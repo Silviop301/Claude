@@ -5,11 +5,12 @@
   const DISPLAY = "'Barlow Condensed', 'Arial Narrow', sans-serif";
   const BODY = "'Barlow', system-ui, sans-serif";
 
+  // Metal: vários pontos de luz ao longo da diagonal (claro/escuro alternando), como metal polido
   const THEMES = {
-    bronze: { a: '#E7B98C', b: '#A86B3C', ink: '#3B2412', line: 'rgba(59,36,18,.35)', label: 'BRONZE' },
-    prata:  { a: '#F1F4F7', b: '#9AA5B1', ink: '#1E2A36', line: 'rgba(30,42,54,.3)', label: 'PRATA' },
-    ouro:   { a: '#FFE9A0', b: '#D2A21B', ink: '#3A2A00', line: 'rgba(58,42,0,.3)', label: 'OURO' },
-    icone:  { a: '#2A2440', b: '#0E0B18', ink: '#F4D675', line: 'rgba(244,214,117,.35)', label: 'ÍCONE' },
+    bronze: { metal: ['#6B3E1C', '#D9A174', '#8E5429', '#F2C9A0', '#A9693A', '#E0AC80', '#5E3517'], ink: '#2E1A0B', line: 'rgba(46,26,11,.35)', label: 'BRONZE' },
+    prata:  { metal: ['#6F7A86', '#F4F7FA', '#A3AEBA', '#FFFFFF', '#8D98A5', '#E6EBF0', '#5E6873'], ink: '#18222D', line: 'rgba(24,34,45,.3)', label: 'PRATA' },
+    ouro:   { metal: ['#7C5A10', '#F7E39A', '#C08E1E', '#FFF4C4', '#B8891F', '#F2D57A', '#6E4F0C'], ink: '#2E2100', line: 'rgba(46,33,0,.3)', label: 'OURO' },
+    icone:  { metal: ['#120E20', '#3A3060', '#1A1530', '#4B3F7A', '#15112A', '#2E2650', '#0B0914'], ink: '#F4D675', line: 'rgba(244,214,117,.35)', label: 'ÍCONE', holo: true },
   };
 
   function themeOf(peak, grade) {
@@ -72,22 +73,51 @@
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, W, H);
 
-    // Fundo do card
+    // Fundo metálico
     shield(ctx);
-    const g = ctx.createLinearGradient(0, 40, W, H);
-    g.addColorStop(0, T.a); g.addColorStop(1, T.b);
+    const g = ctx.createLinearGradient(0, 40, W, H - 40);
+    T.metal.forEach((col, i) => g.addColorStop(i / (T.metal.length - 1), col));
     ctx.fillStyle = g; ctx.fill();
     ctx.save();
     shield(ctx); ctx.clip();
-    // brilho diagonal
-    const sh = ctx.createLinearGradient(0, 0, W, H * 0.6);
-    sh.addColorStop(0, 'rgba(255,255,255,0.35)'); sh.addColorStop(0.5, 'rgba(255,255,255,0)');
+    // Ícone: reflexo holográfico por cima do metal escuro
+    if (T.holo && ctx.createConicGradient) {
+      const hg = ctx.createConicGradient(0.6, W * 0.7, H * 0.3);
+      ['#ff6ec7', '#7afcff', '#fff38a', '#8affa1', '#b28dff', '#ff6ec7'].forEach((col, i, a) => hg.addColorStop(i / (a.length - 1), col));
+      ctx.globalAlpha = 0.16; ctx.fillStyle = hg; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+    }
+    // Metal escovado: riscos finos quase horizontais (sempre iguais, sem sorteio)
+    for (let i = 0, y = 44; y < H; i++, y += 2.2) {
+      const a = ((i * 37) % 11) / 11;
+      ctx.strokeStyle = a > 0.5 ? 'rgba(255,255,255,' + (0.05 + a * 0.05) + ')' : 'rgba(0,0,0,' + (0.03 + a * 0.05) + ')';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y + 6); ctx.stroke();
+    }
+    // Faixa de reflexo especular
+    const sh = ctx.createLinearGradient(0, 0, W, H);
+    sh.addColorStop(0.18, 'rgba(255,255,255,0)'); sh.addColorStop(0.3, 'rgba(255,255,255,0.42)');
+    sh.addColorStop(0.36, 'rgba(255,255,255,0.08)'); sh.addColorStop(0.44, 'rgba(255,255,255,0)');
     ctx.fillStyle = sh; ctx.fillRect(0, 0, W, H);
-    // listras sutis
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 18;
-    for (let i = -H; i < W; i += 60) { ctx.beginPath(); ctx.moveTo(i, H); ctx.lineTo(i + H, 0); ctx.stroke(); }
     ctx.restore();
-    shield(ctx); ctx.lineWidth = 6; ctx.strokeStyle = T.ink; ctx.globalAlpha = 0.55; ctx.stroke(); ctx.globalAlpha = 1;
+    // Chanfro: borda clara em cima/esquerda e escura embaixo/direita, com um friso interno
+    const bev = ctx.createLinearGradient(0, 40, W, H);
+    bev.addColorStop(0, 'rgba(255,255,255,0.85)'); bev.addColorStop(0.5, 'rgba(255,255,255,0.15)'); bev.addColorStop(1, 'rgba(0,0,0,0.55)');
+    shield(ctx); ctx.lineWidth = 8; ctx.strokeStyle = bev; ctx.stroke();
+    ctx.save();
+    ctx.translate(W / 2, H / 2); ctx.scale(0.955, 0.965); ctx.translate(-W / 2, -H / 2);
+    shield(ctx); ctx.lineWidth = 2.5; ctx.strokeStyle = T.line; ctx.stroke();
+    ctx.restore();
+    // Texto em alto-relevo: sombra escura embaixo e luz em cima
+    const emboss = T.holo ? ['rgba(0,0,0,.6)', 'rgba(255,255,255,.12)'] : ['rgba(255,255,255,.55)', 'rgba(0,0,0,.28)'];
+    const fillText = ctx.fillText.bind(ctx);
+    let embossOn = true; // desligado nos emojis (bandeira e ícones), que borrariam
+    ctx.fillText = function (t, x, y, mw) {
+      if (!embossOn) return mw ? fillText(t, x, y, mw) : fillText(t, x, y);
+      const f = this.fillStyle;
+      this.fillStyle = emboss[0]; mw ? fillText(t, x + 1, y + 2, mw) : fillText(t, x + 1, y + 2);
+      this.fillStyle = emboss[1]; mw ? fillText(t, x - 1, y - 1, mw) : fillText(t, x - 1, y - 1);
+      this.fillStyle = f; mw ? fillText(t, x, y, mw) : fillText(t, x, y);
+    };
 
     // Coluna esquerda: nota, posição, bandeira, escudo
     ctx.fillStyle = T.ink;
@@ -98,13 +128,13 @@
     ctx.fillText(d.pos === 'ATA' ? 'ATA' : 'MEI', 128, 232);
     ctx.fillRect(88, 250, 80, 3);
     ctx.font = '52px ' + BODY;
-    ctx.fillText(d.flag, 128, 318);
+    embossOn = false; ctx.fillText(d.flag, 128, 318); embossOn = true;
     ctx.fillRect(88, 340, 80, 3);
     const crest = d.crest ? await loadImg(d.crest) : null;
     if (crest) ctx.drawImage(crest, 93, 356, 70, 70);
 
     // Camisa (no lugar da foto)
-    jersey(ctx, 385, 250, 1.35, 'rgba(255,255,255,0.18)', T.ink, d.pos === 'ATA' ? 9 : 10);
+    jersey(ctx, 385, 250, 1.35, 'rgba(255,255,255,0.18)', T.ink, d.number || (d.pos === 'ATA' ? 9 : 10));
 
     // Nome
     ctx.fillStyle = T.ink;
@@ -137,7 +167,7 @@
     ctx.textAlign = 'center';
     ctx.font = '34px ' + BODY;
     const icons = (d.traits || []).map(t => t.icon + (t.lv > 1 ? ['', '', '²', '³'][t.lv] : '')).join('  ');
-    ctx.fillText(icons, W / 2, 718);
+    embossOn = false; ctx.fillText(icons, W / 2, 718); embossOn = true;
     ctx.font = '700 21px ' + BODY;
     ctx.fillText(d.goals + ' GOLS · ' + d.assists + ' ASSIST · ' + d.titles + ' TÍTULOS' + (d.ballon ? ' · ' + d.ballon + ' BOLA' + (d.ballon > 1 ? 'S' : '') + ' DE OURO' : ''), W / 2, 756, 400);
     ctx.font = '800 18px ' + DISPLAY;

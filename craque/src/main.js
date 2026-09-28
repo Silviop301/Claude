@@ -47,6 +47,7 @@
     const o = S.ovr(c);
     const el = $('bar-ovr');
     el.textContent = o;
+    el.className = 'ovr metal ' + tierCls(o) + (el.classList.contains('up') ? ' up' : '');
     if (o > lastOvr && lastOvr) { el.classList.remove('up'); void el.offsetWidth; el.classList.add('up'); }
     lastOvr = o;
   }
@@ -96,6 +97,8 @@
       '<div class="eyebrow">Nova carreira</div><h2>Quem é o garoto?</h2>' +
       '<div class="field"><label for="f-name">Nome na camisa</label><input id="f-name" maxlength="18" value="' + D.NICKNAMES[i] + '"></div>' +
       '<div class="field"><label>Posição</label><div class="seg" id="f-pos"><button data-v="ATA" class="on">Atacante</button><button data-v="MEI">Meia</button></div></div>' +
+      '<div class="field"><label for="f-num">Número da camisa</label><div class="num-pick"><input id="f-num" type="number" inputmode="numeric" min="1" max="99" value="9">' +
+      [7, 9, 10, 11, 99].map(n => '<button type="button" data-n="' + n + '">' + n + '</button>').join('') + '</div></div>' +
       '<div class="field"><label>Pé bom</label><div class="seg" id="f-foot"><button data-v="D" class="on">Destro</button><button data-v="E">Canhoto</button></div></div>' +
       '<div class="field"><label>País</label><div class="seg flags" id="f-country">' + D.COUNTRIES.map((k, j) => '<button data-v="' + k.id + '"' + (j ? '' : ' class="on"') + ' aria-label="' + k.id + '">' + k.flag + '</button>').join('') + '</div></div>' +
       '<button class="btn" id="b-go">Começar carreira</button>'
@@ -104,11 +107,17 @@
       $(id).querySelectorAll('button').forEach(b => b.onclick = () => {
         $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
         st[key] = b.dataset.v;
+        // Número padrão acompanha a posição até a pessoa escolher um
+        if (key === 'pos' && !numTouched) $('f-num').value = b.dataset.v === 'ATA' ? 9 : 10;
       });
     });
+    let numTouched = false;
+    $('f-num').oninput = () => { numTouched = true; };
+    screen.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { $('f-num').value = b.dataset.n; numTouched = true; });
     $('b-go').onclick = () => {
       const name = $('f-name').value.trim() || D.NICKNAMES[i];
-      c = S.newCareer({ name, pos: st.pos, foot: st.foot, country: st.country });
+      const number = Math.max(1, Math.min(99, parseInt($('f-num').value, 10) || (st.pos === 'ATA' ? 9 : 10)));
+      c = S.newCareer({ name, pos: st.pos, foot: st.foot, country: st.country, number });
       academy();
     };
   }
@@ -199,14 +208,14 @@
     const el = $('mcard'), t = tierCls(o);
     if (el.dataset.t === t) return;
     el.dataset.t = t;
-    el.className = 'mcard ' + t;
+    el.className = 'mcard metal ' + t;
     void el.offsetWidth; // reinicia a animação: mudou de cor, pulsa de novo
     el.classList.add('pop', 'tierup');
     $('mc-tier').textContent = TIER_NAME[t];
   }
   function miniCard() {
     const E = S.eff(c), t = tierCls(S.ovr(c));
-    return '<div class="mcard ' + t + '" id="mcard" data-t="' + t + '"><span class="mc-tier" id="mc-tier">' + TIER_NAME[t] + '</span><div class="mc-ovr"><b id="mc-ovr">' + S.ovr(c) + '</b><span>' + c.pos + '</span><i id="mc-ovr-d"></i></div><div class="mc-grid">' +
+    return '<div class="mcard metal ' + t + '" id="mcard" data-t="' + t + '"><span class="mc-tier" id="mc-tier">' + TIER_NAME[t] + '</span><div class="mc-ovr"><b id="mc-ovr">' + S.ovr(c) + '</b><span>' + c.pos + (c.number ? ' ' + c.number : '') + '</span><i id="mc-ovr-d"></i></div><div class="mc-grid">' +
       D.ATTRS.map(k => '<div class="mc-at" data-k="' + k + '"><b>' + E[k] + '</b><span>' + D.ATTR_LABEL[k] + '</span><i></i></div>').join('') + '</div></div>';
   }
   function showPreview(p) {
@@ -588,7 +597,7 @@
     store(HALL, hall.slice(0, 10));
     const cty = D.COUNTRIES.find(x => x.id === c.country);
     const cardData = {
-      name: c.name, pos: c.pos, peak: c.peak, attrs: c.peakAttrs || c.attrs, flag: cty.flag,
+      name: c.name, number: c.number, pos: c.pos, peak: c.peak, attrs: c.peakAttrs || c.attrs, flag: cty.flag,
       crest: 'badges/' + f.mainClub + '.png', grade: f.grade, verdict: f.verdict,
       goals: T.goals, assists: T.assists, titles: f.titles, ballon: T.ballon,
       traits: c.traits.map(id => ({ icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(c, id) })),

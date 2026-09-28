@@ -107,7 +107,7 @@
     attrs.def = clamp(attrs.def, 20, 70);
     return {
       v: 2, seed: r.state(),
-      name: opts.name, pos: opts.pos, foot: opts.foot, country: opts.country,
+      name: opts.name, pos: opts.pos, foot: opts.foot, country: opts.country, number: opts.number || (opts.pos === 'ATA' ? 9 : 10),
       age: 16, season: 0, attrs,
       pot: Math.round(55 + 25 * Math.pow(r(), 1.5)), // potencial escondido; temporadas muito boas elevam o teto
       traits: [], club: null, clubSince: 0, firstClub: null,
@@ -547,17 +547,18 @@
     const fk = type === 'classico';
     const lv = id => (c.traits.includes(id) ? lvOf(c, id) : 0);
     // Mira: um vaivém completo leva de 1,0 s (FIN baixa) a ~2,1 s (FIN alta); Chute Colocado deixa mais lenta
-    const period = clamp(1.0 + (E.fin - 45) * 0.022 + lv('colocado') * 0.12, 1.0, 2.3);
+    // Na falta a mira corre mais (colocar a bola é mais difícil); Bola Parada devolve parte do tempo
+    const period = clamp((1.0 + (E.fin - 45) * 0.022 + lv('colocado') * 0.12) * (fk ? 0.78 : 1) + (fk ? lv('parada') * 0.12 : 0), 0.85, 2.3);
     // Tremedeira da mira: pressão do lance menos a frieza
     const pressure = type === 'classico' ? 0.6 : 1;
     const calm = clamp((E.fin - 45) / 110, 0, 0.45) + lv('frieza') * 0.18;
     const wobble = round1(clamp(pressure * (0.16 - calm * 0.2), 0, 0.16) * 100) / 100;
     // Alcance do goleiro diminui com a força do chute (FIN e FÍS)
-    const reach = clamp(0.5 - (E.fin + E.fis * 0.5 - 75) / 300, 0.3, 0.5);
+    const reach = clamp(0.6 - (E.fin + E.fis * 0.5 - 75) / 300, 0.4, 0.6);
     // Falta: altura da barreira (Bola Parada ensina a passar por cima dela)
-    const wall = fk ? clamp(0.5 - lv('parada') * 0.05 - (E.pas - 50) / 400, 0.34, 0.5) : 0;
+    const wall = fk ? clamp(0.58 - lv('parada') * 0.05 - (E.pas - 50) / 400, 0.42, 0.58) : 0;
     // Chance ao deixar o jogo decidir (sem jogar)
-    const chance = clamp((fk ? 0.3 : 0.55) + (E.fin - 60) / 110 + lv('frieza') * 0.04 + (fk ? lv('parada') * 0.07 : lv('colocado') * 0.03), fk ? 0.15 : 0.3, fk ? 0.7 : 0.88);
+    const chance = clamp((fk ? 0.3 : 0.48) + (E.fin - 60) / 110 + lv('frieza') * 0.04 + (fk ? lv('parada') * 0.07 : lv('colocado') * 0.03), fk ? 0.15 : 0.3, fk ? 0.7 : 0.88);
     // Na falta, a barreira cobre o lado esquerdo do gol (a tela espelha quando for o direito)
     return { fk, period, wobble, reach, wall, wallL: -0.8, wallR: -0.1, chance: Math.round(chance * 100) / 100 };
   };
@@ -572,10 +573,11 @@
     if (y > 1) return { ok: false, why: 'alto' };
     if (setup.fk && x <= setup.wallR && x >= setup.wallL && y < setup.wall) return { ok: false, why: 'barreira' };
     // Goleiro: no pênalti mergulha para um lado (ou fica no meio); na falta fica no lado sem barreira
-    const kx = setup.fk ? 0.5 : keeper * 0.62;
+    // Na falta a bola demora mais: o goleiro (perto do meio, do lado aberto) chega mais longe
+    const kx = setup.fk ? 0.4 : keeper * 0.62;
     const stay = !setup.fk && keeper === 0;
     // Perto do ângulo ele alcança menos; parado no meio, só pega o que vem na altura dele
-    const reach = setup.reach * (stay ? 0.55 : 1) * (y > 0.7 ? 0.6 : 1);
+    const reach = setup.reach * (stay ? 0.55 : 1) * (setup.fk ? 1.35 : 1) * (y > 0.7 ? 0.72 : 1);
     if (Math.abs(x - kx) < reach && !(stay && y > 0.7)) return { ok: false, why: 'defesa' };
     return { ok: true, why: 'gol' };
   };
