@@ -173,7 +173,7 @@
     const noOffers = !offers.length;
     render(
       '<div class="eyebrow">Janela de transferências · ' + year() + '</div>' +
-      '<h2>' + (ended ? 'Seu contrato com o ' + esc(club(c.club).name) + ' acabou' : 'Seu empresário abriu o mercado') + '</h2>' +
+      '<h2>' + (ended ? 'Seu contrato com ' + D.o(esc(club(c.club).name)) + ' acabou' : 'Seu empresário abriu o mercado') + '</h2>' +
       '<p class="lead">' + (noOffers ? 'Nenhum clube novo apareceu. ' : '') + 'Nota geral ' + S.ovr(c) + ' · fama ' + Math.round(c.fame) + '. A última opção é renovar com o clube atual.</p>' +
       '<div class="choices">' + all.map(offerCard).join('') + '</div>' +
       (S.canRetire(c) ? '<button class="btn ghost" id="b-retire">Pendurar as chuteiras</button>' : '')
@@ -448,9 +448,9 @@
   }
 
   const MOMENT_TXT = {
-    cup: m => ({ tag: 'Final da ' + m.comp, title: 'Pênalti nos acréscimos!', text: 'Final contra o ' + club(m.vs).name + ', empate no placar. A bola é sua.', stakes: 'Converteu: campeão da ' + m.comp + ' · Errou: vice' }),
-    title: m => ({ tag: 'Última rodada · ' + m.comp, title: 'Pênalti valendo o título!', text: 'Contra o ' + club(m.vs).name + ', quem vencer é campeão.', stakes: 'Converteu: campeão da liga · Errou: vice' }),
-    classico: m => ({ tag: 'Clássico', title: 'Falta perigosa no clássico!', text: 'Contra o ' + club(m.vs).name + ', na entrada da área. A barreira está armada.', stakes: 'Converteu: gol no clássico e Torcida +8' }),
+    cup: m => ({ tag: 'Final da ' + m.comp, title: 'Pênalti nos acréscimos!', text: 'Final contra ' + D.o(club(m.vs).name) + ', empate no placar. A bola é sua.', stakes: 'Converteu: campeão da ' + m.comp + ' · Errou: vice' }),
+    title: m => ({ tag: 'Última rodada · ' + m.comp, title: 'Pênalti valendo o título!', text: 'Contra ' + D.o(club(m.vs).name) + ', quem vencer é campeão.', stakes: 'Converteu: campeão da liga · Errou: vice' }),
+    classico: m => ({ tag: 'Clássico', title: 'Falta perigosa no clássico!', text: 'Contra ' + D.o(club(m.vs).name) + ', na entrada da área. A barreira está armada.', stakes: 'Converteu: gol no clássico e Torcida +8' }),
   };
 
   function momentIntro(m) {
@@ -490,7 +490,7 @@
   }
 
   function momentResult(ok, T, m, why) {
-    const how = { defesa: 'O goleiro do ' + club(m.vs).name + ' defendeu.', trave: 'A bola explodiu na trave.', fora: 'A bola foi para fora.', alto: 'A bola foi por cima do gol.', barreira: 'A bola parou na barreira.' }[why] || '';
+    const how = { defesa: 'O goleiro ' + D.do(club(m.vs).name) + ' defendeu.', trave: 'A bola explodiu na trave.', fora: 'A bola foi para fora.', alto: 'A bola foi por cima do gol.', barreira: 'A bola parou na barreira.' }[why] || '';
     const txt = {
       cup: ok ? 'Gol! Campeão da ' + m.comp + '!' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
       title: ok ? 'Na rede! O título é seu!' : (how || 'Não entrou.') + ' O título escapou nos detalhes.',
@@ -547,10 +547,10 @@
   function lede(res, cl) {
     const tb = res.table;
     const pos = tb.pos === 1 ? 'terminou campeão ' + D.da(tb.league) : 'terminou em ' + tb.pos + 'º lugar ' + D.na(tb.league);
-    const perf = !res.games ? c.name + ' quase não entrou em campo, e o ' + cl.name + ' ' + pos + '.'
-      : res.rating >= 7.5 ? c.name + ' foi o nome do ' + cl.name + ', que ' + pos + '.'
-      : res.rating >= 6.8 ? 'Com atuações seguras de ' + c.name + ', o ' + cl.name + ' ' + pos + '.'
-      : 'Em temporada irregular de ' + c.name + ', o ' + cl.name + ' ' + pos + '.';
+    const perf = !res.games ? c.name + ' quase não entrou em campo, e ' + D.o(cl.name) + ' ' + pos + '.'
+      : res.rating >= 7.5 ? c.name + ' foi o nome ' + D.do(cl.name) + ', que ' + pos + '.'
+      : res.rating >= 6.8 ? 'Com atuações seguras de ' + c.name + ', ' + D.o(cl.name) + ' ' + pos + '.'
+      : 'Em temporada irregular de ' + c.name + ', ' + D.o(cl.name) + ' ' + pos + '.';
     return perf + (res.titles.length ? ' A torcida comemorou ' + res.titles.map(t => t.name).join(' e ') + '.' : '');
   }
   function showPaper(res, onClose) {
@@ -564,7 +564,7 @@
     wrap.innerHTML = '<div class="paper"><div class="pp-top"><span>Edição de ' + (year() - 1) + '</span><span>' + price + '</span></div>' +
       '<div class="pp-name">' + P.name + '</div><div class="pp-motto">' + P.motto + '</div>' +
       '<h3 class="pp-head">' + esc(main) + '</h3>' +
-      '<div class="pp-body"><div class="pp-photo">' + crest(cl.id) + '<span>' + esc(c.name) + ' com a camisa do ' + esc(cl.name) + '</span></div>' +
+      '<div class="pp-body"><div class="pp-photo">' + crest(cl.id) + '<span>' + esc(c.name) + ' com a camisa ' + D.do(esc(cl.name)) + '</span></div>' +
       '<div class="pp-col"><p class="pp-stats">' + res.games + ' jogos · ' + res.goals + ' gols · ' + res.assists + ' assist.' + (res.games ? ' · nota ' + res.rating.toFixed(1).replace('.', ',') : '') + '</p>' +
       '<p class="pp-lede">' + esc(lede(res, cl)) + '</p>' +
       rest.map(h => '<p class="pp-sub">' + esc(h) + '</p>').join('') + '</div></div>' +
@@ -620,7 +620,7 @@
     const moveTxt = !res.move ? '' : res.move.dir === 'up' ? '⬆️ Acesso ' + D.paraA(res.move.toName) + '!' : '⬇️ Rebaixado ' + D.paraA(res.move.toName);
     const why = res.why.length ? '<ul class="why">' + res.why.map(w => '<li><span>' + esc(w.txt) + '</span><b class="' + (w.pot ? 'pot' : w.v >= 0 ? 'up' : 'down') + '">' + (w.pot ? 'teto ↑' : (w.v >= 0 ? '+' : '') + w.v) + '</b></li>').join('') + '</ul>' : '';
     const open = S.windowOpen(c);
-    const contractTxt = c.contract > 0 ? 'Contrato: mais ' + c.contract + (c.contract > 1 ? ' temporadas' : ' temporada') + ' no ' + esc(club(c.club).name) : 'Seu contrato acabou: hora de decidir o futuro';
+    const contractTxt = c.contract > 0 ? 'Contrato: mais ' + c.contract + (c.contract > 1 ? ' temporadas' : ' temporada') + ' ' + D.no(esc(club(c.club).name)) : 'Seu contrato acabou: hora de decidir o futuro';
     // Copa do Mundo: convocação logo depois da temporada, em ano de Copa
     const wcNow = S.isWcYear(c) && c.wcYearDone !== year();
     const call = wcNow ? S.wcCall(c) : null;
