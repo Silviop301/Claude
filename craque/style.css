@@ -72,6 +72,41 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 }
 .ovr.up { animation: pop 0.5s ease; }
 
+/* medidores Técnico / Torcida */
+.rel { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rel .m { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rel .ml { font-size: 11.5px; color: #B9CDBF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rel .mb { height: 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.rel .mb i { display: block; height: 100%; background: #9DB5A6; transition: width 0.4s; }
+.rel .mb i.hi { background: #5FD690; }
+.rel .mb i.lo { background: var(--red); }
+
+/* escudos */
+.crest { width: 28px; height: 28px; object-fit: contain; vertical-align: middle; margin-right: 8px; flex: none; }
+.crest.xs { width: 18px; height: 18px; margin-right: 5px; }
+.crest.lg { width: 40px; height: 40px; margin-right: 10px; }
+.with-crest { display: flex; align-items: center; }
+.offer .club { display: flex; align-items: center; min-width: 0; }
+
+/* taças */
+.trophy { flex: none; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.3)); }
+.titles { display: flex; flex-direction: column; gap: 6px; }
+.title-won { display: flex; align-items: center; gap: 12px; background: rgba(242, 194, 48, 0.16); border: 1px solid rgba(242, 194, 48, 0.5); border-radius: 12px; padding: 6px 12px; animation: pop 0.45s ease; }
+.title-won span { font-size: 13px; color: #F7E3A0; line-height: 1.15; }
+.title-won b { font: 800 22px var(--display); color: var(--paper); }
+.award { display: flex; align-items: center; gap: 8px; }
+.award.ballon { justify-content: center; }
+.room-title { font: 800 14px var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+.room { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
+.room div { background: var(--paper-2); border-radius: 12px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; }
+.room b { font: 800 22px/1 var(--display); }
+.room span { font-size: 11.5px; color: var(--muted); line-height: 1.15; }
+.rel-delta { font-size: 14px; color: #CFE0D4; margin: 0; }
+
+/* opções de evento com o que está em jogo */
+.btn.opt { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.btn.opt small { font: 600 13px/1.25 var(--body); letter-spacing: 0; opacity: 0.85; }
+
 /* ---------- telas ---------- */
 #screen { display: flex; flex-direction: column; gap: 12px; animation: enter 0.28s ease-out; }
 .eyebrow { font: 700 13px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); }
@@ -156,7 +191,9 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 
 /* propostas */
 .offer { display: flex; flex-direction: column; align-items: stretch; gap: 6px; text-align: left; }
-.offer .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.offer .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.offer .stars { flex: none; }
+.offer .club { font-size: clamp(19px, 5.6vw, 24px); }
 .offer .club { font: 800 24px/1 var(--display); }
 .offer .lg { font-size: 13px; color: var(--muted); }
 .offer .facts { display: flex; flex-wrap: wrap; gap: 6px; }

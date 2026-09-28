@@ -3,7 +3,7 @@
   const D = window.CRAQUE_DATA, S = window.CRAQUE_SIM;
   const $ = id => document.getElementById(id);
   const screen = $('screen');
-  const SAVE = 'craque-v1', HALL = 'craque-hall-v1';
+  const SAVE = 'craque-v2', HALL = 'craque-hall-v1';
   const YEAR0 = 2026;
   let c = null;      // carreira atual
   let step = null;   // etapa atual (para retomar)
@@ -14,6 +14,10 @@
   const league = id => D.LEAGUE_BY_ID[club(id).league];
   const stars = t => '★'.repeat(t) + '☆'.repeat(5 - t);
   const year = () => YEAR0 + c.season;
+  const crest = (id, cls) => '<img class="crest' + (cls ? ' ' + cls : '') + '" src="badges/' + id + '.png" alt="" loading="lazy">';
+  const trophy = (type, size) => window.CRAQUE_TROPHY(type, size);
+  const titleType = t => (t.id === 'cont' ? (t.name === 'Libertadores' ? 'lib' : 'ucl') : t.id);
+  const meter = (label, v) => '<span class="m"><span class="ml">' + label + ' · ' + S.relLabel(v) + '</span><span class="mb"><i style="width:' + Math.round(v) + '%" class="' + (v >= 62 ? 'hi' : v < 32 ? 'lo' : '') + '"></i></span></span>';
 
   function load(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } }
   function store(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* sem storage */ } }
@@ -35,7 +39,8 @@
     b.hidden = false;
     const cl = club(c.club), lg = league(c.club);
     $('bar-name').textContent = c.name;
-    $('bar-sub').textContent = D.POS[c.pos].name + ' · ' + c.age + ' anos · ' + lg.flag + ' ' + cl.name;
+    $('bar-sub').innerHTML = crest(cl.id, 'xs') + esc(cl.name) + ' · ' + c.age + ' anos';
+    $('bar-rel').innerHTML = meter('👔 Técnico', c.rel.coach) + meter('📣 Torcida', c.rel.fans);
     const T = c.totals;
     $('bar-tot').innerHTML = '<span>' + T.goals + '<small>GOLS</small></span><span>' + T.assists + '<small>ASSIST</small></span><span>' + (T.league + T.cup + T.cont) + '<small>TAÇAS</small></span>';
     const o = S.ovr(c);
@@ -51,7 +56,7 @@
     const saved = load(SAVE);
     const hall = load(HALL) || [];
     render(
-      '<div class="eyebrow">Protótipo 1</div><h1>CRAQUE</h1>' +
+      '<div class="eyebrow">Protótipo 2</div><h1>CRAQUE</h1>' +
       '<p class="lead">Crie um garoto de 16 anos, escolha propostas, monte o estilo dele e descubra se ele vira lenda.</p>' +
       (saved && saved.c ? '<button class="btn" id="b-cont">Continuar carreira de ' + esc(saved.c.name) + '</button>' : '') +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
@@ -104,7 +109,7 @@
     const [kname, kcls] = kinds[o.kind] || ['', ''];
     const roleCls = o.share >= 0.78 ? 'green' : o.share >= 0.5 ? 'blue' : 'red';
     return '<button class="choice offer card" data-i="' + idx + '" style="display:flex">' +
-      '<div class="top"><span class="club">' + esc(cl.name) + '</span><span class="stars">' + stars(cl.tier) + '</span></div>' +
+      '<div class="top"><span class="club">' + crest(cl.id) + esc(cl.name) + '</span><span class="stars">' + stars(cl.tier) + '</span></div>' +
       '<div class="lg">' + lg.flag + ' ' + lg.name + ' · força ' + cl.strength + '</div>' +
       '<div class="facts">' + (kname ? '<span class="tag ' + kcls + '">' + kname + '</span>' : '') +
       '<span class="tag ' + roleCls + '">' + o.role + '</span><span class="tag">R$ ' + money(o.wage) + '/sem</span></div></button>';
@@ -181,21 +186,26 @@
   // ---------- evento ----------
   let pendingEvent = null;
   function eventOrSeason() {
-    if (Math.random() < 0.85) { pendingEvent = S.pickEvent(c); step = 'event'; save(); return eventScreen(); }
-    season();
+    pendingEvent = S.pickEvent(c);
+    if (!pendingEvent) return season();
+    step = 'event';
+    save();
+    eventScreen();
   }
 
   function eventScreen() {
     if (!pendingEvent) pendingEvent = S.pickEvent(c);
+    if (!pendingEvent) return season();
     const ev = pendingEvent;
     render(
       '<div class="eyebrow">Durante a temporada</div>' +
       '<div class="card event-card"><span class="ic">' + ev.icon + '</span><h2>' + ev.title + '</h2><p style="margin:0">' + ev.text + '</p></div>' +
-      '<div class="choices">' + ev.options.map((o, i) => '<button class="btn' + (i ? ' ghost' : '') + '" data-i="' + i + '">' + o.label + '</button>').join('') + '</div>'
+      '<div class="choices">' + ev.options.map((o, i) => '<button class="btn opt' + (i ? ' ghost' : '') + '" data-i="' + i + '">' + esc(o.label) + '<small>' + esc(o.hint) + '</small></button>').join('') + '</div>'
     );
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       const r = S.resolveEvent(c, ev, +b.dataset.i);
       pendingEvent = null;
+      bar();
       render(
         '<div class="eyebrow">' + ev.title + '</div>' +
         '<div class="result ' + (r.ok ? 'ok' : 'ko') + '">' + r.text + '</div>' +
@@ -212,7 +222,7 @@
     save();
     const cl = club(res.club);
     render(
-      '<div class="season-head"><div><div class="eyebrow">Temporada ' + (year() - 1) + ' · ' + res.age + ' anos</div><h2>' + esc(cl.name) + '</h2></div><span class="tag">' + res.role + '</span></div>' +
+      '<div class="season-head"><div><div class="eyebrow">Temporada ' + (year() - 1) + ' · ' + res.age + ' anos</div><h2 class="with-crest">' + crest(cl.id, 'lg') + esc(cl.name) + '</h2></div><span class="tag">' + res.role + '</span></div>' +
       '<div class="counters"><div class="counter"><b id="k-j">0</b><span>Jogos</span></div><div class="counter"><b id="k-g">0</b><span>Gols</span></div>' +
       '<div class="counter"><b id="k-a">0</b><span>Assist.</span></div><div class="counter rate"><b id="k-n">–</b><span>Nota</span></div></div>' +
       '<div class="feed" id="feed"></div><div id="after"></div>'
@@ -238,9 +248,11 @@
     const dOvr = res.ovr1 - res.ovr0;
     const fin = S.mustRetire(c);
     $('after').innerHTML =
-      '<div class="awards">' + res.awards.map(a => '<div class="award' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? '🏆 ' : '🥇 ') + a.name + '</div>').join('') + '</div>' +
+      (res.titles.length ? '<div class="titles">' + res.titles.map(t => '<div class="title-won">' + trophy(titleType(t), 54) + '<span>Campeão<br><b>' + esc(t.name) + '</b></span></div>').join('') + '</div>' : '') +
+      '<div class="awards">' + res.awards.map(a => '<div class="award' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : '🥇 ') + a.name + '</div>').join('') + '</div>' +
       '<div class="news"><div class="np">O GLOBO ESPORTIVO</div>' + res.headlines.map(h => '<p>' + esc(h) + '</p>').join('') + '</div>' +
       '<p class="delta ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' +
+      '<p class="rel-delta">👔 Técnico ' + res.coach0 + ' → ' + res.coach1 + ' · 📣 Torcida ' + res.fans0 + ' → ' + res.fans1 + ' (' + S.relLabel(res.fans1) + ')</p>' +
       (fin ? '<p class="lead">Aos ' + c.age + ' anos, o corpo pediu para parar.</p><button class="btn" id="b-next">Ver sua carreira</button>'
         : '<button class="btn" id="b-next">Janela de transferências</button>');
     bar();
@@ -265,7 +277,10 @@
       '<div class="verdict">' + esc(f.verdict) + '</div>' +
       '<div class="stats"><div><b>' + T.games + '</b><span>Jogos</span></div><div><b>' + T.goals + '</b><span>Gols</span></div><div><b>' + T.assists + '</b><span>Assistências</span></div>' +
       '<div><b>' + f.titles + '</b><span>Títulos</span></div><div><b>' + T.ballon + '</b><span>Bolas de Ouro</span></div><div><b>' + f.nClubs + '</b><span>Clubes</span></div></div>' +
-      '<div class="timeline">' + c.spells.map(s => '<div><span>' + String(YEAR0 + s.from - 16).slice(2) + '–' + String(YEAR0 + s.to - 16 + 1).slice(2) + '</span><span>' + league(s.club).flag + ' ' + esc(club(s.club).name) + '</span><span>' + s.goals + 'G ' + s.assists + 'A' + (s.titles ? ' · ' + s.titles + '🏆' : '') + '</span></div>').join('') + '</div>' +
+      '<div class="timeline">' + c.spells.map(s => '<div><span>' + String(YEAR0 + s.from - 16).slice(2) + '–' + String(YEAR0 + s.to - 16 + 1).slice(2) + '</span><span>' + crest(s.club, 'xs') + esc(club(s.club).name) + '</span><span>' + s.goals + 'G ' + s.assists + 'A' + (s.titles ? ' · ' + s.titles + '🏆' : '') + '</span></div>').join('') + '</div>' +
+      (Object.keys(c.trophies || {}).length ? '<div class="room-title">Sala de troféus</div><div class="room">' +
+        Object.entries(c.trophies).sort((a, b) => ['ballon', 'ucl', 'lib', 'league', 'cup'].indexOf(a[1].type) - ['ballon', 'ucl', 'lib', 'league', 'cup'].indexOf(b[1].type))
+          .map(([name, t]) => '<div>' + trophy(t.type, 44) + '<b>' + t.n + 'x</b><span>' + esc(name) + '</span></div>').join('') + '</div>' : '') +
       '<div class="score">' + f.score + ' pontos' + (rank === 1 ? ' · NOVO RECORDE!' : ' · #' + rank + ' no seu Hall da Fama') + '</div>' +
       '</div>' +
       '<button class="btn" id="b-again">Nova carreira</button><button class="btn ghost" id="b-home">Hall da Fama</button>'

@@ -16,18 +16,18 @@
   // Ligas e clubes: [nome, nível]. Dentro de cada nível da liga, a força cai do primeiro para o último.
   // Nomes reais apenas em texto (sem escudos); para compartilhar publicamente, troque por nomes fictícios aqui.
   D.LEAGUES = [
-    { id: 'bra-c', name: 'Série C', country: 'Brasil', flag: '🇧🇷', clubs: [['Figueirense', 1], ['Náutico', 1], ['Londrina', 1], ['Ypiranga-RS', 1], ['Confiança', 1], ['São Bernardo', 1]] },
-    { id: 'bra-b', name: 'Série B', country: 'Brasil', flag: '🇧🇷', clubs: [['Coritiba', 2], ['Goiás', 2], ['Avaí', 2], ['Ponte Preta', 2], ['Guarani', 2], ['Vila Nova', 2], ['CRB', 2]] },
-    { id: 'bra-a', name: 'Brasileirão', country: 'Brasil', flag: '🇧🇷', clubs: [['Flamengo', 3], ['Palmeiras', 3], ['Atlético-MG', 3], ['São Paulo', 3], ['Corinthians', 3], ['Fluminense', 3], ['Botafogo', 3], ['Grêmio', 3], ['Internacional', 3], ['Cruzeiro', 3], ['Santos', 3], ['Bahia', 3], ['Fortaleza', 3], ['Vasco', 3]] },
-    { id: 'arg', name: 'Liga Argentina', country: 'Argentina', flag: '🇦🇷', clubs: [['River Plate', 3], ['Boca Juniors', 3], ['Racing', 3], ['Independiente', 3], ['San Lorenzo', 3]] },
-    { id: 'por', name: 'Liga Portugal', country: 'Portugal', flag: '🇵🇹', clubs: [['Benfica', 4], ['Porto', 4], ['Sporting', 4], ['Braga', 3]] },
-    { id: 'esp', name: 'La Liga', country: 'Espanha', flag: '🇪🇸', clubs: [['Real Madrid', 5], ['Barcelona', 5], ['Atlético de Madrid', 4], ['Real Sociedad', 4], ['Sevilla', 4], ['Villarreal', 4]] },
-    { id: 'ing', name: 'Premier League', country: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', clubs: [['Manchester City', 5], ['Liverpool', 5], ['Arsenal', 5], ['Chelsea', 4], ['Manchester United', 4], ['Tottenham', 4], ['Newcastle', 4], ['Aston Villa', 4]] },
-    { id: 'ita', name: 'Serie A', country: 'Itália', flag: '🇮🇹', clubs: [['Inter de Milão', 5], ['Juventus', 4], ['Milan', 4], ['Napoli', 4], ['Roma', 4]] },
-    { id: 'ale', name: 'Bundesliga', country: 'Alemanha', flag: '🇩🇪', clubs: [['Bayern de Munique', 5], ['Bayer Leverkusen', 4], ['Borussia Dortmund', 4], ['RB Leipzig', 4]] },
-    { id: 'fra', name: 'Ligue 1', country: 'França', flag: '🇫🇷', clubs: [['PSG', 5], ['Monaco', 4], ['Olympique de Marseille', 4], ['Lyon', 4]] },
-    { id: 'ara', name: 'Saudi Pro League', country: 'Arábia', flag: '🇸🇦', wageMult: 4, clubs: [['Al-Hilal', 3], ['Al-Nassr', 3], ['Al-Ittihad', 3]] },
-    { id: 'usa', name: 'MLS', country: 'EUA', flag: '🇺🇸', wageMult: 2, clubs: [['Inter Miami', 3], ['LA Galaxy', 3], ['LAFC', 3]] },
+    { id: 'bra-c', cup: 'Copa do Brasil', name: 'Série C', country: 'Brasil', flag: '🇧🇷', clubs: [['Figueirense', 1], ['Náutico', 1], ['Londrina', 1], ['Ypiranga-RS', 1], ['Confiança', 1], ['São Bernardo', 1]] },
+    { id: 'bra-b', cup: 'Copa do Brasil', name: 'Série B', country: 'Brasil', flag: '🇧🇷', clubs: [['Coritiba', 2], ['Goiás', 2], ['Avaí', 2], ['Ponte Preta', 2], ['Guarani', 2], ['Vila Nova', 2], ['CRB', 2]] },
+    { id: 'bra-a', cup: 'Copa do Brasil', name: 'Brasileirão', country: 'Brasil', flag: '🇧🇷', clubs: [['Flamengo', 3], ['Palmeiras', 3], ['Atlético-MG', 3], ['São Paulo', 3], ['Corinthians', 3], ['Fluminense', 3], ['Botafogo', 3], ['Grêmio', 3], ['Internacional', 3], ['Cruzeiro', 3], ['Santos', 3], ['Bahia', 3], ['Fortaleza', 3], ['Vasco', 3]] },
+    { id: 'arg', cup: 'Copa Argentina', name: 'Liga Argentina', country: 'Argentina', flag: '🇦🇷', clubs: [['River Plate', 3], ['Boca Juniors', 3], ['Racing', 3], ['Independiente', 3], ['San Lorenzo', 3]] },
+    { id: 'por', cup: 'Taça de Portugal', name: 'Liga Portugal', country: 'Portugal', flag: '🇵🇹', clubs: [['Benfica', 4], ['Porto', 4], ['Sporting', 4], ['Braga', 3]] },
+    { id: 'esp', cup: 'Copa do Rei', name: 'La Liga', country: 'Espanha', flag: '🇪🇸', clubs: [['Real Madrid', 5], ['Barcelona', 5], ['Atlético de Madrid', 4], ['Real Sociedad', 4], ['Sevilla', 4], ['Villarreal', 4]] },
+    { id: 'ing', cup: 'FA Cup', name: 'Premier League', country: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', clubs: [['Manchester City', 5], ['Liverpool', 5], ['Arsenal', 5], ['Chelsea', 4], ['Manchester United', 4], ['Tottenham', 4], ['Newcastle', 4], ['Aston Villa', 4]] },
+    { id: 'ita', cup: 'Coppa Italia', name: 'Serie A', country: 'Itália', flag: '🇮🇹', clubs: [['Inter de Milão', 5], ['Juventus', 4], ['Milan', 4], ['Napoli', 4], ['Roma', 4]] },
+    { id: 'ale', cup: 'Copa da Alemanha', name: 'Bundesliga', country: 'Alemanha', flag: '🇩🇪', clubs: [['Bayern de Munique', 5], ['Bayer Leverkusen', 4], ['Borussia Dortmund', 4], ['RB Leipzig', 4]] },
+    { id: 'fra', cup: 'Copa da França', name: 'Ligue 1', country: 'França', flag: '🇫🇷', clubs: [['PSG', 5], ['Monaco', 4], ['Olympique de Marseille', 4], ['Lyon', 4]] },
+    { id: 'ara', cup: 'Copa do Rei Saudita', name: 'Saudi Pro League', country: 'Arábia', flag: '🇸🇦', wageMult: 4, clubs: [['Al-Hilal', 3], ['Al-Nassr', 3], ['Al-Ittihad', 3]] },
+    { id: 'usa', cup: 'US Open Cup', name: 'MLS', country: 'EUA', flag: '🇺🇸', wageMult: 2, clubs: [['Inter Miami', 3], ['LA Galaxy', 3], ['LAFC', 3]] },
   ];
 
   D.CLUBS = [];
@@ -90,91 +90,6 @@
     { id: 'liso',    a: 'velocista', b: 'drible',  icon: '💨', name: 'Liso',                  desc: '+20% assistências e nota +0,2.',            fx: { assist: 0.2, rating: 0.2 } },
     { id: 'capitao', a: 'lider',    b: 'raca',     icon: '🎖️', name: 'Capitão',               desc: '+12% chance de título e mais fama.',        fx: { title: 0.12, fame: 0.25 } },
     { id: 'maestro', a: 'visao',    b: 'garcom',   icon: '🎼', name: 'Maestro',               desc: '+30% assistências.',                         fx: { assist: 0.3 } },
-  ];
-
-  // Eventos: cada opção tem chance de sucesso (odds), com bônus por característica.
-  // Efeitos: min (tempo de jogo), form (rendimento), inj (lesão garantida em % da temporada),
-  // fame, money (x salário semanal), attr ({atributo: pontos}).
-  D.EVENTS = [
-    {
-      id: 'classico', icon: '🤕', title: 'Clássico no sacrifício',
-      text: 'Você está com uma dor na coxa e tem clássico no domingo. O técnico deixa você decidir.',
-      options: [
-        { label: 'Jogar no sacrifício', odds: 0.55, bonus: { raca: 0.2, pro: 0.1 },
-          ok: { text: 'Você decidiu o clássico e virou herói da torcida!', fx: { fame: 8, form: 0.15 } },
-          ko: { text: 'A lesão piorou. Vai ficar um bom tempo fora.', fx: { inj: 0.3 } } },
-        { label: 'Poupar e se tratar', odds: 1,
-          ok: { text: 'Parte da torcida reclamou, mas você voltou inteiro.', fx: { fame: -2 } } },
-      ],
-    },
-    {
-      id: 'tecnico', icon: '📋', title: 'Treta com o técnico',
-      text: 'O técnico te tirou do time titular sem explicação.',
-      options: [
-        { label: 'Bater de frente', odds: 0.5, bonus: { lider: 0.15, marra: 0.1 },
-          ok: { text: 'Deu certo: você ganhou a posição de volta com moral.', fx: { min: 0.15, fame: 3 } },
-          ko: { text: 'Pegou mal. Você foi encostado no elenco.', fx: { min: -0.35 } } },
-        { label: 'Treinar calado', odds: 0.7, bonus: { pro: 0.2 },
-          ok: { text: 'O esforço foi notado e você voltou a jogar.', fx: { attr: { men: 2 } } },
-          ko: { text: 'Mesmo treinando bem, jogou menos essa temporada.', fx: { min: -0.15 } } },
-      ],
-    },
-    {
-      id: 'festa', icon: '🎉', title: 'Aniversário do parça',
-      text: 'Festão na véspera do jogo. Todo mundo vai estar lá.',
-      options: [
-        { label: 'Ir na festa', odds: 0.4, bonus: { marra: 0.25 },
-          ok: { text: 'Curtiu, apareceu nas redes e ainda fez gol no dia seguinte.', fx: { fame: 6 } },
-          ko: { text: 'Foi flagrado de madrugada. Rendimento e imagem caíram.', fx: { form: -0.15, fame: 2 } } },
-        { label: 'Ficar em casa', odds: 1,
-          ok: { text: 'Descansou e mostrou maturidade.', fx: { attr: { men: 1 } } } },
-      ],
-    },
-    {
-      id: 'patrocinio', icon: '💰', title: 'Patrocínio polêmico',
-      text: 'Uma casa de apostas quer você como garoto-propaganda.',
-      options: [
-        { label: 'Aceitar o contrato', odds: 0.65,
-          ok: { text: 'Grana boa na conta e seu rosto em todo outdoor.', fx: { money: 30, fame: 4 } },
-          ko: { text: 'Virou escândalo na imprensa. Pesou no seu rendimento.', fx: { money: 30, form: -0.1, fame: -3 } } },
-        { label: 'Recusar', odds: 1,
-          ok: { text: 'Você recusou e a imprensa elogiou sua postura.', fx: { fame: 2 } } },
-      ],
-    },
-    {
-      id: 'treino', icon: '🏋️', title: 'Treino extra',
-      text: 'O preparador físico oferece um treino particular pesado nas férias.',
-      options: [
-        { label: 'Topar o desafio', odds: 0.75, bonus: { pro: 0.15, raca: 0.1 },
-          ok: { text: 'Você voltou voando das férias.', fx: { attr: { fis: 3, fin: 1, dri: 1 } } },
-          ko: { text: 'Exagerou na carga e se machucou.', fx: { inj: 0.15, attr: { fis: 1 } } } },
-        { label: 'Descansar', odds: 1,
-          ok: { text: 'Férias tranquilas com a família.', fx: {} } },
-      ],
-    },
-    {
-      id: 'coletiva', icon: '🎤', title: 'Coletiva antes do clássico',
-      text: 'O repórter pergunta o que você acha do zagueiro rival.',
-      options: [
-        { label: 'Provocar', odds: 0.5, bonus: { marra: 0.2, frieza: 0.1 },
-          ok: { text: 'Você provocou e fez dois gols nele. Viralizou!', fx: { fame: 10, form: 0.1 } },
-          ko: { text: 'Ele te anulou e você virou meme.', fx: { fame: -5, form: -0.05 } } },
-        { label: 'Ser humilde', odds: 1,
-          ok: { text: 'Resposta madura, sem polêmica.', fx: { attr: { men: 1 } } } },
-      ],
-    },
-    {
-      id: 'selecao', icon: '🟡', title: 'Convocação para a base',
-      text: 'A seleção sub-20 te convocou, mas o clube precisa de você no mesmo período.',
-      maxAge: 20,
-      options: [
-        { label: 'Ir para a seleção', odds: 0.8,
-          ok: { text: 'Destaque na seleção! Seu nome ganhou o país.', fx: { fame: 8, attr: { men: 2 } } },
-          ko: { text: 'Ficou no banco e ainda perdeu espaço no clube.', fx: { min: -0.1 } } },
-        { label: 'Ficar no clube', odds: 1,
-          ok: { text: 'O clube valorizou sua escolha.', fx: { min: 0.1 } } },
-      ],
-    },
   ];
 
   root.CRAQUE_DATA = D;
