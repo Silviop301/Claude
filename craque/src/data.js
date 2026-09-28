@@ -81,30 +81,34 @@
   // Características. fx: multiplicadores e bônus aplicados na simulação.
   // goal/assist: multiplicador; attr: pontos imediatos; inj: risco de lesão; decl: declínio;
   // title: chance de título; fame: multiplicador de fama; rating: bônus na nota.
+  // Características: cada uma soma pontos nos atributos da carta (nível 2 e 3 somam mais).
   D.TRAITS = [
-    { id: 'colocado',  icon: '🎯', name: 'Chute Colocado',  desc: '+10% gols e +3 Finalização.',              fx: { goal: 0.10, attr: { fin: 3 } } },
-    { id: 'parada',    icon: '🧱', name: 'Bola Parada',     desc: '+6% gols e +8% assistências.',             fx: { goal: 0.06, assist: 0.08 } },
-    { id: 'velocista', icon: '⚡', name: 'Velocista',       desc: '+4 Ritmo e +2 Drible.',                    fx: { attr: { rit: 4, dri: 2 } } },
-    { id: 'drible',    icon: '🌀', name: 'Drible Curto',    desc: '+4 Drible e +5% assistências.',            fx: { assist: 0.05, attr: { dri: 4 } } },
-    { id: 'cabeceio',  icon: '🗣️', name: 'Cabeceio',        desc: '+8% gols (atacante) e +2 Físico.',         fx: { goalATA: 0.08, attr: { fis: 2 } } },
-    { id: 'visao',     icon: '👁️', name: 'Visão de Jogo',   desc: '+15% assistências e +3 Passe.',            fx: { assist: 0.15, attr: { pas: 3 } } },
-    { id: 'lider',     icon: '©️', name: 'Líder',           desc: '+8% chance de título, +2 Passe e +2 Defesa.', fx: { title: 0.08, attr: { pas: 2, def: 2 } } },
-    { id: 'raca',      icon: '🔥', name: 'Raça',            desc: 'Menos lesões, +5% títulos, +2 Físico e Defesa.', fx: { inj: -0.2, title: 0.05, attr: { fis: 2, def: 2 } } },
-    { id: 'pro',       icon: '🧘', name: 'Profissional',    desc: 'Lesões -35% e envelhece mais devagar.',    fx: { inj: -0.35, decl: -0.4 } },
-    { id: 'marra',     icon: '😎', name: 'Marra',           desc: 'Fama +50%, mas atrai polêmicas.',          fx: { fame: 0.5, rating: 0.1 } },
-    { id: 'frieza',    icon: '🧊', name: 'Frieza',          desc: 'Decide finais: +6% títulos, +5% gols.',    fx: { goal: 0.05, title: 0.06 } },
-    { id: 'garcom',    icon: '🍽️', name: 'Garçom',          desc: '+25% assistências, -8% gols.',             fx: { assist: 0.25, goal: -0.08 } },
+    { id: 'colocado',  icon: '🎯', name: 'Chute Colocado', attr: { fin: 4, dri: 1 } },
+    { id: 'parada',    icon: '🧱', name: 'Bola Parada',    attr: { fin: 2, pas: 3 } },
+    { id: 'velocista', icon: '⚡', name: 'Velocista',      attr: { rit: 5 } },
+    { id: 'drible',    icon: '🌀', name: 'Drible Curto',   attr: { dri: 4, rit: 1 } },
+    { id: 'cabeceio',  icon: '🗣️', name: 'Cabeceio',       attr: { fin: 2, fis: 3 } },
+    { id: 'visao',     icon: '👁️', name: 'Visão de Jogo',  attr: { pas: 5 } },
+    { id: 'lider',     icon: '©️', name: 'Líder',          attr: { pas: 2, def: 2, fis: 1 } },
+    { id: 'raca',      icon: '🔥', name: 'Raça',           attr: { def: 3, fis: 2 } },
+    { id: 'pro',       icon: '🧘', name: 'Profissional',   attr: { fis: 3 }, perk: 'Perde menos atributos depois dos 30' },
+    { id: 'tecnica',   icon: '🪄', name: 'Técnica',        attr: { dri: 3, pas: 2 } },
+    { id: 'frieza',    icon: '🧊', name: 'Frieza',         attr: { fin: 3, dri: 2 } },
+    { id: 'garcom',    icon: '🍽️', name: 'Garçom',         attr: { pas: 6, fin: -1 } },
   ];
   D.TRAIT_BY_ID = {};
   D.TRAITS.forEach(t => { D.TRAIT_BY_ID[t.id] = t; });
+  // Multiplicador por nível: Nv1 = 1x, Nv2 = 1.8x, Nv3 = 2.6x
+  D.TRAIT_LV = [0, 1, 1.8, 2.6];
 
-  // Sinergias: ter as duas características ativa um bônus extra.
+  // Sinergias: ter as duas características dá pontos extras.
   D.SYNERGIES = [
-    { id: 'falta',   a: 'colocado', b: 'parada',   icon: '🌟', name: 'Especialista em Falta', desc: '+15% gols e gols de falta nas manchetes.', fx: { goal: 0.15 } },
-    { id: 'liso',    a: 'velocista', b: 'drible',  icon: '💨', name: 'Liso',                  desc: '+20% assistências e nota +0,2.',            fx: { assist: 0.2, rating: 0.2 } },
-    { id: 'capitao', a: 'lider',    b: 'raca',     icon: '🎖️', name: 'Capitão',               desc: '+12% chance de título e mais fama.',        fx: { title: 0.12, fame: 0.25 } },
-    { id: 'maestro', a: 'visao',    b: 'garcom',   icon: '🎼', name: 'Maestro',               desc: '+30% assistências.',                         fx: { assist: 0.3 } },
+    { id: 'falta',   a: 'colocado', b: 'parada',   icon: '🌟', name: 'Especialista em Falta', attr: { fin: 3, pas: 2 }, extra: 'Gols de falta nas manchetes' },
+    { id: 'liso',    a: 'velocista', b: 'drible',  icon: '💨', name: 'Liso',                  attr: { rit: 3, dri: 3 } },
+    { id: 'capitao', a: 'lider',    b: 'raca',     icon: '🎖️', name: 'Capitão',               attr: { def: 3, fis: 2, pas: 1 } },
+    { id: 'maestro', a: 'visao',    b: 'garcom',   icon: '🎼', name: 'Maestro',               attr: { pas: 4, dri: 2 } },
   ];
+  D.ATTR_LABEL = { rit: 'RIT', fin: 'FIN', pas: 'PAS', dri: 'DRI', def: 'DEF', fis: 'FÍS' };
 
   root.CRAQUE_DATA = D;
   if (typeof module !== 'undefined') module.exports = D;

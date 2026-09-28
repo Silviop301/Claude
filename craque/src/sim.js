@@ -27,11 +27,47 @@
   const round1 = v => Math.round(v * 10) / 10;
 
   // ---------- jogador ----------
-  S.ovr = function (c) {
-    const w = D.POS[c.pos].w;
+  // c.attrs guarda a base (treino e idade); as características somam por cima.
+  // A carta mostra sempre a soma (S.eff).
+  const ovrOf = (attrs, pos) => {
+    const w = D.POS[pos].w;
     let o = 0;
-    for (const k in w) o += c.attrs[k] * w[k];
+    for (const k in w) o += attrs[k] * w[k];
     return Math.round(o);
+  };
+  S.ovrOf = ovrOf;
+
+  // Pontos que um conjunto de características (com níveis) soma em cada atributo
+  S.bonusOf = function (traits, lv) {
+    const b = {};
+    D.ATTRS.forEach(k => { b[k] = 0; });
+    traits.forEach(id => {
+      const t = D.TRAIT_BY_ID[id], m = D.TRAIT_LV[lv[id] || 1];
+      for (const k in t.attr) b[k] += Math.round(t.attr[k] * m);
+    });
+    D.SYNERGIES.forEach(s => {
+      if (traits.includes(s.a) && traits.includes(s.b)) for (const k in s.attr) b[k] += s.attr[k];
+    });
+    return b;
+  };
+
+  const effOf = (c, traits, lv) => {
+    const b = S.bonusOf(traits, lv), out = {};
+    D.ATTRS.forEach(k => { out[k] = clamp(Math.round(c.attrs[k]) + b[k], 20, 99); });
+    return out;
+  };
+  S.eff = c => effOf(c, c.traits, c.traitLv || {});
+  S.ovr = c => ovrOf(S.eff(c), c.pos);
+
+  // Como a carta fica depois de uma escolha: { add, remove, up } (ids de características)
+  S.preview = function (c, ch) {
+    let traits = c.traits.slice();
+    const lv = Object.assign({}, c.traitLv);
+    if (ch.remove) { traits = traits.filter(x => x !== ch.remove); delete lv[ch.remove]; }
+    if (ch.add) { traits.push(ch.add); lv[ch.add] = 1; }
+    if (ch.up) lv[ch.up] = (lv[ch.up] || 1) + 1;
+    const attrs = effOf(c, traits, lv);
+    return { attrs, ovr: ovrOf(attrs, c.pos) };
   };
 
   S.newCareer = function (opts, seed) {
@@ -44,10 +80,10 @@
     else { attrs.pas += 4; attrs.dri += 2; attrs.def -= 8; }
     attrs.def = clamp(attrs.def, 20, 70);
     return {
-      v: 1, seed: r.state(),
+      v: 2, seed: r.state(),
       name: opts.name, pos: opts.pos, foot: opts.foot, country: opts.country,
       age: 16, season: 0, attrs,
-      pot: Math.round(63 + 26 * Math.pow(r(), 1.5)), // potencial escondido; temporadas muito boas elevam o teto
+      pot: Math.round(58 + 25 * Math.pow(r(), 1.5)), // potencial escondido; temporadas muito boas elevam o teto
       traits: [], club: null, clubSince: 0, firstClub: null,
       fame: 0, money: 0, wage: 0,
       mod: { min: 0, form: 0, inj: 0, goal: 0, assist: 0 },
@@ -71,19 +107,9 @@
   S.MAX_SLOTS = 5;
   S.MAX_LV = 3;
   const lvOf = (c, id) => (c.traitLv && c.traitLv[id]) || 1;
-  const lvMult = lv => 1 + 0.5 * (lv - 1); // nível 2 = +50%, nível 3 = +100%
 
-  S.fx = function (c) {
-    const f = { goal: 0, assist: 0, title: 0, inj: 0, decl: 0, fame: 0, rating: 0 };
-    const add = (fx, m) => { for (const k in fx) if (k in f) f[k] += fx[k] * m; };
-    c.traits.forEach(id => {
-      const t = D.TRAIT_BY_ID[id].fx, m = lvMult(lvOf(c, id));
-      add(t, m);
-      if (t.goalATA && c.pos === 'ATA') f.goal += t.goalATA * m;
-    });
-    S.synergies(c).forEach(s => add(s.fx, 1));
-    return f;
-  };
+  // Único efeito fora dos atributos: Profissional envelhece mais devagar
+  S.declMult = c => (c.traits.includes('pro') ? 1 - 0.25 * lvOf(c, 'pro') : 1);
 
   const completesSyn = (c, id, without) => D.SYNERGIES.find(s => {
     const has = x => c.traits.includes(x) && x !== without;
@@ -137,16 +163,12 @@
     if (c.traits.length >= S.MAX_SLOTS) return null;
     c.traits.push(id);
     c.traitLv[id] = 1;
-    const t = D.TRAIT_BY_ID[id];
-    if (t.fx.attr) for (const k in t.fx.attr) c.attrs[k] = clamp(c.attrs[k] + t.fx.attr[k], 20, 99);
-    return completesSyn(c, id);
+    return S.synergies(c).find(s => s.a === id || s.b === id) || null;
   };
 
   S.upgradeTrait = function (c, id) {
     if (!c.traits.includes(id) || lvOf(c, id) >= S.MAX_LV) return false;
     c.traitLv[id] = lvOf(c, id) + 1;
-    const t = D.TRAIT_BY_ID[id];
-    if (t.fx.attr) for (const k in t.fx.attr) c.attrs[k] = clamp(c.attrs[k] + t.fx.attr[k], 20, 99);
     return true;
   };
   S.traitLevel = lvOf;
@@ -347,13 +369,13 @@
         title: 'Festa na véspera do jogo',
         text: 'Aniversário do parça, todo mundo vai estar lá.',
         options: [
-          { label: 'Ir na festa', hint: 'Fama +6 · ' + (c.traits.includes('marra') ? '30%' : '55%') + ': flagrado (Técnico −20)' },
+          { label: 'Ir na festa', hint: 'Fama +6 · ' + '55%' + ': flagrado (Técnico −20)' },
           { label: 'Ficar em casa', hint: 'Técnico +5' },
         ],
       }),
       resolve: (c, ev, i, r) => {
         if (i === 0) {
-          if (r() < (c.traits.includes('marra') ? 0.3 : 0.55)) { bump(c, 'coach', -20); return { ok: false, text: 'Foi flagrado de madrugada. O técnico te deixou no banco.', fx: { fame: 3, min: -0.1 } }; }
+          if (r() < 0.55) { bump(c, 'coach', -20); return { ok: false, text: 'Foi flagrado de madrugada. O técnico te deixou no banco.', fx: { fame: 3, min: -0.1 } }; }
           return { ok: true, text: 'Curtiu, bombou nas redes e ainda jogou bem no dia seguinte.', fx: { fame: 6 } };
         }
         bump(c, 'coach', 5);
@@ -430,7 +452,7 @@
     if (fx.inj) c.mod.inj = Math.max(c.mod.inj, fx.inj);
     if (fx.goalMul) c.mod.goal += fx.goalMul;
     if (fx.assistMul) c.mod.assist += fx.assistMul;
-    if (fx.fame) c.fame = Math.max(0, c.fame + fx.fame * (1 + S.fx(c).fame));
+    if (fx.fame) c.fame = Math.max(0, c.fame + fx.fame);
     if (fx.move) {
       const dest = D.CLUB_BY_ID[fx.move];
       S.join(c, { club: dest.id, wage: fx.wageSet || S.wage(c, dest) });
@@ -447,13 +469,14 @@
     const { r, save } = rngOf(c);
     const club = D.CLUB_BY_ID[c.club];
     const lg = D.LEAGUE_BY_ID[club.league];
-    const fx = S.fx(c);
+    const E = S.eff(c);
     const ovr0 = S.ovr(c);
     const role = S.role(c, club);
 
     // Lesão: risco base + idade + eventos
     let injShare = c.mod.inj;
-    const injRisk = clamp((0.14 + Math.max(0, c.age - 29) * 0.03) * (1 + fx.inj), 0.02, 0.6);
+    // Físico alto protege de lesões
+    const injRisk = clamp((0.14 + Math.max(0, c.age - 29) * 0.03) * clamp(1 - (E.fis - 60) / 70, 0.5, 1.4), 0.02, 0.6);
     let injName = null;
     if (r() < injRisk) {
       injShare = Math.max(injShare, r.range(0.1, 0.4));
@@ -470,10 +493,13 @@
     const o = ovr0;
     const teamF = 0.85 + (club.strength - D.TIERS[club.tier].min) * 0.02;
     const form = 1 + c.mod.form + r.gauss() * 0.08;
-    let g90 = (c.pos === 'ATA' ? 0.1 + Math.max(0, o - 45) * 0.0125 : 0.04 + Math.max(0, o - 45) * 0.0055);
-    let a90 = (c.pos === 'ATA' ? 0.04 + Math.max(0, o - 45) * 0.0045 : 0.06 + Math.max(0, o - 45) * 0.0075);
-    g90 *= teamF * form * (1 + fx.goal) * (1 + c.mod.goal);
-    a90 *= teamF * form * (1 + fx.assist) * (1 + c.mod.assist);
+    // Gols saem da finalização (e do que ajuda a chegar nela); assistências, do passe e do drible
+    const gA = E.fin * 0.5 + E.rit * 0.2 + E.dri * 0.15 + E.fis * 0.15;
+    const aA = E.pas * 0.55 + E.dri * 0.25 + E.rit * 0.1 + E.fin * 0.1;
+    let g90 = (c.pos === 'ATA' ? 0.1 + Math.max(0, gA - 45) * 0.0125 : 0.04 + Math.max(0, gA - 45) * 0.0055);
+    let a90 = (c.pos === 'ATA' ? 0.04 + Math.max(0, aA - 45) * 0.0045 : 0.06 + Math.max(0, aA - 45) * 0.0075);
+    g90 *= 1.14 * teamF * form * (1 + c.mod.goal);
+    a90 *= 1.22 * teamF * form * (1 + c.mod.assist);
 
     let goals = 0, assists = 0;
     const highlights = [];
@@ -493,14 +519,15 @@
 
     // Nota média
     const perGame = games ? (goals + assists * 0.7) / games : 0;
-    const rating = games ? clamp(round1(6.1 + perGame * 2.4 + (o - club.strength) * 0.03 + fx.rating + r.gauss() * 0.25), 5.0, 9.6) : 0;
+    const rating = games ? clamp(round1(6.1 + perGame * 2.4 + (o - club.strength) * 0.03 + r.gauss() * 0.25), 5.0, 9.6) : 0;
 
     // Títulos: força do time + sua contribuição
     const contrib = games ? (rating - 6.5) * share * 2.2 : 0;
     const sEff = club.strength + contrib;
     const leagueClubs = D.CLUBS.filter(x => x.league === club.league);
     const top = Math.max(...leagueClubs.map(x => x.strength));
-    const titleBonus = fx.title + (c.captain ? 0.08 : 0);
+    // Defesa e físico pesam nos jogos grandes
+    const titleBonus = (c.captain ? 0.08 : 0) + clamp((E.def + E.fis - 75) / 220, 0, 0.22);
     const pLeague = clamp(0.02 + (sEff - top + 4) / 16 + titleBonus * 0.6, 0.01, 0.55);
     const pCup = clamp(pLeague * 0.5 + 0.03 + titleBonus * 0.3, 0.02, 0.4);
     const league = r() < pLeague;
@@ -546,7 +573,7 @@
 
     // Fama
     const fame0 = c.fame;
-    c.fame = Math.max(0, c.fame * 0.85 + (goals * 0.5 + assists * 0.35 + titles.length * 6 + awards.length * 6 + (ballon ? 30 : 0) + club.tier * 2) * (1 + fx.fame) * (0.8 + c.rel.fans / 250));
+    c.fame = Math.max(0, c.fame * 0.85 + (goals * 0.5 + assists * 0.35 + titles.length * 6 + awards.length * 6 + (ballon ? 30 : 0) + club.tier * 2) * (0.8 + c.rel.fans / 250));
     const coach0 = c.rel.coach, fans0 = c.rel.fans;
     if (games) {
       bump(c, 'coach', (rating - 6.6) * 10);
@@ -558,20 +585,20 @@
     // Jogar muito e bem faz evoluir mais e pode até elevar o teto (potencial)
     const potUp = games >= 22 && rating >= 7.6 && c.age <= 26 ? (rating >= 8.2 ? 2 : 1) : 0;
     if (potUp) c.pot = Math.min(99, c.pot + potUp);
-    const growth = (c.pot - o) * AGE_GROWTH(c.age) * (0.3 + share * 1.25);
-    const decline = AGE_DECLINE(c.age) * (1 + fx.decl);
+    const growth = (c.pot - ovrOf(c.attrs, c.pos)) * AGE_GROWTH(c.age) * (0.3 + share * 1.25);
+    const decline = AGE_DECLINE(c.age) * S.declMult(c);
     const luck = r.gauss() * 1.2;
     const delta = growth - decline + luck;
     const w = D.POS[c.pos].w;
     for (const k in c.attrs) c.attrs[k] = clamp(c.attrs[k] + delta * (0.5 + w[k] * 2.2) + r.gauss() * 0.6, 20, 99);
     const ovr1 = S.ovr(c);
-    if (ovr1 >= c.peak || !c.peakAttrs) c.peakAttrs = Object.assign({}, c.attrs);
+    if (ovr1 >= c.peak || !c.peakAttrs) c.peakAttrs = S.eff(c);
     c.peak = Math.max(c.peak, ovr1, o);
     // Por que a nota mudou (em pontos de nota geral, aproximados)
     const why = [];
     if (growth >= 0.5) why.push({ txt: games >= 30 ? games + ' jogos: muito tempo em campo' : games >= 15 ? games + ' jogos: evolução com minutos' : 'Poucos minutos: evoluiu pouco', v: Math.round(growth) });
     else if (c.age <= 26 && games < 15) why.push({ txt: 'Poucos minutos: evolução travada', v: Math.round(growth) });
-    if (decline > 0) why.push({ txt: 'Idade (' + c.age + ' anos)' + (fx.decl < 0 ? ', amenizada por Profissional' : ''), v: -Math.round(decline) });
+    if (decline > 0) why.push({ txt: 'Idade (' + c.age + ' anos)' + (S.declMult(c) < 1 ? ', amenizada por Profissional' : ''), v: -Math.round(decline) });
     if (Math.abs(luck) >= 1) why.push({ txt: luck > 0 ? 'Fase boa nos treinos' : 'Fase ruim nos treinos', v: Math.round(luck) });
     if (potUp) why.push({ txt: 'Temporada brilhante elevou seu teto', v: 0, pot: true });
 

@@ -3,7 +3,7 @@
   const D = window.CRAQUE_DATA, S = window.CRAQUE_SIM;
   const $ = id => document.getElementById(id);
   const screen = $('screen');
-  const SAVE = 'craque-v4', HALL = 'craque-hall-v1';
+  const SAVE = 'craque-v5', HALL = 'craque-hall-v1';
   const YEAR0 = 2026;
   let c = null;      // carreira atual
   let step = null;   // etapa atual (para retomar)
@@ -37,6 +37,7 @@
     const b = $('bar');
     if (!c || !c.club) { b.hidden = true; return; }
     b.hidden = false;
+    requestAnimationFrame(() => document.documentElement.style.setProperty('--bar-h', b.offsetHeight + 'px'));
     const cl = club(c.club), lg = league(c.club);
     $('bar-name').textContent = c.name;
     $('bar-sub').innerHTML = crest(cl.id, 'xs') + esc(cl.name) + ' · ' + c.age + ' anos';
@@ -160,36 +161,118 @@
     const slots = [];
     for (let i = 0; i < S.MAX_SLOTS; i++) {
       const id = c.traits[i];
-      slots.push(id ? '<span class="chip">' + D.TRAIT_BY_ID[id].icon + ' ' + D.TRAIT_BY_ID[id].name + (S.traitLevel(c, id) > 1 ? ' <b>Nv ' + S.traitLevel(c, id) + '</b>' : '') + '</span>'
-        : '<span class="chip empty">espaço livre</span>');
+      if (id) slots.push('<span class="chip">' + D.TRAIT_BY_ID[id].icon + ' ' + D.TRAIT_BY_ID[id].name + (S.traitLevel(c, id) > 1 ? ' <b>Nv ' + S.traitLevel(c, id) + '</b>' : '') + '</span>');
     }
+    const free = S.MAX_SLOTS - c.traits.length;
+    if (free) slots.push('<span class="chip empty">' + free + (free > 1 ? ' espaços livres' : ' espaço livre') + '</span>');
     return '<div class="eyebrow small">Características ' + c.traits.length + '/' + S.MAX_SLOTS + '</div><div class="chips">' + slots.join('') +
       syn.map(s => '<span class="chip syn">' + s.icon + ' ' + s.name + '</span>').join('') + '</div>';
   }
 
+  // Texto de atributos: "+4 FIN · +1 DRI"
+  const attrTxt = at => Object.keys(at).filter(k => at[k]).map(k => (at[k] > 0 ? '+' : '') + at[k] + ' ' + D.ATTR_LABEL[k]).join(' · ');
+  function traitTxt(t, lv) {
+    const at = {};
+    for (const k in t.attr) at[k] = Math.round(t.attr[k] * D.TRAIT_LV[lv]) - (lv > 1 ? Math.round(t.attr[k] * D.TRAIT_LV[lv - 1]) : 0);
+    return attrTxt(at) + (t.perk ? ' · ' + t.perk : '');
+  }
+
+  // Mini carta da pré-temporada: mostra os atributos atuais e, ao escolher, quanto cada um muda
+  // Mesmas faixas de cor da carta final
+  const tierCls = o => (o >= 85 ? 'icone' : o >= 75 ? 'ouro' : o >= 65 ? 'prata' : 'bronze');
+  const TIER_NAME = { bronze: 'Bronze', prata: 'Prata', ouro: 'Ouro', icone: 'Ícone' };
+  function setTier(o) {
+    const el = $('mcard'), t = tierCls(o);
+    if (el.dataset.t === t) return;
+    el.dataset.t = t;
+    el.className = 'mcard ' + t;
+    void el.offsetWidth; // reinicia a animação: mudou de cor, pulsa de novo
+    el.classList.add('pop', 'tierup');
+    $('mc-tier').textContent = TIER_NAME[t];
+  }
+  function miniCard() {
+    const E = S.eff(c), t = tierCls(S.ovr(c));
+    return '<div class="mcard ' + t + '" id="mcard" data-t="' + t + '"><span class="mc-tier" id="mc-tier">' + TIER_NAME[t] + '</span><div class="mc-ovr"><b id="mc-ovr">' + S.ovr(c) + '</b><span>' + c.pos + '</span><i id="mc-ovr-d"></i></div><div class="mc-grid">' +
+      D.ATTRS.map(k => '<div class="mc-at" data-k="' + k + '"><b>' + E[k] + '</b><span>' + D.ATTR_LABEL[k] + '</span><i></i></div>').join('') + '</div></div>';
+  }
+  function showPreview(p) {
+    const E = S.eff(c), o = S.ovr(c);
+    D.ATTRS.forEach(k => {
+      const el = screen.querySelector('.mc-at[data-k="' + k + '"]'), d = p ? p.attrs[k] - E[k] : 0;
+      el.classList.toggle('up', d > 0); el.classList.toggle('down', d < 0);
+      el.querySelector('i').textContent = d ? (d > 0 ? '+' : '') + d : '';
+    });
+    const d = p ? p.ovr - o : 0, od = $('mc-ovr-d');
+    od.textContent = d ? (d > 0 ? '+' : '') + d : '';
+    od.className = d > 0 ? 'up' : d < 0 ? 'down' : '';
+  }
+  // Números subindo até o valor novo; depois segue
+  function applyAnim(from, then) {
+    const E = S.eff(c), o1 = S.ovr(c), t0 = performance.now(), dur = 900;
+    screen.querySelectorAll('.choice, .btn').forEach(b => { b.disabled = true; });
+    $('mcard').classList.add('pop');
+    const tick = now => {
+      const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      D.ATTRS.forEach(a => { screen.querySelector('.mc-at[data-k="' + a + '"] b').textContent = Math.round(from.attrs[a] + (E[a] - from.attrs[a]) * e); });
+      const ov = Math.round(from.ovr + (o1 - from.ovr) * e);
+      $('mc-ovr').textContent = ov;
+      setTier(ov);
+      if (k < 1) requestAnimationFrame(tick); else setTimeout(then, 650);
+    };
+    requestAnimationFrame(tick);
+  }
+  // Escolha em duas etapas: toca para ver na carta, confirma para aplicar
+  function pickable(sel, previewOf, apply) {
+    let cur = null;
+    const ok = $('b-ok');
+    screen.querySelectorAll(sel).forEach(b => b.onclick = () => {
+      screen.querySelectorAll(sel).forEach(x => x.classList.toggle('sel', x === b));
+      cur = b;
+      showPreview(previewOf(b));
+      ok.disabled = false;
+      ok.textContent = b.dataset.ok || 'Confirmar ' + b.dataset.name;
+    });
+    ok.onclick = () => {
+      if (!cur) return;
+      const from = { attrs: S.eff(c), ovr: S.ovr(c) };
+      const next = apply(cur);
+      if (next.go) return next.go(); // sem mudança na carta ainda (ex.: ir escolher o que sai)
+      showPreview(null);
+      bar();
+      applyAnim(from, next);
+    };
+  }
+
+  let preCh = null;
   function preseason() {
     step = 'preseason';
     save();
     bar();
-    const ch = S.traitChoices(c);
+    if (!preCh || preCh.age !== c.age) preCh = { age: c.age, list: S.traitChoices(c) };
+    const ch = preCh.list;
     if (!ch.length) return eventOrSeason();
     const label = { new: 'NOVA', up: 'EVOLUIR', swap: 'TROCAR' };
     render(
       '<div class="eyebrow">Pré-temporada · ' + year() + (c.farewell ? ' · temporada de despedida' : '') + '</div>' +
-      '<h2>' + (c.traits.length >= S.MAX_SLOTS ? 'Evolua ou troque uma característica' : 'Escolha uma característica') + '</h2>' + traitsHtml() +
+      '<h2>' + (c.traits.length >= S.MAX_SLOTS ? 'Evolua ou troque uma característica' : 'Escolha uma característica') + '</h2>' + miniCard() + traitsHtml() +
       '<div class="choices">' + ch.map((x, i) =>
-        '<button class="choice' + (x.completes ? ' combo' : '') + '" data-i="' + i + '"><span class="ic">' + x.trait.icon + '</span>' +
+        '<button class="choice' + (x.completes ? ' combo' : '') + '" data-i="' + i + '" data-name="' + esc(x.trait.name) + '"' + (x.type === 'swap' ? ' data-ok="Escolher o que sai"' : '') + '><span class="ic">' + x.trait.icon + '</span>' +
         '<b>' + x.trait.name + (x.type === 'up' ? ' → Nv ' + x.lv : '') + ' <span class="tag ' + (x.type === 'up' ? 'green' : x.type === 'swap' ? 'red' : 'blue') + '">' + label[x.type] + '</span></b>' +
-        '<span class="d">' + (x.type === 'up' ? 'Efeito +50% e bônus de atributo de novo. ' : '') + x.trait.desc +
-        (x.completes ? '<br><span class="tag gold">Completa: ' + x.completes.icon + ' ' + x.completes.name + '</span>' : '') + '</span></button>').join('') +
-      '</div><button class="btn ghost" id="b-skip">Seguir sem mudar</button>'
+        '<span class="d">' + traitTxt(x.trait, x.lv) +
+        (x.completes ? '<br><span class="tag gold">Completa ' + x.completes.icon + ' ' + x.completes.name + ': ' + attrTxt(x.completes.attr) + '</span>' : '') + '</span></button>').join('') +
+      '</div><button class="btn" id="b-ok" disabled>Toque numa opção para ver na carta</button><button class="btn ghost" id="b-skip">Seguir sem mudar</button>'
     );
-    $('b-skip').onclick = eventOrSeason;
-    screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
+    $('b-skip').onclick = () => { preCh = null; eventOrSeason(); };
+    pickable('[data-i]', b => {
       const x = ch[+b.dataset.i];
-      if (x.type === 'up') { S.upgradeTrait(c, x.trait.id); bar(); return eventOrSeason(); }
-      if (x.type === 'swap') return chooseSwap(x);
-      afterTrait(S.addTrait(c, x.trait.id));
+      return x.type === 'swap' ? null : S.preview(c, x.type === 'up' ? { up: x.trait.id } : { add: x.trait.id });
+    }, b => {
+      const x = ch[+b.dataset.i];
+      if (x.type === 'swap') return { go: () => chooseSwap(x) };
+      preCh = null;
+      if (x.type === 'up') { S.upgradeTrait(c, x.trait.id); return eventOrSeason; }
+      const syn = S.addTrait(c, x.trait.id);
+      return () => afterTrait(syn);
     });
   }
 
@@ -197,22 +280,25 @@
   function chooseSwap(x) {
     const inSyn = new Set(S.synergies(c).flatMap(s => [s.a, s.b]));
     render(
-      '<div class="eyebrow">Trocar característica</div><h2>O que sai para ' + x.trait.icon + ' ' + x.trait.name + ' entrar?</h2>' +
-      '<p class="lead">A que sair perde os níveis. Os atributos que ela já te deu ficam.</p>' +
+      '<div class="eyebrow">Trocar característica</div><h2>O que sai para ' + x.trait.icon + ' ' + x.trait.name + ' entrar?</h2>' + miniCard() +
       '<div class="choices">' + c.traits.map((id, i) => {
         const t = D.TRAIT_BY_ID[id];
-        return '<button class="choice" data-r="' + i + '"><span class="ic">' + t.icon + '</span><b>' + t.name + ' · Nv ' + S.traitLevel(c, id) + '</b><span class="d">' +
-          (inSyn.has(id) ? '<span class="tag red">Desfaz uma combinação</span> ' : '') + t.desc + '</span></button>';
-      }).join('') + '</div><button class="btn ghost" id="b-back">Voltar</button>'
+        return '<button class="choice" data-r="' + i + '" data-ok="Trocar ' + esc(t.name) + ' por ' + esc(x.trait.name) + '"><span class="ic">' + t.icon + '</span><b>' + t.name + ' · Nv ' + S.traitLevel(c, id) + '</b><span class="d">' +
+          (inSyn.has(id) ? '<span class="tag red">Desfaz uma combinação</span> ' : '') + 'Sai e leva os pontos que dava</span></button>';
+      }).join('') + '</div><button class="btn" id="b-ok" disabled>Toque numa opção para ver na carta</button><button class="btn ghost" id="b-back">Voltar</button>'
     );
-    screen.querySelectorAll('[data-r]').forEach(b => b.onclick = () => afterTrait(S.addTrait(c, x.trait.id, c.traits[+b.dataset.r])));
+    pickable('[data-r]', b => S.preview(c, { add: x.trait.id, remove: c.traits[+b.dataset.r] }), b => {
+      preCh = null;
+      const syn = S.addTrait(c, x.trait.id, c.traits[+b.dataset.r]);
+      return () => afterTrait(syn);
+    });
     $('b-back').onclick = preseason;
   }
 
   function afterTrait(syn) {
     bar();
     if (syn) {
-      render('<div class="eyebrow">Combinação desbloqueada</div><div class="award ballon">' + syn.icon + ' ' + syn.name + '</div><p class="lead">' + syn.desc + '</p><button class="btn" id="b-next">Continuar</button>');
+      render('<div class="eyebrow">Combinação desbloqueada</div><div class="award ballon">' + syn.icon + ' ' + syn.name + '</div><p class="lead">' + attrTxt(syn.attr) + (syn.extra ? ' · ' + syn.extra : '') + ' na sua carta</p><button class="btn" id="b-next">Continuar</button>');
       $('b-next').onclick = eventOrSeason;
     } else eventOrSeason();
   }
