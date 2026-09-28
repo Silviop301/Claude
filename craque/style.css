@@ -420,3 +420,7 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .k-crowd.cheer circle:nth-child(3n) { animation-delay: .08s; }
 .k-crowd.cheer circle:nth-child(3n+1) { animation-delay: .16s; }
 @keyframes hop { to { transform: translateY(-6px); } }
+.move-line { border-radius: 12px; padding: 10px 12px; font: 800 22px var(--display); text-align: center; }
+.move-line.up { background: #CDEFD9; color: #0E5A30; }
+.move-line.down { background: #F8D3D6; color: #8E1B24; }
+.move-line.rv.in { animation: trophy-in .6s cubic-bezier(.2, 1.5, .4, 1); }

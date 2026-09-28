@@ -64,6 +64,20 @@
     { id: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' }, { id: 'Itália', flag: '🇮🇹' }, { id: 'Alemanha', flag: '🇩🇪' },
     { id: 'França', flag: '🇫🇷' }, { id: 'Holanda', flag: '🇳🇱' },
   ];
+  // Acesso e rebaixamento entre divisões do mesmo país (a tabela considera 20 times).
+  // promo: quantos sobem · releg: quantos caem
+  D.LADDER = {
+    'bra-c': { up: 'bra-b', promo: 4 },
+    'bra-b': { up: 'bra-a', promo: 4, down: 'bra-c', releg: 4 },
+    'bra-a': { down: 'bra-b', releg: 4 },
+    'arg-b': { up: 'arg', promo: 2 }, arg: { down: 'arg-b', releg: 2 },
+    'por-2': { up: 'por', promo: 2 }, por: { down: 'por-2', releg: 2 },
+    'esp-2': { up: 'esp', promo: 3 }, esp: { down: 'esp-2', releg: 3 },
+    'ing-2': { up: 'ing', promo: 3 }, ing: { down: 'ing-2', releg: 3 },
+    'ita-2': { up: 'ita', promo: 3 }, ita: { down: 'ita-2', releg: 3 },
+    'ale-2': { up: 'ale', promo: 2 }, ale: { down: 'ale-2', releg: 2 },
+    'fra-2': { up: 'fra', promo: 2 }, fra: { down: 'fra-2', releg: 2 },
+  };
   D.countryOf = club => D.LEAGUE_BY_ID[club.league].country;
 
   D.FIRST_NAMES = ['Gabriel', 'Lucas', 'Matheus', 'Rafael', 'Pedro', 'Vinícius', 'Thiago', 'Caio', 'Diego', 'Bruno', 'Igor', 'Enzo', 'Davi', 'Kauã', 'Renan', 'Wesley'];

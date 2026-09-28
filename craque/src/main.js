@@ -68,6 +68,8 @@
       c = saved.c;
       // saves de antes dos investimentos
       c.inv = c.inv || {}; c.buys = c.buys || 0; c.spent = c.spent || 0;
+      c.leagueOf = c.leagueOf || {}; c.clubBoost = c.clubBoost || {};
+      S.applyLeagues(c); // quem subiu e quem caiu nesta carreira
       resume(saved.step);
     };
     $('b-new').onclick = create;
@@ -547,6 +549,7 @@
     const tb = res.table;
     const tableTxt = !res.games ? '' : tb.pos === 1 ? '🥇 Campeão da ' + tb.league + ' com ' + tb.pts + ' pontos'
       : tb.pos + 'º lugar na ' + tb.league + ' · ' + tb.pts + ' pts, a ' + tb.gap + ' do líder';
+    const moveTxt = !res.move ? '' : res.move.dir === 'up' ? '⬆️ Acesso para a ' + res.move.toName + '!' : '⬇️ Rebaixado para a ' + res.move.toName;
     const why = res.why.length ? '<ul class="why">' + res.why.map(w => '<li><span>' + esc(w.txt) + '</span><b class="' + (w.pot ? 'pot' : w.v >= 0 ? 'up' : 'down') + '">' + (w.pot ? 'teto ↑' : (w.v >= 0 ? '+' : '') + w.v) + '</b></li>').join('') + '</ul>' : '';
     const open = S.windowOpen(c);
     const contractTxt = c.contract > 0 ? 'Contrato: mais ' + c.contract + (c.contract > 1 ? ' temporadas' : ' temporada') + ' no ' + esc(club(c.club).name) : 'Seu contrato acabou: hora de decidir o futuro';
@@ -559,6 +562,7 @@
     }
     $('after').innerHTML =
       (tableTxt ? '<p class="table-line rv">' + tableTxt + '</p>' : '') +
+      (moveTxt ? '<div class="move-line rv ' + res.move.dir + '">' + moveTxt + '</div>' : '') +
       (res.titles.length ? '<div class="titles">' + res.titles.map(t => '<div class="title-won rv">' + trophy(titleType(t), 54) + '<span>Campeão<br><b>' + esc(t.name) + '</b></span></div>').join('') + '</div>' : '') +
       '<div class="awards">' + res.awards.map(a => '<div class="award rv' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : '🥇 ') + a.name + '</div>').join('') + '</div>' +
       '<div class="news rv"><div class="np">📰 Nos jornais</div>' + res.headlines.map(h => '<p>' + esc(h) + '</p>').join('') + '</div>' +

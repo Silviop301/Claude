@@ -23,6 +23,27 @@
     return r;
   };
 
+  // ---------- divisões: cada carreira guarda quem subiu e quem caiu (c.leagueOf) ----------
+  D.CLUBS.forEach(cl => { if (!cl.league0) { cl.league0 = cl.league; cl.strength0 = cl.strength; } });
+  S.applyLeagues = function (c) {
+    const m = (c && c.leagueOf) || {}, f = (c && c.clubBoost) || {};
+    D.CLUBS.forEach(cl => { cl.league = m[cl.id] || cl.league0; cl.strength = cl.strength0 + (f[cl.id] || 0); });
+  };
+  function moveClub(c, club, to) {
+    const from = club.league;
+    const pool = D.CLUBS.filter(x => x.league === to);
+    // Mantém o tamanho das ligas: o mais fraco de cima desce (ou o mais forte de baixo sobe)
+    const up = D.LADDER[from] && D.LADDER[from].up === to;
+    const partner = pool.slice().sort((a, b) => up ? a.strength - b.strength : b.strength - a.strength)[0];
+    c.leagueOf = c.leagueOf || {};
+    c.clubBoost = c.clubBoost || {};
+    // Quem sobe investe (+4 de força); quem cai perde elenco (−3)
+    c.clubBoost[club.id] = clamp((c.clubBoost[club.id] || 0) + (up ? 4 : -3), -6, 8);
+    c.leagueOf[club.id] = to;
+    if (partner) c.leagueOf[partner.id] = from;
+    S.applyLeagues(c);
+  }
+
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const round1 = v => Math.round(v * 10) / 10;
 
@@ -75,6 +96,7 @@
   };
 
   S.newCareer = function (opts, seed) {
+    S.applyLeagues(null); // carreira nova: divisões originais
     const r = S.rng(seed || (Date.now() ^ 0x5EED));
     const base = r.int(44, 52);
     const attrs = {};
@@ -95,7 +117,7 @@
       totals: { games: 0, goals: 0, assists: 0, league: 0, cup: 0, cont: 0, ballon: 0, scorer: 0, young: 0, team: 0 },
       spells: [], seasons: [], peak: 0, retired: false, trophies: {},
       traitLv: {}, contract: 0, farewell: false, peakAttrs: null,
-      inv: {}, spent: 0, buys: 0,
+      inv: {}, spent: 0, buys: 0, leagueOf: {}, clubBoost: {},
     };
   };
 
@@ -655,15 +677,29 @@
     if (league) titles.push({ id: 'league', name: lg.name });
     if (cup) titles.push({ id: 'cup', name: lg.cup || 'Copa nacional' });
     if (cont && contName) titles.push({ id: 'cont', name: contName });
-    // Tabela: pontos aproximados em 38 rodadas a partir da força efetiva
-    const avg = leagueClubs.reduce((a2, x) => a2 + x.strength, 0) / leagueClubs.length;
-    const ppg = x => clamp(1.35 + (x - avg) / 12, 0.6, 2.55);
+    // Tabela de 20 times: os rivais da liga mais times "de fora da lista" na faixa de baixo.
+    // Cada um soma pontos em 38 rodadas pela força; a posição sai da comparação com todos.
+    const others = leagueClubs.filter(x => x.id !== club.id).map(x => x.strength);
+    const lo = Math.min(...leagueClubs.filter(x => x.id !== club.id).map(x => x.strength));
+    for (let i = 0; others.length < 19; i++) others.push(lo - 1 + (i * 7) % 8);
+    const avg = (others.reduce((a2, x) => a2 + x, 0) + club.strength) / 20;
+    const ppg = x => clamp(1.35 + (x - avg) / 12, 0.5, 2.55);
     let pts = Math.round(38 * ppg(sEff) + r.gauss() * 4);
-    let leaderPts = Math.max(pts + 1, Math.round(38 * (ppg(top) + 0.12) + r.gauss() * 3));
-    if (league) { leaderPts = pts = Math.max(pts, leaderPts - 1); }
-    if (M && M.type === 'title' && !M.ok) leaderPts = pts + 1 + Math.floor(r() * 2); // vice por pouco
-    const pos = league ? 1 : clamp(2 + Math.floor((leaderPts - pts) / 4.5), 2, 20);
-    const table = { pos, pts, gap: league ? 0 : leaderPts - pts, league: lg.name };
+    const otherPts = others.map(x => Math.round(38 * ppg(x) + r.gauss() * 4));
+    let leaderPts = Math.max(...otherPts), pos;
+    if (league) { pts = Math.max(pts, leaderPts + 1 + Math.floor(r() * 3)); leaderPts = pts; pos = 1; }
+    else if (M && M.type === 'title') { pos = 2; leaderPts = pts + 1 + Math.floor(r() * 2); } // vice por pouco
+    else {
+      pos = 1 + otherPts.filter(p => p >= pts).length;
+      if (pos === 1) { pos = 2; leaderPts = pts + 1 + Math.floor(r() * 3); } // não foi campeão: alguém passou na frente
+    }
+    const table = { pos, pts, gap: league ? 0 : Math.max(1, leaderPts - pts), league: lg.name };
+    // Acesso / rebaixamento pela posição final
+    const LD = D.LADDER[club.league];
+    let move = null;
+    if (LD && LD.up && pos <= LD.promo) move = { dir: 'up', to: LD.up };
+    else if (LD && LD.down && pos > 20 - LD.releg) move = { dir: 'down', to: LD.down };
+    if (move) move.toName = D.LEAGUE_BY_ID[move.to].name;
     // Jogos marcantes (rivais da própria liga)
     const rivals = leagueClubs.filter(x => x.id !== club.id);
     const rival = rivals.length ? rivals.slice().sort((x, y) => y.strength - x.strength)[0] : null;
@@ -681,7 +717,7 @@
     if (cup && other && !(M && M.type === 'cup')) highlights.push('🏆 Final da ' + (lg.cup || 'copa') + ' contra o ' + other.name + (goals > 5 ? ': gol seu!' : ''));
     if (cont && contName) highlights.push('🌍 Campeão da ' + contName + '!');
     if (!league && rival && games >= 10 && goals + assists >= 8) highlights.push('⚔️ Decidiu o clássico contra o ' + rival.name);
-    if (!league && pos >= 14 && games >= 10) highlights.push('😰 Temporada de sufoco na parte de baixo da tabela');
+    if (!league && pos >= 14 && games >= 10 && !move) highlights.push('😰 Temporada de sufoco na parte de baixo da tabela');
 
     // Prêmios
     const awards = [];
@@ -703,7 +739,7 @@
     const coach0 = c.rel.coach, fans0 = c.rel.fans;
     if (games) {
       bump(c, 'coach', (rating - 6.6) * 10);
-      bump(c, 'fans', (rating - 6.6) * 9 + titles.length * 6 + (M && M.type === 'classico' && M.ok ? 8 : 0) - (c.captain && rating < 6.8 ? 6 : 0));
+      bump(c, 'fans', (rating - 6.6) * 9 + titles.length * 6 + (M && M.type === 'classico' && M.ok ? 8 : 0) + (move ? (move.dir === 'up' ? 8 : -10) : 0) - (c.captain && rating < 6.8 ? 6 : 0));
     }
     c.fansBy[c.club] = Math.max(c.fansBy[c.club] || 0, c.rel.fans);
 
@@ -755,7 +791,9 @@
       coach0: Math.round(coach0), coach1: Math.round(c.rel.coach), fans0: Math.round(fans0), fans1: Math.round(c.rel.fans),
       highlights, event: c.lastEvent || null, table, why, farewell: !!c.farewell,
     };
+    res.move = move;
     res.headlines = S.headlines(c, res);
+    if (move) moveClub(c, club, move.to);
     c.seasons.push(res);
     c.age++;
     c.season++;
@@ -771,6 +809,8 @@
     const nick = c.name;
     const h = [];
     if (s.awards.some(a => a.id === 'ballon')) h.push(nick + ' é o melhor do mundo!');
+    if (s.move && s.move.dir === 'up') h.push('Acesso! ' + club + ' garante vaga na ' + s.move.toName);
+    if (s.move && s.move.dir === 'down') h.push('Rebaixamento: ' + club + ' cai para a ' + s.move.toName);
     if (s.titles.length >= 2) h.push('Temporada histórica: ' + club + ' leva ' + s.titles.length + ' taças');
     else if (s.titles.length) h.push(club + ' é campeão com ' + nick + ' em campo');
     if (s.goals >= 30) h.push(s.goals + ' gols: ' + nick + ' vira pesadelo das defesas');
