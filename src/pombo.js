@@ -118,7 +118,7 @@
 
     // Passeio pela praça
     const lim = W * 0.28;
-    P.nervous = PS.market.v < 0.8 && P.mood !== 'sleep';
+    P.nervous = P.mood !== 'sleep' && (P.nervous ? PS.market.v < 0.88 : PS.market.v < 0.78);
     if (P.mood === 'idle') {
       P.nextWalk -= dt;
       if (P.nextWalk <= 0) {

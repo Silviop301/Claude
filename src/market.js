@@ -1,11 +1,13 @@
 // Mercado ao vivo (multiplicador de produção), bônus temporários, Modo Tubarão e "Comprar na baixa".
 (function () {
   const C = PS.C;
-  const HIST = 90;
+  const HIST = 60;
+  const STEP = 0.5; // o mercado anda em passos; o valor exibido desliza entre eles
   const MIN = 0.4, MAX = 3.2;
   const clamp = v => Math.max(MIN, Math.min(MAX, v));
   const M = PS.market = {
-    v: 1.2, mu: 1.2, regimeT: 20, hist: [], sampleT: 0,
+    v: 1.2, raw: 1.2, mu: 1.2, regimeT: 20, hist: [], sampleT: 0,
+    up: true, dipOpen: false, lo: 0.8, hi: 1.6,
     target: null, targetT: 0, targetK: 1,
     boosts: [], shark: 0, sharkOn: 0, SHARK_DUR: 30,
     zone: 'mid', zoneCd: 0,
@@ -17,10 +19,14 @@
 
   M.init = function () {
     const S = PS.S;
-    M.v = clamp(+(S.market && S.market.v) || 1.2);
+    M.v = M.raw = clamp(+(S.market && S.market.v) || 1.2);
     S.market = { v: M.v };
     M.hist = [];
     for (let i = 0; i < HIST; i++) M.hist.push(M.v);
+    M.lo = M.v - 0.4;
+    M.hi = M.v + 0.4;
+    M.up = true;
+    M.dipOpen = M.v < 0.8;
     M.boosts = [];
     M.shark = 0;
     M.sharkOn = 0;
@@ -50,7 +56,7 @@
   M.hasBoost = id => M.boosts.some(b => b.id === id);
 
   M.trend = function () {
-    return M.v - M.hist[Math.max(0, M.hist.length - 8)];
+    return M.up ? 1 : -1;
   };
 
   M.sharkTap = function () {
@@ -64,7 +70,7 @@
   };
 
   M.canBuyDip = function () {
-    return !PS.S.pos && M.v < 0.85 && PS.S.money >= 10;
+    return !PS.S.pos && M.dipOpen && PS.S.money >= 10;
   };
 
   M.buyDip = function () {
@@ -96,23 +102,35 @@
       M.mu = PS.pick([0.7, 0.95, 1.2, 1.2, 1.4, 1.6, 2.0]);
       M.regimeT = PS.rand(14, 32);
     }
-    if (M.target !== null) {
-      M.v += (M.target - M.v) * Math.min(1, dt * M.targetK) + 0.08 * Math.sqrt(dt) * gauss();
-      M.targetT -= dt;
-      if (M.targetT <= 0) M.target = null;
-    } else {
-      M.v += 0.35 * (M.mu - M.v) * dt + 0.3 * Math.sqrt(dt) * gauss();
-      if (Math.random() < dt * 0.02) M.v += (Math.random() - 0.5) * 0.8;
-    }
-    M.v = clamp(M.v);
-    S.market.v = M.v;
 
+    // Um passo de mercado a cada STEP segundos
     M.sampleT += dt;
-    if (M.sampleT >= 0.33) {
-      M.sampleT = 0;
+    while (M.sampleT >= STEP) {
+      M.sampleT -= STEP;
+      if (M.target !== null) {
+        M.raw += (M.target - M.raw) * Math.min(1, STEP * M.targetK) + 0.04 * gauss();
+        M.targetT -= STEP;
+        if (M.targetT <= 0) M.target = null;
+      } else {
+        M.raw += 0.35 * (M.mu - M.raw) * STEP + 0.2 * gauss();
+        if (Math.random() < 0.01) M.raw += (Math.random() - 0.5) * 0.8;
+      }
+      M.raw = clamp(M.raw);
       M.hist.push(M.v);
       if (M.hist.length > HIST) M.hist.shift();
+
+      // Tendência com histerese (compara com ~3s atrás), para a cor não ficar trocando
+      const d = M.v - M.hist[Math.max(0, M.hist.length - 7)];
+      if (d > 0.04) M.up = true;
+      else if (d < -0.04) M.up = false;
     }
+
+    // Valor exibido desliza suavemente até o passo atual
+    M.v = clamp(M.v + (M.raw - M.v) * (1 - Math.exp(-dt * 3)));
+    S.market.v = M.v;
+
+    if (M.v < 0.8) M.dipOpen = true;
+    else if (M.v > 0.9) M.dipOpen = false;
 
     for (let i = M.boosts.length - 1; i >= 0; i--) {
       M.boosts[i].t -= dt;
@@ -169,20 +187,30 @@
   if (window.ResizeObserver) new ResizeObserver(resize).observe(cv);
   resize();
 
-  M.draw = function (t) {
+  M.draw = function (dt) {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.clearRect(0, 0, W, H);
-    const h = M.hist;
-    let lo = Math.min(...h), hi = Math.max(...h);
-    if (hi - lo < 0.4) { const mid = (hi + lo) / 2; lo = mid - 0.2; hi = mid + 0.2; }
-    const pad = 5;
-    const X = i => (i / (h.length - 1)) * (W - 8);
-    const Y = v => pad + (1 - (v - lo) / (hi - lo)) * (H - pad * 2);
-    const up = M.trend() >= 0;
-    const col = M.hasBoost('moon') ? C.gold : up ? C.green : C.red;
+    const h = M.hist.concat([M.v]);
 
-    // Linha de referência x1
-    if (lo < 1 && hi > 1) {
+    // Escala vertical muda devagar, sem pular
+    let lo = Math.min(...h), hi = Math.max(...h);
+    if (hi - lo < 0.5) { const mid = (hi + lo) / 2; lo = mid - 0.25; hi = mid + 0.25; }
+    const k = 1 - Math.exp(-dt * 1.5);
+    M.lo += (lo - 0.05 - M.lo) * k;
+    M.hi += (hi + 0.05 - M.hi) * k;
+    M.lo = Math.min(M.lo, lo);
+    M.hi = Math.max(M.hi, hi);
+
+    const pad = 5;
+    const n = M.hist.length;
+    const stepW = (W - 10) / (n - 1);
+    const frac = M.sampleT / STEP;
+    // Pontos do histórico deslizam para a esquerda; o último é o valor ao vivo
+    const X = i => (i < n ? i - frac : n - 1) * stepW;
+    const Y = v => pad + (1 - (v - M.lo) / (M.hi - M.lo)) * (H - pad * 2);
+    const col = M.hasBoost('moon') ? C.gold : M.up ? C.green : C.red;
+
+    if (M.lo < 1 && M.hi > 1) {
       ctx.setLineDash([4, 4]);
       ctx.strokeStyle = 'rgba(30,21,55,0.35)';
       ctx.lineWidth = 1.5;
@@ -193,27 +221,29 @@
       ctx.setLineDash([]);
     }
 
-    ctx.beginPath();
-    h.forEach((v, i) => (i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v))));
+    const line = () => {
+      ctx.beginPath();
+      h.forEach((v, i) => (i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v))));
+    };
+    line();
     ctx.lineTo(X(h.length - 1), H);
-    ctx.lineTo(0, H);
+    ctx.lineTo(X(0), H);
     ctx.closePath();
-    ctx.fillStyle = up ? 'rgba(47,210,122,0.22)' : 'rgba(255,77,109,0.2)';
+    ctx.fillStyle = M.up ? 'rgba(47,210,122,0.22)' : 'rgba(255,77,109,0.2)';
     ctx.fill();
 
-    ctx.beginPath();
-    h.forEach((v, i) => (i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v))));
+    line();
     ctx.lineJoin = 'round';
     ctx.lineWidth = 5;
     ctx.strokeStyle = C.ink;
     ctx.stroke();
+    line();
     ctx.lineWidth = 2.5;
     ctx.strokeStyle = col;
     ctx.stroke();
 
-    const ex = X(h.length - 1), ey = Y(h[h.length - 1]);
     ctx.beginPath();
-    ctx.arc(ex, ey, 4 + Math.sin(t * 8) * 1.2, 0, Math.PI * 2);
+    ctx.arc(X(h.length - 1), Y(M.v), 4.5, 0, Math.PI * 2);
     ctx.fillStyle = col;
     ctx.fill();
     ctx.lineWidth = 2;

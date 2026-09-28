@@ -158,7 +158,7 @@
     tk.classList.toggle('down', !up);
     tk.classList.toggle('moon', M.hasBoost('moon'));
     set($('tk-arrow'), 'textContent', up ? '▲' : '▼');
-    set($('tk-mult'), 'textContent', 'x' + M.v.toFixed(2).replace('.', ','));
+    set($('tk-mult'), 'textContent', 'x' + M.v.toFixed(1).replace('.', ','));
 
     const chips = M.boosts.map(b => [b.id, b.icon + ' ' + b.label + (b.x > 1 ? ' x' + b.x : '') + ' · ' + Math.ceil(b.t) + 's']);
     if (M.sharkOn > 0) chips.push(['shark', '🦈 Tubarão x5 · ' + Math.ceil(M.sharkOn) + 's']);

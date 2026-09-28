@@ -273,7 +273,7 @@
 
     PS.pombo.update(vdt);
     PS.pombo.draw();
-    PS.market.draw(PS.pombo.t);
+    PS.market.draw(vdt);
     fx.update(vdt);
     PS.ui.frame(vdt);
 
