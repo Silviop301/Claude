@@ -1,203 +1,227 @@
-# PULSE — Plano do jogo
+# POMBO STONKS — Plano do jogo
 
-**Idle/incremental de dopamina máxima** com loot boxes, roleta e minigame arcade.
-Visual neon minimalista. Roda no navegador (celular e PC), HTML + JavaScript puro + Canvas, sem build.
+**Idle/incremental de dopamina máxima**, tema meme de investimento, com loot boxes, roleta e minigame.
+Mascote: **Pombo Investidor**, que reage a tudo. Visual **cartoon colorido** (estilo figurinha:
+cores vivas, contornos grossos). Roda no navegador (celular e PC), HTML + JavaScript puro + Canvas, sem build.
 
-> Regra de ouro: **tudo é comprável apenas com recursos ganhos no jogo.** Sem dinheiro real.
-> Chances de drop sempre visíveis.
+> Regras de ouro:
+> - **Tudo é comprável apenas com recursos ganhos no jogo.** Sem dinheiro real.
+> - Chances de drop sempre visíveis.
+> - Arte e personagens **100% originais** desenhados em código (sem imagens/personagens de terceiros,
+>   sem marcas ou pessoas reais).
 
 ---
 
-## 1. Filosofia: "algo bom a cada poucos segundos"
+## 1. Premissa
 
-O jogador nunca deve ficar mais de ~10 s sem uma recompensa, ~1 min sem uma decisão e
-~5 min sem uma surpresa.
+Um pombo comum da praça descobre o mercado financeiro. Começa vendendo migalha e termina dono da
+Bolsa Intergaláctica. Humor de coach, cripto, "grupo de sinais do Zap" e STONKS / NOT STONKS.
+
+## 2. Filosofia: "algo bom a cada poucos segundos"
 
 | Intervalo | Recompensa |
 |---|---|
-| Cada toque | número voando, partícula, som com tom subindo |
-| 2–10 s | poder comprar algo novo (botão acende e pulsa) |
-| 30–60 s | marco de gerador (x2!), missão concluída |
-| 1–3 min | evento aleatório (meteoro, tempestade, cápsula) |
-| 5–10 min | loot box, conquista, nova sinergia revelada |
-| 1–2 h | Colapso (prestígio) |
-| Diário | roleta grátis, missões, sequência de login |
+| Cada toque | 💸 voando, som de moeda com tom subindo, pombo reage |
+| 2–10 s | Nova compra disponível (botão pulsa) |
+| 30–60 s | Marco de negócio (x2!), missão concluída |
+| 1–3 min | Evento de mercado (Dica Quente, Bull Run…) |
+| 5–10 min | Loot box, conquista, nova sinergia |
+| 1–2 h | A Pirâmide Desmoronou (prestígio) |
+| Diário | Roleta grátis, missões, sequência de login |
 
----
+## 3. O Pombo Investidor (mascote)
 
-## 2. Tela principal: o Reator
+Fica no centro da tela; **tocar nele gera dinheiro**.
 
-- Núcleo pulsando no centro; cada gerador comprado vira um ponto de luz orbitando.
-  100+ geradores = galáxia girando na tela.
-- Energia sai do núcleo em partículas que voam até o contador.
-- O reator **brilha mais** conforme fica forte (brilho, tamanho, velocidade dos anéis).
-- Contador de energia **grande**, sempre subindo, com /s logo abaixo.
+**Evolução visual** (conforme o patrimônio): pombo da praça → gravatinha → terno →
+óculos escuros e maleta → carro → iate → foguete. Skins e acessórios da loot box aparecem nele.
 
-## 3. Moedas
+**Reações:**
+| Situação | Reação |
+|---|---|
+| Toques rápidos / combo | Estufa o peito, olhos brilhando |
+| Crítico | Cara de **STONKS** com seta verde subindo |
+| Mercado caindo | Anda de um lado para o outro, suando |
+| Evento ruim (golpe) | Cara de **NOT STONKS**, pena caindo |
+| Item Lendário/STONKS | Dança da vitória, confete |
+| Marco atingido | Levanta a asa, "É O MERCADO, BEBÊ" |
+| Parado muito tempo | Cochila, cisca, olha o celular |
+| Prestígio | Chora, some em fumaça, volta de óculos escuros |
+
+Balões de fala com frases de coach aleatórias ("Pombo que acorda cedo pega a migalha").
+
+## 4. Moedas
 
 | Moeda | Como ganha | Para que serve |
 |---|---|---|
-| ⚡ Energia | Reator, toques, minigame | Geradores, caixa básica |
-| 💎 Gemas | Marcos, conquistas, missões, eventos | Caixas melhores, giros, acelerar pesquisa |
-| 🔑 Chaves | Eventos raros, minigame, missões | Baús Estelares |
-| ✨ Pó Estelar | Itens duplicados | Craftar itens específicos |
-| 🌟 Núcleos Estelares | Colapso (prestígio) | Árvore de talentos permanente |
-| 🌌 Matéria Escura | Galáxia (prestígio 2) | Mecânicas de late game |
+| 💸 Grana | Negócios, toques, minigame | Comprar negócios, caixa básica |
+| 🪙 PomboCoin | Marcos, conquistas, missões, eventos | Caixas melhores, giros, acelerar pesquisa |
+| 🎫 Cupom Dourado | Eventos raros, minigame, missões | Cofre Suíço |
+| 🍞 Farelo | Itens duplicados | Craftar itens específicos |
+| 🎓 Lições de Vida | Prestígio | Árvore de talentos permanente |
+| 🏝️ Paraíso Fiscal | Prestígio 2 | Mecânicas de late game |
 
-## 4. Geradores
+## 5. Negócios (geradores)
 
-| # | Gerador | Custo inicial | Produz |
+| # | Negócio | Custo inicial | Produz |
 |---|---|---|---|
-| 1 | Faísca | 10 | 0,1/s |
-| 2 | Bobina | 100 | 1/s |
-| 3 | Célula de Plasma | 1,1K | 8/s |
-| 4 | Anel de Fusão | 12K | 47/s |
-| 5 | Estrela Anã | 130K | 260/s |
-| 6 | Pulsar | 1,4M | 1,4K/s |
-| 7 | Buraco Branco | 20M | 7,8K/s |
-| 8 | Singularidade | 330M | 44K/s |
-| 9+ | ??? (silhueta até desbloquear) | | |
+| 1 | Revenda de Migalha | 10 | 0,1/s |
+| 2 | Banquinha de Pipoca | 100 | 1/s |
+| 3 | Brigadeiro Gourmet | 1,1K | 8/s |
+| 4 | Curso de Coach Online | 12K | 47/s |
+| 5 | Criptomoeda $PRU | 130K | 260/s |
+| 6 | NFT de Pão Mofado | 1,4M | 1,4K/s |
+| 7 | Startup "Uber de Pombo" | 20M | 7,8K/s |
+| 8 | Banco Pombal S.A. | 330M | 44K/s |
+| 9 | Bolsa Intergaláctica | 5,1B | 260K/s |
+| 10+ | ??? (silhueta até desbloquear) | | |
 
-- Custo cresce ~15% por compra. Botões x1 / x10 / x100 / MÁX.
-- Indicador "melhor compra" (menor tempo de retorno).
-- **Marcos** em 10, 25, 50, 100, 150, 200, 300…: produção x2 (ou x3 nos grandes) +
-  flash de tela + som + número gigante. Barra "faltam N para o marco".
-- **Sinergias** reveladas aos poucos ("cada Pulsar dá +1% às Faíscas").
+- Custo cresce ~15% por compra. Botões x1 / x10 / x100 / MÁX. Indicador "melhor compra".
+- **Marcos** em 10, 25, 50, 100, 150, 200…: produção x2 (x3 nos grandes) + flash + fanfarra.
+  Barra "faltam N para o marco".
+- **Sinergias** reveladas aos poucos ("cada Curso de Coach vende +1% de Brigadeiro").
 
-## 5. Máquina de dopamina (juice)
+## 6. O Mercado (mecânica central do tema)
 
-- **Números voadores** em cada toque e coleta, com tamanho proporcional ao valor.
-- **Toque crítico** (5%): x10, texto dourado, mini-tremor. "Super crítico" (0,5%): x100.
-- **Combo de toques:** tocar rápido sobe o multiplicador e o tom do som (dó-ré-mi…).
-- **Sobrecarga:** barra enche com toques → x5 produção por 30 s, tela ganha aura.
-- **Botões vivos:** quando dá para comprar, o botão pulsa e brilha; ao comprar, "pop" + partículas.
-- **Contador rolando** (odômetro) em vez de trocar o número seco.
-- **Sons sintetizados** em camadas: tic de toque, cha-ching de compra, fanfarra de marco,
-  acorde épico de lendário. Tom sobe com sequências.
-- **Confete/explosão** em marcos, conquistas e drops raros.
-- **Notificações empilhadas** no canto: "Conquista!", "Marco!", "Missão concluída!".
-- **Barras de progresso em todo lugar** (marco, missão, pity, colapso, coleção) — sempre algo quase cheio.
-- **Unidades crescentes:** K → M → B → T → Qa → Qi… trocar de unidade tem animação própria.
+- **Gráfico ao vivo** no topo da tela, sempre oscilando (verde subindo / vermelho caindo).
+- Define um **multiplicador de mercado** (x0,5 a x3) sobre a produção.
+- Mercado em alta: tela com brilho verde, pombo feliz, "STONKS" pisca.
+- Mercado em queda: tela avermelhada, pombo nervoso — e o botão **"Comprar na baixa"** aparece
+  (investir agora rende bônus quando o mercado subir).
 
-## 6. Eventos aleatórios
+## 7. Máquina de dopamina (juice)
+
+- **Notas e moedas voando** em cada toque, tamanho proporcional ao valor.
+- **Crítico** (5%): x10 com "STONKS!" dourado e tremor. **Super crítico** (0,5%): x100.
+- **Combo de toques:** multiplicador e tom do som sobem juntos.
+- **Modo Tubarão:** barra enche com toques → x5 produção por 30 s, pombo de óculos escuros.
+- **Botões vivos** que pulsam quando dá para comprar; "pop" + partículas ao comprar.
+- **Contador odômetro** rolando; troca de unidade (K → M → B → T → Qa…) com animação própria.
+- **Sons sintetizados:** caixa registradora, moedas, fanfarra, "arrulho" do pombo.
+- **Confete** em marcos, conquistas e drops raros.
+- **Notificações cômicas empilhadas:** "Sua tia investiu no seu curso", "Um coach copiou sua estratégia".
+- **Barras de progresso em todo lugar** — sempre algo quase cheio.
+
+## 8. Eventos aleatórios
 
 | Evento | Frequência | Efeito |
 |---|---|---|
-| 🌠 Meteoro Dourado | ~2 min | Toque a tempo: 10 min de produção instantânea |
-| ☀️ Tempestade Solar | ~5 min | Tudo x3 por 60 s |
-| 📦 Cápsula Perdida | ~4 min | Loot box grátis flutuando por 15 s |
-| 💎 Chuva de Gemas | raro | Gemas caindo, toque para pegar |
-| 🌀 Anomalia | muito raro | x77 produção por 7 s + chance de item Épico+ |
+| 📲 Dica Quente do Zap | ~2 min | Toque a tempo: 10 min de produção. Às vezes é **golpe** (perde um pouco) |
+| 🐂 Bull Run | ~5 min | Mercado travado em x3 por 60 s |
+| 📦 Encomenda Suspeita | ~4 min | Loot box grátis voando pela tela por 15 s |
+| 🪙 Chuva de PomboCoin | raro | Moedas caindo, toque para pegar |
+| 🚀 TO THE MOON | muito raro | x77 por 7 s + chance de item Épico+ |
+| 🐻 Crash | ocasional | Mercado despenca; toques rápidos "seguram" a queda e dão bônus |
 
-Meteoro pode vir "podre" (raramente) com efeito negativo leve — torna o dourado mais emocionante.
-
-## 7. Sistema de loot
+## 9. Sistema de loot
 
 ### Raridades
 | Raridade | Cor | Chance base |
 |---|---|---|
 | Comum | cinza | 60% |
-| Incomum | verde | 25% |
+| Mid | verde | 25% |
 | Raro | azul | 10% |
-| Épico | roxo | 4% |
+| Brabo | roxo | 4% |
 | Lendário | dourado | 0,9% |
-| Mítico | arco-íris animado | 0,1% |
+| **STONKS** | arco-íris animado | 0,1% |
 
 ### Itens
-- **Relíquias** (foco principal, até 3–6 slots): +% produção, marcos mais fortes,
-  offline mais longo, eventos mais frequentes, crítico maior, etc.
-- **Skins do Reator:** visual do núcleo e dos anéis (cometa, pixel, fantasma, galáxia, buraco negro…).
-- **Artefatos do minigame.**
-- Nível 1–10: duplicatas sobem o nível ou viram Pó Estelar.
+- **Ativos** (até 3–6 slots, bônus passivos): Gravata da Sorte, Planilha Amaldiçoada,
+  Pão Dourado, Livro de Coach Autografado, Celular com 3 Grupos de Sinais, Óculos de Visão de Mercado…
+  Efeitos: +% produção, marcos mais fortes, offline mais longo, mais eventos, crítico maior.
+- **Visual do pombo:** chapéus, óculos, roupas, correntes, veículos.
+- **Itens do minigame.**
+- Nível 1–10: duplicatas sobem o nível ou viram 🍞 Farelo.
 
 ### Caixas
 | Caixa | Custo | Garantia |
 |---|---|---|
-| Básica | ⚡ Energia (escala com progresso) | — |
-| Neon | 💎 Gemas | Incomum+ |
-| Estelar | 🔑 Chave | Raro+ |
-| Pacote x10 | 💎 (desconto) | 1 Épico+ |
+| Caixa do Camelô | 💸 Grana (escala com progresso) | — |
+| Maleta Executiva | 🪙 PomboCoin | Mid+ |
+| Cofre Suíço | 🎫 Cupom Dourado | Raro+ |
+| Container do Porto (x10) | 🪙 (desconto) | 1 Brabo+ |
 
 ### Emoção na abertura
-- Caixa treme cada vez mais; a **cor do brilho revela a raridade** antes do item.
-- Raridades altas: tela escurece, pausa dramática, raio de luz, fanfarra.
-- Épico às vezes "passa perto" do dourado.
-- Pacote x10: cartas viram em sequência, a melhor por último.
+- Caixa treme cada vez mais; **a cor do brilho revela a raridade** antes do item.
+- Raridade alta: tela escurece, pausa dramática, raio de luz, fanfarra, pombo dança.
+- Brabo às vezes "passa perto" do dourado.
+- Container x10: cartas viram em sequência, a melhor por último.
 - **Pity visível:** "Lendário garantido em 37 aberturas".
 - **Álbum de coleção** com silhuetas e % de conclusão; sets completos dão bônus.
-- **Craft** com Pó Estelar para mirar um item específico.
+- **Craft** com Farelo para mirar um item específico.
 
-### Roleta da Sorte
-- 1 giro grátis/dia + giros com Gemas.
-- Prêmios: moedas, chaves, caixas, boosts (x2 por 10 min), jackpot Lendário.
+### Roda da Fortuna Pombal
+- 1 giro grátis/dia + giros com PomboCoin.
+- Prêmios: moedas, cupons, caixas, boosts (x2 por 10 min), jackpot Lendário.
 - Desacelera com "tic-tic-tic", às vezes para ao lado do jackpot.
 
-## 8. Offline e retorno
+## 10. Offline e retorno
 
-- Tela de boas-vindas: "Enquanto você esteve fora (7h 12min): +4,8M ⚡" com moedas caindo.
-- Limite offline inicial 2 h (aumenta com pesquisa/relíquias).
-- **Dobrar coleta** jogando uma partida do minigame.
-- **Sequência de login** (dia 1…7, recompensa crescente, dia 7 = baú Estelar).
-- **3 missões diárias** + 1 missão semanal grande.
+- Tela de boas-vindas: "Enquanto você dormia seus negócios renderam +4,8M 💸", com chuva de notas.
+- Limite offline inicial 2 h (aumenta com pesquisa/ativos).
+- **Dobrar coleta** jogando o minigame.
+- **Sequência de login** (dia 1…7, dia 7 = Cofre Suíço). **3 missões diárias** + 1 semanal.
 
-## 9. Pesquisa (automação)
+## 11. Pesquisa: "MBA do Pombo" (automação)
 
-Árvore com timers curtos (5 min → horas):
-auto-compra, auto-coleta de eventos, offline maior, mais slots de relíquia,
-eventos mais frequentes, desbloqueio de geradores novos.
+Árvore com timers curtos (5 min → horas): estagiário (auto-compra), assessor (auto-coleta de eventos),
+offline maior, mais slots de ativos, mais eventos, desbloqueio de negócios.
 
-## 10. Prestígio
+## 12. Prestígio
 
-- **Colapso:** reinicia geradores e energia → 🌟 Núcleos Estelares (+2% em tudo cada, para sempre)
-  + árvore de talentos. Contador "Colapsar agora: +14 Núcleos" subindo ao vivo.
-  Animação de colapso épica (tudo é sugado para o centro e explode).
+- **A Pirâmide Desmoronou:** reinicia negócios e grana → 🎓 Lições de Vida (+2% em tudo cada,
+  para sempre) + árvore de talentos. Contador "Desmoronar agora: +14 Lições" subindo ao vivo.
+  Animação: tudo desaba, pombo chora, volta de óculos escuros ("dessa vez é diferente").
 - A segunda corrida é muito mais rápida — a grande recompensa do prestígio.
-- **Galáxia (prestígio 2):** vários Colapsos → 🌌 Matéria Escura, novas mecânicas
-  (geradores de segunda ordem, desafios com regras especiais).
+- **Paraíso Fiscal (prestígio 2):** várias pirâmides → 🏝️, novas mecânicas
+  (negócios de segunda ordem, desafios com regras especiais).
 
-## 11. Minigame arcade: "Órbita"
+## 13. Minigame: "Day Trade Turbo"
 
-Bônus opcional de 30–60 s: núcleo orbita, tocar troca de órbita para desviar e coletar.
-Recompensas: Energia, Chaves, dobrar coleta offline, chance de caixa no fim.
+Bônus opcional de 30 s: gráfico correndo na tela, **toque para comprar, toque de novo para vender**.
+Comprar na baixa e vender na alta = lucro; combos por trades seguidos no verde.
+Recompensas: Grana, Cupons, dobrar coleta offline, chance de caixa no fim.
 
-## 12. Ritmo alvo
+## 14. Ritmo alvo
 
 | Tempo | O que acontece |
 |---|---|
-| 0–30 s | Toca no núcleo, primeira Faísca, primeiros números voando |
-| 2 min | Primeiro marco (x2!), segundo gerador, primeiro meteoro |
-| 5 min | Primeira loot box, primeira conquista |
-| 15 min | Roleta, missões, 4–5 geradores |
-| 30 min | Pesquisa liberada, primeira Relíquia rara |
-| 1–2 h | Primeiro Colapso |
-| Dias | Galáxia, coleção, Míticos |
+| 0–30 s | Toca no pombo, primeira Revenda de Migalha |
+| 2 min | Primeiro marco (x2!), segundo negócio, primeira Dica Quente |
+| 5 min | Primeira loot box, primeira conquista, pombo ganha gravata |
+| 15 min | Roda da Fortuna, missões, 4–5 negócios |
+| 30 min | MBA do Pombo liberado, primeiro ativo raro |
+| 1–2 h | Primeira Pirâmide |
+| Dias | Paraíso Fiscal, coleção, itens STONKS |
 
 ---
 
-## 13. Fases de desenvolvimento
+## 15. Fases de desenvolvimento
 
-1. **Núcleo idle:** reator, toque, geradores, custos, marcos, números grandes, save/offline.
-2. **Juice:** partículas, números voadores, críticos, combo, sons, botões vivos, odômetro.
-3. **Eventos aleatórios** + sobrecarga.
-4. **Loot:** relíquias, caixas com animação, pity, inventário, duplicatas.
-5. **Roleta, missões diárias, login streak, conquistas.**
-6. **Pesquisa/automação + álbum + craft.**
-7. **Colapso (prestígio 1).**
-8. **Minigame Órbita.**
-9. **Galáxia (prestígio 2)** + balanceamento e polimento.
+1. **Núcleo idle:** pombo clicável, negócios, custos, marcos, números grandes, save/offline.
+2. **Juice + pombo animado:** partículas, números voadores, críticos, combo, sons, reações.
+3. **Mercado + eventos aleatórios** + Modo Tubarão.
+4. **Loot:** ativos, visual do pombo, caixas com animação, pity, inventário, duplicatas.
+5. **Roda da Fortuna, missões diárias, login streak, conquistas.**
+6. **MBA do Pombo + álbum + craft.**
+7. **A Pirâmide Desmoronou (prestígio 1).**
+8. **Minigame Day Trade Turbo.**
+9. **Paraíso Fiscal (prestígio 2)** + balanceamento e polimento.
 
-## 14. Estrutura técnica
+## 16. Estrutura técnica
 
 ```
 index.html
 src/
   main.js        # loop, troca de telas
   state.js       # estado do jogo
-  idle/          # geradores, marcos, sinergias, offline, pesquisa, prestígio
+  idle/          # negócios, marcos, sinergias, offline, pesquisa, prestígio
+  market/        # gráfico e multiplicador de mercado
   loot/          # tabelas de drop, caixas, roleta, pity, itens, craft
   events/        # eventos aleatórios
   meta/          # missões, conquistas, login streak
-  arcade/        # minigame Órbita
+  minigame/      # Day Trade Turbo
+  pombo/         # desenho, animações e reações do mascote
   ui/            # telas, HUD, animações
   fx/            # partículas, números voadores, tremor, confete
   audio.js       # sons gerados por código (Web Audio)
