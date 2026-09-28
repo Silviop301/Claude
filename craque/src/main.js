@@ -659,6 +659,8 @@
 
   // ---------- Copa do Mundo ----------
   // "do Brasil", "da Argentina", "de Portugal"
+  // "o Brasil", "a Argentina", "Portugal"
+  const theCountry = n => (n === 'Portugal' ? '' : ['Brasil', 'Uruguai'].includes(n) ? 'o ' : 'a ') + n;
   const ofCountry = n => ({ Brasil: 'do', Uruguai: 'do', Portugal: 'de' }[n] || 'da') + ' ' + n;
   function wcIntro() {
     step = 'wc';
@@ -682,6 +684,8 @@
     return '<div class="wc-game ' + (g.pens && g.pensWon !== undefined ? (g.pensWon ? 'w' : 'l') : res) + '"><span class="st">' + esc(g.stage) + '</span>' +
       '<div class="line"><span class="us">' + D.NATION_BY_NAME[c.country].flag + '</span><b>' + g.gf + ' × ' + g.ga + '</b><span class="them">' + g.flag + ' ' + esc(g.opp) + '</span></div>' +
       (me ? '<span class="me">' + me + '</span>' : '') + pen +
+      (g.moment ? '<span class="mom ' + (g.momentOk ? 'ok' : 'ko') + '">' + g.moment.minute + "' " + (g.moment.type === 'pen' ? (g.momentOk ? 'pênalti convertido' : 'pênalti desperdiçado') : (g.momentOk ? 'falta convertida' : 'falta desperdiçada')) + '</span>' : '') +
+      (g.rating ? '<span class="rt' + (g.motm ? ' motm' : '') + '">' + (g.motm ? '⭐ Craque do jogo · ' : 'Nota ') + g.rating.toFixed(1).replace('.', ',') + '</span>' : '') +
       (g.groupEnd ? '<div class="grp ' + (g.groupEnd.pass ? 'ok' : 'ko') + '">' + (g.groupEnd.pass ? 'Classificado com ' + g.groupEnd.pts + ' pontos' : 'Eliminado na fase de grupos (' + g.groupEnd.pts + ' pts)') + '</div>' : '') + '</div>';
   }
 
@@ -689,17 +693,19 @@
     step = 'wc';
     const run = c.wcRun;
     render('<div class="eyebrow">Copa do Mundo ' + run.year + ' · ' + D.NATION_BY_NAME[c.country].flag + ' ' + esc(c.country) + '</div>' +
-      '<div class="wc-list" id="wc-list">' + run.games.map(wcRow).join('') + '</div><div id="wc-after"></div><p class="skip-hint" id="wc-hint">Toque para acelerar</p>');
+      '<div class="wc-list" id="wc-list">' + run.games.filter(g => !g.live).map(wcRow).join('') + '</div><div id="wc-after"></div><p class="skip-hint" id="wc-hint">Toque para acelerar</p>');
     let fast = false, timer = null;
     setTimeout(() => { screen.onclick = () => { fast = true; }; }, 60);
     const list = $('wc-list');
     const next = () => {
       if (!list.isConnected) return;
-      // Pênaltis pendentes (inclusive ao voltar para o jogo)
+      // Lance decisivo ou pênaltis pendentes (inclusive ao voltar para o jogo)
+      if (run.live) return wcLive();
       if (run.pending) return wcPens();
       const g = S.wcNext(c);
       save();
       if (!g) return wcFinal();
+      if (g.live) return wcLive();
       const div = document.createElement('div');
       div.innerHTML = wcRow(g);
       const el = div.firstChild;
@@ -710,6 +716,32 @@
       timer = setTimeout(next, fast ? 250 : g.pens ? 1100 : 1300);
     };
     timer = setTimeout(next, 500);
+  }
+
+  // Lance decisivo nos minutos finais: pênalti ou falta a favor, no minigame
+  function wcLive() {
+    screen.onclick = null;
+    const run = c.wcRun, g = run.games[run.games.length - 1], m = g.moment;
+    // Fechou o jogo no meio da cobrança: a chance decide
+    if (run.momentStarted) { S.wcMomentAuto(c); save(); return wcPlay(); }
+    const type = m.type === 'pen' ? 'cup' : 'classico';
+    const k = S.kickSetup(c, type), d = g.gf - g.ga, ko = run.stage >= 3;
+    const gain = d === 0 ? (ko ? 'classifica' : 'vitória') : d === -1 ? (ko ? 'leva para os pênaltis' : 'empata') : d >= 1 ? 'amplia' : 'diminui';
+    const us = D.NATION_BY_NAME[c.country];
+    const h = $('wc-hint'); if (h) h.remove();
+    $('wc-after').innerHTML = '<div class="card event-card wc-live"><span class="st">' + esc(g.stage) + ' · ' + m.minute + "'</span>" +
+      '<div class="line"><span>' + us.flag + '</span><b>' + g.gf + ' × ' + g.ga + '</b><span>' + g.flag + ' ' + esc(g.opp) + '</span></div>' +
+      '<h2>' + (m.type === 'pen' ? 'Pênalti para ' + theCountry(c.country) + '!' : 'Falta perigosa na entrada da área!') + '</h2>' +
+      '<p class="stakes">Converteu: ' + gain + '</p></div>' +
+      '<button class="btn" id="b-kick">' + (m.type === 'pen' ? 'Bater o pênalti' : 'Bater a falta') + '</button><button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>';
+    $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    sfx('whistle');
+    $('b-kick').onclick = () => {
+      run.momentStarted = true; save();
+      render('<div class="eyebrow">Copa do Mundo ' + run.year + ' · ' + esc(g.stage) + ' · ' + m.minute + "'</div><div id=\"kick\"></div>");
+      window.CRAQUE_KICK($('kick'), { c, moment: { type }, onDone: ok => { S.wcMoment(c, ok); save(); wcPlay(); } });
+    };
+    $('b-auto').onclick = () => { S.wcMomentAuto(c); save(); wcPlay(); };
   }
 
   function wcPens() {

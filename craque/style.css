@@ -508,3 +508,11 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .choice.inv.bought { animation: mc-pop .35s ease; box-shadow: 0 0 0 3px var(--gold), 0 3px 0 rgba(0, 0, 0, .35); }
 .inv-tip { margin: 0; }
 .btn.inv-go { position: sticky; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 3; }
+.wc-game .mom { font: 700 13px var(--body); padding: 2px 8px; border-radius: 999px; }
+.wc-game .mom.ok { background: #CDEFD9; color: #0E5A30; } .wc-game .mom.ko { background: #F8D3D6; color: #8E1B24; }
+.wc-game .rt { margin-left: auto; font: 800 14px var(--display); color: var(--muted); }
+.wc-game .rt.motm { color: #8A6400; }
+.wc-live .st { font: 700 12px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.wc-live .line { display: flex; align-items: center; gap: 10px; font-size: 24px; }
+.wc-live .line b { font: 800 30px var(--display); }
+.wc-live .line span:last-child { font: 700 17px var(--body); }

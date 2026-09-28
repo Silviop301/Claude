@@ -48,7 +48,10 @@ for (let n = 0; n < N; n++) {
     // Copa do Mundo: o robô joga se for convocado (pênaltis pela chance)
     if (S.isWcYear(c) && S.wcCall(c).called) {
       S.wcStart(c); decisions++;
-      let g; while ((g = S.wcNext(c))) { if (g.pens) S.wcPensAuto(c); }
+      let g; while ((g = S.wcNext(c))) {
+        if (g.live) { S.wcMomentAuto(c); decisions++; }
+        if (g.pens) S.wcPensAuto(c);
+      }
     }
     if (S.mustRetire(c)) break;
     if (S.canAnnounce(c) && S.ovr(c) < (SMART ? 76 : 72) && Math.random() < 0.6) { S.announce(c); decisions++; }
