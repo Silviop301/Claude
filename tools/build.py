@@ -35,6 +35,8 @@ def main():
         # Manifest e ícones só existem na versão hospedada (PWA)
         head = re.sub(r'<link rel="(manifest|apple-touch-icon|icon)"[^>]*>\s*', "", head)
         body = re.search(r"<body>(.*?)</body>", html, re.S).group(1)
+        # O Artifact já afasta o conteúdo do notch; sem isso o espaço dobraria
+        head += "\n<style>#app{padding-top:10px;padding-bottom:10px}</style>"
         html = head.strip() + "\n" + body.strip() + "\n"
         default_out = ROOT / "dist" / "pombo-stonks-artifact.html"
     else:
