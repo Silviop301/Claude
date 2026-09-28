@@ -3,7 +3,7 @@
   const D = window.CRAQUE_DATA, S = window.CRAQUE_SIM;
   const $ = id => document.getElementById(id);
   const screen = $('screen');
-  const SAVE = 'craque-v2', HALL = 'craque-hall-v1';
+  const SAVE = 'craque-v3', HALL = 'craque-hall-v1';
   const YEAR0 = 2026;
   let c = null;      // carreira atual
   let step = null;   // etapa atual (para retomar)
@@ -56,7 +56,7 @@
     const saved = load(SAVE);
     const hall = load(HALL) || [];
     render(
-      '<div class="eyebrow">Protótipo 2</div><h1>CRAQUE</h1>' +
+      '<div class="eyebrow">Protótipo 3</div><h1>CRAQUE</h1>' +
       '<p class="lead">Crie um garoto de 16 anos, escolha propostas, monte o estilo dele e descubra se ele vira lenda.</p>' +
       (saved && saved.c ? '<button class="btn" id="b-cont">Continuar carreira de ' + esc(saved.c.name) + '</button>' : '') +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
@@ -72,7 +72,7 @@
     bar();
     if (!c.club) return academy();
     if (S.mustRetire(c)) return finale();
-    if (st === 'offers') return windowOffers();
+    if (st === 'offers') return S.windowOpen(c) ? windowOffers() : preseason();
     if (st === 'event') return eventScreen();
     return preseason();
   }
@@ -105,14 +105,14 @@
   // ---------- propostas ----------
   function offerCard(o, idx) {
     const cl = club(o.club), lg = league(o.club);
-    const kinds = { base: ['Base', ''], up: ['Clube maior', 'blue'], mid: ['Protagonista', 'green'], money: ['Proposta milionária', 'gold'], home: ['Volta pra casa', 'red'], stay: ['Ficar', ''] };
+    const kinds = { base: ['Base', ''], up: ['Clube maior', 'blue'], mid: ['Protagonista', 'green'], money: ['Proposta milionária', 'gold'], home: ['Volta pra casa', 'red'], stay: ['Renovar', ''] };
     const [kname, kcls] = kinds[o.kind] || ['', ''];
     const roleCls = o.share >= 0.78 ? 'green' : o.share >= 0.5 ? 'blue' : 'red';
     return '<button class="choice offer card" data-i="' + idx + '" style="display:flex">' +
       '<div class="top"><span class="club">' + crest(cl.id) + esc(cl.name) + '</span><span class="stars">' + stars(cl.tier) + '</span></div>' +
       '<div class="lg">' + lg.flag + ' ' + lg.name + ' · força ' + cl.strength + '</div>' +
       '<div class="facts">' + (kname ? '<span class="tag ' + kcls + '">' + kname + '</span>' : '') +
-      '<span class="tag ' + roleCls + '">' + o.role + '</span><span class="tag">R$ ' + money(o.wage) + '/sem</span></div></button>';
+      '<span class="tag ' + roleCls + '">' + o.role + '</span><span class="tag">R$ ' + money(o.wage) + '/sem</span><span class="tag">' + o.years + (o.years > 1 ? ' anos' : ' ano') + '</span></div></button>';
   }
 
   function academy() {
@@ -134,16 +134,16 @@
     step = 'offers';
     save();
     bar();
+    const ended = c.contract <= 0;
     const offers = S.offers(c, false);
     const all = offers.concat([S.stayOffer(c)]);
-    const canRet = S.canRetire(c);
     const noOffers = !offers.length;
     render(
       '<div class="eyebrow">Janela de transferências · ' + year() + '</div>' +
-      '<h2>' + (noOffers ? 'Nenhum clube novo te procurou' : 'Chegaram propostas') + '</h2>' +
-      '<p class="lead">Nota geral ' + S.ovr(c) + ' · fama ' + Math.round(c.fame) + '. A última opção é ficar onde está.</p>' +
+      '<h2>' + (ended ? 'Seu contrato com o ' + esc(club(c.club).name) + ' acabou' : 'Seu empresário abriu o mercado') + '</h2>' +
+      '<p class="lead">' + (noOffers ? 'Nenhum clube novo apareceu. ' : '') + 'Nota geral ' + S.ovr(c) + ' · fama ' + Math.round(c.fame) + '. A última opção é renovar com o clube atual.</p>' +
       '<div class="choices">' + all.map(offerCard).join('') + '</div>' +
-      (canRet ? '<button class="btn ghost" id="b-retire">Pendurar as chuteiras</button>' : '')
+      (S.canRetire(c) ? '<button class="btn ghost" id="b-retire">Pendurar as chuteiras</button>' : '')
     );
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       S.join(c, all[+b.dataset.i]);
@@ -153,10 +153,16 @@
   }
 
   // ---------- pré-temporada: característica ----------
+  const SUP = ['', '', '²', '³'];
   function traitsHtml() {
-    if (!c.traits.length) return '';
     const syn = S.synergies(c);
-    return '<div class="chips">' + c.traits.map(id => '<span class="chip">' + D.TRAIT_BY_ID[id].icon + ' ' + D.TRAIT_BY_ID[id].name + '</span>').join('') +
+    const slots = [];
+    for (let i = 0; i < S.MAX_SLOTS; i++) {
+      const id = c.traits[i];
+      slots.push(id ? '<span class="chip">' + D.TRAIT_BY_ID[id].icon + ' ' + D.TRAIT_BY_ID[id].name + (S.traitLevel(c, id) > 1 ? ' <b>Nv ' + S.traitLevel(c, id) + '</b>' : '') + '</span>'
+        : '<span class="chip empty">espaço livre</span>');
+    }
+    return '<div class="eyebrow small">Características ' + c.traits.length + '/' + S.MAX_SLOTS + '</div><div class="chips">' + slots.join('') +
       syn.map(s => '<span class="chip syn">' + s.icon + ' ' + s.name + '</span>').join('') + '</div>';
   }
 
@@ -166,21 +172,47 @@
     bar();
     const ch = S.traitChoices(c);
     if (!ch.length) return eventOrSeason();
+    const label = { new: 'NOVA', up: 'EVOLUIR', swap: 'TROCAR' };
     render(
-      '<div class="eyebrow">Pré-temporada · ' + year() + '</div><h2>Escolha uma característica</h2>' + traitsHtml() +
+      '<div class="eyebrow">Pré-temporada · ' + year() + (c.farewell ? ' · temporada de despedida' : '') + '</div>' +
+      '<h2>' + (c.traits.length >= S.MAX_SLOTS ? 'Evolua ou troque uma característica' : 'Escolha uma característica') + '</h2>' + traitsHtml() +
       '<div class="choices">' + ch.map((x, i) =>
-        '<button class="choice' + (x.completes ? ' combo' : '') + '" data-i="' + i + '"><span class="ic">' + x.trait.icon + '</span><b>' + x.trait.name + '</b>' +
-        '<span class="d">' + x.trait.desc + (x.completes ? '<br><span class="tag gold">Completa: ' + x.completes.icon + ' ' + x.completes.name + '</span>' : '') + '</span></button>').join('') +
+        '<button class="choice' + (x.completes ? ' combo' : '') + '" data-i="' + i + '"><span class="ic">' + x.trait.icon + '</span>' +
+        '<b>' + x.trait.name + (x.type === 'up' ? ' → Nv ' + x.lv : '') + ' <span class="tag ' + (x.type === 'up' ? 'green' : x.type === 'swap' ? 'red' : 'blue') + '">' + label[x.type] + '</span></b>' +
+        '<span class="d">' + (x.type === 'up' ? 'Efeito +50% e bônus de atributo de novo. ' : '') + x.trait.desc +
+        (x.completes ? '<br><span class="tag gold">Completa: ' + x.completes.icon + ' ' + x.completes.name + '</span>' : '') + '</span></button>').join('') +
       '</div>'
     );
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
-      const syn = S.addTrait(c, ch[+b.dataset.i].trait.id);
-      bar();
-      if (syn) {
-        render('<div class="eyebrow">Combinação desbloqueada</div><div class="award ballon">' + syn.icon + ' ' + syn.name + '</div><p class="lead">' + syn.desc + '</p><button class="btn" id="b-next">Continuar</button>');
-        $('b-next').onclick = eventOrSeason;
-      } else eventOrSeason();
+      const x = ch[+b.dataset.i];
+      if (x.type === 'up') { S.upgradeTrait(c, x.trait.id); bar(); return eventOrSeason(); }
+      if (x.type === 'swap') return chooseSwap(x);
+      afterTrait(S.addTrait(c, x.trait.id));
     });
+  }
+
+  // Espaços cheios: escolher qual característica sai
+  function chooseSwap(x) {
+    const inSyn = new Set(S.synergies(c).flatMap(s => [s.a, s.b]));
+    render(
+      '<div class="eyebrow">Trocar característica</div><h2>O que sai para ' + x.trait.icon + ' ' + x.trait.name + ' entrar?</h2>' +
+      '<p class="lead">A que sair perde os níveis. Os atributos que ela já te deu ficam.</p>' +
+      '<div class="choices">' + c.traits.map((id, i) => {
+        const t = D.TRAIT_BY_ID[id];
+        return '<button class="choice" data-r="' + i + '"><span class="ic">' + t.icon + '</span><b>' + t.name + ' · Nv ' + S.traitLevel(c, id) + '</b><span class="d">' +
+          (inSyn.has(id) ? '<span class="tag red">Desfaz uma combinação</span> ' : '') + t.desc + '</span></button>';
+      }).join('') + '</div><button class="btn ghost" id="b-back">Voltar</button>'
+    );
+    screen.querySelectorAll('[data-r]').forEach(b => b.onclick = () => afterTrait(S.addTrait(c, x.trait.id, c.traits[+b.dataset.r])));
+    $('b-back').onclick = preseason;
+  }
+
+  function afterTrait(syn) {
+    bar();
+    if (syn) {
+      render('<div class="eyebrow">Combinação desbloqueada</div><div class="award ballon">' + syn.icon + ' ' + syn.name + '</div><p class="lead">' + syn.desc + '</p><button class="btn" id="b-next">Continuar</button>');
+      $('b-next').onclick = eventOrSeason;
+    } else eventOrSeason();
   }
 
   // ---------- evento ----------
@@ -218,11 +250,11 @@
   // ---------- temporada ----------
   function season() {
     const res = S.playSeason(c);
-    step = 'offers';
+    step = S.windowOpen(c) ? 'offers' : 'preseason';
     save();
     const cl = club(res.club);
     render(
-      '<div class="season-head"><div><div class="eyebrow">Temporada ' + (year() - 1) + ' · ' + res.age + ' anos</div><h2 class="with-crest">' + crest(cl.id, 'lg') + esc(cl.name) + '</h2></div><span class="tag">' + res.role + '</span></div>' +
+      '<div class="season-head"><div><div class="eyebrow">Temporada ' + (year() - 1) + ' · ' + res.age + ' anos</div><h2 class="with-crest">' + crest(cl.id, 'lg') + esc(cl.name) + '</h2></div><span class="tag">' + (res.farewell ? 'Despedida' : res.role) + '</span></div>' +
       '<div class="counters"><div class="counter"><b id="k-j">0</b><span>Jogos</span></div><div class="counter"><b id="k-g">0</b><span>Gols</span></div>' +
       '<div class="counter"><b id="k-a">0</b><span>Assist.</span></div><div class="counter rate"><b id="k-n">–</b><span>Nota</span></div></div>' +
       '<div class="feed" id="feed"></div><div id="after"></div>'
@@ -247,16 +279,31 @@
     res.highlights.forEach(h => { const d = document.createElement('div'); d.textContent = h; feed.appendChild(d); });
     const dOvr = res.ovr1 - res.ovr0;
     const fin = S.mustRetire(c);
+    const tb = res.table;
+    const tableTxt = !res.games ? '' : tb.pos === 1 ? '🥇 Campeão da ' + tb.league + ' com ' + tb.pts + ' pontos'
+      : tb.pos + 'º lugar na ' + tb.league + ' · ' + tb.pts + ' pts, a ' + tb.gap + ' do líder';
+    const why = res.why.length ? '<ul class="why">' + res.why.map(w => '<li><span>' + esc(w.txt) + '</span><b class="' + (w.pot ? 'pot' : w.v >= 0 ? 'up' : 'down') + '">' + (w.pot ? 'teto ↑' : (w.v >= 0 ? '+' : '') + w.v) + '</b></li>').join('') + '</ul>' : '';
+    const open = S.windowOpen(c);
+    const contractTxt = c.contract > 0 ? 'Contrato: mais ' + c.contract + (c.contract > 1 ? ' temporadas' : ' temporada') + ' no ' + esc(club(c.club).name) : 'Seu contrato acabou: hora de decidir o futuro';
+    let actions;
+    if (fin) actions = '<p class="lead">' + (res.farewell ? 'Fim da temporada de despedida. Hora de pendurar as chuteiras.' : 'Aos ' + c.age + ' anos, o corpo pediu para parar.') + '</p><button class="btn" id="b-next">Ver sua carreira</button>';
+    else {
+      actions = '<p class="contract">' + contractTxt + '</p><button class="btn" id="b-next">' + (open ? 'Janela de transferências' : 'Próxima temporada') + '</button>';
+      if (S.canAnnounce(c)) actions += '<button class="btn ghost" id="b-farewell">Anunciar a última temporada<small>Torcida +10 e mais minutos · parar em alta rende pontos extras</small></button>';
+      if (S.canRetire(c)) actions += '<button class="btn ghost" id="b-stop">Parar agora</button>';
+    }
     $('after').innerHTML =
+      (tableTxt ? '<p class="table-line">' + tableTxt + '</p>' : '') +
       (res.titles.length ? '<div class="titles">' + res.titles.map(t => '<div class="title-won">' + trophy(titleType(t), 54) + '<span>Campeão<br><b>' + esc(t.name) + '</b></span></div>').join('') + '</div>' : '') +
       '<div class="awards">' + res.awards.map(a => '<div class="award' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : '🥇 ') + a.name + '</div>').join('') + '</div>' +
       '<div class="news"><div class="np">O GLOBO ESPORTIVO</div>' + res.headlines.map(h => '<p>' + esc(h) + '</p>').join('') + '</div>' +
-      '<p class="delta ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' +
+      '<div class="card why-card"><p class="delta-in ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' + why + '</div>' +
       '<p class="rel-delta">👔 Técnico ' + res.coach0 + ' → ' + res.coach1 + ' · 📣 Torcida ' + res.fans0 + ' → ' + res.fans1 + ' (' + S.relLabel(res.fans1) + ')</p>' +
-      (fin ? '<p class="lead">Aos ' + c.age + ' anos, o corpo pediu para parar.</p><button class="btn" id="b-next">Ver sua carreira</button>'
-        : '<button class="btn" id="b-next">Janela de transferências</button>');
+      actions;
     bar();
-    $('b-next').onclick = fin ? finale : windowOffers;
+    $('b-next').onclick = fin ? finale : open ? windowOffers : preseason;
+    if ($('b-farewell')) $('b-farewell').onclick = () => { S.announce(c); save(); bar(); preseason(); };
+    if ($('b-stop')) $('b-stop').onclick = finale;
   }
 
   // ---------- fim ----------
@@ -270,8 +317,17 @@
     const rank = hall.findIndex(h => h.score === f.score && h.name === c.name) + 1;
     store(HALL, hall.slice(0, 10));
     const cty = D.COUNTRIES.find(x => x.id === c.country);
+    const cardData = {
+      name: c.name, pos: c.pos, peak: c.peak, attrs: c.peakAttrs || c.attrs, flag: cty.flag,
+      crest: 'badges/' + f.mainClub + '.png', grade: f.grade, verdict: f.verdict,
+      goals: T.goals, assists: T.assists, titles: f.titles, ballon: T.ballon,
+      traits: c.traits.map(id => ({ icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(c, id) })),
+    };
+    const shareName = c.name;
     render(
       '<div class="eyebrow">Fim de carreira · ' + (YEAR0 + c.season) + '</div>' +
+      '<div class="fut"><canvas id="fut" aria-label="Card do jogador"></canvas></div>' +
+      '<button class="btn" id="b-share">Compartilhar card</button>' +
       '<div class="final">' +
       '<div class="headrow"><div class="grade ' + f.grade + '">' + f.grade + '</div><div class="who"><b>' + esc(c.name) + '</b><span>' + cty.flag + ' ' + D.POS[c.pos].name + ' · 16 a ' + c.age + ' anos · pico ' + c.peak + '</span></div></div>' +
       '<div class="verdict">' + esc(f.verdict) + '</div>' +
@@ -281,12 +337,19 @@
       (Object.keys(c.trophies || {}).length ? '<div class="room-title">Sala de troféus</div><div class="room">' +
         Object.entries(c.trophies).sort((a, b) => ['ballon', 'ucl', 'lib', 'league', 'cup'].indexOf(a[1].type) - ['ballon', 'ucl', 'lib', 'league', 'cup'].indexOf(b[1].type))
           .map(([name, t]) => '<div>' + trophy(t.type, 44) + '<b>' + t.n + 'x</b><span>' + esc(name) + '</span></div>').join('') + '</div>' : '') +
+      (f.bonus.length ? '<div class="room-title">Despedida</div><ul class="why">' + f.bonus.map(b => '<li><span>' + esc(b.txt) + '</span><b class="up">+' + b.v + '</b></li>').join('') + '</ul>' : '') +
       '<div class="score">' + f.score + ' pontos' + (rank === 1 ? ' · NOVO RECORDE!' : ' · #' + rank + ' no seu Hall da Fama') + '</div>' +
       '</div>' +
       '<button class="btn" id="b-again">Nova carreira</button><button class="btn ghost" id="b-home">Hall da Fama</button>'
     );
     c = null;
     $('bar').hidden = true;
+    const cv = $('fut');
+    window.CRAQUE_CARD(cv, cardData);
+    $('b-share').onclick = async () => {
+      const r = await window.CRAQUE_SHARE(cv, shareName);
+      if (r === 'download') $('b-share').textContent = 'Imagem salva';
+    };
     $('b-again').onclick = create;
     $('b-home').onclick = home;
   }

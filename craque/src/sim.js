@@ -52,6 +52,7 @@
       rel: { coach: 50, fans: 50 }, fansBy: {}, captain: false, renew: 0, wantsOut: false,
       totals: { games: 0, goals: 0, assists: 0, league: 0, cup: 0, cont: 0, ballon: 0, scorer: 0, young: 0, team: 0 },
       spells: [], seasons: [], peak: 0, retired: false, trophies: {},
+      traitLv: {}, contract: 0, farewell: false, peakAttrs: null,
     };
   };
 
@@ -65,46 +66,88 @@
     return D.SYNERGIES.filter(s => c.traits.includes(s.a) && c.traits.includes(s.b));
   };
 
+  S.MAX_SLOTS = 5;
+  S.MAX_LV = 3;
+  const lvOf = (c, id) => (c.traitLv && c.traitLv[id]) || 1;
+  const lvMult = lv => 1 + 0.5 * (lv - 1); // nível 2 = +50%, nível 3 = +100%
+
   S.fx = function (c) {
     const f = { goal: 0, assist: 0, title: 0, inj: 0, decl: 0, fame: 0, rating: 0 };
-    const add = fx => { for (const k in fx) if (k in f) f[k] += fx[k]; };
+    const add = (fx, m) => { for (const k in fx) if (k in f) f[k] += fx[k] * m; };
     c.traits.forEach(id => {
-      const t = D.TRAIT_BY_ID[id].fx;
-      add(t);
-      if (t.goalATA && c.pos === 'ATA') f.goal += t.goalATA;
+      const t = D.TRAIT_BY_ID[id].fx, m = lvMult(lvOf(c, id));
+      add(t, m);
+      if (t.goalATA && c.pos === 'ATA') f.goal += t.goalATA * m;
     });
-    S.synergies(c).forEach(s => add(s.fx));
+    S.synergies(c).forEach(s => add(s.fx, 1));
     return f;
   };
 
-  // 3 características sorteadas; se houver par de sinergia possível, uma delas tende a completar o par.
+  const completesSyn = (c, id, without) => D.SYNERGIES.find(s => {
+    const has = x => c.traits.includes(x) && x !== without;
+    return (s.a === id && has(s.b)) || (s.b === id && has(s.a));
+  }) || null;
+
+  // Escolhas da pré-temporada. Com espaço livre: características novas (e às vezes evoluir uma).
+  // Com os 5 espaços cheios: evoluir uma que já tem ou trocar por uma nova.
   S.traitChoices = function (c) {
     const { r, save } = rngOf(c);
-    const pool = D.TRAITS.filter(t => !c.traits.includes(t.id));
     const out = [];
-    const partners = D.SYNERGIES
-      .filter(s => c.traits.includes(s.a) !== c.traits.includes(s.b))
-      .map(s => (c.traits.includes(s.a) ? s.b : s.a));
-    if (partners.length && r() < 0.6) {
-      const id = r.pick(partners);
-      out.push(D.TRAIT_BY_ID[id]);
-    }
-    while (out.length < 3 && out.length < pool.length) {
-      const t = r.pick(pool);
-      if (!out.includes(t)) out.push(t);
+    const full = c.traits.length >= S.MAX_SLOTS;
+    const upPool = c.traits.filter(id => lvOf(c, id) < S.MAX_LV);
+    const newPool = D.TRAITS.filter(t => !c.traits.includes(t.id));
+    const pushUp = () => {
+      const left = upPool.filter(id => !out.some(o => o.trait.id === id));
+      if (!left.length) return false;
+      const id = r.pick(left);
+      out.push({ type: 'up', trait: D.TRAIT_BY_ID[id], lv: lvOf(c, id) + 1, completes: null });
+      return true;
+    };
+    const pushNew = () => {
+      const left = newPool.filter(t => !out.some(o => o.trait.id === t.id));
+      if (!left.length) return false;
+      // Tende a oferecer o par de uma sinergia que você já começou
+      const partners = left.filter(t => completesSyn(c, t.id));
+      const t = partners.length && r() < 0.6 ? r.pick(partners) : r.pick(left);
+      out.push({ type: full ? 'swap' : 'new', trait: t, lv: 1, completes: completesSyn(c, t.id) });
+      return true;
+    };
+    if (!full) {
+      const ups = c.traits.length >= 2 && r() < 0.5 ? 1 : 0;
+      for (let i = 0; i < ups; i++) pushUp();
+      while (out.length < 3 && pushNew()) { /* completa com novas */ }
+    } else {
+      pushUp(); pushUp();
+      while (out.length < 3 && pushNew()) { /* uma troca possível */ }
+      while (out.length < 3 && pushUp()) { /* sem novas: só evoluções */ }
     }
     save();
-    return out.map(t => ({ trait: t, completes: D.SYNERGIES.find(s => (s.a === t.id && c.traits.includes(s.b)) || (s.b === t.id && c.traits.includes(s.a))) || null }));
+    return out;
   };
 
-  S.addTrait = function (c, id) {
+  // Adiciona característica nova (substituindo outra se os espaços estiverem cheios).
+  S.addTrait = function (c, id, replaceId) {
     if (c.traits.includes(id)) return null;
+    if (replaceId) {
+      c.traits = c.traits.filter(x => x !== replaceId);
+      delete c.traitLv[replaceId];
+    }
+    if (c.traits.length >= S.MAX_SLOTS) return null;
     c.traits.push(id);
+    c.traitLv[id] = 1;
     const t = D.TRAIT_BY_ID[id];
     if (t.fx.attr) for (const k in t.fx.attr) c.attrs[k] = clamp(c.attrs[k] + t.fx.attr[k], 20, 99);
-    const syn = D.SYNERGIES.find(s => (s.a === id && c.traits.includes(s.b)) || (s.b === id && c.traits.includes(s.a)));
-    return syn || null;
+    return completesSyn(c, id);
   };
+
+  S.upgradeTrait = function (c, id) {
+    if (!c.traits.includes(id) || lvOf(c, id) >= S.MAX_LV) return false;
+    c.traitLv[id] = lvOf(c, id) + 1;
+    const t = D.TRAIT_BY_ID[id];
+    if (t.fx.attr) for (const k in t.fx.attr) c.attrs[k] = clamp(c.attrs[k] + t.fx.attr[k], 20, 99);
+    return true;
+  };
+  S.traitLevel = lvOf;
 
   // ---------- papel no elenco ----------
   S.role = function (c, club) {
@@ -243,17 +286,17 @@
     },
     {
       id: 'renovar', icon: '✍️', weight: 3,
-      when: c => c.age >= 22 && c.age <= 31 && c.rel.coach >= 55 && atClub(c) >= 2 && !c.renew,
+      when: c => c.age >= 22 && c.age <= 31 && c.rel.coach >= 55 && atClub(c) >= 2 && c.contract <= 2,
       build: c => ({
         title: 'Renovação no ' + D.CLUB_BY_ID[c.club].name,
         text: 'O clube quer blindar você com um contrato de 5 anos.',
         options: [
-          { label: 'Renovar por 5 anos', hint: 'Salário +40% · Torcida +10 · menos propostas nas próximas 2 janelas' },
+          { label: 'Renovar por mais 3 anos', hint: 'Salário +40% · Torcida +10 · contrato mais longo' },
           { label: 'Só com cláusula de saída', hint: 'Mercado aberto · Técnico −5' },
         ],
       }),
       resolve: (c, ev, i) => {
-        if (i === 0) { c.wage = Math.round(c.wage * 1.4); bump(c, 'fans', 10); c.renew = 2; return { ok: true, text: 'Contrato longo assinado. Você é parte do projeto.', fx: {} }; }
+        if (i === 0) { c.wage = Math.round(c.wage * 1.4); bump(c, 'fans', 10); c.contract += 3; return { ok: true, text: 'Contrato longo assinado. Você é parte do projeto.', fx: {} }; }
         bump(c, 'coach', -5);
         return { ok: true, text: 'Renovou com cláusula. Se aparecer algo melhor, dá para sair.', fx: {} };
       },
@@ -339,7 +382,7 @@
         text: 'A torcida do ' + D.CLUB_BY_ID[c.club].name + ' foi cobrar você no treino.',
         options: [
           { label: 'Encarar e conversar', hint: '65%: Torcida +20 · senão, Torcida −10' },
-          { label: 'Pedir para sair', hint: 'Mais propostas na próxima janela · Torcida −10' },
+          { label: 'Pedir para sair', hint: 'Abre a janela de transferências no fim da temporada · Torcida −10' },
         ],
       }),
       resolve: (c, ev, i, r) => {
@@ -414,6 +457,7 @@
     }
     if (injShare > 0) injName = r.pick(['lesão na coxa', 'entorse no tornozelo', 'lesão no joelho', 'problema muscular']);
 
+    if (c.farewell) c.mod.min += 0.1; // temporada de despedida: o técnico faz questão
     let share = clamp(role.share + c.mod.min + (c.rel.coach - REL0) / 250 + (c.age <= 17 ? -0.2 : 0), 0.05, 0.97);
     share *= 1 - injShare;
     const maxGames = 38 + (club.tier >= 3 ? 8 : 4);
@@ -465,7 +509,23 @@
     if (league) titles.push({ id: 'league', name: lg.name });
     if (cup) titles.push({ id: 'cup', name: lg.cup || 'Copa nacional' });
     if (cont && contName) titles.push({ id: 'cont', name: contName });
-    if (titles.length) highlights.push('🏆 Campeão: ' + titles.map(t => t.name).join(', '));
+    // Tabela: pontos aproximados em 38 rodadas a partir da força efetiva
+    const avg = leagueClubs.reduce((a2, x) => a2 + x.strength, 0) / leagueClubs.length;
+    const ppg = x => clamp(1.35 + (x - avg) / 12, 0.6, 2.55);
+    let pts = Math.round(38 * ppg(sEff) + r.gauss() * 4);
+    let leaderPts = Math.max(pts + 1, Math.round(38 * (ppg(top) + 0.12) + r.gauss() * 3));
+    if (league) { leaderPts = pts = Math.max(pts, leaderPts - 1); }
+    const pos = league ? 1 : clamp(2 + Math.floor((leaderPts - pts) / 4.5), 2, 20);
+    const table = { pos, pts, gap: league ? 0 : leaderPts - pts, league: lg.name };
+    // Jogos marcantes (rivais da própria liga)
+    const rivals = leagueClubs.filter(x => x.id !== club.id);
+    const rival = rivals.length ? rivals.slice().sort((x, y) => y.strength - x.strength)[0] : null;
+    const other = rivals.length ? r.pick(rivals) : null;
+    if (league && rival) highlights.push('🏆 Título garantido na última rodada contra o ' + rival.name);
+    if (cup && other) highlights.push('🏆 Final da ' + (lg.cup || 'copa') + ' contra o ' + other.name + (goals > 5 ? ': gol seu!' : ''));
+    if (cont && contName) highlights.push('🌍 Campeão da ' + contName + '!');
+    if (!league && rival && games >= 10 && goals + assists >= 8) highlights.push('⚔️ Decidiu o clássico contra o ' + rival.name);
+    if (!league && pos >= 14 && games >= 10) highlights.push('😰 Temporada de sufoco na parte de baixo da tabela');
 
     // Prêmios
     const awards = [];
@@ -493,14 +553,24 @@
 
     // Evolução
     // Jogar muito e bem faz evoluir mais e pode até elevar o teto (potencial)
-    if (games >= 22 && rating >= 7.6 && c.age <= 26) c.pot = Math.min(99, c.pot + (rating >= 8.2 ? 2 : 1));
+    const potUp = games >= 22 && rating >= 7.6 && c.age <= 26 ? (rating >= 8.2 ? 2 : 1) : 0;
+    if (potUp) c.pot = Math.min(99, c.pot + potUp);
     const growth = (c.pot - o) * AGE_GROWTH(c.age) * (0.3 + share * 1.25);
     const decline = AGE_DECLINE(c.age) * (1 + fx.decl);
-    const delta = growth - decline + r.gauss() * 1.2;
+    const luck = r.gauss() * 1.2;
+    const delta = growth - decline + luck;
     const w = D.POS[c.pos].w;
     for (const k in c.attrs) c.attrs[k] = clamp(c.attrs[k] + delta * (0.5 + w[k] * 2.2) + r.gauss() * 0.6, 20, 99);
     const ovr1 = S.ovr(c);
+    if (ovr1 >= c.peak || !c.peakAttrs) c.peakAttrs = Object.assign({}, c.attrs);
     c.peak = Math.max(c.peak, ovr1, o);
+    // Por que a nota mudou (em pontos de nota geral, aproximados)
+    const why = [];
+    if (growth >= 0.5) why.push({ txt: games >= 30 ? games + ' jogos: muito tempo em campo' : games >= 15 ? games + ' jogos: evolução com minutos' : 'Poucos minutos: evoluiu pouco', v: Math.round(growth) });
+    else if (c.age <= 26 && games < 15) why.push({ txt: 'Poucos minutos: evolução travada', v: Math.round(growth) });
+    if (decline > 0) why.push({ txt: 'Idade (' + c.age + ' anos)' + (fx.decl < 0 ? ', amenizada por Profissional' : ''), v: -Math.round(decline) });
+    if (Math.abs(luck) >= 1) why.push({ txt: luck > 0 ? 'Fase boa nos treinos' : 'Fase ruim nos treinos', v: Math.round(luck) });
+    if (potUp) why.push({ txt: 'Temporada brilhante elevou seu teto', v: 0, pot: true });
 
     // Dinheiro e totais
     c.money += c.wage * 52;
@@ -527,12 +597,13 @@
       age: c.age, club: club.id, role: role.name, games, goals, assists, rating, titles, awards,
       ovr0, ovr1, fame0: Math.round(fame0), fame1: Math.round(c.fame), injury: injName ? Math.round(injShare * 100) : 0,
       coach0: Math.round(coach0), coach1: Math.round(c.rel.coach), fans0: Math.round(fans0), fans1: Math.round(c.rel.fans),
-      highlights, event: c.lastEvent || null,
+      highlights, event: c.lastEvent || null, table, why, farewell: !!c.farewell,
     };
     res.headlines = S.headlines(c, res);
     c.seasons.push(res);
     c.age++;
     c.season++;
+    c.contract = Math.max(0, c.contract - 1);
     c.mod = { min: 0, form: 0, inj: 0, goal: 0, assist: 0 };
     c.lastEvent = null;
     save();
@@ -565,9 +636,13 @@
     return t;
   };
 
+  const YEARS = { base: 3, up: 4, mid: 3, money: 2, home: 2, stay: 3 };
   function offerFrom(c, club, kind) {
     const role = S.role(c, club);
-    return { club: club.id, kind, role: role.name, share: role.share, wage: S.wage(c, club) };
+    let years = YEARS[kind] || 3;
+    if (c.age >= 32) years = Math.min(years, 2);
+    if (c.age >= 35) years = 1;
+    return { club: club.id, kind, role: role.name, share: role.share, wage: S.wage(c, club), years };
   }
 
   S.offers = function (c, academy) {
@@ -611,8 +686,6 @@
       if (ex) out.push(offerFrom(c, ex, 'mid'));
     }
     save();
-    // Contrato longo: o clube recusa quase tudo nas próximas janelas
-    if (c.renew > 0) { c.renew--; out.length = Math.min(out.length, 1); }
     // Sem propostas decentes quando o jogador está muito fraco e velho
     if (o < 50 && c.age >= 30) return [];
     return out;
@@ -637,17 +710,33 @@
       if (!c.firstClub) c.firstClub = club.id;
     }
     c.wage = offer.wage;
+    c.contract = offer.years || 2;
   };
 
+  // Janela abre quando o contrato acaba ou quando você pediu para sair.
+  S.windowOpen = c => c.contract <= 0 || c.wantsOut;
   S.canRetire = c => c.age >= 33;
-  S.mustRetire = c => c.age >= 38;
+  S.canAnnounce = c => c.age >= 32 && !c.farewell;
+  S.mustRetire = c => c.age >= 38 || (c.farewell && c.seasons.length && c.seasons[c.seasons.length - 1].farewell);
+  S.announce = function (c) {
+    c.farewell = true;
+    bump(c, 'fans', 10);
+  };
 
   // ---------- fim de carreira ----------
   S.finish = function (c) {
     c.retired = true;
     const T = c.totals;
     const titles = T.league + T.cup + T.cont;
-    const score = Math.round(T.goals + T.assists * 0.7 + titles * 12 + T.cont * 10 + T.ballon * 120 + (T.scorer + T.young + T.team) * 8 + c.peak * 2);
+    // Despedida: parar em alta rende pontos extras
+    const lastS = c.seasons[c.seasons.length - 1];
+    const bonus = [];
+    if (lastS && lastS.farewell) {
+      if (lastS.rating >= 7) bonus.push({ txt: 'Parou no auge (nota ' + lastS.rating.toFixed(1).replace('.', ',') + ' na despedida)', v: 80 });
+      if (lastS.titles.length) bonus.push({ txt: 'Título na temporada de despedida', v: 60 });
+      if ((c.fansBy[lastS.club] || 0) >= 70) bonus.push({ txt: 'Estádio lotado na despedida no ' + D.CLUB_BY_ID[lastS.club].name, v: 40 });
+    }
+    const score = Math.round(T.goals + T.assists * 0.7 + titles * 12 + T.cont * 10 + T.ballon * 120 + (T.scorer + T.young + T.team) * 8 + c.peak * 2 + bonus.reduce((a, b) => a + b.v, 0));
     const byClub = {};
     c.spells = c.spells.filter(s => s.seasons);
     c.spells.forEach(s => {
@@ -665,10 +754,13 @@
     else if (titles >= 14) verdict = 'Colecionador de taças';
     else if (c.peak < 66) verdict = 'Promessa que não vingou';
     else if (nClubs >= 11) verdict = 'Cigano da bola';
-    else if (c.spells.some(s => ['ara', 'usa'].includes(D.CLUB_BY_ID[s.club].league))) verdict = 'Foi atrás do dinheiro';
+    else if (c.spells.filter(s => ['ara', 'usa'].includes(D.CLUB_BY_ID[s.club].league)).reduce((n, s) => n + s.seasons, 0) >= 3) verdict = 'Foi atrás do dinheiro';
+    else if (c.spells.filter(s => D.CLUB_BY_ID[s.club].tier >= 4).reduce((n, s) => n + s.seasons, 0) >= 6) verdict = 'Estrela na Europa';
+    else if ((c.trophies['Brasileirão'] || { n: 0 }).n >= 2) verdict = 'Rei do Brasileirão';
     else verdict = 'Carreira sólida';
     const grade = score >= 1300 ? 'S' : score >= 950 ? 'A' : score >= 650 ? 'B' : score >= 420 ? 'C' : 'D';
-    return { score, verdict, grade, titles, nClubs };
+    const mainClub = idol ? idol[0] : c.club;
+    return { score, verdict, grade, titles, nClubs, bonus, mainClub };
   };
 
   root.CRAQUE_SIM = S;

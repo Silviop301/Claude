@@ -16,8 +16,15 @@ for (let n = 0; n < N; n++) {
   while (!c.retired) {
     const ch = S.traitChoices(c);
     if (ch.length) {
-      const pick = SMART ? (ch.find(x => x.completes) || ch.find(x => ['colocado', 'visao', 'lider', 'frieza', 'pro'].includes(x.trait.id)) || ch[0]) : ch[Math.floor(Math.random() * ch.length)];
-      S.addTrait(c, pick.trait.id); decisions++;
+      const pick = SMART ? (ch.find(x => x.completes) || ch.find(x => x.type === 'up') || ch[0]) : ch[Math.floor(Math.random() * ch.length)];
+      if (pick.type === 'up') S.upgradeTrait(c, pick.trait.id);
+      else if (pick.type === 'swap') {
+        // troca a de menor nível que não faça parte de uma sinergia ativa
+        const inSyn = new Set(S.synergies(c).flatMap(x => [x.a, x.b]));
+        const drop = c.traits.filter(id => !inSyn.has(id)).sort((a, b) => S.traitLevel(c, a) - S.traitLevel(c, b))[0] || c.traits[0];
+        S.addTrait(c, pick.trait.id, drop);
+      } else S.addTrait(c, pick.trait.id);
+      decisions++;
     }
     const ev = S.pickEvent(c);
     if (ev) {
@@ -27,7 +34,9 @@ for (let n = 0; n < N; n++) {
       c.stats = c.stats || {}; c.stats[ev.id] = (c.stats[ev.id] || 0) + 1;
     }
     S.playSeason(c);
-    if (S.mustRetire(c) || (S.canRetire(c) && S.ovr(c) < 70 && Math.random() < 0.5)) break;
+    if (S.mustRetire(c)) break;
+    if (S.canAnnounce(c) && S.ovr(c) < (SMART ? 76 : 72) && Math.random() < 0.6) { S.announce(c); decisions++; }
+    if (!S.windowOpen(c)) continue;
     const offers = S.offers(c, false);
     decisions++;
     const opts = offers.concat([S.stayOffer(c)]);
@@ -39,9 +48,10 @@ for (let n = 0; n < N; n++) {
     S.join(c, good[0] || opts.sort((a, b) => b.share - a.share)[0]);
   }
   const f = S.finish(c);
-  res.push({ seasons: c.season, decisions, goals: c.totals.goals, assists: c.totals.assists, titles: f.titles, ballon: c.totals.ballon, peak: c.peak, grade: f.grade, verdict: f.verdict, pos, clubs: f.nClubs, games: c.totals.games, events: Object.values(c.stats || {}).reduce((a, b) => a + b, 0) });
+  res.push({ build: c.traits.slice().sort().join('+'), idol: f.verdict.startsWith('Ídolo'), farewell: !!c.farewell, seasons: c.season, decisions, goals: c.totals.goals, assists: c.totals.assists, titles: f.titles, ballon: c.totals.ballon, peak: c.peak, grade: f.grade, verdict: f.verdict, pos, clubs: f.nClubs, games: c.totals.games, events: Object.values(c.stats || {}).reduce((a, b) => a + b, 0) });
 }
 console.log('Robô:', SMART ? 'esperto' : 'casual');
+console.log('Builds finais diferentes:', new Set(res.map(r => r.build)).size, 'em', N, 'carreiras · Ídolos:', (res.filter(r => r.idol).length / N * 100).toFixed(1) + '% · Com despedida:', (res.filter(r => r.farewell).length / N * 100).toFixed(0) + '%');
 const q = (arr, p) => { const s = arr.slice().sort((a, b) => a - b); return s[Math.floor(p * (s.length - 1))]; };
 const pr = (label, key, filter) => {
   const a = res.filter(filter || (() => true)).map(r => r[key]);
