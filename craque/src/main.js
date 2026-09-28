@@ -64,7 +64,12 @@
       (hall.length ? '<div class="eyebrow" style="margin-top:8px">Hall da Fama</div><div class="hall">' +
         hall.map(h => '<div><b>' + h.grade + '</b><span>' + esc(h.name) + ' · ' + esc(h.verdict) + '<br><small>' + h.goals + ' gols · ' + h.assists + ' assist. · ' + h.titles + ' taças' + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '') + '</small></span><span class="muted">' + h.score + '</span></div>').join('') + '</div>' : '')
     );
-    if ($('b-cont')) $('b-cont').onclick = () => { c = saved.c; resume(saved.step); };
+    if ($('b-cont')) $('b-cont').onclick = () => {
+      c = saved.c;
+      // saves de antes dos investimentos
+      c.inv = c.inv || {}; c.buys = c.buys || 0; c.spent = c.spent || 0;
+      resume(saved.step);
+    };
     $('b-new').onclick = create;
     if (window.CRAQUE_BALL) window.CRAQUE_BALL.mount($('ball3d'));
   }
