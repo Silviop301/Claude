@@ -168,6 +168,8 @@
     ctx.font = '34px ' + BODY;
     const icons = (d.traits || []).map(t => t.icon + (t.lv > 1 ? ['', '', '²', '³'][t.lv] : '')).join('  ');
     embossOn = false; ctx.fillText(icons, W / 2, 718); embossOn = true;
+    // Estrelas de campeão do mundo acima do nome da camisa
+    if (d.wc) { ctx.font = '800 26px ' + DISPLAY; embossOn = false; ctx.fillText('★'.repeat(Math.min(d.wc, 5)), 385, 120); embossOn = true; }
     ctx.font = '700 21px ' + BODY;
     ctx.fillText(d.goals + ' GOLS · ' + d.assists + ' ASSIST · ' + d.titles + ' TÍTULOS' + (d.ballon ? ' · ' + d.ballon + ' BOLA' + (d.ballon > 1 ? 'S' : '') + ' DE OURO' : ''), W / 2, 756, 400);
     ctx.font = '800 18px ' + DISPLAY;

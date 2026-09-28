@@ -1,5 +1,5 @@
 // Taças desenhadas para o CRAQUE (SVG próprio, sem imagens oficiais).
-// Tipos: league (liga), cup (copa nacional), ucl (Liga dos Campeões), lib (Libertadores), ballon (Bola de Ouro).
+// Tipos: league (liga), cup (copa nacional), ucl (Liga dos Campeões), lib (Libertadores), ballon (Bola de Ouro), wc (Copa do Mundo).
 (function (root) {
   const INK = '#13201A';
   const defs =
@@ -45,7 +45,15 @@
       '<path d="M22 18c2-4 5-6 8-7" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="2.5" stroke-linecap="round"/>' +
       '<path d="M26 41h12v5H26z" fill="' + g + '" stroke="' + INK + '" stroke-width="2"/>' + base(g),
   };
-  const METAL = { league: 'gold', cup: 'silver', ucl: 'silver', lib: 'gold', ballon: 'gold' };
+  // Copa do Mundo (desenho próprio): corpo em espiral segurando um globo, anéis verdes na base
+  SHAPES.wc = g =>
+    '<path d="M25 47c-4-7-5-13-1-19 2-3 5-4 5-8h6c0 4 3 5 5 8 4 6 3 12-1 19z" fill="' + g + '" stroke="' + INK + '" stroke-width="2.5" stroke-linejoin="round"/>' +
+    '<path d="M28 44c-2-5-2-10 1-14M36 44c2-5 2-10-1-14" fill="none" stroke="' + INK + '" stroke-width="1.5" stroke-opacity=".6"/>' +
+    '<circle cx="32" cy="13" r="10" fill="' + g + '" stroke="' + INK + '" stroke-width="2.5"/>' +
+    '<path d="M22.5 13h19M32 3.2c-5 5-5 14.6 0 19.6M32 3.2c5 5 5 14.6 0 19.6" fill="none" stroke="' + INK + '" stroke-width="1.3" stroke-opacity=".7"/>' +
+    '<path d="M26 8c2-2 4-3 6-3" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="2" stroke-linecap="round"/>' +
+    '<path d="M22 47h20v11H22z" fill="' + INK + '"/><path d="M22 49.5h20M22 54.5h20" stroke="#1FA35A" stroke-width="2.4"/>';
+  const METAL = { league: 'gold', cup: 'silver', ucl: 'silver', lib: 'gold', ballon: 'gold', wc: 'gold' };
 
   root.CRAQUE_TROPHY = function (type, size) {
     const shape = SHAPES[type] || SHAPES.league;

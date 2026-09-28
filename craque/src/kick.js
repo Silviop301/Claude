@@ -200,7 +200,9 @@
       }
     });
 
+    const sfx = n => { if (root.CRAQUE_SFX) root.CRAQUE_SFX.play(n); };
     function shoot(dx, y) {
+      sfx('kick');
       help.innerHTML = '&nbsp;';
       aim.setAttribute('opacity', '0');
       const x = dx * side; // no referencial da regra (barreira sempre "à esquerda")
@@ -273,6 +275,7 @@
     function after(res, bx, by) {
       const banner = el.querySelector('#k-banner');
       const txt = { gol: 'GOOOL!', defesa: 'DEFENDEU!', trave: 'NA TRAVE!', fora: 'PRA FORA!', alto: 'POR CIMA!', barreira: 'NA BARREIRA!' }[res.why];
+      sfx(res.ok ? 'goal' : 'miss');
       if (res.ok) {
         svg.querySelector('#k-net').classList.add('shake');
         // Rede estufa no ponto onde a bola entrou; a bola afunda um pouco nela

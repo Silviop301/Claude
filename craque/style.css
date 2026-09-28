@@ -463,3 +463,48 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 
 .k-wallman path { fill: #C9303C; }
 .k-wallman path.k-hair { fill: #2A1A0E; }
+
+/* Copa do Mundo */
+.wc-call { display: flex; gap: 12px; align-items: center; background: linear-gradient(135deg, #0E5A30, #1FA35A); border-radius: 14px; padding: 12px 14px; box-shadow: 0 3px 0 rgba(0, 0, 0, .35); }
+.wc-call.rv.in { animation: trophy-in .6s cubic-bezier(.2, 1.5, .4, 1); }
+.wc-call .wc-flag { font-size: 40px; line-height: 1; }
+.wc-call b { display: block; font: 800 22px var(--display); color: #fff; }
+.wc-call span { font-size: 14px; color: #D9F5E3; }
+.wc-miss { margin: 0; font-size: 14px; color: #CFE0D4; background: rgba(255, 255, 255, .06); border-radius: 12px; padding: 10px 12px; }
+.wc-hint { margin: 0; font-size: 14px; color: #FFE9A0; background: rgba(242, 194, 48, .12); border: 1px solid rgba(242, 194, 48, .35); border-radius: 12px; padding: 8px 12px; }
+.wc-hero { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.wc-bigflag { font-size: 84px; line-height: 1; animation: trophy-in .8s cubic-bezier(.2, 1.5, .4, 1); }
+.wc-rules p { margin: 0 0 6px; } .wc-rules p:last-child { margin: 0; }
+.wc-list { display: flex; flex-direction: column; gap: 8px; }
+.wc-game { background: var(--paper); color: var(--ink); border-radius: 12px; padding: 8px 12px; border-left: 6px solid #9DB5A6; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.wc-game.w { border-left-color: #1FA35A; } .wc-game.l { border-left-color: #C9303C; } .wc-game.d { border-left-color: #F2C230; }
+.wc-game.enter { animation: trophy-in .5s cubic-bezier(.2, 1.4, .4, 1); }
+.wc-game .st { width: 100%; font: 700 12px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.wc-game .line { display: flex; align-items: center; gap: 10px; font-size: 22px; }
+.wc-game .line b { font: 800 26px var(--display); }
+.wc-game .them { font: 700 17px var(--body); }
+.wc-game .me { font-size: 15px; }
+.wc-game .grp { width: 100%; font: 800 15px var(--display); }
+.wc-game .grp.ok { color: #0E6A35; } .wc-game .grp.ko { color: #A01E28; }
+.wc-champ { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px; border-radius: 16px; background: radial-gradient(circle at 50% 30%, rgba(255, 226, 122, .45), rgba(255, 226, 122, 0) 70%); animation: trophy-in .9s cubic-bezier(.2, 1.5, .4, 1); }
+.wc-champ .trophy { filter: drop-shadow(0 0 18px rgba(255, 214, 90, .9)); }
+.wc-champ b { font: 800 34px var(--display); color: var(--gold); letter-spacing: .02em; }
+.wc-champ span { color: #D9F5E3; }
+.wc-out { text-align: center; font: 800 24px var(--display); background: rgba(255, 255, 255, .08); border-radius: 12px; padding: 12px; }
+.wc-stats { text-align: center; margin: 0; color: #CFE0D4; }
+#wc-after { display: flex; flex-direction: column; gap: 12px; }
+.snd-mini { border: 0; background: rgba(255, 255, 255, .1); border-radius: 999px; font-size: 13px; padding: 2px 7px; margin-left: 4px; vertical-align: middle; cursor: pointer; }
+.btn.small-btn { padding: 10px; font-size: 16px; }
+.crest-pick-t { font: 700 12px var(--display); letter-spacing: .12em; text-transform: uppercase; color: #B9CDBF; text-align: center; }
+.crest-pick { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; scroll-snap-type: x mandatory; }
+.crest-pick button { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 78px; padding: 8px 4px; border-radius: 12px;
+  border: 2px solid transparent; background: rgba(255, 255, 255, .08); color: #CFE0D4; font: 600 11px/1.15 var(--body); scroll-snap-align: start; cursor: pointer; }
+.crest-pick button .crest { width: 36px; height: 36px; }
+.crest-pick button span { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crest-pick button.on { border-color: var(--gold); background: rgba(242, 194, 48, .15); color: #fff; }
+.choice.inv .price { font: 800 14px var(--display); color: #8A6400; margin-top: 2px; }
+.choice.inv:disabled .price { color: var(--muted); }
+.choice.inv.full .price { color: #0E6A35; }
+.choice.inv.bought { animation: mc-pop .35s ease; box-shadow: 0 0 0 3px var(--gold), 0 3px 0 rgba(0, 0, 0, .35); }
+.inv-tip { margin: 0; }
+.btn.inv-go { position: sticky; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 3; }

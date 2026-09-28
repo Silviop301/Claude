@@ -596,6 +596,124 @@
     return ok;
   };
 
+  // ---------- Copa do Mundo (a cada 4 anos, depois da temporada) ----------
+  const WC_STAGES = ['Grupo · 1º jogo', 'Grupo · 2º jogo', 'Grupo · 3º jogo', 'Oitavas de final', 'Quartas de final', 'Semifinal', 'Final'];
+  S.WC_STAGES = WC_STAGES;
+  S.YEAR0 = 2026;
+  // A temporada que acabou de terminar leva o ano para YEAR0 + c.season; Copa em 2030, 2034, 2038...
+  S.isWcYear = c => c.season > 0 && (S.YEAR0 + c.season) % 4 === 2;
+  // Nota mínima para a convocação: seleções fortes exigem mais
+  S.wcCut = nation => (nation.str >= 86 ? 79 : nation.str >= 82 ? 76 : 73);
+  S.wcCall = function (c) {
+    const nation = D.NATION_BY_NAME[c.country];
+    const cut = S.wcCut(nation), o = S.ovr(c);
+    const called = c.age >= 18 && c.age <= 37 && o >= cut;
+    return { nation, cut, called, starter: o >= cut + 5 };
+  };
+
+  function wcMatch(c, run, opp, r) {
+    const nation = D.NATION_BY_NAME[run.nation], o = S.ovr(c);
+    // O craque puxa a seleção (ou atrapalha pouco, se estiver abaixo do nível)
+    const T = nation.str + (o - run.cut) * 0.25 * run.share;
+    // Copa é equilibrada: diferença de força pesa menos que nos clubes
+    const lu = 1.25 * Math.exp((T - opp.str) / 20), lt = 1.25 * Math.exp((opp.str - T) / 20);
+    const gf = r.poisson(lu), ga = r.poisson(lt);
+    const pg = run.share * (c.pos === 'ATA' ? 0.34 : 0.16) * clamp((o - 60) / 25, 0.3, 1.3);
+    const pa = run.share * (c.pos === 'ATA' ? 0.15 : 0.3) * clamp((o - 60) / 25, 0.3, 1.3);
+    let g = 0, a = 0;
+    for (let i = 0; i < gf; i++) { const x = r(); if (x < pg) g++; else if (x < pg + pa) a++; }
+    return { opp: opp.name, flag: opp.flag, gf, ga, g, a };
+  }
+
+  S.wcStart = function (c) {
+    const { r, save } = rngOf(c);
+    const call = S.wcCall(c);
+    const pool = D.NATIONS.filter(n => n.name !== c.country);
+    const pickFrom = f => { const p = pool.filter(n => f(n) && !used.includes(n.name)); const n = r.pick(p.length ? p : pool); used.push(n.name); return n.name; };
+    const used = [];
+    // Grupo: um forte, um médio, um mais fraco
+    const group = [pickFrom(n => n.str >= 83), pickFrom(n => n.str >= 76 && n.str < 83), pickFrom(n => n.str < 76)];
+    c.wcRun = { year: S.YEAR0 + c.season, nation: c.country, cut: call.cut, starter: call.starter, share: call.starter ? 0.92 : 0.45,
+      group, used, games: [], stage: 0, pts: 0, out: false, champion: false, pending: null, g: 0, a: 0 };
+    save();
+    return c.wcRun;
+  };
+
+  // Próximo jogo. Retorna o jogo; se for mata-mata empatado, game.pens = true e espera S.wcPens.
+  S.wcNext = function (c) {
+    const run = c.wcRun;
+    if (!run || run.out || run.champion || run.pending) return null;
+    const { r, save } = rngOf(c);
+    let opp;
+    if (run.stage < 3) opp = D.NATION_BY_NAME[run.group[run.stage]];
+    else {
+      // Mata-mata: adversários cada vez mais fortes
+      const want = 79 + (run.stage - 3) * 2.5;
+      const pool = D.NATIONS.filter(n => n.name !== c.country && !run.used.includes(n.name) && n.str >= want);
+      opp = r.pick(pool.length ? pool : D.NATIONS.filter(n => n.name !== c.country));
+      run.used.push(opp.name);
+    }
+    const game = wcMatch(c, run, opp, r);
+    game.stage = WC_STAGES[run.stage];
+    run.g += game.g; run.a += game.a;
+    run.games.push(game);
+    if (run.stage < 3) {
+      run.pts += game.gf > game.ga ? 3 : game.gf === game.ga ? 1 : 0;
+      if (run.stage === 2) {
+        // Passa com 5+ pontos; com 4 quase sempre; com 3 às vezes (saldo)
+        const pass = run.pts >= 5 || (run.pts === 4 && r() < 0.8) || (run.pts === 3 && r() < 0.35);
+        game.groupEnd = { pts: run.pts, pass };
+        if (!pass) wcEnd(c, 'Fase de grupos');
+      }
+      run.stage++;
+    } else if (game.gf === game.ga) {
+      game.pens = true;
+      run.pending = true; // decide nos pênaltis: você bate o último
+    } else wcAdvance(c, game.gf > game.ga);
+    save();
+    return game;
+  };
+
+  function wcAdvance(c, won) {
+    const run = c.wcRun;
+    if (!won) return wcEnd(c, WC_STAGES[run.stage]);
+    if (run.stage === 6) { run.champion = true; return wcEnd(c, 'Campeão'); }
+    run.stage++;
+  }
+
+  S.wcPens = function (c, ok) {
+    const run = c.wcRun;
+    if (!run || !run.pending) return;
+    run.pending = false;
+    run.games[run.games.length - 1].pensWon = !!ok;
+    wcAdvance(c, !!ok);
+  };
+  S.wcPensAuto = function (c) {
+    const { r, save } = rngOf(c);
+    const ok = r() < S.kickSetup(c, 'cup').chance;
+    save();
+    S.wcPens(c, ok);
+    return ok;
+  };
+
+  function wcEnd(c, reached) {
+    const run = c.wcRun;
+    run.out = !run.champion;
+    run.reached = reached;
+    c.totals.wcApps = (c.totals.wcApps || 0) + 1;
+    c.totals.wcGoals = (c.totals.wcGoals || 0) + run.g;
+    c.fame += run.g * 2 + (run.champion ? 60 : run.stage >= 5 ? 15 : 0);
+    if (run.champion) {
+      c.totals.wc = (c.totals.wc || 0) + 1;
+      c.trophies['Copa do Mundo'] = c.trophies['Copa do Mundo'] || { type: 'wc', n: 0 };
+      c.trophies['Copa do Mundo'].n++;
+      c.wcBoost = 22; // pesa na Bola de Ouro da próxima temporada
+    }
+    c.wcHist = c.wcHist || [];
+    c.wcHist.push({ year: run.year, nation: run.nation, reached, g: run.g, a: run.a, champion: run.champion });
+  }
+  S.wcDone = c => !c.wcRun || c.wcRun.out || c.wcRun.champion;
+
   // ---------- temporada ----------
   const AGE_GROWTH = age => (age <= 20 ? 0.24 : age <= 23 ? 0.17 : age <= 26 ? 0.08 : age <= 29 ? 0.02 : 0);
   const AGE_DECLINE = age => (age <= 30 ? 0 : age <= 32 ? 1.8 : age <= 34 ? 3.5 : 5);
@@ -611,10 +729,11 @@
     // Lesão: risco base + idade + eventos
     let injShare = c.mod.inj;
     // Físico alto protege de lesões
-    const injRisk = clamp((0.14 + Math.max(0, c.age - 29) * 0.03) * clamp(1 - (E.fis - 60) / 70, 0.5, 1.4) * (1 - 0.25 * (c.inv.fisio || 0)), 0.02, 0.6);
+    // ~6% por temporada no auge físico; sobe com a idade (a partir dos 30) e com FÍS baixo
+    const injRisk = clamp((0.065 + Math.max(0, c.age - 30) * 0.02) * clamp(1 - (E.fis - 60) / 90, 0.6, 1.25) * (1 - 0.25 * (c.inv.fisio || 0)), 0.02, 0.4);
     let injName = null;
     if (r() < injRisk) {
-      injShare = Math.max(injShare, r.range(0.1, 0.4));
+      injShare = Math.max(injShare, r.range(0.08, 0.32));
     }
     if (injShare > 0) injName = r.pick(['lesão na coxa', 'entorse no tornozelo', 'lesão no joelho', 'problema muscular']);
 
@@ -724,12 +843,13 @@
     // Prêmios
     const awards = [];
     const scorerLine = 17 + club.tier * 2 + r.range(-3, 3);
-    if (goals >= scorerLine && c.pos === 'ATA') awards.push({ id: 'scorer', name: 'Artilheiro da ' + lg.name });
-    if (c.pos === 'MEI' && assists >= 14 + club.tier + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Líder de assistências da ' + lg.name });
-    if (c.age <= 21 && rating >= 7.2 && club.tier >= 3) awards.push({ id: 'young', name: 'Melhor jovem da ' + lg.name });
-    if (rating >= 7.5 && games >= 20) awards.push({ id: 'team', name: 'Seleção da ' + lg.name });
+    if (goals >= scorerLine && c.pos === 'ATA') awards.push({ id: 'scorer', name: 'Artilheiro ' + D.da(lg.name) });
+    if (c.pos === 'MEI' && assists >= 14 + club.tier + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Líder de assistências ' + D.da(lg.name) });
+    if (c.age <= 21 && rating >= 7.2 && club.tier >= 3) awards.push({ id: 'young', name: 'Melhor jovem ' + D.da(lg.name) });
+    if (rating >= 7.5 && games >= 20) awards.push({ id: 'team', name: 'Seleção ' + D.da(lg.name) });
     // Bola de Ouro: só em clubes de nível 4-5
-    const bScore = goals + assists * 0.6 + titles.length * 8 + (cont ? 10 : 0) + (rating - 6) * 12;
+    const bScore = goals + assists * 0.6 + titles.length * 8 + (cont ? 10 : 0) + (rating - 6) * 12 + (c.wcBoost || 0);
+    c.wcBoost = 0;
     // Cada Bola de Ouro anterior aumenta a exigência (a concorrência cresce)
     const pBallon = club.tier >= 4 && o >= 87 ? clamp(1 / (1 + Math.exp(-(bScore - 92 - 9 * c.totals.ballon) / 7)) * (club.tier === 5 ? 0.6 : 0.2), 0, 0.6) : 0;
     const ballon = r() < pBallon;
@@ -811,8 +931,8 @@
     const nick = c.name;
     const h = [];
     if (s.awards.some(a => a.id === 'ballon')) h.push(nick + ' é o melhor do mundo!');
-    if (s.move && s.move.dir === 'up') h.push('Acesso! ' + club + ' garante vaga na ' + s.move.toName);
-    if (s.move && s.move.dir === 'down') h.push('Rebaixamento: ' + club + ' cai para a ' + s.move.toName);
+    if (s.move && s.move.dir === 'up') h.push('Acesso! ' + club + ' garante vaga ' + D.na(s.move.toName));
+    if (s.move && s.move.dir === 'down') h.push('Rebaixamento: ' + club + ' cai ' + D.paraA(s.move.toName));
     if (s.titles.length >= 2) h.push('Temporada histórica: ' + club + ' leva ' + s.titles.length + ' taças');
     else if (s.titles.length) h.push(club + ' é campeão com ' + nick + ' em campo');
     if (s.goals >= 30) h.push(s.goals + ' gols: ' + nick + ' vira pesadelo das defesas');
@@ -941,7 +1061,7 @@
       if (lastS.titles.length) bonus.push({ txt: 'Título na temporada de despedida', v: 60 });
       if ((c.fansBy[lastS.club] || 0) >= 70) bonus.push({ txt: 'Estádio lotado na despedida no ' + D.CLUB_BY_ID[lastS.club].name, v: 40 });
     }
-    const score = Math.round(T.goals + T.assists * 0.7 + titles * 12 + T.cont * 10 + T.ballon * 120 + (T.scorer + T.young + T.team) * 8 + c.peak * 2 + bonus.reduce((a, b) => a + b.v, 0));
+    const score = Math.round(T.goals + T.assists * 0.7 + titles * 12 + T.cont * 10 + T.ballon * 120 + (T.scorer + T.young + T.team) * 8 + c.peak * 2 + (T.wc || 0) * 150 + (T.wcGoals || 0) * 3 + bonus.reduce((a, b) => a + b.v, 0));
     const byClub = {};
     c.spells = c.spells.filter(s => s.seasons);
     c.spells.forEach(s => {
@@ -953,6 +1073,7 @@
     const nClubs = Object.keys(byClub).length;
     let verdict;
     if (T.ballon >= 3) verdict = 'Um dos maiores da história';
+    else if (T.wc >= 1) verdict = T.wc > 1 ? 'Multicampeão do mundo' : 'Campeão do mundo';
     else if (T.ballon >= 1) verdict = 'Melhor do mundo';
     else if (T.goals >= 450) verdict = 'Artilheiro histórico';
     else if (idol && idol[1].seasons >= 8 && (c.fansBy[idol[0]] || 0) >= 75) verdict = 'Ídolo eterno do ' + D.CLUB_BY_ID[idol[0]].name;

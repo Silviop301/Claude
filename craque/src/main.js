@@ -1,6 +1,7 @@
 // Telas e fluxo do CRAQUE: criar → base → [característica → evento → temporada → janela] → aposentadoria.
 (function () {
   const D = window.CRAQUE_DATA, S = window.CRAQUE_SIM;
+  const sfx = n => { if (window.CRAQUE_SFX) window.CRAQUE_SFX.play(n); };
   const $ = id => document.getElementById(id);
   const screen = $('screen');
   const SAVE = 'craque-v5', HALL = 'craque-hall-v1';
@@ -39,7 +40,9 @@
     b.hidden = false;
     requestAnimationFrame(() => document.documentElement.style.setProperty('--bar-h', b.offsetHeight + 'px'));
     const cl = club(c.club), lg = league(c.club);
-    $('bar-name').textContent = c.name;
+    // Nome + botão pequeno de som (dá para silenciar no meio da partida)
+    $('bar-name').innerHTML = esc(c.name) + ' <button class="snd-mini" id="b-snd" aria-label="Som">' + (window.CRAQUE_SFX && !CRAQUE_SFX.on ? '🔇' : '🔊') + '</button>';
+    $('b-snd').onclick = e => { e.stopPropagation(); if (window.CRAQUE_SFX) CRAQUE_SFX.toggle(); $('b-snd').textContent = CRAQUE_SFX.on ? '🔊' : '🔇'; };
     $('bar-sub').innerHTML = crest(cl.id, 'xs') + esc(cl.name) + ' · ' + c.age + ' anos';
     $('bar-rel').innerHTML = meter('👔 Técnico', c.rel.coach) + meter('📣 Torcida', c.rel.fans);
     const T = c.totals;
@@ -62,6 +65,7 @@
       '<p class="lead">Crie um garoto de 16 anos, escolha propostas, monte o estilo dele e descubra se ele vira lenda.</p>' +
       (saved && saved.c ? '<button class="btn" id="b-cont">Continuar carreira de ' + esc(saved.c.name) + '</button>' : '') +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
+      '<button class="btn ghost small-btn" id="b-sound"></button>' +
       (hall.length ? '<div class="eyebrow" style="margin-top:8px">Hall da Fama</div><div class="hall">' +
         hall.map(h => '<div><b>' + h.grade + '</b><span>' + esc(h.name) + ' · ' + esc(h.verdict) + '<br><small>' + h.goals + ' gols · ' + h.assists + ' assist. · ' + h.titles + ' taças' + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '') + '</small></span><span class="muted">' + h.score + '</span></div>').join('') + '</div>' : '')
     );
@@ -74,6 +78,9 @@
       resume(saved.step);
     };
     $('b-new').onclick = create;
+    const snd = $('b-sound');
+    const sndTxt = () => { snd.textContent = window.CRAQUE_SFX && CRAQUE_SFX.on ? '🔊 Som ligado' : '🔇 Som desligado'; };
+    if (snd) { sndTxt(); snd.onclick = () => { if (window.CRAQUE_SFX) CRAQUE_SFX.toggle(); sndTxt(); }; }
     if (window.CRAQUE_BALL) window.CRAQUE_BALL.mount($('ball3d'));
   }
 
@@ -81,6 +88,7 @@
     step = st;
     bar();
     if (!c.club) return academy();
+    if (st === 'wc') return wcIntro(); // Copa antes de tudo (pode ser a última dança)
     if (S.mustRetire(c)) return finale();
     if (st === 'offers') return S.windowOpen(c) ? windowOffers() : preseason();
     if (st === 'event') return eventScreen();
@@ -244,6 +252,24 @@
     };
     requestAnimationFrame(tick);
   }
+  function tweenCard(from, dur) {
+    const E = S.eff(c), o1 = S.ovr(c), t0 = performance.now();
+    const mc = $('mcard'); mc.classList.remove('pop'); void mc.offsetWidth; mc.classList.add('pop');
+    D.ATTRS.forEach(a => {
+      const el = screen.querySelector('.mc-at[data-k="' + a + '"]');
+      el.classList.toggle('up', E[a] > from.attrs[a]);
+      el.querySelector('i').textContent = E[a] > from.attrs[a] ? '+' + (E[a] - from.attrs[a]) : '';
+    });
+    const tick = now => {
+      const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      D.ATTRS.forEach(a => { screen.querySelector('.mc-at[data-k="' + a + '"] b').textContent = Math.round(from.attrs[a] + (E[a] - from.attrs[a]) * e); });
+      const ov = Math.round(from.ovr + (o1 - from.ovr) * e);
+      $('mc-ovr').textContent = ov;
+      setTier(ov);
+      if (k < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
   // Escolha em duas etapas: toca para ver na carta, confirma para aplicar
   function pickable(sel, previewOf, apply) {
     let cur = null;
@@ -266,6 +292,13 @@
     };
   }
 
+  // Esta temporada termina em ano de Copa? Mostra a nota que a seleção pede
+  function wcHint() {
+    if ((S.YEAR0 + c.season + 1) % 4 !== 2 || c.age + 1 < 18) return '';
+    const n = D.NATION_BY_NAME[c.country], cut = S.wcCut(n), o = S.ovr(c);
+    return '<p class="wc-hint">' + n.flag + ' Ano de Copa: a seleção convoca com nota <b>' + cut + '</b>' + (o >= cut ? ' · você já está dentro' : ' · faltam ' + (cut - o)) + '</p>';
+  }
+
   let preCh = null;
   function preseason() {
     step = 'preseason';
@@ -277,7 +310,7 @@
     const label = { new: 'NOVA', up: 'EVOLUIR', swap: 'TROCAR' };
     render(
       '<div class="eyebrow">Pré-temporada · ' + year() + (c.farewell ? ' · temporada de despedida' : '') + '</div>' +
-      '<h2>' + (c.traits.length >= S.MAX_SLOTS ? 'Evolua ou troque uma característica' : 'Escolha uma característica') + '</h2>' + miniCard() + traitsHtml() +
+      '<h2>' + (c.traits.length >= S.MAX_SLOTS ? 'Evolua ou troque uma característica' : 'Escolha uma característica') + '</h2>' + wcHint() + miniCard() + traitsHtml() +
       '<div class="choices">' + ch.map((x, i) =>
         '<button class="choice' + (x.completes ? ' combo' : '') + '" data-i="' + i + '" data-name="' + esc(x.trait.name) + '"' + (x.type === 'swap' ? ' data-ok="Escolher o que sai"' : '') + '><span class="ic">' + x.trait.icon + '</span>' +
         '<b>' + x.trait.name + (x.type === 'up' ? ' → Nv ' + x.lv : '') + ' <span class="tag ' + (x.type === 'up' ? 'green' : x.type === 'swap' ? 'red' : 'blue') + '">' + label[x.type] + '</span></b>' +
@@ -293,6 +326,7 @@
       const x = ch[+b.dataset.i];
       if (x.type === 'swap') return { go: () => chooseSwap(x) };
       preCh = null;
+      sfx('levelup');
       if (x.type === 'up') { S.upgradeTrait(c, x.trait.id); return invest; }
       const syn = S.addTrait(c, x.trait.id);
       return () => afterTrait(syn);
@@ -312,6 +346,7 @@
     );
     pickable('[data-r]', b => S.preview(c, { add: x.trait.id, remove: c.traits[+b.dataset.r] }), b => {
       preCh = null;
+      sfx('levelup');
       const syn = S.addTrait(c, x.trait.id, c.traits[+b.dataset.r]);
       return () => afterTrait(syn);
     });
@@ -328,27 +363,44 @@
 
   // ---------- investimentos (dinheiro vira pontos na carta) ----------
   function invest() {
-    const price = S.investPrice(c);
-    if (c.money < price) return eventOrSeason();
+    if (c.money < S.investPrice(c)) return eventOrSeason();
     step = 'invest';
     save();
+    // Um toque = uma compra. A mini carta fica presa no topo e os números sobem na hora;
+    // a tela não é redesenhada (nada de voltar ao topo a cada compra).
     render(
       '<div class="eyebrow">Pré-temporada · Investimentos</div><h2>Invista na sua carreira</h2>' +
-      '<div class="wallet"><span>Saldo <b>R$ ' + money(c.money) + '</b></span><span>Próxima compra <b>R$ ' + money(price) + '</b></span></div>' +
+      '<div class="wallet"><span>Saldo <b id="w-money"></b></span><span>Cada compra <b id="w-price"></b></span></div>' +
       miniCard() +
-      '<div class="choices inv-grid">' + D.INVEST.map(t => {
-        const n = c.inv[t.id] || 0, max = S.investMax(t.id), ok = S.canInvest(c, t.id);
-        return '<button class="choice inv" data-v="' + t.id + '" data-ok="Comprar por R$ ' + money(price) + '"' + (ok ? '' : ' disabled') + '><span class="ic">' + t.icon + '</span>' +
-          '<b>' + t.name + '</b><span class="pips">' + '●'.repeat(n) + '○'.repeat(max - n) + '</span>' +
-          '<span class="d">' + (n >= max ? 'No máximo' : t.attr ? attrTxt(t.attr) : t.perk) + '</span></button>';
-      }).join('') +
-      '</div><p class="muted small">Cada compra deixa a próxima mais cara. O que você não gastar fica como patrimônio no fim da carreira.</p>' +
-      '<button class="btn" id="b-ok" disabled>Toque num investimento para ver na carta</button><button class="btn ghost" id="b-skip">Guardar o dinheiro e seguir</button>'
+      '<p class="muted small inv-tip">Toque para comprar. O preço sobe a cada compra; o que sobrar vira patrimônio.</p>' +
+      '<div class="choices inv-grid">' + D.INVEST.map(t => '<button class="choice inv" data-v="' + t.id + '"><span class="ic">' + t.icon + '</span>' +
+        '<b>' + t.name + '</b><span class="pips"></span><span class="d">' + (t.attr ? attrTxt(t.attr) : t.perk) + '</span><span class="price"></span></button>').join('') +
+      '</div><button class="btn inv-go" id="b-skip">Seguir para a temporada</button>'
     );
+    const refresh = () => {
+      const price = S.investPrice(c);
+      $('w-money').textContent = 'R$ ' + money(c.money);
+      $('w-price').textContent = 'R$ ' + money(price);
+      screen.querySelectorAll('[data-v]').forEach(b => {
+        const id = b.dataset.v, n = c.inv[id] || 0, max = S.investMax(id), full = n >= max;
+        b.disabled = !S.canInvest(c, id);
+        b.querySelector('.pips').textContent = '●'.repeat(n) + '○'.repeat(max - n);
+        b.querySelector('.price').textContent = full ? 'No máximo' : c.money < price ? 'Falta R$ ' + money(price - c.money) : 'R$ ' + money(price);
+        b.classList.toggle('full', full);
+      });
+    };
+    refresh();
     $('b-skip').onclick = eventOrSeason;
-    pickable('[data-v]', b => S.preview(c, { buy: b.dataset.v }), b => {
+    screen.querySelectorAll('[data-v]').forEach(b => b.onclick = () => {
+      if (!S.canInvest(c, b.dataset.v)) return;
+      const from = { attrs: S.eff(c), ovr: S.ovr(c) };
       S.invest(c, b.dataset.v);
-      return invest;
+      save();
+      sfx('coin');
+      bar();
+      tweenCard(from, 450);
+      b.classList.remove('bought'); void b.offsetWidth; b.classList.add('bought');
+      refresh();
     });
   }
 
@@ -421,6 +473,7 @@
     $('b-kick').onclick = () => {
       m.started = true; save();
       render('<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div><div id="kick"></div>');
+      sfx('whistle');
       window.CRAQUE_KICK($('kick'), { c, moment: m, onDone: (ok, why) => momentEnd(m, ok, T, why) });
     };
     $('b-auto').onclick = () => {
@@ -454,7 +507,9 @@
   // ---------- temporada ----------
   function season() {
     const res = S.playSeason(c);
-    step = S.windowOpen(c) ? 'offers' : 'preseason';
+    sfx('whistle');
+    // Em ano de Copa com convocação, fechar o jogo no resumo não pula a Copa
+    step = S.isWcYear(c) && c.wcYearDone !== year() && S.wcCall(c).called ? 'wc' : S.windowOpen(c) ? 'offers' : 'preseason';
     save();
     const cl = club(res.club);
     render(
@@ -491,7 +546,7 @@
   let lastPaper = -1;
   function lede(res, cl) {
     const tb = res.table;
-    const pos = tb.pos === 1 ? 'terminou campeão da ' + tb.league : 'terminou em ' + tb.pos + 'º lugar na ' + tb.league;
+    const pos = tb.pos === 1 ? 'terminou campeão ' + D.da(tb.league) : 'terminou em ' + tb.pos + 'º lugar ' + D.na(tb.league);
     const perf = !res.games ? c.name + ' quase não entrou em campo, e o ' + cl.name + ' ' + pos + '.'
       : res.rating >= 7.5 ? c.name + ' foi o nome do ' + cl.name + ', que ' + pos + '.'
       : res.rating >= 6.8 ? 'Com atuações seguras de ' + c.name + ', o ' + cl.name + ' ' + pos + '.'
@@ -515,6 +570,7 @@
       rest.map(h => '<p class="pp-sub">' + esc(h) + '</p>').join('') + '</div></div>' +
       '<div class="pp-tap">Toque para fechar</div></div>';
     document.body.appendChild(wrap);
+    sfx('paper');
     const close = e => {
       if (e) e.stopPropagation();
       wrap.classList.add('out');
@@ -541,6 +597,9 @@
       const el = items[i++];
       el.classList.add('in');
       el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      if (el.classList.contains('title-won') || el.classList.contains('ballon')) sfx('fanfare');
+      else if (el.classList.contains('move-line') && el.classList.contains('up')) sfx('levelup');
+      else if (el.classList.contains('wc-call')) sfx('levelup');
       if (el.classList.contains('news') && !paper) {
         paper = true;
         screen.onclick = null;
@@ -556,16 +615,23 @@
     const dOvr = res.ovr1 - res.ovr0;
     const fin = S.mustRetire(c);
     const tb = res.table;
-    const tableTxt = !res.games ? '' : tb.pos === 1 ? '🥇 Campeão da ' + tb.league + ' com ' + tb.pts + ' pontos'
-      : tb.pos + 'º lugar na ' + tb.league + ' · ' + tb.pts + ' pts, a ' + tb.gap + ' do líder';
-    const moveTxt = !res.move ? '' : res.move.dir === 'up' ? '⬆️ Acesso para a ' + res.move.toName + '!' : '⬇️ Rebaixado para a ' + res.move.toName;
+    const tableTxt = !res.games ? '' : tb.pos === 1 ? '🥇 Campeão ' + D.da(tb.league) + ' com ' + tb.pts + ' pontos'
+      : tb.pos + 'º lugar ' + D.na(tb.league) + ' · ' + tb.pts + ' pts, a ' + tb.gap + ' do líder';
+    const moveTxt = !res.move ? '' : res.move.dir === 'up' ? '⬆️ Acesso ' + D.paraA(res.move.toName) + '!' : '⬇️ Rebaixado ' + D.paraA(res.move.toName);
     const why = res.why.length ? '<ul class="why">' + res.why.map(w => '<li><span>' + esc(w.txt) + '</span><b class="' + (w.pot ? 'pot' : w.v >= 0 ? 'up' : 'down') + '">' + (w.pot ? 'teto ↑' : (w.v >= 0 ? '+' : '') + w.v) + '</b></li>').join('') + '</ul>' : '';
     const open = S.windowOpen(c);
     const contractTxt = c.contract > 0 ? 'Contrato: mais ' + c.contract + (c.contract > 1 ? ' temporadas' : ' temporada') + ' no ' + esc(club(c.club).name) : 'Seu contrato acabou: hora de decidir o futuro';
+    // Copa do Mundo: convocação logo depois da temporada, em ano de Copa
+    const wcNow = S.isWcYear(c) && c.wcYearDone !== year();
+    const call = wcNow ? S.wcCall(c) : null;
+    let wcBlock = '';
+    if (call && call.called) wcBlock = '<div class="wc-call rv"><span class="wc-flag">' + call.nation.flag + '</span><div><b>Convocado para a Copa do Mundo ' + year() + '!</b><span>' + (call.starter ? 'Titular da seleção' : 'Vai como reserva (nota perto do corte de ' + call.cut + ')') + '</span></div></div>';
+    else if (call && c.age >= 18) { wcBlock = '<p class="wc-miss rv">🌍 Fora da Copa de ' + year() + ': a seleção pedia nota ' + call.cut + ', você tem ' + S.ovr(c) + '.</p>'; c.wcYearDone = year(); save(); }
+    const goWc = call && call.called;
     let actions;
-    if (fin) actions = '<p class="lead">' + (res.farewell ? 'Fim da temporada de despedida. Hora de pendurar as chuteiras.' : 'Aos ' + c.age + ' anos, o corpo pediu para parar.') + '</p><button class="btn" id="b-next">Ver sua carreira</button>';
+    if (fin) actions = '<p class="lead">' + (res.farewell ? 'Fim da temporada de despedida. Hora de pendurar as chuteiras.' : 'Aos ' + c.age + ' anos, o corpo pediu para parar.') + '</p><button class="btn" id="b-next">' + (goWc ? 'Última dança: Copa do Mundo ' + year() + ' 🌍' : 'Ver sua carreira') + '</button>';
     else {
-      actions = '<p class="contract">' + contractTxt + '</p><button class="btn" id="b-next">' + (open ? 'Janela de transferências' : 'Próxima temporada') + '</button>';
+      actions = '<p class="contract">' + contractTxt + '</p><button class="btn" id="b-next">' + (goWc ? 'Jogar a Copa do Mundo ' + year() + ' 🌍' : open ? 'Janela de transferências' : 'Próxima temporada') + '</button>';
       if (S.canAnnounce(c)) actions += '<button class="btn ghost" id="b-farewell">Anunciar a última temporada<small>Torcida +10 e mais minutos · parar em alta rende pontos extras</small></button>';
       if (S.canRetire(c)) actions += '<button class="btn ghost" id="b-stop">Parar agora</button>';
     }
@@ -577,12 +643,108 @@
       '<div class="news rv"><div class="np">📰 Nos jornais</div>' + res.headlines.map(h => '<p>' + esc(h) + '</p>').join('') + '</div>' +
       '<div class="card why-card rv"><p class="delta-in ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' + why + '</div>' +
       '<p class="rel-delta rv">👔 Técnico ' + res.coach0 + ' → ' + res.coach1 + ' · 📣 Torcida ' + res.fans0 + ' → ' + res.fans1 + ' (' + S.relLabel(res.fans1) + ')</p>' +
-      '<div class="rv">' + actions + '</div>';
+      wcBlock + '<div class="rv">' + actions + '</div>';
     bar();
     reveal(skipNow, res);
-    $('b-next').onclick = fin ? finale : open ? windowOffers : preseason;
-    if ($('b-farewell')) $('b-farewell').onclick = () => { S.announce(c); save(); bar(); preseason(); };
+    $('b-next').onclick = goWc ? wcIntro : afterSeason;
+    if ($('b-farewell')) $('b-farewell').onclick = () => { S.announce(c); save(); bar(); goWc ? wcIntro() : preseason(); };
     if ($('b-stop')) $('b-stop').onclick = finale;
+  }
+
+  // Para onde ir depois da temporada (e da Copa, se houver)
+  function afterSeason() {
+    if (S.mustRetire(c)) return finale();
+    return S.windowOpen(c) ? windowOffers() : preseason();
+  }
+
+  // ---------- Copa do Mundo ----------
+  // "do Brasil", "da Argentina", "de Portugal"
+  const ofCountry = n => ({ Brasil: 'do', Uruguai: 'do', Portugal: 'de' }[n] || 'da') + ' ' + n;
+  function wcIntro() {
+    step = 'wc';
+    if (c.wcRun && c.wcRun.year === year()) { save(); return wcPlay(); }
+    const call = S.wcCall(c);
+    save();
+    render(
+      '<div class="eyebrow">Copa do Mundo ' + year() + '</div>' +
+      '<div class="wc-hero"><span class="wc-bigflag">' + call.nation.flag + '</span><h2>Convocado pela seleção ' + ofCountry(c.country) + '!</h2>' +
+      '<p class="lead">' + (call.starter ? 'Você chega como titular. O país inteiro está de olho.' : 'Você vai como reserva: entra no segundo tempo e pode decidir.') + '</p></div>' +
+      '<div class="card wc-rules"><p>Fase de grupos com 3 jogos, depois mata-mata até a final.</p><p>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</p></div>' +
+      '<button class="btn" id="b-wc">Começar a Copa</button>'
+    );
+    $('b-wc').onclick = () => { S.wcStart(c); save(); wcPlay(); };
+  }
+
+  function wcRow(g) {
+    const res = g.gf > g.ga ? 'w' : g.gf < g.ga ? 'l' : 'd';
+    const pen = g.pens ? (g.pensWon === undefined ? '<span class="tag gold">Pênaltis!</span>' : g.pensWon ? '<span class="tag green">Venceu nos pênaltis</span>' : '<span class="tag red">Perdeu nos pênaltis</span>') : '';
+    const me = (g.g ? '⚽'.repeat(Math.min(g.g, 4)) + (g.g > 4 ? '+' : '') + ' ' : '') + (g.a ? '👟'.repeat(Math.min(g.a, 3)) : '');
+    return '<div class="wc-game ' + (g.pens && g.pensWon !== undefined ? (g.pensWon ? 'w' : 'l') : res) + '"><span class="st">' + esc(g.stage) + '</span>' +
+      '<div class="line"><span class="us">' + D.NATION_BY_NAME[c.country].flag + '</span><b>' + g.gf + ' × ' + g.ga + '</b><span class="them">' + g.flag + ' ' + esc(g.opp) + '</span></div>' +
+      (me ? '<span class="me">' + me + '</span>' : '') + pen +
+      (g.groupEnd ? '<div class="grp ' + (g.groupEnd.pass ? 'ok' : 'ko') + '">' + (g.groupEnd.pass ? 'Classificado com ' + g.groupEnd.pts + ' pontos' : 'Eliminado na fase de grupos (' + g.groupEnd.pts + ' pts)') + '</div>' : '') + '</div>';
+  }
+
+  function wcPlay() {
+    step = 'wc';
+    const run = c.wcRun;
+    render('<div class="eyebrow">Copa do Mundo ' + run.year + ' · ' + D.NATION_BY_NAME[c.country].flag + ' ' + esc(c.country) + '</div>' +
+      '<div class="wc-list" id="wc-list">' + run.games.map(wcRow).join('') + '</div><div id="wc-after"></div><p class="skip-hint" id="wc-hint">Toque para acelerar</p>');
+    let fast = false, timer = null;
+    setTimeout(() => { screen.onclick = () => { fast = true; }; }, 60);
+    const list = $('wc-list');
+    const next = () => {
+      if (!list.isConnected) return;
+      // Pênaltis pendentes (inclusive ao voltar para o jogo)
+      if (run.pending) return wcPens();
+      const g = S.wcNext(c);
+      save();
+      if (!g) return wcFinal();
+      const div = document.createElement('div');
+      div.innerHTML = wcRow(g);
+      const el = div.firstChild;
+      el.classList.add('enter');
+      list.appendChild(el);
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      sfx(g.gf > g.ga ? 'goal' : g.gf < g.ga ? 'miss' : 'whistle');
+      timer = setTimeout(next, fast ? 250 : g.pens ? 1100 : 1300);
+    };
+    timer = setTimeout(next, 500);
+  }
+
+  function wcPens() {
+    screen.onclick = null;
+    const run = c.wcRun, g = run.games[run.games.length - 1];
+    // Fechou o jogo no meio da cobrança: a chance decide
+    if (run.pensStarted) { S.wcPensAuto(c); run.pensStarted = false; save(); return wcPlay(); }
+    const k = S.kickSetup(c, 'cup');
+    $('wc-after').innerHTML = '<div class="card event-card wc-pens"><h2>Pênaltis!</h2><p style="margin:0">' + esc(g.stage) + ' contra ' + g.flag + ' ' + esc(g.opp) + ' terminou ' + g.gf + ' × ' + g.ga + '. A disputa está empatada e você bate o último.</p>' +
+      '<p class="stakes">Converteu: ' + (run.stage === 6 ? 'campeão do mundo' : 'a seleção avança') + ' · Errou: eliminado</p></div>' +
+      '<button class="btn" id="b-kick">Bater o pênalti</button><button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>';
+    $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    $('b-kick').onclick = () => {
+      run.pensStarted = true; save();
+      render('<div class="eyebrow">Copa do Mundo ' + run.year + ' · Pênaltis</div><div id="kick"></div>');
+      window.CRAQUE_KICK($('kick'), { c, moment: { type: 'cup' }, onDone: ok => { run.pensStarted = false; S.wcPens(c, ok); save(); wcPlay(); } });
+    };
+    $('b-auto').onclick = () => { S.wcPensAuto(c); save(); wcPlay(); };
+  }
+
+  function wcFinal() {
+    screen.onclick = null;
+    const run = c.wcRun;
+    c.wcYearDone = run.year;
+    save();
+    bar();
+    const h = $('wc-hint'); if (h) h.remove();
+    $('wc-after').innerHTML = (run.champion
+      ? '<div class="wc-champ">' + trophy('wc', 96) + '<b>CAMPEÃO DO MUNDO!</b><span>' + D.NATION_BY_NAME[c.country].flag + ' ' + esc(c.country) + ' · ' + run.year + '</span></div>'
+      : '<div class="wc-out">' + (run.reached === 'Final' ? 'Vice-campeão do mundo' : 'Eliminado: ' + run.reached.toLowerCase()) + '</div>') +
+      '<p class="wc-stats">Na Copa: ' + run.games.length + ' jogos · ' + run.g + (run.g === 1 ? ' gol' : ' gols') + ' · ' + run.a + (run.a === 1 ? ' assistência' : ' assistências') + '</p>' +
+      '<button class="btn" id="b-next">' + (S.mustRetire(c) ? 'Ver sua carreira' : 'Seguir a carreira') + '</button>';
+    if (run.champion) sfx('fanfare');
+    $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    $('b-next').onclick = afterSeason;
   }
 
   // ---------- fim ----------
@@ -597,25 +759,30 @@
     store(HALL, hall.slice(0, 10));
     const cty = D.COUNTRIES.find(x => x.id === c.country);
     const cardData = {
-      name: c.name, number: c.number, pos: c.pos, peak: c.peak, attrs: c.peakAttrs || c.attrs, flag: cty.flag,
+      name: c.name, number: c.number, wc: c.totals.wc || 0, pos: c.pos, peak: c.peak, attrs: c.peakAttrs || c.attrs, flag: cty.flag,
       crest: 'badges/' + f.mainClub + '.png', grade: f.grade, verdict: f.verdict,
       goals: T.goals, assists: T.assists, titles: f.titles, ballon: T.ballon,
       traits: c.traits.map(id => ({ icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(c, id) })),
     };
     const shareName = c.name;
+    // Escudo da carta: começa no clube principal e dá para trocar por qualquer clube da carreira
+    const clubsPlayed = [...new Set(c.spells.filter(sp => sp.seasons).map(sp => sp.club))];
+    if (!clubsPlayed.includes(f.mainClub)) clubsPlayed.unshift(f.mainClub);
     render(
       '<div class="eyebrow">Fim de carreira · ' + (YEAR0 + c.season) + '</div>' +
       '<div class="fut"><canvas id="fut" aria-label="Card do jogador"></canvas></div>' +
+      (clubsPlayed.length > 1 ? '<div class="crest-pick-t">Escudo da carta</div><div class="crest-pick" id="crest-pick">' + clubsPlayed.map(id => '<button data-club="' + id + '"' + (id === f.mainClub ? ' class="on"' : '') + ' aria-label="' + esc(club(id).name) + '">' + crest(id) + '<span>' + esc(club(id).name) + '</span></button>').join('') + '</div>' : '') +
       '<button class="btn" id="b-share">Compartilhar card</button>' +
       '<div class="final">' +
       '<div class="headrow"><div class="grade ' + f.grade + '">' + f.grade + '</div><div class="who"><b>' + esc(c.name) + '</b><span>' + cty.flag + ' ' + D.POS[c.pos].name + ' · 16 a ' + c.age + ' anos · pico ' + c.peak + '</span></div></div>' +
       '<div class="verdict">' + esc(f.verdict) + '</div>' +
       '<div class="stats"><div><b>' + T.games + '</b><span>Jogos</span></div><div><b>' + T.goals + '</b><span>Gols</span></div><div><b>' + T.assists + '</b><span>Assistências</span></div>' +
       '<div><b>' + f.titles + '</b><span>Títulos</span></div><div><b>' + T.ballon + '</b><span>Bolas de Ouro</span></div><div><b>' + f.nClubs + '</b><span>Clubes</span></div></div>' +
+      (T.wcApps ? '<p class="muted small patr">🌍 Copas do Mundo: ' + T.wcApps + (T.wcApps > 1 ? ' disputadas' : ' disputada') + ' · ' + (T.wc || 0) + (T.wc === 1 ? ' título' : ' títulos') + ' · ' + (T.wcGoals || 0) + ' gols</p>' : '') +
       '<p class="muted small patr">💰 Patrimônio R$ ' + money(c.money) + (c.buys ? ' · investiu R$ ' + money(c.spent) + ' em ' + c.buys + (c.buys > 1 ? ' compras' : ' compra') : '') + '</p>' +
       '<div class="timeline">' + c.spells.map(s => '<div><span>' + String(YEAR0 + s.from - 16).slice(2) + '–' + String(YEAR0 + s.to - 16 + 1).slice(2) + '</span><span>' + crest(s.club, 'xs') + esc(club(s.club).name) + '</span><span>' + s.goals + 'G ' + s.assists + 'A' + (s.titles ? ' · ' + s.titles + '🏆' : '') + '</span></div>').join('') + '</div>' +
       (Object.keys(c.trophies || {}).length ? '<div class="room-title">Sala de troféus</div><div class="room">' +
-        Object.entries(c.trophies).sort((a, b) => ['ballon', 'ucl', 'lib', 'league', 'cup'].indexOf(a[1].type) - ['ballon', 'ucl', 'lib', 'league', 'cup'].indexOf(b[1].type))
+        Object.entries(c.trophies).sort((a, b) => ['wc', 'ballon', 'ucl', 'lib', 'league', 'cup'].indexOf(a[1].type) - ['wc', 'ballon', 'ucl', 'lib', 'league', 'cup'].indexOf(b[1].type))
           .map(([name, t]) => '<div>' + trophy(t.type, 44) + '<b>' + t.n + 'x</b><span>' + esc(name) + '</span></div>').join('') + '</div>' : '') +
       (f.bonus.length ? '<div class="room-title">Despedida</div><ul class="why">' + f.bonus.map(b => '<li><span>' + esc(b.txt) + '</span><b class="up">+' + b.v + '</b></li>').join('') + '</ul>' : '') +
       '<div class="score">' + f.score + ' pontos' + (rank === 1 ? ' · NOVO RECORDE!' : ' · #' + rank + ' no seu Hall da Fama') + '</div>' +
@@ -626,6 +793,12 @@
     $('bar').hidden = true;
     const cv = $('fut');
     window.CRAQUE_CARD(cv, cardData);
+    screen.querySelectorAll('[data-club]').forEach(b => b.onclick = () => {
+      screen.querySelectorAll('[data-club]').forEach(x => x.classList.toggle('on', x === b));
+      cardData.crest = 'badges/' + b.dataset.club + '.png';
+      window.CRAQUE_CARD(cv, cardData);
+      $('b-share').textContent = 'Compartilhar card';
+    });
     $('b-share').onclick = async () => {
       const r = await window.CRAQUE_SHARE(cv, shareName);
       if (r === 'download') $('b-share').textContent = 'Imagem salva';

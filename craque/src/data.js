@@ -78,6 +78,26 @@
     'ale-2': { up: 'ale', promo: 2 }, ale: { down: 'ale-2', releg: 2 },
     'fra-2': { up: 'fra', promo: 2 }, fra: { down: 'fra-2', releg: 2 },
   };
+  // Seleções da Copa do Mundo (força 70–89). As 11 primeiras são os países jogáveis.
+  D.NATIONS = [
+    ['Brasil', '🇧🇷', 88], ['Argentina', '🇦🇷', 88], ['Uruguai', '🇺🇾', 80], ['Colômbia', '🇨🇴', 79],
+    ['Portugal', '🇵🇹', 85], ['Espanha', '🇪🇸', 87], ['Inglaterra', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 86], ['Itália', '🇮🇹', 83],
+    ['Alemanha', '🇩🇪', 85], ['França', '🇫🇷', 89], ['Holanda', '🇳🇱', 83],
+    ['Bélgica', '🇧🇪', 82], ['Croácia', '🇭🇷', 81], ['Marrocos', '🇲🇦', 79], ['Suíça', '🇨🇭', 78], ['Dinamarca', '🇩🇰', 78],
+    ['Japão', '🇯🇵', 77], ['EUA', '🇺🇸', 77], ['México', '🇲🇽', 77], ['Equador', '🇪🇨', 76], ['Senegal', '🇸🇳', 76],
+    ['Sérvia', '🇷🇸', 76], ['Polônia', '🇵🇱', 76], ['Coreia do Sul', '🇰🇷', 75], ['Nigéria', '🇳🇬', 74],
+    ['Austrália', '🇦🇺', 72], ['Canadá', '🇨🇦', 72], ['Camarões', '🇨🇲', 72], ['Gana', '🇬🇭', 72], ['Irã', '🇮🇷', 72],
+    ['Tunísia', '🇹🇳', 71], ['Arábia Saudita', '🇸🇦', 70],
+  ].map(([name, flag, str]) => ({ name, flag, str }));
+  D.NATION_BY_NAME = {};
+  D.NATIONS.forEach(n => { D.NATION_BY_NAME[n.name] = n; });
+
+  // Artigos: "o Brasileirão", "a Premier League"
+  const MASC = ['Brasileirão', 'Championship'];
+  D.da = n => (MASC.includes(n) ? 'do ' : 'da ') + n;
+  D.na = n => (MASC.includes(n) ? 'no ' : 'na ') + n;
+  D.paraA = n => (MASC.includes(n) ? 'para o ' : 'para a ') + n;
+
   D.countryOf = club => D.LEAGUE_BY_ID[club.league].country;
 
   D.FIRST_NAMES = ['Gabriel', 'Lucas', 'Matheus', 'Rafael', 'Pedro', 'Vinícius', 'Thiago', 'Caio', 'Diego', 'Bruno', 'Igor', 'Enzo', 'Davi', 'Kauã', 'Renan', 'Wesley'];
