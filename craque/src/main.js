@@ -56,7 +56,7 @@
     const saved = load(SAVE);
     const hall = load(HALL) || [];
     render(
-      '<div class="eyebrow">Protótipo 3</div><h1>CRAQUE</h1>' +
+      '<div class="hero"><div class="ball3d" id="ball3d" aria-hidden="true"></div><div class="eyebrow">Protótipo 3</div><h1>CRAQUE</h1></div>' +
       '<p class="lead">Crie um garoto de 16 anos, escolha propostas, monte o estilo dele e descubra se ele vira lenda.</p>' +
       (saved && saved.c ? '<button class="btn" id="b-cont">Continuar carreira de ' + esc(saved.c.name) + '</button>' : '') +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
@@ -65,6 +65,7 @@
     );
     if ($('b-cont')) $('b-cont').onclick = () => { c = saved.c; resume(saved.step); };
     $('b-new').onclick = create;
+    if (window.CRAQUE_BALL) window.CRAQUE_BALL.mount($('ball3d'));
   }
 
   function resume(st) {
