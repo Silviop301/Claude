@@ -21,6 +21,9 @@
       playTime: 0,
       sound: true,
       buyMode: 1,
+      market: { v: 1.2 },
+      pos: null,
+      stats: { dicas: 0, golpes: 0, sharks: 0, holds: 0, moons: 0, dipProfit: 0 },
       created: now,
       lastTick: now,
     };
@@ -34,11 +37,14 @@
     out.owned = B.map((_, i) => Math.max(0, Math.floor(+owned[i] || 0)));
     ['money', 'lifetime', 'allTime'].forEach(k => { if (!isFinite(out[k]) || out[k] < 0) out[k] = 0; });
     if (![1, 10, 100, 'max'].includes(out.buyMode)) out.buyMode = 1;
+    out.stats = Object.assign(base.stats, s && s.stats);
+    if (out.pos && !(out.pos.amt > 0 && out.pos.p0 > 0)) out.pos = null;
     return out;
   };
 
+  // Bônus temporários (mercado, eventos, Modo Tubarão). Futuro: itens e prestígio.
   PS.globalMult = function () {
-    return 1; // futuros bônus: mercado, itens, prestígio
+    return PS.market ? PS.market.tempMult() : 1;
   };
 
   PS.mileMult = function (c) {
@@ -159,7 +165,9 @@
 
   PS.offlineGain = function (sec) {
     const eff = Math.min(sec, OFFLINE_CAP);
-    return { sec, eff, capped: sec > OFFLINE_CAP, gain: PS.pps() * eff };
+    // Offline não conta mercado nem bônus temporários: só a produção base.
+    const base = PS.pps() / PS.globalMult();
+    return { sec, eff, capped: sec > OFFLINE_CAP, gain: base * eff };
   };
   PS.OFFLINE_CAP = OFFLINE_CAP;
 })();

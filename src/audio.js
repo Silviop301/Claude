@@ -123,6 +123,41 @@
     A.tone(360, 0.3, { type: 'sine', vol: 0.18, slide: 0.65, attack: 0.03, at: 0.24 });
   };
 
+  A.notif = function () {
+    A.tone(1319, 0.08, { type: 'sine', vol: 0.2 });
+    A.tone(1760, 0.14, { type: 'sine', vol: 0.2, at: 0.1 });
+  };
+
+  // Trombone triste: "wah wah wah wahhh"
+  A.scam = function () {
+    [0, -1, -2].forEach((s, i) => A.tone(note(s - 5), 0.28, { type: 'sawtooth', vol: 0.07, at: i * 0.3, attack: 0.03 }));
+    A.tone(note(-8), 0.8, { type: 'sawtooth', vol: 0.07, at: 0.9, slide: 0.92, attack: 0.03 });
+  };
+
+  A.bull = function () {
+    A.tone(110, 0.5, { type: 'sawtooth', vol: 0.1, slide: 1.6 });
+    [0, 7, 12, 19].forEach((s, i) => A.tone(note(s), 0.14, { type: 'square', vol: 0.08, at: 0.25 + i * 0.08 }));
+  };
+
+  A.alarm = function () {
+    for (let i = 0; i < 3; i++) {
+      A.tone(880, 0.18, { type: 'square', vol: 0.07, at: i * 0.36, slide: 0.6 });
+      A.tone(660, 0.18, { type: 'square', vol: 0.07, at: i * 0.36 + 0.18, slide: 1.4 });
+    }
+  };
+
+  A.moon = function () {
+    A.noise(1.6, { freq: 1200, vol: 0.12 });
+    A.tone(120, 1.4, { type: 'sawtooth', vol: 0.08, slide: 8 });
+    [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => A.tone(note(s + 12), 0.2, { type: 'square', vol: 0.07, at: 0.9 + i * 0.07 }));
+  };
+
+  A.shark = function () {
+    A.tone(82, 0.3, { type: 'sawtooth', vol: 0.12 });
+    A.tone(87, 0.3, { type: 'sawtooth', vol: 0.12, at: 0.32 });
+    [0, 3, 7, 10, 12].forEach((s, i) => A.tone(note(s), 0.12, { type: 'square', vol: 0.08, at: 0.65 + i * 0.06 }));
+  };
+
   A.coins = function () {
     for (let i = 0; i < 8; i++) A.tone(PS.rand(1500, 2600), 0.05, { type: 'triangle', vol: 0.06, at: i * 0.06 });
   };

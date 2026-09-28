@@ -198,9 +198,9 @@ Recompensas: Grana, Cupons, dobrar coleta offline, chance de caixa no fim.
 
 ## 15. Fases de desenvolvimento
 
-1. **Núcleo idle:** pombo clicável, negócios, custos, marcos, números grandes, save/offline.
-2. **Juice + pombo animado:** partículas, números voadores, críticos, combo, sons, reações.
-3. **Mercado + eventos aleatórios** + Modo Tubarão.
+1. ✅ **Núcleo idle:** pombo clicável, negócios, custos, marcos, números grandes, save/offline.
+2. ✅ **Juice + pombo animado:** partículas, números voadores, críticos, combo, sons, reações.
+3. ✅ **Mercado + eventos aleatórios** + Modo Tubarão.
 4. **Loot:** ativos, visual do pombo, caixas com animação, pity, inventário, duplicatas.
 5. **Roda da Fortuna, missões diárias, login streak, conquistas.**
 6. **MBA do Pombo + álbum + craft.**

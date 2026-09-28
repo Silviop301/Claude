@@ -14,6 +14,49 @@
     const [tx, ty] = PS.ui.counterPos();
     for (let k = 0; k < n; k++) fx.homing(x, y, tx, ty, PS.ui.bumpCounter, k * 0.05);
   }
+  PS.coinsToCounter = coinsToCounter;
+
+  const NERVOUS = ['Calma, é só uma correção…', 'HODL! Não vendo nem a pau.', 'Tá tudo sob controle. Acho.', 'Isso é temporário. Né?'];
+
+  PS.onShark = function () {
+    fx.banner('MODO TUBARÃO!', 'produção x5 por 30s', '#40C8FF');
+    fx.flash('#9EEBFF', 0.6);
+    fx.shake(10);
+    fx.confetti(50);
+    PS.audio.shark();
+    PS.pombo.celebrate(1.6);
+    PS.pombo.say('Agora eu como os peixes grandes.', 2.8);
+    vibrate([20, 30, 20]);
+  };
+
+  PS.onSell = function (profit, ret, reason) {
+    const p = PS.pombo.screenPos();
+    const pct = Math.round((ret - 1) * 100);
+    if (profit >= 0) {
+      fx.banner(reason === 'top' ? 'VENDEU NO TOPO!' : 'POSIÇÃO FECHADA', '+' + fmt(profit) + ' (+' + pct + '%)', PS.C.green);
+      fx.confetti(reason === 'top' ? 60 : 25);
+      coinsToCounter(p.x, p.y, 10);
+      PS.audio.coins();
+      PS.pombo.setMood('stonks', 1.6);
+      PS.pombo.say('Comprei na baixa, vendi na alta. Gênio.', 2.8);
+    } else {
+      fx.banner('POSIÇÃO FECHADA', fmt(profit) + ' (' + pct + '%)', PS.C.red);
+      PS.audio.scam();
+      PS.pombo.setMood('notstonks', 2);
+      PS.pombo.say('O mercado não me entende.', 2.6);
+    }
+  };
+
+  PS.onMarketZone = function (zone) {
+    if (zone === 'high') {
+      PS.ui.toast('📈', 'Mercado em alta! Produção multiplicada');
+      PS.pombo.setMood('stonks', 1.4);
+      PS.audio.unlock();
+    } else if (zone === 'low') {
+      PS.ui.toast('📉', 'Mercado caindo! Hora de comprar na baixa?');
+      if (PS.pombo.mood !== 'sleep') PS.pombo.say(PS.pick(NERVOUS), 2.8);
+    }
+  };
 
   PS.tap = function (x, y) {
     PS.audio.init();
@@ -63,6 +106,8 @@
       vibrate([30, 40, 30]);
       coinsToCounter(x, y, 12);
     }
+    PS.market.sharkTap();
+    PS.events.onTap();
     PS.ui.combo(PS.combo);
     PS.ui.tapped();
   };
@@ -156,6 +201,7 @@
     PS.wipe();
     PS.S = PS.newState();
     PS.S.sound = PS.audio.on;
+    PS.market.init();
     PS.recalc();
     PS.ui.close();
     PS.ui.init();
@@ -181,6 +227,8 @@
     dt = Math.max(0, Math.min(dt, 10));
     const vdt = Math.min(dt, 0.1); // passo visual
 
+    PS.market.update(dt);
+    PS.events.update(dt);
     PS.recalc();
     if (PS.cachedPps > 0) PS.earn(PS.cachedPps * dt);
     S.playTime += dt;
@@ -205,7 +253,7 @@
     T.phrase -= dt;
     if (T.phrase <= 0) {
       T.phrase = PS.rand(18, 32);
-      if (PS.pombo.mood !== 'sleep' && S.taps > 0) PS.pombo.say(PS.pick(PS.COACH), 3.8);
+      if (PS.pombo.mood !== 'sleep' && S.taps > 0) PS.pombo.say(PS.pick(PS.pombo.nervous ? NERVOUS : PS.COACH), 3.8);
     }
 
     T.news -= dt;
@@ -225,6 +273,7 @@
 
     PS.pombo.update(vdt);
     PS.pombo.draw();
+    PS.market.draw(PS.pombo.t);
     fx.update(vdt);
     PS.ui.frame(vdt);
 
@@ -242,9 +291,28 @@
   function bindInput() {
     const stage = document.getElementById('stage-wrap');
     stage.addEventListener('pointerdown', e => {
+      if (e.target.closest('button')) return;
       e.preventDefault();
       PS.tap(e.clientX, e.clientY);
     });
+    document.getElementById('dica').addEventListener('click', e => {
+      const r = e.currentTarget.getBoundingClientRect();
+      PS.events.clickDica(r.left + r.width / 2, r.top + r.height / 2);
+    });
+    document.getElementById('dip').addEventListener('click', e => {
+      PS.audio.init();
+      const r = e.currentTarget.getBoundingClientRect();
+      const pos = PS.market.buyDip();
+      if (!pos) return;
+      PS.audio.buy();
+      fx.burst(r.left + r.width / 2, r.top, 12, { shape: 'bill', speed: 380 });
+      fx.text(r.left + r.width / 2, r.top - 20, '-' + fmt(pos.amt), { size: 26, color: PS.C.red });
+      PS.pombo.say('Comprei na baixa. Agora é esperar.', 2.6);
+      PS.ui.refresh();
+    });
+    const setW = () => stage.style.setProperty('--stage-w', stage.clientWidth + 'px');
+    window.addEventListener('resize', setW);
+    setW();
     stage.addEventListener('keydown', e => {
       if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) {
         e.preventDefault();
@@ -259,6 +327,7 @@
   function start(data) {
     PS.S = PS.normalize((data && data.state) || PS.load() || PS.newState());
     PS.audio.on = PS.S.sound;
+    PS.market.init();
     PS.recalc();
     PS.ui.init();
     if (PS.S.taps >= 3) document.getElementById('tap-hint').hidden = true;

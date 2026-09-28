@@ -78,6 +78,11 @@
     });
   };
 
+  // Foguete cruzando a tela (TO THE MOON)
+  fx.rocket = function () {
+    fx.spawn({ x: -40, y: H * 0.85, vx: W * 0.55, vy: -H * 0.5, g: 0, life: 2.4, size: 54, shape: 'emoji', str: '🚀', rot: 0 });
+  };
+
   fx.text = function (x, y, str, o = {}) {
     if (texts.length > 70) texts.shift();
     texts.push({
@@ -204,6 +209,13 @@
       ctx.globalAlpha = fade;
       if (p.shape === 'coin') drawCoin(p);
       else if (p.shape === 'bill') drawBill(p);
+      else if (p.shape === 'emoji') {
+        ctx.font = p.size + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(p.str, p.x, p.y);
+        if (Math.random() < 0.8) fx.spawn({ x: p.x - 20, y: p.y + 18, vx: -120 + Math.random() * 60, vy: 60 + Math.random() * 80, g: 0, life: 0.5, size: 6, shape: 'confetti', color: PS.pick([C.gold, C.red, '#FF9F1C']) });
+      }
       else drawConfetti(p);
     }
     ctx.globalAlpha = 1;

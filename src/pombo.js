@@ -118,17 +118,18 @@
 
     // Passeio pela praça
     const lim = W * 0.28;
+    P.nervous = PS.market.v < 0.8 && P.mood !== 'sleep';
     if (P.mood === 'idle') {
       P.nextWalk -= dt;
       if (P.nextWalk <= 0) {
         P.tx = PS.rand(-lim, lim);
-        P.nextWalk = 3 + Math.random() * 5;
+        P.nextWalk = P.nervous ? 0.8 + Math.random() : 3 + Math.random() * 5;
       }
     }
     P.tx = Math.max(-lim, Math.min(lim, P.tx));
     const d = P.tx - P.x;
     if (Math.abs(d) > 2 && P.mood !== 'sleep') {
-      P.x += Math.sign(d) * Math.min(Math.abs(d), 75 * dt);
+      P.x += Math.sign(d) * Math.min(Math.abs(d), (P.nervous ? 170 : 75) * dt);
       P.dir = Math.sign(d);
       P.walkT += dt;
       P.walking = true;
@@ -150,7 +151,7 @@
       if (P.zs[i].t > 2.4) P.zs.splice(i, 1);
     }
 
-    P.rays += dt * (0.12 + P.gold * 0.8);
+    P.rays += dt * (0.12 + P.gold * 0.8 + (PS.market.sharkOn > 0 ? 0.6 : 0));
     P.gold = Math.max(0, P.gold - dt * 0.6);
 
     if (P.bubbleT > 0) {
@@ -193,8 +194,21 @@
         ctx.fillStyle = 'rgba(255,201,40,' + (0.45 * P.gold).toFixed(3) + ')';
         ctx.fill();
       }
+      if (PS.market.sharkOn > 0) {
+        ctx.fillStyle = 'rgba(64,224,255,0.28)';
+        ctx.fill();
+      }
     }
     ctx.restore();
+
+    // Tom do mercado: verde na alta, vermelho na queda
+    const v = PS.market.v;
+    const tint = v >= 1.6 ? 'rgba(47,210,122,' + Math.min(0.3, (v - 1.6) * 0.25).toFixed(3) + ')'
+      : v < 0.9 ? 'rgba(255,77,109,' + Math.min(0.32, (0.9 - v) * 0.7).toFixed(3) + ')' : null;
+    if (tint) {
+      ctx.fillStyle = tint;
+      ctx.fillRect(0, 0, W, H);
+    }
 
     // Chão da praça: calçadão com ondas pretas e brancas
     const gy = P.gy;
@@ -253,6 +267,17 @@
       ctx.strokeStyle = C.ink;
       ctx.beginPath();
       ctx.arc(ex, ey - 2, 7, 0.15 * Math.PI, 0.85 * Math.PI);
+      ctx.stroke();
+      return;
+    }
+    if (P.mood === 'notstonks') {
+      ell(ex, ey, 10, 10, 0, '#fff', 3);
+      ell(ex + 1, ey + 3, 3, 3, 0, C.ink, 0);
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = C.ink;
+      ctx.beginPath();
+      ctx.moveTo(ex - 10, ey - 8);
+      ctx.lineTo(ex + 8, ey - 13);
       ctx.stroke();
       return;
     }
@@ -451,6 +476,43 @@
     ctx.stroke();
     ell(bx + 1, by - 6, 6.5, 3.8, 0, '#F3F0FF', 2.5);
 
+    // Barbatana do Modo Tubarão
+    if (PS.market.sharkOn > 0) {
+      ctx.save();
+      ctx.translate(hx - 8, hy - 22);
+      ctx.beginPath();
+      ctx.moveTo(-14, 4);
+      ctx.quadraticCurveTo(-10, -30, 14, -44);
+      ctx.quadraticCurveTo(8, -18, 16, 4);
+      ctx.closePath();
+      ctx.fillStyle = '#6F8FB8';
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = C.ink;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Suor de nervoso
+    if (P.nervous || P.mood === 'notstonks') {
+      const k = (P.t * 1.6) % 1;
+      [[-22, -8], [-14, -26]].forEach(([dx, dy], j) => {
+        const u = (k + j * 0.5) % 1;
+        ctx.globalAlpha = 1 - u;
+        ctx.beginPath();
+        const x = hx + dx - u * 6, y = hy + dy + u * 14;
+        ctx.moveTo(x, y - 7);
+        ctx.quadraticCurveTo(x + 6, y + 2, x, y + 4);
+        ctx.quadraticCurveTo(x - 6, y + 2, x, y - 7);
+        ctx.fillStyle = '#7FD3FF';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = C.ink;
+        ctx.stroke();
+      });
+      ctx.globalAlpha = 1;
+    }
+
     // Cartola
     if (st >= 4) {
       ctx.save();
@@ -463,6 +525,23 @@
       ctx.fillStyle = st >= 5 ? C.gold : C.red;
       ctx.fillRect(-17, -12, 34, 8);
       ell(0, 0, 28, 6.5, 0, C.ink, 0);
+      ctx.restore();
+    }
+
+    // Seta NOT STONKS
+    if (P.mood === 'notstonks') {
+      ctx.save();
+      ctx.translate(hx + 30, hy - 45);
+      ctx.scale(P.dir, 1);
+      const pts = [[-26, -14], [-10, 0], [0, -8], [22, 16]];
+      const path = () => { ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); };
+      ctx.lineWidth = 11; ctx.strokeStyle = C.ink; path(); ctx.stroke();
+      ctx.lineWidth = 6; ctx.strokeStyle = C.red; path(); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(28, 22); ctx.lineTo(12, 20); ctx.lineTo(26, 6);
+      ctx.closePath();
+      ctx.fillStyle = C.red; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = C.ink; ctx.stroke();
       ctx.restore();
     }
 
@@ -513,8 +592,8 @@
 
   P.draw = function () {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    P.scale = Math.max(0.5, Math.min(H * 0.52 / 175, W / 280, 1.7));
-    P.gy = H * 0.84;
+    P.scale = Math.max(0.45, Math.min((H - 70) * 0.62 / 175, W / 280, 1.7));
+    P.gy = H - Math.max(34, H * 0.13);
     P.px = W / 2 + P.x;
     drawBackground();
     drawPombo();
@@ -523,7 +602,7 @@
       const topY = P.gy - P.jump - (PS.S.stage >= 4 ? 205 : 160) * P.scale;
       const bx = Math.max(90, Math.min(W - 90, P.px + P.dir * 20 * P.scale));
       bubble.style.left = bx + 'px';
-      bubble.style.top = Math.max(46, topY) + 'px';
+      bubble.style.top = Math.max(118, topY) + 'px';
     }
   };
 })();

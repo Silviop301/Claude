@@ -137,6 +137,7 @@
     });
 
     set($('pps'), 'textContent', fmt(pps, true));
+    ui.refreshMarket();
     const st = PS.STAGES[S.stage], nx = PS.STAGES[S.stage + 1];
     set($('rank-title'), 'textContent', st.title);
     if (nx) {
@@ -145,6 +146,50 @@
     } else {
       set($('rank-fill'), 'width', '100%');
       set($('rank-next'), 'textContent', 'Topo da cadeia alimentar');
+    }
+  };
+
+  // Mercado, bônus, Modo Tubarão e posição "Comprar na baixa".
+  ui.refreshMarket = function () {
+    const M = PS.market, S = PS.S;
+    const up = M.trend() >= 0;
+    const tk = $('ticker');
+    tk.classList.toggle('up', up);
+    tk.classList.toggle('down', !up);
+    tk.classList.toggle('moon', M.hasBoost('moon'));
+    set($('tk-arrow'), 'textContent', up ? '▲' : '▼');
+    set($('tk-mult'), 'textContent', 'x' + M.v.toFixed(2).replace('.', ','));
+
+    const chips = M.boosts.map(b => [b.id, b.icon + ' ' + b.label + (b.x > 1 ? ' x' + b.x : '') + ' · ' + Math.ceil(b.t) + 's']);
+    if (M.sharkOn > 0) chips.push(['shark', '🦈 Tubarão x5 · ' + Math.ceil(M.sharkOn) + 's']);
+    const key = chips.map(c => c.join(':')).join('|');
+    const box = $('boosts');
+    if (box._key !== key) {
+      box._key = key;
+      box.innerHTML = '';
+      chips.forEach(([id, txt]) => {
+        const d = document.createElement('div');
+        d.className = 'boost ' + id;
+        d.textContent = txt;
+        box.appendChild(d);
+      });
+    }
+
+    const sh = $('shark');
+    sh.classList.toggle('full', M.sharkOn > 0);
+    set($('shark-fill'), 'width', (M.shark * 100).toFixed(1) + '%');
+    set($('shark-label'), 'textContent', M.sharkOn > 0 ? '🦈 x5 PRODUÇÃO!' : '🦈 Modo Tubarão');
+
+    set($('dip'), 'hidden', !M.canBuyDip());
+    const pe = $('position');
+    if (S.pos) {
+      const ret = M.v / S.pos.p0 - 1;
+      set(pe, 'hidden', false);
+      set(pe, 'textContent', '📊 Posição ' + (ret >= 0 ? '+' : '') + Math.round(ret * 100) + '% · vende em +80% ou ' + Math.ceil(90 - S.pos.t) + 's');
+      pe.classList.toggle('gain', ret >= 0);
+      pe.classList.toggle('loss', ret < 0);
+    } else {
+      set(pe, 'hidden', true);
     }
   };
 
@@ -284,6 +329,12 @@
       ['Maior combo', String(S.bestCombo)],
       ['Negócios comprados', S.owned.reduce((a, b) => a + b, 0).toLocaleString('pt-BR')],
       ['Tempo de jogo', PS.fmtTime(S.playTime)],
+      ['Dicas quentes pegas', String(S.stats.dicas)],
+      ['Golpes sofridos', String(S.stats.golpes)],
+      ['Crashes segurados', String(S.stats.holds)],
+      ['Modos Tubarão', String(S.stats.sharks)],
+      ['Viagens à lua', String(S.stats.moons)],
+      ['Lucro comprando na baixa', fmt(S.stats.dipProfit)],
     ];
     ui.modal({
       title: 'Relatório do Investidor',

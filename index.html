@@ -29,9 +29,36 @@
 
   <section class="stage" id="stage-wrap" tabindex="0" role="button" aria-label="Toque no pombo para ganhar grana">
     <canvas id="stage"></canvas>
+    <div class="ticker" id="ticker">
+      <div class="tk-info">
+        <span class="tk-label">MERCADO</span>
+        <span class="tk-mult"><span id="tk-arrow">▲</span> <span id="tk-mult">x1,20</span></span>
+      </div>
+      <canvas id="chart"></canvas>
+    </div>
+    <div class="under-ticker">
+      <div class="combo" id="combo" hidden></div>
+      <div class="boosts" id="boosts"></div>
+    </div>
     <div class="bubble" id="bubble" hidden></div>
-    <div class="combo" id="combo" hidden></div>
-    <div class="tap-hint" id="tap-hint">Toque no pombo!</div>
+    <div class="crash" id="crash" hidden>
+      <b>SEGURA O MERCADO!</b>
+      <div class="meter"><i id="crash-fill"></i></div>
+      <span id="crash-txt">Toque rápido! 10s</span>
+    </div>
+    <button class="dica" id="dica" type="button" hidden>
+      <span class="dica-ico">📲</span>
+      <span class="dica-body"><b>Dica Quente do Zap</b><span class="dica-txt"></span></span>
+    </button>
+    <div class="stage-foot">
+      <div class="tap-hint" id="tap-hint">Toque no pombo!</div>
+      <button class="dip" id="dip" type="button" hidden>📉 Comprar na baixa <small>investe 25% da grana</small></button>
+      <div class="position" id="position" hidden></div>
+      <div class="shark" id="shark">
+        <span class="shark-label" id="shark-label">🦈 Modo Tubarão</span>
+        <div class="meter"><i id="shark-fill"></i></div>
+      </div>
+    </div>
   </section>
 
   <section class="shop">
@@ -66,6 +93,8 @@
 <script src="src/save.js"></script>
 <script src="src/game.js"></script>
 <script src="src/fx.js"></script>
+<script src="src/market.js"></script>
+<script src="src/events.js"></script>
 <script src="src/pombo.js"></script>
 <script src="src/ui.js"></script>
 <script src="src/main.js"></script>
