@@ -61,7 +61,8 @@ button:focus-visible, .stage:focus-visible {
    No Safari comum esses valores são 0; no app instalado (tela cheia) eles empurram o conteúdo. */
 #app {
   padding-top: calc(10px + env(safe-area-inset-top, 0px));
-  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  /* A barra de gestos do iPhone pode ficar um pouco sobre a borda: evita sobra grande embaixo */
+  padding-bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 12px));
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
