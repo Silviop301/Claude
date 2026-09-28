@@ -26,6 +26,15 @@ for (let n = 0; n < N; n++) {
       } else S.addTrait(c, pick.trait.id);
       decisions++;
     }
+    // Investimentos: o esperto compra o que mais pesa na posição; o casual compra às vezes
+    for (let k = 0; k < 20; k++) {
+      const w = D.POS[c.pos].w;
+      const opts = D.INVEST.filter(t => S.canInvest(c, t.id));
+      if (!opts.length || (!SMART && Math.random() < 0.5)) break;
+      const score = t => (t.attr ? w[Object.keys(t.attr)[0]] : 0.15) / (1 + (c.inv[t.id] || 0));
+      const t = SMART ? opts.sort((a, b) => score(b) - score(a))[0] : opts[Math.floor(Math.random() * opts.length)];
+      S.invest(c, t.id); decisions++;
+    }
     const ev = S.pickEvent(c);
     if (ev) {
       let i = Math.random() < 0.5 ? 0 : 1;
@@ -48,7 +57,7 @@ for (let n = 0; n < N; n++) {
     S.join(c, good[0] || opts.sort((a, b) => b.share - a.share)[0]);
   }
   const f = S.finish(c);
-  res.push({ build: c.traits.slice().sort().join('+'), idol: f.verdict.startsWith('Ídolo'), farewell: !!c.farewell, seasons: c.season, decisions, goals: c.totals.goals, assists: c.totals.assists, titles: f.titles, ballon: c.totals.ballon, peak: c.peak, grade: f.grade, verdict: f.verdict, pos, clubs: f.nClubs, games: c.totals.games, events: Object.values(c.stats || {}).reduce((a, b) => a + b, 0) });
+  res.push({ build: c.traits.slice().sort().join('+'), idol: f.verdict.startsWith('Ídolo'), farewell: !!c.farewell, seasons: c.season, decisions, goals: c.totals.goals, assists: c.totals.assists, titles: f.titles, ballon: c.totals.ballon, peak: c.peak, grade: f.grade, verdict: f.verdict, pos, clubs: f.nClubs, games: c.totals.games, events: Object.values(c.stats || {}).reduce((a, b) => a + b, 0), buys: c.buys, invOvr: S.ovr(c) - S.ovrOf(S.preview(c, {}).attrs, c.pos) + (() => { const inv = c.inv; c.inv = {}; const o = S.ovr(c); c.inv = inv; return S.ovr(c) - o; })(), firstBuy: c.firstBuyAge || 0, money: Math.round(c.money / 1e6) });
 }
 console.log('Robô:', SMART ? 'esperto' : 'casual');
 console.log('Builds finais diferentes:', new Set(res.map(r => r.build)).size, 'em', N, 'carreiras · Ídolos:', (res.filter(r => r.idol).length / N * 100).toFixed(1) + '% · Com despedida:', (res.filter(r => r.farewell).length / N * 100).toFixed(0) + '%');
@@ -60,6 +69,7 @@ const pr = (label, key, filter) => {
 pr('Temporadas', 'seasons'); pr('Decisões', 'decisions');
 pr('Gols (ATA)', 'goals', r => r.pos === 'ATA'); pr('Assistências (MEI)', 'assists', r => r.pos === 'MEI');
 pr('Jogos', 'games'); pr('Eventos por carreira', 'events'); pr('Títulos', 'titles'); pr('Pico OVR', 'peak'); pr('Clubes', 'clubs');
+pr('Compras (investimentos)', 'buys'); pr('OVR vindo de compras', 'invOvr'); pr('Idade da 1ª compra', 'firstBuy'); pr('Saldo final (mi)', 'money');
 const ballon = res.filter(r => r.ballon > 0).length / N;
 console.log('Carreiras com Bola de Ouro:', (ballon * 100).toFixed(1) + '%', '| com 3+:', (res.filter(r => r.ballon >= 3).length / N * 100).toFixed(1) + '%');
 const grades = {}; res.forEach(r => { grades[r.grade] = (grades[r.grade] || 0) + 1; });

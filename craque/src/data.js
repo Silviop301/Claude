@@ -108,6 +108,20 @@
     { id: 'capitao', a: 'lider',    b: 'raca',     icon: '🎖️', name: 'Capitão',               attr: { def: 3, fis: 2, pas: 1 } },
     { id: 'maestro', a: 'visao',    b: 'garcom',   icon: '🎼', name: 'Maestro',               attr: { pas: 4, dri: 2 } },
   ];
+  // Investimentos com o próprio dinheiro: cada compra soma pontos fixos na carta.
+  // O preço sobe a cada compra (de qualquer item).
+  D.INVEST = [
+    { id: 'fis',   icon: '🏋️', name: 'Personal trainer',         attr: { fis: 2 } },
+    { id: 'fin',   icon: '🥅', name: 'Treino de chute',    attr: { fin: 2 } },
+    { id: 'pas',   icon: '📊', name: 'Analista de jogo',   attr: { pas: 2 } },
+    { id: 'rit',   icon: '🏃', name: 'Treino de sprint', attr: { rit: 2 } },
+    { id: 'dri',   icon: '🪄', name: 'Treino de técnica',     attr: { dri: 2 } },
+    { id: 'def',   icon: '🛡️', name: 'Treino defensivo',         attr: { def: 2 } },
+    { id: 'fisio', icon: '🩺', name: 'Fisioterapeuta', perk: '−25% lesões', max: 2 },
+  ];
+  D.INVEST_BY_ID = {};
+  D.INVEST.forEach(t => { D.INVEST_BY_ID[t.id] = t; });
+  D.INVEST_MAX = 5; // compras por item de atributo (+10 no máximo)
   D.ATTR_LABEL = { rit: 'RIT', fin: 'FIN', pas: 'PAS', dri: 'DRI', def: 'DEF', fis: 'FÍS' };
 
   root.CRAQUE_DATA = D;

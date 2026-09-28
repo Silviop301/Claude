@@ -51,8 +51,10 @@
     return b;
   };
 
-  const effOf = (c, traits, lv) => {
+  const effOf = (c, traits, lv, inv) => {
     const b = S.bonusOf(traits, lv), out = {};
+    inv = inv || c.inv || {};
+    D.INVEST.forEach(t => { if (t.attr && inv[t.id]) for (const k in t.attr) b[k] += t.attr[k] * inv[t.id]; });
     D.ATTRS.forEach(k => { out[k] = clamp(Math.round(c.attrs[k]) + b[k], 20, 99); });
     return out;
   };
@@ -66,7 +68,9 @@
     if (ch.remove) { traits = traits.filter(x => x !== ch.remove); delete lv[ch.remove]; }
     if (ch.add) { traits.push(ch.add); lv[ch.add] = 1; }
     if (ch.up) lv[ch.up] = (lv[ch.up] || 1) + 1;
-    const attrs = effOf(c, traits, lv);
+    const inv = Object.assign({}, c.inv);
+    if (ch.buy) inv[ch.buy] = (inv[ch.buy] || 0) + 1;
+    const attrs = effOf(c, traits, lv, inv);
     return { attrs, ovr: ovrOf(attrs, c.pos) };
   };
 
@@ -83,7 +87,7 @@
       v: 2, seed: r.state(),
       name: opts.name, pos: opts.pos, foot: opts.foot, country: opts.country,
       age: 16, season: 0, attrs,
-      pot: Math.round(58 + 25 * Math.pow(r(), 1.5)), // potencial escondido; temporadas muito boas elevam o teto
+      pot: Math.round(55 + 25 * Math.pow(r(), 1.5)), // potencial escondido; temporadas muito boas elevam o teto
       traits: [], club: null, clubSince: 0, firstClub: null,
       fame: 0, money: 0, wage: 0,
       mod: { min: 0, form: 0, inj: 0, goal: 0, assist: 0 },
@@ -91,6 +95,7 @@
       totals: { games: 0, goals: 0, assists: 0, league: 0, cup: 0, cont: 0, ballon: 0, scorer: 0, young: 0, team: 0 },
       spells: [], seasons: [], peak: 0, retired: false, trophies: {},
       traitLv: {}, contract: 0, farewell: false, peakAttrs: null,
+      inv: {}, spent: 0, buys: 0,
     };
   };
 
@@ -172,6 +177,31 @@
     return true;
   };
   S.traitLevel = lvOf;
+
+  // ---------- investimentos ----------
+  S.INVEST_BASE = 40000;
+  S.INVEST_GROWTH = 2.0;
+  S.investPrice = c => Math.round(S.INVEST_BASE * Math.pow(S.INVEST_GROWTH, c.buys || 0) / 1000) * 1000;
+  S.investMax = id => D.INVEST_BY_ID[id].max || D.INVEST_MAX;
+  S.canInvest = (c, id) => (c.inv[id] || 0) < S.investMax(id) && c.money >= S.investPrice(c);
+  // Quantas compras um valor paga, a partir do preço atual (para comparar salários)
+  S.buysWith = function (c, amount) {
+    let n = 0, b = c.buys || 0, left = amount;
+    while (n < 12) {
+      const p = Math.round(S.INVEST_BASE * Math.pow(S.INVEST_GROWTH, b) / 1000) * 1000;
+      if (left < p) break;
+      left -= p; b++; n++;
+    }
+    return n;
+  };
+  S.invest = function (c, id) {
+    if (!S.canInvest(c, id)) return false;
+    const p = S.investPrice(c);
+    c.money -= p; c.spent += p; c.buys++;
+    c.inv[id] = (c.inv[id] || 0) + 1;
+    if (!c.firstBuyAge) c.firstBuyAge = c.age;
+    return true;
+  };
 
   // ---------- papel no elenco ----------
   S.role = function (c, club) {
@@ -476,7 +506,7 @@
     // Lesão: risco base + idade + eventos
     let injShare = c.mod.inj;
     // Físico alto protege de lesões
-    const injRisk = clamp((0.14 + Math.max(0, c.age - 29) * 0.03) * clamp(1 - (E.fis - 60) / 70, 0.5, 1.4), 0.02, 0.6);
+    const injRisk = clamp((0.14 + Math.max(0, c.age - 29) * 0.03) * clamp(1 - (E.fis - 60) / 70, 0.5, 1.4) * (1 - 0.25 * (c.inv.fisio || 0)), 0.02, 0.6);
     let injName = null;
     if (r() < injRisk) {
       injShare = Math.max(injShare, r.range(0.1, 0.4));

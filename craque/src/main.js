@@ -76,6 +76,7 @@
     if (S.mustRetire(c)) return finale();
     if (st === 'offers') return S.windowOpen(c) ? windowOffers() : preseason();
     if (st === 'event') return eventScreen();
+    if (st === 'invest') return invest();
     return preseason();
   }
 
@@ -105,6 +106,11 @@
   }
 
   // ---------- propostas ----------
+  // Salário traduzido em investimentos por temporada
+  function buysTag(wage) {
+    const n = S.buysWith(c, wage * 52);
+    return '<span class="tag' + (n >= 2 ? ' gold' : '') + '">' + (n ? '≈ ' + n + (n > 1 ? ' compras' : ' compra') + '/ano' : 'sem sobra p/ investir') + '</span>';
+  }
   function offerCard(o, idx) {
     const cl = club(o.club), lg = league(o.club);
     const kinds = { base: ['Base', ''], up: ['Clube maior', 'blue'], mid: ['Protagonista', 'green'], money: ['Proposta milionária', 'gold'], home: ['Volta pra casa', 'red'], stay: ['Renovar', ''] };
@@ -114,7 +120,7 @@
       '<div class="top"><span class="club">' + crest(cl.id) + esc(cl.name) + '</span><span class="stars">' + stars(cl.tier) + '</span></div>' +
       '<div class="lg">' + lg.flag + ' ' + lg.name + ' · força ' + cl.strength + '</div>' +
       '<div class="facts">' + (kname ? '<span class="tag ' + kcls + '">' + kname + '</span>' : '') +
-      '<span class="tag ' + roleCls + '">' + o.role + '</span><span class="tag">R$ ' + money(o.wage) + '/sem</span><span class="tag">' + o.years + (o.years > 1 ? ' anos' : ' ano') + '</span></div></button>';
+      '<span class="tag ' + roleCls + '">' + o.role + '</span><span class="tag">R$ ' + money(o.wage) + '/sem</span>' + buysTag(o.wage) + '<span class="tag">' + o.years + (o.years > 1 ? ' anos' : ' ano') + '</span></div></button>';
   }
 
   function academy() {
@@ -250,7 +256,7 @@
     bar();
     if (!preCh || preCh.age !== c.age) preCh = { age: c.age, list: S.traitChoices(c) };
     const ch = preCh.list;
-    if (!ch.length) return eventOrSeason();
+    if (!ch.length) return invest();
     const label = { new: 'NOVA', up: 'EVOLUIR', swap: 'TROCAR' };
     render(
       '<div class="eyebrow">Pré-temporada · ' + year() + (c.farewell ? ' · temporada de despedida' : '') + '</div>' +
@@ -262,7 +268,7 @@
         (x.completes ? '<br><span class="tag gold">Completa ' + x.completes.icon + ' ' + x.completes.name + ': ' + attrTxt(x.completes.attr) + '</span>' : '') + '</span></button>').join('') +
       '</div><button class="btn" id="b-ok" disabled>Toque numa opção para ver na carta</button><button class="btn ghost" id="b-skip">Seguir sem mudar</button>'
     );
-    $('b-skip').onclick = () => { preCh = null; eventOrSeason(); };
+    $('b-skip').onclick = () => { preCh = null; invest(); };
     pickable('[data-i]', b => {
       const x = ch[+b.dataset.i];
       return x.type === 'swap' ? null : S.preview(c, x.type === 'up' ? { up: x.trait.id } : { add: x.trait.id });
@@ -270,7 +276,7 @@
       const x = ch[+b.dataset.i];
       if (x.type === 'swap') return { go: () => chooseSwap(x) };
       preCh = null;
-      if (x.type === 'up') { S.upgradeTrait(c, x.trait.id); return eventOrSeason; }
+      if (x.type === 'up') { S.upgradeTrait(c, x.trait.id); return invest; }
       const syn = S.addTrait(c, x.trait.id);
       return () => afterTrait(syn);
     });
@@ -299,8 +305,34 @@
     bar();
     if (syn) {
       render('<div class="eyebrow">Combinação desbloqueada</div><div class="award ballon">' + syn.icon + ' ' + syn.name + '</div><p class="lead">' + attrTxt(syn.attr) + (syn.extra ? ' · ' + syn.extra : '') + ' na sua carta</p><button class="btn" id="b-next">Continuar</button>');
-      $('b-next').onclick = eventOrSeason;
-    } else eventOrSeason();
+      $('b-next').onclick = invest;
+    } else invest();
+  }
+
+  // ---------- investimentos (dinheiro vira pontos na carta) ----------
+  function invest() {
+    const price = S.investPrice(c);
+    if (c.money < price) return eventOrSeason();
+    step = 'invest';
+    save();
+    render(
+      '<div class="eyebrow">Pré-temporada · Investimentos</div><h2>Invista na sua carreira</h2>' +
+      '<div class="wallet"><span>Saldo <b>R$ ' + money(c.money) + '</b></span><span>Próxima compra <b>R$ ' + money(price) + '</b></span></div>' +
+      miniCard() +
+      '<div class="choices inv-grid">' + D.INVEST.map(t => {
+        const n = c.inv[t.id] || 0, max = S.investMax(t.id), ok = S.canInvest(c, t.id);
+        return '<button class="choice inv" data-v="' + t.id + '" data-ok="Comprar por R$ ' + money(price) + '"' + (ok ? '' : ' disabled') + '><span class="ic">' + t.icon + '</span>' +
+          '<b>' + t.name + '</b><span class="pips">' + '●'.repeat(n) + '○'.repeat(max - n) + '</span>' +
+          '<span class="d">' + (n >= max ? 'No máximo' : t.attr ? attrTxt(t.attr) : t.perk) + '</span></button>';
+      }).join('') +
+      '</div><p class="muted small">Cada compra deixa a próxima mais cara. O que você não gastar fica como patrimônio no fim da carreira.</p>' +
+      '<button class="btn" id="b-ok" disabled>Toque num investimento para ver na carta</button><button class="btn ghost" id="b-skip">Guardar o dinheiro e seguir</button>'
+    );
+    $('b-skip').onclick = eventOrSeason;
+    pickable('[data-v]', b => S.preview(c, { buy: b.dataset.v }), b => {
+      S.invest(c, b.dataset.v);
+      return invest;
+    });
   }
 
   // ---------- evento ----------
@@ -345,26 +377,98 @@
       '<div class="season-head"><div><div class="eyebrow">Temporada ' + (year() - 1) + ' · ' + res.age + ' anos</div><h2 class="with-crest">' + crest(cl.id, 'lg') + esc(cl.name) + '</h2></div><span class="tag">' + (res.farewell ? 'Despedida' : res.role) + '</span></div>' +
       '<div class="counters"><div class="counter"><b id="k-j">0</b><span>Jogos</span></div><div class="counter"><b id="k-g">0</b><span>Gols</span></div>' +
       '<div class="counter"><b id="k-a">0</b><span>Assist.</span></div><div class="counter rate"><b id="k-n">–</b><span>Nota</span></div></div>' +
-      '<div class="feed" id="feed"></div><div id="after"></div>'
+      '<div class="feed" id="feed"></div><div id="after"></div><p class="skip-hint" id="skip-hint">Toque para pular</p>'
     );
-    const dur = 1800, t0 = performance.now();
+    const dur = 2200, t0 = performance.now();
     let skip = false;
-    screen.onclick = () => { skip = true; };
+    // Liga o "pular" só depois: o toque que abriu esta tela ainda está se propagando
+    setTimeout(() => { screen.onclick = () => { skip = true; }; }, 50);
     (function tick(now) {
-      const u = skip ? 1 : Math.min(1, (now - t0) / dur);
-      $('k-j').textContent = Math.round(res.games * u);
-      $('k-g').textContent = Math.round(res.goals * u);
-      $('k-a').textContent = Math.round(res.assists * u);
+      const u = skip ? 1 : Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - u, 2);
+      $('k-j').textContent = Math.round(res.games * e);
+      $('k-g').textContent = Math.round(res.goals * e);
+      $('k-a').textContent = Math.round(res.assists * e);
       if (u < 1) return requestAnimationFrame(tick);
       $('k-n').textContent = res.games ? res.rating.toFixed(1).replace('.', ',') : '–';
-      screen.onclick = null;
-      summary(res);
+      $('k-n').parentNode.classList.add('pop');
+      summary(res, skip);
     })(t0);
   }
 
-  function summary(res) {
+  // Jornal da temporada: um de 6 jornais (inventados) sorteado a cada temporada
+  const PAPERS = [
+    { name: 'Gazeta da Bola', motto: 'O jornal de quem vive futebol' },
+    { name: 'Diário do Craque', motto: 'Desde a várzea até a Europa' },
+    { name: 'Tribuna Esportiva', motto: 'A voz da arquibancada' },
+    { name: 'O Placar', motto: 'Resultado é o que importa' },
+    { name: 'Folha do Gramado', motto: 'Notícia com cheiro de grama' },
+    { name: 'Jornal da Arquibancada', motto: 'Opinião de torcedor' },
+  ];
+  let lastPaper = -1;
+  function lede(res, cl) {
+    const tb = res.table;
+    const pos = tb.pos === 1 ? 'terminou campeão da ' + tb.league : 'terminou em ' + tb.pos + 'º lugar na ' + tb.league;
+    const perf = !res.games ? c.name + ' quase não entrou em campo, e o ' + cl.name + ' ' + pos + '.'
+      : res.rating >= 7.5 ? c.name + ' foi o nome do ' + cl.name + ', que ' + pos + '.'
+      : res.rating >= 6.8 ? 'Com atuações seguras de ' + c.name + ', o ' + cl.name + ' ' + pos + '.'
+      : 'Em temporada irregular de ' + c.name + ', o ' + cl.name + ' ' + pos + '.';
+    return perf + (res.titles.length ? ' A torcida comemorou ' + res.titles.map(t => t.name).join(' e ') + '.' : '');
+  }
+  function showPaper(res, onClose) {
+    let k;
+    do { k = Math.floor(Math.random() * PAPERS.length); } while (k === lastPaper);
+    lastPaper = k;
+    const P = PAPERS[k], cl = club(res.club), [main, ...rest] = res.headlines;
+    const price = 'R$ ' + (2 + (year() % 5)) + ',50';
+    const wrap = document.createElement('div');
+    wrap.className = 'paper-wrap';
+    wrap.innerHTML = '<div class="paper"><div class="pp-top"><span>Edição de ' + (year() - 1) + '</span><span>' + price + '</span></div>' +
+      '<div class="pp-name">' + P.name + '</div><div class="pp-motto">' + P.motto + '</div>' +
+      '<h3 class="pp-head">' + esc(main) + '</h3>' +
+      '<div class="pp-body"><div class="pp-photo">' + crest(cl.id) + '<span>' + esc(c.name) + ' com a camisa do ' + esc(cl.name) + '</span></div>' +
+      '<div class="pp-col"><p class="pp-stats">' + res.games + ' jogos · ' + res.goals + ' gols · ' + res.assists + ' assist.' + (res.games ? ' · nota ' + res.rating.toFixed(1).replace('.', ',') : '') + '</p>' +
+      '<p class="pp-lede">' + esc(lede(res, cl)) + '</p>' +
+      rest.map(h => '<p class="pp-sub">' + esc(h) + '</p>').join('') + '</div></div>' +
+      '<div class="pp-tap">Toque para fechar</div></div>';
+    document.body.appendChild(wrap);
+    const close = e => {
+      if (e) e.stopPropagation();
+      wrap.classList.add('out');
+      setTimeout(() => { wrap.remove(); onClose && onClose(); }, 250);
+    };
+    setTimeout(() => { wrap.onclick = close; }, 400);
+  }
+
+  // Mostra os blocos do resumo um de cada vez (troféus com mais destaque). Tocar mostra tudo.
+  function reveal(skipNow, res) {
+    const items = Array.from(screen.querySelectorAll('.rv'));
+    let i = 0, timer = null, paper = false;
+    const done = () => { screen.onclick = null; const h = $('skip-hint'); if (h) h.remove(); };
+    // O jornal aparece uma vez por temporada, mesmo se a pessoa pular o resto
+    const all = () => {
+      clearTimeout(timer); items.forEach(el => el.classList.add('in')); done();
+      if (!paper) { paper = true; showPaper(res); }
+    };
+    if (skipNow) return all();
+    screen.onclick = all;
+    (function next() {
+      if (i >= items.length) return done();
+      if (!items[0].isConnected) return; // já saiu desta tela
+      const el = items[i++];
+      el.classList.add('in');
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      if (el.classList.contains('news') && !paper) {
+        paper = true;
+        screen.onclick = null;
+        return setTimeout(() => { if (el.isConnected) showPaper(res, () => { screen.onclick = all; timer = setTimeout(next, 200); }); }, 300);
+      }
+      timer = setTimeout(next, el.classList.contains('title-won') ? 900 : el.classList.contains('award') ? 700 : el.classList.contains('hl') ? 450 : 220);
+    })();
+  }
+
+  function summary(res, skipNow) {
     const feed = $('feed');
-    res.highlights.forEach(h => { const d = document.createElement('div'); d.textContent = h; feed.appendChild(d); });
+    res.highlights.forEach(h => { const d = document.createElement('div'); d.className = 'rv hl'; d.textContent = h; feed.appendChild(d); });
     const dOvr = res.ovr1 - res.ovr0;
     const fin = S.mustRetire(c);
     const tb = res.table;
@@ -381,14 +485,15 @@
       if (S.canRetire(c)) actions += '<button class="btn ghost" id="b-stop">Parar agora</button>';
     }
     $('after').innerHTML =
-      (tableTxt ? '<p class="table-line">' + tableTxt + '</p>' : '') +
-      (res.titles.length ? '<div class="titles">' + res.titles.map(t => '<div class="title-won">' + trophy(titleType(t), 54) + '<span>Campeão<br><b>' + esc(t.name) + '</b></span></div>').join('') + '</div>' : '') +
-      '<div class="awards">' + res.awards.map(a => '<div class="award' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : '🥇 ') + a.name + '</div>').join('') + '</div>' +
-      '<div class="news"><div class="np">O GLOBO ESPORTIVO</div>' + res.headlines.map(h => '<p>' + esc(h) + '</p>').join('') + '</div>' +
-      '<div class="card why-card"><p class="delta-in ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' + why + '</div>' +
-      '<p class="rel-delta">👔 Técnico ' + res.coach0 + ' → ' + res.coach1 + ' · 📣 Torcida ' + res.fans0 + ' → ' + res.fans1 + ' (' + S.relLabel(res.fans1) + ')</p>' +
-      actions;
+      (tableTxt ? '<p class="table-line rv">' + tableTxt + '</p>' : '') +
+      (res.titles.length ? '<div class="titles">' + res.titles.map(t => '<div class="title-won rv">' + trophy(titleType(t), 54) + '<span>Campeão<br><b>' + esc(t.name) + '</b></span></div>').join('') + '</div>' : '') +
+      '<div class="awards">' + res.awards.map(a => '<div class="award rv' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : '🥇 ') + a.name + '</div>').join('') + '</div>' +
+      '<div class="news rv"><div class="np">📰 Nos jornais</div>' + res.headlines.map(h => '<p>' + esc(h) + '</p>').join('') + '</div>' +
+      '<div class="card why-card rv"><p class="delta-in ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' + why + '</div>' +
+      '<p class="rel-delta rv">👔 Técnico ' + res.coach0 + ' → ' + res.coach1 + ' · 📣 Torcida ' + res.fans0 + ' → ' + res.fans1 + ' (' + S.relLabel(res.fans1) + ')</p>' +
+      '<div class="rv">' + actions + '</div>';
     bar();
+    reveal(skipNow, res);
     $('b-next').onclick = fin ? finale : open ? windowOffers : preseason;
     if ($('b-farewell')) $('b-farewell').onclick = () => { S.announce(c); save(); bar(); preseason(); };
     if ($('b-stop')) $('b-stop').onclick = finale;
@@ -421,6 +526,7 @@
       '<div class="verdict">' + esc(f.verdict) + '</div>' +
       '<div class="stats"><div><b>' + T.games + '</b><span>Jogos</span></div><div><b>' + T.goals + '</b><span>Gols</span></div><div><b>' + T.assists + '</b><span>Assistências</span></div>' +
       '<div><b>' + f.titles + '</b><span>Títulos</span></div><div><b>' + T.ballon + '</b><span>Bolas de Ouro</span></div><div><b>' + f.nClubs + '</b><span>Clubes</span></div></div>' +
+      '<p class="muted small patr">💰 Patrimônio R$ ' + money(c.money) + (c.buys ? ' · investiu R$ ' + money(c.spent) + ' em ' + c.buys + (c.buys > 1 ? ' compras' : ' compra') : '') + '</p>' +
       '<div class="timeline">' + c.spells.map(s => '<div><span>' + String(YEAR0 + s.from - 16).slice(2) + '–' + String(YEAR0 + s.to - 16 + 1).slice(2) + '</span><span>' + crest(s.club, 'xs') + esc(club(s.club).name) + '</span><span>' + s.goals + 'G ' + s.assists + 'A' + (s.titles ? ' · ' + s.titles + '🏆' : '') + '</span></div>').join('') + '</div>' +
       (Object.keys(c.trophies || {}).length ? '<div class="room-title">Sala de troféus</div><div class="room">' +
         Object.entries(c.trophies).sort((a, b) => ['ballon', 'ucl', 'lib', 'league', 'cup'].indexOf(a[1].type) - ['ballon', 'ucl', 'lib', 'league', 'cup'].indexOf(b[1].type))
