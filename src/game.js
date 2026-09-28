@@ -38,6 +38,10 @@
       login: { last: '', streak: 0, pending: false },
       ach: {},
       rodaUntil: 0,
+      research: { done: {}, active: [] },
+      auto: { buy: true, collect: true },
+      fareloAt: 0,
+      setsDone: {},
       created: now,
       lastTick: now,
     };
@@ -58,17 +62,25 @@
     for (const id in out.inv || {}) if (PS.ITEM_BY_ID[id]) inv[id] = Math.min(PS.MAX_LEVEL, Math.max(1, Math.floor(+out.inv[id] || 1)));
     out.inv = inv;
     const eq = Object.assign({ ativos: [], head: null, eyes: null, neck: null }, out.equip);
-    eq.ativos = (Array.isArray(eq.ativos) ? eq.ativos : []).filter(id => inv[id] && PS.ITEM_BY_ID[id].kind === 'ativo').slice(0, PS.ATIVO_SLOTS);
+    eq.ativos = (Array.isArray(eq.ativos) ? eq.ativos : []).filter(id => inv[id] && PS.ITEM_BY_ID[id].kind === 'ativo').slice(0, PS.MAX_ATIVO_SLOTS);
     ['head', 'eyes', 'neck'].forEach(sl => { if (!(eq[sl] && inv[eq[sl]] && PS.ITEM_BY_ID[eq[sl]].slot === sl)) eq[sl] = null; });
     out.equip = eq;
     out.newItems = (Array.isArray(out.newItems) ? out.newItems : []).filter(id => inv[id]);
-    if (!['biz', 'boxes', 'items', 'daily'].includes(out.tab)) out.tab = 'biz';
+    if (!['biz', 'boxes', 'items', 'mba', 'daily'].includes(out.tab)) out.tab = 'biz';
+    if (!out.setsDone || typeof out.setsDone !== 'object') out.setsDone = {};
     out.daily = Object.assign(base.daily, s && s.daily);
     if (!Array.isArray(out.daily.missions)) out.daily.missions = [];
     out.weekly = Object.assign(base.weekly, s && s.weekly);
     out.login = Object.assign(base.login, s && s.login);
     if (!out.ach || typeof out.ach !== 'object') out.ach = {};
     if (!isFinite(out.rodaUntil)) out.rodaUntil = 0;
+    const rs = out.research && typeof out.research === 'object' ? out.research : {};
+    out.research = {
+      done: rs.done && typeof rs.done === 'object' ? rs.done : {},
+      active: (Array.isArray(rs.active) ? rs.active : []).filter(a => a && typeof a.id === 'string' && isFinite(a.end)),
+    };
+    out.auto = Object.assign(base.auto, s && s.auto);
+    if (!isFinite(out.fareloAt)) out.fareloAt = 0;
     return out;
   };
 
@@ -117,13 +129,16 @@
     return (1 + PS.cachedPps * 0.08) * (1 + (PS.B ? PS.B.tap : 0) / 100);
   };
 
+  // Desconto do Negociador/Lobista (MBA)
+  const costMult = () => 1 - (PS.B ? PS.B.costCut : 0) / 100;
+
   PS.costOf = function (i, n) {
-    const base = B[i].cost * Math.pow(GROWTH, PS.S.owned[i]);
+    const base = B[i].cost * costMult() * Math.pow(GROWTH, PS.S.owned[i]);
     return base * (Math.pow(GROWTH, n) - 1) / (GROWTH - 1);
   };
 
   PS.maxBuy = function (i) {
-    const base = B[i].cost * Math.pow(GROWTH, PS.S.owned[i]);
+    const base = B[i].cost * costMult() * Math.pow(GROWTH, PS.S.owned[i]);
     const n = Math.floor(Math.log(PS.S.money * (GROWTH - 1) / base + 1) / Math.log(GROWTH));
     return Math.max(0, n);
   };

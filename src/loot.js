@@ -7,7 +7,7 @@
   L.cost = function (box) {
     if (box.cur === 'grana') {
       const base = PS.pps() / PS.market.tempMult();
-      return Math.max(250, Math.round(base * 150));
+      return Math.max(250, Math.round(base * 150)) * (1 - PS.B.cameloDisc / 100);
     }
     return box.cost;
   };
@@ -59,7 +59,9 @@
     }
     if (lvl < PS.MAX_LEVEL) {
       S.inv[it.id] = lvl + 1;
-      return { status: 'up', text: 'Nível ' + (lvl + 1) + ' ↑' };
+      const far = 2 * (it.r + 1);
+      S.farelo += far;
+      return { status: 'up', text: 'Nível ' + (lvl + 1) + ' ↑ · +' + far + ' 🍞' };
     }
     const far = 5 * (it.r + 1) * (it.r + 1);
     S.farelo += far;

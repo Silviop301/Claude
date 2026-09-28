@@ -150,6 +150,7 @@
     checkProgress();
   };
 
+  PS.celebrate = (i, m) => celebrateMilestone(i, m);
   function celebrateMilestone(i, m) {
     fx.banner('x' + m.x + '!', B[i].name + ': ' + m.at + ' unidades', PS.C.gold);
     fx.flash('#FFF3B0', 0.55);
@@ -247,6 +248,7 @@
 
     PS.market.update(dt);
     PS.events.update(dt);
+    PS.mba.update(dt);
     PS.recalc();
     if (PS.cachedPps > 0) PS.earn(PS.cachedPps * dt);
     S.playTime += dt;
@@ -287,6 +289,8 @@
     if (T.meta <= 0) {
       T.meta = 1;
       PS.meta.tick();
+      PS.mba.tick();
+      if (PS.loot.busy === false && document.getElementById('opener').hidden) PS.checkSets();
     }
 
     T.save -= dt;

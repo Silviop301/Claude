@@ -27,6 +27,9 @@
 
   E.update = function (dt) {
     if (!$('modal').hidden) return;
+    const auto = PS.B.autocollect && PS.S.auto.collect;
+    if (E.dica && auto && E.dica.t < 7.5) autoClick('dica', E.clickDica);
+    if (E.enc && auto && E.enc.t < 6.5) autoClick('encomenda', E.clickEncomenda);
     if (E.dica) {
       E.dica.t -= dt;
       if (E.dica.t <= 0) endDica();
@@ -48,6 +51,14 @@
       E.fire(pickEvent());
     }
   };
+
+  // Assessor de Eventos: toca sozinho na dica/encomenda depois de ~1,5s.
+  function autoClick(id, fn) {
+    if (PS.loot.busy) return;
+    const r = $(id).getBoundingClientRect();
+    fn(r.left + r.width / 2, r.top + r.height / 2);
+    PS.ui.toast('🕴️', 'Seu assessor pegou essa pra você');
+  }
 
   E.fire = function (kind) {
     if (kind === 'dica') startDica();

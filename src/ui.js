@@ -91,7 +91,7 @@
 
   ui.setTab = function (tab, silent) {
     PS.S.tab = tab;
-    ['biz', 'boxes', 'items', 'daily'].forEach(t => {
+    ['biz', 'boxes', 'items', 'mba', 'daily'].forEach(t => {
       $(t).hidden = t !== tab;
       const b = $('tab-' + t);
       b.classList.toggle('on', t === tab);
@@ -100,6 +100,7 @@
     document.querySelector('.seg').hidden = tab !== 'biz';
     if (tab === 'boxes') ui.renderBoxes();
     if (tab === 'daily') PS.meta.renderDaily();
+    if (tab === 'mba') PS.mba.render();
     if (tab === 'items') {
       PS.S.newItems = [];
       ui.renderItems();
@@ -163,7 +164,8 @@
     if (B.shark) bon.push('+' + Math.round(B.shark) + 's Tubarão');
     if (B.floor) bon.push('mercado ≥ x0,8');
     const total = PS.ITEMS.length, have = B.collection;
-    let html = '<div class="sec-title">Ativos equipados <small>(bônus)</small></div><div class="slots">';
+    let html = '<div class="farelo-line">🍞 <b>' + PS.fmt(S.farelo) + '</b> Farelo · toque num item apagado para craftar ou num item seu para subir o nível</div>' +
+      '<div class="sec-title">Ativos equipados <small>' + Math.min(eq.ativos.length, PS.ATIVO_SLOTS) + '/' + PS.ATIVO_SLOTS + '</small></div><div class="slots' + (PS.ATIVO_SLOTS > 3 ? ' many' : '') + '">';
     for (let i = 0; i < PS.ATIVO_SLOTS; i++) html += slotHtml(eq.ativos[i], 'Vazio', 'a' + i);
     html += '</div><div class="sec-title">Visual do pombo</div><div class="slots">';
     ['head', 'eyes', 'neck'].forEach(sl => { html += slotHtml(eq[sl], SLOT_NAMES[sl], sl); });
@@ -173,12 +175,24 @@
     PS.ITEMS.forEach(it => {
       const lvl = S.inv[it.id];
       const on = [...eq.ativos, eq.head, eq.eyes, eq.neck].includes(it.id);
-      html += '<button type="button" class="cell r-' + PS.RARITIES[it.r].id + (lvl ? '' : ' none') + (on ? ' on' : '') + '" data-item="' + it.id + '" id="it-' + it.id + '"' + (lvl ? '' : ' disabled') + ' aria-label="' + (lvl ? it.name : 'Item não descoberto') + '">' +
+      html += '<button type="button" class="cell r-' + PS.RARITIES[it.r].id + (lvl ? '' : ' none') + (on ? ' on' : '') + '" data-item="' + it.id + '" id="it-' + it.id + '" aria-label="' + (lvl ? it.name : 'Item não descoberto: ' + it.name) + '">' +
         '<span class="c-ico">' + it.icon + '</span>' + (lvl ? '<span class="c-lvl">' + lvl + '</span>' : '') + '</button>';
+    });
+    html += '</div>';
+    const setsDone = PS.SETS.filter(PS.setDone).length;
+    html += '<div class="sec-title">Álbum de sets <small>' + setsDone + '/' + PS.SETS.length + ' · bônus por ter os 4 itens</small></div><div class="sets">';
+    PS.SETS.forEach(set => {
+      const have = set.items.filter(id => S.inv[id]).length, done = have === set.items.length;
+      html += '<div class="set' + (done ? ' done' : '') + '"><div class="set-top"><b>' + set.name + '</b><span>' + (done ? '✓ ' : have + '/4 · ') + set.txt + '</span></div><div class="set-items">' +
+        set.items.map(id => {
+          const it = PS.ITEM_BY_ID[id];
+          return '<button type="button" class="cell mini r-' + PS.RARITIES[it.r].id + (S.inv[id] ? '' : ' none') + '" data-set-item="' + id + '" id="set-' + set.id + '-' + id + '" aria-label="' + it.name + '"><span class="c-ico">' + it.icon + '</span></button>';
+        }).join('') + '</div></div>';
     });
     html += '</div>';
     el.innerHTML = html;
     el.querySelectorAll('[data-item]').forEach(bt => bt.addEventListener('click', () => ui.itemModal(bt.dataset.item)));
+    el.querySelectorAll('[data-set-item]').forEach(bt => bt.addEventListener('click', () => ui.itemModal(bt.dataset.setItem)));
     el.querySelectorAll('[data-slot]').forEach(bt => bt.addEventListener('click', () => {
       const k = bt.dataset.slot;
       const id = k[0] === 'a' && k.length === 2 ? eq.ativos[+k[1]] : eq[k];
@@ -187,9 +201,44 @@
     }));
   };
 
+  const craftCost = (it, lvl) => (lvl ? Math.ceil(PS.CRAFT_COST[it.r] * 0.5 * lvl) : PS.CRAFT_COST[it.r]);
+
+  // Craft com Farelo: cria o item (lvl 0) ou sobe um nível.
+  function craft(it) {
+    const S = PS.S, lvl = S.inv[it.id] || 0, c = craftCost(it, lvl);
+    if (S.farelo < c || lvl >= PS.MAX_LEVEL) { PS.audio.error(); return; }
+    S.farelo -= c;
+    S.inv[it.id] = lvl + 1;
+    PS.recalcBonuses();
+    PS.recalc();
+    PS.audio.milestone();
+    PS.fx.confetti(30 + it.r * 15);
+    PS.fx.banner(lvl ? 'NÍVEL ' + (lvl + 1) + '!' : 'CRAFTADO!', it.name, PS.RARITIES[it.r].color);
+    PS.pombo.say(lvl ? 'Farelo bem investido.' : 'Feito à mão com farelo da praça.', 2.4);
+    PS.checkSets();
+    ui.close();
+    ui.renderItems();
+    ui.refresh();
+  }
+
   ui.itemModal = function (id) {
     const it = PS.ITEM_BY_ID[id], S = PS.S, eq = S.equip, lvl = S.inv[id];
     const rar = PS.RARITIES[it.r];
+    if (!lvl) {
+      const c = craftCost(it, 0);
+      ui.modal({
+        title: it.name,
+        html: '<div class="item-hero none r-' + rar.id + '"><span class="ih-ico">' + it.icon + '</span></div>' +
+          '<p class="ih-meta"><span class="rar-tag r-' + rar.id + '">' + rar.name + '</span> ' + (it.kind === 'ativo' ? 'Ativo' : 'Visual · ' + SLOT_NAMES[it.slot]) + ' · ainda não descoberto</p>' +
+          '<p><b>' + PS.itemEffectText(it, 1) + '</b></p>' +
+          '<p class="m-note">Consiga em caixas ou crafte agora com Farelo. Você tem 🍞 ' + PS.fmt(S.farelo) + '.</p>',
+        actions: [
+          { label: 'Fechar', onClick: ui.close },
+          { label: 'Craftar · 🍞 ' + PS.fmt(c), kind: 'primary', disabled: S.farelo < c, onClick: () => craft(it) },
+        ],
+      });
+      return;
+    }
     const isOn = it.kind === 'ativo' ? eq.ativos.includes(id) : eq[it.slot] === id;
     let label;
     if (isOn) label = 'Desequipar';
@@ -202,9 +251,10 @@
         '<p class="ih-meta"><span class="rar-tag r-' + rar.id + '">' + rar.name + '</span> ' +
         (it.kind === 'ativo' ? 'Ativo' : 'Visual · ' + SLOT_NAMES[it.slot]) + ' · Nível ' + lvl + '/' + PS.MAX_LEVEL + '</p>' +
         '<p><b>' + PS.itemEffectText(it, lvl) + '</b></p><p class="m-note">' + it.flavor + '</p>' +
-        (lvl < PS.MAX_LEVEL ? '<p class="m-note">Itens repetidos sobem o nível (+25% de efeito por nível).</p>' : '<p class="m-note">Nível máximo! Repetidos viram Farelo.</p>'),
+        (lvl < PS.MAX_LEVEL ? '<p class="m-note">Repetidos ou Farelo sobem o nível (+25% de efeito por nível). Você tem 🍞 ' + PS.fmt(S.farelo) + '.</p>' : '<p class="m-note">Nível máximo! Repetidos viram Farelo.</p>'),
       actions: [
         { label: 'Fechar', onClick: ui.close },
+        ...(lvl < PS.MAX_LEVEL ? [{ label: 'Nível ' + (lvl + 1) + ' · 🍞 ' + PS.fmt(craftCost(it, lvl)), disabled: S.farelo < craftCost(it, lvl), onClick: () => craft(it) }] : []),
         {
           label, kind: 'primary', onClick: () => {
             if (it.kind === 'ativo') {
@@ -299,6 +349,8 @@
     set($('tab-items').querySelector('.dot'), 'hidden', !S.newItems.length || S.tab === 'items');
     if (S.tab === 'boxes' && ui._boxKey !== boxKey()) ui.renderBoxes();
     set($('tab-daily').querySelector('.dot'), 'hidden', !PS.meta.claimable() || S.tab === 'daily');
+    set($('tab-mba').querySelector('.dot'), 'hidden', !PS.mba.claimable() || S.tab === 'mba');
+    if (S.tab === 'mba' && PS.mba._key !== PS.mba.key()) PS.mba.render();
     if (S.tab === 'daily' && PS.meta._key !== PS.meta.key()) PS.meta.renderDaily();
     const st = PS.STAGES[S.stage], nx = PS.STAGES[S.stage + 1];
     set($('rank-title'), 'textContent', st.title);
@@ -454,6 +506,7 @@
       b.id = 'm-act-' + k;
       b.className = 'btn ' + (a.kind || '');
       b.textContent = a.label;
+      if (a.disabled) b.disabled = true;
       b.addEventListener('click', () => a.onClick(b));
       acts.appendChild(b);
     });
@@ -513,6 +566,9 @@
       ['Giros na roda', String(S.stats.spins || 0)],
       ['Conquistas', Object.keys(S.ach).length + '/' + PS.meta.ACH.length],
       ['Dias seguidos', String(S.login.streak)],
+      ['Cursos do MBA', Object.keys(S.research.done).length + '/' + PS.RESEARCH.length],
+      ['Sets completos', PS.SETS.filter(PS.setDone).length + '/' + PS.SETS.length],
+      ['Farelo', PS.fmt(S.farelo)],
     ];
     ui.modal({
       title: 'Relatório do Investidor',

@@ -9,8 +9,13 @@
     { id: 'stonks',   name: 'STONKS',   color: '#FF4DB8', weight: 0.1 },
   ];
   PS.MAX_LEVEL = 10;
-  PS.PITY = 60;
-  PS.ATIVO_SLOTS = 3;
+  PS.MAX_ATIVO_SLOTS = 5;
+  // Pesquisas do MBA mudam esses dois valores, por isso são calculados.
+  Object.defineProperty(PS, 'PITY', { get: () => 60 - (PS.B ? PS.B.pityCut : 0) });
+  Object.defineProperty(PS, 'ATIVO_SLOTS', { get: () => 3 + (PS.B ? PS.B.slots : 0) });
+
+  // Custo em Farelo para craftar um item (por raridade). Subir nível custa metade x nível atual.
+  PS.CRAFT_COST = [20, 50, 150, 400, 1500, 6000];
 
   // Efeitos: prod (% produção), tap (% valor do toque), crit (pontos % de chance),
   // offline (min extras), event (% eventos mais frequentes), shark (s extras no Modo Tubarão),
@@ -88,10 +93,53 @@
     return out.join(' · ') + (it.kind === 'visual' ? ' (equipado)' : '');
   };
 
-  // Soma os efeitos de tudo que está equipado + bônus de coleção.
+  // Álbum: ter todos os itens de um set (não precisa equipar) dá um bônus permanente.
+  PS.SETS = [
+    { id: 'coach',   name: 'Kit Coach',      items: ['agenda', 'livrocoach', 'headset', 'bone'],        fx: { prod: 10 },   txt: '+10% produção' },
+    { id: 'praca',   name: 'Kit Praça',      items: ['palha', 'paodormido', 'cachecol', 'cofrinho'],    fx: { offline: 60 }, txt: '+1h de ganho offline' },
+    { id: 'nerd',    name: 'Kit Nerd',       items: ['nerd', 'calc', 'planilha', 'mouse'],              fx: { tap: 50 },    txt: '+50% no toque' },
+    { id: 'trader',  name: 'Kit Trader',     items: ['sinais', 'amaldicoada', 'terminal', 'planilha'],  fx: { event: 15 },  txt: 'eventos +15%' },
+    { id: 'sorte',   name: 'Kit Sorte',      items: ['gravsorte', 'ferradura', 'bola', 'paodourado'],   fx: { crit: 3 },    txt: '+3% crítico' },
+    { id: 'tubarao', name: 'Kit Tubarão',    items: ['barbatana', 'cafe', 'esportivo', 'mouse'],        fx: { shark: 10 },  txt: '+10s de Modo Tubarão' },
+    { id: 'luxo',    name: 'Kit Luxo',       items: ['coroa', 'diamante', 'monoculo', 'borboleta'],     fx: { prod: 25 },   txt: '+25% produção' },
+    { id: 'lenda',   name: 'Kit Lenda',      items: ['impressora', 'aureola', 'laser', 'coroa'],        fx: { mult: 2 },    txt: 'produção x2' },
+  ];
+
+  PS.setDone = set => set.items.every(id => PS.S.inv[id]);
+
+  // Comemora sets recém-completados (chamado após ganhar itens e 1x por segundo).
+  PS.checkSets = function () {
+    const S = PS.S;
+    PS.SETS.forEach(set => {
+      if (S.setsDone[set.id] || !PS.setDone(set)) return;
+      S.setsDone[set.id] = true;
+      PS.recalcBonuses();
+      PS.recalc();
+      setTimeout(() => {
+        PS.fx.banner('SET COMPLETO!', set.name + ': ' + set.txt, PS.C.gold);
+        PS.fx.confetti(90);
+        PS.audio.promote();
+        PS.ui.toast('📚', 'Álbum: ' + set.name + ' completo! ' + set.txt, 'gold');
+      }, 400);
+    });
+  };
+
+  // Soma pesquisas do MBA, sets completos, itens equipados e coleção.
   PS.bonuses = function () {
-    const S = PS.S, b = { prod: 0, tap: 0, crit: 0, offline: 0, event: 0, shark: 0, floor: 0 };
-    const eq = [...S.equip.ativos, S.equip.head, S.equip.eyes, S.equip.neck].filter(Boolean);
+    const S = PS.S;
+    const b = { prod: 0, tap: 0, crit: 0, offline: 0, event: 0, shark: 0, floor: 0, mult: 1,
+      slots: 0, pityCut: 0, costCut: 0, cameloDisc: 0, rslots: 0, autobuy: 0, autocollect: 0, farelo: 0 };
+    const add = fx => {
+      for (const k in fx) {
+        if (k === 'floor') b.floor = Math.max(b.floor, fx.floor);
+        else if (k === 'mult') b.mult *= fx.mult;
+        else b[k] += fx[k];
+      }
+    };
+    (PS.RESEARCH || []).forEach(r => { if (S.research && S.research.done[r.id]) add(r.fx); });
+    PS.SETS.forEach(set => { if (PS.setDone(set)) add(set.fx); });
+    const slots = 3 + b.slots;
+    const eq = [...S.equip.ativos.slice(0, slots), S.equip.head, S.equip.eyes, S.equip.neck].filter(Boolean);
     eq.forEach(id => {
       const it = PS.ITEM_BY_ID[id], lvl = S.inv[id];
       if (!it || !lvl) return;
@@ -111,6 +159,6 @@
 
   PS.permMult = function () {
     const b = PS.B;
-    return b ? (1 + b.prod / 100) * (1 + b.collection / 100) : 1;
+    return b ? (1 + b.prod / 100) * (1 + b.collection / 100) * b.mult : 1;
   };
 })();
