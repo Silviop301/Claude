@@ -738,7 +738,8 @@
       const topY = P.gy - P.jump - (tall ? 205 : 160) * P.scale;
       const bx = Math.max(90, Math.min(W - 90, P.px + P.dir * 20 * P.scale));
       bubble.style.left = bx + 'px';
-      bubble.style.top = Math.max(118, topY) + 'px';
+      // Nunca invade o gráfico do mercado (topo do palco)
+      bubble.style.top = Math.max(70 + bubble.offsetHeight + 12, topY) + 'px';
     }
   };
 })();

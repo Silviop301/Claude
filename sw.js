@@ -1,6 +1,6 @@
 // Service worker: guarda o jogo no aparelho para abrir rápido e funcionar offline.
 // Troque VERSION a cada publicação para os jogadores receberem a atualização.
-const VERSION = 'pombo-v7';
+const VERSION = 'pombo-v7b';
 const SHELL = [
   './',
   'index.html',

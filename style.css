@@ -1025,3 +1025,36 @@ button:focus-visible, .stage:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* ---------- Celular (base: iPhone 14, 390 pt) ---------- */
+@media (max-width: 560px) {
+  .hud { padding: 6px 10px; }
+  #money { font-size: 34px; }
+  .rank-next { font-size: 11px; }
+  .shop-head { padding: 6px 10px; row-gap: 6px; }
+  .seg button { font-size: 12px; padding: 2px 8px; min-width: 36px; }
+  #biz, .pane { padding: 12px 10px 14px; gap: 12px; }
+  .biz { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; padding: 6px 8px; border-radius: 14px; }
+  .biz .ico { width: 44px; height: 44px; border-radius: 12px; }
+  .biz .emo { font-size: 23px; }
+  .biz .name { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .biz .sub { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .biz .mile { margin-top: 2px; }
+  .buy { min-width: 80px; padding: 3px 6px 4px; }
+  .buy .c { font-size: 16px; }
+}
+/* Telas baixas (Safari com barras): palco menor para caber mais negócios */
+@media (max-width: 560px) and (max-height: 800px) {
+  #app { grid-template-rows: auto minmax(215px, 37%) minmax(0, 1fr); gap: 8px; padding-block: 8px; }
+  .rank-next { display: none; }
+}
+@media (max-width: 560px) {
+  .bubble { font-size: 13px; max-width: 210px; padding: 4px 10px; }
+  .stage-foot { align-items: stretch; }
+  .tap-hint { align-self: center; }
+  .dip, .position { align-self: flex-end; }
+}
+@media (max-width: 560px) and (max-height: 800px) {
+  .dip { font-size: 14px; padding: 2px 10px 3px; }
+  .dip small { display: none; }
+}
