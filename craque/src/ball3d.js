@@ -79,6 +79,45 @@ function mount(el) {
   addEventListener('resize', fit);
 }
 
-window.CRAQUE_BALL = { mount };
+// Bola 3D do minigame: uma tela transparente por cima da cena em SVG (viewBox w×h),
+// posicionada nas mesmas coordenadas. Só desenha quando a bola se move.
+function flyer(host, w, h) {
+  return modelReady.then(m => {
+    if (!host.isConnected) return null;
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    const cv = renderer.domElement;
+    cv.className = 'ball3d-fly';
+    host.appendChild(cv);
+    const fit = () => renderer.setSize(host.clientWidth || 1, host.clientHeight || 1, false);
+    fit();
+    // Câmera ortográfica com as coordenadas do SVG (y para baixo vira y negativo)
+    const cam = new THREE.OrthographicCamera(0, w, 0, -h, -100, 100);
+    const scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x1c5a3c, 1.7));
+    const sun = new THREE.DirectionalLight(0xfff1c9, 2.4);
+    sun.position.set(-2, 3, 4);
+    scene.add(sun);
+    const ball = m.clone();
+    const s0 = ball.scale.x, diam = 3.0 / Math.sqrt(3); // tamanho normalizado do modelo
+    ball.rotation.set(0.4, 0.8, 0);
+    scene.add(ball);
+    const api = {
+      // x, y no SVG; r = raio no SVG; spin = quanto girar neste quadro
+      set(x, y, r, spin) {
+        ball.position.set(x, -y, 0);
+        ball.scale.setScalar(s0 * (2 * r) / diam);
+        if (spin) { ball.rotation.x -= spin; ball.rotation.y += spin * 0.35; }
+        renderer.render(scene, cam);
+      },
+      dispose() { renderer.dispose(); cv.remove(); removeEventListener('resize', fit); },
+    };
+    addEventListener('resize', fit);
+    return api;
+  }).catch(() => null);
+}
+
+window.CRAQUE_BALL = { mount, flyer };
 // A tela inicial pode ter sido desenhada antes deste módulo carregar
 mount(document.getElementById('ball3d'));
