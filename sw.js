@@ -1,6 +1,6 @@
 // Service worker: guarda o jogo no aparelho para abrir rápido e funcionar offline.
 // Troque VERSION a cada publicação para os jogadores receberem a atualização.
-const VERSION = 'pombo-v7d';
+const VERSION = 'pombo-v8';
 const SHELL = [
   './',
   'index.html',
@@ -10,7 +10,7 @@ const SHELL = [
   'icons/icon-192.png',
   'icons/icon-512.png',
   'src/data.js', 'src/format.js', 'src/audio.js', 'src/save.js', 'src/items.js', 'src/game.js',
-  'src/fx.js', 'src/market.js', 'src/events.js', 'src/loot.js', 'src/meta.js', 'src/wheel.js', 'src/mba.js', 'src/prestige.js',
+  'src/fx.js', 'src/market.js', 'src/events.js', 'src/loot.js', 'src/meta.js', 'src/wheel.js', 'src/mba.js', 'src/prestige.js', 'src/daytrade.js',
   'src/pombo.js', 'src/ui.js', 'src/main.js', 'src/pwa.js',
 ];
 

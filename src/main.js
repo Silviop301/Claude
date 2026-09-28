@@ -250,6 +250,7 @@
     PS.market.update(dt);
     PS.events.update(dt);
     PS.mba.update(dt);
+    PS.daytrade.update(vdt);
     PS.recalc();
     if (PS.cachedPps > 0) PS.earn(PS.cachedPps * dt);
     S.playTime += dt;
@@ -257,7 +258,7 @@
 
     // Fluxo passivo: número subindo do pombo e moedas voando pro contador.
     T.flow += dt;
-    if (T.flow >= 1 && PS.cachedPps > 0) {
+    if (T.flow >= 1 && PS.cachedPps > 0 && !PS.daytrade.on) {
       T.flow = 0;
       const p = PS.pombo.screenPos();
       fx.text(p.x + PS.rand(-30, 30), p.y - 20, '+' + fmt(PS.cachedPps, true), { size: 18, color: '#C9FFD9', vy: -70, life: 1.1 });
@@ -292,6 +293,7 @@
       PS.meta.tick();
       PS.mba.tick();
       PS.prestige.tick();
+      PS.daytrade.tick();
       if (PS.loot.busy === false && document.getElementById('opener').hidden) PS.checkSets();
     }
 
@@ -320,6 +322,7 @@
 
   function bindInput() {
     const stage = document.getElementById('stage-wrap');
+    document.getElementById('dt-open').addEventListener('click', () => PS.daytrade.open());
     stage.addEventListener('pointerdown', e => {
       if (e.target.closest('button')) return;
       e.preventDefault();

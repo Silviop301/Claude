@@ -343,6 +343,8 @@
     });
 
     set($('pps'), 'textContent', fmt(pps, true));
+    set($('dt-tk'), 'textContent', PS.daytrade.label());
+    $('dt-open').classList.toggle('ready', S.dt.tickets > 0);
     ui.refreshMarket();
 
     // Bolinhas de aviso nas abas
@@ -536,15 +538,26 @@
       html:
         '<p>Você ficou fora por <b>' + PS.fmtTime(r.sec) + '</b>. Enquanto isso, seus negócios renderam:</p>' +
         '<div class="m-big">+' + fmt(r.gain) + '</div>' +
+        '<p class="m-note">Termine uma partida de Day Trade no lucro para receber tudo de novo.</p>' +
         (r.capped ? '<p class="m-note">Os negócios rendem até ' + PS.fmtTime(r.cap) + ' sem você. Itens aumentam esse limite.</p>' : ''),
-      actions: [{
-        label: 'Coletar',
-        kind: 'primary',
-        onClick: () => {
-          ui.close();
-          PS.collectOffline(r.gain);
+      actions: [
+        {
+          label: 'Coletar',
+          onClick: () => {
+            ui.close();
+            PS.collectOffline(r.gain);
+          },
         },
-      }],
+        {
+          label: '📈 Dobrar no Day Trade',
+          kind: 'primary',
+          onClick: () => {
+            ui.close();
+            PS.collectOffline(r.gain);
+            PS.daytrade.open({ offline: r.gain });
+          },
+        },
+      ],
     });
   };
 
@@ -573,6 +586,8 @@
       ['Dias seguidos', String(S.login.streak)],
       ['Cursos do MBA', Object.keys(S.research.done).length + '/' + PS.RESEARCH.length],
       ['Pirâmides desmoronadas', String(S.pyramids)],
+      ['Partidas de Day Trade', String(S.dt.plays)],
+      ['Recorde no Day Trade', (S.dt.best ? (S.dt.best >= 100 ? '+' : '') + Math.round(S.dt.best - 100) + '%' : '—')],
       ['Lições de Vida', S.lvTotal + ' (+' + S.lvTotal * 2 + '% em tudo)'],
       ['Sets completos', PS.SETS.filter(PS.setDone).length + '/' + PS.SETS.length],
       ['Farelo', PS.fmt(S.farelo)],

@@ -53,6 +53,7 @@
     { type: 'combo', txt: n => 'Faça um combo de ' + n, target: () => pick([30, 50, 80]), coins: 20 },
     { type: 'box',   txt: n => 'Abra ' + n + ' caixas', target: () => pick([2, 3, 5]), coins: 20 },
     { type: 'event', txt: n => 'Aproveite ' + n + ' eventos (dica, crash ou encomenda)', target: () => pick([2, 3]), coins: 25 },
+    { type: 'daytrade', txt: n => 'Jogue ' + n + (n > 1 ? ' partidas' : ' partida') + ' de Day Trade', target: () => pick([1, 2, 3]), coins: 20 },
     { type: 'shark', txt: n => 'Ative o Modo Tubarão ' + n + (n > 1 ? ' vezes' : ' vez'), target: () => pick([1, 2, 3]), coins: 20 },
   ];
   const TPL = {};
@@ -141,6 +142,8 @@
     { id: 'streak',    icon: '📅', name: 'Frequentador da Praça', desc: '7 dias seguidos',           prog: () => S_().stats.streak7 || 0, target: 1, coins: 50 },
     { id: 'pyr1',      icon: '🔺', name: 'Dessa Vez É Diferente', desc: 'Desmorone sua primeira pirâmide', prog: () => S_().pyramids, target: 1, coins: 50 },
     { id: 'pyr5',      icon: '🏜️', name: 'Esquema Profissional', desc: 'Desmorone 5 pirâmides',        prog: () => S_().pyramids, target: 5, coins: 100 },
+    { id: 'lobo',      icon: '🐺', name: 'Lobo da Praça',        desc: 'Termine um Day Trade com +200%', prog: () => (S_().dt.best >= 300 ? 1 : 0), target: 1, coins: 60 },
+    { id: 'trader',    icon: '📊', name: 'Trader Viciado',       desc: 'Jogue 25 partidas de Day Trade', prog: () => S_().dt.plays, target: 25, coins: 30 },
     { id: 'spin',      icon: '🎡', name: 'Girador Profissional', desc: 'Gire a roda 20 vezes',       prog: () => S_().stats.spins || 0, target: 20, coins: 20 },
   ];
 

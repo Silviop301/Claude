@@ -66,9 +66,12 @@
       <div class="tap-hint" id="tap-hint">Toque no pombo!</div>
       <button class="dip" id="dip" type="button" hidden>📉 Comprar na baixa <small>investe 25% da grana</small></button>
       <div class="position" id="position" hidden></div>
-      <div class="shark" id="shark">
-        <span class="shark-label" id="shark-label">🦈 Modo Tubarão</span>
-        <div class="meter"><i id="shark-fill"></i></div>
+      <div class="foot-row">
+        <div class="shark" id="shark">
+          <span class="shark-label" id="shark-label">🦈 Modo Tubarão</span>
+          <div class="meter"><i id="shark-fill"></i></div>
+        </div>
+        <button type="button" class="dt-open" id="dt-open" aria-label="Jogar Day Trade Turbo">📈 <span id="dt-tk">3/3</span></button>
       </div>
     </div>
   </section>
@@ -124,6 +127,23 @@
     <p class="wh-odds" id="wh-odds"></p>
   </div>
 </div>
+<div id="daytrade" hidden>
+  <div class="dt-card">
+    <div class="dt-head">
+      <b>📈 Day Trade Turbo</b>
+      <button type="button" class="dt-x" id="dt-exit" aria-label="Sair">✕</button>
+    </div>
+    <div class="dt-stats">
+      <div><span>Carteira</span><b id="dt-bal">+0%</b></div>
+      <div><span>Posição</span><b id="dt-pnl">—</b></div>
+      <div><span id="dt-lev">Alav. 1x · tempo</span><b id="dt-time">30s</b></div>
+    </div>
+    <div class="dt-timebar"><i id="dt-time-bar"></i></div>
+    <canvas id="dt-cv"></canvas>
+    <button type="button" class="dt-tapzone" id="dt-tapzone"><span id="dt-hint">Toque para COMPRAR</span><small>Compre na baixa, venda na alta. Trades seguidos no lucro sobem a alavancagem até 5x.</small></button>
+    <div class="dt-result" id="dt-result" hidden></div>
+  </div>
+</div>
 <div id="toasts" aria-live="polite"></div>
 
 <div id="modal" hidden>
@@ -148,6 +168,7 @@
 <script src="src/wheel.js"></script>
 <script src="src/mba.js"></script>
 <script src="src/prestige.js"></script>
+<script src="src/daytrade.js"></script>
 <script src="src/pombo.js"></script>
 <script src="src/ui.js"></script>
 <script src="src/main.js"></script>

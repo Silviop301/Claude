@@ -48,6 +48,7 @@
       pyramids: 0,
       bestPyramid: 0,
       pyrHinted: false,
+      dt: { tickets: 3, nextAt: 0, best: 0, plays: 0 },
       created: now,
       lastTick: now,
     };
@@ -76,6 +77,8 @@
     if (!out.setsDone || typeof out.setsDone !== 'object') out.setsDone = {};
     ['lvTotal', 'lvSpent', 'pyramids', 'bestPyramid'].forEach(k => { if (!isFinite(out[k]) || out[k] < 0) out[k] = 0; });
     if (!out.talents || typeof out.talents !== 'object') out.talents = {};
+    out.dt = Object.assign(base.dt, s && s.dt);
+    ['tickets', 'nextAt', 'best', 'plays'].forEach(k => { if (!isFinite(out.dt[k]) || out.dt[k] < 0) out.dt[k] = 0; });
     out.daily = Object.assign(base.daily, s && s.daily);
     if (!Array.isArray(out.daily.missions)) out.daily.missions = [];
     out.weekly = Object.assign(base.weekly, s && s.weekly);
