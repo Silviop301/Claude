@@ -118,7 +118,8 @@
     // Atributos (pico)
     ctx.fillStyle = T.ink;
     const A = d.attrs;
-    const stats = [['FIN', A.fin], ['PAS', A.pas], ['DRI', A.dri], ['FÍS', A.fis], ['MEN', A.men], ['GOL', d.goals]];
+    // Mesmos 6 atributos da carta do FIFA/EA FC
+    const stats = [['RIT', A.rit], ['FIN', A.fin], ['PAS', A.pas], ['DRI', A.dri], ['DEF', A.def], ['FÍS', A.fis]];
     stats.forEach(([k, v], i) => {
       const col = i < 3 ? 0 : 1, row = i % 3;
       const x = col ? 345 : 115, y = 568 + row * 48;
@@ -138,7 +139,7 @@
     const icons = (d.traits || []).map(t => t.icon + (t.lv > 1 ? ['', '', '²', '³'][t.lv] : '')).join('  ');
     ctx.fillText(icons, W / 2, 718);
     ctx.font = '700 21px ' + BODY;
-    ctx.fillText(d.assists + ' ASSIST · ' + d.titles + ' TÍTULOS' + (d.ballon ? ' · ' + d.ballon + ' BOLA' + (d.ballon > 1 ? 'S' : '') + ' DE OURO' : ''), W / 2, 756, 400);
+    ctx.fillText(d.goals + ' GOLS · ' + d.assists + ' ASSIST · ' + d.titles + ' TÍTULOS' + (d.ballon ? ' · ' + d.ballon + ' BOLA' + (d.ballon > 1 ? 'S' : '') + ' DE OURO' : ''), W / 2, 756, 400);
     ctx.font = '800 18px ' + DISPLAY;
     ctx.globalAlpha = 0.8;
     ctx.fillText(T.label + ' · ' + d.verdict.toUpperCase(), W / 2, 784, 330);

@@ -3,7 +3,7 @@
   const D = window.CRAQUE_DATA, S = window.CRAQUE_SIM;
   const $ = id => document.getElementById(id);
   const screen = $('screen');
-  const SAVE = 'craque-v3', HALL = 'craque-hall-v1';
+  const SAVE = 'craque-v4', HALL = 'craque-hall-v1';
   const YEAR0 = 2026;
   let c = null;      // carreira atual
   let step = null;   // etapa atual (para retomar)
@@ -14,7 +14,7 @@
   const league = id => D.LEAGUE_BY_ID[club(id).league];
   const stars = t => '★'.repeat(t) + '☆'.repeat(5 - t);
   const year = () => YEAR0 + c.season;
-  const crest = (id, cls) => '<img class="crest' + (cls ? ' ' + cls : '') + '" src="badges/' + id + '.png" alt="" loading="lazy">';
+  const crest = (id, cls) => '<img class="crest' + (cls ? ' ' + cls : '') + '" src="badges/' + id + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">';
   const trophy = (type, size) => window.CRAQUE_TROPHY(type, size);
   const titleType = t => (t.id === 'cont' ? (t.name === 'Libertadores' ? 'lib' : 'ucl') : t.id);
   const meter = (label, v) => '<span class="m"><span class="ml">' + label + ' · ' + S.relLabel(v) + '</span><span class="mb"><i style="width:' + Math.round(v) + '%" class="' + (v >= 62 ? 'hi' : v < 32 ? 'lo' : '') + '"></i></span></span>';
@@ -86,7 +86,7 @@
       '<div class="field"><label for="f-name">Nome na camisa</label><input id="f-name" maxlength="18" value="' + D.NICKNAMES[i] + '"></div>' +
       '<div class="field"><label>Posição</label><div class="seg" id="f-pos"><button data-v="ATA" class="on">Atacante</button><button data-v="MEI">Meia</button></div></div>' +
       '<div class="field"><label>Pé bom</label><div class="seg" id="f-foot"><button data-v="D" class="on">Destro</button><button data-v="E">Canhoto</button></div></div>' +
-      '<div class="field"><label>País</label><div class="seg" id="f-country">' + D.COUNTRIES.map((k, j) => '<button data-v="' + k.id + '"' + (j ? '' : ' class="on"') + ' aria-label="' + k.id + '">' + k.flag + '</button>').join('') + '</div></div>' +
+      '<div class="field"><label>País</label><div class="seg flags" id="f-country">' + D.COUNTRIES.map((k, j) => '<button data-v="' + k.id + '"' + (j ? '' : ' class="on"') + ' aria-label="' + k.id + '">' + k.flag + '</button>').join('') + '</div></div>' +
       '<button class="btn" id="b-go">Começar carreira</button>'
     );
     [['f-pos', 'pos'], ['f-foot', 'foot'], ['f-country', 'country']].forEach(([id, key]) => {

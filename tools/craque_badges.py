@@ -31,11 +31,37 @@ SEARCH = {
     "Porto": ("Porto", "Portugal"), "Sporting": ("Sporting CP", "Portugal"), "Milan": ("AC Milan", "Italy"),
     "Roma": ("AS Roma", "Italy"), "Monaco": ("Monaco", "France"), "Lyon": ("Lyon", "France"),
     "Internacional": ("Internacional", "Brazil"), "Independiente": ("Independiente", "Argentina"),
+    # clubes da expansão
+    "Remo": ("Clube do Remo", "Brazil"), "Botafogo-SP": ("Botafogo SP", "Brazil"), "Sport": ("Sport Recife", "Brazil"),
+    "Ceará": ("Ceara", "Brazil"), "América-MG": ("America Mineiro", "Brazil"), "Novorizontino": ("Gremio Novorizontino", "Brazil"),
+    "Operário-PR": ("Operario Ferroviario", "Brazil"), "Athletico-PR": ("Athletico Paranaense", "Brazil"), "Red Bull Bragantino": ("Red Bull Bragantino", "Brazil"),
+    "Vitória": ("Vitoria", "Brazil"), "Volta Redonda": ("Volta Redonda", "Brazil"),
+    "Vélez Sarsfield": ("Velez Sarsfield", "Argentina"), "Estudiantes": ("Estudiantes de La Plata", "Argentina"), "Talleres": ("Talleres Cordoba", "Argentina"),
+    "Lanús": ("Lanus", "Argentina"), "Huracán": ("Huracan", "Argentina"), "Newell's Old Boys": ("Newells Old Boys", "Argentina"),
+    "Gimnasia La Plata": ("Gimnasia La Plata", "Argentina"), "Colón": ("Colon", "Argentina"),
+    "Peñarol": ("Penarol", "Uruguay"), "Nacional": ("Nacional Montevideo", "Uruguay"), "Liverpool (URU)": ("Liverpool Montevideo", "Uruguay"),
+    "River Plate (URU)": ("River Plate Montevideo", "Uruguay"), "Defensor Sporting": ("Defensor Sporting", "Uruguay"),
+    "Atlético Nacional": ("Atletico Nacional", "Colombia"), "América de Cali": ("America de Cali", "Colombia"), "Junior": ("Atletico Junior", "Colombia"),
+    "Independiente Santa Fe": ("Independiente Santa Fe", "Colombia"), "Deportes Tolima": ("Deportes Tolima", "Colombia"),
+    "Vitória de Guimarães": ("Vitoria Guimaraes", "Portugal"), "Famalicão": ("Famalicao", "Portugal"), "Marítimo": ("Maritimo", "Portugal"),
+    "Leixões": ("Leixoes", "Portugal"), "Académica": ("Academica de Coimbra", "Portugal"),
+    "Celta de Vigo": ("Celta Vigo", "Spain"), "Sporting Gijón": ("Sporting Gijon", "Spain"), "Deportivo La Coruña": ("Deportivo La Coruna", "Spain"),
+    "Málaga": ("Malaga", "Spain"), "Cádiz": ("Cadiz", "Spain"), "Real Betis": ("Real Betis", "Spain"),
+    "Brighton": ("Brighton and Hove Albion", "England"), "West Ham": ("West Ham United", "England"), "Wolverhampton": ("Wolverhampton Wanderers", "England"),
+    "Norwich City": ("Norwich City", "England"),
+    "Stuttgart": ("VfB Stuttgart", "Germany"), "Wolfsburg": ("VfL Wolfsburg", "Germany"), "Freiburg": ("SC Freiburg", "Germany"),
+    "Borussia M'gladbach": ("Borussia Monchengladbach", "Germany"), "Hamburgo": ("Hamburg", "Germany"), "Hertha Berlin": ("Hertha", "Germany"),
+    "Nürnberg": ("Nurnberg", "Germany"), "Kaiserslautern": ("Kaiserslautern", "Germany"),
+    "Saint-Étienne": ("St Etienne", "France"), "Nice": ("Nice", "France"), "Lille": ("Lille OSC", "France"),
+    "PSV": ("PSV Eindhoven", "The Netherlands"), "AZ Alkmaar": ("AZ Alkmaar", "The Netherlands"), "Twente": ("Twente", "The Netherlands"),
+    "Utrecht": ("Utrecht", "The Netherlands"), "Heerenveen": ("Heerenveen", "The Netherlands"), "Groningen": ("Groningen", "The Netherlands"),
+    "Al-Ahli": ("Al Ahli Jeddah", "Saudi Arabia"), "Seattle Sounders": ("Seattle Sounders", "USA"), "Atlanta United": ("Atlanta United", "USA"),
 }
 # Clubes que a busca por nome não acha direito: código do API-Football (logo em media.api-sports.io).
 APIFOOTBALL = {"PSG": 85, "Al-Hilal": 2932, "Al-Ittihad": 2938}
 COUNTRY = {"bra": "Brazil", "arg": "Argentina", "por": "Portugal", "esp": "Spain", "ing": "England",
-           "ita": "Italy", "ale": "Germany", "fra": "France", "ara": "Saudi Arabia", "usa": "USA"}
+           "ita": "Italy", "ale": "Germany", "fra": "France", "ara": "Saudi Arabia", "usa": "USA",
+           "uru": "Uruguay", "col": "Colombia", "ned": "The Netherlands"}
 
 
 def clubs():

@@ -38,9 +38,11 @@
     const r = S.rng(seed || (Date.now() ^ 0x5EED));
     const base = r.int(44, 52);
     const attrs = {};
-    ['fin', 'pas', 'dri', 'fis', 'men'].forEach(k => { attrs[k] = clamp(base + r.int(-6, 6), 30, 70); });
-    // Atributos principais da posição começam um pouco maiores
-    if (opts.pos === 'ATA') { attrs.fin += 4; attrs.dri += 2; } else { attrs.pas += 4; attrs.dri += 2; }
+    D.ATTRS.forEach(k => { attrs[k] = clamp(base + r.int(-6, 6), 30, 70); });
+    // Atributos principais da posição começam maiores; defesa começa baixa (mais ainda no atacante)
+    if (opts.pos === 'ATA') { attrs.fin += 4; attrs.rit += 3; attrs.dri += 2; attrs.def -= 16; }
+    else { attrs.pas += 4; attrs.dri += 2; attrs.def -= 8; }
+    attrs.def = clamp(attrs.def, 20, 70);
     return {
       v: 1, seed: r.state(),
       name: opts.name, pos: opts.pos, foot: opts.foot, country: opts.country,
@@ -659,10 +661,12 @@
       used.add(cl.id);
       return cl;
     };
+    const mine = x => D.countryOf(x) === c.country;
     if (academy) {
-      const home = D.COUNTRIES.find(x => x.id === c.country).home;
+      // A base é sempre no país escolhido, nas divisões mais baixas dele
+      const minT = Math.min(...D.CLUBS.filter(mine).map(x => x.tier));
       for (let i = 0; i < 3; i++) {
-        const cl = pickClub(x => home.includes(x.league) && x.tier <= 2) || pickClub(x => x.tier <= 2);
+        const cl = pickClub(x => mine(x) && x.tier === minT) || pickClub(x => mine(x) && x.tier <= minT + 1) || pickClub(mine);
         if (cl) out.push(offerFrom(c, cl, 'base'));
       }
       save();
@@ -674,7 +678,10 @@
     const up = pickClub(x => x.tier === Math.min(5, t + (r() < 0.35 ? 1 : 0)) && x.strength >= o - 6);
     if (up) out.push(offerFrom(c, up, 'up'));
     // 2) Mesmo nível, papel de protagonista
-    const mid = pickClub(x => x.tier === t && x.strength <= o + 1) || pickClub(x => x.tier === Math.max(1, t - 1));
+    // Jovem: o mercado do próprio país costuma chamar primeiro
+    const homeFirst = c.age <= 21 && r() < 0.6;
+    const mid = (homeFirst && pickClub(x => mine(x) && x.tier === t && x.strength <= o + 1)) ||
+      pickClub(x => x.tier === t && x.strength <= o + 1) || pickClub(x => x.tier === Math.max(1, t - 1));
     if (mid) out.push(offerFrom(c, mid, 'mid'));
     // 3) Especial: dinheiro, volta ao clube do coração ou aposta
     let sp = null;
