@@ -181,8 +181,9 @@
         '<b>' + x.trait.name + (x.type === 'up' ? ' → Nv ' + x.lv : '') + ' <span class="tag ' + (x.type === 'up' ? 'green' : x.type === 'swap' ? 'red' : 'blue') + '">' + label[x.type] + '</span></b>' +
         '<span class="d">' + (x.type === 'up' ? 'Efeito +50% e bônus de atributo de novo. ' : '') + x.trait.desc +
         (x.completes ? '<br><span class="tag gold">Completa: ' + x.completes.icon + ' ' + x.completes.name + '</span>' : '') + '</span></button>').join('') +
-      '</div>'
+      '</div><button class="btn ghost" id="b-skip">Seguir sem mudar</button>'
     );
+    $('b-skip').onclick = eventOrSeason;
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       const x = ch[+b.dataset.i];
       if (x.type === 'up') { S.upgradeTrait(c, x.trait.id); bar(); return eventOrSeason(); }

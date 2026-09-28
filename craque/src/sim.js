@@ -267,10 +267,11 @@
       when: c => c.age >= 28 && S.ovr(c) >= 72 && !['ara', 'usa'].includes(D.CLUB_BY_ID[c.club].league),
       build: (c, r) => {
         const dest = pickClub(r, x => ['ara', 'usa'].includes(x.league));
-        const w = S.wage(c, dest) * 1.5;
+        // Milionária de verdade: sempre bem acima do que você já ganha
+        const w = Math.round(Math.max(S.wage(c, dest) * 1.5, c.wage * 2.5) / 1000) * 1000;
         return {
           title: 'Proposta milionária do ' + dest.name,
-          text: 'Oferecem R$ ' + fmtMoney(w) + ' por semana. É mais que você ganharia no resto da carreira na Europa.',
+          text: 'Oferecem R$ ' + fmtMoney(w) + ' por semana, ' + (c.wage ? String(Math.round(w / c.wage * 10) / 10).replace('.', ',') + 'x o que você ganha hoje (R$ ' + fmtMoney(c.wage) + ')' : 'uma fortuna') + '.',
           dest: dest.id, wage: w,
           options: [
             { label: 'Aceitar a fortuna', hint: 'Salário gigante · adeus à Bola de Ouro e às grandes taças' },
@@ -642,7 +643,9 @@
     let years = YEARS[kind] || 3;
     if (c.age >= 32) years = Math.min(years, 2);
     if (c.age >= 35) years = 1;
-    return { club: club.id, kind, role: role.name, share: role.share, wage: S.wage(c, club), years };
+    let wage = S.wage(c, club);
+    if (kind === 'money') wage = Math.max(wage, Math.round(c.wage * 2 / 1000) * 1000); // proposta de dinheiro paga ao menos o dobro
+    return { club: club.id, kind, role: role.name, share: role.share, wage, years };
   }
 
   S.offers = function (c, academy) {
