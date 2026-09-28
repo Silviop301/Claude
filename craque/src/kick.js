@@ -206,9 +206,9 @@
       help.innerHTML = '&nbsp;';
       aim.setAttribute('opacity', '0');
       const x = dx * side; // no referencial da regra (barreira sempre "à esquerda")
-      // Goleiro do pênalti lê o batedor: acerta o lado 45% das vezes, erra 35%, fica no meio 20%
+      // Goleiro do pênalti: acerta o lado 38% das vezes, erra 42%, fica no meio 20%
       const kr = Math.random(), bs = Math.sign(x) || (Math.random() < 0.5 ? -1 : 1);
-      const kSide = setup.fk ? 0 : kr < 0.45 ? bs : kr < 0.8 ? -bs : 0;
+      const kSide = setup.fk ? 0 : kr < 0.38 ? bs : kr < 0.8 ? -bs : 0;
       if (setup.fk || kSide) keeper.classList.add('diving'); // estica os braços no pulo
       const res = S().kickResult(setup, x, y, kSide);
       // Para onde a bola vai no desenho
@@ -234,7 +234,8 @@
         else if (Math.sign(dx) === kSide) K = gloveTo(bxT - kSide * 30, byT + 12, kSide); // ângulo: quase
         else K = gloveTo(px(kSide * 0.6), py(Math.min(y, 0.9)), kSide); // pulou para o outro lado
       } else {
-        K = { dx: 0, dy: -Math.min(y, 0.8) * 50, rot: 0 };
+        // Parado no meio: defende saltando pouco; na cavadinha fica plantado e a bola passa por cima
+        K = { dx: 0, dy: saved ? -Math.min(y, 0.6) * 40 : -6, rot: 0 };
       }
       const kDx = K.dx, kDy = K.dy, kRot = K.rot;
       const k0 = setup.fk ? px(0.4 * side) - GX : 0;
