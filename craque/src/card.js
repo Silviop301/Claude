@@ -108,14 +108,17 @@
     shield(ctx); ctx.lineWidth = 2.5; ctx.strokeStyle = T.line; ctx.stroke();
     ctx.restore();
     // Texto em alto-relevo: sombra escura embaixo e luz em cima
-    const emboss = T.holo ? ['rgba(0,0,0,.6)', 'rgba(255,255,255,.12)'] : ['rgba(255,255,255,.55)', 'rgba(0,0,0,.28)'];
-    const fillText = ctx.fillText.bind(ctx);
+    // Sutil: só 1 px de luz/sombra. Usa sempre o fillText original do canvas — redesenhar a carta
+    // (ex.: trocar o escudo) não pode acumular o efeito.
+    const emboss = T.holo ? ['rgba(0,0,0,.45)', 'rgba(255,255,255,0)'] : ['rgba(255,255,255,.4)', 'rgba(0,0,0,.12)'];
+    const proto = (typeof CanvasRenderingContext2D !== 'undefined' && CanvasRenderingContext2D.prototype.fillText) || ctx.fillText;
+    const fillText = proto.bind(ctx);
     let embossOn = true; // desligado nos emojis (bandeira e ícones), que borrariam
     ctx.fillText = function (t, x, y, mw) {
       if (!embossOn) return mw ? fillText(t, x, y, mw) : fillText(t, x, y);
       const f = this.fillStyle;
-      this.fillStyle = emboss[0]; mw ? fillText(t, x + 1, y + 2, mw) : fillText(t, x + 1, y + 2);
-      this.fillStyle = emboss[1]; mw ? fillText(t, x - 1, y - 1, mw) : fillText(t, x - 1, y - 1);
+      this.fillStyle = emboss[0]; mw ? fillText(t, x, y + 1.5, mw) : fillText(t, x, y + 1.5);
+      this.fillStyle = emboss[1]; mw ? fillText(t, x, y - 1, mw) : fillText(t, x, y - 1);
       this.fillStyle = f; mw ? fillText(t, x, y, mw) : fillText(t, x, y);
     };
 
@@ -166,15 +169,21 @@
     ctx.fillStyle = T.ink;
     ctx.textAlign = 'center';
     ctx.font = '34px ' + BODY;
+    const extraN = (d.ballon ? 1 : 0) + (d.wc ? 1 : 0);
     const icons = (d.traits || []).map(t => t.icon + (t.lv > 1 ? ['', '', '²', '³'][t.lv] : '')).join('  ');
-    embossOn = false; ctx.fillText(icons, W / 2, 718); embossOn = true;
+    embossOn = false; ctx.fillText(icons, W / 2, extraN ? 710 : 718); embossOn = true;
     // Estrelas de campeão do mundo acima do nome da camisa
     if (d.wc) { ctx.font = '800 26px ' + DISPLAY; embossOn = false; ctx.fillText('★'.repeat(Math.min(d.wc, 5)), 385, 120); embossOn = true; }
+    // Rodapé: números da carreira; conquistas grandes numa segunda linha (nada espremido)
+    const extra = [];
+    if (d.ballon) extra.push(d.ballon + ' BOLA' + (d.ballon > 1 ? 'S' : '') + ' DE OURO');
+    if (d.wc) extra.push(d.wc > 1 ? d.wc + ' COPAS DO MUNDO' : 'CAMPEÃO DO MUNDO');
     ctx.font = '700 21px ' + BODY;
-    ctx.fillText(d.goals + ' GOLS · ' + d.assists + ' ASSIST · ' + d.titles + ' TÍTULOS' + (d.ballon ? ' · ' + d.ballon + ' BOLA' + (d.ballon > 1 ? 'S' : '') + ' DE OURO' : ''), W / 2, 756, 400);
+    ctx.fillText(d.goals + ' GOLS · ' + d.assists + ' ASSIST · ' + d.titles + ' TÍTULOS', W / 2, extra.length ? 741 : 756, 420);
+    if (extra.length) { ctx.font = '800 19px ' + BODY; ctx.fillText(extra.join(' · '), W / 2, 766, 380); }
     ctx.font = '800 18px ' + DISPLAY;
     ctx.globalAlpha = 0.8;
-    ctx.fillText(T.label + ' · ' + d.verdict.toUpperCase(), W / 2, 784, 330);
+    ctx.fillText(T.label + ' · ' + d.verdict.toUpperCase(), W / 2, extra.length ? 790 : 784, extra.length ? 310 : 330);
     ctx.globalAlpha = 1;
     return canvas;
   };
