@@ -1,0 +1,81 @@
+// Interface — tela inicial e criação do jogador
+(function () {
+  const U = window.CRAQUE_UI;
+  const { tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar } = U;
+  // ---------- início ----------
+  function home() {
+    G.c = null; G.step = null; bar();
+    const saved = load(SAVE);
+    const hall = load(HALL) || [];
+    render(
+      '<div class="hero"><div class="ball3d" id="ball3d" aria-hidden="true"></div><div class="eyebrow">Protótipo 3</div><h1>CRAQUE</h1></div>' +
+      '<p class="lead">Crie um garoto de 16 anos, escolha propostas, monte o estilo dele e descubra se ele vira lenda.</p>' +
+      (saved && saved.c ? '<button class="btn" id="b-cont">Continuar carreira de ' + esc(saved.c.name) + '</button>' : '') +
+      '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
+      '<button class="btn ghost small-btn" id="b-sound"></button>' +
+      (hall.length ? '<div class="eyebrow" style="margin-top:8px">Hall da Fama</div><div class="hall">' +
+        hall.map(h => '<div><b>' + h.grade + '</b><span>' + esc(h.name) + ' · ' + esc(h.verdict) + '<br><small>' + h.goals + ' gols · ' + h.assists + ' assist. · ' + h.titles + ' taças' + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '') + '</small></span><span class="muted">' + h.score + '</span></div>').join('') + '</div>' : '')
+    );
+    if ($('b-cont')) $('b-cont').onclick = () => {
+      G.c = saved.c;
+      // saves de antes dos investimentos
+      G.c.inv = G.c.inv || {}; G.c.buys = G.c.buys || 0; G.c.spent = G.c.spent || 0;
+      G.c.leagueOf = G.c.leagueOf || {}; G.c.clubBoost = G.c.clubBoost || {};
+      S.applyLeagues(G.c); // quem subiu e quem caiu nesta carreira
+      resume(saved.step);
+    };
+    $('b-new').onclick = create;
+    const snd = $('b-sound');
+    const sndTxt = () => { snd.textContent = window.CRAQUE_SFX && window.CRAQUE_SFX.on ? '🔊 Som ligado' : '🔇 Som desligado'; };
+    if (snd) { sndTxt(); snd.onclick = () => { if (window.CRAQUE_SFX) window.CRAQUE_SFX.toggle(); sndTxt(); }; }
+    if (window.CRAQUE_BALL) window.CRAQUE_BALL.mount($('ball3d'));
+  }
+
+  function resume(st) {
+    G.step = st;
+    bar();
+    if (!G.c.club) return U.academy();
+    if (st === 'wc') return U.wcIntro(); // Copa antes de tudo (pode ser a última dança)
+    if (S.mustRetire(G.c)) return U.finale();
+    if (st === 'offers') return S.windowOpen(G.c) ? U.windowOffers() : U.preseason();
+    if (st === 'event') return U.eventScreen();
+    if (st === 'invest') return U.invest();
+    if (st === 'moment') return U.momentOrSeason();
+    return U.preseason();
+  }
+
+  // ---------- criação ----------
+  function create() {
+    const i = Math.floor(Math.random() * D.NICKNAMES.length);
+    const st = { pos: 'ATA', foot: 'D', country: 'Brasil' };
+    render(
+      '<div class="eyebrow">Nova carreira</div><h2>Quem é o garoto?</h2>' +
+      '<div class="field"><label for="f-name">Nome na camisa</label><input id="f-name" maxlength="18" value="' + D.NICKNAMES[i] + '"></div>' +
+      '<div class="field"><label>Posição</label><div class="seg" id="f-pos"><button data-v="ATA" class="on">Atacante</button><button data-v="MEI">Meia</button></div></div>' +
+      '<div class="field"><label for="f-num">Número da camisa</label><div class="num-pick"><input id="f-num" type="number" inputmode="numeric" min="1" max="99" value="9">' +
+      [7, 9, 10, 11, 99].map(n => '<button type="button" data-n="' + n + '">' + n + '</button>').join('') + '</div></div>' +
+      '<div class="field"><label>Pé bom</label><div class="seg" id="f-foot"><button data-v="D" class="on">Destro</button><button data-v="E">Canhoto</button></div></div>' +
+      '<div class="field"><label>País</label><div class="seg flags" id="f-country">' + D.COUNTRIES.map((k, j) => '<button data-v="' + k.id + '"' + (j ? '' : ' class="on"') + ' aria-label="' + k.id + '">' + k.flag + '</button>').join('') + '</div></div>' +
+      '<button class="btn" id="b-go">Começar carreira</button>'
+    );
+    [['f-pos', 'pos'], ['f-foot', 'foot'], ['f-country', 'country']].forEach(([id, key]) => {
+      $(id).querySelectorAll('button').forEach(b => b.onclick = () => {
+        $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+        st[key] = b.dataset.v;
+        // Número padrão acompanha a posição até a pessoa escolher um
+        if (key === 'pos' && !numTouched) $('f-num').value = b.dataset.v === 'ATA' ? 9 : 10;
+      });
+    });
+    let numTouched = false;
+    $('f-num').oninput = () => { numTouched = true; };
+    screen.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { $('f-num').value = b.dataset.n; numTouched = true; });
+    $('b-go').onclick = () => {
+      const name = $('f-name').value.trim() || D.NICKNAMES[i];
+      const number = Math.max(1, Math.min(99, parseInt($('f-num').value, 10) || (st.pos === 'ATA' ? 9 : 10)));
+      G.c = S.newCareer({ name, pos: st.pos, foot: st.foot, country: st.country, number });
+      U.academy();
+    };
+  }
+
+  Object.assign(U, { home, resume, create });
+})();
