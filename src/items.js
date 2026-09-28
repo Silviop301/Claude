@@ -128,7 +128,8 @@
   PS.bonuses = function () {
     const S = PS.S;
     const b = { prod: 0, tap: 0, crit: 0, offline: 0, event: 0, shark: 0, floor: 0, mult: 1,
-      slots: 0, pityCut: 0, costCut: 0, cameloDisc: 0, rslots: 0, autobuy: 0, autocollect: 0, farelo: 0 };
+      slots: 0, pityCut: 0, costCut: 0, cameloDisc: 0, rslots: 0, autobuy: 0, autocollect: 0, farelo: 0,
+      startMoney: 0, startBiz: 0, megaMult: 0, coinMult: 0, sharkX: 0, insider: 0, lendMult: 0 };
     const add = fx => {
       for (const k in fx) {
         if (k === 'floor') b.floor = Math.max(b.floor, fx.floor);
@@ -137,6 +138,7 @@
       }
     };
     (PS.RESEARCH || []).forEach(r => { if (S.research && S.research.done[r.id]) add(r.fx); });
+    (PS.TALENTS || []).forEach(t => { if (S.talents && S.talents[t.id]) add(t.fx); });
     PS.SETS.forEach(set => { if (PS.setDone(set)) add(set.fx); });
     const slots = 3 + b.slots;
     const eq = [...S.equip.ativos.slice(0, slots), S.equip.head, S.equip.eyes, S.equip.neck].filter(Boolean);
@@ -159,6 +161,7 @@
 
   PS.permMult = function () {
     const b = PS.B;
-    return b ? (1 + b.prod / 100) * (1 + b.collection / 100) * b.mult : 1;
+    const lv = PS.prestige ? PS.prestige.lvMult() : 1;
+    return b ? (1 + b.prod / 100) * (1 + b.collection / 100) * b.mult * lv : 1;
   };
 })();

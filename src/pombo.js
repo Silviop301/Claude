@@ -238,6 +238,22 @@
   function drawEye(hx, hy) {
     const ex = hx + 9, ey = hy - 5;
     const st = PS.S.stage;
+    if (P.mood === 'cry') {
+      // Olho apertado e duas cachoeiras de lágrima
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = C.ink;
+      ctx.beginPath();
+      ctx.moveTo(ex - 8, ey - 4); ctx.lineTo(ex + 2, ey); ctx.lineTo(ex - 8, ey + 4);
+      ctx.stroke();
+      const k = (P.t * 3) % 1;
+      [0, 0.5].forEach(o => {
+        const u = (k + o) % 1;
+        ctx.globalAlpha = 1 - u * 0.6;
+        ell(ex - 2 - u * 10, ey + 8 + u * 40, 4.5, 7, 0, '#7FD3FF', 2);
+      });
+      ctx.globalAlpha = 1;
+      return;
+    }
     if (st >= 2 && !PS.S.equip.eyes) {
       // Óculos escuros (substituem o olho, exceto dormindo)
       ctx.lineWidth = 4;

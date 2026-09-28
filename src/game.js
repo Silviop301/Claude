@@ -42,6 +42,12 @@
       auto: { buy: true, collect: true },
       fareloAt: 0,
       setsDone: {},
+      lvTotal: 0,
+      lvSpent: 0,
+      talents: {},
+      pyramids: 0,
+      bestPyramid: 0,
+      pyrHinted: false,
       created: now,
       lastTick: now,
     };
@@ -66,8 +72,10 @@
     ['head', 'eyes', 'neck'].forEach(sl => { if (!(eq[sl] && inv[eq[sl]] && PS.ITEM_BY_ID[eq[sl]].slot === sl)) eq[sl] = null; });
     out.equip = eq;
     out.newItems = (Array.isArray(out.newItems) ? out.newItems : []).filter(id => inv[id]);
-    if (!['biz', 'boxes', 'items', 'mba', 'daily'].includes(out.tab)) out.tab = 'biz';
+    if (!['biz', 'boxes', 'items', 'mba', 'pyramid', 'daily'].includes(out.tab)) out.tab = 'biz';
     if (!out.setsDone || typeof out.setsDone !== 'object') out.setsDone = {};
+    ['lvTotal', 'lvSpent', 'pyramids', 'bestPyramid'].forEach(k => { if (!isFinite(out[k]) || out[k] < 0) out[k] = 0; });
+    if (!out.talents || typeof out.talents !== 'object') out.talents = {};
     out.daily = Object.assign(base.daily, s && s.daily);
     if (!Array.isArray(out.daily.missions)) out.daily.missions = [];
     out.weekly = Object.assign(base.weekly, s && s.weekly);

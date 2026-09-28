@@ -158,6 +158,13 @@
     [0, 3, 7, 10, 12].forEach((s, i) => A.tone(note(s), 0.12, { type: 'square', vol: 0.08, at: 0.65 + i * 0.06 }));
   };
 
+  // Desmoronamento: estrondo grave descendo
+  A.crash = function () {
+    A.noise(1.6, { freq: 300, vol: 0.25 });
+    A.tone(220, 1.4, { type: 'sawtooth', vol: 0.12, slide: 0.2 });
+    [0, -3, -7, -12].forEach((s, i) => A.tone(note(s - 5), 0.35, { type: 'square', vol: 0.07, at: 0.2 + i * 0.3 }));
+  };
+
   A.coins = function () {
     for (let i = 0; i < 8; i++) A.tone(PS.rand(1500, 2600), 0.05, { type: 'triangle', vol: 0.06, at: i * 0.06 });
   };

@@ -44,7 +44,7 @@
   M.tempMult = function () {
     let m = M.v;
     for (const b of M.boosts) m *= b.x;
-    if (M.sharkOn > 0) m *= 5;
+    if (M.sharkOn > 0) m *= 5 + (PS.B ? PS.B.sharkX : 0);
     if (PS.S && PS.S.rodaUntil > Date.now()) m *= 2;
     return m;
   };
@@ -101,7 +101,7 @@
 
     M.regimeT -= dt;
     if (M.regimeT <= 0) {
-      M.mu = PS.pick([0.7, 0.95, 1.2, 1.2, 1.4, 1.6, 2.0]);
+      M.mu = PS.pick([0.7, 0.95, 1.2, 1.2, 1.4, 1.6, 2.0]) + (PS.B ? PS.B.insider : 0);
       M.regimeT = PS.rand(14, 32);
     }
 

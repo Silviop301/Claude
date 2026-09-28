@@ -237,8 +237,17 @@
         ctx.save();
         ctx.translate(t.x, t.y);
         ctx.rotate(Math.sin(t.t * 9) * 0.03 - 0.04);
-        outlinedText(t.str, 0, 0, t.size * Math.min(scale, 1.6), t.color);
-        if (t.sub) outlinedText(t.sub, 0, t.size * 0.72, Math.max(18, t.size * 0.3), '#fff');
+        // Encolhe a faixa para caber na largura da tela
+        if (!t.fit) {
+          ctx.font = t.size + 'px ' + FONT;
+          const w1 = ctx.measureText(t.str).width;
+          ctx.font = Math.max(18, t.size * 0.3) + 'px ' + FONT;
+          const w2 = t.sub ? ctx.measureText(t.sub).width : 0;
+          t.fit = Math.min(1, (W * 0.9) / Math.max(w1, 1), (W * 0.94) / Math.max(w2, 1));
+        }
+        const sz = t.size * t.fit;
+        outlinedText(t.str, 0, 0, sz * Math.min(scale, 1.6), t.color);
+        if (t.sub) outlinedText(t.sub, 0, sz * 0.72 + 6, Math.max(14, t.size * 0.3 * t.fit), '#fff');
         ctx.restore();
       } else {
         outlinedText(t.str, t.x, t.y, t.size * scale, t.color);

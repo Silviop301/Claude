@@ -139,6 +139,8 @@
     { id: 'golpe',     icon: '🤡', name: 'Caí no Golpe',         desc: 'Caia num golpe do Zap',      prog: () => S_().stats.golpes, target: 1, coins: 5 },
     { id: 'moon',      icon: '🚀', name: 'Houston',              desc: 'Vá TO THE MOON',             prog: () => S_().stats.moons, target: 1, coins: 20 },
     { id: 'streak',    icon: '📅', name: 'Frequentador da Praça', desc: '7 dias seguidos',           prog: () => S_().stats.streak7 || 0, target: 1, coins: 50 },
+    { id: 'pyr1',      icon: '🔺', name: 'Dessa Vez É Diferente', desc: 'Desmorone sua primeira pirâmide', prog: () => S_().pyramids, target: 1, coins: 50 },
+    { id: 'pyr5',      icon: '🏜️', name: 'Esquema Profissional', desc: 'Desmorone 5 pirâmides',        prog: () => S_().pyramids, target: 5, coins: 100 },
     { id: 'spin',      icon: '🎡', name: 'Girador Profissional', desc: 'Gire a roda 20 vezes',       prog: () => S_().stats.spins || 0, target: 20, coins: 20 },
   ];
 

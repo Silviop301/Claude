@@ -204,7 +204,7 @@ Recompensas: Grana, Cupons, dobrar coleta offline, chance de caixa no fim.
 4. ✅ **Loot:** ativos, visual do pombo, caixas com animação, pity, inventário, duplicatas.
 5. ✅ **Roda da Fortuna, missões diárias, login streak, conquistas.**
 6. ✅ **MBA do Pombo + álbum + craft.**
-7. **A Pirâmide Desmoronou (prestígio 1).**
+7. ✅ **A Pirâmide Desmoronou (prestígio 1).**
 8. **Minigame Day Trade Turbo.**
 9. **Paraíso Fiscal (prestígio 2)** + balanceamento e polimento.
 

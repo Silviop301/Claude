@@ -68,7 +68,8 @@
     const comboMult = 1 + Math.min(PS.combo, 100) / 100;
     const r = Math.random();
     const critChance = 0.05 + (PS.B ? PS.B.crit : 0) / 100;
-    const crit = r < 0.005 ? 2 : r < critChance ? 1 : 0;
+    const megaChance = 0.005 * (1 + (PS.B ? PS.B.megaMult : 0));
+    const crit = r < megaChance ? 2 : r < critChance ? 1 : 0;
     const v = PS.tapBase() * comboMult * (crit === 2 ? 100 : crit === 1 ? 10 : 1);
     PS.earn(v);
     S.taps++;
@@ -290,6 +291,7 @@
       T.meta = 1;
       PS.meta.tick();
       PS.mba.tick();
+      PS.prestige.tick();
       if (PS.loot.busy === false && document.getElementById('opener').hidden) PS.checkSets();
     }
 

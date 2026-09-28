@@ -753,6 +753,43 @@ button:focus-visible, .stage:focus-visible {
 .cell.none { cursor: pointer; }
 .item-hero.none .ih-ico { filter: brightness(0); opacity: 0.35; }
 
+/* ---------- Pirâmide ---------- */
+.pyr-head {
+  display: flex; gap: 10px; align-items: center;
+  background: #FFE9C2;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  padding: 8px 12px;
+}
+.pyr-ico { font-size: 34px; line-height: 1; }
+.pyr-head div { display: flex; flex-direction: column; line-height: 1.25; }
+.pyr-head > div > b { font: 400 18px var(--display); }
+.pyr-head span { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.pyr-head .pos { color: var(--green-d); font-weight: 800; }
+.pyr-now {
+  display: flex; flex-direction: column; gap: 6px;
+  background: var(--card);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  padding: 10px 12px;
+}
+.pyr-now.ready { background: #FFF1B8; box-shadow: 0 0 0 3px var(--gold); }
+.pn-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-weight: 800; }
+.pn-top b { font: 400 30px var(--display); color: var(--gold-d); text-shadow: 0 2px 0 var(--ink); }
+.pn-next { font-size: 12px; font-weight: 700; color: var(--muted); }
+.pyr-now .btn { align-self: stretch; }
+.pyr-now.ready .btn { animation: breathe 0.9s ease-in-out infinite; }
+
+#app.collapse { animation: collapse 2.3s cubic-bezier(.5, 0, .9, .4) forwards; transform-origin: 50% 60%; }
+#app.rebuild { animation: rebuild 0.9s cubic-bezier(.2, 1.5, .4, 1); }
+@keyframes collapse {
+  0% { transform: none; filter: none; }
+  15% { transform: rotate(-2deg) translateY(4px); }
+  30% { transform: rotate(3deg) translateY(8px); }
+  100% { transform: translateY(40%) scale(0.2) rotate(-25deg); filter: grayscale(1) blur(3px); opacity: 0; }
+}
+@keyframes rebuild { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+
 /* ---------- Diário ---------- */
 .wheel-cta {
   display: grid;

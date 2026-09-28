@@ -21,9 +21,11 @@
     return L.balance(box.cur) + 1e-9 >= L.cost(box);
   };
 
+  // Talento Olho Clínico dobra o peso de Lendário e STONKS.
   L.odds = function (minR) {
-    const tot = R.reduce((a, r, i) => a + (i >= minR ? r.weight : 0), 0);
-    return R.map((r, i) => (i >= minR ? r.weight / tot : 0));
+    const w = R.map((r, i) => (i >= minR ? r.weight * (i >= 4 ? 1 + (PS.B ? PS.B.lendMult : 0) : 1) : 0));
+    const tot = w.reduce((a, x) => a + x, 0);
+    return w.map(x => x / tot);
   };
 
   function rollRarity(minR) {
@@ -287,6 +289,7 @@
 
   // ---------- moedas premium ----------
   PS.addCoins = function (n, x, y) {
+    n = Math.round(n * (1 + (PS.B ? PS.B.coinMult : 0) / 100));
     PS.S.coins += n;
     if (x !== undefined) fx.text(x, y, '+' + n + ' 🪙', { size: 24, color: PS.C.gold, vy: -80, life: 1.3 });
   };

@@ -91,7 +91,8 @@
 
   ui.setTab = function (tab, silent) {
     PS.S.tab = tab;
-    ['biz', 'boxes', 'items', 'mba', 'daily'].forEach(t => {
+    if (tab === 'pyramid' && !PS.prestige.unlocked()) tab = PS.S.tab = 'biz';
+    ['biz', 'boxes', 'items', 'mba', 'pyramid', 'daily'].forEach(t => {
       $(t).hidden = t !== tab;
       const b = $('tab-' + t);
       b.classList.toggle('on', t === tab);
@@ -101,6 +102,7 @@
     if (tab === 'boxes') ui.renderBoxes();
     if (tab === 'daily') PS.meta.renderDaily();
     if (tab === 'mba') PS.mba.render();
+    if (tab === 'pyramid') PS.prestige.render();
     if (tab === 'items') {
       PS.S.newItems = [];
       ui.renderItems();
@@ -351,6 +353,9 @@
     set($('tab-daily').querySelector('.dot'), 'hidden', !PS.meta.claimable() || S.tab === 'daily');
     set($('tab-mba').querySelector('.dot'), 'hidden', !PS.mba.claimable() || S.tab === 'mba');
     if (S.tab === 'mba' && PS.mba._key !== PS.mba.key()) PS.mba.render();
+    set($('tab-pyramid'), 'hidden', !PS.prestige.unlocked());
+    set($('tab-pyramid').querySelector('.dot'), 'hidden', !PS.prestige.claimable() || S.tab === 'pyramid');
+    if (S.tab === 'pyramid' && PS.prestige._key !== PS.prestige.key()) PS.prestige.render();
     if (S.tab === 'daily' && PS.meta._key !== PS.meta.key()) PS.meta.renderDaily();
     const st = PS.STAGES[S.stage], nx = PS.STAGES[S.stage + 1];
     set($('rank-title'), 'textContent', st.title);
@@ -567,6 +572,8 @@
       ['Conquistas', Object.keys(S.ach).length + '/' + PS.meta.ACH.length],
       ['Dias seguidos', String(S.login.streak)],
       ['Cursos do MBA', Object.keys(S.research.done).length + '/' + PS.RESEARCH.length],
+      ['Pirâmides desmoronadas', String(S.pyramids)],
+      ['Lições de Vida', S.lvTotal + ' (+' + S.lvTotal * 2 + '% em tudo)'],
       ['Sets completos', PS.SETS.filter(PS.setDone).length + '/' + PS.SETS.length],
       ['Farelo', PS.fmt(S.farelo)],
     ];
