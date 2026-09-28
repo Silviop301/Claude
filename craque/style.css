@@ -379,3 +379,29 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .choice.inv b { font-size: 17px; }
 .choice.inv .pips { margin-left: 0; font-size: 11px; }
 .choice.inv .d { font-size: 13px; font-weight: 700; color: var(--ink); }
+
+/* Jogo decisivo */
+.moment-card .with-crest { display: flex; align-items: center; gap: 10px; font: 800 20px var(--display); color: var(--muted); }
+.moment-card .with-crest .crest { width: 40px; height: 40px; }
+.stakes { margin: 0; font: 700 14px var(--body); color: #8A6400; }
+.lead.small { font-size: 14px; }
+.kick-stage { position: relative; border-radius: 16px; overflow: hidden; box-shadow: 0 3px 0 rgba(0, 0, 0, .35); touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer; }
+.kick-svg { display: block; width: 100%; height: auto; }
+.k-keeper { fill: #F2C230; }
+
+
+.k-aim line { stroke: #FFE27A; stroke-width: 2.5; stroke-dasharray: 6 5; }
+.k-aim circle { fill: none; stroke: #FFE27A; stroke-width: 3; }
+.k-net.shake { animation: net-shake .5s ease 2; }
+@keyframes net-shake { 25% { transform: translate(0, 3px); } 75% { transform: translate(0, -2px); } }
+.kick-banner { position: absolute; left: 50%; top: 13%; transform: translate(-50%, -50%) scale(.3); opacity: 0; font: 800 34px var(--display); box-shadow: 0 4px 0 rgba(0, 0, 0, .3); letter-spacing: .02em;
+  padding: 4px 18px; border-radius: 12px; pointer-events: none; white-space: nowrap; }
+.kick-banner.show { animation: banner-in .5s cubic-bezier(.2, 1.5, .4, 1) forwards; }
+.kick-banner.ok { background: var(--gold); color: var(--ink); }
+.kick-banner.ko { background: #F8D3D6; color: #8E1B24; }
+@keyframes banner-in { to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+.kick-help { text-align: center; margin: 0; color: #CFE0D4; font-size: 15px; min-height: 22px; }
+.k-wallman rect { fill: #C9303C; }
+.k-wallman .k-shorts { fill: #F4F4F4; }
+.k-wallman .k-socks { fill: #9E1F2A; }
+.k-wallman .k-head { fill: #E8B58C; }

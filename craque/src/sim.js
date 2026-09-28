@@ -491,6 +491,87 @@
     return out;
   };
 
+  // ---------- jogo decisivo (minigame de pênalti / falta) ----------
+  // Em algumas temporadas, um lance decide algo grande. O resultado vale de verdade:
+  //  cup      pênalti na final da copa     → converteu: campeão da copa · errou: vice
+  //  title    pênalti na última rodada     → converteu: campeão da liga · errou: vice
+  //  classico falta no clássico            → converteu: gol e torcida +8
+  S.pickMoment = function (c) {
+    if (c.momentAge === c.age) return c.moment || null; // já sorteado nesta temporada
+    const { r, save } = rngOf(c);
+    c.momentAge = c.age;
+    c.moment = null;
+    const club = D.CLUB_BY_ID[c.club], lg = D.LEAGUE_BY_ID[club.league];
+    const rivals = D.CLUBS.filter(x => x.league === club.league && x.id !== club.id).sort((a, b) => b.strength - a.strength);
+    const playing = S.role(c, club).share >= 0.3 || c.farewell;
+    if (playing && rivals.length && r() < 0.45) {
+      const rank = 1 + rivals.filter(x => x.strength > club.strength).length;
+      // Final e briga pelo título só para quem está entre os mais fortes da liga
+      const pool = [['classico', c.pos === 'MEI' ? 4 : 3]];
+      if (rank <= 5) pool.push(['cup', 1]);
+      if (rank <= 2) pool.push(['title', 1.5]);
+      let x = r() * pool.reduce((a, p) => a + p[1], 0), type = pool[0][0];
+      for (const [t, w] of pool) { x -= w; if (x < 0) { type = t; break; } }
+      const vs = type === 'cup' ? r.pick(rivals.slice(0, 8)) : rivals[0];
+      c.moment = { type, vs: vs.id, comp: type === 'cup' ? (lg.cup || 'Copa nacional') : lg.name };
+    }
+    save();
+    return c.moment;
+  };
+
+  // Parâmetros do minigame, todos vindos da carta
+  S.kickSetup = function (c, type) {
+    const E = S.eff(c);
+    const fk = type === 'classico';
+    const lv = id => (c.traits.includes(id) ? lvOf(c, id) : 0);
+    // Mira: um vaivém completo leva de 1,0 s (FIN baixa) a ~2,1 s (FIN alta); Chute Colocado deixa mais lenta
+    const period = clamp(1.0 + (E.fin - 45) * 0.022 + lv('colocado') * 0.12, 1.0, 2.3);
+    // Tremedeira da mira: pressão do lance menos a frieza
+    const pressure = type === 'classico' ? 0.6 : 1;
+    const calm = clamp((E.fin - 45) / 110, 0, 0.45) + lv('frieza') * 0.18;
+    const wobble = round1(clamp(pressure * (0.16 - calm * 0.2), 0, 0.16) * 100) / 100;
+    // Alcance do goleiro diminui com a força do chute (FIN e FÍS)
+    const reach = clamp(0.5 - (E.fin + E.fis * 0.5 - 75) / 300, 0.3, 0.5);
+    // Falta: altura da barreira (Bola Parada ensina a passar por cima dela)
+    const wall = fk ? clamp(0.5 - lv('parada') * 0.05 - (E.pas - 50) / 400, 0.34, 0.5) : 0;
+    // Chance ao deixar o jogo decidir (sem jogar)
+    const chance = clamp((fk ? 0.3 : 0.55) + (E.fin - 60) / 110 + lv('frieza') * 0.04 + (fk ? lv('parada') * 0.07 : lv('colocado') * 0.03), fk ? 0.15 : 0.3, fk ? 0.7 : 0.88);
+    // Na falta, a barreira cobre o lado esquerdo do gol (a tela espelha quando for o direito)
+    return { fk, period, wobble, reach, wall, wallL: -0.8, wallR: -0.1, chance: Math.round(chance * 100) / 100 };
+  };
+
+  // Resultado de um chute travado em (x, y), com x de -1 a 1 entre as traves e y de 0 (chão) a 1 (travessão).
+  // keeper: -1, 0 ou 1 (lado do mergulho; na falta o goleiro fica do lado sem barreira).
+  S.kickResult = function (setup, x, y, keeper) {
+    const ax = Math.abs(x);
+    if (ax >= 0.97 && ax <= 1.03 && y <= 1.03) return { ok: false, why: 'trave' };
+    if (y >= 0.97 && y <= 1.03 && ax <= 1) return { ok: false, why: 'trave' };
+    if (ax > 1) return { ok: false, why: 'fora' };
+    if (y > 1) return { ok: false, why: 'alto' };
+    if (setup.fk && x <= setup.wallR && x >= setup.wallL && y < setup.wall) return { ok: false, why: 'barreira' };
+    // Goleiro: no pênalti mergulha para um lado (ou fica no meio); na falta fica no lado sem barreira
+    const kx = setup.fk ? 0.5 : keeper * 0.62;
+    const stay = !setup.fk && keeper === 0;
+    // Perto do ângulo ele alcança menos; parado no meio, só pega o que vem na altura dele
+    const reach = setup.reach * (stay ? 0.55 : 1) * (y > 0.7 ? 0.6 : 1);
+    if (Math.abs(x - kx) < reach && !(stay && y > 0.7)) return { ok: false, why: 'defesa' };
+    return { ok: true, why: 'gol' };
+  };
+
+  S.resolveMoment = function (c, ok) {
+    if (!c.moment) return;
+    c.mod.moment = Object.assign({}, c.moment, { ok: !!ok });
+    c.moment = null;
+  };
+  // Sem jogar: sorteia com a chance mostrada
+  S.autoMoment = function (c) {
+    const { r, save } = rngOf(c);
+    const ok = r() < S.kickSetup(c, c.moment.type).chance;
+    save();
+    S.resolveMoment(c, ok);
+    return ok;
+  };
+
   // ---------- temporada ----------
   const AGE_GROWTH = age => (age <= 20 ? 0.24 : age <= 23 ? 0.17 : age <= 26 ? 0.08 : age <= 29 ? 0.02 : 0);
   const AGE_DECLINE = age => (age <= 30 ? 0 : age <= 32 ? 1.8 : age <= 34 ? 3.5 : 5);
@@ -560,8 +641,13 @@
     const titleBonus = (c.captain ? 0.08 : 0) + clamp((E.def + E.fis - 75) / 220, 0, 0.22);
     const pLeague = clamp(0.02 + (sEff - top + 4) / 16 + titleBonus * 0.6, 0.01, 0.55);
     const pCup = clamp(pLeague * 0.5 + 0.03 + titleBonus * 0.3, 0.02, 0.4);
-    const league = r() < pLeague;
-    const cup = r() < pCup;
+    let league = r() < pLeague;
+    let cup = r() < pCup;
+    // Jogo decisivo (minigame) manda no resultado
+    const M = c.mod.moment || null;
+    if (M && M.type === 'cup') cup = M.ok;
+    if (M && M.type === 'title') league = M.ok;
+    if (M && M.ok) goals += 1;
     const pCont = club.tier >= 3 ? clamp((sEff - 80) / 40 + titleBonus * 0.3, 0.01, 0.25) * (club.tier === 5 ? 1 : club.tier === 4 ? 0.4 : 0.25) : 0;
     const cont = club.tier >= 3 && r() < pCont;
     const contName = ['bra-a', 'arg'].includes(club.league) ? 'Libertadores' : club.tier >= 4 ? 'Liga dos Campeões' : null;
@@ -575,14 +661,24 @@
     let pts = Math.round(38 * ppg(sEff) + r.gauss() * 4);
     let leaderPts = Math.max(pts + 1, Math.round(38 * (ppg(top) + 0.12) + r.gauss() * 3));
     if (league) { leaderPts = pts = Math.max(pts, leaderPts - 1); }
+    if (M && M.type === 'title' && !M.ok) leaderPts = pts + 1 + Math.floor(r() * 2); // vice por pouco
     const pos = league ? 1 : clamp(2 + Math.floor((leaderPts - pts) / 4.5), 2, 20);
     const table = { pos, pts, gap: league ? 0 : leaderPts - pts, league: lg.name };
     // Jogos marcantes (rivais da própria liga)
     const rivals = leagueClubs.filter(x => x.id !== club.id);
     const rival = rivals.length ? rivals.slice().sort((x, y) => y.strength - x.strength)[0] : null;
     const other = rivals.length ? r.pick(rivals) : null;
-    if (league && rival) highlights.push('🏆 Título garantido na última rodada contra o ' + rival.name);
-    if (cup && other) highlights.push('🏆 Final da ' + (lg.cup || 'copa') + ' contra o ' + other.name + (goals > 5 ? ': gol seu!' : ''));
+    if (M) {
+      const vsName = D.CLUB_BY_ID[M.vs].name;
+      const hl = {
+        cup: M.ok ? '⚽ Seu pênalti decidiu a final da ' + M.comp + ' contra o ' + vsName : '😞 Pênalti perdido na final da ' + M.comp + ' contra o ' + vsName,
+        title: M.ok ? '⚽ Pênalti convertido na última rodada: título contra o ' + vsName : '😞 Pênalti perdido na última rodada contra o ' + vsName + ': vice',
+        classico: M.ok ? '🎯 Gol de falta no clássico contra o ' + vsName : '🧱 Falta desperdiçada no clássico contra o ' + vsName,
+      }[M.type];
+      highlights.unshift(hl);
+    }
+    if (league && rival && !(M && M.type === 'title')) highlights.push('🏆 Título garantido na última rodada contra o ' + rival.name);
+    if (cup && other && !(M && M.type === 'cup')) highlights.push('🏆 Final da ' + (lg.cup || 'copa') + ' contra o ' + other.name + (goals > 5 ? ': gol seu!' : ''));
     if (cont && contName) highlights.push('🌍 Campeão da ' + contName + '!');
     if (!league && rival && games >= 10 && goals + assists >= 8) highlights.push('⚔️ Decidiu o clássico contra o ' + rival.name);
     if (!league && pos >= 14 && games >= 10) highlights.push('😰 Temporada de sufoco na parte de baixo da tabela');
@@ -607,7 +703,7 @@
     const coach0 = c.rel.coach, fans0 = c.rel.fans;
     if (games) {
       bump(c, 'coach', (rating - 6.6) * 10);
-      bump(c, 'fans', (rating - 6.6) * 9 + titles.length * 6 - (c.captain && rating < 6.8 ? 6 : 0));
+      bump(c, 'fans', (rating - 6.6) * 9 + titles.length * 6 + (M && M.type === 'classico' && M.ok ? 8 : 0) - (c.captain && rating < 6.8 ? 6 : 0));
     }
     c.fansBy[c.club] = Math.max(c.fansBy[c.club] || 0, c.rel.fans);
 
