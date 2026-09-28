@@ -66,7 +66,8 @@
     if (PS.combo > S.bestCombo) S.bestCombo = PS.combo;
     const comboMult = 1 + Math.min(PS.combo, 100) / 100;
     const r = Math.random();
-    const crit = r < 0.005 ? 2 : r < 0.05 ? 1 : 0;
+    const critChance = 0.05 + (PS.B ? PS.B.crit : 0) / 100;
+    const crit = r < 0.005 ? 2 : r < critChance ? 1 : 0;
     const v = PS.tapBase() * comboMult * (crit === 2 ? 100 : crit === 1 ? 10 : 1);
     PS.earn(v);
     S.taps++;
@@ -103,11 +104,16 @@
       P.hit(true);
       P.setMood('stonks', 2);
       P.say('EU SOU O MERCADO!', 2.5);
+      PS.addCoins(2, x, y + 30);
       vibrate([30, 40, 30]);
       coinsToCounter(x, y, 12);
     }
     PS.market.sharkTap();
     PS.events.onTap();
+    if (Math.random() < 0.002) {
+      PS.addCupons(1);
+      PS.pombo.say('Achei um cupom no chão da praça!', 2.6);
+    }
     PS.ui.combo(PS.combo);
     PS.ui.tapped();
   };
@@ -130,7 +136,8 @@
     PS.ui.flashRow(i, 'bought');
     PS.pombo.hop();
     if (res.before === 0) {
-      PS.ui.toast('🎉', 'Abriu o negócio: ' + B[i].name);
+      PS.ui.toast('🎉', 'Abriu o negócio: ' + B[i].name + ' · +5 🪙');
+      PS.addCoins(5, cx, cy - 50);
       PS.pombo.say(i === 0 ? 'Meu primeiro negócio! Mãe, tô na bolsa!' : 'Novo negócio, novo eu.', 2.8);
     }
     res.crossed.forEach((m, k) => setTimeout(() => celebrateMilestone(i, m), 250 + k * 800));
@@ -146,7 +153,8 @@
     PS.audio.milestone();
     PS.pombo.celebrate(1.6);
     PS.pombo.say(PS.pick(PS.MILESTONE_LINES), 2.4);
-    PS.ui.toast('⭐', 'Marco! ' + B[i].name + ' agora produz x' + m.x, 'gold');
+    PS.ui.toast('⭐', 'Marco! ' + B[i].name + ' agora produz x' + m.x + ' · +5 🪙', 'gold');
+    PS.addCoins(5);
     vibrate(25);
   }
 
@@ -167,7 +175,9 @@
         PS.audio.promote();
         PS.pombo.celebrate(2.4);
         PS.pombo.say('Agora é ' + st.title + ', meu bem.', 3.2);
-        PS.ui.toast('👔', 'Promoção! Você ganhou ' + st.acc, 'gold');
+        PS.ui.toast('👔', 'Promoção! Você ganhou ' + st.acc + ' · +30 🪙', 'gold');
+        PS.addCoins(30);
+        PS.addCupons(1);
         vibrate([40, 60, 40]);
       }, 300);
     }
@@ -201,6 +211,7 @@
     PS.wipe();
     PS.S = PS.newState();
     PS.S.sound = PS.audio.on;
+    PS.recalcBonuses();
     PS.market.init();
     PS.recalc();
     PS.ui.close();
@@ -299,6 +310,8 @@
       const r = e.currentTarget.getBoundingClientRect();
       PS.events.clickDica(r.left + r.width / 2, r.top + r.height / 2);
     });
+    document.getElementById('encomenda').addEventListener('click', () => PS.events.clickEncomenda());
+    document.getElementById('op-box').addEventListener('click', () => PS.loot.tapBox());
     document.getElementById('dip').addEventListener('click', e => {
       PS.audio.init();
       const r = e.currentTarget.getBoundingClientRect();
@@ -327,6 +340,7 @@
   function start(data) {
     PS.S = PS.normalize((data && data.state) || PS.load() || PS.newState());
     PS.audio.on = PS.S.sound;
+    PS.recalcBonuses();
     PS.market.init();
     PS.recalc();
     PS.ui.init();

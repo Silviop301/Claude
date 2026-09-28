@@ -54,6 +54,7 @@
   };
 
   M.hasBoost = id => M.boosts.some(b => b.id === id);
+  M.sharkDur = () => M.SHARK_DUR + (PS.B ? PS.B.shark : 0);
 
   M.trend = function () {
     return M.up ? 1 : -1;
@@ -63,7 +64,7 @@
     if (M.sharkOn > 0) return;
     M.shark = Math.min(1, M.shark + 0.025);
     if (M.shark >= 1) {
-      M.sharkOn = M.SHARK_DUR;
+      M.sharkOn = M.sharkDur();
       PS.S.stats.sharks++;
       PS.onShark();
     }
@@ -127,6 +128,7 @@
 
     // Valor exibido desliza suavemente até o passo atual
     M.v = clamp(M.v + (M.raw - M.v) * (1 - Math.exp(-dt * 3)));
+    if (PS.B && PS.B.floor) M.v = Math.max(M.v, PS.B.floor);
     S.market.v = M.v;
 
     if (M.v < 0.8) M.dipOpen = true;
@@ -139,7 +141,7 @@
 
     if (M.sharkOn > 0) {
       M.sharkOn -= dt;
-      M.shark = Math.max(0, M.sharkOn / M.SHARK_DUR);
+      M.shark = Math.max(0, M.sharkOn / M.sharkDur());
       if (M.sharkOn <= 0) {
         M.sharkOn = 0;
         M.shark = 0;

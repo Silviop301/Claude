@@ -50,6 +50,10 @@
       <span class="dica-ico">📲</span>
       <span class="dica-body"><b>Dica Quente do Zap</b><span class="dica-txt"></span></span>
     </button>
+    <button class="dica encomenda" id="encomenda" type="button" hidden>
+      <span class="dica-ico">📦</span>
+      <span class="dica-body"><b>Encomenda Suspeita</b><span class="dica-txt">caixa grátis, toque rápido!</span></span>
+    </button>
     <div class="stage-foot">
       <div class="tap-hint" id="tap-hint">Toque no pombo!</div>
       <button class="dip" id="dip" type="button" hidden>📉 Comprar na baixa <small>investe 25% da grana</small></button>
@@ -63,7 +67,11 @@
 
   <section class="shop">
     <div class="shop-head">
-      <h2>Negócios</h2>
+      <div class="tabs" role="tablist" aria-label="Seções">
+        <button type="button" class="tab" role="tab" data-tab="biz" id="tab-biz">Negócios</button>
+        <button type="button" class="tab" role="tab" data-tab="boxes" id="tab-boxes">Caixas<span class="dot" hidden></span></button>
+        <button type="button" class="tab" role="tab" data-tab="items" id="tab-items">Itens<span class="dot" hidden></span></button>
+      </div>
       <div class="seg" role="group" aria-label="Quantidade por compra">
         <button type="button" data-m="1" id="m-1">x1</button>
         <button type="button" data-m="10" id="m-10">x10</button>
@@ -71,12 +79,25 @@
         <button type="button" data-m="max" id="m-max">MÁX</button>
       </div>
     </div>
-    <div id="biz"></div>
+    <div id="biz" class="pane"></div>
+    <div id="boxes" class="pane" hidden></div>
+    <div id="items" class="pane" hidden></div>
   </section>
 </div>
 
 <canvas id="fx"></canvas>
 <div id="flash"></div>
+<div id="opener" hidden>
+  <div class="op-rays"></div>
+  <div class="op-center">
+    <button class="op-box" id="op-box" type="button" aria-label="Abrir caixa">
+      <span class="lid"></span><span class="body"><span class="lbl"></span></span>
+    </button>
+    <div class="op-hint" id="op-hint">Toque na caixa para abrir!</div>
+    <div class="op-cards" id="op-cards"></div>
+    <div class="op-actions" id="op-actions"></div>
+  </div>
+</div>
 <div id="toasts" aria-live="polite"></div>
 
 <div id="modal" hidden>
@@ -91,10 +112,12 @@
 <script src="src/format.js"></script>
 <script src="src/audio.js"></script>
 <script src="src/save.js"></script>
+<script src="src/items.js"></script>
 <script src="src/game.js"></script>
 <script src="src/fx.js"></script>
 <script src="src/market.js"></script>
 <script src="src/events.js"></script>
+<script src="src/loot.js"></script>
 <script src="src/pombo.js"></script>
 <script src="src/ui.js"></script>
 <script src="src/main.js"></script>

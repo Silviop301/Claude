@@ -13,7 +13,7 @@
     '"áudio de 7 minutos, escuta aí"',
   ];
 
-  const WEIGHTS = [['dica', 50], ['bull', 22], ['crash', 22], ['moon', 4]];
+  const WEIGHTS = [['dica', 40], ['bull', 20], ['crash', 20], ['encomenda', 16], ['moon', 4]];
 
   function pickEvent() {
     const total = WEIGHTS.reduce((a, [, w]) => a + w, 0);
@@ -31,6 +31,10 @@
       E.dica.t -= dt;
       if (E.dica.t <= 0) endDica();
     }
+    if (E.enc) {
+      E.enc.t -= dt;
+      if (E.enc.t <= 0) endEncomenda();
+    }
     if (E.crash) {
       E.crash.t -= dt;
       $('crash-fill').style.width = Math.min(100, E.crash.taps / E.crash.need * 100) + '%';
@@ -40,7 +44,7 @@
     if (PS.S.lifetime < 200) return;
     E.next -= dt;
     if (E.next <= 0) {
-      E.next = PS.rand(45, 95);
+      E.next = PS.rand(45, 95) / (1 + (PS.B ? PS.B.event : 0) / 100);
       E.fire(pickEvent());
     }
   };
@@ -50,6 +54,7 @@
     else if (kind === 'bull') startBull();
     else if (kind === 'crash') startCrash();
     else if (kind === 'moon') startMoon();
+    else if (kind === 'encomenda') startEncomenda();
   };
 
   E.onTap = function () {
@@ -104,6 +109,7 @@
       PS.audio.coins();
       PS.pombo.setMood('stonks', 1.8);
       PS.pombo.say('Informação privilegiada, meu bem.', 2.6);
+      PS.addCoins(3, x, y + 40);
     }
   };
 
@@ -141,6 +147,8 @@
       const gain = Math.max(PS.cachedPps * 120, PS.tapBase() * 20);
       PS.earn(gain);
       PS.S.stats.holds++;
+      PS.addCoins(8);
+      if (Math.random() < 0.2) PS.addCupons(1);
       fx.banner('SEGUROU!', 'o mercado voltou e você lucrou +' + fmt(gain), PS.C.gold);
       fx.confetti(70);
       fx.flash('#FFF3B0', 0.5);
@@ -169,5 +177,33 @@
     PS.pombo.celebrate(2.5);
     PS.pombo.say('HOUSTON, TEMOS LUCRO!', 3);
     PS.S.stats.moons++;
+    PS.addCoins(15);
+    PS.addCupons(1);
   }
+
+  // ---------- Encomenda Suspeita (caixa grátis) ----------
+  function startEncomenda() {
+    if (E.enc) return startDica();
+    const el = $('encomenda');
+    el.hidden = false;
+    el.classList.remove('fly');
+    void el.offsetWidth;
+    el.classList.add('fly');
+    E.enc = { t: 8 };
+    PS.audio.notif();
+  }
+
+  function endEncomenda() {
+    $('encomenda').hidden = true;
+    E.enc = null;
+  }
+
+  E.clickEncomenda = function () {
+    if (!E.enc) return;
+    endEncomenda();
+    const r = Math.random();
+    const box = r < 0.03 ? 'cofre' : r < 0.2 ? 'maleta' : 'camelo';
+    PS.ui.toast('📦', 'Encomenda Suspeita! Caixa grátis: ' + PS.BOX_BY_ID[box].name, 'gold');
+    PS.loot.buy(box, true);
+  };
 })();

@@ -238,7 +238,7 @@
   function drawEye(hx, hy) {
     const ex = hx + 9, ey = hy - 5;
     const st = PS.S.stage;
-    if (st >= 2) {
+    if (st >= 2 && !PS.S.equip.eyes) {
       // Óculos escuros (substituem o olho, exceto dormindo)
       ctx.lineWidth = 4;
       ctx.strokeStyle = C.ink;
@@ -297,6 +297,119 @@
     ell(ex + 1.5, ey, 6.5, 6.5, 0, '#FF9A3C', 0);
     ell(ex + 2, ey, 3.3, 3.3, 0, C.ink, 0);
     ell(ex + 3.5, ey - 2, 1.4, 1.4, 0, '#fff', 0);
+  }
+
+  // ---------- itens visuais ----------
+  function path(pts, fill, lw) {
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (lw) { ctx.lineWidth = lw; ctx.strokeStyle = C.ink; ctx.stroke(); }
+  }
+
+  function drawEyesItem(id, hx, hy) {
+    const ex = hx + 9, ey = hy - 5;
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = C.ink;
+    if (id === 'nerd') {
+      ctx.beginPath(); ctx.moveTo(ex - 12, ey - 1); ctx.lineTo(hx - 24, ey + 1); ctx.stroke();
+      ctx.beginPath(); ctx.arc(ex, ey, 13, 0, TAU); ctx.lineWidth = 5; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillRect(ex - 18, ey - 3, 6, 6);
+    } else if (id === 'esportivo') {
+      const g = ctx.createLinearGradient(ex - 14, ey - 8, ex + 14, ey + 8);
+      g.addColorStop(0, '#FF9F1C'); g.addColorStop(1, '#A64DFF');
+      path([[hx - 22, ey - 4], [ex + 15, ey - 10], [ex + 14, ey + 6], [ex - 6, ey + 9], [hx - 12, ey + 4]], g, 4);
+    } else if (id === 'monoculo') {
+      ctx.beginPath(); ctx.arc(ex, ey, 12, 0, TAU);
+      ctx.lineWidth = 6; ctx.strokeStyle = C.ink; ctx.stroke();
+      ctx.lineWidth = 3; ctx.strokeStyle = C.gold; ctx.stroke();
+      ctx.setLineDash([3, 4]);
+      ctx.beginPath(); ctx.moveTo(ex - 4, ey + 12); ctx.quadraticCurveTo(ex - 14, ey + 30, hx - 6, hy + 30);
+      ctx.lineWidth = 2.5; ctx.strokeStyle = C.gold; ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (id === 'laser') {
+      const w = 7 + Math.sin(P.t * 30) * 2;
+      const g = ctx.createLinearGradient(ex, 0, ex + 420, 0);
+      g.addColorStop(0, 'rgba(255,40,60,0.95)'); g.addColorStop(1, 'rgba(255,40,60,0)');
+      ctx.strokeStyle = g; ctx.lineWidth = w; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex + 420, ey - 30); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = w * 0.35;
+      ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex + 300, ey - 21); ctx.stroke();
+      const rg = ctx.createRadialGradient(ex, ey, 2, ex, ey, 18);
+      rg.addColorStop(0, '#fff'); rg.addColorStop(0.4, '#FF2840'); rg.addColorStop(1, 'rgba(255,40,64,0)');
+      ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(ex, ey, 18, 0, TAU); ctx.fill();
+    }
+  }
+
+  function drawHeadItem(id, hx, hy) {
+    const tx = hx - 2, ty = hy - 20;
+    if (id === 'bone') {
+      ctx.beginPath(); ctx.arc(hx, hy - 8, 27, Math.PI * 1.02, Math.PI * 1.98);
+      ctx.closePath(); ctx.fillStyle = C.red; ctx.fill(); ctx.lineWidth = 4.5; ctx.strokeStyle = C.ink; ctx.stroke();
+      path([[hx + 14, hy - 12], [hx + 50, hy - 14], [hx + 50, hy - 7], [hx + 14, hy - 6]], '#C81E45', 4);
+      ell(hx, hy - 36, 4, 3, 0, '#C81E45', 2.5);
+    } else if (id === 'palha') {
+      ell(tx, ty, 42, 8, 0, '#F2C46D', 4);
+      ctx.beginPath(); ctx.roundRect(tx - 19, ty - 24, 38, 24, 8);
+      ctx.fillStyle = '#F2C46D'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = C.ink; ctx.stroke();
+      ctx.fillStyle = C.red; ctx.fillRect(tx - 19, ty - 8, 38, 6);
+    } else if (id === 'headset') {
+      ctx.beginPath(); ctx.arc(hx - 2, hy - 2, 32, Math.PI * 1.05, Math.PI * 1.9);
+      ctx.lineWidth = 9; ctx.strokeStyle = C.ink; ctx.stroke();
+      ctx.lineWidth = 4; ctx.strokeStyle = '#5E6190'; ctx.stroke();
+      ell(hx - 20, hy + 2, 9, 12, 0, C.ink, 0);
+      ctx.beginPath(); ctx.moveTo(hx - 16, hy + 10); ctx.quadraticCurveTo(hx, hy + 26, hx + 24, hy + 18);
+      ctx.lineWidth = 4; ctx.strokeStyle = C.ink; ctx.stroke();
+      ell(hx + 25, hy + 18, 4.5, 4.5, 0, '#5E6190', 2.5);
+    } else if (id === 'cowboy') {
+      ctx.beginPath(); ctx.moveTo(tx - 46, ty - 10); ctx.quadraticCurveTo(tx, ty + 14, tx + 46, ty - 10);
+      ctx.quadraticCurveTo(tx, ty + 2, tx - 46, ty - 10);
+      ctx.fillStyle = '#B5763A'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = C.ink; ctx.stroke();
+      path([[tx - 20, ty], [tx - 16, ty - 30], [tx, ty - 24], [tx + 16, ty - 30], [tx + 20, ty]], '#C98A4B', 4);
+      ctx.fillStyle = '#6B3F17'; ctx.fillRect(tx - 19, ty - 8, 38, 5);
+    } else if (id === 'coroa') {
+      path([[tx - 20, ty], [tx - 22, ty - 26], [tx - 10, ty - 14], [tx, ty - 32], [tx + 10, ty - 14], [tx + 22, ty - 26], [tx + 20, ty]], C.gold, 4);
+      ell(tx, ty - 7, 4, 4, 0, C.red, 2);
+      ell(tx - 12, ty - 6, 3, 3, 0, '#3D8BFF', 2);
+      ell(tx + 12, ty - 6, 3, 3, 0, C.green, 2);
+    } else if (id === 'aureola') {
+      const yy = hy - 48 + Math.sin(P.t * 3) * 3;
+      ctx.save();
+      ctx.shadowColor = '#9FF3FF'; ctx.shadowBlur = 16;
+      ctx.beginPath(); ctx.ellipse(hx - 2, yy, 27, 7, 0, 0, TAU);
+      ctx.lineWidth = 10; ctx.strokeStyle = C.ink; ctx.stroke();
+      ctx.lineWidth = 6; ctx.strokeStyle = '#BFF8FF'; ctx.stroke();
+      ctx.restore();
+      path([[hx + 22, yy - 10], [hx + 27, yy - 4], [hx + 22, yy + 3], [hx + 17, yy - 4]], '#fff', 2);
+    }
+  }
+
+  function drawNeckItem(id) {
+    if (id === 'cachecol') {
+      ctx.save();
+      ctx.translate(26, -86); ctx.rotate(0.25);
+      ctx.beginPath(); ctx.roundRect(-24, -8, 48, 16, 8);
+      ctx.fillStyle = C.red; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = C.ink; ctx.stroke();
+      ctx.fillStyle = '#fff'; [-12, 4].forEach(x => ctx.fillRect(x, -6, 5, 12));
+      ctx.restore();
+      path([[30, -80], [42, -80], [44, -52], [32, -52]], C.red, 4);
+      ctx.fillStyle = '#fff'; ctx.fillRect(33, -70, 10, 4);
+    } else if (id === 'borboleta') {
+      path([[32, -80], [16, -90], [16, -68]], '#A64DFF', 3.5);
+      path([[32, -80], [48, -90], [48, -68]], '#A64DFF', 3.5);
+      ell(32, -80, 5, 6, 0, '#7B2FD6', 3);
+    } else if (id === 'diamante') {
+      for (let k = 0; k <= 8; k++) {
+        const u = k / 8;
+        const x = (1 - u) * (1 - u) * 6 + 2 * (1 - u) * u * 26 + u * u * 48;
+        const y = (1 - u) * (1 - u) * -90 + 2 * (1 - u) * u * -50 + u * u * -88;
+        path([[x, y - 4], [x + 4, y], [x, y + 4], [x - 4, y]], '#9FF3FF', 1.8);
+      }
+      path([[27, -72], [37, -62], [27, -46], [17, -62]], '#9FF3FF', 3);
+      ctx.fillStyle = '#fff'; ctx.fillRect(23, -65, 4, 4);
+    }
   }
 
   function dollar(x, y, size, color) {
@@ -418,8 +531,10 @@
       ctx.stroke();
     }
 
-    // Corrente de ouro
-    if (st >= 3) {
+    // Corrente de ouro (ou item de pescoço)
+    if (PS.S.equip.neck) {
+      drawNeckItem(PS.S.equip.neck);
+    } else if (st >= 3) {
       ctx.fillStyle = C.gold;
       ctx.strokeStyle = C.ink;
       ctx.lineWidth = 2;
@@ -461,6 +576,7 @@
     ell(hx, hy, 28, 27, 0, C.lav, 5);
     ell(hx + 2, hy + 11, 6, 4, 0, 'rgba(255,143,177,0.55)', 0);
     drawEye(hx, hy);
+    const eqv = PS.S.equip;
 
     // Bico
     const bx = hx + 23, by = hy + 2;
@@ -513,8 +629,11 @@
       ctx.globalAlpha = 1;
     }
 
+    if (eqv.eyes) drawEyesItem(eqv.eyes, hx, hy);
+    if (eqv.head) drawHeadItem(eqv.head, hx, hy);
+
     // Cartola
-    if (st >= 4) {
+    if (st >= 4 && !eqv.head) {
       ctx.save();
       ctx.translate(hx - 2, hy - 23);
       ctx.rotate(-0.14);
@@ -599,7 +718,8 @@
     drawPombo();
 
     if (!bubble.hidden) {
-      const topY = P.gy - P.jump - (PS.S.stage >= 4 ? 205 : 160) * P.scale;
+      const tall = PS.S.stage >= 4 || PS.S.equip.head;
+      const topY = P.gy - P.jump - (tall ? 205 : 160) * P.scale;
       const bx = Math.max(90, Math.min(W - 90, P.px + P.dir * 20 * P.scale));
       bubble.style.left = bx + 'px';
       bubble.style.top = Math.max(118, topY) + 'px';

@@ -24,6 +24,15 @@
       market: { v: 1.2 },
       pos: null,
       stats: { dicas: 0, golpes: 0, sharks: 0, holds: 0, moons: 0, dipProfit: 0 },
+      coins: 0,
+      cupons: 0,
+      farelo: 0,
+      pity: 0,
+      boxesOpened: 0,
+      inv: {},
+      equip: { ativos: [], head: null, eyes: null, neck: null },
+      newItems: [],
+      tab: 'biz',
       created: now,
       lastTick: now,
     };
@@ -39,12 +48,23 @@
     if (![1, 10, 100, 'max'].includes(out.buyMode)) out.buyMode = 1;
     out.stats = Object.assign(base.stats, s && s.stats);
     if (out.pos && !(out.pos.amt > 0 && out.pos.p0 > 0)) out.pos = null;
+    ['coins', 'cupons', 'farelo', 'pity', 'boxesOpened'].forEach(k => { if (!isFinite(out[k]) || out[k] < 0) out[k] = 0; });
+    const inv = {};
+    for (const id in out.inv || {}) if (PS.ITEM_BY_ID[id]) inv[id] = Math.min(PS.MAX_LEVEL, Math.max(1, Math.floor(+out.inv[id] || 1)));
+    out.inv = inv;
+    const eq = Object.assign({ ativos: [], head: null, eyes: null, neck: null }, out.equip);
+    eq.ativos = (Array.isArray(eq.ativos) ? eq.ativos : []).filter(id => inv[id] && PS.ITEM_BY_ID[id].kind === 'ativo').slice(0, PS.ATIVO_SLOTS);
+    ['head', 'eyes', 'neck'].forEach(sl => { if (!(eq[sl] && inv[eq[sl]] && PS.ITEM_BY_ID[eq[sl]].slot === sl)) eq[sl] = null; });
+    out.equip = eq;
+    out.newItems = (Array.isArray(out.newItems) ? out.newItems : []).filter(id => inv[id]);
+    if (!['biz', 'boxes', 'items'].includes(out.tab)) out.tab = 'biz';
     return out;
   };
 
   // Bônus temporários (mercado, eventos, Modo Tubarão). Futuro: itens e prestígio.
+  // Itens equipados e coleção (permanente) × mercado e eventos (temporário).
   PS.globalMult = function () {
-    return PS.market ? PS.market.tempMult() : 1;
+    return PS.permMult() * (PS.market ? PS.market.tempMult() : 1);
   };
 
   PS.mileMult = function (c) {
@@ -84,7 +104,7 @@
   };
 
   PS.tapBase = function () {
-    return 1 + PS.cachedPps * 0.08;
+    return (1 + PS.cachedPps * 0.08) * (1 + (PS.B ? PS.B.tap : 0) / 100);
   };
 
   PS.costOf = function (i, n) {
@@ -164,10 +184,11 @@
   };
 
   PS.offlineGain = function (sec) {
-    const eff = Math.min(sec, OFFLINE_CAP);
+    const cap = PS.offlineCap();
+    const eff = Math.min(sec, cap);
     // Offline não conta mercado nem bônus temporários: só a produção base.
-    const base = PS.pps() / PS.globalMult();
-    return { sec, eff, capped: sec > OFFLINE_CAP, gain: base * eff };
+    const base = PS.pps() / PS.market.tempMult();
+    return { sec, eff, cap, capped: sec > cap, gain: base * eff };
   };
-  PS.OFFLINE_CAP = OFFLINE_CAP;
+  PS.offlineCap = () => OFFLINE_CAP + (PS.B ? PS.B.offline : 0) * 60;
 })();
