@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Pombo Stonks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Lilita+One&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header class="hud">
+    <div class="wallet">
+      <div class="money-line"><span id="money">0</span><span class="cur">grana</span></div>
+      <div class="pps"><span class="arrow">▲</span> <span id="pps">0</span> por segundo</div>
+    </div>
+    <div class="rank">
+      <div class="rank-title" id="rank-title">Pombo de Praça</div>
+      <div class="rank-bar"><i id="rank-fill"></i></div>
+      <div class="rank-next" id="rank-next">Próxima promoção: 500</div>
+    </div>
+    <div class="hud-btns">
+      <button class="icon-btn" id="btn-sound" type="button" aria-label="Som ligado">🔊</button>
+      <button class="icon-btn" id="btn-menu" type="button" aria-label="Estatísticas e opções">📊</button>
+    </div>
+  </header>
+
+  <section class="stage" id="stage-wrap" tabindex="0" role="button" aria-label="Toque no pombo para ganhar grana">
+    <canvas id="stage"></canvas>
+    <div class="bubble" id="bubble" hidden></div>
+    <div class="combo" id="combo" hidden></div>
+    <div class="tap-hint" id="tap-hint">Toque no pombo!</div>
+  </section>
+
+  <section class="shop">
+    <div class="shop-head">
+      <h2>Negócios</h2>
+      <div class="seg" role="group" aria-label="Quantidade por compra">
+        <button type="button" data-m="1" id="m-1">x1</button>
+        <button type="button" data-m="10" id="m-10">x10</button>
+        <button type="button" data-m="100" id="m-100">x100</button>
+        <button type="button" data-m="max" id="m-max">MÁX</button>
+      </div>
+    </div>
+    <div id="biz"></div>
+  </section>
+</div>
+
+<canvas id="fx"></canvas>
+<div id="flash"></div>
+<div id="toasts" aria-live="polite"></div>
+
+<div id="modal" hidden>
+  <div class="m-card" role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <h3 id="m-title"></h3>
+    <div id="m-body"></div>
+    <div id="m-actions"></div>
+  </div>
+</div>
+
+<script src="src/data.js"></script>
+<script src="src/format.js"></script>
+<script src="src/audio.js"></script>
+<script src="src/save.js"></script>
+<script src="src/game.js"></script>
+<script src="src/fx.js"></script>
+<script src="src/pombo.js"></script>
+<script src="src/ui.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
