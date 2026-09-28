@@ -93,11 +93,24 @@
       else S.cupons -= c;
     }
     S.boxesOpened += box.n;
+    PS.meta.track('box', box.n);
     const drops = L.roll(box);
     PS.recalcBonuses();
     PS.recalc();
     PS.save();
     open(box, drops);
+  };
+
+  // Abre uma caixa com raridade garantida (jackpot da roda).
+  L.openForced = function (r) {
+    if (L.busy) return;
+    const it = rollItem(r);
+    const drops = [{ it, r, res: grant(it) }];
+    PS.S.pity = 0;
+    PS.recalcBonuses();
+    PS.recalc();
+    PS.save();
+    open(PS.BOX_BY_ID.cofre, drops);
   };
 
   // ---------- animação ----------

@@ -102,6 +102,7 @@
       const gain = Math.max(PS.cachedPps * 600, PS.tapBase() * 40);
       PS.earn(gain);
       S.stats.dicas++;
+      PS.meta.track('event', 1);
       fx.text(x, y, '+' + fmt(gain), { size: 40, color: PS.C.gold, life: 1.5 });
       fx.banner('DICA QUENTE!', '+' + fmt(gain) + ' (10 min de lucro)', PS.C.green);
       fx.burst(x, y, 24, { speed: 560 });
@@ -147,6 +148,7 @@
       const gain = Math.max(PS.cachedPps * 120, PS.tapBase() * 20);
       PS.earn(gain);
       PS.S.stats.holds++;
+      PS.meta.track('event', 1);
       PS.addCoins(8);
       if (Math.random() < 0.2) PS.addCupons(1);
       fx.banner('SEGUROU!', 'o mercado voltou e você lucrou +' + fmt(gain), PS.C.gold);
@@ -201,6 +203,7 @@
   E.clickEncomenda = function () {
     if (!E.enc) return;
     endEncomenda();
+    PS.meta.track('event', 1);
     const r = Math.random();
     const box = r < 0.03 ? 'cofre' : r < 0.2 ? 'maleta' : 'camelo';
     PS.ui.toast('📦', 'Encomenda Suspeita! Caixa grátis: ' + PS.BOX_BY_ID[box].name, 'gold');

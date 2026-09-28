@@ -45,6 +45,7 @@
     let m = M.v;
     for (const b of M.boosts) m *= b.x;
     if (M.sharkOn > 0) m *= 5;
+    if (PS.S && PS.S.rodaUntil > Date.now()) m *= 2;
     return m;
   };
 

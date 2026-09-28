@@ -19,6 +19,7 @@
   const NERVOUS = ['Calma, é só uma correção…', 'HODL! Não vendo nem a pau.', 'Tá tudo sob controle. Acho.', 'Isso é temporário. Né?'];
 
   PS.onShark = function () {
+    PS.meta.track('shark', 1);
     fx.banner('MODO TUBARÃO!', 'produção x5 por 30s', '#40C8FF');
     fx.flash('#9EEBFF', 0.6);
     fx.shake(10);
@@ -72,6 +73,9 @@
     PS.earn(v);
     S.taps++;
     if (crit) S.crits++;
+    PS.meta.track('tap', 1);
+    if (crit) PS.meta.track('crit', 1);
+    PS.meta.track('combo', PS.combo);
 
     PS.idle = 0;
     const P = PS.pombo;
@@ -129,6 +133,7 @@
       return;
     }
     PS.idle = 0;
+    PS.meta.track('buy', res.n);
     if (PS.pombo.mood === 'sleep') PS.pombo.wake();
     PS.audio.buy();
     fx.burst(cx, cy, 8 + Math.min(res.n, 12), { shape: 'bill', speed: 380 });
@@ -215,6 +220,8 @@
     PS.market.init();
     PS.recalc();
     PS.ui.close();
+    PS.meta.loginShown = false;
+    PS.meta.startDay(true);
     PS.ui.init();
     document.getElementById('tap-hint').hidden = false;
     PS.pombo.say('Recomeçando do farelo.', 3);
@@ -274,6 +281,12 @@
         const [ic, txt] = PS.pick(PS.NEWS);
         PS.ui.toast(ic, txt);
       }
+    }
+
+    T.meta = (T.meta || 0) - dt;
+    if (T.meta <= 0) {
+      T.meta = 1;
+      PS.meta.tick();
     }
 
     T.save -= dt;
@@ -351,6 +364,8 @@
     PS.S.lastTick = Date.now();
     if (away > 30) handleAway(away);
     else if (PS.S.taps === 0) setTimeout(() => PS.pombo.say('Bora ficar rico? Toca em mim!', 4), 600);
+    PS.meta.loginShown = false;
+    PS.meta.startDay(true);
 
     try {
       if (window.claude && window.claude.hot && window.claude.hot.snapshot) {

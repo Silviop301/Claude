@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Pombo Stonks</title>
+<meta name="theme-color" content="#3D5BF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pombo Stonks">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Lilita+One&display=swap">
@@ -71,6 +79,7 @@
         <button type="button" class="tab" role="tab" data-tab="biz" id="tab-biz">Negócios</button>
         <button type="button" class="tab" role="tab" data-tab="boxes" id="tab-boxes">Caixas<span class="dot" hidden></span></button>
         <button type="button" class="tab" role="tab" data-tab="items" id="tab-items">Itens<span class="dot" hidden></span></button>
+        <button type="button" class="tab" role="tab" data-tab="daily" id="tab-daily">Diário<span class="dot" hidden></span></button>
       </div>
       <div class="seg" role="group" aria-label="Quantidade por compra">
         <button type="button" data-m="1" id="m-1">x1</button>
@@ -82,6 +91,7 @@
     <div id="biz" class="pane"></div>
     <div id="boxes" class="pane" hidden></div>
     <div id="items" class="pane" hidden></div>
+    <div id="daily" class="pane" hidden></div>
   </section>
 </div>
 
@@ -96,6 +106,18 @@
     <div class="op-hint" id="op-hint">Toque na caixa para abrir!</div>
     <div class="op-cards" id="op-cards"></div>
     <div class="op-actions" id="op-actions"></div>
+  </div>
+</div>
+<div id="wheel" hidden>
+  <div class="wh-card" role="dialog" aria-modal="true" aria-labelledby="wh-title">
+    <div class="wh-head"><h3 id="wh-title">Roda da Fortuna Pombal</h3><span class="chip" id="wh-coins"></span></div>
+    <div class="wh-wrap"><canvas id="wheel-cv"></canvas><div class="wh-pointer" id="wh-pointer"></div></div>
+    <div class="wh-result" id="wh-result"></div>
+    <div class="wh-actions">
+      <button type="button" class="btn primary" id="wh-spin">GIRAR!</button>
+      <button type="button" class="btn" id="wh-close">Fechar</button>
+    </div>
+    <p class="wh-odds" id="wh-odds"></p>
   </div>
 </div>
 <div id="toasts" aria-live="polite"></div>
@@ -118,8 +140,11 @@
 <script src="src/market.js"></script>
 <script src="src/events.js"></script>
 <script src="src/loot.js"></script>
+<script src="src/meta.js"></script>
+<script src="src/wheel.js"></script>
 <script src="src/pombo.js"></script>
 <script src="src/ui.js"></script>
 <script src="src/main.js"></script>
+<script src="src/pwa.js"></script>
 </body>
 </html>

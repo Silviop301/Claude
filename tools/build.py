@@ -32,6 +32,8 @@ def main():
     if mode == "artifact":
         head = re.search(r"<head>(.*?)</head>", html, re.S).group(1)
         head = re.sub(r"<meta[^>]*>\s*", "", head)
+        # Manifest e ícones só existem na versão hospedada (PWA)
+        head = re.sub(r'<link rel="(manifest|apple-touch-icon|icon)"[^>]*>\s*', "", head)
         body = re.search(r"<body>(.*?)</body>", html, re.S).group(1)
         html = head.strip() + "\n" + body.strip() + "\n"
         default_out = ROOT / "dist" / "pombo-stonks-artifact.html"

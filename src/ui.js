@@ -91,7 +91,7 @@
 
   ui.setTab = function (tab, silent) {
     PS.S.tab = tab;
-    ['biz', 'boxes', 'items'].forEach(t => {
+    ['biz', 'boxes', 'items', 'daily'].forEach(t => {
       $(t).hidden = t !== tab;
       const b = $('tab-' + t);
       b.classList.toggle('on', t === tab);
@@ -99,6 +99,7 @@
     });
     document.querySelector('.seg').hidden = tab !== 'biz';
     if (tab === 'boxes') ui.renderBoxes();
+    if (tab === 'daily') PS.meta.renderDaily();
     if (tab === 'items') {
       PS.S.newItems = [];
       ui.renderItems();
@@ -297,6 +298,8 @@
     set($('tab-boxes').querySelector('.dot'), 'hidden', !canBox || S.tab === 'boxes');
     set($('tab-items').querySelector('.dot'), 'hidden', !S.newItems.length || S.tab === 'items');
     if (S.tab === 'boxes' && ui._boxKey !== boxKey()) ui.renderBoxes();
+    set($('tab-daily').querySelector('.dot'), 'hidden', !PS.meta.claimable() || S.tab === 'daily');
+    if (S.tab === 'daily' && PS.meta._key !== PS.meta.key()) PS.meta.renderDaily();
     const st = PS.STAGES[S.stage], nx = PS.STAGES[S.stage + 1];
     set($('rank-title'), 'textContent', st.title);
     if (nx) {
@@ -321,6 +324,8 @@
 
     const chips = M.boosts.map(b => [b.id, b.icon + ' ' + b.label + (b.x > 1 ? ' x' + b.x : '') + ' · ' + Math.ceil(b.t) + 's']);
     if (M.sharkOn > 0) chips.push(['shark', '🦈 Tubarão x5 · ' + Math.ceil(M.sharkOn) + 's']);
+    const rl = PS.wheel.boostLeft();
+    if (rl > 0) chips.push(['roda', '🎡 Roda x2 · ' + Math.floor(rl / 60) + ':' + String(Math.floor(rl % 60)).padStart(2, '0')]);
     const key = chips.map(c => c.join(':')).join('|');
     const box = $('boosts');
     if (box._key !== key) {
@@ -432,7 +437,13 @@
   };
 
   // Janela genérica. html só recebe texto gerado pelo próprio jogo.
+  const queue = [];
   ui.modal = function (o) {
+    if (!$('modal').hidden && ui.modalQueued) {
+      queue.push(o);
+      return;
+    }
+    ui.modalQueued = o.dismissable === false;
     $('m-title').textContent = o.title;
     $('m-body').innerHTML = o.html;
     const acts = $('m-actions');
@@ -452,8 +463,11 @@
     if (first) first.focus();
   };
 
+  // Janelas obrigatórias (offline, login) fazem fila em vez de se sobrescrever.
   ui.close = function () {
     $('modal').hidden = true;
+    ui.modalQueued = false;
+    if (queue.length) setTimeout(() => ui.modal(queue.shift()), 250);
   };
 
   ui.offlineModal = function (r) {
@@ -496,6 +510,9 @@
       ['Lucro comprando na baixa', fmt(S.stats.dipProfit)],
       ['Caixas abertas', String(S.boxesOpened)],
       ['Itens na coleção', Object.keys(S.inv).length + '/' + PS.ITEMS.length],
+      ['Giros na roda', String(S.stats.spins || 0)],
+      ['Conquistas', Object.keys(S.ach).length + '/' + PS.meta.ACH.length],
+      ['Dias seguidos', String(S.login.streak)],
     ];
     ui.modal({
       title: 'Relatório do Investidor',

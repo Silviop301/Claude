@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>Ícone Pombo Stonks</title></head>
+<body style="margin:0;background:#222">
+<!-- Desenha o ícone do app. Gerado por tools/make_icons.js (Playwright). -->
+<canvas id="c" width="512" height="512"></canvas>
+<script>
+const ctx = document.getElementById('c').getContext('2d');
+const TAU = Math.PI * 2, INK = '#1E1537';
+function ell(x, y, rx, ry, fill, lw) {
+  ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, TAU);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (lw) { ctx.lineWidth = lw; ctx.strokeStyle = INK; ctx.stroke(); }
+}
+// Fundo azul com raios
+const g = ctx.createLinearGradient(0, 0, 0, 512);
+g.addColorStop(0, '#4F6BFF'); g.addColorStop(1, '#3D5BF5');
+ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 512);
+ctx.save(); ctx.translate(256, 300);
+for (let i = 0; i < 16; i += 2) {
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 600, i / 16 * TAU, (i + 1) / 16 * TAU); ctx.closePath();
+  ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fill();
+}
+ctx.restore();
+// Seta STONKS
+ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+const pts = [[70, 420], [170, 330], [230, 370], [420, 150]];
+const line = () => { ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); };
+ctx.lineWidth = 58; ctx.strokeStyle = INK; line(); ctx.stroke();
+ctx.lineWidth = 34; ctx.strokeStyle = '#2FD27A'; line(); ctx.stroke();
+ctx.beginPath(); ctx.moveTo(460, 100); ctx.lineTo(350, 118); ctx.lineTo(444, 212); ctx.closePath();
+ctx.fillStyle = '#2FD27A'; ctx.fill(); ctx.lineWidth = 14; ctx.strokeStyle = INK; ctx.stroke();
+// Cabeça do pombo
+const hx = 230, hy = 250;
+const ng = ctx.createLinearGradient(150, 300, 300, 470);
+ng.addColorStop(0, '#4FD6A2'); ng.addColorStop(1, '#A26BE8');
+ell(hx - 10, hy + 150, 120, 110, ng, 14);
+ell(hx, hy, 130, 125, '#B9BCD9', 14);
+ell(hx + 10, hy + 55, 26, 18, 'rgba(255,143,177,0.6)', 0);
+// Bico
+const bx = hx + 105, by = hy + 10;
+ctx.beginPath(); ctx.moveTo(bx - 10, by - 28); ctx.quadraticCurveTo(bx + 60, by - 18, bx + 92, by + 16);
+ctx.lineTo(bx - 10, by + 26); ctx.closePath();
+ctx.fillStyle = '#3A3150'; ctx.fill(); ctx.lineWidth = 12; ctx.strokeStyle = INK; ctx.stroke();
+ell(bx + 2, by - 28, 26, 15, '#F3F0FF', 9);
+// Óculos escuros
+ctx.lineWidth = 16; ctx.strokeStyle = INK;
+ctx.beginPath(); ctx.moveTo(hx + 10, hy - 30); ctx.lineTo(hx - 118, hy - 16); ctx.stroke();
+ctx.beginPath(); ctx.roundRect(hx - 20, hy - 70, 130, 76, 26); ctx.fillStyle = INK; ctx.fill();
+ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 11;
+ctx.beginPath(); ctx.moveTo(hx + 4, hy - 48); ctx.lineTo(hx + 40, hy - 48); ctx.stroke();
+// Gravata
+ctx.lineWidth = 11; ctx.strokeStyle = INK; ctx.fillStyle = '#FF4D6D';
+ctx.beginPath(); ctx.moveTo(hx + 20, hy + 150); ctx.lineTo(hx + 52, hy + 150); ctx.lineTo(hx + 76, hy + 262); ctx.lineTo(hx + 36, hy + 300); ctx.lineTo(hx - 4, hy + 262); ctx.closePath();
+ctx.fill(); ctx.stroke();
+ctx.beginPath(); ctx.roundRect(hx + 12, hy + 118, 48, 38, 8); ctx.fill(); ctx.stroke();
+</script>
+</body>
+</html>

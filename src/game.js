@@ -33,6 +33,11 @@
       equip: { ativos: [], head: null, eyes: null, neck: null },
       newItems: [],
       tab: 'biz',
+      daily: { day: '', missions: [], bonusClaimed: false, spins: 0 },
+      weekly: { week: '', done: 0, claimed: false },
+      login: { last: '', streak: 0, pending: false },
+      ach: {},
+      rodaUntil: 0,
       created: now,
       lastTick: now,
     };
@@ -57,11 +62,16 @@
     ['head', 'eyes', 'neck'].forEach(sl => { if (!(eq[sl] && inv[eq[sl]] && PS.ITEM_BY_ID[eq[sl]].slot === sl)) eq[sl] = null; });
     out.equip = eq;
     out.newItems = (Array.isArray(out.newItems) ? out.newItems : []).filter(id => inv[id]);
-    if (!['biz', 'boxes', 'items'].includes(out.tab)) out.tab = 'biz';
+    if (!['biz', 'boxes', 'items', 'daily'].includes(out.tab)) out.tab = 'biz';
+    out.daily = Object.assign(base.daily, s && s.daily);
+    if (!Array.isArray(out.daily.missions)) out.daily.missions = [];
+    out.weekly = Object.assign(base.weekly, s && s.weekly);
+    out.login = Object.assign(base.login, s && s.login);
+    if (!out.ach || typeof out.ach !== 'object') out.ach = {};
+    if (!isFinite(out.rodaUntil)) out.rodaUntil = 0;
     return out;
   };
 
-  // Bônus temporários (mercado, eventos, Modo Tubarão). Futuro: itens e prestígio.
   // Itens equipados e coleção (permanente) × mercado e eventos (temporário).
   PS.globalMult = function () {
     return PS.permMult() * (PS.market ? PS.market.tempMult() : 1);
@@ -126,6 +136,7 @@
     PS.S.money += v;
     PS.S.lifetime += v;
     PS.S.allTime += v;
+    if (PS.meta) PS.meta.track('earn', v);
   };
 
   // Compra; devolve null se não houver grana.

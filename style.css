@@ -35,6 +35,8 @@ body {
   -webkit-user-select: none;
   user-select: none;
   touch-action: manipulation;
+  -webkit-touch-callout: none;
+  overscroll-behavior: none;
 }
 
 button { font-family: inherit; color: var(--ink); cursor: pointer; }
@@ -52,6 +54,16 @@ button:focus-visible, .stage:focus-visible {
   gap: 10px;
   padding-block: 10px;
   padding-inline: 16px;
+}
+
+/* Instalado como app: desvia do notch e da barra inferior do iPhone */
+@media (display-mode: standalone) {
+  #app {
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
 }
 
 @media (min-width: 900px) {
@@ -377,6 +389,10 @@ button:focus-visible, .stage:focus-visible {
   box-shadow: 0 3px 0 var(--ink);
 }
 .tab.on { background: var(--ink); color: #fff; }
+@media (max-width: 420px) {
+  .tabs { gap: 4px; }
+  .tab { font-size: 15px; padding: 2px 7px 3px; }
+}
 .tab .dot {
   position: absolute;
   top: -7px; right: -7px;
@@ -672,6 +688,131 @@ button:focus-visible, .stage:focus-visible {
 }
 .op-card.pop { animation: cardPop 0.45s cubic-bezier(.2, 1.7, .4, 1); }
 
+/* ---------- Diário ---------- */
+.wheel-cta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  background: var(--card);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  padding: 8px 10px;
+}
+.wheel-cta.free { background: #FFF1B8; box-shadow: 0 0 0 3px var(--gold); }
+.wheel-cta.free .buy { background: var(--gold); animation: breathe 0.8s ease-in-out infinite; }
+.wc-ico { font-size: 38px; line-height: 1; }
+.wheel-cta.free .wc-ico { animation: spin-slow 3s linear infinite; }
+.wc-info { display: flex; flex-direction: column; line-height: 1.2; }
+.wc-info b { font: 400 17px var(--display); }
+.wc-info span { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+
+.mission {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  background: var(--card);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 7px 10px;
+}
+.ms-txt { font-weight: 800; font-size: 14px; line-height: 1.2; }
+.ms-bar { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.ms-bar .meter i { background: var(--green); }
+.ms-bar span { font-size: 11.5px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.claim {
+  min-width: 66px;
+  font: 400 15px var(--display);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  background: #D8D1C4;
+  box-shadow: 0 3px 0 var(--ink);
+  padding: 4px 8px;
+}
+.claim:disabled { cursor: default; opacity: 0.7; }
+.mission.done { box-shadow: 0 0 0 3px var(--gold); }
+.mission.done .claim { background: var(--gold); opacity: 1; animation: breathe 0.7s ease-in-out infinite; }
+.mission.claimed { background: #EAF9EF; }
+.mission.claimed .claim { background: var(--green); opacity: 1; }
+.mission.claimed .ms-txt { color: var(--muted); text-decoration: line-through; }
+.mission.bonus { background: #F4EEFF; }
+
+.ach-list { display: flex; flex-direction: column; gap: 6px; }
+.ach {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  background: var(--card);
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  padding: 5px 10px;
+}
+.ach-ico { font-size: 24px; filter: grayscale(1); opacity: 0.6; }
+.ach.ok { background: #FFF6D6; }
+.ach.ok .ach-ico { filter: none; opacity: 1; }
+.ach-info { display: flex; flex-direction: column; gap: 2px; line-height: 1.2; min-width: 0; }
+.ach-info b { font: 400 15px var(--display); }
+.ach-info span { font-size: 12px; font-weight: 700; color: var(--muted); }
+.ach-info .meter { flex: none; height: 7px; }
+.ach-info .meter i { background: var(--gold); }
+.ach-check { font: 400 20px var(--display); color: var(--green-d); }
+
+/* Login diário */
+.lg-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin: 10px 0; }
+.lg-day {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: var(--card);
+  border: 2.5px solid var(--ink);
+  border-radius: 10px;
+  padding: 4px 0;
+}
+.lg-n { font-size: 9.5px; font-weight: 800; color: var(--muted); white-space: nowrap; }
+.lg-ico { font-size: 20px; line-height: 1.1; }
+.lg-day.past { background: #EAF9EF; opacity: 0.7; }
+.lg-day.today { background: var(--gold); transform: scale(1.12); box-shadow: 0 3px 0 var(--ink); }
+.lg-prize { text-align: center; font-size: 17px; }
+
+/* Roda */
+#wheel {
+  position: fixed; inset: 0; z-index: 17;
+  display: grid; place-items: center;
+  padding: 16px;
+  background: rgba(30, 21, 55, 0.75);
+}
+.wh-card {
+  width: min(400px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 22px;
+  box-shadow: 0 6px 0 var(--ink);
+  padding: 14px 14px 12px;
+  animation: pop 0.35s cubic-bezier(.2, 1.6, .4, 1);
+}
+.wh-head { align-self: stretch; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.wh-head h3 { font: 400 22px var(--display); margin: 0; text-wrap: balance; }
+.wh-wrap { position: relative; width: min(300px, 78vw); aspect-ratio: 1; max-width: 100%; }
+#wheel-cv { width: 100%; height: 100%; display: block; }
+.wh-pointer {
+  position: absolute; left: 50%; top: -8px;
+  width: 0; height: 0;
+  margin-left: -16px;
+  border-left: 16px solid transparent;
+  border-right: 16px solid transparent;
+  border-top: 30px solid var(--red);
+  filter: drop-shadow(0 -3px 0 var(--ink)) drop-shadow(0 3px 0 var(--ink));
+  transform-origin: 50% 0;
+}
+.wh-pointer.flap { animation: flap 0.12s ease-out; }
+.wh-result { min-height: 24px; text-align: center; font-size: 16px; line-height: 1.25; }
+.wh-result small { font-weight: 700; color: var(--red); }
+.wh-actions { display: flex; gap: 10px; }
+.wh-odds { margin: 0; font-size: 11px; font-weight: 700; color: var(--muted); text-align: center; line-height: 1.4; }
+
 /* ---------- Camadas globais ---------- */
 #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
 #flash { position: fixed; inset: 0; pointer-events: none; opacity: 0; z-index: 19; }
@@ -775,6 +916,8 @@ button:focus-visible, .stage:focus-visible {
 @keyframes knock { 30% { transform: scale(calc(1.08 + var(--k, 1) * 0.04)) rotate(calc(var(--k, 1) * 3deg)); } }
 @keyframes shake2 { 0% { transform: translate(-5px, 2px) rotate(-4deg); } 50% { transform: translate(5px, -3px) rotate(4deg); } 100% { transform: translate(-3px, 0) rotate(-2deg); } }
 @keyframes cardPop { 0% { transform: scale(0.3) rotate(-8deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+@keyframes flap { 50% { transform: rotate(-18deg); } }
 @keyframes toastIn { from { transform: translateY(-14px) scale(0.9); opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {

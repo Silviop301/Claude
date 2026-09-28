@@ -202,7 +202,7 @@ Recompensas: Grana, Cupons, dobrar coleta offline, chance de caixa no fim.
 2. ✅ **Juice + pombo animado:** partículas, números voadores, críticos, combo, sons, reações.
 3. ✅ **Mercado + eventos aleatórios** + Modo Tubarão.
 4. ✅ **Loot:** ativos, visual do pombo, caixas com animação, pity, inventário, duplicatas.
-5. **Roda da Fortuna, missões diárias, login streak, conquistas.**
+5. ✅ **Roda da Fortuna, missões diárias, login streak, conquistas.**
 6. **MBA do Pombo + álbum + craft.**
 7. **A Pirâmide Desmoronou (prestígio 1).**
 8. **Minigame Day Trade Turbo.**
