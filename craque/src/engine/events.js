@@ -414,11 +414,17 @@
     // Eventos de contexto (peso alto) quase sempre aparecem; os genéricos, às vezes.
     const total = pool.reduce((a, e) => a + e.weight, 0);
     if (!pool.length || r() > Math.min(0.78, 0.2 + total * 0.05)) { save(); return null; }
-    let x = r() * total, def = pool[0];
-    for (const e of pool) { x -= e.weight; if (x < 0) { def = e; break; } }
-    const ev = Object.assign({ id: def.id, icon: def.icon }, def.build(c, r));
+    // Alguns eventos dependem de dados que podem faltar (ex.: não há rival na liga): sorteia outro
+    let left = pool.slice(), sum = total;
+    while (left.length) {
+      let x = r() * sum, def = left[0];
+      for (const e of left) { x -= e.weight; if (x < 0) { def = e; break; } }
+      const built = def.build(c, r);
+      if (built) { save(); return Object.assign({ id: def.id, icon: def.icon }, built); }
+      left = left.filter(e => e !== def); sum -= def.weight;
+    }
     save();
-    return ev;
+    return null;
   };
 
   // Proposta que vem num evento (a mesma que a tela mostra antes de aceitar)
@@ -427,7 +433,9 @@
 
   S.resolveEvent = function (c, ev, idx) {
     const { r, save } = rngOf(c);
-    const out = EVENT_BY_ID[ev.id].resolve(c, ev, idx, r);
+    // Outros arquivos (engine/events2.js) somam eventos à lista depois deste
+    const def = EVENT_BY_ID[ev.id] || S.EVENT_DEFS.find(e => e.id === ev.id);
+    const out = def.resolve(c, ev, idx, r);
     save();
     const fx = out.fx || {};
     if (fx.min) c.mod.min += fx.min;

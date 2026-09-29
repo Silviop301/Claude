@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-a63776a9';
+const CACHE = 'craque-24790237';
 const ASSETS = [
   "./",
   "./assets/bola.glb",
@@ -611,6 +611,7 @@ const ASSETS = [
   "./src/engine/achievements.js",
   "./src/engine/core.js",
   "./src/engine/events.js",
+  "./src/engine/events2.js",
   "./src/engine/finish.js",
   "./src/engine/market.js",
   "./src/engine/moments.js",
