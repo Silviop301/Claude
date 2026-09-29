@@ -15,7 +15,7 @@
   const stars = t => '★'.repeat(t) + '☆'.repeat(5 - t);
   const year = () => YEAR0 + G.c.season;
   const crest = (id, cls) => '<img class="crest' + (cls ? ' ' + cls : '') + '" src="badges/' + id + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">';
-  const trophy = (type, size) => window.CRAQUE_TROPHY(type, size);
+  const trophy = (type, size, name) => window.CRAQUE_TROPHY(type, size, name);
   const titleType = t => (t.id === 'cont' ? (t.name === 'Libertadores' ? 'lib' : 'ucl') : t.id);
   const meter = (label, v) => '<span class="m"><span class="ml">' + label + ' · ' + S.relLabel(v) + '</span><span class="mb"><i style="width:' + Math.round(v) + '%" class="' + (v >= 62 ? 'hi' : v < 32 ? 'lo' : '') + '"></i></span></span>';
 

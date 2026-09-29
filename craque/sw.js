@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-5e0eb136';
+const CACHE = 'craque-38a9b9db';
 const ASSETS = [
   "./",
   "./assets/bola.glb",
@@ -316,6 +316,7 @@ const ASSETS = [
   "./src/sim.js",
   "./src/sound.js",
   "./src/trophies.js",
+  "./src/trophy-imgs.js",
   "./src/ui/achievements.js",
   "./src/ui/album.js",
   "./src/ui/core.js",
@@ -329,7 +330,46 @@ const ASSETS = [
   "./src/ui/start.js",
   "./src/ui/walkout.js",
   "./src/ui/worldcup.js",
-  "./style.css"
+  "./style.css",
+  "./trophies/2--bundesliga.png",
+  "./trophies/brasileirao.png",
+  "./trophies/bundesliga.png",
+  "./trophies/championship.png",
+  "./trophies/copa-argentina.png",
+  "./trophies/copa-auf.png",
+  "./trophies/copa-colombia.png",
+  "./trophies/copa-da-alemanha.png",
+  "./trophies/copa-da-franca.png",
+  "./trophies/copa-da-holanda.png",
+  "./trophies/copa-da-turquia.png",
+  "./trophies/copa-do-brasil.png",
+  "./trophies/copa-do-mundo.png",
+  "./trophies/copa-do-rei-saudita.png",
+  "./trophies/copa-do-rei.png",
+  "./trophies/coppa-italia.png",
+  "./trophies/eredivisie.png",
+  "./trophies/fa-cup.png",
+  "./trophies/la-liga.png",
+  "./trophies/laliga-2.png",
+  "./trophies/libertadores.png",
+  "./trophies/liga-argentina.png",
+  "./trophies/liga-colombiana.png",
+  "./trophies/liga-dos-campeoes.png",
+  "./trophies/liga-mx.png",
+  "./trophies/liga-portugal.png",
+  "./trophies/liga-uruguaia.png",
+  "./trophies/ligue-1.png",
+  "./trophies/ligue-2.png",
+  "./trophies/mls.png",
+  "./trophies/premier-league.png",
+  "./trophies/primera-nacional.png",
+  "./trophies/saudi-pro-league.png",
+  "./trophies/serie-a.png",
+  "./trophies/serie-b-italiana.png",
+  "./trophies/serie-b.png",
+  "./trophies/serie-c.png",
+  "./trophies/super-lig.png",
+  "./trophies/taca-de-portugal.png"
 ];
 
 self.addEventListener('install', e => {

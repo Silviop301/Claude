@@ -1,4 +1,5 @@
-// Taças desenhadas para o CRAQUE (SVG próprio, sem imagens oficiais).
+// Taças: imagem da taça real quando existe (craque/trophies, via tools/craque_trophies.py);
+// senão, a taça desenhada aqui (SVG próprio) — ex.: Bola de Ouro, US Open Cup, Copa MX.
 // Tipos: league (liga), cup (copa nacional), ucl (Liga dos Campeões), lib (Libertadores), ballon (Bola de Ouro), wc (Copa do Mundo).
 (function (root) {
   const INK = '#13201A';
@@ -55,7 +56,13 @@
     '<path d="M22 47h20v11H22z" fill="' + INK + '"/><path d="M22 49.5h20M22 54.5h20" stroke="#1FA35A" stroke-width="2.4"/>';
   const METAL = { league: 'gold', cup: 'silver', ucl: 'silver', lib: 'gold', ballon: 'gold', wc: 'gold' };
 
-  root.CRAQUE_TROPHY = function (type, size) {
+  // name: nome da competição. Se houver imagem da taça real (src/trophy-imgs.js), usa ela;
+  // se não houver (ou a imagem falhar), fica a taça desenhada.
+  const WC_NAME = { wc: 'Copa do Mundo', lib: 'Libertadores', ucl: 'Liga dos Campeões' };
+  root.CRAQUE_TROPHY = function (type, size, name) {
+    const img = (root.CRAQUE_TROPHY_IMGS || {})[name || WC_NAME[type]];
+    const s = size || 40;
+    if (img) return '<img class="trophy trophy-real" src="' + img + '" alt="" style="height:' + s + 'px;max-width:' + Math.round(s * 1.3) + 'px" onerror="this.outerHTML=window.CRAQUE_TROPHY(\'' + type + '\',' + s + ')">';
     const shape = SHAPES[type] || SHAPES.league;
     const g = 'url(#tg-' + (METAL[type] || 'gold') + ')';
     return '<svg class="trophy" width="' + (size || 40) + '" height="' + (size || 40) + '" viewBox="0 0 64 64" aria-hidden="true">' + defs + shape(g) + '</svg>';

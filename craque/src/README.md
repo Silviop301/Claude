@@ -14,6 +14,7 @@ Scripts clássicos (sem build), carregados pelo `index.html` nesta ordem.
 | `engine/market.js` | Propostas, contratos e transferências |
 | `engine/finish.js` | Pontuação e veredito do fim de carreira |
 | `trophies.js`, `card.js`, `kick.js`, `ball3d.js` | Taças, carta final, minigame e bola 3D |
+| `trophy-imgs.js` + `../trophies/` | Imagens das taças reais (geradas por `tools/craque_trophies.py` e `tools/craque_trophies_resize.js`) |
 | `defend.js` | Minigames defensivos: defesa de pênalti (goleiro) e desarme (zagueiro) |
 | `kits.js` | Cores de camisa de cada clube (geradas dos escudos por `tools/craque_kits.js`) |
 | `ui/paper.js` | Jornal: capa, foto ilustrada, coluna do cronista e edições extras |

@@ -656,3 +656,5 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .al-chart text { fill: #fff; font: 600 10px var(--body); }
 .al-share { margin-top: auto; width: 100%; }
 @media (prefers-reduced-motion: reduce) { .al-prog i.now { background: #fff; } }
+.trophy-real { width: auto; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .45)); }
+.wc-champ .trophy-real { filter: drop-shadow(0 0 18px rgba(255, 214, 90, .9)); }
