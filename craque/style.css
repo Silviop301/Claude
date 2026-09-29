@@ -518,3 +518,20 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .wc-live .line span:last-child { font: 700 17px var(--body); }
 .inv-bar { position: sticky; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 3; }
 .inv-bar .btn { width: 100%; box-shadow: 0 4px 0 rgba(0, 0, 0, .35), 0 6px 18px rgba(0, 0, 0, .35); }
+
+/* Conquistas */
+.ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ach { background: rgba(255, 255, 255, .06); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px; color: #9DB5A6; }
+.ach .ic { font-size: 24px; filter: grayscale(1); opacity: .6; }
+.ach b { font: 800 16px/1.1 var(--display); color: #CFE0D4; }
+.ach .d { font-size: 12px; line-height: 1.25; }
+.ach .by { font: 700 11px var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--gold); margin-top: 2px; }
+.ach.on { background: var(--paper); color: var(--muted); }
+.ach.on .ic { filter: none; opacity: 1; }
+.ach.on b { color: var(--ink); }
+.ach.on .by { color: #8A6400; }
+.ach.new { box-shadow: 0 0 0 3px var(--gold); animation: trophy-in .7s cubic-bezier(.2, 1.5, .4, 1); }
+.ach-bar { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.ach-bar i { display: block; height: 100%; background: var(--gold); border-radius: inherit; }
+.final .ach-grid { margin-top: 4px; }
+.final .ach { background: rgba(0, 0, 0, .05); }

@@ -12,6 +12,7 @@
       '<p class="lead">Crie um garoto de 16 anos, escolha propostas, monte o estilo dele e descubra se ele vira lenda.</p>' +
       (saved && saved.c ? '<button class="btn" id="b-cont">Continuar carreira de ' + esc(saved.c.name) + '</button>' : '') +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
+      '<button class="btn ghost" id="b-ach">🏅 Conquistas <b>' + U.achCount() + '/' + S.ACHIEVEMENTS.length + '</b></button>' +
       '<button class="btn ghost small-btn" id="b-sound"></button>' +
       (hall.length ? '<div class="eyebrow" style="margin-top:8px">Hall da Fama</div><div class="hall">' +
         hall.map(h => '<div><b>' + h.grade + '</b><span>' + esc(h.name) + ' · ' + esc(h.verdict) + '<br><small>' + h.goals + ' gols · ' + h.assists + ' assist. · ' + h.titles + ' taças' + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '') + '</small></span><span class="muted">' + h.score + '</span></div>').join('') + '</div>' : '')
@@ -25,6 +26,7 @@
       resume(saved.step);
     };
     $('b-new').onclick = create;
+    $('b-ach').onclick = U.achievements;
     const snd = $('b-sound');
     const sndTxt = () => { snd.textContent = window.CRAQUE_SFX && window.CRAQUE_SFX.on ? '🔊 Som ligado' : '🔇 Som desligado'; };
     if (snd) { sndTxt(); snd.onclick = () => { if (window.CRAQUE_SFX) window.CRAQUE_SFX.toggle(); sndTxt(); }; }

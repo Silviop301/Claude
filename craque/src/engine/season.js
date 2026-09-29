@@ -80,7 +80,10 @@
     if (M && M.type === 'cup') cup = M.ok;
     if (M && M.type === 'title') league = M.ok;
     if (M && M.ok) goals += 1;
-    const pCont = club.tier >= 3 ? clamp((sEff - 80) / 40 + titleBonus * 0.3, 0.01, 0.25) * (club.tier === 5 ? 1 : club.tier === 4 ? 0.4 : 0.25) : 0;
+    // Continental: Libertadores (Brasil/Argentina) mede força contra o nível sul-americano; Champions, contra o europeu
+    const libert = ['bra-a', 'arg'].includes(club.league);
+    const pCont = club.tier < 3 ? 0 : libert ? clamp((sEff - 66) / 28 + titleBonus * 0.3, 0.01, 0.28)
+      : clamp((sEff - 80) / 40 + titleBonus * 0.3, 0.01, 0.25) * (club.tier === 5 ? 1 : club.tier === 4 ? 0.4 : 0.25);
     const cont = club.tier >= 3 && r() < pCont;
     const contName = ['bra-a', 'arg'].includes(club.league) ? 'Libertadores' : club.tier >= 4 ? 'Liga dos Campeões' : null;
     const titles = [];

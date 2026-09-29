@@ -67,6 +67,7 @@ for (let n = 0; n < N; n++) {
     S.join(c, good[0] || opts.sort((a, b) => b.share - a.share)[0]);
   }
   const f = S.finish(c);
+  (globalThis.ACH = globalThis.ACH || {}); S.achievementsOf(c, f).forEach(id => { ACH[id] = (ACH[id] || 0) + 1; });
   res.push({ build: c.traits.slice().sort().join('+'), idol: f.verdict.startsWith('Ídolo'), farewell: !!c.farewell, seasons: c.season, decisions, goals: c.totals.goals, assists: c.totals.assists, titles: f.titles, ballon: c.totals.ballon, peak: c.peak, grade: f.grade, verdict: f.verdict, pos, clubs: f.nClubs, games: c.totals.games, events: Object.values(c.stats || {}).reduce((a, b) => a + b, 0), buys: c.buys, invOvr: S.ovr(c) - S.ovrOf(S.preview(c, {}).attrs, c.pos) + (() => { const inv = c.inv; c.inv = {}; const o = S.ovr(c); c.inv = inv; return S.ovr(c) - o; })(), firstBuy: c.firstBuyAge || 0, money: Math.round(c.money / 1e6), moments: (c.mstats || {}).n || 0, wcApps: c.totals.wcApps || 0, wc: c.totals.wc || 0, wcGoals: c.totals.wcGoals || 0, momentsOk: (c.mstats || {}).ok || 0 });
 }
 console.log('Robô:', SMART ? 'esperto' : 'casual');
@@ -90,3 +91,5 @@ const ver = {}; res.forEach(r => { const v = r.verdict.startsWith('Ídolo') ? '�
 console.log('Vereditos:', Object.entries(ver).sort((a, b) => b[1] - a[1]).map(([v, n]) => v + ' ' + (n / N * 100).toFixed(0) + '%').join(' · '));
 const secs = q(res.map(r => r.decisions * 6 + r.seasons * 5), .5);
 console.log('Duração estimada (6 s por decisão + 5 s de resumo por temporada):', Math.floor(secs / 60) + 'min' + (secs % 60) + 's');
+
+console.log('Conquistas (% das carreiras):', S.ACHIEVEMENTS.map(a => a.id + ' ' + Math.round((ACH[a.id] || 0) / N * 100) + '%').join(' · '));

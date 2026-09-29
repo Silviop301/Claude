@@ -79,9 +79,16 @@
     return { ok: true, why: 'gol' };
   };
 
+  // Conta as cobranças do minigame (para conquistas): pen/fk, convertidas
+  S.countKick = function (c, type, ok) {
+    const k = c.kicks = c.kicks || { n: 0, ok: 0, fkOk: 0 };
+    k.n++;
+    if (ok) { k.ok++; if (type === 'fk') k.fkOk++; }
+  };
   S.resolveMoment = function (c, ok) {
     if (!c.moment) return;
     c.mod.moment = Object.assign({}, c.moment, { ok: !!ok });
+    S.countKick(c, c.moment.type === 'classico' ? 'fk' : 'pen', ok);
     c.moment = null;
   };
   // Sem jogar: sorteia com a chance mostrada

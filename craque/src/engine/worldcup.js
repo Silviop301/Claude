@@ -112,6 +112,7 @@
     run.live = false; run.momentStarted = false;
     game.live = false;
     game.momentOk = !!ok;
+    S.countKick(c, game.moment.type, ok);
     if (ok) { game.gf++; game.g++; }
     wcClose(c, game, r);
     save();
@@ -137,6 +138,7 @@
     if (!run || !run.pending) return;
     run.pending = false;
     run.games[run.games.length - 1].pensWon = !!ok;
+    S.countKick(c, 'pen', ok);
     wcAdvance(c, !!ok);
   };
   S.wcPensAuto = function (c) {
