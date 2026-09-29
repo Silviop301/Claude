@@ -38,12 +38,12 @@
     if (!clubsPlayed.includes(f.mainClub)) clubsPlayed.unshift(f.mainClub);
     render(
       '<div class="eyebrow">Fim de carreira · ' + (YEAR0 + G.c.season) + '</div>' +
-      '<div class="fut"><canvas id="fut" aria-label="Card do jogador"></canvas></div>' +
+      '<div class="fut card3d-host" id="fut-host"><canvas id="fut" aria-label="Card do jogador"></canvas></div>' +
       // Suas cartas: a final e as especiais; a escolhida aparece grande e é a que vai no compartilhar
       ((G.c.cards || []).length ? '<div class="crest-pick-t">Suas cartas · toque para ver e compartilhar</div><div class="sp-cards">' +
         '<canvas data-sp="final" class="on" aria-label="Carta final"></canvas>' + G.c.cards.map((k, i) => '<canvas data-sp="' + i + '" aria-label="' + esc(U.SPECIAL_NAME[k.type]) + '"></canvas>').join('') + '</div>' : '') +
       (clubsPlayed.length > 1 ? '<div id="crest-wrap"><div class="crest-pick-t">Escudo da carta</div><div class="crest-pick" id="crest-pick">' + clubsPlayed.map(id => '<button data-club="' + id + '"' + (id === f.mainClub ? ' class="on"' : '') + ' aria-label="' + esc(club(id).name) + '">' + crest(id) + '<span>' + esc(club(id).name) + '</span></button>').join('') + '</div></div>' : '') +
-      '<button class="btn" id="b-share">Compartilhar card</button>' +
+      '<button class="btn" id="b-share">Compartilhar carta</button><button class="btn ghost" id="b-save">Salvar imagem da carta</button>' +
       (G.c.seasons.length ? '<button class="btn ghost" id="b-album">📖 Ver o álbum da carreira</button>' : '') +
 
       '<div class="final">' +
@@ -73,27 +73,35 @@
       window.CRAQUE_CARD(sc, spData(sc.dataset.sp));
       sc.onclick = () => {
         screen.querySelectorAll('[data-sp]').forEach(x => x.classList.toggle('on', x === sc));
-        window.CRAQUE_CARD($('fut'), spData(sc.dataset.sp));
+        shown = spData(sc.dataset.sp);
+        window.CRAQUE_CARD($('fut'), shown);
+        if (viewer) viewer.update(shown);
         if ($('crest-wrap')) $('crest-wrap').hidden = sc.dataset.sp !== 'final'; // escudo só se troca na carta final
-        $('b-share').textContent = 'Compartilhar card';
-        $('fut').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        $('b-share').textContent = 'Compartilhar carta';
+        $('fut-host').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       };
     });
     if ($('b-album')) $('b-album').onclick = () => U.album(retired, f, cardData);
     G.c = null;
     $('bar').hidden = true;
     const cv = $('fut');
-    window.CRAQUE_CARD(cv, cardData);
+    // Carta 3D metálica (o canvas fica como reserva e para salvar a imagem)
+    let shown = cardData, viewer = null;
+    U.mount3d($('fut-host'), cardData).then(v => { viewer = v; });
     screen.querySelectorAll('[data-club]').forEach(b => b.onclick = () => {
       screen.querySelectorAll('[data-club]').forEach(x => x.classList.toggle('on', x === b));
       cardData.crest = 'badges/' + b.dataset.club + '.png';
+      shown = cardData;
       window.CRAQUE_CARD(cv, cardData);
+      if (viewer) viewer.update(cardData);
       const th = screen.querySelector('[data-sp="final"]'); if (th) window.CRAQUE_CARD(th, cardData);
-      $('b-share').textContent = 'Compartilhar card';
+      $('b-share').textContent = 'Compartilhar carta';
     });
-    $('b-share').onclick = async () => {
+    // Compartilhar: link que abre a carta 3D no jogo; a imagem continua disponível
+    $('b-share').onclick = () => U.shareCard(shown, $('b-share'));
+    $('b-save').onclick = async () => {
       const r = await window.CRAQUE_SHARE(cv, shareName);
-      if (r === 'download') $('b-share').textContent = 'Imagem salva';
+      if (r === 'download') $('b-save').textContent = 'Imagem salva';
     };
     $('b-again').onclick = U.create;
     // Vai para o início e rola até o Hall da Fama (id próprio: "b-home" é o botão de casa da barra)

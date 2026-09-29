@@ -44,18 +44,19 @@
       '<div class="wo-step wo-flag">' + cty.flag + '</div>' +
       '<div class="wo-step wo-pos">' + esc(card ? SPECIAL[card.type] : D.POS[c.pos].name) + '</div>' +
       '<div class="wo-step wo-crest"><img src="' + (d.crest || 'icons/icon-192.png') + '" alt=""></div>' +
-      '<div class="wo-card"><canvas aria-label="Carta nova"></canvas></div>' +
+      '<div class="wo-card card3d-host"><canvas aria-label="Carta nova"></canvas></div>' +
       '<div class="wo-title"><span>' + (card ? 'Carta especial' : 'Nova carta') + '</span><b>' + (card ? SPECIAL[card.type] : TIER_NAME[t]) + '</b></div>' +
       '<div class="wo-tap">Toque para continuar</div>';
     if (!d.crest) wrap.querySelector('.wo-crest').innerHTML = '<span class="wo-bigflag">' + cty.flag + '</span>';
     document.body.appendChild(wrap);
-    window.CRAQUE_CARD(wrap.querySelector('canvas'), d);
+    let viewer = null;
+    U.mount3d(wrap.querySelector('.wo-card'), d, { delay: 2300 }).then(v => { viewer = v; if (v && !wrap.isConnected) v.dispose(); });
     sfx('levelup');
     const timers = [setTimeout(() => sfx('coin'), 900), setTimeout(() => sfx('coin'), 1700), setTimeout(() => { sfx('fanfare'); wrap.classList.add('shown'); }, 2600)];
     const close = () => {
       if (!wrap.classList.contains('shown')) { timers.forEach(clearTimeout); wrap.classList.add('skip', 'shown'); sfx('fanfare'); return; }
       wrap.classList.add('out');
-      setTimeout(() => { wrap.remove(); onClose && onClose(); }, 250);
+      setTimeout(() => { if (viewer) viewer.dispose(); wrap.remove(); onClose && onClose(); }, 250);
     };
     setTimeout(() => { wrap.onclick = close; }, 300);
   }

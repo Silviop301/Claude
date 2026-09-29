@@ -129,11 +129,14 @@
       if (document.fonts && document.fonts.load) await document.fonts.load("52px 'Twemoji Country Flags'", d.flag || '🇧🇷');
       if (document.fonts && document.fonts.ready) await document.fonts.ready;
     } catch (e) { /* segue */ }
-    const T = d.special ? specialTheme(d) : themeOf(d.peak, d.grade);
+    let T = d.special ? specialTheme(d) : themeOf(d.peak, d.grade);
+    // bare: só o conteúdo (fundo transparente), para ir por cima do metal da carta 3D
+    if (d.bare) T = Object.assign({}, T, { ink: d.ink || T.ink, line: d.line || T.line, holo: false });
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, W, H);
 
+    if (d.bare) { if (T.pattern) { ctx.save(); shield(ctx); ctx.clip(); drawPattern(ctx, T); ctx.restore(); } } else {
     // Fundo metálico
     shield(ctx);
     const g = ctx.createLinearGradient(0, 40, W, H - 40);
@@ -169,10 +172,12 @@
     ctx.translate(W / 2, H / 2); ctx.scale(0.955, 0.965); ctx.translate(-W / 2, -H / 2);
     shield(ctx); ctx.lineWidth = 2.5; ctx.strokeStyle = T.line; ctx.stroke();
     ctx.restore();
+    }
     // Texto em alto-relevo: sombra escura embaixo e luz em cima
     // Sutil: só 1 px de luz/sombra. Usa sempre o fillText original do canvas — redesenhar a carta
     // (ex.: trocar o escudo) não pode acumular o efeito.
-    const emboss = T.holo ? ['rgba(0,0,0,.45)', 'rgba(255,255,255,0)'] : ['rgba(255,255,255,.4)', 'rgba(0,0,0,.12)'];
+    const emboss = d.bare ? (d.inkLight ? ['rgba(0,0,0,.35)', 'rgba(0,0,0,0)'] : ['rgba(255,255,255,.3)', 'rgba(0,0,0,0)'])
+      : T.holo ? ['rgba(0,0,0,.45)', 'rgba(255,255,255,0)'] : ['rgba(255,255,255,.4)', 'rgba(0,0,0,.12)'];
     const proto = (typeof CanvasRenderingContext2D !== 'undefined' && CanvasRenderingContext2D.prototype.fillText) || ctx.fillText;
     const fillText = proto.bind(ctx);
     let embossOn = true; // desligado nos emojis (bandeira e ícones), que borrariam
@@ -264,6 +269,14 @@
   };
 
   // Compartilhar (Safari/Android usam a folha de compartilhamento; senão, baixa a imagem)
+  // Carta 3D: qual das 4 cartas metálicas usar (faixa ou carta especial) e a cor do texto por cima
+  root.CRAQUE_CARD_METAL = function (d) {
+    const k = d.special ? { tots: 'azul', heroi: 'vermelha', copa: 'verde', bola: 'dourada' }[d.special]
+      : { bronze: 'vermelha', prata: 'azul', ouro: 'dourada', icone: 'verde' }[Object.keys(THEMES).find(n => THEMES[n] === themeOf(d.peak, d.grade))];
+    const ink = { azul: ['#FFFFFF', true], vermelha: ['#FFF4E6', true], verde: ['#06220F', false], dourada: ['#231800', false] }[k];
+    return { metal: k, ink: ink[0], inkLight: ink[1], line: ink[1] ? 'rgba(255,255,255,.45)' : 'rgba(20,30,10,.35)' };
+  };
+
   root.CRAQUE_SHARE = function (canvas, name) {
     return new Promise(resolve => {
       canvas.toBlob(async blob => {
