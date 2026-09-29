@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-22b3d5f5';
+const CACHE = 'craque-51a414fa';
 const ASSETS = [
   "./",
   "./assets/bola.glb",
@@ -645,6 +645,7 @@ const ASSETS = [
   "./trophies/copa-da-austria.png",
   "./trophies/copa-da-belgica.png",
   "./trophies/copa-da-coreia.png",
+  "./trophies/copa-da-dinamarca.png",
   "./trophies/copa-da-escocia.png",
   "./trophies/copa-da-franca.png",
   "./trophies/copa-da-grecia.png",
@@ -659,6 +660,7 @@ const ASSETS = [
   "./trophies/copa-do-rei.png",
   "./trophies/copa-equador.png",
   "./trophies/copa-intercontinental.png",
+  "./trophies/copa-mx.png",
   "./trophies/copa-paraguai.png",
   "./trophies/coppa-italia.png",
   "./trophies/eredivisie.png",
@@ -675,6 +677,7 @@ const ASSETS = [
   "./trophies/liga-equatoriana.png",
   "./trophies/liga-mx.png",
   "./trophies/liga-paraguaia.png",
+  "./trophies/liga-portugal-2.png",
   "./trophies/liga-portugal.png",
   "./trophies/liga-uruguaia.png",
   "./trophies/ligue-1.png",
@@ -696,7 +699,8 @@ const ASSETS = [
   "./trophies/super-league-suica.png",
   "./trophies/super-lig.png",
   "./trophies/superliga-dinamarquesa.png",
-  "./trophies/taca-de-portugal.png"
+  "./trophies/taca-de-portugal.png",
+  "./trophies/us-open-cup.png"
 ];
 
 self.addEventListener('install', e => {
