@@ -39,11 +39,13 @@
     b.hidden = false;
     requestAnimationFrame(() => document.documentElement.style.setProperty('--bar-h', b.offsetHeight + 'px'));
     const cl = club(G.c.club), lg = league(G.c.club);
-    // Nome + botão pequeno de som (dá para silenciar no meio da partida)
-    $('bar-name').innerHTML = esc(G.c.name) + ' <button class="snd-mini" id="b-snd" aria-label="Som">' + (window.CRAQUE_SFX && !window.CRAQUE_SFX.on ? '🔇' : '🔊') + '</button>';
+    // Nome e clube (a idade aparece no topo de cada tela; o som fica na linha dos medidores)
+    $('bar-name').innerHTML = '<span class="bn">' + esc(G.c.name) + '</span>';
+    $('bar-sub').innerHTML = crest(cl.id, 'xs') + esc(cl.name);
+    // Som fica no fim da linha dos medidores (libera espaço para nome, idade e clube)
+    $('bar-rel').innerHTML = meter('👔 Técnico', G.c.rel.coach) + meter('📣 Torcida', G.c.rel.fans) +
+      '<button class="snd-mini" id="b-snd" aria-label="Som">' + (window.CRAQUE_SFX && !window.CRAQUE_SFX.on ? '🔇' : '🔊') + '</button>';
     $('b-snd').onclick = e => { e.stopPropagation(); if (window.CRAQUE_SFX) window.CRAQUE_SFX.toggle(); $('b-snd').textContent = window.CRAQUE_SFX.on ? '🔊' : '🔇'; };
-    $('bar-sub').innerHTML = crest(cl.id, 'xs') + esc(cl.name) + ' · ' + G.c.age + ' anos';
-    $('bar-rel').innerHTML = meter('👔 Técnico', G.c.rel.coach) + meter('📣 Torcida', G.c.rel.fans);
     const T = G.c.totals;
     // Números do topo por posição: goleiro (sem sofrer gol, pênaltis defendidos), zagueiro (gols, sem sofrer gol)
     const tot = G.c.pos === 'GOL' ? [[T.cs || 0, 'S/ GOL'], [T.penSaved || 0, 'PÊN. DEF']]

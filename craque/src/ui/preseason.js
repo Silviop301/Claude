@@ -58,8 +58,10 @@
   function applyAnim(from, then) {
     const E = S.eff(G.c), o1 = S.ovr(G.c), t0 = performance.now(), dur = 900;
     screen.querySelectorAll('.choice, .btn').forEach(b => { b.disabled = true; });
-    $('mcard').classList.add('pop');
+    const mc = $('mcard');
+    mc.classList.add('pop');
     const tick = now => {
+      if (!mc.isConnected) return; // já saiu da tela
       const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
       D.ATTRS.forEach(a => { screen.querySelector('.mc-at[data-k="' + a + '"] b').textContent = Math.round(from.attrs[a] + (E[a] - from.attrs[a]) * e); });
       const ov = Math.round(from.ovr + (o1 - from.ovr) * e);
@@ -78,6 +80,7 @@
       el.querySelector('i').textContent = E[a] > from.attrs[a] ? '+' + (E[a] - from.attrs[a]) : '';
     });
     const tick = now => {
+      if (!mc.isConnected) return; // já saiu da tela
       const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
       D.ATTRS.forEach(a => { screen.querySelector('.mc-at[data-k="' + a + '"] b').textContent = Math.round(from.attrs[a] + (E[a] - from.attrs[a]) * e); });
       const ov = Math.round(from.ovr + (o1 - from.ovr) * e);
@@ -116,129 +119,133 @@
     return '<p class="wc-hint">' + n.flag + ' Ano de Copa: a seleção convoca com nota <b>' + cut + '</b>' + (o >= cut ? ' · você já está dentro' : ' · faltam ' + (cut - o)) + '</p>';
   }
 
+  // ---------- pré-temporada: característica e investimentos numa tela só ----------
+  // Tocar numa opção (característica ou investimento) mostra na carta quanto muda; o botão fixo
+  // embaixo aparece só depois disso e confirma. Sem nada para fazer, ele vira "Seguir".
   let preCh = null;
-  function preseason() {
-    G.step = 'preseason';
+  function preseason() { prep(false); }
+  function invest() { prep(true); } // retomar depois de já ter escolhido a característica
+
+  function prep(traitDone, justAdded) {
+    if (!preCh || preCh.age !== G.c.age) preCh = { age: G.c.age, list: S.traitChoices(G.c), done: false };
+    if (traitDone) preCh.done = true;
+    const ch = preCh.done ? [] : preCh.list;
+    const canBuy = () => D.INVEST.some(t => S.canInvest(G.c, t.id));
+    if (!ch.length && !canBuy() && !justAdded) { preCh = null; return U.eventOrSeason(); }
+    G.step = preCh.done ? 'invest' : 'preseason';
     save();
     bar();
-    if (!preCh || preCh.age !== G.c.age) preCh = { age: G.c.age, list: S.traitChoices(G.c) };
-    const ch = preCh.list;
-    if (!ch.length) return invest();
     const label = { new: 'NOVA', up: 'EVOLUIR', swap: 'TROCAR' };
+    const hasInv = G.c.money >= S.investPrice(G.c);
     render(
       '<div class="eyebrow">Pré-temporada · ' + year() + (G.c.farewell ? ' · temporada de despedida' : '') + '</div>' +
-      '<h2>' + (G.c.traits.length >= S.MAX_SLOTS ? 'Evolua ou troque uma característica' : 'Escolha uma característica') + '</h2>' + wcHint() + miniCard() + traitsHtml() +
-      '<div class="choices">' + ch.map((x, i) =>
-        '<button class="choice' + (x.completes ? ' combo' : '') + '" data-i="' + i + '" data-name="' + esc(x.trait.name) + '"' + (x.type === 'swap' ? ' data-ok="Escolher o que sai"' : '') + '><span class="ic">' + x.trait.icon + '</span>' +
-        '<b>' + x.trait.name + (x.type === 'up' ? ' → Nv ' + x.lv : '') + ' <span class="tag ' + (x.type === 'up' ? 'green' : x.type === 'swap' ? 'red' : 'blue') + '">' + label[x.type] + '</span></b>' +
-        '<span class="d">' + traitTxt(x.trait, x.lv) +
-        (x.completes ? '<br><span class="tag gold">Completa ' + x.completes.icon + ' ' + x.completes.name + ': ' + attrTxt(x.completes.attr) + '</span>' : '') + '</span></button>').join('') +
-      '</div><button class="btn" id="b-ok" disabled>Toque numa opção para ver na carta</button><button class="btn ghost" id="b-skip">Seguir sem mudar</button>'
+      '<h2>Prepare a temporada</h2>' + wcHint() + miniCard() +
+      (justAdded ? '<div class="prep-done">' + justAdded + '</div>' : '') +
+      (ch.length ? '<div class="prep-sec">' + (G.c.traits.length >= S.MAX_SLOTS ? 'Evolua ou troque uma característica' : 'Escolha uma característica') + '</div>' + traitsHtml() +
+        '<div class="choices">' + ch.map((x, i) =>
+          '<button class="choice' + (x.completes ? ' combo' : '') + '" data-i="' + i + '"><span class="ic">' + x.trait.icon + '</span>' +
+          '<b>' + x.trait.name + (x.type === 'up' ? ' → Nv ' + x.lv : '') + ' <span class="tag ' + (x.type === 'up' ? 'green' : x.type === 'swap' ? 'red' : 'blue') + '">' + label[x.type] + '</span></b>' +
+          '<span class="d">' + traitTxt(x.trait, x.lv) +
+          (x.completes ? '<br><span class="tag gold">Completa ' + x.completes.icon + ' ' + x.completes.name + ': ' + attrTxt(x.completes.attr) + '</span>' : '') + '</span></button>').join('') + '</div>' : '') +
+      (hasInv ? '<div class="prep-sec">Investimentos</div>' +
+        '<div class="wallet"><span>Saldo <b id="w-money"></b></span><span>Cada compra <b id="w-price"></b></span></div>' +
+        '<div class="choices inv-grid">' + D.INVEST.map(t => '<button class="choice inv" data-v="' + t.id + '"><span class="ic">' + t.icon + '</span>' +
+          '<b>' + D.investName(t, G.c.pos) + '</b><span class="pips"></span><span class="d">' + (t.attr ? attrTxt(t.attr) : t.perk) + '</span><span class="price"></span></button>').join('') + '</div>' : '') +
+      '<div class="inv-bar"><button class="btn" id="b-act" hidden></button></div>' +
+      '<button class="btn ghost" id="b-skip">Seguir para a temporada</button>'
     );
-    $('b-skip').onclick = () => { preCh = null; invest(); };
-    pickable('[data-i]', b => {
-      const x = ch[+b.dataset.i];
-      return x.type === 'swap' ? null : S.preview(G.c, x.type === 'up' ? { up: x.trait.id } : { add: x.trait.id });
-    }, b => {
-      const x = ch[+b.dataset.i];
-      if (x.type === 'swap') return { go: () => chooseSwap(x) };
-      preCh = null;
-      sfx('levelup');
-      if (x.type === 'up') { S.upgradeTrait(G.c, x.trait.id); return invest; }
-      const syn = S.addTrait(G.c, x.trait.id);
-      return () => afterTrait(syn);
-    });
+    let sel = null; // { i } característica ou { v } investimento
+    const act = $('b-act'), skip = $('b-skip');
+    const go = () => { preCh = null; U.eventOrSeason(); };
+    const refresh = () => {
+      if (!act.isConnected) return; // já saiu da tela (ex.: tocou em seguir durante a animação)
+      if (hasInv) {
+        const price = S.investPrice(G.c);
+        $('w-money').textContent = 'R$ ' + money(G.c.money);
+        $('w-price').textContent = 'R$ ' + money(price);
+        screen.querySelectorAll('[data-v]').forEach(b => {
+          const id = b.dataset.v, n = G.c.inv[id] || 0, max = S.investMax(id), full = n >= max;
+          b.disabled = !S.canInvest(G.c, id);
+          b.querySelector('.pips').textContent = '●'.repeat(n) + '○'.repeat(max - n);
+          b.querySelector('.price').textContent = full ? 'No máximo' : G.c.money < price ? 'Falta R$ ' + money(price - G.c.money) : 'R$ ' + money(price);
+          b.classList.toggle('full', full);
+        });
+      }
+      if (sel && sel.v && !S.canInvest(G.c, sel.v)) sel = null; // comprou até não dar mais
+      screen.querySelectorAll('[data-i], [data-v]').forEach(b => b.classList.toggle('sel', !!sel && (sel.v ? b.dataset.v === sel.v : b.dataset.i === String(sel.i))));
+      // Nada escolhido: some o botão fixo; nada mais a fazer: ele vira "Seguir"
+      const nothingLeft = !ch.length && !canBuy();
+      skip.hidden = nothingLeft;
+      if (!sel) {
+        act.hidden = !nothingLeft;
+        act.innerHTML = 'Seguir para a temporada' + (hasInv ? '<small>Saldo R$ ' + money(G.c.money) + '</small>' : '');
+        showPreview(null);
+        return;
+      }
+      act.hidden = false;
+      if (sel.i !== undefined) {
+        const x = ch[sel.i];
+        act.innerHTML = x.type === 'swap' ? 'Escolher o que sai para ' + esc(x.trait.name) + ' entrar' : 'Confirmar ' + esc(x.trait.name) + (x.type === 'up' ? ' Nv ' + x.lv : '');
+        showPreview(x.type === 'swap' ? null : S.preview(G.c, x.type === 'up' ? { up: x.trait.id } : { add: x.trait.id }));
+      } else {
+        act.innerHTML = 'Comprar ' + esc(D.investName(D.INVEST_BY_ID[sel.v], G.c.pos)) + '<small>R$ ' + money(S.investPrice(G.c)) + '</small>';
+        showPreview(S.preview(G.c, { buy: sel.v }));
+      }
+    };
+    screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { sel = { i: +b.dataset.i }; refresh(); });
+    screen.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { sel = { v: b.dataset.v }; refresh(); });
+    skip.onclick = go;
+    act.onclick = () => {
+      if (!sel) return go();
+      if (sel.i !== undefined) {
+        const x = ch[sel.i];
+        if (x.type === 'swap') return chooseSwap(x);
+        const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
+        sfx('levelup');
+        let done;
+        if (x.type === 'up') { S.upgradeTrait(G.c, x.trait.id); done = '✓ ' + x.trait.icon + ' ' + x.trait.name + ' evoluiu para o Nv ' + x.lv; }
+        else { const syn = S.addTrait(G.c, x.trait.id); done = '✓ ' + x.trait.icon + ' ' + x.trait.name + ' entrou' + (syn ? '<br><b>' + syn.icon + ' Combinação desbloqueada: ' + syn.name + '</b> · ' + attrTxt(syn.attr) + (syn.extra ? ' · ' + syn.extra : '') : ''); }
+        preCh.done = true;
+        showPreview(null);
+        bar();
+        applyAnim(from, () => prep(true, done));
+        return;
+      }
+      const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) }, id = sel.v;
+      S.invest(G.c, id);
+      save();
+      sfx('coin');
+      bar();
+      tweenCard(from, 450);
+      const b = screen.querySelector('[data-v="' + id + '"]');
+      b.classList.remove('bought'); void b.offsetWidth; b.classList.add('bought');
+      setTimeout(refresh, 480); // depois da animação, mostra a prévia da próxima compra
+    };
+    refresh();
   }
 
-  // Espaços cheios: escolher qual característica sai
+  // Espaços cheios: escolher qual característica sai (mostra o que se perde)
   function chooseSwap(x) {
     const inSyn = new Set(S.synergies(G.c).flatMap(s => [s.a, s.b]));
     render(
       '<div class="eyebrow">Trocar característica</div><h2>O que sai para ' + x.trait.icon + ' ' + x.trait.name + ' entrar?</h2>' + miniCard() +
       '<div class="choices">' + G.c.traits.map((id, i) => {
-        const t = D.TRAIT_BY_ID[id];
-        return '<button class="choice" data-r="' + i + '" data-ok="Trocar ' + esc(t.name) + ' por ' + esc(x.trait.name) + '"><span class="ic">' + t.icon + '</span><b>' + t.name + ' · Nv ' + S.traitLevel(G.c, id) + '</b><span class="d">' +
-          (inSyn.has(id) ? '<span class="tag red">Desfaz uma combinação</span> ' : '') + 'Sai e leva os pontos que dava</span></button>';
+        const t = D.TRAIT_BY_ID[id], lv = S.traitLevel(G.c, id);
+        const lose = {};
+        for (const k in t.attr) lose[k] = -Math.round(t.attr[k] * D.TRAIT_LV[lv]);
+        return '<button class="choice" data-r="' + i + '" data-ok="Trocar ' + esc(t.name) + ' por ' + esc(x.trait.name) + '"><span class="ic">' + t.icon + '</span><b>' + t.name + ' · Nv ' + lv + '</b><span class="d">' +
+          (inSyn.has(id) ? '<span class="tag red">Desfaz uma combinação</span> ' : '') + 'Na carta: ' + (attrTxt(lose).replace(/-/g, '−') || 'sem mudança') + (t.perk ? ' · perde: ' + t.perk : '') + '</span></button>';
       }).join('') + '</div><button class="btn" id="b-ok" disabled>Toque numa opção para ver na carta</button><button class="btn ghost" id="b-back">Voltar</button>'
     );
     pickable('[data-r]', b => S.preview(G.c, { add: x.trait.id, remove: G.c.traits[+b.dataset.r] }), b => {
-      preCh = null;
       sfx('levelup');
+      const out = D.TRAIT_BY_ID[G.c.traits[+b.dataset.r]];
       const syn = S.addTrait(G.c, x.trait.id, G.c.traits[+b.dataset.r]);
-      return () => afterTrait(syn);
+      return () => prep(true, '✓ ' + x.trait.icon + ' ' + x.trait.name + ' entrou no lugar de ' + out.icon + ' ' + out.name +
+        (syn ? '<br><b>' + syn.icon + ' Combinação desbloqueada: ' + syn.name + '</b> · ' + attrTxt(syn.attr) + (syn.extra ? ' · ' + syn.extra : '') : ''));
     });
-    $('b-back').onclick = preseason;
+    $('b-back').onclick = () => prep(false);
   }
 
-  function afterTrait(syn) {
-    bar();
-    if (syn) {
-      render('<div class="eyebrow">Combinação desbloqueada</div><div class="award ballon">' + syn.icon + ' ' + syn.name + '</div><p class="lead">' + attrTxt(syn.attr) + (syn.extra ? ' · ' + syn.extra : '') + ' na sua carta</p><button class="btn" id="b-next">Continuar</button>');
-      $('b-next').onclick = invest;
-    } else invest();
-  }
-
-  // ---------- investimentos (dinheiro vira pontos na carta) ----------
-  function invest() {
-    if (G.c.money < S.investPrice(G.c)) return U.eventOrSeason();
-    G.step = 'invest';
-    save();
-    // Toque escolhe e mostra na carta quanto sobe; o botão fixo embaixo confirma (dá para comprar
-    // o mesmo item de novo sem rolar). A tela não é redesenhada a cada compra.
-    render(
-      '<div class="eyebrow">Pré-temporada · Investimentos</div><h2>Invista na sua carreira</h2>' +
-      '<div class="wallet"><span>Saldo <b id="w-money"></b></span><span>Cada compra <b id="w-price"></b></span></div>' +
-      miniCard() +
-      '<p class="muted small inv-tip">Escolha um investimento e confirme embaixo. O preço sobe a cada compra; o que sobrar vira patrimônio.</p>' +
-      '<div class="choices inv-grid">' + D.INVEST.map(t => '<button class="choice inv" data-v="' + t.id + '"><span class="ic">' + t.icon + '</span>' +
-        '<b>' + D.investName(t, G.c.pos) + '</b><span class="pips"></span><span class="d">' + (t.attr ? attrTxt(t.attr) : t.perk) + '</span><span class="price"></span></button>').join('') +
-      '</div><div class="inv-bar"><button class="btn" id="b-buy" disabled>Escolha um investimento</button></div>' +
-      '<button class="btn ghost" id="b-skip">Seguir para a temporada</button>'
-    );
-    const refresh = () => {
-      const price = S.investPrice(G.c);
-      $('w-money').textContent = 'R$ ' + money(G.c.money);
-      $('w-price').textContent = 'R$ ' + money(price);
-      screen.querySelectorAll('[data-v]').forEach(b => {
-        const id = b.dataset.v, n = G.c.inv[id] || 0, max = S.investMax(id), full = n >= max;
-        b.disabled = !S.canInvest(G.c, id);
-        b.querySelector('.pips').textContent = '●'.repeat(n) + '○'.repeat(max - n);
-        b.querySelector('.price').textContent = full ? 'No máximo' : G.c.money < price ? 'Falta R$ ' + money(price - G.c.money) : 'R$ ' + money(price);
-        b.classList.toggle('full', full);
-      });
-      // Botão de confirmar: mostra o que está escolhido e o preço
-      const buy = $('b-buy'), ok = sel && S.canInvest(G.c, sel);
-      // Sem nada que dê para comprar: o botão fixo vira "seguir" (nunca fica um botão morto na tela)
-      broke = !D.INVEST.some(t => S.canInvest(G.c, t.id));
-      buy.classList.toggle('go', broke);
-      if (broke) { buy.disabled = false; buy.innerHTML = 'Seguir para a temporada<small>Saldo R$ ' + money(G.c.money) + '</small>'; $('b-skip').hidden = true; showPreview(null); return; }
-      buy.disabled = !ok;
-      const full = sel && (G.c.inv[sel] || 0) >= S.investMax(sel), nm = sel ? D.investName(D.INVEST_BY_ID[sel], G.c.pos) : '';
-      buy.innerHTML = !sel ? 'Escolha um investimento' : full ? esc(nm) + ' no máximo' : ok ? 'Comprar ' + esc(nm) + '<small>R$ ' + money(price) + '</small>' : 'Sem saldo para ' + esc(nm);
-      showPreview(ok ? S.preview(G.c, { buy: sel }) : null);
-    };
-    let sel = null, broke = false;
-    refresh();
-    $('b-skip').onclick = U.eventOrSeason;
-    screen.querySelectorAll('[data-v]').forEach(b => b.onclick = () => {
-      sel = b.dataset.v;
-      screen.querySelectorAll('[data-v]').forEach(x => x.classList.toggle('sel', x === b));
-      refresh();
-    });
-    $('b-buy').onclick = () => {
-      if (broke) return U.eventOrSeason();
-      if (!sel || !S.canInvest(G.c, sel)) return;
-      const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
-      S.invest(G.c, sel);
-      save();
-      sfx('coin');
-      bar();
-      tweenCard(from, 450);
-      const b = screen.querySelector('[data-v="' + sel + '"]');
-      b.classList.remove('bought'); void b.offsetWidth; b.classList.add('bought');
-      setTimeout(refresh, 480); // depois da animação, mostra a prévia da próxima compra
-    };
-  }
-
-  Object.assign(U, { traitsHtml, attrTxt, traitTxt, setTier, miniCard, showPreview, applyAnim, tweenCard, pickable, wcHint, preseason, chooseSwap, afterTrait, invest });
+  Object.assign(U, { traitsHtml, attrTxt, traitTxt, setTier, miniCard, showPreview, applyAnim, tweenCard, pickable, wcHint, preseason, chooseSwap, invest });
 })();

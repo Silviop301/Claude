@@ -51,6 +51,12 @@
     return perf + (res.titles.length ? ' A torcida comemorou ' + res.titles.map(t => t.name).join(' e ') + '.' : '');
   }
   function showPaper(res, onClose) {
+    // Temporada sem notícia: o jornal não sai (a manchete fica só no resumo); cartas reveladas seguem valendo
+    if (res.quiet) {
+      const up = U.tierReveal(G.c, res.ovr0, res.ovr1); if (up) save();
+      const list = (up ? [null] : []).concat(res.cards || []);
+      return list.length ? U.walkouts(G.c, list, onClose) : onClose && onClose();
+    }
     const cl = club(res.club), [main, ...rest] = res.headlines, nick = G.c.name;
     // Foto da capa conforme a temporada: taça, maca (lesão), comemoração ou pose normal
     const won = res.titles.length || res.awards.some(a => a.id === 'ballon');

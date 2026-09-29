@@ -56,9 +56,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
   border-radius: 14px;
   padding: 8px 10px;
 }
-.bar-name { font: 800 20px/1 var(--display); letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-name { font: 800 20px/1 var(--display); letter-spacing: 0.02em; white-space: nowrap; display: flex; align-items: baseline; gap: 5px; min-width: 0; }
+.bar-name .bn { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .bar-sub { font-size: 13px; color: #B9CDBF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bar-tot { display: flex; gap: 10px; font: 700 15px var(--display); color: #DDE9E0; font-variant-numeric: tabular-nums; }
+.bar-tot { display: flex; gap: 7px; font: 700 15px var(--display); color: #DDE9E0; font-variant-numeric: tabular-nums; }
 .bar-tot span { display: flex; flex-direction: column; align-items: center; line-height: 1; }
 .bar-tot small { font: 600 10px var(--body); color: #9DB5A6; letter-spacing: 0.06em; margin-top: 2px; }
 .ovr {
@@ -73,7 +74,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .ovr.up { animation: pop 0.5s ease; }
 
 /* medidores Técnico / Torcida */
-.rel { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rel { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
 .rel .m { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .rel .ml { font-size: 11.5px; color: #B9CDBF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rel .mb { height: 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
@@ -499,7 +500,7 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .wc-out { text-align: center; font: 800 24px var(--display); background: rgba(255, 255, 255, .08); border-radius: 12px; padding: 12px; }
 .wc-stats { text-align: center; margin: 0; color: #CFE0D4; }
 #wc-after { display: flex; flex-direction: column; gap: 12px; }
-.snd-mini { border: 0; background: rgba(255, 255, 255, .1); border-radius: 999px; font-size: 13px; padding: 2px 7px; margin-left: 4px; vertical-align: middle; cursor: pointer; }
+.snd-mini { border: 0; background: rgba(255, 255, 255, .1); border-radius: 999px; font-size: 13px; padding: 2px 7px; cursor: pointer; }
 .btn.small-btn { padding: 10px; font-size: 16px; }
 .crest-pick-t { font: 700 12px var(--display); letter-spacing: .12em; text-transform: uppercase; color: #B9CDBF; text-align: center; }
 .crest-pick { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; scroll-snap-type: x mandatory; }
@@ -658,3 +659,9 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 @media (prefers-reduced-motion: reduce) { .al-prog i.now { background: #fff; } }
 .trophy-real { width: auto; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .45)); }
 .wc-champ .trophy-real { filter: drop-shadow(0 0 18px rgba(255, 214, 90, .9)); }
+
+/* Pré-temporada numa tela só */
+[hidden] { display: none !important; }
+.prep-sec { font: 800 13px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--gold); margin: 14px 0 -2px; }
+.prep-done { background: rgba(123, 227, 160, .14); border: 1px solid rgba(123, 227, 160, .45); color: #CDEFD9; border-radius: 12px; padding: 10px 12px; font: 600 15px/1.35 var(--body); animation: enter .4s ease; }
+.prep-done b { color: var(--gold); }

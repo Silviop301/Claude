@@ -10,6 +10,9 @@
   const last = c => c.seasons[c.seasons.length - 1] || null;
   const atClub = c => c.age - c.clubSince;
 
+  // Evento que já aconteceu nesta carreira volta com outro texto de abertura: [título, texto]
+  const alt = (c, id, opts) => opts[((c.evCount || {})[id] || 0) % opts.length];
+
   function pickClub(r, filter) {
     const pool = D.CLUBS.filter(filter);
     return pool.length ? r.pick(pool) : null;
@@ -154,8 +157,10 @@
       id: 'classico', icon: '🤕', weight: 2,
       when: () => true,
       build: c => ({
-        title: 'Clássico no sacrifício',
-        text: 'Dor na coxa e clássico no domingo. O técnico deixa você decidir.',
+        ...(([title, text]) => ({ title, text }))(alt(c, 'classico', [
+          ['Clássico no sacrifício', 'Dor na coxa e clássico no domingo. O técnico deixa você decidir.'],
+          ['O tornozelo de novo', 'Tornozelo inchado na semana do clássico. O médico torce o nariz; o técnico olha para você.'],
+          ['Infiltração?', 'Clássico decisivo e o joelho reclamando. O médico oferece uma infiltração para você jogar.']])),
         options: [
           { label: 'Jogar no sacrifício', hint: (c.traits.includes('raca') ? '75%' : '55%') + ': herói (Torcida +15) · senão, lesão longa' },
           { label: 'Poupar', hint: 'Torcida −5 · volta inteiro' },
@@ -174,8 +179,10 @@
       id: 'festa', icon: '🎉', weight: 2,
       when: c => c.age <= 30,
       build: c => ({
-        title: 'Festa na véspera do jogo',
-        text: 'Aniversário do parça, todo mundo vai estar lá.',
+        ...(([title, text]) => ({ title, text }))(alt(c, 'festa', [
+          ['Festa na véspera do jogo', 'Aniversário do parça, todo mundo vai estar lá.'],
+          ['Convite para a balada', 'Um cantor famoso chamou você para o camarote. O jogo é amanhã às 16h.'],
+          ['Churrasco que vira festa', 'O churrasco da família virou festão. Já passa da meia-noite e tem jogo amanhã.']])),
         options: [
           { label: 'Ir na festa', hint: 'Fama +6 · ' + '55%' + ': flagrado (Técnico −20)' },
           { label: 'Ficar em casa', hint: 'Técnico +5' },
@@ -273,8 +280,10 @@
       build: c => {
         const value = Math.round(c.wage * 52 * 0.6 / 1000) * 1000;
         return {
-          title: 'Proposta de patrocínio',
-          text: 'Uma marca esportiva quer você como garoto-propaganda.',
+          ...(([title, text]) => ({ title, text }))(alt(c, 'patrocinio', [
+            ['Proposta de patrocínio', 'Uma marca esportiva quer você como garoto-propaganda.'],
+            ['Campanha na TV', 'Uma marca de refrigerante quer você no comercial do intervalo da novela.'],
+            ['Chuteira com seu nome', 'Uma fabricante quer lançar uma linha de chuteiras com o seu nome.']])),
           value,
           options: [
             { label: 'Assinar o contrato', hint: '+R$ ' + fmtMoney(value) + ' · agenda cheia: forma −5%' },
@@ -291,9 +300,10 @@
     {
       id: 'redes', icon: '📱', weight: 3, max: 2,
       when: c => c.age <= 27 && c.fame >= 20,
-      build: () => ({
-        title: 'Polêmica nas redes',
-        text: 'Um vídeo seu provocando a torcida rival viralizou.',
+      build: c => ({
+        ...(([title, text]) => ({ title, text }))(alt(c, 'redes', [
+          ['Polêmica nas redes', 'Um vídeo seu provocando a torcida rival viralizou.'],
+          ['Print vazado', 'Uma conversa sua reclamando do técnico vazou e está em todo lugar.']])),
         options: [
           { label: 'Pedir desculpas', hint: 'Torcida +5 · Fama −2' },
           { label: 'Dobrar a aposta', hint: 'Fama +8 · Torcida −8 · 30%: Técnico −10' },
@@ -328,9 +338,10 @@
     {
       id: 'faltas', icon: '🎯', weight: 3, max: 2,
       when: c => !!c.club && c.age <= 31 && c.pos !== 'GOL',
-      build: () => ({
-        title: 'Treino de faltas',
-        text: 'O preparador propõe uma semana inteira batendo faltas depois do treino.',
+      build: c => ({
+        ...(([title, text]) => ({ title, text }))(alt(c, 'faltas', [
+          ['Treino de faltas', 'O preparador propõe uma semana inteira batendo faltas depois do treino.'],
+          ['Aula com o ídolo', 'Um ex-craque famoso por bater faltas se oferece para treinar com você depois do treino.']])),
         options: [
           { label: 'Topar', hint: '+2 FIN para sempre · cansaço: forma −3%' },
           { label: 'Descansar', hint: 'Forma +5%' },
@@ -347,8 +358,9 @@
       build: c => {
         const value = Math.max(100000, Math.round(c.money * 0.1 / 1000) * 1000);
         return {
-          title: 'Projeto na sua cidade',
-          text: 'Uma escolinha de futebol da sua cidade natal pede ajuda para não fechar.',
+          ...(([title, text]) => ({ title, text }))(alt(c, 'caridade', [
+            ['Projeto na sua cidade', 'Uma escolinha de futebol da sua cidade natal pede ajuda para não fechar.'],
+            ['Campo do bairro', 'O campinho onde você começou vai virar estacionamento. A comunidade pede ajuda.']])),
           value,
           options: [
             { label: 'Doar R$ ' + fmtMoney(value), hint: 'Torcida +10 · Fama +6' },
