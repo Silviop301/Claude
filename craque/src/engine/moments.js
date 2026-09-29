@@ -8,6 +8,12 @@
   //  cup      pênalti na final da copa     → converteu: campeão da copa · errou: vice
   //  title    pênalti na última rodada     → converteu: campeão da liga · errou: vice
   //  classico falta no clássico            → converteu: gol e torcida +8
+  // Taça continental que o clube disputa (ou null)
+  S.contName = club => (['bra-a', 'arg'].includes(club.league) ? 'Libertadores' : club.tier >= 4 ? 'Liga dos Campeões' : null);
+  // Tipo de cobrança do lance: pênalti ou falta ('classico' é sempre falta; 'cont' sorteia)
+  S.kickType = m => m.kick || (m.type === 'classico' ? 'fk' : 'pen');
+  S.kickSetupType = m => (S.kickType(m) === 'fk' ? 'classico' : 'cup');
+
   S.pickMoment = function (c) {
     if (c.momentAge === c.age) return c.moment || null; // já sorteado nesta temporada
     const { r, save } = rngOf(c);
@@ -22,10 +28,21 @@
       const pool = [['classico', c.pos === 'MEI' ? 4 : 3]];
       if (rank <= 5) pool.push(['cup', 1]);
       if (rank <= 2) pool.push(['title', 1.5]);
+      // Final continental: topo do Brasil/Argentina (Libertadores) ou clube grande europeu (Champions)
+      const contName = S.contName(club);
+      if (contName && (contName === 'Libertadores' ? rank <= 4 : club.strength >= 78)) pool.push(['cont', 1.2]);
       let x = r() * pool.reduce((a, p) => a + p[1], 0), type = pool[0][0];
       for (const [t, w] of pool) { x -= w; if (x < 0) { type = t; break; } }
-      const vs = type === 'cup' ? r.pick(rivals.slice(0, 8)) : rivals[0];
-      c.moment = { type, vs: vs.id, comp: type === 'cup' ? (lg.cup || 'Copa nacional') : lg.name };
+      let vs = type === 'cup' ? r.pick(rivals.slice(0, 8)) : rivals[0];
+      if (type === 'cont') {
+        // Adversário da final: um grande de outra liga do mesmo continente
+        const libert = S.contName(club) === 'Libertadores';
+        const pool2 = D.CLUBS.filter(x => x.id !== club.id && (libert ? ['bra-a', 'arg'].includes(x.league) : x.tier >= 4 && !['bra-a', 'arg', 'ara', 'usa', 'mex'].includes(x.league) && x.league !== club.league))
+          .sort((a, b) => b.strength - a.strength).slice(0, 8);
+        if (pool2.length) vs = r.pick(pool2);
+      }
+      c.moment = { type, vs: vs.id, comp: type === 'cup' ? (lg.cup || 'Copa nacional') : type === 'cont' ? S.contName(club) : lg.name };
+      if (type === 'cont') c.moment.kick = r() < 0.55 ? 'pen' : 'fk';
     }
     save();
     return c.moment;
@@ -88,13 +105,13 @@
   S.resolveMoment = function (c, ok) {
     if (!c.moment) return;
     c.mod.moment = Object.assign({}, c.moment, { ok: !!ok });
-    S.countKick(c, c.moment.type === 'classico' ? 'fk' : 'pen', ok);
+    S.countKick(c, S.kickType(c.moment), ok);
     c.moment = null;
   };
   // Sem jogar: sorteia com a chance mostrada
   S.autoMoment = function (c) {
     const { r, save } = rngOf(c);
-    const ok = r() < S.kickSetup(c, c.moment.type).chance;
+    const ok = r() < S.kickSetup(c, S.kickSetupType(c.moment)).chance;
     save();
     S.resolveMoment(c, ok);
     return ok;

@@ -545,3 +545,4 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .daily .dl-sub { font-size: 13px; color: #D9ECFF; }
 .daily-res { cursor: default; margin-top: 10px; gap: 8px; }
 .daily-res b { font: 800 20px var(--display); }
+.moment-card .with-crest .crest { background: rgba(0, 0, 0, .1); border-radius: 12px; padding: 4px; box-sizing: content-box; }

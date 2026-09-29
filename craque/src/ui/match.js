@@ -48,31 +48,35 @@
   const MOMENT_TXT = {
     cup: m => ({ tag: 'Final da ' + m.comp, title: 'Pênalti nos acréscimos!', text: 'Final contra ' + D.o(club(m.vs).name) + ', empate no placar. A bola é sua.', stakes: 'Converteu: campeão da ' + m.comp + ' · Errou: vice' }),
     title: m => ({ tag: 'Última rodada · ' + m.comp, title: 'Pênalti valendo o título!', text: 'Contra ' + D.o(club(m.vs).name) + ', quem vencer é campeão.', stakes: 'Converteu: campeão da liga · Errou: vice' }),
+    cont: m => ({ tag: 'Final da ' + m.comp, title: (m.kick === 'fk' ? 'Falta na final' : 'Pênalti na final') + ' da ' + m.comp + '!',
+      text: 'Decisão contra ' + D.o(club(m.vs).name) + ', ' + (m.kick === 'fk' ? 'falta na entrada da área aos 88 minutos.' : 'pênalti nos acréscimos com o placar empatado.'),
+      stakes: 'Converteu: campeão da ' + m.comp + ' · Errou: vice' }),
     classico: m => ({ tag: 'Clássico', title: 'Falta perigosa no clássico!', text: 'Contra ' + D.o(club(m.vs).name) + ', na entrada da área. A barreira está armada.', stakes: 'Converteu: gol no clássico e Torcida +8' }),
   };
 
   function momentIntro(m) {
-    const T = MOMENT_TXT[m.type](m), k = S.kickSetup(G.c, m.type), E = S.eff(G.c);
+    const fk = S.kickType(m) === 'fk';
+    const T = MOMENT_TXT[m.type](m), k = S.kickSetup(G.c, S.kickSetupType(m)), E = S.eff(G.c);
     const lv = id => (G.c.traits.includes(id) ? S.traitLevel(G.c, id) : 0);
     // O que da carta pesa no chute, sem números escondidos
     const facts = ['<span class="chip">FIN ' + E.fin + ' · mira ' + (k.period >= 1.7 ? 'lenta' : k.period >= 1.35 ? 'média' : 'rápida') + '</span>',
       '<span class="chip">Tremedeira ' + (k.wobble <= 0.03 ? 'nenhuma' : k.wobble <= 0.08 ? 'pouca' : 'muita') + '</span>'];
     if (lv('colocado')) facts.push('<span class="chip">🎯 Chute Colocado: mira mais lenta</span>');
     if (lv('frieza')) facts.push('<span class="chip">🧊 Frieza: menos tremedeira</span>');
-    if (m.type === 'classico' && lv('parada')) facts.push('<span class="chip">🧱 Bola Parada: barreira mais fácil</span>');
+    if (fk && lv('parada')) facts.push('<span class="chip">🧱 Bola Parada: barreira mais fácil</span>');
     render(
       '<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div>' +
       '<div class="card event-card moment-card"><div class="with-crest">' + crest(G.c.club) + '<b>×</b>' + crest(m.vs) + '</div><h2>' + T.title + '</h2><p style="margin:0">' + esc(T.text) + '</p><p class="stakes">' + esc(T.stakes) + '</p></div>' +
       '<div class="chips">' + facts.join('') + '</div>' +
-      '<p class="lead small">Dois toques: o primeiro trava a direção, o segundo a altura. ' + (m.type === 'classico' ? 'Passe por cima da barreira ou busque o ângulo.' : 'O goleiro escolhe um canto; no ângulo ele não alcança.') + '</p>' +
-      '<button class="btn" id="b-kick">' + (m.type === 'classico' ? 'Bater a falta' : 'Bater o pênalti') + '</button>' +
+      '<p class="lead small">Dois toques: o primeiro trava a direção, o segundo a altura. ' + (fk ? 'Passe por cima da barreira ou busque o ângulo.' : 'O goleiro escolhe um canto; no ângulo ele não alcança.') + '</p>' +
+      '<button class="btn" id="b-kick">' + (fk ? 'Bater a falta' : 'Bater o pênalti') + '</button>' +
       '<button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>'
     );
     $('b-kick').onclick = () => {
       m.started = true; save();
       render('<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div><div id="kick"></div>');
       sfx('whistle');
-      window.CRAQUE_KICK($('kick'), { c: G.c, moment: m, onDone: (ok, why) => momentEnd(m, ok, T, why) });
+      window.CRAQUE_KICK($('kick'), { c: G.c, moment: { type: S.kickSetupType(m) }, onDone: (ok, why) => momentEnd(m, ok, T, why) });
     };
     $('b-auto').onclick = () => {
       const ok = S.autoMoment(G.c);
@@ -93,6 +97,7 @@
       cup: ok ? 'Gol! Campeão da ' + m.comp + '!' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
       title: ok ? 'Na rede! O título é seu!' : (how || 'Não entrou.') + ' O título escapou nos detalhes.',
       classico: ok ? 'Golaço de falta! O clássico é seu.' : (how || 'Não foi dessa vez.') + ' A torcida lamenta.',
+      cont: ok ? 'É campeão da ' + m.comp + '! Seu nome entrou para a história do clube.' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
     }[m.type];
     render(
       '<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div>' +
