@@ -20,25 +20,63 @@
     save();
     const cl = club(res.club);
     const [c1, c2] = seasonStats(res);
+    const t0c = tierCls(res.ovr0);
     render(
       '<div class="season-head"><div><div class="eyebrow">Temporada ' + (year() - 1) + ' · ' + res.age + ' anos</div><h2 class="with-crest">' + crest(cl.id, 'lg') + esc(cl.name) + '</h2></div><span class="tag">' + (res.farewell ? 'Despedida' : res.role) + '</span></div>' +
+      // A carta no centro: a nota sobe (ou cai) depois dos números da temporada
+      '<div class="s-hero"><div class="scard metal ' + t0c + '" id="scard"><span class="sc-tier" id="sc-tier">' + TIER_NAME[t0c] + '</span><b id="sc-ovr">' + res.ovr0 + '</b><span class="sc-pos">' + G.c.pos + '</span></div>' +
+      '<div class="s-verdict"><span class="sv-lbl" id="sv-lbl">&nbsp;</span><i class="sv-d" id="sc-d"></i></div></div>' +
       '<div class="counters"><div class="counter"><b id="k-j">0</b><span>Jogos</span></div><div class="counter"><b id="k-g">0</b><span>' + c1[1] + '</span></div>' +
       '<div class="counter"><b id="k-a">0</b><span>' + c2[1] + '</span></div><div class="counter rate"><b id="k-n">–</b><span>Nota</span></div></div>' +
       '<div class="feed" id="feed"></div><div id="after"></div><p class="skip-hint" id="skip-hint">Toque para pular</p>'
     );
-    const dur = 2200, t0 = performance.now();
-    let skip = false;
+    const dur = 1500, t0 = performance.now();
+    let skip = false, shown = [0, 0, 0];
     // Liga o "pular" só depois: o toque que abriu esta tela ainda está se propagando
     setTimeout(() => { screen.onclick = () => { skip = true; }; }, 50);
     (function tick(now) {
       const u = skip ? 1 : Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - u, 2);
-      $('k-j').textContent = Math.round(res.games * e);
-      $('k-g').textContent = Math.round(c1[0] * e);
-      $('k-a').textContent = Math.round(c2[0] * e);
+      const now3 = [Math.round(res.games * e), Math.round(c1[0] * e), Math.round(c2[0] * e)];
+      // Cada gol/assistência que entra faz um "tic"
+      if (!skip && (now3[1] > shown[1] || now3[2] > shown[2])) sfx('tick');
+      shown = now3;
+      $('k-j').textContent = now3[0]; $('k-g').textContent = now3[1]; $('k-a').textContent = now3[2];
       if (u < 1) return requestAnimationFrame(tick);
       $('k-n').textContent = res.games ? res.rating.toFixed(1).replace('.', ',') : '–';
       $('k-n').parentNode.classList.add('pop');
+      const v = verdictOf(res);
+      $('sv-lbl').textContent = v[0]; $('sv-lbl').className = 'sv-lbl ' + v[1];
+      cardRise(res, skip);
       summary(res, skip);
+    })(t0);
+  }
+
+  // Selo da temporada pela nota
+  function verdictOf(res) {
+    if (!res.games) return ['Sem jogos', 'low'];
+    const r = res.rating;
+    return r >= 8 ? ['Temporada de craque', 'top'] : r >= 7.3 ? ['Grande temporada', 'good'] : r >= 6.8 ? ['Boa temporada', 'ok'] : r >= 6.3 ? ['Temporada regular', 'mid'] : ['Temporada apagada', 'low'];
+  }
+
+  // A nota da carta conta de ovr0 até ovr1; se mudar de faixa, o metal troca na hora
+  function cardRise(res, skip) {
+    const el = $('scard'), num = $('sc-ovr'), d = res.ovr1 - res.ovr0, t1 = tierCls(res.ovr1);
+    const finish = () => {
+      if (!el.isConnected) return;
+      num.textContent = res.ovr1;
+      $('sc-d').textContent = d > 0 ? '+' + d : d < 0 ? String(d) : '=';
+      $('sc-d').className = 'sv-d ' + (d > 0 ? 'up' : d < 0 ? 'down' : 'zero');
+      if (t1 !== tierCls(res.ovr0)) { el.className = 'scard metal ' + t1 + ' tierup'; $('sc-tier').textContent = TIER_NAME[t1]; }
+      el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+      if (d > 0) { sfx('levelup'); if (navigator.vibrate) navigator.vibrate(25); }
+    };
+    if (skip || !d) return finish();
+    const t0 = performance.now(), ms = Math.min(900, 180 * Math.abs(d));
+    (function step(now) {
+      if (!el.isConnected) return;
+      const u = Math.min(1, (now - t0) / ms);
+      num.textContent = Math.round(res.ovr0 + d * u);
+      if (u < 1) requestAnimationFrame(step); else finish();
     })(t0);
   }
 
@@ -104,7 +142,8 @@
 
   function summary(res, skipNow) {
     const feed = $('feed');
-    res.highlights.forEach(h => { const d = document.createElement('div'); d.className = 'rv hl'; d.textContent = h; feed.appendChild(d); });
+    // Só o lance mais marcante na tela; os outros ficam nos detalhes
+    res.highlights.slice(0, 1).forEach(h => { const d = document.createElement('div'); d.className = 'rv hl'; d.textContent = h; feed.appendChild(d); });
     const dOvr = res.ovr1 - res.ovr0;
     const fin = S.mustRetire(G.c);
     const tb = res.table;
@@ -134,7 +173,7 @@
     let actions;
     if (fin) actions = '<p class="lead">' + (res.farewell ? 'Fim da temporada de despedida. Hora de pendurar as chuteiras.' : (G.c.age >= S.RETIRE_AGE ? 'Aos ' + G.c.age + ' anos, o corpo pediu para parar.' : 'Com a carta em ' + S.ovr(G.c) + ', nenhum clube quis renovar. Hora de pendurar as chuteiras.')) + '</p><button class="btn" id="b-next">' + (goTour ? 'Última dança: ' + tourLbl : 'Ver sua carreira') + '</button>';
     else {
-      actions = '<p class="contract">' + contractTxt + '</p><button class="btn" id="b-next">' + (goTour ? 'Jogar ' + (goWc ? 'a ' : 'o ') + tourLbl : open ? 'Janela de transferências' : 'Próxima temporada') + '</button>';
+      actions = '<button class="btn" id="b-next">' + (goTour ? 'Jogar ' + (goWc ? 'a ' : 'o ') + tourLbl : open ? 'Janela de transferências' : 'Próxima temporada') + '</button>';
       if (S.canAnnounce(G.c)) actions += '<button class="btn ghost" id="b-farewell">Anunciar a última temporada<small>Torcida +10 e mais minutos · parar em alta rende pontos extras</small></button>';
       if (S.canRetire(G.c)) actions += '<button class="btn ghost" id="b-stop">Parar agora</button>';
     }
@@ -143,10 +182,14 @@
       (moveTxt ? '<div class="move-line rv ' + res.move.dir + '">' + moveTxt + '</div>' : '') +
       (res.titles.length ? '<div class="titles">' + res.titles.map(t => '<div class="title-won rv">' + trophy(titleType(t), 60, t.name) + '<span>Campeão<br><b>' + esc(t.name) + '</b></span></div>').join('') + '</div>' : '') +
       '<div class="awards">' + res.awards.map(a => '<div class="award rv' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : '🥇 ') + a.name + '</div>').join('') + '</div>' +
-      '<div class="news rv"><div class="np">📰 Nos jornais</div>' + res.headlines.map(h => '<p>' + esc(h) + '</p>').join('') + '</div>' +
-      '<div class="card why-card rv"><p class="delta-in ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' + why + '</div>' +
-      '<p class="rel-delta rv">👔 Técnico ' + res.coach0 + ' → ' + res.coach1 + ' · 📣 Torcida ' + res.fans0 + ' → ' + res.fans1 + ' (' + S.relLabel(res.fans1) + ')</p>' +
-      wcBlock + '<div class="rv">' + actions + '</div>';
+      '<div class="news rv"><div class="np">📰 Nos jornais</div><p>' + esc(res.headlines[0] || '') + '</p></div>' +
+      wcBlock +
+      // Detalhes (fechados): outros lances, o porquê da nota, técnico/torcida e contrato
+      '<details class="more rv"><summary>Detalhes da temporada</summary>' +
+      res.highlights.slice(1).map(h => '<div class="hl">' + esc(h) + '</div>').join('') +
+      '<div class="card why-card"><p class="delta-in ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' + why + '</div>' +
+      '<p class="rel-delta">👔 Técnico ' + res.coach0 + ' → ' + res.coach1 + ' · 📣 Torcida ' + res.fans0 + ' → ' + res.fans1 + ' (' + S.relLabel(res.fans1) + ')</p>' +
+      (fin ? '' : '<p class="contract">' + contractTxt + '</p>') + '</details>' + '<div class="rv">' + actions + '</div>';
     bar();
     reveal(skipNow, res);
     $('b-next').onclick = goTour ? tourIntro : afterSeason;

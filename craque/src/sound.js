@@ -88,6 +88,10 @@
       [523, 659, 784, 1047].forEach(f => tone('triangle', f, f, t + 0.5, 1.1, 0.13));
       noise(t + 0.45, 1.6, 0.25, 0.2, 'bandpass', 800, 1000, 0.6);
     },
+    // Contador da temporada: "tic" curto a cada gol/assistência
+    tick(t) {
+      tone('triangle', 1760, 1500, t, 0.035, 0.05);
+    },
     // Jornal chegando
     paper(t) {
       noise(t, 0.35, 0.3, 0.05, 'bandpass', 1500, 4000, 0.7);
