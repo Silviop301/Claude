@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-23a351b5';
+const CACHE = 'craque-a63776a9';
 const ASSETS = [
   "./",
   "./assets/bola.glb",
@@ -10,9 +10,8 @@ const ASSETS = [
   "./assets/cartas/verde.jpg",
   "./assets/cartas/vermelha.jpg",
   "./assets/gol.glb",
-  "./assets/goleiro-defesa.glb",
-  "./assets/goleiro-parado.glb",
-  "./assets/goleiro-pronto.glb",
+  "./assets/sprites/barreira.png",
+  "./assets/sprites/goleiro.png",
   "./badges/ale-0.png",
   "./badges/ale-1.png",
   "./badges/ale-10.png",

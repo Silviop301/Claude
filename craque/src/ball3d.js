@@ -122,17 +122,11 @@ function flyer(host, w, h) {
 // Gol 3D do minigame (traves e rede de verdade). Vira uma <image> dentro do SVG, no lugar do gol desenhado,
 // para o goleiro, a barreira e a bola continuarem na frente dele. A câmera é calculada para as traves caírem
 // exatamente onde a mira funciona: m = { w, h, left, right, top, ground } no SVG.
-let goalModel = null, keeperModels = null;
+let goalModel = null;
 const goalReady = () => (goalModel = goalModel || new GLTFLoader().loadAsync('assets/gol.glb').then(g => g.scene));
-// Goleiro: três poses do mesmo boneco (mesmas peças). A animação interpola o giro de cada articulação.
-const keeperReady = () => (keeperModels = keeperModels || Promise.all(['parado', 'pronto', 'defesa']
-  .map(n => new GLTFLoader().loadAsync('assets/goleiro-' + n + '.glb').then(g => g.scene))));
-const poseOf = root => { const p = {}; root.traverse(o => { if (o.name) p[o.name] = { q: o.quaternion.clone(), p: o.position.clone() }; }); return p; };
 
-// opts.keeper: 'opp' (goleiro adversário, amarelo) ou 'mine' (você, azul); sem isso, só o gol
-function goal(svg, m, opts) {
-  opts = opts || {};
-  return Promise.all([goalReady(), opts.keeper ? keeperReady().catch(() => null) : null]).then(([model, kps]) => {
+function goal(svg, m) {
+  return goalReady().then(model => {
     if (!svg.isConnected) return null;
     const W = m.w, H = m.h, D = 18; // câmera a 18 m: o fundo da rede (2 m) fica com a perspectiva do desenho
     const f = (m.right - m.left) * D / 7.32; // distância focal em unidades do SVG
@@ -204,96 +198,7 @@ function goal(svg, m, opts) {
       if (!anim) anim = requestAnimationFrame(loop);
     };
 
-    // ---------- goleiro 3D ----------
-    let keeper = null;
-    if (kps) {
-      const [kParado, kPronto, kDefesa] = kps;
-      const P = { parado: poseOf(kParado), pronto: poseOf(kPronto), defesa: poseOf(kDefesa) };
-      const body = kParado.clone(true);
-      // Cores: adversário mantém o amarelo do modelo; você (minigame do goleiro) de azul
-      body.traverse(o => {
-        if (!o.isMesh) return;
-        o.material = o.material.clone();
-        o.material.side = THREE.DoubleSide; // o espelhamento (mergulho para o outro lado) inverte as faces
-        if (opts.keeper === 'mine' && ['camisa', 'meiao'].includes(o.material.name)) o.material.color.set(0x2F6FDB);
-      });
-      const nodes = {};
-      body.traverse(o => { if (o.name && P.parado[o.name]) nodes[o.name] = o; });
-      const KS = 1.3; // um pouco maior que o real (o gol do desenho também é mais alto)
-      const rig = new THREE.Group(); // posição, inclinação e espelho do mergulho
-      const inner = new THREE.Group();
-      inner.scale.setScalar(KS);
-      inner.add(body); rig.add(inner); scene.add(rig);
-      // Sombra no gramado
-      const sh = new THREE.Mesh(new THREE.CircleGeometry(0.5, 24), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false }));
-      sh.rotation.x = -Math.PI / 2; sh.scale.set(1.3, 0.55, 1); sh.position.y = 0.01;
-      scene.add(sh);
-      const setPose = (a, b, t) => {
-        for (const n in nodes) {
-          const A = a[n], B = b[n];
-          nodes[n].quaternion.slerpQuaternions(A.q, B.q, t);
-          nodes[n].position.lerpVectors(A.p, B.p, t);
-        }
-      };
-      const hand = new THREE.Vector3();
-      // Luva mais adiantada na direção do mergulho, em metros (com a pose e a inclinação atuais)
-      const gloveAt = dir => {
-        rig.updateMatrixWorld(true);
-        let best = null;
-        ['luvaD', 'luvaE', 'maoD', 'maoE'].forEach(n => {
-          const o = body.getObjectByName(n); if (!o) return;
-          o.getWorldPosition(hand);
-          const score = hand.x * dir + hand.y * 0.35;
-          if (!best || score > best.s) best = { s: score, x: hand.x, y: hand.y };
-        });
-        return best;
-      };
-      let baseX = 0;
-      const place = (x, y, tilt, mirror) => {
-        rig.position.set(x, y, 0.15);
-        rig.rotation.z = tilt;
-        rig.scale.x = mirror;
-        sh.position.x = x;
-        const air = Math.min(1, Math.max(0, y) / 1.2);
-        sh.material.opacity = 0.28 * (1 - air * 0.6);
-        sh.scale.set(1.3 + Math.abs(tilt) * 1.2, 0.55, 1);
-      };
-      setPose(P.parado, P.parado, 0); place(0, 0, 0, 1);
-      keeper = {
-        // Posição inicial no gol (x no SVG) e pose "pronto" (vem de "parado")
-        at(x) { baseX = toWorld(x, cy).X; place(baseX, 0, 0, 1); draw(); },
-        ready() { play(380, u => setPose(P.parado, P.pronto, u), 'kp'); },
-        // Mergulho até a luva chegar em (x, y) do SVG. dir: 1 direita, -1 esquerda, 0 fica no meio (pulo curto)
-        dive(x, y, dir, ms, delay) {
-          const T = toWorld(x, y);
-          if (!dir) {
-            const hop = Math.max(0, Math.min(1.2, T.Y - 2.0));
-            return play(ms, u => { setPose(P.pronto, P.parado, Math.min(1, u * 1.5)); place(baseX, hop * Math.sin(Math.min(1, u) * Math.PI / 2), 0, 1); }, 'kp', delay);
-          }
-          // Modelo mergulha para a direita da tela; para a esquerda, espelha
-          const mirror = dir > 0 ? 1 : -1;
-          // Bola baixa: o corpo deita mais (inclina na direção do pulo)
-          const low = 1 - Math.min(1, Math.max(0, T.Y / 2.6));
-          const tilt = -dir * (0.3 + 0.3 * low);
-          // Onde a luva fica com a pose final: desloca o corpo para ela chegar no alvo
-          setPose(P.defesa, P.defesa, 1); place(0, 0, tilt, mirror);
-          const gl = gloveAt(dir);
-          let fx = T.X - gl.x, fy = T.Y - gl.y;
-          fy = Math.max(-0.35, fy); // não afunda no gramado
-          setPose(P.pronto, P.pronto, 1); place(baseX, 0, 0, 1);
-          play(ms, u => {
-            const e = 1 - Math.pow(1 - u, 3);
-            setPose(P.pronto, P.defesa, Math.min(1, e * 1.15));
-            place(baseX + (fx - baseX) * e, fy * e, tilt * e, u < 0.08 ? 1 : mirror);
-          }, 'kp', delay);
-        },
-      };
-      // O goleiro desenhado sai de cena
-      ['#k-keeper', '#k-kshadow'].forEach(s => { const e = svg.querySelector(s); if (e) e.style.display = 'none'; });
-      draw();
-    }
     return {
-      keeper,
       // Gol: a rede estufa onde a bola entrou e volta um pouco
       bulge(x, y) {
         const p = toWorld(x, Math.max(y, m.top + 4));

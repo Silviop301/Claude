@@ -25,7 +25,9 @@
     const ball = svg.querySelector('#k-ball'), keeper = svg.querySelector('#k-keeper');
     svg.querySelector('#k-aim').remove();
     let goal = null, gone = false;
-    P.goal3d(svg, 'mine').then(g => { if (!g) return; if (gone) return g.dispose(); goal = g; if (g.keeper) { g.keeper.at(P.GX); g.keeper.ready(); } });
+    P.goal3d(svg).then(g => { if (!g) return; if (gone) return g.dispose(); goal = g; });
+    const spr = P.keeperSprite(svg); // você no gol, em sprite
+    spr.stand(P.GX); spr.idle();
     keeper.classList.add('mine'); // o goleiro agora é você
     P.setBall(ball, P.BALL.x, P.BALL.y, P.BALL.r);
     P.setKeeper(keeper, 0, 0, 0);
@@ -86,7 +88,7 @@
       if (d !== 0) keeper.classList.add('diving');
       const T = 520, s0 = performance.now();
       // Goleiro 3D: na defesa a luva vai até a bola; senão, pula para o lado escolhido
-      if (goal && goal.keeper) goal.keeper.dive(saved ? tx : P.px(d * 0.55), saved ? ty : P.py(0.5), d, T * 0.8, 0);
+      spr.dive(saved ? tx : P.px(d * 0.55), saved ? ty : P.py(0.5), d, T * 0.8, 0);
       (function fly(now) {
         const k = Math.min(1, (now - s0) / T), e = ease(k);
         P.setBall(ball, P.BALL.x + (tx - P.BALL.x) * e, P.BALL.y + (ty - P.BALL.y) * e - Math.sin(k * Math.PI) * 16, P.BALL.r + (8.5 - P.BALL.r) * e);

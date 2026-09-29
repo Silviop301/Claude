@@ -11,6 +11,15 @@
   // Onda triangular de -1 a 1: velocidade constante, mais justa que seno
   const tri = u => 1 - 4 * Math.abs(((u % 1) + 1) % 1 - 0.5);
 
+  // Sprites: barreira (8x2 quadros de 124x250) e goleiro (4x4 quadros de 480x250)
+  const WALL = { url: 'assets/sprites/barreira.png', w: 124, h: 250, top: 50, feet: 248, fw: 64 };
+  const wallVB = f => (f % 8) * WALL.w + ' ' + Math.floor(f / 8) * WALL.h + ' ' + WALL.w + ' ' + WALL.h;
+  // Goleiro: 0-3 parado respirando; 4-10 mergulho para a esquerda (desenho original); 11-15 deitado no chão.
+  // bb: caixa do corpo em cada quadro; glove: luva que vai na bola (medidas da folha)
+  const KSP = { url: 'assets/sprites/goleiro.png', w: 480, h: 250, s: 0.6,
+    bb: [[181, 71, 299, 248], [187, 75, 298, 248], [197, 80, 297, 248], [189, 76, 302, 248], [126, 47, 290, 248], [94, 0, 295, 248], [87, 4, 295, 246], [66, 36, 288, 246], [54, 71, 275, 246], [53, 94, 272, 246], [49, 156, 267, 248], [29, 186, 264, 250]],
+    glove: { 6: [143, 8], 7: [100, 40], 8: [68, 76], 9: [57, 155], 10: [54, 217] } };
+
   function scene(setup, side) {
     // Rede com profundidade: fundo (menor e mais alto), laterais e teto
     const BX = 0.9, BT = 80, BB = 178; // trave de trás: ±0.9 da largura, topo e base
@@ -44,23 +53,13 @@
     let wall = '';
     if (setup.fk) {
       const l = Math.min(setup.wallL * side, setup.wallR * side), r = Math.max(setup.wallL * side, setup.wallR * side);
-      // Jogadores encorpados, ombro a ombro (um pouco sobrepostos), braços cruzados na frente.
-      // A cabeça marca a altura da barreira no plano do gol.
-      const n = 4, w = (px(r) - px(l)) / n, top = py(setup.wall), feet = 238;
+      // Jogadores da barreira (sprites de braços cruzados). A cabeça marca a altura da barreira no plano do gol.
+      const top = py(setup.wall), feet = 238, sc = (feet - top) / (WALL.feet - WALL.top);
+      const span = px(r) - px(l), n = Math.max(3, Math.round(span / (WALL.fw * sc * 0.82))), step = span / n;
       for (let i = 0; i < n; i++) {
-        const cx = px(l) + w * (i + 0.5), bw = w * 1.22, hr = Math.min(10.5, w * 0.4);
-        const sh = top + hr * 2 - 1, waist = feet - 40;
-        wall += '<g class="k-wallman">' +
-          // tronco: ombros largos afinando até a cintura
-          '<path d="M' + (cx - bw / 2) + ' ' + (sh + 8) + ' Q' + (cx - bw / 2) + ' ' + sh + ' ' + (cx - bw / 2 + 8) + ' ' + sh + ' H' + (cx + bw / 2 - 8) + ' Q' + (cx + bw / 2) + ' ' + sh + ' ' + (cx + bw / 2) + ' ' + (sh + 8) +
-          ' L' + (cx + bw * 0.42) + ' ' + waist + ' H' + (cx - bw * 0.42) + ' Z"/>' +
-          // braços cruzados na frente
-          '<rect class="k-arms" x="' + (cx - bw * 0.44) + '" y="' + (sh + (waist - sh) * 0.42) + '" width="' + (bw * 0.88) + '" height="' + Math.max(8, (waist - sh) * 0.16) + '" rx="5"/>' +
-          '<rect class="k-shorts" x="' + (cx - bw * 0.43) + '" y="' + (waist - 2) + '" width="' + (bw * 0.86) + '" height="18" rx="4"/>' +
-          '<rect class="k-socks" x="' + (cx - bw * 0.36) + '" y="' + (waist + 15) + '" width="' + (bw * 0.3) + '" height="' + (feet - waist - 15) + '" rx="3"/>' +
-          '<rect class="k-socks" x="' + (cx + bw * 0.06) + '" y="' + (waist + 15) + '" width="' + (bw * 0.3) + '" height="' + (feet - waist - 15) + '" rx="3"/>' +
-          '<circle class="k-head" cx="' + cx + '" cy="' + (top + hr) + '" r="' + hr + '"/>' +
-          '<path class="k-hair" d="M' + (cx - hr) + ' ' + (top + hr - 1) + ' a' + hr + ' ' + hr + ' 0 0 1 ' + (hr * 2) + ' 0 q-' + hr + ' -' + (hr * 0.5) + ' -' + (hr * 2) + ' 0z"/></g>';
+        const cx = px(l) + step * (i + 0.5), f = (i * 5) % 16;
+        wall += '<g class="k-wallspr" transform="translate(' + (cx - WALL.w / 2 * sc) + ' ' + (top - WALL.top * sc) + ') scale(' + sc + ')">' +
+          '<svg width="' + WALL.w + '" height="' + WALL.h + '" viewBox="' + wallVB(f) + '" overflow="hidden"><image href="' + WALL.url + '" width="992" height="500"/></svg></g>';
       }
     }
     const L = 'stroke="#EEF5F0" stroke-width="2" fill="none" opacity=".75"';
@@ -118,8 +117,98 @@
       '</svg>';
   }
 
+  // Goleiro desenhado em sprites, no lugar do goleiro vetorial (mesma camada do SVG)
+  function keeperSprite(svg) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', 'k-kspr');
+    g.innerHTML = '<svg width="' + KSP.w + '" height="' + KSP.h + '" viewBox="0 0 ' + KSP.w + ' ' + KSP.h + '" overflow="hidden"><image href="' + KSP.url + '" width="1920" height="1000"/></svg>';
+    const old = svg.querySelector('#k-keeper');
+    old.parentNode.insertBefore(g, old);
+    old.style.display = 'none';
+    const inner = g.firstChild, sh = svg.querySelector('#k-kshadow'), s = KSP.s;
+    const bb = f => KSP.bb[Math.min(f, 11)];
+    const center = f => { const b = bb(f); return [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]; };
+    // Quadro f com o ponto (ax, ay) da célula em (x, y) do SVG; m = 1 desenho original (mergulho para a esquerda), -1 espelhado
+    const put = (f, ax, ay, x, y, m) => {
+      inner.setAttribute('viewBox', (f % 4) * KSP.w + ' ' + Math.floor(f / 4) * KSP.h + ' ' + KSP.w + ' ' + KSP.h);
+      g.setAttribute('transform', 'translate(' + x + ' ' + y + ') scale(' + (m * s) + ' ' + s + ') translate(' + (-ax) + ' ' + (-ay) + ')');
+    };
+    const shadow = (x, air) => { if (!sh) return; sh.setAttribute('cx', x); sh.setAttribute('opacity', 1 - Math.min(0.65, air)); sh.setAttribute('rx', 16 + 14 * (1 - air)); };
+    let x0 = GX, idle = 0, raf = 0, tmr = 0;
+    const alive = () => svg.isConnected;
+    const api = {
+      stand(x) { x0 = x; put(0, 240, 248, x, GY, 1); shadow(x, 0); },
+      // Respiração enquanto espera o chute (quadros 0-3 indo e voltando)
+      idle() {
+        let k = 0;
+        clearInterval(idle);
+        idle = setInterval(() => { if (!alive()) return clearInterval(idle); k++; put([0, 1, 2, 3, 2, 1][k % 6], 240, 248, x0, GY, 1); }, 170);
+      },
+      // Mergulho até a luva chegar em (tx, ty). dir: -1 esquerda, 1 direita, 0 fica no meio (pulinho)
+      dive(tx, ty, dir, ms, delay) {
+        clearInterval(idle);
+        const h = (GY - ty) / 120, c0 = [x0 + (center(0)[0] - 240) * s, GY + (center(0)[1] - 248) * s];
+        const t0 = performance.now() + (delay || 0);
+        if (!dir) {
+          const hop = Math.max(0, Math.min(38, (GY - 100) - ty));
+          const step = now => {
+            if (!alive()) return;
+            const u = Math.min(1, Math.max(0, (now - t0) / ms)), e = Math.sin(u * Math.PI / 2);
+            put(u > 0.1 ? 4 : 3, 208, 248, x0, GY - hop * e, 1); shadow(x0, hop * e / 80);
+            if (u < 1) raf = requestAnimationFrame(step);
+          };
+          raf = requestAnimationFrame(step);
+          return;
+        }
+        const m = dir < 0 ? 1 : -1;
+        // Quadro do alcance pela altura da bola: ângulo (6), meia altura (8), baixa (9), rasteira (10)
+        const rf = h > 0.72 ? 6 : h > 0.45 ? 8 : h > 0.2 ? 9 : 10, ga = KSP.glove[rf], cr = center(rf);
+        const cF = [tx + m * s * (cr[0] - ga[0]), ty + s * (cr[1] - ga[1])];
+        const step = now => {
+          if (!alive()) return;
+          const u = Math.min(1, Math.max(0, (now - t0) / ms)), e = 1 - Math.pow(1 - u, 3);
+          const f = u <= 0 ? 3 : 4 + Math.round(e * (rf - 4)), cf = center(f);
+          const cx = c0[0] + (cF[0] - c0[0]) * e, cy = c0[1] + (cF[1] - c0[1]) * e - Math.sin(u * Math.PI) * (h < 0.45 ? 14 : 4);
+          put(f, cf[0], cf[1], cx, cy, m);
+          shadow(cx, Math.min(1, Math.max(0, (GY - 20 - cy) / 110)));
+          if (u < 1) raf = requestAnimationFrame(step);
+          else tmr = setTimeout(() => land(cx, cy, rf, m), 260);
+        };
+        raf = requestAnimationFrame(step);
+      },
+    };
+    // Cai no gramado: quadros até o 11 (deitado), descendo até o chão
+    function land(cx, cy, rf, m) {
+      if (!alive()) return;
+      const t0 = performance.now(), c11 = center(11), yEnd = GY - (250 - c11[1]) * s;
+      const step = now => {
+        if (!alive()) return;
+        const u = Math.min(1, (now - t0) / 320), e = u * u;
+        const f = Math.min(11, rf + Math.round(u * (11 - rf))), cf = center(f);
+        const y = cy + (yEnd - cy) * e;
+        put(f, cf[0], cf[1], cx, y, m); shadow(cx, Math.max(0, (GY - 20 - y) / 110));
+        if (u < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    }
+    return api;
+  }
+  // Barreira respirando: troca os quadros dos jogadores (cada um num tempo diferente)
+  function animateWall(svg) {
+    const men = svg.querySelectorAll('.k-wallspr svg');
+    if (!men.length) return;
+    let k = 0;
+    const iv = setInterval(() => {
+      if (!svg.isConnected) return clearInterval(iv);
+      k++;
+      men.forEach((m, i) => m.setAttribute('viewBox', wallVB((k + i * 5) % 16)));
+    }, 110);
+  }
+
   function setBall(g, x, y, r) { g.setAttribute('transform', 'translate(' + x + ' ' + y + ') scale(' + (r / 11) + ')'); }
   function setKeeper(g, dx, dy, rot) {
+    if (g.style.display === 'none') return; // goleiro em sprite no lugar
     g.setAttribute('transform', 'translate(' + (GX + dx) + ' ' + (GY + dy) + ') rotate(' + rot + ')');
     // Sombra no gramado: segue o goleiro e diminui quando ele está no ar
     const sh = g.ownerSVGElement && g.ownerSVGElement.querySelector('#k-kshadow');
@@ -134,12 +223,11 @@
   // opts: { c, moment, onDone(ok) }
   // Peças reaproveitadas pelo minigame do goleiro (defend.js)
   // Gol 3D (traves e rede do modelo) no lugar do desenho; se o 3D não carregar, fica o desenho
-  // keeper: 'opp' (adversário) ou 'mine' (você no gol) → goleiro 3D animado no lugar do desenhado
-  function goal3d(svg, keeper) {
+  function goal3d(svg) {
     if (!root.CRAQUE_BALL || !root.CRAQUE_BALL.goal) return Promise.resolve(null);
-    return root.CRAQUE_BALL.goal(svg, { w: 360, h: 320, left: px(-1), right: px(1), top: py(1), ground: GY }, { keeper });
+    return root.CRAQUE_BALL.goal(svg, { w: 360, h: 320, left: px(-1), right: px(1), top: py(1), ground: GY });
   }
-  root.CRAQUE_KICK_PARTS = { scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d };
+  root.CRAQUE_KICK_PARTS = { scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d, keeperSprite, animateWall };
 
   root.CRAQUE_KICK = function (el, opts) {
     const c = opts.c, m = opts.moment;
@@ -153,10 +241,11 @@
     const stage = el.querySelector('.kick-stage');
     // Bola 3D por cima do desenho (se o 3D não carregar, fica a bola desenhada)
     let fly3d = null, gone = false, goal = null;
-    goal3d(svg, 'opp').then(g => {
-      if (!g) return; if (gone) return g.dispose(); goal = g;
-      if (g.keeper) { g.keeper.at(setup.fk ? px(0.4 * side) : GX); g.keeper.ready(); }
-    });
+    goal3d(svg).then(g => { if (!g) return; if (gone) return g.dispose(); goal = g; });
+    // Goleiro e barreira em sprites
+    const spr = keeperSprite(svg);
+    spr.stand(setup.fk ? px(0.4 * side) : GX); spr.idle();
+    animateWall(svg);
     if (root.CRAQUE_BALL && root.CRAQUE_BALL.flyer) {
       root.CRAQUE_BALL.flyer(stage, 360, 320).then(f => {
         if (!f) return;
@@ -257,7 +346,7 @@
       const kDx = K.dx, kDy = K.dy, kRot = K.rot;
       const k0 = setup.fk ? px(0.4 * side) - GX : 0;
       const T = setup.fk ? 760 : 620, start = performance.now();
-      if (goal && goal.keeper) goal.keeper.dive(G.x, G.y, G.dir, T * 0.75, 90);
+      spr.dive(G.x, G.y, G.dir, T * 0.75, 90);
       // Trajetória em curva (Bézier): no pênalti, um arco leve; na falta, a bola abre e volta por cima da barreira
       const dir = Math.sign(tx - BALL.x) || side;
       const cx = setup.fk ? BALL.x + (tx - BALL.x) * 0.15 - dir * 55 : (BALL.x + tx) / 2;
