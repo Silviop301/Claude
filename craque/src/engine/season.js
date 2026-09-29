@@ -364,7 +364,7 @@
     if (s.goals >= 30) h.push(v('goals', [s.goals + ' gols: ' + nick + ' vira pesadelo das defesas', 'Máquina de gols: ' + nick + ' chega a ' + s.goals + ' na temporada', nick + ' de novo: ' + s.goals + ' gols e as redes pedindo socorro']));
     else if (s.assists >= 15) h.push(v('assists', ['O garçom da liga: ' + s.assists + ' assistências de ' + nick, nick + ' serve ' + s.assists + ' gols na temporada', 'Passe na medida: ' + s.assists + ' assistências de ' + nick]));
     else if (s.penSaved >= 2) h.push(v('pens', ['Pegador! ' + nick + ' defende ' + s.penSaved + ' pênaltis na temporada', 'Muralha na marca da cal: ' + nick + ' pega ' + s.penSaved + ' pênaltis', 'Batedor treme diante de ' + nick + ': ' + s.penSaved + ' pênaltis defendidos']));
-    else if (s.cleanSheets >= 18) h.push(v('cs', [s.cleanSheets + ' jogos sem sofrer gol: ' + nick + ' fecha a defesa ' + D.do(club), 'Cadeado: ' + nick + ' passa ' + s.cleanSheets + ' jogos sem ser vazado', 'Com ' + nick + ', ' + D.o(club) + ' não toma gol: ' + s.cleanSheets + ' jogos no zero']));
+    else if ((s.pos === 'GOL' || s.pos === 'ZAG') && s.cleanSheets >= 18) h.push(v('cs', [s.cleanSheets + ' jogos sem sofrer gol: ' + nick + ' fecha a defesa ' + D.do(club), 'Cadeado: ' + nick + ' passa ' + s.cleanSheets + ' jogos sem ser vazado', 'Com ' + nick + ', ' + D.o(club) + ' não toma gol: ' + s.cleanSheets + ' jogos no zero']));
     else if (s.pos === 'ZAG' && s.goals >= 5) h.push(v('zaggol', ['Zagueiro artilheiro: ' + nick + ' marca ' + s.goals + ' gols de cabeça', 'Perigo na bola parada: ' + nick + ' faz ' + s.goals + ' gols']));
     // Grande temporada individual: o jornal separa o seu desempenho da campanha do clube
     const def = s.pos === 'ZAG' || s.pos === 'GOL', tb = s.table;
