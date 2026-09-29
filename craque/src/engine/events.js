@@ -139,7 +139,7 @@
     },
     {
       id: 'capitao', icon: '©️', weight: 4,
-      when: c => !c.captain && c.rel.fans >= 60 && c.rel.coach >= 60 && atClub(c) >= 3,
+      when: c => !c.captain && c.rel.fans >= 60 && c.rel.coach >= 60 && atClub(c) >= (c.traits.includes('lider') ? 1 : 3), // Líder vira capitão mais cedo
       build: c => ({
         title: 'A braçadeira é sua?',
         text: 'O técnico ' + D.do(D.CLUB_BY_ID[c.club].name) + ' quer que você seja o capitão.',

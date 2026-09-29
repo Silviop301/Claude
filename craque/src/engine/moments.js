@@ -59,16 +59,16 @@
     if (type === 'save') {
       // Goleiro: o corpo do batedor "entrega" o lado por tellMs antes do chute (REF e Pegador aumentam);
       // o pulo alcança até diveReach (ELA); cantos além disso entram mesmo no lado certo
-      const tellMs = Math.round(clamp(150 + (E.fin - 50) * 6 + lv('pegador') * 45, 130, 480));
-      const diveReach = round1(clamp(0.72 + (E.fis - 55) / 100, 0.65, 1) * 100) / 100;
-      const chance = clamp(0.28 + (E.fin + E.def - 120) / 260 + lv('pegador') * 0.05 + lv('frieza') * 0.03, 0.15, 0.6);
+      const tellMs = Math.round(clamp(150 + (E.fin - 50) * 6 + lv('pegador') * 45 + lv('reflexo') * 35, 130, 520));
+      const diveReach = round1(clamp(0.72 + (E.fis - 55) / 100 + lv('elastico') * 0.04, 0.65, 1.05) * 100) / 100;
+      const chance = clamp(0.28 + (E.fin + E.def - 120) / 260 + lv('pegador') * 0.05 + lv('frieza') * 0.09, 0.15, 0.7);
       return { mode: 'save', tellMs, diveReach, chance: Math.round(chance * 100) / 100 };
     }
     if (type === 'tackle') {
       // Zagueiro: tocar quando o atacante passa pela zona certa. DEF alarga a zona; RIT deixa o lance mais lento
       const win = round1(clamp(0.1 + (E.def - 50) / 260 + lv('carrinho') * 0.015, 0.08, 0.26) * 100) / 100;
       const period = round1(clamp(0.95 + (E.rit - 50) * 0.01 + lv('antecipa') * 0.08, 0.8, 1.6) * 10) / 10;
-      const chance = clamp(0.35 + (E.def - 60) / 80 + lv('carrinho') * 0.04 + lv('raca') * 0.03, 0.2, 0.82);
+      const chance = clamp(0.35 + (E.def - 60) / 80 + lv('carrinho') * 0.04 + lv('frieza') * 0.08, 0.2, 0.88);
       return { mode: 'tackle', win, period, chance: Math.round(chance * 100) / 100 };
     }
     // Mira: um vaivém completo leva de 1,0 s (FIN baixa) a ~2,1 s (FIN alta); Chute Colocado deixa mais lenta
@@ -87,8 +87,8 @@
     // Falta: altura da barreira (Bola Parada ensina a passar por cima dela)
     const wall = fk ? clamp(0.58 - lv('parada') * 0.05 - (E.pas - 50) / 400, 0.42, 0.58) : 0;
     // Chance ao deixar o jogo decidir (sem jogar)
-    const chance = fk ? clamp(0.3 + (E.fin - 60) / 110 + lv('frieza') * 0.04 + lv('parada') * 0.07, 0.15, 0.7)
-      : clamp(0.62 + (E.fin - 60) / 150 + lv('frieza') * 0.04 + lv('colocado') * 0.03, 0.4, 0.88);
+    const chance = fk ? clamp(0.3 + (E.fin - 60) / 110 + lv('frieza') * 0.1 + lv('parada') * 0.07, 0.15, 0.78)
+      : clamp(0.62 + (E.fin - 60) / 150 + lv('frieza') * 0.1 + lv('colocado') * 0.03, 0.4, 0.92);
     // Na falta, a barreira cobre o lado esquerdo do gol (a tela espelha quando for o direito)
     return { fk, period, wobble, reach, fkReach, wall, wallL: -0.8, wallR: -0.1, chance: Math.round(chance * 100) / 100 };
   };

@@ -137,31 +137,42 @@
   // title: chance de título; fame: multiplicador de fama; rating: bônus na nota.
   // Características: cada uma soma pontos nos atributos da carta (nível 2 e 3 somam mais).
   const OF = ['ATA', 'MEI'], ALL = ['ATA', 'MEI', 'ZAG', 'GOL'];
+  // Características: pouco atributo + um efeito próprio (fx = texto do efeito; m = multiplicador do nível: 1, 1.8, 2.6).
+  // Algumas têm lado ruim (⚠️). Sem troca: o que entra fica até o fim da carreira.
+  const pc = v => Math.round(v) + '%';
+  const d1 = v => v.toFixed(1).replace('.', ',');
   D.TRAITS = [
-    { id: 'colocado',  icon: '🎯', name: 'Chute Colocado', pos: OF, attr: { fin: 4, dri: 1 } },
-    { id: 'parada',    icon: '🧱', name: 'Bola Parada',    pos: OF, attr: { fin: 2, pas: 3 } },
-    { id: 'velocista', icon: '⚡', name: 'Velocista',      pos: ['ATA', 'MEI', 'ZAG'], attr: { rit: 5 } },
-    { id: 'drible',    icon: '🌀', name: 'Drible Curto',   pos: OF, attr: { dri: 4, rit: 1 } },
-    { id: 'cabeceio',  icon: '🗣️', name: 'Cabeceio',       pos: ['ATA', 'MEI', 'ZAG'], attr: { fin: 2, fis: 3 } },
-    { id: 'visao',     icon: '👁️', name: 'Visão de Jogo',  pos: OF, attr: { pas: 5 } },
-    { id: 'lider',     icon: '©️', name: 'Líder',          pos: ALL, attr: { pas: 2, def: 2, fis: 1 } },
-    { id: 'raca',      icon: '🔥', name: 'Raça',           pos: ALL, attr: { def: 3, fis: 2 } },
-    { id: 'pro',       icon: '🧘', name: 'Profissional',   pos: ALL, attr: { fis: 3 }, perk: 'Perde menos atributos depois dos 30' },
-    { id: 'tecnica',   icon: '🪄', name: 'Técnica',        pos: OF, attr: { dri: 3, pas: 2 } },
-    { id: 'frieza',    icon: '🧊', name: 'Frieza',         pos: ALL, attr: { fin: 3, dri: 2 } },
-    { id: 'garcom',    icon: '🍽️', name: 'Garçom',         pos: OF, attr: { pas: 6, fin: -1 } },
+    // Estilo de jogo (atacante e meia)
+    { id: 'artilheiro', icon: '🦊', name: 'Artilheiro',     pos: ['ATA'], attr: { fin: 2 }, fx: m => '+' + pc(6 * m) + ' gols · −' + pc(8 * m) + ' assistências' },
+    { id: 'garcom',    icon: '🍽️', name: 'Garçom',         pos: ['MEI'], attr: { pas: 2 }, fx: m => '+' + pc(8 * m) + ' assistências · −' + pc(8 * m) + ' gols' },
+    { id: 'colocado',  icon: '🎯', name: 'Chute Colocado', pos: OF, attr: { fin: 2 }, fx: () => 'Mira mais precisa nos lances decisivos' },
+    { id: 'parada',    icon: '🧱', name: 'Bola Parada',    pos: OF, attr: { pas: 2 }, fx: () => 'Mais faltas nos lances decisivos' },
+    { id: 'drible',    icon: '🌀', name: 'Drible Curto',   pos: OF, attr: { dri: 2 }, fx: m => '+' + d1(0.06 * m) + ' na nota média (mais fama)' },
+    { id: 'visao',     icon: '👁️', name: 'Visão de Jogo',  pos: OF, attr: {}, fx: m => 'O time rende mais: +' + d1(0.8 * m) + ' de força (mais títulos)' },
+    { id: 'tecnica',   icon: '🪄', name: 'Técnica',        pos: OF, attr: { dri: 2 }, fx: m => '+' + pc(4 * m) + ' gols e assistências' },
+    { id: 'velocista', icon: '⚡', name: 'Velocista',      pos: ['ATA', 'MEI', 'ZAG'], attr: { rit: 4 }, fx: () => '⚠️ Perde velocidade mais rápido depois dos 29' },
+    { id: 'cabeceio',  icon: '🗣️', name: 'Cabeceio',       pos: ['ATA', 'MEI'], attr: { fis: 2 }, fx: m => '+' + pc(5 * m) + ' gols (de cabeça)' },
+    // Carreira (todas as posições)
+    { id: 'academia',  icon: '🏋️', name: 'Rato de Academia', pos: ALL, attr: {}, fx: m => '+' + pc(45 * m) + ' de evolução até os 24 anos' },
+    { id: 'pro',       icon: '🧘', name: 'Profissional',   pos: ALL, attr: {}, fx: m => 'Envelhece ' + pc(25 * m) + ' mais devagar · −' + pc(15 * m) + ' lesões' },
+    { id: 'estrela',   icon: '🌟', name: 'Estrela',        pos: ALL, attr: {}, fx: m => '+' + pc(25 * m) + ' salário · +' + d1(0.06 * m) + ' na nota nos jogos grandes · ⚠️ Técnico −1 por temporada' },
+    { id: 'lider',     icon: '©️', name: 'Líder',          pos: ALL, attr: {}, fx: m => 'Técnico +' + Math.round(4 * m) + ' por temporada (mais minutos) · capitão mais cedo' },
+    { id: 'raca',      icon: '🔥', name: 'Raça',           pos: ALL, attr: {}, fx: m => '+' + d1(0.07 * m) + ' na nota · Torcida +' + Math.round(3 * m) + ' por temporada · ⚠️ +' + pc(5 * m) + ' lesões' },
+    { id: 'frieza',    icon: '🧊', name: 'Frieza',         pos: ALL, attr: {}, fx: () => 'Mais margem de erro nos lances decisivos' },
+    { id: 'adaptavel', icon: '🧳', name: 'Adaptável',      pos: ALL, attr: {}, fx: m => 'Chega em clube novo com Técnico e Torcida +' + Math.round(12 * m) },
+    { id: 'patriota',  icon: '🎌', name: 'Patriota',       pos: ALL, attr: {}, fx: m => 'Seleção convoca com nota ' + Math.round(2.5 * m) + ' abaixo · rende mais na Copa' },
     // Zagueiro
-    { id: 'xerife',    icon: '🛡️', name: 'Xerife',         pos: ['ZAG'], attr: { def: 5 } },
-    { id: 'carrinho',  icon: '🦵', name: 'Carrinho',       pos: ['ZAG'], attr: { def: 3, fis: 2 } },
-    { id: 'antecipa',  icon: '🧠', name: 'Antecipação',    pos: ['ZAG'], attr: { def: 3, rit: 2 } },
-    { id: 'saida',     icon: '📐', name: 'Saída de bola',  pos: ['ZAG'], attr: { pas: 4, dri: 1 } },
-    { id: 'aereo',     icon: '🦒', name: 'Jogo aéreo',     pos: ['ZAG'], attr: { fis: 3, fin: 2 } },
+    { id: 'xerife',    icon: '🛡️', name: 'Xerife',         pos: ['ZAG'], attr: { def: 2 }, fx: m => 'Mais jogos sem sofrer gol (+' + d1(0.7 * m) + ' de força na defesa)' },
+    { id: 'carrinho',  icon: '🦵', name: 'Carrinho',       pos: ['ZAG'], attr: { def: 1, fis: 1 }, fx: () => 'Faixa do desarme maior nos lances decisivos' },
+    { id: 'antecipa',  icon: '🧠', name: 'Antecipação',    pos: ['ZAG'], attr: { def: 2, rit: 1 }, fx: () => 'O atacante corre mais devagar nos lances decisivos' },
+    { id: 'saida',     icon: '📐', name: 'Saída de bola',  pos: ['ZAG'], attr: { pas: 3 }, fx: m => '+' + pc(30 * m) + ' assistências' },
+    { id: 'aereo',     icon: '🦒', name: 'Jogo aéreo',     pos: ['ZAG'], attr: { fis: 2, fin: 1 }, fx: m => '+' + pc(20 * m) + ' gols de cabeça' },
     // Goleiro (nomes de goleiro: fin=REF, fis=ELA, dri=MAN, def=POS, pas=REP, rit=VEL)
-    { id: 'reflexo',   icon: '⚡', name: 'Reflexo',        pos: ['GOL'], attr: { fin: 5 } },
-    { id: 'elastico',  icon: '🤸', name: 'Elástico',       pos: ['GOL'], attr: { fis: 4, fin: 1 } },
-    { id: 'maofirme',  icon: '🧤', name: 'Mão firme',      pos: ['GOL'], attr: { dri: 5 } },
-    { id: 'pegador',   icon: '🥅', name: 'Pegador de pênalti', pos: ['GOL'], attr: { fin: 2, def: 3 }, perk: 'Lê melhor o batedor no pênalti' },
-    { id: 'libero',    icon: '🦶', name: 'Goleiro-líbero', pos: ['GOL'], attr: { pas: 3, rit: 2 } },
+    { id: 'reflexo',   icon: '⚡', name: 'Reflexo',        pos: ['GOL'], attr: { fin: 3 }, fx: () => 'A seta do batedor aparece antes nos pênaltis' },
+    { id: 'elastico',  icon: '🤸', name: 'Elástico',       pos: ['GOL'], attr: { fis: 3 }, fx: () => 'Alcança bolas mais perto do canto' },
+    { id: 'maofirme',  icon: '🧤', name: 'Mão firme',      pos: ['GOL'], attr: { dri: 2 }, fx: m => 'Mais jogos sem sofrer gol (+' + d1(1 * m) + ' de força na defesa)' },
+    { id: 'pegador',   icon: '🥅', name: 'Pegador de pênalti', pos: ['GOL'], attr: { fin: 1, def: 2 }, fx: () => 'Lê melhor o batedor e defende mais pênaltis' },
+    { id: 'libero',    icon: '🦶', name: 'Goleiro-líbero', pos: ['GOL'], attr: { pas: 2, rit: 1 }, fx: m => '+' + d1(0.08 * m) + ' na nota média' },
   ];
   D.traitFits = (t, pos) => !t.pos || t.pos.includes(pos);
   D.TRAIT_BY_ID = {};
@@ -174,9 +185,10 @@
     { id: 'falta',   a: 'colocado', b: 'parada',   icon: '🌟', name: 'Especialista em Falta', attr: { fin: 3, pas: 2 }, extra: 'Gols de falta nas manchetes' },
     { id: 'liso',    a: 'velocista', b: 'drible',  icon: '💨', name: 'Liso',                  attr: { rit: 3, dri: 3 } },
     { id: 'capitao', a: 'lider',    b: 'raca',     icon: '🎖️', name: 'Capitão',               attr: { def: 3, fis: 2, pas: 1 } },
-    { id: 'maestro', a: 'visao',    b: 'garcom',   icon: '🎼', name: 'Maestro',               attr: { pas: 4, dri: 2 } },
-    { id: 'muralha', a: 'xerife',   b: 'carrinho', icon: '🧱', name: 'Muralha',               attr: { def: 4, fis: 2 } },
+    { id: 'maestro', a: 'visao',    b: 'garcom',   icon: '🎼', name: 'Maestro',               attr: { pas: 2, dri: 1 } },
+    { id: 'muralha', a: 'xerife',   b: 'carrinho', icon: '🧱', name: 'Muralha',               attr: { def: 1, fis: 1 } },
     { id: 'paredao', a: 'reflexo',  b: 'elastico', icon: '🧤', name: 'Paredão',               attr: { fin: 3, fis: 3 } },
+    { id: 'matador', a: 'artilheiro', b: 'frieza', icon: '💀', name: 'Matador',               attr: { fin: 2, fis: 1 } },
   ];
   // Investimentos com o próprio dinheiro: cada compra soma pontos fixos na carta.
   // O preço sobe a cada compra (de qualquer item).

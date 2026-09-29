@@ -83,7 +83,9 @@
     if (c.club !== club.id) {
       if (c.club) c.fansBy[c.club] = Math.max(c.fansBy[c.club] || 0, c.rel.fans);
       // Voltar a um clube onde foi ídolo: a torcida lembra
-      c.rel = { coach: REL0, fans: c.fansBy[club.id] ? Math.max(REL0, c.fansBy[club.id] - 10) : REL0 };
+      // Adaptável chega com Técnico e Torcida mais simpáticos
+      const ad = Math.round(12 * S.tm(c, 'adaptavel'));
+      c.rel = { coach: REL0 + ad, fans: (c.fansBy[club.id] ? Math.max(REL0, c.fansBy[club.id] - 10) : REL0) + ad };
       c.captain = false;
       c.renew = 0;
       c.club = club.id;

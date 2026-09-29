@@ -60,9 +60,18 @@
   S.ovrOf = ovrOf;
 
   // Pontos que um conjunto de características (com níveis) soma em cada atributo
-  S.bonusOf = function (traits, lv) {
+  // Toda característica, qualquer que seja, também soma pontos nos 2 atributos principais da posição
+  // (+1 por nível no principal, +1 a cada 2 níveis no segundo)
+  // (escolher sempre deixa a carta mais forte; o que diferencia uma da outra é o efeito)
+  S.mainAttrs = pos => Object.keys(D.POS[pos].w).sort((a, b) => D.POS[pos].w[b] - D.POS[pos].w[a]).slice(0, 2);
+  S.bonusOf = function (traits, lv, pos) {
     const b = {};
     D.ATTRS.forEach(k => { b[k] = 0; });
+    if (pos) {
+      const levels = traits.reduce((n, id) => n + (lv[id] || 1), 0);
+      const [m1, m2] = S.mainAttrs(pos);
+      b[m1] += levels; b[m2] += Math.floor(levels / 2);
+    }
     traits.forEach(id => {
       const t = D.TRAIT_BY_ID[id], m = D.TRAIT_LV[lv[id] || 1];
       for (const k in t.attr) b[k] += Math.round(t.attr[k] * m);
@@ -74,7 +83,7 @@
   };
 
   const effOf = (c, traits, lv, inv) => {
-    const b = S.bonusOf(traits, lv), out = {};
+    const b = S.bonusOf(traits, lv, c.pos), out = {};
     inv = inv || c.inv || {};
     D.INVEST.forEach(t => { if (t.attr && inv[t.id]) for (const k in t.attr) b[k] += t.attr[k] * inv[t.id]; });
     D.ATTRS.forEach(k => { out[k] = clamp(Math.round(c.attrs[k]) + b[k], 20, 99); });
@@ -138,16 +147,20 @@
   S.MAX_LV = 3;
   const lvOf = (c, id) => (c.traitLv && c.traitLv[id]) || 1;
 
-  // Único efeito fora dos atributos: Profissional envelhece mais devagar
-  S.declMult = c => (c.traits.includes('pro') ? 1 - 0.25 * lvOf(c, 'pro') : 1);
+  // Força do efeito de uma característica: 0 se não tem; 1 / 1,8 / 2,6 conforme o nível
+  S.tm = (c, id) => (c.traits.includes(id) ? D.TRAIT_LV[lvOf(c, id)] : 0);
+  // Profissional envelhece mais devagar
+  S.declMult = c => 1 - 0.25 * S.tm(c, 'pro');
 
   const completesSyn = (c, id, without) => D.SYNERGIES.find(s => {
     const has = x => c.traits.includes(x) && x !== without;
     return (s.a === id && has(s.b)) || (s.b === id && has(s.a));
   }) || null;
 
-  // Escolhas da pré-temporada. Com espaço livre: características novas (e às vezes evoluir uma).
-  // Com os 5 espaços cheios: evoluir uma que já tem ou trocar por uma nova.
+  // Escolhas da pré-temporada (4 opções). Com espaço livre: características novas e às vezes evoluir uma.
+  // Com os 5 espaços cheios: só evoluir as suas. Tudo no nível máximo: build completo (lista vazia).
+  S.CHOICES = 4;
+  S.buildDone = c => c.traits.length >= S.MAX_SLOTS && c.traits.every(id => lvOf(c, id) >= S.MAX_LV);
   S.traitChoices = function (c) {
     const { r, save } = rngOf(c);
     const out = [];
@@ -167,17 +180,15 @@
       // Tende a oferecer o par de uma sinergia que você já começou
       const partners = left.filter(t => completesSyn(c, t.id));
       const t = partners.length && r() < 0.6 ? r.pick(partners) : r.pick(left);
-      out.push({ type: full ? 'swap' : 'new', trait: t, lv: 1, completes: completesSyn(c, t.id) });
+      out.push({ type: 'new', trait: t, lv: 1, completes: completesSyn(c, t.id) });
       return true;
     };
     if (!full) {
-      const ups = c.traits.length >= 2 && r() < 0.5 ? 1 : 0;
+      const ups = c.traits.length >= 2 && r() < 0.6 ? 1 : 0;
       for (let i = 0; i < ups; i++) pushUp();
-      while (out.length < 3 && pushNew()) { /* completa com novas */ }
+      while (out.length < S.CHOICES && pushNew()) { /* completa com novas */ }
     } else {
-      pushUp(); pushUp();
-      while (out.length < 3 && pushNew()) { /* uma troca possível */ }
-      while (out.length < 3 && pushUp()) { /* sem novas: só evoluções */ }
+      while (out.length < S.CHOICES && pushUp()) { /* só evoluções */ }
     }
     save();
     return out;
@@ -242,7 +253,7 @@
     const lg = D.LEAGUE_BY_ID[club.league];
     const base = D.TIERS[club.tier].wage * (lg.wageMult || 1);
     const k = clamp(1 + (S.ovr(c) - club.strength) / 20 + c.fame / 400, 0.4, 3);
-    return Math.round(base * k / 100) * 100;
+    return Math.round(base * k * (1 + 0.25 * S.tm(c, 'estrela')) / 100) * 100; // Estrela ganha mais
   };
 
   // ---------- relação com clube: Técnico e Torcida (0-100) ----------

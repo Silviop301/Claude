@@ -17,14 +17,13 @@ for (let n = 0; n < N; n++) {
   while (!c.retired) {
     const ch = S.traitChoices(c);
     if (ch.length) {
-      const pick = SMART ? (ch.find(x => x.completes) || ch.find(x => x.type === 'up') || ch[0]) : ch[Math.floor(Math.random() * ch.length)];
-      if (pick.type === 'up') S.upgradeTrait(c, pick.trait.id);
-      else if (pick.type === 'swap') {
-        // troca a de menor nível que não faça parte de uma sinergia ativa
-        const inSyn = new Set(S.synergies(c).flatMap(x => [x.a, x.b]));
-        const drop = c.traits.filter(id => !inSyn.has(id)).sort((a, b) => S.traitLevel(c, a) - S.traitLevel(c, b))[0] || c.traits[0];
-        S.addTrait(c, pick.trait.id, drop);
-      } else S.addTrait(c, pick.trait.id);
+      // FORCE=id: sempre pega essa característica quando ela aparece (para medir o peso de cada uma)
+      // AVOID=id: nunca pega (linha de base para comparar)
+      const F = process.env.FORCE, A = process.env.AVOID;
+      const pool = A ? ch.filter(x => x.trait.id !== A) : ch;
+      const pick = (F && ch.find(x => x.trait.id === F)) || (pool.length ? (SMART ? (pool.find(x => x.completes) || pool.find(x => x.type === 'up') || pool[0]) : pool[Math.floor(Math.random() * pool.length)]) : null);
+      if (pick && pick.type === 'up') S.upgradeTrait(c, pick.trait.id);
+      else if (pick) S.addTrait(c, pick.trait.id);
       decisions++;
     }
     // Investimentos: o esperto compra o que mais pesa na posição; o casual compra às vezes

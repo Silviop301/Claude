@@ -5,6 +5,8 @@
   const { REL0, bump, clamp, moveClub, ovrOf, rngOf, round1 } = S._; // ajudantes do núcleo
   // ---------- temporada ----------
   const AGE_GROWTH = age => (age <= 20 ? 0.24 : age <= 23 ? 0.17 : age <= 26 ? 0.08 : age <= 29 ? 0.02 : 0);
+  // Ajuste geral da evolução (as características dão menos atributo desde que ganharam efeitos próprios)
+  const GROWTH_K = 1;
   const AGE_DECLINE = age => (age <= 30 ? 0 : age <= 32 ? 1.8 : age <= 34 ? 3.5 : 5);
 
   S.playSeason = function (c) {
@@ -19,7 +21,8 @@
     let injShare = c.mod.inj;
     // Físico alto protege de lesões
     // ~6% por temporada no auge físico; sobe com a idade (a partir dos 30) e com FÍS baixo
-    const injRisk = clamp((0.065 + Math.max(0, c.age - 30) * 0.02) * clamp(1 - (E.fis - 60) / 90, 0.6, 1.25) * (1 - 0.25 * (c.inv.fisio || 0)), 0.02, 0.4);
+    const injRisk = clamp((0.065 + Math.max(0, c.age - 30) * 0.02) * clamp(1 - (E.fis - 60) / 90, 0.6, 1.25) * (1 - 0.25 * (c.inv.fisio || 0)) *
+      (1 - 0.15 * S.tm(c, 'pro') + 0.05 * S.tm(c, 'raca')), 0.02, 0.4); // Profissional se machuca menos; Raça, mais
     let injName = null;
     if (r() < injRisk) {
       injShare = Math.max(injShare, r.range(0.08, 0.32));
@@ -34,21 +37,27 @@
 
     // Produção por jogo
     const o = ovr0;
-    const teamF = 0.85 + (club.strength - D.TIERS[club.tier].min) * 0.02;
+    // Visão de Jogo faz o time render mais (produção e chance de título)
+    const teamBoost = 0.8 * S.tm(c, 'visao');
+    const teamF = 0.85 + (club.strength + teamBoost - D.TIERS[club.tier].min) * 0.02;
     const form = 1 + c.mod.form + r.gauss() * 0.08;
     // Gols saem da finalização (e do que ajuda a chegar nela); assistências, do passe e do drible
     const gA = E.fin * 0.5 + E.rit * 0.2 + E.dri * 0.15 + E.fis * 0.15;
     const aA = E.pas * 0.55 + E.dri * 0.25 + E.rit * 0.1 + E.fin * 0.1;
     const isDef = D.DEF_POS.includes(c.pos);
     let g90, a90;
-    if (c.pos === 'ATA') { g90 = 0.1 + Math.max(0, gA - 45) * 0.0125; a90 = 0.04 + Math.max(0, aA - 45) * 0.0045; }
+    if (c.pos === 'ATA') { g90 = 0.1 + Math.max(0, gA - 45) * 0.0113; a90 = 0.04 + Math.max(0, aA - 45) * 0.0045; }
     else if (c.pos === 'MEI') { g90 = 0.04 + Math.max(0, gA - 45) * 0.0055; a90 = 0.06 + Math.max(0, aA - 45) * 0.0075; }
     else if (c.pos === 'ZAG') { // gols de cabeça em bola parada; poucas assistências
       g90 = 0.025 + Math.max(0, E.fis * 0.4 + E.fin * 0.3 + E.def * 0.3 - 45) * 0.0014;
       a90 = 0.01 + Math.max(0, E.pas - 45) * 0.0009;
     } else { g90 = 0; a90 = 0.002; } // goleiro
-    g90 *= 1.14 * teamF * form * (1 + c.mod.goal);
-    a90 *= 1.22 * teamF * form * (1 + c.mod.assist);
+    // Estilo de jogo (características): quanto pesa em gols e em assistências
+    const tm = id => S.tm(c, id);
+    const gMul = 1 + 0.06 * tm('artilheiro') - 0.08 * tm('garcom') + 0.04 * tm('tecnica') + 0.05 * tm('cabeceio') + 0.2 * tm('aereo');
+    const aMul = 1 - 0.08 * tm('artilheiro') + 0.08 * tm('garcom') + 0.04 * tm('tecnica') + 0.3 * tm('saida');
+    g90 *= 1.14 * teamF * form * (1 + c.mod.goal) * gMul;
+    a90 *= 1.22 * teamF * form * (1 + c.mod.assist) * aMul;
 
     let goals = 0, assists = 0;
     const highlights = [];
@@ -73,7 +82,7 @@
     // jogos sem sofrer gol dependem da força defensiva do time, que o jogador defensivo puxa pela nota
     const leagueAll = D.CLUBS.filter(x => x.league === club.league);
     const lgAvg = leagueAll.reduce((a2, x) => a2 + x.strength, 0) / leagueAll.length;
-    const dS = club.strength + (isDef ? (o - club.strength) * 0.35 : 0);
+    const dS = club.strength + teamBoost + (isDef ? (o - club.strength) * 0.35 : 0) + 0.7 * tm('xerife') + 1 * tm('maofirme');
     const pCS = Math.exp(-1.45 * Math.exp((lgAvg - dS) / 12));
     let cleanSheets = 0, saves = 0, penFaced = 0, penSaved = 0, tackles = 0;
     for (let i = 0; i < games; i++) if (r() < pCS) cleanSheets++;
@@ -91,11 +100,11 @@
     const perGame = games ? (isDef
       ? (cleanSheets / games) * 0.85 + (goals * 1.2 + assists * 0.5) / games + (saves / games) * 0.35 + penSaved * 0.03 + (tackles / games) * 0.2
       : (goals + assists * 0.7) / games) : 0;
-    const rating = games ? clamp(round1(6.1 + perGame * 2.4 * (isDef ? 0.75 : 1) + (o - club.strength) * 0.03 + r.gauss() * 0.25), 5.0, 9.6) : 0;
+    const rating = games ? clamp(round1(6.1 + perGame * 2.4 * (isDef ? 0.75 : 1) + (o - club.strength) * 0.03 + 0.06 * tm('drible') + 0.08 * tm('libero') + 0.07 * tm('raca') + 0.06 * tm('estrela') + r.gauss() * 0.25), 5.0, 9.6) : 0;
 
     // Títulos: força do time + sua contribuição
     const contrib = games ? (rating - 6.5) * share * 2.2 : 0;
-    const sEff = club.strength + contrib;
+    const sEff = club.strength + contrib + teamBoost;
     const leagueClubs = D.CLUBS.filter(x => x.league === club.league);
     const top = Math.max(...leagueClubs.map(x => x.strength));
     // Defesa e físico pesam nos jogos grandes
@@ -201,8 +210,11 @@
 
     // Fama
     const fame0 = c.fame;
-    c.fame = Math.max(0, c.fame * 0.85 + (goals * 0.5 + assists * 0.35 + (isDef ? cleanSheets * 0.35 + saves * 0.1 + penSaved * 1.5 + tackles * 0.1 : 0) + titles.length * 6 + awards.length * 6 + (ballon ? 30 : 0) + club.tier * 2) * (0.8 + c.rel.fans / 250));
+    c.fame = Math.max(0, c.fame * 0.85 + 5 * S.tm(c, 'estrela') + (goals * 0.5 + assists * 0.35 + (isDef ? cleanSheets * 0.35 + saves * 0.1 + penSaved * 1.5 + tackles * 0.1 : 0) + titles.length * 6 + awards.length * 6 + (ballon ? 30 : 0) + club.tier * 2) * (0.8 + c.rel.fans / 250));
     const coach0 = c.rel.coach, fans0 = c.rel.fans;
+    // Líder agrada o técnico; Estrela irrita; Raça conquista a torcida
+    bump(c, 'coach', 4 * S.tm(c, 'lider') - (c.traits.includes('estrela') ? 1 : 0));
+    bump(c, 'fans', 3 * S.tm(c, 'raca'));
     if (games) {
       bump(c, 'coach', (rating - 6.6) * 10);
       bump(c, 'fans', (rating - 6.6) * 9 + titles.length * 6 + (M && M.type === 'classico' && M.ok ? 8 : 0) + (move ? (move.dir === 'up' ? 8 : -10) : 0) - (c.captain && rating < 6.8 ? 6 : 0));
@@ -213,12 +225,13 @@
     // Jogar muito e bem faz evoluir mais e pode até elevar o teto (potencial)
     const potUp = games >= 22 && rating >= 7.6 && c.age <= 26 ? (rating >= 8.2 ? 2 : 1) : 0;
     if (potUp) c.pot = Math.min(99, c.pot + potUp);
-    const growth = (c.pot - ovrOf(c.attrs, c.pos)) * AGE_GROWTH(c.age) * (0.3 + share * 1.25);
+    const growth = (c.pot - ovrOf(c.attrs, c.pos)) * AGE_GROWTH(c.age) * (0.3 + share * 1.25) * GROWTH_K * (c.age <= 24 ? 1 + 0.45 * S.tm(c, 'academia') : 1);
     const decline = AGE_DECLINE(c.age) * S.declMult(c);
     const luck = r.gauss() * 1.2;
     const delta = growth - decline + luck;
     const w = D.POS[c.pos].w;
     for (const k in c.attrs) c.attrs[k] = clamp(c.attrs[k] + delta * (0.5 + w[k] * 2.2) + r.gauss() * 0.6, 20, 99);
+    if (c.age >= 29) c.attrs.rit = clamp(c.attrs.rit - 1.0 * S.tm(c, 'velocista'), 20, 99); // Velocista perde velocidade mais cedo
     const ovr1 = S.ovr(c);
     if (ovr1 >= c.peak || !c.peakAttrs) c.peakAttrs = S.eff(c);
     c.peak = Math.max(c.peak, ovr1, o);

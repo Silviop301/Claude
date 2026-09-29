@@ -665,3 +665,6 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .prep-sec { font: 800 13px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--gold); margin: 14px 0 -2px; }
 .prep-done { background: rgba(123, 227, 160, .14); border: 1px solid rgba(123, 227, 160, .45); color: #CDEFD9; border-radius: 12px; padding: 10px 12px; font: 600 15px/1.35 var(--body); animation: enter .4s ease; }
 .prep-done b { color: var(--gold); }
+.choice .fx { display: inline-block; margin-top: 3px; font-weight: 600; color: #3E5A4A; }
+.choice .fx .warn { font-weight: 400; }
+.prep-note { margin: 2px 0 0; }

@@ -19,10 +19,12 @@
 
   // Texto de atributos: "+4 FIN · +1 DRI"
   const attrTxt = at => Object.keys(at).filter(k => at[k]).map(k => (at[k] > 0 ? '+' : '') + at[k] + ' ' + D.label(G.c.pos, k)).join(' · ');
+  // Texto da opção: atributos que entram agora + o efeito no nível escolhido
   function traitTxt(t, lv) {
     const at = {};
     for (const k in t.attr) at[k] = Math.round(t.attr[k] * D.TRAIT_LV[lv]) - (lv > 1 ? Math.round(t.attr[k] * D.TRAIT_LV[lv - 1]) : 0);
-    return attrTxt(at) + (t.perk ? ' · ' + t.perk : '');
+    const a = attrTxt(at), fx = t.fx ? t.fx(D.TRAIT_LV[lv]) : '';
+    return (a ? a + '<br>' : '') + '<span class="fx">' + (lv > 1 ? 'Nv ' + lv + ': ' : '') + esc(fx).replace('⚠️', '<b class="warn">⚠️</b>') + '</span>';
   }
 
   // Mini carta da pré-temporada: mostra os atributos atuais e, ao escolher, quanto cada um muda
@@ -115,7 +117,7 @@
   // Esta temporada termina em ano de Copa? Mostra a nota que a seleção pede
   function wcHint() {
     if ((S.YEAR0 + G.c.season + 1) % 4 !== 2 || G.c.age + 1 < 18) return '';
-    const n = D.NATION_BY_NAME[G.c.country], cut = S.wcCut(n), o = S.ovr(G.c);
+    const n = D.NATION_BY_NAME[G.c.country], cut = S.wcCut(n, G.c), o = S.ovr(G.c);
     return '<p class="wc-hint">' + n.flag + ' Ano de Copa: a seleção convoca com nota <b>' + cut + '</b>' + (o >= cut ? ' · você já está dentro' : ' · faltam ' + (cut - o)) + '</p>';
   }
 
@@ -135,16 +137,20 @@
     G.step = preCh.done ? 'invest' : 'preseason';
     save();
     bar();
-    const label = { new: 'NOVA', up: 'EVOLUIR', swap: 'TROCAR' };
+    const label = { new: 'NOVA', up: 'EVOLUIR' };
+    const done = S.buildDone(G.c);
     const hasInv = G.c.money >= S.investPrice(G.c);
     render(
       '<div class="eyebrow">Pré-temporada · ' + year() + (G.c.farewell ? ' · temporada de despedida' : '') + '</div>' +
       '<h2>Prepare a temporada</h2>' + wcHint() + miniCard() +
       (justAdded ? '<div class="prep-done">' + justAdded + '</div>' : '') +
-      (ch.length ? '<div class="prep-sec">' + (G.c.traits.length >= S.MAX_SLOTS ? 'Evolua ou troque uma característica' : 'Escolha uma característica') + '</div>' + traitsHtml() +
+      (done && !justAdded ? '<div class="prep-sec">Características</div>' + traitsHtml() + '<p class="muted small">✅ Build completo: todas no nível máximo.</p>' : '') +
+      (ch.length ? '<div class="prep-sec">' + (G.c.traits.length >= S.MAX_SLOTS ? 'Evolua uma característica' : 'Escolha uma característica') + '</div>' +
+        '<p class="muted small prep-note">' + (() => { const [a, b] = S.mainAttrs(G.c.pos); return 'Cada nível de qualquer característica também soma +1 ' + D.label(G.c.pos, a) + ' (e +1 ' + D.label(G.c.pos, b) + ' a cada 2).'; })() +
+          (G.c.traits.length < S.MAX_SLOTS ? ' Não dá para trocar depois: o que entra fica a carreira toda.' : '') + '</p>' + traitsHtml() +
         '<div class="choices">' + ch.map((x, i) =>
           '<button class="choice' + (x.completes ? ' combo' : '') + '" data-i="' + i + '"><span class="ic">' + x.trait.icon + '</span>' +
-          '<b>' + x.trait.name + (x.type === 'up' ? ' → Nv ' + x.lv : '') + ' <span class="tag ' + (x.type === 'up' ? 'green' : x.type === 'swap' ? 'red' : 'blue') + '">' + label[x.type] + '</span></b>' +
+          '<b>' + x.trait.name + (x.type === 'up' ? ' → Nv ' + x.lv : '') + ' <span class="tag ' + (x.type === 'up' ? 'green' : 'blue') + '">' + label[x.type] + '</span></b>' +
           '<span class="d">' + traitTxt(x.trait, x.lv) +
           (x.completes ? '<br><span class="tag gold">Completa ' + x.completes.icon + ' ' + x.completes.name + ': ' + attrTxt(x.completes.attr) + '</span>' : '') + '</span></button>').join('') + '</div>' : '') +
       (hasInv ? '<div class="prep-sec">Investimentos</div>' +
@@ -185,8 +191,8 @@
       act.hidden = false;
       if (sel.i !== undefined) {
         const x = ch[sel.i];
-        act.innerHTML = x.type === 'swap' ? 'Escolher o que sai para ' + esc(x.trait.name) + ' entrar' : 'Confirmar ' + esc(x.trait.name) + (x.type === 'up' ? ' Nv ' + x.lv : '');
-        showPreview(x.type === 'swap' ? null : S.preview(G.c, x.type === 'up' ? { up: x.trait.id } : { add: x.trait.id }));
+        act.innerHTML = 'Confirmar ' + esc(x.trait.name) + (x.type === 'up' ? ' Nv ' + x.lv : '');
+        showPreview(S.preview(G.c, x.type === 'up' ? { up: x.trait.id } : { add: x.trait.id }));
       } else {
         act.innerHTML = 'Comprar ' + esc(D.investName(D.INVEST_BY_ID[sel.v], G.c.pos)) + '<small>R$ ' + money(S.investPrice(G.c)) + '</small>';
         showPreview(S.preview(G.c, { buy: sel.v }));
@@ -199,12 +205,12 @@
       if (!sel) return go();
       if (sel.i !== undefined) {
         const x = ch[sel.i];
-        if (x.type === 'swap') return chooseSwap(x);
         const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
         sfx('levelup');
         let done;
         if (x.type === 'up') { S.upgradeTrait(G.c, x.trait.id); done = '✓ ' + x.trait.icon + ' ' + x.trait.name + ' evoluiu para o Nv ' + x.lv; }
         else { const syn = S.addTrait(G.c, x.trait.id); done = '✓ ' + x.trait.icon + ' ' + x.trait.name + ' entrou' + (syn ? '<br><b>' + syn.icon + ' Combinação desbloqueada: ' + syn.name + '</b> · ' + attrTxt(syn.attr) + (syn.extra ? ' · ' + syn.extra : '') : ''); }
+        if (S.buildDone(G.c)) done += '<br><b>🏁 Build completo!</b> Suas 5 características estão no nível máximo.';
         preCh.done = true;
         showPreview(null);
         bar();
@@ -224,28 +230,5 @@
     refresh();
   }
 
-  // Espaços cheios: escolher qual característica sai (mostra o que se perde)
-  function chooseSwap(x) {
-    const inSyn = new Set(S.synergies(G.c).flatMap(s => [s.a, s.b]));
-    render(
-      '<div class="eyebrow">Trocar característica</div><h2>O que sai para ' + x.trait.icon + ' ' + x.trait.name + ' entrar?</h2>' + miniCard() +
-      '<div class="choices">' + G.c.traits.map((id, i) => {
-        const t = D.TRAIT_BY_ID[id], lv = S.traitLevel(G.c, id);
-        const lose = {};
-        for (const k in t.attr) lose[k] = -Math.round(t.attr[k] * D.TRAIT_LV[lv]);
-        return '<button class="choice" data-r="' + i + '" data-ok="Trocar ' + esc(t.name) + ' por ' + esc(x.trait.name) + '"><span class="ic">' + t.icon + '</span><b>' + t.name + ' · Nv ' + lv + '</b><span class="d">' +
-          (inSyn.has(id) ? '<span class="tag red">Desfaz uma combinação</span> ' : '') + 'Na carta: ' + (attrTxt(lose).replace(/-/g, '−') || 'sem mudança') + (t.perk ? ' · perde: ' + t.perk : '') + '</span></button>';
-      }).join('') + '</div><button class="btn" id="b-ok" disabled>Toque numa opção para ver na carta</button><button class="btn ghost" id="b-back">Voltar</button>'
-    );
-    pickable('[data-r]', b => S.preview(G.c, { add: x.trait.id, remove: G.c.traits[+b.dataset.r] }), b => {
-      sfx('levelup');
-      const out = D.TRAIT_BY_ID[G.c.traits[+b.dataset.r]];
-      const syn = S.addTrait(G.c, x.trait.id, G.c.traits[+b.dataset.r]);
-      return () => prep(true, '✓ ' + x.trait.icon + ' ' + x.trait.name + ' entrou no lugar de ' + out.icon + ' ' + out.name +
-        (syn ? '<br><b>' + syn.icon + ' Combinação desbloqueada: ' + syn.name + '</b> · ' + attrTxt(syn.attr) + (syn.extra ? ' · ' + syn.extra : '') : ''));
-    });
-    $('b-back').onclick = () => prep(false);
-  }
-
-  Object.assign(U, { traitsHtml, attrTxt, traitTxt, setTier, miniCard, showPreview, applyAnim, tweenCard, pickable, wcHint, preseason, chooseSwap, invest });
+  Object.assign(U, { traitsHtml, attrTxt, traitTxt, setTier, miniCard, showPreview, applyAnim, tweenCard, pickable, wcHint, preseason, invest });
 })();
