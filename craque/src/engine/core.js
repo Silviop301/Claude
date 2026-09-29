@@ -121,7 +121,7 @@
       v: 2, seed: r.state(),
       name: opts.name, pos: opts.pos, foot: opts.foot, country: opts.country, number: opts.number || D.POS_NUM[opts.pos] || 10,
       age: 16, season: 0, attrs,
-      pot: Math.round(55 + 25 * Math.pow(r(), 1.5)), // potencial escondido; temporadas muito boas elevam o teto
+      pot: Math.round(57 + 30 * Math.pow(r(), 1.6)), // potencial escondido; temporadas muito boas elevam o teto
       traits: [], club: null, clubSince: 0, firstClub: null,
       fame: 0, money: 0, wage: 0,
       mod: { min: 0, form: 0, inj: 0, goal: 0, assist: 0 },

@@ -204,7 +204,7 @@
     c.wcBoost = 0;
     // Cada Bola de Ouro anterior aumenta a exigência (a concorrência cresce)
     // Defensor raramente ganha a Bola de Ouro (como na vida real)
-    const pBallon = club.tier >= 4 && o >= 87 ? clamp(1 / (1 + Math.exp(-(bScore - 92 - 9 * c.totals.ballon) / 7)) * (club.tier === 5 ? 0.6 : 0.2) * (isDef ? 0.45 : 1), 0, 0.6) : 0;
+    const pBallon = club.tier >= 4 && o >= 88 ? clamp(1 / (1 + Math.exp(-(bScore - 101 - 9 * c.totals.ballon) / 7)) * (club.tier === 5 ? 0.6 : 0.2) * (isDef ? 0.45 : 1), 0, 0.6) : 0;
     const ballon = r() < pBallon;
     if (ballon) awards.push({ id: 'ballon', name: 'BOLA DE OURO' });
 
