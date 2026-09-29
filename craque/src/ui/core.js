@@ -45,7 +45,10 @@
     $('bar-sub').innerHTML = crest(cl.id, 'xs') + esc(cl.name) + ' · ' + G.c.age + ' anos';
     $('bar-rel').innerHTML = meter('👔 Técnico', G.c.rel.coach) + meter('📣 Torcida', G.c.rel.fans);
     const T = G.c.totals;
-    $('bar-tot').innerHTML = '<span>' + T.goals + '<small>GOLS</small></span><span>' + T.assists + '<small>ASSIST</small></span><span>' + (T.league + T.cup + T.cont) + '<small>TAÇAS</small></span>';
+    // Números do topo por posição: goleiro (sem sofrer gol, pênaltis defendidos), zagueiro (gols, sem sofrer gol)
+    const tot = G.c.pos === 'GOL' ? [[T.cs || 0, 'S/ GOL'], [T.penSaved || 0, 'PÊN. DEF']]
+      : G.c.pos === 'ZAG' ? [[T.goals, 'GOLS'], [T.cs || 0, 'S/ GOL']] : [[T.goals, 'GOLS'], [T.assists, 'ASSIST']];
+    $('bar-tot').innerHTML = tot.map(([v, l]) => '<span>' + v + '<small>' + l + '</small></span>').join('') + '<span>' + (T.league + T.cup + T.cont) + '<small>TAÇAS</small></span>';
     const o = S.ovr(G.c);
     const el = $('bar-ovr');
     el.textContent = o;

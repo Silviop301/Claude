@@ -132,6 +132,9 @@
   }
 
   // opts: { c, moment, onDone(ok) }
+  // Peças reaproveitadas pelo minigame do goleiro (defend.js)
+  root.CRAQUE_KICK_PARTS = { scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease };
+
   root.CRAQUE_KICK = function (el, opts) {
     const c = opts.c, m = opts.moment;
     const setup = S().kickSetup(c, m.type);

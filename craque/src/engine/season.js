@@ -39,8 +39,14 @@
     // Gols saem da finalização (e do que ajuda a chegar nela); assistências, do passe e do drible
     const gA = E.fin * 0.5 + E.rit * 0.2 + E.dri * 0.15 + E.fis * 0.15;
     const aA = E.pas * 0.55 + E.dri * 0.25 + E.rit * 0.1 + E.fin * 0.1;
-    let g90 = (c.pos === 'ATA' ? 0.1 + Math.max(0, gA - 45) * 0.0125 : 0.04 + Math.max(0, gA - 45) * 0.0055);
-    let a90 = (c.pos === 'ATA' ? 0.04 + Math.max(0, aA - 45) * 0.0045 : 0.06 + Math.max(0, aA - 45) * 0.0075);
+    const isDef = D.DEF_POS.includes(c.pos);
+    let g90, a90;
+    if (c.pos === 'ATA') { g90 = 0.1 + Math.max(0, gA - 45) * 0.0125; a90 = 0.04 + Math.max(0, aA - 45) * 0.0045; }
+    else if (c.pos === 'MEI') { g90 = 0.04 + Math.max(0, gA - 45) * 0.0055; a90 = 0.06 + Math.max(0, aA - 45) * 0.0075; }
+    else if (c.pos === 'ZAG') { // gols de cabeça em bola parada; poucas assistências
+      g90 = 0.025 + Math.max(0, E.fis * 0.4 + E.fin * 0.3 + E.def * 0.3 - 45) * 0.0014;
+      a90 = 0.01 + Math.max(0, E.pas - 45) * 0.0009;
+    } else { g90 = 0; a90 = 0.002; } // goleiro
     g90 *= 1.14 * teamF * form * (1 + c.mod.goal);
     a90 *= 1.22 * teamF * form * (1 + c.mod.assist);
 
@@ -60,9 +66,29 @@
     if (c.traits.includes('colocado') && c.traits.includes('parada') && goals > 5) highlights.push('🌟 ' + Math.max(2, Math.round(goals * 0.18)) + ' gols de falta');
     if (injName) highlights.push('🤕 ' + injName[0].toUpperCase() + injName.slice(1) + ': perdeu ' + Math.round(injShare * 100) + '% da temporada');
 
+    // Defesa (todas as posições registram; zagueiro e goleiro são avaliados por isso):
+    // jogos sem sofrer gol dependem da força defensiva do time, que o jogador defensivo puxa pela nota
+    const leagueAll = D.CLUBS.filter(x => x.league === club.league);
+    const lgAvg = leagueAll.reduce((a2, x) => a2 + x.strength, 0) / leagueAll.length;
+    const dS = club.strength + (isDef ? (o - club.strength) * 0.35 : 0);
+    const pCS = Math.exp(-1.45 * Math.exp((lgAvg - dS) / 12));
+    let cleanSheets = 0, saves = 0, penFaced = 0, penSaved = 0, tackles = 0;
+    for (let i = 0; i < games; i++) if (r() < pCS) cleanSheets++;
+    if (c.pos === 'GOL') {
+      saves = r.poisson(games * clamp(0.3 + (E.fin + E.fis - 110) / 180, 0.15, 0.8));
+      penFaced = r.poisson(games * 0.11);
+      const pPen = clamp(0.16 + (E.fin + E.def - 120) / 320 + (c.traits.includes('pegador') ? 0.05 * S.traitLevel(c, 'pegador') : 0), 0.08, 0.45);
+      for (let i = 0; i < penFaced; i++) if (r() < pPen) penSaved++;
+    }
+    if (c.pos === 'ZAG') tackles = r.poisson(games * clamp(0.12 + (E.def - 60) / 150, 0.05, 0.45));
+    if (isDef && games >= 20 && cleanSheets / games >= 0.45) highlights.push('🧱 Muralha: ' + cleanSheets + ' jogos sem sofrer gol');
+    if (penSaved >= 2) highlights.push('🧤 ' + penSaved + ' pênaltis defendidos na temporada');
+
     // Nota média
-    const perGame = games ? (goals + assists * 0.7) / games : 0;
-    const rating = games ? clamp(round1(6.1 + perGame * 2.4 + (o - club.strength) * 0.03 + r.gauss() * 0.25), 5.0, 9.6) : 0;
+    const perGame = games ? (isDef
+      ? (cleanSheets / games) * 0.85 + (goals * 1.2 + assists * 0.5) / games + (saves / games) * 0.35 + penSaved * 0.03 + (tackles / games) * 0.2
+      : (goals + assists * 0.7) / games) : 0;
+    const rating = games ? clamp(round1(6.1 + perGame * 2.4 * (isDef ? 0.75 : 1) + (o - club.strength) * 0.03 + r.gauss() * 0.25), 5.0, 9.6) : 0;
 
     // Títulos: força do time + sua contribuição
     const contrib = games ? (rating - 6.5) * share * 2.2 : 0;
@@ -127,12 +153,17 @@
         cont: M.ok ? '🌍 ' + (M.kick === 'fk' ? 'Seu gol de falta' : 'Seu pênalti') + ' decidiu a final da ' + M.comp + ' contra ' + D.o(vsName) + '!'
           : '😞 ' + (M.kick === 'fk' ? 'Falta desperdiçada' : 'Pênalti perdido') + ' na final da ' + M.comp + ' contra ' + D.o(vsName),
       }[M.type];
-      highlights.unshift(hl);
+      // Zagueiro e goleiro: o lance é defensivo (pênalti contra ou contra-ataque no fim)
+      const where = { cup: 'na final da ' + M.comp, title: 'na última rodada', classico: 'no clássico', cont: 'na final da ' + M.comp }[M.type];
+      const defHl = M.kick === 'save' ? (M.ok ? '🧤 Pênalti defendido ' + where + ' contra ' + D.o(vsName) + '!' : '😞 Pênalti sofrido ' + where + ' contra ' + D.o(vsName))
+        : M.kick === 'tackle' ? (M.ok ? '🛡️ Desarme salvador ' + where + ' contra ' + D.o(vsName) + '!' : '😞 O atacante passou ' + where + ' contra ' + D.o(vsName))
+        : null;
+      highlights.unshift(defHl || hl);
     }
     if (league && rival && !(M && M.type === 'title')) highlights.push('🏆 Título garantido na última rodada contra ' + D.o(rival.name));
     if (cup && other && !(M && M.type === 'cup')) highlights.push('🏆 Final da ' + (lg.cup || 'copa') + ' contra ' + D.o(other.name) + (goals > 5 ? ': gol seu!' : ''));
     if (cont && contName && !(M && M.type === 'cont')) highlights.push('🌍 Campeão da ' + contName + '!');
-    if (!league && rival && games >= 10 && goals + assists >= 8) highlights.push('⚔️ Decidiu o clássico contra ' + D.o(rival.name));
+    if (!league && rival && games >= 10 && (isDef ? cleanSheets >= 15 : goals + assists >= 8)) highlights.push((isDef ? '🛡️ Segurou o zero no clássico contra ' : '⚔️ Decidiu o clássico contra ') + D.o(rival.name));
     if (!league && pos >= 14 && games >= 10 && !move) highlights.push('😰 Temporada de sufoco na parte de baixo da tabela');
 
     // Prêmios
@@ -140,19 +171,24 @@
     const scorerLine = 17 + club.tier * 2 + r.range(-3, 3);
     if (goals >= scorerLine && c.pos === 'ATA') awards.push({ id: 'scorer', name: 'Artilheiro ' + D.da(lg.name) });
     if (c.pos === 'MEI' && assists >= 14 + club.tier + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Líder de assistências ' + D.da(lg.name) });
+    if (c.pos === 'ZAG' && games >= 25 && rating >= 7.1 + r.range(-0.15, 0.15)) awards.push({ id: 'scorer', name: 'Melhor zagueiro ' + D.da(lg.name) });
+    if (c.pos === 'GOL' && games >= 25 && cleanSheets >= 15 + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Luva de Ouro ' + D.da(lg.name) });
     if (c.age <= 21 && rating >= 7.2 && club.tier >= 3) awards.push({ id: 'young', name: 'Melhor jovem ' + D.da(lg.name) });
     if (rating >= 7.5 && games >= 20) awards.push({ id: 'team', name: 'Seleção ' + D.da(lg.name) });
     // Bola de Ouro: só em clubes de nível 4-5
-    const bScore = goals + assists * 0.6 + titles.length * 8 + (cont ? 10 : 0) + (rating - 6) * 12 + (c.wcBoost || 0);
+    // Defensores entram pela muralha (jogos sem sofrer gol, defesas, pênaltis defendidos)
+    const prod = isDef ? goals * 2 + assists * 0.6 + cleanSheets * 0.9 + saves * 0.2 + penSaved * 2 + tackles * 0.1 : goals + assists * 0.6;
+    const bScore = prod + titles.length * 8 + (cont ? 10 : 0) + (rating - 6) * 12 + (c.wcBoost || 0);
     c.wcBoost = 0;
     // Cada Bola de Ouro anterior aumenta a exigência (a concorrência cresce)
-    const pBallon = club.tier >= 4 && o >= 87 ? clamp(1 / (1 + Math.exp(-(bScore - 92 - 9 * c.totals.ballon) / 7)) * (club.tier === 5 ? 0.6 : 0.2), 0, 0.6) : 0;
+    // Defensor raramente ganha a Bola de Ouro (como na vida real)
+    const pBallon = club.tier >= 4 && o >= 87 ? clamp(1 / (1 + Math.exp(-(bScore - 92 - 9 * c.totals.ballon) / 7)) * (club.tier === 5 ? 0.6 : 0.2) * (isDef ? 0.45 : 1), 0, 0.6) : 0;
     const ballon = r() < pBallon;
     if (ballon) awards.push({ id: 'ballon', name: 'BOLA DE OURO' });
 
     // Fama
     const fame0 = c.fame;
-    c.fame = Math.max(0, c.fame * 0.85 + (goals * 0.5 + assists * 0.35 + titles.length * 6 + awards.length * 6 + (ballon ? 30 : 0) + club.tier * 2) * (0.8 + c.rel.fans / 250));
+    c.fame = Math.max(0, c.fame * 0.85 + (goals * 0.5 + assists * 0.35 + (isDef ? cleanSheets * 0.35 + saves * 0.1 + penSaved * 1.5 + tackles * 0.1 : 0) + titles.length * 6 + awards.length * 6 + (ballon ? 30 : 0) + club.tier * 2) * (0.8 + c.rel.fans / 250));
     const coach0 = c.rel.coach, fans0 = c.rel.fans;
     if (games) {
       bump(c, 'coach', (rating - 6.6) * 10);
@@ -185,6 +221,7 @@
     c.money += c.wage * 52;
     const T = c.totals;
     T.games += games; T.goals += goals; T.assists += assists;
+    T.cs = (T.cs || 0) + cleanSheets; T.saves = (T.saves || 0) + saves; T.penSaved = (T.penSaved || 0) + penSaved; T.tackles = (T.tackles || 0) + tackles;
     if (league) T.league++;
     if (cup) T.cup++;
     if (cont) T.cont++;
@@ -200,10 +237,12 @@
     if (ballon) { c.trophies['Bola de Ouro'] = c.trophies['Bola de Ouro'] || { type: 'ballon', n: 0 }; c.trophies['Bola de Ouro'].n++; }
     const sp = c.spells[c.spells.length - 1];
     sp.games += games; sp.goals += goals; sp.assists += assists; sp.titles += titles.length; sp.to = c.age;
+    sp.cs = (sp.cs || 0) + cleanSheets;
     sp.seasons = (sp.seasons || 0) + 1;
 
     const res = {
       age: c.age, club: club.id, role: role.name, games, goals, assists, rating, titles, awards,
+      cleanSheets, saves, penSaved, tackles, pos: c.pos,
       ovr0, ovr1, fame0: Math.round(fame0), fame1: Math.round(c.fame), injury: injName ? Math.round(injShare * 100) : 0,
       coach0: Math.round(coach0), coach1: Math.round(c.rel.coach), fans0: Math.round(fans0), fans1: Math.round(c.rel.fans),
       highlights, event: c.lastEvent || null, table, why, farewell: !!c.farewell,
@@ -232,6 +271,9 @@
     else if (s.titles.length) h.push(club + (D.fem(club) ? ' é campeã' : ' é campeão') + ' com ' + nick + ' em campo');
     if (s.goals >= 30) h.push(s.goals + ' gols: ' + nick + ' vira pesadelo das defesas');
     else if (s.assists >= 15) h.push('O garçom da liga: ' + s.assists + ' assistências de ' + nick);
+    else if (s.penSaved >= 2) h.push('Pegador! ' + nick + ' defende ' + s.penSaved + ' pênaltis na temporada');
+    else if (s.cleanSheets >= 18) h.push(s.cleanSheets + ' jogos sem sofrer gol: ' + nick + ' fecha a defesa ' + D.do(club));
+    else if (s.pos === 'ZAG' && s.goals >= 5) h.push('Zagueiro artilheiro: ' + nick + ' marca ' + s.goals + ' gols de cabeça');
     if (s.ovr1 - s.ovr0 >= 5) h.push(nick + ' não para de evoluir');
     if (s.ovr1 - s.ovr0 <= -4) h.push('Idade pesa? ' + nick + ' já não é o mesmo');
     if (s.injury >= 25) h.push('Lesão atrapalha temporada de ' + nick);

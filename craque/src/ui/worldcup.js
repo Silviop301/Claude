@@ -29,7 +29,11 @@
     return '<div class="wc-game ' + (g.pens && g.pensWon !== undefined ? (g.pensWon ? 'w' : 'l') : res) + '"><span class="st">' + esc(g.stage) + '</span>' +
       '<div class="line"><span class="us">' + D.NATION_BY_NAME[G.c.country].flag + '</span><b>' + g.gf + ' × ' + g.ga + '</b><span class="them">' + g.flag + ' ' + esc(g.opp) + '</span></div>' +
       (me ? '<span class="me">' + me + '</span>' : '') + pen +
-      (g.moment ? '<span class="mom ' + (g.momentOk ? 'ok' : 'ko') + '">' + g.moment.minute + "' " + (g.moment.type === 'pen' ? (g.momentOk ? 'pênalti convertido' : 'pênalti desperdiçado') : (g.momentOk ? 'falta convertida' : 'falta desperdiçada')) + '</span>' : '') +
+      (g.moment ? '<span class="mom ' + (g.momentOk ? 'ok' : 'ko') + '">' + g.moment.minute + "' " + ({
+        pen: g.momentOk ? 'pênalti convertido' : 'pênalti desperdiçado', fk: g.momentOk ? 'falta convertida' : 'falta desperdiçada',
+        save: g.momentOk ? 'pênalti defendido' : 'pênalti sofrido', tackle: g.momentOk ? 'desarme salvador' : 'atacante passou',
+      }[g.moment.type]) + '</span>' : '') +
+      (S.defKick(G.c.pos) && g.cs && !g.live ? '<span class="mom ok">🧤 sem sofrer gol</span>' : '') +
       (g.rating ? '<span class="rt' + (g.motm ? ' motm' : '') + '">' + (g.motm ? '⭐ Craque do jogo · ' : 'Nota ') + g.rating.toFixed(1).replace('.', ',') + '</span>' : '') +
       (g.groupEnd ? '<div class="grp ' + (g.groupEnd.pass ? 'ok' : 'ko') + '">' + (g.groupEnd.pass ? 'Classificado com ' + g.groupEnd.pts + ' pontos' : 'Eliminado na fase de grupos (' + g.groupEnd.pts + ' pts)') + '</div>' : '') + '</div>';
   }
@@ -69,22 +73,25 @@
     const run = G.c.wcRun, g = run.games[run.games.length - 1], m = g.moment;
     // Fechou o jogo no meio da cobrança: a chance decide
     if (run.momentStarted) { S.wcMomentAuto(G.c); save(); return wcPlay(); }
-    const type = m.type === 'pen' ? 'cup' : 'classico';
+    const type = S.kickSetupType({ kick: m.type }), def = type === 'save' || type === 'tackle';
     const k = S.kickSetup(G.c, type), d = g.gf - g.ga, ko = run.stage >= 3;
     const gain = d === 0 ? (ko ? 'classifica' : 'vitória') : d === -1 ? (ko ? 'leva para os pênaltis' : 'empata') : d >= 1 ? 'amplia' : 'diminui';
+    // Defensor: o que acontece se falhar (gol deles)
+    const lose = d >= 2 ? 'diminuem' : d === 1 ? (ko ? 'empatam e vai para os pênaltis' : 'empatam') : d === 0 ? (ko ? 'eliminado' : 'derrota') : 'aumentam';
     const us = D.NATION_BY_NAME[G.c.country];
     const h = $('wc-hint'); if (h) h.remove();
     $('wc-after').innerHTML = '<div class="card event-card wc-live"><span class="st">' + esc(g.stage) + ' · ' + m.minute + "'</span>" +
       '<div class="line"><span>' + us.flag + '</span><b>' + g.gf + ' × ' + g.ga + '</b><span>' + g.flag + ' ' + esc(g.opp) + '</span></div>' +
-      '<h2>' + (m.type === 'pen' ? 'Pênalti para ' + theCountry(G.c.country) + '!' : 'Falta perigosa na entrada da área!') + '</h2>' +
-      '<p class="stakes">Converteu: ' + gain + '</p></div>' +
-      '<button class="btn" id="b-kick">' + (m.type === 'pen' ? 'Bater o pênalti' : 'Bater a falta') + '</button><button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>';
+      '<h2>' + ({ pen: 'Pênalti para ' + theCountry(G.c.country) + '!', fk: 'Falta perigosa na entrada da área!', save: 'Pênalti contra ' + theCountry(G.c.country) + '!', tackle: 'Contra-ataque perigoso!' }[m.type]) + '</h2>' +
+      '<p class="stakes">' + (def ? (type === 'save' ? 'Defendeu: segura o placar · Sofreu: ' : 'Desarmou: segura o placar · Passou: ') + lose : 'Converteu: ' + gain) + '</p></div>' +
+      '<div class="chips">' + U.miniFacts(type).join('') + '</div>' +
+      '<button class="btn" id="b-kick">' + U.MINI_BTN[type] + '</button><button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>';
     $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     sfx('whistle');
     $('b-kick').onclick = () => {
       run.momentStarted = true; save();
       render('<div class="eyebrow">Copa do Mundo ' + run.year + ' · ' + esc(g.stage) + ' · ' + m.minute + "'</div><div id=\"kick\"></div>");
-      window.CRAQUE_KICK($('kick'), { c: G.c, moment: { type }, onDone: ok => { S.wcMoment(G.c, ok); save(); wcPlay(); } });
+      U.playMini($('kick'), type, ok => { S.wcMoment(G.c, ok); save(); wcPlay(); });
     };
     $('b-auto').onclick = () => { S.wcMomentAuto(G.c); save(); wcPlay(); };
   }
@@ -94,15 +101,18 @@
     const run = G.c.wcRun, g = run.games[run.games.length - 1];
     // Fechou o jogo no meio da cobrança: a chance decide
     if (run.pensStarted) { S.wcPensAuto(G.c); run.pensStarted = false; save(); return wcPlay(); }
-    const k = S.kickSetup(G.c, 'cup');
-    $('wc-after').innerHTML = '<div class="card event-card wc-pens"><h2>Pênaltis!</h2><p style="margin:0">' + esc(g.stage) + ' contra ' + g.flag + ' ' + esc(g.opp) + ' terminou ' + g.gf + ' × ' + g.ga + '. A disputa está empatada e você bate o último.</p>' +
-      '<p class="stakes">Converteu: ' + (run.stage === 6 ? 'campeão do mundo' : 'a seleção avança') + ' · Errou: eliminado</p></div>' +
-      '<button class="btn" id="b-kick">Bater o pênalti</button><button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>';
+    // Goleiro defende a última cobrança; os outros batem a última
+    const gk = S.wcPensType(G.c) === 'save', type = gk ? 'save' : 'cup';
+    const k = S.kickSetup(G.c, type);
+    $('wc-after').innerHTML = '<div class="card event-card wc-pens"><h2>Pênaltis!</h2><p style="margin:0">' + esc(g.stage) + ' contra ' + g.flag + ' ' + esc(g.opp) + ' terminou ' + g.gf + ' × ' + g.ga + '. A disputa está empatada e ' + (gk ? 'o último batedor deles vem para a bola.' : 'você bate o último.') + '</p>' +
+      '<p class="stakes">' + (gk ? 'Defendeu: ' : 'Converteu: ') + (run.stage === 6 ? 'campeão do mundo' : 'a seleção avança') + ' · ' + (gk ? 'Sofreu' : 'Errou') + ': eliminado</p></div>' +
+      '<div class="chips">' + U.miniFacts(type).join('') + '</div>' +
+      '<button class="btn" id="b-kick">' + U.MINI_BTN[type] + '</button><button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>';
     $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     $('b-kick').onclick = () => {
       run.pensStarted = true; save();
       render('<div class="eyebrow">Copa do Mundo ' + run.year + ' · Pênaltis</div><div id="kick"></div>');
-      window.CRAQUE_KICK($('kick'), { c: G.c, moment: { type: 'cup' }, onDone: ok => { run.pensStarted = false; S.wcPens(G.c, ok); save(); wcPlay(); } });
+      U.playMini($('kick'), type, ok => { run.pensStarted = false; S.wcPens(G.c, ok); save(); wcPlay(); });
     };
     $('b-auto').onclick = () => { S.wcPensAuto(G.c); save(); wcPlay(); };
   }
@@ -117,7 +127,9 @@
     $('wc-after').innerHTML = (run.champion
       ? '<div class="wc-champ">' + trophy('wc', 96) + '<b>CAMPEÃO DO MUNDO!</b><span>' + D.NATION_BY_NAME[G.c.country].flag + ' ' + esc(G.c.country) + ' · ' + run.year + '</span></div>'
       : '<div class="wc-out">' + (run.reached === 'Final' ? 'Vice-campeão do mundo' : 'Eliminado: ' + run.reached.toLowerCase()) + '</div>') +
-      '<p class="wc-stats">Na Copa: ' + run.games.length + ' jogos · ' + run.g + (run.g === 1 ? ' gol' : ' gols') + ' · ' + run.a + (run.a === 1 ? ' assistência' : ' assistências') + '</p>' +
+      '<p class="wc-stats">Na Copa: ' + run.games.length + ' jogos · ' + (S.defKick(G.c.pos)
+        ? run.games.filter(x => x.cs).length + ' sem sofrer gol' + (run.g ? ' · ' + run.g + (run.g === 1 ? ' gol' : ' gols') : '')
+        : run.g + (run.g === 1 ? ' gol' : ' gols') + ' · ' + run.a + (run.a === 1 ? ' assistência' : ' assistências')) + '</p>' +
       '<button class="btn" id="b-next">' + (S.mustRetire(G.c) ? 'Ver sua carreira' : 'Seguir a carreira') + '</button>';
     if (run.champion) sfx('fanfare');
     $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });

@@ -73,7 +73,7 @@
     },
     {
       id: 'funcao', icon: '🔄', weight: 3,
-      when: c => atClub(c) >= 1,
+      when: c => atClub(c) >= 1 && ['ATA', 'MEI'].includes(c.pos),
       build: c => {
         const other = c.pos === 'ATA' ? 'meia armador' : 'falso 9';
         return {
@@ -231,7 +231,7 @@
     },
     {
       id: 'tecnico', icon: '🧑‍🏫', weight: 3, max: 3,
-      when: c => atClub(c) >= 1,
+      when: c => atClub(c) >= 1 && ['ATA', 'MEI'].includes(c.pos),
       build: c => ({
         title: 'Técnico novo, esquema novo',
         text: D.O(D.CLUB_BY_ID[c.club].name) + ' trocou de técnico. Ele quer você jogando aberto pela ponta.',
@@ -251,13 +251,13 @@
       id: 'mentor', icon: '🧓', weight: 4, max: 1,
       when: c => c.age <= 20 && !!c.club,
       build: c => {
-        const k = c.pos === 'ATA' ? 'fin' : 'pas';
+        const k = { ATA: 'fin', MEI: 'pas', ZAG: 'def', GOL: 'fin' }[c.pos]; // atributo principal da posição
         return {
           title: 'Um veterano quer te ensinar',
           text: 'O jogador mais experiente do elenco se ofereceu para treinar com você depois dos treinos.',
           attr: k,
           options: [
-            { label: 'Aceitar os treinos extras', hint: '+2 ' + D.ATTR_LABEL[k] + ' para sempre · Técnico +5' },
+            { label: 'Aceitar os treinos extras', hint: '+2 ' + D.label(c.pos, k) + ' para sempre · Técnico +5' },
             { label: 'Aproveitar a folga', hint: 'Forma +5% · Fama +3' },
           ],
         };
@@ -327,7 +327,7 @@
     },
     {
       id: 'faltas', icon: '🎯', weight: 3, max: 2,
-      when: c => !!c.club && c.age <= 31,
+      when: c => !!c.club && c.age <= 31 && c.pos !== 'GOL',
       build: () => ({
         title: 'Treino de faltas',
         text: 'O preparador propõe uma semana inteira batendo faltas depois do treino.',

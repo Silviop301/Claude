@@ -18,7 +18,7 @@
   }
 
   // Texto de atributos: "+4 FIN · +1 DRI"
-  const attrTxt = at => Object.keys(at).filter(k => at[k]).map(k => (at[k] > 0 ? '+' : '') + at[k] + ' ' + D.ATTR_LABEL[k]).join(' · ');
+  const attrTxt = at => Object.keys(at).filter(k => at[k]).map(k => (at[k] > 0 ? '+' : '') + at[k] + ' ' + D.label(G.c.pos, k)).join(' · ');
   function traitTxt(t, lv) {
     const at = {};
     for (const k in t.attr) at[k] = Math.round(t.attr[k] * D.TRAIT_LV[lv]) - (lv > 1 ? Math.round(t.attr[k] * D.TRAIT_LV[lv - 1]) : 0);
@@ -39,7 +39,7 @@
   function miniCard() {
     const E = S.eff(G.c), t = tierCls(S.ovr(G.c));
     return '<div class="mcard metal ' + t + '" id="mcard" data-t="' + t + '"><span class="mc-tier" id="mc-tier">' + TIER_NAME[t] + '</span><div class="mc-ovr"><b id="mc-ovr">' + S.ovr(G.c) + '</b><span>' + G.c.pos + (G.c.number ? ' ' + G.c.number : '') + '</span><i id="mc-ovr-d"></i></div><div class="mc-grid">' +
-      D.ATTRS.map(k => '<div class="mc-at" data-k="' + k + '"><b>' + E[k] + '</b><span>' + D.ATTR_LABEL[k] + '</span><i></i></div>').join('') + '</div></div>';
+      D.ATTRS.map(k => '<div class="mc-at" data-k="' + k + '"><b>' + E[k] + '</b><span>' + D.label(G.c.pos, k) + '</span><i></i></div>').join('') + '</div></div>';
   }
   function showPreview(p) {
     const E = S.eff(G.c), o = S.ovr(G.c);
@@ -189,7 +189,7 @@
       miniCard() +
       '<p class="muted small inv-tip">Escolha um investimento e confirme embaixo. O preço sobe a cada compra; o que sobrar vira patrimônio.</p>' +
       '<div class="choices inv-grid">' + D.INVEST.map(t => '<button class="choice inv" data-v="' + t.id + '"><span class="ic">' + t.icon + '</span>' +
-        '<b>' + t.name + '</b><span class="pips"></span><span class="d">' + (t.attr ? attrTxt(t.attr) : t.perk) + '</span><span class="price"></span></button>').join('') +
+        '<b>' + D.investName(t, G.c.pos) + '</b><span class="pips"></span><span class="d">' + (t.attr ? attrTxt(t.attr) : t.perk) + '</span><span class="price"></span></button>').join('') +
       '</div><div class="inv-bar"><button class="btn" id="b-buy" disabled>Escolha um investimento</button></div>' +
       '<button class="btn ghost" id="b-skip">Seguir para a temporada</button>'
     );
@@ -207,7 +207,7 @@
       // Botão de confirmar: mostra o que está escolhido e o preço
       const buy = $('b-buy'), ok = sel && S.canInvest(G.c, sel);
       buy.disabled = !ok;
-      const full = sel && (G.c.inv[sel] || 0) >= S.investMax(sel), nm = sel ? D.INVEST_BY_ID[sel].name : '';
+      const full = sel && (G.c.inv[sel] || 0) >= S.investMax(sel), nm = sel ? D.investName(D.INVEST_BY_ID[sel], G.c.pos) : '';
       buy.innerHTML = !sel ? 'Escolha um investimento' : full ? esc(nm) + ' no máximo' : ok ? 'Comprar ' + esc(nm) + '<small>R$ ' + money(price) + '</small>' : 'Sem saldo para ' + esc(nm);
       showPreview(ok ? S.preview(G.c, { buy: sel }) : null);
     };

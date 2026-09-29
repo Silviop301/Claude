@@ -54,29 +54,64 @@
     classico: m => ({ tag: 'Clássico', title: 'Falta perigosa no clássico!', text: 'Contra ' + D.o(club(m.vs).name) + ', na entrada da área. A barreira está armada.', stakes: 'Converteu: gol no clássico e Torcida +8' }),
   };
 
-  function momentIntro(m) {
-    const fk = S.kickType(m) === 'fk';
-    const T = MOMENT_TXT[m.type](m), k = S.kickSetup(G.c, S.kickSetupType(m)), E = S.eff(G.c);
+  // Lances defensivos (zagueiro/goleiro): o mesmo momento, visto do outro lado
+  const DEF_TXT = (m, mode) => {
+    const vs = D.o(club(m.vs).name), save = mode === 'save';
+    const what = save ? 'Pênalti contra' : 'Contra-ataque';
+    const goal = { cup: 'campeão da ' + m.comp, title: 'campeão da liga', cont: 'campeão da ' + m.comp, classico: 'o clássico é seu, Torcida +8' }[m.type];
+    return {
+      tag: { cup: 'Final da ' + m.comp, title: 'Última rodada · ' + m.comp, cont: 'Final da ' + m.comp, classico: 'Clássico' }[m.type],
+      title: save ? 'Pênalti contra nos acréscimos!' : 'Contra-ataque no último minuto!',
+      text: (save ? 'O camisa 9 ' + D.do(club(m.vs).name) + ' vai bater.' : 'O atacante ' + D.do(club(m.vs).name) + ' arrancou sozinho.') + ' Tudo depende de você contra ' + vs + '.',
+      stakes: (save ? 'Defendeu: ' : 'Desarmou: ') + goal + ' · ' + (m.type === 'classico' ? 'Falhou: gol deles' : 'Falhou: vice'),
+      what,
+    };
+  };
+  // Abre o minigame certo para o tipo do lance (chute, goleiro ou zagueiro)
+  function playMini(el, setupType, onDone) {
+    if (setupType === 'save') return window.CRAQUE_SAVE(el, { c: G.c, onDone });
+    if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, { c: G.c, onDone });
+    return window.CRAQUE_KICK(el, { c: G.c, moment: { type: setupType }, onDone });
+  }
+  // O que da carta pesa no lance, sem números escondidos
+  function miniFacts(setupType) {
+    const k = S.kickSetup(G.c, setupType), E = S.eff(G.c), L = kk => D.label(G.c.pos, kk);
     const lv = id => (G.c.traits.includes(id) ? S.traitLevel(G.c, id) : 0);
-    // O que da carta pesa no chute, sem números escondidos
-    const facts = ['<span class="chip">FIN ' + E.fin + ' · mira ' + (k.period >= 1.7 ? 'lenta' : k.period >= 1.35 ? 'média' : 'rápida') + '</span>',
+    if (setupType === 'save') return ['<span class="chip">' + L('fin') + ' ' + E.fin + ' · sinal do batedor ' + (k.tellMs >= 340 ? 'longo' : k.tellMs >= 220 ? 'médio' : 'curto') + '</span>',
+      '<span class="chip">' + L('fis') + ' ' + E.fis + ' · alcance ' + (k.diveReach >= 0.8 ? 'grande' : k.diveReach >= 0.66 ? 'médio' : 'curto') + '</span>'].concat(lv('pegador') ? ['<span class="chip">🥅 Pegador de pênalti: sinal mais longo</span>'] : []);
+    if (setupType === 'tackle') return ['<span class="chip">DEF ' + E.def + ' · faixa ' + (k.win >= 0.18 ? 'larga' : k.win >= 0.12 ? 'média' : 'estreita') + '</span>',
+      '<span class="chip">RIT ' + E.rit + ' · lance ' + (k.period >= 1.3 ? 'lento' : k.period >= 1.05 ? 'médio' : 'rápido') + '</span>'].concat(lv('carrinho') ? ['<span class="chip">🦵 Carrinho: faixa maior</span>'] : []);
+    const f = ['<span class="chip">FIN ' + E.fin + ' · mira ' + (k.period >= 1.7 ? 'lenta' : k.period >= 1.35 ? 'média' : 'rápida') + '</span>',
       '<span class="chip">Tremedeira ' + (k.wobble <= 0.03 ? 'nenhuma' : k.wobble <= 0.08 ? 'pouca' : 'muita') + '</span>'];
-    if (lv('colocado')) facts.push('<span class="chip">🎯 Chute Colocado: mira mais lenta</span>');
-    if (lv('frieza')) facts.push('<span class="chip">🧊 Frieza: menos tremedeira</span>');
-    if (fk && lv('parada')) facts.push('<span class="chip">🧱 Bola Parada: barreira mais fácil</span>');
+    if (lv('colocado')) f.push('<span class="chip">🎯 Chute Colocado: mira mais lenta</span>');
+    if (lv('frieza')) f.push('<span class="chip">🧊 Frieza: menos tremedeira</span>');
+    if (setupType === 'classico' && lv('parada')) f.push('<span class="chip">🧱 Bola Parada: barreira mais fácil</span>');
+    return f;
+  }
+  const MINI_HOW = {
+    cup: 'Dois toques: o primeiro trava a direção, o segundo a altura. O goleiro escolhe um canto; no ângulo ele não alcança.',
+    classico: 'Dois toques: o primeiro trava a direção, o segundo a altura. Passe por cima da barreira ou busque o ângulo.',
+    save: 'O batedor corre; pouco antes do chute aparece uma seta mostrando o lado. Toque na esquerda, no meio ou na direita para pular.',
+    tackle: 'O atacante arranca em direção ao gol. Toque quando ele passar pela faixa verde para dar o carrinho.',
+  };
+  const MINI_BTN = { cup: 'Bater o pênalti', classico: 'Bater a falta', save: 'Defender o pênalti', tackle: 'Dar o bote' };
+
+  function momentIntro(m) {
+    const st = S.kickSetupType(m), def = st === 'save' || st === 'tackle';
+    const T = def ? DEF_TXT(m, st) : MOMENT_TXT[m.type](m), k = S.kickSetup(G.c, st);
     render(
       '<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div>' +
       '<div class="card event-card moment-card"><div class="with-crest">' + crest(G.c.club) + '<b>×</b>' + crest(m.vs) + '</div><h2>' + T.title + '</h2><p style="margin:0">' + esc(T.text) + '</p><p class="stakes">' + esc(T.stakes) + '</p></div>' +
-      '<div class="chips">' + facts.join('') + '</div>' +
-      '<p class="lead small">Dois toques: o primeiro trava a direção, o segundo a altura. ' + (fk ? 'Passe por cima da barreira ou busque o ângulo.' : 'O goleiro escolhe um canto; no ângulo ele não alcança.') + '</p>' +
-      '<button class="btn" id="b-kick">' + (fk ? 'Bater a falta' : 'Bater o pênalti') + '</button>' +
+      '<div class="chips">' + miniFacts(st).join('') + '</div>' +
+      '<p class="lead small">' + MINI_HOW[st] + '</p>' +
+      '<button class="btn" id="b-kick">' + MINI_BTN[st] + '</button>' +
       '<button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>'
     );
     $('b-kick').onclick = () => {
       m.started = true; save();
       render('<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div><div id="kick"></div>');
       sfx('whistle');
-      window.CRAQUE_KICK($('kick'), { c: G.c, moment: { type: S.kickSetupType(m) }, onDone: (ok, why) => momentEnd(m, ok, T, why) });
+      playMini($('kick'), st, (ok, why) => momentEnd(m, ok, T, why));
     };
     $('b-auto').onclick = () => {
       const ok = S.autoMoment(G.c);
@@ -99,13 +134,20 @@
       classico: ok ? 'Golaço de falta! O clássico é seu.' : (how || 'Não foi dessa vez.') + ' A torcida lamenta.',
       cont: ok ? 'É campeão da ' + m.comp + '! Seu nome entrou para a história do clube.' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
     }[m.type];
+    // Lances defensivos: texto próprio
+    const st = S.kickSetupType(m);
+    const defTxt = st === 'save' ? (ok ? (why === 'fora' ? 'O batedor mandou para fora! ' : 'Que defesa! ') : 'Não deu: a bola entrou. ')
+      : st === 'tackle' ? (ok ? 'Carrinho perfeito, bola roubada! ' : why === 'cedo' ? 'Você chegou cedo e ele passou. ' : 'Chegou tarde: ele passou e marcou. ') : null;
+    const defEnd = { cup: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.', title: ok ? 'O título é seu!' : 'O título escapou.',
+      classico: ok ? 'O clássico é seu.' : 'A torcida lamenta.', cont: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.' }[m.type];
+    const final = defTxt !== null ? defTxt + defEnd : txt;
     render(
       '<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div>' +
-      '<div class="result ' + (ok ? 'ok' : 'ko') + '">' + txt + '</div>' +
+      '<div class="result ' + (ok ? 'ok' : 'ko') + '">' + final + '</div>' +
       '<button class="btn" id="b-next">Jogar a temporada</button>'
     );
     $('b-next').onclick = U.season;
   }
 
-  Object.assign(U, { eventOrSeason, eventScreen, momentOrSeason, MOMENT_TXT, momentIntro, momentEnd, momentResult });
+  Object.assign(U, { eventOrSeason, eventScreen, momentOrSeason, MOMENT_TXT, momentIntro, momentEnd, momentResult, playMini, miniFacts, MINI_BTN });
 })();

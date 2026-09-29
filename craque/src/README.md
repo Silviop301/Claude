@@ -14,6 +14,7 @@ Scripts clássicos (sem build), carregados pelo `index.html` nesta ordem.
 | `engine/market.js` | Propostas, contratos e transferências |
 | `engine/finish.js` | Pontuação e veredito do fim de carreira |
 | `trophies.js`, `card.js`, `kick.js`, `ball3d.js` | Taças, carta final, minigame e bola 3D |
+| `defend.js` | Minigames defensivos: defesa de pênalti (goleiro) e desarme (zagueiro) |
 | `ui/core.js` | Estado compartilhado (`G.c` = carreira, `G.step` = etapa), ajudantes, salvar, barra |
 | `ui/start.js` … `ui/finale.js` | Uma tela (ou grupo de telas) por arquivo; registram funções em `CRAQUE_UI` |
 | `main.js` | Ponto de partida |

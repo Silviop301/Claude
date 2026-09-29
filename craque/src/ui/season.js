@@ -3,6 +3,13 @@
   const U = window.CRAQUE_UI;
   const { tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar } = U;
   // ---------- temporada ----------
+  // Os dois números da temporada que mais importam para a posição
+  function seasonStats(res) {
+    if (res.pos === 'GOL') return [[res.cleanSheets || 0, 'Sem sofrer'], [res.saves || 0, 'Defesas']];
+    if (res.pos === 'ZAG') return [[res.goals, 'Gols'], [res.cleanSheets || 0, 'Sem sofrer']];
+    return [[res.goals, 'Gols'], [res.assists, 'Assist.']];
+  }
+
   function season() {
     const res = S.playSeason(G.c);
     sfx('whistle');
@@ -10,10 +17,11 @@
     G.step = S.isWcYear(G.c) && G.c.wcYearDone !== year() && S.wcCall(G.c).called ? 'wc' : S.windowOpen(G.c) ? 'offers' : 'preseason';
     save();
     const cl = club(res.club);
+    const [c1, c2] = seasonStats(res);
     render(
       '<div class="season-head"><div><div class="eyebrow">Temporada ' + (year() - 1) + ' · ' + res.age + ' anos</div><h2 class="with-crest">' + crest(cl.id, 'lg') + esc(cl.name) + '</h2></div><span class="tag">' + (res.farewell ? 'Despedida' : res.role) + '</span></div>' +
-      '<div class="counters"><div class="counter"><b id="k-j">0</b><span>Jogos</span></div><div class="counter"><b id="k-g">0</b><span>Gols</span></div>' +
-      '<div class="counter"><b id="k-a">0</b><span>Assist.</span></div><div class="counter rate"><b id="k-n">–</b><span>Nota</span></div></div>' +
+      '<div class="counters"><div class="counter"><b id="k-j">0</b><span>Jogos</span></div><div class="counter"><b id="k-g">0</b><span>' + c1[1] + '</span></div>' +
+      '<div class="counter"><b id="k-a">0</b><span>' + c2[1] + '</span></div><div class="counter rate"><b id="k-n">–</b><span>Nota</span></div></div>' +
       '<div class="feed" id="feed"></div><div id="after"></div><p class="skip-hint" id="skip-hint">Toque para pular</p>'
     );
     const dur = 2200, t0 = performance.now();
@@ -23,8 +31,8 @@
     (function tick(now) {
       const u = skip ? 1 : Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - u, 2);
       $('k-j').textContent = Math.round(res.games * e);
-      $('k-g').textContent = Math.round(res.goals * e);
-      $('k-a').textContent = Math.round(res.assists * e);
+      $('k-g').textContent = Math.round(c1[0] * e);
+      $('k-a').textContent = Math.round(c2[0] * e);
       if (u < 1) return requestAnimationFrame(tick);
       $('k-n').textContent = res.games ? res.rating.toFixed(1).replace('.', ',') : '–';
       $('k-n').parentNode.classList.add('pop');
@@ -63,7 +71,7 @@
       '<div class="pp-name">' + P.name + '</div><div class="pp-motto">' + P.motto + '</div>' +
       '<h3 class="pp-head">' + esc(main) + '</h3>' +
       '<div class="pp-body"><div class="pp-photo">' + crest(cl.id) + '<span>' + esc(G.c.name) + ' com a camisa ' + D.do(esc(cl.name)) + '</span></div>' +
-      '<div class="pp-col"><p class="pp-stats">' + res.games + ' jogos · ' + res.goals + ' gols · ' + res.assists + ' assist.' + (res.games ? ' · nota ' + res.rating.toFixed(1).replace('.', ',') : '') + '</p>' +
+      '<div class="pp-col"><p class="pp-stats">' + res.games + ' jogos · ' + seasonStats(res).map(([v, l]) => v + ' ' + l.toLowerCase()).join(' · ') + (res.games ? ' · nota ' + res.rating.toFixed(1).replace('.', ',') : '') + '</p>' +
       '<p class="pp-lede">' + esc(lede(res, cl)) + '</p>' +
       rest.map(h => '<p class="pp-sub">' + esc(h) + '</p>').join('') + '</div></div>' +
       '<div class="pp-tap">Toque para fechar</div></div>';

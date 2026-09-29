@@ -11,8 +11,10 @@
   // Taça continental que o clube disputa (ou null)
   S.contName = club => (['bra-a', 'arg'].includes(club.league) ? 'Libertadores' : club.tier >= 4 ? 'Liga dos Campeões' : null);
   // Tipo de cobrança do lance: pênalti ou falta ('classico' é sempre falta; 'cont' sorteia)
+  // Zagueiro e goleiro têm lances defensivos: 'tackle' (desarme) e 'save' (defender pênalti)
   S.kickType = m => m.kick || (m.type === 'classico' ? 'fk' : 'pen');
-  S.kickSetupType = m => (S.kickType(m) === 'fk' ? 'classico' : 'cup');
+  S.kickSetupType = m => ({ fk: 'classico', save: 'save', tackle: 'tackle' }[S.kickType(m)] || 'cup');
+  S.defKick = pos => (pos === 'GOL' ? 'save' : pos === 'ZAG' ? 'tackle' : null);
 
   S.pickMoment = function (c) {
     if (c.momentAge === c.age) return c.moment || null; // já sorteado nesta temporada
@@ -43,6 +45,7 @@
       }
       c.moment = { type, vs: vs.id, comp: type === 'cup' ? (lg.cup || 'Copa nacional') : type === 'cont' ? S.contName(club) : lg.name };
       if (type === 'cont') c.moment.kick = r() < 0.55 ? 'pen' : 'fk';
+      if (S.defKick(c.pos)) c.moment.kick = S.defKick(c.pos); // defensores: lance contra, no fim do jogo
     }
     save();
     return c.moment;
@@ -53,6 +56,21 @@
     const E = S.eff(c);
     const fk = type === 'classico';
     const lv = id => (c.traits.includes(id) ? lvOf(c, id) : 0);
+    if (type === 'save') {
+      // Goleiro: o corpo do batedor "entrega" o lado por tellMs antes do chute (REF e Pegador aumentam);
+      // o pulo alcança até diveReach (ELA); cantos além disso entram mesmo no lado certo
+      const tellMs = Math.round(clamp(150 + (E.fin - 50) * 6 + lv('pegador') * 45, 130, 480));
+      const diveReach = round1(clamp(0.72 + (E.fis - 55) / 100, 0.65, 1) * 100) / 100;
+      const chance = clamp(0.28 + (E.fin + E.def - 120) / 260 + lv('pegador') * 0.05 + lv('frieza') * 0.03, 0.15, 0.6);
+      return { mode: 'save', tellMs, diveReach, chance: Math.round(chance * 100) / 100 };
+    }
+    if (type === 'tackle') {
+      // Zagueiro: tocar quando o atacante passa pela zona certa. DEF alarga a zona; RIT deixa o lance mais lento
+      const win = round1(clamp(0.1 + (E.def - 50) / 260 + lv('carrinho') * 0.015, 0.08, 0.26) * 100) / 100;
+      const period = round1(clamp(0.95 + (E.rit - 50) * 0.01 + lv('antecipa') * 0.08, 0.8, 1.6) * 10) / 10;
+      const chance = clamp(0.35 + (E.def - 60) / 80 + lv('carrinho') * 0.04 + lv('raca') * 0.03, 0.2, 0.82);
+      return { mode: 'tackle', win, period, chance: Math.round(chance * 100) / 100 };
+    }
     // Mira: um vaivém completo leva de 1,0 s (FIN baixa) a ~2,1 s (FIN alta); Chute Colocado deixa mais lenta
     // Na falta a mira corre mais (colocar a bola é mais difícil); Bola Parada devolve parte do tempo
     const period = clamp((1.0 + (E.fin - 45) * 0.022 + lv('colocado') * 0.12) * (fk ? 0.78 : 1) + (fk ? lv('parada') * 0.12 : 0), 0.85, 2.3);
@@ -100,7 +118,7 @@
   S.countKick = function (c, type, ok) {
     const k = c.kicks = c.kicks || { n: 0, ok: 0, fkOk: 0 };
     k.n++;
-    if (ok) { k.ok++; if (type === 'fk') k.fkOk++; }
+    if (ok) { k.ok++; if (type === 'fk') k.fkOk++; if (type === 'save') k.saveOk = (k.saveOk || 0) + 1; if (type === 'tackle') k.tackleOk = (k.tackleOk || 0) + 1; }
   };
   S.resolveMoment = function (c, ok) {
     if (!c.moment) return;

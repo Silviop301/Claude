@@ -104,11 +104,13 @@
     D.ATTRS.forEach(k => { attrs[k] = clamp(base + r.int(-6, 6), 30, 70); });
     // Atributos principais da posição começam maiores; defesa começa baixa (mais ainda no atacante)
     if (opts.pos === 'ATA') { attrs.fin += 4; attrs.rit += 3; attrs.dri += 2; attrs.def -= 16; }
-    else { attrs.pas += 4; attrs.dri += 2; attrs.def -= 8; }
-    attrs.def = clamp(attrs.def, 20, 70);
+    else if (opts.pos === 'MEI') { attrs.pas += 4; attrs.dri += 2; attrs.def -= 8; }
+    else if (opts.pos === 'ZAG') { attrs.def += 6; attrs.fis += 4; attrs.fin -= 12; attrs.dri -= 6; }
+    else { attrs.fin += 4; attrs.def += 3; attrs.fis += 2; attrs.rit -= 6; } // goleiro: REF, POS, ELA
+    D.ATTRS.forEach(k => { attrs[k] = clamp(attrs[k], 20, 72); });
     return {
       v: 2, seed: r.state(),
-      name: opts.name, pos: opts.pos, foot: opts.foot, country: opts.country, number: opts.number || (opts.pos === 'ATA' ? 9 : 10),
+      name: opts.name, pos: opts.pos, foot: opts.foot, country: opts.country, number: opts.number || D.POS_NUM[opts.pos] || 10,
       age: 16, season: 0, attrs,
       pot: Math.round(55 + 25 * Math.pow(r(), 1.5)), // potencial escondido; temporadas muito boas elevam o teto
       traits: [], club: null, clubSince: 0, firstClub: null,
@@ -151,7 +153,7 @@
     const out = [];
     const full = c.traits.length >= S.MAX_SLOTS;
     const upPool = c.traits.filter(id => lvOf(c, id) < S.MAX_LV);
-    const newPool = D.TRAITS.filter(t => !c.traits.includes(t.id));
+    const newPool = D.TRAITS.filter(t => !c.traits.includes(t.id) && D.traitFits(t, c.pos));
     const pushUp = () => {
       const left = upPool.filter(id => !out.some(o => o.trait.id === id));
       if (!left.length) return false;

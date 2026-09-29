@@ -123,7 +123,12 @@
   D.POS = {
     ATA: { name: 'Atacante', w: { fin: 0.30, rit: 0.20, dri: 0.20, fis: 0.12, pas: 0.12, def: 0.06 } },
     MEI: { name: 'Meia',     w: { pas: 0.32, dri: 0.22, fin: 0.14, rit: 0.12, def: 0.10, fis: 0.10 } },
+    ZAG: { name: 'Zagueiro', w: { def: 0.38, fis: 0.24, pas: 0.14, rit: 0.12, dri: 0.06, fin: 0.06 } },
+    // Goleiro: os mesmos 6 atributos com nomes de goleiro (ver D.GK_LABEL)
+    GOL: { name: 'Goleiro',  w: { fin: 0.28, def: 0.24, fis: 0.20, dri: 0.16, pas: 0.08, rit: 0.04 } },
   };
+  D.POS_NUM = { ATA: 9, MEI: 10, ZAG: 4, GOL: 1 };
+  D.DEF_POS = ['ZAG', 'GOL']; // posições defensivas: estatísticas próprias
   D.ATTRS = ['rit', 'fin', 'pas', 'dri', 'def', 'fis'];
   D.ATTR_NAMES = { rit: 'Ritmo', fin: 'Finalização', pas: 'Passe', dri: 'Drible', def: 'Defesa', fis: 'Físico' };
 
@@ -131,20 +136,34 @@
   // goal/assist: multiplicador; attr: pontos imediatos; inj: risco de lesão; decl: declínio;
   // title: chance de título; fame: multiplicador de fama; rating: bônus na nota.
   // Características: cada uma soma pontos nos atributos da carta (nível 2 e 3 somam mais).
+  const OF = ['ATA', 'MEI'], ALL = ['ATA', 'MEI', 'ZAG', 'GOL'];
   D.TRAITS = [
-    { id: 'colocado',  icon: '🎯', name: 'Chute Colocado', attr: { fin: 4, dri: 1 } },
-    { id: 'parada',    icon: '🧱', name: 'Bola Parada',    attr: { fin: 2, pas: 3 } },
-    { id: 'velocista', icon: '⚡', name: 'Velocista',      attr: { rit: 5 } },
-    { id: 'drible',    icon: '🌀', name: 'Drible Curto',   attr: { dri: 4, rit: 1 } },
-    { id: 'cabeceio',  icon: '🗣️', name: 'Cabeceio',       attr: { fin: 2, fis: 3 } },
-    { id: 'visao',     icon: '👁️', name: 'Visão de Jogo',  attr: { pas: 5 } },
-    { id: 'lider',     icon: '©️', name: 'Líder',          attr: { pas: 2, def: 2, fis: 1 } },
-    { id: 'raca',      icon: '🔥', name: 'Raça',           attr: { def: 3, fis: 2 } },
-    { id: 'pro',       icon: '🧘', name: 'Profissional',   attr: { fis: 3 }, perk: 'Perde menos atributos depois dos 30' },
-    { id: 'tecnica',   icon: '🪄', name: 'Técnica',        attr: { dri: 3, pas: 2 } },
-    { id: 'frieza',    icon: '🧊', name: 'Frieza',         attr: { fin: 3, dri: 2 } },
-    { id: 'garcom',    icon: '🍽️', name: 'Garçom',         attr: { pas: 6, fin: -1 } },
+    { id: 'colocado',  icon: '🎯', name: 'Chute Colocado', pos: OF, attr: { fin: 4, dri: 1 } },
+    { id: 'parada',    icon: '🧱', name: 'Bola Parada',    pos: OF, attr: { fin: 2, pas: 3 } },
+    { id: 'velocista', icon: '⚡', name: 'Velocista',      pos: ['ATA', 'MEI', 'ZAG'], attr: { rit: 5 } },
+    { id: 'drible',    icon: '🌀', name: 'Drible Curto',   pos: OF, attr: { dri: 4, rit: 1 } },
+    { id: 'cabeceio',  icon: '🗣️', name: 'Cabeceio',       pos: ['ATA', 'MEI', 'ZAG'], attr: { fin: 2, fis: 3 } },
+    { id: 'visao',     icon: '👁️', name: 'Visão de Jogo',  pos: OF, attr: { pas: 5 } },
+    { id: 'lider',     icon: '©️', name: 'Líder',          pos: ALL, attr: { pas: 2, def: 2, fis: 1 } },
+    { id: 'raca',      icon: '🔥', name: 'Raça',           pos: ALL, attr: { def: 3, fis: 2 } },
+    { id: 'pro',       icon: '🧘', name: 'Profissional',   pos: ALL, attr: { fis: 3 }, perk: 'Perde menos atributos depois dos 30' },
+    { id: 'tecnica',   icon: '🪄', name: 'Técnica',        pos: OF, attr: { dri: 3, pas: 2 } },
+    { id: 'frieza',    icon: '🧊', name: 'Frieza',         pos: ALL, attr: { fin: 3, dri: 2 } },
+    { id: 'garcom',    icon: '🍽️', name: 'Garçom',         pos: OF, attr: { pas: 6, fin: -1 } },
+    // Zagueiro
+    { id: 'xerife',    icon: '🛡️', name: 'Xerife',         pos: ['ZAG'], attr: { def: 5 } },
+    { id: 'carrinho',  icon: '🦵', name: 'Carrinho',       pos: ['ZAG'], attr: { def: 3, fis: 2 } },
+    { id: 'antecipa',  icon: '🧠', name: 'Antecipação',    pos: ['ZAG'], attr: { def: 3, rit: 2 } },
+    { id: 'saida',     icon: '📐', name: 'Saída de bola',  pos: ['ZAG'], attr: { pas: 4, dri: 1 } },
+    { id: 'aereo',     icon: '🦒', name: 'Jogo aéreo',     pos: ['ZAG'], attr: { fis: 3, fin: 2 } },
+    // Goleiro (nomes de goleiro: fin=REF, fis=ELA, dri=MAN, def=POS, pas=REP, rit=VEL)
+    { id: 'reflexo',   icon: '⚡', name: 'Reflexo',        pos: ['GOL'], attr: { fin: 5 } },
+    { id: 'elastico',  icon: '🤸', name: 'Elástico',       pos: ['GOL'], attr: { fis: 4, fin: 1 } },
+    { id: 'maofirme',  icon: '🧤', name: 'Mão firme',      pos: ['GOL'], attr: { dri: 5 } },
+    { id: 'pegador',   icon: '🥅', name: 'Pegador de pênalti', pos: ['GOL'], attr: { fin: 2, def: 3 }, perk: 'Lê melhor o batedor no pênalti' },
+    { id: 'libero',    icon: '🦶', name: 'Goleiro-líbero', pos: ['GOL'], attr: { pas: 3, rit: 2 } },
   ];
+  D.traitFits = (t, pos) => !t.pos || t.pos.includes(pos);
   D.TRAIT_BY_ID = {};
   D.TRAITS.forEach(t => { D.TRAIT_BY_ID[t.id] = t; });
   // Multiplicador por nível: Nv1 = 1x, Nv2 = 1.8x, Nv3 = 2.6x
@@ -156,6 +175,8 @@
     { id: 'liso',    a: 'velocista', b: 'drible',  icon: '💨', name: 'Liso',                  attr: { rit: 3, dri: 3 } },
     { id: 'capitao', a: 'lider',    b: 'raca',     icon: '🎖️', name: 'Capitão',               attr: { def: 3, fis: 2, pas: 1 } },
     { id: 'maestro', a: 'visao',    b: 'garcom',   icon: '🎼', name: 'Maestro',               attr: { pas: 4, dri: 2 } },
+    { id: 'muralha', a: 'xerife',   b: 'carrinho', icon: '🧱', name: 'Muralha',               attr: { def: 4, fis: 2 } },
+    { id: 'paredao', a: 'reflexo',  b: 'elastico', icon: '🧤', name: 'Paredão',               attr: { fin: 3, fis: 3 } },
   ];
   // Investimentos com o próprio dinheiro: cada compra soma pontos fixos na carta.
   // O preço sobe a cada compra (de qualquer item).
@@ -172,6 +193,11 @@
   D.INVEST.forEach(t => { D.INVEST_BY_ID[t.id] = t; });
   D.INVEST_MAX = 5; // compras por item de atributo (+10 no máximo)
   D.ATTR_LABEL = { rit: 'RIT', fin: 'FIN', pas: 'PAS', dri: 'DRI', def: 'DEF', fis: 'FÍS' };
+  // Carta do goleiro (padrão FIFA): velocidade, reflexo, reposição, manejo, posicionamento, elasticidade
+  D.GK_LABEL = { rit: 'VEL', fin: 'REF', pas: 'REP', dri: 'MAN', def: 'POS', fis: 'ELA' };
+  D.label = (pos, k) => (pos === 'GOL' ? D.GK_LABEL : D.ATTR_LABEL)[k];
+  const GK_INVEST = { fis: 'Treino de elasticidade', fin: 'Treino de reflexo', pas: 'Treino de reposição', rit: 'Treino de sprint', dri: 'Treino de manejo', def: 'Treino de posicionamento' };
+  D.investName = (t, pos) => (pos === 'GOL' && GK_INVEST[t.id]) || t.name;
 
   root.CRAQUE_DATA = D;
   if (typeof module !== 'undefined') module.exports = D;

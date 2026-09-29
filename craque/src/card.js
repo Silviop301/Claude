@@ -128,7 +128,7 @@
     ctx.font = '800 118px ' + DISPLAY;
     ctx.fillText(String(d.peak), 128, 185);
     ctx.font = '800 44px ' + DISPLAY;
-    ctx.fillText(d.pos === 'ATA' ? 'ATA' : 'MEI', 128, 232);
+    ctx.fillText(d.pos || 'MEI', 128, 232);
     ctx.fillRect(88, 250, 80, 3);
     ctx.font = '52px ' + BODY;
     embossOn = false; ctx.fillText(d.flag, 128, 318); embossOn = true;
@@ -137,7 +137,7 @@
     if (crest) ctx.drawImage(crest, 93, 356, 70, 70);
 
     // Camisa (no lugar da foto)
-    jersey(ctx, 385, 250, 1.35, 'rgba(255,255,255,0.18)', T.ink, d.number || (d.pos === 'ATA' ? 9 : 10));
+    jersey(ctx, 385, 250, 1.35, 'rgba(255,255,255,0.18)', T.ink, d.number || ({ ATA: 9, MEI: 10, ZAG: 4, GOL: 1 }[d.pos] || 10));
 
     // Nome
     ctx.fillStyle = T.ink;
@@ -152,7 +152,10 @@
     ctx.fillStyle = T.ink;
     const A = d.attrs;
     // Mesmos 6 atributos da carta do FIFA/EA FC
-    const stats = [['RIT', A.rit], ['FIN', A.fin], ['PAS', A.pas], ['DRI', A.dri], ['DEF', A.def], ['FÍS', A.fis]];
+    // Goleiro usa os rótulos de goleiro (VEL, REF, REP...)
+    const DD = window.CRAQUE_DATA;
+    const lab = k => (DD && DD.label ? DD.label(d.pos, k) : k.toUpperCase()).replace('FIS', 'FÍS');
+    const stats = ['rit', 'fin', 'pas', 'dri', 'def', 'fis'].map(k => [lab(k), A[k]]);
     stats.forEach(([k, v], i) => {
       const col = i < 3 ? 0 : 1, row = i % 3;
       const x = col ? 345 : 115, y = 568 + row * 48;
@@ -179,7 +182,9 @@
     if (d.ballon) extra.push(d.ballon + ' BOLA' + (d.ballon > 1 ? 'S' : '') + ' DE OURO');
     if (d.wc) extra.push(d.wc > 1 ? d.wc + ' COPAS DO MUNDO' : 'CAMPEÃO DO MUNDO');
     ctx.font = '700 21px ' + BODY;
-    ctx.fillText(d.goals + ' GOLS · ' + d.assists + ' ASSIST · ' + d.titles + ' TÍTULOS', W / 2, extra.length ? 741 : 756, 420);
+    const line = d.pos === 'GOL' ? (d.cs || 0) + ' SEM SOFRER GOL · ' + (d.penSaved || 0) + ' PÊN. DEF.'
+      : d.pos === 'ZAG' ? d.goals + ' GOLS · ' + (d.cs || 0) + ' SEM SOFRER GOL' : d.goals + ' GOLS · ' + d.assists + ' ASSIST';
+    ctx.fillText(line + ' · ' + d.titles + ' TÍTULOS', W / 2, extra.length ? 741 : 756, 420);
     if (extra.length) { ctx.font = '800 19px ' + BODY; ctx.fillText(extra.join(' · '), W / 2, 766, 380); }
     ctx.font = '800 18px ' + DISPLAY;
     ctx.globalAlpha = 0.8;

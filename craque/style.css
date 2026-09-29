@@ -546,3 +546,18 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .daily-res { cursor: default; margin-top: 10px; gap: 8px; }
 .daily-res b { font: 800 20px var(--display); }
 .moment-card .with-crest .crest { background: rgba(0, 0, 0, .1); border-radius: 12px; padding: 4px; box-sizing: content-box; }
+
+/* Posições defensivas: seletor com 4 posições e minigames de goleiro/zagueiro */
+.seg.pos4 { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.seg.pos4 button { font-size: 14px; padding-left: 0; padding-right: 0; }
+.k-kicker .kk-shirt { fill: #C9303C; }
+.k-kicker .kk-leg { fill: #E8B58C; }
+.k-keeper.mine .kp-shirt { fill: #3FA7F0; }
+.k-keeper.mine .kp-arm { fill: #2E8AD0; }
+.k-keeper.mine .kp-sock { fill: #3FA7F0; }
+.tk-zone { fill: rgba(80, 230, 130, .28); stroke: #7CF0A4; stroke-width: 2; stroke-dasharray: 6 4; }
+.tk-def circle { fill: var(--gold); stroke: #2E2100; stroke-width: 2; }
+.tk-def text { font: 800 14px var(--display); fill: var(--ink); }
+.tk-att circle { fill: #C9303C; stroke: #fff; stroke-width: 2; }
+.tk-att text { font: 800 14px var(--display); fill: #fff; }
+.tk-att circle.tk-ball { fill: #fff; stroke: #222; stroke-width: 1.5; }

@@ -16,7 +16,7 @@
       '<button class="btn ghost" id="b-ach">🏅 Conquistas <b>' + U.achCount() + '/' + S.ACHIEVEMENTS.length + '</b></button>' +
       '<button class="btn ghost small-btn" id="b-sound"></button>' +
       (hall.length ? '<div class="eyebrow" style="margin-top:8px">Hall da Fama</div><div class="hall">' +
-        hall.map(h => '<div><b>' + h.grade + '</b><span>' + esc(h.name) + ' · ' + esc(h.verdict) + '<br><small>' + h.goals + ' gols · ' + h.assists + ' assist. · ' + h.titles + ' taças' + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '') + '</small></span><span class="muted">' + h.score + '</span></div>').join('') + '</div>' : '')
+        hall.map(h => '<div><b>' + h.grade + '</b><span>' + esc(h.name) + ' · ' + esc(h.verdict) + '<br><small>' + (h.pos === 'GOL' ? h.cs + ' sem sofrer gol · ' + h.penSaved + ' pên. def. · ' : h.pos === 'ZAG' ? h.goals + ' gols · ' + h.cs + ' sem sofrer gol · ' : h.goals + ' gols · ' + h.assists + ' assist. · ') + h.titles + ' taças' + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '') + '</small></span><span class="muted">' + h.score + '</span></div>').join('') + '</div>' : '')
     );
     if ($('b-cont')) $('b-cont').onclick = () => {
       G.c = saved.c;
@@ -55,7 +55,7 @@
     render(
       '<div class="eyebrow">Nova carreira</div><h2>Quem é o garoto?</h2>' +
       '<div class="field"><label for="f-name">Nome na camisa</label><input id="f-name" maxlength="18" value="' + D.NICKNAMES[i] + '"></div>' +
-      '<div class="field"><label>Posição</label><div class="seg" id="f-pos"><button data-v="ATA" class="on">Atacante</button><button data-v="MEI">Meia</button></div></div>' +
+      '<div class="field"><label>Posição</label><div class="seg pos4" id="f-pos"><button data-v="ATA" class="on">Atacante</button><button data-v="MEI">Meia</button><button data-v="ZAG">Zagueiro</button><button data-v="GOL">Goleiro</button></div></div>' +
       '<div class="field"><label for="f-num">Número da camisa</label><div class="num-pick"><input id="f-num" type="number" inputmode="numeric" min="1" max="99" value="9">' +
       [7, 9, 10, 11, 99].map(n => '<button type="button" data-n="' + n + '">' + n + '</button>').join('') + '</div></div>' +
       '<div class="field"><label>Pé bom</label><div class="seg" id="f-foot"><button data-v="D" class="on">Destro</button><button data-v="E">Canhoto</button></div></div>' +
@@ -67,7 +67,7 @@
         $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
         st[key] = b.dataset.v;
         // Número padrão acompanha a posição até a pessoa escolher um
-        if (key === 'pos' && !numTouched) $('f-num').value = b.dataset.v === 'ATA' ? 9 : 10;
+        if (key === 'pos' && !numTouched) $('f-num').value = D.POS_NUM[b.dataset.v];
       });
     });
     let numTouched = false;
@@ -75,7 +75,7 @@
     screen.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { $('f-num').value = b.dataset.n; numTouched = true; });
     $('b-go').onclick = () => {
       const name = $('f-name').value.trim() || D.NICKNAMES[i];
-      const number = Math.max(1, Math.min(99, parseInt($('f-num').value, 10) || (st.pos === 'ATA' ? 9 : 10)));
+      const number = Math.max(1, Math.min(99, parseInt($('f-num').value, 10) || D.POS_NUM[st.pos]));
       G.c = S.newCareer({ name, pos: st.pos, foot: st.foot, country: st.country, number });
       U.academy();
     };

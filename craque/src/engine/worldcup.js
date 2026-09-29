@@ -27,8 +27,8 @@
     const gf = r.poisson(lu), ga = r.poisson(lt);
     // Participação nos gols da seleção
     const q = clamp((o - 60) / 25, 0.3, 1.4);
-    const pg = run.share * (c.pos === 'ATA' ? 0.4 : 0.2) * q;
-    const pa = run.share * (c.pos === 'ATA' ? 0.18 : 0.34) * q;
+    const pg = run.share * ({ ATA: 0.4, MEI: 0.2, ZAG: 0.08, GOL: 0 }[c.pos]) * q;
+    const pa = run.share * ({ ATA: 0.18, MEI: 0.34, ZAG: 0.05, GOL: 0 }[c.pos]) * q;
     let g = 0, a = 0;
     for (let i = 0; i < gf; i++) { const x = r(); if (x < pg) g++; else if (x < pg + pa) a++; }
     return { opp: opp.name, flag: opp.flag, gf, ga, g, a };
@@ -72,9 +72,9 @@
     run.games.push(game);
     const groupMoment = run.groupMoment === undefined ? 2 : run.groupMoment;
     if (run.stage >= 3 || run.stage === groupMoment) {
-      // Lance decisivo nos minutos finais: pênalti ou falta a favor
+      // Lance decisivo nos minutos finais: pênalti ou falta a favor (defensores: pênalti ou contra-ataque contra)
       game.live = true;
-      game.moment = { type: r() < 0.55 ? 'pen' : 'fk', minute: 72 + r.int(0, 18) };
+      game.moment = { type: S.defKick(c.pos) || (r() < 0.55 ? 'pen' : 'fk'), minute: 72 + r.int(0, 18) };
       run.live = true;
     } else wcClose(c, game, r);
     save();
@@ -86,7 +86,10 @@
     const run = c.wcRun;
     run.g += game.g; run.a += game.a;
     const res = game.gf > game.ga ? 0.35 : game.gf < game.ga ? -0.25 : 0;
-    game.rating = round1(clamp(6.2 + game.g * 0.9 + game.a * 0.5 + res + (game.momentOk ? 0.4 : game.momentOk === false ? -0.3 : 0) + r.gauss() * 0.3, 5, 10));
+    // Defensores: não sofrer gol vale muito na nota
+    const def = S.defKick(c.pos) ? (game.ga === 0 ? 0.9 : game.ga === 1 ? 0.15 : -0.3) : 0;
+    game.cs = game.ga === 0;
+    game.rating = round1(clamp(6.2 + game.g * 0.9 + game.a * 0.5 + res + def + (game.momentOk ? 0.4 : game.momentOk === false ? -0.3 : 0) + r.gauss() * 0.3, 5, 10));
     game.motm = game.rating >= 8;
     if (run.stage < 3) {
       run.pts += game.gf > game.ga ? 3 : game.gf === game.ga ? 1 : 0;
@@ -113,14 +116,16 @@
     game.live = false;
     game.momentOk = !!ok;
     S.countKick(c, game.moment.type, ok);
-    if (ok) { game.gf++; game.g++; }
+    const defensive = ['save', 'tackle'].includes(game.moment.type);
+    if (defensive) { if (!ok) game.ga++; } // defendeu/desarmou: placar segue; falhou: gol deles
+    else if (ok) { game.gf++; game.g++; }
     wcClose(c, game, r);
     save();
   };
   S.wcMomentType = c => (c.wcRun && c.wcRun.live ? c.wcRun.games[c.wcRun.games.length - 1].moment.type : null);
   S.wcMomentAuto = function (c) {
     const { r, save } = rngOf(c);
-    const ok = r() < S.kickSetup(c, S.wcMomentType(c) === 'fk' ? 'classico' : 'cup').chance;
+    const ok = r() < S.kickSetup(c, S.kickSetupType({ kick: S.wcMomentType(c) })).chance;
     save();
     S.wcMoment(c, ok);
     return ok;
@@ -138,12 +143,14 @@
     if (!run || !run.pending) return;
     run.pending = false;
     run.games[run.games.length - 1].pensWon = !!ok;
-    S.countKick(c, 'pen', ok);
+    S.countKick(c, S.wcPensType(c), ok);
     wcAdvance(c, !!ok);
   };
+  // Disputa de pênaltis: o goleiro defende a última cobrança; os outros batem a última
+  S.wcPensType = c => (c.pos === 'GOL' ? 'save' : 'pen');
   S.wcPensAuto = function (c) {
     const { r, save } = rngOf(c);
-    const ok = r() < S.kickSetup(c, 'cup').chance;
+    const ok = r() < S.kickSetup(c, c.pos === 'GOL' ? 'save' : 'cup').chance;
     save();
     S.wcPens(c, ok);
     return ok;
