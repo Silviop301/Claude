@@ -206,12 +206,16 @@
       });
       // Botão de confirmar: mostra o que está escolhido e o preço
       const buy = $('b-buy'), ok = sel && S.canInvest(G.c, sel);
+      // Sem nada que dê para comprar: o botão fixo vira "seguir" (nunca fica um botão morto na tela)
+      broke = !D.INVEST.some(t => S.canInvest(G.c, t.id));
+      buy.classList.toggle('go', broke);
+      if (broke) { buy.disabled = false; buy.innerHTML = 'Seguir para a temporada<small>Saldo R$ ' + money(G.c.money) + '</small>'; $('b-skip').hidden = true; showPreview(null); return; }
       buy.disabled = !ok;
       const full = sel && (G.c.inv[sel] || 0) >= S.investMax(sel), nm = sel ? D.investName(D.INVEST_BY_ID[sel], G.c.pos) : '';
       buy.innerHTML = !sel ? 'Escolha um investimento' : full ? esc(nm) + ' no máximo' : ok ? 'Comprar ' + esc(nm) + '<small>R$ ' + money(price) + '</small>' : 'Sem saldo para ' + esc(nm);
       showPreview(ok ? S.preview(G.c, { buy: sel }) : null);
     };
-    let sel = null;
+    let sel = null, broke = false;
     refresh();
     $('b-skip').onclick = U.eventOrSeason;
     screen.querySelectorAll('[data-v]').forEach(b => b.onclick = () => {
@@ -220,6 +224,7 @@
       refresh();
     });
     $('b-buy').onclick = () => {
+      if (broke) return U.eventOrSeason();
       if (!sel || !S.canInvest(G.c, sel)) return;
       const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
       S.invest(G.c, sel);
