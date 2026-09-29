@@ -1,6 +1,6 @@
 # Publica o jogo (pasta craque/) no climbix.app (Hostinger) por SSH a cada atualização.
 # Acesso (Settings > Secrets and variables > Actions), um dos dois:
-#  - CLIMBIX_SSH_KEY: chave PRIVADA cuja chave pública está cadastrada na Hostinger (Acesso SSH), ou
+#  - CLIMBIX_KEY (ou CLIMBIX_SSH_KEY): chave PRIVADA cuja chave pública está cadastrada na Hostinger (Acesso SSH), ou
 #  - CLIMBIX_SSH_PASSWORD: a senha SSH da Hostinger.
 # Sem nenhum dos dois, o workflow só avisa e não faz nada.
 name: Publicar no climbix.app
@@ -31,7 +31,7 @@ jobs:
       - name: Preparar chave SSH
         id: key
         env:
-          KEY: ${{ secrets.CLIMBIX_SSH_KEY }}
+          KEY: ${{ secrets.CLIMBIX_KEY || secrets.CLIMBIX_SSH_KEY }}
           SSHPASS: ${{ secrets.CLIMBIX_SSH_PASSWORD }}
         run: |
           mkdir -p ~/.ssh
