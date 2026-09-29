@@ -40,16 +40,7 @@
     })(t0);
   }
 
-  // Jornal da temporada: um de 6 jornais (inventados) sorteado a cada temporada
-  const PAPERS = [
-    { name: 'Gazeta da Bola', motto: 'O jornal de quem vive futebol' },
-    { name: 'Diário do Craque', motto: 'Desde a várzea até a Europa' },
-    { name: 'Tribuna Esportiva', motto: 'A voz da arquibancada' },
-    { name: 'O Placar', motto: 'Resultado é o que importa' },
-    { name: 'Folha do Gramado', motto: 'Notícia com cheiro de grama' },
-    { name: 'Jornal da Arquibancada', motto: 'Opinião de torcedor' },
-  ];
-  let lastPaper = -1;
+  // Jornal da temporada (a capa em si fica em ui/paper.js)
   function lede(res, cl) {
     const tb = res.table;
     const pos = tb.pos === 1 ? 'terminou campeão ' + D.da(tb.league) : 'terminou em ' + tb.pos + 'º lugar ' + D.na(tb.league);
@@ -60,29 +51,16 @@
     return perf + (res.titles.length ? ' A torcida comemorou ' + res.titles.map(t => t.name).join(' e ') + '.' : '');
   }
   function showPaper(res, onClose) {
-    let k;
-    do { k = Math.floor(Math.random() * PAPERS.length); } while (k === lastPaper);
-    lastPaper = k;
-    const P = PAPERS[k], cl = club(res.club), [main, ...rest] = res.headlines;
-    const price = 'R$ ' + (2 + (year() % 5)) + ',50';
-    const wrap = document.createElement('div');
-    wrap.className = 'paper-wrap';
-    wrap.innerHTML = '<div class="paper"><div class="pp-top"><span>Edição de ' + (year() - 1) + '</span><span>' + price + '</span></div>' +
-      '<div class="pp-name">' + P.name + '</div><div class="pp-motto">' + P.motto + '</div>' +
-      '<h3 class="pp-head">' + esc(main) + '</h3>' +
-      '<div class="pp-body"><div class="pp-photo">' + crest(cl.id) + '<span>' + esc(G.c.name) + ' com a camisa ' + D.do(esc(cl.name)) + '</span></div>' +
-      '<div class="pp-col"><p class="pp-stats">' + res.games + ' jogos · ' + seasonStats(res).map(([v, l]) => v + ' ' + l.toLowerCase()).join(' · ') + (res.games ? ' · nota ' + res.rating.toFixed(1).replace('.', ',') : '') + '</p>' +
-      '<p class="pp-lede">' + esc(lede(res, cl)) + '</p>' +
-      rest.map(h => '<p class="pp-sub">' + esc(h) + '</p>').join('') + '</div></div>' +
-      '<div class="pp-tap">Toque para fechar</div></div>';
-    document.body.appendChild(wrap);
-    sfx('paper');
-    const close = e => {
-      if (e) e.stopPropagation();
-      wrap.classList.add('out');
-      setTimeout(() => { wrap.remove(); onClose && onClose(); }, 250);
-    };
-    setTimeout(() => { wrap.onclick = close; }, 400);
+    const cl = club(res.club), [main, ...rest] = res.headlines, nick = G.c.name;
+    // Foto da capa conforme a temporada: taça, maca (lesão), comemoração ou pose normal
+    const won = res.titles.length || res.awards.some(a => a.id === 'ballon');
+    const pose = won ? 'taca' : res.injury >= 25 ? 'maca' : res.games && res.rating >= 7.3 ? 'celebra' : res.games && res.rating < 6.3 ? 'triste' : 'normal';
+    const caption = { taca: nick + ' ergue a taça', maca: nick + ' deixa o campo de maca', celebra: nick + ' comemora com a torcida', triste: nick + ' cabisbaixo após mais um tropeço' }[pose] || nick + ' com a camisa ' + D.do(cl.name);
+    U.paper({ c: G.c, year: year() - 1, head: main, pose, kit: U.kitOf(cl.id), caption,
+      stats: res.games + ' jogos · ' + seasonStats(res).map(([v, l]) => v + ' ' + l.toLowerCase()).join(' · ') + (res.games ? ' · nota ' + res.rating.toFixed(1).replace('.', ',') : ''),
+      lede: lede(res, cl), subs: rest, column: res.column },
+      // Subiu de faixa? Depois do jornal vem a revelação da carta nova
+      () => (U.tierUp(res.ovr0, res.ovr1) ? U.walkout(G.c, onClose) : onClose && onClose()));
   }
 
   // Mostra os blocos do resumo um de cada vez (troféus com mais destaque). Tocar mostra tudo.
@@ -163,5 +141,5 @@
     return S.windowOpen(G.c) ? U.windowOffers() : U.preseason();
   }
 
-  Object.assign(U, { season, PAPERS, lede, showPaper, reveal, summary, afterSeason });
+  Object.assign(U, { season, lede, showPaper, reveal, summary, afterSeason });
 })();

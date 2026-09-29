@@ -51,8 +51,10 @@
       (S.canRetire(G.c) ? '<button class="btn ghost" id="b-retire">Pendurar as chuteiras</button>' : '')
     );
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
-      S.join(G.c, all[+b.dataset.i]);
-      U.preseason();
+      const o = all[+b.dataset.i], prev = G.c.spells[G.c.spells.length - 1], moving = o.club !== G.c.club;
+      S.join(G.c, o);
+      // Troca de clube vira edição extra do jornal
+      if (moving) { save(); bar(); U.transferPaper(G.c, prev, o, U.preseason); } else U.preseason();
     });
     if ($('b-retire')) $('b-retire').onclick = U.finale;
   }

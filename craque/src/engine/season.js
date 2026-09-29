@@ -249,6 +249,7 @@
     };
     res.move = move;
     res.headlines = S.headlines(c, res);
+    res.column = S.column(c, res);
     if (move) moveClub(c, club, move.to);
     c.seasons.push(res);
     c.age++;
@@ -280,7 +281,65 @@
     if (s.games < 12 && !s.injury) h.push(nick + ' pede mais minutos ' + D.no(club));
     if (s.rating && s.rating < 6.3 && s.games >= 12) h.push('Torcida ' + D.do(club) + ' pega no pé de ' + nick);
     if (!h.length) h.push('Temporada regular de ' + nick + ' ' + D.no(club));
+    // Jornal com memória: uma manchete que lembra o passado entra em 2º (ou em 1º se for a história do ano)
+    const mem = S.memoryHeadline(c, s);
+    if (mem) { if (mem.top) h.unshift(mem.txt); else h.splice(1, 0, mem.txt); }
     return h.slice(0, 3);
+  };
+
+  // Manchetes que olham para trás (c.seasons ainda não tem a temporada atual; c.spells já conta ela)
+  S.memoryHeadline = function (c, s) {
+    const nick = c.name, cur = D.CLUB_BY_ID[s.club], past = c.seasons;
+    const sp = c.spells[c.spells.length - 1];
+    const first = c.firstClub && D.CLUB_BY_ID[c.firstClub];
+    const cont = s.titles.find(t => t.id === 'cont');
+    const ballons = past.filter(x => x.awards.some(a => a.id === 'ballon')).length + (s.awards.some(a => a.id === 'ballon') ? 1 : 0);
+    const lastTitle = [...past].reverse().findIndex(x => x.titles.length);
+    const opts = [];
+    // Grandes histórias
+    if (cont && first && first.id !== cur.id && first.tier <= 2) opts.push({ w: 9, top: true, txt: 'Revelado ' + D.pelo(first.name) + ', ' + nick + ' conquista a ' + cont.name });
+    if (ballons >= 2 && s.awards.some(a => a.id === 'ballon')) opts.push({ w: 9, top: true, txt: nick + ' é o melhor do mundo pela ' + ballons + 'ª vez' });
+    if (sp.seasons === 1 && c.spells.slice(0, -1).some(x => x.seasons && x.club === cur.id)) opts.push({ w: 8, txt: 'De volta para casa: ' + nick + ' reencontra ' + D.o(cur.name) });
+    if (s.titles.length && past.length && !past.some(x => x.titles.length))opts.push({ w: 7, txt: 'Enfim campeão: a primeira taça da carreira de ' + nick });
+    else if (s.titles.length && lastTitle >= 3) opts.push({ w: 7, txt: 'Fim do jejum: ' + nick + ' volta a erguer uma taça depois de ' + (lastTitle + 1) + ' anos' });
+    if (sp.seasons === 10) opts.push({ w: 7, txt: 'Uma década ' + D.no(cur.name) + ': ' + nick + ' vira símbolo do clube' });
+    // Recordes pessoais
+    const def = c.pos === 'ZAG' || c.pos === 'GOL';
+    const key = c.pos === 'GOL' ? 'cleanSheets' : c.pos === 'MEI' ? 'assists' : 'goals';
+    const best = Math.max(0, ...past.map(x => x[key] || 0));
+    const word = { cleanSheets: 'jogos sem sofrer gol', assists: 'assistências', goals: 'gols' }[key];
+    if (past.length >= 3 && s[key] > best && s[key] >= (def ? 15 : 12)) opts.push({ w: 5, txt: 'Recorde pessoal: ' + s[key] + ' ' + word + ', a melhor marca da carreira de ' + nick });
+    // Viradas de fase
+    const prev = past[past.length - 1];
+    if (prev && prev.rating && prev.rating < 6.4 && prev.games >= 12 && s.rating >= 7.2) opts.push({ w: 6, txt: 'Da vaia ao aplauso: ' + nick + ' dá a volta por cima' });
+    if (prev && prev.move && prev.move.dir === 'down' && s.move && s.move.dir === 'up') opts.push({ w: 6, txt: 'Caiu e subiu: ' + nick + ' devolve ' + D.o(cur.name) + ' à elite' });
+    if (past.length === 0 && s.games >= 10) opts.push({ w: 4, txt: 'Aos ' + s.age + ' anos, ' + nick + ' estreia no profissional ' + D.do(cur.name) });
+    if (sp.seasons === 1 && first && first.id !== cur.id && cur.tier >= first.tier + 3) opts.push({ w: 4, txt: 'D' + D.do(first.name).slice(1) + ' para ' + D.o(cur.name) + ': o salto de ' + nick });
+    if (!opts.length) return null;
+    return opts.sort((a, b) => b.w - a.w)[0];
+  };
+
+  // Coluna do cronista (sempre o mesmo colunista, opinião conforme a fase)
+  S.COLUMNIST = 'Tião Barbosa';
+  S.column = function (c, s) {
+    const nick = c.name, cur = D.CLUB_BY_ID[s.club], past = c.seasons, prev = past[past.length - 1];
+    const pick = arr => arr[(past.length + nick.length) % arr.length];
+    const def = c.pos === 'ZAG' || c.pos === 'GOL';
+    const big = s.titles.find(t => t.id === 'cont');
+    const trend = prev && prev.rating ? s.rating - prev.rating : 0;
+    if (!s.games) return { t: 'Cadê ' + nick + '?', x: 'Uma temporada inteira olhando do banco. Talento não se prova no aquecimento.' };
+    if (s.awards.some(a => a.id === 'ballon')) return { t: 'O mundo aos pés', x: pick(['Poucos chegam aqui. ' + nick + ' chegou e não parece satisfeito. Isso é o que separa os bons dos eternos.', 'Escrevo há 40 anos e vi poucos como ' + nick + '. Guardem esta edição.']) };
+    if (big) return { t: 'Noite de gala', x: 'Há jogadores que somem nas finais. ' + nick + ' cresce. A ' + big.name + ' tem a assinatura dele.' };
+    if (c.age >= 33 && trend <= -0.3) return { t: 'A hora certa', x: pick(['O corpo avisa antes da cabeça. ' + nick + ' ainda tem lampejos, mas já não decide como antes. Saber parar também é arte.', 'Ninguém apaga o que ' + nick + ' fez. Mas a pergunta que ninguém quer fazer já está no ar: até quando?']) };
+    if (s.rating >= 7.5 && cur.tier <= 2) return { t: 'Grande demais', x: nick + ' joga num nível acima do resto ' + D.do(cur.name) + '. Se ninguém de fora bater na porta, é porque não estão assistindo.' };
+    if (s.rating >= 7.5) return { t: pick(['Fora da curva', 'Aula de futebol']), x: def ? pick(['Atacante que encara ' + nick + ' sai de campo pensando na vida. Defender também é talento.', 'Não aparece nos melhores momentos, mas é dele o jogo que ninguém vê. Sem ' + nick + ', ' + D.o(cur.name) + ' é outro time.']) : pick(['Toda vez que a bola chega em ' + nick + ', o estádio levanta. Isso não se ensina.', nick + ' joga como quem já sabe o fim do lance. Os outros ainda estão pensando.']) };
+    if (c.age <= 19 && s.rating >= 6.9) return { t: 'Guardem esse nome', x: 'Com ' + c.age + ' anos, ' + nick + ' joga sem medo. Falta casca, sobra personalidade. O futuro é dele, se não se perder no caminho.' };
+    if (trend >= 0.6) return { t: 'Volta por cima', x: 'Muita gente (eu incluído) duvidou de ' + nick + '. Temporada para calar os críticos. Engulo minhas palavras com prazer.' };
+    if (['ara', 'usa'].includes(cur.league) && c.age <= 30) return { t: 'Escolhas', x: 'O dinheiro é bom, ninguém nega. Mas ' + nick + ' tinha futebol para brigar por coisa maior. Cada um sabe da sua conta bancária.' };
+    if (c.rel.coach < 35) return { t: 'Clima pesado', x: 'Nos bastidores ' + D.do(cur.name) + ', a relação de ' + nick + ' com o técnico azedou. Alguém vai ter que ceder, e costuma ser o jogador.' };
+    if (s.games < 12) return { t: 'Pouco tempo', x: nick + ' precisa de minutos. Talento parado enferruja. Ou ganha espaço, ou arruma as malas.' };
+    if (s.rating < 6.4) return { t: 'Cadê o futebol?', x: pick(['A torcida ' + D.do(cur.name) + ' já perdeu a paciência. ' + nick + ' parece jogar com o freio de mão puxado.', 'Não é falta de talento, é falta de fome. ' + nick + ' precisa decidir que jogador quer ser.']) };
+    return { t: pick(['Nota de rodapé', 'Nem lá, nem cá', 'Morno']), x: pick(['Temporada correta de ' + nick + '. Correta demais. Craque que é craque deixa marca, e essa passou sem deixar.', nick + ' fez o básico. O problema é que o básico não entra na história.']) };
   };
 
 

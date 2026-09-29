@@ -56,6 +56,9 @@
       '</div>' +
       '<button class="btn" id="b-again">Nova carreira</button><button class="btn ghost" id="b-home">Hall da Fama</button>'
     );
+    // Edição especial do jornal com a despedida
+    const retired = G.c;
+    setTimeout(() => U.farewellPaper(retired, f), 700);
     G.c = null;
     $('bar').hidden = true;
     const cv = $('fut');

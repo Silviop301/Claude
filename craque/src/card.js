@@ -13,6 +13,63 @@
     icone:  { metal: ['#120E20', '#3A3060', '#1A1530', '#4B3F7A', '#15112A', '#2E2650', '#0B0914'], ink: '#F4D675', line: 'rgba(244,214,117,.35)', label: 'ÍCONE', holo: true },
   };
 
+  // Cartas especiais (momentos da carreira): cada uma com metal, tinta e desenho de fundo próprios
+  const SPECIAL = {
+    tots: { metal: ['#0B1A3C', '#2A4D9B', '#12285E', '#3E68C4', '#162F6B', '#2A4D9B', '#08132C'], ink: '#F4D675', line: 'rgba(244,214,117,.4)', label: 'SELEÇÃO DA TEMPORADA', pattern: 'stars', glow: '#6FA0FF' },
+    heroi: { metal: ['#2A0508', '#8E1420', '#3E070D', '#C22533', '#4D0A12', '#8E1420', '#1C0306'], ink: '#FFE6A3', line: 'rgba(255,230,163,.4)', label: 'HERÓI DA FINAL', pattern: 'flames', glow: '#FF5A3C' },
+    copa: { metal: null, ink: null, line: null, label: 'COPA DO MUNDO', pattern: 'trophy', glow: '#FFE27A' },
+    bola: { metal: ['#B8913A', '#FFF8E1', '#E9CF86', '#FFFFFF', '#D8B660', '#FFF3CC', '#A67F2A'], ink: '#3A2A05', line: 'rgba(58,42,5,.35)', label: 'BOLA DE OURO', pattern: 'ball', glow: '#FFD65A' },
+  };
+  function specialTheme(d) {
+    const s = Object.assign({}, SPECIAL[d.special]);
+    if (d.special === 'copa') {
+      // Metal com as cores da seleção
+      const [a, b] = d.kit || ['#F7D117', '#1B8A3A'];
+      s.metal = [b, a, b, a, b, a, b];
+      // Tinta escura em camisa clara (amarelo, branco); clara em camisa escura
+      const lum = parseInt(a.slice(1, 3), 16) * 0.3 + parseInt(a.slice(3, 5), 16) * 0.59 + parseInt(a.slice(5, 7), 16) * 0.11;
+      s.ink = lum > 150 ? '#10261A' : '#FFFFFF'; s.line = lum > 150 ? 'rgba(16,38,26,.4)' : 'rgba(255,255,255,.45)';
+      s.metal = lum > 150 ? [a, '#FFFFFF', a, b, a, '#FFFFFF', a] : s.metal;
+      s.light = lum > 150;
+    }
+    s.holo = d.special !== 'bola' && !s.light;
+    return s;
+  }
+  // Desenho de fundo das cartas especiais (por baixo do texto, recortado no escudo)
+  function drawPattern(ctx, s) {
+    ctx.save();
+    if (s.pattern === 'stars') {
+      ctx.fillStyle = 'rgba(244,214,117,.22)';
+      for (let i = 0; i < 38; i++) {
+        const x = (i * 157) % W, y = 60 + ((i * 263) % (H - 120)), r = 4 + (i % 4) * 3;
+        ctx.beginPath();
+        for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? r * 0.45 : r; ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+        ctx.fill();
+      }
+    } else if (s.pattern === 'flames') {
+      for (let i = 0; i < 9; i++) {
+        const g = ctx.createLinearGradient(0, H, 0, 300);
+        g.addColorStop(0, 'rgba(255,140,40,.45)'); g.addColorStop(1, 'rgba(255,140,40,0)');
+        ctx.fillStyle = g;
+        const x = 30 + i * 68, h = 260 + (i * 97) % 220;
+        ctx.beginPath(); ctx.moveTo(x - 40, H); ctx.quadraticCurveTo(x - 30, H - h * 0.5, x, H - h); ctx.quadraticCurveTo(x + 30, H - h * 0.5, x + 40, H); ctx.fill();
+      }
+    } else if (s.pattern === 'trophy') {
+      ctx.globalAlpha = 0.16; ctx.fillStyle = '#FFE27A';
+      ctx.translate(385, 380); ctx.scale(2.2, 2.2);
+      ctx.beginPath(); ctx.moveTo(-40, -110); ctx.lineTo(40, -110); ctx.quadraticCurveTo(45, -40, 12, -10); ctx.lineTo(18, 50); ctx.lineTo(35, 60); ctx.lineTo(-35, 60); ctx.lineTo(-18, 50); ctx.lineTo(-12, -10); ctx.quadraticCurveTo(-45, -40, -40, -110); ctx.fill();
+    } else if (s.pattern === 'ball') {
+      const rg = ctx.createRadialGradient(385, 260, 20, 385, 260, 330);
+      rg.addColorStop(0, 'rgba(255,214,90,.55)'); rg.addColorStop(1, 'rgba(255,214,90,0)');
+      ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 0.12; ctx.strokeStyle = '#6E4F0C'; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(385, 250, 170, 0, Math.PI * 2); ctx.stroke();
+      for (let k = 0; k < 5; k++) { const a = -Math.PI / 2 + k * 2 * Math.PI / 5; ctx.beginPath(); ctx.moveTo(385 + Math.cos(a) * 60, 250 + Math.sin(a) * 60); ctx.lineTo(385 + Math.cos(a) * 170, 250 + Math.sin(a) * 170); ctx.stroke(); }
+      ctx.beginPath(); for (let k = 0; k < 5; k++) { const a = -Math.PI / 2 + k * 2 * Math.PI / 5; ctx.lineTo(385 + Math.cos(a) * 60, 250 + Math.sin(a) * 60); } ctx.closePath(); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   function themeOf(peak, grade) {
     if (peak >= 85 || grade === 'S') return THEMES.icone;
     if (peak >= 75) return THEMES.ouro;
@@ -68,7 +125,7 @@
   // data: { name, pos, peak, attrs, flag, crest (url), grade, verdict, goals, assists, titles, ballon, traits:[{icon,lv}], years }
   root.CRAQUE_CARD = async function (canvas, d) {
     try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) { /* segue */ }
-    const T = themeOf(d.peak, d.grade);
+    const T = d.special ? specialTheme(d) : themeOf(d.peak, d.grade);
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, W, H);
@@ -86,6 +143,7 @@
       ['#ff6ec7', '#7afcff', '#fff38a', '#8affa1', '#b28dff', '#ff6ec7'].forEach((col, i, a) => hg.addColorStop(i / (a.length - 1), col));
       ctx.globalAlpha = 0.16; ctx.fillStyle = hg; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
     }
+    if (T.pattern) drawPattern(ctx, T);
     // Metal escovado: riscos finos quase horizontais (sempre iguais, sem sorteio)
     for (let i = 0, y = 44; y < H; i++, y += 2.2) {
       const a = ((i * 37) % 11) / 11;
@@ -177,6 +235,14 @@
     embossOn = false; ctx.fillText(icons, W / 2, extraN ? 710 : 718); embossOn = true;
     // Estrelas de campeão do mundo acima do nome da camisa
     if (d.wc) { ctx.font = '800 26px ' + DISPLAY; embossOn = false; ctx.fillText('★'.repeat(Math.min(d.wc, 5)), 385, 120); embossOn = true; }
+    // Carta do meio da carreira (revelação ao subir de faixa): rodapé simples com clube e idade
+    if (d.footer) {
+      ctx.font = '700 24px ' + BODY;
+      ctx.fillText(d.footer, W / 2, 756, 420);
+      ctx.font = '800 20px ' + DISPLAY;
+      ctx.globalAlpha = 0.8; ctx.fillText(d.special ? T.label : 'NOVA CARTA · ' + T.label, W / 2, 786, 330); ctx.globalAlpha = 1;
+      return canvas;
+    }
     // Rodapé: números da carreira; conquistas grandes numa segunda linha (nada espremido)
     const extra = [];
     if (d.ballon) extra.push(d.ballon + ' BOLA' + (d.ballon > 1 ? 'S' : '') + ' DE OURO');

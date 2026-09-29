@@ -147,6 +147,9 @@
       '<button class="btn" id="b-next">Jogar a temporada</button>'
     );
     $('b-next').onclick = U.season;
+    // Final continental: edição extra do jornal
+    const btn = $('b-next');
+    if (m.type === 'cont') setTimeout(() => { if (btn.isConnected) U.finalPaper(G.c, m, ok); }, 900);
   }
 
   Object.assign(U, { eventOrSeason, eventScreen, momentOrSeason, MOMENT_TXT, momentIntro, momentEnd, momentResult, playMini, miniFacts, MINI_BTN });

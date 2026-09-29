@@ -371,12 +371,12 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 #after > .rv:last-child { display: flex; flex-direction: column; gap: 10px; }
 
 /* Jornal da temporada (popup) */
-.paper-wrap { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px 16px;
+.paper-wrap { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 16px;
   background: rgba(4, 16, 10, 0.72); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: fade-in .25s ease; }
 .paper-wrap.out { animation: fade-out .25s ease forwards; }
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes fade-out { to { opacity: 0; } }
-.paper { width: min(100%, 380px); background: #F4EEDC; color: #1B1A17; padding: 14px 16px 12px; border-radius: 3px;
+.paper { margin: auto 0; flex-shrink: 0; width: min(100%, 380px); background: #F4EEDC; color: #1B1A17; padding: 14px 16px 12px; border-radius: 3px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 0 60px rgba(120, 90, 30, 0.18);
   font-family: 'Playfair Display', Georgia, serif; animation: paper-spin .75s cubic-bezier(.2, .9, .3, 1.1); }
 @keyframes paper-spin { 0% { transform: rotate(-540deg) scale(.05); opacity: 0; } 70% { transform: rotate(8deg) scale(1.04); opacity: 1; } 100% { transform: rotate(-1.5deg) scale(1); } }
@@ -385,9 +385,15 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .pp-name { font-weight: 900; font-size: clamp(30px, 10vw, 40px); text-align: center; line-height: 1.05; margin-top: 6px; letter-spacing: -.01em; }
 .pp-motto { text-align: center; font-style: italic; font-size: 12px; border-bottom: 3px double #1B1A17; padding-bottom: 6px; margin-bottom: 10px; }
 .pp-head { margin: 0 0 10px; font-weight: 900; font-size: 27px; line-height: 1.08; text-wrap: balance; }
-.pp-body { display: grid; grid-template-columns: 118px 1fr; gap: 12px; align-items: start; }
+.pp-body { display: grid; grid-template-columns: 136px 1fr; gap: 12px; align-items: start; }
 .pp-photo { background: #DDD4BC; padding: 10px 8px 6px; text-align: center; font: italic 11px/1.25 Georgia, serif; }
-.pp-photo .crest { width: 72px; height: 72px; filter: grayscale(1) contrast(1.2); display: block; margin: 0 auto 6px; }
+.pp-photo { margin: 0; padding: 6px 6px 5px; }
+.pp-photo svg { display: block; width: 100%; height: auto; margin-bottom: 5px; filter: sepia(.3) saturate(.85) contrast(1.05); border: 1px solid rgba(27, 26, 23, .5); }
+.pp-extra { background: #B3141F; color: #FFF6E0; font: 800 12px var(--body); text-transform: uppercase; letter-spacing: .14em; text-align: center; padding: 4px 6px; margin: -4px 0 8px; }
+.pp-opinion { margin-top: 10px; padding-top: 8px; border-top: 3px double #1B1A17; }
+.pp-opinion span { display: block; font: 700 10px var(--body); text-transform: uppercase; letter-spacing: .12em; color: #6B6553; }
+.pp-opinion b { display: block; font-size: 17px; margin: 2px 0 3px; }
+.pp-opinion p { margin: 0; font: italic 13.5px/1.4 Georgia, serif; }
 .pp-col { font-size: 14px; line-height: 1.35; }
 .pp-stats { margin: 0 0 6px; font: 700 14px var(--body); }
 .pp-sub { margin: 0 0 6px; padding-top: 6px; border-top: 1px solid rgba(27, 26, 23, .3); font-weight: 700; }
@@ -561,3 +567,56 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .tk-att circle { fill: #C9303C; stroke: #fff; stroke-width: 2; }
 .tk-att text { font: 800 14px var(--display); fill: #fff; }
 .tk-att circle.tk-ball { fill: #fff; stroke: #222; stroke-width: 1.5; }
+
+/* Revelação da carta nova (subiu de faixa) */
+.walkout { position: fixed; inset: 0; z-index: 60; overflow: hidden; display: grid; place-items: center; background: radial-gradient(circle at 50% 45%, #1B2A22 0%, #050A07 70%);
+  --wo: #F7E39A; animation: fade-in .3s ease; cursor: pointer; }
+.walkout.wo-bronze { --wo: #E0AC80; } .walkout.wo-prata { --wo: #E6EBF0; } .walkout.wo-ouro { --wo: #F7E39A; } .walkout.wo-icone { --wo: #B28DFF; }
+.walkout.out { animation: fade-out .25s ease forwards; }
+.wo-beams { position: absolute; inset: -50%; background: repeating-conic-gradient(from 0deg at 50% 50%, color-mix(in srgb, var(--wo) 22%, transparent) 0deg 6deg, transparent 6deg 30deg);
+  animation: wo-spin 14s linear infinite; opacity: .5; }
+@keyframes wo-spin { to { transform: rotate(360deg); } }
+.wo-step { position: absolute; opacity: 0; transform: scale(.4); color: #fff; text-align: center; }
+.wo-flag { font-size: 110px; animation: wo-step .8s ease forwards; }
+.wo-pos { font: 800 64px var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--wo); animation: wo-step .8s ease .8s forwards; }
+.wo-crest img { width: 150px; height: 150px; object-fit: contain; filter: drop-shadow(0 0 24px var(--wo)); }
+.wo-crest { animation: wo-step .9s ease 1.6s forwards; }
+@keyframes wo-step { 0% { opacity: 0; transform: scale(.4); } 25% { opacity: 1; transform: scale(1.05); } 75% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.3); } }
+.wo-card { position: relative; width: min(74vw, 300px); opacity: 0; transform: perspective(900px) rotateY(90deg) scale(.6); }
+.wo-card canvas { width: 100%; height: auto; display: block; filter: drop-shadow(0 0 30px color-mix(in srgb, var(--wo) 70%, transparent)); }
+.walkout.shown .wo-card { animation: wo-card .9s cubic-bezier(.2, 1.3, .4, 1) forwards; }
+@keyframes wo-card { 0% { opacity: 0; transform: perspective(900px) rotateY(90deg) scale(.6); } 60% { opacity: 1; transform: perspective(900px) rotateY(-12deg) scale(1.04); } 100% { opacity: 1; transform: perspective(900px) rotateY(0) scale(1); } }
+.wo-title { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 28px); left: 0; right: 0; text-align: center; opacity: 0; color: #fff; }
+.wo-title span { display: block; font: 700 14px var(--body); letter-spacing: .3em; text-transform: uppercase; opacity: .75; }
+.wo-title b { font: 800 46px var(--display); color: var(--wo); text-transform: uppercase; letter-spacing: .08em; text-shadow: 0 0 20px color-mix(in srgb, var(--wo) 60%, transparent); }
+.walkout.shown .wo-title { animation: wo-in .5s ease .4s forwards; }
+.wo-tap { position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 22px); left: 0; right: 0; text-align: center; color: #9DB5A6; font: 600 13px var(--body); opacity: 0; }
+.walkout.shown .wo-tap { animation: wo-in .4s ease 1.2s forwards; }
+@keyframes wo-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.walkout.skip .wo-step { display: none; }
+
+/* Carta gasta no fim da carreira: riscos, manchas e cor desbotando */
+.mcard.worn1 { filter: saturate(.8) sepia(.12); }
+.mcard.worn2 { filter: saturate(.6) sepia(.28) contrast(.96); }
+.mcard.worn1::before, .mcard.worn2::before {
+  background:
+    linear-gradient(24deg, transparent 31%, rgba(255, 255, 255, .45) 31.2%, transparent 31.8%),
+    linear-gradient(160deg, transparent 64%, rgba(0, 0, 0, .28) 64.2%, transparent 64.7%),
+    linear-gradient(8deg, transparent 78%, rgba(255, 255, 255, .35) 78.1%, transparent 78.5%),
+    radial-gradient(ellipse at 88% 84%, rgba(50, 30, 10, .28), transparent 34%),
+    repeating-linear-gradient(178deg, rgba(255, 255, 255, .07) 0 1px, rgba(0, 0, 0, .04) 1px 2px, transparent 2px 3px); }
+.mcard.worn2::before {
+  background:
+    linear-gradient(24deg, transparent 31%, rgba(255, 255, 255, .5) 31.2%, transparent 31.8%),
+    linear-gradient(160deg, transparent 64%, rgba(0, 0, 0, .32) 64.2%, transparent 64.7%),
+    linear-gradient(8deg, transparent 78%, rgba(255, 255, 255, .4) 78.1%, transparent 78.5%),
+    linear-gradient(118deg, transparent 12%, rgba(0, 0, 0, .25) 12.2%, transparent 12.6%),
+    linear-gradient(70deg, transparent 52%, rgba(255, 255, 255, .35) 52.1%, transparent 52.5%),
+    radial-gradient(ellipse at 88% 84%, rgba(50, 30, 10, .4), transparent 38%),
+    radial-gradient(ellipse at 8% 12%, rgba(50, 30, 10, .3), transparent 26%),
+    repeating-linear-gradient(178deg, rgba(255, 255, 255, .07) 0 1px, rgba(0, 0, 0, .04) 1px 2px, transparent 2px 3px); }
+.mcard.worn2 .mc-tier::after { content: ' · veterana'; }
+@media (prefers-reduced-motion: reduce) {
+  .walkout .wo-step { display: none; }
+  .walkout.shown .wo-card, .walkout.shown .wo-title, .walkout.shown .wo-tap { opacity: 1; transform: none; }
+}

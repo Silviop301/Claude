@@ -31,14 +31,16 @@
     const el = $('mcard'), t = tierCls(o);
     if (el.dataset.t === t) return;
     el.dataset.t = t;
-    el.className = 'mcard metal ' + t;
+    const wear = U.wearOf(G.c);
+    el.className = 'mcard metal ' + t + (wear ? ' worn' + wear : '');
     void el.offsetWidth; // reinicia a animação: mudou de cor, pulsa de novo
     el.classList.add('pop', 'tierup');
     $('mc-tier').textContent = TIER_NAME[t];
   }
   function miniCard() {
     const E = S.eff(G.c), t = tierCls(S.ovr(G.c));
-    return '<div class="mcard metal ' + t + '" id="mcard" data-t="' + t + '"><span class="mc-tier" id="mc-tier">' + TIER_NAME[t] + '</span><div class="mc-ovr"><b id="mc-ovr">' + S.ovr(G.c) + '</b><span>' + G.c.pos + (G.c.number ? ' ' + G.c.number : '') + '</span><i id="mc-ovr-d"></i></div><div class="mc-grid">' +
+    const wear = U.wearOf(G.c);
+    return '<div class="mcard metal ' + t + (wear ? ' worn' + wear : '') + '" id="mcard" data-t="' + t + '"><span class="mc-tier" id="mc-tier">' + TIER_NAME[t] + '</span><div class="mc-ovr"><b id="mc-ovr">' + S.ovr(G.c) + '</b><span>' + G.c.pos + (G.c.number ? ' ' + G.c.number : '') + '</span><i id="mc-ovr-d"></i></div><div class="mc-grid">' +
       D.ATTRS.map(k => '<div class="mc-at" data-k="' + k + '"><b>' + E[k] + '</b><span>' + D.label(G.c.pos, k) + '</span><i></i></div>').join('') + '</div></div>';
   }
   function showPreview(p) {
