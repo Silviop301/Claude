@@ -24,6 +24,8 @@
     const svg = el.querySelector('svg'), stage = el.querySelector('.kick-stage'), help = el.querySelector('#k-help');
     const ball = svg.querySelector('#k-ball'), keeper = svg.querySelector('#k-keeper');
     svg.querySelector('#k-aim').remove();
+    let goal = null, gone = false;
+    P.goal3d(svg).then(g => { if (!g) return; if (gone) return g.dispose(); goal = g; });
     keeper.classList.add('mine'); // o goleiro agora é você
     P.setBall(ball, P.BALL.x, P.BALL.y, P.BALL.r);
     P.setKeeper(keeper, 0, 0, 0);
@@ -93,11 +95,11 @@
           const r0 = performance.now(), bx = tx, by = ty;
           (function out(n2) { const q = Math.min(1, (n2 - r0) / 380); P.setBall(ball, bx + (bx < P.GX ? -1 : 1) * 60 * q, by + 45 * q, 8.5 + 2 * q); if (q < 1) requestAnimationFrame(out); })(r0);
         }
-        if (!saved) svg.querySelector('#k-net').classList.add('shake');
+        if (!saved) { svg.querySelector('#k-net').classList.add('shake'); if (goal && !miss) goal.bulge(tx, ty); }
         sfx(saved ? 'goal' : 'miss');
         if (saved) svg.querySelector('#k-crowd').classList.add('cheer');
         banner(el, miss ? 'PRA FORA!' : saved ? 'DEFENDEU!' : 'GOL DELES', saved);
-        setTimeout(() => opts.onDone(saved, why), 1400);
+        setTimeout(() => { gone = true; if (goal) goal.dispose(); opts.onDone(saved, why); }, 1400);
       })(s0);
     }
   };

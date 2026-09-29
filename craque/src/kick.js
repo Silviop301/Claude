@@ -91,10 +91,10 @@
       // gol: rede com profundidade e traves com volume
       '<g class="k-net" id="k-net" stroke="#E9F2EC" stroke-width=".9" stroke-opacity=".38">' + net.join('') + '</g>' +
       '<path d="M' + px(-1) + ' ' + (GY + 1) + ' l6 2 h' + (px(1) - px(-1)) + ' l-6 -2" fill="rgba(0,0,0,.25)"/>' +
-      '<rect x="' + (px(-1) - 3) + '" y="' + (py(1) - 3) + '" width="6" height="' + (GY - py(1) + 3) + '" fill="url(#k-post)"/>' +
+      '<g id="k-posts"><rect x="' + (px(-1) - 3) + '" y="' + (py(1) - 3) + '" width="6" height="' + (GY - py(1) + 3) + '" fill="url(#k-post)"/>' +
       '<rect x="' + (px(1) - 3) + '" y="' + (py(1) - 3) + '" width="6" height="' + (GY - py(1) + 3) + '" fill="url(#k-post)"/>' +
       '<rect x="' + (px(-1) - 3) + '" y="' + (py(1) - 3) + '" width="' + (px(1) - px(-1) + 6) + '" height="6" fill="#F4F7F9"/>' +
-      '<rect x="' + (px(-1) - 3) + '" y="' + (py(1) + 1) + '" width="' + (px(1) - px(-1) + 6) + '" height="2" fill="rgba(0,0,0,.18)"/>' +
+      '<rect x="' + (px(-1) - 3) + '" y="' + (py(1) + 1) + '" width="' + (px(1) - px(-1) + 6) + '" height="2" fill="rgba(0,0,0,.18)"/></g>' +
       '<ellipse id="k-kshadow" cx="' + GX + '" cy="' + (GY + 3) + '" rx="18" ry="3.5" fill="rgba(0,0,0,.3)"/>' +
       '<g id="k-keeper" class="k-keeper">' +
       '<rect class="kp-sock" x="-12" y="-16" width="9" height="16" rx="3"/><rect class="kp-sock" x="3" y="-16" width="9" height="16" rx="3"/>' +
@@ -133,7 +133,12 @@
 
   // opts: { c, moment, onDone(ok) }
   // Peças reaproveitadas pelo minigame do goleiro (defend.js)
-  root.CRAQUE_KICK_PARTS = { scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease };
+  // Gol 3D (traves e rede do modelo) no lugar do desenho; se o 3D não carregar, fica o desenho
+  function goal3d(svg) {
+    if (!root.CRAQUE_BALL || !root.CRAQUE_BALL.goal) return Promise.resolve(null);
+    return root.CRAQUE_BALL.goal(svg, { w: 360, h: 320, left: px(-1), right: px(1), top: py(1), ground: GY });
+  }
+  root.CRAQUE_KICK_PARTS = { scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d };
 
   root.CRAQUE_KICK = function (el, opts) {
     const c = opts.c, m = opts.moment;
@@ -146,7 +151,8 @@
     const shadow = svg.querySelector('#k-shadow'), trail = Array.from(svg.querySelectorAll('#k-trail circle'));
     const stage = el.querySelector('.kick-stage');
     // Bola 3D por cima do desenho (se o 3D não carregar, fica a bola desenhada)
-    let fly3d = null, gone = false;
+    let fly3d = null, gone = false, goal = null;
+    goal3d(svg).then(g => { if (!g) return; if (gone) return g.dispose(); goal = g; });
     if (root.CRAQUE_BALL && root.CRAQUE_BALL.flyer) {
       root.CRAQUE_BALL.flyer(stage, 360, 320).then(f => {
         if (!f) return;
@@ -160,7 +166,7 @@
       setBall(ball, x, y, r);
       if (fly3d) fly3d.set(x, y, r, spin || 0);
     }
-    const finish = (ok, why) => { gone = true; if (fly3d) fly3d.dispose(); opts.onDone(ok, why); };
+    const finish = (ok, why) => { gone = true; if (fly3d) fly3d.dispose(); if (goal) goal.dispose(); opts.onDone(ok, why); };
     place(BALL.x, BALL.y, BALL.r);
     setKeeper(keeper, setup.fk ? px(0.4 * side) - GX : 0, 0, 0);
     aim.setAttribute('opacity', '1');
@@ -282,6 +288,7 @@
       sfx(res.ok ? 'goal' : 'miss');
       if (res.ok) {
         svg.querySelector('#k-net').classList.add('shake');
+        if (goal) goal.bulge(bx, by); // rede 3D estufa no ponto do gol
         // Rede estufa no ponto onde a bola entrou; a bola afunda um pouco nela
         const bul = svg.querySelector('#k-bulge');
         bul.classList.add('pop');
@@ -296,6 +303,7 @@
         svg.querySelector('#k-flash').classList.add('on');
         if (navigator.vibrate) navigator.vibrate([40, 40, 80]);
       } else {
+        if (goal && res.why === 'trave') goal.shake();
         // Rebote: a bola sai para longe do gol
         const start = performance.now(), dx = bx < GX ? -1 : 1;
         (function out(now) {

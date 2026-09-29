@@ -118,6 +118,92 @@ function flyer(host, w, h) {
   }).catch(() => null);
 }
 
-window.CRAQUE_BALL = { mount, flyer };
+// Gol 3D do minigame (traves e rede de verdade). Vira uma <image> dentro do SVG, no lugar do gol desenhado,
+// para o goleiro, a barreira e a bola continuarem na frente dele. A câmera é calculada para as traves caírem
+// exatamente onde a mira funciona: m = { w, h, left, right, top, ground } no SVG.
+let goalModel = null;
+const goalReady = () => (goalModel = goalModel || new GLTFLoader().loadAsync('assets/gol.glb').then(g => g.scene));
+function goal(svg, m) {
+  return goalReady().then(model => {
+    if (!svg.isConnected) return null;
+    const W = m.w, H = m.h, D = 18; // câmera a 18 m: o fundo da rede (2 m) fica com a perspectiva do desenho
+    const f = (m.right - m.left) * D / 7.32; // distância focal em unidades do SVG
+    const sY = (m.ground - m.top) / (m.right - m.left) * 7.32 / 2.44; // o gol do desenho é um pouco mais alto que o real
+    const camY = 2.44 * sY, cx = (m.left + m.right) / 2, cy = m.top;
+    const cam = new THREE.PerspectiveCamera(2 * Math.atan(H / 2 / f) * 180 / Math.PI, W / H, 0.1, 100);
+    cam.position.set(0, camY, D);
+    cam.setViewOffset(W, H, W / 2 - cx, H / 2 - cy, W, H); // centro óptico no meio do travessão
+    const scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x1c5a3c, 1.5));
+    const sun = new THREE.DirectionalLight(0xfff6dd, 2.2);
+    sun.position.set(-6, 14, 12);
+    scene.add(sun);
+    const g = model.clone(true);
+    g.scale.set(1, sY, 1);
+    let net = null;
+    g.traverse(o => {
+      if (!o.isMesh) return;
+      if (o.material.name === 'rede') { o.material = o.material.clone(); o.material.side = THREE.DoubleSide; o.material.depthWrite = false; }
+      if (o.name === 'rede_fundo') { o.geometry = o.geometry.clone(); net = o; }
+    });
+    scene.add(g);
+    g.updateMatrixWorld(true);
+    const base = net && net.geometry.attributes.position.array.slice();
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.setSize(W, H, false);
+    // A imagem entra no lugar do gol desenhado (mesma camada)
+    const NS = 'http://www.w3.org/2000/svg', img = document.createElementNS(NS, 'image');
+    img.setAttribute('x', 0); img.setAttribute('y', 0); img.setAttribute('width', W); img.setAttribute('height', H);
+    img.setAttribute('class', 'k-goal3d');
+    const draw = () => { renderer.render(scene, cam); img.setAttribute('href', renderer.domElement.toDataURL('image/png')); };
+    draw();
+    const anchor = svg.querySelector('#k-net');
+    anchor.parentNode.insertBefore(img, anchor);
+    ['#k-net', '#k-posts'].forEach(s => { const e = svg.querySelector(s); if (e) e.style.display = 'none'; });
+
+    // Ponto do SVG (no plano do gol) → metros
+    const toWorld = (x, y) => ({ X: (x - cx) * D / f, Y: camY - (y - cy) * D / f });
+    const v = new THREE.Vector3();
+    function setBulge(X, Y, depth) {
+      if (!net) return;
+      const pos = net.geometry.attributes.position, mw = net.matrixWorld, inv = mw.clone().invert();
+      for (let i = 0; i < pos.count; i++) {
+        v.set(base[i * 3], base[i * 3 + 1], base[i * 3 + 2]).applyMatrix4(mw);
+        const d = Math.hypot(v.x - X, (v.y - Y) / sY), k = Math.max(0, 1 - d / 1.7);
+        v.z -= depth * k * k;
+        v.applyMatrix4(inv);
+        pos.setXYZ(i, v.x, v.y, v.z);
+      }
+      pos.needsUpdate = true;
+    }
+    // Anima por ~30 quadros/s (cada quadro vira imagem de novo)
+    let anim = 0;
+    const play = (ms, step) => {
+      cancelAnimationFrame(anim);
+      const t0 = performance.now();
+      let last = 0;
+      const tick = now => {
+        const u = Math.min(1, (now - t0) / ms);
+        if (now - last >= 30 || u === 1) { last = now; step(u); draw(); }
+        if (u < 1) anim = requestAnimationFrame(tick);
+      };
+      anim = requestAnimationFrame(tick);
+    };
+    return {
+      // Gol: a rede estufa onde a bola entrou e volta um pouco
+      bulge(x, y) {
+        const p = toWorld(x, Math.max(y, m.top + 4));
+        play(700, u => setBulge(p.X, Math.max(0.2, p.Y), 2.4 * (u < 0.3 ? 1 - Math.pow(1 - u / 0.3, 3) : 1 - 0.4 * (u - 0.3) / 0.7)));
+      },
+      // Bola na trave: o gol todo treme
+      shake() { play(500, u => { g.position.x = 0.05 * Math.sin(u * 40) * (1 - u); }); },
+      dispose() { cancelAnimationFrame(anim); renderer.dispose(); },
+    };
+  }).catch(() => null);
+}
+
+window.CRAQUE_BALL = { mount, flyer, goal };
 // A tela inicial pode ter sido desenhada antes deste módulo carregar
 mount(document.getElementById('ball3d'));
