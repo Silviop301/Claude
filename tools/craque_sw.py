@@ -4,7 +4,7 @@ Rode sempre que arquivos do jogo forem adicionados/removidos:  python3 tools/cra
 Estratégia: código e página (html/js/css) vêm da rede quando há conexão (atualizações chegam na hora)
 e do cache sem internet; imagens, escudos, ícones e o modelo 3D vêm do cache primeiro.
 """
-import hashlib, pathlib
+import hashlib, pathlib, re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent / "craque"
 files = ["./"]
@@ -51,4 +51,15 @@ self.addEventListener('fetch', e => {
   })));
 });
 """ % (digest, assets))
-print("sw.js com", len(files), "arquivos · cache", digest)
+# Versão pelo conteúdo do código: vai na URL de cada script/estilo e do service worker (?v=...).
+# O index.html não fica em cache no CDN; assim cada deploy força js/css novos mesmo com cache longo.
+code = sorted(p for p in ROOT.rglob("*") if p.is_file() and p.suffix in (".js", ".css") and p.name != "sw.js")
+ver = hashlib.sha1(b"".join(p.read_bytes() for p in code) + (ROOT / "sw.js").read_bytes()).hexdigest()[:8]
+idx = ROOT / "index.html"
+html = idx.read_text()
+html = re.sub(r'((?:src|href)="(?:src/[^"?]+\.js|style\.css))(?:\?v=[0-9a-f]+)?"', r'\1?v=' + ver + '"', html)
+html = re.sub(r"window\.CLIMBIX_VER = '[0-9a-f]*'", "window.CLIMBIX_VER = '" + ver + "'", html)
+if "window.CLIMBIX_VER" not in html:
+    html = html.replace('<script src="src/sound.js', "<script>window.CLIMBIX_VER = '" + ver + "';</script>\n<script src=\"src/sound.js", 1)
+idx.write_text(html)
+print("sw.js com", len(files), "arquivos · cache", digest, "· versão", ver)

@@ -91,6 +91,8 @@ jobs:
           SSHPASS: ${{ secrets.CLIMBIX_SSH_PASSWORD }}
           SSH: ${{ steps.key.outputs.ssh }}
         run: |
+          # Versão nova nas URLs de js/css e do service worker (o CDN guarda arquivos por dias)
+          python3 tools/craque_sw.py
           rsync -az --delete --exclude '.htaccess' --exclude '.well-known' \
             -e "$SSH" \
             craque/ "$SSH_USER@$SSH_HOST:$TARGET/"
