@@ -5,7 +5,7 @@ Depois redimensione com:  node tools/craque_trophies_resize.js <pasta_temporaria
 O resultado vai para craque/trophies/<slug>.png e craque/src/trophy-imgs.js (mapa nome da taça -> arquivo).
 Taças sem imagem (Bola de Ouro, US Open Cup, Copa MX) continuam desenhadas em SVG.
 """
-import json, pathlib, sys, time, unicodedata, urllib.request
+import json, pathlib, sys, time, unicodedata, urllib.error, urllib.request
 
 # Nome da taça no jogo -> id da competição no TheSportsDB
 IDS = {
@@ -25,6 +25,14 @@ IDS = {
     "Süper Lig": 4339, "Copa da Turquia": 4960,
     "Liga MX": 4350,
     "Libertadores": 4501, "Liga dos Campeões": 4480, "Copa do Mundo": 4429,
+    # ligas do upgrade de times e o Mundial de Clubes
+    "Série D": 5079, "Pro League": 4338, "Copa da Bélgica": 5831, "Premiership": 4330, "Copa da Escócia": 4723,
+    "Super League Grega": 4336, "Copa da Grécia": 5830, "Super League Suíça": 4675, "Copa da Suíça": 5489,
+    "Bundesliga Austríaca": 4621, "Copa da Áustria": 5883, "Superliga Dinamarquesa": 4340,
+    "Liga Chilena": 4627, "Copa Chile": 5378, "Liga Paraguaia": 4687, "Copa Paraguai": 5499,
+    "Liga Equatoriana": 4686, "Copa Equador": 5636, "J1 League": 4633, "Copa do Imperador": 5637,
+    "K League 1": 4689, "Copa da Coreia": 5635, "Qatar Stars League": 4663, "Copa do Emir": 4971,
+    "Mundial de Clubes": 4503,
 }
 
 
@@ -35,8 +43,14 @@ def slug(name):
 
 def get(url):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return r.read()
+    for wait in (5, 15, 40, 0):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return r.read()
+        except urllib.error.HTTPError as e:  # 429: limite da API gratuita, espera e tenta de novo
+            if e.code != 429 or not wait:
+                raise
+            time.sleep(wait)
 
 
 def main():
@@ -53,7 +67,7 @@ def main():
         (out / (slug(name) + ".png")).write_bytes(get(url))
         found[name] = slug(name)
         print("ok:", name, "<-", league.get("strLeague"))
-        time.sleep(0.7)
+        time.sleep(1.5)
     (out / "found.json").write_text(json.dumps(found, ensure_ascii=False))
 
 

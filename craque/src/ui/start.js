@@ -40,6 +40,7 @@
     bar();
     if (!G.c.club) return U.academy();
     if (st === 'wc') return U.wcIntro(); // Copa antes de tudo (pode ser a última dança)
+    if (st === 'cwc') return U.cwcIntro();
     if (S.mustRetire(G.c)) return U.finale();
     if (st === 'offers') return S.windowOpen(G.c) ? U.windowOffers() : U.preseason();
     if (st === 'event') return U.eventScreen();

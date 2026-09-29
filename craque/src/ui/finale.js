@@ -11,6 +11,8 @@
     return [[T.goals, 'Gols'], [T.assists, 'Assistências']];
   }
 
+  // Ordem da sala de troféus (as maiores primeiro)
+  const ROOM = ['wc', 'ballon', 'cwc', 'ucl', 'lib', 'inter', 'league', 'cup'];
   function finale() {
     const f = S.finish(G.c);
     const ach = U.achRecord(G.c, f);
@@ -49,10 +51,11 @@
       '<div class="stats"><div><b>' + T.games + '</b><span>Jogos</span></div>' + careerStats(G.c).map(([v, l]) => '<div><b>' + v + '</b><span>' + l + '</span></div>').join('') +
       '<div><b>' + f.titles + '</b><span>Títulos</span></div><div><b>' + T.ballon + '</b><span>Bolas de Ouro</span></div><div><b>' + f.nClubs + '</b><span>Clubes</span></div></div>' +
       (T.wcApps ? '<p class="muted small patr">🌍 Copas do Mundo: ' + T.wcApps + (T.wcApps > 1 ? ' disputadas' : ' disputada') + ' · ' + (T.wc || 0) + (T.wc === 1 ? ' título' : ' títulos') + ' · ' + (T.wcGoals || 0) + ' gols</p>' : '') +
+      (T.cwcApps ? '<p class="muted small patr">🌐 Mundiais de Clubes: ' + T.cwcApps + (T.cwcApps > 1 ? ' disputados' : ' disputado') + ' · ' + (T.cwc || 0) + (T.cwc === 1 ? ' título' : ' títulos') + ' · ' + (T.cwcGoals || 0) + ' gols</p>' : '') +
       '<p class="muted small patr">💰 Patrimônio R$ ' + money(G.c.money) + (G.c.buys ? ' · investiu R$ ' + money(G.c.spent) + ' em ' + G.c.buys + (G.c.buys > 1 ? ' compras' : ' compra') : '') + '</p>' +
       '<div class="timeline">' + G.c.spells.map(s => '<div><span>' + String(YEAR0 + s.from - 16).slice(2) + '–' + String(YEAR0 + s.to - 16 + 1).slice(2) + '</span><span>' + crest(s.club, 'xs') + esc(club(s.club).name) + '</span><span>' + (G.c.pos === 'GOL' ? (s.cs || 0) + ' SG' : G.c.pos === 'ZAG' ? s.goals + 'G ' + (s.cs || 0) + 'SG' : s.goals + 'G ' + s.assists + 'A') + (s.titles ? ' · ' + s.titles + '🏆' : '') + '</span></div>').join('') + '</div>' +
       (Object.keys(G.c.trophies || {}).length ? '<div class="room-title">Sala de troféus</div><div class="room">' +
-        Object.entries(G.c.trophies).sort((a, b) => ['wc', 'ballon', 'ucl', 'lib', 'league', 'cup'].indexOf(a[1].type) - ['wc', 'ballon', 'ucl', 'lib', 'league', 'cup'].indexOf(b[1].type))
+        Object.entries(G.c.trophies).sort((a, b) => ROOM.indexOf(a[1].type) - ROOM.indexOf(b[1].type))
           .map(([name, t]) => '<div>' + trophy(t.type, 52, name) + '<b>' + t.n + 'x</b><span>' + esc(name) + '</span></div>').join('') + '</div>' : '') +
       (f.bonus.length ? '<div class="room-title">Despedida</div><ul class="why">' + f.bonus.map(b => '<li><span>' + esc(b.txt) + '</span><b class="up">+' + b.v + '</b></li>').join('') + '</ul>' : '') +
       U.dailyFinish(G.c, f) +

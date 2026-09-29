@@ -9,7 +9,11 @@
   //  title    pênalti na última rodada     → converteu: campeão da liga · errou: vice
   //  classico falta no clássico            → converteu: gol e torcida +8
   // Taça continental que o clube disputa (ou null)
-  S.contName = club => (['bra-a', 'arg'].includes(club.league) ? 'Libertadores' : club.tier >= 4 ? 'Liga dos Campeões' : null);
+  // Libertadores: primeira divisão dos países sul-americanos do jogo; Champions: clubes grandes da Europa
+  S.LIBERTA = ['bra-a', 'arg', 'uru', 'col', 'chi', 'par', 'ecu'];
+  // Continente do clube (para o Mundial e a Intercontinental): sul, conc (México/EUA), asia, eur
+  S.confOf = lg => (['bra', 'arg', 'uru', 'col', 'chi', 'par', 'ecu'].includes(lg.split('-')[0]) ? 'sul' : ['mex', 'usa'].includes(lg) ? 'conc' : ['ara', 'qat', 'jpn', 'kor'].includes(lg) ? 'asia' : 'eur');
+  S.contName = club => (S.LIBERTA.includes(club.league) ? 'Libertadores' : club.tier >= 4 ? 'Liga dos Campeões' : null);
   // Tipo de cobrança do lance: pênalti ou falta ('classico' é sempre falta; 'cont' sorteia)
   // Zagueiro e goleiro têm lances defensivos: 'tackle' (desarme) e 'save' (defender pênalti)
   S.kickType = m => m.kick || (m.type === 'classico' ? 'fk' : 'pen');
@@ -39,7 +43,7 @@
       if (type === 'cont') {
         // Adversário da final: um grande de outra liga do mesmo continente
         const libert = S.contName(club) === 'Libertadores';
-        const pool2 = D.CLUBS.filter(x => x.id !== club.id && (libert ? ['bra-a', 'arg'].includes(x.league) : x.tier >= 4 && !['bra-a', 'arg', 'ara', 'usa', 'mex'].includes(x.league) && x.league !== club.league))
+        const pool2 = D.CLUBS.filter(x => x.id !== club.id && (libert ? S.LIBERTA.includes(x.league) : x.tier >= 4 && !S.LIBERTA.includes(x.league) && !['ara', 'usa', 'mex', 'jpn', 'kor', 'qat'].includes(x.league) && x.league !== club.league))
           .sort((a, b) => b.strength - a.strength).slice(0, 8);
         if (pool2.length) vs = r.pick(pool2);
       }

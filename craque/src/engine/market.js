@@ -58,10 +58,10 @@
     if (mid) out.push(offerFrom(c, mid, 'mid'));
     // 3) Especial: dinheiro, volta ao clube do coração ou aposta
     let sp = null;
-    if (c.age >= 27 && r() < 0.5) sp = pickClub(x => ['ara', 'usa'].includes(x.league));
+    if (c.age >= 27 && r() < 0.5) sp = pickClub(x => D.MONEY.includes(x.league));
     if (!sp && c.age >= 30 && c.firstClub && !used.has(c.firstClub) && (c.fansBy[c.firstClub] || 0) >= 60 && r() < 0.6) { sp = D.CLUB_BY_ID[c.firstClub]; used.add(sp.id); }
     if (!sp) sp = pickClub(x => x.tier === Math.max(1, t - 1));
-    if (sp) out.push(offerFrom(c, sp, sp.id === c.firstClub ? 'home' : ['ara', 'usa'].includes(sp.league) ? 'money' : 'mid'));
+    if (sp) out.push(offerFrom(c, sp, sp.id === c.firstClub ? 'home' : D.MONEY.includes(sp.league) ? 'money' : 'mid'));
     // Pediu para sair: o empresário arruma mais uma proposta
     if (c.wantsOut) {
       c.wantsOut = false;

@@ -19,11 +19,19 @@
   };
 
   function wcMatch(c, run, opp, r) {
-    const nation = D.NATION_BY_NAME[run.nation], o = S.ovr(c);
-    // O craque puxa a seleção: cada ponto de nota acima de 76 vale 0,3 de força (titular)
-    const T = nation.str + (o - 82) * 0.3 * run.share + 2.2 * S.tm(c, 'patriota');
-    // Copa é equilibrada: diferença de força pesa menos que nos clubes
-    const lu = 0.72 * Math.exp((T - opp.str) / 22), lt = 1.3 * Math.exp((opp.str - T) / 22);
+    const o = S.ovr(c), cwc = run.kind === 'cwc';
+    let T, k;
+    if (cwc) {
+      // Mundial de Clubes: a força é a do clube, puxada pela sua nota
+      const cl = D.CLUB_BY_ID[run.club];
+      T = cl.strength + (o - cl.strength) * 0.3 * run.share;
+      k = 18;
+    } else {
+      // O craque puxa a seleção: cada ponto de nota acima de 82 vale 0,3 de força (titular)
+      T = D.NATION_BY_NAME[run.nation].str + (o - 82) * 0.3 * run.share + 2.2 * S.tm(c, 'patriota');
+      k = 22; // Copa é equilibrada: diferença de força pesa menos que nos clubes
+    }
+    const lu = 0.72 * Math.exp((T - opp.str) / k), lt = 1.3 * Math.exp((opp.str - T) / k);
     const gf = r.poisson(lu), ga = r.poisson(lt);
     // Participação nos gols da seleção
     const q = clamp((o - 60) / 25, 0.3, 1.4);
@@ -31,7 +39,9 @@
     const pa = run.share * ({ ATA: 0.18, MEI: 0.34, ZAG: 0.05, GOL: 0 }[c.pos]) * q;
     let g = 0, a = 0;
     for (let i = 0; i < gf; i++) { const x = r(); if (x < pg) g++; else if (x < pg + pa) a++; }
-    return { opp: opp.name, flag: opp.flag, gf, ga, g, a };
+    const game = { opp: opp.name, flag: opp.flag, gf, ga, g, a };
+    if (opp.crest) game.crest = opp.crest;
+    return game;
   }
 
   S.wcStart = function (c) {
@@ -59,7 +69,8 @@
     if (!run || run.out || run.champion || run.pending || run.live) return null;
     const { r, save } = rngOf(c);
     let opp;
-    if (run.stage < 3) opp = D.NATION_BY_NAME[run.group[run.stage]];
+    if (run.kind === 'cwc') opp = cwcOpp(c, run, r);
+    else if (run.stage < 3) opp = D.NATION_BY_NAME[run.group[run.stage]];
     else {
       // Mata-mata: adversários cada vez mais fortes
       const want = 82 + (run.stage - 3) * 2;
@@ -160,6 +171,7 @@
     const run = c.wcRun;
     run.out = !run.champion;
     run.reached = reached;
+    if (run.kind === 'cwc') return cwcEnd(c, run, reached);
     c.totals.wcApps = (c.totals.wcApps || 0) + 1;
     c.totals.wcGoals = (c.totals.wcGoals || 0) + run.g;
     c.fame += run.g * 2 + (run.champion ? 60 : run.stage >= 5 ? 15 : 0);
@@ -174,6 +186,98 @@
     c.wcHist.push({ year: run.year, nation: run.nation, reached, g: run.g, a: run.a, champion: run.champion });
   }
   S.wcDone = c => !c.wcRun || c.wcRun.out || c.wcRun.champion;
+
+  // ---------- Mundial de Clubes (a cada 4 anos, depois da temporada: 2029, 2033...) ----------
+  // 32 clubes, fase de grupos e mata-mata, jogo a jogo como a Copa (usa o mesmo c.wcRun, com kind 'cwc').
+  S.isCwcYear = c => c.season > 0 && (S.YEAR0 + c.season) % 4 === 1;
+  // Vagas por continente (os clubes africanos e da Oceania não estão nas ligas do jogo: entram como convidados)
+  const CWC_QUOTA = { eur: 12, sul: 6, conc: 5, asia: 4 };
+  const CWC_EXTRA = [
+    { id: 'cwc-0', name: 'Al Ahly', flag: '🇪🇬', str: 75 }, { id: 'cwc-1', name: 'Mamelodi Sundowns', flag: '🇿🇦', str: 73 },
+    { id: 'cwc-2', name: 'Espérance', flag: '🇹🇳', str: 71 }, { id: 'cwc-3', name: 'Wydad', flag: '🇲🇦', str: 70 },
+    { id: 'cwc-4', name: 'Auckland City', flag: '🇳🇿', str: 58 },
+  ];
+  S.CWC_EXTRA = CWC_EXTRA;
+  const topDiv = x => !(D.LADDER[x.league] && D.LADDER[x.league].up);
+  // Time do Mundial pelo id: clube do jogo (com escudo) ou convidado
+  S.cwcTeam = function (id) {
+    const cl = D.CLUB_BY_ID[id];
+    if (cl) return { id, name: cl.name, flag: D.LEAGUE_BY_ID[cl.league].flag, crest: id, str: cl.strength, conf: S.confOf(cl.league) };
+    const x = CWC_EXTRA.find(e => e.id === id);
+    return Object.assign({ crest: id, conf: 'out' }, x);
+  };
+  // Seed do ano: a lista muda de um Mundial para outro, mas é a mesma durante o torneio
+  const hash = str => { let h = 2166136261; for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619); return ((h >>> 0) % 1000) / 1000; };
+  // Os 32 do ano: os mais fortes de cada continente (máx. 2 por liga, com um sorteio de forma),
+  // mais os campeões continentais dos últimos 4 anos com você
+  S.cwcField = function (c, yr) {
+    const out = [];
+    const recent = S.cwcChampClub(c);
+    for (const conf in CWC_QUOTA) {
+      const per = {}, list = [];
+      if (recent && S.confOf(D.CLUB_BY_ID[recent].league) === conf) { list.push(recent); per[D.CLUB_BY_ID[recent].league] = 1; }
+      D.CLUBS.filter(x => topDiv(x) && S.confOf(x.league) === conf && x.id !== recent)
+        .map(x => [x, x.strength + hash(yr + x.id) * 8]).sort((a, b) => b[1] - a[1])
+        .forEach(([x]) => {
+          if (list.length >= CWC_QUOTA[conf] || (per[x.league] || 0) >= 2) return;
+          per[x.league] = (per[x.league] || 0) + 1;
+          list.push(x.id);
+        });
+      out.push(...list);
+    }
+    return out.concat(CWC_EXTRA.map(e => e.id));
+  };
+  // Clube com que você ganhou a Libertadores ou a Champions nos últimos 4 anos (vaga garantida)
+  S.cwcChampClub = function (c) {
+    const s = c.seasons.slice(-4).reverse().find(x => x.titles.some(t => t.id === 'cont') && x.club === c.club);
+    return s ? s.club : null;
+  };
+  S.cwcCall = function (c) {
+    const yr = S.YEAR0 + c.season, cl = D.CLUB_BY_ID[c.club];
+    const called = !!cl && S.cwcField(c, yr).includes(c.club);
+    const share = cl ? S.role(c, cl).share : 0;
+    return { club: cl, called, champ: S.cwcChampClub(c) === c.club, starter: share >= 0.6, share };
+  };
+  S.cwcStart = function (c) {
+    const { r, save } = rngOf(c);
+    const call = S.cwcCall(c), yr = S.YEAR0 + c.season;
+    const field = S.cwcField(c, yr).filter(id => id !== c.club).map(S.cwcTeam);
+    const mine = S.confOf(call.club.league), used = [];
+    const pick = f => { const left = field.filter(x => !used.includes(x.id)), p = left.filter(f); const x = r.pick(p.length ? p : left); used.push(x.id); return x.id; };
+    // Grupo com um de cada pote, sempre de outro continente: um grande, um médio e um azarão
+    const group = [pick(x => x.conf !== mine && x.str >= 80), pick(x => x.conf !== mine && x.str >= 70 && x.str < 80), pick(x => x.conf !== mine && x.str < 72)];
+    c.wcRun = { kind: 'cwc', year: yr, club: c.club, starter: call.starter, share: clamp(call.share, 0.35, 0.95),
+      field: field.map(x => x.id), group, used, games: [], stage: 0, pts: 0, out: false, champion: false, pending: null, g: 0, a: 0,
+      groupMoment: r.int(0, 2) };
+    save();
+    return c.wcRun;
+  };
+  // Adversário do jogo: grupo sorteado; no mata-mata, cada vez mais fortes
+  function cwcOpp(c, run, r) {
+    if (run.stage < 3) return S.cwcTeam(run.group[run.stage]);
+    const want = 74 + (run.stage - 3) * 3;
+    const left = run.field.filter(id => !run.used.includes(id)).map(S.cwcTeam);
+    const p = left.filter(x => x.str >= want);
+    const opp = r.pick(p.length ? p : left.sort((a, b) => b.str - a.str).slice(0, 3));
+    run.used.push(opp.id);
+    return opp;
+  }
+  function cwcEnd(c, run, reached) {
+    const T = c.totals;
+    T.cwcApps = (T.cwcApps || 0) + 1;
+    T.cwcGoals = (T.cwcGoals || 0) + run.g;
+    c.fame += run.g * 1.5 + (run.champion ? 40 : run.stage >= 5 ? 10 : 0);
+    if (run.champion) {
+      T.cwc = (T.cwc || 0) + 1;
+      c.trophies['Mundial de Clubes'] = c.trophies['Mundial de Clubes'] || { type: 'cwc', n: 0 };
+      c.trophies['Mundial de Clubes'].n++;
+      c.wcBoost = 8; // pesa na Bola de Ouro da próxima temporada
+      const sp = c.spells[c.spells.length - 1];
+      if (sp && sp.club === run.club) sp.titles++;
+    }
+    c.cwcHist = c.cwcHist || [];
+    c.cwcHist.push({ year: run.year, club: run.club, reached, g: run.g, a: run.a, champion: run.champion });
+  }
 
 
   if (typeof module !== 'undefined') module.exports = S;

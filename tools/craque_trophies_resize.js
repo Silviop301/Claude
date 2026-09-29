@@ -12,7 +12,9 @@ const path = require('path');
   fs.mkdirSync(outDir, { recursive: true });
   const b = await chromium.launch();
   const p = await b.newPage();
+  // Mantém as taças que já estão no mapa (ex.: a Bola de Ouro, que não vem da API)
   const map = {};
+  try { Object.assign(map, JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'craque', 'src', 'trophy-imgs.js'), 'utf8').replace(/^[\s\S]*?= /, '').replace(/;\s*$/, ''))); } catch (e) { /* primeira vez */ }
   for (const [name, slug] of Object.entries(found)) {
     const data = 'data:image/png;base64,' + fs.readFileSync(path.join(src, slug + '.png')).toString('base64');
     const out = await p.evaluate(async data => {

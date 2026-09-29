@@ -54,11 +54,14 @@
     '<path d="M22.5 13h19M32 3.2c-5 5-5 14.6 0 19.6M32 3.2c5 5 5 14.6 0 19.6" fill="none" stroke="' + INK + '" stroke-width="1.3" stroke-opacity=".7"/>' +
     '<path d="M26 8c2-2 4-3 6-3" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="2" stroke-linecap="round"/>' +
     '<path d="M22 47h20v11H22z" fill="' + INK + '"/><path d="M22 49.5h20M22 54.5h20" stroke="#1FA35A" stroke-width="2.4"/>';
-  const METAL = { league: 'gold', cup: 'silver', ucl: 'silver', lib: 'gold', ballon: 'gold', wc: 'gold' };
+  // Mundial de Clubes e Intercontinental (sem imagem real): usam as taças desenhadas parecidas
+  SHAPES.cwc = SHAPES.wc || SHAPES.cup;
+  SHAPES.inter = SHAPES.cup;
+  const METAL = { league: 'gold', cup: 'silver', ucl: 'silver', lib: 'gold', ballon: 'gold', wc: 'gold', cwc: 'gold', inter: 'gold' };
 
   // name: nome da competição. Se houver imagem da taça real (src/trophy-imgs.js), usa ela;
   // se não houver (ou a imagem falhar), fica a taça desenhada.
-  const WC_NAME = { wc: 'Copa do Mundo', lib: 'Libertadores', ucl: 'Liga dos Campeões' };
+  const WC_NAME = { wc: 'Copa do Mundo', lib: 'Libertadores', ucl: 'Liga dos Campeões', ballon: 'Bola de Ouro', cwc: 'Mundial de Clubes', inter: 'Copa Intercontinental' };
   root.CRAQUE_TROPHY = function (type, size, name) {
     const img = (root.CRAQUE_TROPHY_IMGS || {})[name || WC_NAME[type]];
     const s = size || 40;

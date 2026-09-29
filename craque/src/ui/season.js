@@ -14,7 +14,8 @@
     const res = S.playSeason(G.c);
     sfx('whistle');
     // Em ano de Copa com convocação, fechar o jogo no resumo não pula a Copa
-    G.step = S.isWcYear(G.c) && G.c.wcYearDone !== year() && S.wcCall(G.c).called ? 'wc' : S.windowOpen(G.c) ? 'offers' : 'preseason';
+    G.step = S.isWcYear(G.c) && G.c.wcYearDone !== year() && S.wcCall(G.c).called ? 'wc'
+      : S.isCwcYear(G.c) && G.c.cwcYearDone !== year() && S.cwcCall(G.c).called ? 'cwc' : S.windowOpen(G.c) ? 'offers' : 'preseason';
     save();
     const cl = club(res.club);
     const [c1, c2] = seasonStats(res);
@@ -117,11 +118,18 @@
     let wcBlock = '';
     if (call && call.called) wcBlock = '<div class="wc-call rv"><span class="wc-flag">' + call.nation.flag + '</span><div><b>Convocado para a Copa do Mundo ' + year() + '!</b><span>' + (call.starter ? 'Titular da seleção' : 'Vai como reserva (nota perto do corte de ' + call.cut + ')') + '</span></div></div>';
     else if (call && G.c.age >= 18) { wcBlock = '<p class="wc-miss rv">🌍 Fora da Copa de ' + year() + ': a seleção pedia nota ' + call.cut + ', você tem ' + S.ovr(G.c) + '.</p>'; G.c.wcYearDone = year(); save(); }
+    // Mundial de Clubes (a cada 4 anos): o clube classificado joga logo depois da temporada
+    const cwcCall = S.isCwcYear(G.c) && G.c.cwcYearDone !== year() ? S.cwcCall(G.c) : null;
+    if (cwcCall && cwcCall.called) wcBlock = '<div class="wc-call rv">' + crest(cwcCall.club.id, 'lg') + '<div><b>' + D.O(esc(cwcCall.club.name)) + ' está no Mundial de Clubes ' + year() + '!</b><span>' + (cwcCall.champ ? 'Vaga de campeão continental' : 'Vaga pelo ranking de clubes') + ' · 32 clubes, jogo a jogo</span></div></div>';
+    else if (cwcCall) { G.c.cwcYearDone = year(); save(); }
+    const goCwc = !!(cwcCall && cwcCall.called);
     const goWc = call && call.called;
+    const goTour = goWc || goCwc, tourIntro = goWc ? U.wcIntro : U.cwcIntro;
+    const tourLbl = goWc ? 'Copa do Mundo ' + year() + ' 🌍' : 'Mundial de Clubes ' + year() + ' 🌐';
     let actions;
-    if (fin) actions = '<p class="lead">' + (res.farewell ? 'Fim da temporada de despedida. Hora de pendurar as chuteiras.' : 'Aos ' + G.c.age + ' anos, o corpo pediu para parar.') + '</p><button class="btn" id="b-next">' + (goWc ? 'Última dança: Copa do Mundo ' + year() + ' 🌍' : 'Ver sua carreira') + '</button>';
+    if (fin) actions = '<p class="lead">' + (res.farewell ? 'Fim da temporada de despedida. Hora de pendurar as chuteiras.' : 'Aos ' + G.c.age + ' anos, o corpo pediu para parar.') + '</p><button class="btn" id="b-next">' + (goTour ? 'Última dança: ' + tourLbl : 'Ver sua carreira') + '</button>';
     else {
-      actions = '<p class="contract">' + contractTxt + '</p><button class="btn" id="b-next">' + (goWc ? 'Jogar a Copa do Mundo ' + year() + ' 🌍' : open ? 'Janela de transferências' : 'Próxima temporada') + '</button>';
+      actions = '<p class="contract">' + contractTxt + '</p><button class="btn" id="b-next">' + (goTour ? 'Jogar ' + (goWc ? 'a ' : 'o ') + tourLbl : open ? 'Janela de transferências' : 'Próxima temporada') + '</button>';
       if (S.canAnnounce(G.c)) actions += '<button class="btn ghost" id="b-farewell">Anunciar a última temporada<small>Torcida +10 e mais minutos · parar em alta rende pontos extras</small></button>';
       if (S.canRetire(G.c)) actions += '<button class="btn ghost" id="b-stop">Parar agora</button>';
     }
@@ -136,8 +144,8 @@
       wcBlock + '<div class="rv">' + actions + '</div>';
     bar();
     reveal(skipNow, res);
-    $('b-next').onclick = goWc ? U.wcIntro : afterSeason;
-    if ($('b-farewell')) $('b-farewell').onclick = () => { S.announce(G.c); save(); bar(); goWc ? U.wcIntro() : U.preseason(); };
+    $('b-next').onclick = goTour ? tourIntro : afterSeason;
+    if ($('b-farewell')) $('b-farewell').onclick = () => { S.announce(G.c); save(); bar(); goTour ? tourIntro() : U.preseason(); };
     if ($('b-stop')) $('b-stop').onclick = U.finale;
   }
 

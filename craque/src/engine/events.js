@@ -99,9 +99,9 @@
     },
     {
       id: 'arabia', icon: '🛢️', weight: 3,
-      when: c => c.age >= 28 && S.ovr(c) >= 72 && !['ara', 'usa'].includes(D.CLUB_BY_ID[c.club].league),
+      when: c => c.age >= 28 && S.ovr(c) >= 72 && !D.MONEY.includes(D.CLUB_BY_ID[c.club].league),
       build: (c, r) => {
-        const dest = pickClub(r, x => ['ara', 'usa'].includes(x.league));
+        const dest = pickClub(r, x => D.MONEY.includes(x.league));
         // Milionária de verdade: sempre bem acima do que você já ganha
         const w = Math.round(Math.max(S.wage(c, dest) * 1.5, c.wage * 2.5) / 1000) * 1000;
         return {

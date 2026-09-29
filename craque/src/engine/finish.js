@@ -6,7 +6,7 @@
   S.finish = function (c) {
     c.retired = true;
     const T = c.totals;
-    const titles = T.league + T.cup + T.cont;
+    const titles = S.titleCount(T);
     // Despedida: parar em alta rende pontos extras
     const lastS = c.seasons[c.seasons.length - 1];
     const bonus = [];
@@ -19,7 +19,7 @@
     const isDef = D.DEF_POS.includes(c.pos);
     const prod = isDef ? (T.cs || 0) * 0.8 + T.goals * 1.5 + T.assists * 0.7 + (T.saves || 0) * 0.2 + (T.penSaved || 0) * 3 + (T.tackles || 0) * 0.15
       : T.goals + T.assists * 0.7;
-    const score = Math.round(prod + titles * 12 + T.cont * 10 + T.ballon * 120 + (T.scorer + T.young + T.team) * 8 + c.peak * 2 + (T.wc || 0) * 150 + (T.wcGoals || 0) * 3 + bonus.reduce((a, b) => a + b.v, 0));    const byClub = {};
+    const score = Math.round(prod + titles * 12 + T.cont * 10 + T.ballon * 120 + (T.scorer + T.young + T.team) * 8 + c.peak * 2 + (T.wc || 0) * 150 + (T.cwc || 0) * 40 + (T.wcGoals || 0) * 3 + bonus.reduce((a, b) => a + b.v, 0));    const byClub = {};
     c.spells = c.spells.filter(s => s.seasons);
     c.spells.forEach(s => {
       byClub[s.club] = byClub[s.club] || { seasons: 0, goals: 0 };
@@ -40,7 +40,7 @@
     else if (titles >= 14) verdict = 'Colecionador de taças';
     else if (c.peak < 66) verdict = 'Promessa que não vingou';
     else if (nClubs >= 11) verdict = 'Cigano da bola';
-    else if (c.spells.filter(s => ['ara', 'usa'].includes(D.CLUB_BY_ID[s.club].league)).reduce((n, s) => n + s.seasons, 0) >= 3) verdict = 'Foi atrás do dinheiro';
+    else if (c.spells.filter(s => D.MONEY.includes(D.CLUB_BY_ID[s.club].league)).reduce((n, s) => n + s.seasons, 0) >= 3) verdict = 'Foi atrás do dinheiro';
     else if (c.spells.filter(s => D.CLUB_BY_ID[s.club].tier >= 4).reduce((n, s) => n + s.seasons, 0) >= 6) verdict = 'Estrela na Europa';
     else if ((c.trophies['Brasileirão'] || { n: 0 }).n >= 2) verdict = 'Rei do Brasileirão';
     else verdict = 'Carreira sólida';

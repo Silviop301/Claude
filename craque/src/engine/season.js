@@ -118,8 +118,8 @@
     if (M && M.type === 'cup') cup = M.ok;
     if (M && M.type === 'title') league = M.ok;
     if (M && M.ok) goals += 1;
-    // Continental: Libertadores (Brasil/Argentina) mede força contra o nível sul-americano; Champions, contra o europeu
-    const libert = ['bra-a', 'arg'].includes(club.league);
+    // Continental: Libertadores (primeira divisão sul-americana) mede força contra o nível sul-americano; Champions, contra o europeu
+    const libert = S.LIBERTA.includes(club.league);
     const pCont = club.tier < 3 ? 0 : libert ? clamp((sEff - 66) / 28 + titleBonus * 0.3, 0.01, 0.28)
       : clamp((sEff - 80) / 40 + titleBonus * 0.3, 0.01, 0.25) * (club.tier === 5 ? 1 : club.tier === 4 ? 0.4 : 0.25);
     let cont = club.tier >= 3 && r() < pCont;
@@ -129,6 +129,18 @@
     if (league) titles.push({ id: 'league', name: lg.name });
     if (cup) titles.push({ id: 'cup', name: lg.cup || 'Copa nacional' });
     if (cont && contName) titles.push({ id: 'cont', name: contName });
+    // Copa Intercontinental (todo ano, em dezembro): o campeão continental enfrenta um grande do outro continente
+    let inter = null;
+    if (cont && contName) {
+      const fromSul = contName === 'Libertadores';
+      const pool = D.CLUBS.filter(x => x.id !== club.id && !(D.LADDER[x.league] && D.LADDER[x.league].up) && S.confOf(x.league) === (fromSul ? 'eur' : 'sul'))
+        .sort((a, b) => b.strength - a.strength).slice(0, 6);
+      if (pool.length) {
+        const vs = r.pick(pool);
+        inter = { vs: vs.id, won: r() < clamp(0.5 + (sEff - vs.strength) / 24, 0.15, 0.85) };
+        if (inter.won) titles.push({ id: 'inter', name: 'Copa Intercontinental' });
+      }
+    }
     // Tabela de 20 times: os rivais da liga mais times "de fora da lista" na faixa de baixo.
     // Cada um soma pontos em 38 rodadas pela força; a posição sai da comparação com todos.
     const others = leagueClubs.filter(x => x.id !== club.id).map(x => x.strength);
@@ -175,6 +187,10 @@
     if (league && rival && !(M && M.type === 'title')) highlights.push('🏆 Título garantido na última rodada contra ' + D.o(rival.name));
     if (cup && other && !(M && M.type === 'cup')) highlights.push('🏆 Final da ' + (lg.cup || 'copa') + ' contra ' + D.o(other.name) + (goals > 5 ? ': gol seu!' : ''));
     if (cont && contName && !(M && M.type === 'cont')) highlights.push('🌍 Campeão da ' + contName + '!');
+    if (inter) {
+      const vsName = D.CLUB_BY_ID[inter.vs].name;
+      highlights.push(inter.won ? '🌐 Campeão da Copa Intercontinental contra ' + D.o(vsName) + '!' : '😞 Vice da Copa Intercontinental: derrota para ' + D.o(vsName));
+    }
     // Clássico: contra o mesmo rival de novo, o destaque lembra as vezes anteriores
     if (!league && rival && games >= 10 && (isDef ? cleanSheets >= 15 : goals + assists >= 8)) {
       c.rivalWins = c.rivalWins || {};
@@ -200,7 +216,7 @@
     // Bola de Ouro: só em clubes de nível 4-5
     // Defensores entram pela muralha (jogos sem sofrer gol, defesas, pênaltis defendidos)
     const prod = isDef ? goals * 2 + assists * 0.6 + cleanSheets * 0.9 + saves * 0.2 + penSaved * 2 + tackles * 0.1 : goals + assists * 0.6;
-    const bScore = prod + titles.length * 8 + (cont ? 10 : 0) + (rating - 6) * 12 + (c.wcBoost || 0) + Math.min(8, c.fame / 30); // fama pesa no voto
+    const bScore = prod + titles.filter(t => t.id !== 'inter').length * 8 + (cont ? 10 : 0) + (rating - 6) * 12 + (c.wcBoost || 0) + Math.min(8, c.fame / 30); // fama pesa no voto
     c.wcBoost = 0;
     // Cada Bola de Ouro anterior aumenta a exigência (a concorrência cresce)
     // Defensor raramente ganha a Bola de Ouro (como na vida real)
@@ -260,6 +276,7 @@
     if (league) T.league++;
     if (cup) T.cup++;
     if (cont) T.cont++;
+    if (inter && inter.won) T.inter = (T.inter || 0) + 1;
     awards.forEach(a => { if (a.id in T) T[a.id]++; });
     // Sala de troféus: conta por competição
     c.trophies = c.trophies || {};
@@ -406,7 +423,7 @@
     if (trend >= 0.6) return col('volta', [
       ['Volta por cima', 'Muita gente (eu incluído) duvidou de ' + nick + '. Temporada para calar os críticos. Engulo minhas palavras com prazer.'],
       ['Resposta em campo', nick + ' não deu entrevista, não reclamou. Respondeu jogando. É o melhor jeito.']]);
-    if (['ara', 'usa'].includes(cur.league) && c.age <= 30) return col('grana', [
+    if (D.MONEY.includes(cur.league) && c.age <= 30) return col('grana', [
       ['Escolhas', 'O dinheiro é bom, ninguém nega. Mas ' + nick + ' tinha futebol para brigar por coisa maior. Cada um sabe da sua conta bancária.'],
       ['Longe dos holofotes', 'A conta bancária cresce, a lembrança diminui. ' + nick + ' ainda tem tempo de voltar ao palco grande.']]);
     if (c.rel.coach < 35) return col('clima', [

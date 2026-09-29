@@ -162,6 +162,15 @@
       lede: 'O país para. ' + nick + ' entra para a história como campeão do mundo com ' + (D.NATION_BY_NAME[c.country] ? D.NATION_BY_NAME[c.country].flag + ' ' : '') + c.country + '.' }, onClose);
   }
 
+  // Mundial de Clubes: edição extra do título
+  function clubWorldPaper(c, run, onClose) {
+    const nick = c.name, cl = D.CLUB_BY_ID[run.club];
+    const stats = S.defKick(c.pos) ? run.games.filter(x => x.cs).length + ' jogos sem sofrer gol no Mundial' : run.g + (run.g === 1 ? ' gol' : ' gols') + ' e ' + run.a + (run.a === 1 ? ' assistência' : ' assistências') + ' no Mundial';
+    return paper({ c, year: run.year, extra: 'Mundial de Clubes ' + run.year, head: D.O(cl.name) + ' é campeão do mundo! ' + nick + ' ergue a taça',
+      pose: 'taca', kit: kitOf(cl.id), caption: nick + ' com a taça do Mundial', stats,
+      lede: 'Contra os melhores clubes do planeta, ' + D.o(cl.name) + ' chegou ao topo. A festa da torcida vai varar a madrugada.' }, onClose);
+  }
+
   // Despedida (fim de carreira)
   function farewellPaper(c, f, onClose) {
     const nick = c.name, T = c.totals, main = D.CLUB_BY_ID[f.mainClub];
@@ -175,5 +184,5 @@
       lede: 'Foram ' + nums + ' em ' + f.nClubs + (f.nClubs > 1 ? ' clubes' : ' clube') + '. ' + D.O(main.name) + ' foi a casa mais marcante.', column: col }, onClose);
   }
 
-  Object.assign(U, { SKIN, HAIR_COLORS, HAIRS, PAPERS, kitOf, nationKit, photo, paper, transferPaper, finalPaper, worldCupPaper, farewellPaper });
+  Object.assign(U, { SKIN, HAIR_COLORS, HAIRS, PAPERS, kitOf, nationKit, photo, paper, transferPaper, finalPaper, worldCupPaper, clubWorldPaper, farewellPaper });
 })();
