@@ -37,9 +37,14 @@
     const q = clamp((o - 60) / 25, 0.3, 1.4);
     const pg = run.share * ({ ATA: 0.4, MEI: 0.2, ZAG: 0.08, GOL: 0 }[c.pos]) * q;
     const pa = run.share * ({ ATA: 0.18, MEI: 0.34, ZAG: 0.05, GOL: 0 }[c.pos]) * q;
+    // Cada gol com minuto e participação sua: o lance decisivo pode cair no meio do jogo
+    const ours = [], theirs = [];
     let g = 0, a = 0;
-    for (let i = 0; i < gf; i++) { const x = r(); if (x < pg) g++; else if (x < pg + pa) a++; }
-    const game = { opp: opp.name, flag: opp.flag, gf, ga, g, a };
+    for (let i = 0; i < gf; i++) { const x = r(), who = x < pg ? 'g' : x < pg + pa ? 'a' : ''; if (who === 'g') g++; if (who === 'a') a++; ours.push({ min: r.int(1, 90), who }); }
+    for (let i = 0; i < ga; i++) theirs.push(r.int(1, 90));
+    const game = { opp: opp.name, flag: opp.flag, gf, ga, g, a, ours, theirs };
+    // Linha do tempo (a tela mostra gol a gol): s = 'u' (nós) ou 't' (eles); w = 'g' seu gol, 'a' sua assistência
+    game.ev = ours.map(x => ({ m: x.min, s: 'u', w: x.who || undefined })).concat(theirs.map(m => ({ m, s: 't' }))).sort((x, y) => x.m - y.m);
     if (opp.crest) game.crest = opp.crest;
     return game;
   }
@@ -83,14 +88,45 @@
     run.games.push(game);
     const groupMoment = run.groupMoment === undefined ? 2 : run.groupMoment;
     if (run.stage >= 3 || run.stage === groupMoment) {
-      // Lance decisivo nos minutos finais: pênalti ou falta a favor (defensores: pênalti ou contra-ataque contra)
+      // Lance decisivo com o jogo aberto (pênalti ou falta a favor; defensores: pênalti ou contra-ataque contra).
+      // O placar para no minuto do lance; o resto do jogo acontece depois dele.
+      const type = S.defKick(c.pos) || (r() < 0.55 ? 'pen' : 'fk');
+      const minute = pickMinute(game, !!S.defKick(c.pos), r);
+      splitAt(game, minute);
       game.live = true;
-      game.moment = { type: S.defKick(c.pos) || (r() < 0.55 ? 'pen' : 'fk'), minute: 72 + r.int(0, 18) };
+      game.moment = { type, minute };
       run.live = true;
     } else wcClose(c, game, r);
+    delete game.ours; delete game.theirs;
     save();
     return game;
   };
+
+  // Minuto do lance: jogo ainda em aberto (atacando: empatado ou perdendo por um; defendendo: empatado ou ganhando por um).
+  // Às vezes no fim (vale a classificação), às vezes no meio (o resto do jogo ainda pode mudar tudo).
+  function pickMinute(game, def, r) {
+    let best = null, bestCost = 99;
+    for (let i = 0; i < 14; i++) {
+      const m = r() < 0.45 ? r.int(78, 89) : r.int(12, 77);
+      const us = game.ours.filter(x => x.min < m).length, them = game.theirs.filter(x => x < m).length;
+      const d = def ? us - them : them - us; // 0 ou 1 = lance que decide
+      const cost = d === 0 || d === 1 ? 0 : Math.abs(d - 0.5);
+      if (cost < bestCost) { best = m; bestCost = cost; }
+      if (!cost) break;
+    }
+    return best;
+  }
+  // Separa o jogo no minuto do lance: placar até ali e o que vem depois (game.rest)
+  function splitAt(game, m) {
+    const before = game.ours.filter(x => x.min < m), after = game.ours.filter(x => x.min >= m);
+    const cnt = (list, w) => list.filter(x => x.who === w).length;
+    game.gf = before.length; game.ga = game.theirs.filter(x => x < m).length;
+    game.at = [game.gf, game.ga]; // placar na hora do lance
+    game.g = cnt(before, 'g'); game.a = cnt(before, 'a');
+    game.evRest = game.ev.filter(e => e.m >= m);
+    game.ev = game.ev.filter(e => e.m < m);
+    game.rest = { gf: after.length, ga: game.theirs.filter(x => x >= m).length, g: cnt(after, 'g'), a: cnt(after, 'a') };
+  }
 
   // Fecha o placar: nota do jogo, pontos do grupo ou mata-mata
   function wcClose(c, game, r) {
@@ -130,6 +166,16 @@
     const defensive = ['save', 'tackle'].includes(game.moment.type);
     if (defensive) { if (!ok) game.ga++; } // defendeu/desarmou: placar segue; falhou: gol deles
     else if (ok) { game.gf++; game.g++; }
+    // O resto do jogo depois do lance
+    // Linha do tempo: o lance (se virou gol) e o resto do jogo; a tela retoma o relógio do minuto do lance
+    if (game.ev) {
+      const km = game.moment.minute;
+      if (defensive ? !ok : ok) game.ev.push(defensive ? { m: km, s: 't', k: 1 } : { m: km, s: 'u', w: 'g', k: 1 });
+      game.ev = game.ev.concat(game.evRest || []);
+      delete game.evRest;
+      game.resumeAt = km;
+    }
+    if (game.rest) { game.gf += game.rest.gf; game.ga += game.rest.ga; game.g += game.rest.g; game.a += game.rest.a; game.after = game.rest.gf || game.rest.ga ? true : undefined; delete game.rest; }
     wcClose(c, game, r);
     save();
   };

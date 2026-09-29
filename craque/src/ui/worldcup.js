@@ -57,20 +57,71 @@
       (g.moment ? '<span class="mom ' + (g.momentOk ? 'ok' : 'ko') + '">' + g.moment.minute + "' " + ({
         pen: g.momentOk ? 'pênalti convertido' : 'pênalti desperdiçado', fk: g.momentOk ? 'falta convertida' : 'falta desperdiçada',
         save: g.momentOk ? 'pênalti defendido' : 'pênalti sofrido', tackle: g.momentOk ? 'desarme salvador' : 'atacante passou',
-      }[g.moment.type]) + '</span>' : '') +
+      }[g.moment.type]) + (g.at ? ' no ' + g.at[0] + ' × ' + g.at[1] : '') + '</span>' : '') +
       (S.defKick(G.c.pos) && g.cs && !g.live ? '<span class="mom ok">🧤 sem sofrer gol</span>' : '') +
       (g.rating ? '<span class="rt' + (g.motm ? ' motm' : '') + '">' + (g.motm ? '⭐ Craque do jogo · ' : 'Nota ') + g.rating.toFixed(1).replace('.', ',') + '</span>' : '') +
+      (g.ev && g.ev.length && !g.live ? '<div class="gls">' + g.ev.map(e => goalLine(e, g)).join('') + '</div>' : '') +
       (g.groupEnd ? '<div class="grp ' + (g.groupEnd.pass ? 'ok' : 'ko') + '">' + (g.groupEnd.pass ? 'Classificado com ' + g.groupEnd.pts + ' pontos' : 'Eliminado na fase de grupos (' + g.groupEnd.pts + ' pts)') + '</div>' : '') + '</div>';
+  }
+
+  // Jogo ao vivo: relógio correndo e o placar mudando gol a gol
+  function goalLine(e, g) {
+    const run = G.c.wcRun;
+    const txt = e.s === 't' ? esc(g.opp) + ' marca' + (e.k ? ' no lance decisivo' : '')
+      : e.w === 'g' ? '<b>Gol seu!</b>' + (e.k ? ' No lance decisivo' : '') : e.w === 'a' ? usName(run) + ' marca, <b>assistência sua</b>' : usName(run) + ' marca';
+    return '<div class="gl ' + e.s + '"><i>' + e.m + "'</i>" + (e.s === 'u' ? '⚽ ' : '🥅 ') + txt + '</div>';
+  }
+  function liveRow(g) {
+    const el = document.createElement('div');
+    el.className = 'wc-game playing enter';
+    el.innerHTML = '<span class="st">' + esc(g.stage) + ' <i class="clk">0\'</i></span>' +
+      '<div class="line"><span class="us">' + usMark(G.c.wcRun) + '</span><b class="sc">0 × 0</b><span class="them">' + themMark(g) + ' ' + esc(g.opp) + '</span></div><div class="gls"></div>';
+    return el;
+  }
+  // Corre o relógio de "from" até "to"; cada gol aparece no seu minuto (com uma pausa para comemorar)
+  function runClock(el, g, from, to, isFast, done) {
+    const ev = g.ev || [], sc = el.querySelector('.sc'), clk = el.querySelector('.clk'), gls = el.querySelector('.gls');
+    let u = 0, t = 0, m = from;
+    ev.filter(e => e.m < from).forEach(e => { if (e.s === 'u') u++; else t++; gls.insertAdjacentHTML('beforeend', goalLine(e, g)); });
+    sc.textContent = u + ' × ' + t;
+    const tick = () => {
+      if (!el.isConnected) return;
+      const now = ev.filter(e => e.m === m);
+      clk.textContent = m + "'";
+      let pause = isFast() ? 3 : 24;
+      now.forEach(e => {
+        if (e.s === 'u') u++; else t++;
+        sc.textContent = u + ' × ' + t;
+        gls.insertAdjacentHTML('beforeend', goalLine(e, g));
+        el.classList.remove('goal-u', 'goal-t'); void el.offsetWidth; el.classList.add('goal-' + e.s);
+        sfx(e.s === 'u' ? 'goal' : 'miss');
+        pause = isFast() ? 80 : 750;
+      });
+      if (m >= to) return done();
+      m++;
+      setTimeout(tick, pause);
+    };
+    tick();
   }
 
   function wcPlay() {
     const run = G.c.wcRun;
     G.step = isCwc(run) ? 'cwc' : 'wc';
+    const last = run.games[run.games.length - 1];
+    const resume = last && last.resumeAt !== undefined && !last.live ? last : null; // jogo que continua depois do lance
     render('<div class="eyebrow">' + tName(run) + ' ' + run.year + ' · ' + usMark(run) + ' ' + usName(run) + '</div>' +
-      '<div class="wc-list" id="wc-list">' + run.games.filter(g => !g.live).map(wcRow).join('') + '</div><div id="wc-after"></div><p class="skip-hint" id="wc-hint">Toque para acelerar</p>');
-    let fast = false, timer = null;
+      '<div class="wc-list" id="wc-list">' + run.games.filter(g => !g.live && g !== resume).map(wcRow).join('') + '</div><div id="wc-after"></div><p class="skip-hint" id="wc-hint">Toque para acelerar</p>');
+    let fast = false;
+    const isFast = () => fast;
     setTimeout(() => { screen.onclick = () => { fast = true; }; }, 60);
     const list = $('wc-list');
+    // Troca a linha ao vivo pela linha final (nota, lance, craque do jogo)
+    const finish = (el, g) => {
+      const div = document.createElement('div');
+      div.innerHTML = wcRow(g);
+      el.replaceWith(div.firstChild);
+      sfx(g.gf > g.ga ? 'goal' : g.gf < g.ga ? 'miss' : 'whistle');
+    };
     const next = () => {
       if (!list.isConnected) return;
       // Lance decisivo ou pênaltis pendentes (inclusive ao voltar para o jogo)
@@ -79,17 +130,30 @@
       const g = S.wcNext(G.c);
       save();
       if (!g) return wcFinal();
-      if (g.live) return wcLive();
-      const div = document.createElement('div');
-      div.innerHTML = wcRow(g);
-      const el = div.firstChild;
-      el.classList.add('enter');
+      if (!g.ev) { // jogo salvo antes da minutagem
+        if (g.live) return wcLive();
+        const div = document.createElement('div'); div.innerHTML = wcRow(g); list.appendChild(div.firstChild);
+        return setTimeout(next, fast ? 250 : 1300);
+      }
+      const el = liveRow(g);
       list.appendChild(el);
       el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      sfx(g.gf > g.ga ? 'goal' : g.gf < g.ga ? 'miss' : 'whistle');
-      timer = setTimeout(next, fast ? 250 : g.pens ? 1100 : 1300);
+      // Jogo com lance: o relógio para no minuto do lance
+      if (g.live) return runClock(el, g, 0, g.moment.minute, isFast, () => { el.classList.add('paused'); setTimeout(wcLive, fast ? 100 : 500); });
+      runClock(el, g, 0, 90, isFast, () => { finish(el, g); setTimeout(next, fast ? 200 : 900); });
     };
-    timer = setTimeout(next, 500);
+    if (resume) {
+      // Depois do lance: o relógio volta a correr do minuto do lance até o apito final
+      const el = liveRow(resume);
+      list.appendChild(el);
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      return runClock(el, resume, resume.resumeAt, 90, isFast, () => {
+        delete resume.resumeAt; save();
+        finish(el, resume);
+        setTimeout(next, fast ? 200 : 1000);
+      });
+    }
+    setTimeout(next, 500);
   }
 
   // Lance decisivo nos minutos finais: pênalti ou falta a favor, no minigame
@@ -100,14 +164,16 @@
     if (run.momentStarted) { S.wcMomentAuto(G.c); save(); return wcPlay(); }
     const type = S.kickSetupType({ kick: m.type }), def = type === 'save' || type === 'tackle';
     const k = S.kickSetup(G.c, type), d = g.gf - g.ga, ko = run.stage >= 3;
-    const gain = d === 0 ? (ko ? 'classifica' : 'vitória') : d === -1 ? (ko ? 'leva para os pênaltis' : 'empata') : d >= 1 ? 'amplia' : 'diminui';
+    // No fim do jogo o lance decide; antes disso ele muda o placar e o resto do jogo ainda acontece
+    const late = m.minute >= 78, left = 90 - m.minute;
+    const gain = d === 0 ? (late ? (ko ? 'classifica' : 'vitória') : 'sai na frente') : d === -1 ? (late ? (ko ? 'leva para os pênaltis' : 'empata') : 'empata') : d >= 1 ? 'amplia' : 'diminui';
     // Defensor: o que acontece se falhar (gol deles)
-    const lose = d >= 2 ? 'diminuem' : d === 1 ? (ko ? 'empatam e vai para os pênaltis' : 'empatam') : d === 0 ? (ko ? 'eliminado' : 'derrota') : 'aumentam';
+    const lose = d >= 2 ? 'diminuem' : d === 1 ? (late && ko ? 'empatam e vai para os pênaltis' : 'empatam') : d === 0 ? (late ? (ko ? 'eliminado' : 'derrota') : 'saem na frente') : 'aumentam';
     const cwc = isCwc(run), who = cwc ? D.o(esc(club(run.club).name)) : theCountry(G.c.country);
     const h = $('wc-hint'); if (h) h.remove();
     // O que está em jogo nesta fase
     const NEXT = { 3: 'vai às quartas', 4: 'vai à semifinal', 5: 'vai à final', 6: cwc ? 'é campeão mundial' : 'é campeão do mundo' };
-    const ctx = ko ? 'Mata-mata: quem vencer ' + NEXT[run.stage] + '.' : run.stage === 2 ? 'Último jogo do grupo: ' + run.pts + (run.pts === 1 ? ' ponto' : ' pontos') + ' até aqui.' : 'Fase de grupos: ' + run.pts + (run.pts === 1 ? ' ponto' : ' pontos') + ' em ' + run.stage + (run.stage === 1 ? ' jogo.' : ' jogos.');
+    const ctx = (late ? 'Reta final! ' : 'Ainda faltam ' + left + ' minutos. ') + (ko ? 'Mata-mata: quem vencer ' + NEXT[run.stage] + '.' : run.stage === 2 ? 'Último jogo do grupo: ' + run.pts + (run.pts === 1 ? ' ponto' : ' pontos') + ' até aqui.' : 'Fase de grupos: ' + run.pts + (run.pts === 1 ? ' ponto' : ' pontos') + ' em ' + run.stage + (run.stage === 1 ? ' jogo.' : ' jogos.'));
     $('wc-after').innerHTML = '<div class="card event-card wc-live"><span class="st">' + esc(g.stage) + ' · ' + m.minute + "'</span>" +
       '<div class="line"><span>' + usMark(run) + '</span><b>' + g.gf + ' × ' + g.ga + '</b><span>' + themMark(g) + ' ' + esc(g.opp) + '</span></div>' +
       '<p class="mom-ctx">' + esc(ctx) + '</p>' +
