@@ -18,7 +18,7 @@
   // Goleiro: 0-3 parado respirando; 4-10 mergulho para a esquerda (desenho original); 11 deitado no chão.
   // Folha em resolução cheia (quadros de 549x500, 4 colunas). bb: caixa do corpo; glove: luva que vai na bola;
   // foot: ponto dos pés parado (fica na linha do gol)
-  const KSP = { url: 'assets/sprites/goleiro.png?v=314dfb64', w: 549, h: 500, sw: 549, sh: 6000, s: 0.3, foot: [426, 491], hop: [362, 491],
+  const KSP = { url: 'assets/sprites/goleiro.png?v=314dfb64', w: 549, h: 500, sw: 549, sh: 6000, s: 0.265, foot: [426, 491], hop: [362, 491],
     bb: [[313, 147, 539, 491], [326, 154, 537, 491], [346, 165, 535, 491], [329, 157, 545, 491], [203, 99, 521, 491], [139, 0, 530, 491], [125, 12, 531, 491], [84, 77, 516, 491], [60, 148, 491, 491], [56, 193, 485, 491], [50, 316, 474, 491], [4, 377, 469, 500]],
     glove: { 6: [234, 16], 7: [142, 82], 8: [84, 152], 9: [60, 312], 10: [54, 436] } };
 
@@ -56,7 +56,7 @@
     if (setup.fk) {
       const l = Math.min(setup.wallL * side, setup.wallR * side), r = Math.max(setup.wallL * side, setup.wallR * side);
       // Jogadores da barreira (sprites de braços cruzados). A cabeça marca a altura da barreira no plano do gol.
-      const top = py(setup.wall), feet = 238, sc = (feet - top) / (WALL.feet - WALL.top);
+      const top = py(setup.wall), feet = 256, sc = (feet - top) / (WALL.feet - WALL.top);
       const span = px(r) - px(l), n = Math.max(3, Math.round(span / (WALL.fw * sc * 0.82))), step = span / n;
       for (let i = 0; i < n; i++) {
         const cx = px(l) + step * (i + 0.5), f = (i * 5) % 16;
