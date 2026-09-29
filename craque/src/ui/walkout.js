@@ -5,6 +5,13 @@
   const { D, S, sfx, esc, tierCls, TIER_NAME } = U;
   const ORDER = ['bronze', 'prata', 'ouro', 'icone'];
   const tierUp = (o0, o1) => ORDER.indexOf(tierCls(o1)) > ORDER.indexOf(tierCls(o0));
+  // Revelação só na primeira vez que chega a Ouro e a Ícone (Prata e repetições não contam)
+  function tierReveal(c, o0, o1) {
+    const t = ORDER.indexOf(tierCls(o1));
+    if (!tierUp(o0, o1) || t < 2 || t <= (c.tierShown || 1)) return false;
+    c.tierShown = t;
+    return true;
+  }
 
   // Cartas especiais (a da Copa usa as cores da seleção do jogador)
   const SPECIAL = { tots: 'Seleção da Temporada', heroi: 'Herói da Final', copa: 'Copa do Mundo', bola: 'Bola de Ouro' };
@@ -62,5 +69,5 @@
   // Desgaste da carta no fim da carreira: 0 (nova), 1 (marcas de uso) ou 2 (bem gasta)
   const wearOf = c => (c.age >= 35 ? 2 : c.age >= 32 ? 1 : 0);
 
-  Object.assign(U, { tierUp, walkout, walkouts, cardData, wearOf, SPECIAL_NAME: SPECIAL });
+  Object.assign(U, { tierUp, tierReveal, walkout, walkouts, cardData, wearOf, SPECIAL_NAME: SPECIAL });
 })();

@@ -60,7 +60,7 @@
       stats: res.games + ' jogos · ' + seasonStats(res).map(([v, l]) => v + ' ' + l.toLowerCase()).join(' · ') + (res.games ? ' · nota ' + res.rating.toFixed(1).replace('.', ',') : ''),
       lede: lede(res, cl), subs: rest, column: res.column },
       // Depois do jornal: revelação da carta nova (subiu de faixa) e das cartas especiais da temporada
-      () => U.walkouts(G.c, (U.tierUp(res.ovr0, res.ovr1) ? [null] : []).concat(res.cards || []), onClose));
+      () => { const up = U.tierReveal(G.c, res.ovr0, res.ovr1); if (up) save(); U.walkouts(G.c, (up ? [null] : []).concat(res.cards || []), onClose); });
   }
 
   // Mostra os blocos do resumo um de cada vez (troféus com mais destaque). Tocar mostra tudo.

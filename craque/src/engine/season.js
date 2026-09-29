@@ -213,9 +213,10 @@
     const yr = S.YEAR0 + c.season;
     const cards = [];
     const main = isDef ? (c.pos === 'GOL' ? cleanSheets + ' SEM SOFRER GOL' : goals ? goals + ' GOLS · ' + cleanSheets + ' S/ GOL' : cleanSheets + ' SEM SOFRER GOL') : c.pos === 'MEI' ? assists + ' ASSIST.' : goals + ' GOLS';
-    // Seleção da Temporada: só as temporadas de gala (nota alta, muitos jogos, liga forte)
-    if (awards.some(a => a.id === 'team') && rating >= 8.1 && games >= 25 && club.tier >= 3 && (c.cards || []).filter(k => k.type === 'tots').length < 6) cards.push(S.addCard(c, 'tots', lg.name.toUpperCase() + ' ' + yr + ' · ' + main));
-    if (M && M.type === 'cont' && M.ok) cards.push(S.addCard(c, 'heroi', 'FINAL DA ' + M.comp.toUpperCase() + ' ' + yr));
+    // Cartas raras: Seleção da Temporada e Herói da Final saem no máximo uma vez na carreira
+    const has = t => (c.cards || []).some(k => k.type === t);
+    if (awards.some(a => a.id === 'team') && rating >= 8.3 && games >= 25 && club.tier >= 3 && !has('tots')) cards.push(S.addCard(c, 'tots', lg.name.toUpperCase() + ' ' + yr + ' · ' + main));
+    if (M && M.type === 'cont' && M.ok && !has('heroi')) cards.push(S.addCard(c, 'heroi', 'FINAL DA ' + M.comp.toUpperCase() + ' ' + yr));
     if (ballon) cards.push(S.addCard(c, 'bola', 'MELHOR DO MUNDO · ' + yr));
     // Por que a nota mudou (em pontos de nota geral, aproximados)
     const why = [];
