@@ -10,7 +10,7 @@
   // A temporada que acabou de terminar leva o ano para YEAR0 + c.season; Copa em 2030, 2034, 2038...
   S.isWcYear = c => c.season > 0 && (S.YEAR0 + c.season) % 4 === 2;
   // Nota mínima para a convocação: seleções fortes exigem mais
-  S.wcCut = (nation, c) => (nation.str >= 86 ? 79 : nation.str >= 82 ? 76 : 73) - (c ? Math.round(2.5 * S.tm(c, 'patriota')) : 0); // Patriota: a seleção confia mais
+  S.wcCut = (nation, c) => (nation.str >= 86 ? 81 : nation.str >= 82 ? 78 : 75) - (c ? Math.round(2.5 * S.tm(c, 'patriota')) + S.fameCut(c.fame) : 0); // Patriota: a seleção confia mais
   S.wcCall = function (c) {
     const nation = D.NATION_BY_NAME[c.country];
     const cut = S.wcCut(nation, c), o = S.ovr(c);
@@ -21,7 +21,7 @@
   function wcMatch(c, run, opp, r) {
     const nation = D.NATION_BY_NAME[run.nation], o = S.ovr(c);
     // O craque puxa a seleção: cada ponto de nota acima de 76 vale 0,3 de força (titular)
-    const T = nation.str + (o - 76) * 0.3 * run.share + 2.2 * S.tm(c, 'patriota');
+    const T = nation.str + (o - 82) * 0.3 * run.share + 2.2 * S.tm(c, 'patriota');
     // Copa é equilibrada: diferença de força pesa menos que nos clubes
     const lu = 0.72 * Math.exp((T - opp.str) / 22), lt = 1.3 * Math.exp((opp.str - T) / 22);
     const gf = r.poisson(lu), ga = r.poisson(lt);

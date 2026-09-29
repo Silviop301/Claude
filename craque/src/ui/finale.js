@@ -36,10 +36,13 @@
     render(
       '<div class="eyebrow">Fim de carreira · ' + (YEAR0 + G.c.season) + '</div>' +
       '<div class="fut"><canvas id="fut" aria-label="Card do jogador"></canvas></div>' +
-      (clubsPlayed.length > 1 ? '<div class="crest-pick-t">Escudo da carta</div><div class="crest-pick" id="crest-pick">' + clubsPlayed.map(id => '<button data-club="' + id + '"' + (id === f.mainClub ? ' class="on"' : '') + ' aria-label="' + esc(club(id).name) + '">' + crest(id) + '<span>' + esc(club(id).name) + '</span></button>').join('') + '</div>' : '') +
+      // Suas cartas: a final e as especiais; a escolhida aparece grande e é a que vai no compartilhar
+      ((G.c.cards || []).length ? '<div class="crest-pick-t">Suas cartas · toque para ver e compartilhar</div><div class="sp-cards">' +
+        '<canvas data-sp="final" class="on" aria-label="Carta final"></canvas>' + G.c.cards.map((k, i) => '<canvas data-sp="' + i + '" aria-label="' + esc(U.SPECIAL_NAME[k.type]) + '"></canvas>').join('') + '</div>' : '') +
+      (clubsPlayed.length > 1 ? '<div id="crest-wrap"><div class="crest-pick-t">Escudo da carta</div><div class="crest-pick" id="crest-pick">' + clubsPlayed.map(id => '<button data-club="' + id + '"' + (id === f.mainClub ? ' class="on"' : '') + ' aria-label="' + esc(club(id).name) + '">' + crest(id) + '<span>' + esc(club(id).name) + '</span></button>').join('') + '</div></div>' : '') +
       '<button class="btn" id="b-share">Compartilhar card</button>' +
       (G.c.seasons.length ? '<button class="btn ghost" id="b-album">📖 Ver o álbum da carreira</button>' : '') +
-      ((G.c.cards || []).length ? '<div class="crest-pick-t">Cartas especiais · ' + G.c.cards.length + '</div><div class="sp-cards">' + G.c.cards.map((k, i) => '<canvas data-sp="' + i + '" aria-label="' + esc(U.SPECIAL_NAME[k.type]) + '"></canvas>').join('') + '</div>' : '') +
+
       '<div class="final">' +
       '<div class="headrow"><div class="grade ' + f.grade + '">' + f.grade + '</div><div class="who"><b>' + esc(G.c.name) + '</b><span>' + cty.flag + ' ' + D.POS[G.c.pos].name + ' · 16 a ' + G.c.age + ' anos · pico ' + G.c.peak + '</span></div></div>' +
       '<div class="verdict">' + esc(f.verdict) + '</div>' +
@@ -61,7 +64,17 @@
     // Edição especial do jornal com a despedida
     const retired = G.c;
     setTimeout(() => U.farewellPaper(retired, f), 700);
-    screen.querySelectorAll('[data-sp]').forEach(sc => window.CRAQUE_CARD(sc, U.cardData(retired, retired.cards[+sc.dataset.sp])));
+    const spData = k => (k === 'final' ? cardData : U.cardData(retired, retired.cards[+k]));
+    screen.querySelectorAll('[data-sp]').forEach(sc => {
+      window.CRAQUE_CARD(sc, spData(sc.dataset.sp));
+      sc.onclick = () => {
+        screen.querySelectorAll('[data-sp]').forEach(x => x.classList.toggle('on', x === sc));
+        window.CRAQUE_CARD($('fut'), spData(sc.dataset.sp));
+        if ($('crest-wrap')) $('crest-wrap').hidden = sc.dataset.sp !== 'final'; // escudo só se troca na carta final
+        $('b-share').textContent = 'Compartilhar card';
+        $('fut').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      };
+    });
     if ($('b-album')) $('b-album').onclick = () => U.album(retired, f, cardData);
     G.c = null;
     $('bar').hidden = true;
@@ -71,6 +84,7 @@
       screen.querySelectorAll('[data-club]').forEach(x => x.classList.toggle('on', x === b));
       cardData.crest = 'badges/' + b.dataset.club + '.png';
       window.CRAQUE_CARD(cv, cardData);
+      const th = screen.querySelector('[data-sp="final"]'); if (th) window.CRAQUE_CARD(th, cardData);
       $('b-share').textContent = 'Compartilhar card';
     });
     $('b-share').onclick = async () => {

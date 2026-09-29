@@ -20,6 +20,9 @@
       '<span class="tag ' + roleCls + '">' + o.role + '</span><span class="tag">R$ ' + money(o.wage) + '/sem</span>' + buysTag(o.wage) + '<span class="tag">' + o.years + (o.years > 1 ? ' anos' : ' ano') + '</span></div></button>';
   }
 
+  // Verso do card da proposta: o que vai acontecer ao tocar de novo
+  const signTxt = o => '<b>' + (o.kind === 'stay' ? 'Renovar com ' : 'Assinar com ') + esc(club(o.club).name) + '</b><span>' + o.years + (o.years > 1 ? ' anos' : ' ano') + ' · R$ ' + money(o.wage) + '/sem</span><small>Toque de novo para confirmar</small>';
+
   function academy() {
     G.step = 'academy';
     const offers = S.offers(G.c, true);
@@ -29,8 +32,11 @@
       '<p class="lead">Clube mais forte dá mais chance de título, mas menos minutos em campo.</p>' +
       '<div class="choices">' + offers.map(offerCard).join('') + '</div>'
     );
+    // Dois toques: o 1º vira o card ("Assinar com..."), o 2º assina (evita escolher sem querer)
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
-      S.join(G.c, offers[+b.dataset.i]);
+      const o = offers[+b.dataset.i];
+      if (!U.arm(b, signTxt(o))) return;
+      S.join(G.c, o);
       U.preseason();
     });
   }
@@ -46,12 +52,14 @@
     render(
       '<div class="eyebrow">Janela de transferências · ' + year() + '</div>' +
       '<h2>' + (ended ? 'Seu contrato com ' + D.o(esc(club(G.c.club).name)) + ' acabou' : 'Seu empresário abriu o mercado') + '</h2>' +
-      '<p class="lead">' + (noOffers ? 'Nenhum clube novo apareceu. ' : '') + 'Nota geral ' + S.ovr(G.c) + ' · fama ' + Math.round(G.c.fame) + '. A última opção é renovar com o clube atual.</p>' +
+      '<p class="lead">' + (noOffers ? 'Nenhum clube novo apareceu. ' : '') + 'Nota geral ' + S.ovr(G.c) + ' · ⭐ ' + S.fameLabel(G.c.fame) + '. A última opção é renovar com o clube atual.</p>' +
+      '<p class="muted small">⭐ Fama traz propostas de clubes maiores, salários mais altos' + (G.c.fame >= 150 ? ', vaga mais fácil na seleção' : '') + ' e mais votos na Bola de Ouro.</p>' +
       '<div class="choices">' + all.map(offerCard).join('') + '</div>' +
       (S.canRetire(G.c) ? '<button class="btn ghost" id="b-retire">Pendurar as chuteiras</button>' : '')
     );
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       const o = all[+b.dataset.i], prev = G.c.spells[G.c.spells.length - 1], moving = o.club !== G.c.club;
+      if (!U.arm(b, signTxt(o))) return;
       S.join(G.c, o);
       // Troca de clube vira edição extra do jornal
       if (moving) { save(); bar(); U.transferPaper(G.c, prev, o, U.preseason); } else U.preseason();

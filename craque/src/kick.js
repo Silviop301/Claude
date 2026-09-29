@@ -79,7 +79,7 @@
       '<circle cx="10" cy="0" r="95" fill="url(#k-flood)"/><circle cx="350" cy="0" r="95" fill="url(#k-flood)"/>' +
       // placa de LED rolando atrás do gol
       '<rect y="50" width="360" height="12" fill="#0A0A0A"/><rect y="50" width="360" height="1" fill="rgba(255,255,255,.15)"/>' +
-      '<g class="k-led"><text y="59" font-size="8.5" font-weight="800" letter-spacing="2" fill="#F2C230">' + ' CRAQUE ⚽ SEU NOME NA HISTÓRIA ⚽ CRAQUE ⚽ SEU NOME NA HISTÓRIA ⚽ CRAQUE ⚽ SEU NOME NA HISTÓRIA ⚽'.repeat(2) + '</text>' +
+      '<g class="k-led"><text y="59" font-size="8.5" font-weight="800" letter-spacing="2" fill="#F2C230">' + ' CLIMBIX ⚽ SEU NOME NA HISTÓRIA ⚽ CLIMBIX ⚽ SEU NOME NA HISTÓRIA ⚽ CLIMBIX ⚽ SEU NOME NA HISTÓRIA ⚽'.repeat(2) + '</text>' +
       '<animateTransform attributeName="transform" type="translate" from="0 0" to="-300 0" dur="9s" repeatCount="indefinite"/></g>' +
       // gramado, marcações em perspectiva
       '<rect y="62" width="360" height="258" fill="url(#k-grass)"/>' + stripes.join('') +
@@ -215,8 +215,8 @@
       if (setup.fk || kSide) keeper.classList.add('diving'); // estica os braços no pulo
       const res = S().kickResult(setup, x, y, kSide);
       // Para onde a bola vai no desenho
-      let tx = px(dx), ty = py(Math.min(y, 1.35)), tr = 6;
-      if (res.why === 'barreira') { ty = py(setup.wall) + 18; tr = 8; }
+      let tx = px(dx), ty = py(Math.min(y, 1.35)), tr = 8.5; // perto do gol a bola continua bem visível
+      if (res.why === 'barreira') { ty = py(setup.wall) + 18; tr = 9.5; }
       // O desenho do goleiro segue o resultado. Com os braços esticados, a luva fica a ~114 px dos pés,
       // na direção do mergulho: na defesa a luva chega na bola; no gol ela para antes.
       const saved = res.why === 'defesa';
@@ -272,11 +272,11 @@
         setKeeper(keeper, k0 + (kDx - k0) * ke, kDy * ke, kRot * ke);
         if (u < 1) return requestAnimationFrame(fly);
         trail.forEach(t => t.setAttribute('opacity', 0));
-        after(res, bx, by);
+        after(res, bx, by, tr);
       })(start);
     }
 
-    function after(res, bx, by) {
+    function after(res, bx, by, tr) {
       const banner = el.querySelector('#k-banner');
       const txt = { gol: 'GOOOL!', defesa: 'DEFENDEU!', trave: 'NA TRAVE!', fora: 'PRA FORA!', alto: 'POR CIMA!', barreira: 'NA BARREIRA!' }[res.why];
       sfx(res.ok ? 'goal' : 'miss');
@@ -288,7 +288,7 @@
         const s0 = performance.now();
         (function sink(now) {
           const u = Math.min(1, (now - s0) / 260);
-          place(bx, by - Math.sin(u * Math.PI) * 3, 6 - 1.5 * ease(u), 0.02);
+          place(bx, by - Math.sin(u * Math.PI) * 3, tr - 1.5 * ease(u), 0.02);
           bul.setAttribute('transform', 'translate(' + bx + ' ' + by + ') scale(' + (0.4 + 0.8 * ease(u) - 0.2 * u * u) + ')');
           if (u < 1) requestAnimationFrame(sink);
         })(s0);
@@ -300,7 +300,7 @@
         const start = performance.now(), dx = bx < GX ? -1 : 1;
         (function out(now) {
           const u = Math.min(1, (now - start) / 450), e = ease(u);
-          place(bx + dx * 60 * e, by + (res.why === 'barreira' ? 50 : res.why === 'alto' ? -30 : 40) * e, (res.why === 'barreira' ? 8 : 6) + 2 * e, 0.2 * (1 - e));
+          place(bx + dx * 60 * e, by + (res.why === 'barreira' ? 50 : res.why === 'alto' ? -30 : 40) * e, tr + 2 * e, 0.2 * (1 - e));
           if (u < 1) requestAnimationFrame(out);
         })(start);
       }

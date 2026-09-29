@@ -74,7 +74,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .ovr.up { animation: pop 0.5s ease; }
 
 /* medidores Técnico / Torcida */
-.rel { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+.rel { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr 0.8fr auto; gap: 8px; align-items: end; }
+.rel .mb i.fame { background: var(--gold); }
 .rel .m { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .rel .ml { font-size: 11.5px; color: #B9CDBF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rel .mb { height: 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
@@ -589,7 +590,7 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 @keyframes wo-card { 0% { opacity: 0; transform: perspective(900px) rotateY(90deg) scale(.6); } 60% { opacity: 1; transform: perspective(900px) rotateY(-12deg) scale(1.04); } 100% { opacity: 1; transform: perspective(900px) rotateY(0) scale(1); } }
 .wo-title { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 28px); left: 0; right: 0; text-align: center; opacity: 0; color: #fff; }
 .wo-title span { display: block; font: 700 14px var(--body); letter-spacing: .3em; text-transform: uppercase; opacity: .75; }
-.wo-title b { display: block; white-space: nowrap; font: 800 clamp(30px, 10vw, 46px) var(--display); color: var(--wo); text-transform: uppercase; letter-spacing: .08em; text-shadow: 0 0 20px color-mix(in srgb, var(--wo) 60%, transparent); }
+.wo-title b { display: block; padding: 0 12px; line-height: 1.02; font: 800 clamp(28px, 9vw, 46px)/1.02 var(--display); color: var(--wo); text-transform: uppercase; letter-spacing: .08em; text-shadow: 0 0 20px color-mix(in srgb, var(--wo) 60%, transparent); }
 .walkout.shown .wo-title { animation: wo-in .5s ease .4s forwards; }
 .wo-tap { position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 22px); left: 0; right: 0; text-align: center; color: #9DB5A6; font: 600 13px var(--body); opacity: 0; }
 .walkout.shown .wo-tap { animation: wo-in .4s ease 1.2s forwards; }
@@ -668,3 +669,31 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .choice .fx { display: inline-block; margin-top: 3px; font-weight: 600; color: #3E5A4A; }
 .choice .fx .warn { font-weight: 400; }
 .prep-note { margin: 2px 0 0; }
+.bar-btns { display: flex; gap: 6px; align-self: end; }
+.bar-btns .snd-mini { min-width: 32px; }
+
+/* Confirmação em dois toques: o card vira e mostra a ação; tocar de novo confirma */
+.choice { position: relative; }
+.choice.armed { animation: card-flip .36s ease; box-shadow: 0 0 0 3px var(--gold), 0 3px 0 rgba(0, 0, 0, .35); }
+@keyframes card-flip { 0% { transform: perspective(700px) rotateY(0); } 50% { transform: perspective(700px) rotateY(90deg); } 100% { transform: perspective(700px) rotateY(0); } }
+.arm-back { position: absolute; inset: 0; border-radius: inherit; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 8px; text-align: center;
+  background: linear-gradient(135deg, #FFE68A, #F2C230 55%, #D9A514); color: var(--ink); animation: arm-in .36s ease both; }
+@keyframes arm-in { 0%, 49% { opacity: 0; } 50%, 100% { opacity: 1; } }
+.arm-back b { font: 800 19px/1.15 var(--display); }
+.arm-back span { font: 800 17px var(--display); }
+.arm-back small { font: 600 12px var(--body); opacity: .8; }
+.inv-bar #b-skip { margin: 0; }
+.sp-cards canvas { cursor: pointer; border-radius: 10px; transition: transform .15s; }
+.sp-cards canvas.on { transform: translateY(-4px); filter: drop-shadow(0 0 6px var(--gold)) drop-shadow(0 4px 8px rgba(0, 0, 0, .45)); }
+
+/* Visual do jogador na criação */
+.look { display: grid; grid-template-columns: 104px 1fr; gap: 10px; align-items: center; }
+.look-pv svg { width: 104px; height: auto; display: block; border-radius: 10px; filter: sepia(.2); border: 2px solid rgba(255, 255, 255, .15); }
+.look-opts { display: flex; flex-direction: column; gap: 8px; }
+.look-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.look-row button { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .25); padding: 0; cursor: pointer; }
+.look-row button.on { border-color: #fff; box-shadow: 0 0 0 2px var(--gold); }
+.look-row.txt button { width: auto; height: auto; border-radius: 999px; padding: 4px 9px; background: rgba(255, 255, 255, .1); color: #fff; font: 700 13px var(--body); }
+.look-row.txt button.on { background: var(--paper); color: var(--ink); box-shadow: none; }
+.look-row.off { opacity: .35; pointer-events: none; }
+.field label small { font-weight: 500; opacity: .7; }

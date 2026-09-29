@@ -122,8 +122,8 @@
   }
 
   // ---------- pré-temporada: característica e investimentos numa tela só ----------
-  // Tocar numa opção (característica ou investimento) mostra na carta quanto muda; o botão fixo
-  // embaixo aparece só depois disso e confirma. Sem nada para fazer, ele vira "Seguir".
+  // Tocar numa opção (característica ou investimento) vira o card e mostra na carta quanto muda;
+  // tocar de novo confirma. "Seguir para a temporada" fica sempre fixo embaixo.
   let preCh = null;
   function preseason() { prep(false); }
   function invest() { prep(true); } // retomar depois de já ter escolhido a característica
@@ -157,76 +157,57 @@
         '<div class="wallet"><span>Saldo <b id="w-money"></b></span><span>Cada compra <b id="w-price"></b></span></div>' +
         '<div class="choices inv-grid">' + D.INVEST.map(t => '<button class="choice inv" data-v="' + t.id + '"><span class="ic">' + t.icon + '</span>' +
           '<b>' + D.investName(t, G.c.pos) + '</b><span class="pips"></span><span class="d">' + (t.attr ? attrTxt(t.attr) : t.perk) + '</span><span class="price"></span></button>').join('') + '</div>' : '') +
-      '<div class="inv-bar"><button class="btn" id="b-act" hidden></button></div>' +
-      '<button class="btn ghost" id="b-skip">Seguir para a temporada</button>'
+      '<div class="inv-bar"><button class="btn" id="b-skip">Seguir para a temporada</button></div>'
     );
-    let sel = null; // { i } característica ou { v } investimento
-    const act = $('b-act'), skip = $('b-skip');
+    // Toque 1: o card vira e a mini carta mostra quanto muda. Toque 2 no mesmo card: confirma.
+    const skip = $('b-skip');
     const go = () => { preCh = null; U.eventOrSeason(); };
     const refresh = () => {
-      if (!act.isConnected) return; // já saiu da tela (ex.: tocou em seguir durante a animação)
-      if (hasInv) {
-        const price = S.investPrice(G.c);
-        $('w-money').textContent = 'R$ ' + money(G.c.money);
-        $('w-price').textContent = 'R$ ' + money(price);
-        screen.querySelectorAll('[data-v]').forEach(b => {
-          const id = b.dataset.v, n = G.c.inv[id] || 0, max = S.investMax(id), full = n >= max;
-          b.disabled = !S.canInvest(G.c, id);
-          b.querySelector('.pips').textContent = '●'.repeat(n) + '○'.repeat(max - n);
-          b.querySelector('.price').textContent = full ? 'No máximo' : G.c.money < price ? 'Falta R$ ' + money(price - G.c.money) : 'R$ ' + money(price);
-          b.classList.toggle('full', full);
-        });
-      }
-      if (sel && sel.v && !S.canInvest(G.c, sel.v)) sel = null; // comprou até não dar mais
-      screen.querySelectorAll('[data-i], [data-v]').forEach(b => b.classList.toggle('sel', !!sel && (sel.v ? b.dataset.v === sel.v : b.dataset.i === String(sel.i))));
-      // Nada escolhido: some o botão fixo; nada mais a fazer: ele vira "Seguir"
-      const nothingLeft = !ch.length && !canBuy();
-      skip.hidden = nothingLeft;
-      if (!sel) {
-        act.hidden = !nothingLeft;
-        act.innerHTML = 'Seguir para a temporada' + (hasInv ? '<small>Saldo R$ ' + money(G.c.money) + '</small>' : '');
-        showPreview(null);
-        return;
-      }
-      act.hidden = false;
-      if (sel.i !== undefined) {
-        const x = ch[sel.i];
-        act.innerHTML = 'Confirmar ' + esc(x.trait.name) + (x.type === 'up' ? ' Nv ' + x.lv : '');
-        showPreview(S.preview(G.c, x.type === 'up' ? { up: x.trait.id } : { add: x.trait.id }));
-      } else {
-        act.innerHTML = 'Comprar ' + esc(D.investName(D.INVEST_BY_ID[sel.v], G.c.pos)) + '<small>R$ ' + money(S.investPrice(G.c)) + '</small>';
-        showPreview(S.preview(G.c, { buy: sel.v }));
-      }
+      if (!skip.isConnected) return; // já saiu da tela
+      if (!hasInv) return;
+      const price = S.investPrice(G.c);
+      $('w-money').textContent = 'R$ ' + money(G.c.money);
+      $('w-price').textContent = 'R$ ' + money(price);
+      screen.querySelectorAll('[data-v]').forEach(b => {
+        const id = b.dataset.v, n = G.c.inv[id] || 0, max = S.investMax(id), full = n >= max;
+        b.disabled = !S.canInvest(G.c, id);
+        b.querySelector('.pips').textContent = '●'.repeat(n) + '○'.repeat(max - n);
+        b.querySelector('.price').textContent = full ? 'No máximo' : G.c.money < price ? 'Falta R$ ' + money(price - G.c.money) : 'R$ ' + money(price);
+        b.classList.toggle('full', full);
+      });
     };
-    screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { sel = { i: +b.dataset.i }; refresh(); });
-    screen.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { sel = { v: b.dataset.v }; refresh(); });
     skip.onclick = go;
-    act.onclick = () => {
-      if (!sel) return go();
-      if (sel.i !== undefined) {
-        const x = ch[sel.i];
-        const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
-        sfx('levelup');
-        let done;
-        if (x.type === 'up') { S.upgradeTrait(G.c, x.trait.id); done = '✓ ' + x.trait.icon + ' ' + x.trait.name + ' evoluiu para o Nv ' + x.lv; }
-        else { const syn = S.addTrait(G.c, x.trait.id); done = '✓ ' + x.trait.icon + ' ' + x.trait.name + ' entrou' + (syn ? '<br><b>' + syn.icon + ' Combinação desbloqueada: ' + syn.name + '</b> · ' + attrTxt(syn.attr) + (syn.extra ? ' · ' + syn.extra : '') : ''); }
-        if (S.buildDone(G.c)) done += '<br><b>🏁 Build completo!</b> Suas 5 características estão no nível máximo.';
-        preCh.done = true;
-        showPreview(null);
-        bar();
-        applyAnim(from, () => prep(true, done));
-        return;
-      }
-      const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) }, id = sel.v;
+    screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
+      const x = ch[+b.dataset.i];
+      showPreview(S.preview(G.c, x.type === 'up' ? { up: x.trait.id } : { add: x.trait.id }));
+      if (!U.arm(b, '<b>' + (x.type === 'up' ? 'Evoluir para o Nv ' + x.lv : 'Escolher ' + esc(x.trait.name)) + '</b><small>Toque de novo para confirmar</small>')) return;
+      const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
+      sfx('levelup');
+      let done;
+      if (x.type === 'up') { S.upgradeTrait(G.c, x.trait.id); done = '✓ ' + x.trait.icon + ' ' + x.trait.name + ' evoluiu para o Nv ' + x.lv; }
+      else { const syn = S.addTrait(G.c, x.trait.id); done = '✓ ' + x.trait.icon + ' ' + x.trait.name + ' entrou' + (syn ? '<br><b>' + syn.icon + ' Combinação desbloqueada: ' + syn.name + '</b> · ' + attrTxt(syn.attr) + (syn.extra ? ' · ' + syn.extra : '') : ''); }
+      if (S.buildDone(G.c)) done += '<br><b>🏁 Build completo!</b> Suas 5 características estão no nível máximo.';
+      preCh.done = true;
+      showPreview(null);
+      bar();
+      applyAnim(from, () => prep(true, done));
+    });
+    screen.querySelectorAll('[data-v]').forEach(b => b.onclick = () => {
+      const id = b.dataset.v;
+      if (!S.canInvest(G.c, id)) return;
+      showPreview(S.preview(G.c, { buy: id }));
+      if (!U.arm(b, '<b>Comprar</b><span>R$ ' + money(S.investPrice(G.c)) + '</span><small>Toque de novo para confirmar</small>')) return;
+      U.disarm(b);
+      const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
       S.invest(G.c, id);
       save();
       sfx('coin');
       bar();
+      showPreview(null);
       tweenCard(from, 450);
-      const b = screen.querySelector('[data-v="' + id + '"]');
       b.classList.remove('bought'); void b.offsetWidth; b.classList.add('bought');
-      setTimeout(refresh, 480); // depois da animação, mostra a prévia da próxima compra
-    };
+      setTimeout(refresh, 480);
+    });
     refresh();
   }
 

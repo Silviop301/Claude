@@ -68,7 +68,7 @@
         };
       },
       resolve: (c, ev, i) => {
-        if (i === 0) { bump(c, 'fans', -30); return { ok: true, text: 'Negócio fechado. A torcida antiga queimou sua camisa, mas você subiu de patamar.', fx: { move: ev.dest, fame: 4 } }; }
+        if (i === 0) { bump(c, 'fans', -30); return { ok: true, text: 'Negócio fechado. A torcida antiga queimou sua camisa, mas você subiu de patamar.', fx: { move: ev.dest, fame: 8 } }; }
         bump(c, 'fans', 20);
         c.wage = Math.round(c.wage * 1.3);
         return { ok: true, text: 'Você ficou e virou símbolo de lealdade. Contrato renovado com aumento.', fx: {} };
@@ -168,7 +168,7 @@
       }),
       resolve: (c, ev, i, r) => {
         if (i === 0) {
-          if (r() < (c.traits.includes('raca') ? 0.75 : 0.55)) { bump(c, 'fans', 15); return { ok: true, text: 'Você decidiu o clássico mancando. Herói!', fx: { fame: 8 } }; }
+          if (r() < (c.traits.includes('raca') ? 0.75 : 0.55)) { bump(c, 'fans', 15); return { ok: true, text: 'Você decidiu o clássico mancando. Herói!', fx: { fame: 16 } }; }
           return { ok: false, text: 'A lesão piorou. Meses fora.', fx: { inj: 0.35 } };
         }
         bump(c, 'fans', -5);
@@ -184,14 +184,14 @@
           ['Convite para a balada', 'Um cantor famoso chamou você para o camarote. O jogo é amanhã às 16h.'],
           ['Churrasco que vira festa', 'O churrasco da família virou festão. Já passa da meia-noite e tem jogo amanhã.']])),
         options: [
-          { label: 'Ir na festa', hint: 'Fama +6 · ' + '55%' + ': flagrado (Técnico −20)' },
+          { label: 'Ir na festa', hint: 'Fama +12 (propostas e salário) · ' + '55%' + ': flagrado (Técnico −20)' },
           { label: 'Ficar em casa', hint: 'Técnico +5' },
         ],
       }),
       resolve: (c, ev, i, r) => {
         if (i === 0) {
-          if (r() < 0.55) { bump(c, 'coach', -20); return { ok: false, text: 'Foi flagrado de madrugada. O técnico te deixou no banco.', fx: { fame: 3, min: -0.1 } }; }
-          return { ok: true, text: 'Curtiu, bombou nas redes e ainda jogou bem no dia seguinte.', fx: { fame: 6 } };
+          if (r() < 0.55) { bump(c, 'coach', -20); return { ok: false, text: 'Foi flagrado de madrugada. O técnico te deixou no banco.', fx: { fame: 6, min: -0.1 } }; }
+          return { ok: true, text: 'Curtiu, bombou nas redes e ainda jogou bem no dia seguinte.', fx: { fame: 12 } };
         }
         bump(c, 'coach', 5);
         return { ok: true, text: 'Descansou. O técnico notou a maturidade.', fx: {} };
@@ -204,12 +204,12 @@
         title: 'Convocado para a seleção sub-20',
         text: 'O torneio coincide com jogos importantes do clube.',
         options: [
-          { label: 'Ir para a seleção', hint: 'Fama +8 · Técnico −10 pelo desfalque' },
+          { label: 'Ir para a seleção', hint: 'Fama +16 · Técnico −10 pelo desfalque' },
           { label: 'Ficar no clube', hint: 'Técnico +10 · mais minutos' },
         ],
       }),
       resolve: (c, ev, i) => {
-        if (i === 0) { bump(c, 'coach', -10); return { ok: true, text: 'Brilhou na seleção e o país inteiro conheceu seu nome.', fx: { fame: 8 } }; }
+        if (i === 0) { bump(c, 'coach', -10); return { ok: true, text: 'Brilhou na seleção e o país inteiro conheceu seu nome.', fx: { fame: 16 } }; }
         bump(c, 'coach', 10);
         return { ok: true, text: 'O clube valorizou sua escolha.', fx: { min: 0.1 } };
       },
@@ -265,13 +265,13 @@
           attr: k,
           options: [
             { label: 'Aceitar os treinos extras', hint: '+2 ' + D.label(c.pos, k) + ' para sempre · Técnico +5' },
-            { label: 'Aproveitar a folga', hint: 'Forma +5% · Fama +3' },
+            { label: 'Aproveitar a folga', hint: 'Forma +5% · Fama +6' },
           ],
         };
       },
       resolve: (c, ev, i) => {
         if (i === 0) { bump(c, 'coach', 5); return { ok: true, text: 'Meses de treino fino. Dá para ver a diferença no seu jogo.', fx: { attr: { [ev.attr]: 2 } } }; }
-        return { ok: true, text: 'Você chegou descansado para a temporada.', fx: { form: 0.05, fame: 3 } };
+        return { ok: true, text: 'Você chegou descansado para a temporada.', fx: { form: 0.05, fame: 6 } };
       },
     },
     {
@@ -292,7 +292,7 @@
         };
       },
       resolve: (c, ev, i) => {
-        if (i === 0) return { ok: true, text: 'Seu rosto está em todos os outdoors da cidade.', fx: { money: ev.value, fame: 4, form: -0.05 } };
+        if (i === 0) return { ok: true, text: 'Seu rosto está em todos os outdoors da cidade.', fx: { money: ev.value, fame: 8, form: -0.05 } };
         bump(c, 'coach', 5);
         return { ok: true, text: 'O técnico elogiou o foco em entrevista.', fx: { form: 0.05 } };
       },
@@ -305,15 +305,15 @@
           ['Polêmica nas redes', 'Um vídeo seu provocando a torcida rival viralizou.'],
           ['Print vazado', 'Uma conversa sua reclamando do técnico vazou e está em todo lugar.']])),
         options: [
-          { label: 'Pedir desculpas', hint: 'Torcida +5 · Fama −2' },
-          { label: 'Dobrar a aposta', hint: 'Fama +8 · Torcida −8 · 30%: Técnico −10' },
+          { label: 'Pedir desculpas', hint: 'Torcida +5 · Fama −4' },
+          { label: 'Dobrar a aposta', hint: 'Fama +16 · Torcida −8 · 30%: Técnico −10' },
         ],
       }),
       resolve: (c, ev, i, r) => {
-        if (i === 0) { bump(c, 'fans', 5); return { ok: true, text: 'O pedido de desculpas pegou bem.', fx: { fame: -2 } }; }
+        if (i === 0) { bump(c, 'fans', 5); return { ok: true, text: 'O pedido de desculpas pegou bem.', fx: { fame: -4 } }; }
         bump(c, 'fans', -8);
-        if (r() < 0.3) { bump(c, 'coach', -10); return { ok: false, text: 'Viralizou de novo, e o técnico te chamou para uma conversa.', fx: { fame: 8 } }; }
-        return { ok: true, text: 'Virou meme. Todo mundo está falando de você.', fx: { fame: 8 } };
+        if (r() < 0.3) { bump(c, 'coach', -10); return { ok: false, text: 'Viralizou de novo, e o técnico te chamou para uma conversa.', fx: { fame: 16 } }; }
+        return { ok: true, text: 'Virou meme. Todo mundo está falando de você.', fx: { fame: 16 } };
       },
     },
     {
@@ -363,13 +363,13 @@
             ['Campo do bairro', 'O campinho onde você começou vai virar estacionamento. A comunidade pede ajuda.']])),
           value,
           options: [
-            { label: 'Doar R$ ' + fmtMoney(value), hint: 'Torcida +10 · Fama +6' },
+            { label: 'Doar R$ ' + fmtMoney(value), hint: 'Torcida +10 · Fama +12' },
             { label: 'Agora não', hint: 'Nada muda' },
           ],
         };
       },
       resolve: (c, ev, i) => {
-        if (i === 0) { bump(c, 'fans', 10); return { ok: true, text: 'A escolinha agora leva o seu nome.', fx: { money: -ev.value, fame: 6 } }; }
+        if (i === 0) { bump(c, 'fans', 10); return { ok: true, text: 'A escolinha agora leva o seu nome.', fx: { money: -ev.value, fame: 12 } }; }
         return { ok: true, text: 'Fica para a próxima.', fx: {} };
       },
     },
@@ -386,16 +386,16 @@
           text: 'Primeiro jogo contra seu ex-clube, onde a torcida te idolatrava.',
           prev: prev.id,
           options: [
-            { label: 'Não comemorar se marcar', hint: 'A torcida antiga te aplaude · Fama +4' },
+            { label: 'Não comemorar se marcar', hint: 'A torcida antiga te aplaude · Fama +8' },
             { label: 'Comemorar na cara deles', hint: 'Torcida atual +10 · a antiga vira contra você' },
           ],
         };
       },
       resolve: (c, ev, i) => {
-        if (i === 0) return { ok: true, text: 'Você marcou e ergueu as mãos. O estádio inteiro aplaudiu.', fx: { fame: 4 } };
+        if (i === 0) return { ok: true, text: 'Você marcou e ergueu as mãos. O estádio inteiro aplaudiu.', fx: { fame: 8 } };
         bump(c, 'fans', 10);
         c.fansBy[ev.prev] = Math.max(0, (c.fansBy[ev.prev] || 0) - 40);
-        return { ok: true, text: 'A comemoração virou capa de jornal. Os antigos fãs não perdoaram.', fx: { fame: 3 } };
+        return { ok: true, text: 'A comemoração virou capa de jornal. Os antigos fãs não perdoaram.', fx: { fame: 6 } };
       },
     },
   ];

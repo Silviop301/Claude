@@ -40,7 +40,7 @@
     const r = { score: f.score, grade: f.grade, verdict: f.verdict, goals: c.totals.goals, assists: c.totals.assists, titles: f.titles, ballon: c.totals.ballon, wc: c.totals.wc || 0 };
     const best = !prev || r.score > prev.score;
     if (best) { all[c.daily] = r; store(KEY, all); }
-    const txt = 'CRAQUE do dia ' + shortDate(c.daily) + ' — ' + c.name + ': nota ' + r.grade + ' · ' + r.score + ' pts\n' +
+    const txt = 'Climbix do dia ' + shortDate(c.daily) + ' — ' + c.name + ': nota ' + r.grade + ' · ' + r.score + ' pts\n' +
       r.goals + ' gols · ' + r.assists + ' assist. · ' + r.titles + ' títulos' + (r.ballon ? ' · ' + r.ballon + ' Bola(s) de Ouro' : '') + (r.wc ? ' · campeão do mundo' : '') + '\n' + r.verdict;
     setTimeout(() => {
       const b = $('b-daily-share');

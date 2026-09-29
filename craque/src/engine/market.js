@@ -7,7 +7,7 @@
   S.expectedTier = function (c) {
     const o = S.ovr(c);
     let t = o < 55 ? 1 : o < 63 ? 2 : o < 71 ? 3 : o < 79 ? 4 : 5;
-    if (c.fame > 120 && t < 5) t++;
+    if (c.fame >= 150 && t < 5) t++; // Astro: o mercado olha um nível acima
     return t;
   };
 
@@ -47,7 +47,8 @@
     const t = S.expectedTier(c);
     const o = S.ovr(c);
     // 1) Clube maior (pode sobrar pouco espaço)
-    const up = pickClub(x => x.tier === Math.min(5, t + (r() < 0.35 ? 1 : 0)) && x.strength >= o - 6);
+    // Fama aumenta a chance de um clube ainda maior aparecer
+    const up = pickClub(x => x.tier === Math.min(5, t + (r() < 0.35 + Math.min(0.4, c.fame / 500) ? 1 : 0)) && x.strength >= o - 6);
     if (up) out.push(offerFrom(c, up, 'up'));
     // 2) Mesmo nível, papel de protagonista
     // Jovem: o mercado do próprio país costuma chamar primeiro

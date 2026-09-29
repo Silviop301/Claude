@@ -85,13 +85,13 @@
       const T = 520, s0 = performance.now();
       (function fly(now) {
         const k = Math.min(1, (now - s0) / T), e = ease(k);
-        P.setBall(ball, P.BALL.x + (tx - P.BALL.x) * e, P.BALL.y + (ty - P.BALL.y) * e - Math.sin(k * Math.PI) * 16, P.BALL.r + (6 - P.BALL.r) * e);
+        P.setBall(ball, P.BALL.x + (tx - P.BALL.x) * e, P.BALL.y + (ty - P.BALL.y) * e - Math.sin(k * Math.PI) * 16, P.BALL.r + (8.5 - P.BALL.r) * e);
         const ke = ease(Math.min(1, k * 1.25));
         P.setKeeper(keeper, kDx * ke, kDy * ke, (d === 0 ? 0 : d * (saved ? R : 72)) * ke);
         if (k < 1) return requestAnimationFrame(fly);
         if (saved && !miss) { // rebote para fora
           const r0 = performance.now(), bx = tx, by = ty;
-          (function out(n2) { const q = Math.min(1, (n2 - r0) / 380); P.setBall(ball, bx + (bx < P.GX ? -1 : 1) * 60 * q, by + 45 * q, 6 + 2 * q); if (q < 1) requestAnimationFrame(out); })(r0);
+          (function out(n2) { const q = Math.min(1, (n2 - r0) / 380); P.setBall(ball, bx + (bx < P.GX ? -1 : 1) * 60 * q, by + 45 * q, 8.5 + 2 * q); if (q < 1) requestAnimationFrame(out); })(r0);
         }
         if (!saved) svg.querySelector('#k-net').classList.add('shake');
         sfx(saved ? 'goal' : 'miss');

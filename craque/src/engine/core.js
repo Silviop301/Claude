@@ -258,6 +258,10 @@
 
   // ---------- relação com clube: Técnico e Torcida (0-100) ----------
   const REL0 = 50;
+  // Fama: nível, efeito na seleção e texto (aparece na barra e na janela de transferências)
+  S.FAME_LV = [[250, 'Lenda'], [150, 'Astro'], [80, 'Famoso'], [30, 'Conhecido'], [0, 'Anônimo']];
+  S.fameLabel = f => S.FAME_LV.find(([v]) => f >= v)[1];
+  S.fameCut = f => (f >= 150 ? 1 : 0); // Astro: a seleção convoca com nota 1 abaixo
   S.relLabel = v => (v >= 80 ? 'Idolatria' : v >= 62 ? 'Em alta' : v >= 40 ? 'Neutra' : v >= 25 ? 'Em baixa' : 'Crise');
   function bump(c, key, v) { c.rel[key] = clamp(c.rel[key] + v, 0, 100); }
 

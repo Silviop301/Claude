@@ -263,10 +263,10 @@
   root.CRAQUE_SHARE = function (canvas, name) {
     return new Promise(resolve => {
       canvas.toBlob(async blob => {
-        const file = new File([blob], 'craque-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.png', { type: 'image/png' });
+        const file = new File([blob], 'climbix-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.png', { type: 'image/png' });
         try {
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], title: 'Minha carreira no CRAQUE' });
+            await navigator.share({ files: [file], title: 'Minha carreira no Climbix' });
             return resolve('shared');
           }
         } catch (e) {

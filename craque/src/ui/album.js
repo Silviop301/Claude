@@ -142,7 +142,7 @@
       await window.CRAQUE_CARD(sc, U.cardData(c, sp[i]));
       ctx.drawImage(sc, x0 + i * (w + gap), 1500, w, h);
     }
-    ctx.fillStyle = '#F4D675'; ctx.font = '800 44px ' + DISPLAY; ctx.fillText('CRAQUE', 540, 1860);
+    ctx.fillStyle = '#F4D675'; ctx.font = '800 44px ' + DISPLAY; ctx.fillText('CLIMBIX', 540, 1860);
     return cv;
   }
 

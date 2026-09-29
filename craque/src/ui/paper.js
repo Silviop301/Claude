@@ -28,7 +28,21 @@
   const kitOf = clubId => (window.CRAQUE_KITS || {})[clubId] || ['#E6E6E6', '#1B1A17'];
   const nationKit = name => NATION_KIT[name] || ['#FFFFFF', '#1B1A17'];
 
-  const SKIN = ['#F1C7A0', '#D9A078', '#A8714C', '#6B4428'];
+  // Visual do jogador (escolhido na criação; carreiras antigas usam um sorteio pelo nome)
+  const SKIN = ['#F1C7A0', '#E0AC80', '#C68A5E', '#8D5A3B', '#5A3620'];
+  const HAIR_COLORS = ['#1E140C', '#5A3A1E', '#C9A05A', '#A8452A', '#E8E2D0'];
+  const HAIRS = ['curto', 'raspado', 'black', 'moicano', 'longo', 'careca'];
+  const lookOf = c => c.look || { skin: hash(c.name) % 4, hair: 'curto', hc: 0 };
+  // Cabelo em duas partes: atrás da cabeça (antes do rosto) e na frente
+  function hairParts(style, col) {
+    const f = d => '<path d="' + d + '" fill="' + col + '"/>';
+    if (style === 'careca') return ['', ''];
+    if (style === 'raspado') return ['', '<path d="M51.8 27.2a8.5 8.5 0 0 1 16.4 0q-8.2-2.4-16.4 0z" fill="' + col + '" opacity=".55"/>'];
+    if (style === 'black') return ['<circle cx="60" cy="25.5" r="11.5" fill="' + col + '"/>', f('M51.4 27a8.8 8.8 0 0 1 17.2 0q-8.6-3.2-17.2 0z')];
+    if (style === 'moicano') return ['', f('M57.6 15.5h4.8v11h-4.8z') + '<path d="M51.8 27.2a8.5 8.5 0 0 1 16.4 0q-8.2-2.4-16.4 0z" fill="' + col + '" opacity=".35"/>'];
+    if (style === 'longo') return ['<rect x="50.5" y="24" width="19" height="17" rx="5" fill="' + col + '"/>', f('M51.6 27.5a8.5 8.5 0 0 1 16.8 0q-4-4.5-8.4-3.2q-4.4-1.3-8.4 3.2z')];
+    return ['', f('M51.6 27.5a8.5 8.5 0 0 1 16.8 0q-4-4.5-8.4-3.2q-4.4-1.3-8.4 3.2z')];
+  }
   const hash = s => [...String(s)].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
 
   // ---------- foto ilustrada ----------
@@ -42,7 +56,8 @@
     assina: [[[49, 43], [42, 51], [42, 57]], [[71, 43], [78, 51], [78, 57]]],
   };
   function photo(pose, kit, c) {
-    const [k1, k2] = kit, skin = SKIN[hash(c.name) % SKIN.length], gk = c.pos === 'GOL';
+    const [k1, k2] = kit, lk = lookOf(c), skin = SKIN[lk.skin] || SKIN[0], hcol = HAIR_COLORS[lk.hc] || HAIR_COLORS[0], gk = c.pos === 'GOL';
+    const [hBack, hFront] = hairParts(lk.hair, hcol);
     const line = '#1B1A17';
     let crowd = '';
     for (let r = 0; r < 4; r++) for (let x = (r % 2) * 3.5; x < 124; x += 7) crowd += '<circle cx="' + x + '" cy="' + (8 + r * 8) + '" r="3" fill="' + ((x * 7 + r * 3) % 5 < 2 ? '#6A665C' : '#7C786D') + '"/>';
@@ -50,7 +65,7 @@
     if (pose === 'maca') {
       return '<svg viewBox="0 0 120 100" aria-hidden="true">' + bg +
         '<rect x="10" y="68" width="84" height="5" rx="2" fill="#F4F4F4" stroke="' + line + '" stroke-width=".6"/><path d="M16 73v10M88 73v10" stroke="' + line + '" stroke-width="1.5"/>' +
-        '<circle cx="21" cy="60" r="7.5" fill="' + skin + '"/><path d="M14 58a7.5 7.5 0 0 1 14-3z" fill="#2A1A0E"/>' +
+        '<circle cx="21" cy="60" r="7.5" fill="' + skin + '"/>' + (lk.hair === 'careca' ? '' : '<path d="M14 58a7.5 7.5 0 0 1 14-3z" fill="' + hcol + '"/>') +
         '<rect x="28" y="56" width="28" height="12" rx="3" fill="' + k1 + '" stroke="' + line + '" stroke-width=".6"/>' +
         '<rect x="56" y="56" width="12" height="12" rx="2" fill="' + k2 + '" stroke="' + line + '" stroke-width=".6"/>' +
         '<rect x="68" y="59" width="18" height="7" rx="3" fill="' + skin + '"/><rect x="80" y="58.5" width="10" height="8" rx="2" fill="' + k1 + '"/>' +
@@ -80,7 +95,7 @@
       '<rect x="57" y="35" width="6" height="6" fill="' + skin + '"/>' +
       '<path d="M48 42 Q60 38 72 42 L71 66 L49 66 Z" fill="' + k1 + '" stroke="' + line + '" stroke-width=".6"/>' +
       '<path d="M55.5 40.5 L60 45 L64.5 40.5" stroke="' + k2 + '" stroke-width="2" fill="none"/>' +
-      '<circle cx="60" cy="29" r="8.5" fill="' + skin + '"/><path d="M51.6 27.5a8.5 8.5 0 0 1 16.8 0q-4-4.5-8.4-3.2q-4.4-1.3-8.4 3.2z" fill="#2A1A0E"/>' + face +
+      hBack + '<circle cx="60" cy="29" r="8.5" fill="' + skin + '"/>' + hFront + face +
       held + arm(L) + arm(R) + '</svg>';
   }
 
@@ -160,5 +175,5 @@
       lede: 'Foram ' + nums + ' em ' + f.nClubs + (f.nClubs > 1 ? ' clubes' : ' clube') + '. ' + D.O(main.name) + ' foi a casa mais marcante.', column: col }, onClose);
   }
 
-  Object.assign(U, { PAPERS, kitOf, nationKit, photo, paper, transferPaper, finalPaper, worldCupPaper, farewellPaper });
+  Object.assign(U, { SKIN, HAIR_COLORS, HAIRS, PAPERS, kitOf, nationKit, photo, paper, transferPaper, finalPaper, worldCupPaper, farewellPaper });
 })();
