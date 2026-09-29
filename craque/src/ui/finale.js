@@ -18,7 +18,7 @@
     const ach = U.achRecord(G.c, f);
     U.rankSave(G.c, f); // carreira encerrada: entra no ranking com a pontuação
     const T = G.c.totals;
-    store(SAVE, null);
+    store(SAVE, { c: null, at: Date.now() });
     const hall = (load(HALL) || []);
     hall.push({ name: G.c.name, grade: f.grade, score: f.score, verdict: f.verdict, goals: T.goals, assists: T.assists, titles: f.titles, ballon: T.ballon, pos: G.c.pos, cs: T.cs || 0, penSaved: T.penSaved || 0 });
     hall.sort((a, b) => b.score - a.score);

@@ -25,8 +25,12 @@
   const barMeter = (ico, name, txt, v, cls) => '<span class="m" role="button" data-tip="' + ico + ' ' + name + ': ' + txt + '" aria-label="' + name + ': ' + txt + '"><span class="ml">' + ico + '</span><span class="mb"><i class="' + (cls || (v >= 62 ? 'hi' : v < 32 ? 'lo' : '')) + '" style="width:' + Math.round(v) + '%"></i></span></span>';
 
   function load(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } }
-  function store(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* sem storage */ } }
-  function save() { if (G.c && !G.c.retired) store(SAVE, { c: G.c, step: G.step }); else store(SAVE, null); }
+  function store(key, v) {
+    try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* sem storage */ }
+    if (window.CLIMBIX_CLOUD) window.CLIMBIX_CLOUD.touch(key); // com conta, vai para a nuvem
+  }
+  // "at": quando foi salvo (na nuvem vale a carreira mais recente; carreira encerrada fica marcada como vazia)
+  function save() { store(SAVE, G.c && !G.c.retired ? { c: G.c, step: G.step, at: Date.now() } : { c: null, at: Date.now() }); }
 
   function render(html) {
     screen.innerHTML = html;

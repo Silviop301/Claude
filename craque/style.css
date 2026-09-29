@@ -961,3 +961,9 @@ details.more .hl { background: rgba(255, 255, 255, 0.08); border-radius: 10px; p
 .col-rar.rara { background: #2A4D9B; color: #fff; }
 .col-rar.epica { background: #7C3AED; color: #fff; }
 .col-rar.lendaria { background: linear-gradient(90deg, #FF6EC7, #7AFCFF, #FFF38A); color: #1A1030; }
+
+/* Conta */
+.cloud-line { font-size: 14px; }
+.acc-form { display: flex; flex-direction: column; gap: 10px; }
+.acc-form input { width: 100%; box-sizing: border-box; }
+.acc-err { color: #FF9AA2; font-weight: 700; margin: 0; }
