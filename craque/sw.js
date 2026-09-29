@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-38a9b9db';
+const CACHE = 'craque-35f3cd2c';
 const ASSETS = [
   "./",
   "./assets/bola.glb",
@@ -292,6 +292,7 @@ const ASSETS = [
   "./badges/usa-6.png",
   "./badges/usa-7.png",
   "./badges/usa-8.png",
+  "./fonts/TwemojiCountryFlags.woff2",
   "./icons/apple-touch-icon.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

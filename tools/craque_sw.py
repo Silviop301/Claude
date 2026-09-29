@@ -9,7 +9,7 @@ import hashlib, pathlib
 ROOT = pathlib.Path(__file__).resolve().parent.parent / "craque"
 files = ["./"]
 for p in sorted(ROOT.rglob("*")):
-    if p.is_file() and p.name not in ("sw.js", "README.md") and p.suffix in (".html", ".css", ".js", ".png", ".glb", ".webmanifest"):
+    if p.is_file() and p.name not in ("sw.js", "README.md") and p.suffix in (".html", ".css", ".js", ".png", ".glb", ".webmanifest", ".woff2"):
         files.append("./" + p.relative_to(ROOT).as_posix())
 digest = hashlib.sha1("".join(files).encode()).hexdigest()[:8]
 assets = ",\n  ".join('"%s"' % f for f in files)

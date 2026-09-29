@@ -108,7 +108,7 @@
     const g = ctx.createRadialGradient(540, 600, 100, 540, 900, 1300);
     g.addColorStop(0, '#1D4430'); g.addColorStop(1, '#071510');
     ctx.fillStyle = g; ctx.fillRect(0, 0, 1080, 1920);
-    const DISPLAY = "'Barlow Condensed', 'Arial Narrow', sans-serif";
+    const DISPLAY = "'Twemoji Country Flags', 'Barlow Condensed', 'Arial Narrow', sans-serif";
     ctx.textAlign = 'center'; ctx.fillStyle = '#F4D675';
     ctx.font = '800 76px ' + DISPLAY; ctx.fillText('A HISTÓRIA DE ' + c.name.toUpperCase(), 540, 130, 980);
     ctx.fillStyle = '#CFE0D4'; ctx.font = '600 36px ' + DISPLAY;

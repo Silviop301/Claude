@@ -2,8 +2,9 @@
 // Cor pelo pico: bronze (<65), prata (65-74), ouro (75-84), ícone (85+ ou nota S).
 (function (root) {
   const W = 600, H = 860;
-  const DISPLAY = "'Barlow Condensed', 'Arial Narrow', sans-serif";
-  const BODY = "'Barlow', system-ui, sans-serif";
+  // A fonte de bandeiras vem primeiro: no Windows, sem ela o emoji 🇧🇷 vira "BR"
+  const DISPLAY = "'Twemoji Country Flags', 'Barlow Condensed', 'Arial Narrow', sans-serif";
+  const BODY = "'Twemoji Country Flags', 'Barlow', system-ui, sans-serif";
 
   // Metal: vários pontos de luz ao longo da diagonal (claro/escuro alternando), como metal polido
   const THEMES = {
@@ -124,7 +125,10 @@
 
   // data: { name, pos, peak, attrs, flag, crest (url), grade, verdict, goals, assists, titles, ballon, traits:[{icon,lv}], years }
   root.CRAQUE_CARD = async function (canvas, d) {
-    try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) { /* segue */ }
+    try {
+      if (document.fonts && document.fonts.load) await document.fonts.load("52px 'Twemoji Country Flags'", d.flag || '🇧🇷');
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    } catch (e) { /* segue */ }
     const T = d.special ? specialTheme(d) : themeOf(d.peak, d.grade);
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
