@@ -7,10 +7,27 @@ e do cache sem internet; imagens, escudos, ícones e o modelo 3D vêm do cache p
 import hashlib, pathlib, re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent / "craque"
+# Imagens e modelos citados no código levam a versão do próprio conteúdo (?v=...): quando o arquivo
+# muda, o celular não reaproveita a cópia antiga do cache (o CDN guarda imagens por 7 dias).
+fhash = lambda p: hashlib.sha1(p.read_bytes()).hexdigest()[:8]
+asset_re = re.compile(r"(['\"])(assets/[^'\"?]+\.(?:png|jpg|glb))(?:\?v=[0-9a-f]+)?(['\"])")
+versioned = {}
+for p in sorted((ROOT / "src").rglob("*.js")):
+    src = p.read_text()
+    def stamp(m):
+        f = ROOT / m.group(2)
+        if not f.is_file():
+            return m.group(0)
+        versioned[m.group(2)] = m.group(2) + "?v=" + fhash(f)
+        return m.group(1) + versioned[m.group(2)] + m.group(3)
+    new = asset_re.sub(stamp, src)
+    if new != src:
+        p.write_text(new)
 files = ["./"]
 for p in sorted(ROOT.rglob("*")):
     if p.is_file() and p.name not in ("sw.js", "README.md") and p.suffix in (".html", ".css", ".js", ".png", ".jpg", ".glb", ".webmanifest", ".woff2"):
-        files.append("./" + p.relative_to(ROOT).as_posix())
+        rel = p.relative_to(ROOT).as_posix()
+        files.append("./" + versioned.get(rel, rel))
 digest = hashlib.sha1("".join(files).encode()).hexdigest()[:8]
 assets = ",\n  ".join('"%s"' % f for f in files)
 (ROOT / "sw.js").write_text("""// Gerado por tools/craque_sw.py — não editar à mão.

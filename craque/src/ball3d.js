@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-const modelReady = new GLTFLoader().loadAsync('assets/bola.glb').then(g => {
+const modelReady = new GLTFLoader().loadAsync('assets/bola.glb?v=1ba24026').then(g => {
   // Centraliza e normaliza o tamanho, seja qual for a escala do arquivo
   const obj = g.scene;
   const box = new THREE.Box3().setFromObject(obj);
@@ -123,7 +123,7 @@ function flyer(host, w, h) {
 // para o goleiro, a barreira e a bola continuarem na frente dele. A câmera é calculada para as traves caírem
 // exatamente onde a mira funciona: m = { w, h, left, right, top, ground } no SVG.
 let goalModel = null;
-const goalReady = () => (goalModel = goalModel || new GLTFLoader().loadAsync('assets/gol.glb').then(g => g.scene));
+const goalReady = () => (goalModel = goalModel || new GLTFLoader().loadAsync('assets/gol.glb?v=fff0621f').then(g => g.scene));
 
 function goal(svg, m) {
   return goalReady().then(model => {
@@ -222,7 +222,7 @@ const CARD_TRIM = {
   dourada: { borda: [0.791, 0.658, 0.361], filete: [0.254, 0.150, 0.031] },
 };
 let cardModel = null;
-const cardReady = () => (cardModel = cardModel || new GLTFLoader().loadAsync('assets/carta.glb').then(g => g.scene));
+const cardReady = () => (cardModel = cardModel || new GLTFLoader().loadAsync('assets/carta.glb?v=5faf94a3').then(g => g.scene));
 const texCache = {};
 const metalTex = k => (texCache[k] = texCache[k] || new THREE.TextureLoader().loadAsync('assets/cartas/' + k + '.jpg').then(t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }));
 

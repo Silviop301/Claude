@@ -12,12 +12,13 @@
   const tri = u => 1 - 4 * Math.abs(((u % 1) + 1) % 1 - 0.5);
 
   // Sprites: barreira (8x2 quadros de 124x250) e goleiro (4x4 quadros de 480x250)
-  const WALL = { url: 'assets/sprites/barreira.png', w: 124, h: 250, top: 50, feet: 248, fw: 64 };
-  const wallVB = f => (f % 8) * WALL.w + ' ' + Math.floor(f / 8) * WALL.h + ' ' + WALL.w + ' ' + WALL.h;
+  const WALL = { url: 'assets/sprites/barreira.png?v=d83acda0', w: 124, h: 250, top: 50, feet: 248, fw: 64 };
+  // Folhas com no máximo 800 px de largura: o CDN reduz imagens mais largas no celular
+  const wallVB = f => (f % 4) * WALL.w + ' ' + Math.floor(f / 4) * WALL.h + ' ' + WALL.w + ' ' + WALL.h;
   // Goleiro: 0-3 parado respirando; 4-10 mergulho para a esquerda (desenho original); 11 deitado no chão.
   // Folha em resolução cheia (quadros de 549x500, 4 colunas). bb: caixa do corpo; glove: luva que vai na bola;
   // foot: ponto dos pés parado (fica na linha do gol)
-  const KSP = { url: 'assets/sprites/goleiro.png', w: 549, h: 500, sw: 2196, sh: 1500, s: 0.3, foot: [426, 491], hop: [362, 491],
+  const KSP = { url: 'assets/sprites/goleiro.png?v=314dfb64', w: 549, h: 500, sw: 549, sh: 6000, s: 0.3, foot: [426, 491], hop: [362, 491],
     bb: [[313, 147, 539, 491], [326, 154, 537, 491], [346, 165, 535, 491], [329, 157, 545, 491], [203, 99, 521, 491], [139, 0, 530, 491], [125, 12, 531, 491], [84, 77, 516, 491], [60, 148, 491, 491], [56, 193, 485, 491], [50, 316, 474, 491], [4, 377, 469, 500]],
     glove: { 6: [234, 16], 7: [142, 82], 8: [84, 152], 9: [60, 312], 10: [54, 436] } };
 
@@ -60,7 +61,7 @@
       for (let i = 0; i < n; i++) {
         const cx = px(l) + step * (i + 0.5), f = (i * 5) % 16;
         wall += '<g class="k-wallspr" transform="translate(' + (cx - WALL.w / 2 * sc) + ' ' + (top - WALL.top * sc) + ') scale(' + sc + ')">' +
-          '<svg width="' + WALL.w + '" height="' + WALL.h + '" viewBox="' + wallVB(f) + '" overflow="hidden"><image href="' + WALL.url + '" width="992" height="500"/></svg></g>';
+          '<svg width="' + WALL.w + '" height="' + WALL.h + '" viewBox="' + wallVB(f) + '" overflow="hidden"><image href="' + WALL.url + '" width="496" height="1000"/></svg></g>';
       }
     }
     const L = 'stroke="#EEF5F0" stroke-width="2" fill="none" opacity=".75"';
@@ -132,7 +133,7 @@
     const center = f => { const b = bb(f); return [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]; };
     // Quadro f com o ponto (ax, ay) da célula em (x, y) do SVG; m = 1 desenho original (mergulho para a esquerda), -1 espelhado
     const put = (f, ax, ay, x, y, m) => {
-      inner.setAttribute('viewBox', (f % 4) * KSP.w + ' ' + Math.floor(f / 4) * KSP.h + ' ' + KSP.w + ' ' + KSP.h);
+      inner.setAttribute('viewBox', '0 ' + f * KSP.h + ' ' + KSP.w + ' ' + KSP.h); // um quadro por linha
       g.setAttribute('transform', 'translate(' + x + ' ' + y + ') scale(' + (m * s) + ' ' + s + ') translate(' + (-ax) + ' ' + (-ay) + ')');
     };
     const shadow = (x, air) => { if (!sh) return; sh.setAttribute('cx', x); sh.setAttribute('opacity', 1 - Math.min(0.65, air)); sh.setAttribute('rx', 16 + 14 * (1 - air)); };
