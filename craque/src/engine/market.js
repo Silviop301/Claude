@@ -11,7 +11,7 @@
     return t;
   };
 
-  const YEARS = { base: 3, up: 4, mid: 3, money: 2, home: 2, stay: 3 };
+  const YEARS = { base: 3, up: 4, mid: 3, money: 2, home: 2, stay: 3, ask: 3 };
   function offerFrom(c, club, kind) {
     const role = S.role(c, club);
     let years = YEARS[kind] || 3;
@@ -84,6 +84,55 @@
   S.currentDeal = function (c) {
     const club = D.CLUB_BY_ID[c.club], role = S.role(c, club);
     return { club: club.id, kind: 'now', role: role.name, share: role.share, wage: c.wage, years: c.contract };
+  };
+
+  // Propostas da janela ficam guardadas (reabrir a tela não sorteia de novo).
+  // Uma vez por janela dá para pedir novas propostas e uma vez pedir um país/liga ao empresário.
+  S.windowState = function (c, academy) {
+    const key = academy ? 'base' : c.season;
+    if (!c.win || c.win.key !== key) c.win = { key, offers: S.offers(c, !!academy), reroll: 0, ask: 0, askMsg: null };
+    return c.win;
+  };
+  S.rerollOffers = function (c, academy) {
+    const w = S.windowState(c, academy);
+    if (w.reroll >= 1) return false;
+    const before = new Set(w.offers.map(o => o.club));
+    // Evita repetir os mesmos clubes: tenta algumas vezes
+    let next = S.offers(c, !!academy);
+    for (let i = 0; i < 4 && next.some(o => before.has(o.club)); i++) next = S.offers(c, !!academy);
+    w.offers = next;
+    w.reroll++;
+    return true;
+  };
+  // Pedido ao empresário: um clube da liga escolhida que te queira. Chance pela nota (e fama) contra a força do clube.
+  S.askChance = function (c, leagueId) {
+    const o = S.ovr(c), fame = Math.min(4, c.fame / 50);
+    const pool = D.CLUBS.filter(x => x.league === leagueId && x.id !== c.club);
+    if (!pool.length) return 0;
+    const best = Math.max(...pool.filter(x => x.strength <= o + 4 + fame).map(x => x.strength), -1);
+    return best < 0 ? 0.05 : clampN(0.45 + (o + fame - best) / 14, 0.15, 0.95);
+  };
+  const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
+  S.askLeague = function (c, leagueId) {
+    const w = S.windowState(c);
+    if (w.ask >= 1) return null;
+    w.ask++;
+    const { r, save } = rngOf(c);
+    const lg = D.LEAGUE_BY_ID[leagueId], o = S.ovr(c), fame = Math.min(4, c.fame / 50);
+    const pool = D.CLUBS.filter(x => x.league === leagueId && x.id !== c.club && !w.offers.some(of => of.club === x.id));
+    // Clubes que te querem: até um pouco acima do seu nível (a fama ajuda)
+    const want = pool.filter(x => x.strength <= o + 4 + fame).sort((a, b) => b.strength - a.strength);
+    const ok = want.length && r() < S.askChance(c, leagueId);
+    save();
+    if (!ok) {
+      w.askMsg = want.length ? 'Seu empresário ligou para os clubes ' + D.da(lg.name) + ', mas ninguém fechou desta vez.' : 'Os clubes ' + D.da(lg.name) + ' acham que você ainda não tem nível para eles.';
+      return { ok: false, msg: w.askMsg };
+    }
+    const club = r.pick(want.slice(0, 3));
+    const offer = offerFrom(c, club, 'ask');
+    w.offers.push(offer);
+    w.askMsg = D.O(club.name) + ' aceitou conversar: proposta na mesa!';
+    return { ok: true, offer, msg: w.askMsg };
   };
 
   S.stayOffer = function (c) {

@@ -835,3 +835,19 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .wc-game.goal-t { animation: goal-t .7s; }
 @keyframes goal-u { 30% { box-shadow: 0 0 0 4px #1FA35A; transform: scale(1.02); } }
 @keyframes goal-t { 30% { box-shadow: 0 0 0 4px #C0392B; } }
+
+/* Janela: novas propostas e pedido de país/liga */
+.off-tools { display: flex; gap: 8px; margin: 10px 0 4px; }
+.off-tools .tool { flex: 1; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2); color: #fff; border-radius: 12px; padding: 8px 6px; font: 800 14px var(--display); cursor: pointer; }
+.off-tools .tool small { display: block; font: 600 11px var(--body, inherit); color: #BFD3C6; margin-top: 1px; }
+.off-tools .tool:disabled { opacity: .4; cursor: default; }
+.ask-msg { margin: 6px 0 0; font-size: 13px; font-weight: 700; color: #F4D675; text-align: center; }
+.offer.fresh { animation: trophy-in .6s cubic-bezier(.2, 1.5, .4, 1); box-shadow: 0 0 0 3px #F4D675; }
+.lg-row { display: flex; align-items: center; gap: 8px; width: 100%; background: #fff; border: 1px solid #E3E9E5; border-radius: 12px; padding: 10px 12px; margin-bottom: 6px; font-size: 14.5px; color: #13201A; cursor: pointer; flex-wrap: wrap; text-align: left; }
+.lg-row b { flex: 1; }
+.lg-row .stars { color: #D9A400; font-size: 12px; letter-spacing: 1px; }
+.lg-row em { font-style: normal; font-weight: 800; min-width: 40px; text-align: right; color: #7A5700; }
+.lg-row em.hi { color: #0E7A3E; }
+.lg-row em.lo { color: #B3261E; }
+.lg-row.armed { border-color: #F4D675; box-shadow: 0 0 0 2px #F4D675; }
+.lg-row .arm-back { flex-basis: 100%; margin: 6px -12px -10px; }
