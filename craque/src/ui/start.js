@@ -8,10 +8,11 @@
     const saved = load(SAVE);
     const hall = load(HALL) || [];
     render(
-      '<div class="hero"><div class="ball3d" id="ball3d" aria-hidden="true"></div><div class="eyebrow">Protótipo 3</div><h1>CRAQUE</h1></div>' +
+      '<div class="hero"><div class="ball3d" id="ball3d" aria-hidden="true"></div><div class="eyebrow">Carreira de futebol</div><h1>CRAQUE</h1></div>' +
       '<p class="lead">Crie um garoto de 16 anos, escolha propostas, monte o estilo dele e descubra se ele vira lenda.</p>' +
       (saved && saved.c ? '<button class="btn" id="b-cont">Continuar carreira de ' + esc(saved.c.name) + '</button>' : '') +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
+      U.dailyCard() +
       '<button class="btn ghost" id="b-ach">🏅 Conquistas <b>' + U.achCount() + '/' + S.ACHIEVEMENTS.length + '</b></button>' +
       '<button class="btn ghost small-btn" id="b-sound"></button>' +
       (hall.length ? '<div class="eyebrow" style="margin-top:8px">Hall da Fama</div><div class="hall">' +
@@ -27,6 +28,7 @@
     };
     $('b-new').onclick = create;
     $('b-ach').onclick = U.achievements;
+    $('b-daily').onclick = () => { if (!saved || !saved.c || confirm('Começar a carreira do dia? A carreira em andamento será substituída.')) U.dailyStart(); };
     const snd = $('b-sound');
     const sndTxt = () => { snd.textContent = window.CRAQUE_SFX && window.CRAQUE_SFX.on ? '🔊 Som ligado' : '🔇 Som desligado'; };
     if (snd) { sndTxt(); snd.onclick = () => { if (window.CRAQUE_SFX) window.CRAQUE_SFX.toggle(); sndTxt(); }; }

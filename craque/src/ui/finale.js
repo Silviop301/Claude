@@ -41,6 +41,7 @@
         Object.entries(G.c.trophies).sort((a, b) => ['wc', 'ballon', 'ucl', 'lib', 'league', 'cup'].indexOf(a[1].type) - ['wc', 'ballon', 'ucl', 'lib', 'league', 'cup'].indexOf(b[1].type))
           .map(([name, t]) => '<div>' + trophy(t.type, 44) + '<b>' + t.n + 'x</b><span>' + esc(name) + '</span></div>').join('') + '</div>' : '') +
       (f.bonus.length ? '<div class="room-title">Despedida</div><ul class="why">' + f.bonus.map(b => '<li><span>' + esc(b.txt) + '</span><b class="up">+' + b.v + '</b></li>').join('') + '</ul>' : '') +
+      U.dailyFinish(G.c, f) +
       U.achBlock(ach) +
       '<div class="score">' + f.score + ' pontos' + (rank === 1 ? ' · NOVO RECORDE!' : ' · #' + rank + ' no seu Hall da Fama') + '</div>' +
       '</div>' +
