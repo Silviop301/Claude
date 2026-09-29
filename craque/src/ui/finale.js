@@ -32,6 +32,7 @@
       cs: T.cs || 0, penSaved: T.penSaved || 0, tackles: T.tackles || 0,
       traits: G.c.traits.map(id => ({ icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(G.c, id) })),
     };
+    U.collect(G.c, f, cardData); // a carta entra na coleção
     const shareName = G.c.name;
     // Escudo da carta: começa no clube principal e dá para trocar por qualquer clube da carreira
     const clubsPlayed = [...new Set(G.c.spells.filter(sp => sp.seasons).map(sp => sp.club))];
