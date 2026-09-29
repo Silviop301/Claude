@@ -63,7 +63,7 @@
       U.achBlock(ach) +
       '<div class="score">' + f.score + ' pontos' + (rank === 1 ? ' · NOVO RECORDE!' : ' · #' + rank + ' no seu Hall da Fama') + '</div>' +
       '</div>' +
-      '<button class="btn" id="b-again">Nova carreira</button><button class="btn ghost" id="b-home">Hall da Fama</button>'
+      '<button class="btn" id="b-again">Nova carreira</button><button class="btn ghost" id="b-hall">Hall da Fama</button>'
     );
     // Edição especial do jornal com a despedida
     const retired = G.c;
@@ -96,7 +96,8 @@
       if (r === 'download') $('b-share').textContent = 'Imagem salva';
     };
     $('b-again').onclick = U.create;
-    $('b-home').onclick = U.home;
+    // Vai para o início e rola até o Hall da Fama (id próprio: "b-home" é o botão de casa da barra)
+    $('b-hall').onclick = () => { U.home(); setTimeout(() => { const h = document.querySelector('.hall'); if (h) h.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 250); };
   }
 
   Object.assign(U, { finale, careerStatsOf: careerStats });
