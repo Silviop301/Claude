@@ -132,7 +132,7 @@
     const goTour = goWc || goCwc, tourIntro = goWc ? U.wcIntro : U.cwcIntro;
     const tourLbl = goWc ? 'Copa do Mundo ' + year() + ' 🌍' : 'Mundial de Clubes ' + year() + ' 🌐';
     let actions;
-    if (fin) actions = '<p class="lead">' + (res.farewell ? 'Fim da temporada de despedida. Hora de pendurar as chuteiras.' : 'Aos ' + G.c.age + ' anos, o corpo pediu para parar.') + '</p><button class="btn" id="b-next">' + (goTour ? 'Última dança: ' + tourLbl : 'Ver sua carreira') + '</button>';
+    if (fin) actions = '<p class="lead">' + (res.farewell ? 'Fim da temporada de despedida. Hora de pendurar as chuteiras.' : (G.c.age >= S.RETIRE_AGE ? 'Aos ' + G.c.age + ' anos, o corpo pediu para parar.' : 'Com a carta em ' + S.ovr(G.c) + ', nenhum clube quis renovar. Hora de pendurar as chuteiras.')) + '</p><button class="btn" id="b-next">' + (goTour ? 'Última dança: ' + tourLbl : 'Ver sua carreira') + '</button>';
     else {
       actions = '<p class="contract">' + contractTxt + '</p><button class="btn" id="b-next">' + (goTour ? 'Jogar ' + (goWc ? 'a ' : 'o ') + tourLbl : open ? 'Janela de transferências' : 'Próxima temporada') + '</button>';
       if (S.canAnnounce(G.c)) actions += '<button class="btn ghost" id="b-farewell">Anunciar a última temporada<small>Torcida +10 e mais minutos · parar em alta rende pontos extras</small></button>';

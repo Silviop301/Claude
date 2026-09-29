@@ -163,7 +163,9 @@
   S.windowOpen = c => c.contract <= 0 || c.wantsOut;
   S.canRetire = c => c.age >= 33;
   S.canAnnounce = c => c.age >= 32 && !c.farewell;
-  S.mustRetire = c => c.age >= 38 || (c.farewell && c.seasons.length && c.seasons[c.seasons.length - 1].farewell);
+  // Fim obrigatório: aos 42 anos, ou antes (a partir dos 33) se a carta cair abaixo de 45
+  S.RETIRE_AGE = 42; S.RETIRE_OVR = 45;
+  S.mustRetire = c => c.age >= S.RETIRE_AGE || (c.age >= 33 && S.ovr(c) < S.RETIRE_OVR) || (c.farewell && c.seasons.length && c.seasons[c.seasons.length - 1].farewell);
   S.announce = function (c) {
     c.farewell = true;
     bump(c, 'fans', 10);
