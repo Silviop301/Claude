@@ -21,7 +21,8 @@
 
   // Fama (0 a ~300): nível + barra; pesa em propostas, salário, seleção e Bola de Ouro
   // Medidor compacto da barra: ícone + estado (o nome completo fica no aria-label)
-  const barMeter = (ico, name, txt, v, cls) => '<span class="m" aria-label="' + name + ': ' + txt + '"><span class="ml">' + ico + ' ' + txt + '</span><span class="mb"><i class="' + (cls || (v >= 62 ? 'hi' : v < 32 ? 'lo' : '')) + '" style="width:' + Math.round(v) + '%"></i></span></span>';
+  // Medidor do topo: só o ícone e a barra; tocar mostra o nome e o nível
+  const barMeter = (ico, name, txt, v, cls) => '<span class="m" role="button" data-tip="' + ico + ' ' + name + ': ' + txt + '" aria-label="' + name + ': ' + txt + '"><span class="ml">' + ico + '</span><span class="mb"><i class="' + (cls || (v >= 62 ? 'hi' : v < 32 ? 'lo' : '')) + '" style="width:' + Math.round(v) + '%"></i></span></span>';
 
   function load(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } }
   function store(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* sem storage */ } }
@@ -35,12 +36,39 @@
     window.scrollTo(0, 0);
   }
 
+  // ---------- cor do clube ----------
+  // O topo da tela ganha a cor da camisa do clube atual e o escudo grande e apagado ao fundo
+  let bgClub = undefined;
+  function clubBg(id) {
+    if (id === bgClub) return;
+    bgClub = id;
+    let el = $('club-bg');
+    if (!el) { el = document.createElement('div'); el.id = 'club-bg'; el.setAttribute('aria-hidden', 'true'); document.body.prepend(el); }
+    if (!id) { el.className = ''; return; }
+    const kit = (window.CRAQUE_KITS || {})[id] || ['#1F6B3E', '#0B1F14'];
+    el.style.setProperty('--kit', kit[0]);
+    el.innerHTML = '<img src="badges/' + id + '.png" alt="" onerror="this.remove()">';
+    el.className = 'on';
+  }
+  // Balão com o nome do medidor tocado
+  function barTip(m) {
+    document.querySelectorAll('.bar-tip').forEach(x => x.remove());
+    const t = document.createElement('div');
+    t.className = 'bar-tip'; t.textContent = m.dataset.tip;
+    const r = m.getBoundingClientRect();
+    t.style.left = Math.max(8, Math.min(window.innerWidth - 220, r.left)) + 'px';
+    t.style.top = (r.bottom + 6) + 'px';
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 1800);
+  }
+
   // ---------- barra do jogador ----------
   let lastOvr = 0;
   function bar() {
     const b = $('bar');
-    if (!G.c || !G.c.club) { b.hidden = true; return; }
+    if (!G.c || !G.c.club) { b.hidden = true; clubBg(null); return; }
     b.hidden = false;
+    clubBg(G.c.club);
     requestAnimationFrame(() => document.documentElement.style.setProperty('--bar-h', b.offsetHeight + 'px'));
     const cl = club(G.c.club), lg = league(G.c.club);
     // Nome e clube (a idade aparece no topo de cada tela; o som fica na linha dos medidores)
@@ -51,6 +79,7 @@
       barMeter('⭐', 'Fama', S.fameLabel(G.c.fame), Math.min(100, Math.round(G.c.fame / 3)), 'fame') +
       '<span class="bar-btns"><button class="snd-mini" id="b-snd" aria-label="Som">' + (window.CRAQUE_SFX && !window.CRAQUE_SFX.on ? '🔇' : '🔊') + '</button>' +
       '<button class="snd-mini home-btn" id="b-home" aria-label="Voltar ao início">' + HOUSE + '</button></span>';
+    $('bar-rel').querySelectorAll('[data-tip]').forEach(m => m.onclick = e => { e.stopPropagation(); barTip(m); });
     // Voltar ao início: a carreira fica salva e continua de onde parou
     $('b-home').onclick = e => {
       e.stopPropagation();

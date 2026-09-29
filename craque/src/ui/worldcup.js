@@ -261,7 +261,11 @@
         ? run.games.filter(x => x.cs).length + ' sem sofrer gol' + (run.g ? ' · ' + run.g + (run.g === 1 ? ' gol' : ' gols') : '')
         : run.g + (run.g === 1 ? ' gol' : ' gols') + ' · ' + run.a + (run.a === 1 ? ' assistência' : ' assistências')) + '</p>' +
       '<button class="btn" id="b-next">' + (S.mustRetire(G.c) ? 'Ver sua carreira' : 'Seguir a carreira') + '</button>';
-    if (run.champion) { sfx('fanfare'); const btn = $('b-next'); setTimeout(() => { if (btn.isConnected) (cwc ? U.clubWorldPaper(G.c, run) : U.worldCupPaper(G.c, run, () => run.card && U.walkout(G.c, null, run.card))); }, 1400); }
+    if (run.champion) {
+      const btn = $('b-next');
+      U.celebrate([{ art: cwc ? trophy('cwc', 150, 'Mundial de Clubes') : trophy('wc', 150), top: cwc ? 'Campeão mundial!' : 'Campeão do mundo!', name: (cwc ? 'Mundial de Clubes ' : 'Copa do Mundo ') + run.year }],
+        () => { if (btn.isConnected) (cwc ? U.clubWorldPaper(G.c, run) : U.worldCupPaper(G.c, run, () => run.card && U.walkout(G.c, null, run.card))); });
+    }
     $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     $('b-next').onclick = U.afterSeason;
   }

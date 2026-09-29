@@ -47,8 +47,38 @@
       const v = verdictOf(res);
       $('sv-lbl').textContent = v[0]; $('sv-lbl').className = 'sv-lbl ' + v[1];
       cardRise(res, skip);
-      summary(res, skip);
+      // Títulos, Bola de Ouro e acesso ganham tela cheia antes do resumo
+      const big = bigMoments(res);
+      if (big.length && !skip) { res.celebrated = true; screen.onclick = null; setTimeout(() => celebrate(big, () => summary(res, false)), 700); }
+      else summary(res, skip);
     })(t0);
+  }
+
+  function bigMoments(res) {
+    const out = res.titles.map(t => ({ art: trophy(titleType(t), 150, t.name), top: 'Campeão!', name: t.name }));
+    if (res.awards.some(a => a.id === 'ballon')) out.push({ art: trophy('ballon', 150), top: 'O melhor do mundo', name: 'Bola de Ouro' });
+    if (res.move && res.move.dir === 'up') out.push({ art: '<div class="bm-emoji">⬆️</div>', top: 'Acesso!', name: D.O(club(res.club).name) + ' sobe ' + D.paraA(res.move.toName) });
+    return out;
+  }
+
+  // Tela cheia de comemoração: taça grande, confete e fanfarra (toque passa)
+  function celebrate(list, done) {
+    const w = document.createElement('div');
+    w.className = 'bigmoment';
+    document.body.appendChild(w);
+    let i = 0, tmr = 0;
+    const colors = ['#F4D675', '#FFFFFF', '#5FD690', '#FF8A93', '#7AC7FF'];
+    const confetti = Array.from({ length: 36 }, (_, k) => '<i style="left:' + ((k * 37) % 100) + '%;background:' + colors[k % 5] + ';animation-delay:' + ((k * 0.13) % 1.2).toFixed(2) + 's;animation-duration:' + (1.6 + (k % 5) * 0.25).toFixed(2) + 's"></i>').join('');
+    const show = () => {
+      if (i >= list.length) { clearTimeout(tmr); w.classList.add('out'); return setTimeout(() => { w.remove(); done(); }, 250); }
+      const m = list[i++];
+      w.innerHTML = '<div class="bm-confetti">' + confetti + '</div><div class="bm-in"><div class="bm-art">' + m.art + '</div><span class="bm-top">' + esc(m.top) + '</span><b class="bm-name">' + esc(m.name) + '</b><small>Toque para continuar</small></div>';
+      sfx('fanfare');
+      if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+      clearTimeout(tmr); tmr = setTimeout(show, 2600);
+    };
+    w.onclick = show;
+    show();
   }
 
   // Selo da temporada pela nota
@@ -128,7 +158,7 @@
       const el = items[i++];
       el.classList.add('in');
       el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      if (el.classList.contains('title-won') || el.classList.contains('ballon')) sfx('fanfare');
+      if ((el.classList.contains('title-won') || el.classList.contains('ballon')) && !res.celebrated) sfx('fanfare');
       else if (el.classList.contains('move-line') && el.classList.contains('up')) sfx('levelup');
       else if (el.classList.contains('wc-call')) sfx('levelup');
       if (el.classList.contains('news') && !paper) {
@@ -203,5 +233,5 @@
     return S.windowOpen(G.c) ? U.windowOffers() : U.preseason();
   }
 
-  Object.assign(U, { season, lede, showPaper, reveal, summary, afterSeason });
+  Object.assign(U, { celebrate, season, lede, showPaper, reveal, summary, afterSeason });
 })();

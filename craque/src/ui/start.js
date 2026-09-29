@@ -56,24 +56,29 @@
     const i = Math.floor(Math.random() * D.NICKNAMES.length);
     const st = { pos: 'ATA', foot: 'D', country: 'Brasil', look: { skin: Math.floor(Math.random() * 5), hair: 'curto', hc: 0 } };
     const HAIR_NAME = { curto: 'Curto', raspado: 'Raspado', black: 'Black', moicano: 'Moicano', longo: 'Longo', careca: 'Careca' };
+    // Tudo numa tela: a carta no centro (foto, nome, número e bandeira) e as escolhas embaixo
     render(
       '<button class="back-link" id="b-back-home">‹ Início</button>' +
-      '<div class="eyebrow">Nova carreira</div><h2>Quem é o garoto?</h2>' +
-      '<div class="field"><label for="f-name">Nome na camisa</label><input id="f-name" maxlength="18" value="' + D.NICKNAMES[i] + '"></div>' +
-      '<div class="field"><label>Posição</label><div class="seg pos4" id="f-pos"><button data-v="ATA" class="on">Atacante</button><button data-v="MEI">Meia</button><button data-v="ZAG">Zagueiro</button><button data-v="GOL">Goleiro</button></div></div>' +
-      '<div class="field"><label for="f-num">Número da camisa</label><div class="num-pick"><input id="f-num" type="number" inputmode="numeric" min="1" max="99" value="9">' +
-      [7, 9, 10, 11, 99].map(n => '<button type="button" data-n="' + n + '">' + n + '</button>').join('') + '</div></div>' +
-      '<div class="field"><label>Pé bom</label><div class="seg" id="f-foot"><button data-v="D" class="on">Destro</button><button data-v="E">Canhoto</button></div></div>' +
-      '<div class="field"><label>País</label><div class="seg flags" id="f-country">' + D.COUNTRIES.map((k, j) => '<button data-v="' + k.id + '"' + (j ? '' : ' class="on"') + ' aria-label="' + k.id + '">' + k.flag + '</button>').join('') + '</div></div>' +
-      '<div class="field"><label>Visual <small>(aparece nas fotos do jornal)</small></label><div class="look"><div class="look-pv" id="look-pv"></div><div class="look-opts">' +
+      '<div class="eyebrow">Nova carreira · quem é o garoto?</div>' +
+      '<div class="cc metal bronze"><div class="cc-top"><input class="cc-num" id="f-num" type="number" inputmode="numeric" min="1" max="99" value="9" aria-label="Número da camisa">' +
+      '<span class="cc-pos" id="cc-pos">ATA</span><span class="cc-flag" id="cc-flag"></span></div>' +
+      '<button type="button" class="cc-photo" id="look-pv" aria-label="Mudar o visual"></button>' +
+      '<input class="cc-name" id="f-name" maxlength="18" value="' + D.NICKNAMES[i] + '" aria-label="Nome na camisa"></div>' +
+      '<p class="cc-hint">Toque no nome ou no número para editar · no jogador para mudar o visual</p>' +
+      '<div class="look-panel" id="look-panel" hidden>' +
       '<div class="look-row" id="f-skin">' + U.SKIN.map((c, j) => '<button data-v="' + j + '" style="background:' + c + '" aria-label="Pele ' + (j + 1) + '"></button>').join('') + '</div>' +
       '<div class="look-row txt" id="f-hair">' + U.HAIRS.map(h => '<button data-v="' + h + '">' + HAIR_NAME[h] + '</button>').join('') + '</div>' +
-      '<div class="look-row" id="f-hc">' + U.HAIR_COLORS.map((c, j) => '<button data-v="' + j + '" style="background:' + c + '" aria-label="Cor do cabelo ' + (j + 1) + '"></button>').join('') + '</div>' +
-      '</div></div></div>' +
+      '<div class="look-row" id="f-hc">' + U.HAIR_COLORS.map((c, j) => '<button data-v="' + j + '" style="background:' + c + '" aria-label="Cor do cabelo ' + (j + 1) + '"></button>').join('') + '</div></div>' +
+      '<div class="seg pos4" id="f-pos"><button data-v="ATA" class="on">Atacante</button><button data-v="MEI">Meia</button><button data-v="ZAG">Zagueiro</button><button data-v="GOL">Goleiro</button></div>' +
+      '<div class="seg" id="f-foot"><button data-v="D" class="on">Destro</button><button data-v="E">Canhoto</button></div>' +
+      '<div class="seg flags one-line" id="f-country">' + D.COUNTRIES.map((k, j) => '<button data-v="' + k.id + '"' + (j ? '' : ' class="on"') + ' aria-label="' + k.id + '">' + k.flag + '</button>').join('') + '</div>' +
       '<button class="btn" id="b-go">Começar carreira</button>'
     );
+    $('look-pv').onclick = () => { const lp = $('look-panel'); lp.hidden = !lp.hidden; };
     // Prévia da foto do jornal com a camisa da seleção escolhida
     const lookPv = () => {
+      $('cc-pos').textContent = st.pos;
+      $('cc-flag').textContent = (D.COUNTRIES.find(k => k.id === st.country) || {}).flag || '';
       $('look-pv').innerHTML = U.photo('normal', U.nationKit(st.country), { name: $('f-name').value || 'x', pos: st.pos, number: +$('f-num').value || 9, look: st.look });
       [['f-skin', 'skin'], ['f-hair', 'hair'], ['f-hc', 'hc']].forEach(([id, k]) => $(id).querySelectorAll('button').forEach(b => b.classList.toggle('on', String(st.look[k]) === b.dataset.v)));
       $('f-hc').classList.toggle('off', st.look.hair === 'careca');
@@ -92,8 +97,8 @@
     let numTouched = false;
     lookPv();
     $('b-back-home').onclick = home;
-    $('f-num').oninput = () => { numTouched = true; };
-    screen.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { $('f-num').value = b.dataset.n; numTouched = true; });
+    $('f-num').oninput = () => { numTouched = true; lookPv(); };
+    $('f-name').oninput = lookPv;
     $('b-go').onclick = () => {
       const name = $('f-name').value.trim() || D.NICKNAMES[i];
       const number = Math.max(1, Math.min(99, parseInt($('f-num').value, 10) || D.POS_NUM[st.pos]));
