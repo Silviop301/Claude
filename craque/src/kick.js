@@ -14,11 +14,12 @@
   // Sprites: barreira (8x2 quadros de 124x250) e goleiro (4x4 quadros de 480x250)
   const WALL = { url: 'assets/sprites/barreira.png', w: 124, h: 250, top: 50, feet: 248, fw: 64 };
   const wallVB = f => (f % 8) * WALL.w + ' ' + Math.floor(f / 8) * WALL.h + ' ' + WALL.w + ' ' + WALL.h;
-  // Goleiro: 0-3 parado respirando; 4-10 mergulho para a esquerda (desenho original); 11-15 deitado no chão.
-  // bb: caixa do corpo em cada quadro; glove: luva que vai na bola (medidas da folha)
-  const KSP = { url: 'assets/sprites/goleiro.png', w: 480, h: 250, s: 0.6,
-    bb: [[181, 71, 299, 248], [187, 75, 298, 248], [197, 80, 297, 248], [189, 76, 302, 248], [126, 47, 290, 248], [94, 0, 295, 248], [87, 4, 295, 246], [66, 36, 288, 246], [54, 71, 275, 246], [53, 94, 272, 246], [49, 156, 267, 248], [29, 186, 264, 250]],
-    glove: { 6: [143, 8], 7: [100, 40], 8: [68, 76], 9: [57, 155], 10: [54, 217] } };
+  // Goleiro: 0-3 parado respirando; 4-10 mergulho para a esquerda (desenho original); 11 deitado no chão.
+  // Folha em resolução cheia (quadros de 549x500, 4 colunas). bb: caixa do corpo; glove: luva que vai na bola;
+  // foot: ponto dos pés parado (fica na linha do gol)
+  const KSP = { url: 'assets/sprites/goleiro.png', w: 549, h: 500, sw: 2196, sh: 1500, s: 0.3, foot: [426, 491], hop: [362, 491],
+    bb: [[313, 147, 539, 491], [326, 154, 537, 491], [346, 165, 535, 491], [329, 157, 545, 491], [203, 99, 521, 491], [139, 0, 530, 491], [125, 12, 531, 491], [84, 77, 516, 491], [60, 148, 491, 491], [56, 193, 485, 491], [50, 316, 474, 491], [4, 377, 469, 500]],
+    glove: { 6: [234, 16], 7: [142, 82], 8: [84, 152], 9: [60, 312], 10: [54, 436] } };
 
   function scene(setup, side) {
     // Rede com profundidade: fundo (menor e mais alto), laterais e teto
@@ -122,7 +123,7 @@
     const NS = 'http://www.w3.org/2000/svg';
     const g = document.createElementNS(NS, 'g');
     g.setAttribute('class', 'k-kspr');
-    g.innerHTML = '<svg width="' + KSP.w + '" height="' + KSP.h + '" viewBox="0 0 ' + KSP.w + ' ' + KSP.h + '" overflow="hidden"><image href="' + KSP.url + '" width="1920" height="1000"/></svg>';
+    g.innerHTML = '<svg width="' + KSP.w + '" height="' + KSP.h + '" viewBox="0 0 ' + KSP.w + ' ' + KSP.h + '" overflow="hidden"><image href="' + KSP.url + '" width="' + KSP.sw + '" height="' + KSP.sh + '"/></svg>';
     const old = svg.querySelector('#k-keeper');
     old.parentNode.insertBefore(g, old);
     old.style.display = 'none';
@@ -138,24 +139,24 @@
     let x0 = GX, idle = 0, raf = 0, tmr = 0;
     const alive = () => svg.isConnected;
     const api = {
-      stand(x) { x0 = x; put(0, 240, 248, x, GY, 1); shadow(x, 0); },
+      stand(x) { x0 = x; put(0, KSP.foot[0], KSP.foot[1], x, GY, 1); shadow(x, 0); },
       // Respiração enquanto espera o chute (quadros 0-3 indo e voltando)
       idle() {
         let k = 0;
         clearInterval(idle);
-        idle = setInterval(() => { if (!alive()) return clearInterval(idle); k++; put([0, 1, 2, 3, 2, 1][k % 6], 240, 248, x0, GY, 1); }, 170);
+        idle = setInterval(() => { if (!alive()) return clearInterval(idle); k++; put([0, 1, 2, 3, 2, 1][k % 6], KSP.foot[0], KSP.foot[1], x0, GY, 1); }, 170);
       },
       // Mergulho até a luva chegar em (tx, ty). dir: -1 esquerda, 1 direita, 0 fica no meio (pulinho)
       dive(tx, ty, dir, ms, delay) {
         clearInterval(idle);
-        const h = (GY - ty) / 120, c0 = [x0 + (center(0)[0] - 240) * s, GY + (center(0)[1] - 248) * s];
+        const h = (GY - ty) / 120, c0 = [x0 + (center(0)[0] - KSP.foot[0]) * s, GY + (center(0)[1] - KSP.foot[1]) * s];
         const t0 = performance.now() + (delay || 0);
         if (!dir) {
           const hop = Math.max(0, Math.min(38, (GY - 100) - ty));
           const step = now => {
             if (!alive()) return;
             const u = Math.min(1, Math.max(0, (now - t0) / ms)), e = Math.sin(u * Math.PI / 2);
-            put(u > 0.1 ? 4 : 3, 208, 248, x0, GY - hop * e, 1); shadow(x0, hop * e / 80);
+            put(u > 0.1 ? 4 : 3, KSP.hop[0], KSP.hop[1], x0, GY - hop * e, 1); shadow(x0, hop * e / 80);
             if (u < 1) raf = requestAnimationFrame(step);
           };
           raf = requestAnimationFrame(step);
@@ -181,7 +182,7 @@
     // Cai no gramado: quadros até o 11 (deitado), descendo até o chão
     function land(cx, cy, rf, m) {
       if (!alive()) return;
-      const t0 = performance.now(), c11 = center(11), yEnd = GY - (250 - c11[1]) * s;
+      const t0 = performance.now(), c11 = center(11), yEnd = GY - (KSP.h - c11[1]) * s;
       const step = now => {
         if (!alive()) return;
         const u = Math.min(1, (now - t0) / 320), e = u * u;
