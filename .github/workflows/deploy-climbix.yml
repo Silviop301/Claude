@@ -45,6 +45,9 @@ jobs:
           import os, re
           p = os.path.expanduser('~/.ssh/id_deploy'); s = open(p).read().strip()
           m = re.match(r'(-----BEGIN [A-Z ]+-----)\s*(.*?)\s*(-----END [A-Z ]+-----)', s, re.S)
+          if not m:
+              print('::error::A chave está incompleta: tem "BEGIN" mas não termina com a linha "-----END ... PRIVATE KEY-----". Copie o arquivo inteiro de novo (%d caracteres colados).' % len(s))
+              raise SystemExit(1)
           body = re.sub(r'\s+', '', m.group(2))
           open(p, 'w').write(m.group(1) + '\n' + '\n'.join(body[i:i + 70] for i in range(0, len(body), 70)) + '\n' + m.group(3) + '\n')
           PY
