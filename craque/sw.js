@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-b47b6315';
+const CACHE = 'craque-22b3d5f5';
 const ASSETS = [
   "./",
   "./assets/bola.glb",
@@ -658,6 +658,7 @@ const ASSETS = [
   "./trophies/copa-do-rei-saudita.png",
   "./trophies/copa-do-rei.png",
   "./trophies/copa-equador.png",
+  "./trophies/copa-intercontinental.png",
   "./trophies/copa-paraguai.png",
   "./trophies/coppa-italia.png",
   "./trophies/eredivisie.png",
