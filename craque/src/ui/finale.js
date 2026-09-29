@@ -69,7 +69,7 @@
     // Edição especial do jornal com a despedida
     const retired = G.c;
     setTimeout(() => U.farewellPaper(retired, f), 700);
-    const spData = k => (k === 'final' ? cardData : U.cardData(retired, retired.cards[+k]));
+    const spData = k => (k === 'final' ? cardData : U.specialFinal(cardData, retired, retired.cards[+k]));
     screen.querySelectorAll('[data-sp]').forEach(sc => {
       window.CRAQUE_CARD(sc, spData(sc.dataset.sp));
       sc.onclick = () => {

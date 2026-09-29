@@ -15,7 +15,7 @@
     if (c.collected) return;
     c.collected = true;
     const list = all();
-    const specials = (c.cards || []).map(k => U.cardData(c, k));
+    const specials = (c.cards || []).map(k => U.specialFinal(card, c, k));
     list.push({ at: Date.now(), country: c.country, pos: c.pos, peak: c.peak, grade: f.grade, score: f.score, card, specials });
     // Cheio: sai a carta de menor pontuação
     if (list.length > MAX) list.sort((a, b) => b.score - a.score).length = MAX;
@@ -52,13 +52,14 @@
       { t: 'Posições', slots: Object.keys(D.POS).map(p => ({ label: D.POS[p].name, hit: best(finals.filter(x => x.e.pos === p)) })) },
       { t: 'Países', slots: D.COUNTRIES.map(k => ({ label: k.flag, hit: best(finals.filter(x => x.e.country === k.id)) })) },
       { t: 'Notas', slots: GRADES.map(g => ({ label: 'Nota ' + g, hit: best(finals.filter(x => x.e.grade === g)) })) },
-      { t: 'Especiais', slots: Object.keys(U.SPECIAL_NAME).map(s => ({ label: U.SPECIAL_NAME[s], hit: best(cards.filter(x => x.d.special === s)) })) },
+      { t: 'Especiais', slots: Object.keys(U.SPECIAL_NAME).map(s => ({ label: U.SPECIAL_NAME[s], rar: U.SPECIAL_RARITY[s], hit: best(cards.filter(x => x.d.special === s)) })) },
     ];
   }
 
+  const rarHtml = s => (s.rar ? '<i class="col-rar ' + s.rar.toLowerCase().replace('é', 'e') + '">' + s.rar + '</i>' : '');
   const slotHtml = (s, key) => s.hit
-    ? '<button class="col-slot has" data-k="' + key + '" aria-label="' + esc(s.hit.d.name) + '"><img alt=""><span' + (flagLbl(s.label) ? ' class="flag"' : '') + '>' + esc(s.label) + '</span></button>'
-    : '<div class="col-slot empty"><div class="col-ghost">?</div><span' + (flagLbl(s.label) ? ' class="flag"' : '') + '>' + esc(s.label) + '</span></div>';
+    ? '<button class="col-slot has" data-k="' + key + '" aria-label="' + esc(s.hit.d.name) + '"><img alt="">' + rarHtml(s) + '<span' + (flagLbl(s.label) ? ' class="flag"' : '') + '>' + esc(s.label) + '</span></button>'
+    : '<div class="col-slot empty"><div class="col-ghost">?</div>' + rarHtml(s) + '<span' + (flagLbl(s.label) ? ' class="flag"' : '') + '>' + (s.rar ? '???' : esc(s.label)) + '</span></div>';
   const flagLbl = t => D.COUNTRIES.some(k => k.flag === t);
 
   function collection() {
@@ -70,7 +71,7 @@
     let html = '<button class="back-link" id="b-back-home">‹ Início</button>' +
       '<div class="eyebrow">Coleção</div><h2>Suas cartas</h2>' +
       '<div class="col-top"><b>' + got + '/' + total + '</b><span>vagas preenchidas · ' + list.length + (list.length === 1 ? ' carreira' : ' carreiras') + '</span><div class="col-bar"><i style="width:' + Math.round(got / total * 100) + '%"></i></div></div>';
-    if (!list.length) html += '<p class="muted">Termine uma carreira para a carta dela entrar aqui. Cada faixa, posição, país, nota e carta especial tem uma vaga para completar.</p>';
+    if (!list.length) html += '<p class="muted">Termine uma carreira para a carta dela entrar aqui.</p>';
     pg.forEach((p, pi) => {
       const n = p.slots.filter(s => s.hit).length;
       html += '<div class="col-page"><div class="col-pt">' + p.t + '<span>' + n + '/' + p.slots.length + (n === p.slots.length ? ' ✓' : '') + '</span></div><div class="col-grid">' +

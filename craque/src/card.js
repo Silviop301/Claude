@@ -20,6 +20,15 @@
     heroi: { metal: ['#2A0508', '#8E1420', '#3E070D', '#C22533', '#4D0A12', '#8E1420', '#1C0306'], ink: '#FFE6A3', line: 'rgba(255,230,163,.4)', label: 'HERÓI DA FINAL', pattern: 'flames', glow: '#FF5A3C' },
     copa: { metal: null, ink: null, line: null, label: 'COPA DO MUNDO', pattern: 'trophy', glow: '#FFE27A' },
     bola: { metal: ['#B8913A', '#FFF8E1', '#E9CF86', '#FFFFFF', '#D8B660', '#FFF3CC', '#A67F2A'], ink: '#3A2A05', line: 'rgba(58,42,5,.35)', label: 'BOLA DE OURO', pattern: 'ball', glow: '#FFD65A' },
+    chuteira: { metal: ['#3A1200', '#C2410C', '#5C1A02', '#F97316', '#6B2104', '#C2410C', '#2A0C00'], ink: '#FFF1C2', line: 'rgba(255,241,194,.4)', label: 'CHUTEIRA DE OURO', pattern: 'rays', glow: '#FF9A3C' },
+    garcom: { metal: ['#042F2E', '#0F766E', '#063F3C', '#14B8A6', '#0A4D48', '#0F766E', '#021F1E'], ink: '#FFFFFF', line: 'rgba(255,255,255,.4)', label: 'REI DAS ASSISTÊNCIAS', pattern: 'waves', glow: '#5EEAD4' },
+    muralha: { metal: ['#1E2530', '#4B5563', '#272F3B', '#6B7785', '#2E3642', '#4B5563', '#151A22'], ink: '#E8EEF5', line: 'rgba(232,238,245,.4)', label: 'MURALHA', pattern: 'hex', glow: '#9FB3C8' },
+    xerife: { metal: ['#0A1024', '#23355E', '#0F1830', '#3A5285', '#142042', '#23355E', '#060A18'], ink: '#E6ECF7', line: 'rgba(230,236,247,.4)', label: 'XERIFE', pattern: 'rays', glow: '#9FB6E8' },
+    joia: { metal: ['#3B0A2A', '#BE185D', '#4A0D34', '#EC4899', '#5B1040', '#BE185D', '#2A0620'], ink: '#FFF0F7', line: 'rgba(255,240,247,.4)', label: 'JOIA RARA', pattern: 'stars', glow: '#F9A8D4' },
+    lenda: { metal: ['#050505', '#2A2A2A', '#0B0B0B', '#3A3A3A', '#111111', '#2A2A2A', '#000000'], ink: '#F4D675', line: 'rgba(244,214,117,.4)', label: 'LENDA VIVA', pattern: 'rays', glow: '#F4D675' },
+    triplice: { metal: ['#022C16', '#047857', '#033D20', '#10B981', '#064E2B', '#047857', '#011C0E'], ink: '#F4D675', line: 'rgba(244,214,117,.4)', label: 'TRÍPLICE COROA', pattern: 'trophy', glow: '#6EE7B7' },
+    mundial: { metal: ['#0C2A4A', '#3B82C4', '#123A63', '#7CC0F2', '#184A7A', '#3B82C4', '#08203A'], ink: '#FFFFFF', line: 'rgba(255,255,255,.45)', label: 'CAMPEÃO MUNDIAL', pattern: 'trophy', glow: '#7CC0F2' },
+    perfeita: { metal: ['#FF6EC7', '#7AFCFF', '#FFF38A', '#8AFFA1', '#B28DFF', '#FF6EC7', '#7AFCFF'], ink: '#1A1030', line: 'rgba(26,16,48,.35)', label: 'TEMPORADA PERFEITA', pattern: 'rays', glow: '#FFFFFF', light: true },
   };
   function specialTheme(d) {
     const s = Object.assign({}, SPECIAL[d.special]);
@@ -34,6 +43,7 @@
       s.light = lum > 150;
     }
     s.holo = d.special !== 'bola' && !s.light;
+    if (d.special === 'perfeita') s.holo = true;
     return s;
   }
   // Desenho de fundo das cartas especiais (por baixo do texto, recortado no escudo)
@@ -59,6 +69,29 @@
       ctx.globalAlpha = 0.16; ctx.fillStyle = '#FFE27A';
       ctx.translate(385, 380); ctx.scale(2.2, 2.2);
       ctx.beginPath(); ctx.moveTo(-40, -110); ctx.lineTo(40, -110); ctx.quadraticCurveTo(45, -40, 12, -10); ctx.lineTo(18, 50); ctx.lineTo(35, 60); ctx.lineTo(-35, 60); ctx.lineTo(-18, 50); ctx.lineTo(-12, -10); ctx.quadraticCurveTo(-45, -40, -40, -110); ctx.fill();
+    } else if (s.pattern === 'rays') {
+      // Raios saindo do alto da carta
+      ctx.globalAlpha = 0.18; ctx.fillStyle = s.glow || '#FFFFFF';
+      for (let i = 0; i < 18; i++) {
+        const a = Math.PI * (i / 18) * 2;
+        ctx.beginPath(); ctx.moveTo(W / 2, 250);
+        ctx.lineTo(W / 2 + Math.cos(a) * 900, 250 + Math.sin(a) * 900);
+        ctx.lineTo(W / 2 + Math.cos(a + 0.12) * 900, 250 + Math.sin(a + 0.12) * 900); ctx.fill();
+      }
+    } else if (s.pattern === 'waves') {
+      ctx.globalAlpha = 0.2; ctx.strokeStyle = s.glow || '#FFFFFF'; ctx.lineWidth = 5;
+      for (let j = 0; j < 12; j++) {
+        ctx.beginPath();
+        for (let x = 0; x <= W; x += 20) ctx.lineTo(x, 80 + j * 70 + Math.sin(x / 60 + j) * 18);
+        ctx.stroke();
+      }
+    } else if (s.pattern === 'hex') {
+      ctx.globalAlpha = 0.16; ctx.strokeStyle = s.glow || '#FFFFFF'; ctx.lineWidth = 3;
+      const R = 34, hx = R * Math.sqrt(3);
+      for (let row = 0; row * R * 1.5 < H + R; row++) for (let col = -1; col * hx < W + hx; col++) {
+        const cx = col * hx + (row % 2 ? hx / 2 : 0), cy = row * R * 1.5;
+        ctx.beginPath(); for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); } ctx.closePath(); ctx.stroke();
+      }
     } else if (s.pattern === 'ball') {
       const rg = ctx.createRadialGradient(385, 260, 20, 385, 260, 330);
       rg.addColorStop(0, 'rgba(255,214,90,.55)'); rg.addColorStop(1, 'rgba(255,214,90,0)');
@@ -271,10 +304,12 @@
   // Compartilhar (Safari/Android usam a folha de compartilhamento; senão, baixa a imagem)
   // Carta 3D: qual das 4 cartas metálicas usar (faixa ou carta especial) e a cor do texto por cima
   root.CRAQUE_CARD_METAL = function (d) {
-    const k = d.special ? { tots: 'azul', heroi: 'vermelha', copa: 'verde', bola: 'dourada' }[d.special]
+    const k = d.special ? { tots: 'azul', heroi: 'vermelha', copa: 'verde', bola: 'dourada', chuteira: 'fogo', garcom: 'turquesa', muralha: 'aco', xerife: 'marinho', joia: 'rosa', lenda: 'onix', triplice: 'esmeralda', mundial: 'celeste', perfeita: 'arcoiris' }[d.special]
       : { bronze: 'bronze', prata: 'prata', ouro: 'dourada', icone: 'icone' }[Object.keys(THEMES).find(n => THEMES[n] === themeOf(d.peak, d.grade))];
     const ink = { azul: ['#FFFFFF', true], vermelha: ['#FFF4E6', true], verde: ['#06220F', false], dourada: ['#231800', false],
-      bronze: ['#2A1505', false], prata: ['#141C26', false], icone: ['#F4D675', true] }[k];
+      bronze: ['#2A1505', false], prata: ['#141C26', false], icone: ['#F4D675', true],
+      fogo: ['#FFF1C2', true], turquesa: ['#FFFFFF', true], aco: ['#F2F6FA', true], marinho: ['#E6ECF7', true], rosa: ['#FFF0F7', true], onix: ['#F4D675', true],
+      esmeralda: ['#F4D675', true], celeste: ['#FFFFFF', true], arcoiris: ['#1A1030', false] }[k];
     return { metal: k, ink: ink[0], inkLight: ink[1], line: ink[1] ? 'rgba(255,255,255,.45)' : 'rgba(20,30,10,.35)' };
   };
 

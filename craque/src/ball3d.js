@@ -223,6 +223,15 @@ const CARD_TRIM = {
   bronze: { borda: [0.720, 0.450, 0.280], filete: [0.200, 0.100, 0.040] },
   prata: { borda: [0.800, 0.830, 0.870], filete: [0.150, 0.180, 0.220] },
   icone: { borda: [0.860, 0.720, 0.350], filete: [0.950, 0.840, 0.460] },
+  fogo: { borda: [0.900, 0.500, 0.200], filete: [1.000, 0.880, 0.550] },
+  turquesa: { borda: [0.300, 0.750, 0.700], filete: [0.950, 0.950, 0.950] },
+  marinho: { borda: [0.700, 0.760, 0.880], filete: [0.900, 0.930, 0.980] },
+  aco: { borda: [0.550, 0.600, 0.660], filete: [0.900, 0.920, 0.950] },
+  rosa: { borda: [0.900, 0.450, 0.650], filete: [1.000, 0.900, 0.950] },
+  onix: { borda: [0.860, 0.720, 0.350], filete: [0.950, 0.840, 0.460] },
+  esmeralda: { borda: [0.860, 0.720, 0.350], filete: [0.950, 0.840, 0.460] },
+  celeste: { borda: [0.750, 0.850, 0.950], filete: [1.000, 1.000, 1.000] },
+  arcoiris: { borda: [0.950, 0.950, 0.980], filete: [0.600, 0.450, 0.950] },
 };
 let cardModel = null;
 const cardReady = () => (cardModel = cardModel || new GLTFLoader().loadAsync('assets/carta.glb?v=5faf94a3').then(g => g.scene));
@@ -283,7 +292,19 @@ function card3d(host, data, opts) {
     const pivot = new THREE.Group(); scene.add(pivot);
     const card = model.clone(true);
     const mats = {};
-    card.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); mats[o.material.name] = o.material; } });
+    card.traverse(o => {
+      if (!o.isMesh) return;
+      o.material = o.material.clone(); mats[o.material.name] = o.material;
+      // O modelo não traz coordenadas de textura: projeta a frente (x, y) para o metal escovado aparecer inteiro
+      const g = o.geometry;
+      if (o.material.name === 'face_metal' && g && !g.attributes.uv) {
+        g.computeBoundingBox();
+        const bb = g.boundingBox, p = g.attributes.position, uv = new Float32Array(p.count * 2);
+        const w = bb.max.x - bb.min.x || 1, h = bb.max.y - bb.min.y || 1;
+        for (let i = 0; i < p.count; i++) { uv[i * 2] = (p.getX(i) - bb.min.x) / w; uv[i * 2 + 1] = (p.getY(i) - bb.min.y) / h; }
+        g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+      }
+    });
     // Normaliza: o arquivo pode vir com escala no nó raiz. A carta fica com 3,1 de altura, centrada.
     const box0 = new THREE.Box3().setFromObject(card), size0 = box0.getSize(new THREE.Vector3());
     const k = 3.1 / size0.y;
@@ -303,8 +324,11 @@ function card3d(host, data, opts) {
       const [tex, content] = await Promise.all([metalTex(look.metal), contentTexture(d, look)]);
       const f = mats.face_metal;
       if (f) {
-        f.map = tex; f.map.offset.set(0.5, 0.5); f.map.repeat.set(0.47619, 0.32258);
-        f.color.set(0xffffff); f.metalness = 0.85; f.roughness = 0.3; f.needsUpdate = true;
+        f.map = tex; f.map.offset.set(0, 0); f.map.repeat.set(1, 1);
+        f.color.set(0xffffff); f.metalness = 0.85; f.roughness = 0.3;
+        // Temporada Perfeita: reflexo arco-íris que muda com o ângulo
+        if ('iridescence' in f) { const iri = d.special === 'perfeita'; f.iridescence = iri ? 1 : 0; f.iridescenceIOR = 2.2; f.iridescenceThicknessRange = [120, 900]; }
+        f.needsUpdate = true;
       }
       const tr = CARD_TRIM[look.metal];
       if (mats.borda_externa) mats.borda_externa.color.setRGB(...tr.borda, THREE.SRGBColorSpace);

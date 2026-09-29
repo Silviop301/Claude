@@ -264,7 +264,7 @@
     if (run.champion) {
       const btn = $('b-next');
       U.celebrate([{ art: cwc ? trophy('cwc', 150, 'Mundial de Clubes') : trophy('wc', 150), top: cwc ? 'Campeão mundial!' : 'Campeão do mundo!', name: (cwc ? 'Mundial de Clubes ' : 'Copa do Mundo ') + run.year }],
-        () => { if (btn.isConnected) (cwc ? U.clubWorldPaper(G.c, run) : U.worldCupPaper(G.c, run, () => run.card && U.walkout(G.c, null, run.card))); });
+        () => { if (btn.isConnected) (cwc ? U.clubWorldPaper : U.worldCupPaper)(G.c, run, () => run.card && U.walkout(G.c, null, run.card)); });
     }
     $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     $('b-next').onclick = U.afterSeason;

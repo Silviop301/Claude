@@ -14,7 +14,15 @@
   }
 
   // Cartas especiais (a da Copa usa as cores da seleção do jogador)
-  const SPECIAL = { tots: 'Seleção da Temporada', heroi: 'Herói da Final', copa: 'Copa do Mundo', bola: 'Bola de Ouro' };
+  const SPECIAL = { tots: 'Seleção da Temporada', heroi: 'Herói da Final', copa: 'Copa do Mundo', bola: 'Bola de Ouro',
+    chuteira: 'Chuteira de Ouro', garcom: 'Rei das Assistências', xerife: 'Xerife', muralha: 'Muralha', joia: 'Joia Rara', lenda: 'Lenda Viva',
+    triplice: 'Tríplice Coroa', mundial: 'Campeão Mundial', perfeita: 'Temporada Perfeita' };
+  // Raridade (para a coleção): quanto mais difícil de ganhar, mais rara
+  const RARITY = { tots: 'Rara', heroi: 'Rara', mundial: 'Rara', muralha: 'Rara', xerife: 'Rara', joia: 'Rara', lenda: 'Rara',
+    chuteira: 'Épica', garcom: 'Épica', copa: 'Épica', bola: 'Épica', triplice: 'Épica', perfeita: 'Lendária' };
+  // Carta especial no fim da carreira: só o fundo muda; os números são os do auge
+  const specialFinal = (final, c, shot) => Object.assign({}, final, { special: shot.type, footer: shot.txt },
+    shot.type === 'copa' ? { kit: U.nationKit(c.country), crest: null } : {});
 
   // Dados da carta (para o canvas) a partir da carreira e, se houver, de uma "foto" guardada (carta especial ou temporada)
   function cardData(c, shot) {
@@ -70,5 +78,5 @@
   // Desgaste da carta no fim da carreira: 0 (nova), 1 (marcas de uso) ou 2 (bem gasta)
   const wearOf = c => (c.age >= 35 ? 2 : c.age >= 32 ? 1 : 0);
 
-  Object.assign(U, { tierUp, tierReveal, walkout, walkouts, cardData, wearOf, SPECIAL_NAME: SPECIAL });
+  Object.assign(U, { tierUp, tierReveal, walkout, walkouts, cardData, wearOf, specialFinal, SPECIAL_NAME: SPECIAL, SPECIAL_RARITY: RARITY });
 })();

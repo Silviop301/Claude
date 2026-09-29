@@ -320,6 +320,7 @@
       c.wcBoost = 8; // pesa na Bola de Ouro da próxima temporada
       const sp = c.spells[c.spells.length - 1];
       if (sp && sp.club === run.club) sp.titles++;
+      if (!(c.cards || []).some(k => k.type === 'mundial')) run.card = S.addCard(c, 'mundial', 'MUNDIAL DE CLUBES ' + run.year);
     }
     c.cwcHist = c.cwcHist || [];
     c.cwcHist.push({ year: run.year, club: run.club, reached, g: run.g, a: run.a, champion: run.champion });

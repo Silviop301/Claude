@@ -956,3 +956,8 @@ details.more .hl { background: rgba(255, 255, 255, 0.08); border-radius: 10px; p
 .col-slot span.flag { font-size: 20px; line-height: 1.1; }
 .col-ghost { width: 100%; aspect-ratio: 600 / 860; border-radius: 10px; border: 2px dashed rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font: 800 28px var(--display); color: rgba(255,255,255,.25); }
 .col-slot.empty span { opacity: .6; }
+
+.col-rar { font: 800 9px var(--display); letter-spacing: .1em; text-transform: uppercase; font-style: normal; padding: 1px 6px; border-radius: 6px; }
+.col-rar.rara { background: #2A4D9B; color: #fff; }
+.col-rar.epica { background: #7C3AED; color: #fff; }
+.col-rar.lendaria { background: linear-gradient(90deg, #FF6EC7, #7AFCFF, #FFF38A); color: #1A1030; }

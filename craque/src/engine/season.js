@@ -275,6 +275,20 @@
     if (awards.some(a => a.id === 'team') && rating >= 8.3 && games >= 25 && club.tier >= 3 && !has('tots')) cards.push(S.addCard(c, 'tots', lg.name.toUpperCase() + ' ' + yr + ' · ' + main));
     if (M && M.type === 'cont' && M.ok && !has('heroi')) cards.push(S.addCard(c, 'heroi', 'FINAL DA ' + M.comp.toUpperCase() + ' ' + yr));
     if (ballon) cards.push(S.addCard(c, 'bola', 'MELHOR DO MUNDO · ' + yr));
+    // Mais raras (uma por carreira): marcas da temporada, idade e a temporada perfeita
+    const ids = titles.map(t => t.id);
+    const once = (t, ok, txt) => { if (ok && !has(t)) cards.push(S.addCard(c, t, txt)); };
+    if (games >= 20) {
+      // Uma por posição, mais as de idade
+      once('chuteira', c.pos === 'ATA' && goals >= 30, goals + ' GOLS · ' + lg.name.toUpperCase() + ' ' + yr);
+      once('garcom', c.pos === 'MEI' && assists >= 20, assists + ' ASSISTÊNCIAS · ' + yr);
+      once('xerife', c.pos === 'ZAG' && tackles >= 17, tackles + ' DESARMES DECISIVOS · ' + yr);
+      once('muralha', c.pos === 'GOL' && cleanSheets >= 22, cleanSheets + ' JOGOS SEM SOFRER GOL · ' + yr);
+      once('joia', c.age <= 19 && rating >= 7.5, 'AOS ' + c.age + ' ANOS · NOTA ' + rating.toFixed(1).replace('.', ',') + ' · ' + yr);
+      once('lenda', c.age >= 35 && rating >= 7.2, 'AOS ' + c.age + ' ANOS · NOTA ' + rating.toFixed(1).replace('.', ',') + ' · ' + yr);
+    }
+    once('triplice', ids.includes('league') && ids.includes('cup') && ids.includes('cont'), 'LIGA, COPA E ' + ((titles.find(t => t.id === 'cont') || {}).name || '').toUpperCase() + ' · ' + yr);
+    once('perfeita', games >= 30 && rating >= 8.8, 'NOTA ' + rating.toFixed(1).replace('.', ',') + ' EM ' + games + ' JOGOS · ' + yr);
     // Por que a nota mudou (em pontos de nota geral, aproximados)
     // Cada parte em pontos de nota geral; os treinos absorvem a variação miúda para a soma bater com a nota real
     const why = S.whyOf({ c, games, rating, growth, perf, injLoss, injPct: Math.round(injShare * 100), decline, luck, room, potUp, dOvr: ovr1 - ovr0 });
