@@ -28,7 +28,7 @@
       '<div class="card wc-rules"><p>Fase de grupos com 3 jogos, depois mata-mata até a final.</p><p>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</p></div>' +
       '<button class="btn" id="b-wc">Começar o Mundial</button>'
     );
-    $('b-wc').onclick = () => { S.cwcStart(G.c); save(); wcPlay(); };
+    $('b-wc').onclick = () => { simAll = false; S.cwcStart(G.c); save(); wcPlay(); };
   }
 
   function wcIntro() {
@@ -43,7 +43,7 @@
       '<div class="card wc-rules"><p>Fase de grupos com 3 jogos, depois mata-mata até a final.</p><p>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</p></div>' +
       '<button class="btn" id="b-wc">Começar a Copa</button>'
     );
-    $('b-wc').onclick = () => { S.wcStart(G.c); save(); wcPlay(); };
+    $('b-wc').onclick = () => { simAll = false; S.wcStart(G.c); save(); wcPlay(); };
   }
 
   function wcRow(g) {
@@ -78,8 +78,12 @@
       '<div class="line"><span class="us">' + usMark(G.c.wcRun) + '</span><b class="sc">0 × 0</b><span class="them">' + themMark(g) + ' ' + esc(g.opp) + '</span></div><div class="gls"></div>';
     return el;
   }
+  // Simular: "Pular jogo" termina a partida atual na hora; "Simular até o fim" joga o resto sozinho
+  // (lances e pênaltis pela chance da carta)
+  let simAll = false;
   // Corre o relógio de "from" até "to"; cada gol aparece no seu minuto (com uma pausa para comemorar)
-  function runClock(el, g, from, to, isFast, done) {
+  // spd(): 0 normal, 1 acelerado (toque na tela), 2 instantâneo (pular/simular)
+  function runClock(el, g, from, to, spd, done) {
     const ev = g.ev || [], sc = el.querySelector('.sc'), clk = el.querySelector('.clk'), gls = el.querySelector('.gls');
     let u = 0, t = 0, m = from;
     ev.filter(e => e.m < from).forEach(e => { if (e.s === 'u') u++; else t++; gls.insertAdjacentHTML('beforeend', goalLine(e, g)); });
@@ -88,19 +92,24 @@
       if (!el.isConnected) return;
       const now = ev.filter(e => e.m === m);
       clk.textContent = m + "'";
-      let pause = isFast() ? 3 : 24;
+      const sp = spd();
+      let pause = sp === 2 ? 0 : sp ? 3 : 24;
       now.forEach(e => {
         if (e.s === 'u') u++; else t++;
         sc.textContent = u + ' × ' + t;
         gls.insertAdjacentHTML('beforeend', goalLine(e, g));
         el.classList.remove('goal-u', 'goal-t'); void el.offsetWidth; el.classList.add('goal-' + e.s);
-        sfx(e.s === 'u' ? 'goal' : 'miss');
-        pause = isFast() ? 80 : 750;
+        if (sp < 2) sfx(e.s === 'u' ? 'goal' : 'miss');
+        pause = sp === 2 ? 0 : sp ? 80 : 750;
       });
       if (m >= to) return done();
       m++;
-      setTimeout(tick, pause);
+      if (pause === 0) return tick(); // instantâneo: termina o jogo de uma vez
+      timer = setTimeout(tick, pause);
     };
+    let timer = null;
+    // "Pular jogo" no meio de uma pausa (comemoração de gol): segue na hora
+    el._now = () => { clearTimeout(timer); tick(); };
     tick();
   }
 
@@ -110,10 +119,29 @@
     const last = run.games[run.games.length - 1];
     const resume = last && last.resumeAt !== undefined && !last.live ? last : null; // jogo que continua depois do lance
     render('<div class="eyebrow">' + tName(run) + ' ' + run.year + ' · ' + usMark(run) + ' ' + usName(run) + '</div>' +
-      '<div class="wc-list" id="wc-list">' + run.games.filter(g => !g.live && g !== resume).map(wcRow).join('') + '</div><div id="wc-after"></div><p class="skip-hint" id="wc-hint">Toque para acelerar</p>');
-    let fast = false;
-    const isFast = () => fast;
+      '<div class="wc-list" id="wc-list">' + run.games.filter(g => !g.live && g !== resume).map(wcRow).join('') + '</div><div id="wc-after"></div>' +
+      '<div class="wc-sim" id="wc-sim"><button class="tool" id="b-simg">⏩ Pular jogo</button><button class="tool" id="b-sima">⏭ Simular até o fim</button></div>' +
+      '<p class="skip-hint" id="wc-hint">Toque para acelerar</p>');
+    let fast = false, skip = false;
+    const isFast = () => fast || skip || simAll;
+    const spd = () => (skip || simAll ? 2 : fast ? 1 : 0);
     setTimeout(() => { screen.onclick = () => { fast = true; }; }, 60);
+    if (simAll) $('wc-sim').classList.add('on');
+    $('b-simg').onclick = e => {
+      e.stopPropagation(); skip = true;
+      const pl = document.querySelector('.wc-game.playing:not(.paused)');
+      if (pl && pl._now) pl._now();
+    };
+    $('b-sima').onclick = e => {
+      e.stopPropagation();
+      U.ask('Simular até o fim?', 'Os jogos restantes passam direto. Seus lances decisivos e pênaltis serão decididos pela chance da sua carta.', 'Simular', () => {
+        simAll = true;
+        $('wc-sim').classList.add('on');
+        // Parado num lance ou nos pênaltis: decide agora e segue
+        if (run.live) { S.wcMomentAuto(G.c); save(); return wcPlay(); }
+        if (run.pending) { S.wcPensAuto(G.c); save(); return wcPlay(); }
+      });
+    };
     const list = $('wc-list');
     // Troca a linha ao vivo pela linha final (nota, lance, craque do jogo)
     const finish = (el, g) => {
@@ -124,36 +152,41 @@
     };
     const next = () => {
       if (!list.isConnected) return;
+      skip = false; // "Pular jogo" vale só para a partida em andamento
       // Lance decisivo ou pênaltis pendentes (inclusive ao voltar para o jogo)
-      if (run.live) return wcLive();
-      if (run.pending) return wcPens();
+      if (run.live) return simAll ? (S.wcMomentAuto(G.c), save(), wcPlay()) : wcLive();
+      if (run.pending) return simAll ? (S.wcPensAuto(G.c), save(), wcPlay()) : wcPens();
       const g = S.wcNext(G.c);
       save();
       if (!g) return wcFinal();
       if (!g.ev) { // jogo salvo antes da minutagem
         if (g.live) return wcLive();
         const div = document.createElement('div'); div.innerHTML = wcRow(g); list.appendChild(div.firstChild);
-        return setTimeout(next, fast ? 250 : 1300);
+        return setTimeout(next, simAll ? 40 : fast ? 250 : 1300);
       }
       const el = liveRow(g);
       list.appendChild(el);
       el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       // Jogo com lance: o relógio para no minuto do lance
-      if (g.live) return runClock(el, g, 0, g.moment.minute, isFast, () => { el.classList.add('paused'); setTimeout(wcLive, fast ? 100 : 500); });
-      runClock(el, g, 0, 90, isFast, () => { finish(el, g); setTimeout(next, fast ? 200 : 900); });
+      if (g.live) return runClock(el, g, 0, g.moment.minute, spd, () => {
+        el.classList.add('paused');
+        if (simAll) { S.wcMomentAuto(G.c); save(); return wcPlay(); }
+        setTimeout(wcLive, isFast() ? 100 : 500);
+      });
+      runClock(el, g, 0, 90, spd, () => { finish(el, g); setTimeout(next, simAll ? 40 : isFast() ? 200 : 900); });
     };
     if (resume) {
       // Depois do lance: o relógio volta a correr do minuto do lance até o apito final
       const el = liveRow(resume);
       list.appendChild(el);
       el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      return runClock(el, resume, resume.resumeAt, 90, isFast, () => {
+      return runClock(el, resume, resume.resumeAt, 90, spd, () => {
         delete resume.resumeAt; save();
         finish(el, resume);
-        setTimeout(next, fast ? 200 : 1000);
+        setTimeout(next, simAll ? 40 : isFast() ? 200 : 1000);
       });
     }
-    setTimeout(next, 500);
+    setTimeout(next, simAll ? 40 : 500);
   }
 
   // Lance decisivo nos minutos finais: pênalti ou falta a favor, no minigame
@@ -219,6 +252,8 @@
     save();
     bar();
     const h = $('wc-hint'); if (h) h.remove();
+    const sim = $('wc-sim'); if (sim) sim.remove();
+    simAll = false;
     $('wc-after').innerHTML = (run.champion
       ? '<div class="wc-champ">' + (cwc ? trophy('cwc', 96, 'Mundial de Clubes') + '<b>CAMPEÃO MUNDIAL!</b>' : trophy('wc', 96) + '<b>CAMPEÃO DO MUNDO!</b>') + '<span>' + usMark(run) + ' ' + usName(run) + ' · ' + run.year + '</span></div>'
       : '<div class="wc-out">' + (run.reached === 'Final' ? (cwc ? 'Vice-campeão mundial' : 'Vice-campeão do mundo') : 'Eliminado: ' + run.reached.toLowerCase()) + '</div>') +
