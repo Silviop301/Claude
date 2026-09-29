@@ -134,9 +134,10 @@
   // opts: { c, moment, onDone(ok) }
   // Peças reaproveitadas pelo minigame do goleiro (defend.js)
   // Gol 3D (traves e rede do modelo) no lugar do desenho; se o 3D não carregar, fica o desenho
-  function goal3d(svg) {
+  // keeper: 'opp' (adversário) ou 'mine' (você no gol) → goleiro 3D animado no lugar do desenhado
+  function goal3d(svg, keeper) {
     if (!root.CRAQUE_BALL || !root.CRAQUE_BALL.goal) return Promise.resolve(null);
-    return root.CRAQUE_BALL.goal(svg, { w: 360, h: 320, left: px(-1), right: px(1), top: py(1), ground: GY });
+    return root.CRAQUE_BALL.goal(svg, { w: 360, h: 320, left: px(-1), right: px(1), top: py(1), ground: GY }, { keeper });
   }
   root.CRAQUE_KICK_PARTS = { scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d };
 
@@ -152,7 +153,10 @@
     const stage = el.querySelector('.kick-stage');
     // Bola 3D por cima do desenho (se o 3D não carregar, fica a bola desenhada)
     let fly3d = null, gone = false, goal = null;
-    goal3d(svg).then(g => { if (!g) return; if (gone) return g.dispose(); goal = g; });
+    goal3d(svg, 'opp').then(g => {
+      if (!g) return; if (gone) return g.dispose(); goal = g;
+      if (g.keeper) { g.keeper.at(setup.fk ? px(0.4 * side) : GX); g.keeper.ready(); }
+    });
     if (root.CRAQUE_BALL && root.CRAQUE_BALL.flyer) {
       root.CRAQUE_BALL.flyer(stage, 360, 320).then(f => {
         if (!f) return;
@@ -232,23 +236,28 @@
         const ox = dir * 114 * Math.sin(R * Math.PI / 180), oy = -114 * Math.cos(R * Math.PI / 180);
         return { dx: gx - ox - GX, dy: Math.min(0, gy - oy - GY), rot: dir * R };
       };
-      let K;
+      // G: onde a luva termina (x, y no SVG) e o lado do pulo — vale para o goleiro desenhado e o 3D
+      let K, G;
       if (setup.fk) {
         const k0x = px(0.4 * side), dir = Math.sign(bxT - k0x) || side;
         // Gol: a luva fica ~34 px antes da bola (e nunca além da posição inicial para o outro lado)
-        K = saved ? gloveTo(bxT, byT, dir) : gloveTo(bxT - dir * 34, byT + 10, dir);
-        if (!saved && Math.abs(K.dx - (k0x - GX)) > GW * 0.75) K.dx = k0x - GX + dir * GW * 0.75;
+        G = saved ? { x: bxT, y: byT, dir } : { x: bxT - dir * 34, y: byT + 10, dir };
+        K = gloveTo(G.x, G.y, dir);
+        if (!saved && Math.abs(K.dx - (k0x - GX)) > GW * 0.75) { K.dx = k0x - GX + dir * GW * 0.75; G.x = Math.max(px(-1), Math.min(px(1), G.x)); }
       } else if (kSide) {
-        if (saved) K = gloveTo(bxT, byT, kSide);
-        else if (Math.sign(dx) === kSide) K = gloveTo(bxT - kSide * 30, byT + 12, kSide); // ângulo: quase
-        else K = gloveTo(px(kSide * 0.6), py(Math.min(y, 0.9)), kSide); // pulou para o outro lado
+        if (saved) G = { x: bxT, y: byT, dir: kSide };
+        else if (Math.sign(dx) === kSide) G = { x: bxT - kSide * 30, y: byT + 12, dir: kSide }; // ângulo: quase
+        else G = { x: px(kSide * 0.6), y: py(Math.min(y, 0.9)), dir: kSide }; // pulou para o outro lado
+        K = gloveTo(G.x, G.y, kSide);
       } else {
         // Parado no meio: defende saltando pouco; na cavadinha fica plantado e a bola passa por cima
         K = { dx: 0, dy: saved ? -Math.min(y, 0.6) * 40 : -6, rot: 0 };
+        G = { x: GX, y: saved ? byT : py(0.5), dir: 0 };
       }
       const kDx = K.dx, kDy = K.dy, kRot = K.rot;
       const k0 = setup.fk ? px(0.4 * side) - GX : 0;
       const T = setup.fk ? 760 : 620, start = performance.now();
+      if (goal && goal.keeper) goal.keeper.dive(G.x, G.y, G.dir, T * 0.75, 90);
       // Trajetória em curva (Bézier): no pênalti, um arco leve; na falta, a bola abre e volta por cima da barreira
       const dir = Math.sign(tx - BALL.x) || side;
       const cx = setup.fk ? BALL.x + (tx - BALL.x) * 0.15 - dir * 55 : (BALL.x + tx) / 2;
