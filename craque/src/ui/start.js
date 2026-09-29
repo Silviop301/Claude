@@ -28,7 +28,7 @@
     };
     $('b-new').onclick = create;
     $('b-ach').onclick = U.achievements;
-    $('b-daily').onclick = () => { if (!saved || !saved.c || confirm('Começar a carreira do dia? A carreira em andamento será substituída.')) U.dailyStart(); };
+    $('b-daily').onclick = () => { if (!saved || !saved.c) return U.dailyStart(); U.ask('Começar a carreira do dia?', 'A carreira em andamento será substituída.', 'Começar', U.dailyStart); };
     const snd = $('b-sound');
     const sndTxt = () => { snd.textContent = window.CRAQUE_SFX && window.CRAQUE_SFX.on ? '🔊 Som ligado' : '🔇 Som desligado'; };
     if (snd) { sndTxt(); snd.onclick = () => { if (window.CRAQUE_SFX) window.CRAQUE_SFX.toggle(); sndTxt(); }; }
@@ -54,6 +54,7 @@
     const st = { pos: 'ATA', foot: 'D', country: 'Brasil', look: { skin: Math.floor(Math.random() * 5), hair: 'curto', hc: 0 } };
     const HAIR_NAME = { curto: 'Curto', raspado: 'Raspado', black: 'Black', moicano: 'Moicano', longo: 'Longo', careca: 'Careca' };
     render(
+      '<button class="back-link" id="b-back-home">‹ Início</button>' +
       '<div class="eyebrow">Nova carreira</div><h2>Quem é o garoto?</h2>' +
       '<div class="field"><label for="f-name">Nome na camisa</label><input id="f-name" maxlength="18" value="' + D.NICKNAMES[i] + '"></div>' +
       '<div class="field"><label>Posição</label><div class="seg pos4" id="f-pos"><button data-v="ATA" class="on">Atacante</button><button data-v="MEI">Meia</button><button data-v="ZAG">Zagueiro</button><button data-v="GOL">Goleiro</button></div></div>' +
@@ -87,6 +88,7 @@
     });
     let numTouched = false;
     lookPv();
+    $('b-back-home').onclick = home;
     $('f-num').oninput = () => { numTouched = true; };
     screen.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { $('f-num').value = b.dataset.n; numTouched = true; });
     $('b-go').onclick = () => {

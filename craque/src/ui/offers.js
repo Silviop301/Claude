@@ -28,10 +28,13 @@
     const offers = S.offers(G.c, true);
     bar();
     render(
+      '<button class="back-link" id="b-back-home">‹ Início</button>' +
       '<div class="eyebrow">' + year() + ' · 16 anos</div><h2>Três clubes querem você na base</h2>' +
       '<p class="lead">Clube mais forte dá mais chance de título, mas menos minutos em campo.</p>' +
       '<div class="choices">' + offers.map(offerCard).join('') + '</div>'
     );
+    // Ainda sem clube: voltar descarta este garoto (nada foi salvo)
+    $('b-back-home').onclick = () => U.ask('Voltar ao início?', 'Este jogador ainda não assinou com nenhum clube e não será salvo.', 'Voltar', U.home);
     // Dois toques: o 1º vira o card ("Assinar com..."), o 2º assina (evita escolher sem querer)
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       const o = offers[+b.dataset.i];

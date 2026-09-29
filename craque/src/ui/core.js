@@ -50,14 +50,15 @@
     $('bar-rel').innerHTML = barMeter('👔', 'Técnico', S.relLabel(G.c.rel.coach), G.c.rel.coach) + barMeter('📣', 'Torcida', S.relLabel(G.c.rel.fans), G.c.rel.fans) +
       barMeter('⭐', 'Fama', S.fameLabel(G.c.fame), Math.min(100, Math.round(G.c.fame / 3)), 'fame') +
       '<span class="bar-btns"><button class="snd-mini" id="b-snd" aria-label="Som">' + (window.CRAQUE_SFX && !window.CRAQUE_SFX.on ? '🔇' : '🔊') + '</button>' +
-      '<button class="snd-mini" id="b-home" aria-label="Voltar ao início">⌂</button></span>';
+      '<button class="snd-mini home-btn" id="b-home" aria-label="Voltar ao início">' + HOUSE + '</button></span>';
     // Voltar ao início: a carreira fica salva e continua de onde parou
     $('b-home').onclick = e => {
       e.stopPropagation();
-      if (!confirm('Voltar para a tela inicial? Sua carreira fica salva e você continua de onde parou.')) return;
-      save();
-      document.querySelectorAll('.paper-wrap, .walkout, .album').forEach(x => x.remove());
-      window.CRAQUE_UI.home();
+      ask('Voltar ao início?', 'Sua carreira fica salva e você continua de onde parou.', 'Ir para o início', () => {
+        save();
+        document.querySelectorAll('.paper-wrap, .walkout, .album').forEach(x => x.remove());
+        window.CRAQUE_UI.home();
+      });
     };
     $('b-snd').onclick = e => { e.stopPropagation(); if (window.CRAQUE_SFX) window.CRAQUE_SFX.toggle(); $('b-snd').textContent = window.CRAQUE_SFX.on ? '🔊' : '🔇'; };
     const T = G.c.totals;
@@ -71,6 +72,21 @@
     el.className = 'ovr metal ' + tierCls(o) + (el.classList.contains('up') ? ' up' : '');
     if (o > lastOvr && lastOvr) { el.classList.remove('up'); void el.offsetWidth; el.classList.add('up'); }
     lastOvr = o;
+  }
+
+  // Ícone de casa (botão de voltar ao início)
+  const HOUSE = '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9.5h4.5V14h3v5.5H18V10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>';
+  // Janela de confirmação do próprio jogo (no lugar do confirm() do navegador)
+  function ask(title, text, okLabel, onOk, cancelLabel) {
+    const w = document.createElement('div');
+    w.className = 'ask-wrap';
+    w.innerHTML = '<div class="ask" role="dialog" aria-modal="true"><b>' + esc(title) + '</b><p>' + esc(text) + '</p>' +
+      '<button class="btn" data-a="ok">' + esc(okLabel) + '</button><button class="btn ghost" data-a="no">' + esc(cancelLabel || 'Cancelar') + '</button></div>';
+    document.body.appendChild(w);
+    const close = () => w.remove();
+    w.onclick = e => { if (e.target === w) close(); };
+    w.querySelector('[data-a="no"]').onclick = close;
+    w.querySelector('[data-a="ok"]').onclick = () => { close(); onOk(); };
   }
 
   // Confirmação em dois toques: o 1º "vira" o card e mostra o que vai acontecer; o 2º confirma.
@@ -91,5 +107,5 @@
   const tierCls = o => (o >= 85 ? 'icone' : o >= 75 ? 'ouro' : o >= 65 ? 'prata' : 'bronze');
   const TIER_NAME = { bronze: 'Bronze', prata: 'Prata', ouro: 'Ouro', icone: 'Ícone' };
 
-  window.CRAQUE_UI = { arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar };
+  window.CRAQUE_UI = { ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar };
 })();
