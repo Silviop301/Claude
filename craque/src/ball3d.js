@@ -220,6 +220,9 @@ const CARD_TRIM = {
   vermelha: { borda: [0.672, 0.604, 0.565], filete: [0.863, 0.658, 0.262] },
   verde: { borda: [0.839, 0.791, 0.509], filete: [0.044, 0.068, 0.014] },
   dourada: { borda: [0.791, 0.658, 0.361], filete: [0.254, 0.150, 0.031] },
+  bronze: { borda: [0.720, 0.450, 0.280], filete: [0.200, 0.100, 0.040] },
+  prata: { borda: [0.800, 0.830, 0.870], filete: [0.150, 0.180, 0.220] },
+  icone: { borda: [0.860, 0.720, 0.350], filete: [0.950, 0.840, 0.460] },
 };
 let cardModel = null;
 const cardReady = () => (cardModel = cardModel || new GLTFLoader().loadAsync('assets/carta.glb?v=5faf94a3').then(g => g.scene));

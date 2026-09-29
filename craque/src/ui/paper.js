@@ -40,8 +40,20 @@
     if (style === 'raspado') return ['', '<path d="M51.8 27.2a8.5 8.5 0 0 1 16.4 0q-8.2-2.4-16.4 0z" fill="' + col + '" opacity=".55"/>'];
     if (style === 'black') return ['<circle cx="60" cy="25.5" r="11.5" fill="' + col + '"/>', f('M51.4 27a8.8 8.8 0 0 1 17.2 0q-8.6-3.2-17.2 0z')];
     if (style === 'moicano') return ['', f('M57.6 15.5h4.8v11h-4.8z') + '<path d="M51.8 27.2a8.5 8.5 0 0 1 16.4 0q-8.2-2.4-16.4 0z" fill="' + col + '" opacity=".35"/>'];
-    if (style === 'longo') return ['<rect x="50.5" y="24" width="19" height="17" rx="5" fill="' + col + '"/>', f('M51.6 27.5a8.5 8.5 0 0 1 16.8 0q-4-4.5-8.4-3.2q-4.4-1.3-8.4 3.2z')];
+    // Cabelo comprido: cai atrás da cabeça até os ombros (o pescoço e a camisa ficam na frente)
+    if (style === 'longo') return ['<path d="M50.3 29a9.7 9.7 0 0 1 19.4 0v11.5q0 2.5-2.5 2.5h-14.4q-2.5 0-2.5-2.5z" fill="' + col + '"/>', f('M51.6 27.5a8.5 8.5 0 0 1 16.8 0q-4-4.5-8.4-3.2q-4.4-1.3-8.4 3.2z')];
     return ['', f('M51.6 27.5a8.5 8.5 0 0 1 16.8 0q-4-4.5-8.4-3.2q-4.4-1.3-8.4 3.2z')];
+  }
+  // Barba: desenhada antes da boca (a boca fica por cima)
+  const BEARDS = ['nenhuma', 'rala', 'bigode', 'cavanhaque', 'cheia'];
+  function beardOf(style, col) {
+    const jaw = 'M51.7 30.2A8.5 8.5 0 0 0 68.3 30.2Q66.4 32.6 64.2 33.1Q60 34.6 55.8 33.1Q53.6 32.6 51.7 30.2z';
+    const stache = '<path d="M56.6 32.1q3.4-1.7 6.8 0q-1.2 1-3.4.5q-2.2.5-3.4-.5z" fill="' + col + '"/>';
+    if (style === 'rala') return '<path d="' + jaw + '" fill="' + col + '" opacity=".38"/>';
+    if (style === 'bigode') return stache;
+    if (style === 'cavanhaque') return stache + '<path d="M57.8 35.2q2.2 3.6 4.4 0q-2.2.9-4.4 0z" fill="' + col + '"/><path d="M58.4 34.9h3.2v1.4h-3.2z" fill="' + col + '"/>';
+    if (style === 'cheia') return '<path d="M51.2 28.8A8.9 8.9 0 0 0 68.8 28.8Q68.6 35.2 64 37.3Q60 39 56 37.3Q51.4 35.2 51.2 28.8z" fill="' + col + '"/>' + stache;
+    return '';
   }
   const hash = s => [...String(s)].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
 
@@ -92,10 +104,12 @@
       '<rect x="50.5" y="84" width="8" height="11" fill="' + k1 + '" stroke="' + line + '" stroke-width=".5"/><rect x="61.5" y="84" width="8" height="11" fill="' + k1 + '" stroke="' + line + '" stroke-width=".5"/>' +
       '<rect x="50" y="95" width="9" height="3.5" rx="1.5" fill="' + line + '"/><rect x="61" y="95" width="9" height="3.5" rx="1.5" fill="' + line + '"/>' +
       '<rect x="49" y="64" width="22" height="12" rx="2" fill="' + k2 + '" stroke="' + line + '" stroke-width=".6"/>' +
-      '<rect x="57" y="35" width="6" height="6" fill="' + skin + '"/>' +
+      hBack + '<rect x="57" y="35" width="6" height="6" fill="' + skin + '"/>' +
       '<path d="M48 42 Q60 38 72 42 L71 66 L49 66 Z" fill="' + k1 + '" stroke="' + line + '" stroke-width=".6"/>' +
       '<path d="M55.5 40.5 L60 45 L64.5 40.5" stroke="' + k2 + '" stroke-width="2" fill="none"/>' +
-      hBack + '<circle cx="60" cy="29" r="8.5" fill="' + skin + '"/>' + hFront + face +
+      '<circle cx="51.6" cy="29.6" r="1.6" fill="' + skin + '"/><circle cx="68.4" cy="29.6" r="1.6" fill="' + skin + '"/>' +
+      '<circle cx="60" cy="29" r="8.5" fill="' + skin + '"/>' + beardOf(lk.beard, hcol) + hFront +
+      '<path d="M55.6 26.6q1.5-.8 3 0M61.4 26.6q1.5-.8 3 0" stroke="' + (lk.hair === 'careca' || lk.hair === 'raspado' ? line : hcol) + '" stroke-width=".8" fill="none" stroke-linecap="round"/>' + face +
       held + arm(L) + arm(R) + '</svg>';
   }
 
@@ -184,5 +198,5 @@
       lede: 'Foram ' + nums + ' em ' + f.nClubs + (f.nClubs > 1 ? ' clubes' : ' clube') + '. ' + D.O(main.name) + ' foi a casa mais marcante.', column: col }, onClose);
   }
 
-  Object.assign(U, { SKIN, HAIR_COLORS, HAIRS, PAPERS, kitOf, nationKit, photo, paper, transferPaper, finalPaper, worldCupPaper, clubWorldPaper, farewellPaper });
+  Object.assign(U, { SKIN, HAIR_COLORS, HAIRS, BEARDS, PAPERS, kitOf, nationKit, photo, paper, transferPaper, finalPaper, worldCupPaper, clubWorldPaper, farewellPaper });
 })();

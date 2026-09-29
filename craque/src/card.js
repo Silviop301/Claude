@@ -272,8 +272,9 @@
   // Carta 3D: qual das 4 cartas metálicas usar (faixa ou carta especial) e a cor do texto por cima
   root.CRAQUE_CARD_METAL = function (d) {
     const k = d.special ? { tots: 'azul', heroi: 'vermelha', copa: 'verde', bola: 'dourada' }[d.special]
-      : { bronze: 'vermelha', prata: 'azul', ouro: 'dourada', icone: 'verde' }[Object.keys(THEMES).find(n => THEMES[n] === themeOf(d.peak, d.grade))];
-    const ink = { azul: ['#FFFFFF', true], vermelha: ['#FFF4E6', true], verde: ['#06220F', false], dourada: ['#231800', false] }[k];
+      : { bronze: 'bronze', prata: 'prata', ouro: 'dourada', icone: 'icone' }[Object.keys(THEMES).find(n => THEMES[n] === themeOf(d.peak, d.grade))];
+    const ink = { azul: ['#FFFFFF', true], vermelha: ['#FFF4E6', true], verde: ['#06220F', false], dourada: ['#231800', false],
+      bronze: ['#2A1505', false], prata: ['#141C26', false], icone: ['#F4D675', true] }[k];
     return { metal: k, ink: ink[0], inkLight: ink[1], line: ink[1] ? 'rgba(255,255,255,.45)' : 'rgba(20,30,10,.35)' };
   };
 

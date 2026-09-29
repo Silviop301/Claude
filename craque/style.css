@@ -922,7 +922,7 @@ details.more .hl { background: rgba(255, 255, 255, 0.08); border-radius: 10px; p
 @media (prefers-reduced-motion: reduce) { .bm-confetti { display: none; } }
 
 /* Criação: carta no centro */
-.cc { position: relative; width: 230px; margin: 4px auto 0; border-radius: 18px; padding: 12px 14px 14px; display: flex; flex-direction: column; align-items: center; gap: 6px; background: var(--metal); color: #2E1A0B; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+.cc { position: relative; width: 230px; margin: 4px auto 0; border-radius: 18px; padding: 12px 14px 14px; display: flex; flex-direction: column; align-items: center; gap: 6px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16); color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
 .cc > * { position: relative; z-index: 1; }
 .cc-top { width: 100%; display: flex; align-items: center; gap: 8px; }
 .cc-num { width: 64px; font: 800 38px/1 var(--display); background: transparent; border: 0; color: inherit; padding: 0; -moz-appearance: textfield; }
@@ -931,7 +931,7 @@ details.more .hl { background: rgba(255, 255, 255, 0.08); border-radius: 10px; p
 .cc-flag { margin-left: auto; font-size: 30px; line-height: 1; }
 .cc-photo { border: 0; padding: 0; background: none; border-radius: 12px; overflow: hidden; }
 .cc-photo svg { width: 150px; height: auto; display: block; border-radius: 12px; filter: sepia(.15); }
-.cc-name { width: 100%; text-align: center; font: 800 26px/1.1 var(--display); text-transform: uppercase; background: rgba(255,255,255,.25); border: 0; border-radius: 10px; color: inherit; padding: 6px 4px; }
+.cc-name { width: 100%; text-align: center; font: 800 26px/1.1 var(--display); text-transform: uppercase; background: rgba(255,255,255,.1); border: 0; border-radius: 10px; color: inherit; padding: 6px 4px; }
 .cc-hint { text-align: center; color: #B9CDBF; font-size: 13px; margin: 0; }
 .look-panel { display: flex; flex-direction: column; gap: 8px; align-items: center; background: rgba(255,255,255,.06); border-radius: 12px; padding: 10px; }
 .look-panel[hidden] { display: none; }

@@ -54,13 +54,14 @@
   // ---------- criação ----------
   function create() {
     const i = Math.floor(Math.random() * D.NICKNAMES.length);
-    const st = { pos: 'ATA', foot: 'D', country: 'Brasil', look: { skin: Math.floor(Math.random() * 5), hair: 'curto', hc: 0 } };
+    const st = { pos: 'ATA', foot: 'D', country: 'Brasil', look: { skin: Math.floor(Math.random() * 5), hair: 'curto', hc: 0, beard: 'nenhuma' } };
+    const BEARD_NAME = { nenhuma: 'Sem barba', rala: 'Rala', bigode: 'Bigode', cavanhaque: 'Cavanhaque', cheia: 'Cheia' };
     const HAIR_NAME = { curto: 'Curto', raspado: 'Raspado', black: 'Black', moicano: 'Moicano', longo: 'Longo', careca: 'Careca' };
     // Tudo numa tela: a carta no centro (foto, nome, número e bandeira) e as escolhas embaixo
     render(
       '<button class="back-link" id="b-back-home">‹ Início</button>' +
       '<div class="eyebrow">Nova carreira · quem é o garoto?</div>' +
-      '<div class="cc metal bronze"><div class="cc-top"><input class="cc-num" id="f-num" type="number" inputmode="numeric" min="1" max="99" value="9" aria-label="Número da camisa">' +
+      '<div class="cc"><div class="cc-top"><input class="cc-num" id="f-num" type="number" inputmode="numeric" min="1" max="99" value="9" aria-label="Número da camisa">' +
       '<span class="cc-pos" id="cc-pos">ATA</span><span class="cc-flag" id="cc-flag"></span></div>' +
       '<button type="button" class="cc-photo" id="look-pv" aria-label="Mudar o visual"></button>' +
       '<input class="cc-name" id="f-name" maxlength="18" value="' + D.NICKNAMES[i] + '" aria-label="Nome na camisa"></div>' +
@@ -68,6 +69,7 @@
       '<div class="look-panel" id="look-panel" hidden>' +
       '<div class="look-row" id="f-skin">' + U.SKIN.map((c, j) => '<button data-v="' + j + '" style="background:' + c + '" aria-label="Pele ' + (j + 1) + '"></button>').join('') + '</div>' +
       '<div class="look-row txt" id="f-hair">' + U.HAIRS.map(h => '<button data-v="' + h + '">' + HAIR_NAME[h] + '</button>').join('') + '</div>' +
+      '<div class="look-row txt" id="f-beard">' + U.BEARDS.map(h => '<button data-v="' + h + '">' + BEARD_NAME[h] + '</button>').join('') + '</div>' +
       '<div class="look-row" id="f-hc">' + U.HAIR_COLORS.map((c, j) => '<button data-v="' + j + '" style="background:' + c + '" aria-label="Cor do cabelo ' + (j + 1) + '"></button>').join('') + '</div></div>' +
       '<div class="seg pos4" id="f-pos"><button data-v="ATA" class="on">Atacante</button><button data-v="MEI">Meia</button><button data-v="ZAG">Zagueiro</button><button data-v="GOL">Goleiro</button></div>' +
       '<div class="seg" id="f-foot"><button data-v="D" class="on">Destro</button><button data-v="E">Canhoto</button></div>' +
@@ -80,10 +82,10 @@
       $('cc-pos').textContent = st.pos;
       $('cc-flag').textContent = (D.COUNTRIES.find(k => k.id === st.country) || {}).flag || '';
       $('look-pv').innerHTML = U.photo('normal', U.nationKit(st.country), { name: $('f-name').value || 'x', pos: st.pos, number: +$('f-num').value || 9, look: st.look });
-      [['f-skin', 'skin'], ['f-hair', 'hair'], ['f-hc', 'hc']].forEach(([id, k]) => $(id).querySelectorAll('button').forEach(b => b.classList.toggle('on', String(st.look[k]) === b.dataset.v)));
-      $('f-hc').classList.toggle('off', st.look.hair === 'careca');
+      [['f-skin', 'skin'], ['f-hair', 'hair'], ['f-beard', 'beard'], ['f-hc', 'hc']].forEach(([id, k]) => $(id).querySelectorAll('button').forEach(b => b.classList.toggle('on', String(st.look[k]) === b.dataset.v)));
+      $('f-hc').classList.toggle('off', st.look.hair === 'careca' && st.look.beard === 'nenhuma');
     };
-    [['f-skin', 'skin', Number], ['f-hair', 'hair', String], ['f-hc', 'hc', Number]].forEach(([id, k, cast]) =>
+    [['f-skin', 'skin', Number], ['f-hair', 'hair', String], ['f-beard', 'beard', String], ['f-hc', 'hc', Number]].forEach(([id, k, cast]) =>
       $(id).querySelectorAll('button').forEach(b => b.onclick = () => { st.look[k] = cast(b.dataset.v); lookPv(); }));
     [['f-pos', 'pos'], ['f-foot', 'foot'], ['f-country', 'country']].forEach(([id, key]) => {
       $(id).querySelectorAll('button').forEach(b => b.onclick = () => {
