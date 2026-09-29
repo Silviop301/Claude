@@ -162,8 +162,16 @@
     // Toque 1: o card vira e a mini carta mostra quanto muda. Toque 2 no mesmo card: confirma.
     const skip = $('b-skip');
     const go = () => { preCh = null; U.eventOrSeason(); };
+    // "Seguir" só libera quando não há mais escolha a fazer nem compra possível
+    const lockSkip = () => {
+      const trait = ch.length && !preCh.done, buy = D.INVEST.some(t => S.canInvest(G.c, t.id));
+      skip.disabled = !!(trait || buy);
+      skip.innerHTML = trait ? 'Escolha uma característica<small>para seguir para a temporada</small>'
+        : buy ? 'Ainda dá para investir<small>Saldo R$ ' + money(G.c.money) + '</small>' : 'Seguir para a temporada';
+    };
     const refresh = () => {
       if (!skip.isConnected) return; // já saiu da tela
+      lockSkip();
       if (!hasInv) return;
       const price = S.investPrice(G.c);
       $('w-money').textContent = 'R$ ' + money(G.c.money);
@@ -176,11 +184,11 @@
         b.classList.toggle('full', full);
       });
     };
-    skip.onclick = go;
+    skip.onclick = () => { if (!skip.disabled) go(); };
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       const x = ch[+b.dataset.i];
       showPreview(S.preview(G.c, x.type === 'up' ? { up: x.trait.id } : { add: x.trait.id }));
-      if (!U.arm(b, '<b>' + (x.type === 'up' ? 'Evoluir para o Nv ' + x.lv : 'Escolher ' + esc(x.trait.name)) + '</b><small>Toque de novo para confirmar</small>')) return;
+      if (!U.arm(b, '<b>Toque de novo para ' + (x.type === 'up' ? 'evoluir' : 'escolher') + '</b>')) return;
       const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
       sfx('levelup');
       let done;
@@ -196,7 +204,7 @@
       const id = b.dataset.v;
       if (!S.canInvest(G.c, id)) return;
       showPreview(S.preview(G.c, { buy: id }));
-      if (!U.arm(b, '<b>Comprar</b><span>R$ ' + money(S.investPrice(G.c)) + '</span><small>Toque de novo para confirmar</small>')) return;
+      if (!U.arm(b, '<b>Toque de novo para comprar</b>')) return;
       U.disarm(b);
       const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
       S.invest(G.c, id);

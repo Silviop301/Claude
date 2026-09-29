@@ -21,7 +21,7 @@
   }
 
   // Verso do card da proposta: o que vai acontecer ao tocar de novo
-  const signTxt = o => '<b>' + (o.kind === 'stay' ? 'Renovar com ' : 'Assinar com ') + esc(club(o.club).name) + '</b><span>' + o.years + (o.years > 1 ? ' anos' : ' ano') + ' · R$ ' + money(o.wage) + '/sem</span><small>Toque de novo para confirmar</small>';
+  const signTxt = o => '<b>Toque de novo para ' + (o.kind === 'stay' ? 'renovar' : 'assinar') + '</b>';
 
   function academy() {
     G.step = 'academy';
