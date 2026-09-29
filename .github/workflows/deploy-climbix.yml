@@ -1,0 +1,60 @@
+# Publica o jogo (pasta craque/) no climbix.app (Hostinger) por SSH a cada atualização.
+# Precisa do segredo CLIMBIX_SSH_KEY no repositório (Settings > Secrets and variables > Actions)
+# com a chave PRIVADA cuja chave pública está cadastrada na Hostinger (Acesso SSH).
+# Sem o segredo, o workflow só avisa e não faz nada.
+name: Publicar no climbix.app
+
+on:
+  push:
+    branches: [claude/gracious-darwin-9gdlfp, main]
+    paths: ['craque/**', '.github/workflows/deploy-climbix.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-climbix
+  cancel-in-progress: false
+
+env:
+  SSH_HOST: 147.93.39.106
+  SSH_PORT: '65002'
+  SSH_USER: u717677135
+  # Pasta pública do domínio na Hostinger (hospedagem compartilhada)
+  TARGET: domains/climbix.app/public_html
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar chave SSH
+        id: key
+        env:
+          KEY: ${{ secrets.CLIMBIX_SSH_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::warning::Segredo CLIMBIX_SSH_KEY não configurado: nada foi publicado."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+
+      - name: Conferir a pasta do site
+        if: steps.key.outputs.ok == 'true'
+        run: |
+          ssh -p "$SSH_PORT" -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" "ls -d $TARGET" || {
+            echo "::error::Pasta $TARGET não encontrada. Pastas disponíveis:";
+            ssh -p "$SSH_PORT" -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" "ls domains";
+            exit 1; }
+
+      - name: Enviar o jogo
+        if: steps.key.outputs.ok == 'true'
+        run: |
+          rsync -az --delete --exclude '.htaccess' --exclude '.well-known' \
+            -e "ssh -p $SSH_PORT -i $HOME/.ssh/id_deploy" \
+            craque/ "$SSH_USER@$SSH_HOST:$TARGET/"
+          echo "Publicado em https://climbix.app"
