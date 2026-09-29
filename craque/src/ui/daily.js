@@ -30,7 +30,7 @@
     const flag = (D.COUNTRIES.find(x => x.id === sp.country) || {}).flag || '';
     return '<button class="daily" id="b-daily"><span class="dl-top">📅 Carreira do dia · ' + shortDate(key) + '</span>' +
       '<b>' + esc(sp.name) + ' <span>' + flag + ' ' + (sp.pos === 'ATA' ? 'Atacante' : 'Meia') + ' · ' + sp.number + '</span></b>' +
-      '<span class="dl-sub">' + (best ? 'Seu melhor hoje: nota ' + best.grade + ' · ' + best.score + ' pts' : 'O mesmo garoto para todo mundo hoje. Compare com os amigos!') + '</span></button>';
+      '<span class="dl-sub">' + (best ? 'Seu melhor hoje: nota ' + best.grade + ' · ' + best.score + ' pts' : 'Desafio de hoje: todos jogam com ele. Quem vai mais longe?') + '</span></button>';
   }
 
   // Fim de carreira do dia: guarda o melhor resultado e prepara o texto para compartilhar
