@@ -44,7 +44,7 @@
     else if (c.spells.filter(s => D.CLUB_BY_ID[s.club].tier >= 4).reduce((n, s) => n + s.seasons, 0) >= 6) verdict = 'Estrela na Europa';
     else if ((c.trophies['Brasileirão'] || { n: 0 }).n >= 2) verdict = 'Rei do Brasileirão';
     else verdict = 'Carreira sólida';
-    const grade = score >= 1520 ? 'S' : score >= 1100 ? 'A' : score >= 740 ? 'B' : score >= 450 ? 'C' : 'D';
+    const grade = score >= 1620 ? 'S' : score >= 1100 ? 'A' : score >= 740 ? 'B' : score >= 450 ? 'C' : 'D';
     const mainClub = idol ? idol[0] : c.club;
     return { score, verdict, grade, titles, nClubs, bonus, mainClub };
   };

@@ -132,6 +132,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .why b.up { color: var(--green); }
 .why b.down { color: var(--red); }
 .why b.pot { color: #B98700; }
+.why b.zero { color: var(--muted, #8A9A90); }
+.why b.note { font-size: 14px; }
+.why-note { margin: 0 0 8px; font-size: 14px; line-height: 1.35; color: #5A4A10; background: #FFF4CC; border-radius: 10px; padding: 8px 10px; }
 .final .why li { border-color: #D6CEB8; }
 .contract { margin: 0; color: #CFE0D4; font-size: 14px; }
 .btn small { display: block; font: 600 13px/1.25 var(--body); letter-spacing: 0; opacity: 0.85; margin-top: 2px; }
@@ -711,3 +714,94 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .ask b { font: 800 22px var(--display); }
 .ask p { margin: 0 0 6px; color: var(--muted); font-size: 15px; }
 .ask .btn.ghost { color: var(--ink); border-color: rgba(19, 32, 26, .25); }
+
+/* Proposta: hoje × proposta */
+.deal { width: 100%; border-collapse: separate; border-spacing: 0; margin: 10px 0 12px; background: #fff; color: #13201A; border-radius: 12px; overflow: hidden; font-size: 13.5px; box-shadow: 0 2px 0 rgba(0,0,0,.25); }
+.deal th, .deal td { padding: 6px 8px; text-align: left; vertical-align: middle; border-bottom: 1px solid #E5ECE7; }
+.deal tr:last-child th, .deal tr:last-child td { border-bottom: 0; }
+.deal thead th { font: 800 12px var(--display); text-transform: uppercase; letter-spacing: .05em; color: #6A7A70; background: #F2F6F3; }
+.deal tbody th { font-weight: 700; color: #6A7A70; white-space: nowrap; width: 1%; }
+.deal td:last-child { font-weight: 700; }
+.deal td.up { color: #0E7A3E; }
+.deal td.up::after { content: ' ▲'; font-size: 10px; }
+.deal td.down { color: #B3261E; }
+.deal td.down::after { content: ' ▼'; font-size: 10px; }
+.deal .crest.xs { vertical-align: -4px; }
+.arm-back small { display: block; font-weight: 600; opacity: .85; margin-top: 2px; }
+
+/* Lance decisivo: placar, minuto e situação */
+.mom-board { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 4px; }
+.mom-board .crest { width: 40px; height: 40px; margin: 0; }
+.mom-board b { font: 800 34px var(--display); font-variant-numeric: tabular-nums; }
+.mom-min { font: 800 15px var(--display); background: #C0392B; color: #fff; border-radius: 8px; padding: 2px 7px; margin-left: 2px; }
+.mom-ctx { margin: 2px 0 8px; font-weight: 700; font-size: 14.5px; color: #0E5A30; text-align: center; }
+
+/* Ficha do jogador */
+#bar-ovr, #bar-name { cursor: pointer; }
+.link-btn { background: none; border: 0; padding: 0 0 0 6px; color: #F4D675; font: 700 12px var(--body, inherit); letter-spacing: 0; text-transform: none; cursor: pointer; text-decoration: underline; }
+.sheet-wrap { position: fixed; inset: 0; z-index: 60; background: rgba(4, 14, 9, .72); display: flex; align-items: flex-end; justify-content: center; animation: fade-in .2s; }
+.sheet-wrap.out { opacity: 0; transition: opacity .2s; }
+.sheet { width: 100%; max-width: 520px; max-height: 92vh; display: flex; flex-direction: column; background: #FBF8EF; color: #13201A; border-radius: 18px 18px 0 0; box-shadow: 0 -6px 30px rgba(0,0,0,.4); overflow: hidden; }
+.sh-head { display: flex; align-items: center; gap: 10px; padding: 14px 14px 8px; }
+.sh-head > div { flex: 1; min-width: 0; }
+.sh-head b { display: block; font: 800 22px var(--display); }
+.sh-head span { font-size: 13px; color: #56675C; }
+.sh-head .ovr { width: 46px; height: 46px; font-size: 22px; display: grid; place-items: center; border-radius: 10px; }
+.sh-x { background: #E8EEEA; border: 0; border-radius: 50%; width: 34px; height: 34px; font-size: 16px; cursor: pointer; color: #13201A; }
+.sh-tabs { display: flex; gap: 6px; padding: 0 14px 8px; border-bottom: 1px solid #E3E9E5; }
+.sh-tabs button { flex: 1; border: 0; background: #EDF2EE; color: #3C4E43; padding: 8px; border-radius: 10px; font: 800 15px var(--display); cursor: pointer; }
+.sh-tabs button.on { background: #0E5A30; color: #fff; }
+.sh-body { overflow-y: auto; padding: 4px 14px calc(18px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
+.sh-sec { font: 800 12px var(--display); letter-spacing: .08em; text-transform: uppercase; color: #0E5A30; margin: 14px 0 6px; }
+.sh-hint { font-size: 12.5px; color: #5E6E64; margin: 4px 0 8px; line-height: 1.35; }
+.sh-attrs, .sh-seasons { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.sh-attrs th, .sh-attrs td, .sh-seasons th, .sh-seasons td { padding: 5px 4px; text-align: center; border-bottom: 1px solid #EAEFEB; }
+.sh-attrs tbody th { text-align: left; font-weight: 800; }
+.sh-attrs thead th, .sh-seasons thead th { font-size: 11px; color: #6A7A70; font-weight: 700; text-transform: uppercase; }
+.sh-attrs tr.main { background: #FFF6D8; }
+.sh-attrs i { color: #B98700; font-style: normal; }
+.sh-slot, .sh-combo, .sh-cat { background: #fff; border: 1px solid #E3E9E5; border-radius: 12px; padding: 8px 10px; margin-bottom: 6px; }
+.sh-slot b, .sh-combo b, .sh-cat b { display: block; font-size: 14.5px; }
+.sh-slot em { font-style: normal; color: #B98700; letter-spacing: 1px; margin-left: 4px; }
+.sh-slot span, .sh-combo span, .sh-cat span { display: block; font-size: 13px; color: #34453A; margin-top: 2px; }
+.sh-slot small, .sh-combo small, .sh-cat small { display: block; font-size: 12px; color: #6A7A70; margin-top: 2px; }
+.sh-slot.empty { border-style: dashed; background: transparent; }
+.sh-combo.on { border-color: #1FA35A; background: #EAF8EF; }
+.sh-combo.on small { color: #0E7A3E; font-weight: 700; }
+.sh-combo.near { border-color: #E2B93B; background: #FFF9E6; }
+.sh-combo.near small { color: #8A6400; font-weight: 700; }
+.sh-combo.off { opacity: .5; }
+.sh-more summary { cursor: pointer; font-weight: 800; color: #0E5A30; margin: 12px 0 6px; font-size: 14px; }
+.sh-nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+.sh-nums div { background: #fff; border: 1px solid #E3E9E5; border-radius: 10px; padding: 6px 4px; text-align: center; }
+.sh-nums b { display: block; font: 800 20px var(--display); }
+.sh-nums span { font-size: 11px; color: #6A7A70; }
+.sh-scroll { overflow-x: auto; }
+.sh-seasons td.cl { text-align: left; white-space: nowrap; max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
+.sheet .room { color: #13201A; }
+
+/* Ranking */
+.rk-tabs { display: flex; gap: 6px; margin: 8px 0; }
+.rk-tabs button { flex: 1; border: 0; border-radius: 10px; padding: 9px; font: 800 15px var(--display); background: rgba(255,255,255,.1); color: #fff; cursor: pointer; }
+.rk-tabs button.on { background: #F4D675; color: #13201A; }
+.rk-tabs button:disabled { opacity: .35; }
+.rk-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 4px; scrollbar-width: none; }
+.rk-chips button { flex: none; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 6px 12px; background: transparent; color: #DDEBE2; font-weight: 700; font-size: 13.5px; cursor: pointer; }
+.rk-chips button.on { background: #fff; color: #0E5A30; border-color: #fff; }
+.rk-sub { margin: 4px 0 8px; }
+.rk-list { display: flex; flex-direction: column; gap: 6px; }
+.rk-item { display: flex; align-items: center; gap: 10px; background: #FBF8EF; color: #13201A; border-radius: 12px; padding: 8px 12px; }
+.rk-item.me { outline: 3px solid #F4D675; }
+.rk-pos { width: 32px; font: 800 18px var(--display); text-align: center; }
+.rk-who { flex: 1; min-width: 0; }
+.rk-who b { display: block; font-size: 15.5px; }
+.rk-who small { display: block; font-size: 12px; color: #5E6E64; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rk-v { font: 800 22px var(--display); text-align: right; }
+.rk-v small { display: block; font: 600 11px var(--body, inherit); color: #6A7A70; }
+.rk-nick { margin: 8px 0 12px; }
+.rk-nick b { display: block; font-size: 16px; }
+.rk-row { display: flex; gap: 8px; margin-top: 6px; }
+.rk-row input { flex: 1; min-width: 0; font-size: 16px; padding: 10px 12px; border-radius: 10px; border: 2px solid #CFDAD3; }
+.rk-row .btn { width: auto; margin: 0; padding: 10px 16px; }
+.rk-msg { color: #B3261E; font-weight: 700; margin: 6px 0 0; }
+.rk-edit { display: block; margin: 12px auto 0; color: #DDEBE2; }

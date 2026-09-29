@@ -13,7 +13,7 @@
     }
     const free = S.MAX_SLOTS - G.c.traits.length;
     if (free) slots.push('<span class="chip empty">' + free + (free > 1 ? ' espaços livres' : ' espaço livre') + '</span>');
-    return '<div class="eyebrow small">Características ' + G.c.traits.length + '/' + S.MAX_SLOTS + '</div><div class="chips">' + slots.join('') +
+    return '<div class="eyebrow small">Características ' + G.c.traits.length + '/' + S.MAX_SLOTS + ' <button class="link-btn" data-sheet>Ver ficha e combinações ›</button></div><div class="chips">' + slots.join('') +
       syn.map(s => '<span class="chip syn">' + s.icon + ' ' + s.name + '</span>').join('') + '</div>';
   }
 

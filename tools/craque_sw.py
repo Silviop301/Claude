@@ -35,6 +35,7 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  if (url.pathname.includes('/api/')) return; // ranking: sempre da rede
   const code = url.origin === location.origin && /(\\/|\\.html|\\.js|\\.css|\\.webmanifest)$/.test(url.pathname);
   if (code) {
     e.respondWith(fetch(req).then(res => {

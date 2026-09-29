@@ -16,12 +16,17 @@
     if (!pendingEvent) pendingEvent = S.pickEvent(G.c);
     if (!pendingEvent) return momentOrSeason();
     const ev = pendingEvent;
+    // Proposta de transferência: compara com a situação de hoje antes de decidir
+    const offer = S.eventOffer(G.c, ev);
     render(
       '<div class="eyebrow">Durante a temporada</div>' +
       '<div class="card event-card"><span class="ic">' + ev.icon + '</span><h2>' + ev.title + '</h2><p style="margin:0">' + ev.text + '</p></div>' +
+      (offer ? U.dealCompare(S.currentDeal(G.c), offer) : '') +
       '<div class="choices">' + ev.options.map((o, i) => '<button class="btn opt' + (i ? ' ghost' : '') + '" data-i="' + i + '">' + esc(o.label) + '<small>' + esc(o.hint) + '</small></button>').join('') + '</div>'
     );
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
+      // Trocar de clube pede confirmação (dois toques)
+      if (offer && b.dataset.i === '0' && !U.arm(b, '<b>Toque de novo para assinar</b>')) return;
       const r = S.resolveEvent(G.c, ev, +b.dataset.i);
       pendingEvent = null;
       bar();
@@ -51,6 +56,8 @@
     cont: m => ({ tag: 'Final da ' + m.comp, title: (m.kick === 'fk' ? 'Falta na final' : 'Pênalti na final') + ' da ' + m.comp + '!',
       text: 'Decisão contra ' + D.o(club(m.vs).name) + ', ' + (m.kick === 'fk' ? 'falta na entrada da área aos 88 minutos.' : 'pênalti nos acréscimos com o placar empatado.'),
       stakes: 'Converteu: campeão da ' + m.comp + ' · Errou: vice' }),
+    acesso: m => ({ tag: 'Última rodada · ' + m.comp, title: (m.kick === 'fk' ? 'Falta' : 'Pênalti') + ' valendo o acesso!',
+      text: 'Contra ' + D.o(club(m.vs).name) + (m.kick === 'fk' ? ', falta na entrada da área.' : ', pênalti a seu favor.'), stakes: 'Converteu: acesso garantido · Errou: fica para o ano que vem' }),
     classico: m => ({ tag: 'Clássico', title: 'Falta perigosa no clássico!', text: 'Contra ' + D.o(club(m.vs).name) + ', na entrada da área. A barreira está armada.', stakes: 'Converteu: gol no clássico e Torcida +8' }),
   };
 
@@ -58,12 +65,12 @@
   const DEF_TXT = (m, mode) => {
     const vs = D.o(club(m.vs).name), save = mode === 'save';
     const what = save ? 'Pênalti contra' : 'Contra-ataque';
-    const goal = { cup: 'campeão da ' + m.comp, title: 'campeão da liga', cont: 'campeão da ' + m.comp, classico: 'o clássico é seu, Torcida +8' }[m.type];
+    const goal = { cup: 'campeão da ' + m.comp, title: 'campeão da liga', acesso: 'acesso garantido', cont: 'campeão da ' + m.comp, classico: 'o clássico é seu, Torcida +8' }[m.type];
     return {
-      tag: { cup: 'Final da ' + m.comp, title: 'Última rodada · ' + m.comp, cont: 'Final da ' + m.comp, classico: 'Clássico' }[m.type],
+      tag: { cup: 'Final da ' + m.comp, title: 'Última rodada · ' + m.comp, acesso: 'Última rodada · ' + m.comp, cont: 'Final da ' + m.comp, classico: 'Clássico' }[m.type],
       title: save ? 'Pênalti contra nos acréscimos!' : 'Contra-ataque no último minuto!',
       text: (save ? 'O camisa 9 ' + D.do(club(m.vs).name) + ' vai bater.' : 'O atacante ' + D.do(club(m.vs).name) + ' arrancou sozinho.') + ' Tudo depende de você contra ' + vs + '.',
-      stakes: (save ? 'Defendeu: ' : 'Desarmou: ') + goal + ' · ' + (m.type === 'classico' ? 'Falhou: gol deles' : 'Falhou: vice'),
+      stakes: (save ? 'Defendeu: ' : 'Desarmou: ') + goal + ' · ' + (m.type === 'classico' ? 'Falhou: gol deles' : m.type === 'acesso' ? 'Falhou: o acesso escapa' : 'Falhou: vice'),
       what,
     };
   };
@@ -101,7 +108,12 @@
     const T = def ? DEF_TXT(m, st) : MOMENT_TXT[m.type](m), k = S.kickSetup(G.c, st);
     render(
       '<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div>' +
-      '<div class="card event-card moment-card"><div class="with-crest">' + crest(G.c.club) + '<b>×</b>' + crest(m.vs) + '</div><h2>' + T.title + '</h2><p style="margin:0">' + esc(T.text) + '</p><p class="stakes">' + esc(T.stakes) + '</p></div>' +
+      '<div class="card event-card moment-card">' + (m.score
+        // Placar e minuto: o mesmo chute vale outra coisa no 1 × 1 aos 89'
+        ? '<div class="mom-board">' + crest(G.c.club) + '<b>' + m.score[0] + ' × ' + m.score[1] + '</b>' + crest(m.vs) + '<span class="mom-min">' + m.minute + "'</span></div>" +
+          '<p class="mom-ctx">' + esc(m.ctx || '') + '</p>'
+        : '<div class="with-crest">' + crest(G.c.club) + '<b>×</b>' + crest(m.vs) + '</div>') +
+      '<h2>' + T.title + '</h2><p style="margin:0">' + esc(T.text) + '</p><p class="stakes">' + esc(T.stakes) + '</p></div>' +
       '<div class="chips">' + miniFacts(st).join('') + '</div>' +
       '<p class="lead small">' + MINI_HOW[st] + '</p>' +
       '<button class="btn" id="b-kick">' + MINI_BTN[st] + '</button>' +
@@ -132,6 +144,7 @@
       cup: ok ? 'Gol! Campeão da ' + m.comp + '!' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
       title: ok ? 'Na rede! O título é seu!' : (how || 'Não entrou.') + ' O título escapou nos detalhes.',
       classico: ok ? 'Golaço de falta! O clássico é seu.' : (how || 'Não foi dessa vez.') + ' A torcida lamenta.',
+      acesso: ok ? 'Gol! O acesso é seu!' : (how || 'Não entrou.') + ' O acesso escapou na última rodada.',
       cont: ok ? 'É campeão da ' + m.comp + '! Seu nome entrou para a história do clube.' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
     }[m.type];
     // Lances defensivos: texto próprio
@@ -139,7 +152,7 @@
     const defTxt = st === 'save' ? (ok ? (why === 'fora' ? 'O batedor mandou para fora! ' : 'Que defesa! ') : 'Não deu: a bola entrou. ')
       : st === 'tackle' ? (ok ? 'Carrinho perfeito, bola roubada! ' : why === 'cedo' ? 'Você chegou cedo e ele passou. ' : 'Chegou tarde: ele passou e marcou. ') : null;
     const defEnd = { cup: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.', title: ok ? 'O título é seu!' : 'O título escapou.',
-      classico: ok ? 'O clássico é seu.' : 'A torcida lamenta.', cont: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.' }[m.type];
+      classico: ok ? 'O clássico é seu.' : 'A torcida lamenta.', acesso: ok ? 'O acesso é seu!' : 'O acesso escapou.', cont: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.' }[m.type];
     const final = defTxt !== null ? defTxt + defEnd : txt;
     render(
       '<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div>' +

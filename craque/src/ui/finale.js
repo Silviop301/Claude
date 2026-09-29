@@ -16,6 +16,7 @@
   function finale() {
     const f = S.finish(G.c);
     const ach = U.achRecord(G.c, f);
+    U.rankSave(G.c, f); // carreira encerrada: entra no ranking com a pontuação
     const T = G.c.totals;
     store(SAVE, null);
     const hall = (load(HALL) || []);
@@ -58,7 +59,7 @@
         Object.entries(G.c.trophies).sort((a, b) => ROOM.indexOf(a[1].type) - ROOM.indexOf(b[1].type))
           .map(([name, t]) => '<div>' + trophy(t.type, 52, name) + '<b>' + t.n + 'x</b><span>' + esc(name) + '</span></div>').join('') + '</div>' : '') +
       (f.bonus.length ? '<div class="room-title">Despedida</div><ul class="why">' + f.bonus.map(b => '<li><span>' + esc(b.txt) + '</span><b class="up">+' + b.v + '</b></li>').join('') + '</ul>' : '') +
-      U.dailyFinish(G.c, f) +
+      U.dailyFinish(G.c, f) + U.finaleRank() +
       U.achBlock(ach) +
       '<div class="score">' + f.score + ' pontos' + (rank === 1 ? ' · NOVO RECORDE!' : ' · #' + rank + ' no seu Hall da Fama') + '</div>' +
       '</div>' +

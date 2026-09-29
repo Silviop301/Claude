@@ -74,6 +74,18 @@
     return out;
   };
 
+  // Proposta de um clube específico (eventos): mesmo cálculo de papel, salário e anos da janela
+  S.offerFor = function (c, clubId, kind, wage) {
+    const o = offerFrom(c, D.CLUB_BY_ID[clubId], kind || 'up');
+    if (wage) o.wage = wage;
+    return o;
+  };
+  // Situação atual, para comparar com uma proposta
+  S.currentDeal = function (c) {
+    const club = D.CLUB_BY_ID[c.club], role = S.role(c, club);
+    return { club: club.id, kind: 'now', role: role.name, share: role.share, wage: c.wage, years: c.contract };
+  };
+
   S.stayOffer = function (c) {
     const club = D.CLUB_BY_ID[c.club];
     return offerFrom(c, club, 'stay');

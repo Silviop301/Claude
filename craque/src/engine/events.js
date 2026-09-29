@@ -421,6 +421,10 @@
     return ev;
   };
 
+  // Proposta que vem num evento (a mesma que a tela mostra antes de aceitar)
+  const EV_KIND = { banco: 'mid', assedio: 'up', arabia: 'money' };
+  S.eventOffer = (c, ev) => (ev.dest ? S.offerFor(c, ev.dest, EV_KIND[ev.id] || 'up', ev.wage) : null);
+
   S.resolveEvent = function (c, ev, idx) {
     const { r, save } = rngOf(c);
     const out = EVENT_BY_ID[ev.id].resolve(c, ev, idx, r);
@@ -434,10 +438,7 @@
     if (fx.fame) c.fame = Math.max(0, c.fame + fx.fame);
     if (fx.money) c.money = Math.max(0, c.money + fx.money);
     if (fx.attr) for (const k in fx.attr) c.attrs[k] = clamp(c.attrs[k] + fx.attr[k], 20, 99);
-    if (fx.move) {
-      const dest = D.CLUB_BY_ID[fx.move];
-      S.join(c, { club: dest.id, wage: fx.wageSet || S.wage(c, dest) });
-    }
+    if (fx.move) S.join(c, S.eventOffer(c, ev));
     c.lastEvent = ev.id;
     c.evCount = c.evCount || {};
     c.evCount[ev.id] = (c.evCount[ev.id] || 0) + 1;

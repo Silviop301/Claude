@@ -72,6 +72,9 @@
     el.className = 'ovr metal ' + tierCls(o) + (el.classList.contains('up') ? ' up' : '');
     if (o > lastOvr && lastOvr) { el.classList.remove('up'); void el.offsetWidth; el.classList.add('up'); }
     lastOvr = o;
+    // Tocar na nota (ou no nome) abre a ficha: build, combinações e carreira
+    el.onclick = $('bar-name').onclick = e => { e.stopPropagation(); window.CRAQUE_UI.sheet(); };
+    el.setAttribute('role', 'button'); el.setAttribute('aria-label', 'Nota geral ' + o + ': ver ficha do jogador');
   }
 
   // Ícone de casa (botão de voltar ao início)

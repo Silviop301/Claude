@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-3c84a3ec';
+const CACHE = 'craque-b47b6315';
 const ASSETS = [
   "./",
   "./assets/bola.glb",
@@ -624,7 +624,9 @@ const ASSETS = [
   "./src/ui/offers.js",
   "./src/ui/paper.js",
   "./src/ui/preseason.js",
+  "./src/ui/ranking.js",
   "./src/ui/season.js",
+  "./src/ui/sheet.js",
   "./src/ui/start.js",
   "./src/ui/walkout.js",
   "./src/ui/worldcup.js",
@@ -711,6 +713,7 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  if (url.pathname.includes('/api/')) return; // ranking: sempre da rede
   const code = url.origin === location.origin && /(\/|\.html|\.js|\.css|\.webmanifest)$/.test(url.pathname);
   if (code) {
     e.respondWith(fetch(req).then(res => {

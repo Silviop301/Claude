@@ -20,6 +20,39 @@
   S.kickSetupType = m => ({ fk: 'classico', save: 'save', tackle: 'tackle' }[S.kickType(m)] || 'cup');
   S.defKick = pos => (pos === 'GOL' ? 'save' : pos === 'ZAG' ? 'tackle' : null);
 
+  const leagueSize = club => D.CLUBS.filter(x => x.league === club.league).length;
+  // Placar, minuto e o que está em jogo, sorteados junto com o lance
+  function momentContext(c, m, club, rank, n, r) {
+    const def = !!S.defKick(c.pos), kick = S.kickType(m), LD = D.LADDER[club.league] || {};
+    const final = m.type !== 'classico';
+    const g = r.int(0, 2);
+    // Atacando: empate (ou atrás por um no clássico); defendendo: vencendo por um (ou empatado no clássico)
+    m.score = def ? (final || r() < 0.5 ? [g + 1, g] : [g, g]) : (final || r() < 0.6 ? [g, g] : [g, g + 1]);
+    m.minute = kick === 'pen' || kick === 'save' ? '90+' + r.int(1, 5) : String(82 + r.int(0, 7));
+    const us = D.o(club.name), them = D.o(D.CLUB_BY_ID[m.vs].name);
+    const up = LD.up ? ' ' + D.paraA(D.LEAGUE_BY_ID[LD.up].name) : '';
+    m.ctx = def ? {
+      cup: 'Final ' + D.da(m.comp) + ', jogo único: segure o placar e a taça é sua.',
+      title: 'Última rodada: ' + us + ' e ' + them + ' chegam empatados em pontos. Segurando a vitória, o título é seu.',
+      cont: 'Final ' + D.da(m.comp) + ': segure o placar e o título continental é seu.',
+      acesso: 'Última rodada: segurando a vitória, o acesso' + up + ' é seu.',
+    }[m.type] : {
+      cup: 'Final ' + D.da(m.comp) + ', jogo único: quem vencer leva a taça.',
+      title: 'Última rodada: ' + us + ' e ' + them + ' chegam empatados em pontos. Quem vencer é campeão.',
+      cont: 'Final ' + D.da(m.comp) + ': quem vencer é campeão continental.',
+      acesso: 'Última rodada: uma vitória garante o acesso' + up + '.',
+    }[m.type];
+    if (!m.ctx) m.ctx = {
+      classico: rank <= 2 ? 'A vitória mantém ' + us + ' na briga pelo título.'
+        : LD.up && rank <= (LD.promo || 4) + 2 ? 'A vitória deixa ' + us + ' mais perto do acesso.'
+        : LD.down && rank >= n - (LD.releg || 4) ? 'A vitória afasta o fantasma do rebaixamento.'
+        : 'Vale três pontos e a gozação por um ano inteiro.',
+    }[m.type];
+    // Atrás no placar, o gol vale o empate; defendendo, o placar é que está em jogo
+    if (m.type === 'classico' && !def && m.score[0] < m.score[1]) m.ctx = 'Atrás no placar: um gol agora arranca o empate no clássico.';
+    if (m.type === 'classico' && def) m.ctx = m.score[0] > m.score[1] ? 'Vencendo o clássico: segure e os três pontos são seus.' : 'Clássico empatado: se ele marcar, a derrota vem no fim.';
+  }
+
   S.pickMoment = function (c) {
     if (c.momentAge === c.age) return c.moment || null; // já sorteado nesta temporada
     const { r, save } = rngOf(c);
@@ -34,12 +67,15 @@
       const pool = [['classico', c.pos === 'MEI' ? 4 : 3]];
       if (rank <= 5) pool.push(['cup', 1]);
       if (rank <= 2) pool.push(['title', 1.5]);
+      // Última rodada valendo o acesso (divisões de baixo, times perto do G-4)
+      const LD = D.LADDER[club.league];
+      if (LD && LD.up && rank <= (LD.promo || 4) + 2) pool.push(['acesso', 1.3]);
       // Final continental: topo do Brasil/Argentina (Libertadores) ou clube grande europeu (Champions)
       const contName = S.contName(club);
       if (contName && (contName === 'Libertadores' ? rank <= 4 : club.strength >= 78)) pool.push(['cont', 1.2]);
       let x = r() * pool.reduce((a, p) => a + p[1], 0), type = pool[0][0];
       for (const [t, w] of pool) { x -= w; if (x < 0) { type = t; break; } }
-      let vs = type === 'cup' ? r.pick(rivals.slice(0, 8)) : rivals[0];
+      let vs = type === 'cup' ? r.pick(rivals.slice(0, 8)) : type === 'acesso' ? r.pick(rivals.slice(0, 6)) : rivals[0];
       if (type === 'cont') {
         // Adversário da final: um grande de outra liga do mesmo continente
         const libert = S.contName(club) === 'Libertadores';
@@ -48,8 +84,9 @@
         if (pool2.length) vs = r.pick(pool2);
       }
       c.moment = { type, vs: vs.id, comp: type === 'cup' ? (lg.cup || 'Copa nacional') : type === 'cont' ? S.contName(club) : lg.name };
-      if (type === 'cont') c.moment.kick = r() < 0.55 ? 'pen' : 'fk';
+      if (type === 'cont' || type === 'acesso') c.moment.kick = r() < 0.55 ? 'pen' : 'fk';
       if (S.defKick(c.pos)) c.moment.kick = S.defKick(c.pos); // defensores: lance contra, no fim do jogo
+      momentContext(c, c.moment, club, rank, leagueSize(club), r);
     }
     save();
     return c.moment;

@@ -20,8 +20,27 @@
       '<span class="tag ' + roleCls + '">' + o.role + '</span><span class="tag">R$ ' + money(o.wage) + '/sem</span>' + buysTag(o.wage) + '<span class="tag">' + o.years + (o.years > 1 ? ' anos' : ' ano') + '</span></div></button>';
   }
 
-  // Verso do card da proposta: o que vai acontecer ao tocar de novo
-  const signTxt = o => '<b>Toque de novo para ' + (o.kind === 'stay' ? 'renovar' : 'assinar') + '</b>';
+  // Quadro "Hoje × Proposta": clube, força, papel, salário e contrato lado a lado
+  function dealCompare(cur, o) {
+    const a = club(cur.club), b = club(o.club);
+    const diff = (x, y) => (y > x ? ' up' : y < x ? ' down' : '');
+    const row = (lbl, x, y, cls) => '<tr><th>' + lbl + '</th><td>' + x + '</td><td class="' + (cls || '') + '">' + y + '</td></tr>';
+    return '<table class="deal"><thead><tr><th></th><th>Hoje</th><th>Proposta</th></tr></thead><tbody>' +
+      row('Clube', crest(a.id, 'xs') + esc(a.name), crest(b.id, 'xs') + esc(b.name)) +
+      row('Liga', league(a.id).flag + ' ' + esc(league(a.id).name), league(b.id).flag + ' ' + esc(league(b.id).name)) +
+      row('Força', a.strength + ' · ' + stars(a.tier), b.strength + ' · ' + stars(b.tier), diff(a.strength, b.strength)) +
+      row('Seu papel', esc(cur.role), esc(o.role), diff(cur.share, o.share)) +
+      row('Salário', 'R$ ' + money(cur.wage) + '/sem', 'R$ ' + money(o.wage) + '/sem', diff(cur.wage, o.wage)) +
+      row('Contrato', cur.years > 0 ? cur.years + (cur.years > 1 ? ' anos restantes' : ' ano restante') : 'acabando', o.years + (o.years > 1 ? ' anos' : ' ano')) +
+      '</tbody></table>';
+  }
+  // Verso do card da proposta: o que muda em relação a hoje, e o 2º toque assina
+  const signTxt = o => {
+    if (o.kind === 'stay' || !G.c.club) return '<b>Toque de novo para ' + (o.kind === 'stay' ? 'renovar' : 'assinar') + '</b>';
+    const cur = S.currentDeal(G.c), w = o.wage / Math.max(1, cur.wage);
+    return '<b>Toque de novo para assinar</b><small>Salário ' + (w >= 1.05 ? '+' + Math.round((w - 1) * 100) + '%' : w <= 0.95 ? '−' + Math.round((1 - w) * 100) + '%' : 'igual') +
+      ' · ' + esc(o.role) + (o.role !== cur.role ? ' (hoje ' + esc(cur.role).toLowerCase() + ')' : '') + '</small>';
+  };
 
   function academy() {
     G.step = 'academy';
@@ -70,5 +89,5 @@
     if ($('b-retire')) $('b-retire').onclick = U.finale;
   }
 
-  Object.assign(U, { buysTag, offerCard, academy, windowOffers });
+  Object.assign(U, { buysTag, offerCard, dealCompare, academy, windowOffers });
 })();

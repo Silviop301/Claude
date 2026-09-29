@@ -6,7 +6,7 @@
   // ---------- temporada ----------
   const AGE_GROWTH = age => (age <= 20 ? 0.24 : age <= 23 ? 0.17 : age <= 26 ? 0.08 : age <= 29 ? 0.02 : 0);
   // Ajuste geral da evolução (as características dão menos atributo desde que ganharam efeitos próprios)
-  const GROWTH_K = 1;
+  const GROWTH_K = 0.9;
   const AGE_DECLINE = age => (age <= 30 ? 0 : age <= 32 ? 1.8 : age <= 34 ? 3.5 : 5);
 
   S.playSeason = function (c) {
@@ -117,6 +117,7 @@
     const M = c.mod.moment || null;
     if (M && M.type === 'cup') cup = M.ok;
     if (M && M.type === 'title') league = M.ok;
+    if (M && M.type === 'acesso' && !M.ok) league = false; // perdeu o acesso na última rodada: não foi campeão
     if (M && M.ok) goals += 1;
     // Continental: Libertadores (primeira divisão sul-americana) mede força contra o nível sul-americano; Champions, contra o europeu
     const libert = S.LIBERTA.includes(club.league);
@@ -157,6 +158,12 @@
       pos = 1 + otherPts.filter(p => p >= pts).length;
       if (pos === 1) { pos = 2; leaderPts = pts + 1 + Math.floor(r() * 3); } // não foi campeão: alguém passou na frente
     }
+    // Acesso decidido no lance da última rodada
+    const LD0 = D.LADDER[club.league];
+    if (M && M.type === 'acesso' && LD0 && LD0.up) {
+      if (M.ok && pos > LD0.promo) pos = LD0.promo;
+      else if (!M.ok && pos <= LD0.promo) pos = LD0.promo + 1;
+    }
     const table = { pos, pts, gap: league ? 0 : Math.max(1, leaderPts - pts), league: lg.name };
     // Acesso / rebaixamento pela posição final
     const LD = D.LADDER[club.league];
@@ -174,11 +181,13 @@
         cup: M.ok ? '⚽ Seu pênalti decidiu a final da ' + M.comp + ' contra ' + D.o(vsName) : '😞 Pênalti perdido na final da ' + M.comp + ' contra ' + D.o(vsName),
         title: M.ok ? '⚽ Pênalti convertido na última rodada: título contra ' + D.o(vsName) : '😞 Pênalti perdido na última rodada contra ' + D.o(vsName) + ': vice',
         classico: M.ok ? '🎯 Gol de falta no clássico contra ' + D.o(vsName) : '🧱 Falta desperdiçada no clássico contra ' + D.o(vsName),
+        acesso: M.ok ? '⬆️ ' + (M.kick === 'fk' ? 'Seu gol de falta' : 'Seu pênalti') + ' garantiu o acesso contra ' + D.o(vsName) + '!'
+          : '😞 ' + (M.kick === 'fk' ? 'Falta desperdiçada' : 'Pênalti perdido') + ' na última rodada: o acesso escapou contra ' + D.o(vsName),
         cont: M.ok ? '🌍 ' + (M.kick === 'fk' ? 'Seu gol de falta' : 'Seu pênalti') + ' decidiu a final da ' + M.comp + ' contra ' + D.o(vsName) + '!'
           : '😞 ' + (M.kick === 'fk' ? 'Falta desperdiçada' : 'Pênalti perdido') + ' na final da ' + M.comp + ' contra ' + D.o(vsName),
       }[M.type];
       // Zagueiro e goleiro: o lance é defensivo (pênalti contra ou contra-ataque no fim)
-      const where = { cup: 'na final da ' + M.comp, title: 'na última rodada', classico: 'no clássico', cont: 'na final da ' + M.comp }[M.type];
+      const where = { cup: 'na final da ' + M.comp, title: 'na última rodada', acesso: 'na última rodada', classico: 'no clássico', cont: 'na final da ' + M.comp }[M.type];
       const defHl = M.kick === 'save' ? (M.ok ? '🧤 Pênalti defendido ' + where + ' contra ' + D.o(vsName) + '!' : '😞 Pênalti sofrido ' + where + ' contra ' + D.o(vsName))
         : M.kick === 'tackle' ? (M.ok ? '🛡️ Desarme salvador ' + where + ' contra ' + D.o(vsName) + '!' : '😞 O atacante passou ' + where + ' contra ' + D.o(vsName))
         : null;
@@ -241,10 +250,16 @@
     // Jogar muito e bem faz evoluir mais e pode até elevar o teto (potencial)
     const potUp = games >= 22 && rating >= 7.6 && c.age <= 26 ? (rating >= 8.2 ? 2 : 1) : 0;
     if (potUp) c.pot = Math.min(99, c.pot + potUp);
-    const growth = (c.pot - ovrOf(c.attrs, c.pos)) * AGE_GROWTH(c.age) * (0.3 + share * 1.25) * GROWTH_K * (c.age <= 24 ? 1 + 0.45 * S.tm(c, 'academia') : 1);
+    // Evolução = minutos em campo + desempenho (nota) − idade ± treinos. A lesão tira minutos (e evolução).
+    const room = c.pot - ovrOf(c.attrs, c.pos);
+    const growOf = sh => room * AGE_GROWTH(c.age) * (0.3 + sh * 1.25) * GROWTH_K * (c.age <= 24 ? 1 + 0.45 * S.tm(c, 'academia') : 1);
+    const growth = growOf(share);
+    const injLoss = injShare > 0 && injShare < 1 ? growOf(share / (1 - injShare)) - growth : 0;
+    // Jogar bem faz evoluir: nota 7,9 vale ~+1; nota ruim atrasa (depois dos 30 pesa metade)
+    const perf = games >= 10 ? clamp((rating - 7.0) * 1.0, -0.8, 1.5) * (c.age <= 29 ? 1 : 0.5) * (rating < 7 ? 1 : clamp(room / 6, 0.25, 1)) : 0;
     const decline = AGE_DECLINE(c.age) * S.declMult(c);
-    const luck = r.gauss() * 1.2;
-    const delta = growth - decline + luck;
+    const luck = r.gauss() * 0.8;
+    const delta = growth + perf - decline + luck;
     const w = D.POS[c.pos].w;
     for (const k in c.attrs) c.attrs[k] = clamp(c.attrs[k] + delta * (0.5 + w[k] * 2.2) + r.gauss() * 0.6, 20, 99);
     if (c.age >= 29) c.attrs.rit = clamp(c.attrs.rit - 1.0 * S.tm(c, 'velocista'), 20, 99); // Velocista perde velocidade mais cedo
@@ -261,12 +276,8 @@
     if (M && M.type === 'cont' && M.ok && !has('heroi')) cards.push(S.addCard(c, 'heroi', 'FINAL DA ' + M.comp.toUpperCase() + ' ' + yr));
     if (ballon) cards.push(S.addCard(c, 'bola', 'MELHOR DO MUNDO · ' + yr));
     // Por que a nota mudou (em pontos de nota geral, aproximados)
-    const why = [];
-    if (growth >= 0.5) why.push({ txt: games >= 30 ? games + ' jogos: muito tempo em campo' : games >= 15 ? games + ' jogos: evolução com minutos' : 'Poucos minutos: evoluiu pouco', v: Math.round(growth) });
-    else if (c.age <= 26 && games < 15) why.push({ txt: 'Poucos minutos: evolução travada', v: Math.round(growth) });
-    if (decline > 0) why.push({ txt: 'Idade (' + c.age + ' anos)' + (S.declMult(c) < 1 ? ', amenizada por Profissional' : ''), v: -Math.round(decline) });
-    if (Math.abs(luck) >= 1) why.push({ txt: luck > 0 ? 'Fase boa nos treinos' : 'Fase ruim nos treinos', v: Math.round(luck) });
-    if (potUp) why.push({ txt: 'Temporada brilhante elevou seu teto', v: 0, pot: true });
+    // Cada parte em pontos de nota geral; os treinos absorvem a variação miúda para a soma bater com a nota real
+    const why = S.whyOf({ c, games, rating, growth, perf, injLoss, injPct: Math.round(injShare * 100), decline, luck, room, potUp, dOvr: ovr1 - ovr0 });
 
     // Dinheiro e totais
     c.money += c.wage * 52;
@@ -314,6 +325,29 @@
     return res;
   };
 
+  S.whyOf = function (x) {
+    const { c, games, rating } = x;
+    const nota = String(rating.toFixed(1)).replace('.', ',');
+    const items = [];
+    items.push({ k: 'min', txt: games >= 30 ? games + ' jogos: muito tempo em campo' : games >= 15 ? games + ' jogos em campo' : 'Poucos minutos (' + games + ' jogos)', raw: x.growth, keep: c.age <= 29 });
+    if (games >= 10) items.push({ k: 'perf', txt: 'Desempenho: nota ' + nota + (rating >= 7.5 ? ' (ótima)' : rating >= 7 ? ' (boa)' : rating >= 6.6 ? ' (regular)' : ' (fraca)'), raw: x.perf, keep: true });
+    if (x.injLoss >= 0.2) items.push({ k: 'inj', txt: 'Lesão: ' + x.injPct + '% da temporada fora', raw: -x.injLoss, keep: true });
+    if (x.decline > 0) items.push({ k: 'age', txt: 'Idade (' + c.age + ' anos)' + (S.declMult(c) < 1 ? ', amenizada por Profissional' : ''), raw: -x.decline, keep: true });
+    const tr = { k: 'train', raw: x.luck, keep: false };
+    items.push(tr);
+    // A soma bate com a variação real (o resto é ruído do treino)
+    tr.raw += x.dOvr - items.reduce((a, it) => a + it.raw, 0);
+    tr.txt = tr.raw > 0 ? 'Fase boa nos treinos' : 'Fase ruim nos treinos';
+    // Arredonda mantendo a soma (maiores restos)
+    const fl = items.map(it => Math.floor(it.raw));
+    let left = x.dOvr - fl.reduce((a, b) => a + b, 0);
+    items.map((it, i) => [it.raw - fl[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (left > 0) { fl[i]++; left--; } });
+    const out = items.map((it, i) => ({ k: it.k, txt: it.txt, v: fl[i] })).filter((it, i) => it.v !== 0 || items[i].keep);
+    if (x.room <= 3 && c.age <= 29) out.push({ k: 'teto', txt: 'Perto do teto: potencial ' + c.pot + ', a evolução desacelera', v: 0, note: true });
+    if (x.potUp) out.push({ k: 'pot', txt: 'Temporada brilhante elevou seu teto', v: 0, pot: true });
+    return out;
+  };
+
   S.headlines = function (c, s) {
     const club = D.CLUB_BY_ID[s.club].name;
     const nick = c.name, fem = D.fem(club);
@@ -326,11 +360,27 @@
     if (s.move && s.move.dir === 'down') h.push(v('down', ['Rebaixamento: ' + club + ' cai ' + D.paraA(s.move.toName), 'Dia de luto: ' + D.o(club) + ' cai ' + D.paraA(s.move.toName), 'Acabou: ' + D.o(club) + (fem ? ' é rebaixada ' : ' é rebaixado ') + D.paraA(s.move.toName)]));
     if (s.titles.length >= 2) h.push(v('titles', ['Temporada histórica: ' + club + ' leva ' + s.titles.length + ' taças', 'Máquina de títulos: ' + s.titles.length + ' taças para ' + D.o(club), 'Ano mágico ' + D.no(club) + ': ' + s.titles.length + ' títulos com ' + nick]));
     else if (s.titles.length) h.push(v('title', [club + (fem ? ' é campeã' : ' é campeão') + ' com ' + nick + ' em campo', 'Deu ' + club + '! ' + nick + ' ajuda a levantar a taça', 'Campeão! ' + nick + ' festeja com a torcida ' + D.do(club)]));
+    const statH = h.length;
     if (s.goals >= 30) h.push(v('goals', [s.goals + ' gols: ' + nick + ' vira pesadelo das defesas', 'Máquina de gols: ' + nick + ' chega a ' + s.goals + ' na temporada', nick + ' de novo: ' + s.goals + ' gols e as redes pedindo socorro']));
     else if (s.assists >= 15) h.push(v('assists', ['O garçom da liga: ' + s.assists + ' assistências de ' + nick, nick + ' serve ' + s.assists + ' gols na temporada', 'Passe na medida: ' + s.assists + ' assistências de ' + nick]));
     else if (s.penSaved >= 2) h.push(v('pens', ['Pegador! ' + nick + ' defende ' + s.penSaved + ' pênaltis na temporada', 'Muralha na marca da cal: ' + nick + ' pega ' + s.penSaved + ' pênaltis', 'Batedor treme diante de ' + nick + ': ' + s.penSaved + ' pênaltis defendidos']));
     else if (s.cleanSheets >= 18) h.push(v('cs', [s.cleanSheets + ' jogos sem sofrer gol: ' + nick + ' fecha a defesa ' + D.do(club), 'Cadeado: ' + nick + ' passa ' + s.cleanSheets + ' jogos sem ser vazado', 'Com ' + nick + ', ' + D.o(club) + ' não toma gol: ' + s.cleanSheets + ' jogos no zero']));
     else if (s.pos === 'ZAG' && s.goals >= 5) h.push(v('zaggol', ['Zagueiro artilheiro: ' + nick + ' marca ' + s.goals + ' gols de cabeça', 'Perigo na bola parada: ' + nick + ' faz ' + s.goals + ' gols']));
+    // Grande temporada individual: o jornal separa o seu desempenho da campanha do clube
+    const def = s.pos === 'ZAG' || s.pos === 'GOL', tb = s.table;
+    const award = s.awards.find(a => a.id === 'scorer') || s.awards.find(a => a.id === 'team');
+    const star = s.games >= 15 && (s.rating >= 7.5 || !!award || (s.pos === 'ATA' && s.goals >= 15) || (s.pos === 'MEI' && s.assists >= 10) || (def && s.cleanSheets >= 14));
+    if (star && h.length === statH && !s.awards.some(a => a.id === 'ballon')) {
+      const stat = (s.pos === 'ATA' ? s.goals + ' gols' : s.pos === 'MEI' ? s.assists + ' assistências' : s.pos === 'ZAG' && s.goals >= 4 ? s.goals + ' gols e ' + s.cleanSheets + ' jogos sem sofrer gol' : s.cleanSheets + ' jogos sem sofrer gol') +
+        ' e nota ' + s.rating.toFixed(1).replace('.', ',');
+      const crisis = (s.move && s.move.dir === 'down') || (tb && tb.pos >= 11);
+      if (crisis) h.push(v('solo', ['Brilho solitário: ' + stat + ' de ' + nick + ' num ano difícil ' + D.do(club),
+        nick + ' faz a parte dele: ' + stat + ', mas ' + D.o(club) + ' termina em ' + tb.pos + 'º',
+        'Um craque no meio da crise: ' + nick + ' fecha o ano com ' + stat]));
+      else if (award) h.push(v('award', [award.name + ': ' + nick + ' fecha o ano com ' + stat, 'Premiado: ' + nick + ' leva ' + (award.id === 'team' ? 'vaga na ' : 'o prêmio de ') + award.name + ' com ' + stat,
+        'Reconhecimento merecido para ' + nick + ': ' + award.name + ' (' + stat + ')']));
+      else h.push(v('star', ['Temporada de gala: ' + nick + ' faz ' + stat, nick + ' é o destaque ' + D.do(club) + ' com ' + stat, 'Ano para guardar: ' + stat + ' de ' + nick]));
+    }
     if (s.ovr1 - s.ovr0 >= 5) h.push(v('evo', [nick + ' não para de evoluir', 'Ninguém segura: ' + nick + ' sobe de nível outra vez', 'Evolução assustadora de ' + nick]));
     if (s.ovr1 - s.ovr0 <= -4) h.push(v('age', ['Idade pesa? ' + nick + ' já não é o mesmo', 'O tempo passa para ' + nick, nick + ' sente o peso dos anos']));
     if (s.injury >= 25) h.push(v('inj', ['Lesão atrapalha temporada de ' + nick, 'Departamento médico: ' + nick + ' perde boa parte do ano', nick + ' passa mais tempo na maca que no gramado']));
