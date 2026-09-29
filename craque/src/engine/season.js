@@ -209,6 +209,14 @@
     const ovr1 = S.ovr(c);
     if (ovr1 >= c.peak || !c.peakAttrs) c.peakAttrs = S.eff(c);
     c.peak = Math.max(c.peak, ovr1, o);
+    // Cartas especiais da temporada (a foto é com a nota já atualizada)
+    const yr = S.YEAR0 + c.season;
+    const cards = [];
+    const main = isDef ? (c.pos === 'GOL' ? cleanSheets + ' SEM SOFRER GOL' : goals ? goals + ' GOLS · ' + cleanSheets + ' S/ GOL' : cleanSheets + ' SEM SOFRER GOL') : c.pos === 'MEI' ? assists + ' ASSIST.' : goals + ' GOLS';
+    // Seleção da Temporada: só as temporadas de gala (nota alta, muitos jogos, liga forte)
+    if (awards.some(a => a.id === 'team') && rating >= 8.1 && games >= 25 && club.tier >= 3 && (c.cards || []).filter(k => k.type === 'tots').length < 6) cards.push(S.addCard(c, 'tots', lg.name.toUpperCase() + ' ' + yr + ' · ' + main));
+    if (M && M.type === 'cont' && M.ok) cards.push(S.addCard(c, 'heroi', 'FINAL DA ' + M.comp.toUpperCase() + ' ' + yr));
+    if (ballon) cards.push(S.addCard(c, 'bola', 'MELHOR DO MUNDO · ' + yr));
     // Por que a nota mudou (em pontos de nota geral, aproximados)
     const why = [];
     if (growth >= 0.5) why.push({ txt: games >= 30 ? games + ' jogos: muito tempo em campo' : games >= 15 ? games + ' jogos: evolução com minutos' : 'Poucos minutos: evoluiu pouco', v: Math.round(growth) });
@@ -246,6 +254,7 @@
       ovr0, ovr1, fame0: Math.round(fame0), fame1: Math.round(c.fame), injury: injName ? Math.round(injShare * 100) : 0,
       coach0: Math.round(coach0), coach1: Math.round(c.rel.coach), fans0: Math.round(fans0), fans1: Math.round(c.rel.fans),
       highlights, event: c.lastEvent || null, table, why, farewell: !!c.farewell,
+      attrs: S.eff(c), cards, // foto da carta desta temporada (para o álbum) e cartas especiais ganhas
     };
     res.move = move;
     res.headlines = S.headlines(c, res);

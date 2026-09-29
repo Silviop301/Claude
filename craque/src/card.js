@@ -240,7 +240,7 @@
       ctx.font = '700 24px ' + BODY;
       ctx.fillText(d.footer, W / 2, 756, 420);
       ctx.font = '800 20px ' + DISPLAY;
-      ctx.globalAlpha = 0.8; ctx.fillText(d.special ? T.label : 'NOVA CARTA · ' + T.label, W / 2, 786, 330); ctx.globalAlpha = 1;
+      ctx.globalAlpha = 0.8; ctx.fillText(d.special ? T.label : (d.fresh ? 'NOVA CARTA · ' : '') + T.label, W / 2, 786, 330); ctx.globalAlpha = 1;
       return canvas;
     }
     // Rodapé: números da carreira; conquistas grandes numa segunda linha (nada espremido)

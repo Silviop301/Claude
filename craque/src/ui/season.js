@@ -59,8 +59,8 @@
     U.paper({ c: G.c, year: year() - 1, head: main, pose, kit: U.kitOf(cl.id), caption,
       stats: res.games + ' jogos · ' + seasonStats(res).map(([v, l]) => v + ' ' + l.toLowerCase()).join(' · ') + (res.games ? ' · nota ' + res.rating.toFixed(1).replace('.', ',') : ''),
       lede: lede(res, cl), subs: rest, column: res.column },
-      // Subiu de faixa? Depois do jornal vem a revelação da carta nova
-      () => (U.tierUp(res.ovr0, res.ovr1) ? U.walkout(G.c, onClose) : onClose && onClose()));
+      // Depois do jornal: revelação da carta nova (subiu de faixa) e das cartas especiais da temporada
+      () => U.walkouts(G.c, (U.tierUp(res.ovr0, res.ovr1) ? [null] : []).concat(res.cards || []), onClose));
   }
 
   // Mostra os blocos do resumo um de cada vez (troféus com mais destaque). Tocar mostra tudo.

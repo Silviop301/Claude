@@ -168,6 +168,7 @@
       c.trophies['Copa do Mundo'] = c.trophies['Copa do Mundo'] || { type: 'wc', n: 0 };
       c.trophies['Copa do Mundo'].n++;
       c.wcBoost = 22; // pesa na Bola de Ouro da próxima temporada
+      run.card = S.addCard(c, 'copa', 'CAMPEÃO DO MUNDO · ' + run.year);
     }
     c.wcHist = c.wcHist || [];
     c.wcHist.push({ year: run.year, nation: run.nation, reached, g: run.g, a: run.a, champion: run.champion });

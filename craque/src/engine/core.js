@@ -251,6 +251,15 @@
   function bump(c, key, v) { c.rel[key] = clamp(c.rel[key] + v, 0, 100); }
 
   // Ajudantes usados pelas outras partes do motor
+  // Cartas especiais ganhas na carreira (Seleção da Temporada, Herói da Final, Copa do Mundo, Bola de Ouro).
+  // Guardam a foto do momento: nota, atributos e clube daquele ano. O texto do rodapé vem pronto.
+  S.addCard = function (c, type, txt) {
+    c.cards = c.cards || [];
+    const card = { type, season: c.season, age: c.age, ovr: S.ovr(c), attrs: S.eff(c), club: c.club, txt };
+    c.cards.push(card);
+    return card;
+  };
+
   S._ = { clamp, round1, rngOf, lvOf, bump, REL0, moveClub, ovrOf };
 
   root.CRAQUE_SIM = S;

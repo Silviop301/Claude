@@ -38,6 +38,8 @@
       '<div class="fut"><canvas id="fut" aria-label="Card do jogador"></canvas></div>' +
       (clubsPlayed.length > 1 ? '<div class="crest-pick-t">Escudo da carta</div><div class="crest-pick" id="crest-pick">' + clubsPlayed.map(id => '<button data-club="' + id + '"' + (id === f.mainClub ? ' class="on"' : '') + ' aria-label="' + esc(club(id).name) + '">' + crest(id) + '<span>' + esc(club(id).name) + '</span></button>').join('') + '</div>' : '') +
       '<button class="btn" id="b-share">Compartilhar card</button>' +
+      (G.c.seasons.length ? '<button class="btn ghost" id="b-album">📖 Ver o álbum da carreira</button>' : '') +
+      ((G.c.cards || []).length ? '<div class="crest-pick-t">Cartas especiais · ' + G.c.cards.length + '</div><div class="sp-cards">' + G.c.cards.map((k, i) => '<canvas data-sp="' + i + '" aria-label="' + esc(U.SPECIAL_NAME[k.type]) + '"></canvas>').join('') + '</div>' : '') +
       '<div class="final">' +
       '<div class="headrow"><div class="grade ' + f.grade + '">' + f.grade + '</div><div class="who"><b>' + esc(G.c.name) + '</b><span>' + cty.flag + ' ' + D.POS[G.c.pos].name + ' · 16 a ' + G.c.age + ' anos · pico ' + G.c.peak + '</span></div></div>' +
       '<div class="verdict">' + esc(f.verdict) + '</div>' +
@@ -59,6 +61,8 @@
     // Edição especial do jornal com a despedida
     const retired = G.c;
     setTimeout(() => U.farewellPaper(retired, f), 700);
+    screen.querySelectorAll('[data-sp]').forEach(sc => window.CRAQUE_CARD(sc, U.cardData(retired, retired.cards[+sc.dataset.sp])));
+    if ($('b-album')) $('b-album').onclick = () => U.album(retired, f, cardData);
     G.c = null;
     $('bar').hidden = true;
     const cv = $('fut');
@@ -77,5 +81,5 @@
     $('b-home').onclick = U.home;
   }
 
-  Object.assign(U, { finale });
+  Object.assign(U, { finale, careerStatsOf: careerStats });
 })();

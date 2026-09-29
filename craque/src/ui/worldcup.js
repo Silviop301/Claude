@@ -131,7 +131,7 @@
         ? run.games.filter(x => x.cs).length + ' sem sofrer gol' + (run.g ? ' · ' + run.g + (run.g === 1 ? ' gol' : ' gols') : '')
         : run.g + (run.g === 1 ? ' gol' : ' gols') + ' · ' + run.a + (run.a === 1 ? ' assistência' : ' assistências')) + '</p>' +
       '<button class="btn" id="b-next">' + (S.mustRetire(G.c) ? 'Ver sua carreira' : 'Seguir a carreira') + '</button>';
-    if (run.champion) { sfx('fanfare'); const btn = $('b-next'); setTimeout(() => { if (btn.isConnected) U.worldCupPaper(G.c, run); }, 1400); }
+    if (run.champion) { sfx('fanfare'); const btn = $('b-next'); setTimeout(() => { if (btn.isConnected) U.worldCupPaper(G.c, run, () => run.card && U.walkout(G.c, null, run.card)); }, 1400); }
     $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     $('b-next').onclick = U.afterSeason;
   }
