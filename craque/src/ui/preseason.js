@@ -181,16 +181,17 @@
     if (G.c.money < S.investPrice(G.c)) return U.eventOrSeason();
     G.step = 'invest';
     save();
-    // Um toque = uma compra. A mini carta fica presa no topo e os números sobem na hora;
-    // a tela não é redesenhada (nada de voltar ao topo a cada compra).
+    // Toque escolhe e mostra na carta quanto sobe; o botão fixo embaixo confirma (dá para comprar
+    // o mesmo item de novo sem rolar). A tela não é redesenhada a cada compra.
     render(
       '<div class="eyebrow">Pré-temporada · Investimentos</div><h2>Invista na sua carreira</h2>' +
       '<div class="wallet"><span>Saldo <b id="w-money"></b></span><span>Cada compra <b id="w-price"></b></span></div>' +
       miniCard() +
-      '<p class="muted small inv-tip">Toque para comprar. O preço sobe a cada compra; o que sobrar vira patrimônio.</p>' +
+      '<p class="muted small inv-tip">Escolha um investimento e confirme embaixo. O preço sobe a cada compra; o que sobrar vira patrimônio.</p>' +
       '<div class="choices inv-grid">' + D.INVEST.map(t => '<button class="choice inv" data-v="' + t.id + '"><span class="ic">' + t.icon + '</span>' +
         '<b>' + t.name + '</b><span class="pips"></span><span class="d">' + (t.attr ? attrTxt(t.attr) : t.perk) + '</span><span class="price"></span></button>').join('') +
-      '</div><button class="btn inv-go" id="b-skip">Seguir para a temporada</button>'
+      '</div><div class="inv-bar"><button class="btn" id="b-buy" disabled>Escolha um investimento</button></div>' +
+      '<button class="btn ghost" id="b-skip">Seguir para a temporada</button>'
     );
     const refresh = () => {
       const price = S.investPrice(G.c);
@@ -203,20 +204,33 @@
         b.querySelector('.price').textContent = full ? 'No máximo' : G.c.money < price ? 'Falta R$ ' + money(price - G.c.money) : 'R$ ' + money(price);
         b.classList.toggle('full', full);
       });
+      // Botão de confirmar: mostra o que está escolhido e o preço
+      const buy = $('b-buy'), ok = sel && S.canInvest(G.c, sel);
+      buy.disabled = !ok;
+      const full = sel && (G.c.inv[sel] || 0) >= S.investMax(sel), nm = sel ? D.INVEST_BY_ID[sel].name : '';
+      buy.innerHTML = !sel ? 'Escolha um investimento' : full ? esc(nm) + ' no máximo' : ok ? 'Comprar ' + esc(nm) + '<small>R$ ' + money(price) + '</small>' : 'Sem saldo para ' + esc(nm);
+      showPreview(ok ? S.preview(G.c, { buy: sel }) : null);
     };
+    let sel = null;
     refresh();
     $('b-skip').onclick = U.eventOrSeason;
     screen.querySelectorAll('[data-v]').forEach(b => b.onclick = () => {
-      if (!S.canInvest(G.c, b.dataset.v)) return;
+      sel = b.dataset.v;
+      screen.querySelectorAll('[data-v]').forEach(x => x.classList.toggle('sel', x === b));
+      refresh();
+    });
+    $('b-buy').onclick = () => {
+      if (!sel || !S.canInvest(G.c, sel)) return;
       const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
-      S.invest(G.c, b.dataset.v);
+      S.invest(G.c, sel);
       save();
       sfx('coin');
       bar();
       tweenCard(from, 450);
+      const b = screen.querySelector('[data-v="' + sel + '"]');
       b.classList.remove('bought'); void b.offsetWidth; b.classList.add('bought');
-      refresh();
-    });
+      setTimeout(refresh, 480); // depois da animação, mostra a prévia da próxima compra
+    };
   }
 
   Object.assign(U, { traitsHtml, attrTxt, traitTxt, setTier, miniCard, showPreview, applyAnim, tweenCard, pickable, wcHint, preseason, chooseSwap, afterTrait, invest });

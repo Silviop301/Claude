@@ -516,3 +516,5 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .wc-live .line { display: flex; align-items: center; gap: 10px; font-size: 24px; }
 .wc-live .line b { font: 800 30px var(--display); }
 .wc-live .line span:last-child { font: 700 17px var(--body); }
+.inv-bar { position: sticky; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 3; }
+.inv-bar .btn { width: 100%; box-shadow: 0 4px 0 rgba(0, 0, 0, .35), 0 6px 18px rgba(0, 0, 0, .35); }
