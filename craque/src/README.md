@@ -20,3 +20,8 @@ Scripts clássicos (sem build), carregados pelo `index.html` nesta ordem.
 | `sim.js` | Só para o Node: junta o motor para `tools/craque_sim.js` |
 
 As partes do motor compartilham ajudantes por `CRAQUE_SIM._`; as telas chamam telas de outros arquivos por `U.nome()`.
+
+## Instalável / offline
+
+`craque/sw.js` é gerado por `python3 tools/craque_sw.py` (lista de arquivos guardados no aparelho).
+Rode de novo ao adicionar ou remover arquivos do jogo. Código e página vêm da rede quando há internet.
