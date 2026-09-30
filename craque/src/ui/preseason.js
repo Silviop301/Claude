@@ -118,7 +118,7 @@
 
   // Esta temporada termina em ano de Copa? Mostra a nota que a seleção pede
   function wcHint() {
-    if ((S.YEAR0 + G.c.season + 1) % 4 !== 2 || G.c.age + 1 < 18) return '';
+    if ((S.YEAR0 + G.c.season + 1) % 4 !== 2 || G.c.age + 1 < 18 || G.c.natRetired) return '';
     const n = D.NATION_BY_NAME[G.c.country], cut = S.wcCut(n, G.c), o = S.ovr(G.c);
     return '<p class="wc-hint">' + U.flag(n.flag) + ' Ano de Copa: a seleção convoca com nota <b>' + cut + '</b>' + (o >= cut ? ' · você já está dentro' : ' · faltam ' + (cut - o)) + '</p>';
   }
@@ -126,16 +126,16 @@
   // ---------- pré-temporada: característica e investimentos numa tela só ----------
   // Tocar numa opção (característica ou investimento) vira o card e mostra na carta quanto muda;
   // tocar de novo confirma. "Seguir para a temporada" fica sempre fixo embaixo.
-  let preCh = null;
+  // As opções ficam salvas na carreira (G.c.preCh): recarregar a página não troca o sorteio
   function preseason() { prep(false); }
   function invest() { prep(true); } // retomar depois de já ter escolhido a característica
 
   function prep(traitDone, justAdded) {
-    if (!preCh || preCh.age !== G.c.age) preCh = { age: G.c.age, list: S.traitChoices(G.c), done: false };
+    const all = S.seasonChoices(G.c), preCh = G.c.preCh;
     if (traitDone) preCh.done = true;
-    const ch = preCh.done ? [] : preCh.list;
+    const ch = preCh.done ? [] : all;
     const canBuy = () => D.INVEST.some(t => S.canInvest(G.c, t.id));
-    if (!ch.length && !canBuy() && !justAdded) { preCh = null; return U.eventOrSeason(); }
+    if (!ch.length && !canBuy() && !justAdded) { delete G.c.preCh; return U.eventOrSeason(); }
     G.step = preCh.done ? 'invest' : 'preseason';
     save();
     bar();
@@ -164,7 +164,7 @@
     );
     // Toque 1: o card vira e a mini carta mostra quanto muda. Toque 2 no mesmo card: confirma.
     const skip = $('b-skip');
-    const go = () => { preCh = null; U.eventOrSeason(); };
+    const go = () => { delete G.c.preCh; U.eventOrSeason(); };
     // "Seguir" só libera quando não há mais escolha a fazer nem compra possível
     const lockSkip = () => {
       const trait = ch.length && !preCh.done, buy = D.INVEST.some(t => S.canInvest(G.c, t.id));

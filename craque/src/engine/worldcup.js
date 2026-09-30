@@ -14,8 +14,10 @@
   S.wcCall = function (c) {
     const nation = D.NATION_BY_NAME[c.country];
     const cut = S.wcCut(nation, c), o = S.ovr(c);
-    const called = c.age >= 18 && c.age <= 37 && o >= cut;
-    return { nation, cut, called, starter: o >= cut + 5 };
+    // Quem se despediu da seleção não volta a ser convocado
+    const retired = !!c.natRetired;
+    const called = !retired && c.age >= 18 && c.age <= 37 && o >= cut;
+    return { nation, cut, called, retired, starter: o >= cut + 5 };
   };
 
   function wcMatch(c, run, opp, r) {

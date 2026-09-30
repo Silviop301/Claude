@@ -534,7 +534,7 @@
     },
     {
       id: 'amistosos', icon: '🎌', tone: 'green', weight: 3, max: 3,
-      when: c => S.ovr(c) >= 74 && c.age >= 20 && c.age <= 33,
+      when: c => S.ovr(c) >= 74 && c.age >= 20 && c.age <= 33 && !c.natRetired,
       build: c => ({
         title: 'Convocado para amistosos', text: 'A seleção chamou para dois amistosos no meio da temporada do clube.',
         options: [opt('Ir para a seleção', 'Fama +14 · Técnico −6 · 15%: volta machucado'), opt('Pedir dispensa', 'Técnico +8 · Torcida −4')],
@@ -596,13 +596,14 @@
     // ---------- fim de carreira ----------
     {
       id: 'selecao_adeus', icon: '👋', tone: 'blue', weight: 3, max: 1,
-      when: c => c.age >= 32 && S.ovr(c) >= 70,
-      build: () => ({
-        title: 'Adeus à seleção?', text: 'Aos poucos a seleção renova o grupo. Um jornalista pergunta se você pensa em se despedir da camisa amarela.',
-        options: [opt('Anunciar a despedida da seleção', 'Forma +6% · Técnico +6 (mais descanso no clube)'), opt('Seguir à disposição', 'Fama +6 · 20%: volta machucado de uma convocação')],
+      when: c => c.age >= 32 && S.ovr(c) >= 70 && !c.natRetired,
+      build: c => ({
+        title: 'Adeus à seleção?', text: 'Aos poucos a seleção ' + ((D.NATION_BY_NAME[c.country] || {}).flag || '') + ' renova o grupo. Um jornalista pergunta se você pensa em se despedir da seleção.',
+        options: [opt('Anunciar a despedida da seleção', 'Não será mais convocado · Forma +6% · Técnico +6'), opt('Seguir à disposição', 'Fama +6 · 20%: volta machucado de uma convocação')],
       }),
       resolve: (c, ev, i, r) => {
-        if (i === 0) { bump(c, 'coach', 6); return { ok: true, text: 'Carta aberta, vídeo emocionado e mais energia para o clube.', fx: { form: 0.06 } }; }
+        // Vale de verdade: nunca mais convocado (Copa do Mundo e amistosos)
+        if (i === 0) { c.natRetired = S.YEAR0 + c.season; bump(c, 'coach', 6); return { ok: true, text: 'Carta aberta, vídeo emocionado e mais energia para o clube. A seleção fica para os mais novos.', fx: { form: 0.06 } }; }
         if (r() < 0.2) return { ok: false, text: 'Na última convocação, a coxa não aguentou.', fx: { fame: 6, inj: 0.08 } };
         return { ok: true, text: 'Ainda convocado, ainda respeitado.', fx: { fame: 6 } };
       },
@@ -1120,7 +1121,7 @@
     },
     {
       id: 'olimpiada', icon: '🥇', tone: 'green', weight: 4, max: 1,
-      when: c => c.age <= 23 && c.age >= 19 && S.ovr(c) >= 64,
+      when: c => c.age <= 23 && c.age >= 19 && S.ovr(c) >= 64 && !c.natRetired,
       build: () => ({
         title: 'Convocado para as Olimpíadas', text: 'O clube não quer liberar, mas é a chance de uma medalha.',
         options: [opt('Ir às Olimpíadas', 'Técnico −8 · 35%: ouro (Fama +25) · senão Fama +10'), opt('Ficar no clube', 'Técnico +8 · +5% de minutos')],

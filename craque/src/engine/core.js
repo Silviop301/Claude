@@ -185,7 +185,8 @@
     const full = c.traits.length >= S.MAX_SLOTS;
     // Características com efeito até certa idade (Rato de Academia, até os 24) saem do sorteio quando já não rendem:
     // nova só com pelo menos duas temporadas de efeito pela frente; evoluir só enquanto ainda vale.
-    const live = (id, seasons) => { const t = D.TRAIT_BY_ID[id]; return !t.until || c.age + seasons - 1 <= t.until; };
+    // Patriota não rende mais depois da despedida da seleção
+    const live = (id, seasons) => { const t = D.TRAIT_BY_ID[id]; return (!t.until || c.age + seasons - 1 <= t.until) && !(id === 'patriota' && c.natRetired); };
     const upPool = c.traits.filter(id => lvOf(c, id) < S.MAX_LV && live(id, 1));
     const newPool = D.TRAITS.filter(t => !c.traits.includes(t.id) && D.traitFits(t, c.pos) && live(t.id, 2));
     const pushUp = () => {
@@ -213,6 +214,16 @@
     }
     save();
     return out;
+  };
+
+  // Opções da pré-temporada guardadas na própria carreira: recarregar a página mostra as mesmas
+  // (sortear de novo avançaria a semente e trocaria as opções). Valem só para a temporada em que saíram.
+  S.seasonChoices = function (c) {
+    const k = c.season + '/' + c.age;
+    if (!c.preCh || c.preCh.k !== k) c.preCh = { k, list: S.traitChoices(c).map(x => [x.type, x.trait.id, x.lv]), done: false };
+    if (c.preCh.done) return [];
+    return c.preCh.list.filter(([, id]) => D.TRAIT_BY_ID[id])
+      .map(([type, id, lv]) => ({ type, trait: D.TRAIT_BY_ID[id], lv, completes: type === 'new' ? completesSyn(c, id) : null }));
   };
 
   // Adiciona característica nova (substituindo outra se os espaços estiverem cheios).

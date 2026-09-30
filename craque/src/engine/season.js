@@ -124,7 +124,11 @@
     if (M && M.type === 'cup') cup = M.ok;
     if (M && M.type === 'title') league = M.ok;
     if (M && M.type === 'acesso' && !M.ok) league = false; // perdeu o acesso na última rodada: não foi campeão
-    if (M && M.ok) goals += 1;
+    // O lance decisivo entra na estatística do tipo certo: pênalti defendido, desarme ou gol
+    const mk = M && S.kickSetupType(M);
+    if (M && mk === 'save') { penFaced += 1; if (M.ok) { penSaved += 1; saves += 1; } }
+    else if (M && mk === 'tackle') { if (M.ok) tackles += 1; }
+    else if (M && M.ok) goals += 1;
     // Continental: Libertadores (primeira divisão sul-americana) mede força contra o nível sul-americano; Champions, contra o europeu
     const libert = S.LIBERTA.includes(club.league);
     const pCont = club.tier < 3 ? 0 : libert ? clamp((sEff - 66) / 28 + titleBonus * 0.3, 0.01, 0.28)

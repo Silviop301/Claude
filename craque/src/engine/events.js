@@ -199,7 +199,7 @@
     },
     {
       id: 'sub20', icon: '🟡', tone: 'green', weight: 4,
-      when: c => c.age <= 20 && S.ovr(c) >= 55,
+      when: c => c.age <= 20 && S.ovr(c) >= 55 && !c.natRetired,
       build: () => ({
         title: 'Convocado para a seleção sub-20',
         text: 'O torneio coincide com jogos importantes do clube.',
