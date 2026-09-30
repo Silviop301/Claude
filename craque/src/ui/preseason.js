@@ -39,6 +39,8 @@
     el.classList.add('pop', 'tierup');
     $('mc-tier').textContent = TIER_NAME[t];
   }
+  // Investimentos na mesma posição dos atributos na carta (RIT FIN / PAS DRI / DEF FÍS); fisioterapia embaixo
+  const INV_ORDER = () => D.ATTRS.map(k => D.INVEST.find(t => t.attr && t.attr[k])).filter(Boolean).concat(D.INVEST.filter(t => !t.attr));
   function miniCard() {
     const E = S.eff(G.c), t = tierCls(S.ovr(G.c));
     const wear = U.wearOf(G.c);
@@ -156,7 +158,7 @@
           (x.completes ? '<br><span class="tag gold">Completa ' + U.icoOf(x.completes, 'xs') + ' ' + x.completes.name + ': ' + attrTxt(x.completes.attr) + '</span>' : '') + '</span></button>').join('') + '</div>' : '') +
       (hasInv ? '<div class="prep-sec">Investimentos</div>' +
         '<div class="wallet"><span>Saldo <b id="w-money"></b></span><span>Cada compra <b id="w-price"></b></span></div>' +
-        '<div class="choices inv-grid">' + D.INVEST.map(t => '<button class="choice inv" data-v="' + t.id + '"><span class="ic">' + U.icoOf(t, 'sm') + '</span>' +
+        '<div class="choices inv-grid">' + INV_ORDER().map(t => '<button class="choice inv" data-v="' + t.id + '"><span class="ic">' + U.icoOf(t, 'sm') + '</span>' +
           '<b>' + D.investName(t, G.c.pos) + '</b><span class="pips"></span><span class="d">' + (t.attr ? attrTxt(t.attr) : t.perk) + '</span><span class="price"></span></button>').join('') + '</div>' : '') +
       '<div class="inv-bar"><button class="btn" id="b-skip">Seguir para a temporada</button></div>'
     );

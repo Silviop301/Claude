@@ -1350,3 +1350,6 @@ details.more.score-how { background: #F2F4EE; }
 details.more.score-how > summary { color: var(--ink); }
 
 .tl-loan { font: var(--t-label); letter-spacing: .06em; text-transform: uppercase; color: #1D4C9E; margin-left: 4px; }
+
+/* Fisioterapia sozinha embaixo, na largura toda */
+.choices.inv-grid .choice.inv[data-v="fisio"] { grid-column: 1 / -1; }
