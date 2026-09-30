@@ -17,9 +17,10 @@
     }
     // Produção: atacantes e meias pelos gols/assistências; zagueiros e goleiros pela defesa
     const isDef = D.DEF_POS.includes(c.pos);
-    const prod = isDef ? (T.cs || 0) * 0.8 + T.goals * 1.5 + T.assists * 0.7 + (T.saves || 0) * 0.2 + (T.penSaved || 0) * 3 + (T.tackles || 0) * 0.15
-      : T.goals + T.assists * 0.7;
-    const score = Math.round(prod + titles * 12 + T.cont * 10 + T.ballon * 120 + (T.scorer + T.young + T.team) * 8 + c.peak * 2 + (T.wc || 0) * 150 + (T.cwc || 0) * 40 + (T.wcGoals || 0) * 3 + bonus.reduce((a, b) => a + b.v, 0));    const byClub = {};
+    // Pesos por posição para as quatro chegarem às notas altas com a mesma dificuldade
+    const prod = isDef ? (T.cs || 0) * 0.9 + T.goals * 1.5 + T.assists * 0.7 + (T.saves || 0) * 0.2 + (T.penSaved || 0) * 3 + (T.tackles || 0) * 0.3
+      : c.pos === 'MEI' ? T.goals * 1.1 + T.assists * 1.0 : T.goals * 0.62 + T.assists * 0.5;
+    const score = Math.round(prod + titles * 12 + T.cont * 10 + T.ballon * 100 + (T.scorer + T.young + T.team) * 8 + c.peak * 2 + (T.wc || 0) * 150 + (T.cwc || 0) * 40 + (T.wcGoals || 0) * 3 + bonus.reduce((a, b) => a + b.v, 0));    const byClub = {};
     c.spells = c.spells.filter(s => s.seasons);
     c.spells.forEach(s => {
       byClub[s.club] = byClub[s.club] || { seasons: 0, goals: 0 };
@@ -44,7 +45,7 @@
     else if (c.spells.filter(s => D.CLUB_BY_ID[s.club].tier >= 4).reduce((n, s) => n + s.seasons, 0) >= 6) verdict = 'Estrela na Europa';
     else if ((c.trophies['Brasileirão'] || { n: 0 }).n >= 2) verdict = 'Rei do Brasileirão';
     else verdict = 'Carreira sólida';
-    const grade = score >= 1620 ? 'S' : score >= 1100 ? 'A' : score >= 740 ? 'B' : score >= 450 ? 'C' : 'D';
+    const grade = score >= 1800 ? 'S' : score >= 1150 ? 'A' : score >= 760 ? 'B' : score >= 460 ? 'C' : 'D';
     const mainClub = idol ? idol[0] : c.club;
     return { score, verdict, grade, titles, nClubs, bonus, mainClub };
   };

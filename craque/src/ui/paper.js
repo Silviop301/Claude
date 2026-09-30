@@ -197,7 +197,7 @@
       wrap(o.head, W - 2 * M).forEach(l => { y += 84 * k; x.fillText(l, M, y); });
       y += 34 * k;
       // Foto (esquerda) e texto (direita)
-      const PW = 400, top = y;
+      const PW = Math.round(400 * Math.min(1.3, Math.max(1, k))), top = y;
       x.fillStyle = '#DDD4BC'; x.fillRect(M, y, PW, 0); // (o fundo da legenda é desenhado depois de medir)
       const ph = PW - 24, phH = Math.round(ph * 400 / 416);
       font(700, 28, SERIF, true);
@@ -225,7 +225,8 @@
     };
     // Diminui tudo um pouco se não couber na folha
     // Letra grande para encher a folha; diminui até caber
-    let k = 1.45, r = draw(k);
+    // Maior tamanho que ainda cabe (notícia curta ganha letra e foto maiores, sem sobrar papel em branco)
+    let k = 2.1, r = draw(k);
     while (r.y > H - M && k > 0.6) { k -= 0.05; r = draw(k); }
     return r.cv;
   }

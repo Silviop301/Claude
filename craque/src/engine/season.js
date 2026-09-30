@@ -268,6 +268,7 @@
     const ovr1 = S.ovr(c);
     if (ovr1 >= c.peak || !c.peakAttrs) c.peakAttrs = S.eff(c);
     c.peak = Math.max(c.peak, ovr1, o);
+    if (c.age + 1 >= 40 && ovr1 >= 70) c.eterno = true; // conquista "Eterno" (a idade sobe no fim da temporada)
     // Cartas especiais da temporada (a foto é com a nota já atualizada)
     const yr = S.YEAR0 + c.season;
     const cards = [];

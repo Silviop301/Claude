@@ -13,11 +13,13 @@
       (saved && saved.c ? '<button class="btn" id="b-cont">Continuar carreira de ' + esc(saved.c.name) + '</button>' : '') +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
       U.dailyCard() +
-      '<button class="btn ghost" id="b-rank">🏆 Ranking</button>' +
-      '<button class="btn ghost" id="b-col">📚 Coleção <b>' + U.collectionCount() + '</b></button>' +
-      U.cloudLine() +
-      '<button class="btn ghost" id="b-ach">🏅 Conquistas <b>' + U.achCount() + '/' + S.ACHIEVEMENTS.length + '</b></button>' +
-      '<button class="btn ghost small-btn" id="b-sound"></button>' +
+      // Atalhos em grade 2×2: mesmo tamanho, ícone, nome e um número
+      '<div class="home-grid">' +
+      '<button class="hg" id="b-rank"><i>🏆</i><b>Ranking</b><small>hoje · semana · geral</small></button>' +
+      '<button class="hg" id="b-col"><i>📚</i><b>Coleção</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carreira' : ' carreiras') + '</small></button>' +
+      '<button class="hg" id="b-ach"><i>🏅</i><b>Conquistas</b><small>' + U.achCount() + ' de ' + S.ACHIEVEMENTS.length + '</small></button>' +
+      U.cloudLine() + '</div>' +
+      '<button class="link-btn home-snd" id="b-sound"></button>' +
       (hall.length ? '<div class="eyebrow" style="margin-top:8px">Hall da Fama</div><div class="hall">' +
         hall.map(h => '<div><b>' + h.grade + '</b><span>' + esc(h.name) + ' · ' + esc(h.verdict) + '<br><small>' + (h.pos === 'GOL' ? h.cs + ' sem sofrer gol · ' + h.penSaved + ' pên. def. · ' : h.pos === 'ZAG' ? h.goals + ' gols · ' + h.cs + ' sem sofrer gol · ' : h.goals + ' gols · ' + h.assists + ' assist. · ') + h.titles + ' taças' + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '') + '</small></span><span class="muted">' + h.score + '</span></div>').join('') + '</div>' : '')
     );

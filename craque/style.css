@@ -248,7 +248,9 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .chip.syn { background: var(--gold); color: var(--ink); font-weight: 700; }
 
 /* temporada */
-.season-head { display: flex; justify-content: space-between; align-items: end; gap: 8px; }
+/* Topo da temporada: o papel no time (tag) vai embaixo do nome do clube, sem espremer o título */
+.season-head { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.season-head > div { width: 100%; }
 .counters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .counter { background: var(--paper); color: var(--ink); border-radius: 12px; padding: 8px 4px; text-align: center; }
 .counter b { display: block; font: 800 32px/1 var(--display); font-variant-numeric: tabular-nums; }
@@ -849,7 +851,7 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .rk-nick { margin: 8px 0 12px; }
 .rk-nick b { display: block; font-size: 16px; }
 .rk-row { display: flex; gap: 8px; margin-top: 6px; }
-.rk-row input { flex: 1; min-width: 0; font-size: 16px; padding: 10px 12px; border-radius: 10px; border: 2px solid #CFDAD3; }
+.rk-row input { flex: 1; min-width: 0; font-size: 16px; padding: 10px 12px; border-radius: 10px; border: 2px solid #CFDAD3; background: #fff; color: var(--ink); }
 .rk-row .btn { width: auto; margin: 0; padding: 10px 16px; }
 .rk-msg { color: #B3261E; font-weight: 700; margin: 6px 0 0; }
 .rk-edit { display: block; margin: 12px auto 0; color: #DDEBE2; }
@@ -1030,3 +1032,13 @@ details.more .hl { background: rgba(255, 255, 255, 0.08); border-radius: 10px; p
 .paper3d .np-dim { position: absolute; inset: 0; background: rgba(4, 10, 7, .8); opacity: 0; }
 .paper3d .np-cv { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; display: block; }
 .paper3d .np-hint { position: absolute; left: 0; right: 0; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); margin: 0; text-align: center; color: #E9DFC9; opacity: 0; transition: opacity .6s; font: 600 14px var(--body); letter-spacing: .04em; pointer-events: none; z-index: 2; }
+
+/* Tela inicial: atalhos em grade */
+.home-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.hg { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; text-align: left;
+  padding: 12px 12px; border: 0; border-radius: 14px; background: rgba(255, 255, 255, .07); box-shadow: inset 0 0 0 1.5px var(--line); color: var(--paper); min-height: 64px; }
+.hg:active { transform: translateY(1px); }
+.hg i { font-style: normal; font-size: 24px; grid-row: span 2; }
+.hg b { font: 800 18px/1.1 var(--display); letter-spacing: .02em; }
+.hg small { font-size: 12.5px; color: #B9CDBF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.home-snd { align-self: center; font-size: 14px; padding: 2px 0; }

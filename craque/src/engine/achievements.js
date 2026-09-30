@@ -42,7 +42,7 @@
     { id: 'falta', icon: '🎯', name: 'Especialista em falta', desc: 'Marque 6 gols de falta em lances decisivos', test: c => (c.kicks || {}).fkOk >= 6 },
     { id: 'notaS', icon: '⭐', name: 'Nota S', desc: 'Termine uma carreira com nota S', test: (c, f) => f.grade === 'S' },
     { id: 'auge', icon: '🎬', name: 'Parou no auge', desc: 'Anuncie a despedida e faça boa temporada', test: (c, f) => f.bonus.some(b => b.txt.startsWith('Parou no auge')) },
-    { id: 'eterno', icon: '🧓', name: 'Eterno', desc: 'Jogue até os 38 anos', test: c => c.age >= 38 },
+    { id: 'eterno', icon: '🧓', name: 'Eterno', desc: 'Chegue aos 40 anos com nota 70 ou mais', test: c => !!c.eterno },
     { id: 'rico', icon: '💰', name: 'Magnata', desc: 'Termine com R$ 100 mi de patrimônio', test: c => c.money >= 1e8 },
   ];
 

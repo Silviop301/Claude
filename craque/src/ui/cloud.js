@@ -74,7 +74,7 @@
   // Linha na tela inicial
   function homeLine() {
     const a = acc();
-    return '<button class="btn ghost small-btn cloud-line" id="b-cloud">' + (a ? '☁️ ' + esc(a.user) + ' · <span id="cloud-st">' + stTxt() + '</span>' : '☁️ Entrar para salvar na nuvem') + '</button>';
+    return '<button class="hg" id="b-cloud"><i>☁️</i><b>' + (a ? esc(a.user) : 'Conta') + '</b><small' + (a ? ' id="cloud-st">' + stTxt() : '>salvar na nuvem') + '</small></button>';
   }
   const stTxt = () => ({ syncing: 'salvando…', ok: 'salvo na nuvem', offline: 'sem conexão (salva depois)', idle: 'salvo na nuvem' })[state];
   function paint() { const el = $('cloud-st'); if (el) el.textContent = stTxt(); }
