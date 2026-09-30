@@ -1284,3 +1284,11 @@ h2 { font: var(--t-h1); letter-spacing: .01em; }
 .off-tools .tool small { font: 500 12px var(--body); }
 .deal thead th { font: var(--t-label); letter-spacing: .06em; }
 .lg-row em { font-weight: 700; }
+
+/* ===== Escala de texto (A6: evento e resultado) ===== */
+.btn { font-weight: 700; }
+.event-card p { font: var(--t-body); }
+.ev-res .er-txt { font: 600 18px/1.35 var(--body); }
+.mom-min { font: 700 14px var(--display); }
+.mom-ctx { font: 600 14px/1.35 var(--body); }
+.mom-res .mr-txt { font: 600 16px/1.4 var(--body); }
