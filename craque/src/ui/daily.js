@@ -28,7 +28,7 @@
   function dailyCard() {
     const key = todayKey(), sp = dailySpec(key), best = (load(KEY) || {})[key];
     const flag = (D.COUNTRIES.find(x => x.id === sp.country) || {}).flag || '';
-    return '<button class="daily" id="b-daily"><span class="dl-top">' + U.ICON.calendar + ' Carreira do dia · ' + shortDate(key) + '</span>' +
+    return '<button class="daily" id="b-daily"><span class="dl-seal">' + U.ICON['calendar-days'] + '</span><span class="dl-top">Carreira do dia · ' + shortDate(key) + '</span>' +
       '<b>' + esc(sp.name) + ' <span>' + flag + ' ' + (sp.pos === 'ATA' ? 'Atacante' : 'Meia') + ' · ' + sp.number + '</span></b>' +
       '<span class="dl-sub">' + (best ? 'Seu melhor hoje: nota ' + best.grade + ' · ' + best.score + ' pts' : 'Desafio de hoje: todos jogam com ele. Quem vai mais longe?') + '</span></button>';
   }
@@ -52,7 +52,7 @@
         } catch (e) { /* cancelado */ }
       };
     }, 0);
-    return '<div class="daily-res"><span class="dl-top">' + U.ICON.calendar + ' Carreira do dia · ' + shortDate(c.daily) + '</span>' +
+    return '<div class="daily-res"><span class="dl-top">' + U.ICON['calendar-days'] + ' Carreira do dia · ' + shortDate(c.daily) + '</span>' +
       '<b>' + (best ? (prev ? 'Novo melhor do dia!' : 'Resultado do dia registrado') : 'Seu melhor hoje continua: ' + prev.score + ' pts') + '</b>' +
       '<button class="btn" id="b-daily-share">Compartilhar resultado do dia</button></div>';
   }

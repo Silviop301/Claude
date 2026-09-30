@@ -140,6 +140,11 @@
     spark: svgI('M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6z M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z'),
     sound: svgI('M4 9.5v5h3.5l5 4V5.5l-5 4z M16 9a4 4 0 0 1 0 6 M18.5 6.5a7.5 7.5 0 0 1 0 11'),
     vibe: svgI('M8 3.5h8v17H8z M4.5 8v8 M19.5 8v8 M11 17.5h2'),
+    // Lucide (MIT, lucide.dev): paths copiados aqui para o jogo funcionar offline
+    'chevron-right': svgI('m9 18 6-6-6-6'),
+    'calendar-days': svgI('M8 2v3 M16 2v3 M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M3 9h18 M8 13h.01 M12 13h.01 M16 13h.01 M8 17h.01 M12 17h.01 M16 17h.01'),
+    'x': svgI('M18 6 6 18 m6 6 12 12'),
+    'info': svgI('M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0 M12 16v-4 M12 8h.01'),
   };
   const HOUSE = '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9.5h4.5V14h3v5.5H18V10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>';
   // Janela de confirmação do próprio jogo (no lugar do confirm() do navegador)
