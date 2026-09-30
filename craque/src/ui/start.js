@@ -10,14 +10,17 @@
     render(
       '<div class="hero"><div class="ball3d" id="ball3d" aria-hidden="true"></div><div class="eyebrow">Carreira de futebol</div><h1>CLIMBIX</h1></div>' +
       '<p class="lead">Crie um garoto de 16 anos, escolha propostas, monte o estilo dele e descubra se ele vira lenda.</p>' +
-      (saved && saved.c ? '<button class="btn" id="b-cont">Continuar carreira de ' + esc(saved.c.name) + '</button>' : '') +
+      // Carreira em andamento: a carta do jogador no lugar de um botão de texto
+      (saved && saved.c ? (() => { const sc = saved.c, o = S.ovr(sc), t = tierCls(o), cl = club(sc.club);
+        return '<button class="cont-card" id="b-cont"><span class="scard metal ' + t + '"><span class="sc-tier">' + TIER_NAME[t] + '</span><b>' + o + '</b><span class="sc-pos">' + sc.pos + '</span></span>' +
+          '<span class="cc-info"><small>Continuar carreira</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : '') + sc.age + ' anos</span></span><span class="cc-go">›</span></button>'; })() : '') +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
       U.dailyCard() +
       // Atalhos em grade 2×2: mesmo tamanho, ícone, nome e um número
       '<div class="home-grid">' +
-      '<button class="hg" id="b-rank"><i>🏆</i><b>Ranking</b><small>hoje · semana · geral</small></button>' +
-      '<button class="hg" id="b-col"><i>📚</i><b>Coleção</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carreira' : ' carreiras') + '</small></button>' +
-      '<button class="hg" id="b-ach"><i>🏅</i><b>Conquistas</b><small>' + U.achCount() + ' de ' + S.ACHIEVEMENTS.length + '</small></button>' +
+      '<button class="hg" id="b-rank"><i>' + U.ICON.trophy + '</i><b>Ranking</b><small>hoje · semana · geral</small></button>' +
+      '<button class="hg" id="b-col"><i>' + U.ICON.cards + '</i><b>Coleção</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carreira' : ' carreiras') + '</small></button>' +
+      '<button class="hg" id="b-ach"><i>' + U.ICON.medal + '</i><b>Conquistas</b><small>' + U.achCount() + ' de ' + S.ACHIEVEMENTS.length + '</small></button>' +
       U.cloudLine() + '</div>' +
       '<button class="link-btn home-snd" id="b-sound"></button>' +
       (hall.length ? '<div class="eyebrow" style="margin-top:8px">Hall da Fama</div><div class="hall">' +
@@ -38,8 +41,10 @@
     $('b-cloud').onclick = () => U.cloud('login');
     $('b-daily').onclick = () => { if (!saved || !saved.c) return U.dailyStart(); U.ask('Começar a carreira do dia?', 'A carreira em andamento será substituída.', 'Começar', U.dailyStart); };
     const snd = $('b-sound');
-    if (snd) { snd.textContent = '⚙️ Configurações'; snd.onclick = U.settings; }
-    if (window.CRAQUE_BALL && U.cfg.fx3d) window.CRAQUE_BALL.mount($('ball3d'));
+    if (snd) { snd.innerHTML = U.ICON.gear + ' Configurações'; snd.onclick = U.settings; }
+    // A bola 3D espera o módulo 3D terminar de carregar (na primeira visita ele chega depois da tela)
+    const mountBall = n => { const el = $('ball3d'); if (!el || !U.cfg.fx3d) return; if (window.CRAQUE_BALL) window.CRAQUE_BALL.mount(el); else if (n > 0) setTimeout(() => mountBall(n - 1), 250); };
+    mountBall(24);
   }
 
   function resume(st) {

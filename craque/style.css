@@ -1070,3 +1070,91 @@ details.more .hl { background: rgba(255, 255, 255, 0.08); border-radius: 10px; p
 .cfg-seg button { font-size: 15px; padding: 9px 4px; }
 .cfg-note { margin: 0; color: #93AD9D; font-size: 12px; }
 .cfg-wrap.shown, .cfg-wrap.shown .cfg { animation: none; }
+
+/* ===== Acabamento visual (paleta, contraste, hierarquia) ===== */
+:root { --label: #8FD6AE; --text-2: #D3E4D9; --amber-ink: #9A6A00; }
+/* Amarelo só para a ação principal e o que está selecionado; rótulos em verde-claro */
+.eyebrow { color: var(--label); font-weight: 700; font-size: 12.5px; letter-spacing: .16em; }
+.eyebrow.small { color: #C9DCCF; }
+.link-btn { color: #EAF3EE; text-decoration-color: rgba(234, 243, 238, .5); text-underline-offset: 3px; }
+.stars { color: var(--amber-ink); }
+/* Textos secundários mais legíveis sobre o verde */
+.lead { color: #E1EEE5; }
+.muted { color: #C3D6CA; }
+.skip-hint { color: #C9DCCF; font-size: 13px; }
+.hg small { color: #CFE0D5; }
+/* Hierarquia: título de tela maior, rótulos menores */
+h2 { font-size: 34px; line-height: 1.02; }
+.field label { font-weight: 600; color: #C9DCCF; }
+/* Carreira do dia dentro da paleta (verde e creme, detalhe dourado) */
+.daily, .daily-res { background: linear-gradient(135deg, #1D6B45, #0E4630); box-shadow: inset 0 0 0 1.5px rgba(242, 194, 48, .45), 0 3px 0 rgba(0, 0, 0, .35); }
+.daily .dl-top, .daily-res .dl-top { color: var(--label); }
+.daily b span, .daily .dl-sub { color: #E1EEE5; }
+
+/* Barra do topo: nome curto em cada medidor, barra mais grossa, clube mais visível */
+.bar-sub { font-size: 14px; color: #E1EEE5; font-weight: 600; }
+.rel .m { flex-direction: column; align-items: stretch; gap: 3px; }
+.rel .ml { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #D3E4D9; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.rel .ml small { font-size: 10.5px; }
+.rel .ml .ico { width: 14px; height: 14px; flex: none; }
+.rel .mb { height: 7px; background: rgba(255, 255, 255, .2); }
+.rel .mb i { background: #C3D6CA; }
+.snd-mini .ico { width: 19px; height: 19px; }
+.ico { display: block; }
+.hg i .ico { width: 26px; height: 26px; color: var(--label); }
+
+/* Tela inicial: carreira em andamento como carta */
+.cont-card { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; text-align: left; width: 100%; border: 0; border-radius: 16px; padding: 12px 14px;
+  background: var(--gold); color: var(--ink); box-shadow: 0 3px 0 rgba(0, 0, 0, .4); font: inherit; }
+.cont-card:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, .4); }
+.cont-card .scard { width: 62px; height: 78px; border-radius: 11px; }
+.cont-card .scard b { font-size: 32px; }
+.cont-card .cc-info { display: flex; flex-direction: column; min-width: 0; }
+.cont-card .cc-info small { font: 700 12px var(--display); letter-spacing: .12em; text-transform: uppercase; opacity: .75; }
+.cont-card .cc-info b { font: 800 26px/1.05 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cont-card .cc-info span { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 5px; opacity: .85; }
+.cont-card .cc-go { font: 800 34px var(--display); opacity: .7; }
+
+/* Propostas: papel no time e força do time em destaque */
+.of-key { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; margin: 2px 0; }
+.of-role { font: 800 17px var(--display); letter-spacing: .04em; text-transform: uppercase; padding: 6px 10px; border-radius: 10px; background: #EEF2EF; color: var(--ink); }
+.of-role.green { background: #CDEFD9; color: #0E5A30; } .of-role.blue { background: #D6E4FA; color: #1D4C9E; } .of-role.red { background: #F8D3D6; color: #8E1B24; }
+.of-str { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 8px; }
+.of-str small { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.of-str b { font: 800 24px/1 var(--display); color: var(--ink); }
+.of-str i { grid-column: 1 / -1; height: 6px; border-radius: 4px; background: #E3E6E1; overflow: hidden; margin-top: 3px; }
+.of-str em { display: block; height: 100%; background: linear-gradient(90deg, #7FB894, #1F7A48); border-radius: 4px; }
+.of-kind { font-weight: 800; }
+.of-kind.blue { color: #1D4C9E; } .of-kind.green { color: #0E5A30; } .of-kind.gold { color: #8A6200; } .of-kind.red { color: #8E1B24; }
+
+/* Telas curtas no meio da tela */
+#screen.center { justify-content: center; min-height: calc(100svh - var(--bar-h, 0px) - env(safe-area-inset-top, 0px) - 90px); }
+.ev-res { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 22px 18px; animation: mc-pop .45s ease; }
+.ev-res .er-ic { font-size: 54px; line-height: 1; }
+.ev-res .eyebrow { color: var(--muted); }
+.ev-res .er-txt { margin: 0; font: 700 20px/1.3 var(--body); }
+.ev-res.ok .er-txt { color: #0E5A30; } .ev-res.ko .er-txt { color: #8E1B24; }
+.mom-res .mr-big { font-size: 58px; animation: mr-pop .7s cubic-bezier(.2, 1.6, .4, 1); }
+.mom-res.ok .mr-big { text-shadow: 0 0 24px rgba(34, 164, 93, .35); }
+.mom-res .mom-board b { font-size: 44px; }
+@keyframes mr-pop { 0% { transform: scale(.3); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+
+/* No computador: o jogo numa moldura, com estádio à noite em volta */
+@media (min-width: 760px) {
+  body { background:
+      radial-gradient(60% 45% at 12% 0%, rgba(255, 244, 200, .10), transparent 70%),
+      radial-gradient(60% 45% at 88% 0%, rgba(255, 244, 200, .10), transparent 70%),
+      radial-gradient(90% 70% at 50% 100%, #145235, #0A2A1C 70%) fixed; }
+  #app { background: var(--pitch); background-image: repeating-linear-gradient(0deg, transparent 0 56px, rgba(255, 255, 255, 0.025) 56px 112px);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .06), 0 30px 80px rgba(0, 0, 0, .55); border-radius: 0 0 22px 22px; }
+}
+
+/* Ícones próprios em linha com o texto; propostas sem quebra no rótulo */
+.home-snd { display: inline-flex; align-items: center; gap: 6px; }
+.home-snd .ico, .off-tools .tool .ico, .dl-top .ico { width: 16px; height: 16px; vertical-align: -3px; }
+.cfg-t i { color: var(--label); display: grid; place-items: center; width: 26px; }
+.cfg-t i .ico { width: 22px; height: 22px; }
+.cfg-head b { display: inline-flex; align-items: center; gap: 8px; }
+.of-role { font-size: 15px; white-space: nowrap; }
+.of-str small { white-space: nowrap; font-size: 11px; }
+.home-snd .ico, .off-tools .tool .ico, .dl-top .ico { display: inline-block; margin-right: 4px; }

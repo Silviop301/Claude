@@ -6,7 +6,7 @@
   // Salário traduzido em investimentos por temporada
   function buysTag(wage) {
     const n = S.buysWith(G.c, wage * 52);
-    return '<span class="tag' + (n >= 2 ? ' gold' : '') + '">' + (n ? '≈ ' + n + (n > 1 ? ' compras' : ' compra') + '/ano' : 'sem sobra p/ investir') + '</span>';
+    return '<span class="tag">' + (n ? '≈ ' + n + (n > 1 ? ' compras' : ' compra') + '/ano' : 'sem sobra p/ investir') + '</span>';
   }
   function offerCard(o, idx) {
     const cl = club(o.club), lg = league(o.club);
@@ -15,9 +15,11 @@
     const roleCls = o.share >= 0.78 ? 'green' : o.share >= 0.5 ? 'blue' : 'red';
     return '<button class="choice offer card" data-i="' + idx + '" style="display:flex">' +
       '<div class="top"><span class="club">' + crest(cl.id) + esc(cl.name) + '</span><span class="stars">' + stars(cl.tier) + '</span></div>' +
-      '<div class="lg">' + lg.flag + ' ' + lg.name + ' · força ' + cl.strength + '</div>' +
-      '<div class="facts">' + (kname ? '<span class="tag ' + kcls + '">' + kname + '</span>' : '') +
-      '<span class="tag ' + roleCls + '">' + o.role + '</span><span class="tag">R$ ' + money(o.wage) + '/sem</span>' + buysTag(o.wage) + '<span class="tag">' + o.years + (o.years > 1 ? ' anos' : ' ano') + '</span></div></button>';
+      '<div class="lg">' + lg.flag + ' ' + lg.name + (kname ? ' · <b class="of-kind ' + kcls + '">' + kname + '</b>' : '') + '</div>' +
+      // O dilema do jogo em destaque: quanto você vai jogar × quão forte é o time
+      '<div class="of-key"><span class="of-role ' + roleCls + '">' + o.role + '</span>' +
+      '<span class="of-str"><small>Força do time</small><b>' + cl.strength + '</b><i><em style="width:' + Math.max(8, Math.min(100, Math.round((cl.strength - 40) / 55 * 100))) + '%"></em></i></span></div>' +
+      '<div class="facts"><span class="tag">R$ ' + money(o.wage) + '/sem</span>' + buysTag(o.wage) + '<span class="tag">' + o.years + (o.years > 1 ? ' anos' : ' ano') + '</span></div></button>';
   }
 
   // Quadro "Hoje × Proposta": clube, força, papel, salário e contrato lado a lado
@@ -97,8 +99,8 @@
 
   // Linha discreta embaixo das propostas: novas propostas (1x) e pedir um país/liga ao empresário (1x)
   function tools(win, academy) {
-    return '<div class="off-tools"><button class="tool" id="b-reroll"' + (win.reroll ? ' disabled' : '') + '>🔄 Novas propostas<small>' + (win.reroll ? 'já usado' : '1 vez por janela') + '</small></button>' +
-      (academy ? '' : '<button class="tool" id="b-askl"' + (win.ask ? ' disabled' : '') + '>🌍 Pedir país ou liga<small>' + (win.ask ? 'já usado' : 'o empresário tenta') + '</small></button>') + '</div>' +
+    return '<div class="off-tools"><button class="tool" id="b-reroll"' + (win.reroll ? ' disabled' : '') + '>' + U.ICON.refresh + ' Novas propostas<small>' + (win.reroll ? 'já usado' : '1 vez por janela') + '</small></button>' +
+      (academy ? '' : '<button class="tool" id="b-askl"' + (win.ask ? ' disabled' : '') + '>' + U.ICON.globe + ' Pedir país ou liga<small>' + (win.ask ? 'já usado' : 'o empresário tenta') + '</small></button>') + '</div>' +
       (win.askMsg && !academy ? '<p class="ask-msg">' + esc(win.askMsg) + '</p>' : '');
   }
   function bindTools(academy, redraw) {

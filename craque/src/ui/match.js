@@ -31,9 +31,9 @@
       pendingEvent = null;
       bar();
       render(
-        '<div class="eyebrow">' + ev.title + '</div>' +
-        '<div class="result ' + (r.ok ? 'ok' : 'ko') + '">' + r.text + '</div>' +
-        '<button class="btn" id="b-next">Jogar a temporada</button>'
+        '<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + ev.icon + '</span><div class="eyebrow">' + ev.title + '</div>' +
+        '<p class="er-txt">' + r.text + '</p></div>' +
+        '<button class="btn" id="b-next">Jogar a temporada</button>', { center: true }
       );
       $('b-next').onclick = momentOrSeason;
     });
@@ -163,8 +163,9 @@
       '<div class="card mom-res ' + (ok ? 'ok' : 'ko') + '">' +
       (sc ? '<div class="mom-board">' + crest(G.c.club) + '<b>' + sc[0] + ' × ' + sc[1] + '</b>' + crest(m.vs) + '<span class="mom-min">' + (m.minute || 90) + "'</span></div>" : '') +
       '<div class="mr-big">' + big + '</div><p class="mr-txt">' + final + '</p></div>' +
-      '<button class="btn" id="b-next">Jogar a temporada</button>'
+      '<button class="btn" id="b-next">Jogar a temporada</button>', { center: true }
     );
+    if (ok) U.vibe([40, 60, 40]);
     $('b-next').onclick = U.season;
     // Final continental: edição extra do jornal
     const btn = $('b-next');

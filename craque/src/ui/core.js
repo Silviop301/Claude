@@ -22,7 +22,8 @@
   // Fama (0 a ~300): nível + barra; pesa em propostas, salário, seleção e Bola de Ouro
   // Medidor compacto da barra: ícone + estado (o nome completo fica no aria-label)
   // Medidor do topo: só o ícone e a barra; tocar mostra o nome e o nível
-  const barMeter = (ico, name, txt, v, cls) => '<span class="m" role="button" data-tip="' + ico + ' ' + name + ': ' + txt + '" aria-label="' + name + ': ' + txt + '"><span class="ml">' + ico + '</span><span class="mb"><i class="' + (cls || (v >= 62 ? 'hi' : v < 32 ? 'lo' : '')) + '" style="width:' + Math.round(v) + '%"></i></span></span>';
+  // Medidor do topo: ícone + nome curto e a barra; tocar mostra o nível
+  const barMeter = (ico, name, txt, v, cls) => '<span class="m" role="button" data-tip="' + name + ': ' + txt + '" aria-label="' + name + ': ' + txt + '"><span class="ml">' + ico + '<small>' + name + '</small></span><span class="mb"><i class="' + (cls || (v >= 62 ? 'hi' : v < 32 ? 'lo' : '')) + '" style="width:' + Math.round(v) + '%"></i></span></span>';
 
   function load(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } }
   function store(key, v) {
@@ -38,8 +39,10 @@
   const vibe = p => { if (cfg.vibe && navigator.vibrate) navigator.vibrate(p); };
   function save() { store(SAVE, G.c && !G.c.retired ? { c: G.c, step: G.step, at: Date.now() } : { c: null, at: Date.now() }); }
 
-  function render(html) {
+  function render(html, opts) {
     screen.innerHTML = html;
+    // Telas curtas (resultado de evento ou de lance) ficam no meio da tela, sem meia tela vazia embaixo
+    screen.classList.toggle('center', !!(opts && opts.center));
     screen.style.animation = 'none';
     void screen.offsetWidth;
     screen.style.animation = '';
@@ -85,9 +88,9 @@
     $('bar-name').innerHTML = '<span class="bn">' + esc(G.c.name) + '</span>';
     $('bar-sub').innerHTML = crest(cl.id, 'xs') + esc(cl.name);
     // Som fica no fim da linha dos medidores (libera espaço para nome, idade e clube)
-    $('bar-rel').innerHTML = barMeter('👔', 'Técnico', S.relLabel(G.c.rel.coach), G.c.rel.coach) + barMeter('📣', 'Torcida', S.relLabel(G.c.rel.fans), G.c.rel.fans) +
-      barMeter('⭐', 'Fama', S.fameLabel(G.c.fame), Math.min(100, Math.round(G.c.fame / 3)), 'fame') +
-      '<span class="bar-btns"><button class="snd-mini" id="b-snd" aria-label="Configurações">⚙️</button>' +
+    $('bar-rel').innerHTML = barMeter(ICON.coach, 'Técnico', S.relLabel(G.c.rel.coach), G.c.rel.coach) + barMeter(ICON.fans, 'Torcida', S.relLabel(G.c.rel.fans), G.c.rel.fans) +
+      barMeter(ICON.fame, 'Fama', S.fameLabel(G.c.fame), Math.min(100, Math.round(G.c.fame / 3)), 'fame') +
+      '<span class="bar-btns"><button class="snd-mini" id="b-snd" aria-label="Configurações">' + ICON.gear + '</button>' +
       '<button class="snd-mini home-btn" id="b-home" aria-label="Voltar ao início">' + HOUSE + '</button></span>';
     $('bar-rel').querySelectorAll('[data-tip]').forEach(m => m.onclick = e => { e.stopPropagation(); barTip(m); });
     // Voltar ao início: a carreira fica salva e continua de onde parou
@@ -117,6 +120,27 @@
   }
 
   // Ícone de casa (botão de voltar ao início)
+  // Ícones do jogo: mesmo traço (2px, cantos arredondados), em vez de emojis que mudam de aparelho para aparelho
+  const svgI = (d, fill) => '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" class="ico">' + (fill ? '<path d="' + d + '" fill="currentColor"/>' : '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>') + '</svg>';
+  const ICON = {
+    coach: svgI('M8 4h8v3H8z M6 5.5H5a1 1 0 0 0-1 1V20a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V6.5a1 1 0 0 0-1-1h-1 M8 12h8 M8 16h5'),
+    fans: svgI('M3 10v4h3l8 4.5V5.5L6 10H3z M17 9a4 4 0 0 1 0 6 M19.5 6.5a7.5 7.5 0 0 1 0 11'),
+    fame: svgI('M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.1l-5.7 3.2 1.2-6.4-4.7-4.4 6.4-.8z', true),
+    gear: svgI('M12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4z M19.4 13.5l1.6 1.2-1.8 3.1-1.9-.7a7.6 7.6 0 0 1-2 1.2l-.3 2h-3.6l-.3-2a7.6 7.6 0 0 1-2-1.2l-1.9.7-1.8-3.1 1.6-1.2a7.4 7.4 0 0 1 0-2.4L3.4 9.3l1.8-3.1 1.9.7a7.6 7.6 0 0 1 2-1.2l.3-2h3.6l.3 2a7.6 7.6 0 0 1 2 1.2l1.9-.7 1.8 3.1-1.6 1.2a7.4 7.4 0 0 1 0 2.4z'),
+    trophy: svgI('M7 4h10v5a5 5 0 0 1-10 0z M7 6H4.5a3 3 0 0 0 3 4 M17 6h2.5a3 3 0 0 1-3 4 M12 14v3.5 M8.5 20.5h7 M9.5 17.5h5'),
+    cards: svgI('M8 3.5h10a1.5 1.5 0 0 1 1.5 1.5v12 M5.5 7h9A1.5 1.5 0 0 1 16 8.5v11a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 4 19.5v-11A1.5 1.5 0 0 1 5.5 7z'),
+    medal: svgI('M8 3l4 7 4-7 M12 10.5a5 5 0 1 0 0 10 5 5 0 0 0 0-10z M12 13.3l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z'),
+    cloud: svgI('M7 19h10.5a4 4 0 0 0 .6-7.9A6 6 0 0 0 6.5 11.9 3.6 3.6 0 0 0 7 19z'),
+    calendar: svgI('M4.5 6h15v14h-15z M4.5 10h15 M8.5 3.5v4 M15.5 3.5v4'),
+    refresh: svgI('M19.5 12a7.5 7.5 0 1 1-2.2-5.3 M19.5 4v4.5H15'),
+    globe: svgI('M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z M3.5 12h17 M12 3.5c2.4 2.4 3.4 5.3 3.4 8.5s-1 6.1-3.4 8.5c-2.4-2.4-3.4-5.3-3.4-8.5s1-6.1 3.4-8.5z'),
+    paper: svgI('M4 5.5h13v13a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2z M17 9h3v9.5a2 2 0 0 1-4 0 M7.5 9h6 M7.5 12.5h6 M7.5 16h4'),
+    ball: svgI('M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z M12 8.3l3.3 2.4-1.3 3.9h-4l-1.3-3.9z M12 8.3V3.6 M15.3 10.7l4.4-1.5 M14 14.6l2.7 3.8 M10 14.6l-2.7 3.8 M8.7 10.7l-4.4-1.5'),
+    fast: svgI('M3.5 6.5l8 5.5-8 5.5z M12 6.5l8 5.5-8 5.5z', true),
+    spark: svgI('M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6z M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z'),
+    sound: svgI('M4 9.5v5h3.5l5 4V5.5l-5 4z M16 9a4 4 0 0 1 0 6 M18.5 6.5a7.5 7.5 0 0 1 0 11'),
+    vibe: svgI('M8 3.5h8v17H8z M4.5 8v8 M19.5 8v8 M11 17.5h2'),
+  };
   const HOUSE = '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9.5h4.5V14h3v5.5H18V10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>';
   // Janela de confirmação do próprio jogo (no lugar do confirm() do navegador)
   function ask(title, text, okLabel, onOk, cancelLabel) {
@@ -149,5 +173,5 @@
   const tierCls = o => (o >= 85 ? 'icone' : o >= 75 ? 'ouro' : o >= 65 ? 'prata' : 'bronze');
   const TIER_NAME = { bronze: 'Bronze', prata: 'Prata', ouro: 'Ouro', icone: 'Ícone' };
 
-  window.CRAQUE_UI = { cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar };
+  window.CRAQUE_UI = { ICON, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar };
 })();

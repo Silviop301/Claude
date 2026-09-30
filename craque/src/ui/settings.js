@@ -5,14 +5,14 @@
   const { esc } = U;
   const canVibe = typeof navigator !== 'undefined' && !!navigator.vibrate;
   const ROWS = () => [
-    { k: 'papers', ic: '📰', t: 'Jornais', d: 'Capa do jornal no fim de cada temporada', opts: [['all', 'Todos'], ['special', 'Só especiais'], ['none', 'Nenhum']],
+    { k: 'papers', ic: 'paper', t: 'Jornais', d: 'Capa do jornal no fim de cada temporada', opts: [['all', 'Todos'], ['special', 'Só especiais'], ['none', 'Nenhum']],
       note: 'Especiais: transferências, finais, Copa e despedida' },
-    { k: 'cups', ic: '🌍', t: 'Copa e Mundial', d: 'Jogar jogo a jogo ou ver só o resultado', opts: [['play', 'Jogar'], ['sim', 'Simular direto']] },
-    { k: 'moments', ic: '⚽', t: 'Lances decisivos', d: 'Cobrar você mesmo ou deixar a sua carta decidir', opts: [['play', 'Jogar'], ['auto', 'Decidir sozinho']] },
-    { k: 'fast', ic: '⏩', t: 'Resumo da temporada', d: 'Números contando e telas de título', opts: [[false, 'Normal'], [true, 'Rápido']] },
-    { k: 'fx3d', ic: '✨', t: 'Efeitos 3D', d: 'Cartas, gol e jornal em 3D', opts: [[true, 'Ligados'], [false, 'Desligados']], note: 'Desligue se o celular esquentar ou travar' },
-    { k: 'sound', ic: '🔊', t: 'Som', opts: [[true, 'Ligado'], [false, 'Desligado']] },
-  ].concat(canVibe ? [{ k: 'vibe', ic: '📳', t: 'Vibração', opts: [[true, 'Ligada'], [false, 'Desligada']] }] : []);
+    { k: 'cups', ic: 'globe', t: 'Copa e Mundial', d: 'Jogar jogo a jogo ou ver só o resultado', opts: [['play', 'Jogar'], ['sim', 'Simular direto']] },
+    { k: 'moments', ic: 'ball', t: 'Lances decisivos', d: 'Cobrar você mesmo ou deixar a sua carta decidir', opts: [['play', 'Jogar'], ['auto', 'Decidir sozinho']] },
+    { k: 'fast', ic: 'fast', t: 'Resumo da temporada', d: 'Números contando e telas de título', opts: [[false, 'Normal'], [true, 'Rápido']] },
+    { k: 'fx3d', ic: 'spark', t: 'Efeitos 3D', d: 'Cartas, bola e jornal em 3D', opts: [[true, 'Ligados'], [false, 'Desligados']], note: 'Desligue se o celular esquentar ou travar' },
+    { k: 'sound', ic: 'sound', t: 'Som', opts: [[true, 'Ligado'], [false, 'Desligado']] },
+  ].concat(canVibe ? [{ k: 'vibe', ic: 'vibe', t: 'Vibração', opts: [[true, 'Ligada'], [false, 'Desligada']] }] : []);
   const value = k => (k === 'sound' ? !!(window.CRAQUE_SFX && window.CRAQUE_SFX.on) : window.CLIMBIX_CFG[k]);
 
   function settings() {
@@ -20,8 +20,8 @@
     const w = document.createElement('div');
     w.className = 'cfg-wrap';
     const paint = () => {
-      w.innerHTML = '<div class="cfg" role="dialog" aria-modal="true" aria-label="Configurações"><div class="cfg-head"><b>⚙️ Configurações</b><button class="cfg-x" aria-label="Fechar">✕</button></div>' +
-        ROWS().map(r => '<div class="cfg-row"><div class="cfg-t"><i>' + r.ic + '</i><div><b>' + esc(r.t) + '</b>' + (r.d ? '<small>' + esc(r.d) + '</small>' : '') + '</div></div>' +
+      w.innerHTML = '<div class="cfg" role="dialog" aria-modal="true" aria-label="Configurações"><div class="cfg-head"><b>' + U.ICON.gear + ' Configurações</b><button class="cfg-x" aria-label="Fechar">✕</button></div>' +
+        ROWS().map(r => '<div class="cfg-row"><div class="cfg-t"><i>' + U.ICON[r.ic] + '</i><div><b>' + esc(r.t) + '</b>' + (r.d ? '<small>' + esc(r.d) + '</small>' : '') + '</div></div>' +
           '<div class="seg cfg-seg">' + r.opts.map(([v, l]) => '<button data-k="' + r.k + '" data-v="' + v + '"' + (value(r.k) === v ? ' class="on"' : '') + '>' + esc(l) + '</button>').join('') + '</div>' +
           (r.note ? '<p class="cfg-note">' + esc(r.note) + '</p>' : '') + '</div>').join('') +
         '<button class="btn" id="cfg-ok">Pronto</button></div>';
