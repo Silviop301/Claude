@@ -159,6 +159,91 @@
     c.contract = offer.years || 2;
   };
 
+  // ---------- pouco espaço no elenco ----------
+  // Depois de uma temporada com poucos jogos (e ainda com contrato), o jogador pode reagir:
+  // empréstimo (jovem, clube grande), conversa com o técnico ou pedido para sair.
+  S.BENCH_GAMES = 15;
+  S.benchCase = function (c) {
+    const last = c.seasons[c.seasons.length - 1];
+    if (!last || !c.club || c.loan || S.windowOpen(c) || S.mustRetire(c)) return null;
+    if (last.club !== c.club || last.games >= S.BENCH_GAMES || (last.injury || 0) >= 40) return null;
+    if (c.squad && c.squad.key === c.season && c.squad.done) return null;
+    if (!c.squad || c.squad.key !== c.season) c.squad = { key: c.season, loans: S.loanOffers(c), talk: null, done: false };
+    return c.squad;
+  };
+  // Empréstimo: até os 27 anos, para um clube menor onde ele seria titular. O clube atual segue pagando o salário.
+  S.loanOffers = function (c) {
+    const cur = D.CLUB_BY_ID[c.club], o = S.ovr(c);
+    if (c.age > 27 || cur.tier < 2) return [];
+    const { r, save } = rngOf(c);
+    const pool = D.CLUBS.filter(x => x.id !== cur.id && x.tier < cur.tier && x.strength <= o - 1 && x.strength >= o - 10); // titular garantido
+    const out = [];
+    for (let i = 0; i < 2 && pool.length; i++) {
+      // Prefere clubes mais fortes dentro do que ainda dá titularidade
+      pool.sort((a, b) => b.strength - a.strength + (r() - 0.5) * 6);
+      const cl = pool.splice(0, 1)[0];
+      const of = offerFrom(c, cl, 'loan');
+      of.wage = c.wage; of.years = 1;
+      out.push(of);
+    }
+    save();
+    return out;
+  };
+  S.loanOut = function (c, offer) {
+    const parent = c.club;
+    c.fansBy[parent] = Math.max(c.fansBy[parent] || 0, c.rel.fans);
+    c.loan = { parent, season: c.season, rel: Object.assign({}, c.rel), captain: c.captain, since: c.clubSince };
+    const club = D.CLUB_BY_ID[offer.club];
+    const ad = Math.round(12 * S.tm(c, 'adaptavel'));
+    c.rel = { coach: REL0 + 5 + ad, fans: REL0 + ad };
+    c.captain = false;
+    c.club = club.id;
+    c.clubSince = c.age;
+    c.spells.push({ club: club.id, from: c.age, to: c.age, games: 0, goals: 0, assists: 0, titles: 0, loan: true });
+    if (c.squad) c.squad.done = true;
+  };
+  // Fim do empréstimo (chamado no fim da temporada): volta ao clube dono do contrato.
+  // Voltar bem avaliado melhora a relação com o técnico de lá.
+  S.endLoan = function (c, res) {
+    const L = c.loan;
+    if (!L || L.season !== res.season) return null;
+    c.fansBy[c.club] = Math.max(c.fansBy[c.club] || 0, c.rel.fans);
+    const from = c.club;
+    c.club = L.parent;
+    c.rel = L.rel;
+    c.captain = L.captain;
+    c.clubSince = L.since;
+    if (res.games >= 20 && res.rating >= 7) bump(c, 'coach', 10);
+    c.spells.push({ club: L.parent, from: c.age, to: c.age, games: 0, goals: 0, assists: 0, titles: 0, back: true }); // volta de empréstimo (não é "voltar para casa")
+    delete c.loan;
+    return { from, to: L.parent };
+  };
+  // Conversa com o técnico: a chance cresce com a nota da temporada, a relação e a distância para o nível do time
+  S.talkChance = function (c) {
+    const last = c.seasons[c.seasons.length - 1] || {}, club = D.CLUB_BY_ID[c.club];
+    const rating = last.games >= 5 ? last.rating : 6.6;
+    const v = 0.35 + (rating - 6.6) * 0.35 + (c.rel.coach - REL0) / 150 + (S.ovr(c) - club.strength + 5) / 25;
+    return clampN(v, 0.1, 0.85);
+  };
+  S.coachTalk = function (c) {
+    const sq = S.benchCase(c);
+    if (!sq || sq.talk) return sq && sq.talk;
+    const { r, save } = rngOf(c);
+    const ok = r() < S.talkChance(c);
+    save();
+    if (ok) { c.promise = 0.22; bump(c, 'coach', 3); }
+    else bump(c, 'coach', -10);
+    sq.talk = { ok, text: ok ? 'O técnico ouviu e prometeu mais minutos na próxima temporada. Agora é aproveitar.' : 'O técnico não gostou da cobrança. A relação esfriou e nada mudou.' };
+    sq.done = true;
+    return sq.talk;
+  };
+  S.askOut = function (c) {
+    c.wantsOut = true;
+    bump(c, 'fans', -5); bump(c, 'coach', -5);
+    if (c.squad) c.squad.done = true;
+  };
+  S.stayAndFight = function (c) { if (c.squad) c.squad.done = true; };
+
   // Janela abre quando o contrato acaba ou quando você pediu para sair.
   S.windowOpen = c => c.contract <= 0 || c.wantsOut;
   S.canRetire = c => c.age >= 33;

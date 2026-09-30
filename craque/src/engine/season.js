@@ -30,7 +30,8 @@
     if (injShare > 0) injName = r.pick(['lesão na coxa', 'entorse no tornozelo', 'lesão no joelho', 'problema muscular']);
 
     if (c.farewell) c.mod.min += 0.1; // temporada de despedida: o técnico faz questão
-    let share = clamp(role.share + c.mod.min + (c.rel.coach - REL0) / 250 + (c.age <= 17 ? -0.2 : 0), 0.05, 0.97);
+    // Promessa do técnico (conversa depois de uma temporada no banco) vale por uma temporada
+    let share = clamp(role.share + c.mod.min + (c.promise || 0) + (c.rel.coach - REL0) / 250 + (c.age <= 17 ? -0.2 : 0), 0.05, 0.97);
     share *= 1 - injShare;
     // Jogos possíveis: rodadas da liga (ida e volta, no mínimo 20 times) mais as copas
     const lgSize = Math.max(20, D.CLUBS.filter(x => x.league === club.league).length);
@@ -326,6 +327,7 @@
     sp.seasons = (sp.seasons || 0) + 1;
 
     const res = {
+      season: c.season, loan: c.loan ? c.loan.parent : null, promise: !!c.promise,
       age: c.age, club: club.id, role: role.name, games, goals, assists, rating, titles, awards,
       cleanSheets, saves, penSaved, tackles, pos: c.pos,
       ovr0, ovr1, fame0: Math.round(fame0), fame1: Math.round(c.fame), injury: injName ? Math.round(injShare * 100) : 0,
@@ -341,6 +343,8 @@
     c.age++;
     c.season++;
     c.contract = Math.max(0, c.contract - 1);
+    res.loanBack = S.endLoan(c, res);
+    delete c.promise;
     c.mod = { min: 0, form: 0, inj: 0, goal: 0, assist: 0 };
     c.lastEvent = null;
     save();
@@ -406,6 +410,11 @@
         'Reconhecimento merecido para ' + nick + ': ' + award.name + ' (' + stat + ')']));
       else h.push(v('star', ['Temporada de gala: ' + nick + ' faz ' + stat, nick + ' é o destaque ' + D.do(club) + ' com ' + stat, 'Ano para guardar: ' + stat + ' de ' + nick]));
     }
+    // Resposta ao banco: empréstimo e conversa com o técnico viram notícia
+    const parent = s.loan && D.CLUB_BY_ID[s.loan];
+    if (parent && s.games >= 15) h.push(v('loan', ['Emprestado ' + D.ao(club) + ', ' + nick + ' ganha minutos: ' + s.games + ' jogos', 'Longe ' + D.do(parent.name) + ', ' + nick + ' vira titular ' + D.no(club), 'Empréstimo deu certo: ' + nick + ' volta ' + D.ao(parent.name) + ' rodado']));
+    else if (parent) h.push(v('loanbad', ['Nem emprestado: ' + nick + ' segue sem espaço ' + D.no(club), 'Empréstimo frustrado: ' + nick + ' volta ' + D.ao(parent.name) + ' sem ritmo']));
+    if (s.promise && s.games >= 20) h.push(v('promise', ['A conversa resolveu: ' + nick + ' ganha espaço ' + D.no(club), 'Técnico cumpre a promessa e ' + nick + ' responde em campo', 'Do banco ao time: ' + nick + ' faz ' + s.games + ' jogos ' + D.no(club)]));
     if (s.ovr1 - s.ovr0 >= 5 && s.rating >= 6.5) h.push(v('evo', [nick + ' não para de evoluir', 'Ninguém segura: ' + nick + ' sobe de nível outra vez', 'Evolução assustadora de ' + nick]));
     // A nota geral caiu com a idade: se a temporada foi boa mesmo assim, o jornal fala da experiência, não do declínio
     if (s.ovr1 - s.ovr0 <= -4 && s.rating < 7.3) h.push(v('age', ['Idade pesa? ' + nick + ' já não é o mesmo', 'O tempo passa para ' + nick, nick + ' sente o peso dos anos']));
@@ -440,7 +449,7 @@
     // Grandes histórias
     if (cont && first && first.id !== cur.id && first.tier <= 2) opts.push({ w: 9, top: true, txt: 'Revelado ' + D.pelo(first.name) + ', ' + nick + ' conquista a ' + cont.name });
     if (ballons >= 2 && s.awards.some(a => a.id === 'ballon')) opts.push({ w: 9, top: true, txt: nick + ' é o melhor do mundo pela ' + ballons + 'ª vez' });
-    if (sp.seasons === 1 && c.spells.slice(0, -1).some(x => x.seasons && x.club === cur.id)) opts.push({ w: 8, txt: 'De volta para casa: ' + nick + ' reencontra ' + D.o(cur.name) });
+    if (sp.seasons === 1 && !sp.back && c.spells.slice(0, -1).some(x => x.seasons && x.club === cur.id)) opts.push({ w: 8, txt: 'De volta para casa: ' + nick + ' reencontra ' + D.o(cur.name) });
     if (s.titles.length && past.length && !past.some(x => x.titles.length))opts.push({ w: 7, txt: 'Enfim campeão: a primeira taça da carreira de ' + nick });
     else if (s.titles.length && lastTitle >= 3) opts.push({ w: 7, txt: 'Fim do jejum: ' + nick + ' volta a erguer uma taça depois de ' + (lastTitle + 1) + ' anos' });
     if (sp.seasons === 10) opts.push({ w: 7, txt: 'Uma década ' + D.no(cur.name) + ': ' + nick + ' vira símbolo do clube' });

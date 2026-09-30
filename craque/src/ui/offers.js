@@ -10,7 +10,7 @@
   }
   function offerCard(o, idx) {
     const cl = club(o.club), lg = league(o.club);
-    const kinds = { ask: ['Pedido seu', 'blue'], base: ['Base', ''], up: ['Clube maior', 'blue'], mid: ['Protagonista', 'green'], money: ['Proposta milionária', 'gold'], home: ['Volta pra casa', 'red'], stay: ['Renovar', ''] };
+    const kinds = { ask: ['Pedido seu', 'blue'], base: ['Base', ''], up: ['Clube maior', 'blue'], mid: ['Protagonista', 'green'], loan: ['Empréstimo · 1 ano', 'blue'], money: ['Proposta milionária', 'gold'], home: ['Volta pra casa', 'red'], stay: ['Renovar', ''] };
     const [kname, kcls] = kinds[o.kind] || ['', ''];
     const roleCls = o.share >= 0.78 ? 'green' : o.share >= 0.5 ? 'blue' : 'red';
     return '<button class="choice offer card" data-i="' + idx + '" style="display:flex">' +
@@ -131,5 +131,60 @@
     document.body.appendChild(w);
   }
 
-  Object.assign(U, { buysTag, offerCard, dealCompare, academy, windowOffers });
+  // ---------- pouco espaço no elenco ----------
+  // Depois de uma temporada com poucos jogos: empréstimo, conversa com o técnico, pedir para sair ou seguir brigando
+  function squad() {
+    const sq = S.benchCase(G.c);
+    if (!sq) return U.preseason();
+    G.step = 'squad';
+    save();
+    bar();
+    const last = G.c.seasons[G.c.seasons.length - 1], cl = club(G.c.club), role = S.role(G.c, cl);
+    const talk = Math.round(S.talkChance(G.c) * 100);
+    const opt = (id, ico, tone, t, d) => '<button class="choice" data-sq="' + id + '"><span class="ic">' + U.seal(ico, tone) + '</span><b>' + t + '</b><span class="d">' + d + '</span></button>';
+    render(
+      '<div class="eyebrow">Pouco espaço · ' + year() + '</div>' +
+      '<h2>' + last.games + (last.games === 1 ? ' jogo' : ' jogos') + ' ' + D.no(esc(cl.name)) + ' na última temporada</h2>' +
+      '<p class="lead">Hoje você é <b>' + role.name.toLowerCase() + '</b>: o técnico prefere outros. Contrato: ' + G.c.contract + (G.c.contract > 1 ? ' anos' : ' ano') + '. O que fazer?</p>' +
+      '<div class="choices">' +
+      (sq.loans.length ? opt('loan', 'repeat', 'blue', 'Pedir empréstimo', 'Uma temporada como titular num clube menor. Depois você volta, com o contrato valendo.') : '') +
+      opt('talk', 'handshake', 'green', 'Conversar com o técnico', 'Chance de ' + talk + '% de ganhar mais minutos na próxima temporada. Se não der, a relação esfria.') +
+      opt('out', 'door-open', 'red', 'Pedir para sair', 'A janela abre agora, com uma proposta a mais. Torcida e técnico não gostam.') +
+      opt('stay', 'shield', 'sand', 'Seguir brigando por espaço', 'Nada muda: treinar e esperar a chance.') + '</div>'
+    );
+    screen.querySelectorAll('[data-sq]').forEach(b => b.onclick = () => {
+      const k = b.dataset.sq;
+      if (k === 'loan') return loanPick();
+      if (!U.arm(b, '<b>Toque de novo para confirmar</b>')) return;
+      if (k === 'talk') {
+        const r = S.coachTalk(G.c);
+        save(); bar(); sfx(r.ok ? 'levelup' : 'miss');
+        render('<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.seal('handshake', r.ok ? 'green' : 'red', 'lg') + '</span><div class="eyebrow">Conversa com o técnico</div><p class="er-txt">' + r.text + '</p></div>' +
+          '<button class="btn" id="b-next">Pré-temporada</button>', { center: true });
+        $('b-next').onclick = U.preseason;
+      } else if (k === 'out') { S.askOut(G.c); save(); windowOffers(); }
+      else { S.stayAndFight(G.c); save(); U.preseason(); }
+    });
+  }
+  // Destinos do empréstimo: cartas de proposta (1 ano, salário pago pelo seu clube)
+  function loanPick() {
+    const sq = S.benchCase(G.c);
+    if (!sq) return U.preseason();
+    render(
+      '<button class="back-link" id="b-sq-back">‹ Voltar</button>' +
+      '<div class="eyebrow">Empréstimo · ' + year() + '</div><h2>Quem quer você por uma temporada</h2>' +
+      '<p class="lead">Seu clube segue pagando o salário. No fim da temporada você volta ' + D.ao(esc(club(G.c.club).name)) + '.</p>' +
+      '<div class="choices">' + sq.loans.map(offerCard).join('') + '</div>'
+    );
+    $('b-sq-back').onclick = squad;
+    screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
+      const o = sq.loans[+b.dataset.i];
+      if (!U.arm(b, '<b>Toque de novo para ir emprestado</b>')) return;
+      S.loanOut(G.c, o);
+      save(); bar(); sfx('whistle');
+      U.preseason();
+    });
+  }
+
+  Object.assign(U, { buysTag, offerCard, dealCompare, academy, windowOffers, squad });
 })();

@@ -55,6 +55,7 @@
     if (st === 'cwc') return U.cwcIntro();
     if (S.mustRetire(G.c)) return U.finale();
     if (st === 'offers') return S.windowOpen(G.c) ? U.windowOffers() : U.preseason();
+    if (st === 'squad') return U.squad();
     if (st === 'event') return U.eventScreen();
     if (st === 'invest') return U.invest();
     if (st === 'moment') return U.momentOrSeason();

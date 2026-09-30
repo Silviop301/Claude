@@ -210,6 +210,7 @@
     $('after').innerHTML =
       (tableTxt ? '<p class="table-line rv">' + tableTxt + '</p>' : '') +
       (moveTxt ? '<div class="move-line rv ' + res.move.dir + '">' + moveTxt + '</div>' : '') +
+      (res.loanBack ? '<p class="contract rv">Fim do empréstimo: você volta ' + D.ao(esc(club(res.loanBack.to).name)) + '.</p>' : '') +
       (res.titles.length ? '<div class="titles">' + res.titles.map(t => '<div class="title-won rv">' + trophy(titleType(t), 60, t.name) + '<span>Campeão<br><b>' + esc(t.name) + '</b></span></div>').join('') + '</div>' : '') +
       '<div class="awards">' + res.awards.map(a => '<div class="award rv' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : '🥇 ') + a.name + '</div>').join('') + '</div>' +
       '<div class="news rv"><div class="np">📰 Nos jornais</div><p>' + esc(res.headlines[0] || '') + '</p></div>' +
@@ -230,7 +231,8 @@
   // Para onde ir depois da temporada (e da Copa, se houver)
   function afterSeason() {
     if (S.mustRetire(G.c)) return U.finale();
-    return S.windowOpen(G.c) ? U.windowOffers() : U.preseason();
+    if (S.windowOpen(G.c)) return U.windowOffers();
+    return S.benchCase(G.c) ? U.squad() : U.preseason();
   }
 
   Object.assign(U, { celebrate, season, lede, showPaper, reveal, summary, afterSeason });

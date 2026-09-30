@@ -1348,3 +1348,5 @@ details.more > summary { font: 600 16px var(--body); }
 .sh-next { color: #7A5600; font-weight: 600; }
 details.more.score-how { background: #F2F4EE; }
 details.more.score-how > summary { color: var(--ink); }
+
+.tl-loan { font: var(--t-label); letter-spacing: .06em; text-transform: uppercase; color: #1D4C9E; margin-left: 4px; }
