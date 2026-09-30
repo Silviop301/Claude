@@ -154,9 +154,15 @@
     const defEnd = { cup: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.', title: ok ? 'O título é seu!' : 'O título escapou.',
       classico: ok ? 'O clássico é seu.' : 'A torcida lamenta.', acesso: ok ? 'O acesso é seu!' : 'O acesso escapou.', cont: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.' }[m.type];
     const final = defTxt !== null ? defTxt + defEnd : txt;
+    // Placar depois do lance e um título grande (gol, defesa, bote ou a lamentação)
+    const def = st === 'save' || st === 'tackle';
+    const sc = m.score ? [m.score[0] + (!def && ok ? 1 : 0), m.score[1] + (def && !ok ? 1 : 0)] : null;
+    const big = def ? (ok ? (st === 'save' ? 'DEFENDEU!' : 'ROUBOU!') : 'Gol deles…') : ok ? 'GOOOL!' : 'Não entrou…';
     render(
       '<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div>' +
-      '<div class="result ' + (ok ? 'ok' : 'ko') + '">' + final + '</div>' +
+      '<div class="card mom-res ' + (ok ? 'ok' : 'ko') + '">' +
+      (sc ? '<div class="mom-board">' + crest(G.c.club) + '<b>' + sc[0] + ' × ' + sc[1] + '</b>' + crest(m.vs) + '<span class="mom-min">' + (m.minute || 90) + "'</span></div>" : '') +
+      '<div class="mr-big">' + big + '</div><p class="mr-txt">' + final + '</p></div>' +
       '<button class="btn" id="b-next">Jogar a temporada</button>'
     );
     $('b-next').onclick = U.season;

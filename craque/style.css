@@ -1042,3 +1042,15 @@ details.more .hl { background: rgba(255, 255, 255, 0.08); border-radius: 10px; p
 .hg b { font: 800 18px/1.1 var(--display); letter-spacing: .02em; }
 .hg small { font-size: 12.5px; color: #B9CDBF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .home-snd { align-self: center; font-size: 14px; padding: 2px 0; }
+
+/* Minigame: a cena fica no meio da tela (mais perto do polegar), não colada no topo */
+#kick { display: flex; flex-direction: column; justify-content: center; gap: 10px;
+  min-height: calc(100svh - var(--bar-h, 0px) - env(safe-area-inset-top, 0px) - 110px); }
+
+/* Resultado do lance decisivo */
+.mom-res { text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center; padding: 18px 16px; animation: mc-pop .45s ease; }
+.mom-res .mom-board { justify-content: center; }
+.mom-res .mr-big { font: 800 44px/1 var(--display); letter-spacing: .02em; }
+.mom-res.ok .mr-big { color: var(--green); }
+.mom-res.ko .mr-big { color: #B3242F; }
+.mom-res .mr-txt { margin: 0; font-weight: 600; }
