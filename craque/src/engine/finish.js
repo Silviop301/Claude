@@ -3,6 +3,10 @@
   const D = root.CRAQUE_DATA || require('../data.js');
   const S = root.CRAQUE_SIM || require('./core.js');
   // ---------- fim de carreira ----------
+  // Pesos da pontuação final e faixas das notas (a tela de fim de carreira mostra a conta)
+  S.SCORE_W = { title: 12, cont: 35, cwc: 60, wc: 150, wcGoal: 3, ballon: 100, award: 8, peak: 2 };
+  S.GRADES = [['S', 1600], ['A', 1150], ['B', 850], ['C', 500], ['D', 0]];
+  S.gradeOf = score => S.GRADES.find(([, min]) => score >= min)[0];
   S.finish = function (c) {
     c.retired = true;
     const T = c.totals;
@@ -20,7 +24,24 @@
     // Pesos por posição para as quatro chegarem às notas altas com a mesma dificuldade
     const prod = isDef ? (T.cs || 0) * 0.9 + T.goals * 1.5 + T.assists * 0.7 + (T.saves || 0) * 0.2 + (T.penSaved || 0) * 3 + (T.tackles || 0) * 0.3
       : c.pos === 'MEI' ? T.goals * 1.1 + T.assists * 1.0 : T.goals * 0.62 + T.assists * 0.5;
-    const score = Math.round(prod + titles * 12 + T.cont * 10 + T.ballon * 100 + (T.scorer + T.young + T.team) * 8 + c.peak * 2 + (T.wc || 0) * 150 + (T.cwc || 0) * 40 + (T.wcGoals || 0) * 3 + bonus.reduce((a, b) => a + b.v, 0));    const byClub = {};
+    // Cada parcela da pontuação, para a tela explicar de onde veio a nota
+    const n = (x, w) => (x || 0) * w;
+    const prodTxt = isDef ? (T.cs || 0) + ' jogos sem sofrer gol' + (c.pos === 'GOL' ? ', ' + (T.penSaved || 0) + ' pênaltis defendidos' : ', ' + (T.tackles || 0) + ' desarmes') + ', ' + T.goals + ' gols'
+      : T.goals + ' gols e ' + T.assists + ' assistências';
+    const awards = (T.scorer || 0) + (T.young || 0) + (T.team || 0);
+    const parts = [
+      { k: 'prod', txt: 'Produção: ' + prodTxt, v: Math.round(prod) },
+      { k: 'titles', txt: titles + (titles === 1 ? ' título' : ' títulos') + ' × ' + S.SCORE_W.title, v: n(titles, S.SCORE_W.title) },
+      { k: 'cont', txt: 'Títulos continentais: ' + (T.cont || 0) + ' × ' + S.SCORE_W.cont + ' extra', v: n(T.cont, S.SCORE_W.cont) },
+      { k: 'cwc', txt: 'Mundial de Clubes: ' + (T.cwc || 0) + ' × ' + S.SCORE_W.cwc + ' extra', v: n(T.cwc, S.SCORE_W.cwc) },
+      { k: 'wc', txt: 'Copa do Mundo: ' + (T.wc || 0) + ' × ' + S.SCORE_W.wc, v: n(T.wc, S.SCORE_W.wc) },
+      { k: 'wcg', txt: 'Gols em Copas: ' + (T.wcGoals || 0) + ' × ' + S.SCORE_W.wcGoal, v: n(T.wcGoals, S.SCORE_W.wcGoal) },
+      { k: 'ballon', txt: 'Bola de Ouro: ' + (T.ballon || 0) + ' × ' + S.SCORE_W.ballon, v: n(T.ballon, S.SCORE_W.ballon) },
+      { k: 'awards', txt: 'Prêmios da liga (artilharia, revelação, seleção): ' + awards + ' × ' + S.SCORE_W.award, v: n(awards, S.SCORE_W.award) },
+      { k: 'peak', txt: 'Auge: nota geral ' + c.peak + ' × ' + S.SCORE_W.peak, v: n(c.peak, S.SCORE_W.peak) },
+    ].concat(bonus.map(b => ({ k: 'bonus', txt: b.txt, v: b.v }))).filter(p => p.v > 0);
+    const score = parts.reduce((a, p) => a + p.v, 0);
+    const byClub = {};
     c.spells = c.spells.filter(s => s.seasons);
     c.spells.forEach(s => {
       byClub[s.club] = byClub[s.club] || { seasons: 0, goals: 0 };
@@ -45,9 +66,9 @@
     else if (c.spells.filter(s => D.CLUB_BY_ID[s.club].tier >= 4).reduce((n, s) => n + s.seasons, 0) >= 6) verdict = 'Estrela na Europa';
     else if ((c.trophies['Brasileirão'] || { n: 0 }).n >= 2) verdict = 'Rei do Brasileirão';
     else verdict = 'Carreira sólida';
-    const grade = score >= 1800 ? 'S' : score >= 1150 ? 'A' : score >= 760 ? 'B' : score >= 460 ? 'C' : 'D';
+    const grade = S.gradeOf(score);
     const mainClub = idol ? idol[0] : c.club;
-    return { score, verdict, grade, titles, nClubs, bonus, mainClub };
+    return { score, verdict, grade, titles, nClubs, bonus, mainClub, parts };
   };
 
 

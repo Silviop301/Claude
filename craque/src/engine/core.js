@@ -107,6 +107,22 @@
     return { attrs, ovr: ovrOf(attrs, c.pos) };
   };
 
+  // Potencial (teto): começa perto para todos e é construído em campo até os 28 anos.
+  // Temporada com minutos e nota boa eleva o teto; temporada fraca na juventude derruba um pouco.
+  S.POT0 = r => Math.round(64 + 6 * r());
+  // A nota é comparada com a da posição (atacante costuma ter nota mais alta por causa dos gols)
+  const POT_ADJ = { ATA: -0.45, MEI: 0, ZAG: 0.1, GOL: 0 };
+  S.potDelta = function (c, games, rating) {
+    if (c.age > 28 || games < 15) return 0;
+    const x = rating + (POT_ADJ[c.pos] || 0);
+    // Quanto mais alto o teto, mais difícil subir ainda mais
+    const hard = c.pot >= 92 ? 2 : c.pot >= 85 ? 1 : 0;
+    const up = x >= 8.0 ? 4 : x >= 7.8 ? 3 : x >= 7.5 ? 2 : x >= 7.2 ? 1 : 0;
+    if (up) return Math.max(up >= 3 ? 1 : 0, up - hard);
+    if (c.age <= 25) return x < 6.5 ? -2 : x < 6.9 ? -1 : 0;
+    return 0;
+  };
+
   S.newCareer = function (opts, seed) {
     S.applyLeagues(null); // carreira nova: divisões originais
     const r = S.rng(seed || (Date.now() ^ 0x5EED));
@@ -123,7 +139,7 @@
       v: 2, seed: r.state(),
       name: opts.name, pos: opts.pos, foot: opts.foot, country: opts.country, number: opts.number || D.POS_NUM[opts.pos] || 10,
       age: 16, season: 0, attrs,
-      pot: Math.round(57 + 30 * Math.pow(r(), 1.6)), // potencial escondido; temporadas muito boas elevam o teto
+      pot: S.POT0(r), // teto escondido: começa numa faixa estreita e sobe (ou cai) com o que ele faz em campo
       traits: [], club: null, clubSince: 0, firstClub: null,
       fame: 0, money: 0, wage: 0,
       mod: { min: 0, form: 0, inj: 0, goal: 0, assist: 0 },
@@ -167,8 +183,11 @@
     const { r, save } = rngOf(c);
     const out = [];
     const full = c.traits.length >= S.MAX_SLOTS;
-    const upPool = c.traits.filter(id => lvOf(c, id) < S.MAX_LV);
-    const newPool = D.TRAITS.filter(t => !c.traits.includes(t.id) && D.traitFits(t, c.pos));
+    // Características com efeito até certa idade (Rato de Academia, até os 24) saem do sorteio quando já não rendem:
+    // nova só com pelo menos duas temporadas de efeito pela frente; evoluir só enquanto ainda vale.
+    const live = (id, seasons) => { const t = D.TRAIT_BY_ID[id]; return !t.until || c.age + seasons - 1 <= t.until; };
+    const upPool = c.traits.filter(id => lvOf(c, id) < S.MAX_LV && live(id, 1));
+    const newPool = D.TRAITS.filter(t => !c.traits.includes(t.id) && D.traitFits(t, c.pos) && live(t.id, 2));
     const pushUp = () => {
       const left = upPool.filter(id => !out.some(o => o.trait.id === id));
       if (!left.length) return false;

@@ -173,7 +173,7 @@
     { id: 'velocista', icon: '⚡', ico: 'zap', tone: 'green', name: 'Velocista',      pos: ['ATA', 'MEI', 'ZAG'], attr: { rit: 4 }, fx: () => '⚠️ Perde velocidade mais rápido depois dos 29' },
     { id: 'cabeceio',  icon: '🗣️', ico: 'chevrons-up', tone: 'green', name: 'Cabeceio',       pos: ['ATA', 'MEI'], attr: { fis: 2 }, fx: m => '+' + pc(5 * m) + ' gols (de cabeça)' },
     // Carreira (todas as posições)
-    { id: 'academia',  icon: '🏋️', ico: 'dumbbell', tone: 'blue', name: 'Rato de Academia', pos: ALL, attr: {}, fx: m => '+' + pc(45 * m) + ' de evolução até os 24 anos' },
+    { id: 'academia',  icon: '🏋️', ico: 'dumbbell', tone: 'blue', name: 'Rato de Academia', pos: ALL, until: 24, attr: {}, fx: m => '+' + pc(45 * m) + ' de evolução até os 24 anos' },
     { id: 'pro',       icon: '🧘', ico: 'heart-pulse', tone: 'blue', name: 'Profissional',   pos: ALL, attr: {}, fx: m => 'Envelhece ' + pc(25 * m) + ' mais devagar · −' + pc(15 * m) + ' lesões' },
     { id: 'estrela',   icon: '🌟', ico: 'star', tone: 'blue', name: 'Estrela',        pos: ALL, attr: {}, fx: m => '+' + pc(25 * m) + ' salário · +' + d1(0.06 * m) + ' na nota nos jogos grandes · ⚠️ Técnico −1 por temporada' },
     { id: 'lider',     icon: '©️', ico: 'crown', tone: 'blue', name: 'Líder',          pos: ALL, attr: {}, fx: m => 'Técnico +' + Math.round(4 * m) + ' por temporada (mais minutos) · capitão mais cedo' },

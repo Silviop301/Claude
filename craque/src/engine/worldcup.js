@@ -131,7 +131,7 @@
   // Fecha o placar: nota do jogo, pontos do grupo ou mata-mata
   function wcClose(c, game, r) {
     const run = c.wcRun;
-    run.g += game.g; run.a += game.a;
+    run.g += game.g; run.a += game.a; run.gp = (run.gp || 0) + 1;
     const res = game.gf > game.ga ? 0.35 : game.gf < game.ga ? -0.25 : 0;
     // Defensores: não sofrer gol vale muito na nota
     const def = S.defKick(c.pos) ? (game.ga === 0 ? 0.9 : game.ga === 1 ? 0.15 : -0.3) : 0;
@@ -213,6 +213,16 @@
     return ok;
   };
 
+  // Regra dos totais: todo jogo oficial conta (liga, copas, continental, Copa do Mundo e Mundial de Clubes).
+  // O Mundial entra também na passagem pelo clube; a seleção fica separada em natGames/natGoals/natAssists.
+  function addTotals(c, run, national) {
+    const T = c.totals, gp = run.gp || 0;
+    T.games = (T.games || 0) + gp; T.goals = (T.goals || 0) + run.g; T.assists = (T.assists || 0) + run.a;
+    if (national) { T.natGames = (T.natGames || 0) + gp; T.natGoals = (T.natGoals || 0) + run.g; T.natAssists = (T.natAssists || 0) + run.a; return; }
+    const sp = c.spells[c.spells.length - 1];
+    if (sp && sp.club === run.club) { sp.games += gp; sp.goals += run.g; sp.assists += run.a; }
+  }
+
   function wcEnd(c, reached) {
     const run = c.wcRun;
     run.out = !run.champion;
@@ -220,6 +230,7 @@
     if (run.kind === 'cwc') return cwcEnd(c, run, reached);
     c.totals.wcApps = (c.totals.wcApps || 0) + 1;
     c.totals.wcGoals = (c.totals.wcGoals || 0) + run.g;
+    addTotals(c, run, true);
     c.fame += run.g * 2 + (run.champion ? 60 : run.stage >= 5 ? 15 : 0);
     if (run.champion) {
       c.totals.wc = (c.totals.wc || 0) + 1;
@@ -312,6 +323,7 @@
     const T = c.totals;
     T.cwcApps = (T.cwcApps || 0) + 1;
     T.cwcGoals = (T.cwcGoals || 0) + run.g;
+    addTotals(c, run, false);
     c.fame += run.g * 1.5 + (run.champion ? 40 : run.stage >= 5 ? 10 : 0);
     if (run.champion) {
       T.cwc = (T.cwc || 0) + 1;

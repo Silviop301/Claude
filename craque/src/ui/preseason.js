@@ -138,13 +138,14 @@
     save();
     bar();
     const label = { new: 'NOVA', up: 'EVOLUIR' };
-    const done = S.buildDone(G.c);
+    // Sem nada útil para evoluir (tudo no máximo ou só o que já não rende nesta idade): segue sem escolher
+    const done = S.buildDone(G.c) || (!ch.length && !preCh.done && G.c.traits.length >= S.MAX_SLOTS);
     const hasInv = G.c.money >= S.investPrice(G.c);
     render(
       '<div class="eyebrow">Pré-temporada · ' + year() + (G.c.farewell ? ' · temporada de despedida' : '') + '</div>' +
       '<h2>Prepare a temporada</h2>' + wcHint() + miniCard() +
       (justAdded ? '<div class="prep-done">' + justAdded + '</div>' : '') +
-      (done && !justAdded ? '<div class="prep-sec">Características</div>' + traitsHtml() + '<p class="muted small">✅ Build completo: todas no nível máximo.</p>' : '') +
+      (done && !justAdded ? '<div class="prep-sec">Características</div>' + traitsHtml() + '<p class="muted small">' + (S.buildDone(G.c) ? '✅ Build completo: todas no nível máximo.' : 'Nada para evoluir nesta fase: o que falta já não rende na sua idade.') + '</p>' : '') +
       (ch.length ? '<div class="prep-sec">' + (G.c.traits.length >= S.MAX_SLOTS ? 'Evolua uma característica' : 'Escolha uma característica') + '</div>' +
         '<p class="muted small prep-note">' + (() => { const [a, b] = S.mainAttrs(G.c.pos); return 'Cada nível: +1 ' + D.label(G.c.pos, a) + ' (e +1 ' + D.label(G.c.pos, b) + ' a cada 2)'; })() +
           (G.c.traits.length < S.MAX_SLOTS ? ' · fica a carreira toda' : '') + '</p>' + traitsHtml() +

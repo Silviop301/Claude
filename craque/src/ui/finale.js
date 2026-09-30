@@ -13,6 +13,17 @@
 
   // Ordem da sala de troféus (as maiores primeiro)
   const ROOM = ['wc', 'ballon', 'cwc', 'ucl', 'lib', 'inter', 'league', 'cup'];
+  // De onde veio a nota: cada parcela, o total e quanto faltou para a próxima faixa
+  function scoreHow(f) {
+    if (!f.parts) return '';
+    const i = S.GRADES.findIndex(([g]) => g === f.grade), next = i > 0 ? S.GRADES[i - 1] : null;
+    return '<details class="more score-how"><summary>Como chegou a esta nota</summary>' +
+      '<ul class="sh-parts">' + f.parts.map(p => '<li><span>' + esc(p.txt) + '</span><b>+' + p.v + '</b></li>').join('') +
+      '<li class="tot"><span>Total</span><b>' + f.score + '</b></li></ul>' +
+      '<p class="sh-bands">' + S.GRADES.filter(([, min]) => min > 0).map(([g, min]) => g + ' a partir de ' + min).join(' · ') + '</p>' +
+      (next ? '<p class="sh-next">Faltaram ' + (next[1] - f.score) + ' pontos para a nota ' + next[0] + '.</p>' : '') + '</details>';
+  }
+
   function finale() {
     const f = S.finish(G.c);
     const ach = U.achRecord(G.c, f);
@@ -52,8 +63,8 @@
       '<div class="verdict">' + esc(f.verdict) + '</div>' +
       '<div class="stats"><div><b>' + T.games + '</b><span>Jogos</span></div>' + careerStats(G.c).map(([v, l]) => '<div><b>' + v + '</b><span>' + l + '</span></div>').join('') +
       '<div><b>' + f.titles + '</b><span>Títulos</span></div><div><b>' + T.ballon + '</b><span>Bolas de Ouro</span></div><div><b>' + f.nClubs + '</b><span>Clubes</span></div></div>' +
-      (T.wcApps ? '<p class="muted small patr">🌍 Copas do Mundo: ' + T.wcApps + (T.wcApps > 1 ? ' disputadas' : ' disputada') + ' · ' + (T.wc || 0) + (T.wc === 1 ? ' título' : ' títulos') + ' · ' + (T.wcGoals || 0) + ' gols</p>' : '') +
-      (T.cwcApps ? '<p class="muted small patr">🌐 Mundiais de Clubes: ' + T.cwcApps + (T.cwcApps > 1 ? ' disputados' : ' disputado') + ' · ' + (T.cwc || 0) + (T.cwc === 1 ? ' título' : ' títulos') + ' · ' + (T.cwcGoals || 0) + ' gols</p>' : '') +
+      (T.wcApps ? '<p class="muted small patr">🌍 Copas do Mundo: ' + T.wcApps + (T.wcApps > 1 ? ' disputadas' : ' disputada') + ' · ' + (T.wc || 0) + (T.wc === 1 ? ' título' : ' títulos') + ' · ' + (T.natGames ? T.natGames + ' jogos, ' : '') + (T.wcGoals || 0) + ' gols (já no total)</p>' : '') +
+      (T.cwcApps ? '<p class="muted small patr">🌐 Mundiais de Clubes: ' + T.cwcApps + (T.cwcApps > 1 ? ' disputados' : ' disputado') + ' · ' + (T.cwc || 0) + (T.cwc === 1 ? ' título' : ' títulos') + ' · ' + (T.cwcGoals || 0) + ' gols (já no total)</p>' : '') +
       '<p class="muted small patr">💰 Patrimônio R$ ' + money(G.c.money) + (G.c.buys ? ' · investiu R$ ' + money(G.c.spent) + ' em ' + G.c.buys + (G.c.buys > 1 ? ' compras' : ' compra') : '') + '</p>' +
       '<div class="timeline">' + G.c.spells.map(s => '<div><span>' + String(YEAR0 + s.from - 16).slice(2) + '–' + String(YEAR0 + s.to - 16 + 1).slice(2) + '</span><span>' + crest(s.club, 'xs') + esc(club(s.club).name) + '</span><span>' + (G.c.pos === 'GOL' ? (s.cs || 0) + ' SG' : G.c.pos === 'ZAG' ? s.goals + 'G ' + (s.cs || 0) + 'SG' : s.goals + 'G ' + s.assists + 'A') + (s.titles ? ' · ' + s.titles + '🏆' : '') + '</span></div>').join('') + '</div>' +
       (Object.keys(G.c.trophies || {}).length ? '<div class="room-title">Sala de troféus</div><div class="room">' +
@@ -63,6 +74,7 @@
       U.dailyFinish(G.c, f) + U.finaleRank() +
       U.achBlock(ach) +
       '<div class="score">' + f.score + ' pontos' + (rank === 1 ? ' · NOVO RECORDE!' : ' · #' + rank + ' no seu Hall da Fama') + '</div>' +
+      scoreHow(f) +
       '</div>' +
       '<button class="btn" id="b-again">Nova carreira</button><button class="btn ghost" id="b-hall">Hall da Fama</button>'
     );
