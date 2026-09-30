@@ -62,33 +62,81 @@
     : '<div class="col-slot empty"><div class="col-ghost">?</div>' + rarHtml(s) + '<span' + (flagLbl(s.label) ? ' class="flag"' : '') + '>' + (s.rar ? '???' : esc(s.label)) + '</span></div>';
   const flagLbl = t => D.COUNTRIES.some(k => k.flag === t);
 
+  // Álbum de folhear: capa e páginas de 6 figurinhas; passa arrastando para o lado ou nas setas
+  const PER = 6;
+  let at = 0; // página aberta (volta nela depois de ver uma carta)
+  function book(list) {
+    const pg = pages(list), out = [];
+    const got = pg.reduce((a, p) => a + p.slots.filter(s => s.hit).length, 0), total = pg.reduce((a, p) => a + p.slots.length, 0);
+    out.push({ cover: true, got, total, n: list.length });
+    pg.forEach(p => {
+      const parts = Math.ceil(p.slots.length / PER);
+      for (let i = 0; i < parts; i++) out.push({ t: p.t + (parts > 1 ? ' · ' + (i + 1) + '/' + parts : ''), all: p.slots, slots: p.slots.slice(i * PER, i * PER + PER) });
+    });
+    const sorted = list.slice().sort((a, b) => b.score - a.score);
+    for (let i = 0; i < sorted.length; i += PER)
+      out.push({ t: 'Todas as carreiras', list: sorted.slice(i, i + PER) });
+    return out;
+  }
+  function pageHtml(p, i, n, byKey) {
+    if (p.cover) return '<div class="bk-cover"><div class="bk-emb">⚽</div><b>ÁLBUM</b><span>CLIMBIX</span>' +
+      '<div class="bk-prog"><b>' + p.got + '/' + p.total + '</b> figurinhas<div class="col-bar"><i style="width:' + Math.round(p.got / p.total * 100) + '%"></i></div></div>' +
+      '<small>' + p.n + (p.n === 1 ? ' carreira' : ' carreiras') + (p.n ? ' · arraste para abrir' : ' · termine uma carreira para começar') + '</small></div>';
+    let body;
+    if (p.list) body = p.list.map((e, j) => { const k = 'a' + i + '-' + j; byKey[k] = e.card; return '<button class="col-slot has" data-k="' + k + '" aria-label="' + esc(e.card.name) + '"><img alt=""><span>' + e.score + ' pts</span></button>'; }).join('');
+    else body = p.slots.map((sl, j) => { const k = i + '-' + j; if (sl.hit) byKey[k] = sl.hit.d; return slotHtml(sl, k); }).join('');
+    const have = p.all ? p.all.filter(sl => sl.hit).length : 0;
+    return '<div class="bk-head">' + esc(p.t) + (p.all ? '<span>' + have + '/' + p.all.length + (have === p.all.length ? ' ✓' : '') + '</span>' : '') + '</div>' +
+      '<div class="col-grid bk-grid">' + body + '</div><div class="bk-foot">' + i + '</div>';
+  }
+
   function collection() {
     G.c = null; G.step = null; bar();
-    const list = all();
-    const pg = pages(list);
-    const got = pg.reduce((a, p) => a + p.slots.filter(s => s.hit).length, 0), total = pg.reduce((a, p) => a + p.slots.length, 0);
-    const byKey = {};
-    let html = '<button class="back-link" id="b-back-home">‹ Início</button>' +
-      '<div class="eyebrow">Coleção</div><h2>Suas cartas</h2>' +
-      '<div class="col-top"><b>' + got + '/' + total + '</b><span>vagas preenchidas · ' + list.length + (list.length === 1 ? ' carreira' : ' carreiras') + '</span><div class="col-bar"><i style="width:' + Math.round(got / total * 100) + '%"></i></div></div>';
-    if (!list.length) html += '<p class="muted">Termine uma carreira para a carta dela entrar aqui.</p>';
-    pg.forEach((p, pi) => {
-      const n = p.slots.filter(s => s.hit).length;
-      html += '<div class="col-page"><div class="col-pt">' + p.t + '<span>' + n + '/' + p.slots.length + (n === p.slots.length ? ' ✓' : '') + '</span></div><div class="col-grid">' +
-        p.slots.map((s, si) => { const k = pi + '-' + si; if (s.hit) byKey[k] = s.hit.d; return slotHtml(s, k); }).join('') + '</div></div>';
-    });
-    // Todas as cartas finais, da maior pontuação para a menor
-    const sorted = list.map((e, i) => ({ e, i })).sort((a, b) => b.e.score - a.e.score);
-    if (sorted.length) {
-      html += '<div class="col-page"><div class="col-pt">Todas as carreiras<span>' + sorted.length + '</span></div><div class="col-grid all">' +
-        sorted.map(({ e, i }) => { byKey['a' + i] = e.card; return '<button class="col-slot has" data-k="a' + i + '" aria-label="' + esc(e.card.name) + '"><img alt=""><span>' + e.score + ' pts</span></button>'; }).join('') + '</div></div>';
+    const list = all(), pgs = book(list);
+    at = Math.min(at, pgs.length - 1);
+    render('<button class="back-link" id="b-back-home">‹ Início</button>' +
+      '<div class="book" id="book"><div class="bk-page" id="bk-cur"></div></div>' +
+      '<div class="bk-nav"><button class="bk-arrow" id="bk-prev" aria-label="Página anterior">‹</button><span id="bk-n"></span><button class="bk-arrow" id="bk-next" aria-label="Próxima página">›</button></div>');
+    $('b-back-home').onclick = () => { at = 0; U.home(); };
+    const bookEl = $('book');
+    const fill = (el, i) => {
+      const byKey = {};
+      el.innerHTML = pageHtml(pgs[i], i, pgs.length, byKey);
+      el.classList.toggle('cover', !!pgs[i].cover);
+      el.querySelectorAll('.col-slot.has').forEach(b => { const d = byKey[b.dataset.k]; thumb(d, b.querySelector('img')); b.onclick = () => view(d); });
+    };
+    const nav = () => { $('bk-n').textContent = at === 0 ? 'Capa' : 'Página ' + at + ' de ' + (pgs.length - 1); $('bk-prev').disabled = at === 0; $('bk-next').disabled = at >= pgs.length - 1; };
+    fill($('bk-cur'), at); nav();
+    let busy = false;
+    // Virar: a folha gira pela lombada (esquerda); para trás, a folha anterior volta por cima
+    function turn(dir) {
+      const to = at + dir;
+      if (busy || to < 0 || to >= pgs.length) return;
+      busy = true;
+      const cur = $('bk-cur'), leaf = document.createElement('div');
+      leaf.className = 'bk-page bk-leaf';
+      if (dir > 0) {
+        leaf.innerHTML = cur.innerHTML; leaf.classList.toggle('cover', cur.classList.contains('cover'));
+        bookEl.appendChild(leaf); at = to; fill(cur, at);
+        leaf.animate([{ transform: 'rotateY(0deg)', filter: 'brightness(1)' }, { transform: 'rotateY(-100deg)', filter: 'brightness(.55)' }], { duration: 420, easing: 'cubic-bezier(.4,.1,.3,1)', fill: 'forwards' })
+          .finished.then(() => { leaf.remove(); busy = false; });
+      } else {
+        fill(leaf, to); bookEl.appendChild(leaf);
+        leaf.animate([{ transform: 'rotateY(-100deg)', filter: 'brightness(.55)' }, { transform: 'rotateY(0deg)', filter: 'brightness(1)' }], { duration: 420, easing: 'cubic-bezier(.4,.1,.3,1)', fill: 'forwards' })
+          .finished.then(() => { at = to; fill(cur, at); leaf.remove(); busy = false; });
+      }
+      if (U.sfx) U.sfx('paper');
+      nav();
     }
-    render(html);
-    $('b-back-home').onclick = U.home;
-    document.querySelectorAll('.col-slot.has').forEach(b => {
-      const d = byKey[b.dataset.k];
-      thumb(d, b.querySelector('img'));
-      b.onclick = () => view(d);
+    $('bk-prev').onclick = () => turn(-1);
+    $('bk-next').onclick = () => turn(1);
+    // Arrastar para o lado vira a página
+    let x0 = null, y0 = 0;
+    bookEl.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; });
+    bookEl.addEventListener('pointerup', e => {
+      if (x0 === null) return;
+      const dx = e.clientX - x0, dy = e.clientY - y0; x0 = null;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) turn(dx < 0 ? 1 : -1);
     });
   }
 
