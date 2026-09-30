@@ -157,9 +157,8 @@
   }
 
   // data: { name, pos, peak, attrs, flag, crest (url), grade, verdict, goals, assists, titles, ballon, traits:[{icon,lv}], years }
-  // Características no rodapé: selo redondo no tom da característica com o ícone do jogo (U.ICON).
+  // Ícone de cada característica vem do jogo (U.ICON).
   // Cartas antigas guardam só o emoji: acha a característica por ele (⚡ repete: a posição desempata).
-  const SEAL_TONE = { green: ['#CDEFD9', '#0E5A30'], blue: ['#D6E4FA', '#1D4C9E'], sand: ['#EFE9D8', '#13201A'], red: ['#F8D3D6', '#8E1B24'], gold: ['#FBE7A6', '#7A5600'], purple: ['#EADFFF', '#5B35B0'] };
   function traitOf(t, pos) {
     const DD = root.CRAQUE_DATA; if (!DD || !DD.TRAITS) return null;
     if (t.id && DD.TRAIT_BY_ID && DD.TRAIT_BY_ID[t.id]) return DD.TRAIT_BY_ID[t.id];
@@ -171,26 +170,20 @@
     const m = svg && /d="([^"]+)"/.exec(svg);
     return m && typeof Path2D !== 'undefined' ? new Path2D(m[1]) : null;
   }
+  // Características no rodapé: só o desenho do ícone, na tinta da carta, com o nível (2 ou 3) ao lado
   function drawTraitSeals(ctx, d, cy, ink) {
     const list = (d.traits || []).map(t => ({ t, tr: traitOf(t, d.pos) }));
-    const S = 46, GAP = 14, x0 = W / 2 - (list.length * S + (list.length - 1) * GAP) / 2;
+    const S = 30, GAP = 26, x0 = W / 2 - (list.length * S + (list.length - 1) * GAP) / 2;
     list.forEach(({ t, tr }, i) => {
       const cx = x0 + i * (S + GAP) + S / 2, path = tr && tr.ico && iconPath(tr.ico);
-      if (!path) { ctx.font = '34px ' + BODY; ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.fillText(t.icon || '', cx, cy + 12); }
+      ctx.save();
+      if (!path) { ctx.font = '30px ' + BODY; ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.fillText(t.icon || '', cx, cy + 11); }
       else {
-        const [bg, fg] = SEAL_TONE[tr.tone] || SEAL_TONE.sand;
-        ctx.save();
-        ctx.beginPath(); ctx.arc(cx, cy, S / 2, 0, Math.PI * 2); ctx.fillStyle = bg; ctx.fill();
-        ctx.translate(cx - 13, cy - 13); ctx.scale(26 / 24, 26 / 24);
-        ctx.strokeStyle = fg; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(path);
-        ctx.restore();
+        ctx.translate(cx - S / 2, cy - S / 2); ctx.scale(S / 24, S / 24);
+        ctx.strokeStyle = ink; ctx.lineWidth = 2.1; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(path);
       }
-      // Nível 2 e 3: bolinha com o número no canto do selo
-      if (t.lv > 1) {
-        ctx.save(); ctx.beginPath(); ctx.arc(cx + S / 2 - 4, cy - S / 2 + 5, 10, 0, Math.PI * 2); ctx.fillStyle = ink; ctx.fill();
-        ctx.fillStyle = ink === '#F4D675' ? '#15112A' : '#FFFFFF'; ctx.font = '800 15px ' + DISPLAY; ctx.textAlign = 'center'; ctx.fillText(String(t.lv), cx + S / 2 - 4, cy - S / 2 + 10.5);
-        ctx.restore();
-      }
+      ctx.restore();
+      if (t.lv > 1) { ctx.save(); ctx.fillStyle = ink; ctx.font = '800 18px ' + DISPLAY; ctx.textAlign = 'left'; ctx.fillText(String(t.lv), cx + S / 2 + 2, cy - 5); ctx.restore(); }
     });
   }
 
