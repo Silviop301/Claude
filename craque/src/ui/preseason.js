@@ -142,7 +142,8 @@
     const label = { new: 'NOVA', up: 'EVOLUIR' };
     // Sem nada útil para evoluir (tudo no máximo ou só o que já não rende nesta idade): segue sem escolher
     const done = S.buildDone(G.c) || (!ch.length && !preCh.done && G.c.traits.length >= S.MAX_SLOTS);
-    const hasInv = G.c.money >= S.investPrice(G.c);
+    const hasInv = S.canInvestAny(G.c);
+    const pts = n => n + (n === 1 ? ' ponto' : ' pontos');
     render(
       '<div class="eyebrow">Pré-temporada · ' + year() + (G.c.farewell ? ' · temporada de despedida' : '') + '</div>' +
       '<h2>Prepare a temporada</h2>' + wcHint() + miniCard() +
@@ -156,10 +157,11 @@
           '<b>' + x.trait.name + (x.type === 'up' ? ' → Nv ' + x.lv : '') + ' <span class="tag ' + (x.type === 'up' ? 'green' : 'blue') + '">' + label[x.type] + '</span></b>' +
           '<span class="d">' + traitTxt(x.trait, x.lv) +
           (x.completes ? '<br><span class="tag gold">Completa ' + U.icoOf(x.completes, 'xs') + ' ' + x.completes.name + ': ' + attrTxt(x.completes.attr) + '</span>' : '') + '</span></button>').join('') + '</div>' : '') +
-      (hasInv ? '<div class="prep-sec">Investimentos</div>' +
-        '<div class="wallet"><span>Saldo <b id="w-money"></b></span><span>Cada compra <b id="w-price"></b></span></div>' +
+      (hasInv ? '<div class="prep-sec">Pontos de evolução</div>' +
+        '<div class="wallet"><span>Você tem <b id="w-money"></b></span><span class="muted small">Cada nível custa mais 1</span></div>' +
         '<div class="choices inv-grid">' + INV_ORDER().map(t => '<button class="choice inv" data-v="' + t.id + '"><span class="ic">' + U.icoOf(t, 'sm') + '</span>' +
-          '<b>' + D.investName(t, G.c.pos) + '</b><span class="pips"></span><span class="d">' + (t.attr ? attrTxt(t.attr) : t.perk) + '</span><span class="price"></span></button>').join('') + '</div>' : '') +
+          '<b>' + D.investName(t, G.c.pos) + '</b><span class="pips"></span><span class="d">' + (t.attr ? attrTxt(t.attr) : t.perk) + '</span><span class="price"></span></button>').join('') + '</div>'
+        : D.INVEST.some(t => (G.c.inv[t.id] || 0) < S.investMax(t.id)) ? '<p class="muted small prep-note">' + U.emo('⭐', 'xs') + ' Pontos de evolução: ' + (G.c.pe || 0) + '. Você ganha com nota ' + String(S.PE_R1).replace('.', ',') + '+ (' + String(S.PE_R2).replace('.', ',') + '+ vale 2), títulos e prêmios.</p>' : '') +
       '<div class="inv-bar"><button class="btn" id="b-skip">Seguir para a temporada</button></div>'
     );
     // Toque 1: o card vira e a mini carta mostra quanto muda. Toque 2 no mesmo card: confirma.
@@ -167,23 +169,21 @@
     const go = () => { delete G.c.preCh; U.eventOrSeason(); };
     // "Seguir" só libera quando não há mais escolha a fazer nem compra possível
     const lockSkip = () => {
-      const trait = ch.length && !preCh.done, buy = D.INVEST.some(t => S.canInvest(G.c, t.id));
+      const trait = ch.length && !preCh.done, buy = S.canInvestAny(G.c);
       skip.disabled = !!(trait || buy);
       skip.innerHTML = trait ? 'Escolha uma característica<small>para seguir para a temporada</small>'
-        : buy ? 'Ainda dá para investir<small>Saldo R$ ' + money(G.c.money) + '</small>' : 'Seguir para a temporada';
+        : buy ? 'Ainda dá para evoluir<small>' + pts(G.c.pe) + ' de evolução</small>' : 'Seguir para a temporada';
     };
     const refresh = () => {
       if (!skip.isConnected) return; // já saiu da tela
       lockSkip();
       if (!hasInv) return;
-      const price = S.investPrice(G.c);
-      $('w-money').textContent = 'R$ ' + money(G.c.money);
-      $('w-price').textContent = 'R$ ' + money(price);
+      $('w-money').textContent = pts(G.c.pe || 0);
       screen.querySelectorAll('[data-v]').forEach(b => {
-        const id = b.dataset.v, n = G.c.inv[id] || 0, max = S.investMax(id), full = n >= max;
+        const id = b.dataset.v, n = G.c.inv[id] || 0, max = S.investMax(id), full = n >= max, price = S.investPrice(G.c, id);
         b.disabled = !S.canInvest(G.c, id);
         b.querySelector('.pips').textContent = '●'.repeat(n) + '○'.repeat(max - n);
-        b.querySelector('.price').textContent = full ? 'No máximo' : G.c.money < price ? 'Falta R$ ' + money(price - G.c.money) : 'R$ ' + money(price);
+        b.querySelector('.price').textContent = full ? 'No máximo' : (G.c.pe || 0) < price ? 'Custa ' + pts(price) : pts(price);
         b.classList.toggle('full', full);
       });
     };
@@ -209,7 +209,7 @@
       const id = b.dataset.v;
       if (!S.canInvest(G.c, id)) return;
       showPreview(S.preview(G.c, { buy: id }));
-      if (!U.arm(b, '<b>Toque de novo para comprar</b>')) return;
+      if (!U.arm(b, '<b>Toque de novo para evoluir</b><small>' + pts(S.investPrice(G.c, id)) + '</small>')) return;
       U.disarm(b);
       const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
       S.invest(G.c, id);

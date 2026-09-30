@@ -3,11 +3,6 @@
   const U = window.CRAQUE_UI;
   const { tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar } = U;
   // ---------- propostas ----------
-  // Salário traduzido em investimentos por temporada
-  function buysTag(wage) {
-    const n = S.buysWith(G.c, wage * 52);
-    return '<span class="tag">' + (n ? '≈ ' + n + (n > 1 ? ' compras' : ' compra') + '/ano' : 'sem sobra p/ investir') + '</span>';
-  }
   function offerCard(o, idx) {
     const cl = club(o.club), lg = league(o.club);
     const kinds = { ask: ['Pedido seu', 'blue'], base: ['Base', ''], up: ['Clube maior', 'blue'], mid: ['Protagonista', 'green'], loan: ['Empréstimo · 1 ano', 'blue'], money: ['Proposta milionária', 'gold'], home: ['Volta pra casa', 'red'], stay: ['Renovar', ''] };
@@ -19,7 +14,7 @@
       // O dilema do jogo em destaque: quanto você vai jogar × quão forte é o time
       '<div class="of-key"><span class="of-role ' + roleCls + '">' + o.role + '</span>' +
       '<span class="of-str"><small>Força do time</small><b>' + cl.strength + '</b><i><em style="width:' + Math.max(8, Math.min(100, Math.round((cl.strength - 40) / 55 * 100))) + '%"></em></i></span></div>' +
-      '<div class="facts"><span class="tag">R$ ' + money(o.wage) + '/sem</span>' + buysTag(o.wage) + '<span class="tag">' + o.years + (o.years > 1 ? ' anos' : ' ano') + '</span></div></button>';
+      '<div class="facts"><span class="tag">R$ ' + money(o.wage) + '/sem</span><span class="tag">' + o.years + (o.years > 1 ? ' anos' : ' ano') + '</span></div></button>';
   }
 
   // Quadro "Hoje × Proposta": clube, força, papel, salário e contrato lado a lado
@@ -192,5 +187,5 @@
     });
   }
 
-  Object.assign(U, { buysTag, offerCard, dealCompare, academy, windowOffers, squad });
+  Object.assign(U, { offerCard, dealCompare, academy, windowOffers, squad });
 })();

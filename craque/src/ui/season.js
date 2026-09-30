@@ -217,6 +217,8 @@
       '<div class="news rv"><div class="np">' + U.emo('📰', 'xs') + ' Nos jornais</div><p>' + esc(res.headlines[0] || '') + '</p></div>' +
       wcBlock +
       // Detalhes (fechados): outros lances, o porquê da nota, técnico/torcida e contrato
+      // Pontos de evolução ganhos nesta temporada (e por quê)
+      (res.pe && res.pe.n ? '<p class="pe-gain rv">' + U.emo('⭐', 'xs') + ' <b>+' + res.pe.n + (res.pe.n > 1 ? ' pontos' : ' ponto') + ' de evolução</b> · ' + res.pe.why.map(w => esc(w[0])).join(' · ') + (res.pe.why.reduce((a, w) => a + w[1], 0) > res.pe.n ? ' · máximo de ' + S.PE_CAP + ' por temporada' : '') + '</p>' : '') +
       '<details class="more rv"><summary>Detalhes da temporada</summary>' +
       res.highlights.slice(1).map(h => '<div class="hl">' + esc(h) + '</div>').join('') +
       '<div class="card why-card"><p class="delta-in ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' + why + '</div>' +

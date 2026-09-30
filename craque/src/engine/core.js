@@ -147,7 +147,7 @@
       totals: { games: 0, goals: 0, assists: 0, league: 0, cup: 0, cont: 0, ballon: 0, scorer: 0, young: 0, team: 0 },
       spells: [], seasons: [], peak: 0, retired: false, trophies: {},
       traitLv: {}, contract: 0, farewell: false, peakAttrs: null,
-      inv: {}, spent: 0, buys: 0, leagueOf: {}, clubBoost: {},
+      inv: {}, pe: S.PE_START, buys: 0, leagueOf: {}, clubBoost: {},
     };
   };
 
@@ -246,26 +246,29 @@
   };
   S.traitLevel = lvOf;
 
-  // ---------- investimentos ----------
-  S.INVEST_BASE = 40000;
-  S.INVEST_GROWTH = 2.0;
-  S.investPrice = c => Math.round(S.INVEST_BASE * Math.pow(S.INVEST_GROWTH, c.buys || 0) / 1000) * 1000;
+  // ---------- investimentos (pontos de evolução) ----------
+  // Cada temporada rende pontos pelo que você fez em campo; o dinheiro fica para o patrimônio e os eventos.
+  // Cada melhoria custa o seu nível em pontos (1º nível 1 ponto, 2º 2 pontos... até 5);
+  // efeitos sem atributo (fisioterapia) custam o dobro.
+  S.PE_START = 2; // o garoto chega ao profissional com 2 pontos
+  S.PE_CAP = 2; // no máximo 2 por temporada
+  S.investPrice = (c, id) => ((c.inv[id] || 0) + 1) * (D.INVEST_BY_ID[id].attr ? 1 : 2);
   S.investMax = id => D.INVEST_BY_ID[id].max || D.INVEST_MAX;
-  S.canInvest = (c, id) => (c.inv[id] || 0) < S.investMax(id) && c.money >= S.investPrice(c);
-  // Quantas compras um valor paga, a partir do preço atual (para comparar salários)
-  S.buysWith = function (c, amount) {
-    let n = 0, b = c.buys || 0, left = amount;
-    while (n < 12) {
-      const p = Math.round(S.INVEST_BASE * Math.pow(S.INVEST_GROWTH, b) / 1000) * 1000;
-      if (left < p) break;
-      left -= p; b++; n++;
-    }
-    return n;
+  S.canInvest = (c, id) => (c.inv[id] || 0) < S.investMax(id) && (c.pe || 0) >= S.investPrice(c, id);
+  S.PE_R1 = 7.4; S.PE_R2 = 8.2; // nota para ganhar 1 ou 2 pontos
+  S.canInvestAny = c => D.INVEST.some(t => S.canInvest(c, t.id));
+  // Pontos da temporada: jogar, jogar bem, ganhar
+  S.peGain = function (s) {
+    const why = [];
+    if (s.rating >= S.PE_R1) why.push(['Nota ' + s.rating.toFixed(1).replace('.', ','), s.rating >= S.PE_R2 ? 2 : 1]);
+    if (s.titles.length) why.push([s.titles.length > 1 ? s.titles.length + ' títulos' : 'Título', 1]);
+    if (s.awards.length) why.push([s.awards.some(a => a.id === 'ballon') ? 'Bola de Ouro' : 'Prêmio individual', 1]);
+    return { n: Math.min(S.PE_CAP, why.reduce((a, w) => a + w[1], 0)), why };
   };
   S.invest = function (c, id) {
     if (!S.canInvest(c, id)) return false;
-    const p = S.investPrice(c);
-    c.money -= p; c.spent += p; c.buys++;
+    const p = S.investPrice(c, id);
+    c.pe -= p; c.peSpent = (c.peSpent || 0) + p; c.buys++;
     c.inv[id] = (c.inv[id] || 0) + 1;
     if (!c.firstBuyAge) c.firstBuyAge = c.age;
     return true;

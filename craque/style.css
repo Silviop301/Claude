@@ -163,6 +163,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .why b.zero { color: var(--muted, #8A9A90); }
 .why b.note { font-size: 14px; }
 .why-note { margin: 0 0 8px; font-size: 14px; line-height: 1.35; color: #5A4A10; background: #FFF4CC; border-radius: 10px; padding: 8px 10px; }
+.pe-gain { margin: 8px 0 0; font-size: 14px; line-height: 1.35; color: #1F4B2E; background: #E3F4E8; border-radius: 10px; padding: 8px 10px; }
 .final .why li { border-color: #D6CEB8; }
 .contract { margin: 0; color: #CFE0D4; font-size: 14px; }
 .btn small { display: block; font: 600 13px/1.25 var(--body); letter-spacing: 0; opacity: 0.85; margin-top: 2px; }

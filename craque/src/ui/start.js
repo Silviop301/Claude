@@ -32,7 +32,8 @@
     if ($('b-cont')) $('b-cont').onclick = () => {
       G.c = saved.c;
       // saves de antes dos investimentos
-      G.c.inv = G.c.inv || {}; G.c.buys = G.c.buys || 0; G.c.spent = G.c.spent || 0;
+      G.c.inv = G.c.inv || {}; G.c.buys = G.c.buys || 0;
+      if (G.c.pe === undefined) G.c.pe = S.PE_START; // saves de antes dos pontos de evolução
       G.c.leagueOf = G.c.leagueOf || {}; G.c.clubBoost = G.c.clubBoost || {};
       S.applyLeagues(G.c); // quem subiu e quem caiu nesta carreira
       resume(saved.step);

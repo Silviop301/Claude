@@ -217,7 +217,7 @@
     { id: 'paredao', a: 'reflexo',  b: 'elastico', icon: '🧤', tone: 'gold', name: 'Paredão',               attr: { fin: 3, fis: 3 } },
     { id: 'matador', a: 'artilheiro', b: 'frieza', icon: '💀', tone: 'purple', name: 'Matador',               attr: { fin: 2, fis: 1 } },
   ];
-  // Investimentos com o próprio dinheiro: cada compra soma pontos fixos na carta.
+  // Melhorias pagas com pontos de evolução (ganhos pelo desempenho): cada uma soma pontos fixos na carta.
   // O preço sobe a cada compra (de qualquer item).
   D.INVEST = [
     { id: 'fis',   icon: '🏋️', tone: 'sand', name: 'Personal trainer',         attr: { fis: 2 } },

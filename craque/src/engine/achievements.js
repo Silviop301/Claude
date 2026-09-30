@@ -43,7 +43,7 @@
     { id: 'notaS', icon: '⭐', tone: 'purple', name: 'Nota S', desc: 'Termine uma carreira com nota S', test: (c, f) => f.grade === 'S' },
     { id: 'auge', icon: '🎬', tone: 'gold', name: 'Parou no auge', desc: 'Anuncie a despedida e faça boa temporada', test: (c, f) => f.bonus.some(b => b.txt.startsWith('Parou no auge')) },
     { id: 'eterno', icon: '🧓', tone: 'gold', name: 'Eterno', desc: 'Chegue aos 40 anos com nota 70 ou mais', test: c => !!c.eterno },
-    { id: 'rico', icon: '💰', tone: 'gold', name: 'Magnata', desc: 'Termine com R$ 100 mi de patrimônio', test: c => c.money >= 1e8 },
+    { id: 'rico', icon: '💰', tone: 'gold', name: 'Magnata', desc: 'Termine com R$ 400 mi de patrimônio', test: c => c.money >= 4e8 },
   ];
 
   // Lista das conquistas desta carreira (ids)

@@ -311,6 +311,9 @@
 
     // Dinheiro e totais
     c.money += c.wage * 52;
+    // Pontos de evolução: o que você fez em campo vira treino
+    const pe = S.peGain({ games, rating, titles, awards });
+    c.pe = (c.pe || 0) + pe.n;
     const T = c.totals;
     T.games += games; T.goals += goals; T.assists += assists;
     T.cs = (T.cs || 0) + cleanSheets; T.saves = (T.saves || 0) + saves; T.penSaved = (T.penSaved || 0) + penSaved; T.tackles = (T.tackles || 0) + tackles;
@@ -340,7 +343,7 @@
       ovr0, ovr1, fame0: Math.round(fame0), fame1: Math.round(c.fame), injury: injName ? Math.round(injShare * 100) : 0,
       coach0: Math.round(coach0), coach1: Math.round(c.rel.coach), fans0: Math.round(fans0), fans1: Math.round(c.rel.fans),
       highlights, event: c.lastEvent || null, table, why, farewell: !!c.farewell,
-      attrs: S.eff(c), cards, // foto da carta desta temporada (para o álbum) e cartas especiais ganhas
+      attrs: S.eff(c), cards, pe, // foto da carta desta temporada (para o álbum) e cartas especiais ganhas
     };
     res.move = move;
     res.headlines = S.headlines(c, res);
