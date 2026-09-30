@@ -7,6 +7,9 @@
     G.c = null; G.step = null; bar();
     const saved = load(SAVE);
     const hall = load(HALL) || [];
+    // Título de abertura (já desenhado pelo index.html antes dos scripts): a tela inicial reaproveita o mesmo
+    // elemento em vez de criar outro, para a primeira tela não "piscar" nem contar de novo como carregamento
+    const splash = document.querySelector('#screen > .hero.splash');
     render(
       '<div class="hero"><div class="ball3d" id="ball3d" aria-hidden="true"></div><div class="eyebrow">Carreira de futebol</div><h1>CLIMBIX</h1></div>' +
       '<p class="lead">Crie um garoto de 16 anos, escolha propostas, monte o estilo dele e descubra se ele vira lenda.</p>' +
@@ -43,8 +46,10 @@
     const snd = $('b-sound');
     if (snd) { snd.innerHTML = U.ICON.gear + ' Configurações'; snd.onclick = U.settings; }
     // A bola 3D espera o módulo 3D terminar de carregar (na primeira visita ele chega depois da tela)
-    const mountBall = n => { const el = $('ball3d'); if (!el || !U.cfg.fx3d) return; if (window.CRAQUE_BALL) window.CRAQUE_BALL.mount(el); else if (n > 0) setTimeout(() => mountBall(n - 1), 250); };
-    mountBall(24);
+    const hero = splash && screen.querySelector('.hero');
+    if (hero) { splash.classList.remove('splash'); splash.querySelector('.ball3d').id = 'ball3d'; hero.replaceWith(splash); }
+    const mountBall = () => { const el = $('ball3d'); if (el && U.cfg.fx3d && window.CRAQUE_BALL) window.CRAQUE_BALL.mount(el); };
+    if (window.CRAQUE_BALL) mountBall(); else addEventListener('craque-ball-ready', mountBall, { once: true });
   }
 
   function resume(st) {

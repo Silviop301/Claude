@@ -16,11 +16,22 @@ const modelReady = new GLTFLoader().loadAsync('assets/bola.glb?v=1ba24026').then
   return pivot;
 });
 
+// Aparelho sem placa de vídeo de verdade (o 3D seria desenhado pelo processador) ou muito fraco:
+// a bola aparece parada, desenhada uma vez só
+function weakGPU(renderer) {
+  try {
+    const gl = renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+    if (/swiftshader|llvmpipe|software|softpipe|basic render|mesa offscreen/i.test(name)) return true;
+  } catch (e) { /* segue */ }
+  return (navigator.hardwareConcurrency || 4) <= 2 || (navigator.deviceMemory || 4) <= 1;
+}
+
 function mount(el) {
   if (!el || el.dataset.on) return;
   el.dataset.on = '1';
-  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches || weakGPU(renderer);
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   const scene = new THREE.Scene();
@@ -62,22 +73,27 @@ function mount(el) {
   el.addEventListener('pointerup', up);
   el.addEventListener('pointercancel', up);
 
+  // Só desenha com a bola visível, e no máximo 30 quadros por segundo (metade do trabalho, mesmo efeito)
+  let visible = true, last = 0;
+  if ('IntersectionObserver' in window) new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(el);
   const loop = now => {
     // Saiu da tela inicial: libera a GPU
     if (!el.isConnected) { renderer.dispose(); removeEventListener('resize', fit); return; }
     raf = requestAnimationFrame(loop);
-    if (!ball || document.hidden) return;
+    if (!ball || document.hidden || !visible || now - last < 30) return;
+    const k = last ? Math.min(3, (now - last) / 16.7) : 1; // mesma velocidade com menos quadros
+    last = now;
     if (!drag) {
       spinY += (0.012 - spinY) * 0.04;
       spinX += (0 - spinX) * 0.06;
     }
-    ball.rotation.y += spinY;
-    ball.rotation.x += spinX;
+    ball.rotation.y += spinY * k;
+    ball.rotation.x += spinX * k;
     ball.position.y = Math.sin((now - t0) / 700) * 0.08;
     renderer.render(scene, cam);
   };
   if (!still) raf = requestAnimationFrame(loop);
-  addEventListener('resize', fit);
+  addEventListener('resize', () => { fit(); if (still && ball) renderer.render(scene, cam); });
 }
 
 // Bola 3D do minigame: uma tela transparente por cima da cena em SVG (viewBox w×h),
@@ -589,5 +605,6 @@ function newspaper(host, page, onClose) {
 }
 
 window.CRAQUE_BALL = { mount, flyer, goal, card3d, newspaper };
-// A tela inicial pode ter sido desenhada antes deste módulo carregar
-mount(document.getElementById('ball3d'));
+// Este módulo carrega depois da tela aparecer: monta a bola se a tela inicial estiver aberta (e o 3D ligado)
+if (!window.CLIMBIX_CFG || window.CLIMBIX_CFG.fx3d !== false) mount(document.getElementById('ball3d'));
+window.dispatchEvent(new Event('craque-ball-ready'));

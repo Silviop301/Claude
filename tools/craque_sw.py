@@ -29,16 +29,40 @@ for p in sorted(ROOT.rglob("*")):
         rel = p.relative_to(ROOT).as_posix()
         files.append("./" + versioned.get(rel, rel))
 digest = hashlib.sha1("".join(files).encode()).hexdigest()[:8]
-assets = ",\n  ".join('"%s"' % f for f in files)
+# Essencial (página, código, estilo, fontes, ícones do app) entra na instalação; o resto (escudos, taças,
+# emojis, modelo 3D) é guardado aos poucos depois que o jogo abre, para não disputar a rede com a primeira tela
+core_re = re.compile(r"^\./(?:$|index\.html|style\.css|manifest\.webmanifest|sw\.js|src/|fonts/|icons/)")
+core = [f for f in files if core_re.match(f)]
+rest = [f for f in files if not core_re.match(f)]
+assets = ",\n  ".join('"%s"' % f for f in core)
+later = ",\n  ".join('"%s"' % f for f in rest)
 (ROOT / "sw.js").write_text("""// Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
 const CACHE = 'craque-%s';
 const ASSETS = [
   %s
 ];
+// Guardados depois (mensagem 'warm' da página, com o jogo já aberto), em lotes
+const LATER = [
+  %s
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+});
+
+let warming = null;
+self.addEventListener('message', e => {
+  if (e.data !== 'warm' || warming) return;
+  warming = caches.open(CACHE).then(async c => {
+    for (let i = 0; i < LATER.length; i += 12) {
+      const batch = [];
+      for (const u of LATER.slice(i, i + 12)) if (!(await c.match(u))) batch.push(u);
+      if (batch.length) await c.addAll(batch).catch(() => {});
+      await new Promise(r => setTimeout(r, 150));
+    }
+  });
+  e.waitUntil(warming);
 });
 
 self.addEventListener('activate', e => {
@@ -67,7 +91,7 @@ self.addEventListener('fetch', e => {
     return res;
   })));
 });
-""" % (digest, assets))
+""" % (digest, assets, later))
 # Versão pelo conteúdo do código: vai na URL de cada script/estilo e do service worker (?v=...).
 # O index.html não fica em cache no CDN; assim cada deploy força js/css novos mesmo com cache longo.
 code = sorted(p for p in ROOT.rglob("*") if p.is_file() and p.suffix in (".js", ".css") and p.name != "sw.js")
@@ -82,6 +106,6 @@ man = ROOT / "manifest.webmanifest"
 mtxt = re.sub(r'("src": "(icons/[^"?]+\.png))(?:\?v=[0-9a-f]+)?(")', lambda m: m.group(1) + "?v=" + fhash(ROOT / m.group(2)) + m.group(3), man.read_text())
 man.write_text(mtxt)
 if "window.CLIMBIX_VER" not in html:
-    html = html.replace('<script src="src/sound.js', "<script>window.CLIMBIX_VER = '" + ver + "';</script>\n<script src=\"src/sound.js", 1)
+    html = html.replace('<script defer src="src/sound.js', "<script>window.CLIMBIX_VER = '" + ver + "';</script>\n<script defer src=\"src/sound.js", 1)
 idx.write_text(html)
-print("sw.js com", len(files), "arquivos · cache", digest, "· versão", ver)
+print("sw.js com", len(files), "arquivos (", len(core), "na instalação,", len(rest), "depois ) · cache", digest, "· versão", ver)

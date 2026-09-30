@@ -1,8 +1,72 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-094dcad3';
+const CACHE = 'craque-ebad23d3';
 const ASSETS = [
   "./",
+  "./fonts/TwemojiCountryFlags.woff2",
+  "./fonts/barlow-500-latin-ext.woff2",
+  "./fonts/barlow-500-latin.woff2",
+  "./fonts/barlow-600-latin-ext.woff2",
+  "./fonts/barlow-600-latin.woff2",
+  "./fonts/barlow-700-latin-ext.woff2",
+  "./fonts/barlow-700-latin.woff2",
+  "./fonts/barlow-condensed-600-latin-ext.woff2",
+  "./fonts/barlow-condensed-600-latin.woff2",
+  "./fonts/barlow-condensed-700-latin-ext.woff2",
+  "./fonts/barlow-condensed-700-latin.woff2",
+  "./fonts/barlow-condensed-800-latin-ext.woff2",
+  "./fonts/barlow-condensed-800-latin.woff2",
+  "./fonts/playfair-display-700-latin-ext.woff2",
+  "./fonts/playfair-display-700-latin.woff2",
+  "./icons/apple-touch-icon.png",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/icon-maskable-512.png",
+  "./index.html",
+  "./manifest.webmanifest",
+  "./src/ball3d.js",
+  "./src/card.js",
+  "./src/data.js",
+  "./src/defend.js",
+  "./src/engine/achievements.js",
+  "./src/engine/core.js",
+  "./src/engine/events.js",
+  "./src/engine/events2.js",
+  "./src/engine/finish.js",
+  "./src/engine/market.js",
+  "./src/engine/moments.js",
+  "./src/engine/season.js",
+  "./src/engine/worldcup.js",
+  "./src/kick.js",
+  "./src/kits.js",
+  "./src/main.js",
+  "./src/sim.js",
+  "./src/sound.js",
+  "./src/trophies.js",
+  "./src/trophy-imgs.js",
+  "./src/ui/achievements.js",
+  "./src/ui/album.js",
+  "./src/ui/cardview.js",
+  "./src/ui/cloud.js",
+  "./src/ui/collection.js",
+  "./src/ui/core.js",
+  "./src/ui/daily.js",
+  "./src/ui/finale.js",
+  "./src/ui/match.js",
+  "./src/ui/offers.js",
+  "./src/ui/paper.js",
+  "./src/ui/preseason.js",
+  "./src/ui/ranking.js",
+  "./src/ui/season.js",
+  "./src/ui/settings.js",
+  "./src/ui/sheet.js",
+  "./src/ui/start.js",
+  "./src/ui/walkout.js",
+  "./src/ui/worldcup.js",
+  "./style.css"
+];
+// Guardados depois (mensagem 'warm' da página, com o jogo já aberto), em lotes
+const LATER = [
   "./assets/bola.glb?v=1ba24026",
   "./assets/carta.glb?v=5faf94a3",
   "./assets/cartas/aco.jpg",
@@ -789,53 +853,6 @@ const ASSETS = [
   "./badges/usa-7.png",
   "./badges/usa-8.png",
   "./badges/usa-9.png",
-  "./fonts/TwemojiCountryFlags.woff2",
-  "./icons/apple-touch-icon.png",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/icon-maskable-512.png",
-  "./index.html",
-  "./manifest.webmanifest",
-  "./src/ball3d.js",
-  "./src/card.js",
-  "./src/data.js",
-  "./src/defend.js",
-  "./src/engine/achievements.js",
-  "./src/engine/core.js",
-  "./src/engine/events.js",
-  "./src/engine/events2.js",
-  "./src/engine/finish.js",
-  "./src/engine/market.js",
-  "./src/engine/moments.js",
-  "./src/engine/season.js",
-  "./src/engine/worldcup.js",
-  "./src/kick.js",
-  "./src/kits.js",
-  "./src/main.js",
-  "./src/sim.js",
-  "./src/sound.js",
-  "./src/trophies.js",
-  "./src/trophy-imgs.js",
-  "./src/ui/achievements.js",
-  "./src/ui/album.js",
-  "./src/ui/cardview.js",
-  "./src/ui/cloud.js",
-  "./src/ui/collection.js",
-  "./src/ui/core.js",
-  "./src/ui/daily.js",
-  "./src/ui/finale.js",
-  "./src/ui/match.js",
-  "./src/ui/offers.js",
-  "./src/ui/paper.js",
-  "./src/ui/preseason.js",
-  "./src/ui/ranking.js",
-  "./src/ui/season.js",
-  "./src/ui/settings.js",
-  "./src/ui/sheet.js",
-  "./src/ui/start.js",
-  "./src/ui/walkout.js",
-  "./src/ui/worldcup.js",
-  "./style.css",
   "./trophies/2--bundesliga.png",
   "./trophies/bola-de-ouro.png",
   "./trophies/brasileirao.png",
@@ -910,6 +927,20 @@ const ASSETS = [
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+});
+
+let warming = null;
+self.addEventListener('message', e => {
+  if (e.data !== 'warm' || warming) return;
+  warming = caches.open(CACHE).then(async c => {
+    for (let i = 0; i < LATER.length; i += 12) {
+      const batch = [];
+      for (const u of LATER.slice(i, i + 12)) if (!(await c.match(u))) batch.push(u);
+      if (batch.length) await c.addAll(batch).catch(() => {});
+      await new Promise(r => setTimeout(r, 150));
+    }
+  });
+  e.waitUntil(warming);
 });
 
 self.addEventListener('activate', e => {
