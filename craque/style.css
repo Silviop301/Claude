@@ -1259,3 +1259,15 @@ h2 { font: var(--t-h1); letter-spacing: .01em; }
 .cfg-seg button.on { background: var(--paper); color: var(--ink); box-shadow: 0 1px 0 rgba(0, 0, 0, .3); }
 .cfg-note { font: 500 14px/1.35 var(--body); color: #B9CDBF; display: flex; gap: 6px; align-items: flex-start; }
 .cfg-note .ico { width: 15px; height: 15px; flex: none; margin-top: 2px; }
+
+/* ===== Escala de texto (A4: pré-temporada) ===== */
+.choice.inv b { font: var(--t-item); }
+.choice.inv .d { font: 600 14px/1.3 var(--body); color: var(--ink); }
+.choice.inv .price { font: 700 14px var(--display); }
+.choice .pips, .choice.inv .pips { font-size: 12px; }
+.wallet { font: var(--t-small); }
+.chip { font: var(--t-small); }
+.chip b { font-weight: 700; }
+.chip.syn { font-weight: 600; }
+.prep-done { font: 600 16px/1.35 var(--body); }
+.choice .fx { font: 600 14px/1.35 var(--body); }
