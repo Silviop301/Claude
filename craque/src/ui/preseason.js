@@ -9,12 +9,12 @@
     const slots = [];
     for (let i = 0; i < S.MAX_SLOTS; i++) {
       const id = G.c.traits[i];
-      if (id) slots.push('<span class="chip">' + D.TRAIT_BY_ID[id].icon + ' ' + D.TRAIT_BY_ID[id].name + (S.traitLevel(G.c, id) > 1 ? ' <b>Nv ' + S.traitLevel(G.c, id) + '</b>' : '') + '</span>');
+      if (id) slots.push('<span class="chip">' + U.icoOf(D.TRAIT_BY_ID[id], 'xs') + ' ' + D.TRAIT_BY_ID[id].name + (S.traitLevel(G.c, id) > 1 ? ' <b>Nv ' + S.traitLevel(G.c, id) + '</b>' : '') + '</span>');
     }
     const free = S.MAX_SLOTS - G.c.traits.length;
     if (free && G.c.traits.length) slots.push('<span class="chip empty">' + free + (free > 1 ? ' espaços livres' : ' espaço livre') + '</span>');
     return '<div class="eyebrow small">Características ' + G.c.traits.length + '/' + S.MAX_SLOTS + ' <button class="link-btn" data-sheet="combos">Ver combinações ›</button></div><div class="chips">' + slots.join('') +
-      syn.map(s => '<span class="chip syn">' + s.icon + ' ' + s.name + '</span>').join('') + '</div>';
+      syn.map(s => '<span class="chip syn">' + U.icoOf(s, 'xs') + ' ' + s.name + '</span>').join('') + '</div>';
   }
 
   // Texto de atributos: "+4 FIN · +1 DRI"
@@ -149,13 +149,13 @@
         '<p class="muted small prep-note">' + (() => { const [a, b] = S.mainAttrs(G.c.pos); return 'Cada nível: +1 ' + D.label(G.c.pos, a) + ' (e +1 ' + D.label(G.c.pos, b) + ' a cada 2)'; })() +
           (G.c.traits.length < S.MAX_SLOTS ? ' · fica a carreira toda' : '') + '</p>' + traitsHtml() +
         '<div class="choices">' + ch.map((x, i) =>
-          '<button class="choice' + (x.completes ? ' combo' : '') + '" data-i="' + i + '"><span class="ic">' + x.trait.icon + '</span>' +
+          '<button class="choice' + (x.completes ? ' combo' : '') + '" data-i="' + i + '"><span class="ic">' + U.icoOf(x.trait) + '</span>' +
           '<b>' + x.trait.name + (x.type === 'up' ? ' → Nv ' + x.lv : '') + ' <span class="tag ' + (x.type === 'up' ? 'green' : 'blue') + '">' + label[x.type] + '</span></b>' +
           '<span class="d">' + traitTxt(x.trait, x.lv) +
-          (x.completes ? '<br><span class="tag gold">Completa ' + x.completes.icon + ' ' + x.completes.name + ': ' + attrTxt(x.completes.attr) + '</span>' : '') + '</span></button>').join('') + '</div>' : '') +
+          (x.completes ? '<br><span class="tag gold">Completa ' + U.icoOf(x.completes, 'xs') + ' ' + x.completes.name + ': ' + attrTxt(x.completes.attr) + '</span>' : '') + '</span></button>').join('') + '</div>' : '') +
       (hasInv ? '<div class="prep-sec">Investimentos</div>' +
         '<div class="wallet"><span>Saldo <b id="w-money"></b></span><span>Cada compra <b id="w-price"></b></span></div>' +
-        '<div class="choices inv-grid">' + D.INVEST.map(t => '<button class="choice inv" data-v="' + t.id + '"><span class="ic">' + t.icon + '</span>' +
+        '<div class="choices inv-grid">' + D.INVEST.map(t => '<button class="choice inv" data-v="' + t.id + '"><span class="ic">' + U.icoOf(t, 'sm') + '</span>' +
           '<b>' + D.investName(t, G.c.pos) + '</b><span class="pips"></span><span class="d">' + (t.attr ? attrTxt(t.attr) : t.perk) + '</span><span class="price"></span></button>').join('') + '</div>' : '') +
       '<div class="inv-bar"><button class="btn" id="b-skip">Seguir para a temporada</button></div>'
     );
@@ -194,8 +194,8 @@
       const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
       sfx('levelup');
       let done;
-      if (x.type === 'up') { S.upgradeTrait(G.c, x.trait.id); done = '✓ ' + x.trait.icon + ' ' + x.trait.name + ' evoluiu para o Nv ' + x.lv; }
-      else { const syn = S.addTrait(G.c, x.trait.id); done = '✓ ' + x.trait.icon + ' ' + x.trait.name + ' entrou' + (syn ? '<br><b>' + syn.icon + ' Combinação desbloqueada: ' + syn.name + '</b> · ' + attrTxt(syn.attr) + (syn.extra ? ' · ' + syn.extra : '') : ''); }
+      if (x.type === 'up') { S.upgradeTrait(G.c, x.trait.id); done = '✓ ' + U.icoOf(x.trait, 'xs') + ' ' + x.trait.name + ' evoluiu para o Nv ' + x.lv; }
+      else { const syn = S.addTrait(G.c, x.trait.id); done = '✓ ' + U.icoOf(x.trait, 'xs') + ' ' + x.trait.name + ' entrou' + (syn ? '<br><b>' + U.icoOf(syn, 'xs') + ' Combinação desbloqueada: ' + syn.name + '</b> · ' + attrTxt(syn.attr) + (syn.extra ? ' · ' + syn.extra : '') : ''); }
       if (S.buildDone(G.c)) done += '<br><b>🏁 Build completo!</b> Suas 5 características estão no nível máximo.';
       preCh.done = true;
       showPreview(null);

@@ -25,7 +25,7 @@
       const id = c.traits[i];
       if (!id) { out += '<div class="sh-tr empty">Espaço livre</div>'; continue; }
       const t = D.TRAIT_BY_ID[id], lv = S.traitLevel(c, id);
-      out += '<div class="sh-tr"><span class="ic">' + t.icon + '</span><div><b>' + esc(t.name) + DOTS(lv) + '</b><small>' + esc(t.fx ? t.fx(D.TRAIT_LV[lv]) : '') + '</small></div></div>';
+      out += '<div class="sh-tr"><span class="ic">' + U.icoOf(t, 'sm') + '</span><div><b>' + esc(t.name) + DOTS(lv) + '</b><small>' + esc(t.fx ? t.fx(D.TRAIT_LV[lv]) : '') + '</small></div></div>';
     }
     return out;
   }
@@ -42,15 +42,15 @@
     const full = c.traits.length >= S.MAX_SLOTS;
     const list = D.SYNERGIES.filter(s => fits(s.a) && fits(s.b)).map(s => {
       const st = has(s.a) && has(s.b) ? 'on' : full ? 'off' : has(s.a) || has(s.b) ? 'near' : 'far';
-      const need = [s.a, s.b].filter(id => !has(id)).map(id => D.TRAIT_BY_ID[id].icon + ' ' + D.TRAIT_BY_ID[id].name).join(' + ');
-      return { st, html: '<div class="sh-cb ' + st + '"><div><b>' + s.icon + ' ' + esc(s.name) + '</b><small>' + attrLine(s.attr, c.pos) + '</small></div>' +
-        '<span class="pill">' + (st === 'on' ? 'Ativa' : st === 'off' ? 'Sem espaço' : 'Falta ' + esc(need)) + '</span></div>' };
+      const need = [s.a, s.b].filter(id => !has(id)).map(id => U.icoOf(D.TRAIT_BY_ID[id], 'xs') + ' ' + esc(D.TRAIT_BY_ID[id].name)).join(' + ');
+      return { st, html: '<div class="sh-cb ' + st + '"><div><b>' + U.icoOf(s, 'xs') + ' ' + esc(s.name) + '</b><small>' + attrLine(s.attr, c.pos) + '</small></div>' +
+        '<span class="pill">' + (st === 'on' ? 'Ativa' : st === 'off' ? 'Sem espaço' : 'Falta ' + need) + '</span></div>' };
     });
     const order = { on: 0, near: 1, far: 2, off: 3 };
     const combos = list.sort((a, b) => order[a.st] - order[b.st]).map(x => x.html).join('') || '<p class="sh-hint">Nenhuma combinação para esta posição.</p>';
     const left = full ? [] : D.TRAITS.filter(t => D.traitFits(t, c.pos) && !c.traits.includes(t.id));
     return '<div class="sh-sec">Combinações <span>duas características juntas dão bônus</span></div>' + combos +
-      (left.length ? '<div class="sh-sec">Ainda dá para pegar</div>' + left.map(t => '<div class="sh-tr"><span class="ic">' + t.icon + '</span><div><b>' + esc(t.name) + '</b><small>' + esc(t.fx ? t.fx(1) : '') + '</small></div></div>').join('') : '');
+      (left.length ? '<div class="sh-sec">Ainda dá para pegar</div>' + left.map(t => '<div class="sh-tr"><span class="ic">' + U.icoOf(t, 'sm') + '</span><div><b>' + esc(t.name) + '</b><small>' + esc(t.fx ? t.fx(1) : '') + '</small></div></div>').join('') : '');
   }
 
   function careerTab(c) {

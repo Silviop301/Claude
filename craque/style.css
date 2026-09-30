@@ -1307,3 +1307,19 @@ h2 { font: var(--t-h1); letter-spacing: .01em; }
 .feed div { font: var(--t-body); }
 details.more > summary { font: 600 16px var(--body); }
 .why b { font-weight: 700; }
+
+/* ===== Selos de ícone (Parte B) ===== */
+.seal { width: 44px; height: 44px; border-radius: 999px; display: grid; place-items: center; flex: none; }
+.seal .ico { width: 22px; height: 22px; }
+.seal.sm { width: 32px; height: 32px; } .seal.sm .ico { width: 16px; height: 16px; }
+.seal.lg { width: 52px; height: 52px; } .seal.lg .ico { width: 26px; height: 26px; }
+.seal.green  { background: #CDEFD9; color: #0E5A30; }
+.seal.blue   { background: #D6E4FA; color: #1D4C9E; }
+.seal.sand   { background: #EFE9D8; color: #13201A; }
+.seal.red    { background: #F8D3D6; color: #8E1B24; }
+.seal.gold   { background: #FBE7A6; color: #7A5600; }
+.seal.purple { background: #EADFFF; color: #5B35B0; }
+/* xs: selo dentro de uma linha de texto (chips, avisos, combinações) */
+.seal.xs { display: inline-grid; width: 20px; height: 20px; vertical-align: -5px; } .seal.xs .ico { width: 12px; height: 12px; }
+.choice .ic:has(.seal), .sh-tr .ic:has(.seal) { display: grid; place-items: center; }
+.sh-tr .ic:has(.seal) { width: auto; }
