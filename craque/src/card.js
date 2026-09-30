@@ -157,6 +157,43 @@
   }
 
   // data: { name, pos, peak, attrs, flag, crest (url), grade, verdict, goals, assists, titles, ballon, traits:[{icon,lv}], years }
+  // Características no rodapé: selo redondo no tom da característica com o ícone do jogo (U.ICON).
+  // Cartas antigas guardam só o emoji: acha a característica por ele (⚡ repete: a posição desempata).
+  const SEAL_TONE = { green: ['#CDEFD9', '#0E5A30'], blue: ['#D6E4FA', '#1D4C9E'], sand: ['#EFE9D8', '#13201A'], red: ['#F8D3D6', '#8E1B24'], gold: ['#FBE7A6', '#7A5600'], purple: ['#EADFFF', '#5B35B0'] };
+  function traitOf(t, pos) {
+    const DD = root.CRAQUE_DATA; if (!DD || !DD.TRAITS) return null;
+    if (t.id && DD.TRAIT_BY_ID && DD.TRAIT_BY_ID[t.id]) return DD.TRAIT_BY_ID[t.id];
+    const all = DD.TRAITS.filter(x => x.icon === t.icon);
+    return all.find(x => !x.pos || x.pos.includes(pos)) || all[0] || null;
+  }
+  function iconPath(name) {
+    const U = root.CRAQUE_UI, svg = U && U.ICON && U.ICON[name];
+    const m = svg && /d="([^"]+)"/.exec(svg);
+    return m && typeof Path2D !== 'undefined' ? new Path2D(m[1]) : null;
+  }
+  function drawTraitSeals(ctx, d, cy, ink) {
+    const list = (d.traits || []).map(t => ({ t, tr: traitOf(t, d.pos) }));
+    const S = 46, GAP = 14, x0 = W / 2 - (list.length * S + (list.length - 1) * GAP) / 2;
+    list.forEach(({ t, tr }, i) => {
+      const cx = x0 + i * (S + GAP) + S / 2, path = tr && tr.ico && iconPath(tr.ico);
+      if (!path) { ctx.font = '34px ' + BODY; ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.fillText(t.icon || '', cx, cy + 12); }
+      else {
+        const [bg, fg] = SEAL_TONE[tr.tone] || SEAL_TONE.sand;
+        ctx.save();
+        ctx.beginPath(); ctx.arc(cx, cy, S / 2, 0, Math.PI * 2); ctx.fillStyle = bg; ctx.fill();
+        ctx.translate(cx - 13, cy - 13); ctx.scale(26 / 24, 26 / 24);
+        ctx.strokeStyle = fg; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(path);
+        ctx.restore();
+      }
+      // Nível 2 e 3: bolinha com o número no canto do selo
+      if (t.lv > 1) {
+        ctx.save(); ctx.beginPath(); ctx.arc(cx + S / 2 - 4, cy - S / 2 + 5, 10, 0, Math.PI * 2); ctx.fillStyle = ink; ctx.fill();
+        ctx.fillStyle = ink === '#F4D675' ? '#15112A' : '#FFFFFF'; ctx.font = '800 15px ' + DISPLAY; ctx.textAlign = 'center'; ctx.fillText(String(t.lv), cx + S / 2 - 4, cy - S / 2 + 10.5);
+        ctx.restore();
+      }
+    });
+  }
+
   root.CRAQUE_CARD = async function (canvas, d) {
     try {
       if (document.fonts && document.fonts.load) await document.fonts.load("52px 'Twemoji Country Flags'", d.flag || '🇧🇷');
@@ -273,8 +310,7 @@
     ctx.textAlign = 'center';
     ctx.font = '34px ' + BODY;
     const extraN = (d.ballon ? 1 : 0) + (d.wc ? 1 : 0);
-    const icons = (d.traits || []).map(t => t.icon + (t.lv > 1 ? ['', '', '²', '³'][t.lv] : '')).join('  ');
-    embossOn = false; ctx.fillText(icons, W / 2, extraN ? 710 : 718); embossOn = true;
+    embossOn = false; drawTraitSeals(ctx, d, extraN ? 697 : 705, T.ink); embossOn = true;
     // Estrelas de campeão do mundo acima do nome da camisa
     if (d.wc) { ctx.font = '800 26px ' + DISPLAY; embossOn = false; ctx.fillText('★'.repeat(Math.min(d.wc, 5)), 385, 120); embossOn = true; }
     // Carta do meio da carreira (revelação ao subir de faixa): rodapé simples com clube e idade

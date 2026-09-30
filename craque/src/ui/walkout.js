@@ -31,7 +31,7 @@
     const d = {
       name: c.name, number: c.number, pos: c.pos, peak: shot ? shot.ovr : S.ovr(c), attrs: shot ? shot.attrs : S.eff(c), flag: cty.flag,
       crest: 'badges/' + clubId + '.png', verdict: '',
-      traits: c.traits.map(id => ({ icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(c, id) })),
+      traits: c.traits.map(id => ({ id, icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(c, id) })),
       footer: shot && shot.txt ? shot.txt : D.CLUB_BY_ID[clubId].name.toUpperCase() + ' · ' + (shot ? shot.age : c.age) + ' ANOS',
     };
     if (shot && shot.type) {

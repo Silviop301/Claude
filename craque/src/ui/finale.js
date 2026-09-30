@@ -30,7 +30,7 @@
       crest: 'badges/' + f.mainClub + '.png', grade: f.grade, verdict: f.verdict,
       goals: T.goals, assists: T.assists, titles: f.titles, ballon: T.ballon,
       cs: T.cs || 0, penSaved: T.penSaved || 0, tackles: T.tackles || 0,
-      traits: G.c.traits.map(id => ({ icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(G.c, id) })),
+      traits: G.c.traits.map(id => ({ id, icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(G.c, id) })),
     };
     U.collect(G.c, f, cardData); // a carta entra na coleção
     const shareName = G.c.name;
