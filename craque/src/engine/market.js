@@ -35,12 +35,14 @@
     };
     const mine = x => D.countryOf(x) === c.country;
     if (academy) {
-      // A base é sempre no país escolhido, nas divisões mais baixas dele
-      const minT = Math.min(...D.CLUBS.filter(mine).map(x => x.tier));
-      for (let i = 0; i < 3; i++) {
-        const cl = pickClub(x => mine(x) && x.tier === minT) || pickClub(x => mine(x) && x.tier <= minT + 1) || pickClub(mine);
+      // A base é no país escolhido, em três degraus: um clube grande (pouco espaço, dá para pedir empréstimo depois),
+      // um médio e um pequeno (titular desde cedo)
+      const tiers = D.CLUBS.filter(mine).map(x => x.tier), minT = Math.min(...tiers), maxT = Math.max(...tiers);
+      const midT = Math.round((minT + maxT) / 2);
+      [maxT, midT, minT].forEach(tt => {
+        const cl = pickClub(x => mine(x) && x.tier === tt) || pickClub(x => mine(x) && Math.abs(x.tier - tt) <= 1) || pickClub(mine);
         if (cl) out.push(offerFrom(c, cl, 'base'));
-      }
+      });
       save();
       return out;
     }
@@ -51,9 +53,11 @@
     const up = pickClub(x => x.tier === Math.min(5, t + (r() < 0.35 + Math.min(0.4, c.fame / 500) ? 1 : 0)) && x.strength >= o - 6);
     if (up) out.push(offerFrom(c, up, 'up'));
     // 2) Mesmo nível, papel de protagonista
-    // Jovem: o mercado do próprio país costuma chamar primeiro
-    const homeFirst = c.age <= 21 && r() < 0.6;
-    const mid = (homeFirst && pickClub(x => mine(x) && x.tier === t && x.strength <= o + 1)) ||
+    // O mercado do próprio país chama com frequência (mais ainda o jovem); quem já está acima do nível do país
+    // recebe proposta de um clube do topo dele (ex.: Série A para quem joga na Europa)
+    const homeMax = Math.max(...D.CLUBS.filter(mine).map(x => x.tier));
+    const homeFirst = r() < (c.age <= 21 ? 0.6 : c.age <= 31 ? 0.4 : 0.3);
+    const mid = (homeFirst && pickClub(x => mine(x) && x.tier === Math.min(t, homeMax) && x.strength <= o + 1)) ||
       pickClub(x => x.tier === t && x.strength <= o + 1) || pickClub(x => x.tier === Math.max(1, t - 1));
     if (mid) out.push(offerFrom(c, mid, 'mid'));
     // 3) Especial: dinheiro, volta ao clube do coração ou aposta

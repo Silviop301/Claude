@@ -51,7 +51,7 @@
     render(
       '<button class="back-link" id="b-back-home">‹ Início</button>' +
       '<div class="eyebrow">' + year() + ' · 16 anos</div><h2>Três clubes querem você na base</h2>' +
-      '<p class="lead">Clube mais forte dá mais chance de título, mas menos minutos em campo.</p>' +
+      '<p class="lead">Clube grande dá mais chance de título, mas menos minutos em campo. Se não jogar, dá para pedir empréstimo no fim da temporada.</p>' +
       '<div class="choices">' + offers.map(offerCard).join('') + '</div>' + tools(win, true)
     );
     bindTools(true, academy);
