@@ -226,7 +226,7 @@
       c.trophies['Copa do Mundo'] = c.trophies['Copa do Mundo'] || { type: 'wc', n: 0 };
       c.trophies['Copa do Mundo'].n++;
       c.wcBoost = 22; // pesa na Bola de Ouro da próxima temporada
-      run.card = S.addCard(c, 'copa', 'CAMPEÃO DO MUNDO · ' + run.year);
+      run.card = S.dropCard(c, 'copa', 'CAMPEÃO DO MUNDO · ' + run.year);
     }
     c.wcHist = c.wcHist || [];
     c.wcHist.push({ year: run.year, nation: run.nation, reached, g: run.g, a: run.a, champion: run.champion });
@@ -320,7 +320,7 @@
       c.wcBoost = 8; // pesa na Bola de Ouro da próxima temporada
       const sp = c.spells[c.spells.length - 1];
       if (sp && sp.club === run.club) sp.titles++;
-      if (!(c.cards || []).some(k => k.type === 'mundial')) run.card = S.addCard(c, 'mundial', 'MUNDIAL DE CLUBES ' + run.year);
+      run.card = S.dropCard(c, 'mundial', 'MUNDIAL DE CLUBES ' + run.year);
     }
     c.cwcHist = c.cwcHist || [];
     c.cwcHist.push({ year: run.year, club: run.club, reached, g: run.g, a: run.a, champion: run.champion });

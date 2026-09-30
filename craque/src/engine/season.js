@@ -272,12 +272,13 @@
     const main = isDef ? (c.pos === 'GOL' ? cleanSheets + ' SEM SOFRER GOL' : goals ? goals + ' GOLS · ' + cleanSheets + ' S/ GOL' : cleanSheets + ' SEM SOFRER GOL') : c.pos === 'MEI' ? assists + ' ASSIST.' : goals + ' GOLS';
     // Cartas raras: Seleção da Temporada e Herói da Final saem no máximo uma vez na carreira
     const has = t => (c.cards || []).some(k => k.type === t);
-    if (awards.some(a => a.id === 'team') && rating >= 8.3 && games >= 25 && club.tier >= 3 && !has('tots')) cards.push(S.addCard(c, 'tots', lg.name.toUpperCase() + ' ' + yr + ' · ' + main));
-    if (M && M.type === 'cont' && M.ok && !has('heroi')) cards.push(S.addCard(c, 'heroi', 'FINAL DA ' + M.comp.toUpperCase() + ' ' + yr));
-    if (ballon) cards.push(S.addCard(c, 'bola', 'MELHOR DO MUNDO · ' + yr));
+    const drop = (t, ok, txt) => { const k = ok && S.dropCard(c, t, txt); if (k) cards.push(k); };
+    drop('tots', awards.some(a => a.id === 'team') && rating >= 8.3 && games >= 25 && club.tier >= 3, lg.name.toUpperCase() + ' ' + yr + ' · ' + main);
+    drop('heroi', M && M.type === 'cont' && M.ok, 'FINAL DA ' + (M ? M.comp : '').toUpperCase() + ' ' + yr);
+    drop('bola', !!ballon, 'MELHOR DO MUNDO · ' + yr);
     // Mais raras (uma por carreira): marcas da temporada, idade e a temporada perfeita
     const ids = titles.map(t => t.id);
-    const once = (t, ok, txt) => { if (ok && !has(t)) cards.push(S.addCard(c, t, txt)); };
+    const once = drop;
     if (games >= 20) {
       // Uma por posição, mais as de idade
       once('chuteira', c.pos === 'ATA' && goals >= 30, goals + ' GOLS · ' + lg.name.toUpperCase() + ' ' + yr);

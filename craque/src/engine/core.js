@@ -270,6 +270,18 @@
   // Ajudantes usados pelas outras partes do motor
   // Cartas especiais ganhas na carreira (Seleção da Temporada, Herói da Final, Copa do Mundo, Bola de Ouro).
   // Guardam a foto do momento: nota, atributos e clube daquele ano. O texto do rodapé vem pronto.
+  // Chance de a carta sair quando a condição é cumprida (quanto mais rara, menor) e no máximo 4 por carreira
+  S.CARD_DROP = { tots: 0.3, heroi: 0.3, mundial: 0.3, muralha: 0.3, xerife: 0.3, joia: 0.3, lenda: 0.3,
+    chuteira: 0.18, garcom: 0.18, copa: 0.18, bola: 0.18, triplice: 0.18, perfeita: 0.25 };
+  S.CARD_MAX = 4;
+  S.dropCard = function (c, type, txt) {
+    const cards = c.cards || [];
+    if (cards.length >= S.CARD_MAX || cards.some(k => k.type === type)) return null;
+    // Sorteio próprio (não mexe no sorteio da temporada): mesma carreira, mesmo resultado
+    const h = [...(type + ':' + c.season + ':' + c.name + ':' + (c.totals.games || 0))].reduce((a, ch) => Math.imul(a ^ ch.charCodeAt(0), 16777619) >>> 0, 2166136261);
+    if (S.rng(h)() >= (S.CARD_DROP[type] || 0.3)) return null;
+    return S.addCard(c, type, txt);
+  };
   S.addCard = function (c, type, txt) {
     c.cards = c.cards || [];
     const card = { type, season: c.season, age: c.age, ovr: S.ovr(c), attrs: S.eff(c), club: c.club, txt };
