@@ -1329,3 +1329,9 @@ details.more > summary { font: 600 16px var(--body); }
 .ev-tag { font: var(--t-label); letter-spacing: .14em; text-transform: uppercase; }
 .ev-tag.green { color: #0E5A30; } .ev-tag.red { color: #8E1B24; } .ev-tag.blue { color: #1D4C9E; }
 .ev-res .er-ic:has(.seal) { display: grid; place-items: center; }
+
+/* Conquistas com selo: sem o filtro cinza (a bloqueada usa o selo de cadeado) */
+.ach .ic:has(.seal) { filter: none; opacity: 1; }
+.ach:not(.on) .ic .seal { opacity: .75; }
+.ach b { font: 700 16px/1.1 var(--display); }
+.ach .d { font-weight: 500; }

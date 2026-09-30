@@ -18,7 +18,7 @@
 
   function achTile(a, have, isNew) {
     const h = have[a.id];
-    return '<div class="ach' + (h ? ' on' : '') + (isNew ? ' new' : '') + '"><span class="ic">' + (h ? a.icon : '🔒') + '</span>' +
+    return '<div class="ach' + (h ? ' on' : '') + (isNew ? ' new' : '') + '"><span class="ic">' + (h ? U.icoOf(a, 'sm') : U.seal('lock', 'sand', 'sm')) + '</span>' +
       '<b>' + esc(a.name) + '</b><span class="d">' + esc(a.desc) + '</span>' +
       (h ? '<span class="by">' + (isNew ? 'NOVA · ' : '') + esc(h.name) + ' · ' + h.year + '</span>' : '') + '</div>';
   }
