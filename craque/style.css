@@ -1271,3 +1271,16 @@ h2 { font: var(--t-h1); letter-spacing: .01em; }
 .chip.syn { font-weight: 600; }
 .prep-done { font: 600 16px/1.35 var(--body); }
 .choice .fx { font: 600 14px/1.35 var(--body); }
+
+/* ===== Escala de texto (A5: propostas) ===== */
+.offer .club { font: var(--t-h2); }
+.offer .lg { font: var(--t-small); }
+.offer .of-kind { font: 700 16px/1.1 var(--display); }
+.of-role { font: 700 16px var(--display); letter-spacing: .04em; }
+.of-str small { font: var(--t-label); letter-spacing: .08em; }
+.of-str b { font: 800 28px/1 var(--display); }
+.stars { font-size: 14px; }
+.off-tools .tool, .wc-sim .tool { font: 700 16px var(--display); }
+.off-tools .tool small { font: 500 12px var(--body); }
+.deal thead th { font: var(--t-label); letter-spacing: .06em; }
+.lg-row em { font-weight: 700; }
