@@ -65,7 +65,9 @@
       const rank = 1 + rivals.filter(x => x.strength > club.strength).length;
       // Final e briga pelo título só para quem está entre os mais fortes da liga
       const pool = [['classico', c.pos === 'MEI' ? 4 : 3]];
-      if (rank <= 5) pool.push(['cup', 1]);
+      // Final da copa nacional: só para quem está entre os 8 mais fortes do país (todas as divisões)
+      const cupField = S.cupField(club);
+      if (cupField.indexOf(club.id) >= 0 && cupField.indexOf(club.id) < 8) pool.push(['cup', 1]);
       if (rank <= 2) pool.push(['title', 1.5]);
       // Última rodada valendo o acesso (divisões de baixo, times perto do G-4)
       const LD = D.LADDER[club.league];
@@ -75,7 +77,7 @@
       if (contName && (contName === 'Libertadores' ? rank <= 4 : club.strength >= 78)) pool.push(['cont', 1.2]);
       let x = r() * pool.reduce((a, p) => a + p[1], 0), type = pool[0][0];
       for (const [t, w] of pool) { x -= w; if (x < 0) { type = t; break; } }
-      let vs = type === 'cup' ? r.pick(rivals.slice(0, 8)) : type === 'acesso' ? r.pick(rivals.slice(0, 6)) : type === 'classico' ? S.derbyOf(club, r.pick) || rivals[0] : rivals[0];
+      let vs = type === 'cup' ? D.CLUB_BY_ID[r.pick(cupField.filter(id => id !== club.id).slice(0, 8))] : type === 'acesso' ? r.pick(rivals.slice(0, 6)) : type === 'classico' ? S.derbyOf(club, r.pick) || rivals[0] : rivals[0];
       if (type === 'cont') {
         // Adversário da final: um grande de outra liga do mesmo continente
         const libert = S.contName(club) === 'Libertadores';

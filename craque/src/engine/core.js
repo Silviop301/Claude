@@ -270,6 +270,14 @@
     return { id: 'banco', name: 'Banco', share: 0.12 };
   };
 
+  // Copa nacional: todos os clubes do país (todas as divisões), do mais forte ao mais fraco
+  const cupCache = {};
+  S.cupField = function (club) {
+    const ct = D.countryOf(club);
+    return cupCache[ct] || (cupCache[ct] = D.CLUBS.filter(x => D.countryOf(x) === ct).sort((a, b) => b.strength - a.strength).map(x => x.id));
+  };
+  S.cupTop = club => D.CLUB_BY_ID[S.cupField(club)[0]].strength;
+
   S.wage = function (c, club) {
     const lg = D.LEAGUE_BY_ID[club.league];
     const base = D.TIERS[club.tier].wage * (lg.wageMult || 1);

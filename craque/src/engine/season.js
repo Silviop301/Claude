@@ -113,7 +113,10 @@
     // Defesa e físico pesam nos jogos grandes
     const titleBonus = (c.captain ? 0.08 : 0) + clamp((E.def + E.fis - 75) / 220, 0, 0.22);
     const pLeague = clamp(0.02 + (sEff - top + 4) / 16 + titleBonus * 0.6, 0.01, 0.55);
-    const pCup = clamp(pLeague * 0.5 + 0.03 + titleBonus * 0.3, 0.02, 0.4);
+    // Copa nacional junta todas as divisões do país: a chance compara com os mais fortes do país, não da liga
+    // (time de divisão de baixo só leva como zebra rara)
+    const countryTop = S.cupTop(club);
+    const pCup = clamp(0.02 + (sEff - countryTop + 4) / 20 + titleBonus * 0.3, 0.003, 0.4);
     let league = r() < pLeague;
     let cup = r() < pCup;
     // Jogo decisivo (minigame) manda no resultado
