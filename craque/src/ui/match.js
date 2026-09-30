@@ -45,7 +45,7 @@
     if (!m) return U.season();
     G.step = 'moment';
     // Fechou o jogo no meio da cobrança? A chance decide (sem repetir o chute)
-    if (m.started) { S.autoMoment(G.c); save(); return U.season(); }
+    if (m.started || U.cfg.moments === 'auto') { S.autoMoment(G.c); save(); return U.season(); } // configuração: a carta decide
     save();
     momentIntro(m);
   }

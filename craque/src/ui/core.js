@@ -30,6 +30,12 @@
     if (window.CLIMBIX_CLOUD) window.CLIMBIX_CLOUD.touch(key); // com conta, vai para a nuvem
   }
   // "at": quando foi salvo (na nuvem vale a carreira mais recente; carreira encerrada fica marcada como vazia)
+  // Configurações do jogador (tela em ui/settings.js)
+  const CFG_KEY = 'climbix-config';
+  const cfg = Object.assign({ papers: 'all', cups: 'play', moments: 'play', fast: false, fx3d: true, vibe: true }, load(CFG_KEY) || {});
+  window.CLIMBIX_CFG = cfg;
+  const setCfg = (k, v) => { cfg[k] = v; store(CFG_KEY, cfg); };
+  const vibe = p => { if (cfg.vibe && navigator.vibrate) navigator.vibrate(p); };
   function save() { store(SAVE, G.c && !G.c.retired ? { c: G.c, step: G.step, at: Date.now() } : { c: null, at: Date.now() }); }
 
   function render(html) {
@@ -81,7 +87,7 @@
     // Som fica no fim da linha dos medidores (libera espaço para nome, idade e clube)
     $('bar-rel').innerHTML = barMeter('👔', 'Técnico', S.relLabel(G.c.rel.coach), G.c.rel.coach) + barMeter('📣', 'Torcida', S.relLabel(G.c.rel.fans), G.c.rel.fans) +
       barMeter('⭐', 'Fama', S.fameLabel(G.c.fame), Math.min(100, Math.round(G.c.fame / 3)), 'fame') +
-      '<span class="bar-btns"><button class="snd-mini" id="b-snd" aria-label="Som">' + (window.CRAQUE_SFX && !window.CRAQUE_SFX.on ? '🔇' : '🔊') + '</button>' +
+      '<span class="bar-btns"><button class="snd-mini" id="b-snd" aria-label="Configurações">⚙️</button>' +
       '<button class="snd-mini home-btn" id="b-home" aria-label="Voltar ao início">' + HOUSE + '</button></span>';
     $('bar-rel').querySelectorAll('[data-tip]').forEach(m => m.onclick = e => { e.stopPropagation(); barTip(m); });
     // Voltar ao início: a carreira fica salva e continua de onde parou
@@ -93,7 +99,7 @@
         window.CRAQUE_UI.home();
       });
     };
-    $('b-snd').onclick = e => { e.stopPropagation(); if (window.CRAQUE_SFX) window.CRAQUE_SFX.toggle(); $('b-snd').textContent = window.CRAQUE_SFX.on ? '🔊' : '🔇'; };
+    $('b-snd').onclick = e => { e.stopPropagation(); window.CRAQUE_UI.settings(); };
     const T = G.c.totals;
     // Números do topo por posição: goleiro (sem sofrer gol, pênaltis defendidos), zagueiro (gols, sem sofrer gol)
     const tot = G.c.pos === 'GOL' ? [[T.cs || 0, 'S/ GOL'], [T.penSaved || 0, 'PÊN. DEF']]
@@ -143,5 +149,5 @@
   const tierCls = o => (o >= 85 ? 'icone' : o >= 75 ? 'ouro' : o >= 65 ? 'prata' : 'bronze');
   const TIER_NAME = { bronze: 'Bronze', prata: 'Prata', ouro: 'Ouro', icone: 'Ícone' };
 
-  window.CRAQUE_UI = { ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar };
+  window.CRAQUE_UI = { cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar };
 })();

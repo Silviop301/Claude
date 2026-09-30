@@ -41,9 +41,9 @@
   function mount3d(host, d, opts) {
     const cv = host.querySelector('canvas');
     if (cv) window.CRAQUE_CARD(cv, d);
-    const go = () => (window.CRAQUE_BALL && window.CRAQUE_BALL.card3d ? window.CRAQUE_BALL.card3d(host, d, opts) : Promise.resolve(null));
+    const go = () => (window.CRAQUE_BALL && window.CRAQUE_BALL.card3d && U.cfg.fx3d ? window.CRAQUE_BALL.card3d(host, d, opts) : Promise.resolve(null));
     // O módulo 3D pode ainda estar carregando
-    const wait = n => (window.CRAQUE_BALL && window.CRAQUE_BALL.card3d) || n <= 0 ? go() : new Promise(r => setTimeout(r, 150)).then(() => wait(n - 1));
+    const wait = n => (window.CRAQUE_BALL && window.CRAQUE_BALL.card3d) || n <= 0 || !U.cfg.fx3d ? go() : new Promise(r => setTimeout(r, 150)).then(() => wait(n - 1));
     return wait(20).then(v => { if (v) host.classList.add('has3d'); return v; });
   }
 

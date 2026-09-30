@@ -31,7 +31,7 @@
       '<div class="feed" id="feed"></div><div id="after"></div><p class="skip-hint" id="skip-hint">Toque para pular</p>'
     );
     const dur = 1500, t0 = performance.now();
-    let skip = false, shown = [0, 0, 0];
+    let skip = !!U.cfg.fast, shown = [0, 0, 0]; // configuração: resumo rápido
     // Liga o "pular" só depois: o toque que abriu esta tela ainda está se propagando
     setTimeout(() => { screen.onclick = () => { skip = true; }; }, 50);
     (function tick(now) {
@@ -74,7 +74,7 @@
       const m = list[i++];
       w.innerHTML = '<div class="bm-confetti">' + confetti + '</div><div class="bm-in"><div class="bm-art">' + m.art + '</div><span class="bm-top">' + esc(m.top) + '</span><b class="bm-name">' + esc(m.name) + '</b><small>Toque para continuar</small></div>';
       sfx('fanfare');
-      if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+      U.vibe([30, 40, 30]);
       clearTimeout(tmr); tmr = setTimeout(show, 2600);
     };
     w.onclick = show;
@@ -98,7 +98,7 @@
       $('sc-d').className = 'sv-d ' + (d > 0 ? 'up' : d < 0 ? 'down' : 'zero');
       if (t1 !== tierCls(res.ovr0)) { el.className = 'scard metal ' + t1 + ' tierup'; $('sc-tier').textContent = TIER_NAME[t1]; }
       el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
-      if (d > 0) { sfx('levelup'); if (navigator.vibrate) navigator.vibrate(25); }
+      if (d > 0) { sfx('levelup'); U.vibe(25); }
     };
     if (skip || !d) return finish();
     const t0 = performance.now(), ms = Math.min(900, 180 * Math.abs(d));

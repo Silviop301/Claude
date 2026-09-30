@@ -26,9 +26,9 @@
       '<p class="lead">' + (call.champ ? 'Vaga de campeão continental. ' : 'Vaga pelo ranking de clubes. ') + '32 clubes de todos os continentes brigam pelo título. ' +
       (call.starter ? 'Você é peça-chave do time.' : 'Você começa no banco, mas pode decidir.') + '</p></div>' +
       '<div class="card wc-rules"><p>Fase de grupos com 3 jogos, depois mata-mata até a final.</p><p>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</p></div>' +
-      '<button class="btn" id="b-wc">Começar o Mundial</button>'
+      '<button class="btn" id="b-wc">' + (U.cfg.cups === 'sim' ? 'Simular o Mundial' : 'Começar o Mundial') + '</button>'
     );
-    $('b-wc').onclick = () => { simAll = false; S.cwcStart(G.c); save(); wcPlay(); };
+    $('b-wc').onclick = () => { simAll = U.cfg.cups === 'sim'; S.cwcStart(G.c); save(); wcPlay(); };
   }
 
   function wcIntro() {
@@ -41,9 +41,9 @@
       '<div class="wc-hero"><span class="wc-bigflag">' + call.nation.flag + '</span><h2>Convocado pela seleção ' + ofCountry(G.c.country) + '!</h2>' +
       '<p class="lead">' + (call.starter ? 'Você chega como titular. O país inteiro está de olho.' : 'Você vai como reserva: entra no segundo tempo e pode decidir.') + '</p></div>' +
       '<div class="card wc-rules"><p>Fase de grupos com 3 jogos, depois mata-mata até a final.</p><p>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</p></div>' +
-      '<button class="btn" id="b-wc">Começar a Copa</button>'
+      '<button class="btn" id="b-wc">' + (U.cfg.cups === 'sim' ? 'Simular a Copa' : 'Começar a Copa') + '</button>'
     );
-    $('b-wc').onclick = () => { simAll = false; S.wcStart(G.c); save(); wcPlay(); };
+    $('b-wc').onclick = () => { simAll = U.cfg.cups === 'sim'; S.wcStart(G.c); save(); wcPlay(); };
   }
 
   function wcRow(g) {
@@ -154,8 +154,8 @@
       if (!list.isConnected) return;
       skip = false; // "Pular jogo" vale só para a partida em andamento
       // Lance decisivo ou pênaltis pendentes (inclusive ao voltar para o jogo)
-      if (run.live) return simAll ? (S.wcMomentAuto(G.c), save(), wcPlay()) : wcLive();
-      if (run.pending) return simAll ? (S.wcPensAuto(G.c), save(), wcPlay()) : wcPens();
+      if (run.live) return simAll || U.cfg.moments === 'auto' ? (S.wcMomentAuto(G.c), save(), wcPlay()) : wcLive();
+      if (run.pending) return simAll || U.cfg.moments === 'auto' ? (S.wcPensAuto(G.c), save(), wcPlay()) : wcPens();
       const g = S.wcNext(G.c);
       save();
       if (!g) return wcFinal();
@@ -170,7 +170,7 @@
       // Jogo com lance: o relógio para no minuto do lance
       if (g.live) return runClock(el, g, 0, g.moment.minute, spd, () => {
         el.classList.add('paused');
-        if (simAll) { S.wcMomentAuto(G.c); save(); return wcPlay(); }
+        if (simAll || U.cfg.moments === 'auto') { S.wcMomentAuto(G.c); save(); return wcPlay(); }
         setTimeout(wcLive, isFast() ? 100 : 500);
       });
       runClock(el, g, 0, 90, spd, () => { finish(el, g); setTimeout(next, simAll ? 40 : isFast() ? 200 : 900); });

@@ -226,7 +226,7 @@
   // Peças reaproveitadas pelo minigame do goleiro (defend.js)
   // Gol 3D (traves e rede do modelo) no lugar do desenho; se o 3D não carregar, fica o desenho
   function goal3d(svg) {
-    if (!root.CRAQUE_BALL || !root.CRAQUE_BALL.goal) return Promise.resolve(null);
+    if (!root.CRAQUE_BALL || !root.CRAQUE_BALL.goal || (root.CLIMBIX_CFG && root.CLIMBIX_CFG.fx3d === false)) return Promise.resolve(null);
     return root.CRAQUE_BALL.goal(svg, { w: 360, h: 320, left: px(-1), right: px(1), top: py(1), ground: GY });
   }
   root.CRAQUE_KICK_PARTS = { scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d, keeperSprite, animateWall };
@@ -248,7 +248,7 @@
     const spr = keeperSprite(svg);
     spr.stand(setup.fk ? px(0.4 * side) : GX); spr.idle();
     animateWall(svg);
-    if (root.CRAQUE_BALL && root.CRAQUE_BALL.flyer) {
+    if (root.CRAQUE_BALL && root.CRAQUE_BALL.flyer && !(root.CLIMBIX_CFG && root.CLIMBIX_CFG.fx3d === false)) {
       root.CRAQUE_BALL.flyer(stage, 360, 320).then(f => {
         if (!f) return;
         if (gone) return f.dispose();

@@ -38,9 +38,8 @@
     $('b-cloud').onclick = () => U.cloud('login');
     $('b-daily').onclick = () => { if (!saved || !saved.c) return U.dailyStart(); U.ask('Começar a carreira do dia?', 'A carreira em andamento será substituída.', 'Começar', U.dailyStart); };
     const snd = $('b-sound');
-    const sndTxt = () => { snd.textContent = window.CRAQUE_SFX && window.CRAQUE_SFX.on ? '🔊 Som ligado' : '🔇 Som desligado'; };
-    if (snd) { sndTxt(); snd.onclick = () => { if (window.CRAQUE_SFX) window.CRAQUE_SFX.toggle(); sndTxt(); }; }
-    if (window.CRAQUE_BALL) window.CRAQUE_BALL.mount($('ball3d'));
+    if (snd) { snd.textContent = '⚙️ Configurações'; snd.onclick = U.settings; }
+    if (window.CRAQUE_BALL && U.cfg.fx3d) window.CRAQUE_BALL.mount($('ball3d'));
   }
 
   function resume(st) {

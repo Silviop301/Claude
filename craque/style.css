@@ -1054,3 +1054,19 @@ details.more .hl { background: rgba(255, 255, 255, 0.08); border-radius: 10px; p
 .mom-res.ok .mr-big { color: var(--green); }
 .mom-res.ko .mr-big { color: #B3242F; }
 .mom-res .mr-txt { margin: 0; font-weight: 600; }
+
+/* Configurações */
+.cfg-wrap { position: fixed; inset: 0; z-index: 70; background: rgba(4, 12, 8, .7); display: flex; align-items: flex-end; justify-content: center; animation: fade-in .2s ease; }
+.cfg { width: min(100%, 460px); max-height: 92svh; overflow-y: auto; background: #10301F; border-radius: 20px 20px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 12px; box-shadow: 0 -10px 40px rgba(0,0,0,.4); animation: enter .25s ease-out; }
+.cfg-head { display: flex; justify-content: space-between; align-items: center; }
+.cfg-head b { font: 800 22px var(--display); }
+.cfg-x { border: 0; background: rgba(255,255,255,.1); color: #fff; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; }
+.cfg-row { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; background: rgba(255,255,255,.05); }
+.cfg-t { display: flex; gap: 10px; align-items: center; }
+.cfg-t i { font-style: normal; font-size: 22px; }
+.cfg-t b { display: block; font: 800 17px var(--display); }
+.cfg-t small { display: block; color: #B9CDBF; font-size: 13px; }
+.cfg-seg button { font-size: 15px; padding: 9px 4px; }
+.cfg-note { margin: 0; color: #93AD9D; font-size: 12px; }
+.cfg-wrap.shown, .cfg-wrap.shown .cfg { animation: none; }

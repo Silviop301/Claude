@@ -116,6 +116,9 @@
   // ---------- capa ----------
   // o = { c, year, extra, head, pose, kit, caption, stats, lede, subs, column }
   function paper(o, onClose) {
+    // Configuração: sem jornais, ou só as edições especiais (transferência, final, Copa, despedida)
+    const pc = U.cfg.papers;
+    if (pc === 'none' || (pc === 'special' && !o.extra)) { setTimeout(() => onClose && onClose(), 0); return null; }
     let k;
     do { k = Math.floor(Math.random() * PAPERS.length); } while (k === lastPaper);
     lastPaper = k;
@@ -133,7 +136,7 @@
       (o.column ? '<div class="pp-opinion"><span>Opinião · ' + S.COLUMNIST + '</span><b>' + esc(o.column.t) + '</b><p>' + esc(o.column.x) + '</p></div>' : '') +
       '<div class="pp-tap">Toque para fechar</div></div></div>';
     // Com 3D: a mesma página desenhada numa folha de papel que chega girando, desdobra e dá para inclinar
-    if (window.CRAQUE_BALL && window.CRAQUE_BALL.newspaper && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+    if (window.CRAQUE_BALL && window.CRAQUE_BALL.newspaper && U.cfg.fx3d && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
       const box = document.createElement('div');
       box.className = 'paper-wrap paper3d';
       box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', P.name + ': ' + o.head);
