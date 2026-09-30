@@ -176,7 +176,17 @@
       if (M.ok && pos > LD0.promo) pos = LD0.promo;
       else if (!M.ok && pos <= LD0.promo) pos = LD0.promo + 1;
     }
-    const table = { pos, pts, gap: league ? 0 : Math.max(1, leaderPts - pts), league: lg.name };
+    // Pontuação mostrada: a tabela de verdade é bem mais espalhada que as forças (campeão perto de 2 pontos
+    // por jogo, lanterna perto de 0,8). Mantém a ordem e estica as distâncias até o tamanho de uma liga real.
+    const col = otherPts.slice().sort((a, b) => b - a);
+    col.splice(pos - 1, 0, pts);
+    if (!league && pos > 1) col[0] = Math.max(col[0], leaderPts);
+    for (let i = 1; i < col.length; i++) if (col[i] > col[i - 1]) col[i] = col[i - 1];
+    const mid = col.reduce((a2, x) => a2 + x, 0) / col.length, spread = col[0] - col[col.length - 1];
+    const k = Math.max(1, rounds * 1.2 / Math.max(1, spread));
+    const shown = col.map(x => clamp(Math.round(mid + (x - mid) * k), Math.round(rounds * 0.4), rounds * 3));
+    if (!league && pos > 1 && shown[0] <= shown[pos - 1]) shown[0] = shown[pos - 1] + 1;
+    const table = { pos, pts: shown[pos - 1], gap: league ? 0 : Math.max(1, shown[0] - shown[pos - 1]), league: lg.name };
     // Acesso / rebaixamento pela posição final
     const LD = D.LADDER[club.league];
     let move = null;
