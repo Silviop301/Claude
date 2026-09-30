@@ -122,7 +122,7 @@
     const P = PAPERS[k];
     const wrap = document.createElement('div');
     wrap.className = 'paper-wrap';
-    wrap.innerHTML = '<div class="paper' + (o.extra ? ' is-extra' : '') + '"><div class="pp-top"><span>' + (o.extra ? 'Edição extra · ' : 'Edição de ') + o.year + '</span><span>R$ ' + (2 + (o.year % 5)) + ',50</span></div>' +
+    wrap.innerHTML = '<div class="paper' + (o.extra ? ' is-extra' : '') + '"><div class="pp-in"><div class="pp-top"><span>' + (o.extra ? 'Edição extra · ' : 'Edição de ') + o.year + '</span><span>R$ ' + (2 + (o.year % 5)) + ',50</span></div>' +
       '<div class="pp-name">' + P.name + '</div><div class="pp-motto">' + P.motto + '</div>' +
       (o.extra ? '<div class="pp-extra">' + esc(o.extra) + '</div>' : '') +
       '<h3 class="pp-head">' + esc(o.head) + '</h3>' +
@@ -131,9 +131,10 @@
       '<p class="pp-lede">' + esc(o.lede) + '</p>' +
       (o.subs || []).map(h => '<p class="pp-sub">' + esc(h) + '</p>').join('') + '</div></div>' +
       (o.column ? '<div class="pp-opinion"><span>Opinião · ' + S.COLUMNIST + '</span><b>' + esc(o.column.t) + '</b><p>' + esc(o.column.x) + '</p></div>' : '') +
-      '<div class="pp-tap">Toque para fechar</div></div>';
+      '<div class="pp-tap">Toque para fechar</div></div></div>';
     document.body.appendChild(wrap);
     sfx('paper');
+    unfold(wrap.querySelector('.paper'));
     const close = e => {
       if (e) e.stopPropagation();
       wrap.classList.add('out');
@@ -141,6 +142,29 @@
     };
     setTimeout(() => { wrap.onclick = close; }, 400);
     return wrap;
+  }
+
+  // Jornal em 3D: chega girando dobrado ao meio, desdobra (a metade de cima vira pela dobra) e fica flutuando.
+  // A metade de cima é uma cópia da página com a frente e o verso (papel liso), girando junto pela dobra.
+  function unfold(pp) {
+    if (!pp || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    pp.classList.add('folded');
+    const flap = document.createElement('div');
+    flap.className = 'pp-flap';
+    const front = document.createElement('div');
+    front.className = 'pp-flap-front';
+    front.innerHTML = pp.querySelector('.pp-in').innerHTML;
+    const back = document.createElement('div');
+    back.className = 'pp-flap-back';
+    flap.appendChild(front); flap.appendChild(back);
+    pp.appendChild(flap);
+    front.style.height = pp.offsetHeight + 'px';
+    setTimeout(() => {
+      if (!pp.isConnected) return;
+      flap.classList.add('open');
+      sfx('paper');
+      setTimeout(() => { pp.classList.remove('folded'); flap.remove(); pp.classList.add('flat'); }, 520);
+    }, 760);
   }
 
   // ---------- edições extras ----------
