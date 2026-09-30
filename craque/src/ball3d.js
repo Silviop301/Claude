@@ -465,14 +465,28 @@ function newspaper(host, page, onClose) {
   const grain = new THREE.CanvasTexture(gc); grain.wrapS = grain.wrapT = THREE.RepeatWrapping; grain.repeat.set(4, 6);
   const geo = new THREE.PlaneGeometry(W, H, SX, SY);
   const base = geo.attributes.position.array.slice();
+  const nV = geo.attributes.position.count;
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(nV * 3).fill(1), 3));
+  // Sombra da tinta: quanto cada ponto da folha está virado para a luz principal (1 = de frente, como parada)
+  const LIGHT = new THREE.Vector3(-2, 3, 4).normalize(), REST_LIT = 0.62 + 0.38 * LIGHT.z, nv = new THREE.Vector3();
+  function shadeInk(q) {
+    const n = geo.attributes.normal.array, col = geo.attributes.color.array;
+    for (let i = 0; i < nV; i++) {
+      nv.set(n[i * 3], n[i * 3 + 1], n[i * 3 + 2]).applyQuaternion(q);
+      const v = Math.min(1, Math.max(0.3, (0.62 + 0.38 * Math.max(0, nv.dot(LIGHT))) / REST_LIT));
+      col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = v;
+    }
+    geo.attributes.color.needsUpdate = true;
+  }
   const front = new THREE.MeshPhysicalMaterial({ map: tex, roughness: 0.7, metalness: 0, sheen: 0.25, sheenRoughness: 0.6, sheenColor: new THREE.Color(0xfff6e0), bumpMap: grain, bumpScale: 0.6, envMapIntensity: 0.3, side: THREE.FrontSide });
   const back = new THREE.MeshStandardMaterial({ color: 0xe6dcc5, roughness: 0.7, bumpMap: grain, bumpScale: 0.6, envMapIntensity: 0.4, side: THREE.BackSide });
   const pivot = new THREE.Group(); scene.add(pivot);
   const sheet = new THREE.Group(); pivot.add(sheet);
-  // Camada de tinta: a mesma folha, com a página por cima sem iluminação nem tone mapping
+  // Camada de tinta: a mesma folha, com a página por cima sem iluminação nem tone mapping (cores vivas, texto preto).
+  // Ela recebe a mesma sombra do papel pelas cores de vértice (shadeInk): a foto escurece junto com a dobra.
   const inkTex = new THREE.CanvasTexture(page);
   inkTex.colorSpace = THREE.SRGBColorSpace; inkTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  const ink = new THREE.MeshBasicMaterial({ map: inkTex, transparent: true, toneMapped: false, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, side: THREE.FrontSide });
+  const ink = new THREE.MeshBasicMaterial({ map: inkTex, vertexColors: true, transparent: true, toneMapped: false, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, side: THREE.FrontSide });
   const inkMesh = new THREE.Mesh(geo, ink); inkMesh.renderOrder = 1;
   sheet.add(new THREE.Mesh(geo, front), new THREE.Mesh(geo, back), inkMesh);
   const sc = document.createElement('canvas'); sc.width = sc.height = 256;
@@ -523,8 +537,8 @@ function newspaper(host, page, onClose) {
     if (Math.hypot(dx, dy) > 6) down.moved = true;
     tilt.ty = THREE.MathUtils.clamp(dx * 0.006, -0.75, 0.75); tilt.tx = THREE.MathUtils.clamp(dy * 0.006, -0.6, 0.6);
   });
-  // Toque fecha na hora (sem animação de saída)
-  const up = () => { if (!down) return; const tap = !down.moved; down = null; tilt.tx = tilt.ty = 0; if (tap && !done) { done = true; dispose(); onClose && onClose(); } };
+  // Toque fecha: a folha dobra ao meio e desce até sumir (sem giro)
+  const up = () => { if (!down) return; const tap = !down.moved; down = null; tilt.tx = tilt.ty = 0; if (tap && !done && phase !== 'exit') start('exit'); };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   const dispose = () => {
     cancelAnimationFrame(raf); removeEventListener('resize', resize);
@@ -534,7 +548,7 @@ function newspaper(host, page, onClose) {
   function frame(now) {
     if (!host.isConnected) { dispose(); return; } // saiu da tela (ex.: voltou ao início)
     const t = (now - t0) / 1000, time = now / 1000;
-    let fold = 0, curve = 1, flutter = 0, z = 0, rz = REST_Z, rx = 0, ry = 0, s = 1;
+    let fold = 0, curve = 1, flutter = 0, z = 0, y = 0, rz = REST_Z, rx = 0, ry = 0, s = 1;
     if (phase === 'enter') {
       const k = Math.min(t / 1.5, 1), e = easeOut(k);
       fold = 1; z = -16 * (1 - e); rz = REST_Z - (1 - e) * Math.PI * 7; rx = (1 - e) * 0.5; flutter = (1 - e) * 0.6;
@@ -550,8 +564,9 @@ function newspaper(host, page, onClose) {
       curve = 1 + Math.sin(time * 1.3) * 0.15;
     } else if (phase === 'exit') {
       hint.style.opacity = 0;
-      const k = Math.min(t / 0.9, 1), f = easeInOut(Math.min(k / 0.4, 1)), out = Math.max(0, (k - 0.35) / 0.65), e = out * out;
-      fold = f; z = -16 * e; rz = REST_Z + e * Math.PI * 5; flutter = e * 0.5;
+      // Dobra primeiro (40% do tempo) e depois desce reto para fora da tela
+      const k = Math.min(t / 0.85, 1), f = easeInOut(Math.min(k / 0.4, 1)), out = Math.max(0, (k - 0.35) / 0.65), e = out * out;
+      fold = f; y = -2.6 * e; rz = REST_Z;
       dim.style.opacity = 1 - e;
       if (k >= 1 && !done) { done = true; dispose(); onClose && onClose(); return; }
     }
@@ -560,9 +575,10 @@ function newspaper(host, page, onClose) {
     tilt.vy += ((tilt.ty - tilt.y) * kS - tilt.vy * dmp) * dt; tilt.y += tilt.vy * dt;
     curve += Math.abs(tilt.y) * 0.8;
     deform(fold, curve, flutter, time);
-    pivot.position.z = z; pivot.scale.setScalar(s);
+    pivot.position.z = z; pivot.position.y = y; pivot.scale.setScalar(s);
     pivot.rotation.set(rx + tilt.x, ry + tilt.y, rz);
-    shadow.position.set(tilt.y * 0.15 + 0.03, -tilt.x * 0.12 - 0.05, z - 0.25);
+    shadeInk(pivot.quaternion);
+    shadow.position.set(tilt.y * 0.15 + 0.03, -tilt.x * 0.12 - 0.05 + y, z - 0.25);
     shadow.scale.set(W * 1.5, H * (1.35 - fold * 0.6), 1);
     shadow.rotation.z = rz; shadow.material.opacity = 0.8 * (1 - fold * 0.5);
     renderer.render(scene, camera);
