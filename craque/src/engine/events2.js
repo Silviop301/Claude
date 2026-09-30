@@ -1102,7 +1102,7 @@
       },
     },
     {
-      id: 'estadio', icon: '🏟️', tone: 'green', weight: 2, max: 1,
+      id: 'estadio', icon: '🏟️', ico: 'stadium', tone: 'green', weight: 2, max: 1,
       when: c => atClub(c) >= 1 && c.pos !== 'GOL',
       build: c => ({
         title: 'Estádio novo', text: D.O(club(c).name) + ' inaugura o estádio novo. Pênalti para o time no primeiro tempo.',
