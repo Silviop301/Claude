@@ -441,8 +441,8 @@ function newspaper(host, page, onClose) {
   const pc = document.createElement('canvas'); pc.width = TW; pc.height = TH;
   const px = pc.getContext('2d');
   px.drawImage(PAPER_BASE, 0, 0);
-  // Tinta por multiplicação (o papel aparece por baixo); duas passadas para a tinta ficar bem escura
-  px.globalCompositeOperation = 'multiply'; px.drawImage(page, 0, 0, TW, TH); px.drawImage(page, 0, 0, TW, TH); px.globalCompositeOperation = 'source-over';
+  // Foto e faixas coloridas entram no papel; o texto vai numa camada à parte (sem luz), para ficar preto de verdade
+  px.globalCompositeOperation = 'multiply'; px.drawImage(page, 0, 0, TW, TH); px.globalCompositeOperation = 'source-over';
 
   host.innerHTML = '<div class="np-dim"></div><p class="np-hint">Arraste para inclinar · toque para fechar</p>';
   const dim = host.querySelector('.np-dim'), hint = host.querySelector('.np-hint');
@@ -469,7 +469,12 @@ function newspaper(host, page, onClose) {
   const back = new THREE.MeshStandardMaterial({ color: 0xe6dcc5, roughness: 0.7, bumpMap: grain, bumpScale: 0.6, envMapIntensity: 0.4, side: THREE.BackSide });
   const pivot = new THREE.Group(); scene.add(pivot);
   const sheet = new THREE.Group(); pivot.add(sheet);
-  sheet.add(new THREE.Mesh(geo, front), new THREE.Mesh(geo, back));
+  // Camada de tinta: a mesma folha, com a página por cima sem iluminação nem tone mapping
+  const inkTex = new THREE.CanvasTexture(page);
+  inkTex.colorSpace = THREE.SRGBColorSpace; inkTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const ink = new THREE.MeshBasicMaterial({ map: inkTex, transparent: true, toneMapped: false, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, side: THREE.FrontSide });
+  const inkMesh = new THREE.Mesh(geo, ink); inkMesh.renderOrder = 1;
+  sheet.add(new THREE.Mesh(geo, front), new THREE.Mesh(geo, back), inkMesh);
   const sc = document.createElement('canvas'); sc.width = sc.height = 256;
   { const sx = sc.getContext('2d'), g = sx.createRadialGradient(128, 128, 10, 128, 128, 128); g.addColorStop(0, 'rgba(0,0,0,.6)'); g.addColorStop(1, 'rgba(0,0,0,0)'); sx.fillStyle = g; sx.fillRect(0, 0, 256, 256); }
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sc), transparent: true, depthWrite: false }));
@@ -522,7 +527,7 @@ function newspaper(host, page, onClose) {
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   const dispose = () => {
     cancelAnimationFrame(raf); removeEventListener('resize', resize);
-    geo.dispose(); tex.dispose(); grain.dispose(); front.dispose(); back.dispose(); pm.dispose(); renderer.dispose();
+    geo.dispose(); tex.dispose(); inkTex.dispose(); ink.dispose(); grain.dispose(); front.dispose(); back.dispose(); pm.dispose(); renderer.dispose();
   };
 
   function frame(now) {
