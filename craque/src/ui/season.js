@@ -217,6 +217,9 @@
       '<div class="news rv"><div class="np">' + U.emo('📰', 'xs') + ' Nos jornais</div><p>' + esc(res.headlines[0] || '') + '</p></div>' +
       wcBlock +
       // Detalhes (fechados): outros lances, o porquê da nota, técnico/torcida e contrato
+      // Craque carregando um time fraco (a partir do 2º ano) e o clube crescendo com ele
+      (res.carry >= 1 || res.grow ? '<p class="star-line rv">' + U.emo('💪', 'xs') + ' ' + (res.carry >= 1 ? 'Você carregou o time: <b>+' + res.carry + ' de força</b> nos jogos' : '') +
+        (res.grow ? (res.carry >= 1 ? '. ' : '') + 'Com você, ' + D.o(esc(res.grow.name)) + ' se reforçou: força <b>' + res.grow.from + ' → ' + res.grow.to + '</b>' : '') + '</p>' : '') +
       // Pontos de evolução ganhos nesta temporada (e por quê)
       (res.pe && res.pe.n ? '<p class="pe-gain rv">' + U.emo('⭐', 'xs') + ' <b>+' + res.pe.n + (res.pe.n > 1 ? ' pontos' : ' ponto') + ' de evolução</b> · ' + res.pe.why.map(w => esc(w[0])).join(' · ') + (res.pe.why.reduce((a, w) => a + w[1], 0) > res.pe.n ? ' · máximo de ' + S.PE_CAP + ' por temporada' : '') + '</p>' : '') +
       '<details class="more rv"><summary>Detalhes da temporada</summary>' +

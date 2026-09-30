@@ -107,7 +107,11 @@
 
     // Títulos: força do time + sua contribuição
     const contrib = games ? (rating - 6.5) * share * 2.2 : 0;
-    const sEff = club.strength + contrib + teamBoost;
+    // Craque num time fraco carrega o time (Neymar no Santos): só com diferença grande (10+) e a partir
+    // do 2º ano no clube; emprestado não conta
+    const spNow = c.spells[c.spells.length - 1], star = !c.loan && (spNow.seasons || 0) >= 1 && o - club.strength >= S.STAR_GAP;
+    const carry = games && star ? (o - club.strength - 5) * 0.2 * share : 0;
+    const sEff = club.strength + contrib + carry + teamBoost;
     const leagueClubs = D.CLUBS.filter(x => x.league === club.league);
     const top = Math.max(...leagueClubs.map(x => x.strength));
     // Defesa e físico pesam nos jogos grandes
@@ -356,6 +360,9 @@
       attrs: S.eff(c), cards, pe, // foto da carta desta temporada (para o álbum) e cartas especiais ganhas
     };
     res.move = move;
+    // O clube cresce com o craque: mais receita, patrocínio e reforços enquanto ele está lá (e perde aos poucos quando ele sai)
+    res.carry = Math.round(carry);
+    res.grow = S.starGrowth(c, club, o, games, rating, !c.loan && (spNow.seasons || 0) >= 2);
     res.headlines = S.headlines(c, res);
     res.column = S.column(c, res);
     if (move) moveClub(c, club, move.to);

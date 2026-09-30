@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-ebad23d3';
+const CACHE = 'craque-989e1454';
 const ASSETS = [
   "./",
   "./fonts/TwemojiCountryFlags.woff2",
@@ -178,6 +178,7 @@ const LATER = [
   "./assets/tw/1f49a.svg",
   "./assets/tw/1f4a5.svg",
   "./assets/tw/1f4a8.svg",
+  "./assets/tw/1f4aa.svg",
   "./assets/tw/1f4af.svg",
   "./assets/tw/1f4b0.svg",
   "./assets/tw/1f4b5.svg",

@@ -28,7 +28,24 @@
   D.CLUBS.forEach(cl => { if (!cl.league0) { cl.league0 = cl.league; cl.strength0 = cl.strength; } });
   S.applyLeagues = function (c) {
     const m = (c && c.leagueOf) || {}, f = (c && c.clubBoost) || {};
-    D.CLUBS.forEach(cl => { cl.league = m[cl.id] || cl.league0; cl.strength = cl.strength0 + (f[cl.id] || 0); });
+    const st = (c && c.starBoost) || {};
+    D.CLUBS.forEach(cl => { cl.league = m[cl.id] || cl.league0; cl.strength = cl.strength0 + (f[cl.id] || 0) + (st[cl.id] || 0); });
+  };
+  // Efeito do craque no clube: com nota 10+ acima do elenco e a partir do 2º ano no clube, cada boa temporada
+  // dá +1 de força (+2 se for brilhante), até +6 e sem passar de 3 abaixo da nota dele.
+  // Quando ele sai, o clube perde 1 por temporada.
+  S.STAR_MAX = 6; S.STAR_GAP = 10;
+  S.starGrowth = function (c, club, o, games, rating, ok) {
+    const sb = c.starBoost = c.starBoost || {};
+    Object.keys(sb).forEach(id => { if (id !== club.id && sb[id] > 0) { sb[id]--; if (!sb[id]) delete sb[id]; } });
+    let grow = null;
+    const cur = sb[club.id] || 0;
+    if (ok && games >= 20 && rating >= 7.0 && o - club.strength >= S.STAR_GAP && cur < S.STAR_MAX) {
+      const n = Math.min(rating >= 7.8 && o - club.strength >= 12 ? 2 : 1, S.STAR_MAX - cur, Math.max(0, o - 3 - club.strength));
+      if (n > 0) { sb[club.id] = cur + n; grow = { from: club.strength, to: club.strength + n, name: club.name }; }
+    }
+    S.applyLeagues(c);
+    return grow;
   };
   function moveClub(c, club, to) {
     const from = club.league;
