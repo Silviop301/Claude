@@ -1158,3 +1158,23 @@ h2 { font-size: 34px; line-height: 1.02; }
 .of-role { font-size: 15px; white-space: nowrap; }
 .of-str small { white-space: nowrap; font-size: 11px; }
 .home-snd .ico, .off-tools .tool .ico, .dl-top .ico { display: inline-block; margin-right: 4px; }
+/* Medidores empilhados: a barra mantém a altura (a regra antiga flex:1 zerava ela na coluna) */
+.rel .m .mb { flex: none; }
+/* Rótulo do resultado de evento ocupa a largura toda e quebra sem sobrepor o texto */
+.ev-res .eyebrow { width: 100%; flex: none; line-height: 1.35; }
+.ev-res .er-ic, .ev-res .er-txt { flex: none; }
+/* Sem o véu cinza do toque no iPhone: o estado escolhido já tem borda própria */
+button, a, .choice { -webkit-tap-highlight-color: transparent; }
+/* Celulares estreitos: rótulos dos medidores não encostam um no outro, nome e clube ganham espaço */
+.rel .ml { min-width: 0; overflow: hidden; }
+.rel .ml small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 370px) {
+  .rel .ml { gap: 3px; letter-spacing: 0; }
+  .rel .ml small { font-size: 9.5px; }
+  .rel .ml .ico { width: 12px; height: 12px; }
+  .bar-tot { gap: 4px; font-size: 14px; }
+  .bar-tot small { font-size: 9px; letter-spacing: 0; }
+}
+.rel .ml small { line-height: 1.3; }
+/* A característica escolhida fica nítida enquanto os números sobem; as outras apagam */
+.choice.chosen:disabled { opacity: 1; box-shadow: 0 0 0 3px var(--gold), 0 3px 0 rgba(0, 0, 0, .35); }

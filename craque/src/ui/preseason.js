@@ -189,6 +189,8 @@
       const x = ch[+b.dataset.i];
       showPreview(S.preview(G.c, x.type === 'up' ? { up: x.trait.id } : { add: x.trait.id }));
       if (!U.arm(b, '<b>Toque de novo para ' + (x.type === 'up' ? 'evoluir' : 'escolher') + '</b>')) return;
+      b.classList.add('chosen');
+      const ab = b.querySelector('.arm-back'); if (ab) ab.innerHTML = '<b>✓ Escolhida</b>';
       const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
       sfx('levelup');
       let done;
