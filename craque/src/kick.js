@@ -224,11 +224,8 @@
 
   // opts: { c, moment, onDone(ok) }
   // Peças reaproveitadas pelo minigame do goleiro (defend.js)
-  // Gol 3D (traves e rede do modelo) no lugar do desenho; se o 3D não carregar, fica o desenho
-  function goal3d(svg) {
-    if (!root.CRAQUE_BALL || !root.CRAQUE_BALL.goal || (root.CLIMBIX_CFG && root.CLIMBIX_CFG.fx3d === false)) return Promise.resolve(null);
-    return root.CRAQUE_BALL.goal(svg, { w: 360, h: 320, left: px(-1), right: px(1), top: py(1), ground: GY });
-  }
+  // Gol: sempre o desenho (o gol 3D pesava demais em celulares mais simples)
+  function goal3d() { return Promise.resolve(null); }
   root.CRAQUE_KICK_PARTS = { scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d, keeperSprite, animateWall };
 
   root.CRAQUE_KICK = function (el, opts) {
