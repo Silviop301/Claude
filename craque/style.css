@@ -1240,3 +1240,22 @@ h2 { font: var(--t-h1); letter-spacing: .01em; }
   .hg i { width: 32px; height: 32px; }
   .hg i .ico { width: 18px; height: 18px; }
 }
+
+/* ===== Escala de texto (A3: configurações) ===== */
+.cfg-head b { font: var(--t-h2); }
+.cfg-x { display: grid; place-items: center; }
+.cfg-x .ico { width: 18px; height: 18px; }
+.cfg-grp { display: flex; flex-direction: column; gap: 8px; }
+.cfg-box { background: rgba(255, 255, 255, .05); border-radius: 16px; overflow: hidden; }
+.cfg-box .cfg-row { background: none; border-radius: 0; padding: 14px 12px; gap: 10px; }
+.cfg-box .cfg-row + .cfg-row { border-top: 1px solid rgba(255, 255, 255, .06); }
+.cfg-t { gap: 12px; }
+.cfg-t i { width: 36px; height: 36px; flex: none; border-radius: 999px; background: rgba(143, 214, 174, .16); color: var(--label); display: grid; place-items: center; }
+.cfg-t i .ico { width: 20px; height: 20px; }
+.cfg-t b { font: var(--t-item); }
+.cfg-t small { font: 500 14px/1.35 var(--body); color: #C9DCCF; }
+.cfg-seg { padding: 4px; gap: 4px; border-radius: 12px; background: rgba(0, 0, 0, .22); }
+.cfg-seg button { background: transparent; color: #D3E4D9; border-radius: 9px; padding: 8px 4px; }
+.cfg-seg button.on { background: var(--paper); color: var(--ink); box-shadow: 0 1px 0 rgba(0, 0, 0, .3); }
+.cfg-note { font: 500 14px/1.35 var(--body); color: #B9CDBF; display: flex; gap: 6px; align-items: flex-start; }
+.cfg-note .ico { width: 15px; height: 15px; flex: none; margin-top: 2px; }

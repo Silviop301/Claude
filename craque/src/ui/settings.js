@@ -4,15 +4,20 @@
   const U = window.CRAQUE_UI;
   const { esc } = U;
   const canVibe = typeof navigator !== 'undefined' && !!navigator.vibrate;
-  const ROWS = () => [
-    { k: 'papers', ic: 'paper', t: 'Jornais', d: 'Capa do jornal no fim de cada temporada', opts: [['all', 'Todos'], ['special', 'Só especiais'], ['none', 'Nenhum']],
-      note: 'Especiais: transferências, finais, Copa e despedida' },
-    { k: 'cups', ic: 'globe', t: 'Copa e Mundial', d: 'Jogar jogo a jogo ou ver só o resultado', opts: [['play', 'Jogar'], ['sim', 'Simular direto']] },
-    { k: 'moments', ic: 'ball', t: 'Lances decisivos', d: 'Cobrar você mesmo ou deixar a sua carta decidir', opts: [['play', 'Jogar'], ['auto', 'Decidir sozinho']] },
-    { k: 'fast', ic: 'fast', t: 'Resumo da temporada', d: 'Números contando e telas de título', opts: [[false, 'Normal'], [true, 'Rápido']] },
-    { k: 'fx3d', ic: 'spark', t: 'Efeitos 3D', d: 'Cartas, bola e jornal em 3D', opts: [[true, 'Ligados'], [false, 'Desligados']], note: 'Desligue se o celular esquentar ou travar' },
-    { k: 'sound', ic: 'sound', t: 'Som', opts: [[true, 'Ligado'], [false, 'Desligado']] },
-  ].concat(canVibe ? [{ k: 'vibe', ic: 'vibe', t: 'Vibração', opts: [[true, 'Ligada'], [false, 'Desligada']] }] : []);
+  // Dois grupos: o que muda a partida e o que muda o visual/som
+  const GROUPS = () => [
+    { t: 'Partida', rows: [
+      { k: 'moments', ic: 'circle-dot', t: 'Lances decisivos', d: 'Cobrar você mesmo ou deixar a sua carta decidir', opts: [['play', 'Jogar'], ['auto', 'Decidir sozinho']] },
+      { k: 'cups', ic: 'globe', t: 'Copa e Mundial', d: 'Jogar jogo a jogo ou ver só o resultado', opts: [['play', 'Jogar'], ['sim', 'Simular direto']] },
+      { k: 'fast', ic: 'fast-forward', t: 'Resumo da temporada', d: 'Números contando e telas de título', opts: [[false, 'Normal'], [true, 'Rápido']] },
+    ] },
+    { t: 'Visual e som', rows: [
+      { k: 'papers', ic: 'newspaper', t: 'Jornais', d: 'Capa do jornal no fim de cada temporada', opts: [['all', 'Todos'], ['special', 'Só especiais'], ['none', 'Nenhum']],
+        note: 'Especiais: transferências, finais, Copa e despedida' },
+      { k: 'fx3d', ic: 'sparkles', t: 'Efeitos 3D', d: 'Cartas, bola e jornal em 3D', opts: [[true, 'Ligados'], [false, 'Desligados']], note: 'Desligue se o celular esquentar ou travar' },
+      { k: 'sound', ic: 'volume-2', t: 'Som', opts: [[true, 'Ligado'], [false, 'Desligado']] },
+    ].concat(canVibe ? [{ k: 'vibe', ic: 'smartphone', t: 'Vibração', opts: [[true, 'Ligada'], [false, 'Desligada']] }] : []) },
+  ];
   const value = k => (k === 'sound' ? !!(window.CRAQUE_SFX && window.CRAQUE_SFX.on) : window.CLIMBIX_CFG[k]);
 
   function settings() {
@@ -20,10 +25,11 @@
     const w = document.createElement('div');
     w.className = 'cfg-wrap';
     const paint = () => {
-      w.innerHTML = '<div class="cfg" role="dialog" aria-modal="true" aria-label="Configurações"><div class="cfg-head"><b>' + U.ICON.gear + ' Configurações</b><button class="cfg-x" aria-label="Fechar">✕</button></div>' +
-        ROWS().map(r => '<div class="cfg-row"><div class="cfg-t"><i>' + U.ICON[r.ic] + '</i><div><b>' + esc(r.t) + '</b>' + (r.d ? '<small>' + esc(r.d) + '</small>' : '') + '</div></div>' +
-          '<div class="seg cfg-seg">' + r.opts.map(([v, l]) => '<button data-k="' + r.k + '" data-v="' + v + '"' + (value(r.k) === v ? ' class="on"' : '') + '>' + esc(l) + '</button>').join('') + '</div>' +
-          (r.note ? '<p class="cfg-note">' + esc(r.note) + '</p>' : '') + '</div>').join('') +
+      const row = r => '<div class="cfg-row"><div class="cfg-t"><i>' + U.ICON[r.ic] + '</i><div><b>' + esc(r.t) + '</b>' + (r.d ? '<small>' + esc(r.d) + '</small>' : '') + '</div></div>' +
+        '<div class="seg cfg-seg">' + r.opts.map(([v, l]) => '<button data-k="' + r.k + '" data-v="' + v + '"' + (value(r.k) === v ? ' class="on"' : '') + '>' + esc(l) + '</button>').join('') + '</div>' +
+        (r.note ? '<p class="cfg-note">' + U.ICON.info + esc(r.note) + '</p>' : '') + '</div>';
+      w.innerHTML = '<div class="cfg" role="dialog" aria-modal="true" aria-label="Configurações"><div class="cfg-head"><b>Configurações</b><button class="cfg-x" aria-label="Fechar">' + U.ICON.x + '</button></div>' +
+        GROUPS().map(g => '<div class="cfg-grp"><div class="eyebrow">' + g.t + '</div><div class="cfg-box">' + g.rows.map(row).join('') + '</div></div>').join('') +
         '<button class="btn" id="cfg-ok">Pronto</button></div>';
       w.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
         const k = b.dataset.k, raw = b.dataset.v, v = raw === 'true' ? true : raw === 'false' ? false : raw;
