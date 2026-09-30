@@ -76,6 +76,11 @@ idx = ROOT / "index.html"
 html = idx.read_text()
 html = re.sub(r'((?:src|href)="(?:src/[^"?]+\.js|style\.css))(?:\?v=[0-9a-f]+)?"', r'\1?v=' + ver + '"', html)
 html = re.sub(r"window\.CLIMBIX_VER = '[0-9a-f]*'", "window.CLIMBIX_VER = '" + ver + "'", html)
+# Ícones: versão pelo conteúdo (o CDN guarda imagens por 7 dias)
+html = re.sub(r'((?:href|content)="(icons/[^"?]+\.png))(?:\?v=[0-9a-f]+)?(")', lambda m: m.group(1) + "?v=" + fhash(ROOT / m.group(2)) + m.group(3), html)
+man = ROOT / "manifest.webmanifest"
+mtxt = re.sub(r'("src": "(icons/[^"?]+\.png))(?:\?v=[0-9a-f]+)?(")', lambda m: m.group(1) + "?v=" + fhash(ROOT / m.group(2)) + m.group(3), man.read_text())
+man.write_text(mtxt)
 if "window.CLIMBIX_VER" not in html:
     html = html.replace('<script src="src/sound.js', "<script>window.CLIMBIX_VER = '" + ver + "';</script>\n<script src=\"src/sound.js", 1)
 idx.write_text(html)
