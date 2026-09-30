@@ -1199,3 +1199,17 @@ h2 { font: var(--t-h1); letter-spacing: .01em; }
 .muted.small, .prep-note { font-size: 14px; color: #D3E4D9; }
 .seg button, .cfg-seg button { font: 700 16px var(--display); }
 .ask .btn.ghost small { color: var(--muted); }
+
+/* ===== Escala de texto (A1: barra do topo) ===== */
+.bar-name { font: var(--t-h2); letter-spacing: .01em; }
+.bar-sub { font: var(--t-small); font-weight: 600; color: #E1EEE5; }
+.bar-tot { font: 700 16px var(--display); }
+.bar-tot small { font: var(--t-label); letter-spacing: .06em; text-transform: uppercase; color: #B9CDBF; }
+.rel .ml { font: var(--t-label); letter-spacing: .06em; }
+.rel .ml small { font: inherit; letter-spacing: inherit; line-height: 1.3; }
+@media (max-width: 370px) {
+  .bar-name { font: var(--t-item); }
+  .bar-tot small, .rel .ml, .rel .ml small { letter-spacing: 0; }
+  .rel .ml small { font-size: 12px; }
+  .bar-tot small { font-size: 12px; }
+}
