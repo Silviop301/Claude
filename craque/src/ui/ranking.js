@@ -67,36 +67,55 @@
   }
 
   // edit: mostra o campo do nome; msg: aviso (nome ocupado, sem conexão...)
+  // Subtítulo conforme período e categoria
+  const subTxt = () => (st.m === 'daily' ? 'Todo mundo jogando com o mesmo garoto de hoje. Só carreiras encerradas.'
+    : st.m === 'score' ? 'Pontuação final das carreiras encerradas' + (st.p === 'day' ? ' hoje.' : st.p === 'week' ? ' nesta semana (desde segunda).' : '.')
+    : 'Melhor carreira de cada jogador, inclusive as em andamento' + (st.p === 'day' ? ' (jogadas hoje).' : st.p === 'week' ? ' (jogadas nesta semana).' : '.'));
+
+  // edit: mostra o campo do nome; msg: aviso (nome ocupado, sem conexão...)
   function ranking(edit, msg) {
     G.step = null;
     const p = player();
     edit = edit === true || !!msg;
-    const daily = st.m === 'daily';
     render('<button class="back-link" id="b-back-home">‹ Início</button><h2>Ranking</h2>' +
       (!p.nick || edit ? nickForm(p, msg) : '') +
-      '<div class="rk-tabs">' + PERIODS.map(([id, l]) => '<button data-p="' + id + '" class="' + (st.p === id && !daily ? 'on' : '') + '"' + (daily ? ' disabled' : '') + '>' + l + '</button>').join('') + '</div>' +
-      '<div class="rk-chips">' + METRICS.map(([id, l]) => '<button data-m="' + id + '" class="' + (st.m === id ? 'on' : '') + '">' + l + '</button>').join('') + '</div>' +
-      '<p class="muted small rk-sub">' + (daily ? 'Todo mundo jogando com o mesmo garoto de hoje. Só carreiras encerradas.'
-        : st.m === 'score' ? 'Pontuação final das carreiras encerradas' + (st.p === 'day' ? ' hoje.' : st.p === 'week' ? ' nesta semana (desde segunda).' : '.')
-        : 'Melhor carreira de cada jogador, inclusive as em andamento' + (st.p === 'day' ? ' (jogadas hoje).' : st.p === 'week' ? ' (jogadas nesta semana).' : '.')) + '</p>' +
-      '<div id="rk-list" class="rk-list"><p class="muted">Carregando…</p></div>' +
+      '<div class="rk-tabs">' + PERIODS.map(([id, l]) => '<button data-p="' + id + '">' + l + '</button>').join('') + '</div>' +
+      '<div class="rk-chips">' + METRICS.map(([id, l]) => '<button data-m="' + id + '">' + l + '</button>').join('') + '</div>' +
+      '<p class="muted small rk-sub"></p>' +
+      '<div id="rk-list" class="rk-list"></div>' +
       (p.nick && !edit ? '<button class="link-btn rk-edit" id="rk-edit">Mudar meu nome (' + esc(p.nick) + ')</button>' : ''));
     $('b-back-home').onclick = U.home;
-    screen().querySelectorAll('[data-p]').forEach(b => b.onclick = () => { st.p = b.dataset.p; ranking(); });
-    screen().querySelectorAll('[data-m]').forEach(b => b.onclick = () => { st.m = b.dataset.m; ranking(); });
+    // Trocar aba ou categoria não redesenha a tela: só o destaque, o subtítulo e a lista (a rolagem fica onde estava)
+    screen().querySelectorAll('[data-p]').forEach(b => b.onclick = () => { st.p = b.dataset.p; refresh(); });
+    screen().querySelectorAll('[data-m]').forEach(b => b.onclick = () => { st.m = b.dataset.m; refresh(); });
     if ($('rk-edit')) $('rk-edit').onclick = () => ranking(true);
     bindNick(m => ranking(false, m));
+    refresh(true);
+  }
+  let req = 0; // só a última lista pedida aparece (toques rápidos não misturam resultados)
+  function refresh(first) {
+    const p = player(), daily = st.m === 'daily', sc = screen();
+    sc.querySelectorAll('[data-p]').forEach(b => { b.classList.toggle('on', st.p === b.dataset.p && !daily); b.disabled = daily; });
+    sc.querySelectorAll('[data-m]').forEach(b => b.classList.toggle('on', st.m === b.dataset.m));
+    // Categoria escolhida sempre à vista na fileira que rola para o lado
+    const on = sc.querySelector('.rk-chips .on');
+    if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: first ? 'nearest' : 'center', behavior: first ? 'auto' : 'smooth' });
+    const sub = sc.querySelector('.rk-sub'); if (sub) sub.textContent = subTxt();
+    const el = $('rk-list');
+    if (!el) return;
+    el.innerHTML = '<p class="muted">Carregando…</p>';
+    const my = ++req;
     const unit = (METRICS.find(x => x[0] === st.m) || [])[2];
     fetch(API + '?a=top&m=' + st.m + '&p=' + st.p + '&pid=' + p.pid).then(r => r.json()).then(d => {
-      const el = $('rk-list');
-      if (!el) return;
-      if (!d.rows || !d.rows.length) { el.innerHTML = '<p class="muted">Ninguém ainda' + (st.p === 'day' || st.m === 'daily' ? ' hoje' : st.p === 'week' ? ' nesta semana' : '') + '. Seja o primeiro!</p>'; return; }
-      el.innerHTML = d.rows.map((r, i) => '<div class="rk-item' + (r.me ? ' me' : '') + '"><span class="rk-pos">' + (i < 3 ? U.emo(['🥇', '🥈', '🥉'][i], 'sm') : i + 1 + 'º') + '</span>' +
+      const el2 = $('rk-list');
+      if (!el2 || my !== req) return;
+      if (!d.rows || !d.rows.length) { el2.innerHTML = '<p class="muted">Ninguém ainda' + (st.p === 'day' || st.m === 'daily' ? ' hoje' : st.p === 'week' ? ' nesta semana' : '') + '. Seja o primeiro!</p>'; return; }
+      el2.innerHTML = d.rows.map((r, i) => '<div class="rk-item' + (r.me ? ' me' : '') + '"><span class="rk-pos">' + (i < 3 ? U.emo(['🥇', '🥈', '🥉'][i], 'sm') : i + 1 + 'º') + '</span>' +
         '<span class="rk-who"><b>' + esc(r.nick) + '</b><small>' + esc(r.name) + ' · ' + (POS[r.pos] || '') + (r.club ? ' · ' + esc(r.club) : '') + (r.done ? '' : ' · em andamento') + '</small></span>' +
         '<span class="rk-v">' + r.v + (unit ? '<small>' + unit + '</small>' : '') + '</span></div>').join('') +
         (d.me && d.me.rank > d.rows.length ? '<div class="rk-item me"><span class="rk-pos">' + d.me.rank + 'º</span><span class="rk-who"><b>Você</b></span><span class="rk-v">' + d.me.v + '</span></div>' : '') +
         '<p class="muted small">' + d.players + (d.players === 1 ? ' jogador' : ' jogadores') + ' nesta lista.</p>';
-    }).catch(() => { const el = $('rk-list'); if (el) el.innerHTML = '<p class="muted">Sem conexão com o ranking agora. Suas carreiras ficam guardadas e são enviadas depois.</p>'; });
+    }).catch(() => { const el2 = $('rk-list'); if (el2 && my === req) el2.innerHTML = '<p class="muted">Sem conexão com o ranking agora. Suas carreiras ficam guardadas e são enviadas depois.</p>'; });
   }
   const screen = () => document.getElementById('screen');
 
