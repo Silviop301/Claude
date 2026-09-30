@@ -201,12 +201,14 @@
       highlights.push(inter.won ? '🌐 Campeão da Copa Intercontinental contra ' + D.o(vsName) + '!' : '😞 Vice da Copa Intercontinental: derrota para ' + D.o(vsName));
     }
     // Clássico: contra o mesmo rival de novo, o destaque lembra as vezes anteriores
-    if (!league && rival && games >= 10 && (isDef ? cleanSheets >= 15 : goals + assists >= 8)) {
+    // (o rival do clássico é o de verdade: Fla x Flu, Gre-Nal, Barça x Real...; não o mais forte da liga)
+    const derby = S.derbyOf(club, r.pick);
+    if (!league && derby && games >= 10 && (isDef ? cleanSheets >= 15 : goals + assists >= 8)) {
       c.rivalWins = c.rivalWins || {};
-      const k = (c.rivalWins[rival.id] = (c.rivalWins[rival.id] || 0) + 1), ico = isDef ? '🛡️ ' : '⚔️ ';
-      highlights.push(ico + (k === 1 ? (isDef ? 'Segurou o zero no clássico contra ' : 'Decidiu o clássico contra ') + D.o(rival.name)
-        : k === 2 ? 'De novo! Mais um clássico ' + (isDef ? 'sem sofrer gol' : 'decidido') + ' contra ' + D.o(rival.name)
-        : 'Freguês: ' + D.o(rival.name) + ' sofre com você pela ' + k + 'ª vez'));
+      const k = (c.rivalWins[derby.id] = (c.rivalWins[derby.id] || 0) + 1), ico = isDef ? '🛡️ ' : '⚔️ ';
+      highlights.push(ico + (k === 1 ? (isDef ? 'Segurou o zero no clássico contra ' : 'Decidiu o clássico contra ') + D.o(derby.name)
+        : k === 2 ? 'De novo! Mais um clássico ' + (isDef ? 'sem sofrer gol' : 'decidido') + ' contra ' + D.o(derby.name)
+        : 'Freguês: ' + D.o(derby.name) + ' sofre com você pela ' + k + 'ª vez'));
     }
     if (!league && pos >= 14 && games >= 10 && !move) {
       c.sufoco = (c.sufoco || 0) + 1;

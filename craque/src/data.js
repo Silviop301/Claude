@@ -231,6 +231,65 @@
   const GK_INVEST = { fis: 'Treino de elasticidade', fin: 'Treino de reflexo', pas: 'Treino de reposição', rit: 'Treino de sprint', dri: 'Treino de manejo', def: 'Treino de posicionamento' };
   D.investName = (t, pos) => (pos === 'GOL' && GK_INVEST[t.id]) || t.name;
 
+  // Clássicos de verdade: cada grupo é de rivais entre si (cidade, estado ou rivalidade histórica).
+  // Clube sem clássico na mesma divisão joga o "clássico" contra um rival fixo de força parecida.
+  D.DERBIES = [
+    // Brasil
+    ['Flamengo', 'Fluminense', 'Vasco', 'Botafogo'], ['Palmeiras', 'Corinthians', 'São Paulo', 'Santos'], ['Grêmio', 'Internacional'],
+    ['Atlético-MG', 'Cruzeiro', 'América-MG'], ['Bahia', 'Vitória'], ['Fortaleza', 'Ceará'], ['Athletico-PR', 'Coritiba', 'Paraná'],
+    ['Sport', 'Santa Cruz', 'Náutico'], ['Goiás', 'Vila Nova', 'Atlético-GO'], ['Ponte Preta', 'Guarani'], ['Avaí', 'Figueirense'],
+    ['Paysandu', 'Remo'], ['CRB', 'CSA'], ['ABC', 'América-RN'], ['Botafogo-PB', 'Treze', 'Campinense'], ['Juventude', 'Caxias'],
+    ['Portuguesa', 'Santo André', 'São Bernardo'], ['Red Bull Bragantino', 'Ponte Preta'], ['Mirassol', 'Novorizontino'],
+    ['Criciúma', 'Chapecoense', 'Brusque'], ['Sampaio Corrêa', 'Moto Club'], ['Inter de Limeira', 'XV de Piracicaba'],
+    // Argentina e Uruguai
+    ['Boca Juniors', 'River Plate'], ['Racing', 'Independiente'], ['San Lorenzo', 'Huracán'], ['Rosario Central', "Newell's Old Boys"],
+    ['Estudiantes', 'Gimnasia La Plata'], ['Talleres', 'Belgrano', 'Instituto'], ['Unión', 'Colón'], ['Lanús', 'Banfield'],
+    ['Vélez Sarsfield', 'Ferro Carril Oeste'], ['Peñarol', 'Nacional'], ['Defensor Sporting', 'Danubio'],
+    // Europa
+    ['Real Madrid', 'Barcelona', 'Atlético de Madrid'], ['Sevilla', 'Real Betis'], ['Athletic Bilbao', 'Real Sociedad'], ['Barcelona', 'Espanyol'],
+    ['Valencia', 'Villarreal', 'Levante'], ['Celta de Vigo', 'Deportivo La Coruña'], ['Getafe', 'Rayo Vallecano', 'Leganés'],
+    ['Sporting Gijón', 'Real Oviedo'], ['Málaga', 'Granada', 'Almería'], ['Las Palmas', 'Tenerife'],
+    ['Manchester United', 'Manchester City', 'Liverpool'], ['Liverpool', 'Everton'], ['Arsenal', 'Tottenham', 'Chelsea'], ['Chelsea', 'Fulham', 'Brentford'],
+    ['West Ham', 'Millwall'], ['Crystal Palace', 'Brighton'], ['Aston Villa', 'Wolverhampton', 'West Brom'], ['Newcastle', 'Sunderland', 'Middlesbrough'],
+    ['Nottingham Forest', 'Derby County', 'Leicester City'], ['Sheffield Wednesday', 'Sheffield United'], ['Norwich City', 'Ipswich Town'],
+    ['Southampton', 'Portsmouth', 'Bournemouth'], ['Leeds United', 'Burnley', 'Blackburn Rovers'], ['Swansea City', 'Cardiff City'], ['Bristol City', 'Plymouth Argyle'],
+    ['Inter de Milão', 'Milan', 'Juventus'], ['Roma', 'Lazio'], ['Juventus', 'Torino'], ['Genoa', 'Sampdoria'], ['Napoli', 'Roma', 'Juventus'],
+    ['Fiorentina', 'Bologna', 'Empoli'], ['Atalanta', 'Brescia'], ['Palermo', 'Catanzaro'], ['Verona', 'Venezia'], ['Parma', 'Reggiana', 'Modena'],
+    ['Borussia Dortmund', 'Schalke 04', 'Bayern de Munique'], ['Köln', "Borussia M'gladbach", 'Fortuna Düsseldorf', 'Bayer Leverkusen'],
+    ['Hamburgo', 'Werder Bremen', 'St. Pauli'], ['Eintracht Frankfurt', 'Mainz', 'Darmstadt'], ['Stuttgart', 'Karlsruher SC', 'Freiburg'],
+    ['Nürnberg', 'Greuther Fürth'], ['Union Berlin', 'Hertha Berlin'], ['Hannover 96', 'Eintracht Braunschweig', 'Wolfsburg'], ['RB Leipzig', 'Magdeburg'],
+    ['PSG', 'Olympique de Marseille', 'Paris FC'], ['Lyon', 'Saint-Étienne'], ['Nice', 'Monaco'], ['Lille', 'Lens'], ['Rennes', 'Nantes', 'Brest', 'Guingamp'],
+    ['Bordeaux', 'Toulouse'], ['Bastia', 'Ajaccio'], ['Montpellier', 'Nice'], ['Strasbourg', 'Metz', 'Reims'],
+    ['Benfica', 'Porto', 'Sporting'], ['Braga', 'Vitória de Guimarães'], ['Porto', 'Boavista'], ['Rio Ave', 'Famalicão', 'Gil Vicente'], ['Académica', 'União de Leiria'],
+    ['Ajax', 'Feyenoord', 'PSV'], ['Twente', 'Heracles', 'Go Ahead Eagles'], ['Groningen', 'Heerenveen'], ['Vitesse', 'NEC'], ['Feyenoord', 'Sparta Rotterdam'],
+    ['Galatasaray', 'Fenerbahçe', 'Beşiktaş'], ['Trabzonspor', 'Fenerbahçe'], ['Club Brugge', 'Cercle Brugge', 'Anderlecht'], ['Anderlecht', 'Standard Liège', 'Union Saint-Gilloise'],
+    ['Antwerp', 'Mechelen'], ['Genk', 'Sint-Truiden'], ['Celtic', 'Rangers'], ['Hearts', 'Hibernian'], ['Dundee', 'Dundee United'], ['Aberdeen', 'Rangers'],
+    ['Olympiacos', 'Panathinaikos', 'AEK Atenas'], ['PAOK', 'Aris'], ['Basel', 'Zürich', 'Grasshoppers'], ['Young Boys', 'Basel'], ['Servette', 'Lausanne', 'Sion'],
+    ['Rapid Viena', 'Austria Viena'], ['Sturm Graz', 'Grazer AK'], ['Red Bull Salzburg', 'Rapid Viena'], ['LASK', 'Blau-Weiss Linz'],
+    ['Copenhagen', 'Brøndby'], ['AGF', 'Randers', 'Silkeborg'], ['Midtjylland', 'Viborg'],
+    // Américas e resto do mundo
+    ['Club América', 'Chivas', 'Pumas', 'Cruz Azul'], ['Tigres', 'Monterrey'], ['Chivas', 'Atlas'], ['Toluca', 'Club América'], ['Pachuca', 'León'],
+    ['LA Galaxy', 'LAFC', 'San Diego FC'], ['Seattle Sounders', 'Portland Timbers', 'Vancouver Whitecaps'], ['New York City', 'New York Red Bulls', 'Philadelphia Union'],
+    ['Inter Miami', 'Orlando City'], ['Atlanta United', 'Charlotte FC', 'Nashville SC'], ['Columbus Crew', 'FC Cincinnati', 'Chicago Fire'], ['Toronto FC', 'Vancouver Whitecaps'], ['Real Salt Lake', 'Austin FC'],
+    ['Atlético Nacional', 'Independiente Medellín'], ['Millonarios', 'Independiente Santa Fe'], ['América de Cali', 'Deportivo Cali'], ['Junior', 'Atlético Nacional'], ['Once Caldas', 'Deportivo Pereira'],
+    ['Colo-Colo', 'Universidad de Chile', 'Universidad Católica'], ['Everton (CHI)', 'Unión Española', 'Audax Italiano'],
+    ['Olimpia', 'Cerro Porteño'], ['Libertad', 'Guaraní', 'Nacional (PAR)'], ['Barcelona SC', 'Emelec'], ['LDU Quito', 'Independiente del Valle', 'Aucas', 'El Nacional'],
+    ['Al-Hilal', 'Al-Nassr', 'Al-Shabab'], ['Al-Ittihad', 'Al-Ahli'], ['Al-Ettifaq', 'Al-Qadsiah', 'Al-Khaleej'],
+    ['Al-Sadd', 'Al-Duhail', 'Al-Rayyan', 'Al-Arabi'], ['Al-Gharafa', 'Qatar SC'],
+    ['Urawa Reds', 'Kashima Antlers', 'Kashiwa Reysol'], ['Gamba Osaka', 'Cerezo Osaka', 'Vissel Kobe'], ['Kawasaki Frontale', 'Yokohama F. Marinos', 'FC Tokyo', 'Machida Zelvia'],
+    ['Ulsan HD', 'Pohang Steelers', 'Jeonbuk Hyundai'], ['FC Seoul', 'Suwon FC', 'Incheon United'],
+  ];
+  // Rivais de cada clube (por id)
+  D.RIVALS = {};
+  {
+    const byName = {};
+    D.CLUBS.forEach(c => { byName[c.name] = c.id; });
+    D.DERBIES.forEach(g => {
+      const ids = g.map(n => byName[n]).filter(Boolean);
+      ids.forEach(a => { D.RIVALS[a] = D.RIVALS[a] || []; ids.forEach(b => { if (b !== a && !D.RIVALS[a].includes(b)) D.RIVALS[a].push(b); }); });
+    });
+  }
+
   root.CRAQUE_DATA = D;
   if (typeof module !== 'undefined') module.exports = D;
 })(typeof window !== 'undefined' ? window : globalThis);

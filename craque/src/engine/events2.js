@@ -316,7 +316,7 @@
       when: c => atClub(c) >= 2 && c.rel.fans >= 55 && S.ovr(c) >= 62,
       build: (c, r) => {
         const cl = club(c);
-        const rv = D.CLUBS.filter(x => x.league === cl.league && x.id !== cl.id).sort((a, b) => b.strength - a.strength)[0];
+        const rv = S.derbyOf(cl);
         if (!rv) return null;
         return {
           title: D.O(rv.name) + ' quer você', text: 'O maior rival fez uma proposta alta. A torcida ' + D.do(cl.name) + ' não acredita.',

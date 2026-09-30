@@ -75,7 +75,7 @@
       if (contName && (contName === 'Libertadores' ? rank <= 4 : club.strength >= 78)) pool.push(['cont', 1.2]);
       let x = r() * pool.reduce((a, p) => a + p[1], 0), type = pool[0][0];
       for (const [t, w] of pool) { x -= w; if (x < 0) { type = t; break; } }
-      let vs = type === 'cup' ? r.pick(rivals.slice(0, 8)) : type === 'acesso' ? r.pick(rivals.slice(0, 6)) : rivals[0];
+      let vs = type === 'cup' ? r.pick(rivals.slice(0, 8)) : type === 'acesso' ? r.pick(rivals.slice(0, 6)) : type === 'classico' ? S.derbyOf(club, r.pick) || rivals[0] : rivals[0];
       if (type === 'cont') {
         // Adversário da final: um grande de outra liga do mesmo continente
         const libert = S.contName(club) === 'Libertadores';

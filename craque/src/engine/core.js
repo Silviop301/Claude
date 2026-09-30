@@ -289,6 +289,15 @@
     return card;
   };
 
+  // Rival de clássico na mesma divisão (D.RIVALS); sem clássico, um rival fixo de força parecida.
+  // pick: sorteia entre os rivais (o lance do clássico); sem pick, o maior deles (conta de "freguês")
+  S.derbyOf = function (club, pick) {
+    const same = (D.RIVALS[club.id] || []).map(id => D.CLUB_BY_ID[id]).filter(x => x && x.league === club.league);
+    if (same.length) return pick ? pick(same) : same.sort((a, b) => b.strength - a.strength)[0];
+    const pool = D.CLUBS.filter(x => x.league === club.league && x.id !== club.id)
+      .sort((a, b) => Math.abs(a.strength0 - club.strength0) - Math.abs(b.strength0 - club.strength0) || (a.id < b.id ? -1 : 1));
+    return pool[0] || null;
+  };
   S._ = { clamp, round1, rngOf, lvOf, bump, REL0, moveClub, ovrOf };
 
   root.CRAQUE_SIM = S;
