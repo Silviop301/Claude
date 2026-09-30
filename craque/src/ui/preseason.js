@@ -167,12 +167,13 @@
     // Toque 1: o card vira e a mini carta mostra quanto muda. Toque 2 no mesmo card: confirma.
     const skip = $('b-skip');
     const go = () => { delete G.c.preCh; U.eventOrSeason(); };
-    // "Seguir" só libera quando não há mais escolha a fazer nem compra possível
+    // "Seguir" só libera depois de escolher a característica; os pontos podem ficar guardados
     const lockSkip = () => {
-      const trait = ch.length && !preCh.done, buy = S.canInvestAny(G.c);
-      skip.disabled = !!(trait || buy);
+      // Pontos podem ficar guardados: juntar para os níveis mais caros vale a pena
+      const trait = ch.length && !preCh.done, left = G.c.pe || 0;
+      skip.disabled = !!trait;
       skip.innerHTML = trait ? 'Escolha uma característica<small>para seguir para a temporada</small>'
-        : buy ? 'Ainda dá para evoluir<small>' + pts(G.c.pe) + ' de evolução</small>' : 'Seguir para a temporada';
+        : left && hasInv ? 'Seguir para a temporada<small>Guardar ' + pts(left) + ' para depois</small>' : 'Seguir para a temporada';
     };
     const refresh = () => {
       if (!skip.isConnected) return; // já saiu da tela
