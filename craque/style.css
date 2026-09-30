@@ -1292,3 +1292,18 @@ h2 { font: var(--t-h1); letter-spacing: .01em; }
 .mom-min { font: 700 14px var(--display); }
 .mom-ctx { font: 600 14px/1.35 var(--body); }
 .mom-res .mr-txt { font: 600 16px/1.4 var(--body); }
+
+/* ===== Escala de texto (A7: fim de temporada) ===== */
+.sv-lbl { font: var(--t-h2); }
+.sv-d { font: 800 28px/1 var(--display); font-style: normal; }
+.counter span { font: 500 14px/1.2 var(--body); }
+.move-line { font: var(--t-h2); }
+.title-won b { font: var(--t-h2); }
+.title-won span { font: var(--t-small); line-height: 1.15; }
+.award { font: 700 20px var(--display); }
+.award.ballon { font-size: 26px; }
+.news .np { font: var(--t-label); letter-spacing: .14em; }
+.news p { font: var(--t-item); }
+.feed div { font: var(--t-body); }
+details.more > summary { font: 600 16px var(--body); }
+.why b { font-weight: 700; }
