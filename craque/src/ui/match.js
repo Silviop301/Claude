@@ -12,6 +12,10 @@
     eventScreen();
   }
 
+  // Selo do evento e o rótulo do tom (verde = oportunidade, vermelho = risco, azul = decisão)
+  const TONE_LBL = { green: 'Oportunidade', red: 'Risco', blue: 'Decisão' };
+  const evDef = ev => Object.assign({}, S.EVENT_DEFS.find(d => d.id === ev.id) || {}, ev.ico ? ev : {});
+
   function eventScreen() {
     if (!pendingEvent) pendingEvent = S.pickEvent(G.c);
     if (!pendingEvent) return momentOrSeason();
@@ -20,7 +24,7 @@
     const offer = S.eventOffer(G.c, ev);
     render(
       '<div class="eyebrow">Durante a temporada</div>' +
-      '<div class="card event-card"><span class="ic">' + ev.icon + '</span><h2>' + ev.title + '</h2><p style="margin:0">' + ev.text + '</p></div>' +
+      '<div class="card event-card">' + (evDef(ev).ico ? '<div class="ev-top">' + U.icoOf(evDef(ev), 'lg') + '<span class="ev-tag ' + evDef(ev).tone + '">' + (TONE_LBL[evDef(ev).tone] || '') + '</span></div>' : '<span class="ic">' + ev.icon + '</span>') + '<h2>' + ev.title + '</h2><p style="margin:0">' + ev.text + '</p></div>' +
       (offer ? U.dealCompare(S.currentDeal(G.c), offer) : '') +
       '<div class="choices">' + ev.options.map((o, i) => '<button class="btn opt' + (i ? ' ghost' : '') + '" data-i="' + i + '">' + esc(o.label) + '<small>' + esc(o.hint) + '</small></button>').join('') + '</div>'
     );
@@ -31,7 +35,7 @@
       pendingEvent = null;
       bar();
       render(
-        '<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + ev.icon + '</span><div class="eyebrow">' + ev.title + '</div>' +
+        '<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.icoOf(Object.assign({ icon: ev.icon }, evDef(ev)), 'lg') + '</span><div class="eyebrow">' + ev.title + '</div>' +
         '<p class="er-txt">' + r.text + '</p></div>' +
         '<button class="btn" id="b-next">Jogar a temporada</button>', { center: true }
       );

@@ -24,7 +24,7 @@
   const MORE = [
     // ---------- começo de carreira ----------
     {
-      id: 'estudos', icon: '📚', weight: 3, max: 1,
+      id: 'estudos', icon: '📚', ico: 'book-open', tone: 'blue', weight: 3, max: 1,
       when: c => c.age <= 18 && !!c.club,
       build: () => ({
         title: 'Terminar os estudos?', text: 'A escola quer que você conclua o ensino médio à noite. O treino começa às 7h.',
@@ -35,7 +35,7 @@
         : { ok: true, text: 'Foco total no gramado. O corpo agradeceu.', fx: { form: 0.05 } }),
     },
     {
-      id: 'carro', icon: '🏎️', weight: 3, max: 1,
+      id: 'carro', icon: '🏎️', ico: 'car', tone: 'blue', weight: 3, max: 1,
       when: c => c.age <= 22 && c.money >= 60000,
       build: c => {
         const v = Math.round(Math.min(c.money * 0.4, 900000) / 1000) * 1000;
@@ -51,7 +51,7 @@
       },
     },
     {
-      id: 'saudade', icon: '🏠', weight: 4, max: 1,
+      id: 'saudade', icon: '🏠', ico: 'house', tone: 'blue', weight: 4, max: 1,
       when: c => c.age <= 22 && abroad(c) && atClub(c) <= 1,
       build: c => ({
         title: 'Saudade de casa', text: 'Primeiro ano em ' + D.countryOf(club(c)) + '. Frio, comida diferente e a família longe.',
@@ -64,7 +64,7 @@
       },
     },
     {
-      id: 'olheiro', icon: '🔭', weight: 4, max: 2,
+      id: 'olheiro', icon: '🔭', ico: 'binoculars', tone: 'green', weight: 4, max: 2,
       when: c => c.age <= 22 && club(c).tier <= 3 && S.ovr(c) >= 64,
       build: c => ({
         ...alt(c, 'olheiro', [
@@ -82,7 +82,7 @@
       },
     },
     {
-      id: 'empresario', icon: '🕴️', weight: 3, max: 1,
+      id: 'empresario', icon: '🕴️', ico: 'briefcase', tone: 'blue', weight: 3, max: 1,
       when: c => c.age <= 23 && c.fame >= 15,
       build: () => ({
         title: 'Empresário famoso', text: 'O empresário mais poderoso do país quer cuidar da sua carreira.',
@@ -99,7 +99,7 @@
       },
     },
     {
-      id: 'dieta', icon: '🥗', weight: 3, max: 1,
+      id: 'dieta', icon: '🥗', ico: 'salad', tone: 'green', weight: 3, max: 1,
       when: c => c.age <= 26 && !!c.club,
       build: c => ({
         title: 'Nutricionista linha-dura', text: 'O clube contratou uma nutricionista que cortou tudo: açúcar, fritura, refrigerante.',
@@ -110,7 +110,7 @@
         : { ok: true, text: 'Um pouco de cada. O corpo não reclamou.', fx: { form: 0.03 } }),
     },
     {
-      id: 'fisgada', icon: '⚡', weight: 3, max: 3,
+      id: 'fisgada', icon: '⚡', ico: 'zap', tone: 'red', weight: 3, max: 3,
       when: c => c.age <= 27,
       build: c => ({
         ...alt(c, 'fisgada', [
@@ -129,7 +129,7 @@
 
     // ---------- em campo ----------
     {
-      id: 'jejum', icon: '🥶', weight: 4, max: 2,
+      id: 'jejum', icon: '🥶', ico: 'circle-slash', tone: 'red', weight: 4, max: 2,
       when: c => c.pos === 'ATA' && !!last(c) && last(c).goals < 10 && last(c).games >= 15,
       build: c => ({
         ...alt(c, 'jejum', [
@@ -145,7 +145,7 @@
       },
     },
     {
-      id: 'cobrador', icon: '⚽', weight: 3, max: 2,
+      id: 'cobrador', icon: '⚽', ico: 'circle-dot', tone: 'blue', weight: 3, max: 2,
       when: c => ['ATA', 'MEI'].includes(c.pos) && atClub(c) >= 1,
       build: () => ({
         title: 'Quem bate o pênalti?', text: 'O camisa 10 do time e você querem ser o cobrador oficial.',
@@ -162,7 +162,7 @@
       },
     },
     {
-      id: 'var', icon: '📺', weight: 3, max: 2,
+      id: 'var', icon: '📺', ico: 'tv', tone: 'red', weight: 3, max: 2,
       when: c => c.pos !== 'GOL' && c.fame >= 10,
       build: c => ({
         ...alt(c, 'var', [
@@ -181,7 +181,7 @@
       },
     },
     {
-      id: 'provocacao', icon: '😤', weight: 3, max: 2,
+      id: 'provocacao', icon: '😤', ico: 'angry', tone: 'red', weight: 3, max: 2,
       when: c => c.pos !== 'GOL',
       build: () => ({
         title: 'Provocação em campo', text: 'O zagueiro rival passou o jogo inteiro te provocando e pisando no seu pé.',
@@ -198,7 +198,7 @@
       },
     },
     {
-      id: 'volante', icon: '🔁', weight: 3, max: 1,
+      id: 'volante', icon: '🔁', ico: 'repeat', tone: 'blue', weight: 3, max: 1,
       when: c => c.pos === 'ZAG' && atClub(c) >= 1,
       build: () => ({
         title: 'Zagueiro de volante?', text: 'O técnico quer te testar como volante para sair jogando.',
@@ -209,7 +209,7 @@
         : (bump(c, 'coach', -4), { ok: true, text: 'O técnico aceitou, mas não gostou.', fx: {} })),
     },
     {
-      id: 'reserva_gol', icon: '🧤', weight: 4, max: 2,
+      id: 'reserva_gol', icon: '🧤', ico: 'user-plus', tone: 'red', weight: 4, max: 2,
       when: c => c.pos === 'GOL' && atClub(c) >= 1,
       build: () => ({
         title: 'O reserva está chegando', text: 'O goleiro reserva, de 19 anos, está voando nos treinos. A imprensa pede a vez dele.',
@@ -223,7 +223,7 @@
       },
     },
     {
-      id: 'goleiro_area', icon: '🙌', weight: 2, max: 2,
+      id: 'goleiro_area', icon: '🙌', ico: 'flag-triangle-right', tone: 'blue', weight: 2, max: 2,
       when: c => c.pos === 'GOL',
       build: () => ({
         title: 'Último minuto, escanteio', text: 'Perdendo por 1 a 0, acréscimos. O banco grita para você subir para a área.',
@@ -239,7 +239,7 @@
       },
     },
     {
-      id: 'treino_gol', icon: '🥅', weight: 3, max: 1,
+      id: 'treino_gol', icon: '🥅', ico: 'goal', tone: 'green', weight: 3, max: 1,
       when: c => c.pos === 'GOL' && c.age <= 30,
       build: () => ({
         title: 'Preparador de goleiros novo', text: 'O preparador chegou com um método europeu: reação, saída do gol e jogo com os pés.',
@@ -250,7 +250,7 @@
         : (bump(c, 'coach', 4), { ok: true, text: 'Agora o time sai jogando a partir de você.', fx: { attr: { pas: 2 } } })),
     },
     {
-      id: 'aereo', icon: '🦒', weight: 3, max: 1,
+      id: 'aereo', icon: '🦒', ico: 'chevrons-up', tone: 'green', weight: 3, max: 1,
       when: c => ['ZAG', 'ATA'].includes(c.pos) && c.age <= 29,
       build: () => ({
         title: 'Treino de bola aérea', text: 'O auxiliar monta um treino de cabeceio todo dia depois do treino.',
@@ -263,7 +263,7 @@
 
     // ---------- clube e vestiário ----------
     {
-      id: 'atraso', icon: '💸', weight: 4, max: 2,
+      id: 'atraso', icon: '💸', ico: 'wallet', tone: 'red', weight: 4, max: 2,
       when: c => club(c).tier <= 2 && atClub(c) >= 1,
       build: c => ({
         title: 'Salários atrasados', text: 'Três meses sem salário ' + D.no(club(c).name) + '. O elenco fala em greve.',
@@ -281,7 +281,7 @@
       },
     },
     {
-      id: 'presidente', icon: '🏛️', weight: 3, max: 2,
+      id: 'presidente', icon: '🏛️', ico: 'landmark', tone: 'blue', weight: 3, max: 2,
       when: c => atClub(c) >= 1 && c.contract <= 2 && c.age <= 31,
       build: c => ({
         title: 'Promessa do presidente', text: 'O presidente ' + D.do(club(c).name) + ' promete reforços de peso se você renovar agora.',
@@ -297,7 +297,7 @@
       },
     },
     {
-      id: 'vestiario', icon: '🥊', weight: 3, max: 2,
+      id: 'vestiario', icon: '🥊', ico: 'swords', tone: 'red', weight: 3, max: 2,
       when: c => atClub(c) >= 1 && c.age >= 21,
       build: () => ({
         title: 'Briga no vestiário', text: 'Dois veteranos saíram no braço depois da derrota. Todo mundo olhou para você.',
@@ -312,7 +312,7 @@
       },
     },
     {
-      id: 'rival', icon: '😈', weight: 3, max: 1,
+      id: 'rival', icon: '😈', ico: 'shield-alert', tone: 'blue', weight: 3, max: 1,
       when: c => atClub(c) >= 2 && c.rel.fans >= 55 && S.ovr(c) >= 62,
       build: (c, r) => {
         const cl = club(c);
@@ -331,7 +331,7 @@
       },
     },
     {
-      id: 'gringo', icon: '🗣️', weight: 3, max: 1,
+      id: 'gringo', icon: '🗣️', ico: 'languages', tone: 'blue', weight: 3, max: 1,
       when: c => atClub(c) >= 1,
       build: () => ({
         title: 'Técnico estrangeiro', text: 'O novo técnico só fala inglês e ainda não confia em ninguém.',
@@ -344,7 +344,7 @@
       },
     },
     {
-      id: 'estrela', icon: '🌠', weight: 3, max: 2,
+      id: 'estrela', icon: '🌠', ico: 'star', tone: 'red', weight: 3, max: 2,
       when: c => club(c).tier >= 3 && atClub(c) >= 1 && c.age >= 20,
       build: c => ({
         title: 'Contrataram uma estrela', text: D.O(club(c).name) + ' anunciou um craque famoso para a sua posição.',
@@ -361,7 +361,7 @@
       },
     },
     {
-      id: 'demitido', icon: '🚪', weight: 3, max: 2,
+      id: 'demitido', icon: '🚪', ico: 'door-open', tone: 'red', weight: 3, max: 2,
       when: c => atClub(c) >= 1 && c.rel.coach >= 60,
       build: () => ({
         title: 'O técnico caiu', text: 'O treinador que te bancou foi demitido depois de três derrotas.',
@@ -373,7 +373,7 @@
       },
     },
     {
-      id: 'organizada', icon: '🥁', weight: 2, max: 2,
+      id: 'organizada', icon: '🥁', ico: 'drum', tone: 'red', weight: 2, max: 2,
       when: c => c.rel.fans >= 60,
       build: c => ({
         title: 'Convite da organizada', text: 'A torcida organizada ' + D.do(club(c).name) + ' quer você na festa de aniversário dela.',
@@ -390,7 +390,7 @@
       },
     },
     {
-      id: 'homenagem', icon: '🏅', weight: 4, max: 2,
+      id: 'homenagem', icon: '🏅', ico: 'award', tone: 'green', weight: 4, max: 2,
       when: c => atClub(c) >= 5 && c.rel.fans >= 65,
       build: c => ({
         title: 'Homenagem no estádio', text: D.O(club(c).name) + ' vai te homenagear antes do jogo pelos ' + atClub(c) + ' anos de clube.',
@@ -401,7 +401,7 @@
         : (bump(c, 'fans', 4), { ok: true, text: 'Placa na mão, chuteira no pé. E ainda fez o gol.', fx: { form: 0.04 } })),
     },
     {
-      id: 'padrinho', icon: '🤝', weight: 3, max: 1,
+      id: 'padrinho', icon: '🤝', ico: 'handshake', tone: 'green', weight: 3, max: 1,
       when: c => c.age >= 30 && !!c.club,
       build: () => ({
         title: 'O garoto da base', text: 'Um menino de 17 anos subiu ao profissional e diz que você é o ídolo dele.',
@@ -412,7 +412,7 @@
         : { ok: true, text: 'Cabeça no próprio desempenho.', fx: { form: 0.05 } }),
     },
     {
-      id: 'centenario', icon: '🎂', weight: 2, max: 1,
+      id: 'centenario', icon: '🎂', ico: 'cake', tone: 'green', weight: 2, max: 1,
       when: c => atClub(c) >= 1,
       build: c => ({
         title: 'Centenário do clube', text: D.O(club(c).name) + ' faz 100 anos e vai lançar uma camisa comemorativa com o seu rosto na campanha.',
@@ -425,7 +425,7 @@
 
     // ---------- fora de campo ----------
     {
-      id: 'casamento', icon: '💍', weight: 3, max: 1,
+      id: 'casamento', icon: '💍', ico: 'gem', tone: 'green', weight: 3, max: 1,
       when: c => c.age >= 23 && c.age <= 32,
       build: () => ({
         title: 'Casamento marcado', text: 'O casamento cai bem na pré-temporada.',
@@ -436,7 +436,7 @@
         : { ok: true, text: 'Só a família e os amigos. Você voltou leve e feliz.', fx: { form: 0.04 } }),
     },
     {
-      id: 'filho', icon: '👶', weight: 3, max: 1,
+      id: 'filho', icon: '👶', ico: 'baby', tone: 'green', weight: 3, max: 1,
       when: c => c.age >= 24 && c.age <= 35,
       build: () => ({
         title: 'Seu filho vai nascer', text: 'O parto está previsto para o dia do jogo decisivo.',
@@ -449,7 +449,7 @@
       },
     },
     {
-      id: 'documentario', icon: '🎬', weight: 3, max: 1,
+      id: 'documentario', icon: '🎬', ico: 'clapperboard', tone: 'blue', weight: 3, max: 1,
       when: c => c.fame >= 90,
       build: c => {
         const v = Math.round(c.wage * 52 * 0.5 / 1000) * 1000;
@@ -467,7 +467,7 @@
       },
     },
     {
-      id: 'podcast', icon: '🎙️', weight: 3, max: 2,
+      id: 'podcast', icon: '🎙️', ico: 'mic', tone: 'blue', weight: 3, max: 2,
       when: c => c.fame >= 40,
       build: c => ({
         ...alt(c, 'podcast', [
@@ -485,7 +485,7 @@
       },
     },
     {
-      id: 'negocio', icon: '📈', weight: 2, max: 2,
+      id: 'negocio', icon: '📈', ico: 'briefcase-business', tone: 'blue', weight: 2, max: 2,
       when: c => c.money >= 500000,
       build: c => {
         const v = Math.round(c.money * 0.3 / 1000) * 1000;
@@ -506,7 +506,7 @@
       },
     },
     {
-      id: 'reality', icon: '📺', weight: 2, max: 1,
+      id: 'reality', icon: '📺', ico: 'video', tone: 'red', weight: 2, max: 1,
       when: c => c.fame >= 60 && c.age <= 29,
       build: () => ({
         title: 'Reality nas férias', text: 'Um reality show quer você nas férias. Cachê alto e muita exposição.',
@@ -517,7 +517,7 @@
         : { ok: true, text: 'Férias de verdade.', fx: { form: 0.04 } }),
     },
     {
-      id: 'beneficente', icon: '🤲', weight: 2, max: 2,
+      id: 'beneficente', icon: '🤲', ico: 'hand-heart', tone: 'green', weight: 2, max: 2,
       when: c => c.fame >= 30,
       build: () => ({
         title: 'Jogo beneficente', text: 'Um amigo organiza um jogo beneficente nas férias, com ex-craques e artistas.',
@@ -533,7 +533,7 @@
       },
     },
     {
-      id: 'amistosos', icon: '🎌', weight: 3, max: 3,
+      id: 'amistosos', icon: '🎌', ico: 'flag', tone: 'green', weight: 3, max: 3,
       when: c => S.ovr(c) >= 74 && c.age >= 20 && c.age <= 33,
       build: c => ({
         title: 'Convocado para amistosos', text: 'A seleção chamou para dois amistosos no meio da temporada do clube.',
@@ -550,7 +550,7 @@
       },
     },
     {
-      id: 'adaptacao', icon: '🌍', weight: 4, max: 2,
+      id: 'adaptacao', icon: '🌍', ico: 'globe', tone: 'blue', weight: 4, max: 2,
       when: c => c.age >= 23 && abroad(c) && atClub(c) === 0,
       build: c => ({
         title: 'Adaptação em ' + D.countryOf(club(c)), text: 'Idioma, clima e um futebol diferente. O começo está difícil.',
@@ -564,7 +564,7 @@
       },
     },
     {
-      id: 'manipulacao', icon: '🚨', weight: 2, max: 1,
+      id: 'manipulacao', icon: '🚨', ico: 'siren', tone: 'red', weight: 2, max: 1,
       when: c => club(c).tier <= 2 && c.age >= 19,
       build: () => ({
         title: 'Proposta suspeita', text: 'Um desconhecido oferece dinheiro para você tomar um cartão amarelo num jogo específico.',
@@ -580,7 +580,7 @@
       },
     },
     {
-      id: 'lesionou', icon: '🩹', weight: 2, max: 1,
+      id: 'lesionou', icon: '🩹', ico: 'triangle-alert', tone: 'red', weight: 2, max: 1,
       when: c => ['ZAG', 'MEI'].includes(c.pos),
       build: () => ({
         title: 'Lance infeliz', text: 'Numa dividida, você lesionou feio um adversário. Foi sem querer, mas a imagem é forte.',
@@ -595,7 +595,7 @@
 
     // ---------- fim de carreira ----------
     {
-      id: 'selecao_adeus', icon: '👋', weight: 3, max: 1,
+      id: 'selecao_adeus', icon: '👋', ico: 'log-out', tone: 'blue', weight: 3, max: 1,
       when: c => c.age >= 32 && S.ovr(c) >= 70,
       build: () => ({
         title: 'Adeus à seleção?', text: 'Aos poucos a seleção renova o grupo. Um jornalista pergunta se você pensa em se despedir da camisa amarela.',
@@ -608,7 +608,7 @@
       },
     },
     {
-      id: 'corte_salario', icon: '✂️', weight: 3, max: 1,
+      id: 'corte_salario', icon: '✂️', ico: 'scissors', tone: 'red', weight: 3, max: 1,
       when: c => c.age >= 33 && !!c.club && c.wage > 0,
       build: () => ({
         title: 'Contrato de veterano', text: 'A diretoria quer você mais um ano, mas com salário menor.',
@@ -621,7 +621,7 @@
       },
     },
     {
-      id: 'curso_tecnico', icon: '📋', weight: 3, max: 1,
+      id: 'curso_tecnico', icon: '📋', ico: 'clipboard-check', tone: 'blue', weight: 3, max: 1,
       when: c => c.age >= 31 && !!c.club,
       build: () => ({
         title: 'Curso de treinador', text: 'A federação abriu turma do curso de técnico. As aulas são às segundas, dia de folga.',
@@ -632,7 +632,7 @@
         : { ok: true, text: 'Segunda-feira é para descansar.', fx: { form: 0.04 } }),
     },
     {
-      id: 'recuperacao', icon: '🫧', weight: 3, max: 1,
+      id: 'recuperacao', icon: '🫧', ico: 'activity', tone: 'green', weight: 3, max: 1,
       when: c => c.age >= 30 && c.money >= 300000,
       build: c => ({
         title: 'Recuperação de ponta', text: 'Um centro de recuperação usado por craques europeus oferece um programa para prolongar a carreira.',
@@ -643,7 +643,7 @@
         : { ok: true, text: 'O departamento médico do clube dá conta.', fx: {} }),
     },
     {
-      id: 'reserva_luxo', icon: '🛋️', weight: 4, max: 2,
+      id: 'reserva_luxo', icon: '🛋️', ico: 'sofa', tone: 'blue', weight: 4, max: 2,
       when: c => c.age >= 32 && !!last(c) && last(c).club === c.club && last(c).games < 24,
       build: () => ({
         title: 'Reserva de luxo', text: 'O técnico quer poupar você e usar a sua experiência vindo do banco.',
@@ -659,7 +659,7 @@
 
     // ---------- por posição ----------
     {
-      id: 'lateral', icon: '↔️', weight: 3, max: 1,
+      id: 'lateral', icon: '↔️', ico: 'move-horizontal', tone: 'blue', weight: 3, max: 1,
       when: c => c.pos === 'ZAG' && c.age <= 29,
       build: () => ({
         title: 'Improvisado na lateral', text: 'Os dois laterais se machucaram. O técnico pede para você quebrar o galho.',
@@ -670,7 +670,7 @@
         : (bump(c, 'coach', -5), { ok: true, text: 'O técnico improvisou um volante.', fx: {} })),
     },
     {
-      id: 'parceiro_zaga', icon: '🧱', weight: 3, max: 1,
+      id: 'parceiro_zaga', icon: '🧱', ico: 'shield', tone: 'blue', weight: 3, max: 1,
       when: c => c.pos === 'ZAG' && atClub(c) >= 1,
       build: () => ({
         title: 'O parceiro de zaga', text: 'Seu novo parceiro de zaga, de 20 anos, anda errando muito.',
@@ -684,7 +684,7 @@
       },
     },
     {
-      id: 'camisa10', icon: '🔟', weight: 3, max: 1,
+      id: 'camisa10', icon: '🔟', ico: 'shirt', tone: 'green', weight: 3, max: 1,
       when: c => ['MEI', 'ATA'].includes(c.pos) && atClub(c) >= 1 && c.number !== 10,
       build: c => ({
         title: 'A camisa 10', text: 'O camisa 10 ' + D.do(club(c).name) + ' foi embora. A diretoria oferece o número para você.',
@@ -700,7 +700,7 @@
       },
     },
     {
-      id: 'centroavante', icon: '🎯', weight: 3, max: 1,
+      id: 'centroavante', icon: '🎯', ico: 'crosshair', tone: 'blue', weight: 3, max: 1,
       when: c => c.pos === 'ATA' && atClub(c) >= 1,
       build: () => ({
         title: 'Referência ou móvel?', text: 'O técnico pergunta como você prefere jogar nesta temporada.',
@@ -711,7 +711,7 @@
         : { ok: true, text: 'Saindo da área, você abriu espaço para todo mundo.', fx: { assistMul: 0.15, attr: { dri: 1 } } }),
     },
     {
-      id: 'analista_gol', icon: '🎞️', weight: 3, max: 1,
+      id: 'analista_gol', icon: '🎞️', ico: 'film', tone: 'green', weight: 3, max: 1,
       when: c => c.pos === 'GOL' && !!c.club,
       build: () => ({
         title: 'Vídeos dos batedores', text: 'O analista montou um arquivo com os pênaltis de todos os batedores da liga.',
@@ -722,7 +722,7 @@
         : { ok: true, text: 'Goleiro bom é goleiro leve.', fx: { form: 0.04 } }),
     },
     {
-      id: 'frango', icon: '🐔', weight: 3, max: 2,
+      id: 'frango', icon: '🐔', ico: 'bird', tone: 'red', weight: 3, max: 2,
       when: c => c.pos === 'GOL' && !!c.club,
       build: c => ({
         ...alt(c, 'frango', [
@@ -737,7 +737,7 @@
 
     // ---------- dinheiro e contrato ----------
     {
-      id: 'venda_forcada', icon: '🏦', weight: 3, max: 1,
+      id: 'venda_forcada', icon: '🏦', ico: 'badge-dollar-sign', tone: 'red', weight: 3, max: 1,
       when: c => club(c).tier <= 3 && S.ovr(c) >= 66 && c.age <= 28 && atClub(c) >= 1,
       build: (c, r) => {
         const cl = club(c);
@@ -757,7 +757,7 @@
       },
     },
     {
-      id: 'bicho', icon: '💰', weight: 2, max: 2,
+      id: 'bicho', icon: '💰', ico: 'coins', tone: 'green', weight: 2, max: 2,
       when: c => !!c.club && c.wage > 0,
       build: c => ({
         title: 'Bicho dobrado', text: 'O presidente promete bicho dobrado se o time vencer o clássico do fim de semana.',
@@ -772,7 +772,7 @@
       },
     },
     {
-      id: 'pre_contrato', icon: '📝', weight: 4, max: 1,
+      id: 'pre_contrato', icon: '📝', ico: 'file-signature', tone: 'blue', weight: 4, max: 1,
       when: c => c.contract <= 1 && atClub(c) >= 1 && S.ovr(c) >= 64 && c.age <= 31,
       build: c => {
         const v = Math.round(Math.max(c.wage, 5000) * 15 / 1000) * 1000;
@@ -788,7 +788,7 @@
       },
     },
     {
-      id: 'receita', icon: '🦁', weight: 2, max: 1,
+      id: 'receita', icon: '🦁', ico: 'receipt', tone: 'red', weight: 2, max: 1,
       when: c => c.money >= 1000000,
       build: c => ({
         title: 'O leão bateu na porta', text: 'A Receita questiona os seus contratos de imagem dos últimos anos.',
@@ -801,7 +801,7 @@
       },
     },
     {
-      id: 'apostas', icon: '🎰', weight: 2, max: 1,
+      id: 'apostas', icon: '🎰', ico: 'dice-5', tone: 'red', weight: 2, max: 1,
       when: c => c.fame >= 50 && c.wage > 0,
       build: c => {
         const v = Math.round(c.wage * 26 / 1000) * 1000;
@@ -820,7 +820,7 @@
       },
     },
     {
-      id: 'emprestimo', icon: '💵', weight: 2, max: 1,
+      id: 'emprestimo', icon: '💵', ico: 'hand-coins', tone: 'blue', weight: 2, max: 1,
       when: c => c.money >= 200000,
       build: c => {
         const v = Math.round(c.money * 0.1 / 1000) * 1000;
@@ -840,7 +840,7 @@
 
     // ---------- mídia e torcida ----------
     {
-      id: 'capa_game', icon: '🎮', weight: 3, max: 1,
+      id: 'capa_game', icon: '🎮', ico: 'gamepad-2', tone: 'green', weight: 3, max: 1,
       when: c => S.ovr(c) >= 82 && c.wage > 0,
       build: c => ({
         title: 'Capa do videogame', text: 'O jogo de futebol mais vendido do mundo quer você na capa da nova edição.',
@@ -851,7 +851,7 @@
         : { ok: true, text: 'Nada de maldição por aqui.', fx: { form: 0.03 } }),
     },
     {
-      id: 'comemoracao', icon: '🕺', weight: 3, max: 1,
+      id: 'comemoracao', icon: '🕺', ico: 'hand-metal', tone: 'blue', weight: 3, max: 1,
       when: c => c.pos !== 'GOL' && c.fame >= 15,
       build: () => ({
         title: 'Comemoração nova', text: 'Os amigos insistem: você precisa de uma comemoração própria.',
@@ -867,7 +867,7 @@
       },
     },
     {
-      id: 'invasao', icon: '🧒', weight: 2, max: 1,
+      id: 'invasao', icon: '🧒', ico: 'person-standing', tone: 'red', weight: 2, max: 1,
       when: c => c.fame >= 40,
       build: () => ({
         title: 'Invasão de campo', text: 'Um menino invade o gramado no meio do jogo e corre para te abraçar.',
@@ -878,7 +878,7 @@
         : (bump(c, 'coach', 3), { ok: true, text: 'Você acenou e o jogo seguiu.', fx: {} })),
     },
     {
-      id: 'critica', icon: '🗞️', weight: 3, max: 2,
+      id: 'critica', icon: '🗞️', ico: 'newspaper', tone: 'red', weight: 3, max: 2,
       when: c => c.fame >= 30,
       build: c => ({
         ...alt(c, 'critica', [
@@ -896,7 +896,7 @@
       },
     },
     {
-      id: 'musica', icon: '🎵', weight: 2, max: 1,
+      id: 'musica', icon: '🎵', ico: 'music', tone: 'green', weight: 2, max: 1,
       when: c => c.fame >= 35,
       build: () => ({
         title: 'Música com seu nome', text: 'Um cantor famoso lançou uma música com o seu nome e quer você no clipe.',
@@ -907,7 +907,7 @@
         : (bump(c, 'fans', 4), { ok: true, text: 'A arquibancada já canta o refrão.', fx: { fame: 4 } })),
     },
     {
-      id: 'ofensas', icon: '🛑', weight: 2, max: 1,
+      id: 'ofensas', icon: '🛑', ico: 'octagon-alert', tone: 'red', weight: 2, max: 1,
       when: c => !!c.club && c.fame >= 20,
       build: () => ({
         title: 'Ofensas da arquibancada', text: 'Parte da torcida adversária passa o jogo te ofendendo de forma criminosa.',
@@ -918,7 +918,7 @@
         : { ok: false, text: 'Você seguiu, mas aquilo ficou na cabeça por semanas.', fx: { form: -0.04 } }),
     },
     {
-      id: 'torcida_tecnico', icon: '📣', weight: 3, max: 1,
+      id: 'torcida_tecnico', icon: '📣', ico: 'thumbs-down', tone: 'red', weight: 3, max: 1,
       when: c => atClub(c) >= 1 && c.rel.coach >= 50,
       build: () => ({
         title: 'Fora, técnico!', text: 'Depois de três derrotas, a torcida grita contra o técnico. Os microfones procuram você.',
@@ -931,7 +931,7 @@
 
     // ---------- saúde ----------
     {
-      id: 'virose', icon: '🤒', weight: 2, max: 2,
+      id: 'virose', icon: '🤒', ico: 'thermometer', tone: 'red', weight: 2, max: 2,
       when: c => !!c.club,
       build: () => ({
         title: 'Virose no elenco', text: 'Metade do time pegou uma virose na semana de jogo decisivo. Você acordou com febre.',
@@ -946,7 +946,7 @@
       },
     },
     {
-      id: 'insonia', icon: '🌙', weight: 2, max: 1,
+      id: 'insonia', icon: '🌙', ico: 'moon', tone: 'red', weight: 2, max: 1,
       when: c => !!c.club,
       build: () => ({
         title: 'Noites mal dormidas', text: 'Jogos à noite, viagens e a cabeça a mil. Você não consegue dormir direito.',
@@ -959,7 +959,7 @@
       },
     },
     {
-      id: 'pubalgia', icon: '🩻', weight: 3, max: 1,
+      id: 'pubalgia', icon: '🩻', ico: 'stethoscope', tone: 'red', weight: 3, max: 1,
       when: c => c.age >= 24 && !!c.club,
       build: c => ({
         title: 'Pubalgia', text: 'Uma dor na virilha que não passa. O médico dá duas opções.',
@@ -974,7 +974,7 @@
 
     // ---------- família e vida ----------
     {
-      id: 'pai_empresario', icon: '👨‍👦', weight: 3, max: 1,
+      id: 'pai_empresario', icon: '👨‍👦', ico: 'users-round', tone: 'blue', weight: 3, max: 1,
       when: c => c.age <= 24 && !!c.club,
       build: () => ({
         title: 'Seu pai quer ser seu empresário', text: 'Seu pai largou o emprego e quer cuidar dos seus contratos.',
@@ -990,7 +990,7 @@
       },
     },
     {
-      id: 'irmao', icon: '🧑‍🤝‍🧑', weight: 2, max: 1,
+      id: 'irmao', icon: '🧑‍🤝‍🧑', ico: 'users', tone: 'blue', weight: 2, max: 1,
       when: c => c.age >= 20 && !!c.club,
       build: () => ({
         title: 'Seu irmão também joga', text: 'Seu irmão mais novo sonha em ser jogador e pede uma ajuda.',
@@ -1006,7 +1006,7 @@
       },
     },
     {
-      id: 'cachorro', icon: '🐶', weight: 2, max: 1,
+      id: 'cachorro', icon: '🐶', ico: 'dog', tone: 'green', weight: 2, max: 1,
       when: c => !!c.club,
       build: () => ({
         title: 'Um vira-lata no CT', text: 'Um cachorro de rua apareceu no CT e não sai do seu lado no treino.',
@@ -1019,7 +1019,7 @@
 
     // ---------- clube ----------
     {
-      id: 'concentracao', icon: '🏨', weight: 2, max: 1,
+      id: 'concentracao', icon: '🏨', ico: 'hotel', tone: 'blue', weight: 2, max: 1,
       when: c => atClub(c) >= 1,
       build: () => ({
         title: 'Concentração de três dias', text: 'O técnico novo quer o elenco concentrado três dias antes de cada jogo.',
@@ -1033,7 +1033,7 @@
       },
     },
     {
-      id: 'pretemporada', icon: '✈️', weight: 3, max: 2,
+      id: 'pretemporada', icon: '✈️', ico: 'plane', tone: 'blue', weight: 3, max: 2,
       when: c => club(c).tier >= 3,
       build: c => ({
         ...alt(c, 'pretemporada', [
@@ -1046,7 +1046,7 @@
         : (bump(c, 'coach', -3), { ok: true, text: 'Você chegou inteiro para a estreia.', fx: { form: 0.03 } })),
     },
     {
-      id: 'faixa', icon: '🎗️', weight: 5, max: 1,
+      id: 'faixa', icon: '🎗️', ico: 'ribbon', tone: 'blue', weight: 5, max: 1,
       when: c => c.captain && !!last(c) && last(c).rating < 7.0,
       build: () => ({
         title: 'A faixa em jogo', text: 'Temporada ruim. Parte do elenco acha que a braçadeira pesa em você.',
@@ -1060,7 +1060,7 @@
       },
     },
     {
-      id: 'rebaixamento', icon: '⬇️', weight: 5, max: 2,
+      id: 'rebaixamento', icon: '⬇️', ico: 'trending-down', tone: 'red', weight: 5, max: 2,
       when: c => { const l = last(c), cl = club(c), LD = cl && D.LADDER[cl.league]; return !!l && l.club === c.club && !!l.table && !!LD && !!LD.down && l.table.pos >= 14; },
       build: c => ({
         title: 'Luta contra a queda', text: D.O(club(c).name) + ' brigou contra o rebaixamento no ano passado e começa mal de novo.',
@@ -1073,7 +1073,7 @@
       },
     },
     {
-      id: 'acesso_briga', icon: '⬆️', weight: 4, max: 2,
+      id: 'acesso_briga', icon: '⬆️', ico: 'trending-up', tone: 'blue', weight: 4, max: 2,
       when: c => { const l = last(c), cl = club(c), LD = cl && D.LADDER[cl.league]; return !!l && l.club === c.club && !!l.table && !!LD && !!LD.up && l.table.pos <= 8; },
       build: c => ({
         title: 'Sonho do acesso', text: D.O(club(c).name) + ' ficou perto de subir e aposta tudo nesta temporada. A reta final vai ser pesada.',
@@ -1089,7 +1089,7 @@
       },
     },
     {
-      id: 'saf', icon: '🏢', weight: 2, max: 1,
+      id: 'saf', icon: '🏢', ico: 'building-2', tone: 'blue', weight: 2, max: 1,
       when: c => atClub(c) >= 1 && club(c).tier <= 4,
       build: c => ({
         title: 'O clube foi vendido', text: 'Um investidor estrangeiro comprou ' + D.o(club(c).name) + ' e promete revolucionar o futebol.',
@@ -1102,7 +1102,7 @@
       },
     },
     {
-      id: 'estadio', icon: '🏟️', weight: 2, max: 1,
+      id: 'estadio', icon: '🏟️', tone: 'green', weight: 2, max: 1,
       when: c => atClub(c) >= 1 && c.pos !== 'GOL',
       build: c => ({
         title: 'Estádio novo', text: D.O(club(c).name) + ' inaugura o estádio novo. Pênalti para o time no primeiro tempo.',
@@ -1119,7 +1119,7 @@
       },
     },
     {
-      id: 'olimpiada', icon: '🥇', weight: 4, max: 1,
+      id: 'olimpiada', icon: '🥇', ico: 'medal', tone: 'green', weight: 4, max: 1,
       when: c => c.age <= 23 && c.age >= 19 && S.ovr(c) >= 64,
       build: () => ({
         title: 'Convocado para as Olimpíadas', text: 'O clube não quer liberar, mas é a chance de uma medalha.',

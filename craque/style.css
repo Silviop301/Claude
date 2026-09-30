@@ -1323,3 +1323,9 @@ details.more > summary { font: 600 16px var(--body); }
 .seal.xs { display: inline-grid; width: 20px; height: 20px; vertical-align: -5px; } .seal.xs .ico { width: 12px; height: 12px; }
 .choice .ic:has(.seal), .sh-tr .ic:has(.seal) { display: grid; place-items: center; }
 .sh-tr .ic:has(.seal) { width: auto; }
+
+/* Evento: selo grande + rótulo do tom acima do título */
+.event-card .ev-top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.ev-tag { font: var(--t-label); letter-spacing: .14em; text-transform: uppercase; }
+.ev-tag.green { color: #0E5A30; } .ev-tag.red { color: #8E1B24; } .ev-tag.blue { color: #1D4C9E; }
+.ev-res .er-ic:has(.seal) { display: grid; place-items: center; }
