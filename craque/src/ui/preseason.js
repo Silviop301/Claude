@@ -24,7 +24,7 @@
     const at = {};
     for (const k in t.attr) at[k] = Math.round(t.attr[k] * D.TRAIT_LV[lv]) - (lv > 1 ? Math.round(t.attr[k] * D.TRAIT_LV[lv - 1]) : 0);
     const a = attrTxt(at), fx = t.fx ? t.fx(D.TRAIT_LV[lv]) : '';
-    return (a ? a + '<br>' : '') + '<span class="fx">' + (lv > 1 ? 'Nv ' + lv + ': ' : '') + esc(fx).replace('⚠️', '<b class="warn">⚠️</b>') + '</span>';
+    return (a ? a + '<br>' : '') + '<span class="fx">' + (lv > 1 ? 'Nv ' + lv + ': ' : '') + esc(fx).replace('⚠️', '<b class="warn">' + U.emo('⚠️', 'xs') + '</b>') + '</span>';
   }
 
   // Mini carta da pré-temporada: mostra os atributos atuais e, ao escolher, quanto cada um muda
@@ -120,7 +120,7 @@
   function wcHint() {
     if ((S.YEAR0 + G.c.season + 1) % 4 !== 2 || G.c.age + 1 < 18) return '';
     const n = D.NATION_BY_NAME[G.c.country], cut = S.wcCut(n, G.c), o = S.ovr(G.c);
-    return '<p class="wc-hint">' + n.flag + ' Ano de Copa: a seleção convoca com nota <b>' + cut + '</b>' + (o >= cut ? ' · você já está dentro' : ' · faltam ' + (cut - o)) + '</p>';
+    return '<p class="wc-hint">' + U.flag(n.flag) + ' Ano de Copa: a seleção convoca com nota <b>' + cut + '</b>' + (o >= cut ? ' · você já está dentro' : ' · faltam ' + (cut - o)) + '</p>';
   }
 
   // ---------- pré-temporada: característica e investimentos numa tela só ----------
@@ -147,7 +147,7 @@
       '<div class="eyebrow">Pré-temporada · ' + year() + (G.c.farewell ? ' · temporada de despedida' : '') + '</div>' +
       '<h2>Prepare a temporada</h2>' + wcHint() + miniCard() +
       (justAdded ? '<div class="prep-done">' + justAdded + '</div>' : '') +
-      (done && !justAdded ? '<div class="prep-sec">Características</div>' + traitsHtml() + '<p class="muted small">' + (S.buildDone(G.c) ? '✅ Build completo: todas no nível máximo.' : 'Nada para evoluir nesta fase: o que falta já não rende na sua idade.') + '</p>' : '') +
+      (done && !justAdded ? '<div class="prep-sec">Características</div>' + traitsHtml() + '<p class="muted small">' + (S.buildDone(G.c) ? U.emo('✅', 'xs') + ' Build completo: todas no nível máximo.' : 'Nada para evoluir nesta fase: o que falta já não rende na sua idade.') + '</p>' : '') +
       (ch.length ? '<div class="prep-sec">' + (G.c.traits.length >= S.MAX_SLOTS ? 'Evolua uma característica' : 'Escolha uma característica') + '</div>' +
         '<p class="muted small prep-note">' + (() => { const [a, b] = S.mainAttrs(G.c.pos); return 'Cada nível: +1 ' + D.label(G.c.pos, a) + ' (e +1 ' + D.label(G.c.pos, b) + ' a cada 2)'; })() +
           (G.c.traits.length < S.MAX_SLOTS ? ' · fica a carreira toda' : '') + '</p>' + traitsHtml() +
@@ -199,7 +199,7 @@
       let done;
       if (x.type === 'up') { S.upgradeTrait(G.c, x.trait.id); done = '✓ ' + U.icoOf(x.trait, 'xs') + ' ' + x.trait.name + ' evoluiu para o Nv ' + x.lv; }
       else { const syn = S.addTrait(G.c, x.trait.id); done = '✓ ' + U.icoOf(x.trait, 'xs') + ' ' + x.trait.name + ' entrou' + (syn ? '<br><b>' + U.icoOf(syn, 'xs') + ' Combinação desbloqueada: ' + syn.name + '</b> · ' + attrTxt(syn.attr) + (syn.extra ? ' · ' + syn.extra : '') : ''); }
-      if (S.buildDone(G.c)) done += '<br><b>🏁 Build completo!</b> Suas 5 características estão no nível máximo.';
+      if (S.buildDone(G.c)) done += '<br><b>' + U.emo('🏁', 'xs') + ' Build completo!</b> Suas 5 características estão no nível máximo.';
       preCh.done = true;
       showPreview(null);
       bar();

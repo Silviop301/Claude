@@ -15,7 +15,7 @@
     const roleCls = o.share >= 0.78 ? 'green' : o.share >= 0.5 ? 'blue' : 'red';
     return '<button class="choice offer card" data-i="' + idx + '" style="display:flex">' +
       '<div class="top"><span class="club">' + crest(cl.id) + esc(cl.name) + '</span><span class="stars">' + stars(cl.tier) + '</span></div>' +
-      '<div class="lg">' + lg.flag + ' ' + lg.name + (kname ? ' · <b class="of-kind ' + kcls + '">' + kname + '</b>' : '') + '</div>' +
+      '<div class="lg">' + U.flag(lg.flag) + ' ' + lg.name + (kname ? ' · <b class="of-kind ' + kcls + '">' + kname + '</b>' : '') + '</div>' +
       // O dilema do jogo em destaque: quanto você vai jogar × quão forte é o time
       '<div class="of-key"><span class="of-role ' + roleCls + '">' + o.role + '</span>' +
       '<span class="of-str"><small>Força do time</small><b>' + cl.strength + '</b><i><em style="width:' + Math.max(8, Math.min(100, Math.round((cl.strength - 40) / 55 * 100))) + '%"></em></i></span></div>' +
@@ -29,7 +29,7 @@
     const row = (lbl, x, y, cls) => '<tr><th>' + lbl + '</th><td>' + x + '</td><td class="' + (cls || '') + '">' + y + '</td></tr>';
     return '<table class="deal"><thead><tr><th></th><th>Hoje</th><th>Proposta</th></tr></thead><tbody>' +
       row('Clube', crest(a.id, 'xs') + esc(a.name), crest(b.id, 'xs') + esc(b.name)) +
-      row('Liga', league(a.id).flag + ' ' + esc(league(a.id).name), league(b.id).flag + ' ' + esc(league(b.id).name)) +
+      row('Liga', U.flag(league(a.id).flag) + ' ' + esc(league(a.id).name), U.flag(league(b.id).flag) + ' ' + esc(league(b.id).name)) +
       row('Força', a.strength + ' · ' + stars(a.tier), b.strength + ' · ' + stars(b.tier), diff(a.strength, b.strength)) +
       row('Seu papel', esc(cur.role), esc(o.role), diff(cur.share, o.share)) +
       row('Salário', 'R$ ' + money(cur.wage) + '/sem', 'R$ ' + money(o.wage) + '/sem', diff(cur.wage, o.wage)) +
@@ -78,8 +78,8 @@
     render(
       '<div class="eyebrow">Janela de transferências · ' + year() + '</div>' +
       '<h2>' + (ended ? 'Seu contrato com ' + D.o(esc(club(G.c.club).name)) + ' acabou' : 'Seu empresário abriu o mercado') + '</h2>' +
-      '<p class="lead">' + (noOffers ? 'Nenhum clube novo apareceu. ' : '') + 'Nota geral ' + S.ovr(G.c) + ' · ⭐ ' + S.fameLabel(G.c.fame) + '. A última opção é renovar com o clube atual.</p>' +
-      '<p class="muted small">⭐ Fama traz propostas de clubes maiores, salários mais altos' + (G.c.fame >= 150 ? ', vaga mais fácil na seleção' : '') + ' e mais votos na Bola de Ouro.</p>' +
+      '<p class="lead">' + (noOffers ? 'Nenhum clube novo apareceu. ' : '') + 'Nota geral ' + S.ovr(G.c) + ' · ' + U.emo('⭐', 'xs') + ' ' + S.fameLabel(G.c.fame) + '. A última opção é renovar com o clube atual.</p>' +
+      '<p class="muted small">' + U.emo('⭐', 'xs') + ' Fama traz propostas de clubes maiores, salários mais altos' + (G.c.fame >= 150 ? ', vaga mais fácil na seleção' : '') + ' e mais votos na Bola de Ouro.</p>' +
       '<div class="choices">' + all.map(offerCard).join('') + '</div>' + tools(win, false) +
       (S.canRetire(G.c) ? '<button class="btn ghost" id="b-retire">Pendurar as chuteiras</button>' : '')
     );
@@ -121,7 +121,7 @@
     D.LEAGUES.forEach(l => { (byCountry[l.country] = byCountry[l.country] || []).push(l); });
     const lvl = l => { const cl = D.CLUBS.filter(x => x.league === l.id); return cl.length ? Math.round(cl.reduce((a, x) => a + x.tier, 0) / cl.length) : 1; };
     w.innerHTML = '<div class="sheet"><div class="sh-head"><div><b>Pedir ao empresário</b><span>Escolha a liga. Ele tenta um clube que te queira (uma vez por janela).</span></div><button class="sh-x" aria-label="Fechar">✕</button></div>' +
-      '<div class="sh-body lg-pick">' + Object.keys(byCountry).map(ct => '<div class="sh-sec">' + byCountry[ct][0].flag + ' ' + esc(ct) + '</div>' +
+      '<div class="sh-body lg-pick">' + Object.keys(byCountry).map(ct => '<div class="sh-sec">' + U.flag(byCountry[ct][0].flag) + ' ' + esc(ct) + '</div>' +
         byCountry[ct].map(l => { const ch = Math.round(S.askChance(G.c, l.id) * 100); return '<button class="lg-row" data-lg="' + l.id + '"><b>' + esc(l.name) + '</b><span class="stars">' + stars(lvl(l)) + '</span><em class="' + (ch >= 60 ? 'hi' : ch < 25 ? 'lo' : '') + '">' + ch + '%</em></button>'; }).join('')).join('') + '</div></div>';
     const close = () => w.remove();
     w.onclick = e => { if (e.target === w) close(); };
@@ -147,16 +147,16 @@
     bar();
     const last = G.c.seasons[G.c.seasons.length - 1], cl = club(G.c.club), role = S.role(G.c, cl);
     const talk = Math.round(S.talkChance(G.c) * 100);
-    const opt = (id, ico, tone, t, d) => '<button class="choice" data-sq="' + id + '"><span class="ic">' + U.seal(ico, tone) + '</span><b>' + t + '</b><span class="d">' + d + '</span></button>';
+    const opt = (id, e, t, d) => '<button class="choice" data-sq="' + id + '"><span class="ic">' + U.emo(e, 'md') + '</span><b>' + t + '</b><span class="d">' + d + '</span></button>';
     render(
       '<div class="eyebrow">Pouco espaço · ' + year() + '</div>' +
       '<h2>' + last.games + (last.games === 1 ? ' jogo' : ' jogos') + ' ' + D.no(esc(cl.name)) + ' na última temporada</h2>' +
       '<p class="lead">Hoje você é <b>' + role.name.toLowerCase() + '</b>: o técnico prefere outros. Contrato: ' + G.c.contract + (G.c.contract > 1 ? ' anos' : ' ano') + '. O que fazer?</p>' +
       '<div class="choices">' +
-      (sq.loans.length ? opt('loan', 'repeat', 'blue', 'Pedir empréstimo', 'Uma temporada como titular num clube menor. Depois você volta, com o contrato valendo.') : '') +
-      opt('talk', 'handshake', 'green', 'Conversar com o técnico', 'Chance de ' + talk + '% de ganhar mais minutos na próxima temporada. Se não der, a relação esfria.') +
-      opt('out', 'door-open', 'red', 'Pedir para sair', 'A janela abre agora, com uma proposta a mais. Torcida e técnico não gostam.') +
-      opt('stay', 'shield', 'sand', 'Seguir brigando por espaço', 'Nada muda: treinar e esperar a chance.') + '</div>'
+      (sq.loans.length ? opt('loan', '🔁', 'Pedir empréstimo', 'Uma temporada como titular num clube menor. Depois você volta, com o contrato valendo.') : '') +
+      opt('talk', '🤝', 'Conversar com o técnico', 'Chance de ' + talk + '% de ganhar mais minutos na próxima temporada. Se não der, a relação esfria.') +
+      opt('out', '🚪', 'Pedir para sair', 'A janela abre agora, com uma proposta a mais. Torcida e técnico não gostam.') +
+      opt('stay', '🛡️', 'Seguir brigando por espaço', 'Nada muda: treinar e esperar a chance.') + '</div>'
     );
     screen.querySelectorAll('[data-sq]').forEach(b => b.onclick = () => {
       const k = b.dataset.sq;
@@ -165,7 +165,7 @@
       if (k === 'talk') {
         const r = S.coachTalk(G.c);
         save(); bar(); sfx(r.ok ? 'levelup' : 'miss');
-        render('<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.seal('handshake', r.ok ? 'green' : 'red', 'lg') + '</span><div class="eyebrow">Conversa com o técnico</div><p class="er-txt">' + r.text + '</p></div>' +
+        render('<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.emo('🤝', 'lg') + '</span><div class="eyebrow">Conversa com o técnico</div><p class="er-txt">' + r.text + '</p></div>' +
           '<button class="btn" id="b-next">Pré-temporada</button>', { center: true });
         $('b-next').onclick = U.preseason;
       } else if (k === 'out') { S.askOut(G.c); save(); windowOffers(); }

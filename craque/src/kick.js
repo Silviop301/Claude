@@ -80,7 +80,7 @@
       '<circle cx="10" cy="0" r="95" fill="url(#k-flood)"/><circle cx="350" cy="0" r="95" fill="url(#k-flood)"/>' +
       // placa de LED rolando atrás do gol
       '<rect y="50" width="360" height="12" fill="#0A0A0A"/><rect y="50" width="360" height="1" fill="rgba(255,255,255,.15)"/>' +
-      '<g class="k-led"><text y="59" font-size="8.5" font-weight="800" letter-spacing="2" fill="#F2C230">' + ' CLIMBIX ⚽ SEU NOME NA HISTÓRIA ⚽ CLIMBIX ⚽ SEU NOME NA HISTÓRIA ⚽ CLIMBIX ⚽ SEU NOME NA HISTÓRIA ⚽'.repeat(2) + '</text>' +
+      '<g class="k-led"><text y="59" font-size="8.5" font-weight="800" letter-spacing="2" fill="#F2C230">' + ' CLIMBIX • SEU NOME NA HISTÓRIA • CLIMBIX • SEU NOME NA HISTÓRIA • CLIMBIX • SEU NOME NA HISTÓRIA •'.repeat(2) + '</text>' +
       '<animateTransform attributeName="transform" type="translate" from="0 0" to="-300 0" dur="9s" repeatCount="indefinite"/></g>' +
       // gramado, marcações em perspectiva
       '<rect y="62" width="360" height="258" fill="url(#k-grass)"/>' + stripes.join('') +

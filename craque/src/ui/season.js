@@ -57,7 +57,7 @@
   function bigMoments(res) {
     const out = res.titles.map(t => ({ art: trophy(titleType(t), 150, t.name), top: 'Campeão!', name: t.name }));
     if (res.awards.some(a => a.id === 'ballon')) out.push({ art: trophy('ballon', 150), top: 'O melhor do mundo', name: 'Bola de Ouro' });
-    if (res.move && res.move.dir === 'up') out.push({ art: '<div class="bm-emoji">⬆️</div>', top: 'Acesso!', name: D.O(club(res.club).name) + ' sobe ' + D.paraA(res.move.toName) });
+    if (res.move && res.move.dir === 'up') out.push({ art: '<div class="bm-emoji">' + U.emo('⬆️', 'lg') + '</div>', top: 'Acesso!', name: D.O(club(res.club).name) + ' sobe ' + D.paraA(res.move.toName) });
     return out;
   }
 
@@ -177,21 +177,21 @@
     const dOvr = res.ovr1 - res.ovr0;
     const fin = S.mustRetire(G.c);
     const tb = res.table;
-    const tableTxt = !res.games ? '' : tb.pos === 1 ? '🥇 Campeão ' + D.da(tb.league) + ' com ' + tb.pts + ' pontos'
+    const tableTxt = !res.games ? '' : tb.pos === 1 ? U.emo('🥇', 'sm') + ' Campeão ' + D.da(tb.league) + ' com ' + tb.pts + ' pontos'
       : tb.pos + 'º lugar ' + D.na(tb.league) + ' · ' + tb.pts + ' pts, a ' + tb.gap + ' do líder';
-    const moveTxt = !res.move ? '' : res.move.dir === 'up' ? '⬆️ Acesso ' + D.paraA(res.move.toName) + '!' : '⬇️ Rebaixado ' + D.paraA(res.move.toName);
+    const moveTxt = !res.move ? '' : res.move.dir === 'up' ? U.emo('⬆️', 'sm') + ' Acesso ' + D.paraA(res.move.toName) + '!' : U.emo('⬇️', 'sm') + ' Rebaixado ' + D.paraA(res.move.toName);
     // O que mexeu na nota: minutos, desempenho, lesão, idade e treinos (a soma bate com a variação)
     const great = res.games >= 15 && res.rating >= 7.5;
     const why = (great && dOvr <= 0 ? '<p class="why-note">Grande temporada! Seu desempenho valeu ' + ((v => (v > 0 ? '+' : '') + v)((res.why.find(w => w.k === 'perf') || { v: 0 }).v)) + ' na nota' + (res.ovr0 >= G.c.pot - 3 ? ', mas você já está perto do seu teto' : '') + '. Também rendeu fama, torcida e propostas melhores.</p>' : '') +
-      (res.why.length ? '<ul class="why">' + res.why.map(w => '<li><span>' + esc(w.txt) + '</span><b class="' + (w.pot ? 'pot' : w.potDown ? 'down' : w.note ? 'note' : w.v > 0 ? 'up' : w.v < 0 ? 'down' : 'zero') + '">' + (w.pot ? 'teto ↑' : w.potDown ? 'teto ↓' : w.note ? 'ℹ️' : (w.v > 0 ? '+' : w.v < 0 ? '' : '±') + w.v) + '</b></li>').join('') + '</ul>' : '');
+      (res.why.length ? '<ul class="why">' + res.why.map(w => '<li><span>' + esc(w.txt) + '</span><b class="' + (w.pot ? 'pot' : w.potDown ? 'down' : w.note ? 'note' : w.v > 0 ? 'up' : w.v < 0 ? 'down' : 'zero') + '">' + (w.pot ? 'teto ↑' : w.potDown ? 'teto ↓' : w.note ? U.emo('ℹ️', 'xs') : (w.v > 0 ? '+' : w.v < 0 ? '' : '±') + w.v) + '</b></li>').join('') + '</ul>' : '');
     const open = S.windowOpen(G.c);
     const contractTxt = G.c.contract > 0 ? 'Contrato: mais ' + G.c.contract + (G.c.contract > 1 ? ' temporadas' : ' temporada') + ' ' + D.no(esc(club(G.c.club).name)) : 'Seu contrato acabou: hora de decidir o futuro';
     // Copa do Mundo: convocação logo depois da temporada, em ano de Copa
     const wcNow = S.isWcYear(G.c) && G.c.wcYearDone !== year();
     const call = wcNow ? S.wcCall(G.c) : null;
     let wcBlock = '';
-    if (call && call.called) wcBlock = '<div class="wc-call rv"><span class="wc-flag">' + call.nation.flag + '</span><div><b>Convocado para a Copa do Mundo ' + year() + '!</b><span>' + (call.starter ? 'Titular da seleção' : 'Vai como reserva (nota perto do corte de ' + call.cut + ')') + '</span></div></div>';
-    else if (call && G.c.age >= 18) { wcBlock = '<p class="wc-miss rv">🌍 Fora da Copa de ' + year() + ': a seleção pedia nota ' + call.cut + ', você tem ' + S.ovr(G.c) + '.</p>'; G.c.wcYearDone = year(); save(); }
+    if (call && call.called) wcBlock = '<div class="wc-call rv"><span class="wc-flag">' + U.flag(call.nation.flag) + '</span><div><b>Convocado para a Copa do Mundo ' + year() + '!</b><span>' + (call.starter ? 'Titular da seleção' : 'Vai como reserva (nota perto do corte de ' + call.cut + ')') + '</span></div></div>';
+    else if (call && G.c.age >= 18) { wcBlock = '<p class="wc-miss rv">' + U.emo('🌍', 'sm') + ' Fora da Copa de ' + year() + ': a seleção pedia nota ' + call.cut + ', você tem ' + S.ovr(G.c) + '.</p>'; G.c.wcYearDone = year(); save(); }
     // Mundial de Clubes (a cada 4 anos): o clube classificado joga logo depois da temporada
     const cwcCall = S.isCwcYear(G.c) && G.c.cwcYearDone !== year() ? S.cwcCall(G.c) : null;
     if (cwcCall && cwcCall.called) wcBlock = '<div class="wc-call rv">' + crest(cwcCall.club.id, 'lg') + '<div><b>' + D.O(esc(cwcCall.club.name)) + ' está no Mundial de Clubes ' + year() + '!</b><span>' + (cwcCall.champ ? 'Vaga de campeão continental' : 'Vaga pelo ranking de clubes') + ' · 32 clubes, jogo a jogo</span></div></div>';
@@ -199,7 +199,7 @@
     const goCwc = !!(cwcCall && cwcCall.called);
     const goWc = call && call.called;
     const goTour = goWc || goCwc, tourIntro = goWc ? U.wcIntro : U.cwcIntro;
-    const tourLbl = goWc ? 'Copa do Mundo ' + year() + ' 🌍' : 'Mundial de Clubes ' + year() + ' 🌐';
+    const tourLbl = goWc ? 'Copa do Mundo ' + year() + ' ' + U.emo('🌍', 'sm') : 'Mundial de Clubes ' + year() + ' ' + U.emo('🌐', 'sm');
     let actions;
     if (fin) actions = '<p class="lead">' + (res.farewell ? 'Fim da temporada de despedida. Hora de pendurar as chuteiras.' : (G.c.age >= S.RETIRE_AGE ? 'Aos ' + G.c.age + ' anos, o corpo pediu para parar.' : 'Com a carta em ' + S.ovr(G.c) + ', nenhum clube quis renovar. Hora de pendurar as chuteiras.')) + '</p><button class="btn" id="b-next">' + (goTour ? 'Última dança: ' + tourLbl : 'Ver sua carreira') + '</button>';
     else {
@@ -212,14 +212,14 @@
       (moveTxt ? '<div class="move-line rv ' + res.move.dir + '">' + moveTxt + '</div>' : '') +
       (res.loanBack ? '<p class="contract rv">Fim do empréstimo: você volta ' + D.ao(esc(club(res.loanBack.to).name)) + '.</p>' : '') +
       (res.titles.length ? '<div class="titles">' + res.titles.map(t => '<div class="title-won rv">' + trophy(titleType(t), 60, t.name) + '<span>Campeão<br><b>' + esc(t.name) + '</b></span></div>').join('') + '</div>' : '') +
-      '<div class="awards">' + res.awards.map(a => '<div class="award rv' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : '🥇 ') + a.name + '</div>').join('') + '</div>' +
-      '<div class="news rv"><div class="np">📰 Nos jornais</div><p>' + esc(res.headlines[0] || '') + '</p></div>' +
+      '<div class="awards">' + res.awards.map(a => '<div class="award rv' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : U.emo('🥇', 'sm') + ' ') + a.name + '</div>').join('') + '</div>' +
+      '<div class="news rv"><div class="np">' + U.emo('📰', 'xs') + ' Nos jornais</div><p>' + esc(res.headlines[0] || '') + '</p></div>' +
       wcBlock +
       // Detalhes (fechados): outros lances, o porquê da nota, técnico/torcida e contrato
       '<details class="more rv"><summary>Detalhes da temporada</summary>' +
       res.highlights.slice(1).map(h => '<div class="hl">' + esc(h) + '</div>').join('') +
       '<div class="card why-card"><p class="delta-in ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' + why + '</div>' +
-      '<p class="rel-delta">👔 Técnico ' + res.coach0 + ' → ' + res.coach1 + ' · 📣 Torcida ' + res.fans0 + ' → ' + res.fans1 + ' (' + S.relLabel(res.fans1) + ')</p>' +
+      '<p class="rel-delta">' + U.emo('👔', 'xs') + ' Técnico ' + res.coach0 + ' → ' + res.coach1 + ' · ' + U.emo('📣', 'xs') + ' Torcida ' + res.fans0 + ' → ' + res.fans1 + ' (' + S.relLabel(res.fans1) + ')</p>' +
       (fin ? '' : '<p class="contract">' + contractTxt + '</p>') + '</details>' + '<div class="rv">' + actions + '</div>';
     bar();
     reveal(skipNow, res);

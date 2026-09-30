@@ -1353,3 +1353,18 @@ details.more.score-how > summary { color: var(--ink); }
 
 /* Fisioterapia sozinha embaixo, na largura toda */
 .choices.inv-grid .choice.inv[data-v="fisio"] { grid-column: 1 / -1; }
+
+/* ===== Twemoji: ícones coloridos iguais em todo aparelho ===== */
+.tw { display: inline-block; vertical-align: -0.2em; flex: none; }
+.tw-xs { width: 16px; height: 16px; } .tw-sm { width: 20px; height: 20px; } .tw-md { width: 28px; height: 28px; } .tw-lg { width: 40px; height: 40px; }
+/* dentro de um texto: acompanha o tamanho da letra */
+.tw-tx { width: 1.15em; height: 1.15em; vertical-align: -0.22em; }
+.choice .ic:has(.tw), .sh-tr .ic:has(.tw) { display: grid; place-items: center; }
+/* Conquistas: emoji real; bloqueada em cinza com cadeado pequeno no canto */
+.ach .ic { position: relative; display: inline-block; width: max-content; filter: none; opacity: 1; font-size: 0; line-height: 0; }
+.ach:not(.on) .ic .tw-md { filter: grayscale(1); opacity: .35; }
+.ach .ic .tw-xs { position: absolute; right: -6px; bottom: -3px; }
+.bm-emoji .tw { width: 1em; height: 1em; vertical-align: 0; }
+
+.cfg-credit { margin: 2px 0 0; text-align: center; font: 500 12px var(--body); color: #93AD9D; }
+.cfg-credit a { color: inherit; }

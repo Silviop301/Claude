@@ -30,7 +30,9 @@
         (r.note ? '<p class="cfg-note">' + U.ICON.info + esc(r.note) + '</p>' : '') + '</div>';
       w.innerHTML = '<div class="cfg" role="dialog" aria-modal="true" aria-label="Configurações"><div class="cfg-head"><b>Configurações</b><button class="cfg-x" aria-label="Fechar">' + U.ICON.x + '</button></div>' +
         GROUPS().map(g => '<div class="cfg-grp"><div class="eyebrow">' + g.t + '</div><div class="cfg-box">' + g.rows.map(row).join('') + '</div></div>').join('') +
-        '<button class="btn" id="cfg-ok">Pronto</button></div>';
+        '<button class="btn" id="cfg-ok">Pronto</button>' +
+        // Crédito exigido pela licença dos emojis
+        '<p class="cfg-credit">Emojis: <a href="https://github.com/jdecked/twemoji" target="_blank" rel="noopener">Twemoji</a> (CC-BY 4.0)</p></div>';
       w.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
         const k = b.dataset.k, raw = b.dataset.v, v = raw === 'true' ? true : raw === 'false' ? false : raw;
         if (k === 'sound') { if (window.CRAQUE_SFX && window.CRAQUE_SFX.on !== v) window.CRAQUE_SFX.toggle(); }

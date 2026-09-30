@@ -91,7 +91,7 @@
       const el = $('rk-list');
       if (!el) return;
       if (!d.rows || !d.rows.length) { el.innerHTML = '<p class="muted">Ninguém ainda' + (st.p === 'day' || st.m === 'daily' ? ' hoje' : st.p === 'week' ? ' nesta semana' : '') + '. Seja o primeiro!</p>'; return; }
-      el.innerHTML = d.rows.map((r, i) => '<div class="rk-item' + (r.me ? ' me' : '') + '"><span class="rk-pos">' + (i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1 + 'º') + '</span>' +
+      el.innerHTML = d.rows.map((r, i) => '<div class="rk-item' + (r.me ? ' me' : '') + '"><span class="rk-pos">' + (i < 3 ? U.emo(['🥇', '🥈', '🥉'][i], 'sm') : i + 1 + 'º') + '</span>' +
         '<span class="rk-who"><b>' + esc(r.nick) + '</b><small>' + esc(r.name) + ' · ' + (POS[r.pos] || '') + (r.club ? ' · ' + esc(r.club) : '') + (r.done ? '' : ' · em andamento') + '</small></span>' +
         '<span class="rk-v">' + r.v + (unit ? '<small>' + unit + '</small>' : '') + '</span></div>').join('') +
         (d.me && d.me.rank > d.rows.length ? '<div class="rk-item me"><span class="rk-pos">' + d.me.rank + 'º</span><span class="rk-who"><b>Você</b></span><span class="rk-v">' + d.me.v + '</span></div>' : '') +
@@ -103,9 +103,9 @@
   // No fim da carreira: envia e, se ainda não tem nome, convida a entrar no ranking
   function finaleRank() {
     const p = player();
-    setTimeout(() => bindNick(m => { const el = document.querySelector('.rk-fin'); if (el) el.outerHTML = m ? finaleBox(m) : '<p class="rk-fin muted small">✅ Pronto! Sua carreira está no ranking.</p>'; bindNick(() => {}); }), 0);
+    setTimeout(() => bindNick(m => { const el = document.querySelector('.rk-fin'); if (el) el.outerHTML = m ? finaleBox(m) : '<p class="rk-fin muted small">' + U.emo('✅', 'xs') + ' Pronto! Sua carreira está no ranking.</p>'; bindNick(() => {}); }), 0);
     return finaleBox();
-    function finaleBox(msg) { return p.nick && !msg ? '<p class="rk-fin muted small">🏆 Carreira enviada ao ranking como <b>' + esc(p.nick) + '</b>.</p>' : '<div class="rk-fin">' + nickForm(p, msg) + '</div>'; }
+    function finaleBox(msg) { return p.nick && !msg ? '<p class="rk-fin muted small">' + U.emo('🏆', 'xs') + ' Carreira enviada ao ranking como <b>' + esc(p.nick) + '</b>.</p>' : '<div class="rk-fin">' + nickForm(p, msg) + '</div>'; }
   }
 
   flush(); // o que ficou pendente da última vez

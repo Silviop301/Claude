@@ -53,7 +53,7 @@
     const pos = D.POS[d.pos] ? D.POS[d.pos].name : '';
     render('<div class="cv-page"><div class="eyebrow">Carta do Climbix</div>' +
       '<div class="card3d-host big" id="cv-host"><canvas aria-label="Carta"></canvas></div>' +
-      '<div class="cv-info"><b>' + esc(d.name) + '</b><span>' + (d.flag || '') + ' ' + esc(pos) + (d.verdict ? ' · ' + esc(d.verdict) : '') + '</span></div>' +
+      '<div class="cv-info"><b>' + esc(d.name) + '</b><span>' + U.flag(d.flag) + ' ' + esc(pos) + (d.verdict ? ' · ' + esc(d.verdict) : '') + '</span></div>' +
       '<p class="muted small cv-hint">Arraste para girar a carta</p>' +
       '<button class="btn" id="cv-play">Criar a minha carreira</button>' +
       '<button class="btn ghost" id="cv-share">Compartilhar esta carta</button></div>');

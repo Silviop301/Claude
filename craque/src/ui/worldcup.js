@@ -11,8 +11,8 @@
   const isCwc = run => !!run && run.kind === 'cwc';
   const tName = run => (isCwc(run) ? 'Mundial de Clubes' : 'Copa do Mundo');
   // Nosso lado no placar: bandeira da seleção ou escudo do clube
-  const usMark = run => (isCwc(run) ? crest(run.club, 'xs') : D.NATION_BY_NAME[G.c.country].flag);
-  const themMark = g => (g.crest ? crest(g.crest, 'xs') : g.flag);
+  const usMark = run => (isCwc(run) ? crest(run.club, 'xs') : U.flag(D.NATION_BY_NAME[G.c.country].flag));
+  const themMark = g => (g.crest ? crest(g.crest, 'xs') : U.flag(g.flag));
   const usName = run => (isCwc(run) ? esc(club(run.club).name) : esc(G.c.country));
 
   function cwcIntro() {
@@ -38,7 +38,7 @@
     save();
     render(
       '<div class="eyebrow">Copa do Mundo ' + year() + '</div>' +
-      '<div class="wc-hero"><span class="wc-bigflag">' + call.nation.flag + '</span><h2>Convocado pela seleção ' + ofCountry(G.c.country) + '!</h2>' +
+      '<div class="wc-hero"><span class="wc-bigflag">' + U.flag(call.nation.flag) + '</span><h2>Convocado pela seleção ' + ofCountry(G.c.country) + '!</h2>' +
       '<p class="lead">' + (call.starter ? 'Você chega como titular. O país inteiro está de olho.' : 'Você vai como reserva: entra no segundo tempo e pode decidir.') + '</p></div>' +
       '<div class="card wc-rules"><p>Fase de grupos com 3 jogos, depois mata-mata até a final.</p><p>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</p></div>' +
       '<button class="btn" id="b-wc">' + (U.cfg.cups === 'sim' ? 'Simular a Copa' : 'Começar a Copa') + '</button>'
@@ -50,7 +50,7 @@
     const run = G.c.wcRun;
     const res = g.gf > g.ga ? 'w' : g.gf < g.ga ? 'l' : 'd';
     const pen = g.pens ? (g.pensWon === undefined ? '<span class="tag gold">Pênaltis!</span>' : g.pensWon ? '<span class="tag green">Venceu nos pênaltis</span>' : '<span class="tag red">Perdeu nos pênaltis</span>') : '';
-    const me = (g.g ? '⚽'.repeat(Math.min(g.g, 4)) + (g.g > 4 ? '+' : '') + ' ' : '') + (g.a ? '👟'.repeat(Math.min(g.a, 3)) : '');
+    const me = (g.g ? U.emo('⚽', 'xs').repeat(Math.min(g.g, 4)) + (g.g > 4 ? '+' : '') + ' ' : '') + (g.a ? U.emo('👟', 'xs').repeat(Math.min(g.a, 3)) : '');
     return '<div class="wc-game ' + (g.pens && g.pensWon !== undefined ? (g.pensWon ? 'w' : 'l') : res) + '"><span class="st">' + esc(g.stage) + '</span>' +
       '<div class="line"><span class="us">' + usMark(run) + '</span><b>' + g.gf + ' × ' + g.ga + '</b><span class="them">' + themMark(g) + ' ' + esc(g.opp) + '</span></div>' +
       (me ? '<span class="me">' + me + '</span>' : '') + pen +
@@ -58,8 +58,8 @@
         pen: g.momentOk ? 'pênalti convertido' : 'pênalti desperdiçado', fk: g.momentOk ? 'falta convertida' : 'falta desperdiçada',
         save: g.momentOk ? 'pênalti defendido' : 'pênalti sofrido', tackle: g.momentOk ? 'desarme salvador' : 'atacante passou',
       }[g.moment.type]) + (g.at ? ' no ' + g.at[0] + ' × ' + g.at[1] : '') + '</span>' : '') +
-      (S.defKick(G.c.pos) && g.cs && !g.live ? '<span class="mom ok">🧤 sem sofrer gol</span>' : '') +
-      (g.rating ? '<span class="rt' + (g.motm ? ' motm' : '') + '">' + (g.motm ? '⭐ Craque do jogo · ' : 'Nota ') + g.rating.toFixed(1).replace('.', ',') + '</span>' : '') +
+      (S.defKick(G.c.pos) && g.cs && !g.live ? '<span class="mom ok">' + U.emo('🧤', 'xs') + ' sem sofrer gol</span>' : '') +
+      (g.rating ? '<span class="rt' + (g.motm ? ' motm' : '') + '">' + (g.motm ? U.emo('⭐', 'xs') + ' Craque do jogo · ' : 'Nota ') + g.rating.toFixed(1).replace('.', ',') + '</span>' : '') +
       (g.ev && g.ev.length && !g.live ? '<div class="gls">' + g.ev.map(e => goalLine(e, g)).join('') + '</div>' : '') +
       (g.groupEnd ? '<div class="grp ' + (g.groupEnd.pass ? 'ok' : 'ko') + '">' + (g.groupEnd.pass ? 'Classificado com ' + g.groupEnd.pts + ' pontos' : 'Eliminado na fase de grupos (' + g.groupEnd.pts + ' pts)') + '</div>' : '') + '</div>';
   }
@@ -69,7 +69,7 @@
     const run = G.c.wcRun;
     const txt = e.s === 't' ? esc(g.opp) + ' marca' + (e.k ? ' no lance decisivo' : '')
       : e.w === 'g' ? '<b>Gol seu!</b>' + (e.k ? ' No lance decisivo' : '') : e.w === 'a' ? usName(run) + ' marca, <b>assistência sua</b>' : usName(run) + ' marca';
-    return '<div class="gl ' + e.s + '"><i>' + e.m + "'</i>" + (e.s === 'u' ? '⚽ ' : '🥅 ') + txt + '</div>';
+    return '<div class="gl ' + e.s + '"><i>' + e.m + "'</i>" + (e.s === 'u' ? U.emo('⚽', 'xs') : U.emo('🥅', 'xs')) + ' ' + txt + '</div>';
   }
   function liveRow(g) {
     const el = document.createElement('div');
@@ -120,7 +120,7 @@
     const resume = last && last.resumeAt !== undefined && !last.live ? last : null; // jogo que continua depois do lance
     render('<div class="eyebrow">' + tName(run) + ' ' + run.year + ' · ' + usMark(run) + ' ' + usName(run) + '</div>' +
       '<div class="wc-list" id="wc-list">' + run.games.filter(g => !g.live && g !== resume).map(wcRow).join('') + '</div><div id="wc-after"></div>' +
-      '<div class="wc-sim" id="wc-sim"><button class="tool" id="b-simg">⏩ Pular jogo</button><button class="tool" id="b-sima">⏭ Simular até o fim</button></div>' +
+      '<div class="wc-sim" id="wc-sim"><button class="tool" id="b-simg">' + U.emo('⏩', 'xs') + ' Pular jogo</button><button class="tool" id="b-sima">' + U.emo('⏭️', 'xs') + ' Simular até o fim</button></div>' +
       '<p class="skip-hint" id="wc-hint">Toque para acelerar</p>');
     let fast = false, skip = false;
     const isFast = () => fast || skip || simAll;

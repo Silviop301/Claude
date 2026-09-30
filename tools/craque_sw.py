@@ -25,7 +25,7 @@ for p in sorted((ROOT / "src").rglob("*.js")):
         p.write_text(new)
 files = ["./"]
 for p in sorted(ROOT.rglob("*")):
-    if p.is_file() and p.name not in ("sw.js", "README.md") and p.suffix in (".html", ".css", ".js", ".png", ".jpg", ".glb", ".webmanifest", ".woff2"):
+    if p.is_file() and p.name not in ("sw.js", "README.md") and p.suffix in (".html", ".css", ".js", ".png", ".jpg", ".svg", ".glb", ".webmanifest", ".woff2"):
         rel = p.relative_to(ROOT).as_posix()
         files.append("./" + versioned.get(rel, rel))
 digest = hashlib.sha1("".join(files).encode()).hexdigest()[:8]

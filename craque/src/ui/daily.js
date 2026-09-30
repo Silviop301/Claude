@@ -29,7 +29,7 @@
     const key = todayKey(), sp = dailySpec(key), best = (load(KEY) || {})[key];
     const flag = (D.COUNTRIES.find(x => x.id === sp.country) || {}).flag || '';
     return '<button class="daily" id="b-daily"><span class="dl-seal">' + U.ICON['calendar-days'] + '</span><span class="dl-top">Carreira do dia · ' + shortDate(key) + '</span>' +
-      '<b>' + esc(sp.name) + ' <span>' + flag + ' ' + (sp.pos === 'ATA' ? 'Atacante' : 'Meia') + ' · ' + sp.number + '</span></b>' +
+      '<b>' + esc(sp.name) + ' <span>' + U.flag(flag) + ' ' + (sp.pos === 'ATA' ? 'Atacante' : 'Meia') + ' · ' + sp.number + '</span></b>' +
       '<span class="dl-sub">' + (best ? 'Seu melhor hoje: nota ' + best.grade + ' · ' + best.score + ' pts' : 'Desafio de hoje: todos jogam com ele. Quem vai mais longe?') + '</span></button>';
   }
 

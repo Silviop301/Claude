@@ -84,14 +84,14 @@
       '<div class="look-row" id="f-hc">' + U.HAIR_COLORS.map((c, j) => '<button data-v="' + j + '" style="background:' + c + '" aria-label="Cor do cabelo ' + (j + 1) + '"></button>').join('') + '</div></div>' +
       '<div class="seg pos4" id="f-pos"><button data-v="ATA" class="on">Atacante</button><button data-v="MEI">Meia</button><button data-v="ZAG">Zagueiro</button><button data-v="GOL">Goleiro</button></div>' +
       '<div class="seg" id="f-foot"><button data-v="D" class="on">Destro</button><button data-v="E">Canhoto</button></div>' +
-      '<div class="seg flags one-line" id="f-country">' + D.COUNTRIES.map((k, j) => '<button data-v="' + k.id + '"' + (j ? '' : ' class="on"') + ' aria-label="' + k.id + '">' + k.flag + '</button>').join('') + '</div>' +
+      '<div class="seg flags one-line" id="f-country">' + D.COUNTRIES.map((k, j) => '<button data-v="' + k.id + '"' + (j ? '' : ' class="on"') + ' aria-label="' + k.id + '">' + U.flag(k.flag) + '</button>').join('') + '</div>' +
       '<button class="btn" id="b-go">Começar carreira</button>'
     );
     $('look-pv').onclick = () => { const lp = $('look-panel'); lp.hidden = !lp.hidden; };
     // Prévia da foto do jornal com a camisa da seleção escolhida
     const lookPv = () => {
       $('cc-pos').textContent = st.pos;
-      $('cc-flag').textContent = (D.COUNTRIES.find(k => k.id === st.country) || {}).flag || '';
+      $('cc-flag').innerHTML = U.flag((D.COUNTRIES.find(k => k.id === st.country) || {}).flag);
       $('look-pv').innerHTML = U.photo('normal', U.nationKit(st.country), { name: $('f-name').value || 'x', pos: st.pos, number: +$('f-num').value || 9, look: st.look });
       [['f-skin', 'skin'], ['f-hair', 'hair'], ['f-beard', 'beard'], ['f-hc', 'hc']].forEach(([id, k]) => $(id).querySelectorAll('button').forEach(b => b.classList.toggle('on', String(st.look[k]) === b.dataset.v)));
       $('f-hc').classList.toggle('off', st.look.hair === 'careca' && st.look.beard === 'nenhuma');

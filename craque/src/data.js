@@ -170,36 +170,36 @@
   const d1 = v => v.toFixed(1).replace('.', ',');
   D.TRAITS = [
     // Estilo de jogo (atacante e meia)
-    { id: 'artilheiro', icon: '🦊', ico: 'crosshair', tone: 'green', name: 'Artilheiro',     pos: ['ATA'], attr: { fin: 2 }, fx: m => '+' + pc(6 * m) + ' gols · −' + pc(8 * m) + ' assistências' },
-    { id: 'garcom',    icon: '🍽️', ico: 'utensils-crossed', tone: 'green', name: 'Garçom',         pos: ['MEI'], attr: { pas: 2 }, fx: m => '+' + pc(8 * m) + ' assistências · −' + pc(8 * m) + ' gols' },
-    { id: 'colocado',  icon: '🎯', ico: 'target', tone: 'green', name: 'Chute Colocado', pos: OF, attr: { fin: 2 }, fx: () => 'Mira mais precisa nos lances decisivos' },
-    { id: 'parada',    icon: '🧱', ico: 'flag-triangle-right', tone: 'green', name: 'Bola Parada',    pos: OF, attr: { pas: 2 }, fx: () => 'Mais faltas nos lances decisivos' },
-    { id: 'drible',    icon: '🌀', ico: 'tornado', tone: 'green', name: 'Drible Curto',   pos: OF, attr: { dri: 2 }, fx: m => '+' + d1(0.06 * m) + ' na nota média (mais fama)' },
-    { id: 'visao',     icon: '👁️', ico: 'eye', tone: 'green', name: 'Visão de Jogo',  pos: OF, attr: {}, fx: m => 'O time rende mais: +' + d1(0.8 * m) + ' de força (mais títulos)' },
-    { id: 'tecnica',   icon: '🪄', ico: 'wand-sparkles', tone: 'green', name: 'Técnica',        pos: OF, attr: { dri: 2 }, fx: m => '+' + pc(4 * m) + ' gols e assistências' },
-    { id: 'velocista', icon: '⚡', ico: 'zap', tone: 'green', name: 'Velocista',      pos: ['ATA', 'MEI', 'ZAG'], attr: { rit: 4 }, fx: () => '⚠️ Perde velocidade mais rápido depois dos 29' },
-    { id: 'cabeceio',  icon: '🗣️', ico: 'chevrons-up', tone: 'green', name: 'Cabeceio',       pos: ['ATA', 'MEI'], attr: { fis: 2 }, fx: m => '+' + pc(5 * m) + ' gols (de cabeça)' },
+    { id: 'artilheiro', icon: '🦊', tone: 'green', name: 'Artilheiro',     pos: ['ATA'], attr: { fin: 2 }, fx: m => '+' + pc(6 * m) + ' gols · −' + pc(8 * m) + ' assistências' },
+    { id: 'garcom',    icon: '🍽️', tone: 'green', name: 'Garçom',         pos: ['MEI'], attr: { pas: 2 }, fx: m => '+' + pc(8 * m) + ' assistências · −' + pc(8 * m) + ' gols' },
+    { id: 'colocado',  icon: '🎯', tone: 'green', name: 'Chute Colocado', pos: OF, attr: { fin: 2 }, fx: () => 'Mira mais precisa nos lances decisivos' },
+    { id: 'parada',    icon: '🧱', tone: 'green', name: 'Bola Parada',    pos: OF, attr: { pas: 2 }, fx: () => 'Mais faltas nos lances decisivos' },
+    { id: 'drible',    icon: '🌀', tone: 'green', name: 'Drible Curto',   pos: OF, attr: { dri: 2 }, fx: m => '+' + d1(0.06 * m) + ' na nota média (mais fama)' },
+    { id: 'visao',     icon: '👁️', tone: 'green', name: 'Visão de Jogo',  pos: OF, attr: {}, fx: m => 'O time rende mais: +' + d1(0.8 * m) + ' de força (mais títulos)' },
+    { id: 'tecnica',   icon: '🪄', tone: 'green', name: 'Técnica',        pos: OF, attr: { dri: 2 }, fx: m => '+' + pc(4 * m) + ' gols e assistências' },
+    { id: 'velocista', icon: '⚡', tone: 'green', name: 'Velocista',      pos: ['ATA', 'MEI', 'ZAG'], attr: { rit: 4 }, fx: () => '⚠️ Perde velocidade mais rápido depois dos 29' },
+    { id: 'cabeceio',  icon: '🗣️', tone: 'green', name: 'Cabeceio',       pos: ['ATA', 'MEI'], attr: { fis: 2 }, fx: m => '+' + pc(5 * m) + ' gols (de cabeça)' },
     // Carreira (todas as posições)
-    { id: 'academia',  icon: '🏋️', ico: 'dumbbell', tone: 'blue', name: 'Rato de Academia', pos: ALL, until: 24, attr: {}, fx: m => '+' + pc(45 * m) + ' de evolução até os 24 anos' },
-    { id: 'pro',       icon: '🧘', ico: 'heart-pulse', tone: 'blue', name: 'Profissional',   pos: ALL, attr: {}, fx: m => 'Envelhece ' + pc(25 * m) + ' mais devagar · −' + pc(15 * m) + ' lesões' },
-    { id: 'estrela',   icon: '🌟', ico: 'star', tone: 'blue', name: 'Estrela',        pos: ALL, attr: {}, fx: m => '+' + pc(25 * m) + ' salário · +' + d1(0.06 * m) + ' na nota nos jogos grandes · ⚠️ Técnico −1 por temporada' },
-    { id: 'lider',     icon: '©️', ico: 'crown', tone: 'blue', name: 'Líder',          pos: ALL, attr: {}, fx: m => 'Técnico +' + Math.round(4 * m) + ' por temporada (mais minutos) · capitão mais cedo' },
-    { id: 'raca',      icon: '🔥', ico: 'flame', tone: 'blue', name: 'Raça',           pos: ALL, attr: {}, fx: m => '+' + d1(0.07 * m) + ' na nota · Torcida +' + Math.round(3 * m) + ' por temporada · ⚠️ +' + pc(5 * m) + ' lesões' },
-    { id: 'frieza',    icon: '🧊', ico: 'snowflake', tone: 'blue', name: 'Frieza',         pos: ALL, attr: {}, fx: () => 'Mais margem de erro nos lances decisivos' },
-    { id: 'adaptavel', icon: '🧳', ico: 'luggage', tone: 'blue', name: 'Adaptável',      pos: ALL, attr: {}, fx: m => 'Chega em clube novo com Técnico e Torcida +' + Math.round(12 * m) },
-    { id: 'patriota',  icon: '🎌', ico: 'flag', tone: 'blue', name: 'Patriota',       pos: ALL, attr: {}, fx: m => 'Seleção convoca com nota ' + Math.round(2.5 * m) + ' abaixo · rende mais na Copa' },
+    { id: 'academia',  icon: '🏋️', tone: 'blue', name: 'Rato de Academia', pos: ALL, until: 24, attr: {}, fx: m => '+' + pc(45 * m) + ' de evolução até os 24 anos' },
+    { id: 'pro',       icon: '🧘', tone: 'blue', name: 'Profissional',   pos: ALL, attr: {}, fx: m => 'Envelhece ' + pc(25 * m) + ' mais devagar · −' + pc(15 * m) + ' lesões' },
+    { id: 'estrela',   icon: '🌟', tone: 'blue', name: 'Estrela',        pos: ALL, attr: {}, fx: m => '+' + pc(25 * m) + ' salário · +' + d1(0.06 * m) + ' na nota nos jogos grandes · ⚠️ Técnico −1 por temporada' },
+    { id: 'lider',     icon: '👑', tone: 'blue', name: 'Líder',          pos: ALL, attr: {}, fx: m => 'Técnico +' + Math.round(4 * m) + ' por temporada (mais minutos) · capitão mais cedo' },
+    { id: 'raca',      icon: '🔥', tone: 'blue', name: 'Raça',           pos: ALL, attr: {}, fx: m => '+' + d1(0.07 * m) + ' na nota · Torcida +' + Math.round(3 * m) + ' por temporada · ⚠️ +' + pc(5 * m) + ' lesões' },
+    { id: 'frieza',    icon: '🧊', tone: 'blue', name: 'Frieza',         pos: ALL, attr: {}, fx: () => 'Mais margem de erro nos lances decisivos' },
+    { id: 'adaptavel', icon: '🧳', tone: 'blue', name: 'Adaptável',      pos: ALL, attr: {}, fx: m => 'Chega em clube novo com Técnico e Torcida +' + Math.round(12 * m) },
+    { id: 'patriota',  icon: '🎌', tone: 'blue', name: 'Patriota',       pos: ALL, attr: {}, fx: m => 'Seleção convoca com nota ' + Math.round(2.5 * m) + ' abaixo · rende mais na Copa' },
     // Zagueiro
-    { id: 'xerife',    icon: '🛡️', ico: 'shield', tone: 'sand', name: 'Xerife',         pos: ['ZAG'], attr: { def: 2 }, fx: m => 'Mais jogos sem sofrer gol (+' + d1(0.7 * m) + ' de força na defesa)' },
-    { id: 'carrinho',  icon: '🦵', ico: 'move-right', tone: 'sand', name: 'Carrinho',       pos: ['ZAG'], attr: { def: 1, fis: 1 }, fx: () => 'Faixa do desarme maior nos lances decisivos' },
-    { id: 'antecipa',  icon: '🧠', ico: 'brain', tone: 'sand', name: 'Antecipação',    pos: ['ZAG'], attr: { def: 2, rit: 1 }, fx: () => 'O atacante corre mais devagar nos lances decisivos' },
-    { id: 'saida',     icon: '📐', ico: 'ruler', tone: 'sand', name: 'Saída de bola',  pos: ['ZAG'], attr: { pas: 3 }, fx: m => '+' + pc(30 * m) + ' assistências' },
-    { id: 'aereo',     icon: '🦒', ico: 'move-up', tone: 'sand', name: 'Jogo aéreo',     pos: ['ZAG'], attr: { fis: 2, fin: 1 }, fx: m => '+' + pc(20 * m) + ' gols de cabeça' },
+    { id: 'xerife',    icon: '🛡️', tone: 'sand', name: 'Xerife',         pos: ['ZAG'], attr: { def: 2 }, fx: m => 'Mais jogos sem sofrer gol (+' + d1(0.7 * m) + ' de força na defesa)' },
+    { id: 'carrinho',  icon: '🦵', tone: 'sand', name: 'Carrinho',       pos: ['ZAG'], attr: { def: 1, fis: 1 }, fx: () => 'Faixa do desarme maior nos lances decisivos' },
+    { id: 'antecipa',  icon: '🧠', tone: 'sand', name: 'Antecipação',    pos: ['ZAG'], attr: { def: 2, rit: 1 }, fx: () => 'O atacante corre mais devagar nos lances decisivos' },
+    { id: 'saida',     icon: '📐', tone: 'sand', name: 'Saída de bola',  pos: ['ZAG'], attr: { pas: 3 }, fx: m => '+' + pc(30 * m) + ' assistências' },
+    { id: 'aereo',     icon: '🦒', tone: 'sand', name: 'Jogo aéreo',     pos: ['ZAG'], attr: { fis: 2, fin: 1 }, fx: m => '+' + pc(20 * m) + ' gols de cabeça' },
     // Goleiro (nomes de goleiro: fin=REF, fis=ELA, dri=MAN, def=POS, pas=REP, rit=VEL)
-    { id: 'reflexo',   icon: '⚡', ico: 'timer', tone: 'sand', name: 'Reflexo',        pos: ['GOL'], attr: { fin: 3 }, fx: () => 'A seta do batedor aparece antes nos pênaltis' },
-    { id: 'elastico',  icon: '🤸', ico: 'move-horizontal', tone: 'sand', name: 'Elástico',       pos: ['GOL'], attr: { fis: 3 }, fx: () => 'Alcança bolas mais perto do canto' },
-    { id: 'maofirme',  icon: '🧤', ico: 'hand', tone: 'sand', name: 'Mão firme',      pos: ['GOL'], attr: { dri: 2 }, fx: m => 'Mais jogos sem sofrer gol (+' + d1(1 * m) + ' de força na defesa)' },
-    { id: 'pegador',   icon: '🥅', ico: 'goal', tone: 'sand', name: 'Pegador de pênalti', pos: ['GOL'], attr: { fin: 1, def: 2 }, fx: () => 'Lê melhor o batedor e defende mais pênaltis' },
-    { id: 'libero',    icon: '🦶', ico: 'route', tone: 'sand', name: 'Goleiro-líbero', pos: ['GOL'], attr: { pas: 2, rit: 1 }, fx: m => '+' + d1(0.08 * m) + ' na nota média' },
+    { id: 'reflexo',   icon: '⚡', tone: 'sand', name: 'Reflexo',        pos: ['GOL'], attr: { fin: 3 }, fx: () => 'A seta do batedor aparece antes nos pênaltis' },
+    { id: 'elastico',  icon: '🤸', tone: 'sand', name: 'Elástico',       pos: ['GOL'], attr: { fis: 3 }, fx: () => 'Alcança bolas mais perto do canto' },
+    { id: 'maofirme',  icon: '🧤', tone: 'sand', name: 'Mão firme',      pos: ['GOL'], attr: { dri: 2 }, fx: m => 'Mais jogos sem sofrer gol (+' + d1(1 * m) + ' de força na defesa)' },
+    { id: 'pegador',   icon: '🥅', tone: 'sand', name: 'Pegador de pênalti', pos: ['GOL'], attr: { fin: 1, def: 2 }, fx: () => 'Lê melhor o batedor e defende mais pênaltis' },
+    { id: 'libero',    icon: '🦶', tone: 'sand', name: 'Goleiro-líbero', pos: ['GOL'], attr: { pas: 2, rit: 1 }, fx: m => '+' + d1(0.08 * m) + ' na nota média' },
   ];
   D.traitFits = (t, pos) => !t.pos || t.pos.includes(pos);
   D.TRAIT_BY_ID = {};
@@ -209,24 +209,24 @@
 
   // Sinergias: ter as duas características dá pontos extras.
   D.SYNERGIES = [
-    { id: 'falta',   a: 'colocado', b: 'parada',   icon: '🌟', ico: 'sparkles', tone: 'gold', name: 'Especialista em Falta', attr: { fin: 3, pas: 2 }, extra: 'Gols de falta nas manchetes' },
-    { id: 'liso',    a: 'velocista', b: 'drible',  icon: '💨', ico: 'wind', tone: 'gold', name: 'Liso',                  attr: { rit: 3, dri: 3 } },
-    { id: 'capitao', a: 'lider',    b: 'raca',     icon: '🎖️', ico: 'shield-check', tone: 'gold', name: 'Capitão',               attr: { def: 3, fis: 2, pas: 1 } },
-    { id: 'maestro', a: 'visao',    b: 'garcom',   icon: '🎼', ico: 'music', tone: 'gold', name: 'Maestro',               attr: { pas: 2, dri: 1 } },
-    { id: 'muralha', a: 'xerife',   b: 'carrinho', icon: '🧱', ico: 'brick-wall', tone: 'gold', name: 'Muralha',               attr: { def: 1, fis: 1 } },
-    { id: 'paredao', a: 'reflexo',  b: 'elastico', icon: '🧤', ico: 'shield-half', tone: 'gold', name: 'Paredão',               attr: { fin: 3, fis: 3 } },
-    { id: 'matador', a: 'artilheiro', b: 'frieza', icon: '💀', ico: 'skull', tone: 'purple', name: 'Matador',               attr: { fin: 2, fis: 1 } },
+    { id: 'falta',   a: 'colocado', b: 'parada',   icon: '🌟', tone: 'gold', name: 'Especialista em Falta', attr: { fin: 3, pas: 2 }, extra: 'Gols de falta nas manchetes' },
+    { id: 'liso',    a: 'velocista', b: 'drible',  icon: '💨', tone: 'gold', name: 'Liso',                  attr: { rit: 3, dri: 3 } },
+    { id: 'capitao', a: 'lider',    b: 'raca',     icon: '🎖️', tone: 'gold', name: 'Capitão',               attr: { def: 3, fis: 2, pas: 1 } },
+    { id: 'maestro', a: 'visao',    b: 'garcom',   icon: '🎼', tone: 'gold', name: 'Maestro',               attr: { pas: 2, dri: 1 } },
+    { id: 'muralha', a: 'xerife',   b: 'carrinho', icon: '🧱', tone: 'gold', name: 'Muralha',               attr: { def: 1, fis: 1 } },
+    { id: 'paredao', a: 'reflexo',  b: 'elastico', icon: '🧤', tone: 'gold', name: 'Paredão',               attr: { fin: 3, fis: 3 } },
+    { id: 'matador', a: 'artilheiro', b: 'frieza', icon: '💀', tone: 'purple', name: 'Matador',               attr: { fin: 2, fis: 1 } },
   ];
   // Investimentos com o próprio dinheiro: cada compra soma pontos fixos na carta.
   // O preço sobe a cada compra (de qualquer item).
   D.INVEST = [
-    { id: 'fis',   icon: '🏋️', ico: 'dumbbell', tone: 'sand', name: 'Personal trainer',         attr: { fis: 2 } },
-    { id: 'fin',   icon: '🥅', ico: 'goal', tone: 'sand', name: 'Treino de chute',    attr: { fin: 2 } },
-    { id: 'pas',   icon: '📊', ico: 'chart-column', tone: 'sand', name: 'Analista de jogo',   attr: { pas: 2 } },
-    { id: 'rit',   icon: '🏃', ico: 'footprints', tone: 'sand', name: 'Treino de sprint', attr: { rit: 2 } },
-    { id: 'dri',   icon: '🪄', ico: 'wand-sparkles', tone: 'sand', name: 'Treino de técnica',     attr: { dri: 2 } },
-    { id: 'def',   icon: '🛡️', ico: 'shield', tone: 'sand', name: 'Treino defensivo',         attr: { def: 2 } },
-    { id: 'fisio', icon: '🩺', ico: 'stethoscope', tone: 'sand', name: 'Fisioterapeuta', perk: '−25% lesões', max: 2 },
+    { id: 'fis',   icon: '🏋️', tone: 'sand', name: 'Personal trainer',         attr: { fis: 2 } },
+    { id: 'fin',   icon: '🥅', tone: 'sand', name: 'Treino de chute',    attr: { fin: 2 } },
+    { id: 'pas',   icon: '📊', tone: 'sand', name: 'Analista de jogo',   attr: { pas: 2 } },
+    { id: 'rit',   icon: '🏃', tone: 'sand', name: 'Treino de sprint', attr: { rit: 2 } },
+    { id: 'dri',   icon: '🪄', tone: 'sand', name: 'Treino de técnica',     attr: { dri: 2 } },
+    { id: 'def',   icon: '🛡️', tone: 'sand', name: 'Treino defensivo',         attr: { def: 2 } },
+    { id: 'fisio', icon: '🩺', tone: 'sand', name: 'Fisioterapeuta', perk: '−25% lesões', max: 2 },
   ];
   D.INVEST_BY_ID = {};
   D.INVEST.forEach(t => { D.INVEST_BY_ID[t.id] = t; });

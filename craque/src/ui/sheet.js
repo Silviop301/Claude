@@ -33,7 +33,7 @@
   function buildTab(c) {
     const lv = c.traits.reduce((n, id) => n + S.traitLevel(c, id), 0);
     return '<div class="sh-sec">Atributos <span>★ pesa mais na nota · verde = bônus</span></div>' + attrs(c) +
-      '<div class="sh-sec">Características <span>' + (S.buildDone(c) ? 'build completo ✅' : c.traits.length + '/' + S.MAX_SLOTS + ' · nível ' + lv + '/' + S.MAX_SLOTS * S.MAX_LV) + '</span></div>' + slots(c);
+      '<div class="sh-sec">Características <span>' + (S.buildDone(c) ? 'build completo ' + U.emo('✅', 'xs') : c.traits.length + '/' + S.MAX_SLOTS + ' · nível ' + lv + '/' + S.MAX_SLOTS * S.MAX_LV) + '</span></div>' + slots(c);
   }
 
   // Combinações: ativas, a um passo e as outras; depois o que ainda dá para pegar
@@ -59,7 +59,7 @@
       [S.titleCount(T), 'Títulos'], [c.peak, 'Nota máxima']];
     const stat = s => (gk ? s.cleanSheets || 0 : s.goals + (def ? '' : '/' + s.assists));
     const rows = c.seasons.map((s, i) => '<tr><td>' + String(YEAR0 + i).slice(2) + '</td><td class="cl">' + crest(s.club, 'xs') + esc(club(s.club).name) + '</td><td>' + s.games + '</td><td>' + stat(s) + '</td>' +
-      '<td>' + (s.games ? s.rating.toFixed(1).replace('.', ',') : '–') + '</td><td>' + (s.titles.length ? '🏆' + (s.titles.length > 1 ? s.titles.length : '') : '') + (s.awards.some(a => a.id === 'ballon') ? '🌟' : '') + '</td></tr>').join('');
+      '<td>' + (s.games ? s.rating.toFixed(1).replace('.', ',') : '–') + '</td><td>' + (s.titles.length ? U.emo('🏆', 'xs') + (s.titles.length > 1 ? s.titles.length : '') : '') + (s.awards.some(a => a.id === 'ballon') ? trophy('ballon', 18) : '') + '</td></tr>').join('');
     const room = Object.entries(c.trophies || {});
     return '<div class="sh-nums">' + nums.map(([v, l]) => '<div><b>' + v + '</b><span>' + l + '</span></div>').join('') + '</div>' +
       (c.seasons.length ? '<div class="sh-sec">Temporadas <span>' + c.seasons.length + ' · ' + T.games + ' jogos</span></div><table class="sh-seasons"><thead><tr><th>Ano</th><th>Clube</th><th>J</th><th>' + (gk ? 'SG' : def ? 'G' : 'G/A') + '</th><th>Nota</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'

@@ -58,8 +58,8 @@
 
   const rarHtml = s => (s.rar ? '<i class="col-rar ' + s.rar.toLowerCase().replace('é', 'e') + '">' + s.rar + '</i>' : '');
   const slotHtml = (s, key) => s.hit
-    ? '<button class="col-slot has" data-k="' + key + '" aria-label="' + esc(s.hit.d.name) + '"><img alt="">' + rarHtml(s) + '<span' + (flagLbl(s.label) ? ' class="flag"' : '') + '>' + esc(s.label) + '</span></button>'
-    : '<div class="col-slot empty"><div class="col-ghost">?</div>' + rarHtml(s) + '<span' + (flagLbl(s.label) ? ' class="flag"' : '') + '>' + (s.rar ? '???' : esc(s.label)) + '</span></div>';
+    ? '<button class="col-slot has" data-k="' + key + '" aria-label="' + esc(s.hit.d.name) + '"><img alt="">' + rarHtml(s) + '<span' + (flagLbl(s.label) ? ' class="flag"' : '') + '>' + (flagLbl(s.label) ? U.flag(s.label) : esc(s.label)) + '</span></button>'
+    : '<div class="col-slot empty"><div class="col-ghost">?</div>' + rarHtml(s) + '<span' + (flagLbl(s.label) ? ' class="flag"' : '') + '>' + (s.rar ? '???' : flagLbl(s.label) ? U.flag(s.label) : esc(s.label)) + '</span></div>';
   const flagLbl = t => D.COUNTRIES.some(k => k.flag === t);
 
   // Álbum de folhear: capa e páginas de 6 figurinhas; passa arrastando para o lado ou nas setas
@@ -79,7 +79,7 @@
     return out;
   }
   function pageHtml(p, i, n, byKey) {
-    if (p.cover) return '<div class="bk-cover"><div class="bk-emb">⚽</div><b>ÁLBUM</b><span>CLIMBIX</span>' +
+    if (p.cover) return '<div class="bk-cover"><div class="bk-emb">' + U.emo('⚽', 'lg') + '</div><b>ÁLBUM</b><span>CLIMBIX</span>' +
       '<div class="bk-prog"><b>' + p.got + '/' + p.total + '</b> figurinhas<div class="col-bar"><i style="width:' + Math.round(p.got / p.total * 100) + '%"></i></div></div>' +
       '<small>' + p.n + (p.n === 1 ? ' carreira' : ' carreiras') + (p.n ? ' · arraste para abrir' : ' · termine uma carreira para começar') + '</small></div>';
     let body;
@@ -144,7 +144,7 @@
   function view(d) {
     render('<button class="back-link" id="b-back-col">‹ Coleção</button><div class="cv-page">' +
       '<div class="card3d-host big" id="cv-host"><canvas aria-label="Carta"></canvas></div>' +
-      '<div class="cv-info"><b>' + esc(d.name) + '</b><span>' + (d.flag || '') + ' ' + esc(D.POS[d.pos] ? D.POS[d.pos].name : '') + (d.verdict ? ' · ' + esc(d.verdict) : '') + '</span></div>' +
+      '<div class="cv-info"><b>' + esc(d.name) + '</b><span>' + U.flag(d.flag) + ' ' + esc(D.POS[d.pos] ? D.POS[d.pos].name : '') + (d.verdict ? ' · ' + esc(d.verdict) : '') + '</span></div>' +
       '<p class="muted small cv-hint">Arraste para girar a carta</p>' +
       '<button class="btn ghost" id="cv-share">Compartilhar esta carta</button></div>');
     let viewer = null;

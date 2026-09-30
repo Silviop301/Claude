@@ -14,7 +14,7 @@
 
   // Selo do evento e o rótulo do tom (verde = oportunidade, vermelho = risco, azul = decisão)
   const TONE_LBL = { green: 'Oportunidade', red: 'Risco', blue: 'Decisão' };
-  const evDef = ev => Object.assign({}, S.EVENT_DEFS.find(d => d.id === ev.id) || {}, ev.ico ? ev : {});
+  const evDef = ev => Object.assign({}, S.EVENT_DEFS.find(d => d.id === ev.id) || {}, ev);
 
   function eventScreen() {
     if (!pendingEvent) pendingEvent = S.pickEvent(G.c);
@@ -24,7 +24,7 @@
     const offer = S.eventOffer(G.c, ev);
     render(
       '<div class="eyebrow">Durante a temporada</div>' +
-      '<div class="card event-card">' + (evDef(ev).ico ? '<div class="ev-top">' + U.icoOf(evDef(ev), 'lg') + '<span class="ev-tag ' + evDef(ev).tone + '">' + (TONE_LBL[evDef(ev).tone] || '') + '</span></div>' : '<span class="ic">' + ev.icon + '</span>') + '<h2>' + ev.title + '</h2><p style="margin:0">' + ev.text + '</p></div>' +
+      '<div class="card event-card"><div class="ev-top">' + U.icoOf(ev, 'lg') + (evDef(ev).tone ? '<span class="ev-tag ' + evDef(ev).tone + '">' + (TONE_LBL[evDef(ev).tone] || '') + '</span>' : '') + '</div>' + '<h2>' + ev.title + '</h2><p style="margin:0">' + ev.text + '</p></div>' +
       (offer ? U.dealCompare(S.currentDeal(G.c), offer) : '') +
       '<div class="choices">' + ev.options.map((o, i) => '<button class="btn opt' + (i ? ' ghost' : '') + '" data-i="' + i + '">' + esc(o.label) + '<small>' + esc(o.hint) + '</small></button>').join('') + '</div>'
     );
@@ -35,7 +35,7 @@
       pendingEvent = null;
       bar();
       render(
-        '<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.icoOf(Object.assign({ icon: ev.icon }, evDef(ev)), 'lg') + '</span><div class="eyebrow">' + ev.title + '</div>' +
+        '<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.icoOf(ev, 'lg') + '</span><div class="eyebrow">' + ev.title + '</div>' +
         '<p class="er-txt">' + r.text + '</p></div>' +
         '<button class="btn" id="b-next">Jogar a temporada</button>', { center: true }
       );
@@ -89,14 +89,14 @@
     const k = S.kickSetup(G.c, setupType), E = S.eff(G.c), L = kk => D.label(G.c.pos, kk);
     const lv = id => (G.c.traits.includes(id) ? S.traitLevel(G.c, id) : 0);
     if (setupType === 'save') return ['<span class="chip">' + L('fin') + ' ' + E.fin + ' · sinal do batedor ' + (k.tellMs >= 340 ? 'longo' : k.tellMs >= 220 ? 'médio' : 'curto') + '</span>',
-      '<span class="chip">' + L('fis') + ' ' + E.fis + ' · alcance ' + (k.diveReach >= 0.8 ? 'grande' : k.diveReach >= 0.66 ? 'médio' : 'curto') + '</span>'].concat(lv('pegador') ? ['<span class="chip">🥅 Pegador de pênalti: sinal mais longo</span>'] : []);
+      '<span class="chip">' + L('fis') + ' ' + E.fis + ' · alcance ' + (k.diveReach >= 0.8 ? 'grande' : k.diveReach >= 0.66 ? 'médio' : 'curto') + '</span>'].concat(lv('pegador') ? ['<span class="chip">' + U.emo('🥅', 'xs') + ' Pegador de pênalti: sinal mais longo</span>'] : []);
     if (setupType === 'tackle') return ['<span class="chip">DEF ' + E.def + ' · faixa ' + (k.win >= 0.18 ? 'larga' : k.win >= 0.12 ? 'média' : 'estreita') + '</span>',
-      '<span class="chip">RIT ' + E.rit + ' · lance ' + (k.period >= 1.3 ? 'lento' : k.period >= 1.05 ? 'médio' : 'rápido') + '</span>'].concat(lv('carrinho') ? ['<span class="chip">🦵 Carrinho: faixa maior</span>'] : []);
+      '<span class="chip">RIT ' + E.rit + ' · lance ' + (k.period >= 1.3 ? 'lento' : k.period >= 1.05 ? 'médio' : 'rápido') + '</span>'].concat(lv('carrinho') ? ['<span class="chip">' + U.emo('🦵', 'xs') + ' Carrinho: faixa maior</span>'] : []);
     const f = ['<span class="chip">FIN ' + E.fin + ' · mira ' + (k.period >= 1.7 ? 'lenta' : k.period >= 1.35 ? 'média' : 'rápida') + '</span>',
       '<span class="chip">Tremedeira ' + (k.wobble <= 0.03 ? 'nenhuma' : k.wobble <= 0.08 ? 'pouca' : 'muita') + '</span>'];
-    if (lv('colocado')) f.push('<span class="chip">🎯 Chute Colocado: mira mais lenta</span>');
-    if (lv('frieza')) f.push('<span class="chip">🧊 Frieza: menos tremedeira</span>');
-    if (setupType === 'classico' && lv('parada')) f.push('<span class="chip">🧱 Bola Parada: barreira mais fácil</span>');
+    if (lv('colocado')) f.push('<span class="chip">' + U.emo('🎯', 'xs') + ' Chute Colocado: mira mais lenta</span>');
+    if (lv('frieza')) f.push('<span class="chip">' + U.emo('🧊', 'xs') + ' Frieza: menos tremedeira</span>');
+    if (setupType === 'classico' && lv('parada')) f.push('<span class="chip">' + U.emo('🧱', 'xs') + ' Bola Parada: barreira mais fácil</span>');
     return f;
   }
   const MINI_HOW = {

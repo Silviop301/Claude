@@ -20,7 +20,7 @@
 
   S.EVENT_DEFS = [
     {
-      id: 'banco', icon: '🪑', ico: 'armchair', tone: 'blue', weight: 4,
+      id: 'banco', icon: '🪑', tone: 'blue', weight: 4,
       when: c => { const l = last(c); return l && l.club === c.club && l.games < 16; },
       build: (c, r) => {
         const cl = D.CLUB_BY_ID[c.club];
@@ -52,7 +52,7 @@
       },
     },
     {
-      id: 'assedio', icon: '📞', ico: 'phone-call', tone: 'blue', weight: 5,
+      id: 'assedio', icon: '📞', tone: 'blue', weight: 5,
       when: c => { const l = last(c); return l && l.rating >= 7.3 && D.CLUB_BY_ID[c.club].tier < 5; },
       build: (c, r) => {
         const cl = D.CLUB_BY_ID[c.club];
@@ -75,7 +75,7 @@
       },
     },
     {
-      id: 'funcao', icon: '🔄', ico: 'arrow-left-right', tone: 'blue', weight: 3,
+      id: 'funcao', icon: '🔄', tone: 'blue', weight: 3,
       when: c => atClub(c) >= 1 && ['ATA', 'MEI'].includes(c.pos),
       build: c => {
         const other = c.pos === 'ATA' ? 'meia armador' : 'falso 9';
@@ -98,7 +98,7 @@
       },
     },
     {
-      id: 'arabia', icon: '🛢️', ico: 'banknote', tone: 'blue', weight: 3,
+      id: 'arabia', icon: '🛢️', tone: 'blue', weight: 3,
       when: c => c.age >= 28 && S.ovr(c) >= 72 && !D.MONEY.includes(D.CLUB_BY_ID[c.club].league),
       build: (c, r) => {
         const dest = pickClub(r, x => D.MONEY.includes(x.league));
@@ -121,7 +121,7 @@
       },
     },
     {
-      id: 'renovar', icon: '✍️', ico: 'pen-line', tone: 'blue', weight: 3,
+      id: 'renovar', icon: '✍️', tone: 'blue', weight: 3,
       when: c => c.age >= 22 && c.age <= 31 && c.rel.coach >= 55 && atClub(c) >= 2 && c.contract <= 2,
       build: c => ({
         title: 'Renovação ' + D.no(D.CLUB_BY_ID[c.club].name),
@@ -138,7 +138,7 @@
       },
     },
     {
-      id: 'capitao', icon: '©️', ico: 'crown', tone: 'blue', weight: 4,
+      id: 'capitao', icon: '👑', tone: 'blue', weight: 4,
       when: c => !c.captain && c.rel.fans >= 60 && c.rel.coach >= 60 && atClub(c) >= (c.traits.includes('lider') ? 1 : 3), // Líder vira capitão mais cedo
       build: c => ({
         title: 'A braçadeira é sua?',
@@ -154,7 +154,7 @@
       },
     },
     {
-      id: 'classico', icon: '🤕', ico: 'bandage', tone: 'red', weight: 2,
+      id: 'classico', icon: '🤕', tone: 'red', weight: 2,
       when: () => true,
       build: c => ({
         ...(([title, text]) => ({ title, text }))(alt(c, 'classico', [
@@ -176,7 +176,7 @@
       },
     },
     {
-      id: 'festa', icon: '🎉', ico: 'party-popper', tone: 'red', weight: 2,
+      id: 'festa', icon: '🎉', tone: 'red', weight: 2,
       when: c => c.age <= 30,
       build: c => ({
         ...(([title, text]) => ({ title, text }))(alt(c, 'festa', [
@@ -198,7 +198,7 @@
       },
     },
     {
-      id: 'sub20', icon: '🟡', ico: 'flag', tone: 'green', weight: 4,
+      id: 'sub20', icon: '🟡', tone: 'green', weight: 4,
       when: c => c.age <= 20 && S.ovr(c) >= 55,
       build: () => ({
         title: 'Convocado para a seleção sub-20',
@@ -215,7 +215,7 @@
       },
     },
     {
-      id: 'protesto', icon: '📢', ico: 'megaphone', tone: 'red', weight: 6,
+      id: 'protesto', icon: '📢', tone: 'red', weight: 6,
       when: c => c.rel.fans < 32,
       build: c => ({
         title: 'Protesto no CT',
@@ -237,7 +237,7 @@
       },
     },
     {
-      id: 'tecnico', icon: '🧑‍🏫', ico: 'clipboard-list', tone: 'blue', weight: 3, max: 3,
+      id: 'tecnico', icon: '🧑‍🏫', tone: 'blue', weight: 3, max: 3,
       when: c => atClub(c) >= 1 && ['ATA', 'MEI'].includes(c.pos),
       build: c => ({
         title: 'Técnico novo, esquema novo',
@@ -255,7 +255,7 @@
       },
     },
     {
-      id: 'mentor', icon: '🧓', ico: 'graduation-cap', tone: 'green', weight: 4, max: 1,
+      id: 'mentor', icon: '🧓', tone: 'green', weight: 4, max: 1,
       when: c => c.age <= 20 && !!c.club,
       build: c => {
         const k = { ATA: 'fin', MEI: 'pas', ZAG: 'def', GOL: 'fin' }[c.pos]; // atributo principal da posição
@@ -275,7 +275,7 @@
       },
     },
     {
-      id: 'patrocinio', icon: '👟', ico: 'tag', tone: 'green', weight: 3, max: 3,
+      id: 'patrocinio', icon: '👟', tone: 'green', weight: 3, max: 3,
       when: c => c.fame >= 40 && c.wage > 0,
       build: c => {
         const value = Math.round(c.wage * 52 * 0.6 / 1000) * 1000;
@@ -298,7 +298,7 @@
       },
     },
     {
-      id: 'redes', icon: '📱', ico: 'smartphone', tone: 'red', weight: 3, max: 2,
+      id: 'redes', icon: '📱', tone: 'red', weight: 3, max: 2,
       when: c => c.age <= 27 && c.fame >= 20,
       build: c => ({
         ...(([title, text]) => ({ title, text }))(alt(c, 'redes', [
@@ -317,7 +317,7 @@
       },
     },
     {
-      id: 'joelho', icon: '🦵', ico: 'bone', tone: 'red', weight: 3, max: 3,
+      id: 'joelho', icon: '🦵', tone: 'red', weight: 3, max: 3,
       when: c => c.age >= 28,
       build: () => ({
         title: 'Dor no joelho',
@@ -336,7 +336,7 @@
       },
     },
     {
-      id: 'faltas', icon: '🎯', ico: 'target', tone: 'green', weight: 3, max: 2,
+      id: 'faltas', icon: '🎯', tone: 'green', weight: 3, max: 2,
       when: c => !!c.club && c.age <= 31 && c.pos !== 'GOL',
       build: c => ({
         ...(([title, text]) => ({ title, text }))(alt(c, 'faltas', [
@@ -353,7 +353,7 @@
       },
     },
     {
-      id: 'caridade', icon: '💚', ico: 'heart-handshake', tone: 'green', weight: 2, max: 2,
+      id: 'caridade', icon: '💚', tone: 'green', weight: 2, max: 2,
       when: c => c.fame >= 30 && c.money >= 200000,
       build: c => {
         const value = Math.max(100000, Math.round(c.money * 0.1 / 1000) * 1000);
@@ -374,7 +374,7 @@
       },
     },
     {
-      id: 'reencontro', icon: '🔙', ico: 'undo-2', tone: 'blue', weight: 5, max: 3,
+      id: 'reencontro', icon: '🔙', tone: 'blue', weight: 5, max: 3,
       when: c => {
         const prev = c.spells.length >= 2 ? c.spells[c.spells.length - 2] : null;
         return !!prev && atClub(c) <= 1 && (c.fansBy[prev.club] || 0) >= 65 && D.CLUB_BY_ID[prev.club].league === D.CLUB_BY_ID[c.club].league;
@@ -420,7 +420,7 @@
       let x = r() * sum, def = left[0];
       for (const e of left) { x -= e.weight; if (x < 0) { def = e; break; } }
       const built = def.build(c, r);
-      if (built) { save(); return Object.assign({ id: def.id, icon: def.icon, ico: def.ico, tone: def.tone }, built); }
+      if (built) { save(); return Object.assign({ id: def.id, icon: def.icon, tone: def.tone }, built); }
       left = left.filter(e => e !== def); sum -= def.weight;
     }
     save();
