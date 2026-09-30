@@ -523,7 +523,8 @@ function newspaper(host, page, onClose) {
     if (Math.hypot(dx, dy) > 6) down.moved = true;
     tilt.ty = THREE.MathUtils.clamp(dx * 0.006, -0.75, 0.75); tilt.tx = THREE.MathUtils.clamp(dy * 0.006, -0.6, 0.6);
   });
-  const up = () => { if (!down) return; const tap = !down.moved; down = null; tilt.tx = tilt.ty = 0; if (tap) start('exit'); };
+  // Toque fecha na hora (sem animação de saída)
+  const up = () => { if (!down) return; const tap = !down.moved; down = null; tilt.tx = tilt.ty = 0; if (tap && !done) { done = true; dispose(); onClose && onClose(); } };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   const dispose = () => {
     cancelAnimationFrame(raf); removeEventListener('resize', resize);
