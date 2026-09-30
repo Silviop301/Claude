@@ -415,6 +415,157 @@ function card3d(host, data, opts) {
   }).catch(e => { console.warn('carta 3D', e); return null; });
 }
 
-window.CRAQUE_BALL = { mount, flyer, goal, card3d };
+// ---------- Jornal 3D ----------
+// Folha de papel com a página do jogo (canvas 1100×1800): chega girando dobrada, desdobra,
+// fica respirando e dá para inclinar arrastando; um toque fecha (dobra e sai girando).
+function paperTex() {
+  const TW = 1100, TH = 1800, c = document.createElement('canvas'); c.width = TW; c.height = TH;
+  const x = c.getContext('2d');
+  x.fillStyle = '#f2ead7'; x.fillRect(0, 0, TW, TH);
+  const g = x.createRadialGradient(TW / 2, TH / 2, TH * 0.2, TW / 2, TH / 2, TH * 0.75);
+  g.addColorStop(0, 'rgba(255,250,235,.35)'); g.addColorStop(1, 'rgba(170,140,90,.22)');
+  x.fillStyle = g; x.fillRect(0, 0, TW, TH);
+  for (let i = 0; i < 900; i++) {
+    x.strokeStyle = 'rgba(120,100,70,' + Math.random() * 0.06 + ')'; x.lineWidth = 1;
+    const px = Math.random() * TW, py = Math.random() * TH, a = Math.random() * 6.28, l = 4 + Math.random() * 14;
+    x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(a) * l, py + Math.sin(a) * l); x.stroke();
+  }
+  return c;
+}
+let PAPER_BASE = null;
+function newspaper(host, page, onClose) {
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) { return false; }
+  const TW = 1100, TH = 1800;
+  PAPER_BASE = PAPER_BASE || paperTex();
+  const pc = document.createElement('canvas'); pc.width = TW; pc.height = TH;
+  const px = pc.getContext('2d');
+  px.drawImage(PAPER_BASE, 0, 0);
+  // Tinta por multiplicação (o papel aparece por baixo); duas passadas para a tinta ficar bem escura
+  px.globalCompositeOperation = 'multiply'; px.drawImage(page, 0, 0, TW, TH); px.drawImage(page, 0, 0, TW, TH); px.globalCompositeOperation = 'source-over';
+
+  host.innerHTML = '<div class="np-dim"></div><p class="np-hint">Arraste para inclinar · toque para fechar</p>';
+  const dim = host.querySelector('.np-dim'), hint = host.querySelector('.np-hint');
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.92;
+  renderer.domElement.className = 'np-cv';
+  host.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  const pm = new THREE.PMREMGenerator(renderer);
+  scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+  scene.add(new THREE.HemisphereLight(0xfff3dc, 0x1d3a2a, 0.9));
+  const key = new THREE.DirectionalLight(0xfff1d8, 1.3); key.position.set(-2, 3, 4); scene.add(key);
+
+  const W = 1.1, H = 1.8, SX = 44, SY = 140;
+  const tex = new THREE.CanvasTexture(pc);
+  tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const gc = document.createElement('canvas'); gc.width = gc.height = 256;
+  { const gx = gc.getContext('2d'), id = gx.createImageData(256, 256); for (let i = 0; i < id.data.length; i += 4) { const v = 110 + Math.random() * 40; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; } gx.putImageData(id, 0, 0); }
+  const grain = new THREE.CanvasTexture(gc); grain.wrapS = grain.wrapT = THREE.RepeatWrapping; grain.repeat.set(4, 6);
+  const geo = new THREE.PlaneGeometry(W, H, SX, SY);
+  const base = geo.attributes.position.array.slice();
+  const front = new THREE.MeshPhysicalMaterial({ map: tex, roughness: 0.7, metalness: 0, sheen: 0.25, sheenRoughness: 0.6, sheenColor: new THREE.Color(0xfff6e0), bumpMap: grain, bumpScale: 0.6, envMapIntensity: 0.3, side: THREE.FrontSide });
+  const back = new THREE.MeshStandardMaterial({ color: 0xe6dcc5, roughness: 0.7, bumpMap: grain, bumpScale: 0.6, envMapIntensity: 0.4, side: THREE.BackSide });
+  const pivot = new THREE.Group(); scene.add(pivot);
+  const sheet = new THREE.Group(); pivot.add(sheet);
+  sheet.add(new THREE.Mesh(geo, front), new THREE.Mesh(geo, back));
+  const sc = document.createElement('canvas'); sc.width = sc.height = 256;
+  { const sx = sc.getContext('2d'), g = sx.createRadialGradient(128, 128, 10, 128, 128, 128); g.addColorStop(0, 'rgba(0,0,0,.6)'); g.addColorStop(1, 'rgba(0,0,0,0)'); sx.fillStyle = g; sx.fillRect(0, 0, 256, 256); }
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sc), transparent: true, depthWrite: false }));
+  scene.add(shadow);
+
+  // Dobra: a metade de baixo gira pela linha do meio (raio pequeno), mais curvatura e tremulação
+  function deform(fold, curve, flutter, t) {
+    const p = geo.attributes.position.array, th = fold * Math.PI, r = 0.016;
+    for (let i = 0; i < p.length; i += 3) {
+      const x = base[i], y0 = base[i + 1];
+      let y = y0, z = 0;
+      if (y0 < 0 && th > 1e-4) {
+        const s = -y0, arc = th * r;
+        if (s <= arc) { const a = s / r; y = -r * Math.sin(a); z = -r * (1 - Math.cos(a)); }
+        else { const ye = -r * Math.sin(th), ze = -r * (1 - Math.cos(th)), kk = s - arc; y = ye - kk * Math.cos(th); z = ze - kk * Math.sin(th); }
+      }
+      const nx = x / (W / 2);
+      z -= curve * 0.045 * nx * nx;
+      z += curve * 0.012 * Math.sin((y0 / H + 0.5) * Math.PI);
+      if (flutter) z += flutter * 0.03 * Math.sin(y0 * 5 + t * 9) * nx;
+      p[i + 1] = y; p[i + 2] = z;
+    }
+    geo.attributes.position.needsUpdate = true; geo.computeVertexNormals();
+    sheet.position.y = -H / 4 * fold;
+  }
+  function resize() {
+    const w = host.clientWidth || innerWidth, h = host.clientHeight || innerHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h;
+    const tan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    camera.position.set(0, 0, Math.max((H * 0.58) / tan, (W * 0.62) / (tan * camera.aspect)));
+    camera.lookAt(0, 0, 0); camera.updateProjectionMatrix();
+  }
+  addEventListener('resize', resize); resize();
+
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeInOut = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const REST_Z = -0.035;
+  let phase = 'enter', t0 = performance.now(), raf = 0, done = false;
+  const tilt = { x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0 };
+  const start = ph => { phase = ph; t0 = performance.now(); };
+  const cv = renderer.domElement;
+  let down = null;
+  cv.addEventListener('pointerdown', e => { if (phase !== 'idle' && phase !== 'unfold') return; down = { x: e.clientX, y: e.clientY, moved: false }; try { cv.setPointerCapture(e.pointerId); } catch (er) { /* ok */ } });
+  cv.addEventListener('pointermove', e => {
+    if (!down) return; const dx = e.clientX - down.x, dy = e.clientY - down.y;
+    if (Math.hypot(dx, dy) > 6) down.moved = true;
+    tilt.ty = THREE.MathUtils.clamp(dx * 0.006, -0.75, 0.75); tilt.tx = THREE.MathUtils.clamp(dy * 0.006, -0.6, 0.6);
+  });
+  const up = () => { if (!down) return; const tap = !down.moved; down = null; tilt.tx = tilt.ty = 0; if (tap) start('exit'); };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  const dispose = () => {
+    cancelAnimationFrame(raf); removeEventListener('resize', resize);
+    geo.dispose(); tex.dispose(); grain.dispose(); front.dispose(); back.dispose(); pm.dispose(); renderer.dispose();
+  };
+
+  function frame(now) {
+    if (!host.isConnected) { dispose(); return; } // saiu da tela (ex.: voltou ao início)
+    const t = (now - t0) / 1000, time = now / 1000;
+    let fold = 0, curve = 1, flutter = 0, z = 0, rz = REST_Z, rx = 0, ry = 0, s = 1;
+    if (phase === 'enter') {
+      const k = Math.min(t / 1.5, 1), e = easeOut(k);
+      fold = 1; z = -16 * (1 - e); rz = REST_Z - (1 - e) * Math.PI * 7; rx = (1 - e) * 0.5; flutter = (1 - e) * 0.6;
+      s = 0.92 + 0.08 * e; dim.style.opacity = e;
+      if (k >= 1) start('unfold');
+    } else if (phase === 'unfold') {
+      const k = Math.min(t / 0.9, 1);
+      fold = 1 - easeInOut(Math.min(k * 1.15, 1)); curve = 1 + Math.sin(k * Math.PI) * 1.6;
+      s = 1 + Math.sin(k * Math.PI) * 0.03; rx = -Math.sin(k * Math.PI) * 0.12;
+      if (k >= 1) { start('idle'); hint.style.opacity = 0.75; }
+    } else if (phase === 'idle') {
+      rx = Math.sin(time * 0.9) * 0.025; ry = Math.sin(time * 0.7) * 0.03; z = Math.sin(time * 1.1) * 0.015;
+      curve = 1 + Math.sin(time * 1.3) * 0.15;
+    } else if (phase === 'exit') {
+      hint.style.opacity = 0;
+      const k = Math.min(t / 0.9, 1), f = easeInOut(Math.min(k / 0.4, 1)), out = Math.max(0, (k - 0.35) / 0.65), e = out * out;
+      fold = f; z = -16 * e; rz = REST_Z + e * Math.PI * 5; flutter = e * 0.5;
+      dim.style.opacity = 1 - e;
+      if (k >= 1 && !done) { done = true; dispose(); onClose && onClose(); return; }
+    }
+    const kS = 90, dmp = 12, dt = 1 / 60;
+    tilt.vx += ((tilt.tx - tilt.x) * kS - tilt.vx * dmp) * dt; tilt.x += tilt.vx * dt;
+    tilt.vy += ((tilt.ty - tilt.y) * kS - tilt.vy * dmp) * dt; tilt.y += tilt.vy * dt;
+    curve += Math.abs(tilt.y) * 0.8;
+    deform(fold, curve, flutter, time);
+    pivot.position.z = z; pivot.scale.setScalar(s);
+    pivot.rotation.set(rx + tilt.x, ry + tilt.y, rz);
+    shadow.position.set(tilt.y * 0.15 + 0.03, -tilt.x * 0.12 - 0.05, z - 0.25);
+    shadow.scale.set(W * 1.5, H * (1.35 - fold * 0.6), 1);
+    shadow.rotation.z = rz; shadow.material.opacity = 0.8 * (1 - fold * 0.5);
+    renderer.render(scene, camera);
+    raf = requestAnimationFrame(frame);
+  }
+  raf = requestAnimationFrame(frame);
+  return true;
+}
+
+window.CRAQUE_BALL = { mount, flyer, goal, card3d, newspaper };
 // A tela inicial pode ter sido desenhada antes deste módulo carregar
 mount(document.getElementById('ball3d'));

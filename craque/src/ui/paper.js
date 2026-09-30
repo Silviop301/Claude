@@ -132,6 +132,20 @@
       (o.subs || []).map(h => '<p class="pp-sub">' + esc(h) + '</p>').join('') + '</div></div>' +
       (o.column ? '<div class="pp-opinion"><span>Opinião · ' + S.COLUMNIST + '</span><b>' + esc(o.column.t) + '</b><p>' + esc(o.column.x) + '</p></div>' : '') +
       '<div class="pp-tap">Toque para fechar</div></div></div>';
+    // Com 3D: a mesma página desenhada numa folha de papel que chega girando, desdobra e dá para inclinar
+    if (window.CRAQUE_BALL && window.CRAQUE_BALL.newspaper && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+      const box = document.createElement('div');
+      box.className = 'paper-wrap paper3d';
+      box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', P.name + ': ' + o.head);
+      document.body.appendChild(box);
+      sfx('paper');
+      pageCanvas(o, P).then(cv => window.CRAQUE_BALL.newspaper(box, cv, () => { box.remove(); onClose && onClose(); }))
+        .then(ok => { if (!ok && box.isConnected) { box.remove(); domPaper(); } })
+        .catch(() => { if (box.isConnected) { box.remove(); domPaper(); } });
+      return box;
+    }
+    return domPaper();
+    function domPaper() {
     document.body.appendChild(wrap);
     sfx('paper');
     unfold(wrap.querySelector('.paper'));
@@ -142,6 +156,78 @@
     };
     setTimeout(() => { wrap.onclick = close; }, 400);
     return wrap;
+    }
+  }
+
+  // Página do jornal desenhada num canvas 1100×1800 (fundo transparente: o papel 3D aparece por baixo da tinta)
+  async function pageCanvas(o, P) {
+    const W = 1100, H = 1800, M = 64, INK = '#1B1A17';
+    try { if (document.fonts) await Promise.all([document.fonts.load("900 80px 'Playfair Display'"), document.fonts.load("700 40px 'Playfair Display'"), document.fonts.load("700 30px Barlow")]); } catch (e) { /* segue com a fonte que tiver */ }
+    // Foto: a ilustração do jogo (SVG) vira imagem
+    const svg = photo(o.pose || 'normal', o.kit, o.c).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="416" height="400" ');
+    const img = new Image();
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    try { await img.decode(); } catch (e) { /* sem foto */ }
+    const SERIF = "'Playfair Display', Georgia, serif", SANS = "Barlow, Arial, sans-serif";
+    const draw = k => {
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const x = cv.getContext('2d');
+      x.fillStyle = INK; x.strokeStyle = INK; x.textBaseline = 'alphabetic';
+      const font = (w, s, f, it) => { x.font = (it ? 'italic ' : '') + w + ' ' + Math.round(s * k) + 'px ' + f; };
+      const wrap = (txt, maxW) => {
+        const out = []; let line = '';
+        String(txt).split(/\s+/).forEach(wd => { const t = line ? line + ' ' + wd : wd; if (x.measureText(t).width > maxW && line) { out.push(line); line = wd; } else line = t; });
+        if (line) out.push(line); return out;
+      };
+      const rule = (y, w2) => { x.fillRect(M, y, W - 2 * M, w2); };
+      let y = M + 30 * k;
+      // Cabeçalho
+      font(700, 30, SANS);
+      x.textAlign = 'left'; x.fillText(((o.extra ? 'Edição extra · ' : 'Edição de ') + o.year).toUpperCase(), M, y);
+      x.textAlign = 'right'; x.fillText('R$ ' + (2 + (o.year % 5)) + ',50', W - M, y);
+      y += 16 * k; rule(y, 3); y += 20 * k;
+      x.textAlign = 'center';
+      let ns = 118; font(900, ns, SERIF); while (x.measureText(P.name).width > W - 2 * M && ns > 60) { ns -= 4; font(900, ns, SERIF); }
+      y += ns * 0.85 * k; x.fillText(P.name, W / 2, y);
+      font(700, 34, SERIF, true); y += 50 * k; x.fillText(P.motto, W / 2, y);
+      y += 22 * k; rule(y, 5); rule(y + 11, 2); y += 30 * k;
+      if (o.extra) { x.fillStyle = '#B3141F'; x.fillRect(M, y, W - 2 * M, 56 * k); x.fillStyle = '#FFF6E0'; font(800, 32, SANS); x.fillText(o.extra.toUpperCase(), W / 2, y + 39 * k); x.fillStyle = INK; y += 80 * k; }
+      // Manchete
+      x.textAlign = 'left'; font(900, 78, SERIF);
+      wrap(o.head, W - 2 * M).forEach(l => { y += 84 * k; x.fillText(l, M, y); });
+      y += 34 * k;
+      // Foto (esquerda) e texto (direita)
+      const PW = 400, top = y;
+      x.fillStyle = '#DDD4BC'; x.fillRect(M, y, PW, 0); // (o fundo da legenda é desenhado depois de medir)
+      const ph = PW - 24, phH = Math.round(ph * 400 / 416);
+      font(700, 28, SERIF, true);
+      const cap = wrap(o.caption || '', PW - 30);
+      const boxH = 12 + phH + 14 + cap.length * 36 * k + 10;
+      x.fillStyle = '#DDD4BC'; x.fillRect(M, y, PW, boxH); x.fillStyle = INK;
+      if (img.complete && img.naturalWidth) { x.save(); x.filter = 'sepia(.3) saturate(.85) contrast(1.05)'; x.drawImage(img, M + 12, y + 12, ph, phH); x.restore(); x.lineWidth = 2; x.strokeRect(M + 12, y + 12, ph, phH); }
+      x.textAlign = 'center'; let cy = y + 12 + phH + 10;
+      cap.forEach(l => { cy += 34 * k; x.fillText(l, M + PW / 2, cy); });
+      x.textAlign = 'left';
+      const CX = M + PW + 34, CW = W - M - CX;
+      let ty = top;
+      if (o.stats) { font(800, 36, SANS); wrap(o.stats, CW).forEach(l => { ty += 42 * k; x.fillText(l, CX, ty); }); ty += 14 * k; }
+      font(700, 36, SERIF); wrap(o.lede || '', CW).forEach(l => { ty += 48 * k; x.fillText(l, CX, ty); });
+      (o.subs || []).forEach(h => { ty += 26 * k; x.fillStyle = 'rgba(27,26,23,.35)'; x.fillRect(CX, ty, CW, 2); x.fillStyle = INK; font(900, 36, SERIF); wrap(h, CW).forEach(l => { ty += 46 * k; x.fillText(l, CX, ty); }); });
+      y = Math.max(top + boxH, ty) + 36 * k;
+      // Opinião
+      if (o.column) {
+        rule(y, 5); rule(y + 11, 2); y += 52 * k;
+        font(800, 26, SANS); x.fillStyle = '#6B6553'; x.fillText(('Opinião · ' + S.COLUMNIST).toUpperCase(), M, y); x.fillStyle = INK;
+        font(900, 50, SERIF); y += 60 * k; x.fillText(o.column.t, M, y);
+        font(700, 38, SERIF, true); wrap(o.column.x, W - 2 * M).forEach(l => { y += 50 * k; x.fillText(l, M, y); });
+      }
+      return { cv, y };
+    };
+    // Diminui tudo um pouco se não couber na folha
+    // Letra grande para encher a folha; diminui até caber
+    let k = 1.45, r = draw(k);
+    while (r.y > H - M && k > 0.6) { k -= 0.05; r = draw(k); }
+    return r.cv;
   }
 
   // Jornal em 3D: chega girando dobrado ao meio, desdobra (a metade de cima vira pela dobra) e fica flutuando.
