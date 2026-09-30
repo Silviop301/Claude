@@ -128,11 +128,17 @@
       w.askMsg = want.length ? 'Seu empresário ligou para os clubes ' + D.da(lg.name) + ', mas ninguém fechou desta vez.' : 'Os clubes ' + D.da(lg.name) + ' acham que você ainda não tem nível para eles.';
       return { ok: false, msg: w.askMsg };
     }
-    const club = r.pick(want.slice(0, 3));
-    const offer = offerFrom(c, club, 'ask');
-    w.offers.push(offer);
-    w.askMsg = D.O(club.name) + ' aceitou conversar: proposta na mesa!';
-    return { ok: true, offer, msg: w.askMsg };
+    // Dois clubes (quando houver): um da metade de cima de quem te quer e outro de qualquer parte da lista,
+    // para não cair sempre nos mesmos gigantes
+    const topHalf = want.slice(0, Math.max(1, Math.ceil(want.length / 2)));
+    const first = r.pick(topHalf);
+    const rest = want.filter(x => x.id !== first.id);
+    const picked = [first].concat(rest.length ? [r.pick(rest)] : []);
+    save();
+    const offers = picked.map(cl => offerFrom(c, cl, 'ask'));
+    offers.forEach(o => w.offers.push(o));
+    w.askMsg = offers.length > 1 ? D.O(picked[0].name) + ' e ' + D.o(picked[1].name) + ' aceitaram conversar: duas propostas na mesa!' : D.O(picked[0].name) + ' aceitou conversar: proposta na mesa!';
+    return { ok: true, offers, offer: offers[0], msg: w.askMsg };
   };
 
   S.stayOffer = function (c) {

@@ -68,6 +68,13 @@
       D.CLUBS.push({ id: lg.id + '-' + i, name, league: lg.id, tier, strength });
     });
   });
+  // Brasileirão de 2025 (20 clubes): Ceará e Sport sobem, Athletico-PR desce.
+  // O id vem da posição na lista original, então a troca é feita aqui (carreiras salvas continuam valendo).
+  const BR_2025 = { 'Ceará': ['bra-a', 3, 64], 'Sport': ['bra-a', 3, 63], 'Athletico-PR': ['bra-b', 2, 63] };
+  D.CLUBS.forEach(cl => {
+    const m = BR_2025[cl.name];
+    if (m && (cl.league === 'bra-a' || cl.league === 'bra-b')) { cl.league = m[0]; cl.tier = m[1]; cl.strength = m[2]; }
+  });
   D.LEAGUE_BY_ID = {};
   D.LEAGUES.forEach(l => { D.LEAGUE_BY_ID[l.id] = l; });
   D.CLUB_BY_ID = {};

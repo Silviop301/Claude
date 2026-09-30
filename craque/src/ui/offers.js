@@ -93,8 +93,14 @@
     if ($('b-retire')) $('b-retire').onclick = U.finale;
     bindTools(false, windowOffers);
     // Proposta nova do pedido ao empresário: destaca e mostra
-    const fresh = screen.querySelector('.offer[data-i="' + (offers.length - 1) + '"]');
-    if (win.askFresh && fresh) { fresh.classList.add('fresh'); fresh.scrollIntoView({ block: 'center' }); win.askFresh = false; }
+    // Propostas novas do pedido ao empresário (até duas): destaca todas e rola até a primeira
+    if (win.askFresh) {
+      const n = win.askFresh === true ? 1 : win.askFresh;
+      const fresh = [...Array(n)].map((_, k) => screen.querySelector('.offer[data-i="' + (offers.length - n + k) + '"]')).filter(Boolean);
+      fresh.forEach(el => el.classList.add('fresh'));
+      if (fresh[0]) fresh[0].scrollIntoView({ block: 'center' });
+      win.askFresh = false;
+    }
   }
 
   // Linha discreta embaixo das propostas: novas propostas (1x) e pedir um país/liga ao empresário (1x)
@@ -124,7 +130,7 @@
       if (!U.arm(b, '<b>Toque de novo para pedir</b>')) return;
       const res = S.askLeague(G.c, b.dataset.lg);
       close();
-      if (res && res.ok) { S.windowState(G.c).askFresh = true; sfx('levelup'); } else sfx('miss');
+      if (res && res.ok) { S.windowState(G.c).askFresh = res.offers.length; sfx('levelup'); } else sfx('miss');
       save();
       windowOffers();
     });
