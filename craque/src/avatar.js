@@ -99,7 +99,7 @@
     if (style === 'longo') return [shape('M45.4 30C44 17 51 11.6 60 11.6S76 17 74.6 30L76 52Q60 56 44 52Z', col), shape(cap, col)];
     if (style === 'topete') return ['', shape(cap, col) + shape('M49.6 23C48.6 12.6 56 7.2 64.6 8.4C71.4 9.4 74.4 15 72.6 21.6C69 17.4 63.2 16.4 57.4 18.8C54.4 20 51.6 21.4 49.6 23Z', col)];
     if (style === 'trancas') return ['', shape(tight, col) +
-      '<path d="M52.4 26.4Q51.6 19.6 54.6 15.4M56.6 24.4Q56.4 18 58.4 14.2M61.6 24.2Q62.2 18 61.8 14.2M66 25Q67.4 19.4 65.6 15.2M69.6 27Q71.4 21.4 69.4 17.4" stroke="' + OL + '" stroke-width="1" stroke-linecap="round" fill="none" opacity=".55"/>'];
+      '<path d="M52.4 23.2Q51.8 20.2 53.6 17.8M56.4 22.2Q56 18.6 57.4 15.8M60 21.8V15.4M63.6 22.2Q64 18.6 62.6 15.8M67.6 23.2Q68.2 20.2 66.4 17.8" stroke="' + OL + '" stroke-width="1" stroke-linecap="round" fill="none" opacity=".55"/>'];
     if (style === 'dreads') {
       const d = (x1, y1, x2, y2) => limb([[x1, y1], [x2, y2]], col, 3.4);
       return [d(47.4, 26, 44.6, 52) + d(51, 24, 49.6, 54) + d(69, 24, 70.4, 54) + d(72.6, 26, 75.4, 52),

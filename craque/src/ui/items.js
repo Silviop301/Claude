@@ -50,9 +50,7 @@
     ['moicanoloiro', 'Moicano descolorido', 'lendario', 'cabelo', { hair: 'moicanoloiro' }, 'Crista loira em pontas.'],
     ['dreads', 'Dreads', 'raro', 'cabelo', { hair: 'dreads' }, 'Dreads soltos.'],
     ['barba-rala', 'Barba rala', 'comum', 'cabelo', { beard: 'rala' }, 'Barba curtinha, só a sombra.'],
-    ['barba-bigode', 'Bigode', 'comum', 'cabelo', { beard: 'bigode' }, 'Na cor do cabelo.'],
     ['cor-vermelho', 'Cor vermelha', 'comum', 'cores', { boot: 'vermelho' }, 'Vale para chuteira e sola.'],
-    ['barba-cavanhaque', 'Cavanhaque', 'raro', 'cabelo', { beard: 'cavanhaque' }, 'Bigode e queixo.'],
     ['barba-cheia', 'Barba cheia', 'raro', 'cabelo', { beard: 'cheia' }, 'O rosto todo.'],
     // Barbas (lote 3)
     ['barba-porfazer', 'Barba por fazer', 'comum', 'cabelo', { beard: 'porfazer' }, 'Dois dias sem lâmina.'],
