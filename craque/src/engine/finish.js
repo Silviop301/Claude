@@ -5,7 +5,8 @@
   // ---------- fim de carreira ----------
   // Pesos da pontuação final e faixas das notas (a tela de fim de carreira mostra a conta)
   S.SCORE_W = { title: 12, cont: 35, cwc: 60, wc: 150, wcGoal: 3, ballon: 100, award: 8, peak: 2 };
-  S.GRADES = [['S', 1640], ['A', 1200], ['B', 910], ['C', 490], ['D', 0]];
+  // Faixas calibradas no simulador (robô que joga bem): S 10% · A 25% · B 30% · C 20% · D 15% das carreiras
+  S.GRADES = [['S', 1940], ['A', 1460], ['B', 1080], ['C', 820], ['D', 0]];
   S.gradeOf = score => S.GRADES.find(([, min]) => score >= min)[0];
   S.finish = function (c) {
     c.retired = true;
@@ -24,13 +25,15 @@
     // Pesos por posição para as quatro chegarem às notas altas com a mesma dificuldade
     const prod = isDef ? (T.cs || 0) * 0.9 + T.goals * 1.5 + T.assists * 0.7 + (T.saves || 0) * 0.15 + (T.penSaved || 0) * 2.5 + (T.tackles || 0) * 0.3
       : c.pos === 'MEI' ? T.goals * 1.1 + T.assists * 1.0 : T.goals * 0.62 + T.assists * 0.5;
+    // Ajuste fino por posição (medido no simulador): sem ele, atacantes e goleiros ficavam com mais notas D
+    const prodW = { ATA: 1.15, MEI: 1, ZAG: 1.05, GOL: 1.1 }[c.pos] || 1;
     // Cada parcela da pontuação, para a tela explicar de onde veio a nota
     const n = (x, w) => (x || 0) * w;
     const P = D.plural, prodTxt = isDef ? P(T.cs || 0, 'jogo sem sofrer gol', 'jogos sem sofrer gol') + (c.pos === 'GOL' ? ', ' + P(T.penSaved || 0, 'pênalti defendido', 'pênaltis defendidos') : ', ' + P(T.tackles || 0, 'desarme', 'desarmes')) + ', ' + P(T.goals, 'gol', 'gols')
       : P(T.goals, 'gol', 'gols') + ' e ' + P(T.assists, 'assistência', 'assistências');
     const awards = (T.scorer || 0) + (T.young || 0) + (T.team || 0);
     const parts = [
-      { k: 'prod', txt: 'Produção: ' + prodTxt, v: Math.round(prod) },
+      { k: 'prod', txt: 'Produção: ' + prodTxt, v: Math.round(prod * prodW) },
       { k: 'titles', txt: titles + (titles === 1 ? ' título' : ' títulos') + ' × ' + S.SCORE_W.title, v: n(titles, S.SCORE_W.title) },
       { k: 'cont', txt: 'Títulos continentais: ' + (T.cont || 0) + ' × ' + S.SCORE_W.cont + ' extra', v: n(T.cont, S.SCORE_W.cont) },
       { k: 'cwc', txt: 'Mundial de Clubes: ' + (T.cwc || 0) + ' × ' + S.SCORE_W.cwc + ' extra', v: n(T.cwc, S.SCORE_W.cwc) },
