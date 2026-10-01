@@ -70,6 +70,7 @@
     // Liga o "pular" só depois: o toque que abriu esta tela ainda está se propagando
     setTimeout(() => { screen.onclick = () => { skip = true; }; }, 50);
     (function tick(now) {
+      if (!$('k-j')) return; // saiu da tela durante a contagem (voltou ao início): nada mais a desenhar
       const u = skip ? 1 : Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - u, 2);
       const now3 = [Math.round(res.games * e), Math.round(c1[0] * e), Math.round(c2[0] * e)];
       // Cada gol/assistência que entra faz um "tic"
@@ -207,6 +208,7 @@
 
   function summary(res, skipNow) {
     const feed = $('feed');
+    if (!feed || !G.c) return; // a tela do resumo já não está aberta (ex.: voltou ao início durante a comemoração)
     // Só o lance mais marcante na tela; os outros ficam nos detalhes
     res.highlights.slice(0, 1).forEach(h => { const d = document.createElement('div'); d.className = 'rv hl'; d.textContent = h; feed.appendChild(d); });
     const dOvr = res.ovr1 - res.ovr0;
