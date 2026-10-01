@@ -7,11 +7,12 @@
 
   // ---------- desenho dos itens ----------
   // Cada item aparece no próprio boneco, recortado no ponto do corpo onde fica
-  const VIEW = { head: '38 2 44 46', torso: '38 40 44 40', num: '40 52 40 40', feet: '36 170 48 28', legs: '36 142 48 54',
+  const VIEW = { head: '38 2 44 46', headT: '33 -1 54 56', torso: '38 40 44 40', num: '40 52 40 40', feet: '36 170 48 28', legs: '36 142 48 54',
     armR: '62 48 32 32', wristL: '20 84 30 30', handR: '70 88 30 30', armL: '22 50 34 58', armRL: '64 50 34 58', legL: '30 112 46 52', legR: '44 112 46 52' };
   const LIMB_VIEW = { BD: 'armL', BE: 'armRL', PD: 'legL', PE: 'legR' }; // braço direito do jogador fica à esquerda na tela
   const VIEW_OF = { cores: 'feet', cabelo: 'head', tatuagem: 'armL', numeros: 'num', num: 'num',
     arriado: 'legs', munhequeira: 'wristL', faixa: 'head', bonfim: 'wristL', listrado: 'legs', caneleira: 'legs', tiara: 'head',
+    afro: 'headT', samurai: 'headT', moicanoloiro: 'headT', trancalonga: 'headT', mullet: 'headT',
     manga: 'armL', cordao: 'torso', brinco: 'head', camuflada: 'feet', raio: 'feet', tigre: 'handR', capitao: 'armR', chamas: 'feet' };
   const KIT = ['#F7D117', '#1B8A3A'];
   const BASE = { skin: 5, hair: 'curto', hc: 0, beard: 'nenhuma', boot: 'preto', sole: 'branco', sock: 'alto', sleeve: 'curta', wrist: 'nenhuma', band: 'nenhuma', glove: 'lima' };

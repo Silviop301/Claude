@@ -6,7 +6,8 @@
   const SKIN = ['#F6D9BE', '#F1C7A0', '#E0AC80', '#C68A5E', '#A86E48', '#8D5A3B', '#6B4128', '#4A2B18'];
   // 0 preto, 1 castanho, 2 loiro, 3 ruivo, 4 grisalho · itens de pacotinho: 5 platinado, 6 azul, 7 rosa, 8 verde
   const HAIR_COLORS = ['#1E140C', '#5A3A1E', '#C9A05A', '#A8452A', '#E8E2D0', '#F4EAB8', '#2F6FD6', '#FF4FA3', '#4FC36B'];
-  const HAIRS = ['curto', 'raspado', 'topete', 'black', 'trancas', 'dreads', 'moicano', 'longo', 'careca'];
+  const HAIRS = ['curto', 'raspado', 'topete', 'black', 'trancas', 'dreads', 'moicano', 'longo', 'careca',
+    'social', 'franja', 'militar', 'cacheado', 'undercut', 'degrade', 'samurai', 'afro', 'mullet', 'riscado', 'trancalonga', 'moicanoloiro'];
   const BEARDS = ['nenhuma', 'rala', 'bigode', 'cavanhaque', 'cheia'];
   const GEAR = { preto: '#1B1A17', branco: '#F4F2EA', vermelho: '#D8404A', azul: '#2F6FD6', neon: '#7CF03C', rosa: '#FF4FA3', laranja: '#FF8A1F', amarelo: '#F2D630', ouro: 'url(#g-ouro)', holo: 'url(#g-holo)', lima: '#B8F25C',
     roxo: '#7B4FD6', vinho: '#7A1E2E', cinza: '#8C8F93', musgo: '#2E5E3A', celeste: '#8FC8F2', bege: '#D9C7A3', prata: 'url(#g-prata)', cromo: 'url(#g-cromo)',
@@ -75,6 +76,48 @@
       return [d(47.4, 26, 44.6, 52) + d(51, 24, 49.6, 54) + d(69, 24, 70.4, 54) + d(72.6, 26, 75.4, 52),
         shape(cap, col) + d(53.6, 17.6, 52.6, 25) + d(58.6, 15.8, 58.2, 23.4) + d(63.4, 15.8, 64, 23.4) + d(67.8, 17.4, 68.6, 25)];
     }
+    // ---- cortes de pacotinho (12) ----
+    const SIDES = '<path d="' + tight + '" fill="' + col + '" opacity=".42"/>'; // laterais raspadas
+    if (style === 'social') return ['', shape('M46.6 30C45.6 18.4 51.6 12.8 60 12.8S74.6 18.4 73.4 30C72.4 25.4 69.6 22.6 65 21.6C60.4 20.6 56.6 20.8 53.2 22.2C50.2 23.6 47.8 26.2 46.6 30Z', col) +
+      '<path d="M53.4 14.4Q55 18 53.8 21.8" stroke="' + OL + '" stroke-width="1.1" fill="none" stroke-linecap="round" opacity=".6"/>' +
+      '<path d="M57.6 14.4Q64 15.6 69.6 21.4M60.6 14.2Q67.6 16.4 72 24" stroke="' + OL + '" stroke-width=".8" fill="none" stroke-linecap="round" opacity=".35"/>'];
+    if (style === 'franja') return ['', shape('M46.4 30C45.2 18 51.6 12.6 60 12.6S74.8 18 73.6 30C73.2 27.4 72.6 25.4 71.6 23.8Q67 24.6 64.4 23.4Q62 24.6 59.6 23.4Q57.2 24.6 54.8 23.4Q52 24.6 48.4 23.8C47.4 25.4 46.8 27.4 46.4 30Z', col)];
+    if (style === 'militar') return ['', shape('M47.2 28.8C46.6 23 47.2 17.2 50.8 15L69.2 15C72.8 17.2 73.4 23 72.8 28.8C70.6 25 65.8 23.2 60 23.2S49.4 25 47.2 28.8Z', col) +
+      '<path d="M51 15.4V22M55 15.2V21.6M60 15V21.4M65 15.2V21.6M69 15.4V22" stroke="' + OL + '" stroke-width=".7" opacity=".3"/>'];
+    if (style === 'cacheado') {
+      let curls = '';
+      for (let i = 0; i <= 8; i++) { const a = Math.PI * (1.06 + i * 0.11), x = 60 + Math.cos(a) * 13.6, y = 26.4 + Math.sin(a) * 12.6; curls += '<circle cx="' + x.toFixed(2) + '" cy="' + y.toFixed(2) + '" r="3.3" fill="' + col + '" stroke="' + OL + '" stroke-width="1.6"/>'; }
+      return ['', shape(cap, col) + curls + '<path d="M52 19.6q1.4-1.6 2.8 0M58.6 17.6q1.4-1.6 2.8 0M65 19.6q1.4-1.6 2.8 0" stroke="' + OL + '" stroke-width=".9" fill="none" opacity=".45"/>'];
+    }
+    if (style === 'undercut') return ['', SIDES + shape('M48.8 23.2C47.6 14.6 53.8 9.2 61.6 9.4C69.6 9.6 74.4 14.6 72.6 21.8C69.4 18.4 64.8 17.6 60.2 18.6C55.8 19.6 51.8 21.2 48.8 23.2Z', col) +
+      '<path d="M53 18.4Q58 12.4 67 12.6M56.6 19.4Q62 14.6 70.6 16.4" stroke="' + OL + '" stroke-width=".8" fill="none" stroke-linecap="round" opacity=".35"/>'];
+    if (style === 'degrade') return ['', SIDES + shape('M49 23.4C48.8 16.2 53.8 12.8 60 12.8S71.2 16.2 71 23.4C68 21 64.2 20.2 60 20.2S52 21 49 23.4Z', col)];
+    if (style === 'samurai') return ['', SIDES + shape('M50.6 22.6C50.6 17 54.6 14 60 14S69.4 17 69.4 22.6C66.8 21 63.6 20.4 60 20.4S53.2 21 50.6 22.6Z', col) +
+      shape('M60 3.6C63.4 3.6 65.4 5.8 65.4 8.6S63.4 13.6 60 13.6S54.6 11.4 54.6 8.6S56.6 3.6 60 3.6Z', col) +
+      '<rect x="57" y="12" width="6" height="2.4" rx="1" fill="#D8404A" stroke="' + OL + '" stroke-width="1"/>'];
+    if (style === 'afro') {
+      let tex = '';
+      const r = rng(7);
+      for (let i = 0; i < 26; i++) { const x = 40 + r() * 40, y = 6 + r() * 26; tex += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r=".7" fill="' + OL + '" opacity=".22"/>'; }
+      return [shape('M60 1.6C75.8 1.6 85 12 84.6 25C84.4 33.6 80.6 38.4 76.4 39.2L43.6 39.2C39.4 38.4 35.6 33.6 35.4 25C35 12 44.2 1.6 60 1.6Z', col) + tex, ''];
+    }
+    if (style === 'mullet') return [shape('M48.4 33.6C47.6 40 47.8 45.4 49.6 50Q52.6 51.6 55.2 50L55.6 44.4H64.4L64.8 50Q67.4 51.6 70.4 50C72.2 45.4 72.4 40 71.6 33.6Z', col) +
+      '<path d="M50.8 43.6L51.4 49.6M69.2 43.6L68.6 49.6" stroke="' + OL + '" stroke-width=".8" opacity=".35"/>', shape(tight, col)];
+    if (style === 'riscado') return ['', '<path d="' + tight + '" fill="' + col + '" opacity=".55"/>' +
+      '<path d="M48.2 25.6L50.2 22.4L51.6 25L53.8 21.4L55 23.8" stroke="#F4E6D4" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>'];
+    if (style === 'trancalonga') {
+      const braid = (x1, y1, x2, y2) => {
+        let o = limb([[x1, y1], [x2, y2]], col, 3.6);
+        for (let t = 0.12; t < 1; t += 0.13) { const [x, y] = lerp([x1, y1], [x2, y2], t); o += '<path d="M' + (x - 1.6).toFixed(2) + ' ' + (y - .7).toFixed(2) + 'l3.2 1.4" stroke="' + OL + '" stroke-width=".7" opacity=".5"/>'; }
+        return o;
+      };
+      return [braid(47.2, 27, 43.8, 58) + braid(50.6, 25, 48.8, 60) + braid(69.4, 25, 71.2, 60) + braid(72.8, 27, 76.2, 58),
+        shape(tight, col) + '<path d="M52.4 26.4Q51.6 19.6 54.6 15.4M56.6 24.4Q56.4 18 58.4 14.2M61.6 24.2Q62.2 18 61.8 14.2M66 25Q67.4 19.4 65.6 15.2M69.6 27Q71.4 21.4 69.4 17.4" stroke="' + OL + '" stroke-width="1" stroke-linecap="round" fill="none" opacity=".55"/>'];
+    }
+    if (style === 'moicanoloiro') return ['', '<path d="' + tight + '" fill="' + col + '" opacity=".35"/>' +
+      shape('M55.4 24.6L54.6 15.2L57.2 16.8L56.4 8.6L59.2 11.2L60.4 3.2L62.2 10.8L65 7.6L64.8 15.6L66.4 14.4L64.6 24.6Z', '#F4EAB8') +
+      '<path d="M55.8 22.6L64.2 22.6" stroke="' + col + '" stroke-width="2.6" opacity=".85"/>' +
+      '<path d="M58.4 12.6L58.8 20.6M61.4 9.6L61.4 20.6" stroke="' + OL + '" stroke-width=".7" opacity=".25"/>'];
     return ['', shape(cap, col)];
   }
   function beardOf(style, col) {
