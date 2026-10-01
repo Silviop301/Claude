@@ -196,7 +196,7 @@
     const LD = D.LADDER[club.league];
     let move = null;
     if (LD && LD.up && pos <= LD.promo) move = { dir: 'up', to: LD.up };
-    else if (LD && LD.down && pos > 20 - LD.releg) move = { dir: 'down', to: LD.down };
+    else if (LD && LD.down && pos > nTeams - LD.releg) move = { dir: 'down', to: LD.down }; // os últimos da tabela (que pode ter mais de 20 times)
     if (move) move.toName = D.LEAGUE_BY_ID[move.to].name;
     // Jogos marcantes (rivais da própria liga)
     const rivals = leagueClubs.filter(x => x.id !== club.id);
