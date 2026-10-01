@@ -139,8 +139,10 @@ function linkIdentity($db, $f, $userKey) {
     if ($q->fetchColumn()) out(['error' => 'oauth_other'], 409);
     $db->prepare('INSERT INTO identities (provider, subject, user_key, label, created) VALUES (?, ?, ?, ?, ?)')->execute([$f['provider'], $f['subject'], $userKey, $f['label'], time()]);
   }
-  $db->prepare('UPDATE oauth_flows SET code = NULL WHERE state = ?')->execute([$f['state']]);
+  used($db, $f);
 }
+// Login concluído: o código não vale mais e os dados do serviço saem do registro temporário
+function used($db, $f) { $db->prepare('UPDATE oauth_flows SET code = NULL, subject = NULL, label = NULL, name = NULL WHERE state = ?')->execute([$f['state']]); }
 // Sugestão de usuário a partir do nome no serviço (livre como usuário e como nome no ranking)
 function suggest($db, $name) {
   $s = mb_substr(preg_replace('/[^\p{L}\p{N}_.\-]/u', '', (string)$name), 0, 16, 'UTF-8');
@@ -218,7 +220,7 @@ if ($a === 'oauth') {
   }
   $owner = identityOwner($db, $f);
   if ($owner) {
-    $db->prepare('UPDATE oauth_flows SET code = NULL WHERE state = ?')->execute([$f['state']]);
+    used($db, $f);
     accountOut($db, $owner, ['token' => newSession($db, $owner, $f['provider'])], $f['provider']);
   }
   // Primeira vez com esse serviço: o aparelho pergunta se cria conta nova ou liga a uma que já existe

@@ -30,11 +30,14 @@ https://climbix.app/api/oauth.php
 2. **APIs e serviços → Tela de consentimento OAuth** (ou "Google Auth Platform"): tipo **Externo**,
    nome do app "Climbix", e-mail de suporte e domínio autorizado `climbix.app`.
    Os escopos usados são só `openid`, `email` e `profile`.
-3. Em **Público-alvo**, toque em **Publicar app** (status "Em produção"). Em "Teste", só os e-mails
+3. Em **Branding**, preencha também os três links (sem eles o Google não deixa publicar, mesmo parecendo opcionais):
+   página inicial `https://climbix.app`, política de privacidade `https://climbix.app/privacidade.html` e
+   termos de serviço `https://climbix.app/termos.html`. Não envie logo: com logo o Google exige verificação.
+4. Em **Público-alvo**, toque em **Publicar app** (status "Em produção"). Em "Teste", só os e-mails
    cadastrados como testadores conseguem entrar. Com esses escopos não precisa de verificação do Google.
-4. **Credenciais → Criar credenciais → ID do cliente OAuth → Aplicativo da Web**.
+5. **Credenciais → Criar credenciais → ID do cliente OAuth → Aplicativo da Web**.
    Em **URIs de redirecionamento autorizados**, coloque `https://climbix.app/api/oauth.php`.
-5. Copie o **ID do cliente** e a **chave secreta do cliente**.
+6. Copie o **ID do cliente** e a **chave secreta do cliente** na hora (o Google pode não mostrar a chave de novo).
 
 ### GitHub
 

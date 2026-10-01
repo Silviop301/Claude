@@ -1866,3 +1866,5 @@ button.cc-num em { font: 800 13px/1.1 var(--display); font-style: normal; letter
 .pen-mean b { font: var(--t-item); }
 .pen-mean span { font-size: 15px; color: #CFE0D4; }
 .pen-mean .btn { margin: 6px 0 0; }
+.acc-legal { text-align: center; margin-top: 4px; }
+.acc-legal a { color: inherit; text-underline-offset: 3px; }

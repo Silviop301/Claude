@@ -176,6 +176,7 @@
   const top = (back, eyebrow, title) => '<button class="back-link" id="' + (back === 'Início' ? 'b-back-home' : 'b-back-acc') + '">‹ ' + back + '</button><div class="eyebrow">' + eyebrow + '</div><h2>' + esc(title) + '</h2>';
   const note = (msg, ok) => (msg ? '<p class="' + (ok ? 'acc-ok' : 'acc-err') + '">' + esc(msg) + '</p>' : '');
   const field = (id, label, attrs) => '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" ' + attrs + ' required></div>';
+  const LEGAL = '<p class="muted small acc-legal"><a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos de uso</a></p>';
   const USER = 'name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="16"';
   // Envia o formulário: trava o botão, chama o servidor e, se der erro, volta à mesma tela com a mensagem
   function submit(label, call, onOk, onErr) {
@@ -204,7 +205,7 @@
       '<p class="muted" id="cloud-msg">' + stTxt() + '</p>' +
       '<button class="btn" id="b-sync">Sincronizar agora</button>' +
       '<div class="eyebrow small">Formas de entrar</div><div class="acc-ways" id="acc-ways"><p class="muted small">carregando…</p></div>' +
-      '<button class="btn ghost" id="b-logout">Sair desta conta</button>');
+      '<button class="btn ghost" id="b-logout">Sair desta conta</button>' + LEGAL);
     $('b-back-home').onclick = U.home;
     $('b-sync').onclick = () => { $('cloud-msg').textContent = 'salvando…'; sync().then(() => { $('cloud-msg').textContent = stTxt(); showWays(); }); };
     $('b-logout').onclick = () => U.ask('Sair da conta?', 'O jogo continua neste aparelho; só para de salvar na nuvem.', 'Sair', () => {
@@ -268,7 +269,7 @@
       note(msg) + '<button class="btn" id="acc-go" type="submit">' + (reg ? 'Criar conta' : 'Entrar') + '</button></form>' +
       '<button class="link-btn" id="acc-switch">' + (reg ? 'Já tenho conta: entrar' : 'Não tenho conta: criar agora') + '</button>' +
       (reg ? '<p class="muted small" id="acc-hint">Guarde bem a senha: não dá para recuperar por e-mail.</p>'
-        : '<button class="link-btn" id="acc-forgot">Esqueci a senha</button>'));
+        : '<button class="link-btn" id="acc-forgot">Esqueci a senha</button>') + LEGAL);
     $('b-back-home').onclick = U.home;
     $('acc-switch').onclick = () => screen(reg ? 'login' : 'register');
     // Recuperar a senha só existe com serviço ligado à conta: as mensagens dependem de haver serviço configurado
