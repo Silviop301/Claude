@@ -142,7 +142,8 @@
       m.started = true; save();
       render('<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div><div id="kick"></div>');
       sfx('whistle');
-      playMini($('kick'), st, (ok, why) => momentEnd(m, ok, T, why));
+      // Saiu da tela no meio da cobrança (voltou ao início): o resultado não redesenha nada; ao retomar, a chance decide
+      playMini($('kick'), st, (ok, why) => { if (!$('kick')) return; momentEnd(m, ok, T, why); });
     };
     $('b-auto').onclick = () => {
       const ok = S.autoMoment(G.c);
