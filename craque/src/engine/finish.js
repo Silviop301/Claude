@@ -5,7 +5,7 @@
   // ---------- fim de carreira ----------
   // Pesos da pontuação final e faixas das notas (a tela de fim de carreira mostra a conta)
   S.SCORE_W = { title: 12, cont: 35, cwc: 60, wc: 150, wcGoal: 3, ballon: 100, award: 8, peak: 2 };
-  S.GRADES = [['S', 1640], ['A', 1110], ['B', 830], ['C', 490], ['D', 0]];
+  S.GRADES = [['S', 1640], ['A', 1200], ['B', 910], ['C', 490], ['D', 0]];
   S.gradeOf = score => S.GRADES.find(([, min]) => score >= min)[0];
   S.finish = function (c) {
     c.retired = true;
