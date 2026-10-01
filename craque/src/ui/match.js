@@ -116,8 +116,8 @@
     cup: 'Dois toques: o primeiro trava a direção, o segundo a altura. O goleiro escolhe um canto; no ângulo ele não alcança.',
     classico: 'Dois toques: o primeiro trava a direção, o segundo a altura. Passe por cima da barreira ou busque o ângulo.',
     save: 'O batedor corre; pouco antes do chute aparece uma seta mostrando o lado. Toque na esquerda, no meio ou na direita para pular.',
-    tackle: 'O atacante arranca em direção ao gol. Toque quando ele passar pela faixa verde para dar o carrinho.',
-    pass: 'O atacante corre por trás da zaga. Toque quando ele passar pela brecha verde para enfiar a bola: ele finaliza.',
+    tackle: 'O atacante vem conduzindo rumo ao seu gol. Toque quando ele pisar na faixa verde para dar o carrinho.',
+    pass: 'O atacante corre entre a zaga e o último zagueiro. Toque quando ele passar pela faixa verde: a bola passa pela brecha e ele finaliza. Se demorar, ele fica impedido.',
   };
   const MINI_BTN = { cup: 'Bater o pênalti', classico: 'Bater a falta', save: 'Defender o pênalti', tackle: 'Dar o bote', pass: 'Enfiar a bola' };
 

@@ -57,6 +57,7 @@
       (g.moment ? '<span class="mom ' + (g.momentOk ? 'ok' : 'ko') + '">' + g.moment.minute + "' " + ({
         pen: g.momentOk ? 'pênalti convertido' : 'pênalti desperdiçado', fk: g.momentOk ? 'falta convertida' : 'falta desperdiçada',
         save: g.momentOk ? 'pênalti defendido' : 'pênalti sofrido', tackle: g.momentOk ? 'desarme salvador' : 'atacante passou',
+        pass: g.momentOk ? 'passe para gol' : 'passe cortado',
       }[g.moment.type]) + (g.at ? ' no ' + g.at[0] + ' × ' + g.at[1] : '') + '</span>' : '') +
       (S.defKick(G.c.pos) && g.cs && !g.live ? '<span class="mom ok">' + U.emo('🧤', 'xs') + ' sem sofrer gol</span>' : '') +
       (g.rating ? '<span class="rt' + (g.motm ? ' motm' : '') + '">' + (g.motm ? U.emo('⭐', 'xs') + ' Craque do jogo · ' : 'Nota ') + g.rating.toFixed(1).replace('.', ',') + '</span>' : '') +
