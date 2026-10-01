@@ -38,7 +38,8 @@
       .replace(/\{g\}/g, res.goals).replace(/\{a\}/g, res.assists).replace(/\{idade\}/g, res.age);
     // Dois programas sorteados (diferentes) e uma fala sorteada de cada
     const first = Math.floor(Math.random() * shows.length), second = (first + 1 + Math.floor(Math.random() * (shows.length - 1))) % shows.length;
-    const say = sh => key => { const l = sh.talk[key]; return fill(l[Math.floor(Math.random() * l.length)]); };
+    // Fala sorteada com memória entre carreiras (U.fresh): a mesma frase só volta depois das outras
+    const say = sh => key => fill(U.fresh ? U.fresh('r.' + sh.id + '.' + key, sh.talk[key]) : sh.talk[key][Math.floor(Math.random() * sh.talk[key].length)]);
     const item = (sh, q) => '<div class="rs-item"><div class="np">' + U.emo('🎙️', 'xs') + ' ' + esc(sh.who) + ' ' + esc(sh.where) + '</div><p>“' + esc(q) + '”</p></div>';
     return '<div class="news resenha rv">' + item(shows[first], say(shows[first])(mood)) +
       item(shows[second], say(shows[second])(topic || mood)) + '</div>';

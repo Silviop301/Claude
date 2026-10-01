@@ -5,7 +5,7 @@ Os três trabalham num branch próprio, sem publicar no site. Depois eu reviso e
 
 ---
 
-## Prompt 1 · Conteúdo: 20 eventos novos e revisão de textos
+## Prompt 1 · Conteúdo: 40 eventos novos e revisão de textos
 
 ```
 Você vai trabalhar no Climbix, um jogo de carreira de futebol para celular, feito em JavaScript puro (sem build), no repositório silviop301/claude, pasta craque/. O site está no ar em climbix.app e é publicado automaticamente a cada push no branch claude/gracious-darwin-9gdlfp.
@@ -19,18 +19,19 @@ REGRAS DE TRABALHO
 O JOGO
 O jogador vive uma carreira inteira, uma temporada por vez. Entre as temporadas aparecem eventos com uma escolha (por exemplo: proposta de outro clube, briga no vestiário, convite para um comercial). A ideia é um jogo simples, aleatório e viciante, para jogar várias carreiras seguidas e sempre ver algo novo.
 
-TAREFA A · 20 EVENTOS NOVOS
+TAREFA A · 40 EVENTOS NOVOS
 1. Leia craque/src/engine/events.js e craque/src/engine/events2.js (cerca de 94 eventos). Entenda o formato:
    - id, icon (um emoji), tone ('green' oportunidade, 'red' risco, 'blue' decisão), weight (chance relativa), max (vezes por carreira)
    - when(c): quando o evento pode aparecer (idade, posição, fama, clube, temporada, características etc.)
    - build(c): { title, text, options: [{ label, hint }] }. O hint mostra o efeito de cada opção, sem esconder nada.
    - resolve(c, ev, i): { ok, text, fx }. Os efeitos aceitos em fx: min (minutos), form, inj, goalMul, assistMul, fame, money, attr ({ chave: valor }), move. Também existem bump(c, 'fans' | 'coach', valor) e boost(c, n) (reforço do elenco).
    - Para nomes de clube use os artigos de D: D.o(nome) "o Flamengo", D.ao(nome) "ao Flamengo", D.do(nome) "do Flamengo".
-2. Escreva 20 eventos novos em craque/src/engine/events2.js, no array MORE, seguindo o mesmo formato:
+2. Escreva 40 eventos novos (no mínimo 30, se algum não ficar bom o suficiente) em craque/src/engine/events2.js, no array MORE, seguindo o mesmo formato:
    - Variedade de fases: base (até 19 anos), auge, veterano (33+), aposentadoria chegando.
    - Variedade de temas: vida fora de campo, redes sociais, família, vestiário, imprensa, torcida, mercado, seleção, superstição, situações engraçadas.
-   - Pelo menos 5 eventos realmente engraçados.
-   - Pelo menos 4 eventos específicos de posição (goleiro, zagueiro, meia, atacante).
+   - Pelo menos 10 eventos realmente engraçados.
+   - Pelo menos 8 eventos específicos de posição (2 de goleiro, 2 de zagueiro, 2 de meia, 2 de atacante).
+   - Nenhum evento novo pode repetir a ideia de um evento que já existe.
    - Efeitos na mesma escala dos eventos existentes (compare com eventos parecidos antes de escolher números). Nenhuma opção pode ser sempre a melhor: cada escolha tem ganho e custo.
    - Textos curtos: título com até cerca de 40 caracteres, texto com até 2 frases, label e hint com até cerca de 60 caracteres.
    - Nada de termos de uma torcida só (ex.: "fiel" é do Corinthians, "nação" do Flamengo, "tricolor" serve para vários clubes). Os textos precisam servir para qualquer um dos 800 clubes do jogo.
@@ -47,7 +48,7 @@ Corrija o que tiver certeza e liste o resto num relatório.
 ENTREGA
 - Commits no branch fable/eventos: um commit para os eventos e outro para as correções de texto.
 - Um relatório em docs/fable-relatorio-conteudo.md com:
-  - a lista dos 20 eventos (título, quando aparece, opções e efeitos, em uma linha cada);
+  - a lista dos eventos novos (título, quando aparece, opções e efeitos, em uma linha cada);
   - quantas vezes cada um apareceu nas 2000 carreiras simuladas;
   - as correções feitas (antes → depois) e os problemas que você não corrigiu, com o motivo.
 ```

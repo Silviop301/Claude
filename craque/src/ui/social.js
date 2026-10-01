@@ -10,10 +10,21 @@
   const slug = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
   const num = n => n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(',0', '') + ' mi' : n >= 1e4 ? (n / 1e3).toFixed(1).replace('.', ',').replace(',0', '') + ' mil' : n.toLocaleString('pt-BR');
 
-  // Sorteios: um item, ou vários sem repetir
-  const rnd = arr => arr[Math.floor(Math.random() * arr.length)];
-  const shuffle = arr => arr.map(x => [Math.random(), x]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
   const chance = p => Math.random() < p;
+  // Sorteio com memória entre carreiras: a frase usada só volta depois que quase todas as outras da lista saírem.
+  // A memória fica no navegador (por lista, guarda os índices usados recentemente).
+  const SEEN = 'climbix-seen-v1';
+  let seen = null;
+  const seenLoad = () => { if (!seen) { try { seen = JSON.parse(localStorage.getItem(SEEN)) || {}; } catch (e) { seen = {}; } } return seen; };
+  function fresh(key, arr) {
+    if (!arr || !arr.length) return '';
+    const sn = seenLoad(), used = sn[key] || [], all = arr.map((_, i) => i), free = all.filter(i => !used.includes(i));
+    const pool = free.length ? free : all, i = pool[Math.floor(Math.random() * pool.length)];
+    const keep = Math.floor(arr.length * 0.75);
+    sn[key] = keep ? (free.length ? used : []).concat(i).slice(-keep) : [];
+    try { localStorage.setItem(SEEN, JSON.stringify(sn)); } catch (e) { /* sem armazenamento: só sorteia */ }
+    return arr[i];
+  }
 
   // Coração na cor da camisa do clube (vermelho, azul, verde, amarelo, preto, branco, laranja, roxo)
   function heart(id) {
@@ -30,46 +41,62 @@
     : res.pos === 'MEI' ? res.assists + ' assistências' : res.goals + ' gols';
   const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
 
-  // Texto do post e o clima (up, down, bye) de cada situação
+  // Texto do post e o clima (up, down, bye) de cada situação; sub guarda o detalhe (title, ballon, great...)
   function postOf(ctx) {
-    const c = G.c, P = D.SOCIAL.posts;
+    const P = D.SOCIAL.posts, tags = k => chance(0.3) ? ' ' + fresh('p.tag.' + k, P.parts.tags[k]) + ' ' + fresh('p.tag.' + k, P.parts.tags[k]) : '';
     if (ctx.kind === 'season') {
       const r = ctx.res, ballon = r.awards.some(a => a.id === 'ballon');
-      const mood = ballon ? 'ballon' : r.titles.length ? 'title' : !r.games || r.games < 10 ? 'bench' : r.injury >= 25 ? 'injury'
+      const sub = ballon ? 'ballon' : r.titles.length ? 'title' : !r.games || r.games < 10 ? 'bench' : r.injury >= 25 ? 'injury'
         : r.move && r.move.dir === 'down' ? 'down' : r.rating >= 7.6 ? 'great' : r.rating >= 7.0 ? 'good' : 'bad';
-      let text = rnd(P[mood]);
-      if (r.age >= 35 && (mood === 'great' || mood === 'good') && chance(0.6)) text += ' Aos ' + r.age + ', ainda tenho história pra escrever.';
-      return { text, mood: ['ballon', 'title', 'great', 'good'].includes(mood) ? 'up' : 'down', res: r };
+      const up = ['ballon', 'title', 'great', 'good'].includes(sub), k = up ? 'up' : 'down', Pp = P.parts;
+      // Temporadas ótima, boa e fraca: às vezes o post é montado por partes (abertura + fato + fecho)
+      let text = ['great', 'good', 'bad'].includes(sub) && chance(0.55)
+        ? fresh('p.open.' + k, Pp.open[k]) + ' ' + fresh('p.fact.' + k, Pp.fact[k]) + ' ' + fresh('p.close.' + k, Pp.close[k])
+        : fresh('p.' + sub, P.whole[sub]);
+      if (r.age >= 35 && up && chance(0.35)) text += ' Aos {idade}, ainda tenho história pra escrever.';
+      return { text: text + tags(k), mood: k, sub, res: r };
     }
     if (ctx.kind === 'event') {
-      if (ctx.toClub) return { text: rnd(P.transfer), mood: 'up', club: ctx.toClub };
-      return ctx.ok ? { text: rnd(P.eventOk), mood: 'up' } : { text: rnd(P.eventKo), mood: 'down' };
+      if (ctx.toClub) return { text: fresh('p.transfer', P.transfer), mood: 'up', sub: 'transfer', club: ctx.toClub };
+      return ctx.ok ? { text: fresh('p.eventOk', P.eventOk), mood: 'up' } : { text: fresh('p.eventKo', P.eventKo), mood: 'down' };
     }
     if (ctx.kind === 'moment') {
       const m = ctx.m, st = S.kickSetupType(m), key = st === 'save' ? 'save' : st === 'tackle' ? 'tackle' : st === 'pass' ? 'pass' : 'goal';
-      return ctx.ok ? { text: rnd(P.momentOk[key]) + ' ' + rnd(P.momentEnd[m.type] || P.momentEnd.cup) + ' ' + rnd(P.momentTail), mood: 'up' } : { text: rnd(P.momentKo), mood: 'down' };
+      if (!ctx.ok) return { text: fresh('p.momentKo', P.momentKo), mood: 'down', m };
+      return { text: (chance(0.6) ? fresh('p.mctx', P.momentCtx) + ' ' : '') + fresh('p.mok.' + key, P.momentOk[key]) + ' ' +
+        fresh('p.mend.' + m.type, P.momentEnd[m.type] || P.momentEnd.cup) + ' ' + fresh('p.mtail', P.momentTail), mood: 'up', sub: 'moment', m };
     }
-    if (ctx.kind === 'announce') return { text: rnd(P.announce), mood: 'bye' };
-    return { text: rnd(P.farewell), mood: 'bye' };
+    if (ctx.kind === 'announce') return { text: fresh('p.announce', P.announce) + tags('bye'), mood: 'bye' };
+    return { text: fresh('p.farewell', P.farewell) + tags('bye'), mood: 'bye' };
   }
 
-  // Comentários: famosos pela fama, clube, torcida, um aleatório da internet e às vezes um hater (que pode levar resposta)
-  function commentsOf(mood) {
-    const c = G.c, fame = c.fame || 0, cl = club(c.club), base = slug(cl.name).slice(0, 12), SO = D.SOCIAL;
-    const out = [];
+  // Comentários: famosos pela fama, clube, página de notícia, torcida (alguns falando do próprio post),
+  // um aleatório da internet e às vezes um hater, que pode levar resposta do jogador
+  function commentsOf(p, ctx) {
+    const c = G.c, fame = c.fame || 0, cl = club(c.club), base = slug(cl.name).slice(0, 12), SO = D.SOCIAL, mood = p.mood;
+    const total = fame >= 150 ? 6 : 5, top = [], rest = [];
     const nFam = (fame >= 250 ? 4 : fame >= 150 ? 3 : fame >= 80 ? 2 : fame >= 30 ? 1 : 0) + (mood === 'bye' ? 1 : 0);
     // Sorteio com peso: os mais famosos que alcançam o jogador têm mais chance, mas os outros também aparecem
     const fam = SO.famous.filter(f => fame >= f.min || (mood === 'bye' && f.min <= 30)).map(f => [f.min + Math.random() * 230, f]).sort((a, b) => b[0] - a[0]).map(x => x[1]);
-    fam.slice(0, nFam).forEach(f => out.push({ h: f.h, v: true, t: rnd(f[mood]) }));
-    if (chance(mood === 'down' ? 0.5 : 0.75)) out.push({ h: base + 'oficial', v: true, t: rnd(SO.club[mood]) });
+    fam.slice(0, Math.min(nFam, total - 2)).forEach(f => {
+      const which = (p.sub === 'title' || p.sub === 'ballon' || p.sub === 'moment') && f.title && chance(0.6) ? 'title'
+        : mood === 'up' && f['up_' + c.pos] && chance(0.5) ? 'up_' + c.pos : mood;
+      top.push({ h: f.h, v: true, t: fresh('f.' + f.h + '.' + which, f[which]) });
+    });
+    if (chance(mood === 'down' ? 0.45 : 0.7)) rest.push({ h: base + 'oficial', v: true, t: fresh('c.club.' + mood, SO.club[mood]) });
+    if (mood !== 'down' && chance(fame >= 80 ? 0.45 : 0.2)) { const pg = fresh('c.pages', SO.pages); rest.push({ h: pg[0], v: true, t: pg[1] }); }
+    // Comentário sobre o próprio post (números da temporada, minuto do lance, chegada ao clube, despedida)
+    const cx = ctx.kind === 'season' ? ['season.' + mood, SO.ctx.season[mood]] : ctx.kind === 'moment' ? ['moment.' + mood, SO.ctx.moment[mood]]
+      : p.sub === 'transfer' ? ['transfer', SO.ctx.transfer] : mood === 'bye' ? ['bye', SO.ctx.bye] : null;
+    const handles = SO.fanHandles.map(x => base + x).concat(SO.randomHandles);
+    const fan = () => fresh('h.fan', handles);
+    if (cx && cx[1]) rest.push({ h: fan(), v: false, t: fresh('c.ctx.' + cx[0], cx[1]) });
+    if (chance(0.55)) rest.push({ h: fan(), v: false, t: fresh('c.random', SO.random) });
     const hater = chance(mood === 'down' ? 0.65 : mood === 'bye' ? 0.2 : 0.3);
-    const extra = chance(0.55); // comentário aleatório da internet
-    const fanTexts = shuffle(SO.fans[mood]), fanHandles = shuffle(SO.fanHandles.map(x => base + x).concat(SO.randomHandles));
-    let i = 0;
-    while (out.length < 5 - (hater ? 1 : 0) - (extra ? 1 : 0)) { out.push({ h: fanHandles[i], v: false, t: fanTexts[i] }); i++; }
-    if (extra) out.splice(1 + Math.floor(Math.random() * (out.length - 1)), 0, { h: fanHandles[i++], v: false, t: rnd(SO.random) });
-    if (hater) out.push({ h: rnd(SO.haterHandles), v: false, t: rnd(SO.haters[mood]), reply: chance(0.45) ? rnd(SO.replies) : null });
-    return out.slice(0, 5);
+    while (top.length + rest.length < total - (hater ? 1 : 0)) rest.push({ h: fan(), v: false, t: fresh('c.fans.' + mood, SO.fans[mood]) });
+    const out = top.concat(rest.slice(0, total - top.length - (hater ? 1 : 0)).sort(() => Math.random() - 0.5));
+    if (hater) out.push({ h: fresh('h.hater', SO.haterHandles), v: false, t: fresh('c.hater.' + mood, SO.haters[mood]), reply: chance(0.45) ? fresh('c.reply', SO.replies) : null });
+    return out;
   }
 
   const CHECK = '<svg class="sp-check" viewBox="0 0 24 24" aria-label="verificado"><path d="M12 1.5l2.4 1.8 3-.2.9 2.9 2.5 1.6-1 2.8 1 2.8-2.5 1.6-.9 2.9-3-.2L12 19.3l-2.4-1.8-3 .2-.9-2.9-2.5-1.6 1-2.8-1-2.8 2.5-1.6.9-2.9 3 .2Z" fill="#3897F0"/><path d="m8 10.6 2.8 2.8L16.4 8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -78,9 +105,13 @@
 
   function socialPost(ctx, next) {
     const c = G.c, fame = c.fame || 0;
-    const p = postOf(ctx), coms = commentsOf(p.mood), cl = club(p.club || c.club).name, T = c.totals || {};
-    const fill = t => t.replace(/\{n\}/g, c.name).replace(/\{num\}/g, c.number || 10).replace(/\{time\}/g, cl).replace(/\{cor\}/g, heart(c.club)).replace(/\{aoTime\}/g, D.ao(cl))
-      .replace(/\{idade\}/g, c.age).replace(/\{stat\}/g, p.res ? statOf(p.res) : '').replace(/\{titulos\}/g, p.res ? p.res.titles.map(x => x.name).join(' e ') : '')
+    const p = postOf(ctx), coms = commentsOf(p, ctx), cl = club(p.club || c.club).name, T = c.totals || {}, r = p.res, m = p.m;
+    const vs = m && m.vs ? D.o(club(m.vs).name) : 'o adversário', nota = r ? (Math.round(r.rating * 10) / 10).toFixed(1).replace('.', ',') : '';
+    const fill = t => t.replace(/\{n\}/g, c.name).replace(/\{num\}/g, c.number || 10).replace(/\{time\}/g, cl).replace(/\{cor\}/g, heart(c.club))
+      .replace(/\{aoTime\}/g, D.ao(cl)).replace(/\{doTime\}/g, D.do(cl)).replace(/\{noTime\}/g, D.no(cl)).replace(/\{idade\}/g, c.age)
+      .replace(/\{stat\}/g, r ? statOf(r) : '').replace(/\{titulos\}/g, r ? r.titles.map(x => x.name).join(' e ') : '').replace(/\{jogos\}/g, r ? r.games : '')
+      .replace(/\{nota\}/g, nota).replace(/\{pos\}/g, r && r.table ? r.table.pos : '').replace(/\{pts\}/g, r && r.table ? r.table.pts : '')
+      .replace(/\{naLiga\}/g, r && r.table ? D.na(r.table.league) : '').replace(/\{min\}/g, m ? m.minute || 90 : '').replace(/\{vs\}/g, vs).replace(/\{contraVs\}/g, 'contra ' + vs)
       .replace(/\{temps\}/g, c.seasons.length).replace(/\{gols\}/g, T.goals || 0).replace(/\{assist\}/g, T.assists || 0);
     p.text = cap(fill(p.text)); coms.forEach(x => { x.t = fill(x.t); if (x.reply) x.reply = fill(x.reply); });
     const likes = Math.round(80 * Math.pow(1.035, Math.min(320, fame)) * (p.mood === 'bye' ? 3 : p.mood === 'up' ? 1.4 : 0.8));
@@ -92,7 +123,7 @@
       '<p class="sp-text">' + esc(p.text) + '</p>' +
       '<div class="sp-stats"><span>' + HEART + ' <b>' + num(likes) + '</b></span><i></i><span>' + BUBBLE + ' <b>' + num(Math.max(coms.length, Math.round(likes / 20))) + '</b></span></div>' +
       '<h3 class="sp-ch">Comentários</h3>' +
-      coms.map((x, i) => '<div class="sp-com">' + ava(x.h) + '<div><b>' + esc(x.h) + '</b>' + (x.v ? CHECK : '') + '<small>há ' + (1 + Math.floor(i / 2)) + (i < 2 ? ' hora' : ' horas') + '</small><p>' + esc(x.t) + '</p>' +
+      coms.map((x, i) => '<div class="sp-com">' + ava(x.h) + '<div><b>' + esc(x.h) + '</b>' + (x.v ? CHECK : '') + '<small>' + (i < 2 ? 'há 1 hora' : 'há ' + (1 + Math.floor(i / 2)) + ' horas') + '</small><p>' + esc(x.t) + '</p>' +
         (x.reply ? '<div class="sp-reply"><b>' + esc(me) + '</b>' + (fame >= 80 ? CHECK : '') + '<p>' + esc(x.reply) + '</p></div>' : '') + '</div></div>').join('') +
       '</div><p class="sp-note">Comentários fictícios para a simulação do jogo.</p>' +
       '<button class="btn" id="b-post-next">Continuar</button>'
@@ -103,5 +134,5 @@
   const postBtn = () => '<button class="btn ghost" id="b-post">' + U.emo('📱', 'sm') + ' Postar nas redes</button>';
   const postBind = (ctx, next) => { const b = $('b-post'); if (b) b.onclick = () => socialPost(ctx, next); };
 
-  Object.assign(U, { socialPost, postBtn, postBind });
+  Object.assign(U, { socialPost, postBtn, postBind, fresh });
 })();
