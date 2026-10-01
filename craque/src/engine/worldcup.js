@@ -20,8 +20,12 @@
     return { nation, cut, called, retired, starter: o >= cut + 5 };
   };
 
-  function wcMatch(c, run, opp, r) {
+  // moment: o jogo tem lance decisivo. Para atacante e meia o lance só pode somar um gol; para zagueiro e goleiro
+  // só pode custar um gol. As taxas base (0,72 a favor × 1,3 contra em forças iguais) já contam com o bônus do
+  // atacante, então o defensor joga esses jogos com taxas invertidas: o time dele segura mais e o lance decide.
+  function wcMatch(c, run, opp, r, moment) {
     const o = S.ovr(c), cwc = run.kind === 'cwc';
+    const [bu, bt] = moment && S.defKick(c.pos) ? [1.1, 0.72] : [0.72, 1.3];
     let T, k;
     if (cwc) {
       // Mundial de Clubes: a força é a do clube, puxada pela sua nota
@@ -33,7 +37,7 @@
       T = D.NATION_BY_NAME[run.nation].str + (o - 82) * 0.3 * run.share + 2.2 * S.tm(c, 'patriota');
       k = 22; // Copa é equilibrada: diferença de força pesa menos que nos clubes
     }
-    const lu = 0.72 * Math.exp((T - opp.str) / k), lt = 1.3 * Math.exp((opp.str - T) / k);
+    const lu = bu * Math.exp((T - opp.str) / k), lt = bt * Math.exp((opp.str - T) / k);
     const gf = r.poisson(lu), ga = r.poisson(lt);
     // Participação nos gols da seleção
     const q = clamp((o - 60) / 25, 0.3, 1.4);
@@ -85,11 +89,12 @@
       opp = r.pick(pool.length ? pool : D.NATIONS.filter(n => n.name !== c.country));
       run.used.push(opp.name);
     }
-    const game = wcMatch(c, run, opp, r);
+    const groupMoment = run.groupMoment === undefined ? 2 : run.groupMoment;
+    const moment = run.stage >= 3 || run.stage === groupMoment;
+    const game = wcMatch(c, run, opp, r, moment);
     game.stage = WC_STAGES[run.stage];
     run.games.push(game);
-    const groupMoment = run.groupMoment === undefined ? 2 : run.groupMoment;
-    if (run.stage >= 3 || run.stage === groupMoment) {
+    if (moment) {
       // Lance decisivo com o jogo aberto (pênalti ou falta a favor; defensores: pênalti ou contra-ataque contra).
       // O placar para no minuto do lance; o resto do jogo acontece depois dele.
       const type = S.posKick(c.pos) || (r() < 0.55 ? 'pen' : 'fk');

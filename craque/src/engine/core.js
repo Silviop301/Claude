@@ -127,8 +127,11 @@
   // Potencial (teto): começa perto para todos e é construído em campo até os 28 anos.
   // Temporada com minutos e nota boa eleva o teto; temporada fraca na juventude derruba um pouco.
   S.POT0 = r => Math.round(64 + 6 * r());
-  // A nota é comparada com a da posição (atacante costuma ter nota mais alta por causa dos gols)
-  const POT_ADJ = { ATA: -0.45, MEI: 0, ZAG: 0.1, GOL: 0 };
+  // Deslocamento da nota por posição: sem ele, a nota média era ATA 7,96 · GOL 7,50 · MEI 7,41 · ZAG 7,26, e tudo que
+  // usa limiar de nota (Seleção da liga, pontos de evolução, título, despedida, Bola de Ouro) favorecia o atacante
+  S.RATING_ADJ = { ATA: -0.15, MEI: 0.2, ZAG: 0.1, GOL: 0 };
+  // Potencial: compara com a nota típica da posição (já descontado o deslocamento acima, para o teto não mudar)
+  const POT_ADJ = { ATA: -0.3, MEI: -0.2, ZAG: 0, GOL: 0 };
   S.potDelta = function (c, games, rating) {
     if (c.age > 28 || games < 15) return 0;
     const x = rating + (POT_ADJ[c.pos] || 0);

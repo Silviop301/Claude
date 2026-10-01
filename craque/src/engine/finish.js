@@ -5,7 +5,7 @@
   // ---------- fim de carreira ----------
   // Pesos da pontuação final e faixas das notas (a tela de fim de carreira mostra a conta)
   S.SCORE_W = { title: 12, cont: 35, cwc: 60, wc: 150, wcGoal: 3, ballon: 100, award: 8, peak: 2 };
-  S.GRADES = [['S', 1560], ['A', 1110], ['B', 830], ['C', 490], ['D', 0]];
+  S.GRADES = [['S', 1640], ['A', 1110], ['B', 830], ['C', 490], ['D', 0]];
   S.gradeOf = score => S.GRADES.find(([, min]) => score >= min)[0];
   S.finish = function (c) {
     c.retired = true;
@@ -22,7 +22,7 @@
     // Produção: atacantes e meias pelos gols/assistências; zagueiros e goleiros pela defesa
     const isDef = D.DEF_POS.includes(c.pos);
     // Pesos por posição para as quatro chegarem às notas altas com a mesma dificuldade
-    const prod = isDef ? (T.cs || 0) * 0.9 + T.goals * 1.5 + T.assists * 0.7 + (T.saves || 0) * 0.2 + (T.penSaved || 0) * 3 + (T.tackles || 0) * 0.3
+    const prod = isDef ? (T.cs || 0) * 0.9 + T.goals * 1.5 + T.assists * 0.7 + (T.saves || 0) * 0.15 + (T.penSaved || 0) * 2.5 + (T.tackles || 0) * 0.3
       : c.pos === 'MEI' ? T.goals * 1.1 + T.assists * 1.0 : T.goals * 0.62 + T.assists * 0.5;
     // Cada parcela da pontuação, para a tela explicar de onde veio a nota
     const n = (x, w) => (x || 0) * w;
