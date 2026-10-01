@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-1e23137d';
+const CACHE = 'craque-42e867da';
 const ASSETS = [
   "./",
   "./fonts/TwemojiCountryFlags.woff2",
@@ -1078,7 +1078,9 @@ const LATER = [
   "./badges/usa-7.png",
   "./badges/usa-8.png",
   "./badges/usa-9.png",
+  "./trophies/1a-divisao-dinamarquesa.png",
   "./trophies/2--bundesliga.png",
+  "./trophies/2-liga-austriaca.png",
   "./trophies/bola-de-ouro.png",
   "./trophies/brasileirao.png",
   "./trophies/bundesliga-austriaca.png",
@@ -1116,8 +1118,11 @@ const LATER = [
   "./trophies/eerste-divisie.png",
   "./trophies/eredivisie.png",
   "./trophies/fa-cup.png",
+  "./trophies/first-division-saudita.png",
   "./trophies/j1-league.png",
+  "./trophies/j2-league.png",
   "./trophies/k-league-1.png",
+  "./trophies/k-league-2.png",
   "./trophies/la-liga.png",
   "./trophies/laliga-2.png",
   "./trophies/libertadores.png",
@@ -1139,12 +1144,16 @@ const LATER = [
   "./trophies/premier-league.png",
   "./trophies/premiership.png",
   "./trophies/primera-b-chilena.png",
+  "./trophies/primera-b-colombiana.png",
   "./trophies/primera-nacional.png",
   "./trophies/pro-league.png",
   "./trophies/qatar-stars-league.png",
   "./trophies/saudi-pro-league.png",
   "./trophies/scottish-championship.png",
+  "./trophies/second-division-catari.png",
+  "./trophies/segunda-division-uruguaia.png",
   "./trophies/serie-a.png",
+  "./trophies/serie-b-equatoriana.png",
   "./trophies/serie-b-italiana.png",
   "./trophies/serie-b.png",
   "./trophies/serie-c.png",
