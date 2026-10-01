@@ -145,7 +145,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 /* características com espaços e níveis */
 .eyebrow.small { font-size: 12px; color: #B9CDBF; }
 .chip b { font-weight: 800; color: var(--gold); }
-.chip.empty { background: transparent; border: 1px dashed rgba(255, 255, 255, 0.25); color: #9DB5A6; }
+.chip.empty { background: transparent; border: 1px dashed rgba(255, 255, 255, 0.25); color: #9DB5A6; white-space: nowrap; }
 .choice b .tag { vertical-align: middle; margin-left: 4px; }
 
 /* temporada explicada */
@@ -875,6 +875,10 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .rk-row { display: flex; gap: 8px; margin-top: 6px; }
 .rk-row input { flex: 1; min-width: 0; font-size: 16px; padding: 10px 12px; border-radius: 10px; border: 2px solid #CFDAD3; background: #fff; color: var(--ink); }
 .rk-row .btn { width: auto; margin: 0; padding: 10px 16px; }
+/* Dentro de um card creme: texto de apoio escuro (o verde-claro sumia) e sombra do botão em dourado escuro, não cinza */
+.card .muted, .card .muted.small { color: #4F5C55; }
+.card .btn:not(.ghost) { box-shadow: 0 3px 0 #A97C12; }
+.card .btn:not(.ghost):active { box-shadow: 0 1px 0 #A97C12; }
 .rk-msg { color: #B3261E; font-weight: 700; margin: 6px 0 0; }
 .rk-edit { display: block; margin: 12px auto 0; color: #DDEBE2; }
 

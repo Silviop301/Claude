@@ -38,7 +38,7 @@
     const cty = D.COUNTRIES.find(x => x.id === G.c.country);
     const cardData = {
       name: G.c.name, number: G.c.number, wc: G.c.totals.wc || 0, pos: G.c.pos, peak: G.c.peak, attrs: G.c.peakAttrs || G.c.attrs, flag: cty.flag,
-      crest: 'badges/' + f.mainClub + '.png', grade: f.grade, verdict: f.verdict,
+      crest: 'badges/' + f.mainClub + '.png', grade: f.grade, verdict: f.verdict, look: U.lookOf(G.c), shirt: U.kitOf(f.mainClub),
       goals: T.goals, assists: T.assists, titles: f.titles, ballon: T.ballon,
       cs: T.cs || 0, penSaved: T.penSaved || 0, tackles: T.tackles || 0,
       traits: G.c.traits.map(id => ({ id, icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(G.c, id) })),
@@ -107,6 +107,7 @@
     screen.querySelectorAll('[data-club]').forEach(b => b.onclick = () => {
       screen.querySelectorAll('[data-club]').forEach(x => x.classList.toggle('on', x === b));
       cardData.crest = 'badges/' + b.dataset.club + '.png';
+      cardData.shirt = U.kitOf(b.dataset.club); // o jogador veste a camisa do escudo escolhido
       shown = cardData;
       window.CRAQUE_CARD(cv, cardData);
       if (viewer) viewer.update(cardData);

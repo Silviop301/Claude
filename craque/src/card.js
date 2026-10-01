@@ -156,7 +156,38 @@
     });
   }
 
-  // data: { name, pos, peak, attrs, flag, crest (url), grade, verdict, goals, assists, titles, ballon, traits:[{icon,lv}], years }
+  // Foto da carta: o próprio jogador (o mesmo desenho do jornal, src/avatar.js), da cintura para cima,
+  // sumindo embaixo. Cartas antigas (sem o visual guardado) ficam com a camisa.
+  const HEX = v => (/^#[0-9a-f]{3,8}$/i.test(v || '') ? v : null);
+  async function drawAvatar(ctx, d) {
+    const A = root.ClimbixAvatar;
+    if (!A || !d.look || typeof d.look !== 'object' || typeof Image === 'undefined') return false;
+    const k = (d.special === 'copa' ? d.kit : d.shirt) || [];
+    const kit = [HEX(k[0]) || '#E6E6E6', HEX(k[1]) || '#1B1A17'];
+    const num = parseInt(d.number, 10) || ({ ATA: 9, MEI: 10, ZAG: 4, GOL: 1 }[d.pos] || 10);
+    const PW = 296, PH = 388, X = 385 - PW / 2, Y = 92;
+    let svg = A.photo('normal', kit, { name: d.name, pos: d.pos, number: num, look: d.look }, { bust: true, flat: true, num });
+    svg = svg.replace('<svg ', '<svg width="' + PW * 2 + '" height="' + PH * 2 + '" ');
+    const img = await loadImg(A.url(svg));
+    if (!img) return false;
+    const off = document.createElement('canvas');
+    off.width = PW * 2; off.height = PH * 2;
+    const o = off.getContext('2d');
+    o.drawImage(img, 0, 0, off.width, off.height);
+    // Some na altura do nome
+    o.globalCompositeOperation = 'destination-out';
+    const fade = o.createLinearGradient(0, off.height * 0.72, 0, off.height);
+    fade.addColorStop(0, 'rgba(0,0,0,0)'); fade.addColorStop(1, 'rgba(0,0,0,1)');
+    o.fillStyle = fade; o.fillRect(0, 0, off.width, off.height);
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4;
+    ctx.drawImage(off, X, Y, PW, PH);
+    ctx.restore();
+    return true;
+  }
+
+  // data: { name, pos, peak, attrs, flag, crest (url), grade, verdict, goals, assists, titles, ballon, traits:[{icon,lv}], years,
+  //         look (visual do jogador), shirt ([camisa, detalhe] do clube) }
   // Características no rodapé: o Twemoji de cada uma (SVG em assets/tw), com o nível (2 ou 3) ao lado.
   // As imagens são pré-carregadas antes de desenhar a carta (senão sairiam em branco no primeiro reveal e no compartilhamento).
   const twCode = e => [...(e.includes('\u200D') ? e : e.replace(/\uFE0F/g, ''))].map(ch => ch.codePointAt(0).toString(16)).join('-');
@@ -264,8 +295,8 @@
     const crest = d.crest ? await loadImg(d.crest) : null;
     if (crest) ctx.drawImage(crest, 93, 356, 70, 70);
 
-    // Camisa (no lugar da foto)
-    jersey(ctx, 385, 250, 1.35, 'rgba(255,255,255,0.18)', T.ink, d.number || ({ ATA: 9, MEI: 10, ZAG: 4, GOL: 1 }[d.pos] || 10));
+    // Foto: o jogador; sem o visual dele (cartas antigas), a camisa
+    if (!(await drawAvatar(ctx, d))) jersey(ctx, 385, 250, 1.35, 'rgba(255,255,255,0.18)', T.ink, d.number || ({ ATA: 9, MEI: 10, ZAG: 4, GOL: 1 }[d.pos] || 10));
 
     // Nome
     ctx.fillStyle = T.ink;
@@ -303,7 +334,7 @@
     const extraN = (d.ballon ? 1 : 0) + (d.wc ? 1 : 0);
     embossOn = false; drawTraitSeals(ctx, d, extraN ? 697 : 705, T.ink, traitImgs); embossOn = true;
     // Estrelas de campeão do mundo acima do nome da camisa
-    if (d.wc) { ctx.font = '800 26px ' + DISPLAY; embossOn = false; ctx.fillText('★'.repeat(Math.min(d.wc, 5)), 385, 120); embossOn = true; }
+    if (d.wc) { ctx.font = '800 26px ' + DISPLAY; embossOn = false; ctx.fillText('★'.repeat(Math.min(d.wc, 5)), 385, d.look ? 96 : 120); embossOn = true; }
     // Carta do meio da carreira (revelação ao subir de faixa): rodapé simples com clube e idade
     if (d.footer) {
       ctx.font = '700 24px ' + BODY;

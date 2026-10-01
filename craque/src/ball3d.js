@@ -534,8 +534,12 @@ function newspaper(host, page, onClose) {
     const w = host.clientWidth || innerWidth, h = host.clientHeight || innerHeight;
     renderer.setSize(w, h, false); camera.aspect = w / h;
     const tan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-    camera.position.set(0, 0, Math.max((H * 0.58) / tan, (W * 0.62) / (tan * camera.aspect)));
-    camera.lookAt(0, 0, 0); camera.updateProjectionMatrix();
+    // A folha cabe acima da dica (em telas baixas, a dica ficava por cima da borda de baixo)
+    const res = hint.offsetTop > 0 ? Math.min(h * 0.25, h - hint.offsetTop + 10) : 0, free = h - res;
+    const dist = Math.max((H * 0.58) * h / free / tan, (W * 0.62) / (tan * camera.aspect));
+    const dy = (res / 2) * (2 * dist * tan / h); // sobe a folha para o meio do espaço livre
+    camera.position.set(0, -dy, dist);
+    camera.lookAt(0, -dy, 0); camera.updateProjectionMatrix();
   }
   addEventListener('resize', resize); resize();
 

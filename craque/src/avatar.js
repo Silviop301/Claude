@@ -82,7 +82,8 @@
     adeus: [[[44, 57], [36, 78], [50, 37]], [[76, 57], [90, 38], [96, 16]]],
     assina: [[[44, 57], [33, 74], [33, 84]], [[76, 57], [87, 74], [87, 84]]],
   };
-  // opts: { crop: true } enquadra só o jogador; { flat: true } sem estádio; { num: '9' } número na camisa
+  // opts: { crop: true } enquadra só o jogador; { bust: true } só da cintura para cima (carta);
+  // { flat: true } sem estádio; { num: '9' } número na camisa
   let uid = 0;
   // Carreiras antigas: 5 tons de pele (antes do desenho novo) viram os tons equivalentes dos 8 novos
   const OLD_SKIN = [1, 2, 3, 5, 7];
@@ -188,7 +189,7 @@
     const handUp = pose === 'triste' || pose === 'adeus'; // mão no rosto: o braço vai na frente da cabeça
     const torso = 'M41 57Q41.6 52 48 51L55 49.6Q60 54 65 49.6L72 51Q78.4 52 79 57L77.4 104Q60 107 42.6 104Z';
     const top = pose === 'taca' ? 26 : 0;
-    const vb = opts.crop ? '14 ' + (4 - top) + ' 92 ' + (196 + top) : '-60 ' + (-top) + ' 240 ' + (200 + top);
+    const vb = opts.bust ? '21 4 78 102' : opts.crop ? '14 ' + (4 - top) + ' 92 ' + (196 + top) : '-60 ' + (-top) + ' 240 ' + (200 + top);
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb + '">' + defs + bg +
       '<ellipse cx="60" cy="195" rx="26" ry="4.4" fill="rgba(0,0,0,.28)"/>' +
       leg([53.4, 116], [52.4, 150], [52, 185], 'PD') + leg([66.6, 116], [67.6, 150], [68, 185], 'PE') + boot(52, -1) + boot(68, 1) +

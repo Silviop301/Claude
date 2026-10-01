@@ -33,6 +33,7 @@
   const A = window.ClimbixAvatar;
   const { SKIN, HAIR_COLORS, HAIRS, BEARDS } = A;
   const photo = (pose, kit, c, opts) => A.photo(pose, kit, c, opts);
+  const lookOf = c => A.lookOf(c);
 
   // ---------- capa ----------
   // o = { c, year, extra, head, pose, kit, caption, stats, lede, subs, column }
@@ -240,5 +241,5 @@
       lede: 'Foram ' + nums + ' em ' + f.nClubs + (f.nClubs > 1 ? ' clubes' : ' clube') + '. ' + D.O(main.name) + ' foi a casa mais marcante.', column: col }, onClose);
   }
 
-  Object.assign(U, { SKIN, HAIR_COLORS, HAIRS, BEARDS, PAPERS, kitOf, nationKit, photo, paper, transferPaper, finalPaper, worldCupPaper, clubWorldPaper, farewellPaper });
+  Object.assign(U, { SKIN, HAIR_COLORS, HAIRS, BEARDS, PAPERS, kitOf, lookOf, nationKit, photo, paper, transferPaper, finalPaper, worldCupPaper, clubWorldPaper, farewellPaper });
 })();
