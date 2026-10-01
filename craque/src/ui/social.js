@@ -15,6 +15,16 @@
   const shuffle = arr => arr.map(x => [Math.random(), x]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
   const chance = p => Math.random() < p;
 
+  // Coração na cor da camisa do clube (vermelho, azul, verde, amarelo, preto, branco, laranja, roxo)
+  function heart(id) {
+    const k = ((window.CRAQUE_KITS || {})[id] || ['#cc0000'])[0], [r, g, b] = [1, 3, 5].map(i => parseInt(k.slice(i, i + 2), 16));
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    if (mx < 60) return '🖤';
+    if (mn > 200) return '🤍';
+    if (mx - mn < 40) return mx > 140 ? '🤍' : '🖤';
+    const h = mx === r ? ((g - b) / (mx - mn) + 6) % 6 : mx === g ? (b - r) / (mx - mn) + 2 : (r - g) / (mx - mn) + 4, deg = h * 60;
+    return deg < 18 || deg >= 330 ? '❤️' : deg < 42 ? '🧡' : deg < 70 ? '💛' : deg < 165 ? '💚' : deg < 255 ? '💙' : '💜';
+  }
   // Frase de estatística da temporada conforme a posição
   const statOf = res => res.pos === 'GOL' ? (res.cleanSheets || 0) + ' jogos sem sofrer gol' : res.pos === 'ZAG' ? (res.tackles || 0) + ' desarmes'
     : res.pos === 'MEI' ? res.assists + ' assistências' : res.goals + ' gols';
@@ -69,7 +79,7 @@
   function socialPost(ctx, next) {
     const c = G.c, fame = c.fame || 0;
     const p = postOf(ctx), coms = commentsOf(p.mood), cl = club(p.club || c.club).name, T = c.totals || {};
-    const fill = t => t.replace(/\{n\}/g, c.name).replace(/\{num\}/g, c.number || 10).replace(/\{time\}/g, cl).replace(/\{aoTime\}/g, D.ao(cl))
+    const fill = t => t.replace(/\{n\}/g, c.name).replace(/\{num\}/g, c.number || 10).replace(/\{time\}/g, cl).replace(/\{cor\}/g, heart(c.club)).replace(/\{aoTime\}/g, D.ao(cl))
       .replace(/\{idade\}/g, c.age).replace(/\{stat\}/g, p.res ? statOf(p.res) : '').replace(/\{titulos\}/g, p.res ? p.res.titles.map(x => x.name).join(' e ') : '')
       .replace(/\{temps\}/g, c.seasons.length).replace(/\{gols\}/g, T.goals || 0).replace(/\{assist\}/g, T.assists || 0);
     p.text = cap(fill(p.text)); coms.forEach(x => { x.t = fill(x.t); if (x.reply) x.reply = fill(x.reply); });

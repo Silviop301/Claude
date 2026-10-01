@@ -1,6 +1,6 @@
 // Nas redes: textos dos posts do jogador e dos comentários (torcida, haters, clube e famosos).
 // Tudo fictício, para a simulação. Marcadores: {n} nome, {time} clube, {num} número da camisa, {idade} idade,
-// {stat} estatística da temporada (gols, assistências, desarmes ou jogos sem sofrer gol), {temps} temporadas,
+// {cor} coração na cor do clube, {stat} estatística da temporada (gols, assistências, desarmes ou jogos sem sofrer gol), {temps} temporadas,
 // {gols} gols na carreira, {assist} assistências na carreira, {titulos} títulos do ano.
 (function () {
   const D = window.CRAQUE_DATA;
@@ -21,7 +21,7 @@
         'Pode soltar o grito que tá preso na garganta: É CAMPEÃO! 🏆🔥',
         'Taça na mão, sorriso no rosto e zero voz depois da festa 🏆🗣️',
         'Quem duvidou, segura essa! {titulos} é nosso! 🏆',
-        'Mais uma pra galeria. E a de vocês, torcida, é a mais bonita 💚🏆',
+        'Mais uma pra galeria. E a de vocês, torcida, é a mais bonita {cor}🏆',
         'Dormi abraçado com a taça. Não me julguem 🏆😴',
         'Campeão! Agora a resenha vai até segunda-feira 🍖🏆',
       ],
@@ -182,7 +182,7 @@
     // ---------- torcida ----------
     fans: {
       up: [
-        'Nosso camisa {num}! Fica pra sempre 💚', 'Que fase, {n}! Obrigado por tudo!', 'Melhor jogador que já vi com essa camisa 😍', 'Craque dentro e fora de campo 👏',
+        'Nosso camisa {num}! Fica pra sempre {cor}', 'Que fase, {n}! Obrigado por tudo!', 'Melhor jogador que já vi com essa camisa 😍', 'Craque dentro e fora de campo 👏',
         'Renova logo esse contrato, diretoria!! 🙏', 'Já comprei a camisa {num} pro meu filho 😍', 'Meu ídolo!!! Responde aí 🙏🙏', 'Monstro! Monstro! Monstro! 🔥',
         'Te amo, {n}!!! (minha namorada que lute) 😂', 'Esse é o cara! 🐐', 'Tatuei seu rosto na perna, é verdade 😅', 'Se fosse em outro clube, já tava na Seleção!',
         'Melhor contratação da história do {time} 🙌', 'Chorei no gol de você, sério 😭', 'Você joga o que eu jogo no videogame 🎮', 'Respeita o camisa {num}!!',
@@ -190,12 +190,12 @@
       ],
       down: [
         'Ano que vem é nosso, {n}! Confia!', 'Tamo junto nas boas e nas ruins 🙏', 'Volta mais forte, craque!', 'Ainda acredito em você, {n} 💪',
-        'Fase ruim todo mundo tem, cabeça erguida!', 'A torcida tá contigo! 💚', 'Bora reagir, camisa {num}! 🔥', 'Só os fortes sabem levantar 💪',
+        'Fase ruim todo mundo tem, cabeça erguida!', 'A torcida tá contigo! {cor}', 'Bora reagir, camisa {num}! 🔥', 'Só os fortes sabem levantar 💪',
         'Eu sigo te defendendo no grupo da família 😂🙏', 'Não liga pros haters, {n}!', 'Vai voltar a ser aquele de antes, eu sei!', 'Fé! 🙏',
-        'Respira e volta, craque!', 'Meu ídolo continua sendo meu ídolo 💚', 'Ano difícil pra todo mundo, bora!',
+        'Respira e volta, craque!', 'Meu ídolo continua sendo meu ídolo {cor}', 'Ano difícil pra todo mundo, bora!',
       ],
       bye: [
-        'Não vai não 😭😭', 'Obrigado por tudo, {n}! Eterno ídolo 💚', 'Chorei aqui 😭 Que carreira!', 'Vou contar pros meus filhos que vi o {n} jogar 🥹',
+        'Não vai não 😭😭', 'Obrigado por tudo, {n}! Eterno ídolo {cor}', 'Chorei aqui 😭 Que carreira!', 'Vou contar pros meus filhos que vi o {n} jogar 🥹',
         'Volta, nem que seja pro jogo de despedida! 😭', 'Sem você o futebol fica mais chato 😢', 'Obrigado pelas alegrias! 🙏', 'Lenda! Lenda! Lenda! 🐐',
         'Meu filho tem seu nome. Sério 🥹', 'Pode virar técnico do {time} agora? 👀', 'Hoje é dia de chorar no banho 😭', 'Um pedaço da minha infância se aposenta hoje 🥺',
       ],
@@ -229,7 +229,8 @@
       down: ['Seguimos juntos, {n}. 🤝', 'Força, camisa {num}! Estamos contigo 💪', 'Família {time} unida! 🙌'],
       bye: ['Obrigado por tudo, {n}. Sua história está escrita aqui. 🙌', 'Eterno camisa {num}. Obrigado! 👑', 'A camisa {num} vai ficar guardada com carinho 🙏'],
     },
-    fanHandles: ['_raiz', '.fiel', 'dacadeira', '_ultras', '_doente', '.apaixonado', '_desde1999', 'naveia', '_oficialdafiel', '_resenha'],
+    // Sufixos neutros (nada de apelido de torcida, que é de um clube só)
+    fanHandles: ['_raiz', 'dacadeira', '_doente', '.apaixonado', '_desde1999', 'naveia', '_resenha', '.torcedor', '_arquibancada', 'nocoracao', '_sempre', 'roxo'],
     randomHandles: ['arquibancada_89', 'torcedor_raiz', 'resenha.fc', 'futebolraiz', 'joaozinho_2012', 'tia.do.zap', 'memes.da.bola', 'varzea_fc', 'vovo_boleiro', 'zueira_fc', 'goleiro.de.fifa', 'pai_do_craque', 'menino.da.vila', 'sofascore_humano', 'mestre.da.prancheta'],
     haterHandles: ['opiniao_sincera', 'futebol.critico', 'secador_oficial', 'tecnico_de_sofa', 'sincerao_fc', 'anti.modinha', 'xerife.das.redes'],
   };
