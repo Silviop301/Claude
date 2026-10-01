@@ -1817,6 +1817,8 @@ button.cc-num em { font: 800 13px/1.1 var(--display); font-style: normal; letter
 .nb-scroll { overflow-y: auto; margin: 0 -16px; padding: 0 16px; }
 .nb-count { font-size: 14px; color: #CFE0D4; }
 .nb-sec { font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase; color: #8FD6AE; margin: 12px 0 6px; }
+.nb-sec.first { margin-top: 2px; }
+.nb-sheet .nb-leg { margin-top: 14px; }
 .cr-chips button.lock { background: transparent; border: 1.5px dashed var(--rk); color: #E9F1EC; }
 .cr-chips button.lock .tw { width: 14px; height: 14px; vertical-align: -2px; }
 .cr-chips button.pv, .cr-sw button.pv i { box-shadow: 0 0 0 2px var(--rk), 0 0 12px var(--rk); }

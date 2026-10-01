@@ -39,6 +39,14 @@
     ['manga', 'Manga comprida', 'raro', 'equip', { sleeve: 'comprida' }, 'Camisa de manga longa.'],
     ['cordao', 'Cordão', 'raro', 'equip', { extra: ['cordao'] }, 'Corrente dourada com medalha.'],
     ['brinco', 'Brinco', 'raro', 'equip', { extra: ['brinco'] }, 'Ponto dourado nas duas orelhas.'],
+    ['raspado', 'Cabelo raspado', 'comum', 'cabelo', { hair: 'raspado' }, 'Máquina baixinha.'],
+    ['careca', 'Careca', 'comum', 'cabelo', { hair: 'careca' }, 'Sem cabelo nenhum.'],
+    ['longo', 'Cabelo longo', 'comum', 'cabelo', { hair: 'longo' }, 'Até os ombros.'],
+    ['ruivo', 'Cabelo ruivo', 'comum', 'cabelo', { hc: 3 }, 'Cor do cabelo e da barba.'],
+    ['grisalho', 'Cabelo grisalho', 'comum', 'cabelo', { hc: 4 }, 'Cor do cabelo e da barba.'],
+    ['cor-branco', 'Cor branca', 'comum', 'cores', { boot: 'branco' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
+    ['trancas', 'Tranças', 'raro', 'cabelo', { hair: 'trancas' }, 'Tranças rentes à cabeça.'],
+    ['dreads', 'Dreads', 'raro', 'cabelo', { hair: 'dreads' }, 'Dreads soltos.'],
     ['barba-rala', 'Barba rala', 'comum', 'cabelo', { beard: 'rala' }, 'Barba curtinha, só a sombra.'],
     ['barba-bigode', 'Bigode', 'comum', 'cabelo', { beard: 'bigode' }, 'Na cor do cabelo.'],
     ['cor-vermelho', 'Cor vermelha', 'comum', 'cores', { boot: 'vermelho' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
@@ -64,21 +72,21 @@
     CAT.push({ id: 'tat-' + k + '-' + m, name: name + ' · ' + l, rk, cat: 'tatuagem', look: { ['tat' + m]: v }, desc: v === 'pequena' ? 'Estrela e detalhes, ' + l + '.' : 'Espinhos e rosas, ' + l + ' inteiro.', limb: m })));
   const BY_ID = {};
   CAT.forEach(it => { BY_ID[it.id] = it; });
-  // Números da camisa: 77, 88 e 99 são épicos; 1 a 50 comuns; 51 a 98 raros
-  const EPIC_NUMS = [77, 88, 99];
-  const numRar = n => (EPIC_NUMS.includes(n) ? 'epico' : n <= 50 ? 'comum' : 'raro');
+  // Números da camisa: 1 a 11, 77 e 99 são épicos; as dezenas redondas (20 a 90) raras; o resto comum
+  const EPIC_NUMS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 77, 99];
+  const numRar = n => (EPIC_NUMS.includes(n) ? 'epico' : n % 10 === 0 ? 'raro' : 'comum');
   for (let n = 1; n <= 99; n++) BY_ID['n' + n] = { id: 'n' + n, name: 'Número ' + n, rk: numRar(n), cat: 'num', n, desc: 'Número da camisa.' };
   const itemOf = id => BY_ID[id];
 
   // Que item cada valor do visual pede (null = livre)
-  const FREE_COLORS = ['preto', 'branco'];
+  const FREE_COLORS = ['preto'];
   const colorItem = v => (FREE_COLORS.includes(v) || v === 'lima' ? null : BY_ID['cor-' + v] ? 'cor-' + v : null);
   const PATTERN = { camuflada: 'camuflada', raio: 'raio', chamas: 'chamas', tigre: 'tigre' };
   function need(key, v) {
     if (v === undefined || v === null) return null;
     if (key === 'boot' || key === 'sole' || key === 'wristC' || key === 'bandC' || key === 'glove') return PATTERN[v] || colorItem(v);
-    if (key === 'hair') return v === 'moicano' || v === 'topete' ? v : null;
-    if (key === 'hc') return v === 5 ? 'platinado' : v >= 6 ? 'pintado' : null;
+    if (key === 'hair') return v === 'curto' || v === 'black' ? null : BY_ID[v] ? v : null; // livres: curto e black
+    if (key === 'hc') return v === 3 ? 'ruivo' : v === 4 ? 'grisalho' : v === 5 ? 'platinado' : v >= 6 ? 'pintado' : null; // livres: preto, castanho e loiro
     if (key === 'band') return v === 'faixa' ? 'faixa' : v === 'tiara' ? 'tiara' : null;
     if (key === 'sock') return v === 'arriado' ? 'arriado' : null;
     if (key === 'sleeve') return v === 'comprida' ? 'manga' : null;
@@ -95,7 +103,7 @@
   // { own: {id: 1}, fichas, packs: [{ why: [...] }], pity, news: {id: 1}, pen: 'AAAA-MM-DD', at }
   let inv = null;
   const rnd = () => Math.random();
-  const VER = 2;
+  const VER = 3;
   function get() {
     if (inv) return inv;
     inv = load(KEY);
@@ -125,12 +133,13 @@
     const o = { v: VER, own: {}, fichas: 0, packs: [], pity: 0, news: {}, at: Date.now() };
     grantUsed(o);
     const pool = [];
-    for (let n = 1; n <= 50; n++) if (!o.own['n' + n]) pool.push(n);
+    for (let n = 1; n <= 99; n++) if (numRar(n) === 'comum' && !o.own['n' + n]) pool.push(n); // 10 números comuns
     for (let i = 0; i < 10 && pool.length; i++) o.own['n' + pool.splice(Math.floor(rnd() * pool.length), 1)[0]] = 1;
     inv = o; store(KEY, o);
     return o;
   }
   // v2: tatuagem por membro (quem tinha a tatuagem de antes fica com ela nos 4 membros); barbas e vermelho travados
+  // v3: cortes (menos curto e black), ruivo, grisalho e branco travados. O que já foi usado continua liberado.
   function migrate(o) {
     [['tat-pequena', 'p'], ['tat-fechada', 'f']].forEach(([old, k]) => {
       if (!o.own[old]) return;
@@ -149,13 +158,15 @@
     if (!own.length) return want;
     return own.reduce((b, n) => (Math.abs(n - want) < Math.abs(b - want) ? n : b), own[0]);
   }
+  // Visual inicial só com o que é livre para todos
+  const FREE = { hair: 'curto', hc: 0, beard: 'nenhuma', band: 'nenhuma', bandC: 'preto', boot: 'preto', sole: 'preto', sock: 'alto', sleeve: 'curta',
+    wrist: 'nenhuma', wristC: 'preto', glove: 'lima', tatBD: 'nenhuma', tatBE: 'nenhuma', tatPD: 'nenhuma', tatPE: 'nenhuma', extra: [] };
   // Tira do visual o que não está liberado (a prévia nunca entra na carreira)
   function clean(look) {
     const out = Object.assign({}, look);
-    const DEF = window.ClimbixAvatar.DEF;
     Object.keys(out).forEach(k => {
       if (k === 'extra') out.extra = (out.extra || []).filter(x => has(need('extra', x)));
-      else if (!has(need(k, out[k]))) out[k] = k === 'numFx' ? undefined : k === 'hc' ? 0 : /^tat/.test(k) ? 'nenhuma' : DEF[k];
+      else if (!has(need(k, out[k]))) out[k] = k in FREE ? FREE[k] : k === 'tattoo' ? 'nenhuma' : undefined;
     });
     return out;
   }
@@ -261,6 +272,6 @@
     return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news) });
   }
 
-  U.ITEMS = { KEY, CAT, BY_ID, RAR, RAR_NAME, CHANCE, PITY, DUP, COST, itemOf, need, has, get, put, ownedNums, nearestNum, numRar, clean, counts,
+  U.ITEMS = { FREE, KEY, CAT, BY_ID, RAR, RAR_NAME, CHANCE, PITY, DUP, COST, itemOf, need, has, get, put, ownedNums, nearestNum, numRar, clean, counts,
     earn, careerWhy, open, grant, trade, seen, merge, reset: () => { inv = null; } };
 })();

@@ -90,7 +90,7 @@
   // Número padrão da posição, se liberado; senão o liberado mais perto
   const defNum = pos => I.nearestNum(D.POS_NUM[pos] || 10);
   const newSt = () => ({ pos: 'ATA', foot: 'D', country: 'Brasil', num: defNum('ATA'), numTouched: false, name: D.NICKNAMES[Math.floor(Math.random() * D.NICKNAMES.length)],
-    tab: 'corpo', look: Object.assign({}, A.DEF, { v: 2, skin: Math.floor(Math.random() * A.SKIN.length) }) });
+    tab: 'corpo', look: Object.assign({}, A.DEF, I.FREE, { v: 2, extra: [], skin: Math.floor(Math.random() * A.SKIN.length) }) }); // começa só com o que é livre
   const numRk = n => I.itemOf('n' + n).rk;
 
   // Número da camisa: grade com os 99 (liberados em creme, travados vazados na cor da raridade)
@@ -107,10 +107,12 @@
     function draw() {
       const own = I.ownedNums().length;
       w.innerHTML = '<div class="tr-sheet nb-sheet" role="dialog" aria-modal="true"><i class="tr-grab"></i><div class="tr-head"><b>Número da camisa</b><span class="nb-count">' + own + ' de 99</span></div>' +
-        '<div class="nb-scroll"><div class="nb-leg"><span><i class="on"></i>Liberado</span>' + ['comum', 'raro', 'epico'].map(k => '<span><i class="' + U.rarCls(k) + '"></i>' + I.RAR_NAME[k] + '</span>').join('') + '</div>' +
-        sec('Comuns · 1 a 50', range(1, 50)) + sec('Raros · 51 a 98', range(51, 98).filter(n => numRk(n) === 'raro')) + sec('Épicos', [77, 88, 99]) +
-        '<div class="nb-sec">Estilo do número</div><div class="cr-chips">' + fx.map(([v, l]) => { const it = v && !I.has('num-' + v) ? I.itemOf('num-' + v) : null;
-          return '<button data-fx="' + v + '" class="' + ((st.look.numFx || '') === v ? 'on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + '">' + (it ? U.emo('🔒', 'xs') + ' ' : '') + l + '</button>'; }).join('') + '</div></div>' +
+        // Estilo do número primeiro; depois os números por raridade
+        '<div class="nb-scroll"><div class="nb-sec first">Estilo do número</div><div class="cr-chips">' + fx.map(([v, l]) => { const it = v && !I.has('num-' + v) ? I.itemOf('num-' + v) : null;
+          return '<button data-fx="' + v + '" class="' + ((st.look.numFx || '') === v ? 'on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + '">' + (it ? U.emo('🔒', 'xs') + ' ' : '') + l + '</button>'; }).join('') + '</div>' +
+        '<div class="nb-leg"><span><i class="on"></i>Liberado</span>' + ['comum', 'raro', 'epico'].map(k => '<span><i class="' + U.rarCls(k) + '"></i>' + I.RAR_NAME[k] + '</span>').join('') + '</div>' +
+        sec('Comuns', range(1, 99).filter(n => numRk(n) === 'comum')) + sec('Raros · 20, 30, 40… 90', range(1, 99).filter(n => numRk(n) === 'raro')) +
+        sec('Épicos · 1 a 11, 77 e 99', range(1, 99).filter(n => numRk(n) === 'epico')) + '</div>' +
         (msg ? '<div class="lk-note in-sheet">' + msg + '</div>' : '') +
         '<button class="btn" id="nb-use">Usar o ' + sel + '</button></div>';
       w.querySelectorAll('.nb-c').forEach(b => b.onclick = () => {
