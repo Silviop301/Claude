@@ -211,6 +211,7 @@
     }
     ctx.restore();
   }
+  const ENGRAVED = {};
   async function trophyArt(ctx, ink, light, t) {
     const im = TROPHY_IMG(t.comp) ? await loadImg(TROPHY_IMG(t.comp)) : null;
     if (!im) return false;
@@ -221,7 +222,10 @@
     ctx.restore();
     let h = 290, w = Math.round(h * im.width / im.height);
     if (w > 300) { h = Math.round(h * 300 / w); w = 300; }
-    engrave(ctx, ink, light, im, Math.round(cx - w / 2), 86 + (290 - h), w, h);
+    // A gravura (linha a linha) é o desenho mais pesado da carta: fica guardada por taça e cor de tinta
+    const key = t.comp + '|' + ink + '|' + light;
+    if (!ENGRAVED[key]) { const c = mkCanvas(w, h); engrave(c.getContext('2d'), ink, light, im, 0, 0, w, h); ENGRAVED[key] = c; }
+    ctx.drawImage(ENGRAVED[key], Math.round(cx - w / 2), 86 + (290 - h));
     ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.font = '800 30px ' + DISPLAY;
     ctx.fillText(t.caption, cx, 420, 360);
     return true;

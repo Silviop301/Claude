@@ -3,6 +3,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+// Aparelho fraco (até 4 núcleos ou até 3 GB): 3D com resolução menor e 30 quadros por segundo
+const WEAK = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 3;
+const DPR = () => Math.min(devicePixelRatio || 1, WEAK ? 1.25 : 2);
 
 const modelReady = new GLTFLoader().loadAsync('assets/bola.glb?v=1ba24026').then(g => {
   // Centraliza e normaliza o tamanho, seja qual for a escala do arquivo
@@ -32,7 +35,7 @@ function mount(el) {
   el.dataset.on = '1';
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches || weakGPU(renderer);
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(DPR());
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   const scene = new THREE.Scene();
   const cam = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
@@ -102,7 +105,7 @@ function flyer(host, w, h) {
   return modelReady.then(m => {
     if (!host.isConnected) return null;
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(DPR());
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     const cv = renderer.domElement;
     cv.className = 'ball3d-fly';
@@ -168,7 +171,7 @@ function goal(svg, m) {
     g.updateMatrixWorld(true);
     const base = net && net.geometry.attributes.position.array.slice();
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(DPR());
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setSize(W, H, false);
     // A imagem entra no lugar do gol desenhado (mesma camada)
@@ -283,7 +286,7 @@ function card3d(host, data, opts) {
   return cardReady().then(async model => {
     if (!host.isConnected) return null;
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(DPR());
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
@@ -329,9 +332,12 @@ function card3d(host, data, opts) {
     const back = new THREE.Mesh(new THREE.PlaneGeometry(FW, FW * 802 / 530), new THREE.MeshPhysicalMaterial({ transparent: true, metalness: 0.5, roughness: 0.35, depthWrite: false }));
     back.position.set(0, size.y * 0.025, box.min.z - 0.002); back.rotation.y = Math.PI; pivot.add(back);
 
+    let backKey = null;
     async function apply(d) {
       const look = window.CRAQUE_CARD_METAL(d);
-      const [tex, content, backTex] = await Promise.all([metalTex(look.metal), contentTexture(d, look), backTexture(d, look)]);
+      // O verso só muda com a trajetória, o nome, o número e a cor da tinta (trocar a assinatura não refaz o verso)
+      const bk = JSON.stringify([d.curve, d.tSeasons, d.startAge, d.name, d.number, look.ink, look.inkLight]);
+      const [tex, content, backTex] = await Promise.all([metalTex(look.metal), contentTexture(d, look), bk === backKey ? null : backTexture(d, look)]);
       const f = mats.face_metal;
       if (f) {
         f.map = tex; f.map.offset.set(0, 0); f.map.repeat.set(1, 1);
@@ -350,8 +356,10 @@ function card3d(host, data, opts) {
       face.material = look.inkLight
         ? new THREE.MeshPhysicalMaterial({ map: content, transparent: true, metalness: 0.3, roughness: 0.4, clearcoat: 1, clearcoatRoughness: 0.08, depthWrite: false })
         : new THREE.MeshBasicMaterial({ map: content, transparent: true, toneMapped: false, depthWrite: false });
-      if (back.material.map) back.material.map.dispose();
-      back.material.map = backTex; back.material.needsUpdate = true;
+      if (backTex) {
+        if (back.material.map) back.material.map.dispose();
+        back.material.map = backTex; back.material.needsUpdate = true; backKey = bk;
+      }
     }
     await apply(data);
     if (!host.isConnected) { renderer.dispose(); cv.remove(); return null; }
@@ -392,10 +400,16 @@ function card3d(host, data, opts) {
     }
     if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission !== 'function') { tiltAsked = true; addEventListener('deviceorientation', onTilt); }
 
+    // Fora da tela (rolou para baixo) não desenha; em aparelho fraco, no máximo 30 quadros por segundo
+    let onScreen = true, last = 0;
+    const io = typeof IntersectionObserver !== 'undefined' ? new IntersectionObserver(es => { onScreen = es[0].isIntersecting; }) : null;
+    if (io) io.observe(host);
     const loop = now => {
       if (!host.isConnected) return api.dispose();
       raf = requestAnimationFrame(loop);
-      if (document.hidden) return;
+      if (document.hidden || !onScreen) return;
+      if (WEAK && now - last < 32) return;
+      last = now;
       const t = Math.max(0, (now - t0) / 1000);
       if (!drag) {
         // Solto: gira pelo impulso e volta para a frente mais próxima (frente = múltiplo de 2π)
@@ -419,7 +433,7 @@ function card3d(host, data, opts) {
     raf = requestAnimationFrame(loop);
     const api = {
       update: d => apply(d),
-      dispose() { cancelAnimationFrame(raf); removeEventListener('resize', fit); removeEventListener('deviceorientation', onTilt); renderer.dispose(); pm.dispose(); cv.remove(); },
+      dispose() { cancelAnimationFrame(raf); if (io) io.disconnect(); removeEventListener('resize', fit); removeEventListener('deviceorientation', onTilt); renderer.dispose(); pm.dispose(); cv.remove(); },
     };
     return api;
   }).catch(e => { console.warn('carta 3D', e); return null; });
