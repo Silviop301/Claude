@@ -266,10 +266,9 @@
     $('b-dice').onclick = () => {
       const ok = k => v => !lockOf(k, v);
       const p = (k, list) => pick(list.filter(ok(k)));
-      const tat = list => p('tatBD', list);
-      Object.assign(lk, { skin: Math.floor(Math.random() * A.SKIN.length), hair: p('hair', A.HAIRS), hc: p('hc', [0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8]), beard: pick(A.BEARDS),
-        band: p('band', ['nenhuma', 'nenhuma', 'faixa', 'tiara']), bandC: p('bandC', BASIC), tatBD: tat(['nenhuma', 'nenhuma', 'pequena', 'fechado']), tatBE: tat(['nenhuma', 'nenhuma', 'pequena', 'fechado']),
-        tatPD: tat(['nenhuma', 'nenhuma', 'nenhuma', 'pequena', 'fechado']), tatPE: tat(['nenhuma', 'nenhuma', 'nenhuma', 'pequena', 'fechado']),
+      Object.assign(lk, { skin: Math.floor(Math.random() * A.SKIN.length), hair: p('hair', A.HAIRS), hc: p('hc', [0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8]), beard: p('beard', A.BEARDS),
+        band: p('band', ['nenhuma', 'nenhuma', 'faixa', 'tiara']), bandC: p('bandC', BASIC), tatBD: p('tatBD', ['nenhuma', 'nenhuma', 'pequena', 'fechado']), tatBE: p('tatBE', ['nenhuma', 'nenhuma', 'pequena', 'fechado']),
+        tatPD: p('tatPD', ['nenhuma', 'nenhuma', 'nenhuma', 'pequena', 'fechado']), tatPE: p('tatPE', ['nenhuma', 'nenhuma', 'nenhuma', 'pequena', 'fechado']),
         boot: p('boot', BASIC.concat(['ouro', 'holo', 'camuflada', 'raio', 'chamas'])), sole: p('sole', BASIC), sock: p('sock', ['alto', 'arriado']), sleeve: p('sleeve', ['curta', 'curta', 'comprida']),
         wrist: p('wrist', ['nenhuma', 'uma', 'duas']), wristC: p('wristC', BASIC),
         extra: Object.keys(EXTRA_NAME).filter(id => !lockOf('extra', id) && Math.random() < 0.3) });

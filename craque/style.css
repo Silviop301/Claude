@@ -1645,6 +1645,8 @@ html, body, button, a, input, .choice { touch-action: manipulation; }
   background: radial-gradient(circle at 50% 40%, #1E6B45, #0B2E20 75%); }
 .rk-lendario .pk-in { background: radial-gradient(circle at 50% 40%, #3A2A7A, #120A2A 75%); }
 .pk-tile .pk-in img { width: 86%; height: 86%; object-fit: contain; }
+.pk-tile .pk-in { position: absolute; inset: 4px; width: auto; height: auto; }
+.pk-tile.locked .pk-in { inset: 2px; }
 .pk-tile.locked { background: rgba(255,255,255,.03); box-shadow: none; border: 2px dashed var(--rk); padding: 2px; }
 .pk-tile.locked .pk-in img { filter: brightness(0) invert(1); opacity: .16; }
 .pk-new { position: absolute; top: -14px; right: -18px; transform: rotate(10deg); background: var(--red); color: #fff; border-radius: 8px; padding: 6px 14px; font: 800 22px/1 var(--display);

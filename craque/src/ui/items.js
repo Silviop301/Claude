@@ -10,8 +10,14 @@
   const RAR_NAME = { livre: 'Livre', comum: 'Comum', raro: 'Raro', epico: 'Épico', lendario: 'Lendário' };
   const CHANCE = { comum: 62, raro: 26, epico: 9, lendario: 3 }; // por item
   const PITY = 10; // lendário garantido em até 10 pacotes
-  const DUP = { comum: 1, raro: 3, epico: 8, lendario: 20 }; // repetido vira fichas
-  const COST = { comum: 5, raro: 15, epico: 40, lendario: 100 }; // trocar fichas por um item
+  // Economia (tools/craque_itens_sim.js simula quantas carreiras levam para liberar tudo; window.CLIMBIX_ITEMS_ECON troca valores no teste)
+  const E = Object.assign({
+    dup: { comum: 1, raro: 2, epico: 5, lendario: 12 }, // repetido vira fichas
+    cost: { comum: 10, raro: 30, epico: 80, lendario: 200 }, // trocar fichas por um item
+    fresh: 0, // chance extra de o item do pacote vir entre os que a pessoa ainda não tem (0 = sorteio puro)
+    base: 1, gradeA: 0, gradeS: 1, bigMax: 1, achMax: 1, daily: 1, // pacotes no fim da carreira
+  }, window.CLIMBIX_ITEMS_ECON || {});
+  const DUP = E.dup, COST = E.cost;
 
   // Catálogo do visual. look: o que o item muda no boneco (prévia e "vestir")
   // cat: cabelo | equip | tatuagem | cores
@@ -33,7 +39,11 @@
     ['manga', 'Manga comprida', 'raro', 'equip', { sleeve: 'comprida' }, 'Camisa de manga longa.'],
     ['cordao', 'Cordão', 'raro', 'equip', { extra: ['cordao'] }, 'Corrente dourada com medalha.'],
     ['brinco', 'Brinco', 'raro', 'equip', { extra: ['brinco'] }, 'Ponto dourado nas duas orelhas.'],
-    ['tat-pequena', 'Tatuagem pequena', 'raro', 'tatuagem', { tatBD: 'pequena' }, 'Em qualquer braço ou perna.'],
+    ['barba-rala', 'Barba rala', 'comum', 'cabelo', { beard: 'rala' }, 'Barba curtinha, só a sombra.'],
+    ['barba-bigode', 'Bigode', 'comum', 'cabelo', { beard: 'bigode' }, 'Na cor do cabelo.'],
+    ['cor-vermelho', 'Cor vermelha', 'comum', 'cores', { boot: 'vermelho' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
+    ['barba-cavanhaque', 'Cavanhaque', 'raro', 'cabelo', { beard: 'cavanhaque' }, 'Bigode e queixo.'],
+    ['barba-cheia', 'Barba cheia', 'raro', 'cabelo', { beard: 'cheia' }, 'O rosto todo.'],
     ['cor-neon', 'Cor verde neon', 'epico', 'cores', { boot: 'neon' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
     ['cor-rosa', 'Cor rosa', 'epico', 'cores', { boot: 'rosa' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
     ['platinado', 'Platinado', 'epico', 'cabelo', { hc: 5 }, 'Cor nova de cabelo. A sobrancelha continua escura.'],
@@ -42,13 +52,16 @@
     ['raio', 'Chuteira de raio', 'epico', 'equip', { boot: 'raio', sole: 'amarelo' }, 'Raios amarelos sobre preto.'],
     ['tigre', 'Luva tigrada', 'epico', 'equip', { glove: 'tigre' }, 'Só para goleiro.', true],
     ['capitao', 'Faixa de capitão', 'epico', 'equip', { extra: ['capitao'] }, 'Braço esquerdo, por cima da manga.'],
-    ['tat-fechada', 'Tatuagem fechada', 'epico', 'tatuagem', { tatBD: 'fechado' }, 'O braço ou a perna inteira.'],
     ['cor-ouro', 'Ouro', 'lendario', 'cores', { boot: 'ouro', sole: 'ouro' }, 'Chuteira e sola de ouro.'],
     ['cor-holo', 'Holográfica', 'lendario', 'cores', { boot: 'holo', sole: 'holo' }, 'Chuteira e sola que mudam de cor.'],
     ['chamas', 'Chuteira em chamas', 'lendario', 'equip', { boot: 'chamas', sole: 'preto' }, 'Chamas laranja sobre preto.'],
     ['num-ouro', 'Número dourado', 'lendario', 'numeros', { numFx: 'ouro' }, 'Vale para qualquer número.'],
     ['num-holo', 'Número holográfico', 'lendario', 'numeros', { numFx: 'holo' }, 'Vale para qualquer número.'],
   ].map(([id, name, rk, cat, look, desc, gk]) => ({ id, name, rk, cat, look, desc, gk: !!gk }));
+  // Tatuagens: cada membro e cada tamanho é um item (pequena = raro, fechada = épico)
+  const LIMBS = [['BD', 'braço direito'], ['BE', 'braço esquerdo'], ['PD', 'perna direita'], ['PE', 'perna esquerda']];
+  [['p', 'pequena', 'Tatuagem pequena', 'raro'], ['f', 'fechado', 'Tatuagem fechada', 'epico']].forEach(([k, v, name, rk]) => LIMBS.forEach(([m, l]) =>
+    CAT.push({ id: 'tat-' + k + '-' + m, name: name + ' · ' + l, rk, cat: 'tatuagem', look: { ['tat' + m]: v }, desc: v === 'pequena' ? 'Estrela e detalhes, ' + l + '.' : 'Espinhos e rosas, ' + l + ' inteiro.', limb: m })));
   const BY_ID = {};
   CAT.forEach(it => { BY_ID[it.id] = it; });
   // Números da camisa: 77, 88 e 99 são épicos; 1 a 50 comuns; 51 a 98 raros
@@ -58,7 +71,7 @@
   const itemOf = id => BY_ID[id];
 
   // Que item cada valor do visual pede (null = livre)
-  const FREE_COLORS = ['preto', 'branco', 'vermelho'];
+  const FREE_COLORS = ['preto', 'branco'];
   const colorItem = v => (FREE_COLORS.includes(v) || v === 'lima' ? null : BY_ID['cor-' + v] ? 'cor-' + v : null);
   const PATTERN = { camuflada: 'camuflada', raio: 'raio', chamas: 'chamas', tigre: 'tigre' };
   function need(key, v) {
@@ -70,7 +83,8 @@
     if (key === 'sock') return v === 'arriado' ? 'arriado' : null;
     if (key === 'sleeve') return v === 'comprida' ? 'manga' : null;
     if (key === 'wrist') return v === 'nenhuma' ? null : 'munhequeira';
-    if (/^tat/.test(key)) return v === 'pequena' ? 'tat-pequena' : v === 'fechado' ? 'tat-fechada' : null;
+    if (/^tat(BD|BE|PD|PE)$/.test(key)) return v === 'pequena' ? 'tat-p-' + key.slice(3) : v === 'fechado' ? 'tat-f-' + key.slice(3) : null;
+    if (key === 'beard') return v === 'nenhuma' ? null : BY_ID['barba-' + v] ? 'barba-' + v : null;
     if (key === 'numFx') return v ? 'num-' + v : null;
     if (key === 'extra') return BY_ID[v] ? v : null;
     if (key === 'num') return 'n' + v;
@@ -81,10 +95,12 @@
   // { own: {id: 1}, fichas, packs: [{ why: [...] }], pity, news: {id: 1}, pen: 'AAAA-MM-DD', at }
   let inv = null;
   const rnd = () => Math.random();
+  const VER = 2;
   function get() {
     if (inv) return inv;
     inv = load(KEY);
     if (!inv || !inv.own) inv = seed();
+    if ((inv.v || 1) < VER || inv.own['tat-pequena'] || inv.own['tat-fechada']) migrate(inv); // (o outro aparelho pode trazer itens antigos)
     // Chuteira de ouro e holográfica continuam saindo também por conquista (como antes dos pacotinhos)
     const col = load('climbix-colecao-v1') || [], ach = load('craque-ach-v1') || {};
     const sp = new Set(col.flatMap(e => (e.specials || []).map(d => d && d.special)));
@@ -93,9 +109,8 @@
     return inv;
   }
   function put() { inv.at = Date.now(); store(KEY, inv); }
-  // Primeira vez: 10 números comuns sorteados + tudo o que já foi usado nas carreiras salvas (ninguém perde nada)
-  function seed() {
-    const o = { own: {}, fichas: 0, packs: [], pity: 0, news: {}, at: Date.now() };
+  // Tudo o que já foi usado nas carreiras salvas (em andamento e na coleção) fica liberado: ninguém perde nada
+  function grantUsed(o) {
     const used = [];
     const sv = load(U.SAVE);
     if (sv && sv.c) used.push({ look: sv.c.look, number: sv.c.number });
@@ -104,11 +119,27 @@
       if (u.number) o.own['n' + u.number] = 1;
       Object.entries(u.look || {}).forEach(([k, v]) => [].concat(v).forEach(x => { const id = need(k, x); if (id) o.own[id] = 1; }));
     });
+  }
+  // Primeira vez: 10 números comuns sorteados + o que já foi usado
+  function seed() {
+    const o = { v: VER, own: {}, fichas: 0, packs: [], pity: 0, news: {}, at: Date.now() };
+    grantUsed(o);
     const pool = [];
     for (let n = 1; n <= 50; n++) if (!o.own['n' + n]) pool.push(n);
     for (let i = 0; i < 10 && pool.length; i++) o.own['n' + pool.splice(Math.floor(rnd() * pool.length), 1)[0]] = 1;
     inv = o; store(KEY, o);
     return o;
+  }
+  // v2: tatuagem por membro (quem tinha a tatuagem de antes fica com ela nos 4 membros); barbas e vermelho travados
+  function migrate(o) {
+    [['tat-pequena', 'p'], ['tat-fechada', 'f']].forEach(([old, k]) => {
+      if (!o.own[old]) return;
+      delete o.own[old]; delete o.news[old];
+      ['BD', 'BE', 'PD', 'PE'].forEach(m => { o.own['tat-' + k + '-' + m] = 1; });
+    });
+    grantUsed(o);
+    o.v = VER;
+    inv = o; store(KEY, o);
   }
   const has = id => !id || !!get().own[id];
   const ownedNums = () => { const out = []; for (let n = 1; n <= 99; n++) if (has('n' + n)) out.push(n); return out; };
@@ -148,12 +179,12 @@
     if (c.packsGiven) return [];
     c.packsGiven = true;
     const big = Object.values(c.trophies || {}).reduce((s, t) => s + (['ucl', 'lib', 'wc', 'ballon'].includes(t.type) ? t.n : 0), 0);
-    const why = [{ t: 'Fim de carreira', n: 1 }];
-    if (f.grade === 'S') why.push({ t: 'Nota S', n: 2 }); else if (f.grade === 'A') why.push({ t: 'Nota A', n: 1 });
-    if (big) why.push({ t: big > 1 ? 'Títulos grandes' : 'Título grande', n: Math.min(2, big) });
+    const why = [{ t: 'Fim de carreira', n: E.base }];
+    if (f.grade === 'S' && E.gradeS) why.push({ t: 'Nota S', n: E.gradeS }); else if (f.grade === 'A' && E.gradeA) why.push({ t: 'Nota A', n: E.gradeA });
+    if (big && E.bigMax) why.push({ t: big > 1 && E.bigMax > 1 ? 'Títulos grandes' : 'Título grande', n: Math.min(E.bigMax, big) });
     const fresh = achRes && achRes.fresh ? achRes.fresh.length : 0;
-    if (fresh) why.push({ t: fresh > 1 ? 'Conquistas novas' : 'Conquista nova', n: Math.min(2, fresh) });
-    if (c.daily) why.push({ t: 'Carreira do dia', n: 1 });
+    if (fresh && E.achMax) why.push({ t: fresh > 1 && E.achMax > 1 ? 'Conquistas novas' : 'Conquista nova', n: Math.min(E.achMax, fresh) });
+    if (c.daily && E.daily) why.push({ t: 'Carreira do dia', n: E.daily });
     return why;
   }
 
@@ -167,7 +198,7 @@
   // Escolhe um item da raridade: 60% das vezes entre os que a pessoa ainda não tem
   function pickItem(pool) {
     const fresh = pool.filter(it => !get().own[it.id]);
-    return fresh.length && rnd() < 0.6 ? pickOf(fresh) : pickOf(pool);
+    return fresh.length && rnd() < E.fresh ? pickOf(fresh) : pickOf(pool);
   }
   const visualPool = rk => CAT.filter(it => it.rk === rk && it.cat !== 'numeros');
   function numberPool(rk) {
