@@ -5,10 +5,11 @@
   const { D, S, sfx, esc, tierCls, TIER_NAME } = U;
   const ORDER = ['bronze', 'prata', 'ouro', 'icone'];
   const tierUp = (o0, o1) => ORDER.indexOf(tierCls(o1)) > ORDER.indexOf(tierCls(o0));
-  // Revelação só na primeira vez que chega a Ouro e a Ícone (Prata e repetições não contam)
+  // Revelação só na primeira vez que chega a Prata, Ouro e Ícone na carreira.
+  // Voltar a uma faixa que já teve (ex.: caiu de Ouro para Prata e subiu de novo) não mostra nada.
   function tierReveal(c, o0, o1) {
     const t = ORDER.indexOf(tierCls(o1));
-    if (!tierUp(o0, o1) || t < 2 || t <= (c.tierShown || 1)) return false;
+    if (!tierUp(o0, o1) || t < 1 || t <= (c.tierShown || 0)) return false;
     c.tierShown = t;
     return true;
   }
