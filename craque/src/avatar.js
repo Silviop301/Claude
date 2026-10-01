@@ -81,7 +81,6 @@
     triste: [[[44, 57], [36, 78], [50, 37]], [[76, 57], [82.4, 81], [85.4, 104]]],
     adeus: [[[44, 57], [36, 78], [50, 37]], [[76, 57], [90, 38], [96, 16]]],
     assina: [[[44, 57], [33, 74], [33, 84]], [[76, 57], [87, 74], [87, 84]]],
-    cheque: [[[44, 57], [30, 70], [10, 80]], [[76, 57], [90, 70], [110, 80]]],
   };
   // opts: { crop: true } enquadra só o jogador; { flat: true } sem estádio; { num: '9' } número na camisa
   let uid = 0;
@@ -168,7 +167,7 @@
       return shape('M' + X(-5) + ' 183.6V192H' + X(10) + 'Q' + X(12) + ' 192 ' + X(12) + ' 190Q' + X(12) + ' 186.4 ' + X(6.4) + ' 185.2L' + X(5) + ' 183.6Z', g(lk.boot)) +
         '<rect x="' + Math.min(+X(-5.6), +X(12.4)) + '" y="191.4" width="18" height="3.4" rx="1.5" fill="' + g(lk.sole) + '" stroke="' + OL + '" stroke-width="1.6"/>';
     };
-    const happy = pose === 'celebra' || pose === 'taca' || pose === 'cheque', sad = pose === 'triste' || pose === 'adeus';
+    const happy = pose === 'celebra' || pose === 'taca', sad = pose === 'triste' || pose === 'adeus';
     const brow = lk.hair === 'careca' || lk.hair === 'raspado' || lk.hc === 4 ? '#3A2A1E' : hcol;
     const face = '<path d="M52.6 27.2Q55.2 25.8 57.6 27M62.4 27Q64.8 25.8 67.4 27.2" stroke="' + brow + '" stroke-width="1.8" stroke-linecap="round" fill="none"/>' +
       '<ellipse cx="55.4" cy="31" rx="1.35" ry="1.75" fill="' + OL + '"/><ellipse cx="64.6" cy="31" rx="1.35" ry="1.75" fill="' + OL + '"/>' +
@@ -183,20 +182,6 @@
     const held = pose !== 'assina' ? '' : shape('M27 72L42 68L50 73H70L78 68L93 72L95 86H84V124H36V86H25Z', k1) +
       '<path d="M50 73L60 81L70 73" stroke="' + k2 + '" stroke-width="2.6" fill="none" stroke-linejoin="round"/>' +
       '<text x="60" y="112" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="24" fill="' + k2 + '" stroke="' + OL + '" stroke-width=".6">' + (c.number || 10) + '</text>';
-    // Cheque gigante segurado nas pontas (pose "cheque"): opts.cheque = { to, val, ext }
-    const ck = opts.cheque || {};
-    const cheque = pose !== 'cheque' ? '' : shape('M2 72H118V112H2Z', '#FBF8EE') +
-      '<rect x="2" y="72" width="116" height="7" fill="#2E9E6A"/>' +
-      '<text x="17" y="77.6" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="5.4" fill="#fff" letter-spacing=".3">' + (ck.bank || 'BANCO CLIMBIX') + '</text>' +
-      '<text x="103" y="77.6" text-anchor="end" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="5" fill="#fff">' + (ck.date || '') + '</text>' +
-      '<text x="6" y="87" font-family="Barlow, Arial, sans-serif" font-size="4.6" fill="#6B6553">PAGUE A</text>' +
-      '<text x="26" y="87" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="6.2" fill="#1B1A17">' + (ck.to || '') + '</text>' +
-      '<path d="M25 88.6H114" stroke="#BDB6A0" stroke-width=".5"/>' +
-      '<rect x="64" y="91" width="50" height="11" rx="1.6" fill="#EAF6EF" stroke="#2E9E6A" stroke-width=".8"/>' +
-      '<text x="89" y="99.4" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="8" fill="#1B6B45">' + (ck.val || '') + '</text>' +
-      '<text x="6" y="98" font-family="Barlow, Arial, sans-serif" font-style="italic" font-size="4.2" fill="#3A372F">' + (ck.ext || '') + '</text>' +
-      '<path d="M62 108.4Q68 103 72 107T82 106T92 107" stroke="#1F3D8C" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M60 109.4H112" stroke="#BDB6A0" stroke-width=".5"/>' +
-      '<circle cx="10" cy="80" r="4.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/><circle cx="110" cy="80" r="4.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/>';
     const band = lk.band === 'faixa' ? limb([[47.2, 25], [53, 20.6], [60, 19.4], [67, 20.6], [72.8, 25]], g(lk.bandC), 2.8)
       : lk.band === 'tiara' ? '<path d="M48.6 21.4Q60 12.6 71.4 21.4" stroke="' + OL + '" stroke-width="3.8" fill="none" stroke-linecap="round"/><path d="M48.6 21.4Q60 12.6 71.4 21.4" stroke="' + g(lk.bandC) + '" stroke-width="1.6" fill="none" stroke-linecap="round"/>' : '';
     const [L, R] = ARMS[pose] || ARMS.normal;
@@ -217,7 +202,7 @@
       '<circle cx="46.8" cy="31.6" r="3.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/><circle cx="73.2" cy="31.6" r="3.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/>' +
       '<ellipse cx="60" cy="30.4" rx="13.2" ry="15.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/>' +
       '<path d="M66.4 16.6Q73.6 21 73.2 31.4Q72.8 40 66 44.6Q71.2 36 70.6 28Q70 21 66.4 16.6Z" fill="' + SHADE + '"/>' +
-      beardOf(lk.beard, hcol) + face + hFront + band + (handUp ? arm(L, 'direito') : '') + held + cheque + cup + '</svg>';
+      beardOf(lk.beard, hcol) + face + hFront + band + (handUp ? arm(L, 'direito') : '') + held + cup + '</svg>';
   }
   // Lesão: deitado na maca, com o médico ao lado
   function stretcher(kit, c, opts) {
