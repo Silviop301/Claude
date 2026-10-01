@@ -8,7 +8,7 @@
   const TIERS = [['bronze', 'Bronze'], ['prata', 'Prata'], ['ouro', 'Ouro'], ['icone', 'Ícone']];
   const GRADES = ['S', 'A', 'B', 'C', 'D'];
   const all = () => load(KEY) || [];
-  const tierOf = d => TIER_OF[(window.CRAQUE_CARD_METAL(d) || {}).metal] || 'bronze';
+  const tierOf = d => TIER_OF[(window.CRAQUE_CARD_METAL(Object.assign({}, d, { finish: null })) || {}).metal] || 'bronze';
 
   // Fim de carreira: guarda a carta final e as especiais
   function collect(c, f, card) {

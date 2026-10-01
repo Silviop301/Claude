@@ -5,7 +5,7 @@
   const { D, esc, $, render } = U;
 
   // Dados da carta → texto curto para o link (JSON em base64 que funciona em URL)
-  const KEYS = ['name', 'number', 'pos', 'peak', 'attrs', 'flag', 'crest', 'grade', 'verdict', 'goals', 'assists', 'titles', 'ballon', 'wc', 'cs', 'penSaved', 'traits', 'special', 'kit', 'footer', 'look', 'shirt', 'curve', 'tSeasons', 'startAge', 'sign'];
+  const KEYS = ['name', 'number', 'pos', 'peak', 'attrs', 'flag', 'crest', 'grade', 'verdict', 'goals', 'assists', 'titles', 'ballon', 'wc', 'cs', 'penSaved', 'traits', 'special', 'kit', 'footer', 'look', 'shirt', 'curve', 'tSeasons', 'startAge', 'sign', 'finish'];
   function encode(d) {
     const o = {};
     KEYS.forEach(k => { if (d[k] !== undefined && d[k] !== null && d[k] !== '') o[k] = d[k]; });

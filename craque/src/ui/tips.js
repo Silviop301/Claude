@@ -13,7 +13,7 @@
     lance: ['Jogo decisivo', 'Agora é com você: o lance decide o jogo e às vezes o título. Se preferir, nas Configurações dá para deixar a carta decidir sozinha.'],
     resumo: ['Fim da temporada', 'A nota da temporada puxa a evolução da carta. Em Detalhes você vê por que a nota geral mudou. Postar nas redes rende Fama e Torcida uma vez por temporada.'],
     janela: ['Janela de transferências', 'Compare o papel no elenco (titular joga mais) e o salário. Ficar também é uma opção, e trocar de clube muda a torcida que te apoia.'],
-    fim: ['Sua carta final', 'Escolha a assinatura e o estilo da carta e compartilhe com os amigos. Os pacotinhos liberam números, visuais e assinaturas novas.'],
+    fim: ['Sua carta final', 'Escolha a assinatura, o acabamento e o estilo da carta e compartilhe com os amigos. Os pacotinhos liberam números, visuais, assinaturas e acabamentos novos.'],
   };
   // Mostra a dica no topo da tela atual (chamar logo depois do render)
   function tip(key) {

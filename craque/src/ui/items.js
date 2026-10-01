@@ -100,6 +100,17 @@
     ['ass-grafite', 'Assinatura Grafite', 'epico', 'assinatura', { sign: 'grafite' }, 'Autógrafo na carta do fim da carreira.'],
     ['ass-tinteiro', 'Assinatura Tinteiro', 'epico', 'assinatura', { sign: 'tinteiro' }, 'Autógrafo na carta do fim da carreira.'],
     ['ass-dourada', 'Assinatura em tinta dourada', 'lendario', 'assinatura', { sign: 'dourada' }, 'O autógrafo da carta em ouro.'],
+    // Acabamentos da carta final (textura no lugar do metal; escolhe-se no fim da carreira)
+    ['ac-carbono', 'Acabamento Carbono', 'raro', 'acabamento', { finish: 'carbono' }, 'Fibra de carbono trançada na carta final.'],
+    ['ac-marmore', 'Acabamento Mármore', 'raro', 'acabamento', { finish: 'marmore' }, 'Mármore branco com veios dourados.'],
+    ['ac-madeira', 'Acabamento Madeira', 'raro', 'acabamento', { finish: 'madeira' }, 'Madeira nobre envernizada.'],
+    ['ac-neon', 'Acabamento Neon', 'epico', 'acabamento', { finish: 'neon' }, 'Linhas de luz ciano e rosa no escuro.'],
+    ['ac-aurora', 'Acabamento Aurora', 'epico', 'acabamento', { finish: 'aurora' }, 'Céu noturno com aurora verde e roxa.'],
+    ['ac-camuflado', 'Acabamento Camuflado', 'epico', 'acabamento', { finish: 'camuflado' }, 'Camuflagem em tons de grafite.'],
+    ['ac-vitral', 'Acabamento Vitral', 'epico', 'acabamento', { finish: 'vitral' }, 'Vidro colorido com chumbo escuro.'],
+    ['ac-holografico', 'Acabamento Holográfico', 'lendario', 'acabamento', { finish: 'holografico' }, 'Brilho arco-íris de figurinha rara.'],
+    ['ac-ourorose', 'Acabamento Ouro rosé', 'lendario', 'acabamento', { finish: 'ourorose' }, 'Ouro rosé escovado.'],
+    ['ac-diamante', 'Acabamento Diamante', 'lendario', 'acabamento', { finish: 'diamante' }, 'Facetas de diamante, branco e azul-gelo.'],
   ].map(([id, name, rk, cat, look, desc, gk]) => ({ id, name, rk, cat, look, desc, gk: !!gk }));
   // Tatuagens: cada membro e cada tamanho é um item (pequena = raro, fechada = épico)
   const LIMBS = [['BD', 'braço direito'], ['BE', 'braço esquerdo'], ['PD', 'perna direita'], ['PE', 'perna esquerda']];

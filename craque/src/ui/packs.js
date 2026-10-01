@@ -32,6 +32,7 @@
   // Arte do item: o pedaço do boneco onde ele fica; assinatura, o nome escrito na fonte (fonte de página não entra em <img> SVG)
   function itemArt(it) {
     const F = it.cat === 'assinatura' && (window.CRAQUE_SIGN || {})[it.look.sign];
+    if (it.cat === 'acabamento') return '<img class="fin-art" src="assets/cartas/ac-' + it.look.finish + '.jpg" alt="">';
     if (F) return '<span class="sig-art" style="font-family:' + esc(F.family) + ', cursive' + (F.gold ? ';color:#F2C230' : '') + '">' + esc((G.c && G.c.name) || 'Climbix') + '</span>';
     return '<img src="' + itemImg(it) + '" alt="">';
   }
@@ -155,7 +156,7 @@
       $('pk-stage').innerHTML = '<div class="pk-card ' + rarCls(it.rk) + '" id="pk-card"><div class="pk-in">' + itemArt(it) + '<i class="pk-sheen"></i></div>' +
         (g.dup ? '' : '<span class="pk-new">NOVO</span>') + '</div>' +
         '<div class="pk-info">' + (lend ? '<b class="pk-lend">LENDÁRIO</b>' : '') + '<span class="pk-rep" hidden>REPETIDO</span>' +
-        '<b class="pk-name">' + esc(it.name) + '</b>' + selo(it.rk) + '<span class="pk-desc" id="pk-desc">' + (g.dup ? 'Você já tinha este.' : it.cat === 'num' ? 'Já está liberado para a camisa.' : it.cat === 'assinatura' ? 'Para assinar a carta no fim da carreira.' : 'Já está liberado no seu visual.') + '</span></div>' +
+        '<b class="pk-name">' + esc(it.name) + '</b>' + selo(it.rk) + '<span class="pk-desc" id="pk-desc">' + (g.dup ? 'Você já tinha este.' : it.cat === 'num' ? 'Já está liberado para a camisa.' : it.cat === 'assinatura' ? 'Para assinar a carta no fim da carreira.' : it.cat === 'acabamento' ? 'Para a carta final, no fim da carreira.' : 'Já está liberado no seu visual.') + '</span></div>' +
         '<div class="pk-foot"><div class="pk-dots">' + res.got.map((_, i) => '<i' + (i <= idx ? ' class="on"' : '') + '></i>').join('') + '</div>' +
         '<span>' + (idx < res.got.length - 1 ? 'Toque para o próximo' : 'Toque para ver o resumo') + '</span></div>';
       const card = $('pk-card');
@@ -228,7 +229,7 @@
   }
 
   // ---------- Meus itens ----------
-  const TABS = [['num', 'Números'], ['cabelo', 'Cabelo e barba'], ['equip', 'Equipamento'], ['tatuagem', 'Tatuagem'], ['cores', 'Cores'], ['assinatura', 'Assinatura']];
+  const TABS = [['num', 'Números'], ['cabelo', 'Cabelo e barba'], ['equip', 'Equipamento'], ['tatuagem', 'Tatuagem'], ['cores', 'Cores'], ['assinatura', 'Assinatura'], ['acabamento', 'Acabamento']];
   const ORD = rk => I.RAR.indexOf(rk);
   function tile(it) {
     const on = I.has(it.id), novo = on && I.get().news[it.id];

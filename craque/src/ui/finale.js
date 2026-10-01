@@ -104,10 +104,12 @@
     U.mount3d($('fut-host'), cardData).then(v => { viewer = v; });
     const redraw = () => { shown = spData(curSp); window.CRAQUE_CARD(cv, shown); if (viewer) viewer.update(shown); };
 
-    // Editar carta, logo abaixo dela: assinatura, estilo (as cartas especiais conquistadas) e escudo, uma aba por vez
+    // Editar carta, logo abaixo dela: assinatura, acabamento (itens), estilo (as cartas especiais conquistadas) e escudo, uma aba por vez
     const I = U.ITEMS, SG = window.CRAQUE_SIGN || {};
     const signLock = k => { const it = I.itemOf('ass-' + k); return it && !I.has(it.id) ? it : null; };
-    const TABS = [['sign', 'Assinatura']].concat((retired.cards || []).length ? [['style', 'Estilo']] : [], clubsPlayed.length > 1 ? [['crest', 'Escudo']] : []);
+    const FN = window.CRAQUE_FINISH || {};
+    const finLock = k => { const it = I.itemOf('ac-' + k); return it && !I.has(it.id) ? it : null; };
+    const TABS = [['sign', 'Assinatura'], ['finish', 'Acabamento']].concat((retired.cards || []).length ? [['style', 'Estilo']] : [], clubsPlayed.length > 1 ? [['crest', 'Escudo']] : []);
     let tab = 'sign', msg = '';
     // Nome comprido: letra menor para caber no botão (as fontes de marcador são largas)
     const sigSize = shareName.length > 14 ? 15 : shareName.length > 10 ? 18 : shareName.length > 7 ? 21 : 24;
@@ -120,6 +122,13 @@
         return '<button data-sign="' + k + '" class="sig-b' + (cardData.sign === k ? ' on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + '">' +
           '<span style="font-family:' + esc(F.family) + ', cursive;font-size:' + sigSize + 'px">' + esc(shareName) + '</span><small>' + (it ? U.emo('🔒', 'xs') + ' ' : '') + F.label + '</small></button>';
       }).join('') + '</div>' + (msg ? '<p class="muted small sig-msg">' + msg + '</p>' : '');
+      if (tab === 'finish') body = (curSp === 'final' ? '' : '<p class="muted small">O acabamento vale para a carta final.</p>') +
+        '<div class="fin-grid"><button data-fin="" class="fin-b' + (!cardData.finish ? ' on' : '') + '"><i class="fin-sw std"></i><small>Padrão</small></button>' +
+        Object.entries(FN).map(([k, F]) => {
+          const it = finLock(k);
+          return '<button data-fin="' + k + '" class="fin-b' + (cardData.finish === k ? ' on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + '">' +
+            '<i class="fin-sw" style="background-image:url(assets/cartas/ac-' + k + '.jpg)"></i>' + (it ? '<span class="fin-lk">' + U.emo('🔒', 'xs') + '</span>' : '') + '<small>' + esc(F[0]) + '</small></button>';
+        }).join('') + '</div>' + (msg ? '<p class="muted small sig-msg">' + msg + '</p>' : '');
       if (tab === 'style') body = '<div class="sp-cards"><canvas data-sp="final" aria-label="Carta final"' + (curSp === 'final' ? ' class="on"' : '') + '></canvas>' +
         retired.cards.map((k, i) => '<canvas data-sp="' + i + '" aria-label="' + esc(U.SPECIAL_NAME[k.type]) + '"' + (curSp === String(i) ? ' class="on"' : '') + '></canvas>').join('') + '</div>';
       if (tab === 'crest') body = (curSp === 'final' ? '' : '<p class="muted small">O escudo vale para a carta final.</p>') + '<div class="crest-pick">' + clubsPlayed.map(id => '<button data-club="' + id + '"' + (cardData.crest === 'badges/' + id + '.png' ? ' class="on"' : '') + ' aria-label="' + esc(club(id).name) + '">' + crest(id) + '<span>' + esc(club(id).name) + '</span></button>').join('') + '</div>';
@@ -133,6 +142,13 @@
         const k = b.dataset.sign, it = signLock(k);
         if (it) { msg = esc('Assinatura ' + SG[k].label + ' · ' + I.RAR_NAME[it.rk] + ': sai nos pacotinhos ou na troca de fichas.'); return drawEd(); }
         msg = ''; cardData.sign = k; U.collectPatch(colAt, { sign: k }); redraw(); drawEd();
+      });
+      box.querySelectorAll('[data-fin]').forEach(b => b.onclick = () => {
+        const k = b.dataset.fin, it = k && finLock(k);
+        if (it) { msg = esc(it.name + ' · ' + I.RAR_NAME[it.rk] + ': sai nos pacotinhos ou na troca de fichas.'); return drawEd(); }
+        msg = ''; cardData.finish = k || undefined; U.collectPatch(colAt, { finish: k || undefined });
+        if (curSp !== 'final') curSp = 'final';
+        redraw(); drawEd();
       });
       box.querySelectorAll('[data-club]').forEach(b => b.onclick = () => {
         cardData.crest = 'badges/' + b.dataset.club + '.png';

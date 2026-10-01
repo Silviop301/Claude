@@ -80,6 +80,8 @@ function stepInPage(opts) {
     if ($('b-sala-car') && !$('b-sala-car').dataset.e2e) { $('b-sala-car').dataset.e2e = '1'; return label('finale:sala ' + click($('b-sala-car'))); }
     // Edição da carta: troca a assinatura (uma liberada) e abre a aba de estilo
     const sg = qa('#screen [data-sign]:not(.lock):not(.on)'); if (sg.length && !$('ed-box').dataset.e2e) { $('ed-box').dataset.e2e = '1'; return label('finale:sign ' + click(rnd(sg))); }
+    const ft = q('#screen [data-edtab="finish"]:not(.on)'); if (ft && !ft.dataset.e2e) { ft.dataset.e2e = '1'; return label('finale:finishtab ' + click(ft)); }
+    const fb = qa('#screen [data-fin]:not(.on)'); if (fb.length && !$('ed-box').dataset.e2f) { $('ed-box').dataset.e2f = '1'; return label('finale:finish ' + click(rnd(fb))); }
     const et = q('#screen [data-edtab="style"]:not(.on)'); if (et && Math.random() < 0.5) return label('finale:style ' + click(et));
     const sp = qa('#screen [data-sp]:not(.on)'); if (sp.length && Math.random() < 0.5) return label('finale:card ' + click(rnd(sp)));
     click($('b-again')); return { did: 'finale', screen: 'finale', done: true };

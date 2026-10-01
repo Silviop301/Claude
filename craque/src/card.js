@@ -150,6 +150,15 @@
     dourada: { label: 'Tinta dourada', family: "'Mrs Saint Delafield'", rot: -0.16, stroke: 2.4, swoosh: 4.5, gold: true },
   };
   root.CRAQUE_SIGN = SIGN;
+  // Acabamentos (itens dos pacotinhos): textura no lugar do metal da faixa, só na carta final.
+  // [nome, tinta, tinta clara?, sombra atrás do texto] — a textura fica em assets/cartas/ac-<id>.jpg (tools/craque_acabamentos.js)
+  const FINISH = {
+    carbono: ['Carbono', '#E8EEF5', true], marmore: ['Mármore', '#2A2418', false], madeira: ['Madeira', '#F3DFC0', true],
+    neon: ['Neon', '#FFFFFF', true], aurora: ['Aurora', '#E6FFF4', true], camuflado: ['Camuflado', '#E8ECF0', true, 0.12], vitral: ['Vitral', '#FFF6E0', true, 0.32],
+    holografico: ['Holográfico', '#1A1030', false], ourorose: ['Ouro rosé', '#3A1A12', false], diamante: ['Diamante', '#0E2236', false],
+  };
+  root.CRAQUE_FINISH = FINISH;
+  const finishOf = d => (!d.special && d.finish && FINISH[d.finish]) || null;
   async function fontReady(family) {
     try { if (typeof document !== 'undefined' && document.fonts && document.fonts.load) await document.fonts.load('80px ' + family, 'Aa'); } catch (e) { /* segue com a reserva */ }
   }
@@ -291,6 +300,9 @@
     const traitImgs = await Promise.all((d.traits || []).map(t => twLoad(t.icon)));
     let T = d.special ? specialTheme(d) : themeOf(d.peak, d.grade);
     // bare: só o conteúdo (fundo transparente), para ir por cima do metal da carta 3D
+    const fin = finishOf(d);
+    if (fin) T = Object.assign({}, T, { ink: fin[1], line: fin[2] ? 'rgba(255,255,255,.45)' : 'rgba(20,20,20,.35)', holo: false });
+    const finImg = fin && !d.bare ? await loadImg('assets/cartas/ac-' + d.finish + '.jpg') : null;
     if (d.bare) T = Object.assign({}, T, { ink: d.ink || T.ink, line: d.line || T.line, holo: false });
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
@@ -304,6 +316,11 @@
     ctx.fillStyle = g; ctx.fill();
     ctx.save();
     shield(ctx); ctx.clip();
+    // Acabamento: a textura cobre a carta (768x1152 → 600x900, centrada)
+    if (finImg) {
+      ctx.drawImage(finImg, 0, -20, W, W * 1.5);
+      if (fin[3]) { const sc = ctx.createRadialGradient(W / 2, H * 0.5, 40, W / 2, H * 0.5, W * 0.7); sc.addColorStop(0, 'rgba(0,0,0,' + fin[3] + ')'); sc.addColorStop(1, 'rgba(0,0,0,' + fin[3] * 0.4 + ')'); ctx.fillStyle = sc; ctx.fillRect(0, 0, W, H); }
+    }
     // Ícone: reflexo holográfico por cima do metal escuro
     if (T.holo && ctx.createConicGradient) {
       const hg = ctx.createConicGradient(0.6, W * 0.7, H * 0.3);
@@ -312,7 +329,7 @@
     }
     if (T.pattern) drawPattern(ctx, T);
     // Metal escovado: riscos finos quase horizontais (sempre iguais, sem sorteio)
-    for (let i = 0, y = 44; y < H; i++, y += 2.2) {
+    for (let i = 0, y = 44; !finImg && y < H; i++, y += 2.2) {
       const a = ((i * 37) % 11) / 11;
       ctx.strokeStyle = a > 0.5 ? 'rgba(255,255,255,' + (0.05 + a * 0.05) + ')' : 'rgba(0,0,0,' + (0.03 + a * 0.05) + ')';
       ctx.lineWidth = 1;
@@ -337,7 +354,7 @@
     // Sutil: só 1 px de luz/sombra. Usa sempre o fillText original do canvas — redesenhar a carta
     // (ex.: trocar o escudo) não pode acumular o efeito.
     const emboss = d.bare ? (d.inkLight ? ['rgba(0,0,0,.35)', 'rgba(0,0,0,0)'] : ['rgba(255,255,255,.3)', 'rgba(0,0,0,0)'])
-      : T.holo ? ['rgba(0,0,0,.45)', 'rgba(255,255,255,0)'] : ['rgba(255,255,255,.4)', 'rgba(0,0,0,.12)'];
+      : T.holo || (fin && fin[2]) ? ['rgba(0,0,0,.45)', 'rgba(255,255,255,0)'] : ['rgba(255,255,255,.4)', 'rgba(0,0,0,.12)'];
     const proto = (typeof CanvasRenderingContext2D !== 'undefined' && CanvasRenderingContext2D.prototype.fillText) || ctx.fillText;
     const fillText = proto.bind(ctx);
     let embossOn = true; // desligado nos emojis (bandeira e ícones), que borrariam
@@ -490,6 +507,8 @@
   root.CRAQUE_CARD_METAL = function (d) {
     const k = d.special ? { tots: 'azul', heroi: 'vermelha', copa: 'verde', bola: 'dourada', chuteira: 'fogo', garcom: 'turquesa', muralha: 'aco', xerife: 'marinho', joia: 'rosa', lenda: 'onix', triplice: 'esmeralda', mundial: 'celeste', perfeita: 'arcoiris' }[d.special]
       : { bronze: 'bronze', prata: 'prata', ouro: 'dourada', icone: 'icone' }[Object.keys(THEMES).find(n => THEMES[n] === themeOf(d.peak, d.grade))];
+    const fin = finishOf(d);
+    if (fin) return { metal: 'ac-' + d.finish, ink: fin[1], inkLight: fin[2], line: fin[2] ? 'rgba(255,255,255,.45)' : 'rgba(20,30,10,.35)' };
     const ink = { azul: ['#FFFFFF', true], vermelha: ['#FFF4E6', true], verde: ['#06220F', false], dourada: ['#231800', false],
       bronze: ['#2A1505', false], prata: ['#141C26', false], icone: ['#F4D675', true],
       fogo: ['#FFF1C2', true], turquesa: ['#FFFFFF', true], aco: ['#F2F6FA', true], marinho: ['#E6ECF7', true], rosa: ['#FFF0F7', true], onix: ['#F4D675', true],
