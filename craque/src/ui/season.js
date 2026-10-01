@@ -22,6 +22,25 @@
     return '<p class="pe-gain rv">' + U.emo('⭐', 'xs') + ' <b>' + (pe.n ? '+' + pe.n + (pe.n > 1 ? ' pontos' : ' ponto') + ' de evolução' : 'Nenhum ponto de evolução') + '</b> · ' + parts.join(' · ') + '</p>';
   }
 
+  // Resenha da temporada: quem comenta (D.MEDIA.shows) e uma frase conforme o ano do jogador
+  function resenha(res) {
+    const shows = (D.MEDIA || {}).shows || [];
+    if (!shows.length) return '';
+    const nick = G.c.name, cl = D.o(club(res.club).name), n = G.c.seasons.length;
+    const [who, where] = shows[(n + G.c.name.length) % shows.length];
+    const ballon = res.awards.some(a => a.id === 'ballon');
+    const lines = ballon ? ['Bola de Ouro pro ' + nick + '! Eu falei lá atrás que esse menino ia longe.', 'Melhor do mundo e pronto, não tem discussão. ' + nick + ' é outro nível!']
+      : res.titles.length ? ['Campeão! O ' + nick + ' jogou muita bola e decidiu quando precisou.', 'Esse título tem a cara do ' + nick + '. Respeita!']
+      : !res.games || res.games < 10 ? ['Não tá jogando? Coloca o ' + nick + ' pra jogar, professor!', 'Banco não é lugar pro ' + nick + '. Alguém explica isso pro técnico ' + D.do(club(res.club).name) + '.']
+      : res.injury >= 25 ? ['A lesão atrapalhou demais o ' + nick + '. Volta mais forte, garoto!', 'Ano perdido no departamento médico. Ano que vem o ' + nick + ' volta.']
+      : res.move && res.move.dir === 'down' ? ['Rebaixamento dói, mas o ' + nick + ' não caiu sozinho, não.', 'Caiu ' + cl + '. O ' + nick + ' merecia coisa melhor.']
+      : res.rating >= 7.6 ? ['Joga demais esse ' + nick + '! Tem que estar na seleção já.', 'O ' + nick + ' é diferenciado, gente. Diferenciado!', 'Faz tempo que eu não vejo um jogador assim. ' + nick + ' é craque!']
+      : res.rating >= 7.0 ? ['Temporada boa do ' + nick + ', mas eu quero mais. Ele pode mais.', 'O ' + nick + ' tá no caminho certo. Mais um ano assim e ninguém segura.']
+      : ['O ' + nick + ' tem que acordar, viu? Do jeito que tá não dá.', 'Cadê aquele ' + nick + ' que prometia? Ano fraco.'];
+    const q = lines[n % lines.length];
+    return '<div class="news resenha rv"><div class="np">' + U.emo('🎙️', 'xs') + ' ' + esc(who) + ' ' + esc(where) + '</div><p>“' + esc(q) + '”</p></div>';
+  }
+
   function season() {
     const res = S.playSeason(G.c);
     U.rankSave(G.c); // ranking: nota máxima, gols e títulos já contam durante a carreira
@@ -227,6 +246,7 @@
       (res.titles.length ? '<div class="titles">' + res.titles.map(t => '<div class="title-won rv">' + trophy(titleType(t), 60, t.name) + '<span>Campeão<br><b>' + esc(t.name) + '</b></span></div>').join('') + '</div>' : '') +
       '<div class="awards">' + res.awards.map(a => '<div class="award rv' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : U.emo('🥇', 'sm') + ' ') + a.name + '</div>').join('') + '</div>' +
       '<div class="news rv"><div class="np">' + U.emo('📰', 'xs') + ' Nos jornais</div><p>' + esc(res.headlines[0] || '') + '</p></div>' +
+      resenha(res) +
       wcBlock +
       // Detalhes (fechados): outros lances, o porquê da nota, técnico/torcida e contrato
       // Craque carregando um time fraco (a partir do 2º ano) e o clube crescendo com ele

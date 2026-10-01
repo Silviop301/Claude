@@ -132,6 +132,7 @@
     const mk = M && S.kickSetupType(M);
     if (M && mk === 'save') { penFaced += 1; if (M.ok) { penSaved += 1; saves += 1; } }
     else if (M && mk === 'tackle') { if (M.ok) tackles += 1; }
+    else if (M && mk === 'pass') { if (M.ok) assists += 1; } // passe decisivo: assistência
     else if (M && M.ok) goals += 1;
     // Continental: Libertadores (primeira divisão sul-americana) mede força contra o nível sul-americano; Champions, contra o europeu
     const libert = S.LIBERTA.includes(club.league);
@@ -216,6 +217,7 @@
       const where = { cup: 'na final da ' + M.comp, title: 'na última rodada', acesso: 'na última rodada', classico: 'no clássico', cont: 'na final da ' + M.comp }[M.type];
       const defHl = M.kick === 'save' ? (M.ok ? '🧤 Pênalti defendido ' + where + ' contra ' + D.o(vsName) + '!' : '😞 Pênalti sofrido ' + where + ' contra ' + D.o(vsName))
         : M.kick === 'tackle' ? (M.ok ? '🛡️ Desarme salvador ' + where + ' contra ' + D.o(vsName) + '!' : '😞 O atacante passou ' + where + ' contra ' + D.o(vsName))
+        : M.kick === 'pass' ? (M.ok ? '🎯 Sua bola enfiada decidiu ' + where + ' contra ' + D.o(vsName) + '!' : '😞 Passe cortado ' + where + ' contra ' + D.o(vsName))
         : null;
       highlights.unshift(defHl || hl);
     }

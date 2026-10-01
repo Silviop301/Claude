@@ -12,7 +12,7 @@
     { name: 'Folha do Gramado', motto: 'Notícia com cheiro de grama' },
     { name: 'Jornal da Arquibancada', motto: 'Opinião de torcedor' },
   ];
-  let lastPaper = -1;
+  let lastPaper = '';
 
   // Camisas das seleções (para a foto da Copa)
   const NATION_KIT = {
@@ -40,10 +40,17 @@
     // Configuração: sem jornais, ou só as edições especiais (transferência, final, Copa, despedida)
     const pc = U.cfg.papers;
     if (pc === 'none' || (pc === 'special' && !o.extra)) { setTimeout(() => onClose && onClose(), 0); return null; }
+    // Jornal de verdade do país do clube (brasileiro jogando fora também sai nos jornais daqui)
+    const cl = o.c && D.CLUB_BY_ID[o.c.club], lg = cl && D.LEAGUE_BY_ID[cl.league];
+    const M = D.MEDIA || { papers: {} }, local = (lg && M.papers[lg.country]) || [];
+    const pool = local.concat(o.c && o.c.country === 'Brasil' && lg && lg.country !== 'Brasil' ? M.papers['Brasil'] || [] : []);
+    const list = pool.length ? pool.map(([name, motto]) => ({ name, motto, br: (M.papers['Brasil'] || []).some(p => p[0] === name) })) : PAPERS;
     let k;
-    do { k = Math.floor(Math.random() * PAPERS.length); } while (k === lastPaper);
-    lastPaper = k;
-    const P = PAPERS[k];
+    do { k = Math.floor(Math.random() * list.length); } while (list.length > 1 && list[k].name === lastPaper);
+    const P = list[k];
+    lastPaper = P.name;
+    const columnist = P.br && M.columnistBR ? M.columnistBR : S.COLUMNIST;
+    P.columnist = columnist;
     const wrap = document.createElement('div');
     wrap.className = 'paper-wrap';
     wrap.innerHTML = '<div class="paper' + (o.extra ? ' is-extra' : '') + '"><div class="pp-in"><div class="pp-top"><span>' + (o.extra ? 'Edição extra · ' : 'Edição de ') + o.year + '</span><span>R$ ' + (2 + (o.year % 5)) + ',50</span></div>' +
@@ -54,7 +61,7 @@
       '<div class="pp-col">' + (o.stats ? '<p class="pp-stats">' + esc(o.stats) + '</p>' : '') +
       '<p class="pp-lede">' + esc(o.lede) + '</p>' +
       (o.subs || []).map(h => '<p class="pp-sub">' + esc(h) + '</p>').join('') + '</div></div>' +
-      (o.column ? '<div class="pp-opinion"><span>Opinião · ' + S.COLUMNIST + '</span><b>' + esc(o.column.t) + '</b><p>' + esc(o.column.x) + '</p></div>' : '') +
+      (o.column ? '<div class="pp-opinion"><span>Opinião · ' + columnist + '</span><b>' + esc(o.column.t) + '</b><p>' + esc(o.column.x) + '</p></div>' : '') +
       '<div class="pp-tap">Toque para fechar</div></div></div>';
     // Com 3D: a mesma página desenhada numa folha de papel que chega girando, desdobra e dá para inclinar
     if (window.CRAQUE_BALL && window.CRAQUE_BALL.newspaper && U.cfg.fx3d && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
@@ -141,7 +148,7 @@
       // Opinião
       if (o.column) {
         rule(y, 5); rule(y + 11, 2); y += 52 * k;
-        font(800, 26, SANS); x.fillStyle = '#6B6553'; x.fillText(('Opinião · ' + S.COLUMNIST).toUpperCase(), M, y); x.fillStyle = INK;
+        font(800, 26, SANS); x.fillStyle = '#6B6553'; x.fillText(('Opinião · ' + ((P && P.columnist) || S.COLUMNIST)).toUpperCase(), M, y); x.fillStyle = INK;
         font(900, 50, SERIF); y += 60 * k; x.fillText(o.column.t, M, y);
         font(700, 38, SERIF, true); wrap(o.column.x, W - 2 * M).forEach(l => { y += 50 * k; x.fillText(l, M, y); });
       }

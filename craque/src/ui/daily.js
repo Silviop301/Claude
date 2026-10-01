@@ -13,7 +13,9 @@
     for (const ch of 'craque-' + key) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
     const r = S.rng(h);
     const pos = r() < 0.5 ? 'ATA' : 'MEI';
-    return { seed: h, name: r.pick(D.NICKNAMES), pos, foot: r() < 0.75 ? 'D' : 'E', country: r.pick(D.COUNTRIES).id,
+    const foot = r() < 0.75 ? 'D' : 'E', country = r.pick(D.COUNTRIES).id;
+    // Nome conforme a nacionalidade do garoto do dia
+    return { seed: h, name: r.pick((D.DAILY_NAMES || {})[country] || D.NICKNAMES), pos, foot, country,
       number: r.pick(pos === 'ATA' ? [9, 7, 11, 19, 99] : [10, 8, 20, 17, 23]) };
   }
 

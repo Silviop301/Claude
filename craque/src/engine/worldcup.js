@@ -92,7 +92,7 @@
     if (run.stage >= 3 || run.stage === groupMoment) {
       // Lance decisivo com o jogo aberto (pênalti ou falta a favor; defensores: pênalti ou contra-ataque contra).
       // O placar para no minuto do lance; o resto do jogo acontece depois dele.
-      const type = S.defKick(c.pos) || (r() < 0.55 ? 'pen' : 'fk');
+      const type = S.posKick(c.pos) || (r() < 0.55 ? 'pen' : 'fk');
       const minute = pickMinute(game, !!S.defKick(c.pos), r);
       splitAt(game, minute);
       game.live = true;
@@ -167,12 +167,13 @@
     S.countKick(c, game.moment.type, ok);
     const defensive = ['save', 'tackle'].includes(game.moment.type);
     if (defensive) { if (!ok) game.ga++; } // defendeu/desarmou: placar segue; falhou: gol deles
+    else if (ok && game.moment.type === 'pass') { game.gf++; game.a++; } // bola enfiada: gol do time, assistência sua
     else if (ok) { game.gf++; game.g++; }
     // O resto do jogo depois do lance
     // Linha do tempo: o lance (se virou gol) e o resto do jogo; a tela retoma o relógio do minuto do lance
     if (game.ev) {
       const km = game.moment.minute;
-      if (defensive ? !ok : ok) game.ev.push(defensive ? { m: km, s: 't', k: 1 } : { m: km, s: 'u', w: 'g', k: 1 });
+      if (defensive ? !ok : ok) game.ev.push(defensive ? { m: km, s: 't', k: 1 } : { m: km, s: 'u', w: game.moment.type === 'pass' ? 'a' : 'g', k: 1 });
       game.ev = game.ev.concat(game.evRest || []);
       delete game.evRest;
       game.resumeAt = km;

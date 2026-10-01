@@ -210,7 +210,7 @@
     $('wc-after').innerHTML = '<div class="card event-card wc-live"><span class="st">' + esc(g.stage) + ' · ' + m.minute + "'</span>" +
       '<div class="line"><span>' + usMark(run) + '</span><b>' + g.gf + ' × ' + g.ga + '</b><span>' + themMark(g) + ' ' + esc(g.opp) + '</span></div>' +
       '<p class="mom-ctx">' + esc(ctx) + '</p>' +
-      '<h2>' + ({ pen: 'Pênalti para ' + who + '!', fk: 'Falta perigosa na entrada da área!', save: 'Pênalti contra ' + who + '!', tackle: 'Contra-ataque perigoso!' }[m.type]) + '</h2>' +
+      '<h2>' + ({ pen: 'Pênalti para ' + who + '!', fk: 'Falta perigosa na entrada da área!', save: 'Pênalti contra ' + who + '!', tackle: 'Contra-ataque perigoso!', pass: 'A bola é sua: enfie para o atacante!' }[m.type]) + '</h2>' +
       '<p class="stakes">' + (def ? (type === 'save' ? 'Defendeu: segura o placar · Sofreu: ' : 'Desarmou: segura o placar · Passou: ') + lose : 'Converteu: ' + gain) + '</p></div>' +
       '<div class="chips">' + U.miniFacts(type).join('') + '</div>' +
       '<button class="btn" id="b-kick">' + U.MINI_BTN[type] + '</button><button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>';

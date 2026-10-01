@@ -196,16 +196,49 @@
     }
     return api;
   }
-  // Barreira respirando: troca os quadros dos jogadores (cada um num tempo diferente)
+  // Barreira: parada, só respirando (quadros 0-3, cada um no seu tempo); no chute, todos pulam juntos
+  // (quadros 8-11 subindo, 12-15 descendo). Devolve jump() para chamar no chute.
   function animateWall(svg) {
     const men = svg.querySelectorAll('.k-wallspr svg');
-    if (!men.length) return;
-    let k = 0;
+    if (!men.length) return { jump() {} };
+    let k = 0, jumping = false;
     const iv = setInterval(() => {
       if (!svg.isConnected) return clearInterval(iv);
+      if (jumping) return;
       k++;
-      men.forEach((m, i) => m.setAttribute('viewBox', wallVB((k + i * 5) % 16)));
-    }, 110);
+      men.forEach((m, i) => m.setAttribute('viewBox', wallVB([0, 1, 2, 3, 2, 1][(k + i * 2) % 6])));
+    }, 140);
+    return {
+      jump() {
+        jumping = true;
+        let f = 8;
+        const step = () => {
+          if (!svg.isConnected) return;
+          men.forEach(m => m.setAttribute('viewBox', wallVB(f)));
+          if (++f <= 15) setTimeout(step, 75);
+          else setTimeout(() => { jumping = false; }, 300);
+        };
+        step();
+      },
+    };
+  }
+  // Bola 3D por cima do desenho (se o 3D não carregar ou estiver desligado, fica a bola desenhada).
+  // Devolve place(x, y, r, spin) e dispose(); vale para todos os minigames.
+  function ball3d(stage, ballEl, w, h) {
+    let fly = null, gone = false, last = null;
+    if (root.CRAQUE_BALL && root.CRAQUE_BALL.flyer && !(root.CLIMBIX_CFG && root.CLIMBIX_CFG.fx3d === false)) {
+      root.CRAQUE_BALL.flyer(stage, w || 360, h || 320).then(f => {
+        if (!f) return;
+        if (gone) return f.dispose();
+        fly = f;
+        ballEl.style.opacity = '0';
+        if (last) f.set(last[0], last[1], last[2], 0);
+      });
+    }
+    return {
+      place(x, y, r, spin) { last = [x, y, r]; setBall(ballEl, x, y, r); if (fly) fly.set(x, y, r, spin || 0); },
+      dispose() { gone = true; if (fly) fly.dispose(); },
+    };
   }
 
   function setBall(g, x, y, r) { g.setAttribute('transform', 'translate(' + x + ' ' + y + ') scale(' + (r / 11) + ')'); }
@@ -226,7 +259,7 @@
   // Peças reaproveitadas pelo minigame do goleiro (defend.js)
   // Gol: sempre o desenho (o gol 3D pesava demais em celulares mais simples)
   function goal3d() { return Promise.resolve(null); }
-  root.CRAQUE_KICK_PARTS = { scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d, keeperSprite, animateWall };
+  root.CRAQUE_KICK_PARTS = { scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d, keeperSprite, animateWall, ball3d };
 
   root.CRAQUE_KICK = function (el, opts) {
     const c = opts.c, m = opts.moment;
@@ -239,26 +272,15 @@
     const shadow = svg.querySelector('#k-shadow'), trail = Array.from(svg.querySelectorAll('#k-trail circle'));
     const stage = el.querySelector('.kick-stage');
     // Bola 3D por cima do desenho (se o 3D não carregar, fica a bola desenhada)
-    let fly3d = null, gone = false, goal = null;
+    let gone = false, goal = null;
     goal3d(svg).then(g => { if (!g) return; if (gone) return g.dispose(); goal = g; });
     // Goleiro e barreira em sprites
     const spr = keeperSprite(svg);
     spr.stand(setup.fk ? px(0.4 * side) : GX); spr.idle();
-    animateWall(svg);
-    if (root.CRAQUE_BALL && root.CRAQUE_BALL.flyer && !(root.CLIMBIX_CFG && root.CLIMBIX_CFG.fx3d === false)) {
-      root.CRAQUE_BALL.flyer(stage, 360, 320).then(f => {
-        if (!f) return;
-        if (gone) return f.dispose();
-        fly3d = f;
-        ball.style.opacity = '0';
-        f.set(BALL.x, BALL.y, BALL.r, 0);
-      });
-    }
-    function place(x, y, r, spin) {
-      setBall(ball, x, y, r);
-      if (fly3d) fly3d.set(x, y, r, spin || 0);
-    }
-    const finish = (ok, why) => { gone = true; if (fly3d) fly3d.dispose(); if (goal) goal.dispose(); opts.onDone(ok, why); };
+    const wallAnim = animateWall(svg);
+    const b3 = ball3d(stage, ball);
+    const place = b3.place;
+    const finish = (ok, why) => { gone = true; b3.dispose(); if (goal) goal.dispose(); opts.onDone(ok, why); };
     place(BALL.x, BALL.y, BALL.r);
     setKeeper(keeper, setup.fk ? px(0.4 * side) - GX : 0, 0, 0);
     aim.setAttribute('opacity', '1');
@@ -304,6 +326,7 @@
     const sfx = n => { if (root.CRAQUE_SFX) root.CRAQUE_SFX.play(n); };
     function shoot(dx, y) {
       sfx('kick');
+      wallAnim.jump(); // a barreira pula junto, na hora do chute
       help.innerHTML = '&nbsp;';
       aim.setAttribute('opacity', '0');
       const x = dx * side; // no referencial da regra (barreira sempre "à esquerda")
@@ -325,7 +348,7 @@
         return { dx: gx - ox - GX, dy: Math.min(0, gy - oy - GY), rot: dir * R };
       };
       // G: onde a luva termina (x, y no SVG) e o lado do pulo — vale para o goleiro desenhado e o 3D
-      let K, G;
+      let K, G; // (K pode ser recalculado abaixo)
       if (setup.fk) {
         const k0x = px(0.4 * side), dir = Math.sign(bxT - k0x) || side;
         // Gol: a luva fica ~34 px antes da bola (e nunca além da posição inicial para o outro lado)
@@ -341,6 +364,12 @@
         // Parado no meio: defende saltando pouco; na cavadinha fica plantado e a bola passa por cima
         K = { dx: 0, dy: saved ? -Math.min(y, 0.6) * 40 : -6, rot: 0 };
         G = { x: GX, y: saved ? byT : py(0.5), dir: 0 };
+      }
+      // Bola para fora ou por cima: o goleiro vai no máximo até a trave (pulo coerente, sem se esticar no vazio)
+      if (res.why === 'fora' || res.why === 'alto') {
+        G.x = Math.max(px(-0.88), Math.min(px(0.88), G.x));
+        G.y = Math.max(G.y, py(0.85));
+        if (G.dir) K = gloveTo(G.x, G.y, G.dir);
       }
       const kDx = K.dx, kDy = K.dy, kRot = K.rot;
       const k0 = setup.fk ? px(0.4 * side) - GX : 0;

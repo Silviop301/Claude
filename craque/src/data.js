@@ -107,6 +107,41 @@
     { id: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' }, { id: 'Itália', flag: '🇮🇹' }, { id: 'Alemanha', flag: '🇩🇪' },
     { id: 'França', flag: '🇫🇷' }, { id: 'Holanda', flag: '🇳🇱' },
   ];
+  // Mídia de verdade (o jogo é entre amigos): jornais do país do clube, quem assina a opinião e a resenha
+  // depois da temporada. Tudo aqui, para trocar por nomes fictícios se o jogo um dia for público.
+  D.MEDIA = {
+    papers: {
+      'Brasil': [['Lance!', 'O diário esportivo do Brasil'], ['Placar', 'A revista do futebol brasileiro'], ['Gazeta Esportiva', 'Desde 1928 ao lado do torcedor'], ['Jornal dos Sports', 'O cor-de-rosa do Rio']],
+      'Argentina': [['Olé', 'Diario deportivo'], ['El Gráfico', 'La revista del fútbol argentino']],
+      'Uruguai': [['Ovación', 'Diario deportivo uruguayo']],
+      'Colômbia': [['El Tiempo · Deportes', 'Fútbol colombiano']],
+      'Portugal': [['A Bola', 'O jornal desportivo português'], ['Record', 'Diário desportivo'], ['O Jogo', 'Diário desportivo']],
+      'Espanha': [['Marca', 'Diario deportivo'], ['AS', 'Diario deportivo'], ['Mundo Deportivo', 'Desde 1906']],
+      'Inglaterra': [['The Sun · Sport', 'Back pages'], ['Daily Mirror · Sport', 'Back pages']],
+      'Itália': [['La Gazzetta dello Sport', 'Il quotidiano rosa'], ['Corriere dello Sport', 'Quotidiano sportivo'], ['Tuttosport', 'Quotidiano sportivo']],
+      'Alemanha': [['Kicker', 'Das Fußball-Magazin'], ['Bild · Sport', 'Fußball']],
+      'França': [["L'Équipe", 'Le quotidien du sport']],
+      'Holanda': [['Voetbal International', 'Het voetbalweekblad'], ['De Telegraaf · Sport', 'Voetbal']],
+    },
+    // Quem assina a opinião no jornal brasileiro (nos de fora fica o cronista do jogo)
+    columnistBR: 'Craque Neto',
+    // Resenha da temporada: quem comenta (sempre em português, para a turma)
+    shows: [['Craque Neto', 'no Os Donos da Bola'], ['Igão e Mítico', 'no Podpah'], ['Resenha', 'do Flow Sport Club']],
+  };
+  // Garoto da carreira do dia: 5 nomes por nacionalidade
+  D.DAILY_NAMES = {
+    'Brasil': ['Pedrinho', 'Kauãzinho', 'Vini Souza', 'Biel', 'Matheuzinho'],
+    'Argentina': ['Thiago Benítez', 'Valentín Ruiz', 'Nico Ferreyra', 'Facundo Sosa', 'Lautaro Paz'],
+    'Uruguai': ['Agustín Pereira', 'Santiago Olivera', 'Facundo Rodríguez', 'Mateo Cabrera', 'Joaquín Suárez'],
+    'Colômbia': ['Juan Camilo Ríos', 'Yerson Mina', 'Kevin Cuesta', 'Duván Arias', 'Jhon Castaño'],
+    'Portugal': ['Tiago Mendes', 'Rúben Costa', 'Diogo Neves', 'Gonçalo Pires', 'Rafa Lopes'],
+    'Espanha': ['Pablo Gavira', 'Álex Moreno', 'Iker Sanz', 'Hugo Navarro', 'Dani Ortega'],
+    'Inglaterra': ['Jack Harrison', 'Ollie Bennett', 'Harry Walsh', 'Tom Fletcher', 'Charlie Mason'],
+    'Itália': ['Lorenzo Ricci', 'Matteo Esposito', 'Federico Bianchi', 'Davide Conti', 'Andrea Gallo'],
+    'Alemanha': ['Leon Krüger', 'Jonas Becker', 'Florian Wolf', 'Luca Hoffmann', 'Niklas Braun'],
+    'França': ['Kylian Mendy', 'Hugo Lefèvre', 'Théo Bernard', 'Rayan Diallo', 'Lucas Moreau'],
+    'Holanda': ['Daan de Vries', 'Sem Bakker', 'Milan Visser', 'Jesse Smit', 'Lars Jansen'],
+  };
   // Acesso e rebaixamento entre divisões do mesmo país (a tabela considera 20 times).
   // promo: quantos sobem · releg: quantos caem
   D.LADDER = {

@@ -47,7 +47,7 @@
     $('b-cloud').onclick = () => U.cloud('login');
     $('b-daily').onclick = () => { if (!saved || !saved.c) return U.dailyStart(); U.ask('Começar a carreira do dia?', 'A carreira em andamento será substituída.', 'Começar', U.dailyStart); };
     const snd = $('b-sound');
-    if (snd) { snd.innerHTML = U.ICON.gear + ' Configurações'; snd.onclick = U.settings; }
+    if (snd) { snd.innerHTML = U.emo('⚙️', 'xs') + ' Configurações'; snd.onclick = U.settings; }
     // A bola 3D espera o módulo 3D terminar de carregar (na primeira visita ele chega depois da tela)
     const hero = splash && screen.querySelector('.hero');
     if (hero) { splash.classList.remove('splash'); splash.querySelector('.ball3d').id = 'ball3d'; hero.replaceWith(splash); }

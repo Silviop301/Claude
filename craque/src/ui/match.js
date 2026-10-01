@@ -78,10 +78,21 @@
       what,
     };
   };
-  // Abre o minigame certo para o tipo do lance (chute, goleiro ou zagueiro)
+  // Meia: o lance é a bola enfiada para o atacante
+  const PASS_TXT = m => {
+    const goal = { cup: 'campeão da ' + m.comp, title: 'campeão da liga', acesso: 'acesso garantido', cont: 'campeão da ' + m.comp, classico: 'gol no clássico, Torcida +8' }[m.type];
+    return {
+      tag: { cup: 'Final da ' + m.comp, title: 'Última rodada · ' + m.comp, acesso: 'Última rodada · ' + m.comp, cont: 'Final da ' + m.comp, classico: 'Clássico' }[m.type],
+      title: 'A bola é sua no meio-campo!',
+      text: 'O atacante faz a diagonal nas costas da zaga ' + D.do(club(m.vs).name) + '. Um passe na medida e ele fica cara a cara.',
+      stakes: 'Acertou: ' + goal + ' (assistência sua) · Errou: a zaga corta',
+    };
+  };
+  // Abre o minigame certo para o tipo do lance (chute, goleiro, zagueiro ou meia)
   function playMini(el, setupType, onDone) {
     if (setupType === 'save') return window.CRAQUE_SAVE(el, { c: G.c, onDone });
     if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, { c: G.c, onDone });
+    if (setupType === 'pass') return window.CRAQUE_PASS(el, { c: G.c, onDone });
     return window.CRAQUE_KICK(el, { c: G.c, moment: { type: setupType }, onDone });
   }
   // O que da carta pesa no lance, sem números escondidos
@@ -90,6 +101,8 @@
     const lv = id => (G.c.traits.includes(id) ? S.traitLevel(G.c, id) : 0);
     if (setupType === 'save') return ['<span class="chip">' + L('fin') + ' ' + E.fin + ' · sinal do batedor ' + (k.tellMs >= 340 ? 'longo' : k.tellMs >= 220 ? 'médio' : 'curto') + '</span>',
       '<span class="chip">' + L('fis') + ' ' + E.fis + ' · alcance ' + (k.diveReach >= 0.8 ? 'grande' : k.diveReach >= 0.66 ? 'médio' : 'curto') + '</span>'].concat(lv('pegador') ? ['<span class="chip">' + U.emo('🥅', 'xs') + ' Pegador de pênalti: sinal mais longo</span>'] : []);
+    if (setupType === 'pass') return ['<span class="chip">' + L('pas') + ' ' + E.pas + ' · brecha ' + (k.win >= 0.2 ? 'larga' : k.win >= 0.14 ? 'média' : 'estreita') + '</span>',
+      '<span class="chip">Corrida ' + (k.period >= 1.35 ? 'lenta' : k.period >= 1.1 ? 'média' : 'rápida') + '</span>'].concat(lv('visao') ? ['<span class="chip">' + U.emo('👁️', 'xs') + ' Visão de Jogo: brecha maior</span>'] : []);
     if (setupType === 'tackle') return ['<span class="chip">DEF ' + E.def + ' · faixa ' + (k.win >= 0.18 ? 'larga' : k.win >= 0.12 ? 'média' : 'estreita') + '</span>',
       '<span class="chip">RIT ' + E.rit + ' · lance ' + (k.period >= 1.3 ? 'lento' : k.period >= 1.05 ? 'médio' : 'rápido') + '</span>'].concat(lv('carrinho') ? ['<span class="chip">' + U.emo('🦵', 'xs') + ' Carrinho: faixa maior</span>'] : []);
     const f = ['<span class="chip">FIN ' + E.fin + ' · mira ' + (k.period >= 1.7 ? 'lenta' : k.period >= 1.35 ? 'média' : 'rápida') + '</span>',
@@ -104,12 +117,13 @@
     classico: 'Dois toques: o primeiro trava a direção, o segundo a altura. Passe por cima da barreira ou busque o ângulo.',
     save: 'O batedor corre; pouco antes do chute aparece uma seta mostrando o lado. Toque na esquerda, no meio ou na direita para pular.',
     tackle: 'O atacante arranca em direção ao gol. Toque quando ele passar pela faixa verde para dar o carrinho.',
+    pass: 'O atacante corre por trás da zaga. Toque quando ele passar pela brecha verde para enfiar a bola: ele finaliza.',
   };
-  const MINI_BTN = { cup: 'Bater o pênalti', classico: 'Bater a falta', save: 'Defender o pênalti', tackle: 'Dar o bote' };
+  const MINI_BTN = { cup: 'Bater o pênalti', classico: 'Bater a falta', save: 'Defender o pênalti', tackle: 'Dar o bote', pass: 'Enfiar a bola' };
 
   function momentIntro(m) {
     const st = S.kickSetupType(m), def = st === 'save' || st === 'tackle';
-    const T = def ? DEF_TXT(m, st) : MOMENT_TXT[m.type](m), k = S.kickSetup(G.c, st);
+    const T = def ? DEF_TXT(m, st) : st === 'pass' ? PASS_TXT(m) : MOMENT_TXT[m.type](m), k = S.kickSetup(G.c, st);
     render(
       '<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div>' +
       '<div class="card event-card moment-card">' + (m.score
@@ -154,14 +168,15 @@
     // Lances defensivos: texto próprio
     const st = S.kickSetupType(m);
     const defTxt = st === 'save' ? (ok ? (why === 'fora' ? 'O batedor mandou para fora! ' : 'Que defesa! ') : 'Não deu: a bola entrou. ')
-      : st === 'tackle' ? (ok ? 'Carrinho perfeito, bola roubada! ' : why === 'cedo' ? 'Você chegou cedo e ele passou. ' : 'Chegou tarde: ele passou e marcou. ') : null;
+      : st === 'tackle' ? (ok ? 'Carrinho perfeito, bola roubada! ' : why === 'cedo' ? 'Você chegou cedo e ele passou. ' : 'Chegou tarde: ele passou e marcou. ')
+      : st === 'pass' ? (ok ? 'Bola enfiada na medida e o atacante não perdoou: assistência sua! ' : why === 'impedido' ? 'Demorou o passe e ele ficou impedido. ' : 'A zaga cortou o passe. ') : null;
     const defEnd = { cup: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.', title: ok ? 'O título é seu!' : 'O título escapou.',
       classico: ok ? 'O clássico é seu.' : 'A torcida lamenta.', acesso: ok ? 'O acesso é seu!' : 'O acesso escapou.', cont: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.' }[m.type];
     const final = defTxt !== null ? defTxt + defEnd : txt;
     // Placar depois do lance e um título grande (gol, defesa, bote ou a lamentação)
     const def = st === 'save' || st === 'tackle';
     const sc = m.score ? [m.score[0] + (!def && ok ? 1 : 0), m.score[1] + (def && !ok ? 1 : 0)] : null;
-    const big = def ? (ok ? (st === 'save' ? 'DEFENDEU!' : 'ROUBOU!') : 'Gol deles…') : ok ? 'GOOOL!' : 'Não entrou…';
+    const big = def ? (ok ? (st === 'save' ? 'DEFENDEU!' : 'ROUBOU!') : 'Gol deles…') : ok ? 'GOOOL!' : st === 'pass' ? 'Cortado…' : 'Não entrou…';
     render(
       '<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div>' +
       '<div class="card mom-res ' + (ok ? 'ok' : 'ko') + '">' +
