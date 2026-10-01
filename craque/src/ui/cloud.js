@@ -9,7 +9,7 @@
   const API = window.CLIMBIX_ACCOUNT_API || (/climbix\.app$/.test(location.hostname) ? '/api/account.php' : 'https://climbix.app/api/account.php');
   const OAPI = API.replace(/account\.php$/, 'oauth.php');
   const AKEY = 'climbix-account', PKEY = 'climbix-player', OKEY = 'climbix-oauth';
-  const KEYS = { save: SAVE, hall: HALL, col: 'climbix-colecao-v1', ach: 'craque-ach-v1', daily: 'craque-daily-v1', sala: 'climbix-sala-v1', itens: 'climbix-itens-v1' };
+  const KEYS = { save: SAVE, hall: HALL, col: 'climbix-colecao-v1', ach: 'craque-ach-v1', daily: 'craque-daily-v1', sala: 'climbix-sala-v1', itens: 'climbix-itens-v1', reset: 'climbix-reset' };
   // keepalive deixa o save terminar de subir com o app fechando, mas o navegador recusa corpo acima de 64 KB:
   // save grande (coleção cheia) vai sem keepalive
   const post = (a, body, url) => { const b = JSON.stringify(body);
@@ -27,7 +27,10 @@
   function local() { const o = {}; for (const k in KEYS) o[k] = load(KEYS[k]); return o; }
   function merge(a, b) {
     a = a || {}; b = b || {};
-    const o = {};
+    // Progresso reiniciado (Conta): o lado que é de antes do reinício não volta
+    const ra = a.reset || 0, rb = b.reset || 0;
+    if (ra < rb) a = {}; else if (rb < ra) b = {};
+    const o = { reset: Math.max(ra, rb) || null };
     // Carreira: a salva mais recentemente (fim de carreira também conta, para não "ressuscitar" uma antiga)
     const at = s => (s && s.at) || 0;
     o.save = at(b.save) > at(a.save) ? b.save : a.save || b.save || null;
@@ -158,7 +161,10 @@
   function enter(r) {
     store(AKEY, { user: r.user, token: r.token, links: r.links || [], pass: !!r.pass, needold: !!r.needold });
     adopt(r);
-    const m = merge(local(), r.save);
+    // O que já estava neste aparelho entra na conta mesmo que a conta tenha sido reiniciada antes
+    const loc = local(), rs = (r.save && r.save.reset) || 0;
+    if ((loc.reset || 0) < rs) loc.reset = rs;
+    const m = merge(loc, r.save);
     apply(m);
     state = 'syncing';
     U.home();
@@ -176,6 +182,27 @@
   const top = (back, eyebrow, title) => '<button class="back-link" id="' + (back === 'Início' ? 'b-back-home' : 'b-back-acc') + '">‹ ' + back + '</button><div class="eyebrow">' + eyebrow + '</div><h2>' + esc(title) + '</h2>';
   const note = (msg, ok) => (msg ? '<p class="' + (ok ? 'acc-ok' : 'acc-err') + '">' + esc(msg) + '</p>' : '');
   const field = (id, label, attrs) => '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" ' + attrs + ' required></div>';
+  // ---------- reiniciar progresso ----------
+  // Apaga carreiras, coleção, Hall da Fama, conquistas, Sala de Troféus, carreira do dia e itens.
+  // Ficam: a conta, o nome no ranking, as configurações e o som. Com conta, a nuvem também recomeça
+  // (o marcador "reset" faz os outros aparelhos descartarem o progresso antigo na próxima sincronização).
+  const WIPE = [SAVE, HALL, KEYS.col, KEYS.ach, KEYS.daily, KEYS.sala, KEYS.itens, 'climbix-seen-v1', 'climbix-rank-queue'];
+  const RESET = '<div class="acc-reset"><b>Reiniciar progresso</b><p>Começa o jogo do zero neste aparelho' + ' e na nuvem, se você tiver conta.</p>' +
+    '<button class="btn ghost acc-danger" id="b-reset">Reiniciar progresso</button></div>';
+  function bindReset() {
+    const b = $('b-reset');
+    if (!b) return;
+    b.onclick = () => U.ask('Reiniciar todo o progresso?', 'Apaga a carreira em andamento, a coleção de cartas, o Hall da Fama, as conquistas, a Sala de Troféus, os itens, as fichas e os pacotinhos. Sua conta, seu nome no ranking e as configurações continuam.',
+      'Continuar', () => U.ask('Tem certeza?', 'Não dá para desfazer. O progresso some deste aparelho' + (acc() ? ', da nuvem e dos outros aparelhos da conta.' : '.'), 'Apagar tudo', resetAll));
+  }
+  function resetAll() {
+    WIPE.forEach(k => { try { localStorage.removeItem(k); } catch (e) { /* sem armazenamento */ } });
+    raw(KEYS.reset, Date.now());
+    if (U.ITEMS) U.ITEMS.reset(); // o inventário recomeça (10 números novos) na próxima leitura
+    G.c = null; G.step = null;
+    const done = () => { U.home(); U.ask('Progresso reiniciado', 'Tudo pronto para começar do zero.', 'Nova carreira', () => U.create(), 'Fechar'); };
+    if (acc()) sync().then(done, done); else done();
+  }
   const LEGAL = '<p class="muted small acc-legal"><a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos de uso</a></p>';
   const USER = 'name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="16"';
   // Envia o formulário: trava o botão, chama o servidor e, se der erro, volta à mesma tela com a mensagem
@@ -205,7 +232,8 @@
       '<p class="muted" id="cloud-msg">' + stTxt() + '</p>' +
       '<button class="btn" id="b-sync">Sincronizar agora</button>' +
       '<div class="eyebrow small">Formas de entrar</div><div class="acc-ways" id="acc-ways"><p class="muted small">carregando…</p></div>' +
-      '<button class="btn ghost" id="b-logout">Sair desta conta</button>' + LEGAL);
+      '<button class="btn ghost" id="b-logout">Sair desta conta</button>' + RESET + LEGAL);
+    bindReset();
     $('b-back-home').onclick = U.home;
     $('b-sync').onclick = () => { $('cloud-msg').textContent = 'salvando…'; sync().then(() => { $('cloud-msg').textContent = stTxt(); showWays(); }); };
     $('b-logout').onclick = () => U.ask('Sair da conta?', 'O jogo continua neste aparelho; só para de salvar na nuvem.', 'Sair', () => {
@@ -269,7 +297,8 @@
       note(msg) + '<button class="btn" id="acc-go" type="submit">' + (reg ? 'Criar conta' : 'Entrar') + '</button></form>' +
       '<button class="link-btn" id="acc-switch">' + (reg ? 'Já tenho conta: entrar' : 'Não tenho conta: criar agora') + '</button>' +
       (reg ? '<p class="muted small" id="acc-hint">Guarde bem a senha: não dá para recuperar por e-mail.</p>'
-        : '<button class="link-btn" id="acc-forgot">Esqueci a senha</button>') + LEGAL);
+        : '<button class="link-btn" id="acc-forgot">Esqueci a senha</button>') + RESET + LEGAL);
+    bindReset();
     $('b-back-home').onclick = U.home;
     $('acc-switch').onclick = () => screen(reg ? 'login' : 'register');
     // Recuperar a senha só existe com serviço ligado à conta: as mensagens dependem de haver serviço configurado
