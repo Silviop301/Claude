@@ -101,7 +101,7 @@
         res = I.grant('item', p);
         const it = res.it;
         html = resultBox('Gol! Saiu um item ' + I.RAR_NAME[it.rk].toLowerCase(),
-          '<div class="pk-tile ' + U.rarCls(it.rk) + ' pen-tile"><div class="pk-in"><img src="' + U.itemImg(it) + '" alt=""></div>' + (res.dup ? '' : '<span class="pk-new sm">NOVO</span>') + '</div>' +
+          '<div class="pk-tile ' + U.rarCls(it.rk) + ' pen-tile"><div class="pk-in">' + U.itemArt(it) + '</div>' + (res.dup ? '' : '<span class="pk-new sm">NOVO</span>') + '</div>' +
           '<b class="pen-name">' + esc(it.name) + '</b>' + U.raritySelo(it.rk),
           res.dup ? 'Você já tinha. Virou ' + res.fichas + (res.fichas > 1 ? ' fichas.' : ' ficha.') : esc(it.desc));
       }

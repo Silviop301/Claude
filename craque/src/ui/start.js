@@ -296,7 +296,7 @@
       // Só o que está liberado (ex.: a chuteira de raio vem com sola amarela só se a cor amarela já estiver liberada)
       Object.entries(it.look || {}).forEach(([k, v]) => { if (k === 'extra') st.look.extra = (st.look.extra || []).concat(v); else if (!lockOf(k, v)) st.look[k] = v; });
     });
-    const vis = (items || []).filter(it => it.cat !== 'num');
+    const vis = (items || []).filter(it => it.cat !== 'num' && it.cat !== 'assinatura'); // assinatura se escolhe no fim da carreira
     if (!vis.length) return create(st);
     st.tab = vis.some(it => it.cat === 'cabelo') ? 'cabelo' : vis.some(it => it.cat === 'tatuagem') && vis.length === 1 ? 'corpo' : 'equip';
     looks(st);

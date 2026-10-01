@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-aa43e00f';
+const CACHE = 'craque-1564e651';
 const ASSETS = [
   "./",
   "./fonts/TwemojiCountryFlags.woff2",
@@ -16,8 +16,18 @@ const ASSETS = [
   "./fonts/barlow-condensed-700-latin.woff2",
   "./fonts/barlow-condensed-800-latin-ext.woff2",
   "./fonts/barlow-condensed-800-latin.woff2",
+  "./fonts/homemade-apple-400-latin.woff2",
+  "./fonts/monsieur-la-doulaise-400-latin-ext.woff2",
+  "./fonts/monsieur-la-doulaise-400-latin.woff2",
+  "./fonts/mrs-saint-delafield-400-latin-ext.woff2",
+  "./fonts/mrs-saint-delafield-400-latin.woff2",
   "./fonts/playfair-display-700-latin-ext.woff2",
   "./fonts/playfair-display-700-latin.woff2",
+  "./fonts/rock-salt-400-latin.woff2",
+  "./fonts/yellowtail-400-latin-ext.woff2",
+  "./fonts/yellowtail-400-latin.woff2",
+  "./fonts/zeyada-400-latin-ext.woff2",
+  "./fonts/zeyada-400-latin.woff2",
   "./icons/apple-touch-icon.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

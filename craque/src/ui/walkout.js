@@ -25,6 +25,9 @@
   const specialFinal = (final, c, shot) => Object.assign({}, final, { special: shot.type, footer: shot.txt },
     shot.type === 'copa' ? { kit: U.nationKit(c.country), crest: null } : {});
 
+  // Trajetória para o verso da carta: nota geral de cada temporada e as temporadas com título
+  const trail = c => ({ curve: (c.seasons || []).map(s => s.ovr1), tSeasons: (c.seasons || []).map((s, i) => (s.titles && s.titles.length ? i : -1)).filter(i => i >= 0),
+    startAge: c.seasons && c.seasons[0] ? c.seasons[0].age : c.age });
   // Dados da carta (para o canvas) a partir da carreira e, se houver, de uma "foto" guardada (carta especial ou temporada)
   function cardData(c, shot) {
     const cty = D.COUNTRIES.find(x => x.id === c.country) || { flag: '' };
@@ -35,6 +38,7 @@
       traits: c.traits.map(id => ({ id, icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(c, id) })),
       footer: shot && shot.txt ? shot.txt : D.CLUB_BY_ID[clubId].name.toUpperCase() + ' · ' + (shot ? shot.age : c.age) + ' ANOS',
     };
+    Object.assign(d, trail(c));
     if (shot && shot.type) {
       d.special = shot.type;
       if (shot.type === 'copa') { d.kit = U.nationKit(c.country); d.crest = null; }
@@ -80,5 +84,5 @@
   // Desgaste da carta no fim da carreira: 0 (nova), 1 (marcas de uso) ou 2 (bem gasta)
   const wearOf = c => (c.age >= 35 ? 2 : c.age >= 32 ? 1 : 0);
 
-  Object.assign(U, { tierUp, tierReveal, walkout, walkouts, cardData, wearOf, specialFinal, SPECIAL_NAME: SPECIAL, SPECIAL_RARITY: RARITY });
+  Object.assign(U, { trail, tierUp, tierReveal, walkout, walkouts, cardData, wearOf, specialFinal, SPECIAL_NAME: SPECIAL, SPECIAL_RARITY: RARITY });
 })();

@@ -65,6 +65,10 @@
     ['chamas', 'Chuteira em chamas', 'lendario', 'equip', { boot: 'chamas', sole: 'preto' }, 'Chamas laranja sobre preto.'],
     ['num-ouro', 'Número dourado', 'lendario', 'numeros', { numFx: 'ouro' }, 'Vale para qualquer número.'],
     ['num-holo', 'Número holográfico', 'lendario', 'numeros', { numFx: 'holo' }, 'Vale para qualquer número.'],
+    // Assinatura da carta, escolhida no fim da carreira (Clássica, Caneta e Marcador são livres)
+    ['ass-yellowtail', 'Assinatura Esportiva', 'raro', 'assinatura', { sign: 'yellowtail' }, 'Autógrafo na carta do fim da carreira.'],
+    ['ass-zeyada', 'Assinatura Rápida', 'raro', 'assinatura', { sign: 'zeyada' }, 'Autógrafo na carta do fim da carreira.'],
+    ['ass-doulaise', 'Assinatura Floreada', 'epico', 'assinatura', { sign: 'doulaise' }, 'Autógrafo na carta do fim da carreira.'],
   ].map(([id, name, rk, cat, look, desc, gk]) => ({ id, name, rk, cat, look, desc, gk: !!gk }));
   // Tatuagens: cada membro e cada tamanho é um item (pequena = raro, fechada = épico)
   const LIMBS = [['BD', 'braço direito'], ['BE', 'braço esquerdo'], ['PD', 'perna direita'], ['PE', 'perna esquerda']];

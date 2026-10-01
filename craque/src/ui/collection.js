@@ -16,9 +16,19 @@
     c.collected = true;
     const list = all();
     const specials = (c.cards || []).map(k => U.specialFinal(card, c, k));
-    list.push({ at: Date.now(), country: c.country, pos: c.pos, peak: c.peak, grade: f.grade, score: f.score, card, specials });
+    const at = Date.now();
+    list.push({ at, country: c.country, pos: c.pos, peak: c.peak, grade: f.grade, score: f.score, card, specials });
     // Cheio: sai a carta de menor pontuação
     if (list.length > MAX) list.sort((a, b) => b.score - a.score).length = MAX;
+    store(KEY, list);
+    return at;
+  }
+  // Edição da carta no fim da carreira (assinatura, escudo): vale também para as especiais guardadas
+  function collectPatch(at, patch) {
+    const list = all(), e = list.find(x => x.at === at);
+    if (!e) return;
+    Object.assign(e.card, patch);
+    (e.specials || []).forEach(sp => Object.assign(sp, patch.sign !== undefined ? { sign: patch.sign } : {}));
     store(KEY, list);
   }
   const count = () => all().length;
@@ -153,5 +163,5 @@
     $('cv-share').onclick = () => U.shareCard(d, $('cv-share'));
   }
 
-  Object.assign(U, { collection, collect, collectionCount: count });
+  Object.assign(U, { collection, collect, collectPatch, collectionCount: count });
 })();

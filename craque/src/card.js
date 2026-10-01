@@ -18,7 +18,7 @@
   const SPECIAL = {
     tots: { metal: ['#0B1A3C', '#2A4D9B', '#12285E', '#3E68C4', '#162F6B', '#2A4D9B', '#08132C'], ink: '#F4D675', line: 'rgba(244,214,117,.4)', label: 'SELEÇÃO DA TEMPORADA', pattern: 'stars', glow: '#6FA0FF' },
     heroi: { metal: ['#2A0508', '#8E1420', '#3E070D', '#C22533', '#4D0A12', '#8E1420', '#1C0306'], ink: '#FFE6A3', line: 'rgba(255,230,163,.4)', label: 'HERÓI DA FINAL', pattern: 'flames', glow: '#FF5A3C' },
-    copa: { metal: null, ink: null, line: null, label: 'COPA DO MUNDO', pattern: 'trophy', glow: '#FFE27A' },
+    copa: { metal: null, ink: null, line: null, label: 'COPA DO MUNDO', pattern: null, glow: '#FFE27A' },
     bola: { metal: ['#B8913A', '#FFF8E1', '#E9CF86', '#FFFFFF', '#D8B660', '#FFF3CC', '#A67F2A'], ink: '#3A2A05', line: 'rgba(58,42,5,.35)', label: 'BOLA DE OURO', pattern: 'ball', glow: '#FFD65A' },
     chuteira: { metal: ['#3A1200', '#C2410C', '#5C1A02', '#F97316', '#6B2104', '#C2410C', '#2A0C00'], ink: '#FFF1C2', line: 'rgba(255,241,194,.4)', label: 'CHUTEIRA DE OURO', pattern: 'rays', glow: '#FF9A3C' },
     garcom: { metal: ['#042F2E', '#0F766E', '#063F3C', '#14B8A6', '#0A4D48', '#0F766E', '#021F1E'], ink: '#FFFFFF', line: 'rgba(255,255,255,.4)', label: 'REI DAS ASSISTÊNCIAS', pattern: 'waves', glow: '#5EEAD4' },
@@ -26,8 +26,8 @@
     xerife: { metal: ['#0A1024', '#23355E', '#0F1830', '#3A5285', '#142042', '#23355E', '#060A18'], ink: '#E6ECF7', line: 'rgba(230,236,247,.4)', label: 'XERIFE', pattern: 'rays', glow: '#9FB6E8' },
     joia: { metal: ['#3B0A2A', '#BE185D', '#4A0D34', '#EC4899', '#5B1040', '#BE185D', '#2A0620'], ink: '#FFF0F7', line: 'rgba(255,240,247,.4)', label: 'JOIA RARA', pattern: 'stars', glow: '#F9A8D4' },
     lenda: { metal: ['#050505', '#2A2A2A', '#0B0B0B', '#3A3A3A', '#111111', '#2A2A2A', '#000000'], ink: '#F4D675', line: 'rgba(244,214,117,.4)', label: 'LENDA VIVA', pattern: 'rays', glow: '#F4D675' },
-    triplice: { metal: ['#022C16', '#047857', '#033D20', '#10B981', '#064E2B', '#047857', '#011C0E'], ink: '#F4D675', line: 'rgba(244,214,117,.4)', label: 'TRÍPLICE COROA', pattern: 'trophy', glow: '#6EE7B7' },
-    mundial: { metal: ['#0C2A4A', '#3B82C4', '#123A63', '#7CC0F2', '#184A7A', '#3B82C4', '#08203A'], ink: '#FFFFFF', line: 'rgba(255,255,255,.45)', label: 'CAMPEÃO MUNDIAL', pattern: 'trophy', glow: '#7CC0F2' },
+    triplice: { metal: ['#022C16', '#047857', '#033D20', '#10B981', '#064E2B', '#047857', '#011C0E'], ink: '#F4D675', line: 'rgba(244,214,117,.4)', label: 'TRÍPLICE COROA', pattern: null, glow: '#6EE7B7' },
+    mundial: { metal: ['#0C2A4A', '#3B82C4', '#123A63', '#7CC0F2', '#184A7A', '#3B82C4', '#08203A'], ink: '#FFFFFF', line: 'rgba(255,255,255,.45)', label: 'CAMPEÃO MUNDIAL', pattern: null, glow: '#7CC0F2' },
     perfeita: { metal: ['#FF6EC7', '#7AFCFF', '#FFF38A', '#8AFFA1', '#B28DFF', '#FF6EC7', '#7AFCFF'], ink: '#1A1030', line: 'rgba(26,16,48,.35)', label: 'TEMPORADA PERFEITA', pattern: 'rays', glow: '#FFFFFF', light: true },
   };
   function specialTheme(d) {
@@ -130,21 +130,101 @@
     ctx.closePath();
   }
 
-  function jersey(ctx, x, y, s, fill, ink, num) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(s, s);
-    ctx.beginPath();
-    ctx.moveTo(-60, -80); ctx.lineTo(-22, -95); ctx.quadraticCurveTo(0, -80, 22, -95); ctx.lineTo(60, -80);
-    ctx.lineTo(95, -40); ctx.lineTo(70, -18); ctx.lineTo(55, -32); ctx.lineTo(55, 90); ctx.lineTo(-55, 90);
-    ctx.lineTo(-55, -32); ctx.lineTo(-70, -18); ctx.lineTo(-95, -40); ctx.closePath();
-    ctx.fillStyle = fill; ctx.fill();
-    ctx.lineWidth = 5; ctx.strokeStyle = ink; ctx.stroke();
-    ctx.fillStyle = ink;
-    ctx.font = '800 92px ' + DISPLAY;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(String(num), 0, 18);
+  // ---------- Autógrafo e taça (área da foto) ----------
+  // Estilos de assinatura (tools/craque_fonts.py hospeda as fontes). rot = inclinação (rad), stroke = contorno que engrossa
+  // o traço das fontes finas, swoosh = espessura do sublinhado (0 = sem). O jogador assina a carta no fim da carreira (d.sign);
+  // durante a carreira a carta fica só com o número.
+  const SIGN = {
+    delafield: { label: 'Clássica', family: "'Mrs Saint Delafield'", rot: -0.16, stroke: 2.4, swoosh: 4.5 },
+    apple: { label: 'Caneta', family: "'Homemade Apple'", rot: -0.1, stroke: 0.6, swoosh: 3.5 },
+    salt: { label: 'Marcador', family: "'Rock Salt'", rot: -0.08, stroke: 0, swoosh: 0 },
+    yellowtail: { label: 'Esportiva', family: "'Yellowtail'", rot: -0.14, stroke: 0.8, swoosh: 6 },
+    zeyada: { label: 'Rápida', family: "'Zeyada'", rot: -0.2, stroke: 1.6, swoosh: 3 },
+    doulaise: { label: 'Floreada', family: "'Monsieur La Doulaise'", rot: -0.08, stroke: 1.4, swoosh: 0 },
+  };
+  root.CRAQUE_SIGN = SIGN;
+  async function fontReady(family) {
+    try { if (typeof document !== 'undefined' && document.fonts && document.fonts.load) await document.fonts.load('80px ' + family, 'Aa'); } catch (e) { /* segue com a reserva */ }
+  }
+  const mkCanvas = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+  const tint = (c, color) => { const t = mkCanvas(c.width, c.height), x = t.getContext('2d'); x.drawImage(c, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = color; x.fillRect(0, 0, c.width, c.height); return t; };
+  const rgbaOf = (hex, a) => { const n = parseInt(String(hex).slice(1, 7), 16); return 'rgba(' + (n >> 16) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; };
+  const lightInk = hex => { const n = parseInt(String(hex).slice(1, 7), 16); return ((n >> 16) * 0.3 + (n >> 8 & 255) * 0.59 + (n & 255) * 0.11) / 255 > 0.5; };
+
+  // Assinatura: desenhada numa camada própria em preto, depois pintada na tinta da carta com o mesmo relevo do texto.
+  // Ajusta o tamanho para caber em maxW x maxH; nome comprido quebra em 2 linhas (primeiro nome em cima), escalonadas.
+  function signature(ctx, ink, emboss, name, F, cx, cy, maxW, maxH) {
+    const L = mkCanvas(W, H), x = L.getContext('2d');
+    x.translate(cx, cy); x.rotate(F.rot); x.textAlign = 'center';
+    const box = (t, fs) => { x.font = fs + 'px ' + F.family + ', cursive'; const m = x.measureText(t); return { t, w: m.actualBoundingBoxLeft + m.actualBoundingBoxRight, a: m.actualBoundingBoxAscent, d: m.actualBoundingBoxDescent, ox: (m.actualBoundingBoxLeft - m.actualBoundingBoxRight) / 2 }; };
+    const fit = lines => {
+      let fs = 220, bs;
+      for (; fs > 20; fs -= 4) { bs = lines.map(t => box(t, fs)); const h = bs.reduce((s, b) => s + b.a + b.d, 0) + fs * 0.08 * (bs.length - 1); if (Math.max(...bs.map(b => b.w)) <= maxW && h <= maxH) break; }
+      return { fs, bs };
+    };
+    let r = fit([name]);
+    const words = name.split(/\s+/);
+    if (r.fs < 96 && words.length > 1) { const r2 = fit([words[0], words.slice(1).join(' ')]); if (r2.fs > r.fs * 1.25) r = r2; }
+    x.font = r.fs + 'px ' + F.family + ', cursive';
+    const gap = r.fs * 0.08, total = r.bs.reduce((s, b) => s + b.a + b.d, 0) + gap * (r.bs.length - 1);
+    x.fillStyle = x.strokeStyle = '#000'; x.lineJoin = x.lineCap = 'round';
+    let y = -total / 2, hw = 0;
+    r.bs.forEach((b, i) => {
+      const dx = r.bs.length > 1 ? (i ? 1 : -1) * Math.min(40, (maxW - b.w) / 2) : 0;
+      y += b.a; x.fillText(b.t, b.ox + dx, y);
+      if (F.stroke) { x.lineWidth = F.stroke; x.strokeText(b.t, b.ox + dx, y); }
+      y += b.d + gap; hw = Math.max(hw, b.w / 2);
+    });
+    if (F.swoosh) { const bt = total / 2; x.lineWidth = F.swoosh; x.beginPath(); x.moveTo(-hw * 0.82, bt + 12); x.quadraticCurveTo(0, bt + 36, hw * 0.98, bt - 8); x.stroke(); }
+    ctx.drawImage(tint(L, emboss[0]), 0, 1.5);
+    ctx.drawImage(tint(L, emboss[1]), 0, -1);
+    ctx.drawImage(tint(L, ink), 0, 0);
+  }
+
+  // Cartas de título: a taça da competição gravada no lugar da assinatura
+  const TROPHY_IMG = n => (root.CRAQUE_TROPHY_IMGS || {})[n];
+  const compIn = txt => { const k = Object.keys(root.CRAQUE_TROPHY_IMGS || {}).find(n => txt.includes(n.toUpperCase())); return k || null; };
+  function trophyOf(d) {
+    const f = String(d.footer || '').toUpperCase();
+    if (d.special === 'copa') return { comp: 'Copa do Mundo', caption: (d.wc > 1 ? d.wc + '× ' : '') + 'CAMPEÃO DO MUNDO' };
+    if (d.special === 'mundial') return { comp: 'Mundial de Clubes', caption: 'CAMPEÃO MUNDIAL' };
+    // Herói da Final e Tríplice Coroa: a competição continental vem no texto da carta ("FINAL DA LIBERTADORES 2031")
+    if (d.special === 'heroi') { const comp = compIn(f.replace(/^FINAL DA /, '')); return comp && { comp, caption: 'HERÓI DA FINAL' }; }
+    if (d.special === 'triplice') { const comp = compIn(f.split('COPA E ')[1] || ''); return comp && { comp, caption: 'TRÍPLICE COROA' }; }
+    return null;
+  }
+  // Gravura: a foto da taça vira linhas horizontais na tinta da carta, mais grossas onde a imagem é mais escura
+  // (tinta clara: mais grossas onde é mais clara). A imagem é do próprio site (getImageData).
+  function engrave(ctx, ink, light, src, x0, y0, w, h) {
+    const c = mkCanvas(w, h), x = c.getContext('2d'); x.drawImage(src, 0, 0, w, h);
+    let id; try { id = x.getImageData(0, 0, w, h); } catch (e) { ctx.drawImage(src, x0, y0, w, h); return; }
+    const dd = id.data, step = 4, lo = 0.35, hi = step * 0.96;
+    ctx.save(); ctx.fillStyle = ink;
+    for (let y = 0; y < h; y += step) {
+      const sy = Math.min(h - 1, Math.round(y + step / 2));
+      for (let px = 0; px < w; px++) {
+        const i = (sy * w + px) * 4, a = dd[i + 3] / 255;
+        if (a < 0.05) continue;
+        const lum = (dd[i] * 0.3 + dd[i + 1] * 0.59 + dd[i + 2] * 0.11) / 255, t = lo + Math.pow(light ? lum : 1 - lum, 0.9) * (hi - lo);
+        ctx.globalAlpha = a; ctx.fillRect(x0 + px, y0 + y + step / 2 - t / 2, 1.05, t);
+      }
+    }
     ctx.restore();
+  }
+  async function trophyArt(ctx, ink, light, t) {
+    const im = TROPHY_IMG(t.comp) ? await loadImg(TROPHY_IMG(t.comp)) : null;
+    if (!im) return false;
+    const cx = 378, cy = 220;
+    ctx.save();
+    const rg = ctx.createRadialGradient(cx, cy, 20, cx, cy, 250); rg.addColorStop(0, rgbaOf(ink, 0.3)); rg.addColorStop(1, rgbaOf(ink, 0)); ctx.fillStyle = rg;
+    for (let i = 0; i < 24; i++) { const a = i / 24 * Math.PI * 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * 300, cy + Math.sin(a) * 300); ctx.lineTo(cx + Math.cos(a + 0.11) * 300, cy + Math.sin(a + 0.11) * 300); ctx.fill(); }
+    ctx.restore();
+    let h = 290, w = Math.round(h * im.width / im.height);
+    if (w > 300) { h = Math.round(h * 300 / w); w = 300; }
+    engrave(ctx, ink, light, im, Math.round(cx - w / 2), 86 + (290 - h), w, h);
+    ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.font = '800 30px ' + DISPLAY;
+    ctx.fillText(t.caption, cx, 420, 360);
+    return true;
   }
 
   function loadImg(src) {
@@ -157,7 +237,7 @@
   }
 
   // data: { name, pos, peak, attrs, flag, crest (url), grade, verdict, goals, assists, titles, ballon, traits:[{icon,lv}], years,
-  //         look e shirt (não entram mais na carta) }
+  //         sign (assinatura, ver SIGN), curve/tSeasons/startAge (verso) }
   // Características no rodapé: o Twemoji de cada uma (SVG em assets/tw), com o nível (2 ou 3) ao lado.
   // As imagens são pré-carregadas antes de desenhar a carta (senão sairiam em branco no primeiro reveal e no compartilhamento).
   const twCode = e => [...(e.includes('\u200D') ? e : e.replace(/\uFE0F/g, ''))].map(ch => ch.codePointAt(0).toString(16)).join('-');
@@ -265,8 +345,19 @@
     const crest = d.crest ? await loadImg(d.crest) : null;
     if (crest) ctx.drawImage(crest, 93, 356, 70, 70);
 
-    // No lugar da foto: a camisa com o número (o desenho do jogador destoava do metal realista da carta)
-    jersey(ctx, 385, 250, 1.35, 'rgba(255,255,255,0.18)', T.ink, d.number || ({ ATA: 9, MEI: 10, ZAG: 4, GOL: 1 }[d.pos] || 10));
+    // No lugar da foto: o autógrafo gravado no metal, com o número da camisa bem apagado atrás.
+    // Cartas de título (Copa, Mundial, Herói da Final, Tríplice): a taça da competição gravada.
+    const ink = T.ink, light = d.bare ? !!d.inkLight : lightInk(ink);
+    const tr = trophyOf(d), withTrophy = !!(tr && await trophyArt(ctx, ink, light, tr));
+    if (!withTrophy) {
+      const F = SIGN[d.sign];
+      if (F) await fontReady(F.family);
+      ctx.save(); shield(ctx); ctx.clip();
+      ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.font = '800 400px ' + DISPLAY; ctx.globalAlpha = F ? 0.14 : 0.24;
+      ctx.fillText(String(d.number || ({ ATA: 9, MEI: 10, ZAG: 4, GOL: 1 }[d.pos] || 10)), 382, 428); ctx.globalAlpha = 1;
+      ctx.restore();
+      if (F) signature(ctx, ink, emboss, String(d.name || '').trim() || 'Craque', F, 372, 262, 340, 200);
+    }
 
     // Nome
     ctx.fillStyle = T.ink;
@@ -304,7 +395,7 @@
     const extraN = (d.ballon ? 1 : 0) + (d.wc ? 1 : 0);
     embossOn = false; drawTraitSeals(ctx, d, extraN ? 697 : 705, T.ink, traitImgs); embossOn = true;
     // Estrelas de campeão do mundo acima do nome da camisa
-    if (d.wc) { ctx.font = '800 26px ' + DISPLAY; embossOn = false; ctx.fillText('★'.repeat(Math.min(d.wc, 5)), 385, 120); embossOn = true; }
+    if (d.wc && !withTrophy) { ctx.font = '800 26px ' + DISPLAY; embossOn = false; ctx.fillText('★'.repeat(Math.min(d.wc, 5)), 385, 120); embossOn = true; }
     // Carta do meio da carreira (revelação ao subir de faixa): rodapé simples com clube e idade
     if (d.footer) {
       ctx.font = '700 24px ' + BODY;
@@ -326,6 +417,53 @@
     ctx.globalAlpha = 0.8;
     ctx.fillText(T.label + ' · ' + d.verdict.toUpperCase(), W / 2, extra.length ? 790 : 784, extra.length ? 310 : 330);
     ctx.globalAlpha = 1;
+    return canvas;
+  };
+
+  // Verso da carta (sem fundo, vai por cima do metal da carta 3D): CLIMBIX, o gráfico da trajetória e nome · número.
+  // d.curve = nota geral de cada temporada, d.tSeasons = índices das temporadas com título, d.startAge = idade na 1ª.
+  // look = { ink, inkLight, line } (CRAQUE_CARD_METAL). Cartas sem a trajetória guardada ficam só com o CLIMBIX e o nome.
+  root.CRAQUE_CARD_BACK = async function (canvas, d, look) {
+    try { if (document.fonts && document.fonts.load) await Promise.all(["800 40px 'Barlow Condensed'", "700 40px 'Barlow Condensed'"].map(f => document.fonts.load(f))); } catch (e) { /* segue */ }
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d'), ink = look.ink, e = look.inkLight ? ['rgba(0,0,0,.35)', null] : ['rgba(255,255,255,.3)', null];
+    const txt = (t, x, y, mw) => { const f = ctx.fillStyle, put = dy => (mw ? ctx.fillText(t, x, y + dy, mw) : ctx.fillText(t, x, y + dy)); ctx.fillStyle = e[0]; put(1.5); ctx.fillStyle = f; put(0); };
+    const FONT = "'Barlow Condensed', 'Arial Narrow', sans-serif";
+    ctx.fillStyle = ink; ctx.strokeStyle = ink; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    const v = (d.curve || []).filter(n => typeof n === 'number');
+    ctx.font = '800 128px ' + FONT; ctx.letterSpacing = '4px'; txt('CLIMBIX', W / 2 + 2, v.length > 1 ? 180 : 430);
+    ctx.font = '700 22px ' + FONT; ctx.letterSpacing = '6px'; ctx.globalAlpha = 0.85;
+    txt(v.length > 1 ? 'TRAJETÓRIA DA CARREIRA' : 'SEU NOME NA HISTÓRIA', W / 2 + 3, v.length > 1 ? 222 : 472); ctx.globalAlpha = 1; ctx.letterSpacing = '0px';
+    if (v.length > 1) {
+      const n = v.length, x0 = 100, x1 = 500, yb = 640, gh = 340, vmax = Math.min(95, Math.max(...v) + 9), start = d.startAge || 16;
+      const X = i => x0 + i / (n - 1) * (x1 - x0), Y = q => yb - (q - 45) / (vmax - 45) * gh;
+      const path = () => { ctx.beginPath(); ctx.moveTo(X(0), Y(v[0])); for (let i = 1; i < n; i++) ctx.quadraticCurveTo(X(i - 1), Y(v[i - 1]), (X(i - 1) + X(i)) / 2, (Y(v[i - 1]) + Y(v[i])) / 2); ctx.lineTo(X(n - 1), Y(v[n - 1])); };
+      ctx.font = '700 19px ' + FONT; ctx.textAlign = 'left';
+      [65, 75, 85].filter(q => q < vmax - 2).forEach(q => {
+        ctx.globalAlpha = 0.5; ctx.setLineDash([2, 8]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0, Y(q)); ctx.lineTo(x1, Y(q)); ctx.stroke(); ctx.setLineDash([]);
+        ctx.globalAlpha = 0.8; ctx.fillText(String(q), x0, Y(q) - 7);
+      });
+      ctx.globalAlpha = 1;
+      // Hachura diagonal embaixo da curva
+      ctx.save(); path(); ctx.lineTo(X(n - 1), yb); ctx.lineTo(X(0), yb); ctx.closePath(); ctx.clip();
+      ctx.globalAlpha = 0.3; ctx.lineWidth = 2; ctx.beginPath();
+      const L = gh + 60; for (let k = -L; k < x1 - x0; k += 10) { ctx.moveTo(x0 + k, yb); ctx.lineTo(x0 + k + L, yb - L); }
+      ctx.stroke(); ctx.restore();
+      ctx.lineWidth = 6; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; path(); ctx.stroke();
+      ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x0, yb); ctx.lineTo(x1, yb); ctx.stroke();
+      // Estrelas na linha de base: temporadas com título
+      (d.tSeasons || []).filter(i => i >= 0 && i < n).forEach(i => {
+        ctx.beginPath(); for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? 9 * 0.45 : 9; ctx.lineTo(X(i) + Math.cos(a) * rr, yb + 17 + Math.sin(a) * rr); } ctx.closePath(); ctx.fill();
+      });
+      const p = v.indexOf(Math.max(...v));
+      ctx.beginPath(); ctx.arc(X(p), Y(v[p]), 9, 0, Math.PI * 2); ctx.fill();
+      ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(X(p), Y(v[p]), 16, 0, Math.PI * 2); ctx.stroke();
+      ctx.textAlign = 'center'; ctx.font = '800 44px ' + FONT; txt(String(v[p]), Math.min(x1 - 20, Math.max(x0 + 20, X(p))), Y(v[p]) - 28);
+      ctx.font = '700 22px ' + FONT; ctx.textAlign = 'left'; txt(start + ' ANOS', x0, yb + 30 + (d.tSeasons && d.tSeasons.includes(0) ? 14 : 0));
+      ctx.textAlign = 'right'; txt((start + n - 1) + ' ANOS', x1, yb + 30 + (d.tSeasons && d.tSeasons.includes(n - 1) ? 14 : 0));
+    }
+    ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.font = '800 34px ' + FONT;
+    txt(String(d.name || '').toUpperCase() + (d.number ? ' · ' + d.number : ''), W / 2, 736, 400);
     return canvas;
   };
 

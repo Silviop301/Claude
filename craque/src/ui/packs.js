@@ -28,6 +28,12 @@
     svg = svg.replace(/viewBox="[^"]+"/, 'viewBox="' + VIEW[(it.limb && LIMB_VIEW[it.limb]) || VIEW_OF[it.id] || VIEW_OF[it.cat] || 'head'] + '"');
     return (cache[k] = A.url(svg));
   }
+  // Arte do item: o pedaço do boneco onde ele fica; assinatura, o nome escrito na fonte (fonte de página não entra em <img> SVG)
+  function itemArt(it) {
+    const F = it.cat === 'assinatura' && (window.CRAQUE_SIGN || {})[it.look.sign];
+    if (F) return '<span class="sig-art" style="font-family:' + esc(F.family) + ', cursive">' + esc((G.c && G.c.name) || 'Climbix') + '</span>';
+    return '<img src="' + itemImg(it) + '" alt="">';
+  }
   const rarCls = rk => 'rk-' + rk;
   const selo = rk => '<span class="pk-selo ' + rarCls(rk) + '">' + I.RAR_NAME[rk] + '</span>';
   const ficha = (n, cls) => '<span class="pk-fichas' + (cls ? ' ' + cls : '') + '">' + U.emo('🎟️', 'sm') + '<b>' + n + '</b></span>';
@@ -145,10 +151,10 @@
       busy = true;
       frame();
       if (lend) w.classList.add('dark', 'rays'); else w.classList.remove('dark', 'rays');
-      $('pk-stage').innerHTML = '<div class="pk-card ' + rarCls(it.rk) + '" id="pk-card"><div class="pk-in"><img src="' + itemImg(it) + '" alt=""><i class="pk-sheen"></i></div>' +
+      $('pk-stage').innerHTML = '<div class="pk-card ' + rarCls(it.rk) + '" id="pk-card"><div class="pk-in">' + itemArt(it) + '<i class="pk-sheen"></i></div>' +
         (g.dup ? '' : '<span class="pk-new">NOVO</span>') + '</div>' +
         '<div class="pk-info">' + (lend ? '<b class="pk-lend">LENDÁRIO</b>' : '') + '<span class="pk-rep" hidden>REPETIDO</span>' +
-        '<b class="pk-name">' + esc(it.name) + '</b>' + selo(it.rk) + '<span class="pk-desc" id="pk-desc">' + (g.dup ? 'Você já tinha este.' : it.cat === 'num' ? 'Já está liberado para a camisa.' : 'Já está liberado no seu visual.') + '</span></div>' +
+        '<b class="pk-name">' + esc(it.name) + '</b>' + selo(it.rk) + '<span class="pk-desc" id="pk-desc">' + (g.dup ? 'Você já tinha este.' : it.cat === 'num' ? 'Já está liberado para a camisa.' : it.cat === 'assinatura' ? 'Para assinar a carta no fim da carreira.' : 'Já está liberado no seu visual.') + '</span></div>' +
         '<div class="pk-foot"><div class="pk-dots">' + res.got.map((_, i) => '<i' + (i <= idx ? ' class="on"' : '') + '></i>').join('') + '</div>' +
         '<span>' + (idx < res.got.length - 1 ? 'Toque para o próximo' : 'Toque para ver o resumo') + '</span></div>';
       const card = $('pk-card');
@@ -200,7 +206,7 @@
       frame(); w.classList.remove('dark', 'rays');
       const left = I.get().packs.length, lend = res.got.some(g => g.it.rk === 'lendario');
       $('pk-stage').innerHTML = '<div class="pk-res"><div class="pk-eyebrow">Pacotinho ' + idxPack + ' de ' + total + '</div><b class="pk-h">Pacotinho aberto</b>' +
-        '<div class="pk-grid">' + res.got.map(g => '<div class="pk-t' + (g.dup ? ' dup' : '') + '"><div class="pk-tile ' + rarCls(g.it.rk) + '"><div class="pk-in"><img src="' + itemImg(g.it) + '" alt=""></div>' +
+        '<div class="pk-grid">' + res.got.map(g => '<div class="pk-t' + (g.dup ? ' dup' : '') + '"><div class="pk-tile ' + rarCls(g.it.rk) + '"><div class="pk-in">' + itemArt(g.it) + '</div>' +
           (g.dup ? '' : '<span class="pk-new sm">NOVO</span>') + '</div><b>' + esc(g.it.name) + '</b>' + (g.dup ? '<span class="pk-plus">+' + g.fichas + (g.fichas > 1 ? ' fichas' : ' ficha') + '</span>' : '') + '</div>').join('') + '</div>' +
         pityBox(res.pity, lend ? 'Saiu um lendário, então o contador recomeça.' : 'Mais um pacote conta para a garantia.') +
         '<div class="pk-acts"><button class="btn" id="pk-wear">Ver no meu jogador</button>' +
@@ -221,11 +227,11 @@
   }
 
   // ---------- Meus itens ----------
-  const TABS = [['num', 'Números'], ['cabelo', 'Cabelo e barba'], ['equip', 'Equipamento'], ['tatuagem', 'Tatuagem'], ['cores', 'Cores']];
+  const TABS = [['num', 'Números'], ['cabelo', 'Cabelo e barba'], ['equip', 'Equipamento'], ['tatuagem', 'Tatuagem'], ['cores', 'Cores'], ['assinatura', 'Assinatura']];
   const ORD = rk => I.RAR.indexOf(rk);
   function tile(it) {
     const on = I.has(it.id), novo = on && I.get().news[it.id];
-    return '<button class="mi-t' + (on ? '' : ' off') + '" data-id="' + it.id + '"><span class="pk-tile ' + rarCls(it.rk) + (on ? '' : ' locked') + '"><span class="pk-in"><img src="' + itemImg(it) + '" alt=""></span>' +
+    return '<button class="mi-t' + (on ? '' : ' off') + '" data-id="' + it.id + '"><span class="pk-tile ' + rarCls(it.rk) + (on ? '' : ' locked') + '"><span class="pk-in">' + itemArt(it) + '</span>' +
       (on ? '' : '<span class="mi-lock">' + U.emo('🔒', 'xs') + '</span>') + (novo ? '<span class="pk-new sm">NOVO</span>' : '') + '</span>' +
       '<b>' + esc(it.name) + '</b>' + selo(it.rk) + '</button>';
   }
@@ -269,7 +275,7 @@
     const w = document.createElement('div');
     w.className = 'sheet-wrap';
     w.innerHTML = '<div class="tr-sheet" role="dialog" aria-modal="true"><i class="tr-grab"></i><div class="tr-head"><b>Trocar fichas</b>' + ficha(inv.fichas) + '</div>' +
-      '<div class="tr-item"><span class="pk-tile ' + rarCls(it.rk) + '"><span class="pk-in"><img src="' + itemImg(it) + '" alt=""></span><span class="tr-prev">PRÉVIA</span></span>' +
+      '<div class="tr-item"><span class="pk-tile ' + rarCls(it.rk) + '"><span class="pk-in">' + itemArt(it) + '</span><span class="tr-prev">PRÉVIA</span></span>' +
       '<div><b>' + esc(it.name) + '</b>' + selo(it.rk) + '<span>Ainda travado. Também sai em pacotinhos.</span></div></div>' +
       '<div class="tr-math"><div><span>Custa</span><b>' + U.emo('🎟️', 'xs') + ' ' + cost + '</b></div><div><span>Você tem</span><b>' + inv.fichas + '</b></div>' +
       '<div class="tr-after"><span>Depois da troca</span><b>' + (ok ? inv.fichas - cost : '–') + '</b></div></div>' +
@@ -300,7 +306,7 @@
     return '<div class="hb">' +
       (n ? row('b-hb-packs', packHTML('mini'), 'Pacotinhos', n + ' para abrir', '<span class="hb-go gold">Abrir</span>', n) : '') +
       (pen ? row('b-hb-pen', U.emo('⚽', 'md'), 'Pênalti da sorte', 'Disponível agora', '<span class="hb-go">Chutar</span>') : '') +
-      row('b-hb-items', '<img src="' + itemImg(I.BY_ID.chamas) + '" alt="">', 'Meus itens <small>' + ct.got + ' / ' + ct.all + '</small>', '<i class="hb-bar"><em style="width:' + Math.round(ct.got / ct.all * 100) + '%"></em></i>', '<span class="hb-chev">' + U.ICON['chevron-right'] + '</span>') +
+      row('b-hb-items', itemArt(I.BY_ID.chamas), 'Meus itens <small>' + ct.got + ' / ' + ct.all + '</small>', '<i class="hb-bar"><em style="width:' + Math.round(ct.got / ct.all * 100) + '%"></em></i>', '<span class="hb-chev">' + U.ICON['chevron-right'] + '</span>') +
       '</div>';
   }
   function bindHome() {
@@ -309,5 +315,5 @@
     if ($('b-hb-items')) $('b-hb-items').onclick = () => myItems();
   }
 
-  Object.assign(U, { openPacks, myItems, tradeSheet, itemImg, packFinale: finaleBox, packHome: homeBlock, packHomeBind: bindHome, rarCls, raritySelo: selo });
+  Object.assign(U, { openPacks, myItems, tradeSheet, itemImg, itemArt, packFinale: finaleBox, packHome: homeBlock, packHomeBind: bindHome, rarCls, raritySelo: selo });
 })();

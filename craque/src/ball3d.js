@@ -265,21 +265,15 @@ async function contentTexture(data, look) {
   t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
   return t;
 }
-// Verso: logo do jogo gravado no metal
-function backTexture(look) {
+// Verso: CLIMBIX e o gráfico da trajetória da carreira gravados no metal (desenho em card.js), recortados como a frente
+async function backTexture(data, look) {
+  const src = document.createElement('canvas');
+  await window.CRAQUE_CARD_BACK(src, data, look);
   const cv = document.createElement('canvas');
-  cv.width = 512; cv.height = 782;
-  const x = cv.getContext('2d');
-  x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.fillStyle = look.ink;
-  x.font = "800 118px 'Barlow Condensed', 'Arial Narrow', sans-serif";
-  x.fillText('CLIMBIX', 256, 360);
-  x.font = "600 30px 'Barlow', sans-serif";
-  x.globalAlpha = 0.8; x.fillText('SEU NOME NA HISTÓRIA', 256, 440);
-  x.globalAlpha = 0.5; x.lineWidth = 6; x.strokeStyle = look.ink;
-  x.beginPath(); x.arc(256, 210, 58, 0, Math.PI * 2); x.stroke();
+  cv.width = 1060; cv.height = 1604;
+  cv.getContext('2d').drawImage(src, 35, 40, 530, 802, 0, 0, cv.width, cv.height);
   const t = new THREE.CanvasTexture(cv);
-  t.colorSpace = THREE.SRGBColorSpace;
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
   return t;
 }
 
@@ -329,15 +323,15 @@ function card3d(host, data, opts) {
     pivot.add(card);
     const box = new THREE.Box3().setFromObject(card), size = box.getSize(new THREE.Vector3());
     // Camada do conteúdo (frente) e do verso: planos colados na face, dentro do friso
-    const FW = size.x * 0.86, FH = size.y * 0.93;
+    const FW = size.x * 0.86;
     const face = new THREE.Mesh(new THREE.PlaneGeometry(FW, FW * 802 / 530), new THREE.MeshPhysicalMaterial({ transparent: true, metalness: 0.25, roughness: 0.45, clearcoat: 1, clearcoatRoughness: 0.08, depthWrite: false }));
     face.position.set(0, size.y * 0.025, box.max.z + 0.002); pivot.add(face);
-    const back = new THREE.Mesh(new THREE.PlaneGeometry(FW, FH), new THREE.MeshPhysicalMaterial({ transparent: true, metalness: 0.5, roughness: 0.35, depthWrite: false }));
-    back.position.z = box.min.z - 0.002; back.rotation.y = Math.PI; pivot.add(back);
+    const back = new THREE.Mesh(new THREE.PlaneGeometry(FW, FW * 802 / 530), new THREE.MeshPhysicalMaterial({ transparent: true, metalness: 0.5, roughness: 0.35, depthWrite: false }));
+    back.position.set(0, size.y * 0.025, box.min.z - 0.002); back.rotation.y = Math.PI; pivot.add(back);
 
     async function apply(d) {
       const look = window.CRAQUE_CARD_METAL(d);
-      const [tex, content] = await Promise.all([metalTex(look.metal), contentTexture(d, look)]);
+      const [tex, content, backTex] = await Promise.all([metalTex(look.metal), contentTexture(d, look), backTexture(d, look)]);
       const f = mats.face_metal;
       if (f) {
         f.map = tex; f.map.offset.set(0, 0); f.map.repeat.set(1, 1);
@@ -357,7 +351,7 @@ function card3d(host, data, opts) {
         ? new THREE.MeshPhysicalMaterial({ map: content, transparent: true, metalness: 0.3, roughness: 0.4, clearcoat: 1, clearcoatRoughness: 0.08, depthWrite: false })
         : new THREE.MeshBasicMaterial({ map: content, transparent: true, toneMapped: false, depthWrite: false });
       if (back.material.map) back.material.map.dispose();
-      back.material.map = backTexture(look); back.material.needsUpdate = true;
+      back.material.map = backTex; back.material.needsUpdate = true;
     }
     await apply(data);
     if (!host.isConnected) { renderer.dispose(); cv.remove(); return null; }
