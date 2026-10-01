@@ -302,23 +302,23 @@
     // Cartas raras: Seleção da Temporada e Herói da Final saem no máximo uma vez na carreira
     const has = t => (c.cards || []).some(k => k.type === t);
     const drop = (t, ok, txt) => { const k = ok && S.dropCard(c, t, txt); if (k) cards.push(k); };
-    drop('tots', awards.some(a => a.id === 'team') && rating >= 8.3 && games >= 25 && club.tier >= 3, lg.name.toUpperCase() + ' ' + yr + ' · ' + main);
+    drop('tots', awards.some(a => a.id === 'team') && rating >= 8.6 && games >= 28 && club.tier >= 4, lg.name.toUpperCase() + ' ' + yr + ' · ' + main);
     drop('heroi', M && M.type === 'cont' && M.ok, 'FINAL DA ' + (M ? M.comp : '').toUpperCase() + ' ' + yr);
     drop('bola', !!ballon, 'MELHOR DO MUNDO · ' + yr);
     // Mais raras (uma por carreira): marcas da temporada, idade e a temporada perfeita
     const ids = titles.map(t => t.id);
     const once = drop;
-    if (games >= 20) {
+    if (games >= 25) {
       // Uma por posição, mais as de idade
-      once('chuteira', c.pos === 'ATA' && goals >= 30, goals + ' GOLS · ' + lg.name.toUpperCase() + ' ' + yr);
-      once('garcom', c.pos === 'MEI' && assists >= 20, assists + ' ASSISTÊNCIAS · ' + yr);
-      once('xerife', c.pos === 'ZAG' && tackles >= 17, tackles + ' DESARMES DECISIVOS · ' + yr);
-      once('muralha', c.pos === 'GOL' && cleanSheets >= 22, cleanSheets + ' JOGOS SEM SOFRER GOL · ' + yr);
-      once('joia', c.age <= 19 && rating >= 7.5, 'AOS ' + c.age + ' ANOS · NOTA ' + rating.toFixed(1).replace('.', ',') + ' · ' + yr);
-      once('lenda', c.age >= 35 && rating >= 7.2, 'AOS ' + c.age + ' ANOS · NOTA ' + rating.toFixed(1).replace('.', ',') + ' · ' + yr);
+      once('chuteira', c.pos === 'ATA' && goals >= 36, goals + ' GOLS · ' + lg.name.toUpperCase() + ' ' + yr);
+      once('garcom', c.pos === 'MEI' && assists >= 24, assists + ' ASSISTÊNCIAS · ' + yr);
+      once('xerife', c.pos === 'ZAG' && tackles >= 20, tackles + ' DESARMES DECISIVOS · ' + yr);
+      once('muralha', c.pos === 'GOL' && cleanSheets >= 25, cleanSheets + ' JOGOS SEM SOFRER GOL · ' + yr);
+      once('joia', c.age <= 18 && rating >= 7.8, 'AOS ' + c.age + ' ANOS · NOTA ' + rating.toFixed(1).replace('.', ',') + ' · ' + yr);
+      once('lenda', c.age >= 36 && rating >= 7.8, 'AOS ' + c.age + ' ANOS · NOTA ' + rating.toFixed(1).replace('.', ',') + ' · ' + yr);
     }
     once('triplice', ids.includes('league') && ids.includes('cup') && ids.includes('cont'), 'LIGA, COPA E ' + ((titles.find(t => t.id === 'cont') || {}).name || '').toUpperCase() + ' · ' + yr);
-    once('perfeita', games >= 30 && rating >= 8.8, 'NOTA ' + rating.toFixed(1).replace('.', ',') + ' EM ' + games + ' JOGOS · ' + yr);
+    once('perfeita', games >= 32 && rating >= 9.0, 'NOTA ' + rating.toFixed(1).replace('.', ',') + ' EM ' + games + ' JOGOS · ' + yr);
     // Por que a nota mudou (em pontos de nota geral, aproximados)
     // Cada parte em pontos de nota geral; os treinos absorvem a variação miúda para a soma bater com a nota real
     const why = S.whyOf({ c, games, rating, growth, perf, injLoss, injPct: Math.round(injShare * 100), decline, luck, room, potUp, dOvr: ovr1 - ovr0 });
