@@ -6,7 +6,7 @@
   const { G, esc, $, load, store, render, bar, SAVE, HALL } = U;
   const API = window.CLIMBIX_ACCOUNT_API || (/climbix\.app$/.test(location.hostname) ? '/api/account.php' : 'https://climbix.app/api/account.php');
   const AKEY = 'climbix-account', PKEY = 'climbix-player';
-  const KEYS = { save: SAVE, hall: HALL, col: 'climbix-colecao-v1', ach: 'craque-ach-v1', daily: 'craque-daily-v1' };
+  const KEYS = { save: SAVE, hall: HALL, col: 'climbix-colecao-v1', ach: 'craque-ach-v1', daily: 'craque-daily-v1', sala: 'climbix-sala-v1' };
   const post = (a, body) => fetch(API + '?a=' + a, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body), keepalive: a === 'push' })
     .then(r => r.json().then(j => (r.ok ? j : Promise.reject(j))));
   const acc = () => load(AKEY);
@@ -28,6 +28,8 @@
     const hs = new Set(), hall = [];
     (a.hall || []).concat(b.hall || []).forEach(h => { const k = h && h.name + ':' + h.score; if (h && !hs.has(k)) { hs.add(k); hall.push(h); } });
     o.hall = hall.length ? hall.sort((x, y) => y.score - x.score).slice(0, 10) : null;
+    // Sala de Troféus: todas as taças das duas (a mesma conquista não entra duas vezes)
+    o.sala = U.salaMerge ? U.salaMerge(a.sala, b.sala) : a.sala || b.sala || null;
     // Conquistas: todas as das duas
     o.ach = Object.assign({}, b.ach || {}, a.ach || {});
     // Carreira do dia: o melhor resultado de cada dia

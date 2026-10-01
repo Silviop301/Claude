@@ -241,7 +241,8 @@
       (fin ? '' : '<p class="contract">' + contractTxt + '</p>') + '</details>' + '<div class="rv">' + actions + '</div>';
     bar();
     reveal(skipNow, res);
-    $('b-next').onclick = goTour ? tourIntro : afterSeason;
+    // Depois do resumo: as taças da temporada entram na estante, e aí segue
+    $('b-next').onclick = () => U.salaPlay(G.c, goTour ? tourIntro : afterSeason);
     if ($('b-farewell')) $('b-farewell').onclick = () => { S.announce(G.c); save(); bar(); goTour ? tourIntro() : U.preseason(); };
     if ($('b-stop')) $('b-stop').onclick = U.finale;
   }

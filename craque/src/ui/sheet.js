@@ -64,7 +64,7 @@
     return '<div class="sh-nums">' + nums.map(([v, l]) => '<div><b>' + v + '</b><span>' + l + '</span></div>').join('') + '</div>' +
       (c.seasons.length ? '<div class="sh-sec">Temporadas <span>' + c.seasons.length + ' · ' + T.games + ' jogos</span></div><table class="sh-seasons"><thead><tr><th>Ano</th><th>Clube</th><th>J</th><th>' + (gk ? 'SG' : def ? 'G' : 'G/A') + '</th><th>Nota</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
         : '<p class="sh-hint">A primeira temporada ainda não foi jogada.</p>') +
-      (room.length ? '<div class="sh-sec">Troféus</div><div class="sh-room">' + room.map(([name, t]) => '<div>' + trophy(t.type, 34, name) + '<b>' + t.n + '×</b><span>' + esc(name) + '</span></div>').join('') + '</div>' : '');
+      (room.length ? '<div class="sh-sec">Troféus <button class="link-btn sh-sala" id="sh-sala">Ver na Sala de Troféus ›</button></div><div class="sh-room">' + room.map(([name, t]) => '<div>' + trophy(t.type, 34, name) + '<b>' + t.n + '×</b><span>' + esc(name) + '</span></div>').join('') + '</div>' : '');
   }
 
   const TABS = [['build', 'Build'], ['combos', 'Combinações'], ['career', 'Carreira']];
@@ -80,6 +80,7 @@
         '<div class="sh-body">' + (t === 'combos' ? combosTab(c) : t === 'career' ? careerTab(c) : buildTab(c)) + '</div></div>';
       w.querySelector('.sh-x').onclick = close;
       w.querySelectorAll('[data-t]').forEach(b => b.onclick = () => draw(b.dataset.t));
+      const sl = w.querySelector('#sh-sala'); if (sl) sl.onclick = () => { close(); U.trophyRoom('car'); };
     };
     const close = () => { w.classList.add('out'); setTimeout(() => w.remove(), 200); };
     w.onclick = e => { if (e.target === w) close(); };

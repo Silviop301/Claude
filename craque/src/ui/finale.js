@@ -44,6 +44,7 @@
       traits: G.c.traits.map(id => ({ id, icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(G.c, id) })),
     };
     U.collect(G.c, f, cardData); // a carta entra na coleção
+    U.salaRecord(G.c); // e as taças, na Sala de Troféus
     const shareName = G.c.name;
     // Escudo da carta: começa no clube principal e dá para trocar por qualquer clube da carreira
     const clubsPlayed = [...new Set(G.c.spells.filter(sp => sp.seasons).map(sp => sp.club))];
@@ -56,6 +57,7 @@
         '<canvas data-sp="final" class="on" aria-label="Carta final"></canvas>' + G.c.cards.map((k, i) => '<canvas data-sp="' + i + '" aria-label="' + esc(U.SPECIAL_NAME[k.type]) + '"></canvas>').join('') + '</div>' : '') +
       (clubsPlayed.length > 1 ? '<div id="crest-wrap"><div class="crest-pick-t">Escudo da carta</div><div class="crest-pick" id="crest-pick">' + clubsPlayed.map(id => '<button data-club="' + id + '"' + (id === f.mainClub ? ' class="on"' : '') + ' aria-label="' + esc(club(id).name) + '">' + crest(id) + '<span>' + esc(club(id).name) + '</span></button>').join('') + '</div></div>' : '') +
       '<button class="btn" id="b-share">Compartilhar carta</button><button class="btn ghost" id="b-save">Salvar imagem da carta</button>' +
+      (Object.keys(G.c.trophies || {}).length ? '<button class="btn ghost" id="b-sala-car">' + U.emo('🏆', 'sm') + ' Sala de Troféus da carreira</button>' : '') +
       (G.c.seasons.length ? '<button class="btn ghost" id="b-album">' + U.emo('📖', 'sm') + ' Ver o álbum da carreira</button>' : '') +
 
       '<div class="final">' +
@@ -95,6 +97,7 @@
       };
     });
     if ($('b-album')) $('b-album').onclick = () => U.album(retired, f, cardData);
+    if ($('b-sala-car')) $('b-sala-car').onclick = () => U.trophyRoom('car', retired);
     G.c = null;
     $('bar').hidden = true;
     const cv = $('fut');

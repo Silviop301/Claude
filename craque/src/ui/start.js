@@ -19,6 +19,7 @@
           '<span class="cc-info"><small>Continuar carreira</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : '') + sc.age + ' anos</span></span><span class="cc-go">' + U.ICON['chevron-right'] + '</span></button>'; })() : '') +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
       U.dailyCard() +
+      U.salaHome() +
       // Atalhos em grade 2×2: mesmo tamanho, ícone, nome e um número
       '<div class="home-grid">' +
       '<button class="hg" id="b-rank"><i>' + U.ICON.trophy + '</i><b>Ranking</b><small>hoje · geral</small></button>' +
@@ -42,6 +43,7 @@
     $('b-ach').onclick = U.achievements;
     $('b-rank').onclick = () => U.ranking();
     $('b-col').onclick = U.collection;
+    $('b-sala').onclick = () => U.trophyRoom('col');
     $('b-cloud').onclick = () => U.cloud('login');
     $('b-daily').onclick = () => { if (!saved || !saved.c) return U.dailyStart(); U.ask('Começar a carreira do dia?', 'A carreira em andamento será substituída.', 'Começar', U.dailyStart); };
     const snd = $('b-sound');
