@@ -44,6 +44,7 @@ const ASSETS = [
   "./src/main.js",
   "./src/sim.js",
   "./src/social-data.js",
+  "./src/social-events.js",
   "./src/sound.js",
   "./src/trophies.js",
   "./src/trophy-imgs.js",

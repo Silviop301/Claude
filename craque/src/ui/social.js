@@ -5,7 +5,7 @@
 // ctx: { kind: 'season'|'event'|'moment'|'announce'|'farewell', res?, ok?, m?, ev?, toClub? }
 (function () {
   const U = window.CRAQUE_UI;
-  const { G, D, S, $, esc, club, render, year } = U;
+  const { G, D, S, $, esc, club, render, year, save, bar } = U;
 
   const slug = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
   const num = n => n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(',0', '') + ' mi' : n >= 1e4 ? (n / 1e3).toFixed(1).replace('.', ',').replace(',0', '') + ' mil' : n.toLocaleString('pt-BR');
@@ -45,14 +45,20 @@
     : c.pos === 'ZAG' ? P(T.goals || 0, 'gol', 'gols') + ' e ' + csTxt(T.cs) : P(T.goals || 0, 'gol', 'gols') + ' e ' + P(T.assists || 0, 'assistência', 'assistências'); };
   const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
 
+  // Clima da temporada: Bola de Ouro, título, banco, lesão, queda, ótima, boa ou fraca
+  const seasonSub = r => r.awards.some(a => a.id === 'ballon') ? 'ballon' : r.titles.length ? 'title' : !r.games || r.games < 10 ? 'bench' : r.injury >= 25 ? 'injury'
+    : r.move && r.move.dir === 'down' ? 'down' : r.rating >= 7.6 ? 'great' : r.rating >= 7.0 ? 'good' : 'bad';
+  const UP = ['ballon', 'title', 'great', 'good'];
+  const moodOf = ctx => ctx.kind === 'season' ? (UP.includes(seasonSub(ctx.res)) ? 'up' : 'down') : ctx.kind === 'event' ? (ctx.toClub || ctx.ok ? 'up' : 'down')
+    : ctx.kind === 'moment' ? (ctx.ok ? 'up' : 'down') : 'bye';
+
   // Texto do post e o clima (up, down, bye) de cada situação; sub guarda o detalhe (title, ballon, great...)
+  // com: comentário da torcida ligado ao próprio post (posts de evento)
   function postOf(ctx) {
     const P = D.SOCIAL.posts, tags = k => chance(0.3) ? ' ' + fresh('p.tag.' + k, P.parts.tags[k]) + ' ' + fresh('p.tag.' + k, P.parts.tags[k]) : '';
     if (ctx.kind === 'season') {
-      const r = ctx.res, ballon = r.awards.some(a => a.id === 'ballon');
-      const sub = ballon ? 'ballon' : r.titles.length ? 'title' : !r.games || r.games < 10 ? 'bench' : r.injury >= 25 ? 'injury'
-        : r.move && r.move.dir === 'down' ? 'down' : r.rating >= 7.6 ? 'great' : r.rating >= 7.0 ? 'good' : 'bad';
-      const up = ['ballon', 'title', 'great', 'good'].includes(sub), k = up ? 'up' : 'down', Pp = P.parts;
+      const r = ctx.res, sub = seasonSub(r);
+      const up = UP.includes(sub), k = up ? 'up' : 'down', Pp = P.parts;
       // Temporadas ótima, boa e fraca: às vezes o post é montado por partes (abertura + fato + fecho)
       let text = ['great', 'good', 'bad'].includes(sub) && chance(0.55)
         ? fresh('p.open.' + k, Pp.open[k]) + ' ' + fresh('p.fact.' + k, Pp.fact[k]) + ' ' + fresh('p.close.' + k, Pp.close[k])
@@ -61,7 +67,15 @@
       return { text: text + tags(k), mood: k, sub, res: r };
     }
     if (ctx.kind === 'event') {
-      if (ctx.toClub) return { text: fresh('p.transfer', P.transfer), mood: 'up', sub: 'transfer', club: ctx.toClub };
+      // Post do próprio evento: um por opção, com versão de deu certo e deu errado (social-events.js)
+      const ev = ctx.ev || {}, pick = x => Array.isArray(x) ? x[ctx.ok ? 0 : 1] : x;
+      if (ctx.toClub) {
+        const mv = (D.SOCIAL.evMove || {})[ev.id];
+        return { text: mv ? mv[0] : fresh('p.transfer', P.transfer), mood: 'up', sub: 'transfer', club: ctx.toClub, com: mv && mv[1] };
+      }
+      // No "Sem espaço" com proposta, a opção 0 é a transferência e as outras andam uma casa
+      const E = (D.SOCIAL.ev || {})[ev.id], o = E && E[ev.id === 'banco' && ev.dest ? ctx.opt - 1 : ctx.opt];
+      if (o) return { text: pick(o[0]), mood: ctx.ok ? 'up' : 'down', sub: 'event', com: pick(o[1]) };
       return ctx.ok ? { text: fresh('p.eventOk', P.eventOk), mood: 'up' } : { text: fresh('p.eventKo', P.eventKo), mood: 'down' };
     }
     if (ctx.kind === 'moment') {
@@ -76,7 +90,7 @@
 
   // Comentários: famosos pela fama, clube, página de notícia, torcida (alguns falando do próprio post),
   // um aleatório da internet e às vezes um hater, que pode levar resposta do jogador
-  function commentsOf(p, ctx) {
+  function commentsOf(p, ctx, fx) {
     const c = G.c, fame = c.fame || 0, cl = club(c.club), base = slug(cl.name).slice(0, 12), SO = D.SOCIAL, mood = p.mood;
     const total = fame >= 150 ? 6 : 5, top = [], rest = [];
     const nFam = (fame >= 250 ? 4 : fame >= 150 ? 3 : fame >= 80 ? 2 : fame >= 30 ? 1 : 0) + (mood === 'bye' ? 1 : 0);
@@ -94,12 +108,19 @@
       : p.sub === 'transfer' ? ['transfer', SO.ctx.transfer] : mood === 'bye' ? ['bye', SO.ctx.bye] : null;
     const handles = SO.fanHandles.map(x => base + x).concat(SO.randomHandles);
     const fan = () => fresh('h.fan', handles);
+    if (p.com) rest.push({ h: fan(), v: false, t: p.com });
     if (cx && cx[1]) rest.push({ h: fan(), v: false, t: fresh('c.ctx.' + cx[0], cx[1]) });
     if (chance(0.55)) rest.push({ h: fan(), v: false, t: fresh('c.random', SO.random) });
-    const hater = chance(mood === 'down' ? 0.65 : mood === 'bye' ? 0.2 : 0.3);
+    // Crítica: até os melhores têm (mais famoso, mais crítica). Não entra no post de fase ruim, que já tem o hater
+    const ck = ctx.kind === 'season' ? (p.sub === 'ballon' ? 'ballon' : p.sub === 'title' ? 'title' : 'season') : ctx.kind === 'moment' ? 'moment'
+      : p.sub === 'transfer' ? 'transfer' : mood === 'bye' ? 'bye' : 'event';
+    const crit = mood !== 'down' && SO.critics && chance(0.35 + Math.min(0.3, fame / 600));
+    if (crit) rest.splice(p.com ? 1 : 0, 0, { h: fresh('h.critic', SO.criticHandles), v: false, t: fresh('c.critic.' + ck, SO.critics[ck]) });
+    // Na aposta do post humilde: deu certo, sem hater; deu errado, o hater aparece
+    const hater = fx && fx.won === false ? true : fx && fx.won ? false : chance(mood === 'down' ? 0.65 : mood === 'bye' ? 0.2 : 0.3 + Math.min(0.2, fame / 1000));
     while (top.length + rest.length < total - (hater ? 1 : 0)) rest.push({ h: fan(), v: false, t: fresh('c.fans.' + mood, SO.fans[mood]) });
     const out = top.concat(rest.slice(0, total - top.length - (hater ? 1 : 0)).sort(() => Math.random() - 0.5));
-    if (hater) out.push({ h: fresh('h.hater', SO.haterHandles), v: false, t: fresh('c.hater.' + mood, SO.haters[mood]), reply: chance(0.45) ? fresh('c.reply', SO.replies) : null });
+    if (hater) out.push({ h: fresh('h.hater', SO.haterHandles), v: false, t: fresh('c.hater.' + mood, SO.haters[mood]), hater: true });
     return out;
   }
 
@@ -107,9 +128,49 @@
   const HEART = '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 21s-7.5-4.6-9.6-9.3C.7 7.8 3.4 4 7.2 4c2.1 0 3.6 1.1 4.8 2.8C13.2 5.1 14.7 4 16.8 4c3.8 0 6.5 3.8 4.8 7.7C19.5 16.4 12 21 12 21Z" fill="#ED4956"/></svg>';
   const BUBBLE = '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M20.7 16.4A9 9 0 1 0 17 20l4 1-1.3-4.6Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>';
 
+  // Efeito do post: só o primeiro post de cada temporada conta (anunciar a última temporada e a despedida contam sempre).
+  // Temporada boa, título, lance ou evento que deu certo: Fama e Torcida. Fase ruim: aposta no post humilde.
+  // Despedida: Torcida +5, e a torcida do clube lembra disso no fim da carreira (Estádio lotado).
+  const fxKey = ctx => ctx.kind === 'season' ? G.c.seasons.length - 1 : G.c.seasons.length;
+  const ONCE = ['announce', 'farewell'];
+  function fxOf(ctx) {
+    const c = G.c, mood = moodOf(ctx);
+    if (!ONCE.includes(ctx.kind) && c.postS === fxKey(ctx)) return { none: true, lbl: 'Sem efeito: você já postou nesta temporada' };
+    if (mood === 'bye') return { fans: 5, lbl: 'Torcida +5' };
+    if (mood === 'down') return { gamble: true, lbl: '60%: Torcida +4 · 40%: Torcida −3' };
+    if (ctx.kind === 'event') return ctx.toClub ? { fans: 4, lbl: 'Torcida nova +4' } : { fame: 2, fans: 2, lbl: 'Fama +2 · Torcida +2' };
+    return { fame: 3, fans: 2, lbl: 'Fama +3 · Torcida +2' };
+  }
+  const fans = (c, v) => { S._.bump(c, 'fans', v); if (v > 0) c.fansBy[c.club] = Math.max(c.fansBy[c.club] || 0, c.rel.fans); };
+  function fxApply(ctx) {
+    const c = G.c, fx = fxOf(ctx);
+    if (fx.none) return fx;
+    if (!ONCE.includes(ctx.kind)) c.postS = fxKey(ctx);
+    if (fx.gamble) {
+      fx.won = Math.random() < 0.6;
+      fans(c, fx.won ? 4 : -3);
+      fx.res = fx.won ? 'A torcida abraçou o post humilde: Torcida +4' : 'Os haters tomaram conta dos comentários: Torcida −3';
+    } else {
+      if (fx.fame) c.fame = (c.fame || 0) + fx.fame;
+      if (fx.fans) fans(c, fx.fans);
+      fx.res = 'Efeito do post: ' + fx.lbl;
+    }
+    save(); bar();
+    return fx;
+  }
+  // Responder o hater: metade das vezes a resposta viraliza; na outra, o técnico não gosta.
+  // Vale só quando o post conta (o primeiro da temporada, ou o anúncio e a despedida)
+  function replyFx(fx) {
+    const c = G.c;
+    if (fx.none) return 'Sem efeito: o post já não contava';
+    if (Math.random() < 0.5) { c.fame = (c.fame || 0) + 6; save(); bar(); return 'A resposta viralizou: Fama +6'; }
+    S._.bump(c, 'coach', -3); save(); bar(); return 'O técnico não gostou da treta: Técnico −3';
+  }
+
   function socialPost(ctx, next) {
-    const c = G.c, fame = c.fame || 0;
-    const p = postOf(ctx), coms = commentsOf(p, ctx), cl = club(p.club || c.club).name, T = c.totals || {}, r = p.res, m = p.m;
+    const c = G.c;
+    const fx = fxApply(ctx), fame = c.fame || 0;
+    const p = postOf(ctx), coms = commentsOf(p, ctx, fx), cl = club(p.club || c.club).name, T = c.totals || {}, r = p.res, m = p.m;
     const vs = m && m.vs ? D.o(club(m.vs).name) : 'o adversário', nota = r ? (Math.round(r.rating * 10) / 10).toFixed(1).replace('.', ',') : '';
     const fill = t => t.replace(/\{n\}/g, c.name).replace(/\{num\}/g, c.number || 10).replace(/\{time\}/g, cl).replace(/\{cor\}/g, heart(c.club))
       .replace(/\{aoTime\}/g, D.ao(cl)).replace(/\{doTime\}/g, D.do(cl)).replace(/\{noTime\}/g, D.no(cl)).replace(/\{idade\}/g, c.age)
@@ -117,25 +178,32 @@
       .replace(/\{nota\}/g, nota).replace(/\{pos\}/g, r && r.table ? r.table.pos : '').replace(/\{pts\}/g, r && r.table ? r.table.pts : '')
       .replace(/\{naLiga\}/g, r && r.table ? D.na(r.table.league) : '').replace(/\{min\}/g, m ? m.minute || 90 : '').replace(/\{vs\}/g, vs).replace(/\{contraVs\}/g, 'contra ' + vs)
       .replace(/\{numeros\}/g, careerOf(c)).replace(/\{temps\}/g, P(c.seasons.length, 'temporada', 'temporadas')).replace(/\{gols\}/g, T.goals || 0).replace(/\{assist\}/g, T.assists || 0);
-    p.text = cap(fill(p.text)); coms.forEach(x => { x.t = fill(x.t); if (x.reply) x.reply = fill(x.reply); });
+    p.text = cap(fill(p.text)); coms.forEach(x => { x.t = fill(x.t); });
     const likes = Math.round(80 * Math.pow(1.035, Math.min(320, fame)) * (p.mood === 'bye' ? 3 : p.mood === 'up' ? 1.4 : 0.8));
     const me = slug(c.name) + (c.number || 10);
     const ava = h => '<span class="sp-ava">' + esc(h[0].toUpperCase()) + '</span>';
     render(
       '<div class="eyebrow">Temporada ' + year() + ' · ' + c.age + ' anos</div><h1 class="sp-h1">Nas redes</h1><span class="sp-tag">Post do jogador</span>' +
+      '<p class="sp-fx' + (fx.none ? ' none' : fx.won === false ? ' ko' : '') + '">' + esc(fx.none ? fx.lbl : fx.res) + '</p>' +
       '<div class="card sp-card"><div class="sp-head">' + ava(me) + '<div><b>' + esc(me) + '</b>' + (fame >= 80 ? CHECK : '') + '<small>' + esc(club(c.club).name) + ' · há 2 horas</small></div></div>' +
       '<p class="sp-text">' + esc(p.text) + '</p>' +
       '<div class="sp-stats"><span>' + HEART + ' <b>' + num(likes) + '</b></span><i></i><span>' + BUBBLE + ' <b>' + num(Math.max(coms.length, Math.round(likes / 20))) + '</b></span></div>' +
       '<h3 class="sp-ch">Comentários</h3>' +
       coms.map((x, i) => '<div class="sp-com">' + ava(x.h) + '<div><b>' + esc(x.h) + '</b>' + (x.v ? CHECK : '') + '<small>' + (i < 2 ? 'há 1 hora' : 'há ' + (1 + Math.floor(i / 2)) + ' horas') + '</small><p>' + esc(x.t) + '</p>' +
-        (x.reply ? '<div class="sp-reply"><b>' + esc(me) + '</b>' + (fame >= 80 ? CHECK : '') + '<p>' + esc(x.reply) + '</p></div>' : '') + '</div></div>').join('') +
+        (x.hater ? '<div class="sp-reply" id="sp-hater"><button class="sp-hbtn" id="b-hater">Responder o hater<small>' + (fx.none ? 'Sem efeito' : '50%: Fama +6 · 50%: Técnico −3') + '</small></button></div>' : '') + '</div></div>').join('') +
       '</div><p class="sp-note">Comentários fictícios para a simulação do jogo.</p>' +
       '<button class="btn" id="b-post-next">Continuar</button>'
     );
     $('b-post-next').onclick = next;
+    const hb = $('b-hater');
+    if (hb) hb.onclick = () => {
+      const out = replyFx(fx);
+      $('sp-hater').innerHTML = '<b>' + esc(me) + '</b>' + (fame >= 80 ? CHECK : '') + '<p>' + esc(fill(fresh('c.reply', D.SOCIAL.replies))) + '</p><small class="sp-out">' + esc(out) + '</small>';
+    };
   }
 
-  const postBtn = () => '<button class="btn ghost" id="b-post">' + U.emo('📱', 'sm') + ' Postar nas redes</button>';
+  // Botão de postar com o efeito à vista (ctx igual ao do postBind)
+  const postBtn = ctx => '<button class="btn ghost" id="b-post">' + U.emo('📱', 'sm') + ' Postar nas redes<small>' + esc(fxOf(ctx).lbl) + '</small></button>';
   const postBind = (ctx, next) => { const b = $('b-post'); if (b) b.onclick = () => socialPost(ctx, next); };
 
   Object.assign(U, { socialPost, postBtn, postBind, fresh });

@@ -34,13 +34,14 @@
       const r = S.resolveEvent(G.c, ev, +b.dataset.i);
       pendingEvent = null;
       bar();
+      const pctx = { kind: 'event', ok: r.ok, ev, opt: +b.dataset.i, toClub: offer && b.dataset.i === '0' ? G.c.club : null };
       render(
         '<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.icoOf(ev, 'lg') + '</span><div class="eyebrow">' + esc(ev.title) + '</div>' +
         '<p class="er-txt">' + esc(r.text) + '</p></div>' +
-        '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn(), { center: true }
+        '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn(pctx), { center: true }
       );
       $('b-next').onclick = momentOrSeason;
-      U.postBind({ kind: 'event', ok: r.ok, toClub: offer && b.dataset.i === '0' ? G.c.club : null }, momentOrSeason);
+      U.postBind(pctx, momentOrSeason);
     });
   }
 
@@ -184,7 +185,7 @@
       '<div class="card mom-res ' + (ok ? 'ok' : 'ko') + '">' +
       (sc ? '<div class="mom-board">' + crest(G.c.club) + '<b>' + sc[0] + ' × ' + sc[1] + '</b>' + crest(m.vs) + '<span class="mom-min">' + (m.minute || 90) + "'</span></div>" : '') +
       '<div class="mr-big">' + big + '</div><p class="mr-txt">' + final + '</p></div>' +
-      '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn(), { center: true }
+      '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn({ kind: 'moment', ok, m }), { center: true }
     );
     if (ok) U.vibe([40, 60, 40]);
     $('b-next').onclick = U.season;

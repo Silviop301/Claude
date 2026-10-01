@@ -386,6 +386,25 @@
       bye: ['Já foi tarde 🙄 (brincadeira, valeu, craque)', 'Finalmente vai dar espaço pros novos', 'Vai fazer falta... pros adversários 😂', 'Aposentou tarde, mas aposentou',
         'Vou sentir falta de reclamar de você 😢', 'Mesmo eu, que sempre critiquei: obrigado', 'Agora vai jogar só no showbol?', 'Pena que eu torci contra a carreira toda e não adiantou 😂'],
     },
+    // Crítica de verdade (não é hater): aparece até nos posts bons, e mais quanto mais famoso o jogador
+    critics: {
+      season: ['{stat} é bonito, mas nos jogos grandes você sumiu', 'Nota {nota} na média, mas teve jogo que você nem tocou na bola', 'Boa temporada, mas dá pra mais. Ainda acho que tá abaixo do que pode',
+        'Com esse elenco dava pra brigar por mais. Faltou você decidir', 'Números bons contra time pequeno. Contra os grandes, nem tanto', 'Gostei do ano, mas o segundo turno foi fraco demais',
+        'Bom ano, mas o salário pede mais que isso', 'Ok, mas no clássico onde você tava?', 'Temporada boa, atitude nem sempre. Menos reclamação com o juiz'],
+      title: ['Campeão, ok. Mas na final quem decidiu foi o time, não você', 'Taça merecida, mas você jogou abaixo na reta final', 'Título é do grupo. Teve jogo que você atrapalhou mais que ajudou',
+        'Parabéns pelo {titulos}, mas com esse elenco era obrigação', 'Ganhou, mas não convenceu. Ano que vem quero ver jogar bonito'],
+      ballon: ['Bola de Ouro com {stat}? Teve gente que fez mais. Política pura', 'Mereceu? Mais ou menos. O prêmio foi mais pelo marketing', 'Melhor do mundo e não decidiu nenhum jogo grande da seleção. Hmm',
+        'Respeito, mas eu votaria em outro', 'Ganhou o prêmio, mas o melhor ano dele foi outro'],
+      moment: ['Decidiu, ok. Mas até os {min} minutos tava apagado', 'Lance lindo, mas foi o único do jogo', 'Fez o dele, mas o time não pode depender de um lance só',
+        'Ótimo, mas não precisava ter deixado chegar nesse sufoco', 'O lance salva a noite, não salva a atuação'],
+      transfer: ['Pagaram caro demais. Quero ver render', 'Contratação boa, mas não encaixa no esquema do técnico', 'Mais um que chega como craque. Vamos ver no campo',
+        'Já vi esse filme: chega com festa, sai pela porta dos fundos', 'Bom jogador, mas não era a prioridade do elenco'],
+      event: ['Menos assunto fora de campo e mais bola dentro, por favor', 'Decisão estranha, mas vamos ver no que dá', 'Tá aparecendo mais nas notícias do que nos melhores momentos',
+        'Escolha de quem pensa em si, não no time', 'Ok, mas e o futebol? O último mês foi fraco', 'Bonito no post. No campo eu quero ver'],
+      bye: ['Grande carreira, mas podia ter parado antes. Os dois últimos anos foram difíceis', 'Ídolo, sim. Mas tem gente maior que ele na história do clube',
+        'Respeito, mas nunca foi decisivo na seleção', 'Carreira linda, mas ficou faltando aquela taça grande', 'Obrigado, mas a gente esquece rápido os anos ruins né?'],
+    },
+    criticHandles: ['comentarista.sincero', 'analise.tatica', 'scout.da.bola', 'opiniao_de_arquibancada', 'numeros.do.jogo', 'torcedor_exigente', 'o.cornetao', 'prancheta_fria'],
     // O jogador às vezes responde o hater
     replies: [
       'Te espero na próxima, parça 😘', 'Anotado. Obrigado pela motivação 🙏', 'Kkkkk depois a gente conversa no gramado', 'Tá bom, professor 😂', 'Vou mostrar pra minha mãe, ela vai adorar 😂',

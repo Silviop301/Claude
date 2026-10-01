@@ -1627,6 +1627,12 @@ html, body, button, a, input, .choice { touch-action: manipulation; }
 .sp-note { text-align: center; color: rgba(255, 255, 255, .55); font-size: 12px; margin: 8px 0 12px; }
 .sp-reply { margin: 6px 0 0; padding: 6px 0 0 10px; border-left: 2px solid #E4DCCB; }
 .sp-reply b { font-size: 16px; }
+.sp-fx { margin: 0 0 12px; padding: 8px 12px; border-radius: 10px; background: rgba(242, 194, 48, .14); color: var(--gold); font: 700 15px/1.3 var(--body); }
+.sp-fx.ko { background: rgba(237, 73, 86, .14); color: #FF8A93; }
+.sp-fx.none { background: rgba(255, 255, 255, .08); color: rgba(255, 255, 255, .65); }
+.sp-hbtn { display: block; width: 100%; margin: 2px 0; padding: 8px 10px; border: 2px solid var(--ink); border-radius: 10px; background: transparent; color: var(--ink); font: 800 16px var(--display); text-align: left; cursor: pointer; }
+.sp-hbtn small { display: block; margin: 0; font: 600 13px/1.25 var(--body); color: #7A7466; }
+.sp-com small.sp-out { display: block; margin: 4px 0 0; color: #1E4A33; font-weight: 700; }
 
 /* ---------- Pacotinhos (pranchas "Pacotinhos"): raridades, abrir, Meus itens, troca, avisos ---------- */
 .rk-livre { --rk: #8FD6AE; --rk-frame: rgba(255,255,255,.16); --rk-glow: none; --rk-selo: rgba(255,255,255,.14); --rk-ink: #FBF8EF; }
@@ -1872,3 +1878,5 @@ button.cc-num em { font: 800 13px/1.1 var(--display); font-style: normal; letter
 .pen-mean .btn { margin: 6px 0 0; }
 .acc-legal { text-align: center; margin-top: 4px; }
 .acc-legal a { color: inherit; text-underline-offset: 3px; }
+/* Escolha de característica: aviso de atributo já no 99 */
+.choice .d .cap-note { display: inline-block; margin-top: 4px; color: #8A6400; font-weight: 700; }
