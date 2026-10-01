@@ -1538,3 +1538,43 @@ body.sala-on { overflow: hidden; }
 .sl-spark { position: absolute; top: 0; width: 5px; height: 5px; border-radius: 50%; background: #FFE68A; box-shadow: 0 0 6px 1px rgba(255, 220, 120, .8); pointer-events: none; opacity: 0; }
 .sh-sala { margin-left: auto; font-size: 13px; letter-spacing: 0; text-transform: none; color: #0E5A30; text-decoration-color: rgba(14, 90, 48, .5); }
 .ni-sil { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 236, 190, .5)); }
+
+/* ---------- Criação do personagem (prancha: passo 1 quem é, passo 2 como ele é) ---------- */
+.cr-title { margin: 2px 0 6px; font: 800 30px/1.05 var(--display); }
+.cr-lbl { font: 700 14px var(--display); letter-spacing: .08em; color: var(--label); text-transform: uppercase; margin: 12px 0 6px; }
+.cr-lbl b { margin-left: 4px; font: 600 14px var(--body); letter-spacing: 0; text-transform: none; color: #E3F3E9; }
+.cc { width: 210px; }
+.cc-photo svg { width: 132px; }
+.cr-flags { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.cr-flags button { height: 44px; border: 0; border-radius: 12px; background: rgba(255, 255, 255, .08); display: grid; place-items: center; cursor: pointer; }
+.cr-flags button.on { background: var(--paper); }
+.cr-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cr-top .back-link { margin: 0; }
+.cr-dice { height: 44px; padding: 0 16px 0 12px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .12); color: var(--paper); display: flex; align-items: center; gap: 8px; font: 700 16px var(--display); cursor: pointer; }
+.cr-stage { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 10px; margin-top: 6px; }
+.cr-big { position: relative; height: 252px; border-radius: 18px; overflow: hidden; display: flex; align-items: flex-end; justify-content: center;
+  background: radial-gradient(ellipse at 50% 30%, #2A8257, #145235 55%, #0C3322); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); }
+.cr-big::before { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 64px; background: repeating-linear-gradient(90deg, #1E6A44 0 22px, #22744B 22px 44px); }
+.cr-big::after { content: ''; position: absolute; bottom: 10px; left: 50%; width: 110px; height: 14px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, rgba(0, 0, 0, .45), rgba(0, 0, 0, 0) 70%); }
+.cr-big svg { position: relative; z-index: 1; height: 240px; width: auto; }
+.cr-side { display: flex; flex-direction: column; }
+.cr-side .cr-lbl { margin: 0 0 6px; letter-spacing: .06em; }
+.cr-side .cr-lbl + .cr-clip + .cr-lbl { margin-top: 10px; }
+.cr-clip { padding: 4px 4px 3px; background: #DDD4BC; box-shadow: 0 2px 6px rgba(0, 0, 0, .3); }
+.cr-clip svg { display: block; width: 100%; height: auto; filter: sepia(.3) saturate(.85) contrast(1.05); border: 1px solid rgba(27, 26, 23, .5); box-sizing: border-box; }
+.cr-tabs { margin-top: 12px; padding: 4px; border-radius: 999px; background: rgba(0, 0, 0, .25); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.cr-tabs button { height: 40px; border: 0; border-radius: 999px; background: transparent; color: #CDEFD9; font: 700 16px var(--display); cursor: pointer; }
+.cr-tabs button.on { background: var(--paper); color: var(--ink); }
+.cr-rows { display: flex; flex-direction: column; padding-bottom: 8px; }
+.cr-row .cr-lbl { margin-top: 14px; }
+.cr-sw { display: flex; flex-wrap: wrap; gap: 2px; }
+.cr-sw button { position: relative; width: 42px; height: 44px; border: 0; padding: 0; background: transparent; display: grid; place-items: center; cursor: pointer; }
+.cr-sw i { width: 32px; height: 32px; border-radius: 999px; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .22); }
+.cr-sw button.on i { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--gold); }
+.cr-sw button.lock i { opacity: .45; }
+.cr-sw button.lock img { position: absolute; right: 2px; bottom: 2px; width: 16px; height: 16px; }
+.cr-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cr-chips button { min-height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .1); color: var(--paper); font: 600 15px var(--body); cursor: pointer; }
+.cr-chips button.on { background: var(--paper); color: var(--ink); font-weight: 700; }
+.cr-lock { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; padding: 8px 10px; border-radius: 10px; background: rgba(242, 194, 48, .14); font: 600 14px/1.3 var(--body); color: #FBE7A6; }
+@media (max-width: 350px) { .cr-stage { grid-template-columns: minmax(0, 1fr) 84px; } .cr-big { height: 236px; } .cr-big svg { height: 224px; } }
