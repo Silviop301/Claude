@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-3e475f2d';
+const CACHE = 'craque-1e23137d';
 const ASSETS = [
   "./",
   "./fonts/TwemojiCountryFlags.woff2",
@@ -1083,6 +1083,8 @@ const LATER = [
   "./trophies/brasileirao.png",
   "./trophies/bundesliga-austriaca.png",
   "./trophies/bundesliga.png",
+  "./trophies/challenge-league.png",
+  "./trophies/challenger-pro-league.png",
   "./trophies/championship.png",
   "./trophies/copa-argentina.png",
   "./trophies/copa-auf.png",
@@ -1122,6 +1124,7 @@ const LATER = [
   "./trophies/liga-argentina.png",
   "./trophies/liga-chilena.png",
   "./trophies/liga-colombiana.png",
+  "./trophies/liga-de-expansion.png",
   "./trophies/liga-dos-campeoes.png",
   "./trophies/liga-equatoriana.png",
   "./trophies/liga-mx.png",
@@ -1146,11 +1149,13 @@ const LATER = [
   "./trophies/serie-b.png",
   "./trophies/serie-c.png",
   "./trophies/serie-d.png",
+  "./trophies/super-league-2.png",
   "./trophies/super-league-grega.png",
   "./trophies/super-league-suica.png",
   "./trophies/super-lig.png",
   "./trophies/superliga-dinamarquesa.png",
   "./trophies/taca-de-portugal.png",
+  "./trophies/tff-1-lig.png",
   "./trophies/us-open-cup.png",
   "./trophies/usl-championship.png"
 ];
