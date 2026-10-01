@@ -31,7 +31,7 @@
   // Arte do item: o pedaço do boneco onde ele fica; assinatura, o nome escrito na fonte (fonte de página não entra em <img> SVG)
   function itemArt(it) {
     const F = it.cat === 'assinatura' && (window.CRAQUE_SIGN || {})[it.look.sign];
-    if (F) return '<span class="sig-art" style="font-family:' + esc(F.family) + ', cursive">' + esc((G.c && G.c.name) || 'Climbix') + '</span>';
+    if (F) return '<span class="sig-art" style="font-family:' + esc(F.family) + ', cursive' + (F.gold ? ';color:#F2C230' : '') + '">' + esc((G.c && G.c.name) || 'Climbix') + '</span>';
     return '<img src="' + itemImg(it) + '" alt="">';
   }
   const rarCls = rk => 'rk-' + rk;

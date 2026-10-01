@@ -9,9 +9,11 @@
   const HAIRS = ['curto', 'raspado', 'topete', 'black', 'trancas', 'dreads', 'moicano', 'longo', 'careca'];
   const BEARDS = ['nenhuma', 'rala', 'bigode', 'cavanhaque', 'cheia'];
   const GEAR = { preto: '#1B1A17', branco: '#F4F2EA', vermelho: '#D8404A', azul: '#2F6FD6', neon: '#7CF03C', rosa: '#FF4FA3', laranja: '#FF8A1F', amarelo: '#F2D630', ouro: 'url(#g-ouro)', holo: 'url(#g-holo)', lima: '#B8F25C',
+    roxo: '#7B4FD6', vinho: '#7A1E2E', cinza: '#8C8F93', musgo: '#2E5E3A', celeste: '#8FC8F2', bege: '#D9C7A3', prata: 'url(#g-prata)', cromo: 'url(#g-cromo)',
     // Estampas (pacotinho): chuteira camuflada, de raio e em chamas; luva tigrada
     camuflada: 'url(#p-camo)', raio: 'url(#p-raio)', chamas: 'url(#p-chamas)', tigre: 'url(#p-tigre)' };
-  const SWATCH = { ouro: 'linear-gradient(135deg, #FFE68A, #F2C230 50%, #B98700)', holo: 'linear-gradient(135deg, #8FE3FF, #C79BFF 35%, #FF9BD5 65%, #FFE38F)',
+  const SWATCH = { prata: 'linear-gradient(135deg, #FFFFFF, #C9CED6 50%, #7F8790)', cromo: 'linear-gradient(135deg, #5A6470, #F4F7FA 35%, #8A939E 55%, #FFFFFF 75%, #4A535E)',
+    ouro: 'linear-gradient(135deg, #FFE68A, #F2C230 50%, #B98700)', holo: 'linear-gradient(135deg, #8FE3FF, #C79BFF 35%, #FF9BD5 65%, #FFE38F)',
     camuflada: 'radial-gradient(circle at 30% 30%, #3E4628 22%, transparent 24%), radial-gradient(circle at 70% 65%, #A39A63 24%, transparent 26%), #6B7444',
     raio: 'linear-gradient(120deg, #1B1A17 40%, #F2D630 41% 55%, #1B1A17 56%)', chamas: 'linear-gradient(0deg, #FF6A1F, #FFD23F 45%, #1B1A17 46%)',
     tigre: 'repeating-linear-gradient(160deg, #FF8A1F 0 5px, #1B1A17 5px 7px)' };
@@ -94,7 +96,7 @@
   };
   // Acessórios de pacotinho (c.look.extra), desenhados por cima do boneco, no mesmo traço.
   // Fita do Bonfim e faixa de capitão acompanham o braço da pose.
-  const NUM_FX = { ouro: 'url(#g-ouro)', holo: 'url(#g-holo)' };
+  const NUM_FX = { ouro: 'url(#g-ouro)', holo: 'url(#g-holo)', neon: '#7CF03C', fogo: 'url(#g-fogo)', contorno: 'none' };
   const band2 = (s, e, t0, t1, col, w) => limb([lerp(s, e, t0), lerp(s, e, t1)], col, w, 'butt');
   const EXTRA = {
     capitao: o => { const [s, e] = o.R, m = lerp(s, e, .37);
@@ -133,6 +135,9 @@
     const [hBack, hFront] = hairParts(lk.hair, hcol);
     const long = lk.sleeve === 'comprida';
     const defs = '<defs><linearGradient id="g-ouro" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE68A"/><stop offset=".5" stop-color="#F2C230"/><stop offset="1" stop-color="#B98700"/></linearGradient>' +
+      '<linearGradient id="g-prata" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#C9CED6"/><stop offset="1" stop-color="#7F8790"/></linearGradient>' +
+      '<linearGradient id="g-cromo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5A6470"/><stop offset=".35" stop-color="#F4F7FA"/><stop offset=".55" stop-color="#8A939E"/><stop offset=".75" stop-color="#FFFFFF"/><stop offset="1" stop-color="#4A535E"/></linearGradient>' +
+      '<linearGradient id="g-fogo" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#D8261E"/><stop offset=".5" stop-color="#FF8A1F"/><stop offset="1" stop-color="#FFE14A"/></linearGradient>' +
       '<linearGradient id="g-holo" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8FE3FF"/><stop offset=".35" stop-color="#C79BFF"/><stop offset=".65" stop-color="#FF9BD5"/><stop offset="1" stop-color="#FFE38F"/></linearGradient>' + PATTERNS + '</defs>';
     let bg = '';
     if (!opts.flat) {
@@ -229,7 +234,8 @@
       shape(torso, k1) + '<path d="M70.6 51.6Q78 52.6 78.6 57L77.2 103.6Q73.6 104.8 71 105Z" fill="' + SHADE + '"/>' +
       '<path d="M54.6 50L60 57.4L65.4 50" stroke="' + k2 + '" stroke-width="2.8" stroke-linejoin="round" fill="none"/>' +
       (opts.num ? '<text x="60" y="85" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" fill="' +
-        (NUM_FX[lk.numFx] ? NUM_FX[lk.numFx] + '" stroke="' + OL + '" stroke-width=".8' : k2) + '">' + opts.num + '</text>' : '') +
+        (lk.numFx === 'contorno' ? 'none" stroke="' + k2 + '" stroke-width="1.6' : lk.numFx === 'neon' ? NUM_FX.neon + '" stroke="#1B5E0C" stroke-width=".8" style="filter:drop-shadow(0 0 1.6px #7CF03C)'
+          : NUM_FX[lk.numFx] ? NUM_FX[lk.numFx] + '" stroke="' + OL + '" stroke-width=".8' : k2) + '">' + opts.num + '</text>' : '') +
       shape('M42.6 102.6H77.4L78.6 123.6Q71.4 126 62.6 124.2L60 115.6L57.4 124.2Q48.6 126 41.4 123.6Z', k2) +
       '<path d="M44.6 104L43.8 123.4M75.4 104L76.2 123.4" stroke="' + k1 + '" stroke-width="2"/>' +
       '<circle cx="46.8" cy="31.6" r="3.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/><circle cx="73.2" cy="31.6" r="3.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/>' +

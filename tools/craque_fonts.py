@@ -2,7 +2,7 @@
 
 Baixa do Google Fonts só os conjuntos latino e latino-estendido (português) de Barlow, Barlow Condensed e
 Playfair Display, mais as 6 fontes de assinatura da carta (Mrs Saint Delafield, Homemade Apple, Rock Salt,
-Yellowtail, Zeyada, Monsieur La Doulaise; todas com licença OFL ou Apache), grava em craque/fonts/ e escreve as regras @font-face no começo do style.css,
+Yellowtail, Zeyada, Monsieur La Doulaise, Kaushan Script, Caveat Brush, Great Vibes, Sedgwick Ave, Pinyon Script; licença OFL ou Apache), grava em craque/fonts/ e escreve as regras @font-face no começo do style.css,
 entre os marcadores "fontes do jogo". Rode de novo só se mudar as fontes ou os pesos.
 Uso: python3 tools/craque_fonts.py
 """
@@ -10,7 +10,8 @@ import pathlib, re, subprocess
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent / "craque"
 URL = ("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@500;600;700&family=Playfair+Display:wght@700;900"
-       "&family=Mrs+Saint+Delafield&family=Homemade+Apple&family=Rock+Salt&family=Yellowtail&family=Zeyada&family=Monsieur+La+Doulaise&display=swap")
+       "&family=Mrs+Saint+Delafield&family=Homemade+Apple&family=Rock+Salt&family=Yellowtail&family=Zeyada&family=Monsieur+La+Doulaise"
+       "&family=Kaushan+Script&family=Caveat+Brush&family=Great+Vibes&family=Sedgwick+Ave&family=Pinyon+Script&display=swap")
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"
 css = subprocess.run(["curl", "-sfL", "-A", UA, URL], capture_output=True, text=True, check=True).stdout
 

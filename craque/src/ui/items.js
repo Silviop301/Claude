@@ -65,10 +65,28 @@
     ['chamas', 'Chuteira em chamas', 'lendario', 'equip', { boot: 'chamas', sole: 'preto' }, 'Chamas laranja sobre preto.'],
     ['num-ouro', 'Número dourado', 'lendario', 'numeros', { numFx: 'ouro' }, 'Vale para qualquer número.'],
     ['num-holo', 'Número holográfico', 'lendario', 'numeros', { numFx: 'holo' }, 'Vale para qualquer número.'],
+    ['num-neon', 'Número neon', 'epico', 'numeros', { numFx: 'neon' }, 'Vale para qualquer número.'],
+    ['num-contorno', 'Número vazado', 'epico', 'numeros', { numFx: 'contorno' }, 'Só o contorno, na cor do uniforme.'],
+    ['num-fogo', 'Número em chamas', 'lendario', 'numeros', { numFx: 'fogo' }, 'Vale para qualquer número.'],
+    // Cores novas (chuteira, sola, munhequeira e faixa)
+    ['cor-roxo', 'Cor roxa', 'comum', 'cores', { boot: 'roxo' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
+    ['cor-vinho', 'Cor vinho', 'comum', 'cores', { boot: 'vinho' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
+    ['cor-cinza', 'Cor cinza', 'comum', 'cores', { boot: 'cinza' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
+    ['cor-musgo', 'Cor verde-musgo', 'comum', 'cores', { boot: 'musgo' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
+    ['cor-celeste', 'Cor azul-bebê', 'raro', 'cores', { boot: 'celeste' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
+    ['cor-bege', 'Cor bege', 'raro', 'cores', { boot: 'bege' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
+    ['cor-prata', 'Prata', 'epico', 'cores', { boot: 'prata', sole: 'prata' }, 'Chuteira e sola prateadas.'],
+    ['cor-cromo', 'Cromada', 'lendario', 'cores', { boot: 'cromo', sole: 'cromo' }, 'Chuteira e sola espelhadas.'],
     // Assinatura da carta, escolhida no fim da carreira (Clássica, Caneta e Marcador são livres)
     ['ass-yellowtail', 'Assinatura Esportiva', 'raro', 'assinatura', { sign: 'yellowtail' }, 'Autógrafo na carta do fim da carreira.'],
     ['ass-zeyada', 'Assinatura Rápida', 'raro', 'assinatura', { sign: 'zeyada' }, 'Autógrafo na carta do fim da carreira.'],
     ['ass-doulaise', 'Assinatura Floreada', 'epico', 'assinatura', { sign: 'doulaise' }, 'Autógrafo na carta do fim da carreira.'],
+    ['ass-kaushan', 'Assinatura Pincel', 'raro', 'assinatura', { sign: 'kaushan' }, 'Autógrafo na carta do fim da carreira.'],
+    ['ass-caveat', 'Assinatura Pincel leve', 'raro', 'assinatura', { sign: 'caveat' }, 'Autógrafo na carta do fim da carreira.'],
+    ['ass-vibes', 'Assinatura Caligrafia', 'raro', 'assinatura', { sign: 'vibes' }, 'Autógrafo na carta do fim da carreira.'],
+    ['ass-grafite', 'Assinatura Grafite', 'epico', 'assinatura', { sign: 'grafite' }, 'Autógrafo na carta do fim da carreira.'],
+    ['ass-tinteiro', 'Assinatura Tinteiro', 'epico', 'assinatura', { sign: 'tinteiro' }, 'Autógrafo na carta do fim da carreira.'],
+    ['ass-dourada', 'Assinatura em tinta dourada', 'lendario', 'assinatura', { sign: 'dourada' }, 'O autógrafo da carta em ouro.'],
   ].map(([id, name, rk, cat, look, desc, gk]) => ({ id, name, rk, cat, look, desc, gk: !!gk }));
   // Tatuagens: cada membro e cada tamanho é um item (pequena = raro, fechada = épico)
   const LIMBS = [['BD', 'braço direito'], ['BE', 'braço esquerdo'], ['PD', 'perna direita'], ['PE', 'perna esquerda']];
@@ -217,8 +235,10 @@
   }
   const visualPool = rk => CAT.filter(it => it.rk === rk && it.cat !== 'numeros');
   function numberPool(rk) {
-    if (rk === 'lendario') return CAT.filter(it => it.cat === 'numeros');
-    const out = [];
+    // Estilos de número (dourado, neon...) saem na própria raridade, junto com os números
+    const fx = CAT.filter(it => it.cat === 'numeros' && it.rk === rk);
+    if (rk === 'lendario') return fx;
+    const out = fx.slice();
     for (let n = 1; n <= 99; n++) if (numRar(n) === rk) out.push(BY_ID['n' + n]);
     return out;
   }

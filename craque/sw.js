@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-347d9ff4';
+const CACHE = 'craque-cbe1fab0';
 const ASSETS = [
   "./",
   "./fonts/TwemojiCountryFlags.woff2",
@@ -16,14 +16,24 @@ const ASSETS = [
   "./fonts/barlow-condensed-700-latin.woff2",
   "./fonts/barlow-condensed-800-latin-ext.woff2",
   "./fonts/barlow-condensed-800-latin.woff2",
+  "./fonts/caveat-brush-400-latin-ext.woff2",
+  "./fonts/caveat-brush-400-latin.woff2",
+  "./fonts/great-vibes-400-latin-ext.woff2",
+  "./fonts/great-vibes-400-latin.woff2",
   "./fonts/homemade-apple-400-latin.woff2",
+  "./fonts/kaushan-script-400-latin-ext.woff2",
+  "./fonts/kaushan-script-400-latin.woff2",
   "./fonts/monsieur-la-doulaise-400-latin-ext.woff2",
   "./fonts/monsieur-la-doulaise-400-latin.woff2",
   "./fonts/mrs-saint-delafield-400-latin-ext.woff2",
   "./fonts/mrs-saint-delafield-400-latin.woff2",
+  "./fonts/pinyon-script-400-latin-ext.woff2",
+  "./fonts/pinyon-script-400-latin.woff2",
   "./fonts/playfair-display-700-latin-ext.woff2",
   "./fonts/playfair-display-700-latin.woff2",
   "./fonts/rock-salt-400-latin.woff2",
+  "./fonts/sedgwick-ave-400-latin-ext.woff2",
+  "./fonts/sedgwick-ave-400-latin.woff2",
   "./fonts/yellowtail-400-latin-ext.woff2",
   "./fonts/yellowtail-400-latin.woff2",
   "./fonts/zeyada-400-latin-ext.woff2",

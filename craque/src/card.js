@@ -141,6 +141,13 @@
     yellowtail: { label: 'Esportiva', family: "'Yellowtail'", rot: -0.14, stroke: 0.8, swoosh: 6 },
     zeyada: { label: 'Rápida', family: "'Zeyada'", rot: -0.2, stroke: 1.6, swoosh: 3 },
     doulaise: { label: 'Floreada', family: "'Monsieur La Doulaise'", rot: -0.08, stroke: 1.4, swoosh: 0 },
+    kaushan: { label: 'Pincel', family: "'Kaushan Script'", rot: -0.12, stroke: 0, swoosh: 4 },
+    caveat: { label: 'Pincel leve', family: "'Caveat Brush'", rot: -0.1, stroke: 0.4, swoosh: 0 },
+    vibes: { label: 'Caligrafia', family: "'Great Vibes'", rot: -0.12, stroke: 1, swoosh: 3 },
+    grafite: { label: 'Grafite', family: "'Sedgwick Ave'", rot: -0.06, stroke: 0.8, swoosh: 0 },
+    tinteiro: { label: 'Tinteiro', family: "'Pinyon Script'", rot: -0.14, stroke: 1.2, swoosh: 3.5 },
+    // Tinta dourada: o traço da Clássica em ouro, com brilho (lendária)
+    dourada: { label: 'Tinta dourada', family: "'Mrs Saint Delafield'", rot: -0.16, stroke: 2.4, swoosh: 4.5, gold: true },
   };
   root.CRAQUE_SIGN = SIGN;
   async function fontReady(family) {
@@ -178,6 +185,13 @@
     if (F.swoosh) { const bt = total / 2; x.lineWidth = F.swoosh; x.beginPath(); x.moveTo(-hw * 0.82, bt + 12); x.quadraticCurveTo(0, bt + 36, hw * 0.98, bt - 8); x.stroke(); }
     ctx.drawImage(tint(L, emboss[0]), 0, 1.5);
     ctx.drawImage(tint(L, emboss[1]), 0, -1);
+    if (F.gold) { // ouro com brilho por cima, no lugar da tinta da carta
+      ctx.drawImage(tint(L, 'rgba(40,24,0,.85)'), 0.6, 1.6); // sombra escura: o ouro aparece até na carta de ouro
+      ctx.drawImage(tint(L, '#A8740E'), 0, 0.8);
+      ctx.drawImage(tint(L, '#E0AE2E'), 0, 0);
+      ctx.save(); ctx.globalAlpha = 0.6; ctx.drawImage(tint(L, '#FFF0A8'), 0, -0.9); ctx.restore();
+      return;
+    }
     ctx.drawImage(tint(L, ink), 0, 0);
   }
 
