@@ -22,7 +22,7 @@
     // Produção: atacantes e meias pelos gols/assistências; zagueiros e goleiros pela defesa
     const isDef = D.DEF_POS.includes(c.pos);
     // Pesos por posição para as quatro chegarem às notas altas com a mesma dificuldade
-    const prod = isDef ? (T.cs || 0) * 0.9 + T.goals * 1.5 + T.assists * 0.7 + (T.saves || 0) * 0.2 + (T.penSaved || 0) * 3 + (T.tackles || 0) * 0.3
+    const prod = isDef ? (T.cs || 0) * 0.9 + T.goals * 1.5 + T.assists * 0.7 + (T.saves || 0) * 0.15 + (T.penSaved || 0) * 2.5 + (T.tackles || 0) * 0.3
       : c.pos === 'MEI' ? T.goals * 1.1 + T.assists * 1.0 : T.goals * 0.62 + T.assists * 0.5;
     // Cada parcela da pontuação, para a tela explicar de onde veio a nota
     const n = (x, w) => (x || 0) * w;
