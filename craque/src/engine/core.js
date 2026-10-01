@@ -165,7 +165,7 @@
     else { attrs.fin += 4; attrs.def += 3; attrs.fis += 2; attrs.rit -= 6; } // goleiro: REF, POS, ELA
     D.ATTRS.forEach(k => { attrs[k] = clamp(attrs[k], 20, 72); });
     return {
-      v: 2, seed: r.state(),
+      v: 2, seed: r.state(), tseed: r.state(), // tseed: fixo, só para variar os textos entre carreiras
       name: opts.name, pos: opts.pos, foot: opts.foot, country: opts.country, number: opts.number || D.POS_NUM[opts.pos] || 10,
       age: 16, season: 0, attrs,
       pot: S.POT0(r), // teto escondido: começa numa faixa estreita e sobe (ou cai) com o que ele faz em campo
@@ -180,6 +180,13 @@
     };
   };
 
+  // Frase de uma lista (manchete, cronista, destaque). Na mesma carreira, roda a lista sem repetir; cada carreira
+  // começa num ponto diferente. No navegador, ui/social.js liga S.TEXT_PICK: memória entre carreiras (a frase só
+  // volta depois que as outras saíram). Não usa o sorteio do jogo, então não muda nenhum resultado.
+  const hstr = t => { let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+  S.textAt = (c, key, n, used) => (S.TEXT_PICK ? S.TEXT_PICK(key, n) % n : (hstr(String(c.tseed != null ? c.tseed : c.name + c.pos + c.country) + '|' + key) + (used || 0)) % n);
+  // Destaques: contador próprio por tipo (guardado na carreira)
+  S.textPick = (c, key, arr) => { const u = (c.txtUsed = c.txtUsed || {}); const i = S.textAt(c, key, arr.length, u[key] || 0); u[key] = (u[key] || 0) + 1; return arr[i]; };
   const rngOf = c => {
     const r = S.rng(c.seed);
     return { r, save: () => { c.seed = r.state(); } };

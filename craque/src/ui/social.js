@@ -26,6 +26,9 @@
     return arr[i];
   }
 
+  // Textos do motor (manchetes, cronista, destaques) com a mesma memória entre carreiras
+  S.TEXT_PICK = (key, n) => fresh('t.' + key, Array.from({ length: n }, (_, i) => i));
+
   // Coração na cor da camisa do clube (vermelho, azul, verde, amarelo, preto, branco, laranja, roxo)
   function heart(id) {
     const k = ((window.CRAQUE_KITS || {})[id] || ['#cc0000'])[0], [r, g, b] = [1, 3, 5].map(i => parseInt(k.slice(i, i + 2), 16));

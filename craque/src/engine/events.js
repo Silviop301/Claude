@@ -420,7 +420,13 @@
       let x = r() * sum, def = left[0];
       for (const e of left) { x -= e.weight; if (x < 0) { def = e; break; } }
       const built = def.build(c, r);
-      if (built) { save(); return Object.assign({ id: def.id, icon: def.icon, tone: def.tone }, built); }
+      if (built) {
+        save();
+        // Abertura com outras palavras (src/events-text.js, só no navegador): mesma situação, texto variado
+        const alt = D.EV_INTRO && D.EV_INTRO[def.id];
+        if (alt && typeof built.text === 'string') built.text = S.textPick(c, 'ev.' + def.id, [built.text].concat(alt));
+        return Object.assign({ id: def.id, icon: def.icon, tone: def.tone }, built);
+      }
       left = left.filter(e => e !== def); sum -= def.weight;
     }
     save();
