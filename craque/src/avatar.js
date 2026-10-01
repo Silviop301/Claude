@@ -191,7 +191,7 @@
   // front: braços que passam na frente do corpo; serio: sem o sorriso aberto
   const CEL = {
     abertos: { a: [[[44, 57], [30, 51], [16, 44]], [[76, 57], [90, 51], [104, 44]]] },
-    ceu: { a: [[[44, 57], [37.6, 81], [34.6, 104]], [[76, 57], [80.4, 36], [82, 15]]], finger: 1 },
+    ceu: { a: [[[44, 57], [37.6, 81], [34.6, 104]], [[76, 57], [81.6, 37], [75.6, 16.4]]], finger: 1 },
     escudo: { a: [[[44, 57], [37.6, 81], [34.6, 104]], [[76, 57], [85, 75], [69, 66]]], front: 'R' },
     aviao: { a: [[[44, 57], [29, 61], [14, 66]], [[76, 57], [91, 53], [106, 49]]] },
     coracao: { a: [[[44, 57], [41, 77], [56.4, 69]], [[76, 57], [79, 77], [63.6, 69]]], front: 'LR', heart: 1 },
@@ -297,12 +297,28 @@
           '<circle cx="' + f2(L * .62 + 3.6 * k) + '" cy="' + f2(-2.6 * k) + '" r=".6"/><circle cx="' + f2(L * .62 - 3.4 * k) + '" cy="' + f2(2.7 * k) + '" r=".5"/>' +
           '<path d="M' + f2(L * .8) + ' ' + (-hw - .3) + 'h1.8q.9 ' + hw * .55 + '-.3 ' + (hw + .3) + 'q-1 ' + hw * .55 + ' .3 ' + (hw + .3) + 'h-1.8q-1.1-' + hw * .5 + '-.1-' + (hw + .3) + 'q.9-' + hw * .55 + '-.1-' + (hw + .3) + 'Z"/>');
     };
-    const arm = ([s, e, h], side) => {
-      let o = limb([s, e, h], long ? k1 : skin, 7.4);
+    // Braço em partes: part = undefined (inteiro), 'upper' (ombro ao cotovelo) ou 'fore' (antebraço e mão).
+    // A manga (sleeve) é desenhada à parte, por cima do tronco: ombro arredondado e barra no punho, em qualquer pose.
+    const sleeve = ([s0, e]) => {
+      const s = lerp(s0, e, .1); // o ombro da manga começa um pouco para fora, para não ocupar o peito
+      if (long) return limb([s, e], k1, 7.4); // manga comprida: o braço todo até o cotovelo na frente do tronco
+      const c = lerp(s0, e, .55), dx = e[0] - s0[0], dy = e[1] - s0[1], L = Math.hypot(dx, dy) || 1, W = 10, nx = -dy / L * (W / 2 + .9), ny = dx / L * (W / 2 + .9);
+      return limb([s, c], k1, W) + '<path d="M' + pts([s, c]) + '" stroke="' + k1 + '" stroke-width="' + W + '" stroke-linecap="butt"/>' +
+        '<path d="M' + (c[0] + nx).toFixed(2) + ' ' + (c[1] + ny).toFixed(2) + 'L' + (c[0] - nx).toFixed(2) + ' ' + (c[1] - ny).toFixed(2) + '" stroke="' + OL + '" stroke-width="' + OW + '" stroke-linecap="butt"/>';
+    };
+    const arm = ([s, e, h], side, part) => {
+      let o = '';
       const tk = side === 'direito' ? 'BD' : 'BE', tat = tatOf(tk);
-      if (!long && tat !== 'nenhuma') o += tattoo([s, e, h], tat, tk, 3.6, 'lower');
-      if (!long) o += limb(along(s, e, 0, .55), k1, 11.2, 'butt');
-      else o += limb(along(e, h, .78, 1), k2, 7.4, 'butt');
+      if (part !== 'fore') {
+        o += limb(part === 'upper' ? [s, e] : [s, e, h], long ? k1 : skin, 7.4);
+        if (!long && tat !== 'nenhuma' && !part) o += tattoo([s, e, h], tat, tk, 3.6, 'lower');
+        if (part === 'upper') return o;
+      }
+      if (part === 'fore') {
+        o += limb([e, h], long ? k1 : skin, 7.4);
+        if (!long && tat !== 'nenhuma') o += tattoo([s, e, h], tat, tk, 3.6, 'lower');
+      }
+      if (long) o += limb(along(e, h, .78, 1), k2, 7.4, 'butt');
       if (lk.wrist === 'duas' || (lk.wrist === 'uma' && side === 'esquerdo')) o += limb(along(e, h, .66, .84), g(lk.wristC), 8.2, 'butt');
       // Luva: desenhada com os dedos para baixo e girada na direção do antebraço (punho virado para o cotovelo)
       if (gk) o += '<g transform="rotate(' + (Math.atan2(h[1] - e[1], h[0] - e[0]) * 180 / Math.PI - 90).toFixed(1) + ' ' + h[0] + ' ' + h[1] + ')">' +
@@ -351,7 +367,12 @@
     const [L, R] = cel ? cel.a : ARMS[pose] || ARMS.normal;
     const fL = cel && /L/.test(cel.front || ''), fR = cel && /R/.test(cel.front || '');
     // Detalhes da comemoração: dedo para o céu, coração entre as mãos, palmas para baixo
-    const celFx = !cel ? '' : (cel.finger ? '<path d="M82.2 11.6L82.8 3.6" stroke="' + OL + '" stroke-width="4.6" stroke-linecap="round"/><path d="M82.2 11.6L82.8 3.6" stroke="' + (gk ? g(lk.glove) : skin) + '" stroke-width="2.2" stroke-linecap="round"/>' : '') +
+    // Dedo indicador saindo do lado do punho virado para a cabeça, na direção do antebraço
+    const fing = () => { const [, e, h] = R, dx = h[0] - e[0], dy = h[1] - e[1], l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l;
+      const b = [h[0] + ux * 2.6 - uy * -2.2, h[1] + uy * 2.6 + ux * -2.2], t = [b[0] + ux * 6.4, b[1] + uy * 6.4], d = 'M' + pts([b, t]);
+      return '<path d="' + d + '" stroke="' + OL + '" stroke-width="4.6" stroke-linecap="round"/><path d="' + d + '" stroke="' + (gk ? g(lk.glove) : skin) + '" stroke-width="2.2" stroke-linecap="round"/>' +
+        '<path d="M' + pts([[h[0] + 1.2, h[1] - .6], [h[0] + 2.8, h[1] + 1]]) + '" stroke="' + OL + '" stroke-width=".8" stroke-linecap="round" opacity=".6"/>'; };
+    const celFx = !cel ? '' : (cel.finger ? fing() : '') +
       (cel.heart ? '<path d="M60 66.4C57.4 63.6 55.6 61.4 57.4 59.6C58.6 58.4 60 59.4 60 60.6C60 59.4 61.4 58.4 62.6 59.6C64.4 61.4 62.6 63.6 60 66.4Z" fill="#FF4F7A" stroke="' + OL + '" stroke-width="1"/>' : '') +
       (cel.palms ? '<path d="M17 74.6v-2.4M21 73.6v-2.6M25 74.6v-2.4M95 74.6v-2.4M99 73.6v-2.6M103 74.6v-2.4" stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round" opacity=".85"/>' : '');
     const handUp = pose === 'triste' || pose === 'adeus'; // mão no rosto: o braço vai na frente da cabeça
@@ -361,20 +382,21 @@
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb + '">' + defs + bg +
       '<ellipse cx="60" cy="195" rx="26" ry="4.4" fill="rgba(0,0,0,.28)"/>' +
       leg([53.4, 116], [52.4, 150], [52, 185], 'PD') + leg([66.6, 116], [67.6, 150], [68, 185], 'PE') + boot(52, -1) + boot(68, 1) +
-      hBack + (handUp || fL ? '' : arm(L, 'direito')) + (fR ? '' : arm(R, 'esquerdo')) +
+      hBack + (handUp ? '' : arm(L, 'direito', fL ? 'upper' : undefined)) + arm(R, 'esquerdo', fR ? 'upper' : undefined) +
       shape('M55 38h10v15h-10Z', skin) + '<path d="M55.6 44h8.8v4h-8.8Z" fill="rgba(0,0,0,.16)"/>' +
       shape(torso, k1) + '<path d="M70.6 51.6Q78 52.6 78.6 57L77.2 103.6Q73.6 104.8 71 105Z" fill="' + SHADE + '"/>' +
       '<path d="M54.6 50L60 57.4L65.4 50" stroke="' + k2 + '" stroke-width="2.8" stroke-linejoin="round" fill="none"/>' +
+      (handUp ? '' : sleeve(L)) + sleeve(R) +
       (opts.num ? '<text x="60" y="85" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" fill="' +
         (lk.numFx === 'contorno' ? 'none" stroke="' + k2 + '" stroke-width="1.6' : lk.numFx === 'neon' ? NUM_FX.neon + '" stroke="#1B5E0C" stroke-width=".8" style="filter:drop-shadow(0 0 1.6px #7CF03C)'
           : NUM_FX[lk.numFx] ? NUM_FX[lk.numFx] + '" stroke="' + OL + '" stroke-width=".8' : k2) + '">' + opts.num + '</text>' : '') +
       shape('M42.6 102.6H77.4L78.6 123.6Q71.4 126 62.6 124.2L60 115.6L57.4 124.2Q48.6 126 41.4 123.6Z', k2) +
       '<path d="M44.6 104L43.8 123.4M75.4 104L76.2 123.4" stroke="' + k1 + '" stroke-width="2"/>' +
-      (fL ? arm(L, 'direito') : '') + (fR ? arm(R, 'esquerdo') : '') + celFx +
+      (fL ? arm(L, 'direito', 'fore') : '') + (fR ? arm(R, 'esquerdo', 'fore') : '') + celFx +
       '<circle cx="46.8" cy="31.6" r="3.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/><circle cx="73.2" cy="31.6" r="3.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/>' +
       '<ellipse cx="60" cy="30.4" rx="13.2" ry="15.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/>' +
       '<path d="M66.4 16.6Q73.6 21 73.2 31.4Q72.8 40 66 44.6Q71.2 36 70.6 28Q70 21 66.4 16.6Z" fill="' + SHADE + '"/>' +
-      beardOf(lk.beard, lk.hc >= 6 ? '#3A2A1E' : hcol, skin) + face + hFront + band + (handUp ? arm(L, 'direito') : '') + held + cup +
+      beardOf(lk.beard, lk.hc >= 6 ? '#3A2A1E' : hcol, skin) + face + hFront + band + (handUp ? arm(L, 'direito') + sleeve(L) : '') + held + cup +
       extra.map(x => (EXTRA[x] ? EXTRA[x]({ L, R, kit, skin, hcol, lk }) : '')).join('') + '</svg>';
   }
   // Lesão: deitado na maca, com o médico ao lado
