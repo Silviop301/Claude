@@ -554,7 +554,7 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .wc-hero { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .wc-bigflag { font-size: 84px; line-height: 1; animation: trophy-in .8s cubic-bezier(.2, 1.5, .4, 1); }
 .wc-rules p { margin: 0 0 6px; } .wc-rules p:last-child { margin: 0; }
-.wc-list { display: flex; flex-direction: column; gap: 8px; }
+.wc-list { display: flex; flex-direction: column; gap: 8px; overflow-x: clip; } /* cada jogo entra com a mesma animação (cresce 12%) */
 .wc-game { background: var(--paper); color: var(--ink); border-radius: 12px; padding: 8px 12px; border-left: 6px solid #9DB5A6; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
 .wc-game.w { border-left-color: #1FA35A; } .wc-game.l { border-left-color: #C9303C; } .wc-game.d { border-left-color: #F2C230; }
 .wc-game.enter { animation: trophy-in .5s cubic-bezier(.2, 1.4, .4, 1); }
@@ -571,7 +571,7 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .wc-champ span { color: #D9F5E3; }
 .wc-out { text-align: center; font: 800 24px var(--display); background: rgba(255, 255, 255, .08); border-radius: 12px; padding: 12px; }
 .wc-stats { text-align: center; margin: 0; color: #CFE0D4; }
-#wc-after { display: flex; flex-direction: column; gap: 12px; }
+#wc-after { display: flex; flex-direction: column; gap: 12px; overflow-x: clip; } /* o banner de campeão cresce 12% na animação: sem isso a página rolava para o lado por um instante */
 .snd-mini { border: 0; background: rgba(255, 255, 255, .1); border-radius: 999px; font-size: 13px; padding: 2px 7px; cursor: pointer; }
 .btn.small-btn { padding: 10px; font-size: 16px; }
 .crest-pick-t { font: 700 12px var(--display); letter-spacing: .12em; text-transform: uppercase; color: #B9CDBF; text-align: center; }
@@ -599,7 +599,7 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .inv-bar .btn { width: 100%; box-shadow: 0 4px 0 rgba(0, 0, 0, .35), 0 6px 18px rgba(0, 0, 0, .35); }
 
 /* Conquistas */
-.ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; overflow-x: clip; } /* conquista nova cresce 12% na animação */
 .ach { background: rgba(255, 255, 255, .06); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px; color: #9DB5A6; }
 .ach .ic { font-size: 24px; filter: grayscale(1); opacity: .6; }
 .ach b { font: 800 16px/1.1 var(--display); color: #CFE0D4; }
