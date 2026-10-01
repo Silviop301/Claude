@@ -243,10 +243,12 @@
     const ov = document.createElement('div');
     ov.className = 'sl-anim';
     document.body.appendChild(ov);
-    let i = 0, timer = 0, finishNow = null;
+    let i = 0, timer = 0, finishNow = null, ending = false;
     const next = () => {
       clearTimeout(timer);
-      if (i >= list.length) { ov.classList.add('out'); return setTimeout(() => { ov.remove(); done(); }, 220); }
+      // Fim da fila: só uma vez (um toque duplo nos 220 ms da saída chamava done() duas vezes, e a segunda
+      // continuação rodava sem carreira no fim de carreira)
+      if (i >= list.length) { if (ending) return; ending = true; ov.onclick = null; ov.classList.add('out'); return setTimeout(() => { ov.remove(); done(); }, 220); }
       const x = list[i++];
       finishNow = (x.first ? first : repeat)(ov, x, fast);
       timer = setTimeout(next, (fast ? 900 : x.first ? 3400 : 1700));

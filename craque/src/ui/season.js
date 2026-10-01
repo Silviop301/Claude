@@ -102,11 +102,12 @@
     const w = document.createElement('div');
     w.className = 'bigmoment';
     document.body.appendChild(w);
-    let i = 0, tmr = 0;
+    let i = 0, tmr = 0, ending = false;
     const colors = ['#F4D675', '#FFFFFF', '#5FD690', '#FF8A93', '#7AC7FF'];
     const confetti = Array.from({ length: 36 }, (_, k) => '<i style="left:' + ((k * 37) % 100) + '%;background:' + colors[k % 5] + ';animation-delay:' + ((k * 0.13) % 1.2).toFixed(2) + 's;animation-duration:' + (1.6 + (k % 5) * 0.25).toFixed(2) + 's"></i>').join('');
     const show = () => {
-      if (i >= list.length) { clearTimeout(tmr); w.classList.add('out'); return setTimeout(() => { w.remove(); done(); }, 250); }
+      // Fim da fila só uma vez: toque duplo na saída montava o resumo duas vezes (destaque repetido)
+      if (i >= list.length) { if (ending) return; ending = true; w.onclick = null; clearTimeout(tmr); w.classList.add('out'); return setTimeout(() => { w.remove(); done(); }, 250); }
       const m = list[i++];
       w.innerHTML = '<div class="bm-confetti">' + confetti + '</div><div class="bm-in"><div class="bm-art">' + m.art + '</div><span class="bm-top">' + esc(m.top) + '</span><b class="bm-name">' + esc(m.name) + '</b><small>Toque para continuar</small></div>';
       sfx('fanfare');
