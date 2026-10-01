@@ -22,7 +22,7 @@
     // Físico alto protege de lesões
     // ~6% por temporada no auge físico; sobe com a idade (a partir dos 30) e com FÍS baixo
     const injRisk = clamp((0.065 + Math.max(0, c.age - 30) * 0.02) * clamp(1 - (E.fis - 60) / 90, 0.6, 1.25) * (1 - 0.25 * (c.inv.fisio || 0)) *
-      (1 - 0.15 * S.tm(c, 'pro') + 0.05 * S.tm(c, 'raca')), 0.02, 0.4); // Profissional se machuca menos; Raça, mais
+      (1 - 0.15 * S.tm(c, 'pro') + 0.05 * S.tm(c, 'raca')) * S.trainOf(c).inj, 0.02, 0.5); // Profissional se machuca menos; Raça, mais; treino pesado, mais
     let injName = null;
     if (r() < injRisk) {
       injShare = Math.max(injShare, r.range(0.08, 0.32));
@@ -285,7 +285,7 @@
     const injLoss = injShare > 0 && injShare < 1 ? growOf(share / (1 - injShare)) - growth : 0;
     // Jogar bem faz evoluir: nota 7,9 vale ~+1; nota ruim atrasa (depois dos 30 pesa metade)
     const perf = games >= 10 ? clamp((rating - 7.0) * 1.0, -0.8, 1.5) * (c.age <= 29 ? 1 : 0.5) * (rating < 7 ? 1 : clamp(room / 6, 0.25, 1)) : 0;
-    const decline = AGE_DECLINE(c.age) * S.declMult(c);
+    const decline = AGE_DECLINE(c.age) * S.declMult(c) * S.trainOf(c).decl;
     const luck = r.gauss() * 0.8;
     const delta = growth + perf - decline + luck;
     const w = D.POS[c.pos].w;
@@ -327,6 +327,13 @@
     c.money += c.wage * 52;
     // Pontos de evolução: o que você fez em campo vira treino
     const pe = S.peGain({ games, rating, titles, awards });
+    // Foco nos treinos: chance de ponto extra (fora do limite da temporada); lesão séria perde o bônus
+    const tr = S.trainOf(c);
+    if (tr.p1 || tr.p2) {
+      const x = r(), extra = x < tr.p2 ? 2 : x < tr.p2 + tr.p1 ? 1 : 0;
+      if (injShare >= 0.2) pe.train = { id: tr.id, n: 0, lost: true };
+      else { pe.train = { id: tr.id, n: extra }; pe.n += extra; }
+    }
     c.pe = (c.pe || 0) + pe.n;
     const T = c.totals;
     T.games += games; T.goals += goals; T.assists += assists;

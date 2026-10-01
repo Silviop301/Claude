@@ -273,6 +273,7 @@
   S.investMax = id => D.INVEST_BY_ID[id].max || D.INVEST_MAX;
   S.canInvest = (c, id) => (c.inv[id] || 0) < S.investMax(id) && (c.pe || 0) >= S.investPrice(c, id);
   S.PE_R1 = 7.4; S.PE_R2 = 8.2; // nota para ganhar 1 ou 2 pontos
+  S.trainOf = c => D.TRAIN_BY_ID[c.train] || D.TRAIN_BY_ID.normal;
   S.canInvestAny = c => D.INVEST.some(t => S.canInvest(c, t.id));
   // Pontos da temporada: jogar, jogar bem, ganhar
   S.peGain = function (s) {

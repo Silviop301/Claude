@@ -1388,3 +1388,10 @@ details.more.score-how > summary { color: var(--ink); }
 
 .cfg-credit { margin: 2px 0 0; text-align: center; font: 500 12px var(--body); color: #93AD9D; }
 .cfg-credit a { color: inherit; }
+/* Foco nos treinos: 4 opções lado a lado */
+.train-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+.train-opt { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: 14px; border: 2px solid transparent; background: var(--paper, #FBF7EE); color: var(--ink, #14231B); cursor: pointer; }
+.train-opt b { font: 700 15px var(--display); }
+.train-opt.on { border-color: var(--gold); background: #FFF4CC; box-shadow: 0 0 0 2px rgba(242, 193, 46, .35); }
+.train-txt { margin: 8px 0 0; color: #CFE0D4; }
+.train-txt b { color: var(--gold); }

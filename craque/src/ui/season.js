@@ -10,6 +10,18 @@
     return [[res.goals, 'Gols'], [res.assists, 'Assist.']];
   }
 
+  // Pontos de evolução da temporada: desempenho (com limite) + bônus do foco nos treinos
+  function peLine(pe) {
+    if (!pe || (!pe.n && !(pe.train && pe.train.lost))) return '';
+    const tr = pe.train, t = tr && D.TRAIN_BY_ID[tr.id];
+    const base = pe.n - (tr && tr.n ? tr.n : 0), sum = pe.why.reduce((a, w) => a + w[1], 0);
+    const parts = pe.why.map(w => esc(w[0]));
+    if (sum > base) parts.push('máximo de ' + S.PE_CAP + ' pelo desempenho');
+    if (tr && tr.lost) parts.push(t.name.toLowerCase() === 'normal' ? 'lesão: sem bônus do treino' : 'treino ' + t.name.toLowerCase() + ': a lesão tirou o bônus');
+    else if (tr && tr.n) parts.push(U.emo(t.icon, 'xs') + ' treino ' + t.name.toLowerCase() + ': +' + tr.n + ' extra');
+    return '<p class="pe-gain rv">' + U.emo('⭐', 'xs') + ' <b>' + (pe.n ? '+' + pe.n + (pe.n > 1 ? ' pontos' : ' ponto') + ' de evolução' : 'Nenhum ponto de evolução') + '</b> · ' + parts.join(' · ') + '</p>';
+  }
+
   function season() {
     const res = S.playSeason(G.c);
     U.rankSave(G.c); // ranking: nota máxima, gols e títulos já contam durante a carreira
@@ -221,7 +233,7 @@
       (res.carry >= 1 || res.grow ? '<p class="star-line rv">' + U.emo('💪', 'xs') + ' ' + (res.carry >= 1 ? 'Você carregou o time: <b>+' + res.carry + ' de força</b> nos jogos' : '') +
         (res.grow ? (res.carry >= 1 ? '. ' : '') + 'Com você, ' + D.o(esc(res.grow.name)) + ' se reforçou: força <b>' + res.grow.from + ' → ' + res.grow.to + '</b>' : '') + '</p>' : '') +
       // Pontos de evolução ganhos nesta temporada (e por quê)
-      (res.pe && res.pe.n ? '<p class="pe-gain rv">' + U.emo('⭐', 'xs') + ' <b>+' + res.pe.n + (res.pe.n > 1 ? ' pontos' : ' ponto') + ' de evolução</b> · ' + res.pe.why.map(w => esc(w[0])).join(' · ') + (res.pe.why.reduce((a, w) => a + w[1], 0) > res.pe.n ? ' · máximo de ' + S.PE_CAP + ' por temporada' : '') + '</p>' : '') +
+      peLine(res.pe) +
       '<details class="more rv"><summary>Detalhes da temporada</summary>' +
       res.highlights.slice(1).map(h => '<div class="hl">' + esc(h) + '</div>').join('') +
       '<div class="card why-card"><p class="delta-in ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' + why + '</div>' +

@@ -44,6 +44,8 @@ for (let n = 0; n < N; n++) {
     }
     // Jogo decisivo: o robô deixa o jogo decidir (mesma chance que a tela mostra)
     if (!process.env.NOMOMENT && S.pickMoment(c)) { c.mstats = c.mstats || { n: 0, ok: 0 }; c.mstats.n++; if (S.autoMoment(c)) c.mstats.ok++; decisions++; }
+    // Foco nos treinos: TRAIN=id força um; o esperto treina forte enquanto jovem e leve quando veterano
+    c.train = process.env.TRAIN || (SMART ? (c.age <= 28 ? 'forte' : c.age >= 32 ? 'leve' : 'normal') : D.TRAIN[Math.floor(Math.random() * D.TRAIN.length)].id);
     S.playSeason(c);
     // Copa do Mundo: o robô joga se for convocado (pênaltis pela chance)
     if (S.isWcYear(c) && S.wcCall(c).called) {
