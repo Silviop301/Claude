@@ -97,3 +97,36 @@ jobs:
             -e "$SSH" \
             craque/ "$SSH_USER@$SSH_HOST:$TARGET/"
           echo "Publicado em https://climbix.app"
+
+      # Entrar com Google, GitHub e Discord (passo a passo em docs/climbix-login.md). Segredos, em pares:
+      #   CLIMBIX_GOOGLE_ID / CLIMBIX_GOOGLE_SECRET, CLIMBIX_GITHUB_ID / CLIMBIX_GITHUB_SECRET, CLIMBIX_DISCORD_ID / CLIMBIX_DISCORD_SECRET
+      # Grava climbix-data/oauth.json FORA do public_html (o rsync acima não apaga). Sem nenhum par, não mexe no arquivo.
+      - name: Chaves do login com Google, GitHub e Discord
+        if: steps.key.outputs.ok == 'true'
+        env:
+          SSHPASS: ${{ secrets.CLIMBIX_SSH_PASSWORD }}
+          SSH: ${{ steps.key.outputs.ssh }}
+          OAUTH_GOOGLE_ID: ${{ secrets.CLIMBIX_GOOGLE_ID }}
+          OAUTH_GOOGLE_SECRET: ${{ secrets.CLIMBIX_GOOGLE_SECRET }}
+          OAUTH_GITHUB_ID: ${{ secrets.CLIMBIX_GITHUB_ID }}
+          OAUTH_GITHUB_SECRET: ${{ secrets.CLIMBIX_GITHUB_SECRET }}
+          OAUTH_DISCORD_ID: ${{ secrets.CLIMBIX_DISCORD_ID }}
+          OAUTH_DISCORD_SECRET: ${{ secrets.CLIMBIX_DISCORD_SECRET }}
+        run: |
+          python3 - > "$RUNNER_TEMP/oauth.json" <<'PY'
+          import json, os
+          c = {}
+          for p in ('google', 'github', 'discord'):
+              i, s = os.environ.get('OAUTH_%s_ID' % p.upper(), '').strip(), os.environ.get('OAUTH_%s_SECRET' % p.upper(), '').strip()
+              if i and s:
+                  c[p] = {'id': i, 'secret': s}
+          if c:
+              print(json.dumps(c))
+          PY
+          if [ ! -s "$RUNNER_TEMP/oauth.json" ]; then
+            echo "Nenhum serviço de login nos segredos: oauth.json do servidor fica como está."; exit 0
+          fi
+          DATA="$(dirname "$TARGET")/climbix-data"
+          $SSH "$SSH_USER@$SSH_HOST" "mkdir -p $DATA && umask 077 && cat > $DATA/oauth.json" < "$RUNNER_TEMP/oauth.json"
+          rm -f "$RUNNER_TEMP/oauth.json"
+          echo "Login ligado para: $(python3 -c "import os; print(', '.join(p for p in ('google', 'github', 'discord') if os.environ.get('OAUTH_%s_ID' % p.upper()) and os.environ.get('OAUTH_%s_SECRET' % p.upper())))")"

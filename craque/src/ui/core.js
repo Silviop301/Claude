@@ -144,6 +144,7 @@
     'calendar-days': svgI('M8 2v3 M16 2v3 M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M3 9h18 M8 13h.01 M12 13h.01 M16 13h.01 M8 17h.01 M12 17h.01 M16 17h.01'),
     'x': svgI('M18 6 6 18 M0 0m6 6 12 12'),
     'info': svgI('M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0 M12 16v-4 M12 8h.01'),
+    'lock': svgI('M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-7a2 2 0 0 1 2 -2z M7 11V7a5 5 0 0 1 10 0v4'),
   };
   // Selo redondo com ícone. tom: 'green' | 'blue' | 'sand' | 'red' | 'gold' | 'purple'
   // Emojis do jogo como Twemoji (SVG guardado em assets/tw), iguais em todo aparelho.

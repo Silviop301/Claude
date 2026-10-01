@@ -1026,6 +1026,21 @@ details.more .hl { background: rgba(255, 255, 255, 0.08); border-radius: 10px; p
 .acc-form { display: flex; flex-direction: column; gap: 10px; }
 .acc-form input { width: 100%; box-sizing: border-box; }
 .acc-err { color: #FF9AA2; font-weight: 700; margin: 0; }
+.acc-ok { color: #9FE6B8; font-weight: 700; margin: 0; }
+/* Google, GitHub e Discord */
+.acc-prov { display: flex; flex-direction: column; gap: 8px; }
+.acc-prov:empty { display: none; }
+.prov-btn { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 18px; }
+.prov-ico { width: 22px; height: 22px; display: inline-grid; place-items: center; flex: none; }
+.prov-ico svg { width: 100%; height: 100%; display: block; }
+.acc-or { display: flex; align-items: center; gap: 10px; margin-top: 4px; color: #C3D6CA; font-size: 13px; }
+.acc-or::before, .acc-or::after { content: ''; flex: 1; height: 1px; background: rgba(255, 255, 255, .18); }
+.acc-ways { display: flex; flex-direction: column; gap: 8px; }
+.acc-way { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .07); }
+.acc-way > span:nth-child(2) { display: flex; flex-direction: column; min-width: 0; }
+.acc-way small { color: #C3D6CA; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acc-way .btn { width: auto; padding: 8px 14px; font-size: 16px; }
+.acc-way .link-btn { font-size: 13px; }
 
 /* Álbum de folhear */
 .book { position: relative; perspective: 1400px; width: 100%; max-width: 440px; margin: 0 auto; touch-action: pan-y; }
