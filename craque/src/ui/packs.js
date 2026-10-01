@@ -7,13 +7,14 @@
 
   // ---------- desenho dos itens ----------
   // Cada item aparece no próprio boneco, recortado no ponto do corpo onde fica
-  const VIEW = { head: '38 2 44 46', headT: '33 -1 54 56', face: '35 5 50 56', torso: '38 40 44 40', num: '40 52 40 40', feet: '36 170 48 28', legs: '36 142 48 54',
+  const VIEW = { head: '38 2 44 46', headT: '33 -1 54 56', cel: '6 0 108 108', face: '35 5 50 56', torso: '38 40 44 40', num: '40 52 40 40', feet: '36 170 48 28', legs: '36 142 48 54',
     armR: '62 48 32 32', wristL: '20 84 30 30', handR: '70 88 30 30', armL: '22 50 34 58', armRL: '64 50 34 58', legL: '30 112 46 52', legR: '44 112 46 52' };
   const LIMB_VIEW = { BD: 'armL', BE: 'armRL', PD: 'legL', PE: 'legR' }; // braço direito do jogador fica à esquerda na tela
-  const VIEW_OF = { cores: 'feet', cabelo: 'head', tatuagem: 'armL', numeros: 'num', num: 'num',
+  const VIEW_OF = { comemoracao: 'cel', cores: 'feet', cabelo: 'head', tatuagem: 'armL', numeros: 'num', num: 'num',
     arriado: 'legs', munhequeira: 'wristL', faixa: 'head', bonfim: 'wristL', listrado: 'legs', caneleira: 'legs', tiara: 'head',
     afro: 'headT', 'barba-lenhador': 'face', 'barba-trancada': 'face', samurai: 'headT', moicanoloiro: 'headT', trancalonga: 'headT', mullet: 'headT',
-    manga: 'armL', cordao: 'torso', brinco: 'head', camuflada: 'feet', raio: 'feet', tigre: 'handR', capitao: 'armR', chamas: 'feet' };
+    manga: 'armL', cordao: 'torso', brinco: 'head', camuflada: 'feet', raio: 'feet', bicolor: 'feet', listrada: 'feet', pontilhada: 'feet', galaxia: 'feet', camoneon: 'feet', onca: 'feet', brasil: 'feet', cristal: 'feet',
+    velcro: 'handR', dedos: 'handR', luvafogo: 'handR', luvaouro: 'handR', tigre: 'handR', capitao: 'armR', chamas: 'feet' };
   const KIT = ['#F7D117', '#1B8A3A'];
   const BASE = { skin: 5, hair: 'curto', hc: 0, beard: 'nenhuma', boot: 'preto', sole: 'branco', sock: 'alto', sleeve: 'curta', wrist: 'nenhuma', band: 'nenhuma', glove: 'lima' };
   const cache = {};
@@ -26,7 +27,7 @@
     if (it.look && it.look.beard || it.id === 'sobrancelha') look.skin = 2; // barba escura aparece melhor na pele clara
     if (it.id === 'faixa' || it.id === 'tiara') look.bandC = 'branco';
     const n = it.cat === 'num' ? String(it.n) : String(num || 9);
-    let svg = A.photo('normal', KIT, { name: 'Diegao', pos: it.gk ? 'GOL' : 'ATA', number: n, look }, { crop: true, flat: true, num: n });
+    let svg = A.photo(it.cat === 'comemoracao' ? 'celebra' : 'normal', KIT, { name: 'Diegao', pos: it.gk ? 'GOL' : 'ATA', number: n, look }, { crop: true, flat: true, num: n });
     svg = svg.replace(/viewBox="[^"]+"/, 'viewBox="' + VIEW[(it.limb && LIMB_VIEW[it.limb]) || VIEW_OF[it.id] || VIEW_OF[it.cat] || 'head'] + '"');
     return (cache[k] = A.url(svg));
   }
@@ -230,7 +231,7 @@
   }
 
   // ---------- Meus itens ----------
-  const TABS = [['num', 'Números'], ['cabelo', 'Cabelo e barba'], ['equip', 'Equipamento'], ['tatuagem', 'Tatuagem'], ['cores', 'Cores'], ['assinatura', 'Assinatura'], ['acabamento', 'Acabamento']];
+  const TABS = [['num', 'Números'], ['cabelo', 'Cabelo e barba'], ['equip', 'Equipamento'], ['tatuagem', 'Tatuagem'], ['cores', 'Cores'], ['assinatura', 'Assinatura'], ['acabamento', 'Acabamento'], ['comemoracao', 'Comemoração']];
   const ORD = rk => I.RAR.indexOf(rk);
   function tile(it) {
     const on = I.has(it.id), novo = on && I.get().news[it.id];

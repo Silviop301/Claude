@@ -78,11 +78,15 @@
   const A = window.ClimbixAvatar, I = U.ITEMS;
   const BASIC = ['preto', 'branco', 'vermelho', 'azul', 'neon', 'rosa', 'laranja', 'amarelo', 'roxo', 'vinho', 'cinza', 'musgo', 'celeste', 'bege'];
   const GEAR_NAME = { preto: 'Preta', branco: 'Branca', vermelho: 'Vermelha', azul: 'Azul', neon: 'Verde neon', rosa: 'Rosa', laranja: 'Laranja', amarelo: 'Amarela', ouro: 'Ouro', holo: 'Holográfica', lima: 'Lima', roxo: 'Roxa', vinho: 'Vinho', cinza: 'Cinza', musgo: 'Verde-musgo', celeste: 'Azul-bebê', bege: 'Bege', prata: 'Prata', cromo: 'Cromada',
-    camuflada: 'Camuflada', raio: 'De raio', chamas: 'Em chamas', tigre: 'Tigrada' };
+    camuflada: 'Camuflada', raio: 'De raio', chamas: 'Em chamas', tigre: 'Tigrada',
+    bicolor: 'Bicolor', listrada: 'Listrada', pontilhada: 'Pontilhada', galaxia: 'Galáxia', camoneon: 'Camuflada neon', onca: 'Onça', brasil: 'Brasil', cristal: 'Cristal',
+    velcro: 'Com velcro', dedos: 'Dedos coloridos', luvafogo: 'De fogo', luvaouro: 'Dourada' };
   const HAIR_NAME = { curto: 'Curto', raspado: 'Raspado', topete: 'Topete', black: 'Black', trancas: 'Tranças', dreads: 'Dreads', moicano: 'Moicano', longo: 'Longo', careca: 'Careca',
     social: 'Social', franja: 'Franja', militar: 'Militar', cacheado: 'Cacheado', undercut: 'Undercut', degrade: 'Degradê', samurai: 'Samurai', afro: 'Black power',
     mullet: 'Mullet', riscado: 'Com desenho', trancalonga: 'Tranças longas', moicanoloiro: 'Moicano loiro' };
   const BEARD_NAME = { nenhuma: 'Sem barba', rala: 'Rala', bigode: 'Bigode', cavanhaque: 'Cavanhaque', cheia: 'Cheia', porfazer: 'Por fazer', costeleta: 'Costeleta', lenhador: 'Lenhador', bigodao: 'Bigodão', navalha: 'Com desenho', trancada: 'Trançada' };
+  const CEL_NAME = [['padrao', 'Braços para cima'], ['abertos', 'Braços abertos'], ['ceu', 'Dedo para o céu'], ['escudo', 'Mão no escudo'], ['aviao', 'Aviãozinho'],
+    ['coracao', 'Coração'], ['bebe', 'Embalar o bebê'], ['calma', 'Calma, calma'], ['estatua', 'Estátua']];
   const HC_NAME = ['Preto', 'Castanho', 'Loiro', 'Ruivo', 'Grisalho', 'Platinado', 'Azul', 'Rosa', 'Verde'];
   const EXTRA_NAME = { bonfim: 'Fita do Bonfim', listrado: 'Listrado', caneleira: 'Caneleira', coque: 'Coque', risco: 'Risquinho', cordao: 'Cordão', brinco: 'Brinco', capitao: 'Faixa de capitão', mecha: 'Mecha', bandana: 'Bandana', rabo: 'Rabo de cavalo', sobrancelha: 'Sobrancelha riscada', glitter: 'Glitter', clube: 'Cores do clube' };
   const TAT = [['nenhuma', 'Nenhuma'], ['pequena', 'Pequena'], ['fechado', 'Fechada']];
@@ -218,20 +222,21 @@
       let rows = '';
       if (st.tab === 'corpo') rows = row('Pele', '', sw('skin', A.SKIN.map((_, i) => i), i => A.SKIN[i], A.SKIN.map((_, i) => 'Tom ' + (i + 1)))) +
         row('Barba', '', chip('beard', A.BEARDS.map(b => [b, BEARD_NAME[b]]))) +
+        row('Comemoração', '', chip('cel', CEL_NAME)) +
         [['BD', 'braço direito'], ['BE', 'braço esquerdo'], ['PD', 'perna direita'], ['PE', 'perna esquerda']].map(([k, l]) => row('Tatuagem · ' + l, tnote(k), chip('tat' + k, TAT))).join('');
       if (st.tab === 'cabelo') rows = row('Corte', '', chip('hair', A.HAIRS.map(h => [h, HAIR_NAME[h]]))) +
         row('Detalhes', '', tog(['coque', 'risco', 'mecha', 'rabo', 'sobrancelha', 'glitter', 'clube'])) +
         row('Cor do cabelo e da barba', '', sw('hc', A.HAIR_COLORS.map((_, i) => i), i => A.HAIR_COLORS[i], HC_NAME)) +
         row('Na cabeça', '', chip('band', [['nenhuma', 'Nada'], ['faixa', 'Faixa'], ['tiara', 'Tiara']]) + tog(['bandana'])) +
         (lk.band !== 'nenhuma' ? row('Cor da faixa', GEAR_NAME[lk.bandC], sw('bandC', BASIC, gearBg)) : '');
-      if (st.tab === 'equip') rows = row('Chuteira', GEAR_NAME[lk.boot], sw('boot', BASIC.concat(['prata', 'ouro', 'cromo', 'holo', 'camuflada', 'raio', 'chamas']), gearBg)) +
+      if (st.tab === 'equip') rows = row('Chuteira', GEAR_NAME[lk.boot], sw('boot', BASIC.concat(['prata', 'ouro', 'cromo', 'holo', 'bicolor', 'listrada', 'pontilhada', 'galaxia', 'camuflada', 'camoneon', 'onca', 'brasil', 'raio', 'chamas', 'cristal']), gearBg)) +
         row('Sola', GEAR_NAME[lk.sole], sw('sole', BASIC.concat(['prata', 'ouro', 'cromo', 'holo']), gearBg)) +
         row('Meião', '', chip('sock', [['alto', 'Alto'], ['arriado', 'Arriado']]) + tog(['listrado', 'caneleira'])) +
         row('Manga', '', chip('sleeve', [['curta', 'Curta'], ['comprida', 'Comprida']])) +
         row('Munhequeira', '', chip('wrist', [['nenhuma', 'Nenhuma'], ['uma', 'Uma'], ['duas', 'Duas']])) +
         (lk.wrist !== 'nenhuma' ? row('Cor da munhequeira', GEAR_NAME[lk.wristC], sw('wristC', BASIC, gearBg)) : '') +
         row('Acessórios', '', tog(['bonfim', 'cordao', 'brinco', 'capitao'])) +
-        (st.pos === 'GOL' ? row('Luva', GEAR_NAME[lk.glove], sw('glove', ['lima'].concat(BASIC, ['tigre']), gearBg)) : '');
+        (st.pos === 'GOL' ? row('Luva', GEAR_NAME[lk.glove], sw('glove', ['lima'].concat(BASIC, ['velcro', 'dedos', 'tigre', 'luvafogo', 'luvaouro']), gearBg)) : '');
       $('cr-rows').innerHTML = rows;
       $('cr-big').innerHTML = (prev && note ? '<span class="cr-prev">Prévia · ' + esc(note.name) + '</span>' : '') + U.photo('normal', kit, who(), { crop: true, flat: true, num: String(st.num) });
       $('cr-paper').innerHTML = U.photo('normal', kit, who(), { num: String(st.num) });
@@ -273,7 +278,7 @@
       Object.assign(lk, { skin: Math.floor(Math.random() * A.SKIN.length), hair: p('hair', A.HAIRS), hc: p('hc', [0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8]), beard: p('beard', A.BEARDS),
         band: p('band', ['nenhuma', 'nenhuma', 'faixa', 'tiara']), bandC: p('bandC', BASIC), tatBD: p('tatBD', ['nenhuma', 'nenhuma', 'pequena', 'fechado']), tatBE: p('tatBE', ['nenhuma', 'nenhuma', 'pequena', 'fechado']),
         tatPD: p('tatPD', ['nenhuma', 'nenhuma', 'nenhuma', 'pequena', 'fechado']), tatPE: p('tatPE', ['nenhuma', 'nenhuma', 'nenhuma', 'pequena', 'fechado']),
-        boot: p('boot', BASIC.concat(['prata', 'ouro', 'cromo', 'holo', 'camuflada', 'raio', 'chamas'])), sole: p('sole', BASIC), sock: p('sock', ['alto', 'arriado']), sleeve: p('sleeve', ['curta', 'curta', 'comprida']),
+        boot: p('boot', BASIC.concat(['prata', 'ouro', 'cromo', 'holo', 'bicolor', 'listrada', 'pontilhada', 'galaxia', 'camuflada', 'camoneon', 'onca', 'brasil', 'raio', 'chamas', 'cristal'])), sole: p('sole', BASIC), sock: p('sock', ['alto', 'arriado']), sleeve: p('sleeve', ['curta', 'curta', 'comprida']),
         wrist: p('wrist', ['nenhuma', 'uma', 'duas']), wristC: p('wristC', BASIC),
         extra: Object.keys(EXTRA_NAME).filter(id => !lockOf('extra', id) && Math.random() < 0.3) });
       prev = note = null; sfx('tap'); draw();
@@ -300,7 +305,7 @@
     });
     const vis = (items || []).filter(it => it.cat !== 'num' && it.cat !== 'assinatura' && it.cat !== 'acabamento'); // assinatura e acabamento se escolhem no fim da carreira
     if (!vis.length) return create(st);
-    st.tab = vis.some(it => it.cat === 'cabelo') ? 'cabelo' : vis.some(it => it.cat === 'tatuagem') && vis.length === 1 ? 'corpo' : 'equip';
+    st.tab = vis.some(it => it.cat === 'cabelo') ? 'cabelo' : vis.some(it => it.cat === 'comemoracao') ? 'corpo' : vis.some(it => it.cat === 'tatuagem') && vis.length === 1 ? 'corpo' : 'equip';
     looks(st);
   }
 

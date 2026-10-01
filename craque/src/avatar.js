@@ -12,17 +12,46 @@
   const GEAR = { preto: '#1B1A17', branco: '#F4F2EA', vermelho: '#D8404A', azul: '#2F6FD6', neon: '#7CF03C', rosa: '#FF4FA3', laranja: '#FF8A1F', amarelo: '#F2D630', ouro: 'url(#g-ouro)', holo: 'url(#g-holo)', lima: '#B8F25C',
     roxo: '#7B4FD6', vinho: '#7A1E2E', cinza: '#8C8F93', musgo: '#2E5E3A', celeste: '#8FC8F2', bege: '#D9C7A3', prata: 'url(#g-prata)', cromo: 'url(#g-cromo)',
     // Estampas (pacotinho): chuteira camuflada, de raio e em chamas; luva tigrada
-    camuflada: 'url(#p-camo)', raio: 'url(#p-raio)', chamas: 'url(#p-chamas)', tigre: 'url(#p-tigre)' };
+    camuflada: 'url(#p-camo)', raio: 'url(#p-raio)', chamas: 'url(#p-chamas)', tigre: 'url(#p-tigre)',
+    // Lote 4: chuteiras (estampas) e luvas de goleiro (desenho por cima da luva, ver GLOVE_FX)
+    bicolor: '#1B1A17', listrada: 'url(#p-listra)', pontilhada: 'url(#p-ponto)', galaxia: 'url(#p-galaxia)', camoneon: 'url(#p-camoneon)', onca: 'url(#p-onca)', brasil: 'url(#p-brasil)', cristal: 'url(#p-cristal)',
+    velcro: '#F4F2EA', dedos: '#F4F2EA', luvafogo: 'url(#g-fogo)', luvaouro: 'url(#g-ouro)' };
   const SWATCH = { prata: 'linear-gradient(135deg, #FFFFFF, #C9CED6 50%, #7F8790)', cromo: 'linear-gradient(135deg, #5A6470, #F4F7FA 35%, #8A939E 55%, #FFFFFF 75%, #4A535E)',
     ouro: 'linear-gradient(135deg, #FFE68A, #F2C230 50%, #B98700)', holo: 'linear-gradient(135deg, #8FE3FF, #C79BFF 35%, #FF9BD5 65%, #FFE38F)',
     camuflada: 'radial-gradient(circle at 30% 30%, #3E4628 22%, transparent 24%), radial-gradient(circle at 70% 65%, #A39A63 24%, transparent 26%), #6B7444',
     raio: 'linear-gradient(120deg, #1B1A17 40%, #F2D630 41% 55%, #1B1A17 56%)', chamas: 'linear-gradient(0deg, #FF6A1F, #FFD23F 45%, #1B1A17 46%)',
-    tigre: 'repeating-linear-gradient(160deg, #FF8A1F 0 5px, #1B1A17 5px 7px)' };
+    tigre: 'repeating-linear-gradient(160deg, #FF8A1F 0 5px, #1B1A17 5px 7px)',
+    bicolor: 'linear-gradient(90deg, #1B1A17 60%, #F4F2EA 61%)', listrada: 'repeating-linear-gradient(0deg, #F4F2EA 0 4px, #2F6FD6 4px 7px)',
+    pontilhada: 'radial-gradient(circle, #F4F2EA 1.6px, transparent 2px) 0 0 / 7px 7px, #1B1A17',
+    galaxia: 'radial-gradient(circle at 30% 40%, #7B4FD6aa, transparent 45%), radial-gradient(circle at 70% 70%, #2F6FD6aa, transparent 40%), radial-gradient(circle, #fff 1px, transparent 1.4px) 0 0 / 9px 8px, #14193D',
+    camoneon: 'radial-gradient(circle at 30% 30%, #7CF03C 22%, transparent 24%), radial-gradient(circle at 70% 65%, #2C5E1A 24%, transparent 26%), #1B1A17',
+    onca: 'radial-gradient(circle, #B8782A 2px, #2A1A0A 2.4px 3.4px, transparent 3.6px) 0 0 / 11px 10px, #E8B04A',
+    brasil: 'radial-gradient(circle, #2F5FC4 26%, transparent 28%), linear-gradient(135deg, transparent 30%, #F2D630 31% 69%, transparent 70%), #1E9A43',
+    cristal: 'linear-gradient(135deg, #E9F8FF, #8CCBEA 40%, #FFFFFF 55%, #A8DBF2 75%, #E9F8FF)',
+    velcro: 'linear-gradient(180deg, #1B1A17 30%, #F4F2EA 31%)', dedos: 'linear-gradient(90deg, #D8404A 25%, #F2D630 25% 50%, #2F6FD6 50% 75%, #22A45D 75%)',
+    luvafogo: 'linear-gradient(0deg, #D8261E, #FF8A1F 50%, #FFE14A)', luvaouro: 'linear-gradient(135deg, #FFE68A, #F2C230 50%, #B98700)' };
   const PATTERNS = '<pattern id="p-camo" width="9" height="7" patternUnits="userSpaceOnUse"><rect width="9" height="7" fill="#6B7444"/><ellipse cx="2" cy="2" rx="2.4" ry="1.4" fill="#3E4628"/><ellipse cx="6.5" cy="5" rx="2.6" ry="1.5" fill="#A39A63"/><ellipse cx="7.4" cy="1.2" rx="1.4" ry="1" fill="#2A2D1C"/></pattern>' +
     '<pattern id="p-raio" width="7" height="9" patternUnits="userSpaceOnUse" patternTransform="translate(0 183.5)"><rect width="7" height="9" fill="#1B1A17"/><path d="M4.4 0L1.8 4.6H4.6L2.4 9" stroke="#F2D630" stroke-width="1.3" fill="none" stroke-linejoin="round"/></pattern>' +
     '<pattern id="p-chamas" width="6" height="9" patternUnits="userSpaceOnUse" patternTransform="translate(0 183.4)"><rect width="6" height="9" fill="#1B1A17"/><path d="M0 9C.4 6 2 6 1.6 2.4C3.2 4 3.6 6 3.4 6.8C4.2 5.6 5.2 5.2 4.9 3.4C6 5.2 6 7.6 5.6 9Z" fill="#FF6A1F"/><path d="M1.2 9C1.4 7.6 2.4 7.2 2.3 5.8C3.2 6.8 3.5 7.9 3.3 9Z" fill="#FFD23F"/></pattern>' +
     '<pattern id="p-tigre" width="5" height="4" patternUnits="userSpaceOnUse"><rect width="5" height="4" fill="#FF8A1F"/><path d="M0 1.2Q2.5 2.2 5 .8M0 3.2Q2.5 4.2 5 2.8" stroke="#1B1A17" stroke-width=".8" fill="none"/></pattern>';
-  const DEF = { skin: 3, hair: 'curto', hc: 0, beard: 'nenhuma', band: 'nenhuma', bandC: 'branco', tattoo: 'nenhuma', tattooSide: 'direito', boot: 'preto', sole: 'branco', sock: 'alto', sleeve: 'curta', wrist: 'nenhuma', wristC: 'branco', glove: 'lima' };
+  const BOOT_Y = 'patternTransform="translate(0 183.6)"';
+  const PATTERNS2 = '<pattern id="p-listra" width="4" height="2.8" patternUnits="userSpaceOnUse" ' + BOOT_Y + '><rect width="4" height="2.8" fill="#F4F2EA"/><rect width="4" height="1.1" fill="#2F6FD6"/></pattern>' +
+    '<pattern id="p-ponto" width="3.4" height="3.4" patternUnits="userSpaceOnUse" ' + BOOT_Y + '><rect width="3.4" height="3.4" fill="#1B1A17"/><circle cx=".9" cy=".9" r=".6" fill="#F4F2EA"/><circle cx="2.6" cy="2.6" r=".6" fill="#F4F2EA"/></pattern>' +
+    '<pattern id="p-galaxia" width="10" height="8.4" patternUnits="userSpaceOnUse" ' + BOOT_Y + '><rect width="10" height="8.4" fill="#14193D"/><ellipse cx="3" cy="4" rx="3.4" ry="1.8" fill="#7B4FD6" opacity=".55"/><ellipse cx="8" cy="6.6" rx="2.6" ry="1.4" fill="#2F6FD6" opacity=".55"/>' +
+      '<circle cx="1.2" cy="1.4" r=".35" fill="#fff"/><circle cx="6.4" cy="2.2" r=".45" fill="#fff"/><circle cx="4.6" cy="6.8" r=".3" fill="#fff"/><circle cx="8.8" cy="4" r=".3" fill="#FFE68A"/><circle cx="2.4" cy="7.6" r=".25" fill="#fff"/></pattern>' +
+    '<pattern id="p-camoneon" width="9" height="7" patternUnits="userSpaceOnUse"><rect width="9" height="7" fill="#1B1A17"/><ellipse cx="2" cy="2" rx="2.4" ry="1.4" fill="#7CF03C"/><ellipse cx="6.5" cy="5" rx="2.6" ry="1.5" fill="#2C5E1A"/><ellipse cx="7.4" cy="1.2" rx="1.4" ry="1" fill="#B8F25C"/></pattern>' +
+    '<pattern id="p-onca" width="6" height="5.6" patternUnits="userSpaceOnUse" ' + BOOT_Y + '><rect width="6" height="5.6" fill="#E8B04A"/><circle cx="1.6" cy="1.6" r="1.05" fill="#B8782A" stroke="#2A1A0A" stroke-width=".55" stroke-dasharray="1.4 .6"/><circle cx="4.6" cy="4.2" r=".95" fill="#B8782A" stroke="#2A1A0A" stroke-width=".55" stroke-dasharray="1.2 .6"/><circle cx="4.4" cy="1" r=".35" fill="#2A1A0A"/><circle cx="1.2" cy="4.6" r=".3" fill="#2A1A0A"/></pattern>' +
+    '<pattern id="p-brasil" width="12" height="8.4" patternUnits="userSpaceOnUse" ' + BOOT_Y + '><rect width="12" height="8.4" fill="#1E9A43"/><path d="M6 .8L11.2 4.2L6 7.6L.8 4.2Z" fill="#F2D630"/><circle cx="6" cy="4.2" r="2" fill="#2F5FC4"/><path d="M4.1 3.8Q6 3.2 7.9 4.3" stroke="#F4F2EA" stroke-width=".4" fill="none"/></pattern>' +
+    '<pattern id="p-cristal" width="8" height="8.4" patternUnits="userSpaceOnUse" ' + BOOT_Y + '><rect width="8" height="8.4" fill="#BFE6F7"/><path d="M0 0L4 3.2L8 0ZM0 8.4L4 3.2L8 8.4Z" fill="#E9F8FF"/><path d="M0 0L4 3.2L0 8.4ZM8 0L4 3.2L8 8.4Z" fill="#8CCBEA" opacity=".7"/>' +
+      '<path d="M5.6 1.2l.3.9.9.3-.9.3-.3.9-.3-.9-.9-.3.9-.3Z" fill="#fff"/></pattern>';
+  // Luvas do lote 4: o desenho vai por cima da luva (h = centro da mão)
+  const GLOVE_FX = {
+    velcro: h => '<rect x="' + (h[0] - 5.4) + '" y="' + (h[1] - 3) + '" width="10.8" height="3.4" fill="#1B1A17" stroke="' + OL + '" stroke-width="1.2"/><rect x="' + (h[0] - 3.6) + '" y="' + (h[1] - 2.2) + '" width="7.2" height="1.8" rx=".6" fill="#D8404A"/>',
+    dedos: h => ['#D8404A', '#F2D630', '#2F6FD6', '#22A45D'].map((c, i) => '<rect x="' + (h[0] - 4.6 + i * 2.4) + '" y="' + (h[1] + 1.4) + '" width="2" height="' + (i === 0 || i === 3 ? 5 : 6.6) + '" rx="1" fill="' + c + '"/>').join(''),
+    luvafogo: h => '<path d="M' + (h[0] - 4) + ' ' + (h[1] + 5.2) + 'q.8-3 1.8-1.4q.4-3.4 2.4-5q-.2 3.2 1.1 4.1q.9-1.8 2.2-2.2q-.4 2.8.5 4.5Q' + h[0] + ' ' + (h[1] + 8.6) + ' ' + (h[0] - 4) + ' ' + (h[1] + 5.2) + 'Z" fill="#FFE14A" opacity=".9"/>',
+    luvaouro: h => '<path d="M' + (h[0] + 2.6) + ' ' + (h[1] - 1.2) + 'l.5 1.4 1.4.5-1.4.5-.5 1.4-.5-1.4-1.4-.5 1.4-.5Z" fill="#FFFFFF"/><rect x="' + (h[0] - 5.4) + '" y="' + (h[1] - 3) + '" width="10.8" height="2" fill="#B98700" stroke="' + OL + '" stroke-width="1"/>',
+  };
+  const DEF = { skin: 3, hair: 'curto', hc: 0, beard: 'nenhuma', band: 'nenhuma', bandC: 'branco', tattoo: 'nenhuma', tattooSide: 'direito', boot: 'preto', sole: 'branco', sock: 'alto', sleeve: 'curta', wrist: 'nenhuma', wristC: 'branco', glove: 'lima', cel: 'padrao' };
   const OL = '#262321', OW = 2.2, SHADE = 'rgba(0,0,0,.14)';
   const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
   const pts = a => a.map(p => p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' L');
@@ -158,6 +187,18 @@
     adeus: [[[44, 57], [36, 78], [50, 37]], [[76, 57], [90, 38], [96, 16]]],
     assina: [[[44, 57], [33, 74], [33, 84]], [[76, 57], [87, 74], [87, 84]]],
   };
+  // Comemorações de pacotinho (c.look.cel): trocam os braços da pose "celebra".
+  // front: braços que passam na frente do corpo; serio: sem o sorriso aberto
+  const CEL = {
+    abertos: { a: [[[44, 57], [30, 51], [16, 44]], [[76, 57], [90, 51], [104, 44]]] },
+    ceu: { a: [[[44, 57], [37.6, 81], [34.6, 104]], [[76, 57], [80.4, 36], [82, 15]]], finger: 1 },
+    escudo: { a: [[[44, 57], [37.6, 81], [34.6, 104]], [[76, 57], [85, 75], [69, 66]]], front: 'R' },
+    aviao: { a: [[[44, 57], [29, 61], [14, 66]], [[76, 57], [91, 53], [106, 49]]] },
+    coracao: { a: [[[44, 57], [41, 77], [56.4, 69]], [[76, 57], [79, 77], [63.6, 69]]], front: 'LR', heart: 1 },
+    bebe: { a: [[[44, 57], [40, 79], [53.6, 88]], [[76, 57], [81, 78], [66, 85]]], front: 'LR' },
+    calma: { a: [[[44, 57], [35, 76], [21, 79]], [[76, 57], [85, 76], [99, 79]]], palms: 1 },
+    estatua: { a: [[[44, 57], [47, 79], [72, 69]], [[76, 57], [73, 79], [48, 69]]], front: 'LR', serio: 1 },
+  };
   // Acessórios de pacotinho (c.look.extra), desenhados por cima do boneco, no mesmo traço.
   // Fita do Bonfim e faixa de capitão acompanham o braço da pose.
   const NUM_FX = { ouro: 'url(#g-ouro)', holo: 'url(#g-holo)', neon: '#7CF03C', fogo: 'url(#g-fogo)', contorno: 'none' };
@@ -220,7 +261,7 @@
       '<linearGradient id="g-prata" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#C9CED6"/><stop offset="1" stop-color="#7F8790"/></linearGradient>' +
       '<linearGradient id="g-cromo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5A6470"/><stop offset=".35" stop-color="#F4F7FA"/><stop offset=".55" stop-color="#8A939E"/><stop offset=".75" stop-color="#FFFFFF"/><stop offset="1" stop-color="#4A535E"/></linearGradient>' +
       '<linearGradient id="g-fogo" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#D8261E"/><stop offset=".5" stop-color="#FF8A1F"/><stop offset="1" stop-color="#FFE14A"/></linearGradient>' +
-      '<linearGradient id="g-holo" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8FE3FF"/><stop offset=".35" stop-color="#C79BFF"/><stop offset=".65" stop-color="#FF9BD5"/><stop offset="1" stop-color="#FFE38F"/></linearGradient>' + PATTERNS + '</defs>';
+      '<linearGradient id="g-holo" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8FE3FF"/><stop offset=".35" stop-color="#C79BFF"/><stop offset=".65" stop-color="#FF9BD5"/><stop offset="1" stop-color="#FFE38F"/></linearGradient>' + PATTERNS + PATTERNS2 + '</defs>';
     let bg = '';
     if (!opts.flat) {
       let crowd = '';
@@ -263,8 +304,10 @@
       if (!long) o += limb(along(s, e, 0, .55), k1, 11.2, 'butt');
       else o += limb(along(e, h, .78, 1), k2, 7.4, 'butt');
       if (lk.wrist === 'duas' || (lk.wrist === 'uma' && side === 'esquerdo')) o += limb(along(e, h, .66, .84), g(lk.wristC), 8.2, 'butt');
-      if (gk) o += shape('M' + (h[0] - 5.4) + ' ' + (h[1] - 3) + 'h10.8v7.4q0 4.6-5.4 4.6t-5.4-4.6Z', g(lk.glove)) +
-        '<path d="M' + (h[0] - 2.2) + ' ' + (h[1] + 2.4) + 'v3.2M' + h[0] + ' ' + (h[1] + 2.4) + 'v3.6M' + (h[0] + 2.2) + ' ' + (h[1] + 2.4) + 'v3.2" stroke="' + OL + '" stroke-width=".9" stroke-linecap="round" opacity=".6"/>';
+      // Luva: desenhada com os dedos para baixo e girada na direção do antebraço (punho virado para o cotovelo)
+      if (gk) o += '<g transform="rotate(' + (Math.atan2(h[1] - e[1], h[0] - e[0]) * 180 / Math.PI - 90).toFixed(1) + ' ' + h[0] + ' ' + h[1] + ')">' +
+        shape('M' + (h[0] - 5.4) + ' ' + (h[1] - 3) + 'h10.8v7.4q0 4.6-5.4 4.6t-5.4-4.6Z', g(lk.glove)) + (GLOVE_FX[lk.glove] ? GLOVE_FX[lk.glove](h) : '') +
+        '<path d="M' + (h[0] - 2.2) + ' ' + (h[1] + 2.4) + 'v3.2M' + h[0] + ' ' + (h[1] + 2.4) + 'v3.6M' + (h[0] + 2.2) + ' ' + (h[1] + 2.4) + 'v3.2" stroke="' + OL + '" stroke-width=".9" stroke-linecap="round" opacity=".6"/></g>';
       else o += '<circle cx="' + h[0] + '" cy="' + h[1] + '" r="4.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/>';
       return o;
     };
@@ -283,9 +326,11 @@
     const boot = (x, d) => {
       const X = v => (x + v * d).toFixed(2);
       return shape('M' + X(-5) + ' 183.6V192H' + X(10) + 'Q' + X(12) + ' 192 ' + X(12) + ' 190Q' + X(12) + ' 186.4 ' + X(6.4) + ' 185.2L' + X(5) + ' 183.6Z', g(lk.boot)) +
+        (lk.boot === 'bicolor' ? '<path d="M' + X(4.2) + ' 185.4Q' + X(5.6) + ' 184.8 ' + X(6.4) + ' 185.2Q' + X(12) + ' 186.4 ' + X(12) + ' 190Q' + X(12) + ' 192 ' + X(10) + ' 192H' + X(4.2) + 'Z" fill="' + (lk.sole === 'preto' ? '#F4F2EA' : g(lk.sole)) + '" stroke="' + OL + '" stroke-width="1.2" stroke-linejoin="round"/>' : '') +
         '<rect x="' + Math.min(+X(-5.6), +X(12.4)) + '" y="191.4" width="18" height="3.4" rx="1.5" fill="' + g(lk.sole) + '" stroke="' + OL + '" stroke-width="1.6"/>';
     };
-    const happy = pose === 'celebra' || pose === 'taca', sad = pose === 'triste' || pose === 'adeus';
+    const cel = pose === 'celebra' && CEL[lk.cel] || null;
+    const happy = (pose === 'celebra' && !(cel && cel.serio)) || pose === 'taca', sad = pose === 'triste' || pose === 'adeus';
     // Sobrancelha escura com careca, raspado, grisalho e as cores de pacotinho (platinado e pintado)
     const brow = lk.hair === 'careca' || lk.hair === 'raspado' || lk.hc === 4 || lk.hc >= 5 ? '#3A2A1E' : hcol;
     const face = '<path d="M52.6 27.2Q55.2 25.8 57.6 27M62.4 27Q64.8 25.8 67.4 27.2" stroke="' + brow + '" stroke-width="1.8" stroke-linecap="round" fill="none"/>' +
@@ -303,7 +348,12 @@
       '<text x="60" y="112" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="24" fill="' + k2 + '" stroke="' + OL + '" stroke-width=".6">' + (c.number || 10) + '</text>';
     const band = lk.band === 'faixa' ? limb([[47.2, 25], [53, 20.6], [60, 19.4], [67, 20.6], [72.8, 25]], g(lk.bandC), 2.8)
       : lk.band === 'tiara' ? '<path d="M48.6 21.4Q60 12.6 71.4 21.4" stroke="' + OL + '" stroke-width="3.8" fill="none" stroke-linecap="round"/><path d="M48.6 21.4Q60 12.6 71.4 21.4" stroke="' + g(lk.bandC) + '" stroke-width="1.6" fill="none" stroke-linecap="round"/>' : '';
-    const [L, R] = ARMS[pose] || ARMS.normal;
+    const [L, R] = cel ? cel.a : ARMS[pose] || ARMS.normal;
+    const fL = cel && /L/.test(cel.front || ''), fR = cel && /R/.test(cel.front || '');
+    // Detalhes da comemoração: dedo para o céu, coração entre as mãos, palmas para baixo
+    const celFx = !cel ? '' : (cel.finger ? '<path d="M82.2 11.6L82.8 3.6" stroke="' + OL + '" stroke-width="4.6" stroke-linecap="round"/><path d="M82.2 11.6L82.8 3.6" stroke="' + (gk ? g(lk.glove) : skin) + '" stroke-width="2.2" stroke-linecap="round"/>' : '') +
+      (cel.heart ? '<path d="M60 66.4C57.4 63.6 55.6 61.4 57.4 59.6C58.6 58.4 60 59.4 60 60.6C60 59.4 61.4 58.4 62.6 59.6C64.4 61.4 62.6 63.6 60 66.4Z" fill="#FF4F7A" stroke="' + OL + '" stroke-width="1"/>' : '') +
+      (cel.palms ? '<path d="M17 74.6v-2.4M21 73.6v-2.6M25 74.6v-2.4M95 74.6v-2.4M99 73.6v-2.6M103 74.6v-2.4" stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round" opacity=".85"/>' : '');
     const handUp = pose === 'triste' || pose === 'adeus'; // mão no rosto: o braço vai na frente da cabeça
     const torso = 'M41 57Q41.6 52 48 51L55 49.6Q60 54 65 49.6L72 51Q78.4 52 79 57L77.4 104Q60 107 42.6 104Z';
     const top = pose === 'taca' ? 26 : 0;
@@ -311,7 +361,7 @@
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb + '">' + defs + bg +
       '<ellipse cx="60" cy="195" rx="26" ry="4.4" fill="rgba(0,0,0,.28)"/>' +
       leg([53.4, 116], [52.4, 150], [52, 185], 'PD') + leg([66.6, 116], [67.6, 150], [68, 185], 'PE') + boot(52, -1) + boot(68, 1) +
-      hBack + (handUp ? '' : arm(L, 'direito')) + arm(R, 'esquerdo') +
+      hBack + (handUp || fL ? '' : arm(L, 'direito')) + (fR ? '' : arm(R, 'esquerdo')) +
       shape('M55 38h10v15h-10Z', skin) + '<path d="M55.6 44h8.8v4h-8.8Z" fill="rgba(0,0,0,.16)"/>' +
       shape(torso, k1) + '<path d="M70.6 51.6Q78 52.6 78.6 57L77.2 103.6Q73.6 104.8 71 105Z" fill="' + SHADE + '"/>' +
       '<path d="M54.6 50L60 57.4L65.4 50" stroke="' + k2 + '" stroke-width="2.8" stroke-linejoin="round" fill="none"/>' +
@@ -320,6 +370,7 @@
           : NUM_FX[lk.numFx] ? NUM_FX[lk.numFx] + '" stroke="' + OL + '" stroke-width=".8' : k2) + '">' + opts.num + '</text>' : '') +
       shape('M42.6 102.6H77.4L78.6 123.6Q71.4 126 62.6 124.2L60 115.6L57.4 124.2Q48.6 126 41.4 123.6Z', k2) +
       '<path d="M44.6 104L43.8 123.4M75.4 104L76.2 123.4" stroke="' + k1 + '" stroke-width="2"/>' +
+      (fL ? arm(L, 'direito') : '') + (fR ? arm(R, 'esquerdo') : '') + celFx +
       '<circle cx="46.8" cy="31.6" r="3.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/><circle cx="73.2" cy="31.6" r="3.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/>' +
       '<ellipse cx="60" cy="30.4" rx="13.2" ry="15.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/>' +
       '<path d="M66.4 16.6Q73.6 21 73.2 31.4Q72.8 40 66 44.6Q71.2 36 70.6 28Q70 21 66.4 16.6Z" fill="' + SHADE + '"/>' +

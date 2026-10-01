@@ -85,6 +85,28 @@
     ['camuflada', 'Chuteira camuflada', 'epico', 'equip', { boot: 'camuflada' }, 'Estampa em três tons.'],
     ['raio', 'Chuteira de raio', 'epico', 'equip', { boot: 'raio', sole: 'amarelo' }, 'Raios amarelos sobre preto.'],
     ['tigre', 'Luva tigrada', 'epico', 'equip', { glove: 'tigre' }, 'Só para goleiro.', true],
+    // Chuteiras e luvas (lote 4)
+    ['bicolor', 'Chuteira bicolor', 'comum', 'equip', { boot: 'bicolor', sole: 'branco' }, 'Bico na cor da sola.'],
+    ['listrada', 'Chuteira listrada', 'raro', 'equip', { boot: 'listrada', sole: 'azul' }, 'Listras azuis sobre branco.'],
+    ['pontilhada', 'Chuteira pontilhada', 'raro', 'equip', { boot: 'pontilhada', sole: 'branco' }, 'Bolinhas brancas sobre preto.'],
+    ['galaxia', 'Chuteira galáxia', 'raro', 'equip', { boot: 'galaxia', sole: 'preto' }, 'Azul-escuro com estrelas.'],
+    ['camoneon', 'Chuteira camuflada neon', 'epico', 'equip', { boot: 'camoneon', sole: 'neon' }, 'Camuflagem preta e verde neon.'],
+    ['onca', 'Chuteira de onça', 'epico', 'equip', { boot: 'onca', sole: 'preto' }, 'Pintada como onça.'],
+    ['brasil', 'Chuteira Brasil', 'epico', 'equip', { boot: 'brasil', sole: 'amarelo' }, 'Verde, amarelo, azul e branco.'],
+    ['cristal', 'Chuteira de cristal', 'lendario', 'equip', { boot: 'cristal', sole: 'branco' }, 'Azul-gelo com facetas brilhando.'],
+    ['velcro', 'Luva com velcro', 'comum', 'equip', { glove: 'velcro' }, 'Branca, com tira preta no punho. Só para goleiro.', true],
+    ['dedos', 'Luva de dedos coloridos', 'raro', 'equip', { glove: 'dedos' }, 'Cada dedo de uma cor. Só para goleiro.', true],
+    ['luvafogo', 'Luva de fogo', 'epico', 'equip', { glove: 'luvafogo' }, 'Em chamas. Só para goleiro.', true],
+    ['luvaouro', 'Luva dourada', 'lendario', 'equip', { glove: 'luvaouro' }, 'Ouro com brilho. Só para goleiro.', true],
+    // Comemorações (pose de gol no jornal e na foto da criação)
+    ['cel-abertos', 'Braços abertos', 'comum', 'comemoracao', { cel: 'abertos' }, 'Comemoração de gol.'],
+    ['cel-ceu', 'Dedo para o céu', 'comum', 'comemoracao', { cel: 'ceu' }, 'Comemoração de gol.'],
+    ['cel-escudo', 'Mão no escudo', 'comum', 'comemoracao', { cel: 'escudo' }, 'Comemoração de gol.'],
+    ['cel-aviao', 'Aviãozinho', 'raro', 'comemoracao', { cel: 'aviao' }, 'Comemoração de gol.'],
+    ['cel-coracao', 'Coração com as mãos', 'raro', 'comemoracao', { cel: 'coracao' }, 'Comemoração de gol.'],
+    ['cel-bebe', 'Embalar o bebê', 'raro', 'comemoracao', { cel: 'bebe' }, 'Comemoração de gol.'],
+    ['cel-calma', 'Calma, calma', 'epico', 'comemoracao', { cel: 'calma' }, 'Comemoração de gol.'],
+    ['cel-estatua', 'Estátua', 'epico', 'comemoracao', { cel: 'estatua' }, 'Braços cruzados, cara séria.'],
     ['capitao', 'Faixa de capitão', 'epico', 'equip', { extra: ['capitao'] }, 'Braço esquerdo, por cima da manga.'],
     ['cor-ouro', 'Ouro', 'lendario', 'cores', { boot: 'ouro', sole: 'ouro' }, 'Chuteira e sola de ouro.'],
     ['cor-holo', 'Holográfica', 'lendario', 'cores', { boot: 'holo', sole: 'holo' }, 'Chuteira e sola que mudam de cor.'],
@@ -140,7 +162,9 @@
   // Que item cada valor do visual pede (null = livre)
   const FREE_COLORS = ['preto'];
   const colorItem = v => (FREE_COLORS.includes(v) || v === 'lima' ? null : BY_ID['cor-' + v] ? 'cor-' + v : null);
-  const PATTERN = { camuflada: 'camuflada', raio: 'raio', chamas: 'chamas', tigre: 'tigre' };
+  const PATTERN = { camuflada: 'camuflada', raio: 'raio', chamas: 'chamas', tigre: 'tigre',
+    bicolor: 'bicolor', listrada: 'listrada', pontilhada: 'pontilhada', galaxia: 'galaxia', camoneon: 'camoneon', onca: 'onca', brasil: 'brasil', cristal: 'cristal',
+    velcro: 'velcro', dedos: 'dedos', luvafogo: 'luvafogo', luvaouro: 'luvaouro' };
   function need(key, v) {
     if (v === undefined || v === null) return null;
     if (key === 'boot' || key === 'sole' || key === 'wristC' || key === 'bandC' || key === 'glove') return PATTERN[v] || colorItem(v);
@@ -154,6 +178,7 @@
     if (key === 'beard') return v === 'nenhuma' ? null : BY_ID['barba-' + v] ? 'barba-' + v : null;
     if (key === 'numFx') return v ? 'num-' + v : null;
     if (key === 'extra') return BY_ID[v] ? v : null;
+    if (key === 'cel') return BY_ID['cel-' + v] ? 'cel-' + v : null;
     if (key === 'num') return 'n' + v;
     return null;
   }
@@ -219,7 +244,7 @@
   }
   // Visual inicial só com o que é livre para todos
   const FREE = { hair: 'curto', hc: 0, beard: 'nenhuma', band: 'nenhuma', bandC: 'preto', boot: 'preto', sole: 'preto', sock: 'alto', sleeve: 'curta',
-    wrist: 'nenhuma', wristC: 'preto', glove: 'lima', tatBD: 'nenhuma', tatBE: 'nenhuma', tatPD: 'nenhuma', tatPE: 'nenhuma', extra: [] };
+    wrist: 'nenhuma', wristC: 'preto', glove: 'lima', tatBD: 'nenhuma', tatBE: 'nenhuma', tatPD: 'nenhuma', tatPE: 'nenhuma', extra: [], cel: 'padrao' };
   // Tira do visual o que não está liberado (a prévia nunca entra na carreira)
   function clean(look) {
     const out = Object.assign({}, look);
