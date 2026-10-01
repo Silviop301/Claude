@@ -231,7 +231,7 @@
   }
 
   // ---------- Meus itens ----------
-  const TABS = [['num', 'Números'], ['cabelo', 'Cabelo e barba'], ['equip', 'Equipamento'], ['tatuagem', 'Tatuagem'], ['cores', 'Cores'], ['assinatura', 'Assinatura'], ['acabamento', 'Acabamento'], ['comemoracao', 'Comemoração']];
+  const TABS = [['num', 'Números'], ['cabelo', 'Cabelo e barba'], ['equip', 'Chuteiras'], ['cores', 'Cores'], ['assinatura', 'Assinatura'], ['acabamento', 'Acabamento']];
   const ORD = rk => I.RAR.indexOf(rk);
   function tile(it) {
     const on = I.has(it.id), novo = on && I.get().news[it.id];

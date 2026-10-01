@@ -20,31 +20,20 @@
   const DUP = E.dup, COST = E.cost;
 
   // Catálogo do visual. look: o que o item muda no boneco (prévia e "vestir")
-  // cat: cabelo | equip | tatuagem | cores
+  // cat: cabelo (cortes, cores e barbas) | equip (chuteiras estampadas) | cores (chuteira e sola) | numeros | assinatura | acabamento
+  // O visual do boneco é só cabelo, barba e chuteira; o resto do desenho segue o padrão
   const CAT = [
-    ['cor-azul', 'Cor azul', 'comum', 'cores', { boot: 'azul' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
-    ['cor-amarelo', 'Cor amarela', 'comum', 'cores', { boot: 'amarelo' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
-    ['cor-laranja', 'Cor laranja', 'comum', 'cores', { boot: 'laranja' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
-    ['arriado', 'Meião arriado', 'comum', 'equip', { sock: 'arriado' }, 'Meião abaixado até a canela.'],
-    ['munhequeira', 'Munhequeira', 'comum', 'equip', { wrist: 'duas' }, 'Uma ou duas, na cor que quiser.'],
-    ['faixa', 'Faixa na cabeça', 'comum', 'equip', { band: 'faixa' }, 'Na cor que quiser.'],
-    ['bonfim', 'Fita do Bonfim', 'comum', 'equip', { extra: ['bonfim'] }, 'Pulso direito. Combina com a munhequeira.'],
-    ['listrado', 'Meião listrado', 'comum', 'equip', { extra: ['listrado'] }, 'Três listras na segunda cor do uniforme.'],
-    ['caneleira', 'Caneleira à mostra', 'comum', 'equip', { extra: ['caneleira'] }, 'Vem com o meião arriado.'],
+    ['cor-azul', 'Cor azul', 'comum', 'cores', { boot: 'azul' }, 'Vale para chuteira e sola.'],
+    ['cor-amarelo', 'Cor amarela', 'comum', 'cores', { boot: 'amarelo' }, 'Vale para chuteira e sola.'],
+    ['cor-laranja', 'Cor laranja', 'comum', 'cores', { boot: 'laranja' }, 'Vale para chuteira e sola.'],
     ['moicano', 'Moicano', 'raro', 'cabelo', { hair: 'moicano' }, 'Corte com crista no meio.'],
     ['topete', 'Topete', 'raro', 'cabelo', { hair: 'topete' }, 'Corte com volume na frente.'],
-    ['coque', 'Coque', 'raro', 'cabelo', { extra: ['coque'] }, 'Combina com curto e longo.'],
-    ['risco', 'Risquinho no cabelo', 'raro', 'cabelo', { extra: ['risco'] }, 'Duas linhas raspadas na lateral.'],
-    ['tiara', 'Tiara', 'raro', 'equip', { band: 'tiara' }, 'Na cor que quiser.'],
-    ['manga', 'Manga comprida', 'raro', 'equip', { sleeve: 'comprida' }, 'Camisa de manga longa.'],
-    ['cordao', 'Cordão', 'raro', 'equip', { extra: ['cordao'] }, 'Corrente dourada com medalha.'],
-    ['brinco', 'Brinco', 'raro', 'equip', { extra: ['brinco'] }, 'Ponto dourado nas duas orelhas.'],
     ['raspado', 'Cabelo raspado', 'comum', 'cabelo', { hair: 'raspado' }, 'Máquina baixinha.'],
     ['careca', 'Careca', 'comum', 'cabelo', { hair: 'careca' }, 'Sem cabelo nenhum.'],
     ['longo', 'Cabelo longo', 'comum', 'cabelo', { hair: 'longo' }, 'Até os ombros.'],
     ['ruivo', 'Cabelo ruivo', 'comum', 'cabelo', { hc: 3 }, 'Cor do cabelo e da barba.'],
     ['grisalho', 'Cabelo grisalho', 'comum', 'cabelo', { hc: 4 }, 'Cor do cabelo e da barba.'],
-    ['cor-branco', 'Cor branca', 'comum', 'cores', { boot: 'branco' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
+    ['cor-branco', 'Cor branca', 'comum', 'cores', { boot: 'branco' }, 'Vale para chuteira e sola.'],
     ['trancas', 'Tranças', 'raro', 'cabelo', { hair: 'trancas' }, 'Tranças rentes à cabeça.'],
     // Cortes novos
     ['social', 'Corte social', 'comum', 'cabelo', { hair: 'social' }, 'Repartido de lado.'],
@@ -62,30 +51,23 @@
     ['dreads', 'Dreads', 'raro', 'cabelo', { hair: 'dreads' }, 'Dreads soltos.'],
     ['barba-rala', 'Barba rala', 'comum', 'cabelo', { beard: 'rala' }, 'Barba curtinha, só a sombra.'],
     ['barba-bigode', 'Bigode', 'comum', 'cabelo', { beard: 'bigode' }, 'Na cor do cabelo.'],
-    ['cor-vermelho', 'Cor vermelha', 'comum', 'cores', { boot: 'vermelho' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
+    ['cor-vermelho', 'Cor vermelha', 'comum', 'cores', { boot: 'vermelho' }, 'Vale para chuteira e sola.'],
     ['barba-cavanhaque', 'Cavanhaque', 'raro', 'cabelo', { beard: 'cavanhaque' }, 'Bigode e queixo.'],
     ['barba-cheia', 'Barba cheia', 'raro', 'cabelo', { beard: 'cheia' }, 'O rosto todo.'],
-    // Barbas e detalhes do cabelo (lote 3)
+    // Barbas (lote 3)
     ['barba-porfazer', 'Barba por fazer', 'comum', 'cabelo', { beard: 'porfazer' }, 'Dois dias sem lâmina.'],
     ['barba-costeleta', 'Costeleta comprida', 'comum', 'cabelo', { beard: 'costeleta' }, 'Desce até o fim da orelha.'],
     ['barba-lenhador', 'Barba lenhador', 'raro', 'cabelo', { beard: 'lenhador' }, 'Cheia e volumosa.'],
     ['barba-bigodao', 'Bigodão anos 70', 'raro', 'cabelo', { beard: 'bigodao' }, 'Bigode grosso caindo nos cantos.'],
     ['barba-navalha', 'Barba com desenho', 'epico', 'cabelo', { beard: 'navalha' }, 'Barba cheia com risco na navalha.'],
     ['barba-trancada', 'Barba trançada', 'epico', 'cabelo', { beard: 'trancada' }, 'Trancinha no queixo.'],
-    ['mecha', 'Mecha colorida', 'comum', 'cabelo', { extra: ['mecha'] }, 'Uma mecha azul na frente.'],
-    ['bandana', 'Bandana', 'comum', 'cabelo', { extra: ['bandana'] }, 'Pano amarrado na testa.'],
-    ['rabo', 'Rabo de cavalo', 'raro', 'cabelo', { extra: ['rabo'] }, 'Preso atrás, com elástico.'],
-    ['sobrancelha', 'Sobrancelha riscada', 'raro', 'cabelo', { extra: ['sobrancelha'] }, 'Um risco raspado na sobrancelha.'],
-    ['glitter', 'Glitter no cabelo', 'epico', 'cabelo', { extra: ['glitter'] }, 'Brilhos dourados.'],
-    ['clube', 'Cabelo do clube', 'lendario', 'cabelo', { extra: ['clube'] }, 'Metade em cada cor do uniforme. Muda quando você troca de clube.'],
-    ['cor-neon', 'Cor verde neon', 'epico', 'cores', { boot: 'neon' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
-    ['cor-rosa', 'Cor rosa', 'epico', 'cores', { boot: 'rosa' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
+    ['cor-neon', 'Cor verde neon', 'epico', 'cores', { boot: 'neon' }, 'Vale para chuteira e sola.'],
+    ['cor-rosa', 'Cor rosa', 'epico', 'cores', { boot: 'rosa' }, 'Vale para chuteira e sola.'],
     ['platinado', 'Platinado', 'epico', 'cabelo', { hc: 5 }, 'Cor nova de cabelo. A sobrancelha continua escura.'],
     ['pintado', 'Cabelo pintado', 'epico', 'cabelo', { hc: 7 }, 'Rosa, azul ou verde.'],
     ['camuflada', 'Chuteira camuflada', 'epico', 'equip', { boot: 'camuflada' }, 'Estampa em três tons.'],
     ['raio', 'Chuteira de raio', 'epico', 'equip', { boot: 'raio', sole: 'amarelo' }, 'Raios amarelos sobre preto.'],
-    ['tigre', 'Luva tigrada', 'epico', 'equip', { glove: 'tigre' }, 'Só para goleiro.', true],
-    // Chuteiras e luvas (lote 4)
+    // Chuteiras estampadas (lote 4)
     ['bicolor', 'Chuteira bicolor', 'comum', 'equip', { boot: 'bicolor', sole: 'branco' }, 'Bico na cor da sola.'],
     ['listrada', 'Chuteira listrada', 'raro', 'equip', { boot: 'listrada', sole: 'azul' }, 'Listras azuis sobre branco.'],
     ['pontilhada', 'Chuteira pontilhada', 'raro', 'equip', { boot: 'pontilhada', sole: 'branco' }, 'Bolinhas brancas sobre preto.'],
@@ -94,20 +76,6 @@
     ['onca', 'Chuteira de onça', 'epico', 'equip', { boot: 'onca', sole: 'preto' }, 'Pintada como onça.'],
     ['brasil', 'Chuteira Brasil', 'epico', 'equip', { boot: 'brasil', sole: 'amarelo' }, 'Verde, amarelo, azul e branco.'],
     ['cristal', 'Chuteira de cristal', 'lendario', 'equip', { boot: 'cristal', sole: 'branco' }, 'Azul-gelo com facetas brilhando.'],
-    ['velcro', 'Luva com velcro', 'comum', 'equip', { glove: 'velcro' }, 'Branca, com tira preta no punho. Só para goleiro.', true],
-    ['dedos', 'Luva de dedos coloridos', 'raro', 'equip', { glove: 'dedos' }, 'Cada dedo de uma cor. Só para goleiro.', true],
-    ['luvafogo', 'Luva de fogo', 'epico', 'equip', { glove: 'luvafogo' }, 'Em chamas. Só para goleiro.', true],
-    ['luvaouro', 'Luva dourada', 'lendario', 'equip', { glove: 'luvaouro' }, 'Ouro com brilho. Só para goleiro.', true],
-    // Comemorações (pose de gol no jornal e na foto da criação)
-    ['cel-abertos', 'Braços abertos', 'comum', 'comemoracao', { cel: 'abertos' }, 'Comemoração de gol.'],
-    ['cel-ceu', 'Dedo para o céu', 'comum', 'comemoracao', { cel: 'ceu' }, 'Comemoração de gol.'],
-    ['cel-escudo', 'Mão no escudo', 'comum', 'comemoracao', { cel: 'escudo' }, 'Comemoração de gol.'],
-    ['cel-aviao', 'Aviãozinho', 'raro', 'comemoracao', { cel: 'aviao' }, 'Comemoração de gol.'],
-    ['cel-coracao', 'Coração com as mãos', 'raro', 'comemoracao', { cel: 'coracao' }, 'Comemoração de gol.'],
-    ['cel-bebe', 'Embalar o bebê', 'raro', 'comemoracao', { cel: 'bebe' }, 'Comemoração de gol.'],
-    ['cel-calma', 'Calma, calma', 'epico', 'comemoracao', { cel: 'calma' }, 'Comemoração de gol.'],
-    ['cel-estatua', 'Estátua', 'epico', 'comemoracao', { cel: 'estatua' }, 'Braços cruzados, cara séria.'],
-    ['capitao', 'Faixa de capitão', 'epico', 'equip', { extra: ['capitao'] }, 'Braço esquerdo, por cima da manga.'],
     ['cor-ouro', 'Ouro', 'lendario', 'cores', { boot: 'ouro', sole: 'ouro' }, 'Chuteira e sola de ouro.'],
     ['cor-holo', 'Holográfica', 'lendario', 'cores', { boot: 'holo', sole: 'holo' }, 'Chuteira e sola que mudam de cor.'],
     ['chamas', 'Chuteira em chamas', 'lendario', 'equip', { boot: 'chamas', sole: 'preto' }, 'Chamas laranja sobre preto.'],
@@ -116,13 +84,13 @@
     ['num-neon', 'Número neon', 'epico', 'numeros', { numFx: 'neon' }, 'Vale para qualquer número.'],
     ['num-contorno', 'Número vazado', 'epico', 'numeros', { numFx: 'contorno' }, 'Só o contorno, na cor do uniforme.'],
     ['num-fogo', 'Número em chamas', 'lendario', 'numeros', { numFx: 'fogo' }, 'Vale para qualquer número.'],
-    // Cores novas (chuteira, sola, munhequeira e faixa)
-    ['cor-roxo', 'Cor roxa', 'comum', 'cores', { boot: 'roxo' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
-    ['cor-vinho', 'Cor vinho', 'comum', 'cores', { boot: 'vinho' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
-    ['cor-cinza', 'Cor cinza', 'comum', 'cores', { boot: 'cinza' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
-    ['cor-musgo', 'Cor verde-musgo', 'comum', 'cores', { boot: 'musgo' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
-    ['cor-celeste', 'Cor azul-bebê', 'raro', 'cores', { boot: 'celeste' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
-    ['cor-bege', 'Cor bege', 'raro', 'cores', { boot: 'bege' }, 'Vale para chuteira, sola, munhequeira e faixa.'],
+    // Cores novas (chuteira e sola)
+    ['cor-roxo', 'Cor roxa', 'comum', 'cores', { boot: 'roxo' }, 'Vale para chuteira e sola.'],
+    ['cor-vinho', 'Cor vinho', 'comum', 'cores', { boot: 'vinho' }, 'Vale para chuteira e sola.'],
+    ['cor-cinza', 'Cor cinza', 'comum', 'cores', { boot: 'cinza' }, 'Vale para chuteira e sola.'],
+    ['cor-musgo', 'Cor verde-musgo', 'comum', 'cores', { boot: 'musgo' }, 'Vale para chuteira e sola.'],
+    ['cor-celeste', 'Cor azul-bebê', 'raro', 'cores', { boot: 'celeste' }, 'Vale para chuteira e sola.'],
+    ['cor-bege', 'Cor bege', 'raro', 'cores', { boot: 'bege' }, 'Vale para chuteira e sola.'],
     ['cor-prata', 'Prata', 'epico', 'cores', { boot: 'prata', sole: 'prata' }, 'Chuteira e sola prateadas.'],
     ['cor-cromo', 'Cromada', 'lendario', 'cores', { boot: 'cromo', sole: 'cromo' }, 'Chuteira e sola espelhadas.'],
     // Assinatura da carta, escolhida no fim da carreira (Clássica, Caneta e Marcador são livres)
@@ -147,10 +115,6 @@
     ['ac-ourorose', 'Acabamento Ouro rosé', 'lendario', 'acabamento', { finish: 'ourorose' }, 'Ouro rosé escovado.'],
     ['ac-diamante', 'Acabamento Diamante', 'lendario', 'acabamento', { finish: 'diamante' }, 'Facetas de diamante, branco e azul-gelo.'],
   ].map(([id, name, rk, cat, look, desc, gk]) => ({ id, name, rk, cat, look, desc, gk: !!gk }));
-  // Tatuagens: cada membro e cada tamanho é um item (pequena = raro, fechada = épico)
-  const LIMBS = [['BD', 'braço direito'], ['BE', 'braço esquerdo'], ['PD', 'perna direita'], ['PE', 'perna esquerda']];
-  [['p', 'pequena', 'Tatuagem pequena', 'raro'], ['f', 'fechado', 'Tatuagem fechada', 'epico']].forEach(([k, v, name, rk]) => LIMBS.forEach(([m, l]) =>
-    CAT.push({ id: 'tat-' + k + '-' + m, name: name + ' · ' + l, rk, cat: 'tatuagem', look: { ['tat' + m]: v }, desc: v === 'pequena' ? 'Estrela e detalhes, ' + l + '.' : 'Espinhos e rosas, ' + l + ' inteiro.', limb: m })));
   const BY_ID = {};
   CAT.forEach(it => { BY_ID[it.id] = it; });
   // Números da camisa: 1 a 11, 77 e 99 são épicos; as dezenas redondas (20 a 90) raras; o resto comum

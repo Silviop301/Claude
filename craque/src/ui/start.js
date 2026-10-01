@@ -85,32 +85,27 @@
     social: 'Social', franja: 'Franja', militar: 'Militar', cacheado: 'Cacheado', undercut: 'Undercut', degrade: 'Degradê', samurai: 'Samurai', afro: 'Black power',
     mullet: 'Mullet', riscado: 'Com desenho', trancalonga: 'Tranças longas', moicanoloiro: 'Moicano loiro' };
   const BEARD_NAME = { nenhuma: 'Sem barba', rala: 'Rala', bigode: 'Bigode', cavanhaque: 'Cavanhaque', cheia: 'Cheia', porfazer: 'Por fazer', costeleta: 'Costeleta', lenhador: 'Lenhador', bigodao: 'Bigodão', navalha: 'Com desenho', trancada: 'Trançada' };
-  const CEL_NAME = [['padrao', 'Braços para cima'], ['abertos', 'Braços abertos'], ['ceu', 'Dedo para o céu'], ['escudo', 'Mão no escudo'], ['aviao', 'Aviãozinho'],
-    ['coracao', 'Coração'], ['bebe', 'Embalar o bebê'], ['calma', 'Calma, calma'], ['estatua', 'Estátua']];
   const HC_NAME = ['Preto', 'Castanho', 'Loiro', 'Ruivo', 'Grisalho', 'Platinado', 'Azul', 'Rosa', 'Verde'];
-  const EXTRA_NAME = { bonfim: 'Fita do Bonfim', listrado: 'Listrado', caneleira: 'Caneleira', coque: 'Coque', risco: 'Risquinho', cordao: 'Cordão', brinco: 'Brinco', capitao: 'Faixa de capitão', mecha: 'Mecha', bandana: 'Bandana', rabo: 'Rabo de cavalo', sobrancelha: 'Sobrancelha riscada', glitter: 'Glitter', clube: 'Cores do clube' };
-  const TAT = [['nenhuma', 'Nenhuma'], ['pequena', 'Pequena'], ['fechado', 'Fechada']];
   const pick = a => a[Math.floor(Math.random() * a.length)];
   // Itens travados (pacotinhos, ui/items.js): o que falta liberar para usar um valor do visual
   const lockOf = (k, v) => { const id = I.need(k, v); return id && !I.has(id) ? I.itemOf(id) : null; };
   // Número padrão da posição, se liberado; senão o liberado mais perto
   const defNum = pos => I.nearestNum(D.POS_NUM[pos] || 10);
+  // O visual do jogador é só pele, cabelo (corte e cor), barba e chuteira (cor e sola); o resto do desenho fica no padrão
+  const LOOK_KEYS = ['skin', 'hair', 'hc', 'beard', 'boot', 'sole'];
+  const onlyLook = l => { const o = { v: 2 }; LOOK_KEYS.forEach(k => { if (l && l[k] !== undefined) o[k] = l[k]; }); return o; };
   // Visual sorteado só com as peças liberadas (o dado da criação e a primeira carreira)
   const BOOTS = BASIC.concat(['prata', 'ouro', 'cromo', 'holo', 'bicolor', 'listrada', 'pontilhada', 'galaxia', 'camuflada', 'camoneon', 'onca', 'brasil', 'raio', 'chamas', 'cristal']);
   function rollLook(lk) {
     const p = (k, list) => pick(list.filter(v => !lockOf(k, v)));
     return Object.assign(lk, { skin: Math.floor(Math.random() * A.SKIN.length), hair: p('hair', A.HAIRS), hc: p('hc', [0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8]), beard: p('beard', A.BEARDS),
-      band: p('band', ['nenhuma', 'nenhuma', 'faixa', 'tiara']), bandC: p('bandC', BASIC), tatBD: p('tatBD', ['nenhuma', 'nenhuma', 'pequena', 'fechado']), tatBE: p('tatBE', ['nenhuma', 'nenhuma', 'pequena', 'fechado']),
-      tatPD: p('tatPD', ['nenhuma', 'nenhuma', 'nenhuma', 'pequena', 'fechado']), tatPE: p('tatPE', ['nenhuma', 'nenhuma', 'nenhuma', 'pequena', 'fechado']),
-      boot: p('boot', BOOTS), sole: p('sole', BASIC), sock: p('sock', ['alto', 'arriado']), sleeve: p('sleeve', ['curta', 'curta', 'comprida']),
-      wrist: p('wrist', ['nenhuma', 'uma', 'duas']), wristC: p('wristC', BASIC), cel: p('cel', CEL_NAME.map(c => c[0])),
-      extra: Object.keys(EXTRA_NAME).filter(id => !lockOf('extra', id) && Math.random() < 0.3) });
+      boot: p('boot', BOOTS), sole: p('sole', BASIC) });
   }
   // O jogador volta com o visual da última carreira (sem o que não estiver mais liberado)
   const LAST = 'climbix-ultimo-visual';
-  const lastLook = () => { const l = U.load(LAST); return l && typeof l === 'object' ? I.clean(Object.assign({}, A.DEF, I.FREE, l, { v: 2 })) : null; };
+  const lastLook = () => { const l = U.load(LAST); return l && typeof l === 'object' ? I.clean(Object.assign({}, I.FREE, onlyLook(l))) : null; };
   const newSt = () => ({ pos: 'ATA', foot: 'D', country: 'Brasil', num: defNum('ATA'), numTouched: false, name: D.NICKNAMES[Math.floor(Math.random() * D.NICKNAMES.length)],
-    tab: 'corpo', look: lastLook() || rollLook(Object.assign({}, A.DEF, I.FREE, { v: 2, extra: [] })) });
+    tab: 'corpo', look: lastLook() || rollLook(Object.assign({}, I.FREE, { v: 2 })) });
   const numRk = n => I.itemOf('n' + n).rk;
 
   // Número da camisa: grade com os 99 (liberados em creme, travados vazados na cor da raridade)
@@ -214,7 +209,7 @@
     if (!I.has('n' + st.num)) st.num = defNum(st.pos);
     G.c = S.newCareer({ name: st.name.trim() || 'Craque', pos: st.pos, foot: st.foot, country: st.country, number: st.num });
     // Só entra o que está liberado (a prévia fica de fora)
-    G.c.look = Object.assign({ v: 2 }, I.clean(st.look));
+    G.c.look = onlyLook(I.clean(st.look));
     U.store(LAST, G.c.look);
     U.academy();
   }
@@ -242,29 +237,14 @@
       const gearBg = v => A.SWATCH[v] || A.GEAR[v];
       const chipB = (key, v, l, on, it) => '<button data-k="' + key + '" data-v="' + v + '" class="' + (on ? 'on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + (isPv(key, v) ? ' pv' : '') + '">' + (it ? U.emo('🔒', 'xs') + ' ' : '') + l + '</button>';
       const chip = (key, all) => { const list = free(key, all); return list.length < 2 ? '' : '<div class="cr-chips">' + list.map(([v, l]) => { const it = lockOf(key, v); return chipB(key, v, l, !it && String(lk[key]) === v, it); }).join('') + '</div>'; };
-      // Liga/desliga acessórios (c.look.extra)
-      const tog = all => { const list = free('extra', all); return !list.length ? '' : '<div class="cr-chips">' + list.map(id => { const it = lockOf('extra', id); return chipB('extra', id, EXTRA_NAME[id], !it && lk.extra.includes(id), it); }).join('') + '</div>'; };
       const row = (label, value, body) => !body ? '' : '<div class="cr-row"><div class="cr-lbl">' + label + (value ? ' <b>' + esc(value) + '</b>' : '') + '</div>' + body + '</div>';
-      const tv = k => lk['tat' + k] || 'nenhuma';
-      const tnote = k => (tv(k) === 'nenhuma' ? '' : k[0] === 'B' && lk.sleeve === 'comprida' ? 'coberta pela manga comprida' : k[0] === 'P' && tv(k) === 'fechado' && lk.sock === 'alto' ? 'aparece mais com meião arriado' : '');
       let rows = '';
       if (st.tab === 'corpo') rows = row('Pele', '', sw('skin', A.SKIN.map((_, i) => i), i => A.SKIN[i], A.SKIN.map((_, i) => 'Tom ' + (i + 1)))) +
-        row('Barba', '', chip('beard', A.BEARDS.map(b => [b, BEARD_NAME[b]]))) +
-        row('Comemoração', '', chip('cel', CEL_NAME)) +
-        [['BD', 'braço direito'], ['BE', 'braço esquerdo'], ['PD', 'perna direita'], ['PE', 'perna esquerda']].map(([k, l]) => row('Tatuagem · ' + l, tnote(k), chip('tat' + k, TAT))).join('');
+        row('Barba', '', chip('beard', A.BEARDS.map(b => [b, BEARD_NAME[b]])));
       if (st.tab === 'cabelo') rows = row('Corte', '', chip('hair', A.HAIRS.map(h => [h, HAIR_NAME[h]]))) +
-        row('Detalhes', '', tog(['coque', 'risco', 'mecha', 'rabo', 'sobrancelha', 'glitter', 'clube'])) +
-        row('Cor do cabelo e da barba', '', sw('hc', A.HAIR_COLORS.map((_, i) => i), i => A.HAIR_COLORS[i], HC_NAME)) +
-        row('Na cabeça', '', chip('band', [['nenhuma', 'Nada'], ['faixa', 'Faixa'], ['tiara', 'Tiara']]) + tog(['bandana'])) +
-        (lk.band !== 'nenhuma' ? row('Cor da faixa', GEAR_NAME[lk.bandC], sw('bandC', BASIC, gearBg)) : '');
+        row('Cor do cabelo e da barba', '', sw('hc', A.HAIR_COLORS.map((_, i) => i), i => A.HAIR_COLORS[i], HC_NAME));
       if (st.tab === 'equip') rows = row('Chuteira', GEAR_NAME[lk.boot], sw('boot', BOOTS, gearBg)) +
-        row('Sola', GEAR_NAME[lk.sole], sw('sole', BASIC.concat(['prata', 'ouro', 'cromo', 'holo']), gearBg)) +
-        row('Meião', '', chip('sock', [['alto', 'Alto'], ['arriado', 'Arriado']]) + tog(['listrado', 'caneleira'])) +
-        row('Manga', '', chip('sleeve', [['curta', 'Curta'], ['comprida', 'Comprida']])) +
-        row('Munhequeira', '', chip('wrist', [['nenhuma', 'Nenhuma'], ['uma', 'Uma'], ['duas', 'Duas']])) +
-        (lk.wrist !== 'nenhuma' ? row('Cor da munhequeira', GEAR_NAME[lk.wristC], sw('wristC', BASIC, gearBg)) : '') +
-        row('Acessórios', '', tog(['bonfim', 'cordao', 'brinco', 'capitao'])) +
-        (st.pos === 'GOL' ? row('Luva', GEAR_NAME[lk.glove], sw('glove', ['lima'].concat(BASIC, ['velcro', 'dedos', 'tigre', 'luvafogo', 'luvaouro']), gearBg)) : '');
+        row('Sola', GEAR_NAME[lk.sole], sw('sole', BASIC.concat(['prata', 'ouro', 'cromo', 'holo']), gearBg));
       $('cr-rows').innerHTML = rows;
       $('cr-big').innerHTML = (prev && note ? '<span class="cr-prev">Prévia · ' + esc(note.name) + '</span>' : '') + U.photo('normal', kit, who(), { crop: true, flat: true, num: String(st.num) });
       $('cr-paper').innerHTML = U.photo('normal', kit, who(), { num: String(st.num) });
@@ -293,8 +273,8 @@
       '<div class="eyebrow">Personalizar visual</div><h2 class="cr-title">Como ele é?</h2>' +
       '<div class="cr-stage"><div class="cr-big" id="cr-big"></div><div class="cr-side"><div class="cr-lbl">No jornal</div><div class="cr-clip" id="cr-paper"></div>' +
       '<div class="cr-lbl">Comemorando</div><div class="cr-clip" id="cr-joy"></div></div></div>' +
-      '<div class="cr-tabs">' + [['corpo', 'Corpo'], ['cabelo', 'Cabelo'], ['equip', 'Equipamento']].map(([k, l]) => '<button data-tab="' + k + '">' + l + '</button>').join('') + '</div>' +
-      '<div class="cr-rows" id="cr-rows"></div><p class="muted small cr-more">Cortes, chuteiras, comemorações e outros visuais novos saem nos pacotinhos do fim de cada carreira.</p>' +
+      '<div class="cr-tabs">' + [['corpo', 'Corpo'], ['cabelo', 'Cabelo'], ['equip', 'Chuteira']].map(([k, l]) => '<button data-tab="' + k + '">' + l + '</button>').join('') + '</div>' +
+      '<div class="cr-rows" id="cr-rows"></div><p class="muted small cr-more">Cortes, barbas e chuteiras novas saem nos pacotinhos do fim de cada carreira.</p>' +
       '<div class="inv-bar"><div id="cr-note"></div><button class="btn" id="b-go">Começar carreira</button></div>'
     );
     screen.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { st.tab = b.dataset.tab; prev = note = null; clearTimeout(noteT); draw(); });
@@ -313,11 +293,11 @@
       if (it.cat === 'num') { st.num = it.n; st.numTouched = true; return; }
       if (it.gk) st.pos = 'GOL';
       // Só o que está liberado (ex.: a chuteira de raio vem com sola amarela só se a cor amarela já estiver liberada)
-      Object.entries(it.look || {}).forEach(([k, v]) => { if (k === 'extra') st.look.extra = (st.look.extra || []).concat(v); else if (!lockOf(k, v)) st.look[k] = v; });
+      Object.entries(it.look || {}).forEach(([k, v]) => { if (LOOK_KEYS.includes(k) && !lockOf(k, v)) st.look[k] = v; });
     });
     const vis = (items || []).filter(it => it.cat !== 'num' && it.cat !== 'assinatura' && it.cat !== 'acabamento'); // assinatura e acabamento se escolhem no fim da carreira
     if (!vis.length) return create(st);
-    st.tab = vis.some(it => it.cat === 'cabelo') ? 'cabelo' : vis.some(it => it.cat === 'comemoracao') ? 'corpo' : vis.some(it => it.cat === 'tatuagem') && vis.length === 1 ? 'corpo' : 'equip';
+    st.tab = vis.some(it => it.cat === 'cabelo') ? 'cabelo' : 'equip';
     looks(st);
   }
 
