@@ -90,7 +90,7 @@
       c.moment = { type, vs: vs.id, comp: type === 'cup' ? (lg.cup || 'Copa nacional') : type === 'cont' ? S.contName(club) : lg.name };
       if (type === 'cont' || type === 'acesso') c.moment.kick = r() < 0.55 ? 'pen' : 'fk';
       if (S.posKick(c.pos)) c.moment.kick = S.posKick(c.pos); // defensores: lance contra, no fim do jogo; meia: passe decisivo
-      momentContext(c, c.moment, club, rank, leagueSize(club), r);
+      momentContext(c, c.moment, club, rank, Math.max(20, leagueSize(club)), r); // a tabela tem no mínimo 20 times
     }
     save();
     return c.moment;

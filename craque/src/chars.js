@@ -62,18 +62,21 @@ const ANIMS = {
 
 const live = new Set();
 let uid = 0;
+// O laço só roda enquanto houver personagem na tela: sem nenhum, para (e volta quando um entra)
+let running = false;
+function wake() { if (!running) { running = true; requestAnimationFrame(tick); } }
 function tick(now) {
+  if (!live.size) { running = false; return; }
   requestAnimationFrame(tick);
   for (const el of live) if (!el._freeze && !el.hasAttribute('paused') && !el.hasAttribute('t')) el._frame(now);
 }
-requestAnimationFrame(tick);
 
 class JogadorLado extends HTMLElement {
   static get observedAttributes() { return ['anim', 'skin', 'hair', 'cabelo', 'barba', 'shirt', 'shorts', 'socks', 'boots', 'trim', 'espelhar', 't']; }
   connectedCallback() {
     if (!this.style.display) this.style.display = 'block';
     this.style.width = '100%'; this.style.height = '100%';
-    this._build(); live.add(this);
+    this._build(); live.add(this); wake();
   }
   disconnectedCallback() { live.delete(this); }
   attributeChangedCallback(n) {
@@ -312,18 +315,21 @@ const ANIMS = {
 
 const live = new Set();
 let uid = 0;
+// O laço só roda enquanto houver personagem na tela: sem nenhum, para (e volta quando um entra)
+let running = false;
+function wake() { if (!running) { running = true; requestAnimationFrame(tick); } }
 function tick(now) {
+  if (!live.size) { running = false; return; }
   requestAnimationFrame(tick);
   for (const el of live) if (!el._freeze && !el.hasAttribute('paused')) el._frame(now);
 }
-requestAnimationFrame(tick);
 
 class Jogador2D extends HTMLElement {
   static get observedAttributes() { return ['kit', 'anim', 'view', 'skin', 'hair', 'cabelo', 'barba', 'num', 'nome', 'shirt', 'shorts', 'socks', 'boots', 'gloves', 'largura']; }
   connectedCallback() {
     if (!this.style.display) this.style.display = 'block';
     this.style.width = '100%'; this.style.height = '100%';
-    this._build(); live.add(this);
+    this._build(); live.add(this); wake();
   }
   disconnectedCallback() { live.delete(this); }
   attributeChangedCallback(n) {

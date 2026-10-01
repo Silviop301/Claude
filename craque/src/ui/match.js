@@ -24,7 +24,7 @@
     const offer = S.eventOffer(G.c, ev);
     render(
       '<div class="eyebrow">Durante a temporada</div>' +
-      '<div class="card event-card"><div class="ev-top">' + U.icoOf(ev, 'lg') + (evDef(ev).tone ? '<span class="ev-tag ' + evDef(ev).tone + '">' + (TONE_LBL[evDef(ev).tone] || '') + '</span>' : '') + '</div>' + '<h2>' + ev.title + '</h2><p style="margin:0">' + ev.text + '</p></div>' +
+      '<div class="card event-card"><div class="ev-top">' + U.icoOf(ev, 'lg') + (evDef(ev).tone ? '<span class="ev-tag ' + evDef(ev).tone + '">' + (TONE_LBL[evDef(ev).tone] || '') + '</span>' : '') + '</div>' + '<h2>' + esc(ev.title) + '</h2><p style="margin:0">' + esc(ev.text) + '</p></div>' +
       (offer ? U.dealCompare(S.currentDeal(G.c), offer) : '') +
       '<div class="choices">' + ev.options.map((o, i) => '<button class="btn opt' + (i ? ' ghost' : '') + '" data-i="' + i + '">' + esc(o.label) + '<small>' + esc(o.hint) + '</small></button>').join('') + '</div>'
     );
@@ -36,7 +36,7 @@
       bar();
       render(
         '<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.icoOf(ev, 'lg') + '</span><div class="eyebrow">' + ev.title + '</div>' +
-        '<p class="er-txt">' + r.text + '</p></div>' +
+        '<p class="er-txt">' + esc(r.text) + '</p></div>' +
         '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn(), { center: true }
       );
       $('b-next').onclick = momentOrSeason;
@@ -142,7 +142,8 @@
       m.started = true; save();
       render('<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div><div id="kick"></div>');
       sfx('whistle');
-      playMini($('kick'), st, (ok, why) => momentEnd(m, ok, T, why));
+      // Saiu da tela no meio da cobrança (voltou ao início): o resultado não redesenha nada; ao retomar, a chance decide
+      playMini($('kick'), st, (ok, why) => { if (!$('kick')) return; momentEnd(m, ok, T, why); });
     };
     $('b-auto').onclick = () => {
       const ok = S.autoMoment(G.c);

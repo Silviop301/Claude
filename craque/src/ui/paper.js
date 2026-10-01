@@ -83,6 +83,7 @@
     unfold(wrap.querySelector('.paper'));
     const close = e => {
       if (e) e.stopPropagation();
+      if (wrap.classList.contains('out')) return; // já fechando: toque duplo não chama onClose duas vezes
       wrap.classList.add('out');
       setTimeout(() => { wrap.remove(); onClose && onClose(); }, 250);
     };

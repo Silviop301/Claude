@@ -64,6 +64,7 @@
     const timers = [setTimeout(() => sfx('coin'), 900), setTimeout(() => sfx('coin'), 1700), setTimeout(() => { sfx('fanfare'); wrap.classList.add('shown'); }, 2600)];
     const close = () => {
       if (!wrap.classList.contains('shown')) { timers.forEach(clearTimeout); wrap.classList.add('skip', 'shown'); sfx('fanfare'); return; }
+      if (wrap.classList.contains('out')) return; // já fechando: toque duplo não chama onClose duas vezes (revelação repetida)
       wrap.classList.add('out');
       setTimeout(() => { if (viewer) viewer.dispose(); wrap.remove(); onClose && onClose(); }, 250);
     };

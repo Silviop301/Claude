@@ -57,6 +57,7 @@
     let idx = 0, timer = null;
 
     function show(k) {
+      if (!wrap.isConnected) return; // o álbum foi fechado por fora (voltar ao início): para de avançar
       idx = Math.max(0, Math.min(list.length - 1, k));
       clearTimeout(timer);
       const fr = list[idx];
@@ -134,8 +135,10 @@
     const nums = [c.seasons.length + ' temporadas'].concat(U.careerStatsOf(c).map(([v, l]) => v + ' ' + l.toLowerCase()), [f.titles + ' títulos']);
     ctx.fillText(nums.join(' · '), 540, 1450, 1000);
     // Cartas especiais (até 5, as mais raras primeiro)
+    // Cartas sem lugar na lista ficam por último (sem isso a comparação dava NaN e a ordem saía ao acaso)
     const rank = { bola: 0, copa: 1, heroi: 2, tots: 3 };
-    const sp = (c.cards || []).slice().sort((a, b) => rank[a.type] - rank[b.type]).slice(0, 5);
+    const rk = t => (rank[t] !== undefined ? rank[t] : 9);
+    const sp = (c.cards || []).slice().sort((a, b) => rk(a.type) - rk(b.type)).slice(0, 5);
     const w = 180, h = 258, gap = 18, x0 = 540 - (sp.length * w + (sp.length - 1) * gap) / 2;
     for (let i = 0; i < sp.length; i++) {
       const sc = document.createElement('canvas');

@@ -280,6 +280,7 @@
     // Tremedeira: duas senoides somadas, visível na mira (nada escondido)
     const wob = t => setup.wobble * (Math.sin(t * 0.017) + Math.sin(t * 0.029 + 1)) / 2;
     function loop(now) {
+      if (!svg.isConnected) return; // saiu da tela (ex.: voltou ao início) no meio da mira: para o laço
       const t = now - t0;
       if (phase === 'x') {
         cur.x = 1.25 * tri(t / (setup.period * 1000) + 0.25) + wob(now);
