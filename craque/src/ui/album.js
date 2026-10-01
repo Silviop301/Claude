@@ -16,8 +16,8 @@
   }
   const poseOf = s => (s.titles.length || s.awards.some(a => a.id === 'ballon') ? 'taca' : s.injury >= 25 ? 'maca' : s.games && s.rating >= 7.3 ? 'celebra' : s.games && s.rating < 6.3 ? 'triste' : 'normal');
   function chipsOf(c, s) {
-    const main = c.pos === 'GOL' ? [s.cleanSheets + ' sem sofrer gol'] : c.pos === 'ZAG' ? [s.goals + ' gols', s.cleanSheets + ' sem sofrer gol'] : [s.goals + ' gols', s.assists + ' assist.'];
-    return [s.games + ' jogos'].concat(main, s.titles.map(t => '🏆 ' + t.name));
+    const P = D.plural, main = c.pos === 'GOL' ? [s.cleanSheets + ' sem sofrer gol'] : c.pos === 'ZAG' ? [P(s.goals, 'gol', 'gols'), s.cleanSheets + ' sem sofrer gol'] : [P(s.goals, 'gol', 'gols'), s.assists + ' assist.'];
+    return [P(s.games, 'jogo', 'jogos')].concat(main, s.titles.map(t => '🏆 ' + t.name));
   }
 
   // Monta a lista de telas: temporadas, cartas especiais (logo depois da temporada em que vieram) e o final
@@ -131,7 +131,7 @@
     ctx.drawImage(fc, 290, 660, 500, 717);
     // Números
     ctx.fillStyle = '#fff'; ctx.font = '700 40px ' + DISPLAY;
-    const nums = [c.seasons.length + ' temporadas'].concat(U.careerStatsOf(c).map(([v, l]) => v + ' ' + l.toLowerCase()), [f.titles + ' títulos']);
+    const nums = [D.plural(c.seasons.length, 'temporada', 'temporadas')].concat(U.careerStatsOf(c).map(([v, l]) => v + ' ' + l.toLowerCase()), [D.plural(f.titles, 'título', 'títulos')]);
     ctx.fillText(nums.join(' · '), 540, 1450, 1000);
     // Cartas especiais (até 5, as mais raras primeiro)
     const rank = { bola: 0, copa: 1, heroi: 2, tots: 3 };

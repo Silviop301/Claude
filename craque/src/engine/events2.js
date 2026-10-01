@@ -146,7 +146,7 @@
     },
     {
       id: 'cobrador', icon: '⚽', tone: 'blue', weight: 3, max: 2,
-      when: c => ['ATA', 'MEI'].includes(c.pos) && atClub(c) >= 1,
+      when: c => ['ATA', 'MEI'].includes(c.pos) && atClub(c) >= 1 && c.number !== 10,
       build: () => ({
         title: 'Quem bate o pênalti?', text: 'O camisa 10 do time e você querem ser o cobrador oficial.',
         options: [opt('Brigar pela cobrança', '60%: vira o cobrador (gols +12%) · 40%: racha no vestiário (Técnico −10)'), opt('Deixar com ele', 'Técnico +5 · Torcida +3')],
@@ -202,7 +202,7 @@
       when: c => c.pos === 'ZAG' && atClub(c) >= 1,
       build: () => ({
         title: 'Zagueiro de volante?', text: 'O técnico quer te testar como volante para sair jogando.',
-        options: [opt('Topar o desafio', '+2 PAS para sempre · assistências +30% · jogos sem sofrer gol −10%'), opt('Ficar na zaga', 'Técnico −4 · sem mudança')],
+        options: [opt('Topar o desafio', '+2 PAS para sempre · assistências +30% · forma −2%'), opt('Ficar na zaga', 'Técnico −4 · sem mudança')],
       }),
       resolve: (c, ev, i) => (i === 0
         ? { ok: true, text: 'Você descobriu um passe longo que ninguém conhecia.', fx: { attr: { pas: 2 }, assistMul: 0.3, form: -0.02 } }
@@ -334,8 +334,8 @@
       id: 'gringo', icon: '🗣️', tone: 'blue', weight: 3, max: 1,
       when: c => atClub(c) >= 1,
       build: () => ({
-        title: 'Técnico estrangeiro', text: 'O novo técnico só fala inglês e ainda não confia em ninguém.',
-        options: [opt('Fazer aulas de inglês', 'R$ 30 mil · Técnico +12'), opt('Se virar com o tradutor', '40%: ruído na comunicação (Técnico −6)')],
+        title: 'Técnico estrangeiro', text: 'O novo técnico é estrangeiro, ainda não fala a língua do grupo e não confia em ninguém.',
+        options: [opt('Fazer aulas do idioma dele', 'R$ 30 mil · Técnico +12'), opt('Se virar com o tradutor', '40%: ruído na comunicação (Técnico −6)')],
       }),
       resolve: (c, ev, i, r) => {
         if (i === 0) { bump(c, 'coach', 12); return { ok: true, text: 'Em três meses você já era o intérprete do elenco.', fx: { money: -30000 } }; }
@@ -415,7 +415,7 @@
       id: 'centenario', icon: '🎂', tone: 'green', weight: 2, max: 1,
       when: c => atClub(c) >= 1,
       build: c => ({
-        title: 'Centenário do clube', text: D.O(club(c).name) + ' faz 100 anos e vai lançar uma camisa comemorativa com o seu rosto na campanha.',
+        title: 'Aniversário do clube', text: D.O(club(c).name) + ' comemora aniversário e vai lançar uma camisa comemorativa com o seu rosto na campanha.',
         options: [opt('Estrelar a campanha', 'Fama +10 · Torcida +6 · R$ 50 mil'), opt('Deixar para os ídolos antigos', 'Torcida +4 · Técnico +3')],
       }),
       resolve: (c, ev, i) => (i === 0
@@ -1038,7 +1038,7 @@
       when: c => club(c).tier >= 3,
       build: c => ({
         ...alt(c, 'pretemporada', [
-          ['Excursão de pré-temporada', 'O clube marcou seis amistosos nos Estados Unidos em duas semanas.'],
+          ['Excursão de pré-temporada', 'O clube marcou seis amistosos no exterior em duas semanas.'],
           ['Turnê pela Ásia', 'Amistosos caça-níquel na Ásia: calor, fuso e estádios lotados.']]),
         options: [opt('Jogar todos os amistosos', 'Fama +8 · forma −4%'), opt('Pedir para ser poupado', 'Forma +3% · Técnico −3')],
       }),

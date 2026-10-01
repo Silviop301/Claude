@@ -230,7 +230,8 @@
   // Despedida (fim de carreira)
   function farewellPaper(c, f, onClose) {
     const nick = c.name, T = c.totals, main = D.CLUB_BY_ID[f.mainClub];
-    const nums = c.pos === 'GOL' ? (T.cs || 0) + ' jogos sem sofrer gol' : c.pos === 'ZAG' ? T.goals + ' gols e ' + (T.cs || 0) + ' jogos sem sofrer gol' : T.goals + ' gols e ' + T.assists + ' assistências';
+    const P = D.plural, cs = P(T.cs || 0, 'jogo sem sofrer gol', 'jogos sem sofrer gol');
+    const nums = c.pos === 'GOL' ? cs : c.pos === 'ZAG' ? P(T.goals, 'gol', 'gols') + ' e ' + cs : P(T.goals, 'gol', 'gols') + ' e ' + P(T.assists, 'assistência', 'assistências');
     const col = f.grade === 'S' ? { t: 'Um dos maiores', x: 'Contem aos netos que viram ' + nick + ' jogar. Eu conto aos meus.' }
       : f.grade === 'A' ? { t: 'Até logo, craque', x: 'O futebol fica mais pobre hoje. ' + nick + ' fez o que poucos fazem: deixou saudade antes de sair.' }
       : f.grade === 'B' ? { t: 'Carreira de respeito', x: 'Não foi o maior de todos, mas nunca fugiu da briga. ' + nick + ' sai de cabeça erguida.' }

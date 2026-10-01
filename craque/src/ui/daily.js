@@ -43,7 +43,7 @@
     const best = !prev || r.score > prev.score;
     if (best) { all[c.daily] = r; store(KEY, all); }
     const txt = 'Climbix do dia ' + shortDate(c.daily) + ' — ' + c.name + ': nota ' + r.grade + ' · ' + r.score + ' pts\n' +
-      r.goals + ' gols · ' + r.assists + ' assist. · ' + r.titles + ' títulos' + (r.ballon ? ' · ' + r.ballon + ' Bola(s) de Ouro' : '') + (r.wc ? ' · campeão do mundo' : '') + '\n' + r.verdict;
+      D.plural(r.goals, 'gol', 'gols') + ' · ' + r.assists + ' assist. · ' + D.plural(r.titles, 'título', 'títulos') + (r.ballon ? ' · ' + D.plural(r.ballon, 'Bola de Ouro', 'Bolas de Ouro') : '') + (r.wc ? ' · campeão do mundo' : '') + '\n' + r.verdict;
     setTimeout(() => {
       const b = $('b-daily-share');
       if (b) b.onclick = async () => {

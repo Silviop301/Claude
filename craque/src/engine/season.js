@@ -436,7 +436,7 @@
     // Mesma régua da avaliação da temporada: nota 7,3+ é "grande temporada"; os números sozinhos só com nota boa (6,8+)
     const star = s.games >= 15 && (s.rating >= 7.3 || (s.rating >= 6.8 && (!!award || (s.pos === 'ATA' && s.goals >= 15) || (s.pos === 'MEI' && s.assists >= 10) || (def && s.cleanSheets >= 14))));
     if (star && h.length === statH && !s.awards.some(a => a.id === 'ballon')) {
-      const stat = (s.pos === 'ATA' ? s.goals + ' gols' : s.pos === 'MEI' ? s.assists + ' assistências' : s.pos === 'ZAG' && s.goals >= 4 ? s.goals + ' gols e ' + s.cleanSheets + ' jogos sem sofrer gol' : s.cleanSheets + ' jogos sem sofrer gol') +
+      const stat = (s.pos === 'ATA' ? D.plural(s.goals, 'gol', 'gols') : s.pos === 'MEI' ? D.plural(s.assists, 'assistência', 'assistências') : s.pos === 'ZAG' && s.goals >= 4 ? s.goals + ' gols e ' + D.plural(s.cleanSheets, 'jogo sem sofrer gol', 'jogos sem sofrer gol') : D.plural(s.cleanSheets, 'jogo sem sofrer gol', 'jogos sem sofrer gol')) +
         ' e nota ' + s.rating.toFixed(1).replace('.', ',');
       const crisis = (s.move && s.move.dir === 'down') || (tb && tb.pos >= 11);
       if (crisis) h.push(v('solo', ['Brilho solitário: ' + stat + ' de ' + nick + ' num ano difícil ' + D.do(club),

@@ -37,8 +37,12 @@
     return deg < 18 || deg >= 330 ? '❤️' : deg < 42 ? '🧡' : deg < 70 ? '💛' : deg < 165 ? '💚' : deg < 255 ? '💙' : '💜';
   }
   // Frase de estatística da temporada conforme a posição
-  const statOf = res => res.pos === 'GOL' ? (res.cleanSheets || 0) + ' jogos sem sofrer gol' : res.pos === 'ZAG' ? (res.tackles || 0) + ' desarmes'
-    : res.pos === 'MEI' ? res.assists + ' assistências' : res.goals + ' gols';
+  const P = D.plural, csTxt = n => P(n || 0, 'jogo sem sofrer gol', 'jogos sem sofrer gol');
+  const statOf = res => res.pos === 'GOL' ? csTxt(res.cleanSheets) : res.pos === 'ZAG' ? P(res.tackles || 0, 'desarme', 'desarmes')
+    : res.pos === 'MEI' ? P(res.assists, 'assistência', 'assistências') : P(res.goals, 'gol', 'gols');
+  // Números da carreira inteira, por posição (para os posts de despedida)
+  const careerOf = c => { const T = c.totals || {}; return c.pos === 'GOL' ? csTxt(T.cs) + ' e ' + P(T.penSaved || 0, 'pênalti defendido', 'pênaltis defendidos')
+    : c.pos === 'ZAG' ? P(T.goals || 0, 'gol', 'gols') + ' e ' + csTxt(T.cs) : P(T.goals || 0, 'gol', 'gols') + ' e ' + P(T.assists || 0, 'assistência', 'assistências'); };
   const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
 
   // Texto do post e o clima (up, down, bye) de cada situação; sub guarda o detalhe (title, ballon, great...)
@@ -112,7 +116,7 @@
       .replace(/\{stat\}/g, r ? statOf(r) : '').replace(/\{titulos\}/g, r ? r.titles.map(x => x.name).join(' e ') : '').replace(/\{jogos\}/g, r ? r.games : '')
       .replace(/\{nota\}/g, nota).replace(/\{pos\}/g, r && r.table ? r.table.pos : '').replace(/\{pts\}/g, r && r.table ? r.table.pts : '')
       .replace(/\{naLiga\}/g, r && r.table ? D.na(r.table.league) : '').replace(/\{min\}/g, m ? m.minute || 90 : '').replace(/\{vs\}/g, vs).replace(/\{contraVs\}/g, 'contra ' + vs)
-      .replace(/\{temps\}/g, c.seasons.length).replace(/\{gols\}/g, T.goals || 0).replace(/\{assist\}/g, T.assists || 0);
+      .replace(/\{numeros\}/g, careerOf(c)).replace(/\{temps\}/g, P(c.seasons.length, 'temporada', 'temporadas')).replace(/\{gols\}/g, T.goals || 0).replace(/\{assist\}/g, T.assists || 0);
     p.text = cap(fill(p.text)); coms.forEach(x => { x.t = fill(x.t); if (x.reply) x.reply = fill(x.reply); });
     const likes = Math.round(80 * Math.pow(1.035, Math.min(320, fame)) * (p.mood === 'bye' ? 3 : p.mood === 'up' ? 1.4 : 0.8));
     const me = slug(c.name) + (c.number || 10);
