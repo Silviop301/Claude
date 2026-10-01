@@ -19,7 +19,9 @@
     bb: [[313, 147, 539, 491], [326, 154, 537, 491], [346, 165, 535, 491], [329, 157, 545, 491], [203, 99, 521, 491], [139, 0, 530, 491], [125, 12, 531, 491], [84, 77, 516, 491], [60, 148, 491, 491], [56, 193, 485, 491], [50, 316, 474, 491], [4, 377, 469, 500]],
     glove: { 6: [234, 16], 7: [142, 82], 8: [84, 152], 9: [60, 312], 10: [54, 436] } };
 
-  function scene(setup, side) {
+  // zoom (opcional) [zx, zy]: câmera mais longe e mais alta. O gol e o goleiro encolhem (zy < zx com a câmera alta), e as marcações
+  // do gramado ficam por conta de quem chamou (a perspectiva delas muda com a distância da câmera).
+  function scene(setup, side, zoom) {
     // Rede com profundidade: fundo (menor e mais alto), laterais e teto
     const BX = 0.9, BT = 80, BB = 178; // trave de trás: ±0.9 da largura, topo e base
     const net = ['<path d="M' + px(-1) + ' ' + py(1) + ' L' + px(-BX) + ' ' + BT + ' V' + BB + ' L' + px(-1) + ' ' + GY + 'Z M' + px(1) + ' ' + py(1) + ' L' + px(BX) + ' ' + BT + ' V' + BB + ' L' + px(1) + ' ' + GY + 'Z M' + px(-1) + ' ' + py(1) + ' H' + px(1) + ' L' + px(BX) + ' ' + BT + ' H' + px(-BX) + 'Z" fill="rgba(0,0,0,.18)" stroke="none"/>',
@@ -77,11 +79,12 @@
       '<animateTransform attributeName="transform" type="translate" from="0 0" to="-300 0" dur="9s" repeatCount="indefinite"/></g>' +
       // gramado, marcações em perspectiva
       '<rect y="62" width="360" height="258" fill="url(#k-grass)"/>' + stripes.join('') +
-      '<line x1="0" y1="' + GY + '" x2="360" y2="' + GY + '" ' + L + '/>' +
+      '<g id="k-world"' + (zoom ? ' transform="translate(180 ' + (62 + 128 * zoom[0]) + ') scale(' + zoom[0] + ' ' + zoom[1] + ') translate(-180 -' + GY + ')"' : '') + '>' +
+      (zoom ? '' : '<line x1="0" y1="' + GY + '" x2="360" y2="' + GY + '" ' + L + '/>' +
       '<path d="M' + px(-1.5) + ' ' + GY + ' L' + px(-1.68) + ' 218 H' + px(1.68) + ' L' + px(1.5) + ' ' + GY + '" ' + L + '/>' +
       '<line x1="0" y1="268" x2="360" y2="268" ' + L + '/>' +
       '<path d="M112 320 Q180 296 248 320" ' + L + '/>' +
-      '<ellipse cx="180" cy="297" rx="4" ry="1.6" fill="#EEF5F0" opacity=".8"/>' +
+      '<ellipse cx="180" cy="297" rx="4" ry="1.6" fill="#EEF5F0" opacity=".8"/>') +
       // gol: rede com profundidade e traves com volume
       '<g class="k-net" id="k-net" stroke="#E9F2EC" stroke-width=".9" stroke-opacity=".38">' + net.join('') + '</g>' +
       '<path d="M' + px(-1) + ' ' + (GY + 1) + ' l6 2 h' + (px(1) - px(-1)) + ' l-6 -2" fill="rgba(0,0,0,.25)"/>' +
@@ -103,6 +106,7 @@
       '<circle cx="0" cy="-78" r="10" fill="#E8B58C"/><path class="kp-hair" d="M-10 -80 a10 10 0 0 1 20 0 q-10 -4 -20 0z"/></g>' +
       wall +
       '<g id="k-bulge" opacity="0"><ellipse rx="30" ry="22" fill="url(#k-bul)"/><ellipse rx="22" ry="16" fill="none" stroke="#E9F2EC" stroke-opacity=".5" stroke-width="1.2"/><ellipse rx="12" ry="9" fill="none" stroke="#E9F2EC" stroke-opacity=".6" stroke-width="1.2"/></g>' +
+      '</g>' +
       '<ellipse id="k-shadow" cx="180" cy="302" rx="15" ry="4" fill="rgba(0,0,0,.28)"/>' +
       '<g id="k-trail">' + [0.22, 0.15, 0.09, 0.05].map(o => '<circle r="9" fill="#fff" opacity="0" data-o="' + o + '"/>').join('') + '</g>' +
       '<rect width="360" height="320" fill="url(#k-vig)" pointer-events="none"/>' +

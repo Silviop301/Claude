@@ -233,101 +233,154 @@
   };
 
   // ---------- meia: passe decisivo (bola enfiada) ----------
-  // O atacante corre por trás da zaga, da esquerda para a direita. Toque quando ele estiver na brecha (faixa verde)
-  // entre dois zagueiros: a bola passa e ele finaliza. Cedo ou tarde, a zaga corta. PAS alarga a brecha e
-  // deixa a corrida mais lenta.
+  // Câmera atrás de você, na intermediária (36 m do gol). A zaga forma uma linha a 21 m do gol e o último zagueiro
+  // fica mais atrás, dando condição. O seu atacante corre na diagonal entre os dois; toque quando ele estiver na
+  // faixa verde: a bola passa pela brecha, ele vira para o gol e bate. Cedo ou tarde, a zaga corta; se demorar,
+  // ele passa do último zagueiro e fica impedido. PAS alarga a brecha e deixa a corrida mais lenta.
   root.CRAQUE_PASS = function (el, opts) {
-    const P = root.CRAQUE_KICK_PARTS, c = opts.c, setup = S().kickSetup(c, 'pass');
-    el.innerHTML = '<div class="kick-stage">' + P.scene({ fk: false }, 1) + '<div class="kick-banner"></div></div>' +
-      '<p class="kick-help" id="k-help">Toque quando o atacante passar pela <b>brecha</b></p>';
+    const P = root.CRAQUE_KICK_PARTS, C = root.CRAQUE_CHARS, c = opts.c, setup = S().kickSetup(c, 'pass');
+    // Projeção: ponto do gramado a g metros do gol (para a câmera) e x metros do centro
+    // Câmera alta (4,5 m), como numa transmissão; o desenho do gol foi feito para uma câmera a 2,6 m
+    const Z = 0.45, CAM = 36, K = 128 * Z * CAM, CH = 4.5, ZY = Z * 2.6 / CH, GL = 62 + 128 * Z;
+    const sy = g => 62 + K / (CAM - g), sx = (x, g) => 180 + x * (P.GW / 3.66) * Z * CAM / (CAM - g);
+    const hOf = g => 1.85 * (K / CH) / (CAM - g); // altura de um jogador na tela
+    const rOf = g => 0.11 * (K / CH) / (CAM - g) + 0.6; // raio da bola
+    const W = (x, y) => [180 + (x - 180) * Z, GL + (y - P.GY) * ZY]; // coordenadas do gol (k-world) na tela
+    el.innerHTML = '<div class="kick-stage">' + P.scene({ fk: false }, 1, [Z, ZY]) + '<div class="kick-banner"></div></div>' +
+      '<p class="kick-help" id="k-help">Toque quando o atacante passar pela <b>faixa verde</b></p>';
     const svg = el.querySelector('svg'), stage = el.querySelector('.kick-stage'), help = el.querySelector('#k-help');
-    const ball = svg.querySelector('#k-ball');
+    const ball = svg.querySelector('#k-ball'), world = svg.querySelector('#k-world');
     svg.querySelector('#k-aim').remove();
-    svg.querySelector('#k-keeper').style.display = 'none';
+    svg.querySelector('#k-shadow').style.display = 'none';
     const spr = P.keeperSprite(svg); spr.stand(P.GX); spr.idle();
     const NS = 'http://www.w3.org/2000/svg';
-    // Perspectiva da cena: horizonte em y 62 e o gol (2,44 m) com 120 px de altura na linha do gol (y 190).
-    // Um jogador de 1,85 m tem 91 px na linha do gol e cresce conforme chega perto da câmera.
-    const hOf = feet => 91 * (feet - 62) / (P.GY - 62);
-    // Linha da zaga na entrada da área (y 222) e corrida do atacante entre ela e o gol (y 204), de X0 a X1
-    const LINE = 222, RUN = 204, X0 = 30, X1 = 330;
-    const gw = setup.win * (X1 - X0), gc = 120 + Math.random() * 120, g0 = gc - gw / 2, g1 = gc + gw / 2;
-    const C = root.CRAQUE_CHARS, kits = C.kits(c, c.moment && c.moment.vs), fs = C.faces(3);
-    // Faixa verde da brecha no gramado (do pé da zaga até a corrida do atacante)
-    const zone = document.createElementNS(NS, 'rect');
-    zone.setAttribute('x', g0); zone.setAttribute('y', RUN - 6); zone.setAttribute('width', gw); zone.setAttribute('height', LINE - RUN + 10);
-    zone.setAttribute('rx', 6); zone.setAttribute('class', 'tk-zone');
+    // Marcações do gramado nesta câmera: linha de fundo, pequena área, grande área, marca do pênalti e meia-lua
+    const pt = (x, g) => sx(x, g).toFixed(1) + ' ' + sy(g).toFixed(1);
+    const arc = [];
+    for (let a = -53; a <= 53; a += 6) { const r = a * Math.PI / 180; arc.push(pt(9.15 * Math.sin(r), 11 + 9.15 * Math.cos(r))); }
+    const marks = document.createElementNS(NS, 'g');
+    marks.setAttribute('stroke', '#EEF5F0'); marks.setAttribute('stroke-width', '2'); marks.setAttribute('fill', 'none'); marks.setAttribute('opacity', '.75');
+    marks.innerHTML = '<path d="M0 ' + sy(0) + ' H360"/>' +
+      '<path d="M' + pt(-9.16, 0) + ' L' + pt(-9.16, 5.5) + ' L' + pt(9.16, 5.5) + ' L' + pt(9.16, 0) + '"/>' +
+      '<path d="M' + pt(-20.16, 0) + ' L' + pt(-20.16, 16.5) + ' L' + pt(20.16, 16.5) + ' L' + pt(20.16, 0) + '"/>' +
+      '<path d="M' + arc.join(' L') + '"/>' +
+      '<ellipse cx="180" cy="' + sy(11) + '" rx="2.6" ry="1" fill="#EEF5F0" stroke="none"/>';
+    svg.insertBefore(marks, world);
+    // Corrida do atacante: de x0 a x1 (metros), de 20,5 m a 15,5 m do gol. O último zagueiro está a 16,3 m.
+    const side = Math.random() < 0.5 ? 1 : -1, AX0 = -4.6 * side, AX1 = 4.6 * side, AG0 = 20.5, AG1 = 15.5, DEEP = 16.3, LINE = 21;
+    const atU = u => ({ x: AX0 + (AX1 - AX0) * u, g: AG0 + (AG1 - AG0) * u });
+    const offU = (AG0 - DEEP) / (AG0 - AG1); // a partir daqui, impedido
+    // Janela (em u) e o ponto da brecha na linha: onde a reta da bola até o atacante cruza a linha da zaga
+    const uw = Math.min(0.3, setup.win * offU), u0 = 0.18 + Math.random() * (offU - 0.12 - uw - 0.18), u1 = u0 + uw;
+    const BG = 27; // você está a 27 m do gol, no centro
+    const cross = u => { const a = atU(u), t = (BG - LINE) / (BG - a.g); return a.x * t; };
+    const xc = cross((u0 + u1) / 2), half = Math.abs(cross(u1) - cross(u0)) / 2 + 0.45;
+    // Faixa verde sob a corrida do atacante (entre u0 e u1)
+    const z0 = atU(u0), z1 = atU(u1), zone = document.createElementNS(NS, 'polygon');
+    zone.setAttribute('points', [pt(z0.x, z0.g + 0.5), pt(z1.x, z1.g + 0.5), pt(z1.x, z1.g - 0.5), pt(z0.x, z0.g - 0.5)].join(' ').replace(/(\S+) (\S+)/g, '$1,$2'));
+    zone.setAttribute('class', 'tk-zone');
     svg.insertBefore(zone, ball);
-    // Zagueiros: dois fechando a brecha e um mais aberto
-    const hD = hOf(LINE), hM = hOf(RUN), half = hD * 0.24; // metade da largura do corpo
-    // O atacante corre atrás da linha (mais longe da câmera): desenhado antes dos zagueiros
-    const mate = C.put('jogador-lado', Object.assign({ anim: 'corrida', num: '9' }, C.faces(1)[0], kits.mine), svg, ball);
-    mate.place(X0, RUN, hM);
-    const defs = [g0 - half, g1 + half, gc < 180 ? g1 + half * 5 : g0 - half * 5].map((x, i) => {
-      const m = C.put('jogador-2d', Object.assign({ kit: 'barreira', anim: 'parado', num: ['3', '4', '2'][i] }, fs[i], kits.opp), svg, ball);
-      m.place(x, LINE, hD);
-      return { x, m };
-    });
-    // Zagueiros respirando, cada um no seu tempo
+    const kits = C.kits(c, c.moment && c.moment.vs), fs = C.faces(4);
+    const layer = document.createElementNS(NS, 'g');
+    svg.insertBefore(layer, ball);
+    const man = (attrs, x, g) => { const m = C.put('jogador-2d', Object.assign({ kit: 'barreira', anim: 'parado' }, attrs), layer); m.place(sx(x, g), sy(g), hOf(g)); return m; };
+    // Último zagueiro (mais longe, dá condição), depois o atacante, depois a linha (mais perto da câmera)
+    const third = xc + (xc > 0 ? -1 : 1) * (half + 2.6), lineX = [xc - half, xc + half, third];
+    // O último zagueiro fica num ponto livre (sem ficar escondido atrás da linha)
+    let deepX = 0;
+    for (let i = 0; i < 30; i++) {
+      deepX = (Math.random() * 2 - 1) * 3;
+      if (lineX.every(x => Math.abs(sx(x, LINE) - sx(deepX, DEEP)) > 26)) break;
+    }
+    const deep = man(Object.assign({ num: '4' }, fs[0], kits.opp), deepX, DEEP);
+    const mate = C.put('jogador-lado', Object.assign({ anim: 'corrida' }, C.faces(1)[0], kits.mine, side < 0 ? { espelhar: true } : {}), layer);
+    const defs = lineX.map((x, i) => ({ x, m: man(Object.assign({ num: ['3', '2', '6'][i] }, fs[i + 1], kits.opp), x, LINE) }));
+    const all = [deep].concat(defs.map(d => d.m));
     (function idle(now) {
       if (!svg.isConnected) return;
-      defs.forEach((d, i) => d.m.pose((now / 2400 + i * 0.31) % 1, 'parado'));
+      all.forEach((m, i) => m.pose((now / 2400 + i * 0.31) % 1, 'parado'));
       requestAnimationFrame(idle);
     })(performance.now());
     const b3 = P.ball3d(stage, ball);
-    b3.place(P.BALL.x, P.BALL.y, P.BALL.r);
-    const dur = setup.period * 1100, t0 = performance.now();
+    const ballAt = (x, g) => b3.place(sx(x, g), sy(g) - rOf(g), rOf(g), 0.3);
+    ballAt(0, BG);
+    // Você, de costas, atrás da bola
+    const me = C.look(c);
+    const you = C.put('jogador-2d', Object.assign({ kit: 'atacante', view: 'costas', anim: 'chute', num: String(c.number || 8), nome: (c.name || '').split(' ').pop().toUpperCase().slice(0, 10) },
+      me, kits.mine, me.boots ? { boots: me.boots } : {}), svg, ball);
+    you.place(sx(-0.35, BG + 0.5), sy(BG + 0.5), hOf(BG + 0.5)); you.pose(0, 'chute');
+    const dur = setup.period * 1100 / offU, t0 = performance.now();
     let hit = null, armed = false, done = false;
     setTimeout(() => { armed = true; }, 250);
-    const posAt = t => X0 + (X1 - X0) * Math.min(1, t / dur);
+    const uAt = t => Math.min(1, t / dur);
+    const placeMate = u => { const a = atU(u); mate.place(sx(a.x, a.g), sy(a.g), hOf(a.g)); };
     stage.addEventListener('pointerdown', e => {
       e.preventDefault();
       if (!armed || done) return;
-      hit = posAt(performance.now() - t0);
-      finish(hit >= g0 && hit <= g1, hit < g0 ? 'cedo' : 'tarde');
+      hit = uAt(performance.now() - t0);
+      finish(hit >= u0 && hit <= u1, hit < u0 ? 'cedo' : 'tarde');
     });
     (function run(now) {
       if (done) return;
-      const t = now - t0;
-      mate.place(posAt(t), RUN, hM);
-      mate.pose((t / 620) % 1, 'corrida');
-      if (t >= dur) return finish(false, 'impedido');
+      const t = now - t0, u = uAt(t);
+      placeMate(u); mate.pose((t / 620) % 1, 'corrida');
+      if (u >= offU) return finish(false, 'impedido');
       requestAnimationFrame(run);
     })(t0);
 
     function finish(ok, why) {
       done = true;
+      if (why === 'impedido') { mate.pose(0, 'marcacao'); return end(false, why); }
       sfx('kick');
-      const mx = hit !== null ? hit : X1;
-      // Passe: a bola rola até o atacante (ou até o zagueiro que corta)
-      const near = defs.slice().sort((a, b) => Math.abs(a.x - mx) - Math.abs(b.x - mx))[0];
-      const tx = ok ? mx : why === 'impedido' ? X1 : near.x, ty = ok ? RUN : LINE - 4;
+      const p0 = performance.now();
+      (function pass(now) { if (!svg.isConnected) return; const q = Math.min(1, (now - p0) / 380); you.pose(0.4 + 0.42 * q, 'chute'); if (q < 1) requestAnimationFrame(pass); })(p0);
+      // Passe rasteiro: até onde o atacante vai estar (na certa) ou até o zagueiro que corta
+      const T = 520, ua = Math.min(1, hit + T / dur), a = atU(ua);
+      const near = defs.slice().sort((p, q) => Math.abs(p.x - cross(hit)) - Math.abs(q.x - cross(hit)))[0];
+      const tx = ok ? a.x + 0.35 * side : near.x, tg = ok ? a.g : LINE + 0.4;
       const s0 = performance.now();
       (function roll(now) {
-        const u = Math.min(1, (now - s0) / 420), e = P.ease(u);
-        b3.place(P.BALL.x + (tx - P.BALL.x) * e, P.BALL.y + (ty - P.BALL.y) * e, P.BALL.r + (7.5 - P.BALL.r) * e, 0.3);
-        if (u < 1) return requestAnimationFrame(roll);
+        const q = Math.min(1, (now - s0) / T), e = 1 - (1 - q) * (1 - q);
+        ballAt(tx * e, BG + (tg - BG) * e);
+        const um = hit + Math.min(1, (now - s0) / dur) * (ok ? 1 : 0.6);
+        placeMate(Math.min(ua, um)); mate.pose(((now - t0) / 620) % 1, 'corrida');
+        if (q < 1) return requestAnimationFrame(roll);
         if (!ok) { mate.pose(0, 'marcacao'); return end(false, why); }
-        // Finalização do atacante: canto oposto ao goleiro
-        const f0 = performance.now();
-        (function fin(n3) { if (!svg.isConnected) return; const q = Math.min(1, (n3 - f0) / 480); mate.pose(q, 'finalizacao'); if (q < 1) requestAnimationFrame(fin); })(f0);
-        const side = mx < P.GX ? 1 : -1, gx = P.px(side * 0.72), gy = P.py(0.3);
-        spr.dive(P.px(-side * 0.5), P.py(0.4), -side, 380, 60);
-        const s1 = performance.now();
-        (function shot(n2) {
-          const q = Math.min(1, (n2 - s1) / 380), f = P.ease(q);
-          b3.place(tx + (gx - tx) * f, ty + (gy - ty) * f - Math.sin(q * Math.PI) * 10, 7.5 + (6.5 - 7.5) * f, 0.35);
-          if (q < 1) return requestAnimationFrame(shot);
-          svg.querySelector('#k-net').classList.add('shake');
-          svg.querySelector('#k-crowd').classList.add('cheer');
-          end(true);
-        })(s1);
+        shoot(a);
       })(s0);
+    }
+    // Ele recebe, vira de frente para o gol (de costas para a câmera) e bate no canto oposto ao goleiro
+    function shoot(a) {
+      mate.node.remove();
+      const back = C.put('jogador-2d', Object.assign({ kit: 'atacante', view: 'costas', anim: 'chute', num: c.number === 9 ? '11' : '9' }, C.faces(1)[0], kits.mine), layer, layer.firstChild.nextSibling);
+      back.place(sx(a.x - 0.25, a.g), sy(a.g), hOf(a.g));
+      const gs = a.x > 0 ? -1 : 1, goalX = P.px(gs * (0.5 + Math.random() * 0.3)), goalY = P.py(0.2 + Math.random() * 0.5);
+      const s1 = performance.now();
+      let kicked = false;
+      (function swing(now) {
+        if (!svg.isConnected) return;
+        const q = Math.min(1, (now - s1) / 620);
+        back.pose(0.2 + 0.64 * q, 'chute');
+        if (!kicked && q >= 0.3) { kicked = true; sfx('kick'); spr.dive(P.px(-gs * 0.5), P.py(0.45), -gs, 380, 40); fly(a, goalX, goalY); }
+        if (q < 1) requestAnimationFrame(swing);
+      })(s1);
+    }
+    function fly(a, gx, gy) {
+      const s2 = performance.now(), [ex, ey] = W(gx, gy);
+      const bx = sx(a.x, a.g), br = rOf(a.g), by = sy(a.g) - br;
+      (function go(now) {
+        const q = Math.min(1, (now - s2) / 420), f = P.ease(q);
+        b3.place(bx + (ex - bx) * f, by + (ey - by) * f - Math.sin(q * Math.PI) * 8, br + (2.6 - br) * f, 0.35);
+        if (q < 1) return requestAnimationFrame(go);
+        svg.querySelector('#k-net').classList.add('shake');
+        svg.querySelector('#k-crowd').classList.add('cheer');
+        end(true);
+      })(s2);
     }
     function end(ok, why) {
       sfx(ok ? 'goal' : 'miss');
       banner(el, ok ? 'GOOOL!' : why === 'impedido' ? 'IMPEDIDO!' : 'CORTADO!', ok);
-      help.innerHTML = ok ? 'Bola enfiada na medida: <b>assistência sua</b>' : why === 'cedo' ? 'Passou cedo: a zaga cortou.' : why === 'tarde' ? 'Passou tarde: a zaga fechou.' : 'Demorou e ele ficou impedido.';
+      help.innerHTML = ok ? 'Bola enfiada na medida: <b>assistência sua</b>' : why === 'cedo' ? 'Passou cedo: a zaga cortou.' : why === 'tarde' ? 'Passou tarde: a zaga fechou.' : 'Demorou e ele passou do último zagueiro: impedido.';
       setTimeout(() => { b3.dispose(); opts.onDone(ok, ok ? 'passe' : why); }, 1500);
     }
   };
