@@ -19,7 +19,7 @@
     bb: [[313, 147, 539, 491], [326, 154, 537, 491], [346, 165, 535, 491], [329, 157, 545, 491], [203, 99, 521, 491], [139, 0, 530, 491], [125, 12, 531, 491], [84, 77, 516, 491], [60, 148, 491, 491], [56, 193, 485, 491], [50, 316, 474, 491], [4, 377, 469, 500]],
     glove: { 6: [234, 16], 7: [142, 82], 8: [84, 152], 9: [60, 312], 10: [54, 436] } };
 
-  // zoom (opcional) [zx, zy]: câmera mais longe e mais alta. O gol e o goleiro encolhem (zy < zx com a câmera alta), e as marcações
+  // zoom (opcional) [escala, y da linha do gol]: câmera mais longe. O gol e o goleiro encolhem por igual, e as marcações
   // do gramado ficam por conta de quem chamou (a perspectiva delas muda com a distância da câmera).
   function scene(setup, side, zoom) {
     // Rede com profundidade: fundo (menor e mais alto), laterais e teto
@@ -79,7 +79,7 @@
       '<animateTransform attributeName="transform" type="translate" from="0 0" to="-300 0" dur="9s" repeatCount="indefinite"/></g>' +
       // gramado, marcações em perspectiva
       '<rect y="62" width="360" height="258" fill="url(#k-grass)"/>' + stripes.join('') +
-      '<g id="k-world"' + (zoom ? ' transform="translate(180 ' + (62 + 128 * zoom[0]) + ') scale(' + zoom[0] + ' ' + zoom[1] + ') translate(-180 -' + GY + ')"' : '') + '>' +
+      '<g id="k-world"' + (zoom ? ' transform="translate(180 ' + zoom[1] + ') scale(' + zoom[0] + ') translate(-180 -' + GY + ')"' : '') + '>' +
       (zoom ? '' : '<line x1="0" y1="' + GY + '" x2="360" y2="' + GY + '" ' + L + '/>' +
       '<path d="M' + px(-1.5) + ' ' + GY + ' L' + px(-1.68) + ' 218 H' + px(1.68) + ' L' + px(1.5) + ' ' + GY + '" ' + L + '/>' +
       '<line x1="0" y1="268" x2="360" y2="268" ' + L + '/>' +

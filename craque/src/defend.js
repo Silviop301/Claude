@@ -240,13 +240,14 @@
   root.CRAQUE_PASS = function (el, opts) {
     const P = root.CRAQUE_KICK_PARTS, C = root.CRAQUE_CHARS, c = opts.c, setup = S().kickSetup(c, 'pass');
     // Projeção: ponto do gramado a g metros do gol (para a câmera) e x metros do centro
-    // Câmera alta (4,5 m), como numa transmissão; o desenho do gol foi feito para uma câmera a 2,6 m
-    const Z = 0.45, CAM = 36, K = 128 * Z * CAM, CH = 4.5, ZY = Z * 2.6 / CH, GL = 62 + 128 * Z;
-    const sy = g => 62 + K / (CAM - g), sx = (x, g) => 180 + x * (P.GW / 3.66) * Z * CAM / (CAM - g);
+    // Câmera a 36 m do gol e 4 m de altura. Mesma proporção da cena do pênalti: na tela, 1 m na horizontal
+    // vale 0,78 de 1 m na vertical (o gol desenhado tem 280 × 120 para 7,32 m × 2,44 m)
+    const CAM = 36, O = 64, K = O * CAM, CH = 4, GL = 62 + O, Z = 2.44 * (O / CH) / 120, PXM = (P.GW / 3.66) / (120 / 2.44);
+    const sy = g => 62 + K / (CAM - g), sx = (x, g) => 180 + x * PXM * (K / CH) / (CAM - g);
     const hOf = g => 1.85 * (K / CH) / (CAM - g); // altura de um jogador na tela
     const rOf = g => 0.11 * (K / CH) / (CAM - g) + 0.6; // raio da bola
-    const W = (x, y) => [180 + (x - 180) * Z, GL + (y - P.GY) * ZY]; // coordenadas do gol (k-world) na tela
-    el.innerHTML = '<div class="kick-stage">' + P.scene({ fk: false }, 1, [Z, ZY]) + '<div class="kick-banner"></div></div>' +
+    const W = (x, y) => [180 + (x - 180) * Z, GL + (y - P.GY) * Z]; // coordenadas do gol (k-world) na tela
+    el.innerHTML = '<div class="kick-stage">' + P.scene({ fk: false }, 1, [Z, GL]) + '<div class="kick-banner"></div></div>' +
       '<p class="kick-help" id="k-help">Toque quando o atacante passar pela <b>faixa verde</b></p>';
     const svg = el.querySelector('svg'), stage = el.querySelector('.kick-stage'), help = el.querySelector('#k-help');
     const ball = svg.querySelector('#k-ball'), world = svg.querySelector('#k-world');
@@ -272,7 +273,7 @@
     const offU = (AG0 - DEEP) / (AG0 - AG1); // a partir daqui, impedido
     // Janela (em u) e o ponto da brecha na linha: onde a reta da bola até o atacante cruza a linha da zaga
     const uw = Math.min(0.3, setup.win * offU), u0 = 0.18 + Math.random() * (offU - 0.12 - uw - 0.18), u1 = u0 + uw;
-    const BG = 27; // você está a 27 m do gol, no centro
+    const BG = 26; // a bola está a 26 m do gol, no centro
     const cross = u => { const a = atU(u), t = (BG - LINE) / (BG - a.g); return a.x * t; };
     const xc = cross((u0 + u1) / 2), half = Math.abs(cross(u1) - cross(u0)) / 2 + 0.45;
     // Faixa verde sob a corrida do atacante (entre u0 e u1)
