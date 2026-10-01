@@ -36,11 +36,12 @@
       : res.age <= 20 && res.rating >= 7.2 ? 'joia' : res.age >= 33 && res.rating >= 7.0 ? 'veterano' : null;
     const fill = t => t.replace(/\{n\}/g, G.c.name).replace(/\{time\}/g, cl.name).replace(/\{clube\}/g, D.o(cl.name))
       .replace(/\{g\}/g, res.goals).replace(/\{a\}/g, res.assists).replace(/\{idade\}/g, res.age);
-    const first = (n + G.c.name.length) % shows.length, second = (first + 1 + n % (shows.length - 1)) % shows.length;
-    const say = (sh, key, k) => { const l = sh.talk[key]; return fill(l[(n + k) % l.length]); };
+    // Dois programas sorteados (diferentes) e uma fala sorteada de cada
+    const first = Math.floor(Math.random() * shows.length), second = (first + 1 + Math.floor(Math.random() * (shows.length - 1))) % shows.length;
+    const say = sh => key => { const l = sh.talk[key]; return fill(l[Math.floor(Math.random() * l.length)]); };
     const item = (sh, q) => '<div class="rs-item"><div class="np">' + U.emo('🎙️', 'xs') + ' ' + esc(sh.who) + ' ' + esc(sh.where) + '</div><p>“' + esc(q) + '”</p></div>';
-    return '<div class="news resenha rv">' + item(shows[first], say(shows[first], mood, 0)) +
-      item(shows[second], say(shows[second], topic || mood, 1)) + '</div>';
+    return '<div class="news resenha rv">' + item(shows[first], say(shows[first])(mood)) +
+      item(shows[second], say(shows[second])(topic || mood)) + '</div>';
   }
 
   function season() {
