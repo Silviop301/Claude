@@ -35,7 +35,7 @@
       pendingEvent = null;
       bar();
       render(
-        '<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.icoOf(ev, 'lg') + '</span><div class="eyebrow">' + ev.title + '</div>' +
+        '<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.icoOf(ev, 'lg') + '</span><div class="eyebrow">' + esc(ev.title) + '</div>' +
         '<p class="er-txt">' + esc(r.text) + '</p></div>' +
         '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn(), { center: true }
       );
