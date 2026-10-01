@@ -99,11 +99,20 @@
     return b;
   };
 
+  // Atributos da posição, do mais importante para o menos
+  S.attrOrder = pos => Object.keys(D.POS[pos].w).sort((a, b) => D.POS[pos].w[b] - D.POS[pos].w[a]);
+  // Atributo que recebe o que passar do 99 (o mais importante da posição que ainda está abaixo de 99)
+  S.spillTo = (c, E) => S.attrOrder(c.pos).find(k => (E || S.eff(c))[k] < 99) || null;
+  S.SPILL = 0.5; // metade: com o excedente todo, a nota S ia de 15% para 25% das carreiras
   const effOf = (c, traits, lv, inv) => {
     const b = S.bonusOf(traits, lv, c.pos), out = {};
     inv = inv || c.inv || {};
     D.INVEST.forEach(t => { if (t.attr && inv[t.id]) for (const k in t.attr) b[k] += t.attr[k] * inv[t.id]; });
-    D.ATTRS.forEach(k => { out[k] = clamp(Math.round(c.attrs[k]) + b[k], 20, 99); });
+    // Ponto de bônus que passaria do 99 não se perde todo: cada 2 acima do 99 viram 1 no atributo mais importante da posição abaixo de 99
+    let extra = 0;
+    D.ATTRS.forEach(k => { const v = Math.round(c.attrs[k]) + b[k]; extra += Math.max(0, v - 99); out[k] = clamp(v, 20, 99); });
+    extra = Math.floor(extra * S.SPILL);
+    for (const k of S.attrOrder(c.pos)) { if (extra <= 0) break; const add = Math.min(extra, 99 - out[k]); out[k] += add; extra -= add; }
     return out;
   };
   S.eff = c => effOf(c, c.traits, c.traitLv || {});
@@ -274,7 +283,9 @@
   S.PE_CAP = 2; // no máximo 2 por temporada
   S.investPrice = (c, id) => ((c.inv[id] || 0) + 1) * (D.INVEST_BY_ID[id].attr ? 1 : 2);
   S.investMax = id => D.INVEST_BY_ID[id].max || D.INVEST_MAX;
-  S.canInvest = (c, id) => (c.inv[id] || 0) < S.investMax(id) && (c.pe || 0) >= S.investPrice(c, id);
+  // Treino de atributo que já está no 99 não se compra (o ponto não teria onde entrar)
+  S.investCapped = (c, id) => { const t = D.INVEST_BY_ID[id], E = S.eff(c); return !!t.attr && Object.keys(t.attr).every(k => E[k] >= 99); };
+  S.canInvest = (c, id) => (c.inv[id] || 0) < S.investMax(id) && (c.pe || 0) >= S.investPrice(c, id) && !S.investCapped(c, id);
   S.PE_R1 = 7.4; S.PE_R2 = 8.2; // nota para ganhar 1 ou 2 pontos
   S.trainOf = c => D.TRAIN_BY_ID[c.train] || D.TRAIN_BY_ID.normal;
   S.canInvestAny = c => D.INVEST.some(t => S.canInvest(c, t.id));

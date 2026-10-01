@@ -72,6 +72,7 @@ function stepInPage(opts) {
   const sh = q('.sheet-wrap .sh-x, .sl-sheet-wrap #sl-close, .cfg-wrap .cfg-x'); if (sh) return label('close-sheet ' + click(sh));
   const sala = q('.sala #sl-back'); if (sala) return label('sala:back ' + click(sala));
   // Post nas redes aberto
+  if ($('b-hater') && Math.random() < 0.5) return label('post:hater ' + click($('b-hater')));
   if ($('b-post-next')) return label('post:next ' + click($('b-post-next')));
   // Fim de carreira: nova carreira (o teste conta a carreira como terminada)
   if ($('b-again')) {

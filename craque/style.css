@@ -1880,3 +1880,4 @@ button.cc-num em { font: 800 13px/1.1 var(--display); font-style: normal; letter
 .acc-legal a { color: inherit; text-underline-offset: 3px; }
 /* Escolha de característica: aviso de atributo já no 99 */
 .choice .d .cap-note { display: inline-block; margin-top: 4px; color: #8A6400; font-weight: 700; }
+.prep-note .cap-note { color: var(--gold); font-weight: 700; }

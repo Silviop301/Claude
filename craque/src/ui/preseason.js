@@ -27,6 +27,16 @@
     return (a ? a + '<br>' : '') + '<span class="fx">' + (lv > 1 ? 'Nv ' + lv + ': ' : '') + esc(fx).replace('⚠️', '<b class="warn">' + U.emo('⚠️', 'xs') + '</b>') + '</span>';
   }
 
+  // Aviso na escolha: atributo que a característica soma e já está no 99 manda o ponto para outro
+  // (os 2 atributos principais, que toda característica soma, ficam num aviso só, acima das opções)
+  function capNote(t, main) {
+    const E = S.eff(G.c), keys = main ? S.mainAttrs(G.c.pos) : Object.keys(t.attr).filter(k => t.attr[k] > 0 && !S.mainAttrs(G.c.pos).includes(k));
+    const full = keys.filter(k => E[k] >= 99);
+    if (!full.length) return '';
+    const to = S.spillTo(G.c, E);
+    return (main ? '' : '<br>') + '<span class="cap-note">' + full.map(k => D.label(G.c.pos, k)).join(' e ') + ' já no 99: ' + (to ? 'cada 2 pontos acima viram 1 em ' + D.label(G.c.pos, to) : 'carta no máximo') + '</span>';
+  }
+
   // Mini carta da pré-temporada: mostra os atributos atuais e, ao escolher, quanto cada um muda
   // Mesmas faixas de cor da carta final
   function setTier(o) {
@@ -159,11 +169,11 @@
       (done && !justAdded ? '<div class="prep-sec">Características</div>' + traitsHtml() + '<p class="muted small">' + (S.buildDone(G.c) ? U.emo('✅', 'xs') + ' Build completo: todas no nível máximo.' : 'Nada para evoluir nesta fase: o que falta já não rende na sua idade.') + '</p>' : '') +
       (ch.length ? '<div class="prep-sec">' + (G.c.traits.length >= S.MAX_SLOTS ? 'Evolua uma característica' : 'Escolha uma característica') + '</div>' +
         '<p class="muted small prep-note">' + (() => { const [a, b] = S.mainAttrs(G.c.pos); return 'Cada nível: +1 ' + D.label(G.c.pos, a) + ' (e +1 ' + D.label(G.c.pos, b) + ' a cada 2)'; })() +
-          (G.c.traits.length < S.MAX_SLOTS ? ' · fica a carreira toda' : '') + '</p>' + traitsHtml() +
+          (G.c.traits.length < S.MAX_SLOTS ? ' · fica a carreira toda' : '') + (capNote(null, true) ? '<br>' + capNote(null, true) : '') + '</p>' + traitsHtml() +
         '<div class="choices">' + ch.map((x, i) =>
           '<button class="choice' + (x.completes ? ' combo' : '') + '" data-i="' + i + '"><span class="ic">' + U.icoOf(x.trait) + '</span>' +
           '<b>' + x.trait.name + (x.type === 'up' ? ' → Nv ' + x.lv : '') + ' <span class="tag ' + (x.type === 'up' ? 'green' : 'blue') + '">' + label[x.type] + '</span></b>' +
-          '<span class="d">' + traitTxt(x.trait, x.lv) +
+          '<span class="d">' + traitTxt(x.trait, x.lv) + capNote(x.trait) +
           (x.completes ? '<br><span class="tag gold">Completa ' + U.icoOf(x.completes, 'xs') + ' ' + x.completes.name + ': ' + attrTxt(x.completes.attr) + '</span>' : '') + '</span></button>').join('') + '</div>' : '') +
       // Foco nos treinos: vale até mudar
       '<div class="prep-sec">Foco nos treinos</div><div class="train-row">' + D.TRAIN.map(t => '<button class="train-opt" data-t="' + t.id + '">' + U.emo(t.icon, 'sm') + '<b>' + t.name + '</b></button>').join('') + '</div>' +
@@ -195,8 +205,9 @@
         const id = b.dataset.v, n = G.c.inv[id] || 0, max = S.investMax(id), full = n >= max, price = S.investPrice(G.c, id);
         b.disabled = !S.canInvest(G.c, id);
         b.querySelector('.pips').textContent = '●'.repeat(n) + '○'.repeat(max - n);
-        b.querySelector('.price').textContent = full ? 'No máximo' : (G.c.pe || 0) < price ? 'Custa ' + pts(price) : pts(price);
-        b.classList.toggle('full', full);
+        const capped = !full && S.investCapped(G.c, id);
+        b.querySelector('.price').textContent = full ? 'No máximo' : capped ? 'No máximo (já no 99)' : (G.c.pe || 0) < price ? 'Custa ' + pts(price) : pts(price);
+        b.classList.toggle('full', full || capped);
       });
     };
     skip.onclick = () => { if (!skip.disabled) go(); };
