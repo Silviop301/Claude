@@ -8,7 +8,7 @@
   const HAIR_COLORS = ['#1E140C', '#5A3A1E', '#C9A05A', '#A8452A', '#E8E2D0', '#F4EAB8', '#2F6FD6', '#FF4FA3', '#4FC36B'];
   const HAIRS = ['curto', 'raspado', 'topete', 'black', 'trancas', 'dreads', 'moicano', 'longo', 'careca',
     'social', 'franja', 'militar', 'cacheado', 'undercut', 'degrade', 'samurai', 'afro', 'mullet', 'riscado', 'trancalonga', 'moicanoloiro'];
-  const BEARDS = ['nenhuma', 'rala', 'bigode', 'cavanhaque', 'cheia'];
+  const BEARDS = ['nenhuma', 'rala', 'bigode', 'cavanhaque', 'cheia', 'porfazer', 'costeleta', 'lenhador', 'bigodao', 'navalha', 'trancada'];
   const GEAR = { preto: '#1B1A17', branco: '#F4F2EA', vermelho: '#D8404A', azul: '#2F6FD6', neon: '#7CF03C', rosa: '#FF4FA3', laranja: '#FF8A1F', amarelo: '#F2D630', ouro: 'url(#g-ouro)', holo: 'url(#g-holo)', lima: '#B8F25C',
     roxo: '#7B4FD6', vinho: '#7A1E2E', cinza: '#8C8F93', musgo: '#2E5E3A', celeste: '#8FC8F2', bege: '#D9C7A3', prata: 'url(#g-prata)', cromo: 'url(#g-cromo)',
     // Estampas (pacotinho): chuteira camuflada, de raio e em chamas; luva tigrada
@@ -120,12 +120,33 @@
       '<path d="M58.4 12.6L58.8 20.6M61.4 9.6L61.4 20.6" stroke="' + OL + '" stroke-width=".7" opacity=".25"/>'];
     return ['', shape(cap, col)];
   }
-  function beardOf(style, col) {
+  // Barba por fazer: pontinhos no queixo e no buço, sempre nos mesmos lugares (fora da boca)
+  const STUBBLE = (() => {
+    const p = [];
+    for (let y = 35.2; y <= 45.4; y += 1.25) for (let x = 47.6 + ((y * 4) % 2) * .6; x <= 72.6; x += 1.5) {
+      const dx = (x - 60) / 12.6, dy = (y - 30.4) / 14.8;
+      if (dx * dx + dy * dy > 1 || (Math.abs(x - 60) < 4.4 && y > 38.2 && y < 43) || (y < 37 && Math.abs(x - 60) < 2.4)) continue;
+      if (y < 37.4 && Math.abs(x - 60) > 9) continue;
+      p.push('M' + x.toFixed(1) + ' ' + y.toFixed(1) + 'h.01');
+    }
+    return p.join('');
+  })();
+  function beardOf(style, col, skin) {
     const jaw = 'M46.8 32C47 42 52.6 46 60 46S73 42 73.2 32C70.6 37.6 66.6 38.8 60 38.8S49.4 37.6 46.8 32Z';
     const stache = '<path d="M55.4 37.6Q60 34.8 64.6 37.6Q60 37.1 55.4 37.6Z" fill="' + col + '" stroke="' + col + '" stroke-width="1.4" stroke-linejoin="round"/>';
     if (style === 'rala') return '<path d="' + jaw + '" fill="' + col + '" opacity=".32"/>';
     if (style === 'bigode') return stache;
     if (style === 'cavanhaque') return stache + '<path d="M56.8 41.6Q60 48.4 63.2 41.6Q60 43 56.8 41.6Z" fill="' + col + '"/>';
+    if (style === 'porfazer') return '<path d="' + STUBBLE + '" stroke="' + col + '" stroke-width=".85" stroke-linecap="round" opacity=".7"/>';
+    if (style === 'costeleta') return '<path d="M47.4 21.6H51.2L51.4 37.6Q50.6 40.2 48.9 38.8Q47.7 36 47.5 30Z" fill="' + col + '"/><path d="M72.6 21.6H68.8L68.6 37.6Q69.4 40.2 71.1 38.8Q72.3 36 72.5 30Z" fill="' + col + '"/>';
+    if (style === 'bigodao') return '<path d="M53.4 39.6Q55 35.4 60 36.6Q65 35.4 66.6 39.6L67.2 43.6Q65.8 44.2 65.2 41.4Q62.6 39.6 60 39.8Q57.4 39.6 54.8 41.4Q54.2 44.2 52.8 43.6Z" fill="' + col + '" stroke="' + OL + '" stroke-width=".9" stroke-linejoin="round"/>';
+    if (style === 'lenhador') return '<path d="M45.8 27.4C45.4 39 48.6 49.6 53.4 52.4Q55.6 54.6 57.6 53.2Q60 55.4 62.4 53.2Q64.4 54.6 66.6 52.4C71.4 49.6 74.6 39 74.2 27.4C71.6 35.4 67 38.4 60 38.4S48.4 35.4 45.8 27.4Z" fill="' + col + '" stroke="' + OL + '" stroke-width="1.4" stroke-linejoin="round"/>' +
+      '<path d="M51 41.6q1 3.4 3.4 5.4M69 41.6q-1 3.4-3.4 5.4M57.4 47.4q.6 2.4 2.6 3.6M62.6 47.4q-.6 2.4-2.6 3.6" stroke="' + OL + '" stroke-width=".7" fill="none" stroke-linecap="round" opacity=".45"/>' +
+      '<path d="M54.6 39Q57 35.8 60 36.8Q63 35.8 65.4 39Q63.4 38.2 60 39Q56.6 38.2 54.6 39Z" fill="' + col + '" stroke="' + OL + '" stroke-width=".8" stroke-linejoin="round"/>';
+    if (style === 'navalha') return beardOf('cheia', col) + '<path d="M48.6 34.8L53.4 40.8M71.4 34.8L66.6 40.8" stroke="' + (skin || '#C68A5E') + '" stroke-width="1.5" stroke-linecap="round"/>';
+    if (style === 'trancada') return stache + '<path d="M56.6 41.4Q60 47.6 63.4 41.4Q60 43 56.6 41.4Z" fill="' + col + '"/>' +
+      [46.8, 49.6, 52.4].map(y => '<ellipse cx="60" cy="' + y + '" rx="1.9" ry="1.7" fill="' + col + '" stroke="' + OL + '" stroke-width=".9"/>').join('') +
+      '<rect x="58.3" y="53.4" width="3.4" height="1.4" rx=".6" fill="#D8404A" stroke="' + OL + '" stroke-width=".6"/><path d="M58.8 54.8L58.2 57.4M60 54.8V57.8M61.2 54.8L61.8 57.4" stroke="' + col + '" stroke-width="1" stroke-linecap="round"/>';
     if (style === 'cheia') return '<path d="' + jaw.replace('M46.8 32', 'M46.4 30.4').replace('73.2 32', '73.6 30.4') + '" fill="' + col + '"/>' + stache;
     return '';
   }
@@ -141,6 +162,7 @@
   // Fita do Bonfim e faixa de capitão acompanham o braço da pose.
   const NUM_FX = { ouro: 'url(#g-ouro)', holo: 'url(#g-holo)', neon: '#7CF03C', fogo: 'url(#g-fogo)', contorno: 'none' };
   const band2 = (s, e, t0, t1, col, w) => limb([lerp(s, e, t0), lerp(s, e, t1)], col, w, 'butt');
+  const NOHAIR = o => o.lk.hair === 'careca' || o.lk.hair === 'raspado';
   const EXTRA = {
     capitao: o => { const [s, e] = o.R, m = lerp(s, e, .37);
       return band2(s, e, .27, .47, '#F2D630', 12.4) + '<text x="' + f2(m[0]) + '" y="' + f2(m[1] + 2) + '" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="5.6" fill="' + OL + '">C</text>'; },
@@ -153,6 +175,16 @@
     // Listras no meião alto (no arriado não aparecem)
     listrado: o => (o.lk.sock === 'arriado' ? '' : [52, 68].map(x => [166.5, 172.5, 178.5].map(y => '<rect x="' + (x - 5.2) + '" y="' + y + '" width="10.4" height="2.6" fill="' + o.kit[1] + '"/>').join('')).join('')),
     risco: o => (o.lk.hair === 'careca' ? '' : '<path d="M48.6 25.6Q50.2 20.6 55 17.6" stroke="' + o.skin + '" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M49.8 27.4Q51.4 22.8 55.6 20.2" stroke="' + o.skin + '" stroke-width="1" fill="none" stroke-linecap="round"/>'),
+    // Detalhes de cabelo (lote 3): por cima de qualquer corte; sem cabelo, só os que não dependem dele
+    mecha: o => (NOHAIR(o) ? '' : '<path d="M51.4 19.6Q54.4 14.6 59.6 13.4" stroke="#2F6FD6" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M52.6 18.4Q55 15.4 58.2 14.6" stroke="#8FC0FF" stroke-width=".8" fill="none" stroke-linecap="round" opacity=".8"/>'),
+    bandana: () => '<path d="M46.8 24.4Q60 17.4 73.2 24.4" stroke="' + OL + '" stroke-width="5.6" fill="none" stroke-linecap="round"/><path d="M46.8 24.4Q60 17.4 73.2 24.4" stroke="#D8404A" stroke-width="3.4" fill="none" stroke-linecap="round"/>' +
+      '<path d="M53 20.6l.01 0M58 19.2l.01 0M63 19.2l.01 0M68 20.8l.01 0" stroke="#F4F2EA" stroke-width="1.1" stroke-linecap="round"/>' +
+      '<path d="M73 23.4L79.4 27.6L77.6 29.6ZM73 24.4L77.8 32.4L75.4 33Z" fill="#D8404A" stroke="' + OL + '" stroke-width="1.2" stroke-linejoin="round"/>',
+    rabo: o => (NOHAIR(o) ? '' : shape('M72.4 20.6Q80.4 23.6 79.6 33.6Q79 41.6 75.8 46.4Q75.6 38.6 73.8 33.2Q74.6 27 72.4 20.6Z', o.hcol) +
+      '<rect x="72.6" y="21.6" width="3.2" height="2.6" rx="1" transform="rotate(28 74.2 22.9)" fill="#D8404A" stroke="' + OL + '" stroke-width=".8"/>'),
+    sobrancelha: o => '<path d="M65.5 25.4L64.9 28.4" stroke="' + o.skin + '" stroke-width="1.3" stroke-linecap="round"/>',
+    glitter: o => (NOHAIR(o) ? '' : [[51.6, 19.4, 1], [55.4, 15, 1.3], [60.6, 13.2, 1], [65.4, 14.8, 1.4], [69.2, 19, 1], [58, 17.4, .8], [63.4, 18, .9], [53.6, 21.6, .7], [67, 21.4, .8]]
+      .map(([x, y, r]) => '<path d="M' + x + ' ' + (y - r * 1.6) + 'L' + (x + r * .45) + ' ' + (y - r * .45) + 'L' + (x + r * 1.6) + ' ' + y + 'L' + (x + r * .45) + ' ' + (y + r * .45) + 'L' + x + ' ' + (y + r * 1.6) + 'L' + (x - r * .45) + ' ' + (y + r * .45) + 'L' + (x - r * 1.6) + ' ' + y + 'L' + (x - r * .45) + ' ' + (y - r * .45) + 'Z" fill="#FFE68A" stroke="#B98700" stroke-width=".3"/>').join('')),
     coque: o => (o.lk.hair === 'careca' ? '' : '<circle cx="60" cy="9.8" r="4.8" fill="' + o.hcol + '" stroke="' + OL + '" stroke-width="2.2"/><path d="M56.2 13.8Q60 15.4 63.8 13.8" stroke="' + OL + '" stroke-width="1.6" fill="none" stroke-linecap="round"/>'),
   };
   // opts: { crop: true } enquadra só o jogador; { bust: true } só da cintura para cima (carta);
@@ -175,7 +207,14 @@
     const lk = Object.assign({}, DEF, c.look || {});
     const [k1, k2] = kit, skin = SKIN[lk.skin] ?? SKIN[3], hcol = HAIR_COLORS[lk.hc] ?? HAIR_COLORS[0], gk = c.pos === 'GOL';
     const g = k => GEAR[k] || GEAR.preto;
-    const [hBack, hFront] = hairParts(lk.hair, hcol);
+    // Cabelo nas cores do clube (lendário): metade na 1ª cor do uniforme, metade na 2ª
+    const clube = Array.isArray(lk.extra) && lk.extra.includes('clube') && lk.hair !== 'careca';
+    let [hBack, hFront] = hairParts(lk.hair, clube ? k1 : hcol);
+    if (clube) {
+      const [b2, f2] = hairParts(lk.hair, k2), cp = id + '-hc';
+      hBack = '<clipPath id="' + cp + '"><rect x="60" y="-40" width="90" height="160"/></clipPath>' + hBack + '<g clip-path="url(#' + cp + ')">' + b2 + '</g>';
+      hFront += '<g clip-path="url(#' + cp + ')">' + f2 + '</g>';
+    }
     const long = lk.sleeve === 'comprida';
     const defs = '<defs><linearGradient id="g-ouro" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE68A"/><stop offset=".5" stop-color="#F2C230"/><stop offset="1" stop-color="#B98700"/></linearGradient>' +
       '<linearGradient id="g-prata" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#C9CED6"/><stop offset="1" stop-color="#7F8790"/></linearGradient>' +
@@ -284,7 +323,7 @@
       '<circle cx="46.8" cy="31.6" r="3.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/><circle cx="73.2" cy="31.6" r="3.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/>' +
       '<ellipse cx="60" cy="30.4" rx="13.2" ry="15.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/>' +
       '<path d="M66.4 16.6Q73.6 21 73.2 31.4Q72.8 40 66 44.6Q71.2 36 70.6 28Q70 21 66.4 16.6Z" fill="' + SHADE + '"/>' +
-      beardOf(lk.beard, lk.hc >= 6 ? '#3A2A1E' : hcol) + face + hFront + band + (handUp ? arm(L, 'direito') : '') + held + cup +
+      beardOf(lk.beard, lk.hc >= 6 ? '#3A2A1E' : hcol, skin) + face + hFront + band + (handUp ? arm(L, 'direito') : '') + held + cup +
       extra.map(x => (EXTRA[x] ? EXTRA[x]({ L, R, kit, skin, hcol, lk }) : '')).join('') + '</svg>';
   }
   // Lesão: deitado na maca, com o médico ao lado

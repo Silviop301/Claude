@@ -82,9 +82,9 @@
   const HAIR_NAME = { curto: 'Curto', raspado: 'Raspado', topete: 'Topete', black: 'Black', trancas: 'Tranças', dreads: 'Dreads', moicano: 'Moicano', longo: 'Longo', careca: 'Careca',
     social: 'Social', franja: 'Franja', militar: 'Militar', cacheado: 'Cacheado', undercut: 'Undercut', degrade: 'Degradê', samurai: 'Samurai', afro: 'Black power',
     mullet: 'Mullet', riscado: 'Com desenho', trancalonga: 'Tranças longas', moicanoloiro: 'Moicano loiro' };
-  const BEARD_NAME = { nenhuma: 'Sem barba', rala: 'Rala', bigode: 'Bigode', cavanhaque: 'Cavanhaque', cheia: 'Cheia' };
+  const BEARD_NAME = { nenhuma: 'Sem barba', rala: 'Rala', bigode: 'Bigode', cavanhaque: 'Cavanhaque', cheia: 'Cheia', porfazer: 'Por fazer', costeleta: 'Costeleta', lenhador: 'Lenhador', bigodao: 'Bigodão', navalha: 'Com desenho', trancada: 'Trançada' };
   const HC_NAME = ['Preto', 'Castanho', 'Loiro', 'Ruivo', 'Grisalho', 'Platinado', 'Azul', 'Rosa', 'Verde'];
-  const EXTRA_NAME = { bonfim: 'Fita do Bonfim', listrado: 'Listrado', caneleira: 'Caneleira', coque: 'Coque', risco: 'Risquinho', cordao: 'Cordão', brinco: 'Brinco', capitao: 'Faixa de capitão' };
+  const EXTRA_NAME = { bonfim: 'Fita do Bonfim', listrado: 'Listrado', caneleira: 'Caneleira', coque: 'Coque', risco: 'Risquinho', cordao: 'Cordão', brinco: 'Brinco', capitao: 'Faixa de capitão', mecha: 'Mecha', bandana: 'Bandana', rabo: 'Rabo de cavalo', sobrancelha: 'Sobrancelha riscada', glitter: 'Glitter', clube: 'Cores do clube' };
   const TAT = [['nenhuma', 'Nenhuma'], ['pequena', 'Pequena'], ['fechado', 'Fechada']];
   const pick = a => a[Math.floor(Math.random() * a.length)];
   // Itens travados (pacotinhos, ui/items.js): o que falta liberar para usar um valor do visual
@@ -220,9 +220,9 @@
         row('Barba', '', chip('beard', A.BEARDS.map(b => [b, BEARD_NAME[b]]))) +
         [['BD', 'braço direito'], ['BE', 'braço esquerdo'], ['PD', 'perna direita'], ['PE', 'perna esquerda']].map(([k, l]) => row('Tatuagem · ' + l, tnote(k), chip('tat' + k, TAT))).join('');
       if (st.tab === 'cabelo') rows = row('Corte', '', chip('hair', A.HAIRS.map(h => [h, HAIR_NAME[h]]))) +
-        row('Detalhes', '', tog(['coque', 'risco'])) +
+        row('Detalhes', '', tog(['coque', 'risco', 'mecha', 'rabo', 'sobrancelha', 'glitter', 'clube'])) +
         row('Cor do cabelo e da barba', '', sw('hc', A.HAIR_COLORS.map((_, i) => i), i => A.HAIR_COLORS[i], HC_NAME)) +
-        row('Na cabeça', '', chip('band', [['nenhuma', 'Nada'], ['faixa', 'Faixa'], ['tiara', 'Tiara']])) +
+        row('Na cabeça', '', chip('band', [['nenhuma', 'Nada'], ['faixa', 'Faixa'], ['tiara', 'Tiara']]) + tog(['bandana'])) +
         (lk.band !== 'nenhuma' ? row('Cor da faixa', GEAR_NAME[lk.bandC], sw('bandC', BASIC, gearBg)) : '');
       if (st.tab === 'equip') rows = row('Chuteira', GEAR_NAME[lk.boot], sw('boot', BASIC.concat(['prata', 'ouro', 'cromo', 'holo', 'camuflada', 'raio', 'chamas']), gearBg)) +
         row('Sola', GEAR_NAME[lk.sole], sw('sole', BASIC.concat(['prata', 'ouro', 'cromo', 'holo']), gearBg)) +
