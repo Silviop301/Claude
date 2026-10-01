@@ -185,6 +185,7 @@
         : D.INVEST.some(t => (G.c.inv[t.id] || 0) < S.investMax(t.id)) ? '<p class="muted small prep-note">' + U.emo('⭐', 'xs') + ' Pontos de evolução: ' + (G.c.pe || 0) + '. Você ganha com nota ' + String(S.PE_R1).replace('.', ',') + '+ (' + String(S.PE_R2).replace('.', ',') + '+ vale 2), títulos e prêmios.</p>' : '') +
       '<div class="inv-bar"><button class="btn" id="b-skip">Seguir para a temporada</button></div>'
     );
+    U.tip('pre');
     // Toque 1: o card vira e a mini carta mostra quanto muda. Toque 2 no mesmo card: confirma.
     const skip = $('b-skip');
     const go = () => { delete G.c.preCh; U.eventOrSeason(); };

@@ -88,6 +88,7 @@
       '</div></details>' +
       '<button class="btn ghost" id="b-again">Nova carreira</button>'
     );
+    U.tip('fim');
     // Edição especial do jornal com a despedida
     const retired = G.c;
     setTimeout(() => U.farewellPaper(retired, f), 700);

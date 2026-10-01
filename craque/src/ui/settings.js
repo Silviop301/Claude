@@ -9,6 +9,7 @@
     { t: 'Partida', rows: [
       { k: 'moments', ic: 'circle-dot', t: 'Lances decisivos', d: 'Cobrar você mesmo ou deixar a sua carta decidir', opts: [['play', 'Jogar'], ['auto', 'Decidir sozinho']] },
       { k: 'cups', ic: 'globe', t: 'Copa e Mundial', d: 'Jogar jogo a jogo ou ver só o resultado', opts: [['play', 'Jogar'], ['sim', 'Simular direto']] },
+      { k: 'tips', ic: 'info', t: 'Dicas', d: 'Explicação curta na primeira vez de cada tela', opts: [[true, 'Ligadas'], [false, 'Desligadas']], note: 'Ligar de novo mostra todas as dicas outra vez' },
       { k: 'fast', ic: 'fast-forward', t: 'Resumo da temporada', d: 'Números contando e telas de título', opts: [[false, 'Normal'], [true, 'Rápido']] },
     ] },
     { t: 'Visual e som', rows: [
@@ -18,7 +19,7 @@
       { k: 'sound', ic: 'volume-2', t: 'Som', opts: [[true, 'Ligado'], [false, 'Desligado']] },
     ].concat(canVibe ? [{ k: 'vibe', ic: 'smartphone', t: 'Vibração', opts: [[true, 'Ligada'], [false, 'Desligada']] }] : []) },
   ];
-  const value = k => (k === 'sound' ? !!(window.CRAQUE_SFX && window.CRAQUE_SFX.on) : window.CLIMBIX_CFG[k]);
+  const value = k => (k === 'tips' ? U.tipsOn() : k === 'sound' ? !!(window.CRAQUE_SFX && window.CRAQUE_SFX.on) : window.CLIMBIX_CFG[k]);
 
   function settings() {
     document.querySelectorAll('.cfg-wrap').forEach(x => x.remove());
@@ -35,7 +36,8 @@
         '<p class="cfg-credit">Emojis: <a href="https://github.com/jdecked/twemoji" target="_blank" rel="noopener">Twemoji</a> (CC-BY 4.0)</p></div>';
       w.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
         const k = b.dataset.k, raw = b.dataset.v, v = raw === 'true' ? true : raw === 'false' ? false : raw;
-        if (k === 'sound') { if (window.CRAQUE_SFX && window.CRAQUE_SFX.on !== v) window.CRAQUE_SFX.toggle(); }
+        if (k === 'tips') U.tipsSet(v);
+        else if (k === 'sound') { if (window.CRAQUE_SFX && window.CRAQUE_SFX.on !== v) window.CRAQUE_SFX.toggle(); }
         else U.setCfg(k, v);
         if (k === 'vibe' && v) U.vibe(20);
         paint();

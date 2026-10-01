@@ -269,6 +269,7 @@
       (fin ? '' : '<p class="contract">' + contractTxt + '</p>') + '</details>' + '<div class="rv">' + actions + '</div>';
     bar();
     reveal(skipNow, res);
+    U.tip('resumo');
     // Depois do resumo: as taças da temporada entram na estante, e aí segue
     const goOn = () => U.salaPlay(G.c, goTour ? tourIntro : afterSeason);
     $('b-next').onclick = goOn;

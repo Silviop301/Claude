@@ -49,6 +49,7 @@
       '<p class="lead">Clube grande dá mais chance de título, mas menos minutos em campo. Se não jogar, dá para pedir empréstimo no fim da temporada.</p>' +
       '<div class="choices">' + offers.map(offerCard).join('') + '</div>' + tools(win, true)
     );
+    U.tip('base');
     bindTools(true, academy);
     // Ainda sem clube: voltar descarta este garoto (nada foi salvo)
     $('b-back-home').onclick = () => U.ask('Voltar ao início?', 'Este jogador ainda não assinou com nenhum clube e não será salvo.', 'Voltar', U.home);
@@ -78,6 +79,7 @@
       '<div class="choices">' + all.map(offerCard).join('') + '</div>' + tools(win, false) +
       (S.canRetire(G.c) ? '<button class="btn ghost" id="b-retire">Pendurar as chuteiras</button>' : '')
     );
+    U.tip('janela');
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       const o = all[+b.dataset.i], prev = G.c.spells[G.c.spells.length - 1], moving = o.club !== G.c.club;
       if (!U.arm(b, signTxt(o))) return;

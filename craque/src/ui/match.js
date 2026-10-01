@@ -28,6 +28,7 @@
       (offer ? U.dealCompare(S.currentDeal(G.c), offer) : '') +
       '<div class="choices">' + ev.options.map((o, i) => '<button class="btn opt' + (i ? ' ghost' : '') + '" data-i="' + i + '">' + esc(o.label) + '<small>' + esc(o.hint) + '</small></button>').join('') + '</div>'
     );
+    U.tip('evento');
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       // Trocar de clube pede confirmação (dois toques)
       if (offer && b.dataset.i === '0' && !U.arm(b, '<b>Toque de novo para assinar</b>')) return;
@@ -139,6 +140,7 @@
       '<button class="btn" id="b-kick">' + MINI_BTN[st] + '</button>' +
       '<button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>'
     );
+    U.tip('lance');
     $('b-kick').onclick = () => {
       m.started = true; save();
       render('<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div><div id="kick"></div>');
