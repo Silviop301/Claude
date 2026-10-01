@@ -1582,8 +1582,9 @@ body.sala-on { overflow: hidden; }
 /* Toque duplo não dá zoom (comprar rápido no Safari dava zoom); o pinça continua funcionando */
 html, body, button, a, input, .choice { touch-action: manipulation; }
 /* Efeitos que crescem (títulos e prêmios do resumo pulando na tela) não alargam a página no celular */
-/* (clip não cria rolagem própria: a barra fixa embaixo continua funcionando) */
-#screen { overflow-x: clip; }
+/* Só no bloco do resumo (onde os títulos e prêmios crescem): na tela toda cortava as bordas dos botões.
+   (clip não cria rolagem própria: a barra fixa embaixo continua funcionando) */
+#after { overflow-x: clip; padding-left: 14px; padding-right: 14px; margin-left: -14px; margin-right: -14px; }
 /* Minigame do meia (provisório: sprites da barreira; o companheiro em outra cor) */
 .ps-mate { filter: hue-rotate(150deg) saturate(1.2); }
 /* Resenha do podcast no resumo: cartão escuro, frase em itálico */

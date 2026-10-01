@@ -91,7 +91,7 @@
     $('bar-rel').innerHTML = barMeter(ICON.coach, 'Técnico', S.relLabel(G.c.rel.coach), G.c.rel.coach) + barMeter(ICON.fans, 'Torcida', S.relLabel(G.c.rel.fans), G.c.rel.fans) +
       barMeter(ICON.fame, 'Fama', S.fameLabel(G.c.fame), Math.min(100, Math.round(G.c.fame / 3)), 'fame') +
       '<span class="bar-btns"><button class="snd-mini" id="b-snd" aria-label="Configurações">' + emo('⚙️', 'sm') + '</button>' +
-      '<button class="snd-mini home-btn" id="b-home" aria-label="Voltar ao início">' + emo('🏠', 'sm') + '</button></span>';
+      '<button class="snd-mini home-btn" id="b-home" aria-label="Voltar ao início">' + emo('🏟️', 'sm') + '</button></span>';
     $('bar-rel').querySelectorAll('[data-tip]').forEach(m => m.onclick = e => { e.stopPropagation(); barTip(m); });
     // Voltar ao início: a carreira fica salva e continua de onde parou
     $('b-home').onclick = e => {
