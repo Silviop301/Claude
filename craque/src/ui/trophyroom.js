@@ -90,7 +90,7 @@
     const tag = opts.cls ? 'span' : 'button';
     return '<' + tag + ' class="ni' + (n ? ' lit' : ' miss') + (gold ? ' gold' : '') + (n >= 2 ? ' multi' : '') + (legend ? ' leg' : '') + (opts.nova && n ? ' nova' : '') + (opts.cls ? ' ' + opts.cls : '') + '" data-k="' + esc(k) + '" aria-label="' + esc(k) + (n ? ', ' + n + '×' : ', falta') + '">' +
       '<span class="ni-box"><span class="ni-clip"><i class="ni-leg"></i><i class="ni-light"></i><i class="ni-bulb"></i></span><i class="ni-floor"></i>' +
-      '<img class="ni-img" src="' + img(k) + '" alt="" loading="lazy" decoding="async">' +
+      '<img class="ni-img" src="' + img(k) + '" alt="" loading="lazy" decoding="async" draggable="false">' +
       '<i class="ni-ring"></i><b class="ni-new">NOVA</b><b class="ni-cnt">×' + n + '</b></span>' +
       '<span class="ni-shelf"></span>' + (opts.plaque === false ? '' : '<span class="ni-plq">' + esc(k) + '</span>') + '</' + tag + '>';
   }
@@ -179,7 +179,7 @@
     $('sl-back').onclick = close;
     wrap.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { st.view = b.dataset.view; paint(); });
     wrap.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { st.tab = b.dataset.tab; paint(); });
-    wrap.querySelectorAll('.sl-case .ni').forEach(b => b.onclick = () => detail(b.dataset.k));
+    wrap.querySelectorAll('.sl-case .ni').forEach(b => { b.onclick = () => detail(b.dataset.k); b.oncontextmenu = e => e.preventDefault(); });
   }
   const seg = () => '<div class="sl-seg">' + [['col', 'Coleção'], ['car', 'Esta carreira']].map(([id, l]) => '<button data-view="' + id + '"' + (st.view === id ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>';
 

@@ -1462,7 +1462,9 @@ body.sala-on { overflow: hidden; }
 .ni.lit .ni-light, .ni.lit .ni-bulb { opacity: 1; }
 .ni-floor { position: absolute; bottom: 5px; left: 22%; width: 56%; height: 9px; border-radius: 50%; background: radial-gradient(ellipse, rgba(0, 0, 0, .7), rgba(0, 0, 0, 0) 70%); }
 /* Foto sempre a 74% da altura do nicho, apoiada no chão (fora do fluxo: o nicho não cresce com a foto) */
-.ni-img { position: absolute; left: 7%; right: 7%; bottom: 9px; width: 86%; height: 74%; object-fit: contain; object-position: 50% 100%; filter: drop-shadow(0 6px 5px rgba(0, 0, 0, .65)); }
+/* Segurar o dedo não abre a foto (a silhueta da taça que falta não pode ser revelada) */
+.ni { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.ni-img { pointer-events: none; -webkit-user-drag: none; position: absolute; left: 7%; right: 7%; bottom: 9px; width: 86%; height: 74%; object-fit: contain; object-position: 50% 100%; filter: drop-shadow(0 6px 5px rgba(0, 0, 0, .65)); }
 .ni.mini .ni-img { bottom: 4px; }
 .ni.miss .ni-img { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 236, 190, .5)); opacity: .85; }
 .ni-ring, .ni-new, .ni-cnt { display: none; }
