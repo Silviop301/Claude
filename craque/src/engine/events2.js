@@ -1251,10 +1251,14 @@
     {
       id: 'cartola', icon: '🎩', tone: 'blue', weight: 2, max: 1,
       when: c => c.fame >= 25 && !!c.club && c.pos !== 'GOL',
-      build: () => ({
-        title: 'Os cartoleiros estão bravos', text: 'Dois milhões de pessoas te escalaram no fantasy e você tirou nota negativa.',
-        options: [opt('Pedir desculpas aos cartoleiros', 'Fama +8 · Torcida +3'), opt('Ignorar', 'Técnico +2 · 30%: zoação pesada (Torcida −2)')],
-      }),
+      build: c => {
+        // "Cartoleiro" é gíria do Cartola FC: só para quem joga no Brasil; fora daqui, a galera do fantasy
+        const br = D.countryOf(club(c)) === 'Brasil', who = br ? 'cartoleiros' : 'jogadores do fantasy';
+        return {
+          title: 'Os ' + who + ' estão bravos', text: 'Dois milhões de pessoas te escalaram no fantasy e você tirou nota negativa.',
+          options: [opt('Pedir desculpas aos ' + who, 'Fama +8 · Torcida +3'), opt('Ignorar', 'Técnico +2 · 30%: zoação pesada (Torcida −2)')],
+        };
+      },
       resolve: (c, ev, i, r) => {
         if (i === 0) { bump(c, 'fans', 3); return { ok: true, text: '"Semana que vem eu pago com juros." A internet perdoou.', fx: { fame: 8 } }; }
         bump(c, 'coach', 2);
@@ -1416,7 +1420,7 @@
         if (i === 0) {
           const lucky = r() < 0.5, joke = r() < 0.3;
           if (joke) bump(c, 'coach', -3);
-          return { ok: true, text: lucky ? 'Costurada e abençoada. A invencibilidade seguiu.' : 'A costura aguentou. A sorte, nem tanto.' + (joke ? ' E o vestiário descobriu.' : ''), fx: { fame: 4, form: lucky ? 0.04 : 0 } };
+          return { ok: true, text: (lucky ? 'Costurada e abençoada. A invencibilidade seguiu.' : 'A costura aguentou. A sorte, nem tanto.') + (joke ? ' E o vestiário descobriu.' : ''), fx: { fame: 4, form: lucky ? 0.04 : 0 } };
         }
         if (r() < 0.6) return { ok: true, text: 'Descobriu que a sorte era você mesmo.', fx: { form: 0.03 } };
         return { ok: false, text: 'Passou o jogo inteiro pensando na cueca.', fx: { form: -0.04 } };
@@ -1737,7 +1741,7 @@
     },
     {
       id: 'turne', icon: '🚌', tone: 'green', weight: 5, max: 1,
-      when: c => c.farewell && c.spells.length >= 2,
+      when: c => c.farewell && new Set(c.spells.filter(sp => sp.seasons).map(sp => sp.club)).size >= 2, // clubes diferentes (volta de empréstimo não conta)
       build: () => ({
         title: 'Turnê de despedida', text: 'Todos os clubes por onde você passou querem fazer uma homenagem quando você jogar lá.',
         options: [opt('Participar de todas', 'Fama +12 · Torcida +6 · forma −5%'), opt('Só no último jogo', 'Fama +4 · forma +3%')],
