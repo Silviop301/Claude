@@ -227,7 +227,7 @@
     const who = () => ({ name: st.name, pos: st.pos, number: st.num, look: view() });
     const isPv = (k, v) => prev && prev.k === k && String(prev.v) === String(v);
     const draw = () => {
-      // Só aparece o que está liberado; mais visuais saem nos pacotinhos (Meus itens mostra tudo)
+      // O visual é todo livre (o filtro só esconde o que ainda pedisse item)
       const free = (key, list) => list.filter(v => !lockOf(key, Array.isArray(v) ? v[0] : v));
       const sw = (key, all, bgOf, allNames) => { const list = free(key, all), names = allNames && list.map(v => allNames[all.indexOf(v)]); return list.length < 2 ? '' : '<div class="cr-sw">' + list.map((v, i) => {
         const it = lockOf(key, v), on = !it && String(lk[key]) === String(v);
@@ -274,7 +274,7 @@
       '<div class="cr-stage"><div class="cr-big" id="cr-big"></div><div class="cr-side"><div class="cr-lbl">No jornal</div><div class="cr-clip" id="cr-paper"></div>' +
       '<div class="cr-lbl">Comemorando</div><div class="cr-clip" id="cr-joy"></div></div></div>' +
       '<div class="cr-tabs">' + [['corpo', 'Corpo'], ['cabelo', 'Cabelo'], ['equip', 'Chuteira']].map(([k, l]) => '<button data-tab="' + k + '">' + l + '</button>').join('') + '</div>' +
-      '<div class="cr-rows" id="cr-rows"></div><p class="muted small cr-more">Cortes, barbas e chuteiras novas saem nos pacotinhos do fim de cada carreira.</p>' +
+      '<div class="cr-rows" id="cr-rows"></div>' +
       '<div class="inv-bar"><div id="cr-note"></div><button class="btn" id="b-go">Começar carreira</button></div>'
     );
     screen.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { st.tab = b.dataset.tab; prev = note = null; clearTimeout(noteT); draw(); });
@@ -286,20 +286,5 @@
     draw();
   }
 
-  // "Ver no meu jogador" (depois de abrir um pacotinho): nova carreira já vestindo o que saiu
-  function createWith(items) {
-    const st = newSt();
-    (items || []).forEach(it => {
-      if (it.cat === 'num') { st.num = it.n; st.numTouched = true; return; }
-      if (it.gk) st.pos = 'GOL';
-      // Só o que está liberado (ex.: a chuteira de raio vem com sola amarela só se a cor amarela já estiver liberada)
-      Object.entries(it.look || {}).forEach(([k, v]) => { if (LOOK_KEYS.includes(k) && !lockOf(k, v)) st.look[k] = v; });
-    });
-    const vis = (items || []).filter(it => it.cat !== 'num' && it.cat !== 'assinatura' && it.cat !== 'acabamento'); // assinatura e acabamento se escolhem no fim da carreira
-    if (!vis.length) return create(st);
-    st.tab = vis.some(it => it.cat === 'cabelo') ? 'cabelo' : 'equip';
-    looks(st);
-  }
-
-  Object.assign(U, { home, resume, create, createWith });
+  Object.assign(U, { home, resume, create });
 })();

@@ -113,6 +113,12 @@
     let tab = 'sign', msg = '';
     // Nome comprido: letra menor para caber no botão (as fontes de marcador são largas)
     const sigSize = shareName.length > 14 ? 15 : shareName.length > 10 ? 18 : shareName.length > 7 ? 21 : 24;
+    // Travado: de onde sai e a troca por fichas (ao trocar, já aplica na carta)
+    function lockNote(it, onTraded) {
+      msg = esc(it.name + ' · ' + I.RAR_NAME[it.rk] + ': sai nos pacotinhos.') + ' <button class="link-btn ed-trade" id="ed-trade">Trocar por ' + I.COST[it.rk] + ' fichas</button>';
+      drawEd();
+      const b = $('ed-trade'); if (b) b.onclick = () => U.tradeSheet(it.id, onTraded);
+    }
     function drawEd() {
       const box = $('ed-box');
       if (!box) return;
@@ -140,12 +146,12 @@
       });
       box.querySelectorAll('[data-sign]').forEach(b => b.onclick = () => {
         const k = b.dataset.sign, it = signLock(k);
-        if (it) { msg = esc('Assinatura ' + SG[k].label + ' · ' + I.RAR_NAME[it.rk] + ': sai nos pacotinhos ou na troca de fichas.'); return drawEd(); }
+        if (it) return lockNote(it, () => { msg = ''; cardData.sign = k; U.collectPatch(colAt, { sign: k }); redraw(); drawEd(); });
         msg = ''; cardData.sign = k; U.collectPatch(colAt, { sign: k }); redraw(); drawEd();
       });
       box.querySelectorAll('[data-fin]').forEach(b => b.onclick = () => {
         const k = b.dataset.fin, it = k && finLock(k);
-        if (it) { msg = esc(it.name + ' · ' + I.RAR_NAME[it.rk] + ': sai nos pacotinhos ou na troca de fichas.'); return drawEd(); }
+        if (it) return lockNote(it, () => { msg = ''; cardData.finish = k; U.collectPatch(colAt, { finish: k }); if (curSp !== 'final') curSp = 'final'; redraw(); drawEd(); });
         msg = ''; cardData.finish = k || undefined; U.collectPatch(colAt, { finish: k || undefined });
         if (curSp !== 'final') curSp = 'final';
         redraw(); drawEd();

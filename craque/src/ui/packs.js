@@ -1,4 +1,4 @@
-// Interface — pacotinhos: abrir (pranchas "Pacotinhos", tela 2), Meus itens e troca de fichas (tela 4),
+// Interface — pacotinhos: abrir (pranchas "Pacotinhos", tela 2) e troca de fichas (tela 4),
 // aviso no fim da carreira e bloco da tela inicial (tela 1). O sorteio fica em ui/items.js.
 (function () {
   const U = window.CRAQUE_UI;
@@ -158,7 +158,7 @@
       $('pk-stage').innerHTML = '<div class="pk-card ' + rarCls(it.rk) + '" id="pk-card"><div class="pk-in">' + itemArt(it) + '<i class="pk-sheen"></i></div>' +
         (g.dup ? '' : '<span class="pk-new">NOVO</span>') + '</div>' +
         '<div class="pk-info">' + (lend ? '<b class="pk-lend">LENDÁRIO</b>' : '') + '<span class="pk-rep" hidden>REPETIDO</span>' +
-        '<b class="pk-name">' + esc(it.name) + '</b>' + selo(it.rk) + '<span class="pk-desc" id="pk-desc">' + (g.dup ? 'Você já tinha este.' : it.cat === 'num' ? 'Já está liberado para a camisa.' : it.cat === 'assinatura' ? 'Para assinar a carta no fim da carreira.' : it.cat === 'acabamento' ? 'Para a carta final, no fim da carreira.' : 'Já está liberado no seu visual.') + '</span></div>' +
+        '<b class="pk-name">' + esc(it.name) + '</b>' + selo(it.rk) + '<span class="pk-desc" id="pk-desc">' + (g.dup ? 'Você já tinha este.' : it.cat === 'num' ? 'Já está liberado para a camisa.' : it.cat === 'assinatura' ? 'Para assinar a carta no fim da carreira.' : it.cat === 'acabamento' ? 'Para a carta final, no fim da carreira.' : esc(it.desc)) + '</span></div>' +
         '<div class="pk-foot"><div class="pk-dots">' + res.got.map((_, i) => '<i' + (i <= idx ? ' class="on"' : '') + '></i>').join('') + '</div>' +
         '<span>' + (idx < res.got.length - 1 ? 'Toque para o próximo' : 'Toque para ver o resumo') + '</span></div>';
       const card = $('pk-card');
@@ -213,64 +213,19 @@
         '<div class="pk-grid">' + res.got.map(g => '<div class="pk-t' + (g.dup ? ' dup' : '') + '"><div class="pk-tile ' + rarCls(g.it.rk) + '"><div class="pk-in">' + itemArt(g.it) + '</div>' +
           (g.dup ? '' : '<span class="pk-new sm">NOVO</span>') + '</div><b>' + esc(g.it.name) + '</b>' + (g.dup ? '<span class="pk-plus">+' + g.fichas + (g.fichas > 1 ? ' fichas' : ' ficha') + '</span>' : '') + '</div>').join('') + '</div>' +
         pityBox(res.pity, lend ? 'Saiu um lendário, então o contador recomeça.' : 'Mais um pacote conta para a garantia.') +
-        '<div class="pk-acts"><button class="btn" id="pk-wear">Ver no meu jogador</button>' +
-        (left ? '<button class="btn ghost" id="pk-next">Abrir o próximo (' + left + ')</button>' : '') +
+        '<div class="pk-acts">' +
+        (left ? '<button class="btn" id="pk-next">Abrir o próximo (' + left + ')</button>' : '') +
         '<button class="link-btn" id="pk-close">Fechar</button></div></div>';
       if (!reduced()) w.querySelectorAll('.pk-res > *').forEach((el, i) => el.animate([{ transform: 'translateY(24px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 380, delay: i * 60, easing: 'cubic-bezier(.2,1.2,.4,1)', fill: 'both' }));
       w.onclick = null;
       $('pk-close').onclick = close;
       if ($('pk-next')) $('pk-next').onclick = () => { res = null; idle(); };
-      const fresh = res.got.filter(g => !g.dup && g.it.look).map(g => g.it);
-      $('pk-wear').onclick = () => { clear(); w.remove(); U.createWith(fresh); };
     }
     w.addEventListener('click', () => {
       if (phase !== 'item' || busy) return;
       if (idx < res.got.length - 1) { idx++; showItem(); } else toResumo();
     });
     idle();
-  }
-
-  // ---------- Meus itens ----------
-  const TABS = [['num', 'Números'], ['cabelo', 'Cabelo e barba'], ['equip', 'Chuteiras'], ['cores', 'Cores'], ['assinatura', 'Assinatura'], ['acabamento', 'Acabamento']];
-  const ORD = rk => I.RAR.indexOf(rk);
-  function tile(it) {
-    const on = I.has(it.id), novo = on && I.get().news[it.id];
-    return '<button class="mi-t' + (on ? '' : ' off') + '" data-id="' + it.id + '"><span class="pk-tile ' + rarCls(it.rk) + (on ? '' : ' locked') + '"><span class="pk-in">' + itemArt(it) + '</span>' +
-      (on ? '' : '<span class="mi-lock">' + U.emo('🔒', 'xs') + '</span>') + (novo ? '<span class="pk-new sm">NOVO</span>' : '') + '</span>' +
-      '<b>' + esc(it.name) + '</b>' + selo(it.rk) + '</button>';
-  }
-  function numCell(n, sel) {
-    const it = I.itemOf('n' + n), on = I.has(it.id);
-    return '<button class="nb-c ' + rarCls(it.rk) + (on ? ' on' : '') + (sel === n ? ' sel' : '') + '" data-n="' + n + '" aria-label="Número ' + n + (on ? '' : ', travado') + '">' + n + '</button>';
-  }
-  const legend = () => '<div class="nb-leg"><span><i class="on"></i>Liberado</span>' + ['comum', 'raro', 'epico'].map(k => '<span><i class="' + rarCls(k) + '"></i>' + I.RAR_NAME[k] + '</span>').join('') + '</div>';
-  function myItems(tab) {
-    tab = tab || 'equip';
-    G.c = null; G.step = null; bar();
-    const inv = I.get(), ct = I.counts();
-    const catCount = c => { const l = c === 'num' ? Object.values(I.BY_ID).filter(it => it.cat === 'num') : I.CAT.filter(it => it.cat === c || (c === 'num' && it.cat === 'numeros'));
-      return l.filter(it => I.has(it.id)).length + '/' + l.length; };
-    let body;
-    if (tab === 'num') {
-      body = '<div class="mi-fx">' + I.CAT.filter(it => it.cat === 'numeros').map(tile).join('') + '</div>' + legend() +
-        '<div class="nb-grid">' + Array.from({ length: 99 }, (_, i) => numCell(i + 1)).join('') + '</div>';
-    } else {
-      body = '<div class="mi-grid">' + I.CAT.filter(it => it.cat === tab).sort((a, b) => ORD(a.rk) - ORD(b.rk)).map(tile).join('') + '</div>';
-    }
-    render('<div class="mi-top"><button class="back-link" id="b-back-home">‹ Início</button>' + ficha(inv.fichas + ' <small>fichas</small>', 'pill') + '</div>' +
-      '<h2>Meus itens</h2><div class="mi-prog"><span>Liberados</span><b>' + ct.got + ' / ' + ct.all + '</b><i><em style="width:' + Math.round(ct.got / ct.all * 100) + '%"></em></i></div>' +
-      '<div class="mi-tabs">' + TABS.map(([k, l]) => '<button data-tab="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + l + ' <small>' + catCount(k) + '</small></button>').join('') + '</div>' +
-      body + '<p class="muted small mi-note">Tocar num travado abre a troca por fichas. Repetidos dos pacotinhos viram fichas.</p>' +
-      (inv.packs.length ? '<button class="btn" id="mi-open">Abrir pacotinhos (' + inv.packs.length + ')</button>' : ''));
-    $('b-back-home').onclick = U.home;
-    document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => myItems(b.dataset.tab));
-    document.querySelectorAll('.mi-t').forEach(b => b.onclick = () => {
-      const id = b.dataset.id;
-      if (!I.has(id)) return tradeSheet(id, () => myItems(tab));
-      I.seen(id); const nw = b.querySelector('.pk-new'); if (nw) nw.remove();
-    });
-    document.querySelectorAll('.nb-c').forEach(b => b.onclick = () => { const id = 'n' + b.dataset.n; if (!I.has(id)) tradeSheet(id, () => myItems(tab)); });
-    if ($('mi-open')) $('mi-open').onclick = () => openPacks(() => myItems(tab));
   }
 
   // Trocar fichas por um item (folha de baixo)
@@ -302,22 +257,20 @@
       '<div class="pk-chips">' + why.map(x => '<span>' + esc(x.t) + ' <em>+' + x.n + '</em></span>').join('') + '</div></div>' +
       '<button class="btn" id="b-packs">Abrir agora</button><small>Ou depois, pela tela inicial</small></div>';
   }
-  // Bloco da tela inicial (tela 2b): pacotinhos, pênalti da sorte e meus itens num bloco só
+  // Bloco da tela inicial (tela 2b): pacotinhos e pênalti da sorte num bloco só
   function homeBlock() {
-    const inv = I.get(), ct = I.counts(), n = inv.packs.length, pen = U.penaltyReady ? U.penaltyReady() : false;
+    const inv = I.get(), n = inv.packs.length, pen = U.penaltyReady ? U.penaltyReady() : false;
     const row = (id, art, b, sub, btn, badge) => '<button class="hb-row" id="' + id + '"><span class="hb-art">' + art + (badge ? '<em class="hb-badge">' + badge + '</em>' : '') + '</span>' +
       '<span class="hb-t"><b>' + b + '</b><small>' + sub + '</small></span>' + btn + '</button>';
     return '<div class="hb">' +
       (n ? row('b-hb-packs', packHTML('mini'), 'Pacotinhos', n + ' para abrir', '<span class="hb-go gold">Abrir</span>', n) : '') +
       (pen ? row('b-hb-pen', U.emo('⚽', 'md'), 'Pênalti da sorte', 'Disponível agora', '<span class="hb-go">Chutar</span>') : '') +
-      row('b-hb-items', itemArt(I.BY_ID.chamas), 'Meus itens <small>' + ct.got + ' / ' + ct.all + '</small>', '<i class="hb-bar"><em style="width:' + Math.round(ct.got / ct.all * 100) + '%"></em></i>', '<span class="hb-chev">' + U.ICON['chevron-right'] + '</span>') +
       '</div>';
   }
   function bindHome() {
     if ($('b-hb-packs')) $('b-hb-packs').onclick = () => openPacks(U.home);
     if ($('b-hb-pen')) $('b-hb-pen').onclick = () => U.penalty();
-    if ($('b-hb-items')) $('b-hb-items').onclick = () => myItems();
   }
 
-  Object.assign(U, { openPacks, myItems, tradeSheet, itemImg, itemArt, packFinale: finaleBox, packHome: homeBlock, packHomeBind: bindHome, rarCls, raritySelo: selo });
+  Object.assign(U, { openPacks, tradeSheet, itemImg, itemArt, packFinale: finaleBox, packHome: homeBlock, packHomeBind: bindHome, rarCls, raritySelo: selo });
 })();

@@ -94,8 +94,8 @@
     function prize(i, saved) {
       const p = d.prizes[i];
       let res, html;
-      if (saved) { res = I.grant('fichas', null, CONSOLO); html = resultBox('O goleiro pegou', '<div class="pen-fichas">' + U.emo('🎟️', 'lg') + '<b>+' + CONSOLO + ' fichas</b></div>', 'Fichas compram itens em Meus itens.'); }
-      else if (p === 'fichas') { res = I.grant('fichas', null, FICHAS); html = resultBox('Gol! Saíram fichas', '<div class="pen-fichas">' + U.emo('🎟️', 'lg') + '<b>+' + FICHAS + ' fichas</b></div>', 'Fichas compram itens em Meus itens.'); }
+      if (saved) { res = I.grant('fichas', null, CONSOLO); html = resultBox('O goleiro pegou', '<div class="pen-fichas">' + U.emo('🎟️', 'lg') + '<b>+' + CONSOLO + ' fichas</b></div>', 'Fichas trocam por números, assinaturas e acabamentos.'); }
+      else if (p === 'fichas') { res = I.grant('fichas', null, FICHAS); html = resultBox('Gol! Saíram fichas', '<div class="pen-fichas">' + U.emo('🎟️', 'lg') + '<b>+' + FICHAS + ' fichas</b></div>', 'Fichas trocam por números, assinaturas e acabamentos.'); }
       else if (p === 'pacote') { res = I.grant('pacote'); html = resultBox('Gol! Saiu um pacotinho', '<div class="pen-pack">' + '<div class="pk-pack mini"><div class="pk-env"><span class="pk-k"></span><b class="pk-logo">CLIMBIX</b><span class="pk-band"></span></div></div></div>', 'Abra agora ou depois, pela tela inicial.'); }
       else {
         res = I.grant('item', p);
@@ -107,12 +107,11 @@
       }
       const after = $('pen-after');
       after.innerHTML = html +
-        (!saved && p === 'pacote' ? '<button class="btn" id="pen-open">Abrir agora</button>' : !saved && res.it && !res.dup ? '<button class="btn" id="pen-wear">Ver no meu jogador</button>' : '') +
+        (!saved && p === 'pacote' ? '<button class="btn" id="pen-open">Abrir agora</button>' : '') +
         '<button class="btn ghost" id="pen-home">Voltar para o início</button>';
       after.querySelector('.pen-res').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       $('pen-home').onclick = U.home;
       if ($('pen-open')) $('pen-open').onclick = () => U.openPacks(U.home);
-      if ($('pen-wear')) $('pen-wear').onclick = () => U.createWith([res.it]);
     }
   }
   const resultBox = (t, art, sub) => '<div class="pen-res"><span class="pen-rt">' + t + '</span>' + art + '<span class="pen-sub">' + sub + '</span></div>';
