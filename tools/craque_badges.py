@@ -200,6 +200,15 @@ SEARCH.update({
     "Nacional da Madeira": ("Clube Desportivo Nacional", "Portugal"), "Operário-MS": ("Operario Campo Grande", "Brazil"),
     "Universidad Católica (EQU)": ("Universidad Catolica del Ecuador", "Ecuador"), "Al-Arabi": ("Al Arabi", "Qatar"),
 })
+# Segundas divisões novas: nomes como a API conhece
+SEARCH.update({
+    "Queen's Park": ("Queens Park", "Scotland"), "Kalamata": ("Kalamata FC", "Greece"), "Makedonikos": ("Makedonikos Neapolis", "Greece"),
+    "Vaduz": ("FC Vaduz", "Liechtenstein"), "Bregenz": ("SW Bregenz", "Austria"), "Horsens": ("AC Horsens", "Denmark"),
+    "Recoleta": ("Deportes Recoleta", "Chile"), "San Luis": ("San Luis de Quillota", "Chile"), "Independiente CG": ("Independiente FBC", "Paraguay"),
+    "River Plate (PAR)": ("River Plate Asuncion", "Paraguay"), "Oriental": ("Oriental de La Paz", "Uruguay"), "Torque": ("Montevideo City Torque", "Uruguay"),
+    "Atlético FC": ("Atletico FC Cali", "Colombia"), "Leones FC": ("Leones", "Colombia"), "Al-Arabi (KSA)": ("Al Arabi Unaizah", "Saudi Arabia"),
+    "Al-Tai": ("Al Taee", "Saudi Arabia"), "San Antonio FC": ("San Antonio FC", "USA"), "Al-Shahania": ("Al Shahaniya", "Qatar"),
+})
 # Convidados do Mundial de Clubes (fora das ligas do jogo): id do escudo -> (busca, país)
 EXTRA = {"cwc-0": ("Al Ahly", "Egypt"), "cwc-1": ("Mamelodi Sundowns", "South Africa"), "cwc-2": ("Esperance", "Tunisia"),
          "cwc-3": ("Wydad Casablanca", "Morocco"), "cwc-4": ("Auckland City", "New Zealand")}
