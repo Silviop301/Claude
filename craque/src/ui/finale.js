@@ -27,6 +27,9 @@
   function finale() {
     const f = S.finish(G.c);
     const ach = U.achRecord(G.c, f);
+    // Pacotinhos da carreira: fim de carreira, nota, títulos grandes, conquistas novas e carreira do dia
+    const packWhy = U.ITEMS.careerWhy(G.c, f, ach);
+    U.ITEMS.earn(packWhy);
     U.rankSave(G.c, f); // carreira encerrada: entra no ranking com a pontuação
     const T = G.c.totals;
     store(SAVE, { c: null, at: Date.now() });
@@ -56,7 +59,8 @@
       ((G.c.cards || []).length ? '<div class="crest-pick-t">Suas cartas · toque para ver e compartilhar</div><div class="sp-cards">' +
         '<canvas data-sp="final" class="on" aria-label="Carta final"></canvas>' + G.c.cards.map((k, i) => '<canvas data-sp="' + i + '" aria-label="' + esc(U.SPECIAL_NAME[k.type]) + '"></canvas>').join('') + '</div>' : '') +
       (clubsPlayed.length > 1 ? '<div id="crest-wrap"><div class="crest-pick-t">Escudo da carta</div><div class="crest-pick" id="crest-pick">' + clubsPlayed.map(id => '<button data-club="' + id + '"' + (id === f.mainClub ? ' class="on"' : '') + ' aria-label="' + esc(club(id).name) + '">' + crest(id) + '<span>' + esc(club(id).name) + '</span></button>').join('') + '</div></div>' : '') +
-      '<button class="btn" id="b-share">Compartilhar carta</button><button class="btn ghost" id="b-save">Salvar imagem da carta</button>' +
+      U.packFinale(packWhy) +
+      '<button class="btn' + (packWhy.length ? ' ghost' : '') + '" id="b-share">Compartilhar carta</button><button class="btn ghost" id="b-save">Salvar imagem da carta</button>' +
       (Object.keys(G.c.trophies || {}).length ? '<button class="btn ghost" id="b-sala-car">' + U.emo('🏆', 'sm') + ' Sala de Troféus da carreira</button>' : '') +
       (G.c.seasons.length ? '<button class="btn ghost" id="b-album">' + U.emo('📖', 'sm') + ' Ver o álbum da carreira</button>' : '') +
 
@@ -116,6 +120,7 @@
     });
     // Compartilhar: link que abre a carta 3D no jogo; a imagem continua disponível
     $('b-share').onclick = () => U.shareCard(shown, $('b-share'));
+    if ($('b-packs')) $('b-packs').onclick = () => U.openPacks(() => { const b = screen.querySelector('.pk-won'); if (b && !U.ITEMS.get().packs.length) b.remove(); });
     $('b-save').onclick = async () => {
       const r = await window.CRAQUE_SHARE(cv, shareName);
       if (r === 'download') $('b-save').textContent = 'Imagem salva';

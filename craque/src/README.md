@@ -20,6 +20,9 @@ Scripts clássicos (sem build), carregados pelo `index.html` nesta ordem.
 | `ui/paper.js` | Jornal: capa, foto ilustrada, coluna do cronista e edições extras |
 | `ui/walkout.js` | Revelação de carta (nova faixa ou carta especial) e desgaste da carta |
 | `ui/album.js` | Álbum do fim de carreira (stories por temporada) e imagem para compartilhar |
+| `ui/items.js` | Itens para liberar (pacotinhos): catálogo com raridades, inventário no aparelho (`climbix-itens-v1`, também na nuvem), sorteio do pacote, garantia de lendário e fichas |
+| `ui/packs.js` | Abrir o pacotinho, Meus itens, troca de fichas, aviso no fim da carreira e bloco da tela inicial |
+| `ui/penalty.js` | Pênalti da sorte: 1 chute por dia, prêmios sorteados antes do toque |
 | `ui/core.js` | Estado compartilhado (`G.c` = carreira, `G.step` = etapa), ajudantes, salvar, barra |
 | `ui/start.js` … `ui/finale.js` | Uma tela (ou grupo de telas) por arquivo; registram funções em `CRAQUE_UI` |
 | `main.js` | Ponto de partida |

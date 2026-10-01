@@ -4,11 +4,21 @@
 // Poses do jornal: normal, celebra, taca (ergue a taça), triste, adeus, assina (segura a camisa nova), maca (lesão).
 (function () {
   const SKIN = ['#F6D9BE', '#F1C7A0', '#E0AC80', '#C68A5E', '#A86E48', '#8D5A3B', '#6B4128', '#4A2B18'];
-  const HAIR_COLORS = ['#1E140C', '#5A3A1E', '#C9A05A', '#A8452A', '#E8E2D0'];
+  // 0 preto, 1 castanho, 2 loiro, 3 ruivo, 4 grisalho · itens de pacotinho: 5 platinado, 6 azul, 7 rosa, 8 verde
+  const HAIR_COLORS = ['#1E140C', '#5A3A1E', '#C9A05A', '#A8452A', '#E8E2D0', '#F4EAB8', '#2F6FD6', '#FF4FA3', '#4FC36B'];
   const HAIRS = ['curto', 'raspado', 'topete', 'black', 'trancas', 'dreads', 'moicano', 'longo', 'careca'];
   const BEARDS = ['nenhuma', 'rala', 'bigode', 'cavanhaque', 'cheia'];
-  const GEAR = { preto: '#1B1A17', branco: '#F4F2EA', vermelho: '#D8404A', azul: '#2F6FD6', neon: '#7CF03C', rosa: '#FF4FA3', laranja: '#FF8A1F', amarelo: '#F2D630', ouro: 'url(#g-ouro)', holo: 'url(#g-holo)', lima: '#B8F25C' };
-  const SWATCH = { ouro: 'linear-gradient(135deg, #FFE68A, #F2C230 50%, #B98700)', holo: 'linear-gradient(135deg, #8FE3FF, #C79BFF 35%, #FF9BD5 65%, #FFE38F)' };
+  const GEAR = { preto: '#1B1A17', branco: '#F4F2EA', vermelho: '#D8404A', azul: '#2F6FD6', neon: '#7CF03C', rosa: '#FF4FA3', laranja: '#FF8A1F', amarelo: '#F2D630', ouro: 'url(#g-ouro)', holo: 'url(#g-holo)', lima: '#B8F25C',
+    // Estampas (pacotinho): chuteira camuflada, de raio e em chamas; luva tigrada
+    camuflada: 'url(#p-camo)', raio: 'url(#p-raio)', chamas: 'url(#p-chamas)', tigre: 'url(#p-tigre)' };
+  const SWATCH = { ouro: 'linear-gradient(135deg, #FFE68A, #F2C230 50%, #B98700)', holo: 'linear-gradient(135deg, #8FE3FF, #C79BFF 35%, #FF9BD5 65%, #FFE38F)',
+    camuflada: 'radial-gradient(circle at 30% 30%, #3E4628 22%, transparent 24%), radial-gradient(circle at 70% 65%, #A39A63 24%, transparent 26%), #6B7444',
+    raio: 'linear-gradient(120deg, #1B1A17 40%, #F2D630 41% 55%, #1B1A17 56%)', chamas: 'linear-gradient(0deg, #FF6A1F, #FFD23F 45%, #1B1A17 46%)',
+    tigre: 'repeating-linear-gradient(160deg, #FF8A1F 0 5px, #1B1A17 5px 7px)' };
+  const PATTERNS = '<pattern id="p-camo" width="9" height="7" patternUnits="userSpaceOnUse"><rect width="9" height="7" fill="#6B7444"/><ellipse cx="2" cy="2" rx="2.4" ry="1.4" fill="#3E4628"/><ellipse cx="6.5" cy="5" rx="2.6" ry="1.5" fill="#A39A63"/><ellipse cx="7.4" cy="1.2" rx="1.4" ry="1" fill="#2A2D1C"/></pattern>' +
+    '<pattern id="p-raio" width="7" height="9" patternUnits="userSpaceOnUse" patternTransform="translate(0 183.5)"><rect width="7" height="9" fill="#1B1A17"/><path d="M4.4 0L1.8 4.6H4.6L2.4 9" stroke="#F2D630" stroke-width="1.3" fill="none" stroke-linejoin="round"/></pattern>' +
+    '<pattern id="p-chamas" width="6" height="9" patternUnits="userSpaceOnUse" patternTransform="translate(0 183.4)"><rect width="6" height="9" fill="#1B1A17"/><path d="M0 9C.4 6 2 6 1.6 2.4C3.2 4 3.6 6 3.4 6.8C4.2 5.6 5.2 5.2 4.9 3.4C6 5.2 6 7.6 5.6 9Z" fill="#FF6A1F"/><path d="M1.2 9C1.4 7.6 2.4 7.2 2.3 5.8C3.2 6.8 3.5 7.9 3.3 9Z" fill="#FFD23F"/></pattern>' +
+    '<pattern id="p-tigre" width="5" height="4" patternUnits="userSpaceOnUse"><rect width="5" height="4" fill="#FF8A1F"/><path d="M0 1.2Q2.5 2.2 5 .8M0 3.2Q2.5 4.2 5 2.8" stroke="#1B1A17" stroke-width=".8" fill="none"/></pattern>';
   const DEF = { skin: 3, hair: 'curto', hc: 0, beard: 'nenhuma', band: 'nenhuma', bandC: 'branco', tattoo: 'nenhuma', tattooSide: 'direito', boot: 'preto', sole: 'branco', sock: 'alto', sleeve: 'curta', wrist: 'nenhuma', wristC: 'branco', glove: 'lima' };
   const OL = '#262321', OW = 2.2, SHADE = 'rgba(0,0,0,.14)';
   const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
@@ -82,6 +92,24 @@
     adeus: [[[44, 57], [36, 78], [50, 37]], [[76, 57], [90, 38], [96, 16]]],
     assina: [[[44, 57], [33, 74], [33, 84]], [[76, 57], [87, 74], [87, 84]]],
   };
+  // Acessórios de pacotinho (c.look.extra), desenhados por cima do boneco, no mesmo traço.
+  // Fita do Bonfim e faixa de capitão acompanham o braço da pose.
+  const NUM_FX = { ouro: 'url(#g-ouro)', holo: 'url(#g-holo)' };
+  const band2 = (s, e, t0, t1, col, w) => limb([lerp(s, e, t0), lerp(s, e, t1)], col, w, 'butt');
+  const EXTRA = {
+    capitao: o => { const [s, e] = o.R, m = lerp(s, e, .37);
+      return band2(s, e, .27, .47, '#F2D630', 12.4) + '<text x="' + f2(m[0]) + '" y="' + f2(m[1] + 2) + '" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="5.6" fill="' + OL + '">C</text>'; },
+    bonfim: o => { const [, e, h] = o.L, m = lerp(e, h, .74), p = f2(m[0] - 3.8) + ' ' + f2(m[1]);
+      return band2(e, h, .71, .77, '#2F6FD6', 8.2) + '<path d="M' + p + 'l-2.2 3.8M' + p + 'l-3.4 2" stroke="' + OL + '" stroke-width="2.6" stroke-linecap="round"/><path d="M' + p + 'l-2.2 3.8M' + p + 'l-3.4 2" stroke="#2F6FD6" stroke-width="1.1" stroke-linecap="round"/>'; },
+    cordao: () => '<path d="M54.2 50.4Q60 61.4 65.8 50.4" stroke="' + OL + '" stroke-width="2.8" fill="none" stroke-linecap="round"/><path d="M54.2 50.4Q60 61.4 65.8 50.4" stroke="#F2C230" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-dasharray="1.2 .5"/>' +
+      '<circle cx="60" cy="58.4" r="2.3" fill="url(#g-ouro)" stroke="' + OL + '" stroke-width="1.2"/>',
+    brinco: () => '<circle cx="46.4" cy="34.4" r="1.25" fill="url(#g-ouro)" stroke="' + OL + '" stroke-width=".8"/><circle cx="73.6" cy="34.4" r="1.25" fill="url(#g-ouro)" stroke="' + OL + '" stroke-width=".8"/>',
+    caneleira: () => [47.5, 63].map(x => '<rect x="' + x + '" y="152.5" width="9.6" height="20" rx="3.2" fill="#F4F2EA" stroke="' + OL + '" stroke-width="1.8"/><rect x="' + (x + 2.6) + '" y="156" width="4.4" height="13" rx="1.4" fill="#22A45D"/>').join(''),
+    // Listras no meião alto (no arriado não aparecem)
+    listrado: o => (o.lk.sock === 'arriado' ? '' : [52, 68].map(x => [166.5, 172.5, 178.5].map(y => '<rect x="' + (x - 5.2) + '" y="' + y + '" width="10.4" height="2.6" fill="' + o.kit[1] + '"/>').join('')).join('')),
+    risco: o => (o.lk.hair === 'careca' ? '' : '<path d="M48.6 25.6Q50.2 20.6 55 17.6" stroke="' + o.skin + '" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M49.8 27.4Q51.4 22.8 55.6 20.2" stroke="' + o.skin + '" stroke-width="1" fill="none" stroke-linecap="round"/>'),
+    coque: o => (o.lk.hair === 'careca' ? '' : '<circle cx="60" cy="9.8" r="4.8" fill="' + o.hcol + '" stroke="' + OL + '" stroke-width="2.2"/><path d="M56.2 13.8Q60 15.4 63.8 13.8" stroke="' + OL + '" stroke-width="1.6" fill="none" stroke-linecap="round"/>'),
+  };
   // opts: { crop: true } enquadra só o jogador; { bust: true } só da cintura para cima (carta);
   // { flat: true } sem estádio; { num: '9' } número na camisa
   let uid = 0;
@@ -105,7 +133,7 @@
     const [hBack, hFront] = hairParts(lk.hair, hcol);
     const long = lk.sleeve === 'comprida';
     const defs = '<defs><linearGradient id="g-ouro" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE68A"/><stop offset=".5" stop-color="#F2C230"/><stop offset="1" stop-color="#B98700"/></linearGradient>' +
-      '<linearGradient id="g-holo" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8FE3FF"/><stop offset=".35" stop-color="#C79BFF"/><stop offset=".65" stop-color="#FF9BD5"/><stop offset="1" stop-color="#FFE38F"/></linearGradient></defs>';
+      '<linearGradient id="g-holo" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8FE3FF"/><stop offset=".35" stop-color="#C79BFF"/><stop offset=".65" stop-color="#FF9BD5"/><stop offset="1" stop-color="#FFE38F"/></linearGradient>' + PATTERNS + '</defs>';
     let bg = '';
     if (!opts.flat) {
       let crowd = '';
@@ -154,6 +182,8 @@
       return o;
     };
     // Pernas
+    const extra = Array.isArray(lk.extra) ? lk.extra : [];
+    if (extra.includes('caneleira')) lk.sock = 'arriado'; // a caneleira aparece com o meião arriado
     const sockTop = lk.sock === 'arriado' ? 175 : 158;
     const leg = (hip, knee, ank, tk) => {
       let o = limb([hip, knee, ank], skin, 9.6);
@@ -169,7 +199,8 @@
         '<rect x="' + Math.min(+X(-5.6), +X(12.4)) + '" y="191.4" width="18" height="3.4" rx="1.5" fill="' + g(lk.sole) + '" stroke="' + OL + '" stroke-width="1.6"/>';
     };
     const happy = pose === 'celebra' || pose === 'taca', sad = pose === 'triste' || pose === 'adeus';
-    const brow = lk.hair === 'careca' || lk.hair === 'raspado' || lk.hc === 4 ? '#3A2A1E' : hcol;
+    // Sobrancelha escura com careca, raspado, grisalho e as cores de pacotinho (platinado e pintado)
+    const brow = lk.hair === 'careca' || lk.hair === 'raspado' || lk.hc === 4 || lk.hc >= 5 ? '#3A2A1E' : hcol;
     const face = '<path d="M52.6 27.2Q55.2 25.8 57.6 27M62.4 27Q64.8 25.8 67.4 27.2" stroke="' + brow + '" stroke-width="1.8" stroke-linecap="round" fill="none"/>' +
       '<ellipse cx="55.4" cy="31" rx="1.35" ry="1.75" fill="' + OL + '"/><ellipse cx="64.6" cy="31" rx="1.35" ry="1.75" fill="' + OL + '"/>' +
       '<path d="M60.4 32.4Q62 35.6 59.4 36" stroke="rgba(0,0,0,.35)" stroke-width="1.1" stroke-linecap="round" fill="none"/>' +
@@ -197,13 +228,15 @@
       shape('M55 38h10v15h-10Z', skin) + '<path d="M55.6 44h8.8v4h-8.8Z" fill="rgba(0,0,0,.16)"/>' +
       shape(torso, k1) + '<path d="M70.6 51.6Q78 52.6 78.6 57L77.2 103.6Q73.6 104.8 71 105Z" fill="' + SHADE + '"/>' +
       '<path d="M54.6 50L60 57.4L65.4 50" stroke="' + k2 + '" stroke-width="2.8" stroke-linejoin="round" fill="none"/>' +
-      (opts.num ? '<text x="60" y="85" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" fill="' + k2 + '">' + opts.num + '</text>' : '') +
+      (opts.num ? '<text x="60" y="85" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" fill="' +
+        (NUM_FX[lk.numFx] ? NUM_FX[lk.numFx] + '" stroke="' + OL + '" stroke-width=".8' : k2) + '">' + opts.num + '</text>' : '') +
       shape('M42.6 102.6H77.4L78.6 123.6Q71.4 126 62.6 124.2L60 115.6L57.4 124.2Q48.6 126 41.4 123.6Z', k2) +
       '<path d="M44.6 104L43.8 123.4M75.4 104L76.2 123.4" stroke="' + k1 + '" stroke-width="2"/>' +
       '<circle cx="46.8" cy="31.6" r="3.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/><circle cx="73.2" cy="31.6" r="3.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/>' +
       '<ellipse cx="60" cy="30.4" rx="13.2" ry="15.4" fill="' + skin + '" stroke="' + OL + '" stroke-width="' + OW + '"/>' +
       '<path d="M66.4 16.6Q73.6 21 73.2 31.4Q72.8 40 66 44.6Q71.2 36 70.6 28Q70 21 66.4 16.6Z" fill="' + SHADE + '"/>' +
-      beardOf(lk.beard, hcol) + face + hFront + band + (handUp ? arm(L, 'direito') : '') + held + cup + '</svg>';
+      beardOf(lk.beard, lk.hc >= 6 ? '#3A2A1E' : hcol) + face + hFront + band + (handUp ? arm(L, 'direito') : '') + held + cup +
+      extra.map(x => (EXTRA[x] ? EXTRA[x]({ L, R, kit, skin, hcol, lk }) : '')).join('') + '</svg>';
   }
   // Lesão: deitado na maca, com o médico ao lado
   function stretcher(kit, c, opts) {

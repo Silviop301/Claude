@@ -1,6 +1,6 @@
 // Interface — conta e save na nuvem (servidor em climbix.app/api/account.php).
 // Com login, o jogo junta o que está no aparelho com o que está na nuvem e guarda de volta:
-// carreira em andamento (vale a mais recente), coleção, Hall da Fama, conquistas e carreira do dia.
+// carreira em andamento (vale a mais recente), coleção, Hall da Fama, conquistas, carreira do dia e itens.
 // Entrar com Google, GitHub ou Discord (api/oauth.php): o aparelho guarda um "verifier", vai para o serviço e volta
 // com #climbix-oauth=<código>. O código só vale junto com o verifier deste aparelho.
 (function () {
@@ -9,7 +9,7 @@
   const API = window.CLIMBIX_ACCOUNT_API || (/climbix\.app$/.test(location.hostname) ? '/api/account.php' : 'https://climbix.app/api/account.php');
   const OAPI = API.replace(/account\.php$/, 'oauth.php');
   const AKEY = 'climbix-account', PKEY = 'climbix-player', OKEY = 'climbix-oauth';
-  const KEYS = { save: SAVE, hall: HALL, col: 'climbix-colecao-v1', ach: 'craque-ach-v1', daily: 'craque-daily-v1', sala: 'climbix-sala-v1' };
+  const KEYS = { save: SAVE, hall: HALL, col: 'climbix-colecao-v1', ach: 'craque-ach-v1', daily: 'craque-daily-v1', sala: 'climbix-sala-v1', itens: 'climbix-itens-v1' };
   // keepalive deixa o save terminar de subir com o app fechando, mas o navegador recusa corpo acima de 64 KB:
   // save grande (coleção cheia) vai sem keepalive
   const post = (a, body, url) => { const b = JSON.stringify(body);
@@ -41,6 +41,8 @@
     o.hall = hall.length ? hall.sort((x, y) => y.score - x.score).slice(0, 10) : null;
     // Sala de Troféus: todas as taças das duas (a mesma conquista não entra duas vezes)
     o.sala = U.salaMerge ? U.salaMerge(a.sala, b.sala) : a.sala || b.sala || null;
+    // Itens (pacotinhos): todos os liberados nos dois aparelhos
+    o.itens = U.ITEMS ? U.ITEMS.merge(a.itens, b.itens) : a.itens || b.itens || null;
     // Conquistas: todas as das duas
     o.ach = Object.assign({}, b.ach || {}, a.ach || {});
     // Carreira do dia: o melhor resultado de cada dia
@@ -48,7 +50,7 @@
     Object.entries(a.daily || {}).forEach(([d, r]) => { if (!o.daily[d] || (r && r.score > o.daily[d].score)) o.daily[d] = r; });
     return o;
   }
-  function apply(m) { for (const k in KEYS) if (m[k] !== undefined && m[k] !== null) raw(KEYS[k], m[k]); }
+  function apply(m) { for (const k in KEYS) if (m[k] !== undefined && m[k] !== null) raw(KEYS[k], m[k]); if (U.ITEMS) U.ITEMS.reset(); }
   // Grava sem avisar a nuvem de novo (evita laço)
   const raw = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sem espaço */ } };
 
