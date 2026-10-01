@@ -1,4 +1,4 @@
-// Nas redes: posts do jogador (só texto) com a reação da torcida e de famosos.
+// Nas redes: posts do jogador no formato de tweet (X), com as respostas da torcida e de famosos com a reação da torcida e de famosos.
 // Quanto mais fama, mais famosos comentam. O jogador posta quando quer: no fim da temporada, depois de um
 // evento ou do lance decisivo; anunciar a última temporada já sai como post.
 // U.postBtn() devolve o botão; U.postBind(ctx, next) liga o botão; U.socialPost(ctx, next) abre a tela do post.
@@ -184,24 +184,42 @@
     p.text = cap(fill(p.text)); coms.forEach(x => { x.t = fill(x.t); });
     const likes = Math.round(80 * Math.pow(1.035, Math.min(320, fame)) * (p.mood === 'bye' ? 3 : p.mood === 'up' ? 1.4 : 0.8));
     const me = slug(c.name) + (c.number || 10);
-    const ava = h => '<span class="sp-ava">' + esc(h[0].toUpperCase()) + '</span>';
+    // Formato de tweet (X): sem foto; avatar com a inicial na cor do nome
+    const COLORS = ['#1D9BF0', '#F91880', '#7856FF', '#00BA7C', '#FF7A00', '#E0245E', '#8B6CEF', '#16A3B5'];
+    const ava = (h, big) => '<span class="xw-ava' + (big ? ' big' : '') + '" style="background:' + COLORS[[...h].reduce((a, ch) => a + ch.charCodeAt(0), 0) % COLORS.length] + '">' + esc(h[0].toUpperCase()) + '</span>';
+    const XCHK = '<svg class="xw-chk" viewBox="0 0 22 22" aria-label="verificado"><path d="M20.4 11c0-1.4-.9-2.7-2.2-3.2.5-1.3.2-2.8-.8-3.8s-2.5-1.3-3.8-.8C13.1 1.9 11.8 1 10.4 1S7.7 1.9 7.2 3.2c-1.3-.5-2.8-.2-3.8.8s-1.3 2.5-.8 3.8C1.3 8.3.4 9.6.4 11s.9 2.7 2.2 3.2c-.5 1.3-.2 2.8.8 3.8s2.5 1.3 3.8.8c.5 1.3 1.8 2.2 3.2 2.2s2.7-.9 3.2-2.2c1.3.5 2.8.2 3.8-.8s1.3-2.5.8-3.8c1.3-.5 2.2-1.8 2.2-3.2Z" fill="#1D9BF0"/><path d="m6.8 11.2 2.7 2.7 5.6-5.8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    const IC = {
+      rep: '<svg viewBox="0 0 24 24"><path d="M1.8 10c0-4.4 3.6-8 8-8h4.4c4.4 0 8.1 3.6 8.1 8.1 0 2.9-1.6 5.6-4.1 7L10 21.3V18h-.1c-4.5.1-8.1-3.5-8.1-8Z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
+      rt: '<svg viewBox="0 0 24 24"><path d="M4.5 3.9 8.9 8H6v8a2 2 0 0 0 2 2h5v2H8a4 4 0 0 1-4-4V8H1.1l4.4-4.1M19.5 20.1 15.1 16H18V8a2 2 0 0 0-2-2h-5V4h5a4 4 0 0 1 4 4v8h2.9l-4.4 4.1Z" fill="currentColor"/></svg>',
+      like: '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.3C.7 7.8 3.4 4 7.2 4c2.1 0 3.6 1.1 4.8 2.8C13.2 5.1 14.7 4 16.8 4c3.8 0 6.5 3.8 4.8 7.7C19.5 16.4 12 21 12 21Z" fill="currentColor"/></svg>',
+      view: '<svg viewBox="0 0 24 24"><path d="M5 21V10M10 21V3M15 21v-8M20 21V7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    };
+    const nRep = Math.max(coms.length, Math.round(likes / 20)), nRt = Math.round(likes / 7), nView = likes * 18;
+    const hrs = i => (i < 2 ? '1 h' : (1 + Math.floor(i / 2)) + ' h');
+    const acts = (r, t, l, v, on) => '<div class="xw-acts"><span>' + IC.rep + num(r) + '</span><span>' + IC.rt + num(t) + '</span><span' + (on ? ' class="on"' : '') + '>' + IC.like + num(l) + '</span><span>' + IC.view + num(v) + '</span></div>';
+    const when = String(10 + (likes % 12)).padStart(2, '0') + ':' + String(likes % 60).padStart(2, '0');
     render(
-      '<div class="eyebrow">Temporada ' + year() + ' · ' + c.age + ' anos</div><h1 class="sp-h1">Nas redes</h1><span class="sp-tag">Post do jogador</span>' +
+      '<div class="eyebrow">Temporada ' + year() + ' · ' + c.age + ' anos</div>' +
       '<p class="sp-fx' + (fx.none ? ' none' : fx.won === false ? ' ko' : '') + '">' + esc(fx.none ? fx.lbl : fx.res) + '</p>' +
-      '<div class="card sp-card"><div class="sp-head">' + ava(me) + '<div><b>' + esc(me) + '</b>' + (fame >= 80 ? CHECK : '') + '<small>' + esc(club(c.club).name) + ' · há 2 horas</small></div></div>' +
-      '<p class="sp-text">' + esc(p.text) + '</p>' +
-      '<div class="sp-stats"><span>' + HEART + ' <b>' + num(likes) + '</b></span><i></i><span>' + BUBBLE + ' <b>' + num(Math.max(coms.length, Math.round(likes / 20))) + '</b></span></div>' +
-      '<h3 class="sp-ch">Comentários</h3>' +
-      coms.map((x, i) => '<div class="sp-com">' + ava(x.h) + '<div><b>' + esc(x.h) + '</b>' + (x.v ? CHECK : '') + '<small>' + (i < 2 ? 'há 1 hora' : 'há ' + (1 + Math.floor(i / 2)) + ' horas') + '</small><p>' + esc(x.t) + '</p>' +
-        (x.hater ? '<div class="sp-reply" id="sp-hater"><button class="sp-hbtn" id="b-hater">Responder o hater<small>' + (fx.none ? 'Sem efeito' : '50%: Fama +6 · 50%: Técnico −3') + '</small></button></div>' : '') + '</div></div>').join('') +
-      '</div><p class="sp-note">Comentários fictícios para a simulação do jogo.</p>' +
+      '<article class="xw">' +
+      '<div class="xw-main"><header class="xw-head">' + ava(c.name, true) + '<div><b>' + esc(c.name) + '</b>' + (fame >= 80 ? XCHK : '') + '<small>@' + esc(me) + '</small></div></header>' +
+      '<p class="xw-text">' + esc(p.text) + '</p>' +
+      '<p class="xw-when">' + when + ' · ' + year() + ' · <b>' + num(nView) + '</b> visualizações</p>' +
+      '<div class="xw-sum"><span><b>' + num(nRt) + '</b> reposts</span><span><b>' + num(likes) + '</b> curtidas</span></div>' +
+      acts(nRep, nRt, likes, nView, true).replace('xw-acts', 'xw-acts big') + '</div>' +
+      coms.map((x, i) => '<div class="xw-rep">' + ava(x.h) + '<div class="xw-rc"><p class="xw-rh"><b>' + esc(x.h.replace(/[._]/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase())) + '</b>' + (x.v ? XCHK : '') + ' <small>@' + esc(x.h) + ' · ' + hrs(i) + '</small></p>' +
+        '<p class="xw-rt"><small>Em resposta a <em>@' + esc(me) + '</em></small>' + esc(x.t) + '</p>' +
+        (x.hater ? '<div class="sp-reply" id="sp-hater"><button class="sp-hbtn" id="b-hater">Responder o hater<small>' + (fx.none ? 'Sem efeito' : '50%: Fama +6 · 50%: Técnico −3') + '</small></button></div>' : '') +
+        acts(1 + ((i * 3 + likes) % 9), (i * 5 + likes) % 14, 3 + ((i * 7 + likes) % 60), 200 + ((i * 131 + likes) % 4000)) + '</div></div>').join('') +
+      '</article>' +
+      '<p class="sp-note">Post e respostas fictícios, da simulação do jogo.</p>' +
       '<button class="btn" id="b-post-next">Continuar</button>'
     );
     $('b-post-next').onclick = next;
     const hb = $('b-hater');
     if (hb) hb.onclick = () => {
       const out = replyFx(fx);
-      $('sp-hater').innerHTML = '<b>' + esc(me) + '</b>' + (fame >= 80 ? CHECK : '') + '<p>' + esc(fill(fresh('c.reply', D.SOCIAL.replies))) + '</p><small class="sp-out">' + esc(out) + '</small>';
+      $('sp-hater').innerHTML = '<div class="xw-rep self">' + ava(c.name) + '<div class="xw-rc"><p class="xw-rh"><b>' + esc(c.name) + '</b>' + (fame >= 80 ? XCHK : '') + ' <small>@' + esc(me) + ' · agora</small></p><p class="xw-rt">' + esc(fill(fresh('c.reply', D.SOCIAL.replies))) + '</p><small class="sp-out">' + esc(out) + '</small></div></div>';
     };
   }
 
