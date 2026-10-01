@@ -95,8 +95,22 @@
   const lockOf = (k, v) => { const id = I.need(k, v); return id && !I.has(id) ? I.itemOf(id) : null; };
   // Número padrão da posição, se liberado; senão o liberado mais perto
   const defNum = pos => I.nearestNum(D.POS_NUM[pos] || 10);
+  // Visual sorteado só com as peças liberadas (o dado da criação e a primeira carreira)
+  const BOOTS = BASIC.concat(['prata', 'ouro', 'cromo', 'holo', 'bicolor', 'listrada', 'pontilhada', 'galaxia', 'camuflada', 'camoneon', 'onca', 'brasil', 'raio', 'chamas', 'cristal']);
+  function rollLook(lk) {
+    const p = (k, list) => pick(list.filter(v => !lockOf(k, v)));
+    return Object.assign(lk, { skin: Math.floor(Math.random() * A.SKIN.length), hair: p('hair', A.HAIRS), hc: p('hc', [0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8]), beard: p('beard', A.BEARDS),
+      band: p('band', ['nenhuma', 'nenhuma', 'faixa', 'tiara']), bandC: p('bandC', BASIC), tatBD: p('tatBD', ['nenhuma', 'nenhuma', 'pequena', 'fechado']), tatBE: p('tatBE', ['nenhuma', 'nenhuma', 'pequena', 'fechado']),
+      tatPD: p('tatPD', ['nenhuma', 'nenhuma', 'nenhuma', 'pequena', 'fechado']), tatPE: p('tatPE', ['nenhuma', 'nenhuma', 'nenhuma', 'pequena', 'fechado']),
+      boot: p('boot', BOOTS), sole: p('sole', BASIC), sock: p('sock', ['alto', 'arriado']), sleeve: p('sleeve', ['curta', 'curta', 'comprida']),
+      wrist: p('wrist', ['nenhuma', 'uma', 'duas']), wristC: p('wristC', BASIC), cel: p('cel', CEL_NAME.map(c => c[0])),
+      extra: Object.keys(EXTRA_NAME).filter(id => !lockOf('extra', id) && Math.random() < 0.3) });
+  }
+  // O jogador volta com o visual da última carreira (sem o que não estiver mais liberado)
+  const LAST = 'climbix-ultimo-visual';
+  const lastLook = () => { const l = U.load(LAST); return l && typeof l === 'object' ? I.clean(Object.assign({}, A.DEF, I.FREE, l, { v: 2 })) : null; };
   const newSt = () => ({ pos: 'ATA', foot: 'D', country: 'Brasil', num: defNum('ATA'), numTouched: false, name: D.NICKNAMES[Math.floor(Math.random() * D.NICKNAMES.length)],
-    tab: 'corpo', look: Object.assign({}, A.DEF, I.FREE, { v: 2, extra: [], skin: Math.floor(Math.random() * A.SKIN.length) }) }); // começa só com o que é livre
+    tab: 'corpo', look: lastLook() || rollLook(Object.assign({}, A.DEF, I.FREE, { v: 2, extra: [] })) });
   const numRk = n => I.itemOf('n' + n).rk;
 
   // Número da camisa: grade com os 99 (liberados em creme, travados vazados na cor da raridade)
@@ -160,16 +174,17 @@
     const numBtn = () => '<b>' + st.num + '</b><span><em>' + I.RAR_NAME[numRk(st.num)] + '</em>trocar</span>';
     render(
       '<button class="back-link" id="b-back-home">‹ Início</button>' +
-      '<div class="eyebrow">Nova carreira · 1 de 2</div><h2 class="cr-title">Quem é o garoto?</h2>' +
+      '<div class="eyebrow">Nova carreira</div><h2 class="cr-title">Quem é o garoto?</h2>' +
       '<div class="cc"><div class="cc-top"><button class="cc-num ' + U.rarCls(numRk(st.num)) + '" id="f-num" aria-label="Número da camisa: ' + st.num + '. Trocar">' + numBtn() + '</button>' +
       '<span class="cc-pos" id="cc-pos"></span><span class="cc-flag" id="cc-flag"></span></div>' +
       '<div class="cc-photo" id="cc-photo"></div>' +
       '<input class="cc-name" id="f-name" maxlength="18" value="' + esc(st.name) + '" aria-label="Nome na camisa"></div>' +
-      '<p class="cc-hint">Toque no número para ver os liberados e no nome para editar</p>' +
+      '<div class="cc-acts"><button class="cr-dice" id="b-dice1">' + U.emo('🎲', 'sm') + ' Outro visual</button><button class="cr-dice" id="b-look">' + U.emo('✏️', 'sm') + ' Personalizar</button></div>' +
+      '<p class="cc-hint">Toque no número para trocar e no nome para editar</p>' +
       '<div class="cr-lbl">Posição</div><div class="seg pos4" id="f-pos">' + [['ATA', 'Atacante'], ['MEI', 'Meia'], ['ZAG', 'Zagueiro'], ['GOL', 'Goleiro']].map(([v, l]) => '<button data-v="' + v + '"' + (st.pos === v ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>' +
       '<div class="cr-lbl">Pé bom</div><div class="seg" id="f-foot"><button data-v="D"' + (st.foot === 'D' ? ' class="on"' : '') + '>Destro</button><button data-v="E"' + (st.foot === 'E' ? ' class="on"' : '') + '>Canhoto</button></div>' +
       '<div class="cr-lbl">País · <b id="cr-cty"></b></div><div class="cr-flags" id="f-country">' + D.COUNTRIES.map(k => '<button data-v="' + k.id + '"' + (k.id === st.country ? ' class="on"' : '') + ' aria-label="' + k.id + '">' + U.flag(k.flag, 'sm') + '</button>').join('') + '</div>' +
-      '<div class="inv-bar"><button class="btn" id="b-next1">Próximo: o visual</button></div>'
+      '<div class="inv-bar"><button class="btn" id="b-start">Começar carreira</button></div>'
     );
     const paint = () => {
       $('cc-pos').textContent = st.pos;
@@ -189,8 +204,19 @@
     $('f-num').onclick = () => numSheet(st, paint);
     $('f-name').oninput = () => { st.name = $('f-name').value; };
     $('b-back-home').onclick = home;
-    $('b-next1').onclick = () => { st.name = $('f-name').value.trim() || st.name; looks(st); };
+    $('b-look').onclick = () => { st.name = $('f-name').value.trim() || st.name; looks(st); };
+    $('b-dice1').onclick = () => { rollLook(st.look); sfx('tap'); paint(); };
+    $('b-start').onclick = () => { st.name = $('f-name').value.trim() || st.name; start(st); };
     paint();
+  }
+
+  function start(st) {
+    if (!I.has('n' + st.num)) st.num = defNum(st.pos);
+    G.c = S.newCareer({ name: st.name.trim() || 'Craque', pos: st.pos, foot: st.foot, country: st.country, number: st.num });
+    // Só entra o que está liberado (a prévia fica de fora)
+    G.c.look = Object.assign({ v: 2 }, I.clean(st.look));
+    U.store(LAST, G.c.look);
+    U.academy();
   }
 
   function looks(st) {
@@ -206,17 +232,19 @@
     const who = () => ({ name: st.name, pos: st.pos, number: st.num, look: view() });
     const isPv = (k, v) => prev && prev.k === k && String(prev.v) === String(v);
     const draw = () => {
-      const sw = (key, list, bgOf, names) => '<div class="cr-sw">' + list.map((v, i) => {
+      // Só aparece o que está liberado; mais visuais saem nos pacotinhos (Meus itens mostra tudo)
+      const free = (key, list) => list.filter(v => !lockOf(key, Array.isArray(v) ? v[0] : v));
+      const sw = (key, all, bgOf, allNames) => { const list = free(key, all), names = allNames && list.map(v => allNames[all.indexOf(v)]); return list.length < 2 ? '' : '<div class="cr-sw">' + list.map((v, i) => {
         const it = lockOf(key, v), on = !it && String(lk[key]) === String(v);
         return '<button data-k="' + key + '" data-v="' + v + '" class="' + (on ? 'on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + (isPv(key, v) ? ' pv' : '') + '" aria-label="' + esc(names ? names[i] : GEAR_NAME[v]) + (it ? ', travado' : '') + '">' +
           '<i style="background:' + bgOf(v) + '"></i>' + (it ? U.emo('🔒', 'xs') : '') + '</button>';
-      }).join('') + '</div>';
+      }).join('') + '</div>'; };
       const gearBg = v => A.SWATCH[v] || A.GEAR[v];
       const chipB = (key, v, l, on, it) => '<button data-k="' + key + '" data-v="' + v + '" class="' + (on ? 'on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + (isPv(key, v) ? ' pv' : '') + '">' + (it ? U.emo('🔒', 'xs') + ' ' : '') + l + '</button>';
-      const chip = (key, list) => '<div class="cr-chips">' + list.map(([v, l]) => { const it = lockOf(key, v); return chipB(key, v, l, !it && String(lk[key]) === v, it); }).join('') + '</div>';
+      const chip = (key, all) => { const list = free(key, all); return list.length < 2 ? '' : '<div class="cr-chips">' + list.map(([v, l]) => { const it = lockOf(key, v); return chipB(key, v, l, !it && String(lk[key]) === v, it); }).join('') + '</div>'; };
       // Liga/desliga acessórios (c.look.extra)
-      const tog = list => '<div class="cr-chips">' + list.map(id => { const it = lockOf('extra', id); return chipB('extra', id, EXTRA_NAME[id], !it && lk.extra.includes(id), it); }).join('') + '</div>';
-      const row = (label, value, body) => '<div class="cr-row"><div class="cr-lbl">' + label + (value ? ' <b>' + esc(value) + '</b>' : '') + '</div>' + body + '</div>';
+      const tog = all => { const list = free('extra', all); return !list.length ? '' : '<div class="cr-chips">' + list.map(id => { const it = lockOf('extra', id); return chipB('extra', id, EXTRA_NAME[id], !it && lk.extra.includes(id), it); }).join('') + '</div>'; };
+      const row = (label, value, body) => !body ? '' : '<div class="cr-row"><div class="cr-lbl">' + label + (value ? ' <b>' + esc(value) + '</b>' : '') + '</div>' + body + '</div>';
       const tv = k => lk['tat' + k] || 'nenhuma';
       const tnote = k => (tv(k) === 'nenhuma' ? '' : k[0] === 'B' && lk.sleeve === 'comprida' ? 'coberta pela manga comprida' : k[0] === 'P' && tv(k) === 'fechado' && lk.sock === 'alto' ? 'aparece mais com meião arriado' : '');
       let rows = '';
@@ -229,7 +257,7 @@
         row('Cor do cabelo e da barba', '', sw('hc', A.HAIR_COLORS.map((_, i) => i), i => A.HAIR_COLORS[i], HC_NAME)) +
         row('Na cabeça', '', chip('band', [['nenhuma', 'Nada'], ['faixa', 'Faixa'], ['tiara', 'Tiara']]) + tog(['bandana'])) +
         (lk.band !== 'nenhuma' ? row('Cor da faixa', GEAR_NAME[lk.bandC], sw('bandC', BASIC, gearBg)) : '');
-      if (st.tab === 'equip') rows = row('Chuteira', GEAR_NAME[lk.boot], sw('boot', BASIC.concat(['prata', 'ouro', 'cromo', 'holo', 'bicolor', 'listrada', 'pontilhada', 'galaxia', 'camuflada', 'camoneon', 'onca', 'brasil', 'raio', 'chamas', 'cristal']), gearBg)) +
+      if (st.tab === 'equip') rows = row('Chuteira', GEAR_NAME[lk.boot], sw('boot', BOOTS, gearBg)) +
         row('Sola', GEAR_NAME[lk.sole], sw('sole', BASIC.concat(['prata', 'ouro', 'cromo', 'holo']), gearBg)) +
         row('Meião', '', chip('sock', [['alto', 'Alto'], ['arriado', 'Arriado']]) + tog(['listrado', 'caneleira'])) +
         row('Manga', '', chip('sleeve', [['curta', 'Curta'], ['comprida', 'Comprida']])) +
@@ -262,35 +290,19 @@
     };
     render(
       '<div class="cr-top"><button class="back-link" id="b-back1">‹ Voltar</button><button class="cr-dice" id="b-dice">' + U.emo('🎲', 'sm') + ' Sortear</button></div>' +
-      '<div class="eyebrow">Nova carreira · 2 de 2</div><h2 class="cr-title">Como ele é?</h2>' +
+      '<div class="eyebrow">Personalizar visual</div><h2 class="cr-title">Como ele é?</h2>' +
       '<div class="cr-stage"><div class="cr-big" id="cr-big"></div><div class="cr-side"><div class="cr-lbl">No jornal</div><div class="cr-clip" id="cr-paper"></div>' +
       '<div class="cr-lbl">Comemorando</div><div class="cr-clip" id="cr-joy"></div></div></div>' +
       '<div class="cr-tabs">' + [['corpo', 'Corpo'], ['cabelo', 'Cabelo'], ['equip', 'Equipamento']].map(([k, l]) => '<button data-tab="' + k + '">' + l + '</button>').join('') + '</div>' +
-      '<div class="cr-rows" id="cr-rows"></div>' +
+      '<div class="cr-rows" id="cr-rows"></div><p class="muted small cr-more">Cortes, chuteiras, comemorações e outros visuais novos saem nos pacotinhos do fim de cada carreira.</p>' +
       '<div class="inv-bar"><div id="cr-note"></div><button class="btn" id="b-go">Começar carreira</button></div>'
     );
     screen.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { st.tab = b.dataset.tab; prev = note = null; clearTimeout(noteT); draw(); });
     $('b-back1').onclick = () => { clearTimeout(noteT); create(st); };
     // Sortear: um visual inteiro de uma vez (só com as peças liberadas)
-    $('b-dice').onclick = () => {
-      const ok = k => v => !lockOf(k, v);
-      const p = (k, list) => pick(list.filter(ok(k)));
-      Object.assign(lk, { skin: Math.floor(Math.random() * A.SKIN.length), hair: p('hair', A.HAIRS), hc: p('hc', [0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8]), beard: p('beard', A.BEARDS),
-        band: p('band', ['nenhuma', 'nenhuma', 'faixa', 'tiara']), bandC: p('bandC', BASIC), tatBD: p('tatBD', ['nenhuma', 'nenhuma', 'pequena', 'fechado']), tatBE: p('tatBE', ['nenhuma', 'nenhuma', 'pequena', 'fechado']),
-        tatPD: p('tatPD', ['nenhuma', 'nenhuma', 'nenhuma', 'pequena', 'fechado']), tatPE: p('tatPE', ['nenhuma', 'nenhuma', 'nenhuma', 'pequena', 'fechado']),
-        boot: p('boot', BASIC.concat(['prata', 'ouro', 'cromo', 'holo', 'bicolor', 'listrada', 'pontilhada', 'galaxia', 'camuflada', 'camoneon', 'onca', 'brasil', 'raio', 'chamas', 'cristal'])), sole: p('sole', BASIC), sock: p('sock', ['alto', 'arriado']), sleeve: p('sleeve', ['curta', 'curta', 'comprida']),
-        wrist: p('wrist', ['nenhuma', 'uma', 'duas']), wristC: p('wristC', BASIC),
-        extra: Object.keys(EXTRA_NAME).filter(id => !lockOf('extra', id) && Math.random() < 0.3) });
-      prev = note = null; sfx('tap'); draw();
-    };
-    $('b-go').onclick = () => {
-      clearTimeout(noteT);
-      if (!I.has('n' + st.num)) st.num = defNum(st.pos);
-      G.c = S.newCareer({ name: st.name.trim() || 'Craque', pos: st.pos, foot: st.foot, country: st.country, number: st.num });
-      // Só entra o que está liberado (a prévia fica de fora)
-      G.c.look = Object.assign({ v: 2 }, I.clean(lk));
-      U.academy();
-    };
+    // Sortear: um visual inteiro de uma vez (só com as peças liberadas)
+    $('b-dice').onclick = () => { rollLook(lk); prev = note = null; sfx('tap'); draw(); };
+    $('b-go').onclick = () => { clearTimeout(noteT); start(st); };
     draw();
   }
 

@@ -87,13 +87,15 @@ function stepInPage(opts) {
     click($('b-again')); return { did: 'finale', screen: 'finale', done: true };
   }
   // Tela inicial: nova carreira
-  if ($('b-new') && !$('b-next1')) return label('home:new ' + click($('b-new')));
+  if ($('b-new') && !$('b-start')) return label('home:new ' + click($('b-new')));
   // Criação 1 de 2: posição, país e nome
-  if ($('b-next1')) {
+  if ($('b-start')) {
     const pb = q('#f-pos button[data-v="' + pos + '"]'); if (pb) pb.click();
     const cb = q('#f-country button[data-v="' + country + '"]'); if (cb) cb.click();
     const nm = $('f-name'); if (nm) { nm.value = rnd(['Zé Pequeno', "D'Alessandro", 'Kauã <b>x</b>', 'Luís Ângelo', 'Rafa', 'O\'Neil']); nm.dispatchEvent(new Event('input')); }
-    return label('create:next1 ' + click($('b-next1')));
+    if (Math.random() < 0.3) $('b-dice1').click();
+    if (Math.random() < 0.3) return label('create:look ' + click($('b-look')));
+    return label('create:start ' + click($('b-start')));
   }
   // Criação 2 de 2: sortear o visual e começar
   if ($('b-go')) { if ($('b-dice') && Math.random() < 0.5) $('b-dice').click(); return label('create:go ' + click($('b-go'))); }

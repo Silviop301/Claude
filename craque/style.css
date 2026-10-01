@@ -1011,6 +1011,9 @@ details.more .hl { background: rgba(255, 255, 255, 0.08); border-radius: 10px; p
 .cc-photo { border: 0; padding: 0; background: none; border-radius: 12px; overflow: hidden; }
 .cc-photo svg { width: 150px; height: auto; display: block; border-radius: 12px; filter: sepia(.15); }
 .cc-name { width: 100%; text-align: center; font: 800 26px/1.1 var(--display); text-transform: uppercase; background: rgba(255,255,255,.1); border: 0; border-radius: 10px; color: inherit; padding: 6px 4px; }
+.cc-acts { display: flex; justify-content: center; gap: 8px; margin: 2px 0 6px; }
+.cc-acts .cr-dice { height: 40px; font-size: 15px; }
+.cr-more { text-align: center; margin: 10px 4px 14px; }
 .cc-hint { text-align: center; color: #B9CDBF; font-size: 13px; margin: 0; }
 .look-panel { display: flex; flex-direction: column; gap: 8px; align-items: center; background: rgba(255,255,255,.06); border-radius: 12px; padding: 10px; }
 .look-panel[hidden] { display: none; }
