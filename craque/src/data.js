@@ -382,7 +382,7 @@
   // p1/p2: chance de +1 / +2 pontos de evolução (só sem lesão séria); inj: multiplica o risco de lesão; decl: declínio pela idade
   D.TRAIN = [
     { id: 'leve',   icon: '🧘', name: 'Leve',   p1: 0,    p2: 0,    inj: 0.6, decl: 0.85 },
-    { id: 'normal', icon: '⚖️', name: 'Normal', p1: 0.1,  p2: 0,    inj: 1,   decl: 1 },
+    { id: 'normal', icon: '⚖️', name: 'Normal', p1: 0.18, p2: 0,    inj: 1,   decl: 1 },
     { id: 'forte',  icon: '🔥', name: 'Forte',  p1: 0.3,  p2: 0.03, inj: 1.7, decl: 1 },
     { id: 'max',    icon: '🏋️', name: 'Máximo', p1: 0.4,  p2: 0.15, inj: 3,   decl: 1.1 },
   ];
