@@ -62,7 +62,9 @@ Crie os pares dos serviços que você configurou:
 | GitHub  | `CLIMBIX_GITHUB_ID` e `CLIMBIX_GITHUB_SECRET`     |
 | Discord | `CLIMBIX_DISCORD_ID` e `CLIMBIX_DISCORD_SECRET`   |
 
-Depois rode o deploy: **Actions → Publicar no climbix.app → Run workflow**. Ele grava
+Depois rode o deploy de novo (os segredos só chegam ao servidor num deploy feito depois de salvos): em
+**Actions → Publicar no climbix.app**, abra a última execução e clique em **Re-run all jobs**. O botão
+"Run workflow" não aparece porque o GitHub só mostra para workflows do branch principal. O deploy grava
 `domains/climbix.app/climbix-data/oauth.json` no servidor (fora do `public_html`, onde ninguém baixa pelo site)
 e o log mostra "Login ligado para: google, ...". Os botões aparecem no jogo na hora.
 
