@@ -1933,3 +1933,12 @@ details.fin-more[open] { display: flex; flex-direction: column; gap: 12px; paddi
 .fin-links { display: flex; gap: 8px; }
 .fin-links button { flex: 1; }
 .fin-links button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border: 0; border-radius: 14px; background: rgba(255, 255, 255, .08); color: #E9F1EC; font: 700 14px var(--display); cursor: pointer; }
+/* Dicas da primeira experiência (ui/tips.js) */
+.tip-card { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 16px; background: #FFF6D6; color: var(--ink); border: 2px solid var(--gold); box-shadow: 0 4px 0 rgba(0, 0, 0, .25); animation: enter .3s ease-out; }
+.tip-card .tip-ic { flex: none; margin-top: 2px; }
+.tip-card b { display: block; font: 800 18px var(--display); }
+.tip-card p { margin: 2px 0 8px; font: 500 15px/1.35 var(--body); }
+.tip-acts { display: flex; gap: 8px; }
+.tip-acts button { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 0; font: 700 15px var(--display); cursor: pointer; }
+.tip-ok { background: var(--ink); color: var(--gold); }
+.tip-off { background: transparent; color: #5E5A4E; text-decoration: underline; }
