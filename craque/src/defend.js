@@ -184,12 +184,15 @@
     svg.querySelector('#k-keeper').style.display = 'none';
     const spr = P.keeperSprite(svg); spr.stand(P.GX); spr.idle();
     const NS = 'http://www.w3.org/2000/svg';
-    // Linha da zaga (y = 238) e corrida do atacante logo atrás dela (y = 212), de X0 a X1
-    const LINE = 238, RUN = 212, X0 = 40, X1 = 320;
+    // Perspectiva da cena: horizonte em y 62 e o gol (2,44 m) com 120 px de altura na linha do gol (y 190).
+    // Um jogador de 1,85 m tem 91 px na linha do gol e cresce conforme chega perto da câmera.
+    const hOf = feet => 91 * (feet - 62) / (P.GY - 62);
+    // Linha da zaga na entrada da área (y 222) e corrida do atacante entre ela e o gol (y 204), de X0 a X1
+    const LINE = 222, RUN = 204, X0 = 30, X1 = 330;
     const gw = setup.win * (X1 - X0), gc = 120 + Math.random() * 120, g0 = gc - gw / 2, g1 = gc + gw / 2;
     const WALL = { url: 'assets/sprites/barreira.png?v=d83acda0', w: 124, h: 250 };
     const man = (x, feet, h, cls, f) => {
-      const sc = h / 200, g = document.createElementNS(NS, 'g');
+      const sc = h / 198, g = document.createElementNS(NS, 'g');
       g.setAttribute('class', cls);
       g.setAttribute('transform', 'translate(' + (x - WALL.w / 2 * sc) + ' ' + (feet - 248 * sc) + ') scale(' + sc + ')');
       g.innerHTML = '<svg width="124" height="250" viewBox="' + (f % 4) * 124 + ' ' + Math.floor(f / 4) * 250 + ' 124 250" overflow="hidden"><image href="' + WALL.url + '" width="496" height="1000"/></svg>';
@@ -202,15 +205,17 @@
     zone.setAttribute('rx', 6); zone.setAttribute('class', 'tk-zone');
     svg.insertBefore(zone, ball);
     // Zagueiros: dois fechando a brecha e um mais aberto
-    const defs = [g0 - 16, g1 + 16, gc < 180 ? g1 + 90 : g0 - 90].map((x, i) => ({ x, el: man(x, LINE, 62, 'ps-def', i) }));
-    const mate = man(X0, RUN, 54, 'ps-mate', 0);
+    const hD = hOf(LINE), hM = hOf(RUN), half = hD * 0.24; // metade da largura do corpo
+    // O atacante corre atrás da linha (mais longe da câmera): desenhado antes dos zagueiros
+    const mate = man(X0, RUN, hM, 'ps-mate', 0);
+    const defs = [g0 - half, g1 + half, gc < 180 ? g1 + half * 5 : g0 - half * 5].map((x, i) => ({ x, el: man(x, LINE, hD, 'ps-def', i) }));
     const b3 = P.ball3d(stage, ball);
     b3.place(P.BALL.x, P.BALL.y, P.BALL.r);
     const dur = setup.period * 1100, t0 = performance.now();
     let hit = null, armed = false, done = false;
     setTimeout(() => { armed = true; }, 250);
     const posAt = t => X0 + (X1 - X0) * Math.min(1, t / dur);
-    const setMan = (g, x, feet, h) => { const sc = h / 200; g.setAttribute('transform', 'translate(' + (x - WALL.w / 2 * sc) + ' ' + (feet - 248 * sc) + ') scale(' + sc + ')'); };
+    const setMan = (g, x, feet, h) => { const sc = h / 198; g.setAttribute('transform', 'translate(' + (x - WALL.w / 2 * sc) + ' ' + (feet - 248 * sc) + ') scale(' + sc + ')'); };
     stage.addEventListener('pointerdown', e => {
       e.preventDefault();
       if (!armed || done) return;
@@ -221,7 +226,7 @@
     (function run(now) {
       if (done) return;
       const t = now - t0;
-      setMan(mate, posAt(t), RUN - Math.abs(Math.sin(t / 110)) * 3, 54);
+      setMan(mate, posAt(t), RUN - Math.abs(Math.sin(t / 110)) * 3, hM);
       if (++k % 6 === 0) mate.querySelector('svg').setAttribute('viewBox', [0, 4, 1, 5][(k / 6) % 4] % 4 * 124 + ' ' + Math.floor([0, 4, 1, 5][(k / 6) % 4] / 4) * 250 + ' 124 250');
       if (t >= dur) return finish(false, 'impedido');
       requestAnimationFrame(run);

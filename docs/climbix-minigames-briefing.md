@@ -51,6 +51,13 @@ Arquivos de referência (já no projeto):
 ## 3. Meia: bola enfiada (novo)
 **Mecânica (já funcionando com desenho provisório):** você está com a bola perto da câmera. A zaga adversária forma uma linha na frente da área, e o seu atacante corre da esquerda para a direita, por trás dela. Toque quando ele passar pela brecha (faixa verde) entre dois zagueiros. A bola passa, ele bate e é gol. Cedo ou tarde, a zaga corta. Se você demorar, ele fica impedido.
 
+**Câmera e proporção (definir na prancha):** hoje a cena reaproveita a do pênalti, com a câmera na marca do pênalti e o gol grande. Para o passe, faz mais sentido a câmera **atrás de você, na intermediária**. Nessa câmera:
+- o gol fica menor e mais longe;
+- a linha de zagueiros fica na entrada da área;
+- o atacante corre entre a zaga e o goleiro.
+
+Regra de proporção que já uso no código: horizonte em y 62 e o gol (2,44 m) com 120 px de altura na linha do gol (y 190). Um jogador de 1,85 m tem 91 px na linha do gol e cresce conforme se aproxima da câmera (altura = 91 × (y dos pés − 62) / 128). Se a câmera mudar, preciso da nova linha do horizonte e da altura do gol na prancha.
+
 **Personagens e quadros:**
 - **Zagueiros da linha (recoloríveis, 3 por lance):**
   - parados em posição de marcação: 4 quadros;
