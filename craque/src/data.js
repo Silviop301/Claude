@@ -126,7 +126,52 @@
     // Quem assina a opinião no jornal brasileiro (nos de fora fica o cronista do jogo)
     columnistBR: 'Craque Neto',
     // Resenha da temporada: quem comenta (sempre em português, para a turma)
-    shows: [['Craque Neto', 'no Os Donos da Bola'], ['Igão e Mítico', 'no Podpah'], ['Resenha', 'do Flow Sport Club']],
+    // Programas que comentam a temporada, cada um no seu estilo. {n} nome, {time} clube, {clube} clube com artigo,
+    // {g} gols, {a} assistências, {idade} idade. Situações: resumo do ano e destaques (gols, assist, joia, veterano)
+    shows: [
+      { id: 'neto', who: 'Craque Neto', where: 'no Os Donos da Bola', talk: {
+        ballon: ['Bola de Ouro pro {n}! Eu falei aqui, meu! Eu falei lá atrás que esse menino era diferente!', 'Ô, meu! Melhor do mundo! Pelo amor de Deus, alguém discorda? Não tem como discordar!', 'Eu tô nesse negócio há quarenta anos e te falo: o {n} é o melhor do mundo. Ponto final!'],
+        title: ['Campeão! E com o {n} decidindo! Isso aqui é jogador, gente, isso aqui é jogador!', 'Respeita o {n}! Respeita! Foi lá e ganhou o título. Quem criticou que venha pedir desculpa!', 'Eu falei que {clube} ia ser campeão com o {n} em campo. Falei ou não falei?'],
+        bench: ['Professor, pelo amor de Deus, coloca o {n} pra jogar! Não dá pra deixar esse menino no banco!', 'Eu não entendo! O {n} no banco? Alguém me explica isso, porque eu não entendo!', 'Quem deixa o {n} no banco não entende de futebol. Desculpa, mas não entende!'],
+        injury: ['Que tristeza, meu. Lesão é a pior coisa pro jogador. Volta forte, {n}!', 'Ano perdido pro {n} no departamento médico. Cuida desse menino, {time}!', 'Eu sei o que é lesão, gente. O {n} vai voltar, e vai voltar melhor. Escreve aí.'],
+        down: ['Rebaixado! Que vergonha, {time}! Mas o {n} não tem culpa, o {n} correu sozinho!', 'Caiu! E o {n}? O {n} merece jogar num time grande, isso sim!'],
+        great: ['Joga muito, meu! O {n} tem que estar na Seleção ontem! Ontem!', 'Isso aqui é craque, gente! O {n} é craque! E eu não falo isso de qualquer um!', 'Ô, meu, que temporada do {n}! Se não convocar, eu paro de assistir à Seleção!'],
+        good: ['Temporada boa do {n}, mas eu quero mais! Ele pode mais, eu sei que pode!', 'O {n} tá no caminho, tá no caminho. Mais um ano assim e vira ídolo.', 'Gostei do {n}, gostei. Mas craque tem que decidir mais, viu?'],
+        bad: ['O {n} tem que acordar! Acorda, {n}! Do jeito que tá não dá!', 'Cadê aquele {n}? Cadê? Eu defendi esse menino aqui, hein!', 'Fraco, gente, fraco. O {n} sabe que pode muito mais que isso.'],
+        gols: ['{g} gols! Ô, meu, {g} gols! Isso é centroavante de verdade!', 'Gol, gol, gol! O {n} fez {g} na temporada. Respeita!'],
+        assist: ['{a} assistências! O {n} joga de cabeça erguida, igual camisa 10 de antigamente!', 'Passe, gente! O {n} dá passe! {a} assistências, isso é futebol raiz!'],
+        joia: ['Esse garoto de {idade} anos é joia, meu! Cuida bem dele, {time}!', 'Com {idade} anos jogando desse jeito? Pelo amor de Deus!'],
+        veterano: ['Com {idade} anos e jogando assim! Experiência não se compra, meu!', 'O {n} com {idade} anos dando aula. Os moleques têm que aprender com ele!'],
+      } },
+      { id: 'podpah', who: 'Igão e Mítico', where: 'no Podpah', talk: {
+        ballon: ['Mano do céu, o {n} é Bola de Ouro! É o pai, rapaziada, é o pai!', 'Bola de Ouro, mano! Chama o {n} aqui no Podpah que eu quero ver essa taça de perto!', 'Cê é loko, o {n} melhor do mundo! Tô arrepiado, olha meu braço!'],
+        title: ['Campeão, mano! O {n} brabo demais, papo reto!', 'É campeão! O {n} foi monstro nessa temporada, monstro!', 'Pô, que título, mano! O time com o {n} tava voando!'],
+        bench: ['Mano, o {n} no banco? Tá de brincadeira, né, professor? Kkkkk', 'Papo reto: coloca o {n} pra jogar! O moleque é brabo!', 'Ninguém entende o {n} no banco, mano. Ninguém!'],
+        injury: ['Pô, mano, lesão é triste demais. Força, {n}!', 'O {n} machucado o ano inteiro, mano. Volta logo que a gente sente falta!'],
+        down: ['Caiu, mano... pesado. Mas o {n} não tem nada a ver com isso, o moleque correu!', 'Rebaixamento é triste, mano. O {n} merece time grande, papo reto.'],
+        great: ['O {n} tá voando, mano! Tá voando!', 'Brabo, brabo, brabo! O {n} é diferenciado, pai!', 'Mano, o {n} jogando desse jeito é outro nível! Cê é loko!'],
+        good: ['O {n} mandou bem, mano. Dá pra mais, mas mandou bem.', 'Temporada firmeza do {n}. Ano que vem vem mais, confia.', 'Tá no caminho, o {n}. Brabo ele vai ficar, papo reto.'],
+        bad: ['Mano, o {n} sumiu esse ano, hein? Kkkkk, acorda, {n}!', 'Pô, ano fraco do {n}, mano. Papo reto, dá pra mais.', 'Cadê o {n}, mano? Alguém viu o {n} por aí? Kkkkk'],
+        gols: ['{g} gols, mano! O {n} não para de fazer gol, é o pai!', 'Mano, {g} gols! O cara é máquina, máquina!'],
+        assist: ['{a} assistências, mano! O {n} serve todo mundo, é o garçom!', 'O {n} dá passe de olho fechado, mano. {a} assistências, brabo!'],
+        joia: ['Com {idade} anos, mano? Esse moleque vai ser monstro!', 'Moleque de {idade} anos jogando assim, mano? Cê é loko!'],
+        veterano: ['{idade} anos e jogando isso tudo, mano? É o tiozão brabo!', 'O {n} com {idade} anos dando aula, mano. Respeita o tiozão!'],
+      } },
+      { id: 'flow', who: 'Resenha', where: 'do Flow Sport Club', talk: {
+        ballon: ['Rapaziada, Bola de Ouro pro {n}! Aí é cinema, aí é cinema!', 'Salve, salve! O {n} é o melhor do mundo e a resenha hoje é só sobre ele!'],
+        title: ['Olha o nível! Campeão com o {n} decidindo. Resenha boa demais!', 'Campeão, rapaziada! O {n} chamou a responsabilidade, isso é absurdo!'],
+        bench: ['Fala sério, o {n} no banco? A resenha aqui não aceita isso não!', 'Rapaziada, alguém liga pro técnico e pergunta por que o {n} não joga!'],
+        injury: ['Lesão chata, rapaziada. Fica bem, {n}, a resenha te espera!', 'Ano difícil pro {n}. Mas jogador grande volta, pode anotar.'],
+        down: ['Rebaixamento pesado, rapaziada. O {n} não merecia essa.', 'Caiu... mas o {n} vai ter mercado, isso eu garanto.'],
+        great: ['Olha o nível do {n}! Isso é absurdo, rapaziada!', 'O {n} tá no hype, e com razão. Aí é cinema!', 'Fala sério, que temporada do {n}! Seleção já!'],
+        good: ['Temporada sólida do {n}. Dá pra subir mais um degrau, rapaziada.', 'O {n} foi bem, mas a resenha quer ver mais.'],
+        bad: ['Ano pra esquecer do {n}, rapaziada. Acontece, mas tem que reagir.', 'Fala sério, {n}! A resenha esperava muito mais.'],
+        gols: ['{g} gols, rapaziada! O {n} tá impossível!', 'Olha o nível: {g} gols do {n}. Aí é cinema!'],
+        assist: ['{a} assistências! O {n} joga pro time, e isso a resenha respeita.', 'O {n} distribuindo o jogo: {a} assistências, rapaziada!'],
+        joia: ['{idade} anos e jogando isso? O futuro chegou, rapaziada!', 'Anota o nome: {n}, {idade} anos. Vai ser gigante.'],
+        veterano: ['{idade} anos e ainda decidindo? Respeito total, rapaziada!', 'O {n} aos {idade} anos é aula de futebol.'],
+      } },
+    ],
   };
   // Garoto da carreira do dia: 5 nomes por nacionalidade
   D.DAILY_NAMES = {
