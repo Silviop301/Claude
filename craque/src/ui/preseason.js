@@ -71,7 +71,9 @@
       const ov = Math.round(from.ovr + (o1 - from.ovr) * e);
       $('mc-ovr').textContent = ov;
       setTier(ov);
-      if (k < 1) requestAnimationFrame(tick); else setTimeout(then, 650);
+      // Depois da pausa, só segue se a mini carta ainda estiver na tela (voltar ao início no meio da animação
+      // redesenharia a pré-temporada por cima da tela inicial, sem carreira)
+      if (k < 1) requestAnimationFrame(tick); else setTimeout(() => { if (mc.isConnected && G.c) then(); }, 650);
     };
     requestAnimationFrame(tick);
   }
