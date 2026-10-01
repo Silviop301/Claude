@@ -4,7 +4,7 @@
 //   temporada: {stat} (gols, assistências, desarmes ou jogos sem sofrer gol) · {jogos} · {nota} · {pos} posição na tabela
 //              {naLiga} ("no Brasileirão", "na Premier League") · {pts} pontos · {titulos} títulos do ano
 //   lance:     {min} minuto · {vs} adversário com artigo ("o Palmeiras") · {contraVs} ("contra o Palmeiras")
-//   carreira:  {temps} temporadas · {gols} gols · {assist} assistências
+//   carreira:  {temps} ("12 temporadas") · {numeros} números da carreira por posição (gols e assistências; jogos sem sofrer gol...)
 (function () {
   const D = window.CRAQUE_DATA;
   D.SOCIAL = {
@@ -197,11 +197,11 @@
         'Ainda não pendurei a chuteira, mas já escolhi o prego 😂 Última temporada!', 'Vou parar. Mas antes, um último ano pra gente comemorar junto 🥂', 'Fim de uma era chegando. Aproveitem comigo cada jogo 🙌',
       ],
       farewell: [
-        'Hoje eu me despeço dos gramados. {temps} temporadas, {gols} gols, {assist} assistências. Obrigado, futebol. ⚽❤️', 'Fim. {temps} temporadas e uma vida inteira de gratidão. Obrigado a cada torcedor. 🙏',
+        'Hoje eu me despeço dos gramados. {temps}, {numeros}. Obrigado, futebol. ⚽❤️', 'Fim. {temps} e uma vida inteira de gratidão. Obrigado a cada torcedor. 🙏',
         'Pendurei as chuteiras. Literalmente: tão na parede da sala agora 😂 Obrigado por tudo!', 'O menino que sonhava virou jogador. O jogador agora vira torcedor. Obrigado, futebol! ⚽❤️',
-        '{gols} gols, {assist} assistências e milhões de abraços. Hoje eu paro. Obrigado! 🙏', 'Acabou. E foi lindo. Obrigado, família, companheiros e torcida {cor}',
+        '{numeros}. E milhões de abraços. Hoje eu paro. Obrigado! 🙏', 'Acabou. E foi lindo. Obrigado, família, companheiros e torcida {cor}',
         'Agora eu vou poder comer pizza na sexta sem culpa 🍕 Obrigado por tudo, futebol!', 'Última vez que eu entro em campo como jogador. Que privilégio foi viver isso 🙏',
-        '{temps} temporadas. Nenhum arrependimento. Obrigado! ⚽', 'Fecho a porta do vestiário pela última vez. O coração fica lá dentro {cor}',
+        '{temps}. Nenhum arrependimento. Obrigado! ⚽', 'Fecho a porta do vestiário pela última vez. O coração fica lá dentro {cor}',
         'Me aposento hoje. Minha esposa pediu pra eu parar de comemorar gol na sala 😂 Obrigado, futebol!', 'Obrigado, bola. Você foi a minha melhor amiga ⚽❤️',
       ],
     },
@@ -308,7 +308,7 @@
       transfer: ['Bem-vindo, {n}! Já comprei a camisa {num} 👕', 'Era o reforço que faltava!', 'Diretoria acertou demais nessa!', 'Seja bem-vindo à maior torcida que existe {cor}',
         'Torcida antiga chorando e a nova comemorando 😂', 'Primeiro gol já tá agendado, né?', 'Estreia quando? Já quero ingresso 🎟️', 'Contratação do ano, sem discussão',
         'Vem fazer história, {n}! {cor}', 'Já tô vendo você levantando taça aqui 🏆', 'Nem acredito que você agora joga {noTime}! 😍'],
-      bye: ['{temps} temporadas de alegria. Obrigado por cada uma', '{gols} gols e cada um com uma memória pra mim', 'Cresci te vendo jogar. Agora vou envelhecer contando suas histórias 🥹',
+      bye: ['{temps} de alegria. Obrigado por cada uma', 'Cada jogo seu tem uma memória minha guardada', 'Cresci te vendo jogar. Agora vou envelhecer contando suas histórias 🥹',
         'Vou guardar sua camisa {num} pra sempre', 'Sem você o domingo vai ficar mais chato 😢', 'Faz um jogo de despedida, por favor! 🙏', 'A {num} tinha que ser aposentada junto com você'],
     },
     fans: {

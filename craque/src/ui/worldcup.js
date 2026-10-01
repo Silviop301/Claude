@@ -62,7 +62,7 @@
       (S.defKick(G.c.pos) && g.cs && !g.live ? '<span class="mom ok">' + U.emo('🧤', 'xs') + ' sem sofrer gol</span>' : '') +
       (g.rating ? '<span class="rt' + (g.motm ? ' motm' : '') + '">' + (g.motm ? U.emo('⭐', 'xs') + ' Craque do jogo · ' : 'Nota ') + g.rating.toFixed(1).replace('.', ',') + '</span>' : '') +
       (g.ev && g.ev.length && !g.live ? '<div class="gls">' + g.ev.map(e => goalLine(e, g)).join('') + '</div>' : '') +
-      (g.groupEnd ? '<div class="grp ' + (g.groupEnd.pass ? 'ok' : 'ko') + '">' + (g.groupEnd.pass ? 'Classificado com ' + g.groupEnd.pts + ' pontos' : 'Eliminado na fase de grupos (' + g.groupEnd.pts + ' pts)') + '</div>' : '') + '</div>';
+      (g.groupEnd ? '<div class="grp ' + (g.groupEnd.pass ? 'ok' : 'ko') + '">' + (g.groupEnd.pass ? 'Classificado com ' + D.plural(g.groupEnd.pts, 'ponto', 'pontos') : 'Eliminado na fase de grupos (' + g.groupEnd.pts + ' pts)') + '</div>' : '') + '</div>';
   }
 
   // Jogo ao vivo: relógio correndo e o placar mudando gol a gol
@@ -202,7 +202,7 @@
     const late = m.minute >= 78, left = 90 - m.minute;
     const gain = d === 0 ? (late ? (ko ? 'classifica' : 'vitória') : 'sai na frente') : d === -1 ? (late ? (ko ? 'leva para os pênaltis' : 'empata') : 'empata') : d >= 1 ? 'amplia' : 'diminui';
     // Defensor: o que acontece se falhar (gol deles)
-    const lose = d >= 2 ? 'diminuem' : d === 1 ? (late && ko ? 'empatam e vai para os pênaltis' : 'empatam') : d === 0 ? (late ? (ko ? 'eliminado' : 'derrota') : 'saem na frente') : 'aumentam';
+    const lose = d >= 2 ? 'diminuem' : d === 1 ? (late && ko ? 'empatam e levam para os pênaltis' : 'empatam') : d === 0 ? (late ? (ko ? 'eliminado' : 'derrota') : 'saem na frente') : 'aumentam';
     const cwc = isCwc(run), who = cwc ? D.o(esc(club(run.club).name)) : theCountry(G.c.country);
     const h = $('wc-hint'); if (h) h.remove();
     // O que está em jogo nesta fase

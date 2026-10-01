@@ -146,7 +146,7 @@
     },
     {
       id: 'cobrador', icon: '⚽', tone: 'blue', weight: 3, max: 2,
-      when: c => ['ATA', 'MEI'].includes(c.pos) && atClub(c) >= 1,
+      when: c => ['ATA', 'MEI'].includes(c.pos) && atClub(c) >= 1 && c.number !== 10,
       build: () => ({
         title: 'Quem bate o pênalti?', text: 'O camisa 10 do time e você querem ser o cobrador oficial.',
         options: [opt('Brigar pela cobrança', '60%: vira o cobrador (gols +12%) · 40%: racha no vestiário (Técnico −10)'), opt('Deixar com ele', 'Técnico +5 · Torcida +3')],
@@ -202,7 +202,7 @@
       when: c => c.pos === 'ZAG' && atClub(c) >= 1,
       build: () => ({
         title: 'Zagueiro de volante?', text: 'O técnico quer te testar como volante para sair jogando.',
-        options: [opt('Topar o desafio', '+2 PAS para sempre · assistências +30% · jogos sem sofrer gol −10%'), opt('Ficar na zaga', 'Técnico −4 · sem mudança')],
+        options: [opt('Topar o desafio', '+2 PAS para sempre · assistências +30% · forma −2%'), opt('Ficar na zaga', 'Técnico −4 · sem mudança')],
       }),
       resolve: (c, ev, i) => (i === 0
         ? { ok: true, text: 'Você descobriu um passe longo que ninguém conhecia.', fx: { attr: { pas: 2 }, assistMul: 0.3, form: -0.02 } }
@@ -334,8 +334,8 @@
       id: 'gringo', icon: '🗣️', tone: 'blue', weight: 3, max: 1,
       when: c => atClub(c) >= 1,
       build: () => ({
-        title: 'Técnico estrangeiro', text: 'O novo técnico só fala inglês e ainda não confia em ninguém.',
-        options: [opt('Fazer aulas de inglês', 'R$ 30 mil · Técnico +12'), opt('Se virar com o tradutor', '40%: ruído na comunicação (Técnico −6)')],
+        title: 'Técnico estrangeiro', text: 'O novo técnico é estrangeiro, ainda não fala a língua do grupo e não confia em ninguém.',
+        options: [opt('Fazer aulas do idioma dele', 'R$ 30 mil · Técnico +12'), opt('Se virar com o tradutor', '40%: ruído na comunicação (Técnico −6)')],
       }),
       resolve: (c, ev, i, r) => {
         if (i === 0) { bump(c, 'coach', 12); return { ok: true, text: 'Em três meses você já era o intérprete do elenco.', fx: { money: -30000 } }; }
@@ -415,7 +415,7 @@
       id: 'centenario', icon: '🎂', tone: 'green', weight: 2, max: 1,
       when: c => atClub(c) >= 1,
       build: c => ({
-        title: 'Centenário do clube', text: D.O(club(c).name) + ' faz 100 anos e vai lançar uma camisa comemorativa com o seu rosto na campanha.',
+        title: 'Aniversário do clube', text: D.O(club(c).name) + ' comemora aniversário e vai lançar uma camisa comemorativa com o seu rosto na campanha.',
         options: [opt('Estrelar a campanha', 'Fama +10 · Torcida +6 · R$ 50 mil'), opt('Deixar para os ídolos antigos', 'Torcida +4 · Técnico +3')],
       }),
       resolve: (c, ev, i) => (i === 0
@@ -1038,7 +1038,7 @@
       when: c => club(c).tier >= 3,
       build: c => ({
         ...alt(c, 'pretemporada', [
-          ['Excursão de pré-temporada', 'O clube marcou seis amistosos nos Estados Unidos em duas semanas.'],
+          ['Excursão de pré-temporada', 'O clube marcou seis amistosos no exterior em duas semanas.'],
           ['Turnê pela Ásia', 'Amistosos caça-níquel na Ásia: calor, fuso e estádios lotados.']]),
         options: [opt('Jogar todos os amistosos', 'Fama +8 · forma −4%'), opt('Pedir para ser poupado', 'Forma +3% · Técnico −3')],
       }),
@@ -1132,6 +1132,630 @@
         if (r() < 0.35) return { ok: true, text: 'MEDALHA DE OURO! Você voltou com o ouro no peito.', fx: { fame: 25 } };
         return { ok: true, text: 'Sem medalha, mas o mundo conheceu seu futebol.', fx: { fame: 10 } };
       },
+    },
+
+    // ========== eventos novos (base, auge, veterano, posição, humor) ==========
+    // ---------- base ----------
+    {
+      id: 'alojamento', icon: '🛏️', tone: 'blue', weight: 3, max: 1,
+      when: c => c.age <= 18 && !!c.club,
+      build: () => ({
+        title: 'O colega de quarto', text: 'Seu colega no alojamento ronca e joga videogame até as 3h. O treino é às 7h.',
+        options: [opt('Pedir quarto individual', 'Forma +4% · Técnico −3 (o grupo acha frescura)'), opt('Aguentar o colega', '50%: viram amigos (Técnico +4 · forma +3%) · 50%: noites mal dormidas (forma −4%)')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) { bump(c, 'coach', -3); return { ok: true, text: 'Quarto só seu. Dormiu como nunca.', fx: { form: 0.04 } }; }
+        if (r() < 0.5) { bump(c, 'coach', 4); return { ok: true, text: 'Vocês viraram inseparáveis. O técnico gostou da dupla.', fx: { form: 0.03 } }; }
+        return { ok: false, text: 'Meses de olheiras. O ronco venceu.', fx: { form: -0.04 } };
+      },
+    },
+    {
+      id: 'vlog_base', icon: '📹', tone: 'blue', weight: 3, max: 1,
+      when: c => c.age <= 19 && !!c.club && c.fame < 40,
+      build: () => ({
+        title: 'Vlog do alojamento', text: 'Um amigo youtuber quer gravar a rotina da base: alojamento, rango e treino.',
+        options: [opt('Gravar a série', 'Fama +8 · 35%: o clube proíbe no meio (Técnico −6)'), opt('Recusar', 'Técnico +3')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.35) { bump(c, 'coach', -6); return { ok: false, text: 'O episódio do rango viralizou e a diretoria mandou parar.', fx: { fame: 8 } }; }
+          return { ok: true, text: 'A série bombou. Todo garoto da base quer ser você.', fx: { fame: 8 } };
+        }
+        bump(c, 'coach', 3);
+        return { ok: true, text: 'Câmera só no dia de jogo. O técnico aprovou.', fx: {} };
+      },
+    },
+    {
+      id: 'primeira_entrevista', icon: '🎤', tone: 'blue', weight: 3, max: 1,
+      when: c => c.age <= 19 && !!c.club && c.fame <= 30,
+      build: () => ({
+        title: 'Primeira entrevista ao vivo', text: 'A TV te parou na saída do campo. Você nunca falou num microfone na vida.',
+        options: [opt('Falar o que vier à cabeça', 'Fama +6 · 40%: gafe vira meme (Fama +4, Torcida −3)'), opt('Usar as frases prontas', 'Técnico +3')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.4) { bump(c, 'fans', -3); return { ok: false, text: 'Você chamou o repórter de "professor" e agradeceu ao "grupo de WhatsApp". Virou meme.', fx: { fame: 10 } }; }
+          return { ok: true, text: 'Espontâneo e sincero. O país simpatizou na hora.', fx: { fame: 6 } };
+        }
+        bump(c, 'coach', 3);
+        return { ok: true, text: '"Agradecer ao grupo, foco no próximo jogo." Zero risco.', fx: {} };
+      },
+    },
+    {
+      id: 'ingressos', icon: '🎟️', tone: 'blue', weight: 3, max: 1,
+      when: c => c.age <= 21 && c.wage > 0,
+      build: c => {
+        const v = Math.round(Math.max(c.wage * 2, 3000) / 1000) * 1000;
+        return {
+          title: 'Todo mundo quer ingresso', text: 'Trinta pessoas do bairro pedem ingresso a cada jogo. A cota do clube é de quatro.', value: v,
+          options: [opt('Comprar para a turma toda', 'R$ ' + money(v) + ' · Torcida +5'), opt('Só para a família', 'Forma +3% · Fama −2')],
+        };
+      },
+      resolve: (c, ev, i) => (i === 0
+        ? (bump(c, 'fans', 5), { ok: true, text: 'O setor inteiro gritava seu nome. Valeu cada centavo.', fx: { money: -ev.value } })
+        : { ok: true, text: 'Alguns ficaram chateados, mas a cabeça ficou no jogo.', fx: { form: 0.03, fame: -2 } }),
+    },
+
+    // ---------- seleção e imprensa ----------
+    {
+      id: 'hino', icon: '🎶', tone: 'red', weight: 3, max: 1,
+      when: c => c.fame >= 40 && S.ovr(c) >= 70 && c.age >= 20 && c.age <= 33 && !c.natRetired,
+      build: () => ({
+        title: 'De boca fechada no hino', text: 'A câmera flagrou você sem cantar o hino na seleção. A internet está em polvorosa.',
+        options: [opt('Explicar que estava concentrado', 'Técnico +2 · 40%: ninguém acredita (Fama −4)'), opt('Postar vídeo cantando em casa', 'Fama +8 · Torcida +4 · 25%: desafinado (vira meme, Torcida −2)')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          bump(c, 'coach', 2);
+          if (r() < 0.4) return { ok: false, text: 'A explicação não colou. Dias de cobrança nas redes.', fx: { fame: -4 } };
+          return { ok: true, text: 'Assunto morreu em dois dias.', fx: {} };
+        }
+        if (r() < 0.25) { bump(c, 'fans', 2); return { ok: true, text: 'Desafinou tudo, mas foi sincero. Virou meme carinhoso.', fx: { fame: 8 } }; }
+        bump(c, 'fans', 4);
+        return { ok: true, text: 'Vídeo em família cantando o hino. Patriotismo aprovado.', fx: { fame: 8 } };
+      },
+    },
+    {
+      id: 'arbitro_foto', icon: '📸', tone: 'red', weight: 2, max: 1,
+      when: c => c.fame >= 25 && !!c.club,
+      build: () => ({
+        title: 'Foto com o árbitro', text: 'Vazou uma foto sua jantando com o árbitro do próximo clássico.',
+        options: [opt('Explicar: amigo de infância', 'Torcida +3 · 40%: a imprensa não perdoa (Fama −4)'), opt('Pedir a troca do árbitro', 'Técnico +4 · Fama +2')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          bump(c, 'fans', 3);
+          if (r() < 0.4) return { ok: false, text: 'Toda decisão dele no clássico virou teoria da conspiração.', fx: { fame: -4 } };
+          return { ok: true, text: 'A história do bairro comoveu. Assunto encerrado.', fx: {} };
+        }
+        bump(c, 'coach', 4);
+        return { ok: true, text: 'A federação trocou o árbitro. Postura elogiada.', fx: { fame: 2 } };
+      },
+    },
+    {
+      id: 'drone', icon: '🛸', tone: 'blue', weight: 2, max: 1,
+      when: c => !!c.club && c.fame >= 15,
+      build: () => ({
+        title: 'Drone no treino fechado', text: 'Um drone da imprensa filmou o treino fechado e revelou a escalação do clássico.',
+        options: [opt('Derrubar o drone com uma bolada', 'Fama +10 · 40%: multa de R$ 10 mil'), opt('Chamar a segurança', 'Técnico +4')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.4) return { ok: true, text: 'Bolada certeira. O dono do drone mandou a conta.', fx: { fame: 10, money: -10000 } };
+          return { ok: true, text: 'Bolada certeira e o vídeo mais compartilhado da semana.', fx: { fame: 10 } };
+        }
+        bump(c, 'coach', 4);
+        return { ok: true, text: 'A segurança resolveu. O técnico agradeceu a calma.', fx: {} };
+      },
+    },
+    {
+      id: 'cartola', icon: '🎩', tone: 'blue', weight: 2, max: 1,
+      when: c => c.fame >= 25 && !!c.club && c.pos !== 'GOL',
+      build: () => ({
+        title: 'Os cartoleiros estão bravos', text: 'Dois milhões de pessoas te escalaram no fantasy e você tirou nota negativa.',
+        options: [opt('Pedir desculpas aos cartoleiros', 'Fama +8 · Torcida +3'), opt('Ignorar', 'Técnico +2 · 30%: zoação pesada (Torcida −2)')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) { bump(c, 'fans', 3); return { ok: true, text: '"Semana que vem eu pago com juros." A internet perdoou.', fx: { fame: 8 } }; }
+        bump(c, 'coach', 2);
+        if (r() < 0.3) { bump(c, 'fans', -2); return { ok: false, text: 'Virou a figurinha mais zoada do fantasy.', fx: {} }; }
+        return { ok: true, text: 'Foco no campo. Os memes passaram.', fx: {} };
+      },
+    },
+    {
+      id: 'videogame_nota', icon: '🕹️', tone: 'blue', weight: 2, max: 1,
+      when: c => c.fame >= 30 && !!c.club,
+      build: c => ({
+        title: 'Sua nota no videogame', text: 'O videogame de futebol lançou a sua carta com ' + D.label(c.pos, 'rit') + ' baixíssimo. Você viu ao vivo.',
+        options: [opt('Reclamar com a produtora', 'Fama +8 · 25%: zoação (Torcida −3)'), opt('Provar em campo', 'Forma +4%')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.25) { bump(c, 'fans', -3); return { ok: false, text: 'A produtora respondeu com um vídeo seu perdendo corrida. Doeu.', fx: { fame: 8 } }; }
+          return { ok: true, text: 'A produtora prometeu rever. Milhões de jogadores concordaram com você.', fx: { fame: 8 } };
+        }
+        return { ok: true, text: 'Deixou o jogo responder. A próxima atualização subiu a nota.', fx: { form: 0.04 } };
+      },
+    },
+
+    // ---------- fama e vida fora de campo ----------
+    {
+      id: 'palco', icon: '🎸', tone: 'blue', weight: 2, max: 1,
+      when: c => c.fame >= 45,
+      build: () => ({
+        title: 'Convite para o palco', text: 'Uma dupla famosa quer você cantando uma música no show de domingo.',
+        options: [opt('Subir no palco', 'Fama +10 · 50%: desafina e vira meme (Técnico −3)'), opt('Ficar no camarote', 'Fama +3 · forma +2%')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.5) { bump(c, 'coach', -3); return { ok: false, text: 'Desafinou no refrão. O vestiário cantou a sua versão por um mês.', fx: { fame: 10 } }; }
+          return { ok: true, text: 'Afinado e à vontade. Convites para mais shows.', fx: { fame: 10 } };
+        }
+        return { ok: true, text: 'Curtiu o show e dormiu cedo.', fx: { fame: 3, form: 0.02 } };
+      },
+    },
+    {
+      id: 'tatuagem', icon: '🖋️', tone: 'blue', weight: 4, max: 1,
+      when: c => { const l = last(c); return !!l && l.club === c.club && l.titles.length > 0 && c.fame >= 10; },
+      build: () => ({
+        title: 'A promessa da tatuagem', text: 'Você prometeu em entrevista: "Se for campeão, tatuo o escudo". Foi campeão.',
+        options: [opt('Cumprir a promessa', 'Torcida +12 · Fama +6 · 20%: o tatuador erra o escudo'), opt('Fingir que esqueceu', 'Torcida −6 · forma +2%')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.2) { bump(c, 'fans', 8); return { ok: false, text: 'O escudo saiu torto e virou meme. A torcida amou mesmo assim.', fx: { fame: 12 } }; }
+          bump(c, 'fans', 12);
+          return { ok: true, text: 'Escudo no braço e a torcida aos prantos.', fx: { fame: 6 } };
+        }
+        bump(c, 'fans', -6);
+        return { ok: true, text: 'A torcida cobrou por semanas. Pelo menos não doeu.', fx: { form: 0.02 } };
+      },
+    },
+    {
+      id: 'penteado', icon: '💇', tone: 'blue', weight: 2, max: 1,
+      when: c => c.fame >= 20 && c.age <= 30,
+      build: () => ({
+        title: 'O corte polêmico', text: 'Seu novo corte de cabelo virou assunto em todos os programas esportivos.',
+        options: [opt('Manter o corte', 'Fama +8 · 30%: o técnico acha excêntrico (Técnico −4)'), opt('Raspar a cabeça', 'Técnico +3 · Fama −2')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.3) { bump(c, 'coach', -4); return { ok: false, text: '"Aqui a gente joga bola, não desfila." O técnico não curtiu.', fx: { fame: 8 } }; }
+          return { ok: true, text: 'Os barbeiros da cidade já oferecem "o corte do ' + c.name + '".', fx: { fame: 8 } };
+        }
+        bump(c, 'coach', 3);
+        return { ok: true, text: 'Careca e sem assunto. O técnico aprovou.', fx: { fame: -2 } };
+      },
+    },
+    {
+      id: 'sosia', icon: '👯', tone: 'blue', weight: 2, max: 1,
+      when: c => c.fame >= 60,
+      build: () => ({
+        title: 'Um sósia na cidade', text: 'Um sósia seu está dando autógrafos e entrando de graça nas festas.',
+        options: [opt('Chamar o sósia para um vídeo', 'Fama +10 · Torcida +4'), opt('Ignorar', '30%: ele apronta e sobra para você (Fama −6)')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) { bump(c, 'fans', 4); return { ok: true, text: 'Os dois lado a lado no vídeo. Ninguém sabe quem é quem.', fx: { fame: 10 } }; }
+        if (r() < 0.3) return { ok: false, text: 'Ele brigou numa balada e a manchete saiu com o seu nome.', fx: { fame: -6 } };
+        return { ok: true, text: 'O sósia sumiu sozinho. Problema resolvido.', fx: {} };
+      },
+    },
+    {
+      id: 'figurinha', icon: '🃏', tone: 'green', weight: 2, max: 1,
+      when: c => c.fame >= 30 && c.age <= 33,
+      build: () => ({
+        title: 'A figurinha rara', text: 'A sua figurinha é a mais difícil do álbum. Pais te param na rua pedindo uma.',
+        options: [opt('Distribuir figurinhas nas escolas', 'R$ 20 mil · Torcida +8 · Fama +6'), opt('Rir e seguir', 'Fama +3')],
+      }),
+      resolve: (c, ev, i) => (i === 0
+        ? (bump(c, 'fans', 8), { ok: true, text: 'Mil figurinhas entregues em mãos. Cidade inteira com o álbum completo.', fx: { money: -20000, fame: 6 } })
+        : { ok: true, text: '"Nem eu tenho a minha." A frase virou manchete.', fx: { fame: 3 } }),
+    },
+    {
+      id: 'namoro', icon: '💞', tone: 'blue', weight: 2, max: 1,
+      when: c => c.age >= 20 && c.age <= 30 && c.fame >= 40,
+      build: () => ({
+        title: 'Namoro famoso', text: 'Você está namorando uma cantora famosa e os paparazzi não largam o seu pé.',
+        options: [opt('Assumir publicamente', 'Fama +14 · 35%: exposição demais (forma −5%)'), opt('Manter discreto', 'Forma +3%')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.35) return { ok: false, text: 'Capa de revista toda semana. Difícil pensar em bola.', fx: { fame: 14, form: -0.05 } };
+          return { ok: true, text: 'O casal do ano. E você seguiu jogando bem.', fx: { fame: 14 } };
+        }
+        return { ok: true, text: 'Vida privada é privada. Cabeça leve.', fx: { form: 0.03 } };
+      },
+    },
+    {
+      id: 'idioma', icon: '🗯️', tone: 'blue', weight: 3, max: 1,
+      when: c => abroad(c) && atClub(c) >= 1,
+      build: () => ({
+        title: 'A coletiva no idioma local', text: 'Você arriscou o idioma local na coletiva e disse que "ama o goleiro adversário".',
+        options: [opt('Rir e virar meme', 'Fama +8 · Torcida +5'), opt('Só falar com tradutor', 'Técnico +2 · Fama −2')],
+      }),
+      resolve: (c, ev, i) => (i === 0
+        ? (bump(c, 'fans', 5), { ok: true, text: 'O goleiro adversário respondeu "eu também". A torcida se derreteu.', fx: { fame: 8 } })
+        : (bump(c, 'coach', 2), { ok: true, text: 'Sem risco, sem graça. O técnico preferiu assim.', fx: { fame: -2 } })),
+    },
+    {
+      id: 'mae_entrevista', icon: '👩', tone: 'green', weight: 2, max: 1,
+      when: c => c.fame >= 30,
+      build: () => ({
+        title: 'Sua mãe deu entrevista', text: 'Sua mãe contou na TV que você dormia com a bola e chorava quando perdia no videogame.',
+        options: [opt('Rir junto e postar', 'Fama +8 · Torcida +6'), opt('Pedir para ela parar', 'Forma +2% · Fama −2')],
+      }),
+      resolve: (c, ev, i) => (i === 0
+        ? (bump(c, 'fans', 6), { ok: true, text: 'O vídeo da sua mãe passou de dez milhões de visualizações.', fx: { fame: 8 } })
+        : { ok: true, text: 'Ela entendeu, mas contou mais três histórias para as vizinhas.', fx: { form: 0.02, fame: -2 } }),
+    },
+    {
+      id: 'pai_arquibancada', icon: '👨', tone: 'red', weight: 2, max: 1,
+      when: c => c.fame >= 20 && !!c.club,
+      build: () => ({
+        title: 'Seu pai na arquibancada', text: 'Seu pai discutiu com torcedores que te xingavam. O vídeo da briga viralizou.',
+        options: [opt('Defender o pai em público', 'Torcida +6 · Fama +6 · 30%: distração (Técnico −4)'), opt('Pedir calma a ele', 'Técnico +3')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          bump(c, 'fans', 6);
+          if (r() < 0.3) { bump(c, 'coach', -4); return { ok: false, text: 'A história rendeu uma semana e tirou o foco do grupo.', fx: { fame: 6 } }; }
+          return { ok: true, text: '"Ninguém mexe com a minha família." A torcida aplaudiu.', fx: { fame: 6 } };
+        }
+        bump(c, 'coach', 3);
+        return { ok: true, text: 'Seu pai agora assiste de camarote, longe da confusão.', fx: {} };
+      },
+    },
+    {
+      id: 'cueca', icon: '🩲', tone: 'blue', weight: 2, max: 1,
+      when: c => !!c.club,
+      build: () => ({
+        title: 'A cueca da sorte', text: 'Doze jogos invicto com a mesma cueca. Ela rasgou no treino.',
+        options: [opt('Costurar e seguir', 'Fama +4 · 50%: confiança (forma +4%) · 30%: piada no vestiário (Técnico −3)'), opt('Jogar sem ela', '60%: se liberta (forma +3%) · 40%: a cabeça pesa (forma −4%)')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          const lucky = r() < 0.5, joke = r() < 0.3;
+          if (joke) bump(c, 'coach', -3);
+          return { ok: true, text: lucky ? 'Costurada e abençoada. A invencibilidade seguiu.' : 'A costura aguentou. A sorte, nem tanto.' + (joke ? ' E o vestiário descobriu.' : ''), fx: { fame: 4, form: lucky ? 0.04 : 0 } };
+        }
+        if (r() < 0.6) return { ok: true, text: 'Descobriu que a sorte era você mesmo.', fx: { form: 0.03 } };
+        return { ok: false, text: 'Passou o jogo inteiro pensando na cueca.', fx: { form: -0.04 } };
+      },
+    },
+    {
+      id: 'benzedeira', icon: '🕯️', tone: 'blue', weight: 2, max: 1,
+      when: c => !!c.club,
+      build: () => ({
+        title: 'A benzedeira da sua avó', text: 'Sua avó mandou uma benzedeira para o CT antes da decisão. Ela já está na portaria.',
+        options: [opt('Deixar benzer o elenco', 'Forma +3% · Torcida +5 · 20%: o técnico acha circo (Técnico −4)'), opt('Dispensar com carinho', 'Técnico +2 · 30%: a avó fica magoada (forma −2%)')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          bump(c, 'fans', 5);
+          if (r() < 0.2) { bump(c, 'coach', -4); return { ok: true, text: 'Elenco benzido, técnico bufando. Mas o time venceu.', fx: { form: 0.03 } }; }
+          return { ok: true, text: 'Até o técnico pediu um galhinho de arruda.', fx: { form: 0.03 } };
+        }
+        bump(c, 'coach', 2);
+        if (r() < 0.3) return { ok: false, text: 'Sua avó ficou uma semana sem te ligar.', fx: { form: -0.02 } };
+        return { ok: true, text: 'A benzedeira entendeu e benzeu o portão.', fx: {} };
+      },
+    },
+    {
+      id: 'trofeu_sumido', icon: '🔍', tone: 'blue', weight: 3, max: 1,
+      when: c => { const l = last(c); return !!l && l.club === c.club && l.titles.length > 0; },
+      build: () => ({
+        title: 'A taça sumiu', text: 'Na festa do título, a taça desapareceu. A última foto dela é com você.',
+        options: [opt('Procurar na casa do zagueiro', '50%: achou (Torcida +4) · 50%: apareceu num bar (Fama +6, Técnico −4)'), opt('Pagar a réplica', 'R$ 20 mil · Técnico +2')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.5) { bump(c, 'fans', 4); return { ok: true, text: 'Estava na banheira do zagueiro, cheia de gelo.', fx: {} }; }
+          bump(c, 'coach', -4);
+          return { ok: false, text: 'Um bar da cidade publicou a foto da taça servindo chope. Virou lenda.', fx: { fame: 6 } };
+        }
+        bump(c, 'coach', 2);
+        return { ok: true, text: 'Réplica paga. A original apareceu uma semana depois.', fx: { money: -20000 } };
+      },
+    },
+    {
+      id: 'apelido', icon: '🏷️', tone: 'blue', weight: 3, max: 1,
+      when: c => atClub(c) >= 1 && c.fame >= 10,
+      build: () => ({
+        title: 'O apelido pegou', text: 'O elenco te deu um apelido ridículo e a torcida adotou. Já tem faixa no estádio.',
+        options: [opt('Abraçar o apelido', 'Fama +8 · Torcida +6'), opt('Proibir o apelido', 'Técnico −3 · 50%: viraliza mais (Fama +4, Torcida −3)')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) { bump(c, 'fans', 6); return { ok: true, text: 'Virou grito de guerra. Até a camisa oficial ganhou o apelido.', fx: { fame: 8 } }; }
+        bump(c, 'coach', -3);
+        if (r() < 0.5) { bump(c, 'fans', -3); return { ok: false, text: 'Proibir só piorou. Agora todo mundo usa.', fx: { fame: 4 } }; }
+        return { ok: true, text: 'O apelido morreu em um mês.', fx: {} };
+      },
+    },
+    {
+      id: 'grito_torcida', icon: '🎺', tone: 'blue', weight: 2, max: 1,
+      when: c => c.rel.fans >= 55 && !!c.club,
+      build: () => ({
+        title: 'A música da torcida', text: 'A torcida fez uma música com o seu nome, mas a letra ofende o rival.',
+        options: [opt('Pedir para mudarem a letra', 'Fama +6 · Torcida −6'), opt('Cantar junto', 'Torcida +10 · 30%: multa de R$ 20 mil e Técnico −4')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) { bump(c, 'fans', -6); return { ok: true, text: 'A nova letra ficou mais bonita. Parte da torcida reclamou.', fx: { fame: 6 } }; }
+        bump(c, 'fans', 10);
+        if (r() < 0.3) { bump(c, 'coach', -4); return { ok: false, text: 'O vídeo chegou à federação. Multa e bronca.', fx: { money: -20000 } }; }
+        return { ok: true, text: 'Você cantou na despedida do estádio. Ídolo absoluto.', fx: {} };
+      },
+    },
+    {
+      id: 'presente_torcedor', icon: '⌚', tone: 'green', weight: 2, max: 1,
+      when: c => c.rel.fans >= 50 && !!c.club,
+      build: () => ({
+        title: 'O relógio do sócio', text: 'Um torcedor de 80 anos te deu o relógio que ganhou por 50 anos como sócio do clube.',
+        options: [opt('Aceitar e visitar ele', 'Torcida +10 · Fama +6 · forma −1%'), opt('Devolver com carinho', 'Torcida +4')],
+      }),
+      resolve: (c, ev, i) => (i === 0
+        ? (bump(c, 'fans', 10), { ok: true, text: 'Você passou uma tarde ouvindo histórias do clube. O relógio está no seu pulso.', fx: { fame: 6, form: -0.01 } })
+        : (bump(c, 'fans', 4), { ok: true, text: '"Esse relógio é seu, meu amigo." Ele chorou de alegria.', fx: {} })),
+    },
+    {
+      id: 'clausula', icon: '🔓', tone: 'blue', weight: 3, max: 1,
+      when: c => c.contract >= 2 && atClub(c) >= 1 && S.ovr(c) >= 70 && c.age <= 30 && club(c).tier <= 4,
+      build: () => ({
+        title: 'Cláusula baixa demais', text: 'A imprensa descobriu que sua cláusula de rescisão é barata. Três clubes já avisaram que vão pagar.',
+        options: [opt('Renovar com cláusula alta', 'Salário +10% · contrato +1 ano · Técnico +4'), opt('Deixar como está', 'Fama +6 · 40%: o clube te vende na próxima janela (Torcida −6)')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) { c.wage = Math.round(c.wage * 1.1); c.contract += 1; bump(c, 'coach', 4); return { ok: true, text: 'Cláusula nas alturas. Ninguém te tira daqui barato.', fx: {} }; }
+        if (r() < 0.4) { c.wantsOut = true; bump(c, 'fans', -6); return { ok: false, text: 'A diretoria aceitou a primeira proposta. Mala pronta.', fx: { fame: 6 } }; }
+        return { ok: true, text: 'Seu nome ficou no mercado, mas nenhum clube bateu a cláusula.', fx: { fame: 6 } };
+      },
+    },
+
+    // ---------- por posição ----------
+    {
+      id: 'gol_contra', icon: '🙈', tone: 'red', weight: 3, max: 1,
+      when: c => c.pos === 'ZAG' && !!c.club && c.fame >= 10,
+      build: () => ({
+        title: 'Gol contra bizarro', text: 'Você fez um gol contra de calcanhar no clássico. O vídeo tem vinte milhões de visualizações.',
+        options: [opt('Pedir desculpas na coletiva', 'Torcida +5 · Fama +4'), opt('Treinar e calar', '+1 DEF para sempre · Técnico +4 · forma −2%')],
+      }),
+      resolve: (c, ev, i) => (i === 0
+        ? (bump(c, 'fans', 5), { ok: true, text: '"Foi o gol mais bonito que eu já fiz. Pena que foi contra." A torcida riu junto.', fx: { fame: 4 } })
+        : (bump(c, 'coach', 4), { ok: true, text: 'Semanas de treino de posicionamento. Nunca mais.', fx: { attr: { def: 1 }, form: -0.02 } })),
+    },
+    {
+      id: 'xerife', icon: '🟨', tone: 'blue', weight: 3, max: 2,
+      when: c => c.pos === 'ZAG' && !!c.club,
+      build: () => ({
+        title: 'Pendurado antes do clássico', text: 'Você leva cartão todo jogo. Mais um e fica suspenso justo no clássico.',
+        options: [opt('Seguir no estilo', 'Torcida +6 · 50%: suspenso no clássico (−5% de minutos)'), opt('Controlar as entradas', 'Técnico +6 · forma −2%')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          bump(c, 'fans', 6);
+          if (r() < 0.5 - (has(c, 'frieza') ? 0.15 : 0)) return { ok: false, text: 'Amarelo bobo aos 30 minutos. Clássico visto da arquibancada.', fx: { min: -0.05 } };
+          return { ok: true, text: 'Xerife da área, sem cartão. O rival nem passou perto.', fx: {} };
+        }
+        bump(c, 'coach', 6);
+        return { ok: true, text: 'Zaga mais calma e técnico tranquilo.', fx: { form: -0.02 } };
+      },
+    },
+    {
+      id: 'luvas', icon: '📦', tone: 'green', weight: 3, max: 1,
+      when: c => c.pos === 'GOL' && c.fame >= 20 && c.wage > 0,
+      build: c => {
+        const v = Math.round(Math.max(c.wage * 8, 20000) / 1000) * 1000;
+        return {
+          title: 'Luvas novas de patrocínio', text: 'Uma marca manda luvas com o seu nome. O modelo é diferente do que você usa há anos.', value: v,
+          options: [opt('Usar as luvas novas', 'R$ ' + money(v) + ' · Fama +4 · 25%: estranha o modelo (forma −4%)'), opt('Ficar com as velhas', 'Forma +2%')],
+        };
+      },
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.25) return { ok: false, text: 'A bola escorregou duas vezes no primeiro jogo. Voltou para as velhas.', fx: { money: ev.value, fame: 4, form: -0.04 } };
+          return { ok: true, text: 'Luvas com o seu nome em todas as lojas.', fx: { money: ev.value, fame: 4 } };
+        }
+        return { ok: true, text: 'Luva velha é luva de confiança.', fx: { form: 0.02 } };
+      },
+    },
+    {
+      id: 'penalti_goleiro', icon: '🥾', tone: 'blue', weight: 2, max: 1,
+      when: c => c.pos === 'GOL' && !!c.club,
+      build: () => ({
+        title: 'O goleiro vai bater?', text: 'Disputa de pênaltis na copa. Os cinco batedores já foram. O técnico olha para você.',
+        options: [opt('Bater o pênalti', '40%: gol e herói (Fama +15 · Torcida +8) · 60%: perde (Torcida −4)'), opt('Deixar com o zagueiro', 'Técnico +3')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.4 + (has(c, 'frieza') ? 0.15 : 0)) { bump(c, 'fans', 8); return { ok: true, text: 'GOL DO GOLEIRO NA DECISÃO! Classificado e eterno.', fx: { fame: 15 } }; }
+          bump(c, 'fans', -4);
+          return { ok: false, text: 'Chutou nas nuvens. O goleiro adversário riu.', fx: {} };
+        }
+        bump(c, 'coach', 3);
+        return { ok: true, text: 'O zagueiro converteu. Você defendeu o próximo.', fx: {} };
+      },
+    },
+    {
+      id: 'assistencia_roubada', icon: '📊', tone: 'blue', weight: 3, max: 2,
+      when: c => c.pos === 'MEI' && c.fame >= 15,
+      build: c => ({
+        ...alt(c, 'assistencia_roubada', [
+          ['Assistência roubada', 'O site de estatísticas deu a sua assistência para o lateral. Era sua, claramente.'],
+          ['Passe de gol ignorado', 'Seu passe de calcanhar virou gol e a súmula registrou "rebote". A internet viu tudo.']]),
+        options: [opt('Reclamar nas redes', 'Fama +6 · 30%: zoação (Torcida −3)'), opt('Deixar pra lá', 'Técnico +3 · forma +2%')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.3) { bump(c, 'fans', -3); return { ok: false, text: '"Chorão" virou tendência por um dia.', fx: { fame: 6 } }; }
+          return { ok: true, text: 'O site corrigiu e pediu desculpas em público.', fx: { fame: 6 } };
+        }
+        bump(c, 'coach', 3);
+        return { ok: true, text: 'Quem viu o jogo sabe. O técnico também.', fx: { form: 0.02 } };
+      },
+    },
+    {
+      id: 'maestro', icon: '🎼', tone: 'blue', weight: 3, max: 1,
+      when: c => c.pos === 'MEI' && atClub(c) >= 1 && c.age >= 24,
+      build: () => ({
+        title: 'Primeiro volante?', text: 'O técnico quer você mais recuado, organizando o jogo na frente da zaga.',
+        options: [opt('Aceitar a função', '+2 DEF para sempre · assistências −15% · Técnico +8'), opt('Ficar na armação', 'Técnico −4 · assistências +5%')],
+      }),
+      resolve: (c, ev, i) => (i === 0
+        ? (bump(c, 'coach', 8), { ok: true, text: 'Você virou o cérebro do time. Menos assistências, mais controle.', fx: { attr: { def: 2 }, assistMul: -0.15 } })
+        : (bump(c, 'coach', -4), { ok: true, text: 'O técnico cedeu. A bola segue passando por você perto da área.', fx: { assistMul: 0.05 } })),
+    },
+    {
+      id: 'gol_mao', icon: '🤚', tone: 'blue', weight: 3, max: 1,
+      when: c => c.pos === 'ATA' && !!c.club && c.fame >= 10,
+      build: () => ({
+        title: 'Gol de mão', text: 'Você marcou com a mão e o árbitro validou. O jogo ainda está rolando.',
+        options: [opt('Avisar o árbitro', 'Fama +12 (fair play) · Torcida −6 · Técnico −4'), opt('Ficar quieto', 'Torcida +6 · 40%: o vídeo te expõe (Fama −8)')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) { bump(c, 'fans', -6); bump(c, 'coach', -4); return { ok: true, text: 'Gol anulado a seu pedido. O mundo aplaudiu, a torcida nem tanto.', fx: { fame: 12 } }; }
+        bump(c, 'fans', 6);
+        if (r() < 0.4) return { ok: false, text: 'O replay não deixou dúvida. "Mão santa" virou piada.', fx: { fame: -8 } };
+        return { ok: true, text: 'Ninguém viu de perto. Gol da vitória.', fx: {} };
+      },
+    },
+    {
+      id: 'artilharia', icon: '🏹', tone: 'blue', weight: 4, max: 2,
+      when: c => c.pos === 'ATA' && !!last(c) && last(c).club === c.club && last(c).goals >= 18,
+      build: () => ({
+        title: 'Um gol da artilharia', text: 'Falta um gol para a artilharia e a final da copa é em três dias. O técnico quer te poupar.',
+        options: [opt('Pedir para jogar', '55%: artilheiro (Fama +12) · 45%: chega cansado na final (forma −5%)'), opt('Aceitar o descanso', 'Técnico +8 · forma +3%')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.55 + (has(c, 'artilheiro') ? 0.15 : 0)) return { ok: true, text: 'Gol aos 89 minutos. Artilheiro e ainda inteiro para a final.', fx: { fame: 12 } };
+          return { ok: false, text: 'Não saiu o gol e você chegou arrastado na final.', fx: { form: -0.05 } };
+        }
+        bump(c, 'coach', 8);
+        return { ok: true, text: 'Descansado para a final. A artilharia ficou para o ano que vem.', fx: { form: 0.03 } };
+      },
+    },
+
+    // ---------- veterano e aposentadoria ----------
+    {
+      id: 'grisalho', icon: '🧴', tone: 'blue', weight: 2, max: 1,
+      when: c => c.age >= 32 && c.fame >= 20,
+      build: () => ({
+        title: 'O primeiro fio branco', text: 'Apareceu um fio branco na sua barba e a internet não perdoou.',
+        options: [opt('Pintar', 'R$ 3 mil · Fama +6 · 30%: fica pior e vira meme (Torcida −3)'), opt('Assumir o grisalho', 'Torcida +5')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.3) { bump(c, 'fans', -3); return { ok: false, text: 'A tinta saiu alaranjada. O apelido "cenoura" durou um mês.', fx: { money: -3000, fame: 6 } }; }
+          return { ok: true, text: 'Ninguém notou. Ou fingiram que não.', fx: { money: -3000, fame: 6 } };
+        }
+        bump(c, 'fans', 5);
+        return { ok: true, text: '"Grisalho de tanto carregar esse time." A torcida adorou.', fx: {} };
+      },
+    },
+    {
+      id: 'comentarista', icon: '📡', tone: 'blue', weight: 3, max: 1,
+      when: c => c.age >= 33 && c.fame >= 30,
+      build: () => ({
+        title: 'Comentar na TV', text: 'Uma emissora quer você comentando, nos dias de folga, os jogos que não disputa.',
+        options: [opt('Aceitar o convite', 'R$ 80 mil · Fama +8 · 35%: critica um colega (Técnico −8)'), opt('Recusar', 'Técnico +4')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.35) { bump(c, 'coach', -8); return { ok: false, text: 'Você criticou um companheiro ao vivo. O vestiário ficou gelado.', fx: { money: 80000, fame: 8 } }; }
+          return { ok: true, text: 'Análise de craque. Já falam no seu futuro na TV.', fx: { money: 80000, fame: 8 } };
+        }
+        bump(c, 'coach', 4);
+        return { ok: true, text: '"Enquanto eu jogo, eu jogo." O técnico aprovou.', fx: {} };
+      },
+    },
+    {
+      id: 'recorde', icon: '📜', tone: 'green', weight: 3, max: 1,
+      when: c => c.age >= 31 && atClub(c) >= 4 && c.rel.fans >= 60,
+      build: c => ({
+        title: 'A um jogo do recorde', text: 'Falta um jogo para você virar o jogador com mais partidas pela história ' + D.do(club(c).name) + '. O técnico quer te poupar.',
+        options: [opt('Pedir para jogar', 'Torcida +10 · Fama +6 · 25%: lesão leve (−4% de minutos)'), opt('Esperar a hora certa', 'Técnico +5')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          bump(c, 'fans', 10);
+          if (r() < 0.25) return { ok: false, text: 'Recorde batido, mas a coxa travou aos 70 minutos.', fx: { fame: 6, min: -0.04 } };
+          return { ok: true, text: 'Recorde batido com o estádio de pé. Placa na entrada do CT.', fx: { fame: 6 } };
+        }
+        bump(c, 'coach', 5);
+        return { ok: true, text: 'O recorde veio semanas depois, num jogo em casa.', fx: {} };
+      },
+    },
+    {
+      id: 'estatua', icon: '🗿', tone: 'green', weight: 3, max: 1,
+      when: c => c.age >= 33 && atClub(c) >= 5 && c.rel.fans >= 75 && c.fame >= 60,
+      build: () => ({
+        title: 'Uma estátua sua', text: 'O clube vai erguer uma estátua sua na porta do estádio. O escultor pediu quarenta sessões de pose.',
+        options: [opt('Posar para o escultor', 'Torcida +8 · Fama +10 · forma −4%'), opt('Mandar fotos', 'Torcida +4 · 30%: a estátua fica estranha e vira meme (Fama +6, Torcida −2)')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) { bump(c, 'fans', 8); return { ok: true, text: 'Idêntica. Até a tatuagem ficou igual.', fx: { fame: 10, form: -0.04 } }; }
+        bump(c, 'fans', 4);
+        if (r() < 0.3) { bump(c, 'fans', -2); return { ok: false, text: 'A estátua parece outro jogador. Já virou ponto turístico pela zoeira.', fx: { fame: 6 } }; }
+        return { ok: true, text: 'Ficou boa. Os turistas tiram foto todo dia.', fx: {} };
+      },
+    },
+    {
+      id: 'oculos', icon: '👓', tone: 'blue', weight: 2, max: 1,
+      when: c => c.age >= 30 && !!c.club,
+      build: () => ({
+        title: 'Lentes de contato', text: 'No exame do clube, o oftalmologista descobriu que você enxerga mal de longe. Há anos.',
+        options: [opt('Usar lentes de contato', 'R$ 5 mil · forma +4%'), opt('Ignorar', '35%: forma −5%')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) return { ok: true, text: 'Você descobriu que o placar tem números. O jogo ficou mais fácil.', fx: { money: -5000, form: 0.04 } };
+        if (r() < 0.35) return { ok: false, text: 'Dois passes para o bandeirinha. Faltou enxergar.', fx: { form: -0.05 } };
+        return { ok: true, text: 'Sempre jogou assim, segue jogando assim.', fx: {} };
+      },
+    },
+    {
+      id: 'teste_fisico', icon: '⏱️', tone: 'red', weight: 3, max: 1,
+      when: c => c.age >= 33 && !!c.club,
+      build: c => ({
+        title: 'Último no teste físico', text: 'Você ficou em último no teste de corrida da pré-temporada. A imprensa soube.',
+        options: [opt('Personal escondido', 'R$ 30 mil · +1 ' + D.label(c.pos, 'fis') + ' para sempre · forma −2%'), opt('Dizer que o jogo é na cabeça', 'Fama +4 · 30%: Técnico −5')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) return { ok: true, text: 'Treino às 5h da manhã por dois meses. No teste seguinte, meio de tabela.', fx: { money: -30000, attr: { fis: 1 }, form: -0.02 } };
+        if (r() < 0.3) { bump(c, 'coach', -5); return { ok: false, text: 'O técnico leu a entrevista e não achou graça.', fx: { fame: 4 } }; }
+        return { ok: true, text: '"Corro pouco porque penso rápido." A frase virou camiseta.', fx: { fame: 4 } };
+      },
+    },
+    {
+      id: 'dirigente', icon: '💼', tone: 'blue', weight: 3, max: 1,
+      when: c => c.age >= 34 && atClub(c) >= 2 && c.rel.fans >= 55,
+      build: () => ({
+        title: 'Convite para a diretoria', text: 'O presidente oferece um cargo de diretor quando você pendurar as chuteiras. E já quer sua opinião nas contratações.',
+        options: [opt('Aceitar e já ajudar', 'Técnico +6 · Torcida +6 · forma −3%'), opt('Só pensar em jogar', 'Forma +4%')],
+      }),
+      resolve: (c, ev, i) => (i === 0
+        ? (bump(c, 'coach', 6), bump(c, 'fans', 6), { ok: true, text: 'Reuniões de manhã, treino à tarde. Cansativo, mas o futuro está garantido.', fx: { form: -0.03 } })
+        : { ok: true, text: '"Dirigente eu viro depois. Hoje eu jogo."', fx: { form: 0.04 } }),
+    },
+    {
+      id: 'turne', icon: '🚌', tone: 'green', weight: 5, max: 1,
+      when: c => c.farewell && c.spells.length >= 2,
+      build: () => ({
+        title: 'Turnê de despedida', text: 'Todos os clubes por onde você passou querem fazer uma homenagem quando você jogar lá.',
+        options: [opt('Participar de todas', 'Fama +12 · Torcida +6 · forma −5%'), opt('Só no último jogo', 'Fama +4 · forma +3%')],
+      }),
+      resolve: (c, ev, i) => (i === 0
+        ? (bump(c, 'fans', 6), { ok: true, text: 'Placa, camisa emoldurada e lágrimas em cada estádio.', fx: { fame: 12, form: -0.05 } })
+        : { ok: true, text: 'Uma só despedida, do jeito que você queria.', fx: { fame: 4, form: 0.03 } }),
+    },
+    {
+      id: 'palestra', icon: '🎓', tone: 'blue', weight: 2, max: 1,
+      when: c => c.age >= 32 && c.fame >= 50,
+      build: () => ({
+        title: 'Palestras motivacionais', text: 'Empresas pagam fortunas por uma palestra sua. A agenda proposta tem dez datas.',
+        options: [opt('Fazer as dez palestras', 'R$ 200 mil · forma −4%'), opt('Uma só, de graça, na escola da infância', 'Torcida +6 · Fama +4')],
+      }),
+      resolve: (c, ev, i) => (i === 0
+        ? { ok: true, text: 'Dez cidades em dois meses. A conta cresceu, as pernas pesaram.', fx: { money: 200000, form: -0.04 } }
+        : (bump(c, 'fans', 6), { ok: true, text: 'As crianças da sua antiga escola nunca vão esquecer.', fx: { fame: 4 } })),
     },
   ];
   // Eventos que dependem de dados (ex.: rival) podem não montar: o sorteio pula os que devolvem null

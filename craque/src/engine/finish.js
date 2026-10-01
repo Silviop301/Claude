@@ -26,8 +26,8 @@
       : c.pos === 'MEI' ? T.goals * 1.1 + T.assists * 1.0 : T.goals * 0.62 + T.assists * 0.5;
     // Cada parcela da pontuação, para a tela explicar de onde veio a nota
     const n = (x, w) => (x || 0) * w;
-    const prodTxt = isDef ? (T.cs || 0) + ' jogos sem sofrer gol' + (c.pos === 'GOL' ? ', ' + (T.penSaved || 0) + ' pênaltis defendidos' : ', ' + (T.tackles || 0) + ' desarmes') + ', ' + T.goals + ' gols'
-      : T.goals + ' gols e ' + T.assists + ' assistências';
+    const P = D.plural, prodTxt = isDef ? P(T.cs || 0, 'jogo sem sofrer gol', 'jogos sem sofrer gol') + (c.pos === 'GOL' ? ', ' + P(T.penSaved || 0, 'pênalti defendido', 'pênaltis defendidos') : ', ' + P(T.tackles || 0, 'desarme', 'desarmes')) + ', ' + P(T.goals, 'gol', 'gols')
+      : P(T.goals, 'gol', 'gols') + ' e ' + P(T.assists, 'assistência', 'assistências');
     const awards = (T.scorer || 0) + (T.young || 0) + (T.team || 0);
     const parts = [
       { k: 'prod', txt: 'Produção: ' + prodTxt, v: Math.round(prod) },

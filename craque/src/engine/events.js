@@ -125,7 +125,7 @@
       when: c => c.age >= 22 && c.age <= 31 && c.rel.coach >= 55 && atClub(c) >= 2 && c.contract <= 2,
       build: c => ({
         title: 'Renovação ' + D.no(D.CLUB_BY_ID[c.club].name),
-        text: 'O clube quer blindar você com um contrato de 5 anos.',
+        text: 'O clube quer blindar você com um contrato longo.',
         options: [
           { label: 'Renovar por mais 3 anos', hint: 'Salário +40% · Torcida +10 · contrato mais longo' },
           { label: 'Só com cláusula de saída', hint: 'Mercado aberto · Técnico −5' },
