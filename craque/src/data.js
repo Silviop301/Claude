@@ -56,6 +56,26 @@
     { id: 'jpn', cup: 'Copa do Imperador', name: 'J1 League', country: 'Japão', flag: '🇯🇵', wageMult: 1.3, clubs: [['Vissel Kobe', 3], ['Kashima Antlers', 3], ['Urawa Reds', 3], ['Kawasaki Frontale', 3], ['Yokohama F. Marinos', 3], ['Sanfrecce Hiroshima', 3], ['Gamba Osaka', 2], ['Cerezo Osaka', 2], ['FC Tokyo', 2], ['Nagoya Grampus', 2], ['Kashiwa Reysol', 2], ['Machida Zelvia', 2], ['Albirex Niigata', 1], ['Shonan Bellmare', 1]] },
     { id: 'kor', cup: 'Copa da Coreia', name: 'K League 1', country: 'Coreia do Sul', flag: '🇰🇷', clubs: [['Ulsan HD', 3], ['Jeonbuk Hyundai', 3], ['Pohang Steelers', 2], ['FC Seoul', 2], ['Gangwon', 2], ['Gimcheon Sangmu', 2], ['Suwon FC', 2], ['Daejeon Hana', 2], ['Incheon United', 1], ['Jeju United', 1], ['Gwangju', 1], ['Daegu', 1]] },
     { id: 'qat', cup: 'Copa do Emir', name: 'Qatar Stars League', country: 'Catar', flag: '🇶🇦', wageMult: 3, clubs: [['Al-Sadd', 3], ['Al-Duhail', 3], ['Al-Rayyan', 3], ['Al-Gharafa', 3], ['Al-Arabi', 2], ['Qatar SC', 2], ['Al-Wakrah', 2], ['Umm Salal', 2]] },
+    // Segundas divisões dos países que só tinham a elite (acesso e rebaixamento em D.LADDER)
+    { id: 'ned-2', cup: 'Copa da Holanda', name: 'Eerste Divisie', country: 'Holanda', flag: '🇳🇱', clubs: [['ADO Den Haag', 2], ['Cambuur', 2], ['Roda JC', 2], ['De Graafschap', 2], ['Almere City', 2], ['RKC Waalwijk', 2], ['FC Den Bosch', 2], ['Dordrecht', 2], ['FC Emmen', 2], ['Helmond Sport', 2], ['MVV', 1], ['VVV-Venlo', 1], ['TOP Oss', 1], ['FC Eindhoven', 1]] },
+    { id: 'tur-2', cup: 'Copa da Turquia', name: 'TFF 1. Lig', country: 'Turquia', flag: '🇹🇷', clubs: [['Bodrumspor', 2], ['Pendikspor', 2], ['Çorum FK', 2], ['Erzurumspor', 2], ['Boluspor', 2], ['Bandırmaspor', 2], ['Sakaryaspor', 2], ['Iğdır FK', 2], ['Manisa FK', 2], ['Keçiörengücü', 2], ['Ümraniyespor', 1], ['Hatayspor', 1], ['Adana Demirspor', 1], ['Amedspor', 1]] },
+    { id: 'mex-2', cup: 'Copa MX', name: 'Liga de Expansión', country: 'México', flag: '🇲🇽', wageMult: 1.3, clubs: [['Atlante', 2], ['Celaya', 2], ['Leones Negros', 2], ['Tepatitlán', 2], ['Correcaminos', 2], ['Dorados', 2], ['Mineros de Zacatecas', 2], ['Venados', 2], ['Tlaxcala', 2], ['Atlético Morelia', 2], ['Cancún FC', 1], ['Tapatío', 1], ['Jaiba Brava', 1], ['Irapuato', 1]] },
+    { id: 'bel-2', cup: 'Copa da Bélgica', name: 'Challenger Pro League', country: 'Bélgica', flag: '🇧🇪', clubs: [['Beerschot', 2], ['Lommel', 2], ['RWD Molenbeek', 2], ['Patro Eisden', 2], ['Lierse', 2], ['Lokeren', 2], ['Francs Borains', 2], ['Seraing', 2], ['Eupen', 1], ['Kortrijk', 1], ['Beveren', 1], ['Club NXT', 1]] },
+    { id: 'sco-2', cup: 'Copa da Escócia', name: 'Scottish Championship', country: 'Escócia', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', clubs: [['St Johnstone', 2], ['Hamilton Academical', 2], ['Partick Thistle', 2], ['Ayr United', 1], ['Raith Rovers', 1], ['Greenock Morton', 1], ['Airdrieonians', 1], ["Queen's Park", 1], ['Arbroath', 1], ['Dunfermline', 1]] },
+    { id: 'gre-2', cup: 'Copa da Grécia', name: 'Super League 2', country: 'Grécia', flag: '🇬🇷', clubs: [['Iraklis', 2], ['Kalamata', 2], ['Panionios', 2], ['Niki Volos', 2], ['Ilioupoli', 2], ['Chania', 2], ['Kampaniakos', 2], ['Makedonikos', 2], ['Marko', 1], ['Panachaiki', 1], ['Athens Kallithea', 1], ['Egaleo', 1]] },
+    { id: 'sui-2', cup: 'Copa da Suíça', name: 'Challenge League', country: 'Suíça', flag: '🇨🇭', clubs: [['Aarau', 2], ['Vaduz', 2], ['Neuchâtel Xamax', 2], ['Wil', 2], ['Bellinzona', 2], ['Stade Lausanne Ouchy', 2], ['Étoile Carouge', 1], ['Stade Nyonnais', 1], ['Rapperswil-Jona', 1], ['Schaffhausen', 1]] },
+    { id: 'aut-2', cup: 'Copa da Áustria', name: '2. Liga Austríaca', country: 'Áustria', flag: '🇦🇹', clubs: [['Admira Wacker', 2], ['Austria Lustenau', 2], ['Kapfenberg', 2], ['Liefering', 2], ['First Vienna', 2], ['Floridsdorfer AC', 2], ['St. Pölten', 2], ['Bregenz', 2], ['Austria Klagenfurt', 1], ['Amstetten', 1], ['Leoben', 1], ['Horn', 1]] },
+    { id: 'den-2', cup: 'Copa da Dinamarca', name: '1ª Divisão Dinamarquesa', country: 'Dinamarca', flag: '🇩🇰', clubs: [['Lyngby', 2], ['AaB', 2], ['Hvidovre', 2], ['HB Køge', 2], ['Hillerød', 2], ['Esbjerg', 2], ['Kolding IF', 2], ['Horsens', 2], ['B.93', 1], ['Middelfart', 1], ['Hobro', 1], ['Aarhus Fremad', 1]] },
+    { id: 'chi-2', cup: 'Copa Chile', name: 'Primera B Chilena', country: 'Chile', flag: '🇨🇱', clubs: [['Deportes Antofagasta', 2], ['Santiago Wanderers', 2], ['Deportes Temuco', 2], ['Rangers de Talca', 1], ['San Marcos de Arica', 1], ['Unión San Felipe', 1], ['Deportes Copiapó', 1], ['Curicó Unido', 1], ['Magallanes', 1], ['Santiago Morning', 1], ['Recoleta', 1], ['San Luis', 1]] },
+    { id: 'par-2', cup: 'Copa Paraguai', name: 'División Intermedia', country: 'Paraguai', flag: '🇵🇾', clubs: [['Rubio Ñu', 2], ['Sol de América', 2], ['Sportivo Carapeguá', 2], ['Fernando de la Mora', 1], ['Independiente CG', 1], ['Resistencia', 1], ['Tembetary', 1], ['12 de Octubre', 1], ['Deportivo Santaní', 1], ['River Plate (PAR)', 1], ['Atlético Colegiales', 1], ['Guaireña', 1]] },
+    { id: 'ecu-2', cup: 'Copa Equador', name: 'Serie B Equatoriana', country: 'Equador', flag: '🇪🇨', clubs: [['Deportivo Quito', 2], ['Imbabura', 2], ['Chacaritas', 2], ['Cumbayá', 1], ['Guayaquil City', 1], ['Gualaceo', 1], ['9 de Octubre', 1], ['Independiente Juniors', 1], ['Manta', 1], ['Vargas Torres', 1]] },
+    { id: 'uru-2', cup: 'Copa AUF', name: 'Segunda División Uruguaia', country: 'Uruguai', flag: '🇺🇾', clubs: [['Rampla Juniors', 2], ['Uruguay Montevideo', 2], ['Atenas', 2], ['Villa Teresa', 1], ['Central Español', 1], ['Juventud de Las Piedras', 1], ['Sud América', 1], ['Rentistas', 1], ['Oriental', 1], ['Tacuarembó', 1], ['Cerrito', 1], ['Torque', 1]] },
+    { id: 'col-2', cup: 'Copa Colômbia', name: 'Primera B Colombiana', country: 'Colômbia', flag: '🇨🇴', clubs: [['Real Cartagena', 2], ['Cúcuta Deportivo', 2], ['Atlético FC', 2], ['Boca Juniors de Cali', 1], ['Barranquilla FC', 1], ['Bogotá FC', 1], ['Orsomarso', 1], ['Real Santander', 1], ['Tigres FC', 1], ['Leones FC', 1], ['Patriotas', 1], ['Deportes Quindío', 1], ['Jaguares de Córdoba', 1], ['Internacional de Palmira', 1]] },
+    { id: 'jpn-2', cup: 'Copa do Imperador', name: 'J2 League', country: 'Japão', flag: '🇯🇵', wageMult: 1.3, clubs: [['Hokkaido Consadole Sapporo', 2], ['Júbilo Iwata', 2], ['Kataller Toyama', 2], ['Montedio Yamagata', 2], ['Vegalta Sendai', 2], ['Oita Trinita', 2], ['Ventforet Kofu', 2], ['Blaublitz Akita', 2], ['Iwaki FC', 2], ['Fujieda MYFC', 2], ['Tokushima Vortis', 1], ['Ehime FC', 1], ['Roasso Kumamoto', 1], ['RB Omiya Ardija', 1]] },
+    { id: 'kor-2', cup: 'Copa da Coreia', name: 'K League 2', country: 'Coreia do Sul', flag: '🇰🇷', clubs: [['Suwon Samsung Bluewings', 2], ['Busan IPark', 2], ['Seongnam FC', 2], ['Jeonnam Dragons', 2], ['Bucheon FC', 2], ['Gimpo FC', 2], ['Seoul E-Land', 2], ['Chungnam Asan', 2], ['Ansan Greeners', 1], ['Cheonan City', 1], ['Chungbuk Cheongju', 1], ['Gyeongnam FC', 1]] },
+    { id: 'ara-2', cup: 'Copa do Rei Saudita', name: 'First Division Saudita', country: 'Arábia', flag: '🇸🇦', wageMult: 2, clubs: [['Al-Faisaly', 2], ['Al-Jabalain', 2], ['Al-Arabi (KSA)', 2], ['Al-Adalah', 2], ['Al-Batin', 2], ['Al-Jandal', 2], ['Al-Ula', 2], ['Al-Zulfi', 2], ['Ohod', 1], ['Al-Diriyah', 1], ['Abha', 1], ['Al-Tai', 1]] },
+    { id: 'usa-2', cup: 'US Open Cup', name: 'USL Championship', country: 'EUA', flag: '🇺🇸', wageMult: 1, clubs: [['Louisville City', 2], ['Sacramento Republic', 2], ['Phoenix Rising', 2], ['Tampa Bay Rowdies', 2], ['Pittsburgh Riverhounds', 2], ['San Antonio FC', 2], ['New Mexico United', 2], ['Indy Eleven', 2], ['Detroit City', 1], ['Charleston Battery', 1], ['Colorado Springs Switchbacks', 1], ['Orange County SC', 1]] },
+    { id: 'qat-2', cup: 'Copa do Emir', name: 'Second Division Catari', country: 'Catar', flag: '🇶🇦', wageMult: 1.5, clubs: [['Al-Shamal', 2], ['Muaither', 2], ['Mesaimeer', 2], ['Al-Bidda', 1], ['Lusail', 1], ['Al-Waab', 1], ['Al-Kharaitiyat', 1], ['Al-Shahania', 1]] },
   ];
 
   D.CLUBS = [];
@@ -101,6 +121,25 @@
     'ita-2': { up: 'ita', promo: 3 }, ita: { down: 'ita-2', releg: 3 },
     'ale-2': { up: 'ale', promo: 2 }, ale: { down: 'ale-2', releg: 2 },
     'fra-2': { up: 'fra', promo: 2 }, fra: { down: 'fra-2', releg: 2 },
+    // Segundas divisões novas (a MLS não tem acesso: a USL fica separada)
+    'ned-2': { up: 'ned', promo: 2 }, ned: { down: 'ned-2', releg: 2 },
+    'tur-2': { up: 'tur', promo: 2 }, tur: { down: 'tur-2', releg: 2 },
+    'mex-2': { up: 'mex', promo: 2 }, mex: { down: 'mex-2', releg: 2 },
+    'bel-2': { up: 'bel', promo: 2 }, bel: { down: 'bel-2', releg: 2 },
+    'sco-2': { up: 'sco', promo: 1 }, sco: { down: 'sco-2', releg: 1 },
+    'gre-2': { up: 'gre', promo: 2 }, gre: { down: 'gre-2', releg: 2 },
+    'sui-2': { up: 'sui', promo: 2 }, sui: { down: 'sui-2', releg: 2 },
+    'aut-2': { up: 'aut', promo: 2 }, aut: { down: 'aut-2', releg: 2 },
+    'den-2': { up: 'den', promo: 2 }, den: { down: 'den-2', releg: 2 },
+    'chi-2': { up: 'chi', promo: 2 }, chi: { down: 'chi-2', releg: 2 },
+    'par-2': { up: 'par', promo: 2 }, par: { down: 'par-2', releg: 2 },
+    'ecu-2': { up: 'ecu', promo: 2 }, ecu: { down: 'ecu-2', releg: 2 },
+    'uru-2': { up: 'uru', promo: 2 }, uru: { down: 'uru-2', releg: 2 },
+    'col-2': { up: 'col', promo: 2 }, col: { down: 'col-2', releg: 2 },
+    'jpn-2': { up: 'jpn', promo: 2 }, jpn: { down: 'jpn-2', releg: 2 },
+    'kor-2': { up: 'kor', promo: 2 }, kor: { down: 'kor-2', releg: 2 },
+    'ara-2': { up: 'ara', promo: 2 }, ara: { down: 'ara-2', releg: 2 },
+    'qat-2': { up: 'qat', promo: 1 }, qat: { down: 'qat-2', releg: 1 },
   };
   // Seleções da Copa do Mundo (força 70–89). As 11 primeiras são os países jogáveis.
   D.NATIONS = [
@@ -133,7 +172,7 @@
   D.ao = n => g(n, 'ao', 'à');
 
   // Artigos: "o Brasileirão", "a Premier League"
-  const MASC = ['Brasileirão', 'Championship'];
+  const MASC = ['Brasileirão', 'Championship', 'Scottish Championship', 'USL Championship'];
   D.da = n => (MASC.includes(n) ? 'do ' : 'da ') + n;
   D.na = n => (MASC.includes(n) ? 'no ' : 'na ') + n;
   D.paraA = n => (MASC.includes(n) ? 'para o ' : 'para a ') + n;

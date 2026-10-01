@@ -1,11 +1,11 @@
 """Baixa as imagens das taças reais (TheSportsDB, campo strTrophy de cada competição).
 
-Uso:  python3 tools/craque_trophies.py <pasta_temporaria>
+Uso:  python3 tools/craque_trophies.py <pasta_temporaria>   (ONLY="Nome,Nome" para baixar só algumas)
 Depois redimensione com:  node tools/craque_trophies_resize.js <pasta_temporaria>
 O resultado vai para craque/trophies/<slug>.png e craque/src/trophy-imgs.js (mapa nome da taça -> arquivo).
 Taças sem imagem (Bola de Ouro, US Open Cup, Copa MX) continuam desenhadas em SVG.
 """
-import json, pathlib, sys, time, unicodedata, urllib.error, urllib.request
+import json, os, pathlib, sys, time, unicodedata, urllib.error, urllib.request
 
 # Nome da taça no jogo -> id da competição no TheSportsDB
 IDS = {
@@ -33,6 +33,11 @@ IDS = {
     "Liga Equatoriana": 4686, "Copa Equador": 5636, "J1 League": 4633, "Copa do Imperador": 5637,
     "K League 1": 4689, "Copa da Coreia": 5635, "Qatar Stars League": 4663, "Copa do Emir": 4971,
     "Mundial de Clubes": 4503,
+    # Segundas divisões novas (várias não têm foto da taça na API: ficam com a taça desenhada)
+    "Eerste Divisie": 4641, "TFF 1. Lig": 4676, "Liga de Expansión": 4654, "Challenger Pro League": 4623,
+    "Scottish Championship": 4395, "Challenge League": 4713, "2. Liga Austríaca": 4796, "1ª Divisão Dinamarquesa": 4683,
+    "Primera B Chilena": 4899, "División Intermedia": 4900, "Serie B Equatoriana": 4957, "Segunda División Uruguaia": 5072,
+    "Primera B Colombiana": 4951, "J2 League": 4824, "K League 2": 4822, "First Division Saudita": 5627, "USL Championship": 4684,
 }
 
 
@@ -57,7 +62,11 @@ def main():
     out = pathlib.Path(sys.argv[1])
     out.mkdir(parents=True, exist_ok=True)
     found = {}
+    # ONLY="Nome A,Nome B": baixa só essas (para não refazer as que já estão no jogo)
+    only = [x for x in os.environ.get("ONLY", "").split(",") if x]
     for name, lid in IDS.items():
+        if only and name not in only:
+            continue
         data = json.loads(get("https://www.thesportsdb.com/api/v1/json/123/lookupleague.php?id=%d" % lid))
         league = (data.get("leagues") or [{}])[0]
         url = league.get("strTrophy")

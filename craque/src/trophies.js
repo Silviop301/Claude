@@ -57,7 +57,7 @@
   // Mundial de Clubes e Intercontinental (sem imagem real): usam as taças desenhadas parecidas
   SHAPES.cwc = SHAPES.wc || SHAPES.cup;
   SHAPES.inter = SHAPES.cup;
-  const METAL = { league: 'gold', cup: 'silver', ucl: 'silver', lib: 'gold', ballon: 'gold', wc: 'gold', cwc: 'gold', inter: 'gold' };
+  const METAL = { league2: 'silver', league: 'gold', cup: 'silver', ucl: 'silver', lib: 'gold', ballon: 'gold', wc: 'gold', cwc: 'gold', inter: 'gold' };
 
   // name: nome da competição. Se houver imagem da taça real (src/trophy-imgs.js), usa ela;
   // se não houver (ou a imagem falhar), fica a taça desenhada.

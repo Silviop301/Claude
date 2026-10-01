@@ -33,7 +33,7 @@
     { id: 'fiel', icon: '💍', tone: 'gold', name: 'Um clube só', desc: '10 temporadas ou mais sem trocar de clube', test: c => c.spells.some(sp => (sp.seasons || 0) >= 10) },
     { id: 'cigano', icon: '🧳', tone: 'gold', name: 'Mala sem alça', desc: 'Jogue por 10 clubes', test: c => new Set(c.spells.filter(sp => sp.seasons).map(sp => sp.club)).size >= 10 },
     { id: 'mundo', icon: '✈️', tone: 'gold', name: 'Volta ao mundo', desc: 'Jogue em 5 países', test: c => new Set(c.spells.filter(sp => sp.seasons).map(sp => D.LEAGUE_BY_ID[leagueOf(sp.club)].country)).size >= 5 },
-    { id: 'arabia', icon: '🛢️', tone: 'gold', name: 'Petrodólares', desc: 'Jogue na Arábia Saudita ou no Catar', test: c => c.spells.some(sp => sp.seasons && ['ara', 'qat'].includes(leagueOf(sp.club))) },
+    { id: 'arabia', icon: '🛢️', tone: 'gold', name: 'Petrodólares', desc: 'Jogue na Arábia Saudita ou no Catar', test: c => c.spells.some(sp => sp.seasons && ['ara', 'qat'].includes(leagueOf(sp.club).split('-')[0])) },
     { id: 'prodigo', icon: '🏠', tone: 'gold', name: 'Filho pródigo', desc: 'Volte ao clube que te revelou', test: c => c.spells.filter(sp => sp.seasons && sp.club === c.firstClub && !sp.back).length >= 2 },
     { id: 'idolo', icon: '📣', tone: 'gold', name: 'Ídolo eterno', desc: 'Vire ídolo eterno de um clube', test: (c, f) => f.verdict.startsWith('Ídolo') },
     { id: 'acesso', icon: '⬆️', tone: 'gold', name: 'Subiu!', desc: 'Conquiste um acesso', test: c => c.seasons.some(s => s.move && s.move.dir === 'up') },

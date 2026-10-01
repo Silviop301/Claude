@@ -6,7 +6,10 @@
   const U = window.CRAQUE_UI;
   const { D, G, $, esc, load, store, sfx, club, crest, YEAR0 } = U;
   const KEY = 'climbix-sala-v1';
-  const img = n => (window.CRAQUE_TROPHY_IMGS || {})[n] || '';
+  // Foto da taça real; sem foto (algumas segundas divisões), a taça desenhada em prata
+  const drawn = {};
+  const img = n => (window.CRAQUE_TROPHY_IMGS || {})[n] || drawn[n] || (drawn[n] = 'data:image/svg+xml,' + encodeURIComponent(
+    window.CRAQUE_TROPHY('league2', 192).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ')));
   const HONRA = ['Copa do Mundo', 'Bola de Ouro', 'Mundial de Clubes', 'Copa Intercontinental', 'Liga dos Campeões', 'Libertadores'];
   const BIG5 = ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1'];
   const hex = n => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => b.toString(16).padStart(2, '0')).join('');
@@ -40,7 +43,7 @@
   // Todas as taças de uma carreira, a partir das temporadas, da Copa do Mundo e do Mundial de Clubes
   function entriesOf(c) {
     if (!c.uid) c.uid = hex(10);
-    const out = [], add = (k, y, cl) => { if (img(k) || HONRA.includes(k)) out.push({ k, y, cl, w: c.name, cid: c.uid }); };
+    const out = [], add = (k, y, cl) => { if (catalog().info[k]) out.push({ k, y, cl, w: c.name, cid: c.uid }); };
     (c.seasons || []).forEach((s, i) => {
       (s.titles || []).forEach(t => add(t.name, YEAR0 + i, s.club));
       if ((s.awards || []).some(a => a.id === 'ballon')) add('Bola de Ouro', YEAR0 + i, s.club);
@@ -93,7 +96,7 @@
   }
 
   // ---------- tela ----------
-  let st = { view: 'col', tab: 'ligas' }, wrap = null;
+  let st = { view: 'col', tab: 'paises' }, wrap = null;
   // Carreira mostrada em "Esta carreira": a atual, a que acabou de terminar ou a salva em andamento
   let careerShown = null;
   const careerOf = () => careerShown || G.c || ((load(U.SAVE) || {}).c) || null;
@@ -103,7 +106,7 @@
     st.view = view || 'col';
     const d = data();
     // Abre na aba da taça nova mais recente (ou em Ligas)
-    if (st.view === 'col') { const k = d.nova[d.nova.length - 1]; const inf = k && catalog().info[k]; st.tab = inf ? (inf.kind === 'honra' ? 'honra' : inf.kind === 'liga' ? 'ligas' : 'copas') : st.tab; }
+    if (st.view === 'col') { const k = d.nova[d.nova.length - 1]; const inf = k && catalog().info[k]; st.tab = inf ? (inf.kind === 'honra' ? 'honra' : 'paises') : st.tab; }
     if (wrap) wrap.remove();
     wrap = document.createElement('div');
     wrap.className = 'sala';
@@ -136,17 +139,16 @@
       head = '<div class="sl-count"><b>' + total + '</b><span>/ ' + cat.total + ' taças</span></div><div class="sl-bar"><i style="width:' + Math.max(total ? 2 : 0, pct) + '%"></i></div>' +
         seg() +
         '<div class="sl-metas">' + metas.map(([t, a, b]) => '<div class="sl-meta' + (a === b ? ' done' : '') + '"><span><b>' + esc(t) + '</b><i>' + a + '/' + b + '</i></span><em><s style="width:' + Math.round(a / b * 100) + '%"></s></em></div>').join('') + '</div>' +
-        '<div class="sl-tabs">' + [['honra', 'Honra', prog(HONRA), HONRA.length], ['ligas', 'Ligas', prog(ligas), cat.nL], ['copas', 'Copas', prog(copas), cat.nC]]
+        '<div class="sl-tabs">' + [['honra', 'Galeria de honra', prog(HONRA), HONRA.length], ['paises', 'Ligas e copas', prog(ligas) + prog(copas), cat.nL + cat.nC]]
           .map(([id, l, a, b]) => '<button data-tab="' + id + '"' + (st.tab === id ? ' class="on"' : '') + '>' + l + '<span>' + a + '/' + b + '</span></button>').join('') + '</div>';
       const hint = total <= 3 ? '<p class="sl-hint">Cada carreira enche um pouco a estante. As silhuetas são as taças que ainda faltam: toque numa para ver como ganhar.</p>' : '';
       if (st.tab === 'honra') body = hint + '<div class="sl-honra">' + HONRA.map(k => niche(k, got(k), { nova: d.nova.includes(k), legend: true })).join('') + '</div>';
       else {
-        const key = st.tab === 'ligas' ? 'ligas' : 'copas';
         // Países com alguma taça primeiro (mais completos antes); depois os outros, na ordem do jogo
         const rows = cat.countries.map((p, i) => ({ p, i, a: prog(p.ligas.concat(p.copas)), all: p.ligas.length + p.copas.length }))
           .sort((x, y) => (y.a > 0) - (x.a > 0) || (y.a > 0 ? y.a / y.all - x.a / x.all : 0) || x.i - y.i);
         body = hint + rows.map(({ p, a, all }) => '<section class="sl-shelf"><header>' + U.flag(p.flag, 'sm') + '<b>' + esc(p.name) + '</b>' + (a === all ? '<em class="sl-full">COMPLETO</em>' : '') + '<span>' + a + '/' + all + '</span></header>' +
-          '<div class="sl-row">' + p[key].map(k => niche(k, got(k), { nova: d.nova.includes(k) })).join('') + '</div></section>').join('');
+          '<div class="sl-row">' + p.ligas.concat(p.copas).map(k => niche(k, got(k), { nova: d.nova.includes(k) })).join('') + '</div></section>').join('');
       }
     } else {
       // Esta carreira: só o que ela ganhou, agrupado (honra, depois cada país)

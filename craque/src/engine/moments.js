@@ -12,7 +12,7 @@
   // Libertadores: primeira divisão dos países sul-americanos do jogo; Champions: clubes grandes da Europa
   S.LIBERTA = ['bra-a', 'arg', 'uru', 'col', 'chi', 'par', 'ecu'];
   // Continente do clube (para o Mundial e a Intercontinental): sul, conc (México/EUA), asia, eur
-  S.confOf = lg => (['bra', 'arg', 'uru', 'col', 'chi', 'par', 'ecu'].includes(lg.split('-')[0]) ? 'sul' : ['mex', 'usa'].includes(lg) ? 'conc' : ['ara', 'qat', 'jpn', 'kor'].includes(lg) ? 'asia' : 'eur');
+  S.confOf = lg => { const b = lg.split('-')[0]; return ['bra', 'arg', 'uru', 'col', 'chi', 'par', 'ecu'].includes(b) ? 'sul' : ['mex', 'usa'].includes(b) ? 'conc' : ['ara', 'qat', 'jpn', 'kor'].includes(b) ? 'asia' : 'eur'; };
   S.contName = club => (S.LIBERTA.includes(club.league) ? 'Libertadores' : club.tier >= 4 ? 'Liga dos Campeões' : null);
   // Tipo de cobrança do lance: pênalti ou falta ('classico' é sempre falta; 'cont' sorteia)
   // Zagueiro e goleiro têm lances defensivos: 'tackle' (desarme) e 'save' (defender pênalti)
