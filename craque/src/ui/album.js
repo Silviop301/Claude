@@ -57,6 +57,7 @@
     let idx = 0, timer = null;
 
     function show(k) {
+      if (!wrap.isConnected) return; // o álbum foi fechado por fora (voltar ao início): para de avançar
       idx = Math.max(0, Math.min(list.length - 1, k));
       clearTimeout(timer);
       const fr = list[idx];
