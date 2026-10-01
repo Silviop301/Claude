@@ -11,10 +11,7 @@
   // Onda triangular de -1 a 1: velocidade constante, mais justa que seno
   const tri = u => 1 - 4 * Math.abs(((u % 1) + 1) % 1 - 0.5);
 
-  // Sprites: barreira (8x2 quadros de 124x250) e goleiro (4x4 quadros de 480x250)
-  const WALL = { url: 'assets/sprites/barreira.png?v=d83acda0', w: 124, h: 250, top: 50, feet: 248, fw: 64 };
-  // Folhas com no máximo 800 px de largura: o CDN reduz imagens mais largas no celular
-  const wallVB = f => (f % 4) * WALL.w + ' ' + Math.floor(f / 4) * WALL.h + ' ' + WALL.w + ' ' + WALL.h;
+  const WALL_FEET = 256; // pés da barreira no gramado
   // Goleiro: 0-3 parado respirando; 4-10 mergulho para a esquerda (desenho original); 11 deitado no chão.
   // Folha em resolução cheia (quadros de 549x500, 4 colunas). bb: caixa do corpo; glove: luva que vai na bola;
   // foot: ponto dos pés parado (fica na linha do gol)
@@ -55,14 +52,10 @@
     let wall = '';
     if (setup.fk) {
       const l = Math.min(setup.wallL * side, setup.wallR * side), r = Math.max(setup.wallL * side, setup.wallR * side);
-      // Jogadores da barreira (sprites de braços cruzados). A cabeça marca a altura da barreira no plano do gol.
-      const top = py(setup.wall), feet = 256, sc = (feet - top) / (WALL.feet - WALL.top);
-      const span = px(r) - px(l), n = Math.max(3, Math.round(span / (WALL.fw * sc * 0.82))), step = span / n;
-      for (let i = 0; i < n; i++) {
-        const cx = px(l) + step * (i + 0.5), f = (i * 5) % 16;
-        wall += '<g class="k-wallspr" transform="translate(' + (cx - WALL.w / 2 * sc) + ' ' + (top - WALL.top * sc) + ') scale(' + sc + ')">' +
-          '<svg width="' + WALL.w + '" height="' + WALL.h + '" viewBox="' + wallVB(f) + '" overflow="hidden"><image href="' + WALL.url + '" width="496" height="1000"/></svg></g>';
-      }
+      // Jogadores da barreira (personagens do designer, montados em animateWall). A cabeça marca a altura da barreira no plano do gol.
+      const top = py(setup.wall), h = WALL_FEET - top;
+      const span = px(r) - px(l), n = Math.min(6, Math.max(3, Math.round(span / (h * 0.265)))), step = span / n;
+      for (let i = 0; i < n; i++) wall += '<g class="k-wallspr" data-x="' + (px(l) + step * (i + 0.5)) + '" data-top="' + top + '"></g>';
     }
     const L = 'stroke="#EEF5F0" stroke-width="2" fill="none" opacity=".75"';
     return '<svg class="kick-svg" viewBox="0 0 360 320" aria-label="Cobrança">' +
@@ -196,31 +189,25 @@
     }
     return api;
   }
-  // Barreira: parada, só respirando (quadros 0-3, cada um no seu tempo); no chute, todos pulam juntos
-  // (quadros 8-11 subindo, 12-15 descendo). Devolve jump() para chamar no chute.
-  function animateWall(svg) {
-    const men = svg.querySelectorAll('.k-wallspr svg');
-    if (!men.length) return { jump() {} };
-    let k = 0, jumping = false;
-    const iv = setInterval(() => {
-      if (!svg.isConnected) return clearInterval(iv);
-      if (jumping) return;
-      k++;
-      men.forEach((m, i) => m.setAttribute('viewBox', wallVB([0, 1, 2, 3, 2, 1][(k + i * 2) % 6])));
-    }, 140);
-    return {
-      jump() {
-        jumping = true;
-        let f = 8;
-        const step = () => {
-          if (!svg.isConnected) return;
-          men.forEach(m => m.setAttribute('viewBox', wallVB(f)));
-          if (++f <= 15) setTimeout(step, 75);
-          else setTimeout(() => { jumping = false; }, 300);
-        };
-        step();
-      },
-    };
+  // Barreira: parada, respirando (cada um no seu tempo); no chute, todos pulam juntos.
+  // Rostos sorteados e o uniforme do adversário do lance. Devolve jump() para chamar no chute.
+  function animateWall(svg, c) {
+    const slots = svg.querySelectorAll('.k-wallspr'), C = root.CRAQUE_CHARS;
+    if (!slots.length || !C) return { jump() {} };
+    const kit = C.kits(c, c && c.moment && c.moment.vs).opp, fs = C.faces(slots.length), nums = ['4', '5', '8', '6', '3', '2'];
+    const men = Array.from(slots).map((g, i) => {
+      const m = C.put('jogador-2d', Object.assign({ kit: 'barreira', anim: 'barreira', num: nums[i] }, fs[i % fs.length], kit), g);
+      m.place(+g.dataset.x, WALL_FEET, WALL_FEET - +g.dataset.top);
+      return m;
+    });
+    let jumpAt = 0;
+    (function loop(now) {
+      if (!svg.isConnected) return;
+      if (!jumpAt) men.forEach((m, i) => m.pose((now / 2600 + i * 0.37) % 1, 'barreira'));
+      else { const t = Math.min(1, 0.25 + (now - jumpAt) / 900); men.forEach(m => m.pose(t, 'pulo')); }
+      requestAnimationFrame(loop);
+    })(performance.now());
+    return { jump() { if (!jumpAt) jumpAt = performance.now(); } };
   }
   // Bola 3D por cima do desenho (se o 3D não carregar ou estiver desligado, fica a bola desenhada).
   // Devolve place(x, y, r, spin) e dispose(); vale para todos os minigames.
@@ -277,7 +264,7 @@
     // Goleiro e barreira em sprites
     const spr = keeperSprite(svg);
     spr.stand(setup.fk ? px(0.4 * side) : GX); spr.idle();
-    const wallAnim = animateWall(svg);
+    const wallAnim = animateWall(svg, c);
     const b3 = ball3d(stage, ball);
     const place = b3.place;
     const finish = (ok, why) => { gone = true; b3.dispose(); if (goal) goal.dispose(); opts.onDone(ok, why); };
