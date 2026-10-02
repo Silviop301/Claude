@@ -94,7 +94,16 @@
     const tight = 'M47 29.5C46.4 19.4 52 14 60 14S73.6 19.4 73 29.5C70.4 24.4 65.6 22.6 60 22.6S49.6 24.4 47 29.5Z';
     if (style === 'careca') return ['', ''];
     if (style === 'raspado') return ['', '<path d="' + tight + '" fill="' + col + '" opacity=".5"/>'];
-    if (style === 'black') return [shape('M60 7C72 7 79 15 78.6 26C78.4 32 75.6 35 73.6 35.6L46.4 35.6C44.4 35 41.6 32 41.4 26C41 15 48 7 60 7Z', col), ''];
+    // Black e black power: volume atrás da cabeça e a frente crespa cobrindo o alto da testa (linha do cabelo ondulada)
+    const afroFront = (top, y) => {
+      // Linha do cabelo ondulada, da têmpora direita à esquerda
+      const wave = 'Q72.6 ' + (y + 3) + ' 70.2 ' + (y + 2.4) + 'Q68.4 ' + (y - 0.6) + ' 65.4 ' + (y + 0.4) + 'Q62.8 ' + (y - 1.6) + ' 60 ' + (y - 0.4) +
+        'Q57.2 ' + (y - 1.6) + ' 54.6 ' + (y + 0.4) + 'Q51.6 ' + (y - 0.6) + ' 49.8 ' + (y + 2.4) + 'Q47.4 ' + (y + 3) + ' 46 30';
+      // Preenchimento sem contorno em cima (emenda com o volume de trás); só a linha do cabelo leva traço
+      return '<path d="M45 31.4C43.8 ' + (top + 5) + ' 51 ' + (top - 1) + ' 60 ' + (top - 1) + 'S76.2 ' + (top + 5) + ' 75 31.4L74 30' + wave + 'Z" fill="' + col + '"/>' +
+        '<path d="M74 30' + wave + '" fill="none" stroke="' + OL + '" stroke-width="' + OW + '" stroke-linecap="round" stroke-linejoin="round"/>';
+    };
+    if (style === 'black') return [shape('M60 7C72 7 79 15 78.6 26C78.4 32 75.6 35 73.6 35.6L46.4 35.6C44.4 35 41.6 32 41.4 26C41 15 48 7 60 7Z', col), afroFront(11.6, 21.4)];
     if (style === 'moicano') return ['', '<path d="' + tight + '" fill="' + col + '" opacity=".35"/>' + shape('M56.4 24V12.4C56.4 8.6 63.6 8.6 63.6 12.4V24Z', col)];
     if (style === 'longo') return [shape('M45.4 30C44 17 51 11.6 60 11.6S76 17 74.6 30L76 52Q60 56 44 52Z', col), shape(cap, col)];
     if (style === 'topete') return ['', shape(cap, col) + shape('M49.6 23C48.6 12.6 56 7.2 64.6 8.4C71.4 9.4 74.4 15 72.6 21.6C69 17.4 63.2 16.4 57.4 18.8C54.4 20 51.6 21.4 49.6 23Z', col)];
@@ -128,7 +137,7 @@
       let tex = '';
       const r = rng(7);
       for (let i = 0; i < 26; i++) { const x = 40 + r() * 40, y = 6 + r() * 26; tex += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r=".7" fill="' + OL + '" opacity=".22"/>'; }
-      return [shape('M60 1.6C75.8 1.6 85 12 84.6 25C84.4 33.6 80.6 38.4 76.4 39.2L43.6 39.2C39.4 38.4 35.6 33.6 35.4 25C35 12 44.2 1.6 60 1.6Z', col) + tex, ''];
+      return [shape('M60 1.6C75.8 1.6 85 12 84.6 25C84.4 33.6 80.6 38.4 76.4 39.2L43.6 39.2C39.4 38.4 35.6 33.6 35.4 25C35 12 44.2 1.6 60 1.6Z', col) + tex, afroFront(11, 21)];
     }
     if (style === 'mullet') return [shape('M48.4 33.6C47.6 40 47.8 45.4 49.6 50Q52.6 51.6 55.2 50L55.6 44.4H64.4L64.8 50Q67.4 51.6 70.4 50C72.2 45.4 72.4 40 71.6 33.6Z', col) +
       '<path d="M50.8 43.6L51.4 49.6M69.2 43.6L68.6 49.6" stroke="' + OL + '" stroke-width=".8" opacity=".35"/>', shape(tight, col)];
