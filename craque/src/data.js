@@ -327,6 +327,77 @@
       veterano: ['{idade} anos e o {n} segue brilhando, amigos!', 'Classe não tem idade, amigos. {idade} anos de puro talento!'],
     },
   };
+  // Leva nova de falas (mais variedade por programa e situação)
+  const MEDIA_MAIS2 = {
+    neto: {
+      ballon: ['Vocês tão de brincadeira comigo? Eu disse em 2019 que esse {n} ia ser o melhor do mundo! Tá gravado!', 'Ow Cascão, desliga tudo e deixa só a cara do {n} na tela o programa inteiro!', 'Melhor do mundo e eu chorando aqui ao vivo, pelo amor de Deus!'],
+      title: ['Campeão! E quem criticou, ow Cascão, põe a cara deles na tela!', 'Esse título tem dono, diga-se de passagem: {n}!', 'Taça na mão e o {n} carregando o time nas costas, como eu gosto!'],
+      bench: ['Professor, eu vou aí no CT tirar o {n} do banco pela orelha!', 'O {n} no banco e o titular jogando de salto alto! Absurdo!', 'Banco? O {n}? Vocês tão de brincadeira comigo!'],
+      injury: ['Ow Cascão, manda flores pro {n}! Volta logo, garotinho!', 'Esse departamento médico tem que ser investigado, pelo amor de Deus!'],
+      down: ['Rebaixado! A diretoria tinha que ir pra rua! O {n} jogou sozinho!', 'Pelo amor de Deus, que time horroroso! Salva o {n} desse barco!'],
+      great: ['Esse {n} joga o que eu jogava! E olha que eu jogava muito!', 'Ow Cascão, faz um compilado só do {n}! Uma hora de vídeo!', 'Se a Seleção não chamar o {n}, eu mesmo vou lá falar com o técnico!', 'Joga muito, diga-se de passagem, joga muito, muito!'],
+      good: ['Bom, bom. Mas eu sou chato, quero o {n} decidindo final!', 'Tá bem, garotinho. Agora para de postar foto e vai treinar falta!'],
+      bad: ['Ow Cascão, alguém viu o {n} jogando esse ano? Porque eu não vi!', 'Família não joga, empresário não joga, quem joga é você, {n}!', 'Pelo amor de Deus, {n}, menos rede social e mais academia!', 'Esse ano do {n} foi um desrespeito com o torcedor!'],
+      gols: ['{g} gols! Esse sabe onde a coruja dorme!', '{g} gols, diga-se de passagem, sem pênalti roubado!'],
+      assist: ['{a} assistências! Joga de cabeça erguida, igual eu jogava!'],
+      joia: ['Com {idade} anos eu já era craque também. O {n} tá no caminho!'],
+      veterano: ['{idade} anos! Isso é o que eu chamo de tiozão boleiro!'],
+    },
+    podpah: {
+      ballon: ['Mano, Bola de Ouro! Chama o {n}, a gente faz o episódio de 6 horas, papo reto!', 'O Mítico já tá chorando aqui, mano. Bola de Ouro pro {n}!'],
+      title: ['Campeão, mano! O {n} vai ter que vir aqui pagar a resenha!', 'Papo reto, esse título é do {n} com 70% de participação, mano!'],
+      bench: ['O {n} tá no banco tanto tempo que já ganhou almofada personalizada kkkk', 'Professor, papo reto: o {n} no banco é crime, mano!'],
+      injury: ['Mano, o {n} passou mais tempo no fisioterapeuta que no campo. Força, irmão!'],
+      down: ['Caiu, mano... mas o {n} vai sair dali pra time grande, cê vai ver.'],
+      great: ['O {n} tá jogando no modo fácil, mano! Ninguém para!', 'Mano, o {n} tá voando tão alto que vai precisar de passaporte kkkk', 'É o pai, é o pai, é o pai, mano!'],
+      good: ['Ano firmeza, mano. Mas eu quero o {n} insano ano que vem!'],
+      bad: ['Mano, o {n} esse ano jogou igual eu no FIFA bêbado kkkkk', 'Cadê o {n}, mano? Abriram até B.O. de desaparecimento kkkk', 'Papo reto: o {n} esse ano foi um NPC, mano'],
+      gols: ['{g} gols, mano! Esse cara faz gol até dormindo!'],
+      assist: ['{a} assistências, mano! O {n} é generoso demais, divide até a pizza!'],
+      joia: ['Mano, {idade} anos e jogando isso! Eu com {idade} anos perdia pra criança no FIFA!'],
+      veterano: ['O tiozão de {idade} anos tá dando aula de cardio, mano!'],
+    },
+    flow: {
+      ballon: ['Rapaziada, melhor do mundo! Aí é cinema, aí é Oscar!'], title: ['Taça na mão, rapaziada! O {n} foi o protagonista!'],
+      great: ['Rapaziada, o {n} tá impossível! Aí é cinema!', 'O {n} jogou demais, rapaziada. Demais!'], good: ['O {n} foi bem, rapaziada. Sólido.'],
+      bad: ['O {n} sumiu, rapaziada. Sumiu!', 'Ano ruim, rapaziada. O {n} sabe disso.'], bench: ['O {n} no banco não dá, rapaziada.'],
+      injury: ['Força, {n}! Volta logo, rapaziada te espera.'], down: ['Caiu o time, rapaziada. Pesado demais.'],
+      gols: ['{g} gols! Aí é cinema, rapaziada!'], assist: ['{a} assistências: que visão, rapaziada!'],
+    },
+    casimiro: {
+      ballon: ['Ih, meteu essa? Melhor do mundo! Fecha a live, não tem como superar isso!', 'Bola de Ouro pro {n}. Simplesmente. Apenas. Ponto final, mané.'],
+      title: ['Campeão! O {n} amassou e ainda tirou onda. Muito forte!', 'Que papinho é esse de que o {n} não decide? Tá aí a taça, mané!'],
+      bench: ['O {n} no banco o ano todo? Professor, aceitas um conselho? Escala o mané!'],
+      great: ['O {n} tá amassando tanto que dá até dó do adversário, mané!', 'Tu tá de sacanagem comigo? Que ano do {n}! Muito forte!', 'Qual é, tranquilão? O {n} jogando assim parece videogame!'],
+      good: ['O {n} foi bem. Tranquilão. Mas amassar que é bom, nada ainda.'],
+      bad: ['Ih, mané... o {n} esse ano jogou com o freio de mão puxado.', 'Que papinho foi esse, {n}? Volta a jogar, mané, para de palhaçada!', 'O {n} esse ano foi muito fraco. Simplesmente fraco. Apenas.'],
+      gols: ['{g} gols e nenhum de pênalti roubado, mané. Muito forte!'],
+      joia: ['Com {idade} anos? O mané nem tem idade pra dirigir e já amassa!'],
+    },
+    galvao: {
+      ballon: ['Melhor do mundo! Sai que é sua, {n}! Haja coração, amigos!'],
+      title: ['Acabou! Acabou! É campeão! O {n} é campeão!', 'Bem, amigos... esse título vai ficar marcado para sempre!'],
+      great: ['Olha o que ele fez! Olha o que ele fez! Que temporada do {n}!', 'Ele vai, ele vai, ele vai... e o {n} fez um ano espetacular!'],
+      bad: ['Bem, amigos... o {n} pode mais. Ele sabe que pode.', 'Calma, {n}! O futebol é feito de voltas, amigo!'],
+      gols: ['{g} gols! É tetra? Não, são {g} gols do {n}! Haja coração!'],
+    },
+  };
+  D.MEDIA.shows.forEach(sh => { const add = MEDIA_MAIS2[sh.id]; if (add) for (const k in add) sh.talk[k] = (sh.talk[k] || []).concat(add[k]); });
+  // Programa novo: Denílson Show, o podcast do Denílson
+  D.MEDIA.shows.push({ id: 'denilson', who: 'Denílson', where: 'no Denílson Show', talk: {
+    ballon: ['Bola de Ouro pro {n}! Eu dava drible de vaca, ele ganha a Bola de Ouro, é outro nível!', 'Melhor do mundo! O {n} vem aqui no Denílson Show contar como é!', 'Bola de Ouro! Tô arrepiado aqui no estúdio, gente!'],
+    title: ['É campeão! O {n} foi o nome do título, não tem discussão!', 'Denílson Show aprova: o {n} deu show e levou a taça!', 'Título merecido, e o {n} foi decisivo do começo ao fim!'],
+    bench: ['Me explica: o {n} no banco? Eu não entendo, gente!', 'O {n} no banco o ano inteiro? Já liguei pro técnico, ele não atende!'],
+    injury: ['Ano complicado pro {n}, muita lesão. Força, menino!', 'O {n} machucado faz falta pra qualquer time do mundo.'],
+    down: ['Rebaixamento dói. Mas o {n} não pode levar a culpa sozinho.', 'O time caiu e o {n} foi dos poucos que se salvaram.'],
+    great: ['Que temporada do {n}! O Denílson Show aprovou!', 'Se o {n} jogasse no meu tempo, eu ia pra reserva!', 'O {n} jogou muita bola, muita! Foi o melhor do ano pra mim!', 'Esse {n} dribla igual eu driblava. Só que ele faz gol depois kkkk'],
+    good: ['Temporada boa do {n}, mas dá pra crescer, viu?', 'O {n} foi regular. Bom, mas não brilhante.'],
+    bad: ['O {n} esse ano foi decepção. Tem que melhorar muito!', 'O {n} esse ano jogou com o pé errado... e olha que ele tem dois!', 'Ano pra esquecer. O {n} precisa voltar a se divertir em campo.'],
+    gols: ['{g} gols! O {n} não perdoa!', 'Contei aqui: {g} gols do {n}! É muito gol!'],
+    assist: ['{a} assistências! O {n} joga pros outros, isso é craque!'],
+    joia: ['{idade} anos, gente! Esse menino vai longe!', 'Com {idade} anos eu ainda tava na base. O {n} já é titular!'],
+    veterano: ['{idade} anos e jogando assim? Respeito total, o Denílson aprova!'],
+  } });
   D.MEDIA.shows.forEach(sh => { const add = MEDIA_MAIS[sh.id]; if (add) for (const k in add) sh.talk[k] = (sh.talk[k] || []).concat(add[k]); });
   // Garoto da carreira do dia: 5 nomes por nacionalidade
   D.DAILY_NAMES = {
