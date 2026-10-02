@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-8e9af92a';
+const CACHE = 'craque-66032ebc';
 const ASSETS = [
   "./",
   "./fonts/TwemojiCountryFlags.woff2",
@@ -80,6 +80,7 @@ const ASSETS = [
   "./src/ui/collection.js",
   "./src/ui/core.js",
   "./src/ui/daily.js",
+  "./src/ui/feedback.js",
   "./src/ui/finale.js",
   "./src/ui/items.js",
   "./src/ui/match.js",
@@ -286,6 +287,7 @@ const LATER = [
   "./assets/tw/1f4a7.svg",
   "./assets/tw/1f4a8.svg",
   "./assets/tw/1f4aa.svg",
+  "./assets/tw/1f4ac.svg",
   "./assets/tw/1f4af.svg",
   "./assets/tw/1f4b0.svg",
   "./assets/tw/1f4b5.svg",
@@ -348,7 +350,10 @@ const LATER = [
   "./assets/tw/1f60d.svg",
   "./assets/tw/1f60e.svg",
   "./assets/tw/1f60f.svg",
+  "./assets/tw/1f610.svg",
   "./assets/tw/1f612.svg",
+  "./assets/tw/1f615.svg",
+  "./assets/tw/1f616.svg",
   "./assets/tw/1f618.svg",
   "./assets/tw/1f61e.svg",
   "./assets/tw/1f621.svg",
@@ -360,6 +365,7 @@ const LATER = [
   "./assets/tw/1f630.svg",
   "./assets/tw/1f631.svg",
   "./assets/tw/1f634.svg",
+  "./assets/tw/1f642.svg",
   "./assets/tw/1f643.svg",
   "./assets/tw/1f644.svg",
   "./assets/tw/1f648.svg",
@@ -1433,6 +1439,7 @@ const LATER = [
   "./badges/ven-8.png",
   "./badges/ven-9.png",
   "./privacidade.html",
+  "./respostas.html",
   "./termos.html",
   "./trophies/1a-divisao-dinamarquesa.png",
   "./trophies/2--bundesliga.png",

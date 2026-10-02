@@ -86,6 +86,7 @@
       U.achBlock(ach) +
       scoreHow(f) +
       '</div></details>' +
+      U.feedbackCard() +
       '<button class="btn ghost" id="b-again">Nova carreira</button>'
     );
     U.tip('fim');
@@ -172,6 +173,9 @@
     $('b-share').onclick = () => U.shareCard(shown, $('b-share'));
     if ($('b-packs')) $('b-packs').onclick = () => U.openPacks(() => { const b = screen.querySelector('.pk-won'); if (b && !U.ITEMS.get().packs.length) b.remove(); });
     $('b-again').onclick = U.create;
+    $('b-feedback').onclick = () => U.feedback('fim', { pos: retired.pos, seasons: retired.seasons.length, grade: f.grade }, () => {
+      const card = screen.querySelector('.fb-card'); if (card) card.outerHTML = '<div class="card fb-card done"><div>' + U.emo('💚', 'sm') + '<b>Opinião enviada</b><span>Valeu! Ela ajuda a decidir o que muda no jogo.</span></div></div>';
+    });
     // Vai para o início e rola até o Hall da Fama (id próprio: "b-home" é o botão de casa da barra)
     $('b-hall').onclick = () => { U.home(); setTimeout(() => { const h = document.querySelector('.hall'); if (h) h.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 250); };
   }

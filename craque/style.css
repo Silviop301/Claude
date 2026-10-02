@@ -2077,3 +2077,25 @@ details.fin-more[open] { display: flex; flex-direction: column; gap: 12px; paddi
 .news-it { display: flex; gap: 12px; align-items: flex-start; }
 .news-it b { display: block; font: 800 15px/1.25 var(--body); }
 .news-it small { display: block; opacity: .8; font: 500 13px/1.35 var(--body); margin-top: 2px; }
+
+/* Opinião do jogador (ui/feedback.js) */
+.fb { display: flex; flex-direction: column; gap: 14px; }
+.fb .lead { margin: 0; }
+.fb-q { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; background: rgba(255,255,255,.05); }
+.fb-q b { font: 800 16px var(--display); }
+.fb-q small { color: #93AD9D; font-size: 12px; margin-top: -6px; }
+.fb-rate { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.fb-rate button { border: 0; background: rgba(255,255,255,.06); border-radius: 12px; padding: 8px 0; display: grid; place-items: center; opacity: .55; transition: transform .12s, opacity .12s; }
+.fb-rate button.on { opacity: 1; background: rgba(255,214,90,.18); box-shadow: inset 0 0 0 2px var(--gold); transform: scale(1.06); }
+.fb-likes { display: flex; flex-wrap: wrap; gap: 6px; }
+.fb-likes button { border: 0; border-radius: 999px; padding: 8px 12px; background: rgba(255,255,255,.08); color: var(--paper); font: 700 14px var(--body); }
+.fb-likes button.on { background: var(--gold); color: #10301F; }
+.fb-q textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 70px; border-radius: 12px; border: 1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.25); color: var(--paper); font: 500 15px/1.35 var(--body); padding: 10px; }
+.fb-q textarea:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+.fb-msg { margin: 0; min-height: 1em; color: #FFB4A2; font-size: 14px; }
+.fb-msg.ok { color: #B9CDBF; }
+.fb-card { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; background: rgba(255,255,255,.06); color: var(--paper); box-shadow: inset 0 0 0 1px rgba(242,194,48,.35); }
+.fb-card > div { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; }
+.fb-card > div b { font: 800 17px var(--display); }
+.fb-card > div span { grid-column: 2; color: #B9CDBF; font-size: 14px; }
+.fb-card.done { opacity: .9; }

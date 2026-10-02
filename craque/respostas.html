@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Opiniões · Climbix</title>
+<meta name="theme-color" content="#0F3D2A">
+<link rel="icon" href="icons/icon-192.png">
+<!-- Leitura das opiniões dos jogadores (api/feedback.php). Pede a senha do segredo CLIMBIX_FEEDBACK_SENHA. -->
+<style>
+  @font-face { font-family: 'Barlow'; font-weight: 500; font-display: swap; src: url('fonts/barlow-500-latin.woff2') format('woff2'); }
+  @font-face { font-family: 'Barlow'; font-weight: 700; font-display: swap; src: url('fonts/barlow-700-latin.woff2') format('woff2'); }
+  @font-face { font-family: 'Barlow Condensed'; font-weight: 800; font-display: swap; src: url('fonts/barlow-condensed-800-latin.woff2') format('woff2'); }
+  :root { --pitch: #0F3D2A; --paper: #FBF8EF; --text-2: #D3E4D9; --label: #8FD6AE; --gold: #F2C230; }
+  body { margin: 0; background: var(--pitch); color: var(--paper); font: 500 16px/1.5 'Barlow', system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font: 800 34px/1 'Barlow Condensed', 'Arial Narrow', sans-serif; margin: 4px 0 14px; }
+  form { display: flex; gap: 8px; }
+  input { flex: 1; min-width: 0; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(0,0,0,.25); color: #fff; }
+  button { font: 700 15px 'Barlow', sans-serif; border: 0; border-radius: 10px; padding: 10px 16px; background: var(--gold); color: #10301F; }
+  .msg { color: #FFB4A2; }
+  .sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 16px 0; }
+  .sum div { background: rgba(255,255,255,.06); border-radius: 12px; padding: 10px; }
+  .sum b { display: block; font: 800 26px 'Barlow Condensed', sans-serif; color: var(--gold); }
+  .sum span { color: var(--text-2); font-size: 13px; }
+  .likes { color: var(--text-2); font-size: 14px; margin-bottom: 16px; }
+  .it { background: rgba(255,255,255,.05); border-radius: 12px; padding: 12px; margin: 8px 0; }
+  .it .meta { color: var(--label); font-size: 12px; }
+  .it p { margin: 6px 0 0; color: var(--text-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .it p b { color: var(--paper); }
+  .eyebrow { color: var(--label); font: 700 12px 'Barlow', sans-serif; letter-spacing: .16em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Climbix</div>
+  <h1>Opiniões dos jogadores</h1>
+  <form id="f"><input id="s" type="password" placeholder="Senha" autocomplete="current-password"><button>Ver</button></form>
+  <p class="msg" id="m"></p>
+  <div id="out"></div>
+</main>
+<script>
+(function () {
+  const API = /climbix\.app$/.test(location.hostname) ? '/api/feedback.php' : 'https://climbix.app/api/feedback.php';
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const FACE = ['', '😖', '😕', '😐', '🙂', '🤩'];
+  const LIKE = { decisoes: 'Decisões', lances: 'Lances', rede: 'Rede social', jornal: 'Jornal', tacas: 'Taças', ranking: 'Ranking', cartas: 'Cartas', copa: 'Copa do Mundo' };
+  const REC = { sim: 'indicaria', talvez: 'talvez indicasse', nao: 'não indicaria' };
+  const $ = id => document.getElementById(id);
+  function load(pass) {
+    $('m').textContent = 'Carregando…';
+    fetch(API + '?a=list', { headers: { 'X-Climbix-Senha': pass } }).then(r => r.json()).then(j => {
+      if (j.error) { $('m').textContent = j.error === 'sem_senha' ? 'Leitura desligada: crie o segredo CLIMBIX_FEEDBACK_SENHA no GitHub e publique de novo.' : 'Senha errada.'; return; }
+      try { sessionStorage.setItem('climbix-fb-senha', pass); } catch (e) {}
+      $('m').textContent = '';
+      const s = j.summary, n = +s.n || 0;
+      $('out').innerHTML = '<div class="sum"><div><b>' + n + '</b><span>respostas</span></div>' +
+        '<div><b>' + (s.rate ? (+s.rate).toFixed(1) : '–') + '</b><span>nota média (1 a 5)</span></div>' +
+        '<div><b>' + (+s.sim || 0) + ' · ' + (+s.talvez || 0) + ' · ' + (+s.nao || 0) + '</b><span>indicaria: sim · talvez · não</span></div></div>' +
+        '<div class="likes">Mais curtido: ' + Object.entries(s.likes).filter(e => e[1]).map(([k, v]) => esc(LIKE[k] || k) + ' ' + v).join(' · ') + '</div>' +
+        j.rows.map(r => '<div class="it"><div class="meta">' + esc(r.created) + ' · ' + (r.place === 'fim' ? 'fim de carreira' : 'configurações') +
+          (r.pos ? ' · ' + esc(r.pos) : '') + (r.seasons ? ' · ' + r.seasons + ' temp.' : '') + (r.grade ? ' · nota ' + esc(r.grade) : '') + ' · ' + esc(r.ua) + ' · ' + esc(r.ver) + '</div>' +
+          '<p>' + (r.rate ? FACE[r.rate] + ' ' + r.rate + '/5' : '') + (r.rec ? ' · ' + REC[r.rec] : '') + (r.likes ? ' · gostou de: ' + r.likes.split(',').map(k => esc(LIKE[k] || k)).join(', ') : '') + '</p>' +
+          (r.lost ? '<p><b>Confuso/chato:</b> ' + esc(r.lost) + '</p>' : '') + (r.more ? '<p><b>Mais:</b> ' + esc(r.more) + '</p>' : '') + '</div>').join('');
+    }).catch(() => { $('m').textContent = 'Não deu para carregar (sem internet?).'; });
+  }
+  $('f').onsubmit = e => { e.preventDefault(); load($('s').value); };
+  let saved = ''; try { saved = sessionStorage.getItem('climbix-fb-senha') || ''; } catch (e) {}
+  if (saved) load(saved);
+})();
+</script>
+</body>
+</html>

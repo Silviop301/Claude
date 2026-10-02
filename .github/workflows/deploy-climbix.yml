@@ -130,3 +130,20 @@ jobs:
           $SSH "$SSH_USER@$SSH_HOST" "mkdir -p $DATA && umask 077 && cat > $DATA/oauth.json" < "$RUNNER_TEMP/oauth.json"
           rm -f "$RUNNER_TEMP/oauth.json"
           echo "Login ligado para: $(python3 -c "import os; print(', '.join(p for p in ('google', 'github', 'discord') if os.environ.get('OAUTH_%s_ID' % p.upper()) and os.environ.get('OAUTH_%s_SECRET' % p.upper())))")"
+
+      # Senha para ler as opiniões dos jogadores em climbix.app/respostas.html (segredo CLIMBIX_FEEDBACK_SENHA,
+      # escolhido por você, com 8 caracteres ou mais). Grava climbix-data/feedback-senha FORA do public_html.
+      # Sem o segredo, não mexe no arquivo (e sem arquivo ninguém lê as respostas).
+      - name: Senha das opiniões
+        if: steps.key.outputs.ok == 'true'
+        env:
+          SSHPASS: ${{ secrets.CLIMBIX_SSH_PASSWORD }}
+          SSH: ${{ steps.key.outputs.ssh }}
+          FB_SENHA: ${{ secrets.CLIMBIX_FEEDBACK_SENHA }}
+        run: |
+          if [ "${#FB_SENHA}" -lt 8 ]; then
+            echo "Sem CLIMBIX_FEEDBACK_SENHA (ou com menos de 8 caracteres): leitura das opiniões fica como está."; exit 0
+          fi
+          DATA="$(dirname "$TARGET")/climbix-data"
+          printf '%s' "$FB_SENHA" | $SSH "$SSH_USER@$SSH_HOST" "mkdir -p $DATA && umask 077 && cat > $DATA/feedback-senha"
+          echo "Leitura das opiniões ligada em https://climbix.app/respostas.html"

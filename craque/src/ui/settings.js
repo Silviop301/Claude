@@ -60,6 +60,7 @@
       w.innerHTML = '<div class="cfg" role="dialog" aria-modal="true" aria-label="Configurações"><div class="cfg-head"><b>Configurações</b><button class="cfg-x" aria-label="Fechar">' + U.ICON.x + '</button></div>' +
         GROUPS().map(g => '<div class="cfg-grp"><div class="eyebrow">' + g.t + '</div><div class="cfg-box">' + g.rows.map(row).join('') + '</div></div>').join('') +
         '<button class="btn ghost" id="cfg-train">' + U.emo('🏟️', 'xs') + ' Treinar lances</button>' +
+        '<button class="btn ghost" id="cfg-fb">' + U.emo('💬', 'xs') + ' Dar opinião sobre o jogo</button>' +
         '<button class="btn" id="cfg-ok">Pronto</button>' +
         // Crédito exigido pela licença dos emojis
         '<p class="cfg-credit"><button class="link-btn" id="cfg-news">Climbix ' + VERSION + ' · ver novidades</button></p>' +
@@ -76,6 +77,7 @@
       w.querySelector('.cfg-x').onclick = close;
       w.querySelector('#cfg-ok').onclick = close;
       w.querySelector('#cfg-train').onclick = () => { close(); U.trainMenu(); };
+      w.querySelector('#cfg-fb').onclick = () => { close(); U.feedback('config'); };
       w.querySelector('#cfg-news').onclick = () => { close(); whatsNew(true); };
     };
     w.onclick = e => { if (e.target === w) { w.remove(); if (U.G.c) U.bar(); } };
