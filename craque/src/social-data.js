@@ -375,6 +375,11 @@
         'Juiz ajudou em metade desses jogos aí', 'Tá bom, tá bom, mas e a Copa?', 'Esse aí só aparece em foto 📸', 'Ano que vem volta pro normal, anota',
         'Meu time tem três iguais a ele no banco', 'Joga bem, mas comemora feio', 'Esperando o dia que ele erra pra eu voltar aqui 👀', 'Se fosse eu com esse salário, fazia o dobro',
         'Parabéns, mas eu continuo preferindo o reserva', 'Superestimado, nota 5', 'Ok, mas quantos gols de cabeça?',
+        'Fez o mínimo e já quer estátua', 'Ano bom é fácil. Quero ver na fase ruim', 'Em liga fraca até eu brilho', 'Temporada boa, post ruim', 'Esse sorriso aí é de quem ganhou no VAR',
+        'Mais um que vai sumir na primeira lesão', 'Calma, ninguém ganhou Bola de Ouro com uma temporada', 'O time jogou, ele só apareceu na foto', 'Não me convenceu ainda 🤨',
+        'Aplaudo, mas de longe', 'Bom pra time médio', 'Quero ver fazer isso numa quarta à noite com chuva', 'Rendeu porque o técnico esconde ele dos jogos difíceis',
+        'Engraçado que em clássico ele some 👻', 'Tô guardando esse post pra quando ele perder', 'Tem gente que confunde fase boa com craque', 'Nem é tudo isso, gente',
+        'Comemorou como se tivesse ganhado a Copa kkkk', 'Os números são bons, o futebol nem tanto', 'Na minha época isso era o básico',
       ],
       down: [
         'Tá na hora de pendurar a chuteira 😴', 'Salário alto pra pouca coisa...', 'Volta pro banco 🙄', 'Postando em vez de treinar?', 'Devolve o dinheiro do meu ingresso 😤',
@@ -382,9 +387,15 @@
         'Vende pro rival, por favor 🙏', 'Pelo menos o cabelo tá bonito', 'Ano todo assim e ainda posta foto?', 'Desliga o celular e vai treinar', 'Já foi bom um dia. Um dia.',
         'Contratação mais cara e mais inútil', 'Se ele jogar ano que vem eu cancelo o sócio', 'Meu avô de bengala marca mais', 'Postou rápido, joga devagar', 'Esse ano ele jogou de pantufa',
         'Vou pedir reembolso da camisa {num}', 'Pior que o técnico ainda escala', 'Desaprendeu a jogar?', 'Fase ruim ou jogador ruim?', 'Tão bonzinho quem diz que foi só uma fase',
+        'Com esse futebol aí nem no meu time de várzea', 'Desculpa, mas é ruim mesmo', 'O empresário dele é um gênio, isso sim', 'Já pode trocar de profissão', 'Bola pune, e ela não perdoa 🙃',
+        'Cadê aquele que ia ser o melhor do mundo?', 'Postou e desativou os comentários? Não? Corajoso', 'Treino, que é bom, nada', 'Esse ano foi um amistoso longo pra ele',
+        'Torcida merece mais que isso', 'A fase ruim já virou estilo de jogo', 'Nem o goleiro adversário tem medo dele mais', 'Só sabe cair e pedir falta', 'Pior contratação do clube, e olha que a concorrência é forte',
+        'Vai culpar o gramado de novo?',
       ],
       bye: ['Já foi tarde 🙄 (brincadeira, valeu, craque)', 'Finalmente vai dar espaço pros novos', 'Vai fazer falta... pros adversários 😂', 'Aposentou tarde, mas aposentou',
-        'Vou sentir falta de reclamar de você 😢', 'Mesmo eu, que sempre critiquei: obrigado', 'Agora vai jogar só no showbol?', 'Pena que eu torci contra a carreira toda e não adiantou 😂'],
+        'Vou sentir falta de reclamar de você 😢', 'Mesmo eu, que sempre critiquei: obrigado', 'Agora vai jogar só no showbol?', 'Pena que eu torci contra a carreira toda e não adiantou 😂',
+        'Vai virar comentarista e errar tudo também? 😂', 'Até que enfim, achei que ia jogar até os 50', 'Respeito, mas aquele gol perdido eu levo pro túmulo',
+        'Tchau! Agora meu time tem chance 😂', 'Vou ter que achar outro pra secar', 'Overrated até na despedida', 'Ok, ok... foi bom. Mas só um pouco', 'Saiu sem nunca me convencer, mas valeu'],
     },
     // Crítica de verdade (não é hater): aparece até nos posts bons, e mais quanto mais famoso o jogador
     critics: {
@@ -427,6 +438,7 @@
     randomHandles: ['arquibancada_89', 'torcedor_raiz', 'resenha.fc', 'futebolraiz', 'joaozinho_2012', 'tia.do.zap', 'memes.da.bola', 'varzea_fc', 'vovo_boleiro', 'zueira_fc', 'goleiro.de.fifa',
       'pai_do_craque', 'menino.da.vila', 'sofascore_humano', 'mestre.da.prancheta', 'camisa10.de.varzea', 'tio.do.churrasco', 'dona.cida.futebol', 'lateral.ofensivo', 'reserva.do.reserva',
       'fa.numero.1', 'peladeiro.de.quinta', 'narrador.de.sofa', 'figurinhas.repetidas', 'coach.da.bola', 'gandula_oficial', 'bola.murcha', 'chuteira.velha', 'cabeca.de.area', 'canela.fina'],
-    haterHandles: ['opiniao_sincera', 'futebol.critico', 'secador_oficial', 'tecnico_de_sofa', 'sincerao_fc', 'anti.modinha', 'xerife.das.redes', 'corneteiro.oficial', 'nunca.satisfeito', 'zica.fc', 'do.contra_'],
+    haterHandles: ['opiniao_sincera', 'futebol.critico', 'secador_oficial', 'tecnico_de_sofa', 'sincerao_fc', 'anti.modinha', 'xerife.das.redes', 'corneteiro.oficial', 'nunca.satisfeito', 'zica.fc', 'do.contra_',
+      'rei.da.corneta', 'pe.frio_detector', 'analista.de.bar', 'tio.da.arquibancada', 'secadora.oficial', 'sofa.tatico', 'treinador.de.facebook', 'chato.mas.sincero', 'vaia.livre', 'olho.de.var'],
   };
 })();

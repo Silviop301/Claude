@@ -119,11 +119,19 @@
       : p.sub === 'transfer' ? 'transfer' : mood === 'bye' ? 'bye' : 'event';
     const crit = mood !== 'down' && SO.critics && chance(0.35 + Math.min(0.3, fame / 600));
     if (crit) rest.splice(p.com ? 1 : 0, 0, { h: fresh('h.critic', SO.criticHandles), v: false, t: fresh('c.critic.' + ck, SO.critics[ck]) });
-    // Na aposta do post humilde: deu certo, sem hater; deu errado, o hater aparece
-    const hater = fx && fx.won === false ? true : fx && fx.won ? false : chance(mood === 'down' ? 0.65 : mood === 'bye' ? 0.2 : 0.3 + Math.min(0.2, fame / 1000));
-    while (top.length + rest.length < total - (hater ? 1 : 0)) rest.push({ h: fan(), v: false, t: fresh('c.fans.' + mood, SO.fans[mood]) });
-    const out = top.concat(rest.slice(0, total - top.length - (hater ? 1 : 0)).sort(() => Math.random() - 0.5));
-    if (hater) out.push({ h: fresh('h.hater', SO.haterHandles), v: false, t: fresh('c.hater.' + mood, SO.haters[mood]), hater: true });
+    // Haters: quase sempre tem um (mais famoso, mais hater) e às vezes dois. Na aposta do post humilde:
+    // deu certo, sem hater; deu errado, eles aparecem em dobro
+    const nHater = fx && fx.won ? 0 : fx && fx.won === false ? 2
+      : (chance(mood === 'down' ? 0.95 : mood === 'bye' ? 0.45 : 0.7 + Math.min(0.2, fame / 1000)) ? 1 : 0) + (chance(mood === 'down' ? 0.5 : 0.2 + Math.min(0.2, fame / 1000)) ? 1 : 0);
+    while (top.length + rest.length < total - nHater) rest.push({ h: fan(), v: false, t: fresh('c.fans.' + mood, SO.fans[mood]) });
+    const out = top.concat(rest.slice(0, total - top.length - nHater).sort(() => Math.random() - 0.5));
+    // Entram no meio da conversa (nunca como primeira resposta); o botão de responder fica só no primeiro hater
+    for (let k = 0; k < nHater; k++) {
+      const at = 1 + Math.floor(Math.random() * out.length);
+      out.splice(at, 0, { h: fresh('h.hater', SO.haterHandles), v: false, t: fresh('c.hater.' + mood, SO.haters[mood]), hate: true });
+    }
+    const first = out.find(x => x.hate);
+    if (first) first.hater = true;
     return out;
   }
 
