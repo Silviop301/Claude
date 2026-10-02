@@ -1,5 +1,5 @@
 // Uniformes de verdade (camisa e calção do titular, camisa e calção do reserva) dos principais clubes e seleções.
-// Os outros clubes usam as cores tiradas do escudo (kits.js). Usado nos minigames (barreira, goleiro, atacantes).
+// Os outros clubes usam as cores tiradas do escudo (kits.js). Usado nos minigames (barreira, goleiro, atacantes). Escolhido conforme o adversário em chars.js (kits).
 (function (root) {
   const W = '#F4F2EC', K = '#141414', R = '#C8102E', B = '#1C3F94', N = '#14213D', Y = '#F7D117', G = '#0E7A3E', S = '#7FC4EE', O = '#F36C21', P = '#5B2A86', V = '#7A1F3D', GR = '#8A8F96';
   root.CRAQUE_KITS_REAL = {

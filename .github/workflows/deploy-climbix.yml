@@ -93,6 +93,11 @@ jobs:
         run: |
           # Versão nova nas URLs de js/css e do service worker (o CDN guarda arquivos por dias)
           python3 tools/craque_sw.py
+          # Primeiro os arquivos novos (código, imagens), depois a página e o service worker: assim a página
+          # nova nunca aponta para um arquivo que ainda não chegou (o cache da Hostinger guardaria o 404)
+          rsync -az --exclude '.htaccess' --exclude '.well-known' --exclude '/index.html' --exclude '/sw.js' \
+            -e "$SSH" \
+            craque/ "$SSH_USER@$SSH_HOST:$TARGET/"
           rsync -az --delete --exclude '.htaccess' --exclude '.well-known' \
             -e "$SSH" \
             craque/ "$SSH_USER@$SSH_HOST:$TARGET/"
