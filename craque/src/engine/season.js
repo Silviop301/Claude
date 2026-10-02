@@ -38,6 +38,8 @@
     const lgSize = Math.max(20, D.CLUBS.filter(x => x.league === club.league).length);
     const maxGames = 2 * (lgSize - 1) + (club.tier >= 3 ? 8 : 4);
     const games = Math.max(0, Math.round(maxGames * share));
+    // Participação: quem jogou pouco é campeão do elenco, não dono da taça (fama, torcida e textos usam isso)
+    const part = clamp(games / (maxGames * 0.6), 0, 1), mine = part >= 0.35;
 
     // Produção por jogo
     const o = ovr0;
@@ -142,7 +144,8 @@
     else if (M && M.ok) goals += 1;
     // Continental: Libertadores (primeira divisão sul-americana) mede força contra o nível sul-americano; Champions, contra o europeu
     const libert = S.LIBERTA.includes(club.league);
-    const pCont = club.tier < 3 ? 0 : libert ? clamp((sEff - 66) / 28 + titleBonus * 0.3, 0.01, 0.28)
+    const libF = { 'bra-a': 1, arg: 0.8 }[club.league] || 0.35;
+    const pCont = club.tier < 3 ? 0 : libert ? clamp(0.08 * libF * Math.exp((sEff - 72) / 2.5) + titleBonus * 0.1, 0.003, 0.35)
       : clamp((sEff - 80) / 40 + titleBonus * 0.3, 0.01, 0.25) * (club.tier === 5 ? 1 : club.tier === 4 ? 0.4 : 0.25);
     let cont = club.tier >= 3 && r() < pCont;
     const contName = S.contName(club);
@@ -159,7 +162,7 @@
         .sort((a, b) => b.strength - a.strength).slice(0, 6);
       if (pool.length) {
         const vs = r.pick(pool);
-        inter = { vs: vs.id, won: r() < clamp(0.5 + (sEff - vs.strength) / 24, 0.15, 0.85) };
+        inter = { vs: vs.id, won: r() < clamp(0.5 + (sEff - vs.strength) / 24, 0.08, 0.85) };
         if (inter.won) titles.push({ id: 'inter', name: 'Copa Intercontinental' });
       }
     }
@@ -249,19 +252,22 @@
       highlights.unshift(ALT ? S.textPick(c, 'hl.m.' + mk + (M.ok ? 'ok' : 'ko'), ALT) : defHl || hl);
     }
     const vr = n => D.o(n);
-    if (league && rival && !(M && M.type === 'title')) highlights.push('🏆 ' + S.textPick(c, 'hl.liga', ['Título garantido na última rodada contra ' + vr(rival.name), 'Campeão da liga! Taça confirmada contra ' + vr(rival.name),
+    // Jogou pouco: a taça é do clube (sem "é sua"); com participação, as frases de sempre
+    const clT = D.O(club.name), campe = D.fem(club.name) ? ' é campeã' : ' é campeão';
+    const own = (arr, t) => (mine ? arr : arr.filter(x => !/é sua|é seu/.test(x)).concat([clT + campe + ' ' + D.da(t) + '. Você jogou pouco', 'Do banco, você viu ' + D.o(club.name) + ' levantar ' + D.paraA(t).slice(5)]));
+    if (league && rival && !(M && M.type === 'title')) highlights.push('🏆 ' + S.textPick(c, 'hl.liga', own(['Título garantido na última rodada contra ' + vr(rival.name), 'Campeão da liga! Taça confirmada contra ' + vr(rival.name),
       'Liga conquistada com vitória sobre ' + vr(rival.name) + ' na reta final', 'Volta olímpica depois de bater ' + vr(rival.name), 'Título nacional: o jogo da taça foi contra ' + vr(rival.name),
-      'Campeão com rodada de festa contra ' + vr(rival.name), 'A liga é sua: confronto decisivo vencido contra ' + vr(rival.name)]));
+      'Campeão com rodada de festa contra ' + vr(rival.name), 'A liga é sua: confronto decisivo vencido contra ' + vr(rival.name)], lg.name)));
     if (cup && other && !(M && M.type === 'cup')) highlights.push('🏆 ' + S.textPick(c, 'hl.copa', ['Final da ' + (lg.cup || 'copa') + ' contra ' + vr(other.name), 'Campeão da ' + (lg.cup || 'copa') + ' em cima ' + D.do(other.name),
       'Taça da ' + (lg.cup || 'copa') + ' na final contra ' + vr(other.name), 'Copa conquistada: decisão contra ' + vr(other.name)]) + (goals > 5 ? ': gol seu!' : ''));
-    if (cont2) highlights.push('🌎 ' + S.textPick(c, 'hl.cont2', ['Campeão da ' + cont2Name + '!', 'A ' + cont2Name + ' é sua!', cont2Name + ' na estante!', 'Noite de taça: ' + cont2Name + ' conquistada']));
+    if (cont2) highlights.push('🌎 ' + S.textPick(c, 'hl.cont2', own(['Campeão da ' + cont2Name + '!', 'A ' + cont2Name + ' é sua!', cont2Name + ' na estante!', 'Noite de taça: ' + cont2Name + ' conquistada'], cont2Name)));
     if (superT) highlights.push('🏆 ' + S.textPick(c, 'hl.super', [superName + ' conquistada no começo da temporada', 'Primeira taça do ano: ' + superName, superName + ' na estante']));
-    if (cont && contName && !(M && M.type === 'cont')) highlights.push('🌍 ' + S.textPick(c, 'hl.cont', ['Campeão da ' + contName + '!', 'A ' + contName + ' é sua!', 'Rei do continente: ' + contName + ' conquistada',
-      'Noite continental: título da ' + contName, contName + ' na estante!']));
+    if (cont && contName && !(M && M.type === 'cont')) highlights.push('🌍 ' + S.textPick(c, 'hl.cont', own(['Campeão da ' + contName + '!', 'A ' + contName + ' é sua!', 'Rei do continente: ' + contName + ' conquistada',
+      'Noite continental: título da ' + contName, contName + ' na estante!'], contName)));
     if (inter) {
       const vsName = D.CLUB_BY_ID[inter.vs].name;
       highlights.push(inter.won ? '🌐 ' + S.textPick(c, 'hl.inter', ['Campeão da Copa Intercontinental contra ' + vr(vsName) + '!', 'Intercontinental conquistada sobre ' + vr(vsName) + '!',
-        'O mundo é seu: Intercontinental contra ' + vr(vsName), 'Taça intercontinental depois de bater ' + vr(vsName)]) : '😞 Vice da Copa Intercontinental: derrota para ' + vr(vsName));
+         (mine ? 'O mundo é seu: Intercontinental contra ' : 'Intercontinental para ' + D.o(club.name) + ' contra ') + vr(vsName), 'Taça intercontinental depois de bater ' + vr(vsName)]) : '😞 Vice da Copa Intercontinental: derrota para ' + vr(vsName));
     }
     // Clássico: contra o mesmo rival de novo, o destaque lembra as vezes anteriores
     // (o rival do clássico é o de verdade: Fla x Flu, Gre-Nal, Barça x Real...; não o mais forte da liga)
@@ -306,7 +312,6 @@
 
     // Participação: o reconhecimento individual (fama e torcida) pesa os minutos. Quem jogou 60% ou mais
     // dos jogos leva o crédito todo pelos títulos; seis jogos e três taças dão medalha, não idolatria.
-    const part = clamp(games / (maxGames * 0.6), 0, 1);
     // Fama
     const fame0 = c.fame;
     c.fame = Math.max(0, c.fame * 0.85 + 5 * S.tm(c, 'estrela') + (goals * 0.5 + assists * 0.35 + (isDef ? cleanSheets * 0.35 + saves * 0.1 + penSaved * 1.5 + tackles * 0.1 : 0) + titles.length * 6 * part + awards.length * 6 + (ballon ? 30 : 0) + club.tier * 2) * (0.8 + c.rel.fans / 250));
@@ -408,7 +413,7 @@
     const res = {
       season: c.season, loan: c.loan ? c.loan.parent : null, promise: !!c.promise,
       age: c.age, club: club.id, role: role.name, games, goals, assists, rating, titles, awards,
-      cleanSheets, saves, penSaved, tackles, pos: c.pos,
+      cleanSheets, saves, penSaved, tackles, pos: c.pos, part: Math.round(part * 100) / 100,
       ovr0, ovr1, fame0: Math.round(fame0), fame1: Math.round(c.fame), injury: injName ? Math.round(injShare * 100) : 0,
       coach0: Math.round(coach0), coach1: Math.round(c.rel.coach), fans0: Math.round(fans0), fans1: Math.round(c.rel.fans),
       highlights, event: c.lastEvent || null, table, why, farewell: !!c.farewell,
@@ -474,7 +479,13 @@
     if (s.move && s.move.dir === 'down') h.push(v('down', ['Rebaixamento: ' + club + ' cai ' + D.paraA(s.move.toName), 'Dia de luto: ' + D.o(club) + ' cai ' + D.paraA(s.move.toName), 'Acabou: ' + D.o(club) + (fem ? ' é rebaixada ' : ' é rebaixado ') + D.paraA(s.move.toName),
       'Queda dolorosa: ' + D.o(club) + ' jogará ' + D.na(s.move.toName) + ' no ano que vem', 'Silêncio no estádio: ' + D.o(club) + ' cai e ' + nick + ' lamenta', 'O pior aconteceu: ' + club + ' rebaixado' + (fem ? 'a' : ''),
       'Noite triste: nem ' + nick + ' evita a queda ' + D.do(club)]));
-    if (s.titles.length >= 2) h.push(v('titles', ['Temporada histórica: ' + club + ' leva ' + s.titles.length + ' taças', 'Máquina de títulos: ' + s.titles.length + ' taças para ' + D.o(club), 'Ano mágico ' + D.no(club) + ': ' + s.titles.length + ' títulos com ' + nick,
+    const few = s.part != null && s.part < 0.35;
+    if (s.titles.length && few) h.push(s.titles.length >= 2
+      ? v('titlesB', ['Temporada histórica: ' + club + ' leva ' + s.titles.length + ' taças', 'Ano de ouro: ' + D.o(club) + ' empilha ' + s.titles.length + ' títulos', s.titles.length + ' taças para ' + D.o(club) + '; ' + nick + ' espera sua chance',
+        'Falta espaço na estante ' + D.do(club) + ', e falta espaço para ' + nick + ' no time', 'Elenco campeão: ' + D.o(club) + ' leva ' + s.titles.length + ' títulos; ' + nick + ' quase não entrou'])
+      : v('titleB', [club + (fem ? ' é campeã' : ' é campeão') + '; ' + nick + ' acompanha do banco', 'Deu ' + club + '! ' + nick + ' festeja, mas quer jogar mais', s.titles[0].name + ' para ' + D.o(club) + '; ' + nick + ' entrou pouco',
+        'Título ' + D.do(club) + ' com ' + nick + ' no elenco, e quase sempre no banco']));
+    else if (s.titles.length >= 2) h.push(v('titles', ['Temporada histórica: ' + club + ' leva ' + s.titles.length + ' taças', 'Máquina de títulos: ' + s.titles.length + ' taças para ' + D.o(club), 'Ano mágico ' + D.no(club) + ': ' + s.titles.length + ' títulos com ' + nick,
       'Ninguém para ' + D.o(club) + ': ' + s.titles.length + ' troféus na temporada', 'Galeria cheia: ' + nick + ' soma ' + s.titles.length + ' taças no ano', 'Ano de ouro: ' + D.o(club) + ' empilha ' + s.titles.length + ' títulos',
       'Falta espaço na estante ' + D.do(club) + ': ' + s.titles.length + ' conquistas', 'Hegemonia: ' + nick + ' e ' + D.o(club) + ' levam ' + s.titles.length + ' taças']));
     else if (s.titles.length) h.push(v('title', [club + (fem ? ' é campeã' : ' é campeão') + ' com ' + nick + ' em campo', 'Deu ' + club + '! ' + nick + ' ajuda a levantar a taça', 'Campeão! ' + nick + ' festeja com a torcida ' + D.do(club),
@@ -614,7 +625,7 @@
       ['Meu neto vai perguntar', 'Um dia meu neto vai me perguntar se eu vi ' + nick + ' jogar. Vou responder com esta coluna.'],
       ['O melhor de todos', 'Melhor do mundo. Escrevo devagar para saborear: ' + nick + ', melhor do mundo.'],
       ['Ponto final', 'Discutir quem é o melhor jogador do planeta perdeu a graça. A resposta tem nome: ' + nick + '.']]);
-    if (big) return col('final', [
+    if (big && !(s.part != null && s.part < 0.35)) return col('final', [
       ['Noite de gala', 'Há jogadores que somem nas finais. ' + nick + ' cresce. A ' + big.name + ' tem a assinatura dele.'],
       ['Nasceu para isso', 'Final é outro jogo, e ' + nick + ' sabe jogar esse jogo. A ' + big.name + ' volta para casa com ' + cl + '.'],
       ['Gigante', 'No jogo em que as pernas tremem, as de ' + nick + ' firmaram. ' + cl + ' tem a ' + big.name + ' e um ídolo.'],
