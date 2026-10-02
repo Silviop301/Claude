@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-6f4eb37a';
+const CACHE = 'craque-07db4c7e';
 const ASSETS = [
   "./",
   "./fonts/TwemojiCountryFlags.woff2",
@@ -1446,6 +1446,7 @@ const LATER = [
   "./trophies/1a-divisao-dinamarquesa.png",
   "./trophies/2--bundesliga.png",
   "./trophies/2-liga-austriaca.png",
+  "./trophies/a-league.png",
   "./trophies/allsvenskan.png",
   "./trophies/bola-de-ouro.png",
   "./trophies/botola-pro.png",
@@ -1520,6 +1521,7 @@ const LATER = [
   "./trophies/liga-paraguaia.png",
   "./trophies/liga-portugal-2.png",
   "./trophies/liga-portugal.png",
+  "./trophies/liga-tcheca.png",
   "./trophies/liga-uruguaia.png",
   "./trophies/ligue-1.png",
   "./trophies/ligue-2.png",

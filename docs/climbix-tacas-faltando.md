@@ -1,12 +1,12 @@
-# Taças sem imagem no Climbix (29)
+# Taças sem imagem no Climbix (27 de 29 faltando)
 
 Hoje elas aparecem com o desenho genérico de taça. Para cada uma: um PNG com fundo transparente,
 a taça em pé, de preferência com 400 px de altura ou mais. O nome do arquivo pode ser o nome da taça.
 Me mande as imagens e eu recorto, redimensiono e coloco no jogo.
 
 ## Ligas (2)
-- [ ] Liga Tcheca (Fortuna Liga) — República Tcheca
-- [ ] A-League — Austrália
+- [x] Liga Tcheca (Fortuna Liga) — República Tcheca
+- [x] A-League — Austrália
 
 ## Copas nacionais (8)
 - [ ] Copa Bicentenário — Peru
