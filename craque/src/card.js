@@ -132,7 +132,7 @@
 
   // ---------- Autógrafo e taça (área da foto) ----------
   // Estilos de assinatura (tools/craque_fonts.py hospeda as fontes). rot = inclinação (rad), stroke = contorno que engrossa
-  // o traço das fontes finas, swoosh = espessura do sublinhado (0 = sem). O jogador assina a carta no fim da carreira (d.sign);
+  // o traço das fontes finas, (sem sublinhado). O jogador assina a carta no fim da carreira (d.sign);
   // durante a carreira a carta fica só com o número.
   const SIGN = {
     delafield: { label: 'Clássica', family: "'Mrs Saint Delafield'", rot: -0.16, stroke: 2.4, swoosh: 4.5 },
@@ -191,7 +191,6 @@
       if (F.stroke) { x.lineWidth = F.stroke; x.strokeText(b.t, b.ox + dx, y); }
       y += b.d + gap; hw = Math.max(hw, b.w / 2);
     });
-    if (F.swoosh) { const bt = total / 2; x.lineWidth = F.swoosh; x.beginPath(); x.moveTo(-hw * 0.82, bt + 12); x.quadraticCurveTo(0, bt + 36, hw * 0.98, bt - 8); x.stroke(); }
     ctx.drawImage(tint(L, emboss[0]), 0, 1.5);
     ctx.drawImage(tint(L, emboss[1]), 0, -1);
     if (F.gold) { // ouro com brilho por cima, no lugar da tinta da carta
