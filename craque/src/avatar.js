@@ -8,7 +8,7 @@
   const HAIR_COLORS = ['#1E140C', '#5A3A1E', '#C9A05A', '#A8452A', '#E8E2D0', '#F4EAB8', '#2F6FD6', '#FF4FA3', '#4FC36B'];
   const HAIRS = ['curto', 'raspado', 'topete', 'black', 'trancas', 'dreads', 'moicano', 'longo', 'careca',
     'social', 'franja', 'militar', 'cacheado', 'undercut', 'degrade', 'samurai', 'afro', 'mullet', 'riscado', 'trancalonga', 'moicanoloiro'];
-  const BEARDS = ['nenhuma', 'rala', 'bigode', 'cavanhaque', 'cheia', 'porfazer', 'costeleta', 'lenhador', 'bigodao', 'navalha', 'trancada'];
+  const BEARDS = ['nenhuma', 'rala', 'bigode', 'cavanhaque', 'cheia', 'porfazer', 'costeleta', 'lenhador', 'bigodao', 'trancada'];
   const GEAR = { preto: '#1B1A17', branco: '#F4F2EA', vermelho: '#D8404A', azul: '#2F6FD6', neon: '#7CF03C', rosa: '#FF4FA3', laranja: '#FF8A1F', amarelo: '#F2D630', ouro: 'url(#g-ouro)', holo: 'url(#g-holo)', lima: '#B8F25C',
     roxo: '#7B4FD6', vinho: '#7A1E2E', cinza: '#8C8F93', musgo: '#2E5E3A', celeste: '#8FC8F2', bege: '#D9C7A3', prata: 'url(#g-prata)', cromo: 'url(#g-cromo)',
     // Estampas (pacotinho): chuteira camuflada, de raio e em chamas; luva tigrada
@@ -181,7 +181,7 @@
     if (style === 'lenhador') return '<path d="M46.6 25.2L46.2 31C46.6 40 49.6 47.6 54.2 51.4Q55.8 53.6 57.6 52.4Q60 54.8 62.4 52.4Q64.2 53.6 65.8 51.4C70.4 47.6 73.4 40 73.8 31L73.4 25.2L70.6 25.6C70.8 30.4 69.8 34 67.2 36.6Q64 38.6 60 38.2Q56 38.6 52.8 36.6C50.2 34 49.2 30.4 49.4 25.6Z" fill="' + col + '" stroke="' + OL + '" stroke-width="1.4" stroke-linejoin="round"/>' +
       '<path d="M50.6 40.6q1.2 3.4 3.4 5.4M69.4 40.6q-1.2 3.4-3.4 5.4M57.4 46.4q.6 2.4 2.6 3.6M62.6 46.4q-.6 2.4-2.6 3.6" stroke="' + OL + '" stroke-width=".7" fill="none" stroke-linecap="round" opacity=".45"/>' +
       '<path d="M54.6 39Q57 35.8 60 36.8Q63 35.8 65.4 39Q63.4 38.2 60 39Q56.6 38.2 54.6 39Z" fill="' + col + '" stroke="' + OL + '" stroke-width=".8" stroke-linejoin="round"/>';
-    if (style === 'navalha') return beardOf('cheia', col) + '<path d="M49.4 35.4L52.4 39.8M70.6 35.4L67.6 39.8" stroke="' + (skin || '#C68A5E') + '" stroke-width="1.5" stroke-linecap="round"/>';
+    if (style === 'navalha') return beardOf('cheia', col); // estilo antigo ("com desenho"): vira a barba cheia
     if (style === 'trancada') return stache + '<path d="M56.6 41.4Q60 47.6 63.4 41.4Q60 43 56.6 41.4Z" fill="' + col + '"/>' +
       [46.8, 49.6, 52.4].map(y => '<ellipse cx="60" cy="' + y + '" rx="1.9" ry="1.7" fill="' + col + '" stroke="' + OL + '" stroke-width=".9"/>').join('') +
       '<rect x="58.3" y="53.4" width="3.4" height="1.4" rx=".6" fill="#D8404A" stroke="' + OL + '" stroke-width=".6"/><path d="M58.8 54.8L58.2 57.4M60 54.8V57.8M61.2 54.8L61.8 57.4" stroke="' + col + '" stroke-width="1" stroke-linecap="round"/>';
