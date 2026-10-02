@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-a606614f';
+const CACHE = 'craque-d5f27fbe';
 const ASSETS = [
   "./",
   "./fonts/TwemojiCountryFlags.woff2",
@@ -1453,6 +1453,7 @@ const LATER = [
   "./trophies/brasileirao.png",
   "./trophies/bundesliga-austriaca.png",
   "./trophies/bundesliga.png",
+  "./trophies/campeao-de-campeoes.png",
   "./trophies/challenge-league.png",
   "./trophies/challenger-pro-league.png",
   "./trophies/champions-da-africa.png",
@@ -1492,6 +1493,7 @@ const LATER = [
   "./trophies/copa-do-rei-saudita.png",
   "./trophies/copa-do-rei.png",
   "./trophies/copa-do-trono.png",
+  "./trophies/copa-do-xeique-jassim.png",
   "./trophies/copa-equador.png",
   "./trophies/copa-intercontinental.png",
   "./trophies/copa-mx.png",
@@ -1559,10 +1561,17 @@ const LATER = [
   "./trophies/super-lig.png",
   "./trophies/supercopa-argentina.png",
   "./trophies/supercopa-da-alemanha.png",
+  "./trophies/supercopa-da-belgica.png",
+  "./trophies/supercopa-da-coreia.png",
   "./trophies/supercopa-da-espanha.png",
+  "./trophies/supercopa-da-grecia.png",
   "./trophies/supercopa-da-holanda.png",
   "./trophies/supercopa-da-turquia.png",
   "./trophies/supercopa-do-brasil.png",
+  "./trophies/supercopa-do-chile.png",
+  "./trophies/supercopa-do-equador.png",
+  "./trophies/supercopa-do-japao.png",
+  "./trophies/supercopa-paraguaia.png",
   "./trophies/supercopa-saudita.png",
   "./trophies/supercopa-uruguaia.png",
   "./trophies/supercoppa-italiana.png",

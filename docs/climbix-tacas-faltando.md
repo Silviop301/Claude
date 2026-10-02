@@ -1,4 +1,4 @@
-# Taças sem imagem no Climbix (9 de 29 faltando)
+# Taças sem imagem no Climbix: todas as 29 prontas
 
 Hoje elas aparecem com o desenho genérico de taça. Para cada uma: um PNG com fundo transparente,
 a taça em pé, de preferência com 400 px de altura ou mais. O nome do arquivo pode ser o nome da taça.
@@ -29,12 +29,12 @@ Me mande as imagens e eu recorto, redimensiono e coloco no jogo.
 - [x] Superliga Colombiana
 - [x] Supercopa da Holanda (Johan Cruijff Schaal)
 - [x] Supercopa da Turquia
-- [ ] Campeão de Campeões — México
-- [ ] Supercopa da Bélgica
-- [ ] Supercopa da Grécia
-- [ ] Supercopa do Chile
-- [ ] Supercopa Paraguaia
-- [ ] Supercopa do Equador
-- [ ] Supercopa do Japão (Fuji Film Super Cup)
-- [ ] Supercopa da Coreia
-- [ ] Copa do Xeique Jassim — Catar
+- [x] Campeão de Campeões — México
+- [x] Supercopa da Bélgica
+- [x] Supercopa da Grécia
+- [x] Supercopa do Chile
+- [x] Supercopa Paraguaia
+- [x] Supercopa do Equador
+- [x] Supercopa do Japão (Fuji Film Super Cup)
+- [x] Supercopa da Coreia
+- [x] Copa do Xeique Jassim — Catar
