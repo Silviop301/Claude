@@ -168,7 +168,7 @@
       const r = await window.CRAQUE_SHARE(cv, shareName);
       if (r === 'download') $('b-save').textContent = 'Salva';
     };
-    // Compartilhar: link que abre a carta 3D no jogo; a imagem continua disponível
+    // Compartilhar: a imagem da carta + o link curto que abre a carta 3D
     $('b-share').onclick = () => U.shareCard(shown, $('b-share'));
     if ($('b-packs')) $('b-packs').onclick = () => U.openPacks(() => { const b = screen.querySelector('.pk-won'); if (b && !U.ITEMS.get().packs.length) b.remove(); });
     $('b-again').onclick = U.create;

@@ -28,13 +28,38 @@
   }
   const linkOf = d => location.origin + location.pathname.replace(/index\.html$/, '') + '?c=' + encode(d);
 
-  // Compartilhar a carta: link (abre a carta 3D no jogo); sem folha de compartilhar, copia o link
-  async function shareCard(d, btn) {
-    const url = linkOf(d), text = 'Olha a carta de ' + d.name + ' no Climbix!';
+  // Link curto (climbix.app/?c=xxxxxxx): a carta fica guardada no servidor (api/c.php); sem servidor, o link longo
+  const CARDS_API = window.CLIMBIX_CARDS_API || (/climbix\.app$/.test(location.hostname) ? '/api/c.php' : 'https://climbix.app/api/c.php');
+  const SHORT = /^[0-9A-Za-z]{7}$/;
+  const base = () => location.origin + location.pathname.replace(/index\.html$/, '');
+  async function shortLink(d) {
     try {
-      if (navigator.share) { await navigator.share({ title: 'Climbix', text, url }); return 'shared'; }
-    } catch (e) { if (e && e.name === 'AbortError') return 'cancel'; }
-    try { await navigator.clipboard.writeText(text + ' ' + url); if (btn) btn.textContent = 'Link copiado!'; return 'copied'; } catch (e) { prompt('Copie o link da carta:', url); return 'prompt'; }
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 4000);
+      const r = await fetch(CARDS_API + '?a=put', { method: 'POST', body: JSON.stringify({ d: encode(d) }), signal: ctl.signal });
+      clearTimeout(t);
+      const j = await r.json();
+      if (j && SHORT.test(j.id || '')) return base() + '?c=' + j.id;
+    } catch (e) { /* sem internet ou servidor fora: link longo */ }
+    return linkOf(d);
+  }
+
+  // Compartilhar a carta: a imagem da carta + o link curto que abre a carta 3D.
+  // Sem folha de compartilhar com arquivo: salva a imagem e copia o texto com o link
+  async function shareCard(d, btn) {
+    const old = btn ? btn.innerHTML : '';
+    if (btn) btn.textContent = 'Preparando…';
+    const cv = document.createElement('canvas');
+    const [url] = await Promise.all([shortLink(d), window.CRAQUE_CARD(cv, d)]);
+    const text = 'Olha a carta de ' + d.name + ' no Climbix! Veja em 3D: ' + url;
+    const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+    const file = blob && new File([blob], 'climbix-' + String(d.name).toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.png', { type: 'image/png' });
+    const done = (label, r) => { if (btn) { btn.innerHTML = label || old; if (label) setTimeout(() => { btn.innerHTML = old; }, 2500); } return r; };
+    try {
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return done('', 'shared'); }
+      if (navigator.share) { await navigator.share({ title: 'Climbix', text, url }); return done('', 'shared'); }
+    } catch (e) { if (e && e.name === 'AbortError') return done('', 'cancel'); }
+    if (file) { const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; document.body.appendChild(a); a.click(); a.remove(); }
+    try { await navigator.clipboard.writeText(text); return done('Imagem salva e link copiado', 'copied'); } catch (e) { prompt('Copie o link da carta:', url); return done('', 'prompt'); }
   }
 
   // Carta 3D num elemento; se o 3D não vier, a carta desenhada
@@ -62,13 +87,20 @@
     $('cv-share').onclick = () => shareCard(d, $('cv-share'));
   }
 
-  // Link com carta: abre direto nela
+  // Link com carta: abre direto nela (link curto busca a carta no servidor; link longo traz a carta inteira)
   function fromLink() {
     const c = new URLSearchParams(location.search).get('c');
-    const d = c && decode(c);
+    if (!c) return false;
+    if (SHORT.test(c)) {
+      render('<div class="cv-page"><div class="eyebrow">Carta do Climbix</div><p class="muted">Carregando a carta…</p></div>');
+      fetch(CARDS_API + '?a=get&id=' + c).then(r => r.json()).then(j => { const d = j && j.d && decode(j.d); if (d) cardView(d); else throw new Error('sem carta'); })
+        .catch(() => { history.replaceState(null, '', location.pathname); U.home(); });
+      return true;
+    }
+    const d = decode(c);
     if (d) { cardView(d); return true; }
     return false;
   }
 
-  Object.assign(U, { cardLink: linkOf, shareCard, mount3d, cardView, cardFromLink: fromLink });
+  Object.assign(U, { cardLink: linkOf, shortLink, shareCard, mount3d, cardView, cardFromLink: fromLink });
 })();
