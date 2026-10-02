@@ -440,9 +440,9 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 @keyframes fade-out { to { opacity: 0; } }
 .paper { margin: auto 0; flex-shrink: 0; width: min(100%, 380px); background: #F4EEDC; color: #1B1A17; padding: 14px 16px 12px; border-radius: 3px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 0 60px rgba(120, 90, 30, 0.18);
-  font-family: 'Twemoji Country Flags', 'Playfair Display', Georgia, serif; animation: paper-spin .75s cubic-bezier(.2, .9, .3, 1.1);
+  font-family: 'Twemoji Country Flags', 'Playfair Display', Georgia, serif; animation: paper-spin .5s cubic-bezier(.2, .9, .3, 1.1);
   position: relative; transform-style: preserve-3d; }
-@keyframes paper-spin { 0% { transform: perspective(900px) translateZ(-1400px) rotateZ(-600deg) rotateX(55deg) scale(.4); opacity: 0; }
+@keyframes paper-spin { 0% { transform: perspective(900px) translateZ(-1400px) rotateZ(-200deg) rotateX(40deg) scale(.4); opacity: 0; }
   60% { opacity: 1; } 78% { transform: perspective(900px) translateZ(40px) rotateZ(10deg) rotateX(-8deg) scale(1.03); }
   100% { transform: perspective(900px) translateZ(0) rotateZ(-1.5deg) rotateX(0) scale(1); } }
 /* Dobrado ao meio: a metade de cima está dobrada para a frente (a aba mostra o verso); ao abrir, ela sobe pela dobra */

@@ -444,5 +444,5 @@
       '<circle cx="150" cy="88" r="11" fill="' + doc + '" stroke="' + OL + '" stroke-width="' + OW + '"/></svg>';
   }
   const url = svg => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-  window.ClimbixAvatar = { SKIN, HAIR_COLORS, HAIRS, BEARDS, GEAR, SWATCH, DEF, photo, url, lookOf };
+  window.ClimbixAvatar = { SKIN, HAIR_COLORS, HAIRS, BEARDS, GEAR, SWATCH, DEF, photo, url, lookOf, beardAtAge };
 })();

@@ -26,10 +26,13 @@
     const { r, save } = rngOf(c);
     const out = [];
     const used = new Set([c.club]);
+    // Clubes que já mandaram proposta nas últimas janelas ficam para depois (se houver outros), para variar
+    const recent = new Set(academy ? [] : (c.offerHist || []));
     const pickClub = (filter) => {
       const pool = D.CLUBS.filter(x => !used.has(x.id) && filter(x));
       if (!pool.length) return null;
-      const cl = r.pick(pool);
+      const fresh = pool.filter(x => !recent.has(x.id));
+      const cl = r.pick(fresh.length ? fresh : pool);
       used.add(cl.id);
       return cl;
     };
@@ -58,7 +61,8 @@
     const homeMax = Math.max(...D.CLUBS.filter(mine).map(x => x.tier));
     const homeFirst = r() < (c.age <= 21 ? 0.6 : c.age <= 31 ? 0.4 : 0.3);
     const mid = (homeFirst && pickClub(x => mine(x) && x.tier === Math.min(t, homeMax) && x.strength <= o + 1)) ||
-      pickClub(x => x.tier === t && x.strength <= o + 1) || pickClub(x => x.tier === Math.max(1, t - 1));
+      // No topo, os grandes do nível de baixo (Juventus, Chelsea, Atlético, Milan...) também chamam como protagonista
+      pickClub(x => (x.tier === t || (t === 5 && x.tier === 4 && x.strength >= 76)) && x.strength <= o + 1) || pickClub(x => x.tier === Math.max(1, t - 1));
     if (mid) out.push(offerFrom(c, mid, 'mid'));
     // 3) Especial: dinheiro, volta ao clube do coração ou aposta
     let sp = null;
@@ -73,6 +77,7 @@
       if (ex) out.push(offerFrom(c, ex, 'mid'));
     }
     save();
+    c.offerHist = (c.offerHist || []).concat(out.map(x => x.club)).slice(-8);
     // Sem propostas decentes quando o jogador está muito fraco e velho
     if (o < 50 && c.age >= 30) return [];
     return out;

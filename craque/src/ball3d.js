@@ -588,12 +588,12 @@ function newspaper(host, page, onClose) {
     const t = (now - t0) / 1000, time = now / 1000;
     let fold = 0, curve = 1, flutter = 0, z = 0, y = 0, rz = REST_Z, rx = 0, ry = 0, s = 1;
     if (phase === 'enter') {
-      const k = Math.min(t / 1.5, 1), e = easeOut(k);
-      fold = 1; z = -16 * (1 - e); rz = REST_Z - (1 - e) * Math.PI * 7; rx = (1 - e) * 0.5; flutter = (1 - e) * 0.6;
+      const k = Math.min(t / 0.8, 1), e = easeOut(k); // chega rápido e girando pouco (uma volta)
+      fold = 1; z = -16 * (1 - e); rz = REST_Z - (1 - e) * Math.PI * 2; rx = (1 - e) * 0.5; flutter = (1 - e) * 0.6;
       s = 0.92 + 0.08 * e; dim.style.opacity = e;
       if (k >= 1) start('unfold');
     } else if (phase === 'unfold') {
-      const k = Math.min(t / 0.9, 1);
+      const k = Math.min(t / 0.55, 1);
       fold = 1 - easeInOut(Math.min(k * 1.15, 1)); curve = 1 + Math.sin(k * Math.PI) * 1.6;
       s = 1 + Math.sin(k * Math.PI) * 0.03; rx = -Math.sin(k * Math.PI) * 0.12;
       if (k >= 1) { start('idle'); hint.style.opacity = 0.75; }

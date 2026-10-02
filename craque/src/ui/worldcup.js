@@ -220,7 +220,7 @@
     $('b-kick').onclick = U.gateTrain(type, () => {
       run.momentStarted = true; save();
       render('<div class="eyebrow">' + tName(run) + ' ' + run.year + ' · ' + esc(g.stage) + ' · ' + m.minute + "'</div><div id=\"kick\"></div>");
-      U.playMini($('kick'), type, ok => { if (!$('kick')) return; S.wcMoment(G.c, ok); save(); wcPlay(); }); // saiu da tela: ao retomar, a chance decide
+      U.playMini($('kick'), type, ok => { if (!$('kick')) return; S.wcMoment(G.c, ok); save(); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }); // saiu da tela: ao retomar, a chance decide
     });
     $('b-auto').onclick = () => { S.wcMomentAuto(G.c); save(); wcPlay(); };
   }
@@ -241,7 +241,7 @@
     $('b-kick').onclick = U.gateTrain(type, () => {
       run.pensStarted = true; save();
       render('<div class="eyebrow">' + tName(run) + ' ' + run.year + ' · Pênaltis</div><div id="kick"></div>');
-      U.playMini($('kick'), type, ok => { if (!$('kick')) return; run.pensStarted = false; S.wcPens(G.c, ok); save(); wcPlay(); });
+      U.playMini($('kick'), type, ok => { if (!$('kick')) return; run.pensStarted = false; S.wcPens(G.c, ok); save(); wcPlay(); }, null, { vs: g.opp, mine: isCwc(run) ? club(run.club).name : G.c.country });
     });
     $('b-auto').onclick = () => { S.wcPensAuto(G.c); save(); wcPlay(); };
   }

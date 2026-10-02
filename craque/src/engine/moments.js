@@ -179,6 +179,8 @@
     if (setup.fk) {
       // Falta: goleiro perto do meio, do lado sem barreira
       if (Math.abs(x - 0.4) < (setup.fkReach || setup.reach * 1.35) * high) return { ok: false, why: 'defesa' };
+      // Bola no meio do gol (mesmo por cima da barreira): o goleiro chega. Gol de falta é no canto
+      if (Math.abs(x) < 0.3 && y < 0.95) return { ok: false, why: 'defesa' };
       return { ok: true, why: 'gol' };
     }
     // Pênalti: mergulha para um lado (±0,55) ou fica no meio (só pega bola no meio e não muito alta)

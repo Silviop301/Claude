@@ -553,13 +553,16 @@ customElements.define('jogador-2d', Jogador2D);
     };
   }
   // Visual da criação de personagem no formato dos personagens dos minigames
-  const HAIR = { curto: 'curto', raspado: 'raspado', topete: 'curto', black: 'black', trancas: 'trancas', dreads: 'trancas', moicano: 'raspado', longo: 'cacheado', careca: 'careca' };
-  const BEARD = { nenhuma: 'sem', rala: 'rala', bigode: 'rala', cavanhaque: 'rala', cheia: 'cheia' };
+  // Visual do jogador (avatar.js) → desenho de lado dos minigames: cada corte e barba vira o mais parecido que existe de lado
+  const HAIR = { curto: 'curto', raspado: 'raspado', topete: 'curto', black: 'black', trancas: 'trancas', dreads: 'trancas', moicano: 'raspado', longo: 'cacheado', careca: 'careca',
+    social: 'curto', franja: 'curto', militar: 'raspado', cacheado: 'cacheado', undercut: 'curto', degrade: 'raspado', samurai: 'cacheado', afro: 'black',
+    mullet: 'cacheado', riscado: 'raspado', trancalonga: 'trancas', moicanoloiro: 'raspado' };
+  const BEARD = { nenhuma: 'sem', rala: 'rala', bigode: 'rala', cavanhaque: 'rala', cheia: 'cheia', porfazer: 'rala', costeleta: 'rala', lenhador: 'cheia', bigodao: 'cheia', trancada: 'cheia' };
   function look(c) {
     const A = root.ClimbixAvatar;
     if (!A || !c) return { skin: 'media', cabelo: 'curto' };
     const lk = Object.assign({}, A.DEF, A.lookOf(c)), g = A.GEAR[lk.boot];
-    return { skin: A.SKIN[lk.skin] || A.SKIN[3], hair: A.HAIR_COLORS[lk.hc] || A.HAIR_COLORS[0], cabelo: HAIR[lk.hair] || 'curto', barba: BEARD[lk.beard] || 'sem',
+    return { skin: A.SKIN[lk.skin] || A.SKIN[3], hair: A.HAIR_COLORS[lk.hc] || A.HAIR_COLORS[0], cabelo: HAIR[lk.hair] || 'curto', barba: BEARD[A.beardAtAge ? A.beardAtAge(lk.beard, c.age) : lk.beard] || 'sem',
       boots: lk.boot === 'ouro' ? '#E0B43A' : lk.boot === 'holo' ? '#B99BFF' : g && g[0] === '#' ? g : null };
   }
   // Rostos variados (barreira e zagueiros adversários)
@@ -579,14 +582,20 @@ customElements.define('jogador-2d', Jogador2D);
   const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
   const near = (a, b) => { const x = rgb(a), y = rgb(b); return Math.abs(x[0] - y[0]) + Math.abs(x[1] - y[1]) + Math.abs(x[2] - y[2]) < 150; };
   const kitOf = p => ({ shirt: p[0], shorts: p[1], socks: p[0], trim: near(p[0], p[1]) ? (near(p[0], '#ffffff') ? '#1D1D1F' : '#FFFFFF') : p[1] });
+  // Uniformes do lance: o de verdade (kits-real.js) quando existe; senão, as cores do escudo (kits.js).
+  // Se a camisa do adversário bate com a sua ou com o amarelo do goleiro, ele usa o uniforme reserva.
+  // CRAQUE_KIT_CTX (Copa e Mundial): nomes do adversário e do seu time/seleção, no lugar dos clubes
   function kits(c, vs) {
-    const K = root.CRAQUE_KITS || {};
-    const mine = (c && K[c.club]) || ['#12824A', '#F4F1E8'];
-    // O goleiro dos minigames veste amarelo: o adversário nunca joga parecido com ele nem com você
+    const ctx = root.CRAQUE_KIT_CTX || null;
+    const REAL = root.CRAQUE_KITS_REAL || {}, K = root.CRAQUE_KITS || {}, DD = root.CRAQUE_DATA;
+    const nameOf = id => (id && DD && DD.CLUB_BY_ID && DD.CLUB_BY_ID[id] ? DD.CLUB_BY_ID[id].name : id);
+    const kitFor = (name, id) => REAL[name] || (id && K[id] ? [K[id][0], K[id][1], K[id][1], K[id][0]] : null);
+    const m = kitFor(ctx && ctx.mine ? ctx.mine : nameOf(c && c.club), c && !(ctx && ctx.mine) ? c.club : null) || ['#12824A', '#F4F1E8', '#F4F1E8', '#12824A'];
+    const mine = [m[0], m[1]];
     const bad = x => near(x, mine[0]) || near(x, '#F2C230');
-    let opp = vs && K[vs];
-    if (opp && bad(opp[0])) opp = [opp[1], opp[0]];
-    if (!opp || bad(opp[0])) { const ok = PAL.filter(p => !bad(p[0])); opp = ok[Math.floor(Math.random() * ok.length)] || PAL[0]; }
+    const o = ctx && ctx.vs ? kitFor(ctx.vs, null) : kitFor(nameOf(vs), vs);
+    let opp = o && (!bad(o[0]) ? [o[0], o[1]] : !bad(o[2]) ? [o[2], o[3]] : null);
+    if (!opp) { const ok = PAL.filter(p => !bad(p[0])); opp = ok[Math.floor(Math.random() * ok.length)] || PAL[0]; }
     return { mine: kitOf(mine), opp: kitOf(opp) };
   }
   root.CRAQUE_CHARS = { put, look, faces, kits };

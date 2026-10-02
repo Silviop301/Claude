@@ -99,8 +99,10 @@
   };
   // Abre o minigame certo para o tipo do lance (chute, goleiro, zagueiro ou meia)
   // c: quem bate (o treino pode usar um jogador médio da posição do lance)
-  function playMini(el, setupType, onDone, c) {
+  // kitCtx (Copa e Mundial): { vs: nome do adversário, mine: sua seleção ou clube } para os uniformes certos
+  function playMini(el, setupType, onDone, c, kitCtx) {
     c = c || G.c;
+    window.CRAQUE_KIT_CTX = kitCtx || null;
     if (setupType === 'save') return window.CRAQUE_SAVE(el, { c, onDone });
     if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, { c, onDone });
     if (setupType === 'pass') return window.CRAQUE_PASS(el, { c, onDone });
