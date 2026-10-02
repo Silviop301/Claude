@@ -407,10 +407,17 @@
   // Sorteia um evento que faça sentido agora (ou nenhum). Não repete os das 2 últimas temporadas.
   S.pickEvent = function (c) {
     const { r, save } = rngOf(c);
+    // Consequência de uma escolha antiga (engine/events3.js): quando vence, passa na frente do sorteio
+    const due = S.hookDue && S.hookDue(c);
+    if (due) {
+      const hd = S.HOOK_DEFS[due.id], built = hd.build(c, r, due);
+      save();
+      return Object.assign({ id: hd.id, icon: hd.icon, tone: hd.tone, hookOf: due.id }, built);
+    }
     const recent = c.seasons.slice(-2).map(s => s.event).filter(Boolean);
     // Alguns eventos têm limite por carreira (max)
     const seen = c.evCount || {};
-    const pool = S.EVENT_DEFS.filter(e => !recent.includes(e.id) && (seen[e.id] || 0) < (e.max || 99) && e.when(c));
+    const pool = S.EVENT_DEFS.filter(e => !e.hook && !recent.includes(e.id) && (seen[e.id] || 0) < (e.max || 99) && e.when(c));
     // Eventos de contexto (peso alto) quase sempre aparecem; os genéricos, às vezes.
     const total = pool.reduce((a, e) => a + e.weight, 0);
     if (!pool.length || r() > Math.min(0.78, 0.2 + total * 0.05)) { save(); return null; }
@@ -441,7 +448,9 @@
     const { r, save } = rngOf(c);
     // Outros arquivos (engine/events2.js) somam eventos à lista depois deste
     const def = EVENT_BY_ID[ev.id] || S.EVENT_DEFS.find(e => e.id === ev.id);
-    const out = def.resolve(c, ev, idx, r);
+    const before = c.club, out = def.resolve(c, ev, idx, r);
+    if (def.hook) S.hookDone(c, ev.id);
+    if (S.hookSeed) S.hookSeed(c, ev, idx, out, r, before); // a escolha pode deixar uma consequência para depois
     save();
     const fx = out.fx || {};
     if (fx.min) c.mod.min += fx.min;
