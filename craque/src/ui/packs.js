@@ -257,19 +257,17 @@
       '<div class="pk-chips">' + why.map(x => '<span>' + esc(x.t) + ' <em>+' + x.n + '</em></span>').join('') + '</div></div>' +
       '<button class="btn" id="b-packs">Abrir agora</button><small>Ou depois, pela tela inicial</small></div>';
   }
-  // Bloco da tela inicial (tela 2b): pacotinhos e pênalti da sorte num bloco só
+  // Bloco da tela inicial (tela 2b): pacotinhos para abrir
   function homeBlock() {
-    const inv = I.get(), n = inv.packs.length, pen = U.penaltyReady ? U.penaltyReady() : false;
+    const inv = I.get(), n = inv.packs.length;
     const row = (id, art, b, sub, btn, badge) => '<button class="hb-row" id="' + id + '"><span class="hb-art">' + art + (badge ? '<em class="hb-badge">' + badge + '</em>' : '') + '</span>' +
       '<span class="hb-t"><b>' + b + '</b><small>' + sub + '</small></span>' + btn + '</button>';
     return '<div class="hb">' +
       (n ? row('b-hb-packs', packHTML('mini'), 'Pacotinhos', n + ' para abrir', '<span class="hb-go gold">Abrir</span>', n) : '') +
-      (pen ? row('b-hb-pen', U.emo('⚽', 'md'), 'Pênalti da sorte', 'Disponível agora', '<span class="hb-go">Chutar</span>') : '') +
       '</div>';
   }
   function bindHome() {
     if ($('b-hb-packs')) $('b-hb-packs').onclick = () => openPacks(U.home);
-    if ($('b-hb-pen')) $('b-hb-pen').onclick = () => U.penalty();
   }
 
   Object.assign(U, { openPacks, tradeSheet, itemImg, itemArt, packFinale: finaleBox, packHome: homeBlock, packHomeBind: bindHome, rarCls, raritySelo: selo });

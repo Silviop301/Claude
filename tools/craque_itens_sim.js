@@ -53,17 +53,8 @@ require('../craque/src/ui/items.js');
 const I = window.CRAQUE_UI.ITEMS;
 const isNum = id => /^n\d+$/.test(id);
 const all = Object.keys(I.BY_ID), visual = all.filter(id => !isNum(id)), nums = all.filter(isNum);
-console.log('Itens: ' + visual.length + ' de visual + ' + nums.length + ' números = ' + all.length + ' (cada jogador começa com 10 números)');
+console.log('Itens nos pacotinhos: ' + all.length + ' (assinaturas, acabamentos e estilos de número; os números da camisa são livres)');
 
-// Pênalti da sorte (mesmas chances de ui/penalty.js)
-function penalty() {
-  if (Math.random() < 0.25) return I.grant('fichas', null, 2);
-  let r = Math.random() * 100;
-  for (const [k, c] of [['comum', 40], ['fichas', 30], ['raro', 18], ['pacote', 8], ['epico', 4]]) {
-    if (r < c) return k === 'fichas' ? I.grant('fichas', null, 5) : k === 'pacote' ? I.grant('pacote') : I.grant('item', k);
-    r -= c;
-  }
-}
 // Troca de fichas: compra o item que falta mais barato (o jogador junta fichas para o que quer)
 function trade() {
   for (;;) {
@@ -73,18 +64,16 @@ function trade() {
   }
 }
 
-// daily: fração das carreiras que são a carreira do dia · pen: pênaltis por carreira
+// daily: fração das carreiras que são a carreira do dia
 function player(sc) {
   mem = {}; I.reset();
   const ach = new Set(), out = { packs: 0 };
-  let pen = 0;
   const done = ids => ids.every(id => I.get().own[id]);
   for (let n = 1; n <= 3000; n++) {
     const r = bank[Math.floor(Math.random() * bank.length)];
     const fresh = r.ach.filter(id => !ach.has(id)); fresh.forEach(id => ach.add(id));
     const c = { trophies: r.big ? { x: { type: 'ucl', n: r.big } } : {}, daily: Math.random() < sc.daily ? 'd' : null };
     out.packs += I.earn(I.careerWhy(c, { grade: r.grade }, { fresh }));
-    for (pen += sc.pen; pen >= 1; pen--) penalty();
     while (I.get().packs.length) I.open();
     trade();
     if (!out.half && I.counts().got >= all.length / 2) out.half = n;
@@ -99,8 +88,8 @@ function player(sc) {
 const q = (a, p) => { const s = a.slice().sort((x, y) => x - y); return s[Math.floor(p * (s.length - 1))]; };
 const fmt = (a, k) => { const v = a.map(o => o[k]); return 'mediana ' + String(q(v, .5)).padStart(4) + ' · p10 ' + String(q(v, .1)).padStart(4) + ' · p90 ' + String(q(v, .9)).padStart(4); };
 const SCEN = [
-  { name: 'Só carreiras (sem carreira do dia e sem pênalti)', daily: 0, pen: 0, perDay: 0 },
-  { name: 'Todo dia: 3 carreiras (1 é a do dia) + 1 pênalti', daily: 1 / 3, pen: 1 / 3, perDay: 3 },
+  { name: 'Só carreiras (sem carreira do dia)', daily: 0, perDay: 0 },
+  { name: 'Todo dia: 3 carreiras (1 é a do dia)', daily: 1 / 3, perDay: 3 },
 ];
 for (const sc of SCEN) {
   const res = Array.from({ length: PLAYERS }, () => player(sc));

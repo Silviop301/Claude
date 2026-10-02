@@ -51,10 +51,7 @@
   ].map(([id, name, rk, cat, look, desc, gk]) => ({ id, name, rk, cat, look, desc, gk: !!gk }));
   const BY_ID = {};
   CAT.forEach(it => { BY_ID[it.id] = it; });
-  // Números da camisa: 1 a 11, 77 e 99 são épicos; as dezenas redondas (20 a 90) raras; o resto comum
-  const EPIC_NUMS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 77, 99];
-  const numRar = n => (EPIC_NUMS.includes(n) ? 'epico' : n % 10 === 0 ? 'raro' : 'comum');
-  for (let n = 1; n <= 99; n++) BY_ID['n' + n] = { id: 'n' + n, name: 'Número ' + n, rk: numRar(n), cat: 'num', n, desc: 'Número da camisa.' };
+  // Números da camisa: todos livres (não são mais itens)
   const itemOf = id => BY_ID[id];
 
   // Que item cada valor do visual pede (null = livre)
@@ -79,7 +76,6 @@
     if (key === 'numFx') return v ? 'num-' + v : null;
     if (key === 'extra') return BY_ID[v] ? v : null;
     if (key === 'cel') return BY_ID['cel-' + v] ? 'cel-' + v : null;
-    if (key === 'num') return 'n' + v;
     return null;
   }
 
@@ -108,17 +104,13 @@
     if (sv && sv.c) used.push({ look: sv.c.look, number: sv.c.number });
     (load('climbix-colecao-v1') || []).forEach(e => e && e.card && used.push({ look: e.card.look, number: e.card.number }));
     used.forEach(u => {
-      if (u.number) o.own['n' + u.number] = 1;
       Object.entries(u.look || {}).forEach(([k, v]) => [].concat(v).forEach(x => { const id = need(k, x); if (id) o.own[id] = 1; }));
     });
   }
-  // Primeira vez: 10 números comuns sorteados + o que já foi usado
+  // Primeira vez: o que já foi usado nas carreiras salvas
   function seed() {
     const o = { v: VER, own: {}, fichas: 0, packs: [], pity: 0, news: {}, at: Date.now() };
     grantUsed(o);
-    const pool = [];
-    for (let n = 1; n <= 99; n++) if (numRar(n) === 'comum' && !o.own['n' + n]) pool.push(n); // 10 números comuns
-    for (let i = 0; i < 10 && pool.length; i++) o.own['n' + pool.splice(Math.floor(rnd() * pool.length), 1)[0]] = 1;
     inv = o; store(KEY, o);
     return o;
   }
@@ -135,13 +127,6 @@
     inv = o; store(KEY, o);
   }
   const has = id => !id || !!get().own[id];
-  const ownedNums = () => { const out = []; for (let n = 1; n <= 99; n++) if (has('n' + n)) out.push(n); return out; };
-  // Número liberado mais perto do pedido (o padrão da posição, se a pessoa não tiver)
-  function nearestNum(want) {
-    const own = ownedNums();
-    if (!own.length) return want;
-    return own.reduce((b, n) => (Math.abs(n - want) < Math.abs(b - want) ? n : b), own[0]);
-  }
   // Visual inicial só com o que é livre para todos
   const FREE = { hair: 'curto', hc: 0, beard: 'nenhuma', band: 'nenhuma', bandC: 'preto', boot: 'preto', sole: 'preto', sock: 'alto', sleeve: 'curta',
     wrist: 'nenhuma', wristC: 'preto', glove: 'lima', tatBD: 'nenhuma', tatBE: 'nenhuma', tatPD: 'nenhuma', tatPE: 'nenhuma', extra: [], cel: 'padrao' };
@@ -195,25 +180,19 @@
     const fresh = pool.filter(it => !get().own[it.id]);
     return fresh.length && rnd() < E.fresh ? pickOf(fresh) : pickOf(pool);
   }
-  // Peças da carta (assinatura e acabamento); na raridade sem peça da carta (comum), sai um número
-  const visualPool = rk => { const l = CAT.filter(it => it.rk === rk && it.cat !== 'numeros'); return l.length ? l : numberPool(rk); };
-  function numberPool(rk) {
-    // Estilos de número (dourado, neon...) saem na própria raridade, junto com os números
-    const fx = CAT.filter(it => it.cat === 'numeros' && it.rk === rk);
-    if (rk === 'lendario') return fx;
-    const out = fx.slice();
-    for (let n = 1; n <= 99; n++) if (numRar(n) === rk) out.push(BY_ID['n' + n]);
-    return out;
+  // Peças do pacote: assinatura, acabamento e estilo de número. Raridade sem peça (comum) sobe para a próxima que tenha
+  function pool(rk) {
+    for (let i = RAR.indexOf(rk); i < RAR.length; i++) { const l = CAT.filter(it => it.rk === RAR[i]); if (l.length) return l; }
+    return CAT;
   }
-  // Pacote: 2 peças da carta + 1 número, do mais comum para o mais raro (o melhor fica por último)
+  // Pacote: 3 peças, do mais comum para o mais raro (o melhor fica por último), sem repetir peça no mesmo pacote
   function roll() {
     const o = get();
     const rks = [rollRar(), rollRar(), rollRar()];
-    // Garantia: o 10º pacote sem lendário vira lendário numa das peças de visual
+    // Garantia: o 10º pacote sem lendário vira lendário numa das peças
     if (!rks.includes('lendario') && o.pity >= PITY - 1) rks[0] = 'lendario';
-    const items = [pickItem(visualPool(rks[0])), pickItem(visualPool(rks[1])), pickItem(numberPool(rks[2]))];
-    // Num pacote, o mesmo item não sai duas vezes
-    if (items[1].id === items[0].id) items[1] = pickItem(visualPool(rks[1]).filter(it => it.id !== items[0].id)) || items[1];
+    const items = [];
+    rks.forEach(rk => { const p = pool(rk), left = p.filter(it => !items.includes(it)); items.push(pickItem(left.length ? left : p)); });
     const ord = RAR.indexOf.bind(RAR);
     items.sort((a, b) => ord(a.rk) - ord(b.rk));
     return items;
@@ -234,16 +213,6 @@
     put();
     return { got, pity: o.pity, top: items[items.length - 1].rk };
   }
-  // Prêmio direto (pênalti da sorte): um item de uma raridade, fichas ou um pacote
-  function grant(kind, rk, n) {
-    const o = get();
-    if (kind === 'fichas') { o.fichas += n; put(); return { fichas: n }; }
-    if (kind === 'pacote') { o.packs.push({ why: ['Pênalti da sorte'] }); put(); return { pacote: 1 }; }
-    const it = pickItem(visualPool(rk)), dup = !!o.own[it.id];
-    if (dup) o.fichas += DUP[rk]; else { o.own[it.id] = 1; o.news[it.id] = 1; }
-    put();
-    return { it, dup, fichas: dup ? DUP[rk] : 0 };
-  }
   function trade(id) {
     const o = get(), it = BY_ID[id];
     if (!it || o.own[id] || o.fichas < COST[it.rk]) return false;
@@ -259,6 +228,6 @@
     return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news) });
   }
 
-  U.ITEMS = { FREE, KEY, CAT, BY_ID, RAR, RAR_NAME, CHANCE, PITY, DUP, COST, itemOf, need, has, get, put, ownedNums, nearestNum, numRar, clean, counts,
-    earn, careerWhy, open, grant, trade, seen, merge, reset: () => { inv = null; } };
+  U.ITEMS = { FREE, KEY, CAT, BY_ID, RAR, RAR_NAME, CHANCE, PITY, DUP, COST, itemOf, need, has, get, put, clean, counts,
+    earn, careerWhy, open, trade, seen, merge, reset: () => { inv = null; } };
 })();

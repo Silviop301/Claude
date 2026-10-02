@@ -90,7 +90,7 @@
   // Itens travados (pacotinhos, ui/items.js): o que falta liberar para usar um valor do visual
   const lockOf = (k, v) => { const id = I.need(k, v); return id && !I.has(id) ? I.itemOf(id) : null; };
   // Número padrão da posição, se liberado; senão o liberado mais perto
-  const defNum = pos => I.nearestNum(D.POS_NUM[pos] || 10);
+  const defNum = pos => D.POS_NUM[pos] || 10;
   // O visual do jogador é só pele, cabelo (corte e cor), barba e chuteira (cor e sola); o resto do desenho fica no padrão
   const LOOK_KEYS = ['skin', 'hair', 'hc', 'beard', 'boot', 'sole'];
   const onlyLook = l => { const o = { v: 2 }; LOOK_KEYS.forEach(k => { if (l && l[k] !== undefined) o[k] = l[k]; }); return o; };
@@ -106,37 +106,23 @@
   const lastLook = () => { const l = U.load(LAST); return l && typeof l === 'object' ? I.clean(Object.assign({}, I.FREE, onlyLook(l))) : null; };
   const newSt = () => ({ pos: 'ATA', foot: 'D', country: 'Brasil', num: defNum('ATA'), numTouched: false, name: D.NICKNAMES[Math.floor(Math.random() * D.NICKNAMES.length)],
     tab: 'corpo', look: lastLook() || rollLook(Object.assign({}, I.FREE, { v: 2 })) });
-  const numRk = n => I.itemOf('n' + n).rk;
 
-  // Número da camisa: grade com os 99 (liberados em creme, travados vazados na cor da raridade)
+  // Número da camisa: os 99 livres; o estilo do número (dourado, neon...) sai nos pacotinhos
   function numSheet(st, onDone) {
     let sel = st.num, msg = '';
     const w = document.createElement('div');
     w.className = 'sheet-wrap';
     document.body.appendChild(w);
     const close = () => w.remove();
-    const cell = n => { const on = I.has('n' + n); return '<button class="nb-c ' + U.rarCls(numRk(n)) + (on ? ' on' : '') + (sel === n ? ' sel' : '') + '" data-n="' + n + '" aria-label="Número ' + n + (on ? '' : ', travado') + '">' + n + '</button>'; };
-    const sec = (t, list) => '<div class="nb-sec">' + t + '</div><div class="nb-grid">' + list.map(cell).join('') + '</div>';
-    const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
     const fx = [['', 'Normal'], ['contorno', 'Vazado'], ['neon', 'Neon'], ['ouro', 'Dourado'], ['holo', 'Holográfico'], ['fogo', 'Em chamas']];
     function draw() {
-      const own = I.ownedNums().length;
-      w.innerHTML = '<div class="tr-sheet nb-sheet" role="dialog" aria-modal="true"><i class="tr-grab"></i><div class="tr-head"><b>Número da camisa</b><span class="nb-count">' + own + ' de 99</span></div>' +
-        // Estilo do número primeiro; depois os números por raridade
+      w.innerHTML = '<div class="tr-sheet nb-sheet" role="dialog" aria-modal="true"><i class="tr-grab"></i><div class="tr-head"><b>Número da camisa</b></div>' +
         '<div class="nb-scroll"><div class="nb-sec first">Estilo do número</div><div class="cr-chips">' + fx.map(([v, l]) => { const it = v && !I.has('num-' + v) ? I.itemOf('num-' + v) : null;
           return '<button data-fx="' + v + '" class="' + ((st.look.numFx || '') === v ? 'on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + '">' + (it ? U.emo('🔒', 'xs') + ' ' : '') + l + '</button>'; }).join('') + '</div>' +
-        '<div class="nb-leg"><span><i class="on"></i>Liberado</span>' + ['comum', 'raro', 'epico'].map(k => '<span><i class="' + U.rarCls(k) + '"></i>' + I.RAR_NAME[k] + '</span>').join('') + '</div>' +
-        sec('Comuns', range(1, 99).filter(n => numRk(n) === 'comum')) + sec('Raros · 20, 30, 40… 90', range(1, 99).filter(n => numRk(n) === 'raro')) +
-        sec('Épicos · 1 a 11, 77 e 99', range(1, 99).filter(n => numRk(n) === 'epico')) + '</div>' +
+        '<div class="nb-sec">Número</div><div class="nb-grid">' + Array.from({ length: 99 }, (_, i) => i + 1).map(n => '<button class="nb-c on' + (sel === n ? ' sel' : '') + '" data-n="' + n + '" aria-label="Número ' + n + '">' + n + '</button>').join('') + '</div></div>' +
         (msg ? '<div class="lk-note in-sheet">' + msg + '</div>' : '') +
         '<button class="btn" id="nb-use">Usar o ' + sel + '</button></div>';
-      w.querySelectorAll('.nb-c').forEach(b => b.onclick = () => {
-        const n = +b.dataset.n, it = I.itemOf('n' + n);
-        if (I.has(it.id)) { sel = n; msg = ''; return draw(); }
-        msg = lockMsg(it, () => draw());
-        draw();
-        bindNote(w, it, () => { sel = n; msg = ''; draw(); }, () => { close(); U.openPacks(() => create(st)); });
-      });
+      w.querySelectorAll('.nb-c').forEach(b => b.onclick = () => { sel = +b.dataset.n; msg = ''; draw(); });
       w.querySelectorAll('[data-fx]').forEach(b => b.onclick = () => {
         const v = b.dataset.fx, it = v && !I.has('num-' + v) ? I.itemOf('num-' + v) : null;
         if (!it) { st.look.numFx = v || undefined; msg = ''; return draw(); }
@@ -152,7 +138,7 @@
   function lockMsg(it) {
     const packs = I.get().packs.length;
     return '<span class="lk-ico">' + U.emo('🔒', 'sm') + '</span><div><b>' + esc(it.name) + ' · ' + I.RAR_NAME[it.rk] + '</b>' +
-      '<small>Sai em pacotinhos.' + (packs ? ' Você tem ' + packs + ' para abrir.' : '') + (it.cat === 'num' ? '' : ' A prévia não entra na carreira.') + '</small>' +
+      '<small>Sai em pacotinhos.' + (packs ? ' Você tem ' + packs + ' para abrir.' : '') + '' + '</small>' +
       '<div class="lk-acts">' + (packs ? '<button class="lk-open">Abrir pacotinhos</button>' : '') + '<button class="lk-trade">Trocar ' + I.COST[it.rk] + ' ' + U.emo('🎟️', 'xs') + '</button></div></div>';
   }
   function bindNote(root, it, onTraded, onOpen) {
@@ -163,14 +149,13 @@
 
   function create(prev) {
     const st = prev && prev.look ? prev : newSt();
-    if (!I.has('n' + st.num)) st.num = defNum(st.pos);
     const cty = () => D.COUNTRIES.find(k => k.id === st.country) || D.COUNTRIES[0];
     const who = () => ({ name: st.name, pos: st.pos, number: st.num, look: st.look });
-    const numBtn = () => '<b>' + st.num + '</b><span><em>' + I.RAR_NAME[numRk(st.num)] + '</em>trocar</span>';
+    const numBtn = () => '<b>' + st.num + '</b><span>trocar</span>';
     render(
       '<button class="back-link" id="b-back-home">‹ Início</button>' +
       '<div class="eyebrow">Nova carreira</div><h2 class="cr-title">Quem é o garoto?</h2>' +
-      '<div class="cc"><div class="cc-top"><button class="cc-num ' + U.rarCls(numRk(st.num)) + '" id="f-num" aria-label="Número da camisa: ' + st.num + '. Trocar">' + numBtn() + '</button>' +
+      '<div class="cc"><div class="cc-top"><button class="cc-num" id="f-num" aria-label="Número da camisa: ' + st.num + '. Trocar">' + numBtn() + '</button>' +
       '<span class="cc-pos" id="cc-pos"></span><span class="cc-flag" id="cc-flag"></span></div>' +
       '<div class="cc-photo" id="cc-photo"></div>' +
       '<input class="cc-name" id="f-name" maxlength="18" value="' + esc(st.name) + '" aria-label="Nome na camisa"></div>' +
@@ -185,7 +170,7 @@
       $('cc-pos').textContent = st.pos;
       $('cc-flag').innerHTML = U.flag(cty().flag);
       $('cr-cty').textContent = cty().id;
-      const nb = $('f-num'); nb.innerHTML = numBtn(); nb.className = 'cc-num ' + U.rarCls(numRk(st.num));
+      const nb = $('f-num'); nb.innerHTML = numBtn();
       $('cc-photo').innerHTML = U.photo('normal', U.nationKit(st.country), who(), { num: String(st.num) });
     };
     [['f-pos', 'pos'], ['f-foot', 'foot'], ['f-country', 'country']].forEach(([id, key]) =>
@@ -206,7 +191,6 @@
   }
 
   function start(st) {
-    if (!I.has('n' + st.num)) st.num = defNum(st.pos);
     G.c = S.newCareer({ name: st.name.trim() || 'Craque', pos: st.pos, foot: st.foot, country: st.country, number: st.num });
     // Só entra o que está liberado (a prévia fica de fora)
     G.c.look = onlyLook(I.clean(st.look));
