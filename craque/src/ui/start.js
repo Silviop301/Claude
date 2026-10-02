@@ -12,6 +12,7 @@
     render(
       '<div class="hero"><div class="ball3d" id="ball3d" aria-hidden="true"></div><div class="eyebrow">Carreira de futebol</div><h1>CLIMBIX</h1></div>' +
       '<p class="lead">Crie um garoto de 16 anos, escolha propostas, monte o estilo dele e descubra se ele vira lenda.</p>' +
+      U.challengeHome() +
       // Carreira em andamento: a carta do jogador no lugar de um botão de texto
       (saved && saved.c ? (() => { const sc = saved.c, o = S.ovr(sc), t = tierCls(o), cl = club(sc.club);
         return '<button class="cont-card" id="b-cont"><span class="scard metal ' + t + '"><span class="sc-tier">' + TIER_NAME[t] + '</span><b>' + o + '</b><span class="sc-pos">' + sc.pos + '</span></span>' +
@@ -38,6 +39,7 @@
     $('b-new').onclick = () => create();
     U.packHomeBind();
     $('b-mine').onclick = mine;
+    U.challengeHomeBind();
     $('b-opiniao').onclick = () => U.feedback('inicio', {}, home);
     $('b-rank').onclick = () => U.ranking();
     $('b-cloud').innerHTML = U.emo('☁️', 'xs') + ' ' + esc(U.cloudName());

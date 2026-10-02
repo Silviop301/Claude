@@ -2108,3 +2108,17 @@ details.fin-more[open] { display: flex; flex-direction: column; gap: 12px; paddi
 .btn.ghost.fb-btn { box-shadow: inset 0 0 0 2px var(--gold); color: var(--gold); margin-top: 10px; }
 @keyframes fb-glow { 0%, 100% { filter: none; } 50% { filter: drop-shadow(0 0 8px rgba(242,194,48,.45)); } }
 @media (prefers-reduced-motion: reduce) { .fb-home, .fb-card { animation: none !important; } }
+
+/* Desafio "bata minha nota" (ui/challenge.js) */
+.dz-home { position: relative; background: rgba(242,194,48,.12); color: var(--paper); box-shadow: inset 0 0 0 2px var(--gold); margin: 4px 0 14px; }
+.dz-home p { margin: 8px 0 0; color: #D3E4D9; font-size: 14px; }
+.dz-x { position: absolute; top: 8px; right: 8px; border: 0; background: rgba(255,255,255,.1); color: #fff; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; }
+.dz-x .ico { width: 14px; height: 14px; }
+.dz-top, .dz-res { display: flex; gap: 10px; align-items: center; }
+.dz-top small, .dz-res small { display: block; color: #8FD6AE; font: 700 12px var(--body); letter-spacing: .08em; text-transform: uppercase; }
+.dz-top b, .dz-res b { display: block; font: 800 20px/1.1 var(--display); padding-right: 30px; }
+.dz-top span, .dz-res span { display: block; color: #D3E4D9; font-size: 13px; margin-top: 2px; }
+.dz-res { background: rgba(255,255,255,.06); color: var(--paper); margin: 14px 0 0; }
+.dz-res.win { box-shadow: inset 0 0 0 2px var(--gold); background: rgba(242,194,48,.14); }
+.dz-res.win b { color: var(--gold); }
+.btn.ghost.dz-btn { margin-top: 12px; width: 100%; }

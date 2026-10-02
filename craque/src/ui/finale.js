@@ -65,6 +65,7 @@
       '<div class="fin-sum"><div class="grade ' + f.grade + '">' + f.grade + '</div><div><b>' + esc(f.verdict) + '</b><span>' + esc(scoreTxt) + '</span></div></div>' +
       '<div class="ed-box" id="ed-box"></div>' +
       '<div class="fin-acts"><button class="btn" id="b-share">Compartilhar carta</button><button class="btn ghost" id="b-save">Salvar</button></div>' +
+      U.challengeFinale(G.c, f) +
       U.feedbackCard() +
       U.packFinale(packWhy) +
       '<details class="fin-more"><summary>Resumo da carreira' + (fresh ? ' <em>' + fresh + (fresh > 1 ? ' conquistas novas' : ' conquista nova') + '</em>' : '') + '</summary>' +
@@ -173,6 +174,7 @@
     $('b-share').onclick = () => U.shareCard(shown, $('b-share'));
     if ($('b-packs')) $('b-packs').onclick = () => U.openPacks(() => { const b = screen.querySelector('.pk-won'); if (b && !U.ITEMS.get().packs.length) b.remove(); });
     $('b-again').onclick = U.create;
+    U.challengeFinaleBind(retired, f);
     $('b-feedback').onclick = () => U.feedback('fim', { pos: retired.pos, seasons: retired.seasons.length, grade: f.grade }, () => {
       const card = screen.querySelector('.fb-card'); if (card) card.outerHTML = '<div class="card fb-card done"><div>' + U.emo('💚', 'sm') + '<b>Opinião enviada</b><span>Valeu! Ela ajuda a decidir o que muda no jogo.</span></div></div>';
     });
