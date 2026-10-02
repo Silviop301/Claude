@@ -206,7 +206,8 @@
   // Força do efeito de uma característica: 0 se não tem; 1 / 1,8 / 2,6 conforme o nível
   S.tm = (c, id) => (c.traits.includes(id) ? D.TRAIT_LV[lvOf(c, id)] : 0);
   // Profissional envelhece mais devagar
-  S.declMult = c => 1 - 0.25 * S.tm(c, 'pro');
+  // Declínio pela idade: Profissional segura; escolhas de fim de carreira (cuidar do corpo) também (c.longev)
+  S.declMult = c => Math.max(0.4, (1 - 0.25 * S.tm(c, 'pro')) * (1 - 0.15 * (c.longev || 0)));
 
   const completesSyn = (c, id, without) => D.SYNERGIES.find(s => {
     const has = x => c.traits.includes(x) && x !== without;

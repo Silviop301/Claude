@@ -47,6 +47,7 @@
     if (hero) { splash.classList.remove('splash'); splash.querySelector('.ball3d').id = 'ball3d'; hero.replaceWith(splash); }
     const mountBall = () => { const el = $('ball3d'); if (el && U.cfg.fx3d && window.CRAQUE_BALL) window.CRAQUE_BALL.mount(el); };
     if (window.CRAQUE_BALL) mountBall(); else addEventListener('craque-ball-ready', mountBall, { once: true });
+    if (U.whatsNew) U.whatsNew();
   }
 
   // Minhas carreiras: tudo o que ficou das carreiras encerradas (as telas daqui voltam para cá)

@@ -209,7 +209,8 @@
     const acts = (r, t, l, v, on) => '<div class="xw-acts"><span>' + IC.rep + num(r) + '</span><span>' + IC.rt + num(t) + '</span><span' + (on ? ' class="on"' : '') + '>' + IC.like + num(l) + '</span><span>' + IC.view + num(v) + '</span></div>';
     const when = String(10 + (likes % 12)).padStart(2, '0') + ':' + String(likes % 60).padStart(2, '0');
     render(
-      '<div class="eyebrow">Temporada ' + year() + ' · ' + c.age + ' anos</div>' +
+      // Fechar no topo e Continuar fixo embaixo: não precisa rolar até o fim do post
+      '<div class="sp-top"><div class="eyebrow">Temporada ' + year() + ' · ' + c.age + ' anos</div><button class="sp-x" id="b-post-x" aria-label="Fechar o post">' + U.ICON.x + '</button></div>' +
       '<p class="sp-fx' + (fx.none ? ' none' : fx.won === false ? ' ko' : '') + '">' + esc(fx.none ? fx.lbl : fx.res) + '</p>' +
       '<article class="xw">' +
       '<div class="xw-main"><header class="xw-head">' + ava(c.name, true) + '<div><b>' + esc(c.name) + '</b>' + (fame >= 80 ? XCHK : '') + '<small>@' + esc(me) + '</small></div></header>' +
@@ -223,9 +224,10 @@
         acts(1 + ((i * 3 + likes) % 9), (i * 5 + likes) % 14, 3 + ((i * 7 + likes) % 60), 200 + ((i * 131 + likes) % 4000)) + '</div></div>').join('') +
       '</article>' +
       '<p class="sp-note">Post e respostas fictícios, da simulação do jogo.</p>' +
-      '<button class="btn" id="b-post-next">Continuar</button>'
+      '<div class="sp-sticky"><button class="btn" id="b-post-next">Continuar</button></div>'
     );
     $('b-post-next').onclick = next;
+    $('b-post-x').onclick = next;
     const hb = $('b-hater');
     if (hb) hb.onclick = () => {
       const out = replyFx(fx);

@@ -207,16 +207,17 @@
     const where = inf.kind === 'honra' ? 'Galeria de honra' : esc(inf.country.name) + ' · ' + (inf.kind === 'liga' ? 'Liga' : 'Copa');
     const sh = document.createElement('div');
     sh.className = 'sl-sheet-wrap';
-    sh.innerHTML = '<div class="sl-sheet"><i class="sl-grab"></i><div class="sl-sh-top">' + niche(k, n, { cls: 'big' }) +
+    sh.innerHTML = '<div class="sl-sheet"><i class="sl-grab"></i><button class="sp-x sl-sh-x" id="sl-x" aria-label="Fechar">' + U.ICON.x + '</button><div class="sl-sh-top">' + niche(k, n, { cls: 'big' }) +
       '<div><div class="sl-where">' + (inf.country ? U.flag(inf.country.flag, 'xs') + ' ' : '') + where + '</div><h3>' + esc(k) + '</h3>' +
       (n ? '<div class="sl-times"><b>' + n + '×</b><span>' + (careers === 1 ? 'em 1 carreira' : 'em ' + careers + ' carreiras') + '</span></div>' : '<p class="sl-miss">Ainda não está na coleção.</p>') + '</div></div>' +
       (n ? '<div class="sl-hist">' + es.slice().reverse().map(x => '<div><b>' + x.y + '</b>' + (x.cl && club(x.cl) ? crest(x.cl, 'xs') + '<span>' + esc(club(x.cl).name) + '</span>' : '<span>Seleção</span>') + '<em>' + esc(x.w || '') + '</em></div>').join('') + '</div>'
         : '<div class="sl-how"><small>Como conquistar</small><b>' + esc(howTo(k)) + '</b></div>') +
-      '<button class="btn" id="sl-close">Fechar</button></div>';
+      '<div class="sl-sh-foot"><button class="btn" id="sl-close">Fechar</button></div></div>';
     wrap.appendChild(sh);
     const shut = () => { sh.remove(); paint(); };
     sh.onclick = e => { if (e.target === sh) shut(); };
     sh.querySelector('#sl-close').onclick = shut;
+    sh.querySelector('#sl-x').onclick = shut;
   }
 
   // ---------- entrada na tela inicial ----------

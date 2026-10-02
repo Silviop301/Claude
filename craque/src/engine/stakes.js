@@ -60,6 +60,10 @@
     if (fx.captain) p.push('vira capitão');
     if (fx.wantsOut) p.push('abre a janela de transferências');
     if (fx.contract) p.push('contrato +' + fx.contract + (fx.contract > 1 ? ' anos' : ' ano'));
+    if (fx.legacy) p.push('legado ' + sg(fx.legacy) + ' pts na nota final');
+    if (fx.longev) p.push('declínio mais lento');
+    if (fx.captainOff) p.push('deixa de ser capitão');
+    if (fx.natRetire) p.push('não será mais convocado');
     return p;
   };
   const pctOf = p => Math.round(p * 100) + '%';
@@ -87,7 +91,7 @@
     v += (fx.goal || 0) * 20 + (fx.assist || 0) * 12;
     const co = fx.coach || 0, fa = fx.fans || 0;
     v += co > 0 ? co * 0.2 : co * 0.5;
-    v += fa * 0.1 + (fx.boost || 0) * 4;
+    v += fa * 0.1 + (fx.boost || 0) * 4 + (fx.legacy || 0) + (fx.longev || 0) * Math.max(0, 40 - Math.abs(c.age - 31) * 6);
     return v;
   };
   const stakeValue = (c, st) => (st.safe ? S.fxValue(c, st.safe.fx || {}) : st.p * S.fxValue(c, st.win.fx || {}) + (1 - st.p) * S.fxValue(c, st.lose.fx || {}));
@@ -114,7 +118,13 @@
     if (fx.contract) c.contract += fx.contract;
     if (fx.captain) c.captain = true;
     if (fx.wantsOut) c.wantsOut = true;
-    if (fx.move) out.move = true; // resolveEvent leva para o clube da proposta (ev.dest)
+    if (fx.move) out.move = true;
+    // Fim de carreira: legado (pontos na nota final), corpo que dura mais, faixa e seleção
+    if (fx.legacy) c.legacy = (c.legacy || 0) + fx.legacy;
+    if (fx.longev) c.longev = (c.longev || 0) + fx.longev;
+    if (fx.captainOff) c.captain = false;
+    if (fx.natRetire) c.natRetired = S.YEAR0 + c.season;
+    if (fx.prevFans) c.fansBy[fx.prevFans.club] = Math.max(0, (c.fansBy[fx.prevFans.club] || 0) + fx.prevFans.n); // resolveEvent leva para o clube da proposta (ev.dest)
     if (fx.boost) {
       c.clubBoost = c.clubBoost || {};
       c.clubBoost[c.club] = Math.max(-6, Math.min(8, (c.clubBoost[c.club] || 0) + fx.boost));

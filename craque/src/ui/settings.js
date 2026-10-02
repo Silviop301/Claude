@@ -21,6 +21,34 @@
   ];
   const value = k => (k === 'tips' ? U.tipsOn() : k === 'sound' ? !!(window.CRAQUE_SFX && window.CRAQUE_SFX.on) : window.CLIMBIX_CFG[k]);
 
+  // Versão do jogo (aparece nas Configurações e decide quando mostrar as novidades)
+  const VERSION = '1.0';
+  const NEWS_KEY = 'climbix-novidades';
+  const NEWS = [
+    ['🎲', 'Decisões que mudam a carreira', 'Todo evento mostra a chance de dar certo e o que se ganha ou perde. Atributos ganhos ou perdidos ficam para sempre.'],
+    ['🧭', 'Escolhas de fim de carreira', 'Depois dos 30: liderança, herdeiro, ambição, cuidar do corpo. Valem legado na nota final.'],
+    ['🏆', 'Mais taças', 'Sul-Americana, Liga Europa, Liga Conferência, Champions da Ásia, da Concacaf e da África, e Supercopas.'],
+    ['🌍', '39 países', 'Todos os países com liga viraram jogáveis, mais 12 novos: Peru, Croácia, Noruega, Marrocos, Egito, Austrália...'],
+    ['🏟️', 'Treino dos lances', 'Antes do primeiro lance de cada tipo, um treino que não vale nada. Repita quando quiser nas Configurações.'],
+  ];
+  // Novidades: uma vez por versão, só para quem já jogava (quem chega agora vê o jogo direto)
+  function whatsNew(force) {
+    let seen = null; try { seen = localStorage.getItem(NEWS_KEY); } catch (e) {}
+    const veteran = !!(U.load('craque-v5') || U.load('craque-hall-v1'));
+    if (!force && (seen === VERSION || !veteran)) { try { localStorage.setItem(NEWS_KEY, VERSION); } catch (e) {} return; }
+    try { localStorage.setItem(NEWS_KEY, VERSION); } catch (e) {}
+    const w = document.createElement('div');
+    w.className = 'cfg-wrap';
+    w.innerHTML = '<div class="cfg news-sheet" role="dialog" aria-modal="true" aria-label="Novidades"><div class="cfg-head"><b>Climbix ' + VERSION + ' · Novidades</b><button class="cfg-x" aria-label="Fechar">' + U.ICON.x + '</button></div>' +
+      '<div class="news-list">' + NEWS.map(([ic, t, d]) => '<div class="news-it">' + U.emo(ic, 'sm') + '<div><b>' + esc(t) + '</b><small>' + esc(d) + '</small></div></div>').join('') + '</div>' +
+      '<button class="btn" id="news-ok">Bora jogar</button></div>';
+    const close = () => w.remove();
+    w.onclick = e => { if (e.target === w) close(); };
+    w.querySelector('.cfg-x').onclick = close;
+    w.querySelector('#news-ok').onclick = close;
+    document.body.appendChild(w);
+  }
+
   function settings() {
     document.querySelectorAll('.cfg-wrap').forEach(x => x.remove());
     const w = document.createElement('div');
@@ -34,6 +62,7 @@
         '<button class="btn ghost" id="cfg-train">' + U.emo('🏟️', 'xs') + ' Treinar lances</button>' +
         '<button class="btn" id="cfg-ok">Pronto</button>' +
         // Crédito exigido pela licença dos emojis
+        '<p class="cfg-credit"><button class="link-btn" id="cfg-news">Climbix ' + VERSION + ' · ver novidades</button></p>' +
         '<p class="cfg-credit">Emojis: <a href="https://github.com/jdecked/twemoji" target="_blank" rel="noopener">Twemoji</a> (CC-BY 4.0)</p></div>';
       w.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
         const k = b.dataset.k, raw = b.dataset.v, v = raw === 'true' ? true : raw === 'false' ? false : raw;
@@ -47,6 +76,7 @@
       w.querySelector('.cfg-x').onclick = close;
       w.querySelector('#cfg-ok').onclick = close;
       w.querySelector('#cfg-train').onclick = () => { close(); U.trainMenu(); };
+      w.querySelector('#cfg-news').onclick = () => { close(); whatsNew(true); };
     };
     w.onclick = e => { if (e.target === w) { w.remove(); if (U.G.c) U.bar(); } };
     paint();
@@ -54,5 +84,5 @@
     setTimeout(() => w.classList.add('shown'), 300); // a animação de entrada só na abertura
   }
 
-  Object.assign(U, { settings });
+  Object.assign(U, { settings, whatsNew, VERSION });
 })();

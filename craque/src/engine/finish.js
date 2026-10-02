@@ -6,9 +6,9 @@
   // Pesos da pontuação final e faixas das notas (a tela de fim de carreira mostra a conta)
   S.SCORE_W = { title: 12, cont: 35, cont2: 12, cwc: 60, wc: 150, wcGoal: 3, ballon: 100, award: 8, peak: 2 };
   // Faixas calibradas no simulador (robô que joga bem): S 10% · A 25% · B 30% · C 20% · D 15% das carreiras
-  S.GRADES = [['S', 2140], ['A', 1710], ['B', 1300], ['C', 990], ['D', 0]];
+  S.GRADES = [['S', 2150], ['A', 1740], ['B', 1330], ['C', 1020], ['D', 0]];
   // Peso da produção por posição (medido no simulador para as quatro chegarem às notas altas com a mesma dificuldade)
-  S.PROD_W = { ATA: 1, MEI: 0.97, ZAG: 1.06, GOL: 1.17 };
+  S.PROD_W = { ATA: 1.04, MEI: 0.97, ZAG: 1.06, GOL: 1.17 };
   S.gradeOf = score => S.GRADES.find(([, min]) => score >= min)[0];
   S.finish = function (c) {
     c.retired = true;
@@ -44,6 +44,7 @@
       { k: 'wcg', txt: 'Gols em Copas: ' + (T.wcGoals || 0) + ' × ' + S.SCORE_W.wcGoal, v: n(T.wcGoals, S.SCORE_W.wcGoal) },
       { k: 'ballon', txt: 'Bola de Ouro: ' + (T.ballon || 0) + ' × ' + S.SCORE_W.ballon, v: n(T.ballon, S.SCORE_W.ballon) },
       { k: 'awards', txt: 'Prêmios da liga (artilharia, revelação, seleção): ' + awards + ' × ' + S.SCORE_W.award, v: n(awards, S.SCORE_W.award) },
+      { k: 'legacy', txt: 'Legado (escolhas de liderança e de clube)', v: Math.round(c.legacy || 0) },
       { k: 'peak', txt: 'Auge: nota geral ' + c.peak + ' × ' + S.SCORE_W.peak, v: n(c.peak, S.SCORE_W.peak) },
     ].concat(bonus.map(b => ({ k: 'bonus', txt: b.txt, v: b.v }))).filter(p => p.v > 0);
     const score = parts.reduce((a, p) => a + p.v, 0);

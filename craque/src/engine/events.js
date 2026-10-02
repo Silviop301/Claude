@@ -460,7 +460,7 @@
   };
 
   // Proposta que vem num evento (a mesma que a tela mostra antes de aceitar)
-  const EV_KIND = { banco: 'mid', assedio: 'up', arabia: 'money' };
+  const EV_KIND = S.EV_KIND = { banco: 'mid', assedio: 'up', arabia: 'money' };
   S.eventOffer = (c, ev) => (ev.dest ? S.offerFor(c, ev.dest, EV_KIND[ev.id] || 'up', ev.wage) : null);
 
   S.resolveEvent = function (c, ev, idx) {
