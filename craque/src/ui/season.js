@@ -170,7 +170,7 @@
     const won = res.titles.length || res.awards.some(a => a.id === 'ballon');
     const pose = won ? 'taca' : res.injury >= 25 ? 'maca' : res.games && res.rating >= 7.3 ? 'celebra' : res.games && res.rating < 6.3 ? 'triste' : 'normal';
     const caption = { taca: nick + ' ergue a taça', maca: nick + ' deixa o campo de maca', celebra: nick + ' comemora com a torcida', triste: nick + ' cabisbaixo após mais um tropeço' }[pose] || nick + ' com a camisa ' + D.do(cl.name);
-    U.paper({ c: G.c, year: year() - 1, head: main, pose, kit: U.kitOf(cl.id), caption, big: !!won,
+    U.paper({ c: Object.assign({}, G.c, { age: res.age }), year: year() - 1, head: main, pose, kit: U.kitOf(cl.id), caption, big: !!won,
       stats: res.games + ' jogos · ' + seasonStats(res).map(([v, l]) => v + ' ' + l.toLowerCase()).join(' · ') + (res.games ? ' · nota ' + res.rating.toFixed(1).replace('.', ',') : ''),
       lede: lede(res, cl), subs: rest, column: res.column },
       // Depois do jornal: revelação da carta nova (subiu de faixa) e das cartas especiais da temporada

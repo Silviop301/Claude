@@ -67,7 +67,7 @@
         const s = fr.s, cl = D.CLUB_BY_ID[s.club];
         body = '<div class="al-t">' + (YEAR0 + fr.i) + ' · ' + s.age + ' anos</div>' +
           '<div class="al-card"><canvas></canvas></div>' +
-          '<div class="al-clip"><span>' + U.PAPERS[(fr.i * 7) % U.PAPERS.length].name + '</span><b>' + esc(s.headlines[0]) + '</b>' + U.photo(poseOf(s), U.kitOf(cl.id), c) + '</div>' +
+          '<div class="al-clip"><span>' + U.PAPERS[(fr.i * 7) % U.PAPERS.length].name + '</span><b>' + esc(s.headlines[0]) + '</b>' + U.photo(poseOf(s), U.kitOf(cl.id), Object.assign({}, c, { age: s.age })) + '</div>' +
           '<div class="al-chips">' + chipsOf(c, s).map(x => '<em>' + esc(x).replace('🏆', U.emo('🏆', 'xs')) + '</em>').join('') + '</div>';
       } else if (fr.kind === 'special') {
         body = '<div class="al-t">Carta especial</div><div class="al-card big"><canvas></canvas></div>' +

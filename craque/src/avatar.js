@@ -251,10 +251,19 @@
     if (raw.v === 2) return raw;
     return Object.assign({}, raw, { v: 2, skin: OLD_SKIN[raw.skin] !== undefined ? OLD_SKIN[raw.skin] : 3 });
   }
+  // Barba cresce com a idade: até 17 anos, nenhuma; aos 18 e 19, as grandes aparecem ralas; aos 20, a escolhida.
+  // Sem idade (prévia da criação do jogador), mostra a barba escolhida.
+  const BIG_BEARD = { cheia: 'rala', lenhador: 'rala', trancada: 'rala', bigodao: 'bigode', navalha: 'rala' };
+  function beardAtAge(b, age) {
+    if (typeof age !== 'number' || !b || b === 'nenhuma') return b;
+    if (age < 18) return 'nenhuma';
+    if (age < 20) return BIG_BEARD[b] || b;
+    return b;
+  }
   function photo(pose, kit, c, opts) {
     opts = opts || {};
     const id = 'a' + (++uid);
-    c = Object.assign({}, c, { look: lookOf(c) });
+    c = Object.assign({}, c, { look: Object.assign({}, lookOf(c), { beard: beardAtAge(lookOf(c).beard, c.age) }) });
     if (pose === 'maca') return stretcher(kit, c, opts);
     const lk = Object.assign({}, DEF, c.look || {});
     const [k1, k2] = kit, skin = SKIN[lk.skin] ?? SKIN[3], hcol = HAIR_COLORS[lk.hc] ?? HAIR_COLORS[0], gk = c.pos === 'GOL';
