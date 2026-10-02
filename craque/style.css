@@ -2122,3 +2122,18 @@ details.fin-more[open] { display: flex; flex-direction: column; gap: 12px; paddi
 .dz-res.win { box-shadow: inset 0 0 0 2px var(--gold); background: rgba(242,194,48,.14); }
 .dz-res.win b { color: var(--gold); }
 .btn.ghost.dz-btn { margin-top: 12px; width: 100%; }
+
+/* Computador com mouse (html.desk, ligado por ui/desktop.js) */
+.desk { scrollbar-color: rgba(255,255,255,.22) transparent; }
+/* Lance maior: o campo sai da coluna e usa a altura da tela */
+.desk .kick-stage { --kw: min(720px, 94vw, calc((100dvh - 240px) * 1.125)); width: var(--kw); max-width: none; margin-left: calc(50% - var(--kw) / 2); }
+.desk .kick-help { font-size: 17px; margin-top: 6px; }
+/* Janelas no meio da tela, com os quatro cantos arredondados */
+.desk .cfg-wrap, .desk .sheet-wrap, .desk .sl-sheet-wrap { align-items: center; padding: 24px; }
+.desk .cfg, .desk .sheet, .desk .sl-sheet, .desk .tr-sheet { border-radius: 20px; }
+/* Passar o mouse */
+.desk .btn:not(:disabled):hover { filter: brightness(1.07); }
+.desk .btn.ghost:not(:disabled):hover { background: rgba(255,255,255,.06); }
+.desk .hg:hover, .desk .cont-card:hover, .desk .choices .btn:hover { transform: translateY(-1px); }
+.desk .fin-links button:hover, .desk .link-btn:hover { color: var(--gold); }
+.desk-hint { text-align: center; color: #93AD9D; font-size: 13px; margin: 2px 0 0; }
