@@ -178,14 +178,16 @@
     if (style === 'porfazer') return '<path d="' + STUBBLE + '" stroke="' + col + '" stroke-width=".85" stroke-linecap="round" opacity=".7"/>';
     if (style === 'costeleta') return '<path d="M47.4 21.6H51.2L51.4 37.6Q50.6 40.2 48.9 38.8Q47.7 36 47.5 30Z" fill="' + col + '"/><path d="M72.6 21.6H68.8L68.6 37.6Q69.4 40.2 71.1 38.8Q72.3 36 72.5 30Z" fill="' + col + '"/>';
     if (style === 'bigodao') return '<path d="M53.4 39.6Q55 35.4 60 36.6Q65 35.4 66.6 39.6L67.2 43.6Q65.8 44.2 65.2 41.4Q62.6 39.6 60 39.8Q57.4 39.6 54.8 41.4Q54.2 44.2 52.8 43.6Z" fill="' + col + '" stroke="' + OL + '" stroke-width=".9" stroke-linejoin="round"/>';
-    if (style === 'lenhador') return '<path d="M45.8 27.4C45.4 39 48.6 49.6 53.4 52.4Q55.6 54.6 57.6 53.2Q60 55.4 62.4 53.2Q64.4 54.6 66.6 52.4C71.4 49.6 74.6 39 74.2 27.4C71.6 35.4 67 38.4 60 38.4S48.4 35.4 45.8 27.4Z" fill="' + col + '" stroke="' + OL + '" stroke-width="1.4" stroke-linejoin="round"/>' +
-      '<path d="M51 41.6q1 3.4 3.4 5.4M69 41.6q-1 3.4-3.4 5.4M57.4 47.4q.6 2.4 2.6 3.6M62.6 47.4q-.6 2.4-2.6 3.6" stroke="' + OL + '" stroke-width=".7" fill="none" stroke-linecap="round" opacity=".45"/>' +
+    if (style === 'lenhador') return '<path d="M46.6 25.2L46.2 31C46.6 40 49.6 47.6 54.2 51.4Q55.8 53.6 57.6 52.4Q60 54.8 62.4 52.4Q64.2 53.6 65.8 51.4C70.4 47.6 73.4 40 73.8 31L73.4 25.2L70.6 25.6C70.8 30.4 69.8 34 67.2 36.6Q64 38.6 60 38.2Q56 38.6 52.8 36.6C50.2 34 49.2 30.4 49.4 25.6Z" fill="' + col + '" stroke="' + OL + '" stroke-width="1.4" stroke-linejoin="round"/>' +
+      '<path d="M50.6 40.6q1.2 3.4 3.4 5.4M69.4 40.6q-1.2 3.4-3.4 5.4M57.4 46.4q.6 2.4 2.6 3.6M62.6 46.4q-.6 2.4-2.6 3.6" stroke="' + OL + '" stroke-width=".7" fill="none" stroke-linecap="round" opacity=".45"/>' +
       '<path d="M54.6 39Q57 35.8 60 36.8Q63 35.8 65.4 39Q63.4 38.2 60 39Q56.6 38.2 54.6 39Z" fill="' + col + '" stroke="' + OL + '" stroke-width=".8" stroke-linejoin="round"/>';
-    if (style === 'navalha') return beardOf('cheia', col) + '<path d="M48.6 34.8L53.4 40.8M71.4 34.8L66.6 40.8" stroke="' + (skin || '#C68A5E') + '" stroke-width="1.5" stroke-linecap="round"/>';
+    if (style === 'navalha') return beardOf('cheia', col) + '<path d="M49.4 35.4L52.4 39.8M70.6 35.4L67.6 39.8" stroke="' + (skin || '#C68A5E') + '" stroke-width="1.5" stroke-linecap="round"/>';
     if (style === 'trancada') return stache + '<path d="M56.6 41.4Q60 47.6 63.4 41.4Q60 43 56.6 41.4Z" fill="' + col + '"/>' +
       [46.8, 49.6, 52.4].map(y => '<ellipse cx="60" cy="' + y + '" rx="1.9" ry="1.7" fill="' + col + '" stroke="' + OL + '" stroke-width=".9"/>').join('') +
       '<rect x="58.3" y="53.4" width="3.4" height="1.4" rx=".6" fill="#D8404A" stroke="' + OL + '" stroke-width=".6"/><path d="M58.8 54.8L58.2 57.4M60 54.8V57.8M61.2 54.8L61.8 57.4" stroke="' + col + '" stroke-width="1" stroke-linecap="round"/>';
-    if (style === 'cheia') return '<path d="' + jaw.replace('M46.8 32', 'M46.4 30.4').replace('73.2 32', '73.6 30.4') + '" fill="' + col + '"/>' + stache;
+    // Cheia: desce pela lateral do rosto (costeleta), a linha da bochecha sobe em diagonal e o queixo fecha levemente em ponta
+    if (style === 'cheia') return '<path d="M47.1 25.4L46.9 31C47.5 38.4 51.2 44.4 55.8 46.6Q60 48.6 64.2 46.6C68.8 44.4 72.5 38.4 73.1 31L72.9 25.4L70.5 25.8C70.7 30.4 69.8 33.8 67.2 36.4Q64 38.6 60 38.2Q56 38.6 52.8 36.4C50.2 33.8 49.3 30.4 49.5 25.8Z" fill="' + col + '"/>' +
+      '<path d="M50.4 39.4q1.2 2.2 2.8 3.4M69.6 39.4q-1.2 2.2-2.8 3.4M58.4 44.6l.4 1.6M61.6 44.6l-.4 1.6" stroke="' + OL + '" stroke-width=".6" stroke-linecap="round" opacity=".3" fill="none"/>' + stache;
     return '';
   }
   const ARMS = {
