@@ -72,7 +72,7 @@ function tick(now) {
 }
 
 class JogadorLado extends HTMLElement {
-  static get observedAttributes() { return ['anim', 'skin', 'hair', 'cabelo', 'barba', 'shirt', 'shorts', 'socks', 'boots', 'trim', 'espelhar', 't']; }
+  static get observedAttributes() { return ['anim', 'skin', 'hair', 'cabelo', 'barba', 'barbacor', 'shirt', 'shorts', 'socks', 'boots', 'sola', 'trim', 'espelhar', 't']; }
   connectedCallback() {
     if (!this.style.display) this.style.display = 'block';
     this.style.width = '100%'; this.style.height = '100%';
@@ -117,6 +117,7 @@ class JogadorLado extends HTMLElement {
         <g data-j="ankle${s}">
           <path d="M-5.6,-3 Q-7.4,4 -5.4,${SOLE} L13.5,${SOLE} Q16.5,${SOLE} 15.2,4.2 Q13,0.5 5,-0.8 L4.8,-3Z" fill="${G('boots' + F)}" ${S}/>
           <path d="M2,3 L9,3.4" stroke="${k.boots === k.trim ? k.shirt : k.trim}" stroke-width="1.6" stroke-linecap="round"/>
+          ${a('sola') ? `<path d="M-5,${SOLE - 0.6} L13.6,${SOLE - 0.6}" stroke="${a('sola')}" stroke-width="2" stroke-linecap="round"/>` : ''}
         </g>
       </g>
     </g>`; };
@@ -130,28 +131,79 @@ class JogadorLado extends HTMLElement {
       </g>
     </g>`; };
 
-    const dk = mix(hair, '#000000', 0.4);
-    const rasp = `<path d="M-11.6,-9 Q-14.5,-27 1,-27.5 Q11.5,-27 12.4,-20 Q8,-23 3,-22.5 Q-1.5,-21.5 -5,-15 Q-7,-11 -11.6,-9Z" fill="${hair}" opacity="0.8"/>`;
-    let hairSvg = '';
-    if (style === 'careca') hairSvg = `<ellipse cx="-1" cy="-23.5" rx="5" ry="2.4" fill="#ffffff" opacity="0.28"/>`;
-    else if (style === 'raspado') hairSvg = rasp;
-    else if (style === 'black') hairSvg = `<path d="M-13,-6 Q-20,-14 -18,-24 Q-15,-36.5 -1,-36.5 Q13,-36.5 15,-24 Q15.5,-20 12.5,-18 Q8,-22 3,-21.5 Q-2,-20 -4,-14 Q-6,-9 -9,-6 Q-11,-4 -13,-6Z" fill="${G('hair')}" ${S}/>`;
-    else if (style === 'trancas') hairSvg = rasp + [0, 1, 2].map(i => `<path d="M${10 - 3 * i},${-21.5 + 1.2 * i} Q${1 - 2 * i},${-31 + 2.6 * i} ${-11 + 1.5 * i},${-10.5 + 1.8 * i}" stroke="${dk}" stroke-width="1.6" fill="none" stroke-linecap="round"/>`).join('')
-      + `<path d="M-10,-9 L-12,-1.5 M-7.6,-8 L-9,-0.5" stroke="${G('hair')}" stroke-width="2.6" stroke-linecap="round"/>`;
-    else if (style === 'cacheado') {
-      const c = [];
-      for (let i = 0; i < 8; i++) { const ang = Math.PI * (160 + 160 * i / 7) / 180; c.push(`<circle cx="${(-1 + 12.4 * Math.cos(ang)).toFixed(1)}" cy="${(-15 + 12.6 * Math.sin(ang)).toFixed(1)}" r="4.4" fill="${G('hair')}" ${S}/>`); }
-      hairSvg = c.join('') + `<ellipse cx="-2" cy="-20" rx="10" ry="7.5" fill="${hair}"/>`;
-    } else hairSvg = `<path d="M-12,-9 Q-15.5,-28 1,-28.5 Q12,-28 13,-19 Q9,-22.5 4,-22 Q-1,-21 -3,-17 Q-5.5,-15.5 -6.5,-12 L-8,-9 Q-10,-7 -12,-9Z" fill="${G('hair')}" ${S}/>`;
-    const beard = barba === 'cheia'
-      ? `<path d="M-4.5,-12 Q-5,-2 1,0.8 Q7,2.5 10.5,-1 Q13,-4 12.2,-10 Q10,-7.5 7.5,-8 Q4,-7 1.5,-9.5 Q-1,-12 -4.5,-12Z" fill="${G('hair')}" ${S}/>`
-      : barba === 'rala' ? `<path d="M-4,-11 Q-3,-3 1,-1 Q6,0.5 9,-2 Q12,-4 12,-9 Q10,-6 7,-7.5 Q3,-6 1,-9 Q-1,-11 -4,-11Z" fill="${hair}" opacity="0.4"/>` : '';
+    // Cabelo de perfil (rosto para a direita): os 21 cortes da criação. back = atrás da cabeça (cabelo comprido, coque)
+    const dk = mix(hair, '#000000', 0.4), bc = a('barbacor') || hair;
+    const H = (d, x) => `<path d="${d}" fill="${G('hair')}" ${S}${x || ''}/>`;
+    const fade = o => `<path d="M-11.6,-9 Q-14.5,-27 1,-27.5 Q11.5,-27 12.4,-20 Q8,-23 3,-22.5 Q-1.5,-21.5 -5,-15 Q-7,-11 -11.6,-9Z" fill="${hair}" opacity="${o}"/>`;
+    const rasp = fade(0.8), sides = fade(0.42);
+    const CAP = 'M-12,-9 Q-15.5,-28 1,-28.5 Q12,-28 13,-19 Q9,-22.5 4,-22 Q-1,-21 -3,-17 Q-5.5,-15.5 -6.5,-12 L-8,-9 Q-10,-7 -12,-9Z';
+    const strand = (x1, y1, x2, y2, w, ticks) => {
+      let o = `<path d="M${x1},${y1} L${x2},${y2}" stroke="${OUT}" stroke-width="${w + 3}" stroke-linecap="round"/><path d="M${x1},${y1} L${x2},${y2}" stroke="${hair}" stroke-width="${w}" stroke-linecap="round"/>`;
+      if (ticks) for (let t = 0.15; t < 0.95; t += 0.16) { const x = x1 + (x2 - x1) * t, y = y1 + (y2 - y1) * t; o += `<path d="M${(x - 1.6).toFixed(1)},${(y - 0.6).toFixed(1)} l3.2,1.2" stroke="${OUT}" stroke-width="0.7" opacity="0.5"/>`; }
+      return o;
+    };
+    const curls = () => { const c = []; for (let i = 0; i < 8; i++) { const ang = Math.PI * (160 + 160 * i / 7) / 180; c.push(`<circle cx="${(-1 + 12.4 * Math.cos(ang)).toFixed(1)}" cy="${(-15 + 12.6 * Math.sin(ang)).toFixed(1)}" r="4.4" fill="${G('hair')}" ${S}/>`); } return c.join('') + `<ellipse cx="-2" cy="-20" rx="10" ry="7.5" fill="${hair}"/>`; };
+    const afroDots = () => { let o = '', s = 7; const r = () => (s = (s * 9301 + 49297) % 233280) / 233280; for (let i = 0; i < 18; i++) o += `<circle cx="${(-16 + r() * 28).toFixed(1)}" cy="${(-37 + r() * 18).toFixed(1)}" r="0.7" fill="${OUT}" opacity="0.22"/>`; return o; };
+    const SIDE = {
+      careca: ['', `<ellipse cx="-1" cy="-23.5" rx="5" ry="2.4" fill="#ffffff" opacity="0.28"/>`],
+      raspado: ['', rasp],
+      curto: ['', H(CAP)],
+      social: ['', H(CAP) + H('M0,-28.6 Q11,-31 14,-22.5 Q13.4,-20.6 12.6,-20 Q9.6,-24.4 3,-24.6 Q-2,-25 -5,-23.6 Q-3,-27.6 0,-28.6Z') +
+        `<path d="M-5,-23.6 Q-8,-21.6 -9.4,-18" stroke="${OUT}" stroke-width="0.9" fill="none" opacity="0.5" stroke-linecap="round"/>`],
+      topete: ['', H(CAP) + H('M-4,-27 Q-1,-34 8,-34 Q15,-33.6 15.4,-28.4 Q15,-24.6 13,-20.5 Q11,-25.6 5,-25.6 Q-0.6,-25.6 -4,-27Z') +
+        `<path d="M0,-30.4 Q6,-32.6 12.6,-30.4" stroke="${OUT}" stroke-width="0.8" fill="none" opacity="0.4" stroke-linecap="round"/>`],
+      franja: ['', H(CAP) + H('M2,-28.4 Q12.6,-28.6 14.4,-20.6 L13.6,-16.6 L12.2,-18.8 L11,-16 L9.6,-18.8 L8.2,-16.8 Q6.6,-20.6 4,-21.6Z')],
+      militar: ['', rasp + H('M-11.4,-15.6 Q-13,-26 -7,-30.4 L9,-30.4 Q12.8,-28.6 12.8,-20.6 Q8.4,-24.2 3,-23.8 Q-4.6,-23 -11.4,-15.6Z') +
+        `<path d="M-6,-30 V-24.6 M-1,-30.2 V-24.4 M4,-30.2 V-24.2 M8.6,-30 V-24.4" stroke="${OUT}" stroke-width="0.7" opacity="0.3"/>`],
+      undercut: ['', sides + H('M13,-21 Q13,-32 2.6,-34.4 Q-8,-36 -13.4,-26.6 Q-11.6,-23.6 -8.6,-25 Q-2,-27.6 4,-25 Q9.4,-24.4 13,-21Z') +
+        `<path d="M-8,-28.6 Q0,-33.6 9,-29.6 M-6,-26.6 Q2,-30.4 10.6,-26.4" stroke="${OUT}" stroke-width="0.8" fill="none" opacity="0.35" stroke-linecap="round"/>`],
+      degrade: ['', sides + H('M12.4,-21 Q11,-29.6 1,-30.2 Q-8.4,-30.4 -11.6,-23 Q-5,-26 2,-25.4 Q8,-25 12.4,-21Z')],
+      samurai: [H('M-4.6,-36.6 Q-10.6,-37.4 -11,-31.4 Q-11,-26.6 -5.6,-27 Q-0.6,-28.6 -0.8,-33 Q-1,-36.6 -4.6,-36.6Z'), sides + H('M11.6,-21.4 Q10,-28.6 1,-29.4 Q-8,-29.6 -11,-22.6 Q-4,-25.6 2,-25 Q7.6,-24.6 11.6,-21.4Z') +
+        `<rect x="-5.4" y="-29.8" width="5.6" height="2.6" rx="1" transform="rotate(-24 -2.6 -28.5)" fill="#D8404A" stroke="${OUT}" stroke-width="1"/>`],
+      moicano: ['', fade(0.35) + H('M11.4,-23.4 Q11,-33.6 1,-35.6 Q-9,-36.4 -13.6,-25.6 Q-12,-23.4 -10,-24.6 Q-3,-29 3.6,-27.6 Q8.4,-26.4 11.4,-23.4Z')],
+      moicanoloiro: ['', fade(0.35) + `<path d="M11.4,-23.4 L13.6,-31.6 L8.4,-28.6 L8.6,-37.6 L3.6,-31.4 L1.4,-40 L-1.6,-31.6 L-6.4,-37.6 L-6.6,-30.4 L-12.6,-33.6 L-10.4,-25.4 Q-3,-29 3.6,-27.6 Q8.4,-26.4 11.4,-23.4Z" fill="#F4EAB8" ${S}/>` +
+        `<path d="M-9.6,-25.8 Q-3,-29.4 3.6,-28 Q8.4,-26.8 11,-23.8" stroke="${hair}" stroke-width="2.6" fill="none" opacity="0.85"/>`],
+      riscado: ['', fade(0.55) + `<path d="M-9.6,-15 L-7,-18.6 L-5.6,-15.6 L-2.6,-19.6 L-1,-16.8" stroke="#F4E6D4" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>`],
+      black: ['', `<path d="M-13,-6 Q-20,-14 -18,-24 Q-15,-36.5 -1,-36.5 Q13,-36.5 15,-24 Q15.5,-20 12.5,-18 Q8,-22 3,-21.5 Q-2,-20 -4,-14 Q-6,-9 -9,-6 Q-11,-4 -13,-6Z" fill="${G('hair')}" ${S}/>`],
+      afro: ['', H('M-13.6,-5 Q-22,-12 -20.6,-26 Q-17.6,-40 -1,-40 Q14.6,-40 16.8,-28 Q17.4,-21.6 13.6,-18.6 Q9,-22.4 3.6,-21.8 Q-1.6,-20.6 -3.6,-14.6 Q-6,-8.6 -9,-5.4 Q-11.4,-3 -13.6,-5Z') + afroDots()],
+      cacheado: ['', curls()],
+      longo: [H('M-6,-25 Q-18,-22 -17,-6 Q-16.6,4 -13,9 Q-8,11 -4.6,7 Q-6.6,-2 -4.4,-12Z'), H(CAP) + `<path d="M-13.6,-4 Q-13,3 -10.6,7" stroke="${OUT}" stroke-width="0.8" fill="none" opacity="0.4"/>`],
+      mullet: [H('M-10,-14 Q-15.6,-6 -14.4,3 Q-12.6,7.4 -9,6 Q-7,2 -6.6,-6Z'), H(CAP) + `<path d="M-12.6,-2 L-12,4" stroke="${OUT}" stroke-width="0.8" opacity="0.35"/>`],
+      trancas: ['', rasp + [0, 1, 2].map(i => `<path d="M${10 - 3 * i},${-21.5 + 1.2 * i} Q${1 - 2 * i},${-31 + 2.6 * i} ${-11 + 1.5 * i},${-10.5 + 1.8 * i}" stroke="${dk}" stroke-width="1.6" fill="none" stroke-linecap="round"/>`).join('') +
+        `<path d="M-10,-9 L-12,-1.5 M-7.6,-8 L-9,-0.5" stroke="${G('hair')}" stroke-width="2.6" stroke-linecap="round"/>`],
+      dreads: [strand(-9, -22, -16, 4, 3.4) + strand(-5, -25, -11, 6, 3.4) + strand(-12, -16, -18, 0, 3.2), H(CAP) + `<path d="M-9,-11 Q-11,-22 -3,-26 M-4,-16 Q-5,-23 2,-26.4 M2,-22 Q4,-26 10,-24.6" stroke="${dk}" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.8"/>`],
+      trancalonga: [strand(-9, -22, -15, 16, 3.6, 1) + strand(-4.6, -24, -9, 18, 3.6, 1) + strand(-12, -15, -18, 12, 3.4, 1),
+        fade(0.9) + `<path d="M-8,-12 Q-10,-22 -2,-26 M-2,-17 Q-4,-24 4,-26 M3,-22 Q4,-25.6 9,-24" stroke="${OUT}" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.5"/>`],
+    };
+    const [hairBack, hairSvg] = SIDE[style] || SIDE.curto;
+    // Barba de perfil (as 10 da criação), na cor da barba (cabelo pintado: barba castanho-escura)
+    const FACE = 'M-11,-7 Q-14,-27 0,-27 Q12,-27 12.5,-16 L14,-11.5 L12,-10 Q12.5,-4 8.5,-1.5 Q3,1 -3,-0.5 Q-8.5,-2 -11,-7Z';
+    const stache = `<path d="M6.4,-7.6 Q9.6,-9.4 12.8,-7.2 Q12.2,-6.2 9.6,-6.8 Q8,-6.6 6.4,-7.6Z" fill="${bc}" stroke="${mix(bc, '#000000', 0.35)}" stroke-width="0.7" stroke-linejoin="round"/>`;
+    const goatee = `<path d="M6.2,-3.6 Q8.6,-2.2 11,-3.6 Q10.8,0.6 7.8,1.4 Q5.8,-0.6 6.2,-3.6Z" fill="${bc}" stroke="${mix(bc, '#000000', 0.35)}" stroke-width="0.7"/>`;
+    const stubble = () => { let o = ''; for (let y = -11; y <= 0.5; y += 1.3) for (let x = -3.6 + (Math.round(y * 4) % 2) * 0.6; x <= 11.6; x += 1.5) {
+      const dx = (x - 4) / 8.4, dy = (y + 4.6) / 6.4; if (dx * dx + dy * dy > 1 || (x > 6.6 && y > -7.6 && y < -4.4) || (x < 1 && y < -8)) continue; o += `M${x.toFixed(1)},${y.toFixed(1)}h.01`; }
+      return `<clipPath id="${u}cara"><path d="${FACE}"/></clipPath><path d="${o}" clip-path="url(#${u}cara)" stroke="${bc}" stroke-width="0.85" stroke-linecap="round" opacity="0.7"/>`; };
+    const BEARD = {
+      rala: `<path d="M-4,-11 Q-3,-3 1,-1 Q6,0.5 9,-2 Q12,-4 12,-9 Q10,-6 7,-7.5 Q3,-6 1,-9 Q-1,-11 -4,-11Z" fill="${bc}" opacity="0.4"/>`,
+      porfazer: stubble(),
+      bigode: stache,
+      cavanhaque: stache + goatee,
+      costeleta: `<path d="M-0.4,-20 L2.8,-20 L2.6,-9.6 Q1.2,-7.6 -0.2,-9.4Z" fill="${bc}"/>`,
+      cheia: `<path d="M-4.5,-12 Q-5,-2 1,0.8 Q7,2.5 10.5,-1 Q13,-4 12.2,-10 Q10,-7.5 7.5,-8 Q4,-7 1.5,-9.5 Q-1,-12 -4.5,-12Z" fill="${bc}" ${S}/>` + stache,
+      lenhador: `<path d="M-4.8,-13 Q-6,1 0,5.6 Q6,9.4 10.6,4.6 Q13.6,1 12.6,-8 Q10,-6.6 7.5,-7.6 Q4,-6.5 1.6,-9.5 Q-1,-13 -4.8,-13Z" fill="${bc}" ${S}/>` +
+        `<path d="M1,0.6 q2,3 4.6,3.6 M6.4,-1 q1.6,3 4,3" stroke="${OUT}" stroke-width="0.7" fill="none" opacity="0.4" stroke-linecap="round"/>` + stache,
+      bigodao: `<path d="M5.8,-8 Q9.6,-10.4 13.2,-7.8 L13.4,-2 Q12,-1.4 11.8,-5 Q9.4,-6.4 6.4,-6.2Z" fill="${bc}" stroke="${OUT}" stroke-width="0.9" stroke-linejoin="round"/>`,
+      trancada: stache + goatee + [3.6, 6.4, 9.2].map(y => `<ellipse cx="8.2" cy="${y}" rx="1.9" ry="1.6" fill="${bc}" stroke="${OUT}" stroke-width="0.9"/>`).join('') +
+        `<rect x="6.6" y="10.4" width="3.4" height="1.4" rx="0.6" fill="#D8404A" stroke="${OUT}" stroke-width="0.6"/><path d="M7.2,11.8 L6.6,14 M8.3,11.8 V14.4 M9.4,11.8 L10,14" stroke="${bc}" stroke-width="1" stroke-linecap="round"/>`,
+    };
+    const beard = BEARD[barba] || '';
     const head = `
-      <path d="M-11,-7 Q-14,-27 0,-27 Q12,-27 12.5,-16 L14,-11.5 L12,-10 Q12.5,-4 8.5,-1.5 Q3,1 -3,-0.5 Q-8.5,-2 -11,-7Z" fill="${G('skin')}" ${S}/>
+      ${hairBack}
+      <path d="${FACE}" fill="${G('skin')}" ${S}/>
       <ellipse cx="-2.5" cy="-12" rx="2.6" ry="3.8" fill="${G('skin')}" ${S}/>
       ${beard}
       <ellipse cx="7" cy="-15" rx="1.3" ry="1.5" fill="${OUT}"/>
-      <path d="M4.5,-18.6 L10,-18.2" stroke="${mix(hair, '#000000', 0.2)}" stroke-width="1.9" stroke-linecap="round"/>
+      <path d="M4.5,-18.6 L10,-18.2" stroke="${mix(bc, '#000000', 0.2)}" stroke-width="1.9" stroke-linecap="round"/>
       <path d="M8,-5.4 L11,-5.9" stroke="${OUT}" stroke-width="1.3" stroke-linecap="round"/>
       ${hairSvg}`;
 
@@ -351,8 +403,12 @@ class Jogador2D extends HTMLElement {
     if (a('shirt')) { const v = [1, 3, 5].map(i => parseInt(k.shirt.slice(i, i + 2), 16)); k.numColor = v[0] * 0.3 + v[1] * 0.59 + v[2] * 0.11 > 165 ? '#1D1D1F' : '#FFFFFF'; }
     const skin = SKINS[a('skin')] || a('skin') || SKINS.media;
     const hair = HAIRS[a('hair')] || a('hair') || HAIRS.preto;
-    const style = a('cabelo') || 'curto';
     const view = a('view') || ANIMS[this.anim].view;
+    // De costas há desenho para os 21 cortes da criação; de frente (só adversários), o corte mais parecido entre os 6 de frente
+    const style0 = a('cabelo') || 'curto';
+    const FRONT = { topete: 'curto', social: 'curto', franja: 'curto', undercut: 'curto', dreads: 'trancas', trancalonga: 'trancas', moicano: 'raspado', moicanoloiro: 'raspado',
+      militar: 'raspado', degrade: 'raspado', riscado: 'raspado', longo: 'cacheado', samurai: 'cacheado', mullet: 'cacheado', afro: 'black' };
+    const style = FRONT[style0] || style0;
     const W = this.W = parseFloat(a('largura')) || 110;
     const u = 'j' + (++uid);
     const G = n => `url(#${u}${n})`;
@@ -417,6 +473,39 @@ class Jogador2D extends HTMLElement {
       hairSvg = rasp;
     } else {
       hairSvg = `<path d="M-12.8,-18 Q-14.5,-38 0,-37.2 Q14.5,-38 12.8,-18 Q11.5,-27 7,-28.8 Q2,-27.2 -2,-29 Q-7,-27.4 -10,-28.6 Q-12,-25 -12.8,-18Z" fill="${G('hair')}" ${S}/>`;
+    }
+    if (view === 'costas') {
+      const H = d => `<path d="${d}" fill="${G('hair')}" ${S}/>`;
+      const BK = 'M-12.8,-14 Q-14,-37 0,-36.5 Q14,-37 12.8,-14 Q12,-6 6,-3.2 Q0,-2 -6,-3.2 Q-12,-6 -12.8,-14Z';
+      const fade = o => `<path d="${BK}" fill="${hair}" opacity="${o}"/>`;
+      const strand = (x1, y1, x2, y2, w, ticks) => {
+        let o = `<path d="M${x1},${y1} L${x2},${y2}" stroke="${OUT}" stroke-width="${w + 3}" stroke-linecap="round"/><path d="M${x1},${y1} L${x2},${y2}" stroke="${hair}" stroke-width="${w}" stroke-linecap="round"/>`;
+        if (ticks) for (let t = 0.15; t < 0.95; t += 0.16) { const x = x1 + (x2 - x1) * t, y = y1 + (y2 - y1) * t; o += `<path d="M${(x - 1.6).toFixed(1)},${(y - 0.6).toFixed(1)} l3.2,1.2" stroke="${OUT}" stroke-width="0.7" opacity="0.5"/>`; }
+        return o;
+      };
+      const top = 'M-11,-27 Q-11.6,-37.4 0,-37.4 Q11.6,-37.4 11,-27 Q0,-30.4 -11,-27Z';
+      const dots = () => { let o = '', q = 7; const r = () => (q = (q * 9301 + 49297) % 233280) / 233280; for (let i = 0; i < 18; i++) o += `<circle cx="${(-18 + r() * 36).toFixed(1)}" cy="${(-42 + r() * 30).toFixed(1)}" r="0.7" fill="${OUT}" opacity="0.22"/>`; return o; };
+      const BACK = {
+        topete: H(BK) + H('M-9,-33 Q-6,-42.6 2,-42.4 Q10,-41.6 10,-33.6 Q0,-37 -9,-33Z'),
+        social: H(BK) + `<path d="M-4,-36 Q-6.4,-27 -9.6,-19" stroke="${OUT}" stroke-width="0.9" fill="none" opacity="0.45" stroke-linecap="round"/>`,
+        franja: H(BK),
+        militar: fade(0.8) + H('M-12.6,-26 Q-13,-37 -8,-39 L8,-39 Q13,-37 12.6,-26 Q0,-29.6 -12.6,-26Z'),
+        undercut: fade(0.42) + H('M-12,-24 Q-13.6,-38.6 0,-38.8 Q13.6,-38.6 12,-24 Q0,-28.4 -12,-24Z'),
+        degrade: fade(0.42) + H(top),
+        samurai: fade(0.42) + H(top) + `<circle cx="0" cy="-40.6" r="5" fill="${G('hair')}" ${S}/><rect x="-3" y="-37.6" width="6" height="2.4" rx="1" fill="#D8404A" stroke="${OUT}" stroke-width="1"/>`,
+        moicano: fade(0.35) + H('M-4,-38.6 Q0,-41.4 4,-38.6 L3.4,-4.6 Q0,-3.6 -3.4,-4.6Z'),
+        moicanoloiro: fade(0.35) + `<path d="M-4,-31 L-7,-41 L-2.4,-37.6 L0,-45 L2.4,-37.6 L7,-41 L4,-31 L3.4,-6 Q0,-5 -3.4,-6Z" fill="#F4EAB8" ${S}/>` +
+          `<path d="M0,-30 V-7" stroke="${hair}" stroke-width="3" opacity="0.85"/>`,
+        riscado: fade(0.55) + `<path d="M-9,-19 L-6,-23 L-3,-19 L0,-23 L3,-19" stroke="#F4E6D4" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>`,
+        afro: H('M-16,-8 Q-23,-18 -21,-32 Q-16.6,-46 0,-46 Q16.6,-46 21,-32 Q23,-18 16,-8 Q8,-4 0,-4 Q-8,-4 -16,-8Z') + dots(),
+        longo: H('M-13.6,-20 Q-15,-37.4 0,-37.4 Q15,-37.4 13.6,-20 L14.6,6 Q0,10 -14.6,6Z') + `<path d="M-5,-20 L-6,6 M5,-20 L6,6" stroke="${OUT}" stroke-width="0.8" opacity="0.3"/>`,
+        mullet: H('M-8.6,-8 Q-9.6,4 -7.4,8.6 Q0,10.6 7.4,8.6 Q9.6,4 8.6,-8Z') + H(BK),
+        dreads: [-11, -6, -1, 4, 9].map((x, i) => strand(x * 0.8, -24, x * 1.05, 6 + (i % 2) * 3, 3.4)).join('') + H(BK) +
+          `<path d="M-8,-30 Q-9,-20 -9,-12 M-3,-34 V-8 M3,-34 V-8 M8,-30 Q9,-20 9,-12" stroke="${dk}" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.8"/>`,
+        trancalonga: fade(0.9) + [-9, -3, 3, 9].map(x => strand(x * 0.9, -12, x * 1.1, 16, 3.6, 1)).join('') +
+          [-8, -3, 3, 8].map(x => `<path d="M${x * 0.5},-36 Q${x * 1.1},-24 ${x * 0.9},-12" stroke="${OUT}" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.5"/>`).join(''),
+      };
+      if (BACK[style0]) hairSvg = BACK[style0];
     }
     const barba = a('barba') || 'sem';
     const beard = view === 'costas' || barba === 'sem' ? '' : barba === 'rala'
@@ -552,18 +641,19 @@ customElements.define('jogador-2d', Jogador2D);
       pose(t, anim) { el.pose(t, anim); },
     };
   }
-  // Visual da criação de personagem no formato dos personagens dos minigames
-  // Visual do jogador (avatar.js) → desenho de lado dos minigames: cada corte e barba vira o mais parecido que existe de lado
-  const HAIR = { curto: 'curto', raspado: 'raspado', topete: 'curto', black: 'black', trancas: 'trancas', dreads: 'trancas', moicano: 'raspado', longo: 'cacheado', careca: 'careca',
-    social: 'curto', franja: 'curto', militar: 'raspado', cacheado: 'cacheado', undercut: 'curto', degrade: 'raspado', samurai: 'cacheado', afro: 'black',
-    mullet: 'cacheado', riscado: 'raspado', trancalonga: 'trancas', moicanoloiro: 'raspado' };
-  const BEARD = { nenhuma: 'sem', rala: 'rala', bigode: 'rala', cavanhaque: 'rala', cheia: 'cheia', porfazer: 'rala', costeleta: 'rala', lenhador: 'cheia', bigodao: 'cheia', trancada: 'cheia' };
+  // Visual da criação (avatar.js) → personagens dos minigames: de lado e de costas há desenho para cada corte e cada barba.
+  // Chuteira e sola estampadas viram a cor que mais aparece na estampa; cabelo pintado tem barba castanho-escura (como no avatar)
+  const FLAT = { ouro: '#E0B43A', holo: '#B99BFF', prata: '#C9CED6', cromo: '#A8B0BA', camuflada: '#6B7444', raio: '#1B1A17', chamas: '#1B1A17', tigre: '#FF8A1F',
+    listrada: '#F4F2EA', pontilhada: '#1B1A17', galaxia: '#14193D', camoneon: '#1B1A17', onca: '#E8B04A', brasil: '#1E9A43', cristal: '#BFE6F7', bicolor: '#1B1A17' };
   function look(c) {
     const A = root.ClimbixAvatar;
     if (!A || !c) return { skin: 'media', cabelo: 'curto' };
-    const lk = Object.assign({}, A.DEF, A.lookOf(c)), g = A.GEAR[lk.boot];
-    return { skin: A.SKIN[lk.skin] || A.SKIN[3], hair: A.HAIR_COLORS[lk.hc] || A.HAIR_COLORS[0], cabelo: HAIR[lk.hair] || 'curto', barba: BEARD[A.beardAtAge ? A.beardAtAge(lk.beard, c.age) : lk.beard] || 'sem',
-      boots: lk.boot === 'ouro' ? '#E0B43A' : lk.boot === 'holo' ? '#B99BFF' : g && g[0] === '#' ? g : null };
+    const lk = Object.assign({}, A.DEF, A.lookOf(c));
+    const gear = k => FLAT[k] || (A.GEAR[k] && A.GEAR[k][0] === '#' ? A.GEAR[k] : null);
+    const hair = A.HAIR_COLORS[lk.hc] || A.HAIR_COLORS[0];
+    return { skin: A.SKIN[lk.skin] || A.SKIN[3], hair, cabelo: A.HAIRS.includes(lk.hair) ? lk.hair : 'curto',
+      barba: A.beardAtAge ? A.beardAtAge(lk.beard, c.age) : lk.beard, barbacor: lk.hc >= 6 ? '#3A2A1E' : hair,
+      boots: gear(lk.boot), sola: gear(lk.sole) };
   }
   // Rostos variados (barreira e zagueiros adversários)
   const FACES = [
