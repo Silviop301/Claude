@@ -31,7 +31,8 @@
 
     if (c.farewell) c.mod.min += 0.1; // temporada de despedida: o técnico faz questão
     // Promessa do técnico (conversa depois de uma temporada no banco) vale por uma temporada
-    let share = clamp(role.share + c.mod.min + (c.promise || 0) + (c.rel.coach - REL0) / 250 + (c.age <= 17 ? -0.2 : 0), 0.05, 0.97);
+    // Técnico: confiança decide minutos (60 de diferença para o neutro ≈ 40% dos jogos)
+    let share = clamp(role.share + c.mod.min + (c.promise || 0) + (c.rel.coach - REL0) / 150 + (c.age <= 17 ? -0.2 : 0), 0.05, 0.97);
     share *= 1 - injShare;
     // Jogos possíveis: rodadas da liga (ida e volta, no mínimo 20 times) mais as copas
     const lgSize = Math.max(20, D.CLUBS.filter(x => x.league === club.league).length);
@@ -43,7 +44,8 @@
     // Visão de Jogo faz o time render mais (produção e chance de título)
     const teamBoost = 0.8 * S.tm(c, 'visao');
     const teamF = 0.85 + (club.strength + teamBoost - D.TIERS[club.tier].min) * 0.02;
-    const form = 1 + c.mod.form + r.gauss() * 0.08;
+    // Torcida: apoio (ou vaia) mexe na fase em campo, até ±8%
+    const form = 1 + c.mod.form + (c.rel.fans - REL0) / 625 + r.gauss() * 0.08;
     // Gols saem da finalização (e do que ajuda a chegar nela); assistências, do passe e do drible
     const gA = E.fin * 0.5 + E.rit * 0.2 + E.dri * 0.15 + E.fis * 0.15;
     const aA = E.pas * 0.55 + E.dri * 0.25 + E.rit * 0.1 + E.fin * 0.1;

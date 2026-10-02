@@ -108,6 +108,8 @@
     const b = S.bonusOf(traits, lv, c.pos), out = {};
     inv = inv || c.inv || {};
     D.INVEST.forEach(t => { if (t.attr && inv[t.id]) for (const k in t.attr) b[k] += t.attr[k] * inv[t.id]; });
+    // Marcas das decisões (engine/stakes.js): o que um evento deu ou tirou fica para sempre, fora do teto
+    if (c.xb) for (const k in c.xb) b[k] += c.xb[k];
     // Ponto de bônus que passaria do 99 não se perde todo: cada 2 acima do 99 viram 1 no atributo mais importante da posição abaixo de 99
     let extra = 0;
     D.ATTRS.forEach(k => { const v = Math.round(c.attrs[k]) + b[k]; extra += Math.max(0, v - 99); out[k] = clamp(v, 20, 99); });

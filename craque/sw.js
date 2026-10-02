@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-0ce51106';
+const CACHE = 'craque-00e5efa8';
 const ASSETS = [
   "./",
   "./fonts/TwemojiCountryFlags.woff2",
@@ -52,6 +52,7 @@ const ASSETS = [
   "./src/defend.js",
   "./src/engine/achievements.js",
   "./src/engine/core.js",
+  "./src/engine/decisions.js",
   "./src/engine/events.js",
   "./src/engine/events2.js",
   "./src/engine/events3.js",
@@ -59,6 +60,7 @@ const ASSETS = [
   "./src/engine/market.js",
   "./src/engine/moments.js",
   "./src/engine/season.js",
+  "./src/engine/stakes.js",
   "./src/engine/worldcup.js",
   "./src/errors.js",
   "./src/events-text.js",

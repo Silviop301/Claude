@@ -6,7 +6,7 @@
   // Pesos da pontuação final e faixas das notas (a tela de fim de carreira mostra a conta)
   S.SCORE_W = { title: 12, cont: 35, cwc: 60, wc: 150, wcGoal: 3, ballon: 100, award: 8, peak: 2 };
   // Faixas calibradas no simulador (robô que joga bem): S 10% · A 25% · B 30% · C 20% · D 15% das carreiras
-  S.GRADES = [['S', 1940], ['A', 1460], ['B', 1080], ['C', 820], ['D', 0]];
+  S.GRADES = [['S', 2120], ['A', 1640], ['B', 1240], ['C', 910], ['D', 0]];
   S.gradeOf = score => S.GRADES.find(([, min]) => score >= min)[0];
   S.finish = function (c) {
     c.retired = true;

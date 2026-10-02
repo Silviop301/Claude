@@ -38,7 +38,9 @@ for (let n = 0; n < N; n++) {
     const ev = S.pickEvent(c);
     if (ev) {
       let i = Math.random() < 0.5 ? 0 : 1;
-      if (SMART) i = { banco: 0, assedio: 0, funcao: 0, arabia: 1, renovar: 1, capitao: 0, classico: 1, festa: 1, sub20: 0, protesto: 0 }[ev.id] ?? 0;
+      // Eventos com aposta (engine/stakes.js): o esperto lê a chance e o que está em jogo (valor escondido ev); nos outros, o mapa antigo
+      if (SMART) i = ev.options.every(o => o.ev !== undefined) && !ev.dest ? ev.options.map((o, k) => [o.ev, k]).sort((a, b) => b[0] - a[0])[0][1]
+        : ({ banco: 0, assedio: 0, funcao: 0, arabia: 1, renovar: 1, capitao: 0, classico: 1, festa: 1, sub20: 0, protesto: 0 }[ev.id] ?? 0);
       S.resolveEvent(c, ev, i); decisions++;
       c.stats = c.stats || {}; c.stats[ev.id] = (c.stats[ev.id] || 0) + 1;
     }

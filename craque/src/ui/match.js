@@ -36,10 +36,15 @@
       const r = S.resolveEvent(G.c, ev, +b.dataset.i);
       pendingEvent = null;
       bar();
+      // O que mudou de verdade: o geral (quando mexeu) e cada efeito, verde quando ajuda e vermelho quando atrapalha
+      const o1 = S.ovr(G.c), dOvr = r.ovrFrom != null ? o1 - r.ovrFrom : 0;
+      const kind = g => (/\+|sobe|mais forte/.test(g) ? ' up' : /−|cai|lesão|mais fraco/.test(g) ? ' down' : '');
+      const fxRow = r.gain && r.gain.length ? '<div class="er-fx">' + (dOvr ? '<span class="er-ovr' + (dOvr > 0 ? ' up' : ' down') + '">Nota geral ' + r.ovrFrom + ' → ' + o1 + '</span>' : '') +
+        r.gain.map(g => '<span class="' + kind(g).trim() + '">' + esc(g) + '</span>').join('') + '</div>' : '';
       const pctx = { kind: 'event', ok: r.ok, ev, opt: +b.dataset.i, toClub: offer && b.dataset.i === '0' ? G.c.club : null };
       render(
         '<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.icoOf(ev, 'lg') + '</span><div class="eyebrow">' + esc(ev.title) + '</div>' +
-        '<p class="er-txt">' + esc(r.text) + '</p></div>' +
+        '<p class="er-txt">' + esc(r.text) + '</p>' + fxRow + '</div>' +
         '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn(pctx), { center: true }
       );
       $('b-next').onclick = momentOrSeason;

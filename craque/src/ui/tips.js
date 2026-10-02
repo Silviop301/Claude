@@ -9,7 +9,7 @@
   const TIPS = {
     base: ['Sua carreira começa aqui', 'A cada temporada você se prepara, toma decisões e joga. No fim, a carreira vira uma carta com nota de S a D. Toque num clube para ver a proposta e toque de novo para assinar.'],
     pre: ['Prepare a temporada', 'Escolha uma característica: ela soma pontos nos atributos principais e tem um efeito próprio. São 5 na carreira, e depois dá para evoluir. Os pontos de evolução compram treinos e podem ficar guardados.'],
-    evento: ['Decisões fora de campo', 'Cada escolha mexe com Técnico, Torcida e Fama, que ficam na barra do topo. O selo mostra o tipo: oportunidade, risco ou decisão. A chance de cada resultado aparece na própria opção.'],
+    evento: ['Decisões que mudam a carreira', 'Cada opção mostra a chance de dar certo e o que está em jogo. Atributos e teto mudam para sempre; forma e minutos valem só esta temporada. A chance depende do seu momento: nível no clube, características e idade.'],
     lance: ['Jogo decisivo', 'Agora é com você: o lance decide o jogo e às vezes o título. Se preferir, nas Configurações dá para deixar a carta decidir sozinha.'],
     resumo: ['Fim da temporada', 'A nota da temporada puxa a evolução da carta. Em Detalhes você vê por que a nota geral mudou. Postar nas redes rende Fama e Torcida uma vez por temporada.'],
     janela: ['Janela de transferências', 'Compare o papel no elenco (titular joga mais) e o salário. Ficar também é uma opção, e trocar de clube muda a torcida que te apoia.'],
