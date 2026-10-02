@@ -27,6 +27,10 @@
       p.ligas.push({ name: l.name, s: str(l.id) });
       if (!p.copas.includes(l.cup)) p.copas.push(l.cup);
     });
+    // Supercopa nacional entra nas copas do país; as outras taças continentais ficam num grupo próprio
+    const SN = (window.CRAQUE_SIM || {}).SUPER_NAME || {};
+    by.forEach(p => { if (SN[p.name] && !p.copas.includes(SN[p.name])) p.copas.push(SN[p.name]); });
+    by.set('Continentais', { name: 'Continentais', flag: '🌍', ligas: [], copas: ['Copa Sul-Americana', 'Liga Europa', 'Liga Conferência', 'Champions da Ásia', 'Champions da Concacaf', 'Champions da África'] });
     const countries = [...by.values()].map(p => ({ name: p.name, flag: p.flag, ligas: p.ligas.sort((a, b) => a.s - b.s).map(x => x.name), copas: p.copas }));
     const info = {};
     HONRA.forEach(n => { info[n] = { kind: 'honra' }; });

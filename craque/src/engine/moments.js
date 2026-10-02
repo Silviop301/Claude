@@ -10,10 +10,30 @@
   //  classico falta no clássico            → converteu: gol e torcida +8
   // Taça continental que o clube disputa (ou null)
   // Libertadores: primeira divisão dos países sul-americanos do jogo; Champions: clubes grandes da Europa
-  S.LIBERTA = ['bra-a', 'arg', 'uru', 'col', 'chi', 'par', 'ecu'];
+  S.LIBERTA = ['bra-a', 'arg', 'uru', 'col', 'chi', 'par', 'ecu', 'per', 'bol', 'ven'];
   // Continente do clube (para o Mundial e a Intercontinental): sul, conc (México/EUA), asia, eur
-  S.confOf = lg => { const b = lg.split('-')[0]; return ['bra', 'arg', 'uru', 'col', 'chi', 'par', 'ecu'].includes(b) ? 'sul' : ['mex', 'usa'].includes(b) ? 'conc' : ['ara', 'qat', 'jpn', 'kor'].includes(b) ? 'asia' : 'eur'; };
+  S.confOf = lg => { const b = lg.split('-')[0]; return ['bra', 'arg', 'uru', 'col', 'chi', 'par', 'ecu', 'per', 'bol', 'ven'].includes(b) ? 'sul' : ['mex', 'usa'].includes(b) ? 'conc' : ['ara', 'qat', 'jpn', 'kor', 'aus'].includes(b) ? 'asia' : ['mar', 'egi'].includes(b) ? 'caf' : 'eur'; };
   S.contName = club => (S.LIBERTA.includes(club.league) ? 'Libertadores' : club.tier >= 4 ? 'Liga dos Campeões' : null);
+  // Segunda taça continental (só para clubes da primeira divisão): Sul-Americana, Liga Europa, Liga Conferência;
+  // na Ásia e na Concacaf, a Champions de cada continente. Conta como título (e pontos extras), sem Intercontinental.
+  S.cont2Name = club => {
+    const LD = D.LADDER[club.league];
+    if (LD && LD.up) return null; // segunda divisão não joga torneio continental
+    const cf = S.confOf(club.league);
+    if (cf === 'sul') return S.LIBERTA.includes(club.league) && club.tier >= 2 ? 'Copa Sul-Americana' : null;
+    if (cf === 'asia') return club.tier >= 3 ? 'Champions da Ásia' : null;
+    if (cf === 'conc') return club.tier >= 3 ? 'Champions da Concacaf' : null;
+    if (cf === 'caf') return club.tier >= 2 ? 'Champions da África' : null;
+    return club.tier === 4 ? 'Liga Europa' : club.tier === 3 ? 'Liga Conferência' : null;
+  };
+  // Supercopa nacional: o campeão da liga (ou da copa) do ano anterior disputa no começo da temporada
+  S.SUPER_NAME = { 'Brasil': 'Supercopa do Brasil', 'Argentina': 'Supercopa Argentina', 'Espanha': 'Supercopa da Espanha', 'Inglaterra': 'Community Shield',
+    'Itália': 'Supercoppa Italiana', 'Alemanha': 'Supercopa da Alemanha', 'França': 'Troféu dos Campeões', 'Portugal': 'Supertaça Cândido de Oliveira',
+    'Holanda': 'Supercopa da Holanda', 'Turquia': 'Supercopa da Turquia', 'Arábia Saudita': 'Supercopa Saudita', 'México': 'Campeão de Campeões',
+    'Bélgica': 'Supercopa da Bélgica', 'Grécia': 'Supercopa da Grécia', 'Japão': 'Supercopa do Japão', 'Coreia do Sul': 'Supercopa da Coreia',
+    'Chile': 'Supercopa do Chile', 'Paraguai': 'Supercopa Paraguaia', 'Equador': 'Supercopa do Equador', 'Uruguai': 'Supercopa Uruguaia',
+    'Colômbia': 'Superliga Colombiana', 'Catar': 'Copa do Xeique Jassim', 'Áustria': null, 'Suíça': null, 'Dinamarca': null, 'Escócia': null, 'EUA': null };
+  S.superName = club => { const LD = D.LADDER[club.league]; if (LD && LD.up) return null; return S.SUPER_NAME[D.countryOf(club)] || null; };
   // Tipo de cobrança do lance: pênalti ou falta ('classico' é sempre falta; 'cont' sorteia)
   // Zagueiro e goleiro têm lances defensivos: 'tackle' (desarme) e 'save' (defender pênalti)
   S.kickType = m => m.kick || (m.type === 'classico' ? 'fk' : 'pen');

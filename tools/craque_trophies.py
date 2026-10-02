@@ -38,6 +38,13 @@ IDS = {
     "Scottish Championship": 4395, "Challenge League": 4713, "2. Liga Austríaca": 4796, "1ª Divisão Dinamarquesa": 4683,
     "Primera B Chilena": 4899, "División Intermedia": 4900, "Serie B Equatoriana": 4957, "Segunda División Uruguaia": 5072,
     "Primera B Colombiana": 4951, "J2 League": 4824, "K League 2": 4822, "First Division Saudita": 5627, "USL Championship": 4684,
+    # Taças continentais secundárias, supercopas e os países novos
+    "Liga Europa": 4481, "Copa Sul-Americana": 4724, "Liga Conferência": 5071, "Champions da Ásia": 4719,
+    "Champions da Concacaf": 4721, "Champions da África": 4720, "Supercoppa Italiana": 4507, "Supercopa da Espanha": 4511,
+    "Community Shield": 4571, "Liga 1 Peruana": 4688, "División Profesional": 4685, "Liga FUTVE": 4513, "Copa Venezuela": 5660,
+    "HNL": 4629, "Superliga Sérvia": 4671, "Eliteserien": 4358, "Copa da Noruega": 5634, "Allsvenskan": 4347,
+    "Copa da Suécia": 4756, "Ekstraklasa": 4422, "Copa da Polônia": 5838, "Botola Pro": 4520,
+    "Premier League Egípcia": 4829, "Copa da Austrália": 5180,
 }
 
 

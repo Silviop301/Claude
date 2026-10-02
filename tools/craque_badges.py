@@ -183,9 +183,11 @@ COUNTRY = {"bra": "Brazil", "arg": "Argentina", "por": "Portugal", "esp": "Spain
            "ita": "Italy", "ale": "Germany", "fra": "France", "ara": "Saudi Arabia", "usa": "USA",
            "uru": "Uruguay", "col": "Colombia", "ned": "The Netherlands", "tur": "Turkey", "mex": "Mexico",
            "bel": "Belgium", "sco": "Scotland", "gre": "Greece", "sui": "Switzerland", "aut": "Austria", "den": "Denmark",
-           "chi": "Chile", "par": "Paraguay", "ecu": "Ecuador", "jpn": "Japan", "kor": "South Korea", "qat": "Qatar"}
+           "chi": "Chile", "par": "Paraguay", "ecu": "Ecuador", "jpn": "Japan", "kor": "South Korea", "qat": "Qatar",
+           "per": "Peru", "bol": "Bolivia", "ven": "Venezuela", "cro": "Croatia", "srb": "Serbia", "nor": "Norway",
+           "swe": "Sweden", "pol": "Poland", "cze": "Czech Republic", "mar": "Morocco", "egi": "Egypt", "aus": "Australia"}
 # Países com mais de um nome na API
-ALIASES = {"South Korea": ("South Korea", "Korea Republic", "Korea"), "USA": ("USA", "United States", "Canada"),
+ALIASES = {"South Korea": ("South Korea", "Korea Republic", "Korea"), "Czech Republic": ("Czech Republic", "Czechia"), "Australia": ("Australia", "New Zealand"), "USA": ("USA", "United States", "Canada"),
            "The Netherlands": ("The Netherlands", "Netherlands"), "England": ("England", "Wales")}
 # Nomes que a busca só acha escritos de outro jeito
 SEARCH.update({
@@ -208,6 +210,40 @@ SEARCH.update({
     "River Plate (PAR)": ("River Plate Asuncion", "Paraguay"), "Oriental": ("Oriental de La Paz", "Uruguay"), "Torque": ("Montevideo City Torque", "Uruguay"),
     "Atlético FC": ("Atletico FC Cali", "Colombia"), "Leones FC": ("Leones", "Colombia"), "Al-Arabi (KSA)": ("Al Arabi Unaizah", "Saudi Arabia"),
     "Al-Tai": ("Al Taee", "Saudi Arabia"), "San Antonio FC": ("San Antonio FC", "USA"), "Al-Shahania": ("Al Shahaniya", "Qatar"),
+})
+# Países novos: nomes como a API conhece
+SEARCH.update({
+    "Universitario": ("Universitario de Deportes", "Peru"), "ADT": ("ADT Tarma", "Peru"), "César Vallejo": ("Cesar Vallejo", "Peru"),
+    "Deportivo Garcilaso": ("Deportivo Garcilaso", "Peru"), "Cusco FC": ("Cusco", "Peru"),
+    "Bolívar": ("Club Bolivar", "Bolivia"), "Nacional Potosí": ("Nacional Potosi", "Bolivia"), "Guabirá": ("Guabira", "Bolivia"),
+    "Universitario de Vinto": ("Universitario de Vinto", "Bolivia"), "San Antonio Bulo Bulo": ("San Antonio Bulo Bulo", "Bolivia"),
+    "Deportivo Táchira": ("Deportivo Tachira", "Venezuela"), "Caracas FC": ("Caracas", "Venezuela"), "Portuguesa (VEN)": ("Portuguesa", "Venezuela"),
+    "Estudiantes de Mérida": ("Estudiantes de Merida", "Venezuela"), "Universidad Central": ("Universidad Central de Venezuela", "Venezuela"),
+    "Dinamo Zagreb": ("Dinamo Zagreb", "Croatia"), "Varaždin": ("Varazdin", "Croatia"), "Šibenik": ("Sibenik", "Croatia"), "Rudeš": ("Rudes", "Croatia"),
+    "Gorica": ("HNK Gorica", "Croatia"), "Istra 1961": ("Istra 1961", "Croatia"),
+    "Estrela Vermelha": ("Crvena Zvezda", "Serbia"), "TSC Bačka Topola": ("TSC Backa Topola", "Serbia"), "Čukarički": ("Cukaricki", "Serbia"),
+    "Radnički Niš": ("Radnicki Nis", "Serbia"), "Mladost Lučani": ("Mladost Lucani", "Serbia"), "Železničar Pančevo": ("Zeleznicar Pancevo", "Serbia"),
+    "Bodø/Glimt": ("Bodo Glimt", "Norway"), "Vålerenga": ("Valerenga", "Norway"), "Lillestrøm": ("Lillestrom", "Norway"), "Tromsø": ("Tromso", "Norway"),
+    "Strømsgodset": ("Stromsgodset", "Norway"), "Odd": ("Odds BK", "Norway"), "Brann": ("SK Brann", "Norway"),
+    "Malmö FF": ("Malmo FF", "Sweden"), "Djurgården": ("Djurgardens IF", "Sweden"), "IFK Göteborg": ("IFK Goteborg", "Sweden"), "Häcken": ("BK Hacken", "Sweden"),
+    "Mjällby": ("Mjallby AIF", "Sweden"), "AIK": ("AIK", "Sweden"), "GAIS": ("GAIS", "Sweden"), "Sirius": ("IK Sirius", "Sweden"),
+    "Legia Varsóvia": ("Legia Warszawa", "Poland"), "Lech Poznań": ("Lech Poznan", "Poland"), "Raków Częstochowa": ("Rakow Czestochowa", "Poland"),
+    "Jagiellonia": ("Jagiellonia Bialystok", "Poland"), "Pogoń Szczecin": ("Pogon Szczecin", "Poland"), "Górnik Zabrze": ("Gornik Zabrze", "Poland"),
+    "Wisła Cracóvia": ("Wisla Krakow", "Poland"), "Lechia Gdańsk": ("Lechia Gdansk", "Poland"), "Śląsk Wrocław": ("Slask Wroclaw", "Poland"),
+    "Widzew Łódź": ("Widzew Lodz", "Poland"), "Zagłębie Lubin": ("Zaglebie Lubin", "Poland"), "Cracovia": ("Cracovia Krakow", "Poland"),
+    "Slavia Praga": ("Slavia Prague", "Czech Republic"), "Sparta Praga": ("Sparta Prague", "Czech Republic"), "Viktoria Plzeň": ("Viktoria Plzen", "Czech Republic"),
+    "Baník Ostrava": ("Banik Ostrava", "Czech Republic"), "Mladá Boleslav": ("Mlada Boleslav", "Czech Republic"), "Hradec Králové": ("Hradec Kralove", "Czech Republic"),
+    "Zlín": ("Zlin", "Czech Republic"), "Bohemians 1905": ("Bohemians Praha", "Czech Republic"),
+    "Wydad": ("Wydad Casablanca", "Morocco"), "Raja Casablanca": ("Raja Casablanca", "Morocco"), "AS FAR": ("FAR Rabat", "Morocco"),
+    "Maghreb de Fès": ("Maghreb Fes", "Morocco"), "Ittihad Tânger": ("Ittihad Tanger", "Morocco"), "Difaâ El Jadida": ("Difaa El Jadida", "Morocco"),
+    "Moghreb Tétouan": ("Moghreb Tetouan", "Morocco"), "RS Berkane": ("Renaissance Berkane", "Morocco"),
+    "Al Ittihad Alexandria": ("Al Ittihad Alexandria", "Egypt"), "ZED FC": ("ZED", "Egypt"), "Ghazl El Mahalla": ("Ghazl El Mahalla", "Egypt"),
+    "Future FC": ("Modern Sport", "Egypt"),
+    "Partizan": ("Partizan Belgrade", "Serbia"), "Malmö FF": ("Malmo", "Sweden"), "Djurgården": ("Djurgarden", "Sweden"),
+    "Häcken": ("Hacken", "Sweden"), "Legia Varsóvia": ("Legia Warsaw", "Poland"), "Cracovia": ("Cracovia", "Poland"),
+    "The Strongest": ("Strongest", "Bolivia"), "Zamora": ("Zamora FC", "Venezuela"), "Portuguesa (VEN)": ("Portuguesa FC", "Venezuela"),
+    "RS Berkane": ("Berkane", "Morocco"), "Ittihad Tânger": ("IR Tanger", "Morocco"), "Difaâ El Jadida": ("Difaa", "Morocco"),
+    "Olympique Safi": ("Olympic Safi", "Morocco"),
 })
 # Convidados do Mundial de Clubes (fora das ligas do jogo): id do escudo -> (busca, país)
 EXTRA = {"cwc-0": ("Al Ahly", "Egypt"), "cwc-1": ("Mamelodi Sundowns", "South Africa"), "cwc-2": ("Esperance", "Tunisia"),

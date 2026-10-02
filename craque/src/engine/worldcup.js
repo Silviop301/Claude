@@ -256,7 +256,7 @@
   // 32 clubes, fase de grupos e mata-mata, jogo a jogo como a Copa (usa o mesmo c.wcRun, com kind 'cwc').
   S.isCwcYear = c => c.season > 0 && (S.YEAR0 + c.season) % 4 === 1;
   // Vagas por continente (os clubes africanos e da Oceania não estão nas ligas do jogo: entram como convidados)
-  const CWC_QUOTA = { eur: 12, sul: 6, conc: 5, asia: 4 };
+  const CWC_QUOTA = { eur: 12, sul: 6, conc: 5, asia: 4, caf: 2 };
   const CWC_EXTRA = [
     { id: 'cwc-0', name: 'Al Ahly', flag: '🇪🇬', str: 75 }, { id: 'cwc-1', name: 'Mamelodi Sundowns', flag: '🇿🇦', str: 73 },
     { id: 'cwc-2', name: 'Espérance', flag: '🇹🇳', str: 71 }, { id: 'cwc-3', name: 'Wydad', flag: '🇲🇦', str: 70 },
@@ -290,7 +290,8 @@
         });
       out.push(...list);
     }
-    return out.concat(CWC_EXTRA.map(e => e.id));
+    // Al Ahly e Wydad agora jogam no Egito e no Marrocos do jogo: entram pela cota da África
+    return out.concat(CWC_EXTRA.filter(e => !['cwc-0', 'cwc-3'].includes(e.id)).map(e => e.id));
   };
   // Clube com que você ganhou a Libertadores ou a Champions nos últimos 4 anos (vaga garantida)
   S.cwcChampClub = function (c) {

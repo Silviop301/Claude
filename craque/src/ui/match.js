@@ -98,11 +98,13 @@
     };
   };
   // Abre o minigame certo para o tipo do lance (chute, goleiro, zagueiro ou meia)
-  function playMini(el, setupType, onDone) {
-    if (setupType === 'save') return window.CRAQUE_SAVE(el, { c: G.c, onDone });
-    if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, { c: G.c, onDone });
-    if (setupType === 'pass') return window.CRAQUE_PASS(el, { c: G.c, onDone });
-    return window.CRAQUE_KICK(el, { c: G.c, moment: { type: setupType }, onDone });
+  // c: quem bate (o treino pode usar um jogador médio da posição do lance)
+  function playMini(el, setupType, onDone, c) {
+    c = c || G.c;
+    if (setupType === 'save') return window.CRAQUE_SAVE(el, { c, onDone });
+    if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, { c, onDone });
+    if (setupType === 'pass') return window.CRAQUE_PASS(el, { c, onDone });
+    return window.CRAQUE_KICK(el, { c, moment: { type: setupType }, onDone });
   }
   // O que da carta pesa no lance, sem números escondidos
   function miniFacts(setupType) {
@@ -144,16 +146,19 @@
       '<div class="chips">' + miniFacts(st).join('') + '</div>' +
       '<p class="lead small">' + MINI_HOW[st] + '</p>' +
       '<button class="btn" id="b-kick">' + MINI_BTN[st] + '</button>' +
-      '<button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>'
+      '<button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>' +
+      '<button class="link-btn mom-train" id="b-train">' + U.emo('🏟️', 'xs') + ' Treinar este lance antes</button>'
     );
     U.tip('lance');
-    $('b-kick').onclick = () => {
+    $('b-train').onclick = () => U.training(st);
+    // Primeiro lance deste tipo: o treino abre antes (e dá para pular)
+    $('b-kick').onclick = U.gateTrain(st, () => {
       m.started = true; save();
       render('<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div><div id="kick"></div>');
       sfx('whistle');
       // Saiu da tela no meio da cobrança (voltou ao início): o resultado não redesenha nada; ao retomar, a chance decide
       playMini($('kick'), st, (ok, why) => { if (!$('kick')) return; momentEnd(m, ok, T, why); });
-    };
+    });
     $('b-auto').onclick = () => {
       const ok = S.autoMoment(G.c);
       save();

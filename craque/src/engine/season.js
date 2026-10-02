@@ -163,6 +163,15 @@
         if (inter.won) titles.push({ id: 'inter', name: 'Copa Intercontinental' });
       }
     }
+    // Segunda taça continental (Sul-Americana, Liga Europa, Liga Conferência, Champions da Ásia/Concacaf)
+    const cont2Name = S.cont2Name(club);
+    const pCont2 = cont2Name ? clamp((sEff - (club.tier >= 4 ? 74 : club.tier === 3 ? 63 : 56)) / 40 + titleBonus * 0.3, 0.02, 0.22) * (cont ? 0 : 1) : 0;
+    const cont2 = !!cont2Name && r() < pCont2;
+    if (cont2) titles.push({ id: 'cont2', name: cont2Name });
+    // Supercopa nacional: quem ganhou a liga ou a copa no ano anterior, no mesmo clube
+    const prevS = c.seasons[c.seasons.length - 1], superName = S.superName(club);
+    const superT = !!superName && !!prevS && prevS.club === club.id && prevS.titles.some(t => t.id === 'league' || t.id === 'cup') && r() < clamp(0.5 + (sEff - 72) / 50, 0.3, 0.75);
+    if (superT) titles.push({ id: 'super', name: superName });
     // Tabela de 20 times: os rivais da liga mais times "de fora da lista" na faixa de baixo.
     // Cada um soma pontos em ida e volta (rodadas pelo tamanho da liga) pela força; a posição sai da comparação com todos.
     const others = leagueClubs.filter(x => x.id !== club.id).map(x => x.strength);
@@ -245,6 +254,8 @@
       'Campeão com rodada de festa contra ' + vr(rival.name), 'A liga é sua: confronto decisivo vencido contra ' + vr(rival.name)]));
     if (cup && other && !(M && M.type === 'cup')) highlights.push('🏆 ' + S.textPick(c, 'hl.copa', ['Final da ' + (lg.cup || 'copa') + ' contra ' + vr(other.name), 'Campeão da ' + (lg.cup || 'copa') + ' em cima ' + D.do(other.name),
       'Taça da ' + (lg.cup || 'copa') + ' na final contra ' + vr(other.name), 'Copa conquistada: decisão contra ' + vr(other.name)]) + (goals > 5 ? ': gol seu!' : ''));
+    if (cont2) highlights.push('🌎 ' + S.textPick(c, 'hl.cont2', ['Campeão da ' + cont2Name + '!', 'A ' + cont2Name + ' é sua!', cont2Name + ' na estante!', 'Noite de taça: ' + cont2Name + ' conquistada']));
+    if (superT) highlights.push('🏆 ' + S.textPick(c, 'hl.super', [superName + ' conquistada no começo da temporada', 'Primeira taça do ano: ' + superName, superName + ' na estante']));
     if (cont && contName && !(M && M.type === 'cont')) highlights.push('🌍 ' + S.textPick(c, 'hl.cont', ['Campeão da ' + contName + '!', 'A ' + contName + ' é sua!', 'Rei do continente: ' + contName + ' conquistada',
       'Noite continental: título da ' + contName, contName + ' na estante!']));
     if (inter) {
@@ -376,6 +387,8 @@
     if (league) T.league++;
     if (cup) T.cup++;
     if (cont) T.cont++;
+    if (cont2) T.cont2 = (T.cont2 || 0) + 1;
+    if (superT) T.super = (T.super || 0) + 1;
     if (inter && inter.won) T.inter = (T.inter || 0) + 1;
     awards.forEach(a => { if (a.id in T) T[a.id]++; });
     // Sala de troféus: conta por competição

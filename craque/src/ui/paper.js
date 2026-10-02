@@ -24,6 +24,10 @@
     'Senegal': ['#FFFFFF', '#0B6B3A'], 'Sérvia': ['#C8102E', '#1C3F94'], 'Polônia': ['#FFFFFF', '#C8102E'], 'Coreia do Sul': ['#C8102E', '#111111'],
     'Nigéria': ['#0B8A3A', '#FFFFFF'], 'Austrália': ['#F7D117', '#0B6B3A'], 'Canadá': ['#C8102E', '#FFFFFF'], 'Camarões': ['#0B8A3A', '#C8102E'],
     'Gana': ['#FFFFFF', '#111111'], 'Irã': ['#FFFFFF', '#C8102E'], 'Tunísia': ['#C8102E', '#FFFFFF'], 'Arábia Saudita': ['#0B8A3A', '#FFFFFF'],
+    'Turquia': ['#C8102E', '#FFFFFF'], 'Áustria': ['#C8102E', '#FFFFFF'], 'Escócia': ['#1C2E5E', '#FFFFFF'], 'Grécia': ['#1F5FB4', '#FFFFFF'],
+    'Chile': ['#C8102E', '#1C3F94'], 'Paraguai': ['#C8102E', '#FFFFFF'], 'Catar': ['#7A1F3D', '#FFFFFF'],
+    'Peru': ['#FFFFFF', '#C8102E'], 'Bolívia': ['#0B8A3A', '#FFFFFF'], 'Venezuela': ['#7A1F3D', '#FFFFFF'], 'Noruega': ['#C8102E', '#FFFFFF'],
+    'Suécia': ['#F7D117', '#1C3F94'], 'República Tcheca': ['#C8102E', '#FFFFFF'], 'Egito': ['#C8102E', '#FFFFFF'],
   };
   const kitOf = clubId => (window.CRAQUE_KITS || {})[clubId] || ['#E6E6E6', '#1B1A17'];
   const nationKit = name => NATION_KIT[name] || ['#FFFFFF', '#1B1A17'];

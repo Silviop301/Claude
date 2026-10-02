@@ -12,7 +12,7 @@
   }
 
   // Ordem da sala de troféus (as maiores primeiro)
-  const ROOM = ['wc', 'ballon', 'cwc', 'ucl', 'lib', 'inter', 'league', 'cup'];
+  const ROOM = ['wc', 'ballon', 'cwc', 'ucl', 'lib', 'inter', 'cont2', 'league', 'cup', 'super'];
   // De onde veio a nota: cada parcela, o total e quanto faltou para a próxima faixa
   function scoreHow(f) {
     if (!f.parts) return '';

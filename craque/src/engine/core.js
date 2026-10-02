@@ -120,7 +120,7 @@
   S.eff = c => effOf(c, c.traits, c.traitLv || {});
   S.ovr = c => ovrOf(S.eff(c), c.pos);
   // Taças de clube na carreira (liga, copa, continental, Intercontinental e Mundial de Clubes)
-  S.titleCount = T => T.league + T.cup + T.cont + (T.inter || 0) + (T.cwc || 0);
+  S.titleCount = T => T.league + T.cup + T.cont + (T.inter || 0) + (T.cwc || 0) + (T.cont2 || 0) + (T.super || 0);
 
   // Como a carta fica depois de uma escolha: { add, remove, up } (ids de características)
   S.preview = function (c, ch) {

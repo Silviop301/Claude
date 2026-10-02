@@ -2050,3 +2050,15 @@ details.fin-more[open] { display: flex; flex-direction: column; gap: 12px; paddi
 .tip-acts button { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 0; font: 700 15px var(--display); cursor: pointer; }
 .tip-ok { background: var(--ink); color: var(--gold); }
 .tip-off { background: transparent; color: #5E5A4E; text-decoration: underline; }
+
+/* Treino dos lances: por cima da tela atual */
+.trn-wrap { position: fixed; inset: 0; z-index: 75; background: var(--pitch); color: var(--paper); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.trn { max-width: 480px; margin: 0 auto; padding: 14px 16px calc(24px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; }
+.trn-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: env(safe-area-inset-top); }
+.trn-head b { font: 800 18px/1.2 var(--display, inherit); color: #fff; display: flex; align-items: center; gap: 8px; }
+.trn .lead { margin: 0; }
+.trn-steps { margin: 0; padding: 14px 16px 14px 34px; background: rgba(255,255,255,.08); border-radius: 14px; color: #E9F2EC; display: grid; gap: 8px; font: 500 15px/1.4 var(--body, inherit); }
+.trn-tip { margin: 0; color: #CFE3D6; font: 600 14px/1.35 var(--body, inherit); text-align: center; }
+.trn-score { margin: 6px 0 0; font: 700 13px/1.2 var(--body, inherit); opacity: .75; }
+.trn-menu { display: grid; gap: 8px; }
+.mom-train { align-self: center; min-height: 40px; font-size: 14px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; }

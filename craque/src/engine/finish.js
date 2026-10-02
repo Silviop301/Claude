@@ -4,11 +4,11 @@
   const S = root.CRAQUE_SIM || require('./core.js');
   // ---------- fim de carreira ----------
   // Pesos da pontuação final e faixas das notas (a tela de fim de carreira mostra a conta)
-  S.SCORE_W = { title: 12, cont: 35, cwc: 60, wc: 150, wcGoal: 3, ballon: 100, award: 8, peak: 2 };
+  S.SCORE_W = { title: 12, cont: 35, cont2: 12, cwc: 60, wc: 150, wcGoal: 3, ballon: 100, award: 8, peak: 2 };
   // Faixas calibradas no simulador (robô que joga bem): S 10% · A 25% · B 30% · C 20% · D 15% das carreiras
-  S.GRADES = [['S', 2120], ['A', 1640], ['B', 1240], ['C', 910], ['D', 0]];
+  S.GRADES = [['S', 2140], ['A', 1710], ['B', 1300], ['C', 990], ['D', 0]];
   // Peso da produção por posição (medido no simulador para as quatro chegarem às notas altas com a mesma dificuldade)
-  S.PROD_W = { ATA: 1, MEI: 1, ZAG: 1.15, GOL: 1.32 };
+  S.PROD_W = { ATA: 1, MEI: 0.97, ZAG: 1.06, GOL: 1.17 };
   S.gradeOf = score => S.GRADES.find(([, min]) => score >= min)[0];
   S.finish = function (c) {
     c.retired = true;
@@ -38,6 +38,7 @@
       { k: 'prod', txt: 'Produção: ' + prodTxt, v: Math.round(prod * prodW) },
       { k: 'titles', txt: titles + (titles === 1 ? ' título' : ' títulos') + ' × ' + S.SCORE_W.title, v: n(titles, S.SCORE_W.title) },
       { k: 'cont', txt: 'Títulos continentais: ' + (T.cont || 0) + ' × ' + S.SCORE_W.cont + ' extra', v: n(T.cont, S.SCORE_W.cont) },
+      { k: 'cont2', txt: 'Outras taças continentais (Sul-Americana, Liga Europa...): ' + (T.cont2 || 0) + ' × ' + S.SCORE_W.cont2 + ' extra', v: n(T.cont2, S.SCORE_W.cont2) },
       { k: 'cwc', txt: 'Mundial de Clubes: ' + (T.cwc || 0) + ' × ' + S.SCORE_W.cwc + ' extra', v: n(T.cwc, S.SCORE_W.cwc) },
       { k: 'wc', txt: 'Copa do Mundo: ' + (T.wc || 0) + ' × ' + S.SCORE_W.wc, v: n(T.wc, S.SCORE_W.wc) },
       { k: 'wcg', txt: 'Gols em Copas: ' + (T.wcGoals || 0) + ' × ' + S.SCORE_W.wcGoal, v: n(T.wcGoals, S.SCORE_W.wcGoal) },

@@ -217,11 +217,11 @@
       '<button class="btn" id="b-kick">' + U.MINI_BTN[type] + '</button><button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>';
     $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     sfx('whistle');
-    $('b-kick').onclick = () => {
+    $('b-kick').onclick = U.gateTrain(type, () => {
       run.momentStarted = true; save();
       render('<div class="eyebrow">' + tName(run) + ' ' + run.year + ' · ' + esc(g.stage) + ' · ' + m.minute + "'</div><div id=\"kick\"></div>");
       U.playMini($('kick'), type, ok => { if (!$('kick')) return; S.wcMoment(G.c, ok); save(); wcPlay(); }); // saiu da tela: ao retomar, a chance decide
-    };
+    });
     $('b-auto').onclick = () => { S.wcMomentAuto(G.c); save(); wcPlay(); };
   }
 
@@ -238,11 +238,11 @@
       '<div class="chips">' + U.miniFacts(type).join('') + '</div>' +
       '<button class="btn" id="b-kick">' + U.MINI_BTN[type] + '</button><button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>';
     $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    $('b-kick').onclick = () => {
+    $('b-kick').onclick = U.gateTrain(type, () => {
       run.pensStarted = true; save();
       render('<div class="eyebrow">' + tName(run) + ' ' + run.year + ' · Pênaltis</div><div id="kick"></div>');
       U.playMini($('kick'), type, ok => { if (!$('kick')) return; run.pensStarted = false; S.wcPens(G.c, ok); save(); wcPlay(); });
-    };
+    });
     $('b-auto').onclick = () => { S.wcPensAuto(G.c); save(); wcPlay(); };
   }
 
