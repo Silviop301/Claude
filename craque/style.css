@@ -901,6 +901,45 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .card .btn:not(.ghost):active { box-shadow: 0 1px 0 #A97C12; }
 .rk-msg { color: #B3261E; font-weight: 700; margin: 6px 0 0; }
 .rk-edit { display: block; margin: 12px auto 0; color: #DDEBE2; }
+/* Ranking: bloco da tela inicial */
+.rk-home { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border-radius: 16px; cursor: pointer; text-align: left; color: #fff;
+  border: 1px solid rgba(244, 214, 117, .45); background: linear-gradient(135deg, rgba(244, 214, 117, .18), rgba(255, 255, 255, .05) 60%); }
+.rk-home:active { transform: translateY(1px); }
+.rk-home .podium-ico { flex: none; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .35)); }
+.rk-home-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rk-home-t b { font: 800 22px/1 var(--display); letter-spacing: .02em; }
+.rk-home-t small { font: 500 14px/1.3 var(--body); color: #D3E4D9; }
+.rk-home-t small b { font: inherit; font-weight: 800; color: #F4D675; }
+.rk-home-go .ico { width: 20px; height: 20px; color: #F4D675; }
+/* Ranking: tela */
+.rk-head { display: flex; align-items: center; gap: 12px; margin: 4px 0 6px; }
+.rk-head h2 { margin: 2px 0 0; line-height: 1.05; }
+.rk-head .podium-ico { flex: none; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .35)); }
+.rk-g { flex: none; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; font: 800 16px/1 var(--display); color: #13201A; background: #C9D1D8; }
+.rk-g.gS { background: linear-gradient(135deg, #FFE68A, #F2C230 55%, #C99A12); }
+.rk-g.gA { background: linear-gradient(135deg, #E8EEF5, #B7C3D0); }
+.rk-g.gB { background: #8FD6AE; }
+.rk-g.gC { background: #F0B27A; }
+.rk-g.gD { background: #B9B4AA; }
+.rk-podium { display: grid; grid-template-columns: 1fr 1.15fr 1fr; align-items: end; gap: 8px; margin: 6px 0 10px; }
+.rk-step { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; min-width: 0; padding: 0 2px; }
+.rk-step.empty { visibility: hidden; }
+.rk-medal { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 800 18px/1 var(--display); color: #13201A; box-shadow: 0 2px 6px rgba(0, 0, 0, .35); }
+.rk-step.s1 .rk-medal { width: 42px; height: 42px; font-size: 22px; background: linear-gradient(135deg, #FFE68A, #F2C230 55%, #C99A12); }
+.rk-step.s2 .rk-medal { background: linear-gradient(135deg, #FFFFFF, #C9D1D8 55%, #8D98A5); }
+.rk-step.s3 .rk-medal { background: linear-gradient(135deg, #F2C9A0, #D99A6A 55%, #8E5429); }
+.rk-nk { font: 800 16px/1.1 var(--display); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk-step small { font-size: 11px; color: #B9CDBF; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk-step .rk-v { color: #fff; font-size: 20px; text-align: center; }
+.rk-step .rk-v small { color: #B9CDBF; text-align: center; }
+.rk-block { display: block; width: 100%; border-radius: 10px 10px 0 0; margin-top: 4px; }
+.rk-step.s1 .rk-block { height: 54px; background: linear-gradient(180deg, rgba(242, 194, 48, .55), rgba(242, 194, 48, .12)); }
+.rk-step.s2 .rk-block { height: 36px; background: linear-gradient(180deg, rgba(201, 209, 216, .45), rgba(201, 209, 216, .1)); }
+.rk-step.s3 .rk-block { height: 24px; background: linear-gradient(180deg, rgba(217, 154, 106, .45), rgba(217, 154, 106, .1)); }
+.rk-step.me .rk-nk { color: #F4D675; }
+.rk-item .rk-g { margin-right: 2px; }
+.rk-mine { position: sticky; bottom: 10px; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
+.rk-empty { text-align: center; padding: 18px 0; }
 
 /* Copa/Mundial ao vivo: relógio e gols no minuto */
 .wc-game .clk { font-style: normal; background: #13201A; color: #F4D675; border-radius: 6px; padding: 1px 6px; margin-left: 4px; font-variant-numeric: tabular-nums; letter-spacing: 0; }

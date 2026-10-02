@@ -42,12 +42,24 @@
     } catch (e) { /* ranking é extra: o jogo segue */ }
   }
 
-  // Categorias: [id na API, rótulo, unidade]
-  const METRICS = [['score', 'Pontuação', 'pts'], ['daily', 'Carreira do dia', 'pts'], ['peak', 'Nota máxima', ''], ['goals', 'Gols na carreira', 'gols'],
-    ['best_goals', 'Gols numa temporada', 'gols'], ['assists', 'Assistências', 'assist.'], ['titles', 'Títulos', 'títulos'], ['ballon', 'Bolas de Ouro', '']];
-  const PERIODS = [['day', 'Hoje'], ['week', 'Semana'], ['all', 'Geral']];
-  const POS = { ATA: 'ATA', MEI: 'MEI', ZAG: 'ZAG', GOL: 'GOL' };
+  // Categorias: [id na API, rótulo, unidade]. A carreira do dia saiu por enquanto (a disputa é na carreira normal)
+  const METRICS = [['score', 'Pontuação', 'pts'], ['peak', 'Overall máximo', 'OVR'], ['goals', 'Gols', 'gols'], ['assists', 'Assistências', 'assist.'],
+    ['titles', 'Títulos', 'títulos'], ['ballon', 'Bolas de Ouro', 'bolas']];
+  const PERIODS = [['week', 'Semana'], ['all', 'Geral'], ['day', 'Hoje']];
+  const POS = { ATA: 'Atacante', MEI: 'Meia', ZAG: 'Zagueiro', GOL: 'Goleiro' };
   let st = { m: 'score', p: 'week' };
+
+  // Ícone do ranking: pódio com os três degraus (ouro no meio, prata e bronze dos lados)
+  const podium = (size) => '<svg class="podium-ico" viewBox="0 0 48 48" width="' + (size || 40) + '" height="' + (size || 40) + '" aria-hidden="true">' +
+    '<path d="M24 3.5l2.1 4.3 4.7.7-3.4 3.3.8 4.7-4.2-2.2-4.2 2.2.8-4.7-3.4-3.3 4.7-.7Z" fill="#F4D675" stroke="#8A6400" stroke-width="1"/>' +
+    '<rect x="16.5" y="19" width="15" height="25" rx="2" fill="#F2C230" stroke="#8A6400" stroke-width="1.4"/>' +
+    '<rect x="2.5" y="27" width="14" height="17" rx="2" fill="#D9DEE4" stroke="#6B7682" stroke-width="1.4"/>' +
+    '<rect x="31.5" y="32" width="14" height="12" rx="2" fill="#D99A6A" stroke="#6E4021" stroke-width="1.4"/>' +
+    '<text x="24" y="35" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="12" fill="#5A4100">1</text>' +
+    '<text x="9.5" y="39.5" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="10" fill="#3F4852">2</text>' +
+    '<text x="38.5" y="41.5" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="9" fill="#4A2A14">3</text></svg>';
+  const fmt = v => Number(v).toLocaleString('pt-BR');
+  const gradeTag = g => (g ? '<span class="rk-g g' + g + '">' + g + '</span>' : '');
 
   function nickForm(p, msg) {
     return '<div class="card rk-nick"><b>' + (p.nick ? 'Seu nome no ranking: ' + esc(p.nick) : 'Escolha seu nome no ranking') + '</b>' +
@@ -66,18 +78,34 @@
     };
   }
 
-  // edit: mostra o campo do nome; msg: aviso (nome ocupado, sem conexão...)
   // Subtítulo conforme período e categoria
-  const subTxt = () => (st.m === 'daily' ? 'Todo mundo jogando com o mesmo garoto de hoje. Só carreiras encerradas.'
-    : st.m === 'score' ? 'Pontuação final das carreiras encerradas' + (st.p === 'day' ? ' hoje.' : st.p === 'week' ? ' nesta semana (desde segunda).' : '.')
-    : 'Melhor carreira de cada jogador, inclusive as em andamento' + (st.p === 'day' ? ' (jogadas hoje).' : st.p === 'week' ? ' (jogadas nesta semana).' : '.'));
+  const when = () => (st.p === 'day' ? 'hoje' : st.p === 'week' ? 'nesta semana' : 'de todos os tempos');
+  const subTxt = () => (st.m === 'score' ? 'Pontuação final das carreiras encerradas ' + when() + '. Vale a melhor carreira de cada um.'
+    : 'Melhor carreira de cada jogador ' + when() + ', inclusive as em andamento.');
+
+  // Bloco da tela inicial: o pódio e a sua posição na semana (chega depois, sem travar a tela)
+  function homeCard() {
+    setTimeout(() => {
+      const p = player();
+      fetch(API + '?a=top&m=score&p=week&pid=' + p.pid).then(r => r.json()).then(d => {
+        const el = document.getElementById('rk-home-sub');
+        if (!el) return;
+        const lead = d.rows && d.rows[0];
+        el.innerHTML = d.me ? 'Você está em <b>' + d.me.rank + 'º</b> na semana · ' + fmt(d.me.v) + ' pts'
+          : lead ? 'Líder da semana: <b>' + esc(lead.nick) + '</b> · ' + fmt(lead.v) + ' pts' : 'Ninguém pontuou nesta semana ainda. Seja o primeiro!';
+      }).catch(() => {});
+    }, 0);
+    return '<button class="rk-home" id="b-rank">' + podium(46) + '<span class="rk-home-t"><b>Ranking</b><small id="rk-home-sub">Quem fez a maior carreira da semana?</small></span>' +
+      '<span class="rk-home-go">' + U.ICON['chevron-right'] + '</span></button>';
+  }
 
   // edit: mostra o campo do nome; msg: aviso (nome ocupado, sem conexão...)
   function ranking(edit, msg) {
     G.step = null;
     const p = player();
     edit = edit === true || !!msg;
-    render('<button class="back-link" id="b-back-home">‹ Voltar</button><h2>Ranking</h2>' +
+    render('<button class="back-link" id="b-back-home">‹ Voltar</button>' +
+      '<div class="rk-head">' + podium(56) + '<div><div class="eyebrow">Ranking</div><h2>Quem fez a maior carreira?</h2></div></div>' +
       (!p.nick || edit ? nickForm(p, msg) : '') +
       '<div class="rk-tabs">' + PERIODS.map(([id, l]) => '<button data-p="' + id + '">' + l + '</button>').join('') + '</div>' +
       '<div class="rk-chips">' + METRICS.map(([id, l]) => '<button data-m="' + id + '">' + l + '</button>').join('') + '</div>' +
@@ -94,8 +122,8 @@
   }
   let req = 0; // só a última lista pedida aparece (toques rápidos não misturam resultados)
   function refresh(first) {
-    const p = player(), daily = st.m === 'daily', sc = screen();
-    sc.querySelectorAll('[data-p]').forEach(b => { b.classList.toggle('on', st.p === b.dataset.p && !daily); b.disabled = daily; });
+    const p = player(), sc = screen();
+    sc.querySelectorAll('[data-p]').forEach(b => b.classList.toggle('on', st.p === b.dataset.p));
     sc.querySelectorAll('[data-m]').forEach(b => b.classList.toggle('on', st.m === b.dataset.m));
     // Categoria escolhida sempre à vista na fileira que rola para o lado
     const on = sc.querySelector('.rk-chips .on');
@@ -106,14 +134,22 @@
     el.innerHTML = '<p class="muted">Carregando…</p>';
     const my = ++req;
     const unit = (METRICS.find(x => x[0] === st.m) || [])[2];
+    const val = r => '<span class="rk-v">' + fmt(r.v) + (unit ? '<small>' + unit + '</small>' : '') + '</span>';
+    const who = r => esc(r.name) + ' · ' + (POS[r.pos] || '') + (r.club ? ' · ' + esc(r.club) : '') + (r.done ? '' : ' · em andamento');
     fetch(API + '?a=top&m=' + st.m + '&p=' + st.p + '&pid=' + p.pid).then(r => r.json()).then(d => {
       const el2 = $('rk-list');
       if (!el2 || my !== req) return;
-      if (!d.rows || !d.rows.length) { el2.innerHTML = '<p class="muted">Ninguém ainda' + (st.p === 'day' || st.m === 'daily' ? ' hoje' : st.p === 'week' ? ' nesta semana' : '') + '. Seja o primeiro!</p>'; return; }
-      el2.innerHTML = d.rows.map((r, i) => '<div class="rk-item' + (r.me ? ' me' : '') + '"><span class="rk-pos">' + (i < 3 ? U.emo(['🥇', '🥈', '🥉'][i], 'sm') : i + 1 + 'º') + '</span>' +
-        '<span class="rk-who"><b>' + esc(r.nick) + '</b><small>' + esc(r.name) + ' · ' + (POS[r.pos] || '') + (r.club ? ' · ' + esc(r.club) : '') + (r.done ? '' : ' · em andamento') + '</small></span>' +
-        '<span class="rk-v">' + r.v + (unit ? '<small>' + unit + '</small>' : '') + '</span></div>').join('') +
-        (d.me && d.me.rank > d.rows.length ? '<div class="rk-item me"><span class="rk-pos">' + d.me.rank + 'º</span><span class="rk-who"><b>Você</b></span><span class="rk-v">' + d.me.v + '</span></div>' : '') +
+      if (!d.rows || !d.rows.length) { el2.innerHTML = '<p class="muted rk-empty">Ninguém ainda ' + when() + '. Termine uma carreira e seja o primeiro!</p>'; return; }
+      const top = d.rows.slice(0, 3), rest = d.rows.slice(3);
+      // Pódio: 2º à esquerda, 1º no meio (mais alto), 3º à direita
+      const step = (r, i) => !r ? '<div class="rk-step empty"></div>' : '<div class="rk-step s' + (i + 1) + (r.me ? ' me' : '') + '"><span class="rk-medal">' + (i + 1) + '</span>' +
+        '<b class="rk-nk">' + esc(r.nick) + '</b><small>' + esc(r.name) + '</small>' + gradeTag(st.m === 'score' ? r.grade : '') + val(r) + '<i class="rk-block"></i></div>';
+      el2.innerHTML = '<div class="rk-podium">' + step(top[1], 1) + step(top[0], 0) + step(top[2], 2) + '</div>' +
+        rest.map((r, i) => '<div class="rk-item' + (r.me ? ' me' : '') + '"><span class="rk-pos">' + (i + 4) + 'º</span>' +
+          '<span class="rk-who"><b>' + esc(r.nick) + '</b><small>' + who(r) + '</small></span>' + (st.m === 'score' ? gradeTag(r.grade) : '') + val(r) + '</div>').join('') +
+        // Sua posição: sempre à vista, mesmo fora do top 30
+        (d.me && d.me.rank > d.rows.length ? '<div class="rk-item me rk-mine"><span class="rk-pos">' + d.me.rank + 'º</span><span class="rk-who"><b>Você</b><small>' + esc(d.me.name || '') + '</small></span>' + (st.m === 'score' ? gradeTag(d.me.grade) : '') + val(d.me) + '</div>'
+          : !d.me && p.nick ? '<p class="muted small rk-none">Você ainda não aparece aqui ' + when() + '.</p>' : '') +
         '<p class="muted small">' + d.players + (d.players === 1 ? ' jogador' : ' jogadores') + ' nesta lista.</p>';
     }).catch(() => { const el2 = $('rk-list'); if (el2 && my === req) el2.innerHTML = '<p class="muted">Sem conexão com o ranking agora. Suas carreiras ficam guardadas e são enviadas depois.</p>'; });
   }
@@ -128,5 +164,5 @@
   }
 
   flush(); // o que ficou pendente da última vez
-  Object.assign(U, { ranking, rankSave, finaleRank, rankPlayer: player });
+  Object.assign(U, { ranking, rankSave, finaleRank, rankPlayer: player, rankHome: homeCard, podiumIcon: podium });
 })();

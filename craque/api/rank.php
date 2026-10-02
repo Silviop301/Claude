@@ -91,14 +91,14 @@ if ($a === 'top') {
     if ($m === 'score') $where[] = 'c.done = 1';
   }
   // Melhor carreira de cada jogador na métrica
-  $sql = "SELECT * FROM (SELECT p.pid, p.nick, c.name, c.pos, c.club, c.$col AS v, c.done, c.updated,
+  $sql = "SELECT * FROM (SELECT p.pid, p.nick, c.name, c.pos, c.club, c.grade, c.peak, c.$col AS v, c.done, c.updated,
       ROW_NUMBER() OVER (PARTITION BY c.pid ORDER BY c.$col DESC, c.updated ASC) AS rn
     FROM careers c JOIN players p ON p.pid = c.pid WHERE " . implode(' AND ', $where) . ") WHERE rn = 1 ORDER BY v DESC, updated ASC";
   $q = $db->prepare($sql); $q->execute($args);
   $all = $q->fetchAll(PDO::FETCH_ASSOC);
   $me = null; $pid = $_GET['pid'] ?? '';
-  foreach ($all as $i => $r) if ($r['pid'] === $pid) { $me = ['rank' => $i + 1, 'v' => (int)$r['v']]; break; }
-  $rows = array_map(fn($r) => ['nick' => $r['nick'], 'name' => $r['name'], 'pos' => $r['pos'], 'club' => $r['club'], 'v' => (int)$r['v'], 'done' => (int)$r['done'], 'me' => $r['pid'] === $pid], array_slice($all, 0, 30));
+  foreach ($all as $i => $r) if ($r['pid'] === $pid) { $me = ['rank' => $i + 1, 'v' => (int)$r['v'], 'grade' => $r['grade'] ?: '', 'name' => $r['name']]; break; }
+  $rows = array_map(fn($r) => ['nick' => $r['nick'], 'name' => $r['name'], 'pos' => $r['pos'], 'club' => $r['club'], 'v' => (int)$r['v'], 'done' => (int)$r['done'], 'grade' => $r['grade'] ?: '', 'peak' => (int)$r['peak'], 'me' => $r['pid'] === $pid], array_slice($all, 0, 30));
   out(['rows' => $rows, 'me' => $me, 'players' => count($all), 'day' => date('Y-m-d')]);
 }
 

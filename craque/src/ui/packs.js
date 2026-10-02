@@ -260,6 +260,7 @@
   // Bloco da tela inicial (tela 2b): pacotinhos para abrir
   function homeBlock() {
     const inv = I.get(), n = inv.packs.length;
+    if (!n) return '';
     const row = (id, art, b, sub, btn, badge) => '<button class="hb-row" id="' + id + '"><span class="hb-art">' + art + (badge ? '<em class="hb-badge">' + badge + '</em>' : '') + '</span>' +
       '<span class="hb-t"><b>' + b + '</b><small>' + sub + '</small></span>' + btn + '</button>';
     return '<div class="hb">' +

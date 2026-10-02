@@ -17,9 +17,9 @@
         return '<button class="cont-card" id="b-cont"><span class="scard metal ' + t + '"><span class="sc-tier">' + TIER_NAME[t] + '</span><b>' + o + '</b><span class="sc-pos">' + sc.pos + '</span></span>' +
           '<span class="cc-info"><small>Continuar carreira</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : '') + sc.age + ' anos</span></span><span class="cc-go">' + U.ICON['chevron-right'] + '</span></button>'; })() : '') +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
-      U.dailyCard() +
+      U.rankHome() +
       U.packHome() +
-      // Coleção, Sala de Troféus, Conquistas, Ranking e Hall da Fama ficam numa tela só
+      // Coleção, Sala de Troféus, Conquistas e Hall da Fama ficam numa tela só
       '<button class="hg mine-btn" id="b-mine"><i>' + U.ICON.cards + '</i><b>Minhas carreiras</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carreira' : ' carreiras') +
         (U.salaNew() ? ' · <em>+' + U.salaNew() + (U.salaNew() === 1 ? ' taça nova' : ' taças novas') + '</em>' : '') + '</small></button>' +
       '<div class="home-foot"><button class="link-btn home-snd" id="b-sound"></button><button class="link-btn home-snd" id="b-cloud"></button></div>'
@@ -37,9 +37,9 @@
     $('b-new').onclick = () => create();
     U.packHomeBind();
     $('b-mine').onclick = mine;
+    $('b-rank').onclick = () => U.ranking();
     $('b-cloud').innerHTML = U.emo('☁️', 'xs') + ' ' + esc(U.cloudName());
     $('b-cloud').onclick = () => U.cloud('login');
-    $('b-daily').onclick = () => { if (!saved || !saved.c) return U.dailyStart(); U.ask('Começar a carreira do dia?', 'A carreira em andamento será substituída.', 'Começar', U.dailyStart); };
     const snd = $('b-sound');
     if (snd) { snd.innerHTML = U.emo('⚙️', 'xs') + ' Configurações'; snd.onclick = U.settings; }
     // A bola 3D espera o módulo 3D terminar de carregar (na primeira visita ele chega depois da tela)
@@ -59,7 +59,6 @@
       '<div class="home-grid">' +
       '<button class="hg" id="b-col"><i>' + U.ICON.cards + '</i><b>Coleção</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carta' : ' cartas') + '</small></button>' +
       '<button class="hg" id="b-ach"><i>' + U.ICON.medal + '</i><b>Conquistas</b><small>' + U.achCount() + ' de ' + S.ACHIEVEMENTS.length + '</small></button>' +
-      '<button class="hg" id="b-rank"><i>' + U.ICON.trophy + '</i><b>Ranking</b><small>hoje · geral</small></button>' +
       '</div>' +
       (hall.length ? '<div class="eyebrow" style="margin-top:8px">Hall da Fama</div><div class="hall">' +
         hall.map(h => '<div><b>' + h.grade + '</b><span>' + esc(h.name) + ' · ' + esc(h.verdict) + '<br><small>' + (h.pos === 'GOL' ? h.cs + ' sem sofrer gol · ' + h.penSaved + ' pên. def. · ' : h.pos === 'ZAG' ? h.goals + ' gols · ' + h.cs + ' sem sofrer gol · ' : h.goals + ' gols · ' + h.assists + ' assist. · ') + h.titles + ' taças' + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '') + '</small></span><span class="muted">' + h.score + '</span></div>').join('') + '</div>'
@@ -67,10 +66,9 @@
     $('b-back-home').onclick = home;
     $('b-col').onclick = U.collection;
     $('b-ach').onclick = U.achievements;
-    $('b-rank').onclick = () => U.ranking();
     $('b-sala').onclick = () => U.trophyRoom('col');
   }
-  // Voltar das telas de "Minhas carreiras" (Coleção, Conquistas, Ranking, Sala): volta para lá; senão, para o início
+  // Voltar das telas de "Minhas carreiras" (Coleção, Conquistas, Sala): volta para lá; senão, para o início
   U.goBack = () => (U.backTo || home)();
 
   function resume(st) {
