@@ -6,7 +6,6 @@
   function home() {
     G.c = null; G.step = null; bar();
     const saved = load(SAVE);
-    const hall = load(HALL) || [];
     // Título de abertura (já desenhado pelo index.html antes dos scripts): a tela inicial reaproveita o mesmo
     // elemento em vez de criar outro, para a primeira tela não "piscar" nem contar de novo como carregamento
     const splash = document.querySelector('#screen > .hero.splash');
@@ -18,18 +17,12 @@
         return '<button class="cont-card" id="b-cont"><span class="scard metal ' + t + '"><span class="sc-tier">' + TIER_NAME[t] + '</span><b>' + o + '</b><span class="sc-pos">' + sc.pos + '</span></span>' +
           '<span class="cc-info"><small>Continuar carreira</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : '') + sc.age + ' anos</span></span><span class="cc-go">' + U.ICON['chevron-right'] + '</span></button>'; })() : '') +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
-      U.packHome() +
       U.dailyCard() +
-      U.salaHome() +
-      // Atalhos em grade 2×2: mesmo tamanho, ícone, nome e um número
-      '<div class="home-grid">' +
-      '<button class="hg" id="b-rank"><i>' + U.ICON.trophy + '</i><b>Ranking</b><small>hoje · geral</small></button>' +
-      '<button class="hg" id="b-col"><i>' + U.ICON.cards + '</i><b>Coleção</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carreira' : ' carreiras') + '</small></button>' +
-      '<button class="hg" id="b-ach"><i>' + U.ICON.medal + '</i><b>Conquistas</b><small>' + U.achCount() + ' de ' + S.ACHIEVEMENTS.length + '</small></button>' +
-      U.cloudLine() + '</div>' +
-      '<button class="link-btn home-snd" id="b-sound"></button>' +
-      (hall.length ? '<div class="eyebrow" style="margin-top:8px">Hall da Fama</div><div class="hall">' +
-        hall.map(h => '<div><b>' + h.grade + '</b><span>' + esc(h.name) + ' · ' + esc(h.verdict) + '<br><small>' + (h.pos === 'GOL' ? h.cs + ' sem sofrer gol · ' + h.penSaved + ' pên. def. · ' : h.pos === 'ZAG' ? h.goals + ' gols · ' + h.cs + ' sem sofrer gol · ' : h.goals + ' gols · ' + h.assists + ' assist. · ') + h.titles + ' taças' + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '') + '</small></span><span class="muted">' + h.score + '</span></div>').join('') + '</div>' : '')
+      U.packHome() +
+      // Coleção, Sala de Troféus, Conquistas, Ranking e Hall da Fama ficam numa tela só
+      '<button class="hg mine-btn" id="b-mine"><i>' + U.ICON.cards + '</i><b>Minhas carreiras</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carreira' : ' carreiras') +
+        (U.salaNew() ? ' · <em>+' + U.salaNew() + (U.salaNew() === 1 ? ' taça nova' : ' taças novas') + '</em>' : '') + '</small></button>' +
+      '<div class="home-foot"><button class="link-btn home-snd" id="b-sound"></button><button class="link-btn home-snd" id="b-cloud"></button></div>'
     );
     if ($('b-cont')) $('b-cont').onclick = () => {
       G.c = saved.c;
@@ -40,12 +33,11 @@
       S.applyLeagues(G.c); // quem subiu e quem caiu nesta carreira
       resume(saved.step);
     };
+    U.backTo = null;
     $('b-new').onclick = () => create();
     U.packHomeBind();
-    $('b-ach').onclick = U.achievements;
-    $('b-rank').onclick = () => U.ranking();
-    $('b-col').onclick = U.collection;
-    $('b-sala').onclick = () => U.trophyRoom('col');
+    $('b-mine').onclick = mine;
+    $('b-cloud').innerHTML = U.emo('☁️', 'xs') + ' ' + esc(U.cloudName());
     $('b-cloud').onclick = () => U.cloud('login');
     $('b-daily').onclick = () => { if (!saved || !saved.c) return U.dailyStart(); U.ask('Começar a carreira do dia?', 'A carreira em andamento será substituída.', 'Começar', U.dailyStart); };
     const snd = $('b-sound');
@@ -56,6 +48,30 @@
     const mountBall = () => { const el = $('ball3d'); if (el && U.cfg.fx3d && window.CRAQUE_BALL) window.CRAQUE_BALL.mount(el); };
     if (window.CRAQUE_BALL) mountBall(); else addEventListener('craque-ball-ready', mountBall, { once: true });
   }
+
+  // Minhas carreiras: tudo o que ficou das carreiras encerradas (as telas daqui voltam para cá)
+  function mine() {
+    G.c = null; G.step = null; bar();
+    U.backTo = mine;
+    const hall = load(HALL) || [];
+    render('<button class="back-link" id="b-back-home">‹ Início</button><div class="eyebrow">Suas carreiras</div><h2>Minhas carreiras</h2>' +
+      U.salaHome() +
+      '<div class="home-grid">' +
+      '<button class="hg" id="b-col"><i>' + U.ICON.cards + '</i><b>Coleção</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carta' : ' cartas') + '</small></button>' +
+      '<button class="hg" id="b-ach"><i>' + U.ICON.medal + '</i><b>Conquistas</b><small>' + U.achCount() + ' de ' + S.ACHIEVEMENTS.length + '</small></button>' +
+      '<button class="hg" id="b-rank"><i>' + U.ICON.trophy + '</i><b>Ranking</b><small>hoje · geral</small></button>' +
+      '</div>' +
+      (hall.length ? '<div class="eyebrow" style="margin-top:8px">Hall da Fama</div><div class="hall">' +
+        hall.map(h => '<div><b>' + h.grade + '</b><span>' + esc(h.name) + ' · ' + esc(h.verdict) + '<br><small>' + (h.pos === 'GOL' ? h.cs + ' sem sofrer gol · ' + h.penSaved + ' pên. def. · ' : h.pos === 'ZAG' ? h.goals + ' gols · ' + h.cs + ' sem sofrer gol · ' : h.goals + ' gols · ' + h.assists + ' assist. · ') + h.titles + ' taças' + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '') + '</small></span><span class="muted">' + h.score + '</span></div>').join('') + '</div>'
+        : '<p class="muted small">Termine uma carreira para ela aparecer aqui.</p>'));
+    $('b-back-home').onclick = home;
+    $('b-col').onclick = U.collection;
+    $('b-ach').onclick = U.achievements;
+    $('b-rank').onclick = () => U.ranking();
+    $('b-sala').onclick = () => U.trophyRoom('col');
+  }
+  // Voltar das telas de "Minhas carreiras" (Coleção, Conquistas, Ranking, Sala): volta para lá; senão, para o início
+  U.goBack = () => (U.backTo || home)();
 
   function resume(st) {
     G.step = st;
@@ -270,5 +286,5 @@
     draw();
   }
 
-  Object.assign(U, { home, resume, create });
+  Object.assign(U, { home, mine, resume, create });
 })();

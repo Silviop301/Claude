@@ -40,7 +40,7 @@
       '<div class="ach-bar"><i style="width:' + Math.round(n / S.ACHIEVEMENTS.length * 100) + '%"></i></div>' +
       '<div class="ach-grid">' + S.ACHIEVEMENTS.slice().sort((a, b) => !!have[b.id] - !!have[a.id]).map(a => achTile(a, have, false)).join('') + '</div>' +
       '<button class="btn ghost" id="b-back">Voltar</button>');
-    $('b-back').onclick = U.home;
+    $('b-back').onclick = U.goBack;
   }
 
   Object.assign(U, { achRecord, achBlock, achievements, achCount: count });

@@ -13,7 +13,7 @@
       { k: 'fast', ic: 'fast-forward', t: 'Resumo da temporada', d: 'Números contando e telas de título', opts: [[false, 'Normal'], [true, 'Rápido']] },
     ] },
     { t: 'Visual e som', rows: [
-      { k: 'papers', ic: 'newspaper', t: 'Jornais', d: 'Capa do jornal no fim de cada temporada', opts: [['all', 'Todos'], ['special', 'Só especiais'], ['none', 'Nenhum']],
+      { k: 'papers', ic: 'newspaper', t: 'Jornais', d: 'Capa do jornal no fim da temporada', opts: [['all', 'Todos'], ['special', 'Só especiais'], ['none', 'Nenhum']],
         note: 'Especiais: transferências, finais, Copa e despedida' },
       { k: 'fx3d', ic: 'sparkles', t: 'Efeitos 3D', d: 'Cartas, bola e jornal em 3D', opts: [[true, 'Ligados'], [false, 'Desligados']], note: 'Desligue se o celular esquentar ou travar' },
       { k: 'sound', ic: 'volume-2', t: 'Som', opts: [[true, 'Ligado'], [false, 'Desligado']] },

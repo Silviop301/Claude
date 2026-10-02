@@ -77,14 +77,14 @@
     G.step = null;
     const p = player();
     edit = edit === true || !!msg;
-    render('<button class="back-link" id="b-back-home">‹ Início</button><h2>Ranking</h2>' +
+    render('<button class="back-link" id="b-back-home">‹ Voltar</button><h2>Ranking</h2>' +
       (!p.nick || edit ? nickForm(p, msg) : '') +
       '<div class="rk-tabs">' + PERIODS.map(([id, l]) => '<button data-p="' + id + '">' + l + '</button>').join('') + '</div>' +
       '<div class="rk-chips">' + METRICS.map(([id, l]) => '<button data-m="' + id + '">' + l + '</button>').join('') + '</div>' +
       '<p class="muted small rk-sub"></p>' +
       '<div id="rk-list" class="rk-list"></div>' +
       (p.nick && !edit ? '<button class="link-btn rk-edit" id="rk-edit">Mudar meu nome (' + esc(p.nick) + ')</button>' : ''));
-    $('b-back-home').onclick = U.home;
+    $('b-back-home').onclick = U.goBack;
     // Trocar aba ou categoria não redesenha a tela: só o destaque, o subtítulo e a lista (a rolagem fica onde estava)
     screen().querySelectorAll('[data-p]').forEach(b => b.onclick = () => { st.p = b.dataset.p; refresh(); });
     screen().querySelectorAll('[data-m]').forEach(b => b.onclick = () => { st.m = b.dataset.m; refresh(); });

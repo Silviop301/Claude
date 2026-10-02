@@ -1106,6 +1106,10 @@ details.more .hl { background: rgba(255, 255, 255, 0.08); border-radius: 10px; p
 .hg b { font: 800 18px/1.1 var(--display); letter-spacing: .02em; }
 .hg small { font-size: 12px; color: #B9CDBF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .home-snd { align-self: center; font-size: 14px; padding: 2px 0; }
+.mine-btn { width: 100%; }
+.home-grid > .hg:last-child:nth-child(odd) { grid-column: span 2; }
+.mine-btn small em { font-style: normal; color: var(--gold); font-weight: 700; }
+.home-foot { display: flex; justify-content: center; gap: 22px; margin-top: 4px; }
 
 /* Minigame: a cena fica no meio da tela (mais perto do polegar), não colada no topo */
 #kick { display: flex; flex-direction: column; justify-content: center; gap: 10px;

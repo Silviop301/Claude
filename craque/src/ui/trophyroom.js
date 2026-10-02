@@ -118,7 +118,7 @@
     if (!wrap) return;
     wrap.remove(); wrap = null; careerShown = null;
     document.body.classList.remove('sala-on');
-    if (!G.c && document.getElementById('b-sala')) U.home(); // atualiza o contador da tela inicial
+    if (!G.c && document.getElementById('b-sala')) U.goBack(); // atualiza o contador (Minhas carreiras)
   }
 
   function paint() {
@@ -329,5 +329,5 @@
     return () => { clearTimeout(t); anims.forEach(a => { try { a.finish(); } catch (e) { /* ok */ } }); set(); };
   }
 
-  Object.assign(U, { trophyRoom: open, salaPlay: play, salaRecord: record, salaHome: homeCard, salaMerge: merge, SALA_KEY: KEY });
+  Object.assign(U, { salaNew: () => data().nova.length, trophyRoom: open, salaPlay: play, salaRecord: record, salaHome: homeCard, salaMerge: merge, SALA_KEY: KEY });
 })();

@@ -38,9 +38,9 @@
   // ---------- capa ----------
   // o = { c, year, extra, head, pose, kit, caption, stats, lede, subs, column }
   function paper(o, onClose) {
-    // Configuração: sem jornais, ou só as edições especiais (transferência, final, Copa, despedida)
+    // Configuração: sem jornais, ou só as especiais (temporada com título ou prêmio, final, Copa, despedida)
     const pc = U.cfg.papers;
-    if (pc === 'none' || (pc === 'special' && !o.extra)) { setTimeout(() => onClose && onClose(), 0); return null; }
+    if (pc === 'none' || (pc === 'special' && !o.extra && !o.big)) { setTimeout(() => onClose && onClose(), 0); return null; }
     // Jornal de verdade do país do clube (brasileiro jogando fora também sai nos jornais daqui)
     const cl = o.c && D.CLUB_BY_ID[o.c.club], lg = cl && D.LEAGUE_BY_ID[cl.league];
     const M = D.MEDIA || { papers: {} }, local = (lg && M.papers[lg.country]) || [];

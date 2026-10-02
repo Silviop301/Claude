@@ -104,10 +104,10 @@
     G.c = null; G.step = null; bar();
     const list = all(), pgs = book(list);
     at = Math.min(at, pgs.length - 1);
-    render('<button class="back-link" id="b-back-home">‹ Início</button>' +
+    render('<button class="back-link" id="b-back-home">‹ Voltar</button>' +
       '<div class="book" id="book"><div class="bk-page" id="bk-cur"></div></div>' +
       '<div class="bk-nav"><button class="bk-arrow" id="bk-prev" aria-label="Página anterior">‹</button><span id="bk-n"></span><button class="bk-arrow" id="bk-next" aria-label="Próxima página">›</button></div>');
-    $('b-back-home').onclick = () => { at = 0; U.home(); };
+    $('b-back-home').onclick = () => { at = 0; U.goBack(); };
     const bookEl = $('book');
     const fill = (el, i) => {
       const byKey = {};

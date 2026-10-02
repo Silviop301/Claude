@@ -145,12 +145,13 @@
     const pe = t.p1 + t.p2 ? pct(t.p1 + t.p2) + ' de chance de ponto extra' + (t.p2 ? ' (' + pct(t.p2) + ' de +2)' : '') : 'Sem ponto extra';
     const inj = t.inj < 1 ? 'lesões −' + pct(1 - t.inj) : t.inj === 1 ? 'risco normal de lesão' : t.inj < 2 ? 'lesões +' + pct(t.inj - 1) : 'lesões ×' + String(t.inj).replace('.', ',');
     const age = t.decl < 1 ? ' · sente menos a idade' : t.decl > 1 ? ' · sente mais a idade' : '';
-    return '<b>' + U.emo(t.icon, 'xs') + ' ' + t.name + ':</b> ' + pe + ' · ' + inj + age + (t.p1 + t.p2 ? '. Lesão séria tira o bônus.' : '.');
+    return '<b>' + U.emo(t.icon, 'xs') + ' Treino ' + t.name.toLowerCase() + ':</b> ' + pe + ' · ' + inj + age + (t.p1 + t.p2 ? '. Lesão séria tira o bônus.' : '.');
   }
   function preseason() { prep(false); }
   function invest() { prep(true); } // retomar depois de já ter escolhido a característica
 
   function prep(traitDone, justAdded) {
+    G.c.train = S.autoTrain(G.c); // foco nos treinos pela idade
     const all = S.seasonChoices(G.c), preCh = G.c.preCh;
     if (traitDone) preCh.done = true;
     const ch = preCh.done ? [] : all;
@@ -175,8 +176,7 @@
           '<b>' + x.trait.name + (x.type === 'up' ? ' → Nv ' + x.lv : '') + ' <span class="tag ' + (x.type === 'up' ? 'green' : 'blue') + '">' + label[x.type] + '</span></b>' +
           '<span class="d">' + traitTxt(x.trait, x.lv) + capNote(x.trait) +
           (x.completes ? '<br><span class="tag gold">Completa ' + U.icoOf(x.completes, 'xs') + ' ' + x.completes.name + ': ' + attrTxt(x.completes.attr) + '</span>' : '') + '</span></button>').join('') + '</div>' : '') +
-      // Foco nos treinos: vale até mudar
-      '<div class="prep-sec">Foco nos treinos</div><div class="train-row">' + D.TRAIN.map(t => '<button class="train-opt" data-t="' + t.id + '">' + U.emo(t.icon, 'sm') + '<b>' + t.name + '</b></button>').join('') + '</div>' +
+      // Foco nos treinos: automático pela idade, só informado
       '<p class="muted small train-txt" id="train-txt"></p>' +
       (hasInv ? '<div class="prep-sec">Pontos de evolução</div>' +
         '<div class="wallet"><span>Você tem <b id="w-money"></b></span><span class="muted small">Cada nível custa mais 1</span></div>' +
@@ -212,13 +212,7 @@
       });
     };
     skip.onclick = () => { if (!skip.disabled) go(); };
-    const trainShow = () => {
-      const cur = S.trainOf(G.c);
-      screen.querySelectorAll('[data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === cur.id));
-      $('train-txt').innerHTML = trainTxt(cur);
-    };
-    screen.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { G.c.train = b.dataset.t; save(); sfx('tap'); trainShow(); });
-    trainShow();
+    $('train-txt').innerHTML = trainTxt(S.trainOf(G.c)).replace(':</b>', ' (pela idade):</b>');
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       const x = ch[+b.dataset.i];
       showPreview(S.preview(G.c, x.type === 'up' ? { up: x.trait.id } : { add: x.trait.id }));

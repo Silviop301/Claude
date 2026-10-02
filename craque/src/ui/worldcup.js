@@ -268,7 +268,7 @@
         () => { if (btn.isConnected) (cwc ? U.clubWorldPaper : U.worldCupPaper)(G.c, run, () => run.card && U.walkout(G.c, null, run.card)); });
     }
     $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    $('b-next').onclick = () => U.salaPlay(G.c, U.afterSeason);
+    $('b-next').onclick = () => { U.salaRecord(G.c); U.afterSeason(); };
   }
 
   Object.assign(U, { theCountry, ofCountry, cwcIntro, wcIntro, wcRow, wcPlay, wcLive, wcPens, wcFinal });

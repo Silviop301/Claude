@@ -81,11 +81,11 @@
     );
     U.tip('janela');
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
-      const o = all[+b.dataset.i], prev = G.c.spells[G.c.spells.length - 1], moving = o.club !== G.c.club;
+      const o = all[+b.dataset.i], moving = o.club !== G.c.club;
       if (!U.arm(b, signTxt(o))) return;
       S.join(G.c, o);
-      // Troca de clube vira edição extra do jornal
-      if (moving) { save(); bar(); U.transferPaper(G.c, prev, o, U.preseason); } else U.preseason();
+      if (moving) { save(); bar(); }
+      U.preseason();
     });
     if ($('b-retire')) $('b-retire').onclick = U.finale;
     bindTools(false, windowOffers);

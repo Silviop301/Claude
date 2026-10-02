@@ -33,7 +33,9 @@
   // "at": quando foi salvo (na nuvem vale a carreira mais recente; carreira encerrada fica marcada como vazia)
   // Configurações do jogador (tela em ui/settings.js)
   const CFG_KEY = 'climbix-config';
-  const cfg = Object.assign({ papers: 'all', cups: 'play', moments: 'play', fast: false, fx3d: true, vibe: true }, load(CFG_KEY) || {});
+  const cfg = Object.assign({ papers: 'special', cups: 'play', moments: 'play', fast: false, fx3d: true, vibe: true }, load(CFG_KEY) || {});
+  // v2: jornal só nas temporadas especiais (título, prêmio, transferência, Copa, despedida) passou a ser o padrão
+  if ((cfg.v || 1) < 2) { if (cfg.papers === 'all') cfg.papers = 'special'; cfg.v = 2; }
   window.CLIMBIX_CFG = cfg;
   const setCfg = (k, v) => { cfg[k] = v; store(CFG_KEY, cfg); };
   const vibe = p => { if (cfg.vibe && navigator.vibrate) navigator.vibrate(p); };
