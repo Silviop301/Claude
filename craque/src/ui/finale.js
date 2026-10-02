@@ -18,7 +18,7 @@
     if (!f.parts) return '';
     const i = S.GRADES.findIndex(([g]) => g === f.grade), next = i > 0 ? S.GRADES[i - 1] : null;
     return '<details class="more score-how"><summary>Como chegou a esta nota</summary>' +
-      '<ul class="sh-parts">' + f.parts.map(p => '<li><span>' + esc(p.txt) + '</span><b>+' + p.v + '</b></li>').join('') +
+      '<ul class="sh-parts">' + f.parts.map(p => '<li><span>' + esc(p.txt) + '</span><b' + (p.v < 0 ? ' class="neg"' : '') + '>' + (p.v < 0 ? '−' + -p.v : '+' + p.v) + '</b></li>').join('') +
       '<li class="tot"><span>Total</span><b>' + f.score + '</b></li></ul>' +
       '<p class="sh-bands">' + S.GRADES.filter(([, min]) => min > 0).map(([g, min]) => g + ' a partir de ' + min).join(' · ') + '</p>' +
       (next ? '<p class="sh-next">Faltaram ' + (next[1] - f.score) + ' pontos para a nota ' + next[0] + '.</p>' : '') + '</details>';

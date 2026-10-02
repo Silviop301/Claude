@@ -184,9 +184,13 @@
   // Empréstimo: até os 27 anos, para um clube menor onde ele seria titular. O clube atual segue pagando o salário.
   S.loanOffers = function (c) {
     const cur = D.CLUB_BY_ID[c.club], o = S.ovr(c);
-    if (c.age > 27 || cur.tier < 2) return [];
+    const young = c.age <= 21;
+    if (c.age > 27 || (cur.tier < 2 && !young)) return [];
     const { r, save } = rngOf(c);
-    const pool = D.CLUBS.filter(x => x.id !== cur.id && x.tier < cur.tier && x.strength <= o - 1 && x.strength >= o - 10); // titular garantido
+    // Jovem: qualquer clube mais fraco onde ele jogaria (rodízio ou mais); depois dos 21, titular garantido numa divisão abaixo
+    const yp = need => D.CLUBS.filter(x => x.id !== cur.id && x.strength < cur.strength - 2 && S.role(c, x).share >= need && x.strength >= o - 12);
+    const pool = young ? (yp(0.78).length >= 2 ? yp(0.78) : yp(0.55))
+      : D.CLUBS.filter(x => x.id !== cur.id && x.tier < cur.tier && x.strength <= o - 1 && x.strength >= o - 10);
     const out = [];
     for (let i = 0; i < 2 && pool.length; i++) {
       // Prefere clubes mais fortes dentro do que ainda dá titularidade
@@ -223,7 +227,8 @@
     c.rel = L.rel;
     c.captain = L.captain;
     c.clubSince = L.since;
-    if (res.games >= 20 && res.rating >= 7) bump(c, 'coach', 10);
+    // Voltou bem: o clube dono passa a confiar (mais minutos na temporada seguinte)
+    if (res.games >= 15 && res.rating >= 6.8) { bump(c, 'coach', 10); c.promise = Math.max(c.promise || 0, 0.15); }
     c.spells.push({ club: L.parent, from: c.age, to: c.age, games: 0, goals: 0, assists: 0, titles: 0, back: true }); // volta de empréstimo (não é "voltar para casa")
     delete c.loan;
     return { from, to: L.parent };

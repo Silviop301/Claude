@@ -111,7 +111,7 @@
     const perGame = games ? (isDef
       ? (cleanSheets / games) * 0.85 + (goals * 1.2 + assists * 0.5) / games + (saves / games) * 0.35 + penSaved * 0.03 + (tackles / games) * 0.2
       : (goals + assists * 0.7) / games) : 0;
-    const rating = games ? clamp(round1(6.1 + S.RATING_ADJ[c.pos] + perGame * 2.4 * (isDef ? 0.75 : 1) + (o - club.strength) * 0.03 + 0.06 * tm('drible') + 0.08 * tm('libero') + 0.07 * tm('raca') + 0.06 * tm('estrela') + r.gauss() * 0.25), 5.0, 9.6) : 0;
+    const rating = games ? clamp(round1(6.1 + S.RATING_ADJ[c.pos] + perGame * 2.4 * (isDef ? 0.75 : 1) + Math.min(o - club.strength, S.RATING_GAP) * 0.03 + 0.06 * tm('drible') + 0.08 * tm('libero') + 0.07 * tm('raca') + 0.06 * tm('estrela') + r.gauss() * 0.25), 5.0, 9.6) : 0;
 
     // Títulos: força do time + sua contribuição
     const contrib = games ? (rating - 6.5) * share * 2.2 : 0;
@@ -331,7 +331,11 @@
     if (potUp) c.pot = clamp(c.pot + potUp, 50, 99);
     // Evolução = minutos em campo + desempenho (nota) − idade ± treinos. A lesão tira minutos (e evolução).
     const room = c.pot - ovrOf(c.attrs, c.pos);
-    const growOf = sh => room * AGE_GROWTH(c.age) * (0.3 + sh * 1.25) * GROWTH_K * (c.age <= 24 ? 1 + 0.45 * S.tm(c, 'academia') : 1);
+    // Clube forte tem estrutura: até os 21 anos o jovem evolui mais mesmo jogando pouco (centro de treinamento)
+    // Emprestado: o clube dono segue acompanhando (70% da estrutura dele)
+    const estClub = c.loan ? D.CLUB_BY_ID[c.loan.parent] : club;
+    const est = c.age <= 21 ? clamp((estClub.strength - 55) / 40, 0, S.EST_MAX) * (c.loan ? 0.7 : 1) : 0;
+    const growOf = sh => room * AGE_GROWTH(c.age) * (0.3 + est + sh * 1.25) * GROWTH_K * (c.age <= 24 ? 1 + 0.45 * S.tm(c, 'academia') : 1);
     const growth = growOf(share);
     const injLoss = injShare > 0 && injShare < 1 ? growOf(share / (1 - injShare)) - growth : 0;
     // Jogar bem faz evoluir: nota 7,9 vale ~+1; nota ruim atrasa (depois dos 30 pesa metade)
@@ -430,8 +434,8 @@
     c.age++;
     c.season++;
     c.contract = Math.max(0, c.contract - 1);
-    res.loanBack = S.endLoan(c, res);
     delete c.promise;
+    res.loanBack = S.endLoan(c, res);
     c.mod = { min: 0, form: 0, inj: 0, goal: 0, assist: 0 };
     c.lastEvent = null;
     save();
@@ -602,6 +606,8 @@
 
   // Coluna do cronista (sempre o mesmo colunista, opinião conforme a fase)
   S.COLUMNIST = 'Tião Barbosa';
+  S.EST_MAX = 0.4;
+  S.RATING_GAP = 8;
   S.column = function (c, s) {
     const nick = c.name, cur = D.CLUB_BY_ID[s.club], past = c.seasons, prev = past[past.length - 1];
     const def = c.pos === 'ZAG' || c.pos === 'GOL';

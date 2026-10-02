@@ -72,6 +72,6 @@ while (Object.keys(WANT).some(g => got[g].length < WANT[g]) && n < 4000) {
 }
 const list = Object.values(got).flat().sort((a, b) => b.score - a.score)
   .map((r, i) => Object.assign({ id: 'cpu' + String(i + 1).padStart(2, '0'), nick: 'Robô ' + r.name }, r));
-fs.writeFileSync(path.join(__dirname, '../craque/api/robots.json'), JSON.stringify({ v: 1, robots: list }, null, 1) + '\n');
+fs.writeFileSync(path.join(__dirname, '../craque/api/robots.json'), JSON.stringify({ v: 2, robots: list }, null, 1) + '\n');
 list.forEach(r => console.log(r.grade, String(r.score).padStart(5), r.nick.padEnd(14), r.pos, r.country.padEnd(10), r.club, '·', r.goals, 'gols ·', r.titles, 'títulos ·', r.ballon, 'BO'));
 console.log(n, 'carreiras jogadas');
