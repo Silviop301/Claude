@@ -101,3 +101,21 @@ Para o status do WhatsApp: poste uma arte de story por dia (01 a 06), com "climb
 No fim de cada carreira tem o botão **Desafiar um amigo**. Ele manda um link com a sua nota. Quem abre vê o desafio na tela inicial e, no fim da carreira dele, o jogo mostra quem ganhou e oferece devolver o desafio.
 
 É o jeito mais fácil de divulgar sem postar nada: cada pessoa que joga desafia outra.
+
+---
+
+## Vídeo "Como NÃO jogar Climbix" (`climbix-jogando-mal.mp4`)
+
+24 s, vertical, sem som. A carreira do Juninho, feita de propósito para dar errado:
+recusou o Corinthians para ir ao América-RN, foi na festa e foi flagrado, aceitou a Arábia aos 30 no auge,
+perdeu o pênalti do título (com 88% de chance!) e terminou com nota D.
+
+Legendas (escolha uma):
+
+> Errei onde? 🤔 Joga grátis: link na bio #futebol #modocarreira #jogodefutebol
+
+> Juro que eu sei jogar 😭 Quanto você faria? climbix.app #futebol #modocarreira
+
+> 88% de chance no pênalti e eu consegui errar 💀 #futebol #jogo #modocarreira
+
+Dica: responda os comentários do tipo "era só ter ido pro Corinthians" com "então mostra! climbix.app 😤".
