@@ -58,9 +58,9 @@
         '<div class="seg cfg-seg">' + r.opts.map(([v, l]) => '<button data-k="' + r.k + '" data-v="' + v + '"' + (value(r.k) === v ? ' class="on"' : '') + '>' + esc(l) + '</button>').join('') + '</div>' +
         (r.note ? '<p class="cfg-note">' + U.ICON.info + esc(r.note) + '</p>' : '') + '</div>';
       w.innerHTML = '<div class="cfg" role="dialog" aria-modal="true" aria-label="Configurações"><div class="cfg-head"><b>Configurações</b><button class="cfg-x" aria-label="Fechar">' + U.ICON.x + '</button></div>' +
+        '<button class="btn ghost fb-btn" id="cfg-fb">' + U.emo('💬', 'xs') + ' Dar opinião sobre o jogo</button>' +
         GROUPS().map(g => '<div class="cfg-grp"><div class="eyebrow">' + g.t + '</div><div class="cfg-box">' + g.rows.map(row).join('') + '</div></div>').join('') +
         '<button class="btn ghost" id="cfg-train">' + U.emo('🏟️', 'xs') + ' Treinar lances</button>' +
-        '<button class="btn ghost" id="cfg-fb">' + U.emo('💬', 'xs') + ' Dar opinião sobre o jogo</button>' +
         '<button class="btn" id="cfg-ok">Pronto</button>' +
         // Crédito exigido pela licença dos emojis
         '<p class="cfg-credit"><button class="link-btn" id="cfg-news">Climbix ' + VERSION + ' · ver novidades</button></p>' +

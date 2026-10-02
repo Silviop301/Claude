@@ -93,5 +93,12 @@
       '<button class="btn' + (sent ? ' ghost' : '') + '" id="b-feedback">Dar opinião</button></div>';
   }
 
-  Object.assign(U, { feedback, feedbackCard });
+  // Botão da tela inicial: destacado (borda dourada) até a primeira resposta
+  function feedbackHome() {
+    const sent = st().sent;
+    return '<button class="hg fb-home' + (sent ? ' done' : '') + '" id="b-opiniao"><i>' + U.emo('💬', 'md') + '</i><b>Dar opinião</b><small>' +
+      (sent ? 'Valeu! Mande outra quando quiser' : '1 minuto · me ajuda a melhorar o jogo') + '</small></button>';
+  }
+
+  Object.assign(U, { feedback, feedbackCard, feedbackHome });
 })();

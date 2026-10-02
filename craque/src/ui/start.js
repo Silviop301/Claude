@@ -22,6 +22,7 @@
       // Coleção, Sala de Troféus, Conquistas e Hall da Fama ficam numa tela só
       '<button class="hg mine-btn" id="b-mine"><i>' + U.ICON.cards + '</i><b>Minhas carreiras</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carreira' : ' carreiras') +
         (U.salaNew() ? ' · <em>+' + U.salaNew() + (U.salaNew() === 1 ? ' taça nova' : ' taças novas') + '</em>' : '') + '</small></button>' +
+      U.feedbackHome() +
       '<div class="home-foot"><button class="link-btn home-snd" id="b-sound"></button><button class="link-btn home-snd" id="b-cloud"></button></div>'
     );
     if ($('b-cont')) $('b-cont').onclick = () => {
@@ -37,6 +38,7 @@
     $('b-new').onclick = () => create();
     U.packHomeBind();
     $('b-mine').onclick = mine;
+    $('b-opiniao').onclick = () => U.feedback('inicio', {}, home);
     $('b-rank').onclick = () => U.ranking();
     $('b-cloud').innerHTML = U.emo('☁️', 'xs') + ' ' + esc(U.cloudName());
     $('b-cloud').onclick = () => U.cloud('login');

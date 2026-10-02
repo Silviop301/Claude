@@ -52,7 +52,7 @@ if ($a === 'send') {
     [$n, $last] = $q->fetch(PDO::FETCH_NUM);
     if ($n >= 20 || ($last && time() - $last < 30)) out(['error' => 'slow'], 429);
   }
-  $place = in_array($in['where'] ?? '', ['fim', 'config'], true) ? $in['where'] : '';
+  $place = in_array($in['where'] ?? '', ['fim', 'config', 'inicio'], true) ? $in['where'] : '';
   $pos = in_array($in['pos'] ?? '', ['ATA', 'MEI', 'ZAG', 'GOL'], true) ? $in['pos'] : '';
   $seasons = max(0, min(40, (int)($in['seasons'] ?? 0)));
   $grade = preg_match('/^[SABCD]$/', $in['grade'] ?? '') ? $in['grade'] : '';

@@ -59,7 +59,7 @@
         '<div><b>' + (s.rate ? (+s.rate).toFixed(1) : '–') + '</b><span>nota média (1 a 5)</span></div>' +
         '<div><b>' + (+s.sim || 0) + ' · ' + (+s.talvez || 0) + ' · ' + (+s.nao || 0) + '</b><span>indicaria: sim · talvez · não</span></div></div>' +
         '<div class="likes">Mais curtido: ' + Object.entries(s.likes).filter(e => e[1]).map(([k, v]) => esc(LIKE[k] || k) + ' ' + v).join(' · ') + '</div>' +
-        j.rows.map(r => '<div class="it"><div class="meta">' + esc(r.created) + ' · ' + (r.place === 'fim' ? 'fim de carreira' : 'configurações') +
+        j.rows.map(r => '<div class="it"><div class="meta">' + esc(r.created) + ' · ' + ({ fim: 'fim de carreira', inicio: 'tela inicial', config: 'configurações' }[r.place] || '?') +
           (r.pos ? ' · ' + esc(r.pos) : '') + (r.seasons ? ' · ' + r.seasons + ' temp.' : '') + (r.grade ? ' · nota ' + esc(r.grade) : '') + ' · ' + esc(r.ua) + ' · ' + esc(r.ver) + '</div>' +
           '<p>' + (r.rate ? FACE[r.rate] + ' ' + r.rate + '/5' : '') + (r.rec ? ' · ' + REC[r.rec] : '') + (r.likes ? ' · gostou de: ' + r.likes.split(',').map(k => esc(LIKE[k] || k)).join(', ') : '') + '</p>' +
           (r.lost ? '<p><b>Confuso/chato:</b> ' + esc(r.lost) + '</p>' : '') + (r.more ? '<p><b>Mais:</b> ' + esc(r.more) + '</p>' : '') + '</div>').join('');

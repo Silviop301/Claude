@@ -65,6 +65,7 @@
       '<div class="fin-sum"><div class="grade ' + f.grade + '">' + f.grade + '</div><div><b>' + esc(f.verdict) + '</b><span>' + esc(scoreTxt) + '</span></div></div>' +
       '<div class="ed-box" id="ed-box"></div>' +
       '<div class="fin-acts"><button class="btn" id="b-share">Compartilhar carta</button><button class="btn ghost" id="b-save">Salvar</button></div>' +
+      U.feedbackCard() +
       U.packFinale(packWhy) +
       '<details class="fin-more"><summary>Resumo da carreira' + (fresh ? ' <em>' + fresh + (fresh > 1 ? ' conquistas novas' : ' conquista nova') + '</em>' : '') + '</summary>' +
       '<div class="fin-links">' + (G.c.seasons.length ? '<button id="b-album">' + U.emo('📖', 'sm') + '<span>Álbum</span></button>' : '') +
@@ -86,7 +87,6 @@
       U.achBlock(ach) +
       scoreHow(f) +
       '</div></details>' +
-      U.feedbackCard() +
       '<button class="btn ghost" id="b-again">Nova carreira</button>'
     );
     U.tip('fim');
