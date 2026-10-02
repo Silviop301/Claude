@@ -24,7 +24,7 @@
       '<div class="eyebrow">Mundial de Clubes ' + year() + '</div>' +
       '<div class="wc-hero">' + crest(cl.id, 'xl') + '<h2>' + D.O(esc(cl.name)) + ' vai ao Mundial de Clubes!</h2>' +
       '<p class="lead">' + (call.champ ? 'Vaga de campeão continental. ' : 'Vaga pelo ranking de clubes. ') + '32 clubes de todos os continentes brigam pelo título. ' +
-      (call.starter ? 'Você é peça-chave do time.' : 'Você começa no banco, mas pode decidir.') + '</p></div>' +
+      (call.starter ? 'Você é peça-chave do time.' : G.c.pos === 'GOL' ? 'Você é o goleiro reserva: a vaga depende do titular.' : 'Você começa no banco, mas pode decidir.') + '</p></div>' +
       '<div class="card wc-rules"><p>Fase de grupos com 3 jogos, depois mata-mata até a final.</p><p>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</p></div>' +
       '<button class="btn" id="b-wc">' + (U.cfg.cups === 'sim' ? 'Simular o Mundial' : 'Começar o Mundial') + '</button>'
     );
@@ -39,7 +39,7 @@
     render(
       '<div class="eyebrow">Copa do Mundo ' + year() + '</div>' +
       '<div class="wc-hero"><span class="wc-bigflag">' + U.flag(call.nation.flag) + '</span><h2>Convocado pela seleção ' + ofCountry(G.c.country) + '!</h2>' +
-      '<p class="lead">' + (call.starter ? 'Você chega como titular. O país inteiro está de olho.' : 'Você vai como reserva: entra no segundo tempo e pode decidir.') + '</p></div>' +
+      '<p class="lead">' + (call.starter ? 'Você chega como titular. O país inteiro está de olho.' : (G.c.pos === 'GOL' ? 'Você vai como goleiro reserva: se o titular se machucar ou for poupado, a vaga é sua.' : 'Você vai como reserva: entra no segundo tempo e pode decidir.')) + '</p></div>' +
       '<div class="card wc-rules"><p>Fase de grupos com 3 jogos, depois mata-mata até a final.</p><p>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</p></div>' +
       '<button class="btn" id="b-wc">' + (U.cfg.cups === 'sim' ? 'Simular a Copa' : 'Começar a Copa') + '</button>'
     );

@@ -404,6 +404,25 @@
 
   function fmtMoney(v) { return v >= 1e6 ? (v / 1e6).toFixed(1).replace('.', ',') + ' mi' : Math.round(v / 1e3) + ' mil'; }
 
+  // Opções pagas à vista nos eventos do formato antigo: { evento: { opção: custo | (c, ev) => custo } }
+  // (os do formato novo, engine/stakes.js, já trazem o custo na opção)
+  const EV_COST = {
+    casamento: { 0: 300000 }, ingressos: { 0: (c, ev) => ev.value }, figurinha: { 0: 20000 },
+    trofeu_sumido: { 1: 20000 }, grisalho: { 0: 3000 },
+  };
+  // Sem saldo para pagar, a opção aparece travada (e não pode ser escolhida)
+  function lockUnaffordable(c, ev) {
+    const map = EV_COST[ev.id] || {};
+    (ev.options || []).forEach((o, i) => {
+      const k = map[i], cost = o.cost || (typeof k === 'function' ? k(c, ev) : k || 0);
+      if (!cost) return;
+      o.cost = cost;
+      if ((c.money || 0) < cost) { o.locked = true; o.hint = 'Sem saldo: custa R$ ' + fmtMoney(cost) + ' e você tem ' + ((c.money || 0) >= 1000 ? 'R$ ' + fmtMoney(c.money) : 'R$ 0'); o.ev = -1e6; }
+    });
+    return ev;
+  }
+  S.lockUnaffordable = lockUnaffordable;
+
   // Sorteia um evento que faça sentido agora (ou nenhum). Não repete os das 2 últimas temporadas.
   S.pickEvent = function (c) {
     const { r, save } = rngOf(c);
@@ -412,7 +431,7 @@
     if (due) {
       const hd = S.HOOK_DEFS[due.id], built = hd.build(c, r, due);
       save();
-      return Object.assign({ id: hd.id, icon: hd.icon, tone: hd.tone, hookOf: due.id }, built);
+      return lockUnaffordable(c, Object.assign({ id: hd.id, icon: hd.icon, tone: hd.tone, hookOf: due.id }, built));
     }
     const recent = c.seasons.slice(-2).map(s => s.event).filter(Boolean);
     // Alguns eventos têm limite por carreira (max)
@@ -432,7 +451,7 @@
         // Abertura com outras palavras (src/events-text.js, só no navegador): mesma situação, texto variado
         const alt = D.EV_INTRO && D.EV_INTRO[def.id];
         if (alt && typeof built.text === 'string') built.text = S.textPick(c, 'ev.' + def.id, [built.text].concat(alt));
-        return Object.assign({ id: def.id, icon: def.icon, tone: def.tone }, built);
+        return lockUnaffordable(c, Object.assign({ id: def.id, icon: def.icon, tone: def.tone }, built));
       }
       left = left.filter(e => e !== def); sum -= def.weight;
     }
@@ -448,6 +467,9 @@
     const { r, save } = rngOf(c);
     // Outros arquivos (engine/events2.js) somam eventos à lista depois deste
     const def = EVENT_BY_ID[ev.id] || S.EVENT_DEFS.find(e => e.id === ev.id);
+    // Opção paga sem saldo não vale: fica na primeira que dá para pagar
+    const o = ev.options && ev.options[idx];
+    if (o && o.cost && (c.money || 0) < o.cost) { const k = ev.options.findIndex(x => !x.cost || (c.money || 0) >= x.cost); if (k >= 0) idx = k; }
     const before = c.club, out = def.resolve(c, ev, idx, r);
     if (def.hook) S.hookDone(c, ev.id);
     if (S.hookSeed) S.hookSeed(c, ev, idx, out, r, before); // a escolha pode deixar uma consequência para depois

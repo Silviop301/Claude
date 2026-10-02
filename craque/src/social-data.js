@@ -438,6 +438,22 @@
     randomHandles: ['arquibancada_89', 'torcedor_raiz', 'resenha.fc', 'futebolraiz', 'joaozinho_2012', 'tia.do.zap', 'memes.da.bola', 'varzea_fc', 'vovo_boleiro', 'zueira_fc', 'goleiro.de.fifa',
       'pai_do_craque', 'menino.da.vila', 'sofascore_humano', 'mestre.da.prancheta', 'camisa10.de.varzea', 'tio.do.churrasco', 'dona.cida.futebol', 'lateral.ofensivo', 'reserva.do.reserva',
       'fa.numero.1', 'peladeiro.de.quinta', 'narrador.de.sofa', 'figurinhas.repetidas', 'coach.da.bola', 'gandula_oficial', 'bola.murcha', 'chuteira.velha', 'cabeca.de.area', 'canela.fina'],
+    // Posts de evento (fora de campo): comentários sobre a escolha, não sobre a temporada.
+    // up = a escolha deu certo; down = deu errado. Famosos usam evFamous com o próprio @.
+    evFamous: {
+      up: ['Atitude de quem sabe o que quer, {n} 👊', 'Gostei da postura, {n}.', 'É isso. Cabeça no lugar 👏', 'Decisão de gente grande. Segue firme, {n}!', 'Boa, {n}! Assim que se faz 👏'],
+      down: ['Força, {n}. Acontece com todo mundo 🙏', 'Cabeça erguida, {n}. Isso passa.', 'Faz parte. Aprende e segue 👊', 'Tamo junto, {n}. Bola pra frente.', 'Erro todo mundo comete. O importante é a resposta, {n}.'],
+    },
+    evFans: {
+      up: ['Tamo junto, {n}! 🙌', 'Que atitude! Por isso é ídolo 👏', 'Decisão certa demais', 'Esse é o {n} que a gente gosta 💪', 'Orgulho de torcer pra você {cor}', 'Maturidade é outra coisa 👏',
+        'Sabia que ia dar certo!', 'Isso que é cabeça boa 🧠', 'Exemplo pros mais novos 👏', 'Sigo fechado com você, {n}!'],
+      down: ['Força, {n}! A torcida tá contigo {cor}', 'Acontece, bola pra frente 🙏', 'Fica tranquilo, a gente confia em você', 'Errou, mas assumiu. Respeito 👊', 'Vai dar a volta por cima 💪',
+        'Cabeça erguida, craque', 'Não liga pros comentários não 🙏', 'Todo mundo erra. Volta mais forte!', 'Melhores dias virão, {n}', 'Tamo junto na fase boa e na ruim {cor}'],
+    },
+    evHaters: {
+      up: ['Isso aí é assessoria, não decisão 🙄', 'Post bonito. Quero ver no campo', 'Deu certo por sorte', 'Menos marketing e mais bola', 'Tá aparecendo mais fora de campo do que dentro'],
+      down: ['Bem feito kkkk', 'Pensa antes de agir da próxima vez 🤦', 'Avisei que ia dar ruim', 'Agora é tarde, {n}', 'Esse aí só faz besteira', 'Quem mandou? 🤷'],
+    },
     haterHandles: ['opiniao_sincera', 'futebol.critico', 'secador_oficial', 'tecnico_de_sofa', 'sincerao_fc', 'anti.modinha', 'xerife.das.redes', 'corneteiro.oficial', 'nunca.satisfeito', 'zica.fc', 'do.contra_',
       'rei.da.corneta', 'pe.frio_detector', 'analista.de.bar', 'tio.da.arquibancada', 'secadora.oficial', 'sofa.tatico', 'treinador.de.facebook', 'chato.mas.sincero', 'vaia.livre', 'olho.de.var'],
   };

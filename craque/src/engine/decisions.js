@@ -74,7 +74,7 @@
     build: () => ({ title: 'Jogo beneficente', text: 'Um amigo organiza um jogo beneficente nas férias, com ex-craques e artistas.' }),
     options: c => [
       risk('Jogar', P(0.8, X.vet(c, -0.15)),
-        out('', { fans: 6, fame: 8, form: 0.03 }, 'Golaço de letra, muito dinheiro arrecadado e você voltou animado.'),
+        out('', { fans: 6, fame: 8, form: 0.03 }, (c.pos === 'GOL' ? 'Defendeu até pênalti de cantor' : 'Golaço de letra') + ', muito dinheiro arrecadado e você voltou animado.'),
         out('pancada boba', { fame: 6, inj: 0.15, main: -1 }, 'Um cantor entrou de carrinho. Tornozelo torcido e meses para voltar ao normal.')),
       safe('Só doar camisas', { fame: 2 }, 'As camisas autografadas foram leiloadas.'),
     ],
@@ -189,7 +189,7 @@
         out('ele para', { fans: 8, form: 0.06 }, 'Você mediu forças e ele parou de provocar.'),
         out('vermelho direto', { min: -0.12, coach: -12 }, 'Vermelho direto. Três jogos fora e bronca no vestiário.')),
       risk('Responder com a bola', P(0.45, X.edge(c, 0.03), X.t(c, 'frieza', 0.1)),
-        out('golaço', { form: 0.1, fame: 8 }, 'Drible no provocador e gol. Resposta perfeita.'),
+        out(c.pos === 'ZAG' ? 'desarme limpo' : 'golaço', { form: 0.1, fame: 8 }, c.pos === 'ZAG' ? 'Três desarmes limpos no provocador e ainda saiu jogando. Resposta perfeita.' : c.pos === 'MEI' ? 'Caneta no provocador e passe para gol. Resposta perfeita.' : 'Drible no provocador e gol. Resposta perfeita.'),
         out('some no jogo', { form: -0.05 }, 'Ele ganhou a briga: você sumiu do jogo.')),
     ],
   });
@@ -222,7 +222,7 @@
         out('resposta afiada', { fame: 6, fans: 8, form: 0.03 }, 'A resposta foi afiada e a torcida adorou.'),
         out('soou arrogante', { fame: 6, fans: -8, form: -0.03 }, 'A resposta soou arrogante e virou meme contra você.')),
       risk('Responder em campo', P(0.5, X.edge(c, 0.025), X.t(c, 'frieza', 0.1)),
-        out('dois gols', { form: 0.1, fame: 6 }, 'Dois gols no jogo seguinte e um silêncio no estúdio.'),
+        out({ GOL: 'fecha o gol', ZAG: 'jogo perfeito', MEI: 'show de passes' }[c.pos] || 'dois gols', { form: 0.1, fame: 6 }, ({ GOL: 'Três defesas difíceis no jogo seguinte', ZAG: 'Nenhum lance perdido no jogo seguinte', MEI: 'Duas assistências no jogo seguinte' }[c.pos] || 'Dois gols no jogo seguinte') + ' e um silêncio no estúdio.'),
         out('a crítica pesa', { form: -0.07 }, 'Você quis provar demais e a crítica entrou na cabeça.')),
     ],
   });

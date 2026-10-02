@@ -102,7 +102,7 @@
       }),
       resolve: (c, ev, i, r) => {
         if (i === 0) { bump(c, 'fans', 4); return { ok: true, text: 'O aperto de mão viralizou mais que a briga.', fx: { fame: 4 } }; }
-        if (r() < 0.55) { bump(c, 'fans', 8); return { ok: true, text: 'Gol e comemoração na frente dele. O estádio veio abaixo.', fx: { fame: 12 } }; }
+        if (r() < 0.55) { bump(c, 'fans', 8); return { ok: true, text: (c.pos === 'GOL' ? 'Pênalti defendido e comemoração na frente dele.' : c.pos === 'ZAG' ? 'Jogo perfeito e comemoração na frente dele no apito final.' : 'Gol e comemoração na frente dele.') + ' O estádio veio abaixo.', fx: { fame: 12 } }; }
         bump(c, 'coach', -10);
         return { ok: false, text: 'Cartão vermelho no primeiro tempo. O técnico não te olhou na saída.', fx: { min: -0.06 } };
       },
@@ -153,7 +153,7 @@
       },
       resolve: (c, ev, i, r) => {
         if (i === 1) { bump(c, 'coach', -10); return { ok: false, text: 'O técnico não aceitou o pedido e a imprensa soube.', fx: { min: -0.04 } }; }
-        if (r() < 0.6) { bump(c, 'fans', 12); return { ok: true, text: 'Gol no ex-clube e silêncio na casa deles. A sua nova torcida te abraçou de vez.', fx: { fame: 10 } }; }
+        if (r() < 0.6) { bump(c, 'fans', 12); return { ok: true, text: (c.pos === 'GOL' ? 'Defesa atrás de defesa contra o ex-clube' : c.pos === 'ZAG' ? 'Seu ex-clube não passou por você' : 'Gol no ex-clube') + ' e silêncio na casa deles. A sua nova torcida te abraçou de vez.', fx: { fame: 10 } }; }
         bump(c, 'fans', -6);
         return { ok: false, text: 'A pressão pesou. Você sumiu em campo e as duas torcidas reclamaram.', fx: {} };
       },

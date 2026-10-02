@@ -293,16 +293,19 @@
     const ballon = r() < pBallon;
     if (ballon) awards.push({ id: 'ballon', name: 'BOLA DE OURO' });
 
+    // Participação: o reconhecimento individual (fama e torcida) pesa os minutos. Quem jogou 60% ou mais
+    // dos jogos leva o crédito todo pelos títulos; seis jogos e três taças dão medalha, não idolatria.
+    const part = clamp(games / (maxGames * 0.6), 0, 1);
     // Fama
     const fame0 = c.fame;
-    c.fame = Math.max(0, c.fame * 0.85 + 5 * S.tm(c, 'estrela') + (goals * 0.5 + assists * 0.35 + (isDef ? cleanSheets * 0.35 + saves * 0.1 + penSaved * 1.5 + tackles * 0.1 : 0) + titles.length * 6 + awards.length * 6 + (ballon ? 30 : 0) + club.tier * 2) * (0.8 + c.rel.fans / 250));
+    c.fame = Math.max(0, c.fame * 0.85 + 5 * S.tm(c, 'estrela') + (goals * 0.5 + assists * 0.35 + (isDef ? cleanSheets * 0.35 + saves * 0.1 + penSaved * 1.5 + tackles * 0.1 : 0) + titles.length * 6 * part + awards.length * 6 + (ballon ? 30 : 0) + club.tier * 2) * (0.8 + c.rel.fans / 250));
     const coach0 = c.rel.coach, fans0 = c.rel.fans;
     // Líder agrada o técnico; Estrela irrita; Raça conquista a torcida
     bump(c, 'coach', 4 * S.tm(c, 'lider') - (c.traits.includes('estrela') ? 1 : 0));
     bump(c, 'fans', 3 * S.tm(c, 'raca'));
     if (games) {
-      bump(c, 'coach', (rating - 6.6) * 10);
-      bump(c, 'fans', (rating - 6.6) * 9 + titles.length * 6 + (M && M.type === 'classico' && M.ok ? 8 : 0) + (move ? (move.dir === 'up' ? 8 : -10) : 0) - (c.captain && rating < 6.8 ? 6 : 0));
+      bump(c, 'coach', (rating - 6.6) * 10 * (0.4 + 0.6 * part));
+      bump(c, 'fans', (rating - 6.6) * 9 * (0.3 + 0.7 * part) + titles.length * 6 * part + (M && M.type === 'classico' && M.ok ? 8 : 0) + (move ? (move.dir === 'up' ? 8 : -10) : 0) - (c.captain && rating < 6.8 ? 6 : 0));
     }
     c.fansBy[c.club] = Math.max(c.fansBy[c.club] || 0, c.rel.fans);
 

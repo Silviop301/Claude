@@ -7,6 +7,8 @@
   S.SCORE_W = { title: 12, cont: 35, cwc: 60, wc: 150, wcGoal: 3, ballon: 100, award: 8, peak: 2 };
   // Faixas calibradas no simulador (robô que joga bem): S 10% · A 25% · B 30% · C 20% · D 15% das carreiras
   S.GRADES = [['S', 2120], ['A', 1640], ['B', 1240], ['C', 910], ['D', 0]];
+  // Peso da produção por posição (medido no simulador para as quatro chegarem às notas altas com a mesma dificuldade)
+  S.PROD_W = { ATA: 1, MEI: 1, ZAG: 1.15, GOL: 1.32 };
   S.gradeOf = score => S.GRADES.find(([, min]) => score >= min)[0];
   S.finish = function (c) {
     c.retired = true;
@@ -26,7 +28,7 @@
     const prod = isDef ? (T.cs || 0) * 0.9 + T.goals * 1.5 + T.assists * 0.7 + (T.saves || 0) * 0.15 + (T.penSaved || 0) * 2.5 + (T.tackles || 0) * 0.3
       : c.pos === 'MEI' ? T.goals * 1.1 + T.assists * 1.0 : T.goals * 0.62 + T.assists * 0.5;
     // Ajuste fino por posição (medido no simulador): sem ele, atacantes e goleiros ficavam com mais notas D
-    const prodW = { ATA: 1.15, MEI: 1, ZAG: 1.05, GOL: 1.1 }[c.pos] || 1;
+    const prodW = S.PROD_W[c.pos] || 1;
     // Cada parcela da pontuação, para a tela explicar de onde veio a nota
     const n = (x, w) => (x || 0) * w;
     const P = D.plural, prodTxt = isDef ? P(T.cs || 0, 'jogo sem sofrer gol', 'jogos sem sofrer gol') + (c.pos === 'GOL' ? ', ' + P(T.penSaved || 0, 'pênalti defendido', 'pênaltis defendidos') : ', ' + P(T.tackles || 0, 'desarme', 'desarmes')) + ', ' + P(T.goals, 'gol', 'gols')

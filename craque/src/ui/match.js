@@ -27,7 +27,7 @@
       '<div class="card event-card"><div class="ev-top">' + U.icoOf(ev, 'lg') + (ev.hookOf ? '<span class="ev-tag back">Consequência</span>' : evDef(ev).tone ? '<span class="ev-tag ' + evDef(ev).tone + '">' + (TONE_LBL[evDef(ev).tone] || '') + '</span>' : '') + '</div>' +
       (ev.memory ? '<p class="ev-mem">' + U.emo('🔁', 'xs') + ' ' + esc(ev.memory) + '</p>' : '') + '<h2>' + esc(ev.title) + '</h2><p style="margin:0">' + esc(ev.text) + '</p></div>' +
       (offer ? U.dealCompare(S.currentDeal(G.c), offer) : '') +
-      '<div class="choices">' + ev.options.map((o, i) => '<button class="btn opt' + (i ? ' ghost' : '') + '" data-i="' + i + '">' + esc(o.label) + '<small>' + esc(o.hint) + '</small></button>').join('') + '</div>'
+      '<div class="choices">' + ev.options.map((o, i) => '<button class="btn opt' + (i ? ' ghost' : '') + (o.locked ? ' locked' : '') + '" data-i="' + i + '"' + (o.locked ? ' disabled' : '') + '>' + esc(o.label) + '<small>' + esc(o.hint) + '</small></button>').join('') + '</div>'
     );
     U.tip('evento');
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {

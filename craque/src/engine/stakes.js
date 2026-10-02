@@ -150,7 +150,9 @@
       if (!base) return null;
       const options = spec.options(c, base).map(scaleOpt).map(o => {
         const st = o.safe ? { safe: o.safe, note: o.note } : { p: o.p, win: o.win, lose: o.lose };
-        return { label: o.label, hint: S.stakeHint(c, st), st, ev: Math.round(stakeValue(c, st) * 10) / 10 };
+        // Custo à vista (opção segura que tira dinheiro): sem saldo, a opção fica travada (ver S.pickEvent)
+        const cost = st.safe && st.safe.fx && st.safe.fx.money < 0 ? -st.safe.fx.money : 0;
+        return Object.assign({ label: o.label, hint: S.stakeHint(c, st), st, ev: Math.round(stakeValue(c, st) * 10) / 10 }, cost ? { cost } : {});
       });
       return Object.assign(base, { options });
     };

@@ -96,16 +96,18 @@
   function commentsOf(p, ctx, fx) {
     const c = G.c, fame = c.fame || 0, cl = club(c.club), base = slug(cl.name).slice(0, 12), SO = D.SOCIAL, mood = p.mood;
     const total = fame >= 150 ? 6 : 5, top = [], rest = [];
+    // Post de evento fora de campo: comentários falam da escolha (sem "que temporada!" ou "gol é isso")
+    const isEv = ctx.kind === 'event' && p.sub !== 'transfer' && !!SO.evFans;
     const nFam = (fame >= 250 ? 4 : fame >= 150 ? 3 : fame >= 80 ? 2 : fame >= 30 ? 1 : 0) + (mood === 'bye' ? 1 : 0);
     // Sorteio com peso: os mais famosos que alcançam o jogador têm mais chance, mas os outros também aparecem
     const fam = SO.famous.filter(f => fame >= f.min || (mood === 'bye' && f.min <= 30)).map(f => [f.min + Math.random() * 230, f]).sort((a, b) => b[0] - a[0]).map(x => x[1]);
     fam.slice(0, Math.min(nFam, total - 2)).forEach(f => {
       const which = (p.sub === 'title' || p.sub === 'ballon' || p.sub === 'moment') && f.title && chance(0.6) ? 'title'
         : mood === 'up' && f['up_' + c.pos] && chance(0.5) ? 'up_' + c.pos : mood;
-      top.push({ h: f.h, v: true, t: fresh('f.' + f.h + '.' + which, f[which]) });
+      top.push({ h: f.h, v: true, t: isEv ? fresh('f.ev.' + mood, SO.evFamous[mood] || SO.evFamous.up) : fresh('f.' + f.h + '.' + which, f[which]) });
     });
-    if (chance(mood === 'down' ? 0.45 : 0.7)) rest.push({ h: base + 'oficial', v: true, t: fresh('c.club.' + mood, SO.club[mood]) });
-    if (mood !== 'down' && chance(fame >= 80 ? 0.45 : 0.2)) { const pg = fresh('c.pages', SO.pages); rest.push({ h: pg[0], v: true, t: pg[1] }); }
+    if (!isEv && chance(mood === 'down' ? 0.45 : 0.7)) rest.push({ h: base + 'oficial', v: true, t: fresh('c.club.' + mood, SO.club[mood]) });
+    if (!isEv && mood !== 'down' && chance(fame >= 80 ? 0.45 : 0.2)) { const pg = fresh('c.pages', SO.pages); rest.push({ h: pg[0], v: true, t: pg[1] }); }
     // Comentário sobre o próprio post (números da temporada, minuto do lance, chegada ao clube, despedida)
     const cx = ctx.kind === 'season' ? ['season.' + mood, SO.ctx.season[mood]] : ctx.kind === 'moment' ? ['moment.' + mood, SO.ctx.moment[mood]]
       : p.sub === 'transfer' ? ['transfer', SO.ctx.transfer] : mood === 'bye' ? ['bye', SO.ctx.bye] : null;
@@ -123,12 +125,12 @@
     // deu certo, sem hater; deu errado, eles aparecem em dobro
     const nHater = fx && fx.won ? 0 : fx && fx.won === false ? 2
       : (chance(mood === 'down' ? 0.95 : mood === 'bye' ? 0.45 : 0.7 + Math.min(0.2, fame / 1000)) ? 1 : 0) + (chance(mood === 'down' ? 0.5 : 0.2 + Math.min(0.2, fame / 1000)) ? 1 : 0);
-    while (top.length + rest.length < total - nHater) rest.push({ h: fan(), v: false, t: fresh('c.fans.' + mood, SO.fans[mood]) });
+    while (top.length + rest.length < total - nHater) rest.push({ h: fan(), v: false, t: isEv ? fresh('c.evfans.' + mood, SO.evFans[mood] || SO.evFans.up) : fresh('c.fans.' + mood, SO.fans[mood]) });
     const out = top.concat(rest.slice(0, total - top.length - nHater).sort(() => Math.random() - 0.5));
     // Entram no meio da conversa (nunca como primeira resposta); o botão de responder fica só no primeiro hater
     for (let k = 0; k < nHater; k++) {
       const at = 1 + Math.floor(Math.random() * out.length);
-      out.splice(at, 0, { h: fresh('h.hater', SO.haterHandles), v: false, t: fresh('c.hater.' + mood, SO.haters[mood]), hate: true });
+      out.splice(at, 0, { h: fresh('h.hater', SO.haterHandles), v: false, t: isEv ? fresh('c.evhater.' + mood, SO.evHaters[mood] || SO.evHaters.down) : fresh('c.hater.' + mood, SO.haters[mood]), hate: true });
     }
     const first = out.find(x => x.hate);
     if (first) first.hater = true;

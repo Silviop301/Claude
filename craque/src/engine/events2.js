@@ -398,7 +398,7 @@
       }),
       resolve: (c, ev, i) => (i === 0
         ? (bump(c, 'fans', 10), { ok: true, text: 'Você chorou, o estádio chorou junto.', fx: { fame: 8 } })
-        : (bump(c, 'fans', 4), { ok: true, text: 'Placa na mão, chuteira no pé. E ainda fez o gol.', fx: { form: 0.04 } })),
+        : (bump(c, 'fans', 4), { ok: true, text: 'Placa na mão, chuteira no pé. ' + ({ GOL: 'E ainda pegou um pênalti.', ZAG: 'E ninguém passou por você.', MEI: 'E ainda deu o passe do gol.' }[c.pos] || 'E ainda fez o gol.'), fx: { form: 0.04 } })),
     },
     {
       id: 'padrinho', icon: '🤝', tone: 'green', weight: 3, max: 1,
@@ -438,14 +438,15 @@
     {
       id: 'filho', icon: '👶', tone: 'green', weight: 3, max: 1,
       when: c => c.age >= 24 && c.age <= 35,
-      build: () => ({
+      build: c => ({
         title: 'Seu filho vai nascer', text: 'O parto está previsto para o dia do jogo decisivo.',
-        options: [opt('Estar no parto', 'Técnico −5 · Torcida +8 · Fama +6'), opt('Jogar e dedicar o gol', 'Gols +5% · Fama +8 · 30%: perde o nascimento (forma −5%)')],
+        options: [opt('Estar no parto', 'Técnico −5 · Torcida +8 · Fama +6'), c.pos === 'GOL' ? opt('Jogar e dedicar a vitória', 'Fama +8 · 30%: perde o nascimento (forma −5%)') : opt('Jogar e dedicar o gol', 'Gols +5% · Fama +8 · 30%: perde o nascimento (forma −5%)')],
       }),
       resolve: (c, ev, i, r) => {
         if (i === 0) { bump(c, 'coach', -5); bump(c, 'fans', 8); return { ok: true, text: 'Você viu seu filho nascer. O resto é detalhe.', fx: { fame: 6 } }; }
-        if (r() < 0.3) return { ok: false, text: 'O parto foi antes do intervalo. Você só soube no vestiário.', fx: { goalMul: 0.05, fame: 8, form: -0.05 } };
-        return { ok: true, text: 'Gol e a comemoração de embalar o bebê. Foto do ano.', fx: { goalMul: 0.05, fame: 8 } };
+        const gm = c.pos === 'GOL' ? 0 : 0.05;
+        if (r() < 0.3) return { ok: false, text: 'O parto foi antes do intervalo. Você só soube no vestiário.', fx: { goalMul: gm, fame: 8, form: -0.05 } };
+        return { ok: true, text: (c.pos === 'GOL' ? 'Vitória sem sofrer gol' : 'Gol') + ' e a comemoração de embalar o bebê. Foto do ano.', fx: { goalMul: gm, fame: 8 } };
       },
     },
     {
