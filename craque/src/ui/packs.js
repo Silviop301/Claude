@@ -43,7 +43,7 @@
   const ficha = (n, cls) => '<span class="pk-fichas' + (cls ? ' ' + cls : '') + '">' + U.emo('🎟️', 'sm') + '<b>' + n + '</b></span>';
   // Envelope de figurinha (bordas serrilhadas, lacre canelado, faixa em ouro escovado)
   const packHTML = cls => '<div class="pk-pack' + (cls ? ' ' + cls : '') + '"><div class="pk-env"><i class="pk-seal"></i><i class="pk-seal b"></i>' +
-    '<span class="pk-k">PACOTINHO</span><b class="pk-logo">CLIMBIX</b><span class="pk-band">3 ITENS</span><span class="pk-s">Série 1</span></div></div>';
+    '<span class="pk-k">PACOTINHO</span><b class="pk-logo">CLIMBIX</b><span class="pk-band">1 PEÇA</span><span class="pk-s">Série 1</span></div></div>';
   const reduced = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   const LUZ = { comum: ['rgba(227,150,90,.6)', '#FFC896'], raro: ['rgba(220,235,255,.55)', '#F4F8FF'], epico: ['rgba(255,214,90,.75)', '#FFE68A'], lendario: ['rgba(170,120,255,.85)', '#E3C8FF'] };
   const HOLO = ['#8FE3FF', '#C79BFF', '#FF9BD5', '#FFE38F'], GOLD = ['#FFE68A', '#FFF6D0', '#F2C230'];

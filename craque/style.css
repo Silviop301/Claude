@@ -1783,6 +1783,7 @@ html, body, button, a, input, .choice { touch-action: manipulation; }
 .pk-res { align-self: stretch; display: flex; flex-direction: column; gap: 16px; height: 100%; cursor: default; }
 .pk-h { font: 800 38px/1 var(--display); }
 .pk-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.pk-grid:has(> .pk-t:only-child) { grid-template-columns: minmax(0, 150px); justify-content: center; text-align: center; }
 .pk-t { display: flex; flex-direction: column; gap: 8px; }
 .pk-t > b { font: 700 16px/1.1 var(--display); }
 .pk-t.dup .pk-tile { opacity: .55; box-shadow: none; }

@@ -185,17 +185,11 @@
     for (let i = RAR.indexOf(rk); i < RAR.length; i++) { const l = CAT.filter(it => it.rk === RAR[i]); if (l.length) return l; }
     return CAT;
   }
-  // Pacote: 3 peças, do mais comum para o mais raro (o melhor fica por último), sem repetir peça no mesmo pacote
+  // Pacote: 1 peça (garantia: o 10º pacote seguido sem lendário vem com um lendário)
   function roll() {
     const o = get();
-    const rks = [rollRar(), rollRar(), rollRar()];
-    // Garantia: o 10º pacote sem lendário vira lendário numa das peças
-    if (!rks.includes('lendario') && o.pity >= PITY - 1) rks[0] = 'lendario';
-    const items = [];
-    rks.forEach(rk => { const p = pool(rk), left = p.filter(it => !items.includes(it)); items.push(pickItem(left.length ? left : p)); });
-    const ord = RAR.indexOf.bind(RAR);
-    items.sort((a, b) => ord(a.rk) - ord(b.rk));
-    return items;
+    const rk = o.pity >= PITY - 1 ? 'lendario' : rollRar();
+    return [pickItem(pool(rk))];
   }
   // Abre o próximo pacote: aplica tudo no inventário e devolve o que saiu
   function open() {

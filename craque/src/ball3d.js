@@ -3,8 +3,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-// Aparelho fraco (até 4 núcleos ou até 3 GB): 3D com resolução menor e 30 quadros por segundo
-const WEAK = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 3;
+// Aparelho bem fraco (até 2 núcleos ou até 2 GB): 3D com resolução um pouco menor (os quadros por segundo não mudam)
+const WEAK = (navigator.hardwareConcurrency || 8) <= 2 || (navigator.deviceMemory || 8) <= 2;
 const DPR = () => Math.min(devicePixelRatio || 1, WEAK ? 1.25 : 2);
 
 const modelReady = new GLTFLoader().loadAsync('assets/bola.glb?v=1ba24026').then(g => {
@@ -76,14 +76,14 @@ function mount(el) {
   el.addEventListener('pointerup', up);
   el.addEventListener('pointercancel', up);
 
-  // Só desenha com a bola visível, e no máximo 30 quadros por segundo (metade do trabalho, mesmo efeito)
+  // Só desenha com a bola visível
   let visible = true, last = 0;
   if ('IntersectionObserver' in window) new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(el);
   const loop = now => {
     // Saiu da tela inicial: libera a GPU
     if (!el.isConnected) { renderer.dispose(); removeEventListener('resize', fit); return; }
     raf = requestAnimationFrame(loop);
-    if (!ball || document.hidden || !visible || now - last < 30) return;
+    if (!ball || document.hidden || !visible) return;
     const k = last ? Math.min(3, (now - last) / 16.7) : 1; // mesma velocidade com menos quadros
     last = now;
     if (!drag) {
@@ -411,7 +411,7 @@ function card3d(host, data, opts) {
     }
     if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission !== 'function') { tiltAsked = true; addEventListener('deviceorientation', onTilt); }
 
-    // Fora da tela (rolou para baixo) não desenha; em aparelho fraco, no máximo 30 quadros por segundo
+    // Fora da tela (rolou para baixo) não desenha
     let onScreen = true, last = 0;
     const io = typeof IntersectionObserver !== 'undefined' ? new IntersectionObserver(es => { onScreen = es[0].isIntersecting; }) : null;
     if (io) io.observe(host);
@@ -419,7 +419,6 @@ function card3d(host, data, opts) {
       if (!host.isConnected) return api.dispose();
       raf = requestAnimationFrame(loop);
       if (document.hidden || !onScreen) return;
-      if (WEAK && now - last < 32) return;
       last = now;
       const t = Math.max(0, (now - t0) / 1000);
       if (!drag) {
