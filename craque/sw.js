@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-09999859';
+const CACHE = 'craque-a606614f';
 const ASSETS = [
   "./",
   "./fonts/TwemojiCountryFlags.woff2",
@@ -1557,12 +1557,22 @@ const LATER = [
   "./trophies/super-league-grega.png",
   "./trophies/super-league-suica.png",
   "./trophies/super-lig.png",
+  "./trophies/supercopa-argentina.png",
+  "./trophies/supercopa-da-alemanha.png",
   "./trophies/supercopa-da-espanha.png",
+  "./trophies/supercopa-da-holanda.png",
+  "./trophies/supercopa-da-turquia.png",
+  "./trophies/supercopa-do-brasil.png",
+  "./trophies/supercopa-saudita.png",
+  "./trophies/supercopa-uruguaia.png",
   "./trophies/supercoppa-italiana.png",
+  "./trophies/superliga-colombiana.png",
   "./trophies/superliga-dinamarquesa.png",
   "./trophies/superliga-servia.png",
+  "./trophies/supertaca-candido-de-oliveira.png",
   "./trophies/taca-de-portugal.png",
   "./trophies/tff-1-lig.png",
+  "./trophies/trofeu-dos-campeoes.png",
   "./trophies/us-open-cup.png",
   "./trophies/usl-championship.png"
 ];
