@@ -330,10 +330,12 @@
       // Para onde a bola vai no desenho
       let tx = px(dx), ty = py(Math.min(y, 1.35)), tr = 8.5; // perto do gol a bola continua bem visível
       if (res.why === 'barreira') { ty = py(setup.wall) + 18; tr = 9.5; }
+      // Gol no ângulo: a bola inteira passa por dentro (sem encostar na trave nem no travessão, que têm 3 px de meia-espessura)
+      if (res.ok) { const m = 3 + tr + 2; tx = Math.max(px(-1) + m, Math.min(px(1) - m, tx)); ty = Math.max(py(1) + m, ty); }
       // O desenho do goleiro segue o resultado. Com os braços esticados, a luva fica a ~114 px dos pés,
       // na direção do mergulho: na defesa a luva chega na bola; no gol ela para antes.
       const saved = res.why === 'defesa';
-      const bxT = px(dx), byT = py(Math.min(y, 1.1));
+      const bxT = res.ok ? tx : px(dx), byT = res.ok ? ty : py(Math.min(y, 1.1));
       const gloveTo = (gx, gy, dir) => {
         const R = Math.max(35, Math.min(88, 88 - Math.max(0, Math.min(1, y)) * 45)); // bola alta: pulo mais em pé
         const ox = dir * 114 * Math.sin(R * Math.PI / 180), oy = -114 * Math.cos(R * Math.PI / 180);
