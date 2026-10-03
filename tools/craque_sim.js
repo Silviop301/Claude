@@ -1,0 +1,117 @@
+// Simula milhares de carreiras do CRAQUE com um "jogador robô" para checar ritmo e variedade.
+// Uso: node tools/craque_sim.js [n]
+const D = require('../craque/src/data.js');
+const S = require('../craque/src/sim.js');
+const N = +process.argv[2] || 2000;
+const res = [];
+// Dois perfis de robô: "casual" (escolhas aleatórias) e "esperto" (joga como um humano estratégico:
+// busca sinergias, sobe para clubes maiores sem perder a titularidade, aceita as boas oportunidades).
+const SMART = process.argv[3] !== 'casual';
+for (let n = 0; n < N; n++) {
+  const POSS = process.env.POS ? process.env.POS.split(',') : ['ATA', 'MEI', 'ZAG', 'GOL'];
+  const pos = POSS[n % POSS.length];
+  const c = S.newCareer({ name: 'Robô', pos, foot: 'D', country: D.COUNTRIES[Math.floor(n / POSS.length) % D.COUNTRIES.length].id }, 1000 + n);
+  let decisions = 0;
+  const base = S.offers(c, true);
+  S.join(c, SMART ? base.slice().sort((a, b) => b.share - a.share)[0] : base[0]); decisions++;
+  while (!c.retired) {
+    const ch = S.traitChoices(c);
+    if (ch.length) {
+      // FORCE=id: sempre pega essa característica quando ela aparece (para medir o peso de cada uma)
+      // AVOID=id: nunca pega (linha de base para comparar)
+      const F = process.env.FORCE, A = process.env.AVOID;
+      const pool = A ? ch.filter(x => x.trait.id !== A) : ch;
+      const pick = (F && ch.find(x => x.trait.id === F)) || (pool.length ? (SMART ? (pool.find(x => x.completes) || pool.find(x => x.type === 'up') || pool[0]) : pool[Math.floor(Math.random() * pool.length)]) : null);
+      if (pick && pick.type === 'up') S.upgradeTrait(c, pick.trait.id);
+      else if (pick) S.addTrait(c, pick.trait.id);
+      decisions++;
+    }
+    // Investimentos: o esperto compra o que mais pesa na posição; o casual compra às vezes
+    for (let k = 0; k < 20; k++) {
+      const w = D.POS[c.pos].w;
+      const opts = D.INVEST.filter(t => S.canInvest(c, t.id));
+      if (!opts.length || (!SMART && Math.random() < 0.5)) break;
+      const score = t => (t.attr ? w[Object.keys(t.attr)[0]] : 0.15) / (1 + (c.inv[t.id] || 0));
+      const t = SMART ? opts.sort((a, b) => score(b) - score(a))[0] : opts[Math.floor(Math.random() * opts.length)];
+      S.invest(c, t.id); decisions++;
+    }
+    const ev = S.pickEvent(c);
+    if (ev) {
+      let i = Math.random() < 0.5 ? 0 : 1;
+      // Eventos com aposta (engine/stakes.js): o esperto lê a chance e o que está em jogo (valor escondido ev); nos outros, o mapa antigo
+      if (SMART) i = ev.options.every(o => o.ev !== undefined) && !ev.dest ? ev.options.map((o, k) => [o.ev, k]).sort((a, b) => b[0] - a[0])[0][1]
+        : ({ banco: 0, assedio: 0, funcao: 0, arabia: 1, renovar: 1, capitao: 0, classico: 1, festa: 1, sub20: 0, protesto: 0 }[ev.id] ?? 0);
+      S.resolveEvent(c, ev, i); decisions++;
+      c.stats = c.stats || {}; c.stats[ev.id] = (c.stats[ev.id] || 0) + 1;
+    }
+    // Jogo decisivo: o robô deixa o jogo decidir (mesma chance que a tela mostra)
+    if (!process.env.NOMOMENT && S.pickMoment(c)) { c.mstats = c.mstats || { n: 0, ok: 0 }; c.mstats.n++; if (S.autoMoment(c)) c.mstats.ok++; decisions++; }
+    // Foco nos treinos: TRAIN=id força um; o esperto treina forte enquanto jovem e leve quando veterano
+    c.train = process.env.TRAIN || (SMART ? (c.age <= 28 ? 'forte' : c.age >= 32 ? 'leve' : 'normal') : D.TRAIN[Math.floor(Math.random() * D.TRAIN.length)].id);
+    S.playSeason(c);
+    // Copa do Mundo: o robô joga se for convocado (pênaltis pela chance)
+    if (S.isWcYear(c) && S.wcCall(c).called) {
+      S.wcStart(c); decisions++;
+      let g; while ((g = S.wcNext(c))) {
+        if (g.live) { S.wcMomentAuto(c); decisions++; }
+        if (g.pens) S.wcPensAuto(c);
+      }
+    }
+    // Mundial de Clubes (a cada 4 anos): o robô joga se o clube estiver classificado
+    if (S.isCwcYear(c) && S.cwcCall(c).called) {
+      S.cwcStart(c); decisions++;
+      let g; while ((g = S.wcNext(c))) {
+        if (g.live) { S.wcMomentAuto(c); decisions++; }
+        if (g.pens) S.wcPensAuto(c);
+      }
+    }
+    if (S.mustRetire(c)) break;
+    if (S.canAnnounce(c) && S.ovr(c) < (SMART ? 76 : 72) && Math.random() < 0.6) { S.announce(c); decisions++; }
+    if (!S.windowOpen(c)) continue;
+    const offers = S.offers(c, false);
+    decisions++;
+    const opts = offers.concat([S.stayOffer(c)]);
+    if (!offers.length && S.ovr(c) < 50) break;
+    const stay = S.stayOffer(c);
+    if (!SMART && n % 4 < 2 && stay.share >= 0.78 && Math.random() < 0.8) { S.join(c, stay); continue; }
+    const minShare = SMART ? 0.78 : 0.55;
+    const good = opts.filter(o => o.share >= minShare).sort((a, b) => D.CLUB_BY_ID[b.club].strength - D.CLUB_BY_ID[a.club].strength);
+    S.join(c, good[0] || opts.sort((a, b) => b.share - a.share)[0]);
+  }
+  const f = S.finish(c);
+  (globalThis.ACH = globalThis.ACH || {}); S.achievementsOf(c, f).forEach(id => { ACH[id] = (ACH[id] || 0) + 1; });
+  res.push({ score: f.score, cs: c.totals.cs || 0, penSaved: c.totals.penSaved || 0, tackles: c.totals.tackles || 0, build:c.traits.slice().sort().join('+'), idol: f.verdict.startsWith('Ídolo'), farewell: !!c.farewell, seasons: c.season, decisions, goals: c.totals.goals, assists: c.totals.assists, titles: f.titles, ballon: c.totals.ballon, peak: c.peak, grade: f.grade, verdict: f.verdict, pos, clubs: f.nClubs, games: c.totals.games, events: Object.values(c.stats || {}).reduce((a, b) => a + b, 0), buys: c.buys, invOvr: S.ovr(c) - S.ovrOf(S.preview(c, {}).attrs, c.pos) + (() => { const inv = c.inv; c.inv = {}; const o = S.ovr(c); c.inv = inv; return S.ovr(c) - o; })(), firstBuy: c.firstBuyAge || 0, peLeft: c.pe || 0, money: Math.round(c.money / 1e6), moments: (c.mstats || {}).n || 0, wcApps: c.totals.wcApps || 0, wc: c.totals.wc || 0, wcGoals: c.totals.wcGoals || 0, cwcApps: c.totals.cwcApps || 0, cwc: c.totals.cwc || 0, inter: c.totals.inter || 0, momentsOk: (c.mstats || {}).ok || 0, cards: (c.cards || []).length });
+}
+console.log('Robô:', SMART ? 'esperto' : 'casual');
+console.log('Builds finais diferentes:', new Set(res.map(r => r.build)).size, 'em', N, 'carreiras · Ídolos:', (res.filter(r => r.idol).length / N * 100).toFixed(1) + '% · Com despedida:', (res.filter(r => r.farewell).length / N * 100).toFixed(0) + '%');
+const q = (arr, p) => { const s = arr.slice().sort((a, b) => a - b); return s[Math.floor(p * (s.length - 1))]; };
+const pr = (label, key, filter) => {
+  const a = res.filter(filter || (() => true)).map(r => r[key]);
+  console.log(label.padEnd(26), 'p10', String(q(a, .1)).padStart(5), ' mediana', String(q(a, .5)).padStart(5), ' p90', String(q(a, .9)).padStart(5), ' max', Math.max(...a));
+};
+pr('Temporadas', 'seasons'); pr('Decisões', 'decisions');
+pr('Gols (ATA)', 'goals', r => r.pos === 'ATA'); pr('Assistências (MEI)', 'assists', r => r.pos === 'MEI');
+pr('Jogos', 'games'); pr('Eventos por carreira', 'events'); pr('Títulos', 'titles'); pr('Pico OVR', 'peak'); pr('Clubes', 'clubs');
+pr('Compras (investimentos)', 'buys'); pr('OVR vindo de compras', 'invOvr'); pr('Idade da 1ª compra', 'firstBuy'); pr('Saldo final (mi)', 'money'); pr('Pontos não usados', 'peLeft'); pr('Jogos decisivos', 'moments'); pr('Copas disputadas', 'wcApps'); pr('Gols em Copas', 'wcGoals');
+console.log('Carreiras com Copa disputada:', (res.filter(r => r.wcApps > 0).length / N * 100).toFixed(0) + '% · campeão do mundo:', (res.filter(r => r.wc > 0).length / N * 100).toFixed(1) + '% · 2+ títulos:', (res.filter(r => r.wc > 1).length / N * 100).toFixed(1) + '%');
+console.log('Carreiras com Mundial de Clubes:', (res.filter(r => r.cwcApps > 0).length / N * 100).toFixed(0) + '% · campeão:', (res.filter(r => r.cwc > 0).length / N * 100).toFixed(1) + '% · Intercontinental:', (res.filter(r => r.inter > 0).length / N * 100).toFixed(1) + '%');
+console.log('Acerto nos jogos decisivos:', (res.reduce((a, r) => a + r.momentsOk, 0) / Math.max(1, res.reduce((a, r) => a + r.moments, 0)) * 100).toFixed(0) + '%');
+const ballon = res.filter(r => r.ballon > 0).length / N;
+console.log('Cartas especiais por carreira:', (res.reduce((a, r) => a + r.cards, 0) / N).toFixed(2), '· carreiras sem nenhuma:', (res.filter(r => !r.cards).length / N * 100).toFixed(0) + '%');
+console.log('Carreiras com Bola de Ouro:', (ballon * 100).toFixed(1) + '%', '| com 3+:', (res.filter(r => r.ballon >= 3).length / N * 100).toFixed(1) + '%');
+// Por posição: nota final, Bola de Ouro, pontuação mediana e estatísticas próprias
+['ATA', 'MEI', 'ZAG', 'GOL'].forEach(p => {
+  const rs = res.filter(r => r.pos === p); if (!rs.length) return;
+  const gd = {}; rs.forEach(r => { gd[r.grade] = (gd[r.grade] || 0) + 1; });
+  console.log(p.padEnd(4), 'notas', Object.entries(gd).sort().map(([g, n]) => g + ' ' + Math.round(n / rs.length * 100) + '%').join(' '),
+    '| Bola de Ouro', Math.round(rs.filter(r => r.ballon > 0).length / rs.length * 100) + '%', '| pontos (mediana)', q(rs.map(r => r.score), 0.5),
+    '| gols', q(rs.map(r => r.goals), 0.5), '| sem sofrer gol', q(rs.map(r => r.cs), 0.5), '| pênaltis defendidos', q(rs.map(r => r.penSaved), 0.5), '| desarmes', q(rs.map(r => r.tackles), 0.5));
+});
+const grades = {}; res.forEach(r => { grades[r.grade] = (grades[r.grade] || 0) + 1; });
+console.log('Notas finais:', Object.entries(grades).sort().map(([g, n]) => g + ' ' + (n / N * 100).toFixed(0) + '%').join(' · '));
+const ver = {}; res.forEach(r => { const v = r.verdict.startsWith('Ídolo') ? 'Ídolo eterno do X' : r.verdict; ver[v] = (ver[v] || 0) + 1; });
+console.log('Vereditos:', Object.entries(ver).sort((a, b) => b[1] - a[1]).map(([v, n]) => v + ' ' + (n / N * 100).toFixed(0) + '%').join(' · '));
+const secs = q(res.map(r => r.decisions * 6 + r.seasons * 5), .5);
+console.log('Duração estimada (6 s por decisão + 5 s de resumo por temporada):', Math.floor(secs / 60) + 'min' + (secs % 60) + 's');
+
+console.log('Conquistas (% das carreiras):', S.ACHIEVEMENTS.map(a => a.id + ' ' + Math.round((ACH[a.id] || 0) / N * 100) + '%').join(' · '));

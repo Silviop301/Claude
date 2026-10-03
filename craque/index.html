@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Climbix</title>
+<meta name="theme-color" content="#0F3D2A">
+<meta name="description" content="Climbix: crie um garoto de 16 anos e descubra se ele vira lenda do futebol.">
+<meta property="og:title" content="Climbix">
+<meta property="og:description" content="Crie um garoto de 16 anos e descubra se ele vira lenda do futebol.">
+<meta property="og:image" content="icons/icon-512.png?v=098d6d96">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1abc585d">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=97f6d0d7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Climbix">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- Fontes no próprio site (tools/craque_fonts.py); a do título vem antes para a primeira tela sair certa -->
+<link rel="preload" href="fonts/barlow-condensed-800-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css?v=470d4596">
+</head>
+<body>
+<div id="app">
+  <header class="bar" id="bar" hidden>
+    <div class="bar-id">
+      <div class="bar-name" id="bar-name"></div>
+      <div class="bar-sub" id="bar-sub"></div>
+    </div>
+    <div class="bar-tot" id="bar-tot"></div>
+    <div class="ovr" id="bar-ovr" aria-label="Nota geral"></div>
+    <div class="rel" id="bar-rel"></div>
+  </header>
+  <!-- Aparece antes dos scripts terminarem de carregar (a tela inicial substitui igual) -->
+  <main id="screen"><div class="hero splash"><div class="ball3d" aria-hidden="true"></div><div class="eyebrow">Carreira de futebol</div><h1>CLIMBIX</h1></div></main>
+</div>
+<script>window.CLIMBIX_VER = '470d4596';</script>
+<script defer src="src/errors.js?v=470d4596"></script>
+<script defer src="src/sound.js?v=470d4596"></script>
+<script defer src="src/data.js?v=470d4596"></script>
+<script defer src="src/social-data.js?v=470d4596"></script>
+<script defer src="src/social-events.js?v=470d4596"></script>
+<script defer src="src/events-text.js?v=470d4596"></script>
+<script defer src="src/engine/core.js?v=470d4596"></script>
+<script defer src="src/engine/events.js?v=470d4596"></script>
+<script defer src="src/engine/events2.js?v=470d4596"></script>
+<script defer src="src/engine/stakes.js?v=470d4596"></script>
+<script defer src="src/engine/decisions.js?v=470d4596"></script>
+<script defer src="src/engine/events3.js?v=470d4596"></script>
+<script defer src="src/engine/moments.js?v=470d4596"></script>
+<script defer src="src/engine/worldcup.js?v=470d4596"></script>
+<script defer src="src/engine/season.js?v=470d4596"></script>
+<script defer src="src/engine/market.js?v=470d4596"></script>
+<script defer src="src/engine/finish.js?v=470d4596"></script>
+<script defer src="src/engine/achievements.js?v=470d4596"></script>
+<script defer src="src/trophy-imgs.js?v=470d4596"></script>
+<script defer src="src/trophies.js?v=470d4596"></script>
+<script defer src="src/card.js?v=470d4596"></script>
+<script defer src="src/cine.js?v=470d4596"></script>
+<script defer src="src/kick.js?v=470d4596"></script>
+<script defer src="src/defend.js?v=470d4596"></script>
+<script defer src="src/kits.js?v=470d4596"></script>
+<script defer src="src/kits-real.js?v=470d4596"></script>
+<script defer src="src/avatar.js?v=470d4596"></script>
+<script defer src="src/chars.js?v=470d4596"></script>
+<script defer src="src/ui/core.js?v=470d4596"></script>
+<script defer src="src/ui/tips.js?v=470d4596"></script>
+<script defer src="src/ui/paper.js?v=470d4596"></script>
+<script defer src="src/ui/walkout.js?v=470d4596"></script>
+<script defer src="src/ui/album.js?v=470d4596"></script>
+<script defer src="src/ui/sheet.js?v=470d4596"></script>
+<script defer src="src/ui/ranking.js?v=470d4596"></script>
+<script defer src="src/ui/cardview.js?v=470d4596"></script>
+<script defer src="src/ui/collection.js?v=470d4596"></script>
+<script defer src="src/ui/trophyroom.js?v=470d4596"></script>
+<script defer src="src/ui/social.js?v=470d4596"></script>
+<script defer src="src/ui/cloud.js?v=470d4596"></script>
+<script defer src="src/ui/settings.js?v=470d4596"></script>
+<script defer src="src/ui/items.js?v=470d4596"></script>
+<script defer src="src/ui/packs.js?v=470d4596"></script>
+<script defer src="src/ui/start.js?v=470d4596"></script>
+<script defer src="src/ui/offers.js?v=470d4596"></script>
+<script defer src="src/ui/preseason.js?v=470d4596"></script>
+<script defer src="src/ui/match.js?v=470d4596"></script>
+<script defer src="src/ui/training.js?v=470d4596"></script>
+<script defer src="src/ui/feedback.js?v=470d4596"></script>
+<script defer src="src/ui/challenge.js?v=470d4596"></script>
+<script defer src="src/ui/desktop.js?v=470d4596"></script>
+<script defer src="src/ui/season.js?v=470d4596"></script>
+<script defer src="src/ui/worldcup.js?v=470d4596"></script>
+<script defer src="src/ui/finale.js?v=470d4596"></script>
+<script defer src="src/ui/achievements.js?v=470d4596"></script>
+<script defer src="src/ui/daily.js?v=470d4596"></script>
+<script defer src="src/main.js?v=470d4596"></script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"}}</script>
+<!-- O 3D (biblioteca de ~1 MB) só carrega depois que o jogo abre: ver src/main.js -->
+<script type="text/plain" id="ball3d-src" data-src="src/ball3d.js?v=470d4596"></script>
+</body>
+</html>
