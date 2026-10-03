@@ -53,10 +53,10 @@
   S.stake('pubalgia', {
     build: () => ({ title: 'Pubalgia', text: 'Uma dor na virilha que não passa. O médico dá duas opções.' }),
     options: c => [
-      safe('Operar agora', { inj: 0.15, attr: { fis: 2 } }, 'Cirurgia bem-sucedida. Você voltou mais forte.'),
-      risk('Tratar e ir jogando', P(0.55, X.t(c, 'pro', 0.2), X.young(c, 0.15), X.vet(c, -0.2)),
+      safe('Operar agora', { inj: 0.15, form: 0.02 }, 'Cirurgia bem-sucedida. Você voltou inteiro e sem dor.'),
+      risk('Tratar e ir jogando', P(0.5, X.t(c, 'pro', 0.2), X.young(c, 0.1), X.vet(c, -0.2)),
         out('a dor passa', { main: 1 }, 'Fisioterapia diária e a dor foi embora sem cirurgia, sem perder o ritmo.'),
-        out('piora', { inj: 0.35, attr: { fis: -3 }, main: -1, pot: T(c, -1, 21) }, 'A dor piorou, a cirurgia veio do mesmo jeito e a recuperação foi lenta.')),
+        out('piora', { inj: 0.35, attr: { fis: -3 }, pot: T(c, -1, 21) }, 'A dor piorou, a cirurgia veio do mesmo jeito e a recuperação foi lenta.')),
     ],
   });
   S.stake('pretemporada', {
@@ -64,8 +64,8 @@
       ['Excursão de pré-temporada', 'O clube marcou seis amistosos no exterior em duas semanas.'],
       ['Turnê pela Ásia', 'Amistosos caça-níquel na Ásia: calor, fuso e estádios lotados.']]),
     options: c => [
-      risk('Jogar todos os amistosos', P(0.6, X.t(c, 'pro', 0.15), X.young(c, 0.15), X.vet(c, -0.25)),
-        out('chega voando', { main: 2, pot: T(c, 1, 21), fame: 8, coach: 6 }, 'Camisas esgotadas por onde passou, e você chegou à estreia voando.'),
+      risk('Jogar todos os amistosos', P(0.5, X.t(c, 'pro', 0.15), X.young(c, 0.05), X.vet(c, -0.25)),
+        out('chega voando', { main: 2, fame: 8, coach: 6 }, 'Camisas esgotadas por onde passou, e você chegou à estreia voando.'),
         out('o corpo sente', { fame: 8, inj: 0.15, main: -2 }, 'Fuso, calor e gramado duro. O corpo cobrou a conta logo no começo.')),
       safe('Pedir para ser poupado', { form: 0.03, coach: -6 }, 'Você chegou inteiro para a estreia. O técnico torceu o nariz.'),
     ],
@@ -146,10 +146,10 @@
   S.stake('estrela', {
     build: c => ({ title: 'Contrataram uma estrela', text: D.O(club(c).name) + ' anunciou um craque famoso para a sua posição.' }),
     options: c => [
-      risk('Disputar a vaga', P(0.45, X.edge(c, 0.04), X.t(c, 'raca', 0.1)),
-        out('fica com a vaga', { min: 0.1, main: 2, pot: T(c, 1, 21), fame: 6 }, 'O craque famoso virou seu reserva. Que temporada.'),
-        out('vai para o banco', { min: -0.25, main: -1, pot: T(c, -1, 23) }, 'O técnico escolheu o recém-chegado. Banco a temporada inteira, e o ritmo foi embora.')),
-      safe('Aceitar o rodízio', { coach: 8, min: -0.1 }, 'Maturidade: o técnico reveza e confia em você.'),
+      risk('Disputar a vaga', P(0.45, X.edge(c, 0.02), X.t(c, 'raca', 0.1)),
+        out('fica com a vaga', { min: 0.1, main: 2, fame: 6 }, 'O craque famoso virou seu reserva. Que temporada.'),
+        out('vai para o banco', { min: -0.25, main: -2, pot: T(c, -1, 23) }, 'O técnico escolheu o recém-chegado. Banco a temporada inteira, e o ritmo foi embora.')),
+      safe('Aceitar o rodízio', { coach: 8, min: -0.05 }, 'Maturidade: o técnico reveza e confia em você.'),
       safe('Pedir para sair', { wantsOut: true }, 'Seu empresário já abriu conversas.'),
     ],
   });
@@ -300,9 +300,11 @@
   });
   S.stake('ofensas', {
     build: () => ({ title: 'Ofensas da arquibancada', text: 'Parte da torcida adversária passa o jogo te ofendendo de forma criminosa.' }),
-    options: () => [
-      safe('Parar o jogo e denunciar', { fame: 10, fans: 8, form: 0.03 }, 'O jogo parou, os agressores foram identificados e o país inteiro ficou do seu lado.'),
-      { label: 'Seguir jogando', safe: { fx: { form: -0.04 }, txt: 'Você seguiu, mas aquilo ficou na cabeça por semanas.', ok: false } },
+    options: c => [
+      safe('Parar o jogo e denunciar', { fame: 10, fans: 6, form: 0.01 }, 'O jogo parou, os agressores foram identificados e o país inteiro ficou do seu lado.'),
+      risk('Seguir jogando', P(0.45, X.t(c, 'frieza', 0.2), X.t(c, 'raca', 0.1)),
+        out('responde jogando', { form: 0.08, fans: 8, fame: 8 }, 'Você respondeu do único jeito que eles entendem: jogando. Atuação impecável e silêncio na arquibancada.'),
+        out('fica na cabeça', { form: -0.06 }, 'Você seguiu, mas aquilo ficou na cabeça por semanas.')),
     ],
   });
 
@@ -408,15 +410,19 @@
   });
   S.stake('padrinho', {
     build: () => ({ title: 'O garoto da base', text: 'Um menino de 17 anos subiu ao profissional e diz que você é o ídolo dele.' }),
-    options: () => [
-      safe('Apadrinhar o garoto', { coach: 8, fans: 6, form: -0.02 }, 'O garoto marcou na estreia e correu para te abraçar.'),
-      safe('Focar no seu jogo', { form: 0.05 }, 'Cabeça no próprio desempenho.'),
+    options: c => [
+      risk('Apadrinhar o garoto', P(0.55, X.t(c, 'lider', 0.2)),
+        out('o garoto deslancha', { coach: 10, fans: 8, form: 0.05, legacy: 3 }, 'O garoto marcou na estreia e correu para te abraçar. Ensinar também te fez jogar melhor.'),
+        out('ele toma a sua vaga', { min: -0.1, form: -0.04 }, 'Você ensinou bem até demais: o garoto ganhou a posição, e você foi para o banco.')),
+      safe('Focar no seu jogo', { form: 0.03 }, 'Cabeça no próprio desempenho.'),
     ],
   });
   S.stake('centenario', {
     build: c => ({ title: 'Aniversário do clube', text: D.O(club(c).name) + ' comemora aniversário e vai lançar uma camisa comemorativa com o seu rosto na campanha.' }),
-    options: () => [
-      safe('Estrelar a campanha', { fame: 10, fans: 6, money: 50000 }, 'A camisa esgotou em um dia.'),
+    options: c => [
+      risk('Estrelar a campanha', P(0.65, X.fans(c, 0.1)),
+        out('a camisa esgota', { fame: 12, fans: 8, money: 50000, form: 0.03 }, 'A camisa esgotou em um dia, e o estádio cantou o seu nome na festa.'),
+        out('gravações demais', { fame: 8, money: 50000, form: -0.05, coach: -6 }, 'Sessões de foto e gravação na semana de jogo. O técnico reclamou, e você entrou em campo disperso.')),
       safe('Deixar para os ídolos antigos', { fans: 4, coach: 4 }, 'Humildade que a velha guarda respeitou.'),
     ],
   });
@@ -498,10 +504,10 @@
   S.stake('camisa10', {
     build: c => ({ title: 'A camisa 10', text: 'O camisa 10 ' + D.do(club(c).name) + ' foi embora. A diretoria oferece o número para você.' }),
     options: c => [
-      risk('Vestir a 10', P(0.6, X.t(c, 'frieza', 0.15), X.edge(c, 0.02)),
-        out('cai como uma luva', { fame: 10, form: 0.06, main: 1 }, 'A 10 caiu como uma luva. Camisa mais vendida da loja.'),
-        out('o peso da camisa', { fame: 10, form: -0.08 }, 'A 10 pesou nos primeiros jogos.')),
-      safe('Manter o seu número', { coach: 4 }, '"Meu número me trouxe até aqui."'),
+      risk('Vestir a 10', P(0.4, X.t(c, 'frieza', 0.15), X.edge(c, 0.02), X.young(c, -0.15)),
+        out('cai como uma luva', { fame: 10, form: 0.05, main: 1 }, 'A 10 caiu como uma luva. Camisa mais vendida da loja.'),
+        out('o peso da camisa', { fame: 6, form: -0.1, min: -0.06, fans: -8 },'A 10 pesou. A torcida cobrou cada passe errado, e a fase não veio.')),
+      safe('Manter o seu número', { coach: 4, form: 0.02 }, '"Meu número me trouxe até aqui."'),
     ],
   });
 
@@ -542,9 +548,11 @@
   });
   S.stake('recuperacao', {
     build: () => ({ title: 'Recuperação de ponta', text: 'Um centro de recuperação usado por craques europeus oferece um programa para prolongar a carreira.' }),
-    options: () => [
-      safe('Investir R$ 200 mil', { money: -200000, attr: { fis: 3 }, form: 0.03 }, 'Câmara hiperbárica, crioterapia e um corpo de 25 anos.'),
-      safe('Seguir no método do clube', {}, 'O departamento médico do clube dá conta.'),
+    options: c => [
+      risk('Investir R$ 200 mil', P(0.6, X.t(c, 'pro', 0.15), X.vet(c, -0.1)),
+        out('corpo de 25 anos', { money: -200000, attr: { fis: 3 }, form: 0.03 }, 'Câmara hiperbárica, crioterapia e um corpo de 25 anos.'),
+        out('o corpo estranha', { money: -200000, form: -0.06, inj: 0.1 }, 'O corpo estranhou o método novo. Uma lesão muscular no começo da temporada e dinheiro jogado fora.')),
+      safe('Seguir no método do clube', { form: 0.02 }, 'O departamento médico do clube dá conta, e a rotina conhecida ajuda.'),
     ],
   });
   S.stake('teste_fisico', {
@@ -558,9 +566,11 @@
   });
   S.stake('curso_tecnico', {
     build: () => ({ title: 'Curso de treinador', text: 'A federação abriu turma do curso de técnico. As aulas são às segundas, dia de folga.' }),
-    options: () => [
-      safe('Fazer o curso', { coach: 10, attr: { pas: 2 }, form: -0.04 }, 'Você começou a enxergar o jogo como o treinador. Ele percebeu.'),
-      safe('Pensar nisso depois', { form: 0.04 }, 'Segunda-feira é para descansar.'),
+    options: c => [
+      risk('Fazer o curso', P(0.55, X.t(c, 'lider', 0.15), X.t(c, 'pro', 0.1)),
+        out('enxerga o jogo', { coach: 10, attr: { pas: 2 }, form: -0.02 }, 'Você começou a enxergar o jogo como o treinador. Ele percebeu.'),
+        out('sem folga, sem perna', { form: -0.07, min: -0.05 }, 'Sem a folga de segunda, o corpo de veterano não recuperou. As pernas pesaram a temporada inteira.')),
+      safe('Pensar nisso depois', { form: 0.03 }, 'Segunda-feira é para descansar.'),
     ],
   });
 
@@ -577,9 +587,9 @@
   S.stake('lateral', {
     build: () => ({ title: 'Improvisado na lateral', text: 'Os dois laterais se machucaram. O técnico pede para você quebrar o galho.' }),
     options: c => [
-      risk('Topar a lateral', P(0.65, X.coach(c, 0.1)),
+      risk('Topar a lateral', P(0.5, X.coach(c, 0.1), X.edge(c, 0.02)),
         out('quebra o galho', { coach: 12, assist: 0.2, attr: { rit: 2 } }, 'Você subiu ao ataque e ainda deu um passe para gol.'),
-        out('sofre no um contra um', { coach: 4, form: -0.06 }, 'Os pontas adversários fizeram a festa pelo seu lado.')),
+        out('sofre no um contra um', { coach: -6, form: -0.08, min: -0.06 }, 'Os pontas adversários fizeram a festa pelo seu lado. O técnico te tirou no intervalo e você perdeu espaço.')),
       safe('Recusar', { coach: -6 }, 'O técnico improvisou um volante.'),
     ],
   });
@@ -750,10 +760,10 @@
   S.stake('adaptacao', {
     build: c => ({ title: 'Adaptação em ' + D.countryOf(club(c)), text: 'Idioma, clima e um futebol diferente. O começo está difícil.' }),
     options: c => [
-      safe('Contratar professor e chef', { money: -80000, form: 0.06 }, 'Em dois meses você já pedia café no idioma local.'),
-      risk('Aprender na marra', P(0.6, X.t(c, 'adaptavel', 0.25)),
-        out('adaptado', { coach: 8, form: 0.04 }, 'Adaptação rápida. O técnico ficou impressionado.'),
-        out('meio ano perdido', { form: -0.1, min: -0.06 }, 'Levou meio ano para se sentir em casa.')),
+      safe('Contratar professor e chef', { money: -80000, form: 0.04 }, 'Em dois meses você já pedia café no idioma local.'),
+      risk('Aprender na marra', P(0.5, X.t(c, 'adaptavel', 0.25), X.edge(c, 0.02)),
+        out('adaptado', { coach: 8, form: 0.04, main: 1 }, 'Adaptação rápida: você absorveu o futebol local e voltou um jogador mais completo. O técnico ficou impressionado.'),
+        out('meio ano perdido', { form: -0.1, min: -0.08 }, 'Levou meio ano para se sentir em casa.')),
     ],
   });
 
@@ -776,15 +786,19 @@
   });
   S.stake('centroavante', {
     build: () => ({ title: 'Referência ou móvel?', text: 'O técnico pergunta como você prefere jogar nesta temporada.' }),
-    options: () => [
-      safe('Centroavante de área', { goal: 0.12, assist: -0.1, attr: { fin: 1 } }, 'Dentro da área, pouco toque e muita bola na rede.'),
-      safe('Atacante móvel', { assist: 0.15, attr: { dri: 2 } }, 'Saindo da área, você abriu espaço para todo mundo.'),
+    options: c => [
+      risk('Centroavante de área', P(0.45, X.t(c, 'frieza', 0.1), X.edge(c, 0.02)),
+        out('matador de área', { goal: 0.15, assist: -0.1, attr: { fin: 1 } }, 'Dentro da área, pouco toque e muita bola na rede. Seu faro de gol nunca foi tão afiado.'),
+        out('isolado entre os zagueiros', { goal: -0.05, assist: -0.1, form: -0.06 }, 'Parado na área, você virou presa fácil dos zagueiros. A bola quase não chegou.')),
+      safe('Atacante móvel', { assist: 0.15, form: 0.02 }, 'Saindo da área, você abriu espaço para todo mundo.'),
     ],
   });
   S.stake('analista_gol', {
     build: () => ({ title: 'Vídeos dos batedores', text: 'O analista montou um arquivo com os pênaltis de todos os batedores da liga.' }),
-    options: () => [
-      safe('Estudar tudo', { attr: { def: 2 }, coach: 3 }, 'Agora você sabe o canto preferido de cada um.'),
+    options: c => [
+      risk('Estudar tudo', P(0.55, X.t(c, 'pro', 0.15), X.young(c, 0.05)),
+        out('sabe o canto de cada um', { attr: { def: 1 }, coach: 3 }, 'Agora você sabe o canto preferido de cada um.'),
+        out('informação demais', { form: -0.1, min: -0.06 }, 'Informação demais: você ficou esperando o canto do vídeo e tomou gols bobos. O reserva ganhou chances.')),
       safe('Confiar no instinto', { form: 0.04 }, 'Goleiro bom é goleiro leve.'),
     ],
   });
@@ -794,9 +808,11 @@
       ['Saída errada', 'Você saiu do gol, furou a bola e o atacante tocou para o gol vazio. O vídeo não para de rodar.']]),
     options: c => [
       risk('Rir de si mesmo nas redes', P(0.6, X.fans(c, 0.15)),
-        out('a internet te abraça', { fame: 8, fans: 5 }, 'Você postou o meme primeiro. A internet te abraçou.'),
-        out('a confiança balança', { fame: 6, form: -0.06 }, 'Riu por fora, mas o lance não saiu da cabeça.')),
-      safe('Treinar em silêncio', { attr: { dri: 2 }, coach: 4, form: -0.02 }, 'Horas de treino extra. Nunca mais aconteceu.'),
+        out('a internet te abraça', { fame: 8, fans: 6, form: 0.03 }, 'Você postou o meme primeiro. A internet te abraçou, e você entrou leve no jogo seguinte.'),
+        out('a confiança balança', { fame: 4, form: -0.06 }, 'Riu por fora, mas o lance não saiu da cabeça.')),
+      risk('Treinar em silêncio', P(0.55, X.t(c, 'pro', 0.15), X.coach(c, 0.1)),
+        out('nunca mais aconteceu', { attr: { dri: 1 }, coach: 4 }, 'Horas de treino extra. Nunca mais aconteceu.'),
+        out('o lance não sai da cabeça', { form: -0.08, min: -0.08, coach: -4 }, 'Treinou dobrado, mas o frango voltava em cada bola fácil. O técnico deu chances ao reserva.')),
     ],
   });
   S.stake('gol_contra', {
@@ -931,8 +947,8 @@
   });
   S.stake('corte_salario', {
     build: () => ({ title: 'Contrato de veterano', text: 'A diretoria quer você mais um ano, mas com salário menor.' }),
-    options: () => [one('Aceitar ganhar menos', { wage: 0.75, contract: 1, fans: 8, coach: 6, legacy: 6 }, 'Assinou sem discutir. "Aqui eu jogo por amor."'),
-      risk('Manter o salário', 0.6, out('a diretoria cede', {}, 'A diretoria cedeu. Salário mantido.'), out('te põem no mercado', { wantsOut: true }, 'O clube não gostou e colocou seu nome no mercado.'))],
+    options: c => [one('Aceitar ganhar menos', { wage: 0.75, contract: 1, fans: 6, coach: 4, legacy: 3 }, 'Assinou sem discutir. "Aqui eu jogo por amor."'),
+      risk('Manter o salário', P(0.6, X.edge(c, 0.02)), out('a diretoria cede', { contract: 1, form: 0.03 }, 'A diretoria cedeu. Salário mantido, e você jogou motivado.'), out('te põem no mercado', { wantsOut: true, coach: -8, fans: -6 }, 'O clube não gostou e colocou seu nome no mercado. O técnico já te tratou como ex-jogador.'))],
   });
   S.stake('empresario', {
     build: () => ({ title: 'Empresário famoso', text: 'O empresário mais poderoso do país quer cuidar da sua carreira.' }),
@@ -941,8 +957,8 @@
   });
   S.stake('pai_empresario', {
     build: () => ({ title: 'Seu pai quer ser seu empresário', text: 'Seu pai largou o emprego e quer cuidar dos seus contratos.' }),
-    options: () => [risk('Deixar ele cuidar', 0.6, out('surpreende', { form: 0.04, fans: 3 }, 'Seu pai surpreendeu na mesa de negociação.'), out('negocia mal', { form: 0.04, fans: 3, wage: 0.9 }, 'Ele aceitou a primeira proposta do clube. Salário menor, mas família unida.')),
-      one('Manter um profissional', {}, 'Ele entendeu. Segue sendo seu maior torcedor.')],
+    options: c => [risk('Deixar ele cuidar', P(0.6, X.edge(c, 0.02)), out('surpreende', { form: 0.05, fans: 3 }, 'Seu pai surpreendeu na mesa de negociação, e você jogou com a família por perto.'), out('negocia mal', { wage: 0.9, form: -0.05, coach: -6 }, 'Ele brigou com a diretoria por um bônus e aceitou a primeira proposta. Salário menor e clima ruim com o técnico.')),
+      one('Manter um profissional', { form: 0.01, fans: 2 }, 'Ele entendeu. Segue sendo seu maior torcedor.')],
   });
   S.stake('carro', {
     build: c => ({ title: 'O primeiro carrão', text: 'O primeiro salário bom caiu e a concessionária já ligou.', value: Math.round(Math.min(c.money * 0.4, 900000) / 1000) * 1000 }),
@@ -961,8 +977,8 @@
   });
   S.stake('reality', {
     build: () => ({ title: 'Reality nas férias', text: 'Um reality show quer você nas férias. Cachê alto e muita exposição.' }),
-    options: () => [risk('Participar', 0.5, out('favorito do público', { fame: 20, money: 200000, form: -0.02 }, 'Você foi o favorito do público e ainda voltou inteiro.'), out('férias sem descanso', { fame: 20, money: 200000, coach: -10, form: -0.06 }, 'Voltou cansado, e o técnico reparou no primeiro treino.')),
-      one('Recusar', { form: 0.04 }, 'Férias de verdade.')],
+    options: c => [risk('Participar', P(0.5, X.t(c, 'pro', 0.15)), out('favorito do público', { fame: 20, money: 200000, form: 0.03 }, 'Você foi o favorito do público e ainda voltou inteiro e embalado.'), out('férias sem descanso', { fame: 20, money: 200000, coach: -10, form: -0.06 }, 'Voltou cansado, e o técnico reparou no primeiro treino.')),
+      one('Recusar', { form: 0.02 }, 'Férias de verdade.')],
   });
   S.stake('capa_game', {
     build: c => ({ title: 'Capa do videogame', text: 'O jogo de futebol mais vendido do mundo quer você na capa da nova edição.', value: c.wage * 10 }),
@@ -981,7 +997,10 @@
   // Torcida, imprensa e vida
   S.stake('demitido', {
     build: () => ({ title: 'O técnico caiu', text: 'O treinador que te bancou foi demitido depois de três derrotas.' }),
-    options: () => [one('Defender ele na imprensa', { fame: 6, fans: 4, coach: -12, legacy: 3 }, 'Lealdade rara no futebol. O novo técnico anotou.'), one('Ficar em silêncio', {}, 'Página virada. Vida que segue.')],
+    options: c => [risk('Defender ele na imprensa', P(0.5, X.fans(c, 0.1), X.t(c, 'lider', 0.15)),
+      out('o vestiário fecha com você', { fame: 6, fans: 8, form: 0.04, legacy: 3 }, 'Lealdade rara no futebol. O vestiário fechou com você, e o novo técnico entendeu o recado.'),
+      out('o novo técnico anota', { fame: 6, coach: -15, min: -0.08 }, 'Lealdade rara no futebol. O novo técnico anotou, e você começou a temporada nova no banco.')),
+      one('Ficar em silêncio', { coach: 4 }, 'Página virada. O novo técnico notou a sua discrição.')],
   });
   S.stake('organizada', {
     build: c => ({ title: 'Convite da organizada', text: 'A torcida organizada ' + D.do(club(c).name) + ' quer você na festa de aniversário dela.' }),
@@ -995,7 +1014,10 @@
   });
   S.stake('casamento', {
     build: () => ({ title: 'Casamento marcado', text: 'O casamento cai bem na pré-temporada.' }),
-    options: () => [one('Festão com 800 convidados', { fame: 10, money: -300000, form: -0.05 }, 'A festa foi capa de revista. O preparo físico, nem tanto.'), one('Cerimônia íntima', { form: 0.04 }, 'Só a família e os amigos. Você voltou leve e feliz.')],
+    options: c => [risk('Festão com 800 convidados', P(0.5, X.t(c, 'pro', 0.15)),
+      out('festa da década', { fame: 12, fans: 6, money: -300000, form: 0.06 }, 'A festa foi capa de revista, e você voltou da lua de mel renovado.'),
+      out('ressaca na pré-temporada', { fame: 10, money: -300000, form: -0.07, coach: -6 }, 'A festa foi capa de revista. O preparo físico, nem tanto, e o técnico reparou.')),
+      one('Cerimônia íntima', { form: 0.03 }, 'Só a família e os amigos. Você voltou leve e feliz.')],
   });
   S.stake('filho', {
     build: () => ({ title: 'Seu filho vai nascer', text: 'O parto está previsto para o dia do jogo decisivo.' }),
@@ -1016,12 +1038,15 @@
   });
   S.stake('selecao_adeus', {
     build: c => ({ title: 'Adeus à seleção?', text: 'Aos poucos a seleção ' + ((D.NATION_BY_NAME[c.country] || {}).flag || '') + ' renova o grupo. Um jornalista pergunta se você pensa em se despedir da seleção.' }),
-    options: () => [one('Anunciar a despedida da seleção', { natRetire: true, form: 0.06, coach: 6 }, 'Carta aberta, vídeo emocionado e mais energia para o clube. A seleção fica para os mais novos.'),
-      risk('Seguir à disposição', 0.8, out('ainda respeitado', { fame: 6 }, 'Ainda convocado, ainda respeitado.'), out('volta machucado', { fame: 6, inj: 0.1 }, 'Na última convocação, a coxa não aguentou.'))],
+    options: c => [one('Anunciar a despedida da seleção', { natRetire: true, form: 0.04, coach: 4 }, 'Carta aberta, vídeo emocionado e mais energia para o clube. A seleção fica para os mais novos.'),
+      risk('Seguir à disposição', P(0.7, X.t(c, 'pro', 0.1), X.edge(c, 0.02)), out('ainda respeitado', { fame: 8, form: 0.03 }, 'Ainda convocado, ainda respeitado. Cada convocação te dá gás.'), out('volta machucado', { fame: 4, inj: 0.15, form: -0.03 }, 'Na última convocação, a coxa não aguentou.'))],
   });
   S.stake('invasao', {
     build: () => ({ title: 'Invasão de campo', text: 'Um menino invade o gramado no meio do jogo e corre para te abraçar.' }),
-    options: () => [one('Parar e abraçar o menino', { fans: 10, fame: 10 }, 'O abraço virou a foto do ano.'), one('Pedir para os seguranças', { coach: 3 }, 'Você acenou e o jogo seguiu.')],
+    options: c => [risk('Parar e abraçar o menino', P(0.7, X.t(c, 'frieza', 0.1)),
+      out('foto do ano', { fans: 10, fame: 12, form: 0.03 }, 'O abraço virou a foto do ano, e você jogou o resto da partida flutuando.'),
+      out('perde a concentração', { fame: 8, form: -0.06, coach: -6 }, 'O abraço virou foto bonita, mas o jogo parou, você esfriou e o gol do adversário saiu no seu setor.')),
+      one('Pedir para os seguranças', { coach: 4, form: 0.02 }, 'Você acenou e o jogo seguiu. Concentração total.')],
   });
   S.stake('musica', {
     build: () => ({ title: 'Música com seu nome', text: 'Um cantor famoso lançou uma música com o seu nome e quer você no clipe.' }),
