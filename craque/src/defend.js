@@ -9,6 +9,13 @@
   const sfx = n => { if (root.CRAQUE_SFX) root.CRAQUE_SFX.play(n); };
   const ease = t => 1 - Math.pow(1 - t, 3);
 
+  // Câmera e efeitos (cine.js); devolve a camada onde a bola 3D deve morar
+  function cineOf(stage) {
+    const cine = root.CRAQUE_CINE ? root.CRAQUE_CINE(stage) : null;
+    return { cine: cine && cine.enabled ? cine : null, host: cine && cine.enabled ? stage.querySelector('.k-cam') : stage };
+  }
+  const colorsOf = k => [k.shirt, k.shorts, k.trim, '#F2C230'];
+
   function banner(el, txt, ok) {
     const b = el.querySelector('.kick-banner');
     b.textContent = txt;
@@ -29,7 +36,9 @@
     const spr = P.keeperSprite(svg); // você no gol, em sprite
     spr.stand(P.GX); spr.idle();
     keeper.classList.add('mine'); // o goleiro agora é você
-    const b3 = P.ball3d(stage, ball);
+    const { cine, host } = cineOf(stage);
+    if (cine) cine.intro(P.GX, 120, 1.7, 1100);
+    const b3 = P.ball3d(host, ball);
     b3.place(P.BALL.x, P.BALL.y, P.BALL.r);
     P.setKeeper(keeper, 0, 0, 0);
     // Batedor (de costas, em primeiro plano) e a seta do "corpo entregando o lado"
@@ -72,6 +81,7 @@
       const u = Math.min(1, t / runMs);
       kicker.setAttribute('transform', 'translate(' + (k0.x + (k1.x - k0.x) * u) + ' ' + (k0.y + (k1.y - k0.y) * u) + ')');
       tell.setAttribute('opacity', t >= tellAt ? 1 : 0);
+      if (cine && t >= tellAt && !run.pushed) { run.pushed = 1; cine.to(P.GX, 175, 1.1, Math.max(200, runMs - tellAt)); }
       bat.pose(0.04 + 0.3 * u, 'chute');
       if (t < runMs + 170) return requestAnimationFrame(run); // pequena folga de reação depois do chute
       shoot();
@@ -80,6 +90,7 @@
     function shoot() {
       done = true;
       sfx('kick');
+      if (cine) { cine.turf(P.BALL.x, P.BALL.y + 8, 14); cine.shake(2, 180); }
       tell.setAttribute('opacity', 0);
       const kt0 = performance.now();
       (function swing(now) {
@@ -116,9 +127,14 @@
           (function party(n3) { if (!svg.isConnected) return; bat.pose(((n3 - c0) / 1100) % 1, 'comemoracao'); requestAnimationFrame(party); })(c0);
         }
         sfx(saved ? 'goal' : 'miss');
+        if (cine) {
+          if (saved && !miss) cine.win(tx, ty, colorsOf(C.kits(c, c.moment && c.moment.vs).mine), '#B8F25C');
+          else if (miss) cine.to(180, 170, 1.05, 600);
+          else cine.lose(tx, ty, 4);
+        }
         if (saved) svg.querySelector('#k-crowd').classList.add('cheer');
         banner(el, miss ? 'PRA FORA!' : saved ? 'DEFENDEU!' : 'GOL DELES', saved);
-        setTimeout(() => { gone = true; b3.dispose(); if (goal) goal.dispose(); opts.onDone(saved, why); }, 1400);
+        setTimeout(() => { gone = true; b3.dispose(); if (goal) goal.dispose(); if (cine) cine.dispose(); opts.onDone(saved, why); }, 1400);
       })(s0);
     }
   };
@@ -154,10 +170,16 @@
     const kits = C.kits(c, c.moment && c.moment.vs), me = C.look(c);
     const atk = C.put('jogador-lado', Object.assign({ anim: 'corrida' }, C.faces(1)[0], kits.opp), layer);
     const def = C.put('jogador-lado', Object.assign({ anim: 'marcacao', espelhar: true }, me, kits.mine, me.boots ? { boots: me.boots } : {}), layer);
-    const b3 = P.ball3d(stage, ball);
+    const { cine, host } = cineOf(stage);
+    const b3 = P.ball3d(host, ball);
     const g = { u: 0, cut: 0, mode: 'run', def: { x: 258, y: 252 }, slide: null, aAnim: 'corrida', aT0: 0, ball: null };
     let armed = false, t = 0, last = performance.now(), result = null;
     setTimeout(() => { armed = true; }, 250);
+    // Câmera: abre no gol e depois acompanha a disputa (metade entre o atacante e o zagueiro)
+    if (cine) {
+      cine.intro(P.GX, 130, 1.6, 900);
+      setTimeout(() => cine.follow(() => { const a = at(g.u); return { x: (a.x + g.def.x) / 2, y: (a.y + g.def.y) / 2 - 40, z: 1.12 }; }), 950);
+    }
     const setAtk = (anim, now) => { g.aAnim = anim; g.aT0 = now; };
     stage.addEventListener('pointerdown', e => {
       e.preventDefault();
@@ -170,8 +192,9 @@
       if (result) return;
       result = { ok, why };
       sfx(ok ? 'goal' : 'miss');
+      if (cine) { const a = at(g.u); if (ok) cine.win(a.x + 10, a.y - 20, colorsOf(kits.mine)); else cine.lose(why === 'passou' || why === 'tarde' || why === 'cedo' ? P.GX : null, 140, 4); }
       banner(el, ok ? 'DESARME!' : why === 'cedo' ? 'CHEGOU CEDO!' : why === 'tarde' ? 'CHEGOU TARDE!' : 'GOL DELES', ok);
-      setTimeout(() => { b3.dispose(); opts.onDone(ok, ok ? 'desarme' : why); }, 1500);
+      setTimeout(() => { b3.dispose(); if (cine) cine.dispose(); opts.onDone(ok, ok ? 'desarme' : why); }, 1500);
     }
     // A bola sai do pé (desarme ou chute) e vai até um ponto
     const kickBall = (from, to, r1, ms, arc) => { g.ball = { from, to, r1, ms, arc, t0: performance.now() }; };
@@ -188,6 +211,7 @@
         if (k >= 1 && !s.done) {
           s.done = true;
           if (s.kind === 'certo') {
+            if (cine) { const a0 = at(g.u); cine.turf(a0.x + 10, a0.y, 22); }
             g.mode = 'fall'; g.fallT = t; setAtk('queda', now);
             const a = at(g.u), h = H(a.y);
             kickBall([a.x + 0.17 * h, a.y - 0.06 * h, 0.06 * h], [a.x + 0.17 * h + 90, Math.min(318, a.y + 40), 0.06 * h + 3], 0, 600, 14);
@@ -302,7 +326,9 @@
       all.forEach((m, i) => m.pose((now / 2400 + i * 0.31) % 1, 'parado'));
       requestAnimationFrame(idle);
     })(performance.now());
-    const b3 = P.ball3d(stage, ball);
+    const { cine, host } = cineOf(stage);
+    if (cine) cine.intro(180, GL - 20, 1.9, 1200);
+    const b3 = P.ball3d(host, ball);
     const ballAt = (x, g) => b3.place(sx(x, g), sy(g) - rOf(g), rOf(g), 0.3);
     ballAt(0, BG);
     // Você, de costas, atrás da bola
@@ -333,6 +359,7 @@
       done = true;
       if (why === 'impedido') { mate.pose(0, 'marcacao'); return end(false, why); }
       sfx('kick');
+      if (cine) { cine.turf(sx(0, BG), sy(BG), 10); cine.to(180, (sy(BG) + sy(LINE)) / 2, 1.2, 500); }
       const p0 = performance.now();
       (function pass(now) { if (!svg.isConnected) return; const q = Math.min(1, (now - p0) / 380); you.pose(0.4 + 0.42 * q, 'chute'); if (q < 1) requestAnimationFrame(pass); })(p0);
       // Passe rasteiro: até onde o atacante vai estar (na certa) ou até o zagueiro que corta
@@ -362,7 +389,7 @@
         if (!svg.isConnected) return;
         const q = Math.min(1, (now - s1) / 620);
         back.pose(0.2 + 0.64 * q, 'chute');
-        if (!kicked && q >= 0.3) { kicked = true; sfx('kick'); spr.dive(P.px(-gs * 0.5), P.py(0.45), -gs, 380, 40); fly(a, goalX, goalY); }
+        if (!kicked && q >= 0.3) { kicked = true; sfx('kick'); if (cine) cine.to(180, GL, 1.6, 420); spr.dive(P.px(-gs * 0.5), P.py(0.45), -gs, 380, 40); fly(a, goalX, goalY); }
         if (q < 1) requestAnimationFrame(swing);
       })(s1);
     }
@@ -380,9 +407,10 @@
     }
     function end(ok, why) {
       sfx(ok ? 'goal' : 'miss');
+      if (cine) { if (ok) cine.win(180, GL - 10, colorsOf(kits.mine)); else cine.lose(null, null, why === 'impedido' ? 2 : 4); }
       banner(el, ok ? 'GOOOL!' : why === 'impedido' ? 'IMPEDIDO!' : 'CORTADO!', ok);
       help.innerHTML = ok ? 'Bola enfiada na medida: <b>assistência sua</b>' : why === 'cedo' ? 'Passou cedo: a zaga cortou.' : why === 'tarde' ? 'Passou tarde: a zaga fechou.' : 'Demorou e ele passou do último zagueiro: impedido.';
-      setTimeout(() => { b3.dispose(); opts.onDone(ok, ok ? 'passe' : why); }, 1500);
+      setTimeout(() => { b3.dispose(); if (cine) cine.dispose(); opts.onDone(ok, ok ? 'passe' : why); }, 1500);
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

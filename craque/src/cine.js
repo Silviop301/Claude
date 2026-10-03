@@ -117,6 +117,20 @@
         }
         for (let i = 0; i < (n || 120) / 2; i++) parts.push({ kind: 'conf', x: R(0, W), y: R(-60, -5), vx: R(-20, 20), vy: R(20, 80), g: 60, drag: 0.99, rot: R(0, 6), vr: R(-10, 10), r: R(2, 3.6), c: cs[i % cs.length], life: R(2, 3), fade: 0.8 });
       },
+      // Lance a seu favor em (x, y): clarão, tremor, faíscas, câmera chega perto e abre com confete
+      win(x, y, colors, spark) {
+        if (!enabled) return;
+        api.flash(true); api.shake(7, 700); api.sparks(x, y, 22, spark || '#FFF6C8'); api.grade('goal');
+        api.to(x, y, 1.35, 260);
+        setTimeout(() => { api.confetti(colors, 140); api.to(W / 2, 190, 1.05, 900); }, 300);
+      },
+      // Lance contra: cena apagada e um tremor curto
+      lose(x, y, a) {
+        if (!enabled) return;
+        api.shake(a || 3, 350); api.grade('miss');
+        if (x != null) { api.to(x, y, 1.3, 240); setTimeout(() => api.to(W / 2, 170, 1.05, 900), 450); }
+        else api.to(W / 2, 170, 1.05, 700);
+      },
       // Para tudo por ms (impacto); devolve uma Promise
       hitstop(ms) { return new Promise(r => setTimeout(r, enabled ? ms : 0)); },
       dispose() { alive = false; cancelAnimationFrame(raf); },
