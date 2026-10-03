@@ -528,7 +528,7 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .k-wallman .k-socks { fill: #9E1F2A; }
 .k-wallman .k-head { fill: #E8B58C; }
 .ball3d-fly { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-.kick-banner { z-index: 2; }
+.kick-banner { z-index: 3; }
 .k-keeper .kp-shirt { fill: #F2C230; }
 .k-keeper .kp-arm { fill: #E0AE1C; }
 .k-keeper .kp-shorts { fill: #1E2A36; }
@@ -2141,3 +2141,20 @@ details.fin-more[open] { display: flex; flex-direction: column; gap: 12px; paddi
 .rk-bots { margin: 0 0 8px; padding: 8px 12px; border-radius: 12px; background: rgba(255,255,255,.06); color: #D3E4D9; font-size: 13px; }
 .rk-bots b { color: var(--gold); }
 .sh-parts b.neg { color: #E8857A; }
+
+/* Câmera e efeitos dos minigames (cine.js) */
+.k-cam { position: relative; transform-origin: 0 0; transition: filter .5s ease; }
+.k-cam[data-grade="goal"] { filter: saturate(1.25) brightness(1.06) contrast(1.05); }
+.k-cam[data-grade="miss"] { filter: saturate(.55) brightness(.85); }
+.k-fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+.k-flashwhite { position: absolute; inset: 0; background: #FFFBE8; opacity: 0; pointer-events: none; z-index: 2; mix-blend-mode: screen; }
+.k-flashwhite.on { animation: k-white .45s ease-out; }
+.k-flashwhite.on.strong { animation-duration: .7s; }
+@keyframes k-white { 0% { opacity: .85; } 100% { opacity: 0; } }
+.kick-stage.cine .k-crowd g:nth-child(7n) { animation: k-sway 1.6s ease-in-out infinite alternate; transform-box: fill-box; }
+.kick-stage.cine .k-crowd g:nth-child(11n) { animation: k-sway 1.1s ease-in-out infinite alternate-reverse; transform-box: fill-box; }
+@keyframes k-sway { to { transform: translateY(-1.5px); } }
+.kick-stage.cine .k-crowd.cheer g { animation: hop .32s ease-in-out 5 alternate; }
+.k-beams { mix-blend-mode: screen; animation: k-beam 6s ease-in-out infinite alternate; }
+@keyframes k-beam { to { opacity: .7; } }
+@media (prefers-reduced-motion: reduce) { .k-beams, .kick-stage.cine .k-crowd g { animation: none !important; } }

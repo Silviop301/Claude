@@ -21,6 +21,14 @@
 
   // zoom (opcional) [escala, y da linha do gol]: câmera mais longe. O gol e o goleiro encolhem por igual, e as marcações
   // do gramado ficam por conta de quem chamou (a perspectiva delas muda com a distância da câmera).
+  // Luz de estádio: fachos dos refletores, névoa sobre a arquibancada e o gramado mais claro no meio
+  const lit = !(typeof location !== 'undefined' && /[?&]cine=0/.test(location.search));
+  const LIGHT = '<defs><linearGradient id="k-beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF6D0" stop-opacity=".22"/><stop offset="1" stop-color="#FFF6D0" stop-opacity="0"/></linearGradient>' +
+    '<linearGradient id="k-haze" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B1A12" stop-opacity=".55"/><stop offset=".7" stop-color="#0B1A12" stop-opacity=".1"/><stop offset="1" stop-color="#0B1A12" stop-opacity="0"/></linearGradient>' +
+    '<radialGradient id="k-pool" cx=".5" cy=".55" r=".6"><stop offset="0" stop-color="#E8FFD8" stop-opacity=".16"/><stop offset="1" stop-color="#E8FFD8" stop-opacity="0"/></radialGradient></defs>' +
+    '<rect width="360" height="50" fill="url(#k-haze)" pointer-events="none"/>' +
+    '<g class="k-beams" pointer-events="none"><path d="M-10 -5 L40 -5 L230 320 L60 320Z" fill="url(#k-beam)"/><path d="M320 -5 L370 -5 L300 320 L130 320Z" fill="url(#k-beam)"/></g>' +
+    '<ellipse cx="180" cy="215" rx="240" ry="120" fill="url(#k-pool)" pointer-events="none"/>';
   function scene(setup, side, zoom) {
     // Rede com profundidade: fundo (menor e mais alto), laterais e teto
     const BX = 0.9, BT = 80, BB = 178; // trave de trás: ±0.9 da largura, topo e base
@@ -79,6 +87,7 @@
       '<animateTransform attributeName="transform" type="translate" from="0 0" to="-300 0" dur="9s" repeatCount="indefinite"/></g>' +
       // gramado, marcações em perspectiva
       '<rect y="62" width="360" height="258" fill="url(#k-grass)"/>' + stripes.join('') +
+      (lit ? LIGHT : '') +
       '<g id="k-world"' + (zoom ? ' transform="translate(180 ' + zoom[1] + ') scale(' + zoom[0] + ') translate(-180 -' + GY + ')"' : '') + '>' +
       (zoom ? '' : '<line x1="0" y1="' + GY + '" x2="360" y2="' + GY + '" ' + L + '/>' +
       '<path d="M' + px(-1.5) + ' ' + GY + ' L' + px(-1.68) + ' 218 H' + px(1.68) + ' L' + px(1.5) + ' ' + GY + '" ' + L + '/>' +
@@ -262,6 +271,18 @@
     const aim = svg.querySelector('#k-aim'), vline = svg.querySelector('#k-vline'), hline = svg.querySelector('#k-hline'), dot = svg.querySelector('#k-dot');
     const shadow = svg.querySelector('#k-shadow'), trail = Array.from(svg.querySelectorAll('#k-trail circle'));
     const stage = el.querySelector('.kick-stage');
+    // Câmera e efeitos (cine.js); a bola 3D vai junto com a cena, dentro da camada da câmera
+    const cine = root.CRAQUE_CINE ? root.CRAQUE_CINE(stage) : null, on = cine && cine.enabled;
+    // Você, de costas, atrás da bola (só com a câmera nova)
+    const C = root.CRAQUE_CHARS, kitsK = C ? C.kits(c, m.vs || (c.moment && c.moment.vs)) : null;
+    let you = null;
+    if (on && C) {
+      const me = C.look(c);
+      you = C.put('jogador-2d', Object.assign({ kit: 'atacante', view: 'costas', anim: 'chute', num: String(c.number || 9), nome: (c.name || '').split(' ').pop().toUpperCase().slice(0, 10) },
+        me, kitsK.mine, me.boots ? { boots: me.boots } : {}), svg, ball);
+      you.place(BALL.x - 15, BALL.y + 19, 118); you.pose(0, 'chute');
+      cine.intro(GX, 125, 1.75, 1300);
+    }
     // Bola 3D por cima do desenho (se o 3D não carregar, fica a bola desenhada)
     let gone = false, goal = null;
     goal3d(svg).then(g => { if (!g) return; if (gone) return g.dispose(); goal = g; });
@@ -269,9 +290,9 @@
     const spr = keeperSprite(svg);
     spr.stand(setup.fk ? px(0.4 * side) : GX); spr.idle();
     const wallAnim = animateWall(svg, c);
-    const b3 = ball3d(stage, ball);
+    const b3 = ball3d(on ? stage.querySelector('.k-cam') : stage, ball);
     const place = b3.place;
-    const finish = (ok, why) => { gone = true; b3.dispose(); if (goal) goal.dispose(); opts.onDone(ok, why); };
+    const finish = (ok, why) => { gone = true; b3.dispose(); if (goal) goal.dispose(); if (cine) cine.dispose(); opts.onDone(ok, why); };
     place(BALL.x, BALL.y, BALL.r);
     setKeeper(keeper, setup.fk ? px(0.4 * side) - GX : 0, 0, 0);
     aim.setAttribute('opacity', '1');
@@ -317,6 +338,26 @@
 
     const sfx = n => { if (root.CRAQUE_SFX) root.CRAQUE_SFX.play(n); };
     function shoot(dx, y) {
+      if (on && you) {
+        help.innerHTML = '&nbsp;';
+        aim.setAttribute('opacity', '0');
+        cine.to(180, 205, 1.15, 520);
+        const r0 = performance.now(), RUN = 520;
+        (function run(now) {
+          if (!svg.isConnected) return;
+          const q = Math.min(1, (now - r0) / RUN);
+          you.pose(0.46 * q, 'chute');
+          if (q < 1) return requestAnimationFrame(run);
+          cine.turf(BALL.x, BALL.y + 8, 16); cine.shake(2.5, 200);
+          const f0 = performance.now();
+          (function follow(now2) { if (!svg.isConnected) return; const q2 = Math.min(1, (now2 - f0) / 500); you.pose(0.46 + 0.36 * q2, 'chute'); if (q2 < 1) requestAnimationFrame(follow); })(f0);
+          kickNow(dx, y);
+        })(r0);
+        return;
+      }
+      kickNow(dx, y);
+    }
+    function kickNow(dx, y) {
       sfx('kick');
       wallAnim.jump(); // a barreira pula junto, na hora do chute
       help.innerHTML = '&nbsp;';
@@ -368,18 +409,24 @@
       const kDx = K.dx, kDy = K.dy, kRot = K.rot;
       const k0 = setup.fk ? px(0.4 * side) - GX : 0;
       const T = setup.fk ? 760 : 620, start = performance.now();
-      spr.dive(G.x, G.y, G.dir, T * 0.75, 90);
+      // Câmera lenta: a partir de 55% do voo, o tempo anda SLOW vezes mais devagar (só com a câmera nova)
+      const SLOW = on ? 2.4 : 1, A = T * 0.55;
+      const vt = r => r < A ? r : A + (r - A) / SLOW, real = v => v < A ? v : A + (v - A) * SLOW;
+      spr.dive(G.x, G.y, G.dir, real(T * 0.75 + 90) - 90, 90);
+      let cur = { x: BALL.x, y: BALL.y };
+      if (on) cine.follow(() => { const e = Math.min(1, Math.max(0, (cur.y - BALL.y) / (ty - BALL.y || 1))); return { x: cur.x * 0.7 + GX * 0.3, y: cur.y * 0.6 + 130 * 0.4, z: 1.15 + 0.45 * e }; });
       // Trajetória em curva (Bézier): no pênalti, um arco leve; na falta, a bola abre e volta por cima da barreira
       const dir = Math.sign(tx - BALL.x) || side;
       const cx = setup.fk ? BALL.x + (tx - BALL.x) * 0.15 - dir * 55 : (BALL.x + tx) / 2;
       const cy = setup.fk ? Math.min(BALL.y, ty) - 95 : (BALL.y + ty) / 2 - 22;
       const hist = [];
       (function fly(now) {
-        const u = Math.min(1, (now - start) / T), e = ease(u), q = 1 - e;
+        const u = Math.min(1, vt(now - start) / T), e = ease(u), q = 1 - e;
         const bx = q * q * BALL.x + 2 * q * e * cx + e * e * tx;
         const by = q * q * BALL.y + 2 * q * e * cy + e * e * ty;
         const br = BALL.r + (tr - BALL.r) * e;
         place(bx, by, br, 0.45 * (1 - e) + 0.05);
+        cur = { x: bx, y: by };
         // Rastro: posições de alguns quadros atrás
         hist.unshift([bx, by, br]);
         trail.forEach((t, i) => {
@@ -393,7 +440,7 @@
         shadow.setAttribute('cx', bx); shadow.setAttribute('cy', gy);
         shadow.setAttribute('rx', br * 1.3 * (1 - Math.min(0.5, hgt / 300))); shadow.setAttribute('ry', br * 0.35);
         shadow.setAttribute('opacity', Math.max(0.15, 1 - hgt / 160));
-        const ku = Math.min(1, Math.max(0, (now - start - 90) / (T * 0.75)));
+        const ku = Math.min(1, Math.max(0, (vt(now - start) - 90) / (T * 0.75)));
         const ke = ease(ku);
         setKeeper(keeper, k0 + (kDx - k0) * ke, kDy * ke, kRot * ke);
         if (u < 1) return requestAnimationFrame(fly);
@@ -406,6 +453,16 @@
       const banner = el.querySelector('#k-banner');
       const txt = { gol: 'GOOOL!', defesa: 'DEFENDEU!', trave: 'NA TRAVE!', fora: 'PRA FORA!', alto: 'POR CIMA!', barreira: 'NA BARREIRA!' }[res.why];
       sfx(res.ok ? 'goal' : 'miss');
+      if (on) {
+        if (res.ok) {
+          cine.flash(true); cine.shake(7, 700); cine.sparks(bx, by, 22, '#FFF6C8'); cine.grade('goal');
+          cine.to(GX, 140, 1.3, 260);
+          setTimeout(() => { cine.confetti(kitsK ? [kitsK.mine.shirt, kitsK.mine.shorts, kitsK.mine.trim, '#F2C230'] : null, 140); cine.to(180, 200, 1.05, 900); }, 280);
+          if (you) { const c0 = performance.now(); (function cel(now) { if (!svg.isConnected) return; you.pose(((now - c0) / 1100) % 1, 'comemoracao'); requestAnimationFrame(cel); })(c0); }
+        } else if (res.why === 'trave') { cine.shake(6, 500); cine.sparks(bx, by, 26); cine.flash(false); cine.grade('miss'); cine.to(bx, by, 1.5, 200); setTimeout(() => cine.to(180, 170, 1.05, 900), 400); }
+        else if (res.why === 'defesa') { cine.shake(4, 350); cine.sparks(bx, by, 14, '#B8F25C'); cine.grade('miss'); cine.to(bx, by + 20, 1.45, 220); setTimeout(() => cine.to(180, 170, 1.05, 900), 450); }
+        else { cine.shake(res.why === 'barreira' ? 4 : 2, 300); cine.grade('miss'); cine.to(180, 170, 1.05, 700); }
+      }
       if (res.ok) {
         svg.querySelector('#k-net').classList.add('shake');
         if (goal) goal.bulge(bx, by); // rede 3D estufa no ponto do gol
