@@ -268,9 +268,13 @@
   S.windowOpen = c => c.contract <= 0 || c.wantsOut;
   S.canRetire = c => c.age >= 33;
   S.canAnnounce = c => c.age >= 32 && !c.farewell;
-  // Fim obrigatório: aos 42 anos, ou antes (a partir dos 33) se a carta cair abaixo de 45
-  S.RETIRE_AGE = 42; S.RETIRE_OVR = 45;
-  S.mustRetire = c => c.age >= S.RETIRE_AGE || (c.age >= 33 && S.ovr(c) < S.RETIRE_OVR) || (c.farewell && c.seasons.length && c.seasons[c.seasons.length - 1].farewell);
+  // Fim obrigatório: aos 40 anos, ou antes (a partir dos 33) se a carta cair 12 abaixo do auge (ou abaixo de 45)
+  S.RETIRE_AGE = 40; S.RETIRE_OVR = 45; S.RETIRE_DROP = 12;
+  // Linha do fim: a partir dos 33, a carta não pode cair mais que RETIRE_DROP abaixo do auge (nem abaixo de RETIRE_OVR)
+  S.retireLine = c => Math.max(S.RETIRE_OVR, (c.peak || 0) - S.RETIRE_DROP);
+  // Perto do fim: a próxima temporada já pode ser a última (mesma queda da última temporada cruzaria a linha)
+  S.nearRetire = (c, drop) => !c.farewell && c.age >= 32 && (c.age + 1 >= S.RETIRE_AGE || S.ovr(c) + Math.min(drop || 0, -2) < S.retireLine(c));
+  S.mustRetire = c => c.age >= S.RETIRE_AGE || (c.age >= 33 && S.ovr(c) < S.retireLine(c)) || (c.farewell && c.seasons.length && c.seasons[c.seasons.length - 1].farewell);
   S.announce = function (c) {
     c.farewell = true;
     bump(c, 'fans', 10);

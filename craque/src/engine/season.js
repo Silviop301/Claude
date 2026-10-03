@@ -7,7 +7,8 @@
   const AGE_GROWTH = age => (age <= 20 ? 0.24 : age <= 23 ? 0.17 : age <= 26 ? 0.08 : age <= 29 ? 0.02 : 0);
   // Ajuste geral da evolução (as características dão menos atributo desde que ganharam efeitos próprios)
   const GROWTH_K = 0.9;
-  const AGE_DECLINE = age => (age <= 30 ? 0 : age <= 32 ? 1.8 : age <= 34 ? 3.5 : 5);
+  // Declínio pela idade: começa aos 31 e acelera depois dos 34 (a carreira tem fim, ver S.mustRetire)
+  const AGE_DECLINE = age => (age <= 30 ? 0 : age <= 32 ? 3 : age <= 34 ? 5.5 : age <= 36 ? 8 : 10);
 
   S.playSeason = function (c) {
     const { r, save } = rngOf(c);
