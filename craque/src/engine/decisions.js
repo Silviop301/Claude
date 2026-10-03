@@ -25,8 +25,8 @@
       ['Infiltração?', 'Clássico decisivo e o joelho reclamando. O médico oferece uma infiltração para você jogar.']]),
     options: c => [
       risk('Jogar no sacrifício', P(0.45, X.t(c, 'raca', 0.15), X.t(c, 'pro', 0.1), X.young(c, 0.05), X.vet(c, -0.15), X.edge(c, 0.03)),
-        out('herói', { main: 3, pot: T(c, 1, 21), fans: 12 }, 'Você decidiu o clássico mancando. Herói! A confiança foi lá em cima e o seu jogo subiu de nível.'),
-        out('lesão longa', { inj: 0.3, main: -3, pot: T(c, -1, 21) }, 'A lesão piorou. Meses fora, e você voltou sem a mesma explosão.')),
+        out('herói', { main: 2, pot: T(c, 1, 20), fans: 12 }, 'Você decidiu o clássico mancando. Herói! A confiança foi lá em cima e o seu jogo subiu de nível.'),
+        out('lesão longa', { inj: 0.3, main: -2, pot: T(c, -1, 20) }, 'A lesão piorou. Meses fora, e você voltou sem a mesma explosão.')),
       safe('Poupar', { fans: -6 }, 'A torcida reclamou, mas você voltou inteiro.'),
     ],
   });
@@ -35,9 +35,9 @@
       ['Fisgada na coxa', 'Sentiu a coxa no aquecimento. Jogo importante hoje.'],
       ['Panturrilha travada', 'A panturrilha travou no treino da véspera. O técnico conta com você.']]),
     options: c => [
-      risk('Jogar mesmo assim', P(0.5, X.t(c, 'pro', 0.15), X.t(c, 'raca', 0.05), X.young(c, 0.1), X.edge(c, 0.03)),
-        out('decide o jogo', { main: 2, pot: T(c, 1, 21), coach: 10 }, 'Aguentou firme e ainda foi o melhor em campo. O técnico não esquece.'),
-        out('estiramento', { inj: 0.25, main: -2, pot: T(c, -1, 21) }, 'A fisgada virou estiramento. Semanas de departamento médico, e a perna demorou a voltar a ser a mesma.')),
+      risk('Jogar mesmo assim', P(0.45, X.t(c, 'pro', 0.15), X.t(c, 'raca', 0.05), X.young(c, 0.05), X.edge(c, 0.03)),
+        out('decide o jogo', { main: 2, pot: T(c, 1, 20), coach: 10 }, 'Aguentou firme e ainda foi o melhor em campo. O técnico não esquece.'),
+        out('estiramento', { inj: 0.25, main: -2, pot: T(c, -1, 20) }, 'A fisgada virou estiramento. Semanas de departamento médico, e a perna demorou a voltar a ser a mesma.')),
       safe('Avisar o médico', { min: -0.05 }, 'Duas semanas de tratamento e voltou 100%.'),
     ],
   });
@@ -96,9 +96,9 @@
   S.stake('dieta', {
     build: () => ({ title: 'Nutricionista linha-dura', text: 'O clube contratou uma nutricionista que cortou tudo: açúcar, fritura, refrigerante.' }),
     options: c => [
-      risk('Seguir à risca', P(0.5, X.t(c, 'pro', 0.25), X.young(c, 0.1), X.t(c, 'estrela', -0.15)),
+      risk('Seguir à risca', P(0.45,X.t(c, 'pro', 0.25), X.young(c, 0.05), X.t(c, 'estrela', -0.15)),
         out('corpo novo', { attr: { fis: 3, rit: 2 }, pot: T(c, 1, 21) }, 'Três quilos a menos, mais explosão e um fôlego que você não conhecia.'),
-        out('sem energia', { form: -0.08, attr: { fis: -3 } }, 'Cortou demais, perdeu massa muscular e ficou sem energia nos jogos.')),
+        out('sem energia', { form: -0.08, attr: { fis: -3 }, pot: T(c, -1, 21) }, 'Cortou demais, perdeu massa muscular e ficou sem energia nos jogos.')),
       safe('Seguir mais ou menos', { form: 0.03 }, 'Um pouco de cada. O corpo não reclamou.'),
     ],
   });
@@ -108,10 +108,10 @@
       return { title: 'Um veterano quer te ensinar', text: 'O jogador mais experiente do elenco se ofereceu para treinar com você depois dos treinos.', attr: k };
     },
     options: c => [
-      risk('Aceitar os treinos extras', P(0.65, X.t(c, 'pro', 0.15), X.t(c, 'estrela', -0.15)),
-        out('aprende tudo', { main: 2, pot: 1, coach: 6 }, 'Meses de treino fino. Dá para ver a diferença no seu jogo, e você ainda tem muito para crescer.'),
-        out('carga demais', { inj: 0.15, coach: 4 }, 'A carga dobrada cobrou um músculo antes de você aprender o que ele ensinava.')),
-      safe('Aproveitar a folga', { form: 0.06, fame: 6 }, 'Você chegou descansado para a temporada.'),
+      risk('Aceitar os treinos extras', P(0.45, X.t(c, 'pro', 0.15), X.t(c, 'estrela', -0.15)),
+        out('aprende tudo', { main: 1, pot: T(c, 1), coach: 6 }, 'Meses de treino fino. Dá para ver a diferença no seu jogo, e você ainda tem muito para crescer.'),
+        out('carga demais', { inj: 0.2, form: -0.05, pot: T(c, -1) }, 'A carga dobrada cobrou um músculo antes de você aprender o que ele ensinava, e você ficou para trás na formação.')),
+      safe('Aproveitar a folga', { form: 0.04, fame: 4 }, 'Você chegou descansado para a temporada.'),
     ],
   });
 
@@ -131,7 +131,7 @@
       risk('Aceitar a faixa', P(0.45, X.t(c, 'lider', 0.3), c.age >= 26 ? 0.1 : 0, X.coach(c, 0.1), X.young(c, -0.15)),
         out('líder nato', { captain: true, coach: 12, fans: 6, form: 0.08 }, 'Capitão ' + D.do(club(c).name) + '. A faixa te fez crescer em campo.'),
         out('a faixa pesa', { captain: true, form: -0.08, fans: -8, coach: -6 }, 'Capitão ' + D.do(club(c).name) + ', mas a cobrança pesou nos primeiros meses.')),
-      safe('Recusar', {}, 'Você preferiu focar só no seu jogo.', { note: 'Sem pressão extra' }),
+      safe('Recusar', { form: 0.03 }, 'Você preferiu focar só no seu jogo.', { note: 'Sem pressão extra' }),
     ],
   });
   S.stake('concentracao', {
@@ -253,9 +253,9 @@
       ['Churrasco que vira festa', 'O churrasco da família virou festão. Já passa da meia-noite e tem jogo amanhã.']]),
     options: c => [
       risk('Ir na festa', P(0.5, X.t(c, 'estrela', 0.1), X.t(c, 'pro', -0.1)),
-        out('ninguém viu', { fame: 12, form: 0.04 }, 'Curtiu, bombou nas redes e ainda jogou bem no dia seguinte.'),
-        out('flagrado', { fame: 6, coach: -15, min: -0.12, pot: T(c, -1, 22) }, 'Foi flagrado de madrugada. O técnico te deixou no banco' + (c.age <= 22 ? ' e o clube passou a duvidar de você.' : '.'))),
-      safe('Ficar em casa', { coach: 6, form: 0.03 }, 'Descansou. O técnico notou a maturidade.'),
+        out('ninguém viu', { fame: 15, fans: 4, form: 0.1 }, 'Curtiu, bombou nas redes e jogou leve como nunca no dia seguinte.'),
+        out('flagrado', { fame: 6, coach: -15, min: -0.12, form: -0.04 }, 'Foi flagrado de madrugada. O técnico te deixou no banco' + (c.age <= 22 ? ' e o clube passou a duvidar de você.' : '.'))),
+      safe('Ficar em casa', { coach: 5, form: 0.02 }, 'Descansou. O técnico notou a maturidade.'),
     ],
   });
   S.stake('redes', {
@@ -362,8 +362,10 @@
       ['Projeto na sua cidade', 'Uma escolinha de futebol da sua cidade natal pede ajuda para não fechar.'],
       ['Campo do bairro', 'O campinho onde você começou vai virar estacionamento. A comunidade pede ajuda.']]), { value: Math.max(100000, Math.round(c.money * 0.1 / 1000) * 1000) }),
     options: (c, ev) => [
-      safe('Doar R$ ' + money(ev.value), { money: -ev.value, fans: 10, fame: 12, form: 0.03 }, 'A escolinha agora leva o seu nome.'),
-      safe('Agora não', {}, 'Fica para a próxima.'),
+      safe('Doar R$ ' + money(ev.value), { money: -ev.value, fans: 8, fame: 8 }, 'A escolinha agora leva o seu nome.'),
+      risk('Agora não', P(0.6, X.fans(c, 0.1)),
+        out('foco total', { form: 0.1 }, 'Fica para a próxima. Sem distração, você fez a melhor fase do ano.'),
+        out('a recusa vaza', { fans: -8, fame: -4, form: -0.04 }, 'A recusa vazou: "craque milionário vira as costas para a própria cidade". O assunto te perseguiu por semanas.')),
     ],
   });
 
@@ -452,7 +454,7 @@
     options: (c, ev) => {
       const fight = risk('Brigar pela vaga', P(0.45, X.edge(c, 0.035), X.t(c, 'raca', 0.15), X.t(c, 'pro', 0.1)),
         out('vira titular', { min: 0.25, main: 1, coach: 15 }, 'Treinou como nunca e ganhou a posição.'),
-        out('segue no banco', { min: -0.1, coach: -5, pot: T(c, -1, 23) }, 'O técnico não mudou de ideia. Mais uma temporada no banco.'));
+        out('segue no banco', { min: -0.1, coach: -8, form: -0.1 }, 'O técnico não mudou de ideia e a cobrança pesou. Mais uma temporada no banco, e sem ritmo.'));
       return ev.dest ? [
         { label: 'Ir para ' + D.o(D.CLUB_BY_ID[ev.dest].name), note: 'Titular num clube menor', safe: { fx: { move: true, fans: -10 }, txt: 'Você foi para ' + D.o(D.CLUB_BY_ID[ev.dest].name) + ' para ser titular.' } },
         fight,
@@ -462,19 +464,19 @@
   S.stake('tecnico', {
     build: c => ({ title: 'Técnico novo, esquema novo', text: D.O(club(c).name) + ' trocou de técnico. Ele quer você jogando aberto pela ponta.' }),
     options: c => [
-      safe('Topar jogar pela ponta', { attr: { dri: 1 }, assist: 0.2, goal: -0.1, coach: 10 }, 'Você virou peça-chave do novo esquema.'),
-      risk('Exigir sua posição', P(0.5, X.edge(c, 0.035), X.t(c, 'lider', 0.1)),
+      safe('Topar jogar pela ponta', { assist: 0.2, goal: -0.1, coach: 10 }, 'Você virou peça-chave do novo esquema.'),
+      risk('Exigir sua posição', P(0.45, X.edge(c, 0.035), X.t(c, 'lider', 0.1)),
         out('ele cede', { goal: 0.1, main: 1 }, 'O técnico entendeu e montou o time em volta de você.'),
-        out('banco', { coach: -15, min: -0.15 }, 'Ele não gostou nada. Você começa a temporada no banco.')),
+        out('banco', { coach: -15, min: -0.15, form: -0.08 }, 'Ele não gostou nada. Você começa a temporada no banco, e sem ritmo.')),
     ],
   });
   S.stake('funcao', {
     build: c => ({ title: 'Técnico novo, função nova', text: 'O novo técnico ' + D.do(club(c).name) + ' quer te usar como ' + (c.pos === 'ATA' ? 'meia armador' : 'falso 9') + ' nesta temporada.' }),
     options: c => [
-      safe('Aceitar a função', c.pos === 'ATA' ? { attr: { pas: 2 }, goal: -0.2, assist: 0.4, coach: 12 } : { attr: { fin: 2 }, goal: 0.4, assist: -0.2, coach: 12 }, 'Você se adaptou à função e aprendeu um jogo novo.'),
-      risk('Recusar', P(0.45, X.edge(c, 0.035)),
-        out('ele recua', { coach: -5 }, 'O técnico recuou e te deixou na sua posição.'),
-        out('perde espaço', { coach: -20, min: -0.12 }, 'O técnico não gostou. Vai ter que provar em campo, vindo do banco.')),
+      risk('Aceitar a função', P(0.5, X.coach(c, 0.1), X.t(c, 'pro', 0.1), X.t(c, 'adaptavel', 0.15)),
+        out('aprende um jogo novo', c.pos === 'ATA' ? { attr: { pas: 2 }, goal: -0.2, assist: 0.4, coach: 12 } : { attr: { fin: 2 }, goal: 0.4, assist: -0.2, coach: 12 }, 'Você se adaptou à função e aprendeu um jogo novo.'),
+        out('peixe fora d\'água', { form: -0.08, coach: -6, min: -0.05 }, 'Você não se encontrou na função nova. Partidas apagadas e o técnico começou a te tirar no intervalo.')),
+      safe('Recusar', { coach: -8, form: 0.03 }, 'O técnico recuou e te deixou na sua posição, mas não esqueceu da recusa.'),
     ],
   });
   S.stake('reserva_luxo', {
@@ -531,13 +533,13 @@
       ['Jejum de gols', 'Oito jogos sem marcar. A imprensa já conta os minutos.'],
       ['A bola não entra', 'Trave, goleiro, VAR... a fase não ajuda. Faz um mês que você não marca.']]),
     options: c => [
-      risk('Ficar depois do treino finalizando', P(0.7, X.t(c, 'pro', 0.15)),
-        out('a bola volta a obedecer', { attr: { fin: 3 } }, 'Trezentas finalizações depois, a bola voltou a obedecer.'),
-        out('ansiedade', { attr: { fin: 1 }, form: -0.05 }, 'Você treinou muito, mas a ansiedade seguiu em campo.')),
-      safe('Conversar com a psicóloga do clube', { form: 0.1 }, 'A cabeça leve fez a diferença. Os gols voltaram.'),
-      risk('Ignorar e seguir', P(0.4, X.t(c, 'frieza', 0.15)),
-        out('desencanta', { goal: 0.15, form: 0.05 }, 'Gol de canela no fim do jogo. Desencantou!'),
-        out('a seca continua', { form: -0.08 }, 'A seca continuou por mais algumas semanas.')),
+      risk('Ficar depois do treino finalizando', P(0.5, X.t(c, 'pro', 0.15)),
+        out('a bola volta a obedecer', { attr: { fin: 2 } }, 'Trezentas finalizações depois, a bola voltou a obedecer.'),
+        out('ansiedade', { attr: { fin: -1 }, form: -0.08 }, 'Você treinou muito, mas a ansiedade travou o pé. Até no treino a bola passou a sair torta.')),
+      safe('Conversar com a psicóloga do clube', { form: 0.05 }, 'A cabeça leve fez a diferença. Os gols voltaram.'),
+      risk('Ignorar e seguir', P(0.45, X.t(c, 'frieza', 0.15)),
+        out('desencanta', { goal: 0.15, form: 0.08 }, 'Gol de canela no fim do jogo. Desencantou!'),
+        out('a seca continua', { form: -0.06 }, 'A seca continuou por mais algumas semanas.')),
     ],
   });
   S.stake('recuperacao', {
@@ -568,10 +570,10 @@
   S.stake('volante', {
     build: () => ({ title: 'Zagueiro de volante?', text: 'O técnico quer te testar como volante para sair jogando.' }),
     options: c => [
-      risk('Topar o desafio', P(0.65, X.t(c, 'pro', 0.1), X.edge(c, 0.02)),
-        out('passe novo', { attr: { pas: 3 }, assist: 0.3 }, 'Você descobriu um passe longo que ninguém conhecia.'),
-        out('perdido em campo', { attr: { pas: 1 }, form: -0.06 }, 'Aprendeu alguma coisa, mas sofreu muito na função nova.')),
-      safe('Ficar na zaga', { coach: -4 }, 'O técnico aceitou, mas não gostou.'),
+      risk('Topar o desafio', P(0.55, X.t(c, 'pro', 0.1), X.edge(c, 0.02)),
+        out('passe novo', { attr: { pas: 2 }, assist: 0.3 }, 'Você descobriu um passe longo que ninguém conhecia.'),
+        out('perdido em campo', { form: -0.08, coach: -6, min: -0.05 }, 'Você sofreu muito na função nova, errou passes bobos e perdeu espaço no time.')),
+      safe('Ficar na zaga', { coach: -4, form: 0.03 }, 'O técnico aceitou, mas não gostou. Na sua posição, você seguiu firme.'),
     ],
   });
   S.stake('lateral', {
@@ -595,9 +597,9 @@
   S.stake('reserva_gol', {
     build: () => ({ title: 'O reserva está chegando', text: 'O goleiro reserva, de 19 anos, está voando nos treinos. A imprensa pede a vez dele.' }),
     options: c => [
-      risk('Treinar dobrado', P(0.65, X.t(c, 'pro', 0.15), X.vet(c, -0.1)),
-        out('fecha o gol', { attr: { fin: 3 } }, 'Você fechou o gol. A vaga continuou sua.'),
-        out('sobrecarga', { inj: 0.12, attr: { fin: 1 } }, 'Treinou tanto que o ombro reclamou. O garoto jogou algumas.')),
+      risk('Treinar dobrado', P(0.55, X.t(c, 'pro', 0.15), X.vet(c, -0.1)),
+        out('fecha o gol', { attr: { fin: 2 } }, 'Você fechou o gol. A vaga continuou sua.'),
+        out('sobrecarga', { inj: 0.15, min: -0.1, form: -0.05, pot: T(c, -1, 21) }, 'Treinou tanto que o ombro reclamou. O garoto jogou algumas e você voltou sem ritmo.')),
       risk('Ajudar o garoto', P(0.7, X.edge(c, 0.03)),
         out('liderança', { coach: 8, fans: 4 }, 'Liderança de verdade. O vestiário te respeita ainda mais.'),
         out('perde a vaga', { coach: 8, min: -0.2 }, 'O garoto aproveitou a chance e jogou meia temporada.')),
@@ -617,7 +619,7 @@
   S.stake('sub20', {
     build: () => ({ title: 'Convocado para a seleção sub-20', text: 'O torneio coincide com jogos importantes do clube.' }),
     options: c => [
-      risk('Ir para a seleção', P(0.45, X.edge(c, 0.04), X.t(c, 'patriota', 0.15)),
+      risk('Ir para a seleção', P(0.3, X.edge(c, 0.03), X.t(c, 'patriota', 0.15)),
         out('brilha', { fame: 16, main: 1, pot: T(c, 1, 21) }, 'Brilhou na seleção e o país inteiro conheceu seu nome.'),
         out('reserva na seleção', { fame: 4, coach: -10, min: -0.1, pot: T(c, -1, 21) }, 'Ficou no banco da seleção e ainda perdeu espaço no clube, no momento de crescer.')),
       safe('Ficar no clube', { coach: 10, min: 0.1 }, 'O clube valorizou sua escolha.'),
@@ -628,7 +630,7 @@
       ['Olheiro na arquibancada', 'Um olheiro de um grande europeu veio assistir ao seu jogo.'],
       ['Relatório na mesa', 'Seu nome apareceu no relatório de um clube inglês. Eles mandam alguém no próximo jogo.']]),
     options: c => [
-      risk('Jogar para aparecer', P(0.45, X.edge(c, 0.04), X.t(c, 'estrela', 0.1)),
+      risk('Jogar para aparecer', P(0.4, X.edge(c, 0.03), X.t(c, 'estrela', 0.1)),
         out('o olheiro anota', { fame: 12, goal: 0.1, pot: T(c, 1, 22) }, 'Dribles, gol e o olheiro anotando sem parar.'),
         out('individualista', { fame: 6, coach: -12, min: -0.08, pot: T(c, -1, 22) }, 'Você prendeu a bola demais, o técnico reclamou e te tirou do time por um tempo.')),
       safe('Jogar para o time', { coach: 6, assist: 0.1 }, 'O olheiro elogiou sua leitura de jogo no relatório.'),
@@ -638,9 +640,9 @@
     build: c => ({ title: 'Saudade de casa', text: 'Primeiro ano em ' + D.countryOf(club(c)) + '. Frio, comida diferente e a família longe.' }),
     options: c => [
       safe('Trazer a família', { money: -120000, form: 0.06 }, 'Com a família por perto, o futebol voltou a fluir.'),
-      risk('Aguentar sozinho', P(0.5, X.t(c, 'adaptavel', 0.25), X.t(c, 'pro', 0.05)),
-        out('amadurece', { coach: 8, main: 1, pot: T(c, 1, 21) }, 'Foi duro, mas você amadureceu anos em meses.'),
-        out('as noites pesam', { form: -0.1, pot: T(c, -1, 21) }, 'As noites sozinho pesaram dentro de campo.')),
+      risk('Aguentar sozinho', P(0.4,X.t(c, 'adaptavel', 0.25), X.t(c, 'pro', 0.05)),
+        out('amadurece', { coach: 8, main: 1 }, 'Foi duro, mas você amadureceu anos em meses.'),
+        out('as noites pesam', { form: -0.1, min: -0.08, coach: -4 }, 'As noites sozinho pesaram dentro de campo, e o técnico percebeu.')),
     ],
   });
   S.stake('olimpiada', {
@@ -760,17 +762,21 @@
   // ========== terceira leva: treinos de posição (o ganho agora fica de verdade) e mais escolhas ==========
   S.stake('treino_gol', {
     build: () => ({ title: 'Preparador de goleiros novo', text: 'O preparador chegou com um método europeu: reação, saída do gol e jogo com os pés.' }),
-    options: () => [
-      safe('Foco em reflexo', { attr: { fin: 2 } }, 'Você começou a pegar bolas que antes entravam.'),
-      safe('Foco em jogo com os pés', { attr: { pas: 2 }, coach: 4 }, 'Agora o time sai jogando a partir de você.'),
+    options: c => [
+      risk('Foco em reflexo', P(0.5, X.t(c, 'pro', 0.15), X.young(c, 0.05), X.vet(c, -0.1)),
+        out('reflexo novo', { attr: { fin: 2 } }, 'Você começou a pegar bolas que antes entravam.'),
+        out('método não encaixa', { form: -0.08, attr: { fin: -1 } }, 'Você desaprendeu o tempo de bola antigo antes de pegar o novo. Frangos em sequência.')),
+      risk('Foco em jogo com os pés', P(0.55, X.t(c, 'pro', 0.1), X.coach(c, 0.1)),
+        out('sai jogando', { attr: { pas: 3 }, coach: 6 }, 'Agora o time sai jogando a partir de você.'),
+        out('saída errada', { form: -0.06, coach: -8 }, 'Uma saída errada virou gol deles, e o técnico mandou você dar chutão.')),
     ],
   });
   S.stake('aereo', {
     build: () => ({ title: 'Treino de bola aérea', text: 'O auxiliar monta um treino de cabeceio todo dia depois do treino.' }),
     options: c => [
-      risk('Topar', P(0.75, X.t(c, 'pro', 0.1), X.vet(c, -0.1)),
+      risk('Topar', P(0.55, X.t(c, 'pro', 0.1), X.vet(c, -0.1)),
         out('tempo de bola', { attr: { fis: 2 }, goal: 0.08 }, 'Tempo de bola afiado. Os cruzamentos viraram chance.'),
-        out('pescoço travado', { attr: { fis: 1 }, inj: 0.08 }, 'Aprendeu o tempo de bola, mas o pescoço travou por semanas.')),
+        out('pescoço travado', { inj: 0.12, form: -0.05 }, 'O pescoço travou por semanas, e você voltou fora de ritmo.')),
       safe('Poupar o pescoço', { form: 0.04 }, 'Descansado para a temporada.'),
     ],
   });
@@ -912,7 +918,9 @@
     build: c => { const prev = D.CLUB_BY_ID[c.spells[c.spells.length - 2].club]; return { title: 'Reencontro com ' + D.o(prev.name), text: 'Primeiro jogo contra seu ex-clube, onde a torcida te idolatrava.', prev: prev.id }; },
     options: (c, ev) => [
       one('Não comemorar se marcar', { fame: 8, legacy: 4 }, 'Você marcou e ergueu as mãos. O estádio inteiro aplaudiu.'),
-      one('Comemorar na cara deles', { fans: 10, fame: 6, prevFans: { club: ev.prev, n: -40 } }, 'A comemoração virou capa de jornal. Os antigos fãs não perdoaram.'),
+      risk('Comemorar na cara deles', P(0.55, X.t(c, 'estrela', 0.1), X.t(c, 'frieza', 0.1), X.edge(c, 0.02)),
+        out('capa de jornal', { fans: 12, fame: 10, form: 0.06, prevFans: { club: ev.prev, n: -40 } }, 'Você marcou e comemorou na cara deles. A comemoração virou capa de jornal. Os antigos fãs não perdoaram.'),
+        out('vaiado o jogo todo', { fame: 2, form: -0.06, prevFans: { club: ev.prev, n: -40 } }, 'Você provocou antes de marcar, foi vaiado o jogo inteiro e sumiu em campo. Os antigos fãs não perdoaram.')),
     ],
   });
   // Contrato e dinheiro
@@ -936,7 +944,7 @@
   });
   S.stake('empresario', {
     build: () => ({ title: 'Empresário famoso', text: 'O empresário mais poderoso do país quer cuidar da sua carreira.' }),
-    options: () => [risk('Assinar com ele', 0.65, out('nome nos grandes', { wage: 1.15, fame: 8 }, 'Contrato revisado e seu nome circulando nos grandes.'), out('força uma transferência', { wage: 1.15, fame: 8, wantsOut: true }, 'Em um mês, ele já estava negociando você com outros clubes.')),
+    options: () => [risk('Assinar com ele', 0.65, out('nome nos grandes', { wage: 1.15, fame: 15 }, 'Contrato revisado e seu nome circulando nos grandes.'), out('força uma transferência', { wage: 1.15, fame: 6, wantsOut: true, coach: -10, form: -0.04 }, 'Em um mês, ele já estava negociando você com outros clubes. O técnico se sentiu traído e a cabeça foi junto.')),
       one('Ficar com quem te trouxe', { fans: 4, coach: 4 }, 'Lealdade: quem esteve com você no começo continua com você.')],
   });
   S.stake('pai_empresario', {
@@ -946,8 +954,8 @@
   });
   S.stake('carro', {
     build: c => ({ title: 'O primeiro carrão', text: 'O primeiro salário bom caiu e a concessionária já ligou.', value: Math.round(Math.min(c.money * 0.4, 900000) / 1000) * 1000 }),
-    options: (c, ev) => [risk('Comprar o carrão (R$ ' + money(ev.value) + ')', 0.65, out('ostentação aprovada', { money: -ev.value, fame: 10 }, 'O carro virou notícia e você virou assunto.'), out('vira piada', { money: -ev.value, fame: 6, fans: -8, form: -0.04 }, 'Foi parado em blitz na porta do CT. O vídeo rodou o país.')),
-      one('Dar uma casa para a família', { money: -Math.round(ev.value * 0.8), fans: 8, form: 0.05 }, 'Sua mãe chorou na entrega das chaves. Você jogou leve a temporada inteira.')],
+    options: (c, ev) => [risk('Comprar o carrão (R$ ' + money(ev.value) + ')', P(0.6, X.t(c, 'estrela', 0.1), X.t(c, 'pro', -0.05)), out('ostentação aprovada', { money: -ev.value, fame: 12, form: 0.08 }, 'O carro virou notícia, você virou assunto e entrou em campo se sentindo o dono do mundo.'), out('vira piada', { money: -ev.value, fame: 4, fans: -8, form: -0.06 }, 'Foi parado em blitz na porta do CT. O vídeo rodou o país.')),
+      one('Dar uma casa para a família', { money: -Math.round(ev.value * 0.8), fans: 6, form: 0.03 }, 'Sua mãe chorou na entrega das chaves. Você jogou leve a temporada inteira.')],
   });
   S.stake('luvas', {
     build: c => ({ title: 'Luvas novas de patrocínio', text: 'Uma marca manda luvas com o seu nome. O modelo é diferente do que você usa há anos.', value: Math.round(Math.max(c.wage * 8, 20000) / 1000) * 1000 }),
