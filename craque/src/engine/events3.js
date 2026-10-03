@@ -164,10 +164,10 @@
       build: (c, r, h) => ({
         memory: ago(c, h) + ', o presidente prometeu reforços e eles não vieram.',
         title: 'O presidente promete de novo', text: 'Na festa de fim de ano, o presidente ' + D.do(club(c).name) + ' anunciou "o maior reforço da história". Os jornalistas querem saber o que você acha.',
-        options: [opt('Cobrar em público', 'Torcida +10 · Técnico −8 · 50%: os reforços chegam'), opt('Desconversar', 'Nada muda')],
+        options: [opt('Cobrar em público', 'Torcida +10 · Técnico −8 · 50%: os reforços chegam'), opt('Desconversar', 'Técnico +4')],
       }),
       resolve: (c, ev, i, r) => {
-        if (i === 1) return { ok: true, text: '"Vamos ver." A frase não comprometeu ninguém.', fx: {} };
+        if (i === 1) { bump(c, 'coach', 4); return { ok: true, text: '"Vamos ver." A comissão técnica gostou da discrição.', fx: {} }; }
         bump(c, 'fans', 10); bump(c, 'coach', -8);
         if (r() < 0.5) {
           c.clubBoost = c.clubBoost || {};
@@ -211,12 +211,12 @@
       build: (c, r, h) => ({
         memory: ago(c, h) + ', você jogou um clássico no sacrifício e se machucou.',
         title: 'A lesão antiga voltou', text: 'A mesma região daquela lesão voltou a doer. O médico quer operar de vez.',
-        options: [opt('Operar agora', 'Perde parte da temporada (−15% de minutos) · sem risco depois'), opt('Seguir com tratamento', '40%: lesão longa · senão, nada')],
+        options: [opt('Operar agora', 'Perde parte da temporada (−15% de minutos) · sem risco depois'), opt('Seguir com tratamento', '60%: segura e você joga tudo (forma +4%) · 40%: lesão longa')],
       }),
       resolve: (c, ev, i, r) => {
         if (i === 0) return { ok: true, text: 'A cirurgia foi um sucesso. Volta mais forte na reta final.', fx: { min: -0.15 } };
         if (r() < 0.4) return { ok: false, text: 'Não aguentou. Meses fora de novo.', fx: { inj: 0.3 } };
-        return { ok: true, text: 'O tratamento segurou. Dor controlada.', fx: {} };
+        return { ok: true, text: 'O tratamento segurou. Dor controlada e nenhum jogo perdido.', fx: { form: 0.04 } };
       },
     },
     {
@@ -249,11 +249,11 @@
       build: (c, r, h) => ({
         memory: ago(c, h) + ', você separou a briga no vestiário.',
         title: 'O grupo quer a sua voz', text: 'Os dois veteranos que brigaram vieram juntos te pedir para falar pelo elenco nas conversas com a diretoria.',
-        options: [opt('Assumir a liderança', 'Técnico +8 · Torcida +4 · forma −2%'), opt('Deixar para os mais velhos', 'Nada muda')],
+        options: [opt('Assumir a liderança', 'Técnico +8 · Torcida +4 · forma −2%'), opt('Deixar para os mais velhos', 'Forma +3%')],
       }),
       resolve: (c, ev, i) => (i === 0
         ? (bump(c, 'coach', 8), bump(c, 'fans', 4), { ok: true, text: 'Você levou as demandas do grupo e voltou com tudo resolvido.', fx: { form: -0.02 } })
-        : { ok: true, text: 'Você preferiu seguir focado só no campo.', fx: {} }),
+        : { ok: true, text: 'Você preferiu seguir focado só no campo, e o campo agradeceu.', fx: { form: 0.03 } }),
     },
     {
       id: 'v_mosaico', from: 'protesto', icon: '🎨', tone: 'green',
