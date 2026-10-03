@@ -240,15 +240,26 @@
       const gearBg = v => A.SWATCH[v] || A.GEAR[v];
       const chipB = (key, v, l, on, it) => '<button data-k="' + key + '" data-v="' + v + '" class="' + (on ? 'on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + (isPv(key, v) ? ' pv' : '') + '">' + (it ? U.emo('🔒', 'xs') + ' ' : '') + l + '</button>';
       const chip = (key, all) => { const list = free(key, all); return list.length < 2 ? '' : '<div class="cr-chips">' + list.map(([v, l]) => { const it = lockOf(key, v); return chipB(key, v, l, !it && String(lk[key]) === v, it); }).join('') + '</div>'; };
+      // Miniaturas: o próprio jogador com aquela opção (rosto para cabelo e barba, pés para chuteira e sola)
+      const tiles = (key, all, part) => { const list = free(key, all); return list.length < 2 ? '' : '<div class="cr-tiles ' + part + '">' + list.map(([v, l]) => {
+        const it = lockOf(key, v), on = !it && String(lk[key]) === String(v);
+        const w = Object.assign({}, who(), { look: Object.assign(view(), { [key]: v }) });
+        return '<button data-k="' + key + '" data-v="' + v + '" class="' + (on ? 'on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + (isPv(key, v) ? ' pv' : '') + '" aria-label="' + esc(l) + '">' +
+          '<span class="tl-img">' + A.photo('normal', kit, w, { flat: true, [part]: true }) + '</span><span class="tl-name">' + (it ? U.emo('🔒', 'xs') + ' ' : '') + esc(l) + '</span></button>';
+      }).join('') + '</div>'; };
       const row = (label, value, body) => !body ? '' : '<div class="cr-row"><div class="cr-lbl">' + label + (value ? ' <b>' + esc(value) + '</b>' : '') + '</div>' + body + '</div>';
       let rows = '';
       if (st.tab === 'corpo') rows = row('Pele', '', sw('skin', A.SKIN.map((_, i) => i), i => A.SKIN[i], A.SKIN.map((_, i) => 'Tom ' + (i + 1)))) +
-        row('Barba', '', chip('beard', A.BEARDS.map(b => [b, BEARD_NAME[b]])));
-      if (st.tab === 'cabelo') rows = row('Corte', '', chip('hair', A.HAIRS.map(h => [h, HAIR_NAME[h]]))) +
+        row('Barba', '', tiles('beard', A.BEARDS.map(b => [b, BEARD_NAME[b]]), 'head'));
+      if (st.tab === 'cabelo') rows = row('Corte', '', tiles('hair', A.HAIRS.map(h => [h, HAIR_NAME[h]]), 'head')) +
         row('Cor do cabelo e da barba', '', sw('hc', A.HAIR_COLORS.map((_, i) => i), i => A.HAIR_COLORS[i], HC_NAME));
-      if (st.tab === 'equip') rows = row('Chuteira', GEAR_NAME[lk.boot], sw('boot', BOOTS, gearBg)) +
+      if (st.tab === 'equip') rows = row('Chuteira', GEAR_NAME[lk.boot], tiles('boot', BOOTS.map(b => [b, GEAR_NAME[b] || b]), 'feet')) +
         row('Sola', GEAR_NAME[lk.sole], sw('sole', BASIC.concat(['prata', 'ouro', 'cromo', 'holo']), gearBg));
       $('cr-rows').innerHTML = rows;
+      const zoom = { corpo: '', cabelo: 'z-head', equip: 'z-feet' }[st.tab] || '';
+      $('cr-big').className = 'cr-big ' + (st.zoomWas != null ? st.zoomWas : zoom);
+      if (st.zoomWas != null && st.zoomWas !== zoom) requestAnimationFrame(() => requestAnimationFrame(() => { if ($('cr-big')) $('cr-big').className = 'cr-big ' + zoom; }));
+      st.zoomWas = zoom;
       $('cr-big').innerHTML = (prev && note ? '<span class="cr-prev">Prévia · ' + esc(note.name) + '</span>' : '') + U.photo('normal', kit, who(), { crop: true, flat: true, num: String(st.num) });
       $('cr-paper').innerHTML = U.photo('normal', kit, who(), { num: String(st.num) });
       $('cr-joy').innerHTML = U.photo('celebra', kit, who(), { num: String(st.num) });

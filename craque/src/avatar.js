@@ -352,7 +352,11 @@
     if (extra.includes('caneleira')) lk.sock = 'arriado'; // a caneleira aparece com o meião arriado
     const sockTop = lk.sock === 'arriado' ? 175 : 158;
     const leg = (hip, knee, ank, tk) => {
-      let o = limb([hip, knee, ank], skin, 9.6);
+      // Coxa mais grossa que a canela, com um pouco de panturrilha
+      // (todos os contornos primeiro e depois as cores, para não aparecer emenda no joelho)
+      const segs = [[[hip, knee], 11.4], [[knee, ank], 9.2], [[lerp(knee, ank, .18), lerp(knee, ank, .42)], 10.6]];
+      let o = segs.map(([a, w]) => '<path d="M' + pts(a) + '" stroke="' + OL + '" stroke-width="' + (w + OW * 2) + '" stroke-linecap="round" fill="none"/>').join('') +
+        segs.map(([a, w]) => '<path d="M' + pts(a) + '" stroke="' + skin + '" stroke-width="' + w + '" stroke-linecap="round" fill="none"/>').join('');
       if (tatOf(tk) !== 'nenhuma') o += tattoo([hip, knee, ank], tatOf(tk), tk, 4.7, 'upper');
       o += limb([[ank[0], sockTop], ank], k1, 10.4, 'butt');
       o += lk.sock === 'arriado' ? shape('M' + (ank[0] - 6) + ' ' + (sockTop - 1.6) + 'h12q1.4 0 1.4 1.6v1.4q0 1.6-1.4 1.6h-12q-1.4 0-1.4-1.6v-1.4q0-1.6 1.4-1.6Z', k1) : '<rect x="' + (ank[0] - 5.2) + '" y="' + (sockTop + 3) + '" width="10.4" height="2.6" fill="' + k2 + '"/>';
@@ -369,8 +373,13 @@
     const happy = (pose === 'celebra' && !(cel && cel.serio)) || pose === 'taca', sad = pose === 'triste' || pose === 'adeus';
     // Sobrancelha escura com careca, raspado, grisalho e as cores de pacotinho (platinado e pintado)
     const brow = lk.hair === 'careca' || lk.hair === 'raspado' || lk.hc === 4 || lk.hc >= 5 ? '#3A2A1E' : hcol;
-    const face = '<path d="M52.6 27.2Q55.2 25.8 57.6 27M62.4 27Q64.8 25.8 67.4 27.2" stroke="' + brow + '" stroke-width="1.8" stroke-linecap="round" fill="none"/>' +
-      '<ellipse cx="55.4" cy="31" rx="1.35" ry="1.75" fill="' + OL + '"/><ellipse cx="64.6" cy="31" rx="1.35" ry="1.75" fill="' + OL + '"/>' +
+    const EYE = ['#4A2E1C', '#5B3A22', '#3F5E2E', '#3A5A86'][lk.skin <= 1 ? hash(c.name || '') % 4 : hash(c.name || '') % 2];
+    const face = '<path d="M51.8 27Q55.2 25 58.2 26.6M61.8 26.6Q64.8 25 68.2 27" stroke="' + brow + '" stroke-width="2.2" stroke-linecap="round" fill="none"/>' +
+      // Olhos com branco, íris e brilho (olham um pouco para o lado da câmera)
+      [55.2, 64.8].map(x => '<ellipse cx="' + x + '" cy="31" rx="2.5" ry="2.15" fill="#FBF7F0" stroke="' + OL + '" stroke-width=".9"/>' +
+        '<circle cx="' + (x + .35) + '" cy="31.2" r="1.45" fill="' + EYE + '"/><circle cx="' + (x + .35) + '" cy="31.2" r=".7" fill="' + OL + '"/>' +
+        '<circle cx="' + (x + .85) + '" cy="30.5" r=".45" fill="#FFFFFF"/>' +
+        '<path d="M' + (x - 2.6) + ' 30.2Q' + x + ' 28.2 ' + (x + 2.6) + ' 30.2" stroke="' + OL + '" stroke-width="1.1" fill="none" stroke-linecap="round"/>').join('') +
       '<path d="M60.4 32.4Q62 35.6 59.4 36" stroke="rgba(0,0,0,.35)" stroke-width="1.1" stroke-linecap="round" fill="none"/>' +
       (happy ? '<path d="M56.4 39.6Q60 38.6 63.6 39.6Q63.4 44 60 44Q56.6 44 56.4 39.6Z" fill="#5A1A10" stroke="' + OL + '" stroke-width="1.4" stroke-linejoin="round"/>'
         : sad ? '<path d="M56.8 41.6Q60 39.4 63.2 41.6" stroke="' + OL + '" stroke-width="1.3" stroke-linecap="round" fill="none"/><path d="M66 33.6q1.6 2.8 0 4.2q-1.6-1.4 0-4.2Z" fill="#6FB7E8" stroke="' + OL + '" stroke-width=".7"/>'
@@ -398,7 +407,7 @@
     const handUp = pose === 'triste' || pose === 'adeus'; // mão no rosto: o braço vai na frente da cabeça
     const torso = 'M41 57Q41.6 52 48 51L55 49.6Q60 54 65 49.6L72 51Q78.4 52 79 57L77.4 104Q60 107 42.6 104Z';
     const top = pose === 'taca' ? 26 : 0;
-    const vb = opts.bust ? '21 4 78 102' : opts.crop ? '14 ' + (4 - top) + ' 92 ' + (196 + top) : '-60 ' + (-top) + ' 240 ' + (200 + top);
+    const vb = opts.head ? '35 0 50 52' : opts.feet ? '35 175 50 23' : opts.bust ? '21 4 78 102' : opts.crop ? '14 ' + (4 - top) + ' 92 ' + (196 + top) : '-60 ' + (-top) + ' 240 ' + (200 + top);
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb + '">' + defs + bg +
       '<ellipse cx="60" cy="195" rx="26" ry="4.4" fill="rgba(0,0,0,.28)"/>' +
       leg([53.4, 116], [52.4, 150], [52, 185], 'PD') + leg([66.6, 116], [67.6, 150], [68, 185], 'PE') + boot(52, -1) + boot(68, 1) +
