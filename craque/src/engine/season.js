@@ -10,6 +10,9 @@
   // Declínio pela idade: começa aos 31 e acelera depois dos 34 (a carreira tem fim, ver S.mustRetire)
   const AGE_DECLINE = age => (age <= 30 ? 0 : age <= 32 ? 3 : age <= 34 ? 5.5 : age <= 36 ? 8 : 10);
 
+  // Nota mínima para a Seleção da liga, por posição (a nota média de cada posição no auge é diferente)
+  S.TEAM_R = { ATA: 8.5, MEI: 8.15, ZAG: 7.8, GOL: 7.95 };
+
   S.playSeason = function (c) {
     const { r, save } = rngOf(c);
     const club = D.CLUB_BY_ID[c.club];
@@ -293,13 +296,14 @@
 
     // Prêmios
     const awards = [];
-    const scorerLine = 17 + club.tier * 2 + r.range(-3, 3);
+    // Prêmios raros de propósito: no auge, cada posição leva o prêmio dela em ~1 de 3 temporadas e entra na Seleção em ~2 de 5
+    const scorerLine = 26 + club.tier * 2 + r.range(-3, 3);
     if (goals >= scorerLine && c.pos === 'ATA') awards.push({ id: 'scorer', name: 'Artilheiro ' + D.da(lg.name) });
-    if (c.pos === 'MEI' && assists >= 14 + club.tier + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Líder de assistências ' + D.da(lg.name) });
-    if (c.pos === 'ZAG' && games >= 25 && rating >= 7.2 + r.range(-0.15, 0.15)) awards.push({ id: 'scorer', name: 'Melhor zagueiro ' + D.da(lg.name) });
-    if (c.pos === 'GOL' && games >= 25 && cleanSheets >= 15 + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Luva de Ouro ' + D.da(lg.name) });
+    if (c.pos === 'MEI' && assists >= 21 + club.tier + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Líder de assistências ' + D.da(lg.name) });
+    if (c.pos === 'ZAG' && games >= 25 && rating >= 7.85 + r.range(-0.15, 0.15)) awards.push({ id: 'scorer', name: 'Melhor zagueiro ' + D.da(lg.name) });
+    if (c.pos === 'GOL' && games >= 25 && cleanSheets >= 25 + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Luva de Ouro ' + D.da(lg.name) });
     if (c.age <= 21 && rating >= 7.2 && club.tier >= 3) awards.push({ id: 'young', name: 'Melhor jovem ' + D.da(lg.name) });
-    if (rating >= 7.5 && games >= 20) awards.push({ id: 'team', name: 'Seleção ' + D.da(lg.name) });
+    if (rating >= S.TEAM_R[c.pos] && games >= 20) awards.push({ id: 'team', name: 'Seleção ' + D.da(lg.name) });
     // Bola de Ouro: só em clubes de nível 4-5
     // Defensores entram pela muralha (jogos sem sofrer gol, defesas, pênaltis defendidos)
     const prod = isDef ? goals * 2 + assists * 0.6 + cleanSheets * 0.9 + saves * 0.2 + penSaved * 2 + tackles * 0.1 : goals + assists * 0.6;

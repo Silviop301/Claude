@@ -4,9 +4,9 @@
   const S = root.CRAQUE_SIM || require('./core.js');
   // ---------- fim de carreira ----------
   // Pesos da pontuação final e faixas das notas (a tela de fim de carreira mostra a conta)
-  S.SCORE_W = { title: 12, cont: 35, cont2: 12, cwc: 60, wc: 150, wcGoal: 3, ballon: 100, award: 8, peak: 2 };
+  S.SCORE_W = { title: 12, cont: 35, cont2: 12, cwc: 60, wc: 150, wcGoal: 3, ballon: 100, award: 16, peak: 2 };
   // Faixas calibradas no simulador (robô que joga bem): S 10% · A 25% · B 30% · C 20% · D 15% das carreiras
-  S.GRADES = [['S', 1740], ['A', 1330], ['B', 1050], ['C', 855], ['D', 0]];
+  S.GRADES = [['S', 1740], ['A', 1275], ['B', 960], ['C', 745], ['D', 0]];
   // Peso da produção por posição (medido no simulador para as quatro chegarem às notas altas com a mesma dificuldade)
   S.PROD_W = { ATA: 1.04, MEI: 0.97, ZAG: 1.06, GOL: 1.17 };
   S.gradeOf = score => S.GRADES.find(([, min]) => score >= min)[0];
