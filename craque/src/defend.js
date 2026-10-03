@@ -37,7 +37,7 @@
     spr.stand(P.GX); spr.idle();
     keeper.classList.add('mine'); // o goleiro agora é você
     const { cine, host } = cineOf(stage);
-    if (cine) cine.intro(P.GX, 120, 1.7, 1100);
+    if (cine) cine.intro(P.GX, 120, 1.7, 700);
     const b3 = P.ball3d(host, ball);
     b3.place(P.BALL.x, P.BALL.y, P.BALL.r);
     P.setKeeper(keeper, 0, 0, 0);
@@ -173,12 +173,14 @@
     const { cine, host } = cineOf(stage);
     const b3 = P.ball3d(host, ball);
     const g = { u: 0, cut: 0, mode: 'run', def: { x: 258, y: 252 }, slide: null, aAnim: 'corrida', aT0: 0, ball: null };
+    // Com a câmera nova, o atacante só sai depois que ela abre (0,7 s); antes disso o toque não conta
+    const HOLD = cine ? 700 : 0, go0 = performance.now() + HOLD;
     let armed = false, t = 0, last = performance.now(), result = null;
-    setTimeout(() => { armed = true; }, 250);
+    setTimeout(() => { armed = true; }, Math.max(250, HOLD));
     // Câmera: abre no gol e depois acompanha a disputa (metade entre o atacante e o zagueiro)
     if (cine) {
-      cine.intro(P.GX, 130, 1.6, 900);
-      setTimeout(() => cine.follow(() => { const a = at(g.u); return { x: (a.x + g.def.x) / 2, y: (a.y + g.def.y) / 2 - 40, z: 1.12 }; }), 950);
+      cine.intro(P.GX, 130, 1.6, HOLD);
+      setTimeout(() => cine.follow(() => { const a = at(g.u); return { x: (a.x + g.def.x) / 2, y: (a.y + g.def.y) / 2 - 40, z: 1.12 }; }), HOLD + 50);
     }
     const setAtk = (anim, now) => { g.aAnim = anim; g.aT0 = now; };
     stage.addEventListener('pointerdown', e => {
@@ -201,7 +203,7 @@
     (function step(now) {
       if (!svg.isConnected) return b3.dispose();
       const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
-      if (g.mode === 'run') g.u += dt / T;
+      if (g.mode === 'run' && now >= go0) g.u += dt / T;
       else if (g.mode === 'cut') g.u += dt / T * 0.35;
       else if (g.mode === 'fall') g.u += dt / T * 0.8 * Math.max(0, 1 - (t - g.fallT) / 0.5);
       // Carrinho
@@ -327,7 +329,9 @@
       requestAnimationFrame(idle);
     })(performance.now());
     const { cine, host } = cineOf(stage);
-    if (cine) cine.intro(180, GL - 20, 1.9, 1200);
+    // A câmera abre em 0,7 s e só depois o atacante começa a correr (antes disso o toque não conta)
+    const HOLD = cine ? 700 : 0;
+    if (cine) cine.intro(180, GL - 20, 1.9, HOLD);
     const b3 = P.ball3d(host, ball);
     const ballAt = (x, g) => b3.place(sx(x, g), sy(g) - rOf(g), rOf(g), 0.3);
     ballAt(0, BG);
@@ -336,10 +340,10 @@
     const you = C.put('jogador-2d', Object.assign({ kit: 'atacante', view: 'costas', anim: 'chute', num: String(c.number || 8), nome: (c.name || '').split(' ').pop().toUpperCase().slice(0, 10) },
       me, kits.mine, me.boots ? { boots: me.boots } : {}), svg, ball);
     you.place(sx(-0.35, BG + 0.5), sy(BG + 0.5), hOf(BG + 0.5)); you.pose(0, 'chute');
-    const dur = setup.period * 1100 / offU, t0 = performance.now();
+    const dur = setup.period * 1500 / offU, t0 = performance.now() + HOLD;
     let hit = null, armed = false, done = false;
-    setTimeout(() => { armed = true; }, 250);
-    const uAt = t => Math.min(1, t / dur);
+    setTimeout(() => { armed = true; }, Math.max(250, HOLD));
+    const uAt = t => Math.max(0, Math.min(1, t / dur));
     const placeMate = u => { const a = atU(u); mate.place(sx(a.x, a.g), sy(a.g), hOf(a.g)); };
     stage.addEventListener('pointerdown', e => {
       e.preventDefault();
@@ -350,7 +354,7 @@
     (function run(now) {
       if (done) return;
       const t = now - t0, u = uAt(t);
-      placeMate(u); mate.pose((t / 620) % 1, 'corrida');
+      placeMate(u); mate.pose(Math.max(0, t / 620) % 1, 'corrida');
       if (u >= offU) return finish(false, 'impedido');
       requestAnimationFrame(run);
     })(t0);

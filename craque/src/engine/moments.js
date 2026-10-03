@@ -132,7 +132,7 @@
     if (type === 'pass') {
       // Meia: o atacante corre por trás da zaga; toque quando ele passar pela brecha entre os zagueiros.
       // PAS alarga a brecha e deixa a corrida mais lenta; Visão de Jogo e Garçom ajudam
-      const win = round1(clamp(0.11 + (E.pas - 50) / 240 + lv('visao') * 0.02 + lv('garcom') * 0.015, 0.09, 0.28) * 100) / 100;
+      const win = round1(clamp(0.17 + (E.pas - 50) / 240 + lv('visao') * 0.02 + lv('garcom') * 0.015, 0.15, 0.34) * 100) / 100;
       const period = round1(clamp(0.95 + (E.pas - 50) * 0.011 + lv('visao') * 0.08, 0.85, 1.7) * 10) / 10;
       const chance = clamp(0.32 + (E.pas - 60) / 75 + lv('visao') * 0.05 + lv('garcom') * 0.04 + lv('frieza') * 0.06, 0.2, 0.88);
       return { mode: 'pass', win, period, chance: Math.round(chance * 100) / 100 };
