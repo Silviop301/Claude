@@ -7,7 +7,12 @@
   const AGE_GROWTH = age => (age <= 20 ? 0.24 : age <= 23 ? 0.17 : age <= 26 ? 0.08 : age <= 29 ? 0.02 : 0);
   // Ajuste geral da evolução (as características dão menos atributo desde que ganharam efeitos próprios)
   const GROWTH_K = 0.9;
-  const AGE_DECLINE = age => (age <= 30 ? 0 : age <= 32 ? 1.8 : age <= 34 ? 3.5 : 5);
+  // Declínio pela idade: começa aos 31 e acelera depois dos 34 (a carreira tem fim, ver S.mustRetire)
+  const AGE_DECLINE = age => (age <= 30 ? 0 : age <= 32 ? 3 : age <= 34 ? 5.5 : age <= 36 ? 8 : 10);
+
+  // Nota mínima para a Seleção da liga, por posição (a nota média de cada posição no auge é diferente)
+  S.REL_KEEP = 0.6;
+  S.TEAM_R = { ATA: 8.5, MEI: 8.15, ZAG: 7.8, GOL: 7.95 };
 
   S.playSeason = function (c) {
     const { r, save } = rngOf(c);
@@ -31,8 +36,8 @@
 
     if (c.farewell) c.mod.min += 0.1; // temporada de despedida: o técnico faz questão
     // Promessa do técnico (conversa depois de uma temporada no banco) vale por uma temporada
-    // Técnico: confiança decide minutos (60 de diferença para o neutro ≈ 40% dos jogos)
-    let share = clamp(role.share + c.mod.min + (c.promise || 0) + (c.rel.coach - REL0) / 150 + (c.age <= 17 ? -0.2 : 0), 0.05, 0.97);
+    // Técnico: confiança decide minutos (40 de diferença para o neutro ≈ 45% dos jogos)
+    let share = clamp(role.share + c.mod.min + (c.promise || 0) + (c.rel.coach - REL0) / 90 + (c.age <= 17 ? -0.2 : 0), 0.05, 0.97);
     share *= 1 - injShare;
     // Jogos possíveis: rodadas da liga (ida e volta, no mínimo 20 times) mais as copas
     const lgSize = Math.max(20, D.CLUBS.filter(x => x.league === club.league).length);
@@ -46,8 +51,8 @@
     // Visão de Jogo faz o time render mais (produção e chance de título)
     const teamBoost = 0.8 * S.tm(c, 'visao');
     const teamF = 0.85 + (club.strength + teamBoost - D.TIERS[club.tier].min) * 0.02;
-    // Torcida: apoio (ou vaia) mexe na fase em campo, até ±8%
-    const form = 1 + c.mod.form + (c.rel.fans - REL0) / 625 + r.gauss() * 0.08;
+    // Torcida: apoio (ou vaia) mexe na fase em campo, até ±14%
+    const form = 1 + c.mod.form + (c.rel.fans - REL0) / 350 + r.gauss() * 0.08;
     // Gols saem da finalização (e do que ajuda a chegar nela); assistências, do passe e do drible
     const gA = E.fin * 0.5 + E.rit * 0.2 + E.dri * 0.15 + E.fis * 0.15;
     const aA = E.pas * 0.55 + E.dri * 0.25 + E.rit * 0.1 + E.fin * 0.1;
@@ -292,17 +297,18 @@
 
     // Prêmios
     const awards = [];
-    const scorerLine = 17 + club.tier * 2 + r.range(-3, 3);
+    // Prêmios raros de propósito: no auge, cada posição leva o prêmio dela em ~1 de 3 temporadas e entra na Seleção em ~2 de 5
+    const scorerLine = 26 + club.tier * 2 + r.range(-3, 3);
     if (goals >= scorerLine && c.pos === 'ATA') awards.push({ id: 'scorer', name: 'Artilheiro ' + D.da(lg.name) });
-    if (c.pos === 'MEI' && assists >= 14 + club.tier + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Líder de assistências ' + D.da(lg.name) });
-    if (c.pos === 'ZAG' && games >= 25 && rating >= 7.2 + r.range(-0.15, 0.15)) awards.push({ id: 'scorer', name: 'Melhor zagueiro ' + D.da(lg.name) });
-    if (c.pos === 'GOL' && games >= 25 && cleanSheets >= 15 + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Luva de Ouro ' + D.da(lg.name) });
+    if (c.pos === 'MEI' && assists >= 21 + club.tier + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Líder de assistências ' + D.da(lg.name) });
+    if (c.pos === 'ZAG' && games >= 25 && rating >= 7.85 + r.range(-0.15, 0.15)) awards.push({ id: 'scorer', name: 'Melhor zagueiro ' + D.da(lg.name) });
+    if (c.pos === 'GOL' && games >= 25 && cleanSheets >= 25 + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Luva de Ouro ' + D.da(lg.name) });
     if (c.age <= 21 && rating >= 7.2 && club.tier >= 3) awards.push({ id: 'young', name: 'Melhor jovem ' + D.da(lg.name) });
-    if (rating >= 7.5 && games >= 20) awards.push({ id: 'team', name: 'Seleção ' + D.da(lg.name) });
+    if (rating >= S.TEAM_R[c.pos] && games >= 20) awards.push({ id: 'team', name: 'Seleção ' + D.da(lg.name) });
     // Bola de Ouro: só em clubes de nível 4-5
     // Defensores entram pela muralha (jogos sem sofrer gol, defesas, pênaltis defendidos)
     const prod = isDef ? goals * 2 + assists * 0.6 + cleanSheets * 0.9 + saves * 0.2 + penSaved * 2 + tackles * 0.1 : goals + assists * 0.6;
-    const bScore = prod + titles.filter(t => t.id !== 'inter').length * 8 + (cont ? 10 : 0) + (rating - 6) * 12 + (c.wcBoost || 0) + Math.min(8, c.fame / 30); // fama pesa no voto
+    const bScore = prod + titles.filter(t => t.id !== 'inter').length * 8 + (cont ? 10 : 0) + (rating - 6) * 12 + (c.wcBoost || 0) + Math.min(12, c.fame / 22); // fama pesa no voto
     c.wcBoost = 0;
     // Cada Bola de Ouro anterior aumenta a exigência (a concorrência cresce)
     // Defensor raramente ganha a Bola de Ouro (como na vida real)
@@ -316,12 +322,16 @@
     const fame0 = c.fame;
     c.fame = Math.max(0, c.fame * 0.85 + 5 * S.tm(c, 'estrela') + (goals * 0.5 + assists * 0.35 + (isDef ? cleanSheets * 0.35 + saves * 0.1 + penSaved * 1.5 + tackles * 0.1 : 0) + titles.length * 6 * part + awards.length * 6 + (ballon ? 30 : 0) + club.tier * 2) * (0.8 + c.rel.fans / 250));
     const coach0 = c.rel.coach, fans0 = c.rel.fans;
+    // Técnico e torcida esquecem: a cada temporada voltam um terço do caminho para o neutro. Assim nunca ficam
+    // presos no máximo e o que você escolhe nos eventos continua mexendo em minutos e fase
+    c.rel.coach = REL0 + (c.rel.coach - REL0) * S.REL_KEEP;
+    c.rel.fans = REL0 + (c.rel.fans - REL0) * S.REL_KEEP;
     // Líder agrada o técnico; Estrela irrita; Raça conquista a torcida
     bump(c, 'coach', 4 * S.tm(c, 'lider') - (c.traits.includes('estrela') ? 1 : 0));
     bump(c, 'fans', 3 * S.tm(c, 'raca'));
     if (games) {
-      bump(c, 'coach', (rating - 6.6) * 10 * (0.4 + 0.6 * part));
-      bump(c, 'fans', (rating - 6.6) * 9 * (0.3 + 0.7 * part) + titles.length * 6 * part + (M && M.type === 'classico' && M.ok ? 8 : 0) + (move ? (move.dir === 'up' ? 8 : -10) : 0) - (c.captain && rating < 6.8 ? 6 : 0));
+      bump(c, 'coach', (rating - 6.6) * 6 * (0.4 + 0.6 * part));
+      bump(c, 'fans', (rating - 6.6) * 5 * (0.3 + 0.7 * part) + titles.length * 3 * part + (M && M.type === 'classico' && M.ok ? 8 : 0) + (move ? (move.dir === 'up' ? 8 : -10) : 0) - (c.captain && rating < 6.8 ? 6 : 0));
     }
     c.fansBy[c.club] = Math.max(c.fansBy[c.club] || 0, c.rel.fans);
 

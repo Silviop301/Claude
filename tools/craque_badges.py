@@ -249,6 +249,26 @@ SEARCH.update({
 EXTRA = {"cwc-0": ("Al Ahly", "Egypt"), "cwc-1": ("Mamelodi Sundowns", "South Africa"), "cwc-2": ("Esperance", "Tunisia"),
          "cwc-3": ("Wydad Casablanca", "Morocco"), "cwc-4": ("Auckland City", "New Zealand")}
 
+# Clubes da temporada 2025-26 (ligas completas)
+SEARCH.update({
+    "Birmingham City": ("Birmingham", "England"), "Wrexham": ("Wrexham", "England"),
+    "Castellón": ("CD Castellon", "Spain"), "Andorra": ("FC Andorra", "Andorra"),
+    "Padova": ("Padova", "Italy"), "Avellino": ("Avellino", "Italy"), "Dynamo Dresden": ("Dynamo Dresden", "Germany"),
+    "Nancy": ("Nancy", "France"), "Excelsior": ("Excelsior", "The Netherlands"), "Telstar": ("Telstar", "The Netherlands"),
+    "FC Volendam": ("Volendam", "The Netherlands"), "Kocaelispor": ("Kocaelispor", "Turkey"), "Gençlerbirliği": ("Genclerbirligi", "Turkey"),
+    "Fatih Karagümrük": ("Fatih Karagumruk", "Turkey"), "Zulte Waregem": ("Zulte Waregem", "Belgium"), "La Louvière": ("RAAL La Louviere", "Belgium"),
+    "Atlético San Luis": ("Atletico San Luis", "Mexico"), "FC Juárez": ("FC Juarez", "Mexico"),
+    "Al-Riyadh": ("Al Riyadh", "Saudi Arabia"), "Al-Okhdood": ("Al Okhdood", "Saudi Arabia"), "Al-Kholood": ("Al Kholood", "Saudi Arabia"),
+    "Al-Hazem": ("Al Hazem", "Saudi Arabia"), "Al-Najma": ("Al Najmah", "Saudi Arabia"), "NEOM": ("NEOM", "Saudi Arabia"),
+    "Houston Dynamo": ("Houston Dynamo", "USA"), "FC Dallas": ("FC Dallas", "USA"), "Sporting Kansas City": ("Sporting Kansas City", "USA"),
+    "Minnesota United": ("Minnesota United", "USA"), "Colorado Rapids": ("Colorado Rapids", "USA"), "San Jose Earthquakes": ("San Jose Earthquakes", "USA"),
+    "CF Montréal": ("CF Montreal", "USA"), "New England Revolution": ("New England Revolution", "USA"), "D.C. United": ("DC United", "USA"),
+    "St. Louis City": ("St Louis City SC", "USA"),
+    "Aldosivi": ("Aldosivi", "Argentina"), "Independiente Rivadavia": ("Independiente Rivadavia", "Argentina"),
+    "Central Córdoba": ("Central Cordoba Santiago del Estero", "Argentina"), "Atlético Tucumán": ("Atletico Tucuman", "Argentina"),
+    "Deportivo Riestra": ("Deportivo Riestra", "Argentina"), "San Martín de San Juan": ("San Martin San Juan", "Argentina"),
+})
+
 
 def clubs():
     js = "const D=require('./craque/src/data.js');console.log(JSON.stringify(D.CLUBS))"
