@@ -1,8 +1,9 @@
 // Bola 3D da tela inicial. Só enfeite: carrega depois da tela aparecer e, se falhar, nada acontece.
 // Gira sozinha e dá para girar com o dedo.
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+// Endereços completos (versão +esm do jsDelivr): funcionam mesmo onde o import map é ignorado (alguns navegadores Android)
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.184.0/+esm';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/loaders/GLTFLoader.js/+esm';
+import { RoomEnvironment } from 'https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/environments/RoomEnvironment.js/+esm';
 // Aparelho bem fraco (até 2 núcleos ou até 2 GB): 3D com resolução um pouco menor (os quadros por segundo não mudam)
 const WEAK = (navigator.hardwareConcurrency || 8) <= 2 || (navigator.deviceMemory || 8) <= 2;
 const DPR = () => Math.min(devicePixelRatio || 1, WEAK ? 1.25 : 2);
