@@ -959,7 +959,7 @@
   S.stake('clausula', {
     build: () => ({ title: 'Cláusula baixa demais', text: 'A imprensa descobriu que sua cláusula de rescisão é barata. Três clubes já avisaram que vão pagar.' }),
     options: () => [one('Renovar com cláusula alta', { wage: 1.1, contract: 1, coach: 4 }, 'Cláusula nas alturas. Ninguém te tira daqui barato.'),
-      risk('Deixar como está', 0.6, out('ninguém paga', { fame: 6 }, 'Seu nome ficou no mercado, mas nenhum clube bateu a cláusula.'), out('o clube vende', { fame: 6, wantsOut: true, fans: -6 }, 'A diretoria aceitou a primeira proposta. Mala pronta.'))],
+      risk('Deixar como está', 0.6, out('ninguém paga', { fame: 6 }, 'Seu nome ficou no mercado, mas nenhum clube bateu a cláusula.'), out('o clube vende', { fame: 6, wantsOut: true, fans: -6, form: -0.04 }, 'A diretoria aceitou a primeira proposta. Mala pronta, e a cabeça já longe daqui.'))],
   });
   S.stake('corte_salario', {
     build: () => ({ title: 'Contrato de veterano', text: 'A diretoria quer você mais um ano, mas com salário menor.' }),

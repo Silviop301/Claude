@@ -105,7 +105,7 @@
     v += co > 0 ? co * 0.2 : co * 0.5;
     // Dinheiro vale pelo peso no saldo (gastar um quarto do que tem custa ~6); sair vale quando você está acima do clube (subir de clube rende taça e Bola de Ouro)
     if (fx.money) v += fx.money / Math.max(c.money || 0, 1e6) * 25;
-    if (fx.wantsOut) v += Math.max(0, S.edge(c) - 4) * 3;
+    if (fx.wantsOut) v += Math.max(0, S.edge(c) - 8) * 3;
     v += fa * 0.1 + (fx.boost || 0) * 4 + (fx.legacy || 0) + (fx.longev || 0) * Math.max(0, 40 - Math.abs(c.age - 31) * 6);
     return v;
   };
