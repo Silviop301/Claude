@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./craque/sw.js)",
+      "Read(./craque/src/kits.js)",
+      "Read(./craque/src/trophy-imgs.js)",
+      "Read(./craque/fonts/**)",
+      "Read(./divulgacao/**)",
+      "Read(./**/*.zip)"
+    ]
+  }
+}
