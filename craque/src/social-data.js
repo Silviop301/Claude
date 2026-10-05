@@ -174,6 +174,11 @@
         saveFora: ['Fiquei grande no gol e ele mandou pra fora!', 'Encarei o batedor e a bola foi longe!', 'Segurei até o fim e ele errou o alvo!', 'Pressão no batedor: pra fora!'],
         tackle: ['Bola roubada no último minuto!', 'Carrinho limpo e jogo salvo!', 'Hoje não passou ninguém!', 'Cheguei na hora certa!', 'Tempo certo, carrinho perfeito!', 'Zaga fechada!', 'Desarme na raça!', 'Joguei a vida nesse carrinho!'],
         pass: ['Que passe!', 'Enfiei e ele só empurrou!', 'Vi a brecha e coloquei na medida!', 'Assistência com açúcar!', 'Passe de olho fechado!', 'Coloquei com a mão!', 'Ele correu, eu achei!', 'A bola foi de presente!'],
+        // Estilo arriscado do lance (S.STYLES): chute forte, goleiro que adiantou, bote em pé, lançamento por cima
+        goalB: ['Bati com tudo e a bola rasgou a rede!', 'Sem frescura: bomba e gol!', 'Pé na bola com raiva, goleiro nem viu!', 'Chutei forte porque colocado é pra quem tem tempo!', 'Explodi essa bola!', 'Nem mirei, só meti o pé!'],
+        saveB: ['Saí da linha e cresci na frente dele!', 'Adiantei, encarei e peguei!', 'Fiquei gigante e a bola veio na minha mão!', 'Saí do gol na coragem e deu certo!'],
+        tackleB: ['Fiquei em pé e a bola ficou comigo!', 'Encaixei o corpo e ele não passou!', 'Sem carrinho: só o corpo e a bola é minha!', 'Marquei em pé, do jeito que o professor ensina!'],
+        passB: ['Lancei por cima e ele só empurrou!', 'Vi o goleiro adiantado e chapei por cima!', 'Lançamento com açúcar!', 'Bola por cima da zaga, na medida!'],
       },
       momentCtx: ["Aos {min}', {contraVs}.", "{min}' de jogo e decisão {contraVs}.", 'Último lance {contraVs}.', "Minuto {min}'.", 'Contra {vs}, no fim do jogo.', "Placar travado até os {min}'.", "Aos {min}'.", 'Na hora mais difícil, {contraVs}.'],
       momentEnd: {

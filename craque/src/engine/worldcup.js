@@ -237,7 +237,9 @@
   S.wcMomentType = c => (c.wcRun && c.wcRun.live ? c.wcRun.games[c.wcRun.games.length - 1].moment.type : null);
   S.wcMomentAuto = function (c) {
     const { r, save } = rngOf(c);
-    const ok = r() < S.kickSetup(c, S.kickSetupType({ kick: S.wcMomentType(c) })).chance;
+    const m = c.wcRun.games[c.wcRun.games.length - 1].moment, st = S.kickSetupType({ kick: m.type });
+    if (!m.style) m.style = S.autoStyle(c, st);
+    const ok = r() < S.kickSetup(c, st, m.style).chance;
     save();
     S.wcMoment(c, ok);
     return ok;

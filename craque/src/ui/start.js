@@ -6,12 +6,13 @@
   function home() {
     G.c = null; G.step = null; bar();
     const saved = load(SAVE);
+    const played = !!(saved && saved.c) || U.collectionCount() > 0 || (load(HALL) || []).length > 0;
     // Título de abertura (já desenhado pelo index.html antes dos scripts): a tela inicial reaproveita o mesmo
     // elemento em vez de criar outro, para a primeira tela não "piscar" nem contar de novo como carregamento
     const splash = document.querySelector('#screen > .hero.splash');
     render(
       '<div class="hero"><div class="ball3d" id="ball3d" aria-hidden="true"></div><div class="eyebrow">Carreira de futebol</div><h1>CLIMBIX</h1></div>' +
-      '<p class="lead">Crie um garoto de 16 anos, escolha propostas, monte o estilo dele e descubra se ele vira lenda.</p>' +
+      '<p class="lead">Uma carreira inteira em uns 9 minutos: crie um garoto de 16 anos, escolha os clubes, decida e cobre os lances. No fim, a carta dele diz se virou lenda.</p>' +
       U.challengeHome() +
       // Carreira em andamento: a carta do jogador no lugar de um botão de texto
       (saved && saved.c ? (() => { const sc = saved.c, o = S.ovr(sc), t = tierCls(o), cl = club(sc.club);
@@ -19,12 +20,13 @@
           '<span class="cc-info"><small>Continuar carreira</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : '') + sc.age + ' anos</span></span><span class="cc-go">' + U.ICON['chevron-right'] + '</span></button>'; })() : '') +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
       U.rankHome() +
-      U.streakHome() +
+      // Primeira visita: sequência de dias e pedido de opinião só depois de existir uma carreira (fichas e pacotinhos ainda não querem dizer nada)
+      (played ? U.streakHome() : '') +
       U.packHome() +
       // Coleção, Sala de Troféus, Conquistas e Hall da Fama ficam numa tela só
       '<button class="hg mine-btn" id="b-mine"><i>' + U.ICON.cards + '</i><b>Minhas carreiras</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carreira' : ' carreiras') +
         (U.salaNew() ? ' · <em>+' + U.salaNew() + (U.salaNew() === 1 ? ' taça nova' : ' taças novas') + '</em>' : '') + '</small></button>' +
-      U.feedbackHome() +
+      (played ? U.feedbackHome() : '') +
       '<div class="home-foot"><button class="link-btn home-snd" id="b-sound"></button><button class="link-btn home-snd" id="b-cloud"></button></div>' + U.deskHint()
     );
     if ($('b-cont')) $('b-cont').onclick = () => {
@@ -42,7 +44,7 @@
     U.streakBind(U.home); // pegou um pacotinho da sequência: a tela redesenha com o bloco de pacotinhos
     $('b-mine').onclick = mine;
     U.challengeHomeBind();
-    $('b-opiniao').onclick = () => U.feedback('inicio', {}, home);
+    if ($('b-opiniao')) $('b-opiniao').onclick = () => U.feedback('inicio', {}, home);
     $('b-rank').onclick = () => U.ranking();
     $('b-cloud').innerHTML = U.emo('☁️', 'xs') + ' ' + esc(U.cloudName());
     $('b-cloud').onclick = () => U.cloud('login');

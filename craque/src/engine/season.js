@@ -317,8 +317,17 @@
       const whyHl = kickWhy ? (M.why === 'barreira' ? '🧱 ' : '😞 ') + kickWhy + ' ' + where + (M.why === 'defesa' ? '' : ' contra ' + vsO) + after
         : mk === 'sv' && M.ok && M.why === 'fora' ? '😅 O batedor ' + D.do(vsName) + ' mandou o pênalti para fora ' + where + '!'
         : mk === 'ps' && !M.ok && M.why === 'impedido' ? '😞 Passe atrasado e atacante impedido ' + where + ' contra ' + vsO
+        : mk === 'ps' && !M.ok && M.why === 'goleiro' ? '😞 O goleiro ' + D.do(vsName) + ' saiu e ficou com o seu lançamento ' + where
+        : mk === 'tk' && !M.ok && M.why === 'drible' ? '😞 Ele driblou o seu bote ' + where + ' contra ' + vsO
         : null;
-      highlights.unshift(whyHl || (ALT ? S.textPick(c, 'hl.m.' + mk + (M.ok ? 'ok' : 'ko'), ALT) : defHl || hl));
+      // O estilo escolhido (S.STYLES) entra na manchete quando deu certo: o mesmo lance que a tela do resultado contou
+      const sTy = S.kickSetupType(M), bold = S.styleOf(sTy, M) !== S.styleIds(sTy)[0];
+      const styled = h => !bold || !M.ok ? h : mk === 'pk' ? h.replace('⚽ Seu pênalti', '💥 Sua bomba de pênalti').replace('⚽ Pênalti convertido', '💥 Pênalti forte convertido').replace('Seu pênalti', 'Seu pênalti forte')
+        : mk === 'fk' ? h.replace('Seu gol de falta', 'Sua bomba de falta').replace('Gol de falta', 'Bomba de falta').replace('Falta no ângulo', 'Falta forte no ângulo').replace('Bola parada perfeita', 'Bola parada forte').replace('Cobrança indefensável', 'Bomba indefensável')
+        : mk === 'sv' ? h.replace('Pênalti defendido', 'Saiu da linha e defendeu o pênalti').replace('Pegou o pênalti', 'Adiantou e pegou o pênalti').replace('Voou no canto: pênalti defendido', 'Saiu da linha e defendeu o pênalti')
+        : mk === 'tk' ? h.replace('Desarme salvador', 'Desarme em pé salvador').replace('Carrinho perfeito', 'Bote em pé perfeito').replace('Bola roubada', 'Corpo encaixado e bola roubada')
+        : mk === 'ps' ? h.replace('Sua bola enfiada', 'Seu lançamento por cima').replace('Passe na medida', 'Lançamento por cima na medida').replace('Assistência decisiva', 'Lançamento e assistência') : h;
+      highlights.unshift(styled(whyHl || (ALT ? S.textPick(c, 'hl.m.' + mk + (M.ok ? 'ok' : 'ko'), ALT) : defHl || hl)));
     }
     const vr = n => D.o(n);
     // Jogou pouco: a taça é do clube (sem "é sua"); com participação, as frases de sempre

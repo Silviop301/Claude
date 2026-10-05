@@ -263,7 +263,8 @@
 
   root.CRAQUE_KICK = function (el, opts) {
     const c = opts.c, m = opts.moment;
-    const setup = S().kickSetup(c, m.type);
+    const setup = S().kickSetup(c, m.type, m.style);
+    const rise = setup.rise || 0; // chute forte: a mira já mostra onde a bola sobe
     const side = setup.fk ? (Math.random() < 0.5 ? 1 : -1) : 1; // lado da barreira
     el.innerHTML = '<div class="kick-stage">' + scene(setup, side) +
       '<div class="kick-banner" id="k-banner"></div></div><p class="kick-help" id="k-help">Toque na tela para travar a <b>direção</b></p>';
@@ -311,8 +312,8 @@
         // Altura: de 0 a 1,3 (acima de 1 vai por cima)
         cur.y = 0.65 + 0.65 * tri(t / (setup.period * 900) - 0.25) + wob(now + 500);
         cur.y = Math.max(0, cur.y);
-        hline.setAttribute('y1', py(cur.y)); hline.setAttribute('y2', py(cur.y));
-        dot.setAttribute('cx', px(lockX)); dot.setAttribute('cy', py(cur.y));
+        hline.setAttribute('y1', py(cur.y + rise)); hline.setAttribute('y2', py(cur.y + rise));
+        dot.setAttribute('cx', px(lockX)); dot.setAttribute('cy', py(cur.y + rise));
       }
       if (phase === 'x' || phase === 'y') raf = requestAnimationFrame(loop);
     }
@@ -367,9 +368,9 @@
       const kr = Math.random(), bs = Math.sign(x) || (Math.random() < 0.5 ? -1 : 1);
       const kSide = setup.fk ? 0 : kr < 0.38 ? bs : kr < 0.8 ? -bs : 0;
       if (setup.fk || kSide) keeper.classList.add('diving'); // estica os braços no pulo
-      const res = S().kickResult(setup, x, y, kSide);
+      const res = S().kickResult(setup, x, y, kSide); // (a regra soma a subida do chute forte)
       // Para onde a bola vai no desenho
-      let tx = px(dx), ty = py(Math.min(y, 1.35)), tr = 8.5; // perto do gol a bola continua bem visível
+      let tx = px(dx), ty = py(Math.min(y + rise, 1.35)), tr = 8.5; // perto do gol a bola continua bem visível
       if (res.why === 'barreira') { ty = py(setup.wall) + 18; tr = 9.5; }
       // Gol no ângulo: a bola inteira passa por dentro (sem encostar na trave nem no travessão, que têm 3 px de meia-espessura)
       if (res.ok) { const m = 3 + tr + 2; tx = Math.max(px(-1) + m, Math.min(px(1) - m, tx)); ty = Math.max(py(1) + m, ty); }
