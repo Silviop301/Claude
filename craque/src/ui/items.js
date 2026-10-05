@@ -20,7 +20,7 @@
   const DUP = E.dup, COST = E.cost;
 
   // Catálogo do visual. look: o que o item muda no boneco (prévia e "vestir")
-  // cat: numeros (estilo do número) | assinatura | acabamento — o visual do jogador (cabelo, barba, chuteira) é todo livre
+  // cat: numeros (estilo do número) | assinatura | acabamento | cores (chuteira com estampa) — o resto do visual é livre
   const CAT = [
     ['num-ouro', 'Número dourado', 'lendario', 'numeros', { numFx: 'ouro' }, 'Vale para qualquer número.'],
     ['num-holo', 'Número holográfico', 'lendario', 'numeros', { numFx: 'holo' }, 'Vale para qualquer número.'],
@@ -48,6 +48,18 @@
     ['ac-holografico', 'Acabamento Holográfico', 'lendario', 'acabamento', { finish: 'holografico' }, 'Brilho arco-íris de figurinha rara.'],
     ['ac-ourorose', 'Acabamento Ouro rosé', 'lendario', 'acabamento', { finish: 'ourorose' }, 'Ouro rosé escovado.'],
     ['ac-diamante', 'Acabamento Diamante', 'lendario', 'acabamento', { finish: 'diamante' }, 'Facetas de diamante, branco e azul-gelo.'],
+    // Chuteiras com estampa (as lisas e as metálicas são livres); o id é o valor da chuteira (PATTERN abaixo)
+    ['bicolor', 'Chuteira bicolor', 'raro', 'cores', { boot: 'bicolor' }, 'Duas cores na chuteira.'],
+    ['listrada', 'Chuteira listrada', 'raro', 'cores', { boot: 'listrada' }, 'Listras azuis e brancas.'],
+    ['pontilhada', 'Chuteira pontilhada', 'raro', 'cores', { boot: 'pontilhada' }, 'Bolinhas brancas no preto.'],
+    ['camuflada', 'Chuteira camuflada', 'raro', 'cores', { boot: 'camuflada' }, 'Camuflagem verde-oliva.'],
+    ['onca', 'Chuteira onça', 'epico', 'cores', { boot: 'onca' }, 'Pintada de onça.'],
+    ['raio', 'Chuteira de raio', 'epico', 'cores', { boot: 'raio' }, 'Raios amarelos no preto.'],
+    ['brasil', 'Chuteira Brasil', 'epico', 'cores', { boot: 'brasil' }, 'Verde, amarelo e azul.'],
+    ['camoneon', 'Chuteira camuflada neon', 'epico', 'cores', { boot: 'camoneon' }, 'Camuflagem verde-limão no preto.'],
+    ['chamas', 'Chuteira em chamas', 'epico', 'cores', { boot: 'chamas' }, 'Labaredas laranja no preto.'],
+    ['galaxia', 'Chuteira galáxia', 'lendario', 'cores', { boot: 'galaxia' }, 'Céu estrelado azul e roxo.'],
+    ['cristal', 'Chuteira cristal', 'lendario', 'cores', { boot: 'cristal' }, 'Cristal azul-gelo com brilho.'],
   ].map(([id, name, rk, cat, look, desc, gk]) => ({ id, name, rk, cat, look, desc, gk: !!gk }));
   const BY_ID = {};
   CAT.forEach(it => { BY_ID[it.id] = it; });
@@ -83,7 +95,7 @@
   // { own: {id: 1}, fichas, packs: [{ why: [...] }], pity, news: {id: 1}, pen: 'AAAA-MM-DD', at }
   let inv = null;
   const rnd = () => Math.random();
-  const VER = 3;
+  const VER = 4; // 4: chuteiras com estampa viraram itens (quem já usou numa carreira fica com elas)
   function get() {
     if (inv) return inv;
     inv = load(KEY);
@@ -102,6 +114,7 @@
     const used = [];
     const sv = load(U.SAVE);
     if (sv && sv.c) used.push({ look: sv.c.look, number: sv.c.number });
+    const last = load('climbix-ultimo-visual'); if (last && typeof last === 'object') used.push({ look: last });
     (load('climbix-colecao-v1') || []).forEach(e => e && e.card && used.push({ look: e.card.look, number: e.card.number }));
     used.forEach(u => {
       Object.entries(u.look || {}).forEach(([k, v]) => [].concat(v).forEach(x => { const id = need(k, x); if (id) o.own[id] = 1; }));
@@ -215,13 +228,50 @@
   }
   const seen = id => { const o = get(); if (o.news[id]) { delete o.news[id]; put(); } };
 
-  // Nuvem: itens de todos os aparelhos; contadores (fichas, pacotes, garantia) do salvo mais recente
+  // ---------- sequência de dias ----------
+  // Um dia conta quando você termina uma carreira (qualquer uma). A primeira carreira terminada no dia paga o
+  // prêmio daquele dia da sequência; o ciclo tem 7 dias e recomeça. Pulou um dia: volta para o dia 1.
+  // inv.days = { 'AAAA-MM-DD': carreiras terminadas no dia }
+  const STREAK = [{ f: 5 }, { f: 10 }, { p: 1 }, { f: 15 }, { p: 1 }, { f: 25 }, { p: 2 }];
+  const dayKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const shift = (d, n) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() + n); return x; };
+  // Estado da sequência hoje: n dias seguidos (até hoje, ou até ontem se hoje ainda não jogou), se hoje já conta,
+  // e o ciclo de 7 dias em que você está (datas e prêmios)
+  function streak(now) {
+    const days = get().days || {}, today = now || new Date(), played = !!days[dayKey(today)];
+    let d = played ? today : shift(today, -1), n = 0;
+    while (days[dayKey(d)]) { n++; d = shift(d, -1); }
+    // Posição no ciclo: com hoje jogado, hoje é o dia ((n-1)%7)+1; sem hoje, hoje seria o dia (n%7)+1
+    const pos = played ? (n - 1) % 7 : n % 7, start = shift(today, -pos);
+    const cells = STREAK.map((r, i) => { const dt = shift(start, i); return { i, date: dt, key: dayKey(dt), r, done: i < pos || (i === pos && played), today: i === pos }; });
+    return { n, played, pos, cells, next: STREAK[played ? (pos + 1) % 7 : pos] };
+  }
+  // Fim de carreira: marca o dia; na primeira carreira do dia, paga o prêmio (fichas na hora, pacotinho na fila)
+  function streakRecord() {
+    const o = get(), k = dayKey(new Date());
+    o.days = o.days || {};
+    const first = !o.days[k];
+    o.days[k] = (o.days[k] || 0) + 1;
+    // Guarda só os últimos 60 dias
+    Object.keys(o.days).sort().slice(0, -60).forEach(x => delete o.days[x]);
+    put();
+    if (!first) return null;
+    const st = streak(), r = STREAK[st.pos];
+    if (r.f) { o.fichas += r.f; put(); }
+    return { day: st.pos + 1, n: st.n, r };
+  }
+  const streakTxt = r => (r.f ? r.f + ' fichas' : r.p + (r.p > 1 ? ' pacotinhos' : ' pacotinho'));
+
+  // Nuvem: itens de todos os aparelhos; contadores (fichas, pacotes, garantia) do salvo mais recente;
+  // dias da sequência de todos os aparelhos
   function merge(a, b) {
     if (!a || !b) return a || b || null;
     const newer = (b.at || 0) > (a.at || 0) ? b : a;
-    return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news) });
+    const days = Object.assign({}, a.days, b.days);
+    Object.keys(days).forEach(k => { days[k] = Math.max((a.days || {})[k] || 0, (b.days || {})[k] || 0); });
+    return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news), days });
   }
 
   U.ITEMS = { FREE, KEY, CAT, BY_ID, RAR, RAR_NAME, CHANCE, PITY, DUP, COST, itemOf, need, has, get, put, clean, counts,
-    earn, careerWhy, open, trade, seen, merge, reset: () => { inv = null; } };
+    earn, careerWhy, open, trade, seen, merge, STREAK, streak, streakRecord, streakTxt, reset: () => { inv = null; } };
 })();

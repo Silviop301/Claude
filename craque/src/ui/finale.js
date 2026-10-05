@@ -33,6 +33,17 @@
     return '<div class="fin-rival"><b>' + U.emo('⚔️', 'xs') + ' Você x ' + esc(R.name) + ' · ' + verdict + '</b><table><tr><td></td><td>Você</td><td>' + esc(R.name.split(' ')[0]) + '</td></tr>' +
       R.rows.map(([l, a, b]) => '<tr><td>' + l + '</td><td>' + a + '</td><td>' + b + '</td></tr>').join('') + '</table></div>';
   }
+  // Para a próxima: o que faltou nesta carreira (próxima nota, recorde, rival) vira a meta da seguinte
+  function nextGoal(c, f, hall, rank) {
+    const out = [], G2 = S.GRADES, i = G2.findIndex(([g]) => g === f.grade);
+    if (i > 0) out.push(['🎯', 'Faltaram <b>' + (G2[i - 1][1] - f.score) + ' pontos</b> para a nota ' + G2[i - 1][0]]);
+    if (rank === 1 && hall.length > 1) out.push(['🏅', 'Novo recorde: <b>+' + (f.score - hall[1].score) + '</b> sobre o anterior']);
+    else if (rank > 1) out.push(['🏅', 'Seu recorde é ' + hall[0].score + ' pts: faltaram <b>' + (hall[0].score - f.score) + '</b>']);
+    const R = S.rivalSummary && S.rivalSummary(c, f.titles);
+    if (R && R.rows.filter(([, a, b]) => a < b).length > R.rows.filter(([, a, b]) => a > b).length) out.push(['⚔️', esc(R.name) + ' levou a melhor. Revanche na próxima?']);
+    if (!out.length) return '';
+    return '<div class="fin-goal"><span class="fg-h">Para a próxima</span>' + out.slice(0, 3).map(([ic, t]) => '<p>' + U.emo(ic, 'xs') + ' ' + t + '</p>').join('') + '</div>';
+  }
   // Origem e desafio da carreira (engine/origins.js)
   function originLine(c, f) {
     const o = S.ORIGIN_BY_ID[c.origin], ch = f.challenge && S.CHALLENGE_BY_ID[f.challenge.id];
@@ -45,6 +56,9 @@
     const ach = U.achRecord(G.c, f);
     // Pacotinhos da carreira: fim de carreira, nota, títulos grandes, conquistas novas e carreira do dia
     const packWhy = U.ITEMS.careerWhy(G.c, f, ach);
+    // Sequência de dias: a primeira carreira terminada no dia paga o prêmio do dia (fichas na hora; pacotinho entra aqui)
+    const skGot = packWhy.length ? U.ITEMS.streakRecord() : null;
+    if (skGot && skGot.r.p) packWhy.push({ t: 'Sequência · dia ' + skGot.day, n: skGot.r.p });
     U.ITEMS.earn(packWhy);
     U.rankSave(G.c, f); // carreira encerrada: entra no ranking com a pontuação
     const T = G.c.totals;
@@ -79,10 +93,12 @@
       '<div class="eyebrow">Fim de carreira · ' + (YEAR0 + G.c.season) + '</div>' +
       '<div class="fut card3d-host" id="fut-host"><canvas id="fut" aria-label="Card do jogador"></canvas></div>' +
       '<div class="fin-sum"><div class="grade ' + f.grade + '">' + f.grade + '</div><div><b>' + esc(f.verdict) + '</b><span>' + esc(scoreTxt) + '</span></div></div>' +
+      nextGoal(G.c, f, hall, rank) +
       '<div class="ed-box" id="ed-box"></div>' +
       '<div class="fin-acts"><button class="btn" id="b-share">Compartilhar carta</button><button class="btn ghost" id="b-save">Salvar</button></div>' +
       U.challengeFinale(G.c, f) +
       U.feedbackCard() +
+      U.streakFinale(skGot) +
       U.packFinale(packWhy) +
       '<details class="fin-more"><summary>Resumo da carreira' + (fresh ? ' <em>' + fresh + (fresh > 1 ? ' conquistas novas' : ' conquista nova') + '</em>' : '') + '</summary>' +
       '<div class="fin-links">' + (G.c.seasons.length ? '<button id="b-album">' + U.emo('📖', 'sm') + '<span>Álbum</span></button>' : '') +
