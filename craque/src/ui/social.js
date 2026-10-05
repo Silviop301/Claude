@@ -112,7 +112,13 @@
       top.push({ h: f.h, v: true, t: isEv ? pk('f.ev.' + mood, SO.evFamous[mood] || SO.evFamous.up) : pk('f.' + f.h + '.' + which, f[which]) });
     });
     if (!isEv && chance(mood === 'down' ? 0.45 : 0.7)) rest.push({ h: base + 'oficial', v: true, t: pk('c.club.' + mood, SO.club[mood]) });
-    if (!isEv && mood !== 'down' && chance(fame >= 80 ? 0.45 : 0.2)) { const pg = fresh('c.pages', SO.pages); rest.push({ h: pg[0], v: true, t: pg[1] }); }
+    // Página de notícia ("🚨 |", "📊 |") falando do fato do post; nos posts bons, às vezes é página de meme
+    const nk = ctx.kind === 'season' || ctx.kind === 'moment' ? ctx.kind + '.' + mood : p.sub === 'transfer' ? 'transfer' : mood === 'bye' ? 'bye' : 'event';
+    const news = (SO.news || {})[nk];
+    if (chance(fame >= 80 ? 0.6 : 0.3)) {
+      if (news && (mood === 'down' || chance(0.7))) rest.push({ h: fresh('h.news', SO.newsHandles), v: true, t: pk('c.news.' + nk, news) });
+      else if (!isEv && mood !== 'down') { const pg = fresh('c.pages', SO.pages); rest.push({ h: pg[0], v: true, t: pg[1] }); }
+    }
     // Comentário sobre o próprio post (números da temporada, minuto do lance, chegada ao clube, despedida)
     const cx = ctx.kind === 'season' ? ['season.' + mood, SO.ctx.season[mood]] : ctx.kind === 'moment' ? ['moment.' + mood, SO.ctx.moment[mood]]
       : p.sub === 'transfer' ? ['transfer', SO.ctx.transfer] : mood === 'bye' ? ['bye', SO.ctx.bye] : null;

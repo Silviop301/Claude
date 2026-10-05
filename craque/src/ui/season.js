@@ -23,26 +23,40 @@
   }
 
   // Resenha da temporada: dois programas comentam, cada um no seu estilo (D.MEDIA.shows). Um fala do ano
-  // (título, banco, lesão, nota) e o outro de um destaque (gols, assistências, idade); sem destaque, também do ano.
+  // (título, banco, lesão, nota) e o outro de um destaque (gols, assistências, idade, paredão, xerife); sem destaque,
+  // também do ano. Às vezes o segundo discorda do primeiro, como numa mesa de debate (rebate e rebateDown).
+  const UP_TALK = ['ballon', 'title', 'great'], DOWN_TALK = ['bad'];
+  const GOAL_TALK = /\bgols?\b|gola[çc]o|dribl|pedalada|artilh/i;
   function resenha(res) {
     const shows = (D.MEDIA || {}).shows || [];
     if (shows.length < 2) return '';
-    const n = G.c.seasons.length, cl = club(res.club);
+    const cl = club(res.club);
     const ballon = res.awards.some(a => a.id === 'ballon');
     const mood = ballon ? 'ballon' : res.titles.length ? 'title' : !res.games || res.games < 10 ? 'bench' : res.injury >= 25 ? 'injury'
       : res.move && res.move.dir === 'down' ? 'down' : res.rating >= 7.6 ? 'great' : res.rating >= 7.0 ? 'good' : 'bad';
     const atk = res.pos === 'ATA' || res.pos === 'PON';
     const topic = res.games < 10 ? null : res.goals >= (atk ? 20 : 12) ? 'gols' : res.assists >= 12 ? 'assist'
+      : res.pos === 'GOL' && res.cleanSheets >= 24 ? 'paredao' : res.pos === 'ZAG' && res.tackles >= 19 ? 'xerife'
       : res.age <= 20 && res.rating >= 7.2 ? 'joia' : res.age >= 33 && res.rating >= 7.0 ? 'veterano' : null;
-    const fill = t => t.replace(/\{n\}/g, G.c.name).replace(/\{time\}/g, cl.name).replace(/\{clube\}/g, D.o(cl.name))
-      .replace(/\{g\}/g, res.goals).replace(/\{a\}/g, res.assists).replace(/\{idade\}/g, res.age);
-    // Dois programas sorteados (diferentes) e uma fala sorteada de cada
+    // Goleiro e zagueiro de poucos gols: nada de "gols", "dribla" ou "pedalada" nas falas do ano
+    const noGoal = res.pos === 'GOL' || (res.pos === 'ZAG' && res.goals < 5);
     const first = Math.floor(Math.random() * shows.length), second = (first + 1 + Math.floor(Math.random() * (shows.length - 1))) % shows.length;
+    const nota = (Math.round(res.rating * 10) / 10).toFixed(1).replace('.', ',');
+    const fill = t => t.replace(/\{n\}/g, G.c.name).replace(/\{time\}/g, cl.name).replace(/\{clube\}/g, D.o(cl.name))
+      .replace(/\{Clube\}/g, D.o(cl.name).replace(/^./, ch => ch.toUpperCase())).replace(/\{doTime\}/g, D.do(cl.name)).replace(/\{noTime\}/g, D.no(cl.name))
+      .replace(/\{g\}/g, res.goals).replace(/\{a\}/g, res.assists).replace(/\{idade\}/g, res.age).replace(/\{nota\}/g, nota)
+      .replace(/\{jogos\} jogos/g, D.plural(res.games || 0, 'jogo', 'jogos')).replace(/\{jogos\}/g, res.games || 0).replace(/\{cs\}/g, res.cleanSheets || 0).replace(/\{desarmes\}/g, res.tackles || 0)
+      .replace(/\{outro\}/g, shows[first].nick || shows[first].who);
     // Fala sorteada com memória entre carreiras (U.fresh): a mesma frase só volta depois das outras
-    const say = sh => key => fill(U.fresh ? U.fresh('r.' + sh.id + '.' + key, sh.talk[key]) : sh.talk[key][Math.floor(Math.random() * sh.talk[key].length)]);
+    const say = (sh, key) => {
+      let arr = sh.talk[key] && sh.talk[key].length ? sh.talk[key] : sh.talk[mood], k = 'r.' + sh.id + '.' + key;
+      if (noGoal && key === mood) { const ok = arr.filter(x => !GOAL_TALK.test(x)); if (ok.length && ok.length < arr.length) { arr = ok; k += '.ng'; } }
+      return fill(U.fresh ? U.fresh(k, arr) : arr[Math.floor(Math.random() * arr.length)]);
+    };
+    const reb = UP_TALK.includes(mood) ? 'rebate' : DOWN_TALK.includes(mood) ? 'rebateDown' : null;
+    const key2 = reb && (shows[second].talk[reb] || []).length && Math.random() < 0.3 ? reb : topic || mood;
     const item = (sh, q) => '<div class="rs-item"><div class="np">' + U.emo('🎙️', 'xs') + ' ' + esc(sh.who) + ' ' + esc(sh.where) + '</div><p>“' + esc(q) + '”</p></div>';
-    return '<div class="news resenha rv">' + item(shows[first], say(shows[first])(mood)) +
-      item(shows[second], say(shows[second])(topic || mood)) + '</div>';
+    return '<div class="news resenha rv">' + item(shows[first], say(shows[first], mood)) + item(shows[second], say(shows[second], key2)) + '</div>';
   }
 
   function season() {
