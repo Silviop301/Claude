@@ -7,11 +7,11 @@
   const KEY = 'climbix-dicas-v1';
   const st = () => { const s = load(KEY); return s && typeof s === 'object' ? s : { off: false, n: {} }; };
   const TIPS = {
-    base: ['Sua carreira começa aqui', 'A cada temporada você se prepara, toma decisões e joga. No fim, a carreira vira uma carta com nota de S a D. Toque num clube para ver a proposta e toque de novo para assinar.'],
-    pre: ['Prepare a temporada', 'Escolha uma característica: ela soma pontos nos atributos principais e tem um efeito próprio. São 5 na carreira, e depois dá para evoluir. Os pontos de evolução compram treinos e podem ficar guardados.'],
-    evento: ['Decisões que mudam a carreira', 'Cada opção mostra a chance de dar certo e o que está em jogo. Atributos e teto mudam para sempre; forma e minutos valem só esta temporada. A chance depende do seu momento: nível no clube, características e idade.'],
-    lance: ['Jogo decisivo', 'Agora é com você: o lance decide o jogo e às vezes o título. Se preferir, nas Configurações dá para deixar a carta decidir sozinha.'],
-    resumo: ['Fim da temporada', 'A nota da temporada puxa a evolução da carta. Em Detalhes você vê por que a nota geral mudou. Postar nas redes rende Fama e Torcida uma vez por temporada.'],
+    base: ['Sua carreira começa aqui', 'Uma carreira inteira em uns 9 minutos: a cada temporada você se prepara, decide e joga. No fim, ele vira uma carta com nota de S a D. Dica de começo: quem é titular joga toda semana; no banco, quase não entra em campo.'],
+    pre: ['Prepare a temporada', 'Escolha uma característica: ela deixa sua carta mais forte para sempre e tem um efeito próprio. Os pontos de evolução compram treinos, e dá para guardar para a próxima temporada.'],
+    evento: ['Decisões que mudam a carreira', 'Cada opção mostra a chance de dar certo e o que ganha ou perde. Não existe resposta certa: a arriscada rende mais, mas pode dar errado de verdade. Atributos valem para sempre; forma e minutos, só esta temporada.'],
+    lance: ['Jogo decisivo', 'Agora é com você: o lance decide o jogo e às vezes o título. Antes do primeiro de cada tipo, você treina sem valer nada. Se preferir, "Deixar o jogo decidir" usa a chance da sua carta.'],
+    resumo: ['Fim da temporada', 'Jogos, gols e nota puxam a evolução da carta: o quadro abaixo mostra o que ajudou e o que atrapalhou. Postar nas redes rende Fama e Torcida uma vez por temporada.'],
     janela: ['Janela de transferências', 'Compare o papel no elenco (titular joga mais) e o salário. Ficar também é uma opção, e trocar de clube muda a torcida que te apoia.'],
     fim: ['Sua carta final', 'Escolha a assinatura, o acabamento e o estilo da carta e compartilhe com os amigos. Os pacotinhos liberam números, visuais, assinaturas e acabamentos novos.'],
   };

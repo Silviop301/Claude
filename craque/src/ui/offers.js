@@ -8,11 +8,13 @@
     const kinds = { ask: ['Pedido seu', 'blue'], base: ['Base', ''], up: ['Clube maior', 'blue'], mid: ['Protagonista', 'green'], loan: ['Empréstimo · 1 ano', 'blue'], money: ['Proposta milionária', 'gold'], home: ['Volta pra casa', 'red'], stay: ['Renovar', ''] };
     const [kname, kcls] = kinds[o.kind] || ['', ''];
     const roleCls = o.share >= 0.78 ? 'green' : o.share >= 0.5 ? 'blue' : 'red';
+    // O que o papel quer dizer na prática (quem chega agora não sabe que "banco" é quase não jogar)
+    const roleNote = o.share >= 0.9 ? 'joga tudo' : o.share >= 0.78 ? 'joga quase sempre' : o.share >= 0.5 ? 'metade dos jogos' : o.share >= 0.3 ? 'entra pouco' : 'quase não joga';
     return '<button class="choice offer card" data-i="' + idx + '" style="display:flex">' +
       '<div class="top"><span class="club">' + crest(cl.id) + esc(cl.name) + '</span><span class="stars">' + stars(cl.tier) + '</span></div>' +
       '<div class="lg">' + U.flag(lg.flag) + ' ' + lg.name + (kname ? ' · <b class="of-kind ' + kcls + '">' + kname + '</b>' : '') + '</div>' +
       // O dilema do jogo em destaque: quanto você vai jogar × quão forte é o time
-      '<div class="of-key"><span class="of-role ' + roleCls + '">' + o.role + '</span>' +
+      '<div class="of-key"><span class="of-role ' + roleCls + '">' + o.role + '<small>' + roleNote + '</small></span>' +
       '<span class="of-str"><small>Força do time</small><b>' + cl.strength + '</b><i><em style="width:' + Math.max(8, Math.min(100, Math.round((cl.strength - 40) / 55 * 100))) + '%"></em></i></span></div>' +
       '<div class="facts"><span class="tag">R$ ' + money(o.wage) + '/sem</span><span class="tag">' + o.years + (o.years > 1 ? ' anos' : ' ano') + '</span>' +
       (G.c && (S.breaksChallenge(G.c, o) || (o.kind === 'loan' && G.c.challenge === 'fiel' && !G.c.chFail)) ? '<span class="tag ch-break">' + U.emo('⚠️', 'xs') + ' Quebra o desafio</span>' : '') + '</div></button>';
@@ -54,7 +56,7 @@
     render(
       '<button class="back-link" id="b-back-home">‹ Início</button>' +
       '<div class="eyebrow">' + year() + ' · ' + G.c.age + ' anos</div><h2>' + ACAD_TITLE[G.c.origin || 'base'] + '</h2>' +
-      '<p class="lead">' + (ACAD_LEAD[G.c.origin] || 'Clube grande dá mais chance de título, mas menos minutos em campo. Se não jogar, dá para pedir empréstimo no fim da temporada.') + '</p>' + U.originNote(G.c) +
+      '<p class="lead">' + (ACAD_LEAD[G.c.origin] || 'No clube grande você começa no banco e quase não joga; no menor, é titular e joga toda semana. Quem joga faz gols, ganha nota e pontos de evolução. Se não jogar, dá para pedir empréstimo no fim da temporada.') + '</p>' + U.originNote(G.c) +
       '<div class="choices">' + offers.map(offerCard).join('') + '</div>' + tools(win, true)
     );
     U.tip('base');

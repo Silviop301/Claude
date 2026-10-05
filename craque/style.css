@@ -1241,6 +1241,7 @@ h2 { font-size: 34px; line-height: 1.02; }
 /* Propostas: papel no time e força do time em destaque */
 .of-key { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; margin: 2px 0; }
 .of-role { font: 800 17px var(--display); letter-spacing: .04em; text-transform: uppercase; padding: 6px 10px; border-radius: 10px; background: #EEF2EF; color: var(--ink); }
+.of-role small { display: block; font: 600 11px/1.2 var(--body); letter-spacing: 0; text-transform: none; opacity: .85; margin-top: 1px; }
 .of-role.green { background: #CDEFD9; color: #0E5A30; } .of-role.blue { background: #D6E4FA; color: #1D4C9E; } .of-role.red { background: #F8D3D6; color: #8E1B24; }
 .of-str { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 8px; }
 .of-str small { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
