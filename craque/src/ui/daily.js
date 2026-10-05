@@ -12,16 +12,23 @@
     let h = 2166136261;
     for (const ch of 'craque-' + key) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
     const r = S.rng(h);
-    const pos = r() < 0.5 ? 'ATA' : 'MEI';
+    // As quatro posições (atacante e meia saem mais)
+    const pos = r.pick(['ATA', 'ATA', 'ATA', 'MEI', 'MEI', 'MEI', 'ZAG', 'ZAG', 'GOL']);
     const foot = r() < 0.75 ? 'D' : 'E', country = r.pick(D.COUNTRIES).id;
+    // Origem e desafio do dia (engine/origins.js): todo mundo joga com os mesmos, liberados ou não
+    const origin = r() < 0.4 ? 'base' : r.pick(S.ORIGINS.filter(o => o.id !== 'base')).id;
+    const chs = S.CHALLENGES.filter(x => S.challengeFits(x, country));
+    const challenge = chs.length && r() < 0.5 ? r.pick(chs).id : null;
+    const NUMS = { ATA: [9, 7, 11, 19, 99], MEI: [10, 8, 20, 17, 23], ZAG: [4, 3, 2, 5, 14], GOL: [1, 12, 23, 31, 99] };
     // Nome conforme a nacionalidade do garoto do dia
-    return { seed: h, name: r.pick((D.DAILY_NAMES || {})[country] || D.NICKNAMES), pos, foot, country,
-      number: r.pick(pos === 'ATA' ? [9, 7, 11, 19, 99] : [10, 8, 20, 17, 23]) };
+    return { seed: h, name: r.pick((D.DAILY_NAMES || {})[country] || D.NICKNAMES), pos, foot, country, origin, challenge,
+      number: r.pick(NUMS[pos]) };
   }
 
   function dailyStart() {
     const key = todayKey(), sp = dailySpec(key);
     G.c = S.newCareer(sp, sp.seed);
+    S.setOrigin(G.c, sp.origin, sp.challenge);
     G.c.daily = key;
     U.academy();
   }
@@ -31,7 +38,8 @@
     const key = todayKey(), sp = dailySpec(key), best = (load(KEY) || {})[key];
     const flag = (D.COUNTRIES.find(x => x.id === sp.country) || {}).flag || '';
     return '<button class="daily" id="b-daily"><span class="dl-seal">' + U.ICON['calendar-days'] + '</span><span class="dl-top">Carreira do dia · ' + shortDate(key) + '</span>' +
-      '<b>' + esc(sp.name) + ' <span>' + U.flag(flag) + ' ' + (sp.pos === 'ATA' ? 'Atacante' : 'Meia') + ' · ' + sp.number + '</span></b>' +
+      '<b>' + esc(sp.name) + ' <span>' + U.flag(flag) + ' ' + D.POS[sp.pos].name + ' · ' + sp.number + '</span></b>' +
+      (sp.origin !== 'base' || sp.challenge ? '<span class="dl-sub dl-rule">' + [S.ORIGIN_BY_ID[sp.origin], S.CHALLENGE_BY_ID[sp.challenge]].filter(o => o && o.id !== 'base').map(o => U.emo(o.icon, 'xs') + ' ' + esc(o.name)).join(' · ') + '</span>' : '') +
       '<span class="dl-sub">' + (best ? 'Seu melhor hoje: nota ' + best.grade + ' · ' + best.score + ' pts' : 'Desafio de hoje: todos jogam com ele. Quem vai mais longe?') + '</span></button>';
   }
 

@@ -1,5 +1,5 @@
 // Simula milhares de carreiras do CRAQUE com um "jogador robô" para checar ritmo e variedade.
-// Uso: node tools/craque_sim.js [n]
+// Uso: node tools/craque_sim.js [n] [casual]  ·  ORIGIN=tardia CHAL=fiel node tools/craque_sim.js (origem e desafio)
 const D = require('../craque/src/data.js');
 const S = require('../craque/src/sim.js');
 const N = +process.argv[2] || 2000;
@@ -11,6 +11,8 @@ for (let n = 0; n < N; n++) {
   const POSS = process.env.POS ? process.env.POS.split(',') : ['ATA', 'MEI', 'ZAG', 'GOL'];
   const pos = POSS[n % POSS.length];
   const c = S.newCareer({ name: 'Robô', pos, foot: 'D', country: D.COUNTRIES[Math.floor(n / POSS.length) % D.COUNTRIES.length].id }, 1000 + n);
+  // ORIGIN=id / CHAL=id: carreira com origem e desafio (engine/origins.js); o robô não quebra o desafio
+  if (process.env.ORIGIN || process.env.CHAL) S.setOrigin(c, process.env.ORIGIN || 'base', process.env.CHAL);
   let decisions = 0;
   const base = S.offers(c, true);
   S.join(c, SMART ? base.slice().sort((a, b) => b.share - a.share)[0] : base[0]); decisions++;
@@ -41,6 +43,8 @@ for (let n = 0; n < N; n++) {
       // Eventos com aposta (engine/stakes.js): o esperto lê a chance e o que está em jogo (valor escondido ev); nos outros, o mapa antigo
       if (SMART) i = ev.options.every(o => o.ev !== undefined) && !ev.dest ? ev.options.map((o, k) => [o.ev, k]).sort((a, b) => b[0] - a[0])[0][1]
         : ({ banco: 0, assedio: 0, funcao: 0, arabia: 1, renovar: 1, capitao: 0, classico: 1, festa: 1, sub20: 0, protesto: 0 }[ev.id] ?? 0);
+      // Com desafio valendo, o robô recusa a proposta do evento que quebraria a regra (a tela avisa)
+      if (ev.dest && i === 0 && S.breaksChallenge(c, { club: ev.dest })) i = 1;
       S.resolveEvent(c, ev, i); decisions++;
       c.stats = c.stats || {}; c.stats[ev.id] = (c.stats[ev.id] || 0) + 1;
     }
@@ -70,7 +74,8 @@ for (let n = 0; n < N; n++) {
     if (!S.windowOpen(c)) continue;
     const offers = S.offers(c, false);
     decisions++;
-    const opts = offers.concat([S.stayOffer(c)]);
+    let opts = offers.concat([S.stayOffer(c)]);
+    if (c.challenge && !c.chFail) opts = opts.filter(o => !S.breaksChallenge(c, o));
     if (!offers.length && S.ovr(c) < 50) break;
     const stay = S.stayOffer(c);
     if (!SMART && n % 4 < 2 && stay.share >= 0.78 && Math.random() < 0.8) { S.join(c, stay); continue; }

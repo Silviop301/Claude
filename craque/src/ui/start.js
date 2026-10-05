@@ -124,7 +124,42 @@
   const LAST = 'climbix-ultimo-visual';
   const lastLook = () => { const l = U.load(LAST); return l && typeof l === 'object' ? I.clean(Object.assign({}, I.FREE, onlyLook(l))) : null; };
   const newSt = () => ({ pos: 'ATA', foot: 'D', country: 'Brasil', num: defNum('ATA'), numTouched: false, name: D.NICKNAMES[Math.floor(Math.random() * D.NICKNAMES.length)],
-    tab: 'corpo', look: lastLook() || rollLook(Object.assign({}, I.FREE, { v: 2 })) });
+    tab: 'corpo', origin: 'base', challenge: null, look: lastLook() || rollLook(Object.assign({}, I.FREE, { v: 2 })) });
+
+  // Origem e desafio (engine/origins.js): liberados por conquistas
+  const achName = id => (S.ACHIEVEMENTS.find(a => a.id === id) || {}).name || id;
+  const optChips = (list, cur, kind, st) => '<div class="cr-chips">' + list.map(o => {
+    const lock = !U.achHas(o.need), off = kind === 'challenge' && !S.challengeFits(o, st.country);
+    return '<button data-' + kind + '="' + o.id + '" class="' + (cur === o.id ? 'on' : '') + (lock || off ? ' lock' : '') + '">' + (lock ? U.emo('🔒', 'xs') + ' ' : U.emo(o.icon, 'xs') + ' ') + esc(o.name) + '</button>';
+  }).join('') + '</div>';
+  function originRows(st) {
+    const o = S.ORIGIN_BY_ID[st.origin], ch = S.CHALLENGE_BY_ID[st.challenge];
+    return '<div class="cr-lbl">Origem · <b>' + esc(o.name) + '</b></div>' + optChips(S.ORIGINS, st.origin, 'origin', st) +
+      '<p class="cr-desc">' + esc(o.desc) + '</p>' +
+      '<div class="cr-lbl">Desafio · <b>' + (ch ? esc(ch.name) : 'nenhum') + '</b></div>' +
+      optChips([{ id: '', icon: '➖', name: 'Nenhum' }].concat(S.CHALLENGES), st.challenge || '', 'challenge', st) +
+      '<p class="cr-desc">' + (ch ? esc(ch.desc) : 'Sem regra extra. Um desafio cumprido soma pontos na nota final.') + '</p>';
+  }
+  function bindOrigin(st, redraw) {
+    const note = (it, why) => { const el = $('cr-onote'); if (el) el.innerHTML = '<div class="cr-lock">' + U.emo('🔒', 'sm') + '<span><b>' + esc(it.name) + '</b> · ' + why + '</span></div>'; };
+    screen.querySelectorAll('[data-origin]').forEach(b => b.onclick = () => {
+      const it = S.ORIGIN_BY_ID[b.dataset.origin];
+      if (!U.achHas(it.need)) return note(it, 'libere com a conquista "' + achName(it.need) + '"');
+      st.origin = it.id; sfx('tap'); redraw();
+    });
+    screen.querySelectorAll('[data-challenge]').forEach(b => b.onclick = () => {
+      const it = S.CHALLENGE_BY_ID[b.dataset.challenge];
+      if (it && !U.achHas(it.need)) return note(it, 'libere com a conquista "' + achName(it.need) + '"');
+      if (it && !S.challengeFits(it, st.country)) return note(it, 'só para quem nasceu fora da Europa');
+      st.challenge = it ? it.id : null; sfx('tap'); redraw();
+    });
+  }
+  // Lembrete na base e na janela: origem e desafio em andamento
+  U.originNote = c => {
+    const ch = S.CHALLENGE_BY_ID[c.challenge];
+    if (!ch) return '';
+    return '<p class="muted small ch-note">' + U.emo(ch.icon, 'xs') + ' Desafio ' + esc(ch.name) + (c.chFail ? ': quebrado' : ': valendo +' + ch.v + ' pts no fim') + '</p>';
+  };
 
   // Número da camisa: os 99 livres; o estilo do número (dourado, neon...) sai nos pacotinhos
   function numSheet(st, onDone) {
@@ -184,8 +219,13 @@
       '<div class="cr-lbl">Posição</div><div class="seg pos4" id="f-pos">' + [['ATA', 'Atacante'], ['MEI', 'Meia'], ['ZAG', 'Zagueiro'], ['GOL', 'Goleiro']].map(([v, l]) => '<button data-v="' + v + '"' + (st.pos === v ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>' +
       '<div class="cr-lbl">Pé bom</div><div class="seg" id="f-foot"><button data-v="D"' + (st.foot === 'D' ? ' class="on"' : '') + '>Destro</button><button data-v="E"' + (st.foot === 'E' ? ' class="on"' : '') + '>Canhoto</button></div>' +
       '<div class="cr-lbl">País · <b id="cr-cty"></b></div><div class="cr-flags" id="f-country">' + D.COUNTRIES.map(k => '<button data-v="' + k.id + '"' + (k.id === st.country ? ' class="on"' : '') + ' aria-label="' + k.id + '">' + U.flag(k.flag, 'sm') + '</button>').join('') + '</div>' +
+      '<div id="cr-origin"></div><div id="cr-onote"></div>' +
       '<div class="inv-bar fade"><button class="btn" id="b-start">Começar carreira</button></div>'
     );
+    const drawOrigin = () => {
+      if (st.challenge && !S.challengeFits(S.CHALLENGE_BY_ID[st.challenge], st.country)) st.challenge = null;
+      $('cr-origin').innerHTML = originRows(st); $('cr-onote').innerHTML = ''; bindOrigin(st, drawOrigin);
+    };
     const paint = () => {
       $('cc-flag').innerHTML = U.flag(cty().flag);
       $('cr-cty').textContent = cty().id;
@@ -198,6 +238,7 @@
         st[key] = b.dataset.v;
         // Número padrão acompanha a posição até a pessoa escolher um (sempre entre os liberados)
         if (key === 'pos' && !st.numTouched) st.num = defNum(b.dataset.v);
+        if (key === 'country') drawOrigin();
         paint();
       }));
     $('f-num').onclick = () => numSheet(st, paint);
@@ -206,11 +247,12 @@
     $('b-look').onclick = () => { st.name = $('f-name').value.trim() || st.name; looks(st); };
     $('b-dice1').onclick = () => { rollLook(st.look); sfx('tap'); paint(); };
     $('b-start').onclick = () => { st.name = $('f-name').value.trim() || st.name; start(st); };
-    paint();
+    paint(); drawOrigin();
   }
 
   function start(st) {
     G.c = S.newCareer({ name: st.name.trim() || 'Craque', pos: st.pos, foot: st.foot, country: st.country, number: st.num });
+    S.setOrigin(G.c, U.achHas((S.ORIGIN_BY_ID[st.origin] || {}).need) ? st.origin : 'base', st.challenge);
     // Só entra o que está liberado (a prévia fica de fora)
     G.c.look = onlyLook(I.clean(st.look));
     U.store(LAST, G.c.look);

@@ -6,10 +6,23 @@
   // Pesos da pontuação final e faixas das notas (a tela de fim de carreira mostra a conta)
   S.SCORE_W = { title: 12, cont: 35, cont2: 12, cwc: 60, wc: 150, wcGoal: 3, ballon: 100, award: 16, peak: 2 };
   // Faixas calibradas no simulador (robô que joga bem): S 10% · A 25% · B 30% · C 20% · D 15% das carreiras
-  S.GRADES = [['S', 1745], ['A', 1270], ['B', 930], ['C', 725], ['D', 0]];
+  S.GRADES = [['S', 1810], ['A', 1275], ['B', 910], ['C', 690], ['D', 0]];
   // Peso da produção por posição (medido no simulador para as quatro chegarem às notas altas com a mesma dificuldade)
   S.PROD_W = { ATA: 1.04, MEI: 0.97, ZAG: 1.06, GOL: 1.17 };
   S.gradeOf = score => S.GRADES.find(([, min]) => score >= min)[0];
+  // Nível das ligas onde você jogou: gol e prêmio num clube de elite valem mais que numa liga fraca (sem isso,
+  // ficar a carreira toda sendo o melhor de uma liga menor rendia mais pontos que brilhar na Europa).
+  // Média das temporadas pelo nível do clube (estrelas), pesada pelos jogos (produção) ou pelos prêmios.
+  S.LEVEL_W = { prod: [0, 0.68, 0.78, 0.9, 1, 1.08], awards: [0, 0.4, 0.5, 0.7, 1, 1.15], titles: [0, 0.45, 0.6, 0.85, 1, 1.15] };
+  S.levelOf = function (c, k) {
+    let w = 0, sum = 0;
+    (c.seasons || []).forEach(s => {
+      const cl = D.CLUB_BY_ID[s.club]; if (!cl) return;
+      const n = k === 'prod' ? s.games || 0 : k === 'titles' ? (s.titles || []).length : (s.awards || []).filter(a => ['scorer', 'young', 'team'].includes(a.id)).length;
+      w += n; sum += n * S.LEVEL_W[k][cl.tier];
+    });
+    return w ? sum / w : 1;
+  };
   S.finish = function (c) {
     c.retired = true;
     const T = c.totals;
@@ -29,22 +42,23 @@
     const prod = isDef ? (T.cs || 0) * 0.9 + (T.goals * 1.5 + T.assists * 0.7) / G + (T.saves || 0) * 0.15 + (T.penSaved || 0) * 2.5 + (T.tackles || 0) * 0.3
       : c.pos === 'MEI' ? (T.goals * 1.1 + T.assists * 1.0) / G : (T.goals * 0.62 + T.assists * 0.5) / G;
     // Ajuste fino por posição (medido no simulador): sem ele, atacantes e goleiros ficavam com mais notas D
-    const prodW = S.PROD_W[c.pos] || 1;
+    const prodW = (S.PROD_W[c.pos] || 1) * S.levelOf(c, 'prod');
     // Cada parcela da pontuação, para a tela explicar de onde veio a nota
     const n = (x, w) => (x || 0) * w;
     const P = D.plural, prodTxt = isDef ? P(T.cs || 0, 'jogo sem sofrer gol', 'jogos sem sofrer gol') + (c.pos === 'GOL' ? ', ' + P(T.penSaved || 0, 'pênalti defendido', 'pênaltis defendidos') : ', ' + P(T.tackles || 0, 'desarme', 'desarmes')) + ', ' + P(T.goals, 'gol', 'gols')
       : P(T.goals, 'gol', 'gols') + ' e ' + P(T.assists, 'assistência', 'assistências');
     const awards = (T.scorer || 0) + (T.young || 0) + (T.team || 0);
+    const levelTxt = k => { const l = S.levelOf(c, k); return Math.abs(l - 1) >= 0.02 ? ' (nível das ligas ×' + l.toFixed(2).replace('.', ',') + ')' : ''; };
     const parts = [
-      { k: 'prod', txt: 'Produção: ' + prodTxt, v: Math.round(prod * prodW) },
-      { k: 'titles', txt: titles + (titles === 1 ? ' título' : ' títulos') + ' × ' + S.SCORE_W.title, v: n(titles, S.SCORE_W.title) },
+      { k: 'prod', txt: 'Produção: ' + prodTxt + levelTxt('prod'), v: Math.round(prod * prodW) },
+      { k: 'titles', txt: titles + (titles === 1 ? ' título' : ' títulos') + ' × ' + S.SCORE_W.title + levelTxt('titles'), v: Math.round(n(titles, S.SCORE_W.title) * S.levelOf(c, 'titles')) },
       { k: 'cont', txt: 'Títulos continentais: ' + (T.cont || 0) + ' × ' + S.SCORE_W.cont + ' extra', v: n(T.cont, S.SCORE_W.cont) },
       { k: 'cont2', txt: 'Outras taças continentais (Sul-Americana, Liga Europa...): ' + (T.cont2 || 0) + ' × ' + S.SCORE_W.cont2 + ' extra', v: n(T.cont2, S.SCORE_W.cont2) },
       { k: 'cwc', txt: 'Mundial de Clubes: ' + (T.cwc || 0) + ' × ' + S.SCORE_W.cwc + ' extra', v: n(T.cwc, S.SCORE_W.cwc) },
       { k: 'wc', txt: 'Copa do Mundo: ' + (T.wc || 0) + ' × ' + S.SCORE_W.wc, v: n(T.wc, S.SCORE_W.wc) },
       { k: 'wcg', txt: 'Gols em Copas: ' + (T.wcGoals || 0) + ' × ' + S.SCORE_W.wcGoal, v: n(T.wcGoals, S.SCORE_W.wcGoal) },
       { k: 'ballon', txt: 'Bola de Ouro: ' + (T.ballon || 0) + ' × ' + S.SCORE_W.ballon, v: n(T.ballon, S.SCORE_W.ballon) },
-      { k: 'awards', txt: 'Prêmios da liga (artilharia, revelação, seleção): ' + awards + ' × ' + S.SCORE_W.award, v: n(awards, S.SCORE_W.award) },
+      { k: 'awards', txt: 'Prêmios da liga (artilharia, revelação, seleção): ' + awards + ' × ' + S.SCORE_W.award + levelTxt('awards'), v: Math.round(n(awards, S.SCORE_W.award) * S.levelOf(c, 'awards')) },
       { k: 'legacy', txt: 'Legado (escolhas de liderança e de clube)', v: Math.round(c.legacy || 0) },
       { k: 'peak', txt: 'Auge: nota geral ' + c.peak + ' × ' + S.SCORE_W.peak, v: n(c.peak, S.SCORE_W.peak) },
     ].concat(bonus.map(b => ({ k: 'bonus', txt: b.txt, v: b.v }))).filter(p => p.v > 0);

@@ -1,6 +1,6 @@
 // Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
-const CACHE = 'craque-ad779a7f';
+const CACHE = 'craque-f70b55ae';
 const ASSETS = [
   "./",
   "./fonts/TwemojiCountryFlags.woff2",
@@ -60,6 +60,7 @@ const ASSETS = [
   "./src/engine/finish.js",
   "./src/engine/market.js",
   "./src/engine/moments.js",
+  "./src/engine/origins.js",
   "./src/engine/rival.js",
   "./src/engine/season.js",
   "./src/engine/stakes.js",
@@ -434,6 +435,7 @@ const LATER = [
   "./assets/tw/1f9d0.svg",
   "./assets/tw/1f9d1-200d-1f3eb.svg",
   "./assets/tw/1f9d1-200d-1f91d-200d-1f9d1.svg",
+  "./assets/tw/1f9d1-200d-2695-fe0f.svg",
   "./assets/tw/1f9d2.svg",
   "./assets/tw/1f9d3.svg",
   "./assets/tw/1f9d8.svg",
@@ -484,6 +486,7 @@ const LATER = [
   "./assets/tw/270f.svg",
   "./assets/tw/2728.svg",
   "./assets/tw/2764.svg",
+  "./assets/tw/2796.svg",
   "./assets/tw/27a1.svg",
   "./assets/tw/2b06.svg",
   "./assets/tw/2b07.svg",

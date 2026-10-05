@@ -2182,3 +2182,11 @@ details.fin-more[open] { display: flex; flex-direction: column; gap: 12px; paddi
 .k-beams { mix-blend-mode: screen; animation: k-beam 6s ease-in-out infinite alternate; }
 @keyframes k-beam { to { opacity: .7; } }
 @media (prefers-reduced-motion: reduce) { .k-beams, .kick-stage.cine .k-crowd g { animation: none !important; } }
+
+/* Origem e desafio na criação (engine/origins.js) */
+.cr-chips button.lock { opacity: .55; }
+.cr-chips button img { vertical-align: -3px; }
+.cr-desc { margin: 6px 2px 0; font: 500 14px/1.35 var(--body); color: #CFE3D6; }
+.ch-note { margin: 4px 0 8px; }
+.facts .tag.ch-break { background: rgba(232, 92, 72, .2); color: #FFC7BD; }
+.btn.opt .ch-warn { display: block; margin-top: 4px; font: 600 13px var(--body); color: #FFC7BD; }

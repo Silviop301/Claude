@@ -43,5 +43,5 @@
     $('b-back').onclick = U.goBack;
   }
 
-  Object.assign(U, { achRecord, achBlock, achievements, achCount: count });
+  Object.assign(U, { achRecord, achBlock, achievements, achCount: count, achHas: id => !id || !!got()[id] });
 })();

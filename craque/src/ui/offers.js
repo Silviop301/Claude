@@ -14,7 +14,8 @@
       // O dilema do jogo em destaque: quanto você vai jogar × quão forte é o time
       '<div class="of-key"><span class="of-role ' + roleCls + '">' + o.role + '</span>' +
       '<span class="of-str"><small>Força do time</small><b>' + cl.strength + '</b><i><em style="width:' + Math.max(8, Math.min(100, Math.round((cl.strength - 40) / 55 * 100))) + '%"></em></i></span></div>' +
-      '<div class="facts"><span class="tag">R$ ' + money(o.wage) + '/sem</span><span class="tag">' + o.years + (o.years > 1 ? ' anos' : ' ano') + '</span></div></button>';
+      '<div class="facts"><span class="tag">R$ ' + money(o.wage) + '/sem</span><span class="tag">' + o.years + (o.years > 1 ? ' anos' : ' ano') + '</span>' +
+      (G.c && (S.breaksChallenge(G.c, o) || (o.kind === 'loan' && G.c.challenge === 'fiel' && !G.c.chFail)) ? '<span class="tag ch-break">' + U.emo('⚠️', 'xs') + ' Quebra o desafio</span>' : '') + '</div></button>';
   }
 
   // Quadro "Hoje × Proposta": clube, força, papel, salário e contrato lado a lado
@@ -39,14 +40,21 @@
       ' · ' + esc(o.role) + (o.role !== cur.role ? ' (hoje ' + esc(cur.role).toLowerCase() + ')' : '') + '</small>';
   };
 
+  // Base conforme a origem (engine/origins.js)
+  const ACAD_TITLE = { base: 'Três clubes querem você na base', filho: 'O sobrenome chegou antes de você', tardia: 'Um olheiro te viu na várzea', exportado: 'Clubes de fora querem você na base' };
+  const ACAD_LEAD = {
+    filho: 'Todo mundo conhece o seu pai. As portas abrem mais fácil, mas cada temporada ruim vai ser comparada com a dele.',
+    tardia: 'Aos 19, só os clubes pequenos apostam. Quem joga logo de cara aparece rápido.',
+    exportado: 'Luvas no bolso e passagem só de ida. Os primeiros anos longe de casa custam a render.',
+  };
   function academy() {
     G.step = 'academy';
     const win = S.windowState(G.c, true), offers = win.offers;
     bar();
     render(
       '<button class="back-link" id="b-back-home">‹ Início</button>' +
-      '<div class="eyebrow">' + year() + ' · 16 anos</div><h2>Três clubes querem você na base</h2>' +
-      '<p class="lead">Clube grande dá mais chance de título, mas menos minutos em campo. Se não jogar, dá para pedir empréstimo no fim da temporada.</p>' +
+      '<div class="eyebrow">' + year() + ' · ' + G.c.age + ' anos</div><h2>' + ACAD_TITLE[G.c.origin || 'base'] + '</h2>' +
+      '<p class="lead">' + (ACAD_LEAD[G.c.origin] || 'Clube grande dá mais chance de título, mas menos minutos em campo. Se não jogar, dá para pedir empréstimo no fim da temporada.') + '</p>' + U.originNote(G.c) +
       '<div class="choices">' + offers.map(offerCard).join('') + '</div>' + tools(win, true)
     );
     U.tip('base');
@@ -75,7 +83,7 @@
       '<div class="eyebrow">Janela de transferências · ' + year() + '</div>' +
       '<h2>' + (ended ? 'Seu contrato com ' + D.o(esc(club(G.c.club).name)) + ' acabou' : 'Seu empresário abriu o mercado') + '</h2>' +
       '<p class="lead">' + (noOffers ? 'Nenhum clube novo apareceu. ' : '') + 'Nota geral ' + S.ovr(G.c) + ' · ' + U.emo('⭐', 'xs') + ' ' + S.fameLabel(G.c.fame) + '. A última opção é renovar com o clube atual.</p>' +
-      '<p class="muted small">' + U.emo('⭐', 'xs') + ' Fama traz propostas de clubes maiores, salários mais altos' + (G.c.fame >= 150 ? ', vaga mais fácil na seleção' : '') + ' e mais votos na Bola de Ouro.</p>' +
+      U.originNote(G.c) + '<p class="muted small">' + U.emo('⭐', 'xs') + ' Fama traz propostas de clubes maiores, salários mais altos' + (G.c.fame >= 150 ? ', vaga mais fácil na seleção' : '') + ' e mais votos na Bola de Ouro.</p>' +
       '<div class="choices">' + all.map(offerCard).join('') + '</div>' + tools(win, false) +
       (S.canRetire(G.c) ? '<button class="btn ghost" id="b-retire">Pendurar as chuteiras</button>' : '')
     );
