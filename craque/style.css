@@ -514,6 +514,14 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .wallet span { white-space: nowrap; }
 .wallet b { font-size: 18px; }
 .choices.inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* estilo do lance decisivo: dois jeitos lado a lado, com a chance pela carta em cada um */
+.st-lead { margin-bottom: 4px; }
+.choices.style-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.btn.opt.style { padding: 10px 8px; min-height: 0; }
+.btn.opt.style .st-ico { line-height: 1; }
+.btn.opt.style small { font-size: 12px; line-height: 1.2; }
+.btn.opt.style .st-chance { opacity: 1; margin-top: 2px; }
+.btn.opt.style .st-chance b { font-weight: 800; }
 .choice.inv { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px; }
 .choice.inv .ic { font-size: 24px; }
 .choice.inv b { font-size: 17px; }

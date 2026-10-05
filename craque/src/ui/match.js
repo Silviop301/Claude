@@ -110,13 +110,24 @@
   // Abre o minigame certo para o tipo do lance (chute, goleiro, zagueiro ou meia)
   // c: quem bate (o treino pode usar um jogador médio da posição do lance)
   // kitCtx (Copa e Mundial): { vs: nome do adversário, mine: sua seleção ou clube } para os uniformes certos
-  function playMini(el, setupType, onDone, c, kitCtx) {
+  // style: estilo escolhido na tela do lance (S.STYLES); sem ele, o lance de sempre
+  function playMini(el, setupType, onDone, c, kitCtx, style) {
     c = c || G.c;
     window.CRAQUE_KIT_CTX = kitCtx || null;
-    if (setupType === 'save') return window.CRAQUE_SAVE(el, { c, onDone });
-    if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, { c, onDone });
-    if (setupType === 'pass') return window.CRAQUE_PASS(el, { c, onDone });
-    return window.CRAQUE_KICK(el, { c, moment: { type: setupType }, onDone });
+    if (setupType === 'save') return window.CRAQUE_SAVE(el, { c, onDone, style });
+    if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, { c, onDone, style });
+    if (setupType === 'pass') return window.CRAQUE_PASS(el, { c, onDone, style });
+    return window.CRAQUE_KICK(el, { c, moment: { type: setupType, style }, onDone });
+  }
+  // Os dois estilos do lance, lado a lado: nome, como muda o lance e a chance pela carta em cada um.
+  // Nenhum é sempre o melhor: a chance pende para atributos diferentes e o jeito de jogar muda.
+  function styleBtns(st) {
+    return '<div class="choices style-grid">' + S.STYLES[st].map(d => { const k = S.kickSetup(G.c, st, d.id);
+      return '<button class="btn opt style" data-style="' + d.id + '"><span class="st-ico">' + U.emo(d.ico, 'sm') + '</span>' + esc(d.name) + '<small>' + esc(d.hint) + '</small><small class="st-chance">Pela carta: <b>' + Math.round(k.chance * 100) + '%</b></small></button>'; }).join('') + '</div>';
+  }
+  // Liga os botões de estilo: guarda a escolha no lance (m) e segue para o minigame
+  function bindStyle(m, go) {
+    screen.querySelectorAll('[data-style]').forEach(b => b.onclick = () => { m.style = b.dataset.style; save(); go(); });
   }
   // O que da carta pesa no lance, sem números escondidos
   function miniFacts(setupType) {
@@ -146,7 +157,7 @@
 
   function momentIntro(m) {
     const st = S.kickSetupType(m), def = st === 'save' || st === 'tackle';
-    const T = def ? DEF_TXT(m, st) : st === 'pass' ? PASS_TXT(m) : MOMENT_TXT[m.type](m), k = S.kickSetup(G.c, st);
+    const T = def ? DEF_TXT(m, st) : st === 'pass' ? PASS_TXT(m) : MOMENT_TXT[m.type](m), k = S.kickSetup(G.c, st, S.autoStyle(G.c, st));
     render(
       '<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div>' +
       '<div class="card event-card moment-card">' + (m.score
@@ -157,20 +168,20 @@
       '<h2>' + T.title + '</h2><p style="margin:0">' + esc(T.text) + '</p><p class="stakes">' + esc(T.stakes) + '</p></div>' +
       '<div class="chips">' + miniFacts(st).join('') + '</div>' +
       '<p class="lead small">' + MINI_HOW[st] + '</p>' +
-      '<button class="btn" id="b-kick">' + MINI_BTN[st] + '</button>' +
+      '<p class="lead small st-lead">Como você vai ' + { cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar' }[st] + '?</p>' + styleBtns(st) +
       '<button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>' +
       '<button class="link-btn mom-train" id="b-train">' + U.emo('🏟️', 'xs') + ' Treinar este lance antes</button>'
     );
     U.tip('lance');
     $('b-train').onclick = () => U.training(st);
     // Primeiro lance deste tipo: o treino abre antes (e dá para pular)
-    $('b-kick').onclick = U.gateTrain(st, () => {
+    bindStyle(m, U.gateTrain(st, () => {
       m.started = true; save();
       render('<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div><div id="kick"></div>');
       sfx('whistle');
       // Saiu da tela no meio da cobrança (voltou ao início): o resultado não redesenha nada; ao retomar, a chance decide
-      playMini($('kick'), st, (ok, why) => { if (!$('kick')) return; momentEnd(m, ok, T, why); });
-    });
+      playMini($('kick'), st, (ok, why) => { if (!$('kick')) return; momentEnd(m, ok, T, why); }, null, null, m.style);
+    }));
     $('b-auto').onclick = () => {
       const ok = S.autoMoment(G.c);
       save();
@@ -186,18 +197,20 @@
 
   function momentResult(ok, T, m, why) {
     const how = { defesa: 'O goleiro ' + D.do(club(m.vs).name) + ' defendeu.', trave: 'A bola explodiu na trave.', fora: 'A bola foi para fora.', alto: 'A bola foi por cima do gol.', barreira: 'A bola parou na barreira.' }[why] || '';
+    // O estilo escolhido entra no texto (o chute forte, a saída do gol, o bote em pé, o lançamento)
+    const st = S.kickSetupType(m), bold = S.styleOf(st, m) !== S.styleIds(st)[0];
+    const goal = bold ? 'Bomba indefensável! ' : 'No cantinho! ';
     const txt = {
-      cup: ok ? 'Gol! Campeão da ' + m.comp + '!' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
-      title: ok ? 'Na rede! O título é seu!' : (how || 'Não entrou.') + ' O título escapou nos detalhes.',
-      classico: ok ? 'Golaço de falta! O clássico é seu.' : (how || 'Não foi dessa vez.') + ' A torcida lamenta.',
-      acesso: ok ? 'Gol! O acesso é seu!' : (how || 'Não entrou.') + ' O acesso escapou na última rodada.',
-      cont: ok ? 'É campeão da ' + m.comp + '! Seu nome entrou para a história do clube.' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
+      cup: ok ? goal + 'Campeão da ' + m.comp + '!' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
+      title: ok ? goal + 'O título é seu!' : (how || 'Não entrou.') + ' O título escapou nos detalhes.',
+      classico: ok ? (bold ? 'Bomba de falta, golaço! ' : 'Golaço de falta colocada! ') + 'O clássico é seu.' : (how || 'Não foi dessa vez.') + ' A torcida lamenta.',
+      acesso: ok ? goal + 'O acesso é seu!' : (how || 'Não entrou.') + ' O acesso escapou na última rodada.',
+      cont: ok ? goal + 'É campeão da ' + m.comp + '! Seu nome entrou para a história do clube.' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
     }[m.type];
     // Lances defensivos: texto próprio
-    const st = S.kickSetupType(m);
-    const defTxt = st === 'save' ? (ok ? (why === 'fora' ? 'O batedor mandou para fora! ' : 'Que defesa! ') : 'Não deu: a bola entrou. ')
-      : st === 'tackle' ? (ok ? 'Carrinho perfeito, bola roubada! ' : why === 'cedo' ? 'Você chegou cedo e ele passou. ' : 'Chegou tarde: ele passou e marcou. ')
-      : st === 'pass' ? (ok ? 'Bola enfiada na medida e o atacante não perdoou: assistência sua! ' : why === 'impedido' ? 'Demorou o passe e ele ficou impedido. ' : 'A zaga cortou o passe. ') : null;
+    const defTxt = st === 'save' ? (ok ? (why === 'fora' ? (bold ? 'Você cresceu no gol e o batedor mandou para fora! ' : 'O batedor mandou para fora! ') : bold ? 'Saiu da linha e cresceu: que defesa! ' : 'Que defesa! ') : 'Não deu: a bola entrou. ')
+      : st === 'tackle' ? (ok ? (bold ? 'Encaixou o corpo e ficou com a bola! ' : 'Carrinho perfeito, bola roubada! ') : why === 'cedo' ? 'Você chegou cedo e ele passou. ' : why === 'drible' ? 'Você chegou junto, mas ele driblou e marcou. ' : 'Chegou tarde: ele passou e marcou. ')
+      : st === 'pass' ? (ok ? (bold ? 'Lançamento por cima na medida e o atacante não perdoou: assistência sua! ' : 'Bola enfiada na medida e o atacante não perdoou: assistência sua! ') : why === 'impedido' ? 'Demorou o passe e ele ficou impedido. ' : why === 'goleiro' ? 'O lançamento foi bom, mas o goleiro saiu e ficou com a bola. ' : 'A zaga cortou o passe. ') : null;
     const defEnd = { cup: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.', title: ok ? 'O título é seu!' : 'O título escapou.',
       classico: ok ? 'O clássico é seu.' : 'A torcida lamenta.', acesso: ok ? 'O acesso é seu!' : 'O acesso escapou.', cont: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.' }[m.type];
     const final = defTxt !== null ? defTxt + defEnd : txt;
@@ -220,5 +233,5 @@
     if (m.type === 'cont') setTimeout(() => { if (btn.isConnected) U.finalPaper(G.c, m, ok); }, 900);
   }
 
-  Object.assign(U, { eventOrSeason, eventScreen, momentOrSeason, MOMENT_TXT, momentIntro, momentEnd, momentResult, playMini, miniFacts, MINI_BTN });
+  Object.assign(U, { eventOrSeason, eventScreen, momentOrSeason, MOMENT_TXT, momentIntro, momentEnd, momentResult, playMini, miniFacts, MINI_BTN, styleBtns, bindStyle });
 })();

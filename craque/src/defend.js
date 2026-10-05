@@ -25,9 +25,9 @@
   // ---------- goleiro ----------
   root.CRAQUE_SAVE = function (el, opts) {
     const P = root.CRAQUE_KICK_PARTS, c = opts.c;
-    const setup = S().kickSetup(c, 'save');
+    const setup = S().kickSetup(c, 'save', opts.style);
     el.innerHTML = '<div class="kick-stage">' + P.scene({ fk: false }, 1) + '<div class="kick-banner"></div></div>' +
-      '<p class="kick-help" id="k-help">Leia o batedor e toque no lado para <b>pular</b></p>';
+      '<p class="kick-help" id="k-help">' + (setup.miss ? 'Você adiantou: a seta vem tarde, toque logo no lado para <b>pular</b>' : 'Leia o batedor e toque no lado para <b>pular</b>') + '</p>';
     const svg = el.querySelector('svg'), stage = el.querySelector('.kick-stage'), help = el.querySelector('#k-help');
     const ball = svg.querySelector('#k-ball'), keeper = svg.querySelector('#k-keeper');
     svg.querySelector('#k-aim').remove();
@@ -59,7 +59,7 @@
     // O chute: lado (-1, 0, 1) e ponto do gol; às vezes o batedor erra
     const rs = Math.random();
     const side = rs < 0.42 ? -1 : rs < 0.84 ? 1 : 0;
-    const miss = Math.random() < 0.07;
+    const miss = Math.random() < (setup.miss || 0.07); // adiantando, o batedor sente a pressão e erra mais
     const x = miss ? side * (1.05 + Math.random() * 0.15) || 1.1 : side === 0 ? (Math.random() - 0.5) * 0.4 : side * (0.35 + Math.random() * 0.62);
     const y = 0.1 + Math.random() * 0.8;
     const runMs = 1300 + Math.random() * 500, tellAt = runMs - setup.tellMs;
@@ -143,9 +143,9 @@
   // Cena do pênalti com o nosso gol: o atacante vem conduzindo na diagonal, de perto da câmera até a área.
   // Você (visual da criação) espera à direita e dá o carrinho no toque. Faixa verde: onde ele precisa estar no toque.
   root.CRAQUE_TACKLE = function (el, opts) {
-    const P = root.CRAQUE_KICK_PARTS, C = root.CRAQUE_CHARS, c = opts.c, setup = S().kickSetup(c, 'tackle');
+    const P = root.CRAQUE_KICK_PARTS, C = root.CRAQUE_CHARS, c = opts.c, setup = S().kickSetup(c, 'tackle', opts.style), standing = !!setup.dribble;
     el.innerHTML = '<div class="kick-stage">' + P.scene({ fk: false }, 1) + '<div class="kick-banner"></div></div>' +
-      '<p class="kick-help">Toque quando o atacante pisar na <b>faixa verde</b></p>';
+      '<p class="kick-help">Toque quando o atacante pisar na <b>faixa verde</b>' + (standing ? ' para encaixar o corpo' : '') + '</p>';
     const svg = el.querySelector('svg'), stage = el.querySelector('.kick-stage'), ball = svg.querySelector('#k-ball');
     svg.querySelector('#k-aim').remove();
     svg.querySelector('#k-keeper').style.display = 'none';
@@ -195,7 +195,7 @@
       result = { ok, why };
       sfx(ok ? 'goal' : 'miss');
       if (cine) { const a = at(g.u); if (ok) cine.win(a.x + 10, a.y - 20, colorsOf(kits.mine)); else cine.lose(why === 'passou' || why === 'tarde' || why === 'cedo' ? P.GX : null, 140, 4); }
-      banner(el, ok ? 'DESARME!' : why === 'cedo' ? 'CHEGOU CEDO!' : why === 'tarde' ? 'CHEGOU TARDE!' : 'GOL DELES', ok);
+      banner(el, ok ? 'DESARME!' : why === 'cedo' ? 'CHEGOU CEDO!' : why === 'tarde' ? 'CHEGOU TARDE!' : why === 'drible' ? 'DRIBLOU!' : 'GOL DELES', ok);
       setTimeout(() => { b3.dispose(); if (cine) cine.dispose(); opts.onDone(ok, ok ? 'desarme' : why); }, 1500);
     }
     // A bola sai do pé (desarme ou chute) e vai até um ponto
@@ -212,13 +212,15 @@
         g.def = { x: s.from.x + (s.to.x - s.from.x) * e, y: s.from.y + (s.to.y - s.from.y) * e };
         if (k >= 1 && !s.done) {
           s.done = true;
+          // Em pé: mesmo no tempo certo, às vezes ele dribla
+          if (s.kind === 'certo' && standing && Math.random() < setup.dribble) s.kind = 'drible';
           if (s.kind === 'certo') {
             if (cine) { const a0 = at(g.u); cine.turf(a0.x + 10, a0.y, 22); }
             g.mode = 'fall'; g.fallT = t; setAtk('queda', now);
             const a = at(g.u), h = H(a.y);
             kickBall([a.x + 0.17 * h, a.y - 0.06 * h, 0.06 * h], [a.x + 0.17 * h + 90, Math.min(318, a.y + 40), 0.06 * h + 3], 0, 600, 14);
             end(true);
-          } else if (s.kind === 'cedo') { g.mode = 'cut'; g.cutT = t; setAtk('corte', now); }
+          } else if (s.kind === 'cedo' || s.kind === 'drible') { g.mode = 'cut'; g.cutT = t; setAtk('corte', now); }
         }
       }
       // Corte: ele puxa a bola para trás e segue
@@ -244,7 +246,7 @@
       const A = { corrida: 620, corte: 420, finalizacao: 480, queda: 800 }[g.aAnim], ta = (now - g.aT0) / A;
       atk.pose(g.aAnim === 'corrida' ? ta % 1 : Math.min(1, ta), g.aAnim);
       def.place(g.def.x, g.def.y, H(g.def.y));
-      if (g.slide) def.pose(Math.min(1, (t - g.slide.t0) / 0.76), 'carrinho');
+      if (g.slide) def.pose(Math.min(1, (t - g.slide.t0) / 0.76), standing ? 'marcacao' : 'carrinho');
       else def.pose((now / 1100) % 1, 'marcacao');
       if ((g.def.y > ay) !== (layer.lastChild === def.node)) layer.appendChild(g.def.y > ay ? def.node : atk.node);
       if (g.ball) {
@@ -264,7 +266,7 @@
   // faixa verde: a bola passa pela brecha, ele vira para o gol e bate. Cedo ou tarde, a zaga corta; se demorar,
   // ele passa do último zagueiro e fica impedido. PAS alarga a brecha e deixa a corrida mais lenta.
   root.CRAQUE_PASS = function (el, opts) {
-    const P = root.CRAQUE_KICK_PARTS, C = root.CRAQUE_CHARS, c = opts.c, setup = S().kickSetup(c, 'pass');
+    const P = root.CRAQUE_KICK_PARTS, C = root.CRAQUE_CHARS, c = opts.c, setup = S().kickSetup(c, 'pass', opts.style), lob = !!setup.keeperOut;
     // Projeção: ponto do gramado a g metros do gol (para a câmera) e x metros do centro
     // Câmera a 36 m do gol e 4 m de altura. Mesma proporção da cena do pênalti: na tela, 1 m na horizontal
     // vale 0,78 de 1 m na vertical (o gol desenhado tem 280 × 120 para 7,32 m × 2,44 m)
@@ -274,7 +276,7 @@
     const rOf = g => 0.11 * (K / CH) / (CAM - g) + 0.6; // raio da bola
     const W = (x, y) => [180 + (x - 180) * Z, GL + (y - P.GY) * Z]; // coordenadas do gol (k-world) na tela
     el.innerHTML = '<div class="kick-stage">' + P.scene({ fk: false }, 1, [Z, GL]) + '<div class="kick-banner"></div></div>' +
-      '<p class="kick-help" id="k-help">Toque quando o atacante passar pela <b>faixa verde</b></p>';
+      '<p class="kick-help" id="k-help">Toque quando o atacante passar pela <b>faixa verde</b>' + (lob ? ' para lançar por cima' : '') + '</p>';
     const svg = el.querySelector('svg'), stage = el.querySelector('.kick-stage'), help = el.querySelector('#k-help');
     const ball = svg.querySelector('#k-ball'), world = svg.querySelector('#k-world');
     svg.querySelector('#k-aim').remove();
@@ -378,6 +380,13 @@
         placeMate(Math.min(ua, um)); mate.pose(((now - t0) / 620) % 1, 'corrida');
         if (q < 1) return requestAnimationFrame(roll);
         if (!ok) { mate.pose(0, 'marcacao'); return end(false, why); }
+        // Por cima: às vezes o goleiro sai e fica com a bola antes do atacante
+        if (lob && Math.random() < setup.keeperOut) {
+          const gs = a.x > 0 ? 1 : -1, k0 = performance.now();
+          spr.dive(P.px(gs * 0.35), P.py(0.08), gs, 420, 30);
+          mate.pose(0, 'marcacao');
+          return (function take(n2) { const q2 = Math.min(1, (n2 - k0) / 420); ballAt(tx * (1 - 0.45 * q2), tg + (5 - tg) * q2); if (q2 < 1) return requestAnimationFrame(take); end(false, 'goleiro'); })(k0);
+        }
         shoot(a);
       })(s0);
     }
@@ -412,8 +421,8 @@
     function end(ok, why) {
       sfx(ok ? 'goal' : 'miss');
       if (cine) { if (ok) cine.win(180, GL - 10, colorsOf(kits.mine)); else cine.lose(null, null, why === 'impedido' ? 2 : 4); }
-      banner(el, ok ? 'GOOOL!' : why === 'impedido' ? 'IMPEDIDO!' : 'CORTADO!', ok);
-      help.innerHTML = ok ? 'Bola enfiada na medida: <b>assistência sua</b>' : why === 'cedo' ? 'Passou cedo: a zaga cortou.' : why === 'tarde' ? 'Passou tarde: a zaga fechou.' : 'Demorou e ele passou do último zagueiro: impedido.';
+      banner(el, ok ? 'GOOOL!' : why === 'impedido' ? 'IMPEDIDO!' : why === 'goleiro' ? 'O GOLEIRO SAIU!' : 'CORTADO!', ok);
+      help.innerHTML = ok ? (lob ? 'Lançamento por cima na medida: <b>assistência sua</b>' : 'Bola enfiada na medida: <b>assistência sua</b>') : why === 'cedo' ? 'Passou cedo: a zaga cortou.' : why === 'tarde' ? 'Passou tarde: a zaga fechou.' : why === 'goleiro' ? 'O lançamento foi bom, mas o goleiro saiu e ficou com a bola.' : 'Demorou e ele passou do último zagueiro: impedido.';
       setTimeout(() => { b3.dispose(); if (cine) cine.dispose(); opts.onDone(ok, ok ? 'passe' : why); }, 1500);
     }
   };
