@@ -162,6 +162,7 @@
     $('b-sima').onclick = e => {
       e.stopPropagation();
       U.ask('Simular até o fim?', 'Os jogos restantes passam direto. Seus lances decisivos e pênaltis serão decididos pela chance da sua carta.', 'Simular', () => {
+        if (!$('wc-sim')) return; // o torneio acabou enquanto a pergunta estava aberta: já está na tela final
         simAll = true;
         $('wc-sim').classList.add('on');
         // Parado num lance ou nos pênaltis: decide agora e segue

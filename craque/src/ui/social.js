@@ -130,7 +130,10 @@
     fam.slice(0, Math.min(nFam, total - 2)).forEach(f => {
       const which = (p.sub === 'title' || p.sub === 'ballon' || p.sub === 'moment') && f.title && chance(0.6) ? 'title'
         : mood === 'up' && f['up_' + c.pos] && chance(0.5) ? 'up_' + c.pos : mood;
-      top.push({ h: f.h, nm: f.name, v: true, t: isEv ? pk('f.ev.' + mood, SO.evFamous[mood] || SO.evFamous.up) : pk('f.' + f.h + '.' + which, f[which]) });
+      // "Na última rodada" só quando a liga foi mesmo decidida no fim (até 3 pontos de vantagem)
+      const tight = p.res && p.res.table ? p.res.table.lead <= 3 : true;
+      const pool = which === 'title' && !tight ? f.title.filter(x => !/última rodada|no detalhe/.test(x)) : f[which];
+      top.push({ h: f.h, nm: f.name, v: true, t: isEv ? pk('f.ev.' + mood, SO.evFamous[mood] || SO.evFamous.up) : pk('f.' + f.h + '.' + which + (pool !== f[which] ? '.folga' : ''), pool.length ? pool : f[which]) });
     });
     if (!isEv && chance(mood === 'down' ? 0.45 : 0.7)) rest.push({ h: base + 'oficial', nm: cl.name, v: true, t: pk('c.club.' + mood, SO.club[mood]) });
     // Página de notícia ("🚨 |", "📊 |") falando do fato do post; nos posts bons, às vezes é página de meme

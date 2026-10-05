@@ -41,7 +41,7 @@
     const first = Math.floor(Math.random() * shows.length);
     const nota = (Math.round(res.rating * 10) / 10).toFixed(1).replace('.', ',');
     const fill = t => t.replace(/\{n\}/g, G.c.name).replace(/\{time\}/g, cl.name).replace(/\{clube\}/g, D.o(cl.name))
-      .replace(/\{Clube\}/g, D.o(cl.name).replace(/^./, ch => ch.toUpperCase())).replace(/\{doTime\}/g, D.do(cl.name)).replace(/\{noTime\}/g, D.no(cl.name))
+      .replace(/\{Clube\}/g, D.o(cl.name).replace(/^./, ch => ch.toUpperCase())).replace(/\{campeao\}/g, D.fem(cl.name) ? 'campeã' : 'campeão').replace(/\{doTime\}/g, D.do(cl.name)).replace(/\{noTime\}/g, D.no(cl.name))
       .replace(/\{g\}/g, res.goals).replace(/\{a\}/g, res.assists).replace(/\{idade\}/g, res.age).replace(/\{nota\}/g, nota)
       .replace(/\{jogos\} jogos/g, D.plural(res.games || 0, 'jogo', 'jogos')).replace(/\{jogos\}/g, res.games || 0).replace(/\{cs\}/g, res.cleanSheets || 0).replace(/\{desarmes\}/g, res.tackles || 0);
     // Fala sorteada com memória entre carreiras (U.fresh): a mesma frase só volta depois das outras
@@ -205,7 +205,7 @@
     const [c1, c2] = seasonStats(res);
     const t0c = tierCls(res.ovr0);
     const race = raceOf(res);
-    res.race = !!race;
+    res.race = race ? race.kind : false;
     render(
       '<div class="season-head"><div><div class="eyebrow">Temporada ' + (year() - 1) + ' · ' + res.age + ' anos</div><h2 class="with-crest">' + crest(cl.id, 'lg') + esc(cl.name) + '</h2></div><span class="tag">' + (res.farewell ? 'Despedida' : res.role) + '</span></div>' +
       // A carta no centro: a nota sobe (ou cai) depois dos números da temporada
@@ -327,7 +327,7 @@
     const pose = won ? 'taca' : res.injury >= 25 ? 'maca' : res.games && res.rating >= 7.3 ? 'celebra' : res.games && res.rating < 6.3 ? 'triste' : 'normal';
     const caption = { taca: nick + ' ergue a taça', maca: nick + ' deixa o campo de maca', celebra: nick + ' comemora com a torcida', triste: nick + ' cabisbaixo após mais um tropeço' }[pose] || nick + ' com a camisa ' + D.do(cl.name);
     U.paper({ c: Object.assign({}, G.c, { age: res.age }), year: year() - 1, head: main, pose, kit: U.kitOf(cl.id), caption, big: !!won,
-      stats: res.games + ' jogos · ' + seasonStats(res).map(([v, l]) => v + ' ' + l.toLowerCase()).join(' · ') + (res.games ? ' · nota ' + res.rating.toFixed(1).replace('.', ',') : ''),
+      stats: D.plural(res.games, 'jogo', 'jogos') + ' · ' + seasonStats(res).map(([v, l]) => (l === 'Gols' ? D.plural(v, 'gol', 'gols') : l === 'Assist.' ? D.plural(v, 'assistência', 'assistências') : l === 'Defesas' ? D.plural(v, 'defesa', 'defesas') : v + ' ' + l.toLowerCase())).join(' · ') + (res.games ? ' · nota ' + res.rating.toFixed(1).replace('.', ',') : ''),
       lede: lede(res, cl), subs: rest, column: res.column },
       // Depois do jornal: revelação da carta nova (subiu de faixa) e das cartas especiais da temporada
       () => { const up = U.tierReveal(G.c, res.ovr0, res.ovr1); if (up) save(); U.walkouts(G.c, (up ? [null] : []).concat(res.cards || []), onClose); });
@@ -375,7 +375,8 @@
     const tableTxt = !res.games || res.race ? '' : tb.pos === 1 ? U.emo('🥇', 'sm') + ' Campeão ' + D.da(tb.league) + ' com ' + tb.pts + ' pontos'
       : tb.pos + 'º lugar ' + D.na(tb.league) + ' · ' + tb.pts + ' pts, a ' + tb.gap + ' do líder';
     // Acesso e rebaixamento: com a mini tabela na tela, o veredito dela já conta
-    const moveTxt = !res.move || res.race ? '' : res.move.dir === 'up' ? U.emo('⬆️', 'sm') + ' Acesso ' + D.paraA(res.move.toName) + '!' : U.emo('⬇️', 'sm') + ' Rebaixado ' + D.paraA(res.move.toName);
+    // (com a mini tabela de título ou meio da tabela, o acesso ou a queda ainda precisam aparecer)
+    const moveTxt = !res.move || res.race === 'acesso' || res.race === 'degola' || res.race === true ? '' : res.move.dir === 'up' ? U.emo('⬆️', 'sm') + ' Acesso ' + D.paraA(res.move.toName) + '!' : U.emo('⬇️', 'sm') + ' Rebaixado ' + D.paraA(res.move.toName);
     // O que mexeu na nota: minutos, desempenho, lesão, idade e treinos (a soma bate com a variação)
     const great = res.games >= 15 && res.rating >= 7.5;
     const why = (great && dOvr <= 0 ? '<p class="why-note">Grande temporada! Seu desempenho valeu ' + ((v => (v > 0 ? '+' : '') + v)((res.why.find(w => w.k === 'perf') || { v: 0 }).v)) + ' na nota' + (res.ovr0 >= G.c.pot - 3 ? ', mas você já está perto do seu teto' : '') + '. Também rendeu fama, torcida e propostas melhores.</p>' : '') +
@@ -388,7 +389,7 @@
     let wcBlock = '';
     if (call && call.called) wcBlock = '<div class="wc-call rv"><span class="wc-flag">' + U.flag(call.nation.flag) + '</span><div><b>Convocado para a Copa do Mundo ' + year() + '!</b><span>' + (call.starter ? 'Titular da seleção' : 'Vai como reserva (nota perto do corte de ' + call.cut + ')') + '</span></div></div>';
     else if (call && call.retired) { wcBlock = '<p class="wc-miss rv">' + U.emo('👋', 'sm') + ' Copa de ' + year() + ' sem você, que já se despediu da seleção.</p>'; G.c.wcYearDone = year(); save(); }
-    else if (call && G.c.age >= 18) { wcBlock = '<p class="wc-miss rv">' + U.emo('🌍', 'sm') + ' Fora da Copa de ' + year() + ': a seleção pedia nota ' + call.cut + ', você tem ' + S.ovr(G.c) + '.</p>'; G.c.wcYearDone = year(); save(); }
+    else if (call && G.c.age >= 18) { wcBlock = '<p class="wc-miss rv">' + U.emo('🌍', 'sm') + ' Fora da Copa de ' + year() + ': ' + (S.ovr(G.c) >= call.cut ? 'aos ' + G.c.age + ' anos, a seleção preferiu apostar na nova geração.' : 'a seleção pedia nota ' + call.cut + ', você tem ' + S.ovr(G.c) + '.') + '</p>'; G.c.wcYearDone = year(); save(); }
     // Mundial de Clubes (a cada 4 anos): o clube classificado joga logo depois da temporada
     const cwcCall = S.isCwcYear(G.c) && G.c.cwcYearDone !== year() ? S.cwcCall(G.c) : null;
     if (cwcCall && cwcCall.called) wcBlock = '<div class="wc-call rv">' + crest(cwcCall.club.id, 'lg') + '<div><b>' + D.O(esc(cwcCall.club.name)) + ' está no Mundial de Clubes ' + year() + '!</b><span>' + (cwcCall.champ ? 'Vaga de campeão continental' : 'Vaga pelo ranking de clubes') + ' · 32 clubes, jogo a jogo</span></div></div>';

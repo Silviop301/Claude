@@ -117,7 +117,7 @@
       : x.ballon ? 'ganhou a Bola de Ouro'
       : x.beatHim ? 'você bateu ele na votação da Bola de Ouro'
       : x.sameClub ? 'agora vocês jogam juntos'
-      : x.sameLeague ? 'duelo na mesma liga: ' + (x.pos === 'ATA' ? res.goals + ' gols seus contra ' + x.goals : x.pos === 'MEI' ? res.assists + ' assistências suas contra ' + x.assists : res.cleanSheets + ' jogos sem sofrer gol seus contra ' + x.cs)
+      : x.sameLeague ? 'duelo na mesma liga: ' + (x.pos === 'ATA' ? D.plural(res.goals, 'gol seu', 'gols seus') + ' contra ' + x.goals : x.pos === 'MEI' ? D.plural(res.assists, 'assistência sua', 'assistências suas') + ' contra ' + x.assists : D.plural(res.cleanSheets || 0, 'jogo sem sofrer gol seu', 'jogos sem sofrer gol seus') + ' contra ' + x.cs)
       : x.retires ? 'anunciou a aposentadoria' : '';
     return (x.first ? 'Seu rival de geração: ' : 'Rival: ') + base + (tag ? ' · ' + tag : '');
   };
