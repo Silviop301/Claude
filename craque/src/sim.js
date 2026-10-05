@@ -3,5 +3,5 @@
 const D = require('./data.js');
 globalThis.CRAQUE_DATA = globalThis.CRAQUE_DATA || D;
 const S = require('./engine/core.js');
-['events', 'events2', 'stakes', 'decisions', 'events3', 'moments', 'worldcup', 'season', 'market', 'finish', 'achievements'].forEach(part => require('./engine/' + part + '.js'));
+['events', 'events2', 'stakes', 'decisions', 'events3', 'moments', 'worldcup', 'season', 'market', 'finish', 'achievements', 'rival'].forEach(part => require('./engine/' + part + '.js'));
 module.exports = S;

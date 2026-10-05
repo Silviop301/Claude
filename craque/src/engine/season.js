@@ -316,7 +316,10 @@
     // Cada Bola de Ouro anterior aumenta a exigência (a concorrência cresce)
     // Defensor raramente ganha a Bola de Ouro (como na vida real)
     const pBallon = club.tier >= 4 && o >= 86 ? clamp(1 / (1 + Math.exp(-(bScore - 103 - 9 * c.totals.ballon) / 7)) * (club.tier === 5 ? 0.6 : 0.2) * (isDef ? 0.45 : 1), 0, 0.6) : 0;
-    const ballon = r() < pBallon;
+    let ballon = r() < pBallon;
+    // O rival de geração (engine/rival.js) também pode ter ganho a votação: só um leva
+    const ballonLost = ballon && !!S.rivalWinsVote && S.rivalWinsVote(c, o);
+    if (ballonLost) ballon = false;
     if (ballon) awards.push({ id: 'ballon', name: 'BOLA DE OURO' });
 
     // Participação: o reconhecimento individual (fama e torcida) pesa os minutos. Quem jogou 60% ou mais
@@ -437,6 +440,7 @@
       attrs: S.eff(c), cards, pe, // foto da carta desta temporada (para o álbum) e cartas especiais ganhas
     };
     res.move = move;
+    if (ballonLost) res.ballonLost = true;
     // O clube cresce com o craque: mais receita, patrocínio e reforços enquanto ele está lá (e perde aos poucos quando ele sai)
     res.carry = Math.round(carry);
     res.grow = S.starGrowth(c, club, o, games, rating, !c.loan && (spNow.seasons || 0) >= 2);

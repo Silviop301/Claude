@@ -195,6 +195,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .why b.note { font-size: 14px; }
 .why-note { margin: 0 0 8px; font-size: 14px; line-height: 1.35; color: #5A4A10; background: #FFF4CC; border-radius: 10px; padding: 8px 10px; }
 .pe-gain { margin: 8px 0 0; font-size: 14px; line-height: 1.35; color: #1F4B2E; background: #E3F4E8; border-radius: 10px; padding: 8px 10px; }
+.rival-line { margin: 8px 0 0; font-size: 14px; line-height: 1.35; color: #14233D; background: #E6EEFB; border-radius: 10px; padding: 8px 10px; }
+.rival-line.hot { background: #FDE4E1; color: #4A1410; }
+.fin-rival { margin: 10px 0 0; border-radius: 10px; background: #E6EEFB; color: #14233D; padding: 8px 10px; font-size: 13px; }
+.fin-rival b { display: block; margin-bottom: 4px; font-size: 14px; }
+.fin-rival table { width: 100%; border-collapse: collapse; }
+.fin-rival td { padding: 2px 0; }
+.fin-rival td + td { text-align: right; font-weight: 700; width: 25%; }
 .star-line { margin: 8px 0 0; font-size: 14px; line-height: 1.35; color: #3B2A06; background: #FFF4CC; border-radius: 10px; padding: 8px 10px; }
 .final .why li { border-color: #D6CEB8; }
 .contract { margin: 0; color: #CFE0D4; font-size: 14px; }

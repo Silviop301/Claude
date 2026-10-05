@@ -267,6 +267,8 @@
       '<div class="awards">' + res.awards.map(a => '<div class="award rv' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : U.emo('🥇', 'sm') + ' ') + a.name + '</div>').join('') + '</div>' +
       '<div class="news rv"><div class="np">' + U.emo('📰', 'xs') + ' Nos jornais</div><p>' + esc(res.headlines[0] || '') + '</p></div>' +
       resenha(res) +
+      // Rival de geração (engine/rival.js): o que ele fez no ano e o duelo com você
+      (res.rival ? '<p class="rival-line rv' + (res.rival.tookBallon || res.rival.ballon ? ' hot' : '') + '">' + U.emo('⚔️', 'xs') + ' ' + esc(S.rivalLine(G.c, res)) + '</p>' : '') +
       wcBlock +
       // Detalhes (fechados): outros lances, o porquê da nota, técnico/torcida e contrato
       // Craque carregando um time fraco (a partir do 2º ano) e o clube crescendo com ele

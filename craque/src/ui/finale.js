@@ -24,6 +24,15 @@
       (next ? '<p class="sh-next">Faltaram ' + (next[1] - f.score) + ' pontos para a nota ' + next[0] + '.</p>' : '') + '</details>';
   }
 
+  // Você contra o rival de geração (engine/rival.js), número a número
+  function rivalBlock(c, f) {
+    const R = S.rivalSummary && S.rivalSummary(c, f.titles);
+    if (!R) return '';
+    const wins = R.rows.filter(([, a, b]) => a > b).length, loses = R.rows.filter(([, a, b]) => a < b).length;
+    const verdict = wins > loses ? 'Você venceu a rivalidade' : wins < loses ? R.name + ' levou a melhor' : 'Rivalidade empatada';
+    return '<div class="fin-rival"><b>' + U.emo('⚔️', 'xs') + ' Você x ' + esc(R.name) + ' · ' + verdict + '</b><table><tr><td></td><td>Você</td><td>' + esc(R.name.split(' ')[0]) + '</td></tr>' +
+      R.rows.map(([l, a, b]) => '<tr><td>' + l + '</td><td>' + a + '</td><td>' + b + '</td></tr>').join('') + '</table></div>';
+  }
   function finale() {
     const f = S.finish(G.c);
     const ach = U.achRecord(G.c, f);
@@ -79,6 +88,7 @@
       '<div><b>' + f.titles + '</b><span>Títulos</span></div><div><b>' + T.ballon + '</b><span>Bolas de Ouro</span></div><div><b>' + f.nClubs + '</b><span>Clubes</span></div></div>' +
       (T.wcApps ? '<p class="muted small patr">' + U.emo('🌍', 'sm') + ' Copas do Mundo: ' + T.wcApps + (T.wcApps > 1 ? ' disputadas' : ' disputada') + ' · ' + (T.wc || 0) + (T.wc === 1 ? ' título' : ' títulos') + ' · ' + (T.natGames ? T.natGames + ' jogos, ' : '') + (T.wcGoals || 0) + ' gols (já no total)</p>' : '') +
       (T.cwcApps ? '<p class="muted small patr">' + U.emo('🌐', 'sm') + ' Mundiais de Clubes: ' + T.cwcApps + (T.cwcApps > 1 ? ' disputados' : ' disputado') + ' · ' + (T.cwc || 0) + (T.cwc === 1 ? ' título' : ' títulos') + ' · ' + (T.cwcGoals || 0) + ' gols (já no total)</p>' : '') +
+      rivalBlock(G.c, f) +
       '<p class="muted small patr">' + U.emo('💰', 'sm') + ' Patrimônio R$ ' + money(G.c.money) + (G.c.buys ? ' · ' + G.c.buys + (G.c.buys > 1 ? ' melhorias' : ' melhoria') + ' com pontos de evolução' : '') + '</p>' +
       '<div class="timeline">' + G.c.spells.map(s => '<div><span>' + String(YEAR0 + s.from - 16).slice(2) + '–' + String(YEAR0 + s.to - 16 + 1).slice(2) + '</span><span>' + crest(s.club, 'xs') + esc(club(s.club).name) + (s.loan ? ' <small class="tl-loan">empréstimo</small>' : '') + '</span><span>' + (G.c.pos === 'GOL' ? (s.cs || 0) + ' SG' : G.c.pos === 'ZAG' ? s.goals + 'G ' + (s.cs || 0) + 'SG' : s.goals + 'G ' + s.assists + 'A') + (s.titles ? ' · ' + s.titles + U.emo('🏆', 'xs') : '') + '</span></div>').join('') + '</div>' +
       (Object.keys(G.c.trophies || {}).length ? '<div class="room-title">Sala de troféus</div><div class="room">' +
