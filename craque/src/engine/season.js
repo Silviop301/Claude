@@ -213,7 +213,13 @@
     col.splice(pos - 1, 0, pts);
     // Quem é quem na tabela (mesma ordem de col): clubes da liga e você; 0 = time de fora da lista (completa os 20)
     // Liga com menos de 20 clubes: os de fora da lista levam o nome dos mais fortes da divisão de baixo (só para a tela)
+    // Sem divisão de baixo (ou curta): outros clubes do país, os de força mais parecida com a liga
     const below = LD0 && LD0.down ? D.CLUBS.filter(x => x.league === LD0.down).sort((a, b) => b.strength - a.strength).map(x => x.id) : [];
+    if (leagueClubs.length + below.length < nTeams) {
+      const avg = leagueClubs.reduce((a2, x) => a2 + x.strength, 0) / Math.max(1, leagueClubs.length), cty = D.countryOf(club);
+      D.CLUBS.filter(x => x.league !== club.league && (!LD0 || x.league !== LD0.down) && D.countryOf(x) === cty)
+        .sort((a, b) => Math.abs(a.strength - avg) - Math.abs(b.strength - avg)).forEach(x => below.push(x.id));
+    }
     const otherIds = leagueClubs.filter(x => x.id !== club.id).map(x => x.id).concat(below);
     const order = otherPts.map((p2, i) => [p2, otherIds[i] || 0]).sort((a, b) => b[0] - a[0]).map(x => x[1]);
     order.splice(pos - 1, 0, club.id);
