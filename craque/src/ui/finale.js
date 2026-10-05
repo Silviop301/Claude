@@ -36,7 +36,9 @@
   // Para a próxima: o que faltou nesta carreira (próxima nota, recorde, rival) vira a meta da seguinte
   function nextGoal(c, f, hall, rank) {
     const out = [], G2 = S.GRADES, i = G2.findIndex(([g]) => g === f.grade);
-    if (i > 0) out.push(['🎯', 'Faltaram <b>' + (G2[i - 1][1] - f.score) + ' pontos</b> para a nota ' + G2[i - 1][0]]);
+    // Quem é novo não sabe o que é "ponto": a linha diz de onde eles vêm (os pesos estão em S.SCORE_W)
+    if (i > 0) out.push(['🎯', 'Faltaram <b>' + (G2[i - 1][1] - f.score) + ' pontos</b> para a nota ' + G2[i - 1][0] +
+      (hall.length <= 2 ? '. Pontos vêm de jogar bem, títulos (' + S.SCORE_W.title + ' cada), Bola de Ouro (' + S.SCORE_W.ballon + ') e Copa do Mundo (' + S.SCORE_W.wc + ')' : '')]);
     if (rank === 1 && hall.length > 1) out.push(['🏅', 'Novo recorde: <b>+' + (f.score - hall[1].score) + '</b> sobre o anterior']);
     else if (rank > 1) out.push(['🏅', 'Seu recorde é ' + hall[0].score + ' pts: faltaram <b>' + (hall[0].score - f.score) + '</b>']);
     const R = S.rivalSummary && S.rivalSummary(c, f.titles);
@@ -96,7 +98,7 @@
       '<div class="ed-box" id="ed-box"></div>' +
       '<div class="fin-acts"><button class="btn" id="b-share">Compartilhar carta</button><button class="btn ghost" id="b-save">Salvar</button></div>' +
       U.challengeFinale(G.c, f) +
-      U.feedbackCard() +
+      (hall.length > 1 ? U.feedbackCard() : '') + // 1ª carreira: a tela já é longa e a opinião fica na tela inicial
       U.streakFinale(skGot) +
       U.packFinale(packWhy) +
       '<details class="fin-more"><summary>Resumo da carreira' + (fresh ? ' <em>' + fresh + (fresh > 1 ? ' conquistas novas' : ' conquista nova') + '</em>' : '') + '</summary>' +
@@ -208,7 +210,7 @@
     if ($('b-packs')) $('b-packs').onclick = () => U.openPacks(() => { const b = screen.querySelector('.pk-won'); if (b && !U.ITEMS.get().packs.length) b.remove(); });
     $('b-again').onclick = U.create;
     U.challengeFinaleBind(retired, f);
-    $('b-feedback').onclick = () => U.feedback('fim', { pos: retired.pos, seasons: retired.seasons.length, grade: f.grade }, () => {
+    if ($('b-feedback')) $('b-feedback').onclick = () => U.feedback('fim', { pos: retired.pos, seasons: retired.seasons.length, grade: f.grade }, () => {
       const card = screen.querySelector('.fb-card'); if (card) card.outerHTML = '<div class="card fb-card done"><div>' + U.emo('💚', 'sm') + '<b>Opinião enviada</b><span>Valeu! Ela ajuda a decidir o que muda no jogo.</span></div></div>';
     });
     // Vai para o início e rola até o Hall da Fama (id próprio: "b-home" é o botão de casa da barra)

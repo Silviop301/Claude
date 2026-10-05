@@ -140,12 +140,15 @@
   // para a temporada. "Seguir para a temporada" fica sempre fixo embaixo.
   // As opções ficam salvas na carreira (G.c.preCh): recarregar a página não troca o sorteio
   // Texto do foco nos treinos: chance de ponto extra × risco de lesão
+  // O foco é automático pela idade (S.autoTrain), então a linha só explica em palavras simples o que ele faz
+  const TRAIN_TXT = {
+    leve: 'o corpo pede calma: menos lesões e menos desgaste com a idade, sem ponto extra.',
+    normal: 'ritmo de meio de carreira: às vezes rende um ponto extra de evolução, risco normal de lesão.',
+    forte: 'carga de jovem: boa chance de um ponto extra de evolução no fim do ano, mas se machuca mais.',
+    max: 'tudo ou nada: pontos extras de evolução quase garantidos, mas o risco de lesão triplica.',
+  };
   function trainTxt(t) {
-    const pct = v => Math.round(v * 100) + '%';
-    const pe = t.p1 + t.p2 ? pct(t.p1 + t.p2) + ' de chance de ponto extra' + (t.p2 ? ' (' + pct(t.p2) + ' de +2)' : '') : 'Sem ponto extra';
-    const inj = t.inj < 1 ? 'lesões −' + pct(1 - t.inj) : t.inj === 1 ? 'risco normal de lesão' : t.inj < 2 ? 'lesões +' + pct(t.inj - 1) : 'lesões ×' + String(t.inj).replace('.', ',');
-    const age = t.decl < 1 ? ' · sente menos a idade' : t.decl > 1 ? ' · sente mais a idade' : '';
-    return '<b>' + U.emo(t.icon, 'xs') + ' Treino ' + t.name.toLowerCase() + ':</b> ' + pe + ' · ' + inj + age + (t.p1 + t.p2 ? '. Lesão séria tira o bônus.' : '.');
+    return '<b>' + U.emo(t.icon, 'xs') + ' Treino ' + t.name.toLowerCase() + ' (pela idade):</b> ' + (TRAIN_TXT[t.id] || '') + (t.p1 + t.p2 ? ' Lesão séria tira o bônus.' : '');
   }
   // Desfazer: foto da carreira antes de cada escolha desta pré-temporada (some ao seguir)
   let undo = [];
@@ -226,7 +229,7 @@
       });
     };
     skip.onclick = () => { if (!skip.disabled) go(); };
-    $('train-txt').innerHTML = trainTxt(S.trainOf(G.c)).replace(':</b>', ' (pela idade):</b>');
+    $('train-txt').innerHTML = trainTxt(S.trainOf(G.c));
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       const x = ch[+b.dataset.i];
       if (preCh.done) return;

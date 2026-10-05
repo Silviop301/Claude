@@ -193,6 +193,11 @@
       '<p class="rc-lbl ' + tone + '">' + (end ? esc(vd[0]) : esc(raceLabel(rc, f.v, f))) + '</p>';
   }
 
+  // Etiqueta do papel: o prometido pelo clube, ou o que de fato aconteceu quando quase não jogou (lesão, técnico, escolhas)
+  function roleSeen(res) {
+    const sh = res.src && res.src.max ? res.games / res.src.max : 1;
+    return sh >= 0.3 || res.role === 'Banco' || res.role === 'Reserva' ? res.role : sh >= 0.15 ? 'Reserva' : 'Banco';
+  }
   function season() {
     const res = S.playSeason(G.c);
     U.rankSave(G.c); // ranking: nota máxima, gols e títulos já contam durante a carreira
@@ -207,7 +212,7 @@
     const race = raceOf(res);
     res.race = race ? race.kind : false;
     render(
-      '<div class="season-head"><div><div class="eyebrow">Temporada ' + (year() - 1) + ' · ' + res.age + ' anos</div><h2 class="with-crest">' + crest(cl.id, 'lg') + esc(cl.name) + '</h2></div><span class="tag">' + (res.farewell ? 'Despedida' : res.role) + '</span></div>' +
+      '<div class="season-head"><div><div class="eyebrow">Temporada ' + (year() - 1) + ' · ' + res.age + ' anos</div><h2 class="with-crest">' + crest(cl.id, 'lg') + esc(cl.name) + '</h2></div><span class="tag">' + (res.farewell ? 'Despedida' : roleSeen(res)) + '</span></div>' +
       // A carta no centro: a nota sobe (ou cai) depois dos números da temporada
       '<div class="s-hero"><div class="scard metal ' + t0c + '" id="scard"><span class="sc-tier" id="sc-tier">' + TIER_NAME[t0c] + '</span><b id="sc-ovr">' + res.ovr0 + '</b><span class="sc-pos">' + G.c.pos + '</span></div>' +
       '<div class="s-verdict"><span class="sv-lbl" id="sv-lbl">&nbsp;</span><i class="sv-d" id="sc-d"></i></div></div>' +
@@ -217,7 +222,8 @@
       '<div class="feed" id="feed"></div><div id="after"></div><p class="skip-hint" id="skip-hint">Toque para pular</p>'
     );
     // Com reta final, a temporada dura um pouco mais: a tabela precisa de tempo para virar
-    const dur = race ? (race.kind === 'meio' ? 2200 : 2800) : 1500, t0 = performance.now();
+    const few = res.src && res.src.max && res.games / res.src.max < 0.15; // do banco não há o que contar: a tela não se arrasta
+    const dur = few ? (race ? 1400 : 800) : race ? (race.kind === 'meio' ? 2200 : 2800) : 1500, t0 = performance.now();
     let skip = !!U.cfg.fast, shown = [0, 0, 0]; // configuração: resumo rápido
     // Liga o "pular" só depois: o toque que abriu esta tela ainda está se propagando
     setTimeout(() => { screen.onclick = () => { skip = true; }; }, 50);
@@ -277,6 +283,7 @@
   // Selo da temporada pela nota
   function verdictOf(res) {
     if (!res.games) return ['Sem jogos', 'low'];
+    if (res.src && res.src.max && res.games / res.src.max < 0.15) return ['Quase não jogou', 'low']; // 2 jogos não fazem temporada
     const r = res.rating;
     return r >= 8 ? ['Temporada de craque', 'top'] : r >= 7.3 ? ['Grande temporada', 'good'] : r >= 6.8 ? ['Boa temporada', 'ok'] : r >= 6.3 ? ['Temporada regular', 'mid'] : ['Temporada apagada', 'low'];
   }
