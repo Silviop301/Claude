@@ -2258,3 +2258,12 @@ button.sk-d { font: inherit; color: inherit; cursor: pointer; }
 @keyframes sk-pulse { 50% { box-shadow: 0 0 0 4px rgba(242, 194, 48, .25); } }
 .sk.won .sk-h small { color: var(--gold); font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { .sk-d.claim { animation: none; } }
+.race .rc-tbl { display: grid; gap: 2px; }
+.race .rt-r { display: grid; grid-template-columns: 22px 20px minmax(0, 1fr) 36px; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 8px; font: 600 14px var(--body); color: var(--text-2, #D3E4D9); }
+.race .rt-r i { font-style: normal; font-variant-numeric: tabular-nums; opacity: .8; }
+.race .rt-r span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.race .rt-r b { text-align: right; font: 800 16px var(--display); font-variant-numeric: tabular-nums; color: #fff; }
+.race .rt-r.me { background: rgba(242, 194, 48, .16); color: var(--gold); }
+.race .rt-r.me b { color: var(--gold); }
+.race .rt-r.cut { border-bottom: 1.5px dashed rgba(255, 255, 255, .45); border-radius: 8px 8px 0 0; }
+.race .rt-gap { text-align: center; font-size: 12px; line-height: 1; opacity: .5; }
