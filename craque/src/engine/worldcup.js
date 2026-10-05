@@ -206,7 +206,8 @@
   };
 
   // Resultado do lance decisivo (minigame ou chance)
-  S.wcMoment = function (c, ok) {
+  // why: como o lance terminou no minigame (a linha do jogo conta o mesmo; sem why, texto neutro)
+  S.wcMoment = function (c, ok, why) {
     const run = c.wcRun;
     if (!run || !run.live) return;
     const { r, save } = rngOf(c);
@@ -214,6 +215,7 @@
     run.live = false; run.momentStarted = false;
     game.live = false;
     game.momentOk = !!ok;
+    if (why) game.momentWhy = why;
     S.countKick(c, game.moment.type, ok);
     const defensive = ['save', 'tackle'].includes(game.moment.type);
     if (defensive) { if (!ok) game.ga++; } // defendeu/desarmou: placar segue; falhou: gol deles

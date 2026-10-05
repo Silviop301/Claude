@@ -289,7 +289,7 @@
       const vsO = D.o(vsName), mk = M.kick === 'save' ? 'sv' : M.kick === 'tackle' ? 'tk' : M.kick === 'pass' ? 'ps' : M.kick === 'fk' || M.type === 'classico' ? 'fk' : 'pk';
       const ALT = M.type !== 'classico' ? null : {
         fkok: ['🎯 Gol de falta no clássico contra ' + vsO, '🎯 Falta no ângulo: clássico decidido contra ' + vsO, '🎯 Bola parada perfeita no clássico contra ' + vsO, '🎯 Cobrança indefensável no clássico contra ' + vsO],
-        fkko: ['🧱 Falta desperdiçada no clássico contra ' + vsO, '🧱 A barreira levou a melhor no clássico contra ' + vsO, '🧱 Cobrança para fora no clássico contra ' + vsO],
+        fkko: ['😞 Falta desperdiçada no clássico contra ' + vsO, '😞 A falta decisiva não entrou no clássico contra ' + vsO, '😞 Bola parada sem gol no clássico contra ' + vsO],
         psok: ['🎯 Sua bola enfiada decidiu no clássico contra ' + vsO + '!', '🎯 Passe na medida e gol no clássico contra ' + vsO, '🎯 Assistência decisiva no clássico contra ' + vsO],
         psko: ['😞 Passe cortado no clássico contra ' + vsO, '😞 A zaga ' + D.do(vsName) + ' leu seu passe no clássico', '😞 O passe decisivo não chegou no clássico contra ' + vsO],
         tkok: ['🛡️ Desarme salvador no clássico contra ' + vsO + '!', '🛡️ Carrinho perfeito salvou o clássico contra ' + vsO, '🛡️ Bola roubada no último lance do clássico contra ' + vsO],
@@ -297,7 +297,18 @@
         svok: ['🧤 Pênalti defendido no clássico contra ' + vsO + '!', '🧤 Pegou o pênalti e salvou o clássico contra ' + vsO, '🧤 Voou no canto: pênalti defendido contra ' + vsO],
         svko: ['😞 Pênalti sofrido no clássico contra ' + vsO, '😞 Não deu para pegar o pênalti contra ' + vsO],
       }[mk + (M.ok ? 'ok' : 'ko')];
-      highlights.unshift(ALT ? S.textPick(c, 'hl.m.' + mk + (M.ok ? 'ok' : 'ko'), ALT) : defHl || hl);
+      // O lance como terminou no minigame (M.why): a manchete conta o mesmo que a tela do resultado mostrou.
+      // As listas acima são neutras quanto ao motivo e ficam para quando a chance decidiu
+      const isFk = mk === 'fk', after = { cup: ': fica o vice', cont: ': fica o vice', title: ': vice', acesso: ': o acesso escapou' }[M.type] || '';
+      const kickWhy = mk !== 'fk' && mk !== 'pk' || M.ok ? null : {
+        defesa: (isFk ? 'Falta defendida' : 'Pênalti defendido') + ' pelo goleiro ' + D.do(vsName), trave: (isFk ? 'Falta' : 'Pênalti') + ' na trave',
+        fora: (isFk ? 'Falta' : 'Pênalti') + ' para fora', alto: (isFk ? 'Falta' : 'Pênalti') + ' por cima do gol', barreira: 'Falta na barreira',
+      }[M.why];
+      const whyHl = kickWhy ? (M.why === 'barreira' ? '🧱 ' : '😞 ') + kickWhy + ' ' + where + (M.why === 'defesa' ? '' : ' contra ' + vsO) + after
+        : mk === 'sv' && M.ok && M.why === 'fora' ? '😅 O batedor ' + D.do(vsName) + ' mandou o pênalti para fora ' + where + '!'
+        : mk === 'ps' && !M.ok && M.why === 'impedido' ? '😞 Passe atrasado e atacante impedido ' + where + ' contra ' + vsO
+        : null;
+      highlights.unshift(whyHl || (ALT ? S.textPick(c, 'hl.m.' + mk + (M.ok ? 'ok' : 'ko'), ALT) : defHl || hl));
     }
     const vr = n => D.o(n);
     // Jogou pouco: a taça é do clube (sem "é sua"); com participação, as frases de sempre

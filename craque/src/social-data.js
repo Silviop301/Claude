@@ -170,6 +170,8 @@
       momentOk: {
         goal: ['Que gol!', 'Bati e saí pro abraço!', 'Coração na boca e bola na rede!', 'Eu sabia que ia entrar!', 'Nem olhei pro goleiro, só bati!', 'Chutei com a alma!', 'Fechei o olho e confiei!', 'A bola sabia o caminho!'],
         save: ['Que defesa!', 'Fui buscar lá no canto!', 'Hoje não passou nada!', 'Li o batedor e fui!', 'Voei!', 'Luva abençoada!', 'Esperei até o último segundo!', 'Escolhi o canto certo!'],
+        // Goleiro: o batedor chutou para fora (não foi defesa, então nada de "voei" ou "luva")
+        saveFora: ['Fiquei grande no gol e ele mandou pra fora!', 'Encarei o batedor e a bola foi longe!', 'Segurei até o fim e ele errou o alvo!', 'Pressão no batedor: pra fora!'],
         tackle: ['Bola roubada no último minuto!', 'Carrinho limpo e jogo salvo!', 'Hoje não passou ninguém!', 'Cheguei na hora certa!', 'Tempo certo, carrinho perfeito!', 'Zaga fechada!', 'Desarme na raça!', 'Joguei a vida nesse carrinho!'],
         pass: ['Que passe!', 'Enfiei e ele só empurrou!', 'Vi a brecha e coloquei na medida!', 'Assistência com açúcar!', 'Passe de olho fechado!', 'Coloquei com a mão!', 'Ele correu, eu achei!', 'A bola foi de presente!'],
       },

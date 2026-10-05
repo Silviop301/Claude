@@ -81,8 +81,8 @@
       (me ? '<span class="me">' + me + '</span>' : '') + pen +
       (g.moment ? '<span class="mom ' + (g.momentOk ? 'ok' : 'ko') + '">' + g.moment.minute + "' " + ({
         pen: g.momentOk ? 'pênalti convertido' : 'pênalti desperdiçado', fk: g.momentOk ? 'falta convertida' : 'falta desperdiçada',
-        save: g.momentOk ? 'pênalti defendido' : 'pênalti sofrido', tackle: g.momentOk ? 'desarme salvador' : 'atacante passou',
-        pass: g.momentOk ? 'passe para gol' : 'passe cortado',
+        save: g.momentOk ? (g.momentWhy === 'fora' ? 'batedor chutou para fora' : 'pênalti defendido') : 'pênalti sofrido', tackle: g.momentOk ? 'desarme salvador' : 'atacante passou',
+        pass: g.momentOk ? 'passe para gol' : g.momentWhy === 'impedido' ? 'atacante impedido' : 'passe cortado',
       }[g.moment.type]) + (g.at ? ' no ' + g.at[0] + ' × ' + g.at[1] : '') + '</span>' : '') +
       (S.defKick(G.c.pos) && g.cs && !g.live ? '<span class="mom ok">' + U.emo('🧤', 'xs') + ' sem sofrer gol</span>' : '') +
       (g.rating ? '<span class="rt' + (g.motm ? ' motm' : '') + '">' + (g.motm ? U.emo('⭐', 'xs') + ' Craque do jogo · ' : 'Nota ') + g.rating.toFixed(1).replace('.', ',') + '</span>' : '') +
@@ -250,7 +250,7 @@
     $('b-kick').onclick = U.gateTrain(type, () => {
       run.momentStarted = true; save();
       render('<div class="eyebrow">' + tName(run) + ' ' + run.year + ' · ' + esc(g.stage) + ' · ' + m.minute + "'</div><div id=\"kick\"></div>");
-      U.playMini($('kick'), type, ok => { if (!$('kick')) return; S.wcMoment(G.c, ok); save(); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }); // saiu da tela: ao retomar, a chance decide
+      U.playMini($('kick'), type, (ok, why) => { if (!$('kick')) return; S.wcMoment(G.c, ok, why); save(); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }); // saiu da tela: ao retomar, a chance decide
     });
     $('b-auto').onclick = () => { S.wcMomentAuto(G.c); save(); wcPlay(); };
   }
