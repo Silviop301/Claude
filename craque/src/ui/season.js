@@ -75,6 +75,10 @@
     // Lance decisivo na última rodada (título ou acesso): chegam empatados e o jogo vale os 3 pontos
     const last = (tb.m === 'title' && kind === 'title') || (tb.m === 'acesso' && kind === 'acesso');
     if (last) fin = fin > 0 ? 3 : -3;
+    // Acesso e degola: com a tabela salva, a diferença sai dela (você contra o primeiro de fora ou o último de dentro);
+    // 0 = decidido no saldo. inside: terminou dentro do G-acesso / fora da degola
+    const L = kind === 'acesso' ? tb.promo : kind === 'degola' ? n - tb.releg : 0, inside = L ? tb.pos <= L : tb.pos === 1;
+    if (L && tb.all) fin = tb.all[tb.pos - 1] - tb.all[inside ? L : L - 1];
     const rounds = RACE_AT.map(f => Math.max(1, Math.round(R * f))).concat([R - 1, R]);
     const v0 = Math.round(fin * 0.3 + r.gauss() * 3);
     const vals = rounds.map((rd, i) => {
@@ -98,6 +102,28 @@
       return v > 0 ? Math.max(1, n - tb.releg - step) : Math.min(n - tb.releg + 1 + step, n);
     };
     const frames = vals.map((v, i) => ({ rd: rounds[i], v, pos: posAt(v, i) }));
+    // Mini tabela de cada rodada (temporadas salvas antes de tb.ids ficam só com a linha): os outros somam pontos
+    // na proporção das rodadas; você fica a v pontos da referência (líder, último do G-acesso ou primeiro fora da degola)
+    if (tb.ids && tb.all) {
+      const me = res.club, others = tb.ids.map((id, i) => ({ id, pf: tb.all[i] })).filter(x => x.id !== me);
+      const line = kind === 'title' ? 1 : kind === 'acesso' ? tb.promo : n - tb.releg;
+      frames.forEach((f, i) => {
+        const last = i === frames.length - 1;
+        const rows = last ? tb.ids.map((id, j) => ({ id, pts: tb.all[j], me: id === me }))
+          : (() => {
+            const os = others.map(x => ({ id: x.id, pts: Math.round(x.pf * f.rd / R) })).sort((a, b) => b.pts - a.pts);
+            const ref = os[Math.min(os.length - 1, line - 1)].pts;
+            const mine = { id: me, pts: Math.max(0, ref + f.v), me: true };
+            const at = os.findIndex(x => x.pts < mine.pts || (x.pts === mine.pts && f.v >= 0));
+            os.splice(at < 0 ? os.length : at, 0, mine);
+            return os;
+          })();
+        rows.forEach((x, j) => { x.pos = j + 1; });
+        f.rows = rows;
+        f.pos = rows.find(x => x.me).pos;
+        f.line = line;
+      });
+    }
     // Para o veredito: até quando liderou (vice) ou quando saiu da zona (escapou)
     let lastLead = 0, leftZone = 0, wasBehind = false;
     frames.forEach((f, i) => {
@@ -105,7 +131,7 @@
       if (i > 0 && f.v > 0 && frames[i - 1].v <= 0) leftZone = f.rd;
       if (i >= 4 && i < frames.length - 1 && f.v < 0) wasBehind = true;
     });
-    return { kind, fin, R, frames, lastLead, leftZone, wasBehind, last, pos: tb.pos, promo: tb.promo };
+    return { kind, fin, R, frames, lastLead, leftZone, wasBehind, last, inside, pos: tb.pos, promo: tb.promo };
   }
 
   function raceLabel(rc, v) {
@@ -122,11 +148,24 @@
       if (rc.pos === 2) return [rc.last ? 'O título escapou na última rodada.' : 'Vice por ' + p + '.' + (rc.lastLead >= rc.R * 0.5 ? ' Liderou até a rodada ' + rc.lastLead + '.' : ''), 'miss'];
       return [rc.pos + 'º lugar, a ' + p + ' do título.', 'miss'];
     }
-    if (rc.kind === 'acesso') return rc.fin > 0 ? [rc.last ? 'Acesso garantido na última rodada!' : 'Acesso garantido por ' + p + '!', 'win'] : ['O acesso escapou por ' + p + '.', 'miss'];
-    return rc.fin > 0 ? ['Escapou da degola por ' + p + '!' + (rc.leftZone >= rc.R * 0.6 ? ' Saiu da zona na rodada ' + rc.leftZone + '.' : ''), 'win'] : ['Rebaixado por ' + p + '.', 'miss'];
+    const by = a ? 'por ' + p : 'no saldo de gols';
+    if (rc.kind === 'acesso') return rc.inside ? [rc.last ? 'Acesso garantido na última rodada!' : 'Acesso garantido ' + by + '!', 'win'] : ['O acesso escapou ' + by + '.', 'miss'];
+    return rc.inside ? ['Escapou da degola ' + by + '!' + (rc.leftZone >= rc.R * 0.6 ? ' Saiu da zona na rodada ' + rc.leftZone + '.' : ''), 'win'] : ['Rebaixado ' + by + '.', 'miss'];
   }
 
   // Desenha a corrida até a fração u (0 a 1); em 1, mostra o veredito
+  // Quatro linhas da tabela em volta do que está em jogo (topo, corte do acesso ou da degola), sempre com você;
+  // a linha tracejada marca o corte. Times de fora da lista (id 0, completam ligas pequenas) não aparecem.
+  function miniTable(rc, f) {
+    const real = f.rows.filter(x => x.id);
+    const a = Math.max(1, f.line - (rc.kind === 'title' ? 0 : 1)), b = a + 3;
+    let rows = real.filter(x => x.pos >= a && x.pos <= b);
+    if (!rows.some(x => x.me)) rows = rows.slice(0, 3).concat(real.filter(x => x.me));
+    const cut = rc.kind === 'title' ? 0 : f.line;
+    return '<div class="rc-tbl">' + rows.map((x, i) => (i && x.pos - rows[i - 1].pos > 1 ? '<div class="rt-gap">⋯</div>' : '') +
+      '<div class="rt-r' + (x.me ? ' me' : '') + (x.pos === cut ? ' cut' : '') + (rc.kind === 'title' && x.pos === 1 ? ' top' : '') + '"><i>' + x.pos + '</i>' + crest(x.id, 'xs') +
+      '<span>' + esc(club(x.id).name) + '</span><b>' + x.pts + '</b></div>').join('') + '</div>';
+  }
   // (o primeiro quadro da animação pode chegar com u < 0: o relógio do quadro é anterior ao início)
   function drawRace(rc, u) {
     const el = $('race');
@@ -140,8 +179,8 @@
     const vd = end ? raceVerdict(rc) : null;
     el.className = 'race ' + rc.kind + (end ? ' end ' + vd[1] : '');
     el.innerHTML = '<div class="rc-top"><span class="rc-rd">' + (end ? 'Fim da liga' : 'Rodada ' + f.rd + ' de ' + rc.R) + '</span><b class="rc-pos">' + f.pos + 'º</b></div>' +
-      '<svg class="rc-spark" viewBox="0 0 240 44" preserveAspectRatio="none" aria-hidden="true"><line x1="0" x2="240" y1="22" y2="22"/><polyline points="' + pts + '"/>' +
-      '<circle cx="' + X(k).toFixed(1) + '" cy="' + Y(f.v).toFixed(1) + '" r="3.5"/></svg>' +
+      (f.rows ? miniTable(rc, f) : '<svg class="rc-spark" viewBox="0 0 240 44" preserveAspectRatio="none" aria-hidden="true"><line x1="0" x2="240" y1="22" y2="22"/><polyline points="' + pts + '"/>' +
+      '<circle cx="' + X(k).toFixed(1) + '" cy="' + Y(f.v).toFixed(1) + '" r="3.5"/></svg>') +
       '<p class="rc-lbl ' + tone + '">' + (end ? esc(vd[0]) : esc(raceLabel(rc, f.v))) + '</p>';
   }
 

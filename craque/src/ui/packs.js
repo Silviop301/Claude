@@ -271,28 +271,46 @@
   // Calendariozinho: os 7 dias do ciclo com as datas de verdade, o prêmio de cada um e o que já foi feito
   const WD = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
   function streakCal(st) {
-    return '<div class="sk-cal">' + st.cells.map(c => '<div class="sk-d' + (c.done ? ' done' : '') + (c.today ? ' today' : '') + '">' +
-      '<span class="sk-wd">' + WD[c.date.getDay()] + ' ' + c.date.getDate() + '</span>' +
-      '<span class="sk-ic">' + (c.done ? U.emo('✅', 'xs') : U.emo(c.r.p ? '📦' : '🎟️', 'xs')) + '</span>' +
-      '<b>' + (c.r.p ? (c.r.p > 1 ? c.r.p + ' pac.' : 'pacote') : c.r.f) + '</b></div>').join('') + '</div>';
+    return '<div class="sk-cal">' + st.cells.map(c => {
+      const cls = 'sk-d' + (c.done ? ' done' : '') + (c.today ? ' today' : '') + (c.claim ? ' claim' : '');
+      const inner = '<span class="sk-wd">' + WD[c.date.getDay()] + ' ' + c.date.getDate() + '</span>' +
+        '<span class="sk-ic">' + (c.claim ? U.emo(c.r.p ? '📦' : '🎟️', 'xs') : c.done ? U.emo('✅', 'xs') : U.emo(c.r.p ? '📦' : '🎟️', 'xs')) + '</span>' +
+        '<b>' + (c.claim ? 'Pegar' : c.r.p ? (c.r.p > 1 ? c.r.p + ' pac.' : 'pacote') : c.r.f) + '</b>';
+      // Dia com prêmio liberado: toque para pegar; hoje sem carreira: toque explica como liberar
+      return c.claim || (c.today && !c.done) ? '<button class="' + cls + '" data-sk="' + c.key + '">' + inner + '</button>' : '<div class="' + cls + '">' + inner + '</div>';
+    }).join('') + '</div>';
   }
-  function streakHome() {
-    const st = I.streak(), T = I.streakTxt;
-    const head = st.n >= 1 ? U.emo('🔥', 'sm') + ' ' + (st.n > 1 ? st.n + ' dias seguidos' : '1 dia de sequência') : U.emo('🔥', 'sm') + ' Sequência de dias';
-    const sub = st.played ? 'Prêmio de hoje garantido. Amanhã: ' + T(st.next) : st.n ? 'Termine uma carreira hoje e ganhe ' + T(st.next) + ' sem perder a sequência' : 'Termine uma carreira por dia e ganhe fichas e pacotinhos';
-    return '<div class="sk"><div class="sk-h"><b>' + head + '</b><small>' + sub + '</small></div>' + streakCal(st) + '</div>';
+  function streakBox(kind, got, note) {
+    const st = I.streak(), T = I.streakTxt, pend = st.cells.find(c => c.claim);
+    const head = U.emo('🔥', 'sm') + ' ' + (got && kind === 'fin' ? 'Dia ' + got.day + ' da sequência liberado!' : st.n >= 1 ? (st.n > 1 ? st.n + ' dias seguidos' : '1 dia de sequência') : 'Sequência de dias');
+    const sub = note || (pend ? 'Toque no dia para pegar ' + T(pend.r) : st.played ? 'Prêmio de hoje já pego. Amanhã: ' + T(st.next)
+      : st.n ? 'Termine uma carreira hoje e ganhe ' + T(st.next) + ' sem perder a sequência' : 'Termine uma carreira por dia e ganhe fichas e pacotinhos');
+    return '<div class="sk' + (kind === 'fin' ? ' fin' : '') + '" data-skind="' + kind + '"><div class="sk-h"><b>' + head + '</b><small>' + sub + '</small></div>' + streakCal(st) + '</div>';
   }
-  // Fim de carreira: o prêmio do dia (got = I.streakRecord()) ou o lembrete de voltar amanhã
-  function streakFinale(got) {
-    const st = I.streak(), T = I.streakTxt;
-    const head = got ? U.emo('🔥', 'sm') + ' Dia ' + got.day + ' da sequência: <em>+' + T(got.r) + '</em>' : U.emo('🔥', 'sm') + ' ' + D.plural(st.n, 'dia seguido', 'dias seguidos');
-    const sub = got && got.r.p ? 'O pacotinho já está com os outros, logo abaixo' : 'Volte amanhã e termine uma carreira: ' + T(st.next);
-    return '<div class="sk fin"><div class="sk-h"><b>' + head + '</b><small>' + sub + '</small></div>' + streakCal(st) + '</div>';
+  const streakHome = () => streakBox('home');
+  const streakFinale = got => streakBox('fin', got);
+  // Toques no calendário (tela inicial e fim de carreira): pega o prêmio e redesenha o bloco
+  function streakBind(onPack) {
+    const box = document.querySelector('.sk[data-skind]');
+    if (!box) return;
+    box.querySelectorAll('[data-sk]').forEach(b => b.onclick = e => {
+      e.stopPropagation();
+      const kind = box.dataset.skind, got = I.streakClaim(b.dataset.sk);
+      let note;
+      if (got) { sfx('levelup'); U.vibe([30, 40, 30]); note = '+' + I.streakTxt(got.r) + (got.r.p ? '! Abra na tela inicial' : '! Já estão na sua conta'); }
+      else note = 'Termine uma carreira hoje para liberar o prêmio deste dia';
+      const div = document.createElement('div');
+      div.innerHTML = streakBox(kind, null, note);
+      box.replaceWith(div.firstChild);
+      const nb = document.querySelector('.sk[data-skind]');
+      if (got) { nb.classList.add('won'); if (got.r.p && onPack) onPack(); }
+      streakBind(onPack);
+    });
   }
 
   function bindHome() {
     if ($('b-hb-packs')) $('b-hb-packs').onclick = () => openPacks(U.home);
   }
 
-  Object.assign(U, { openPacks, tradeSheet, itemImg, itemArt, packFinale: finaleBox, packHome: homeBlock, packHomeBind: bindHome, streakHome, streakFinale, rarCls, raritySelo: selo });
+  Object.assign(U, { openPacks, tradeSheet, itemImg, itemArt, packFinale: finaleBox, packHome: homeBlock, packHomeBind: bindHome, streakHome, streakFinale, streakBind, rarCls, raritySelo: selo });
 })();

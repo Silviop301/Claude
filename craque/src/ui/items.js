@@ -243,10 +243,13 @@
     while (days[dayKey(d)]) { n++; d = shift(d, -1); }
     // Posição no ciclo: com hoje jogado, hoje é o dia ((n-1)%7)+1; sem hoje, hoje seria o dia (n%7)+1
     const pos = played ? (n - 1) % 7 : n % 7, start = shift(today, -pos);
-    const cells = STREAK.map((r, i) => { const dt = shift(start, i); return { i, date: dt, key: dayKey(dt), r, done: i < pos || (i === pos && played), today: i === pos }; });
+    const claims = get().claims || [];
+    const cells = STREAK.map((r, i) => { const dt = shift(start, i), key = dayKey(dt);
+      return { i, date: dt, key, r, done: i < pos || (i === pos && played), today: i === pos, claim: claims.some(x => x.k === key) }; });
     return { n, played, pos, cells, next: STREAK[played ? (pos + 1) % 7 : pos] };
   }
-  // Fim de carreira: marca o dia; na primeira carreira do dia, paga o prêmio (fichas na hora, pacotinho na fila)
+  // Fim de carreira: marca o dia; a primeira carreira do dia libera o prêmio, que se pega tocando no dia do
+  // calendário (inv.claims: prêmios liberados e ainda não pegos; não vencem)
   function streakRecord() {
     const o = get(), k = dayKey(new Date());
     o.days = o.days || {};
@@ -254,11 +257,21 @@
     o.days[k] = (o.days[k] || 0) + 1;
     // Guarda só os últimos 60 dias
     Object.keys(o.days).sort().slice(0, -60).forEach(x => delete o.days[x]);
-    put();
-    if (!first) return null;
+    if (!first) { put(); return null; }
     const st = streak(), r = STREAK[st.pos];
-    if (r.f) { o.fichas += r.f; put(); }
+    o.claims = (o.claims || []).concat([{ k, day: st.pos + 1, r }]);
+    put();
     return { day: st.pos + 1, n: st.n, r };
+  }
+  // Pegar o prêmio de um dia: fichas na hora, pacotinho na fila
+  function streakClaim(k) {
+    const o = get(), c = (o.claims || []).find(x => x.k === k);
+    if (!c) return null;
+    o.claims = o.claims.filter(x => x !== c);
+    if (c.r.f) o.fichas += c.r.f;
+    if (c.r.p) for (let i = 0; i < c.r.p; i++) o.packs.push({ why: ['Sequência · dia ' + c.day] });
+    put();
+    return c;
   }
   const streakTxt = r => (r.f ? r.f + ' fichas' : r.p + (r.p > 1 ? ' pacotinhos' : ' pacotinho'));
 
@@ -268,10 +281,11 @@
     if (!a || !b) return a || b || null;
     const newer = (b.at || 0) > (a.at || 0) ? b : a;
     const days = Object.assign({}, a.days, b.days);
+    // Prêmio pego em qualquer aparelho some dos dois: vale a lista do salvo mais recente
     Object.keys(days).forEach(k => { days[k] = Math.max((a.days || {})[k] || 0, (b.days || {})[k] || 0); });
     return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news), days });
   }
 
   U.ITEMS = { FREE, KEY, CAT, BY_ID, RAR, RAR_NAME, CHANCE, PITY, DUP, COST, itemOf, need, has, get, put, clean, counts,
-    earn, careerWhy, open, trade, seen, merge, STREAK, streak, streakRecord, streakTxt, reset: () => { inv = null; } };
+    earn, careerWhy, open, trade, seen, merge, STREAK, streak, streakRecord, streakClaim, streakTxt, reset: () => { inv = null; } };
 })();

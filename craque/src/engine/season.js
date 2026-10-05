@@ -211,6 +211,12 @@
     // por jogo, lanterna perto de 0,8). Mantém a ordem e estica as distâncias até o tamanho de uma liga real.
     const col = otherPts.slice().sort((a, b) => b - a);
     col.splice(pos - 1, 0, pts);
+    // Quem é quem na tabela (mesma ordem de col): clubes da liga e você; 0 = time de fora da lista (completa os 20)
+    // Liga com menos de 20 clubes: os de fora da lista levam o nome dos mais fortes da divisão de baixo (só para a tela)
+    const below = LD0 && LD0.down ? D.CLUBS.filter(x => x.league === LD0.down).sort((a, b) => b.strength - a.strength).map(x => x.id) : [];
+    const otherIds = leagueClubs.filter(x => x.id !== club.id).map(x => x.id).concat(below);
+    const order = otherPts.map((p2, i) => [p2, otherIds[i] || 0]).sort((a, b) => b[0] - a[0]).map(x => x[1]);
+    order.splice(pos - 1, 0, club.id);
     if (!league && pos > 1) col[0] = Math.max(col[0], leaderPts);
     for (let i = 1; i < col.length; i++) if (col[i] > col[i - 1]) col[i] = col[i - 1];
     const mid = col.reduce((a2, x) => a2 + x, 0) / col.length, spread = col[0] - col[col.length - 1];
@@ -220,7 +226,7 @@
     // lead: vantagem do campeão sobre o vice · n, rounds, promo, releg e m: para a reta final na tela da temporada (ui/season.js)
     const LD = D.LADDER[club.league];
     const table = { pos, pts: shown[pos - 1], gap: league ? 0 : Math.max(1, shown[0] - shown[pos - 1]), league: lg.name,
-      lead: league ? Math.max(1, shown[0] - shown[1]) : 0, n: nTeams, rounds, promo: LD && LD.up ? LD.promo : 0, releg: LD && LD.down ? LD.releg : 0, m: M ? M.type : null };
+      lead: league ? Math.max(1, shown[0] - shown[1]) : 0, n: nTeams, rounds, ids: order, all: shown, promo: LD && LD.up ? LD.promo : 0, releg: LD && LD.down ? LD.releg : 0, m: M ? M.type : null };
     // Acesso / rebaixamento pela posição final
     let move = null;
     if (LD && LD.up && pos <= LD.promo) move = { dir: 'up', to: LD.up };

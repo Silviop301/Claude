@@ -56,9 +56,8 @@
     const ach = U.achRecord(G.c, f);
     // Pacotinhos da carreira: fim de carreira, nota, títulos grandes, conquistas novas e carreira do dia
     const packWhy = U.ITEMS.careerWhy(G.c, f, ach);
-    // Sequência de dias: a primeira carreira terminada no dia paga o prêmio do dia (fichas na hora; pacotinho entra aqui)
+    // Sequência de dias: a primeira carreira terminada no dia libera o prêmio do dia (pega-se tocando no calendário)
     const skGot = packWhy.length ? U.ITEMS.streakRecord() : null;
-    if (skGot && skGot.r.p) packWhy.push({ t: 'Sequência · dia ' + skGot.day, n: skGot.r.p });
     U.ITEMS.earn(packWhy);
     U.rankSave(G.c, f); // carreira encerrada: entra no ranking com a pontuação
     const T = G.c.totals;
@@ -124,6 +123,7 @@
       '<button class="btn ghost" id="b-again">Nova carreira</button>'
     );
     U.tip('fim');
+    U.streakBind();
     // Edição especial do jornal com a despedida
     const retired = G.c;
     setTimeout(() => U.farewellPaper(retired, f), 700);
