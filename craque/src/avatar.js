@@ -286,7 +286,12 @@
     if (!opts.flat) {
       let crowd = '';
       for (let r = 0; r < 6; r++) for (let x = -60 + (r % 2) * 6; x < 182; x += 12) crowd += '<circle cx="' + x + '" cy="' + (12 + r * 15) + '" r="5" fill="' + ((x * 7 + r * 3) % 5 < 2 ? '#6A665C' : '#7C786D') + '"/>';
-      bg = '<rect x="-60" y="-30" width="240" height="230" fill="#A29E91"/>' + crowd + '<rect x="-60" y="96" width="240" height="14" fill="#5E5B52"/><rect x="-60" y="110" width="240" height="90" fill="#7F8A6C"/>';
+      // lawn: gramado verde e arquibancada escura (card da criação); sem ele, o tom apagado do jornal
+      bg = opts.lawn
+        ? '<rect x="-60" y="-30" width="240" height="230" fill="#2C3A44"/>' + crowd.replace(/#6A665C/g, '#3E4E5A').replace(/#7C786D/g, '#4F606C') +
+          '<rect x="-60" y="96" width="240" height="14" fill="#1E2A31"/><rect x="-60" y="110" width="240" height="90" fill="#3FA055"/>' +
+          [0, 2, 4].map(i => '<rect x="-60" y="' + (110 + i * 15) + '" width="240" height="15" fill="#47AE5E"/>').join('')
+        : '<rect x="-60" y="-30" width="240" height="230" fill="#A29E91"/>' + crowd + '<rect x="-60" y="96" width="240" height="14" fill="#5E5B52"/><rect x="-60" y="110" width="240" height="90" fill="#7F8A6C"/>';
     }
     // Braços (atrás do tronco)
     // Tatuagem: desenhada em coordenadas do próprio braço e recortada na largura da pele,
