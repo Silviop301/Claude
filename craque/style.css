@@ -2242,3 +2242,19 @@ details.fin-more[open] { display: flex; flex-direction: column; gap: 12px; paddi
 .sk-d.done { opacity: 1; background: rgba(34, 164, 93, .25); }
 .sk-d.today { opacity: 1; border-color: var(--gold); }
 .sk-d.today b { color: var(--gold); }
+
+/* ===== Copa e Mundial: um jogo por vez (os anteriores viram fichinhas) ===== */
+.wc-list > .wc-game:not(:last-child) { display: none; }
+.wc-path { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.wc-path:empty { display: none; }
+.wc-path .wp { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 999px; background: var(--paper); color: var(--ink); border-left: 4px solid #9DB5A6; font: 600 12px var(--body); }
+.wc-path .wp small { font: 700 10px var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.wc-path .wp b { font: 800 15px var(--display); }
+.wc-path .wp i { font-style: normal; color: var(--muted); }
+.wc-path .wp.w { border-left-color: #1FA35A; } .wc-path .wp.l { border-left-color: #C9303C; } .wc-path .wp.d { border-left-color: #F2C230; }
+button.sk-d { font: inherit; color: inherit; cursor: pointer; }
+.sk-d.claim { opacity: 1; background: rgba(242, 194, 48, .22); border-color: var(--gold); animation: sk-pulse 1.4s ease-in-out infinite; }
+.sk-d.claim b { color: var(--gold); }
+@keyframes sk-pulse { 50% { box-shadow: 0 0 0 4px rgba(242, 194, 48, .25); } }
+.sk.won .sk-h small { color: var(--gold); font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { .sk-d.claim { animation: none; } }

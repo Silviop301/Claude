@@ -192,6 +192,18 @@
     return tbl.slice().sort((x, y) => y.pts - x.pts || (y.gf - y.ga) - (x.gf - x.ga) || y.gf - x.gf || y.tie - x.tie);
   }
   S.wcGroupTable = run => (run && run.tbl ? groupSort(run.tbl) : null);
+  // Tabela só com as n primeiras rodadas (a tela mostra o jogo rolando antes de somar o resultado)
+  S.wcGroupTableAt = function (run, n) {
+    if (!run || !run.tbl) return null;
+    const t = run.tbl.map(x => ({ id: x.id, pts: 0, gf: 0, ga: 0, tie: x.tie }));
+    const T = id => t.find(x => x.id === id), add = (x, gf, ga) => { x.gf += gf; x.ga += ga; x.pts += gf > ga ? 3 : gf === ga ? 1 : 0; };
+    run.games.slice(0, Math.min(n, 3)).forEach((g, i) => {
+      if (g.live || !g.other) return;
+      add(T('me'), g.gf, g.ga); add(T(run.group[i]), g.ga, g.gf);
+      add(T(g.other.a), g.other.ga, g.other.gb); add(T(g.other.b), g.other.gb, g.other.ga);
+    });
+    return groupSort(t);
+  };
 
   // Resultado do lance decisivo (minigame ou chance)
   S.wcMoment = function (c, ok) {

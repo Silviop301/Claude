@@ -39,6 +39,7 @@
     U.backTo = null;
     $('b-new').onclick = () => create();
     U.packHomeBind();
+    U.streakBind(U.home); // pegou um pacotinho da sequência: a tela redesenha com o bloco de pacotinhos
     $('b-mine').onclick = mine;
     U.challengeHomeBind();
     $('b-opiniao').onclick = () => U.feedback('inicio', {}, home);
