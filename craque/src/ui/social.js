@@ -82,7 +82,7 @@
       return ctx.ok ? { text: fresh('p.eventOk', P.eventOk), mood: 'up' } : { text: fresh('p.eventKo', P.eventKo), mood: 'down' };
     }
     if (ctx.kind === 'moment') {
-      const m = ctx.m, st = S.kickSetupType(m), key = st === 'save' ? 'save' : st === 'tackle' ? 'tackle' : st === 'pass' ? 'pass' : 'goal';
+      const m = ctx.m, st = S.kickSetupType(m), key = st === 'save' ? (ctx.why === 'fora' ? 'saveFora' : 'save') : st === 'tackle' ? 'tackle' : st === 'pass' ? 'pass' : 'goal';
       if (!ctx.ok) return { text: fresh('p.momentKo', P.momentKo), mood: 'down', m };
       return { text: (chance(0.6) ? fresh('p.mctx', P.momentCtx) + ' ' : '') + fresh('p.mok.' + key, P.momentOk[key]) + ' ' +
         fresh('p.mend.' + m.type, P.momentEnd[m.type] || P.momentEnd.cup) + ' ' + fresh('p.mtail', P.momentTail), mood: 'up', sub: 'moment', m };

@@ -179,7 +179,7 @@
   }
 
   function momentEnd(m, ok, T, why) {
-    S.resolveMoment(G.c, ok);
+    S.resolveMoment(G.c, ok, why);
     save();
     momentResult(ok, T, m, why);
   }
@@ -214,7 +214,7 @@
     );
     if (ok) U.vibe([40, 60, 40]);
     $('b-next').onclick = U.season;
-    U.postBind({ kind: 'moment', ok, m }, U.season);
+    U.postBind({ kind: 'moment', ok, m, why }, U.season);
     // Final continental: edição extra do jornal
     const btn = $('b-next');
     if (m.type === 'cont') setTimeout(() => { if (btn.isConnected) U.finalPaper(G.c, m, ok); }, 900);

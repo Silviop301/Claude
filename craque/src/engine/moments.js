@@ -195,9 +195,11 @@
     k.n++;
     if (ok) { k.ok++; if (type === 'fk') k.fkOk++; if (type === 'save') k.saveOk = (k.saveOk || 0) + 1; if (type === 'tackle') k.tackleOk = (k.tackleOk || 0) + 1; if (type === 'pass') k.passOk = (k.passOk || 0) + 1; }
   };
-  S.resolveMoment = function (c, ok) {
+  // why: como o lance terminou no minigame (defesa, barreira, fora, impedido...). Resultado, manchete e post
+  // contam a partir dele; sem why (a chance decidiu) os textos ficam neutros
+  S.resolveMoment = function (c, ok, why) {
     if (!c.moment) return;
-    c.mod.moment = Object.assign({}, c.moment, { ok: !!ok });
+    c.mod.moment = Object.assign({}, c.moment, { ok: !!ok }, why ? { why } : {});
     S.countKick(c, S.kickType(c.moment), ok);
     c.moment = null;
   };
