@@ -1056,15 +1056,13 @@ details.more .hl { background: rgba(255, 255, 255, 0.08); border-radius: 10px; p
 .cc-top { width: 100%; display: flex; align-items: center; gap: 8px; }
 .cc-num { width: 64px; font: 800 38px/1 var(--display); background: transparent; border: 0; color: inherit; padding: 0; -moz-appearance: textfield; }
 .cc-num::-webkit-inner-spin-button, .cc-num::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.cc-pos { font: 800 15px var(--display); letter-spacing: .08em; opacity: .8; }
 .cc-flag { margin-left: auto; font-size: 30px; line-height: 1; }
 .cc-photo { border: 0; padding: 0; background: none; border-radius: 12px; overflow: hidden; }
-.cc-photo svg { width: 150px; height: auto; display: block; border-radius: 12px; filter: sepia(.15); }
+.cc-photo svg { width: 150px; height: auto; display: block; border-radius: 12px; }
 .cc-name { width: 100%; text-align: center; font: 800 26px/1.1 var(--display); text-transform: uppercase; background: rgba(255,255,255,.1); border: 0; border-radius: 10px; color: inherit; padding: 6px 4px; }
 .cc-acts { display: flex; justify-content: center; gap: 8px; margin: 2px 0 6px; }
 .cc-acts .cr-dice { height: 40px; font-size: 15px; }
 .cr-more { text-align: center; margin: 10px 4px 14px; }
-.cc-hint { text-align: center; color: #B9CDBF; font-size: 13px; margin: 0; }
 .look-panel { display: flex; flex-direction: column; gap: 8px; align-items: center; background: rgba(255,255,255,.06); border-radius: 12px; padding: 10px; }
 .look-panel[hidden] { display: none; }
 .seg.flags.one-line { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 52px; overflow-x: auto; scrollbar-width: none; }
@@ -1936,6 +1934,14 @@ html, body, button, a, input, .choice { touch-action: manipulation; }
 button.cc-num { width: auto; display: inline-flex; align-items: center; gap: 8px; border: 2px solid var(--rk); border-radius: 10px; padding: 2px 10px 2px 8px; background: rgba(0,0,0,.18); color: inherit; cursor: pointer; min-height: 44px; }
 button.cc-num b { font: 800 34px/1 var(--display); }
 button.cc-num span { display: flex; flex-direction: column; align-items: flex-start; font: 600 14px/1.1 var(--body); opacity: .9; }
+button.cc-num small { font: 700 12px/1 var(--display); letter-spacing: .06em; opacity: .7; align-self: flex-start; margin-top: 6px; }
+.cc-caret { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid currentColor; opacity: .75; }
+/* Nome editável: lápis ao lado, sem precisar de dica */
+.cc-name-w { position: relative; width: 100%; display: block; cursor: text; }
+.cc-name-w .cc-name { padding: 6px 30px; }
+.cc-name-w .ico { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); opacity: .7; pointer-events: none; }
+/* Botão fixo no rodapé: o conteúdo some num degradê atrás dele em vez de aparecer cortado em volta */
+.inv-bar.fade::before { content: ''; position: absolute; z-index: -1; left: -20px; right: -20px; top: -44px; bottom: calc(-10px - env(safe-area-inset-bottom, 0px)); background: linear-gradient(to bottom, rgba(15, 61, 42, 0), var(--pitch) 40px); pointer-events: none; }
 button.cc-num em { font: 800 13px/1.1 var(--display); font-style: normal; letter-spacing: .08em; text-transform: uppercase; color: var(--rk); }
 .nb-sheet { max-height: 88vh; }
 .nb-scroll { overflow-y: auto; margin: 0 -16px; padding: 0 16px; }
