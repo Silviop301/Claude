@@ -63,7 +63,7 @@
   const RACE_AT = [0.2, 0.35, 0.5, 0.62, 0.74, 0.84, 0.92];
   function raceOf(res) {
     const tb = res.table;
-    if (!tb || !tb.rounds || !res.games || res.games < 10) return null;
+    if (!tb || !tb.rounds) return null;
     const r = S.rng(((G.c && G.c.tseed) || 7) * 31 + res.age * 977 + tb.pos * 13);
     const n = tb.n, R = tb.rounds, up = res.move && res.move.dir === 'up', down = res.move && res.move.dir === 'down';
     let kind, fin;
@@ -71,6 +71,7 @@
     else if (tb.pos <= 3 && tb.gap <= 6) { kind = 'title'; fin = -tb.gap; }
     else if (tb.promo && tb.pos <= tb.promo + 2) { kind = 'acesso'; fin = up ? r.int(1, 4) : -r.int(1, 4); }
     else if (tb.releg && tb.pos >= n - tb.releg - 1) { kind = 'degola'; fin = down ? -r.int(1, 4) : r.int(1, 4); }
+    else if (tb.ids && tb.all) { kind = 'meio'; fin = 0; } // meio da tabela: a posição flutua e termina na real
     else return null;
     // Lance decisivo na última rodada (título ou acesso): chegam empatados e o jogo vale os 3 pontos
     const last = (tb.m === 'title' && kind === 'title') || (tb.m === 'acesso' && kind === 'acesso');
@@ -80,13 +81,13 @@
     const L = kind === 'acesso' ? tb.promo : kind === 'degola' ? n - tb.releg : 0, inside = L ? tb.pos <= L : tb.pos === 1;
     if (L && tb.all) fin = tb.all[tb.pos - 1] - tb.all[inside ? L : L - 1];
     const rounds = RACE_AT.map(f => Math.max(1, Math.round(R * f))).concat([R - 1, R]);
-    const v0 = Math.round(fin * 0.3 + r.gauss() * 3);
+    const amp = kind === 'meio' ? 5 : 3, v0 = Math.round(fin * 0.3 + r.gauss() * amp);
     const vals = rounds.map((rd, i) => {
       const f = rd / R;
-      return Math.round(v0 + (fin - v0) * Math.pow(f, 1.5) + r.gauss() * (1 - f) * 3);
+      return Math.round(v0 + (fin - v0) * Math.pow(f, 1.5) + r.gauss() * (1 - f) * amp);
     });
     // Final apertado: quem ganhou estava atrás, quem perdeu estava na frente
-    if (Math.abs(fin) <= 3 && r() < 0.75) {
+    if (kind !== 'meio' && Math.abs(fin) <= 3 && r() < 0.75) {
       // Na penúltima rodada a troca só cabe com diferença mínima (uma rodada vale 3 pontos)
       const at = r.pick(Math.abs(fin) <= 2 ? [5, 6, 7] : [5, 6]);
       vals[at] = -Math.sign(fin) * (at === 7 ? 1 : r.int(1, 3));
@@ -106,7 +107,7 @@
     // na proporção das rodadas; você fica a v pontos da referência (líder, último do G-acesso ou primeiro fora da degola)
     if (tb.ids && tb.all) {
       const me = res.club, others = tb.ids.map((id, i) => ({ id, pf: tb.all[i] })).filter(x => x.id !== me);
-      const line = kind === 'title' ? 1 : kind === 'acesso' ? tb.promo : n - tb.releg;
+      const line = kind === 'title' ? 1 : kind === 'acesso' ? tb.promo : kind === 'meio' ? tb.pos : n - tb.releg;
       frames.forEach((f, i) => {
         const last = i === frames.length - 1;
         const rows = last ? tb.ids.map((id, j) => ({ id, pts: tb.all[j], me: id === me }))
@@ -121,6 +122,7 @@
         rows.forEach((x, j) => { x.pos = j + 1; });
         f.rows = rows;
         f.pos = rows.find(x => x.me).pos;
+        f.lead = rows[0].me ? 0 : rows[0].pts - rows.find(x => x.me).pts;
         f.line = line;
       });
     }
@@ -131,11 +133,12 @@
       if (i > 0 && f.v > 0 && frames[i - 1].v <= 0) leftZone = f.rd;
       if (i >= 4 && i < frames.length - 1 && f.v < 0) wasBehind = true;
     });
-    return { kind, fin, R, frames, lastLead, leftZone, wasBehind, last, inside, pos: tb.pos, promo: tb.promo };
+    return { kind, fin, R, frames, lastLead, leftZone, wasBehind, last, inside, pos: tb.pos, promo: tb.promo, pts: tb.pts, gap: tb.gap };
   }
 
-  function raceLabel(rc, v) {
+  function raceLabel(rc, v, f) {
     const p = n => D.plural(Math.abs(n), 'ponto', 'pontos');
+    if (rc.kind === 'meio') return f.lead ? 'A ' + p(f.lead) + ' do líder' : 'Na liderança';
     if (rc.kind === 'title') return v > 0 ? 'Lidera por ' + p(v) : v === 0 ? 'Empatado com o líder' : 'A ' + p(v) + ' do líder';
     if (rc.kind === 'acesso') return v > 0 ? p(v) + ' acima da zona de acesso' : v === 0 ? 'Empatado na briga pelo acesso' : 'A ' + p(v) + ' da zona de acesso';
     return v > 0 ? p(v) + ' acima da degola' : v === 0 ? 'Empatado com a zona da degola' : 'Na zona da degola, a ' + p(v) + ' de sair';
@@ -143,6 +146,7 @@
 
   function raceVerdict(rc) {
     const a = Math.abs(rc.fin), p = D.plural(a, 'ponto', 'pontos');
+    if (rc.kind === 'meio') return [rc.pos + 'º lugar com ' + D.plural(rc.pts, 'ponto', 'pontos') + ', a ' + rc.gap + ' do líder.', 'mid'];
     if (rc.kind === 'title') {
       if (rc.pos === 1) return [rc.last ? 'Título decidido na última rodada!' : a <= 3 ? 'Campeão por ' + p + '!' + (rc.wasBehind ? ' Virada na reta final.' : '') : 'Campeão com ' + p + ' de vantagem', 'win'];
       if (rc.pos === 2) return [rc.last ? 'O título escapou na última rodada.' : 'Vice por ' + p + '.' + (rc.lastLead >= rc.R * 0.5 ? ' Liderou até a rodada ' + rc.lastLead + '.' : ''), 'miss'];
@@ -158,10 +162,10 @@
   // a linha tracejada marca o corte. Times de fora da lista (id 0, completam ligas pequenas) não aparecem.
   function miniTable(rc, f) {
     const real = f.rows.filter(x => x.id);
-    const a = Math.max(1, f.line - (rc.kind === 'title' ? 0 : 1)), b = a + 3;
+    const n = f.rows.length, a = rc.kind === 'meio' ? Math.max(1, Math.min(f.pos - 1, n - 3)) : Math.max(1, f.line - (rc.kind === 'title' ? 0 : 1)), b = a + 3;
     let rows = real.filter(x => x.pos >= a && x.pos <= b);
     if (!rows.some(x => x.me)) rows = rows.slice(0, 3).concat(real.filter(x => x.me));
-    const cut = rc.kind === 'title' ? 0 : f.line;
+    const cut = rc.kind === 'title' || rc.kind === 'meio' ? 0 : f.line;
     return '<div class="rc-tbl">' + rows.map((x, i) => (i && x.pos - rows[i - 1].pos > 1 ? '<div class="rt-gap">⋯</div>' : '') +
       '<div class="rt-r' + (x.me ? ' me' : '') + (x.pos === cut ? ' cut' : '') + (rc.kind === 'title' && x.pos === 1 ? ' top' : '') + '"><i>' + x.pos + '</i>' + crest(x.id, 'xs') +
       '<span>' + esc(club(x.id).name) + '</span><b>' + x.pts + '</b></div>').join('') + '</div>';
@@ -181,7 +185,7 @@
     el.innerHTML = '<div class="rc-top"><span class="rc-rd">' + (end ? 'Fim da liga' : 'Rodada ' + f.rd + ' de ' + rc.R) + '</span><b class="rc-pos">' + f.pos + 'º</b></div>' +
       (f.rows ? miniTable(rc, f) : '<svg class="rc-spark" viewBox="0 0 240 44" preserveAspectRatio="none" aria-hidden="true"><line x1="0" x2="240" y1="22" y2="22"/><polyline points="' + pts + '"/>' +
       '<circle cx="' + X(k).toFixed(1) + '" cy="' + Y(f.v).toFixed(1) + '" r="3.5"/></svg>') +
-      '<p class="rc-lbl ' + tone + '">' + (end ? esc(vd[0]) : esc(raceLabel(rc, f.v))) + '</p>';
+      '<p class="rc-lbl ' + tone + '">' + (end ? esc(vd[0]) : esc(raceLabel(rc, f.v, f))) + '</p>';
   }
 
   function season() {
@@ -208,7 +212,7 @@
       '<div class="feed" id="feed"></div><div id="after"></div><p class="skip-hint" id="skip-hint">Toque para pular</p>'
     );
     // Com reta final, a temporada dura um pouco mais: a tabela precisa de tempo para virar
-    const dur = race ? 2800 : 1500, t0 = performance.now();
+    const dur = race ? (race.kind === 'meio' ? 2200 : 2800) : 1500, t0 = performance.now();
     let skip = !!U.cfg.fast, shown = [0, 0, 0]; // configuração: resumo rápido
     // Liga o "pular" só depois: o toque que abriu esta tela ainda está se propagando
     setTimeout(() => { screen.onclick = () => { skip = true; }; }, 50);
