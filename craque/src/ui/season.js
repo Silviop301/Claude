@@ -24,8 +24,7 @@
 
   // Resenha da temporada: dois programas comentam, cada um no seu estilo (D.MEDIA.shows). Um fala do ano
   // (título, banco, lesão, nota) e o outro de um destaque (gols, assistências, idade, paredão, xerife); sem destaque,
-  // também do ano. Às vezes o segundo discorda do primeiro, como numa mesa de debate (rebate e rebateDown).
-  const UP_TALK = ['ballon', 'title', 'great'], DOWN_TALK = ['bad'];
+  // também do ano.
   const GOAL_TALK = /\bgols?\b|gola[çc]o|dribl|pedalada|artilh/i;
   function resenha(res) {
     const shows = (D.MEDIA || {}).shows || [];
@@ -45,18 +44,15 @@
     const fill = t => t.replace(/\{n\}/g, G.c.name).replace(/\{time\}/g, cl.name).replace(/\{clube\}/g, D.o(cl.name))
       .replace(/\{Clube\}/g, D.o(cl.name).replace(/^./, ch => ch.toUpperCase())).replace(/\{doTime\}/g, D.do(cl.name)).replace(/\{noTime\}/g, D.no(cl.name))
       .replace(/\{g\}/g, res.goals).replace(/\{a\}/g, res.assists).replace(/\{idade\}/g, res.age).replace(/\{nota\}/g, nota)
-      .replace(/\{jogos\} jogos/g, D.plural(res.games || 0, 'jogo', 'jogos')).replace(/\{jogos\}/g, res.games || 0).replace(/\{cs\}/g, res.cleanSheets || 0).replace(/\{desarmes\}/g, res.tackles || 0)
-      .replace(/\{outro\}/g, shows[first].nick || shows[first].who);
+      .replace(/\{jogos\} jogos/g, D.plural(res.games || 0, 'jogo', 'jogos')).replace(/\{jogos\}/g, res.games || 0).replace(/\{cs\}/g, res.cleanSheets || 0).replace(/\{desarmes\}/g, res.tackles || 0);
     // Fala sorteada com memória entre carreiras (U.fresh): a mesma frase só volta depois das outras
     const say = (sh, key) => {
       let arr = sh.talk[key] && sh.talk[key].length ? sh.talk[key] : sh.talk[mood], k = 'r.' + sh.id + '.' + key;
       if (noGoal && key === mood) { const ok = arr.filter(x => !GOAL_TALK.test(x)); if (ok.length && ok.length < arr.length) { arr = ok; k += '.ng'; } }
       return fill(U.fresh ? U.fresh(k, arr) : arr[Math.floor(Math.random() * arr.length)]);
     };
-    const reb = UP_TALK.includes(mood) ? 'rebate' : DOWN_TALK.includes(mood) ? 'rebateDown' : null;
-    const key2 = reb && (shows[second].talk[reb] || []).length && Math.random() < 0.3 ? reb : topic || mood;
     const item = (sh, q) => '<div class="rs-item"><div class="np">' + U.emo('🎙️', 'xs') + ' ' + esc(sh.who) + ' ' + esc(sh.where) + '</div><p>“' + esc(q) + '”</p></div>';
-    return '<div class="news resenha rv">' + item(shows[first], say(shows[first], mood)) + item(shows[second], say(shows[second], key2)) + '</div>';
+    return '<div class="news resenha rv">' + item(shows[first], say(shows[first], mood)) + item(shows[second], say(shows[second], topic || mood)) + '</div>';
   }
 
   function season() {

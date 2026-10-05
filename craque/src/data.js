@@ -338,10 +338,9 @@
     // de verdade. {n} nome, {time} clube, {clube} clube com artigo, {g} gols, {a} assistências, {idade} idade,
     // {nota} nota do ano, {jogos} jogos, {cs} jogos sem sofrer gol, {desarmes} desarmes.
     // Situações: resumo do ano (ballon, title, bench, injury, down, great, good, bad) e destaques (gols, assist, joia,
-    // veterano, paredao do goleiro, xerife do zagueiro). rebate e rebateDown: o segundo programa discorda do primeiro
-    // ({outro} = nick de quem falou antes), como numa mesa de debate de verdade.
+    // veterano, paredao do goleiro, xerife do zagueiro).
     shows: [
-      { id: 'neto', who: 'Craque Neto', where: 'no Os Donos da Bola', nick: 'Neto', talk: {
+      { id: 'neto', who: 'Craque Neto', where: 'no Os Donos da Bola', talk: {
         ballon: ["Eu falei aqui no programa, tá gravado! Cascão, acha o vídeo! Bola de Ouro pro {n}!",
           "Melhor do mundo! E tinha gente aqui dentro dizendo que era jogador de Instagram. Tá rindo de quê agora, Cascão?",
           "Bola de Ouro! Pelo amor de Deus, eu vou chorar ao vivo de novo e minha mulher vai brigar comigo.",
@@ -401,16 +400,11 @@
           "Cascão, conta comigo: {cs} jogos sem sofrer gol. Isso é paredão, diga-se de passagem!"],
         xerife: ["{desarmes} desarmes! Zagueiro raiz, que dá o carrinho e ainda levanta o atacante do chão!",
           "Zagueiro que eu gosto é isso aí: {desarmes} desarmes e nenhum chilique pro juiz."],
-        rebate: ["O {outro} tá exagerando. O {n} é bom, mas melhor do mundo é outra conversa, diga-se de passagem!",
-          "Eu respeito o {outro}, mas vamos com calma. Uma temporada boa não faz craque!",
-          "Calma, {outro}! Daqui a pouco vão pedir estátua. Eu quero ver o {n} repetir isso ano que vem!"],
-        rebateDown: ["O {outro} tá pegando pesado demais! Com esse time aí, nem eu jogava!",
-          "Para de bater no menino, {outro}! O problema {doTime} é a diretoria!"],
       } },
-      { id: 'podpah', who: 'Igão e Mítico', where: 'no Podpah', nick: 'Igão', talk: {
+      { id: 'podpah', who: 'Igão e Mítico', where: 'no Podpah', talk: {
         ballon: ["Mano, Bola de Ouro! O Mítico tá chorando aqui, olha a cara dele kkkk",
           "Papo reto, melhor do mundo. O {n} vem aqui e a gente faz episódio de seis horas, quem quiser que vá no banheiro antes.",
-          "— Mítico, lembra quando tu falou que o {n} era modinha? — Lembro não, mano, edita isso aí kkkk",
+          "O Mítico falou ano passado que o {n} era modinha. Edita essa parte aí, produção kkkk",
           "Bola de Ouro, mano! Cê é loko, o moleque zerou o futebol!",
           "Mano, a Bola de Ouro foi pro {n}! Já pode vir no Podpah com ela debaixo do braço, papo reto."],
         title: ["Campeão, mano! Agora o {n} tem que vir aqui pagar o churrasco do estúdio, papo reto.",
@@ -421,7 +415,7 @@
         bench: ["Mano, {jogos} jogos? O {n} viu mais jogo do banco do que eu do sofá kkkk",
           "Papo reto: o {n} no banco é desperdício. Professor, solta o moleque!",
           "O {n} já tem almofada personalizada no banco, mano. Com o nome bordado kkkk",
-          "— Mítico, por que o {n} não joga? — Mano, nem a mãe do técnico sabe kkkk",
+          "Mano, por que o {n} não joga? Nem a mãe do técnico sabe kkkk",
           "Mano, o {n} tá vendo os jogos de camarote. Só que o camarote é o banco kkkk"],
         injury: ["Pô, mano, lesão é triste demais. Força, {n}, volta brabo!",
           "O {n} passou mais tempo com o fisioterapeuta do que com a família, mano. Força, irmão!",
@@ -431,7 +425,7 @@
           "Mano, rebaixamento dói. Mas o {n} tem mercado, os empresários já tão no direct dele."],
         great: ["Mano, o {n} tá jogando no modo fácil! Alguém desliga o cheat dele kkkk",
           "Nota {nota}, mano! É o pai! É o pai!",
-          "— O {n} é o melhor do campeonato. — Do campeonato não, Mítico, da galáxia, mano!",
+          "Melhor do campeonato? Do campeonato não, mano, da galáxia!",
           "Papo reto, se o {n} vier no Podpah, eu pago o rango brabo, o do restaurante caro!",
           "Mano, cada jogo do {n} vira corte no TikTok. O cara tá zerando o algoritmo!",
           "Mano, o {n} tá voando tão alto que vai precisar de passaporte kkkk"],
@@ -441,7 +435,7 @@
           "Ano firmeza, papo reto. Nem brabo, nem fraco: firmeza."],
         bad: ["Mano, o {n} esse ano jogou de chinelo, papo reto kkkk",
           "Cadê o {n}, mano? Abriram até boletim de ocorrência de desaparecimento kkkk",
-          "— Mítico, nota {nota}... — Mano, isso é a nota da minha prova de química kkkk",
+          "Nota {nota}, mano? Isso é a nota da minha prova de química kkkk",
           "Papo reto, o {n} foi um NPC esse ano, mano. Só andava em campo e dava bom dia.",
           "Mano, o {n} jogou igual eu no videogame depois da meia-noite: só passe errado kkkk",
           "Mano, o {n} tava no modo avião o ano inteiro kkkk"],
@@ -458,12 +452,8 @@
           "Mano, {cs} jogos zerado! Esse goleiro tem ímã na luva, papo reto."],
         xerife: ["{desarmes} desarmes, mano! Atacante que passa pelo {n} tem que pagar pedágio kkkk",
           "Papo reto, o {n} é zagueiro raiz. Toma a bola e ainda dá tapinha nas costas."],
-        rebate: ["— O {outro} falou que o {n} é tudo isso. — Calma, mano, é bom, mas não é o pai ainda kkkk",
-          "Papo reto, o {outro} tá no hype. O {n} é firmeza, brabo ainda não, mano."],
-        rebateDown: ["Ah, mano, o {outro} pegou pesado! O {n} correu mais que o time inteiro, papo reto.",
-          "Mano, deixa o {n} em paz, {outro}! Ano ruim todo mundo tem, eu tenho um por semana kkkk"],
       } },
-      { id: 'flow', who: 'Resenha', where: 'do Flow Sport Club', nick: 'pessoal do Flow', talk: {
+      { id: 'flow', who: 'Resenha', where: 'do Flow Sport Club', talk: {
         ballon: ["Rapaziada, Bola de Ouro pro {n}! O chat tá pegando fogo, ninguém consegue ler nada!",
           "Fizemos enquete aqui: 92% acha justa a Bola de Ouro do {n}. Os outros 8% são torcedores do rival.",
           "Melhor do mundo, rapaziada. Aí é cinema! E é cinema com pipoca e refrigerante grande."],
@@ -502,12 +492,8 @@
           "Rapaziada, {cs} jogos sem levar gol. Atacante chega na frente do {n} e esquece o que ia fazer."],
         xerife: ["{desarmes} desarmes, rapaziada. Atacante que pega o {n} pela frente pede pra sair.",
           "Rapaziada, {desarmes} desarmes. O {n} é o tipo de zagueiro que o adversário estuda no vídeo e ainda perde."],
-        rebate: ["Discordo do {outro}, rapaziada. Ano bom, sim. Histórico? Calma lá.",
-          "Rapaziada, o {outro} tá no hype. A gente gosta do {n}, mas vamos com calma."],
-        rebateDown: ["Rapaziada, o {outro} pegou pesado. O {n} jogou num time que nem sabia pra que lado atacar.",
-          "Calma, {outro}! Ano ruim todo mundo tem. A resenha tá com o {n}."],
       } },
-      { id: 'casimiro', who: 'Casimiro', where: 'na live da CazéTV', nick: 'Casimiro', talk: {
+      { id: 'casimiro', who: 'Casimiro', where: 'na live da CazéTV', talk: {
         ballon: ["Ih, meteu essa? Bola de Ouro pro {n}! Chat, eu tô arrepiado, olha isso!",
           "Melhor do mundo. Apenas. Simplesmente. Fecha a live, não tem como superar isso, mané!",
           "Bola de Ouro pro {n}! Aceitas? Aceita! Muito forte!",
@@ -548,12 +534,8 @@
           "{cs} jogos zerado. O {n} é o goleiro mais chato da liga. Elogio, tá, mané?"],
         xerife: ["{desarmes} desarmes, mané! O {n} rouba bola igual eu roubo batata frita do prato dos outros.",
           "{desarmes} desarmes. O atacante vê o {n} e já pede pra trocar de lado. Apenas."],
-        rebate: ["O {outro} falou isso aí? Que papinho, mané! É bom, mas calma.",
-          "Chat, com todo respeito ao {outro}: é forte, não é muito forte. Ainda."],
-        rebateDown: ["Ih, o {outro} pegou pesado! Deixa o mané em paz, ano ruim todo mundo tem.",
-          "Que papinho é esse, {outro}? O {n} jogou num time que não ajudava nada!"],
       } },
-      { id: 'galvao', who: 'Galvão Bueno', where: 'no Bem, Amigos!', nick: 'Galvão', talk: {
+      { id: 'galvao', who: 'Galvão Bueno', where: 'no Bem, Amigos!', talk: {
         ballon: ["Bem, amigos... o {n} é o melhor do mundo! Haja coração!",
           "É do {n}! É do {n}! A Bola de Ouro é do {n}! Eu narrei muita Copa e me arrepiei agora.",
           "Tá na hora de o mundo inteiro conhecer o {n}! Melhor do mundo, amigos!"],
@@ -591,10 +573,8 @@
           "Bem, amigos, {cs} jogos sem levar gol. É um paredão!"],
         xerife: ["Bem, amigos, {desarmes} desarmes. Zagueiro com Z maiúsculo!",
           "Pode isso, Arnaldo? {desarmes} desarmes limpinhos! Pode!"],
-        rebate: ["Bem, amigos, com todo respeito ao {outro}: calma! Calma! Uma temporada não faz uma lenda."],
-        rebateDown: ["Calma, {outro}! Calma! O {n} merece respeito, amigos."],
       } },
-      { id: 'denilson', who: 'Denílson', where: 'no Denílson Show', nick: 'Denílson', talk: {
+      { id: 'denilson', who: 'Denílson', where: 'no Denílson Show', talk: {
         ballon: ["Bola de Ouro pro {n}! Eu dava pedalada e ganhava aplauso, ele ganha Bola de Ouro. Tá certo, ele merece mais.",
           "Melhor do mundo! Tô arrepiado aqui no estúdio, gente!",
           "O {n} vem aqui no Denílson Show contar como é ser o melhor do mundo. Eu conto como é perder pra ele no videogame."],
@@ -625,8 +605,6 @@
         veterano: ["{idade} anos e jogando assim? Respeito total, o Denílson aprova!"],
         paredao: ["{cs} jogos sem tomar gol! Eu nunca ia conseguir fazer gol nesse cara. Nem pedalando."],
         xerife: ["{desarmes} desarmes! Ainda bem que eu já parei, esse {n} ia me pegar."],
-        rebate: ["O {outro} tá empolgado, né? Bom ano, sim. Mas calma, gente."],
-        rebateDown: ["Ô {outro}, pega leve! O {n} jogou num time que não ajudava nada."],
       } },
     ],
   };
