@@ -217,9 +217,11 @@
     const k = Math.max(1, rounds * 1.2 / Math.max(1, spread));
     const shown = col.map(x => clamp(Math.round(mid + (x - mid) * k), Math.round(rounds * 0.4), rounds * 3));
     if (!league && pos > 1 && shown[0] <= shown[pos - 1]) shown[0] = shown[pos - 1] + 1;
-    const table = { pos, pts: shown[pos - 1], gap: league ? 0 : Math.max(1, shown[0] - shown[pos - 1]), league: lg.name };
-    // Acesso / rebaixamento pela posição final
+    // lead: vantagem do campeão sobre o vice · n, rounds, promo, releg e m: para a reta final na tela da temporada (ui/season.js)
     const LD = D.LADDER[club.league];
+    const table = { pos, pts: shown[pos - 1], gap: league ? 0 : Math.max(1, shown[0] - shown[pos - 1]), league: lg.name,
+      lead: league ? Math.max(1, shown[0] - shown[1]) : 0, n: nTeams, rounds, promo: LD && LD.up ? LD.promo : 0, releg: LD && LD.down ? LD.releg : 0, m: M ? M.type : null };
+    // Acesso / rebaixamento pela posição final
     let move = null;
     if (LD && LD.up && pos <= LD.promo) move = { dir: 'up', to: LD.up };
     else if (LD && LD.down && pos > nTeams - LD.releg) move = { dir: 'down', to: LD.down }; // os últimos da tabela (que pode ter mais de 20 times)
