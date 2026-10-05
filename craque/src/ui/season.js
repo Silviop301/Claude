@@ -22,13 +22,12 @@
     return '<p class="pe-gain rv">' + U.emo('⭐', 'xs') + ' <b>' + (pe.n ? '+' + pe.n + (pe.n > 1 ? ' pontos' : ' ponto') + ' de evolução' : 'Nenhum ponto de evolução') + '</b> · ' + parts.join(' · ') + '</p>';
   }
 
-  // Resenha da temporada: dois programas comentam, cada um no seu estilo (D.MEDIA.shows). Um fala do ano
-  // (título, banco, lesão, nota) e o outro de um destaque (gols, assistências, idade, paredão, xerife); sem destaque,
-  // também do ano.
+  // Resenha da temporada: um programa sorteado comenta no seu estilo (D.MEDIA.shows), sobre o destaque do ano
+  // (gols, assistências, idade, paredão, xerife) ou, sem destaque, sobre o ano (título, banco, lesão, nota).
   const GOAL_TALK = /\bgols?\b|gola[çc]o|dribl|pedalada|artilh/i;
   function resenha(res) {
     const shows = (D.MEDIA || {}).shows || [];
-    if (shows.length < 2) return '';
+    if (!shows.length) return '';
     const cl = club(res.club);
     const ballon = res.awards.some(a => a.id === 'ballon');
     const mood = ballon ? 'ballon' : res.titles.length ? 'title' : !res.games || res.games < 10 ? 'bench' : res.injury >= 25 ? 'injury'
@@ -39,7 +38,7 @@
       : res.age <= 20 && res.rating >= 7.2 ? 'joia' : res.age >= 33 && res.rating >= 7.0 ? 'veterano' : null;
     // Goleiro e zagueiro de poucos gols: nada de "gols", "dribla" ou "pedalada" nas falas do ano
     const noGoal = res.pos === 'GOL' || (res.pos === 'ZAG' && res.goals < 5);
-    const first = Math.floor(Math.random() * shows.length), second = (first + 1 + Math.floor(Math.random() * (shows.length - 1))) % shows.length;
+    const first = Math.floor(Math.random() * shows.length);
     const nota = (Math.round(res.rating * 10) / 10).toFixed(1).replace('.', ',');
     const fill = t => t.replace(/\{n\}/g, G.c.name).replace(/\{time\}/g, cl.name).replace(/\{clube\}/g, D.o(cl.name))
       .replace(/\{Clube\}/g, D.o(cl.name).replace(/^./, ch => ch.toUpperCase())).replace(/\{doTime\}/g, D.do(cl.name)).replace(/\{noTime\}/g, D.no(cl.name))
@@ -52,7 +51,7 @@
       return fill(U.fresh ? U.fresh(k, arr) : arr[Math.floor(Math.random() * arr.length)]);
     };
     const item = (sh, q) => '<div class="rs-item"><div class="np">' + U.emo('🎙️', 'xs') + ' ' + esc(sh.who) + ' ' + esc(sh.where) + '</div><p>“' + esc(q) + '”</p></div>';
-    return '<div class="news resenha rv">' + item(shows[first], say(shows[first], mood)) + item(shows[second], say(shows[second], topic || mood)) + '</div>';
+    return '<div class="news resenha rv">' + item(shows[first], say(shows[first], topic || mood)) + '</div>';
   }
 
   // ---------- reta final: a corrida da liga rodada a rodada ----------
@@ -369,7 +368,8 @@
     // Com reta final na tela, a linha da tabela já está lá em cima (o veredito da corrida)
     const tableTxt = !res.games || res.race ? '' : tb.pos === 1 ? U.emo('🥇', 'sm') + ' Campeão ' + D.da(tb.league) + ' com ' + tb.pts + ' pontos'
       : tb.pos + 'º lugar ' + D.na(tb.league) + ' · ' + tb.pts + ' pts, a ' + tb.gap + ' do líder';
-    const moveTxt = !res.move ? '' : res.move.dir === 'up' ? U.emo('⬆️', 'sm') + ' Acesso ' + D.paraA(res.move.toName) + '!' : U.emo('⬇️', 'sm') + ' Rebaixado ' + D.paraA(res.move.toName);
+    // Acesso e rebaixamento: com a mini tabela na tela, o veredito dela já conta
+    const moveTxt = !res.move || res.race ? '' : res.move.dir === 'up' ? U.emo('⬆️', 'sm') + ' Acesso ' + D.paraA(res.move.toName) + '!' : U.emo('⬇️', 'sm') + ' Rebaixado ' + D.paraA(res.move.toName);
     // O que mexeu na nota: minutos, desempenho, lesão, idade e treinos (a soma bate com a variação)
     const great = res.games >= 15 && res.rating >= 7.5;
     const why = (great && dOvr <= 0 ? '<p class="why-note">Grande temporada! Seu desempenho valeu ' + ((v => (v > 0 ? '+' : '') + v)((res.why.find(w => w.k === 'perf') || { v: 0 }).v)) + ' na nota' + (res.ovr0 >= G.c.pot - 3 ? ', mas você já está perto do seu teto' : '') + '. Também rendeu fama, torcida e propostas melhores.</p>' : '') +
