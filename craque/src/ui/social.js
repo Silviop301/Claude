@@ -91,6 +91,27 @@
     return { text: fresh('p.farewell', P.farewell) + tags('bye'), mood: 'bye' };
   }
 
+  // Perfil com cara de gente de verdade: nome como as pessoas colocam no X (só o primeiro nome, nome e sobrenome,
+  // minúsculo, com emoji ou com o time) e @ montado do nome, com número ou sobrenome. Haters às vezes são perfis
+  // "de número" (@nome8472610), como no X de verdade.
+  const pickA = a => a[Math.floor(Math.random() * a.length)];
+  function person(kind, c) {
+    const PP = D.SOCIAL.people, cl = club(c.club), first = pickA(PP.first), last = pickA(PP.last);
+    const f = slug(first), l = slug(last), roll = Math.random();
+    let nm = roll < 0.3 ? first : roll < 0.5 ? first + ' ' + last : roll < 0.65 ? first.toLowerCase() : first + ' ' + pickA(PP.deco);
+    if (kind === 'fan' && chance(0.2)) nm = chance(0.5) ? first + ' ' + heart(c.club) : first + ' | ' + cl.name;
+    if (kind === 'critic' && chance(0.5)) nm = first + ' ' + pickA(['| Scout', '| Análise', '📊', '| tática']);
+    const num = () => pickA(['', '', String(Math.floor(Math.random() * 99) + 1).padStart(2, '0'), String(1985 + Math.floor(Math.random() * 25)), '10', '7']);
+    const opts = [f + '_' + l, f + '.' + l, f + l.slice(0, 1) + num(), f + num(), f + '_' + l.slice(0, 3) + num(), l + f.slice(0, 1) + num()];
+    if (kind === 'fan') opts.push(f + '_' + slug(cl.name).slice(0, 8), f + slug(cl.name).slice(0, 4) + num());
+    if (kind === 'critic') opts.push(f + 'scout', f + '_analise', l + 'tatico');
+    let h = pickA(opts);
+    if (kind === 'hater' && chance(0.35)) h = f + String(Math.floor(Math.random() * 9e7) + 1e6);
+    return { h: h.slice(0, 15), nm };
+  }
+  // Nome de página a partir do @ (central.da.bola → Central da Bola)
+  const pageName = h => h.split(/[._]/).filter(Boolean).map((w, i) => w === 'fc' ? 'FC' : i && /^(da|de|do|das|dos|e|em|no|na|sem)$/.test(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
   // Comentários: famosos pela fama, clube, página de notícia, torcida (alguns falando do próprio post),
   // um aleatório da internet e às vezes um hater, que pode levar resposta do jogador
   function commentsOf(p, ctx, fx) {
@@ -109,33 +130,38 @@
     fam.slice(0, Math.min(nFam, total - 2)).forEach(f => {
       const which = (p.sub === 'title' || p.sub === 'ballon' || p.sub === 'moment') && f.title && chance(0.6) ? 'title'
         : mood === 'up' && f['up_' + c.pos] && chance(0.5) ? 'up_' + c.pos : mood;
-      top.push({ h: f.h, v: true, t: isEv ? pk('f.ev.' + mood, SO.evFamous[mood] || SO.evFamous.up) : pk('f.' + f.h + '.' + which, f[which]) });
+      top.push({ h: f.h, nm: f.name, v: true, t: isEv ? pk('f.ev.' + mood, SO.evFamous[mood] || SO.evFamous.up) : pk('f.' + f.h + '.' + which, f[which]) });
     });
-    if (!isEv && chance(mood === 'down' ? 0.45 : 0.7)) rest.push({ h: base + 'oficial', v: true, t: pk('c.club.' + mood, SO.club[mood]) });
-    if (!isEv && mood !== 'down' && chance(fame >= 80 ? 0.45 : 0.2)) { const pg = fresh('c.pages', SO.pages); rest.push({ h: pg[0], v: true, t: pg[1] }); }
+    if (!isEv && chance(mood === 'down' ? 0.45 : 0.7)) rest.push({ h: base + 'oficial', nm: cl.name, v: true, t: pk('c.club.' + mood, SO.club[mood]) });
+    // Página de notícia ("🚨 |", "📊 |") falando do fato do post; nos posts bons, às vezes é página de meme
+    const nk = ctx.kind === 'season' || ctx.kind === 'moment' ? ctx.kind + '.' + mood : p.sub === 'transfer' ? 'transfer' : mood === 'bye' ? 'bye' : 'event';
+    const news = (SO.news || {})[nk];
+    if (chance(fame >= 80 ? 0.6 : 0.3)) {
+      if (news && (mood === 'down' || chance(0.7))) { const nh = fresh('h.news', SO.newsHandles); rest.push({ h: nh, nm: pageName(nh), v: true, t: pk('c.news.' + nk, news) }); }
+      else if (!isEv && mood !== 'down') { const pg = fresh('c.pages', SO.pages); rest.push({ h: pg[0], nm: pageName(pg[0]), v: true, t: pg[1] }); }
+    }
     // Comentário sobre o próprio post (números da temporada, minuto do lance, chegada ao clube, despedida)
     const cx = ctx.kind === 'season' ? ['season.' + mood, SO.ctx.season[mood]] : ctx.kind === 'moment' ? ['moment.' + mood, SO.ctx.moment[mood]]
       : p.sub === 'transfer' ? ['transfer', SO.ctx.transfer] : mood === 'bye' ? ['bye', SO.ctx.bye] : null;
-    const handles = SO.fanHandles.map(x => base + x).concat(SO.randomHandles);
-    const fan = () => fresh('h.fan', handles);
-    if (p.com) rest.push({ h: fan(), v: false, t: p.com });
-    if (cx && cx[1]) rest.push({ h: fan(), v: false, t: pk('c.ctx.' + cx[0], cx[1]) });
-    if (chance(0.55)) rest.push({ h: fan(), v: false, t: pk('c.random', SO.random) });
+    const fan = () => person('fan', c), anyone = () => person('any', c);
+    if (p.com) rest.push({ ...fan(), v: false, t: p.com });
+    if (cx && cx[1]) rest.push({ ...fan(), v: false, t: pk('c.ctx.' + cx[0], cx[1]) });
+    if (chance(0.55)) rest.push({ ...anyone(), v: false, t: pk('c.random', SO.random) });
     // Crítica: até os melhores têm (mais famoso, mais crítica). Não entra no post de fase ruim, que já tem o hater
     const ck = ctx.kind === 'season' ? (p.sub === 'ballon' ? 'ballon' : p.sub === 'title' ? 'title' : 'season') : ctx.kind === 'moment' ? 'moment'
       : p.sub === 'transfer' ? 'transfer' : mood === 'bye' ? 'bye' : 'event';
     const crit = mood !== 'down' && SO.critics && chance(0.35 + Math.min(0.3, fame / 600));
-    if (crit) rest.splice(p.com ? 1 : 0, 0, { h: fresh('h.critic', SO.criticHandles), v: false, t: pk('c.critic.' + ck, SO.critics[ck]) });
+    if (crit) rest.splice(p.com ? 1 : 0, 0, { ...person('critic', c), v: false, t: pk('c.critic.' + ck, SO.critics[ck]) });
     // Haters: quase sempre tem um (mais famoso, mais hater) e às vezes dois. Na aposta do post humilde:
     // deu certo, sem hater; deu errado, eles aparecem em dobro
     const nHater = fx && fx.won ? 0 : fx && fx.won === false ? 2
       : (chance(mood === 'down' ? 0.95 : mood === 'bye' ? 0.45 : 0.7 + Math.min(0.2, fame / 1000)) ? 1 : 0) + (chance(mood === 'down' ? 0.5 : 0.2 + Math.min(0.2, fame / 1000)) ? 1 : 0);
-    while (top.length + rest.length < total - nHater) rest.push({ h: fan(), v: false, t: isEv ? pk('c.evfans.' + mood, SO.evFans[mood] || SO.evFans.up) : pk('c.fans.' + mood, SO.fans[mood]) });
+    while (top.length + rest.length < total - nHater) rest.push({ ...fan(), v: false, t: isEv ? pk('c.evfans.' + mood, SO.evFans[mood] || SO.evFans.up) : pk('c.fans.' + mood, SO.fans[mood]) });
     const out = top.concat(rest.slice(0, total - top.length - nHater).sort(() => Math.random() - 0.5));
     // Entram no meio da conversa (nunca como primeira resposta); o botão de responder fica só no primeiro hater
     for (let k = 0; k < nHater; k++) {
       const at = 1 + Math.floor(Math.random() * out.length);
-      out.splice(at, 0, { h: fresh('h.hater', SO.haterHandles), v: false, t: isEv ? pk('c.evhater.' + mood, SO.evHaters[mood] || SO.evHaters.down) : pk('c.hater.' + mood, SO.haters[mood]), hate: true });
+      out.splice(at, 0, { ...person('hater', c), v: false, t: isEv ? pk('c.evhater.' + mood, SO.evHaters[mood] || SO.evHaters.down) : pk('c.hater.' + mood, SO.haters[mood]), hate: true });
     }
     const first = out.find(x => x.hate);
     if (first) first.hater = true;
@@ -223,7 +249,7 @@
       '<p class="xw-when">' + when + ' · ' + year() + ' · <b>' + num(nView) + '</b> visualizações</p>' +
       '<div class="xw-sum"><span><b>' + num(nRt) + '</b> reposts</span><span><b>' + num(likes) + '</b> curtidas</span></div>' +
       acts(nRep, nRt, likes, nView, true).replace('xw-acts', 'xw-acts big') + '</div>' +
-      coms.map((x, i) => '<div class="xw-rep">' + ava(x.h) + '<div class="xw-rc"><p class="xw-rh"><b>' + esc(x.h.replace(/[._]/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase())) + '</b>' + (x.v ? XCHK : '') + ' <small>@' + esc(x.h) + ' · ' + hrs(i) + '</small></p>' +
+      coms.map((x, i) => '<div class="xw-rep">' + ava(x.nm || x.h) + '<div class="xw-rc"><p class="xw-rh"><b>' + esc(x.nm || pageName(x.h)) + '</b>' + (x.v ? XCHK : '') + ' <small>@' + esc(x.h) + ' · ' + hrs(i) + '</small></p>' +
         '<p class="xw-rt"><small>Em resposta a <em>@' + esc(me) + '</em></small>' + esc(x.t) + '</p>' +
         (x.hater ? '<div class="sp-reply" id="sp-hater"><button class="sp-hbtn" id="b-hater">Responder o hater<small>' + (fx.none ? 'Sem efeito' : '50%: Fama +6 · 50%: Técnico −3') + '</small></button></div>' : '') +
         acts(1 + ((i * 3 + likes) % 9), (i * 5 + likes) % 14, 3 + ((i * 7 + likes) % 60), 200 + ((i * 131 + likes) % 4000)) + '</div></div>').join('') +
