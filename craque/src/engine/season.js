@@ -134,7 +134,7 @@
       const at = c.pos === 'ZAG' ? ['fis', 'fin', 'def'] : ['fin', 'rit', 'dri'];
       src.gol.push([at.map(k => D.ATTR_LABEL[k] + ' ' + Math.round(E[k])).join(' · '), 0]);
     } else src.gol.push(['Defesa do time', pc((dS - lgAvg) / 20)]);
-    if (Math.abs(teamF - 1) >= 0.03) src.gol.push([teamF > 1 ? 'Time forte' : 'Time fraco', pc(teamF - 1)]);
+    if (Math.abs(teamF - 1) >= 0.03) src.gol.push(['Força do time na liga', pc(teamF - 1)]);
     const formV = c.mod.form + (c.rel.fans - REL0) / 350;
     if (Math.abs(formV) >= 0.03) src.gol.push(['Fase e torcida', pc(formV)]);
     if (c.pos !== 'GOL' && Math.abs(gMul - 1) >= 0.03) src.gol.push(['Características', pc(gMul - 1)]);
@@ -252,8 +252,10 @@
     if (!league && pos > 1) col[0] = Math.max(col[0], leaderPts);
     for (let i = 1; i < col.length; i++) if (col[i] > col[i - 1]) col[i] = col[i - 1];
     const mid = col.reduce((a2, x) => a2 + x, 0) / col.length, spread = col[0] - col[col.length - 1];
-    const k = Math.max(1, rounds * 1.2 / Math.max(1, spread));
-    const shown = col.map(x => clamp(Math.round(mid + (x - mid) * k), Math.round(rounds * 0.4), rounds * 3));
+    // Teto de 2,6 pontos por jogo para o líder (recordes reais ficam por aí): sem 106 pontos numa liga de 34 rodadas
+    const cap = Math.round(rounds * 2.6);
+    const k = Math.max(1, Math.min(rounds * 1.2 / Math.max(1, spread), col[0] > mid ? (cap - mid) / (col[0] - mid) : Infinity));
+    const shown = col.map(x => clamp(Math.round(mid + (x - mid) * k), Math.round(rounds * 0.4), cap));
     if (!league && pos > 1 && shown[0] <= shown[pos - 1]) shown[0] = shown[pos - 1] + 1;
     // Lance decisivo na última rodada (título ou acesso): a tabela mostrada precisa contar a mesma história
     // da tela (chegaram empatados, o jogo valia 3 pontos): diferença de 1 a 3 pontos para quem ficou do outro lado
@@ -605,8 +607,8 @@
     // Grande temporada individual: o jornal separa o seu desempenho da campanha do clube
     const def = s.pos === 'ZAG' || s.pos === 'GOL', tb = s.table;
     const award = s.awards.find(a => a.id === 'scorer') || s.awards.find(a => a.id === 'team');
-    // Mesma régua da avaliação da temporada: nota 7,3+ é "grande temporada"; os números sozinhos só com nota boa (6,8+)
-    const star = s.games >= 15 && (s.rating >= 7.3 || (s.rating >= 6.8 && (!!award || (s.pos === 'ATA' && s.goals >= 12) || (s.pos === 'MEI' && s.assists >= 8) || (def && s.cleanSheets >= 14))));
+    // Mesma régua da avaliação da temporada: nota 7,3+ é "grande temporada"; os números sozinhos só com nota 7,0+ (abaixo disso a manchete animada destoa)
+    const star = s.games >= 15 && (s.rating >= 7.3 || (s.rating >= 7 && (!!award || (s.pos === 'ATA' && s.goals >= 12) || (s.pos === 'MEI' && s.assists >= 8) || (def && s.cleanSheets >= 14))));
     if (star && h.length === statH && !s.awards.some(a => a.id === 'ballon')) {
       const stat = (s.pos === 'ATA' ? D.plural(s.goals, 'gol', 'gols') : s.pos === 'MEI' ? D.plural(s.assists, 'assistência', 'assistências') : s.pos === 'ZAG' && s.goals >= 4 ? s.goals + ' gols e ' + D.plural(s.cleanSheets, 'jogo sem sofrer gol', 'jogos sem sofrer gol') : D.plural(s.cleanSheets, 'jogo sem sofrer gol', 'jogos sem sofrer gol')) +
         ' e nota ' + s.rating.toFixed(1).replace('.', ',');
