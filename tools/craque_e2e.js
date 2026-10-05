@@ -47,7 +47,7 @@ function stepInPage(opts) {
   const qa = s => Array.from(document.querySelectorAll(s));
   const rnd = a => a[Math.floor(Math.random() * a.length)];
   const click = el => { el.click(); return true; };
-  const twice = el => { el.click(); el.click(); return true; };
+  const twice = el => { el.click(); return true; }; // pré-temporada: um toque aplica (antes eram dois)
   const label = (what) => ({ did: what, screen: (q('#screen .eyebrow') || q('#screen h2') || q('#screen h1') || { textContent: '?' }).textContent.trim().slice(0, 60) });
   // Sobreposições (por cima da tela): fecham primeiro
   const ask = q('.ask-wrap [data-a="ok"]'); if (ask) return label('ask:ok ' + click(ask));

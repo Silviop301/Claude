@@ -121,6 +121,32 @@
       : (goals + assists * 0.7) / S.GOAL_SCALE / games) : 0;
     const rating = games ? clamp(round1(6.1 + S.RATING_ADJ[c.pos] + perGame * 2.4 * (isDef ? 0.75 : 1) + Math.min(o - club.strength, S.RATING_GAP) * 0.03 + 0.06 * tm('drible') + 0.08 * tm('libero') + 0.07 * tm('raca') + 0.06 * tm('estrela') + r.gauss() * 0.25), 5.0, 9.6) : 0;
 
+    // De onde vieram minutos, gols e nota (só para a tela da temporada): as mesmas contas acima, em partes.
+    // Cada parte: [texto, valor]; o valor vira "+" ou "−" na tela (0 = só informação)
+    const pc = v => Math.round(v * 100);
+    const src = { max: maxGames, min: [[role.name + ' (carta ' + o + ', time ' + club.strength + ')', pc(role.share)]], gol: [], nota: [] };
+    const coachV = (c.rel.coach - REL0) / 90, modV = c.mod.min + (c.promise || 0);
+    if (Math.abs(coachV) >= 0.03) src.min.push(['Técnico', pc(coachV)]);
+    if (Math.abs(modV) >= 0.03) src.min.push([c.promise ? 'Promessa do técnico' : 'Escolhas do ano', pc(modV)]);
+    if (c.age <= 17) src.min.push(['Idade', -20]);
+    if (injShare > 0) src.min.push(['Lesão', -pc(injShare)]);
+    if (c.pos !== 'GOL') {
+      const at = c.pos === 'ZAG' ? ['fis', 'fin', 'def'] : ['fin', 'rit', 'dri'];
+      src.gol.push([at.map(k => D.ATTR_LABEL[k] + ' ' + Math.round(E[k])).join(' · '), 0]);
+    } else src.gol.push(['Defesa do time', pc((dS - lgAvg) / 20)]);
+    if (Math.abs(teamF - 1) >= 0.03) src.gol.push([teamF > 1 ? 'Time forte' : 'Time fraco', pc(teamF - 1)]);
+    const formV = c.mod.form + (c.rel.fans - REL0) / 350;
+    if (Math.abs(formV) >= 0.03) src.gol.push(['Fase e torcida', pc(formV)]);
+    if (c.pos !== 'GOL' && Math.abs(gMul - 1) >= 0.03) src.gol.push(['Características', pc(gMul - 1)]);
+    if (games) {
+      const prod = round1(perGame * 2.4 * (isDef ? 0.75 : 1)), gap = round1(Math.min(o - club.strength, S.RATING_GAP) * 0.03);
+      const trt = round1(0.06 * tm('drible') + 0.08 * tm('libero') + 0.07 * tm('raca') + 0.06 * tm('estrela')), base = round1(6.1 + S.RATING_ADJ[c.pos]);
+      src.nota = [['Base', base], [isDef ? 'Defesa, gols e assistências' : 'Gols e assistências', prod], ['Carta contra o nível do time', gap]];
+      if (trt) src.nota.push(['Características', trt]);
+      const luck = round1(rating - base - prod - gap - trt);
+      if (luck) src.nota.push(['Fase', luck]);
+    }
+
     // Títulos: força do time + sua contribuição
     const contrib = games ? (rating - 6.5) * share * 2.2 : 0;
     // Craque num time fraco carrega o time (Neymar no Santos): só com diferença grande (10+) e a partir
@@ -451,7 +477,7 @@
       ovr0, ovr1, fame0: Math.round(fame0), fame1: Math.round(c.fame), injury: injName ? Math.round(injShare * 100) : 0,
       coach0: Math.round(coach0), coach1: Math.round(c.rel.coach), fans0: Math.round(fans0), fans1: Math.round(c.rel.fans),
       highlights, event: c.lastEvent || null, table, why, farewell: !!c.farewell,
-      attrs: S.eff(c), cards, pe, // foto da carta desta temporada (para o álbum) e cartas especiais ganhas
+      attrs: S.eff(c), cards, pe, src, // foto da carta desta temporada (para o álbum) e cartas especiais ganhas
     };
     res.move = move;
     if (ballonLost) res.ballonLost = true;

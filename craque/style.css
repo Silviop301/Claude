@@ -2267,3 +2267,31 @@ button.sk-d { font: inherit; color: inherit; cursor: pointer; }
 .race .rt-r.me b { color: var(--gold); }
 .race .rt-r.cut { border-bottom: 1.5px dashed rgba(255, 255, 255, .45); border-radius: 8px 8px 0 0; }
 .race .rt-gap { text-align: center; font-size: 12px; line-height: 1; opacity: .5; }
+
+/* De onde vieram minutos, gols e nota (tela da temporada) */
+.src-card { background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 12px; padding: 8px 12px; display: grid; gap: 6px; }
+.src-card .sr-row { display: grid; gap: 3px; }
+.src-card .sr-l { font: 700 12px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--label, #8FD6AE); }
+.src-card .sr-l b { color: #fff; letter-spacing: 0; text-transform: none; font-size: 14px; }
+.src-card .sr-cs { display: flex; flex-wrap: wrap; gap: 4px; }
+.src-card .sr-c { font: 600 13px var(--body); color: var(--text-2, #D3E4D9); background: rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 2px 6px; }
+.src-card .sr-c b { font-weight: 800; }
+.src-card .sr-c.up b { color: #8FD6AE; }
+.src-card .sr-c.down b { color: #FF9AA2; }
+
+/* Pré-temporada: um toque aplica, "Desfazer" ao lado de "Seguir" */
+.inv-bar { display: flex; gap: 8px; }
+.inv-bar #b-undo { width: auto; flex: 0 0 auto; padding-left: 14px; padding-right: 14px; margin: 0; background: #1E3F30; color: #E8F1EA; }
+
+/* Computador com tela larga: temporada e pré-temporada em 2 colunas (o celular fica igual) */
+@media (min-width: 1000px) {
+  .desk #app:has(#screen > .s-hero), .desk #app:has(#screen > .inv-bar) { max-width: 1040px; }
+  /* Temporada: carta, números e mini tabela à esquerda; o resumo (jornal, comentário, detalhes, botões) à direita */
+  .desk #screen:has(> .s-hero) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: repeat(6, auto) 1fr; column-gap: 24px; align-items: start; }
+  .desk #screen:has(> .s-hero) > * { grid-column: 1; }
+  .desk #screen:has(> .s-hero) > #after { grid-column: 2; grid-row: 1 / -1; }
+  /* Pré-temporada: a carta fica parada à esquerda; as escolhas à direita */
+  .desk #screen:has(> .inv-bar) { display: grid; grid-template-columns: 400px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 28px; align-items: start; }
+  .desk #screen:has(> .inv-bar) > * { grid-column: 2; }
+  .desk #screen:has(> .inv-bar) > .mcard { grid-column: 1; grid-row: 1 / -1; }
+}

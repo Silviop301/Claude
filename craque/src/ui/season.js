@@ -407,7 +407,23 @@
       if (S.canAnnounce(G.c)) actions += '<button class="btn ghost" id="b-farewell">Anunciar a última temporada<small>Torcida +10 (+5 com o post) e mais minutos · parar em alta rende pontos extras</small></button>';
       if (S.canRetire(G.c)) actions += '<button class="btn ghost" id="b-stop">Parar agora</button>';
     }
+    // De onde vieram os números: minutos, gols (ou jogos sem sofrer gol) e nota, com o peso de cada parte
+    const srcBlock = (() => {
+      const sc = res.src;
+      if (!sc) return '';
+      const num = (v, dec) => (dec ? v.toFixed(1).replace('.', ',') : String(v));
+      const chip = (t, v, unit, sign) => '<span class="sr-c' + (!v || !sign ? '' : v > 0 ? ' up' : ' down') + '">' + esc(t) +
+        (v ? ' <b>' + (sign && v > 0 ? '+' : v < 0 ? '−' : '') + num(Math.abs(v), unit === '') + unit + '</b>' : '') + '</span>';
+      const row = (lbl, val, chips) => '<div class="sr-row"><span class="sr-l">' + lbl + ' <b>' + val + '</b></span><div class="sr-cs">' + chips + '</div></div>';
+      const gk = res.pos === 'GOL';
+      return '<div class="src-card rv">' +
+        row('Minutos', res.games + ' de ' + sc.max + ' jogos', sc.min.map((x, i) => chip(x[0], x[1], '%', i > 0)).join('')) +
+        (res.games ? row(gk ? 'Sem sofrer gol' : 'Gols', gk ? res.cleanSheets : res.goals, sc.gol.map((x, i) => chip(x[0], x[1], '%', true)).join('')) : '') +
+        (sc.nota.length ? row('Nota', res.rating.toFixed(1).replace('.', ','), sc.nota.map((x, i) => chip(x[0], x[1], '', i > 0)).join('')) : '') +
+        '</div>';
+    })();
     $('after').innerHTML =
+      srcBlock +
       (tableTxt ? '<p class="table-line rv">' + tableTxt + '</p>' : '') +
       (moveTxt ? '<div class="move-line rv ' + res.move.dir + '">' + moveTxt + '</div>' : '') +
       (res.loanBack ? '<p class="contract rv">Fim do empréstimo: você volta ' + D.ao(esc(club(res.loanBack.to).name)) + '.</p>' : '') +

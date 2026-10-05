@@ -136,8 +136,8 @@
   }
 
   // ---------- pré-temporada: característica e investimentos numa tela só ----------
-  // Tocar numa opção (característica ou investimento) vira o card e mostra na carta quanto muda;
-  // tocar de novo confirma. "Seguir para a temporada" fica sempre fixo embaixo.
+  // Um toque numa opção (característica ou investimento) já aplica; "Desfazer" volta o último passo até seguir
+  // para a temporada. "Seguir para a temporada" fica sempre fixo embaixo.
   // As opções ficam salvas na carreira (G.c.preCh): recarregar a página não troca o sorteio
   // Texto do foco nos treinos: chance de ponto extra × risco de lesão
   function trainTxt(t) {
@@ -147,7 +147,10 @@
     const age = t.decl < 1 ? ' · sente menos a idade' : t.decl > 1 ? ' · sente mais a idade' : '';
     return '<b>' + U.emo(t.icon, 'xs') + ' Treino ' + t.name.toLowerCase() + ':</b> ' + pe + ' · ' + inj + age + (t.p1 + t.p2 ? '. Lesão séria tira o bônus.' : '.');
   }
-  function preseason() { prep(false); }
+  // Desfazer: foto da carreira antes de cada escolha desta pré-temporada (some ao seguir)
+  let undo = [];
+  const snap = () => { undo.push(JSON.stringify(G.c)); if (undo.length > 30) undo.shift(); };
+  function preseason() { undo = []; prep(false); }
   function invest() { prep(true); } // retomar depois de já ter escolhido a característica
 
   function prep(traitDone, justAdded) {
@@ -183,12 +186,23 @@
         '<div class="choices inv-grid">' + INV_ORDER().map(t => '<button class="choice inv" data-v="' + t.id + '"><span class="ic">' + U.icoOf(t, 'sm') + '</span>' +
           '<b>' + D.investName(t, G.c.pos) + '</b><span class="pips"></span><span class="d">' + (t.attr ? attrTxt(t.attr) : t.perk) + '</span><span class="price"></span></button>').join('') + '</div>'
         : D.INVEST.some(t => (G.c.inv[t.id] || 0) < S.investMax(t.id)) ? '<p class="muted small prep-note">' + U.emo('⭐', 'xs') + ' Pontos de evolução: ' + (G.c.pe || 0) + '. Você ganha com nota ' + String(S.PE_R1).replace('.', ',') + '+ (' + String(S.PE_R2).replace('.', ',') + '+ vale 2), títulos e prêmios.</p>' : '') +
-      '<div class="inv-bar"><button class="btn" id="b-skip">Seguir para a temporada</button></div>'
+      '<div class="inv-bar">' + (undo.length ? '<button class="btn ghost" id="b-undo">Desfazer</button>' : '') + '<button class="btn" id="b-skip">Seguir para a temporada</button></div>'
     );
     U.tip('pre');
-    // Toque 1: o card vira e a mini carta mostra quanto muda. Toque 2 no mesmo card: confirma.
     const skip = $('b-skip');
-    const go = () => { delete G.c.preCh; U.eventOrSeason(); };
+    const go = () => { undo = []; delete G.c.preCh; U.eventOrSeason(); };
+    const showUndo = () => {
+      if (!undo.length || $('b-undo')) return;
+      const u = document.createElement('button'); u.className = 'btn ghost'; u.id = 'b-undo'; u.textContent = 'Desfazer';
+      skip.parentNode.insertBefore(u, skip); u.onclick = doUndo;
+    };
+    const doUndo = () => {
+      if (!undo.length) return;
+      G.c = JSON.parse(undo.pop());
+      save(); sfx('tick');
+      prep(!!(G.c.preCh && G.c.preCh.done));
+    };
+    if ($('b-undo')) $('b-undo').onclick = doUndo;
     // "Seguir" só libera depois de escolher a característica; os pontos podem ficar guardados
     const lockSkip = () => {
       // Pontos podem ficar guardados: juntar para os níveis mais caros vale a pena
@@ -215,10 +229,9 @@
     $('train-txt').innerHTML = trainTxt(S.trainOf(G.c)).replace(':</b>', ' (pela idade):</b>');
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       const x = ch[+b.dataset.i];
-      showPreview(S.preview(G.c, x.type === 'up' ? { up: x.trait.id } : { add: x.trait.id }));
-      if (!U.arm(b, '<b>Toque de novo para ' + (x.type === 'up' ? 'evoluir' : 'escolher') + '</b>')) return;
+      if (preCh.done) return;
+      snap();
       b.classList.add('chosen');
-      const ab = b.querySelector('.arm-back'); if (ab) ab.innerHTML = '<b>✓ Escolhida</b>';
       const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
       sfx('levelup');
       let done;
@@ -233,9 +246,7 @@
     screen.querySelectorAll('[data-v]').forEach(b => b.onclick = () => {
       const id = b.dataset.v;
       if (!S.canInvest(G.c, id)) return;
-      showPreview(S.preview(G.c, { buy: id }));
-      if (!U.arm(b, '<b>Toque de novo para evoluir</b><small>' + pts(S.investPrice(G.c, id)) + '</small>')) return;
-      U.disarm(b);
+      snap();
       const from = { attrs: S.eff(G.c), ovr: S.ovr(G.c) };
       S.invest(G.c, id);
       save();
@@ -244,6 +255,7 @@
       showPreview(null);
       tweenCard(from, 450);
       b.classList.remove('bought'); void b.offsetWidth; b.classList.add('bought');
+      showUndo();
       setTimeout(refresh, 480);
     });
     refresh();
