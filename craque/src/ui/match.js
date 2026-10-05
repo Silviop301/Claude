@@ -15,6 +15,16 @@
   // Selo do evento e o rótulo do tom (verde = oportunidade, vermelho = risco, azul = decisão)
   const TONE_LBL = { green: 'Oportunidade', red: 'Risco', blue: 'Decisão' };
   const evDef = ev => Object.assign({}, S.EVENT_DEFS.find(d => d.id === ev.id) || {}, ev);
+  // O que está em jogo numa opção arriscada, curto: uma linha por resultado com a chance em destaque
+  // (verde quando dá certo, vermelho quando dá errado) e o que vale nos dois casos numa linha à parte.
+  // Opções seguras e as consequências (events3.js, texto pronto) continuam com o texto de sempre.
+  function optHint(c, o) {
+    const { rows, always } = o.st && !o.st.safe && !o.locked ? S.stakeRows(c, o.st) : {};
+    if (!rows) return '<small>' + esc(o.hint) + '</small>';
+    const cost = always.length === 1 && /^−R\$ /.test(always[0]);
+    return '<span class="odds">' + rows.map(r => '<span class="od-row ' + r.kind + '"><b>' + Math.round(r.p * 100) + '%</b><span>' + esc(r.parts.join(' · ')) + '</span></span>').join('') +
+      (always.length ? '<span class="od-always">' + (cost ? 'Custa ' + esc(always[0].slice(1)) : 'Sempre: ' + esc(always.join(' · '))) + '</span>' : '') + '</span>';
+  }
 
   function eventScreen() {
     if (!pendingEvent) pendingEvent = S.pickEvent(G.c);
@@ -27,7 +37,7 @@
       '<div class="card event-card"><div class="ev-top">' + U.icoOf(ev, 'lg') + (ev.hookOf ? '<span class="ev-tag back">Consequência</span>' : evDef(ev).tone ? '<span class="ev-tag ' + evDef(ev).tone + '">' + (TONE_LBL[evDef(ev).tone] || '') + '</span>' : '') + '</div>' +
       (ev.memory ? '<p class="ev-mem">' + U.emo('🔁', 'xs') + ' ' + esc(ev.memory) + '</p>' : '') + '<h2>' + esc(ev.title) + '</h2><p style="margin:0">' + esc(ev.text) + '</p></div>' +
       (offer ? U.dealCompare(S.currentDeal(G.c), offer) : '') +
-      '<div class="choices">' + ev.options.map((o, i) => '<button class="btn opt' + (i ? ' ghost' : '') + (o.locked ? ' locked' : '') + '" data-i="' + i + '"' + (o.locked ? ' disabled' : '') + '>' + esc(o.label) + '<small>' + esc(o.hint) + '</small></button>').join('') + '</div>'
+      '<div class="choices">' + ev.options.map((o, i) => '<button class="btn opt' + (i ? ' ghost' : '') + (o.locked ? ' locked' : '') + '" data-i="' + i + '"' + (o.locked ? ' disabled' : '') + '>' + esc(o.label) + optHint(G.c, o) + '</button>').join('') + '</div>'
     );
     U.tip('evento');
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {

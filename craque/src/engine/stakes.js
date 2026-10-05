@@ -77,6 +77,18 @@
     if (st.safe) { const parts = S.fxParts(c, st.safe.fx || {}); return (st.note ? [st.note] : []).concat(parts).join(' · ') || 'Nada muda'; }
     return pctOf(st.p) + ': ' + outcomeTxt(c, st.win) + ' · ' + pctOf(1 - st.p) + ': ' + outcomeTxt(c, st.lose);
   };
+  // Versão curta para o botão: só os números de cada lado (o nome do resultado aparece depois da escolha)
+  // e o que acontece nos dois casos (ex.: o custo) separado, uma vez só.
+  // → { rows: [{ p, kind: 'win'|'lose', parts }], always: [...] }
+  S.stakeRows = function (c, st) {
+    const short = x => x.replace(/^lesão: perde (\d+%) da temporada$/, 'lesão ($1 da temporada)');
+    const w = S.fxParts(c, st.win.fx || {}).map(short), l = S.fxParts(c, st.lose.fx || {}).map(short);
+    let always = w.filter(x => l.includes(x));
+    // Só separa quando sobra alguma diferença dos dois lados; senão um lado ficaria vazio
+    if (!w.some(x => !always.includes(x)) || !l.some(x => !always.includes(x))) always = [];
+    const side = (parts, o) => { const p = parts.filter(x => !always.includes(x)); return p.length ? p : [o.tag || 'nada muda']; };
+    return { rows: [{ p: st.p, kind: 'win', parts: side(w, st.win) }, { p: 1 - st.p, kind: 'lose', parts: side(l, st.lose) }], always };
+  };
 
   // Valor aproximado de cada efeito em pontos de carreira, medido no simulador (só o robô de teste usa).
   // O que fica para sempre pesa muito mais que o que vale só nesta temporada; o teto (potencial) pesa mais ainda
