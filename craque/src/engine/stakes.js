@@ -103,6 +103,9 @@
     v += (fx.goal || 0) * 20 + (fx.assist || 0) * 12;
     const co = fx.coach || 0, fa = fx.fans || 0;
     v += co > 0 ? co * 0.2 : co * 0.5;
+    // Dinheiro vale pelo peso no saldo (gastar um quarto do que tem custa ~6); sair vale quando você está acima do clube (subir de clube rende taça e Bola de Ouro)
+    if (fx.money) v += fx.money / Math.max(c.money || 0, 1e6) * 25;
+    if (fx.wantsOut) v += Math.max(0, S.edge(c) - 8) * 3;
     v += fa * 0.1 + (fx.boost || 0) * 4 + (fx.legacy || 0) + (fx.longev || 0) * Math.max(0, 40 - Math.abs(c.age - 31) * 6);
     return v;
   };
@@ -145,14 +148,22 @@
     return out;
   };
 
-  // Força dos ganhos e perdas nos 2 atributos principais (o grande salto ou a grande perda): calibrado no simulador.
-  // Os treinos de um atributo só (attr) ficam como estão.
-  S.STAKE_K = 1;      // ganhos
-  S.STAKE_LOSS = 1;   // perdas
+  // Força das apostas: multiplica tudo o que uma opção mexe (atributos, teto, forma, minutos, lesão, técnico, torcida).
+  // Com 1, decidir bem rendia só ~3% mais pontos que decidir ao acaso; com 2, ~9% (tools/craque_decisoes.js).
+  S.STAKE_K = 2;      // ganhos
+  S.STAKE_LOSS = 2;   // perdas
   const scaleFx = fx => {
     if (!fx || (S.STAKE_K === 1 && S.STAKE_LOSS === 1)) return fx;
     const f = Object.assign({}, fx), sc = n => Math.sign(n) * Math.max(1, Math.round(Math.abs(n) * (n > 0 ? S.STAKE_K : S.STAKE_LOSS)));
+    const k = good => (good ? S.STAKE_K : S.STAKE_LOSS), r2 = n => Math.round(n * 100) / 100;
     if (f.main) f.main = sc(f.main);
+    if (f.attr) { f.attr = Object.assign({}, f.attr); for (const a in f.attr) f.attr[a] = sc(f.attr[a]); }
+    if (f.pot) f.pot = sc(f.pot);
+    if (f.form) f.form = r2(f.form * k(f.form > 0));
+    if (f.min) f.min = r2(f.min * k(f.min > 0));
+    if (f.inj) f.inj = Math.min(0.6, r2(f.inj * S.STAKE_LOSS));
+    if (f.coach) f.coach = sc(f.coach);
+    if (f.fans) f.fans = sc(f.fans);
     return f;
   };
   const scaleOut = o => (o ? Object.assign({}, o, { fx: scaleFx(o.fx) }) : o);
@@ -172,8 +183,9 @@
       if (!base) return null;
       const options = spec.options(c, base).map(scaleOpt).map(o => {
         const st = o.safe ? { safe: o.safe, note: o.note } : { p: o.p, win: o.win, lose: o.lose };
-        // Custo à vista (opção segura que tira dinheiro): sem saldo, a opção fica travada (ver S.pickEvent)
-        const cost = st.safe && st.safe.fx && st.safe.fx.money < 0 ? -st.safe.fx.money : 0;
+        // Custo à vista (opção que tira dinheiro nos dois resultados): sem saldo, a opção fica travada (ver S.pickEvent)
+        const m = x => (x && x.fx && x.fx.money) || 0;
+        const cost = st.safe ? Math.max(0, -m(st.safe)) : (m(st.win) < 0 && m(st.win) === m(st.lose) ? -m(st.win) : 0);
         return Object.assign({ label: o.label, hint: S.stakeHint(c, st), st, ev: Math.round(stakeValue(c, st) * 10) / 10 }, cost ? { cost } : {});
       });
       return Object.assign(base, { options });

@@ -113,7 +113,7 @@
     ctx.textAlign = 'center'; ctx.fillStyle = '#F4D675';
     ctx.font = '800 76px ' + DISPLAY; ctx.fillText('A HISTÓRIA DE ' + c.name.toUpperCase(), 540, 130, 980);
     ctx.fillStyle = '#CFE0D4'; ctx.font = '600 36px ' + DISPLAY;
-    ctx.fillText('16 a ' + c.age + ' anos · ' + YEAR0 + '–' + (YEAR0 + c.seasons.length) + ' · nota ' + f.grade, 540, 185);
+    ctx.fillText(S.startAge(c) + ' a ' + c.age + ' anos · ' + YEAR0 + '–' + (YEAR0 + c.seasons.length) + ' · nota ' + f.grade, 540, 185);
     // Curva
     const ss = c.seasons, n = ss.length;
     if (n) {

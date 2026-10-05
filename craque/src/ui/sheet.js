@@ -43,7 +43,7 @@
     const list = D.SYNERGIES.filter(s => fits(s.a) && fits(s.b)).map(s => {
       const st = has(s.a) && has(s.b) ? 'on' : full ? 'off' : has(s.a) || has(s.b) ? 'near' : 'far';
       const need = [s.a, s.b].filter(id => !has(id)).map(id => U.icoOf(D.TRAIT_BY_ID[id], 'xs') + ' ' + esc(D.TRAIT_BY_ID[id].name)).join(' + ');
-      return { st, html: '<div class="sh-cb ' + st + '"><div><b>' + U.icoOf(s, 'xs') + ' ' + esc(s.name) + '</b><small>' + attrLine(s.attr, c.pos) + '</small></div>' +
+      return { st, html: '<div class="sh-cb ' + st + '"><div><b>' + U.icoOf(s, 'xs') + ' ' + esc(s.name) + '</b><small>' + attrLine(s.attr, c.pos) + (s.extra ? ' · ' + esc(s.extra) : '') + '</small></div>' +
         '<span class="pill">' + (st === 'on' ? 'Ativa' : st === 'off' ? 'Sem espaço' : 'Falta ' + need) + '</span></div>' };
     });
     const order = { on: 0, near: 1, far: 2, off: 3 };

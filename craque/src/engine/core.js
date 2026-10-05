@@ -141,6 +141,9 @@
   // Deslocamento da nota por posição: sem ele, a nota média era ATA 7,96 · GOL 7,50 · MEI 7,41 · ZAG 7,26, e tudo que
   // usa limiar de nota (Seleção da liga, pontos de evolução, título, despedida, Bola de Ouro) favorecia o atacante
   S.RATING_ADJ = { ATA: -0.15, MEI: 0.2, ZAG: 0.1, GOL: 0 };
+  // Escala de gols e assistências: com 1,0 o atacante mediano passava de 480 gols na carreira e a melhor temporada
+  // tinha 42. Nota, prêmios, Bola de Ouro e pontuação final descontam a escala, então só o número mostrado muda
+  S.GOAL_SCALE = 0.8;
   // Potencial: compara com a nota típica da posição (já descontado o deslocamento acima, para o teto não mudar)
   const POT_ADJ = { ATA: -0.3, MEI: -0.2, ZAG: 0, GOL: 0 };
   S.potDelta = function (c, games, rating) {
@@ -198,6 +201,8 @@
   S.synergies = function (c) {
     return D.SYNERGIES.filter(s => c.traits.includes(s.a) && c.traits.includes(s.b));
   };
+  // 1 se a combinação está ativa (cada combinação tem um efeito próprio além dos pontos, ver D.SYNERGIES.extra)
+  S.syn = (c, id) => (S.synergies(c).some(s => s.id === id) ? 1 : 0);
 
   S.MAX_SLOTS = 5;
   S.MAX_LV = 3;

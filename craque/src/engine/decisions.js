@@ -959,7 +959,7 @@
   S.stake('clausula', {
     build: () => ({ title: 'Cláusula baixa demais', text: 'A imprensa descobriu que sua cláusula de rescisão é barata. Três clubes já avisaram que vão pagar.' }),
     options: () => [one('Renovar com cláusula alta', { wage: 1.1, contract: 1, coach: 4 }, 'Cláusula nas alturas. Ninguém te tira daqui barato.'),
-      risk('Deixar como está', 0.6, out('ninguém paga', { fame: 6 }, 'Seu nome ficou no mercado, mas nenhum clube bateu a cláusula.'), out('o clube vende', { fame: 6, wantsOut: true, fans: -6 }, 'A diretoria aceitou a primeira proposta. Mala pronta.'))],
+      risk('Deixar como está', 0.6, out('ninguém paga', { fame: 6 }, 'Seu nome ficou no mercado, mas nenhum clube bateu a cláusula.'), out('o clube vende', { fame: 6, wantsOut: true, fans: -6, form: -0.04 }, 'A diretoria aceitou a primeira proposta. Mala pronta, e a cabeça já longe daqui.'))],
   });
   S.stake('corte_salario', {
     build: () => ({ title: 'Contrato de veterano', text: 'A diretoria quer você mais um ano, mas com salário menor.' }),
@@ -1241,6 +1241,43 @@
     build: c => ({ title: 'A última chance de taça grande', text: 'Você sabe que restam poucos anos. ' + D.O(club(c).name) + ' não briga por título grande.' }),
     options: c => [one('Pedir para sair para um candidato ao título', { wantsOut: true, fans: -8 }, 'Seu empresário já conversa com quem briga por taça.', 'Para um time que briga por título'),
       risk('Ficar e tentar com o seu clube', P(0.35, X.edge(c, 0.03), X.t(c, 'lider', 0.1)), out('o clube compra a ideia', { boost: 2, legacy: 10 }, 'A diretoria se mexeu, trouxe reforços e o time sonha alto com você.'), out('fica no sonho', { legacy: 2, form: -0.06, fans: -4 }, 'O time seguiu o mesmo, e a frustração de mais um ano sem taça pesou em campo.'))],
+  });
+
+  // ========== para onde vai o dinheiro ==========
+  // O salário acumulava sem uso (R$ 250 mi parados no fim da carreira mediana). Estes eventos trocam dinheiro por
+  // carreira: atributo e teto (só no risco), legado, fama ou uma saída antes do fim do contrato.
+  // O preço acompanha o saldo, para pesar tanto no começo quanto no auge.
+  const share = (c, f, min) => Math.max(min, Math.round((c.money || 0) * f / 1e4) * 1e4);
+  S.addStake({ id: 'staff_particular', icon: '🧑‍⚕️', tone: 'green', weight: 7, max: 2, when: c => c.age >= 19 && c.age <= 28 && !!c.club && (c.money || 0) >= 500000 }, {
+    build: c => ({ title: 'Uma equipe só sua', text: 'Um preparador famoso oferece montar uma equipe particular para você: treino extra, análise de vídeo e nutricionista. Não sai barato.', cost: share(c, 0.25, 300000) }),
+    options: (c, ev) => [risk('Contratar por R$ ' + money(ev.cost), P(0.45, X.t(c, 'pro', 0.15), X.young(c, 0.05)),
+        out('o trabalho rende', { money: -ev.cost, main: 1, pot: T(c, 1, 23) }, 'Treino extra todo dia e vídeo de cada lance. Você sentiu a diferença em campo.'),
+        out('não encaixa', { money: -ev.cost, form: -0.06, coach: -6, inj: 0.05 }, 'O método bateu de frente com o do clube. Dinheiro gasto e o técnico desconfiado.')),
+      safe('Seguir com o staff do clube', { form: 0.02 }, 'O clube cuida de você. E o dinheiro fica no banco.')],
+  });
+  S.addStake({ id: 'clube_origem', icon: '🏟️', tone: 'blue', weight: 6, max: 1,
+    when: c => c.age >= 29 && !!c.firstClub && c.club !== c.firstClub && (c.money || 0) >= 3e6 }, {
+    build: c => ({ title: D.O(D.CLUB_BY_ID[c.firstClub].name) + ' pede socorro', text: 'O clube que te revelou está afundado em dívidas. Um investimento seu salvaria a base, mas a gestão de lá não é das melhores.', cost: share(c, 0.3, 1e6) }),
+    options: (c, ev) => [risk('Investir R$ ' + money(ev.cost), P(0.6, X.fans(c, 0.05)),
+        out('o clube renasce', { money: -ev.cost, legacy: 14, fame: 6 }, 'A base voltou a revelar jogadores. O CT novo leva o seu nome.'),
+        out('o dinheiro some', { money: -ev.cost, legacy: 3, fame: -4, form: -0.04 }, 'A diretoria torrou tudo em contratações ruins. Você virou alvo de piada.')),
+      safe('Mandar uma mensagem de apoio', { fame: 2 }, 'Um vídeo de apoio nas redes. Os torcedores agradeceram, mas esperavam mais.')],
+  });
+  S.addStake({ id: 'multa', icon: '💼', tone: 'blue', weight: 6, max: 1,
+    when: c => c.age <= 30 && !!c.club && c.contract >= 2 && !c.wantsOut && !c.loan && S.edge(c) >= 8 && (c.money || 0) >= Math.max(1e6, c.wage * 78) }, {
+    build: c => ({ title: 'Você é maior que o clube', text: 'Você está acima do nível do time e ainda tem ' + c.contract + ' anos de contrato. O clube só te libera se a multa for paga.', cost: Math.max(1e6, Math.round(c.wage * 78 / 1e4) * 1e4) }),
+    options: (c, ev) => [safe('Pagar a multa do próprio bolso', { money: -ev.cost, wantsOut: true, coach: -4, fans: -6 }, 'Você pagou para sair. A torcida chamou de traição, mas a janela está aberta.'),
+      risk('Forçar a saída sem pagar', P(0.4, X.edge(c, 0.02), X.coach(c, 0.1)),
+        out('o clube cede', { wantsOut: true, coach: -12, fans: -14 }, 'Greve de treino, entrevista atravessada e o clube cedeu. Saída liberada, imagem arranhada.'),
+        out('o clube endurece', { coach: -14, fans: -12, form: -0.06, min: -0.1 }, 'O clube não cedeu e te afastou do grupo por semanas. Você ficou, e o clima azedou.')),
+      safe('Cumprir o contrato', { coach: 4, form: 0.02 }, 'Contrato é contrato. O técnico gostou da atitude.')],
+  });
+  S.addStake({ id: 'documentario', icon: '🎬', tone: 'purple', weight: 5, max: 1, when: c => c.age >= 24 && c.fame >= 40 && (c.money || 0) >= 1e6 }, {
+    build: c => ({ title: 'Seu documentário', text: 'Uma produtora quer contar a sua história numa série. Você banca a produção e fica com os direitos.', cost: share(c, 0.15, 500000) }),
+    options: (c, ev) => [risk('Bancar a série (R$ ' + money(ev.cost) + ')', P(0.5, X.t(c, 'estrela', 0.15), X.fans(c, 0.05)),
+        out('sucesso na plataforma', { money: -ev.cost, fame: 20, fans: 6, legacy: 8 }, 'Top 1 da plataforma no país. Todo mundo comenta a sua história.'),
+        out('a crítica detona', { money: -ev.cost, fame: -8, form: -0.05 }, '"Ego em quatro episódios." A crítica detonou e a zoeira chegou ao vestiário.')),
+      safe('Recusar', { form: 0.03 }, 'Documentário é para quando parar. Agora é jogar.')],
   });
 
   if (typeof module !== 'undefined') module.exports = S;

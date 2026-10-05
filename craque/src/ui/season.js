@@ -34,7 +34,7 @@
     const mood = ballon ? 'ballon' : res.titles.length ? 'title' : !res.games || res.games < 10 ? 'bench' : res.injury >= 25 ? 'injury'
       : res.move && res.move.dir === 'down' ? 'down' : res.rating >= 7.6 ? 'great' : res.rating >= 7.0 ? 'good' : 'bad';
     const atk = res.pos === 'ATA' || res.pos === 'PON';
-    const topic = res.games < 10 ? null : res.goals >= (atk ? 20 : 12) ? 'gols' : res.assists >= 12 ? 'assist'
+    const topic = res.games < 10 ? null : res.goals >= (atk ? 16 : 10) ? 'gols' : res.assists >= 10 ? 'assist'
       : res.pos === 'GOL' && res.cleanSheets >= 24 ? 'paredao' : res.pos === 'ZAG' && res.tackles >= 19 ? 'xerife'
       : res.age <= 20 && res.rating >= 7.2 ? 'joia' : res.age >= 33 && res.rating >= 7.0 ? 'veterano' : null;
     // Goleiro e zagueiro de poucos gols: nada de "gols", "dribla" ou "pedalada" nas falas do ano
@@ -267,6 +267,8 @@
       '<div class="awards">' + res.awards.map(a => '<div class="award rv' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : U.emo('🥇', 'sm') + ' ') + a.name + '</div>').join('') + '</div>' +
       '<div class="news rv"><div class="np">' + U.emo('📰', 'xs') + ' Nos jornais</div><p>' + esc(res.headlines[0] || '') + '</p></div>' +
       resenha(res) +
+      // Rival de geração (engine/rival.js): o que ele fez no ano e o duelo com você
+      (res.rival ? '<p class="rival-line rv' + (res.rival.tookBallon || res.rival.ballon ? ' hot' : '') + '">' + U.emo('⚔️', 'xs') + ' ' + esc(S.rivalLine(G.c, res)) + '</p>' : '') +
       wcBlock +
       // Detalhes (fechados): outros lances, o porquê da nota, técnico/torcida e contrato
       // Craque carregando um time fraco (a partir do 2º ano) e o clube crescendo com ele

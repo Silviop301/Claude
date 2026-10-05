@@ -24,6 +24,22 @@
       (next ? '<p class="sh-next">Faltaram ' + (next[1] - f.score) + ' pontos para a nota ' + next[0] + '.</p>' : '') + '</details>';
   }
 
+  // Você contra o rival de geração (engine/rival.js), número a número
+  function rivalBlock(c, f) {
+    const R = S.rivalSummary && S.rivalSummary(c, f.titles);
+    if (!R) return '';
+    const wins = R.rows.filter(([, a, b]) => a > b).length, loses = R.rows.filter(([, a, b]) => a < b).length;
+    const verdict = wins > loses ? 'Você venceu a rivalidade' : wins < loses ? R.name + ' levou a melhor' : 'Rivalidade empatada';
+    return '<div class="fin-rival"><b>' + U.emo('⚔️', 'xs') + ' Você x ' + esc(R.name) + ' · ' + verdict + '</b><table><tr><td></td><td>Você</td><td>' + esc(R.name.split(' ')[0]) + '</td></tr>' +
+      R.rows.map(([l, a, b]) => '<tr><td>' + l + '</td><td>' + a + '</td><td>' + b + '</td></tr>').join('') + '</table></div>';
+  }
+  // Origem e desafio da carreira (engine/origins.js)
+  function originLine(c, f) {
+    const o = S.ORIGIN_BY_ID[c.origin], ch = f.challenge && S.CHALLENGE_BY_ID[f.challenge.id];
+    if ((!o || o.id === 'base') && !ch) return '';
+    return '<p class="muted small patr">' + [o && o.id !== 'base' ? U.emo(o.icon, 'sm') + ' ' + esc(o.name) : '',
+      ch ? U.emo(ch.icon, 'sm') + ' Desafio ' + esc(ch.name) + (f.challenge.ok ? ' cumprido: +' + ch.v + ' pts' : ' quebrado') : ''].filter(Boolean).join(' · ') + '</p>';
+  }
   function finale() {
     const f = S.finish(G.c);
     const ach = U.achRecord(G.c, f);
@@ -74,13 +90,14 @@
         '<button id="b-hall">' + U.emo('🏅', 'sm') + '<span>Hall da Fama</span></button></div>' +
       U.dailyFinish(G.c, f) + U.finaleRank() +
       '<div class="final">' +
-      '<div class="headrow"><div class="grade ' + f.grade + '">' + f.grade + '</div><div class="who"><b>' + esc(G.c.name) + '</b><span>' + U.flag(cty.flag) + ' ' + D.POS[G.c.pos].name + ' · 16 a ' + G.c.age + ' anos · pico ' + G.c.peak + '</span></div></div>' +
+      '<div class="headrow"><div class="grade ' + f.grade + '">' + f.grade + '</div><div class="who"><b>' + esc(G.c.name) + '</b><span>' + U.flag(cty.flag) + ' ' + D.POS[G.c.pos].name + ' · ' + S.startAge(G.c) + ' a ' + G.c.age + ' anos · pico ' + G.c.peak + '</span></div></div>' +
       '<div class="stats"><div><b>' + T.games + '</b><span>Jogos</span></div>' + careerStats(G.c).map(([v, l]) => '<div><b>' + v + '</b><span>' + l + '</span></div>').join('') +
       '<div><b>' + f.titles + '</b><span>Títulos</span></div><div><b>' + T.ballon + '</b><span>Bolas de Ouro</span></div><div><b>' + f.nClubs + '</b><span>Clubes</span></div></div>' +
       (T.wcApps ? '<p class="muted small patr">' + U.emo('🌍', 'sm') + ' Copas do Mundo: ' + T.wcApps + (T.wcApps > 1 ? ' disputadas' : ' disputada') + ' · ' + (T.wc || 0) + (T.wc === 1 ? ' título' : ' títulos') + ' · ' + (T.natGames ? T.natGames + ' jogos, ' : '') + (T.wcGoals || 0) + ' gols (já no total)</p>' : '') +
       (T.cwcApps ? '<p class="muted small patr">' + U.emo('🌐', 'sm') + ' Mundiais de Clubes: ' + T.cwcApps + (T.cwcApps > 1 ? ' disputados' : ' disputado') + ' · ' + (T.cwc || 0) + (T.cwc === 1 ? ' título' : ' títulos') + ' · ' + (T.cwcGoals || 0) + ' gols (já no total)</p>' : '') +
+      originLine(G.c, f) + rivalBlock(G.c, f) +
       '<p class="muted small patr">' + U.emo('💰', 'sm') + ' Patrimônio R$ ' + money(G.c.money) + (G.c.buys ? ' · ' + G.c.buys + (G.c.buys > 1 ? ' melhorias' : ' melhoria') + ' com pontos de evolução' : '') + '</p>' +
-      '<div class="timeline">' + G.c.spells.map(s => '<div><span>' + String(YEAR0 + s.from - 16).slice(2) + '–' + String(YEAR0 + s.to - 16 + 1).slice(2) + '</span><span>' + crest(s.club, 'xs') + esc(club(s.club).name) + (s.loan ? ' <small class="tl-loan">empréstimo</small>' : '') + '</span><span>' + (G.c.pos === 'GOL' ? (s.cs || 0) + ' SG' : G.c.pos === 'ZAG' ? s.goals + 'G ' + (s.cs || 0) + 'SG' : s.goals + 'G ' + s.assists + 'A') + (s.titles ? ' · ' + s.titles + U.emo('🏆', 'xs') : '') + '</span></div>').join('') + '</div>' +
+      '<div class="timeline">' + G.c.spells.map(s => '<div><span>' + String(YEAR0 + s.from - S.startAge(G.c)).slice(2) + '–' + String(YEAR0 + s.to - S.startAge(G.c) + 1).slice(2) + '</span><span>' + crest(s.club, 'xs') + esc(club(s.club).name) + (s.loan ? ' <small class="tl-loan">empréstimo</small>' : '') + '</span><span>' + (G.c.pos === 'GOL' ? (s.cs || 0) + ' SG' : G.c.pos === 'ZAG' ? s.goals + 'G ' + (s.cs || 0) + 'SG' : s.goals + 'G ' + s.assists + 'A') + (s.titles ? ' · ' + s.titles + U.emo('🏆', 'xs') : '') + '</span></div>').join('') + '</div>' +
       (Object.keys(G.c.trophies || {}).length ? '<div class="room-title">Sala de troféus</div><div class="room">' +
         Object.entries(G.c.trophies).sort((a, b) => ROOM.indexOf(a[1].type) - ROOM.indexOf(b[1].type))
           .map(([name, t]) => '<div>' + trophy(t.type, 52, name) + '<b>' + t.n + 'x</b><span>' + esc(name) + '</span></div>').join('') + '</div>' : '') +
