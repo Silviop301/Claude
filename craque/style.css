@@ -2162,8 +2162,6 @@ details.fin-more[open] { display: flex; flex-direction: column; gap: 12px; paddi
 .desk .fin-links button:hover, .desk .link-btn:hover { color: var(--gold); }
 .desk-hint { text-align: center; color: #93AD9D; font-size: 13px; margin: 2px 0 0; }
 /* Robôs do ranking */
-.rk-bots { margin: 0 0 8px; padding: 8px 12px; border-radius: 12px; background: rgba(255,255,255,.06); color: #D3E4D9; font-size: 13px; }
-.rk-bots b { color: var(--gold); }
 .sh-parts b.neg { color: #E8857A; }
 
 /* Câmera e efeitos dos minigames (cine.js) */
