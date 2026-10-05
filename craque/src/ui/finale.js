@@ -56,6 +56,9 @@
     const ach = U.achRecord(G.c, f);
     // Pacotinhos da carreira: fim de carreira, nota, títulos grandes, conquistas novas e carreira do dia
     const packWhy = U.ITEMS.careerWhy(G.c, f, ach);
+    // Sequência de dias: a primeira carreira terminada no dia paga o prêmio do dia (fichas na hora; pacotinho entra aqui)
+    const skGot = packWhy.length ? U.ITEMS.streakRecord() : null;
+    if (skGot && skGot.r.p) packWhy.push({ t: 'Sequência · dia ' + skGot.day, n: skGot.r.p });
     U.ITEMS.earn(packWhy);
     U.rankSave(G.c, f); // carreira encerrada: entra no ranking com a pontuação
     const T = G.c.totals;
@@ -95,6 +98,7 @@
       '<div class="fin-acts"><button class="btn" id="b-share">Compartilhar carta</button><button class="btn ghost" id="b-save">Salvar</button></div>' +
       U.challengeFinale(G.c, f) +
       U.feedbackCard() +
+      U.streakFinale(skGot) +
       U.packFinale(packWhy) +
       '<details class="fin-more"><summary>Resumo da carreira' + (fresh ? ' <em>' + fresh + (fresh > 1 ? ' conquistas novas' : ' conquista nova') + '</em>' : '') + '</summary>' +
       '<div class="fin-links">' + (G.c.seasons.length ? '<button id="b-album">' + U.emo('📖', 'sm') + '<span>Álbum</span></button>' : '') +

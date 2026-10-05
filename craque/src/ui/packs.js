@@ -2,7 +2,7 @@
 // aviso no fim da carreira e bloco da tela inicial (tela 1). O sorteio fica em ui/items.js.
 (function () {
   const U = window.CRAQUE_UI;
-  const { $, esc, sfx, render, bar, G } = U;
+  const { $, esc, sfx, render, bar, G, D } = U;
   const I = U.ITEMS, A = window.ClimbixAvatar;
 
   // ---------- desenho dos itens ----------
@@ -267,9 +267,32 @@
       (n ? row('b-hb-packs', packHTML('mini'), 'Pacotinhos', n + ' para abrir', '<span class="hb-go gold">Abrir</span>', n) : '') +
       '</div>';
   }
+  // ---------- sequência de dias (ui/items.js) ----------
+  // Calendariozinho: os 7 dias do ciclo com as datas de verdade, o prêmio de cada um e o que já foi feito
+  const WD = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+  function streakCal(st) {
+    return '<div class="sk-cal">' + st.cells.map(c => '<div class="sk-d' + (c.done ? ' done' : '') + (c.today ? ' today' : '') + '">' +
+      '<span class="sk-wd">' + WD[c.date.getDay()] + ' ' + c.date.getDate() + '</span>' +
+      '<span class="sk-ic">' + (c.done ? U.emo('✅', 'xs') : U.emo(c.r.p ? '📦' : '🎟️', 'xs')) + '</span>' +
+      '<b>' + (c.r.p ? (c.r.p > 1 ? c.r.p + ' pac.' : 'pacote') : c.r.f) + '</b></div>').join('') + '</div>';
+  }
+  function streakHome() {
+    const st = I.streak(), T = I.streakTxt;
+    const head = st.n >= 1 ? U.emo('🔥', 'sm') + ' ' + (st.n > 1 ? st.n + ' dias seguidos' : '1 dia de sequência') : U.emo('🔥', 'sm') + ' Sequência de dias';
+    const sub = st.played ? 'Prêmio de hoje garantido. Amanhã: ' + T(st.next) : st.n ? 'Termine uma carreira hoje e ganhe ' + T(st.next) + ' sem perder a sequência' : 'Termine uma carreira por dia e ganhe fichas e pacotinhos';
+    return '<div class="sk"><div class="sk-h"><b>' + head + '</b><small>' + sub + '</small></div>' + streakCal(st) + '</div>';
+  }
+  // Fim de carreira: o prêmio do dia (got = I.streakRecord()) ou o lembrete de voltar amanhã
+  function streakFinale(got) {
+    const st = I.streak(), T = I.streakTxt;
+    const head = got ? U.emo('🔥', 'sm') + ' Dia ' + got.day + ' da sequência: <em>+' + T(got.r) + '</em>' : U.emo('🔥', 'sm') + ' ' + D.plural(st.n, 'dia seguido', 'dias seguidos');
+    const sub = got && got.r.p ? 'O pacotinho já está com os outros, logo abaixo' : 'Volte amanhã e termine uma carreira: ' + T(st.next);
+    return '<div class="sk fin"><div class="sk-h"><b>' + head + '</b><small>' + sub + '</small></div>' + streakCal(st) + '</div>';
+  }
+
   function bindHome() {
     if ($('b-hb-packs')) $('b-hb-packs').onclick = () => openPacks(U.home);
   }
 
-  Object.assign(U, { openPacks, tradeSheet, itemImg, itemArt, packFinale: finaleBox, packHome: homeBlock, packHomeBind: bindHome, rarCls, raritySelo: selo });
+  Object.assign(U, { openPacks, tradeSheet, itemImg, itemArt, packFinale: finaleBox, packHome: homeBlock, packHomeBind: bindHome, streakHome, streakFinale, rarCls, raritySelo: selo });
 })();

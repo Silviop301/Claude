@@ -215,13 +215,50 @@
   }
   const seen = id => { const o = get(); if (o.news[id]) { delete o.news[id]; put(); } };
 
-  // Nuvem: itens de todos os aparelhos; contadores (fichas, pacotes, garantia) do salvo mais recente
+  // ---------- sequência de dias ----------
+  // Um dia conta quando você termina uma carreira (qualquer uma). A primeira carreira terminada no dia paga o
+  // prêmio daquele dia da sequência; o ciclo tem 7 dias e recomeça. Pulou um dia: volta para o dia 1.
+  // inv.days = { 'AAAA-MM-DD': carreiras terminadas no dia }
+  const STREAK = [{ f: 5 }, { f: 10 }, { p: 1 }, { f: 15 }, { p: 1 }, { f: 25 }, { p: 2 }];
+  const dayKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const shift = (d, n) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() + n); return x; };
+  // Estado da sequência hoje: n dias seguidos (até hoje, ou até ontem se hoje ainda não jogou), se hoje já conta,
+  // e o ciclo de 7 dias em que você está (datas e prêmios)
+  function streak(now) {
+    const days = get().days || {}, today = now || new Date(), played = !!days[dayKey(today)];
+    let d = played ? today : shift(today, -1), n = 0;
+    while (days[dayKey(d)]) { n++; d = shift(d, -1); }
+    // Posição no ciclo: com hoje jogado, hoje é o dia ((n-1)%7)+1; sem hoje, hoje seria o dia (n%7)+1
+    const pos = played ? (n - 1) % 7 : n % 7, start = shift(today, -pos);
+    const cells = STREAK.map((r, i) => { const dt = shift(start, i); return { i, date: dt, key: dayKey(dt), r, done: i < pos || (i === pos && played), today: i === pos }; });
+    return { n, played, pos, cells, next: STREAK[played ? (pos + 1) % 7 : pos] };
+  }
+  // Fim de carreira: marca o dia; na primeira carreira do dia, paga o prêmio (fichas na hora, pacotinho na fila)
+  function streakRecord() {
+    const o = get(), k = dayKey(new Date());
+    o.days = o.days || {};
+    const first = !o.days[k];
+    o.days[k] = (o.days[k] || 0) + 1;
+    // Guarda só os últimos 60 dias
+    Object.keys(o.days).sort().slice(0, -60).forEach(x => delete o.days[x]);
+    put();
+    if (!first) return null;
+    const st = streak(), r = STREAK[st.pos];
+    if (r.f) { o.fichas += r.f; put(); }
+    return { day: st.pos + 1, n: st.n, r };
+  }
+  const streakTxt = r => (r.f ? r.f + ' fichas' : r.p + (r.p > 1 ? ' pacotinhos' : ' pacotinho'));
+
+  // Nuvem: itens de todos os aparelhos; contadores (fichas, pacotes, garantia) do salvo mais recente;
+  // dias da sequência de todos os aparelhos
   function merge(a, b) {
     if (!a || !b) return a || b || null;
     const newer = (b.at || 0) > (a.at || 0) ? b : a;
-    return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news) });
+    const days = Object.assign({}, a.days, b.days);
+    Object.keys(days).forEach(k => { days[k] = Math.max((a.days || {})[k] || 0, (b.days || {})[k] || 0); });
+    return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news), days });
   }
 
   U.ITEMS = { FREE, KEY, CAT, BY_ID, RAR, RAR_NAME, CHANCE, PITY, DUP, COST, itemOf, need, has, get, put, clean, counts,
-    earn, careerWhy, open, trade, seen, merge, reset: () => { inv = null; } };
+    earn, careerWhy, open, trade, seen, merge, STREAK, streak, streakRecord, streakTxt, reset: () => { inv = null; } };
 })();
