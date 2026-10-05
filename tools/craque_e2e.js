@@ -9,7 +9,9 @@
 //   ex.: node tools/craque_e2e.js 30 390 4   → 30 carreiras em cada posição (ATA, MEI, ZAG, GOL), tela de 390 px, 4 abas
 //        node tools/craque_e2e.js 5 320 2    → teste rápido em 320 px
 // Variáveis: BASE (padrão http://localhost:8765/craque/) · POS=ATA,GOL (só estas posições) · OUT=arquivo.json (relatório
-// completo) · SHOTS=pasta (foto de cada problema) · SLOW=1 (sem acelerar os temporizadores)
+// completo) · SHOTS=pasta (foto de cada problema) · SLOW=1 (sem acelerar os temporizadores) · DESKTOP=1 (mouse, sem toque)
+// · CFG='{"papers":"special","cups":"play"}' (configuração do jogo) · TR=pasta (transcrição: texto de cada tela + estado da
+// carreira, para caçar incoerências entre telas)
 // Playwright precisa estar instalado (o Chromium já está em /opt/pw-browsers).
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
@@ -18,6 +20,7 @@ const N = +process.argv[2] || 30, WIDTH = +process.argv[3] || 390, PAR = +proces
 const BASE = process.env.BASE || 'http://localhost:8765/craque/';
 const POSITIONS = (process.env.POS || 'ATA,MEI,ZAG,GOL').split(',');
 const SHOTS = process.env.SHOTS || '';
+const TR = process.env.TR || ''; if (TR) fs.mkdirSync(TR, { recursive: true });
 const COUNTRIES = ['Brasil', 'Argentina', 'Uruguai', 'Colômbia', 'Portugal', 'Espanha', 'Inglaterra', 'Itália', 'Alemanha', 'França', 'Holanda'];
 const BAD = /\bundefined\b|\bNaN\b|\bnull\b|\[object Object\]/;
 const pick = a => a[Math.floor(Math.random() * a.length)];
@@ -26,7 +29,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 // sem jornais nem 3D (o que interessa é o fluxo e o texto). Os temporizadores do jogo rodam 20× mais rápido.
 function initScript(slow) {
   return `
-    localStorage.setItem('climbix-config', JSON.stringify({ papers: 'none', cups: 'sim', moments: 'auto', fast: true, fx3d: false, vibe: false }));
+    localStorage.setItem('climbix-config', JSON.stringify(Object.assign({ papers: 'none', cups: 'sim', moments: 'auto', fast: true, fx3d: false, vibe: false }, ${process.env.CFG || '{}'})));
     localStorage.setItem('craque-sound', 'off');
     if (!${slow}) {
       const st = window.setTimeout;
@@ -136,8 +139,24 @@ function stepInPage(opts) {
   // Pedido de liga aberto: escolhe uma (dois toques)
   const lg = qa('.sheet-wrap [data-lg]'); if (lg.length) return label('askl ' + twice(rnd(lg)));
   // Copa em andamento (simulando): só espera
-  if ($('wc-list')) return label('wc:play');
+  if ($('wc-list')) { if ($('b-sima') && Math.random() < 0.02) { $('b-sima').click(); return label('wc:sima'); } if ($('b-simg') && Math.random() < 0.3) { $('b-simg').click(); return label('wc:skipg'); } return label('wc:play'); }
   return label('nada');
+}
+
+
+// Foto da tela: texto + estado da carreira (para conferir coerência depois)
+function snapInPage() {
+  const U = window.CRAQUE_UI, c = U && U.G && U.G.c;
+  const txt = (document.body.innerText || '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  let st = null;
+  if (c) {
+    const ls = c.seasons[c.seasons.length - 1];
+    const pick = (o, ks) => { const r = {}; ks.forEach(k => { if (o && o[k] !== undefined) r[k] = o[k]; }); return r; };
+    st = { age: c.age, season: c.season, club: c.club, contract: c.contract, ovr: window.CRAQUE_SIM.ovr(c), pot: c.pot, money: c.money, wage: c.wage, fame: c.fame, rel: c.rel, totals: c.totals, captain: c.captain, farewell: c.farewell, traits: c.traits, step: U.G.step,
+      moment: c.mod && c.mod.moment, spells: c.spells,
+      last: ls && pick(ls, ['age','club','games','goals','assists','rating','cleanSheets','saves','tackles','table','titles','headlines','highlights','move','awards','ovr0','ovr1','pos','role','farewell','race','why','pe','rival','carry','grow','loanBack','src','injury','coach0','coach1','fans0','fans1','moment']) };
+  }
+  return { txt, st };
 }
 
 // Varredura da tela: textos ruins e rolagem horizontal
@@ -180,7 +199,7 @@ async function tour(page, issues) {
 async function career(page, pos, idx, issues, stats) {
   const country = pick(COUNTRIES);
   const chance = { invest: 0.6, post: 0.15, farewell: 0.06, stop: 0.02 };
-  let last = '', same = 0, steps = 0, seasons = 0;
+  let last = '', same = 0, steps = 0, seasons = 0, lastTxt = '', trans = [];
   const seen = new Set(), cov = {};
   const note = (kind, detail, screen) => {
     const key = kind + '|' + screen + '|' + String(detail).slice(0, 50);
@@ -195,6 +214,7 @@ async function career(page, pos, idx, issues, stats) {
     if (r.done) break;
     if (/^next/.test(r.did) && /^Temporada /.test(r.screen)) seasons++;
     const scan = await page.evaluate(scanInPage, BAD.source);
+    if (TR) { const sn = await page.evaluate(snapInPage); if (sn.txt !== lastTxt) { lastTxt = sn.txt; trans.push({ step: steps, did: r.did, screen: r.screen, txt: sn.txt, st: sn.st }); } }
     scan.errors.forEach(e => note('console', e, r.screen));
     if (scan.bad) note('texto', scan.bad, r.screen);
     if (scan.overflow) note('layout', scan.overflow, r.screen);
@@ -203,6 +223,7 @@ async function career(page, pos, idx, issues, stats) {
     if (same > 60) { note('travou', 'tela não muda: ' + sig, r.screen); break; }
     if (r.did === 'wc:play' || r.did === 'pre:wait' || r.did === 'nada' || same > 2) await page.waitForTimeout(same > 20 ? 150 : 30);
   }
+  if (TR) { const sn = await page.evaluate(snapInPage).catch(() => null); if (sn && sn.txt !== lastTxt) trans.push({ step: steps, did: 'end', screen: 'end', txt: sn.txt, st: sn.st }); fs.writeFileSync(path.join(TR, pos + idx + '.json'), JSON.stringify(trans)); }
   stats.push({ pos, idx, country, steps, seasons, cov });
 }
 
@@ -214,7 +235,7 @@ async function career(page, pos, idx, issues, stats) {
   const issues = [], stats = [], pageErrors = [];
   const t0 = Date.now();
   async function worker(k) {
-    const ctx = await browser.newContext({ viewport: { width: WIDTH, height: 780 }, isMobile: true, hasTouch: true, serviceWorkers: 'block', locale: 'pt-BR' });
+    const ctx = await browser.newContext(process.env.DESKTOP ? { viewport: { width: WIDTH, height: 800 }, serviceWorkers: 'block', locale: 'pt-BR' } : { viewport: { width: WIDTH, height: 780 }, isMobile: true, hasTouch: true, serviceWorkers: 'block', locale: 'pt-BR' });
     await ctx.addInitScript(initScript(!!process.env.SLOW));
     const page = await ctx.newPage();
     page.on('pageerror', e => pageErrors.push({ worker: k, msg: e.message, stack: String(e.stack || '').split('\n').slice(0, 3).join(' | ') }));

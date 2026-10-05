@@ -255,6 +255,16 @@
     const k = Math.max(1, rounds * 1.2 / Math.max(1, spread));
     const shown = col.map(x => clamp(Math.round(mid + (x - mid) * k), Math.round(rounds * 0.4), rounds * 3));
     if (!league && pos > 1 && shown[0] <= shown[pos - 1]) shown[0] = shown[pos - 1] + 1;
+    // Lance decisivo na última rodada (título ou acesso): a tabela mostrada precisa contar a mesma história
+    // da tela (chegaram empatados, o jogo valia 3 pontos): diferença de 1 a 3 pontos para quem ficou do outro lado
+    if (M && (M.type === 'title' || M.type === 'acesso')) {
+      const tight = 1 + ((pts + c.season) % 3); // sem gastar sorteio: o resto da temporada não muda
+      if (M.type === 'title' && pos === 1) shown[1] = Math.max(shown[1], shown[0] - tight);
+      else if (M.type === 'title' && pos === 2) shown[0] = shown[1] + Math.min(tight, 2);
+      else if (LD0 && LD0.up && pos === LD0.promo && shown[pos]) shown[pos] = Math.max(shown[pos], shown[pos - 1] - tight);
+      else if (LD0 && LD0.up && pos === LD0.promo + 1) shown[pos - 2] = Math.max(shown[pos - 1] + 1, Math.min(shown[pos - 2], shown[pos - 1] + tight));
+      for (let i = 1; i < shown.length; i++) if (shown[i] > shown[i - 1]) shown[i] = shown[i - 1];
+    }
     // lead: vantagem do campeão sobre o vice · n, rounds, promo, releg e m: para a reta final na tela da temporada (ui/season.js)
     const LD = D.LADDER[club.league];
     const table = { pos, pts: shown[pos - 1], gap: league ? 0 : Math.max(1, shown[0] - shown[pos - 1]), league: lg.name,
@@ -323,9 +333,14 @@
     // Jogou pouco: a taça é do clube (sem "é sua"); com participação, as frases de sempre
     const clT = D.O(club.name), campe = D.fem(club.name) ? ' é campeã' : ' é campeão';
     const own = (arr, t) => (mine ? arr : arr.filter(x => !/é sua|é seu/.test(x)).concat([clT + campe + ' ' + D.da(t) + '. Você jogou pouco', 'Do banco, você viu ' + D.o(club.name) + ' levantar ' + D.paraA(t).slice(5)]));
-    if (league && rival && !(M && M.type === 'title')) highlights.push('🏆 ' + S.textPick(c, 'hl.liga', own(['Título garantido na última rodada contra ' + vr(rival.name), 'Campeão da liga! Taça confirmada contra ' + vr(rival.name),
-      'Liga conquistada com vitória sobre ' + vr(rival.name) + ' na reta final', 'Volta olímpica depois de bater ' + vr(rival.name), 'Título nacional: o jogo da taça foi contra ' + vr(rival.name),
-      'Campeão com rodada de festa contra ' + vr(rival.name), 'A liga é sua: confronto decisivo vencido contra ' + vr(rival.name)], lg.name)));
+    // "Última rodada" e "reta final" só quando a tabela mostra briga de verdade (até 3 pontos); com folga, frases neutras
+    const tightLeague = table.lead <= 3;
+    if (league && rival && !(M && M.type === 'title')) highlights.push('🏆 ' + S.textPick(c, tightLeague ? 'hl.liga' : 'hl.liga.folga', own(tightLeague
+      ? ['Título garantido na última rodada contra ' + vr(rival.name), 'Campeão da liga! Taça confirmada contra ' + vr(rival.name),
+        'Liga conquistada com vitória sobre ' + vr(rival.name) + ' na reta final', 'Volta olímpica depois de bater ' + vr(rival.name), 'Título nacional: o jogo da taça foi contra ' + vr(rival.name),
+        'Campeão com rodada de festa contra ' + vr(rival.name), 'A liga é sua: confronto decisivo vencido contra ' + vr(rival.name)]
+      : ['Campeão da liga com sobra! A taça veio com rodadas de antecedência', 'Volta olímpica depois de bater ' + vr(rival.name), 'Título nacional: o jogo da taça foi contra ' + vr(rival.name),
+        'Campeão com rodada de festa contra ' + vr(rival.name), 'A liga é sua: campanha dominante do começo ao fim', 'Liga conquistada sem sustos: ninguém chegou perto'], lg.name)));
     if (cup && other && !(M && M.type === 'cup')) highlights.push('🏆 ' + S.textPick(c, 'hl.copa', ['Final da ' + (lg.cup || 'copa') + ' contra ' + vr(other.name), 'Campeão da ' + (lg.cup || 'copa') + ' em cima ' + D.do(other.name),
       'Taça da ' + (lg.cup || 'copa') + ' na final contra ' + vr(other.name), 'Copa conquistada: decisão contra ' + vr(other.name)]) + (goals > 5 ? ': gol seu!' : ''));
     if (cont2) highlights.push('🌎 ' + S.textPick(c, 'hl.cont2', own(['Campeão da ' + cont2Name + '!', 'A ' + cont2Name + ' é sua!', cont2Name + ' na estante!', 'Noite de taça: ' + cont2Name + ' conquistada'], cont2Name)));

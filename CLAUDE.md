@@ -41,6 +41,7 @@ node tools/craque_textos.js                         # repetição de textos entr
 node tools/craque_itens_sim.js                      # carreiras para liberar todos os itens
 node tools/craque_estilos.js                        # estilos dos lances decisivos: nenhum pode dominar (esperado: 0 alertas)
 NODE_PATH=$(npm root -g) node tools/craque_e2e.js 2 390 4   # carreiras pela interface (Playwright)
+DESKTOP=1 TR=/tmp/tr node tools/craque_e2e.js 3 1280 3      # idem no computador, gravando o texto de cada tela em /tmp/tr
 python3 tools/craque_erros.py                       # erros reais dos jogadores (climbix.app)
 ```
 
