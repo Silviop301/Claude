@@ -120,28 +120,28 @@
   S.kickSetup = function (c, type) {
     const E = S.eff(c);
     const fk = type === 'classico';
-    const lv = id => (c.traits.includes(id) ? lvOf(c, id) : 0);
+    const lv = id => (c.traits.includes(id) ? lvOf(c, id) : 0), sy = id => S.syn(c, id);
     if (type === 'save') {
       // Goleiro: o corpo do batedor "entrega" o lado por tellMs antes do chute (REF e Pegador aumentam);
       // o pulo alcança até diveReach (ELA); cantos além disso entram mesmo no lado certo
-      const tellMs = Math.round(clamp(150 + (E.fin - 50) * 6 + lv('pegador') * 45 + lv('reflexo') * 35, 130, 520));
+      const tellMs = Math.round(clamp(150 + (E.fin - 50) * 6 + lv('pegador') * 45 + lv('reflexo') * 35 + sy('paredao') * 40, 130, 560));
       const diveReach = round1(clamp(0.72 + (E.fis - 55) / 100 + lv('elastico') * 0.04, 0.65, 1.05) * 100) / 100;
-      const chance = clamp(0.28 + (E.fin + E.def - 120) / 260 + lv('pegador') * 0.05 + lv('frieza') * 0.09, 0.15, 0.7);
+      const chance = clamp(0.28 + (E.fin + E.def - 120) / 260 + lv('pegador') * 0.05 + lv('frieza') * 0.09 + sy('paredao') * 0.05, 0.15, 0.72);
       return { mode: 'save', tellMs, diveReach, chance: Math.round(chance * 100) / 100 };
     }
     if (type === 'pass') {
       // Meia: o atacante corre por trás da zaga; toque quando ele passar pela brecha entre os zagueiros.
       // PAS alarga a brecha e deixa a corrida mais lenta; Visão de Jogo e Garçom ajudam
-      const win = round1(clamp(0.17 + (E.pas - 50) / 240 + lv('visao') * 0.02 + lv('garcom') * 0.015, 0.15, 0.34) * 100) / 100;
+      const win = round1(clamp(0.17 + (E.pas - 50) / 240 + lv('visao') * 0.02 + lv('garcom') * 0.015 + sy('maestro') * 0.02, 0.15, 0.36) * 100) / 100;
       const period = round1(clamp(0.95 + (E.pas - 50) * 0.011 + lv('visao') * 0.08, 0.85, 1.7) * 10) / 10;
-      const chance = clamp(0.32 + (E.pas - 60) / 75 + lv('visao') * 0.05 + lv('garcom') * 0.04 + lv('frieza') * 0.06, 0.2, 0.88);
+      const chance = clamp(0.32 + (E.pas - 60) / 75 + lv('visao') * 0.05 + lv('garcom') * 0.04 + lv('frieza') * 0.06 + sy('maestro') * 0.05, 0.2, 0.9);
       return { mode: 'pass', win, period, chance: Math.round(chance * 100) / 100 };
     }
     if (type === 'tackle') {
       // Zagueiro: tocar quando o atacante passa pela zona certa. DEF alarga a zona; RIT deixa o lance mais lento
-      const win = round1(clamp(0.1 + (E.def - 50) / 260 + lv('carrinho') * 0.015, 0.08, 0.26) * 100) / 100;
+      const win = round1(clamp(0.1 + (E.def - 50) / 260 + lv('carrinho') * 0.015 + sy('muralha') * 0.02, 0.08, 0.28) * 100) / 100;
       const period = round1(clamp(0.95 + (E.rit - 50) * 0.01 + lv('antecipa') * 0.08, 0.8, 1.6) * 10) / 10;
-      const chance = clamp(0.35 + (E.def - 60) / 80 + lv('carrinho') * 0.04 + lv('frieza') * 0.08, 0.2, 0.88);
+      const chance = clamp(0.35 + (E.def - 60) / 80 + lv('carrinho') * 0.04 + lv('frieza') * 0.08 + sy('muralha') * 0.05, 0.2, 0.9);
       return { mode: 'tackle', win, period, chance: Math.round(chance * 100) / 100 };
     }
     // Mira: um vaivém completo leva de 1,0 s (FIN baixa) a ~2,1 s (FIN alta); Chute Colocado deixa mais lenta
@@ -149,7 +149,7 @@
     const period = clamp((1.0 + (E.fin - 45) * 0.022 + lv('colocado') * 0.12) * (fk ? 0.78 : 1) + (fk ? lv('parada') * 0.12 : 0), 0.85, 2.3);
     // Tremedeira da mira: pressão do lance menos a frieza
     const pressure = type === 'classico' ? 0.6 : 1;
-    const calm = clamp((E.fin - 45) / 110, 0, 0.45) + lv('frieza') * 0.18;
+    const calm = clamp((E.fin - 45) / 110, 0, 0.45) + lv('frieza') * 0.18 + sy('matador') * 0.15;
     const wobble = round1(clamp(pressure * (0.16 - calm * 0.2), 0, 0.16) * 100) / 100;
     // Alcance do goleiro diminui com a força do chute (FIN e FÍS).
     // Pênalti: raio em volta do ponto do mergulho (±0,55); o canto fica fora do alcance.
@@ -158,10 +158,10 @@
     const reach = clamp(0.3 - power * 0.5, 0.22, 0.3);
     const fkReach = clamp(0.6 - power, 0.4, 0.6) * 1.35;
     // Falta: altura da barreira (Bola Parada ensina a passar por cima dela)
-    const wall = fk ? clamp(0.58 - lv('parada') * 0.05 - (E.pas - 50) / 400, 0.42, 0.58) : 0;
+    const wall = fk ? clamp(0.58 - lv('parada') * 0.05 - sy('falta') * 0.04 - (E.pas - 50) / 400, 0.4, 0.58) : 0;
     // Chance ao deixar o jogo decidir (sem jogar)
-    const chance = fk ? clamp(0.3 + (E.fin - 60) / 110 + lv('frieza') * 0.1 + lv('parada') * 0.07, 0.15, 0.78)
-      : clamp(0.62 + (E.fin - 60) / 150 + lv('frieza') * 0.1 + lv('colocado') * 0.03, 0.4, 0.92);
+    const chance = fk ? clamp(0.3 + (E.fin - 60) / 110 + lv('frieza') * 0.1 + lv('parada') * 0.07 + sy('falta') * 0.06, 0.15, 0.8)
+      : clamp(0.62 + (E.fin - 60) / 150 + lv('frieza') * 0.1 + lv('colocado') * 0.03 + sy('matador') * 0.05, 0.4, 0.93);
     // Na falta, a barreira cobre o lado esquerdo do gol (a tela espelha quando for o direito)
     return { fk, period, wobble, reach, fkReach, wall, wallL: -0.8, wallR: -0.1, chance: Math.round(chance * 100) / 100 };
   };

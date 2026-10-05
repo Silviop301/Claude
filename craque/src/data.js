@@ -713,15 +713,15 @@
   // Multiplicador por nível: Nv1 = 1x, Nv2 = 1.8x, Nv3 = 2.6x
   D.TRAIT_LV = [0, 1, 1.8, 2.6];
 
-  // Sinergias: ter as duas características dá pontos extras.
+  // Sinergias: ter as duas características dá pontos extras e um efeito próprio (extra, aplicado em engine/season.js e engine/moments.js).
   D.SYNERGIES = [
-    { id: 'falta',   a: 'colocado', b: 'parada',   icon: '🌟', tone: 'gold', name: 'Especialista em Falta', attr: { fin: 3, pas: 2 }, extra: 'Gols de falta nas manchetes' },
-    { id: 'liso',    a: 'velocista', b: 'drible',  icon: '💨', tone: 'gold', name: 'Liso',                  attr: { rit: 3, dri: 3 } },
-    { id: 'capitao', a: 'lider',    b: 'raca',     icon: '🎖️', tone: 'gold', name: 'Capitão',               attr: { def: 3, fis: 2, pas: 1 } },
-    { id: 'maestro', a: 'visao',    b: 'garcom',   icon: '🎼', tone: 'gold', name: 'Maestro',               attr: { pas: 2, dri: 1 } },
-    { id: 'muralha', a: 'xerife',   b: 'carrinho', icon: '🧱', tone: 'gold', name: 'Muralha',               attr: { def: 1, fis: 1 } },
-    { id: 'paredao', a: 'reflexo',  b: 'elastico', icon: '🧤', tone: 'gold', name: 'Paredão',               attr: { fin: 3, fis: 3 } },
-    { id: 'matador', a: 'artilheiro', b: 'frieza', icon: '💀', tone: 'purple', name: 'Matador',               attr: { fin: 2, fis: 1 } },
+    { id: 'falta',   a: 'colocado', b: 'parada',   icon: '🌟', tone: 'gold', name: 'Especialista em Falta', attr: { fin: 3, pas: 2 }, extra: '+3% gols e barreira mais baixa na falta decisiva' },
+    { id: 'liso',    a: 'velocista', b: 'drible',  icon: '💨', tone: 'gold', name: 'Liso',                  attr: { rit: 3, dri: 3 }, extra: 'Sofre pênaltis: +3% gols e assistências' },
+    { id: 'capitao', a: 'lider',    b: 'raca',     icon: '🎖️', tone: 'gold', name: 'Capitão',               attr: { def: 3, fis: 2, pas: 1 }, extra: 'Puxa o time: mais chance de título' },
+    { id: 'maestro', a: 'visao',    b: 'garcom',   icon: '🎼', tone: 'gold', name: 'Maestro',               attr: { pas: 2, dri: 1 }, extra: 'O time fica mais forte, +5% assistências e passe decisivo mais fácil' },
+    { id: 'muralha', a: 'xerife',   b: 'carrinho', icon: '🧱', tone: 'gold', name: 'Muralha',               attr: { def: 1, fis: 1 }, extra: 'Mais jogos sem sofrer gol e desarme decisivo mais fácil' },
+    { id: 'paredao', a: 'reflexo',  b: 'elastico', icon: '🧤', tone: 'gold', name: 'Paredão',               attr: { fin: 3, fis: 3 }, extra: 'Defende mais pênaltis e lê o batedor mais cedo' },
+    { id: 'matador', a: 'artilheiro', b: 'frieza', icon: '💀', tone: 'purple', name: 'Matador',               attr: { fin: 2, fis: 1 }, extra: '+4% gols e mira firme no lance decisivo' },
   ];
   // Melhorias pagas com pontos de evolução (ganhos pelo desempenho): cada uma soma pontos fixos na carta.
   // O preço sobe a cada compra (de qualquer item).

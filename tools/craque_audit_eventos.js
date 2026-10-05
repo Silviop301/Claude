@@ -24,7 +24,7 @@ for (const def of S.EVENT_DEFS.filter(e => e.stakes)) {
     if (!ev || !ev.options) continue;
     R.n++; R.labels = ev.options.map(o => o.label); R.kinds = ev.options.map(o => o.st.safe ? 'S' : 'R');
     const e = ev.options.map(o => o.ev); R.evs.push(e);
-    const sorted = e.slice().sort((a, b) => b - a); R.gap.push(sorted[0] - sorted[1]); R.dom = (R.dom || 0) + (sorted[0] - sorted[1] > Math.max(8, 0.35 * Math.abs(sorted[0])) ? 1 : 0);
+    const sorted = e.slice().sort((a, b) => b - a); R.gap.push(sorted[0] - sorted[1]); R.dom = (R.dom || 0) + (sorted[0] - sorted[1] > Math.max(8 * S.STAKE_K, 0.35 * Math.abs(sorted[0])) ? 1 : 0);
     if (ev.options.some(o => o.st.safe && perm(o.st.safe.fx))) R.safePerm++;
     if (ev.options.some(o => !o.st.safe && S.fxValue(c, o.st.lose.fx || {}) >= 0)) R.riskNoDown++;
   }

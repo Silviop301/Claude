@@ -103,6 +103,9 @@
     v += (fx.goal || 0) * 20 + (fx.assist || 0) * 12;
     const co = fx.coach || 0, fa = fx.fans || 0;
     v += co > 0 ? co * 0.2 : co * 0.5;
+    // Dinheiro vale pelo peso no saldo (gastar um quarto do que tem custa ~6); sair vale quando você está acima do clube (subir de clube rende taça e Bola de Ouro)
+    if (fx.money) v += fx.money / Math.max(c.money || 0, 1e6) * 25;
+    if (fx.wantsOut) v += Math.max(0, S.edge(c) - 4) * 3;
     v += fa * 0.1 + (fx.boost || 0) * 4 + (fx.legacy || 0) + (fx.longev || 0) * Math.max(0, 40 - Math.abs(c.age - 31) * 6);
     return v;
   };
@@ -180,8 +183,9 @@
       if (!base) return null;
       const options = spec.options(c, base).map(scaleOpt).map(o => {
         const st = o.safe ? { safe: o.safe, note: o.note } : { p: o.p, win: o.win, lose: o.lose };
-        // Custo à vista (opção segura que tira dinheiro): sem saldo, a opção fica travada (ver S.pickEvent)
-        const cost = st.safe && st.safe.fx && st.safe.fx.money < 0 ? -st.safe.fx.money : 0;
+        // Custo à vista (opção que tira dinheiro nos dois resultados): sem saldo, a opção fica travada (ver S.pickEvent)
+        const m = x => (x && x.fx && x.fx.money) || 0;
+        const cost = st.safe ? Math.max(0, -m(st.safe)) : (m(st.win) < 0 && m(st.win) === m(st.lose) ? -m(st.win) : 0);
         return Object.assign({ label: o.label, hint: S.stakeHint(c, st), st, ev: Math.round(stakeValue(c, st) * 10) / 10 }, cost ? { cost } : {});
       });
       return Object.assign(base, { options });

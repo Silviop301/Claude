@@ -201,6 +201,8 @@
   S.synergies = function (c) {
     return D.SYNERGIES.filter(s => c.traits.includes(s.a) && c.traits.includes(s.b));
   };
+  // 1 se a combinação está ativa (cada combinação tem um efeito próprio além dos pontos, ver D.SYNERGIES.extra)
+  S.syn = (c, id) => (S.synergies(c).some(s => s.id === id) ? 1 : 0);
 
   S.MAX_SLOTS = 5;
   S.MAX_LV = 3;

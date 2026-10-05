@@ -51,7 +51,8 @@
     // Produção por jogo
     const o = ovr0;
     // Visão de Jogo faz o time render mais (produção e chance de título)
-    const teamBoost = 0.8 * S.tm(c, 'visao');
+    const sy = id => S.syn(c, id);
+    const teamBoost = 0.8 * S.tm(c, 'visao') + 0.6 * sy('maestro');
     const teamF = 0.85 + (club.strength + teamBoost - D.TIERS[club.tier].min) * 0.02;
     // Torcida: apoio (ou vaia) mexe na fase em campo, até ±14%
     const form = 1 + c.mod.form + (c.rel.fans - REL0) / 350 + r.gauss() * 0.08;
@@ -68,8 +69,8 @@
     } else { g90 = 0; a90 = 0.002; } // goleiro
     // Estilo de jogo (características): quanto pesa em gols e em assistências
     const tm = id => S.tm(c, id);
-    const gMul = 1 + 0.06 * tm('artilheiro') - 0.08 * tm('garcom') + 0.04 * tm('tecnica') + 0.05 * tm('cabeceio') + 0.2 * tm('aereo');
-    const aMul = 1 - 0.08 * tm('artilheiro') + 0.08 * tm('garcom') + 0.04 * tm('tecnica') + 0.3 * tm('saida');
+    const gMul = 1 + 0.06 * tm('artilheiro') - 0.08 * tm('garcom') + 0.04 * tm('tecnica') + 0.05 * tm('cabeceio') + 0.2 * tm('aereo') + 0.03 * sy('falta') + 0.03 * sy('liso') + 0.04 * sy('matador');
+    const aMul = 1 - 0.08 * tm('artilheiro') + 0.08 * tm('garcom') + 0.04 * tm('tecnica') + 0.3 * tm('saida') + 0.03 * sy('liso') + 0.05 * sy('maestro');
     g90 *= 1.14 * S.GOAL_SCALE * teamF * form * (1 + c.mod.goal) * gMul;
     a90 *= 1.22 * S.GOAL_SCALE * teamF * form * (1 + c.mod.assist) * aMul;
 
@@ -100,14 +101,14 @@
     // jogos sem sofrer gol dependem da força defensiva do time, que o jogador defensivo puxa pela nota
     const leagueAll = D.CLUBS.filter(x => x.league === club.league);
     const lgAvg = leagueAll.reduce((a2, x) => a2 + x.strength, 0) / leagueAll.length;
-    const dS = club.strength + teamBoost + (isDef ? (o - club.strength) * 0.35 : 0) + 0.7 * tm('xerife') + 1 * tm('maofirme');
+    const dS = club.strength + teamBoost + (isDef ? (o - club.strength) * 0.35 : 0) + 0.7 * tm('xerife') + 1 * tm('maofirme') + 0.8 * sy('muralha') + 0.5 * sy('paredao');
     const pCS = Math.exp(-1.45 * Math.exp((lgAvg - dS) / 12));
     let cleanSheets = 0, saves = 0, penFaced = 0, penSaved = 0, tackles = 0;
     for (let i = 0; i < games; i++) if (r() < pCS) cleanSheets++;
     if (c.pos === 'GOL') {
       saves = r.poisson(games * clamp(0.3 + (E.fin + E.fis - 110) / 180, 0.15, 0.8));
       penFaced = r.poisson(games * 0.11);
-      const pPen = clamp(0.16 + (E.fin + E.def - 120) / 320 + (c.traits.includes('pegador') ? 0.05 * S.traitLevel(c, 'pegador') : 0), 0.08, 0.45);
+      const pPen = clamp(0.16 + (E.fin + E.def - 120) / 320 + (c.traits.includes('pegador') ? 0.05 * S.traitLevel(c, 'pegador') : 0) + 0.03 * sy('paredao'), 0.08, 0.48);
       for (let i = 0; i < penFaced; i++) if (r() < pPen) penSaved++;
     }
     if (c.pos === 'ZAG') tackles = r.poisson(games * clamp(0.12 + (E.def - 60) / 150, 0.05, 0.45));
@@ -130,7 +131,7 @@
     const leagueClubs = D.CLUBS.filter(x => x.league === club.league);
     const top = Math.max(...leagueClubs.map(x => x.strength));
     // Defesa e físico pesam nos jogos grandes
-    const titleBonus = (c.captain ? 0.08 : 0) + clamp((E.def + E.fis - 75) / 220, 0, 0.22);
+    const titleBonus = (c.captain ? 0.08 : 0) + 0.03 * sy('capitao') + clamp((E.def + E.fis - 75) / 220, 0, 0.22);
     const pLeague = clamp(0.02 + (sEff - top + 3) / 18 + titleBonus * 0.5, 0.01, 0.35);
     // Copa nacional junta todas as divisões do país: a chance compara com os mais fortes do país, não da liga
     // (time de divisão de baixo só leva como zebra rara)
@@ -314,7 +315,7 @@
     c.wcBoost = 0;
     // Cada Bola de Ouro anterior aumenta a exigência (a concorrência cresce)
     // Defensor raramente ganha a Bola de Ouro (como na vida real)
-    const pBallon = club.tier >= 4 && o >= 86 ? clamp(1 / (1 + Math.exp(-(bScore - 100 - 9 * c.totals.ballon) / 7)) * (club.tier === 5 ? 0.6 : 0.2) * (isDef ? 0.45 : 1), 0, 0.6) : 0;
+    const pBallon = club.tier >= 4 && o >= 86 ? clamp(1 / (1 + Math.exp(-(bScore - 103 - 9 * c.totals.ballon) / 7)) * (club.tier === 5 ? 0.6 : 0.2) * (isDef ? 0.45 : 1), 0, 0.6) : 0;
     const ballon = r() < pBallon;
     if (ballon) awards.push({ id: 'ballon', name: 'BOLA DE OURO' });
 
