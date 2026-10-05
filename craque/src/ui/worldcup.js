@@ -46,6 +46,23 @@
     $('b-wc').onclick = () => { simAll = U.cfg.cups === 'sim'; S.wcStart(G.c); save(); wcPlay(); };
   }
 
+  // Tabela do grupo (engine/worldcup.js, run.tbl): os dois primeiros passam
+  const teamName = (run, id) => (id === 'me' ? usName(run) : esc(isCwc(run) ? S.cwcTeam(id).name : id));
+  const teamMark = (run, id) => (id === 'me' ? usMark(run) : isCwc(run) ? crest(id, 'xs') : U.flag(D.NATION_BY_NAME[id].flag));
+  function groupTable(run) {
+    const t = S.wcGroupTable(run);
+    if (!t) return '';
+    const played = Math.min(run.stage, 3);
+    return '<div class="wc-tbl"><div class="wt-h"><span>Grupo · ' + (played >= 3 ? 'final' : played ? 'rodada ' + played + ' de 3' : 'antes da estreia') + '</span><span>Pts</span><span>Saldo</span></div>' +
+      t.map((x, i) => '<div class="wt-r' + (x.id === 'me' ? ' me' : '') + (i < 2 ? ' in' : '') + '"><span><i>' + (i + 1) + '</i>' + teamMark(run, x.id) + ' ' + teamName(run, x.id) + '</span><b>' + x.pts + '</b><span>' + (x.gf - x.ga > 0 ? '+' : '') + (x.gf - x.ga) + '</span></div>').join('') +
+      '<p class="wt-n">Os dois primeiros vão ao mata-mata</p></div>';
+  }
+  function drawGroup(run) {
+    const el = $('wc-tbl');
+    if (!el) return;
+    el.innerHTML = run.games.length <= 3 ? groupTable(run) : ''; // no mata-mata a tabela sai de cena
+  }
+
   function wcRow(g) {
     const run = G.c.wcRun;
     const res = g.gf > g.ga ? 'w' : g.gf < g.ga ? 'l' : 'd';
@@ -62,7 +79,8 @@
       (S.defKick(G.c.pos) && g.cs && !g.live ? '<span class="mom ok">' + U.emo('🧤', 'xs') + ' sem sofrer gol</span>' : '') +
       (g.rating ? '<span class="rt' + (g.motm ? ' motm' : '') + '">' + (g.motm ? U.emo('⭐', 'xs') + ' Craque do jogo · ' : 'Nota ') + g.rating.toFixed(1).replace('.', ',') + '</span>' : '') +
       (g.ev && g.ev.length && !g.live ? '<div class="gls">' + g.ev.map(e => goalLine(e, g)).join('') + '</div>' : '') +
-      (g.groupEnd ? '<div class="grp ' + (g.groupEnd.pass ? 'ok' : 'ko') + '">' + (g.groupEnd.pass ? 'Classificado com ' + D.plural(g.groupEnd.pts, 'ponto', 'pontos') : 'Eliminado na fase de grupos (' + g.groupEnd.pts + ' pts)') + '</div>' : '') + '</div>';
+      (g.other && !g.live ? '<span class="oth">Na rodada: ' + teamMark(run, g.other.a) + ' ' + teamName(run, g.other.a) + ' ' + g.other.ga + ' × ' + g.other.gb + ' ' + teamName(run, g.other.b) + ' ' + teamMark(run, g.other.b) + '</span>' : '') +
+      (g.groupEnd ? '<div class="grp ' + (g.groupEnd.pass ? 'ok' : 'ko') + '">' + (g.groupEnd.pass ? 'Classificado ' + (g.groupEnd.pos ? 'em ' + g.groupEnd.pos + 'º ' : '') + 'com ' + D.plural(g.groupEnd.pts, 'ponto', 'pontos') : 'Eliminado na fase de grupos' + (g.groupEnd.pos ? ' em ' + g.groupEnd.pos + 'º' : '') + ' (' + g.groupEnd.pts + ' pts)') + '</div>' : '') + '</div>';
   }
 
   // Jogo ao vivo: relógio correndo e o placar mudando gol a gol
@@ -120,7 +138,7 @@
     const last = run.games[run.games.length - 1];
     const resume = last && last.resumeAt !== undefined && !last.live ? last : null; // jogo que continua depois do lance
     render('<div class="eyebrow">' + tName(run) + ' ' + run.year + ' · ' + usMark(run) + ' ' + usName(run) + '</div>' +
-      '<div class="wc-list" id="wc-list">' + run.games.filter(g => !g.live && g !== resume).map(wcRow).join('') + '</div><div id="wc-after"></div>' +
+      '<div id="wc-tbl"></div><div class="wc-list" id="wc-list">' + run.games.filter(g => !g.live && g !== resume).map(wcRow).join('') + '</div><div id="wc-after"></div>' +
       '<div class="wc-sim" id="wc-sim"><button class="tool" id="b-simg">' + U.emo('⏩', 'xs') + ' Pular jogo</button><button class="tool" id="b-sima">' + U.emo('⏭️', 'xs') + ' Simular até o fim</button></div>' +
       '<p class="skip-hint" id="wc-hint">Toque para acelerar</p>');
     let fast = false, skip = false;
@@ -144,11 +162,13 @@
       });
     };
     const list = $('wc-list');
+    drawGroup(run);
     // Troca a linha ao vivo pela linha final (nota, lance, craque do jogo)
     const finish = (el, g) => {
       const div = document.createElement('div');
       div.innerHTML = wcRow(g);
       el.replaceWith(div.firstChild);
+      drawGroup(run);
       sfx(g.gf > g.ga ? 'goal' : g.gf < g.ga ? 'miss' : 'whistle');
     };
     const next = () => {

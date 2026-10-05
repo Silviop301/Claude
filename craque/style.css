@@ -2208,3 +2208,23 @@ details.fin-more[open] { display: flex; flex-direction: column; gap: 12px; paddi
 .race.end.win .rc-lbl { color: var(--gold); }
 .race.end.miss .rc-lbl { color: #FF9AA2; }
 .race.end { animation: mc-pop .5s ease; }
+
+/* ===== Tabela do grupo na Copa e no Mundial (ui/worldcup.js) ===== */
+.wc-tbl { background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 12px; padding: 8px 10px; margin-bottom: 8px; }
+.wc-tbl .wt-h, .wc-tbl .wt-r { display: grid; grid-template-columns: minmax(0, 1fr) 40px 52px; align-items: center; gap: 6px; }
+.wc-tbl .wt-h { font: 700 12px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--label, #8FD6AE); padding-bottom: 4px; }
+.wc-tbl .wt-h span + span, .wc-tbl .wt-r > :not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.wc-tbl .wt-r { font: 600 15px var(--body); padding: 4px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.wc-tbl .wt-r > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wc-tbl .wt-r i { display: inline-block; width: 18px; font-style: normal; color: var(--text-2, #D3E4D9); opacity: .7; }
+.wc-tbl .wt-r.in i { color: var(--gold); opacity: 1; }
+.wc-tbl .wt-r b { font: 800 18px var(--display); }
+.wc-tbl .wt-r.me { color: var(--gold); }
+.wc-tbl .wt-n { margin: 4px 0 0; font: 500 12px var(--body); color: var(--text-2, #D3E4D9); opacity: .8; }
+.wc-game .oth { width: 100%; font: 500 13px var(--body); color: var(--muted); }
+
+/* ===== Para a próxima: meta da carreira seguinte (ui/finale.js) ===== */
+.fin-goal { margin-top: 8px; padding: 10px 12px; border-radius: 14px; background: rgba(242, 194, 48, 0.10); border: 1px solid rgba(242, 194, 48, 0.35); display: grid; gap: 4px; }
+.fin-goal .fg-h { font: 700 12px var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+.fin-goal p { margin: 0; font: 600 15px/1.35 var(--body); color: #fff; }
+.fin-goal b { color: var(--gold); }

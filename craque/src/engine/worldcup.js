@@ -147,10 +147,16 @@
     game.motm = game.rating >= 8;
     if (run.stage < 3) {
       run.pts += game.gf > game.ga ? 3 : game.gf === game.ga ? 1 : 0;
+      // Tabela do grupo: o seu jogo e, na mesma rodada, o jogo entre os outros dois
+      if (!run.tbl && run.stage === 0) run.tbl = [{ id: 'me', pts: 0, gf: 0, ga: 0 }].concat(run.group.map(id => ({ id, pts: 0, gf: 0, ga: 0 })));
+      // Classificação pela regra de sempre (5+ pontos passa; 4 quase sempre; 3 às vezes), para não mexer no
+      // equilíbrio; na última rodada, o outro jogo do grupo sai com um placar que bate com ela
+      const want = run.stage === 2 ? run.pts >= 5 || (run.pts === 4 && r() < 0.8) || (run.pts === 3 && r() < 0.35) : null;
+      if (run.tbl) groupRound(run, game, r, want);
       if (run.stage === 2) {
-        // Passa com 5+ pontos; com 4 quase sempre; com 3 às vezes (saldo)
-        const pass = run.pts >= 5 || (run.pts === 4 && r() < 0.8) || (run.pts === 3 && r() < 0.35);
-        game.groupEnd = { pts: run.pts, pass };
+        const pos = run.tbl ? groupSort(run.tbl, r).findIndex(x => x.id === 'me') + 1 : 0;
+        const pass = run.tbl ? pos <= 2 : want;
+        game.groupEnd = { pts: run.pts, pass, pos };
         if (!pass) wcEnd(c, 'Fase de grupos');
       }
       run.stage++;
@@ -159,6 +165,33 @@
       run.pending = true; // decide nos pênaltis: você bate o último
     } else wcAdvance(c, game.gf > game.ga);
   }
+
+  // Rodada do grupo: soma o seu jogo na tabela e joga o outro jogo da rodada (os dois rivais que não te enfrentaram)
+  const teamOf = (run, id) => (run.kind === 'cwc' ? S.cwcTeam(id) : D.NATION_BY_NAME[id]);
+  // want (última rodada): true/false = o placar do outro jogo precisa deixar você dentro/fora dos dois primeiros
+  function groupRound(run, game, r, want) {
+    const T = id => run.tbl.find(x => x.id === id);
+    const add = (t, gf, ga, s) => { t.gf += s * gf; t.ga += s * ga; t.pts += s * (gf > ga ? 3 : gf === ga ? 1 : 0); };
+    add(T('me'), game.gf, game.ga, 1); add(T(run.group[run.stage]), game.ga, game.gf, 1);
+    const [a, b] = run.group.filter((_, i) => i !== run.stage), A = teamOf(run, a), B = teamOf(run, b), k = run.kind === 'cwc' ? 18 : 22;
+    let ga, gb;
+    for (let i = 0; i < 40; i++) {
+      ga = r.poisson(0.7 * Math.exp((A.str - B.str) / k)); gb = r.poisson(0.7 * Math.exp((B.str - A.str) / k));
+      if (want === null || want === undefined) break;
+      add(T(a), ga, gb, 1); add(T(b), gb, ga, 1);
+      const ok = (groupSort(run.tbl, r).findIndex(x => x.id === 'me') < 2) === want;
+      add(T(a), ga, gb, -1); add(T(b), gb, ga, -1);
+      if (ok) break;
+    }
+    add(T(a), ga, gb, 1); add(T(b), gb, ga, 1);
+    game.other = { a, b, ga, gb };
+  }
+  // Ordem da tabela: pontos, saldo, gols marcados e, empatado em tudo, sorteio (fixado na primeira vez)
+  function groupSort(tbl, r) {
+    tbl.forEach(t => { if (t.tie === undefined) t.tie = r ? r() : 0; });
+    return tbl.slice().sort((x, y) => y.pts - x.pts || (y.gf - y.ga) - (x.gf - x.ga) || y.gf - x.gf || y.tie - x.tie);
+  }
+  S.wcGroupTable = run => (run && run.tbl ? groupSort(run.tbl) : null);
 
   // Resultado do lance decisivo (minigame ou chance)
   S.wcMoment = function (c, ok) {

@@ -197,7 +197,9 @@
   }
 
   function bigMoments(res) {
-    const out = res.titles.map(t => ({ art: trophy(titleType(t), 150, t.name), top: 'Campeão!', name: t.name }));
+    // Tela cheia só para taça grande (liga e continental); copa nacional, supercopa, segunda continental e
+    // Intercontinental ficam no resumo: quando toda taça ganha festa, nenhuma vale muito
+    const out = res.titles.filter(t => t.id === 'league' || t.id === 'cont').map(t => ({ art: trophy(titleType(t), 150, t.name), top: 'Campeão!', name: t.name }));
     if (res.awards.some(a => a.id === 'ballon')) out.push({ art: trophy('ballon', 150), top: 'O melhor do mundo', name: 'Bola de Ouro' });
     if (res.move && res.move.dir === 'up') out.push({ art: '<div class="bm-emoji">' + U.emo('⬆️', 'lg') + '</div>', top: 'Acesso!', name: D.O(club(res.club).name) + ' sobe ' + D.paraA(res.move.toName) });
     return out;
