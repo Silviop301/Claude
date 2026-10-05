@@ -80,8 +80,14 @@ for (let n = 0; n < N; n++) {
     const stay = S.stayOffer(c);
     if (!SMART && n % 4 < 2 && stay.share >= 0.78 && Math.random() < 0.8) { S.join(c, stay); continue; }
     const minShare = SMART ? 0.78 : 0.55;
+    // Janela aberta pela cláusula: o esperto só sai para um clube de nível acima (senão segue o contrato)
+    if (SMART && c.clauseOpen && c.contract > 0) { const up = opts.filter(o => o.share >= minShare && D.CLUB_BY_ID[o.club].tier > D.CLUB_BY_ID[c.club].tier); if (!up.length) { c.clauseOpen = false; continue; } }
     const good = opts.filter(o => o.share >= minShare).sort((a, b) => D.CLUB_BY_ID[b.club].strength - D.CLUB_BY_ID[a.club].strength);
-    S.join(c, good[0] || opts.sort((a, b) => b.share - a.share)[0]);
+    // Termos do contrato (engine/contract.js): DEAL=id força um; o esperto pede minutos quando chega sem vaga
+    // de titular; o casual assina como veio
+    const pickO = good[0] || opts.sort((a, b) => b.share - a.share)[0];
+    const term = process.env.DEAL || (!SMART ? 'padrao' : pickO.share < 0.78 ? 'minutos' : 'padrao');
+    S.join(c, S.withTerm(pickO, term));
   }
   const f = S.finish(c);
   (globalThis.ACH = globalThis.ACH || {}); S.achievementsOf(c, f).forEach(id => { ACH[id] = (ACH[id] || 0) + 1; });

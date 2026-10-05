@@ -77,13 +77,18 @@
     const ended = G.c.contract <= 0;
     const win = S.windowState(G.c), offers = win.offers;
     save();
-    const all = offers.concat([S.stayOffer(G.c)]);
+    win.term = win.term || 'padrao';
+    // Termos pedidos na mesa (engine/contract.js) valem para a proposta que você assinar
+    const all = offers.concat([S.stayOffer(G.c)]).map(o => S.withTerm(o, win.term));
     const noOffers = !offers.length;
+    const tm = S.TERM_BY_ID[win.term];
     render(
       '<div class="eyebrow">Janela de transferências · ' + year() + '</div>' +
-      '<h2>' + (ended ? 'Seu contrato com ' + D.o(esc(club(G.c.club).name)) + ' acabou' : 'Seu empresário abriu o mercado') + '</h2>' +
+      '<h2>' + (ended ? 'Seu contrato com ' + D.o(esc(club(G.c.club).name)) + ' acabou' : G.c.clauseOpen ? 'Sua cláusula de saída abriu o mercado' : 'Seu empresário abriu o mercado') + '</h2>' +
       '<p class="lead">' + (noOffers ? 'Nenhum clube novo apareceu. ' : '') + 'Nota geral ' + S.ovr(G.c) + ' · ' + U.emo('⭐', 'xs') + ' ' + S.fameLabel(G.c.fame) + '. A última opção é renovar com o clube atual.</p>' +
       U.originNote(G.c) + '<p class="muted small">' + U.emo('⭐', 'xs') + ' Fama traz propostas de clubes maiores, salários mais altos' + (G.c.fame >= 150 ? ', vaga mais fácil na seleção' : '') + ' e mais votos na Bola de Ouro.</p>' +
+      '<div class="cr-lbl">O que pedir na mesa</div><div class="cr-chips terms">' + S.TERMS.map(t => '<button data-term="' + t.id + '"' + (t.id === win.term ? ' class="on"' : '') + '>' + U.emo(t.icon, 'xs') + ' ' + esc(t.name) + '</button>').join('') + '</div>' +
+      '<p class="cr-desc term-desc">' + esc(tm.desc) + '</p>' +
       '<div class="choices">' + all.map(offerCard).join('') + '</div>' + tools(win, false) +
       (S.canRetire(G.c) ? '<button class="btn ghost" id="b-retire">Pendurar as chuteiras</button>' : '')
     );
@@ -95,6 +100,7 @@
       if (moving) { save(); bar(); }
       U.preseason();
     });
+    screen.querySelectorAll('[data-term]').forEach(b => b.onclick = () => { win.term = b.dataset.term; save(); sfx('tap'); const y = scrollY; windowOffers(); scrollTo(0, y); });
     if ($('b-retire')) $('b-retire').onclick = U.finale;
     bindTools(false, windowOffers);
     // Proposta nova do pedido ao empresário: destaca e mostra
