@@ -2295,12 +2295,18 @@ button.sk-d { font: inherit; color: inherit; cursor: pointer; }
 /* Computador com tela larga: temporada e pré-temporada em 2 colunas (o celular fica igual) */
 @media (min-width: 1000px) {
   .desk #app:has(#screen > .s-hero), .desk #app:has(#screen > .inv-bar) { max-width: 1040px; }
+  /* Criar jogador: carta e botões de visual à esquerda, parados; posição, pé, país e "Começar" à direita */
+  .desk #screen:has(> .cc-side) { display: grid; grid-template-columns: 380px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 32px; align-items: start; }
+  .desk #screen:has(> .cc-side) > * { grid-column: 2; }
+  .desk #screen:has(> .cc-side) > .cc-side { grid-column: 1; grid-row: 1 / -1; display: flex; flex-direction: column; gap: 12px; position: sticky; top: 16px; padding-top: 64px; align-items: center; }
+  .desk #screen:has(> .cc-side) > .back-link { justify-self: start; }
   /* Temporada: carta, números e mini tabela à esquerda; o resumo (jornal, comentário, detalhes, botões) à direita */
   .desk #screen:has(> .s-hero) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: repeat(6, auto) 1fr; column-gap: 24px; align-items: start; }
   .desk #screen:has(> .s-hero) > * { grid-column: 1; }
   .desk #screen:has(> .s-hero) > #after { grid-column: 2; grid-row: 1 / -1; }
   /* Pré-temporada: a carta fica parada à esquerda; as escolhas à direita */
-  .desk #screen:has(> .inv-bar) { display: grid; grid-template-columns: 400px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 28px; align-items: start; }
-  .desk #screen:has(> .inv-bar) > * { grid-column: 2; }
+  .desk #screen:has(> .inv-bar):not(:has(> .cc-side)) { display: grid; grid-template-columns: 400px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 28px; align-items: start; }
+  .desk #screen:has(> .inv-bar):not(:has(> .cc-side)) > * { grid-column: 2; }
   .desk #screen:has(> .inv-bar) > .mcard { grid-column: 1; grid-row: 1 / -1; }
 }
+.cc-side { display: contents; }
