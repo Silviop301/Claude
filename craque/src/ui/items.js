@@ -20,7 +20,7 @@
   const DUP = E.dup, COST = E.cost;
 
   // Catálogo do visual. look: o que o item muda no boneco (prévia e "vestir")
-  // cat: numeros (estilo do número) | assinatura | acabamento — o visual do jogador (cabelo, barba, chuteira) é todo livre
+  // cat: numeros (estilo do número) | assinatura | acabamento | cores (chuteira com estampa) — o resto do visual é livre
   const CAT = [
     ['num-ouro', 'Número dourado', 'lendario', 'numeros', { numFx: 'ouro' }, 'Vale para qualquer número.'],
     ['num-holo', 'Número holográfico', 'lendario', 'numeros', { numFx: 'holo' }, 'Vale para qualquer número.'],
@@ -48,6 +48,18 @@
     ['ac-holografico', 'Acabamento Holográfico', 'lendario', 'acabamento', { finish: 'holografico' }, 'Brilho arco-íris de figurinha rara.'],
     ['ac-ourorose', 'Acabamento Ouro rosé', 'lendario', 'acabamento', { finish: 'ourorose' }, 'Ouro rosé escovado.'],
     ['ac-diamante', 'Acabamento Diamante', 'lendario', 'acabamento', { finish: 'diamante' }, 'Facetas de diamante, branco e azul-gelo.'],
+    // Chuteiras com estampa (as lisas e as metálicas são livres); o id é o valor da chuteira (PATTERN abaixo)
+    ['bicolor', 'Chuteira bicolor', 'raro', 'cores', { boot: 'bicolor' }, 'Duas cores na chuteira.'],
+    ['listrada', 'Chuteira listrada', 'raro', 'cores', { boot: 'listrada' }, 'Listras azuis e brancas.'],
+    ['pontilhada', 'Chuteira pontilhada', 'raro', 'cores', { boot: 'pontilhada' }, 'Bolinhas brancas no preto.'],
+    ['camuflada', 'Chuteira camuflada', 'raro', 'cores', { boot: 'camuflada' }, 'Camuflagem verde-oliva.'],
+    ['onca', 'Chuteira onça', 'epico', 'cores', { boot: 'onca' }, 'Pintada de onça.'],
+    ['raio', 'Chuteira de raio', 'epico', 'cores', { boot: 'raio' }, 'Raios amarelos no preto.'],
+    ['brasil', 'Chuteira Brasil', 'epico', 'cores', { boot: 'brasil' }, 'Verde, amarelo e azul.'],
+    ['camoneon', 'Chuteira camuflada neon', 'epico', 'cores', { boot: 'camoneon' }, 'Camuflagem verde-limão no preto.'],
+    ['chamas', 'Chuteira em chamas', 'epico', 'cores', { boot: 'chamas' }, 'Labaredas laranja no preto.'],
+    ['galaxia', 'Chuteira galáxia', 'lendario', 'cores', { boot: 'galaxia' }, 'Céu estrelado azul e roxo.'],
+    ['cristal', 'Chuteira cristal', 'lendario', 'cores', { boot: 'cristal' }, 'Cristal azul-gelo com brilho.'],
   ].map(([id, name, rk, cat, look, desc, gk]) => ({ id, name, rk, cat, look, desc, gk: !!gk }));
   const BY_ID = {};
   CAT.forEach(it => { BY_ID[it.id] = it; });
@@ -83,7 +95,7 @@
   // { own: {id: 1}, fichas, packs: [{ why: [...] }], pity, news: {id: 1}, pen: 'AAAA-MM-DD', at }
   let inv = null;
   const rnd = () => Math.random();
-  const VER = 3;
+  const VER = 4; // 4: chuteiras com estampa viraram itens (quem já usou numa carreira fica com elas)
   function get() {
     if (inv) return inv;
     inv = load(KEY);
@@ -102,6 +114,7 @@
     const used = [];
     const sv = load(U.SAVE);
     if (sv && sv.c) used.push({ look: sv.c.look, number: sv.c.number });
+    const last = load('climbix-ultimo-visual'); if (last && typeof last === 'object') used.push({ look: last });
     (load('climbix-colecao-v1') || []).forEach(e => e && e.card && used.push({ look: e.card.look, number: e.card.number }));
     used.forEach(u => {
       Object.entries(u.look || {}).forEach(([k, v]) => [].concat(v).forEach(x => { const id = need(k, x); if (id) o.own[id] = 1; }));

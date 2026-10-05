@@ -274,7 +274,8 @@
     const isPv = (k, v) => prev && prev.k === k && String(prev.v) === String(v);
     const draw = () => {
       // O visual é todo livre (o filtro só esconde o que ainda pedisse item)
-      const free = (key, list) => list.filter(v => !lockOf(key, Array.isArray(v) ? v[0] : v));
+      // Os travados aparecem com cadeado (tocar mostra a prévia e de onde saem); só os livres entram no sorteio
+      const free = (key, list) => list;
       const sw = (key, all, bgOf, allNames) => { const list = free(key, all), names = allNames && list.map(v => allNames[all.indexOf(v)]); return list.length < 2 ? '' : '<div class="cr-sw">' + list.map((v, i) => {
         const it = lockOf(key, v), on = !it && String(lk[key]) === String(v);
         return '<button data-k="' + key + '" data-v="' + v + '" class="' + (on ? 'on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + (isPv(key, v) ? ' pv' : '') + '" aria-label="' + esc(names ? names[i] : GEAR_NAME[v]) + (it ? ', travado' : '') + '">' +
