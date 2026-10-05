@@ -32,7 +32,7 @@
     const mood = ballon ? 'ballon' : res.titles.length ? 'title' : !res.games || res.games < 10 ? 'bench' : res.injury >= 25 ? 'injury'
       : res.move && res.move.dir === 'down' ? 'down' : res.rating >= 7.6 ? 'great' : res.rating >= 7.0 ? 'good' : 'bad';
     const atk = res.pos === 'ATA' || res.pos === 'PON';
-    const topic = res.games < 10 ? null : res.goals >= (atk ? 20 : 12) ? 'gols' : res.assists >= 12 ? 'assist'
+    const topic = res.games < 10 ? null : res.goals >= (atk ? 16 : 10) ? 'gols' : res.assists >= 10 ? 'assist'
       : res.age <= 20 && res.rating >= 7.2 ? 'joia' : res.age >= 33 && res.rating >= 7.0 ? 'veterano' : null;
     const fill = t => t.replace(/\{n\}/g, G.c.name).replace(/\{time\}/g, cl.name).replace(/\{clube\}/g, D.o(cl.name))
       .replace(/\{g\}/g, res.goals).replace(/\{a\}/g, res.assists).replace(/\{idade\}/g, res.age);

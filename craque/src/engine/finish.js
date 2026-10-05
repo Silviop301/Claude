@@ -6,7 +6,7 @@
   // Pesos da pontuação final e faixas das notas (a tela de fim de carreira mostra a conta)
   S.SCORE_W = { title: 12, cont: 35, cont2: 12, cwc: 60, wc: 150, wcGoal: 3, ballon: 100, award: 16, peak: 2 };
   // Faixas calibradas no simulador (robô que joga bem): S 10% · A 25% · B 30% · C 20% · D 15% das carreiras
-  S.GRADES = [['S', 1690], ['A', 1245], ['B', 935], ['C', 730], ['D', 0]];
+  S.GRADES = [['S', 1685], ['A', 1220], ['B', 895], ['C', 690], ['D', 0]];
   // Peso da produção por posição (medido no simulador para as quatro chegarem às notas altas com a mesma dificuldade)
   S.PROD_W = { ATA: 1.04, MEI: 0.97, ZAG: 1.06, GOL: 1.17 };
   S.gradeOf = score => S.GRADES.find(([, min]) => score >= min)[0];
@@ -25,8 +25,9 @@
     // Produção: atacantes e meias pelos gols/assistências; zagueiros e goleiros pela defesa
     const isDef = D.DEF_POS.includes(c.pos);
     // Pesos por posição para as quatro chegarem às notas altas com a mesma dificuldade
-    const prod = isDef ? (T.cs || 0) * 0.9 + T.goals * 1.5 + T.assists * 0.7 + (T.saves || 0) * 0.15 + (T.penSaved || 0) * 2.5 + (T.tackles || 0) * 0.3
-      : c.pos === 'MEI' ? T.goals * 1.1 + T.assists * 1.0 : T.goals * 0.62 + T.assists * 0.5;
+    const G = S.GOAL_SCALE; // gols e assistências contam como antes da escala (engine/core.js)
+    const prod = isDef ? (T.cs || 0) * 0.9 + (T.goals * 1.5 + T.assists * 0.7) / G + (T.saves || 0) * 0.15 + (T.penSaved || 0) * 2.5 + (T.tackles || 0) * 0.3
+      : c.pos === 'MEI' ? (T.goals * 1.1 + T.assists * 1.0) / G : (T.goals * 0.62 + T.assists * 0.5) / G;
     // Ajuste fino por posição (medido no simulador): sem ele, atacantes e goleiros ficavam com mais notas D
     const prodW = S.PROD_W[c.pos] || 1;
     // Cada parcela da pontuação, para a tela explicar de onde veio a nota
@@ -71,10 +72,10 @@
     if (T.ballon >= 3) verdict = 'Um dos maiores da história';
     else if (T.wc >= 1) verdict = T.wc > 1 ? 'Multicampeão do mundo' : 'Campeão do mundo';
     else if (T.ballon >= 1) verdict = 'Melhor do mundo';
-    else if (T.goals >= 450) verdict = 'Artilheiro histórico';
+    else if (T.goals >= 360) verdict = 'Artilheiro histórico';
     else if (c.pos === 'GOL' && (T.cs || 0) >= 230) verdict = 'Paredão';
     else if (c.pos === 'ZAG' && (T.cs || 0) >= 210) verdict = 'Xerife da defesa';
-    else if (c.pos === 'ZAG' && T.goals >= 50) verdict = 'Zagueiro artilheiro';
+    else if (c.pos === 'ZAG' && T.goals >= 40) verdict = 'Zagueiro artilheiro';
     else if (idol && idol[1].seasons >= 8 && (c.fansBy[idol[0]] || 0) >= 75) verdict = 'Ídolo eterno ' + D.do(D.CLUB_BY_ID[idol[0]].name);
     else if (titles >= 14) verdict = 'Colecionador de taças';
     else if (c.peak < 66) verdict = 'Promessa que não vingou';

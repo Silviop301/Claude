@@ -1624,7 +1624,7 @@
     },
     {
       id: 'artilharia', icon: '🏹', tone: 'blue', weight: 4, max: 2,
-      when: c => c.pos === 'ATA' && !!last(c) && last(c).club === c.club && last(c).goals >= 18,
+      when: c => c.pos === 'ATA' && !!last(c) && last(c).club === c.club && last(c).goals >= 15,
       build: () => ({
         title: 'Um gol da artilharia', text: 'Falta um gol para a artilharia e a final da copa é em três dias. O técnico quer te poupar.',
         options: [opt('Pedir para jogar', '55%: artilheiro (Fama +12) · 45%: chega cansado na final (forma −5%)'), opt('Aceitar o descanso', 'Técnico +8 · forma +3%')],

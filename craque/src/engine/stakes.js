@@ -145,14 +145,22 @@
     return out;
   };
 
-  // Força dos ganhos e perdas nos 2 atributos principais (o grande salto ou a grande perda): calibrado no simulador.
-  // Os treinos de um atributo só (attr) ficam como estão.
-  S.STAKE_K = 1;      // ganhos
-  S.STAKE_LOSS = 1;   // perdas
+  // Força das apostas: multiplica tudo o que uma opção mexe (atributos, teto, forma, minutos, lesão, técnico, torcida).
+  // Com 1, decidir bem rendia só ~3% mais pontos que decidir ao acaso; com 2, ~9% (tools/craque_decisoes.js).
+  S.STAKE_K = 2;      // ganhos
+  S.STAKE_LOSS = 2;   // perdas
   const scaleFx = fx => {
     if (!fx || (S.STAKE_K === 1 && S.STAKE_LOSS === 1)) return fx;
     const f = Object.assign({}, fx), sc = n => Math.sign(n) * Math.max(1, Math.round(Math.abs(n) * (n > 0 ? S.STAKE_K : S.STAKE_LOSS)));
+    const k = good => (good ? S.STAKE_K : S.STAKE_LOSS), r2 = n => Math.round(n * 100) / 100;
     if (f.main) f.main = sc(f.main);
+    if (f.attr) { f.attr = Object.assign({}, f.attr); for (const a in f.attr) f.attr[a] = sc(f.attr[a]); }
+    if (f.pot) f.pot = sc(f.pot);
+    if (f.form) f.form = r2(f.form * k(f.form > 0));
+    if (f.min) f.min = r2(f.min * k(f.min > 0));
+    if (f.inj) f.inj = Math.min(0.6, r2(f.inj * S.STAKE_LOSS));
+    if (f.coach) f.coach = sc(f.coach);
+    if (f.fans) f.fans = sc(f.fans);
     return f;
   };
   const scaleOut = o => (o ? Object.assign({}, o, { fx: scaleFx(o.fx) }) : o);

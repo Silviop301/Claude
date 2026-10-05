@@ -10,8 +10,10 @@
   // Declínio pela idade: começa aos 31 e acelera depois dos 34 (a carreira tem fim, ver S.mustRetire)
   const AGE_DECLINE = age => (age <= 30 ? 0 : age <= 32 ? 3 : age <= 34 ? 5.5 : age <= 36 ? 8 : 10);
 
+  // Quanto da relação com técnico e torcida (acima ou abaixo de 50) passa para a temporada seguinte: com 0,8 uma briga
+  // ou um gesto num evento ainda pesa dois, três anos depois
+  S.REL_KEEP = 0.8;
   // Nota mínima para a Seleção da liga, por posição (a nota média de cada posição no auge é diferente)
-  S.REL_KEEP = 0.6;
   S.TEAM_R = { ATA: 8.5, MEI: 8.15, ZAG: 7.8, GOL: 7.95 };
 
   S.playSeason = function (c) {
@@ -68,8 +70,8 @@
     const tm = id => S.tm(c, id);
     const gMul = 1 + 0.06 * tm('artilheiro') - 0.08 * tm('garcom') + 0.04 * tm('tecnica') + 0.05 * tm('cabeceio') + 0.2 * tm('aereo');
     const aMul = 1 - 0.08 * tm('artilheiro') + 0.08 * tm('garcom') + 0.04 * tm('tecnica') + 0.3 * tm('saida');
-    g90 *= 1.14 * teamF * form * (1 + c.mod.goal) * gMul;
-    a90 *= 1.22 * teamF * form * (1 + c.mod.assist) * aMul;
+    g90 *= 1.14 * S.GOAL_SCALE * teamF * form * (1 + c.mod.goal) * gMul;
+    a90 *= 1.22 * S.GOAL_SCALE * teamF * form * (1 + c.mod.assist) * aMul;
 
     let goals = 0, assists = 0;
     const highlights = [];
@@ -114,8 +116,8 @@
 
     // Nota média
     const perGame = games ? (isDef
-      ? (cleanSheets / games) * 0.85 + (goals * 1.2 + assists * 0.5) / games + (saves / games) * 0.35 + penSaved * 0.03 + (tackles / games) * 0.2
-      : (goals + assists * 0.7) / games) : 0;
+      ? (cleanSheets / games) * 0.85 + (goals * 1.2 + assists * 0.5) / S.GOAL_SCALE / games + (saves / games) * 0.35 + penSaved * 0.03 + (tackles / games) * 0.2
+      : (goals + assists * 0.7) / S.GOAL_SCALE / games) : 0;
     const rating = games ? clamp(round1(6.1 + S.RATING_ADJ[c.pos] + perGame * 2.4 * (isDef ? 0.75 : 1) + Math.min(o - club.strength, S.RATING_GAP) * 0.03 + 0.06 * tm('drible') + 0.08 * tm('libero') + 0.07 * tm('raca') + 0.06 * tm('estrela') + r.gauss() * 0.25), 5.0, 9.6) : 0;
 
     // Títulos: força do time + sua contribuição
@@ -129,11 +131,11 @@
     const top = Math.max(...leagueClubs.map(x => x.strength));
     // Defesa e físico pesam nos jogos grandes
     const titleBonus = (c.captain ? 0.08 : 0) + clamp((E.def + E.fis - 75) / 220, 0, 0.22);
-    const pLeague = clamp(0.02 + (sEff - top + 4) / 16 + titleBonus * 0.6, 0.01, 0.55);
+    const pLeague = clamp(0.02 + (sEff - top + 3) / 18 + titleBonus * 0.5, 0.01, 0.35);
     // Copa nacional junta todas as divisões do país: a chance compara com os mais fortes do país, não da liga
     // (time de divisão de baixo só leva como zebra rara)
     const countryTop = S.cupTop(club);
-    const pCup = clamp(0.02 + (sEff - countryTop + 4) / 20 + titleBonus * 0.3, 0.003, 0.4);
+    const pCup = clamp(0.02 + (sEff - countryTop + 3) / 26 + titleBonus * 0.2, 0.003, 0.2);
     let league = r() < pLeague;
     let cup = r() < pCup;
     // Jogo decisivo (minigame) manda no resultado
@@ -151,7 +153,7 @@
     const libert = S.LIBERTA.includes(club.league);
     const libF = { 'bra-a': 1, arg: 0.8 }[club.league] || 0.35;
     const pCont = club.tier < 3 ? 0 : libert ? clamp(0.08 * libF * Math.exp((sEff - 72) / 2.5) + titleBonus * 0.1, 0.003, 0.35)
-      : clamp((sEff - 80) / 40 + titleBonus * 0.3, 0.01, 0.25) * (club.tier === 5 ? 1 : club.tier === 4 ? 0.4 : 0.25);
+      : clamp((sEff - 80) / 40 + titleBonus * 0.3, 0.01, 0.2) * (club.tier === 5 ? 1 : club.tier === 4 ? 0.4 : 0.25);
     let cont = club.tier >= 3 && r() < pCont;
     const contName = S.contName(club);
     if (M && M.type === 'cont' && contName) cont = M.ok; // final continental decidida no minigame
@@ -167,18 +169,18 @@
         .sort((a, b) => b.strength - a.strength).slice(0, 6);
       if (pool.length) {
         const vs = r.pick(pool);
-        inter = { vs: vs.id, won: r() < clamp(0.5 + (sEff - vs.strength) / 24, 0.08, 0.85) };
+        inter = { vs: vs.id, won: r() < clamp(0.42 + (sEff - vs.strength) / 24, 0.06, 0.7) };
         if (inter.won) titles.push({ id: 'inter', name: 'Copa Intercontinental' });
       }
     }
     // Segunda taça continental (Sul-Americana, Liga Europa, Liga Conferência, Champions da Ásia/Concacaf)
     const cont2Name = S.cont2Name(club);
-    const pCont2 = cont2Name ? clamp((sEff - (club.tier >= 4 ? 74 : club.tier === 3 ? 63 : 56)) / 40 + titleBonus * 0.3, 0.02, 0.22) * (cont ? 0 : 1) : 0;
+    const pCont2 = cont2Name ? clamp((sEff - (club.tier >= 4 ? 74 : club.tier === 3 ? 63 : 56)) / 40 + titleBonus * 0.2, 0.02, 0.12) * (cont ? 0 : 1) : 0;
     const cont2 = !!cont2Name && r() < pCont2;
     if (cont2) titles.push({ id: 'cont2', name: cont2Name });
-    // Supercopa nacional: quem ganhou a liga ou a copa no ano anterior, no mesmo clube
+    // Supercopa nacional: quem ganhou a liga no ano anterior, no mesmo clube
     const prevS = c.seasons[c.seasons.length - 1], superName = S.superName(club);
-    const superT = !!superName && !!prevS && prevS.club === club.id && prevS.titles.some(t => t.id === 'league' || t.id === 'cup') && r() < clamp(0.5 + (sEff - 72) / 50, 0.3, 0.75);
+    const superT = !!superName && !!prevS && prevS.club === club.id && prevS.titles.some(t => t.id === 'league') && r() < clamp(0.35 + (sEff - 72) / 60, 0.2, 0.55);
     if (superT) titles.push({ id: 'super', name: superName });
     // Tabela de 20 times: os rivais da liga mais times "de fora da lista" na faixa de baixo.
     // Cada um soma pontos em ida e volta (rodadas pelo tamanho da liga) pela força; a posição sai da comparação com todos.
@@ -298,21 +300,21 @@
     // Prêmios
     const awards = [];
     // Prêmios raros de propósito: no auge, cada posição leva o prêmio dela em ~1 de 3 temporadas e entra na Seleção em ~2 de 5
-    const scorerLine = 26 + club.tier * 2 + r.range(-3, 3);
+    const scorerLine = Math.round((26 + club.tier * 2 + r.range(-3, 3)) * S.GOAL_SCALE);
     if (goals >= scorerLine && c.pos === 'ATA') awards.push({ id: 'scorer', name: 'Artilheiro ' + D.da(lg.name) });
-    if (c.pos === 'MEI' && assists >= 21 + club.tier + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Líder de assistências ' + D.da(lg.name) });
+    if (c.pos === 'MEI' && assists >= Math.round((21 + club.tier + r.range(-2, 2)) * S.GOAL_SCALE)) awards.push({ id: 'scorer', name: 'Líder de assistências ' + D.da(lg.name) });
     if (c.pos === 'ZAG' && games >= 25 && rating >= 7.85 + r.range(-0.15, 0.15)) awards.push({ id: 'scorer', name: 'Melhor zagueiro ' + D.da(lg.name) });
     if (c.pos === 'GOL' && games >= 25 && cleanSheets >= 25 + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Luva de Ouro ' + D.da(lg.name) });
     if (c.age <= 21 && rating >= 7.2 && club.tier >= 3) awards.push({ id: 'young', name: 'Melhor jovem ' + D.da(lg.name) });
     if (rating >= S.TEAM_R[c.pos] && games >= 20) awards.push({ id: 'team', name: 'Seleção ' + D.da(lg.name) });
     // Bola de Ouro: só em clubes de nível 4-5
     // Defensores entram pela muralha (jogos sem sofrer gol, defesas, pênaltis defendidos)
-    const prod = isDef ? goals * 2 + assists * 0.6 + cleanSheets * 0.9 + saves * 0.2 + penSaved * 2 + tackles * 0.1 : goals + assists * 0.6;
+    const prod = isDef ? (goals * 2 + assists * 0.6) / S.GOAL_SCALE + cleanSheets * 0.9 + saves * 0.2 + penSaved * 2 + tackles * 0.1 : (goals + assists * 0.6) / S.GOAL_SCALE;
     const bScore = prod + titles.filter(t => t.id !== 'inter').length * 8 + (cont ? 10 : 0) + (rating - 6) * 12 + (c.wcBoost || 0) + Math.min(12, c.fame / 22); // fama pesa no voto
     c.wcBoost = 0;
     // Cada Bola de Ouro anterior aumenta a exigência (a concorrência cresce)
     // Defensor raramente ganha a Bola de Ouro (como na vida real)
-    const pBallon = club.tier >= 4 && o >= 86 ? clamp(1 / (1 + Math.exp(-(bScore - 102 - 9 * c.totals.ballon) / 7)) * (club.tier === 5 ? 0.6 : 0.2) * (isDef ? 0.45 : 1), 0, 0.6) : 0;
+    const pBallon = club.tier >= 4 && o >= 86 ? clamp(1 / (1 + Math.exp(-(bScore - 100 - 9 * c.totals.ballon) / 7)) * (club.tier === 5 ? 0.6 : 0.2) * (isDef ? 0.45 : 1), 0, 0.6) : 0;
     const ballon = r() < pBallon;
     if (ballon) awards.push({ id: 'ballon', name: 'BOLA DE OURO' });
 
@@ -375,8 +377,8 @@
     const once = drop;
     if (games >= 25) {
       // Uma por posição, mais as de idade
-      once('chuteira', c.pos === 'ATA' && goals >= 36, goals + ' GOLS · ' + lg.name.toUpperCase() + ' ' + yr);
-      once('garcom', c.pos === 'MEI' && assists >= 24, assists + ' ASSISTÊNCIAS · ' + yr);
+      once('chuteira', c.pos === 'ATA' && goals >= 29, goals + ' GOLS · ' + lg.name.toUpperCase() + ' ' + yr);
+      once('garcom', c.pos === 'MEI' && assists >= 19, assists + ' ASSISTÊNCIAS · ' + yr);
       once('xerife', c.pos === 'ZAG' && tackles >= 20, tackles + ' DESARMES DECISIVOS · ' + yr);
       once('muralha', c.pos === 'GOL' && cleanSheets >= 25, cleanSheets + ' JOGOS SEM SOFRER GOL · ' + yr);
       once('joia', c.age <= 18 && rating >= 7.8, 'AOS ' + c.age + ' ANOS · NOTA ' + rating.toFixed(1).replace('.', ',') + ' · ' + yr);
@@ -506,10 +508,10 @@
       'Taça na mão: ' + nick + ' é campeão ' + D.no(club), 'É campeão! ' + D.O(club) + ' fatura o título com ' + nick, 'Volta olímpica: ' + nick + ' comemora o título: ' + s.titles[0].name,
       'Grito de campeão ' + D.no(club) + ', e ' + nick + ' no meio da festa', s.titles[0].name + ': taça ' + D.do(club) + ' com a assinatura de ' + nick]));
     const statH = h.length;
-    if (s.goals >= 30) h.push(v('goals', [s.goals + ' gols: ' + nick + ' vira pesadelo das defesas', 'Máquina de gols: ' + nick + ' chega a ' + s.goals + ' na temporada', nick + ' de novo: ' + s.goals + ' gols e as redes pedindo socorro',
+    if (s.goals >= 24) h.push(v('goals', [s.goals + ' gols: ' + nick + ' vira pesadelo das defesas', 'Máquina de gols: ' + nick + ' chega a ' + s.goals + ' na temporada', nick + ' de novo: ' + s.goals + ' gols e as redes pedindo socorro',
       'Artilheiro implacável: ' + s.goals + ' gols de ' + nick, 'Faro de gol: ' + nick + ' fecha o ano com ' + s.goals, 'Goleiros da liga contam os dias: ' + nick + ' marcou ' + s.goals,
       s.goals + ' vezes ' + nick + ': o ano mais goleador ' + D.do(club), 'Ninguém segura ' + nick + ': ' + s.goals + ' gols na temporada']));
-    else if (s.assists >= 15) h.push(v('assists', ['O garçom da liga: ' + s.assists + ' assistências de ' + nick, nick + ' serve ' + s.assists + ' gols na temporada', 'Passe na medida: ' + s.assists + ' assistências de ' + nick,
+    else if (s.assists >= 12) h.push(v('assists', ['O garçom da liga: ' + s.assists + ' assistências de ' + nick, nick + ' serve ' + s.assists + ' gols na temporada', 'Passe na medida: ' + s.assists + ' assistências de ' + nick,
       'Visão de jogo: ' + nick + ' distribui ' + s.assists + ' assistências', 'Os atacantes agradecem: ' + s.assists + ' passes para gol de ' + nick, 'Cérebro ' + D.do(club) + ': ' + nick + ' dá ' + s.assists + ' assistências',
       'Bandeja de prata: ' + nick + ' fecha o ano com ' + s.assists + ' assistências']));
     else if (s.penSaved >= 2) h.push(v('pens', ['Pegador! ' + nick + ' defende ' + s.penSaved + ' pênaltis na temporada', 'Muralha na marca da cal: ' + nick + ' pega ' + s.penSaved + ' pênaltis', 'Batedor treme diante de ' + nick + ': ' + s.penSaved + ' pênaltis defendidos',
@@ -524,7 +526,7 @@
     const def = s.pos === 'ZAG' || s.pos === 'GOL', tb = s.table;
     const award = s.awards.find(a => a.id === 'scorer') || s.awards.find(a => a.id === 'team');
     // Mesma régua da avaliação da temporada: nota 7,3+ é "grande temporada"; os números sozinhos só com nota boa (6,8+)
-    const star = s.games >= 15 && (s.rating >= 7.3 || (s.rating >= 6.8 && (!!award || (s.pos === 'ATA' && s.goals >= 15) || (s.pos === 'MEI' && s.assists >= 10) || (def && s.cleanSheets >= 14))));
+    const star = s.games >= 15 && (s.rating >= 7.3 || (s.rating >= 6.8 && (!!award || (s.pos === 'ATA' && s.goals >= 12) || (s.pos === 'MEI' && s.assists >= 8) || (def && s.cleanSheets >= 14))));
     if (star && h.length === statH && !s.awards.some(a => a.id === 'ballon')) {
       const stat = (s.pos === 'ATA' ? D.plural(s.goals, 'gol', 'gols') : s.pos === 'MEI' ? D.plural(s.assists, 'assistência', 'assistências') : s.pos === 'ZAG' && s.goals >= 4 ? s.goals + ' gols e ' + D.plural(s.cleanSheets, 'jogo sem sofrer gol', 'jogos sem sofrer gol') : D.plural(s.cleanSheets, 'jogo sem sofrer gol', 'jogos sem sofrer gol')) +
         ' e nota ' + s.rating.toFixed(1).replace('.', ',');
