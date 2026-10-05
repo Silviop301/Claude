@@ -161,6 +161,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 /* opções de evento com o que está em jogo */
 .btn.opt { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .btn.opt small { font: 600 13px/1.25 var(--body); letter-spacing: 0; opacity: 0.85; }
+/* chance em destaque: uma linha por resultado (verde dá certo, vermelho dá errado) e o custo/fixo à parte */
+.btn.opt .odds { display: grid; grid-template-columns: auto auto; justify-content: center; align-items: center; gap: 4px 8px; margin-top: 4px; font: var(--t-small); letter-spacing: 0; text-align: left; }
+.btn.opt .od-row { display: contents; }
+.btn.opt .od-row b { min-width: 44px; padding: 2px 6px; border-radius: 999px; background: rgba(19, 32, 26, .14); font: 800 13px/1.2 var(--body); text-align: center; }
+.btn.opt .od-row.win b { background: #1E7A45; color: #fff; }
+.btn.opt .od-row.lose b { background: #B83A2E; color: #fff; }
+.btn.opt .od-always { grid-column: 1 / -1; text-align: center; opacity: .8; font-size: 13px; }
+.btn.ghost.opt .od-row b { background: rgba(255, 255, 255, .14); }
+.btn.ghost.opt .od-row.win b { background: #2E9A5C; }
+.btn.ghost.opt .od-row.lose b { background: #C9463A; }
+.btn.ghost.opt .odds { color: #D3E4D9; }
 
 /* características com espaços e níveis */
 .eyebrow.small { font-size: 12px; color: #B9CDBF; }
