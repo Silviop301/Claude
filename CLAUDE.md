@@ -39,6 +39,7 @@ node tools/craque_decisoes.js                       # quanto vale decidir bem (m
 node tools/craque_audit_eventos.js [ids]            # auditoria das decisões (esperado: 0 alertas)
 node tools/craque_textos.js                         # repetição de textos entre carreiras
 node tools/craque_itens_sim.js                      # carreiras para liberar todos os itens
+node tools/craque_estilos.js                        # estilos dos lances decisivos: nenhum pode dominar (esperado: 0 alertas)
 NODE_PATH=$(npm root -g) node tools/craque_e2e.js 2 390 4   # carreiras pela interface (Playwright)
 python3 tools/craque_erros.py                       # erros reais dos jogadores (climbix.app)
 ```
@@ -67,7 +68,7 @@ dividem ajudantes por `CRAQUE_SIM._`. O motor não usa DOM: roda no navegador e 
 | `stakes.js` | Formato das decisões: opção segura `{safe}` ou arriscada `{p, win, lose}`; `S.stakeRows`, `S.STAKE_K`, `S.fxValue` |
 | `decisions.js` | Eventos frequentes no formato de stakes + eventos de dinheiro |
 | `events3.js` | Ganchos (`c.hooks`): escolhas que voltam temporadas depois |
-| `moments.js` | Regras do minigame (pênalti, falta) |
+| `moments.js` | Regras do minigame (pênalti, falta, goleiro, zagueiro, meia); `S.STYLES` (dois estilos por lance, `kickSetup(c, tipo, estilo)`) |
 | `worldcup.js` | Copa do Mundo e Mundial (tabela do grupo `S.wcGroupTable`) |
 | `season.js` | Simulação da temporada, tabela, títulos, Bola de Ouro, manchetes |
 | `market.js` | Propostas, contratos, transferências |
@@ -140,6 +141,8 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
   (minúsculas, kkkk); sem ofensa pesada. Personalidades reais ficam (jogo entre amigos).
 - Itens e coleções são **só visuais**: nunca mudam nota ou sorte.
 - Ao criar intro de câmera em minigame, a ação cronometrada só começa depois que a câmera abre.
+- **Estilos do lance decisivo:** o primeiro de `S.STYLES[tipo]` é o lance de sempre; o segundo muda a mecânica. Mudou
+  um número? Rode `craque_estilos.js` (chance pela carta igual ±4 pontos e nenhum estilo melhor em todos os níveis).
 - Melhoria de personagem por ajuste de SVG em código já foi recusada: precisa de arte nova.
 
 ## Conferir na tela (Playwright)

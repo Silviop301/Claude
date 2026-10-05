@@ -226,7 +226,7 @@
     // Fechou o jogo no meio da cobrança: a chance decide
     if (run.momentStarted) { S.wcMomentAuto(G.c); save(); return wcPlay(); }
     const type = S.kickSetupType({ kick: m.type }), def = type === 'save' || type === 'tackle';
-    const k = S.kickSetup(G.c, type), d = g.gf - g.ga, ko = run.stage >= 3;
+    const k = S.kickSetup(G.c, type, S.autoStyle(G.c, type)), d = g.gf - g.ga, ko = run.stage >= 3;
     // No fim do jogo o lance decide; antes disso ele muda o placar e o resto do jogo ainda acontece
     const late = m.minute >= 78, left = 90 - m.minute;
     const gain = d === 0 ? (late ? (ko ? 'classifica' : 'vitória') : 'sai na frente') : d === -1 ? (late ? (ko ? 'leva para os pênaltis' : 'empata') : 'empata') : d >= 1 ? 'amplia' : 'diminui';
@@ -244,14 +244,14 @@
       '<h2>' + ({ pen: 'Pênalti para ' + who + '!', fk: 'Falta perigosa na entrada da área!', save: 'Pênalti contra ' + who + '!', tackle: 'Contra-ataque perigoso!', pass: 'A bola é sua: enfie para o atacante!' }[m.type]) + '</h2>' +
       '<p class="stakes">' + (def ? (type === 'save' ? 'Defendeu: segura o placar · Sofreu: ' : 'Desarmou: segura o placar · Passou: ') + lose : 'Converteu: ' + gain) + '</p></div>' +
       '<div class="chips">' + U.miniFacts(type).join('') + '</div>' +
-      '<button class="btn" id="b-kick">' + U.MINI_BTN[type] + '</button><button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>';
+      U.styleBtns(type) + '<button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>';
     $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     sfx('whistle');
-    $('b-kick').onclick = U.gateTrain(type, () => {
+    U.bindStyle(m, U.gateTrain(type, () => {
       run.momentStarted = true; save();
       render('<div class="eyebrow">' + tName(run) + ' ' + run.year + ' · ' + esc(g.stage) + ' · ' + m.minute + "'</div><div id=\"kick\"></div>");
-      U.playMini($('kick'), type, (ok, why) => { if (!$('kick')) return; S.wcMoment(G.c, ok, why); save(); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }); // saiu da tela: ao retomar, a chance decide
-    });
+      U.playMini($('kick'), type, (ok, why) => { if (!$('kick')) return; S.wcMoment(G.c, ok, why); save(); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }, m.style); // saiu da tela: ao retomar, a chance decide
+    }));
     $('b-auto').onclick = () => { S.wcMomentAuto(G.c); save(); wcPlay(); };
   }
 

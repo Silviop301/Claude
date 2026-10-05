@@ -116,8 +116,67 @@
     return c.moment;
   };
 
-  // Parâmetros do minigame, todos vindos da carta
-  S.kickSetup = function (c, type) {
+  // Estilo do lance: antes de jogar, o jogador escolhe entre dois jeitos de fazer o mesmo lance.
+  // O primeiro de cada lista é o lance de sempre; o segundo muda a mecânica (mais fácil num ponto, mais arriscado em outro).
+  // A chance "pela carta" de cada estilo pende para atributos diferentes, por isso nenhum é sempre o melhor.
+  S.STYLES = {
+    cup: [
+      { id: 'colocado', name: 'Colocado', ico: '🎯', hint: 'Mira mais lenta, mas o goleiro alcança se adivinhar o canto.' },
+      { id: 'forte', name: 'Forte', ico: '💥', hint: 'A mira corre e a bola sobe: pode ir por cima, mas o goleiro quase não pega.' },
+    ],
+    classico: [
+      { id: 'colocado', name: 'Colocada', ico: '🎯', hint: 'Mira mais lenta, mas o goleiro alcança se adivinhar o canto.' },
+      { id: 'forte', name: 'Forte', ico: '💥', hint: 'A mira corre e a bola sobe: pode ir por cima, mas o goleiro quase não pega.' },
+    ],
+    save: [
+      { id: 'esperar', name: 'Esperar', ico: '🧤', hint: 'Lê o batedor até o fim; o pulo tem o alcance normal.' },
+      { id: 'adiantar', name: 'Adiantar', ico: '🏃', hint: 'Sai da linha: pulo mais longo e o batedor erra mais, mas a seta aparece bem mais tarde.' },
+    ],
+    tackle: [
+      { id: 'carrinho', name: 'Carrinho', ico: '🦵', hint: 'Faixa estreita, mas se acertar a bola é sua.' },
+      { id: 'empe', name: 'Em pé', ico: '🛡️', hint: 'Faixa bem mais larga e o lance mais rápido; mesmo acertando, às vezes ele dribla.' },
+    ],
+    pass: [
+      { id: 'rasteira', name: 'Rasteira', ico: '➡️', hint: 'Brecha estreita, mas o passe chega limpo.' },
+      { id: 'porcima', name: 'Por cima', ico: '🌙', hint: 'Brecha bem mais larga, mas o goleiro sai e às vezes fica com a bola.' },
+    ],
+  };
+  S.styleIds = type => S.STYLES[S.STYLES[type] ? type : 'cup'].map(x => x.id);
+  S.styleDef = (type, id) => S.STYLES[S.STYLES[type] ? type : 'cup'].find(x => x.id === id) || S.STYLES[S.STYLES[type] ? type : 'cup'][0];
+  // Estilo escolhido para o lance (ou o de sempre)
+  S.styleOf = (type, m) => (m && m.style && S.styleIds(type).includes(m.style) ? m.style : S.styleIds(type)[0]);
+  // Sem jogar, o jogador usa o estilo em que a carta rende mais
+  S.autoStyle = (c, type) => S.styleIds(type).map(id => S.kickSetup(c, type, id)).sort((a, b) => b.chance - a.chance)[0].style;
+  S.setStyle = function (c, id) { if (c.moment) c.moment.style = S.styleIds(S.kickSetupType(c.moment)).includes(id) ? id : undefined; };
+
+  // Parâmetros do minigame, todos vindos da carta (e do estilo escolhido)
+  S.kickSetup = function (c, type, style) {
+    const k = kickSetupBase(c, type);
+    const bold = S.styleOf(type, { style }) !== S.styleIds(type)[0];
+    k.style = bold ? S.styleIds(type)[1] : S.styleIds(type)[0];
+    if (!bold) return k;
+    const E = S.eff(c), tilt = (a, b) => clamp((E[a] - E[b]) / 200, -0.08, 0.08);
+    if (type === 'save') {
+      // Adiantar: a seta aparece mais tarde (você se compromete antes), o pulo vai mais longe, o batedor sente a pressão
+      k.tellMs = Math.round(k.tellMs * 0.45); k.diveReach = Math.min(1.25, Math.round(k.diveReach * 1.25 * 100) / 100); k.miss = 0.12;
+      k.chance = Math.round(clamp(k.chance + tilt('fis', 'fin'), 0.15, 0.72) * 100) / 100;
+    } else if (type === 'tackle') {
+      // Em pé: faixa larga e lance rápido; mesmo no tempo certo ele dribla às vezes
+      k.win = Math.round(k.win * 1.7 * 100) / 100; k.period = Math.round(k.period * 0.8 * 10) / 10; k.dribble = 0.15;
+      k.chance = Math.round(clamp(k.chance + tilt('rit', 'def'), 0.2, 0.9) * 100) / 100;
+    } else if (type === 'pass') {
+      // Por cima: brecha larga, bola no ar por mais tempo (menos tempo antes do impedimento), goleiro pode sair
+      k.win = Math.round(k.win * 1.9 * 100) / 100; k.period = Math.round(k.period * 0.9 * 10) / 10; k.keeperOut = 0.1;
+      k.chance = Math.round(clamp(k.chance + tilt('fis', 'pas'), 0.2, 0.9) * 100) / 100;
+    } else {
+      // Forte: mira mais rápida, a bola sobe (risco de ir por cima), o goleiro alcança bem menos
+      // Na falta a bola forte também passa pelo meio do gol (o goleiro não chega): só o lado do goleiro fica difícil
+      k.period = Math.round(k.period * (k.fk ? 0.85 : 0.8) * 100) / 100; k.rise = k.fk ? 0.08 : 0.1; k.reach = Math.round(k.reach * 0.4 * 100) / 100; k.fkReach = Math.round(k.fkReach * 0.5 * 100) / 100; if (k.fk) k.mid = 0.12;
+      k.chance = Math.round(clamp(k.chance + tilt('fis', 'fin'), 0.15, 0.93) * 100) / 100;
+    }
+    return k;
+  };
+  function kickSetupBase(c, type) {
     const E = S.eff(c);
     const fk = type === 'classico';
     const lv = id => (c.traits.includes(id) ? lvOf(c, id) : 0), sy = id => S.syn(c, id);
@@ -164,11 +223,12 @@
       : clamp(0.62 + (E.fin - 60) / 150 + lv('frieza') * 0.1 + lv('colocado') * 0.03 + sy('matador') * 0.05, 0.4, 0.93);
     // Na falta, a barreira cobre o lado esquerdo do gol (a tela espelha quando for o direito)
     return { fk, period, wobble, reach, fkReach, wall, wallL: -0.8, wallR: -0.1, chance: Math.round(chance * 100) / 100 };
-  };
+  }
 
   // Resultado de um chute travado em (x, y), com x de -1 a 1 entre as traves e y de 0 (chão) a 1 (travessão).
   // keeper: -1, 0 ou 1 (lado do mergulho; na falta o goleiro fica do lado sem barreira).
   S.kickResult = function (setup, x, y, keeper) {
+    if (setup.rise) y += setup.rise; // chute forte: a bola sobe
     const ax = Math.abs(x);
     if (ax >= 0.97 && ax <= 1.03 && y <= 1.03) return { ok: false, why: 'trave' };
     if (y >= 0.97 && y <= 1.03 && ax <= 1) return { ok: false, why: 'trave' };
@@ -180,7 +240,7 @@
       // Falta: goleiro perto do meio, do lado sem barreira
       if (Math.abs(x - 0.4) < (setup.fkReach || setup.reach * 1.35) * high) return { ok: false, why: 'defesa' };
       // Bola no meio do gol (mesmo por cima da barreira): o goleiro chega. Gol de falta é no canto
-      if (Math.abs(x) < 0.3 && y < 0.95) return { ok: false, why: 'defesa' };
+      if (Math.abs(x) < (setup.mid || 0.3) && y < 0.95) return { ok: false, why: 'defesa' };
       return { ok: true, why: 'gol' };
     }
     // Pênalti: mergulha para um lado (±0,55) ou fica no meio (só pega bola no meio e não muito alta)
@@ -206,7 +266,9 @@
   // Sem jogar: sorteia com a chance mostrada
   S.autoMoment = function (c) {
     const { r, save } = rngOf(c);
-    const ok = r() < S.kickSetup(c, S.kickSetupType(c.moment)).chance;
+    const st = S.kickSetupType(c.moment);
+    if (!c.moment.style) c.moment.style = S.autoStyle(c, st);
+    const ok = r() < S.kickSetup(c, st, c.moment.style).chance;
     save();
     S.resolveMoment(c, ok);
     return ok;
