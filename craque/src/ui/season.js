@@ -107,13 +107,18 @@
     if (tb.ids && tb.all) {
       const me = res.club, others = tb.ids.map((id, i) => ({ id, pf: tb.all[i] })).filter(x => x.id !== me);
       const line = kind === 'title' ? 1 : kind === 'acesso' ? tb.promo : kind === 'meio' ? tb.pos : n - tb.releg;
+      // Seus pontos nunca caem, sobem no máximo 3 por rodada e chegam no total real (até 3 por rodada que falta)
+      const myFin = tb.all[tb.pos - 1];
+      let prevPts = 0, prevRd = 0;
       frames.forEach((f, i) => {
         const last = i === frames.length - 1;
         const rows = last ? tb.ids.map((id, j) => ({ id, pts: tb.all[j], me: id === me }))
           : (() => {
             const os = others.map(x => ({ id: x.id, pts: Math.round(x.pf * f.rd / R) })).sort((a, b) => b.pts - a.pts);
             const ref = os[Math.min(os.length - 1, line - 1)].pts;
-            const mine = { id: me, pts: Math.max(0, ref + f.v), me: true };
+            const lo = Math.max(prevPts, myFin - 3 * (R - f.rd)), hi = Math.min(myFin, prevPts + 3 * (f.rd - prevRd));
+            const mine = { id: me, pts: Math.max(lo, Math.min(hi, ref + f.v)), me: true };
+            f.v = mine.pts - ref;
             const at = os.findIndex(x => x.pts < mine.pts || (x.pts === mine.pts && f.v >= 0));
             os.splice(at < 0 ? os.length : at, 0, mine);
             return os;
@@ -123,6 +128,7 @@
         f.pos = rows.find(x => x.me).pos;
         f.lead = rows[0].me ? 0 : rows[0].pts - rows.find(x => x.me).pts;
         f.line = line;
+        prevPts = rows.find(x => x.me).pts; prevRd = f.rd;
       });
     }
     // Para o veredito: até quando liderou (vice) ou quando saiu da zona (escapou)
