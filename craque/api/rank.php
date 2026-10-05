@@ -26,33 +26,15 @@ try {
     seasons INTEGER, created INTEGER, updated INTEGER)');
   $db->exec('CREATE INDEX IF NOT EXISTS careers_upd ON careers(updated)');
   $db->exec('CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT)');
-  // Robôs do ranking (robots.json, gerado por tools/craque_robots.js): carreiras do simulador, sempre com o selo 🤖.
-  // Entram uma vez por versão do arquivo; pid começa com "cpu" (nenhum jogador de verdade tem esse pid)
-  $rf = __DIR__ . '/robots.json';
-  $rj = is_file($rf) ? json_decode((string)file_get_contents($rf), true) : null;
-  if (is_array($rj) && isset($rj['robots'])) {
-    $ver = (string)($rj['v'] ?? '0');
-    $cur = $db->query("SELECT v FROM meta WHERE k = 'robots'")->fetchColumn();
-    if ($cur !== $ver) {
-      $db->beginTransaction();
-      $db->exec("DELETE FROM careers WHERE pid LIKE 'cpu%'");
-      $db->exec("DELETE FROM players WHERE pid LIKE 'cpu%'");
-      $pp = $db->prepare('INSERT OR IGNORE INTO players (pid, nick, nick_key, created) VALUES (?, ?, ?, ?)');
-      $pc = $db->prepare('INSERT OR REPLACE INTO careers (id, pid, name, pos, country, club, daily, done, score, grade, peak, goals, assists, best_goals, titles, ballon, seasons, created, updated)
-        VALUES (?,?,?,?,?,?,NULL,1,?,?,?,?,?,?,?,?,?,?,?)');
-      foreach ($rj['robots'] as $r) {
-        $id = preg_replace('/[^a-z0-9]/', '', (string)$r['id']);
-        if (strncmp($id, 'cpu', 3) !== 0) continue;
-        $pp->execute([$id, $r['nick'], mb_strtolower('🤖' . $r['nick'], 'UTF-8'), time()]);
-        $pc->execute([$id . '-c', $id, $r['name'], $r['pos'], $r['country'], $r['club'], (int)$r['score'], $r['grade'], (int)$r['peak'], (int)$r['goals'],
-          (int)$r['assists'], (int)$r['best_goals'], (int)$r['titles'], (int)$r['ballon'], (int)$r['seasons'], time(), time()]);
-      }
-      $db->prepare("INSERT OR REPLACE INTO meta (k, v) VALUES ('robots', ?)")->execute([$ver]);
-      $db->commit();
-    }
+  // Os robôs do ranking (carreiras do simulador, pid "cpu…") saíram: apaga os que ficaram no banco, uma vez só
+  if ($db->query("SELECT v FROM meta WHERE k = 'robots'")->fetchColumn() !== 'off') {
+    $db->beginTransaction();
+    $db->exec("DELETE FROM careers WHERE pid LIKE 'cpu%'");
+    $db->exec("DELETE FROM players WHERE pid LIKE 'cpu%'");
+    $db->exec("INSERT OR REPLACE INTO meta (k, v) VALUES ('robots', 'off')");
+    $db->commit();
   }
 } catch (Exception $e) { out(['error' => 'db'], 500); }
-$isCpu = fn($pid) => strncmp((string)$pid, 'cpu', 3) === 0;
 
 $a = $_GET['a'] ?? '';
 $okId = fn($s) => is_string($s) && preg_match('/^[a-f0-9]{16,32}$/', $s);
@@ -60,7 +42,6 @@ $okId = fn($s) => is_string($s) && preg_match('/^[a-f0-9]{16,32}$/', $s);
 function cleanNick($s) {
   $s = trim(preg_replace('/\s+/u', ' ', (string)$s));
   if (!preg_match('/^[\p{L}\p{N} _\-.]{2,16}$/u', $s)) return null;
-  if (preg_match('/^rob[oôó]\b/iu', $s)) return null; // "Robô ..." é dos robôs do ranking
   return $s;
 }
 $num = function ($v, $min, $max) { $v = (int)$v; return max($min, min($max, $v)); };
@@ -115,7 +96,7 @@ if ($a === 'top') {
   $args = [];
   if ($m === 'daily') { $where[] = 'c.done = 1'; $where[] = 'c.daily = :day'; $args[':day'] = date('Y-m-d'); }
   else {
-    $where[] = "(c.updated >= :since OR c.pid LIKE 'cpu%')"; $args[':since'] = $since;
+    $where[] = 'c.updated >= :since'; $args[':since'] = $since;
     if ($m === 'score') $where[] = 'c.done = 1';
   }
   // Melhor carreira de cada jogador na métrica
@@ -124,13 +105,10 @@ if ($a === 'top') {
     FROM careers c JOIN players p ON p.pid = c.pid WHERE " . implode(' AND ', $where) . ") WHERE rn = 1 ORDER BY v DESC, updated ASC";
   $q = $db->prepare($sql); $q->execute($args);
   $all = $q->fetchAll(PDO::FETCH_ASSOC);
-  // Robôs: sempre no geral; em hoje/semana só enquanto houver menos de 10 jogadores de verdade
-  $real = count(array_filter($all, fn($r) => !$isCpu($r['pid'])));
-  if ($p !== 'all' && $real >= 10) $all = array_values(array_filter($all, fn($r) => !$isCpu($r['pid'])));
   $me = null; $pid = $_GET['pid'] ?? '';
   foreach ($all as $i => $r) if ($r['pid'] === $pid) { $me = ['rank' => $i + 1, 'v' => (int)$r['v'], 'grade' => $r['grade'] ?: '', 'name' => $r['name']]; break; }
-  $rows = array_map(fn($r) => ['nick' => $r['nick'], 'name' => $r['name'], 'pos' => $r['pos'], 'club' => $r['club'], 'v' => (int)$r['v'], 'done' => (int)$r['done'], 'grade' => $r['grade'] ?: '', 'peak' => (int)$r['peak'], 'me' => $r['pid'] === $pid, 'cpu' => $isCpu($r['pid'])], array_slice($all, 0, 30));
-  out(['rows' => $rows, 'me' => $me, 'players' => $real, 'robots' => count($all) - $real, 'day' => date('Y-m-d')]);
+  $rows = array_map(fn($r) => ['nick' => $r['nick'], 'name' => $r['name'], 'pos' => $r['pos'], 'club' => $r['club'], 'v' => (int)$r['v'], 'done' => (int)$r['done'], 'grade' => $r['grade'] ?: '', 'peak' => (int)$r['peak'], 'me' => $r['pid'] === $pid], array_slice($all, 0, 30));
+  out(['rows' => $rows, 'me' => $me, 'players' => count($all), 'day' => date('Y-m-d')]);
 }
 
 if ($a === 'ping') out(['ok' => true, 'php' => PHP_VERSION]);

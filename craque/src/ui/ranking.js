@@ -92,7 +92,7 @@
         if (!el) return;
         const lead = d.rows && d.rows[0];
         el.innerHTML = d.me ? 'Você está em <b>' + d.me.rank + 'º</b> na semana · ' + fmt(d.me.v) + ' pts'
-          : lead ? (lead.cpu ? 'Líder: <b>' + nickOf(lead) + '</b>' : 'Líder da semana: <b>' + esc(lead.nick) + '</b>') + ' · ' + fmt(lead.v) + ' pts' : 'Ninguém pontuou nesta semana ainda. Seja o primeiro!';
+          : lead ? 'Líder da semana: <b>' + esc(lead.nick) + '</b>' + ' · ' + fmt(lead.v) + ' pts' : 'Ninguém pontuou nesta semana ainda. Seja o primeiro!';
       }).catch(() => {});
     }, 0);
     return '<button class="rk-home" id="b-rank">' + podium(46) + '<span class="rk-home-t"><b>Ranking</b><small id="rk-home-sub">Quem fez a maior carreira da semana?</small></span>' +
@@ -143,20 +143,17 @@
       const top = d.rows.slice(0, 3), rest = d.rows.slice(3);
       // Pódio: 2º à esquerda, 1º no meio (mais alto), 3º à direita
       const step = (r, i) => !r ? '<div class="rk-step empty"></div>' : '<div class="rk-step s' + (i + 1) + (r.me ? ' me' : '') + '"><span class="rk-medal">' + (i + 1) + '</span>' +
-        '<b class="rk-nk">' + nickOf(r) + '</b><small>' + esc(r.name) + '</small>' + gradeTag(st.m === 'score' ? r.grade : '') + val(r) + '<i class="rk-block"></i></div>';
-      el2.innerHTML = (d.robots ? '<p class="rk-bots">' + U.emo('🤖', 'xs') + ' <b>Supere os robôs!</b> Carreiras jogadas pelo próprio jogo. Só um deles tirou nota S.</p>' : '') +
-        '<div class="rk-podium">' + step(top[1], 1) + step(top[0], 0) + step(top[2], 2) + '</div>' +
+        '<b class="rk-nk">' + esc(r.nick) + '</b><small>' + esc(r.name) + '</small>' + gradeTag(st.m === 'score' ? r.grade : '') + val(r) + '<i class="rk-block"></i></div>';
+      el2.innerHTML = '<div class="rk-podium">' + step(top[1], 1) + step(top[0], 0) + step(top[2], 2) + '</div>' +
         rest.map((r, i) => '<div class="rk-item' + (r.me ? ' me' : '') + '"><span class="rk-pos">' + (i + 4) + 'º</span>' +
-          '<span class="rk-who"><b>' + nickOf(r) + '</b><small>' + who(r) + '</small></span>' + (st.m === 'score' ? gradeTag(r.grade) : '') + val(r) + '</div>').join('') +
+          '<span class="rk-who"><b>' + esc(r.nick) + '</b><small>' + who(r) + '</small></span>' + (st.m === 'score' ? gradeTag(r.grade) : '') + val(r) + '</div>').join('') +
         // Sua posição: sempre à vista, mesmo fora do top 30
         (d.me && d.me.rank > d.rows.length ? '<div class="rk-item me rk-mine"><span class="rk-pos">' + d.me.rank + 'º</span><span class="rk-who"><b>Você</b><small>' + esc(d.me.name || '') + '</small></span>' + (st.m === 'score' ? gradeTag(d.me.grade) : '') + val(d.me) + '</div>'
           : !d.me && p.nick ? '<p class="muted small rk-none">Você ainda não aparece aqui ' + when() + '.</p>' : '') +
-        '<p class="muted small">' + d.players + (d.players === 1 ? ' jogador' : ' jogadores') + (d.robots ? ' e ' + d.robots + (d.robots === 1 ? ' robô' : ' robôs') : '') + ' nesta lista.</p>';
+        '<p class="muted small">' + d.players + (d.players === 1 ? ' jogador' : ' jogadores') + ' nesta lista.</p>';
     }).catch(() => { const el2 = $('rk-list'); if (el2 && my === req) el2.innerHTML = '<p class="muted">Sem conexão com o ranking agora. Suas carreiras ficam guardadas e são enviadas depois.</p>'; });
   }
   const screen = () => document.getElementById('screen');
-  // Robôs do ranking (carreiras do simulador): sempre com o selo, nunca passam por gente de verdade
-  const nickOf = r => (r.cpu ? U.emo('🤖', 'xs') + ' ' : '') + esc(r.nick);
 
   // No fim da carreira: envia e, se ainda não tem nome, convida a entrar no ranking
   function finaleRank() {
