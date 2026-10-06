@@ -145,6 +145,9 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
 - **Estilos do lance decisivo:** o primeiro de `S.STYLES[tipo]` é o lance de sempre; o segundo muda a mecânica. Mudou
   um número? Rode `craque_estilos.js` (chance pela carta igual ±4 pontos e nenhum estilo melhor em todos os níveis).
 - Melhoria de personagem por ajuste de SVG em código já foi recusada: precisa de arte nova.
+- **Monitor grande tem zoom** (`html.desk`, `--z` 1,15 ou 1,3 no fim do `style.css`): altura em `vh/svh/dvh` nova
+  precisa da versão `/ var(--z)` naquele bloco, e posição tirada de `getBoundingClientRect` e aplicada como CSS
+  divide por `U.zk()`. Tela larga (≥1000 px, computador ou tablet deitado) usa as telas em 2 colunas.
 
 ## Conferir na tela (Playwright)
 

@@ -169,8 +169,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .btn.opt .od-row.lose b { background: #B83A2E; color: #fff; }
 .btn.opt .od-always { grid-column: 1 / -1; text-align: center; opacity: .8; font-size: 13px; }
 .btn.ghost.opt .od-row b { background: rgba(255, 255, 255, .14); }
-.btn.ghost.opt .od-row.win b { background: #2E9A5C; }
-.btn.ghost.opt .od-row.lose b { background: #C9463A; }
+.btn.ghost.opt .od-row.win b { background: #23804B; }
+.btn.ghost.opt .od-row.lose b { background: #B83A2E; }
 .btn.ghost.opt .odds { color: #D3E4D9; }
 
 /* características com espaços e níveis */
@@ -990,7 +990,7 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .offer.fresh { animation: trophy-in .6s cubic-bezier(.2, 1.5, .4, 1); box-shadow: 0 0 0 3px #F4D675; }
 .lg-row { display: flex; align-items: center; gap: 8px; width: 100%; background: #fff; border: 1px solid #E3E9E5; border-radius: 12px; padding: 10px 12px; margin-bottom: 6px; font-size: 14px; color: #13201A; cursor: pointer; flex-wrap: wrap; text-align: left; }
 .lg-row b { flex: 1; }
-.lg-row .stars { color: #D9A400; font-size: 12px; letter-spacing: 1px; }
+.lg-row .stars { color: var(--amber-ink, #9A6A00); font-size: 12px; letter-spacing: 1px; }
 .lg-row em { font-style: normal; font-weight: 800; min-width: 40px; text-align: right; color: #7A5700; }
 .lg-row em.hi { color: #0E7A3E; }
 .lg-row em.lo { color: #B3261E; }
@@ -2292,22 +2292,38 @@ button.sk-d { font: inherit; color: inherit; cursor: pointer; }
 .inv-bar { display: flex; gap: 8px; }
 .inv-bar #b-undo { width: auto; flex: 0 0 auto; padding-left: 14px; padding-right: 14px; margin: 0; background: #1E3F30; color: #E8F1EA; }
 
-/* Computador com tela larga: temporada e pré-temporada em 2 colunas (o celular fica igual) */
+/* Tela larga (computador ou tablet deitado): temporada e pré-temporada em 2 colunas (o celular fica igual) */
 @media (min-width: 1000px) {
-  .desk #app:has(#screen > .s-hero), .desk #app:has(#screen > .inv-bar) { max-width: 1040px; }
+  #app:has(#screen > .s-hero), #app:has(#screen > .inv-bar) { max-width: 1040px; }
   /* Criar jogador: carta e botões de visual à esquerda, parados; posição, pé, país e "Começar" à direita */
-  .desk #screen:has(> .cc-side) { display: grid; grid-template-columns: 380px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 32px; align-items: start; }
-  .desk #screen:has(> .cc-side) > * { grid-column: 2; }
-  .desk #screen:has(> .cc-side) > .cc-side { grid-column: 1; grid-row: 1 / -1; display: flex; flex-direction: column; gap: 12px; position: sticky; top: 16px; padding-top: 64px; align-items: center; }
-  .desk #screen:has(> .cc-side) > .back-link { justify-self: start; }
+  #screen:has(> .cc-side) { display: grid; grid-template-columns: 380px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 32px; align-items: start; }
+  #screen:has(> .cc-side) > * { grid-column: 2; }
+  #screen:has(> .cc-side) > .cc-side { grid-column: 1; grid-row: 1 / -1; display: flex; flex-direction: column; gap: 12px; position: sticky; top: 16px; padding-top: 64px; align-items: center; }
+  #screen:has(> .cc-side) > .back-link { justify-self: start; }
   /* Temporada: carta, números e mini tabela à esquerda; o resumo (jornal, comentário, detalhes, botões) à direita */
-  .desk #screen:has(> .s-hero) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: repeat(6, auto) 1fr; column-gap: 24px; align-items: start; }
-  .desk #screen:has(> .s-hero) > * { grid-column: 1; }
-  .desk #screen:has(> .s-hero) > #after { grid-column: 2; grid-row: 1 / -1; }
+  #screen:has(> .s-hero) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: repeat(6, auto) 1fr; column-gap: 24px; align-items: start; }
+  #screen:has(> .s-hero) > * { grid-column: 1; }
+  #screen:has(> .s-hero) > #after { grid-column: 2; grid-row: 1 / -1; }
   /* Pré-temporada: a carta fica parada à esquerda; as escolhas à direita */
-  .desk #screen:has(> .inv-bar):not(:has(> .cc-side)) { display: grid; grid-template-columns: 400px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 28px; align-items: start; }
-  .desk #screen:has(> .inv-bar):not(:has(> .cc-side)) > * { grid-column: 2; }
-  .desk #screen:has(> .inv-bar) > .mcard { grid-column: 1; grid-row: 1 / -1; }
+  #screen:has(> .inv-bar):not(:has(> .cc-side)) { display: grid; grid-template-columns: 400px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 28px; align-items: start; }
+  #screen:has(> .inv-bar):not(:has(> .cc-side)) > * { grid-column: 2; }
+  #screen:has(> .inv-bar) > .mcard { grid-column: 1; grid-row: 1 / -1; }
 }
 .cc-side { display: contents; }
 details.more .src-card { margin: 2px 0 8px; }
+
+/* Monitor grande: o jogo inteiro um pouco maior, para ler de longe (celular, tablet e notebook de 768 px de altura ficam iguais).
+   O zoom não corrige as unidades vh/svh/dvh, então as alturas que dependem da tela são divididas por --z aqui. */
+@media (min-width: 1280px) and (min-height: 860px) {
+  html.desk { zoom: var(--z); --z: 1.15; }
+  html.desk #app { min-height: calc(100dvh / var(--z)); }
+  html.desk #kick { min-height: calc(100svh / var(--z) - var(--bar-h, 0px) - 110px); }
+  html.desk #screen.center { min-height: calc(100svh / var(--z) - var(--bar-h, 0px) - 90px); }
+  html.desk .kick-stage { --kw: min(720px, 94vw, calc((100dvh / var(--z) - 240px) * 1.125)); }
+  html.desk .sheet { height: min(calc(82vh / var(--z)), 700px); }
+  html.desk .card3d-host.big { height: min(calc(62vh / var(--z)), 520px); }
+  html.desk .cfg { max-height: calc(92svh / var(--z)); }
+  html.desk .sl-case { min-height: calc(70vh / var(--z)); }
+  html.desk .sl-sheet, html.desk .nb-sheet { max-height: calc(88vh / var(--z)); }
+}
+@media (min-width: 1600px) and (min-height: 1000px) { html.desk { --z: 1.3; } }
