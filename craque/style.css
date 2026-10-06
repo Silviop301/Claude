@@ -2310,3 +2310,4 @@ button.sk-d { font: inherit; color: inherit; cursor: pointer; }
   .desk #screen:has(> .inv-bar) > .mcard { grid-column: 1; grid-row: 1 / -1; }
 }
 .cc-side { display: contents; }
+details.more .src-card { margin: 2px 0 8px; }
