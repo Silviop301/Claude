@@ -415,7 +415,7 @@
       if (S.canAnnounce(G.c)) actions += '<button class="btn ghost" id="b-farewell">Anunciar a última temporada<small>Torcida +10 (+5 com o post) e mais minutos · parar em alta rende pontos extras</small></button>';
       if (S.canRetire(G.c)) actions += '<button class="btn ghost" id="b-stop">Parar agora</button>';
     }
-    // De onde vieram os números: minutos, gols (ou jogos sem sofrer gol) e nota, com o peso de cada parte
+    // De onde vieram os números (fica em Detalhes): minutos, gols (ou jogos sem sofrer gol) e nota, com o peso de cada parte
     const srcBlock = (() => {
       const sc = res.src;
       if (!sc) return '';
@@ -424,14 +424,13 @@
         (v ? ' <b>' + (sign && v > 0 ? '+' : v < 0 ? '−' : '') + num(Math.abs(v), unit === '') + unit + '</b>' : '') + '</span>';
       const row = (lbl, val, chips) => '<div class="sr-row"><span class="sr-l">' + lbl + ' <b>' + val + '</b></span><div class="sr-cs">' + chips + '</div></div>';
       const gk = res.pos === 'GOL';
-      return '<div class="src-card rv">' +
+      return '<div class="src-card">' +
         row('Minutos', res.games + ' de ' + sc.max + ' jogos', sc.min.map((x, i) => chip(x[0], x[1], '%', i > 0)).join('')) +
         (res.games ? row(gk ? 'Sem sofrer gol' : 'Gols', gk ? res.cleanSheets : res.goals, sc.gol.map((x, i) => chip(x[0], x[1], '%', true)).join('')) : '') +
         (sc.nota.length ? row('Nota', res.rating.toFixed(1).replace('.', ','), sc.nota.map((x, i) => chip(x[0], x[1], '', i > 0)).join('')) : '') +
         '</div>';
     })();
     $('after').innerHTML =
-      srcBlock +
       (tableTxt ? '<p class="table-line rv">' + tableTxt + '</p>' : '') +
       (moveTxt ? '<div class="move-line rv ' + res.move.dir + '">' + moveTxt + '</div>' : '') +
       (res.loanBack ? '<p class="contract rv">Fim do empréstimo: você volta ' + D.ao(esc(club(res.loanBack.to).name)) + '.</p>' : '') +
@@ -448,7 +447,7 @@
         (res.grow ? (res.carry >= 1 ? '. ' : '') + 'Com você, ' + D.o(esc(res.grow.name)) + ' se reforçou: força <b>' + res.grow.from + ' → ' + res.grow.to + '</b>' : '') + '</p>' : '') +
       // Pontos de evolução ganhos nesta temporada (e por quê)
       peLine(res.pe) +
-      '<details class="more rv"><summary>Detalhes da temporada</summary>' +
+      '<details class="more rv"><summary>Detalhes da temporada</summary>' + srcBlock +
       res.highlights.slice(1).map(h => '<div class="hl">' + esc(h) + '</div>').join('') +
       '<div class="card why-card"><p class="delta-in ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' + why + '</div>' +
       '<p class="rel-delta">' + U.emo('👔', 'xs') + ' Técnico ' + res.coach0 + ' → ' + res.coach1 + ' · ' + U.emo('📣', 'xs') + ' Torcida ' + res.fans0 + ' → ' + res.fans1 + ' (' + S.relLabel(res.fans1) + ')</p>' +
