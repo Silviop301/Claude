@@ -247,12 +247,15 @@
         paint();
       }));
     $('f-num').onclick = () => numSheet(st, paint);
-    $('f-name').oninput = () => { st.name = $('f-name').value; };
+    // Nome comprido diminui a letra para caber inteiro na plaquinha (celular estreito cortava "WESLEYZINH")
+    const fitName = () => { const el = $('f-name'); if (!el) return; let fs = 26; el.style.fontSize = fs + 'px';
+      while (fs > 14 && el.scrollWidth > el.clientWidth) el.style.fontSize = --fs + 'px'; };
+    $('f-name').oninput = () => { st.name = $('f-name').value; fitName(); };
     $('b-back-home').onclick = home;
     $('b-look').onclick = () => { st.name = $('f-name').value.trim() || st.name; looks(st); };
     $('b-dice1').onclick = () => { rollLook(st.look); sfx('tap'); paint(); };
     $('b-start').onclick = () => { st.name = $('f-name').value.trim() || st.name; start(st); };
-    paint(); drawOrigin();
+    paint(); drawOrigin(); fitName(); if (document.fonts) document.fonts.ready.then(fitName);
   }
 
   function start(st) {

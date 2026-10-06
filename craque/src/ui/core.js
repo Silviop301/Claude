@@ -70,9 +70,9 @@
     document.querySelectorAll('.bar-tip').forEach(x => x.remove());
     const t = document.createElement('div');
     t.className = 'bar-tip'; t.textContent = m.dataset.tip;
-    const r = m.getBoundingClientRect();
-    t.style.left = Math.max(8, Math.min(window.innerWidth - 220, r.left)) + 'px';
-    t.style.top = (r.bottom + 6) + 'px';
+    const r = m.getBoundingClientRect(), k = zk();
+    t.style.left = Math.max(8, Math.min(window.innerWidth / k - 220, r.left / k)) + 'px';
+    t.style.top = (r.bottom / k + 6) + 'px';
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 1800);
   }
@@ -204,9 +204,12 @@
     return false;
   }
 
+  // Zoom da página (monitor grande, style.css): medidas da tela ÷ zk() = pixels do CSS. Sem zoom, 1.
+  const zk = () => { const b = document.body, w = b && b.offsetWidth; return w ? b.getBoundingClientRect().width / w || 1 : 1; };
+
   // Faixa de cor da carta pela nota (bronze, prata, ouro, ícone)
   const tierCls = o => (o >= 85 ? 'icone' : o >= 75 ? 'ouro' : o >= 65 ? 'prata' : 'bronze');
   const TIER_NAME = { bronze: 'Bronze', prata: 'Prata', ouro: 'Ouro', icone: 'Ícone' };
 
-  window.CRAQUE_UI = { ICON, emo, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar };
+  window.CRAQUE_UI = { zk, ICON, emo, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar };
 })();

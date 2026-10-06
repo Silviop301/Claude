@@ -133,7 +133,7 @@
     function tear() {
       phase = 'tear';
       const top = res.top, holder = w.querySelector('.pk-holder');
-      const r = holder.getBoundingClientRect(), wr = w.getBoundingClientRect(), cx = r.left - wr.left + r.width / 2, cy = r.top - wr.top + 12;
+      const r = holder.getBoundingClientRect(), wr = w.getBoundingClientRect(), z = U.zk(), cx = (r.left - wr.left + r.width / 2) / z, cy = (r.top - wr.top) / z + 12;
       if (reduced()) { holder.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }); return later(() => toItem(), 240); }
       w.querySelector('.pk-seal').animate([{ transform: 'translate(0,0) rotate(0deg)', opacity: 1 }, { transform: 'translate(90px,-120px) rotate(24deg)', opacity: 0 }], { duration: 350, easing: 'ease-out', fill: 'forwards' });
       const fl = document.createElement('div');
@@ -171,7 +171,7 @@
         sfx(lend ? 'fanfare' : it.rk === 'epico' ? 'levelup' : 'coin');
         if (lend && !red) {
           card.querySelector('.pk-sheen').animate([{ transform: 'translateX(-120%)' }, { transform: 'translateX(120%)' }], { duration: 900, delay: d - 250, easing: 'ease-in-out', fill: 'both' });
-          later(() => { const r = card.getBoundingClientRect(), wr = w.getBoundingClientRect(); burst(r.left - wr.left + r.width / 2, r.top - wr.top + r.height / 2, 170, HOLO); }, d - 350);
+          later(() => { const r = card.getBoundingClientRect(), wr = w.getBoundingClientRect(), z = U.zk(); burst((r.left - wr.left + r.width / 2) / z, (r.top - wr.top + r.height / 2) / z, 170, HOLO); }, d - 350);
           U.vibe(60);
         }
         if (g.dup) later(() => convert(g), d + 700); else later(() => { busy = false; }, d);
@@ -187,8 +187,8 @@
       const bump = n => { shownFichas += n; ctr.innerHTML = ficha(shownFichas); ctr.animate([{ transform: 'scale(1.25)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' }); sfx('tick'); };
       if (reduced()) { bump(g.fichas); busy = false; return; }
       card.animate([{ transform: 'scale(1)', opacity: 1, filter: 'saturate(1)' }, { transform: 'scale(.3)', opacity: 0, filter: 'saturate(0)' }], { duration: 600, delay: 150, easing: 'ease-in', fill: 'forwards' });
-      const wr = w.getBoundingClientRect(), cr = card.getBoundingClientRect(), kr = ctr.getBoundingClientRect();
-      const sx = cr.left - wr.left + cr.width / 2 - 17, sy = cr.top - wr.top + cr.height / 2 - 17, ex = kr.left - wr.left + 6, ey = kr.top - wr.top + 4;
+      const wr = w.getBoundingClientRect(), cr = card.getBoundingClientRect(), kr = ctr.getBoundingClientRect(), z = U.zk();
+      const sx = (cr.left - wr.left + cr.width / 2) / z - 17, sy = (cr.top - wr.top + cr.height / 2) / z - 17, ex = (kr.left - wr.left) / z + 6, ey = (kr.top - wr.top) / z + 4;
       const k = Math.min(g.fichas, 3);
       ctr.firstChild.classList.add('lit');
       for (let i = 0; i < k; i++) {
