@@ -273,6 +273,12 @@
     put();
     return c;
   }
+  // Prêmio liberado num dia que já saiu do calendário (o ciclo virou ou a sequência quebrou): sem um dia para
+  // tocar, ele entra direto na conta, para não sumir
+  function streakFlush() {
+    const keys = streak().cells.map(x => x.key);
+    return (get().claims || []).filter(x => !keys.includes(x.k)).map(x => streakClaim(x.k)).filter(Boolean);
+  }
   const streakTxt = r => (r.f ? r.f + ' fichas' : r.p + (r.p > 1 ? ' pacotinhos' : ' pacotinho'));
 
   // Nuvem: itens de todos os aparelhos; contadores (fichas, pacotes, garantia) do salvo mais recente;
@@ -287,5 +293,5 @@
   }
 
   U.ITEMS = { FREE, KEY, CAT, BY_ID, RAR, RAR_NAME, CHANCE, PITY, DUP, COST, itemOf, need, has, get, put, clean, counts,
-    earn, careerWhy, open, trade, seen, merge, STREAK, streak, streakRecord, streakClaim, streakTxt, reset: () => { inv = null; } };
+    earn, careerWhy, open, trade, seen, merge, STREAK, streak, streakRecord, streakClaim, streakFlush, streakTxt, reset: () => { inv = null; } };
 })();
