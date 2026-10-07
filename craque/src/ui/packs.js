@@ -281,7 +281,9 @@
     }).join('') + '</div>';
   }
   function streakBox(kind, got, note) {
-    const st = I.streak(), T = I.streakTxt, pend = st.cells.find(c => c.claim);
+    const late = I.streakFlush(), T = I.streakTxt;
+    if (late.length && !note) note = '+' + late.map(x => T(x.r)).join(' e ') + ' de um dia anterior da sequência' + (!late.some(x => x.r.p) ? ': já estão na sua conta' : kind === 'home' ? ': já estão nos pacotinhos aqui embaixo' : ': abra na tela inicial');
+    const st = I.streak(), pend = st.cells.find(c => c.claim);
     const head = U.emo('🔥', 'sm') + ' ' + (got && kind === 'fin' ? 'Dia ' + got.day + ' da sequência liberado!' : st.n >= 1 ? (st.n > 1 ? st.n + ' dias seguidos' : '1 dia de sequência') : 'Sequência de dias');
     const sub = note || (pend ? 'Toque no dia para pegar ' + T(pend.r) : st.played ? 'Prêmio de hoje já pego. Amanhã: ' + T(st.next)
       : st.n ? 'Termine uma carreira hoje e ganhe ' + T(st.next) + ' sem perder a sequência' : 'Termine uma carreira por dia e ganhe fichas e pacotinhos');
