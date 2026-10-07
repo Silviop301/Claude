@@ -12,7 +12,7 @@
   const PITY = 10; // lendário garantido em até 10 pacotes
   // Economia (tools/craque_itens_sim.js simula quantas carreiras levam para liberar tudo; window.CLIMBIX_ITEMS_ECON troca valores no teste)
   const E = Object.assign({
-    dup: { comum: 1, raro: 2, epico: 5, lendario: 12 }, // repetido vira fichas
+    dup: { comum: 3, raro: 8, epico: 20, lendario: 50 }, // repetido vira fichas (cerca de 1/4 do preço de troca da raridade)
     cost: { comum: 10, raro: 30, epico: 80, lendario: 200 }, // trocar fichas por um item
     fresh: 0, // chance extra de o item do pacote vir entre os que a pessoa ainda não tem (0 = sorteio puro)
     base: 1, gradeA: 0, gradeS: 1, bigMax: 1, achMax: 1, daily: 1, // pacotes no fim da carreira
