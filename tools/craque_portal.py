@@ -100,6 +100,11 @@ def main():
     open(os.path.join(work, 'index.html'), 'w', encoding='utf-8').write(html)
     if lang == 'en':
         subprocess.run(['node', os.path.join(ROOT, 'tools', 'craque_i18n.js'), 'apply', work], check=True)
+        # Privacidade e Termos traduzidos à mão (craque/i18n/*.en.html)
+        for p in ('privacidade', 'termos'):
+            en = os.path.join(SRC, 'i18n', p + '.en.html')
+            if os.path.exists(en):
+                shutil.copy2(en, os.path.join(work, p + '.html'))
 
     zpath = os.path.join(OUT, 'climbix-' + name + '.zip')
     with zipfile.ZipFile(zpath, 'w', zipfile.ZIP_DEFLATED) as z:

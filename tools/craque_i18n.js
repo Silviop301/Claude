@@ -8,7 +8,7 @@
 //   node tools/craque_i18n.js apply <pasta> → troca os textos nos .js de <pasta> (cópia do jogo feita pelo craque_portal.py)
 //
 // Que textos entram: literais com letras que tenham espaço, maiúscula ou acento (frases, nomes de tela), e os dois
-// últimos argumentos de D.plural(n, 'gol', 'gols'). Palavras soltas em minúsculas (ids, classes, chaves) ficam de fora.
+// últimos argumentos de D.plural(n, 'gol', 'gols') (ou do apelido P/p = D.plural). Palavras soltas em minúsculas (ids, classes, chaves) ficam de fora.
 // A troca vale para todas as ocorrências do mesmo texto, então comparações entre textos continuam batendo.
 // Partes ${...} de template ficam como estão; a tradução de um template guarda os mesmos ${} na mesma ordem.
 const fs = require('fs'), path = require('path');
@@ -30,7 +30,7 @@ function isDisplay(s) {
   const t = textOf(s);
   if (!/[A-Za-zÀ-ú]{2}/.test(t)) return false;
   if (/^\s*(https?:|data:|assets\/|badges\/|icons\/|src\/)/.test(s)) return false;
-  if (/[À-ú]/.test(t)) return true;
+  if (/[À-ú]/.test(t) || /^[A-Z]{3,}!$/.test(s)) return true; // acento, ou grito de lance: 'GOOOL!', 'DEFENDEU!'
   if (/\s/.test(s) && /[A-Za-z]{2}/.test(t) && !/^[a-z0-9 _-]+$/.test(s.trim()) || /^\s+[a-z]{2,}|[a-z]{2,}\s+$/.test(s)) return true; // pedaços de frase: ' anos', 'S/ GOL'
   if (/[A-Za-z]{2,}\s+[A-Za-z]/.test(t)) return true; // duas palavras
   return /^[^a-z]*[A-Z][a-zà-ú]/.test(t.trim()) && !/^[A-Z][A-Za-z0-9]*$/.test(s.trim()) ? true : /^[A-Z][a-zà-ú]+[!?.:]?$/.test(t.trim());
@@ -43,13 +43,15 @@ function literals(file) {
   const out = [];
   const pluralArg = n => {
     const p = n.parent;
-    return p && ts.isCallExpression(p) && /(^|\.)plural$/.test(p.expression.getText(sf)) && p.arguments.indexOf(n) >= 1;
+    return p && ts.isCallExpression(p) && /(^|\.)plural$|^[Pp]$/.test(p.expression.getText(sf)) && p.arguments.indexOf(n) >= 1;
   };
   const visit = n => {
     if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) {
       const key = n.text;
-      if (key && (isDisplay(key) || (pluralArg(n) && /[a-zà-ú]/.test(key))) && !(n.parent && ts.isPropertyAssignment(n.parent) && n.parent.name === n)
-        && !(n.parent && (ts.isImportDeclaration(n.parent) || ts.isElementAccessExpression(n.parent) && n.parent.argumentExpression === n)))
+      // Chaves de objeto e obj['…'] entram só quando são nomes de verdade (país, taça, clube): os mapas por nome
+      // ('Brasil': [...], c.trophies['Copa do Mundo']) seguem os nomes traduzidos; ids e chaves técnicas ficam
+      const keyLike = n.parent && (ts.isPropertyAssignment(n.parent) && n.parent.name === n || ts.isElementAccessExpression(n.parent) && n.parent.argumentExpression === n);
+      if (key && (isDisplay(key) || (!keyLike && pluralArg(n) && /[a-zà-ú]/.test(key))) && !(n.parent && ts.isImportDeclaration(n.parent)))
         out.push({ start: n.getStart(sf), end: n.getEnd(), key, tpl: ts.isNoSubstitutionTemplateLiteral(n) });
     } else if (ts.isTemplateExpression(n)) {
       const raw = code.slice(n.getStart(sf) + 1, n.getEnd() - 1);
@@ -97,7 +99,9 @@ function quote(s, tpl, expr, q) {
 }
 
 // Ajustes de código que não são texto: número com ponto, mi/mil → M/k, artigos do português (D.o, D.do...)
-const CODE_EN = [[".replace('.', ',')", ''], [".replace(',0', '')", ".replace('.0', '')"], ["' mi'", "'M'"], ["' mil'", "'k'"], ["'pt-BR'", "'en-US'"]];
+const CODE_EN = [[".replace('.', ',')", ''], [".replace(',0', '')", ".replace('.0', '')"], ["' mi'", "'M'"], ["' mil'", "'k'"], ["'pt-BR'", "'en-US'"],
+  ["' e '", "' and '"], // ' e ' só aparece juntando partes de frase (join, concatenação)
+  ["'EUA'", "'USA'"]]; // id de país que aparece na tela (seleção, liga, mídia); kits-real.js também
 // Trechos de código que comparam com texto em português (regex) ou recortam artigos: [arquivo, de, para].
 // Cada um precisa existir no arquivo (já com os textos traduzidos); se o código mudar, o apply avisa.
 const FILE_EN = [
@@ -114,18 +118,87 @@ const FILE_EN = [
   ['engine/season.js', '/é sua|é seu/', '/ is yours| are yours/'],
   ['engine/season.js', "'D' + D.do(club).slice(1)", "'From ' + club"],
   ['engine/season.js', "'D' + D.do(first.name).slice(1)", "'From ' + first.name"],
-  ['engine/season.js', 'D.paraA(t).slice(5)', "'the ' + t"],
+  ['engine/season.js', 'D.paraA(t).slice(5)', 'D.paraA(t).slice(3)'],
   ['ui/desktop.js', '/oque/.test(t)', '/[Tt]ap/.test(t)'],
   ['ui/desktop.js', "(cap ? 'Click' : 'clique') : (cap ? 'Tap' : 'toque')", "(cap ? 'Click' : 'click') : (cap ? 'Tap' : 'tap')"],
   ['ui/desktop.js', "[/\\bToque\\b/g, 'Click'],", "[/\\bTap\\b/g, 'Click'],"],
   ['ui/desktop.js', "[/\\btoque(?= (?:para|na tela|quando|numa|à (?:direita|esquerda)|de novo))/g, 'clique'],", "[/\\btap(?= (?:to|the screen|when|again|left|right|on))/g, 'click'],"],
   ['ui/desktop.js', "/\\b(Agora|primeiro|segundo|1º|2º|o) toque\\b(?! seu)/g", "/\\b(first|second|the) tap\\b/g"],
+  ['ui/core.js', "'GOLS'", "'GOALS'"],
+  ['ui/preseason.js', "{ new: 'NOVA', up: 'EVOLUIR' }", "{ new: 'NEW', up: 'UPGRADE' }"],
+  ['ui/preseason.js', "' (e +1 '", "' (and +1 '"],
+  ['card.js', "label: 'PRATA' }", "label: 'SILVER' }"],
+  ['card.js', "label: 'OURO' }", "label: 'GOLD' }"],
+  ['card.js', "label: 'MURALHA',", "label: 'THE WALL',"],
+  ['card.js', "label: 'XERIFE',", "label: 'SHERIFF',"],
+  ['ui/worldcup.js', "(n === 'Portugal' ? '' : ['Brazil', 'Uruguay'].includes(n) ? 'o ' : 'a ') + n", "n"],
+  ['ui/worldcup.js', "({ Brasil: 'do', Uruguai: 'do', Portugal: 'de' }[n] || 'da') + ' ' + n", "n"],
+  ['ui/worldcup.js', "Called up by the national team ' + ofCountry(", "Called up by ' + ofCountry("],
+  ['ui/worldcup.js', "'classifica'", "'goes through'"],
+  ['ui/worldcup.js', "'empata'", "'equalises'"],
+  ['ui/worldcup.js', "'amplia'", "'extends the lead'"],
+  ['ui/worldcup.js', "'diminui'", "'pulls one back'"],
+  ['ui/worldcup.js', "'diminuem'", "'they pull one back'"],
+  ['ui/worldcup.js', "'empatam'", "'they equalise'"],
+  ['ui/worldcup.js', "'eliminado'", "'knocked out'"],
+  ['ui/worldcup.js', "'derrota'", "'defeat'"],
+  ['ui/worldcup.js', "'aumentam'", "'they extend the lead'"],
+  ['ui/season.js', "'Play ' + (goWc ? 'a ' : 'o ') + tourLbl", "'Play the ' + tourLbl"],
+  ['ui/album.js', "' a ' + c.age", "'–' + c.age"],
+  ['ui/finale.js', "' a ' + G.c.age", "'–' + G.c.age"],
+  ['ui/paper.js', "nick + ' é ' + D.do(to.name)", "nick + ' joins ' + to.name"],
+  ['ui/paper.js', "m.comp + ' é ' + D.do(cl.name)", "m.comp + ' belongs to ' + cl.name"],
+  ['engine/season.js', "', e '", "', and '"],
+  ['ui/cloud.js', "syncing: 'salvando…'", "syncing: 'saving…'"],
+  ['engine/events.js', "'falso 9'", "'false 9'"],
+  ['engine/decisions.js', "'falso 9'", "'false 9'"],
+  ['engine/season.js', "goals: 'gols' }[key]", "goals: 'goals' }[key]"],
+  ['ui/season.js', "(pe.n > 1 ? ' points' : ' point') + ' development'", "(pe.n > 1 ? ' development points' : ' development point')"],
+  ['ui/season.js', "', a ' + rc.gap", "', ' + rc.gap"],
+  ['ui/season.js', "'finished ' + tb.pos + 'th place ' + D.na(tb.league)", "'finished ' + tb.pos + 'th ' + D.na(tb.league)"],
+  ['ui/season.js', "res.titles.map(t => t.name).join(' and ')", "D.andList(res.titles.map(t => t.name))"],
+  ['ui/social.js', "r.titles.map(x => x.name).join(' and ')", "D.andList(r.titles.map(x => x.name))"],
+  ['ui/offers.js', "? 'renovar' : 'assinar')", "? 'renew' : 'sign')"],
+  ['engine/season.js', "'decidido'", "'decided'"],
+  ['engine/season.js', "' for ' + D.o(cur.name) + ': the big leap", "' to ' + D.o(cur.name) + ': the big leap"],
+  ['engine/season.js', "'A ' + cont2Name + ' is yours!'", "'The ' + cont2Name + ' is yours!'"],
+  ['engine/season.js', "'A ' + contName + ' is yours!'", "'The ' + contName + ' is yours!'"],
+  ['engine/season.js', "'A ' + big.name + ' doesn", "'The ' + big.name + ' doesn"],
+  ['engine/season.js', "'O ' + nick + ' of this year looks", "\"This year's \" + nick + ' looks"],
+  ['engine/events.js', "'Mega offer ' + D.do(dest.name)", "'Mega offer from ' + dest.name"],
+  ['engine/decisions.js', "'Mega offer ' + D.do(dest.name)", "'Mega offer from ' + dest.name"],
+  ['engine/decisions.js', "? 'cartoleiros' :", "? 'Cartola managers' :"],
+  ['engine/events2.js', "? 'cartoleiros' :", "? 'Cartola managers' :"],
+  ['ui/season.js', "G.c.peak + ' for ' + S.ovr(G.c)", "G.c.peak + ' to ' + S.ovr(G.c)"],
+  ['ui/season.js', "f.lead ? 'A ' + p(f.lead) + ' behind", "f.lead ? p(f.lead) + ' behind"],
+  ['ui/season.js', "'A ' + p(v) + ' behind the leader'", "p(v) + ' behind the leader'"],
+  ['ui/season.js', "'A ' + p(v) + ' off the promotion zone'", "p(v) + ' off the promotion zone'"],
+  ['ui/worldcup.js', "run.games.filter(x => x.cs).length + ' clean sheets' + (run.g", "D.plural(run.games.filter(x => x.cs).length, 'clean sheet', 'clean sheets') + (run.g"],
+  ['ui/paper.js', "run.games.filter(x => x.cs).length + ' clean sheets at the World Cup'", "D.plural(run.games.filter(x => x.cs).length, 'clean sheet', 'clean sheets') + ' at the World Cup'"],
+  ['ui/paper.js', "run.games.filter(x => x.cs).length + ' clean sheets at the Club World Cup'", "D.plural(run.games.filter(x => x.cs).length, 'clean sheet', 'clean sheets') + ' at the Club World Cup'"],
+  ['ui/album.js', "s.cleanSheets + ' clean sheets'", "P(s.cleanSheets, 'clean sheet', 'clean sheets')"],
+  ['ui/offers.js', "'igual'", "'unchanged'"],
+  // Fichas do lance decisivo (match.js): adjetivos soltos
+  ['ui/match.js', "'longo'", "'long'"], ['ui/match.js', "'curto'", "'short'"], ['ui/match.js', "'grande'", "'big'"],
+  ['ui/match.js', "'larga'", "'wide'"], ['ui/match.js', "'estreita'", "'narrow'"], ['ui/match.js', "'lenta'", "'slow'"], ['ui/match.js', "'lento'", "'slow'"],
+  ['ui/match.js', "'nenhuma'", "'none'"], ['ui/match.js', "'pouca'", "'low'"], ['ui/match.js', "'muita'", "'high'"],
+  ['ui/match.js', `'<span class="chip">RIT ' + E.rit`, `'<span class="chip">PAC ' + E.rit`],
+  ['ui/start.js', "esc(ch.name) : 'nenhum')", "esc(ch.name) : 'none')"],
+  ['ui/ranking.js', "'hoje'", "'today'"],
+  ['ui/cloud.js', "'conectado'", "'connected'"],
+  ['ui/cloud.js', "'criada'", "'set'"],
+  ['ui/offers.js', "'acabando'", "'ending'"],
+  ['engine/season.js', "' makes his senior debut ' + D.do(cur.name)", "' makes his senior debut for ' + cur.name"],
+  ['engine/season.js', "s.goals + ' goals and ' + D.plural(s.cleanSheets", "s.goals + ' goals, ' + D.plural(s.cleanSheets"],
   ['ui/desktop.js', "/\\b([Dd])ois toques\\b/g, (m, d) => (d === 'D' ? 'Two' : 'dois')", "/\\b([Tt])wo taps\\b/g, (m, d) => (d === 'T' ? 'Two' : 'two')"],
 ];
 const DATA_EN = `
 ;(function (D) { // versão em inglês: sem artigos do português
   D.o = D.O = n => n; D.do = n => 'of ' + n; D.no = n => 'at ' + n; D.pelo = n => 'for ' + n; D.ao = n => 'to ' + n;
-  D.fem = () => false; D.da = n => 'of the ' + n; D.na = n => 'in the ' + n; D.paraA = n => 'to the ' + n;
+  // D.da/D.na/D.paraA só recebem ligas e taças: 'the Premier League', mas 'La Liga', 'Ligue 1', 'Serie A', 'MLS' sem artigo
+  const the = n => (/^(La |LaLiga|Ligue |Liga |Serie |Série |MLS|HNL|Allsvenskan|Eliteserien|Ekstraklasa|Botola|TFF|J[12] |K League)/.test(n) ? '' : 'the ') + n;
+  D.fem = () => false; D.da = n => 'of ' + the(n); D.na = n => 'in ' + the(n); D.paraA = n => 'to ' + the(n);
+  D.andList = a => (a.length > 1 ? a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : a.join('')); // 'A, B and C'
 })(typeof window !== 'undefined' ? window.CRAQUE_DATA : globalThis.CRAQUE_DATA);
 `;
 
@@ -151,6 +224,9 @@ function apply(dir) {
     if (rel === 'data.js') outCode += DATA_EN;
     fs.writeFileSync(f, outCode);
   }
+  // kits-real.js (fora da extração) guarda os uniformes por nome de seleção/clube: as chaves seguem os nomes traduzidos
+  const kr = path.join(dir, 'src', 'kits-real.js');
+  if (fs.existsSync(kr)) fs.writeFileSync(kr, fs.readFileSync(kr, 'utf8').replace(/'([^'\\\n]+)'(?=\s*:)/g, (m, k) => (d[k] ? quote(d[k], false, false, "'") : m)).split("'EUA'").join("'USA'"));
   console.log(`traduzidos ${done} · em português ${kept}`);
 }
 
