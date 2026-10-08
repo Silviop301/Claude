@@ -100,8 +100,9 @@
   };
   const pname = p => (PROV[p] ? PROV[p].name : 'o serviço');
   const pico = p => '<span class="prov-ico">' + PROV[p].icon + '</span>';
-  // Serviços ligados no servidor (só aparecem os que têm chave configurada)
-  let provP = null;
+  // Serviços ligados no servidor (só aparecem os que têm chave configurada).
+  // Na versão de portal o jogo roda dentro de outra página, onde o Google e afins recusam abrir: só usuário e senha
+  let provP = window.CLIMBIX_PORTAL ? Promise.resolve([]) : null;
   const providers = () => provP || (provP = fetch(OAPI + '?a=providers').then(r => r.json())
     .then(j => (j.providers || []).filter(p => PROV[p]), () => { provP = null; return []; }));
 

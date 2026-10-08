@@ -26,12 +26,12 @@
       return d;
     } catch (e) { return null; }
   }
-  const linkOf = d => location.origin + location.pathname.replace(/index\.html$/, '') + '?c=' + encode(d);
+  const linkOf = d => (window.CLIMBIX_HOME || location.origin + location.pathname.replace(/index\.html$/, '')) + '?c=' + encode(d);
 
   // Link curto (climbix.app/?c=xxxxxxx): a carta fica guardada no servidor (api/c.php); sem servidor, o link longo
   const CARDS_API = window.CLIMBIX_CARDS_API || (/climbix\.app$/.test(location.hostname) ? '/api/c.php' : 'https://climbix.app/api/c.php');
   const SHORT = /^[0-9A-Za-z]{7}$/;
-  const base = () => location.origin + location.pathname.replace(/index\.html$/, '');
+  const base = () => (window.CLIMBIX_HOME || location.origin + location.pathname.replace(/index\.html$/, ''));
   async function shortLink(d) {
     try {
       const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 4000);

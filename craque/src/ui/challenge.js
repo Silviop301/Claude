@@ -21,7 +21,7 @@
       return { n: String(d.n || 'Alguém').slice(0, 24), p: d.p, s: int(d.s, 20000), g: d.g, k: int(d.k, 3000), t: int(d.t, 200), b: int(d.b, 25) };
     } catch (e) { return null; }
   }
-  const base = () => location.origin + location.pathname.replace(/index\.html$/, '');
+  const base = () => (window.CLIMBIX_HOME || location.origin + location.pathname.replace(/index\.html$/, ''));
   const pts = n => n.toLocaleString('pt-BR');
   const active = () => load(KEY);
 

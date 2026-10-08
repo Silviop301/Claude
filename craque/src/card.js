@@ -258,6 +258,8 @@
       const i = new Image();
       i.onload = () => res(i);
       i.onerror = () => res(null);
+      // Portal: escudo vem de climbix.app; sem crossOrigin a carta não vira imagem para compartilhar
+      if (window.CLIMBIX_BADGES && /^badges\//.test(src)) { i.crossOrigin = 'anonymous'; src = src.replace(/^badges\//, window.CLIMBIX_BADGES); }
       i.src = src;
     });
   }

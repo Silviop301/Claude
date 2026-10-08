@@ -6,7 +6,8 @@ if (!window.CRAQUE_UI.cardFromLink()) window.CRAQUE_UI.home();
 window.CRAQUE_UI.cloudBoot();
 
 // Instalável e offline: registra o service worker (gerado por tools/craque_sw.py)
-if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+// (fora na versão de portal: o jogo roda dentro da página do portal)
+if ('serviceWorker' in navigator && location.protocol !== 'file:' && !window.CLIMBIX_PORTAL) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js' + (window.CLIMBIX_VER ? '?v=' + window.CLIMBIX_VER : '')).catch(() => { /* sem offline, segue normal */ });
     // Escudos, taças, emojis e o 3D vão para o offline aos poucos, com o jogo já aberto

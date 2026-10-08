@@ -14,7 +14,10 @@
   const league = id => D.LEAGUE_BY_ID[club(id).league];
   const stars = t => '★'.repeat(t) + '☆'.repeat(5 - t);
   const year = () => YEAR0 + G.c.season;
-  const crest = (id, cls) => '<img class="crest' + (cls ? ' ' + cls : '') + '" src="badges/' + id + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">';
+  // Versão de portal (tools/craque_portal.py): os escudos vêm de climbix.app, para o pacote caber no limite de arquivos
+  const BADGES = window.CLIMBIX_BADGES || 'badges/';
+  const badgeSrc = s => String(s).replace(/^badges\//, BADGES);
+  const crest = (id, cls) => '<img class="crest' + (cls ? ' ' + cls : '') + '" src="' + BADGES + id + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">';
   const trophy = (type, size, name) => window.CRAQUE_TROPHY(type, size, name);
   const titleType = t => (t.id === 'cont' ? (t.name === 'Libertadores' ? 'lib' : 'ucl') : t.id);
   const meter = (label, v) => '<span class="m"><span class="ml">' + label + ' · ' + S.relLabel(v) + '</span><span class="mb"><i style="width:' + Math.round(v) + '%" class="' + (v >= 62 ? 'hi' : v < 32 ? 'lo' : '') + '"></i></span></span>';
@@ -62,7 +65,7 @@
     if (!id) { el.className = ''; return; }
     const kit = (window.CRAQUE_KITS || {})[id] || ['#1F6B3E', '#0B1F14'];
     el.style.setProperty('--kit', kit[0]);
-    el.innerHTML = '<img src="badges/' + id + '.png" alt="" onerror="this.remove()">';
+    el.innerHTML = '<img src="' + BADGES + id + '.png" alt="" onerror="this.remove()">';
     el.className = 'on';
   }
   // Balão com o nome do medidor tocado
@@ -211,5 +214,5 @@
   const tierCls = o => (o >= 85 ? 'icone' : o >= 75 ? 'ouro' : o >= 65 ? 'prata' : 'bronze');
   const TIER_NAME = { bronze: 'Bronze', prata: 'Prata', ouro: 'Ouro', icone: 'Ícone' };
 
-  window.CRAQUE_UI = { zk, ICON, emo, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar };
+  window.CRAQUE_UI = { zk, ICON, emo, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar };
 })();
