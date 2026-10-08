@@ -103,19 +103,22 @@
       const saved = miss || (d === side && (side === 0 || Math.abs(x) <= setup.diveReach));
       const why = miss ? 'fora' : saved ? 'defesa' : 'gol';
       const tx = P.px(Math.max(-1.25, Math.min(1.25, x))), ty = P.py(Math.min(y, 1.1));
-      // Mergulho: na defesa a luva vai até a bola; senão, pula para o lado escolhido
+      // Mergulho: na defesa a luva vai até a bola; senão, pula para o lado escolhido.
+      // Bola pra fora: no lado certo a luva para bem perto da trave, nunca além (deitado, o corpo ainda cabe no gol)
       const R = 72 - Math.min(1, y) * 30, dir = d || 1;
-      const kDx = d === 0 ? 0 : saved ? tx - P.GX - dir * 114 * Math.sin(R * Math.PI / 180) : d * P.GW * 0.55;
-      const kDy = d === 0 ? -Math.min(y, 0.7) * 45 : Math.min(0, (saved ? ty : P.py(0.5)) - P.GY + 114 * Math.cos(R * Math.PI / 180));
+      const reach = miss ? d === side : saved;
+      const gx = miss ? P.px(side * 0.9) : tx;
+      const kDx = d === 0 ? 0 : reach ? gx - P.GX - dir * 114 * Math.sin(R * Math.PI / 180) : d * P.GW * 0.55;
+      const kDy = d === 0 ? -Math.min(y, 0.7) * 45 : Math.min(0, (reach ? ty : P.py(0.5)) - P.GY + 114 * Math.cos(R * Math.PI / 180));
       if (d !== 0) keeper.classList.add('diving');
       const T = 520, s0 = performance.now();
       // Goleiro 3D: na defesa a luva vai até a bola; senão, pula para o lado escolhido
-      spr.dive(saved ? tx : P.px(d * 0.55), saved ? ty : P.py(0.5), d, T * 0.8, 0);
+      spr.dive(reach ? gx : P.px(d * 0.55), reach ? ty : P.py(0.5), d, T * 0.8, 0);
       (function fly(now) {
         const k = Math.min(1, (now - s0) / T), e = ease(k);
         b3.place(P.BALL.x + (tx - P.BALL.x) * e, P.BALL.y + (ty - P.BALL.y) * e - Math.sin(k * Math.PI) * 16, P.BALL.r + (8.5 - P.BALL.r) * e, 0.3 * (1 - e) + 0.05);
         const ke = ease(Math.min(1, k * 1.25));
-        P.setKeeper(keeper, kDx * ke, kDy * ke, (d === 0 ? 0 : d * (saved ? R : 72)) * ke);
+        P.setKeeper(keeper, kDx * ke, kDy * ke, (d === 0 ? 0 : d * (reach ? R : 72)) * ke);
         if (k < 1) return requestAnimationFrame(fly);
         if (saved && !miss) { // rebote para fora
           const r0 = performance.now(), bx = tx, by = ty;
