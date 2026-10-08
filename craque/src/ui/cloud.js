@@ -348,7 +348,7 @@
 
   // Abriu o jogo: volta de um login com serviço ou, com conta, busca o que mudou em outro aparelho
   function boot() {
-    if (oauthReturn() || !acc()) return;
+    if (window.CLIMBIX_SOLO || oauthReturn() || !acc()) return;
     sync().then(changed => { if (changed && !G.c && document.getElementById('b-new')) U.home(); });
   }
 

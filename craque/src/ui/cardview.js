@@ -49,16 +49,18 @@
     const old = btn ? btn.innerHTML : '';
     if (btn) btn.textContent = 'Preparando…';
     const cv = document.createElement('canvas');
-    const [url] = await Promise.all([shortLink(d), window.CRAQUE_CARD(cv, d)]);
-    const text = 'Olha a carta de ' + d.name + ' no Climbix! Veja em 3D: ' + url;
+    // Portal sem links para fora (CLIMBIX_SOLO): só a imagem e o texto
+    const [url] = await Promise.all([window.CLIMBIX_SOLO ? '' : shortLink(d), window.CRAQUE_CARD(cv, d)]);
+    const text = 'Olha a carta de ' + d.name + (url ? ' no Climbix! Veja em 3D: ' + url : ' no Climbix!');
     const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
     const file = blob && new File([blob], 'climbix-' + String(d.name).toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.png', { type: 'image/png' });
     const done = (label, r) => { if (btn) { btn.innerHTML = label || old; if (label) setTimeout(() => { btn.innerHTML = old; }, 2500); } return r; };
     try {
       if (file && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return done('', 'shared'); }
-      if (navigator.share) { await navigator.share({ title: 'Climbix', text, url }); return done('', 'shared'); }
+      if (navigator.share) { await navigator.share(url ? { title: 'Climbix', text, url } : { title: 'Climbix', text }); return done('', 'shared'); }
     } catch (e) { if (e && e.name === 'AbortError') return done('', 'cancel'); }
     if (file) { const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; document.body.appendChild(a); a.click(); a.remove(); }
+    if (!url) return done('Imagem salva', 'saved');
     try { await navigator.clipboard.writeText(text); return done('Imagem salva e link copiado', 'copied'); } catch (e) { prompt('Copie o link da carta:', url); return done('', 'prompt'); }
   }
 

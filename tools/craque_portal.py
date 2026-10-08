@@ -7,7 +7,8 @@ O portal mostra o jogo dentro da página dele (iframe, em outro domínio), por i
   no máximo 1000 arquivos; os escudos vêm de https://climbix.app/badges/, que libera CORS);
 - marca a página com CLIMBIX_PORTAL, CLIMBIX_BADGES e CLIMBIX_HOME (links de compartilhar
   apontam para climbix.app; login só com usuário e senha);
-- abre links (Privacidade, Termos) em outra aba, para não trocar a página dentro do portal.
+- abre links (Privacidade, Termos) em outra aba, para não trocar a página dentro do portal;
+- no CrazyGames e no Poki (SOLO), sem conta e sem links para climbix.app (regras desses portais).
 
 Uso (da raiz): python3 tools/craque_portal.py [nome-do-portal] [en]   # padrão: itch, em português
 Com "en", os textos viram a tradução de craque/i18n/en.json (tools/craque_i18n.js apply; precisa do
@@ -25,6 +26,9 @@ OUT = os.path.join(ROOT, 'dist')
 SKIP_DIRS = {'api', 'badges', 'i18n'}
 SKIP_FILES = {'sw.js', 'manifest.webmanifest'}
 HOME = 'https://climbix.app/'
+# Portais que proíbem login externo e links para a versão jogável no site: sem conta, sem desafio por link,
+# carta compartilhada só como imagem
+SOLO = {'crazygames', 'poki'}
 
 FLAGS = (
     "<script>window.CLIMBIX_PORTAL = '{p}'; window.CLIMBIX_BADGES = '" + HOME + "badges/'; window.CLIMBIX_HOME = '" + HOME + "';\n"
@@ -74,7 +78,10 @@ def main():
     html = open(os.path.join(SRC, 'index.html'), encoding='utf-8').read()
     html = html.replace('<link rel="manifest" href="manifest.webmanifest">\n', '')
     first = html.index('<script')
-    html = html[:first] + FLAGS.format(p=portal) + html[first:]
+    flags = FLAGS.format(p=portal)
+    if portal in SOLO:
+        flags = flags.replace("<script>", "<script>window.CLIMBIX_SOLO = true; ", 1)
+    html = html[:first] + flags + html[first:]
     if 'CLIMBIX_PORTAL' not in html:
         sys.exit('index.html: não achei onde marcar a versão de portal')
     if lang == 'en':
@@ -82,7 +89,7 @@ def main():
             if a not in html:
                 sys.exit('index.html: não achei ' + a)
             html = html.replace(a, b)
-        html = html.replace(FLAGS.format(p=portal), FLAGS.format(p=portal) + EN_SCRIPT)
+        html = html.replace(flags, flags + EN_SCRIPT)
 
     name = portal + ('-' + lang if lang != 'pt' else '')
     work = os.path.join(OUT, name)

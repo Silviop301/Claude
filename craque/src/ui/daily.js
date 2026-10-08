@@ -56,8 +56,8 @@
       const b = $('b-daily-share');
       if (b) b.onclick = async () => {
         try {
-          if (navigator.share) { await navigator.share({ text: txt + '\n' + (window.CLIMBIX_HOME || location.href) }); return; }
-          await navigator.clipboard.writeText(txt + '\n' + (window.CLIMBIX_HOME || location.href));
+          if (navigator.share) { await navigator.share({ text: txt + (window.CLIMBIX_SOLO ? '' : '\n' + (window.CLIMBIX_HOME || location.href)) }); return; }
+          await navigator.clipboard.writeText(txt + (window.CLIMBIX_SOLO ? '' : '\n' + (window.CLIMBIX_HOME || location.href)));
           b.textContent = 'Copiado! Cole para os amigos';
         } catch (e) { /* cancelado */ }
       };

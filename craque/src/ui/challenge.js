@@ -59,6 +59,8 @@
         '<span>' + pts(f.score) + ' (' + f.grade + ') contra ' + pts(d.s) + ' (' + d.g + ')' + (diff > 0 ? '. Devolva o desafio!' : '. Tente de novo ou desafie de volta.') + '</span></div></div>';
       if (diff > 0) store(KEY, Object.assign(d, { done: true }));
     }
+    // Portal sem links para fora (CLIMBIX_SOLO): o desafio é um link, então não aparece
+    if (window.CLIMBIX_SOLO) return res;
     return res + '<button class="btn ghost dz-btn" id="b-desafio">' + U.emo('🎯', 'sm') + ' Desafiar um amigo<small>Manda sua nota e vê se ele bate</small></button>';
   }
   function finaleBind(c, f) {
