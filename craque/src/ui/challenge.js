@@ -21,7 +21,7 @@
       return { n: String(d.n || 'Alguém').slice(0, 24), p: d.p, s: int(d.s, 20000), g: d.g, k: int(d.k, 3000), t: int(d.t, 200), b: int(d.b, 25) };
     } catch (e) { return null; }
   }
-  const base = () => location.origin + location.pathname.replace(/index\.html$/, '');
+  const base = () => (window.CLIMBIX_HOME || location.origin + location.pathname.replace(/index\.html$/, ''));
   const pts = n => n.toLocaleString('pt-BR');
   const active = () => load(KEY);
 
@@ -59,6 +59,8 @@
         '<span>' + pts(f.score) + ' (' + f.grade + ') contra ' + pts(d.s) + ' (' + d.g + ')' + (diff > 0 ? '. Devolva o desafio!' : '. Tente de novo ou desafie de volta.') + '</span></div></div>';
       if (diff > 0) store(KEY, Object.assign(d, { done: true }));
     }
+    // Portal sem links para fora (CLIMBIX_SOLO): o desafio é um link, então não aparece
+    if (window.CLIMBIX_SOLO) return res;
     return res + '<button class="btn ghost dz-btn" id="b-desafio">' + U.emo('🎯', 'sm') + ' Desafiar um amigo<small>Manda sua nota e vê se ele bate</small></button>';
   }
   function finaleBind(c, f) {

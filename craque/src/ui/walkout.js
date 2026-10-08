@@ -56,7 +56,7 @@
     wrap.innerHTML = '<div class="wo-beams"></div>' +
       '<div class="wo-step wo-flag">' + U.flag(cty.flag) + '</div>' +
       '<div class="wo-step wo-pos">' + esc(card ? SPECIAL[card.type] : D.POS[c.pos].name) + '</div>' +
-      '<div class="wo-step wo-crest"><img src="' + (d.crest || 'icons/icon-192.png') + '" alt=""></div>' +
+      '<div class="wo-step wo-crest"><img src="' + (d.crest ? U.badgeSrc(d.crest) : 'icons/icon-192.png') + '" alt=""></div>' +
       '<div class="wo-card card3d-host"><canvas aria-label="Carta nova"></canvas></div>' +
       '<div class="wo-title"><span>' + (card ? 'Carta especial' : 'Nova carta') + '</span><b>' + (card ? SPECIAL[card.type] : TIER_NAME[t]) + '</b></div>' +
       '<div class="wo-tap">Toque para continuar</div>';

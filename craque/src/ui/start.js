@@ -27,7 +27,7 @@
       '<button class="hg mine-btn" id="b-mine"><i>' + U.ICON.cards + '</i><b>Minhas carreiras</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carreira' : ' carreiras') +
         (U.salaNew() ? ' · <em>+' + U.salaNew() + (U.salaNew() === 1 ? ' taça nova' : ' taças novas') + '</em>' : '') + '</small></button>' +
       (played ? U.feedbackHome() : '') +
-      '<div class="home-foot"><button class="link-btn home-snd" id="b-sound"></button><button class="link-btn home-snd" id="b-cloud"></button></div>' + U.deskHint()
+      '<div class="home-foot"><button class="link-btn home-snd" id="b-sound"></button>' + (window.CLIMBIX_SOLO ? '' : '<button class="link-btn home-snd" id="b-cloud"></button>') + '</div>' + U.deskHint()
     );
     if ($('b-cont')) $('b-cont').onclick = () => {
       G.c = saved.c;
@@ -46,8 +46,10 @@
     U.challengeHomeBind();
     if ($('b-opiniao')) $('b-opiniao').onclick = () => U.feedback('inicio', {}, home);
     $('b-rank').onclick = () => U.ranking();
-    $('b-cloud').innerHTML = U.emo('☁️', 'xs') + ' ' + esc(U.cloudName());
-    $('b-cloud').onclick = () => U.cloud('login');
+    if ($('b-cloud')) {
+      $('b-cloud').innerHTML = U.emo('☁️', 'xs') + ' ' + esc(U.cloudName());
+      $('b-cloud').onclick = () => U.cloud('login');
+    }
     const snd = $('b-sound');
     if (snd) { snd.innerHTML = U.emo('⚙️', 'xs') + ' Configurações'; snd.onclick = U.settings; }
     // A bola 3D espera o módulo 3D terminar de carregar (na primeira visita ele chega depois da tela)
