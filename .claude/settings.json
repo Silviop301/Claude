@@ -1,5 +1,6 @@
 {
   "permissions": {
+    "allow": ["Bash(cp dist/climbix-*.zip /mnt/project-files/climbix/portais/)"],
     "deny": [
       "Read(./craque/sw.js)",
       "Read(./craque/src/kits.js)",
