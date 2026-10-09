@@ -15,6 +15,7 @@ Com "en", os textos viram a tradução de craque/i18n/en.json (tools/craque_i18n
 typescript global) e a pasta dist/<portal>/ fica para conferir antes do zip.
 """
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -24,7 +25,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'craque')
 OUT = os.path.join(ROOT, 'dist')
 SKIP_DIRS = {'api', 'badges', 'i18n'}
-SKIP_FILES = {'sw.js', 'manifest.webmanifest'}
+SKIP_FILES = {'sw.js', 'manifest.webmanifest', 'robots.txt', 'sitemap.xml'}
 HOME = 'https://climbix.app/'
 # Portais que proíbem login externo e links para a versão jogável no site: sem conta, sem desafio por link,
 # carta compartilhada só como imagem
@@ -38,7 +39,9 @@ FLAGS = (
 # Textos fixos do index.html na versão em inglês
 EN_HTML = [
     ('<html lang="pt-BR">', '<html lang="en">'),
-    ('Climbix: crie um garoto de 16 anos e descubra se ele vira lenda do futebol.', 'Climbix: create a 16-year-old and find out if he becomes a football legend.'),
+    ('Jogo de carreira de futebol grátis no navegador', 'Free football career game in your browser'),
+    ('Jogo de carreira de futebol">', 'Football career game">'),
+    ('Jogo grátis de carreira de futebol no navegador: crie um garoto de 16 anos, escolha clubes, jogue os lances decisivos e descubra se ele vira lenda.', 'Free football career game in your browser: create a 16-year-old, pick clubs, play the decisive moments and find out if he becomes a legend.'),
     ('Crie um garoto de 16 anos e descubra se ele vira lenda do futebol.', 'Create a 16-year-old and find out if he becomes a football legend.'),
     ('aria-label="Nota geral"', 'aria-label="Overall rating"'),
     ('<div class="eyebrow">Carreira de futebol</div>', '<div class="eyebrow">Football career</div>'),
@@ -77,6 +80,10 @@ def main():
     lang = sys.argv[2] if len(sys.argv) > 2 else 'pt'
     html = open(os.path.join(SRC, 'index.html'), encoding='utf-8').read()
     html = html.replace('<link rel="manifest" href="manifest.webmanifest">\n', '')
+    # Endereço, canônico e ficha do Google valem só para o climbix.app
+    html, n = re.subn(r'<!-- SEO:.*?<!-- /SEO -->\n', '', html, flags=re.S)
+    if n != 1:
+        sys.exit('index.html: não achei o bloco <!-- SEO -->')
     first = html.index('<script')
     flags = FLAGS.format(p=portal)
     if portal in SOLO:
