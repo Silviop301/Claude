@@ -214,6 +214,7 @@
     const game = run.games[run.games.length - 1];
     run.live = false; run.momentStarted = false;
     game.live = false;
+    if (!game.moment) { save(); return; }
     game.momentOk = !!ok;
     if (why) game.momentWhy = why;
     S.countKick(c, game.moment.type, ok);
@@ -237,7 +238,9 @@
   S.wcMomentType = c => (c.wcRun && c.wcRun.live ? c.wcRun.games[c.wcRun.games.length - 1].moment.type : null);
   S.wcMomentAuto = function (c) {
     const { r, save } = rngOf(c);
-    const m = c.wcRun.games[c.wcRun.games.length - 1].moment, st = S.kickSetupType({ kick: m.type });
+    const m = c.wcRun.games[c.wcRun.games.length - 1].moment;
+    if (!m) return S.wcMoment(c, false); // lance perdido no save: só libera a Copa
+    const st = S.kickSetupType({ kick: m.type });
     if (!m.style) m.style = S.autoStyle(c, st);
     const ok = r() < S.kickSetup(c, st, m.style).chance;
     save();

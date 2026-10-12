@@ -224,6 +224,8 @@
   function wcLive() {
     screen.onclick = null;
     const run = G.c.wcRun, g = run.games[run.games.length - 1], m = g.moment;
+    // Copa salva marcando lance ao vivo num jogo sem lance (aconteceu num iPhone): libera e segue a Copa
+    if (!g || !m) { run.live = false; run.momentStarted = false; if (g) g.live = false; save(); return wcPlay(); }
     // Fechou o jogo no meio da cobrança: a chance decide
     if (run.momentStarted) { S.wcMomentAuto(G.c); save(); return wcPlay(); }
     const type = S.kickSetupType({ kick: m.type }), def = type === 'save' || type === 'tackle';
