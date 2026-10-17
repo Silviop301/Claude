@@ -5,11 +5,12 @@
 //  - U.rankClimb(el, pontos): no fim da carreira, a posição na semana conta do fim da fila até a sua.
 //  - U.riskRoll(p, ok, title, done): decisão arriscada. O ponteiro corre sobre a chance (verde = deu certo) e para
 //    no resultado que o motor já sorteou (só mostra; não sorteia nada). ~1,2 s; um toque pula.
-// Configuração "rápido" ou "reduzir movimento" do aparelho: sem animação (vai direto ao fim).
+// "Reduzir movimento" do aparelho: sem animação (vai direto ao fim).
 (function () {
   const U = window.CRAQUE_UI;
   const { S, esc } = U;
-  const still = () => !!(U.cfg && U.cfg.fast) || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Só "reduzir movimento" do aparelho desliga: o resumo rápido da temporada vale só para o resumo
+  const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const layer = cls => { const w = document.createElement('div'); w.className = 'mo-wrap ' + cls; document.body.appendChild(w); return w; };
 
   // ---------- Nota final ----------
