@@ -33,7 +33,7 @@
     svg.querySelector('#k-aim').remove();
     let goal = null, gone = false;
     P.goal3d(svg).then(g => { if (!g) return; if (gone) return g.dispose(); goal = g; });
-    const spr = P.keeperSprite(svg); // você no gol, em sprite
+    const spr = P.keeperSprite(svg, root.CRAQUE_CHARS.keeperLook(c)); // você no gol, com a sua pele, cabelo e luva
     spr.stand(P.GX); spr.idle();
     keeper.classList.add('mine'); // o goleiro agora é você
     const { cine, host } = cineOf(stage);
