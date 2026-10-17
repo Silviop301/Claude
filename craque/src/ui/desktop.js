@@ -41,9 +41,9 @@
   // ---------- Teclado ----------
   const visible = el => !!el && el.isConnected && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
   // Camadas por cima da tela (a última adicionada fica na frente)
-  const LAYERS = '.ask-wrap, .cfg-wrap, .sheet-wrap, .sl-sheet-wrap, .trn-wrap, .paper-wrap, .walkout, .pk-wrap, .album, .bigmoment';
+  const LAYERS = '.ask-wrap, .cfg-wrap, .sheet-wrap, .sl-sheet-wrap, .trn-wrap, .paper-wrap, .walkout, .pk-wrap, .album, .bigmoment, .mo-wrap';
   // Camadas que fecham ou avançam com um clique em qualquer lugar
-  const TAP_LAYER = /\b(paper-wrap|walkout|bigmoment|album|pk-wrap)\b/;
+  const TAP_LAYER = /\b(paper-wrap|walkout|bigmoment|album|pk-wrap|mo-wrap)\b/;
   const top = () => { const ls = [...document.querySelectorAll(LAYERS)].filter(visible); return ls[ls.length - 1] || null; };
   // Clique de verdade num ponto (fx, fy em fração do elemento): passa pelos mesmos caminhos do mouse
   function clickAt(el, fx, fy, type) {
