@@ -126,7 +126,60 @@
   }
 
   // Goleiro desenhado em sprites, no lugar do goleiro vetorial (mesma camada do SVG)
-  function keeperSprite(svg) {
+  // Goleiro com o visual do jogador (quando o goleiro é você): o desenho do designer com a pele, a cor do cabelo
+  // (e das sobrancelhas) e a luva trocadas pixel a pixel. O corte de cabelo e a barba seguem os do desenho (pedem arte nova).
+  // look: { skin, hair, brow, glove } em #rrggbb (brow: sobrancelha; cabelo pintado tem sobrancelha castanha). Devolve uma URL (blob) ou null; guarda por visual.
+  const tinted = {};
+  function keeperTint(look) {
+    if (!look || typeof document === 'undefined') return Promise.resolve(null);
+    const key = [look.skin, look.hair, look.brow, look.glove].join('|');
+    if (tinted[key]) return tinted[key];
+    const hex = h => (/^#[0-9a-f]{6}$/i.test(h || '') ? [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)) : null);
+    const SK = hex(look.skin), HR = hex(look.hair), GL = hex(look.glove);
+    return (tinted[key] = new Promise(res => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const cv = document.createElement('canvas'); cv.width = KSP.sw; cv.height = KSP.sh;
+          const x = cv.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0);
+          const d = x.getImageData(0, 0, cv.width, cv.height), px = d.data;
+          const lum = (r, g, b) => 0.3 * r + 0.59 * g + 0.11 * b;
+          // Cores de referência do desenho: pele, cabelo e luva (medidas na folha)
+          const B_SK = lum(240, 196, 166), B_HR = lum(66, 42, 30), B_GL = lum(180, 222, 72);
+          const put = (i, T, k) => { px[i] = Math.min(255, T[0] * k); px[i + 1] = Math.min(255, T[1] * k); px[i + 2] = Math.min(255, T[2] * k); };
+          // 1ª passada: o que é pele (1), cabelo (2) e luva (3), olhando a cor original
+          const W = cv.width, N = W * cv.height, cls = new Uint8Array(N);
+          for (let j = 0, i = 0; j < N; j++, i += 4) {
+            if (px[i + 3] < 40) continue;
+            const r = px[i], g = px[i + 1], b = px[i + 2], L = lum(r, g, b);
+            if (r >= 170 && r > g && g > b && r - b >= 45 && r - b <= 100 && b >= 100) cls[j] = 1;
+            else if (r > g && g > b && L >= 40 && L <= 105 && r - b >= 20 && r < 140) cls[j] = 2;
+            else if (g > r && g > b + 60 && g >= 120) cls[j] = 3;
+          }
+          // Borda de contorno (1 px, mesma faixa de cor) não é cabelo: cabelo tem vizinhos de cabelo
+          const hairN = j => { let n = 0; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (cls[j + dy * W + dx] === 2) n++; return n; };
+          for (let j = 0; j < N; j++) if (cls[j] === 2 && hairN(j) < 9) cls[j] = 4;
+          for (let j = 0; j < N; j++) if (cls[j] === 4) cls[j] = 0;
+          // Sobrancelha: faixa fina de "cabelo" com pele dos dois lados (em cima e embaixo, ou dos lados no mergulho)
+          const skinNear = (j, dx, dy) => { for (let k = 1; k <= 4; k++) if (cls[j + k * (dy * W + dx)] === 1) return true; return false; };
+          const brow = j => (skinNear(j, 0, -1) && skinNear(j, 0, 1)) || (skinNear(j, -1, 0) && skinNear(j, 1, 0));
+          const BR = hex(look.brow) || HR, hk = HR && HR[0] + HR[1] + HR[2] > 500 ? 0.85 : 1;
+          for (let j = 0, i = 0; j < N; j++, i += 4) {
+            const k = cls[j]; if (!k) continue;
+            const L = lum(px[i], px[i + 1], px[i + 2]);
+            if (k === 1 && SK) put(i, SK, L / B_SK);
+            else if (k === 2 && HR) { const b = brow(j); put(i, b ? BR : HR, Math.max(0.55, L / B_HR) * (b ? 1 : hk)); }
+            else if (k === 3 && GL) put(i, GL, L / B_GL);
+          }
+          x.putImageData(d, 0, 0);
+          cv.toBlob(bl => res(bl ? URL.createObjectURL(bl) : null));
+        } catch (e) { res(null); } // imagem de outro domínio (portal): fica o goleiro padrão
+      };
+      img.onerror = () => res(null);
+      img.src = KSP.url;
+    }));
+  }
+  function keeperSprite(svg, look) {
     const NS = 'http://www.w3.org/2000/svg';
     const g = document.createElementNS(NS, 'g');
     g.setAttribute('class', 'k-kspr');
@@ -134,6 +187,7 @@
     const old = svg.querySelector('#k-keeper');
     old.parentNode.insertBefore(g, old);
     old.style.display = 'none';
+    if (look) keeperTint(look).then(u => { if (u) g.querySelector('image').setAttribute('href', u); });
     const inner = g.firstChild, sh = svg.querySelector('#k-kshadow'), s = KSP.s;
     const bb = f => KSP.bb[Math.min(f, 11)];
     const center = f => { const b = bb(f); return [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]; };
@@ -259,7 +313,7 @@
   // Peças reaproveitadas pelo minigame do goleiro (defend.js)
   // Gol: sempre o desenho (o gol 3D pesava demais em celulares mais simples)
   function goal3d() { return Promise.resolve(null); }
-  root.CRAQUE_KICK_PARTS = { scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d, keeperSprite, animateWall, ball3d };
+  root.CRAQUE_KICK_PARTS = { scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d, keeperSprite, keeperTint, animateWall, ball3d };
 
   root.CRAQUE_KICK = function (el, opts) {
     const c = opts.c, m = opts.moment;

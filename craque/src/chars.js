@@ -688,5 +688,13 @@ customElements.define('jogador-2d', Jogador2D);
     if (!opp) { const ok = PAL.filter(p => !bad(p[0])); opp = ok[Math.floor(Math.random() * ok.length)] || PAL[0]; }
     return { mine: kitOf(mine), opp: kitOf(opp) };
   }
-  root.CRAQUE_CHARS = { put, look, faces, kits };
+  // Goleiro (sprite do designer recolorido em kick.js): pele, cor do cabelo e luva da criação
+  const GLOVE_FLAT = { tigre: '#FF8A1F', velcro: '#F4F2EA', dedos: '#F2D630', luvafogo: '#FF6A1F', luvaouro: '#E0B43A' };
+  function keeperLook(c) {
+    const A = root.ClimbixAvatar;
+    if (!A || !c) return null;
+    const lk = Object.assign({}, A.DEF, A.lookOf(c)), l = look(c), g = A.GEAR[lk.glove];
+    return { skin: l.skin, hair: l.hair, brow: l.barbacor, glove: GLOVE_FLAT[lk.glove] || FLAT[lk.glove] || (g && g[0] === '#' ? g : null) };
+  }
+  root.CRAQUE_CHARS = { put, look, faces, kits, keeperLook };
 })(window);
