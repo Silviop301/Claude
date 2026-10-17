@@ -43,7 +43,7 @@
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       // Trocar de clube pede confirmação (dois toques)
       if (offer && b.dataset.i === '0' && !U.arm(b, '<b>Toque de novo para assinar</b>')) return;
-      const r = S.resolveEvent(G.c, ev, +b.dataset.i);
+      const prevClub = G.c.club, r = S.resolveEvent(G.c, ev, +b.dataset.i);
       pendingEvent = null;
       bar();
       // O que mudou de verdade: o geral (quando mexeu) e cada efeito, verde quando ajuda e vermelho quando atrapalha
@@ -54,7 +54,7 @@
       const pctx = { kind: 'event', ok: r.ok, ev, opt: +b.dataset.i, toClub: offer && b.dataset.i === '0' ? G.c.club : null };
       // Opção arriscada: o ponteiro corre sobre a chance e para no resultado que já saiu (motion.js)
       const st = ev.options[+b.dataset.i].st;
-      U.riskRoll(st && !st.safe ? st.p : 0, r.ok, ev.options[+b.dataset.i].label, () => {
+      U.riskRoll(st && !st.safe ? st.p : 0, r.ok, ev.options[+b.dataset.i].label, () => U.transferMove(prevClub, G.c.club, G.c.name, () => {
       render(
         '<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.icoOf(ev, 'lg') + '</span><div class="eyebrow">' + esc(ev.title) + '</div>' +
         '<p class="er-txt">' + esc(r.text) + '</p>' + fxRow + '</div>' +
@@ -62,7 +62,7 @@
       );
       $('b-next').onclick = momentOrSeason;
       U.postBind(pctx, momentOrSeason);
-      });
+      }));
     });
   }
 

@@ -94,6 +94,7 @@
       '<div class="eyebrow">Fim de carreira · ' + (YEAR0 + G.c.season) + '</div>' +
       '<div class="fut card3d-host" id="fut-host"><canvas id="fut" aria-label="Card do jogador"></canvas></div>' +
       '<div class="fin-sum"><div class="grade ' + f.grade + '">' + f.grade + '</div><div><b>' + esc(f.verdict) + '</b><span>' + esc(scoreTxt) + '</span></div></div>' +
+      '<p class="mo-climb" id="mo-climb" hidden></p>' +
       nextGoal(G.c, f, hall, rank) +
       '<div class="ed-box" id="ed-box"></div>' +
       '<div class="fin-acts"><button class="btn" id="b-share">Compartilhar carta</button><button class="btn ghost" id="b-save">Salvar</button></div>' +
@@ -129,7 +130,7 @@
     // Edição especial do jornal com a despedida
     const retired = G.c;
     // A nota da carreira entra primeiro (motion.js); o jornal de despedida vem quando ela fecha
-    setTimeout(() => U.scoreReveal(f, () => setTimeout(() => U.farewellPaper(retired, f), 300)), 250);
+    setTimeout(() => U.scoreReveal(f, () => setTimeout(() => U.farewellPaper(retired, f, () => U.rankClimb($('mo-climb'), f.score)), 300)), 250);
     const spData = k => (k === 'final' ? cardData : U.specialFinal(cardData, retired, retired.cards[+k]));
     let curSp = 'final';
     if ($('b-album')) $('b-album').onclick = () => U.album(retired, f, cardData);

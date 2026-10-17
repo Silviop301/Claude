@@ -96,10 +96,10 @@
     );
     U.tip('janela');
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
-      const o = all[+b.dataset.i], moving = o.club !== G.c.club;
+      const o = all[+b.dataset.i], moving = o.club !== G.c.club, prev = G.c.club;
       if (!U.arm(b, signTxt(o))) return;
       S.join(G.c, o);
-      if (moving) { save(); bar(); }
+      if (moving) { save(); bar(); return U.transferMove(prev, G.c.club, G.c.name, U.preseason); }
       U.preseason();
     });
     screen.querySelectorAll('[data-term]').forEach(b => b.onclick = () => { win.term = b.dataset.term; save(); sfx('tap'); const y = scrollY; windowOffers(); scrollTo(0, y); });

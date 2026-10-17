@@ -1,6 +1,8 @@
 // Interface — animações de momento (prévia aprovada em out/2026):
 //  - U.scoreReveal(f, done): fim de carreira. As partes da pontuação entram uma a uma, o total corre, a nota troca
 //    a cada faixa (D → C → B → A → S) e a última trava com um carimbo. ~2,8 s; um toque pula; fecha sozinho.
+//  - U.transferMove(de, para, nome, done): escudo antigo sai e o novo entra com a cor do uniforme (~1,4 s).
+//  - U.rankClimb(el, pontos): no fim da carreira, a posição na semana conta do fim da fila até a sua.
 //  - U.riskRoll(p, ok, title, done): decisão arriscada. O ponteiro corre sobre a chance (verde = deu certo) e para
 //    no resultado que o motor já sorteou (só mostra; não sorteia nada). ~1,2 s; um toque pula.
 // Configuração "rápido" ou "reduzir movimento" do aparelho: sem animação (vai direto ao fim).
@@ -87,5 +89,49 @@
     w.addEventListener('click', finish);
   }
 
-  Object.assign(U, { scoreReveal, riskRoll });
+  // ---------- Transferência ----------
+  // O escudo antigo sai pela esquerda, o novo entra com a cor do uniforme (~1,4 s; um toque pula; fecha sozinho)
+  function transferMove(fromId, toId, name, done) {
+    const D = U.D, to = D.CLUB_BY_ID[toId], from = D.CLUB_BY_ID[fromId];
+    if (!to || !from || fromId === toId || still()) return done && done();
+    const REAL = window.CRAQUE_KITS_REAL || {}, K = window.CRAQUE_KITS || {};
+    const kit = REAL[to.name] ? REAL[to.name] : K[toId] ? [K[toId][0], K[toId][1]] : ['#145235', '#FBF8EF'];
+    const w = layer('mo-move');
+    w.style.setProperty('--kit', kit[0]); w.style.setProperty('--kit2', kit[1]);
+    w.innerHTML = '<div class="mo-mcard" role="dialog" aria-label="Transferência"><div class="mo-crests"><span class="mo-old">' + U.crest(fromId, 'xl') + '</span><span class="mo-arrow">›</span><span class="mo-new">' + U.crest(toId, 'xl') + '</span></div>' +
+      '<small>Mercado da bola</small><b>' + esc(name) + ' é ' + D.do(esc(to.name)) + '!</b><span>Saiu ' + D.do(esc(from.name)) + '</span></div>';
+    let over = false;
+    const close = () => { if (over) return; over = true; w.classList.add('out'); setTimeout(() => w.remove(), 220); if (done) done(); };
+    if (U.sfx) setTimeout(() => U.sfx('whistle'), 500);
+    const t = setTimeout(close, 1900);
+    w.addEventListener('click', () => { clearTimeout(t); close(); });
+  }
+
+  // ---------- Subida no ranking ----------
+  // Fim de carreira: busca a posição da semana e conta do fim da fila até ela (~1 s). Sem rede ou fora do top, não mostra nada
+  function rankClimb(el, score) {
+    if (!el || !U.rankPlayer) return;
+    const API = window.CLIMBIX_API || (/climbix\.app$/.test(location.hostname) ? '/api/rank.php' : 'https://climbix.app/api/rank.php');
+    const pid = U.rankPlayer().pid;
+    const ask = n => fetch(API + '?a=top&m=score&p=week&pid=' + encodeURIComponent(pid)).then(r => r.json()).then(d => {
+      // O envio da carreira pode demorar uns segundos: tenta de novo até a pontuação desta carreira aparecer
+      if (!d || !d.me || d.me.v < score) { if (n > 0) setTimeout(() => ask(n - 1), 2500); return; }
+      if (d.me.v !== score) return; // a melhor da semana é outra carreira sua
+      const rank = d.me.rank, from = Math.max(rank, d.players || rank);
+      el.innerHTML = U.emo('📈', 'sm') + ' <span>Você está em</span> <b class="mo-rank">' + from + 'º</b> <span>no ranking da semana</span>';
+      el.hidden = false;
+      const num = el.querySelector('.mo-rank');
+      if (still() || from === rank) { num.textContent = rank + 'º'; el.classList.add('done'); return; }
+      const t0 = performance.now(), T = Math.min(1100, 120 * (from - rank) + 300);
+      (function step(now) {
+        if (!num.isConnected) return;
+        const u = Math.min(1, (now - t0) / T), e = 1 - Math.pow(1 - u, 3);
+        num.textContent = Math.round(from - (from - rank) * e) + 'º';
+        if (u < 1) requestAnimationFrame(step); else { el.classList.add('done'); if (rank <= 3 && U.sfx) U.sfx('levelup'); }
+      })(t0);
+    }).catch(() => {});
+    ask(3);
+  }
+
+  Object.assign(U, { scoreReveal, riskRoll, transferMove, rankClimb });
 })();
