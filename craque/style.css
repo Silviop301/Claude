@@ -808,7 +808,7 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .inv-bar .btn:disabled small { color: #9DB5A6; }
 
 /* Voltar ao início: ícone na barra, link na criação e janela de confirmação do jogo */
-.home-btn { display: inline-flex; align-items: center; justify-content: center; color: #fff; }
+.home-btn, .cfg-btn { display: inline-flex; align-items: center; justify-content: center; color: #fff; }
 .bar-btns .snd-mini { min-width: 34px; height: 30px; display: inline-flex; align-items: center; justify-content: center; }
 .back-link { align-self: flex-start; border: 0; background: rgba(255, 255, 255, .1); color: #fff; border-radius: 999px; padding: 6px 14px; font: 700 14px var(--body); margin-bottom: 6px; cursor: pointer; }
 .ask-wrap { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 20px; background: rgba(4, 16, 10, .72); animation: fade-in .2s ease; }
