@@ -2373,3 +2373,18 @@ details.more .src-card { margin: 2px 0 8px; }
 .mo-roll.is-ok .mo-meter .win, .mo-roll.is-ko .mo-meter .lose { box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .7); }
 .mo-legend { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--text-2); }
 @media (prefers-reduced-motion: reduce) { .mo-wrap, .mo-wrap * { animation: none !important; transition: none !important; } }
+.mo-move { background: radial-gradient(110% 70% at 50% 40%, color-mix(in srgb, var(--kit, #145235) 55%, #082015), #082015 78%); }
+.mo-mcard { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; color: var(--paper); }
+.mo-crests { display: flex; align-items: center; justify-content: center; gap: 18px; height: 120px; margin-bottom: 8px; }
+.mo-crests .crest.xl { width: 92px; height: 92px; margin: 0; }
+.mo-old { animation: mo-old .7s ease .35s forwards; }
+.mo-new { opacity: 0; transform: translateX(40px) scale(.6); animation: mo-new .6s cubic-bezier(.3, 1.5, .5, 1) .55s forwards; }
+.mo-arrow { font: 800 44px var(--display); color: var(--kit2, var(--gold)); opacity: .8; }
+@keyframes mo-old { to { opacity: .25; transform: translateX(-24px) scale(.7); filter: grayscale(1); } }
+@keyframes mo-new { to { opacity: 1; transform: none; } }
+.mo-mcard small { font: var(--t-label); letter-spacing: .12em; text-transform: uppercase; color: var(--label); }
+.mo-mcard b { font: var(--t-h1); text-wrap: balance; }
+.mo-mcard > span { font: var(--t-small); color: var(--text-2); }
+.mo-climb { margin: 4px 0 10px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; font: var(--t-small); color: var(--text-2); }
+.mo-climb .mo-rank { font: 800 30px/1 var(--display); color: var(--gold); font-variant-numeric: tabular-nums; }
+.mo-climb.done .mo-rank { animation: mo-bump .3s cubic-bezier(.3, 1.6, .5, 1); }
