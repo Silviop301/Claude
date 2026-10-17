@@ -55,6 +55,7 @@ function stepInPage(opts) {
   // Sobreposições (por cima da tela): fecham primeiro
   const ask = q('.ask-wrap [data-a="ok"]'); if (ask) return label('ask:ok ' + click(ask));
   const big = q('.bigmoment'); if (big) return label('bigmoment ' + click(big));
+  const mo = q('.mo-wrap'); if (mo) { mo.click(); return label('motion'); }
   const wo = q('.walkout'); if (wo) { wo.click(); return label('walkout'); }
   const pw = q('.paper-wrap'); if (pw) { pw.click(); return label('paper'); }
   const sl = q('.sl-anim'); if (sl) { sl.click(); return label('sala'); }

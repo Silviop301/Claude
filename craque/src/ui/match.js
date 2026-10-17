@@ -52,6 +52,9 @@
       const fxRow = r.gain && r.gain.length ? '<div class="er-fx">' + (dOvr ? '<span class="er-ovr' + (dOvr > 0 ? ' up' : ' down') + '">Nota geral ' + r.ovrFrom + ' → ' + o1 + '</span>' : '') +
         r.gain.map(g => '<span class="' + kind(g).trim() + '">' + esc(g) + '</span>').join('') + '</div>' : '';
       const pctx = { kind: 'event', ok: r.ok, ev, opt: +b.dataset.i, toClub: offer && b.dataset.i === '0' ? G.c.club : null };
+      // Opção arriscada: o ponteiro corre sobre a chance e para no resultado que já saiu (motion.js)
+      const st = ev.options[+b.dataset.i].st;
+      U.riskRoll(st && !st.safe ? st.p : 0, r.ok, ev.options[+b.dataset.i].label, () => {
       render(
         '<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.icoOf(ev, 'lg') + '</span><div class="eyebrow">' + esc(ev.title) + '</div>' +
         '<p class="er-txt">' + esc(r.text) + '</p>' + fxRow + '</div>' +
@@ -59,6 +62,7 @@
       );
       $('b-next').onclick = momentOrSeason;
       U.postBind(pctx, momentOrSeason);
+      });
     });
   }
 

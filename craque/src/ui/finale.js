@@ -128,7 +128,8 @@
     U.streakBind();
     // Edição especial do jornal com a despedida
     const retired = G.c;
-    setTimeout(() => U.farewellPaper(retired, f), 700);
+    // A nota da carreira entra primeiro (motion.js); o jornal de despedida vem quando ela fecha
+    setTimeout(() => U.scoreReveal(f, () => setTimeout(() => U.farewellPaper(retired, f), 300)), 250);
     const spData = k => (k === 'final' ? cardData : U.specialFinal(cardData, retired, retired.cards[+k]));
     let curSp = 'final';
     if ($('b-album')) $('b-album').onclick = () => U.album(retired, f, cardData);
