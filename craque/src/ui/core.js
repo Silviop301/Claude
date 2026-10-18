@@ -82,6 +82,32 @@
 
   // ---------- barra do jogador ----------
   let lastOvr = 0;
+  // Técnico, Torcida e Fama mudaram desde a última barra (mesma carreira): a barra desliza do valor antigo ao novo
+  // e um "+8" / "−15" sobe ao lado. Espera camadas de animação (motion.js) fecharem para o jogador ver.
+  let lastRel = null;
+  function barDelta() {
+    const c = G.c, now = { id: c.uid || c.name, coach: c.rel.coach, fans: c.rel.fans, fame: c.fame };
+    const prev = lastRel; lastRel = now;
+    if (!prev || prev.id !== now.id || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const ms = [...$('bar-rel').querySelectorAll('.m')];
+    const rows = [['coach', ms[0], v => v], ['fans', ms[1], v => v], ['fame', ms[2], v => Math.min(100, Math.round(v / 3))]]
+      .map(([k, m, pct]) => ({ m, d: Math.round(now[k] - prev[k]), from: pct(prev[k]), to: pct(now[k]) })).filter(r => r.m && r.d);
+    if (!rows.length) return;
+    rows.forEach(r => { const i = r.m.querySelector('.mb i'); if (i) { i.style.transition = 'none'; i.style.width = r.from + '%'; } });
+    const play = () => {
+      if (!document.body.contains(ms[0])) return;
+      if (document.querySelector('.mo-wrap')) return setTimeout(play, 150); // suspense ou transferência na tela
+      rows.forEach(r => {
+        const i = r.m.querySelector('.mb i');
+        if (i) { void i.offsetWidth; i.style.transition = 'width .7s cubic-bezier(.3, 1.2, .5, 1)'; i.style.width = r.to + '%'; }
+        const b = document.createElement('b');
+        b.className = 'm-d ' + (r.d > 0 ? 'up' : 'down');
+        b.textContent = (r.d > 0 ? '+' : '−') + Math.abs(r.d);
+        r.m.appendChild(b); setTimeout(() => b.remove(), 2200);
+      });
+    };
+    setTimeout(play, 120);
+  }
   function bar() {
     const b = $('bar');
     if (!G.c || !G.c.club) { b.hidden = true; clubBg(null); return; }
@@ -98,6 +124,7 @@
       '<span class="bar-btns"><button class="snd-mini cfg-btn" id="b-snd" aria-label="Configurações">' + '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' + '</button>' +
       '<button class="snd-mini home-btn" id="b-home" aria-label="Voltar ao início">' + '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4.5 3 12l7.5 7.5M3.8 12h17" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>';
     $('bar-rel').querySelectorAll('[data-tip]').forEach(m => m.onclick = e => { e.stopPropagation(); barTip(m); });
+    barDelta();
     // Voltar ao início: a carreira fica salva e continua de onde parou
     $('b-home').onclick = e => {
       e.stopPropagation();
