@@ -26,6 +26,8 @@
   // Medidor compacto da barra: ícone + estado (o nome completo fica no aria-label)
   // Medidor do topo: só o ícone e a barra; tocar mostra o nome e o nível
   // Medidor do topo: ícone + nome curto e a barra; tocar mostra o nível
+  // Engrenagem das configurações (branca, no traço da seta de voltar); o emoji cinza parecia desabilitado
+  const GEAR_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const barMeter = (ico, name, txt, v, cls) => '<span class="m" role="button" data-tip="' + name + ': ' + txt + '" aria-label="' + name + ': ' + txt + '"><span class="ml">' + ico + '<small>' + name + '</small></span><span class="mb"><i class="' + (cls || (v >= 62 ? 'hi' : v < 32 ? 'lo' : '')) + '" style="width:' + Math.round(v) + '%"></i></span></span>';
 
   function load(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } }
@@ -108,6 +110,26 @@
     };
     setTimeout(play, 120);
   }
+  // Gols, assistências e taças: o número que mudou desde a última barra conta até o novo e brilha
+  let lastTot = null;
+  function totCount(v) {
+    const id = G.c.uid || G.c.name, prev = lastTot;
+    lastTot = { id, v };
+    if (!prev || prev.id !== id || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    [...$('bar-tot').querySelectorAll('b')].forEach((b, k) => {
+      const a = prev.v[k], z = v[k];
+      if (a == null || a === z) return;
+      const t0 = performance.now(), T = Math.min(900, 300 + 25 * Math.abs(z - a));
+      b.parentNode.classList.add('tot-up');
+      setTimeout(() => b.parentNode && b.parentNode.classList.remove('tot-up'), T + 700);
+      (function step(now) {
+        if (!b.isConnected) return;
+        const u = Math.min(1, (now - t0) / T), e = 1 - Math.pow(1 - u, 3);
+        b.textContent = Math.round(a + (z - a) * e);
+        if (u < 1) requestAnimationFrame(step);
+      })(t0);
+    });
+  }
   function bar() {
     const b = $('bar');
     if (!G.c || !G.c.club) { b.hidden = true; clubBg(null); return; }
@@ -121,7 +143,7 @@
     // Som fica no fim da linha dos medidores (libera espaço para nome, idade e clube)
     $('bar-rel').innerHTML = barMeter(ICON.coach, 'Técnico', S.relLabel(G.c.rel.coach), G.c.rel.coach) + barMeter(ICON.fans, 'Torcida', S.relLabel(G.c.rel.fans), G.c.rel.fans) +
       barMeter(ICON.fame, 'Fama', S.fameLabel(G.c.fame), Math.min(100, Math.round(G.c.fame / 3)), 'fame') +
-      '<span class="bar-btns"><button class="snd-mini cfg-btn" id="b-snd" aria-label="Configurações">' + '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' + '</button>' +
+      '<span class="bar-btns"><button class="snd-mini cfg-btn" id="b-snd" aria-label="Configurações">' + GEAR_SVG + '</button>' +
       '<button class="snd-mini home-btn" id="b-home" aria-label="Voltar ao início">' + '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4.5 3 12l7.5 7.5M3.8 12h17" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>';
     $('bar-rel').querySelectorAll('[data-tip]').forEach(m => m.onclick = e => { e.stopPropagation(); barTip(m); });
     barDelta();
@@ -139,7 +161,9 @@
     // Números do topo por posição: goleiro (sem sofrer gol, pênaltis defendidos), zagueiro (gols, sem sofrer gol)
     const tot = G.c.pos === 'GOL' ? [[T.cs || 0, 'S/ GOL'], [T.penSaved || 0, 'PÊN. DEF']]
       : G.c.pos === 'ZAG' ? [[T.goals, 'GOLS'], [T.cs || 0, 'S/ GOL']] : [[T.goals, 'GOLS'], [T.assists, 'ASSIST']];
-    $('bar-tot').innerHTML = tot.map(([v, l]) => '<span>' + v + '<small>' + l + '</small></span>').join('') + '<span>' + S.titleCount(T) + '<small>TAÇAS</small></span>';
+    const totV = tot.map(([v]) => v).concat(S.titleCount(T));
+    $('bar-tot').innerHTML = tot.map(([v, l]) => '<span><b>' + v + '</b><small>' + l + '</small></span>').join('') + '<span><b>' + totV[2] + '</b><small>TAÇAS</small></span>';
+    totCount(totV);
     const o = S.ovr(G.c);
     const el = $('bar-ovr');
     el.textContent = o;
@@ -241,5 +265,5 @@
   const tierCls = o => (o >= 85 ? 'icone' : o >= 75 ? 'ouro' : o >= 65 ? 'prata' : 'bronze');
   const TIER_NAME = { bronze: 'Bronze', prata: 'Prata', ouro: 'Ouro', icone: 'Ícone' };
 
-  window.CRAQUE_UI = { zk, ICON, emo, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar };
+  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar };
 })();

@@ -26,6 +26,12 @@
       (always.length ? '<span class="od-always">' + (cost ? 'Custa ' + esc(always[0].slice(1)) : 'Sempre: ' + esc(always.join(' · '))) + '</span>' : '') + '</span>';
   }
 
+  // O seu jogador no canto do cartão, reagindo ao tipo de evento (oportunidade sorri, risco fica sério, consequência lamenta)
+  function evPhoto(ev) {
+    if (!U.photo || !G.c) return '';
+    const tone = evDef(ev).tone, pose = ev.hookOf ? 'triste' : tone === 'green' ? 'celebra' : 'normal';
+    try { return '<div class="ev-photo" aria-hidden="true">' + U.photo(pose, U.kitOf(G.c.club), G.c, { bust: true, flat: true }) + '</div>'; } catch (e) { return ''; }
+  }
   function eventScreen() {
     if (!pendingEvent) pendingEvent = S.pickEvent(G.c);
     if (!pendingEvent) return momentOrSeason();
@@ -34,7 +40,7 @@
     const offer = S.eventOffer(G.c, ev);
     render(
       '<div class="eyebrow">Durante a temporada</div>' +
-      '<div class="card event-card"><div class="ev-top">' + U.icoOf(ev, 'lg') + (ev.hookOf ? '<span class="ev-tag back">Consequência</span>' : evDef(ev).tone ? '<span class="ev-tag ' + evDef(ev).tone + '">' + (TONE_LBL[evDef(ev).tone] || '') + '</span>' : '') + '</div>' +
+      '<div class="card event-card">' + evPhoto(ev) + '<div class="ev-top">' + U.icoOf(ev, 'lg') + (ev.hookOf ? '<span class="ev-tag back">Consequência</span>' : evDef(ev).tone ? '<span class="ev-tag ' + evDef(ev).tone + '">' + (TONE_LBL[evDef(ev).tone] || '') + '</span>' : '') + '</div>' +
       (ev.memory ? '<p class="ev-mem">' + U.emo('🔁', 'xs') + ' ' + esc(ev.memory) + '</p>' : '') + '<h2>' + esc(ev.title) + '</h2><p style="margin:0">' + esc(ev.text) + '</p></div>' +
       (offer ? U.dealCompare(S.currentDeal(G.c), offer) : '') +
       '<div class="choices">' + ev.options.map((o, i) => '<button class="btn opt' + (i ? ' ghost' : '') + (o.locked ? ' locked' : '') + '" data-i="' + i + '"' + (o.locked ? ' disabled' : '') + '>' + esc(o.label) + optHint(G.c, o) + (i === 0 && ev.dest && S.breaksChallenge(G.c, { club: ev.dest }) ? '<small class="ch-warn">' + U.emo('⚠️', 'xs') + ' Quebra o desafio</small>' : '') + '</button>').join('') + '</div>'
