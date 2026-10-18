@@ -147,7 +147,7 @@
       '<small>Contrato profissional</small><b class="mo-doc-club">' + esc(cl.name) + '</b>' +
       '<ul><li><span>Atleta</span><b>' + esc(c.name) + '</b></li><li><span>Duração</span><b>' + yrs + (yrs > 1 ? ' anos' : ' ano') + '</b></li>' +
       '<li><span>Salário</span><b>R$ ' + U.money(c.wage || 0) + '/sem</b></li></ul>' +
-      '<div class="mo-sigline"><span class="mo-sig">' + esc(c.name) + '</span></div><span class="mo-siglbl">Assinatura do atleta</span>' +
+      '<div class="mo-sigline"><span class="mo-sig" style="--sig:' + Math.max(26, Math.min(44, Math.round(560 / Math.max(8, c.name.length)))) + 'px">' + esc(c.name) + '</span></div><span class="mo-siglbl">Assinatura do atleta</span>' +
       '<span class="mo-seal">' + U.crest(c.club, 'xl') + '</span></div>' +
       '<p class="mo-welcome">Bem-vindo ' + D.ao(esc(cl.name)) + '!</p>';
     let over = false;
