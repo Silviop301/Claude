@@ -55,7 +55,7 @@
     if (!t) return '';
     const played = Math.min(n, 3);
     return '<div class="wc-tbl"><div class="wt-h"><span>Grupo · ' + (played >= 3 ? 'final' : played ? 'rodada ' + played + ' de 3' : 'antes da estreia') + '</span><span>Pts</span><span>Saldo</span></div>' +
-      t.map((x, i) => '<div class="wt-r' + (x.id === 'me' ? ' me' : '') + (i < 2 ? ' in' : '') + '"><span><i>' + (i + 1) + '</i>' + teamMark(run, x.id) + ' ' + teamName(run, x.id) + '</span><b>' + x.pts + '</b><span>' + (x.gf - x.ga > 0 ? '+' : '') + (x.gf - x.ga) + '</span></div>').join('') +
+      t.map((x, i) => '<div class="wt-r' + (x.id === 'me' ? ' me' : '') + (i < 2 ? ' in' : '') + '" data-id="' + esc(x.id) + '" data-pts="' + x.pts + '"><span><i>' + (i + 1) + '</i>' + teamMark(run, x.id) + ' ' + teamName(run, x.id) + '</span><b>' + x.pts + '</b><span>' + (x.gf - x.ga > 0 ? '+' : '') + (x.gf - x.ga) + '</span></div>').join('') +
       '<p class="wt-n">Os dois primeiros vão ao mata-mata</p></div>';
   }
   // Um jogo por vez na lista (o atual); os anteriores viram fichinhas com o placar, para a tabela caber na tela
@@ -63,7 +63,18 @@
   function drawGroup(run, n) {
     const el = $('wc-tbl');
     if (!el) return;
+    // As linhas que trocam de posição deslizam até o lugar novo; os pontos que mudaram dão um pulinho
+    const before = {};
+    el.querySelectorAll('.wt-r').forEach(r => { before[r.dataset.id] = [r.getBoundingClientRect().top, r.dataset.pts]; });
     el.innerHTML = run.games.length <= 3 ? groupTable(run, n) : ''; // no mata-mata a tabela sai de cena
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    el.querySelectorAll('.wt-r').forEach(r => {
+      const b = before[r.dataset.id];
+      if (!b) return;
+      const dy = (b[0] - r.getBoundingClientRect().top) / U.zk();
+      if (dy) r.animate([{ transform: 'translateY(' + dy + 'px)' }, { transform: 'none' }], { duration: 650, easing: 'cubic-bezier(.3, 1.2, .5, 1)', delay: 150 });
+      if (b[1] !== r.dataset.pts) r.querySelector('b').animate([{ transform: 'scale(1.6)', color: '#F2C230' }, { transform: 'none' }], { duration: 600, easing: 'ease-out', delay: 150 });
+    });
     const past = run.games.slice(0, -1);
     const pathEl = $('wc-path');
     if (pathEl) pathEl.innerHTML = past.map(g => {

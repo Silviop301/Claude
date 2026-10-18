@@ -878,6 +878,8 @@ button:not(:disabled):active { scale: .97; }
 .sh-tr b { display: block; font-size: 15px; }
 .sh-tr small { display: block; font-size: 12px; color: #6A7A70; line-height: 1.3; }
 .sh-tr.empty { justify-content: center; color: #93A098; font-size: 13px; font-weight: 700; border: 1.5px dashed #D5DED8; border-radius: 10px; margin: 4px 0; }
+.sh-tr.empty .sh-pips { display: flex; gap: 4px; }
+.sh-tr.empty .sh-pips i { width: 10px; height: 10px; border-radius: 3px; border: 1.5px dashed #B5C2BA; }
 .dots { font-style: normal; color: #D9A400; font-size: 10px; letter-spacing: 1px; margin-left: 6px; vertical-align: 2px; }
 .dots s { text-decoration: none; color: #DDE3DF; }
 /* combinações */
@@ -2484,3 +2486,35 @@ details.more .src-card { margin: 2px 0 8px; }
 .last-card .lc-g { font: 800 16px var(--display); font-style: normal; padding: 0 6px; border-radius: 5px; background: #E8F1EA; color: var(--ink); }
 .last-card .lc-g.g-S { background: var(--gold); } .last-card .lc-g.g-A { background: #E9E0FA; color: #4B2E8F; }
 .last-card .lc-rec { color: #B9CDBF !important; font-size: 13px !important; }
+
+/* Resumo da temporada: carta, nota e tabela na frente; a história do ano num bloco só, em linhas mais leves */
+.feed:empty, .awards:empty { display: none; }
+#screen:has(> #after) .counters { gap: 0; background: rgba(255, 255, 255, .05); box-shadow: inset 0 0 0 1.5px var(--line); border-radius: 14px; padding: 6px 0; }
+#screen:has(> #after) .counter { background: none; color: var(--paper); border-radius: 0; padding: 4px; }
+#screen:has(> #after) .counter + .counter { box-shadow: inset 1.5px 0 0 var(--line); }
+#screen:has(> #after) .counter span { color: #B9CDBF; }
+#screen:has(> #after) .counter.rate b { color: #7BE3A0; }
+.story { display: flex; flex-direction: column; background: rgba(255, 255, 255, .05); border-radius: 14px; padding: 4px 14px; }
+.story > * { margin: 0 !important; padding: 12px 0 !important; background: none !important; border-radius: 0 !important; color: #E8F1EA !important; }
+.story > * + * { border-top: 1px solid rgba(255, 255, 255, .1); }
+.story .st-hl { font: 600 15px/1.35 var(--body); color: #CFE0D4 !important; }
+.story .news .np { color: #9DB5A6; border: 0; padding: 0; margin-bottom: 4px; }
+.story .news:not(.resenha) p { margin: 0; font: 800 21px/1.15 var(--display); color: var(--paper); }
+.story .news.resenha .np { color: #C9A93A; }
+.story .news.resenha p { margin: 0; font: italic 500 15px/1.35 var(--body); color: #CFE0D4; }
+.story .rival-line p { font-size: 14px; color: #CFE0D4; }
+.story .rival-line .rd-bar { background: rgba(255, 255, 255, .12); }
+.story .rival-line.hot p { color: #FFB4B9; }
+#after > .star-line, #after > .pe-gain, #after > .wc-miss { margin: 0; background: none; color: #CFE0D4; padding: 0 2px; font-size: 14px; }
+#after > .star-line b, #after > .pe-gain b { color: var(--paper); }
+/* Evento: o papel ganha o tom do tipo (faixa no topo e um leve degradê), sem mudar o peso do texto */
+.event-card[class*=' t-'] { --tn: transparent; --tb: var(--paper); background: linear-gradient(180deg, var(--tb), var(--paper) 120px); box-shadow: inset 0 5px 0 var(--tn), 0 3px 0 rgba(0, 0, 0, .35); }
+.event-card.t-green { --tn: #1FA35A; --tb: #E2F2E6; } .event-card.t-red { --tn: #D8404A; --tb: #F8E3E2; }
+.event-card.t-blue { --tn: #2F6FD6; --tb: #E4ECF8; } .event-card.t-gold { --tn: #E0A800; --tb: #F8EDCB; }
+.event-card.t-purple, .event-card.t-back { --tn: #7A4FD6; --tb: #ECE5F8; }
+/* Fim de carreira: a carta do resumo desbota em sépia */
+.s-hero .scard { transition: filter 1.8s ease; }
+.s-hero .scard.aged { filter: sepia(.85) saturate(.8) contrast(.95) brightness(.95); }
+.sc-aged { display: inline-block; margin-top: 6px; font: 700 12px var(--display); letter-spacing: .12em; text-transform: uppercase; color: #F5E9D0; background: #6B5233;
+  padding: 3px 9px; border-radius: 4px; transform: rotate(-3deg); align-self: flex-start; animation: aged-in .6s ease 1.2s both; }
+@keyframes aged-in { from { opacity: 0; transform: rotate(-3deg) scale(1.4); } }

@@ -18,15 +18,15 @@
     }).join('') + '</div>';
   }
 
-  // As 5 características: uma linha cada (nome, nível e o efeito de hoje)
+  // As características: uma linha cada (nome, nível e o efeito de hoje); os espaços livres viram uma linha só
   function slots(c) {
     let out = '';
-    for (let i = 0; i < S.MAX_SLOTS; i++) {
-      const id = c.traits[i];
-      if (!id) { out += '<div class="sh-tr empty">Espaço livre</div>'; continue; }
+    c.traits.forEach(id => {
       const t = D.TRAIT_BY_ID[id], lv = S.traitLevel(c, id);
       out += '<div class="sh-tr"><span class="ic">' + U.icoOf(t, 'sm') + '</span><div><b>' + esc(t.name) + DOTS(lv) + '</b><small>' + esc(t.fx ? t.fx(D.TRAIT_LV[lv]) : '') + '</small></div></div>';
-    }
+    });
+    const free = S.MAX_SLOTS - c.traits.length;
+    if (free > 0) out += '<div class="sh-tr empty"><span class="sh-pips">' + '<i></i>'.repeat(free) + '</span>' + (free === 1 ? '1 espaço livre' : free + ' espaços livres') + '</div>';
     return out;
   }
 
