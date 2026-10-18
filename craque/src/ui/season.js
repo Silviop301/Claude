@@ -284,8 +284,8 @@
 
   // Selo da temporada pela nota
   function verdictOf(res) {
-    if (!res.games) return ['Sem jogos', 'low'];
-    if (res.src && res.src.max && res.games / res.src.max < 0.15) return ['Quase não jogou', 'low']; // 2 jogos não fazem temporada
+    if (!res.games) return ['Sem jogos', 'idle'];
+    if (res.src && res.src.max && res.games / res.src.max < 0.15) return ['Quase não jogou', 'idle']; // 2 jogos não fazem temporada
     const r = res.rating;
     return r >= 8 ? ['Temporada de craque', 'top'] : r >= 7.3 ? ['Grande temporada', 'good'] : r >= 6.8 ? ['Boa temporada', 'ok'] : r >= 6.3 ? ['Temporada regular', 'mid'] : ['Temporada apagada', 'low'];
   }

@@ -150,18 +150,35 @@
     });
   }
 
+  // Tela inicial sem carreira em andamento: a carta da última carreira flutua, com nota e recorde
+  function lastHome() {
+    const list = all();
+    if (!list.length) return '';
+    const e = list.reduce((a, b) => (b.at > a.at ? b : a)), best = Math.max(...list.map(x => x.score));
+    return '<button class="last-card" id="b-last"><span class="lc-card"><img alt=""></span><span class="lc-info"><small>Última carreira</small>' +
+      '<b>' + esc(e.card.name) + '</b><span>Nota <em class="lc-g g-' + e.grade + '">' + e.grade + '</em> · ' + e.score + ' pts</span>' +
+      '<span class="lc-rec">' + (e.score >= best ? U.emo('🏆', 'xs') + ' Seu recorde' : 'Recorde: ' + best + ' pts') + '</span></span></button>';
+  }
+  function lastHomeBind() {
+    const b = $('b-last');
+    if (!b) return;
+    const list = all(), e = list.reduce((a, x) => (x.at > a.at ? x : a));
+    thumb(e.card, b.querySelector('img'));
+    b.onclick = () => view(e.card, U.home, 'Início');
+  }
+
   // Uma carta da coleção em 3D (arrastar gira); compartilhar manda o link dela
-  function view(d) {
-    render('<button class="back-link" id="b-back-col">‹ Coleção</button><div class="cv-page">' +
+  function view(d, back = collection, backName = 'Coleção') {
+    render('<button class="back-link" id="b-back-col">‹ ' + backName + '</button><div class="cv-page">' +
       '<div class="card3d-host big" id="cv-host"><canvas aria-label="Carta"></canvas></div>' +
       '<div class="cv-info"><b>' + esc(d.name) + '</b><span>' + U.flag(d.flag) + ' ' + esc(D.POS[d.pos] ? D.POS[d.pos].name : '') + (d.verdict ? ' · ' + esc(d.verdict) : '') + '</span></div>' +
       '<p class="muted small cv-hint">Arraste para girar a carta</p>' +
       '<button class="btn ghost" id="cv-share">Compartilhar esta carta</button></div>');
     let viewer = null;
     U.mount3d($('cv-host'), d).then(v => { viewer = v; });
-    $('b-back-col').onclick = () => { if (viewer && viewer.dispose) viewer.dispose(); collection(); };
+    $('b-back-col').onclick = () => { if (viewer && viewer.dispose) viewer.dispose(); back(); };
     $('cv-share').onclick = () => U.shareCard(d, $('cv-share'));
   }
 
-  Object.assign(U, { collection, collect, collectPatch, collectionCount: count });
+  Object.assign(U, { collection, collect, collectPatch, collectionCount: count, lastHome, lastHomeBind });
 })();

@@ -211,7 +211,8 @@
       // Pontos podem ficar guardados: juntar para os níveis mais caros vale a pena
       const trait = ch.length && !preCh.done, left = G.c.pe || 0;
       skip.disabled = !!trait;
-      skip.innerHTML = trait ? 'Escolha uma característica<small>para seguir para a temporada</small>'
+      skip.classList.toggle('wait', !!trait);
+      skip.innerHTML = trait ? 'Escolha 1 característica acima <i class="up-ar">↑</i><small>depois é só seguir para a temporada</small>'
         : left && hasInv ? 'Seguir para a temporada<small>Guardar ' + pts(left) + ' para depois</small>' : 'Seguir para a temporada';
     };
     const refresh = () => {

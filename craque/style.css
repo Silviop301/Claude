@@ -281,6 +281,9 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4); }
 .btn.ghost { background: transparent; color: var(--paper); box-shadow: inset 0 0 0 2px var(--line); }
 .btn:disabled { opacity: 0.5; }
+/* Todo botão afunda um pouco no toque; "scale" se soma ao transform próprio de cada um */
+button { transition: scale .08s ease-out; }
+button:not(:disabled):active { scale: .97; }
 
 /* criação */
 .field { display: flex; flex-direction: column; gap: 6px; }
@@ -806,6 +809,9 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .field label small { font-weight: 500; opacity: .7; }
 .inv-bar .btn:disabled { opacity: 1; background: #24503B; color: #CFE0D4; box-shadow: 0 4px 0 rgba(0, 0, 0, .35), 0 6px 18px rgba(0, 0, 0, .35); cursor: default; }
 .inv-bar .btn:disabled small { color: #9DB5A6; }
+.inv-bar .btn.wait:disabled { background: #143A2A; color: #E8F1EA; box-shadow: inset 0 0 0 2px rgba(242, 193, 46, .55), 0 6px 18px rgba(0, 0, 0, .45); }
+.up-ar { display: inline-block; font: 900 1.1em var(--display); color: var(--gold); margin-left: 2px; animation: up-ar 1.1s ease-in-out infinite; }
+@keyframes up-ar { 50% { transform: translateY(-4px); } }
 
 /* Voltar ao início: ícone na barra, link na criação e janela de confirmação do jogo */
 .home-btn, .cfg-btn { display: inline-flex; align-items: center; justify-content: center; color: #fff; }
@@ -1031,7 +1037,7 @@ h2 { font-size: 30px; font-weight: 800; line-height: 1.05; }
 .scard.tierup { animation: mc-pop .6s ease 2; box-shadow: 0 0 0 3px var(--gold), 0 0 26px rgba(244, 214, 117, .7); }
 .s-verdict { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .sv-lbl { font: 800 22px/1.1 var(--display); color: #fff; }
-.sv-lbl.top { color: var(--gold); } .sv-lbl.good { color: #7BE3A0; } .sv-lbl.low { color: #FF9AA2; }
+.sv-lbl.top { color: var(--gold); } .sv-lbl.good { color: #7BE3A0; } .sv-lbl.low { color: #FF9AA2; } .sv-lbl.idle { color: #B9CDBF; }
 .sv-d { font: 800 26px/1 var(--display); font-style: normal; }
 .sv-d.up { color: #7BE3A0; } .sv-d.down { color: #FF8A93; } .sv-d.zero { color: #CFE0D4; }
 .sv-d:not(:empty) { animation: mc-pop .5s ease; }
@@ -2463,3 +2469,18 @@ details.more .src-card { margin: 2px 0 8px; }
 .event-card ~ .choices > .btn:nth-child(1) { animation-delay: .18s; } .event-card ~ .choices > .btn:nth-child(2) { animation-delay: .3s; }
 .event-card ~ .choices > .btn:nth-child(3) { animation-delay: .42s; } .event-card ~ .choices > .btn:nth-child(4) { animation-delay: .54s; }
 @media (prefers-reduced-motion: reduce) { .event-card .ev-top > :first-child, .event-card ~ .choices > .btn { animation: none; } }
+
+/* Início: carta da última carreira flutuando, com nota e recorde */
+.last-card { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; text-align: left; width: 100%; border: 0; border-radius: 16px; padding: 12px 16px;
+  background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1.5px var(--line); color: var(--paper); font: inherit; }
+.last-card .lc-card { display: block; width: 66px; height: 95px; perspective: 400px; }
+.last-card .lc-card img { display: block; width: 100%; height: 100%; border-radius: 6px; background: rgba(255, 255, 255, .08);
+  box-shadow: 0 10px 16px rgba(0, 0, 0, .4); animation: lc-float 4.2s ease-in-out infinite; }
+@keyframes lc-float { 0%, 100% { transform: translateY(0) rotateY(-10deg) rotate(-3deg); } 50% { transform: translateY(-6px) rotateY(10deg) rotate(2deg); } }
+.last-card .lc-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.last-card .lc-info small { font: var(--t-label); letter-spacing: .14em; text-transform: uppercase; color: #B9CDBF; }
+.last-card .lc-info b { font: var(--t-h2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.last-card .lc-info span { font: 600 14px/1.35 var(--body); color: #E8F1EA; }
+.last-card .lc-g { font: 800 16px var(--display); font-style: normal; padding: 0 6px; border-radius: 5px; background: #E8F1EA; color: var(--ink); }
+.last-card .lc-g.g-S { background: var(--gold); } .last-card .lc-g.g-A { background: #E9E0FA; color: #4B2E8F; }
+.last-card .lc-rec { color: #B9CDBF !important; font-size: 13px !important; }
