@@ -523,8 +523,6 @@ button:not(:disabled):active { scale: .97; }
 .btn.opt.style { padding: 10px 8px; min-height: 0; }
 .btn.opt.style .st-ico { line-height: 1; }
 .btn.opt.style small { font-size: 12px; line-height: 1.2; }
-.btn.opt.style .st-chance { opacity: 1; margin-top: 2px; }
-.btn.opt.style .st-chance b { font-weight: 800; }
 .choice.inv { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px; }
 .choice.inv .ic { font-size: 24px; }
 .choice.inv b { font-size: 17px; }
@@ -2518,3 +2516,46 @@ details.more .src-card { margin: 2px 0 8px; }
 .sc-aged { display: inline-block; margin-top: 6px; font: 700 12px var(--display); letter-spacing: .12em; text-transform: uppercase; color: #F5E9D0; background: #6B5233;
   padding: 3px 9px; border-radius: 4px; transform: rotate(-3deg); align-self: flex-start; animation: aged-in .6s ease 1.2s both; }
 @keyframes aged-in { from { opacity: 0; transform: rotate(-3deg) scale(1.4); } }
+
+/* Fim de carreira: a nota em destaque logo abaixo da carta */
+.fin-sum { gap: 16px; padding: 14px 16px; background: rgba(0, 0, 0, .28); box-shadow: inset 0 0 0 1.5px var(--line); }
+.fin-sum .grade { width: 72px; height: 84px; font-size: 60px; border-radius: 14px; flex: none; }
+.fin-sum small { display: block; font: var(--t-label); letter-spacing: .14em; text-transform: uppercase; color: #9DB5A6; }
+.fin-sum b { font: 800 26px/1.1 var(--display); }
+.fin-sum span { font-size: 15px; }
+.fin-sum.rec { box-shadow: inset 0 0 0 2px rgba(242, 194, 48, .6); }
+.fin-sum.rec span { color: var(--gold); font-weight: 700; }
+/* Assinaturas e acabamentos numa linha que rola para o lado */
+.ed-box .sig-grid, .ed-box .fin-grid { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; margin: 0 -12px; padding: 2px 12px 4px; scrollbar-width: none; overscroll-behavior-x: contain; }
+.ed-box .sig-grid::-webkit-scrollbar, .ed-box .fin-grid::-webkit-scrollbar { display: none; }
+.ed-box .sig-b { flex: 0 0 128px; scroll-snap-align: start; }
+.ed-box .fin-b { flex: 0 0 76px; scroll-snap-align: start; }
+.ed-cnt { margin: -2px 0 0; font: 500 13px var(--body); color: #9DB5A6; }
+/* Prêmios da carreira (sequência de dias e pacotinhos) num bloco só */
+.fin-prizes { display: flex; flex-direction: column; background: rgba(255, 255, 255, .05); border-radius: 16px; padding: 12px 14px 4px; }
+.fin-prizes .fp-t { font: var(--t-label); letter-spacing: .14em; text-transform: uppercase; color: #9DB5A6; }
+.fin-prizes > .sk, .fin-prizes > .pk-won { margin: 0; background: none !important; box-shadow: none !important; border: 0 !important; border-radius: 0; padding: 12px 0; }
+.fin-prizes > * + .pk-won { border-top: 1px solid rgba(255, 255, 255, .1) !important; }
+.fin-prizes .pk-won .btn { background: transparent; color: var(--gold); box-shadow: inset 0 0 0 2px rgba(242, 194, 48, .6); }
+
+/* Pré-temporada: treinos numa lista compacta (um papel só, uma linha por treino); as características seguem em cartão */
+.choices.inv-grid { grid-template-columns: 1fr; gap: 0; background: var(--paper); border-radius: 16px; box-shadow: 0 3px 0 rgba(0, 0, 0, .35); overflow: hidden; }
+.choices.inv-grid .choice.inv { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; grid-template-areas: "ic name pips" "ic d price"; gap: 1px 10px; align-items: center;
+  border-radius: 0; box-shadow: none; padding: 10px 14px; background: transparent; }
+.choices.inv-grid .choice.inv + .choice.inv { border-top: 1px solid #E4EAE6; }
+.choices.inv-grid .choice.inv[data-v] { grid-column: auto; }
+.choices.inv-grid .choice.inv .ic { grid-area: ic; font-size: 22px; }
+.choices.inv-grid .choice.inv b { grid-area: name; font: 800 17px/1.15 var(--display); }
+.choices.inv-grid .choice.inv .pips { grid-area: pips; justify-self: end; letter-spacing: 1px; }
+.choices.inv-grid .choice.inv .d { grid-area: d; font: 500 13.5px/1.3 var(--body); color: #4A5A50; }
+.choices.inv-grid .choice.inv .price { grid-area: price; justify-self: end; margin: 0; white-space: nowrap; }
+.choices.inv-grid .choice.inv:active { transform: none; background: #EEF3EF; }
+.choices.inv-grid .choice.inv.armed { box-shadow: inset 0 0 0 3px var(--gold); background: #FFF8E0; }
+.choices.inv-grid .choice.inv .arm-back { grid-column: 1 / -1; grid-area: auto; margin: 6px -14px -10px; border-radius: 0; }
+.choices.inv-grid .choice.inv.bought { box-shadow: inset 0 0 0 3px var(--gold); }
+/* Lance decisivo: a chance de cada estilo num selo, para comparar de relance */
+.btn.opt.style { position: relative; padding-top: 14px; display: flex; flex-direction: column; align-items: center; }
+.btn.opt.style > small { margin-bottom: 8px; }
+.btn.opt.style .st-pct { display: inline-flex; align-items: baseline; gap: 5px; align-self: center; margin-top: auto; padding: 3px 10px; border-radius: 999px;
+  background: var(--ink); color: #E8F1EA; font: 600 12px var(--body); }
+.btn.opt.style .st-pct b { font: 800 20px/1 var(--display); color: var(--gold); }
