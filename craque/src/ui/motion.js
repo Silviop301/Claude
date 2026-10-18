@@ -2,6 +2,7 @@
 //  - U.scoreReveal(f, done): fim de carreira. As partes da pontuação entram uma a uma, o total corre, a nota troca
 //    a cada faixa (D → C → B → A → S) e a última trava com um carimbo. ~2,8 s; um toque pula; fecha sozinho.
 //  - U.transferMove(de, para, nome, done): escudo antigo sai e o novo entra com a cor do uniforme (~1,4 s).
+//  - U.firstContract(c, done): primeiro contrato aos 16, com a assinatura do nome e o escudo carimbando (~2 s).
 //  - U.rankClimb(el, pontos): no fim da carreira, a posição na semana conta do fim da fila até a sua.
 //  - U.riskRoll(p, ok, title, done): decisão arriscada. O ponteiro corre sobre a chance (verde = deu certo) e para
 //    no resultado que o motor já sorteou (só mostra; não sorteia nada). ~1,2 s; um toque pula.
@@ -134,5 +135,26 @@
     ask(3);
   }
 
-  Object.assign(U, { scoreReveal, riskRoll, transferMove, rankClimb });
+  // ---------- Primeiro contrato (16 anos) ----------
+  // O contrato aparece, o nome é assinado da esquerda para a direita e o escudo do clube carimba (~2 s; um toque pula)
+  function firstContract(c, done) {
+    const D = U.D, cl = D.CLUB_BY_ID[c.club];
+    if (!cl || still()) return done && done();
+    const w = layer('mo-sign');
+    const yrs = c.contract || 2;
+    w.innerHTML = '<div class="mo-doc" role="dialog" aria-label="Primeiro contrato">' +
+      '<small>Contrato profissional</small><b class="mo-doc-club">' + esc(cl.name) + '</b>' +
+      '<ul><li><span>Atleta</span><b>' + esc(c.name) + '</b></li><li><span>Duração</span><b>' + yrs + (yrs > 1 ? ' anos' : ' ano') + '</b></li>' +
+      '<li><span>Salário</span><b>R$ ' + U.money(c.wage || 0) + '/sem</b></li></ul>' +
+      '<div class="mo-sigline"><span class="mo-sig">' + esc(c.name) + '</span></div><span class="mo-siglbl">Assinatura do atleta</span>' +
+      '<span class="mo-seal">' + U.crest(c.club, 'xl') + '</span></div>' +
+      '<p class="mo-welcome">Bem-vindo ' + D.ao(esc(cl.name)) + '!</p>';
+    let over = false;
+    const close = () => { if (over) return; over = true; w.classList.add('out'); setTimeout(() => w.remove(), 220); if (done) done(); };
+    if (U.sfx) setTimeout(() => U.sfx('whistle'), 1500);
+    const t = setTimeout(close, 3000);
+    w.addEventListener('click', () => { clearTimeout(t); close(); });
+  }
+
+  Object.assign(U, { scoreReveal, riskRoll, transferMove, rankClimb, firstContract });
 })();

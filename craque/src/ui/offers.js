@@ -68,7 +68,7 @@
       const o = offers[+b.dataset.i];
       if (!U.arm(b, signTxt(o))) return;
       S.join(G.c, o);
-      U.preseason();
+      U.firstContract(G.c, U.preseason); // primeiro contrato: assinatura e escudo (motion.js)
     });
   }
 
