@@ -43,6 +43,7 @@
       '<div class="card wc-rules"><p>Fase de grupos com 3 jogos, depois mata-mata até a final.</p><p>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</p></div>' +
       '<button class="btn" id="b-wc">' + (U.cfg.cups === 'sim' ? 'Simular a Copa' : 'Começar a Copa') + '</button>'
     );
+    if (G.c.wcCallShown !== year()) { G.c.wcCallShown = year(); save(); U.callUp(G.c, call); } // lista da seleção (motion.js)
     $('b-wc').onclick = () => { simAll = U.cfg.cups === 'sim'; S.wcStart(G.c); save(); wcPlay(); };
   }
 

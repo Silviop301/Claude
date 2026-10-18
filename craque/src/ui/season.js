@@ -214,8 +214,10 @@
     render(
       '<div class="season-head"><div><div class="eyebrow">Temporada ' + (year() - 1) + ' · ' + res.age + ' anos</div><h2 class="with-crest">' + crest(cl.id, 'lg') + esc(cl.name) + '</h2></div><span class="tag">' + (res.farewell ? 'Despedida' : roleSeen(res)) + '</span></div>' +
       // A carta no centro: a nota sobe (ou cai) depois dos números da temporada
-      '<div class="s-hero"><div class="scard metal ' + t0c + '" id="scard"><span class="sc-tier" id="sc-tier">' + TIER_NAME[t0c] + '</span><b id="sc-ovr">' + res.ovr0 + '</b><span class="sc-pos">' + G.c.pos + '</span></div>' +
-      '<div class="s-verdict"><span class="sv-lbl" id="sv-lbl">&nbsp;</span><i class="sv-d" id="sc-d"></i></div></div>' +
+      '<div class="s-hero' + (res.injury >= 15 ? ' hurt' : '') + '"><div class="scard metal ' + t0c + '" id="scard"><span class="sc-tier" id="sc-tier">' + TIER_NAME[t0c] + '</span><b id="sc-ovr">' + res.ovr0 + '</b><span class="sc-pos">' + G.c.pos + '</span></div>' +
+      '<div class="s-verdict"><span class="sv-lbl" id="sv-lbl">&nbsp;</span><i class="sv-d" id="sc-d"></i></div>' +
+        // Lesão séria: a carta pisca em vermelho e o curativo cai com o tanto da temporada perdida
+        (res.injury >= 15 ? '<span class="sc-inj">' + U.emo('🩹', 'xs') + ' Lesão: ' + res.injury + '% da temporada fora</span>' : '') + '</div>' +
       '<div class="counters"><div class="counter"><b id="k-j">0</b><span>Jogos</span></div><div class="counter"><b id="k-g">0</b><span>' + c1[1] + '</span></div>' +
       '<div class="counter"><b id="k-a">0</b><span>' + c2[1] + '</span></div><div class="counter rate"><b id="k-n">–</b><span>Nota</span></div></div>' +
       (race ? '<div class="race" id="race"></div>' : '') +
@@ -340,6 +342,19 @@
       () => { const up = U.tierReveal(G.c, res.ovr0, res.ovr1); if (up) save(); U.walkouts(G.c, (up ? [null] : []).concat(res.cards || []), onClose); });
   }
 
+  // Duelo com o rival de geração: duas barras de nota que enchem quando o bloco aparece; quem passou o outro ganha o selo
+  function rivalDuel(res) {
+    const R = res.rival, rv = G.c.rival;
+    if (!R || R.ovr == null) return '';
+    const prev = rv && rv.seasons && rv.seasons.length > 1 ? rv.seasons[rv.seasons.length - 2].ovr : null;
+    const me = res.ovr1, him = R.ovr, lo = Math.min(me, him) - 8, span = Math.max(me, him) - lo || 1;
+    const pct = v => Math.round(20 + 80 * (v - lo) / span);
+    const flip = prev == null ? '' : res.ovr0 <= prev && me > him ? '<span class="rd-flip up">Você passou ' + esc(R.name.split(' ')[0]) + '!</span>'
+      : res.ovr0 > prev && me <= him ? '<span class="rd-flip down">' + esc(R.name.split(' ')[0]) + ' te passou</span>' : '';
+    const row = (lbl, v, cls) => '<div class="rd-row ' + cls + '"><span>' + lbl + '</span><span class="rd-bar"><i style="--w:' + pct(v) + '%"></i></span><b>' + v + '</b></div>';
+    return '<div class="rv-duel">' + row('Você', me, 'me') + row(esc(R.name.split(' ')[0]), him, 'him') + flip + '</div>';
+  }
+
   // Mostra os blocos do resumo um de cada vez (troféus com mais destaque). Tocar mostra tudo.
   function reveal(skipNow, res) {
     const items = Array.from(screen.querySelectorAll('.rv'));
@@ -439,7 +454,7 @@
       '<div class="news rv"><div class="np">' + U.emo('📰', 'xs') + ' Nos jornais</div><p>' + esc(res.headlines[0] || '') + '</p></div>' +
       resenha(res) +
       // Rival de geração (engine/rival.js): o que ele fez no ano e o duelo com você
-      (res.rival ? '<p class="rival-line rv' + (res.rival.tookBallon || res.rival.ballon ? ' hot' : '') + '">' + U.emo('⚔️', 'xs') + ' ' + esc(S.rivalLine(G.c, res)) + '</p>' : '') +
+      (res.rival ? '<div class="rival-line rv' + (res.rival.tookBallon || res.rival.ballon ? ' hot' : '') + '"><p>' + U.emo('⚔️', 'xs') + ' ' + esc(S.rivalLine(G.c, res)) + '</p>' + rivalDuel(res) + '</div>' : '') +
       wcBlock +
       // Detalhes (fechados): outros lances, o porquê da nota, técnico/torcida e contrato
       // Craque carregando um time fraco (a partir do 2º ano) e o clube crescendo com ele

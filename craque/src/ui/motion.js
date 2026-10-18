@@ -3,6 +3,7 @@
 //    a cada faixa (D → C → B → A → S) e a última trava com um carimbo. ~2,8 s; um toque pula; fecha sozinho.
 //  - U.transferMove(de, para, nome, done): escudo antigo sai e o novo entra com a cor do uniforme (~1,4 s).
 //  - U.firstContract(c, done): primeiro contrato aos 16, com a assinatura do nome e o escudo carimbando (~2 s).
+//  - U.callUp(c, call, done): lista da seleção abrindo por setor, com o seu nome em destaque (~2 s).
 //  - U.rankClimb(el, pontos): no fim da carreira, a posição na semana conta do fim da fila até a sua.
 //  - U.riskRoll(p, ok, title, done): decisão arriscada. O ponteiro corre sobre a chance (verde = deu certo) e para
 //    no resultado que o motor já sorteou (só mostra; não sorteia nada). ~1,2 s; um toque pula.
@@ -156,5 +157,23 @@
     w.addEventListener('click', () => { clearTimeout(t); close(); });
   }
 
-  Object.assign(U, { scoreReveal, riskRoll, transferMove, rankClimb, firstContract });
+  // ---------- Convocação para a Copa ----------
+  // A lista da seleção vai abrindo por setor e o seu nome entra em destaque no seu (~2 s; um toque pula)
+  function callUp(c, call, done) {
+    if (!call || !call.nation || still()) return done && done();
+    const SECT = [['GOL', 'Goleiros'], ['ZAG', 'Defensores'], ['MEI', 'Meio-campistas'], ['ATA', 'Atacantes']];
+    const w = layer('mo-call');
+    w.innerHTML = '<div class="mo-list" role="dialog" aria-label="Convocação">' +
+      '<div class="mo-list-h">' + U.flag(call.nation.flag, 'lg') + '<div><small>Lista de convocados</small><b>' + esc(call.nation.name || '') + '</b></div></div>' +
+      SECT.map(([pos, lbl], k) => '<div class="mo-sect" style="--d:' + (0.25 + k * 0.32).toFixed(2) + 's"><span>' + lbl + '</span><div class="mo-names">' +
+        [0, 1, 2].map(j => (pos === c.pos && j === 1 ? '<b class="mo-me">' + esc(c.name) + '</b>' : '<i style="width:' + (52 + ((k * 3 + j) * 17) % 38) + '%"></i>')).join('') + '</div></div>').join('') +
+      '<div class="mo-callstamp">Convocado!</div></div>';
+    let over = false;
+    const close = () => { if (over) return; over = true; w.classList.add('out'); setTimeout(() => w.remove(), 220); if (done) done(); };
+    if (U.sfx) setTimeout(() => U.sfx('levelup'), 1500);
+    const t = setTimeout(close, 3200);
+    w.addEventListener('click', () => { clearTimeout(t); close(); });
+  }
+
+  Object.assign(U, { scoreReveal, riskRoll, transferMove, rankClimb, firstContract, callUp });
 })();
