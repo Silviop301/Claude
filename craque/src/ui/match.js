@@ -127,7 +127,7 @@
   // Nenhum é sempre o melhor: a chance pende para atributos diferentes e o jeito de jogar muda.
   function styleBtns(st) {
     return '<div class="choices style-grid">' + S.STYLES[st].map(d => { const k = S.kickSetup(G.c, st, d.id);
-      return '<button class="btn opt style" data-style="' + d.id + '"><span class="st-ico">' + U.emo(d.ico, 'sm') + '</span>' + esc(d.name) + '<small>' + esc(d.hint) + '</small><small class="st-chance">Pela carta: <b>' + Math.round(k.chance * 100) + '%</b></small></button>'; }).join('') + '</div>';
+      return '<button class="btn opt style" data-style="' + d.id + '"><span class="st-ico">' + U.emo(d.ico, 'sm') + '</span>' + esc(d.name) + '<small>' + esc(d.hint) + '</small><span class="st-pct" aria-label="Chance pela carta"><b>' + Math.round(k.chance * 100) + '%</b>pela carta</span></button>'; }).join('') + '</div>';
   }
   // Liga os botões de estilo: guarda a escolha no lance (m) e segue para o minigame
   function bindStyle(m, go) {

@@ -235,7 +235,7 @@
   // Lance decisivo nos minutos finais: pênalti ou falta a favor, no minigame
   function wcLive() {
     screen.onclick = null;
-    const run = G.c.wcRun, g = run.games[run.games.length - 1], m = g.moment;
+    const run = G.c.wcRun, g = run.games[run.games.length - 1], m = g && g.moment;
     // Copa salva marcando lance ao vivo num jogo sem lance (aconteceu num iPhone): libera e segue a Copa
     if (!g || !m) { run.live = false; run.momentStarted = false; if (g) g.live = false; save(); return wcPlay(); }
     // Fechou o jogo no meio da cobrança: a chance decide

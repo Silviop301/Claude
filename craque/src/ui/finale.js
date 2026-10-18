@@ -93,15 +93,15 @@
     render(
       '<div class="eyebrow">Fim de carreira · ' + (YEAR0 + G.c.season) + '</div>' +
       '<div class="fut card3d-host" id="fut-host"><canvas id="fut" aria-label="Card do jogador"></canvas></div>' +
-      '<div class="fin-sum"><div class="grade ' + f.grade + '">' + f.grade + '</div><div><b>' + esc(f.verdict) + '</b><span>' + esc(scoreTxt) + '</span></div></div>' +
+      '<div class="fin-sum' + (rank === 1 ? ' rec' : '') + '"><div class="grade ' + f.grade + '">' + f.grade + '</div><div><small>Nota da carreira</small><b>' + esc(f.verdict) + '</b><span>' + esc(scoreTxt) + '</span></div></div>' +
       '<p class="mo-climb" id="mo-climb" hidden></p>' +
       nextGoal(G.c, f, hall, rank) +
       '<div class="ed-box" id="ed-box"></div>' +
       '<div class="fin-acts"><button class="btn" id="b-share">Compartilhar carta</button><button class="btn ghost" id="b-save">Salvar</button></div>' +
       U.challengeFinale(G.c, f) +
       (hall.length > 1 ? U.feedbackCard() : '') + // 1ª carreira: a tela já é longa e a opinião fica na tela inicial
-      U.streakFinale(skGot) +
-      U.packFinale(packWhy) +
+      // Sequência de dias e pacotinhos ganhos: um bloco só de prêmios, abaixo das ações da carta
+      (prizes => prizes ? '<div class="fin-prizes"><div class="fp-t">Prêmios desta carreira</div>' + prizes + '</div>' : '')(U.streakFinale(skGot) + U.packFinale(packWhy)) +
       '<details class="fin-more"><summary>Resumo da carreira' + (fresh ? ' <em>' + fresh + (fresh > 1 ? ' conquistas novas' : ' conquista nova') + '</em>' : '') + '</summary>' +
       '<div class="fin-links">' + (G.c.seasons.length ? '<button id="b-album">' + U.emo('📖', 'sm') + '<span>Álbum</span></button>' : '') +
         (Object.keys(G.c.trophies || {}).length ? '<button id="b-sala-car">' + U.emo('🏆', 'sm') + '<span>Troféus</span></button>' : '') +
@@ -162,11 +162,14 @@
       const box = $('ed-box');
       if (!box) return;
       let body = '';
-      if (tab === 'sign') body = '<div class="sig-grid">' + Object.entries(SG).map(([k, F]) => {
+      // Assinaturas numa linha que rola para o lado: as liberadas primeiro, as do pacotinho depois (tocar mostra como pegar)
+      const sigs = Object.entries(SG).sort((a, b) => !!signLock(a[0]) - !!signLock(b[0])), sigLocked = sigs.filter(([k]) => signLock(k)).length;
+      if (tab === 'sign') body = '<div class="sig-grid">' + sigs.map(([k, F]) => {
         const it = signLock(k);
         return '<button data-sign="' + k + '" class="sig-b' + (cardData.sign === k ? ' on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + '">' +
           '<span style="font-family:' + esc(F.family) + ', cursive;font-size:' + sigSize + 'px">' + esc(shareName) + '</span><small>' + (it ? U.emo('🔒', 'xs') + ' ' : '') + F.label + '</small></button>';
-      }).join('') + '</div>' + (msg ? '<p class="muted small sig-msg">' + msg + '</p>' : '');
+      }).join('') + '</div>' + (sigLocked ? '<p class="ed-cnt">' + (sigs.length - sigLocked) + ' liberadas · ' + sigLocked + ' nos pacotinhos · arraste para ver todas</p>' : '') +
+        (msg ? '<p class="muted small sig-msg">' + msg + '</p>' : '');
       if (tab === 'finish') body = (curSp === 'final' ? '' : '<p class="muted small">O acabamento vale para a carta final.</p>') +
         '<div class="fin-grid"><button data-fin="" class="fin-b' + (!cardData.finish ? ' on' : '') + '"><i class="fin-sw std"></i><small>Padrão</small></button>' +
         Object.entries(FN).map(([k, F]) => {
@@ -179,6 +182,8 @@
       if (tab === 'crest') body = (curSp === 'final' ? '' : '<p class="muted small">O escudo vale para a carta final.</p>') + '<div class="crest-pick">' + clubsPlayed.map(id => '<button data-club="' + id + '"' + (cardData.crest === 'badges/' + id + '.png' ? ' class="on"' : '') + ' aria-label="' + esc(club(id).name) + '">' + crest(id) + '<span>' + esc(club(id).name) + '</span></button>').join('') + '</div>';
       box.innerHTML = '<div class="ed-t">Edite sua carta</div>' + (TABS.length > 1 ? '<div class="ed-tabs">' + TABS.map(([k, l]) => '<button data-edtab="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>' : '') + body;
       box.querySelectorAll('[data-edtab]').forEach(b => b.onclick = () => { tab = b.dataset.edtab; msg = ''; drawEd(); });
+      const onSig = box.querySelector('.sig-b.on');
+      if (onSig) onSig.parentNode.scrollLeft = Math.max(0, onSig.offsetLeft - onSig.parentNode.offsetLeft - 24);
       box.querySelectorAll('[data-sp]').forEach(sc => {
         window.CRAQUE_CARD(sc, spData(sc.dataset.sp));
         sc.onclick = () => { curSp = sc.dataset.sp; redraw(); drawEd(); };
