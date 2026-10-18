@@ -388,8 +388,8 @@
   function summary(res, skipNow) {
     const feed = $('feed');
     if (!feed || !G.c) return; // a tela do resumo já não está aberta (ex.: voltou ao início durante a comemoração)
-    // Só o lance mais marcante na tela; os outros ficam nos detalhes
-    res.highlights.slice(0, 1).forEach(h => { const d = document.createElement('div'); d.className = 'rv hl'; d.textContent = h; feed.appendChild(d); });
+    // Só o lance mais marcante na tela (no bloco da história do ano); os outros ficam nos detalhes
+    const hl = res.highlights[0] ? '<p class="st-hl rv">' + esc(res.highlights[0]) + '</p>' : '';
     const dOvr = res.ovr1 - res.ovr0;
     const fin = S.mustRetire(G.c);
     const tb = res.table;
@@ -451,10 +451,13 @@
       (res.loanBack ? '<p class="contract rv">Fim do empréstimo: você volta ' + D.ao(esc(club(res.loanBack.to).name)) + '.</p>' : '') +
       (res.titles.length ? '<div class="titles">' + res.titles.map(t => '<div class="title-won rv">' + trophy(titleType(t), 60, t.name) + '<span>Campeão<br><b>' + esc(t.name) + '</b></span></div>').join('') + '</div>' : '') +
       '<div class="awards">' + res.awards.map(a => '<div class="award rv' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : U.emo('🥇', 'sm') + ' ') + a.name + '</div>').join('') + '</div>' +
+      // A história do ano num bloco só, em linhas com peso menor que a carta, a nota e a tabela
+      '<div class="story rv">' + hl +
       '<div class="news rv"><div class="np">' + U.emo('📰', 'xs') + ' Nos jornais</div><p>' + esc(res.headlines[0] || '') + '</p></div>' +
       resenha(res) +
       // Rival de geração (engine/rival.js): o que ele fez no ano e o duelo com você
       (res.rival ? '<div class="rival-line rv' + (res.rival.tookBallon || res.rival.ballon ? ' hot' : '') + '"><p>' + U.emo('⚔️', 'xs') + ' ' + esc(S.rivalLine(G.c, res)) + '</p>' + rivalDuel(res) + '</div>' : '') +
+      '</div>' +
       wcBlock +
       // Detalhes (fechados): outros lances, o porquê da nota, técnico/torcida e contrato
       // Craque carregando um time fraco (a partir do 2º ano) e o clube crescendo com ele
@@ -469,6 +472,13 @@
       (fin ? '' : '<p class="contract">' + contractTxt + '</p>') + '</details>' + '<div class="rv">' + actions + '</div>';
     bar();
     reveal(skipNow, res);
+    // Última temporada: a carta desbota em sépia, como foto antiga, antes da carta final da carreira
+    if (fin) setTimeout(() => {
+      const sc = $('scard'), sv = $('sc-d');
+      if (!sc || sc.classList.contains('aged')) return;
+      sc.classList.add('aged');
+      sv.insertAdjacentHTML('afterend', '<span class="sc-aged">Fim de carreira</span>');
+    }, skipNow ? 0 : 900);
     U.tip('resumo');
     // Depois do resumo: as taças da temporada entram na Sala de Troféus (sem tela extra; a taça já aparece no resumo)
     const goOn = () => { U.salaRecord(G.c); (goTour ? tourIntro : afterSeason)(); };
