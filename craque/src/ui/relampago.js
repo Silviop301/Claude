@@ -59,7 +59,7 @@
       '<div class="card rl-rules">' +
         '<p><b>5 casas montam a carreira:</b> Base, Auge, Último clube, G/A e Títulos. Cada casa tem <b>5 bolas</b>.</p>' +
         '<p>' + U.emo('⚽', 'sm') + ' Nos clubes, cada bola esconde um time: vale <b>a primeira que entrar</b>. Errou as 5, fica o mais fraco.</p>' +
-        '<p>' + U.emo('🏆', 'sm') + ' Em G/A e Títulos, <b>cada gol soma</b>.</p>' +
+        '<p>' + U.emo('🏆', 'sm') + ' Em G/A e Títulos cada bola esconde gols e assistências ou um título. <b>Você leva o de cada bola que entrar</b>, e pode perder justo a da Bola de Ouro.</p>' +
         '<p>' + U.emo('😤', 'sm') + ' O goleiro é <b>mais esperto</b> que no modo carreira, e a mira acelera a cada bola.</p>' +
       '</div>' +
       '<div class="field"><label for="rl-name">Seu nome no desafio</label><input id="rl-name" maxlength="20" autocomplete="nickname" placeholder="Ex.: Vitinho" value="' + esc(name) + '"></div>' +
@@ -84,14 +84,14 @@
   // Prêmio pequeno (quadro de cima e resultado)
   function coneMini(c) {
     if (c.id) return crest(c.id, 'xs') + '<em>' + esc(c.name) + '</em>';
-    if (c.ga) return '<b class="rl-ga">' + c.ga + '</b>';
+    if ('ga' in c) return '<b class="rl-ga">' + c.ga + '</b>';
     return '<span class="rl-tr">' + c.items.map(([n, q]) => trophyImg(n, 18) + '<i>' + q + '</i>').join('') + '</span><em>' + esc(c.name) + '</em>';
   }
   // Prêmio por extenso (revelado depois da cobrança)
   function prize(c) {
     let inner;
     if (c.id) inner = crest(c.id, 'sm') + '<em>' + esc(c.name) + '</em>';
-    else if (c.ga) inner = '<b class="rl-ga">' + c.ga + '</b><em>gols + assistências</em>';
+    else if ('ga' in c) inner = '<span class="rl-gas"><b class="rl-ga">' + c.gols + '</b><i>gols</i><b class="rl-ga">' + c.ast + '</b><i>assistências</i></span>';
     else inner = '<span class="rl-tr">' + c.items.map(([n, q]) => '<span class="rl-ti">' + trophyImg(n, 26) + '<i>' + q + '×</i></span>').join('') + '</span><em>' + esc(c.name) + '</em>';
     return inner + (c.home ? '<small>voltou pra casa</small>' : '');
   }
@@ -122,7 +122,7 @@
     const i = current();
     if (i >= 5) return result();
     const sl = S.RL_SLOTS[i], kicks = run.rounds[i], k = kicks.length;
-    const rule = i < 3 ? 'Vale o clube da primeira bola que entrar' : 'Cada gol das 5 bolas soma';
+    const rule = i < 3 ? 'Vale o clube da primeira bola que entrar' : 'Você leva o prêmio de cada bola que entrar';
     render('<div class="rl-head"><div class="eyebrow">Casa ' + (i + 1) + ' de 5 · bola ' + (k + 1) + ' de 5</div><h2>' + sl.name + '</h2>' +
       '<div class="rl-rule"><span>' + rule + '</span>' + dots(kicks) + '</div></div>' + boardHtml(i) +
       '<div id="rl-kick"></div><div class="card rl-reveal" id="rl-reveal" hidden></div>');
@@ -142,11 +142,11 @@
       if (ok) msg = 'Gol! Esse é o seu clube';
       else if (r.done) msg = 'Nenhuma entrou. Sobrou';
       else { msg = 'Errou. Essa bola era'; shown = r.hidden(kicks.length - 1); }
-    } else msg = (ok ? 'Gol! ' : 'Errou. ') + r.goals + (r.goals === 1 ? ' gol em ' : ' gols em ') + kicks.length;
+    } else { msg = ok ? 'Gol! Você levou' : 'Errou. Essa bola tinha'; shown = r.hidden(kicks.length - 1); }
     box.hidden = false;
-    box.className = 'card rl-reveal ' + (ok ? 'ok' : 'ko') + (club && !ok && !r.done ? ' lost' : '');
+    box.className = 'card rl-reveal ' + (ok ? 'ok' : 'ko') + (!ok && !(club && r.done) ? ' lost' : '');
     box.innerHTML = '<small>' + msg + '</small>' +
-      '<div class="rl-prize">' + prize(shown) + '</div>' + (r.done ? '<b class="rl-pts">+' + String(r.cone.pts).replace('.', ',') + ' pts</b>' : '') +
+      '<div class="rl-prize">' + prize(shown) + '</div>' + (!club && r.done ? '<div class="rl-sum"><small>Total da casa</small>' + esc(r.cone.name) + '</div>' : '') + (r.done ? '<b class="rl-pts">+' + String(r.cone.pts).replace('.', ',') + ' pts</b>' : '') +
       '<button class="btn" id="rl-next">' + (!r.done ? 'Próxima bola' : i < 4 ? 'Próxima casa' : 'Ver a carreira') + '</button>';
     if (r.done) { const board = document.querySelector('.rl-board'); if (board) board.outerHTML = boardHtml(i); }
     sfx(ok ? 'goal' : 'kick');
@@ -160,7 +160,7 @@
   const how = s => s.cone.id ? (s.goal ? 'gol na ' + s.kicks + 'ª' : 'nenhuma entrou') : s.goals + ' de 5';
   function coneVal(c) {
     if (c.id) return crest(c.id, 'xs') + esc(c.name);
-    if (c.ga) return c.ga + ' gols + assistências';
+    if ('ga' in c) return esc(c.name);
     return esc(c.name);
   }
   function result() {
@@ -178,7 +178,7 @@
         '<div class="rl-duel">' + col(run.name, f, true) + '<div class="rl-x">x</div>' + col(vs.n, g) + '</div>' +
         '<p class="rl-ask">Quem montou a melhor carreira?</p>'
       : '<h2>' + esc(run.name) + '</h2>') +
-      '<div class="card rl-res"><div class="rl-score"><span class="rl-grade big g-' + f.grade + '">' + f.grade + '</span><div><b>' + f.total + ' pontos</b><small>máximo 120 · ' + f.slots.reduce((a, s) => a + s.goals, 0) + ' gols em ' + f.slots.reduce((a, s) => a + s.kicks, 0) + ' cobranças</small></div></div>' +
+      '<div class="card rl-res"><div class="rl-score"><span class="rl-grade big g-' + f.grade + '">' + f.grade + '</span><div><b>' + f.total + ' pontos</b><small>' + f.slots.reduce((a, s) => a + s.goals, 0) + ' gols em ' + f.slots.reduce((a, s) => a + s.kicks, 0) + ' cobranças</small></div></div>' +
         rows(f) + combos + '</div>' +
       (window.CLIMBIX_SOLO ? '' : '<button class="btn" id="rl-share">' + U.emo('🎯', 'sm') + ' ' + (g && diff > 0 ? 'Devolver o desafio' : 'Desafiar um amigo') + '<small>Ele cobra com os mesmos times escondidos</small></button>') +
       '<button class="btn ghost" id="rl-again">Jogar de novo</button>' +
