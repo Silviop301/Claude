@@ -56,11 +56,11 @@
     const d = active(), name = load(NAME) || '';
     render('<button class="back-link" id="rl-back">‹ Voltar</button>' +
       '<div class="eyebrow">Modo rápido</div><h2>Carreira Relâmpago</h2>' +
-      (d ? '<div class="card dz-res rl-vs-top">' + U.emo('🎯', 'md') + '<div><small>Desafio de ' + esc(d.n) + '</small><b>' + S.rlScore(d.s, d.p).total + ' pontos pra bater</b><span>Os cones são os mesmos que ' + esc(d.n) + ' teve.</span></div></div>' : '') +
+      (d ? '<div class="card dz-res rl-vs-top">' + U.emo('🎯', 'md') + '<div><small>Desafio de ' + esc(d.n) + '</small><b>' + S.rlScore(d.s, d.p).total + ' pontos pra bater</b><span>Os prêmios estão escondidos nos mesmos cones que ' + esc(d.n) + ' teve. Uma chance só.</span></div></div>' : '') +
       '<div class="card rl-rules">' +
         '<p><b>5 chutes montam a carreira:</b> Base, Auge, Último clube, G/A e Títulos.</p>' +
-        '<p>' + U.emo('🎯', 'sm') + ' Os <b>melhores prêmios ficam nas pontas</b> e o pior fica no meio.</p>' +
-        '<p>' + U.emo('😤', 'sm') + ' Chutou <b>pra fora</b>? Fica com o pior cone e a casa não pontua.</p>' +
+        '<p>' + U.emo('🎯', 'sm') + ' Cada cone <b>esconde um prêmio</b>. Você vê o que pode sair, mas não onde está.</p>' +
+        '<p>' + U.emo('😤', 'sm') + ' Chutou <b>pra fora</b>? Fica com o pior prêmio e a casa não pontua.</p>' +
         '<p>' + U.emo('⚡', 'sm') + ' A mira fica mais rápida a cada chute.</p>' +
       '</div>' +
       '<div class="field"><label for="rl-name">Seu nome no desafio</label><input id="rl-name" maxlength="20" autocomplete="nickname" placeholder="Ex.: Vitinho" value="' + esc(name) + '"></div>' +
@@ -88,14 +88,19 @@
     if (c.ga) return '<b class="rl-ga">' + c.ga + '</b>';
     return '<span class="rl-tr">' + c.items.map(([n, q]) => trophyImg(n, 18) + '<i>' + q + '</i>').join('') + '</span><em>' + esc(c.name) + '</em>';
   }
-  // Prêmio em cima do cone
-  function chip(c, k) {
+  // Prêmio por extenso (revelado no cone e na faixa do que pode sair)
+  function prize(c) {
     let inner;
     if (c.id) inner = crest(c.id, 'sm') + '<em>' + esc(c.name) + '</em>';
     else if (c.ga) inner = '<b class="rl-ga">' + c.ga + '</b><em>G/A</em>';
     else inner = c.items.map(([n, q]) => '<span class="rl-ti">' + trophyImg(n, 22) + '<i>' + q + '×</i></span>').join('');
-    return '<div class="rl-chip' + (c.home ? ' home' : '') + '" id="rl-c' + k + '" style="left:' + (CX(k) / 3.6) + '%">' + inner + (c.home ? '<small>volta pra casa</small>' : '') + '</div>';
+    return inner + (c.home ? '<small>volta pra casa</small>' : '');
   }
+  // Em cima do cone o prêmio fica escondido até o chute
+  const chip = (c, k) => '<div class="rl-chip" id="rl-c' + k + '" style="left:' + (CX(k) / 3.6) + '%"><b class="rl-hid">?</b></div>';
+  // O que pode sair nesta casa, do melhor para o pior (sem dizer em qual cone)
+  const pool = cones => '<div class="rl-pool"><small>Pode sair</small><div>' + cones.slice().sort((a, b) => a.rank - b.rank)
+    .map(c => '<span class="rl-pi' + (c.home ? ' home' : '') + '" id="rl-p' + c.rank + '">' + prize(c) + '</span>').join('') + '</div></div>';
   function coneSvg(k) {
     const x = CX(k), y = CONE_Y;
     return '<g transform="translate(' + x + ' ' + y + ')"><ellipse cx="0" cy="2" rx="17" ry="4" fill="rgba(0,0,0,.35)"/><g class="rl-cone" id="rl-k' + k + '">' +
@@ -124,7 +129,7 @@
     if (i >= 5) return result();
     const cones = S.rlCones(run.seed, run.picks), sl = S.RL_SLOTS[i];
     render('<div class="rl-head"><div class="eyebrow">Chute ' + (i + 1) + ' de 5</div><h2>' + sl.name + '</h2></div>' + boardHtml(i) +
-      '<div class="kick-stage rl-stage" id="rl-stage">' + scene() + cones.map(chip).join('') + '<div class="kick-banner" id="rl-banner"></div></div>' +
+      '<div class="kick-stage rl-stage" id="rl-stage">' + scene() + cones.map(chip).join('') + '<div class="kick-banner" id="rl-banner"></div></div>' + pool(cones) +
       '<p class="kick-help" id="rl-help">Toque na tela para <b>chutar</b></p><p class="rl-pick" id="rl-pick">&nbsp;</p>');
     const svg = document.querySelector('.rl-svg'), aim = $('rl-aim'), ring = $('rl-ring'), stage = $('rl-stage');
     const period = S.RL_PERIOD[i] * 1000, t0 = performance.now();
@@ -172,15 +177,15 @@
     if (hit !== null) {
       const k = $('rl-k' + hit);
       k.classList.add('fall' + (CX(hit) < 180 ? 'l' : 'r'));
-      $('rl-c' + hit).classList.add('hit');
+      const ch = $('rl-c' + hit);
+      ch.innerHTML = prize(cone); ch.classList.add('hit');
       document.querySelectorAll('.rl-chip').forEach((c, j) => { if (j !== hit) c.classList.add('dim'); });
-    } else {
-      document.querySelectorAll('.rl-chip').forEach(c => c.classList.add('dim'));
-      $('rl-c' + cones.indexOf(cone)).classList.add('hit', 'miss');
-    }
+    } else document.querySelectorAll('.rl-chip').forEach(c => c.classList.add('dim'));
+    document.querySelectorAll('.rl-pi').forEach(x => x.classList.add('dim'));
+    const pi = $('rl-p' + cone.rank); pi.classList.remove('dim'); pi.classList.add(hit === null ? 'miss' : 'hit');
     const best = hit !== null && cone.rank === 0;
     sfx(hit === null ? 'miss' : best ? 'goal' : 'kick');
-    banner.textContent = hit === null ? 'PRA FORA!' : best ? 'NA MOSCA!' : cone.rank <= 2 ? 'BOA!' : 'IXI...';
+    banner.textContent = hit === null ? 'PRA FORA!' : best ? 'O MELHOR!' : cone.rank <= 2 ? 'BOA!' : 'IXI...';
     banner.className = 'kick-banner show ' + (hit !== null && cone.rank <= 2 ? 'ok' : 'ko');
     $('rl-pick').innerHTML = hit === null ? 'Ficou com <b>' + esc(cone.name) + '</b> e não pontua' : '<b>' + esc(cone.name) + '</b> · +' + String(cone.pts).replace('.', ',') + ' pts';
     if (navigator.vibrate && best) navigator.vibrate([40, 40, 80]);
@@ -200,7 +205,8 @@
     const f = S.rlScore(run.seed, run.picks), vs = run.vs;
     const g = vs ? S.rlScore(vs.s, vs.p) : null;
     const diff = g ? f.total - g.total : 0;
-    if (g && diff > 0) store(KEY, Object.assign(load(KEY) || {}, { done: true }));
+    // Uma chance só por desafio (os prêmios escondidos já foram vistos)
+    if (g) store(KEY, Object.assign(load(KEY) || {}, { done: true }));
     const combos = f.combos.length ? '<div class="rl-combos">' + f.combos.map(c => '<span>' + U.emo('🔥', 'xs') + ' <b>' + c.name + '</b> ' + c.desc + (c.pts ? ' (+' + c.pts + ')' : '') + '</span>').join('') + '</div>' : '';
     const col = (who, sc, me) => '<div class="rl-col' + (me ? ' me' : '') + '"><div class="rl-col-h"><b>' + esc(who) + '</b><span class="rl-grade g-' + sc.grade + '">' + sc.grade + '</span></div>' +
       sc.slots.map(s => '<div class="rl-mini' + (s.out ? ' out' : '') + '"><small>' + s.name + '</small>' + coneMini(s.cone) + '</div>').join('') +
@@ -210,14 +216,13 @@
         '<div class="rl-duel">' + col(run.name, f, true) + '<div class="rl-x">x</div>' + col(vs.n, g) + '</div>' +
         '<p class="rl-ask">Quem montou a melhor carreira?</p>'
       : '<h2>' + esc(run.name) + '</h2>') +
-      '<div class="card rl-res"><div class="rl-score"><span class="rl-grade big g-' + f.grade + '">' + f.grade + '</span><div><b>' + f.total + ' pontos</b><small>máximo 124 · ' + f.slots.filter(s => s.best).length + ' de 5 na mosca</small></div></div>' +
+      '<div class="card rl-res"><div class="rl-score"><span class="rl-grade big g-' + f.grade + '">' + f.grade + '</span><div><b>' + f.total + ' pontos</b><small>máximo 124 · ' + f.slots.filter(s => s.best).length + ' de 5 com o melhor prêmio</small></div></div>' +
         rows(f) + combos + '</div>' +
       (window.CLIMBIX_SOLO ? '' : '<button class="btn" id="rl-share">' + U.emo('🎯', 'sm') + ' ' + (g && diff > 0 ? 'Devolver o desafio' : 'Desafiar um amigo') + '<small>Ele chuta nos mesmos cones</small></button>') +
-      '<button class="btn ghost" id="rl-again">' + (g && diff <= 0 ? 'Tentar de novo os mesmos cones' : 'Jogar de novo') + '</button>' +
+      '<button class="btn ghost" id="rl-again">Jogar de novo</button>' +
       '<button class="link-btn" id="rl-home">Voltar ao início</button>');
     $('rl-again').onclick = () => {
-      const same = g && diff <= 0;
-      run = { seed: same ? run.seed : S.rlNewSeed(), picks: [], name: run.name, vs: same ? vs : null };
+      run = { seed: S.rlNewSeed(), picks: [], name: run.name, vs: null };
       play();
     };
     $('rl-home').onclick = () => U.home();
