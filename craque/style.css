@@ -1963,7 +1963,7 @@ button.cc-num small { font: 700 12px/1 var(--display); letter-spacing: .06em; op
 .cc-name-w .cc-name { padding: 6px 30px; }
 .cc-name-w .ico { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); opacity: .7; pointer-events: none; }
 /* Botão fixo no rodapé: o conteúdo some num degradê atrás dele em vez de aparecer cortado em volta */
-.inv-bar.fade::before { content: ''; position: absolute; z-index: -1; left: -20px; right: -20px; top: -44px; bottom: calc(-10px - env(safe-area-inset-bottom, 0px)); background: linear-gradient(to bottom, rgba(15, 61, 42, 0), var(--pitch) 40px); pointer-events: none; }
+.inv-bar.fade::before { content: ''; position: absolute; z-index: -1; left: -16px; right: -16px; top: -44px; bottom: calc(-10px - env(safe-area-inset-bottom, 0px)); background: linear-gradient(to bottom, rgba(15, 61, 42, 0), var(--pitch) 40px); pointer-events: none; }
 button.cc-num em { font: 800 13px/1.1 var(--display); font-style: normal; letter-spacing: .08em; text-transform: uppercase; color: var(--rk); }
 .nb-sheet { max-height: 88vh; }
 .nb-scroll { overflow-y: auto; margin: 0 -16px; padding: 0 16px; }
@@ -2559,3 +2559,13 @@ details.more .src-card { margin: 2px 0 8px; }
 .btn.opt.style .st-pct { display: inline-flex; align-items: baseline; gap: 5px; align-self: center; margin-top: auto; padding: 3px 10px; border-radius: 999px;
   background: var(--ink); color: #E8F1EA; font: 600 12px var(--body); }
 .btn.opt.style .st-pct b { font: 800 20px/1 var(--display); color: var(--gold); }
+
+/* Post no X: as respostas entram uma a uma depois do post (um toque mostra tudo) */
+.xw.xw-live .xw-rep { animation: xw-in .4s ease-out both; animation-delay: calc(.7s + var(--i, 0) * .45s); }
+.xw.xw-done .xw-rep { animation: none; }
+@keyframes xw-in { from { opacity: 0; transform: translateY(12px); } }
+.xw .xn { font-style: normal; font-variant-numeric: tabular-nums; }
+/* Bola da tela inicial sem 3D (desligado, sem WebGL ou a biblioteca não chegou): bola desenhada girando devagar */
+.ball3d.flat { opacity: 1; transform: none; display: grid; place-items: center; }
+.ball3d.flat img { width: 112px; height: 112px; animation: ball-flat 9s linear infinite; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .35)); }
+@keyframes ball-flat { to { transform: rotate(360deg); } }

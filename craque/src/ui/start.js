@@ -56,8 +56,20 @@
     // A bola 3D espera o módulo 3D terminar de carregar (na primeira visita ele chega depois da tela)
     const hero = splash && screen.querySelector('.hero');
     if (hero) { splash.classList.remove('splash'); splash.querySelector('.ball3d').id = 'ball3d'; hero.replaceWith(splash); }
-    const mountBall = () => { const el = $('ball3d'); if (el && U.cfg.fx3d && window.CRAQUE_BALL) window.CRAQUE_BALL.mount(el); };
-    if (window.CRAQUE_BALL) mountBall(); else addEventListener('craque-ball-ready', mountBall, { once: true });
+    // Sem 3D (desligado, sem WebGL ou a biblioteca não chegou): bola desenhada no lugar, para o topo não ficar vazio
+    const flatBall = () => { const el = $('ball3d'); if (el && !el.querySelector('canvas') && !el.classList.contains('flat')) { el.classList.add('flat'); el.innerHTML = '<img src="assets/tw/26bd.svg" alt="">'; } };
+    const mountBall = () => {
+      const el = $('ball3d');
+      if (!el || !U.cfg.fx3d) return flatBall();
+      if (!window.CRAQUE_BALL) return;
+      el.classList.remove('flat'); el.innerHTML = '';
+      try { window.CRAQUE_BALL.mount(el); } catch (e) { flatBall(); }
+    };
+    if (window.CRAQUE_BALL || !U.cfg.fx3d) mountBall();
+    else {
+      addEventListener('craque-ball-ready', mountBall, { once: true });
+      if (window.CRAQUE_BALL_FAIL) flatBall(); else { addEventListener('craque-ball-fail', flatBall, { once: true }); setTimeout(flatBall, 6000); }
+    }
     if (U.whatsNew) U.whatsNew();
   }
 
