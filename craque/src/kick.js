@@ -317,7 +317,9 @@
 
   root.CRAQUE_KICK = function (el, opts) {
     const c = opts.c, m = opts.moment;
-    const setup = S().kickSetup(c, m.type, m.style);
+    // opts.setup: regra pronta (Carreira Relâmpago); opts.ballX/extraBalls: bola fora do meio e as próximas da fila
+    const setup = opts.setup || S().kickSetup(c, m.type, m.style);
+    BALL.x = opts.ballX || 180;
     const rise = setup.rise || 0; // chute forte: a mira já mostra onde a bola sobe
     const side = setup.fk ? (Math.random() < 0.5 ? 1 : -1) : 1; // lado da barreira
     el.innerHTML = '<div class="kick-stage">' + scene(setup, side) +
@@ -326,6 +328,7 @@
     const aim = svg.querySelector('#k-aim'), vline = svg.querySelector('#k-vline'), hline = svg.querySelector('#k-hline'), dot = svg.querySelector('#k-dot');
     const shadow = svg.querySelector('#k-shadow'), trail = Array.from(svg.querySelectorAll('#k-trail circle'));
     const stage = el.querySelector('.kick-stage');
+    (opts.extraBalls || []).forEach(x => { const b = ball.cloneNode(true); b.removeAttribute('id'); setBall(b, x, BALL.y, BALL.r); ball.parentNode.insertBefore(b, ball); });
     // Câmera e efeitos (cine.js); a bola 3D vai junto com a cena, dentro da camada da câmera
     const cine = root.CRAQUE_CINE ? root.CRAQUE_CINE(stage) : null, on = cine && cine.enabled;
     // Você, de costas, atrás da bola (só com a câmera nova)
@@ -347,8 +350,9 @@
     const wallAnim = animateWall(svg, c);
     const b3 = ball3d(on ? stage.querySelector('.k-cam') : stage, ball);
     const place = b3.place;
-    const finish = (ok, why) => { gone = true; b3.dispose(); if (goal) goal.dispose(); if (cine) cine.dispose(); opts.onDone(ok, why); };
+    const finish = (ok, why) => { gone = true; BALL.x = 180; b3.dispose(); if (goal) goal.dispose(); if (cine) cine.dispose(); opts.onDone(ok, why); };
     place(BALL.x, BALL.y, BALL.r);
+    shadow.setAttribute('cx', BALL.x);
     setKeeper(keeper, setup.fk ? px(0.4 * side) - GX : 0, 0, 0);
     aim.setAttribute('opacity', '1');
 
@@ -418,9 +422,9 @@
       help.innerHTML = '&nbsp;';
       aim.setAttribute('opacity', '0');
       const x = dx * side; // no referencial da regra (barreira sempre "à esquerda")
-      // Goleiro do pênalti: acerta o lado 38% das vezes, erra 42%, fica no meio 20%
-      const kr = Math.random(), bs = Math.sign(x) || (Math.random() < 0.5 ? -1 : 1);
-      const kSide = setup.fk ? 0 : kr < 0.38 ? bs : kr < 0.8 ? -bs : 0;
+      // Goleiro do pênalti: acerta o lado 38% das vezes, erra 42%, fica no meio 20% (opts.keeperGuess: goleiro mais esperto)
+      const kr = Math.random(), bs = Math.sign(x) || (Math.random() < 0.5 ? -1 : 1), kg = opts.keeperGuess || 0.38;
+      const kSide = setup.fk ? 0 : kr < kg ? bs : kr < kg + (1 - kg) * 0.68 ? -bs : 0;
       if (setup.fk || kSide) keeper.classList.add('diving'); // estica os braços no pulo
       const res = S().kickResult(setup, x, y, kSide); // (a regra soma a subida do chute forte)
       // Para onde a bola vai no desenho

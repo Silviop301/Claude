@@ -25,6 +25,7 @@
   // ---------- goleiro ----------
   root.CRAQUE_SAVE = function (el, opts) {
     const P = root.CRAQUE_KICK_PARTS, c = opts.c;
+    P.BALL.x = 180; // a Carreira Relâmpago chuta de outras posições (kick.js)
     const setup = S().kickSetup(c, 'save', opts.style);
     el.innerHTML = '<div class="kick-stage">' + P.scene({ fk: false }, 1) + '<div class="kick-banner"></div></div>' +
       '<p class="kick-help" id="k-help">' + (setup.miss ? 'Você adiantou: a seta vem tarde, toque logo no lado para <b>pular</b>' : 'Leia o batedor e toque no lado para <b>pular</b>') + '</p>';
