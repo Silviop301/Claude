@@ -169,6 +169,8 @@
     const diff = g ? f.total - g.total : 0;
     // Uma chance só por desafio (os prêmios escondidos já foram vistos)
     if (g) store(KEY, Object.assign(load(KEY) || {}, { done: true }));
+    // Conta como carreira terminada na sequência de dias (a primeira do dia libera o prêmio): uma vez por partida
+    if (!run.sk) run.sk = { got: U.ITEMS.streakRecord() };
     const combos = f.combos.length ? '<div class="rl-combos">' + f.combos.map(c => '<span>' + U.emo('🔥', 'xs') + ' <b>' + c.name + '</b> ' + c.desc + (c.pts ? ' (+' + c.pts + ')' : '') + '</span>').join('') + '</div>' : '';
     const col = (who, sc, me) => '<div class="rl-col' + (me ? ' me' : '') + '"><div class="rl-col-h"><b>' + esc(who) + '</b><span class="rl-grade g-' + sc.grade + '">' + sc.grade + '</span></div>' +
       sc.slots.map(s => '<div class="rl-mini' + (s.goal ? '' : ' out') + '"><small>' + s.name + '</small>' + coneMini(s.cone) + '</div>').join('') +
@@ -179,7 +181,7 @@
         '<p class="rl-ask">Quem montou a melhor carreira?</p>'
       : '<h2>' + esc(run.name) + '</h2>') +
       '<div class="card rl-res"><div class="rl-score"><span class="rl-grade big g-' + f.grade + '">' + f.grade + '</span><div><b>' + f.total + ' pontos</b><small>' + f.slots.reduce((a, s) => a + s.goals, 0) + ' gols em ' + f.slots.reduce((a, s) => a + s.kicks, 0) + ' cobranças</small></div></div>' +
-        rows(f) + combos + '</div>' +
+        rows(f) + combos + '</div>' + U.streakFinale(run.sk.got) +
       (window.CLIMBIX_SOLO ? '' : '<button class="btn" id="rl-share">' + U.emo('🎯', 'sm') + ' ' + (g && diff > 0 ? 'Devolver o desafio' : 'Desafiar um amigo') + '<small>Ele cobra com os mesmos times escondidos</small></button>') +
       '<button class="btn ghost" id="rl-again">Jogar de novo</button>' +
       '<button class="link-btn" id="rl-home">Voltar ao início</button>');
@@ -188,6 +190,7 @@
       play();
     };
     $('rl-home').onclick = () => U.home();
+    U.streakBind();
     const b = $('rl-share');
     if (b) b.onclick = () => share(b, f);
   }
