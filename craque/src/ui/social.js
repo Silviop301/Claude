@@ -243,7 +243,9 @@
     };
     const nRep = Math.max(coms.length, Math.round(likes / 20)), nRt = Math.round(likes / 7), nView = likes * 18;
     const hrs = i => (i < 2 ? '1 h' : (1 + Math.floor(i / 2)) + ' h');
-    const acts = (r, t, l, v, on) => '<div class="xw-acts"><span>' + IC.rep + num(r) + '</span><span>' + IC.rt + num(t) + '</span><span' + (on ? ' class="on"' : '') + '>' + IC.like + num(l) + '</span><span>' + IC.view + num(v) + '</span></div>';
+    // Números do post principal: sobem contando quando o post abre (xn)
+    const xn = (v, live) => (live ? '<i class="xn" data-n="' + v + '">' + num(v) + '</i>' : num(v));
+    const acts = (r, t, l, v, on) => '<div class="xw-acts"><span>' + IC.rep + xn(r, on) + '</span><span>' + IC.rt + xn(t, on) + '</span><span' + (on ? ' class="on"' : '') + '>' + IC.like + xn(l, on) + '</span><span>' + IC.view + xn(v, on) + '</span></div>';
     const when = String(10 + (likes % 12)).padStart(2, '0') + ':' + String(likes % 60).padStart(2, '0');
     render(
       // Fechar no topo e Continuar fixo embaixo: não precisa rolar até o fim do post
@@ -252,10 +254,10 @@
       '<article class="xw">' +
       '<div class="xw-main"><header class="xw-head">' + ava(c.name, true) + '<div><b>' + esc(c.name) + '</b>' + (fame >= 80 ? XCHK : '') + '<small>@' + esc(me) + '</small></div></header>' +
       '<p class="xw-text">' + esc(p.text) + '</p>' +
-      '<p class="xw-when">' + when + ' · ' + year() + ' · <b>' + num(nView) + '</b> visualizações</p>' +
-      '<div class="xw-sum"><span><b>' + num(nRt) + '</b> reposts</span><span><b>' + num(likes) + '</b> curtidas</span></div>' +
+      '<p class="xw-when">' + when + ' · ' + year() + ' · <b>' + xn(nView, true) + '</b> visualizações</p>' +
+      '<div class="xw-sum"><span><b>' + xn(nRt, true) + '</b> reposts</span><span><b>' + xn(likes, true) + '</b> curtidas</span></div>' +
       acts(nRep, nRt, likes, nView, true).replace('xw-acts', 'xw-acts big') + '</div>' +
-      coms.map((x, i) => '<div class="xw-rep">' + ava(x.nm || x.h) + '<div class="xw-rc"><p class="xw-rh"><b>' + esc(x.nm || pageName(x.h)) + '</b>' + (x.v ? XCHK : '') + ' <small>@' + esc(x.h) + ' · ' + hrs(i) + '</small></p>' +
+      coms.map((x, i) => '<div class="xw-rep" style="--i:' + i + '">' + ava(x.nm || x.h) + '<div class="xw-rc"><p class="xw-rh"><b>' + esc(x.nm || pageName(x.h)) + '</b>' + (x.v ? XCHK : '') + ' <small>@' + esc(x.h) + ' · ' + hrs(i) + '</small></p>' +
         '<p class="xw-rt"><small>Em resposta a <em>@' + esc(me) + '</em></small>' + esc(x.t) + '</p>' +
         (x.hater ? '<div class="sp-reply" id="sp-hater"><button class="sp-hbtn" id="b-hater">Responder o hater<small>' + (fx.none ? 'Sem efeito' : '50%: Fama +6 · 50%: Técnico −3') + '</small></button></div>' : '') +
         acts(1 + ((i * 3 + likes) % 9), (i * 5 + likes) % 14, 3 + ((i * 7 + likes) % 60), 200 + ((i * 131 + likes) % 4000)) + '</div></div>').join('') +
@@ -265,6 +267,22 @@
     );
     $('b-post-next').onclick = next;
     $('b-post-x').onclick = next;
+    // O post "acontece": curtidas e visualizações sobem contando e as respostas entram uma a uma; um toque mostra tudo
+    const scr = U.screen, art = scr.querySelector('.xw'), nums = Array.from(art.querySelectorAll('.xn'));
+    const done = () => { art.classList.add('xw-done'); nums.forEach(e => { e.textContent = num(+e.dataset.n); }); scr.removeEventListener('click', done); };
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) done();
+    else {
+      art.classList.add('xw-live');
+      const t0 = performance.now(), dur = 1400;
+      const tick = now => {
+        if (art.classList.contains('xw-done') || !art.isConnected) return;
+        const u = Math.min(1, (now - t0) / dur), k = 1 - Math.pow(1 - u, 3);
+        nums.forEach(e => { e.textContent = num(Math.round(+e.dataset.n * k)); });
+        if (u < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+      scr.addEventListener('click', done);
+    }
     const hb = $('b-hater');
     if (hb) hb.onclick = () => {
       const out = replyFx(fx);
