@@ -2587,25 +2587,6 @@ details.more .src-card { margin: 2px 0 8px; }
 .rl-ga { font: 800 18px var(--display); color: var(--gold); }
 .rl-tr { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0 2px; }
 .rl-tr i { font: 700 11px var(--body); font-style: normal; margin-right: 2px; }
-.rl-stage { aspect-ratio: 360 / 300; }
-.rl-svg { display: block; width: 100%; height: 100%; }
-.rl-chip { position: absolute; top: 20%; width: 17%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; pointer-events: none;
-  background: rgba(11, 26, 18, .72); border-radius: 10px; padding: 5px 3px; transition: opacity .25s, transform .3s; }
-.rl-chip .crest { margin: 0; width: 30px; height: 30px; }
-.rl-chip em { font: 600 10.5px/1.1 var(--body); font-style: normal; color: #fff; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
-.rl-chip small { font: 700 9px var(--display); color: var(--gold); text-transform: uppercase; letter-spacing: .04em; }
-.rl-chip.home { box-shadow: inset 0 0 0 1.5px var(--gold); }
-.rl-chip .rl-ti { display: flex; align-items: center; gap: 1px; }
-.rl-chip .rl-ti i { font: 700 12px var(--body); font-style: normal; color: #fff; }
-.rl-chip .rl-ga { font-size: 20px; line-height: 1; }
-.rl-chip.dim { opacity: .3; }
-.rl-chip.hit { transform: translateX(-50%) scale(1.18); background: var(--gold); z-index: 2; opacity: 1; }
-.rl-chip.hit em, .rl-chip.hit i, .rl-chip.hit .rl-ga, .rl-chip.hit small { color: var(--ink); }
-.rl-chip.miss { background: #F8D3D6; }
-.rl-cone { transition: transform .45s cubic-bezier(.2, .8, .3, 1); transform-box: fill-box; transform-origin: 50% 100%; }
-.rl-cone.falll { transform: translate(-10px, 4px) rotate(-82deg); }
-.rl-cone.fallr { transform: translate(10px, 4px) rotate(82deg); }
-.rl-pick { text-align: center; margin: 4px 0 0; color: #E1EEE5; font-size: 15px; min-height: 22px; }
 .rl-res { margin-top: 10px; }
 .rl-score { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
 .rl-score b { display: block; font: 800 28px/1 var(--display); }
@@ -2639,22 +2620,20 @@ details.more .src-card { margin: 2px 0 8px; }
 .rl-ask { text-align: center; font: 700 17px var(--display); color: #E1EEE5; margin: 10px 0 0; }
 #rl-share small { display: block; font: 600 12px var(--body); opacity: .8; letter-spacing: 0; }
 #rl-home { display: block; margin: 12px auto 0; }
-/* Carreira Relâmpago: prêmio escondido no cone e faixa do que pode sair */
-.rl-chip .rl-hid { display: grid; place-items: center; width: 34px; height: 40px; border-radius: 8px; font: 800 24px var(--display); color: var(--ink);
   background: repeating-linear-gradient(135deg, #F2C230 0 6px, #E0B020 6px 12px); box-shadow: 0 2px 0 rgba(0, 0, 0, .35); }
-.rl-chip.hit { animation: rl-flip .45s ease-out; }
-@keyframes rl-flip { from { transform: translateX(-50%) rotateY(90deg); } to { transform: translateX(-50%) scale(1.18); } }
-.rl-pool { margin-top: 8px; }
-.rl-pool > small { display: block; font: 700 11px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--label); margin-bottom: 4px; }
-.rl-pool > div { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
-.rl-pi { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; background: rgba(255, 255, 255, .07); border-radius: 10px; padding: 5px 3px; min-width: 0; transition: opacity .25s; }
-.rl-pi .crest { margin: 0; width: 24px; height: 24px; }
-.rl-pi em { font: 600 10.5px/1.1 var(--body); font-style: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
-.rl-pi small { font: 700 9px var(--display); color: var(--gold); text-transform: uppercase; }
-.rl-pi .rl-ti { display: flex; align-items: center; gap: 1px; }
-.rl-pi .rl-ti i { font: 700 11px var(--body); font-style: normal; }
-.rl-pi .rl-ga { font-size: 17px; }
-.rl-pi.dim { opacity: .35; }
-.rl-pi.hit { background: var(--gold); color: var(--ink); }
-.rl-pi.hit .rl-ga, .rl-pi.hit small { color: var(--ink); }
-.rl-pi.miss { background: #F8D3D6; color: #8E1B24; }
+/* Carreira Relâmpago: prêmio revelado depois do pênalti */
+.rl-reveal { margin-top: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; animation: rl-pop .45s cubic-bezier(.2, 1.5, .4, 1); }
+@keyframes rl-pop { from { opacity: 0; transform: scale(.7); } }
+.rl-reveal > small { font: 700 13px var(--display); letter-spacing: .08em; text-transform: uppercase; }
+.rl-reveal.ok > small { color: #1E7A45; }
+.rl-reveal.ko > small { color: #B83A2E; }
+.rl-prize { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.rl-prize .crest { width: 64px; height: 64px; margin: 0; }
+.rl-prize em { font: 800 24px/1.1 var(--display); font-style: normal; }
+.rl-prize .rl-ga { font-size: 44px; color: var(--ink); }
+.rl-prize .rl-ti { display: inline-flex; align-items: center; gap: 2px; margin: 0 4px; }
+.rl-prize .rl-ti i { font: 800 18px var(--display); font-style: normal; }
+.rl-prize small { font: 700 12px var(--display); color: var(--amber-ink); text-transform: uppercase; }
+.rl-pts { font: 800 20px var(--display); color: #1E7A45; }
+.rl-reveal .btn { width: 100%; margin-top: 4px; }
+.rl-reveal .rl-pts { display: block; width: 100%; text-align: center; }

@@ -1,7 +1,6 @@
-// Carreira Relâmpago: modo rápido de 5 chutes. Cada chute acerta um cone e o prêmio dele entra numa casa da carreira
-// (Base, Auge, Último clube, G/A, Títulos). Tudo sai de uma semente: quem recebe o link de desafio joga os mesmos cones.
-// Os prêmios ficam escondidos e embaralhados nos cones (a tela só mostra o que pode sair): é sorte, como no vídeo que
-// inspirou o modo. Chute pra fora = fica com o pior prêmio e a casa não pontua.
+// Carreira Relâmpago: modo rápido de 5 pênaltis (5 bolas, da esquerda para a direita). Cada cobrança sorteia o prêmio de
+// uma casa da carreira (Base, Auge, Último clube, G/A, Títulos), escondido até a bola parar: gol sorteia entre os 3
+// melhores, erro entre os 2 piores. Tudo sai de uma semente: quem recebe o link de desafio tem os mesmos sorteios.
 (function (root) {
   const D = root.CRAQUE_DATA || require('../data.js');
   const S = root.CRAQUE_SIM || require('./core.js');
@@ -18,13 +17,16 @@
     { key: 'base', name: 'Base' }, { key: 'auge', name: 'Auge' }, { key: 'ultimo', name: 'Último clube' },
     { key: 'ga', name: 'G/A' }, { key: 'tit', name: 'Títulos' },
   ];
-  S.RL_GRADES = [['S', 85], ['A', 72], ['B', 60], ['C', 45], ['D', 0]]; // máximo 124; chutando ao acaso: S 5%, A 15%, B 25%, D 25%
-  // Velocidade da mira por casa (segundos de uma ponta à outra e de volta): cada chute fica mais difícil
-  S.RL_PERIOD = [2.1, 1.9, 1.75, 1.6, 1.45];
-  S.RL_WOBBLE = 0.14; // desvio da bola (em larguras de cone): perto do meio quase nunca muda nada
+  S.RL_GRADES = [['S', 85], ['A', 72], ['B', 60], ['C', 45], ['D', 0]]; // máximo 124
+  // Cobrança (kick.js): a mira acelera a cada bola; goleiro esperto acerta o lado 55% das vezes (no jogo normal, 38%)
+  S.RL_PERIOD = [1.7, 1.55, 1.4, 1.3, 1.2];
+  S.RL_KEEPER = 0.55;
+  S.rlKickSetup = i => ({ fk: false, period: S.RL_PERIOD[i], wobble: 0.06, reach: 0.3, fkReach: 0, wall: 0, wallL: -0.8, wallR: -0.1 });
 
   // Clubes das três casas de clube, sorteados uma vez pela semente (sem repetir clube)
+  let memo = null;
   function clubDraw(seed) {
+    if (memo && memo.seed === seed) return memo.dr;
     const r = S.rng(seed >>> 0), used = new Set();
     const byTier = t => D.CLUBS.filter(c => c.tier === t && !used.has(c.id));
     const take = list => { const pool = list.filter(c => !used.has(c.id)); const c = pool[Math.floor(r() * pool.length)]; used.add(c.id); return c; };
@@ -32,12 +34,13 @@
     const auge = [5, 5, 4, 3, 2].map(t => take(byTier(t)));
     // Fim de carreira: um grande ainda, uma aposentadoria de luxo (Arábia ou EUA) e dois modestos; o quinto é voltar pra base
     const ultimo = [take(byTier(4)), take(D.CLUBS.filter(c => c.league === 'ara' || c.league === 'usa')), take(byTier(2)), take(byTier(1))];
-    // Ordem escondida dos prêmios em cada casa (posição na fila de cones de cada colocado)
-    const perm = S.RL_SLOTS.map(() => { const a = [0, 1, 2, 3, 4]; for (let k = 4; k > 0; k--) { const j = Math.floor(r() * (k + 1)); [a[k], a[j]] = [a[j], a[k]]; } return a; });
-    return { base, auge, ultimo, perm };
+    // Prêmio escondido de cada casa: colocado (0 = melhor) sorteado para o gol e para o erro
+    const goal = S.RL_SLOTS.map(() => Math.floor(r() * 3)), miss = S.RL_SLOTS.map(() => 3 + Math.floor(r() * 2));
+    memo = { seed, dr: { base, auge, ultimo, goal, miss } };
+    return memo.dr;
   }
 
-  // Cones de uma casa na ordem da tela (esquerda → direita). picks: posições já chutadas nas casas anteriores.
+  // Os 5 prêmios possíveis de uma casa, do melhor para o pior. prev: prêmios das casas anteriores.
   function slotCones(seed, i, prev) {
     const dr = clubDraw(seed), key = S.RL_SLOTS[i].key;
     let cones;
@@ -52,11 +55,7 @@
       else cones.push(clubCone(dr.base[2], W.ultimo));
     } else if (key === 'ga') cones = GA.map((v, k) => ({ ga: v, name: v + ' G/A', pts: GA_PTS[k] }));
     else cones = titleCones(prev[1] ? D.CLUB_BY_ID[prev[1].id] : dr.auge[0]);
-    // Ordena do melhor para o pior e espalha nas posições pela ordem sorteada
-    const ranked = cones.map((c, k) => Object.assign(c, { k })).sort((a, b) => b.pts - a.pts || a.k - b.k);
-    const out = new Array(5);
-    ranked.forEach((c, rank) => { const pos = dr.perm[i][rank]; out[pos] = Object.assign(c, { rank }); });
-    return out;
+    return cones.map((c, k) => Object.assign(c, { k })).sort((a, b) => b.pts - a.pts || a.k - b.k).map((c, rank) => Object.assign(c, { rank }));
   }
 
   // Pacotes de títulos com os nomes do clube do auge (a pontuação não depende do clube)
@@ -73,24 +72,16 @@
     return list.map((t, k) => Object.assign(t, { pts: TIT_PTS[k], top: k >= 3 }));
   }
 
-  // Onde a bola cai (em larguras de cone, 0 a 4 são os cones) → posição do cone acertado, ou null (pra fora).
-  // Passou da fila de cones (a mira vai um pouco além das pontas), a bola sai.
-  S.rlHit = x => (x < -0.3 || x > 4.3 ? null : Math.max(0, Math.min(4, Math.round(x))));
-
-  // Carreira inteira a partir da semente e das posições chutadas (5 = pra fora → fica com o pior cone)
+  // Carreira inteira a partir da semente e das cobranças (0 = gol, outro número = errou)
   S.rlCareer = function (seed, picks) {
-    const slots = [], prev = [];
+    const dr = clubDraw(seed), slots = [], prev = [];
     for (let i = 0; i < picks.length && i < 5; i++) {
-      const cones = slotCones(seed, i, prev), p = picks[i];
-      const out = !(p >= 0 && p <= 4);
-      const cone = out ? cones.find(c => c.rank === 4) : cones[p];
+      const goal = picks[i] === 0, cone = slotCones(seed, i, prev)[goal ? dr.goal[i] : dr.miss[i]];
       prev.push(cone);
-      // Pra fora: fica com o pior cone e a casa não pontua
-      slots.push({ key: S.RL_SLOTS[i].key, name: S.RL_SLOTS[i].name, cone, out, pts: out ? 0 : cone.pts, best: !out && cone.rank === 0 });
+      slots.push({ key: S.RL_SLOTS[i].key, name: S.RL_SLOTS[i].name, cone, goal, out: false, pts: cone.pts, best: cone.rank === 0 });
     }
     return slots;
   };
-  S.rlCones = (seed, picks) => slotCones(seed, picks.length, S.rlCareer(seed, picks).map(s => s.cone));
 
   S.rlScore = function (seed, picks) {
     const slots = S.rlCareer(seed, picks);
@@ -99,7 +90,7 @@
     const ult = get('ultimo'), auge = get('auge'), tit = get('tit');
     if (ult && ult.home && !slots[2].out) combos.push({ name: 'Ídolo da casa', desc: 'Voltou pro clube que te revelou', pts: 0 }); // os 8 já estão no cone
     if (auge && tit && tit.top && !slots[4].out && D.CLUB_BY_ID[auge.id].strength >= 78) combos.push({ name: 'Dinastia', desc: 'Ganhou tudo num gigante', pts: 6 });
-    if (slots.length === 5 && slots.every(s => s.best)) combos.push({ name: 'Carreira perfeita', desc: 'Os 5 melhores prêmios', pts: 10 });
+    if (slots.length === 5 && slots.every(s => s.goal)) combos.push({ name: 'Matador', desc: '5 gols em 5 cobranças', pts: 8 });
     const total = Math.round(slots.reduce((a, s) => a + s.pts, 0) + combos.reduce((a, c) => a + c.pts, 0));
     const grade = S.RL_GRADES.find(g => total >= g[1])[0];
     return { slots, combos, total, grade };
