@@ -2576,6 +2576,13 @@ details.more .src-card { margin: 2px 0 8px; }
 .rl-rules p:last-child { margin: 0; }
 .rl-rules .tw { vertical-align: -3px; margin-right: 4px; }
 .rl-head h2 { margin: 2px 0 8px; }
+.rl-rule { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -2px 0 8px; font-size: 13px; color: rgba(255, 255, 255, .78); }
+.rl-dots { display: inline-flex; gap: 5px; flex: none; }
+.rl-dots i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .35); }
+.rl-dots i.g { background: #1E7A45; border-color: #1E7A45; }
+.rl-dots i.x { background: #B83A2E; border-color: #B83A2E; }
+.rl-row b i { font: 600 11px var(--body, inherit); font-style: normal; color: var(--muted); margin-right: 4px; }
+.rl-reveal.lost .rl-prize { opacity: .5; filter: grayscale(1); }
 .rl-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 8px; }
 .rl-cell { min-height: 58px; border-radius: 10px; background: rgba(255, 255, 255, .07); padding: 5px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; overflow: hidden; }
 .rl-cell small { font: 700 10px var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--label); white-space: nowrap; }
