@@ -252,17 +252,6 @@ const CARD_TRIM = {
   esmeralda: { borda: [0.860, 0.720, 0.350], filete: [0.950, 0.840, 0.460] },
   celeste: { borda: [0.750, 0.850, 0.950], filete: [1.000, 1.000, 1.000] },
   arcoiris: { borda: [0.950, 0.950, 0.980], filete: [0.600, 0.450, 0.950] },
-  // Acabamentos (itens): a borda puxa a cor da textura
-  'ac-carbono': { borda: [0.300, 0.320, 0.350], filete: [0.850, 0.880, 0.920] },
-  'ac-marmore': { borda: [0.860, 0.720, 0.350], filete: [0.950, 0.840, 0.460] },
-  'ac-madeira': { borda: [0.550, 0.340, 0.180], filete: [0.950, 0.840, 0.600] },
-  'ac-neon': { borda: [0.200, 0.900, 0.950], filete: [1.000, 0.350, 0.800] },
-  'ac-aurora': { borda: [0.400, 0.900, 0.650], filete: [0.700, 0.500, 0.950] },
-  'ac-camuflado': { borda: [0.450, 0.470, 0.500], filete: [0.850, 0.870, 0.900] },
-  'ac-vitral': { borda: [0.250, 0.230, 0.220], filete: [0.950, 0.800, 0.400] },
-  'ac-holografico': { borda: [0.950, 0.950, 0.980], filete: [0.600, 0.450, 0.950] },
-  'ac-ourorose': { borda: [0.900, 0.640, 0.560], filete: [1.000, 0.880, 0.820] },
-  'ac-diamante': { borda: [0.850, 0.920, 0.980], filete: [1.000, 1.000, 1.000] },
 };
 let cardModel = null;
 const cardReady = () => (cardModel = cardModel || new GLTFLoader().loadAsync('assets/carta.glb?v=5faf94a3').then(g => g.scene));
@@ -354,8 +343,8 @@ function card3d(host, data, opts) {
       if (f) {
         f.map = tex; f.map.offset.set(0, 0); f.map.repeat.set(1, 1);
         f.color.set(0xffffff); f.metalness = 0.85; f.roughness = 0.3;
-        // Temporada Perfeita: reflexo arco-íris que muda com o ângulo
-        if ('iridescence' in f) { const iri = d.special === 'perfeita' || look.metal === 'ac-holografico'; f.iridescence = iri ? 1 : 0; f.iridescenceIOR = 2.2; f.iridescenceThicknessRange = [120, 900]; }
+        // Temporada Perfeita e acabamentos lendários: reflexo arco-íris que muda com o ângulo
+        if ('iridescence' in f) { const iri = d.special === 'perfeita' || !!look.iri; f.iridescence = iri ? 1 : 0; f.iridescenceIOR = 2.2; f.iridescenceThicknessRange = [120, 900]; }
         f.needsUpdate = true;
       }
       const tr = CARD_TRIM[look.metal] || CARD_TRIM.prata;

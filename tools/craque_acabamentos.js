@@ -156,7 +156,7 @@ const T = {
   ourorose() {
     const n = noise(13), r = rnd(5), rows = new Float32Array(H);
     for (let y = 0; y < H; y++) rows[y] = (r() - .5) * .14;
-    const a = hex('#9E5A48'), b = hex('#F4C8B6'), cc = hex('#C9846E');
+    const a = hex('#9A4658'), b = hex('#F8CCD4'), cc = hex('#D4808F'); // rosa de verdade, longe do bronze
     const c = pixels((x, y) => {
       const t = (x / W) * .4 + (y / H) * .6 + (n(x * .002, y * .002, 3) - .5) * .3;
       const brush = rows[y] + (n(x * .004, y * 1.5, 1) - .5) * .08;
@@ -178,7 +178,8 @@ const T = {
       x.strokeStyle = 'rgba(255,255,255,.7)'; x.lineWidth = 1.4; x.stroke();
     };
     for (let k = 0; k + cols + 1 < pts.length; k++) { if ((k + 1) % cols === 0) continue; tri(pts[k], pts[k + 1], pts[k + cols]); tri(pts[k + 1], pts[k + cols + 1], pts[k + cols]); }
-    for (let i = 0; i < 70; i++) { const px = r() * W, py = r() * H, s = 2 + r() * 5; x.fillStyle = 'rgba(255,255,255,.9)'; x.fillRect(px - s / 4, py - s * 2, s / 2, s * 4); x.fillRect(px - s * 2, py - s / 4, s * 4, s / 2); }
+    // Brilhos só perto da borda, fora do nome e dos atributos
+    for (let i = 0; i < 70; i++) { const px = r() * W, py = r() * H, s = 2 + r() * 5; if (px > W * .16 && px < W * .84 && py > H * .14 && py < H * .86) continue; x.fillStyle = 'rgba(255,255,255,.9)'; x.fillRect(px - s / 4, py - s * 2, s / 2, s * 4); x.fillRect(px - s * 2, py - s / 4, s * 4, s / 2); }
     return sheen(c, .3);
   },
 };
