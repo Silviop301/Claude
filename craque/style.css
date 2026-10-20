@@ -3070,3 +3070,18 @@ details.fin-more.o6-panel:not([open]) { display: none; }
 .o6-prizes .pk-chips span { white-space: normal; }
 .o6-acts .btn.dz-btn { font-size: 17px; }
 /* ----- fim O6 ----- */
+/* Carreira Relâmpago: ficar ou chutar de novo, bolas que sobraram e o que escapou */
+.rl-dots i.g.l { background: transparent; border-color: #1E7A45; box-shadow: inset 0 0 0 2px #1E7A45; }
+.rl-reveal .btn.ghost { color: var(--ink); box-shadow: inset 0 0 0 2px rgba(19, 32, 26, .25); margin-top: 0; }
+.rl-reveal .btn.ghost small { color: var(--muted); }
+.rl-rest { width: 100%; }
+.rl-rest small, .rl-miss small { display: block; font: 700 11px var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.rl-rest span { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 10px; }
+.rl-rest i { display: inline-flex; align-items: center; gap: 3px; font-style: normal; font-size: 12.5px; opacity: .7; }
+.rl-rest em { font-style: normal; font-weight: 600; }
+.rl-after { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(19, 32, 26, .1); font-size: 14px; }
+.rl-rec { color: #1E7A45; }
+.rl-miss { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
+.rl-miss span { display: flex; align-items: center; gap: 5px; }
+.rl-miss span i { font-style: normal; color: var(--muted); font-size: 12.5px; }
+.rl-row .rl-lft { grid-column: 2 / -1; margin-top: -4px; font-size: 12.5px; color: var(--muted); }

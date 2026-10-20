@@ -244,9 +244,20 @@
       return { ok: true, why: 'gol' };
     }
     // Pênalti: mergulha para um lado (±0,55) ou fica no meio (só pega bola no meio e não muito alta)
-    if (keeper === 0) return Math.abs(x) < 0.3 && y < 0.7 ? { ok: false, why: 'defesa' } : { ok: true, why: 'gol' };
+    // (setup.reads, Carreira Relâmpago: parado no meio ele pega também a bola alta)
+    if (keeper === 0) return Math.abs(x) < 0.3 && (y < 0.7 || setup.reads) ? { ok: false, why: 'defesa' } : { ok: true, why: 'gol' };
     if (Math.abs(x - keeper * 0.55) < setup.reach * high) return { ok: false, why: 'defesa' };
     return { ok: true, why: 'gol' };
+  };
+
+  // Para onde vai o goleiro do pênalti: 1/-1 (lado da bola ou o outro) ou 0 (fica no meio). Acerta o lado kg das vezes,
+  // erra 68% do resto e fica no meio no restante. setup.reads (Carreira Relâmpago): no chute pelo meio ele também lê
+  // e fica parado kg das vezes (senão pula para um lado qualquer)
+  S.kickKeeper = function (setup, x, kg, r) {
+    r = r || Math.random;
+    const kr = r(), bs = Math.sign(x) || (r() < 0.5 ? -1 : 1);
+    if (setup.reads && Math.abs(x) < 0.25) return kr < kg ? 0 : bs;
+    return kr < kg ? bs : kr < kg + (1 - kg) * 0.68 ? -bs : 0;
   };
 
   // Conta as cobranças do minigame (para conquistas): pen/fk, convertidas
