@@ -3,21 +3,75 @@
   const U = window.CRAQUE_UI;
   const { tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar } = U;
   // ---------- propostas ----------
-  function offerCard(o, idx) {
+  // Cor da faixa do cartão: a cor mais escura da camisa (camisa branca escurece para o texto branco aparecer)
+  const hexRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const lum = h => { const [r, g, b] = hexRgb(h); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
+  const mix = (h, t, k) => { const a = hexRgb(h), b = hexRgb(t); return '#' + a.map((v, i) => Math.round(v + (b[i] - v) * k).toString(16).padStart(2, '0')).join(''); };
+  function bandColor(id) {
+    const k = ((window.CRAQUE_KITS || {})[id] || ['#1F6B3E', '#0B1F14']).filter(h => /^#[0-9a-f]{6}$/i.test(h));
+    if (!k.length) return '#1F6B3E';
+    let c = k.slice().sort((x, y) => lum(x) - lum(y))[0];
+    if (lum(c) > 0.45) c = mix(c, '#13201A', 0.62);
+    else if (lum(c) < 0.06) c = mix(c, '#2A3A32', 0.5);
+    return c;
+  }
+  // Cartão grande da proposta: faixa com a cor e o escudo do clube, papel no elenco, força, salário, anos,
+  // (na janela) os pedidos do contrato e o botão de assinar, que pede dois toques. opts.terms: html dos pedidos
+  function offerCard(o, idx, opts) {
+    opts = opts && typeof opts === 'object' ? opts : {};
     const cl = club(o.club), lg = league(o.club);
     const kinds = { ask: ['Pedido seu', 'blue'], base: ['Base', ''], up: ['Clube maior', 'blue'], mid: ['Protagonista', 'green'], loan: ['Empréstimo · 1 ano', 'blue'], money: ['Proposta milionária', 'gold'], home: ['Volta pra casa', 'red'], stay: ['Renovar', ''] };
     const [kname, kcls] = kinds[o.kind] || ['', ''];
     const roleCls = o.share >= 0.78 ? 'green' : o.share >= 0.5 ? 'blue' : 'red';
     // O que o papel quer dizer na prática (quem chega agora não sabe que "banco" é quase não jogar)
     const roleNote = o.share >= 0.9 ? 'joga tudo' : o.share >= 0.78 ? 'joga quase sempre' : o.share >= 0.5 ? 'metade dos jogos' : o.share >= 0.3 ? 'entra pouco' : 'quase não joga';
-    return '<button class="choice offer card" data-i="' + idx + '" style="display:flex">' +
-      '<div class="top"><span class="club">' + crest(cl.id) + esc(cl.name) + '</span><span class="stars">' + stars(cl.tier) + '</span></div>' +
-      '<div class="lg">' + U.flag(lg.flag) + ' ' + lg.name + (kname ? ' · <b class="of-kind ' + kcls + '">' + kname + '</b>' : '') + '</div>' +
-      // O dilema do jogo em destaque: quanto você vai jogar × quão forte é o time
-      '<div class="of-key"><span class="of-role ' + roleCls + '">' + o.role + '<small>' + roleNote + '</small></span>' +
-      '<span class="of-str"><small>Força do time</small><b>' + cl.strength + '</b><i><em style="width:' + Math.max(8, Math.min(100, Math.round((cl.strength - 40) / 55 * 100))) + '%"></em></i></span></div>' +
-      '<div class="facts"><span class="tag">R$ ' + money(o.wage) + '/sem</span><span class="tag">' + o.years + (o.years > 1 ? ' anos' : ' ano') + '</span>' +
-      (G.c && (S.breaksChallenge(G.c, o) || (o.kind === 'loan' && G.c.challenge === 'fiel' && !G.c.chFail)) ? '<span class="tag ch-break">' + U.emo('⚠️', 'xs') + ' Quebra o desafio</span>' : '') + '</div></button>';
+    const segs = Math.max(1, Math.min(5, Math.round(o.share * 5)));
+    const breaks = G.c && (S.breaksChallenge(G.c, o) || (o.kind === 'loan' && G.c.challenge === 'fiel' && !G.c.chFail));
+    const verb = o.kind === 'stay' ? 'Renovar com ' : o.kind === 'loan' ? 'Ir emprestado para ' : 'Assinar com ';
+    const w = money(o.wage);
+    return '<div class="of-card" style="--of-c:' + bandColor(cl.id) + '">' +
+      '<div class="of-band">' + crest(cl.id, 'of-crest') +
+        '<div class="of-id">' + (kname ? '<span class="of-kind ' + kcls + '">' + kname + '</span>' : '') +
+        '<b class="of-name">' + esc(cl.name) + '</b><span class="of-lg">' + U.flag(lg.flag) + ' ' + esc(lg.name) + ' <span class="stars">' + stars(cl.tier) + '</span></span></div></div>' +
+      '<div class="of-body">' +
+        '<div class="of-role2 ' + roleCls + '"><div><b>' + o.role + '</b><span>' + roleNote + '</span></div><i>' + [0, 1, 2, 3, 4].map(k => '<em' + (k < segs ? ' class="on"' : '') + '></em>').join('') + '</i></div>' +
+        '<div class="of-tiles"><div><b>' + cl.strength + '</b><small>força do time</small></div>' +
+          '<div><b class="' + (w.length > 7 ? 'sm' : '') + '">R$ ' + w + '</b><small>por semana</small></div>' +
+          '<div><b>' + o.years + '</b><small>' + (o.years > 1 ? 'anos' : 'ano') + '</small></div></div>' +
+        (breaks ? '<span class="tag ch-break">' + U.emo('⚠️', 'xs') + ' Quebra o desafio</span>' : '') +
+        (opts.terms || '') +
+        '<button class="offer of-sign" data-i="' + idx + '"><span class="lbl">' + verb + esc(D.o(cl.name)) + '</span></button>' +
+      '</div></div>';
+  }
+  // Carrossel dos cartões: rolagem por encaixe e pontinhos (no computador, lado a lado e sem pontinhos)
+  function offerRail(list, opts) {
+    const cards = list.map((o, i) => offerCard(o, i, opts)).join('');
+    return '<div class="of-rail" id="of-rail">' + cards + '</div>' +
+      (list.length > 1 ? '<div class="of-dots" aria-hidden="true">' + list.map((_, i) => '<i' + (i ? '' : ' class="on"') + '></i>').join('') + '</div>' +
+        '<p class="of-hint">Arraste para ver ' + listNames(list.slice(1)) + '</p>' : '');
+  }
+  function listNames(list) {
+    const n = list.map(o => o.kind === 'stay' ? 'renovar com ' + D.o(club(o.club).name) : club(o.club).name).map(esc);
+    return n.length > 1 ? n.slice(0, -1).join(', ') + ' e ' + n[n.length - 1] : n[0] || '';
+  }
+  function bindRail() {
+    const rail = $('of-rail'), dots = screen.querySelectorAll('.of-dots i');
+    if (!rail || !dots.length) return;
+    const upd = () => {
+      const cards = rail.children, mid = rail.scrollLeft + rail.clientWidth / 2;
+      let best = 0, bd = 1e9;
+      for (let i = 0; i < cards.length; i++) { const c = cards[i], d = Math.abs(c.offsetLeft - rail.offsetLeft + c.offsetWidth / 2 - mid); if (d < bd) { bd = d; best = i; } }
+      dots.forEach((d, i) => d.classList.toggle('on', i === best));
+      [...cards].forEach((c, i) => c.classList.toggle('cur', i === best));
+    };
+    rail.addEventListener('scroll', () => requestAnimationFrame(upd), { passive: true });
+    upd();
+  }
+  // Leva o cartão i para o meio do carrossel (proposta nova, voltar à mesma depois de trocar o pedido)
+  function railTo(i, smooth) {
+    const rail = $('of-rail'), c = rail && rail.children[i];
+    if (!c) return;
+    rail.scrollTo({ left: c.offsetLeft - rail.offsetLeft - (rail.clientWidth - c.offsetWidth) / 2, behavior: smooth ? 'smooth' : 'auto' });
   }
 
   // Quadro "Hoje × Proposta": clube, força, papel, salário e contrato lado a lado
@@ -57,9 +111,10 @@
       '<button class="back-link" id="b-back-home">‹ Início</button>' +
       '<div class="eyebrow">' + year() + ' · ' + G.c.age + ' anos</div><h2>' + ACAD_TITLE[G.c.origin || 'base'] + '</h2>' +
       '<p class="lead">' + (ACAD_LEAD[G.c.origin] || 'No clube grande você começa no banco e quase não joga; no menor, é titular e joga toda semana. Quem joga faz gols, ganha nota e pontos de evolução. Se não jogar, dá para pedir empréstimo no fim da temporada.') + '</p>' + U.originNote(G.c) +
-      '<div class="choices">' + offers.map(offerCard).join('') + '</div>' + tools(win, true)
+      offerRail(offers) + tools(win, true)
     );
     U.tip('base');
+    bindRail();
     bindTools(true, academy);
     // Ainda sem clube: voltar descarta este garoto (nada foi salvo)
     $('b-back-home').onclick = () => U.ask('Voltar ao início?', 'Este jogador ainda não assinou com nenhum clube e não será salvo.', 'Voltar', U.home);
@@ -84,14 +139,18 @@
     const all = offers.concat([S.stayOffer(G.c)]).map(o => S.withTerm(o, win.term));
     const noOffers = !offers.length;
     const tm = S.TERM_BY_ID[win.term];
+    const why = ended ? 'Seu contrato com ' + D.o(esc(club(G.c.club).name)) + ' acabou' : G.c.clauseOpen ? 'Sua cláusula de saída abriu o mercado' : 'Seu empresário abriu o mercado';
+    const n = offers.length;
+    // Pedidos do contrato (valem para qualquer proposta): dentro de cada cartão, o mesmo seletor
+    const terms = '<div class="of-terms"><span class="of-tl">O que pedir na mesa</span><div class="of-seg terms">' +
+      S.TERMS.map(t => '<button data-term="' + t.id + '"' + (t.id === win.term ? ' class="on"' : '') + ' aria-label="' + esc(t.name) + '">' + U.emo(t.icon, 'xs') + '<small>' + esc(t.name.replace(/^Mais /, '').split(' ')[0].replace(/^./, x => x.toUpperCase())) + '</small></button>').join('') +
+      '</div><p class="term-desc">' + esc(tm.desc) + '</p></div>';
     render(
       '<div class="eyebrow">Janela de transferências · ' + year() + '</div>' +
-      '<h2>' + (ended ? 'Seu contrato com ' + D.o(esc(club(G.c.club).name)) + ' acabou' : G.c.clauseOpen ? 'Sua cláusula de saída abriu o mercado' : 'Seu empresário abriu o mercado') + '</h2>' +
-      '<p class="lead">' + (noOffers ? 'Nenhum clube novo apareceu. ' : '') + 'Nota geral ' + S.ovr(G.c) + ' · ' + U.emo('⭐', 'xs') + ' ' + S.fameLabel(G.c.fame) + '. A última opção é renovar com o clube atual.</p>' +
-      U.originNote(G.c) + '<p class="muted small">' + U.emo('⭐', 'xs') + ' Fama traz propostas de clubes maiores, salários mais altos' + (G.c.fame >= 150 ? ', vaga mais fácil na seleção' : '') + ' e mais votos na Bola de Ouro.</p>' +
-      '<div class="cr-lbl">O que pedir na mesa</div><div class="cr-chips terms">' + S.TERMS.map(t => '<button data-term="' + t.id + '"' + (t.id === win.term ? ' class="on"' : '') + '>' + U.emo(t.icon, 'xs') + ' ' + esc(t.name) + '</button>').join('') + '</div>' +
-      '<p class="cr-desc term-desc">' + esc(tm.desc) + '</p>' +
-      '<div class="choices">' + all.map(offerCard).join('') + '</div>' + tools(win, false) +
+      '<h2 class="of-h">' + (noOffers ? 'Nenhum clube novo apareceu' : n + (n > 1 ? ' clubes querem você' : ' clube quer você')) + '</h2>' +
+      '<p class="of-sub">' + why + ' · nota ' + S.ovr(G.c) + ' · ' + U.emo('⭐', 'xs') + ' ' + S.fameLabel(G.c.fame) + '</p>' +
+      U.originNote(G.c) + offerRail(all, { terms }) + tools(win, false) +
+      '<p class="muted small of-fame">' + U.emo('⭐', 'xs') + ' Fama traz propostas de clubes maiores, salários mais altos' + (G.c.fame >= 150 ? ', vaga mais fácil na seleção' : '') + ' e mais votos na Bola de Ouro.</p>' +
       (S.canRetire(G.c) ? '<button class="btn ghost" id="b-retire">Pendurar as chuteiras</button>' : '')
     );
     U.tip('janela');
@@ -102,16 +161,22 @@
       if (moving) { save(); bar(); return U.transferMove(prev, G.c.club, G.c.name, U.preseason); }
       U.preseason();
     });
-    screen.querySelectorAll('[data-term]').forEach(b => b.onclick = () => { win.term = b.dataset.term; save(); sfx('tap'); const y = scrollY; windowOffers(); scrollTo(0, y); });
+    bindRail();
+    // Trocar o pedido redesenha os cartões: volta para o mesmo cartão e a mesma altura
+    screen.querySelectorAll('[data-term]').forEach(b => b.onclick = () => {
+      const r = $('of-rail'), cur = r ? [...r.children].findIndex(c => c.classList.contains('cur')) : 0, y = scrollY;
+      win.term = b.dataset.term; save(); sfx('tap'); windowOffers(); scrollTo(0, y); railTo(Math.max(0, cur));
+    });
     if ($('b-retire')) $('b-retire').onclick = U.finale;
     bindTools(false, windowOffers);
     // Proposta nova do pedido ao empresário: destaca e mostra
     // Propostas novas do pedido ao empresário (até duas): destaca todas e rola até a primeira
     if (win.askFresh) {
       const n = win.askFresh === true ? 1 : win.askFresh;
-      const fresh = [...Array(n)].map((_, k) => screen.querySelector('.offer[data-i="' + (offers.length - n + k) + '"]')).filter(Boolean);
+      const k0 = offers.length - n, rail = $('of-rail');
+      const fresh = [...Array(n)].map((_, k) => rail && rail.children[k0 + k]).filter(Boolean);
       fresh.forEach(el => el.classList.add('fresh'));
-      if (fresh[0]) fresh[0].scrollIntoView({ block: 'center' });
+      if (fresh[0]) { rail.scrollIntoView({ block: 'center' }); railTo(k0); }
       win.askFresh = false;
     }
   }
@@ -193,8 +258,9 @@
       '<button class="back-link" id="b-sq-back">‹ Voltar</button>' +
       '<div class="eyebrow">Empréstimo · ' + year() + '</div><h2>Quem quer você por uma temporada</h2>' +
       '<p class="lead">Seu clube segue pagando o salário. No fim da temporada você volta ' + D.ao(esc(club(G.c.club).name)) + '.</p>' +
-      '<div class="choices">' + sq.loans.map(offerCard).join('') + '</div>'
+      offerRail(sq.loans)
     );
+    bindRail();
     $('b-sq-back').onclick = squad;
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       const o = sq.loans[+b.dataset.i];

@@ -37,14 +37,14 @@
   function nextGoal(c, f, hall, rank) {
     const out = [], G2 = S.GRADES, i = G2.findIndex(([g]) => g === f.grade);
     // Quem é novo não sabe o que é "ponto": a linha diz de onde eles vêm (os pesos estão em S.SCORE_W)
-    if (i > 0) out.push(['🎯', 'Faltaram <b>' + (G2[i - 1][1] - f.score) + ' pontos</b> para a nota ' + G2[i - 1][0] +
-      (hall.length <= 2 ? '. Pontos vêm de jogar bem, títulos (' + S.SCORE_W.title + ' cada), Bola de Ouro (' + S.SCORE_W.ballon + ') e Copa do Mundo (' + S.SCORE_W.wc + ')' : '')]);
+    // (quanto faltou para a próxima nota já está na barra de pontos, logo acima)
+    if (i > 0 && hall.length <= 2) out.push(['🎯', 'Pontos vêm de jogar bem, títulos (' + S.SCORE_W.title + ' cada), Bola de Ouro (' + S.SCORE_W.ballon + ') e Copa do Mundo (' + S.SCORE_W.wc + ')']);
     if (rank === 1 && hall.length > 1) out.push(['🏅', 'Novo recorde: <b>+' + (f.score - hall[1].score) + '</b> sobre o anterior']);
     else if (rank > 1) out.push(['🏅', 'Seu recorde é ' + hall[0].score + ' pts: faltaram <b>' + (hall[0].score - f.score) + '</b>']);
     const R = S.rivalSummary && S.rivalSummary(c, f.titles);
     if (R && R.rows.filter(([, a, b]) => a < b).length > R.rows.filter(([, a, b]) => a > b).length) out.push(['⚔️', esc(R.name) + ' levou a melhor. Revanche na próxima?']);
     if (!out.length) return '';
-    return '<div class="fin-goal"><span class="fg-h">Para a próxima</span>' + out.slice(0, 3).map(([ic, t]) => '<p>' + U.emo(ic, 'xs') + ' ' + t + '</p>').join('') + '</div>';
+    return '<div class="o6-goal">' + out.slice(0, 3).map(([ic, t]) => '<p>' + U.emo(ic, 'xs') + ' ' + t + '</p>').join('') + '</div>';
   }
   // Origem e desafio da carreira (engine/origins.js)
   function originLine(c, f) {
@@ -52,6 +52,13 @@
     if ((!o || o.id === 'base') && !ch) return '';
     return '<p class="muted small patr">' + [o && o.id !== 'base' ? U.emo(o.icon, 'sm') + ' ' + esc(o.name) : '',
       ch ? U.emo(ch.icon, 'sm') + ' Desafio ' + esc(ch.name) + (f.challenge.ok ? ' cumprido: +' + ch.v + ' pts' : ' quebrado') : ''].filter(Boolean).join(' · ') + '</p>';
+  }
+  // Barra de pontos: onde a carreira parou dentro da faixa da nota e quanto faltou para a próxima
+  function pointsBar(f, rankTxt) {
+    const G2 = S.GRADES, i = G2.findIndex(([g]) => g === f.grade), next = i > 0 ? G2[i - 1] : null, lo = G2[i] ? G2[i][1] : 0;
+    const pct = next ? Math.max(4, Math.min(100, Math.round((f.score - lo) / Math.max(1, next[1] - lo) * 100))) : 100;
+    return '<div class="o6-pts"><div class="o6-pl"><b>' + f.score + ' pontos</b><span>' + (next ? 'faltaram ' + (next[1] - f.score) + ' para ' + next[0] : 'nota máxima') + '</span></div>' +
+      '<i><em style="width:' + pct + '%"></em></i>' + (rankTxt ? '<small>' + rankTxt + '</small>' : '') + '</div>';
   }
   function finale() {
     const f = S.finish(G.c);
@@ -87,22 +94,28 @@
     const clubsPlayed = [...new Set(G.c.spells.filter(sp => sp.seasons).map(sp => sp.club))];
     if (!clubsPlayed.includes(f.mainClub)) clubsPlayed.unshift(f.mainClub);
     const fresh = ach && ach.fresh ? ach.fresh.length : 0;
-    const scoreTxt = f.score + ' pontos' + (rank === 1 ? ' · novo recorde!' : ' · #' + rank + ' no seu Hall da Fama');
-    // Tela enxuta, com foco em editar a carta, compartilhar e abrir os pacotinhos.
-    // O resto (álbum, troféus, ranking, números, clubes, conquistas, de onde veio a nota) fica no "Resumo da carreira", fechado.
+    const rankTxt = rank === 1 ? (hall.length > 1 ? 'Novo recorde no seu Hall da Fama!' : '') : '#' + rank + ' no seu Hall da Fama';
+    const first = careerStats(G.c)[0];
+    const prizes = U.streakFinale(skGot) + U.packFinale(packWhy);
+    // Tela curta: carta com a medalha da nota, os números, a barra de pontos, Compartilhar e Desafiar, os prêmios numa faixa,
+    // e links pequenos que abrem a edição da carta e o resumo (álbum, troféus, ranking, números, conquistas, de onde veio a nota)
     render(
-      '<div class="eyebrow">Fim de carreira · ' + (YEAR0 + G.c.season) + '</div>' +
-      '<div class="fut card3d-host" id="fut-host"><canvas id="fut" aria-label="Card do jogador"></canvas></div>' +
-      '<div class="fin-sum' + (rank === 1 ? ' rec' : '') + '"><div class="grade ' + f.grade + '">' + f.grade + '</div><div><small>Nota da carreira</small><b>' + esc(f.verdict) + '</b><span>' + esc(scoreTxt) + '</span></div></div>' +
+      '<div class="eyebrow o6-eb">Fim de carreira · ' + YEAR0 + '–' + (YEAR0 + G.c.season) + '</div>' +
+      '<h2 class="o6-v">' + esc(f.verdict) + '</h2>' +
+      '<div class="o6-hero"><div class="fut card3d-host" id="fut-host"><canvas id="fut" aria-label="Card do jogador"></canvas></div>' +
+        '<div class="o6-medal g-' + f.grade + '"><small>Nota</small><b>' + f.grade + '</b></div></div>' +
+      '<div class="o6-nums"><div><b>' + first[0] + '</b><small>' + first[1].toLowerCase() + '</small></div><div><b>' + f.titles + '</b><small>' + (f.titles === 1 ? 'título' : 'títulos') + '</small></div>' +
+        '<div><b>' + T.ballon + '</b><small>' + (T.ballon === 1 ? 'Bola de Ouro' : 'Bolas de Ouro') + '</small></div></div>' +
+      pointsBar(f, rankTxt) +
       '<p class="mo-climb" id="mo-climb" hidden></p>' +
       nextGoal(G.c, f, hall, rank) +
-      '<div class="ed-box" id="ed-box"></div>' +
-      '<div class="fin-acts"><button class="btn" id="b-share">Compartilhar carta</button><button class="btn ghost" id="b-save">Salvar</button></div>' +
-      U.challengeFinale(G.c, f) +
-      (hall.length > 1 ? U.feedbackCard() : '') + // 1ª carreira: a tela já é longa e a opinião fica na tela inicial
-      // Sequência de dias e pacotinhos ganhos: um bloco só de prêmios, abaixo das ações da carta
-      (prizes => prizes ? '<div class="fin-prizes"><div class="fp-t">Prêmios desta carreira</div>' + prizes + '</div>' : '')(U.streakFinale(skGot) + U.packFinale(packWhy)) +
-      '<details class="fin-more"><summary>Resumo da carreira' + (fresh ? ' <em>' + fresh + (fresh > 1 ? ' conquistas novas' : ' conquista nova') + '</em>' : '') + '</summary>' +
+      '<div class="fin-acts o6-acts"><button class="btn" id="b-share">Compartilhar carta</button></div>' +
+      '<div class="o6-dz">' + U.challengeFinale(G.c, f) + '</div>' +
+      (prizes ? '<div class="fin-prizes o6-prizes">' + prizes + '</div>' : '') +
+      '<div class="o6-links"><button class="link-btn" data-o6="ed">Editar carta</button><button class="link-btn" data-o6="more">Resumo' + (fresh ? ' <em>' + fresh + '</em>' : '') + '</button>' +
+        '<button class="link-btn" id="b-save">Salvar imagem</button><button class="link-btn gold" id="b-again">Nova carreira</button></div>' +
+      '<div class="o6-panel" id="o6-ed" hidden><div class="ed-box" id="ed-box"></div></div>' +
+      '<details class="fin-more o6-panel" id="o6-more"><summary>Resumo da carreira' + (fresh ? ' <em>' + fresh + (fresh > 1 ? ' conquistas novas' : ' conquista nova') + '</em>' : '') + '</summary>' +
       '<div class="fin-links">' + (G.c.seasons.length ? '<button id="b-album">' + U.emo('📖', 'sm') + '<span>Álbum</span></button>' : '') +
         (Object.keys(G.c.trophies || {}).length ? '<button id="b-sala-car">' + U.emo('🏆', 'sm') + '<span>Troféus</span></button>' : '') +
         '<button id="b-hall">' + U.emo('🏅', 'sm') + '<span>Hall da Fama</span></button></div>' +
@@ -122,9 +135,21 @@
       (f.bonus.length ? '<div class="room-title">Despedida</div><ul class="why">' + f.bonus.map(b => '<li><span>' + esc(b.txt) + '</span><b class="up">+' + b.v + '</b></li>').join('') + '</ul>' : '') +
       U.achBlock(ach) +
       scoreHow(f) +
-      '</div></details>' +
-      '<button class="btn ghost" id="b-again">Nova carreira</button>'
+      '</div>' + (hall.length > 1 ? U.feedbackCard() : '') + '</details>' // 1ª carreira: a opinião fica na tela inicial
     );
+    // Desafiar fica ao lado de Compartilhar (o resultado de um desafio recebido continua logo abaixo)
+    const dz = $('b-desafio');
+    if (dz) screen.querySelector('.o6-acts').appendChild(dz);
+    else screen.querySelector('.o6-acts').classList.add('solo');
+    if (!screen.querySelector('.o6-dz').children.length) screen.querySelector('.o6-dz').remove();
+    if ($('b-packs')) $('b-packs').textContent = 'Abrir';
+    // Links pequenos: abrem (e fecham) a edição da carta e o resumo
+    screen.querySelectorAll('[data-o6]').forEach(b => b.onclick = () => {
+      const ed = $('o6-ed'), more = $('o6-more');
+      if (b.dataset.o6 === 'ed') { ed.hidden = !ed.hidden; if (!ed.hidden) { more.open = false; ed.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } }
+      else { more.open = !more.open; if (more.open) { ed.hidden = true; more.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
+      screen.querySelectorAll('[data-o6]').forEach(x => x.classList.toggle('on', x.dataset.o6 === 'ed' ? !ed.hidden : more.open));
+    });
     U.tip('fim');
     U.streakBind();
     // Edição especial do jornal com a despedida
