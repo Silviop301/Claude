@@ -51,11 +51,18 @@
   }
   // Investimentos na mesma posição dos atributos na carta (RIT FIN / PAS DRI / DEF FÍS); fisioterapia embaixo
   const INV_ORDER = () => D.ATTRS.map(k => D.INVEST.find(t => t.attr && t.attr[k])).filter(Boolean).concat(D.INVEST.filter(t => !t.attr));
-  function miniCard() {
+  // Com pontos para gastar, cada atributo da carta vira o botão do treino dele (um toque compra +2)
+  function miniCard(inv) {
     const E = S.eff(G.c), t = tierCls(S.ovr(G.c));
     const wear = U.wearOf(G.c);
-    return '<div class="mcard metal ' + t + (wear ? ' worn' + wear : '') + '" id="mcard" data-t="' + t + '"><span class="mc-tier" id="mc-tier">' + TIER_NAME[t] + '</span><div class="mc-ovr"><b id="mc-ovr">' + S.ovr(G.c) + '</b><span>' + G.c.pos + (G.c.number ? ' ' + G.c.number : '') + '</span><i id="mc-ovr-d"></i></div><div class="mc-grid">' +
-      D.ATTRS.map(k => '<div class="mc-at" data-k="' + k + '"><b>' + E[k] + '</b><span>' + D.label(G.c.pos, k) + '</span><i></i></div>').join('') + '</div></div>';
+    const byAttr = k => D.INVEST.find(x => x.attr && x.attr[k]);
+    return '<div class="mcard metal ' + t + (wear ? ' worn' + wear : '') + (inv ? ' trainable' : '') + '" id="mcard" data-t="' + t + '"><span class="mc-tier" id="mc-tier">' + TIER_NAME[t] + '</span><div class="mc-ovr"><b id="mc-ovr">' + S.ovr(G.c) + '</b><span>' + G.c.pos + (G.c.number ? ' ' + G.c.number : '') + '</span><i id="mc-ovr-d"></i></div><div class="mc-grid">' +
+      D.ATTRS.map(k => {
+        const v = inv && byAttr(k), lb = D.label(G.c.pos, k);
+        return v ? '<button class="mc-at" data-k="' + k + '" data-v="' + v.id + '" aria-label="' + esc(D.investName(v, G.c.pos)) + ': +2 ' + lb + '"><b>' + E[k] + '</b><span>' + lb + '</span><i></i><small class="pips"></small><em class="price"></em></button>'
+          : '<div class="mc-at" data-k="' + k + '"><b>' + E[k] + '</b><span>' + lb + '</span><i></i></div>';
+      }).join('') + '</div>' +
+      (inv ? '<p class="mc-hint">Toque num atributo para treinar · cada nível custa mais 1 ' + U.emo('⭐', 'xs') + '</p>' : '') + '</div>';
   }
   function showPreview(p) {
     const E = S.eff(G.c), o = S.ovr(G.c);
@@ -71,7 +78,7 @@
   // Números subindo até o valor novo; depois segue
   function applyAnim(from, then) {
     const E = S.eff(G.c), o1 = S.ovr(G.c), t0 = performance.now(), dur = 900;
-    screen.querySelectorAll('.choice, .btn').forEach(b => { b.disabled = true; });
+    screen.querySelectorAll('.choice, .btn, button.mc-at, .inv-chip').forEach(b => { b.disabled = true; });
     const mc = $('mcard');
     mc.classList.add('pop');
     const tick = now => {
@@ -168,28 +175,34 @@
     // Sem nada útil para evoluir (tudo no máximo ou só o que já não rende nesta idade): segue sem escolher
     const done = S.buildDone(G.c) || (!ch.length && !preCh.done && G.c.traits.length >= S.MAX_SLOTS);
     const hasInv = S.canInvestAny(G.c);
-    const pts = n => n + (n === 1 ? ' ponto' : ' pontos');
+    const fisio = D.INVEST.find(t => !t.attr);
+    const coins = D.INVEST.some(t => (G.c.inv[t.id] || 0) < S.investMax(t.id));
+    const star = U.emo('⭐', 'xs');
     render(
-      '<div class="eyebrow">Pré-temporada · ' + year() + (G.c.farewell ? ' · temporada de despedida' : '') + '</div>' +
-      '<h2>Prepare a temporada</h2>' + wcHint() + miniCard() +
+      '<div class="pre-head"><div><div class="eyebrow">Pré-temporada · ' + year() + (G.c.farewell ? ' · temporada de despedida' : '') + '</div>' +
+        '<h2>Prepare a temporada</h2></div>' +
+        (coins ? '<div class="coins" aria-label="Pontos de evolução">' + U.emo('⭐', 'sm') + '<b id="w-money">' + (G.c.pe || 0) + '</b></div>' : '') + '</div>' +
+      wcHint() + miniCard(hasInv) +
       (justAdded ? '<div class="prep-done">' + justAdded + '</div>' : '') +
       (done && !justAdded ? '<div class="prep-sec">Características</div>' + traitsHtml() + '<p class="muted small">' + (S.buildDone(G.c) ? U.emo('✅', 'xs') + ' Build completo: todas no nível máximo.' : 'Nada para evoluir nesta fase: o que falta já não rende na sua idade.') + '</p>' : '') +
-      (ch.length ? '<div class="prep-sec">' + (G.c.traits.length >= S.MAX_SLOTS ? 'Evolua uma característica' : 'Escolha uma característica') + '</div>' +
+      // Características: as opções lado a lado, como cartas; um toque escolhe
+      (ch.length ? '<div class="pick-h"><b>' + (G.c.traits.length >= S.MAX_SLOTS ? 'Evolua 1 de ' : 'Escolha 1 de ') + ch.length + '</b>' +
+          (G.c.traits.length < S.MAX_SLOTS ? '<span>fica a carreira toda</span>' : '') + '</div>' +
         '<p class="muted small prep-note">' + (() => { const [a, b] = S.mainAttrs(G.c.pos); return 'Cada nível: +1 ' + D.label(G.c.pos, a) + ' (e +1 ' + D.label(G.c.pos, b) + ' a cada 2)'; })() +
-          (G.c.traits.length < S.MAX_SLOTS ? ' · fica a carreira toda' : '') + (capNote(null, true) ? '<br>' + capNote(null, true) : '') + '</p>' + traitsHtml() +
-        '<div class="choices">' + ch.map((x, i) =>
-          '<button class="choice' + (x.completes ? ' combo' : '') + '" data-i="' + i + '"><span class="ic">' + U.icoOf(x.trait) + '</span>' +
-          '<b>' + x.trait.name + (x.type === 'up' ? ' → Nv ' + x.lv : '') + ' <span class="tag ' + (x.type === 'up' ? 'green' : 'blue') + '">' + label[x.type] + '</span></b>' +
-          '<span class="d">' + traitTxt(x.trait, x.lv) + capNote(x.trait) +
-          (x.completes ? '<br><span class="tag gold">Completa ' + U.icoOf(x.completes, 'xs') + ' ' + x.completes.name + ': ' + attrTxt(x.completes.attr) + '</span>' : '') + '</span></button>').join('') + '</div>' : '') +
+          (capNote(null, true) ? '<br>' + capNote(null, true) : '') + '</p>' +
+        '<div class="choices tr-pick" style="--n:' + (ch.length === 4 ? 2 : Math.min(3, ch.length)) + '">' + ch.map((x, i) =>
+          '<button class="choice tr' + (x.completes ? ' combo' : '') + '" data-i="' + i + '"><span class="tag ' + (x.type === 'up' ? 'green' : 'blue') + '">' + label[x.type] + '</span>' +
+          '<span class="ic">' + U.icoOf(x.trait, 'lg') + '</span>' +
+          '<b>' + x.trait.name + (x.type === 'up' ? ' <small>Nv ' + x.lv + '</small>' : '') + '</b>' +
+          '<span class="d">' + traitTxt(x.trait, x.lv).replace('>Nv ' + x.lv + ': ', '>') + capNote(x.trait) +
+          (x.completes ? '<br><span class="tag gold">Completa ' + U.icoOf(x.completes, 'xs') + ' ' + x.completes.name + ': ' + attrTxt(x.completes.attr) + '</span>' : '') + '</span></button>').join('') + '</div>' +
+        traitsHtml() : '') +
+      // Fisioterapeuta: o único treino que não é atributo fica num botão à parte, embaixo das escolhas
+      (hasInv && fisio ? '<button class="inv-chip" data-v="' + fisio.id + '">' + U.icoOf(fisio, 'sm') + '<span class="nm"><b>' + D.investName(fisio, G.c.pos) + '</b> · ' + fisio.perk + '</span><small class="pips"></small><em class="price"></em></button>' : '') +
       // Foco nos treinos: automático pela idade, só informado
       '<p class="muted small train-txt" id="train-txt"></p>' +
-      (hasInv ? '<div class="prep-sec">Pontos de evolução</div>' +
-        '<div class="wallet"><span>Você tem <b id="w-money"></b></span><span class="muted small">Cada nível custa mais 1</span></div>' +
-        '<div class="choices inv-grid">' + INV_ORDER().map(t => '<button class="choice inv" data-v="' + t.id + '"><span class="ic">' + U.icoOf(t, 'sm') + '</span>' +
-          '<b>' + D.investName(t, G.c.pos) + '</b><span class="pips"></span><span class="d">' + (t.attr ? attrTxt(t.attr) : t.perk) + '</span><span class="price"></span></button>').join('') + '</div>'
-        : D.INVEST.some(t => (G.c.inv[t.id] || 0) < S.investMax(t.id)) ? '<p class="muted small prep-note">' + U.emo('⭐', 'xs') + ' Pontos de evolução: ' + (G.c.pe || 0) + '. Você ganha com nota ' + String(S.PE_R1).replace('.', ',') + '+ (' + String(S.PE_R2).replace('.', ',') + '+ vale 2), títulos e prêmios.</p>' : '') +
-      '<div class="inv-bar">' + (undo.length ? '<button class="btn ghost" id="b-undo">Desfazer</button>' : '') + '<button class="btn" id="b-skip">Seguir para a temporada</button></div>'
+      (!hasInv && coins ? '<p class="muted small prep-note">' + star + ' Pontos de evolução: ' + (G.c.pe || 0) + '. Você ganha com nota ' + String(S.PE_R1).replace('.', ',') + '+ (' + String(S.PE_R2).replace('.', ',') + '+ vale 2), títulos e prêmios.</p>' : '') +
+      '<div class="inv-bar">' + (undo.length ? '<button class="btn ghost" id="b-undo">Desfazer</button>' : '') + '<button class="btn" id="b-skip">Jogar a temporada</button></div>'
     );
     U.tip('pre');
     const skip = $('b-skip');
@@ -212,21 +225,22 @@
       const trait = ch.length && !preCh.done, left = G.c.pe || 0;
       skip.disabled = !!trait;
       skip.classList.toggle('wait', !!trait);
-      skip.innerHTML = trait ? 'Escolha 1 característica acima <i class="up-ar">↑</i><small>depois é só seguir para a temporada</small>'
-        : left && hasInv ? 'Seguir para a temporada<small>Guardar ' + pts(left) + ' para depois</small>' : 'Seguir para a temporada';
+      skip.innerHTML = trait ? 'Escolha 1 característica <i class="up-ar">↑</i><small>antes de jogar a temporada</small>'
+        : left && hasInv ? 'Jogar a temporada<small>Guarda ' + left + ' ' + star + ' para depois</small>' : 'Jogar a temporada';
     };
     const refresh = () => {
       if (!skip.isConnected) return; // já saiu da tela
       lockSkip();
+      if ($('w-money')) $('w-money').textContent = G.c.pe || 0;
       if (!hasInv) return;
-      $('w-money').textContent = pts(G.c.pe || 0);
       screen.querySelectorAll('[data-v]').forEach(b => {
         const id = b.dataset.v, n = G.c.inv[id] || 0, max = S.investMax(id), full = n >= max, price = S.investPrice(G.c, id);
+        const capped = !full && S.investCapped(G.c, id);
         b.disabled = !S.canInvest(G.c, id);
         b.querySelector('.pips').textContent = '●'.repeat(n) + '○'.repeat(max - n);
-        const capped = !full && S.investCapped(G.c, id);
-        b.querySelector('.price').textContent = full ? 'No máximo' : capped ? 'No máximo (já no 99)' : (G.c.pe || 0) < price ? 'Custa ' + pts(price) : pts(price);
+        b.querySelector('.price').innerHTML = full ? 'máx' : capped ? '99' : price + ' ' + star;
         b.classList.toggle('full', full || capped);
+        b.classList.toggle('poor', !full && !capped && (G.c.pe || 0) < price);
       });
     };
     skip.onclick = () => { if (!skip.disabled) go(); };

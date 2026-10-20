@@ -169,17 +169,24 @@
     const real = f.rows.filter(x => x.id);
     const n = f.rows.length, a = rc.kind === 'meio' ? Math.max(1, Math.min(f.pos - 1, n - 3)) : Math.max(1, f.line - (rc.kind === 'title' ? 0 : 1)), b = a + 3;
     let rows = real.filter(x => x.pos >= a && x.pos <= b);
-    if (!rows.some(x => x.me)) rows = rows.slice(0, 3).concat(real.filter(x => x.me));
+    // Você fora do recorte: entra no seu lugar (acima ou abaixo), e a lista segue em ordem de posição
+    if (!rows.some(x => x.me)) { const me = real.filter(x => x.me); rows = me.length && me[0].pos < a ? me.concat(rows.slice(-3)) : rows.slice(0, 3).concat(me); }
     const cut = rc.kind === 'title' || rc.kind === 'meio' ? 0 : f.line;
     return '<div class="rc-tbl">' + rows.map((x, i) => (i && x.pos - rows[i - 1].pos > 1 ? '<div class="rt-gap">⋯</div>' : '') +
       '<div class="rt-r' + (x.me ? ' me' : '') + (x.pos === cut ? ' cut' : '') + (rc.kind === 'title' && x.pos === 1 ? ' top' : '') + '"><i>' + x.pos + '</i>' + crest(x.id, 'xs') +
       '<span>' + esc(club(x.id).name) + '</span><b>' + x.pts + '</b></div>').join('') + '</div>';
   }
+  // Título da caixa enquanto a liga corre (a rodada fica na faixa "ao vivo" lá em cima)
+  const RACE_KIND = { title: 'Briga pelo título', acesso: 'Briga pelo acesso', degola: 'Luta contra a degola', meio: 'Sua posição na liga' };
   // (o primeiro quadro da animação pode chegar com u < 0: o relógio do quadro é anterior ao início)
   function drawRace(rc, u) {
     const el = $('race');
     if (!el) return;
     const k = Math.max(0, Math.min(rc.frames.length - 1, Math.floor(u * (rc.frames.length - 1) + 1e-9))), f = rc.frames[k], end = u >= 1;
+    // Só redesenha quando muda o quadro: refazer a tabela a cada quadro reiniciava os escudos, que não chegavam a aparecer
+    const key = k + (end ? 'e' : '');
+    if (rc.drawn === key && el.firstChild) return;
+    rc.drawn = key;
     const vs = rc.frames.map(x => x.v), hi = Math.max(3, ...vs.map(Math.abs));
     // Raiz no eixo: as diferenças pequenas (1 a 3 pontos), que são o que importa, ficam visíveis
     const X = i => 4 + (i / (rc.frames.length - 1)) * 232, Y = v => 22 - Math.sign(v) * Math.sqrt(Math.abs(v) / hi) * 18;
@@ -187,7 +194,7 @@
     const tone = f.v > 0 ? 'up' : f.v < 0 ? 'down' : 'zero';
     const vd = end ? raceVerdict(rc) : null;
     el.className = 'race ' + rc.kind + (end ? ' end ' + vd[1] : '');
-    el.innerHTML = '<div class="rc-top"><span class="rc-rd">' + (end ? 'Fim da liga' : 'Rodada ' + f.rd + ' de ' + rc.R) + '</span><b class="rc-pos">' + f.pos + 'º</b></div>' +
+    el.innerHTML = '<div class="rc-top"><span class="rc-rd">' + (end ? 'Fim da liga' : RACE_KIND[rc.kind]) + '</span><b class="rc-pos">' + f.pos + 'º</b></div>' +
       (f.rows ? miniTable(rc, f) : '<svg class="rc-spark" viewBox="0 0 240 44" preserveAspectRatio="none" aria-hidden="true"><line x1="0" x2="240" y1="22" y2="22"/><polyline points="' + pts + '"/>' +
       '<circle cx="' + X(k).toFixed(1) + '" cy="' + Y(f.v).toFixed(1) + '" r="3.5"/></svg>') +
       '<p class="rc-lbl ' + tone + '">' + (end ? esc(vd[0]) : esc(raceLabel(rc, f.v, f))) + '</p>';
@@ -211,21 +218,49 @@
     const t0c = tierCls(res.ovr0);
     const race = raceOf(res);
     res.race = race ? race.kind : false;
+    // Cores do clube no topo (as do escudo, as mesmas do fundo da tela)
+    const kit = (window.CRAQUE_KITS || {})[cl.id] || ['#1F6B3E', '#0B1F14'];
     render(
-      '<div class="season-head"><div><div class="eyebrow">Temporada ' + (year() - 1) + ' · ' + res.age + ' anos</div><h2 class="with-crest">' + crest(cl.id, 'lg') + esc(cl.name) + '</h2></div><span class="tag">' + (res.farewell ? 'Despedida' : roleSeen(res)) + '</span></div>' +
-      // A carta no centro: a nota sobe (ou cai) depois dos números da temporada
+      '<div class="season-head sx-head" style="--k1:' + kit[0] + ';--k2:' + (kit[1] || kit[0]) + '">' + crest(cl.id, 'lg') + '<div class="sx-id"><h2>' + esc(cl.name) + '</h2>' +
+        '<div class="eyebrow">Temporada ' + (year() - 1) + ' · ' + res.age + ' anos</div></div><span class="tag">' + (res.farewell ? 'Despedida' : roleSeen(res)) + '</span></div>' +
+      // Faixa "ao vivo": a rodada (com reta final) ou o andamento da temporada; no fim vira o selo do fim da temporada
+      '<div class="sx-live" id="sx-live"><span class="sx-dot" aria-hidden="true"></span><b id="sx-st">Ao vivo</b><span class="sx-rd" id="sx-rd"></span><i class="sx-prog"><i id="sx-bar"></i></i></div>' +
+      // A carta à esquerda: a nota sobe (ou cai) depois dos números da temporada, que contam ao lado
       '<div class="s-hero' + (res.injury >= 15 ? ' hurt' : '') + '"><div class="scard metal ' + t0c + '" id="scard"><span class="sc-tier" id="sc-tier">' + TIER_NAME[t0c] + '</span><b id="sc-ovr">' + res.ovr0 + '</b><span class="sc-pos">' + G.c.pos + '</span></div>' +
-      '<div class="s-verdict"><span class="sv-lbl" id="sv-lbl">&nbsp;</span><i class="sv-d" id="sc-d"></i></div>' +
+      '<div class="sx-side"><div class="s-verdict"><span class="sv-lbl" id="sv-lbl">&nbsp;</span><i class="sv-d" id="sc-d"></i></div>' +
+      '<div class="counters"><div class="counter"><b id="k-j">0</b><span>Jogos</span></div><div class="counter"><b id="k-g">0</b><span>' + c1[1] + '</span></div>' +
+      '<div class="counter"><b id="k-a">0</b><span>' + c2[1] + '</span></div><div class="counter rate"><b id="k-n">–</b><span>Nota</span></div></div></div>' +
         // Lesão séria: a carta pisca em vermelho e o curativo cai com o tanto da temporada perdida
         (res.injury >= 15 ? '<span class="sc-inj">' + U.emo('🩹', 'xs') + ' Lesão: ' + res.injury + '% da temporada fora</span>' : '') + '</div>' +
-      '<div class="counters"><div class="counter"><b id="k-j">0</b><span>Jogos</span></div><div class="counter"><b id="k-g">0</b><span>' + c1[1] + '</span></div>' +
-      '<div class="counter"><b id="k-a">0</b><span>' + c2[1] + '</span></div><div class="counter rate"><b id="k-n">–</b><span>Nota</span></div></div>' +
       (race ? '<div class="race" id="race"></div>' : '') +
+      // Lances do ano entrando como ticker enquanto a temporada corre (no resumo, o principal fica em "O que falaram")
       '<div class="feed" id="feed"></div><div id="after"></div><p class="skip-hint" id="skip-hint">Toque para pular</p>'
     );
+    let hls = [], hlShown = 0;
+    const tickLive = (u, now3) => {
+      const bar = $('sx-bar'), rd = $('sx-rd');
+      if (!bar) return;
+      bar.style.width = Math.round(Math.max(0, Math.min(1, u)) * 100) + '%';
+      if (race) { const f = race.frames[Math.max(0, Math.min(race.frames.length - 1, Math.floor(u * (race.frames.length - 1) + 1e-9)))]; rd.innerHTML = 'Rodada <b>' + f.rd + '</b><small>/' + race.R + '</small>'; }
+      else rd.innerHTML = 'Jogo <b>' + now3[0] + '</b><small>/' + (res.src && res.src.max ? res.src.max : res.games) + '</small>';
+      // Cada lance entra no topo do ticker numa fração da temporada
+      while (hlShown < hls.length && u >= (hlShown + 1) / (hls.length + 1)) {
+        const fd = $('feed');
+        fd.insertAdjacentHTML('afterbegin', '<div class="tk-i' + (hlShown ? '' : ' new') + '">' + esc(hls[hlShown]) + '</div>');
+        hlShown++;
+      }
+    };
+    const endLive = () => {
+      const lv = $('sx-live');
+      if (!lv) return;
+      lv.classList.add('end');
+      $('sx-st').textContent = 'Fim da temporada ' + (year() - 1);
+      $('sx-rd').innerHTML = res.games ? D.plural(res.games, 'jogo', 'jogos') : '';
+    };
     // Com reta final, a temporada dura um pouco mais: a tabela precisa de tempo para virar
     const few = res.src && res.src.max && res.games / res.src.max < 0.15; // do banco não há o que contar: a tela não se arrasta
     const dur = few ? (race ? 1400 : 800) : race ? (race.kind === 'meio' ? 2200 : 2800) : 1500, t0 = performance.now();
+    if (!few) hls = res.highlights.slice(0, 4);
     let skip = !!U.cfg.fast, shown = [0, 0, 0]; // configuração: resumo rápido
     // Liga o "pular" só depois: o toque que abriu esta tela ainda está se propagando
     setTimeout(() => { screen.onclick = () => { skip = true; }; }, 50);
@@ -238,7 +273,10 @@
       shown = now3;
       $('k-j').textContent = now3[0]; $('k-g').textContent = now3[1]; $('k-a').textContent = now3[2];
       if (race) drawRace(race, u);
+      tickLive(u, now3);
       if (u < 1) return requestAnimationFrame(tick);
+      endLive();
+      bar(); // a barra do topo mostra os totais da carreira já com esta temporada (antes só mudava no resumo)
       if (race && !skip) { const vd = raceVerdict(race); if (vd[1] === 'win' && race.kind !== 'title') sfx('levelup'); if (vd[1] === 'win') U.vibe(25); }
       $('k-n').textContent = res.games ? res.rating.toFixed(1).replace('.', ',') : '–';
       $('k-n').parentNode.classList.add('pop');
@@ -296,7 +334,8 @@
     const finish = () => {
       if (!el.isConnected) return;
       num.textContent = res.ovr1;
-      $('sc-d').textContent = d > 0 ? '+' + d : d < 0 ? String(d) : '=';
+      // Quanto a carta subiu: a nota antiga riscada e a diferença grande
+      $('sc-d').innerHTML = d ? '<s>' + res.ovr0 + '</s>' + (d > 0 ? '+' + d : '−' + Math.abs(d)) + '<small>na carta</small>' : '=<small>carta igual</small>';
       $('sc-d').className = 'sv-d ' + (d > 0 ? 'up' : d < 0 ? 'down' : 'zero');
       if (t1 !== tierCls(res.ovr0)) { el.className = 'scard metal ' + t1 + ' tierup'; $('sc-tier').textContent = TIER_NAME[t1]; }
       el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
@@ -372,7 +411,8 @@
       if (!items[0].isConnected) return; // já saiu desta tela
       const el = items[i++];
       el.classList.add('in');
-      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      // No carrossel "O que falaram" a rolagem é só vertical: os cartões ficam no começo, para deslizar
+      (el.closest('.story') || el).scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
       if ((el.classList.contains('title-won') || el.classList.contains('ballon')) && !res.celebrated) sfx('fanfare');
       else if (el.classList.contains('move-line') && el.classList.contains('up')) sfx('levelup');
       else if (el.classList.contains('wc-call')) sfx('levelup');
@@ -388,6 +428,7 @@
   function summary(res, skipNow) {
     const feed = $('feed');
     if (!feed || !G.c) return; // a tela do resumo já não está aberta (ex.: voltou ao início durante a comemoração)
+    feed.innerHTML = ''; // o ticker da temporada ao vivo sai: o lance principal fica em "O que falaram", os outros nos detalhes
     // Só o lance mais marcante na tela (no bloco da história do ano); os outros ficam nos detalhes
     const hl = res.highlights[0] ? '<p class="st-hl rv">' + esc(res.highlights[0]) + '</p>' : '';
     const dOvr = res.ovr1 - res.ovr0;
@@ -452,7 +493,7 @@
       (res.titles.length ? '<div class="titles">' + res.titles.map(t => '<div class="title-won rv">' + trophy(titleType(t), 60, t.name) + '<span>Campeão<br><b>' + esc(t.name) + '</b></span></div>').join('') + '</div>' : '') +
       '<div class="awards">' + res.awards.map(a => '<div class="award rv' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : U.emo('🥇', 'sm') + ' ') + a.name + '</div>').join('') + '</div>' +
       // A história do ano num bloco só, em linhas com peso menor que a carta, a nota e a tabela
-      '<div class="story rv">' + hl +
+      '<p class="sx-lbl rv">O que falaram</p><div class="story rv">' + hl +
       '<div class="news rv"><div class="np">' + U.emo('📰', 'xs') + ' Nos jornais</div><p>' + esc(res.headlines[0] || '') + '</p></div>' +
       resenha(res) +
       // Rival de geração (engine/rival.js): o que ele fez no ano e o duelo com você
@@ -469,7 +510,7 @@
       res.highlights.slice(1).map(h => '<div class="hl">' + esc(h) + '</div>').join('') +
       '<div class="card why-card"><p class="delta-in ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' + why + '</div>' +
       '<p class="rel-delta">' + U.emo('👔', 'xs') + ' Técnico ' + res.coach0 + ' → ' + res.coach1 + ' · ' + U.emo('📣', 'xs') + ' Torcida ' + res.fans0 + ' → ' + res.fans1 + ' (' + S.relLabel(res.fans1) + ')</p>' +
-      (fin ? '' : '<p class="contract">' + contractTxt + '</p>') + '</details>' + '<div class="rv">' + actions + '</div>';
+      (fin ? '' : '<p class="contract">' + contractTxt + '</p>') + '</details>' + '<div class="rv s-acts">' + actions + '</div>';
     bar();
     reveal(skipNow, res);
     // Última temporada: a carta desbota em sépia, como foto antiga, antes da carta final da carreira

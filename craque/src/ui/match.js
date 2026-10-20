@@ -18,12 +18,26 @@
   // O que está em jogo numa opção arriscada, curto: uma linha por resultado com a chance em destaque
   // (verde quando dá certo, vermelho quando dá errado) e o que vale nos dois casos numa linha à parte.
   // Opções seguras e as consequências (events3.js, texto pronto) continuam com o texto de sempre.
+  // Estilo ousado: a arriscada ganha uma barra de chance (verde/vermelho) em cima das linhas; a segura, a barra cheia do ganho certo.
   function optHint(c, o) {
     const { rows, always } = o.st && !o.st.safe && !o.locked ? S.stakeRows(c, o.st) : {};
-    if (!rows) return '<small>' + esc(o.hint) + '</small>';
-    const cost = always.length === 1 && /^−R\$ /.test(always[0]);
-    return '<span class="odds">' + rows.map(r => '<span class="od-row ' + r.kind + '"><b>' + Math.round(r.p * 100) + '%</b><span>' + esc(r.parts.join(' · ')) + '</span></span>').join('') +
+    if (!rows) {
+      if (o.st && o.st.safe && !o.locked) return '<span class="ob3-bar safe" aria-hidden="true"><i style="width:100%"></i></span><span class="odds"><span class="od-row safe"><b>Certo</b><span>' + esc(o.hint) + '</span></span></span>';
+      return '<small>' + esc(o.hint) + '</small>';
+    }
+    const cost = always.length === 1 && /^−R\$ /.test(always[0]), pw = Math.round(rows[0].p * 100);
+    return '<span class="ob3-bar" aria-hidden="true"><i class="w" style="width:' + pw + '%"></i><i class="l"></i></span>' +
+      '<span class="odds">' + rows.map(r => '<span class="od-row ' + r.kind + '"><b>' + Math.round(r.p * 100) + '%</b><span>' + esc(r.parts.join(' · ')) + '</span></span>').join('') +
       (always.length ? '<span class="od-always">' + (cost ? 'Custa ' + esc(always[0].slice(1)) : 'Sempre: ' + esc(always.join(' · '))) + '</span>' : '') + '</span>';
+  }
+  // Etiqueta da opção: arriscada (chance) ou segura (ganho certo); evento antigo/consequência sem etiqueta
+  const optKind = o => (o.st ? (o.st.safe ? 'safe' : 'risk') : 'plain');
+  const OPT_TAG = { risk: 'Arriscada', safe: 'Segura' };
+  function optCard(c, ev, o, i) {
+    const k = optKind(o);
+    return '<button class="btn opt ob3-opt k-' + k + (o.locked ? ' locked' : '') + '" data-i="' + i + '"' + (o.locked ? ' disabled' : '') + '>' +
+      (OPT_TAG[k] ? '<span class="ob3-tag">' + OPT_TAG[k] + '</span>' : '') + '<b class="ob3-lbl">' + esc(o.label) + '</b>' + optHint(c, o) +
+      (i === 0 && ev.dest && S.breaksChallenge(c, { club: ev.dest }) ? '<small class="ch-warn">' + U.emo('⚠️', 'xs') + ' Quebra o desafio</small>' : '') + '</button>';
   }
 
   function eventScreen() {
@@ -32,12 +46,18 @@
     const ev = pendingEvent;
     // Proposta de transferência: compara com a situação de hoje antes de decidir
     const offer = S.eventOffer(G.c, ev);
+    // Estilo ousado: cartão claro centrado (ícone grande, categoria, título, texto) e as opções com o mesmo peso visual.
+    // Duas opções sem proposta de clube ficam lado a lado; 3 ou mais (ou proposta) empilham.
+    const tone = ev.hookOf ? 'back' : evDef(ev).tone || '', kinds = ev.options.map(optKind);
+    const two = ev.options.length === 2 && !offer;
     render(
-      '<div class="eyebrow">Durante a temporada</div>' +
-      '<div class="card event-card' + (ev.hookOf ? ' t-back' : evDef(ev).tone ? ' t-' + evDef(ev).tone : '') + '"><div class="ev-top">' + U.icoOf(ev, 'lg') + (ev.hookOf ? '<span class="ev-tag back">Consequência</span>' : evDef(ev).tone ? '<span class="ev-tag ' + evDef(ev).tone + '">' + (TONE_LBL[evDef(ev).tone] || '') + '</span>' : '') + '</div>' +
-      (ev.memory ? '<p class="ev-mem">' + U.emo('🔁', 'xs') + ' ' + esc(ev.memory) + '</p>' : '') + '<h2>' + esc(ev.title) + '</h2><p style="margin:0">' + esc(ev.text) + '</p></div>' +
+      '<div class="eyebrow">Durante a temporada · ' + year() + '</div>' +
+      '<div class="card event-card ob3' + (tone ? ' t-' + tone : '') + '"><div class="ev-top"><span class="ob3-ic">' + U.icoOf(ev, 'lg') + '</span>' +
+      '<span class="ev-tag ' + (tone || 'blue') + '">' + (ev.hookOf ? 'Consequência' : TONE_LBL[tone] || 'Decisão') + '</span></div>' +
+      (ev.memory ? '<p class="ev-mem">' + U.emo('🔁', 'xs') + ' ' + esc(ev.memory) + '</p>' : '') + '<h2>' + esc(ev.title) + '</h2><p class="ob3-txt">' + esc(ev.text) + '</p></div>' +
       (offer ? U.dealCompare(S.currentDeal(G.c), offer) : '') +
-      '<div class="choices">' + ev.options.map((o, i) => '<button class="btn opt' + (i ? ' ghost' : '') + (o.locked ? ' locked' : '') + '" data-i="' + i + '"' + (o.locked ? ' disabled' : '') + '>' + esc(o.label) + optHint(G.c, o) + (i === 0 && ev.dest && S.breaksChallenge(G.c, { club: ev.dest }) ? '<small class="ch-warn">' + U.emo('⚠️', 'xs') + ' Quebra o desafio</small>' : '') + '</button>').join('') + '</div>'
+      '<div class="choices ob3-opts' + (two ? ' two' : '') + '">' + ev.options.map((o, i) => optCard(G.c, ev, o, i)).join('') + '</div>' +
+      (kinds.includes('risk') && kinds.includes('safe') ? '<p class="ob3-note">A arriscada pode render mais, mas pode dar errado de verdade.</p>' : '')
     );
     U.tip('evento');
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
@@ -54,9 +74,13 @@
       const pctx = { kind: 'event', ok: r.ok, ev, opt: +b.dataset.i, toClub: offer && b.dataset.i === '0' ? G.c.club : null };
       // Opção arriscada: o ponteiro corre sobre a chance e para no resultado que já saiu (motion.js)
       const st = ev.options[+b.dataset.i].st;
+      // Carimbo do resultado: arriscada deu certo/errado; segura é tranquila; proposta de clube não leva carimbo
+      const stamp = st ? (st.safe ? (r.ok ? 'calm' : '') : r.ok ? 'ok' : 'ko') : offer ? '' : r.ok ? 'ok' : 'ko';
+      const STAMP = { ok: 'Deu certo', ko: 'Deu errado', calm: 'Tranquilo' };
       U.riskRoll(st && !st.safe ? st.p : 0, r.ok, ev.options[+b.dataset.i].label, () => U.transferMove(prevClub, G.c.club, G.c.name, () => {
       render(
-        '<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.icoOf(ev, 'lg') + '</span><div class="eyebrow">' + esc(ev.title) + '</div>' +
+        '<div class="card ev-res ob3-res ' + (r.ok ? 'ok' : 'ko') + (stamp === 'calm' ? ' calm' : '') + '">' + (stamp ? '<span class="ob3-stamp s-' + stamp + '">' + STAMP[stamp] + '</span>' : '') +
+        '<span class="er-ic">' + U.icoOf(ev, 'lg') + '</span><div class="eyebrow">' + esc(ev.title) + '</div>' +
         '<p class="er-txt">' + esc(r.text) + '</p>' + fxRow + '</div>' +
         '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn(pctx), { center: true }
       );
@@ -125,7 +149,12 @@
   }
   // Os dois estilos do lance, lado a lado: nome, como muda o lance e a chance pela carta em cada um.
   // Nenhum é sempre o melhor: a chance pende para atributos diferentes e o jeito de jogar muda.
-  function styleBtns(st) {
+  // big (estilo ousado, tela do lance): cartões grandes com ícone e chance no alto, nome e como muda o lance
+  function styleBtns(st, big) {
+    if (big) return '<div class="choices style-grid ob5-styles">' + S.STYLES[st].map((d, i) => { const k = S.kickSetup(G.c, st, d.id);
+      return '<button class="btn opt style ob5-st s' + i + '" data-style="' + d.id + '"><span class="ob5-st-top">' + U.emo(d.ico, 'md') +
+        '<span class="st-pct" aria-label="Chance pela carta"><b>' + Math.round(k.chance * 100) + '%</b>pela carta</span></span>' +
+        '<b class="ob5-st-nm">' + esc(d.name) + '</b><small>' + esc(d.hint) + '</small></button>'; }).join('') + '</div>';
     return '<div class="choices style-grid">' + S.STYLES[st].map(d => { const k = S.kickSetup(G.c, st, d.id);
       return '<button class="btn opt style" data-style="' + d.id + '"><span class="st-ico">' + U.emo(d.ico, 'sm') + '</span>' + esc(d.name) + '<small>' + esc(d.hint) + '</small><span class="st-pct" aria-label="Chance pela carta"><b>' + Math.round(k.chance * 100) + '%</b>pela carta</span></button>'; }).join('') + '</div>';
   }
@@ -162,19 +191,21 @@
   function momentIntro(m) {
     const st = S.kickSetupType(m), def = st === 'save' || st === 'tackle';
     const T = def ? DEF_TXT(m, st) : st === 'pass' ? PASS_TXT(m) : MOMENT_TXT[m.type](m), k = S.kickSetup(G.c, st, S.autoStyle(G.c, st));
+    // Estilo ousado: placar escuro (escudos, minuto ao vivo, competição), título grande, o que vale em dourado,
+    // o que pesa da carta e os dois estilos como cartões grandes; decidir no automático e treinar no rodapé.
+    const sc = m.score || ['', ''];
     render(
-      '<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div>' +
-      '<div class="card event-card moment-card">' + (m.score
-        // Placar e minuto: o mesmo chute vale outra coisa no 1 × 1 aos 89'
-        ? '<div class="mom-board">' + crest(G.c.club) + '<b>' + m.score[0] + ' × ' + m.score[1] + '</b>' + crest(m.vs) + '<span class="mom-min">' + m.minute + "'</span></div>" +
-          '<p class="mom-ctx">' + esc(m.ctx || '') + '</p>'
-        : '<div class="with-crest">' + crest(G.c.club) + '<b>×</b>' + crest(m.vs) + '</div>') +
-      '<h2>' + T.title + '</h2><p style="margin:0">' + esc(T.text) + '</p><p class="stakes">' + esc(T.stakes) + '</p></div>' +
-      '<div class="chips">' + miniFacts(st).join('') + '</div>' +
-      '<p class="lead small">' + MINI_HOW[st] + '</p>' +
-      '<p class="lead small st-lead">Como você vai ' + { cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar' }[st] + '?</p>' + styleBtns(st) +
-      '<button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>' +
-      '<button class="link-btn mom-train" id="b-train">' + U.emo('🏟️', 'xs') + ' Treinar este lance antes</button>'
+      '<div class="eyebrow">Jogo decisivo</div>' +
+      '<div class="ob5-board' + (m.score ? '' : ' no-score') + '">' + crest(G.c.club) + '<b class="ob5-g">' + sc[0] + '</b>' +
+        '<span class="ob5-mid">' + (m.minute ? '<span class="ob5-min"><i aria-hidden="true"></i>' + m.minute + "'</span>" : '<span class="ob5-x">×</span>') + '<small>' + esc(T.tag) + '</small></span>' +
+        '<b class="ob5-g">' + sc[1] + '</b>' + crest(m.vs) + '</div>' +
+      '<div class="ob5-head"><h2>' + T.title + '</h2><p class="ob5-stakes">' + U.emo('🏆', 'xs') + '<span>' + esc(T.stakes) + '</span></p>' +
+        '<p class="ob5-txt">' + (m.ctx ? esc(m.ctx) + ' ' : '') + esc(T.text) + '</p></div>' +
+      '<div class="chips ob5-facts">' + miniFacts(st).join('') + '</div>' +
+      '<details class="ob5-how"><summary>Como funciona o lance</summary><p>' + MINI_HOW[st] + '</p></details>' +
+      '<p class="st-lead ob5-q">Como você vai ' + { cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar' }[st] + '?</p>' + styleBtns(st, true) +
+      '<div class="ob5-foot"><button class="btn ghost ob5-auto" id="b-auto">Deixar o jogo decidir<small>' + Math.round(k.chance * 100) + '% pela sua carta</small></button>' +
+      '<button class="ob5-train mom-train" id="b-train">' + U.emo('🏟️', 'xs') + ' Treinar antes</button></div>'
     );
     U.tip('lance');
     $('b-train').onclick = () => U.training(st);

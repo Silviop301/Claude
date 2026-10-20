@@ -109,7 +109,7 @@ function stepInPage(opts) {
   if ($('b-skip')) {
     const ch = qa('#screen .choice[data-i]');
     if ($('b-skip').disabled && ch.length) return label('pre:trait ' + twice(rnd(ch)));
-    const inv = qa('#screen .choice.inv[data-v]:not([disabled])');
+    const inv = qa('#screen [data-v]:not([disabled])');
     if (inv.length && Math.random() < chance.invest) return label('pre:invest ' + twice(rnd(inv)));
     const tr = qa('#screen .train-opt[data-t]'); if (tr.length && Math.random() < 0.3) rnd(tr).click();
     if (Math.random() < 0.05 && q('[data-sheet]')) return label('pre:sheet ' + click(q('[data-sheet]')));
