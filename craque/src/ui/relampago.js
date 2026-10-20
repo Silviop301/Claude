@@ -4,17 +4,17 @@
 (function () {
   const U = window.CRAQUE_UI;
   const { D, S, G, esc, $, load, store, render, crest, sfx } = U;
-  const KEY = 'climbix-relampago-desafio', NAME = 'climbix-relampago-nome';
+  const KEY = 'climbix-relampago-desafio', NAME = 'climbix-relampago-nome', PLAYED = 'climbix-relampago-jogados', BEST = 'climbix-relampago-recorde';
   let run = null; // { seed, rounds, name, vs }
 
   const b64 = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const unb64 = s => decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/'))));
-  // n: nome, s: semente, p: cobranças de cada casa (1 = gol, 0 = errou), casas separadas por '-'
+  // n: nome, s: semente, p: cobranças de cada casa (1 = gol, 0 = errou, 2 = gol num clube largado), casas separadas por '-'
   const encode = r => b64(JSON.stringify({ n: String(r.name).slice(0, 20), s: r.seed, p: r.rounds.map(k => k.join('')).join('-') }));
   function decode(q) {
     try {
       const d = JSON.parse(unb64(String(q).slice(0, 300)));
-      if (!d || !/^[01]{1,5}(-[01]{1,5}){4}$/.test(String(d.p)) || !(d.s >= 0 && d.s <= 4294967295)) return null;
+      if (!d || !/^([012]{1,5}-){3}[01]{5}-[01]{5}$/.test(String(d.p)) || !(d.s >= 0 && d.s <= 4294967295)) return null;
       const p = String(d.p).split('-').map(k => k.split('').map(Number));
       if (S.rlCareer(d.s >>> 0, p).length !== 5) return null;
       return { n: String(d.n || 'Alguém').slice(0, 20), s: d.s >>> 0, p };
@@ -24,25 +24,34 @@
   const active = () => { const d = load(KEY); return d && !d.done && Array.isArray(d.p) && Array.isArray(d.p[0]) ? d : null; }; // desafio no formato antigo é ignorado
   const trophyImg = (name, s) => U.trophy(name === 'Bola de Ouro' ? 'ballon' : /Libertadores/.test(name) ? 'lib' : /Campeões/.test(name) ? 'ucl' : /Copa do Mundo/.test(name) ? 'wc' : 'league', s, name);
 
-  // Link recebido: guarda o desafio e segue para a tela inicial
+  // Sementes já jogadas neste aparelho (as suas e os desafios): o mesmo desafio não abre de novo, porque quem jogou
+  // já viu onde estão os prêmios
+  const played = () => { const a = load(PLAYED); return Array.isArray(a) ? a : []; };
+  const markPlayed = seed => { const a = played().filter(x => x !== seed); a.push(seed); store(PLAYED, a.slice(-100)); };
+
+  // Link recebido: guarda o desafio e segue para a tela inicial (já jogado: fica marcado como feito)
   function fromLink() {
     const q = new URLSearchParams(location.search).get('r');
     if (!q) return;
     const d = decode(q);
     history.replaceState(null, '', location.pathname);
-    if (d) store(KEY, Object.assign(d, { at: Date.now() }));
+    if (d) store(KEY, Object.assign(d, { at: Date.now() }, played().includes(d.s) ? { done: true, again: true } : {}));
   }
 
   // ---------- tela inicial ----------
   function homeHtml() {
     const d = active();
+    const old = load(KEY);
+    if (!d && old && old.again) return '<div class="card dz-home rl-dz"><button class="dz-x" id="rl-x" aria-label="Fechar">' + U.ICON.x + '</button>' +
+      '<div class="dz-top">' + U.emo('⚡', 'md') + '<div><small>Desafio relâmpago</small><b>Você já jogou esse desafio</b><span>Cada desafio vale uma vez só. Desafie de volta com uma carreira nova</span></div></div></div>' + btn();
     const card = d ? (() => { const f = S.rlScore(d.s, d.p);
       return '<div class="card dz-home rl-dz"><button class="dz-x" id="rl-x" aria-label="Descartar desafio">' + U.ICON.x + '</button>' +
         '<div class="dz-top">' + U.emo('⚡', 'md') + '<div><small>Desafio relâmpago</small><b>' + esc(d.n) + ' fez ' + f.total + ' pontos</b>' +
         '<span>Nota ' + f.grade + ' · mesmos sorteios pra você</span></div></div>' +
         '<button class="btn rl-go" id="rl-accept">Aceitar desafio</button></div>'; })() : '';
-    return card + '<button class="hg rl-btn" id="b-relampago"><i>' + U.emo('⚡', 'sm') + '</i><b>Carreira Relâmpago</b><small>5 casas, 5 bolas cada. Desafie um amigo</small></button>';
+    return card + btn();
   }
+  const btn = () => '<button class="hg rl-btn" id="b-relampago"><i>' + U.emo('⚡', 'sm') + '</i><b>Carreira Relâmpago</b><small>5 casas, 5 bolas cada. Desafie um amigo</small></button>';
   function homeBind() {
     if ($('b-relampago')) $('b-relampago').onclick = () => intro();
     if ($('rl-accept')) $('rl-accept').onclick = () => intro();
@@ -58,9 +67,9 @@
       (d ? '<div class="card dz-res rl-vs-top">' + U.emo('🎯', 'md') + '<div><small>Desafio de ' + esc(d.n) + '</small><b>' + S.rlScore(d.s, d.p).total + ' pontos pra bater</b><span>Os prêmios escondidos são os mesmos que ' + esc(d.n) + ' teve. Uma chance só.</span></div></div>' : '') +
       '<div class="card rl-rules">' +
         '<p><b>5 casas montam a carreira:</b> Base, Auge, Último clube, G/A e Títulos. Cada casa tem <b>5 bolas</b>.</p>' +
-        '<p>' + U.emo('⚽', 'sm') + ' Nos clubes, cada bola esconde um time: vale <b>a primeira que entrar</b>. Errou as 5, fica o mais fraco.</p>' +
+        '<p>' + U.emo('⚽', 'sm') + ' Nos clubes, cada bola esconde um time. Fez o gol, <b>fica com ele ou larga e chuta a próxima</b>. Errou todas, fica o mais fraco.</p>' +
         '<p>' + U.emo('🏆', 'sm') + ' Em G/A e Títulos cada bola esconde gols e assistências ou um título. <b>Você leva o de cada bola que entrar</b>, e pode perder justo a da Bola de Ouro.</p>' +
-        '<p>' + U.emo('😤', 'sm') + ' O goleiro é <b>mais esperto</b> que no modo carreira, e a mira acelera a cada bola.</p>' +
+        '<p>' + U.emo('😤', 'sm') + ' O goleiro é <b>mais esperto</b> que no modo carreira: lê até a cavadinha. E a mira acelera a cada casa.</p>' +
       '</div>' +
       '<div class="field"><label for="rl-name">Seu nome no desafio</label><input id="rl-name" maxlength="20" autocomplete="nickname" placeholder="Ex.: Vitinho" value="' + esc(name) + '"></div>' +
       '<button class="btn" id="rl-start">' + (d ? 'Jogar o desafio' : 'Começar') + '</button>');
@@ -69,6 +78,7 @@
       const n = ($('rl-name').value || '').trim().slice(0, 20) || 'Você';
       store(NAME, n === 'Você' ? '' : n);
       run = { seed: d ? d.s : S.rlNewSeed(), rounds: [], name: n, vs: d };
+      markPlayed(run.seed);
       play();
     };
   }
@@ -116,22 +126,42 @@
     }
     return n - 1;
   }
-  const dots = kicks => '<span class="rl-dots">' + [0, 1, 2, 3, 4].map(j => '<i class="' + (kicks[j] === 1 ? 'g' : kicks[j] === 0 ? 'x' : '') + '"></i>').join('') + '</span>';
+  const dots = kicks => '<span class="rl-dots">' + [0, 1, 2, 3, 4].map(j => '<i class="' + (kicks[j] === 1 ? 'g' : kicks[j] === 2 ? 'g l' : kicks[j] === 0 ? 'x' : '') + '"></i>').join('') + '</span>';
 
   function play() {
     const i = current();
     if (i >= 5) return result();
     const sl = S.RL_SLOTS[i], kicks = run.rounds[i], k = kicks.length;
-    const rule = i < 3 ? 'Vale o clube da primeira bola que entrar' : 'Você leva o prêmio de cada bola que entrar';
+    const rule = i < 3 ? 'Fez o gol: fica com o clube ou chuta de novo' : 'Você leva o prêmio de cada bola que entrar';
     render('<div class="rl-head"><div class="eyebrow">Casa ' + (i + 1) + ' de 5 · bola ' + (k + 1) + ' de 5</div><h2>' + sl.name + '</h2>' +
       '<div class="rl-rule"><span>' + rule + '</span>' + dots(kicks) + '</div></div>' + boardHtml(i) +
       '<div id="rl-kick"></div><div class="card rl-reveal" id="rl-reveal" hidden></div>');
     window.CRAQUE_KICK($('rl-kick'), { c: kicker(), moment: { type: 'cup' }, setup: S.rlKickSetup(i), keeperGuess: S.RL_KEEPER,
-      ballX: BX[k], extraBalls: BX.slice(k + 1), onDone: ok => { kicks.push(ok ? 1 : 0); reveal(i, ok); } });
+      ballX: BX[k], extraBalls: BX.slice(k + 1), onDone: ok => {
+        // Gol num clube com bolas sobrando: o jogador decide antes de a casa fechar
+        if (ok && i < 3 && k < 4) return choose(i);
+        kicks.push(ok ? 1 : 0); reveal(i, ok);
+      } });
+  }
+
+  // Gol num clube: ficar com ele ou largar e chutar a próxima bola (se errar todas as que sobram, fica o mais fraco)
+  function choose(i) {
+    const kicks = run.rounds[i], k = kicks.length, box = $('rl-reveal');
+    if (!box) return;
+    const cl = S.rlRound(run.seed, i, prevOf(i), kicks.concat(1)).cone, left = 4 - k;
+    $('rl-kick').hidden = true;
+    box.hidden = false;
+    box.className = 'card rl-reveal ok';
+    box.innerHTML = '<small>Gol! Essa bola tinha</small><div class="rl-prize">' + prize(cl) + '</div><b class="rl-pts">+' + String(cl.pts).replace('.', ',') + ' pts</b>' +
+      '<button class="btn" id="rl-keep">Ficar com ' + esc(cl.name) + '</button>' +
+      '<button class="btn ghost" id="rl-again-k">Chutar de novo<small>Larga esse clube. Sobra' + (left > 1 ? 'm ' + left + ' bolas' : ' 1 bola') + '; se errar, fica o mais fraco</small></button>';
+    sfx('goal');
+    $('rl-keep').onclick = () => { kicks.push(1); reveal(i, true, true); };
+    $('rl-again-k').onclick = () => { kicks.push(2); play(); };
   }
 
   // Depois de cada cobrança: o que a bola valia; quando a casa acaba, o prêmio e os pontos
-  function reveal(i, ok) {
+  function reveal(i, ok, kept) {
     const kicks = run.rounds[i], r = S.rlRound(run.seed, i, prevOf(i), kicks), box = $('rl-reveal');
     if (!box) return;
     const k = $('rl-kick'); if (k) k.hidden = true;
@@ -139,7 +169,7 @@
     const club = i < 3;
     let msg, shown = r.cone;
     if (club) {
-      if (ok) msg = 'Gol! Esse é o seu clube';
+      if (ok) msg = kept ? 'Fechado! Esse é o seu clube' : 'Gol! Esse é o seu clube';
       else if (r.done) msg = 'Nenhuma entrou. Sobrou';
       else { msg = 'Errou. Essa bola era'; shown = r.hidden(kicks.length - 1); }
     } else { msg = ok ? 'Gol! Você levou' : 'Errou. Essa bola tinha'; shown = r.hidden(kicks.length - 1); }
@@ -147,15 +177,21 @@
     box.className = 'card rl-reveal ' + (ok ? 'ok' : 'ko') + (!ok && !(club && r.done) ? ' lost' : '');
     box.innerHTML = '<small>' + msg + '</small>' +
       '<div class="rl-prize">' + prize(shown) + '</div>' + (!club && r.done ? '<div class="rl-sum"><small>Total da casa</small>' + esc(r.cone.name) + '</div>' : '') + (r.done ? '<b class="rl-pts">+' + String(r.cone.pts).replace('.', ',') + ' pts</b>' : '') +
+      (club && ok && kicks.length < 5 ? rest(r, kicks.length) : '') +
       '<button class="btn" id="rl-next">' + (!r.done ? 'Próxima bola' : i < 4 ? 'Próxima casa' : 'Ver a carreira') + '</button>';
     if (r.done) { const board = document.querySelector('.rl-board'); if (board) board.outerHTML = boardHtml(i); }
-    sfx(ok ? 'goal' : 'kick');
+    if (!kept) sfx(ok ? 'goal' : 'kick');
     $('rl-next').onclick = play;
   }
 
+  // As bolas que ficaram sem chutar: o que cada uma escondia
+  const rest = (r, from) => '<div class="rl-rest"><small>As outras bolas tinham</small><span>' +
+    [0, 1, 2, 3, 4].slice(from).map(j => { const c = r.hidden(j); return '<i title="' + esc(c.name) + '">' + crest(c.id, 'xs') + '<em>' + esc(c.name) + '</em></i>'; }).join('') + '</span></div>';
+
   // ---------- resultado ----------
   function rows(f) {
-    return f.slots.map(s => '<div class="rl-row' + (s.best ? ' best' : s.goal ? '' : ' out') + '"><small>' + s.name + '</small><span class="rl-val">' + coneVal(s.cone) + '</span><b><i>' + how(s) + '</i> +' + Math.round(s.pts) + '</b></div>').join('');
+    return f.slots.map(s => '<div class="rl-row' + (s.best ? ' best' : s.goal ? '' : ' out') + '"><small>' + s.name + '</small><span class="rl-val">' + coneVal(s.cone) + '</span><b><i>' + how(s) + '</i> +' + Math.round(s.pts) + '</b>' +
+      (s.left.length ? '<span class="rl-lft">Largou ' + s.left.map(c => esc(c.name)).join(', ') + '</span>' : '') + '</div>').join('');
   }
   const how = s => s.cone.id ? (s.goal ? 'gol na ' + s.kicks + 'ª' : 'nenhuma entrou') : s.goals + ' de 5';
   function coneVal(c) {
@@ -171,6 +207,15 @@
     if (g) store(KEY, Object.assign(load(KEY) || {}, { done: true }));
     // Conta como carreira terminada na sequência de dias (a primeira do dia libera o prêmio): uma vez por partida
     if (!run.sk) run.sk = { got: U.ITEMS.streakRecord() };
+    // Recorde (uma vez por partida): o anterior fica guardado para mostrar "novo recorde"
+    if (!run.best) { const b = +load(BEST) || 0; run.best = { old: b }; if (f.total > b) store(BEST, f.total); }
+    const nx = S.rlNext(f.total), miss = S.rlMissed(run.seed, run.rounds).slice(0, 3);
+    const after = '<div class="rl-after">' +
+      (run.best.old && f.total > run.best.old ? '<b class="rl-rec">' + U.emo('🏅', 'xs') + ' Novo recorde! Antes: ' + run.best.old + '</b>'
+        : run.best.old ? '<span>Seu recorde: <b>' + Math.max(run.best.old, f.total) + ' pontos</b></span>' : '') +
+      (nx ? '<span>Faltaram <b>' + nx.need + ' ponto' + (nx.need > 1 ? 's' : '') + '</b> para a nota ' + nx.grade + '</span>' : '') +
+      (miss.length ? '<div class="rl-miss"><small>O que escapou</small>' + miss.map(m => '<span>' + (m.prize.id ? crest(m.prize.id, 'xs') : '') + '<b>' + esc(m.prize.name) + '</b> <i>' + m.slot + ', bola ' + m.ball + '</i></span>').join('') + '</div>' : '') +
+      '</div>';
     const combos = f.combos.length ? '<div class="rl-combos">' + f.combos.map(c => '<span>' + U.emo('🔥', 'xs') + ' <b>' + c.name + '</b> ' + c.desc + (c.pts ? ' (+' + c.pts + ')' : '') + '</span>').join('') + '</div>' : '';
     const col = (who, sc, me) => '<div class="rl-col' + (me ? ' me' : '') + '"><div class="rl-col-h"><b>' + esc(who) + '</b><span class="rl-grade g-' + sc.grade + '">' + sc.grade + '</span></div>' +
       sc.slots.map(s => '<div class="rl-mini' + (s.goal ? '' : ' out') + '"><small>' + s.name + '</small>' + coneMini(s.cone) + '</div>').join('') +
@@ -181,12 +226,13 @@
         '<p class="rl-ask">Quem montou a melhor carreira?</p>'
       : '<h2>' + esc(run.name) + '</h2>') +
       '<div class="card rl-res"><div class="rl-score"><span class="rl-grade big g-' + f.grade + '">' + f.grade + '</span><div><b>' + f.total + ' pontos</b><small>' + f.slots.reduce((a, s) => a + s.goals, 0) + ' gols em ' + f.slots.reduce((a, s) => a + s.kicks, 0) + ' cobranças</small></div></div>' +
-        rows(f) + combos + '</div>' + U.streakFinale(run.sk.got) +
+        rows(f) + combos + after + '</div>' + U.streakFinale(run.sk.got) +
       (window.CLIMBIX_SOLO ? '' : '<button class="btn" id="rl-share">' + U.emo('🎯', 'sm') + ' ' + (g && diff > 0 ? 'Devolver o desafio' : 'Desafiar um amigo') + '<small>Ele cobra com os mesmos times escondidos</small></button>') +
       '<button class="btn ghost" id="rl-again">Jogar de novo</button>' +
       '<button class="link-btn" id="rl-home">Voltar ao início</button>');
     $('rl-again').onclick = () => {
       run = { seed: S.rlNewSeed(), rounds: [], name: run.name, vs: null };
+      markPlayed(run.seed);
       play();
     };
     $('rl-home').onclick = () => U.home();

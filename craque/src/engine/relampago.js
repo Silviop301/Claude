@@ -1,6 +1,7 @@
 // Carreira Relâmpago: modo rápido de pênaltis. Cada casa da carreira (Base, Auge, Último clube, G/A, Títulos) tem 5 bolas,
 // cobradas da esquerda para a direita. Nas casas de clube cada bola esconde um clube e vale a primeira que entrar
-// (nenhuma entrou: fica o mais fraco). Em G/A e Títulos cada bola esconde um prêmio sorteado (gols e assistências, ou um
+// (nenhuma entrou: fica o mais fraco). Fez o gol, o jogador pode ficar com o clube ou largá-lo e chutar a próxima bola
+// (largou e errou todas as que sobraram: fica o mais fraco). Em G/A e Títulos cada bola esconde um prêmio sorteado (gols e assistências, ou um
 // título) e você leva o de cada bola que entrar. Tudo sai de uma semente: quem recebe o link de desafio tem os mesmos
 // prêmios escondidos nas mesmas bolas.
 (function (root) {
@@ -19,11 +20,12 @@
     { key: 'base', name: 'Base' }, { key: 'auge', name: 'Auge' }, { key: 'ultimo', name: 'Último clube' },
     { key: 'ga', name: 'G/A' }, { key: 'tit', name: 'Títulos' },
   ];
-  S.RL_GRADES = [['S', 77], ['A', 63], ['B', 51], ['C', 40], ['D', 0]];
+  S.RL_GRADES = [['S', 85], ['A', 72], ['B', 60], ['C', 48], ['D', 0]];
   // Cobrança (kick.js): a mira acelera a cada casa; goleiro esperto acerta o lado 55% das vezes (no jogo normal, 38%)
+  // e lê o chute no meio (reads: fica parado e pega também a bola alta), então não há canto sempre livre além do ângulo
   S.RL_PERIOD = [1.7, 1.55, 1.4, 1.3, 1.2];
   S.RL_KEEPER = 0.55;
-  S.rlKickSetup = i => ({ fk: false, period: S.RL_PERIOD[i], wobble: 0.06, reach: 0.3, fkReach: 0, wall: 0, wallL: -0.8, wallR: -0.1 });
+  S.rlKickSetup = i => ({ fk: false, period: S.RL_PERIOD[i], wobble: 0.06, reach: 0.3, fkReach: 0, wall: 0, wallL: -0.8, wallR: -0.1, reads: true });
 
   // Clubes das três casas de clube, sorteados uma vez pela semente (sem repetir clube)
   let memo = null;
@@ -75,11 +77,12 @@
   const gaPrize = b => ({ gols: b.gols, ast: b.ast, ga: b.gols + b.ast, name: b.gols + ' gols + ' + b.ast + ' assistências', pts: r1pts((b.gols + b.ast) / GA_DIV) });
   const titPrize = (b, cl) => { const n = titleName(b.k, cl); return { items: [[n, b.q]], name: b.q + ' ' + n, pts: b.q * b.pts, kind: b.k }; };
 
-  // Casa i já jogada com estas cobranças (1 = gol, 0 = errou). Clube: a primeira bola que entrou (ou o mais fraco).
+  // Casa i já jogada com estas cobranças (1 = gol, 0 = errou, 2 = gol num clube que o jogador largou para chutar de novo).
+  // Clube: a primeira bola que entrou e ele ficou (ou o mais fraco).
   // G/A e Títulos: soma o prêmio de cada bola que entrou. done: a casa acabou (clube termina no primeiro gol; as outras, nas 5 bolas).
   // hidden(j): o prêmio que a bola j escondia.
   S.rlRound = function (seed, i, prev, kicks) {
-    const key = S.RL_SLOTS[i].key, goals = kicks.filter(k => k === 1).length, dr = clubDraw(seed);
+    const key = S.RL_SLOTS[i].key, goals = kicks.filter(k => k > 0).length, dr = clubDraw(seed);
     if (key === 'ga' || key === 'tit') {
       const auge = prev[1] ? D.CLUB_BY_ID[prev[1].id] : dr.auge[0];
       const balls = key === 'ga' ? dr.ga.map(gaPrize) : dr.tit.map(b => titPrize(b, auge));
@@ -97,7 +100,8 @@
     const clubs = slotClubs(seed, i, prev), perm = dr.perm[i];
     const at = kicks.indexOf(1);
     const cone = at >= 0 ? clubs[perm[at]] : clubs[4];
-    return { cone, goals, done: at >= 0 || kicks.length >= 5, ball: at, hidden: j => clubs[perm[j]] };
+    const left = kicks.map((k, j) => k === 2 ? clubs[perm[j]] : null).filter(Boolean); // clubes largados
+    return { cone, goals, done: at >= 0 || kicks.length >= 5, ball: at, left, hidden: j => clubs[perm[j]] };
   };
 
   // Carreira a partir da semente e das cobranças de cada casa (rounds: listas de 1/0)
@@ -107,8 +111,9 @@
       const r = S.rlRound(seed, i, prev, rounds[i]);
       if (!r.done) break;
       prev.push(r.cone);
+      const club = i < 3;
       slots.push({ key: S.RL_SLOTS[i].key, name: S.RL_SLOTS[i].name, cone: r.cone, goals: r.goals, kicks: rounds[i].length,
-        goal: r.goals > 0, pts: r.cone.pts, best: r.cone.rank === 0 || r.goals === 5 });
+        goal: club ? r.ball >= 0 : r.goals > 0, pts: r.cone.pts, best: club ? r.cone.rank === 0 : r.goals === 5, left: r.left || [] });
     }
     return slots;
   };
@@ -124,6 +129,30 @@
     const total = Math.round(slots.reduce((a, s) => a + s.pts, 0) + combos.reduce((a, c) => a + c.pts, 0));
     const grade = S.RL_GRADES.find(g => total >= g[1])[0];
     return { slots, combos, total, grade };
+  };
+  // O que escapou: em cada casa, o melhor prêmio escondido que o jogador não levou (clube melhor que o seu, ou a bola
+  // de G/A ou de título que ele errou), do que mais valia para o que menos valia
+  S.rlMissed = function (seed, rounds) {
+    const out = [], prev = [];
+    for (let i = 0; i < rounds.length && i < 5; i++) {
+      const r = S.rlRound(seed, i, prev, rounds[i]);
+      if (!r.done) break;
+      const name = S.RL_SLOTS[i].name;
+      if (i < 3) {
+        const top = slotClubs(seed, i, prev)[0], j = clubDraw(seed).perm[i].indexOf(0);
+        if (r.cone.rank !== 0) out.push({ slot: name, prize: top, ball: j + 1, pts: r1(top.pts - r.cone.pts) });
+      } else {
+        const miss = rounds[i].map((k, j) => k ? null : Object.assign({ ball: j + 1 }, r.hidden(j))).filter(Boolean).sort((a, b) => b.pts - a.pts)[0];
+        if (miss) out.push({ slot: name, prize: miss, ball: miss.ball, pts: miss.pts });
+      }
+      prev.push(r.cone);
+    }
+    return out.sort((a, b) => b.pts - a.pts);
+  };
+  // Pontos que faltaram para a nota seguinte (null na nota S)
+  S.rlNext = function (total) {
+    const k = S.RL_GRADES.findIndex(g => total >= g[1]);
+    return k > 0 ? { grade: S.RL_GRADES[k - 1][0], need: S.RL_GRADES[k - 1][1] - total } : null;
   };
   S.rlNewSeed = () => (Math.random() * 4294967295) >>> 0;
 })(typeof window !== 'undefined' ? window : globalThis);
