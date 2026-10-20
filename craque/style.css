@@ -2701,11 +2701,96 @@ button.mc-at.up { background: rgba(255, 255, 255, .42); }
 @media (max-width: 360px) { .choice.tr .d { font-size: 11px; } .choice.tr .ic .tw { width: 38px; height: 38px; } }
 
 /* ===== Estilo ousado: temporada ao vivo (O1) ===== */
-
+/* Topo com as cores do clube (--k1/--k2 vêm do escudo, ui/season.js) */
+#screen > .sx-head { position: relative; flex-direction: row; align-items: center; gap: 12px; padding: 14px 14px 10px; border-radius: 16px; overflow: hidden;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--k1) 34%, rgba(6, 14, 10, .6)), color-mix(in srgb, var(--k2) 26%, rgba(6, 14, 10, .6)));
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .08), 0 8px 22px rgba(0, 0, 0, .25); }
+.sx-head::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: linear-gradient(90deg, var(--k1) 0 50%, var(--k2) 50% 100%); }
+.sx-head .crest { width: 48px; height: 48px; margin: 0; flex: 0 0 auto; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .35)); }
+.season-head.sx-head > .sx-id { width: auto; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sx-head h2 { margin: 0; font: 800 26px/1 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; text-shadow: 0 2px 6px rgba(0, 0, 0, .35); }
+.sx-head .eyebrow { color: rgba(255, 255, 255, .78); font-size: 12px; letter-spacing: .1em; }
+.sx-head .tag { margin: 0; flex: 0 0 auto; align-self: center; }
+/* Faixa "ao vivo": ponto pulsando, rodada grande e barra de andamento */
+.sx-live { display: grid; grid-template-columns: auto 1fr auto; align-items: end; column-gap: 8px; row-gap: 6px; padding: 0 2px; }
+.sx-dot { width: 8px; height: 8px; border-radius: 4px; background: #FF5A5F; align-self: center; animation: sx-pulse 1.2s infinite; }
+@keyframes sx-pulse { 50% { opacity: .3; } }
+.sx-live > b { font: 700 13px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #D3E4D9; align-self: center; }
+.sx-rd { font: 800 15px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; color: #fff; white-space: nowrap; }
+.sx-rd b { font-size: 28px; font-variant-numeric: tabular-nums; margin-left: 4px; }
+.sx-rd small { font-size: 15px; color: rgba(255, 255, 255, .5); }
+.sx-prog { grid-column: 1 / -1; display: block; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.sx-prog > i { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--gold); }
+.sx-live.end .sx-dot { background: var(--gold); animation: none; }
+.sx-live.end > b { color: var(--gold); }
+.sx-live.end .sx-rd { font: 700 14px var(--body); letter-spacing: 0; text-transform: none; color: #D3E4D9; align-self: center; }
+.sx-live.end .sx-prog > i { width: 100% !important; }
+/* Carta à esquerda, veredito e contadores grandes ao lado */
+#screen > .s-hero { align-items: stretch; gap: 12px; }
+.s-hero .scard { width: 104px; height: auto; min-height: 134px; border-radius: 16px; flex: 0 0 auto; }
+.s-hero .scard b { font-size: 54px; }
+.sx-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.sx-side .s-verdict { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; min-height: 24px; }
+.sx-side .sv-lbl { font: 800 21px/1.05 var(--display); }
+.sx-side .sv-d { display: inline-flex; align-items: baseline; font: 800 28px/1 var(--display); }
+.sx-side .sv-d s { font: 700 17px var(--display); color: rgba(255, 255, 255, .45); margin-right: 6px; }
+.sx-side .sv-d small { font: 600 13px var(--body); color: #D3E4D9; margin-left: 6px; }
+#screen:has(> #after) .sx-side .counters { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; background: none; box-shadow: none; padding: 0; border-radius: 0; flex: 1; }
+#screen:has(> #after) .sx-side .counter { background: rgba(255, 255, 255, .07); box-shadow: none; border-radius: 12px; padding: 6px 2px 5px; display: flex; flex-direction: column; justify-content: center; }
+#screen:has(> #after) .sx-side .counter:nth-child(2) { background: rgba(242, 194, 48, .16); box-shadow: inset 0 0 0 1px rgba(242, 194, 48, .5); }
+#screen:has(> #after) .sx-side .counter:nth-child(2) b { color: var(--gold); }
+.sx-side .counter b { font: 800 30px/1 var(--display); }
+.sx-side .counter span { font: 600 12px/1.2 var(--body); }
+.s-hero .sc-inj { left: 2px; bottom: -24px; }
+#screen > .s-hero.hurt { margin-bottom: 16px; }
+/* Mini tabela: título da briga em cima, sua posição grande */
+.race .rc-rd { color: #D3E4D9; }
+.race .rc-pos { font-size: 32px; }
+.race.end .rc-pos { font-size: 44px; color: var(--gold); }
+/* Ticker dos lances do ano (só enquanto a temporada corre) */
+#screen > #feed { gap: 8px; max-height: 196px; overflow: hidden; }
+#screen > #feed:has(> .tk-i:nth-child(3)) { -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent); mask-image: linear-gradient(180deg, #000 70%, transparent); }
+#feed .tk-i { display: flex; align-items: center; gap: 8px; border-radius: 14px; padding: 10px 12px; background: rgba(255, 255, 255, .08); font: 500 14px/1.3 var(--body); animation: sx-tk .35s cubic-bezier(.2, 1.3, .4, 1); }
+#feed .tk-i:first-child { background: var(--paper); color: var(--ink); font-weight: 600; box-shadow: 0 3px 0 rgba(0, 0, 0, .3); }
+#feed .tk-i .tw { flex: 0 0 auto; }
+@keyframes sx-tk { from { opacity: 0; transform: translateY(-12px) scale(.96); } }
+@media (prefers-reduced-motion: reduce) { .sx-dot, #feed .tk-i { animation: none; } }
 /* ----- fim O1 ----- */
 
 /* ===== Estilo ousado: fim de temporada (O2) ===== */
-
+#screen > #after { gap: 12px; }
+/* Prêmio: faixa dourada; taça com troféu grande */
+#after .awards { gap: 8px; }
+#after .award:not(.ballon) { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 6px 12px; border-radius: 14px;
+  background: var(--gold); color: var(--ink); box-shadow: 0 4px 0 #A9861C; font: 800 19px/1.1 var(--display); text-align: center; }
+#after .title-won { border-radius: 16px; box-shadow: 0 4px 0 rgba(0, 0, 0, .25); }
+/* "O que falaram": jornal, resenha, lance e rival em carrossel horizontal */
+.sx-lbl { margin: 2px 0 -4px; font: 700 13px var(--display); letter-spacing: .14em; text-transform: uppercase; color: #D3E4D9; }
+#after > .story { flex-direction: row; align-items: stretch; gap: 10px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: 14px;
+  background: none; border-radius: 0; padding: 2px 14px 6px; margin: 0 -14px; scrollbar-width: none; }
+#after > .story::-webkit-scrollbar { display: none; }
+#after > .story > * { flex: 0 0 min(80%, 300px); scroll-snap-align: start; padding: 12px 14px !important; border-radius: 16px !important; border-top: 0 !important;
+  background: rgba(255, 255, 255, .08) !important; display: flex; flex-direction: column; gap: 6px; }
+#after > .story > :only-child { flex-basis: 100%; }
+#after > .story > .news:not(.resenha) { background: #F3EBD7 !important; color: #1F1A12 !important; box-shadow: 0 3px 0 rgba(0, 0, 0, .3); }
+#after > .story > .news:not(.resenha) .np { color: #6B5B3E; font: 700 11px var(--display); letter-spacing: .14em; text-transform: uppercase; }
+#after > .story > .news:not(.resenha) p { font: 700 19px/1.15 Georgia, 'Times New Roman', serif; color: #1F1A12; }
+#after > .story > .resenha { background: #1B1A17 !important; }
+#after > .story > .resenha .np { color: #F2C230; }
+#after > .story > .st-hl { flex-direction: row; align-items: center; gap: 10px; font: 600 15px/1.35 var(--body); color: #E8F1EA !important; }
+#after > .story > .rival-line p { font-size: 14px; line-height: 1.3; }
+#after > .story > .rival-line.hot { background: rgba(216, 64, 74, .18) !important; }
+/* Botões: seguir e postar lado a lado; despedida e parar embaixo; detalhes como link no fim */
+#after > .rv.s-acts { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 10px; align-items: stretch; }
+#after > .s-acts > * { grid-column: 1 / -1; margin: 0; }
+#after > .s-acts > #b-next, #after > .s-acts > #b-post { grid-column: auto; margin: 0; width: 100%; min-height: 58px; }
+#after > .s-acts > #b-post { padding: 6px 8px; font-size: 16px; line-height: 1.1; }
+#after > .s-acts > #b-post small { font-size: 10.5px; line-height: 1.2; margin-top: 2px; }
+#after > details.more { order: 1; background: none; padding: 0; text-align: center; }
+#after > details.more > summary { padding: 4px 0 8px; color: #D3E4D9; font: 600 15px var(--body); text-decoration: underline; text-underline-offset: 3px; }
+#after > details.more[open] { text-align: left; background: rgba(255, 255, 255, .06); padding: 4px 12px 12px; }
+#after > details.more[open] > summary { text-decoration: none; }
+#after > .pe-gain, #after > .star-line { line-height: 1.35; }
 /* ----- fim O2 ----- */
 
 /* ===== Estilo ousado: decisão (O3) ===== */
