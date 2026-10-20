@@ -424,7 +424,7 @@
       help.innerHTML = '&nbsp;';
       aim.setAttribute('opacity', '0');
       const x = dx * side; // no referencial da regra (barreira sempre "à esquerda")
-      // Goleiro do pênalti: acerta o lado 38% das vezes, erra 42%, fica no meio 20% (opts.keeperGuess: goleiro mais esperto)
+      // Goleiro do pênalti: acerta o lado 38% das vezes, erra 42%, fica no meio 20% (opts.keeperGuess: outra taxa de acerto)
       const kSide = setup.fk ? 0 : S().kickKeeper(setup, x, opts.keeperGuess || 0.38);
       if (setup.fk || kSide) keeper.classList.add('diving'); // estica os braços no pulo
       const res = S().kickResult(setup, x, y, kSide); // (a regra soma a subida do chute forte)
