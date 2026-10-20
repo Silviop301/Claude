@@ -2699,3 +2699,27 @@ button.mc-at.up { background: rgba(255, 255, 255, .42); }
 .inv-chip.full .price { color: #7BE3A0; text-transform: uppercase; }
 .inv-chip.bought, button.mc-at.bought { animation: mc-pop .35s ease; }
 @media (max-width: 360px) { .choice.tr .d { font-size: 11px; } .choice.tr .ic .tw { width: 38px; height: 38px; } }
+
+/* ===== Estilo ousado: temporada ao vivo (O1) ===== */
+
+/* ----- fim O1 ----- */
+
+/* ===== Estilo ousado: fim de temporada (O2) ===== */
+
+/* ----- fim O2 ----- */
+
+/* ===== Estilo ousado: decisão (O3) ===== */
+
+/* ----- fim O3 ----- */
+
+/* ===== Estilo ousado: janela de transferências (O4) ===== */
+
+/* ----- fim O4 ----- */
+
+/* ===== Estilo ousado: lance decisivo (O5) ===== */
+
+/* ----- fim O5 ----- */
+
+/* ===== Estilo ousado: fim de carreira (O6) ===== */
+
+/* ----- fim O6 ----- */
