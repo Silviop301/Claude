@@ -423,8 +423,7 @@
       aim.setAttribute('opacity', '0');
       const x = dx * side; // no referencial da regra (barreira sempre "à esquerda")
       // Goleiro do pênalti: acerta o lado 38% das vezes, erra 42%, fica no meio 20% (opts.keeperGuess: goleiro mais esperto)
-      const kr = Math.random(), bs = Math.sign(x) || (Math.random() < 0.5 ? -1 : 1), kg = opts.keeperGuess || 0.38;
-      const kSide = setup.fk ? 0 : kr < kg ? bs : kr < kg + (1 - kg) * 0.68 ? -bs : 0;
+      const kSide = setup.fk ? 0 : S().kickKeeper(setup, x, opts.keeperGuess || 0.38);
       if (setup.fk || kSide) keeper.classList.add('diving'); // estica os braços no pulo
       const res = S().kickResult(setup, x, y, kSide); // (a regra soma a subida do chute forte)
       // Para onde a bola vai no desenho
