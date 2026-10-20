@@ -34,6 +34,9 @@ function weakGPU(renderer) {
 function mount(el) {
   if (!el || el.dataset.on) return;
   el.dataset.on = '1';
+  // A bola desenhada (3D demorou a chegar) sai: o 3D toma o lugar dela
+  el.classList.remove('flat');
+  el.querySelectorAll('img').forEach(i => i.remove());
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches || weakGPU(renderer);
   renderer.setPixelRatio(DPR());
