@@ -19,12 +19,11 @@
     { key: 'base', name: 'Base' }, { key: 'auge', name: 'Auge' }, { key: 'ultimo', name: 'Último clube' },
     { key: 'ga', name: 'G/A' }, { key: 'tit', name: 'Títulos' },
   ];
-  S.RL_GRADES = [['S', 74], ['A', 60], ['B', 48], ['C', 37], ['D', 0]];
-  // Cobrança (kick.js): a mira acelera a cada casa; goleiro esperto acerta o lado 55% das vezes (no jogo normal, 38%)
-  // e lê o chute no meio (reads: fica parado e pega também a bola alta), então não há canto sempre livre além do ângulo
+  S.RL_GRADES = [['S', 81], ['A', 67], ['B', 55], ['C', 43], ['D', 0]];
+  // Cobrança (kick.js): a mira acelera a cada casa; o goleiro é o mesmo do modo carreira (acerta o lado 38% das vezes)
   S.RL_PERIOD = [1.7, 1.55, 1.4, 1.3, 1.2];
-  S.RL_KEEPER = 0.55;
-  S.rlKickSetup = i => ({ fk: false, period: S.RL_PERIOD[i], wobble: 0.06, reach: 0.3, fkReach: 0, wall: 0, wallL: -0.8, wallR: -0.1, reads: true });
+  S.RL_KEEPER = 0.38;
+  S.rlKickSetup = i => ({ fk: false, period: S.RL_PERIOD[i], wobble: 0.06, reach: 0.3, fkReach: 0, wall: 0, wallL: -0.8, wallR: -0.1 });
 
   // Clubes das três casas de clube, sorteados uma vez pela semente (sem repetir clube)
   let memo = null;

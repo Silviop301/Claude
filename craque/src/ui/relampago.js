@@ -81,7 +81,7 @@
         '<p>' + U.emo('👆', 'sm') + ' <b>Você escolhe qual bola chutar</b>, uma de cada vez.</p>' +
         '<p>' + U.emo('⚽', 'sm') + ' Nos clubes, cada bola esconde um time: vale <b>a primeira que entrar</b>. Errou as 5, fica o mais fraco.</p>' +
         '<p>' + U.emo('🏆', 'sm') + ' Em G/A e Títulos cada bola esconde gols e assistências ou um título. <b>Você leva o de cada bola que entrar</b>, e pode perder justo a da Bola de Ouro.</p>' +
-        '<p>' + U.emo('😤', 'sm') + ' O goleiro é <b>mais esperto</b> que no modo carreira: lê até a cavadinha. E a mira acelera a cada casa.</p>' +
+        '<p>' + U.emo('😤', 'sm') + ' A mira <b>acelera a cada casa</b>.</p>' +
       '</div>' +
       '<div class="field"><label for="rl-name">Seu nome no desafio</label><input id="rl-name" maxlength="20" autocomplete="nickname" placeholder="Ex.: Vitinho" value="' + esc(name) + '"></div>' +
       '<button class="btn" id="rl-start">' + (d ? 'Jogar o desafio' : 'Começar') + '</button>');
