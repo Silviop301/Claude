@@ -64,7 +64,8 @@
       const el = $('ball3d');
       if (!el || !U.cfg.fx3d) return flatBall();
       if (!window.CRAQUE_BALL) return;
-      el.classList.remove('flat'); el.innerHTML = '';
+      // Não apagar o conteúdo aqui: o módulo 3D pode já ter montado a bola neste elemento ao carregar
+      // (apagar tirava o canvas e, 6 s depois, entrava a bola desenhada no lugar da 3D)
       try { window.CRAQUE_BALL.mount(el); } catch (e) { flatBall(); }
     };
     if (window.CRAQUE_BALL || !U.cfg.fx3d) mountBall();
