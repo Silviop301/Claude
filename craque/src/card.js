@@ -158,6 +158,43 @@
     holografico: ['Holográfico', '#1A1030', false], ourorose: ['Ouro rosé', '#3A1A12', false], diamante: ['Diamante', '#0E2236', false],
   };
   root.CRAQUE_FINISH = FINISH;
+  // O acabamento fica no miolo e a borda continua no metal da faixa; a moldura sobe com a raridade do item (ui/items.js):
+  // raro = aro liso, épico = aro com friso gravado, lendário = aro arco-íris e friso dourado
+  const FIN_RK = { carbono: 'raro', marmore: 'raro', madeira: 'raro', neon: 'epico', aurora: 'epico', camuflado: 'epico', vitral: 'epico', holografico: 'lendario', ourorose: 'lendario', diamante: 'lendario' };
+  const FIN_IN = { raro: 18, epico: 20, lendario: 22 }; // largura do aro
+  const RK_COL = { raro: '#C9D1D8', epico: '#F2C230', lendario: '#B48CFF' }; // mesmas cores das raridades dos pacotinhos
+  const RK_N = { raro: 1, epico: 2, lendario: 3 };
+  // Texturas carregadas: placa de leitura atrás do nome e dos atributos (1 escura, 2 clara)
+  const FIN_PLACA = { camuflado: 1, vitral: 1, holografico: 2, diamante: 2 };
+  const RAINBOW = ['#ff6ec7', '#7afcff', '#fff38a', '#8affa1', '#b28dff', '#ff6ec7'];
+  // Escudo encolhido k px para dentro (miolo do acabamento)
+  function shieldIn(ctx, k) {
+    ctx.save(); ctx.translate(300, 441); ctx.scale((530 - 2 * k) / 530, (802 - 2 * k) / 802); ctx.translate(-300, -441); shield(ctx); ctx.restore();
+  }
+  // Moldura e miolo do acabamento: textura, placa de leitura, divisa entre aro e miolo e friso (no 3D o aro é o metal do modelo)
+  function finishInner(ctx, d, fin, img) {
+    const rk = FIN_RK[d.finish] || 'raro', k = FIN_IN[rk];
+    ctx.save(); shieldIn(ctx, k); ctx.clip();
+    if (img) ctx.drawImage(img, 0, -20, W, W * 1.5);
+    if (fin[3]) { const sc = ctx.createRadialGradient(W / 2, H * 0.5, 40, W / 2, H * 0.5, W * 0.7); sc.addColorStop(0, 'rgba(0,0,0,' + fin[3] + ')'); sc.addColorStop(1, 'rgba(0,0,0,' + fin[3] * 0.4 + ')'); ctx.fillStyle = sc; ctx.fillRect(0, 0, W, H); }
+    const pl = FIN_PLACA[d.finish];
+    if (pl) { ctx.fillStyle = pl === 1 ? 'rgba(6,10,16,.42)' : 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(78, 446, 444, 244, 26) : ctx.rect(78, 446, 444, 244); ctx.fill(); }
+    ctx.restore();
+    shieldIn(ctx, k); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.stroke();
+    if (rk !== 'raro') { shieldIn(ctx, k + 12); ctx.lineWidth = 2.5; ctx.strokeStyle = rk === 'lendario' ? '#FFE9A8' : 'rgba(255,255,255,.8)'; ctx.stroke(); }
+  }
+  // Plaquinha do rodapé: faixa · acabamento e um losango por nível de raridade
+  function finishPlate(ctx, fillText, label, d, fin, cy) {
+    const rk = FIN_RK[d.finish] || 'raro', n = RK_N[rk], txt = label + ' · ' + fin[0].toUpperCase();
+    ctx.font = '800 19px ' + DISPLAY;
+    const tw = Math.min(ctx.measureText(txt).width, 190), w = tw + 30 + n * 17, x = W / 2 - w / 2;
+    ctx.fillStyle = 'rgba(10,10,14,.62)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, cy - 15, w, 30, 15) : ctx.rect(x, cy - 15, w, 30); ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.stroke();
+    ctx.fillStyle = '#FFFFFF'; ctx.textAlign = 'left'; fillText(txt, x + 15, cy + 7, 190);
+    ctx.fillStyle = RK_COL[rk];
+    for (let i = 0; i < n; i++) { const px = x + 15 + tw + 14 + i * 17, py = cy; ctx.beginPath(); ctx.moveTo(px, py - 6); ctx.lineTo(px + 6, py); ctx.lineTo(px, py + 6); ctx.lineTo(px - 6, py); ctx.closePath(); ctx.fill(); }
+    ctx.textAlign = 'center';
+  }
   const finishOf = d => (!d.special && d.finish && FINISH[d.finish]) || null;
   async function fontReady(family) {
     try { if (typeof document !== 'undefined' && document.fonts && document.fonts.load) await document.fonts.load('80px ' + family, 'Aa'); } catch (e) { /* segue com a reserva */ }
@@ -300,16 +337,17 @@
     } catch (e) { /* segue */ }
     const traitImgs = await Promise.all((d.traits || []).map(t => twLoad(t.icon)));
     let T = d.special ? specialTheme(d) : themeOf(d.peak, d.grade);
+    const T0 = T; // metal da faixa: vira o aro quando há acabamento
     // bare: só o conteúdo (fundo transparente), para ir por cima do metal da carta 3D
     const fin = finishOf(d);
     if (fin) T = Object.assign({}, T, { ink: fin[1], line: fin[2] ? 'rgba(255,255,255,.45)' : 'rgba(20,20,20,.35)', holo: false });
-    const finImg = fin && !d.bare ? await loadImg('assets/cartas/ac-' + d.finish + '.jpg') : null;
+    const finImg = fin ? await loadImg('assets/cartas/ac-' + d.finish + '.jpg') : null;
     if (d.bare) T = Object.assign({}, T, { ink: d.ink || T.ink, line: d.line || T.line, holo: false });
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, W, H);
 
-    if (d.bare) { if (T.pattern) { ctx.save(); shield(ctx); ctx.clip(); drawPattern(ctx, T); ctx.restore(); } } else {
+    if (d.bare) { if (T.pattern) { ctx.save(); shield(ctx); ctx.clip(); drawPattern(ctx, T); ctx.restore(); } if (fin) finishInner(ctx, d, fin, finImg); } else {
     // Fundo metálico
     shield(ctx);
     const g = ctx.createLinearGradient(0, 40, W, H - 40);
@@ -317,25 +355,29 @@
     ctx.fillStyle = g; ctx.fill();
     ctx.save();
     shield(ctx); ctx.clip();
-    // Acabamento: a textura cobre a carta (768x1152 → 600x900, centrada)
-    if (finImg) {
-      ctx.drawImage(finImg, 0, -20, W, W * 1.5);
-      if (fin[3]) { const sc = ctx.createRadialGradient(W / 2, H * 0.5, 40, W / 2, H * 0.5, W * 0.7); sc.addColorStop(0, 'rgba(0,0,0,' + fin[3] + ')'); sc.addColorStop(1, 'rgba(0,0,0,' + fin[3] * 0.4 + ')'); ctx.fillStyle = sc; ctx.fillRect(0, 0, W, H); }
-    }
-    // Ícone: reflexo holográfico por cima do metal escuro
-    if (T.holo && ctx.createConicGradient) {
+    // Ícone: reflexo holográfico por cima do metal escuro (mais forte na faixa ícone, que é o topo)
+    if (T0.holo && ctx.createConicGradient) {
       const hg = ctx.createConicGradient(0.6, W * 0.7, H * 0.3);
-      ['#ff6ec7', '#7afcff', '#fff38a', '#8affa1', '#b28dff', '#ff6ec7'].forEach((col, i, a) => hg.addColorStop(i / (a.length - 1), col));
-      ctx.globalAlpha = 0.16; ctx.fillStyle = hg; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+      RAINBOW.forEach((col, i, a) => hg.addColorStop(i / (a.length - 1), col));
+      ctx.globalAlpha = T0 === THEMES.icone ? 0.26 : 0.16; ctx.fillStyle = hg; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
     }
     if (T.pattern) drawPattern(ctx, T);
     // Metal escovado: riscos finos quase horizontais (sempre iguais, sem sorteio)
-    for (let i = 0, y = 44; !finImg && y < H; i++, y += 2.2) {
+    for (let i = 0, y = 44; y < H; i++, y += 2.2) {
       const a = ((i * 37) % 11) / 11;
       ctx.strokeStyle = a > 0.5 ? 'rgba(255,255,255,' + (0.05 + a * 0.05) + ')' : 'rgba(0,0,0,' + (0.03 + a * 0.05) + ')';
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y + 6); ctx.stroke();
     }
+    // Acabamento lendário: aro arco-íris por cima do metal
+    if (fin && FIN_RK[d.finish] === 'lendario' && ctx.createConicGradient) {
+      const rg = ctx.createConicGradient(0.9, W / 2, H / 2);
+      RAINBOW.forEach((col, i, a) => rg.addColorStop(i / (a.length - 1), col));
+      ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = 0.55; ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    }
+    // Acabamento: a textura no miolo (768x1152 → 600x900, centrada), dentro do aro da faixa
+    if (fin) { ctx.restore(); ctx.save(); finishInner(ctx, d, fin, finImg); shield(ctx); ctx.clip(); }
     // Faixa de reflexo especular
     const sh = ctx.createLinearGradient(0, 0, W, H);
     sh.addColorStop(0.18, 'rgba(255,255,255,0)'); sh.addColorStop(0.3, 'rgba(255,255,255,0.42)');
@@ -346,10 +388,13 @@
     const bev = ctx.createLinearGradient(0, 40, W, H);
     bev.addColorStop(0, 'rgba(255,255,255,0.85)'); bev.addColorStop(0.5, 'rgba(255,255,255,0.15)'); bev.addColorStop(1, 'rgba(0,0,0,0.55)');
     shield(ctx); ctx.lineWidth = 8; ctx.strokeStyle = bev; ctx.stroke();
-    ctx.save();
-    ctx.translate(W / 2, H / 2); ctx.scale(0.955, 0.965); ctx.translate(-W / 2, -H / 2);
-    shield(ctx); ctx.lineWidth = 2.5; ctx.strokeStyle = T.line; ctx.stroke();
-    ctx.restore();
+    if (T0 === THEMES.icone) { shield(ctx); ctx.lineWidth = 3; ctx.strokeStyle = '#F4D675'; ctx.stroke(); }
+    if (!fin) {
+      ctx.save();
+      ctx.translate(W / 2, H / 2); ctx.scale(0.955, 0.965); ctx.translate(-W / 2, -H / 2);
+      shield(ctx); ctx.lineWidth = 2.5; ctx.strokeStyle = T.line; ctx.stroke();
+      ctx.restore();
+    }
     }
     // Texto em alto-relevo: sombra escura embaixo e luz em cima
     // Sutil: só 1 px de luz/sombra. Usa sempre o fillText original do canvas — redesenhar a carta
@@ -389,7 +434,7 @@
       const F = SIGN[d.sign];
       if (F) await fontReady(F.family);
       ctx.save(); shield(ctx); ctx.clip();
-      ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.font = '800 400px ' + DISPLAY; ctx.globalAlpha = F ? 0.14 : 0.24;
+      ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.font = '800 400px ' + DISPLAY; ctx.globalAlpha = (F ? 0.14 : 0.24) * (fin && FIN_PLACA[d.finish] ? 0.5 : 1);
       ctx.fillText(String(d.number || ({ ATA: 9, MEI: 10, ZAG: 4, GOL: 1 }[d.pos] || 10)), 382, 428); ctx.globalAlpha = 1;
       ctx.restore();
       if (F) signature(ctx, ink, emboss, String(d.name || '').trim() || 'Craque', F, 372, 262, 340, 200);
@@ -444,6 +489,17 @@
     const extra = [];
     if (d.ballon) extra.push(d.ballon + ' BOLA' + (d.ballon > 1 ? 'S' : '') + ' DE OURO');
     if (d.wc) extra.push(d.wc > 1 ? d.wc + ' COPAS DO MUNDO' : 'CAMPEÃO DO MUNDO');
+    if (fin) { // acabamento: números, conquistas e veredito em cima; a plaquinha com faixa · acabamento embaixo
+      ctx.font = '700 21px ' + BODY;
+      const ln = d.pos === 'GOL' ? (d.cs || 0) + ' SEM SOFRER GOL · ' + (d.penSaved || 0) + ' PÊN. DEF.'
+        : d.pos === 'ZAG' ? d.goals + ' GOLS · ' + (d.cs || 0) + ' SEM SOFRER GOL' : d.goals + ' GOLS · ' + d.assists + ' ASSIST';
+      ctx.fillText(ln + ' · ' + d.titles + ' TÍTULOS', W / 2, extra.length ? 724 : 734, 420);
+      if (extra.length) { ctx.font = '800 19px ' + BODY; ctx.fillText(extra.join(' · '), W / 2, 748, 390); }
+      ctx.font = '800 17px ' + DISPLAY; ctx.globalAlpha = 0.85;
+      ctx.fillText(d.verdict.toUpperCase(), W / 2, extra.length ? 769 : 760, 330); ctx.globalAlpha = 1;
+      embossOn = false; finishPlate(ctx, fillText, T0.label, d, fin, extra.length ? 795 : 789); embossOn = true;
+      return canvas;
+    }
     ctx.font = '700 21px ' + BODY;
     const line = d.pos === 'GOL' ? (d.cs || 0) + ' SEM SOFRER GOL · ' + (d.penSaved || 0) + ' PÊN. DEF.'
       : d.pos === 'ZAG' ? d.goals + ' GOLS · ' + (d.cs || 0) + ' SEM SOFRER GOL' : d.goals + ' GOLS · ' + d.assists + ' ASSIST';
@@ -509,7 +565,8 @@
     const k = d.special ? { tots: 'azul', heroi: 'vermelha', copa: 'verde', bola: 'dourada', chuteira: 'fogo', garcom: 'turquesa', muralha: 'aco', xerife: 'marinho', joia: 'rosa', lenda: 'onix', triplice: 'esmeralda', mundial: 'celeste', perfeita: 'arcoiris' }[d.special]
       : { bronze: 'bronze', prata: 'prata', ouro: 'dourada', icone: 'icone' }[Object.keys(THEMES).find(n => THEMES[n] === themeOf(d.peak, d.grade))];
     const fin = finishOf(d);
-    if (fin) return { metal: 'ac-' + d.finish, ink: fin[1], inkLight: fin[2], line: fin[2] ? 'rgba(255,255,255,.45)' : 'rgba(20,30,10,.35)' };
+    // Acabamento: o metal do modelo é o da faixa (vira o aro) e a textura vem no conteúdo; lendário reflete arco-íris
+    if (fin) return { metal: k, ink: fin[1], inkLight: fin[2], line: fin[2] ? 'rgba(255,255,255,.45)' : 'rgba(20,30,10,.35)', iri: FIN_RK[d.finish] === 'lendario' };
     const ink = { azul: ['#FFFFFF', true], vermelha: ['#FFF4E6', true], verde: ['#06220F', false], dourada: ['#231800', false],
       bronze: ['#2A1505', false], prata: ['#141C26', false], icone: ['#F4D675', true],
       fogo: ['#FFF1C2', true], turquesa: ['#FFFFFF', true], aco: ['#F2F6FA', true], marinho: ['#E6ECF7', true], rosa: ['#FFF0F7', true], onix: ['#F4D675', true],
