@@ -277,8 +277,9 @@
     return { jump() { if (!jumpAt) jumpAt = performance.now(); } };
   }
   // Bola 3D por cima do desenho (se o 3D não carregar ou estiver desligado, fica a bola desenhada).
-  // Devolve place(x, y, r, spin) e dispose(); vale para todos os minigames.
-  function ball3d(stage, ballEl, w, h) {
+  // Devolve place(x, y, r, spin) e dispose(); vale para todos os minigames. extra: bolas paradas [elemento, x, y, r]
+  // que também viram 3D (a fila da Carreira Relâmpago)
+  function ball3d(stage, ballEl, w, h, extra) {
     let fly = null, gone = false, last = null;
     if (root.CRAQUE_BALL && root.CRAQUE_BALL.flyer && !(root.CLIMBIX_CFG && root.CLIMBIX_CFG.fx3d === false)) {
       root.CRAQUE_BALL.flyer(stage, w || 360, h || 320).then(f => {
@@ -286,6 +287,7 @@
         if (gone) return f.dispose();
         fly = f;
         ballEl.style.opacity = '0';
+        if (f.add) (extra || []).forEach(([el, x, y, r]) => { f.add(x, y, r); el.style.opacity = '0'; });
         if (last) f.set(last[0], last[1], last[2], 0);
       });
     }
@@ -328,7 +330,7 @@
     const aim = svg.querySelector('#k-aim'), vline = svg.querySelector('#k-vline'), hline = svg.querySelector('#k-hline'), dot = svg.querySelector('#k-dot');
     const shadow = svg.querySelector('#k-shadow'), trail = Array.from(svg.querySelectorAll('#k-trail circle'));
     const stage = el.querySelector('.kick-stage');
-    (opts.extraBalls || []).forEach(x => { const b = ball.cloneNode(true); b.removeAttribute('id'); setBall(b, x, BALL.y, BALL.r); ball.parentNode.insertBefore(b, ball); });
+    const extra = (opts.extraBalls || []).map(x => { const b = ball.cloneNode(true); b.removeAttribute('id'); setBall(b, x, BALL.y, BALL.r); ball.parentNode.insertBefore(b, ball); return [b, x, BALL.y, BALL.r]; });
     // Câmera e efeitos (cine.js); a bola 3D vai junto com a cena, dentro da camada da câmera
     const cine = root.CRAQUE_CINE ? root.CRAQUE_CINE(stage) : null, on = cine && cine.enabled;
     // Você, de costas, atrás da bola (só com a câmera nova)
@@ -348,7 +350,7 @@
     const spr = keeperSprite(svg);
     spr.stand(setup.fk ? px(0.4 * side) : GX); spr.idle();
     const wallAnim = animateWall(svg, c);
-    const b3 = ball3d(on ? stage.querySelector('.k-cam') : stage, ball);
+    const b3 = ball3d(on ? stage.querySelector('.k-cam') : stage, ball, 0, 0, extra);
     const place = b3.place;
     const finish = (ok, why) => { gone = true; BALL.x = 180; b3.dispose(); if (goal) goal.dispose(); if (cine) cine.dispose(); opts.onDone(ok, why); };
     place(BALL.x, BALL.y, BALL.r);

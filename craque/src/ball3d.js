@@ -34,6 +34,9 @@ function weakGPU(renderer) {
 function mount(el) {
   if (!el || el.dataset.on) return;
   el.dataset.on = '1';
+  // A bola desenhada (3D demorou a chegar) sai: o 3D toma o lugar dela
+  el.classList.remove('flat');
+  el.querySelectorAll('img').forEach(i => i.remove());
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches || weakGPU(renderer);
   renderer.setPixelRatio(DPR());
@@ -132,10 +135,42 @@ function flyer(host, w, h) {
         if (spin) { ball.rotation.x -= spin; ball.rotation.y += spin * 0.35; }
         renderer.render(scene, cam);
       },
+      // Bola parada na mesma cena (as que esperam na fila da Carreira Relâmpago)
+      add(x, y, r) {
+        const b = m.clone();
+        b.rotation.set(0.4 + Math.random() * 2, 0.8 + Math.random() * 2, 0);
+        b.position.set(x, -y, 0);
+        b.scale.setScalar(s0 * (2 * r) / diam);
+        scene.add(b);
+      },
       dispose() { renderer.dispose(); cv.remove(); removeEventListener('resize', fit); },
     };
     addEventListener('resize', fit);
     return api;
+  }).catch(() => null);
+}
+
+// Foto da bola 3D (PNG transparente, guardada) para usar como imagem fora do minigame: as bolas para escolher na
+// Carreira Relâmpago
+let shot = null;
+function snapshot() {
+  return shot = shot || modelReady.then(m => {
+    const S = 128, renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
+    renderer.setSize(S, S, false);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, -100, 100), scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x1c5a3c, 1.7));
+    const sun = new THREE.DirectionalLight(0xfff1c9, 2.4);
+    sun.position.set(-2, 3, 4);
+    scene.add(sun);
+    const ball = m.clone();
+    ball.scale.setScalar(ball.scale.x * 1.9 / (3.0 / Math.sqrt(3)));
+    ball.rotation.set(0.4, 0.8, 0);
+    scene.add(ball);
+    renderer.render(scene, cam);
+    const url = renderer.domElement.toDataURL('image/png');
+    renderer.dispose();
+    return url;
   }).catch(() => null);
 }
 
@@ -616,7 +651,7 @@ function newspaper(host, page, onClose) {
   return true;
 }
 
-window.CRAQUE_BALL = { mount, flyer, goal, card3d, newspaper };
+window.CRAQUE_BALL = { mount, flyer, goal, card3d, newspaper, snapshot };
 // Este módulo carrega depois da tela aparecer: monta a bola se a tela inicial estiver aberta (e o 3D ligado)
 if (!window.CLIMBIX_CFG || window.CLIMBIX_CFG.fx3d !== false) mount(document.getElementById('ball3d'));
 window.dispatchEvent(new Event('craque-ball-ready'));

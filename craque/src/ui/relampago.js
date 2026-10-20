@@ -9,19 +9,30 @@
 
   const b64 = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const unb64 = s => decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/'))));
-  // n: nome, s: semente, p: cobranças de cada casa (1 = gol, 0 = errou, 2 = gol num clube largado), casas separadas por '-'
-  const encode = r => b64(JSON.stringify({ n: String(r.name).slice(0, 20), s: r.seed, p: r.rounds.map(k => k.join('')).join('-') }));
+  // n: nome, s: semente, v: 2, p: cobranças de cada casa na ordem em que saíram, cada uma com a bola (0 a 4) e 1 = gol / 0 = errou
+  // ('3041' = bola 4 errou, bola 5 gol), casas separadas por '-'. Sem v (links antigos): bolas da esquerda para a direita, '1'/'0'
+  const encode = r => b64(JSON.stringify({ n: String(r.name).slice(0, 20), s: r.seed, v: 2, p: r.rounds.map(k => k.map(x => x[0] + '' + x[1]).join('')).join('-') }));
+  const legacy = p => p.map(ks => ks.map((v, j) => Array.isArray(v) ? v : [j, v === 1 || v === 2 ? 1 : 0]));
   function decode(q) {
     try {
       const d = JSON.parse(unb64(String(q).slice(0, 300)));
-      if (!d || !/^([012]{1,5}-){3}[01]{5}-[01]{5}$/.test(String(d.p)) || !(d.s >= 0 && d.s <= 4294967295)) return null;
-      const p = String(d.p).split('-').map(k => k.split('').map(Number));
+      if (!d || !(d.s >= 0 && d.s <= 4294967295)) return null;
+      let p;
+      if (d.v === 2) {
+        if (!/^([0-4][01]){1,5}(-([0-4][01]){1,5}){4}$/.test(String(d.p))) return null;
+        p = String(d.p).split('-').map(k => k.match(/../g).map(x => [+x[0], +x[1]]));
+        if (p.some(ks => new Set(ks.map(x => x[0])).size !== ks.length)) return null; // a mesma bola duas vezes
+      } else {
+        if (!/^[012]{1,5}(-[012]{1,5}){4}$/.test(String(d.p))) return null;
+        p = legacy(String(d.p).split('-').map(k => k.split('').map(Number)));
+      }
       if (S.rlCareer(d.s >>> 0, p).length !== 5) return null;
       return { n: String(d.n || 'Alguém').slice(0, 20), s: d.s >>> 0, p };
     } catch (e) { return null; }
   }
   const base = () => (window.CLIMBIX_HOME || location.origin + location.pathname.replace(/index\.html$/, ''));
-  const active = () => { const d = load(KEY); return d && !d.done && Array.isArray(d.p) && Array.isArray(d.p[0]) ? d : null; }; // desafio no formato antigo é ignorado
+  // Desafio guardado (o formato de antes da escolha da bola vira [bola, gol]; o mais antigo, sem casas, é ignorado)
+  const active = () => { const d = load(KEY); return d && !d.done && Array.isArray(d.p) && Array.isArray(d.p[0]) ? Object.assign(d, { p: legacy(d.p) }) : null; };
   const trophyImg = (name, s) => U.trophy(name === 'Bola de Ouro' ? 'ballon' : /Libertadores/.test(name) ? 'lib' : /Campeões/.test(name) ? 'ucl' : /Copa do Mundo/.test(name) ? 'wc' : 'league', s, name);
 
   // Sementes já jogadas neste aparelho (as suas e os desafios): o mesmo desafio não abre de novo, porque quem jogou
@@ -67,7 +78,8 @@
       (d ? '<div class="card dz-res rl-vs-top">' + U.emo('🎯', 'md') + '<div><small>Desafio de ' + esc(d.n) + '</small><b>' + S.rlScore(d.s, d.p).total + ' pontos pra bater</b><span>Os prêmios escondidos são os mesmos que ' + esc(d.n) + ' teve. Uma chance só.</span></div></div>' : '') +
       '<div class="card rl-rules">' +
         '<p><b>5 casas montam a carreira:</b> Base, Auge, Último clube, G/A e Títulos. Cada casa tem <b>5 bolas</b>.</p>' +
-        '<p>' + U.emo('⚽', 'sm') + ' Nos clubes, cada bola esconde um time. Fez o gol, <b>fica com ele ou larga e chuta a próxima</b>. Errou todas, fica o mais fraco.</p>' +
+        '<p>' + U.emo('👆', 'sm') + ' <b>Você escolhe qual bola chutar</b>, uma de cada vez.</p>' +
+        '<p>' + U.emo('⚽', 'sm') + ' Nos clubes, cada bola esconde um time: vale <b>a primeira que entrar</b>. Errou as 5, fica o mais fraco.</p>' +
         '<p>' + U.emo('🏆', 'sm') + ' Em G/A e Títulos cada bola esconde gols e assistências ou um título. <b>Você leva o de cada bola que entrar</b>, e pode perder justo a da Bola de Ouro.</p>' +
         '<p>' + U.emo('😤', 'sm') + ' O goleiro é <b>mais esperto</b> que no modo carreira: lê até a cavadinha. E a mira acelera a cada casa.</p>' +
       '</div>' +
@@ -126,42 +138,42 @@
     }
     return n - 1;
   }
-  const dots = kicks => '<span class="rl-dots">' + [0, 1, 2, 3, 4].map(j => '<i class="' + (kicks[j] === 1 ? 'g' : kicks[j] === 2 ? 'g l' : kicks[j] === 0 ? 'x' : '') + '"></i>').join('') + '</span>';
+  // Situação de cada bola, da esquerda para a direita: 1 gol, 0 errou, undefined ainda não chutada
+  const stateOf = (kicks, j) => { const x = kicks.find(k => k[0] === j); return x ? x[1] : undefined; };
+  const dots = kicks => '<span class="rl-dots">' + [0, 1, 2, 3, 4].map(j => { const v = stateOf(kicks, j); return '<i class="' + (v === 1 ? 'g' : v === 0 ? 'x' : '') + '"></i>'; }).join('') + '</span>';
 
   function play() {
     const i = current();
     if (i >= 5) return result();
     const sl = S.RL_SLOTS[i], kicks = run.rounds[i], k = kicks.length;
-    const rule = i < 3 ? 'Fez o gol: fica com o clube ou chuta de novo' : 'Você leva o prêmio de cada bola que entrar';
-    render('<div class="rl-head"><div class="eyebrow">Casa ' + (i + 1) + ' de 5 · bola ' + (k + 1) + ' de 5</div><h2>' + sl.name + '</h2>' +
+    const rule = i < 3 ? 'Vale o clube da primeira bola que entrar' : 'Você leva o prêmio de cada bola que entrar';
+    render('<div class="rl-head"><div class="eyebrow">Casa ' + (i + 1) + ' de 5 · cobrança ' + (k + 1) + ' de 5</div><h2>' + sl.name + '</h2>' +
       '<div class="rl-rule"><span>' + rule + '</span>' + dots(kicks) + '</div></div>' + boardHtml(i) +
+      '<div class="card rl-pick" id="rl-pick"><small>Escolha a bola</small><div class="rl-balls">' + [0, 1, 2, 3, 4].map(j => {
+        const v = stateOf(kicks, j);
+        return '<button class="rl-ball' + (v === 1 ? ' g' : v === 0 ? ' x' : '') + '" data-b="' + j + '"' + (v === undefined ? '' : ' disabled') + ' aria-label="Bola ' + (j + 1) + '">' +
+          U.emo('⚽', 'md') + '<i>' + (j + 1) + '</i></button>';
+      }).join('') + '</div></div>' +
       '<div id="rl-kick"></div><div class="card rl-reveal" id="rl-reveal" hidden></div>');
-    window.CRAQUE_KICK($('rl-kick'), { c: kicker(), moment: { type: 'cup' }, setup: S.rlKickSetup(i), keeperGuess: S.RL_KEEPER,
-      ballX: BX[k], extraBalls: BX.slice(k + 1), onDone: ok => {
-        // Gol num clube com bolas sobrando: o jogador decide antes de a casa fechar
-        if (ok && i < 3 && k < 4) return choose(i);
-        kicks.push(ok ? 1 : 0); reveal(i, ok);
-      } });
+    document.querySelectorAll('.rl-ball:not([disabled])').forEach(b => { b.onclick = () => kick(i, +b.dataset.b); });
+    // Bola 3D no lugar do emoji (se o 3D estiver ligado e carregar)
+    const B = window.CRAQUE_BALL;
+    if (B && B.snapshot && !(window.CLIMBIX_CFG && window.CLIMBIX_CFG.fx3d === false)) B.snapshot().then(url => {
+      if (url) document.querySelectorAll('.rl-ball').forEach(b => { const e = b.querySelector('.tw'); if (e) e.outerHTML = '<img class="rl-b3" src="' + url + '" alt="">'; });
+    });
   }
 
-  // Gol num clube: ficar com ele ou largar e chutar a próxima bola (se errar todas as que sobram, fica o mais fraco)
-  function choose(i) {
-    const kicks = run.rounds[i], k = kicks.length, box = $('rl-reveal');
-    if (!box) return;
-    const cl = S.rlRound(run.seed, i, prevOf(i), kicks.concat(1)).cone, left = 4 - k;
-    $('rl-kick').hidden = true;
-    box.hidden = false;
-    box.className = 'card rl-reveal ok';
-    box.innerHTML = '<small>Gol! Essa bola tinha</small><div class="rl-prize">' + prize(cl) + '</div><b class="rl-pts">+' + String(cl.pts).replace('.', ',') + ' pts</b>' +
-      '<button class="btn" id="rl-keep">Ficar com ' + esc(cl.name) + '</button>' +
-      '<button class="btn ghost" id="rl-again-k">Chutar de novo<small>Larga esse clube. Sobra' + (left > 1 ? 'm ' + left + ' bolas' : ' 1 bola') + '; se errar, fica o mais fraco</small></button>';
-    sfx('goal');
-    $('rl-keep').onclick = () => { kicks.push(1); reveal(i, true, true); };
-    $('rl-again-k').onclick = () => { kicks.push(2); play(); };
+  // Cobra a bola b: ela vai para a marca e as outras que ainda não saíram ficam na fila
+  function kick(i, b) {
+    const kicks = run.rounds[i], pick = $('rl-pick');
+    if (pick) pick.remove();
+    const others = [0, 1, 2, 3, 4].filter(j => j !== b && stateOf(kicks, j) === undefined).map(j => BX[j]);
+    window.CRAQUE_KICK($('rl-kick'), { c: kicker(), moment: { type: 'cup' }, setup: S.rlKickSetup(i), keeperGuess: S.RL_KEEPER,
+      ballX: BX[b], extraBalls: others, onDone: ok => { kicks.push([b, ok ? 1 : 0]); reveal(i, ok); } });
   }
 
   // Depois de cada cobrança: o que a bola valia; quando a casa acaba, o prêmio e os pontos
-  function reveal(i, ok, kept) {
+  function reveal(i, ok) {
     const kicks = run.rounds[i], r = S.rlRound(run.seed, i, prevOf(i), kicks), box = $('rl-reveal');
     if (!box) return;
     const k = $('rl-kick'); if (k) k.hidden = true;
@@ -169,29 +181,28 @@
     const club = i < 3;
     let msg, shown = r.cone;
     if (club) {
-      if (ok) msg = kept ? 'Fechado! Esse é o seu clube' : 'Gol! Esse é o seu clube';
+      if (ok) msg = 'Gol! Esse é o seu clube';
       else if (r.done) msg = 'Nenhuma entrou. Sobrou';
-      else { msg = 'Errou. Essa bola era'; shown = r.hidden(kicks.length - 1); }
-    } else { msg = ok ? 'Gol! Você levou' : 'Errou. Essa bola tinha'; shown = r.hidden(kicks.length - 1); }
+      else { msg = 'Errou. Essa bola era'; shown = r.hidden(kicks[kicks.length - 1][0]); }
+    } else { msg = ok ? 'Gol! Você levou' : 'Errou. Essa bola tinha'; shown = r.hidden(kicks[kicks.length - 1][0]); }
     box.hidden = false;
     box.className = 'card rl-reveal ' + (ok ? 'ok' : 'ko') + (!ok && !(club && r.done) ? ' lost' : '');
     box.innerHTML = '<small>' + msg + '</small>' +
       '<div class="rl-prize">' + prize(shown) + '</div>' + (!club && r.done ? '<div class="rl-sum"><small>Total da casa</small>' + esc(r.cone.name) + '</div>' : '') + (r.done ? '<b class="rl-pts">+' + String(r.cone.pts).replace('.', ',') + ' pts</b>' : '') +
-      (club && ok && kicks.length < 5 ? rest(r, kicks.length) : '') +
+      (club && ok && kicks.length < 5 ? rest(r, kicks) : '') +
       '<button class="btn" id="rl-next">' + (!r.done ? 'Próxima bola' : i < 4 ? 'Próxima casa' : 'Ver a carreira') + '</button>';
     if (r.done) { const board = document.querySelector('.rl-board'); if (board) board.outerHTML = boardHtml(i); }
-    if (!kept) sfx(ok ? 'goal' : 'kick');
+    sfx(ok ? 'goal' : 'kick');
     $('rl-next').onclick = play;
   }
 
   // As bolas que ficaram sem chutar: o que cada uma escondia
-  const rest = (r, from) => '<div class="rl-rest"><small>As outras bolas tinham</small><span>' +
-    [0, 1, 2, 3, 4].slice(from).map(j => { const c = r.hidden(j); return '<i title="' + esc(c.name) + '">' + crest(c.id, 'xs') + '<em>' + esc(c.name) + '</em></i>'; }).join('') + '</span></div>';
+  const rest = (r, kicks) => '<div class="rl-rest"><small>As outras bolas tinham</small><span>' +
+    [0, 1, 2, 3, 4].filter(j => stateOf(kicks, j) === undefined).map(j => { const c = r.hidden(j); return '<i title="' + esc(c.name) + '">' + crest(c.id, 'xs') + '<em>' + esc(c.name) + '</em></i>'; }).join('') + '</span></div>';
 
   // ---------- resultado ----------
   function rows(f) {
-    return f.slots.map(s => '<div class="rl-row' + (s.best ? ' best' : s.goal ? '' : ' out') + '"><small>' + s.name + '</small><span class="rl-val">' + coneVal(s.cone) + '</span><b><i>' + how(s) + '</i> +' + Math.round(s.pts) + '</b>' +
-      (s.left.length ? '<span class="rl-lft">Largou ' + s.left.map(c => esc(c.name)).join(', ') + '</span>' : '') + '</div>').join('');
+    return f.slots.map(s => '<div class="rl-row' + (s.best ? ' best' : s.goal ? '' : ' out') + '"><small>' + s.name + '</small><span class="rl-val">' + coneVal(s.cone) + '</span><b><i>' + how(s) + '</i> +' + Math.round(s.pts) + '</b></div>').join('');
   }
   const how = s => s.cone.id ? (s.goal ? 'gol na ' + s.kicks + 'ª' : 'nenhuma entrou') : s.goals + ' de 5';
   function coneVal(c) {
