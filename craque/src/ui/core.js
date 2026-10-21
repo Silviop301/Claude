@@ -57,7 +57,7 @@
   }
 
   // ---------- cor do clube ----------
-  // O topo da tela ganha a cor da camisa do clube atual e o escudo grande e apagado ao fundo
+  // Fundo atrás da tela: só na Copa do Mundo (cores da bandeira); no clube fica limpo, sem escudo apagado
   let bgClub = undefined;
   // cols: na Copa do Mundo o fundo usa as cores da bandeira (ui/worldcup.js, natBg) no lugar do escudo do clube
   function clubBg(id, cols) {
@@ -67,10 +67,7 @@
     if (!el) { el = document.createElement('div'); el.id = 'club-bg'; el.setAttribute('aria-hidden', 'true'); document.body.prepend(el); }
     if (!id) { el.className = ''; return; }
     if (cols) { cols.forEach((x, i) => el.style.setProperty('--n' + (i + 1), x)); el.innerHTML = ''; el.className = 'on nat'; return; }
-    const kit = (window.CRAQUE_KITS || {})[id] || ['#1F6B3E', '#0B1F14'];
-    el.style.setProperty('--kit', kit[0]);
-    el.innerHTML = '<img src="' + BADGES + id + '.png" alt="" onerror="this.remove()">';
-    el.className = 'on';
+    el.innerHTML = ''; el.className = '';
   }
   // Balão com o nome do medidor tocado
   function barTip(m) {
