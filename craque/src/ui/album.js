@@ -80,7 +80,7 @@
       }
       wrap.innerHTML = prog + '<button class="al-x" aria-label="Fechar">✕</button>' + body;
       const cv = wrap.querySelector('canvas');
-      if (fr.kind === 'season') window.CRAQUE_CARD(cv, U.cardData(c, { ovr: fr.s.ovr1, attrs: attrsOf(c, fr.s), club: fr.s.club, age: fr.s.age }));
+      if (fr.kind === 'season') window.CRAQUE_CARD(cv, U.cardData(c, { ovr: fr.s.ovr1, attrs: attrsOf(c, fr.s), club: fr.s.club, age: fr.s.age, season: true, traits: fr.s.traits }));
       else if (fr.kind === 'special') window.CRAQUE_CARD(cv, U.cardData(c, fr.card));
       else window.CRAQUE_CARD(cv, finalCard);
       wrap.querySelector('.al-x').onclick = e => { e.stopPropagation(); close(); };

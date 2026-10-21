@@ -122,12 +122,31 @@
       const t0 = performance.now(), T = Math.min(900, 300 + 25 * Math.abs(z - a));
       b.parentNode.classList.add('tot-up');
       setTimeout(() => b.parentNode && b.parentNode.classList.remove('tot-up'), T + 700);
+      if (prev.live && k < 2) return; // já contou junto com a temporada ao vivo (barLive): só o brilho
       (function step(now) {
         if (!b.isConnected) return;
         const u = Math.min(1, (now - t0) / T), e = 1 - Math.pow(1 - u, 3);
         b.textContent = Math.round(a + (z - a) * e);
         if (u < 1) requestAnimationFrame(step);
       })(t0);
+    });
+  }
+  // Números do topo por posição: goleiro (sem sofrer gol, pênaltis defendidos), zagueiro (gols, sem sofrer gol)
+  function totOf(c) {
+    const T = c.totals;
+    return c.pos === 'GOL' ? [[T.cs || 0, 'S/ GOL'], [T.penSaved || 0, 'PÊN. DEF']]
+      : c.pos === 'ZAG' ? [[T.goals, 'GOLS'], [T.cs || 0, 'S/ GOL']] : [[T.goals, 'GOLS'], [T.assists, 'ASSIST']];
+  }
+  // Temporada ao vivo: gols e assistências do topo sobem junto com o quadro (e = 0…1). As taças só no fim,
+  // para não entregar o título antes da hora. No bar() seguinte, o totCount só faz o brilho.
+  function barLive(e) {
+    const id = G.c && (G.c.uid || G.c.name), el = $('bar-tot');
+    if (!lastTot || lastTot.id !== id || !el) return;
+    const z = totOf(G.c).map(([v]) => v);
+    lastTot.live = true;
+    [...el.querySelectorAll('b')].slice(0, 2).forEach((b, k) => {
+      const a = lastTot.v[k];
+      if (a != null && a !== z[k]) b.textContent = Math.round(a + (z[k] - a) * e);
     });
   }
   function bar() {
@@ -157,10 +176,7 @@
       });
     };
     $('b-snd').onclick = e => { e.stopPropagation(); window.CRAQUE_UI.settings(); };
-    const T = G.c.totals;
-    // Números do topo por posição: goleiro (sem sofrer gol, pênaltis defendidos), zagueiro (gols, sem sofrer gol)
-    const tot = G.c.pos === 'GOL' ? [[T.cs || 0, 'S/ GOL'], [T.penSaved || 0, 'PÊN. DEF']]
-      : G.c.pos === 'ZAG' ? [[T.goals, 'GOLS'], [T.cs || 0, 'S/ GOL']] : [[T.goals, 'GOLS'], [T.assists, 'ASSIST']];
+    const T = G.c.totals, tot = totOf(G.c);
     const totV = tot.map(([v]) => v).concat(S.titleCount(T));
     $('bar-tot').innerHTML = tot.map(([v, l]) => '<span><b>' + v + '</b><small>' + l + '</small></span>').join('') + '<span><b>' + totV[2] + '</b><small>TAÇAS</small></span>';
     totCount(totV);
@@ -265,5 +281,5 @@
   const tierCls = o => (o >= 85 ? 'icone' : o >= 75 ? 'ouro' : o >= 65 ? 'prata' : 'bronze');
   const TIER_NAME = { bronze: 'Bronze', prata: 'Prata', ouro: 'Ouro', icone: 'Ícone' };
 
-  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar };
+  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive };
 })();

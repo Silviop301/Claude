@@ -1,5 +1,6 @@
-// Interface — dicas da primeira experiência: um cartão curto no topo da tela, na primeira vez que cada momento aparece.
-// "Entendi" fecha aquela dica; "Pular dicas" desliga todas. Depois de aparecer 3 vezes sem resposta, a dica não volta.
+// Interface — dicas da primeira experiência: uma linha recolhida depois do conteúdo, logo acima do botão de ação,
+// na primeira vez que cada momento aparece (só uma vez por tipo). Tocar abre o texto; "Entendi" fecha aquela dica;
+// "Pular dicas" desliga todas.
 // Configurações: "Mostrar as dicas de novo" zera tudo.
 (function () {
   const U = window.CRAQUE_UI;
@@ -15,20 +16,22 @@
     janela: ['Janela de transferências', 'Compare o papel no elenco (titular joga mais) e o salário. Ficar também é uma opção, e trocar de clube muda a torcida que te apoia.'],
     fim: ['Sua carta final', 'Escolha a assinatura, o acabamento e o estilo da carta e compartilhe com os amigos. Os pacotinhos liberam números, visuais, assinaturas e acabamentos novos.'],
   };
-  // Mostra a dica no topo da tela atual (chamar logo depois do render)
+  // Onde a dica entra: antes do botão de ação de cada tela (sem âncora, no fim da tela, depois das opções)
+  const BEFORE = { base: '.off-tools', janela: '.off-tools', pre: '.inv-bar', lance: '.ob5-foot', resumo: '.s-acts', fim: '.o6-acts, .fin-acts' };
+  // Mostra a dica na tela atual (chamar logo depois do render)
   function tip(key) {
     const s = st(), t = TIPS[key], screen = $('screen');
-    if (!t || !screen || s.off || (s.n[key] || 0) >= 3) return;
+    if (!t || !screen || s.off || (s.n[key] || 0) >= 1) return;
     s.n[key] = (s.n[key] || 0) + 1; store(KEY, s);
-    const el = document.createElement('div');
+    const el = document.createElement('details');
     el.className = 'tip-card';
-    el.setAttribute('role', 'note');
-    el.innerHTML = '<span class="tip-ic">' + U.emo('💡', 'sm') + '</span><div><b>' + esc(t[0]) + '</b><p>' + esc(t[1]) + '</p>' +
-      '<div class="tip-acts"><button class="tip-ok">Entendi</button><button class="tip-off">Pular dicas</button></div></div>';
-    el.querySelector('.tip-ok').onclick = () => { const s2 = st(); s2.n[key] = 3; store(KEY, s2); el.remove(); };
+    el.dataset.k = key;
+    el.innerHTML = '<summary><span class="tip-ic">' + U.emo('💡', 'sm') + '</span><b>' + esc(t[0]) + '</b><em>Como funciona?</em></summary>' +
+      '<div class="tip-body"><p>' + esc(t[1]) + '</p><div class="tip-acts"><button class="tip-ok">Entendi</button><button class="tip-off">Pular dicas</button></div></div>';
+    el.querySelector('.tip-ok').onclick = () => el.remove();
     el.querySelector('.tip-off').onclick = () => { const s2 = st(); s2.off = true; store(KEY, s2); el.remove(); };
-    const back = screen.querySelector(':scope > .back-link, :scope > .cr-top');
-    if (back) back.after(el); else screen.prepend(el);
+    const at = BEFORE[key] && screen.querySelector(BEFORE[key]);
+    if (at) at.before(el); else screen.append(el);
   }
   const tipsReset = () => store(KEY, { off: false, n: {} });
   const tipsSet = on => (on ? tipsReset() : store(KEY, Object.assign(st(), { off: true })));

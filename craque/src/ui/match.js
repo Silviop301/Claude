@@ -202,7 +202,8 @@
       '<div class="ob5-head"><h2>' + T.title + '</h2><p class="ob5-stakes">' + U.emo('🏆', 'xs') + '<span>' + esc(T.stakes) + '</span></p>' +
         '<p class="ob5-txt">' + (m.ctx ? esc(m.ctx) + ' ' : '') + esc(T.text) + '</p></div>' +
       '<div class="chips ob5-facts">' + miniFacts(st).join('') + '</div>' +
-      '<details class="ob5-how"><summary>Como funciona o lance</summary><p>' + MINI_HOW[st] + '</p></details>' +
+      // Em tela baixa (até 700 px de altura) os chips saem do topo e ficam aqui dentro (style.css, bloco E1)
+      '<details class="ob5-how"><summary>Como funciona o lance</summary><p>' + MINI_HOW[st] + '</p><div class="chips ob5-facts in">' + miniFacts(st).join('') + '</div></details>' +
       '<p class="st-lead ob5-q">Como você vai ' + { cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar' }[st] + '?</p>' + styleBtns(st, true) +
       '<div class="ob5-foot"><button class="btn ghost ob5-auto" id="b-auto">Deixar o jogo decidir<small>' + Math.round(k.chance * 100) + '% pela sua carta</small></button>' +
       '<button class="ob5-train mom-train" id="b-train">' + U.emo('🏟️', 'xs') + ' Treinar antes</button></div>'

@@ -164,7 +164,10 @@ function snapInPage() {
 function scanInPage(BAD_SRC) {
   const BAD = new RegExp(BAD_SRC);
   const txt = document.body.innerText || '';
-  const out = { bad: null, overflow: false, errors: (window.__e2e && window.__e2e.errors.splice(0)) || [] };
+  const out = { bad: null, overflow: false, img: null, errors: (window.__e2e && window.__e2e.errors.splice(0)) || [] };
+  // Emoji do Twemoji sem arquivo em assets/tw (rodar tools/craque_twemoji.js)
+  const broken = Array.from(document.querySelectorAll('img.tw')).find(i => i.complete && i.naturalWidth === 0);
+  if (broken) out.img = 'emoji sem arquivo: ' + (broken.getAttribute('alt') || '') + ' ' + (broken.getAttribute('src') || '');
   const m = txt.match(BAD);
   if (m) { const i = txt.indexOf(m[0]); out.bad = txt.slice(Math.max(0, i - 60), i + 40).replace(/\s+/g, ' '); }
   const w = document.documentElement.scrollWidth, vw = window.innerWidth;
@@ -191,6 +194,7 @@ async function tour(page, issues) {
     scan.errors.forEach(e => note('console', e, 'tela:' + open));
     if (scan.bad) note('texto', scan.bad, 'tela:' + open);
     if (scan.overflow) note('layout', scan.overflow, 'tela:' + open);
+    if (scan.img) note('imagem', scan.img, 'tela:' + open);
     await page.evaluate(id => { document.querySelectorAll('.sl-sheet-wrap #sl-close, .cfg-wrap .cfg-x').forEach(x => x.click()); const b = id && document.getElementById(id); if (b) b.click(); }, back);
     await page.waitForTimeout(60);
   }
@@ -219,6 +223,7 @@ async function career(page, pos, idx, issues, stats) {
     scan.errors.forEach(e => note('console', e, r.screen));
     if (scan.bad) note('texto', scan.bad, r.screen);
     if (scan.overflow) note('layout', scan.overflow, r.screen);
+    if (scan.img) note('imagem', scan.img, r.screen);
     const sig = r.did + '|' + r.screen;
     same = sig === last ? same + 1 : 0; last = sig;
     if (same > 60) { note('travou', 'tela não muda: ' + sig, r.screen); break; }

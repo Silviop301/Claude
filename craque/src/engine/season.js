@@ -515,6 +515,7 @@
       coach0: Math.round(coach0), coach1: Math.round(c.rel.coach), fans0: Math.round(fans0), fans1: Math.round(c.rel.fans),
       highlights, event: c.lastEvent || null, table, why, farewell: !!c.farewell,
       attrs: S.eff(c), cards, pe, src, // foto da carta desta temporada (para o álbum) e cartas especiais ganhas
+      traits: c.traits.map(id => ({ id, lv: S.traitLevel(c, id) })), // características como estavam nesta temporada (álbum)
     };
     res.move = move;
     if (ballonLost) res.ballonLost = true;

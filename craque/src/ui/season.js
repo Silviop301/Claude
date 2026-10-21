@@ -237,6 +237,12 @@
       '<div class="feed" id="feed"></div><div id="after"></div><p class="skip-hint" id="skip-hint">Toque para pular</p>'
     );
     let hls = [], hlShown = 0;
+    const rateShow = r => {
+      const k = $('k-n');
+      k.textContent = r.toFixed(1).replace('.', ',');
+      k.parentNode.classList.remove('rt-lo', 'rt-mid', 'rt-hi');
+      k.parentNode.classList.add(r >= 7 ? 'rt-hi' : r >= 6.3 ? 'rt-mid' : 'rt-lo');
+    };
     const tickLive = (u, now3) => {
       const bar = $('sx-bar'), rd = $('sx-rd');
       if (!bar) return;
@@ -272,13 +278,16 @@
       if (!skip && (now3[1] > shown[1] || now3[2] > shown[2])) sfx('tick');
       shown = now3;
       $('k-j').textContent = now3[0]; $('k-g').textContent = now3[1]; $('k-a').textContent = now3[2];
+      // A nota anda junto (de 6,0 até a da temporada) e ganha a cor da faixa; a barra do topo soma ao vivo
+      if (res.games && now3[0]) rateShow(6 + (res.rating - 6) * e);
+      U.barLive(e);
       if (race) drawRace(race, u);
       tickLive(u, now3);
       if (u < 1) return requestAnimationFrame(tick);
       endLive();
       bar(); // a barra do topo mostra os totais da carreira já com esta temporada (antes só mudava no resumo)
       if (race && !skip) { const vd = raceVerdict(race); if (vd[1] === 'win' && race.kind !== 'title') sfx('levelup'); if (vd[1] === 'win') U.vibe(25); }
-      $('k-n').textContent = res.games ? res.rating.toFixed(1).replace('.', ',') : '–';
+      if (res.games) rateShow(res.rating); else $('k-n').textContent = '–';
       $('k-n').parentNode.classList.add('pop');
       const v = verdictOf(res);
       $('sv-lbl').textContent = v[0]; $('sv-lbl').className = 'sv-lbl ' + v[1];
