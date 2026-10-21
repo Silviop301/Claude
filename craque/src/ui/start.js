@@ -145,7 +145,7 @@
   // O jogador volta com o visual da última carreira (sem o que não estiver mais liberado)
   const LAST = 'climbix-ultimo-visual';
   const lastLook = () => { const l = U.load(LAST); return l && typeof l === 'object' ? I.clean(Object.assign({}, I.FREE, onlyLook(l))) : null; };
-  const newSt = () => ({ pos: 'ATA', foot: 'D', country: 'Brasil', num: defNum('ATA'), numTouched: false, name: D.NICKNAMES[Math.floor(Math.random() * D.NICKNAMES.length)],
+  const newSt = () => ({ pos: 'ATA', foot: 'D', country: 'Brasil', num: defNum('ATA'), numTouched: false, name: D.randomName('Brasil'), nameAuto: true,
     tab: 'corpo', origin: 'base', challenge: null, look: lastLook() || rollLook(Object.assign({}, I.FREE, { v: 2 })) });
 
   // Origem e desafio (engine/origins.js): liberados por conquistas
@@ -237,7 +237,8 @@
       '<div class="cc-side"><div class="cc"><div class="cc-top"><button class="cc-num" id="f-num" aria-label="Número da camisa: ' + st.num + '. Trocar">' + numBtn() + '</button>' +
       '<span class="cc-flag" id="cc-flag"></span></div>' +
       '<div class="cc-photo" id="cc-photo"></div>' +
-      '<label class="cc-name-w"><input class="cc-name" id="f-name" maxlength="18" value="' + esc(st.name) + '" aria-label="Nome na camisa">' + U.ICON.pencil + '</label></div>' +
+      '<label class="cc-name-w"><input class="cc-name" id="f-name" maxlength="18" value="' + esc(st.name) + '" aria-label="Nome na camisa">' + U.ICON.pencil +
+        '<button type="button" class="cc-name-dice" id="b-name" aria-label="Sortear nome">' + U.emo('🎲', 'sm') + '</button></label></div>' +
       '<div class="cc-acts"><button class="cr-dice" id="b-dice1">' + U.emo('🎲', 'sm') + ' Outro visual</button><button class="cr-dice" id="b-look">' + U.emo('✏️', 'sm') + ' Personalizar</button></div></div>' +
       '<div class="cr-lbl">Posição</div><div class="seg pos4" id="f-pos">' + [['ATA', 'Atacante'], ['MEI', 'Meia'], ['ZAG', 'Zagueiro'], ['GOL', 'Goleiro']].map(([v, l]) => '<button data-v="' + v + '"' + (st.pos === v ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>' +
       '<div class="cr-lbl">Pé bom</div><div class="seg" id="f-foot"><button data-v="D"' + (st.foot === 'D' ? ' class="on"' : '') + '>Destro</button><button data-v="E"' + (st.foot === 'E' ? ' class="on"' : '') + '>Canhoto</button></div>' +
@@ -261,14 +262,17 @@
         st[key] = b.dataset.v;
         // Número padrão acompanha a posição até a pessoa escolher um (sempre entre os liberados)
         if (key === 'pos' && !st.numTouched) st.num = defNum(b.dataset.v);
-        if (key === 'country') drawOrigin();
+        if (key === 'country') { drawOrigin(); if (st.nameAuto) setName(D.randomName(st.country, null, st.name)); }
         paint();
       }));
     $('f-num').onclick = () => numSheet(st, paint);
     // Nome comprido diminui a letra para caber inteiro na plaquinha (celular estreito cortava "WESLEYZINH")
     const fitName = () => { const el = $('f-name'); if (!el) return; let fs = 26; el.style.fontSize = fs + 'px';
-      while (fs > 14 && el.scrollWidth > el.clientWidth) el.style.fontSize = --fs + 'px'; };
-    $('f-name').oninput = () => { st.name = $('f-name').value; fitName(); };
+      while (fs > 12 && el.scrollWidth > el.clientWidth) el.style.fontSize = --fs + 'px'; };
+    // Nome sorteado acompanha o país até a pessoa digitar um; o dado sorteia outro do país escolhido
+    const setName = n => { st.name = n; $('f-name').value = n; fitName(); };
+    $('f-name').oninput = () => { st.name = $('f-name').value; st.nameAuto = false; fitName(); };
+    $('b-name').onclick = e => { e.preventDefault(); st.nameAuto = true; setName(D.randomName(st.country, null, $('f-name').value.trim())); sfx('tap'); };
     $('b-back-home').onclick = home;
     $('b-look').onclick = () => { st.name = $('f-name').value.trim() || st.name; looks(st); };
     $('b-dice1').onclick = () => { rollLook(st.look); sfx('tap'); paint(); };

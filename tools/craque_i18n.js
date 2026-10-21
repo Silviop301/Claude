@@ -18,7 +18,7 @@ const ROOT = path.join(__dirname, '..');
 const SRC = path.join(ROOT, 'craque', 'src');
 const DICT = process.env.I18N_DICT || path.join(ROOT, 'craque', 'i18n', 'en.json');
 // Gerados ou sem texto para jogador
-const SKIP = new Set(['kits.js', 'trophy-imgs.js', 'ball3d.js', 'kits-real.js', 'errors.js']);
+const SKIP = new Set(['names.js', 'kits.js', 'trophy-imgs.js', 'ball3d.js', 'kits-real.js', 'errors.js']);
 
 const jsFiles = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => {
   const p = path.join(dir, e.name);

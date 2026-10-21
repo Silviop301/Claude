@@ -9147,5 +9147,6 @@
  "CORTADO!": "CUT OUT!",
  "ROUBOU!": "WON IT!",
  "GOL!": "GOAL!",
- "Content-Type": "Content-Type"
+ "Content-Type": "Content-Type",
+ "<button type=\"button\" class=\"cc-name-dice\" id=\"b-name\" aria-label=\"Sortear nome\">": "<button type=\"button\" class=\"cc-name-dice\" id=\"b-name\" aria-label=\"Random name\">"
 }
