@@ -84,7 +84,7 @@
       const left = I.get().packs.length;
       $('pk-stage').innerHTML = '<div class="pk-eyebrow">Pacotinho ' + (idxPack + 1) + ' de ' + total + '</div>' +
         '<div class="pk-holder">' + '<div class="pk-halo"></div>' + packHTML() + '<div class="pk-leak"></div></div>' +
-        '<div class="pk-idle"><b>Toque para abrir</b><div class="pk-box">' + chances() + pityBox(I.get().pity) + '</div></div>';
+        '<b class="pk-cta">Toque para abrir</b><div class="pk-idle"><div class="pk-box">' + chances() + pityBox(I.get().pity) + '</div></div>';
       w.querySelector('.pk-pack').animate && !reduced() && w.querySelector('.pk-holder').animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-4px)' }, { transform: 'translateY(0)' }], { duration: 2400, iterations: Infinity, easing: 'ease-in-out' });
       w.onclick = () => { if (phase === 'idle' && left) start(); };
     }
@@ -102,7 +102,7 @@
       const holder = w.querySelector('.pk-holder'), halo = w.querySelector('.pk-halo'), leak = w.querySelector('.pk-leak');
       halo.style.background = 'radial-gradient(closest-side, ' + LUZ[top][0] + ', rgba(0,0,0,0))';
       leak.style.background = LUZ[top][1];
-      w.querySelector('.pk-idle').animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' });
+      w.querySelectorAll('.pk-idle, .pk-cta').forEach(el => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }));
       holder.getAnimations().forEach(a => a.cancel());
       sfx('paper');
       if (red) {
@@ -160,7 +160,8 @@
         '<div class="pk-info">' + (lend ? '<b class="pk-lend">LENDÁRIO</b>' : '') + '<span class="pk-rep" hidden>REPETIDO</span>' +
         '<b class="pk-name">' + esc(it.name) + '</b>' + selo(it.rk) + '<span class="pk-desc" id="pk-desc">' + (g.dup ? 'Você já tinha este.' : it.cat === 'num' ? 'Já está liberado para a camisa.' : it.cat === 'assinatura' ? 'Para assinar a carta no fim da carreira.' : it.cat === 'acabamento' ? 'Para a carta final, no fim da carreira.' : esc(it.desc)) + '</span></div>' +
         '<div class="pk-foot"><div class="pk-dots">' + res.got.map((_, i) => '<i' + (i <= idx ? ' class="on"' : '') + '></i>').join('') + '</div>' +
-        '<span>' + (idx < res.got.length - 1 ? 'Toque para o próximo' : 'Toque para ver o resumo') + '</span></div>';
+        '<span>' + (idx < res.got.length - 1 ? 'Toque para o próximo' : '') + '</span></div>';
+      $('pk-stage').classList.toggle('last', idx === res.got.length - 1);
       const card = $('pk-card');
       const d = red ? 200 : lend ? 1000 : 650;
       later(() => {
@@ -174,7 +175,7 @@
           later(() => { const r = card.getBoundingClientRect(), wr = w.getBoundingClientRect(), z = U.zk(); burst((r.left - wr.left + r.width / 2) / z, (r.top - wr.top + r.height / 2) / z, 170, HOLO); }, d - 350);
           U.vibe(60);
         }
-        if (g.dup) later(() => convert(g), d + 700); else later(() => { busy = false; }, d);
+        if (g.dup) later(() => convert(g), d + 700); else later(ready, d);
       }, lend && !red ? 300 : 0);
       card.style.opacity = '0';
       later(() => { card.style.opacity = ''; }, lend && !red ? 300 : 0);
@@ -185,7 +186,7 @@
       w.querySelector('.pk-rep').hidden = false;
       $('pk-desc').textContent = 'Você já tinha. Virou ' + g.fichas + (g.fichas > 1 ? ' fichas.' : ' ficha.');
       const bump = n => { shownFichas += n; ctr.innerHTML = ficha(shownFichas); ctr.animate([{ transform: 'scale(1.25)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' }); sfx('tick'); };
-      if (reduced()) { bump(g.fichas); busy = false; return; }
+      if (reduced()) { bump(g.fichas); ready(); return; }
       card.animate([{ transform: 'scale(1)', opacity: 1, filter: 'saturate(1)' }, { transform: 'scale(.3)', opacity: 0, filter: 'saturate(0)' }], { duration: 600, delay: 150, easing: 'ease-in', fill: 'forwards' });
       const wr = w.getBoundingClientRect(), cr = card.getBoundingClientRect(), kr = ctr.getBoundingClientRect(), z = U.zk();
       const sx = (cr.left - wr.left + cr.width / 2) / z - 17, sy = (cr.top - wr.top + cr.height / 2) / z - 17, ex = (kr.left - wr.left) / z + 6, ey = (kr.top - wr.top) / z + 4;
@@ -201,7 +202,39 @@
           { duration: 700, delay: 350 + i * 80, easing: 'ease-in', fill: 'forwards' });
         a.onfinish = () => { t.remove(); bump(i === k - 1 ? g.fichas - (k - 1) : 1); };
       }
-      later(() => { busy = false; const f = ctr.firstChild; if (f) f.classList.remove('lit'); }, 350 + k * 80 + 900);
+      later(() => { ready(); const f = ctr.firstChild; if (f) f.classList.remove('lit'); }, 350 + k * 80 + 900);
+    }
+    // Fim da revelação: com uma peça só, a revelação já é o fim (sem resumo repetindo o item).
+    // A garantia e os botões entram embaixo; "Abrir todos" quando ainda há 2 ou mais
+    function ready() {
+      busy = false;
+      if (phase !== 'item' || idx < res.got.length - 1) return;
+      const left = I.get().packs.length, lend = res.got.some(g => g.it.rk === 'lendario'), foot = w.querySelector('.pk-foot');
+      if (!foot) return;
+      phase = 'end';
+      const sk = $('pk-skip'); if (sk) sk.remove();
+      foot.className = 'pk-foot pk-end';
+      foot.innerHTML = pityBox(res.pity, lend ? 'Saiu um lendário, então o contador recomeça.' : '') + acts(left);
+      w.querySelector('.pk-stage').classList.add('end');
+      if (!reduced()) foot.animate([{ transform: 'translateY(24px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.2,1.2,.4,1)', fill: 'both' });
+      bindActs();
+    }
+    const acts = left => '<div class="pk-acts">' + (left ? '<button class="btn" id="pk-next">Abrir o próximo (' + left + ')</button>' : '') +
+      (left > 1 ? '<button class="btn ghost" id="pk-all">Abrir todos (' + left + ')</button>' : '') +
+      '<button class="link-btn" id="pk-close">Fechar</button></div>';
+    function bindActs() {
+      $('pk-close').onclick = e => { e.stopPropagation(); close(); };
+      if ($('pk-next')) $('pk-next').onclick = e => { e.stopPropagation(); res = null; idle(); };
+      if ($('pk-all')) $('pk-all').onclick = e => { e.stopPropagation(); openAll(); };
+    }
+    // Abrir todos: abre os que faltam, um depois do outro (mesmo sorteio de abrir um a um), e mostra tudo junto
+    function openAll() {
+      const all = [];
+      let r;
+      while ((r = I.open())) { all.push(r); idxPack++; }
+      if (!all.length) return close();
+      res = { got: [].concat(...all.map(x => x.got)), pity: all[all.length - 1].pity, many: all.length };
+      toResumo();
     }
     function toResumo() {
       clear();
@@ -209,17 +242,14 @@
       phase = 'resumo'; busy = false; shownFichas = I.get().fichas;
       frame(); w.classList.remove('dark', 'rays');
       const left = I.get().packs.length, lend = res.got.some(g => g.it.rk === 'lendario');
-      $('pk-stage').innerHTML = '<div class="pk-res"><div class="pk-eyebrow">Pacotinho ' + idxPack + ' de ' + total + '</div><b class="pk-h">Pacotinho aberto</b>' +
+      $('pk-stage').innerHTML = '<div class="pk-res"><div class="pk-eyebrow">' + (res.many ? res.many + ' pacotinhos' : 'Pacotinho ' + idxPack + ' de ' + total) + '</div><b class="pk-h">' + (res.many > 1 ? 'Pacotinhos abertos' : 'Pacotinho aberto') + '</b>' +
         '<div class="pk-grid">' + res.got.map(g => '<div class="pk-t' + (g.dup ? ' dup' : '') + '"><div class="pk-tile ' + rarCls(g.it.rk) + '"><div class="pk-in">' + itemArt(g.it) + '</div>' +
           (g.dup ? '' : '<span class="pk-new sm">NOVO</span>') + '</div><b>' + esc(g.it.name) + '</b>' + (g.dup ? '<span class="pk-plus">+' + g.fichas + (g.fichas > 1 ? ' fichas' : ' ficha') + '</span>' : '') + '</div>').join('') + '</div>' +
         pityBox(res.pity, lend ? 'Saiu um lendário, então o contador recomeça.' : 'Mais um pacote conta para a garantia.') +
-        '<div class="pk-acts">' +
-        (left ? '<button class="btn" id="pk-next">Abrir o próximo (' + left + ')</button>' : '') +
-        '<button class="link-btn" id="pk-close">Fechar</button></div></div>';
+        acts(left) + '</div>';
       if (!reduced()) w.querySelectorAll('.pk-res > *').forEach((el, i) => el.animate([{ transform: 'translateY(24px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 380, delay: i * 60, easing: 'cubic-bezier(.2,1.2,.4,1)', fill: 'both' }));
       w.onclick = null;
-      $('pk-close').onclick = close;
-      if ($('pk-next')) $('pk-next').onclick = () => { res = null; idle(); };
+      bindActs();
     }
     w.addEventListener('click', () => {
       if (phase !== 'item' || busy) return;

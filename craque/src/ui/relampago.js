@@ -142,19 +142,23 @@
   const stateOf = (kicks, j) => { const x = kicks.find(k => k[0] === j); return x ? x[1] : undefined; };
   const dots = kicks => '<span class="rl-dots">' + [0, 1, 2, 3, 4].map(j => { const v = stateOf(kicks, j); return '<i class="' + (v === 1 ? 'g' : v === 0 ? 'x' : '') + '"></i>'; }).join('') + '</span>';
 
+  // Pontos das casas já fechadas (o total final ainda soma os combos)
+  const ptsNow = () => Math.round(S.rlCareer(run.seed, run.rounds).reduce((a, s) => a + s.pts, 0));
   function play() {
     const i = current();
     if (i >= 5) return result();
     const sl = S.RL_SLOTS[i], kicks = run.rounds[i], k = kicks.length;
     const rule = i < 3 ? 'Vale o clube da primeira bola que entrar' : 'Você leva o prêmio de cada bola que entrar';
-    render('<div class="rl-head"><div class="eyebrow">Casa ' + (i + 1) + ' de 5 · cobrança ' + (k + 1) + ' de 5</div><h2>' + sl.name + '</h2>' +
+    render('<div class="rl-head"><div class="ob5-board rl-ob"><div class="rl-ob-c"><small>Casa</small><b>' + (i + 1) + '/5</b></div>' +
+      '<div class="ob5-mid"><b class="rl-ob-nm">' + sl.name + '</b><small>Cobrança ' + (k + 1) + ' de 5</small></div>' +
+      '<div class="rl-ob-c pts"><small>Pontos</small><b id="rl-pts">' + ptsNow() + '</b></div></div>' +
       '<div class="rl-rule"><span>' + rule + '</span>' + dots(kicks) + '</div></div>' + boardHtml(i) +
-      '<div class="card rl-pick" id="rl-pick"><small>Escolha a bola</small><div class="rl-balls">' + [0, 1, 2, 3, 4].map(j => {
+      '<div class="rl-pick" id="rl-pick"><small>Escolha a bola</small><div class="rl-balls">' + [0, 1, 2, 3, 4].map(j => {
         const v = stateOf(kicks, j);
         return '<button class="rl-ball' + (v === 1 ? ' g' : v === 0 ? ' x' : '') + '" data-b="' + j + '"' + (v === undefined ? '' : ' disabled') + ' aria-label="Bola ' + (j + 1) + '">' +
           U.emo('⚽', 'md') + '<i>' + (j + 1) + '</i></button>';
       }).join('') + '</div></div>' +
-      '<div id="rl-kick"></div><div class="card rl-reveal" id="rl-reveal" hidden></div>');
+      '<div class="rl-stage"><div id="rl-kick"></div><div class="rl-reveal" id="rl-reveal" hidden></div></div>');
     document.querySelectorAll('.rl-ball:not([disabled])').forEach(b => { b.onclick = () => kick(i, +b.dataset.b); });
     // Bola 3D no lugar do emoji (se o 3D estiver ligado e carregar)
     const B = window.CRAQUE_BALL;
@@ -176,22 +180,21 @@
   function reveal(i, ok) {
     const kicks = run.rounds[i], r = S.rlRound(run.seed, i, prevOf(i), kicks), box = $('rl-reveal');
     if (!box) return;
-    const k = $('rl-kick'); if (k) k.hidden = true;
     const dl = document.querySelector('.rl-dots'); if (dl) dl.outerHTML = dots(kicks);
     const club = i < 3;
     let msg, shown = r.cone;
     if (club) {
-      if (ok) msg = 'Gol! Esse é o seu clube';
+      if (ok) msg = 'Esse é o seu clube';
       else if (r.done) msg = 'Nenhuma entrou. Sobrou';
-      else { msg = 'Errou. Essa bola era'; shown = r.hidden(kicks[kicks.length - 1][0]); }
-    } else { msg = ok ? 'Gol! Você levou' : 'Errou. Essa bola tinha'; shown = r.hidden(kicks[kicks.length - 1][0]); }
+      else { msg = 'Essa bola era'; shown = r.hidden(kicks[kicks.length - 1][0]); }
+    } else { msg = ok ? 'Você levou' : 'Essa bola tinha'; shown = r.hidden(kicks[kicks.length - 1][0]); }
     box.hidden = false;
-    box.className = 'card rl-reveal ' + (ok ? 'ok' : 'ko') + (!ok && !(club && r.done) ? ' lost' : '');
-    box.innerHTML = '<small>' + msg + '</small>' +
+    box.className = 'rl-reveal ' + (ok ? 'ok' : 'ko') + (!ok && !(club && r.done) ? ' lost' : '');
+    box.innerHTML = '<b class="rl-stamp">' + (ok ? 'Gol!' : 'Errou') + '</b><small>' + msg + '</small>' +
       '<div class="rl-prize">' + prize(shown) + '</div>' + (!club && r.done ? '<div class="rl-sum"><small>Total da casa</small>' + esc(r.cone.name) + '</div>' : '') + (r.done ? '<b class="rl-pts">+' + String(r.cone.pts).replace('.', ',') + ' pts</b>' : '') +
       (club && ok && kicks.length < 5 ? rest(r, kicks) : '') +
       '<button class="btn" id="rl-next">' + (!r.done ? 'Próxima bola' : i < 4 ? 'Próxima casa' : 'Ver a carreira') + '</button>';
-    if (r.done) { const board = document.querySelector('.rl-board'); if (board) board.outerHTML = boardHtml(i); }
+    if (r.done) { const board = document.querySelector('.rl-board'); if (board) board.outerHTML = boardHtml(i); const p = $('rl-pts'); if (p) p.textContent = ptsNow(); }
     sfx(ok ? 'goal' : 'kick');
     $('rl-next').onclick = play;
   }
@@ -228,16 +231,22 @@
       (miss.length ? '<div class="rl-miss"><small>O que escapou</small>' + miss.map(m => '<span>' + (m.prize.id ? crest(m.prize.id, 'xs') : '') + '<b>' + esc(m.prize.name) + '</b> <i>' + m.slot + ', bola ' + m.ball + '</i></span>').join('') + '</div>' : '') +
       '</div>';
     const combos = f.combos.length ? '<div class="rl-combos">' + f.combos.map(c => '<span>' + U.emo('🔥', 'xs') + ' <b>' + c.name + '</b> ' + c.desc + (c.pts ? ' (+' + c.pts + ')' : '') + '</span>').join('') + '</div>' : '';
-    const col = (who, sc, me) => '<div class="rl-col' + (me ? ' me' : '') + '"><div class="rl-col-h"><b>' + esc(who) + '</b><span class="rl-grade g-' + sc.grade + '">' + sc.grade + '</span></div>' +
-      sc.slots.map(s => '<div class="rl-mini' + (s.goal ? '' : ' out') + '"><small>' + s.name + '</small>' + coneMini(s.cone) + '</div>').join('') +
-      '<div class="rl-col-t">' + sc.total + ' pts</div></div>';
-    render('<div class="eyebrow">Carreira Relâmpago</div>' +
-      (g ? '<h2>' + (diff > 0 ? 'Você ganhou!' : diff === 0 ? 'Empate!' : esc(vs.n) + ' ganhou') + '</h2>' +
-        '<div class="rl-duel">' + col(run.name, f, true) + '<div class="rl-x">x</div>' + col(vs.n, g) + '</div>' +
-        '<p class="rl-ask">Quem montou a melhor carreira?</p>'
-      : '<h2>' + esc(run.name) + '</h2>') +
-      '<div class="card rl-res"><div class="rl-score"><span class="rl-grade big g-' + f.grade + '">' + f.grade + '</span><div><b>' + f.total + ' pontos</b><small>' + f.slots.reduce((a, s) => a + s.goals, 0) + ' gols em ' + f.slots.reduce((a, s) => a + s.kicks, 0) + ' cobranças</small></div></div>' +
-        rows(f) + combos + after + '</div>' + U.streakFinale(run.sk.got) +
+    const col = (who, sc, me) => '<div class="rl-col' + (me ? ' me' : '') + '"><div class="rl-col-h"><b>' + esc(who) + '</b></div>' +
+      sc.slots.map(s => '<div class="rl-mini' + (s.goal ? '' : ' out') + '"><small>' + s.name + '</small>' + coneMini(s.cone) + '</div>').join('') + '</div>';
+    const grade = sc => '<span class="rl-grade g-' + sc.grade + '">' + sc.grade + '</span>';
+    const kicksTxt = f.slots.reduce((a, s) => a + s.goals, 0) + ' gols em ' + f.slots.reduce((a, s) => a + s.kicks, 0) + ' cobranças';
+    // Placar escuro: no duelo, "VOCÊ 52 x 30 RAFA" com a nota de cada um; sozinho, nota, nome e pontos
+    const board = g ? '<div class="ob5-board rl-sb"><div class="rl-sb-t me"><b>' + esc(run.name) + '</b>' + grade(f) + '</div>' +
+        '<b class="ob5-g' + (diff >= 0 ? ' win' : '') + '">' + f.total + '</b><span class="ob5-x">x</span><b class="ob5-g' + (diff <= 0 ? ' win' : '') + '">' + g.total + '</b>' +
+        '<div class="rl-sb-t"><b>' + esc(vs.n) + '</b>' + grade(g) + '</div></div>'
+      : '<div class="ob5-board rl-sb solo">' + grade(f) + '<div class="ob5-mid"><b class="rl-ob-nm">' + esc(run.name) + '</b><small>' + kicksTxt + '</small></div>' +
+        '<div class="rl-ob-c pts"><b>' + f.total + '</b><small>pontos</small></div></div>';
+    render('<div class="rl-rh"><div class="eyebrow">Carreira Relâmpago</div>' +
+      '<h2>' + (g ? (diff > 0 ? 'Você ganhou!' : diff === 0 ? 'Empate!' : esc(vs.n) + ' ganhou') : 'Sua carreira') + '</h2></div>' + board +
+      (g ? '<div class="rl-duel">' + col(run.name, f, true) + col(vs.n, g) + '</div>' : boardHtml(-1)) +
+      (combos || after !== '<div class="rl-after"></div>' ? '<div class="rl-res">' + combos + after + '</div>' : '') +
+      '<details class="ob5-how rl-det"><summary>Casa a casa' + (g ? ' (' + kicksTxt + ')' : '') + '</summary>' + rows(f) + '</details>' +
+      U.streakFinale(run.sk.got) +
       (window.CLIMBIX_SOLO ? '' : '<button class="btn" id="rl-share">' + U.emo('🎯', 'sm') + ' ' + (g && diff > 0 ? 'Devolver o desafio' : 'Desafiar um amigo') + '<small>Ele cobra com os mesmos times escondidos</small></button>') +
       '<button class="btn ghost" id="rl-again">Jogar de novo</button>' +
       '<button class="link-btn" id="rl-home">Voltar ao início</button>');

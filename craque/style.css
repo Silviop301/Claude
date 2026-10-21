@@ -2619,7 +2619,6 @@ details.more .src-card { margin: 2px 0 8px; }
 .rl-ask { text-align: center; font: 700 17px var(--display); color: #E1EEE5; margin: 10px 0 0; }
 #rl-share small { display: block; font: 600 12px var(--body); opacity: .8; letter-spacing: 0; }
 #rl-home { display: block; margin: 12px auto 0; }
-  background: repeating-linear-gradient(135deg, #F2C230 0 6px, #E0B020 6px 12px); box-shadow: 0 2px 0 rgba(0, 0, 0, .35); }
 /* Carreira Relâmpago: prêmio revelado depois do pênalti */
 .rl-reveal { margin-top: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; animation: rl-pop .45s cubic-bezier(.2, 1.5, .4, 1); }
 @keyframes rl-pop { from { opacity: 0; transform: scale(.7); } }
@@ -3307,3 +3306,119 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 @media (max-width: 360px) { .wc-o5 .ob5-head h2 { font-size: 28px; } .wcb-t { width: 54px; } .wcb-t .tw { width: 34px; height: 34px; } .wc-band { font-size: 22px; } }
 @media (prefers-reduced-motion: reduce) { .wc-end { animation: none; } }
 /* ----- fim E7 ----- */
+
+/* ===== E8: Carreira Relâmpago no estilo ousado (ui/relampago.js) e pacotinho com palco escuro (ui/packs.js) ===== */
+/* Placar do alto: casa, nome da casa e pontos (reaproveita .ob5-board) */
+.rl-ob { justify-content: space-between; padding: 10px 14px; }
+.rl-ob-c { flex: none; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 54px; }
+.rl-ob-c small { font: 700 10.5px/1 var(--display); letter-spacing: .12em; text-transform: uppercase; color: #9DB5A6; }
+.rl-ob-c b { font: 800 30px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--paper); }
+.rl-ob-c.pts { align-items: flex-end; }
+.rl-ob-c.pts b { color: var(--gold); }
+.rl-ob-nm { font: 800 26px/1 var(--display); text-transform: uppercase; color: var(--paper); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rl-head .rl-rule { margin: 8px 0; }
+/* Faixa das 5 casas em escuro */
+.rl-board .rl-cell { background: #050A07; border: 1px solid rgba(255, 255, 255, .1); }
+.rl-board .rl-cell.done:not(.out) { border-color: rgba(95, 214, 144, .45); }
+.rl-board .rl-cell.out { background: rgba(216, 64, 74, .2); }
+/* Escolher a bola: bolas grandes no gramado, de frente para o gol */
+.rl-pick { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 14px; text-align: center; overflow: hidden;
+  min-height: max(250px, calc(100svh - var(--bar-h, 0px) - env(safe-area-inset-top, 0px) - 330px)); padding: 16px 10px 26px; border-radius: 18px;
+  background: repeating-linear-gradient(180deg, #2E8B4F 0 34px, #277C46 34px 68px); border: 1px solid rgba(255, 255, 255, .14); box-shadow: inset 0 0 40px rgba(0, 0, 0, .3);
+  animation: rl-pop .35s cubic-bezier(.2, 1.5, .4, 1); }
+.rl-pick::before { content: ''; position: absolute; left: 50%; top: 14px; width: 62%; height: 38%; transform: translateX(-50%); border: 3px solid rgba(255, 255, 255, .7); border-bottom: 0;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .12) 0 2px, transparent 2px 12px), repeating-linear-gradient(0deg, rgba(255, 255, 255, .12) 0 2px, transparent 2px 12px); }
+.rl-pick::after { content: ''; position: absolute; left: 0; right: 0; top: calc(14px + 38%); border-top: 3px solid rgba(255, 255, 255, .6); }
+.rl-pick > small { position: relative; margin: 0; font: 800 18px var(--display); letter-spacing: .08em; text-transform: uppercase; color: #fff; text-shadow: 0 2px 6px rgba(0, 0, 0, .45); }
+.rl-pick .rl-balls { position: relative; gap: 6px; }
+.rl-pick .rl-ball { width: clamp(50px, 15.5vw, 66px); height: clamp(50px, 15.5vw, 66px); background: rgba(0, 0, 0, .22); }
+.rl-pick .rl-ball:not([disabled]) { box-shadow: inset 0 0 0 3px var(--gold), 0 6px 14px rgba(0, 0, 0, .35); }
+.rl-pick .rl-ball .tw, .rl-pick .rl-b3 { width: 78%; height: 78%; }
+.rl-pick .rl-ball i { background: #050A07; box-shadow: 0 0 0 2px var(--gold); }
+.rl-pick .rl-ball.g[disabled] { background: rgba(95, 214, 144, .45); opacity: .6; }
+.rl-pick .rl-ball.x[disabled] { background: rgba(216, 64, 74, .45); opacity: .6; }
+/* Depois da cobrança: o palco fica e o resultado entra como carimbo por cima */
+.rl-stage { display: grid; }
+.rl-stage > * { grid-area: 1 / 1; min-width: 0; }
+.rl-stage > .rl-reveal { z-index: 3; margin: 0; align-self: stretch; justify-content: center; gap: 8px; padding: 16px 14px; border-radius: 18px;
+  background: rgba(5, 10, 7, .8); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); color: var(--paper); animation: enter .25s ease-out; }
+.rl-stamp { display: inline-block; padding: 4px 18px; border: 4px solid currentColor; border-radius: 12px; font: 800 52px/1 var(--display); text-transform: uppercase; letter-spacing: .04em;
+  transform: rotate(-6deg); animation: rl-stamp .45s cubic-bezier(.2, 1.5, .4, 1); }
+@keyframes rl-stamp { from { opacity: 0; transform: rotate(-6deg) scale(2.2); } }
+.rl-reveal.ok .rl-stamp { color: #5FD690; text-shadow: 0 0 22px rgba(95, 214, 144, .45); }
+.rl-reveal.ko .rl-stamp { color: #FF6B73; }
+.rl-stage > .rl-reveal > small { font: 700 14px var(--display); letter-spacing: .08em; text-transform: uppercase; color: #C9D8CE !important; }
+.rl-stage .rl-prize em { color: var(--paper); }
+.rl-stage .rl-prize .rl-ga { color: var(--gold); }
+.rl-stage .rl-gas i, .rl-stage .rl-sum small, .rl-stage .rl-rest small { color: #9DB5A6; }
+.rl-stage .rl-prize small { color: var(--gold); }
+.rl-stage .rl-pts { color: #5FD690; font-size: 24px; }
+.rl-stage .rl-rest i { opacity: .85; }
+/* Resultado: placar escuro, colunas do duelo, detalhe recolhido */
+.rl-rh { margin-bottom: 10px; }
+.rl-rh h2 { margin: 2px 0 0; font: 800 34px/.98 var(--display); text-transform: uppercase; text-wrap: balance; }
+.rl-sb { gap: 8px; margin-bottom: 10px; }
+.rl-sb-t { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.rl-sb-t:last-child { align-items: flex-end; }
+.rl-sb-t b { max-width: 100%; font: 800 15px/1.1 var(--display); text-transform: uppercase; letter-spacing: .04em; color: #C9D8CE; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rl-sb-t.me b { color: var(--gold); }
+.rl-sb .ob5-g { color: #9DB5A6; }
+.rl-sb .ob5-g.win { color: var(--paper); }
+.rl-sb.solo .rl-grade { width: 52px; height: 52px; border-radius: 12px; font-size: 32px; flex: none; }
+.rl-sb.solo .ob5-mid { align-items: flex-start; }
+.rl-sb.solo .ob5-mid small { text-transform: none; letter-spacing: 0; font: 600 13px var(--body); }
+.rl-sb.solo .rl-ob-c.pts b { font-size: 38px; }
+/* Notas fortes (no lugar do pastel) */
+.rl-grade { background: #C9D3CC; color: #050A07; box-shadow: 0 3px 0 rgba(0, 0, 0, .35); }
+.rl-grade.g-S { background: var(--gold); }
+.rl-grade.g-A { background: #5FD690; }
+.rl-grade.g-B { background: #7FC4FF; }
+.rl-grade.g-C { background: #E8DCC0; }
+.rl-grade.g-D { background: #FF6B73; color: #2A0508; }
+.rl-duel { grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 10px; }
+.rl-col { background: #050A07; border: 1px solid rgba(255, 255, 255, .1); gap: 6px; padding: 10px; }
+.rl-col.me { border-color: var(--gold); box-shadow: none; }
+.rl-col-h b { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: #C9D8CE; }
+.rl-col.me .rl-col-h b { color: var(--gold); }
+.rl-mini em { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2; }
+.rl-res { margin: 0 0 10px; padding: 12px 14px; border-radius: 16px; background: #050A07; border: 1px solid rgba(255, 255, 255, .1); color: var(--paper); }
+.rl-res .rl-combos { margin-top: 0; }
+.rl-res .rl-after { margin-top: 0; padding-top: 0; border-top: 0; }
+.rl-res .rl-combos + .rl-after { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .1); }
+.rl-res .rl-rec { color: #5FD690; }
+.rl-res .rl-miss small, .rl-res .rl-miss span i { color: #9DB5A6; }
+.rl-det { margin: -6px 0 6px; }
+.rl-det[open] { padding: 0 12px 6px; border-radius: 16px; background: #050A07; border: 1px solid rgba(255, 255, 255, .1); }
+.rl-det[open] summary { margin: 0 -2px; }
+.rl-det .rl-row { border-top-color: rgba(255, 255, 255, .1); color: var(--paper); }
+.rl-det .rl-row small, .rl-det .rl-row b i { color: #9DB5A6; }
+.rl-det .rl-row.best b { color: #5FD690; }
+.rl-det .rl-row.out b { color: #FF6B73; }
+.rl-sb ~ .rl-board { margin-bottom: 10px; }
+@media (max-width: 360px) { .rl-ob-nm { font-size: 22px; } .rl-ob-c b { font-size: 26px; } .rl-stamp { font-size: 44px; } .rl-rh h2 { font-size: 30px; } .rl-sb .ob5-g { font-size: 34px; } }
+@media (prefers-reduced-motion: reduce) { .rl-stamp { animation: none; } }
+@media (min-width: 1280px) and (min-height: 860px) {
+  html.desk .rl-pick { min-height: max(250px, calc(100svh / var(--z) - var(--bar-h, 0px) - 330px)); }
+}
+/* Pacotinho: palco radial escuro, envelope em contraste e "Toque para abrir" logo abaixo dele */
+.pk-wrap { background: radial-gradient(circle at 50% 38%, #12301F, #050A07 70%); }
+.pk-holder { margin: auto 0 0; }
+.pk-holder .pk-pack { filter: drop-shadow(0 0 1.5px rgba(242, 194, 48, .9)) drop-shadow(0 0 26px rgba(242, 194, 48, .28)) drop-shadow(0 16px 20px rgba(0, 0, 0, .6)); }
+.pk-cta { margin: 22px 0 0; font: 800 26px/1 var(--display); text-align: center; color: var(--gold); }
+.pk-idle { margin-top: auto; padding-top: 18px; }
+/* Fim da revelação (1 peça): garantia e botões entram embaixo, sem tela de resumo */
+.pk-stage.end { cursor: default; }
+.pk-stage.last .pk-card { margin-top: 8px; }
+.pk-stage.last .pk-info { margin-top: 18px; gap: 6px; }
+.pk-foot.pk-end { align-self: stretch; align-items: stretch; gap: 12px; font: inherit; color: inherit; cursor: default; }
+.pk-end .pk-pity { background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .1); border-radius: 14px; padding: 10px 14px; font-size: 14px; }
+.pk-end .pk-acts { margin-top: 0; gap: 8px; }
+.pk-acts .btn.ghost { margin: 0; }
+@media (max-height: 700px) {
+  .pk-stage.last { padding-top: calc(70px + env(safe-area-inset-top, 0px)); }
+  .pk-stage.last .pk-card { width: 170px; height: 194px; margin-top: 0; }
+  .pk-stage.last .pk-name { font-size: 28px; }
+  .pk-stage.last .pk-info { margin-top: 12px; }
+  .pk-stage.last .pk-desc { font-size: 14px; }
+}
+/* ----- fim E8 ----- */
