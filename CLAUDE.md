@@ -102,7 +102,7 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
 | Arquivo | Tela |
 |---|---|
 | `core.js` | Estado `G`, ajudantes, salvar/carregar, barra do topo |
-| `start.js` | Tela inicial e criação do jogador |
+| `start.js` | Tela inicial (primeira visita, quem já jogou com menu de baixo `U.homeNav`, página do desafio por link `U.linkLanding`) e criação do jogador |
 | `offers.js`, `preseason.js` | Base, janela/propostas; pré-temporada |
 | `match.js` | Eventos e jogo decisivo (`optHint`) |
 | `season.js` | Temporada: contadores, corrida/mini tabela (`raceOf`, `miniTable`), resenha, resumo |

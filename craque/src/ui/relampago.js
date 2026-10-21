@@ -46,11 +46,16 @@
     if (!q) return;
     const d = decode(q);
     history.replaceState(null, '', location.pathname);
-    if (d) store(KEY, Object.assign(d, { at: Date.now() }, played().includes(d.s) ? { done: true, again: true } : {}));
+    if (!d) return;
+    const again = played().includes(d.s);
+    store(KEY, Object.assign(d, { at: Date.now() }, again ? { done: true, again: true } : {}));
+    if (!again) U.linkLanding = 'r'; // a tela inicial abre na página do desafio
   }
 
   // ---------- tela inicial ----------
-  function homeHtml() {
+  // withBtn = false: só o cartão do desafio (a primeira visita tem o próprio botão do modo rápido)
+  function homeHtml(withBtn = true) {
+    const btn = withBtn ? btnHtml : () => '';
     const d = active();
     const old = load(KEY);
     if (!d && old && old.again) return '<div class="card dz-home rl-dz"><button class="dz-x" id="rl-x" aria-label="Fechar">' + U.ICON.x + '</button>' +
@@ -62,7 +67,7 @@
         '<button class="btn rl-go" id="rl-accept">Aceitar desafio</button></div>'; })() : '';
     return card + btn();
   }
-  const btn = () => '<button class="hg rl-btn" id="b-relampago"><i>' + U.emo('⚡', 'sm') + '</i><b>Carreira Relâmpago</b><small>5 casas, 5 bolas cada. Desafie um amigo</small></button>';
+  const btnHtml = () => '<button class="hg rl-btn" id="b-relampago"><i>' + U.emo('⚡', 'sm') + '</i><b>Carreira Relâmpago</b><small>5 casas, 5 bolas cada. Desafie um amigo</small></button>';
   function homeBind() {
     if ($('b-relampago')) $('b-relampago').onclick = () => intro();
     if ($('rl-accept')) $('rl-accept').onclick = () => intro();
@@ -272,5 +277,5 @@
     catch (e) { prompt('Copie o link do desafio:', text + ' ' + url); }
   }
 
-  Object.assign(U, { relampagoFromLink: fromLink, relampagoHome: homeHtml, relampagoHomeBind: homeBind, relampago: intro, relampagoEncode: encode, relampagoDecode: decode });
+  Object.assign(U, { relampagoFromLink: fromLink, relampagoHome: homeHtml, relampagoHomeBind: homeBind, relampago: intro, relampagoEncode: encode, relampagoDecode: decode, relampagoActive: () => { const d = active(); return d ? Object.assign({ f: S.rlScore(d.s, d.p) }, d) : null; } });
 })();

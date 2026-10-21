@@ -3,33 +3,40 @@
   const U = window.CRAQUE_UI;
   const { tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar } = U;
   // ---------- início ----------
+  // Três jeitos (prancha "Climbix · Nova home"): primeira visita (um botão só e o modo rápido), quem já jogou
+  // (continuar, jogar, sequência, ranking e menu embaixo) e quem chega por link de desafio (página do desafio)
   function home() {
     G.c = null; G.step = null; bar();
-    const saved = load(SAVE);
-    const played = !!(saved && saved.c) || U.collectionCount() > 0 || (load(HALL) || []).length > 0;
+    const saved = load(SAVE), cur = saved && saved.c;
+    const played = !!cur || U.collectionCount() > 0 || (load(HALL) || []).length > 0;
     // Título de abertura (já desenhado pelo index.html antes dos scripts): a tela inicial reaproveita o mesmo
     // elemento em vez de criar outro, para a primeira tela não "piscar" nem contar de novo como carregamento
     const splash = document.querySelector('#screen > .hero.splash');
-    render(
-      '<div class="hero"><div class="ball3d" id="ball3d" aria-hidden="true"></div><div class="eyebrow">Carreira de futebol</div><h1>CLIMBIX</h1></div>' +
-      '<p class="lead">Uma carreira inteira em uns 9 minutos: crie um garoto de 16 anos, escolha os clubes, decida e cobre os lances. No fim, a carta dele diz se virou lenda.</p>' +
-      U.challengeHome() +
-      // Carreira em andamento: a carta do jogador no lugar de um botão de texto
-      (saved && saved.c ? (() => { const sc = saved.c, o = S.ovr(sc), t = tierCls(o), cl = club(sc.club);
-        return '<button class="cont-card" id="b-cont"><span class="scard metal ' + t + '"><span class="sc-tier">' + TIER_NAME[t] + '</span><b>' + o + '</b><span class="sc-pos">' + sc.pos + '</span></span>' +
-          '<span class="cc-info"><small>Continuar carreira</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : U.lastHome()) + sc.age + ' anos</span></span><span class="cc-go">' + U.ICON['chevron-right'] + '</span></button>'; })() : U.lastHome()) +
-      '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
-      U.relampagoHome() +
-      U.rankHome() +
-      // Primeira visita: sequência de dias e pedido de opinião só depois de existir uma carreira (fichas e pacotinhos ainda não querem dizer nada)
-      (played ? U.streakHome() : '') +
-      U.packHome() +
-      // Coleção, Sala de Troféus, Conquistas e Hall da Fama ficam numa tela só
-      '<button class="hg mine-btn" id="b-mine"><i>' + U.ICON.cards + '</i><b>Minhas carreiras</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carreira' : ' carreiras') +
-        (U.salaNew() ? ' · <em>+' + U.salaNew() + (U.salaNew() === 1 ? ' taça nova' : ' taças novas') + '</em>' : '') + '</small></button>' +
-      (played ? U.feedbackHome() : '') +
-      '<div class="home-foot"><button class="link-btn home-snd" id="b-sound"></button>' + (window.CLIMBIX_SOLO ? '' : '<button class="link-btn home-snd" id="b-cloud"></button>') + '</div>' + U.deskHint()
-    );
+    const kind = U.linkLanding; U.linkLanding = null;
+    if (kind && landing(kind, played)) { if (splash) splash.remove(); return; }
+    const hero = '<div class="hero"><div class="ball3d" id="ball3d" aria-hidden="true"></div><div class="eyebrow">Carreira de futebol</div><h1>CLIMBIX</h1></div>';
+    const gear = '<button class="hm-gear" id="b-sound" aria-label="Configurações">' + U.GEAR_SVG + '</button>';
+    if (!played) render('<div class="hm hm-first">' + gear + hero +
+      '<h2 class="hm-tag">De garoto de 16 anos a lenda. Em 9 minutos.</h2>' +
+      '<p class="lead">Escolha os clubes, decida e cobre os lances. No fim, a carta diz o que você virou.</p>' +
+      U.challengeHome() + U.relampagoHome(false) +
+      '<button class="btn hm-cta" id="b-new">Começar minha carreira</button>' +
+      '<button class="hm-quick" id="b-relampago"><i>' + U.emo('⚡', 'sm') + '</i><span><b>Só tenho 1 minuto</b><small>Carreira Relâmpago: 5 casas, 5 chutes</small></span>' + U.ICON['chevron-right'] + '</button>' +
+      '<div class="home-foot"><button class="link-btn" id="b-rank">Ranking da semana</button>' + (window.CLIMBIX_SOLO ? '' : '<button class="link-btn" id="b-cloud"></button>') + '</div>' + U.deskHint() +
+      '</div>');
+    else {
+      const inv = U.ITEMS.get(), sk = U.ITEMS.streak();
+      render('<div class="hm hm-back"><div class="hm-top">' + hero +
+        '<div class="hm-chips">' + (sk.n ? '<span class="hm-chip" title="Sequência de dias">' + U.emo('🔥', 'xs') + ' ' + D.plural(sk.n, 'dia', 'dias') + '</span>' : '') +
+        '<span class="hm-chip" title="Fichas">' + U.emo('🎟️', 'xs') + ' ' + inv.fichas + '</span>' + gear + '</div></div>' +
+        U.challengeHome() + U.relampagoHome(false) +
+        (cur ? contCard(saved) : U.lastHome()) +
+        '<div class="hm-lbl">Jogar</div><div class="hm-tiles">' +
+        '<button class="hm-tile' + (cur ? '' : ' gold') + '" id="b-new"><i>' + U.ICON.plus + '</i><span><b>Nova carreira</b><small>uns 9 minutos</small></span></button>' +
+        '<button class="hm-tile rl" id="b-relampago"><i>' + U.emo('⚡', 'sm') + '</i><span><b>Relâmpago</b><small>1 minuto · desafie um amigo</small></span></button></div>' +
+        U.packHome() + U.streakHome() + U.rankHome() + U.feedbackHome() + U.deskHint() +
+        '</div>' + U.homeNav('home'));
+    }
     if ($('b-cont')) $('b-cont').onclick = () => {
       G.c = saved.c;
       // saves de antes dos investimentos
@@ -44,20 +51,21 @@
     U.lastHomeBind();
     U.packHomeBind();
     U.streakBind(U.home); // pegou um pacotinho da sequência: a tela redesenha com o bloco de pacotinhos
-    $('b-mine').onclick = mine;
+    U.homeNavBind();
     U.challengeHomeBind();
     U.relampagoHomeBind();
     if ($('b-opiniao')) $('b-opiniao').onclick = () => U.feedback('inicio', {}, home);
     $('b-rank').onclick = () => U.ranking();
     if ($('b-cloud')) {
-      $('b-cloud').innerHTML = U.emo('☁️', 'xs') + ' ' + esc(U.cloudName());
+      $('b-cloud').innerHTML = U.emo('☁️', 'xs') + ' ' + (U.cloudName() === 'Conta' ? 'Entrar na conta' : esc(U.cloudName()));
       $('b-cloud').onclick = () => U.cloud('login');
     }
-    const snd = $('b-sound');
-    if (snd) { snd.innerHTML = '<span class="gear-ic">' + U.GEAR_SVG + '</span> Configurações'; snd.onclick = U.settings; }
+    $('b-sound').onclick = U.settings;
     // A bola 3D espera o módulo 3D terminar de carregar (na primeira visita ele chega depois da tela)
-    const hero = splash && screen.querySelector('.hero');
-    if (hero) { splash.classList.remove('splash'); splash.querySelector('.ball3d').id = 'ball3d'; hero.replaceWith(splash); }
+    const top = splash && screen.querySelector('.hero');
+    if (top) { splash.classList.remove('splash'); splash.querySelector('.ball3d').id = 'ball3d'; top.replaceWith(splash); }
+    // Quem já jogou vê a bola pequena ao lado do nome: a bola montada no tamanho da abertura se ajusta ao novo tamanho
+    if (played) requestAnimationFrame(() => dispatchEvent(new Event('resize')));
     // Sem 3D (desligado, sem WebGL ou a biblioteca não chegou): bola desenhada no lugar, para o topo não ficar vazio
     const flatBall = () => { const el = $('ball3d'); if (el && !el.querySelector('canvas') && !el.classList.contains('flat')) { el.classList.add('flat'); el.innerHTML = '<img src="assets/tw/26bd.svg" alt="">'; } };
     const mountBall = () => {
@@ -76,6 +84,50 @@
     if (U.whatsNew) U.whatsNew();
   }
 
+  // Carreira em andamento: a carta, onde ele está, o caminho até a aposentadoria e o botão de continuar
+  function contCard(saved) {
+    const sc = saved.c, o = S.ovr(sc), t = tierCls(o), cl = club(sc.club), yr = YEAR0 + (sc.season || 0);
+    const next = !sc.club ? 'Próximo: escolher o primeiro clube' : saved.step === 'wc' ? 'Próximo: Copa do Mundo ' + yr : saved.step === 'cwc' ? 'Próximo: Mundial de Clubes'
+      : ['event', 'squad', 'moment', 'invest'].includes(saved.step) ? 'Temporada ' + yr + ' em andamento' : 'Próximo: temporada ' + yr;
+    // Caminho até a aposentadoria: dos 16 aos 35 (a maioria para entre 33 e 37)
+    const pct = Math.max(4, Math.min(100, Math.round((sc.age - 16) / 19 * 100)));
+    return '<div class="hm-cont"><div class="hm-cont-row"><span class="scard metal ' + t + '"><span class="sc-tier">' + TIER_NAME[t] + '</span><b>' + o + '</b><span class="sc-pos">' + sc.pos + '</span></span>' +
+      '<span class="cc-info"><small>Sua carreira</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : '') + sc.age + ' anos</span><em>' + next + '</em></span></div>' +
+      '<div class="hm-prog" aria-hidden="true"><i style="width:' + pct + '%"></i></div><div class="hm-prog-l"><span>16 anos</span><span>aposentadoria</span></div>' +
+      '<button class="btn" id="b-cont">Continuar carreira</button></div>';
+  }
+
+  // Quem chega por link de desafio (?d= carreira, ?r= relâmpago): uma página só do desafio, com um botão
+  function landing(kind, played) {
+    const rl = kind === 'r', d = rl ? U.relampagoActive() : U.challengeActive();
+    if (!d) return false;
+    const score = rl ? d.f.total : d.s, grade = rl ? d.f.grade : d.g;
+    const steps = rl ? ['5 casas da carreira: clubes, gols e títulos', 'Cada casa tem 5 bolas. Gol leva o prêmio escondido', 'Mesmos prêmios de ' + esc(d.n) + '. Quem fizer mais vence']
+      : ['Crie um garoto de 16 anos e escolha os clubes', 'Decida e cobre os lances: uns 9 minutos', 'No fim, o jogo compara a sua nota com a de ' + esc(d.n)];
+    render('<div class="hm hm-land"><div class="eyebrow">' + (rl ? 'Desafio relâmpago' : 'Você foi desafiado') + '</div>' +
+      '<h2 class="hm-tag">' + esc(d.n) + ' fez ' + score.toLocaleString('pt-BR') + ' pontos. Consegue bater?</h2>' +
+      '<div class="hm-vs"><div class="hm-vs-c gold"><small>' + esc(d.n) + '</small><b>' + score.toLocaleString('pt-BR') + '</b><span>Nota ' + grade + '</span></div>' +
+      '<div class="hm-vs-c you"><small>Você</small><b>?</b><span>' + (rl ? '1 tentativa' : 'sua carreira') + '</span></div></div>' +
+      '<ol class="hm-steps">' + steps.map(x => '<li>' + x + '</li>').join('') + '</ol>' +
+      '<button class="btn hm-cta" id="b-land-go">Aceitar desafio</button>' +
+      '<button class="link-btn" id="b-land-home">' + (rl ? 'Prefiro jogar uma carreira completa' : played ? 'Ir para o início' : 'Só tenho 1 minuto: Carreira Relâmpago') + '</button></div>');
+    $('b-land-go').onclick = () => (rl ? U.relampago() : create());
+    $('b-land-home').onclick = () => (rl || played ? home() : U.relampago());
+    return true;
+  }
+
+  // Menu de baixo (quem já jogou): Início, Carreiras, Ranking e Conta. Sem item de pacotinhos: eles aparecem
+  // no início quando há algum para abrir
+  U.homeNav = cur => {
+    const it = (id, k, ic, label, badge) => '<button class="hn-i' + (cur === k ? ' on' : '') + '" id="' + id + '"' + (cur === k ? ' aria-current="page"' : '') + '>' + U.ICON[ic] + '<span>' + label + '</span>' + (badge ? '<em>' + badge + '</em>' : '') + '</button>';
+    return '<nav class="home-nav" aria-label="Menu principal">' + it('hn-home', 'home', 'house', 'Início') + it('hn-mine', 'mine', 'cards', 'Carreiras', U.salaNew() ? '+' + U.salaNew() : '') +
+      it('hn-rank', 'rank', 'trophy', 'Ranking') + (window.CLIMBIX_SOLO ? '' : it('hn-acc', 'acc', 'user', U.cloudName() === 'Conta' ? 'Conta' : esc(U.cloudName()).slice(0, 12))) + '</nav>';
+  };
+  U.homeNavBind = () => {
+    const on = (id, fn) => { const b = $(id); if (b) b.onclick = () => { if (!b.classList.contains('on')) fn(); }; };
+    on('hn-home', home); on('hn-mine', mine); on('hn-rank', () => U.ranking()); on('hn-acc', () => U.cloud('login'));
+  };
+
   // Minhas carreiras: tudo o que ficou das carreiras encerradas (as telas daqui voltam para cá)
   function mine() {
     G.c = null; G.step = null; bar();
@@ -89,7 +141,8 @@
       '</div>' +
       (hall.length ? '<div class="eyebrow" style="margin-top:8px">Hall da Fama</div><div class="hall">' +
         hall.map(h => '<div><b>' + h.grade + '</b><span>' + esc(h.name) + ' · ' + esc(h.verdict) + '<br><small>' + (h.pos === 'GOL' ? h.cs + ' sem sofrer gol · ' + h.penSaved + ' pên. def. · ' : h.pos === 'ZAG' ? h.cs + ' sem sofrer gol · ' + D.plural(h.goals, 'gol', 'gols') + ' · ' : D.plural(h.goals, 'gol', 'gols') + ' · ' + h.assists + ' assist. · ') + D.plural(h.titles, 'taça', 'taças') + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '') + '</small></span><span class="muted">' + h.score + '</span></div>').join('') + '</div>'
-        : '<p class="muted small">Termine uma carreira para ela aparecer aqui.</p>'));
+        : '<p class="muted small">Termine uma carreira para ela aparecer aqui.</p>') + U.homeNav('mine'));
+    U.homeNavBind();
     $('b-back-home').onclick = home;
     $('b-col').onclick = U.collection;
     $('b-ach').onclick = U.achievements;

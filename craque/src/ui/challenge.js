@@ -31,7 +31,7 @@
     if (!q) return;
     const d = decode(q);
     history.replaceState(null, '', location.pathname);
-    if (d) store(KEY, Object.assign(d, { at: Date.now() }));
+    if (d) { store(KEY, Object.assign(d, { at: Date.now() })); U.linkLanding = 'd'; } // a tela inicial abre na página do desafio
   }
 
   // Cartão da tela inicial enquanto há desafio aberto
@@ -78,5 +78,5 @@
     };
   }
 
-  Object.assign(U, { challengeFromLink: fromLink, challengeHome: homeCard, challengeHomeBind: homeBind, challengeFinale: finaleBox, challengeFinaleBind: finaleBind, challengeEncode: encode, challengeDecode: decode });
+  Object.assign(U, { challengeFromLink: fromLink, challengeHome: homeCard, challengeHomeBind: homeBind, challengeFinale: finaleBox, challengeFinaleBind: finaleBind, challengeEncode: encode, challengeDecode: decode, challengeActive: () => { const d = active(); return d && !d.done ? d : null; } });
 })();
