@@ -58,16 +58,21 @@
     const goReal = () => { markTrained(st); close(); opts.real(); };
     const head = '<div class="trn-head"><b>' + U.emo(dr.ico, 'sm') + ' Treino · ' + esc(dr.name) + '</b>' +
       (opts.real ? '' : '<button class="cfg-x" id="trn-x" aria-label="Fechar">' + U.ICON.x + '</button>') + '</div>';
+    // Placar do treino: acertos de quantas tentativas, no lugar dos gols
+    const board = () => '<div class="ob5-board mini trn-board">' + (G.c ? U.crest(G.c.club) : '<span></span>') +
+      '<span class="ob5-mid"><span class="ob5-min trn-live">Treino</span><small>Não vale nada</small></span>' +
+      (tries ? '<span class="trn-sc"><b>' + hits + '</b><small>de ' + tries + '</small></span>' : '<span class="trn-sc"><small>' + esc(dr.name) + '</small></span>') + '</div>';
     const intro = () => {
       w.innerHTML = '<div class="trn">' + head +
         '<p class="lead small">' + (opts.real ? 'Antes do seu primeiro lance de verdade, treine aqui. Não vale nada: erre à vontade.' : 'Treine o lance quantas vezes quiser. Não vale nada para a carreira.') + '</p>' +
-        '<ol class="trn-steps">' + dr.steps.map(s => '<li>' + esc(s) + '</li>').join('') + '</ol>' +
+        '<ol class="trn-steps ob5-steps">' + dr.steps.map((s, i) => '<li><b>' + (i + 1) + '</b><span>' + esc(s) + '</span></li>').join('') + '</ol>' +
         '<button class="btn" id="trn-go">Começar o treino</button>' +
-        (opts.real ? '<button class="btn ghost" id="trn-skip">Pular o treino</button>' : '') + '</div>';
+        (opts.real ? '<button class="trn-skip-link" id="trn-skip">Pular o treino e ir ao lance</button>' : '') + '</div>';
       bind();
     };
     const play = () => {
-      w.innerHTML = '<div class="trn">' + head + '<p class="trn-tip">' + esc(dr.steps[dr.steps.length - 1]) + '</p><div id="trn-mini"></div></div>';
+      // Faixa escura do placar do lance (O5), avisando que é treino
+      w.innerHTML = '<div class="trn">' + head + board() + '<p class="trn-tip">' + esc(dr.steps[dr.steps.length - 1]) + '</p><div id="trn-mini"></div></div>';
       bind();
       sfx('whistle');
       U.playMini(w.querySelector('#trn-mini'), st, (ok, why) => { if (!w.isConnected) return; tries++; if (ok) hits++; result(ok, why); }, trainee(st));
@@ -76,8 +81,7 @@
     const result = (ok, why) => {
       const big = ok ? ({ save: 'DEFENDEU!', tackle: 'ROUBOU!', pass: 'ASSISTÊNCIA!' }[st] || 'GOL!') : 'Não foi…';
       w.innerHTML = '<div class="trn">' + head +
-        '<div class="card mom-res ' + (ok ? 'ok' : 'ko') + '"><div class="mr-big">' + big + '</div><p class="mr-txt">' + esc(ok ? 'Isso! É assim no jogo de verdade.' : (WHY[why] || 'Tente de novo: o tempo certo é tudo.')) + '</p>' +
-        '<p class="trn-score">' + tries + (tries === 1 ? ' tentativa' : ' tentativas') + ' · ' + hits + (hits === 1 ? ' acerto' : ' acertos') + '</p></div>' +
+        board() + '<div class="ob5-res ' + (ok ? 'ok' : 'ko') + '"><div class="mr-big">' + big + '</div><p class="mr-txt">' + esc(ok ? 'Isso! É assim no jogo de verdade.' : (WHY[why] || 'Tente de novo: o tempo certo é tudo.')) + '</p></div>' +
         '<button class="btn' + (opts.real ? ' ghost' : '') + '" id="trn-go">Treinar de novo</button>' +
         (opts.real ? '<button class="btn" id="trn-real">Ir para o lance de verdade</button>' : '<button class="btn ghost" id="trn-out">Sair do treino</button>') + '</div>';
       bind();

@@ -35,7 +35,9 @@
     const d = {
       name: c.name, number: c.number, pos: c.pos, peak: shot ? shot.ovr : S.ovr(c), attrs: shot ? shot.attrs : S.eff(c), flag: cty.flag,
       crest: 'badges/' + clubId + '.png', verdict: '', look: U.lookOf(c), shirt: U.kitOf(clubId),
-      traits: c.traits.map(id => ({ id, icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(c, id) })),
+      // Foto de temporada traz as características daquela idade; carreira salva antes disso mostra a carta sem elas
+      traits: shot && shot.traits ? shot.traits.filter(t => D.TRAIT_BY_ID[t.id]).map(t => ({ id: t.id, icon: D.TRAIT_BY_ID[t.id].icon, lv: t.lv }))
+        : shot && shot.season ? [] : c.traits.map(id => ({ id, icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(c, id) })),
       footer: shot && shot.txt ? shot.txt : D.CLUB_BY_ID[clubId].name.toUpperCase() + ' · ' + (shot ? shot.age : c.age) + ' ANOS',
     };
     Object.assign(d, trail(c));

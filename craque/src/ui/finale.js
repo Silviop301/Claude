@@ -30,7 +30,9 @@
     if (!R) return '';
     const wins = R.rows.filter(([, a, b]) => a > b).length, loses = R.rows.filter(([, a, b]) => a < b).length;
     const verdict = wins > loses ? 'Você venceu a rivalidade' : wins < loses ? R.name + ' levou a melhor' : 'Rivalidade empatada';
-    return '<div class="fin-rival"><b>' + U.emo('⚔️', 'xs') + ' Você x ' + esc(R.name) + ' · ' + verdict + '</b><table><tr><td></td><td>Você</td><td>' + esc(R.name.split(' ')[0]) + '</td></tr>' +
+    const h = c.rivalHist;
+    return '<div class="fin-rival"><b>' + U.emo('⚔️', 'xs') + ' Você x ' + esc(R.name) + ' · ' + verdict + '</b>' +
+      (R.back && h ? '<span class="fr-hist">Revanche · placar histórico entre carreiras: ' + h.me + ' x ' + h.him + '</span>' : '') + '<table><tr><td></td><td>Você</td><td>' + esc(R.name.split(' ')[0]) + '</td></tr>' +
       R.rows.map(([l, a, b]) => '<tr><td>' + l + '</td><td>' + a + '</td><td>' + b + '</td></tr>').join('') + '</table></div>';
   }
   // Para a próxima: o que faltou nesta carreira (próxima nota, recorde, rival) vira a meta da seguinte
@@ -42,7 +44,11 @@
     if (rank === 1 && hall.length > 1) out.push(['🏅', 'Novo recorde: <b>+' + (f.score - hall[1].score) + '</b> sobre o anterior']);
     else if (rank > 1) out.push(['🏅', 'Seu recorde é ' + hall[0].score + ' pts: faltaram <b>' + (hall[0].score - f.score) + '</b>']);
     const R = S.rivalSummary && S.rivalSummary(c, f.titles);
-    if (R && R.rows.filter(([, a, b]) => a < b).length > R.rows.filter(([, a, b]) => a > b).length) out.push(['⚔️', esc(R.name) + ' levou a melhor. Revanche na próxima?']);
+    const h = c.rivalHist;
+    if (R && R.rows.filter(([, a, b]) => a < b).length > R.rows.filter(([, a, b]) => a > b).length) {
+      out.push(['⚔️', !h ? esc(R.name) + ' levou a melhor.' : R.back ? esc(R.name) + ' levou a melhor de novo (placar histórico ' + h.me + ' x ' + h.him + '). Ele volta na próxima carreira.'
+        : esc(R.name) + ' levou a melhor. Ele volta na próxima carreira para a revanche.']);
+    } else if (R && R.back && h && h.won) out.push(['⚔️', 'Revanche feita contra ' + esc(R.name) + ': placar histórico ' + h.me + ' x ' + h.him]);
     if (!out.length) return '';
     return '<div class="o6-goal">' + out.slice(0, 3).map(([ic, t]) => '<p>' + U.emo(ic, 'xs') + ' ' + t + '</p>').join('') + '</div>';
   }
@@ -60,8 +66,23 @@
     return '<div class="o6-pts"><div class="o6-pl"><b>' + f.score + ' pontos</b><span>' + (next ? 'faltaram ' + (next[1] - f.score) + ' para ' + next[0] : 'nota máxima') + '</span></div>' +
       '<i><em style="width:' + pct + '%"></em></i>' + (rankTxt ? '<small>' + rankTxt + '</small>' : '') + '</div>';
   }
+  // Revanche (engine/rival.js): só nas carreiras normais (ui/start.js marca rivalKeep). Quem levou a melhor fica guardado
+  // e volta na carreira seguinte; venceu ou empatou, a próxima tem rival novo
+  const RIVAL_KEY = 'climbix-rival-v1';
+  function rivalCarry(c, f) {
+    if (!c.rivalKeep || c.rivalHist) return;
+    const R = S.rivalSummary && S.rivalSummary(c, f.titles), rv = c.rival;
+    if (!R || !rv) return;
+    const wins = R.rows.filter(([, a, b]) => a > b).length, loses = R.rows.filter(([, a, b]) => a < b).length;
+    const b = rv.back || { me: 0, him: 0 };
+    const h = c.rivalHist = { me: b.me + (wins > loses ? 1 : 0), him: b.him + (loses > wins ? 1 : 0), won: wins > loses };
+    if (loses > wins) store(RIVAL_KEY, { name: rv.name, country: rv.country, me: h.me, him: h.him, at: Date.now() });
+    else try { localStorage.removeItem(RIVAL_KEY); } catch (e) {}
+  }
+
   function finale() {
     const f = S.finish(G.c);
+    rivalCarry(G.c, f);
     const ach = U.achRecord(G.c, f);
     // Pacotinhos da carreira: fim de carreira, nota, títulos grandes, conquistas novas e carreira do dia
     const packWhy = U.ITEMS.careerWhy(G.c, f, ach);
@@ -72,7 +93,7 @@
     const T = G.c.totals;
     store(SAVE, { c: null, at: Date.now() });
     const hall = (load(HALL) || []);
-    hall.push({ name: G.c.name, grade: f.grade, score: f.score, verdict: f.verdict, goals: T.goals, assists: T.assists, titles: f.titles, ballon: T.ballon, pos: G.c.pos, cs: T.cs || 0, penSaved: T.penSaved || 0 });
+    hall.push({ name: G.c.name, grade: f.grade, score: f.score, verdict: f.verdict, goals: T.goals, assists: T.assists, titles: f.titles, ballon: T.ballon, pos: G.c.pos, cs: T.cs || 0, penSaved: T.penSaved || 0, peak: G.c.peak });
     hall.sort((a, b) => b.score - a.score);
     const rank = hall.findIndex(h => h.score === f.score && h.name === G.c.name) + 1;
     store(HALL, hall.slice(0, 10));
@@ -109,11 +130,12 @@
       pointsBar(f, rankTxt) +
       '<p class="mo-climb" id="mo-climb" hidden></p>' +
       nextGoal(G.c, f, hall, rank) +
-      '<div class="fin-acts o6-acts"><button class="btn" id="b-share">Compartilhar carta</button></div>' +
+      // Compartilhar e jogar de novo numa barra presa embaixo, ao alcance do polegar (Desafiar fica logo abaixo, no fluxo)
+      '<div class="fin-acts o6-acts go-bar"><button class="btn" id="b-share">Compartilhar carta</button><button class="btn o6-again" id="b-again">Nova carreira</button></div>' +
       '<div class="o6-dz">' + U.challengeFinale(G.c, f) + '</div>' +
       (prizes ? '<div class="fin-prizes o6-prizes">' + prizes + '</div>' : '') +
       '<div class="o6-links"><button class="link-btn" data-o6="ed">Editar carta</button><button class="link-btn" data-o6="more">Resumo' + (fresh ? ' <em>' + fresh + '</em>' : '') + '</button>' +
-        '<button class="link-btn" id="b-save">Salvar imagem</button><button class="link-btn gold" id="b-again">Nova carreira</button></div>' +
+        '<button class="link-btn" id="b-save">Salvar imagem</button></div>' +
       '<div class="o6-panel" id="o6-ed" hidden><div class="ed-box" id="ed-box"></div></div>' +
       '<details class="fin-more o6-panel" id="o6-more"><summary>Resumo da carreira' + (fresh ? ' <em>' + fresh + (fresh > 1 ? ' conquistas novas' : ' conquista nova') + '</em>' : '') + '</summary>' +
       '<div class="fin-links">' + (G.c.seasons.length ? '<button id="b-album">' + U.emo('📖', 'sm') + '<span>Álbum</span></button>' : '') +
@@ -137,10 +159,6 @@
       scoreHow(f) +
       '</div>' + (hall.length > 1 ? U.feedbackCard() : '') + '</details>' // 1ª carreira: a opinião fica na tela inicial
     );
-    // Desafiar fica ao lado de Compartilhar (o resultado de um desafio recebido continua logo abaixo)
-    const dz = $('b-desafio');
-    if (dz) screen.querySelector('.o6-acts').appendChild(dz);
-    else screen.querySelector('.o6-acts').classList.add('solo');
     if (!screen.querySelector('.o6-dz').children.length) screen.querySelector('.o6-dz').remove();
     if ($('b-packs')) $('b-packs').textContent = 'Abrir';
     // Links pequenos: abrem (e fecham) a edição da carta e o resumo

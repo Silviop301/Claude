@@ -16,10 +16,18 @@
 
   const count = () => Object.keys(got()).filter(id => S.ACHIEVEMENTS.some(a => a.id === id)).length;
 
+  // Melhor marca entre as carreiras guardadas (HALL) para uma conquista de número: { v, of }
+  function progOf(a) {
+    if (!a.prog) return null;
+    const v = (load(U.HALL) || []).filter(h => !a.prog.pos || a.prog.pos.includes(h.pos)).reduce((m, h) => Math.max(m, h[a.prog.k] || 0), 0);
+    return v > 0 ? { v: Math.min(v, a.prog.of), of: a.prog.of } : null;
+  }
+
   function achTile(a, have, isNew) {
-    const h = have[a.id];
+    const h = have[a.id], pr = !h && progOf(a);
     return '<div class="ach' + (h ? ' on' : '') + (isNew ? ' new' : '') + '"><span class="ic">' + U.icoOf(a, 'md') + (h ? '' : U.emo('🔒', 'xs')) + '</span>' +
       '<b>' + esc(a.name) + '</b><span class="d">' + esc(a.desc) + '</span>' +
+      (pr ? '<span class="ach-prog"><i style="width:' + Math.round(pr.v / pr.of * 100) + '%"></i><em>' + pr.v + '/' + pr.of + '</em></span>' : '') +
       (h ? '<span class="by">' + (isNew ? 'NOVA · ' : '') + esc(h.name) + ' · ' + h.year + '</span>' : '') + '</div>';
   }
 
@@ -36,10 +44,16 @@
   // Tela com todas as conquistas
   function achievements() {
     const have = got(), n = count();
-    render('<div class="eyebrow">Conquistas</div><h2>' + n + ' de ' + S.ACHIEVEMENTS.length + '</h2>' +
+    // "Quase lá": as ainda trancadas com recorde a 60% ou mais do alvo, da mais perto para a mais longe
+    const near = S.ACHIEVEMENTS.filter(a => !have[a.id]).map(a => ({ a, p: progOf(a) })).filter(x => x.p && x.p.v / x.p.of >= 0.6)
+      .sort((x, y) => y.p.v / y.p.of - x.p.v / x.p.of).map(x => x.a);
+    const rest = S.ACHIEVEMENTS.filter(a => !near.includes(a)).sort((a, b) => !!have[b.id] - !!have[a.id]);
+    render('<button class="back-link" id="b-back">‹ Voltar</button>' +
+      '<div class="eyebrow">Conquistas</div><h2>' + n + ' de ' + S.ACHIEVEMENTS.length + '</h2>' +
       '<div class="ach-bar"><i style="width:' + Math.round(n / S.ACHIEVEMENTS.length * 100) + '%"></i></div>' +
-      '<div class="ach-grid">' + S.ACHIEVEMENTS.slice().sort((a, b) => !!have[b.id] - !!have[a.id]).map(a => achTile(a, have, false)).join('') + '</div>' +
-      '<button class="btn ghost" id="b-back">Voltar</button>');
+      (near.length ? '<div class="room-title ach-near-t">Quase lá</div><div class="ach-grid ach-near">' + near.map(a => achTile(a, have, false)).join('') + '</div>' +
+        '<div class="room-title">Todas</div>' : '') +
+      '<div class="ach-grid">' + rest.map(a => achTile(a, have, false)).join('') + '</div>');
     $('b-back').onclick = U.goBack;
   }
 

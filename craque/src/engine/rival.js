@@ -24,8 +24,14 @@
     const names = Object.keys(D.DAILY_NAMES);
     const country = names.includes(c.country) && r() < 0.5 ? c.country : names[Math.floor(r() * names.length)];
     const pool = D.DAILY_NAMES[country].filter(n => n !== c.name);
+    let name = pool[Math.floor(r() * pool.length)], ctry = country;
+    // Revanche (ui/start.js põe c.rivalBack, nunca na carreira do dia nem num desafio): quem venceu a anterior volta com
+    // o mesmo nome e país; força e potencial seguem do sorteio
+    const back = c.rivalBack;
+    if (back && names.includes(back.country) && back.name && back.name !== c.name) { name = back.name; ctry = back.country; }
+    else c.rivalBack = null;
     const rv = c.rival = {
-      name: pool[Math.floor(r() * pool.length)], country, pos: c.pos, age: c.age, seed: r.state(),
+      name, country: ctry, pos: c.pos, age: c.age, seed: r.state(), back: c.rivalBack ? { me: c.rivalBack.me || 0, him: c.rivalBack.him || 0 } : undefined,
       ovr: S.ovr(c) + r.int(-2, 3), pot: r.int(83, 94), club: null, contract: 0, retired: false,
       totals: { games: 0, goals: 0, assists: 0, cs: 0, titles: 0, ballon: 0 }, seasons: [], peak: 0,
     };
@@ -37,6 +43,7 @@
   S.rivalPre = function (c) {
     const rv = S.rivalInit(c);
     if (!rv || rv.retired) { if (rv) rv.now = null; return; }
+    if (rv.now && rv.now.age === rv.age) return; // já jogou esta temporada (S.pickMoment chama antes, para o duelo direto)
     const r = S.rng(rv.seed);
     const a = rv.age;
     if (a > 16) rv.ovr += a <= 27 ? Math.max(0, rv.pot - rv.ovr) * 0.2 + r.gauss() * 1.2 : a <= 30 ? r.gauss() * 0.8 : -DECL(a) + r.gauss() * 0.8;
@@ -64,7 +71,9 @@
     // Candidato à Bola de Ouro: nível de craque num clube grande e uma temporada à altura
     const contender = cl.tier >= 4 && o >= 86;
     const claim = contender && r() < clamp((o - 85) * 0.06, 0, 0.36) * (DEF(rv.pos) ? 0.45 : 1);
-    rv.now = { age: a, club: cl.id, ovr: o, games, goals, assists, cs, titles, contender, claim, ballon: false };
+    // Ligas guardadas agora: no fim da temporada o acesso/rebaixamento já mudou a liga dos clubes
+    const mine = c.club && D.CLUB_BY_ID[c.club];
+    rv.now = { age: a, club: cl.id, league: cl.league, myLeague: mine ? mine.league : null, ovr: o, games, goals, assists, cs, titles, contender, claim, ballon: false };
     rv.seed = r.state();
   };
 
@@ -80,17 +89,21 @@
   };
 
   // Depois da sua temporada: fecha a temporada dele, compara com a sua e envelhece
-  S.rivalPost = function (c, res) {
+  S.rivalPost = function (c, res, M) {
     const rv = c.rival, now = rv && rv.now;
     if (!now) return;
+    // Lance decisivo contra o clube dele: conta como duelo direto
+    const duel = M && M.rival === rv.name && M.vs === now.club ? (M.ok ? 'win' : 'loss') : null;
+    if (duel) { rv.duels = rv.duels || { w: 0, l: 0 }; rv.duels[duel === 'win' ? 'w' : 'l']++; }
     const youBallon = res.awards.some(a => a.id === 'ballon');
     now.ballon = (now.claim || !!res.ballonLost) && !youBallon;
     const T = rv.totals;
     T.games += now.games; T.goals += now.goals; T.assists += now.assists; T.cs += now.cs; T.titles += now.titles; T.ballon += now.ballon ? 1 : 0;
     rv.seasons.push(now);
     const cl = D.CLUB_BY_ID[now.club], yours = D.CLUB_BY_ID[res.club];
-    res.rival = Object.assign({ name: rv.name, country: rv.country, pos: rv.pos, first: rv.seasons.length === 1,
-      sameClub: now.club === res.club, sameLeague: !!cl && !!yours && cl.league === yours.league && now.club !== res.club,
+    const lgHim = now.league || (cl && cl.league), lgYou = now.myLeague || (yours && yours.league);
+    res.rival = Object.assign({ name: rv.name, country: rv.country, pos: rv.pos, first: rv.seasons.length === 1, back: rv.back, duel,
+      sameClub: now.club === res.club, sameLeague: !!lgHim && !!lgYou && lgHim === lgYou && now.club !== res.club,
       tookBallon: !!res.ballonLost, beatHim: youBallon && now.contender }, now);
     rv.age++;
     if (rv.age >= 39 || (rv.age >= 34 && (rv.ovr < 72 || S.rng(rv.seed)() < (rv.age - 33) * 0.15))) { rv.retired = true; res.rival.retires = true; }
@@ -101,8 +114,9 @@
   const play = S.playSeason;
   S.playSeason = function (c) {
     S.rivalPre(c);
+    const M = c.mod && c.mod.moment;
     const res = play(c);
-    S.rivalPost(c, res);
+    S.rivalPost(c, res, M);
     return res;
   };
 
@@ -116,10 +130,12 @@
     const tag = x.tookBallon ? 'tirou a Bola de Ouro de você na votação'
       : x.ballon ? 'ganhou a Bola de Ouro'
       : x.beatHim ? 'você bateu ele na votação da Bola de Ouro'
+      : x.duel ? 'duelo direto no lance decisivo: ' + (x.duel === 'win' ? 'você venceu' : 'ele venceu')
       : x.sameClub ? 'agora vocês jogam juntos'
       : x.sameLeague ? 'duelo na mesma liga: ' + (x.pos === 'ATA' ? D.plural(res.goals, 'gol seu', 'gols seus') + ' contra ' + x.goals : x.pos === 'MEI' ? D.plural(res.assists, 'assistência sua', 'assistências suas') + ' contra ' + x.assists : D.plural(res.cleanSheets || 0, 'jogo sem sofrer gol seu', 'jogos sem sofrer gol seus') + ' contra ' + x.cs)
       : x.retires ? 'anunciou a aposentadoria' : '';
-    return (x.first ? 'Seu rival de geração: ' : 'Rival: ') + base + (tag ? ' · ' + tag : '');
+    const intro = !x.first ? 'Rival: ' : x.back ? 'Ele voltou (placar histórico ' + x.back.me + ' x ' + x.back.him + '): ' : 'Seu rival de geração: ';
+    return intro + base + (tag ? ' · ' + tag : '');
   };
 
   // Balanço da rivalidade no fim da carreira (ui/finale.js)
@@ -129,7 +145,8 @@
     const T = c.totals, R = rv.totals, def = DEF(c.pos);
     const rows = [[def ? 'Jogos sem sofrer gol' : c.pos === 'MEI' ? 'Assistências' : 'Gols', def ? T.cs || 0 : c.pos === 'MEI' ? T.assists : T.goals, def ? R.cs : c.pos === 'MEI' ? R.assists : R.goals],
       ['Títulos', titles, R.titles], ['Bolas de Ouro', T.ballon, R.ballon], ['Melhor carta', c.peak, rv.peak]];
-    return { name: rv.name, country: rv.country, rows, retired: rv.retired };
+    if (rv.duels) rows.push(['Duelos diretos', rv.duels.w, rv.duels.l]);
+    return { name: rv.name, country: rv.country, rows, retired: rv.retired, back: rv.back };
   };
 
   // ---------- decisões com o rival ----------

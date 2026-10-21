@@ -23,7 +23,7 @@
     const { rows, always } = o.st && !o.st.safe && !o.locked ? S.stakeRows(c, o.st) : {};
     if (!rows) {
       if (o.st && o.st.safe && !o.locked) return '<span class="ob3-bar safe" aria-hidden="true"><i style="width:100%"></i></span><span class="odds"><span class="od-row safe"><b>Certo</b><span>' + esc(o.hint) + '</span></span></span>';
-      return '<small>' + esc(o.hint) + '</small>';
+      return '<small>' + (o.locked ? U.emo('🔒', 'xs') : '') + esc(o.hint) + '</small>';
     }
     const cost = always.length === 1 && /^−R\$ /.test(always[0]), pw = Math.round(rows[0].p * 100);
     return '<span class="ob3-bar" aria-hidden="true"><i class="w" style="width:' + pw + '%"></i><i class="l"></i></span>' +
@@ -97,6 +97,9 @@
     G.step = 'moment';
     // Fechou o jogo no meio da cobrança? A chance decide (sem repetir o chute)
     if (m.started || U.cfg.moments === 'auto') { S.autoMoment(G.c); save(); return U.season(); } // configuração: a carta decide
+    // Título, acesso e finais: antes do lance, a reta final corre ao vivo e para na véspera da decisão (ui/season.js).
+    // m.pre fica salvo: quem fecha o jogo e volta cai direto no lance; o fim da temporada não recomeça a corrida.
+    if (m.type !== 'classico' && !m.pre && !U.cfg.fast) { m.pre = true; save(); return U.preRace(m, () => momentIntro(m)); }
     save();
     momentIntro(m);
   }
@@ -109,7 +112,8 @@
       stakes: 'Converteu: campeão da ' + m.comp + ' · Errou: vice' }),
     acesso: m => ({ tag: 'Última rodada · ' + m.comp, title: (m.kick === 'fk' ? 'Falta' : 'Pênalti') + ' valendo o acesso!',
       text: 'Contra ' + D.o(club(m.vs).name) + (m.kick === 'fk' ? ', falta na entrada da área.' : ', pênalti a seu favor.'), stakes: 'Converteu: acesso garantido · Errou: fica para o ano que vem' }),
-    classico: m => ({ tag: 'Clássico', title: 'Falta perigosa no clássico!', text: 'Contra ' + D.o(club(m.vs).name) + ', na entrada da área. A barreira está armada.', stakes: 'Converteu: gol no clássico e Torcida +8' }),
+    classico: m => m.kick === 'pen' ? { tag: 'Clássico', title: 'Pênalti no clássico!', text: 'Derrubaram você na área contra ' + D.o(club(m.vs).name) + '. O estádio inteiro de pé.', stakes: 'Converteu: gol no clássico e Torcida +8' }
+      : ({ tag: 'Clássico', title: 'Falta perigosa no clássico!', text: 'Contra ' + D.o(club(m.vs).name) + ', na entrada da área. A barreira está armada.', stakes: 'Converteu: gol no clássico e Torcida +8' }),
   };
 
   // Lances defensivos (zagueiro/goleiro): o mesmo momento, visto do outro lado
@@ -166,11 +170,11 @@
   function miniFacts(setupType) {
     const k = S.kickSetup(G.c, setupType), E = S.eff(G.c), L = kk => D.label(G.c.pos, kk);
     const lv = id => (G.c.traits.includes(id) ? S.traitLevel(G.c, id) : 0);
-    if (setupType === 'save') return ['<span class="chip">' + L('fin') + ' ' + E.fin + ' · sinal do batedor ' + (k.tellMs >= 340 ? 'longo' : k.tellMs >= 220 ? 'médio' : 'curto') + '</span>',
-      '<span class="chip">' + L('fis') + ' ' + E.fis + ' · alcance ' + (k.diveReach >= 0.8 ? 'grande' : k.diveReach >= 0.66 ? 'médio' : 'curto') + '</span>'].concat(lv('pegador') ? ['<span class="chip">' + U.emo('🥅', 'xs') + ' Pegador de pênalti: sinal mais longo</span>'] : []);
-    if (setupType === 'pass') return ['<span class="chip">' + L('pas') + ' ' + E.pas + ' · brecha ' + (k.win >= 0.2 ? 'larga' : k.win >= 0.14 ? 'média' : 'estreita') + '</span>',
-      '<span class="chip">Corrida ' + (k.period >= 1.35 ? 'lenta' : k.period >= 1.1 ? 'média' : 'rápida') + '</span>'].concat(lv('visao') ? ['<span class="chip">' + U.emo('👁️', 'xs') + ' Visão de Jogo: brecha maior</span>'] : []);
-    if (setupType === 'tackle') return ['<span class="chip">DEF ' + E.def + ' · faixa ' + (k.win >= 0.18 ? 'larga' : k.win >= 0.12 ? 'média' : 'estreita') + '</span>',
+    if (setupType === 'save') return ['<span class="chip">' + L('fin') + ' ' + E.fin + ' · sinal do batedor ' + (k.tellMs >= 190 ? 'longo' : k.tellMs >= 130 ? 'médio' : 'curto') + '</span>',
+      '<span class="chip">' + L('fis') + ' ' + E.fis + ' · alcance ' + (k.diveReach >= 0.62 ? 'grande' : k.diveReach >= 0.52 ? 'médio' : 'curto') + '</span>'].concat(lv('pegador') ? ['<span class="chip">' + U.emo('🥅', 'xs') + ' Pegador de pênalti: sinal mais longo</span>'] : []);
+    if (setupType === 'pass') return ['<span class="chip">' + L('pas') + ' ' + E.pas + ' · brecha ' + (k.win >= 0.13 ? 'larga' : k.win >= 0.093 ? 'média' : 'estreita') + '</span>',
+      '<span class="chip">Corrida ' + (k.period >= 1.0 ? 'lenta' : k.period >= 0.82 ? 'média' : 'rápida') + '</span>'].concat(lv('visao') ? ['<span class="chip">' + U.emo('👁️', 'xs') + ' Visão de Jogo: brecha maior</span>'] : []);
+    if (setupType === 'tackle') return ['<span class="chip">DEF ' + E.def + ' · faixa ' + (k.win >= 0.15 ? 'larga' : k.win >= 0.1 ? 'média' : 'estreita') + '</span>',
       '<span class="chip">RIT ' + E.rit + ' · lance ' + (k.period >= 1.3 ? 'lento' : k.period >= 1.05 ? 'médio' : 'rápido') + '</span>'].concat(lv('carrinho') ? ['<span class="chip">' + U.emo('🦵', 'xs') + ' Carrinho: faixa maior</span>'] : []);
     const f = ['<span class="chip">FIN ' + E.fin + ' · mira ' + (k.period >= 1.7 ? 'lenta' : k.period >= 1.35 ? 'média' : 'rápida') + '</span>',
       '<span class="chip">Tremedeira ' + (k.wobble <= 0.03 ? 'nenhuma' : k.wobble <= 0.08 ? 'pouca' : 'muita') + '</span>'];
@@ -188,21 +192,32 @@
   };
   const MINI_BTN = { cup: 'Bater o pênalti', classico: 'Bater a falta', save: 'Defender o pênalti', tackle: 'Dar o bote', pass: 'Enfiar a bola' };
 
+  // Duelo direto: o clube do outro lado é o do seu rival de geração (engine/moments.js marca m.rival)
+  function rivalTag(m) {
+    if (!m.rival) return '';
+    const rv = G.c.rival, d = rv && rv.duels;
+    return '<p class="ob5-rival">' + U.emo('⚔️', 'xs') + '<span>Do outro lado: <b>' + esc(m.rival) + '</b>, seu rival de geração' + (d ? ' · duelos diretos ' + d.w + ' x ' + d.l : '') + '</span></p>';
+  }
+
+  // Placar escuro do lance (O5): escudos, gols, minuto ao vivo e a competição. mini: faixa baixa em cima da cena (minigame)
+  function board(m, sc, tag, mini) {
+    return '<div class="ob5-board' + (sc ? '' : ' no-score') + (mini ? ' mini' : '') + '">' + crest(G.c.club) + '<b class="ob5-g">' + (sc ? sc[0] : '') + '</b>' +
+      '<span class="ob5-mid">' + (m.minute ? '<span class="ob5-min"><i aria-hidden="true"></i>' + m.minute + "'</span>" : '<span class="ob5-x">×</span>') + '<small>' + esc(tag) + '</small></span>' +
+      '<b class="ob5-g">' + (sc ? sc[1] : '') + '</b>' + crest(m.vs) + '</div>';
+  }
+
   function momentIntro(m) {
     const st = S.kickSetupType(m), def = st === 'save' || st === 'tackle';
     const T = def ? DEF_TXT(m, st) : st === 'pass' ? PASS_TXT(m) : MOMENT_TXT[m.type](m), k = S.kickSetup(G.c, st, S.autoStyle(G.c, st));
     // Estilo ousado: placar escuro (escudos, minuto ao vivo, competição), título grande, o que vale em dourado,
     // o que pesa da carta e os dois estilos como cartões grandes; decidir no automático e treinar no rodapé.
-    const sc = m.score || ['', ''];
     render(
-      '<div class="eyebrow">Jogo decisivo</div>' +
-      '<div class="ob5-board' + (m.score ? '' : ' no-score') + '">' + crest(G.c.club) + '<b class="ob5-g">' + sc[0] + '</b>' +
-        '<span class="ob5-mid">' + (m.minute ? '<span class="ob5-min"><i aria-hidden="true"></i>' + m.minute + "'</span>" : '<span class="ob5-x">×</span>') + '<small>' + esc(T.tag) + '</small></span>' +
-        '<b class="ob5-g">' + sc[1] + '</b>' + crest(m.vs) + '</div>' +
+      '<div class="eyebrow">Jogo decisivo</div>' + board(m, m.score, T.tag) +
       '<div class="ob5-head"><h2>' + T.title + '</h2><p class="ob5-stakes">' + U.emo('🏆', 'xs') + '<span>' + esc(T.stakes) + '</span></p>' +
-        '<p class="ob5-txt">' + (m.ctx ? esc(m.ctx) + ' ' : '') + esc(T.text) + '</p></div>' +
+        '<p class="ob5-txt">' + (m.ctx ? esc(m.ctx) + ' ' : '') + esc(T.text) + '</p>' + rivalTag(m) + '</div>' +
       '<div class="chips ob5-facts">' + miniFacts(st).join('') + '</div>' +
-      '<details class="ob5-how"><summary>Como funciona o lance</summary><p>' + MINI_HOW[st] + '</p></details>' +
+      // Em tela baixa (até 700 px de altura) os chips saem do topo e ficam aqui dentro (style.css, bloco E1)
+      '<details class="ob5-how"><summary>Como funciona o lance</summary><p>' + MINI_HOW[st] + '</p><div class="chips ob5-facts in">' + miniFacts(st).join('') + '</div></details>' +
       '<p class="st-lead ob5-q">Como você vai ' + { cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar' }[st] + '?</p>' + styleBtns(st, true) +
       '<div class="ob5-foot"><button class="btn ghost ob5-auto" id="b-auto">Deixar o jogo decidir<small>' + Math.round(k.chance * 100) + '% pela sua carta</small></button>' +
       '<button class="ob5-train mom-train" id="b-train">' + U.emo('🏟️', 'xs') + ' Treinar antes</button></div>'
@@ -212,7 +227,8 @@
     // Primeiro lance deste tipo: o treino abre antes (e dá para pular)
     bindStyle(m, U.gateTrain(st, () => {
       m.started = true; save();
-      render('<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div><div id="kick"></div>');
+      // O placar escuro continua em cima da cena, numa faixa baixa (placar, minuto e competição)
+      render(board(m, m.score, T.tag, true) + '<div id="kick"></div>');
       sfx('whistle');
       // Saiu da tela no meio da cobrança (voltou ao início): o resultado não redesenha nada; ao retomar, a chance decide
       playMini($('kick'), st, (ok, why) => { if (!$('kick')) return; momentEnd(m, ok, T, why); }, null, null, m.style);
@@ -238,7 +254,8 @@
     const txt = {
       cup: ok ? goal + 'Campeão da ' + m.comp + '!' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
       title: ok ? goal + 'O título é seu!' : (how || 'Não entrou.') + ' O título escapou nos detalhes.',
-      classico: ok ? (bold ? 'Bomba de falta, golaço! ' : 'Golaço de falta colocada! ') + 'O clássico é seu.' : (how || 'Não foi dessa vez.') + ' A torcida lamenta.',
+      classico: m.kick === 'pen' ? (ok ? goal + 'O clássico é seu.' : (how || 'Não entrou.') + ' A torcida lamenta.')
+        : ok ? (bold ? 'Bomba de falta, golaço! ' : 'Golaço de falta colocada! ') + 'O clássico é seu.' : (how || 'Não foi dessa vez.') + ' A torcida lamenta.',
       acesso: ok ? goal + 'O acesso é seu!' : (how || 'Não entrou.') + ' O acesso escapou na última rodada.',
       cont: ok ? goal + 'É campeão da ' + m.comp + '! Seu nome entrou para a história do clube.' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
     }[m.type];
@@ -248,18 +265,29 @@
       : st === 'pass' ? (ok ? (bold ? 'Lançamento por cima na medida e o atacante não perdoou: assistência sua! ' : 'Bola enfiada na medida e o atacante não perdoou: assistência sua! ') : why === 'impedido' ? 'Demorou o passe e ele ficou impedido. ' : why === 'goleiro' ? 'O lançamento foi bom, mas o goleiro saiu e ficou com a bola. ' : 'A zaga cortou o passe. ') : null;
     const defEnd = { cup: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.', title: ok ? 'O título é seu!' : 'O título escapou.',
       classico: ok ? 'O clássico é seu.' : 'A torcida lamenta.', acesso: ok ? 'O acesso é seu!' : 'O acesso escapou.', cont: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.' }[m.type];
-    const final = defTxt !== null ? defTxt + defEnd : txt;
+    const final = (defTxt !== null ? defTxt + defEnd : txt) + (m.rival ? ' ' + (ok ? 'Duelo direto com ' + m.rival.split(' ')[0] + ': ponto seu.' : 'Duelo direto: ponto para ' + m.rival.split(' ')[0] + '.') : '');
     // Placar depois do lance e um título grande (gol, defesa, bote ou a lamentação)
     const def = st === 'save' || st === 'tackle';
     const sc = m.score ? [m.score[0] + (!def && ok ? 1 : 0), m.score[1] + (def && !ok ? 1 : 0)] : null;
     const big = def ? (ok ? (st === 'save' ? 'DEFENDEU!' : 'ROUBOU!') : 'Gol deles…') : ok ? 'GOOOL!' : st === 'pass' ? 'Cortado…' : 'Não entrou…';
+    // Título grande (final continental ou liga principal) ganho no lance: faixa dourada, confete curto e "Comemorar"
+    const LD = D.LADDER[club(G.c.club).league];
+    const fest = ok && (m.type === 'cont' || (m.type === 'title' && !(LD && LD.up)));
+    // O mesmo placar escuro da abertura: mostra o placar de antes e o gol entra contando logo depois
+    const side = sc && sc[0] !== m.score[0] ? 0 : sc && sc[1] !== m.score[1] ? 1 : -1;
     render(
       '<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div>' +
-      '<div class="card mom-res ' + (ok ? 'ok' : 'ko') + '">' +
-      (sc ? '<div class="mom-board">' + crest(G.c.club) + '<b>' + sc[0] + ' × ' + sc[1] + '</b>' + crest(m.vs) + '<span class="mom-min">' + (m.minute || 90) + "'</span></div>" : '') +
-      '<div class="mr-big">' + big + '</div><p class="mr-txt">' + final + '</p></div>' +
-      '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn({ kind: 'moment', ok, m }), { center: true }
+      board(Object.assign({}, m, { minute: m.minute || 90 }), m.score, T.tag) +
+      '<div class="ob5-res ' + (ok ? 'ok' : 'ko') + '"><div class="mr-big">' + big + '</div><p class="mr-txt">' + final + '</p></div>' +
+      (fest ? '<div class="ob5-prize">' + trophy(titleType({ id: m.type === 'cont' ? 'cont' : 'league', name: m.comp }), 52, m.comp) +
+        '<span><small>Campeão</small><b>' + esc(m.comp) + '</b></span></div>' : '') +
+      '<button class="btn" id="b-next">' + (fest ? 'Comemorar' : m.pre ? 'Fechar a temporada' : 'Jogar a temporada') + '</button>' + U.postBtn({ kind: 'moment', ok, m }), { center: true }
     );
+    if (side >= 0) {
+      const g = screen.querySelectorAll('.ob5-board .ob5-g')[side];
+      setTimeout(() => { if (!g.isConnected) return; g.textContent = sc[side]; g.classList.add('bump'); }, 550);
+    }
+    if (fest) confetti();
     if (ok) U.vibe([40, 60, 40]);
     $('b-next').onclick = U.season;
     U.postBind({ kind: 'moment', ok, m, why }, U.season);
@@ -268,5 +296,17 @@
     if (m.type === 'cont') setTimeout(() => { if (btn.isConnected) U.finalPaper(G.c, m, ok); }, 900);
   }
 
-  Object.assign(U, { eventOrSeason, eventScreen, momentOrSeason, MOMENT_TXT, momentIntro, momentEnd, momentResult, playMini, miniFacts, MINI_BTN, styleBtns, bindStyle });
+  // Confete curto por cima da tela (não bloqueia o toque); some sozinho
+  function confetti() {
+    const colors = ['#F4D675', '#FFFFFF', '#5FD690', '#FF8A93', '#7AC7FF'];
+    const w = document.createElement('div');
+    w.className = 'bm-confetti ob5-confetti';
+    w.setAttribute('aria-hidden', 'true');
+    w.innerHTML = Array.from({ length: 28 }, (_, k) => '<i style="left:' + ((k * 37) % 100) + '%;background:' + colors[k % 5] + ';animation-delay:' + ((k * 0.09) % 0.8).toFixed(2) + 's;animation-duration:' + (1.5 + (k % 5) * 0.2).toFixed(2) + 's"></i>').join('');
+    document.body.appendChild(w);
+    sfx('fanfare');
+    setTimeout(() => w.remove(), 2800);
+  }
+
+  Object.assign(U, { eventOrSeason, eventScreen, momentOrSeason, MOMENT_TXT, momentIntro, momentEnd, momentResult, playMini, miniFacts, MINI_BTN, MINI_HOW, styleBtns, bindStyle });
 })();

@@ -224,17 +224,24 @@
     save();
     bar();
     const last = G.c.seasons[G.c.seasons.length - 1], cl = club(G.c.club), role = S.role(G.c, cl);
-    const talk = Math.round(S.talkChance(G.c) * 100);
-    const opt = (id, e, t, d) => '<button class="choice" data-sq="' + id + '"><span class="ic">' + U.emo(e, 'md') + '</span><b>' + t + '</b><span class="d">' + d + '</span></button>';
+    const talk = Math.round(S.talkChance(G.c) * 100), F = S.SQUAD_FX, sg = v => (v > 0 ? '+' : '−') + Math.abs(v);
+    // Estilo ousado (O3): cartão claro com a faixa do clube e as opções com etiqueta, chance e custo em números
+    const kit = (window.CRAQUE_KITS || {})[cl.id] || ['#1F6B3E', '#0B1F14'];
+    const row = (k, b, t) => '<span class="od-row ' + k + '"><b>' + b + '</b><span>' + esc(t) + '</span></span>';
+    const opt = (id, k, tag, t, body) => '<button class="btn opt ob3-opt k-' + k + '" data-sq="' + id + '">' + (tag ? '<span class="ob3-tag">' + tag + '</span>' : '') + '<b class="ob3-lbl">' + t + '</b>' + body + '</button>';
     render(
       '<div class="eyebrow">Pouco espaço · ' + year() + '</div>' +
+      '<div class="card event-card ob3 t-red sq-card" style="--k1:' + kit[0] + ';--k2:' + (kit[1] || kit[0]) + '"><div class="ev-top"><span class="ob3-ic">' + crest(cl.id) + '</span>' +
+      '<span class="ev-tag red">Pouco espaço</span></div>' +
       '<h2>' + last.games + (last.games === 1 ? ' jogo' : ' jogos') + ' ' + D.no(esc(cl.name)) + ' na última temporada</h2>' +
-      '<p class="lead">Hoje você é <b>' + role.name.toLowerCase() + '</b>: o técnico prefere outros. Contrato: ' + G.c.contract + (G.c.contract > 1 ? ' anos' : ' ano') + '. O que fazer?</p>' +
-      '<div class="choices">' +
-      (sq.loans.length ? opt('loan', '🔁', 'Pedir empréstimo', 'Uma temporada como titular num clube menor. Depois você volta, com o contrato valendo.') : '') +
-      opt('talk', '🤝', 'Conversar com o técnico', 'Chance de ' + talk + '% de ganhar mais minutos na próxima temporada. Se não der, a relação esfria.') +
-      opt('out', '🚪', 'Pedir para sair', 'A janela abre agora, com uma proposta a mais. Torcida e técnico não gostam.') +
-      opt('stay', '🛡️', 'Seguir brigando por espaço', 'Nada muda: treinar e esperar a chance.') + '</div>'
+      '<p class="ob3-txt">Hoje você é <b>' + role.name.toLowerCase() + '</b>: o técnico prefere outros. Contrato: ' + G.c.contract + (G.c.contract > 1 ? ' anos' : ' ano') + '. O que fazer?</p></div>' +
+      '<div class="choices ob3-opts">' +
+      (sq.loans.length ? opt('loan', 'plain', '', 'Pedir empréstimo', '<small>Uma temporada como titular num clube menor (' + sq.loans.length + (sq.loans.length === 1 ? ' interessado' : ' interessados') + '). Depois você volta, com o contrato valendo.</small>') : '') +
+      opt('talk', 'risk', 'Arriscada', 'Conversar com o técnico', '<span class="ob3-bar" aria-hidden="true"><i class="w" style="width:' + talk + '%"></i><i class="l"></i></span>' +
+        '<span class="odds">' + row('win', talk + '%', 'mais minutos na próxima temporada · Técnico ' + sg(F.talkOk)) + row('lose', (100 - talk) + '%', 'a relação esfria · Técnico ' + sg(F.talkKo)) + '</span>') +
+      opt('out', 'plain', '', 'Pedir para sair', '<span class="odds">' + row('safe', 'Certo', 'a janela abre agora, com uma proposta a mais') + row('lose', 'Custo', 'Técnico ' + sg(F.outCoach) + ' · Torcida ' + sg(F.outFans)) + '</span>') +
+      opt('stay', 'safe', 'Segura', 'Seguir brigando por espaço', '<span class="ob3-bar safe" aria-hidden="true"><i style="width:100%"></i></span><span class="odds">' + row('safe', 'Certo', 'nada muda: treinar e esperar a chance') + '</span>') +
+      '</div>'
     );
     screen.querySelectorAll('[data-sq]').forEach(b => b.onclick = () => {
       const k = b.dataset.sq;
@@ -243,9 +250,14 @@
       if (k === 'talk') {
         const r = S.coachTalk(G.c);
         save(); bar(); sfx(r.ok ? 'levelup' : 'miss');
-        render('<div class="card ev-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="er-ic">' + U.emo('🤝', 'lg') + '</span><div class="eyebrow">Conversa com o técnico</div><p class="er-txt">' + r.text + '</p></div>' +
-          '<button class="btn" id="b-next">Pré-temporada</button>', { center: true });
-        $('b-next').onclick = U.preseason;
+        // O ponteiro corre sobre a chance e o cartão vira com o carimbo (como nas decisões)
+        U.riskRoll(talk / 100, r.ok, 'Conversar com o técnico', () => {
+          render('<div class="card ev-res ob3-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="ob3-stamp s-' + (r.ok ? 'ok' : 'ko') + '">' + (r.ok ? 'Deu certo' : 'Deu errado') + '</span>' +
+            '<span class="er-ic">' + U.emo('🤝', 'lg') + '</span><div class="eyebrow">Conversa com o técnico</div><p class="er-txt">' + r.text + '</p>' +
+            '<div class="er-fx">' + (r.ok ? '<span class="up">Técnico ' + sg(F.talkOk) + '</span><span class="up">Mais minutos</span>' : '<span class="down">Técnico ' + sg(F.talkKo) + '</span>') + '</div></div>' +
+            '<button class="btn" id="b-next">Pré-temporada</button>', { center: true });
+          $('b-next').onclick = U.preseason;
+        });
       } else if (k === 'out') { S.askOut(G.c); save(); windowOffers(); }
       else { S.stayAndFight(G.c); save(); U.preseason(); }
     });

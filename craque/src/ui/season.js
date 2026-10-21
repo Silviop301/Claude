@@ -66,7 +66,9 @@
     const r = S.rng(((G.c && G.c.tseed) || 7) * 31 + res.age * 977 + tb.pos * 13);
     const n = tb.n, R = tb.rounds, up = res.move && res.move.dir === 'up', down = res.move && res.move.dir === 'down';
     let kind, fin;
-    if (tb.pos === 1) { kind = 'title'; fin = tb.lead; }
+    // Lance de acesso na última rodada: a corrida é a do acesso, mesmo terminando entre os primeiros
+    if (tb.m === 'acesso' && tb.promo && tb.pos <= tb.promo + 2) { kind = 'acesso'; fin = up ? r.int(1, 4) : -r.int(1, 4); }
+    else if (tb.pos === 1) { kind = 'title'; fin = tb.lead; }
     else if (tb.pos <= 3 && tb.gap <= 6) { kind = 'title'; fin = -tb.gap; }
     else if (tb.promo && tb.pos <= tb.promo + 2) { kind = 'acesso'; fin = up ? r.int(1, 4) : -r.int(1, 4); }
     else if (tb.releg && tb.pos >= n - tb.releg - 1) { kind = 'degola'; fin = down ? -r.int(1, 4) : r.int(1, 4); }
@@ -182,7 +184,8 @@
   function drawRace(rc, u) {
     const el = $('race');
     if (!el) return;
-    const k = Math.max(0, Math.min(rc.frames.length - 1, Math.floor(u * (rc.frames.length - 1) + 1e-9))), f = rc.frames[k], end = u >= 1;
+    // rc.from: a corrida começa nesse quadro (a reta final já foi vista antes do lance) · rc.open: sem veredito no fim
+    const k = Math.max(rc.from || 0, Math.min(rc.frames.length - 1, Math.floor(u * (rc.frames.length - 1) + 1e-9))), f = rc.frames[k], end = u >= 1 && !rc.open;
     // Só redesenha quando muda o quadro: refazer a tabela a cada quadro reiniciava os escudos, que não chegavam a aparecer
     const key = k + (end ? 'e' : '');
     if (rc.drawn === key && el.firstChild) return;
@@ -200,12 +203,84 @@
       '<p class="rc-lbl ' + tone + '">' + (end ? esc(vd[0]) : esc(raceLabel(rc, f.v, f))) + '</p>';
   }
 
+  // ---------- reta final antes do lance decisivo ----------
+  // Lance de título ou acesso (última rodada) e finais de copa: antes do lance, a liga corre ao vivo até a penúltima
+  // rodada e para empatada (ou o mata-mata chega à final). O resultado só sai no lance; depois a temporada fecha
+  // sem recomeçar a corrida (season: race.from). Só apresentação: o motor joga a temporada depois do lance, como sempre.
+  const PRE_PHASES = ['Oitavas', 'Quartas', 'Semi'];
+  function preRace(m, done) {
+    const c = G.c, cl = club(c.club), LD = D.LADDER[cl.league], cupLike = m.type === 'cup' || m.type === 'cont';
+    const r = S.rng(((c.tseed || 7) * 37 + c.age * 911 + 5) >>> 0);
+    const kit = (window.CRAQUE_KITS || {})[cl.id] || ['#1F6B3E', '#0B1F14'];
+    let rc = null, path = null;
+    if (!cupLike) {
+      // Mesmo tamanho de tabela do motor (no mínimo 20 times, ida e volta)
+      const n = Math.max(20, D.CLUBS.filter(x => x.league === cl.league).length), R = 2 * (n - 1);
+      const kind = m.type === 'title' ? 'title' : 'acesso', promo = (LD && LD.promo) || 4;
+      const rounds = RACE_AT.map(f => Math.max(1, Math.round(R * f))).concat([R - 1]);
+      const v0 = Math.round(r.gauss() * 4);
+      const vals = rounds.map((rd, i) => i === rounds.length - 1 ? 0 : Math.max(-6, Math.min(6, Math.round(v0 * (1 - Math.pow(rd / R, 1.5)) + r.gauss() * (1 - rd / R) * 3))));
+      const posAt = v => { const st = Math.floor(Math.abs(v) / 3);
+        return kind === 'title' ? (v >= 0 ? 1 : Math.min(2 + st, n - 1)) : v >= 0 ? Math.max(2, promo - st) : Math.min(promo + 1 + st, n); };
+      rc = { kind, R, open: true, frames: vals.map((v, i) => ({ rd: rounds[i], v, pos: posAt(v) })) };
+    } else {
+      // Mata-mata até a final: três adversários da copa (do mais fraco ao mais forte), nenhum deles o da final
+      const skip = x => x.id !== cl.id && x.id !== m.vs;
+      let pool = m.type === 'cup' ? S.cupField(cl).slice(0, 16).map(id => D.CLUB_BY_ID[id]).filter(skip)
+        : D.CLUBS.filter(x => skip(x) && S.contName(x) === m.comp && x.league !== cl.league).sort((a, b) => b.strength - a.strength).slice(0, 16);
+      if (pool.length < 3) pool = D.CLUBS.filter(x => skip(x) && x.league === cl.league);
+      const got = [];
+      while (got.length < 3 && pool.length) got.push(pool.splice(r.int(0, pool.length - 1), 1)[0]);
+      path = got.sort((a, b) => a.strength - b.strength);
+    }
+    const head = cupLike ? (m.type === 'cup' ? 'Mata-mata' : 'Fase final') : 'Reta final';
+    render(
+      '<div class="season-head sx-head" style="--k1:' + kit[0] + ';--k2:' + (kit[1] || kit[0]) + '">' + crest(cl.id, 'lg') + '<div class="sx-id"><h2>' + esc(cl.name) + '</h2>' +
+        '<div class="eyebrow">Temporada ' + year() + ' · ' + esc(m.comp) + '</div></div><span class="tag">' + head + '</span></div>' +
+      '<div class="sx-live" id="sx-live"><span class="sx-dot" aria-hidden="true"></span><b id="sx-st">Ao vivo</b><span class="sx-rd" id="sx-rd"></span><i class="sx-prog"><i id="sx-bar"></i></i></div>' +
+      (rc ? '<div class="race" id="race"></div>' : '<div class="race title pr-path" id="pre-path"><div class="rc-top"><span class="rc-rd">Caminho até a final</span></div><div class="rc-tbl" id="pr-rows"></div></div>') +
+      '<div class="pr-duel" id="pr-duel" hidden>' + crest(cl.id) + '<span class="pr-x"><b>' + (cupLike ? 'Final' : 'Última rodada') + '</b>' + esc(cupLike ? 'Contra ' + D.o(club(m.vs).name) + ', jogo único' : 'Empatados em pontos com ' + D.o(club(m.vs).name)) + '</span>' + crest(m.vs) + '</div>' +
+      '<p class="skip-hint" id="skip-hint">Toque para pular</p>'
+    );
+    const steps = rc ? rc.frames.length : path.length;
+    const dur = rc ? 2200 : 1800, t0 = performance.now();
+    let skip = false, shown = 0, finished = false;
+    setTimeout(() => { screen.onclick = () => { if (finished) go(); else skip = true; }; }, 50);
+    const go = () => { if (!$('pr-duel')) return; screen.onclick = null; done(); };
+    const rowOf = (x, i) => '<div class="rt-r pr-row"><i>' + PRE_PHASES[i] + '</i>' + crest(x.id, 'xs') + '<span>' + esc(x.name) + '</span><b>passou</b></div>';
+    (function tick(now) {
+      if (!$('pr-duel')) return; // saiu da tela
+      const u = skip ? 1 : Math.max(0, Math.min(1, (now - t0) / dur));
+      $('sx-bar').style.width = Math.round(u * (rc ? (rc.R - 1) / rc.R : 0.8) * 100) + '%';
+      if (rc) {
+        drawRace(rc, u);
+        const f = rc.frames[Math.max(0, Math.min(steps - 1, Math.floor(u * (steps - 1) + 1e-9)))];
+        $('sx-rd').innerHTML = 'Rodada <b>' + f.rd + '</b><small>/' + rc.R + '</small>';
+        if (!skip && f.rd !== shown) { shown = f.rd; sfx('tick'); }
+      } else {
+        const k = Math.min(steps, Math.floor(u * steps + 1e-9) + 1), rows = $('pr-rows');
+        while (shown < k) { rows.insertAdjacentHTML('beforeend', rowOf(path[shown], shown)); shown++; if (!skip) sfx('tick'); }
+        $('sx-rd').innerHTML = '<b>' + (u >= 1 ? 'Final' : PRE_PHASES[Math.max(0, k - 1)]) + '</b>';
+      }
+      if (u < 1) return requestAnimationFrame(tick);
+      // Parou na véspera da decisão: o duelo aparece e o lance abre sozinho (toque adianta)
+      finished = true;
+      $('sx-live').classList.add('hold');
+      $('sx-st').textContent = rc ? 'Antes da última rodada' : 'Vai começar a final';
+      $('pr-duel').hidden = false;
+      $('skip-hint').textContent = 'Toque para ir ao lance';
+      setTimeout(go, skip ? 900 : 1600);
+    })(t0);
+  }
+
   // Etiqueta do papel: o prometido pelo clube, ou o que de fato aconteceu quando quase não jogou (lesão, técnico, escolhas)
   function roleSeen(res) {
     const sh = res.src && res.src.max ? res.games / res.src.max : 1;
     return sh >= 0.3 || res.role === 'Banco' || res.role === 'Reserva' ? res.role : sh >= 0.15 ? 'Reserva' : 'Banco';
   }
   function season() {
+    // A reta final já passou na tela antes do lance (preRace): a corrida não recomeça da rodada 1
+    const preM = G.c.mod && G.c.mod.moment && G.c.mod.moment.pre ? G.c.mod.moment.type : null;
     const res = S.playSeason(G.c);
     U.rankSave(G.c); // ranking: nota máxima, gols e títulos já contam durante a carreira
     sfx('whistle');
@@ -218,6 +293,7 @@
     const t0c = tierCls(res.ovr0);
     const race = raceOf(res);
     res.race = race ? race.kind : false;
+    if (race && race.last && (preM === 'title' || preM === 'acesso')) race.from = race.frames.length - 1;
     // Cores do clube no topo (as do escudo, as mesmas do fundo da tela)
     const kit = (window.CRAQUE_KITS || {})[cl.id] || ['#1F6B3E', '#0B1F14'];
     render(
@@ -237,11 +313,17 @@
       '<div class="feed" id="feed"></div><div id="after"></div><p class="skip-hint" id="skip-hint">Toque para pular</p>'
     );
     let hls = [], hlShown = 0;
+    const rateShow = r => {
+      const k = $('k-n');
+      k.textContent = r.toFixed(1).replace('.', ',');
+      k.parentNode.classList.remove('rt-lo', 'rt-mid', 'rt-hi');
+      k.parentNode.classList.add(r >= 7 ? 'rt-hi' : r >= 6.3 ? 'rt-mid' : 'rt-lo');
+    };
     const tickLive = (u, now3) => {
       const bar = $('sx-bar'), rd = $('sx-rd');
       if (!bar) return;
       bar.style.width = Math.round(Math.max(0, Math.min(1, u)) * 100) + '%';
-      if (race) { const f = race.frames[Math.max(0, Math.min(race.frames.length - 1, Math.floor(u * (race.frames.length - 1) + 1e-9)))]; rd.innerHTML = 'Rodada <b>' + f.rd + '</b><small>/' + race.R + '</small>'; }
+      if (race) { const f = race.frames[Math.max(race.from || 0, Math.min(race.frames.length - 1, Math.floor(u * (race.frames.length - 1) + 1e-9)))]; rd.innerHTML = 'Rodada <b>' + f.rd + '</b><small>/' + race.R + '</small>'; }
       else rd.innerHTML = 'Jogo <b>' + now3[0] + '</b><small>/' + (res.src && res.src.max ? res.src.max : res.games) + '</small>';
       // Cada lance entra no topo do ticker numa fração da temporada
       while (hlShown < hls.length && u >= (hlShown + 1) / (hls.length + 1)) {
@@ -259,7 +341,7 @@
     };
     // Com reta final, a temporada dura um pouco mais: a tabela precisa de tempo para virar
     const few = res.src && res.src.max && res.games / res.src.max < 0.15; // do banco não há o que contar: a tela não se arrasta
-    const dur = few ? (race ? 1400 : 800) : race ? (race.kind === 'meio' ? 2200 : 2800) : 1500, t0 = performance.now();
+    const dur = few ? (race ? 1400 : 800) : race && !race.from ? (race.kind === 'meio' ? 2200 : 2800) : 1500, t0 = performance.now();
     if (!few) hls = res.highlights.slice(0, 4);
     let skip = !!U.cfg.fast, shown = [0, 0, 0]; // configuração: resumo rápido
     // Liga o "pular" só depois: o toque que abriu esta tela ainda está se propagando
@@ -272,13 +354,16 @@
       if (!skip && (now3[1] > shown[1] || now3[2] > shown[2])) sfx('tick');
       shown = now3;
       $('k-j').textContent = now3[0]; $('k-g').textContent = now3[1]; $('k-a').textContent = now3[2];
+      // A nota anda junto (de 6,0 até a da temporada) e ganha a cor da faixa; a barra do topo soma ao vivo
+      if (res.games && now3[0]) rateShow(6 + (res.rating - 6) * e);
+      U.barLive(e);
       if (race) drawRace(race, u);
       tickLive(u, now3);
       if (u < 1) return requestAnimationFrame(tick);
       endLive();
       bar(); // a barra do topo mostra os totais da carreira já com esta temporada (antes só mudava no resumo)
       if (race && !skip) { const vd = raceVerdict(race); if (vd[1] === 'win' && race.kind !== 'title') sfx('levelup'); if (vd[1] === 'win') U.vibe(25); }
-      $('k-n').textContent = res.games ? res.rating.toFixed(1).replace('.', ',') : '–';
+      if (res.games) rateShow(res.rating); else $('k-n').textContent = '–';
       $('k-n').parentNode.classList.add('pop');
       const v = verdictOf(res);
       $('sv-lbl').textContent = v[0]; $('sv-lbl').className = 'sv-lbl ' + v[1];
@@ -401,6 +486,8 @@
     const done = () => { screen.onclick = null; const h = $('skip-hint'); if (h) h.remove(); };
     // O jornal aparece uma vez por temporada, mesmo se a pessoa pular o resto
     const all = () => {
+      // Tocou num botão (ex.: "Encerrar a carreira") antes do fim da revelação: a tela já é outra, o jornal não abre mais
+      if (!items.length || !items[0].isConnected) { clearTimeout(timer); screen.onclick = null; return; }
       clearTimeout(timer); items.forEach(el => el.classList.add('in')); done();
       if (!paper) { paper = true; showPaper(res); }
     };
@@ -463,9 +550,11 @@
     const tourLbl = goWc ? 'Copa do Mundo ' + year() + ' ' + U.emo('🌍', 'sm') : 'Mundial de Clubes ' + year() + ' ' + U.emo('🌐', 'sm');
     let actions;
     const pctx = { kind: fin ? 'farewell' : 'season', res };
-    if (fin) actions = '<p class="lead">' + (res.farewell ? 'Fim da temporada de despedida. Hora de pendurar as chuteiras.' : (G.c.age >= S.RETIRE_AGE ? 'Aos ' + G.c.age + ' anos, o corpo pediu para parar.' : S.ovr(G.c) < S.RETIRE_OVR ? 'Com a carta em ' + S.ovr(G.c) + ', nenhum clube quis renovar. Hora de pendurar as chuteiras.' : 'Aos ' + G.c.age + ' anos, o corpo já não acompanha a cabeça: a carta caiu de ' + G.c.peak + ' para ' + S.ovr(G.c) + '. Hora de pendurar as chuteiras.')) + '</p><button class="btn" id="b-next">' + (goTour ? 'Última dança: ' + tourLbl : 'Ver sua carreira') + '</button>' + U.postBtn(pctx);
+    // Seguir e postar numa barra presa embaixo, ao alcance do polegar (a tela mais repetida da carreira)
+    const goBtns = '<button class="btn" id="b-next">' + (goTour ? (fin ? 'Última dança: ' : 'Jogar ' + (goWc ? 'a ' : 'o ')) + tourLbl : fin ? 'Ver sua carreira' : open ? 'Janela de transferências' : 'Próxima temporada') + '</button>' + U.postBtn(pctx);
+    if (fin) actions = '<p class="lead">' + (res.farewell ? 'Fim da temporada de despedida. Hora de pendurar as chuteiras.' : (G.c.age >= S.RETIRE_AGE ? 'Aos ' + G.c.age + ' anos, o corpo pediu para parar.' : S.ovr(G.c) < S.RETIRE_OVR ? 'Com a carta em ' + S.ovr(G.c) + ', nenhum clube quis renovar. Hora de pendurar as chuteiras.' : 'Aos ' + G.c.age + ' anos, o corpo já não acompanha a cabeça: a carta caiu de ' + G.c.peak + ' para ' + S.ovr(G.c) + '. Hora de pendurar as chuteiras.')) + '</p>';
     else {
-      actions = '<button class="btn" id="b-next">' + (goTour ? 'Jogar ' + (goWc ? 'a ' : 'o ') + tourLbl : open ? 'Janela de transferências' : 'Próxima temporada') + '</button>' + U.postBtn(pctx);
+      actions = '';
       // Sinal do fim: mais uma queda como a desta temporada e a carreira acaba (dá tempo de anunciar a despedida)
       if (S.nearRetire(G.c, dOvr)) actions = '<p class="wc-miss rv">' + U.emo('⏳', 'sm') + ' O corpo dá sinais: mais uma queda como esta e a carreira acaba. Pode ser a hora de anunciar a última temporada.</p>' + actions;
       if (S.canAnnounce(G.c)) actions += '<button class="btn ghost" id="b-farewell">Anunciar a última temporada<small>Torcida +10 (+5 com o post) e mais minutos · parar em alta rende pontos extras</small></button>';
@@ -491,7 +580,8 @@
       (moveTxt ? '<div class="move-line rv ' + res.move.dir + '">' + moveTxt + '</div>' : '') +
       (res.loanBack ? '<p class="contract rv">Fim do empréstimo: você volta ' + D.ao(esc(club(res.loanBack.to).name)) + '.</p>' : '') +
       (res.titles.length ? '<div class="titles">' + res.titles.map(t => '<div class="title-won rv">' + trophy(titleType(t), 60, t.name) + '<span>Campeão<br><b>' + esc(t.name) + '</b></span></div>').join('') + '</div>' : '') +
-      '<div class="awards">' + res.awards.map(a => '<div class="award rv' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : U.emo('🥇', 'sm') + ' ') + a.name + '</div>').join('') + '</div>' +
+      '<div class="awards">' + res.awards.map(a => '<div class="award rv' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : U.emo('🥇', 'sm') + ' ') + a.name + '</div>').join('') +
+        (res.milestones || []).map(m => '<div class="award milestone rv">' + U.emo(m.icon, 'sm') + ' ' + esc(m.txt) + '</div>').join('') + '</div>' +
       // A história do ano num bloco só, em linhas com peso menor que a carta, a nota e a tabela
       '<p class="sx-lbl rv">O que falaram</p><div class="story rv">' + hl +
       '<div class="news rv"><div class="np">' + U.emo('📰', 'xs') + ' Nos jornais</div><p>' + esc(res.headlines[0] || '') + '</p></div>' +
@@ -510,7 +600,10 @@
       res.highlights.slice(1).map(h => '<div class="hl">' + esc(h) + '</div>').join('') +
       '<div class="card why-card"><p class="delta-in ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' + why + '</div>' +
       '<p class="rel-delta">' + U.emo('👔', 'xs') + ' Técnico ' + res.coach0 + ' → ' + res.coach1 + ' · ' + U.emo('📣', 'xs') + ' Torcida ' + res.fans0 + ' → ' + res.fans1 + ' (' + S.relLabel(res.fans1) + ')</p>' +
-      (fin ? '' : '<p class="contract">' + contractTxt + '</p>') + '</details>' + '<div class="rv s-acts">' + actions + '</div>';
+      (fin ? '' : '<p class="contract">' + contractTxt + '</p>') + '</details>' + (actions ? '<div class="rv s-acts">' + actions + '</div>' : '');
+    // A barra fica fora do #after (que começa abaixo da dobra no celular): presa no pé da tela desde o começo do resumo
+    screen.querySelectorAll('.s-go').forEach(el => el.remove());
+    $('after').insertAdjacentHTML('afterend', '<div class="rv s-go go-bar">' + goBtns + '</div>');
     bar();
     reveal(skipNow, res);
     // Última temporada: a carta desbota em sépia, como foto antiga, antes da carta final da carreira
@@ -538,5 +631,5 @@
     return S.benchCase(G.c) ? U.squad() : U.preseason();
   }
 
-  Object.assign(U, { celebrate, season, lede, showPaper, reveal, summary, afterSeason });
+  Object.assign(U, { celebrate, preRace, season, lede, showPaper, reveal, summary, afterSeason });
 })();

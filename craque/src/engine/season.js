@@ -249,6 +249,12 @@
     const otherIds = leagueClubs.filter(x => x.id !== club.id).map(x => x.id).concat(below);
     const order = otherPts.map((p2, i) => [p2, otherIds[i] || 0]).sort((a, b) => b[0] - a[0]).map(x => x[1]);
     order.splice(pos - 1, 0, club.id);
+    // Lance da última rodada (título ou acesso): o adversário do lance fica do outro lado da linha na tabela mostrada
+    // (só troca nomes de lugar: pontos e posições não mudam, nada de sorteio)
+    if (M && (M.type === 'title' || (M.type === 'acesso' && LD0 && LD0.up))) {
+      const t = M.type === 'title' ? (pos === 1 ? 1 : 0) : pos <= LD0.promo ? LD0.promo : pos - 2, j = order.indexOf(M.vs);
+      if (j >= 0 && t >= 0 && t < order.length && t !== j && order[t] !== club.id) { order[j] = order[t]; order[t] = M.vs; }
+    }
     if (!league && pos > 1) col[0] = Math.max(col[0], leaderPts);
     for (let i = 1; i < col.length; i++) if (col[i] > col[i - 1]) col[i] = col[i - 1];
     const mid = col.reduce((a2, x) => a2 + x, 0) / col.length, spread = col[0] - col[col.length - 1];
@@ -263,7 +269,8 @@
       const tight = 1 + ((pts + c.season) % 3); // sem gastar sorteio: o resto da temporada não muda
       if (M.type === 'title' && pos === 1) shown[1] = Math.max(shown[1], shown[0] - tight);
       else if (M.type === 'title' && pos === 2) shown[0] = shown[1] + Math.min(tight, 2);
-      else if (LD0 && LD0.up && pos === LD0.promo && shown[pos]) shown[pos] = Math.max(shown[pos], shown[pos - 1] - tight);
+      // Subiu (mesmo terminando acima do corte): quem ficou até o primeiro de fora chega a no máximo 3 pontos
+      else if (LD0 && LD0.up && pos <= LD0.promo && shown[pos]) for (let i = pos; i <= LD0.promo && i < shown.length; i++) shown[i] = Math.max(shown[i], shown[pos - 1] - tight);
       else if (LD0 && LD0.up && pos === LD0.promo + 1) shown[pos - 2] = Math.max(shown[pos - 1] + 1, Math.min(shown[pos - 2], shown[pos - 1] + tight));
       for (let i = 1; i < shown.length; i++) if (shown[i] > shown[i - 1]) shown[i] = shown[i - 1];
     }
@@ -285,7 +292,8 @@
       const hl = {
         cup: M.ok ? '⚽ Seu pênalti decidiu a final da ' + M.comp + ' contra ' + D.o(vsName) : '😞 Pênalti perdido na final da ' + M.comp + ' contra ' + D.o(vsName),
         title: M.ok ? '⚽ Pênalti convertido na última rodada: título contra ' + D.o(vsName) : '😞 Pênalti perdido na última rodada contra ' + D.o(vsName) + ': vice',
-        classico: M.ok ? '🎯 Gol de falta no clássico contra ' + D.o(vsName) : '🧱 Falta desperdiçada no clássico contra ' + D.o(vsName),
+        classico: M.kick === 'pen' ? (M.ok ? '⚽ Pênalti convertido no clássico contra ' + D.o(vsName) : '😞 Pênalti perdido no clássico contra ' + D.o(vsName))
+          : M.ok ? '🎯 Gol de falta no clássico contra ' + D.o(vsName) : '🧱 Falta desperdiçada no clássico contra ' + D.o(vsName),
         acesso: M.ok ? '⬆️ ' + (M.kick === 'fk' ? 'Seu gol de falta' : 'Seu pênalti') + ' garantiu o acesso contra ' + D.o(vsName) + '!'
           : '😞 ' + (M.kick === 'fk' ? 'Falta desperdiçada' : 'Pênalti perdido') + ' na última rodada: o acesso escapou contra ' + D.o(vsName),
         cont: M.ok ? '🌍 ' + (M.kick === 'fk' ? 'Seu gol de falta' : 'Seu pênalti') + ' decidiu a final da ' + M.comp + ' contra ' + D.o(vsName) + '!'
@@ -298,10 +306,12 @@
         : M.kick === 'pass' ? (M.ok ? '🎯 Sua bola enfiada decidiu ' + where + ' contra ' + D.o(vsName) + '!' : '😞 Passe cortado ' + where + ' contra ' + D.o(vsName))
         : null;
       // Variações dos lances mais comuns (clássico): mesmo fato, frase diferente
-      const vsO = D.o(vsName), mk = M.kick === 'save' ? 'sv' : M.kick === 'tackle' ? 'tk' : M.kick === 'pass' ? 'ps' : M.kick === 'fk' || M.type === 'classico' ? 'fk' : 'pk';
+      const vsO = D.o(vsName), mk = M.kick === 'save' ? 'sv' : M.kick === 'tackle' ? 'tk' : M.kick === 'pass' ? 'ps' : S.kickType(M) === 'fk' ? 'fk' : 'pk';
       const ALT = M.type !== 'classico' ? null : {
         fkok: ['🎯 Gol de falta no clássico contra ' + vsO, '🎯 Falta no ângulo: clássico decidido contra ' + vsO, '🎯 Bola parada perfeita no clássico contra ' + vsO, '🎯 Cobrança indefensável no clássico contra ' + vsO],
         fkko: ['😞 Falta desperdiçada no clássico contra ' + vsO, '😞 A falta decisiva não entrou no clássico contra ' + vsO, '😞 Bola parada sem gol no clássico contra ' + vsO],
+        pkok: ['⚽ Pênalti convertido no clássico contra ' + vsO, '⚽ Bola de um lado, goleiro do outro: clássico decidido contra ' + vsO, '⚽ Seu pênalti decidiu o clássico contra ' + vsO],
+        pkko: ['😞 Pênalti perdido no clássico contra ' + vsO, '😞 O pênalti do clássico não entrou contra ' + vsO],
         psok: ['🎯 Sua bola enfiada decidiu no clássico contra ' + vsO + '!', '🎯 Passe na medida e gol no clássico contra ' + vsO, '🎯 Assistência decisiva no clássico contra ' + vsO],
         psko: ['😞 Passe cortado no clássico contra ' + vsO, '😞 A zaga ' + D.do(vsName) + ' leu seu passe no clássico', '😞 O passe decisivo não chegou no clássico contra ' + vsO],
         tkok: ['🛡️ Desarme salvador no clássico contra ' + vsO + '!', '🛡️ Carrinho perfeito salvou o clássico contra ' + vsO, '🛡️ Bola roubada no último lance do clássico contra ' + vsO],
@@ -515,8 +525,10 @@
       coach0: Math.round(coach0), coach1: Math.round(c.rel.coach), fans0: Math.round(fans0), fans1: Math.round(c.rel.fans),
       highlights, event: c.lastEvent || null, table, why, farewell: !!c.farewell,
       attrs: S.eff(c), cards, pe, src, // foto da carta desta temporada (para o álbum) e cartas especiais ganhas
+      traits: c.traits.map(id => ({ id, lv: S.traitLevel(c, id) })), // características como estavam nesta temporada (álbum)
     };
     res.move = move;
+    res.milestones = S.milestones(c, res, club);
     if (ballonLost) res.ballonLost = true;
     // O clube cresce com o craque: mais receita, patrocínio e reforços enquanto ele está lá (e perde aos poucos quando ele sai)
     res.carry = Math.round(carry);
@@ -852,6 +864,28 @@
       ['Faltou ousadia', nick + ' jogou seguro demais. Futebol que fica na memória é futebol que arrisca.']]);
   };
 
+
+  // Marcos redondos da temporada (100º gol, 500º jogo...): só texto no resumo, no máximo um por temporada.
+  // Ordem = prioridade: gols pelo clube, gols, assistências, jogos sem sofrer gol, jogos.
+  S.MILESTONES = [
+    { k: 'club', at: [100, 200], icon: '💯', txt: (n, c, club) => n + 'º gol ' + D.pelo(club.name) },
+    { k: 'goals', at: [100, 200, 300, 400, 500, 600], icon: '⚽', txt: n => n + 'º gol na carreira' },
+    { k: 'assists', at: [100, 200, 300], icon: '👟', txt: n => n + 'ª assistência na carreira' },
+    { k: 'cs', at: [100, 200, 300, 400, 500], icon: '🧤', txt: n => n + ' jogos sem sofrer gol', pos: ['GOL', 'ZAG'] },
+    { k: 'games', at: [100, 250, 500], icon: '🏅', txt: n => n + 'º jogo como profissional' },
+  ];
+  S.milestones = function (c, res, club) {
+    const T = c.totals;
+    const now = { club: c.spells.filter(x => x.club === club.id).reduce((n, x) => n + (x.goals || 0), 0), goals: T.goals, assists: T.assists, cs: T.cs || 0, games: T.games };
+    const add = { club: res.goals, goals: res.goals, assists: res.assists, cs: res.cleanSheets || 0, games: res.games };
+    for (const m of S.MILESTONES) {
+      if (m.pos && !m.pos.includes(c.pos)) continue;
+      if (c.pos === 'GOL' && (m.k === 'goals' || m.k === 'club' || m.k === 'assists')) continue;
+      const hit = m.at.filter(n => now[m.k] >= n && now[m.k] - add[m.k] < n).pop();
+      if (hit) return [{ id: m.k, n: hit, icon: m.icon, txt: m.txt(hit, c, club) }];
+    }
+    return [];
+  };
 
   if (typeof module !== 'undefined') module.exports = S;
 })(typeof window !== 'undefined' ? window : globalThis);

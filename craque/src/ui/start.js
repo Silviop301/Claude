@@ -281,6 +281,10 @@
     S.setOrigin(G.c, U.achHas((S.ORIGIN_BY_ID[st.origin] || {}).need) ? st.origin : 'base', st.challenge);
     // Só entra o que está liberado (a prévia fica de fora)
     G.c.look = onlyLook(I.clean(st.look));
+    // Revanche: quem venceu a última rivalidade volta nesta carreira (não num desafio por link aberto: as duas carreiras se comparam)
+    const dz = load('climbix-desafio'), back = load('climbix-rival-v1');
+    G.c.rivalKeep = !(dz && !dz.done);
+    G.c.rivalBack = G.c.rivalKeep && back && back.name ? { name: String(back.name), country: String(back.country), me: +back.me || 0, him: +back.him || 0 } : null;
     U.store(LAST, G.c.look);
     U.academy();
   }

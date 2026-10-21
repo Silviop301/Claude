@@ -2081,14 +2081,6 @@ details.fin-more[open] { display: flex; flex-direction: column; gap: 12px; paddi
 .fin-links button { flex: 1; }
 .fin-links button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border: 0; border-radius: 14px; background: rgba(255, 255, 255, .08); color: #E9F1EC; font: 700 14px var(--display); cursor: pointer; }
 /* Dicas da primeira experiência (ui/tips.js) */
-.tip-card { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 16px; background: #FFF6D6; color: var(--ink); border: 2px solid var(--gold); box-shadow: 0 4px 0 rgba(0, 0, 0, .25); animation: enter .3s ease-out; }
-.tip-card .tip-ic { flex: none; margin-top: 2px; }
-.tip-card b { display: block; font: 800 18px var(--display); }
-.tip-card p { margin: 2px 0 8px; font: 500 15px/1.35 var(--body); }
-.tip-acts { display: flex; gap: 8px; }
-.tip-acts button { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 0; font: 700 15px var(--display); cursor: pointer; }
-.tip-ok { background: var(--ink); color: var(--gold); }
-.tip-off { background: transparent; color: #5E5A4E; text-decoration: underline; }
 
 /* Treino dos lances: por cima da tela atual */
 .trn-wrap { position: fixed; inset: 0; z-index: 75; background: var(--pitch); color: var(--paper); overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -2627,7 +2619,6 @@ details.more .src-card { margin: 2px 0 8px; }
 .rl-ask { text-align: center; font: 700 17px var(--display); color: #E1EEE5; margin: 10px 0 0; }
 #rl-share small { display: block; font: 600 12px var(--body); opacity: .8; letter-spacing: 0; }
 #rl-home { display: block; margin: 12px auto 0; }
-  background: repeating-linear-gradient(135deg, #F2C230 0 6px, #E0B020 6px 12px); box-shadow: 0 2px 0 rgba(0, 0, 0, .35); }
 /* Carreira Relâmpago: prêmio revelado depois do pênalti */
 .rl-reveal { margin-top: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; animation: rl-pop .45s cubic-bezier(.2, 1.5, .4, 1); }
 @keyframes rl-pop { from { opacity: 0; transform: scale(.7); } }
@@ -2993,12 +2984,12 @@ button.offer.of-sign .arm-back small { font: 600 12px var(--body); opacity: .85;
 @media (prefers-reduced-motion: reduce) { .ob5-min i { animation: none; } }
 /* Tela larga: placar e lance à esquerda; estilos e botões à direita */
 @media (min-width: 1000px) {
-  #app:has(#screen > .ob5-board) { max-width: 1000px; }
-  #screen:has(> .ob5-board) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 28px; align-items: start; grid-auto-flow: dense; }
-  #screen:has(> .ob5-board) > * { grid-column: 1; }
-  #screen:has(> .ob5-board) > .ob5-q { grid-column: 2; grid-row: 1; align-self: end; margin: 0; }
-  #screen:has(> .ob5-board) > .ob5-styles { grid-column: 2; grid-row: 2 / span 3; }
-  #screen:has(> .ob5-board) > .ob5-foot { grid-column: 2; grid-row: 5; }
+  #app:has(#screen > .ob5-head) { max-width: 1000px; }
+  #screen:has(> .ob5-head) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 28px; align-items: start; grid-auto-flow: dense; }
+  #screen:has(> .ob5-head) > * { grid-column: 1; }
+  #screen:has(> .ob5-head) > .ob5-q { grid-column: 2; grid-row: 1; align-self: end; margin: 0; }
+  #screen:has(> .ob5-head) > .ob5-styles { grid-column: 2; grid-row: 2 / span 3; }
+  #screen:has(> .ob5-head) > .ob5-foot { grid-column: 2; grid-row: 5; }
   .btn.opt.style.ob5-st { min-height: 200px; }
 }
 
@@ -3092,3 +3083,361 @@ details.fin-more.o6-panel:not([open]) { display: none; }
 .rl-miss span { display: flex; align-items: center; gap: 5px; }
 .rl-miss span i { font-style: normal; color: var(--muted); font-size: 12.5px; }
 .rl-b3 { width: 40px; height: 40px; }
+
+/* ===== Dicas recolhidas (E1): uma linha antes do botão de ação; tocar abre o texto ===== */
+.tip-card { border-radius: 14px; background: #FFF6D6; color: var(--ink); border: 2px solid var(--gold); box-shadow: 0 3px 0 rgba(0, 0, 0, .25); animation: enter .3s ease-out; }
+.tip-card summary { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; cursor: pointer; list-style: none; }
+.tip-card summary::-webkit-details-marker { display: none; }
+.tip-card .tip-ic { flex: none; display: inline-flex; }
+.tip-card summary b { flex: 1; min-width: 0; font: 800 16px/1.15 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tip-card summary em { flex: none; font: 700 13px var(--body); font-style: normal; color: #6B5B1E; }
+.tip-card summary em::after { content: ' ›'; display: inline-block; margin-left: 2px; font-weight: 800; transition: transform .2s; }
+.tip-card[open] summary em::after { transform: rotate(90deg); }
+.tip-body { padding: 0 12px 12px 40px; }
+.tip-body p { margin: 0 0 8px; font: 500 15px/1.35 var(--body); }
+.tip-acts { display: flex; gap: 8px; }
+.tip-acts button { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 0; font: 700 15px var(--display); cursor: pointer; }
+.tip-ok { background: var(--ink); color: var(--gold); }
+.tip-off { background: transparent; color: #5E5A4E; text-decoration: underline; }
+/* Resumo da temporada: a dica aparece junto com os botões (que entram aos poucos) */
+.tip-card:has(+ .rv:not(.in)) { opacity: 0; pointer-events: none; }
+.tip-card:has(+ .rv) { transition: opacity .35s ease; }
+/* Tela baixa: os chips do lance vão para dentro de "Como funciona o lance" */
+.ob5-how .ob5-facts { display: none; margin-top: 8px; }
+@media (max-height: 700px) {
+  .ob5-facts:not(.in) { display: none; }
+  .ob5-how .ob5-facts.in { display: flex; }
+}
+/* Computador: nas grades de 2 colunas a dica fica na coluna das escolhas, sem quebrar a grade */
+@media (min-width: 1000px) {
+  #screen:has(> .ob5-head) > .tip-card { grid-column: 2; grid-row: 6; }
+  #screen:has(> .of-rail) > .tip-card { max-width: 520px; width: 100%; margin-left: auto; margin-right: auto; }
+}
+/* Temporada ao vivo: a nota anda junto com os números e ganha a cor da faixa (abaixo de 6,3 · até 6,9 · 7,0 ou mais, como "Boa temporada") */
+#screen .counter.rate.rt-lo b, #screen:has(> #after) .counter.rate.rt-lo b { color: #FF9A8A; }
+#screen .counter.rate.rt-mid b, #screen:has(> #after) .counter.rate.rt-mid b { color: #F2D27A; }
+#screen .counter.rate.rt-hi b, #screen:has(> #after) .counter.rate.rt-hi b { color: #7BE3A0; }
+/* ----- fim E1 ----- */
+
+/* ===== E2: polegar e toque ===== */
+/* Barra presa embaixo (fim de temporada e fim de carreira): seguir fica ao alcance do polegar, com o mesmo degradê da
+   criação (.inv-bar.fade). Fica presa só enquanto o lugar dela na tela ainda está abaixo da dobra; depois rola junto. */
+.go-bar { position: sticky; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 3; }
+.go-bar::before { content: ''; position: absolute; z-index: -1; left: -16px; right: -16px; top: -36px; bottom: calc(-10px - env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to bottom, rgba(15, 61, 42, 0), var(--pitch) 34px); pointer-events: none; }
+.go-bar .btn { box-shadow: 0 4px 0 rgba(0, 0, 0, .35), 0 6px 18px rgba(0, 0, 0, .35); }
+#screen:has(> .go-bar) .rv { scroll-margin-bottom: 96px; }
+/* Fim de temporada: seguir e postar lado a lado (como era no fim do resumo) */
+.s-go { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 10px; align-items: stretch; margin-top: 12px; }
+.s-go > #b-next, .s-go > #b-post { margin: 0; width: 100%; min-height: 58px; }
+.s-go > #b-post { padding: 6px 8px; font-size: 16px; line-height: 1.1; }
+.s-go > #b-post small { font-size: 12px; line-height: 1.2; margin-top: 2px; }
+@media (min-width: 1000px) { #screen:has(> .s-hero) > .s-go { grid-column: 2; } }
+/* Fim de carreira: Compartilhar (dourado) e Nova carreira lado a lado, 52 px; Desafiar logo abaixo, no fluxo */
+.fin-acts.o6-acts.go-bar { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.o6-acts.go-bar .btn { min-height: 52px; }
+.o6-acts .btn.o6-again { background: #1E3F30; color: #FBF8EF; box-shadow: inset 0 0 0 2px var(--gold), 0 4px 0 rgba(0, 0, 0, .35), 0 6px 18px rgba(0, 0, 0, .35); }
+.o6-dz { display: flex; flex-direction: column; gap: 10px; }
+.o6-dz .btn.ghost.dz-btn { margin: 0; min-height: 48px; border: 2px solid rgba(242, 194, 48, .7); background: rgba(242, 194, 48, .08); color: #FBF8EF; font-size: 17px; }
+.o6-dz .dz-btn .tw { width: 20px; height: 20px; vertical-align: -4px; }
+.o6-dz .dz-btn small { font-size: 12px; color: #C9D8CE; }
+.o6-links .link-btn { min-height: 44px; }
+
+/* Pré-temporada: enquanto falta escolher a característica, o botão fica no fim da tela, discreto (não cobre as cartas);
+   depois da escolha ele volta a ficar preso embaixo, dourado */
+.inv-bar:has(#b-skip.wait) { position: static; }
+.inv-bar:has(#b-skip.wait)::before { display: none; }
+.inv-bar .btn.wait:disabled { background: transparent; box-shadow: inset 0 0 0 2px rgba(242, 193, 46, .45); min-height: 0; padding-top: 10px; padding-bottom: 10px; font-size: 17px; }
+/* Tela baixa: a carta dos atributos não fica presa no topo (com a barra de cima ela tomava metade da tela) */
+@media (max-height: 760px) and (max-width: 999px) { .mcard, .mcard.metal { position: relative; top: auto; } }
+/* Fisioterapeuta: o ícone num selo claro, para não sumir no verde */
+.inv-chip > .tw:first-child { box-sizing: content-box; padding: 5px; border-radius: 50%; background: #F3EBD7; flex: none; }
+
+/* Alvos de toque de 44 px */
+.seg button, .cr-chips button { min-height: 44px; }
+#f-name { min-height: 44px; }
+#b-dice1, #b-look { min-height: 44px; }
+.tip-acts button { min-height: 44px; }
+.ob5-how summary { min-height: 44px; }
+#after > details.more > summary { padding: 12px 0; }
+/* Ícones da barra (engrenagem e voltar) e links pequenos: área de toque maior sem mudar o desenho */
+.bar-btns { gap: 8px; }
+.bar-btns .snd-mini, .back-link, .eyebrow .link-btn[data-sheet] { position: relative; }
+.bar-btns .snd-mini::after { content: ''; position: absolute; inset: -7px -4px; }
+.back-link::after { content: ''; position: absolute; inset: -8px -2px; }
+.eyebrow .link-btn[data-sheet]::after { content: ''; position: absolute; inset: -15px -6px; }
+/* Opção bloqueada: o motivo ('Sem saldo...') em cor plena, com cadeado; só o resto do cartão fica apagado */
+.btn.opt.ob3-opt.locked { opacity: 1; --oc: rgba(242, 194, 48, .4); }
+.btn.opt.ob3-opt.locked > :not(small) { opacity: .45; }
+.btn.opt.ob3-opt.locked > small { color: #FBF8EF; font-weight: 700; }
+.btn.opt.ob3-opt.locked > small .tw { width: 15px; height: 15px; vertical-align: -2px; margin-right: 3px; }
+/* Ganhos em verde legível (contraste ≥ 4,5:1) */
+.rel .m-d.up { background: #9BF0BC; color: #0B2A1A; }
+.why b.up { color: #157A41; font-weight: 800; }
+.delta-in.up { color: #157A41; }
+.src-card .sr-c.up b { color: #9BF0BC; font-weight: 800; }
+/* Piso de 12 px para texto que informa */
+.tr-pick .choice .d, .tr-pick .tag { font-size: 12px; }
+#after > .story > .news:not(.resenha) .np { font-size: 12px; }
+.ob3-tag { font-size: 12px; }
+button.mc-at .pips { font-size: 11px; opacity: .85; }
+/* ----- fim E2 ----- */
+
+/* ----- E3: toque do lance na tela toda ----- */
+/* O toque conta em qualquer lugar (kick.js onTap): a dica fica logo abaixo do palco, maior, e a área abaixo vira zona de toque */
+.kick-help { font-size: 17px; font-weight: 600; line-height: 1.35; padding: 4px 8px 0; }
+#kick, #rl-kick { cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.desk .kick-help { font-size: 18px; }
+/* ----- fim E3 ----- */
+
+/* ----- E4: duelo direto com o rival e revanche ----- */
+/* Linha do rival na tela do lance (ui/match.js rivalTag): mesma forma do "o que vale", em vermelho de duelo */
+.ob5-rival { margin: 0; display: flex; align-items: flex-start; gap: 8px; font: 600 14px/1.35 var(--body); color: #FFB3B8; }
+.ob5-rival .tw { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+.ob5-rival b { color: #FFE1E3; font-weight: 800; }
+/* Placar histórico da revanche no balanço do fim (ui/finale.js rivalBlock) */
+.fin-rival .fr-hist { display: block; margin: -2px 0 4px; font-size: 12.5px; font-weight: 600; color: #4A5A78; }
+/* ----- fim E4 ----- */
+
+/* ----- E5: marcos da temporada e progresso das conquistas ----- */
+/* Marco redondo no resumo (res.milestones, ui/season.js): mesma faixa do prêmio, em tinta com borda dourada para não parecer troféu */
+#after .award.milestone:not(.ballon) { background: #12261B; color: #FBE7A1; box-shadow: inset 0 0 0 2px var(--gold), 0 4px 0 rgba(0, 0, 0, .3); font: 800 17px/1.15 var(--display); }
+#after .award.milestone .tw { width: 22px; height: 22px; flex: none; }
+/* Conquistas: barra do recorde (melhor carreira guardada) nas trancadas e grupo "Quase lá" */
+.ach-prog { position: relative; display: block; height: 16px; margin-top: 4px; border-radius: 999px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.ach-prog i { display: block; height: 100%; background: linear-gradient(90deg, #A9861C, var(--gold)); border-radius: inherit; }
+.ach-prog em { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 800 11px var(--display); font-style: normal; letter-spacing: .04em; color: #FBF8EF; text-shadow: 0 1px 2px rgba(0, 0, 0, .7); }
+.ach-near .ach { box-shadow: inset 0 0 0 2px rgba(242, 194, 48, .55); }
+.ach-near .ach b { color: #FBF8EF; }
+.ach-near-t { color: var(--gold); }
+/* ----- fim E5 ----- */
+
+/* ----- E6: placar escuro no lance inteiro e "pouco espaço" no formato O3 ----- */
+/* Faixa baixa do placar (O5) em cima da cena do minigame e do treino (ui/match.js board, ui/training.js) */
+.ob5-board.mini { gap: 8px; padding: 7px 12px; border-radius: 14px; min-height: 52px; box-shadow: 0 6px 16px rgba(0, 0, 0, .3); }
+.ob5-board.mini .crest { width: 30px; height: 30px; }
+.ob5-board.mini .ob5-g { font-size: 28px; min-width: 16px; }
+.ob5-board.mini .ob5-mid { flex-direction: row; justify-content: center; gap: 8px; }
+.ob5-board.mini .ob5-min { font-size: 17px; }
+.ob5-board.mini .ob5-x { font-size: 18px; }
+.ob5-board.mini small { font-size: 10.5px; }
+/* A cena perde a altura que a faixa ocupa (o rótulo de cima saiu; a faixa é ~30 px maior) */
+.ob5-board.mini + #kick { min-height: calc(100svh - var(--bar-h, 0px) - env(safe-area-inset-top, 0px) - 150px); }
+@media (min-width: 1280px) and (min-height: 860px) {
+  html.desk .ob5-board.mini + #kick { min-height: calc(100svh / var(--z) - var(--bar-h, 0px) - 150px); }
+}
+/* Treino: "TREINO" no lugar do minuto, acertos de quantas tentativas no lugar do placar */
+.trn-board { justify-content: space-between; }
+.trn-board .ob5-mid { flex: 1; }
+.ob5-min.trn-live { color: var(--gold); text-transform: uppercase; letter-spacing: .08em; }
+.ob5-min.trn-live::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
+.trn-sc { display: flex; align-items: baseline; gap: 4px; flex: none; max-width: 34%; }
+.trn-sc b { font: 800 28px/1 var(--display); font-variant-numeric: tabular-nums; color: #fff; }
+.trn-sc small { font: 700 11px/1.15 var(--display); letter-spacing: .1em; text-transform: uppercase; color: #9DB5A6; text-align: right; }
+/* Treino: os passos como três cartões numerados; pular vira link */
+.trn-steps.ob5-steps { list-style: none; padding: 0; background: none; gap: 10px; }
+.ob5-steps li { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 16px; background: #050A07; border: 1px solid rgba(255, 255, 255, .12); }
+.ob5-steps li > b { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--gold); color: var(--ink); font: 800 19px/1 var(--display); }
+.ob5-steps li > span { padding-top: 6px; }
+.trn-skip-link { align-self: center; min-height: 44px; padding: 0 12px; border: 0; background: none; color: #CFE3D6; font: 600 15px var(--body); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+/* Resultado do lance no campo escuro: título grande e texto, sem o cartão creme */
+.ob5-res { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 6px 4px 2px; animation: enter .3s ease-out; }
+.ob5-res .mr-big { font: 800 58px/1 var(--display); letter-spacing: .02em; animation: mr-pop .7s cubic-bezier(.2, 1.6, .4, 1); }
+.ob5-res.ok .mr-big { color: #5FD690; text-shadow: 0 0 26px rgba(95, 214, 144, .45); }
+.ob5-res.ko .mr-big { color: #FF6B73; }
+.ob5-res .mr-txt { margin: 0; font: 600 16px/1.4 var(--body); color: #E3EEE7; text-wrap: pretty; }
+.trn .ob5-res .mr-big { font-size: 48px; }
+/* O gol entra contando no placar */
+.ob5-g.bump { animation: ob5-bump .6s cubic-bezier(.2, 1.6, .4, 1); color: var(--gold); }
+@keyframes ob5-bump { 0% { transform: scale(.4); opacity: 0; } 60% { transform: scale(1.35); opacity: 1; } 100% { transform: none; } }
+/* Título grande ganho no lance: faixa dourada com a taça */
+.ob5-prize { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 16px; background: linear-gradient(135deg, #F4D675, #E0A800 60%, #B8860B);
+  color: var(--ink); box-shadow: 0 10px 26px rgba(224, 168, 0, .35); animation: mr-pop .7s cubic-bezier(.2, 1.6, .4, 1) .25s both; }
+.ob5-prize svg, .ob5-prize img { width: 52px; height: 52px; object-fit: contain; flex: none; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .3)); }
+.ob5-prize span { display: flex; flex-direction: column; min-width: 0; }
+.ob5-prize small { font: 700 12px var(--display); letter-spacing: .18em; text-transform: uppercase; opacity: .8; }
+.ob5-prize b { font: 800 26px/1.05 var(--display); text-transform: uppercase; }
+/* Confete curto (uma queda só), por cima de tudo e sem pegar o toque */
+.ob5-confetti { position: fixed; inset: 0; z-index: 90; pointer-events: none; overflow: hidden; }
+.ob5-confetti i { animation-iteration-count: 1; animation-fill-mode: both; }
+@media (prefers-reduced-motion: reduce) { .ob5-g.bump, .ob5-prize, .ob5-res .mr-big { animation: none; } }
+@media (max-width: 360px) { .ob5-res .mr-big { font-size: 48px; } .ob5-board.mini .ob5-g { font-size: 24px; } .ob5-board.mini .crest { width: 26px; height: 26px; } .ob5-prize b { font-size: 22px; } }
+@media (min-width: 1000px) { #app:has(#screen > .ob5-res) { max-width: 560px; } }
+/* Pouco espaço (ui/offers.js squad): faixa com as cores do clube no lugar da cor do tom; escudo no círculo */
+.event-card.ob3.sq-card::before { background: linear-gradient(90deg, var(--k1) 0 50%, var(--k2) 50% 100%); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .15); }
+.event-card.ob3.sq-card .ob3-ic .crest { width: 62px; height: 62px; margin: 0; }
+.event-card.ob3.sq-card .ob3-txt b { color: var(--ink); }
+/* ----- fim E6 ----- */
+
+/* ===== E7: Copa e Mundial no estilo ousado (ui/worldcup.js) ===== */
+/* Fundo com as cores da bandeira no lugar do escudo do clube (core.js clubBg com cores) */
+#club-bg.nat { background: linear-gradient(118deg, var(--n1) 0 34%, var(--n2) 34% 66%, var(--n3) 66%);
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, .2), rgba(0, 0, 0, .07) 55%, transparent); mask-image: linear-gradient(180deg, rgba(0, 0, 0, .2), rgba(0, 0, 0, .07) 55%, transparent); }
+/* Lance e pênaltis: o mesmo placar escuro do lance da temporada, com bandeira e nome de cada lado */
+.wc-o5 { display: flex; flex-direction: column; gap: 12px; }
+#wc-after:has(> .wc-o5) { scroll-margin-top: calc(var(--bar-h, 0px) + 10px); }
+.wc-board { gap: 8px; }
+.wcb-t { flex: none; width: 64px; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.wcb-t .tw { width: 40px; height: 40px; }
+.wcb-t small { max-width: 100%; font: 700 11px/1.1 var(--display); letter-spacing: .04em; text-transform: uppercase; color: #C9D8CE; text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wc-board .ob5-mid .ob5-min { white-space: nowrap; }
+.wc-board.mini .wcb-t { width: auto; }
+.wc-board.mini .wcb-t small { display: none; }
+.wc-board.mini .wcb-t .tw { width: 30px; height: 30px; }
+.wc-o5 .ob5-head h2 { font-size: 32px; }
+/* Fim da Copa: faixa dourada (campeão), prateada (vice) ou escura com a fase em que caiu */
+.wc-end { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 6px 4px; text-align: center; animation: trophy-in .9s cubic-bezier(.2, 1.5, .4, 1); }
+.wc-end.champ { background: radial-gradient(circle at 50% 28%, rgba(255, 226, 122, .4), rgba(255, 226, 122, 0) 68%); }
+.wc-end.champ .trophy, .wc-end.champ .trophy-real { filter: drop-shadow(0 0 18px rgba(255, 214, 90, .9)); }
+.wc-end .wc-bigflag { font-size: 72px; }
+.wc-end .crest.xl { margin: 0; }
+.wc-band { display: block; width: 100%; padding: 10px 14px; border-radius: 14px; font: 800 26px/1.05 var(--display); text-transform: uppercase; letter-spacing: .01em; text-wrap: balance; }
+.wc-band.gold { background: var(--gold); color: var(--ink); box-shadow: 0 4px 0 #A9861C, 0 10px 26px rgba(224, 168, 0, .3); }
+.wc-band.silver { background: linear-gradient(135deg, #F1F4F6, #C3CBD2 60%, #9EA8B1); color: #1C2329; box-shadow: 0 4px 0 #7D868E; }
+.wc-band.phase { background: #050A07; color: var(--paper); border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 4px 0 rgba(0, 0, 0, .35); }
+.wc-end-who { font: 600 15px/1.35 var(--body); color: #D9F5E3; }
+.wc-end-who .tw { vertical-align: -3px; }
+#wc-after > .sx-lbl { margin: 4px 0 -4px; }
+.wc-end-stats { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+.wc-end-stats span { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: 14px; background: rgba(255, 255, 255, .08);
+  font: 600 12.5px/1.15 var(--body); color: #C9D8CE; text-align: center; }
+.wc-end-stats b { font: 800 28px/1 var(--display); color: var(--paper); }
+@media (max-width: 360px) { .wc-o5 .ob5-head h2 { font-size: 28px; } .wcb-t { width: 54px; } .wcb-t .tw { width: 34px; height: 34px; } .wc-band { font-size: 22px; } }
+@media (prefers-reduced-motion: reduce) { .wc-end { animation: none; } }
+/* ----- fim E7 ----- */
+
+/* ===== E8: Carreira Relâmpago no estilo ousado (ui/relampago.js) e pacotinho com palco escuro (ui/packs.js) ===== */
+/* Placar do alto: casa, nome da casa e pontos (reaproveita .ob5-board) */
+.rl-ob { justify-content: space-between; padding: 10px 14px; }
+.rl-ob-c { flex: none; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 54px; }
+.rl-ob-c small { font: 700 10.5px/1 var(--display); letter-spacing: .12em; text-transform: uppercase; color: #9DB5A6; }
+.rl-ob-c b { font: 800 30px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--paper); }
+.rl-ob-c.pts { align-items: flex-end; }
+.rl-ob-c.pts b { color: var(--gold); }
+.rl-ob-nm { font: 800 26px/1 var(--display); text-transform: uppercase; color: var(--paper); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rl-head .rl-rule { margin: 8px 0; }
+/* Faixa das 5 casas em escuro */
+.rl-board .rl-cell { background: #050A07; border: 1px solid rgba(255, 255, 255, .1); }
+.rl-board .rl-cell.done:not(.out) { border-color: rgba(95, 214, 144, .45); }
+.rl-board .rl-cell.out { background: rgba(216, 64, 74, .2); }
+/* Escolher a bola: bolas grandes no gramado, de frente para o gol */
+.rl-pick { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 14px; text-align: center; overflow: hidden;
+  min-height: max(250px, calc(100svh - var(--bar-h, 0px) - env(safe-area-inset-top, 0px) - 330px)); padding: 16px 10px 26px; border-radius: 18px;
+  background: repeating-linear-gradient(180deg, #2E8B4F 0 34px, #277C46 34px 68px); border: 1px solid rgba(255, 255, 255, .14); box-shadow: inset 0 0 40px rgba(0, 0, 0, .3);
+  animation: rl-pop .35s cubic-bezier(.2, 1.5, .4, 1); }
+.rl-pick::before { content: ''; position: absolute; left: 50%; top: 14px; width: 62%; height: 38%; transform: translateX(-50%); border: 3px solid rgba(255, 255, 255, .7); border-bottom: 0;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .12) 0 2px, transparent 2px 12px), repeating-linear-gradient(0deg, rgba(255, 255, 255, .12) 0 2px, transparent 2px 12px); }
+.rl-pick::after { content: ''; position: absolute; left: 0; right: 0; top: calc(14px + 38%); border-top: 3px solid rgba(255, 255, 255, .6); }
+.rl-pick > small { position: relative; margin: 0; font: 800 18px var(--display); letter-spacing: .08em; text-transform: uppercase; color: #fff; text-shadow: 0 2px 6px rgba(0, 0, 0, .45); }
+.rl-pick .rl-balls { position: relative; gap: 6px; }
+.rl-pick .rl-ball { width: clamp(50px, 15.5vw, 66px); height: clamp(50px, 15.5vw, 66px); background: rgba(0, 0, 0, .22); }
+.rl-pick .rl-ball:not([disabled]) { box-shadow: inset 0 0 0 3px var(--gold), 0 6px 14px rgba(0, 0, 0, .35); }
+.rl-pick .rl-ball .tw, .rl-pick .rl-b3 { width: 78%; height: 78%; }
+.rl-pick .rl-ball i { background: #050A07; box-shadow: 0 0 0 2px var(--gold); }
+.rl-pick .rl-ball.g[disabled] { background: rgba(95, 214, 144, .45); opacity: .6; }
+.rl-pick .rl-ball.x[disabled] { background: rgba(216, 64, 74, .45); opacity: .6; }
+/* Depois da cobrança: o palco fica e o resultado entra como carimbo por cima */
+.rl-stage { display: grid; }
+.rl-stage > * { grid-area: 1 / 1; min-width: 0; }
+.rl-stage > .rl-reveal { z-index: 3; margin: 0; align-self: stretch; justify-content: center; gap: 8px; padding: 16px 14px; border-radius: 18px;
+  background: rgba(5, 10, 7, .8); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); color: var(--paper); animation: enter .25s ease-out; }
+.rl-stamp { display: inline-block; padding: 4px 18px; border: 4px solid currentColor; border-radius: 12px; font: 800 52px/1 var(--display); text-transform: uppercase; letter-spacing: .04em;
+  transform: rotate(-6deg); animation: rl-stamp .45s cubic-bezier(.2, 1.5, .4, 1); }
+@keyframes rl-stamp { from { opacity: 0; transform: rotate(-6deg) scale(2.2); } }
+.rl-reveal.ok .rl-stamp { color: #5FD690; text-shadow: 0 0 22px rgba(95, 214, 144, .45); }
+.rl-reveal.ko .rl-stamp { color: #FF6B73; }
+.rl-stage > .rl-reveal > small { font: 700 14px var(--display); letter-spacing: .08em; text-transform: uppercase; color: #C9D8CE !important; }
+.rl-stage .rl-prize em { color: var(--paper); }
+.rl-stage .rl-prize .rl-ga { color: var(--gold); }
+.rl-stage .rl-gas i, .rl-stage .rl-sum small, .rl-stage .rl-rest small { color: #9DB5A6; }
+.rl-stage .rl-prize small { color: var(--gold); }
+.rl-stage .rl-pts { color: #5FD690; font-size: 24px; }
+.rl-stage .rl-rest i { opacity: .85; }
+/* Resultado: placar escuro, colunas do duelo, detalhe recolhido */
+.rl-rh { margin-bottom: 10px; }
+.rl-rh h2 { margin: 2px 0 0; font: 800 34px/.98 var(--display); text-transform: uppercase; text-wrap: balance; }
+.rl-sb { gap: 8px; margin-bottom: 10px; }
+.rl-sb-t { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.rl-sb-t:last-child { align-items: flex-end; }
+.rl-sb-t b { max-width: 100%; font: 800 15px/1.1 var(--display); text-transform: uppercase; letter-spacing: .04em; color: #C9D8CE; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rl-sb-t.me b { color: var(--gold); }
+.rl-sb .ob5-g { color: #9DB5A6; }
+.rl-sb .ob5-g.win { color: var(--paper); }
+.rl-sb.solo .rl-grade { width: 52px; height: 52px; border-radius: 12px; font-size: 32px; flex: none; }
+.rl-sb.solo .ob5-mid { align-items: flex-start; }
+.rl-sb.solo .ob5-mid small { text-transform: none; letter-spacing: 0; font: 600 13px var(--body); }
+.rl-sb.solo .rl-ob-c.pts b { font-size: 38px; }
+/* Notas fortes (no lugar do pastel) */
+.rl-grade { background: #C9D3CC; color: #050A07; box-shadow: 0 3px 0 rgba(0, 0, 0, .35); }
+.rl-grade.g-S { background: var(--gold); }
+.rl-grade.g-A { background: #5FD690; }
+.rl-grade.g-B { background: #7FC4FF; }
+.rl-grade.g-C { background: #E8DCC0; }
+.rl-grade.g-D { background: #FF6B73; color: #2A0508; }
+.rl-duel { grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 10px; }
+.rl-col { background: #050A07; border: 1px solid rgba(255, 255, 255, .1); gap: 6px; padding: 10px; }
+.rl-col.me { border-color: var(--gold); box-shadow: none; }
+.rl-col-h b { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: #C9D8CE; }
+.rl-col.me .rl-col-h b { color: var(--gold); }
+.rl-mini em { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2; }
+.rl-res { margin: 0 0 10px; padding: 12px 14px; border-radius: 16px; background: #050A07; border: 1px solid rgba(255, 255, 255, .1); color: var(--paper); }
+.rl-res .rl-combos { margin-top: 0; }
+.rl-res .rl-after { margin-top: 0; padding-top: 0; border-top: 0; }
+.rl-res .rl-combos + .rl-after { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .1); }
+.rl-res .rl-rec { color: #5FD690; }
+.rl-res .rl-miss small, .rl-res .rl-miss span i { color: #9DB5A6; }
+.rl-det { margin: -6px 0 6px; }
+.rl-det[open] { padding: 0 12px 6px; border-radius: 16px; background: #050A07; border: 1px solid rgba(255, 255, 255, .1); }
+.rl-det[open] summary { margin: 0 -2px; }
+.rl-det .rl-row { border-top-color: rgba(255, 255, 255, .1); color: var(--paper); }
+.rl-det .rl-row small, .rl-det .rl-row b i { color: #9DB5A6; }
+.rl-det .rl-row.best b { color: #5FD690; }
+.rl-det .rl-row.out b { color: #FF6B73; }
+.rl-sb ~ .rl-board { margin-bottom: 10px; }
+@media (max-width: 360px) { .rl-ob-nm { font-size: 22px; } .rl-ob-c b { font-size: 26px; } .rl-stamp { font-size: 44px; } .rl-rh h2 { font-size: 30px; } .rl-sb .ob5-g { font-size: 34px; } }
+@media (prefers-reduced-motion: reduce) { .rl-stamp { animation: none; } }
+@media (min-width: 1280px) and (min-height: 860px) {
+  html.desk .rl-pick { min-height: max(250px, calc(100svh / var(--z) - var(--bar-h, 0px) - 330px)); }
+}
+/* Pacotinho: palco radial escuro, envelope em contraste e "Toque para abrir" logo abaixo dele */
+.pk-wrap { background: radial-gradient(circle at 50% 38%, #12301F, #050A07 70%); }
+.pk-holder { margin: auto 0 0; }
+.pk-holder .pk-pack { filter: drop-shadow(0 0 1.5px rgba(242, 194, 48, .9)) drop-shadow(0 0 26px rgba(242, 194, 48, .28)) drop-shadow(0 16px 20px rgba(0, 0, 0, .6)); }
+.pk-cta { margin: 22px 0 0; font: 800 26px/1 var(--display); text-align: center; color: var(--gold); }
+.pk-idle { margin-top: auto; padding-top: 18px; }
+/* Fim da revelação (1 peça): garantia e botões entram embaixo, sem tela de resumo */
+.pk-stage.end { cursor: default; }
+.pk-stage.last .pk-card { margin-top: 8px; }
+.pk-stage.last .pk-info { margin-top: 18px; gap: 6px; }
+.pk-foot.pk-end { align-self: stretch; align-items: stretch; gap: 12px; font: inherit; color: inherit; cursor: default; }
+.pk-end .pk-pity { background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .1); border-radius: 14px; padding: 10px 14px; font-size: 14px; }
+.pk-end .pk-acts { margin-top: 0; gap: 8px; }
+.pk-acts .btn.ghost { margin: 0; }
+@media (max-height: 700px) {
+  .pk-stage.last { padding-top: calc(70px + env(safe-area-inset-top, 0px)); }
+  .pk-stage.last .pk-card { width: 170px; height: 194px; margin-top: 0; }
+  .pk-stage.last .pk-name { font-size: 28px; }
+  .pk-stage.last .pk-info { margin-top: 12px; }
+  .pk-stage.last .pk-desc { font-size: 14px; }
+}
+/* ----- fim E8 ----- */
+
+/* ===== E9: reta final antes do lance decisivo (ui/season.js, preRace) ===== */
+.pr-path .rt-r { grid-template-columns: 58px 20px minmax(0, 1fr) auto; animation: pr-in .32s ease-out both; }
+.pr-path .rt-r i { font: 700 12px var(--display); letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
+.pr-path .rt-r b { font: 700 12px var(--body); letter-spacing: .04em; text-transform: uppercase; color: #8FD6AE; }
+@keyframes pr-in { from { opacity: 0; transform: translateY(6px); } }
+.pr-duel { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px;
+  background: linear-gradient(180deg, #0E1A14, #07110C); border: 1.5px solid rgba(242, 194, 48, .55); box-shadow: 0 8px 22px rgba(0, 0, 0, .35); animation: pr-in .35s ease-out both; }
+.pr-duel[hidden] { display: none; }
+.pr-duel .crest { width: 44px; height: 44px; margin: 0; }
+.pr-duel .pr-x { display: grid; gap: 2px; text-align: center; font: 600 14px/1.25 var(--body); color: #D3E4D9; }
+.pr-duel .pr-x b { font: 800 20px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--gold); }
+.sx-live.hold .sx-dot { background: var(--gold); }
+.sx-live.hold > b { color: var(--gold); }
+@media (prefers-reduced-motion: reduce) { .pr-path .rt-r, .pr-duel { animation: none; } }
+
+/* ===== Conferência (E10) ===== */
+/* O carimbo do resultado entra com scale(2,2): crescendo do canto de cima à direita a página não rola para o lado por um instante */
+.ob3-stamp { transform-origin: 100% 0; }

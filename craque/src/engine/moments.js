@@ -7,7 +7,7 @@
   // Em algumas temporadas, um lance decide algo grande. O resultado vale de verdade:
   //  cup      pênalti na final da copa     → converteu: campeão da copa · errou: vice
   //  title    pênalti na última rodada     → converteu: campeão da liga · errou: vice
-  //  classico falta no clássico            → converteu: gol e torcida +8
+  //  classico falta ou pênalti no clássico → converteu: gol e torcida +8
   // Taça continental que o clube disputa (ou null)
   // Libertadores: primeira divisão dos países sul-americanos do jogo; Champions: clubes grandes da Europa
   S.LIBERTA = ['bra-a', 'arg', 'uru', 'col', 'chi', 'par', 'ecu', 'per', 'bol', 'ven'];
@@ -34,7 +34,7 @@
     'Chile': 'Supercopa do Chile', 'Paraguai': 'Supercopa Paraguaia', 'Equador': 'Supercopa do Equador', 'Uruguai': 'Supercopa Uruguaia',
     'Colômbia': 'Superliga Colombiana', 'Catar': 'Copa do Xeique Jassim', 'Áustria': null, 'Suíça': null, 'Dinamarca': null, 'Escócia': null, 'EUA': null };
   S.superName = club => { const LD = D.LADDER[club.league]; if (LD && LD.up) return null; return S.SUPER_NAME[D.countryOf(club)] || null; };
-  // Tipo de cobrança do lance: pênalti ou falta ('classico' é sempre falta; 'cont' sorteia)
+  // Tipo de cobrança do lance: pênalti ou falta ('classico' sem kick é falta; 'classico', 'cont' e 'acesso' sorteiam)
   // Zagueiro e goleiro têm lances defensivos: 'tackle' (desarme) e 'save' (defender pênalti)
   S.kickType = m => m.kick || (m.type === 'classico' ? 'fk' : 'pen');
   // Meia: o lance dele é o passe decisivo (bola enfiada para o atacante), pela PAS e não pela FIN
@@ -83,23 +83,31 @@
     const club = D.CLUB_BY_ID[c.club], lg = D.LEAGUE_BY_ID[club.league];
     const rivals = D.CLUBS.filter(x => x.league === club.league && x.id !== club.id).sort((a, b) => b.strength - a.strength);
     const playing = S.role(c, club).share >= 0.3 || c.farewell;
+    // O rival de geração joga a temporada dele antes da sua (engine/rival.js): aqui já se sabe o clube dele neste ano
+    if (S.rivalPre && playing) S.rivalPre(c);
+    const rank = 1 + rivals.filter(x => x.strength > club.strength).length;
+    // Final e briga pelo título só para quem está entre os mais fortes da liga
+    const cupField = S.cupField(club);
+    const LD = D.LADDER[club.league];
+    const contName = S.contName(club);
+    const pool = [['classico', c.pos === 'MEI' ? 4 : 3]];
+    // Final da copa nacional: só para quem está entre os 8 mais fortes do país (todas as divisões)
+    if (cupField.indexOf(club.id) >= 0 && cupField.indexOf(club.id) < 8) pool.push(['cup', 1]);
+    if (rank <= 2) pool.push(['title', 1.5]);
+    // Última rodada valendo o acesso (divisões de baixo, times perto do G-4)
+    if (LD && LD.up && rank <= (LD.promo || 4) + 2) pool.push(['acesso', 1.3]);
+    // Final continental: topo do Brasil/Argentina (Libertadores) ou clube grande europeu (Champions)
+    if (contName && (contName === 'Libertadores' ? rank <= 4 : club.strength >= 78)) pool.push(['cont', 1.2]);
+    const sum = pool.reduce((a, p) => a + p[1], 0);
     if (playing && rivals.length && r() < 0.45) {
-      const rank = 1 + rivals.filter(x => x.strength > club.strength).length;
-      // Final e briga pelo título só para quem está entre os mais fortes da liga
-      const pool = [['classico', c.pos === 'MEI' ? 4 : 3]];
-      // Final da copa nacional: só para quem está entre os 8 mais fortes do país (todas as divisões)
-      const cupField = S.cupField(club);
-      if (cupField.indexOf(club.id) >= 0 && cupField.indexOf(club.id) < 8) pool.push(['cup', 1]);
-      if (rank <= 2) pool.push(['title', 1.5]);
-      // Última rodada valendo o acesso (divisões de baixo, times perto do G-4)
-      const LD = D.LADDER[club.league];
-      if (LD && LD.up && rank <= (LD.promo || 4) + 2) pool.push(['acesso', 1.3]);
-      // Final continental: topo do Brasil/Argentina (Libertadores) ou clube grande europeu (Champions)
-      const contName = S.contName(club);
-      if (contName && (contName === 'Libertadores' ? rank <= 4 : club.strength >= 78)) pool.push(['cont', 1.2]);
-      let x = r() * pool.reduce((a, p) => a + p[1], 0), type = pool[0][0];
+      let x = r() * sum, type = pool[0][0];
       for (const [t, w] of pool) { x -= w; if (x < 0) { type = t; break; } }
+      const derby = type === 'classico' && (D.RIVALS[club.id] || []).some(id => D.CLUB_BY_ID[id] && D.CLUB_BY_ID[id].league === club.league);
       let vs = type === 'cup' ? D.CLUB_BY_ID[r.pick(cupField.filter(id => id !== club.id).slice(0, 8))] : type === 'acesso' ? r.pick(rivals.slice(0, 6)) : type === 'classico' ? S.derbyOf(club, r.pick) || rivals[0] : rivals[0];
+      // Duelo direto: o rival de geração joga na mesma liga (num time de cima, se é briga pelo título)
+      const rv = c.rival, rc = rv && !rv.retired && rv.now && rv.now.club !== club.id && D.CLUB_BY_ID[rv.now.club];
+      const rvOk = rc && rc.league === club.league && (type === 'title' ? rivals.slice(0, 3).includes(rc) : type === 'classico' && !derby);
+      if (rvOk && r() < 0.5) vs = rc;
       if (type === 'cont') {
         // Adversário da final: um grande de outra liga do mesmo continente
         const libert = S.contName(club) === 'Libertadores';
@@ -110,6 +118,14 @@
       c.moment = { type, vs: vs.id, comp: type === 'cup' ? (lg.cup || 'Copa nacional') : type === 'cont' ? S.contName(club) : lg.name };
       if (type === 'cont' || type === 'acesso') c.moment.kick = r() < 0.55 ? 'pen' : 'fk';
       if (S.posKick(c.pos)) c.moment.kick = S.posKick(c.pos); // defensores: lance contra, no fim do jogo; meia: passe decisivo
+      // Clássico do atacante (falta ou pênalti) e do meia (passe ou falta): sorteia e não repete o do clássico do ano anterior
+      const ALT2 = { ATA: ['fk', 'pen'], MEI: ['pass', 'fk'] }[c.pos], last = c.momLast;
+      if (type === 'classico' && ALT2) {
+        const prev = last && last.age === c.age - 1 && last.type === 'classico' ? last.kick : null;
+        c.moment.kick = prev ? ALT2[prev === ALT2[0] ? 1 : 0] : ALT2[r() < 0.5 ? 0 : 1];
+      }
+      if (vs.id === (rc && rc.id) && type !== 'cont') c.moment.rival = rv.name; // duelo direto com o rival de geração
+      c.momLast = { age: c.age, type, kick: S.kickType(c.moment) };
       momentContext(c, c.moment, club, rank, Math.max(20, leagueSize(club)), r); // a tabela tem no mínimo 20 times
     }
     save();
@@ -158,7 +174,7 @@
     const E = S.eff(c), tilt = (a, b) => clamp((E[a] - E[b]) / 200, -0.08, 0.08);
     if (type === 'save') {
       // Adiantar: a seta aparece mais tarde (você se compromete antes), o pulo vai mais longe, o batedor sente a pressão
-      k.tellMs = Math.round(k.tellMs * 0.45); k.diveReach = Math.min(1.25, Math.round(k.diveReach * 1.25 * 100) / 100); k.miss = 0.12;
+      k.tellMs = Math.round(k.tellMs * 0.75); k.diveReach = Math.min(1.25, Math.round(k.diveReach * 1.1 * 100) / 100); k.miss = 0.12;
       k.chance = Math.round(clamp(k.chance + tilt('fis', 'fin'), 0.15, 0.72) * 100) / 100;
     } else if (type === 'tackle') {
       // Em pé: faixa larga e lance rápido; mesmo no tempo certo ele dribla às vezes
@@ -166,7 +182,7 @@
       k.chance = Math.round(clamp(k.chance + tilt('rit', 'def'), 0.2, 0.9) * 100) / 100;
     } else if (type === 'pass') {
       // Por cima: brecha larga, bola no ar por mais tempo (menos tempo antes do impedimento), goleiro pode sair
-      k.win = Math.round(k.win * 1.9 * 100) / 100; k.period = Math.round(k.period * 0.9 * 10) / 10; k.keeperOut = 0.1;
+      k.win = Math.round(k.win * 1.3 * 1000) / 1000; k.period = Math.round(k.period * 0.9 * 100) / 100; k.keeperOut = 0.1;
       k.chance = Math.round(clamp(k.chance + tilt('fis', 'pas'), 0.2, 0.9) * 100) / 100;
     } else {
       // Forte: mira mais rápida, a bola sobe (risco de ir por cima), o goleiro alcança bem menos
@@ -183,38 +199,38 @@
     if (type === 'save') {
       // Goleiro: o corpo do batedor "entrega" o lado por tellMs antes do chute (REF e Pegador aumentam);
       // o pulo alcança até diveReach (ELA); cantos além disso entram mesmo no lado certo
-      const tellMs = Math.round(clamp(150 + (E.fin - 50) * 6 + lv('pegador') * 45 + lv('reflexo') * 35 + sy('paredao') * 40, 130, 560));
-      const diveReach = round1(clamp(0.72 + (E.fis - 55) / 100 + lv('elastico') * 0.04, 0.65, 1.05) * 100) / 100;
+      const tellMs = Math.round(clamp(120 + (E.fin - 55) * 2.3 + lv('pegador') * 18 + lv('reflexo') * 14 + sy('paredao') * 16, 90, 260));
+      const diveReach = Math.round(clamp(0.52 + (E.fis - 55) / 300 + lv('elastico') * 0.02, 0.45, 0.72) * 100) / 100;
       const chance = clamp(0.28 + (E.fin + E.def - 120) / 260 + lv('pegador') * 0.05 + lv('frieza') * 0.09 + sy('paredao') * 0.05, 0.15, 0.72);
       return { mode: 'save', tellMs, diveReach, chance: Math.round(chance * 100) / 100 };
     }
     if (type === 'pass') {
       // Meia: o atacante corre por trás da zaga; toque quando ele passar pela brecha entre os zagueiros.
       // PAS alarga a brecha e deixa a corrida mais lenta; Visão de Jogo e Garçom ajudam
-      const win = round1(clamp(0.17 + (E.pas - 50) / 240 + lv('visao') * 0.02 + lv('garcom') * 0.015 + sy('maestro') * 0.02, 0.15, 0.36) * 100) / 100;
-      const period = round1(clamp(0.95 + (E.pas - 50) * 0.011 + lv('visao') * 0.08, 0.85, 1.7) * 10) / 10;
+      const win = Math.round(clamp(0.055 + (E.pas - 50) / 375 + lv('visao') * 0.013 + lv('garcom') * 0.011 + sy('maestro') * 0.013, 0.053, 0.21) * 1000) / 1000;
+      const period = Math.round(clamp(0.71 + (E.pas - 50) * 0.0083 + lv('visao') * 0.06, 0.64, 1.28) * 100) / 100;
       const chance = clamp(0.32 + (E.pas - 60) / 75 + lv('visao') * 0.05 + lv('garcom') * 0.04 + lv('frieza') * 0.06 + sy('maestro') * 0.05, 0.2, 0.9);
       return { mode: 'pass', win, period, chance: Math.round(chance * 100) / 100 };
     }
     if (type === 'tackle') {
       // Zagueiro: tocar quando o atacante passa pela zona certa. DEF alarga a zona; RIT deixa o lance mais lento
-      const win = round1(clamp(0.1 + (E.def - 50) / 260 + lv('carrinho') * 0.015 + sy('muralha') * 0.02, 0.08, 0.28) * 100) / 100;
+      const win = Math.round(clamp(0.078 + (E.def - 50) / 290 + lv('carrinho') * 0.012 + sy('muralha') * 0.016, 0.065, 0.24) * 1000) / 1000;
       const period = round1(clamp(0.95 + (E.rit - 50) * 0.01 + lv('antecipa') * 0.08, 0.8, 1.6) * 10) / 10;
       const chance = clamp(0.35 + (E.def - 60) / 80 + lv('carrinho') * 0.04 + lv('frieza') * 0.08 + sy('muralha') * 0.05, 0.2, 0.9);
       return { mode: 'tackle', win, period, chance: Math.round(chance * 100) / 100 };
     }
     // Mira: um vaivém completo leva de 1,0 s (FIN baixa) a ~2,1 s (FIN alta); Chute Colocado deixa mais lenta
     // Na falta a mira corre mais (colocar a bola é mais difícil); Bola Parada devolve parte do tempo
-    const period = clamp((1.0 + (E.fin - 45) * 0.022 + lv('colocado') * 0.12) * (fk ? 0.78 : 1) + (fk ? lv('parada') * 0.12 : 0), 0.85, 2.3);
+    const period = clamp((1.0 + (E.fin - 45) * 0.022 + lv('colocado') * 0.12) * (fk ? 0.92 : 1) + (fk ? lv('parada') * 0.12 : 0), 0.85, 2.3);
     // Tremedeira da mira: pressão do lance menos a frieza
-    const pressure = type === 'classico' ? 0.6 : 1;
+    const pressure = type === 'classico' ? 0.6 : 0.5;
     const calm = clamp((E.fin - 45) / 110, 0, 0.45) + lv('frieza') * 0.18 + sy('matador') * 0.15;
     const wobble = round1(clamp(pressure * (0.16 - calm * 0.2), 0, 0.16) * 100) / 100;
     // Alcance do goleiro diminui com a força do chute (FIN e FÍS).
     // Pênalti: raio em volta do ponto do mergulho (±0,55); o canto fica fora do alcance.
     // Falta: a bola demora mais, o goleiro chega mais longe.
     const power = (E.fin + E.fis * 0.5 - 75) / 300;
-    const reach = clamp(0.3 - power * 0.5, 0.22, 0.3);
+    const reach = clamp(0.255 - power * 0.425, 0.19, 0.255);
     const fkReach = clamp(0.6 - power, 0.4, 0.6) * 1.35;
     // Falta: altura da barreira (Bola Parada ensina a passar por cima dela)
     const wall = fk ? clamp(0.58 - lv('parada') * 0.05 - sy('falta') * 0.04 - (E.pas - 50) / 400, 0.4, 0.58) : 0;

@@ -122,6 +122,11 @@ const grades = {}; res.forEach(r => { grades[r.grade] = (grades[r.grade] || 0) +
 console.log('Notas finais:', Object.entries(grades).sort().map(([g, n]) => g + ' ' + (n / N * 100).toFixed(0) + '%').join(' · '));
 const ver = {}; res.forEach(r => { const v = r.verdict.startsWith('Ídolo') ? 'Ídolo eterno do X' : r.verdict; ver[v] = (ver[v] || 0) + 1; });
 console.log('Vereditos:', Object.entries(ver).sort((a, b) => b[1] - a[1]).map(([v, n]) => v + ' ' + (n / N * 100).toFixed(0) + '%').join(' · '));
+['ATA', 'MEI', 'ZAG', 'GOL'].forEach(p => {
+  const rs = res.filter(r => r.pos === p); if (!rs.length) return;
+  const vp = {}; rs.forEach(r => { const v = r.verdict.startsWith('Ídolo') ? 'Ídolo eterno do X' : r.verdict; vp[v] = (vp[v] || 0) + 1; });
+  console.log('  vereditos ' + p + ':', Object.entries(vp).sort((a, b) => b[1] - a[1]).map(([v, n]) => v + ' ' + Math.round(n / rs.length * 100) + '%').join(' · '));
+});
 const secs = q(res.map(r => r.decisions * 6 + r.seasons * 5), .5);
 console.log('Duração estimada (6 s por decisão + 5 s de resumo por temporada):', Math.floor(secs / 60) + 'min' + (secs % 60) + 's');
 
