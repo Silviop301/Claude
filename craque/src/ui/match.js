@@ -109,7 +109,8 @@
       stakes: 'Converteu: campeão da ' + m.comp + ' · Errou: vice' }),
     acesso: m => ({ tag: 'Última rodada · ' + m.comp, title: (m.kick === 'fk' ? 'Falta' : 'Pênalti') + ' valendo o acesso!',
       text: 'Contra ' + D.o(club(m.vs).name) + (m.kick === 'fk' ? ', falta na entrada da área.' : ', pênalti a seu favor.'), stakes: 'Converteu: acesso garantido · Errou: fica para o ano que vem' }),
-    classico: m => ({ tag: 'Clássico', title: 'Falta perigosa no clássico!', text: 'Contra ' + D.o(club(m.vs).name) + ', na entrada da área. A barreira está armada.', stakes: 'Converteu: gol no clássico e Torcida +8' }),
+    classico: m => m.kick === 'pen' ? { tag: 'Clássico', title: 'Pênalti no clássico!', text: 'Derrubaram você na área contra ' + D.o(club(m.vs).name) + '. O estádio inteiro de pé.', stakes: 'Converteu: gol no clássico e Torcida +8' }
+      : ({ tag: 'Clássico', title: 'Falta perigosa no clássico!', text: 'Contra ' + D.o(club(m.vs).name) + ', na entrada da área. A barreira está armada.', stakes: 'Converteu: gol no clássico e Torcida +8' }),
   };
 
   // Lances defensivos (zagueiro/goleiro): o mesmo momento, visto do outro lado
@@ -188,6 +189,13 @@
   };
   const MINI_BTN = { cup: 'Bater o pênalti', classico: 'Bater a falta', save: 'Defender o pênalti', tackle: 'Dar o bote', pass: 'Enfiar a bola' };
 
+  // Duelo direto: o clube do outro lado é o do seu rival de geração (engine/moments.js marca m.rival)
+  function rivalTag(m) {
+    if (!m.rival) return '';
+    const rv = G.c.rival, d = rv && rv.duels;
+    return '<p class="ob5-rival">' + U.emo('⚔️', 'xs') + '<span>Do outro lado: <b>' + esc(m.rival) + '</b>, seu rival de geração' + (d ? ' · duelos diretos ' + d.w + ' x ' + d.l : '') + '</span></p>';
+  }
+
   function momentIntro(m) {
     const st = S.kickSetupType(m), def = st === 'save' || st === 'tackle';
     const T = def ? DEF_TXT(m, st) : st === 'pass' ? PASS_TXT(m) : MOMENT_TXT[m.type](m), k = S.kickSetup(G.c, st, S.autoStyle(G.c, st));
@@ -200,7 +208,7 @@
         '<span class="ob5-mid">' + (m.minute ? '<span class="ob5-min"><i aria-hidden="true"></i>' + m.minute + "'</span>" : '<span class="ob5-x">×</span>') + '<small>' + esc(T.tag) + '</small></span>' +
         '<b class="ob5-g">' + sc[1] + '</b>' + crest(m.vs) + '</div>' +
       '<div class="ob5-head"><h2>' + T.title + '</h2><p class="ob5-stakes">' + U.emo('🏆', 'xs') + '<span>' + esc(T.stakes) + '</span></p>' +
-        '<p class="ob5-txt">' + (m.ctx ? esc(m.ctx) + ' ' : '') + esc(T.text) + '</p></div>' +
+        '<p class="ob5-txt">' + (m.ctx ? esc(m.ctx) + ' ' : '') + esc(T.text) + '</p>' + rivalTag(m) + '</div>' +
       '<div class="chips ob5-facts">' + miniFacts(st).join('') + '</div>' +
       // Em tela baixa (até 700 px de altura) os chips saem do topo e ficam aqui dentro (style.css, bloco E1)
       '<details class="ob5-how"><summary>Como funciona o lance</summary><p>' + MINI_HOW[st] + '</p><div class="chips ob5-facts in">' + miniFacts(st).join('') + '</div></details>' +
@@ -239,7 +247,8 @@
     const txt = {
       cup: ok ? goal + 'Campeão da ' + m.comp + '!' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
       title: ok ? goal + 'O título é seu!' : (how || 'Não entrou.') + ' O título escapou nos detalhes.',
-      classico: ok ? (bold ? 'Bomba de falta, golaço! ' : 'Golaço de falta colocada! ') + 'O clássico é seu.' : (how || 'Não foi dessa vez.') + ' A torcida lamenta.',
+      classico: m.kick === 'pen' ? (ok ? goal + 'O clássico é seu.' : (how || 'Não entrou.') + ' A torcida lamenta.')
+        : ok ? (bold ? 'Bomba de falta, golaço! ' : 'Golaço de falta colocada! ') + 'O clássico é seu.' : (how || 'Não foi dessa vez.') + ' A torcida lamenta.',
       acesso: ok ? goal + 'O acesso é seu!' : (how || 'Não entrou.') + ' O acesso escapou na última rodada.',
       cont: ok ? goal + 'É campeão da ' + m.comp + '! Seu nome entrou para a história do clube.' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
     }[m.type];
@@ -249,7 +258,7 @@
       : st === 'pass' ? (ok ? (bold ? 'Lançamento por cima na medida e o atacante não perdoou: assistência sua! ' : 'Bola enfiada na medida e o atacante não perdoou: assistência sua! ') : why === 'impedido' ? 'Demorou o passe e ele ficou impedido. ' : why === 'goleiro' ? 'O lançamento foi bom, mas o goleiro saiu e ficou com a bola. ' : 'A zaga cortou o passe. ') : null;
     const defEnd = { cup: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.', title: ok ? 'O título é seu!' : 'O título escapou.',
       classico: ok ? 'O clássico é seu.' : 'A torcida lamenta.', acesso: ok ? 'O acesso é seu!' : 'O acesso escapou.', cont: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.' }[m.type];
-    const final = defTxt !== null ? defTxt + defEnd : txt;
+    const final = (defTxt !== null ? defTxt + defEnd : txt) + (m.rival ? ' ' + (ok ? 'Duelo direto com ' + m.rival.split(' ')[0] + ': ponto seu.' : 'Duelo direto: ponto para ' + m.rival.split(' ')[0] + '.') : '');
     // Placar depois do lance e um título grande (gol, defesa, bote ou a lamentação)
     const def = st === 'save' || st === 'tackle';
     const sc = m.score ? [m.score[0] + (!def && ok ? 1 : 0), m.score[1] + (def && !ok ? 1 : 0)] : null;

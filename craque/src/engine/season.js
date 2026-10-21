@@ -285,7 +285,8 @@
       const hl = {
         cup: M.ok ? '⚽ Seu pênalti decidiu a final da ' + M.comp + ' contra ' + D.o(vsName) : '😞 Pênalti perdido na final da ' + M.comp + ' contra ' + D.o(vsName),
         title: M.ok ? '⚽ Pênalti convertido na última rodada: título contra ' + D.o(vsName) : '😞 Pênalti perdido na última rodada contra ' + D.o(vsName) + ': vice',
-        classico: M.ok ? '🎯 Gol de falta no clássico contra ' + D.o(vsName) : '🧱 Falta desperdiçada no clássico contra ' + D.o(vsName),
+        classico: M.kick === 'pen' ? (M.ok ? '⚽ Pênalti convertido no clássico contra ' + D.o(vsName) : '😞 Pênalti perdido no clássico contra ' + D.o(vsName))
+          : M.ok ? '🎯 Gol de falta no clássico contra ' + D.o(vsName) : '🧱 Falta desperdiçada no clássico contra ' + D.o(vsName),
         acesso: M.ok ? '⬆️ ' + (M.kick === 'fk' ? 'Seu gol de falta' : 'Seu pênalti') + ' garantiu o acesso contra ' + D.o(vsName) + '!'
           : '😞 ' + (M.kick === 'fk' ? 'Falta desperdiçada' : 'Pênalti perdido') + ' na última rodada: o acesso escapou contra ' + D.o(vsName),
         cont: M.ok ? '🌍 ' + (M.kick === 'fk' ? 'Seu gol de falta' : 'Seu pênalti') + ' decidiu a final da ' + M.comp + ' contra ' + D.o(vsName) + '!'
@@ -298,10 +299,12 @@
         : M.kick === 'pass' ? (M.ok ? '🎯 Sua bola enfiada decidiu ' + where + ' contra ' + D.o(vsName) + '!' : '😞 Passe cortado ' + where + ' contra ' + D.o(vsName))
         : null;
       // Variações dos lances mais comuns (clássico): mesmo fato, frase diferente
-      const vsO = D.o(vsName), mk = M.kick === 'save' ? 'sv' : M.kick === 'tackle' ? 'tk' : M.kick === 'pass' ? 'ps' : M.kick === 'fk' || M.type === 'classico' ? 'fk' : 'pk';
+      const vsO = D.o(vsName), mk = M.kick === 'save' ? 'sv' : M.kick === 'tackle' ? 'tk' : M.kick === 'pass' ? 'ps' : S.kickType(M) === 'fk' ? 'fk' : 'pk';
       const ALT = M.type !== 'classico' ? null : {
         fkok: ['🎯 Gol de falta no clássico contra ' + vsO, '🎯 Falta no ângulo: clássico decidido contra ' + vsO, '🎯 Bola parada perfeita no clássico contra ' + vsO, '🎯 Cobrança indefensável no clássico contra ' + vsO],
         fkko: ['😞 Falta desperdiçada no clássico contra ' + vsO, '😞 A falta decisiva não entrou no clássico contra ' + vsO, '😞 Bola parada sem gol no clássico contra ' + vsO],
+        pkok: ['⚽ Pênalti convertido no clássico contra ' + vsO, '⚽ Bola de um lado, goleiro do outro: clássico decidido contra ' + vsO, '⚽ Seu pênalti decidiu o clássico contra ' + vsO],
+        pkko: ['😞 Pênalti perdido no clássico contra ' + vsO, '😞 O pênalti do clássico não entrou contra ' + vsO],
         psok: ['🎯 Sua bola enfiada decidiu no clássico contra ' + vsO + '!', '🎯 Passe na medida e gol no clássico contra ' + vsO, '🎯 Assistência decisiva no clássico contra ' + vsO],
         psko: ['😞 Passe cortado no clássico contra ' + vsO, '😞 A zaga ' + D.do(vsName) + ' leu seu passe no clássico', '😞 O passe decisivo não chegou no clássico contra ' + vsO],
         tkok: ['🛡️ Desarme salvador no clássico contra ' + vsO + '!', '🛡️ Carrinho perfeito salvou o clássico contra ' + vsO, '🛡️ Bola roubada no último lance do clássico contra ' + vsO],

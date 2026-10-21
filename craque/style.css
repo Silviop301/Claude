@@ -3190,3 +3190,12 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 #kick, #rl-kick { cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .desk .kick-help { font-size: 18px; }
 /* ----- fim E3 ----- */
+
+/* ----- E4: duelo direto com o rival e revanche ----- */
+/* Linha do rival na tela do lance (ui/match.js rivalTag): mesma forma do "o que vale", em vermelho de duelo */
+.ob5-rival { margin: 0; display: flex; align-items: flex-start; gap: 8px; font: 600 14px/1.35 var(--body); color: #FFB3B8; }
+.ob5-rival .tw { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+.ob5-rival b { color: #FFE1E3; font-weight: 800; }
+/* Placar histórico da revanche no balanço do fim (ui/finale.js rivalBlock) */
+.fin-rival .fr-hist { display: block; margin: -2px 0 4px; font-size: 12.5px; font-weight: 600; color: #4A5A78; }
+/* ----- fim E4 ----- */

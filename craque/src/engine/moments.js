@@ -7,7 +7,7 @@
   // Em algumas temporadas, um lance decide algo grande. O resultado vale de verdade:
   //  cup      pênalti na final da copa     → converteu: campeão da copa · errou: vice
   //  title    pênalti na última rodada     → converteu: campeão da liga · errou: vice
-  //  classico falta no clássico            → converteu: gol e torcida +8
+  //  classico falta ou pênalti no clássico → converteu: gol e torcida +8
   // Taça continental que o clube disputa (ou null)
   // Libertadores: primeira divisão dos países sul-americanos do jogo; Champions: clubes grandes da Europa
   S.LIBERTA = ['bra-a', 'arg', 'uru', 'col', 'chi', 'par', 'ecu', 'per', 'bol', 'ven'];
@@ -34,7 +34,7 @@
     'Chile': 'Supercopa do Chile', 'Paraguai': 'Supercopa Paraguaia', 'Equador': 'Supercopa do Equador', 'Uruguai': 'Supercopa Uruguaia',
     'Colômbia': 'Superliga Colombiana', 'Catar': 'Copa do Xeique Jassim', 'Áustria': null, 'Suíça': null, 'Dinamarca': null, 'Escócia': null, 'EUA': null };
   S.superName = club => { const LD = D.LADDER[club.league]; if (LD && LD.up) return null; return S.SUPER_NAME[D.countryOf(club)] || null; };
-  // Tipo de cobrança do lance: pênalti ou falta ('classico' é sempre falta; 'cont' sorteia)
+  // Tipo de cobrança do lance: pênalti ou falta ('classico' sem kick é falta; 'classico', 'cont' e 'acesso' sorteiam)
   // Zagueiro e goleiro têm lances defensivos: 'tackle' (desarme) e 'save' (defender pênalti)
   S.kickType = m => m.kick || (m.type === 'classico' ? 'fk' : 'pen');
   // Meia: o lance dele é o passe decisivo (bola enfiada para o atacante), pela PAS e não pela FIN
@@ -83,23 +83,31 @@
     const club = D.CLUB_BY_ID[c.club], lg = D.LEAGUE_BY_ID[club.league];
     const rivals = D.CLUBS.filter(x => x.league === club.league && x.id !== club.id).sort((a, b) => b.strength - a.strength);
     const playing = S.role(c, club).share >= 0.3 || c.farewell;
+    // O rival de geração joga a temporada dele antes da sua (engine/rival.js): aqui já se sabe o clube dele neste ano
+    if (S.rivalPre && playing) S.rivalPre(c);
+    const rank = 1 + rivals.filter(x => x.strength > club.strength).length;
+    // Final e briga pelo título só para quem está entre os mais fortes da liga
+    const cupField = S.cupField(club);
+    const LD = D.LADDER[club.league];
+    const contName = S.contName(club);
+    const pool = [['classico', c.pos === 'MEI' ? 4 : 3]];
+    // Final da copa nacional: só para quem está entre os 8 mais fortes do país (todas as divisões)
+    if (cupField.indexOf(club.id) >= 0 && cupField.indexOf(club.id) < 8) pool.push(['cup', 1]);
+    if (rank <= 2) pool.push(['title', 1.5]);
+    // Última rodada valendo o acesso (divisões de baixo, times perto do G-4)
+    if (LD && LD.up && rank <= (LD.promo || 4) + 2) pool.push(['acesso', 1.3]);
+    // Final continental: topo do Brasil/Argentina (Libertadores) ou clube grande europeu (Champions)
+    if (contName && (contName === 'Libertadores' ? rank <= 4 : club.strength >= 78)) pool.push(['cont', 1.2]);
+    const sum = pool.reduce((a, p) => a + p[1], 0);
     if (playing && rivals.length && r() < 0.45) {
-      const rank = 1 + rivals.filter(x => x.strength > club.strength).length;
-      // Final e briga pelo título só para quem está entre os mais fortes da liga
-      const pool = [['classico', c.pos === 'MEI' ? 4 : 3]];
-      // Final da copa nacional: só para quem está entre os 8 mais fortes do país (todas as divisões)
-      const cupField = S.cupField(club);
-      if (cupField.indexOf(club.id) >= 0 && cupField.indexOf(club.id) < 8) pool.push(['cup', 1]);
-      if (rank <= 2) pool.push(['title', 1.5]);
-      // Última rodada valendo o acesso (divisões de baixo, times perto do G-4)
-      const LD = D.LADDER[club.league];
-      if (LD && LD.up && rank <= (LD.promo || 4) + 2) pool.push(['acesso', 1.3]);
-      // Final continental: topo do Brasil/Argentina (Libertadores) ou clube grande europeu (Champions)
-      const contName = S.contName(club);
-      if (contName && (contName === 'Libertadores' ? rank <= 4 : club.strength >= 78)) pool.push(['cont', 1.2]);
-      let x = r() * pool.reduce((a, p) => a + p[1], 0), type = pool[0][0];
+      let x = r() * sum, type = pool[0][0];
       for (const [t, w] of pool) { x -= w; if (x < 0) { type = t; break; } }
+      const derby = type === 'classico' && (D.RIVALS[club.id] || []).some(id => D.CLUB_BY_ID[id] && D.CLUB_BY_ID[id].league === club.league);
       let vs = type === 'cup' ? D.CLUB_BY_ID[r.pick(cupField.filter(id => id !== club.id).slice(0, 8))] : type === 'acesso' ? r.pick(rivals.slice(0, 6)) : type === 'classico' ? S.derbyOf(club, r.pick) || rivals[0] : rivals[0];
+      // Duelo direto: o rival de geração joga na mesma liga (num time de cima, se é briga pelo título)
+      const rv = c.rival, rc = rv && !rv.retired && rv.now && rv.now.club !== club.id && D.CLUB_BY_ID[rv.now.club];
+      const rvOk = rc && rc.league === club.league && (type === 'title' ? rivals.slice(0, 3).includes(rc) : type === 'classico' && !derby);
+      if (rvOk && r() < 0.5) vs = rc;
       if (type === 'cont') {
         // Adversário da final: um grande de outra liga do mesmo continente
         const libert = S.contName(club) === 'Libertadores';
@@ -110,6 +118,14 @@
       c.moment = { type, vs: vs.id, comp: type === 'cup' ? (lg.cup || 'Copa nacional') : type === 'cont' ? S.contName(club) : lg.name };
       if (type === 'cont' || type === 'acesso') c.moment.kick = r() < 0.55 ? 'pen' : 'fk';
       if (S.posKick(c.pos)) c.moment.kick = S.posKick(c.pos); // defensores: lance contra, no fim do jogo; meia: passe decisivo
+      // Clássico do atacante (falta ou pênalti) e do meia (passe ou falta): sorteia e não repete o do clássico do ano anterior
+      const ALT2 = { ATA: ['fk', 'pen'], MEI: ['pass', 'fk'] }[c.pos], last = c.momLast;
+      if (type === 'classico' && ALT2) {
+        const prev = last && last.age === c.age - 1 && last.type === 'classico' ? last.kick : null;
+        c.moment.kick = prev ? ALT2[prev === ALT2[0] ? 1 : 0] : ALT2[r() < 0.5 ? 0 : 1];
+      }
+      if (vs.id === (rc && rc.id) && type !== 'cont') c.moment.rival = rv.name; // duelo direto com o rival de geração
+      c.momLast = { age: c.age, type, kick: S.kickType(c.moment) };
       momentContext(c, c.moment, club, rank, Math.max(20, leagueSize(club)), r); // a tabela tem no mínimo 20 times
     }
     save();
