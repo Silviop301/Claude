@@ -66,7 +66,7 @@
 
   // ---------- Decisão arriscada ----------
   // Roleta com 100 números: o verde ocupa exatamente a chance (62% = números 1 a 62, 223° da roda) e o vermelho o resto.
-  // O motor já sorteou o número (S.roll100); a roda gira e para nele, e o centro mostra o número que passa pelo ponteiro.
+  // O motor já sorteou o número (S.roll100); a roda gira e para nele, e o centro acende na cor que passa pelo ponteiro.
   function riskRoll(p, ok, title, done, roll) {
     const pc = S.pct(p);
     if (!(p > 0 && p < 1)) return done();
@@ -79,8 +79,8 @@
     w.innerHTML = '<div class="mo-rcard" role="dialog" aria-label="Sorteio da decisão: ' + pc + '% de dar certo"><small class="mo-rk">Decisão arriscada</small><h3>' + esc(title) + '</h3>' +
       '<div class="mo-wbox"><i class="mo-pin"></i><div class="mo-wheel" style="--g:' + deg.toFixed(1) + 'deg">' +
       (pc >= 8 ? lbl(pc + '%', 'w', deg / 2) : '') + (pc <= 92 ? lbl((100 - pc) + '%', 'l', deg + (360 - deg) / 2) : '') + '</div>' +
-      '<div class="mo-hub"><b>·</b><small>sorteio</small></div></div>' +
-      '<div class="mo-keys"><span class="w"><i></i>Verde: 1 a ' + pc + ' · deu certo</span><span class="l"><i></i>Vermelho: ' + (pc + 1) + ' a 100 · deu errado</span></div>' +
+      '<div class="mo-hub"><b>?</b></div></div>' +
+      '<div class="mo-keys"><span class="w"><i></i>Verde: deu certo</span><span class="l"><i></i>Vermelho: deu errado</span></div>' +
       '<p class="mo-out" aria-live="polite"></p></div>';
     const wheel = w.querySelector('.mo-wheel'), hub = w.querySelector('.mo-hub'), num = hub.querySelector('b'), out = w.querySelector('.mo-out');
     // Ângulo final: o ponteiro (no topo) fica sobre a fatia do número n, num ponto qualquer dentro dela
@@ -90,7 +90,7 @@
     const show = r => {
       wheel.style.transform = 'rotate(' + r.toFixed(2) + 'deg)';
       const k = under(r), side = k <= pc ? 'w' : 'l';
-      num.textContent = k; hub.className = 'mo-hub ' + side;
+      hub.className = 'mo-hub ' + side; // o centro acende na cor da fatia sob o ponteiro (o número fica só no motor)
       // Um "tic" a cada troca de cor e a cada 10 números (no máximo um a cada 70 ms)
       const seg = side + Math.floor((k - 1) / 10);
       if (U.sfx && seg !== lastSeg && performance.now() - last > 70) { U.sfx('tick'); last = performance.now(); }
@@ -99,7 +99,8 @@
     const finish = () => {
       if (over) return; over = true; cancelAnimationFrame(raf); show(END);
       w.classList.add(ok ? 'is-ok' : 'is-ko'); ring();
-      out.innerHTML = 'Saiu o <b>' + n + '</b> · ' + (ok ? 'deu certo' : 'deu errado');
+      num.textContent = ok ? '✓' : '✕';
+      out.textContent = ok ? 'Deu certo!' : 'Deu errado';
       const t = setTimeout(close, 1100);
       w.onclick = () => { clearTimeout(t); close(); };
     };
