@@ -24,7 +24,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:' && !window.CLI
   const go = () => {
     const s = document.createElement('script'); s.type = 'module'; s.src = tag.dataset.src;
     // A biblioteca não chegou (sem internet, rede bloqueando, navegador antigo): as telas usam o desenho 2D
-    s.onerror = () => { window.CRAQUE_BALL_FAIL = true; window.dispatchEvent(new Event('craque-ball-fail')); };
+    s.onerror = () => { window.CRAQUE_BALL_FAIL = true; if (window.CLIMBIX_REPORT) window.CLIMBIX_REPORT('3D: biblioteca não carregou'); window.dispatchEvent(new Event('craque-ball-fail')); };
     document.head.appendChild(s);
   };
   const idle = () => ('requestIdleCallback' in window ? requestIdleCallback(go, { timeout: 2500 }) : setTimeout(go, 800));
