@@ -3183,3 +3183,10 @@ details.fin-more.o6-panel:not([open]) { display: none; }
 .ob3-tag { font-size: 12px; }
 button.mc-at .pips { font-size: 11px; opacity: .85; }
 /* ----- fim E2 ----- */
+
+/* ----- E3: toque do lance na tela toda ----- */
+/* O toque conta em qualquer lugar (kick.js onTap): a dica fica logo abaixo do palco, maior, e a área abaixo vira zona de toque */
+.kick-help { font-size: 17px; font-weight: 600; line-height: 1.35; padding: 4px 8px 0; }
+#kick, #rl-kick { cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.desk .kick-help { font-size: 18px; }
+/* ----- fim E3 ----- */

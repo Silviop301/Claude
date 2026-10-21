@@ -315,7 +315,22 @@
   // Peças reaproveitadas pelo minigame do goleiro (defend.js)
   // Gol: sempre o desenho (o gol 3D pesava demais em celulares mais simples)
   function goal3d() { return Promise.resolve(null); }
-  root.CRAQUE_KICK_PARTS = { scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d, keeperSprite, keeperTint, animateWall, ball3d };
+  // Toque no lance: vale em qualquer lugar da tela (o polegar descansa abaixo do palco), não só no palco.
+  // Ignora botões, links e campos, a barra do topo e o que estiver em outra camada (janela por cima).
+  // O handler recebe o evento como antes (o goleiro lê clientX em relação ao palco).
+  const LAYER = '.ask-wrap, .cfg-wrap, .sheet-wrap, .sl-sheet-wrap, .trn-wrap, .paper-wrap, .walkout, .pk-wrap, .album, .bigmoment, .mo-wrap';
+  function onTap(stage, fn) {
+    const home = stage.closest(LAYER);
+    const h = e => {
+      if (!stage.isConnected) return document.removeEventListener('pointerdown', h, true);
+      if (e.button > 0 || !stage.getClientRects().length) return;
+      const t = e.target;
+      if (t && t.closest && (t.closest('button, a, input, select, textarea, label, summary, [role="button"], #bar') || t.closest(LAYER) !== home)) return;
+      fn(e);
+    };
+    document.addEventListener('pointerdown', h, true);
+  }
+  root.CRAQUE_KICK_PARTS = { onTap, scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d, keeperSprite, keeperTint, animateWall, ball3d };
 
   root.CRAQUE_KICK = function (el, opts) {
     const c = opts.c, m = opts.moment;
@@ -382,7 +397,7 @@
     const help = el.querySelector('#k-help');
     let armed = false;
     setTimeout(() => { armed = true; }, 250); // o toque que abriu a tela não conta
-    stage.addEventListener('pointerdown', e => {
+    onTap(stage, e => {
       e.preventDefault();
       if (!armed) return;
       if (phase === 'x') {

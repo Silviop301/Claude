@@ -69,7 +69,7 @@
 
     let dive = null, t0 = performance.now(), done = false, armed = false;
     setTimeout(() => { armed = true; }, 250);
-    stage.addEventListener('pointerdown', e => {
+    P.onTap(stage, e => {
       e.preventDefault();
       if (!armed || dive !== null || done) return;
       const r = stage.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width;
@@ -187,7 +187,7 @@
       setTimeout(() => cine.follow(() => { const a = at(g.u); return { x: (a.x + g.def.x) / 2, y: (a.y + g.def.y) / 2 - 40, z: 1.12 }; }), HOLD + 50);
     }
     const setAtk = (anim, now) => { g.aAnim = anim; g.aT0 = now; };
-    stage.addEventListener('pointerdown', e => {
+    P.onTap(stage, e => {
       e.preventDefault();
       if (!armed || g.slide || g.mode !== 'run') return;
       const tgt = at(Math.min(1, g.u + SL / T));
@@ -351,7 +351,7 @@
     setTimeout(() => { armed = true; }, Math.max(250, HOLD));
     const uAt = t => Math.max(0, Math.min(1, t / dur));
     const placeMate = u => { const a = atU(u); mate.place(sx(a.x, a.g), sy(a.g), hOf(a.g)); };
-    stage.addEventListener('pointerdown', e => {
+    P.onTap(stage, e => {
       e.preventDefault();
       if (!armed || done) return;
       hit = uAt(performance.now() - t0);

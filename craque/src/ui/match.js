@@ -166,11 +166,11 @@
   function miniFacts(setupType) {
     const k = S.kickSetup(G.c, setupType), E = S.eff(G.c), L = kk => D.label(G.c.pos, kk);
     const lv = id => (G.c.traits.includes(id) ? S.traitLevel(G.c, id) : 0);
-    if (setupType === 'save') return ['<span class="chip">' + L('fin') + ' ' + E.fin + ' · sinal do batedor ' + (k.tellMs >= 340 ? 'longo' : k.tellMs >= 220 ? 'médio' : 'curto') + '</span>',
-      '<span class="chip">' + L('fis') + ' ' + E.fis + ' · alcance ' + (k.diveReach >= 0.8 ? 'grande' : k.diveReach >= 0.66 ? 'médio' : 'curto') + '</span>'].concat(lv('pegador') ? ['<span class="chip">' + U.emo('🥅', 'xs') + ' Pegador de pênalti: sinal mais longo</span>'] : []);
-    if (setupType === 'pass') return ['<span class="chip">' + L('pas') + ' ' + E.pas + ' · brecha ' + (k.win >= 0.2 ? 'larga' : k.win >= 0.14 ? 'média' : 'estreita') + '</span>',
-      '<span class="chip">Corrida ' + (k.period >= 1.35 ? 'lenta' : k.period >= 1.1 ? 'média' : 'rápida') + '</span>'].concat(lv('visao') ? ['<span class="chip">' + U.emo('👁️', 'xs') + ' Visão de Jogo: brecha maior</span>'] : []);
-    if (setupType === 'tackle') return ['<span class="chip">DEF ' + E.def + ' · faixa ' + (k.win >= 0.18 ? 'larga' : k.win >= 0.12 ? 'média' : 'estreita') + '</span>',
+    if (setupType === 'save') return ['<span class="chip">' + L('fin') + ' ' + E.fin + ' · sinal do batedor ' + (k.tellMs >= 190 ? 'longo' : k.tellMs >= 130 ? 'médio' : 'curto') + '</span>',
+      '<span class="chip">' + L('fis') + ' ' + E.fis + ' · alcance ' + (k.diveReach >= 0.62 ? 'grande' : k.diveReach >= 0.52 ? 'médio' : 'curto') + '</span>'].concat(lv('pegador') ? ['<span class="chip">' + U.emo('🥅', 'xs') + ' Pegador de pênalti: sinal mais longo</span>'] : []);
+    if (setupType === 'pass') return ['<span class="chip">' + L('pas') + ' ' + E.pas + ' · brecha ' + (k.win >= 0.13 ? 'larga' : k.win >= 0.093 ? 'média' : 'estreita') + '</span>',
+      '<span class="chip">Corrida ' + (k.period >= 1.0 ? 'lenta' : k.period >= 0.82 ? 'média' : 'rápida') + '</span>'].concat(lv('visao') ? ['<span class="chip">' + U.emo('👁️', 'xs') + ' Visão de Jogo: brecha maior</span>'] : []);
+    if (setupType === 'tackle') return ['<span class="chip">DEF ' + E.def + ' · faixa ' + (k.win >= 0.15 ? 'larga' : k.win >= 0.1 ? 'média' : 'estreita') + '</span>',
       '<span class="chip">RIT ' + E.rit + ' · lance ' + (k.period >= 1.3 ? 'lento' : k.period >= 1.05 ? 'médio' : 'rápido') + '</span>'].concat(lv('carrinho') ? ['<span class="chip">' + U.emo('🦵', 'xs') + ' Carrinho: faixa maior</span>'] : []);
     const f = ['<span class="chip">FIN ' + E.fin + ' · mira ' + (k.period >= 1.7 ? 'lenta' : k.period >= 1.35 ? 'média' : 'rápida') + '</span>',
       '<span class="chip">Tremedeira ' + (k.wobble <= 0.03 ? 'nenhuma' : k.wobble <= 0.08 ? 'pouca' : 'muita') + '</span>'];
