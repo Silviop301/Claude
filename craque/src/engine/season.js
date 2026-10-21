@@ -456,7 +456,7 @@
     // Cartas especiais da temporada (a foto é com a nota já atualizada)
     const yr = S.YEAR0 + c.season;
     const cards = [];
-    const main = isDef ? (c.pos === 'GOL' ? cleanSheets + ' SEM SOFRER GOL' : goals ? goals + ' GOLS · ' + cleanSheets + ' S/ GOL' : cleanSheets + ' SEM SOFRER GOL') : c.pos === 'MEI' ? assists + ' ASSIST.' : goals + ' GOLS';
+    const main = isDef ? (c.pos === 'GOL' ? cleanSheets + ' SEM SOFRER GOL' : goals ? cleanSheets + ' S/ GOL · ' + D.plural(goals, 'GOL', 'GOLS') : cleanSheets + ' SEM SOFRER GOL') : c.pos === 'MEI' ? assists + ' ASSIST.' : goals + ' GOLS';
     // Cartas raras: Seleção da Temporada e Herói da Final saem no máximo uma vez na carreira
     const has = t => (c.cards || []).some(k => k.type === t);
     const drop = (t, ok, txt) => { const k = ok && S.dropCard(c, t, txt); if (k) cards.push(k); };

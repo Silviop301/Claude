@@ -55,14 +55,14 @@
 
   function careerTab(c) {
     const T = c.totals, gk = c.pos === 'GOL', def = gk || c.pos === 'ZAG';
-    const nums = [[gk ? T.cs || 0 : T.goals, gk ? 'Sem sofrer gol' : 'Gols'], [gk ? T.penSaved || 0 : def ? T.cs || 0 : T.assists, gk ? 'Pênaltis def.' : def ? 'Sem sofrer gol' : 'Assistências'],
+    const nums = [[def ? T.cs || 0 : T.goals, def ? 'Sem sofrer gol' : 'Gols'], [gk ? T.penSaved || 0 : def ? T.goals : T.assists, gk ? 'Pênaltis def.' : def ? 'Gols' : 'Assistências'],
       [S.titleCount(T), 'Títulos'], [c.peak, 'Nota máxima']];
-    const stat = s => (gk ? s.cleanSheets || 0 : s.goals + (def ? '' : '/' + s.assists));
+    const stat = s => (gk ? s.cleanSheets || 0 : def ? (s.cleanSheets || 0) + '/' + s.goals : s.goals + '/' + s.assists);
     const rows = c.seasons.map((s, i) => '<tr><td>' + String(YEAR0 + i).slice(2) + '</td><td class="cl">' + crest(s.club, 'xs') + esc(club(s.club).name) + '</td><td>' + s.games + '</td><td>' + stat(s) + '</td>' +
       '<td>' + (s.games ? s.rating.toFixed(1).replace('.', ',') : '–') + '</td><td>' + (s.titles.length ? U.emo('🏆', 'xs') + (s.titles.length > 1 ? s.titles.length : '') : '') + (s.awards.some(a => a.id === 'ballon') ? trophy('ballon', 18) : '') + '</td></tr>').join('');
     const room = Object.entries(c.trophies || {});
     return '<div class="sh-nums">' + nums.map(([v, l]) => '<div><b>' + v + '</b><span>' + l + '</span></div>').join('') + '</div>' +
-      (c.seasons.length ? '<div class="sh-sec">Temporadas <span>' + c.seasons.length + ' · ' + T.games + ' jogos</span></div><table class="sh-seasons"><thead><tr><th>Ano</th><th>Clube</th><th>J</th><th>' + (gk ? 'SG' : def ? 'G' : 'G/A') + '</th><th>Nota</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
+      (c.seasons.length ? '<div class="sh-sec">Temporadas <span>' + c.seasons.length + ' · ' + T.games + ' jogos</span></div><table class="sh-seasons"><thead><tr><th>Ano</th><th>Clube</th><th>J</th><th>' + (gk ? 'SG' : def ? 'SG/G' : 'G/A') + '</th><th>Nota</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
         : '<p class="sh-hint">A primeira temporada ainda não foi jogada.</p>') +
       (room.length ? '<div class="sh-sec">Troféus <button class="link-btn sh-sala" id="sh-sala">Ver na Sala de Troféus ›</button></div><div class="sh-room">' + room.map(([name, t]) => '<div>' + trophy(t.type, 34, name) + '<b>' + t.n + '×</b><span>' + esc(name) + '</span></div>').join('') + '</div>' : '');
   }

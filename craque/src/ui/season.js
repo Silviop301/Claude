@@ -6,7 +6,7 @@
   // Os dois números da temporada que mais importam para a posição
   function seasonStats(res) {
     if (res.pos === 'GOL') return [[res.cleanSheets || 0, 'Sem sofrer'], [res.saves || 0, 'Defesas']];
-    if (res.pos === 'ZAG') return [[res.goals, 'Gols'], [res.cleanSheets || 0, 'Sem sofrer']];
+    if (res.pos === 'ZAG') return [[res.cleanSheets || 0, 'Sem sofrer'], [res.goals, 'Gols']];
     return [[res.goals, 'Gols'], [res.assists, 'Assist.']];
   }
 

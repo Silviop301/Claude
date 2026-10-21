@@ -2713,6 +2713,12 @@ button.mc-at.poor .price { opacity: .55; }
 button.mc-at.full .price { opacity: .65; text-transform: uppercase; }
 button.mc-at.up { background: rgba(255, 255, 255, .75); }
 .mcard.icone button.mc-at.up { background: rgba(123, 227, 160, .15); }
+.at-help { margin: 8px 0 4px; }
+.at-help .ah-row { display: grid; grid-template-columns: 40px 1fr; gap: 8px; align-items: start; }
+.at-help .ah-row > b { font: 800 15px/1.6 var(--display); color: var(--gold, #E9C46A); }
+.at-help .ah-row span { display: block; font-weight: 700; }
+.at-help .ah-row em { font-style: normal; font-weight: 600; opacity: .7; }
+.at-help .ah-row small { display: block; opacity: .85; line-height: 1.35; }
 .mc-hint { grid-column: 1 / -1; margin: 2px 0 0; font: 700 12px var(--display); letter-spacing: .04em; text-align: center; opacity: .8; display: flex; align-items: center; justify-content: center; gap: 4px; }
 .pick-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 16px 0 -4px; }
 .pick-h b { font: 800 22px var(--display); }

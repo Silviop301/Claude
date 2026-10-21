@@ -45,7 +45,7 @@
     : res.pos === 'MEI' ? P(res.assists, 'assistência', 'assistências') : P(res.goals, 'gol', 'gols');
   // Números da carreira inteira, por posição (para os posts de despedida)
   const careerOf = c => { const T = c.totals || {}; return c.pos === 'GOL' ? csTxt(T.cs) + ' e ' + P(T.penSaved || 0, 'pênalti defendido', 'pênaltis defendidos')
-    : c.pos === 'ZAG' ? P(T.goals || 0, 'gol', 'gols') + ' e ' + csTxt(T.cs) : P(T.goals || 0, 'gol', 'gols') + ' e ' + P(T.assists || 0, 'assistência', 'assistências'); };
+    : c.pos === 'ZAG' ? csTxt(T.cs) + ' e ' + P(T.goals || 0, 'gol', 'gols') : P(T.goals || 0, 'gol', 'gols') + ' e ' + P(T.assists || 0, 'assistência', 'assistências'); };
   const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
 
   // Clima da temporada: Bola de Ouro, título, banco, lesão, queda, ótima, boa ou fraca

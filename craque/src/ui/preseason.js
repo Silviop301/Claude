@@ -64,6 +64,31 @@
       }).join('') + '</div>' +
       (inv ? '<p class="mc-hint">Toque num atributo para treinar · cada nível custa mais 1 ' + U.emo('⭐', 'xs') + '</p>' : '') + '</div>';
   }
+  // "O que é cada atributo": o que cada um faz para a sua posição (tirado das contas do motor) e o peso na nota da carta
+  const ATTR_HELP = {
+    ATA: { rit: 'Arrancada: ajuda a fazer gols na temporada.', fin: 'O mais importante: mais gols, e nos chutes a mira anda mais devagar e treme menos.',
+      pas: 'Mais assistências; na falta, ajuda a bola a passar por cima da barreira.', dri: 'Ajuda nos gols e nas assistências.',
+      def: 'Pesa pouco: só ajuda um pouco nos jogos grandes.', fis: 'Chute mais forte (o goleiro alcança menos), menos lesões e mais força nos jogos grandes.' },
+    MEI: { rit: 'Ajuda um pouco nos gols e nas assistências.', fin: 'Gols e chutes de falta: a mira anda mais devagar e treme menos.',
+      pas: 'O mais importante: mais assistências e, no lance de passe, a brecha fica maior e a corrida mais lenta.', dri: 'Ajuda nas assistências e nos gols.',
+      def: 'Ajuda o time nos jogos grandes (títulos).', fis: 'Menos lesões e mais força nos jogos grandes.' },
+    ZAG: { rit: 'No lance de desarme, o atacante vem mais devagar: mais tempo para acertar.', fin: 'Ajuda a fazer gol de bola parada.',
+      pas: 'Pesa na nota da carta.', dri: 'Quase não pesa para zagueiro.',
+      def: 'O mais importante: mais desarmes, faixa certa maior no lance de desarme, mais jogos sem sofrer gol e mais títulos.',
+      fis: 'Menos lesões, gols de cabeça na bola parada e mais força nos jogos grandes.' },
+    GOL: { rit: 'Velocidade: quase não pesa para goleiro.', fin: 'Reflexo, o mais importante: mais defesas e pênaltis defendidos, e no pênalti o batedor entrega o lado mais cedo.',
+      pas: 'Reposição: pesa pouco na nota da carta.', dri: 'Manejo: segurar a bola; pesa na nota da carta.',
+      def: 'Posicionamento: mais pênaltis defendidos, mais jogos sem sofrer gol e mais títulos.', fis: 'Elasticidade: o pulo alcança mais longe, mais defesas e menos lesões.' },
+  };
+  function attrHelp() {
+    const pos = G.c.pos, w = D.POS[pos].w, help = ATTR_HELP[pos];
+    const name = k => pos === 'GOL' ? help[k].split(':')[0] : D.ATTR_NAMES[k];
+    const txt = k => pos === 'GOL' ? help[k].slice(help[k].indexOf(':') + 2) : help[k];
+    return '<details class="more at-help"><summary>' + U.emo('📖', 'xs') + ' O que é cada atributo?</summary>' +
+      '<p class="muted small">A nota da carta é a soma dos atributos com estes pesos para ' + D.POS[pos].name.toLowerCase() + '. Mais nota também traz mais jogos e propostas melhores.</p>' +
+      D.ATTRS.slice().sort((a, b) => w[b] - w[a]).map(k => '<div class="ah-row"><b>' + D.label(pos, k) + '</b><div><span>' + esc(name(k)) + ' · <em>' + Math.round(w[k] * 100) + '% da nota</em></span><small>' + esc(txt(k)) + '</small></div></div>').join('') +
+      '</details>';
+  }
   function showPreview(p) {
     const E = S.eff(G.c), o = S.ovr(G.c);
     D.ATTRS.forEach(k => {
@@ -182,7 +207,7 @@
       '<div class="pre-head"><div><div class="eyebrow">Pré-temporada · ' + year() + (G.c.farewell ? ' · temporada de despedida' : '') + '</div>' +
         '<h2>Prepare a temporada</h2></div>' +
         (coins ? '<div class="coins" aria-label="Pontos de evolução">' + U.emo('⭐', 'sm') + '<b id="w-money">' + (G.c.pe || 0) + '</b></div>' : '') + '</div>' +
-      wcHint() + miniCard(hasInv) +
+      wcHint() + miniCard(hasInv) + attrHelp() +
       (justAdded ? '<div class="prep-done">' + justAdded + '</div>' : '') +
       (done && !justAdded ? '<div class="prep-sec">Características</div>' + traitsHtml() + '<p class="muted small">' + (S.buildDone(G.c) ? U.emo('✅', 'xs') + ' Build completo: todas no nível máximo.' : 'Nada para evoluir nesta fase: o que falta já não rende na sua idade.') + '</p>' : '') +
       // Características: as opções lado a lado, como cartas; um toque escolhe
