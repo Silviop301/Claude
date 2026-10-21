@@ -249,15 +249,15 @@
       if (!U.arm(b, '<b>Toque de novo para confirmar</b>')) return;
       if (k === 'talk') {
         const r = S.coachTalk(G.c);
-        save(); bar(); sfx(r.ok ? 'levelup' : 'miss');
-        // O ponteiro corre sobre a chance e o cartão vira com o carimbo (como nas decisões)
-        U.riskRoll(talk / 100, r.ok, 'Conversar com o técnico', () => {
+        save(); bar();
+        // A roleta para no número sorteado e o cartão vira com o carimbo (como nas decisões); o som sai quando ela para
+        U.riskRoll(r.p ? r.p / 100 : talk / 100, r.ok, 'Conversar com o técnico', () => {
           render('<div class="card ev-res ob3-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="ob3-stamp s-' + (r.ok ? 'ok' : 'ko') + '">' + (r.ok ? 'Deu certo' : 'Deu errado') + '</span>' +
             '<span class="er-ic">' + U.emo('🤝', 'lg') + '</span><div class="eyebrow">Conversa com o técnico</div><p class="er-txt">' + r.text + '</p>' +
             '<div class="er-fx">' + (r.ok ? '<span class="up">Técnico ' + sg(F.talkOk) + '</span><span class="up">Mais minutos</span>' : '<span class="down">Técnico ' + sg(F.talkKo) + '</span>') + '</div></div>' +
             '<button class="btn" id="b-next">Pré-temporada</button>', { center: true });
           $('b-next').onclick = U.preseason;
-        });
+        }, r.roll);
       } else if (k === 'out') { S.askOut(G.c); save(); windowOffers(); }
       else { S.stayAndFight(G.c); save(); U.preseason(); }
     });

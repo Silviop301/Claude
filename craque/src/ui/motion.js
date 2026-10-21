@@ -5,8 +5,8 @@
 //  - U.firstContract(c, done): primeiro contrato aos 16, com a assinatura do nome e o escudo carimbando (~2 s).
 //  - U.callUp(c, call, done): lista da seleção abrindo por setor, com o seu nome em destaque (~2 s).
 //  - U.rankClimb(el, pontos): no fim da carreira, a posição na semana conta do fim da fila até a sua.
-//  - U.riskRoll(p, ok, title, done): decisão arriscada. O ponteiro corre sobre a chance (verde = deu certo) e para
-//    no resultado que o motor já sorteou (só mostra; não sorteia nada). ~1,2 s; um toque pula.
+//  - U.riskRoll(p, ok, title, done, roll): decisão arriscada. Roleta de 100 números com o verde do tamanho exato da
+//    chance; gira e para no número que o motor já sorteou (só mostra; não sorteia nada). ~3 s; um toque pula.
 // "Reduzir movimento" do aparelho: sem animação (vai direto ao fim).
 (function () {
   const U = window.CRAQUE_UI;
@@ -65,31 +65,54 @@
   }
 
   // ---------- Decisão arriscada ----------
-  function riskRoll(p, ok, title, done) {
-    if (!(p > 0 && p < 1) || still()) return done();
-    const pc = Math.round(p * 100);
-    // Onde o ponteiro para: dentro da faixa do resultado que já saiu
-    const v = ok ? p * (0.12 + Math.random() * 0.76) : p + (1 - p) * (0.12 + Math.random() * 0.76);
+  // Roleta com 100 números: o verde ocupa exatamente a chance (62% = números 1 a 62, 223° da roda) e o vermelho o resto.
+  // O motor já sorteou o número (S.roll100); a roda gira e para nele, e o centro mostra o número que passa pelo ponteiro.
+  function riskRoll(p, ok, title, done, roll) {
+    const pc = S.pct(p);
+    if (!(p > 0 && p < 1)) return done();
+    const ring = () => U.sfx && U.sfx(ok ? 'levelup' : 'miss');
+    if (still()) { ring(); return done(); }
+    // Evento salvo antes do número existir: um número qualquer do lado que saiu
+    const n = roll >= 1 && roll <= 100 ? roll : ok ? 1 + Math.floor(Math.random() * pc) : pc + 1 + Math.floor(Math.random() * (100 - pc));
+    const deg = pc * 3.6, lbl = (txt, cls, mid) => '<span class="mo-wl ' + cls + '" style="--a:' + mid.toFixed(1) + 'deg">' + txt + '</span>';
     const w = layer('mo-roll');
-    w.innerHTML = '<div class="mo-rcard" role="dialog" aria-label="Sorteio da decisão"><h3>' + esc(title) + '</h3>' +
-      '<div class="mo-meter"><div class="win" style="width:' + pc + '%">' + pc + '%</div><div class="lose">' + (100 - pc) + '%</div><i class="mo-needle"></i></div>' +
-      '<div class="mo-legend"><span>Verde: deu certo</span><span>Vermelho: deu errado</span></div></div>';
-    const needle = w.querySelector('.mo-needle');
-    let raf = 0, over = false;
-    const finish = () => {
-      if (over) return; over = true; cancelAnimationFrame(raf); needle.style.left = (v * 100) + '%';
-      w.classList.add(ok ? 'is-ok' : 'is-ko');
-      setTimeout(() => { w.classList.add('out'); setTimeout(() => w.remove(), 200); done(); }, 380);
+    w.innerHTML = '<div class="mo-rcard" role="dialog" aria-label="Sorteio da decisão: ' + pc + '% de dar certo"><small class="mo-rk">Decisão arriscada</small><h3>' + esc(title) + '</h3>' +
+      '<div class="mo-wbox"><i class="mo-pin"></i><div class="mo-wheel" style="--g:' + deg.toFixed(1) + 'deg">' +
+      (pc >= 8 ? lbl(pc + '%', 'w', deg / 2) : '') + (pc <= 92 ? lbl((100 - pc) + '%', 'l', deg + (360 - deg) / 2) : '') + '</div>' +
+      '<div class="mo-hub"><b>·</b><small>sorteio</small></div></div>' +
+      '<div class="mo-keys"><span class="w"><i></i>Verde: 1 a ' + pc + ' · deu certo</span><span class="l"><i></i>Vermelho: ' + (pc + 1) + ' a 100 · deu errado</span></div>' +
+      '<p class="mo-out" aria-live="polite"></p></div>';
+    const wheel = w.querySelector('.mo-wheel'), hub = w.querySelector('.mo-hub'), num = hub.querySelector('b'), out = w.querySelector('.mo-out');
+    // Ângulo final: o ponteiro (no topo) fica sobre a fatia do número n, num ponto qualquer dentro dela
+    const at = (n - 1 + 0.2 + Math.random() * 0.6) * 3.6, END = 4 * 360 - at, T = 1900;
+    const under = r => { const a = ((-r % 360) + 360) % 360; return Math.min(100, Math.floor(a / 3.6) + 1); };
+    let raf = 0, over = false, last = 0, lastSeg = '';
+    const show = r => {
+      wheel.style.transform = 'rotate(' + r.toFixed(2) + 'deg)';
+      const k = under(r), side = k <= pc ? 'w' : 'l';
+      num.textContent = k; hub.className = 'mo-hub ' + side;
+      // Um "tic" a cada troca de cor e a cada 10 números (no máximo um a cada 70 ms)
+      const seg = side + Math.floor((k - 1) / 10);
+      if (U.sfx && seg !== lastSeg && performance.now() - last > 70) { U.sfx('tick'); last = performance.now(); }
+      lastSeg = seg;
     };
-    // Vai e volta pela faixa, cada vez mais devagar, e para em v
-    const T = 1200, t0 = performance.now(), sweeps = 2.5;
+    const finish = () => {
+      if (over) return; over = true; cancelAnimationFrame(raf); show(END);
+      w.classList.add(ok ? 'is-ok' : 'is-ko'); ring();
+      out.innerHTML = 'Saiu o <b>' + n + '</b> · ' + (ok ? 'deu certo' : 'deu errado');
+      const t = setTimeout(close, 1100);
+      w.onclick = () => { clearTimeout(t); close(); };
+    };
+    let closed = false;
+    const close = () => { if (closed) return; closed = true; w.classList.add('out'); setTimeout(() => w.remove(), 200); done(); };
+    const t0 = performance.now();
     (function step(now) {
-      const u = Math.min(1, (now - t0) / T), e = 1 - Math.pow(1 - u, 3), ph = e * sweeps;
-      const tri = ph % 2 < 1 ? ph % 1 : 1 - (ph % 1);
-      needle.style.left = ((u < 1 ? tri * (1 - e) + v * e : v) * 100) + '%';
+      const u = Math.min(1, (now - t0) / T), e = 1 - Math.pow(1 - u, 4);
+      show(END * e);
       if (u < 1) raf = requestAnimationFrame(step); else finish();
     })(t0);
-    w.addEventListener('click', finish);
+    // O mesmo clique que escolheu a opção (no computador ele chega depois que a roda abre) não pula a animação
+    w.onclick = () => { if (performance.now() - t0 > 350) finish(); };
   }
 
   // ---------- Transferência ----------

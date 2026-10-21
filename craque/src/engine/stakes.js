@@ -66,7 +66,6 @@
     if (fx.natRetire) p.push('não será mais convocado');
     return p;
   };
-  const pctOf = p => Math.round(p * 100) + '%';
   function outcomeTxt(c, o) {
     // "lesão longa (perde 30% da temporada)": sem repetir a palavra lesão quando o resultado já diz
     const parts = S.fxParts(c, o.fx || {}).map(x => (o.tag && /lesão/.test(o.tag) ? x.replace('lesão: ', '') : x));
@@ -75,7 +74,7 @@
   }
   S.stakeHint = function (c, st) {
     if (st.safe) { const parts = S.fxParts(c, st.safe.fx || {}); return (st.note ? [st.note] : []).concat(parts).join(' · ') || 'Nada muda'; }
-    return pctOf(st.p) + ': ' + outcomeTxt(c, st.win) + ' · ' + pctOf(1 - st.p) + ': ' + outcomeTxt(c, st.lose);
+    return S.pct(st.p) + '%: ' + outcomeTxt(c, st.win) + ' · ' + (100 - S.pct(st.p)) + '%: ' + outcomeTxt(c, st.lose);
   };
   // Versão curta para o botão: só os números de cada lado (o nome do resultado aparece depois da escolha)
   // e o que acontece nos dois casos (ex.: o custo) separado, uma vez só.
@@ -87,7 +86,8 @@
     // Só separa quando sobra alguma diferença dos dois lados; senão um lado ficaria vazio
     if (!w.some(x => !always.includes(x)) || !l.some(x => !always.includes(x))) always = [];
     const side = (parts, o) => { const p = parts.filter(x => !always.includes(x)); return p.length ? p : [o.tag || 'nada muda']; };
-    return { rows: [{ p: st.p, kind: 'win', parts: side(w, st.win) }, { p: 1 - st.p, kind: 'lose', parts: side(l, st.lose) }], always };
+    const pc = S.pct(st.p); // a mesma chance inteira que o sorteio usa (as duas linhas somam 100)
+    return { rows: [{ p: pc / 100, kind: 'win', parts: side(w, st.win) }, { p: 1 - pc / 100, kind: 'lose', parts: side(l, st.lose) }], always };
   };
 
   // Valor aproximado de cada efeito em pontos de carreira, medido no simulador (só o robô de teste usa).
@@ -194,13 +194,14 @@
       // Evento salvo antes desta versão (sem a aposta guardada): monta de novo com o momento atual
       const o = (ev.options[i] && ev.options[i].st) ? ev.options[i] : (spec.options(c, ev).map(scaleOpt).map(x => ({ st: x.safe ? { safe: x.safe } : { p: x.p, win: x.win, lose: x.lose } }))[i] || { st: { safe: { fx: {}, txt: '' } } });
       const st = o.st;
-      let res, ok;
+      let res, ok, roll;
       if (st.safe) { res = st.safe; ok = st.safe.ok !== false; }
-      else { ok = r() < st.p; res = ok ? st.win : st.lose; }
+      // Sorteio de 1 a 100: dá certo se sair até a chance mostrada na tela (a mesma porcentagem, arredondada)
+      else { roll = S.roll100(r); ok = roll <= S.pct(st.p); res = ok ? st.win : st.lose; }
       const fx = res.fx || {};
       const before = S.ovr(c);
       const out = S.applyStake(c, fx);
-      return { ok, text: res.txt, fx: out, gain: S.fxParts(c, fx), ovrFrom: before, stake: true };
+      return { ok, text: res.txt, fx: out, gain: S.fxParts(c, fx), ovrFrom: before, stake: true, roll };
     };
     return def;
   };
