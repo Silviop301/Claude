@@ -16,7 +16,7 @@
   }
   const poseOf = s => (s.titles.length || s.awards.some(a => a.id === 'ballon') ? 'taca' : s.injury >= 25 ? 'maca' : s.games && s.rating >= 7.3 ? 'celebra' : s.games && s.rating < 6.3 ? 'triste' : 'normal');
   function chipsOf(c, s) {
-    const P = D.plural, main = c.pos === 'GOL' ? [s.cleanSheets + ' sem sofrer gol'] : c.pos === 'ZAG' ? [P(s.goals, 'gol', 'gols'), s.cleanSheets + ' sem sofrer gol'] : [P(s.goals, 'gol', 'gols'), s.assists + ' assist.'];
+    const P = D.plural, main = c.pos === 'GOL' ? [s.cleanSheets + ' sem sofrer gol'] : c.pos === 'ZAG' ? [s.cleanSheets + ' sem sofrer gol', P(s.goals, 'gol', 'gols')] : [P(s.goals, 'gol', 'gols'), s.assists + ' assist.'];
     return [P(s.games, 'jogo', 'jogos')].concat(main, s.titles.map(t => '🏆 ' + t.name));
   }
 

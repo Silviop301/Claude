@@ -134,7 +134,7 @@
   function totOf(c) {
     const T = c.totals;
     return c.pos === 'GOL' ? [[T.cs || 0, 'S/ GOL'], [T.penSaved || 0, 'PÊN. DEF']]
-      : c.pos === 'ZAG' ? [[T.goals, 'GOLS'], [T.cs || 0, 'S/ GOL']] : [[T.goals, 'GOLS'], [T.assists, 'ASSIST']];
+      : c.pos === 'ZAG' ? [[T.cs || 0, 'S/ GOL'], [T.goals, 'GOLS']] : [[T.goals, 'GOLS'], [T.assists, 'ASSIST']];
   }
   // Temporada ao vivo: gols e assistências do topo sobem junto com o quadro (e = 0…1). As taças só no fim,
   // para não entregar o título antes da hora. No bar() seguinte, o totCount só faz o brilho.
