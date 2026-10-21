@@ -486,6 +486,8 @@
     const done = () => { screen.onclick = null; const h = $('skip-hint'); if (h) h.remove(); };
     // O jornal aparece uma vez por temporada, mesmo se a pessoa pular o resto
     const all = () => {
+      // Tocou num botão (ex.: "Encerrar a carreira") antes do fim da revelação: a tela já é outra, o jornal não abre mais
+      if (!items.length || !items[0].isConnected) { clearTimeout(timer); screen.onclick = null; return; }
       clearTimeout(timer); items.forEach(el => el.classList.add('in')); done();
       if (!paper) { paper = true; showPaper(res); }
     };

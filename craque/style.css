@@ -3437,3 +3437,7 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 .sx-live.hold .sx-dot { background: var(--gold); }
 .sx-live.hold > b { color: var(--gold); }
 @media (prefers-reduced-motion: reduce) { .pr-path .rt-r, .pr-duel { animation: none; } }
+
+/* ===== Conferência (E10) ===== */
+/* O carimbo do resultado entra com scale(2,2): crescendo do canto de cima à direita a página não rola para o lado por um instante */
+.ob3-stamp { transform-origin: 100% 0; }
