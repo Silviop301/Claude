@@ -14,6 +14,35 @@
   const usMark = run => (isCwc(run) ? crest(run.club, 'xs') : U.flag(D.NATION_BY_NAME[G.c.country].flag));
   const themMark = g => (g.crest ? crest(g.crest, 'xs') : U.flag(g.flag));
   const usName = run => (isCwc(run) ? esc(club(run.club).name) : esc(G.c.country));
+  // Cores da bandeira para o fundo durante a Copa (no lugar do escudo do clube)
+  const NAT_COLORS = {
+    Brasil: ['#009C3B', '#FFDF00', '#002776'], Argentina: ['#74ACDF', '#FFFFFF', '#74ACDF'], Uruguai: ['#0038A8', '#FFFFFF', '#FCD116'],
+    'Colômbia': ['#FCD116', '#003893', '#CE1126'], Portugal: ['#006600', '#FF0000', '#FFCC00'], Espanha: ['#AA151B', '#F1BF00', '#AA151B'],
+    Inglaterra: ['#FFFFFF', '#CE1124', '#FFFFFF'], 'Itália': ['#009246', '#FFFFFF', '#CE2B37'], Alemanha: ['#000000', '#DD0000', '#FFCE00'],
+    'França': ['#0055A4', '#FFFFFF', '#EF4135'], Holanda: ['#AE1C28', '#FFFFFF', '#21468B'], 'Bélgica': ['#000000', '#FDDA24', '#EF3340'],
+    Turquia: ['#E30A17', '#FFFFFF', '#E30A17'], 'Escócia': ['#005EB8', '#FFFFFF', '#005EB8'], 'Grécia': ['#0D5EAF', '#FFFFFF', '#0D5EAF'],
+    'Suíça': ['#DA291C', '#FFFFFF', '#DA291C'], 'Áustria': ['#ED2939', '#FFFFFF', '#ED2939'], Dinamarca: ['#C8102E', '#FFFFFF', '#C8102E'],
+    Chile: ['#0039A6', '#FFFFFF', '#D52B1E'], Paraguai: ['#D52B1E', '#FFFFFF', '#0038A8'], Equador: ['#FFDD00', '#034EA2', '#ED1C24'],
+    'México': ['#006847', '#FFFFFF', '#CE1126'], EUA: ['#3C3B6E', '#FFFFFF', '#B22234'], 'Japão': ['#FFFFFF', '#BC002D', '#FFFFFF'],
+    'Coreia do Sul': ['#FFFFFF', '#CD2E3A', '#0047A0'], 'Arábia Saudita': ['#006C35', '#FFFFFF', '#006C35'], Catar: ['#8A1538', '#FFFFFF', '#8A1538'],
+    Peru: ['#D91023', '#FFFFFF', '#D91023'], 'Bolívia': ['#D52B1E', '#F9E300', '#007934'], Venezuela: ['#FFCC00', '#00247D', '#CF142B'],
+    'Croácia': ['#FF0000', '#FFFFFF', '#171796'], 'Sérvia': ['#C6363C', '#0C4076', '#FFFFFF'], Noruega: ['#BA0C2F', '#FFFFFF', '#00205B'],
+    'Suécia': ['#006AA7', '#FECC02', '#006AA7'], 'Polônia': ['#FFFFFF', '#DC143C', '#DC143C'], 'República Tcheca': ['#FFFFFF', '#D7141A', '#11457E'],
+    Marrocos: ['#C1272D', '#006233', '#C1272D'], Egito: ['#CE1126', '#FFFFFF', '#000000'], 'Austrália': ['#00008B', '#FFFFFF', '#FF0000'],
+  };
+  const natBg = () => U.clubBg('nat:' + G.c.country, NAT_COLORS[G.c.country] || ['#1F6B3E', '#F2C230', '#0B1F14']);
+  // Placar escuro do lance (O5) com bandeiras (ou escudos no Mundial) e o nome de cada lado. mini: faixa baixa em cima do minigame
+  const wcBoard = (run, g, mid, tag, mini) => '<div class="ob5-board wc-board' + (mini ? ' mini' : '') + '">' +
+    '<span class="wcb-t">' + usMark(run) + '<small>' + usName(run) + '</small></span><b class="ob5-g">' + g.gf + '</b>' +
+    '<span class="ob5-mid">' + mid + '<small>' + esc(tag) + '</small></span>' +
+    '<b class="ob5-g">' + g.ga + '</b><span class="wcb-t">' + themMark(g) + '<small>' + esc(g.opp) + '</small></span></div>';
+  const liveMin = t => '<span class="ob5-min"><i aria-hidden="true"></i>' + t + '</span>';
+  // Rodapé do lance: decidir no automático e treinar (igual ao lance da temporada)
+  const o5Foot = (type, k) => '<div class="ob5-foot"><button class="btn ghost ob5-auto" id="b-auto">Deixar o jogo decidir<small>' + Math.round(k.chance * 100) + '% pela sua carta</small></button>' +
+    '<button class="ob5-train mom-train" id="b-train">' + U.emo('🏟️', 'xs') + ' Treinar antes</button></div>';
+  const o5Body = type => '<div class="chips ob5-facts">' + U.miniFacts(type).join('') + '</div>' +
+    '<details class="ob5-how"><summary>Como funciona o lance</summary><p>' + U.MINI_HOW[type] + '</p><div class="chips ob5-facts in">' + U.miniFacts(type).join('') + '</div></details>' +
+    '<p class="st-lead ob5-q">Como você vai ' + { cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar' }[type] + '?</p>' + U.styleBtns(type, true);
 
   function cwcIntro() {
     G.step = 'cwc';
@@ -36,6 +65,7 @@
     if (G.c.wcRun && !isCwc(G.c.wcRun) && G.c.wcRun.year === year()) { save(); return wcPlay(); }
     const call = S.wcCall(G.c);
     save();
+    natBg();
     render(
       '<div class="eyebrow">Copa do Mundo ' + year() + '</div>' +
       '<div class="wc-hero"><span class="wc-bigflag">' + U.flag(call.nation.flag) + '</span><h2>Convocado pela seleção ' + ofCountry(G.c.country) + '!</h2>' +
@@ -155,6 +185,7 @@
   function wcPlay() {
     const run = G.c.wcRun;
     G.step = isCwc(run) ? 'cwc' : 'wc';
+    if (!isCwc(run)) natBg();
     const last = run.games[run.games.length - 1];
     const resume = last && last.resumeAt !== undefined && !last.live ? last : null; // jogo que continua depois do lance
     render('<div class="eyebrow">' + tName(run) + ' ' + run.year + ' · ' + usMark(run) + ' ' + usName(run) + '</div>' +
@@ -253,18 +284,18 @@
     const NEXT = { 3: 'vai às quartas', 4: 'vai à semifinal', 5: 'vai à final', 6: cwc ? 'é campeão mundial' : 'é campeão do mundo' };
     const ctx = (late ? 'Reta final! ' : 'Ainda faltam ' + left + ' minutos. ') + (ko ? 'Mata-mata: quem vencer ' + NEXT[run.stage] + '.' : run.stage === 2 ? 'Último jogo do grupo: ' + run.pts + (run.pts === 1 ? ' ponto' : ' pontos') + ' até aqui.' : 'Fase de grupos: ' + run.pts + (run.pts === 1 ? ' ponto' : ' pontos') + ' em ' + run.stage + (run.stage === 1 ? ' jogo.' : ' jogos.'));
     const paused = document.querySelector('.wc-game.paused'); if (paused) paused.style.display = 'none'; // o lance já mostra placar e minuto
-    $('wc-after').innerHTML = '<div class="card event-card wc-live"><span class="st">' + esc(g.stage) + ' · ' + m.minute + "'</span>" +
-      '<div class="line"><span>' + usMark(run) + '</span><b>' + g.gf + ' × ' + g.ga + '</b><span>' + themMark(g) + ' ' + esc(g.opp) + '</span></div>' +
-      '<p class="mom-ctx">' + esc(ctx) + '</p>' +
-      '<h2>' + ({ pen: 'Pênalti para ' + who + '!', fk: 'Falta perigosa na entrada da área!', save: 'Pênalti contra ' + who + '!', tackle: 'Contra-ataque perigoso!', pass: 'A bola é sua: enfie para o atacante!' }[m.type]) + '</h2>' +
-      '<p class="stakes">' + (def ? (type === 'save' ? 'Defendeu: segura o placar · Sofreu: ' : 'Desarmou: segura o placar · Passou: ') + lose : 'Converteu: ' + gain) + '</p></div>' +
-      '<div class="chips">' + U.miniFacts(type).join('') + '</div>' +
-      U.styleBtns(type) + '<button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>';
-    $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    const tag = g.stage;
+    // Estilo ousado (O5): placar escuro com bandeiras, título grande, o que vale em dourado e os dois estilos como cartões grandes
+    $('wc-after').innerHTML = '<div class="wc-o5">' + wcBoard(run, g, liveMin(m.minute + "'"), tag) +
+      '<div class="ob5-head"><h2>' + ({ pen: 'Pênalti para ' + who + '!', fk: 'Falta perigosa na entrada da área!', save: 'Pênalti contra ' + who + '!', tackle: 'Contra-ataque perigoso!', pass: 'A bola é sua: enfie para o atacante!' }[m.type]) + '</h2>' +
+      '<p class="ob5-stakes">' + U.emo('🏆', 'xs') + '<span>' + (def ? (type === 'save' ? 'Defendeu: segura o placar · Sofreu: ' : 'Desarmou: segura o placar · Passou: ') + lose : 'Converteu: ' + gain) + '</span></p>' +
+      '<p class="ob5-txt">' + esc(ctx) + '</p></div>' + o5Body(type) + o5Foot(type, k) + '</div>';
+    $('wc-after').scrollIntoView({ block: 'start', behavior: 'smooth' });
     sfx('whistle');
+    $('b-train').onclick = () => U.training(type);
     U.bindStyle(m, U.gateTrain(type, () => {
       run.momentStarted = true; save();
-      render('<div class="eyebrow">' + tName(run) + ' ' + run.year + ' · ' + esc(g.stage) + ' · ' + m.minute + "'</div><div id=\"kick\"></div>");
+      render(wcBoard(run, g, liveMin(m.minute + "'"), tag, true) + '<div id="kick"></div>');
       U.playMini($('kick'), type, (ok, why) => { if (!$('kick')) return; S.wcMoment(G.c, ok, why); save(); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }, m.style); // saiu da tela: ao retomar, a chance decide
     }));
     $('b-auto').onclick = () => { S.wcMomentAuto(G.c); save(); wcPlay(); };
@@ -277,17 +308,22 @@
     if (run.pensStarted) { S.wcPensAuto(G.c); run.pensStarted = false; save(); return wcPlay(); }
     // Goleiro defende a última cobrança; os outros batem a última
     const gk = S.wcPensType(G.c) === 'save', type = gk ? 'save' : 'cup';
-    const k = S.kickSetup(G.c, type);
-    $('wc-after').innerHTML = '<div class="card event-card wc-pens"><h2>Pênaltis!</h2><p style="margin:0">' + esc(g.stage) + ' contra ' + themMark(g) + ' ' + esc(g.opp) + ' terminou ' + g.gf + ' × ' + g.ga + '. A disputa está empatada e ' + (gk ? 'o último batedor deles vem para a bola.' : 'você bate o último.') + '</p>' +
-      '<p class="stakes">' + (gk ? 'Defendeu: ' : 'Converteu: ') + (run.stage === 6 ? (isCwc(run) ? 'campeão mundial' : 'campeão do mundo') : isCwc(run) ? 'o time avança' : 'a seleção avança') + ' · ' + (gk ? 'Sofreu' : 'Errou') + ': eliminado</p></div>' +
-      '<div class="chips">' + U.miniFacts(type).join('') + '</div>' +
-      '<button class="btn" id="b-kick">' + U.MINI_BTN[type] + '</button><button class="btn ghost" id="b-auto">Deixar o jogo decidir<small>Chance de ' + Math.round(k.chance * 100) + '% pela sua carta</small></button>';
-    $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    $('b-kick').onclick = U.gateTrain(type, () => {
+    // "Deixar decidir" usa o estilo de sempre (S.wcPensAuto); escolher o outro estilo só muda o minigame, como no lance da temporada
+    const k = S.kickSetup(G.c, type), ps = {}, cwc = isCwc(run);
+    const tag = g.stage;
+    $('wc-after').innerHTML = '<div class="wc-o5">' + wcBoard(run, g, liveMin('Pênaltis'), tag) +
+      '<div class="ob5-head"><h2>' + (gk ? 'Defenda o último!' : 'Você bate o último!') + '</h2>' +
+      '<p class="ob5-stakes">' + U.emo('🏆', 'xs') + '<span>' + (gk ? 'Defendeu: ' : 'Converteu: ') + (run.stage === 6 ? (cwc ? 'campeão mundial' : 'campeão do mundo') : cwc ? 'o time avança' : 'a seleção avança') + ' · ' + (gk ? 'Sofreu' : 'Errou') + ': eliminado</span></p>' +
+      '<p class="ob5-txt">Terminou ' + g.gf + ' × ' + g.ga + ' e a disputa está empatada. ' + (gk ? 'O último batedor deles vem para a bola.' : 'A última cobrança é sua.') + '</p></div>' +
+      o5Body(type) + o5Foot(type, k) + '</div>';
+    const rows = document.querySelectorAll('#wc-list > .wc-game'); if (rows.length) rows[rows.length - 1].style.display = 'none'; // o placar já mostra o jogo
+    $('wc-after').scrollIntoView({ block: 'start', behavior: 'smooth' });
+    $('b-train').onclick = () => U.training(type);
+    U.bindStyle(ps, U.gateTrain(type, () => {
       run.pensStarted = true; save();
-      render('<div class="eyebrow">' + tName(run) + ' ' + run.year + ' · Pênaltis</div><div id="kick"></div>');
-      U.playMini($('kick'), type, ok => { if (!$('kick')) return; run.pensStarted = false; S.wcPens(G.c, ok); save(); wcPlay(); }, null, { vs: g.opp, mine: isCwc(run) ? club(run.club).name : G.c.country });
-    });
+      render(wcBoard(run, g, liveMin('Pênaltis'), tag, true) + '<div id="kick"></div>');
+      U.playMini($('kick'), type, ok => { if (!$('kick')) return; run.pensStarted = false; S.wcPens(G.c, ok); save(); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }, ps.style);
+    }));
     $('b-auto').onclick = () => { S.wcPensAuto(G.c); save(); wcPlay(); };
   }
 
@@ -300,12 +336,23 @@
     const h = $('wc-hint'); if (h) h.remove();
     const sim = $('wc-sim'); if (sim) sim.remove();
     simAll = false;
-    $('wc-after').innerHTML = (run.champion
-      ? '<div class="wc-champ">' + (cwc ? trophy('cwc', 96, 'Mundial de Clubes') + '<b>CAMPEÃO MUNDIAL!</b>' : trophy('wc', 96) + '<b>CAMPEÃO DO MUNDO!</b>') + '<span>' + usMark(run) + ' ' + usName(run) + ' · ' + run.year + '</span></div>'
-      : '<div class="wc-out">' + (run.reached === 'Final' ? (cwc ? 'Vice-campeão mundial' : 'Vice-campeão do mundo') : 'Eliminado: ' + run.reached.toLowerCase()) + '</div>') +
-      '<p class="wc-stats">' + (cwc ? 'No Mundial: ' : 'Na Copa: ') + run.games.length + ' jogos · ' + (S.defKick(G.c.pos)
-        ? run.games.filter(x => x.cs).length + ' sem sofrer gol' + (run.g ? ' · ' + run.g + (run.g === 1 ? ' gol' : ' gols') : '')
-        : run.g + (run.g === 1 ? ' gol' : ' gols') + ' · ' + run.a + (run.a === 1 ? ' assistência' : ' assistências')) + '</p>' +
+    // Fim no estilo ousado (O2): faixa dourada (campeão), prateada (vice) ou da fase em que caiu, e os números em blocos
+    const last = run.games[run.games.length - 1], big = cwc ? crest(run.club, 'xl') : '<span class="wc-bigflag">' + usMark(run) + '</span>';
+    const PH = { 'Oitavas de final': 'nas oitavas', 'Quartas de final': 'nas quartas', Semifinal: 'na semifinal' };
+    const lost = g => (g ? 'para ' + themMark(g) + ' ' + esc(g.opp) + (g.pens ? ' nos pênaltis (' + g.gf + ' × ' + g.ga + ')' : ' por ' + g.gf + ' × ' + g.ga) : '');
+    const ge = last && last.groupEnd;
+    const end = run.champion
+      ? '<div class="wc-end champ">' + (cwc ? trophy('cwc', 96, 'Mundial de Clubes') : trophy('wc', 96)) + '<b class="wc-band gold">' + (cwc ? 'Campeão mundial!' : 'Campeão do mundo!') + '</b><span class="wc-end-who">' + usMark(run) + ' ' + usName(run) + ' · ' + run.year + '</span></div>'
+      : run.reached === 'Final'
+        ? '<div class="wc-end vice">' + big + '<b class="wc-band silver">' + (cwc ? 'Vice-campeão mundial' : 'Vice-campeão do mundo') + '</b><span class="wc-end-who">Perdeu a final ' + lost(last) + '</span></div>'
+        : /^Grupo/.test(run.reached)
+          ? '<div class="wc-end out">' + big + '<b class="wc-band phase">Eliminado na fase de grupos</b><span class="wc-end-who">' + (ge ? (ge.pos ? ge.pos + 'º lugar no grupo com ' : 'Terminou com ') + D.plural(ge.pts, 'ponto', 'pontos') : usName(run) + ' · ' + run.year) + '</span></div>'
+          : '<div class="wc-end out">' + big + '<b class="wc-band phase">Eliminado ' + (PH[run.reached] || esc(run.reached.toLowerCase())) + '</b><span class="wc-end-who">Caiu ' + lost(last) + '</span></div>';
+    const n = (v, one, many) => '<span><b>' + v + '</b>' + (v === 1 ? one : many) + '</span>';
+    $('wc-after').innerHTML = end +
+      '<p class="sx-lbl">' + (cwc ? 'Seu Mundial' : 'Sua Copa') + '</p><div class="wc-end-stats">' + n(run.games.length, 'jogo', 'jogos') + (S.defKick(G.c.pos)
+        ? n(run.games.filter(x => x.cs).length, 'sem sofrer gol', 'sem sofrer gol') + (run.g ? n(run.g, 'gol', 'gols') : '')
+        : n(run.g, 'gol', 'gols') + n(run.a, 'assistência', 'assistências')) + '</div>' +
       '<button class="btn" id="b-next">' + (S.mustRetire(G.c) ? 'Ver sua carreira' : 'Seguir a carreira') + '</button>';
     if (run.champion) {
       const btn = $('b-next');
@@ -313,8 +360,8 @@
         () => { if (btn.isConnected) (cwc ? U.clubWorldPaper : U.worldCupPaper)(G.c, run, () => run.card && U.walkout(G.c, null, run.card)); });
     }
     $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    $('b-next').onclick = () => { U.salaRecord(G.c); U.afterSeason(); };
+    $('b-next').onclick = () => { U.clubBg(G.c.club); U.salaRecord(G.c); U.afterSeason(); };
   }
 
-  Object.assign(U, { theCountry, ofCountry, cwcIntro, wcIntro, wcRow, wcPlay, wcLive, wcPens, wcFinal });
+  Object.assign(U, { natBg, theCountry, ofCountry, cwcIntro, wcIntro, wcRow, wcPlay, wcLive, wcPens, wcFinal });
 })();

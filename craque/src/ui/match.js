@@ -305,5 +305,5 @@
     setTimeout(() => w.remove(), 2800);
   }
 
-  Object.assign(U, { eventOrSeason, eventScreen, momentOrSeason, MOMENT_TXT, momentIntro, momentEnd, momentResult, playMini, miniFacts, MINI_BTN, styleBtns, bindStyle });
+  Object.assign(U, { eventOrSeason, eventScreen, momentOrSeason, MOMENT_TXT, momentIntro, momentEnd, momentResult, playMini, miniFacts, MINI_BTN, MINI_HOW, styleBtns, bindStyle });
 })();

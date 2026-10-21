@@ -3269,3 +3269,41 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 .event-card.ob3.sq-card .ob3-ic .crest { width: 62px; height: 62px; margin: 0; }
 .event-card.ob3.sq-card .ob3-txt b { color: var(--ink); }
 /* ----- fim E6 ----- */
+
+/* ===== E7: Copa e Mundial no estilo ousado (ui/worldcup.js) ===== */
+/* Fundo com as cores da bandeira no lugar do escudo do clube (core.js clubBg com cores) */
+#club-bg.nat { background: linear-gradient(118deg, var(--n1) 0 34%, var(--n2) 34% 66%, var(--n3) 66%);
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, .2), rgba(0, 0, 0, .07) 55%, transparent); mask-image: linear-gradient(180deg, rgba(0, 0, 0, .2), rgba(0, 0, 0, .07) 55%, transparent); }
+/* Lance e pênaltis: o mesmo placar escuro do lance da temporada, com bandeira e nome de cada lado */
+.wc-o5 { display: flex; flex-direction: column; gap: 12px; }
+#wc-after:has(> .wc-o5) { scroll-margin-top: calc(var(--bar-h, 0px) + 10px); }
+.wc-board { gap: 8px; }
+.wcb-t { flex: none; width: 64px; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.wcb-t .tw { width: 40px; height: 40px; }
+.wcb-t small { max-width: 100%; font: 700 11px/1.1 var(--display); letter-spacing: .04em; text-transform: uppercase; color: #C9D8CE; text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wc-board .ob5-mid .ob5-min { white-space: nowrap; }
+.wc-board.mini .wcb-t { width: auto; }
+.wc-board.mini .wcb-t small { display: none; }
+.wc-board.mini .wcb-t .tw { width: 30px; height: 30px; }
+.wc-o5 .ob5-head h2 { font-size: 32px; }
+/* Fim da Copa: faixa dourada (campeão), prateada (vice) ou escura com a fase em que caiu */
+.wc-end { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 6px 4px; text-align: center; animation: trophy-in .9s cubic-bezier(.2, 1.5, .4, 1); }
+.wc-end.champ { background: radial-gradient(circle at 50% 28%, rgba(255, 226, 122, .4), rgba(255, 226, 122, 0) 68%); }
+.wc-end.champ .trophy, .wc-end.champ .trophy-real { filter: drop-shadow(0 0 18px rgba(255, 214, 90, .9)); }
+.wc-end .wc-bigflag { font-size: 72px; }
+.wc-end .crest.xl { margin: 0; }
+.wc-band { display: block; width: 100%; padding: 10px 14px; border-radius: 14px; font: 800 26px/1.05 var(--display); text-transform: uppercase; letter-spacing: .01em; text-wrap: balance; }
+.wc-band.gold { background: var(--gold); color: var(--ink); box-shadow: 0 4px 0 #A9861C, 0 10px 26px rgba(224, 168, 0, .3); }
+.wc-band.silver { background: linear-gradient(135deg, #F1F4F6, #C3CBD2 60%, #9EA8B1); color: #1C2329; box-shadow: 0 4px 0 #7D868E; }
+.wc-band.phase { background: #050A07; color: var(--paper); border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 4px 0 rgba(0, 0, 0, .35); }
+.wc-end-who { font: 600 15px/1.35 var(--body); color: #D9F5E3; }
+.wc-end-who .tw { vertical-align: -3px; }
+#wc-after > .sx-lbl { margin: 4px 0 -4px; }
+.wc-end-stats { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+.wc-end-stats span { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: 14px; background: rgba(255, 255, 255, .08);
+  font: 600 12.5px/1.15 var(--body); color: #C9D8CE; text-align: center; }
+.wc-end-stats b { font: 800 28px/1 var(--display); color: var(--paper); }
+@media (max-width: 360px) { .wc-o5 .ob5-head h2 { font-size: 28px; } .wcb-t { width: 54px; } .wcb-t .tw { width: 34px; height: 34px; } .wc-band { font-size: 22px; } }
+@media (prefers-reduced-motion: reduce) { .wc-end { animation: none; } }
+/* ----- fim E7 ----- */
