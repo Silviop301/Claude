@@ -2699,8 +2699,21 @@ button.mc-at .price .tw { width: 13px; height: 13px; }
 button.mc-at:not(:disabled):active { transform: scale(.96); }
 button.mc-at:disabled { cursor: default; }
 button.mc-at.poor .price { opacity: .5; }
+/* Liberado x bloqueado: o que dá para treinar fica em relevo com o preço numa pílula verde; sem estrelas
+   (ou no máximo) fica chapado, tracejado e apagado. O rótulo da faixa ganha uma linha só dele acima da grade */
+.mcard.trainable { padding-top: 26px; }
+.mcard.trainable .mc-tier { top: 8px; right: 16px; }
+button.mc-at:not(:disabled) { background: rgba(255, 255, 255, .5); border-color: color-mix(in srgb, currentColor 40%, transparent);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .8); }
+button.mc-at:not(:disabled) .price { padding: 1px 6px 1px 7px; border-radius: 9px; background: #0E6A35; color: #fff; text-shadow: none; }
+button.mc-at:disabled { background: transparent; border-style: dashed; box-shadow: none; }
+button.mc-at:disabled > b, button.mc-at:disabled > span, button.mc-at:disabled .pips { opacity: .45; }
+button.mc-at.poor .price { opacity: .55; }
+.mcard.icone button.mc-at:not(:disabled) { background: rgba(255, 255, 255, .16); box-shadow: 0 2px 0 rgba(0, 0, 0, .5), inset 0 1px 0 rgba(244, 214, 117, .35); }
+.mcard.icone button.mc-at:not(:disabled) .price { background: #7BE3A0; color: #0B0914; }
+.mcard.icone button.mc-at:disabled { background: transparent; }
 button.mc-at.full .price { opacity: .65; text-transform: uppercase; }
-button.mc-at.up { background: rgba(255, 255, 255, .42); }
+button.mc-at.up { background: rgba(255, 255, 255, .75); }
 .mcard.icone button.mc-at.up { background: rgba(123, 227, 160, .15); }
 .mc-hint { grid-column: 1 / -1; margin: 2px 0 0; font: 700 12px var(--display); letter-spacing: .04em; text-align: center; opacity: .8; display: flex; align-items: center; justify-content: center; gap: 4px; }
 .pick-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 16px 0 -4px; }
