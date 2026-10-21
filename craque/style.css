@@ -2285,6 +2285,7 @@ button.sk-d { font: inherit; color: inherit; cursor: pointer; }
 .src-card .sr-c b { font-weight: 800; }
 .src-card .sr-c.up b { color: #8FD6AE; }
 .src-card .sr-c.down b { color: #FF9AA2; }
+.src-card .sr-c.sr-exp { background: none; border: 1px dashed rgba(255, 255, 255, .22); }
 
 /* Pré-temporada: um toque aplica, "Desfazer" ao lado de "Seguir" */
 .inv-bar { display: flex; gap: 8px; }
@@ -3394,6 +3395,13 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 .rl-det .rl-row small, .rl-det .rl-row b i { color: #9DB5A6; }
 .rl-det .rl-row.best b { color: #5FD690; }
 .rl-det .rl-row.out b { color: #FF6B73; }
+.rl-det .rl-how { grid-template-columns: 74px 1fr; align-items: baseline; font-size: 13px; line-height: 1.35; }
+.rl-det .rl-how b { font: 800 13px var(--body, inherit); color: var(--gold); }
+.rl-bands { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 4px; border-top: 1px solid rgba(255, 255, 255, .1); }
+.rl-bands span { font-size: 13px; color: #9DB5A6; padding: 3px 8px; border-radius: 8px; background: rgba(255, 255, 255, .06); }
+.rl-bands span b { color: var(--paper); }
+.rl-bands span.on { background: var(--gold); color: var(--ink); }
+.rl-bands span.on b { color: var(--ink); }
 .rl-sb ~ .rl-board { margin-bottom: 10px; }
 @media (max-width: 360px) { .rl-ob-nm { font-size: 22px; } .rl-ob-c b { font-size: 26px; } .rl-stamp { font-size: 44px; } .rl-rh h2 { font-size: 30px; } .rl-sb .ob5-g { font-size: 34px; } }
 @media (prefers-reduced-motion: reduce) { .rl-stamp { animation: none; } }

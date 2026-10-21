@@ -40,6 +40,19 @@
       (i === 0 && ev.dest && S.breaksChallenge(c, { club: ev.dest }) ? '<small class="ch-warn">' + U.emo('⚠️', 'xs') + ' Quebra o desafio</small>' : '') + '</button>';
   }
 
+  // Rodapé de quem tem opção segura e arriscada. Em geral a arriscada rende mais; quando o melhor caso dela é "nada muda",
+  // a vantagem é escapar do custo da segura (ex.: os R$ 30 mil das aulas de idioma), e o texto diz isso
+  function riskNote(c, ev) {
+    const risky = ev.options.filter(o => o.st && !o.st.safe && !o.locked), safes = ev.options.filter(o => o.st && o.st.safe && !o.locked);
+    if (!risky.length || risky.some(o => S.fxValue(c, o.st.win.fx || {}) > 0)) return 'A arriscada pode render mais, mas pode dar errado de verdade.';
+    const cost = safes.map(o => S.fxParts(c, o.st.safe.fx || {}).filter(x => /^−|−\d| cai|mais fraco|deixa de|não será/.test(x))).find(x => x.length) || [];
+    const cash = cost.find(x => /^−R\$ /.test(x)), other = cost.filter(x => x !== cash);
+    const why = cash ? 'economizar os ' + cash.slice(1) + ' da segura' + (other.length ? ' (e ' + other.join(', ') + ')' : '')
+      : other.length ? 'escapar do que a segura custa (' + other.join(', ') + ')' : '';
+    return why ? 'A arriscada não rende nada a mais: a vantagem dela é ' + why + '. Se der errado, a perda é de verdade.'
+      : 'A arriscada não rende nada a mais: no melhor caso, nada muda. Se der errado, a perda é de verdade.';
+  }
+
   function eventScreen() {
     if (!pendingEvent) pendingEvent = S.pickEvent(G.c);
     if (!pendingEvent) return momentOrSeason();
@@ -57,7 +70,7 @@
       (ev.memory ? '<p class="ev-mem">' + U.emo('🔁', 'xs') + ' ' + esc(ev.memory) + '</p>' : '') + '<h2>' + esc(ev.title) + '</h2><p class="ob3-txt">' + esc(ev.text) + '</p></div>' +
       (offer ? U.dealCompare(S.currentDeal(G.c), offer) : '') +
       '<div class="choices ob3-opts' + (two ? ' two' : '') + '">' + ev.options.map((o, i) => optCard(G.c, ev, o, i)).join('') + '</div>' +
-      (kinds.includes('risk') && kinds.includes('safe') ? '<p class="ob3-note">A arriscada pode render mais, mas pode dar errado de verdade.</p>' : '')
+      (kinds.includes('risk') && kinds.includes('safe') ? '<p class="ob3-note">' + esc(riskNote(G.c, ev)) + '</p>' : '')
     );
     U.tip('evento');
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {

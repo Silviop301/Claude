@@ -71,6 +71,7 @@
     const tm = id => S.tm(c, id);
     const gMul = 1 + 0.06 * tm('artilheiro') - 0.08 * tm('garcom') + 0.04 * tm('tecnica') + 0.05 * tm('cabeceio') + 0.2 * tm('aereo') + 0.03 * sy('falta') + 0.03 * sy('liso') + 0.04 * sy('matador');
     const aMul = 1 - 0.08 * tm('artilheiro') + 0.08 * tm('garcom') + 0.04 * tm('tecnica') + 0.3 * tm('saida') + 0.03 * sy('liso') + 0.05 * sy('maestro');
+    const g0 = g90 * 1.14 * S.GOAL_SCALE; // ritmo só pelos atributos e posição (a composição dos gols parte daqui)
     g90 *= 1.14 * S.GOAL_SCALE * teamF * form * (1 + c.mod.goal) * gMul;
     a90 *= 1.22 * S.GOAL_SCALE * teamF * form * (1 + c.mod.assist) * aMul;
 
@@ -130,14 +131,23 @@
     if (Math.abs(modV) >= 0.03) src.min.push([c.promise ? 'Promessa do técnico' : 'Escolhas do ano', pc(modV)]);
     if (c.age <= 17) src.min.push(['Idade', -20]);
     if (injShare > 0) src.min.push(['Lesão', -pc(injShare)]);
+    // Gols em números que fecham a conta: o esperado pelos atributos e jogos, o que cada efeito somou a isso,
+    // a faixa normal (o sorteio jogo a jogo) e a sorte do ano (o que saiu acima ou abaixo do esperado)
+    const formV = c.mod.form + (c.rel.fans - REL0) / 350;
+    src.gv = 2;
     if (c.pos !== 'GOL') {
       const at = c.pos === 'ZAG' ? ['fis', 'fin', 'def'] : ['fin', 'rit', 'dri'];
-      src.gol.push([at.map(k => D.ATTR_LABEL[k] + ' ' + Math.round(E[k])).join(' · '), 0]);
-    } else src.gol.push(['Defesa do time', pc((dS - lgAvg) / 20)]);
-    if (Math.abs(teamF - 1) >= 0.03) src.gol.push(['Força do time na liga', pc(teamF - 1)]);
-    const formV = c.mod.form + (c.rel.fans - REL0) / 350;
-    if (Math.abs(formV) >= 0.03) src.gol.push(['Fase e torcida', pc(formV)]);
-    if (c.pos !== 'GOL' && Math.abs(gMul - 1) >= 0.03) src.gol.push(['Características', pc(gMul - 1)]);
+      const steps = [[at.map(k => D.ATTR_LABEL[k] + ' ' + Math.round(E[k])).join(' · ') + ' em ' + games + ' jogos', games * 0.9 * g0],
+        ['Força do time na liga', teamF], ['Fase e torcida', Math.max(0, 1 + formV)], ['Características', gMul], ['Escolhas do ano', 1 + c.mod.goal]];
+      let v = 0, shown = 0;
+      steps.forEach(([t, f], i) => { v = i ? v * f : f; const n = Math.round(v), d = n - shown; if (!i || d) src.gol.push([t, d]); shown = n; });
+      const sd = Math.sqrt(v + (0.08 * v) ** 2);
+      src.exp = { n: shown, lo: Math.max(0, Math.round(v - 1.28 * sd)), hi: Math.round(v + 1.28 * sd), got: goals };
+    } else {
+      const v = games * pCS, sd = Math.sqrt(v * (1 - pCS));
+      src.gol.push(['Defesa do time: ' + pc(pCS) + '% de chance por jogo', Math.round(v)]);
+      src.exp = { n: Math.round(v), lo: Math.max(0, Math.round(v - 1.28 * sd)), hi: Math.min(games, Math.round(v + 1.28 * sd)), got: cleanSheets };
+    }
     if (games) {
       const prod = round1(perGame * 2.4 * (isDef ? 0.75 : 1)), gap = round1(Math.min(o - club.strength, S.RATING_GAP) * 0.03);
       const trt = round1(0.06 * tm('drible') + 0.08 * tm('libero') + 0.07 * tm('raca') + 0.06 * tm('estrela')), base = round1(6.1 + S.RATING_ADJ[c.pos]);
@@ -366,17 +376,23 @@
     }
     // Clássico: contra o mesmo rival de novo, o destaque lembra as vezes anteriores
     // (o rival do clássico é o de verdade: Fla x Flu, Gre-Nal, Barça x Real...; não o mais forte da liga)
-    const derby = S.derbyOf(club, r.pick);
-    if (!league && derby && games >= 10 && (isDef ? cleanSheets >= 15 : goals + assists >= 8)) {
+    // Um relato só por resultado: se o lance decisivo foi o clássico contra esse mesmo rival, é ele que conta o jogo
+    // (perdeu o lance: nada de "decidiu o clássico"; converteu: a linha do lance já disse). Outro jogo leva rodada e placar.
+    const dPick = S.derbyOf(club, r.pick), mDerby = M && M.type === 'classico' && (D.RIVALS[club.id] || []).includes(M.vs) && D.CLUB_BY_ID[M.vs].league === club.league;
+    const derby = mDerby ? D.CLUB_BY_ID[M.vs] : dPick, sameM = !!(M && derby && M.type === 'classico' && M.vs === derby.id);
+    if (!league && derby && games >= 10 && (isDef ? cleanSheets >= 15 : goals + assists >= 8) && !(sameM && !M.ok)) {
       c.rivalWins = c.rivalWins || {};
       const k = (c.rivalWins[derby.id] = (c.rivalWins[derby.id] || 0) + 1), ico = isDef ? '🛡️ ' : '⚔️ ';
+      // Rodada e placar de um sorteio à parte (não mexe na sequência da temporada)
+      const dr = S.rng(r.state() ^ 0x9E3779B9), gl = isDef ? 0 : dr.int(0, 1), rd = dr.int(Math.ceil(rounds / 2) + 1, rounds - 2);
+      const game = sameM ? '' : ' (' + rd + 'ª rodada, ' + (gl + 1 + dr.int(0, 1)) + ' a ' + gl + ')';
       const dn = D.o(derby.name);
-      highlights.push(ico + (k === 1 ? S.textPick(c, isDef ? 'hl.dz1' : 'hl.d1', isDef ? ['Segurou o zero no clássico contra ' + dn, 'Clássico sem sofrer gol contra ' + dn, 'Fechou a porta no clássico contra ' + dn]
+      if (!(sameM && k === 1)) highlights.push(ico + (k === 1 ? S.textPick(c, isDef ? 'hl.dz1' : 'hl.d1', isDef ? ['Segurou o zero no clássico contra ' + dn, 'Clássico sem sofrer gol contra ' + dn, 'Fechou a porta no clássico contra ' + dn]
           : ['Decidiu o clássico contra ' + dn, 'Clássico é com você: decidiu contra ' + dn, 'Herói do clássico contra ' + dn, 'Seu nome no clássico contra ' + dn])
         : k === 2 ? S.textPick(c, 'hl.d2', ['De novo! Mais um clássico ' + (isDef ? 'sem sofrer gol' : 'decidido') + ' contra ' + dn, 'Bis no clássico: outra vez contra ' + dn, 'Segunda vez que ' + dn + ' sofre com você no clássico'])
         : S.textPick(c, 'hl.d3', ['Freguês: ' + dn + ' sofre com você pela ' + k + 'ª vez', 'Já virou rotina: ' + k + 'ª vez decidindo contra ' + dn, dn.charAt(0).toUpperCase() + dn.slice(1) + ' já sabe: ' + k + 'ª vez que você pesa no clássico',
           'Carrasco ' + D.do(derby.name) + ': ' + k + 'ª temporada decidindo o clássico', 'Pesadelo ' + D.do(derby.name) + ': ' + k + 'ª vez que você decide o clássico', 'O clássico tem dono: ' + k + 'ª temporada decidindo contra ' + dn,
-          'Torcida ' + D.do(derby.name) + ' já te teme: ' + k + 'ª vez no clássico'])));
+          'Torcida ' + D.do(derby.name) + ' já te teme: ' + k + 'ª vez no clássico'])) + game);
     }
     if (!league && pos >= 14 && games >= 10 && !move) {
       c.sufoco = (c.sufoco || 0) + 1;
