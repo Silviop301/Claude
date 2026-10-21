@@ -23,7 +23,7 @@
     const { rows, always } = o.st && !o.st.safe && !o.locked ? S.stakeRows(c, o.st) : {};
     if (!rows) {
       if (o.st && o.st.safe && !o.locked) return '<span class="ob3-bar safe" aria-hidden="true"><i style="width:100%"></i></span><span class="odds"><span class="od-row safe"><b>Certo</b><span>' + esc(o.hint) + '</span></span></span>';
-      return '<small>' + esc(o.hint) + '</small>';
+      return '<small>' + (o.locked ? U.emo('🔒', 'xs') : '') + esc(o.hint) + '</small>';
     }
     const cost = always.length === 1 && /^−R\$ /.test(always[0]), pw = Math.round(rows[0].p * 100);
     return '<span class="ob3-bar" aria-hidden="true"><i class="w" style="width:' + pw + '%"></i><i class="l"></i></span>' +

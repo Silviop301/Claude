@@ -109,11 +109,12 @@
       pointsBar(f, rankTxt) +
       '<p class="mo-climb" id="mo-climb" hidden></p>' +
       nextGoal(G.c, f, hall, rank) +
-      '<div class="fin-acts o6-acts"><button class="btn" id="b-share">Compartilhar carta</button></div>' +
+      // Compartilhar e jogar de novo numa barra presa embaixo, ao alcance do polegar (Desafiar fica logo abaixo, no fluxo)
+      '<div class="fin-acts o6-acts go-bar"><button class="btn" id="b-share">Compartilhar carta</button><button class="btn o6-again" id="b-again">Nova carreira</button></div>' +
       '<div class="o6-dz">' + U.challengeFinale(G.c, f) + '</div>' +
       (prizes ? '<div class="fin-prizes o6-prizes">' + prizes + '</div>' : '') +
       '<div class="o6-links"><button class="link-btn" data-o6="ed">Editar carta</button><button class="link-btn" data-o6="more">Resumo' + (fresh ? ' <em>' + fresh + '</em>' : '') + '</button>' +
-        '<button class="link-btn" id="b-save">Salvar imagem</button><button class="link-btn gold" id="b-again">Nova carreira</button></div>' +
+        '<button class="link-btn" id="b-save">Salvar imagem</button></div>' +
       '<div class="o6-panel" id="o6-ed" hidden><div class="ed-box" id="ed-box"></div></div>' +
       '<details class="fin-more o6-panel" id="o6-more"><summary>Resumo da carreira' + (fresh ? ' <em>' + fresh + (fresh > 1 ? ' conquistas novas' : ' conquista nova') + '</em>' : '') + '</summary>' +
       '<div class="fin-links">' + (G.c.seasons.length ? '<button id="b-album">' + U.emo('📖', 'sm') + '<span>Álbum</span></button>' : '') +
@@ -137,10 +138,6 @@
       scoreHow(f) +
       '</div>' + (hall.length > 1 ? U.feedbackCard() : '') + '</details>' // 1ª carreira: a opinião fica na tela inicial
     );
-    // Desafiar fica ao lado de Compartilhar (o resultado de um desafio recebido continua logo abaixo)
-    const dz = $('b-desafio');
-    if (dz) screen.querySelector('.o6-acts').appendChild(dz);
-    else screen.querySelector('.o6-acts').classList.add('solo');
     if (!screen.querySelector('.o6-dz').children.length) screen.querySelector('.o6-dz').remove();
     if ($('b-packs')) $('b-packs').textContent = 'Abrir';
     // Links pequenos: abrem (e fecham) a edição da carta e o resumo

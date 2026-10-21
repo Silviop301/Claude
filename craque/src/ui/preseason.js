@@ -202,7 +202,7 @@
       // Foco nos treinos: automático pela idade, só informado
       '<p class="muted small train-txt" id="train-txt"></p>' +
       (!hasInv && coins ? '<p class="muted small prep-note">' + star + ' Pontos de evolução: ' + (G.c.pe || 0) + '. Você ganha com nota ' + String(S.PE_R1).replace('.', ',') + '+ (' + String(S.PE_R2).replace('.', ',') + '+ vale 2), títulos e prêmios.</p>' : '') +
-      '<div class="inv-bar">' + (undo.length ? '<button class="btn ghost" id="b-undo">Desfazer</button>' : '') + '<button class="btn" id="b-skip">Jogar a temporada</button></div>'
+      '<div class="inv-bar fade">' + (undo.length ? '<button class="btn ghost" id="b-undo">Desfazer</button>' : '') + '<button class="btn" id="b-skip">Jogar a temporada</button></div>'
     );
     U.tip('pre');
     const skip = $('b-skip');

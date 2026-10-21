@@ -17,7 +17,7 @@
     fim: ['Sua carta final', 'Escolha a assinatura, o acabamento e o estilo da carta e compartilhe com os amigos. Os pacotinhos liberam números, visuais, assinaturas e acabamentos novos.'],
   };
   // Onde a dica entra: antes do botão de ação de cada tela (sem âncora, no fim da tela, depois das opções)
-  const BEFORE = { base: '.off-tools', janela: '.off-tools', pre: '.inv-bar', lance: '.ob5-foot', resumo: '.s-acts', fim: '.o6-acts, .fin-acts' };
+  const BEFORE = { base: '.off-tools', janela: '.off-tools', pre: '.inv-bar', lance: '.ob5-foot', resumo: '.s-acts, .s-go', fim: '.o6-acts, .fin-acts' };
   // Mostra a dica na tela atual (chamar logo depois do render)
   function tip(key) {
     const s = st(), t = TIPS[key], screen = $('screen');

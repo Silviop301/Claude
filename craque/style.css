@@ -3119,3 +3119,67 @@ details.fin-more.o6-panel:not([open]) { display: none; }
 #screen .counter.rate.rt-mid b, #screen:has(> #after) .counter.rate.rt-mid b { color: #F2D27A; }
 #screen .counter.rate.rt-hi b, #screen:has(> #after) .counter.rate.rt-hi b { color: #7BE3A0; }
 /* ----- fim E1 ----- */
+
+/* ===== E2: polegar e toque ===== */
+/* Barra presa embaixo (fim de temporada e fim de carreira): seguir fica ao alcance do polegar, com o mesmo degradê da
+   criação (.inv-bar.fade). Fica presa só enquanto o lugar dela na tela ainda está abaixo da dobra; depois rola junto. */
+.go-bar { position: sticky; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 3; }
+.go-bar::before { content: ''; position: absolute; z-index: -1; left: -16px; right: -16px; top: -36px; bottom: calc(-10px - env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to bottom, rgba(15, 61, 42, 0), var(--pitch) 34px); pointer-events: none; }
+.go-bar .btn { box-shadow: 0 4px 0 rgba(0, 0, 0, .35), 0 6px 18px rgba(0, 0, 0, .35); }
+#screen:has(> .go-bar) .rv { scroll-margin-bottom: 96px; }
+/* Fim de temporada: seguir e postar lado a lado (como era no fim do resumo) */
+.s-go { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 10px; align-items: stretch; margin-top: 12px; }
+.s-go > #b-next, .s-go > #b-post { margin: 0; width: 100%; min-height: 58px; }
+.s-go > #b-post { padding: 6px 8px; font-size: 16px; line-height: 1.1; }
+.s-go > #b-post small { font-size: 12px; line-height: 1.2; margin-top: 2px; }
+@media (min-width: 1000px) { #screen:has(> .s-hero) > .s-go { grid-column: 2; } }
+/* Fim de carreira: Compartilhar (dourado) e Nova carreira lado a lado, 52 px; Desafiar logo abaixo, no fluxo */
+.fin-acts.o6-acts.go-bar { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.o6-acts.go-bar .btn { min-height: 52px; }
+.o6-acts .btn.o6-again { background: #1E3F30; color: #FBF8EF; box-shadow: inset 0 0 0 2px var(--gold), 0 4px 0 rgba(0, 0, 0, .35), 0 6px 18px rgba(0, 0, 0, .35); }
+.o6-dz { display: flex; flex-direction: column; gap: 10px; }
+.o6-dz .btn.ghost.dz-btn { margin: 0; min-height: 48px; border: 2px solid rgba(242, 194, 48, .7); background: rgba(242, 194, 48, .08); color: #FBF8EF; font-size: 17px; }
+.o6-dz .dz-btn .tw { width: 20px; height: 20px; vertical-align: -4px; }
+.o6-dz .dz-btn small { font-size: 12px; color: #C9D8CE; }
+.o6-links .link-btn { min-height: 44px; }
+
+/* Pré-temporada: enquanto falta escolher a característica, o botão fica no fim da tela, discreto (não cobre as cartas);
+   depois da escolha ele volta a ficar preso embaixo, dourado */
+.inv-bar:has(#b-skip.wait) { position: static; }
+.inv-bar:has(#b-skip.wait)::before { display: none; }
+.inv-bar .btn.wait:disabled { background: transparent; box-shadow: inset 0 0 0 2px rgba(242, 193, 46, .45); min-height: 0; padding-top: 10px; padding-bottom: 10px; font-size: 17px; }
+/* Tela baixa: a carta dos atributos não fica presa no topo (com a barra de cima ela tomava metade da tela) */
+@media (max-height: 760px) and (max-width: 999px) { .mcard, .mcard.metal { position: relative; top: auto; } }
+/* Fisioterapeuta: o ícone num selo claro, para não sumir no verde */
+.inv-chip > .tw:first-child { box-sizing: content-box; padding: 5px; border-radius: 50%; background: #F3EBD7; flex: none; }
+
+/* Alvos de toque de 44 px */
+.seg button, .cr-chips button { min-height: 44px; }
+#f-name { min-height: 44px; }
+#b-dice1, #b-look { min-height: 44px; }
+.tip-acts button { min-height: 44px; }
+.ob5-how summary { min-height: 44px; }
+#after > details.more > summary { padding: 12px 0; }
+/* Ícones da barra (engrenagem e voltar) e links pequenos: área de toque maior sem mudar o desenho */
+.bar-btns { gap: 8px; }
+.bar-btns .snd-mini, .back-link, .eyebrow .link-btn[data-sheet] { position: relative; }
+.bar-btns .snd-mini::after { content: ''; position: absolute; inset: -7px -4px; }
+.back-link::after { content: ''; position: absolute; inset: -8px -2px; }
+.eyebrow .link-btn[data-sheet]::after { content: ''; position: absolute; inset: -15px -6px; }
+/* Opção bloqueada: o motivo ('Sem saldo...') em cor plena, com cadeado; só o resto do cartão fica apagado */
+.btn.opt.ob3-opt.locked { opacity: 1; --oc: rgba(242, 194, 48, .4); }
+.btn.opt.ob3-opt.locked > :not(small) { opacity: .45; }
+.btn.opt.ob3-opt.locked > small { color: #FBF8EF; font-weight: 700; }
+.btn.opt.ob3-opt.locked > small .tw { width: 15px; height: 15px; vertical-align: -2px; margin-right: 3px; }
+/* Ganhos em verde legível (contraste ≥ 4,5:1) */
+.rel .m-d.up { background: #9BF0BC; color: #0B2A1A; }
+.why b.up { color: #157A41; font-weight: 800; }
+.delta-in.up { color: #157A41; }
+.src-card .sr-c.up b { color: #9BF0BC; font-weight: 800; }
+/* Piso de 12 px para texto que informa */
+.tr-pick .choice .d, .tr-pick .tag { font-size: 12px; }
+#after > .story > .news:not(.resenha) .np { font-size: 12px; }
+.ob3-tag { font-size: 12px; }
+button.mc-at .pips { font-size: 11px; opacity: .85; }
+/* ----- fim E2 ----- */

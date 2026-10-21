@@ -472,9 +472,11 @@
     const tourLbl = goWc ? 'Copa do Mundo ' + year() + ' ' + U.emo('🌍', 'sm') : 'Mundial de Clubes ' + year() + ' ' + U.emo('🌐', 'sm');
     let actions;
     const pctx = { kind: fin ? 'farewell' : 'season', res };
-    if (fin) actions = '<p class="lead">' + (res.farewell ? 'Fim da temporada de despedida. Hora de pendurar as chuteiras.' : (G.c.age >= S.RETIRE_AGE ? 'Aos ' + G.c.age + ' anos, o corpo pediu para parar.' : S.ovr(G.c) < S.RETIRE_OVR ? 'Com a carta em ' + S.ovr(G.c) + ', nenhum clube quis renovar. Hora de pendurar as chuteiras.' : 'Aos ' + G.c.age + ' anos, o corpo já não acompanha a cabeça: a carta caiu de ' + G.c.peak + ' para ' + S.ovr(G.c) + '. Hora de pendurar as chuteiras.')) + '</p><button class="btn" id="b-next">' + (goTour ? 'Última dança: ' + tourLbl : 'Ver sua carreira') + '</button>' + U.postBtn(pctx);
+    // Seguir e postar numa barra presa embaixo, ao alcance do polegar (a tela mais repetida da carreira)
+    const goBtns = '<button class="btn" id="b-next">' + (goTour ? (fin ? 'Última dança: ' : 'Jogar ' + (goWc ? 'a ' : 'o ')) + tourLbl : fin ? 'Ver sua carreira' : open ? 'Janela de transferências' : 'Próxima temporada') + '</button>' + U.postBtn(pctx);
+    if (fin) actions = '<p class="lead">' + (res.farewell ? 'Fim da temporada de despedida. Hora de pendurar as chuteiras.' : (G.c.age >= S.RETIRE_AGE ? 'Aos ' + G.c.age + ' anos, o corpo pediu para parar.' : S.ovr(G.c) < S.RETIRE_OVR ? 'Com a carta em ' + S.ovr(G.c) + ', nenhum clube quis renovar. Hora de pendurar as chuteiras.' : 'Aos ' + G.c.age + ' anos, o corpo já não acompanha a cabeça: a carta caiu de ' + G.c.peak + ' para ' + S.ovr(G.c) + '. Hora de pendurar as chuteiras.')) + '</p>';
     else {
-      actions = '<button class="btn" id="b-next">' + (goTour ? 'Jogar ' + (goWc ? 'a ' : 'o ') + tourLbl : open ? 'Janela de transferências' : 'Próxima temporada') + '</button>' + U.postBtn(pctx);
+      actions = '';
       // Sinal do fim: mais uma queda como a desta temporada e a carreira acaba (dá tempo de anunciar a despedida)
       if (S.nearRetire(G.c, dOvr)) actions = '<p class="wc-miss rv">' + U.emo('⏳', 'sm') + ' O corpo dá sinais: mais uma queda como esta e a carreira acaba. Pode ser a hora de anunciar a última temporada.</p>' + actions;
       if (S.canAnnounce(G.c)) actions += '<button class="btn ghost" id="b-farewell">Anunciar a última temporada<small>Torcida +10 (+5 com o post) e mais minutos · parar em alta rende pontos extras</small></button>';
@@ -519,7 +521,10 @@
       res.highlights.slice(1).map(h => '<div class="hl">' + esc(h) + '</div>').join('') +
       '<div class="card why-card"><p class="delta-in ' + (dOvr >= 0 ? 'up' : 'down') + '">Nota geral ' + res.ovr0 + ' → ' + res.ovr1 + ' (' + (dOvr >= 0 ? '+' : '') + dOvr + ')</p>' + why + '</div>' +
       '<p class="rel-delta">' + U.emo('👔', 'xs') + ' Técnico ' + res.coach0 + ' → ' + res.coach1 + ' · ' + U.emo('📣', 'xs') + ' Torcida ' + res.fans0 + ' → ' + res.fans1 + ' (' + S.relLabel(res.fans1) + ')</p>' +
-      (fin ? '' : '<p class="contract">' + contractTxt + '</p>') + '</details>' + '<div class="rv s-acts">' + actions + '</div>';
+      (fin ? '' : '<p class="contract">' + contractTxt + '</p>') + '</details>' + (actions ? '<div class="rv s-acts">' + actions + '</div>' : '');
+    // A barra fica fora do #after (que começa abaixo da dobra no celular): presa no pé da tela desde o começo do resumo
+    screen.querySelectorAll('.s-go').forEach(el => el.remove());
+    $('after').insertAdjacentHTML('afterend', '<div class="rv s-go go-bar">' + goBtns + '</div>');
     bar();
     reveal(skipNow, res);
     // Última temporada: a carta desbota em sépia, como foto antiga, antes da carta final da carreira
