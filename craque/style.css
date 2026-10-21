@@ -2318,6 +2318,9 @@ details.more .src-card { margin: 2px 0 8px; }
   html.desk #app { min-height: calc(100dvh / var(--z)); }
   html.desk #kick { min-height: calc(100svh / var(--z) - var(--bar-h, 0px) - 110px); }
   html.desk #screen.center { min-height: calc(100svh / var(--z) - var(--bar-h, 0px) - 90px); }
+  html.desk .hm-first { min-height: calc(100svh / var(--z) - 32px); }
+  html.desk .hm-first .ball3d { height: clamp(150px, calc(24svh / var(--z)), 210px); }
+  html.desk .hm-land { min-height: calc(100svh / var(--z) - 60px); }
   html.desk .kick-stage { --kw: min(720px, 94vw, calc((100dvh / var(--z) - 240px) * 1.125)); }
   html.desk .sheet { height: min(calc(82vh / var(--z)), 700px); }
   html.desk .card3d-host.big { height: min(calc(62vh / var(--z)), 520px); }
@@ -3486,3 +3489,98 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 /* ===== Conferência (E10) ===== */
 /* O carimbo do resultado entra com scale(2,2): crescendo do canto de cima à direita a página não rola para o lado por um instante */
 .ob3-stamp { transform-origin: 100% 0; }
+
+/* ===== Nova home (ui/start.js): primeira visita, quem já jogou, página do desafio e menu de baixo ===== */
+.hm { display: flex; flex-direction: column; gap: 12px; position: relative; }
+.hm-first { min-height: calc(100svh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+.hm-gear { width: 44px; height: 44px; flex: none; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .05); color: var(--paper); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.hm-gear svg { width: 20px; height: 20px; }
+.hm-first > .hm-gear { position: absolute; top: 0; right: 0; z-index: 2; }
+.hm-first .hero h1 { font-size: clamp(44px, 13vw, 64px); }
+.hm-first .ball3d { height: clamp(150px, 24svh, 210px); }
+.hm-tag { font: 800 clamp(34px, 10vw, 42px)/.98 var(--display); letter-spacing: .005em; color: #fff; text-wrap: balance; margin-top: 4px; }
+.hm .lead { color: #D3E4D9; font: 500 16px/1.4 var(--body); }
+.hm-cta { height: 60px; font-size: 22px; margin-top: 6px; }
+.hm-quick { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 14px; border-radius: 16px; border: 1px solid rgba(242, 194, 48, .5); background: rgba(255, 255, 255, .05); color: var(--paper); text-align: left; cursor: pointer; }
+.hm-quick > i { font-style: normal; width: 36px; height: 36px; border-radius: 999px; background: rgba(242, 194, 48, .14); display: grid; place-items: center; flex: none; }
+.hm-quick > span { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.hm-quick b { font: 700 19px/1.1 var(--display); }
+.hm-quick small { font: 500 14px/1.3 var(--body); color: #CFE0D5; }
+.hm-quick > .ico, .hm-tile .ico { color: #CFE0D5; width: 20px; height: 20px; flex: none; }
+.hm-quick:active, .hm-tile:active { transform: translateY(1px); }
+.hm-first .home-foot { margin-top: auto; padding-top: 10px; gap: 26px; }
+.hm-first .home-foot .link-btn { font: 600 15px var(--body); color: #CFE0D5; padding: 6px 0; display: inline-flex; align-items: center; gap: 6px; }
+
+/* Quem já jogou: topo com bola pequena, nome do jogo e fichinhas */
+.hm-back { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+.hm-top { display: flex; align-items: center; gap: 8px; }
+.hm-top .hero { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; padding: 0; }
+.hm-top .ball3d { width: 52px; height: 52px; flex: none; margin: -4px 0 -4px -6px; transform: none; background: none; }
+.hm-top .ball3d.flat img { width: 36px; height: 36px; }
+.hm-top .eyebrow { display: none; }
+.hm-top h1 { font: 800 26px/1 var(--display); letter-spacing: .04em; }
+.hm-chips { display: flex; align-items: center; gap: 6px; flex: none; }
+.hm-chip { height: 36px; padding: 0 11px; border-radius: 999px; background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .14); display: inline-flex; align-items: center; gap: 5px; font: 700 15px var(--display); white-space: nowrap; }
+.hm-top .hm-gear { width: 36px; height: 36px; }
+.hm-top .hm-gear svg { width: 18px; height: 18px; }
+
+/* Continuar: a carta, onde ele está e o caminho até a aposentadoria */
+.hm-cont { border-radius: 22px; background: var(--pitch-2); border: 1px solid rgba(255, 255, 255, .12); padding: 14px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 12px 28px rgba(0, 0, 0, .25); }
+.hm-cont-row { display: flex; gap: 14px; align-items: center; }
+.hm-cont .scard { width: 78px; height: 100px; }
+.hm-cont .scard b { font-size: 36px; }
+.hm-cont .cc-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.hm-cont .cc-info small { font: var(--t-label); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.hm-cont .cc-info b { font: 800 26px/1 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hm-cont .cc-info span { font: 500 14px/1.3 var(--body); color: #D3E4D9; display: flex; align-items: center; gap: 5px; }
+.hm-cont .cc-info em { font: 600 13px/1.3 var(--body); font-style: normal; color: #CFE0D5; }
+.hm-prog { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.hm-prog i { display: block; height: 100%; background: var(--gold); border-radius: 3px; }
+.hm-prog-l { display: flex; justify-content: space-between; font: 600 12px var(--body); color: #B9CDBF; margin-top: -6px; }
+.hm-cont .btn { height: 56px; font-size: 21px; }
+
+.hm-lbl { font: 700 13px var(--display); letter-spacing: .14em; text-transform: uppercase; color: #B9CDBF; margin: 6px 0 -4px; }
+.hm-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.hm-tile { min-height: 108px; border-radius: 18px; border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .05); color: var(--paper); display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 14px; text-align: left; cursor: pointer; }
+.hm-tile > i { font-style: normal; width: 36px; height: 36px; border-radius: 999px; background: rgba(143, 214, 174, .16); display: grid; place-items: center; }
+.hm-tile > i .ico { color: #fff; width: 22px; height: 22px; }
+.hm-tile > span { display: flex; flex-direction: column; gap: 2px; }
+.hm-tile b { font: 700 20px/1.05 var(--display); }
+.hm-tile small { font: 500 13px/1.25 var(--body); color: #CFE0D5; }
+.hm-tile.rl { border-color: rgba(242, 194, 48, .5); background: rgba(242, 194, 48, .08); }
+.hm-tile.rl > i { background: rgba(242, 194, 48, .16); }
+.hm-tile.gold { background: var(--gold); border-color: var(--gold); color: var(--ink); box-shadow: 0 4px 0 #A9861C; }
+.hm-tile.gold small { color: #4A3A08; }
+.hm-tile.gold > i { background: rgba(19, 32, 26, .12); }
+.hm-tile.gold > i .ico { color: var(--ink); }
+.hm-back .rk-home { padding: 10px 14px; }
+.hm-back .rk-home .podium-ico { width: 38px; height: auto; }
+.hm-back .rk-home-t > b { font-size: 18px; }
+.hm-back .fb-home { width: 100%; }
+
+/* Página do desafio (link ?d= ou ?r=) */
+.hm-land { padding-top: 18px; min-height: calc(100svh - 60px); }
+.hm-land .hm-cta { margin-top: auto; }
+.hm-land > .link-btn { align-self: center; font: 600 15px var(--body); color: #CFE0D5; padding: 8px 0; }
+.hm-vs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 8px; }
+.hm-vs-c { border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hm-vs-c small { font: 700 12px var(--display); letter-spacing: .14em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hm-vs-c b { font: 800 52px/.9 var(--display); }
+.hm-vs-c span { font: 700 15px var(--display); }
+.hm-vs-c.gold { background: linear-gradient(160deg, #F7D774, #B8860B); color: var(--ink); box-shadow: 0 12px 24px rgba(0, 0, 0, .35); }
+.hm-vs-c.you { border: 2px dashed rgba(255, 255, 255, .3); color: #CFE0D5; }
+.hm-vs-c.you b { color: rgba(255, 255, 255, .55); }
+.hm-steps { list-style: none; counter-reset: st; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.hm-steps li { counter-increment: st; display: flex; gap: 12px; align-items: center; font: 500 15px/1.35 var(--body); color: #DDE9E0; }
+.hm-steps li::before { content: counter(st); width: 30px; height: 30px; flex: none; border-radius: 999px; background: rgba(242, 194, 48, .15); color: var(--gold); display: grid; place-items: center; font: 800 15px var(--display); }
+
+/* Menu de baixo: preso no rodapé, na largura do jogo */
+.home-nav { position: fixed; z-index: 20; bottom: 0; left: 50%; transform: translateX(-50%); width: min(520px, 100%); display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+  background: #0B2F20; border-top: 1px solid rgba(255, 255, 255, .12); padding: 4px 4px calc(6px + env(safe-area-inset-bottom, 0px)); }
+.hn-i { position: relative; min-height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 0; background: none; color: #B9CDBF; font: 600 12px var(--body); cursor: pointer; padding: 0; }
+.hn-i .ico { width: 22px; height: 22px; }
+.hn-i span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hn-i.on { color: var(--gold); font-weight: 700; cursor: default; }
+.hn-i em { position: absolute; top: 4px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; background: var(--red); color: #fff; font: 700 10px/18px var(--body); font-style: normal; }
+#screen:has(> .home-nav) { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+#screen:has(> .hm-back) { padding-bottom: 0; }
