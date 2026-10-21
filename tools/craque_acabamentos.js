@@ -7,10 +7,11 @@ const fs = require('fs'), path = require('path');
 const OUT = path.join(__dirname, '..', 'craque', 'assets', 'cartas');
 const ONLY = process.argv.slice(2);
 
-// Código que roda no navegador: cada função desenha num canvas 768×1152
+// Código que roda no navegador: cada função desenha num canvas de 768×1152 (coordenadas), gravado com o dobro de
+// pixels (SS): bordas e detalhes finos saem nítidos na carta 3D, que estica a textura na face inteira
 const PAGE = String.raw`
-const W = 768, H = 1152;
-function mk() { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; }
+const W = 768, H = 1152, SS = 2;
+function mk() { const c = document.createElement('canvas'); c.width = W * SS; c.height = H * SS; c.getContext('2d').setTransform(SS, 0, 0, SS, 0, 0); return c; }
 function rnd(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 // Ruído de valor suave + fbm
 function noise(seed) {
@@ -23,10 +24,19 @@ function noise(seed) {
   return (x, y, oct = 5) => { let v = 0, amp = .5, f = 1; for (let o = 0; o < oct; o++) { v += n(x * f, y * f) * amp; amp *= .5; f *= 2; } return v; };
 }
 const mix = (a, b, t) => a + (b - a) * t;
+// Brilho de estrela: halo suave e quatro pontas finas (no lugar da cruz de quadradinhos)
+function sparkle(x, px, py, s, a) {
+  const g = x.createRadialGradient(px, py, 0, px, py, s * 2.2);
+  g.addColorStop(0, 'rgba(255,255,255,' + a * .8 + ')'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = g; x.fillRect(px - s * 2.2, py - s * 2.2, s * 4.4, s * 4.4);
+  x.fillStyle = 'rgba(255,255,255,' + a + ')';
+  x.beginPath(); x.moveTo(px, py - s * 2.6); x.lineTo(px + s * .26, py); x.lineTo(px, py + s * 2.6); x.lineTo(px - s * .26, py); x.closePath(); x.fill();
+  x.beginPath(); x.moveTo(px - s * 2.6, py); x.lineTo(px, py + s * .26); x.lineTo(px + s * 2.6, py); x.lineTo(px, py - s * .26); x.closePath(); x.fill();
+}
 const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 function pixels(fn) {
-  const c = mk(), x = c.getContext('2d'), id = x.createImageData(W, H), d = id.data;
-  for (let y = 0; y < H; y++) for (let i = 0; i < W; i++) { const [r, g, b] = fn(i, y), k = (y * W + i) * 4; d[k] = r; d[k + 1] = g; d[k + 2] = b; d[k + 3] = 255; }
+  const c = mk(), x = c.getContext('2d'), w = W * SS, h = H * SS, id = x.createImageData(w, h), d = id.data;
+  for (let y = 0; y < h; y++) for (let i = 0; i < w; i++) { const [r, g, b] = fn(i / SS, y / SS), k = (y * w + i) * 4; d[k] = r; d[k + 1] = g; d[k + 2] = b; d[k + 3] = 255; }
   x.putImageData(id, 0, 0); return c;
 }
 // Brilho diagonal suave por cima (como o metal das outras cartas)
@@ -102,12 +112,12 @@ const T = {
     const n = noise(21);
     const band = (y0, amp, f, ph, col, h) => {
       const [cr, cg, cb] = hex(col);
-      const id = x.getImageData(0, 0, W, H), d = id.data;
-      for (let px = 0; px < W; px++) {
-        const center = y0 + Math.sin(px * f + ph) * amp + (n(px * .01, y0 * .01, 3) - .5) * 80;
+      const w = W * SS, id = x.getImageData(0, 0, w, H * SS), d = id.data;
+      for (let qx = 0; qx < w; qx++) {
+        const px = qx / SS, center = y0 + Math.sin(px * f + ph) * amp + (n(px * .01, y0 * .01, 3) - .5) * 80;
         const streak = .6 + .4 * n(px * .08, ph, 2);
-        for (let py = Math.max(0, center - h * 2.5); py < Math.min(H, center + h); py++) {
-          const dy = (py - center) / h, a = Math.exp(-dy * dy * (dy > 0 ? 3 : .6)) * .55 * streak, k = (Math.floor(py) * W + px) * 4;
+        for (let qy = Math.max(0, Math.floor((center - h * 2.5) * SS)); qy < Math.min(H * SS, (center + h) * SS); qy++) {
+          const dy = (qy / SS - center) / h, a = Math.exp(-dy * dy * (dy > 0 ? 3 : .6)) * .55 * streak, k = (qy * w + qx) * 4;
           d[k] = mix(d[k], cr, a); d[k + 1] = mix(d[k + 1], cg, a); d[k + 2] = mix(d[k + 2], cb, a);
         }
       }
@@ -122,35 +132,41 @@ const T = {
     const c = pixels((x, y) => {
       const v1 = a(x * .006, y * .006, 4), v2 = b(x * .008, y * .008, 4), v3 = cc(x * .01, y * .01, 3);
       const k = v3 > .58 ? 0 : v2 > .55 ? 1 : v1 > .5 ? 3 : 2;
-      return P[k];
+      // Trama do tecido: fios finos cruzados e um pouco de ruído, para não parecer mancha chapada
+      const t = Math.sin(x * 2.4) * Math.sin(y * 2.4) * 5 + (Math.sin(x * 2.4 + y * 2.4) > .6 ? 4 : 0) + (a(x * .3, y * .3, 1) - .5) * 10;
+      return [P[k][0] + t, P[k][1] + t, P[k][2] + t];
     });
     return sheen(vignette(c, .25), .1);
   },
   vitral() {
     const r = rnd(12), pts = [];
     for (let i = 0; i < 46; i++) pts.push([r() * W, r() * H, ['#B8263A', '#2E5FB8', '#E0A21E', '#2E9A5A', '#7A3AB0', '#D85A1E', '#1E8A9A'][Math.floor(r() * 7)]]);
-    const cols = pts.map(p => hex(p[2]));
+    const cols = pts.map(p => hex(p[2])), gn = noise(13);
     const c = pixels((x, y) => {
       let d1 = 1e9, d2 = 1e9, k = 0;
       for (let i = 0; i < pts.length; i++) { const dx = x - pts[i][0], dy = y - pts[i][1], dd = dx * dx + dy * dy; if (dd < d1) { d2 = d1; d1 = dd; k = i; } else if (dd < d2) d2 = dd; }
       const edge = Math.sqrt(d2) - Math.sqrt(d1);
-      if (edge < 5) return [26, 24, 22];
+      // Chumbo com relevo (claro no meio do filete) e vidro com bolhas e escurecendo perto do chumbo
+      if (edge < 5) { const l = 24 + Math.pow(1 - edge / 5, 1.5) * 40; return [l, l - 2, l - 4]; }
       const glow = Math.max(0, 1 - Math.sqrt(d1) / 160) * .35, col = cols[k];
-      return [Math.min(255, col[0] * (.6 + glow)), Math.min(255, col[1] * (.6 + glow)), Math.min(255, col[2] * (.6 + glow))];
+      const grain = (gn(x * .05, y * .05, 3) - .5) * .22, near = edge < 13 ? .72 + .28 * (edge - 5) / 8 : 1, m = (.58 + glow + grain) * near;
+      return [Math.min(255, col[0] * m), Math.min(255, col[1] * m), Math.min(255, col[2] * m)];
     });
     return sheen(vignette(c, .3), .14);
   },
   holografico() {
     const n = noise(77), r = rnd(9);
     const c = pixels((x, y) => {
-      const h = ((x * .22 + y * .3 + n(x * .004, y * .004, 4) * 220) % 360 + 360) % 360;
-      const s = .62, l = .7 + (n(x * .02, y * .02, 2) - .5) * .1;
+      // Folha holográfica: faixas de arco-íris em diagonal e a grade fina de difração (riscos que mudam a cor)
+      const grade = Math.sin((x * .8 + y * .45) * 3.1);
+      const h = ((x * .2 + y * .15 + n(x * .003, y * .003, 4) * 180 + grade * 8) % 360 + 360) % 360;
+      const s = .66, l = .72 + grade * .022 + (n(x * .02, y * .02, 2) - .5) * .07;
       const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
       const f = m => l - a * Math.max(-1, Math.min(k(m) - 3, Math.min(9 - k(m), 1)));
       return [f(0) * 255, f(8) * 255, f(4) * 255];
     });
     const x = c.getContext('2d');
-    for (let i = 0; i < 380; i++) { const px = r() * W, py = r() * H, s = 1 + r() * 2.2; x.fillStyle = 'rgba(255,255,255,' + (.5 + r() * .5) + ')'; x.fillRect(px - s / 2, py - s * 2, s, s * 4); x.fillRect(px - s * 2, py - s / 2, s * 4, s); }
+    for (let i = 0; i < 380; i++) { const px = r() * W, py = r() * H, s = 1 + r() * 2.2; sparkle(x, px, py, s * .9, .45 + r() * .45); }
     return sheen(c, .3);
   },
   ourorose() {
@@ -159,7 +175,7 @@ const T = {
     const a = hex('#9A4658'), b = hex('#F8CCD4'), cc = hex('#D4808F'); // rosa de verdade, longe do bronze
     const c = pixels((x, y) => {
       const t = (x / W) * .4 + (y / H) * .6 + (n(x * .002, y * .002, 3) - .5) * .3;
-      const brush = rows[y] + (n(x * .004, y * 1.5, 1) - .5) * .08;
+      const brush = rows[Math.floor(y)] + (n(x * .004, y * 1.5, 1) - .5) * .08;
       const v = Math.min(1, Math.max(0, .5 + Math.sin(t * Math.PI * 2.2) * .38 + brush));
       const c1 = v < .5 ? a : b, c0 = v < .5 ? cc : cc, tt = Math.abs(v - .5) * 2;
       return [mix(c0[0], c1[0], tt), mix(c0[1], c1[1], tt), mix(c0[2], c1[2], tt)];
@@ -168,22 +184,22 @@ const T = {
   },
   diamante() {
     const c = mk(), x = c.getContext('2d'), r = rnd(21), S = 96, pts = [];
-    for (let j = -1; j <= H / S + 1; j++) for (let i = -1; i <= W / S + 1; i++) pts.push([i * S + (j % 2 ? S / 2 : 0) + (r() - .5) * 40, j * S * .86 + (r() - .5) * 40]);
+    for (let j = -1; j <= H / (S * .86) + 1; j++) for (let i = -1; i <= W / S + 1; i++) pts.push([i * S + (j % 2 ? S / 2 : 0) + (r() - .5) * 40, j * S * .86 + (r() - .5) * 40]);
     const cols = Math.ceil(W / S) + 3;
     x.fillStyle = '#CFE8F6'; x.fillRect(0, 0, W, H);
     const tri = (a, b, cpt) => {
-      const l = 70 + r() * 28, g = x.createLinearGradient(a[0], a[1], cpt[0], cpt[1]);
+      const l = r() < .08 ? 96 : 70 + r() * 28, g = x.createLinearGradient(a[0], a[1], cpt[0], cpt[1]); // algumas facetas refletem quase branco
       g.addColorStop(0, 'hsl(200,60%,' + l + '%)'); g.addColorStop(1, 'hsl(205,55%,' + Math.max(55, l - 18) + '%)');
       x.fillStyle = g; x.beginPath(); x.moveTo(...a); x.lineTo(...b); x.lineTo(...cpt); x.closePath(); x.fill();
       x.strokeStyle = 'rgba(255,255,255,.7)'; x.lineWidth = 1.4; x.stroke();
     };
     for (let k = 0; k + cols + 1 < pts.length; k++) { if ((k + 1) % cols === 0) continue; tri(pts[k], pts[k + 1], pts[k + cols]); tri(pts[k + 1], pts[k + cols + 1], pts[k + cols]); }
     // Brilhos só perto da borda, fora do nome e dos atributos
-    for (let i = 0; i < 70; i++) { const px = r() * W, py = r() * H, s = 2 + r() * 5; if (px > W * .16 && px < W * .84 && py > H * .14 && py < H * .86) continue; x.fillStyle = 'rgba(255,255,255,.9)'; x.fillRect(px - s / 4, py - s * 2, s / 2, s * 4); x.fillRect(px - s * 2, py - s / 4, s * 4, s / 2); }
+    for (let i = 0; i < 70; i++) { const px = r() * W, py = r() * H, s = 2 + r() * 5; if (px > W * .16 && px < W * .84 && py > H * .14 && py < H * .86) continue; sparkle(x, px, py, s * .7, .9); }
     return sheen(c, .3);
   },
 };
-window.__make = id => T[id]().toDataURL('image/jpeg', .88);
+window.__make = id => T[id]().toDataURL('image/jpeg', .86);
 window.__ids = Object.keys(T);
 `;
 
