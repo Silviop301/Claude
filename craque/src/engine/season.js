@@ -521,6 +521,7 @@
       traits: c.traits.map(id => ({ id, lv: S.traitLevel(c, id) })), // características como estavam nesta temporada (álbum)
     };
     res.move = move;
+    res.milestones = S.milestones(c, res, club);
     if (ballonLost) res.ballonLost = true;
     // O clube cresce com o craque: mais receita, patrocínio e reforços enquanto ele está lá (e perde aos poucos quando ele sai)
     res.carry = Math.round(carry);
@@ -856,6 +857,28 @@
       ['Faltou ousadia', nick + ' jogou seguro demais. Futebol que fica na memória é futebol que arrisca.']]);
   };
 
+
+  // Marcos redondos da temporada (100º gol, 500º jogo...): só texto no resumo, no máximo um por temporada.
+  // Ordem = prioridade: gols pelo clube, gols, assistências, jogos sem sofrer gol, jogos.
+  S.MILESTONES = [
+    { k: 'club', at: [100, 200], icon: '💯', txt: (n, c, club) => n + 'º gol ' + D.pelo(club.name) },
+    { k: 'goals', at: [100, 200, 300, 400, 500, 600], icon: '⚽', txt: n => n + 'º gol na carreira' },
+    { k: 'assists', at: [100, 200, 300], icon: '👟', txt: n => n + 'ª assistência na carreira' },
+    { k: 'cs', at: [100, 200, 300, 400, 500], icon: '🧤', txt: n => n + ' jogos sem sofrer gol', pos: ['GOL', 'ZAG'] },
+    { k: 'games', at: [100, 250, 500], icon: '🏅', txt: n => n + 'º jogo como profissional' },
+  ];
+  S.milestones = function (c, res, club) {
+    const T = c.totals;
+    const now = { club: c.spells.filter(x => x.club === club.id).reduce((n, x) => n + (x.goals || 0), 0), goals: T.goals, assists: T.assists, cs: T.cs || 0, games: T.games };
+    const add = { club: res.goals, goals: res.goals, assists: res.assists, cs: res.cleanSheets || 0, games: res.games };
+    for (const m of S.MILESTONES) {
+      if (m.pos && !m.pos.includes(c.pos)) continue;
+      if (c.pos === 'GOL' && (m.k === 'goals' || m.k === 'club' || m.k === 'assists')) continue;
+      const hit = m.at.filter(n => now[m.k] >= n && now[m.k] - add[m.k] < n).pop();
+      if (hit) return [{ id: m.k, n: hit, icon: m.icon, txt: m.txt(hit, c, club) }];
+    }
+    return [];
+  };
 
   if (typeof module !== 'undefined') module.exports = S;
 })(typeof window !== 'undefined' ? window : globalThis);

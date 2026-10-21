@@ -93,7 +93,7 @@
     const T = G.c.totals;
     store(SAVE, { c: null, at: Date.now() });
     const hall = (load(HALL) || []);
-    hall.push({ name: G.c.name, grade: f.grade, score: f.score, verdict: f.verdict, goals: T.goals, assists: T.assists, titles: f.titles, ballon: T.ballon, pos: G.c.pos, cs: T.cs || 0, penSaved: T.penSaved || 0 });
+    hall.push({ name: G.c.name, grade: f.grade, score: f.score, verdict: f.verdict, goals: T.goals, assists: T.assists, titles: f.titles, ballon: T.ballon, pos: G.c.pos, cs: T.cs || 0, penSaved: T.penSaved || 0, peak: G.c.peak });
     hall.sort((a, b) => b.score - a.score);
     const rank = hall.findIndex(h => h.score === f.score && h.name === G.c.name) + 1;
     store(HALL, hall.slice(0, 10));

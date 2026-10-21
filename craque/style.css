@@ -3199,3 +3199,16 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 /* Placar histórico da revanche no balanço do fim (ui/finale.js rivalBlock) */
 .fin-rival .fr-hist { display: block; margin: -2px 0 4px; font-size: 12.5px; font-weight: 600; color: #4A5A78; }
 /* ----- fim E4 ----- */
+
+/* ----- E5: marcos da temporada e progresso das conquistas ----- */
+/* Marco redondo no resumo (res.milestones, ui/season.js): mesma faixa do prêmio, em tinta com borda dourada para não parecer troféu */
+#after .award.milestone:not(.ballon) { background: #12261B; color: #FBE7A1; box-shadow: inset 0 0 0 2px var(--gold), 0 4px 0 rgba(0, 0, 0, .3); font: 800 17px/1.15 var(--display); }
+#after .award.milestone .tw { width: 22px; height: 22px; flex: none; }
+/* Conquistas: barra do recorde (melhor carreira guardada) nas trancadas e grupo "Quase lá" */
+.ach-prog { position: relative; display: block; height: 16px; margin-top: 4px; border-radius: 999px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.ach-prog i { display: block; height: 100%; background: linear-gradient(90deg, #A9861C, var(--gold)); border-radius: inherit; }
+.ach-prog em { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 800 11px var(--display); font-style: normal; letter-spacing: .04em; color: #FBF8EF; text-shadow: 0 1px 2px rgba(0, 0, 0, .7); }
+.ach-near .ach { box-shadow: inset 0 0 0 2px rgba(242, 194, 48, .55); }
+.ach-near .ach b { color: #FBF8EF; }
+.ach-near-t { color: var(--gold); }
+/* ----- fim E5 ----- */

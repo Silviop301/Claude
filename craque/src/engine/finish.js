@@ -86,18 +86,25 @@
     if (T.ballon >= 3) verdict = 'Um dos maiores da história';
     else if (T.wc >= 1) verdict = T.wc > 1 ? 'Multicampeão do mundo' : 'Campeão do mundo';
     else if (T.ballon >= 1) verdict = 'Melhor do mundo';
-    else if (T.goals >= 360) verdict = 'Artilheiro histórico';
-    else if (c.pos === 'GOL' && (T.cs || 0) >= 230) verdict = 'Paredão';
-    else if (c.pos === 'ZAG' && (T.cs || 0) >= 210) verdict = 'Xerife da defesa';
-    else if (c.pos === 'ZAG' && T.goals >= 40) verdict = 'Zagueiro artilheiro';
-    else if (idol && idol[1].seasons >= 8 && (c.fansBy[idol[0]] || 0) >= 75) verdict = 'Ídolo eterno ' + D.do(D.CLUB_BY_ID[idol[0]].name);
-    else if (titles >= 14) verdict = 'Colecionador de taças';
-    else if (c.peak < 66) verdict = 'Promessa que não vingou';
-    else if (nClubs >= 11) verdict = 'Cigano da bola';
-    else if (c.spells.filter(s => D.MONEY.includes(D.CLUB_BY_ID[s.club].league)).reduce((n, s) => n + s.seasons, 0) >= 3) verdict = 'Foi atrás do dinheiro';
-    else if (c.spells.filter(s => D.CLUB_BY_ID[s.club].tier >= 4).reduce((n, s) => n + s.seasons, 0) >= 6) verdict = 'Estrela na Europa';
-    else if ((c.trophies['Brasileirão'] || { n: 0 }).n >= 2) verdict = 'Rei do Brasileirão';
-    else verdict = 'Carreira sólida';
+    else {
+      // Abaixo do topo (Bolas de Ouro e Copa), vence o feito mais acima do próprio limiar (valor ÷ limiar).
+      // Limiares calibrados com craque_sim para nenhum veredito passar de ~30% em uma posição.
+      const sum = f => c.spells.filter(f).reduce((n, s) => n + s.seasons, 0);
+      const feats = [
+        ['Artilheiro histórico', T.goals / 330],
+        ['Paredão', c.pos === 'GOL' ? (T.cs || 0) / 290 : 0],
+        ['Xerife da defesa', c.pos === 'ZAG' ? (T.cs || 0) / 280 : 0],
+        ['Zagueiro artilheiro', c.pos === 'ZAG' ? T.goals / 50 : 0],
+        ['Ídolo eterno ' + (idol ? D.do(D.CLUB_BY_ID[idol[0]].name) : ''), idol && (c.fansBy[idol[0]] || 0) >= 75 ? idol[1].seasons / 7 : 0],
+        ['Colecionador de taças', titles / 12],
+        ['Cigano da bola', nClubs / 11],
+        ['Foi atrás do dinheiro', sum(s => D.MONEY.includes(D.CLUB_BY_ID[s.club].league)) / 3],
+        ['Estrela na Europa', sum(s => D.CLUB_BY_ID[s.club].tier >= 4) / 11],
+        ['Rei do Brasileirão', (c.trophies['Brasileirão'] || { n: 0 }).n / 2],
+      ];
+      const best = feats.reduce((b, x) => x[1] >= 1 && (!b || x[1] > b[1]) ? x : b, null);
+      verdict = best ? best[0] : c.peak < 66 ? 'Promessa que não vingou' : 'Carreira sólida';
+    }
     const grade = S.gradeOf(score);
     const mainClub = idol ? idol[0] : c.club;
     return { score, verdict, grade, titles, nClubs, bonus, mainClub, parts };

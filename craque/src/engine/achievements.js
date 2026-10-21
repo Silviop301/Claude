@@ -46,6 +46,10 @@
     { id: 'rico', icon: '💰', tone: 'gold', name: 'Magnata', desc: 'Termine com R$ 400 mi de patrimônio', test: c => c.money >= 4e8 },
   ];
 
+  // Progresso das conquistas de número (tela de Conquistas): campo do recorde no salão (HALL) e alvo
+  const PROG = { g300: ['goals', 300], g500: ['goals', 500], a200: ['assists', 200], muralha: ['cs', 330, ['ZAG', 'GOL']], pegador: ['penSaved', 35], ouro3: ['ballon', 3], icone: ['peak', 85], n95: ['peak', 95] };
+  S.ACHIEVEMENTS.forEach(a => { if (PROG[a.id]) a.prog = { k: PROG[a.id][0], of: PROG[a.id][1], pos: PROG[a.id][2] }; });
+
   // Lista das conquistas desta carreira (ids)
   S.achievementsOf = function (c, f) {
     return S.ACHIEVEMENTS.filter(a => { try { return a.test(c, f); } catch (e) { return false; } }).map(a => a.id);
