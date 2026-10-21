@@ -1,9 +1,16 @@
 // Bola 3D da tela inicial. Só enfeite: carrega depois da tela aparecer e, se falhar, nada acontece.
 // Gira sozinha e dá para girar com o dedo.
-// Endereços completos (versão +esm do jsDelivr): funcionam mesmo onde o import map é ignorado (alguns navegadores Android)
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.184.0/+esm';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/loaders/GLTFLoader.js/+esm';
-import { RoomEnvironment } from 'https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/environments/RoomEnvironment.js/+esm';
+// three.js servido pelo próprio site (lib/three): não depende do jsDelivr nem de import map
+import * as THREE from '../lib/three/three.module.js';
+import { GLTFLoader } from '../lib/three/GLTFLoader.js';
+import { RoomEnvironment } from '../lib/three/RoomEnvironment.js';
+// Falha do 3D vai para o registro de erros (craque_erros.py): o erro nasce dentro da biblioteca e não era registrado
+const report3d = (() => { const seen = new Set(); return (what, e) => { if (seen.has(what)) return; seen.add(what);
+  window.CLIMBIX_REPORT && window.CLIMBIX_REPORT('3D: ' + what + (e ? ': ' + ((e && e.message) || e) : ''), e && e.stack); }; })();
+// O navegador pode descartar o 3D (memória da placa de vídeo): registra uma vez por tipo
+function watchLost(renderer, what) {
+  renderer.domElement.addEventListener('webglcontextlost', () => report3d('contexto perdido (' + what + ')'), { once: true });
+}
 // Aparelho bem fraco (até 2 núcleos ou até 2 GB): 3D com resolução um pouco menor (os quadros por segundo não mudam)
 const WEAK = (navigator.hardwareConcurrency || 8) <= 2 || (navigator.deviceMemory || 8) <= 2;
 const DPR = () => Math.min(devicePixelRatio || 1, WEAK ? 1.25 : 2);
@@ -36,8 +43,10 @@ function mount(el) {
   el.dataset.on = '1';
   // A bola desenhada (3D demorou a chegar) sai: o 3D toma o lugar dela
   el.classList.remove('flat');
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true }); } catch (e) { delete el.dataset.on; report3d('sem WebGL', e); throw e; }
+  watchLost(renderer, 'bola');
   el.querySelectorAll('img').forEach(i => i.remove());
-  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches || weakGPU(renderer);
   renderer.setPixelRatio(DPR());
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -339,6 +348,7 @@ function card3d(host, data, opts) {
   return cardReady().then(async model => {
     if (!host.isConnected) return null;
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    watchLost(renderer, 'carta');
     renderer.setPixelRatio(DPR());
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -503,7 +513,7 @@ function card3d(host, data, opts) {
       dispose() { cancelAnimationFrame(raf); if (io) io.disconnect(); removeEventListener('resize', fit); removeEventListener('deviceorientation', onTilt); renderer.dispose(); pm.dispose(); cv.remove(); },
     };
     return api;
-  }).catch(e => { console.warn('carta 3D', e); return null; });
+  }).catch(e => { console.warn('carta 3D', e); report3d('carta', e); return null; });
 }
 
 // ---------- Jornal 3D ----------
@@ -685,5 +695,6 @@ function newspaper(host, page, onClose) {
 
 window.CRAQUE_BALL = { mount, flyer, goal, card3d, newspaper, snapshot };
 // Este módulo carrega depois da tela aparecer: monta a bola se a tela inicial estiver aberta (e o 3D ligado)
-if (!window.CLIMBIX_CFG || window.CLIMBIX_CFG.fx3d !== false) mount(document.getElementById('ball3d'));
+// (sem WebGL: a tela inicial põe a bola desenhada; o aviso de pronto sai do mesmo jeito)
+if (!window.CLIMBIX_CFG || window.CLIMBIX_CFG.fx3d !== false) { try { mount(document.getElementById('ball3d')); } catch (e) { /* registrado em mount */ } }
 window.dispatchEvent(new Event('craque-ball-ready'));
