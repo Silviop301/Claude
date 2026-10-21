@@ -2363,14 +2363,40 @@ details.more .src-card { margin: 2px 0 8px; }
 .mo-verdict.in { opacity: 1; transform: none; }
 .mo-verdict small { display: block; margin-top: 3px; font: 600 14px var(--body); color: var(--text-2); }
 .mo-hint { margin: 0; text-align: center; font-size: 12px; color: var(--label); }
-.mo-rcard { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
-.mo-rcard h3 { margin: 0; text-align: center; font: var(--t-h1); color: var(--paper); text-wrap: balance; }
-.mo-meter { position: relative; height: 54px; border-radius: 14px; overflow: hidden; display: flex; font: 800 19px var(--display); color: #fff; }
-.mo-meter .win { background: var(--green); display: grid; place-items: center; }
-.mo-meter .lose { background: var(--red); display: grid; place-items: center; flex: 1; }
-.mo-needle { position: absolute; top: -6px; bottom: -6px; left: 0; width: 6px; margin-left: -3px; border-radius: 3px; background: var(--paper); box-shadow: 0 0 0 2px var(--ink), 0 4px 14px rgba(0, 0, 0, .5); }
-.mo-roll.is-ok .mo-meter .win, .mo-roll.is-ko .mo-meter .lose { box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .7); }
-.mo-legend { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--text-2); }
+.mo-rcard { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.mo-rk { font: var(--t-label); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.mo-rcard h3 { margin: 0 0 16px; text-align: center; font: var(--t-h1); color: var(--paper); text-wrap: balance; }
+/* Roleta: verde do tamanho exato da chance (--g), marcas a cada 10 números, aro claro */
+.mo-wbox { --wd: min(270px, 68vw, 42svh); position: relative; width: var(--wd); aspect-ratio: 1; }
+html.desk .mo-wbox { --wd: min(270px, 68vw, calc(42svh / var(--z, 1))); }
+.mo-wheel { position: absolute; inset: 0; border-radius: 50%; will-change: transform;
+  background: radial-gradient(circle, transparent 57%, rgba(0, 0, 0, .14) 57.5% 58.5%, transparent 59%),
+    repeating-conic-gradient(rgba(255, 255, 255, .5) 0 .7deg, transparent .7deg 36deg),
+    repeating-conic-gradient(rgba(0, 0, 0, .12) 0 .5deg, transparent .5deg 3.6deg),
+    conic-gradient(#2BB868 0 var(--g), #1E8F50 var(--g) var(--g), #E04B55 var(--g) 360deg);
+  box-shadow: 0 0 0 5px var(--paper), 0 0 0 7px rgba(0, 0, 0, .35), 0 14px 40px rgba(0, 0, 0, .55), inset 0 0 0 3px rgba(0, 0, 0, .15); }
+.mo-wheel::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 35% 25%, rgba(255, 255, 255, .22), transparent 55%); }
+.mo-wl { position: absolute; left: 50%; top: 50%; font: 800 clamp(20px, 6vw, 26px) var(--display); color: #fff; text-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+  transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(var(--wd) * -.37)); }
+.mo-pin { position: absolute; z-index: 2; left: 50%; top: -14px; width: 26px; height: 32px; margin-left: -13px; background: var(--gold);
+  clip-path: polygon(0 0, 100% 0, 100% 45%, 50% 100%, 0 45%); filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .5)); }
+.mo-hub { position: absolute; left: 50%; top: 50%; width: 34%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; display: grid; place-content: center; text-align: center;
+  background: var(--ink); color: var(--paper); box-shadow: 0 0 0 4px var(--paper), 0 6px 16px rgba(0, 0, 0, .4); transition: background .15s; }
+.mo-hub b { font: 800 clamp(28px, 9vw, 38px)/1 var(--display); font-variant-numeric: tabular-nums; }
+.mo-hub small { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
+.mo-hub.w b { color: #6EE7A0; } .mo-hub.l b { color: #FF8A92; }
+.mo-roll.is-ok .mo-hub { background: var(--green); } .mo-roll.is-ko .mo-hub { background: var(--red); }
+.mo-roll.is-ok .mo-hub b, .mo-roll.is-ko .mo-hub b { color: #fff; }
+.mo-roll.is-ok .mo-hub, .mo-roll.is-ko .mo-hub { animation: mo-pop .35s ease; }
+.mo-roll.is-ok .mo-pin, .mo-roll.is-ko .mo-pin { animation: mo-nod .4s ease; }
+@keyframes mo-pop { 40% { transform: translate(-50%, -50%) scale(1.14); } }
+@keyframes mo-nod { 30% { transform: translateY(5px); } }
+.mo-keys { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; font-size: 13px; color: var(--text-2); margin-top: 6px; }
+.mo-keys span { display: inline-flex; align-items: center; gap: 6px; }
+.mo-keys i { width: 10px; height: 10px; border-radius: 3px; background: #2BB868; } .mo-keys .l i { background: #E04B55; }
+.mo-out { min-height: 1.4em; margin: 0; font: 700 18px var(--display); color: var(--paper); opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s; }
+.mo-roll.is-ok .mo-out, .mo-roll.is-ko .mo-out { opacity: 1; transform: none; }
+.mo-roll.is-ok .mo-out b { color: #6EE7A0; } .mo-roll.is-ko .mo-out b { color: #FF8A92; }
 @media (prefers-reduced-motion: reduce) { .mo-wrap, .mo-wrap * { animation: none !important; transition: none !important; } }
 .mo-move { background: radial-gradient(110% 70% at 50% 40%, color-mix(in srgb, var(--kit, #145235) 55%, #082015), #082015 78%); }
 .mo-mcard { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; color: var(--paper); }
@@ -2672,8 +2698,21 @@ button.mc-at .price .tw { width: 13px; height: 13px; }
 button.mc-at:not(:disabled):active { transform: scale(.96); }
 button.mc-at:disabled { cursor: default; }
 button.mc-at.poor .price { opacity: .5; }
+/* Liberado x bloqueado: o que dá para treinar fica em relevo com o preço numa pílula verde; sem estrelas
+   (ou no máximo) fica chapado, tracejado e apagado. O rótulo da faixa ganha uma linha só dele acima da grade */
+.mcard.trainable { padding-top: 26px; }
+.mcard.trainable .mc-tier { top: 8px; right: 16px; }
+button.mc-at:not(:disabled) { background: rgba(255, 255, 255, .5); border-color: color-mix(in srgb, currentColor 40%, transparent);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .8); }
+button.mc-at:not(:disabled) .price { padding: 1px 6px 1px 7px; border-radius: 9px; background: #0E6A35; color: #fff; text-shadow: none; }
+button.mc-at:disabled { background: transparent; border-style: dashed; box-shadow: none; }
+button.mc-at:disabled > b, button.mc-at:disabled > span, button.mc-at:disabled .pips { opacity: .45; }
+button.mc-at.poor .price { opacity: .55; }
+.mcard.icone button.mc-at:not(:disabled) { background: rgba(255, 255, 255, .16); box-shadow: 0 2px 0 rgba(0, 0, 0, .5), inset 0 1px 0 rgba(244, 214, 117, .35); }
+.mcard.icone button.mc-at:not(:disabled) .price { background: #7BE3A0; color: #0B0914; }
+.mcard.icone button.mc-at:disabled { background: transparent; }
 button.mc-at.full .price { opacity: .65; text-transform: uppercase; }
-button.mc-at.up { background: rgba(255, 255, 255, .42); }
+button.mc-at.up { background: rgba(255, 255, 255, .75); }
 .mcard.icone button.mc-at.up { background: rgba(123, 227, 160, .15); }
 .mc-hint { grid-column: 1 / -1; margin: 2px 0 0; font: 700 12px var(--display); letter-spacing: .04em; text-align: center; opacity: .8; display: flex; align-items: center; justify-content: center; gap: 4px; }
 .pick-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 16px 0 -4px; }

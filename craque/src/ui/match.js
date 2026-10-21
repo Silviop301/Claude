@@ -72,11 +72,13 @@
       const fxRow = r.gain && r.gain.length ? '<div class="er-fx">' + (dOvr ? '<span class="er-ovr' + (dOvr > 0 ? ' up' : ' down') + '">Nota geral ' + r.ovrFrom + ' → ' + o1 + '</span>' : '') +
         r.gain.map(g => '<span class="' + kind(g).trim() + '">' + esc(g) + '</span>').join('') + '</div>' : '';
       const pctx = { kind: 'event', ok: r.ok, ev, opt: +b.dataset.i, toClub: offer && b.dataset.i === '0' ? G.c.club : null };
-      // Opção arriscada: o ponteiro corre sobre a chance e para no resultado que já saiu (motion.js)
+      // Opção arriscada: a roleta gira e para no número que já saiu (motion.js)
       const st = ev.options[+b.dataset.i].st;
       // Carimbo do resultado: arriscada deu certo/errado; segura é tranquila; proposta de clube não leva carimbo
       const stamp = st ? (st.safe ? (r.ok ? 'calm' : '') : r.ok ? 'ok' : 'ko') : offer ? '' : r.ok ? 'ok' : 'ko';
       const STAMP = { ok: 'Deu certo', ko: 'Deu errado', calm: 'Tranquilo' };
+      // Já resolvido: salva antes da animação, para fechar e voltar não sortear de novo
+      G.step = 'moment'; save();
       U.riskRoll(st && !st.safe ? st.p : 0, r.ok, ev.options[+b.dataset.i].label, () => U.transferMove(prevClub, G.c.club, G.c.name, () => {
       render(
         '<div class="card ev-res ob3-res ' + (r.ok ? 'ok' : 'ko') + (stamp === 'calm' ? ' calm' : '') + '">' + (stamp ? '<span class="ob3-stamp s-' + stamp + '">' + STAMP[stamp] + '</span>' : '') +
@@ -86,7 +88,7 @@
       );
       $('b-next').onclick = momentOrSeason;
       U.postBind(pctx, momentOrSeason);
-      }));
+      }), r.roll);
     });
   }
 

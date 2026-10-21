@@ -192,6 +192,10 @@
   S.textAt = (c, key, n, used) => (S.TEXT_PICK ? S.TEXT_PICK(key, n) % n : (hstr(String(c.tseed != null ? c.tseed : c.name + c.pos + c.country) + '|' + key) + (used || 0)) % n);
   // Destaques: contador próprio por tipo (guardado na carreira)
   S.textPick = (c, key, arr) => { const u = (c.txtUsed = c.txtUsed || {}); const i = S.textAt(c, key, arr.length, u[key] || 0); u[key] = (u[key] || 0) + 1; return arr[i]; };
+  // Decisão arriscada: a chance vira um inteiro de 1 a 99 (o que a tela mostra) e o sorteio sai de 1 a 100.
+  // Deu certo quando roll <= pct: com 62%, saem 62 números verdes em 100. A animação para no número sorteado.
+  S.pct = p => Math.max(1, Math.min(99, Math.round(p * 100)));
+  S.roll100 = r => Math.floor(r() * 100) + 1;
   const rngOf = c => {
     const r = S.rng(c.seed);
     return { r, save: () => { c.seed = r.state(); } };

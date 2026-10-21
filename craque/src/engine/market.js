@@ -251,11 +251,11 @@
     const sq = S.benchCase(c);
     if (!sq || sq.talk) return sq && sq.talk;
     const { r, save } = rngOf(c);
-    const ok = r() < S.talkChance(c);
+    const p = S.pct(S.talkChance(c)), roll = S.roll100(r), ok = roll <= p;
     save();
     if (ok) { c.promise = 0.22; bump(c, 'coach', S.SQUAD_FX.talkOk); }
     else bump(c, 'coach', S.SQUAD_FX.talkKo);
-    sq.talk = { ok, text: ok ? 'O técnico ouviu e prometeu mais minutos na próxima temporada. Agora é aproveitar.' : 'O técnico não gostou da cobrança. A relação esfriou e nada mudou.' };
+    sq.talk = { ok, roll, p, text: ok ? 'O técnico ouviu e prometeu mais minutos na próxima temporada. Agora é aproveitar.' : 'O técnico não gostou da cobrança. A relação esfriou e nada mudou.' };
     sq.done = true;
     return sq.talk;
   };
