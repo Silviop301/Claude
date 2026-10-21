@@ -2985,12 +2985,12 @@ button.offer.of-sign .arm-back small { font: 600 12px var(--body); opacity: .85;
 @media (prefers-reduced-motion: reduce) { .ob5-min i { animation: none; } }
 /* Tela larga: placar e lance à esquerda; estilos e botões à direita */
 @media (min-width: 1000px) {
-  #app:has(#screen > .ob5-board) { max-width: 1000px; }
-  #screen:has(> .ob5-board) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 28px; align-items: start; grid-auto-flow: dense; }
-  #screen:has(> .ob5-board) > * { grid-column: 1; }
-  #screen:has(> .ob5-board) > .ob5-q { grid-column: 2; grid-row: 1; align-self: end; margin: 0; }
-  #screen:has(> .ob5-board) > .ob5-styles { grid-column: 2; grid-row: 2 / span 3; }
-  #screen:has(> .ob5-board) > .ob5-foot { grid-column: 2; grid-row: 5; }
+  #app:has(#screen > .ob5-head) { max-width: 1000px; }
+  #screen:has(> .ob5-head) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 28px; align-items: start; grid-auto-flow: dense; }
+  #screen:has(> .ob5-head) > * { grid-column: 1; }
+  #screen:has(> .ob5-head) > .ob5-q { grid-column: 2; grid-row: 1; align-self: end; margin: 0; }
+  #screen:has(> .ob5-head) > .ob5-styles { grid-column: 2; grid-row: 2 / span 3; }
+  #screen:has(> .ob5-head) > .ob5-foot { grid-column: 2; grid-row: 5; }
   .btn.opt.style.ob5-st { min-height: 200px; }
 }
 
@@ -3111,7 +3111,7 @@ details.fin-more.o6-panel:not([open]) { display: none; }
 }
 /* Computador: nas grades de 2 colunas a dica fica na coluna das escolhas, sem quebrar a grade */
 @media (min-width: 1000px) {
-  #screen:has(> .ob5-board) > .tip-card { grid-column: 2; grid-row: 6; }
+  #screen:has(> .ob5-head) > .tip-card { grid-column: 2; grid-row: 6; }
   #screen:has(> .of-rail) > .tip-card { max-width: 520px; width: 100%; margin-left: auto; margin-right: auto; }
 }
 /* Temporada ao vivo: a nota anda junto com os números e ganha a cor da faixa (abaixo de 6,3 · até 6,9 · 7,0 ou mais, como "Boa temporada") */
@@ -3212,3 +3212,60 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 .ach-near .ach b { color: #FBF8EF; }
 .ach-near-t { color: var(--gold); }
 /* ----- fim E5 ----- */
+
+/* ----- E6: placar escuro no lance inteiro e "pouco espaço" no formato O3 ----- */
+/* Faixa baixa do placar (O5) em cima da cena do minigame e do treino (ui/match.js board, ui/training.js) */
+.ob5-board.mini { gap: 8px; padding: 7px 12px; border-radius: 14px; min-height: 52px; box-shadow: 0 6px 16px rgba(0, 0, 0, .3); }
+.ob5-board.mini .crest { width: 30px; height: 30px; }
+.ob5-board.mini .ob5-g { font-size: 28px; min-width: 16px; }
+.ob5-board.mini .ob5-mid { flex-direction: row; justify-content: center; gap: 8px; }
+.ob5-board.mini .ob5-min { font-size: 17px; }
+.ob5-board.mini .ob5-x { font-size: 18px; }
+.ob5-board.mini small { font-size: 10.5px; }
+/* A cena perde a altura que a faixa ocupa (o rótulo de cima saiu; a faixa é ~30 px maior) */
+.ob5-board.mini + #kick { min-height: calc(100svh - var(--bar-h, 0px) - env(safe-area-inset-top, 0px) - 150px); }
+@media (min-width: 1280px) and (min-height: 860px) {
+  html.desk .ob5-board.mini + #kick { min-height: calc(100svh / var(--z) - var(--bar-h, 0px) - 150px); }
+}
+/* Treino: "TREINO" no lugar do minuto, acertos de quantas tentativas no lugar do placar */
+.trn-board { justify-content: space-between; }
+.trn-board .ob5-mid { flex: 1; }
+.ob5-min.trn-live { color: var(--gold); text-transform: uppercase; letter-spacing: .08em; }
+.ob5-min.trn-live::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
+.trn-sc { display: flex; align-items: baseline; gap: 4px; flex: none; max-width: 34%; }
+.trn-sc b { font: 800 28px/1 var(--display); font-variant-numeric: tabular-nums; color: #fff; }
+.trn-sc small { font: 700 11px/1.15 var(--display); letter-spacing: .1em; text-transform: uppercase; color: #9DB5A6; text-align: right; }
+/* Treino: os passos como três cartões numerados; pular vira link */
+.trn-steps.ob5-steps { list-style: none; padding: 0; background: none; gap: 10px; }
+.ob5-steps li { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 16px; background: #050A07; border: 1px solid rgba(255, 255, 255, .12); }
+.ob5-steps li > b { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--gold); color: var(--ink); font: 800 19px/1 var(--display); }
+.ob5-steps li > span { padding-top: 6px; }
+.trn-skip-link { align-self: center; min-height: 44px; padding: 0 12px; border: 0; background: none; color: #CFE3D6; font: 600 15px var(--body); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+/* Resultado do lance no campo escuro: título grande e texto, sem o cartão creme */
+.ob5-res { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 6px 4px 2px; animation: enter .3s ease-out; }
+.ob5-res .mr-big { font: 800 58px/1 var(--display); letter-spacing: .02em; animation: mr-pop .7s cubic-bezier(.2, 1.6, .4, 1); }
+.ob5-res.ok .mr-big { color: #5FD690; text-shadow: 0 0 26px rgba(95, 214, 144, .45); }
+.ob5-res.ko .mr-big { color: #FF6B73; }
+.ob5-res .mr-txt { margin: 0; font: 600 16px/1.4 var(--body); color: #E3EEE7; text-wrap: pretty; }
+.trn .ob5-res .mr-big { font-size: 48px; }
+/* O gol entra contando no placar */
+.ob5-g.bump { animation: ob5-bump .6s cubic-bezier(.2, 1.6, .4, 1); color: var(--gold); }
+@keyframes ob5-bump { 0% { transform: scale(.4); opacity: 0; } 60% { transform: scale(1.35); opacity: 1; } 100% { transform: none; } }
+/* Título grande ganho no lance: faixa dourada com a taça */
+.ob5-prize { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 16px; background: linear-gradient(135deg, #F4D675, #E0A800 60%, #B8860B);
+  color: var(--ink); box-shadow: 0 10px 26px rgba(224, 168, 0, .35); animation: mr-pop .7s cubic-bezier(.2, 1.6, .4, 1) .25s both; }
+.ob5-prize svg, .ob5-prize img { width: 52px; height: 52px; object-fit: contain; flex: none; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .3)); }
+.ob5-prize span { display: flex; flex-direction: column; min-width: 0; }
+.ob5-prize small { font: 700 12px var(--display); letter-spacing: .18em; text-transform: uppercase; opacity: .8; }
+.ob5-prize b { font: 800 26px/1.05 var(--display); text-transform: uppercase; }
+/* Confete curto (uma queda só), por cima de tudo e sem pegar o toque */
+.ob5-confetti { position: fixed; inset: 0; z-index: 90; pointer-events: none; overflow: hidden; }
+.ob5-confetti i { animation-iteration-count: 1; animation-fill-mode: both; }
+@media (prefers-reduced-motion: reduce) { .ob5-g.bump, .ob5-prize, .ob5-res .mr-big { animation: none; } }
+@media (max-width: 360px) { .ob5-res .mr-big { font-size: 48px; } .ob5-board.mini .ob5-g { font-size: 24px; } .ob5-board.mini .crest { width: 26px; height: 26px; } .ob5-prize b { font-size: 22px; } }
+@media (min-width: 1000px) { #app:has(#screen > .ob5-res) { max-width: 560px; } }
+/* Pouco espaço (ui/offers.js squad): faixa com as cores do clube no lugar da cor do tom; escudo no círculo */
+.event-card.ob3.sq-card::before { background: linear-gradient(90deg, var(--k1) 0 50%, var(--k2) 50% 100%); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .15); }
+.event-card.ob3.sq-card .ob3-ic .crest { width: 62px; height: 62px; margin: 0; }
+.event-card.ob3.sq-card .ob3-txt b { color: var(--ink); }
+/* ----- fim E6 ----- */

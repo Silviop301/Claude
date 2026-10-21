@@ -245,21 +245,23 @@
     const v = 0.35 + (rating - 6.6) * 0.35 + (c.rel.coach - REL0) / 150 + (S.ovr(c) - club.strength + 5) / 25;
     return clampN(v, 0.1, 0.85);
   };
+  // Quanto muda a relação em cada saída do "pouco espaço" (a tela mostra estes números)
+  S.SQUAD_FX = { talkOk: 3, talkKo: -10, outCoach: -5, outFans: -5 };
   S.coachTalk = function (c) {
     const sq = S.benchCase(c);
     if (!sq || sq.talk) return sq && sq.talk;
     const { r, save } = rngOf(c);
     const ok = r() < S.talkChance(c);
     save();
-    if (ok) { c.promise = 0.22; bump(c, 'coach', 3); }
-    else bump(c, 'coach', -10);
+    if (ok) { c.promise = 0.22; bump(c, 'coach', S.SQUAD_FX.talkOk); }
+    else bump(c, 'coach', S.SQUAD_FX.talkKo);
     sq.talk = { ok, text: ok ? 'O técnico ouviu e prometeu mais minutos na próxima temporada. Agora é aproveitar.' : 'O técnico não gostou da cobrança. A relação esfriou e nada mudou.' };
     sq.done = true;
     return sq.talk;
   };
   S.askOut = function (c) {
     c.wantsOut = true;
-    bump(c, 'fans', -5); bump(c, 'coach', -5);
+    bump(c, 'fans', S.SQUAD_FX.outFans); bump(c, 'coach', S.SQUAD_FX.outCoach);
     if (c.squad) c.squad.done = true;
   };
   S.stayAndFight = function (c) { if (c.squad) c.squad.done = true; };

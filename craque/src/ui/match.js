@@ -196,17 +196,20 @@
     return '<p class="ob5-rival">' + U.emo('⚔️', 'xs') + '<span>Do outro lado: <b>' + esc(m.rival) + '</b>, seu rival de geração' + (d ? ' · duelos diretos ' + d.w + ' x ' + d.l : '') + '</span></p>';
   }
 
+  // Placar escuro do lance (O5): escudos, gols, minuto ao vivo e a competição. mini: faixa baixa em cima da cena (minigame)
+  function board(m, sc, tag, mini) {
+    return '<div class="ob5-board' + (sc ? '' : ' no-score') + (mini ? ' mini' : '') + '">' + crest(G.c.club) + '<b class="ob5-g">' + (sc ? sc[0] : '') + '</b>' +
+      '<span class="ob5-mid">' + (m.minute ? '<span class="ob5-min"><i aria-hidden="true"></i>' + m.minute + "'</span>" : '<span class="ob5-x">×</span>') + '<small>' + esc(tag) + '</small></span>' +
+      '<b class="ob5-g">' + (sc ? sc[1] : '') + '</b>' + crest(m.vs) + '</div>';
+  }
+
   function momentIntro(m) {
     const st = S.kickSetupType(m), def = st === 'save' || st === 'tackle';
     const T = def ? DEF_TXT(m, st) : st === 'pass' ? PASS_TXT(m) : MOMENT_TXT[m.type](m), k = S.kickSetup(G.c, st, S.autoStyle(G.c, st));
     // Estilo ousado: placar escuro (escudos, minuto ao vivo, competição), título grande, o que vale em dourado,
     // o que pesa da carta e os dois estilos como cartões grandes; decidir no automático e treinar no rodapé.
-    const sc = m.score || ['', ''];
     render(
-      '<div class="eyebrow">Jogo decisivo</div>' +
-      '<div class="ob5-board' + (m.score ? '' : ' no-score') + '">' + crest(G.c.club) + '<b class="ob5-g">' + sc[0] + '</b>' +
-        '<span class="ob5-mid">' + (m.minute ? '<span class="ob5-min"><i aria-hidden="true"></i>' + m.minute + "'</span>" : '<span class="ob5-x">×</span>') + '<small>' + esc(T.tag) + '</small></span>' +
-        '<b class="ob5-g">' + sc[1] + '</b>' + crest(m.vs) + '</div>' +
+      '<div class="eyebrow">Jogo decisivo</div>' + board(m, m.score, T.tag) +
       '<div class="ob5-head"><h2>' + T.title + '</h2><p class="ob5-stakes">' + U.emo('🏆', 'xs') + '<span>' + esc(T.stakes) + '</span></p>' +
         '<p class="ob5-txt">' + (m.ctx ? esc(m.ctx) + ' ' : '') + esc(T.text) + '</p>' + rivalTag(m) + '</div>' +
       '<div class="chips ob5-facts">' + miniFacts(st).join('') + '</div>' +
@@ -221,7 +224,8 @@
     // Primeiro lance deste tipo: o treino abre antes (e dá para pular)
     bindStyle(m, U.gateTrain(st, () => {
       m.started = true; save();
-      render('<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div><div id="kick"></div>');
+      // O placar escuro continua em cima da cena, numa faixa baixa (placar, minuto e competição)
+      render(board(m, m.score, T.tag, true) + '<div id="kick"></div>');
       sfx('whistle');
       // Saiu da tela no meio da cobrança (voltou ao início): o resultado não redesenha nada; ao retomar, a chance decide
       playMini($('kick'), st, (ok, why) => { if (!$('kick')) return; momentEnd(m, ok, T, why); }, null, null, m.style);
@@ -263,19 +267,42 @@
     const def = st === 'save' || st === 'tackle';
     const sc = m.score ? [m.score[0] + (!def && ok ? 1 : 0), m.score[1] + (def && !ok ? 1 : 0)] : null;
     const big = def ? (ok ? (st === 'save' ? 'DEFENDEU!' : 'ROUBOU!') : 'Gol deles…') : ok ? 'GOOOL!' : st === 'pass' ? 'Cortado…' : 'Não entrou…';
+    // Título grande (final continental ou liga principal) ganho no lance: faixa dourada, confete curto e "Comemorar"
+    const LD = D.LADDER[club(G.c.club).league];
+    const fest = ok && (m.type === 'cont' || (m.type === 'title' && !(LD && LD.up)));
+    // O mesmo placar escuro da abertura: mostra o placar de antes e o gol entra contando logo depois
+    const side = sc && sc[0] !== m.score[0] ? 0 : sc && sc[1] !== m.score[1] ? 1 : -1;
     render(
       '<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div>' +
-      '<div class="card mom-res ' + (ok ? 'ok' : 'ko') + '">' +
-      (sc ? '<div class="mom-board">' + crest(G.c.club) + '<b>' + sc[0] + ' × ' + sc[1] + '</b>' + crest(m.vs) + '<span class="mom-min">' + (m.minute || 90) + "'</span></div>" : '') +
-      '<div class="mr-big">' + big + '</div><p class="mr-txt">' + final + '</p></div>' +
-      '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn({ kind: 'moment', ok, m }), { center: true }
+      board(Object.assign({}, m, { minute: m.minute || 90 }), m.score, T.tag) +
+      '<div class="ob5-res ' + (ok ? 'ok' : 'ko') + '"><div class="mr-big">' + big + '</div><p class="mr-txt">' + final + '</p></div>' +
+      (fest ? '<div class="ob5-prize">' + trophy(titleType({ id: m.type === 'cont' ? 'cont' : 'league', name: m.comp }), 52, m.comp) +
+        '<span><small>Campeão</small><b>' + esc(m.comp) + '</b></span></div>' : '') +
+      '<button class="btn" id="b-next">' + (fest ? 'Comemorar' : 'Jogar a temporada') + '</button>' + U.postBtn({ kind: 'moment', ok, m }), { center: true }
     );
+    if (side >= 0) {
+      const g = screen.querySelectorAll('.ob5-board .ob5-g')[side];
+      setTimeout(() => { if (!g.isConnected) return; g.textContent = sc[side]; g.classList.add('bump'); }, 550);
+    }
+    if (fest) confetti();
     if (ok) U.vibe([40, 60, 40]);
     $('b-next').onclick = U.season;
     U.postBind({ kind: 'moment', ok, m, why }, U.season);
     // Final continental: edição extra do jornal
     const btn = $('b-next');
     if (m.type === 'cont') setTimeout(() => { if (btn.isConnected) U.finalPaper(G.c, m, ok); }, 900);
+  }
+
+  // Confete curto por cima da tela (não bloqueia o toque); some sozinho
+  function confetti() {
+    const colors = ['#F4D675', '#FFFFFF', '#5FD690', '#FF8A93', '#7AC7FF'];
+    const w = document.createElement('div');
+    w.className = 'bm-confetti ob5-confetti';
+    w.setAttribute('aria-hidden', 'true');
+    w.innerHTML = Array.from({ length: 28 }, (_, k) => '<i style="left:' + ((k * 37) % 100) + '%;background:' + colors[k % 5] + ';animation-delay:' + ((k * 0.09) % 0.8).toFixed(2) + 's;animation-duration:' + (1.5 + (k % 5) * 0.2).toFixed(2) + 's"></i>').join('');
+    document.body.appendChild(w);
+    sfx('fanfare');
+    setTimeout(() => w.remove(), 2800);
   }
 
   Object.assign(U, { eventOrSeason, eventScreen, momentOrSeason, MOMENT_TXT, momentIntro, momentEnd, momentResult, playMini, miniFacts, MINI_BTN, styleBtns, bindStyle });
