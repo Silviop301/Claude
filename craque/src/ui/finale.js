@@ -130,8 +130,6 @@
       pointsBar(f, rankTxt) +
       '<p class="mo-climb" id="mo-climb" hidden></p>' +
       nextGoal(G.c, f, hall, rank) +
-      // Compartilhar e jogar de novo numa barra presa embaixo, ao alcance do polegar (Desafiar fica logo abaixo, no fluxo)
-      '<div class="fin-acts o6-acts go-bar"><button class="btn" id="b-share">Compartilhar carta</button><button class="btn o6-again" id="b-again">Nova carreira</button></div>' +
       '<div class="o6-dz">' + U.challengeFinale(G.c, f) + '</div>' +
       (prizes ? '<div class="fin-prizes o6-prizes">' + prizes + '</div>' : '') +
       '<div class="o6-links"><button class="link-btn" data-o6="ed">Editar carta</button><button class="link-btn" data-o6="more">Resumo' + (fresh ? ' <em>' + fresh + '</em>' : '') + '</button>' +
@@ -157,7 +155,10 @@
       (f.bonus.length ? '<div class="room-title">Despedida</div><ul class="why">' + f.bonus.map(b => '<li><span>' + esc(b.txt) + '</span><b class="up">+' + b.v + '</b></li>').join('') + '</ul>' : '') +
       U.achBlock(ach) +
       scoreHow(f) +
-      '</div>' + (hall.length > 1 ? U.feedbackCard() : '') + '</details>' // 1ª carreira: a opinião fica na tela inicial
+      '</div>' + (hall.length > 1 ? U.feedbackCard() : '') + '</details>' + // 1ª carreira: a opinião fica na tela inicial
+      // Compartilhar e jogar de novo numa barra presa embaixo, ao alcance do polegar. Fica por último: o degradê dela
+      // passa por baixo do que vem depois, então no meio da tela cortava o Desafiar
+      '<div class="fin-acts o6-acts go-bar"><button class="btn" id="b-share">Compartilhar carta</button><button class="btn o6-again" id="b-again">Nova carreira</button></div>'
     );
     if (!screen.querySelector('.o6-dz').children.length) screen.querySelector('.o6-dz').remove();
     if ($('b-packs')) $('b-packs').textContent = 'Abrir';
