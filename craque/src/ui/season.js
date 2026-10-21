@@ -66,7 +66,9 @@
     const r = S.rng(((G.c && G.c.tseed) || 7) * 31 + res.age * 977 + tb.pos * 13);
     const n = tb.n, R = tb.rounds, up = res.move && res.move.dir === 'up', down = res.move && res.move.dir === 'down';
     let kind, fin;
-    if (tb.pos === 1) { kind = 'title'; fin = tb.lead; }
+    // Lance de acesso na última rodada: a corrida é a do acesso, mesmo terminando entre os primeiros
+    if (tb.m === 'acesso' && tb.promo && tb.pos <= tb.promo + 2) { kind = 'acesso'; fin = up ? r.int(1, 4) : -r.int(1, 4); }
+    else if (tb.pos === 1) { kind = 'title'; fin = tb.lead; }
     else if (tb.pos <= 3 && tb.gap <= 6) { kind = 'title'; fin = -tb.gap; }
     else if (tb.promo && tb.pos <= tb.promo + 2) { kind = 'acesso'; fin = up ? r.int(1, 4) : -r.int(1, 4); }
     else if (tb.releg && tb.pos >= n - tb.releg - 1) { kind = 'degola'; fin = down ? -r.int(1, 4) : r.int(1, 4); }
@@ -182,7 +184,8 @@
   function drawRace(rc, u) {
     const el = $('race');
     if (!el) return;
-    const k = Math.max(0, Math.min(rc.frames.length - 1, Math.floor(u * (rc.frames.length - 1) + 1e-9))), f = rc.frames[k], end = u >= 1;
+    // rc.from: a corrida começa nesse quadro (a reta final já foi vista antes do lance) · rc.open: sem veredito no fim
+    const k = Math.max(rc.from || 0, Math.min(rc.frames.length - 1, Math.floor(u * (rc.frames.length - 1) + 1e-9))), f = rc.frames[k], end = u >= 1 && !rc.open;
     // Só redesenha quando muda o quadro: refazer a tabela a cada quadro reiniciava os escudos, que não chegavam a aparecer
     const key = k + (end ? 'e' : '');
     if (rc.drawn === key && el.firstChild) return;
@@ -200,12 +203,84 @@
       '<p class="rc-lbl ' + tone + '">' + (end ? esc(vd[0]) : esc(raceLabel(rc, f.v, f))) + '</p>';
   }
 
+  // ---------- reta final antes do lance decisivo ----------
+  // Lance de título ou acesso (última rodada) e finais de copa: antes do lance, a liga corre ao vivo até a penúltima
+  // rodada e para empatada (ou o mata-mata chega à final). O resultado só sai no lance; depois a temporada fecha
+  // sem recomeçar a corrida (season: race.from). Só apresentação: o motor joga a temporada depois do lance, como sempre.
+  const PRE_PHASES = ['Oitavas', 'Quartas', 'Semi'];
+  function preRace(m, done) {
+    const c = G.c, cl = club(c.club), LD = D.LADDER[cl.league], cupLike = m.type === 'cup' || m.type === 'cont';
+    const r = S.rng(((c.tseed || 7) * 37 + c.age * 911 + 5) >>> 0);
+    const kit = (window.CRAQUE_KITS || {})[cl.id] || ['#1F6B3E', '#0B1F14'];
+    let rc = null, path = null;
+    if (!cupLike) {
+      // Mesmo tamanho de tabela do motor (no mínimo 20 times, ida e volta)
+      const n = Math.max(20, D.CLUBS.filter(x => x.league === cl.league).length), R = 2 * (n - 1);
+      const kind = m.type === 'title' ? 'title' : 'acesso', promo = (LD && LD.promo) || 4;
+      const rounds = RACE_AT.map(f => Math.max(1, Math.round(R * f))).concat([R - 1]);
+      const v0 = Math.round(r.gauss() * 4);
+      const vals = rounds.map((rd, i) => i === rounds.length - 1 ? 0 : Math.max(-6, Math.min(6, Math.round(v0 * (1 - Math.pow(rd / R, 1.5)) + r.gauss() * (1 - rd / R) * 3))));
+      const posAt = v => { const st = Math.floor(Math.abs(v) / 3);
+        return kind === 'title' ? (v >= 0 ? 1 : Math.min(2 + st, n - 1)) : v >= 0 ? Math.max(2, promo - st) : Math.min(promo + 1 + st, n); };
+      rc = { kind, R, open: true, frames: vals.map((v, i) => ({ rd: rounds[i], v, pos: posAt(v) })) };
+    } else {
+      // Mata-mata até a final: três adversários da copa (do mais fraco ao mais forte), nenhum deles o da final
+      const skip = x => x.id !== cl.id && x.id !== m.vs;
+      let pool = m.type === 'cup' ? S.cupField(cl).slice(0, 16).map(id => D.CLUB_BY_ID[id]).filter(skip)
+        : D.CLUBS.filter(x => skip(x) && S.contName(x) === m.comp && x.league !== cl.league).sort((a, b) => b.strength - a.strength).slice(0, 16);
+      if (pool.length < 3) pool = D.CLUBS.filter(x => skip(x) && x.league === cl.league);
+      const got = [];
+      while (got.length < 3 && pool.length) got.push(pool.splice(r.int(0, pool.length - 1), 1)[0]);
+      path = got.sort((a, b) => a.strength - b.strength);
+    }
+    const head = cupLike ? (m.type === 'cup' ? 'Mata-mata' : 'Fase final') : 'Reta final';
+    render(
+      '<div class="season-head sx-head" style="--k1:' + kit[0] + ';--k2:' + (kit[1] || kit[0]) + '">' + crest(cl.id, 'lg') + '<div class="sx-id"><h2>' + esc(cl.name) + '</h2>' +
+        '<div class="eyebrow">Temporada ' + year() + ' · ' + esc(m.comp) + '</div></div><span class="tag">' + head + '</span></div>' +
+      '<div class="sx-live" id="sx-live"><span class="sx-dot" aria-hidden="true"></span><b id="sx-st">Ao vivo</b><span class="sx-rd" id="sx-rd"></span><i class="sx-prog"><i id="sx-bar"></i></i></div>' +
+      (rc ? '<div class="race" id="race"></div>' : '<div class="race title pr-path" id="pre-path"><div class="rc-top"><span class="rc-rd">Caminho até a final</span></div><div class="rc-tbl" id="pr-rows"></div></div>') +
+      '<div class="pr-duel" id="pr-duel" hidden>' + crest(cl.id) + '<span class="pr-x"><b>' + (cupLike ? 'Final' : 'Última rodada') + '</b>' + esc(cupLike ? 'Contra ' + D.o(club(m.vs).name) + ', jogo único' : 'Empatados em pontos com ' + D.o(club(m.vs).name)) + '</span>' + crest(m.vs) + '</div>' +
+      '<p class="skip-hint" id="skip-hint">Toque para pular</p>'
+    );
+    const steps = rc ? rc.frames.length : path.length;
+    const dur = rc ? 2200 : 1800, t0 = performance.now();
+    let skip = false, shown = 0, finished = false;
+    setTimeout(() => { screen.onclick = () => { if (finished) go(); else skip = true; }; }, 50);
+    const go = () => { if (!$('pr-duel')) return; screen.onclick = null; done(); };
+    const rowOf = (x, i) => '<div class="rt-r pr-row"><i>' + PRE_PHASES[i] + '</i>' + crest(x.id, 'xs') + '<span>' + esc(x.name) + '</span><b>passou</b></div>';
+    (function tick(now) {
+      if (!$('pr-duel')) return; // saiu da tela
+      const u = skip ? 1 : Math.max(0, Math.min(1, (now - t0) / dur));
+      $('sx-bar').style.width = Math.round(u * (rc ? (rc.R - 1) / rc.R : 0.8) * 100) + '%';
+      if (rc) {
+        drawRace(rc, u);
+        const f = rc.frames[Math.max(0, Math.min(steps - 1, Math.floor(u * (steps - 1) + 1e-9)))];
+        $('sx-rd').innerHTML = 'Rodada <b>' + f.rd + '</b><small>/' + rc.R + '</small>';
+        if (!skip && f.rd !== shown) { shown = f.rd; sfx('tick'); }
+      } else {
+        const k = Math.min(steps, Math.floor(u * steps + 1e-9) + 1), rows = $('pr-rows');
+        while (shown < k) { rows.insertAdjacentHTML('beforeend', rowOf(path[shown], shown)); shown++; if (!skip) sfx('tick'); }
+        $('sx-rd').innerHTML = '<b>' + (u >= 1 ? 'Final' : PRE_PHASES[Math.max(0, k - 1)]) + '</b>';
+      }
+      if (u < 1) return requestAnimationFrame(tick);
+      // Parou na véspera da decisão: o duelo aparece e o lance abre sozinho (toque adianta)
+      finished = true;
+      $('sx-live').classList.add('hold');
+      $('sx-st').textContent = rc ? 'Antes da última rodada' : 'Vai começar a final';
+      $('pr-duel').hidden = false;
+      $('skip-hint').textContent = 'Toque para ir ao lance';
+      setTimeout(go, skip ? 900 : 1600);
+    })(t0);
+  }
+
   // Etiqueta do papel: o prometido pelo clube, ou o que de fato aconteceu quando quase não jogou (lesão, técnico, escolhas)
   function roleSeen(res) {
     const sh = res.src && res.src.max ? res.games / res.src.max : 1;
     return sh >= 0.3 || res.role === 'Banco' || res.role === 'Reserva' ? res.role : sh >= 0.15 ? 'Reserva' : 'Banco';
   }
   function season() {
+    // A reta final já passou na tela antes do lance (preRace): a corrida não recomeça da rodada 1
+    const preM = G.c.mod && G.c.mod.moment && G.c.mod.moment.pre ? G.c.mod.moment.type : null;
     const res = S.playSeason(G.c);
     U.rankSave(G.c); // ranking: nota máxima, gols e títulos já contam durante a carreira
     sfx('whistle');
@@ -218,6 +293,7 @@
     const t0c = tierCls(res.ovr0);
     const race = raceOf(res);
     res.race = race ? race.kind : false;
+    if (race && race.last && (preM === 'title' || preM === 'acesso')) race.from = race.frames.length - 1;
     // Cores do clube no topo (as do escudo, as mesmas do fundo da tela)
     const kit = (window.CRAQUE_KITS || {})[cl.id] || ['#1F6B3E', '#0B1F14'];
     render(
@@ -247,7 +323,7 @@
       const bar = $('sx-bar'), rd = $('sx-rd');
       if (!bar) return;
       bar.style.width = Math.round(Math.max(0, Math.min(1, u)) * 100) + '%';
-      if (race) { const f = race.frames[Math.max(0, Math.min(race.frames.length - 1, Math.floor(u * (race.frames.length - 1) + 1e-9)))]; rd.innerHTML = 'Rodada <b>' + f.rd + '</b><small>/' + race.R + '</small>'; }
+      if (race) { const f = race.frames[Math.max(race.from || 0, Math.min(race.frames.length - 1, Math.floor(u * (race.frames.length - 1) + 1e-9)))]; rd.innerHTML = 'Rodada <b>' + f.rd + '</b><small>/' + race.R + '</small>'; }
       else rd.innerHTML = 'Jogo <b>' + now3[0] + '</b><small>/' + (res.src && res.src.max ? res.src.max : res.games) + '</small>';
       // Cada lance entra no topo do ticker numa fração da temporada
       while (hlShown < hls.length && u >= (hlShown + 1) / (hls.length + 1)) {
@@ -265,7 +341,7 @@
     };
     // Com reta final, a temporada dura um pouco mais: a tabela precisa de tempo para virar
     const few = res.src && res.src.max && res.games / res.src.max < 0.15; // do banco não há o que contar: a tela não se arrasta
-    const dur = few ? (race ? 1400 : 800) : race ? (race.kind === 'meio' ? 2200 : 2800) : 1500, t0 = performance.now();
+    const dur = few ? (race ? 1400 : 800) : race && !race.from ? (race.kind === 'meio' ? 2200 : 2800) : 1500, t0 = performance.now();
     if (!few) hls = res.highlights.slice(0, 4);
     let skip = !!U.cfg.fast, shown = [0, 0, 0]; // configuração: resumo rápido
     // Liga o "pular" só depois: o toque que abriu esta tela ainda está se propagando
@@ -553,5 +629,5 @@
     return S.benchCase(G.c) ? U.squad() : U.preseason();
   }
 
-  Object.assign(U, { celebrate, season, lede, showPaper, reveal, summary, afterSeason });
+  Object.assign(U, { celebrate, preRace, season, lede, showPaper, reveal, summary, afterSeason });
 })();

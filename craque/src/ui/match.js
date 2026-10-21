@@ -97,6 +97,9 @@
     G.step = 'moment';
     // Fechou o jogo no meio da cobrança? A chance decide (sem repetir o chute)
     if (m.started || U.cfg.moments === 'auto') { S.autoMoment(G.c); save(); return U.season(); } // configuração: a carta decide
+    // Título, acesso e finais: antes do lance, a reta final corre ao vivo e para na véspera da decisão (ui/season.js).
+    // m.pre fica salvo: quem fecha o jogo e volta cai direto no lance; o fim da temporada não recomeça a corrida.
+    if (m.type !== 'classico' && !m.pre && !U.cfg.fast) { m.pre = true; save(); return U.preRace(m, () => momentIntro(m)); }
     save();
     momentIntro(m);
   }
@@ -278,7 +281,7 @@
       '<div class="ob5-res ' + (ok ? 'ok' : 'ko') + '"><div class="mr-big">' + big + '</div><p class="mr-txt">' + final + '</p></div>' +
       (fest ? '<div class="ob5-prize">' + trophy(titleType({ id: m.type === 'cont' ? 'cont' : 'league', name: m.comp }), 52, m.comp) +
         '<span><small>Campeão</small><b>' + esc(m.comp) + '</b></span></div>' : '') +
-      '<button class="btn" id="b-next">' + (fest ? 'Comemorar' : 'Jogar a temporada') + '</button>' + U.postBtn({ kind: 'moment', ok, m }), { center: true }
+      '<button class="btn" id="b-next">' + (fest ? 'Comemorar' : m.pre ? 'Fechar a temporada' : 'Jogar a temporada') + '</button>' + U.postBtn({ kind: 'moment', ok, m }), { center: true }
     );
     if (side >= 0) {
       const g = screen.querySelectorAll('.ob5-board .ob5-g')[side];

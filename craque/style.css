@@ -3422,3 +3422,18 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
   .pk-stage.last .pk-desc { font-size: 14px; }
 }
 /* ----- fim E8 ----- */
+
+/* ===== E9: reta final antes do lance decisivo (ui/season.js, preRace) ===== */
+.pr-path .rt-r { grid-template-columns: 58px 20px minmax(0, 1fr) auto; animation: pr-in .32s ease-out both; }
+.pr-path .rt-r i { font: 700 12px var(--display); letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
+.pr-path .rt-r b { font: 700 12px var(--body); letter-spacing: .04em; text-transform: uppercase; color: #8FD6AE; }
+@keyframes pr-in { from { opacity: 0; transform: translateY(6px); } }
+.pr-duel { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px;
+  background: linear-gradient(180deg, #0E1A14, #07110C); border: 1.5px solid rgba(242, 194, 48, .55); box-shadow: 0 8px 22px rgba(0, 0, 0, .35); animation: pr-in .35s ease-out both; }
+.pr-duel[hidden] { display: none; }
+.pr-duel .crest { width: 44px; height: 44px; margin: 0; }
+.pr-duel .pr-x { display: grid; gap: 2px; text-align: center; font: 600 14px/1.25 var(--body); color: #D3E4D9; }
+.pr-duel .pr-x b { font: 800 20px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--gold); }
+.sx-live.hold .sx-dot { background: var(--gold); }
+.sx-live.hold > b { color: var(--gold); }
+@media (prefers-reduced-motion: reduce) { .pr-path .rt-r, .pr-duel { animation: none; } }

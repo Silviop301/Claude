@@ -249,6 +249,12 @@
     const otherIds = leagueClubs.filter(x => x.id !== club.id).map(x => x.id).concat(below);
     const order = otherPts.map((p2, i) => [p2, otherIds[i] || 0]).sort((a, b) => b[0] - a[0]).map(x => x[1]);
     order.splice(pos - 1, 0, club.id);
+    // Lance da última rodada (título ou acesso): o adversário do lance fica do outro lado da linha na tabela mostrada
+    // (só troca nomes de lugar: pontos e posições não mudam, nada de sorteio)
+    if (M && (M.type === 'title' || (M.type === 'acesso' && LD0 && LD0.up))) {
+      const t = M.type === 'title' ? (pos === 1 ? 1 : 0) : pos <= LD0.promo ? LD0.promo : pos - 2, j = order.indexOf(M.vs);
+      if (j >= 0 && t >= 0 && t < order.length && t !== j && order[t] !== club.id) { order[j] = order[t]; order[t] = M.vs; }
+    }
     if (!league && pos > 1) col[0] = Math.max(col[0], leaderPts);
     for (let i = 1; i < col.length; i++) if (col[i] > col[i - 1]) col[i] = col[i - 1];
     const mid = col.reduce((a2, x) => a2 + x, 0) / col.length, spread = col[0] - col[col.length - 1];
@@ -263,7 +269,8 @@
       const tight = 1 + ((pts + c.season) % 3); // sem gastar sorteio: o resto da temporada não muda
       if (M.type === 'title' && pos === 1) shown[1] = Math.max(shown[1], shown[0] - tight);
       else if (M.type === 'title' && pos === 2) shown[0] = shown[1] + Math.min(tight, 2);
-      else if (LD0 && LD0.up && pos === LD0.promo && shown[pos]) shown[pos] = Math.max(shown[pos], shown[pos - 1] - tight);
+      // Subiu (mesmo terminando acima do corte): quem ficou até o primeiro de fora chega a no máximo 3 pontos
+      else if (LD0 && LD0.up && pos <= LD0.promo && shown[pos]) for (let i = pos; i <= LD0.promo && i < shown.length; i++) shown[i] = Math.max(shown[i], shown[pos - 1] - tight);
       else if (LD0 && LD0.up && pos === LD0.promo + 1) shown[pos - 2] = Math.max(shown[pos - 1] + 1, Math.min(shown[pos - 2], shown[pos - 1] + tight));
       for (let i = 1; i < shown.length; i++) if (shown[i] > shown[i - 1]) shown[i] = shown[i - 1];
     }
