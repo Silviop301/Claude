@@ -293,6 +293,23 @@ const cardReady = () => (cardModel = cardModel || new GLTFLoader().loadAsync('as
 const texCache = {};
 const metalTex = k => (texCache[k] = texCache[k] || new THREE.TextureLoader().loadAsync('assets/cartas/' + k + '.jpg').then(t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }));
 
+// Textura do acabamento (item dos pacotinhos), como imagem para pintar no metal da face
+const finCache = {};
+const finishImg = k => (finCache[k] = finCache[k] || new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = 'assets/cartas/ac-' + k + '.jpg'; }));
+// Formato da face do modelo nas coordenadas de textura: os triângulos pintados de branco (vira a máscara do aro)
+function faceMaskOf(g) {
+  const W = 1280, H = 1920, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const x = cv.getContext('2d'), uv = g.attributes.uv, idx = g.index;
+  x.fillStyle = '#fff'; x.strokeStyle = '#fff'; x.lineWidth = 1.5; x.lineJoin = 'round';
+  const n = idx ? idx.count : uv.count, at = i => (idx ? idx.getX(i) : i);
+  for (let t = 0; t + 2 < n; t += 3) {
+    x.beginPath();
+    for (let j = 0; j < 3; j++) { const v = at(t + j), px = uv.getX(v) * W, py = (1 - uv.getY(v)) * H; j ? x.lineTo(px, py) : x.moveTo(px, py); }
+    x.closePath(); x.fill(); x.stroke(); // o traço fino fecha as frestas entre triângulos vizinhos
+  }
+  return cv;
+}
+
 // Conteúdo da carta (canvas 600x860 do card.js) recortado na área interna da carta
 async function contentTexture(data, look) {
   const src = document.createElement('canvas');
@@ -341,6 +358,7 @@ function card3d(host, data, opts) {
     const pivot = new THREE.Group(); scene.add(pivot);
     const card = model.clone(true);
     const mats = {};
+    let faceGeo = null, faceMask = null, faceComp = null;
     card.traverse(o => {
       if (!o.isMesh) return;
       o.material = o.material.clone(); mats[o.material.name] = o.material;
@@ -353,6 +371,7 @@ function card3d(host, data, opts) {
         for (let i = 0; i < p.count; i++) { uv[i * 2] = (p.getX(i) - bb.min.x) / w; uv[i * 2 + 1] = (p.getY(i) - bb.min.y) / h; }
         g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
       }
+      if (o.material.name === 'face_metal' && g) faceGeo = g;
     });
     // Normaliza: o arquivo pode vir com escala no nó raiz. A carta fica com 3,1 de altura, centrada.
     const box0 = new THREE.Box3().setFromObject(card), size0 = box0.getSize(new THREE.Vector3());
@@ -373,11 +392,24 @@ function card3d(host, data, opts) {
       const look = window.CRAQUE_CARD_METAL(d);
       // O verso só muda com a trajetória, o nome, o número e a cor da tinta (trocar a assinatura não refaz o verso)
       const bk = JSON.stringify([d.curve, d.tSeasons, d.startAge, d.name, d.number, look.ink, look.inkLight]);
-      const [tex, content, backTex] = await Promise.all([metalTex(look.metal), contentTexture(d, look), bk === backKey ? null : backTexture(d, look)]);
+      const [tex0, content, backTex, finImg] = await Promise.all([metalTex(look.metal), contentTexture(d, look), bk === backKey ? null : backTexture(d, look),
+        look.finish ? finishImg(look.finish) : null]);
+      // Acabamento: o miolo é pintado em cima do metal da faixa, dentro do contorno da face do modelo (aro igual em toda a volta)
+      let tex = tex0;
+      if (faceComp) { faceComp.dispose(); faceComp = null; }
+      if (finImg && faceGeo && window.CRAQUE_FINISH_LAYER) {
+        faceMask = faceMask || faceMaskOf(faceGeo);
+        const cv = document.createElement('canvas'); cv.width = faceMask.width; cv.height = faceMask.height;
+        const x = cv.getContext('2d');
+        x.drawImage(tex0.image, 0, 0, cv.width, cv.height);
+        x.drawImage(window.CRAQUE_FINISH_LAYER(faceMask, d, finImg), 0, 0);
+        tex = faceComp = new THREE.CanvasTexture(cv);
+        tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+      }
       const f = mats.face_metal;
       if (f) {
         f.map = tex; f.map.offset.set(0, 0); f.map.repeat.set(1, 1);
-        f.color.set(0xffffff); f.metalness = 0.85; f.roughness = 0.3;
+        f.color.set(0xffffff); f.metalness = faceComp ? 0.45 : 0.85; f.roughness = 0.3; // acabamento: menos metal, para a cor da textura aparecer de verdade
         // Temporada Perfeita e acabamentos lendários: reflexo arco-íris que muda com o ângulo
         if ('iridescence' in f) { const iri = d.special === 'perfeita' || !!look.iri; f.iridescence = iri ? 1 : 0; f.iridescenceIOR = 2.2; f.iridescenceThicknessRange = [120, 900]; }
         f.needsUpdate = true;
