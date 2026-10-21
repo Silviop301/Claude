@@ -53,7 +53,7 @@ Não há build, lint nem testes unitários: a validação é o simulador + o e2e
 HTML/CSS/JS puro, **scripts clássicos sem build**, carregados por `craque/index.html` nesta ordem
 (a ordem importa: cada arquivo acrescenta funções a objetos globais):
 
-`errors → sound → data → social-data → social-events → events-text → engine/* → trophy-imgs, trophies,
+`errors → sound → data → names → social-data → social-events → events-text → engine/* → trophy-imgs, trophies,
 card, cine, kick, defend, kits, kits-real, avatar, chars → ui/core → ui/* → main → ball3d`
 
 Objetos globais: `CRAQUE_DATA` (`D`, dados), `CRAQUE_SIM` (`S`, motor), `CRAQUE_UI` (`U`, telas;
@@ -88,6 +88,7 @@ dividem ajudantes por `CRAQUE_SIM._`. O motor não usa DOM: roda no navegador e 
 | `social-data.js` | Textos do X (`D.SOCIAL`: famosos, torcida, haters, `people`) |
 | `social-events.js` | Post + comentário por opção de evento (`D.SOCIAL.ev[id]`) |
 | `events-text.js` | Aberturas alternativas dos eventos |
+| `names.js` | Nomes para sortear na criação, por país (`D.NAMES`, `D.randomName`); fora da tradução |
 
 ### Apresentação — `craque/src/`
 

@@ -1960,8 +1960,10 @@ button.cc-num small { font: 700 12px/1 var(--display); letter-spacing: .06em; op
 .cc-caret { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid currentColor; opacity: .75; }
 /* Nome editável: lápis ao lado, sem precisar de dica */
 .cc-name-w { position: relative; width: 100%; display: block; cursor: text; }
-.cc-name-w .cc-name { padding: 6px 30px; }
+.cc-name-w .cc-name { padding: 6px 36px; }
 .cc-name-w .ico { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); opacity: .7; pointer-events: none; }
+.cc-name-w .cc-name-dice { position: absolute; left: 2px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer; }
+.cc-name-w .cc-name-dice:active { transform: translateY(-50%) rotate(-20deg) scale(.92); }
 /* Botão fixo no rodapé: o conteúdo some num degradê atrás dele em vez de aparecer cortado em volta */
 .inv-bar.fade::before { content: ''; position: absolute; z-index: -1; left: -16px; right: -16px; top: -44px; bottom: calc(-10px - env(safe-area-inset-bottom, 0px)); background: linear-gradient(to bottom, rgba(15, 61, 42, 0), var(--pitch) 40px); pointer-events: none; }
 button.cc-num em { font: 800 13px/1.1 var(--display); font-style: normal; letter-spacing: .08em; text-transform: uppercase; color: var(--rk); }
