@@ -10,7 +10,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent / "craque"
 # Imagens e modelos citados no código levam a versão do próprio conteúdo (?v=...): quando o arquivo
 # muda, o celular não reaproveita a cópia antiga do cache (o CDN guarda imagens por 7 dias).
 fhash = lambda p: hashlib.sha1(p.read_bytes()).hexdigest()[:8]
-asset_re = re.compile(r"(['\"])(assets/[^'\"?]+\.(?:png|jpg|glb))(?:\?v=[0-9a-f]+)?(['\"])")
+asset_re = re.compile(r"(['\"])(assets/[^'\"?]+\.(?:png|jpg|glb|mp3))(?:\?v=[0-9a-f]+)?(['\"])")
 versioned = {}
 for p in sorted((ROOT / "src").rglob("*.js")):
     src = p.read_text()
@@ -25,7 +25,7 @@ for p in sorted((ROOT / "src").rglob("*.js")):
         p.write_text(new)
 files = ["./"]
 for p in sorted(ROOT.rglob("*")):
-    if p.is_file() and p.name not in ("sw.js", "README.md") and p.suffix in (".html", ".css", ".js", ".png", ".jpg", ".svg", ".glb", ".webmanifest", ".woff2"):
+    if p.is_file() and p.name not in ("sw.js", "README.md") and p.suffix in (".html", ".css", ".js", ".png", ".jpg", ".svg", ".glb", ".mp3", ".webmanifest", ".woff2"):
         rel = p.relative_to(ROOT).as_posix()
         files.append("./" + versioned.get(rel, rel))
 digest = hashlib.sha1("".join(files).encode()).hexdigest()[:8]
