@@ -79,12 +79,16 @@
       const STAMP = { ok: 'Deu certo', ko: 'Deu errado', calm: 'Tranquilo' };
       // Já resolvido: salva antes da animação, para fechar e voltar não sortear de novo
       G.step = 'moment'; save();
-      U.riskRoll(st && !st.safe ? st.p : 0, r.ok, ev.options[+b.dataset.i].label, () => U.transferMove(prevClub, G.c.club, G.c.name, () => {
+      const pick = ev.options[+b.dataset.i].label;
+      U.riskRoll(st && !st.safe ? st.p : 0, r.ok, pick, () => U.transferMove(prevClub, G.c.club, G.c.name, () => {
+      // Resultado no mesmo lugar do cartão do evento (no alto, com o mesmo rótulo), lembrando o que foi escolhido
       render(
+        '<div class="eyebrow">Durante a temporada · ' + year() + '</div>' +
         '<div class="card ev-res ob3-res ' + (r.ok ? 'ok' : 'ko') + (stamp === 'calm' ? ' calm' : '') + '">' + (stamp ? '<span class="ob3-stamp s-' + stamp + '">' + STAMP[stamp] + '</span>' : '') +
         '<span class="er-ic">' + U.icoOf(ev, 'lg') + '</span><div class="eyebrow">' + esc(ev.title) + '</div>' +
+        '<span class="er-pick"><small>Sua escolha</small>' + esc(pick) + '</span>' +
         '<p class="er-txt">' + esc(r.text) + '</p>' + fxRow + '</div>' +
-        '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn(pctx), { center: true }
+        '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn(pctx)
       );
       $('b-next').onclick = momentOrSeason;
       U.postBind(pctx, momentOrSeason);

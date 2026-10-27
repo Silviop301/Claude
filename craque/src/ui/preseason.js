@@ -12,7 +12,7 @@
       if (id) slots.push('<span class="chip">' + U.icoOf(D.TRAIT_BY_ID[id], 'xs') + ' ' + D.TRAIT_BY_ID[id].name + (S.traitLevel(G.c, id) > 1 ? ' <b>Nv ' + S.traitLevel(G.c, id) + '</b>' : '') + '</span>');
     }
     const free = S.MAX_SLOTS - G.c.traits.length;
-    if (free && G.c.traits.length) slots.push('<span class="chip empty">' + free + (free > 1 ? ' espaços livres' : ' espaço livre') + '</span>');
+    if (free) slots.push('<span class="chip empty">' + free + (free > 1 ? ' espaços livres' : ' espaço livre') + '</span>');
     return '<div class="eyebrow small">Características ' + G.c.traits.length + '/' + S.MAX_SLOTS + ' <button class="link-btn" data-sheet="combos">Ver combinações ›</button></div><div class="chips">' + slots.join('') +
       syn.map(s => '<span class="chip syn">' + U.icoOf(s, 'xs') + ' ' + s.name + '</span>').join('') + '</div>';
   }
@@ -24,7 +24,7 @@
     const at = {};
     for (const k in t.attr) at[k] = Math.round(t.attr[k] * D.TRAIT_LV[lv]) - (lv > 1 ? Math.round(t.attr[k] * D.TRAIT_LV[lv - 1]) : 0);
     const a = attrTxt(at), fx = t.fx ? t.fx(D.TRAIT_LV[lv]) : '';
-    return (a ? a + '<br>' : '') + '<span class="fx">' + (lv > 1 ? 'Nv ' + lv + ': ' : '') + esc(fx).replace('⚠️', '<b class="warn">' + U.emo('⚠️', 'xs') + '</b>') + '</span>';
+    return (a ? '<span class="at">' + a + '</span><br>' : '') + '<span class="fx">' + (lv > 1 ? 'Nv ' + lv + ': ' : '') + esc(fx).replace('⚠️', '<b class="warn">' + U.emo('⚠️', 'xs') + '</b>') + '</span>';
   }
 
   // Aviso na escolha: atributo que a característica soma e já está no 99 manda o ponto para outro
@@ -209,7 +209,7 @@
         (coins ? '<div class="coins" aria-label="Pontos de evolução">' + U.emo('⭐', 'sm') + '<b id="w-money">' + (G.c.pe || 0) + '</b></div>' : '') + '</div>' +
       wcHint() + miniCard(hasInv) + attrHelp() +
       (justAdded ? '<div class="prep-done">' + justAdded + '</div>' : '') +
-      (done && !justAdded ? '<div class="prep-sec">Características</div>' + traitsHtml() + '<p class="muted small">' + (S.buildDone(G.c) ? U.emo('✅', 'xs') + ' Build completo: todas no nível máximo.' : 'Nada para evoluir nesta fase: o que falta já não rende na sua idade.') + '</p>' : '') +
+      (done && !justAdded ? traitsHtml() + '<p class="muted small">' + (S.buildDone(G.c) ? U.emo('✅', 'xs') + ' Build completo: todas no nível máximo.' : 'Nada para evoluir nesta fase: o que falta já não rende na sua idade.') + '</p>' : '') +
       // Características: as opções lado a lado, como cartas; um toque escolhe
       (ch.length ? '<div class="pick-h"><b>' + (G.c.traits.length >= S.MAX_SLOTS ? 'Evolua 1 de ' : 'Escolha 1 de ') + ch.length + '</b>' +
           (G.c.traits.length < S.MAX_SLOTS ? '<span>fica a carreira toda</span>' : '') + '</div>' +

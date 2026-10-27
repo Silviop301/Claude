@@ -3668,6 +3668,133 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 /* ----- fim V1 ----- */
 
 /* ----- V2: pré-temporada, decisões e mercado (pré-temporada, ficha, evento, base, janela, pouco espaço) ----- */
+/* Decisão (evento e pouco espaço): todas as opções no mesmo cartão escuro, com o tipo só na etiqueta e num leve brilho
+   no alto (laranja = arriscada, azul = segura). O dourado fica para a opção escolhida (1º toque). */
+.btn.opt.ob3-opt { --oc: rgba(255, 255, 255, .2); --ot: rgba(255, 255, 255, .07); position: relative; gap: 9px; padding: 14px 14px 13px; border-radius: var(--r-lg);
+  background: linear-gradient(180deg, var(--ot), rgba(255, 255, 255, .02) 64px), rgba(255, 255, 255, .05); box-shadow: inset 0 0 0 1.5px var(--oc), var(--sh-press); }
+.btn.opt.ob3-opt.k-risk { --oc: rgba(255, 255, 255, .2); --ot: rgba(255, 159, 67, .16); background: linear-gradient(180deg, var(--ot), rgba(255, 255, 255, .02) 64px), rgba(255, 255, 255, .05); }
+.btn.opt.ob3-opt.k-safe { --oc: rgba(255, 255, 255, .2); --ot: rgba(127, 176, 255, .16); background: linear-gradient(180deg, var(--ot), rgba(255, 255, 255, .02) 64px), rgba(255, 255, 255, .05); }
+.btn.opt.ob3-opt.armed { background: linear-gradient(180deg, rgba(242, 194, 48, .2), rgba(242, 194, 48, .08) 64px), rgba(255, 255, 255, .05); box-shadow: inset 0 0 0 3px var(--gold), var(--sh-press); }
+.btn.opt.ob3-opt.locked { --oc: rgba(255, 255, 255, .1); }
+.ob3-opt .ob3-lbl { font: 800 22px/1.05 var(--display); color: var(--tx-1); }
+.ob3-bar { height: 8px; border-radius: 4px; }
+/* Chance e resultado em duas colunas: o número grande à esquerda (verde certo, vermelho errado, azul certo) e o texto alinhado */
+.btn.opt.ob3-opt .odds { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 9px; align-items: baseline; font: 600 14px/1.3 var(--body); color: var(--tx-2); }
+.btn.opt.ob3-opt .od-row { display: contents; }
+.btn.opt.ob3-opt .od-row b { font: 800 18px/1 var(--display); letter-spacing: .01em; font-variant-numeric: tabular-nums; }
+.btn.opt.ob3-opt .od-row b::after { content: none; }
+.btn.opt.ob3-opt .od-row.win b { color: var(--up); } .btn.opt.ob3-opt .od-row.win > span { color: #D2F5DF; }
+.btn.opt.ob3-opt .od-row.lose b { color: var(--down); } .btn.opt.ob3-opt .od-row.lose > span { color: #FFD6D9; }
+.btn.opt.ob3-opt .od-row.safe b { color: #9CC2FF; font-size: 16px; } .btn.opt.ob3-opt .od-row.safe > span { color: #DDE8FF; }
+.btn.opt.ob3-opt .od-always { grid-column: 1 / -1; margin-top: 2px; padding-top: 7px; border-top: 1px solid rgba(255, 255, 255, .1); color: var(--tx-2); font: 600 13px/1.3 var(--body); }
+.ob3-opt > small { font: 600 14px/1.35 var(--body); color: var(--tx-2); }
+.choices.ob3-opts.two .ob3-opt { min-height: 176px; }
+.ob3-note { font: 500 13px/1.35 var(--body); color: var(--tx-3); }
+/* Pouco espaço: "Pedir empréstimo" abre a lista de clubes (seta), as outras resolvem na hora */
+.btn.opt.ob3-opt[data-sq="loan"] { padding-right: 54px; }
+.btn.opt.ob3-opt[data-sq="loan"]::after { content: '›'; position: absolute; right: 14px; top: 50%; width: 30px; height: 30px; margin-top: -15px; border-radius: 50%; display: grid; place-items: center;
+  padding-bottom: 3px; box-sizing: border-box; background: rgba(255, 255, 255, .1); font: 800 26px/1 var(--display); color: var(--tx-1); }
+/* Cartão do evento: mais presença no celular alto; mais compacto no celular baixo */
+@media (min-height: 760px) and (max-width: 999px) {
+  .event-card.ob3 { gap: 10px; padding: 30px 20px 24px; }
+  .event-card.ob3 .ob3-ic { width: 108px; height: 108px; }
+  .event-card.ob3 .ob3-ic .tw { width: 68px; height: 68px; }
+  .event-card.ob3 h2 { font-size: 32px; }
+  .choices.ob3-opts { gap: 12px; }
+}
+@media (max-height: 700px) and (max-width: 999px) {
+  .event-card.ob3 { gap: 6px; padding: 20px 16px 16px; }
+  .event-card.ob3 .ob3-ic { width: 76px; height: 76px; }
+  .event-card.ob3 .ob3-ic .tw { width: 48px; height: 48px; }
+  .event-card.ob3.sq-card .ob3-ic .crest { width: 50px; height: 50px; }
+  .choices.ob3-opts.two .ob3-opt { min-height: 0; }
+}
+/* Computador: as opções empilhadas na coluna da direita, do tamanho do cartão do evento */
+@media (min-width: 1000px) {
+  #screen:has(> .event-card.ob3) .choices.ob3-opts.two { grid-template-columns: minmax(0, 1fr); }
+  #screen:has(> .event-card.ob3) .choices.ob3-opts.two .ob3-opt { min-height: 0; }
+  #screen:has(> .event-card.ob3) .btn.opt.ob3-opt { padding: 16px 18px 15px; }
+  #screen:has(> .event-card.ob3) .btn.opt.ob3-opt[data-sq="loan"] { padding-right: 58px; }
+}
+/* Duas opções lado a lado no celular: a coluna é estreita, então o texto corre por baixo do número (sem recuo) */
+@media (max-width: 999px) {
+  .choices.ob3-opts.two .btn.opt.ob3-opt .odds { display: flex; flex-direction: column; gap: 6px; }
+  .choices.ob3-opts.two .btn.opt.ob3-opt .od-row { display: block; }
+  .choices.ob3-opts.two .btn.opt.ob3-opt .od-row b { margin-right: 5px; }
+}
+@media (max-width: 360px) { .ob3-opt .ob3-lbl { font-size: 19px; } .btn.opt.ob3-opt { padding: 12px 11px 11px; } .btn.opt.ob3-opt .odds { column-gap: 7px; } }
+
+/* Resultado da decisão: no alto, no lugar do cartão do evento, com a faixa da cor do resultado e o que foi escolhido */
+.ev-res.ob3-res { --rc: #2F6FD6; overflow: hidden; gap: 10px; padding: 32px 20px 24px; border-radius: var(--r-xl); }
+.ev-res.ob3-res::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 8px; background: var(--rc); }
+.ev-res.ob3-res.ok { --rc: #1FA35A; } .ev-res.ob3-res.ko { --rc: #D8404A; } .ev-res.ob3-res.calm { --rc: #2F6FD6; }
+.ev-res.ob3-res .er-ic { width: 96px; height: 96px; }
+.ev-res.ob3-res .er-ic .tw { width: 60px; height: 60px; }
+.ev-res.ob3-res > .eyebrow { margin-top: 2px; color: var(--ink-2); }
+.er-pick { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 2px 8px; max-width: 100%; padding: 6px 14px; border-radius: 999px;
+  background: rgba(19, 32, 26, .07); font: 700 17px/1.2 var(--display); color: var(--ink); text-wrap: balance; }
+.er-pick small { font: 700 12px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
+.ev-res.ob3-res .er-txt { margin-top: 2px; font: 700 21px/1.3 var(--body); text-wrap: pretty; }
+.ev-res.ob3-res.calm .er-txt { color: var(--ink); }
+.ev-res.ob3-res .er-fx { gap: 8px; margin-top: 6px; }
+.ev-res.ob3-res .er-fx span { font: 700 14px/1.2 var(--body); padding: 6px 12px; }
+.ev-res.ob3-res .er-fx .er-ovr { font-size: 16px; }
+.ob3-stamp { top: 18px; right: 10px; }
+#screen > .ev-res.ob3-res + .btn { margin-top: 4px; }
+@media (max-height: 700px) and (max-width: 999px) {
+  .ev-res.ob3-res { gap: 8px; padding: 26px 16px 18px; }
+  .ev-res.ob3-res .er-ic { width: 80px; height: 80px; }
+  .ev-res.ob3-res .er-ic .tw { width: 50px; height: 50px; }
+  .ev-res.ob3-res .er-txt { font-size: 19px; }
+}
+
+/* Roleta da decisão arriscada: etiqueta laranja (como a da opção), números da roda sempre de pé, resultado grande */
+.mo-rk { padding: 4px 10px 3px; border-radius: 6px; background: #FF9F43; color: #2A1500; font: 700 12px var(--display); letter-spacing: .14em; }
+.mo-wl { transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(var(--wd) * -.37)) rotate(calc(-1 * (var(--a) + var(--rot, 0deg)))); }
+.mo-keys { font-size: 14px; color: var(--tx-2); }
+.mo-out { font: 800 30px/1.1 var(--display); letter-spacing: .02em; text-transform: uppercase; }
+.mo-roll.is-ok .mo-out { color: var(--up); } .mo-roll.is-ko .mo-out { color: var(--down); }
+
+/* Pré-temporada: cartas de característica mais legíveis (ganho de atributo em verde, efeito em tinta escura) */
+.choice.tr { gap: 5px; padding: 12px 10px 14px; border-radius: var(--r-md); }
+.choice.tr > .tag { font-size: 12px; padding: 2px 7px; }
+.choice.tr .ic .tw { width: 52px; height: 52px; }
+.choice.tr b { font: 800 20px/1.05 var(--display); color: var(--ink); }
+.choice.tr .d { font: 600 13px/1.35 var(--body); color: #3B4842; }
+.choice.tr .d .at { display: inline-block; margin: 1px 0 3px; padding: 2px 9px; border-radius: 999px; background: #DDF3E4; color: var(--up-ink); font: 800 13px/1.3 var(--display); letter-spacing: .02em; }
+.choice.tr .d .fx { color: #3B4842; font: 600 13px/1.35 var(--body); }
+.pick-h { margin-top: 18px; }
+.pick-h span { font: 600 13px var(--body); color: var(--tx-3); }
+.train-txt { color: var(--tx-2); }
+.train-txt b { color: var(--tx-1); }
+
+/* Ficha: ícone da característica num círculo (como nos cartões de decisão) e nada que informa abaixo de 12 px */
+.sh-tr { gap: 12px; padding: 10px 2px; }
+.sh-tr .ic { width: 40px; height: 40px; border-radius: 50%; background: #EEF3EF; }
+.sh-tr .ic .tw { width: 24px; height: 24px; }
+.sh-tr .ic:has(.seal) { background: none; height: auto; }
+.sh-tr b { font: 700 16px/1.25 var(--body); }
+.sh-tr small { font-size: 13px; color: var(--ink-2); }
+.sh-tr.empty { min-height: 48px; }
+.sh-at i { font-size: 12px; }
+.sh-nums span, .sh-room span { font-size: 12px; }
+.sh-seasons thead th { font-size: 12px; }
+
+/* Pedir ao empresário: país à esquerda (fixo no alto enquanto rola), ligas da mais forte para a mais fraca,
+   chance em destaque com a cor e uma barrinha do tamanho dela */
+.lg-legend { display: grid; grid-template-columns: minmax(0, 1fr) 78px 62px; gap: 8px; padding: 6px 13px 0; font: 700 12px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
+.lg-legend span:nth-child(3) { text-align: center; }
+.lg-pick .lg-ct .sh-sec { position: sticky; top: 0; z-index: 1; justify-content: flex-start; gap: 8px; margin: 0; padding: 14px 0 8px; background: var(--paper); font-size: 13px; }
+.lg-pick .lg-ct .sh-sec .tw { width: 20px; height: 20px; }
+.lg-row { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) 78px 62px; gap: 8px; align-items: center; min-height: 52px; padding: 8px 12px 10px; border-radius: var(--r-md); }
+.lg-row b { font: 700 16px/1.2 var(--body); }
+.lg-row .stars { font-size: 13px; }
+.lg-row em { justify-self: center; min-width: 54px; padding: 4px 8px; border-radius: 999px; text-align: center; font: 800 17px/1.1 var(--display); background: #FFF1C2; color: #6E4E00; }
+.lg-row em.hi { background: #DDF3E4; color: #11673A; }
+.lg-row em.lo { background: #FBE1E3; color: #A3242E; }
+.lg-row::after { content: ''; position: absolute; left: 0; bottom: 0; height: 3px; width: var(--ch, 0); background: #E2B93B; border-radius: 0 2px 2px 0; }
+.lg-row:has(em.hi)::after { background: #1FA35A; } .lg-row:has(em.lo)::after { background: #D8404A; }
+.lg-row.armed::after { content: none; }
 /* ----- fim V2 ----- */
 
 /* ----- V3: lances e minigames (lance, minigames, resultado, treino, reta final, Relâmpago) ----- */
