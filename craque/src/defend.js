@@ -130,7 +130,7 @@
           const c0 = performance.now();
           (function party(n3) { if (!svg.isConnected) return; bat.pose(((n3 - c0) / 1100) % 1, 'comemoracao'); requestAnimationFrame(party); })(c0);
         }
-        sfx(saved ? 'goal' : 'miss');
+        sfx(saved ? 'cheer' : 'miss'); // defesa: torcida sem a bola na rede
         if (cine) {
           if (saved && !miss) cine.win(tx, ty, colorsOf(C.kits(c, c.moment && c.moment.vs).mine), '#B8F25C');
           else if (miss) cine.to(180, 170, 1.05, 600);
@@ -197,7 +197,7 @@
     function end(ok, why) {
       if (result) return;
       result = { ok, why };
-      sfx(ok ? 'goal' : 'miss');
+      sfx(ok ? 'cheer' : 'miss');
       if (cine) { const a = at(g.u); if (ok) cine.win(a.x + 10, a.y - 20, colorsOf(kits.mine)); else cine.lose(why === 'passou' || why === 'tarde' || why === 'cedo' ? P.GX : null, 140, 4); }
       banner(el, ok ? 'DESARME!' : why === 'cedo' ? 'CHEGOU CEDO!' : why === 'tarde' ? 'CHEGOU TARDE!' : why === 'drible' ? 'DRIBLOU!' : 'GOL DELES', ok);
       setTimeout(() => { b3.dispose(); if (cine) cine.dispose(); opts.onDone(ok, ok ? 'desarme' : why); }, 1500);

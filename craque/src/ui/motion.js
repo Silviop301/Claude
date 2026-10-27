@@ -48,7 +48,7 @@
       lis.forEach(li => li.classList.add('in')); set(f.score);
       stamp.className = 'mo-stamp g-' + f.grade; void stamp.offsetWidth; stamp.classList.add('final');
       w.classList.remove('shake'); void w.offsetWidth; w.classList.add('shake');
-      if (U.sfx) U.sfx(f.grade === 'S' || f.grade === 'A' ? 'goal' : 'whistle');
+      if (U.sfx) U.sfx(f.grade === 'S' || f.grade === 'A' ? 'cheer' : 'whistle');
       const i = G.findIndex(([g]) => g === f.grade), next = i > 0 ? G[i - 1] : null;
       verdict.innerHTML = 'Nota ' + f.grade + ' · ' + esc(f.verdict) + '<small>' + (next ? 'Faltaram ' + (next[1] - f.score) + ' pontos para a nota ' + next[0] + '.' : 'Nota máxima.') + '</small>';
       verdict.classList.add('in');

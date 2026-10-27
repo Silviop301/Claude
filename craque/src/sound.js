@@ -200,9 +200,13 @@
       if (rec.rede) play('rede', t, 0.75, 0.15); else noise(t, 0.35, 0.16, 0.01, 'bandpass', 2600, 900, 0.9);
       if (rec.torcida) play('torcida', t + 0.05, 0.3, 0.1); else crowd(t + 0.04, { vowel: 'o', dur: 2.9, a: 0.25, hold: 1.6, spread: 0.2, peak: 1, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.8, 1.2], [2.9, 0.95]], shouts: 14, shoutGain: 1.1, bend: [1, 1.15] });
     },
-    // Erro: o "uhhh" da torcida, que começa alto e vai murchando
+    // Vitória no fim de um jogo simulado: só a torcida, sem a bola na rede
+    cheer(t) {
+      if (rec.torcida) play('torcida', t, 0.25, 0.1); else crowd(t, { vowel: 'o', dur: 2.4, a: 0.25, hold: 1.2, spread: 0.2, peak: 0.8, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.6, 1.2], [2.4, 0.95]], shouts: 12, shoutGain: 1, bend: [1, 1.12] });
+    },
+    // Erro: "uhhh" da torcida caindo (o som original, que o Silvio prefere)
     miss(t) {
-      crowd(t, { vowel: 'u', dur: 1.2, a: 0.08, hold: 0.3, spread: 0.08, peak: 1, sections: 5, color: [[0, 2.2], [0.2, 1.9], [1.2, 0.8]], shouts: 10, shoutGain: 0.9, bend: [1.08, 0.82] });
+      noise(t, 1.1, 0.22, 0.15, 'bandpass', 900, 280, 1.2);
     },
     // Moeda: dois bipes de sino
     coin(t) {
