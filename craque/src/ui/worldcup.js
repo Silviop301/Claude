@@ -289,11 +289,11 @@
     const ctx = (late ? 'Reta final! ' : 'Ainda faltam ' + left + ' minutos. ') + (ko ? 'Mata-mata: quem vencer ' + NEXT[run.stage] + '.' : run.stage === 2 ? 'Último jogo do grupo: ' + run.pts + (run.pts === 1 ? ' ponto' : ' pontos') + ' até aqui.' : 'Fase de grupos: ' + run.pts + (run.pts === 1 ? ' ponto' : ' pontos') + ' em ' + run.stage + (run.stage === 1 ? ' jogo.' : ' jogos.'));
     const paused = document.querySelector('.wc-game.paused'); if (paused) paused.style.display = 'none'; // o lance já mostra placar e minuto
     const tag = g.stage;
-    // Estilo ousado (O5): placar escuro com bandeiras, título grande, o que vale em dourado e os dois estilos como cartões grandes
+    // Estilo ousado (O5): placar escuro com bandeiras, título grande, o que vale em duas linhas (U.lanceStakes, igual ao lance da temporada) e os dois estilos como cartões grandes
     $('wc-after').innerHTML = '<div class="wc-o5">' + wcBoard(run, g, liveMin(m.minute + "'"), tag) +
       '<div class="ob5-head"><h2>' + ({ pen: 'Pênalti para ' + who + '!', fk: 'Falta perigosa na entrada da área!', save: 'Pênalti contra ' + who + '!', tackle: 'Contra-ataque perigoso!', pass: 'A bola é sua: enfie para o atacante!' }[m.type]) + '</h2>' +
-      '<p class="ob5-stakes">' + U.emo('🏆', 'xs') + '<span>' + (def ? (type === 'save' ? 'Defendeu: segura o placar · Sofreu: ' : 'Desarmou: segura o placar · Passou: ') + lose : 'Converteu: ' + gain) + '</span></p>' +
-      '<p class="ob5-txt">' + esc(ctx) + '</p></div>' + o5Body(type) + o5Foot(type, k) + '</div>';
+      '<p class="ob5-txt">' + esc(ctx) + '</p>' +
+      U.lanceStakes(def ? (type === 'save' ? 'Defendeu: segura o placar · Sofreu: ' : 'Desarmou: segura o placar · Passou: ') + lose : 'Converteu: ' + gain) + '</div>' + o5Body(type) + o5Foot(type, k) + '</div>';
     $('wc-after').scrollIntoView({ block: 'start', behavior: 'smooth' });
     sfx('whistle');
     $('b-train').onclick = () => U.training(type);
@@ -317,8 +317,8 @@
     const tag = g.stage;
     $('wc-after').innerHTML = '<div class="wc-o5">' + wcBoard(run, g, liveMin('Pênaltis'), tag) +
       '<div class="ob5-head"><h2>' + (gk ? 'Defenda o último!' : 'Você bate o último!') + '</h2>' +
-      '<p class="ob5-stakes">' + U.emo('🏆', 'xs') + '<span>' + (gk ? 'Defendeu: ' : 'Converteu: ') + (run.stage === 6 ? (cwc ? 'campeão mundial' : 'campeão do mundo') : cwc ? 'o time avança' : 'a seleção avança') + ' · ' + (gk ? 'Sofreu' : 'Errou') + ': eliminado</span></p>' +
-      '<p class="ob5-txt">Terminou ' + g.gf + ' × ' + g.ga + ' e a disputa está empatada. ' + (gk ? 'O último batedor deles vem para a bola.' : 'A última cobrança é sua.') + '</p></div>' +
+      '<p class="ob5-txt">Terminou ' + g.gf + ' × ' + g.ga + ' e a disputa está empatada. ' + (gk ? 'O último batedor deles vem para a bola.' : 'A última cobrança é sua.') + '</p>' +
+      U.lanceStakes((gk ? 'Defendeu: ' : 'Converteu: ') + (run.stage === 6 ? (cwc ? 'campeão mundial' : 'campeão do mundo') : cwc ? 'o time avança' : 'a seleção avança') + ' · ' + (gk ? 'Sofreu' : 'Errou') + ': eliminado') + '</div>' +
       o5Body(type) + o5Foot(type, k) + '</div>';
     const rows = document.querySelectorAll('#wc-list > .wc-game'); if (rows.length) rows[rows.length - 1].style.display = 'none'; // o placar já mostra o jogo
     $('wc-after').scrollIntoView({ block: 'start', behavior: 'smooth' });

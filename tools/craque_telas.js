@@ -37,7 +37,10 @@ function fnSource(src, name) {
   for (let k = j; k < src.length; k++) { if (src[k] === '{') d++; else if (src[k] === '}' && !--d) return src.slice(i, k + 1); }
   throw new Error('não achei ' + name + ' em craque_e2e.js');
 }
-const STEP = fnSource(E2E, 'stepInPage').replace(/Math\.random\(\)/g, 'window.__rnd()');
+// liga pedida ao empresário: o robô sorteia pela posição na lista; ordenar pelo id mantém a mesma escolha
+// mesmo que a lista mude de ordem na tela (antes e depois de uma mudança visual batem)
+const STEP = fnSource(E2E, 'stepInPage').replace(/Math\.random\(\)/g, 'window.__rnd()')
+  .replace("qa('.sheet-wrap [data-lg]')", "qa('.sheet-wrap [data-lg]').sort((a, b) => a.dataset.lg < b.dataset.lg ? -1 : a.dataset.lg > b.dataset.lg ? 1 : 0)");
 
 // Antes de a página carregar: configuração (jornal especial, Copa simulada, lances com tela de abertura), sem som,
 // sorteio fixo (Math.random e o robô) e temporizadores acelerados como no e2e
@@ -218,7 +221,9 @@ const LIVE = { 'temporada-ao-vivo': 0, 'reta-final': 120, 'copa-jogos': 300 };
   if (await click('#b-col')) {
     await shot('colecao', 700);
     if (await click('#bk-next')) await shot('colecao-pagina', 700);
-    if (await click('#screen [data-card], #screen .cl-card, #screen .bk-card')) await shot('colecao-carta', 900);
+    // a página 1 pode não ter carta: avança até achar uma
+    for (let i = 0; i < 14 && !(await page.$('#screen .col-slot.has')); i++) if (!(await click('#bk-next'))) break;
+    if (await click('#screen .col-slot.has')) await shot('colecao-carta', 900);
   }
   await ev(() => window.CRAQUE_UI.mine());
   if (await click('#b-sala')) {
