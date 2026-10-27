@@ -106,6 +106,31 @@
     if (b) { b.click(); return done(); }
   }, true);
 
+  // ---------- Telas curtas na tela larga ----------
+  // Computador e tablet deitado: a tela curta da carreira desce para perto do meio (antes ficava colada no topo com
+  // meia tela vazia embaixo). O respiro é medido uma vez a cada tela nova: abrir um detalhe ou a lista crescer só
+  // estica para baixo, sem empurrar o resto. Fora: telas que já centralizam (.center), a temporada (ao vivo e resumo, que cresce
+  // depois de aberta), a Copa e os minigames.
+  const wide = matchMedia('(min-width: 1000px) and (min-height: 560px)');
+  const scr = document.getElementById('screen'), barEl = document.getElementById('bar');
+  const NO_LIFT = '.s-hero, #wc-list, #kick, .kick-stage, .cc-side, #b-new, #b-start, #b-go';
+  function lift() {
+    if (!scr) return;
+    scr.style.marginTop = '';
+    if (!wide.matches || scr.classList.contains('center') || scr.querySelector(NO_LIFT)) return;
+    if (barEl.hidden && !scr.querySelector('.of-rail')) return; // só na carreira (com a barra) e nas propostas da base
+    const k = U.zk(), app = scr.parentNode, cs = getComputedStyle(app);
+    const used = scr.getBoundingClientRect().top / k + window.scrollY / k + scr.offsetHeight + parseFloat(cs.paddingBottom);
+    const free = window.innerHeight / k - used;
+    if (free > 48) scr.style.marginTop = Math.round(free * 0.42) + 'px';
+  }
+  if (scr) {
+    new MutationObserver(lift).observe(scr, { childList: true });
+    let rq = 0;
+    addEventListener('resize', () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(lift); });
+    if (wide.addEventListener) wide.addEventListener('change', lift);
+  }
+
   // Dica no rodapé da tela inicial (só no computador)
   U.deskHint = () => (on() ? '<p class="desk-hint">' + U.emo('📱', 'xs') + ' Feito para celular, mas dá para jogar aqui: Espaço ou Enter continua e cobra os lances · 1 a 4 escolhe · Esc fecha</p>' : '');
 })();
