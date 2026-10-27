@@ -168,7 +168,7 @@
         sc.textContent = u + ' × ' + t;
         gls.insertAdjacentHTML('beforeend', goalLine(e, g));
         el.classList.remove('goal-u', 'goal-t'); void el.offsetWidth; el.classList.add('goal-' + e.s);
-        if (sp < 2) sfx(e.s === 'u' ? 'goal' : 'miss');
+        if (sp < 2) sfx('tick'); // torcida só no fim do jogo: em todo gol as comemorações se atropelavam
         pause = sp === 2 ? 0 : sp ? 80 : 750;
       });
       if (m >= to) return done();
@@ -221,7 +221,7 @@
       div.innerHTML = wcRow(g);
       el.replaceWith(div.firstChild);
       drawGroup(run, run.games.length);
-      sfx(g.gf > g.ga ? 'goal' : g.gf < g.ga ? 'miss' : 'whistle');
+      if (!simAll) sfx(g.gf > g.ga ? 'cheer' : g.gf < g.ga ? 'miss' : 'whistle');
     };
     const next = () => {
       if (!list.isConnected) return;
