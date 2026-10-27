@@ -415,7 +415,7 @@
     const sfx = n => { if (root.CRAQUE_SFX) root.CRAQUE_SFX.play(n); };
     function shoot(dx, y) {
       if (on && you) {
-        help.innerHTML = '&nbsp;';
+        help.innerHTML = '&nbsp;'; help.classList.add('off'); // a dica some (style.css V3), sem mudar a altura
         aim.setAttribute('opacity', '0');
         cine.to(180, 205, 1.15, 520);
         const r0 = performance.now(), RUN = 520;
@@ -436,7 +436,7 @@
     function kickNow(dx, y) {
       sfx('kick');
       wallAnim.jump(); // a barreira pula junto, na hora do chute
-      help.innerHTML = '&nbsp;';
+      help.innerHTML = '&nbsp;'; help.classList.add('off'); // a dica some (style.css V3), sem mudar a altura
       aim.setAttribute('opacity', '0');
       const x = dx * side; // no referencial da regra (barreira sempre "à esquerda")
       // Goleiro do pênalti: acerta o lado 38% das vezes, erra 42%, fica no meio 20% (opts.keeperGuess: outra taxa de acerto)

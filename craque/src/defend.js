@@ -74,7 +74,7 @@
       if (!armed || dive !== null || done) return;
       const r = stage.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width;
       dive = fx < 0.38 ? -1 : fx > 0.62 ? 1 : 0;
-      help.innerHTML = dive === 0 ? 'Ficou no meio!' : 'Pulou para a ' + (dive < 0 ? 'esquerda' : 'direita') + '!';
+      help.innerHTML = dive === 0 ? 'Ficou no meio!' : 'Pulou para a ' + (dive < 0 ? 'esquerda' : 'direita') + '!'; help.classList.add('done'); // a dica vira o que aconteceu (sem o ponto piscando)
     });
 
     (function run(now) {
@@ -426,7 +426,7 @@
       sfx(ok ? 'goal' : 'miss');
       if (cine) { if (ok) cine.win(180, GL - 10, colorsOf(kits.mine)); else cine.lose(null, null, why === 'impedido' ? 2 : 4); }
       banner(el, ok ? 'GOOOL!' : why === 'impedido' ? 'IMPEDIDO!' : why === 'goleiro' ? 'O GOLEIRO SAIU!' : 'CORTADO!', ok);
-      help.innerHTML = ok ? (lob ? 'Lançamento por cima na medida: <b>assistência sua</b>' : 'Bola enfiada na medida: <b>assistência sua</b>') : why === 'cedo' ? 'Passou cedo: a zaga cortou.' : why === 'tarde' ? 'Passou tarde: a zaga fechou.' : why === 'goleiro' ? 'O lançamento foi bom, mas o goleiro saiu e ficou com a bola.' : 'Demorou e ele passou do último zagueiro: impedido.';
+      help.innerHTML = ok ? (lob ? 'Lançamento por cima na medida: <b>assistência sua</b>' : 'Bola enfiada na medida: <b>assistência sua</b>') : why === 'cedo' ? 'Passou cedo: a zaga cortou.' : why === 'tarde' ? 'Passou tarde: a zaga fechou.' : why === 'goleiro' ? 'O lançamento foi bom, mas o goleiro saiu e ficou com a bola.' : 'Demorou e ele passou do último zagueiro: impedido.'; help.classList.add('done');
       setTimeout(() => { b3.dispose(); if (cine) cine.dispose(); opts.onDone(ok, ok ? 'passe' : why); }, 1500);
     }
   };
