@@ -36,7 +36,7 @@
       '<div class="of-body">' +
         '<div class="of-role2 ' + roleCls + '"><div><b>' + o.role + '</b><span>' + roleNote + '</span></div><i>' + [0, 1, 2, 3, 4].map(k => '<em' + (k < segs ? ' class="on"' : '') + '></em>').join('') + '</i></div>' +
         '<div class="of-tiles"><div><b>' + cl.strength + '</b><small>força do time</small></div>' +
-          '<div><b class="' + (w.length > 7 ? 'sm' : '') + '">R$ ' + w + '</b><small>por semana</small></div>' +
+          '<div><b class="wage">R$ ' + w + '</b><small>por semana</small></div>' +
           '<div><b>' + o.years + '</b><small>' + (o.years > 1 ? 'anos' : 'ano') + '</small></div></div>' +
         (breaks ? '<span class="tag ch-break">' + U.emo('⚠️', 'xs') + ' Quebra o desafio</span>' : '') +
         (opts.terms || '') +

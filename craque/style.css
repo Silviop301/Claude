@@ -2967,7 +2967,9 @@ button.mc-at.up { background: rgba(255, 255, 255, .75); }
 .of-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .of-tiles > div { border-radius: 12px; background: #EFE9D8; padding: 8px 2px 7px; text-align: center; min-width: 0; }
 .of-tiles b { display: block; font: 800 22px/1 var(--display); white-space: nowrap; }
-.of-tiles b.sm { font-size: 18px; line-height: 22px; }
+.of-tiles > div:nth-child(2) { container-type: inline-size; }
+/* Salário: encolhe com a largura da caixa ("R$ 999 mil" e "R$ 12,5 mi" ≈ 3,8 letras de 1em) para nunca vazar */
+.of-tiles b.wage { font-size: min(22px, 25cqi); line-height: 22px; }
 .of-tiles small { font: 600 11px var(--body); color: #5E6B63; }
 .of-body > .tag.ch-break { align-self: flex-start; margin: -4px 0 0; }
 .of-terms { display: flex; flex-direction: column; gap: 6px; }
