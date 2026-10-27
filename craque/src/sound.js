@@ -93,16 +93,16 @@
   // Torcida: milhares de vozes longe não têm tom, só "ar" com cor de vogal. Cada setor do estádio é um
   // ruído rosa com seu próprio sobe e desce (a multidão nunca grita junto), seu lado no estéreo e sua
   // hora de entrar. A emoção vem do brilho: color = [[tempo, razão das formantes]] sobe no gol e cai no "uhhh".
-  // (Um coro de vozes com tom foi tentado e soou como filme de terror.)
+  // (Um coro grave e sustentado foi tentado e soou como filme de terror: as vozes com tom são só os gritos agudos e curtos.)
   function crowd(t, o) {
     const dur = o.dur, g = ctx.createGain(), stops = [];
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(o.peak, t + o.a);
     g.gain.setValueAtTime(o.peak, t + o.hold);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    // Corta o agudo de cima: é ele que fazia a torcida antiga soar como chiado de TV
+    // Corta só o chiado de cima: abaixo de 5 kHz ficam os gritos agudos
     const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass'; lp.frequency.value = 3000; lp.Q.value = 0.5;
+    lp.type = 'lowpass'; lp.frequency.value = 5000; lp.Q.value = 0.5;
     g.connect(lp); out(lp, o.echo || 0.3);
     const sr = ctx.sampleRate, len = pinkBuf.length / sr;
     for (let i = 0; i < o.sections; i++) {
@@ -133,6 +133,28 @@
       n.start(t, rnd(0, len));
       n.stop(t + dur + 0.1);
     }
+    // Gritos agudos (mulheres, crianças, quem está perto): vozes curtas, cada uma numa hora, num tom e
+    // com tremido largo, para soarem como gente gritando e não como coro. bend = [razão no início, no fim].
+    const shout = ctx.createBiquadFilter();
+    shout.type = 'bandpass'; shout.frequency.value = 1500; shout.Q.value = 0.6;
+    shout.connect(g);
+    for (let i = 0; i < (o.shouts || 0); i++) {
+      const osc = ctx.createOscillator(), vg = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+      const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+      const f0 = rnd(330, 640), t0 = t + rnd(0, o.spread + o.hold * 0.5), len = Math.min(t + dur - t0, rnd(0.35, 0.9) * dur);
+      const v = rnd(0.4, 1) * (o.shoutGain || 0.3) / Math.sqrt(o.shouts);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(f0 * o.bend[0], t0);
+      osc.frequency.exponentialRampToValueAtTime(f0 * o.bend[1] * rnd(0.95, 1.05), t0 + len);
+      lfo.frequency.value = rnd(5, 8); lg.gain.value = f0 * rnd(0.03, 0.06);
+      lfo.connect(lg); lg.connect(osc.frequency);
+      vg.gain.setValueAtTime(0.0001, t0);
+      vg.gain.exponentialRampToValueAtTime(v, t0 + rnd(0.04, 0.12));
+      vg.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
+      osc.connect(vg);
+      if (pan) { pan.pan.value = rnd(-0.9, 0.9); vg.connect(pan); pan.connect(shout); } else vg.connect(shout);
+      [osc, lfo].forEach(x => { x.start(t0); x.stop(t0 + len + 0.05); });
+    }
   }
 
   const SOUNDS = {
@@ -161,11 +183,11 @@
     // Gol: a rede balança e a torcida explode, cada vez mais aberta
     goal(t) {
       noise(t, 0.35, 0.16, 0.01, 'bandpass', 2600, 900, 0.9);
-      crowd(t + 0.04, { vowel: 'o', dur: 2.9, a: 0.25, hold: 1.6, spread: 0.2, peak: 1, sections: 6, color: [[0, 0.85], [0.45, 1.15], [1.8, 1.15], [2.9, 0.9]] });
+      crowd(t + 0.04, { vowel: 'o', dur: 2.9, a: 0.25, hold: 1.6, spread: 0.2, peak: 1, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.8, 1.2], [2.9, 0.95]], shouts: 14, shoutGain: 1.1, bend: [1, 1.15] });
     },
     // Erro: o "uhhh" da torcida, que começa alto e vai murchando
     miss(t) {
-      crowd(t, { vowel: 'u', dur: 1.4, a: 0.12, hold: 0.4, spread: 0.1, peak: 1, sections: 5, color: [[0, 1.1], [0.3, 1.05], [1.4, 0.75]] });
+      crowd(t, { vowel: 'u', dur: 1.2, a: 0.08, hold: 0.3, spread: 0.08, peak: 1, sections: 5, color: [[0, 2.2], [0.2, 1.9], [1.2, 0.8]], shouts: 10, shoutGain: 0.9, bend: [1.08, 0.82] });
     },
     // Moeda: dois bipes de sino
     coin(t) {
@@ -181,7 +203,7 @@
     fanfare(t) {
       [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.36]].forEach(([f, dt]) => tone('sawtooth', f, f, t + dt, 0.2, 0.13, { a: 0.02, lp: 2400, echo: 0.3 }));
       [523, 659, 784, 1047].forEach(f => tone('sawtooth', f, f, t + 0.5, 1.2, 0.07, { a: 0.03, lp: 1800, echo: 0.4 }));
-      crowd(t + 0.4, { vowel: 'a', dur: 2.2, a: 0.3, hold: 1.2, spread: 0.3, peak: 0.6, sections: 5, color: [[0, 0.95], [0.5, 1.1], [2.2, 0.95]] });
+      crowd(t + 0.4, { vowel: 'a', dur: 2.2, a: 0.3, hold: 1.2, spread: 0.3, peak: 0.6, sections: 5, color: [[0, 0.95], [0.5, 1.1], [2.2, 0.95]], shouts: 10, shoutGain: 0.8, bend: [1, 1.1] });
     },
     // Contador da temporada: "tic" curto a cada gol/assistência
     tick(t) {
