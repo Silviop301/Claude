@@ -3514,6 +3514,113 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 
 /* ===== Visual novo (2026-10-27): um bloco por grupo de telas; cada bloco usa as variáveis do topo (--tx-*, --panel, --r-*) ===== */
 /* ----- V0: componentes comuns e computador (botões, abas, etiquetas, janelas, barra do topo, moldura no computador) ----- */
+/* Etiquetas: um formato só (ARRISCADA, SEGURA, NOVA, BASE, EMPRÉSTIMO, BANCO, RETA FINAL); a cor dá o sentido */
+.tag, .ob3-tag, .of-id .of-kind, .choice.tr > .tag, .tr-pick .tag {
+  display: inline-block; padding: 4px 7px 3px; border-radius: 6px; font: 700 12px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.choice .d .tag { line-height: 1.2; }
+
+/* Escolhido: um jeito só em abas, segmentados e chips. No verde, trilho escuro e o escolhido em creme com texto escuro;
+   no papel (ficha, propostas), o contrário: escolhido em verde-escuro com texto creme */
+.seg.cfg-seg, .seg.fb-seg, .rk-tabs, .sl-seg, .ed-tabs {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding: 4px; border-radius: var(--r-md); background: rgba(0, 0, 0, .24); }
+.seg.cfg-seg button, .seg.fb-seg button, .rk-tabs button, .sl-seg button, .ed-tabs button {
+  min-height: 44px; height: auto; padding: 8px 6px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--tx-2); font: 700 16px/1.1 var(--display); box-shadow: none; }
+.seg.cfg-seg button.on, .seg.fb-seg button.on, .rk-tabs button.on, .sl-seg button.on, .ed-tabs button.on {
+  background: var(--paper); color: var(--ink); box-shadow: 0 1px 0 rgba(0, 0, 0, .3); }
+.desk .seg.cfg-seg button:not(.on):hover, .desk .seg.fb-seg button:not(.on):hover, .desk .rk-tabs button:not(.on):not(:disabled):hover,
+.desk .sl-seg button:not(.on):hover, .desk .ed-tabs button:not(.on):hover { background: var(--panel-2); color: var(--tx-1); }
+/* Chips de filtro (ranking, itens, opinião): pílula; o escolhido igual às abas */
+.rk-chips button, .mi-tabs button, .fb-likes button {
+  min-height: 40px; padding: 0 14px; border: 1px solid var(--panel-line); border-radius: 999px; background: var(--panel); color: var(--tx-2); font: 700 15px var(--display); }
+.rk-chips button.on, .mi-tabs button.on, .fb-likes button.on { background: var(--paper); border-color: var(--paper); color: var(--ink); }
+.mi-tabs button small { color: inherit; }
+.fb-rate button.on { background: rgba(251, 248, 239, .14); box-shadow: inset 0 0 0 2px var(--paper); }
+/* Abas de texto (Sala de Troféus): sublinhado creme */
+.sl-tabs button { color: var(--tx-3); }
+.sl-tabs button.on { color: var(--tx-1); border-bottom-color: var(--paper); }
+.sl-tabs button.on span { color: var(--tx-2); }
+/* No papel */
+.sh-tabs button { color: var(--ink-2); }
+.sh-tabs button.on { background: var(--ink); color: var(--paper); box-shadow: none; }
+
+/* Botão secundário: mais leve que o dourado (uma ação principal por tela) */
+.btn.ghost { padding: 10px 16px; min-height: 48px; font: 700 17px/1.15 var(--display); background: transparent; color: var(--tx-1); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .22); }
+.btn.ghost small { font: 600 13px/1.25 var(--body); color: var(--tx-3); margin-top: 2px; }
+.desk .btn.ghost:not(:disabled):hover { background: var(--panel-2); }
+.ask .btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px rgba(19, 32, 26, .2); }
+.desk .ask .btn.ghost:not(:disabled):hover { background: rgba(19, 32, 26, .06); }
+
+/* Voltar: pílula com a seta desenhada, mesma altura em toda tela */
+.back-link { display: inline-flex; align-items: center; min-height: 34px; padding: 0 14px 0 12px; border-radius: 999px; background: var(--panel-2); color: var(--tx-1); font: 700 15px var(--body); }
+.desk .back-link:hover { background: rgba(255, 255, 255, .16); }
+
+/* Links de texto: 14 px e área de toque de 44 px, sem mudar o desenho de link */
+.link-btn { position: relative; font-size: 14px; }
+.eyebrow .link-btn { font-size: 13px; }
+.link-btn::after { content: ''; position: absolute; inset: -12px -4px; }
+/* Rótulo de seção (conquistas, Sala, despedida): igual ao eyebrow; no papel, cinza do papel */
+.room-title { margin-top: 4px; font: var(--t-label); letter-spacing: .14em; text-transform: uppercase; color: var(--label); }
+.room-title.ach-near-t { color: var(--gold-2); }
+.final .room-title, .card .room-title { color: var(--ink-2); }
+/* Rolagem até um bloco (resumo, Copa): o bloco para abaixo da barra grudada no topo, não embaixo dela */
+html:has(#bar:not([hidden])) { scroll-padding-top: calc(var(--bar-h, 0px) + 12px); }
+/* Folha sem abas (pedir ao empresário): do tamanho do conteúdo, até o limite de sempre. A ficha (com abas) fica com a
+   altura fixa para não pular de tamanho ao trocar de aba, um pouco mais baixa (menos creme vazio nas abas curtas) */
+.sheet:not(:has(.sh-tabs)) { height: auto; max-height: min(82vh, 700px); }
+html.desk .sheet:not(:has(.sh-tabs)) { height: auto; max-height: min(calc(82vh / var(--z, 1)), 700px); }
+.sheet:not(:has(.sh-tabs)) > .sh-body { flex: 1 1 auto; min-height: 0; }
+.sheet:has(.sh-tabs) { height: min(74vh, 640px); }
+html.desk .sheet:has(.sh-tabs) { height: min(calc(74vh / var(--z, 1)), 640px); }
+/* Celular estreito: o par do fim da temporada (dourado + postar) cabe sem quebrar o dourado em duas linhas */
+@media (max-width: 370px) {
+  .s-go, #after > .rv.s-acts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .s-go > #b-next, #after > .s-acts > #b-next { padding-inline: 8px; font-size: 18px; }
+  .s-go > #b-post, #after > .s-acts > #b-post { padding-inline: 6px; font-size: 15px; }
+}
+
+/* Janela de confirmação: título, texto e as duas ações com o mesmo peso de sempre */
+.ask { width: min(100%, 360px); gap: 10px; padding: 20px 18px 16px; border-radius: var(--r-xl); box-shadow: var(--sh-float), 0 0 0 1px rgba(0, 0, 0, .08); }
+.ask b { font: var(--t-h1); font-size: 26px; line-height: 1.05; text-wrap: balance; }
+.ask p { margin: 0 0 6px; font: 500 16px/1.4 var(--body); color: var(--ink-2); }
+.ask .btn { margin: 0; }
+
+/* Dica da primeira vez: bloco de apoio (escuro), sem competir com o cartão e o botão dourado */
+.tip-card { background: var(--panel-2); color: var(--tx-1); border: 1px solid var(--panel-line); box-shadow: none; }
+.tip-card summary b { color: var(--tx-1); font: 700 16px/1.15 var(--display); }
+.tip-card summary em { color: var(--label); }
+.tip-body p { color: var(--tx-2); }
+.tip-ok { background: var(--paper); color: var(--ink); }
+.tip-off { color: var(--tx-3); }
+
+/* Barra do topo: fundo de placar (mais escuro que o gramado), separada do conteúdo que rola por baixo */
+.bar { background: rgba(7, 17, 12, .9); border-color: var(--panel-line); box-shadow: 0 6px 18px rgba(0, 0, 0, .25); }
+/* Barra do topo no computador (tela larga): uma linha só, como um placar (nome, medidores com o estado, números, nota) */
+.rel .ml .mv { display: none; }
+@media (min-width: 1000px) {
+  .bar { grid-template-columns: minmax(150px, 1.25fr) repeat(3, minmax(92px, 1fr)) auto auto auto; column-gap: 20px; padding: 10px 12px 10px 16px; border-radius: var(--r-lg); }
+  .bar > .rel { display: contents; }
+  .bar .bar-id { grid-column: 1; grid-row: 1; }
+  .bar .rel .m { grid-row: 1; align-self: center; gap: 6px; }
+  .bar .rel .m:nth-child(1) { grid-column: 2; } .bar .rel .m:nth-child(2) { grid-column: 3; } .bar .rel .m:nth-child(3) { grid-column: 4; }
+  .bar .rel .ml { justify-content: flex-start; }
+  .bar .rel .ml .mv { display: block; margin-left: auto; font: 600 13px var(--body); font-style: normal; letter-spacing: 0; text-transform: none; color: var(--tx-3); white-space: nowrap; }
+  .bar .bar-tot { grid-column: 5; grid-row: 1; gap: 14px; padding-left: 20px; border-left: 1px solid var(--panel-line); }
+  .bar .ovr { grid-column: 6; grid-row: 1; }
+  .bar .bar-btns { grid-column: 7; grid-row: 1; align-self: center; }
+}
+
+/* Computador e tablet deitado: a moldura tem a mesma largura em toda tela da carreira (antes mudava de tela para tela);
+   a barra do topo ocupa a moldura toda e a tela fica no meio dela, com a largura que tiver */
+@media (min-width: 1000px) {
+  /* moldura: até 1120 px; na tela menor que isso ocupa a largura toda (como antes). A barra fica 24 px para dentro de cada lado
+     (o 100vw conta a barra de rolagem; a moldura é fixa e não rola para o lado) */
+  :root { --frame: min(1120px, 100vw / var(--z, 1)); --bar-w: min(1088px, 100vw / var(--z, 1) - 48px); }
+  body:has(#bar:not([hidden]))::before { content: ''; position: fixed; z-index: -1; top: 0; bottom: 0; left: 50%; width: var(--frame); transform: translateX(-50%); pointer-events: none;
+    background: var(--pitch) repeating-linear-gradient(0deg, transparent 0 56px, rgba(255, 255, 255, .025) 56px 112px);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .06), 0 30px 80px rgba(0, 0, 0, .55); }
+  body:has(#bar:not([hidden])) #app { background: none; box-shadow: none; }
+  #bar:not([hidden]) { margin-inline: calc((100% - var(--bar-w)) / 2); }
+}
 /* ----- fim V0 ----- */
 
 /* ----- V1: início e telas de fora (Minhas carreiras, ranking, conquistas, conta, configurações, opinião) ----- */
