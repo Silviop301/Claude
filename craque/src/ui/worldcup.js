@@ -44,17 +44,20 @@
     '<details class="ob5-how"><summary>Como funciona o lance</summary><p>' + U.MINI_HOW[type] + '</p><div class="chips ob5-facts in">' + U.miniFacts(type).join('') + '</div></details>' +
     '<p class="st-lead ob5-q">Como você vai ' + { cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar' }[type] + '?</p>' + U.styleBtns(type, true);
 
+  // Como funciona o torneio: duas linhas de apoio com ícone (o cartão principal da tela é a convocação)
+  const wcRules = () => '<div class="wc-rules"><p>' + U.emo('⚽', 'sm') + '<span>Fase de grupos com 3 jogos, depois mata-mata até a final.</span></p>' +
+    '<p>' + U.emo('🥅', 'sm') + '<span>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</span></p></div>';
+
   function cwcIntro() {
     G.step = 'cwc';
     if (isCwc(G.c.wcRun) && G.c.wcRun.year === year()) { save(); return wcPlay(); }
     const call = S.cwcCall(G.c), cl = call.club;
     save();
     render(
-      '<div class="eyebrow">Mundial de Clubes ' + year() + '</div>' +
-      '<div class="wc-hero">' + crest(cl.id, 'xl') + '<h2>' + D.O(esc(cl.name)) + ' vai ao Mundial de Clubes!</h2>' +
+      '<div class="wc-hero"><div class="eyebrow">Mundial de Clubes ' + year() + '</div><span class="wc-mark">' + crest(cl.id, 'xl') + '</span><h2>' + D.O(esc(cl.name)) + ' vai ao Mundial de Clubes!</h2>' +
       '<p class="lead">' + (call.champ ? 'Vaga de campeão continental. ' : 'Vaga pelo ranking de clubes. ') + '32 clubes de todos os continentes brigam pelo título. ' +
       (call.starter ? 'Você é peça-chave do time.' : G.c.pos === 'GOL' ? 'Você é o goleiro reserva: a vaga depende do titular.' : 'Você começa no banco, mas pode decidir.') + '</p></div>' +
-      '<div class="card wc-rules"><p>Fase de grupos com 3 jogos, depois mata-mata até a final.</p><p>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</p></div>' +
+      wcRules() +
       '<button class="btn" id="b-wc">' + (U.cfg.cups === 'sim' ? 'Simular o Mundial' : 'Começar o Mundial') + '</button>'
     );
     $('b-wc').onclick = () => { simAll = U.cfg.cups === 'sim'; S.cwcStart(G.c); save(); wcPlay(); };
@@ -67,10 +70,9 @@
     save();
     natBg();
     render(
-      '<div class="eyebrow">Copa do Mundo ' + year() + '</div>' +
-      '<div class="wc-hero"><span class="wc-bigflag">' + U.flag(call.nation.flag) + '</span><h2>Convocado pela seleção ' + ofCountry(G.c.country) + '!</h2>' +
+      '<div class="wc-hero"><div class="eyebrow">Copa do Mundo ' + year() + '</div><span class="wc-mark"><span class="wc-bigflag">' + U.flag(call.nation.flag) + '</span></span><h2>Convocado pela seleção ' + ofCountry(G.c.country) + '!</h2>' +
       '<p class="lead">' + (call.starter ? 'Você chega como titular. O país inteiro está de olho.' : (G.c.pos === 'GOL' ? 'Você vai como goleiro reserva: se o titular se machucar ou for poupado, a vaga é sua.' : 'Você vai como reserva: entra no segundo tempo e pode decidir.')) + '</p></div>' +
-      '<div class="card wc-rules"><p>Fase de grupos com 3 jogos, depois mata-mata até a final.</p><p>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</p></div>' +
+      wcRules() +
       '<button class="btn" id="b-wc">' + (U.cfg.cups === 'sim' ? 'Simular a Copa' : 'Começar a Copa') + '</button>'
     );
     if (G.c.wcCallShown !== year()) { G.c.wcCallShown = year(); save(); U.callUp(G.c, call); } // lista da seleção (motion.js)
@@ -81,7 +83,9 @@
   const teamName = (run, id) => (id === 'me' ? usName(run) : esc(isCwc(run) ? S.cwcTeam(id).name : id));
   const teamMark = (run, id) => (id === 'me' ? usMark(run) : isCwc(run) ? crest(id, 'xs') : U.flag(D.NATION_BY_NAME[id].flag));
   function groupTable(run, n) {
-    const t = S.wcGroupTableAt(run, n);
+    // Até fechar o primeiro jogo (que pode parar no lance) o motor ainda não montou a tabela: os quatro do grupo aparecem
+    // zerados, para a tela não começar vazia
+    const t = S.wcGroupTableAt(run, n) || (run.stage === 0 && run.group ? ['me'].concat(run.group).map(id => ({ id, pts: 0, gf: 0, ga: 0 })) : null);
     if (!t) return '';
     const played = Math.min(n, 3);
     return '<div class="wc-tbl"><div class="wt-h"><span>Grupo · ' + (played >= 3 ? 'final' : played ? 'rodada ' + played + ' de 3' : 'antes da estreia') + '</span><span>Pts</span><span>Saldo</span></div>' +
@@ -345,14 +349,15 @@
       ? '<div class="wc-end champ">' + (cwc ? trophy('cwc', 96, 'Mundial de Clubes') : trophy('wc', 96)) + '<b class="wc-band gold">' + (cwc ? 'Campeão mundial!' : 'Campeão do mundo!') + '</b><span class="wc-end-who">' + usMark(run) + ' ' + usName(run) + ' · ' + run.year + '</span></div>'
       : run.reached === 'Final'
         ? '<div class="wc-end vice">' + big + '<b class="wc-band silver">' + (cwc ? 'Vice-campeão mundial' : 'Vice-campeão do mundo') + '</b><span class="wc-end-who">Perdeu a final ' + lost(last) + '</span></div>'
-        : /^Grupo/.test(run.reached)
+        : /^(Grupo|Fase de grupos)/.test(run.reached)
           ? '<div class="wc-end out">' + big + '<b class="wc-band phase">Eliminado na fase de grupos</b><span class="wc-end-who">' + (ge ? (ge.pos ? ge.pos + 'º lugar no grupo com ' : 'Terminou com ') + D.plural(ge.pts, 'ponto', 'pontos') : usName(run) + ' · ' + run.year) + '</span></div>'
           : '<div class="wc-end out">' + big + '<b class="wc-band phase">Eliminado ' + (PH[run.reached] || esc(run.reached.toLowerCase())) + '</b><span class="wc-end-who">Caiu ' + lost(last) + '</span></div>';
     const n = (v, one, many) => '<span><b>' + v + '</b>' + (v === 1 ? one : many) + '</span>';
-    $('wc-after').innerHTML = end +
+    // O fim num cartão só: bandeira (ou escudo), a faixa do resultado e, embaixo, os seus números no torneio
+    $('wc-after').innerHTML = end.replace(/<\/div>$/, '') +
       '<p class="sx-lbl">' + (cwc ? 'Seu Mundial' : 'Sua Copa') + '</p><div class="wc-end-stats">' + n(run.games.length, 'jogo', 'jogos') + (S.defKick(G.c.pos)
         ? n(run.games.filter(x => x.cs).length, 'sem sofrer gol', 'sem sofrer gol') + (run.g ? n(run.g, 'gol', 'gols') : '')
-        : n(run.g, 'gol', 'gols') + n(run.a, 'assistência', 'assistências')) + '</div>' +
+        : n(run.g, 'gol', 'gols') + n(run.a, 'assistência', 'assistências')) + '</div></div>' +
       '<button class="btn" id="b-next">' + (S.mustRetire(G.c) ? 'Ver sua carreira' : 'Seguir a carreira') + '</button>';
     if (run.champion) {
       const btn = $('b-next');

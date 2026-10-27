@@ -517,7 +517,7 @@
     if (!feed || !G.c) return; // a tela do resumo já não está aberta (ex.: voltou ao início durante a comemoração)
     feed.innerHTML = ''; // o ticker da temporada ao vivo sai: o lance principal fica em "O que falaram", os outros nos detalhes
     // Só o lance mais marcante na tela (no bloco da história do ano); os outros ficam nos detalhes
-    const hl = res.highlights[0] ? '<p class="st-hl rv">' + esc(res.highlights[0]) + '</p>' : '';
+    const hl = res.highlights[0] ? '<div class="st-hl rv"><div class="np">Lance da temporada</div><p>' + esc(res.highlights[0]) + '</p></div>' : '';
     const dOvr = res.ovr1 - res.ovr0;
     const fin = S.mustRetire(G.c);
     const tb = res.table;
