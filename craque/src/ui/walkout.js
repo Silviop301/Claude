@@ -61,7 +61,7 @@
       '<div class="wo-step wo-crest"><img src="' + (d.crest ? U.badgeSrc(d.crest) : 'icons/icon-192.png') + '" alt=""></div>' +
       '<div class="wo-card card3d-host"><canvas aria-label="Carta nova"></canvas></div>' +
       '<div class="wo-title"><span>' + (card ? 'Carta especial' : 'Nova carta') + '</span><b>' + (card ? SPECIAL[card.type] : TIER_NAME[t]) + '</b></div>' +
-      '<div class="wo-tap">Toque para continuar</div>';
+      '<div class="wo-tap">' + (U.tapWord && U.tapWord(true) === 'Clique' ? 'Clique fora da carta para continuar' : 'Toque para continuar') + '</div>';
     if (!d.crest) wrap.querySelector('.wo-crest').innerHTML = '<span class="wo-bigflag">' + U.flag(cty.flag) + '</span>';
     document.body.appendChild(wrap);
     let viewer = null;
@@ -74,7 +74,17 @@
       wrap.classList.add('out');
       setTimeout(() => { if (viewer) viewer.dispose(); wrap.remove(); onClose && onClose(); }, 250);
     };
-    setTimeout(() => { wrap.onclick = close; }, 300);
+    // Arrastar a carta para girar não fecha (no mouse, soltar o botão também vira clique); no mouse, clicar na carta dá um giro
+    let p0 = null;
+    wrap.addEventListener('pointerdown', e => { p0 = { x: e.clientX, y: e.clientY, mouse: e.pointerType === 'mouse' }; });
+    setTimeout(() => {
+      wrap.onclick = e => {
+        const p = p0; p0 = null;
+        if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) > 8) return;
+        if (p && p.mouse && wrap.classList.contains('shown') && e.target.closest('.wo-card')) { if (viewer && viewer.spin) viewer.spin(); return; }
+        close();
+      };
+    }, 300);
   }
 
   // Várias revelações em fila (subiu de faixa + cartas especiais da temporada)
