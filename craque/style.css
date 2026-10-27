@@ -3529,4 +3529,125 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 /* ----- fim V4 ----- */
 
 /* ----- V5: cartas e coleção (carta nova, álbum, coleção, carta 3D, Sala de Troféus, pacotinhos, itens) ----- */
+/* Carta desenhando (album.js, cardview.js mount3d: classe .ld até o CRAQUE_CARD terminar): silhueta com brilho
+   passando no lugar da carta pela metade (só a nota e a posição enquanto o escudo e a fonte da assinatura carregam) */
+@keyframes v5-shim { to { background-position: -200% 0; } }
+.al-card.ld, .cv-page .card3d-host.ld > canvas:not(.card3d-cv) {
+  background: linear-gradient(110deg, rgba(255, 255, 255, .05) 30%, rgba(255, 255, 255, .13) 50%, rgba(255, 255, 255, .05) 70%) 0 0 / 200% 100%;
+  border-radius: 16px 16px 46% 46% / 16px 16px 22% 22%; }
+.al-card.ld { animation: pop .45s ease, v5-shim 1.3s linear infinite; }
+.al-card.ld canvas { opacity: 0; }
+.cv-page .card3d-host.ld > canvas:not(.card3d-cv) { animation: v5-shim 1.3s linear infinite; }
+.al-card canvas, .cv-page .card3d-host > canvas:not(.card3d-cv) { transition: opacity .3s ease; }
+/* O canvas vazio tem 300×150: com a proporção da carta fixa, nada pula nem alarga a tela enquanto ela desenha */
+.al-card { aspect-ratio: 600 / 860; }
+.al-card canvas { height: 100%; aspect-ratio: 600 / 860; }
+.cv-page .card3d-host.big > canvas:not(.card3d-cv) { aspect-ratio: 600 / 860; max-width: 100%; object-fit: contain; }
+
+/* Carta nova: no computador e no tablet a carta cresce com a altura da tela; o "Toque para continuar" mais legível */
+.wo-card { width: min(74vw, 340px, max(220px, calc((100svh - 230px) * .7))); }
+.wo-title span { opacity: 1; color: var(--tx-2); }
+.wo-tap { font: 600 14px var(--body); color: var(--tx-3); letter-spacing: .02em; }
+
+/* Álbum (stories): uma coluna de celular no meio da tela larga; título no alto, carta e números no meio da altura que sobra */
+.album { gap: 12px; padding-left: max(16px, calc(50% - 240px)); padding-right: max(16px, calc(50% - 240px)); }
+.al-x { right: max(12px, calc(50% - 236px)); }
+.al-x::after { content: ''; position: absolute; inset: -4px; } /* toque de 44 px sem mudar o desenho */
+.al-t { margin-top: 4px; text-align: center; line-height: 1.05; }
+.album > .al-t + * { margin-top: auto; }
+.album > .al-chips { margin-bottom: auto; }
+/* Cartas maiores, limitadas pela altura (a temporada tem o recorte de jornal embaixo; a especial fica sozinha) */
+.al-card { width: min(66vw, 280px, max(150px, calc((100svh - 340px) / 1.433))); }
+.al-card.big { width: min(78vw, 330px, max(170px, calc((100svh - 210px) / 1.433))); }
+.al-clip { width: min(100%, 380px); }
+/* Carta especial: o nome dela vira o título embaixo da carta (antes uma pílula igual às dos números) */
+.al-card.big + .al-chips em { background: none; box-shadow: none; padding: 0; font: 800 24px/1.1 var(--display); letter-spacing: .03em; text-transform: uppercase; color: var(--tx-1); text-align: center; }
+.al-chips em { font-size: 14px; padding: 5px 12px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--panel-line); }
+/* Última página: a carta final é a estrela (antes era a menor da história), com brilho dourado; curva mais baixa e nomes legíveis */
+.al-chart { flex: none; height: min(150px, 18svh); max-width: 420px; }
+.al-chart text { font: 600 11px var(--body); paint-order: stroke; stroke: rgba(7, 21, 16, .85); stroke-width: 3px; }
+.al-card.small { width: min(58vw, 250px, max(130px, calc((100svh - 400px) / 1.433))); }
+.al-card.small canvas { filter: drop-shadow(0 0 24px rgba(244, 214, 117, .38)) drop-shadow(0 8px 16px rgba(0, 0, 0, .5)); }
+.al-share { flex: none; margin-top: 0; max-width: 440px; }
+/* Tela larga: as laterais escurecem um pouco, a história fica como uma tela de celular no meio */
+@media (min-width: 700px) {
+  .album { background: linear-gradient(90deg, rgba(0, 0, 0, .3), rgba(0, 0, 0, 0) calc(50% - 300px), rgba(0, 0, 0, 0) calc(50% + 300px), rgba(0, 0, 0, .3)), radial-gradient(circle at 50% 30%, #1D4430, #071510); }
+}
+
+/* Coleção (álbum de folhear): a página ocupa a altura da tela; nomes das vagas legíveis (11 → 13 px) e paginação no padrão */
+.bk-page { min-height: clamp(470px, calc(100svh - 210px), 660px); }
+.bk-grid { align-content: space-evenly; gap: 14px 12px; }
+.bk-head { font-size: 16px; color: var(--gold-ink); align-items: center; }
+.bk-head span { font: 700 14px var(--display); letter-spacing: .02em; color: #5B5340; background: rgba(122, 90, 18, .1); border-radius: 999px; padding: 3px 10px; }
+.bk-page .col-slot { font: 600 13px/1.2 var(--body); color: var(--ink); gap: 6px; }
+.bk-page .col-slot.empty span { opacity: 1; color: var(--ink-2); }
+.bk-page .col-slot span.flag { font-size: 22px; }
+.bk-page .col-ghost { border-radius: var(--r-sm); }
+.col-rar { font-size: 12px; padding: 2px 7px; }
+.bk-foot { font: 700 13px var(--display); color: var(--ink-2); }
+.bk-cover small { font-size: 14px; color: var(--tx-2); margin-top: 6px; }
+/* Capa: sumário com cada parte do álbum (tocar abre a parte); emblema e margens menores para caber em 360×640 */
+.bk-cover .bk-emb { font-size: 52px; }
+.bk-prog { margin-top: 14px; }
+.bk-idx { display: flex; flex-direction: column; width: min(100%, 280px); margin-top: 12px; border-top: 1px solid rgba(244, 214, 117, .22); }
+.bk-idx button { display: grid; grid-template-columns: minmax(0, 1fr) 70px 46px; align-items: center; gap: 10px; min-height: 44px; padding: 0 4px; border: 0;
+  border-bottom: 1px solid rgba(244, 214, 117, .22); background: none; color: var(--tx-1); font: 700 16px var(--display); text-align: left; cursor: pointer; }
+.bk-idx button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bk-idx i { height: 6px; border-radius: 999px; background: rgba(0, 0, 0, .3); overflow: hidden; }
+.bk-idx em { display: block; height: 100%; border-radius: 999px; background: var(--gold); }
+.bk-idx b { text-align: right; font: 800 16px var(--display); color: var(--gold-2); font-variant-numeric: tabular-nums; }
+.bk-idx button.full b::after { content: ' ✓'; }
+.desk .bk-idx button:hover span { color: var(--gold-2); }
+.bk-nav { gap: 16px; color: var(--tx-2); font: 700 17px var(--display); }
+.bk-nav #bk-n { min-width: 120px; text-align: center; }
+.bk-arrow { background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--panel-line), var(--sh-press); }
+.bk-arrow:disabled { opacity: .35; box-shadow: inset 0 0 0 1px var(--panel-line); }
+
+/* Carta aberta (coleção e link compartilhado): nome, posição e dica mais legíveis; botões separados */
+.cv-info b { font-size: 32px; line-height: 1.05; }
+.cv-info span { font-size: 15px; color: var(--tx-2); }
+.cv-page .cv-hint { color: var(--tx-3); margin: 6px 0 16px; }
+.cv-info { margin-top: 6px; }
+.cv-page .btn + .btn { margin-top: 10px; }
+/* Celular baixo (360×640): os dois botões cabem na tela sem rolar (a carta encolhe um pouco) */
+@media (max-height: 700px) {
+  .cv-page .card3d-host.big { height: min(55vh, 520px); }
+  .cv-info { margin-top: 0; }
+  .cv-page .cv-hint { margin: 2px 0 10px; }
+}
+
+/* Sala de Troféus: na tela larga a estante cresce (640 px) e cabe uma taça a mais por prateleira */
+@media (min-width: 1000px) {
+  .sala > * { max-width: 640px; }
+  .sl-row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .sl-honra { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .sl-deco { right: -20px; }
+  .sl-metas { margin: 0; padding-left: 0; padding-right: 0; }
+  .sl-meta { flex: 1 1 0; width: auto; min-width: 0; }
+}
+.sl-meta b { color: var(--tx-2); }
+.sl-hist em { color: var(--ink-2); }
+
+/* Pacotinhos: "Pacotinho 1 de 4" num selo no meio, acima do envelope (antes solto no canto, em 12 px) */
+.pk-stage > .pk-eyebrow { align-self: center; padding: 6px 14px; border-radius: 999px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--panel-line);
+  font: 700 13px var(--display); letter-spacing: .14em; color: var(--tx-2); }
+.pk-odds { font-size: 15px; color: var(--tx-2); }
+.pk-odds b { color: var(--tx-1); }
+.pk-pity { color: var(--tx-2); }
+/* Resumo (abrir todos): os itens no meio da tela, botões embaixo; com muitos itens a grade rola em vez de sair da tela */
+.pk-res > .pk-eyebrow { margin-top: auto; }
+.pk-res .pk-h { margin-top: -6px; }
+.pk-res .pk-grid { flex: 0 1 auto; min-height: 0; overflow-y: auto; padding: 10px 6px 4px; margin: -10px -6px 0; gap: 16px 12px; scrollbar-width: none; }
+.pk-t > b { font: 700 15px/1.15 var(--display); }
+.pk-acts #pk-close.btn { margin: 0; }
+
+/* Monitor grande (zoom --z): as alturas acima que dependem da tela, divididas pelo zoom */
+@media (min-width: 1280px) and (min-height: 860px) {
+  html.desk .wo-card { width: min(74vw, 340px, max(220px, calc((100svh / var(--z) - 230px) * .7))); }
+  html.desk .al-card { width: min(66vw, 280px, max(150px, calc((100svh / var(--z) - 340px) / 1.433))); }
+  html.desk .al-card.big { width: min(78vw, 330px, max(170px, calc((100svh / var(--z) - 210px) / 1.433))); }
+  html.desk .al-card.small { width: min(58vw, 250px, max(130px, calc((100svh / var(--z) - 400px) / 1.433))); }
+  html.desk .al-chart { height: min(150px, calc(18svh / var(--z))); }
+  html.desk .bk-page { min-height: clamp(470px, calc(100svh / var(--z) - 210px), 660px); }
+}
 /* ----- fim V5 ----- */

@@ -67,7 +67,8 @@
   // Carta 3D num elemento; se o 3D não vier, a carta desenhada
   function mount3d(host, d, opts) {
     const cv = host.querySelector('canvas');
-    if (cv) window.CRAQUE_CARD(cv, d);
+    // 'ld' enquanto a carta desenha (escudo e fonte da assinatura chegam depois): a tela mostra a silhueta, não a carta pela metade
+    if (cv) { const ready = () => host.classList.remove('ld'); host.classList.add('ld'); Promise.resolve(window.CRAQUE_CARD(cv, d)).then(ready, ready); }
     const go = () => (window.CRAQUE_BALL && window.CRAQUE_BALL.card3d && U.cfg.fx3d ? window.CRAQUE_BALL.card3d(host, d, opts) : Promise.resolve(null));
     // O módulo 3D pode ainda estar carregando
     const wait = n => (window.CRAQUE_BALL && window.CRAQUE_BALL.card3d) || n <= 0 || !U.cfg.fx3d ? go() : new Promise(r => setTimeout(r, 150)).then(() => wait(n - 1));
