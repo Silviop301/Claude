@@ -89,6 +89,7 @@
     let raf = 0, over = false, last = 0, lastSeg = '';
     const show = r => {
       wheel.style.transform = 'rotate(' + r.toFixed(2) + 'deg)';
+      wheel.style.setProperty('--rot', r.toFixed(2) + 'deg'); // os números da roda giram de volta e ficam sempre de pé
       const k = under(r), side = k <= pc ? 'w' : 'l';
       hub.className = 'mo-hub ' + side; // o centro acende na cor da fatia sob o ponteiro (o número fica só no motor)
       // Um "tic" a cada troca de cor e a cada 10 números (no máximo um a cada 70 ms)

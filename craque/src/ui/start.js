@@ -81,15 +81,20 @@
     G.c = null; G.step = null; bar();
     U.backTo = mine;
     const hall = load(HALL) || [];
+    // Linha do Hall da Fama: nota (mesma etiqueta do ranking), jogador e números, pontuação à direita
+    const stats = h => (h.pos === 'GOL' ? h.cs + ' sem sofrer gol · ' + h.penSaved + ' pên. def. · ' : h.pos === 'ZAG' ? h.cs + ' sem sofrer gol · ' + D.plural(h.goals, 'gol', 'gols') + ' · ' : D.plural(h.goals, 'gol', 'gols') + ' · ' + h.assists + ' assist. · ') +
+      D.plural(h.titles, 'taça', 'taças') + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '');
     render('<button class="back-link" id="b-back-home">‹ Início</button><div class="eyebrow">Suas carreiras</div><h2>Minhas carreiras</h2>' +
-      U.salaHome() +
+      '<div class="mc-side">' + U.salaHome() +
       '<div class="home-grid">' +
       '<button class="hg" id="b-col"><i>' + U.ICON.cards + '</i><b>Coleção</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carta' : ' cartas') + '</small></button>' +
       '<button class="hg" id="b-ach"><i>' + U.ICON.medal + '</i><b>Conquistas</b><small>' + U.achCount() + ' de ' + S.ACHIEVEMENTS.length + '</small></button>' +
-      '</div>' +
-      (hall.length ? '<div class="eyebrow" style="margin-top:8px">Hall da Fama</div><div class="hall">' +
-        hall.map(h => '<div><b>' + h.grade + '</b><span>' + esc(h.name) + ' · ' + esc(h.verdict) + '<br><small>' + (h.pos === 'GOL' ? h.cs + ' sem sofrer gol · ' + h.penSaved + ' pên. def. · ' : h.pos === 'ZAG' ? h.cs + ' sem sofrer gol · ' + D.plural(h.goals, 'gol', 'gols') + ' · ' : D.plural(h.goals, 'gol', 'gols') + ' · ' + h.assists + ' assist. · ') + D.plural(h.titles, 'taça', 'taças') + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '') + '</small></span><span class="muted">' + h.score + '</span></div>').join('') + '</div>'
-        : '<p class="muted small">Termine uma carreira para ela aparecer aqui.</p>'));
+      '</div></div>' +
+      '<section class="mc-hall"><div class="eyebrow">Hall da Fama</div>' +
+      (hall.length ? '<div class="mc-list">' +
+        hall.map((h, i) => '<div class="mc-row' + (i ? '' : ' best') + '"><span class="rk-g g' + esc(h.grade) + '">' + esc(h.grade) + '</span><span class="mc-who"><b>' + esc(h.name) + ' · ' + esc(h.verdict) + '</b>' +
+          '<small>' + stats(h) + '</small></span><span class="mc-pts">' + Number(h.score).toLocaleString('pt-BR') + '<small>pts</small></span></div>').join('') + '</div>'
+        : '<p class="mc-empty">' + U.ICON.trophy + '<span>Termine uma carreira para ela aparecer aqui.</span></p>') + '</section>');
     $('b-back-home').onclick = home;
     $('b-col').onclick = U.collection;
     $('b-ach').onclick = U.achievements;

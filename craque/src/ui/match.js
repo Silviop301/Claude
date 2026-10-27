@@ -40,6 +40,19 @@
       (i === 0 && ev.dest && S.breaksChallenge(c, { club: ev.dest }) ? '<small class="ch-warn">' + U.emo('⚠️', 'xs') + ' Quebra o desafio</small>' : '') + '</button>';
   }
 
+  // Rodapé de quem tem opção segura e arriscada. Em geral a arriscada rende mais; quando o melhor caso dela é "nada muda",
+  // a vantagem é escapar do custo da segura (ex.: os R$ 30 mil das aulas de idioma), e o texto diz isso
+  function riskNote(c, ev) {
+    const risky = ev.options.filter(o => o.st && !o.st.safe && !o.locked), safes = ev.options.filter(o => o.st && o.st.safe && !o.locked);
+    if (!risky.length || risky.some(o => S.fxValue(c, o.st.win.fx || {}) > 0)) return 'A arriscada pode render mais, mas pode dar errado de verdade.';
+    const cost = safes.map(o => S.fxParts(c, o.st.safe.fx || {}).filter(x => /^−|−\d| cai|mais fraco|deixa de|não será/.test(x))).find(x => x.length) || [];
+    const cash = cost.find(x => /^−R\$ /.test(x)), other = cost.filter(x => x !== cash);
+    const why = cash ? 'economizar os ' + cash.slice(1) + ' da segura' + (other.length ? ' (e ' + other.join(', ') + ')' : '')
+      : other.length ? 'escapar do que a segura custa (' + other.join(', ') + ')' : '';
+    return why ? 'A arriscada não rende nada a mais: a vantagem dela é ' + why + '. Se der errado, a perda é de verdade.'
+      : 'A arriscada não rende nada a mais: no melhor caso, nada muda. Se der errado, a perda é de verdade.';
+  }
+
   function eventScreen() {
     if (!pendingEvent) pendingEvent = S.pickEvent(G.c);
     if (!pendingEvent) return momentOrSeason();
@@ -57,7 +70,7 @@
       (ev.memory ? '<p class="ev-mem">' + U.emo('🔁', 'xs') + ' ' + esc(ev.memory) + '</p>' : '') + '<h2>' + esc(ev.title) + '</h2><p class="ob3-txt">' + esc(ev.text) + '</p></div>' +
       (offer ? U.dealCompare(S.currentDeal(G.c), offer) : '') +
       '<div class="choices ob3-opts' + (two ? ' two' : '') + '">' + ev.options.map((o, i) => optCard(G.c, ev, o, i)).join('') + '</div>' +
-      (kinds.includes('risk') && kinds.includes('safe') ? '<p class="ob3-note">A arriscada pode render mais, mas pode dar errado de verdade.</p>' : '')
+      (kinds.includes('risk') && kinds.includes('safe') ? '<p class="ob3-note">' + esc(riskNote(G.c, ev)) + '</p>' : '')
     );
     U.tip('evento');
     screen.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
@@ -79,12 +92,16 @@
       const STAMP = { ok: 'Deu certo', ko: 'Deu errado', calm: 'Tranquilo' };
       // Já resolvido: salva antes da animação, para fechar e voltar não sortear de novo
       G.step = 'moment'; save();
-      U.riskRoll(st && !st.safe ? st.p : 0, r.ok, ev.options[+b.dataset.i].label, () => U.transferMove(prevClub, G.c.club, G.c.name, () => {
+      const pick = ev.options[+b.dataset.i].label;
+      U.riskRoll(st && !st.safe ? st.p : 0, r.ok, pick, () => U.transferMove(prevClub, G.c.club, G.c.name, () => {
+      // Resultado no mesmo lugar do cartão do evento (no alto, com o mesmo rótulo), lembrando o que foi escolhido
       render(
+        '<div class="eyebrow">Durante a temporada · ' + year() + '</div>' +
         '<div class="card ev-res ob3-res ' + (r.ok ? 'ok' : 'ko') + (stamp === 'calm' ? ' calm' : '') + '">' + (stamp ? '<span class="ob3-stamp s-' + stamp + '">' + STAMP[stamp] + '</span>' : '') +
         '<span class="er-ic">' + U.icoOf(ev, 'lg') + '</span><div class="eyebrow">' + esc(ev.title) + '</div>' +
+        '<span class="er-pick"><small>Sua escolha</small>' + esc(pick) + '</span>' +
         '<p class="er-txt">' + esc(r.text) + '</p>' + fxRow + '</div>' +
-        '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn(pctx), { center: true }
+        '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn(pctx)
       );
       $('b-next').onclick = momentOrSeason;
       U.postBind(pctx, momentOrSeason);
@@ -194,6 +211,15 @@
   };
   const MINI_BTN = { cup: 'Bater o pênalti', classico: 'Bater a falta', save: 'Defender o pênalti', tackle: 'Dar o bote', pass: 'Enfiar a bola' };
 
+  // O que vale o lance em duas linhas: ganho em verde, perda em vermelho ("Converteu: X · Errou: Y").
+  // Sem a parte da perda (clássico do atacante), só a linha do ganho.
+  function stakesHtml(s) {
+    const row = (p, k) => { const i = p.indexOf(': ');
+      return '<p class="lc-st ' + k + '">' + (i > 0 ? '<b>' + esc(p.slice(0, i)) + '</b><span>' + esc(p.slice(i + 2)) + '</span>' : '<span>' + esc(p) + '</span>') + '</p>'; };
+    const parts = String(s).split(' · ');
+    return '<div class="lc-stakes">' + row(parts[0], 'win') + (parts[1] ? row(parts.slice(1).join(' · '), 'lose') : '') + '</div>';
+  }
+
   // Duelo direto: o clube do outro lado é o do seu rival de geração (engine/moments.js marca m.rival)
   function rivalTag(m) {
     if (!m.rival) return '';
@@ -215,8 +241,8 @@
     // o que pesa da carta e os dois estilos como cartões grandes; decidir no automático e treinar no rodapé.
     render(
       '<div class="eyebrow">Jogo decisivo</div>' + board(m, m.score, T.tag) +
-      '<div class="ob5-head"><h2>' + T.title + '</h2><p class="ob5-stakes">' + U.emo('🏆', 'xs') + '<span>' + esc(T.stakes) + '</span></p>' +
-        '<p class="ob5-txt">' + (m.ctx ? esc(m.ctx) + ' ' : '') + esc(T.text) + '</p>' + rivalTag(m) + '</div>' +
+      '<div class="ob5-head"><h2>' + T.title + '</h2>' +
+        '<p class="ob5-txt">' + (m.ctx ? esc(m.ctx) + ' ' : '') + esc(T.text) + '</p>' + rivalTag(m) + stakesHtml(T.stakes) + '</div>' +
       '<div class="chips ob5-facts">' + miniFacts(st).join('') + '</div>' +
       // Em tela baixa (até 700 px de altura) os chips saem do topo e ficam aqui dentro (style.css, bloco E1)
       '<details class="ob5-how"><summary>Como funciona o lance</summary><p>' + MINI_HOW[st] + '</p><div class="chips ob5-facts in">' + miniFacts(st).join('') + '</div></details>' +
@@ -278,12 +304,13 @@
     // O mesmo placar escuro da abertura: mostra o placar de antes e o gol entra contando logo depois
     const side = sc && sc[0] !== m.score[0] ? 0 : sc && sc[1] !== m.score[1] ? 1 : -1;
     render(
-      '<div class="eyebrow">Jogo decisivo · ' + esc(T.tag) + '</div>' +
+      '<div class="eyebrow">Jogo decisivo</div>' + // a competição já está no placar logo abaixo
       board(Object.assign({}, m, { minute: m.minute || 90 }), m.score, T.tag) +
-      '<div class="ob5-res ' + (ok ? 'ok' : 'ko') + '"><div class="mr-big">' + big + '</div><p class="mr-txt">' + final + '</p></div>' +
+      // O grito e o texto no meio da tela; a faixa do título ganho fica junto deles
+      '<div class="ob5-res ' + (ok ? 'ok' : 'ko') + '"><div class="mr-big">' + big + '</div><p class="mr-txt">' + final + '</p>' +
       (fest ? '<div class="ob5-prize">' + trophy(titleType({ id: m.type === 'cont' ? 'cont' : 'league', name: m.comp }), 52, m.comp) +
-        '<span><small>Campeão</small><b>' + esc(m.comp) + '</b></span></div>' : '') +
-      '<button class="btn" id="b-next">' + (fest ? 'Comemorar' : m.pre ? 'Fechar a temporada' : 'Jogar a temporada') + '</button>' + U.postBtn({ kind: 'moment', ok, m }), { center: true }
+        '<span><small>Campeão</small><b>' + esc(m.comp) + '</b></span></div>' : '') + '</div>' +
+      '<div class="lc-acts"><button class="btn" id="b-next">' + (fest ? 'Comemorar' : m.pre ? 'Fechar a temporada' : 'Jogar a temporada') + '</button>' + U.postBtn({ kind: 'moment', ok, m }) + '</div>' // no alto, como o resultado do evento
     );
     if (side >= 0) {
       const g = screen.querySelectorAll('.ob5-board .ob5-g')[side];
@@ -310,5 +337,5 @@
     setTimeout(() => w.remove(), 2800);
   }
 
-  Object.assign(U, { eventOrSeason, eventScreen, momentOrSeason, MOMENT_TXT, momentIntro, momentEnd, momentResult, playMini, miniFacts, MINI_BTN, MINI_HOW, styleBtns, bindStyle });
+  Object.assign(U, { eventOrSeason, eventScreen, momentOrSeason, MOMENT_TXT, momentIntro, momentEnd, momentResult, playMini, miniFacts, MINI_BTN, MINI_HOW, styleBtns, bindStyle, lanceStakes: stakesHtml });
 })();

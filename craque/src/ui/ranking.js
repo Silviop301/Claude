@@ -106,10 +106,10 @@
     edit = edit === true || !!msg;
     render('<button class="back-link" id="b-back-home">‹ Voltar</button>' +
       '<div class="rk-head">' + podium(56) + '<div><div class="eyebrow">Ranking</div><h2>Quem fez a maior carreira?</h2></div></div>' +
-      (!p.nick || edit ? nickForm(p, msg) : '') +
+      '<div class="rk-side">' + (!p.nick || edit ? nickForm(p, msg) : '') +
       '<div class="rk-tabs">' + PERIODS.map(([id, l]) => '<button data-p="' + id + '">' + l + '</button>').join('') + '</div>' +
       '<div class="rk-chips">' + METRICS.map(([id, l]) => '<button data-m="' + id + '">' + l + '</button>').join('') + '</div>' +
-      '<p class="muted small rk-sub"></p>' +
+      '<p class="muted small rk-sub"></p></div>' +
       '<div id="rk-list" class="rk-list"></div>' +
       (p.nick && !edit ? '<button class="link-btn rk-edit" id="rk-edit">Mudar meu nome (' + esc(p.nick) + ')</button>' : ''));
     $('b-back-home').onclick = U.goBack;
@@ -131,7 +131,8 @@
     const sub = sc.querySelector('.rk-sub'); if (sub) sub.textContent = subTxt();
     const el = $('rk-list');
     if (!el) return;
-    el.innerHTML = '<p class="muted">Carregando…</p>';
+    // Carregando: o desenho da lista em cinza (pódio e linhas), sem a tela pular quando os nomes chegam
+    el.innerHTML = '<div class="rk-skel" role="status"><div class="rk-skel-pod"><i></i><i></i><i></i></div><i></i><i></i><i></i><span>Carregando…</span></div>';
     const my = ++req;
     const unit = (METRICS.find(x => x[0] === st.m) || [])[2];
     const val = r => '<span class="rk-v">' + fmt(r.v) + (unit ? '<small>' + unit + '</small>' : '') + '</span>';
@@ -139,7 +140,7 @@
     fetch(API + '?a=top&m=' + st.m + '&p=' + st.p + '&pid=' + p.pid).then(r => r.json()).then(d => {
       const el2 = $('rk-list');
       if (!el2 || my !== req) return;
-      if (!d.rows || !d.rows.length) { el2.innerHTML = '<p class="muted rk-empty">Ninguém ainda ' + when() + '. Termine uma carreira e seja o primeiro!</p>'; return; }
+      if (!d.rows || !d.rows.length) { el2.innerHTML = '<div class="rk-state rk-empty">' + U.ICON.trophy + '<b>Ninguém ainda ' + when() + '.</b><span>Termine uma carreira e seja o primeiro!</span>' + GHOST + '</div>'; return; }
       const top = d.rows.slice(0, 3), rest = d.rows.slice(3);
       // Pódio: 2º à esquerda, 1º no meio (mais alto), 3º à direita
       const step = (r, i) => !r ? '<div class="rk-step empty"></div>' : '<div class="rk-step s' + (i + 1) + (r.me ? ' me' : '') + '"><span class="rk-medal">' + (i + 1) + '</span>' +
@@ -150,10 +151,12 @@
         // Sua posição: sempre à vista, mesmo fora do top 30
         (d.me && d.me.rank > d.rows.length ? '<div class="rk-item me rk-mine"><span class="rk-pos">' + d.me.rank + 'º</span><span class="rk-who"><b>Você</b><small>' + esc(d.me.name || '') + '</small></span>' + (st.m === 'score' ? gradeTag(d.me.grade) : '') + val(d.me) + '</div>'
           : !d.me && p.nick ? '<p class="muted small rk-none">Você ainda não aparece aqui ' + when() + '.</p>' : '') +
-        '<p class="muted small">' + d.players + (d.players === 1 ? ' jogador' : ' jogadores') + ' nesta lista.</p>';
-    }).catch(() => { const el2 = $('rk-list'); if (el2 && my === req) el2.innerHTML = '<p class="muted">Sem conexão com o ranking agora. Suas carreiras ficam guardadas e são enviadas depois.</p>'; });
+        '<p class="muted small rk-count">' + d.players + (d.players === 1 ? ' jogador' : ' jogadores') + ' nesta lista.</p>';
+    }).catch(() => { const el2 = $('rk-list'); if (el2 && my === req) el2.innerHTML = '<div class="rk-state rk-off">' + U.ICON.cloud + '<b>Sem conexão com o ranking agora.</b><span>Suas carreiras ficam guardadas e são enviadas depois.</span>' + GHOST + '</div>'; });
   }
   const screen = () => document.getElementById('screen');
+  // Pódio vazio (sem conexão ou sem ninguém): os três degraus apagados no pé do quadro
+  const GHOST = '<div class="rk-ghost" aria-hidden="true"><i></i><i></i><i></i></div>';
 
   // No fim da carreira: envia e, se ainda não tem nome, convida a entrar no ranking
   function finaleRank() {

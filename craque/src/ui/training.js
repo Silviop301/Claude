@@ -62,8 +62,11 @@
     const board = () => '<div class="ob5-board mini trn-board">' + (G.c ? U.crest(G.c.club) : '<span></span>') +
       '<span class="ob5-mid"><span class="ob5-min trn-live">Treino</span><small>Não vale nada</small></span>' +
       (tries ? '<span class="trn-sc"><b>' + hits + '</b><small>de ' + tries + '</small></span>' : '<span class="trn-sc"><small>' + esc(dr.name) + '</small></span>') + '</div>';
+    // Abertura: só "Treino" e o fechar em cima; o lance em destaque (ícone e nome grandes), os passos e o botão embaixo
     const intro = () => {
-      w.innerHTML = '<div class="trn">' + head +
+      w.innerHTML = '<div class="trn trn-intro"><div class="trn-head"><span class="eyebrow">Treino</span>' +
+        (opts.real ? '' : '<button class="cfg-x" id="trn-x" aria-label="Fechar">' + U.ICON.x + '</button>') + '</div>' +
+        '<div class="trn-hero"><span class="trn-ico">' + U.emo(dr.ico, 'lg') + '</span><h2>' + esc(dr.name) + '</h2></div>' +
         '<p class="lead small">' + (opts.real ? 'Antes do seu primeiro lance de verdade, treine aqui. Não vale nada: erre à vontade.' : 'Treine o lance quantas vezes quiser. Não vale nada para a carreira.') + '</p>' +
         '<ol class="trn-steps ob5-steps">' + dr.steps.map((s, i) => '<li><b>' + (i + 1) + '</b><span>' + esc(s) + '</span></li>').join('') + '</ol>' +
         '<button class="btn" id="trn-go">Começar o treino</button>' +
@@ -105,7 +108,7 @@
     w.className = 'trn-wrap';
     w.innerHTML = '<div class="trn"><div class="trn-head"><b>' + U.emo('🏟️', 'sm') + ' Treinar lances</b><button class="cfg-x" id="trn-x" aria-label="Fechar">' + U.ICON.x + '</button></div>' +
       '<p class="lead small">Os mesmos lances do jogo, sem valer nada. Escolha um:</p>' +
-      '<div class="trn-menu">' + order.map(st => '<button class="btn ghost" data-st="' + st + '">' + U.emo(DRILLS[st].ico, 'sm') + ' ' + esc(DRILLS[st].name) +
+      '<div class="trn-menu">' + order.map(st => '<button class="btn ghost' + (mine.includes(st) ? ' mine' : '') + '" data-st="' + st + '">' + U.emo(DRILLS[st].ico, 'sm') + ' ' + esc(DRILLS[st].name) +
         '<small>' + (mine.includes(st) ? 'Da sua posição' : 'Lance de ' + D.POS[DRILLS[st].pos].name.toLowerCase()) + '</small></button>').join('') + '</div></div>';
     document.body.appendChild(w);
     w.querySelector('#trn-x').onclick = () => w.remove();

@@ -41,6 +41,7 @@ node tools/craque_textos.js                         # repetição de textos entr
 node tools/craque_itens_sim.js                      # carreiras para liberar todos os itens
 node tools/craque_estilos.js                        # estilos dos lances decisivos: nenhum pode dominar (esperado: 0 alertas)
 NODE_PATH=$(npm root -g) node tools/craque_e2e.js 2 390 4   # carreiras pela interface (Playwright)
+NODE_PATH=$(npm root -g) node tools/craque_telas.js /tmp/antes   # foto de cada tela (carreira com sorteio fixo + telas de fora + minigames); DESKTOP=1 ... 1440 900 no computador, SO=evento,lance só algumas
 DESKTOP=1 TR=/tmp/tr node tools/craque_e2e.js 3 1280 3      # idem no computador, gravando o texto de cada tela em /tmp/tr
 python3 tools/craque_erros.py                       # erros reais dos jogadores (climbix.app)
 NODE_PATH=$(npm root -g) node tools/craque_sons.js [pasta]   # grava cada som do jogo (sound.js) em WAV, com volume de cada um
@@ -151,6 +152,30 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
 - **Monitor grande tem zoom** (`html.desk`, `--z` 1,15 ou 1,3 no fim do `style.css`): altura em `vh/svh/dvh` nova
   precisa da versão `/ var(--z)` naquele bloco, e posição tirada de `getBoundingClientRect` e aplicada como CSS
   divide por `U.zk()`. Tela larga (≥1000 px, computador ou tablet deitado) usa as telas em 2 colunas.
+
+## Guia visual
+
+Tema: gramado à noite (`--pitch`), cartões de papel creme, ouro para a ação. Regra nova usa as variáveis do topo do
+`style.css` (cor solta só para cores de clube, raridade e arte):
+
+- **Texto sobre o verde:** `--tx-1` principal, `--tx-2` apoio, `--tx-3` rótulo/nota, `--tx-4` desligado; rótulo
+  de seção (eyebrow) em `--label`, 12 px, caixa alta espaçada. Sobre o papel: `--ink` e `--ink-2`.
+- **Superfícies:** papel creme = o cartão principal da tela (decisão, proposta, informação); `--panel` (escuro
+  translúcido, borda `--panel-line`) = blocos de apoio (números, tabelas, listas); `--board` = placar, ao vivo e
+  X; metal só na carta do jogador. Uma tela tem um cartão principal; o resto é apoio.
+- **Cores com sentido:** ouro = ação principal, escolhido e prêmio (um botão dourado por tela); verde (`--up`,
+  `--up-ink`) = ganho; vermelho (`--down`, `--down-ink`) = perda/perigo; azul = certo/informação; laranja = arriscada.
+- **Hierarquia:** eyebrow → título `h2` (display 800) → texto de apoio (16 px, `--tx-2`) → blocos. Número em
+  destaque em display 800. Nada que informa abaixo de 12 px.
+- **Medidas:** cantos `--r-sm/md/lg/xl` (10/14/18/22), sombras `--sh-press` (tocável) e `--sh-float` (flutuando),
+  espaço entre blocos de 12 px, toque de 44 px no mínimo.
+- **Componentes:** escolhido (abas, segmentados, chips) = trilho escuro com o escolhido em creme e texto escuro (no
+  papel, verde-escuro com texto creme); etiquetas (ARRISCADA, SEGURA, NOVA…) com 12 px e a cor dando o sentido; botão
+  secundário (`.btn.ghost`) de contorno fino, bem mais leve que o dourado; o que vale num lance é `U.lanceStakes(texto)`
+  ("Converteu: … · Errou: …" em duas linhas), na temporada e na Copa.
+- **Computador:** a carreira fica numa moldura de largura fixa (até 1120 px) com a barra do topo em uma linha; tela
+  curta desce para perto do meio (`lift` em `ui/desktop.js`). Tela que cresce depois de aberta entra em `NO_LIFT`.
+- **Visual novo (2026-10-27):** cada grupo de telas tem seu bloco no fim do `style.css` (V0 comuns e computador, V1 a V5 telas).
 
 ## Conferir na tela (Playwright)
 

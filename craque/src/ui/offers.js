@@ -198,9 +198,12 @@
     const byCountry = {};
     D.LEAGUES.forEach(l => { (byCountry[l.country] = byCountry[l.country] || []).push(l); });
     const lvl = l => { const cl = D.CLUBS.filter(x => x.league === l.id); return cl.length ? Math.round(cl.reduce((a, x) => a + x.tier, 0) / cl.length) : 1; };
+    // Em cada país, da divisão mais forte para a mais fraca; a chance vira número em destaque com uma barrinha
+    const lv = {}; D.LEAGUES.forEach(l => { lv[l.id] = lvl(l); });
+    const row = l => { const ch = Math.round(S.askChance(G.c, l.id) * 100); return '<button class="lg-row" data-lg="' + l.id + '" style="--ch:' + ch + '%"><b>' + esc(l.name) + '</b><span class="stars">' + stars(lv[l.id]) + '</span><em class="' + (ch >= 60 ? 'hi' : ch < 25 ? 'lo' : '') + '">' + ch + '%</em></button>'; };
     w.innerHTML = '<div class="sheet"><div class="sh-head"><div><b>Pedir ao empresário</b><span>Escolha a liga. Ele tenta um clube que te queira (uma vez por janela).</span></div><button class="sh-x" aria-label="Fechar">✕</button></div>' +
-      '<div class="sh-body lg-pick">' + Object.keys(byCountry).map(ct => '<div class="sh-sec">' + U.flag(byCountry[ct][0].flag) + ' ' + esc(ct) + '</div>' +
-        byCountry[ct].map(l => { const ch = Math.round(S.askChance(G.c, l.id) * 100); return '<button class="lg-row" data-lg="' + l.id + '"><b>' + esc(l.name) + '</b><span class="stars">' + stars(lvl(l)) + '</span><em class="' + (ch >= 60 ? 'hi' : ch < 25 ? 'lo' : '') + '">' + ch + '%</em></button>'; }).join('')).join('') + '</div></div>';
+      '<div class="sh-body lg-pick"><div class="lg-legend" aria-hidden="true"><span>Liga</span><span>Nível</span><span>Chance</span></div>' + Object.keys(byCountry).map(ct => '<div class="lg-ct"><div class="sh-sec">' + U.flag(byCountry[ct][0].flag) + ' ' + esc(ct) + '</div>' +
+        byCountry[ct].slice().sort((a, b) => lv[b.id] - lv[a.id]).map(row).join('') + '</div>').join('') + '</div></div>';
     const close = () => w.remove();
     w.onclick = e => { if (e.target === w) close(); };
     w.querySelector('.sh-x').onclick = close;
@@ -252,10 +255,11 @@
         save(); bar();
         // A roleta para no número sorteado e o cartão vira com o carimbo (como nas decisões); o som sai quando ela para
         U.riskRoll(r.p ? r.p / 100 : talk / 100, r.ok, 'Conversar com o técnico', () => {
-          render('<div class="card ev-res ob3-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="ob3-stamp s-' + (r.ok ? 'ok' : 'ko') + '">' + (r.ok ? 'Deu certo' : 'Deu errado') + '</span>' +
+          render('<div class="eyebrow">Pouco espaço · ' + year() + '</div>' +
+            '<div class="card ev-res ob3-res ' + (r.ok ? 'ok' : 'ko') + '"><span class="ob3-stamp s-' + (r.ok ? 'ok' : 'ko') + '">' + (r.ok ? 'Deu certo' : 'Deu errado') + '</span>' +
             '<span class="er-ic">' + U.emo('🤝', 'lg') + '</span><div class="eyebrow">Conversa com o técnico</div><p class="er-txt">' + r.text + '</p>' +
             '<div class="er-fx">' + (r.ok ? '<span class="up">Técnico ' + sg(F.talkOk) + '</span><span class="up">Mais minutos</span>' : '<span class="down">Técnico ' + sg(F.talkKo) + '</span>') + '</div></div>' +
-            '<button class="btn" id="b-next">Pré-temporada</button>', { center: true });
+            '<button class="btn" id="b-next">Pré-temporada</button>');
           $('b-next').onclick = U.preseason;
         }, r.roll);
       } else if (k === 'out') { S.askOut(G.c); save(); windowOffers(); }

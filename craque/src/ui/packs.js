@@ -221,7 +221,8 @@
     }
     const acts = left => '<div class="pk-acts">' + (left ? '<button class="btn" id="pk-next">Abrir o próximo (' + left + ')</button>' : '') +
       (left > 1 ? '<button class="btn ghost" id="pk-all">Abrir todos (' + left + ')</button>' : '') +
-      '<button class="link-btn" id="pk-close">Fechar</button></div>';
+      // Sem pacotinho para abrir, fechar é a única ação: vira o botão principal
+      '<button class="' + (left ? 'link-btn' : 'btn') + '" id="pk-close">Fechar</button></div>';
     function bindActs() {
       $('pk-close').onclick = e => { e.stopPropagation(); close(); };
       if ($('pk-next')) $('pk-next').onclick = e => { e.stopPropagation(); res = null; idle(); };

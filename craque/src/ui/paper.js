@@ -218,7 +218,7 @@
   // Título da Copa do Mundo
   function worldCupPaper(c, run, onClose) {
     const nick = c.name;
-    const stats = S.defKick(c.pos) ? run.games.filter(x => x.cs).length + ' jogos sem sofrer gol na Copa' : run.g + (run.g === 1 ? ' gol' : ' gols') + ' e ' + run.a + (run.a === 1 ? ' assistência' : ' assistências') + ' na Copa';
+    const stats = S.defKick(c.pos) ? D.plural(run.games.filter(x => x.cs).length, 'jogo', 'jogos') + ' sem sofrer gol na Copa' : run.g + (run.g === 1 ? ' gol' : ' gols') + ' e ' + run.a + (run.a === 1 ? ' assistência' : ' assistências') + ' na Copa';
     return paper({ c, year: run.year, extra: 'Copa do Mundo ' + run.year, head: 'CAMPEÃO DO MUNDO! ' + nick + ' leva a taça para casa',
       pose: 'taca', kit: nationKit(c.country), caption: nick + ' com a taça do mundo', stats,
       lede: 'O país para. ' + nick + ' entra para a história como campeão do mundo com ' + (D.NATION_BY_NAME[c.country] ? D.NATION_BY_NAME[c.country].flag + ' ' : '') + c.country + '.' }, onClose);
@@ -227,7 +227,7 @@
   // Mundial de Clubes: edição extra do título
   function clubWorldPaper(c, run, onClose) {
     const nick = c.name, cl = D.CLUB_BY_ID[run.club];
-    const stats = S.defKick(c.pos) ? run.games.filter(x => x.cs).length + ' jogos sem sofrer gol no Mundial' : run.g + (run.g === 1 ? ' gol' : ' gols') + ' e ' + run.a + (run.a === 1 ? ' assistência' : ' assistências') + ' no Mundial';
+    const stats = S.defKick(c.pos) ? D.plural(run.games.filter(x => x.cs).length, 'jogo', 'jogos') + ' sem sofrer gol no Mundial' : run.g + (run.g === 1 ? ' gol' : ' gols') + ' e ' + run.a + (run.a === 1 ? ' assistência' : ' assistências') + ' no Mundial';
     return paper({ c, year: run.year, extra: 'Mundial de Clubes ' + run.year, head: D.O(cl.name) + ' é campeão do mundo! ' + nick + ' ergue a taça',
       pose: 'taca', kit: kitOf(cl.id), caption: nick + ' com a taça do Mundial', stats,
       lede: 'Contra os melhores clubes do planeta, ' + D.o(cl.name) + ' chegou ao topo. A festa da torcida vai varar a madrugada.' }, onClose);

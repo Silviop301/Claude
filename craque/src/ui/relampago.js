@@ -76,13 +76,16 @@
     render('<button class="back-link" id="rl-back">‹ Voltar</button>' +
       '<div class="eyebrow">Modo rápido</div><h2>Carreira Relâmpago</h2>' +
       (d ? '<div class="card dz-res rl-vs-top">' + U.emo('🎯', 'md') + '<div><small>Desafio de ' + esc(d.n) + '</small><b>' + S.rlScore(d.s, d.p).total + ' pontos pra bater</b><span>Os prêmios escondidos são os mesmos que ' + esc(d.n) + ' teve. Uma chance só.</span></div></div>' : '') +
-      '<div class="card rl-rules">' +
-        '<p><b>5 casas montam a carreira:</b> Base, Auge, Último clube, G/A e Títulos. Cada casa tem <b>5 bolas</b>.</p>' +
-        '<p>' + U.emo('👆', 'sm') + ' <b>Você escolhe qual bola chutar</b>, uma de cada vez.</p>' +
-        '<p>' + U.emo('⚽', 'sm') + ' Nos clubes, cada bola esconde um time: vale <b>a primeira que entrar</b>. Errou as 5, fica o mais fraco.</p>' +
-        '<p>' + U.emo('🏆', 'sm') + ' Em G/A e Títulos cada bola esconde gols e assistências ou um título. <b>Você leva o de cada bola que entrar</b>, e pode perder justo a da Bola de Ouro.</p>' +
-        '<p>' + U.emo('😤', 'sm') + ' A mira <b>acelera a cada casa</b>.</p>' +
-      '</div>' +
+      // As 5 casas desenhadas como no quadro do jogo (clubes e prêmios) e as regras em lista, cada uma com o seu ícone
+      '<div class="rl-intro"><p class="rl-i-lead"><b>5 casas montam a carreira.</b> Cada casa tem <b>5 bolas</b>.</p>' +
+        '<div class="rl-i-map"><div class="rl-board">' + S.RL_SLOTS.map(sl => '<div class="rl-cell"><small>' + sl.name + '</small><span class="rl-i-balls" aria-hidden="true">' + '<i></i>'.repeat(5) + '</span></div>').join('') + '</div>' +
+          '<div class="rl-i-groups"><span>' + U.emo('⚽', 'xs') + ' Clubes</span><span>' + U.emo('🏆', 'xs') + ' Prêmios</span></div></div>' +
+        '<ul class="rl-i-rules">' +
+          '<li>' + U.emo('👆', 'sm') + '<span><b>Você escolhe qual bola chutar</b>, uma de cada vez.</span></li>' +
+          '<li>' + U.emo('⚽', 'sm') + '<span>Nos clubes, cada bola esconde um time: vale <b>a primeira que entrar</b>. Errou as 5, fica o mais fraco.</span></li>' +
+          '<li>' + U.emo('🏆', 'sm') + '<span>Em G/A e Títulos cada bola esconde gols e assistências ou um título: <b>você leva o de cada bola que entrar</b>. Copa do Mundo e Bola de Ouro valem mais.</span></li>' +
+          '<li>' + U.emo('😤', 'sm') + '<span>A mira <b>acelera a cada casa</b>.</span></li>' +
+        '</ul></div>' +
       '<div class="field"><label for="rl-name">Seu nome no desafio</label><input id="rl-name" maxlength="20" autocomplete="nickname" placeholder="Ex.: Vitinho" value="' + esc(name) + '"></div>' +
       '<button class="btn" id="rl-start">' + (d ? 'Jogar o desafio' : 'Começar') + '</button>');
     $('rl-back').onclick = () => U.home();
@@ -213,6 +216,18 @@
     if ('ga' in c) return esc(c.name);
     return esc(c.name);
   }
+  // Pesos e faixas da nota, com os números do motor (S.RL_W, S.RL_GRADES): a sua faixa fica em destaque
+  const TIT_LBL = { copa: 'Copa nacional', liga: 'Liga', cont: 'Continental', wc: 'Copa do Mundo', bola: 'Bola de Ouro' };
+  function gradeHow(f) {
+    const w = S.RL_W, tit = w.tit.slice().sort((a, b) => b[1] - a[1]);
+    const line = (lbl, txt) => '<div class="rl-row rl-how"><small>' + lbl + '</small><span>' + txt + '</span></div>';
+    const bands = S.RL_GRADES.map((g, i) => '<span class="' + (g[0] === f.grade ? 'on' : '') + '"><b>' + g[0] + '</b> ' + (g[1] ? g[1] + '+' : 'abaixo de ' + S.RL_GRADES[i - 1][1]) + '</span>').join('');
+    return line('Clubes', 'Pela força do time: Base até <b>' + w.base + '</b>, Auge até <b>' + w.auge + '</b>, Último clube até <b>' + w.ultimo + '</b> (voltar pro clube da base: +' + w.home + ')') +
+      line('G/A', '<b>1 ponto</b> a cada ' + w.ga + ' gols + assistências') +
+      line('Títulos', tit.map(t => TIT_LBL[t[0]] + ' <b>' + t[1] + '</b>').join(' · ') + ' (cada um)') +
+      line('Combos', 'Lenda (Copa do Mundo + Bola de Ouro), Dinastia (continental + Bola de Ouro num gigante) e Matador (10 de 10): <b>+6</b> cada') +
+      '<div class="rl-bands">' + bands + '</div>';
+  }
   function result() {
     const f = S.rlScore(run.seed, run.rounds), vs = run.vs;
     const g = vs ? S.rlScore(vs.s, vs.p) : null;
@@ -246,6 +261,7 @@
       (g ? '<div class="rl-duel">' + col(run.name, f, true) + col(vs.n, g) + '</div>' : boardHtml(-1)) +
       (combos || after !== '<div class="rl-after"></div>' ? '<div class="rl-res">' + combos + after + '</div>' : '') +
       '<details class="ob5-how rl-det"><summary>Casa a casa' + (g ? ' (' + kicksTxt + ')' : '') + '</summary>' + rows(f) + '</details>' +
+      '<details class="ob5-how rl-det"><summary>Como a nota é feita</summary>' + gradeHow(f) + '</details>' +
       U.streakFinale(run.sk.got) +
       (window.CLIMBIX_SOLO ? '' : '<button class="btn" id="rl-share">' + U.emo('🎯', 'sm') + ' ' + (g && diff > 0 ? 'Devolver o desafio' : 'Desafiar um amigo') + '<small>Ele cobra com os mesmos times escondidos</small></button>') +
       '<button class="btn ghost" id="rl-again">Jogar de novo</button>' +

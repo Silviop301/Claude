@@ -78,9 +78,12 @@
   function book(list) {
     const pg = pages(list), out = [];
     const got = pg.reduce((a, p) => a + p.slots.filter(s => s.hit).length, 0), total = pg.reduce((a, p) => a + p.slots.length, 0);
-    out.push({ cover: true, got, total, n: list.length });
+    const cover = { cover: true, got, total, n: list.length, idx: [] };
+    out.push(cover);
     pg.forEach(p => {
       const parts = Math.ceil(p.slots.length / PER);
+      // Sumário da capa: cada parte do álbum com quantas tem e a página onde começa
+      cover.idx.push({ t: p.t, have: p.slots.filter(s => s.hit).length, all: p.slots.length, at: out.length });
       for (let i = 0; i < parts; i++) out.push({ t: p.t + (parts > 1 ? ' · ' + (i + 1) + '/' + parts : ''), all: p.slots, slots: p.slots.slice(i * PER, i * PER + PER) });
     });
     const sorted = list.slice().sort((a, b) => b.score - a.score);
@@ -91,6 +94,7 @@
   function pageHtml(p, i, n, byKey) {
     if (p.cover) return '<div class="bk-cover"><div class="bk-emb">' + U.emo('⚽', 'lg') + '</div><b>ÁLBUM</b><span>CLIMBIX</span>' +
       '<div class="bk-prog"><b>' + p.got + '/' + p.total + '</b> figurinhas<div class="col-bar"><i style="width:' + Math.round(p.got / p.total * 100) + '%"></i></div></div>' +
+      '<div class="bk-idx">' + p.idx.map(s => '<button data-go="' + s.at + '"' + (s.have === s.all ? ' class="full"' : '') + '><span>' + esc(s.t) + '</span><i><em style="width:' + Math.round(s.have / s.all * 100) + '%"></em></i><b>' + s.have + '/' + s.all + '</b></button>').join('') + '</div>' +
       '<small>' + p.n + (p.n === 1 ? ' carreira' : ' carreiras') + (p.n ? ' · arraste para abrir' : ' · termine uma carreira para começar') + '</small></div>';
     let body;
     if (p.list) body = p.list.map((e, j) => { const k = 'a' + i + '-' + j; byKey[k] = e.card; return '<button class="col-slot has" data-k="' + k + '" aria-label="' + esc(e.card.name) + '"><img alt=""><span>' + e.score + ' pts</span></button>'; }).join('');
@@ -114,6 +118,8 @@
       el.innerHTML = pageHtml(pgs[i], i, pgs.length, byKey);
       el.classList.toggle('cover', !!pgs[i].cover);
       el.querySelectorAll('.col-slot.has').forEach(b => { const d = byKey[b.dataset.k]; thumb(d, b.querySelector('img')); b.onclick = () => view(d); });
+      // Sumário da capa: vai direto para a parte (uma folha vira, como nas setas)
+      el.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => turn(+b.dataset.go - at); });
     };
     const nav = () => { $('bk-n').textContent = at === 0 ? 'Capa' : 'Página ' + at + ' de ' + (pgs.length - 1); $('bk-prev').disabled = at === 0; $('bk-next').disabled = at >= pgs.length - 1; };
     fill($('bk-cur'), at); nav();

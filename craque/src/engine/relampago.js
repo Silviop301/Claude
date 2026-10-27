@@ -14,12 +14,14 @@
   const W = { base: 15, auge: 30, ultimo: 10 };
   // G/A: cada bola tem 15 a 130 gols e 5 a 80 assistências (1 ponto a cada 50). Títulos: pontos por título de cada tipo
   const GA_DIV = 50;
-  const TIT_KINDS = [['copa', 1, 3, 1], ['liga', 1, 3, 2], ['cont', 1, 2, 3], ['wc', 1, 1, 5], ['bola', 1, 2, 5]]; // tipo, mín, máx, pontos cada
+  // Os prêmios que a história mais lembra pesam mais: Copa do Mundo 10, Bola de Ouro 8 (cada); e as duas juntas dão o combo Lenda
+  const TIT_KINDS = [['copa', 1, 3, 1], ['liga', 1, 3, 2], ['cont', 1, 2, 3], ['wc', 1, 1, 10], ['bola', 1, 2, 8]]; // tipo, mín, máx, pontos cada
+  S.RL_W = Object.assign({ ga: GA_DIV, home: 8 }, W, { tit: TIT_KINDS.map(t => [t[0], t[3]]) }); // para a tela explicar a nota
   S.RL_SLOTS = [
     { key: 'base', name: 'Base' }, { key: 'auge', name: 'Auge' }, { key: 'ultimo', name: 'Último clube' },
     { key: 'ga', name: 'G/A' }, { key: 'tit', name: 'Títulos' },
   ];
-  S.RL_GRADES = [['S', 81], ['A', 67], ['B', 55], ['C', 43], ['D', 0]];
+  S.RL_GRADES = [['S', 95], ['A', 78], ['B', 64], ['C', 49], ['D', 0]];
   // Cobrança (kick.js): a mira acelera a cada casa; o goleiro é o mesmo do modo carreira (acerta o lado 38% das vezes)
   S.RL_PERIOD = [1.7, 1.55, 1.4, 1.3, 1.2];
   S.RL_KEEPER = 0.38;
@@ -91,7 +93,7 @@
         cone = { gols, ast, ga: gols + ast, name: gols + ' gols + ' + ast + ' assistências', pts };
       } else {
         const items = got.map(b => b.items[0]);
-        cone = { items, name: itemsName(items), pts, top: got.some(b => b.kind === 'cont') && got.some(b => b.kind === 'bola') };
+        cone = { items, name: itemsName(items), pts, top: got.some(b => b.kind === 'cont') && got.some(b => b.kind === 'bola'), legend: got.some(b => b.kind === 'wc') && got.some(b => b.kind === 'bola') };
       }
       return { cone, goals, done: kicks.length >= 5, hidden: j => balls[j] };
     }
@@ -122,6 +124,7 @@
     const ult = get('ultimo'), auge = get('auge'), tit = get('tit');
     if (ult && ult.home) combos.push({ name: 'Ídolo da casa', desc: 'Voltou pro clube que te revelou', pts: 0 }); // os 8 já estão no clube
     if (auge && tit && tit.top && D.CLUB_BY_ID[auge.id].strength >= 78) combos.push({ name: 'Dinastia', desc: 'Continental e Bola de Ouro num gigante', pts: 6 });
+    if (tit && tit.legend) combos.push({ name: 'Lenda', desc: 'Copa do Mundo e Bola de Ouro', pts: 6 });
     if (slots.length === 5 && slots[3].goals === 5 && slots[4].goals === 5) combos.push({ name: 'Matador', desc: '10 de 10 em G/A e Títulos', pts: 6 });
     const total = Math.round(slots.reduce((a, s) => a + s.pts, 0) + combos.reduce((a, c) => a + c.pts, 0));
     const grade = S.RL_GRADES.find(g => total >= g[1])[0];
