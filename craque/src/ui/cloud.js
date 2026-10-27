@@ -230,9 +230,9 @@
     render(top('Início', 'Conta', a.user) +
       '<p class="lead">Seu jogo fica salvo na nuvem: carreira em andamento, coleção, Hall da Fama e conquistas. Entre com a mesma conta em outro aparelho para continuar.</p>' +
       note(msg, ok) +
-      '<p class="muted" id="cloud-msg">' + stTxt() + '</p>' +
+      '<p class="muted acc-st" id="cloud-msg">' + stTxt() + '</p>' +
       '<button class="btn" id="b-sync">Sincronizar agora</button>' +
-      '<div class="eyebrow small">Formas de entrar</div><div class="acc-ways" id="acc-ways"><p class="muted small">carregando…</p></div>' +
+      '<div class="eyebrow small acc-ways-t">Formas de entrar</div><div class="acc-ways" id="acc-ways"><p class="muted small">carregando…</p></div>' +
       '<button class="btn ghost" id="b-logout">Sair desta conta</button>' + RESET + LEGAL);
     bindReset();
     $('b-back-home').onclick = U.home;
@@ -255,7 +255,7 @@
     el.innerHTML = ps.map(p => {
       const l = on(p);
       return '<div class="acc-way">' + pico(p) + '<span><b>' + PROV[p].name + '</b><small>' + (l ? esc(l.label || 'conectado') : 'não conectado') + '</small></span>' +
-        (l ? (last ? '' : '<button class="link-btn" data-un="' + p + '">desconectar</button>') : '<button class="btn small-btn" data-ln="' + p + '">Conectar</button>') + '</div>';
+        (l ? (last ? '' : '<button class="link-btn" data-un="' + p + '">desconectar</button>') : '<button class="btn ghost small-btn" data-ln="' + p + '">Conectar</button>') + '</div>';
     }).join('') +
       '<div class="acc-way"><span class="prov-ico">' + U.ICON.lock + '</span><span><b>Senha</b><small>' + (a.pass ? 'criada' : 'sem senha') + '</small></span>' +
       '<button class="link-btn" id="b-pass">' + (a.pass ? 'trocar' : 'criar') + '</button></div>' +
@@ -296,9 +296,9 @@
       field('acc-user', 'Usuário', USER) +
       field('acc-pass', 'Senha', 'name="password" type="password" autocomplete="' + (reg ? 'new-password' : 'current-password') + '" minlength="6"') +
       note(msg) + '<button class="btn" id="acc-go" type="submit">' + (reg ? 'Criar conta' : 'Entrar') + '</button></form>' +
-      '<button class="link-btn" id="acc-switch">' + (reg ? 'Já tenho conta: entrar' : 'Não tenho conta: criar agora') + '</button>' +
+      '<div class="acc-links"><button class="link-btn" id="acc-switch">' + (reg ? 'Já tenho conta: entrar' : 'Não tenho conta: criar agora') + '</button>' +
       (reg ? '<p class="muted small" id="acc-hint">Guarde bem a senha: não dá para recuperar por e-mail.</p>'
-        : '<button class="link-btn" id="acc-forgot">Esqueci a senha</button>') + RESET + LEGAL);
+        : '<button class="link-btn" id="acc-forgot">Esqueci a senha</button>') + '</div>' + RESET + LEGAL);
     bindReset();
     $('b-back-home').onclick = U.home;
     $('acc-switch').onclick = () => screen(reg ? 'login' : 'register');
@@ -334,7 +334,7 @@
       field('acc-user', 'Usuário', USER + (join ? '' : ' value="' + esc(o.suggest || '') + '"')) +
       (join ? field('acc-pass', 'Senha', 'name="password" type="password" autocomplete="current-password"') : '') +
       note(msg) + '<button class="btn" id="acc-go" type="submit">' + (join ? 'Entrar e ligar' : 'Criar conta') + '</button></form>' +
-      '<button class="link-btn" id="acc-switch">' + (join ? 'Não tenho conta: criar uma nova' : 'Já tenho conta no Climbix: ligar o ' + esc(n) + ' a ela') + '</button>');
+      '<div class="acc-links"><button class="link-btn" id="acc-switch">' + (join ? 'Não tenho conta: criar uma nova' : 'Já tenho conta no Climbix: ligar o ' + esc(n) + ' a ela') + '</button></div>');
     $('b-back-home').onclick = () => { localStorage.removeItem(OKEY); U.home(); };
     $('acc-switch').onclick = () => screen(join ? 'new' : 'join');
     submit(join ? 'Entrando…' : 'Criando…', () => {
