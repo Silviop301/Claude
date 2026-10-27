@@ -3517,6 +3517,154 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 /* ----- fim V0 ----- */
 
 /* ----- V1: início e telas de fora (Minhas carreiras, ranking, conquistas, conta, configurações, opinião) ----- */
+/* Minhas carreiras: Sala e atalhos juntos; Hall da Fama em linhas com a nota (mesma etiqueta do ranking) e os pontos em destaque */
+.mc-side { display: flex; flex-direction: column; gap: 10px; }
+.mc-side .sl-home { margin: 0; }
+@media (max-width: 380px) { .mc-side .sl-minis .ni:first-child { display: none; } }
+.mc-hall { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.mc-list { display: flex; flex-direction: column; gap: 8px; }
+.mc-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 68px; padding: 10px 14px 10px 10px;
+  border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--panel-line); }
+.mc-row.best { background: linear-gradient(90deg, rgba(242, 194, 48, .13), rgba(242, 194, 48, .03) 70%), var(--panel); border-color: rgba(244, 214, 117, .38); }
+.mc-row .rk-g { width: 42px; height: 42px; border-radius: 12px; font-size: 26px; box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .18); }
+.mc-who { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.mc-who b { font: 700 18px/1.12 var(--display); letter-spacing: .01em; color: var(--tx-1); }
+.mc-who small { font: 500 13px/1.3 var(--body); color: var(--tx-3); }
+.mc-pts { font: 800 26px/1 var(--display); color: var(--tx-1); text-align: right; font-variant-numeric: tabular-nums; }
+.mc-pts small { display: block; margin-top: 2px; font: 600 12px var(--body); color: var(--tx-3); }
+.mc-row.best .mc-pts { color: var(--gold-2); }
+.mc-empty { display: flex; align-items: center; gap: 12px; margin: 0; padding: 16px; border-radius: var(--r-md); border: 1.5px dashed rgba(255, 255, 255, .2);
+  font: 500 15px/1.35 var(--body); color: var(--tx-2); }
+.mc-empty .ico { flex: none; width: 30px; height: 30px; color: var(--label); }
+
+/* Conquistas: cabeçalho com a barra; blocos Quase lá → Conquistadas → Faltam; a conquistada em papel creme (figurinha colada),
+   a que falta como espaço vazio tracejado; Quase lá uma por linha, com a barra larga */
+.ach-head { display: flex; flex-direction: column; gap: 6px; }
+.ach-head .ach-bar { height: 10px; margin-top: 6px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
+.ach-head .ach-bar i { background: linear-gradient(90deg, var(--gold-deep), var(--gold) 60%, var(--gold-2)); }
+.ach-head small { font: 600 13px var(--body); color: var(--tx-3); }
+.ach-page { display: flex; flex-direction: column; gap: 18px; margin-top: 6px; }
+.ach-sec { display: flex; flex-direction: column; gap: 10px; }
+.ach-sec > .eyebrow { display: flex; align-items: center; gap: 8px; }
+.ach-sec > .eyebrow span { padding: 1px 8px; border-radius: 999px; background: var(--panel-2); color: var(--tx-2); font: 700 12px/18px var(--body); letter-spacing: 0; }
+.ach-page .ach-grid { gap: 8px; }
+.ach-page .ach { gap: 2px; padding: 9px 9px 10px; border-radius: var(--r-md); background: rgba(255, 255, 255, .03); border: 1px dashed rgba(255, 255, 255, .2); color: var(--tx-3); }
+.ach-page .ach .ic { margin-bottom: 2px; }
+.ach-page .ach b { color: var(--tx-2); }
+.ach-page .ach .d { font: 500 12px/1.28 var(--body); color: var(--tx-3); }
+.ach-page .ach.on { background: var(--paper); border: 1px solid transparent; box-shadow: var(--sh-press); }
+.ach-page .ach.on b { color: var(--ink); }
+.ach-page .ach.on .d { color: var(--ink-2); }
+.ach-page .ach.on .by { margin-top: auto; padding-top: 2px; color: var(--gold-ink); font-size: 12px; }
+.ach-page .ach-near { grid-template-columns: 1fr; }
+.ach-page .ach-near .ach { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 12px; row-gap: 2px; align-items: center;
+  border: 1.5px solid rgba(242, 194, 48, .5); background: rgba(242, 194, 48, .07); box-shadow: none; }
+.ach-page .ach-near .ach .ic { grid-row: 1 / span 2; display: grid; place-items: center; width: 44px; height: 44px; margin: 0; border-radius: 999px;
+  background: rgba(255, 255, 255, .05); box-shadow: inset 0 0 0 2px rgba(242, 194, 48, .45); }
+.ach-page .ach-near .ach .ic .tw-xs { right: -4px; bottom: -2px; }
+.ach-page .ach-near .ach b { color: var(--tx-1); }
+.ach-page .ach-near .ach .d { color: var(--tx-2); }
+.ach-page .ach-near .ach-prog { grid-column: 1 / -1; height: 20px; margin-top: 8px; }
+.ach-page .ach-prog em { font-size: 12px; }
+
+/* Ranking: pódio num quadro escuro (como os placares), lista em blocos escuros, a sua linha em dourado; sem conexão = pódio apagado */
+.rk-side { display: flex; flex-direction: column; gap: 10px; }
+.rk-side > * { margin: 0; }
+.rk-side .rk-sub { color: var(--tx-2); }
+.rk-list { gap: 8px; }
+.rk-list .rk-podium { position: relative; margin: 2px 0 4px; padding: 18px 10px 0; gap: 6px; border-radius: var(--r-lg); overflow: hidden;
+  background: radial-gradient(90% 70% at 50% 0%, rgba(242, 194, 48, .16), transparent 70%), var(--board); border: 1px solid var(--panel-line); box-shadow: var(--sh-float); }
+.rk-list .rk-step small { font-size: 12px; color: var(--tx-3); }
+.rk-list .rk-step .rk-v small { font-size: 12px; }
+.rk-list .rk-step .rk-block { margin-top: 6px; border-radius: 10px 10px 0 0; }
+.rk-list .rk-step.s1 .rk-block { height: 64px; box-shadow: inset 0 2px 0 rgba(255, 230, 140, .6); }
+.rk-list .rk-step.s2 .rk-block { height: 44px; box-shadow: inset 0 2px 0 rgba(255, 255, 255, .4); }
+.rk-list .rk-step.s3 .rk-block { height: 30px; box-shadow: inset 0 2px 0 rgba(242, 201, 160, .45); }
+.rk-list .rk-item { min-height: 60px; padding: 8px 12px 8px 8px; border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--panel-line); color: var(--tx-1); }
+.rk-list .rk-pos { flex: none; color: var(--tx-3); font-size: 18px; }
+.rk-list .rk-who small { font-size: 13px; color: var(--tx-3); }
+.rk-list .rk-item .rk-v { color: var(--tx-1); font-variant-numeric: tabular-nums; }
+.rk-list .rk-item .rk-v small { font-size: 12px; color: var(--tx-3); }
+.rk-list .rk-item.me { outline: 0; border: 1.5px solid var(--gold); background: linear-gradient(90deg, rgba(242, 194, 48, .2), rgba(242, 194, 48, .06)), #123A27; }
+.rk-list .rk-item.me .rk-pos, .rk-list .rk-item.me .rk-who b { color: var(--gold-2); }
+.rk-list .rk-mine { box-shadow: var(--sh-float); }
+.rk-list .rk-count, .rk-list .rk-none { margin: 4px 0 0; text-align: center; color: var(--tx-3); }
+.rk-state { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 26px 20px 92px; text-align: center; overflow: hidden;
+  border-radius: var(--r-lg); background: radial-gradient(90% 70% at 50% 0%, rgba(255, 255, 255, .06), transparent 70%), var(--board); border: 1px solid var(--panel-line); }
+.rk-state > .ico { width: 40px; height: 40px; margin-bottom: 4px; color: var(--label); }
+.rk-state b { font: 700 19px/1.15 var(--display); color: var(--tx-1); }
+.rk-state span { max-width: 32ch; font: 500 15px/1.4 var(--body); color: var(--tx-2); }
+.rk-ghost { position: absolute; left: 10px; right: 10px; bottom: 0; display: grid; grid-template-columns: 1fr 1.15fr 1fr; align-items: end; gap: 6px; }
+.rk-ghost i { display: block; border-radius: 10px 10px 0 0; background: linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, .03)); }
+.rk-ghost i:nth-child(1) { height: 44px; } .rk-ghost i:nth-child(2) { height: 64px; } .rk-ghost i:nth-child(3) { height: 30px; }
+/* Carregando: o desenho do pódio e das linhas piscando de leve */
+.rk-skel { display: flex; flex-direction: column; gap: 8px; }
+.rk-skel > i, .rk-skel-pod { border-radius: var(--r-md); background: var(--panel); animation: v1-blink 1.2s ease-in-out infinite; }
+.rk-skel > i { display: block; height: 60px; }
+.rk-skel-pod { display: grid; grid-template-columns: 1fr 1.15fr 1fr; align-items: end; gap: 6px; height: 196px; padding: 0 10px; border-radius: var(--r-lg); background: var(--board); border: 1px solid var(--panel-line); }
+.rk-skel-pod i { display: block; border-radius: 10px 10px 0 0; background: rgba(255, 255, 255, .08); }
+.rk-skel-pod i:nth-child(1) { height: 44px; } .rk-skel-pod i:nth-child(2) { height: 64px; } .rk-skel-pod i:nth-child(3) { height: 30px; }
+.rk-skel span { text-align: center; font: 500 13px var(--body); color: var(--tx-3); }
+@keyframes v1-blink { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .rk-skel > i, .rk-skel-pod { animation: none; } }
+.rk-edit { min-height: 44px; padding: 0 12px; font-size: 14px; }
+
+/* Conta: links com toque de 44 px; reiniciar progresso separado e discreto no pé (o perigo continua vermelho) */
+.acc-links { display: flex; flex-direction: column; align-items: center; gap: 0; margin-top: -2px; }
+.acc-links .link-btn { min-height: 44px; padding: 0 12px; font: 600 15px var(--body); color: var(--tx-1); text-decoration-color: rgba(251, 248, 239, .45); }
+.acc-links p { margin: 2px 0 0; text-align: center; }
+.acc-reset { margin-top: 28px; padding: 18px 0 0; border: 0; border-top: 1px solid var(--panel-line); border-radius: 0; background: none; }
+.acc-reset b { font: 700 16px var(--display); letter-spacing: .02em; color: var(--tx-2); }
+.acc-reset p { margin: 4px 0 12px; color: var(--tx-3); }
+.acc-reset .btn.ghost.acc-danger { width: auto; min-height: 44px; padding: 10px 18px; font-size: 17px; color: var(--down); box-shadow: inset 0 0 0 1.5px rgba(255, 154, 162, .55); }
+.acc-legal { margin-top: 10px; }
+.acc-legal a { display: inline-block; padding: 12px 4px; }
+.acc-st { display: flex; align-items: center; gap: 10px; margin: 0; padding: 12px 14px; border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--panel-line);
+  font: 600 15px var(--body); color: var(--tx-1); }
+.acc-st::before { content: ''; flex: none; width: 22px; height: 22px; background: var(--label);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 19h10.5a4 4 0 0 0 .6-7.9A6 6 0 0 0 6.5 11.9 3.6 3.6 0 0 0 7 19z' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 19h10.5a4 4 0 0 0 .6-7.9A6 6 0 0 0 6.5 11.9 3.6 3.6 0 0 0 7 19z' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+.acc-ways-t { margin-top: 10px; }
+.acc-way { min-height: 60px; border: 1px solid var(--panel-line); background: var(--panel); }
+.acc-way .btn.ghost { min-height: 40px; padding: 8px 14px; font-size: 16px; background: var(--panel-2); color: var(--tx-1); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .22); }
+.acc-way .link-btn { min-height: 44px; padding: 0 4px 0 10px; font-size: 14px; color: var(--tx-2); }
+
+/* Configurações: "Dar opinião" vira uma linha de atalho (o dourado fica com "Pronto"); link das novidades com toque maior */
+.cfg .btn.ghost.fb-btn { display: flex; align-items: center; gap: 10px; min-height: 52px; margin-top: 12px; padding: 10px 12px 10px 14px; text-align: left;
+  font: 700 18px var(--display); letter-spacing: .01em; color: var(--tx-1); background: rgba(242, 194, 48, .08); box-shadow: inset 0 0 0 1px rgba(244, 214, 117, .4); }
+.cfg .fb-btn span { flex: 1; }
+.cfg .fb-btn .ico { flex: none; width: 20px; height: 20px; color: var(--gold-2); }
+.cfg-credit .link-btn { min-height: 44px; padding: 0 10px; font-size: 14px; }
+
+/* Opinião: perguntas numeradas (5 rapidinhas), escolhas com toque de 44 px */
+.fb { counter-reset: fbq; }
+.fb-q { counter-increment: fbq; border: 1px solid var(--panel-line); }
+.fb-q > b, .fb-q > label > b { display: flex; align-items: flex-start; gap: 8px; font: 700 17px/1.2 var(--display); color: var(--tx-1); }
+.fb-q > b::before, .fb-q > label > b::before { content: counter(fbq); flex: none; display: grid; place-items: center; width: 24px; height: 24px; margin-top: -2px; border-radius: 999px;
+  background: rgba(143, 214, 174, .16); color: var(--label); font: 800 15px/1 var(--display); }
+.fb-q > small { margin: -4px 0 0 32px; font-size: 13px; color: var(--tx-3); }
+.fb-rate button { min-height: 52px; opacity: .7; }
+.fb-likes button { min-height: 44px; padding: 8px 14px; font-size: 15px; }
+.fb-q textarea::placeholder { color: var(--tx-4); }
+
+/* Computador e tablet deitado: Minhas carreiras e ranking em 2 colunas; conquistas em 3 */
+@media (min-width: 1000px) {
+  #app:has(#screen > .mc-side), #app:has(#screen > .rk-side) { max-width: 1000px; }
+  #screen:has(> .mc-side) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 28px; align-content: start; align-items: start; }
+  #screen:has(> .mc-side) > * { grid-column: 1 / -1; }
+  #screen:has(> .mc-side) > .back-link { justify-self: start; }
+  #screen:has(> .mc-side) > .mc-side { grid-column: 1; }
+  #screen:has(> .mc-side) > .mc-hall { grid-column: 2; margin-top: 0; }
+  #screen:has(> .rk-side) { display: grid; grid-template-columns: 400px minmax(0, 1fr); grid-template-rows: repeat(4, auto) 1fr; column-gap: 32px; align-items: start; }
+  #screen:has(> .rk-side) > * { grid-column: 1; }
+  #screen:has(> .rk-side) > .back-link { justify-self: start; }
+  #screen:has(> .rk-side) > .rk-list { grid-column: 2; grid-row: 1 / -1; }
+  #screen:has(> .rk-side) > .rk-edit { justify-self: start; margin: 0; }
+  #screen:has(> .rk-side) .rk-chips { flex-wrap: wrap; overflow: visible; }
+  #app:has(#screen > .ach-page) { max-width: 860px; }
+  .ach-page .ach-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ach-page .ach-grid.ach-near { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 /* ----- fim V1 ----- */
 
 /* ----- V2: pré-temporada, decisões e mercado (pré-temporada, ficha, evento, base, janela, pouco espaço) ----- */

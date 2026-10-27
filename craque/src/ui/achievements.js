@@ -48,12 +48,15 @@
     const near = S.ACHIEVEMENTS.filter(a => !have[a.id]).map(a => ({ a, p: progOf(a) })).filter(x => x.p && x.p.v / x.p.of >= 0.6)
       .sort((x, y) => y.p.v / y.p.of - x.p.v / x.p.of).map(x => x.a);
     const rest = S.ACHIEVEMENTS.filter(a => !near.includes(a)).sort((a, b) => !!have[b.id] - !!have[a.id]);
+    const on = rest.filter(a => have[a.id]), off = rest.filter(a => !have[a.id]);
+    const pct = Math.round(n / S.ACHIEVEMENTS.length * 100);
+    // Blocos: Quase lá (perto de liberar) → conquistadas → trancadas
+    const group = (t, list, cls) => (list.length ? '<section class="ach-sec"><div class="eyebrow">' + t + '<span>' + list.length + '</span></div>' +
+      '<div class="ach-grid' + (cls ? ' ' + cls : '') + '">' + list.map(a => achTile(a, have, false)).join('') + '</div></section>' : '');
     render('<button class="back-link" id="b-back">‹ Voltar</button>' +
-      '<div class="eyebrow">Conquistas</div><h2>' + n + ' de ' + S.ACHIEVEMENTS.length + '</h2>' +
-      '<div class="ach-bar"><i style="width:' + Math.round(n / S.ACHIEVEMENTS.length * 100) + '%"></i></div>' +
-      (near.length ? '<div class="room-title ach-near-t">Quase lá</div><div class="ach-grid ach-near">' + near.map(a => achTile(a, have, false)).join('') + '</div>' +
-        '<div class="room-title">Todas</div>' : '') +
-      '<div class="ach-grid">' + rest.map(a => achTile(a, have, false)).join('') + '</div>');
+      '<div class="ach-head"><div class="eyebrow">Conquistas</div><h2>' + n + ' de ' + S.ACHIEVEMENTS.length + '</h2>' +
+      '<div class="ach-bar"><i style="width:' + pct + '%"></i></div><small>' + pct + '% liberadas</small></div>' +
+      '<div class="ach-page">' + group('Quase lá', near, 'ach-near') + group('Conquistadas', on) + group(on.length ? 'Faltam' : 'Todas', off) + '</div>');
     $('b-back').onclick = U.goBack;
   }
 
