@@ -3674,6 +3674,149 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 /* ----- fim V3 ----- */
 
 /* ----- V4: temporada, Copa e fim de carreira (ao vivo, resumo, jornal, X, Copa/Mundial, fim) ----- */
+/* Temporada: a faixa "ao vivo" vira placar de TV (--board): ponto, rodada grande e a barra de andamento embaixo */
+.sx-live { padding: 8px 12px 9px; border-radius: var(--r-md); background: var(--board); box-shadow: inset 0 0 0 1px var(--panel-line), var(--sh-press); }
+.sx-live > b { color: var(--tx-2); }
+.sx-live .sx-prog { height: 5px; background: rgba(255, 255, 255, .1); }
+.sx-live.end .sx-rd { color: var(--tx-2); }
+/* Veredito da temporada: é a manchete do ano, maior que os números ao lado */
+.sx-side .s-verdict { min-height: 30px; row-gap: 4px; }
+.sx-side .sv-lbl { font: 800 clamp(23px, 6.6vw, 27px)/1 var(--display); text-wrap: balance; }
+.sx-side .sv-lbl.idle { color: var(--tx-2); }
+.sx-side .sv-lbl.mid, .sx-side .sv-lbl.ok { color: var(--tx-1); }
+/* Prêmios e marcos do ano: faixa de prêmio (dourado claro, sem relevo de botão); o botão dourado da tela é só o de seguir */
+#after .award:not(.ballon) { justify-content: flex-start; gap: 10px; min-height: 50px; padding: 8px 14px 8px 12px; border-radius: var(--r-md); text-align: left;
+  background: linear-gradient(100deg, rgba(242, 194, 48, .22), rgba(242, 194, 48, .05) 75%); color: var(--gold-2);
+  box-shadow: inset 0 0 0 1px rgba(242, 194, 48, .45); font: 800 19px/1.1 var(--display); }
+#after .award:not(.ballon) .tw { width: 26px; height: 26px; flex: none; }
+#after .award.milestone:not(.ballon) { background: var(--panel); color: var(--tx-1); box-shadow: inset 0 0 0 1px var(--panel-line); font: 700 17px/1.15 var(--display); }
+#after .title-won { border-radius: var(--r-md); background: linear-gradient(100deg, rgba(242, 194, 48, .26), rgba(242, 194, 48, .07) 75%); border-color: rgba(242, 194, 48, .55); }
+#after .title-won span { color: var(--gold-2); }
+/* "O que falaram": rótulos de 12 px e o lance do ano com rótulo, como os outros cartões */
+#after > .story > .news .np, #after > .story > .st-hl .np { font: 700 12px var(--display); letter-spacing: .14em; text-transform: uppercase; }
+#after > .story > .st-hl { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; }
+#after > .story > .st-hl .np { color: var(--tx-3); }
+#after > .story > .st-hl p { margin: 0; font: 700 18px/1.25 var(--display); color: var(--tx-1); }
+#after > .story > .st-hl p .tw { width: 22px; height: 22px; vertical-align: -4px; }
+/* Detalhes da temporada: o porquê da nota em bloco de apoio escuro (o papel creme fica para o cartão principal) */
+#after .why-card { margin: 0; background: var(--panel); color: var(--tx-1); border-radius: var(--r-md); box-shadow: inset 0 0 0 1px var(--panel-line); }
+#after .why-card .delta-in.up { color: var(--up); } #after .why-card .delta-in.down { color: var(--down); }
+#after .why-card .why li { border-top-color: var(--panel-line); color: var(--tx-2); }
+#after .why-card .why b.up { color: var(--up); } #after .why-card .why b.down { color: var(--down); }
+#after .why-card .why b.pot { color: var(--gold-2); } #after .why-card .why b.zero { color: var(--tx-4); }
+#after .why-card .why-note { background: rgba(242, 194, 48, .1); color: var(--tx-1); box-shadow: inset 3px 0 0 var(--gold); }
+@media (min-width: 1000px) {
+  /* Computador: a coluna da direita tem largura para os cartões lado a lado (nada cortado na borda) */
+  #after > .story { flex-wrap: wrap; overflow: visible; scroll-snap-type: none; margin: 0; padding: 0; }
+  #after > .story > * { flex: 1 1 calc(50% - 5px); min-width: 0; }
+  /* Temporada ao vivo: os lances do ano entram na coluna da direita (vazia até o resumo), em vez de embaixo da tabela */
+  #screen:has(> .s-hero) > #feed { grid-column: 2; grid-row: 1 / span 4; max-height: none; }
+}
+/* Título em tela cheia: fundo fechado (a tela de trás não aparece), raios dourados girando devagar e o nome grande */
+.bigmoment { background: radial-gradient(circle at 50% 40%, rgba(244, 214, 117, .36), rgba(244, 214, 117, 0) 44%), radial-gradient(120% 90% at 50% 40%, #11452D, #04100A 72%); }
+.bigmoment::before { content: ''; position: absolute; left: 50%; top: 40%; width: 1100px; height: 1100px; margin: -550px 0 0 -550px; border-radius: 50%; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 236, 170, .08) 0deg 6deg, transparent 6deg 18deg);
+  -webkit-mask: radial-gradient(closest-side, #000 25%, transparent 70%); mask: radial-gradient(closest-side, #000 25%, transparent 70%); animation: v4-spin 60s linear infinite; }
+@keyframes v4-spin { to { transform: rotate(1turn); } }
+.bm-top { font-size: 18px; letter-spacing: .22em; color: var(--gold-2); margin-top: 14px; }
+.bm-name { font-size: clamp(36px, 11vw, 48px); line-height: 1; text-wrap: balance; max-width: 16ch; text-shadow: 0 4px 18px rgba(0, 0, 0, .45); }
+.bm-in small { font: 600 13px var(--body); color: var(--tx-3); margin-top: 22px; }
+@media (prefers-reduced-motion: reduce) { .bigmoment::before { animation: none; } }
+/* Copa e Mundial · convocação: bandeira (ou escudo) num disco com brilho, título e o como funciona em linhas de apoio */
+.wc-hero { gap: 8px; padding-top: 4px; }
+.wc-hero > .eyebrow { margin: 0; }
+.wc-mark { position: relative; display: grid; place-items: center; width: 132px; height: 132px; margin: 6px 0 4px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(244, 214, 117, .3), rgba(244, 214, 117, .06) 62%, transparent 70%); }
+.wc-mark::before { content: ''; position: absolute; inset: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(244, 214, 117, .4); }
+.wc-mark .wc-bigflag { font-size: 84px; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .4)); }
+.wc-mark .crest.xl { margin: 0; width: 84px; height: 84px; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .4)); }
+.wc-hero h2 { margin: 0; font: 800 30px/1.05 var(--display); text-wrap: balance; }
+.wc-hero .lead { color: var(--tx-2); text-wrap: pretty; }
+.wc-rules { display: grid; gap: 0; padding: 4px 14px; border-radius: var(--r-lg); background: var(--panel); box-shadow: inset 0 0 0 1px var(--panel-line); }
+.wc-rules p { display: flex; align-items: center; gap: 12px; margin: 0; padding: 10px 0; font: 500 15px/1.35 var(--body); color: var(--tx-2); }
+.wc-rules p + p { border-top: 1px solid var(--panel-line); }
+.wc-rules p .tw { width: 26px; height: 26px; flex: none; }
+.wc-rules b { color: var(--tx-1); }
+/* Jogos: tabela do grupo, fichas dos jogos anteriores e o jogo da vez como placar escuro (--board), número grande */
+.wc-list > .wc-game { background: var(--board-2); color: var(--tx-1); border-radius: var(--r-md); border-left-width: 5px; padding: 10px 14px 12px;
+  box-shadow: inset 0 0 0 1px var(--panel-line), var(--sh-press); row-gap: 6px; }
+.wc-list > .wc-game .st { color: var(--tx-3); }
+.wc-list > .wc-game .line { gap: 12px; }
+.wc-list > .wc-game .line b { font: 800 36px/1 var(--display); font-variant-numeric: tabular-nums; color: #fff; letter-spacing: .01em; }
+.wc-list > .wc-game .line .tw { width: 30px; height: 30px; }
+.wc-list > .wc-game .them { display: inline-flex; align-items: center; gap: 8px; font: 700 19px/1.1 var(--display); color: var(--tx-1); }
+.wc-list > .wc-game .clk { background: rgba(255, 255, 255, .1); color: var(--gold-2); }
+.wc-list > .wc-game.paused .clk { background: #C0392B; color: #fff; }
+.wc-list > .wc-game .gls { width: 100%; padding-top: 6px; border-top: 1px solid var(--panel-line); }
+.wc-list > .wc-game .gl { font-size: 13px; color: var(--tx-2); }
+.wc-list > .wc-game .gl i { color: var(--tx-4); }
+.wc-list > .wc-game .gl b { color: #fff; }
+.wc-list > .wc-game .gl.t { color: var(--down); }
+.wc-list > .wc-game .mom.ok { background: rgba(123, 227, 160, .16); color: var(--up); }
+.wc-list > .wc-game .mom.ko { background: rgba(255, 154, 162, .16); color: var(--down); }
+.wc-list > .wc-game .rt { color: var(--tx-3); }
+.wc-list > .wc-game .rt.motm { color: var(--gold-2); }
+.wc-list > .wc-game .oth { color: var(--tx-3); }
+.wc-list > .wc-game .grp { font-size: 16px; }
+.wc-list > .wc-game .grp.ok { color: var(--up); } .wc-list > .wc-game .grp.ko { color: var(--down); }
+.wc-list > .wc-game.goal-u, .wc-list > .wc-game.goal-t { animation-duration: .7s; }
+.wc-path .wp { background: var(--board-2); color: var(--tx-1); box-shadow: inset 0 0 0 1px var(--panel-line); padding: 5px 10px 5px 8px; }
+.wc-path .wp small { font-size: 12px; color: var(--tx-3); }
+.wc-path .wp i { color: var(--tx-3); }
+.wc-tbl { border-radius: var(--r-md); background: var(--panel); border-color: var(--panel-line); }
+.wc-tbl .wt-h { color: var(--label); }
+.wc-tbl .wt-r.me { background: rgba(242, 194, 48, .12); border-radius: 8px; }
+.wc-tbl .wt-r.me > span:first-child i { color: var(--gold); }
+/* Fim: um cartão só com a bandeira, a faixa do resultado, a linha de como foi e os seus números */
+.wc-end { gap: 10px; padding: 18px 14px 14px; border-radius: var(--r-xl); background: var(--panel); box-shadow: inset 0 0 0 1px var(--panel-line); }
+.wc-end.champ { background: radial-gradient(circle at 50% 22%, rgba(255, 226, 122, .38), rgba(255, 226, 122, 0) 62%), var(--panel); box-shadow: inset 0 0 0 1.5px rgba(242, 194, 48, .55); }
+.wc-end.vice { box-shadow: inset 0 0 0 1.5px rgba(214, 222, 229, .4); }
+.wc-end .wc-bigflag { font-size: 76px; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .4)); }
+.wc-end .crest.xl { width: 80px; height: 80px; }
+.wc-end .wc-band { width: auto; max-width: 100%; padding: 9px 18px; border-radius: var(--r-sm); font-size: 25px; }
+.wc-band.phase { background: var(--board); border: 0; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16), var(--sh-press); }
+.wc-end-who { color: var(--tx-2); }
+.wc-end .sx-lbl { align-self: stretch; margin: 6px 0 0; padding-top: 12px; border-top: 1px solid var(--panel-line); font-size: 12px; color: var(--tx-3); }
+.wc-end .wc-end-stats { align-self: stretch; gap: 0; }
+.wc-end .wc-end-stats span { background: none; border-radius: 0; padding: 2px 4px; font: 600 13px/1.15 var(--body); color: var(--tx-3); }
+.wc-end .wc-end-stats span + span { box-shadow: inset 1px 0 0 var(--panel-line); }
+.wc-end .wc-end-stats b { font-size: 32px; color: var(--tx-1); }
+@media (max-width: 360px) { .wc-end .wc-band { font-size: 21px; } .wc-hero h2 { font-size: 27px; } }
+/* Convocação (animação): o seu nome com mais peso e o carimbo maior */
+.mo-call .mo-list { padding: 18px; border-radius: var(--r-xl); }
+.mo-call .mo-me { font-size: 20px; padding: 3px 10px; box-shadow: 0 2px 0 var(--gold-deep); }
+.mo-call .mo-callstamp { top: auto; bottom: 34px; right: 22px; font-size: 23px; background: rgba(251, 248, 239, .85); } /* embaixo, ao lado do seu nome: no topo cobria o título em 360 px */
+/* Reta final antes do lance: a corrida e o duelo maiores (a tela é curta e passa em 3 s) */
+#screen:has(> #pr-duel) .race { padding: 14px 14px 12px; gap: 8px; border-radius: var(--r-lg); }
+#screen:has(> #pr-duel) .race .rc-spark { height: 72px; }
+#screen:has(> #pr-duel) .race .rc-pos { font-size: 40px; }
+#screen:has(> #pr-duel) .race .rc-lbl { font: 700 18px/1.25 var(--display); }
+#screen > .pr-duel { padding: 16px 16px; gap: 12px; border-radius: var(--r-lg); background: linear-gradient(180deg, var(--board-2), var(--board)); }
+#screen > .pr-duel .crest { width: 56px; height: 56px; }
+#screen > .pr-duel .pr-x { font-size: 15px; color: var(--tx-2); }
+#screen > .pr-duel .pr-x b { font-size: 26px; }
+#screen:has(> #pr-duel) .pr-path .rt-r { padding: 7px 8px; font-size: 16px; }
+@media (max-width: 374px) { #screen > .pr-duel .crest { width: 46px; height: 46px; } #screen > .pr-duel .pr-x b { font-size: 22px; } }
+#screen:has(> #pr-duel) .pr-path .rt-r b { color: var(--up); }
+/* Post no X: o efeito do post com a cor do sentido (ganho em verde, perda em vermelho), sem o dourado da ação */
+.sp-fx { padding: 9px 12px; border-radius: var(--r-sm); background: rgba(123, 227, 160, .12); color: var(--up); box-shadow: inset 3px 0 0 var(--up); }
+.sp-fx.ko { background: rgba(255, 154, 162, .12); color: var(--down); box-shadow: inset 3px 0 0 var(--down); }
+.sp-fx.none { background: var(--panel); color: var(--tx-3); box-shadow: inset 3px 0 0 var(--tx-4); }
+.sp-top .eyebrow { margin: 0; }
+.sp-note { color: var(--tx-4); }
+/* Nota final (animação): o quadro ganha moldura de placar e o total em destaque */
+.mo-score .mo-card { padding: 18px 16px 14px; border-radius: var(--r-xl); background: rgba(4, 12, 8, .55); box-shadow: inset 0 0 0 1px var(--panel-line), var(--sh-float); }
+.mo-score .mo-total b { color: #fff; }
+/* Fim de carreira: um dourado só (Compartilhar); Nova carreira e Desafiar como secundários neutros; números num bloco */
+.o6-acts .btn.o6-again { background: #1E3F30; color: var(--tx-1); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .3), 0 4px 0 rgba(0, 0, 0, .35), 0 6px 18px rgba(0, 0, 0, .35); }
+.o6-dz .btn.ghost.dz-btn { border: 0; background: var(--panel-2); color: var(--tx-1); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .22), var(--sh-press); border-radius: var(--r-md); }
+.o6-dz .dz-btn small { color: var(--tx-3); }
+.o6-nums { gap: 0; padding: 12px 4px 10px; border-radius: var(--r-lg); background: var(--panel); box-shadow: inset 0 0 0 1px var(--panel-line); }
+.o6-nums > div + div { box-shadow: inset 1px 0 0 var(--panel-line); }
+.o6-nums b { font-size: 32px; }
+.o6-nums small { font-size: 13px; color: var(--tx-3); }
+.o6-pl span { color: var(--gold-2); }
+.o6-goal p { color: var(--tx-2); }
 /* ----- fim V4 ----- */
 
 /* ----- V5: cartas e coleção (carta nova, álbum, coleção, carta 3D, Sala de Troféus, pacotinhos, itens) ----- */
