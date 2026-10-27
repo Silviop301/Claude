@@ -75,6 +75,11 @@
     if (m.type === 'classico' && def) m.ctx = m.score[0] > m.score[1] ? 'Vencendo o clássico: segure e os três pontos são seus.' : 'Clássico empatado: se ele marcar, a derrota vem no fim.';
   }
 
+  // Brigando pelo título ou pelo acesso, o clássico pesa metade no sorteio do lance (sobra espaço para o lance que vale taça).
+  // Como o lance de taça converte mais que a temporada simulada, as taças das temporadas sem lance dessa briga ficam
+  // um pouco mais difíceis (S.RACE_ODDS em engine/season.js) e o total de títulos da carreira não muda.
+  S.RACE_DERBY = 0.5;
+  S.RACE_ODDS = 0.94;
   S.pickMoment = function (c) {
     if (c.momentAge === c.age) return c.moment || null; // já sorteado nesta temporada
     const { r, save } = rngOf(c);
@@ -90,7 +95,9 @@
     const cupField = S.cupField(club);
     const LD = D.LADDER[club.league];
     const contName = S.contName(club);
-    const pool = [['classico', c.pos === 'MEI' ? 4 : 3]];
+    // Brigando pelo título (ou pelo acesso), o clássico pesa metade
+    const race = rank <= 2 || !!(LD && LD.up && rank <= (LD.promo || 4) + 2);
+    const pool = [['classico', (c.pos === 'MEI' ? 4 : 3) * (race ? S.RACE_DERBY : 1)]];
     // Final da copa nacional: só para quem está entre os 8 mais fortes do país (todas as divisões)
     if (cupField.indexOf(club.id) >= 0 && cupField.indexOf(club.id) < 8) pool.push(['cup', 1]);
     if (rank <= 2) pool.push(['title', 1.5]);
@@ -99,6 +106,7 @@
     // Final continental: topo do Brasil/Argentina (Libertadores) ou clube grande europeu (Champions)
     if (contName && (contName === 'Libertadores' ? rank <= 4 : club.strength >= 78)) pool.push(['cont', 1.2]);
     const sum = pool.reduce((a, p) => a + p[1], 0);
+    c.momentRace = race && playing; // engine/season.js compensa as taças (S.RACE_ODDS)
     if (playing && rivals.length && r() < 0.45) {
       let x = r() * sum, type = pool[0][0];
       for (const [t, w] of pool) { x -= w; if (x < 0) { type = t; break; } }
