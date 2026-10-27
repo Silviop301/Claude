@@ -142,7 +142,7 @@ class JogadorLado extends HTMLElement {
       if (ticks) for (let t = 0.15; t < 0.95; t += 0.16) { const x = x1 + (x2 - x1) * t, y = y1 + (y2 - y1) * t; o += `<path d="M${(x - 1.6).toFixed(1)},${(y - 0.6).toFixed(1)} l3.2,1.2" stroke="${OUT}" stroke-width="0.7" opacity="0.5"/>`; }
       return o;
     };
-    const curls = () => { const c = []; for (let i = 0; i < 8; i++) { const ang = Math.PI * (160 + 160 * i / 7) / 180; c.push(`<circle cx="${(-1 + 12.4 * Math.cos(ang)).toFixed(1)}" cy="${(-15 + 12.6 * Math.sin(ang)).toFixed(1)}" r="4.4" fill="${G('hair')}" ${S}/>`); } return c.join('') + `<ellipse cx="-2" cy="-20" rx="10" ry="7.5" fill="${hair}"/>`; };
+    const curls = () => { const c = []; for (let i = 0; i < 8; i++) { const ang = Math.PI * (160 + 160 * i / 7) / 180; c.push(`<circle cx="${(-1 + 12.4 * Math.cos(ang)).toFixed(1)}" cy="${(-15 + 12.6 * Math.sin(ang)).toFixed(1)}" r="4.4" fill="${G('hair')}" ${S}/>`); } return H(CAP) + c.join(''); };
     const afroDots = () => { let o = '', s = 7; const r = () => (s = (s * 9301 + 49297) % 233280) / 233280; for (let i = 0; i < 18; i++) o += `<circle cx="${(-16 + r() * 28).toFixed(1)}" cy="${(-37 + r() * 18).toFixed(1)}" r="0.7" fill="${OUT}" opacity="0.22"/>`; return o; };
     const SIDE = {
       careca: ['', `<ellipse cx="-1" cy="-23.5" rx="5" ry="2.4" fill="#ffffff" opacity="0.28"/>`],
@@ -153,17 +153,18 @@ class JogadorLado extends HTMLElement {
       topete: ['', H(CAP) + H('M-4,-27 Q-1,-34 8,-34 Q15,-33.6 15.4,-28.4 Q15,-24.6 13,-20.5 Q11,-25.6 5,-25.6 Q-0.6,-25.6 -4,-27Z') +
         `<path d="M0,-30.4 Q6,-32.6 12.6,-30.4" stroke="${OUT}" stroke-width="0.8" fill="none" opacity="0.4" stroke-linecap="round"/>`],
       franja: ['', H(CAP) + H('M2,-28.4 Q12.6,-28.6 14.4,-20.6 L13.6,-16.6 L12.2,-18.8 L11,-16 L9.6,-18.8 L8.2,-16.8 Q6.6,-20.6 4,-21.6Z')],
-      militar: ['', rasp + H('M-11.4,-15.6 Q-13,-26 -7,-30.4 L9,-30.4 Q12.8,-28.6 12.8,-20.6 Q8.4,-24.2 3,-23.8 Q-4.6,-23 -11.4,-15.6Z') +
-        `<path d="M-6,-30 V-24.6 M-1,-30.2 V-24.4 M4,-30.2 V-24.2 M8.6,-30 V-24.4" stroke="${OUT}" stroke-width="0.7" opacity="0.3"/>`],
+      militar: ['', rasp + H('M-11,-17 Q-13.4,-28 1,-28.8 Q11.6,-28.6 12.8,-20.6 Q8.4,-23.6 3,-23.4 Q-4.6,-23 -11,-17Z') +
+        `<path d="M-6,-26.4 v1.2 M-1,-27.4 v1.2 M4,-27.4 v1.2 M8.6,-26.4 v1.2 M-8.4,-22.4 v1.2 M-3.4,-24 v1.2 M1.6,-24.6 v1.2" stroke="${OUT}" stroke-width="0.7" stroke-linecap="round" opacity="0.3"/>`],
       undercut: ['', sides + H('M13,-21 Q13,-32 2.6,-34.4 Q-8,-36 -13.4,-26.6 Q-11.6,-23.6 -8.6,-25 Q-2,-27.6 4,-25 Q9.4,-24.4 13,-21Z') +
         `<path d="M-8,-28.6 Q0,-33.6 9,-29.6 M-6,-26.6 Q2,-30.4 10.6,-26.4" stroke="${OUT}" stroke-width="0.8" fill="none" opacity="0.35" stroke-linecap="round"/>`],
       degrade: ['', sides + H('M12.4,-21 Q11,-29.6 1,-30.2 Q-8.4,-30.4 -11.6,-23 Q-5,-26 2,-25.4 Q8,-25 12.4,-21Z')],
       samurai: [H('M-4.6,-36.6 Q-10.6,-37.4 -11,-31.4 Q-11,-26.6 -5.6,-27 Q-0.6,-28.6 -0.8,-33 Q-1,-36.6 -4.6,-36.6Z'), sides + H('M11.6,-21.4 Q10,-28.6 1,-29.4 Q-8,-29.6 -11,-22.6 Q-4,-25.6 2,-25 Q7.6,-24.6 11.6,-21.4Z') +
         `<rect x="-5.4" y="-29.8" width="5.6" height="2.6" rx="1" transform="rotate(-24 -2.6 -28.5)" fill="#D8404A" stroke="${OUT}" stroke-width="1"/>`],
       moicano: ['', fade(0.35) + H('M11.4,-23.4 Q11,-33.6 1,-35.6 Q-9,-36.4 -13.6,-25.6 Q-12,-23.4 -10,-24.6 Q-3,-29 3.6,-27.6 Q8.4,-26.4 11.4,-23.4Z')],
-      moicanoloiro: ['', fade(0.35) + `<path d="M11.4,-23.4 L13.6,-31.6 L8.4,-28.6 L8.6,-37.6 L3.6,-31.4 L1.4,-40 L-1.6,-31.6 L-6.4,-37.6 L-6.6,-30.4 L-12.6,-33.6 L-10.4,-25.4 Q-3,-29 3.6,-27.6 Q8.4,-26.4 11.4,-23.4Z" fill="#F4EAB8" ${S}/>` +
-        `<path d="M-9.6,-25.8 Q-3,-29.4 3.6,-28 Q8.4,-26.8 11,-23.8" stroke="${hair}" stroke-width="2.6" fill="none" opacity="0.85"/>`],
-      riscado: ['', fade(0.55) + `<path d="M-9.6,-15 L-7,-18.6 L-5.6,-15.6 L-2.6,-19.6 L-1,-16.8" stroke="#F4E6D4" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>`],
+      moicanoloiro: ['', fade(0.35) + `<path d="M11.4,-23.4 Q11,-33.6 1,-35.6 Q-9,-36.4 -13.6,-25.6 Q-12,-23.4 -10,-24.6 Q-3,-29 3.6,-27.6 Q8.4,-26.4 11.4,-23.4Z" fill="#F4EAB8" ${S}/>` +
+        `<path d="M-9.4,-25.6 Q-3,-29.6 3.6,-28.2 Q8.4,-27 10.6,-24.4" stroke="${hair}" stroke-width="2.2" fill="none"/>` +
+        `<path d="M-8,-30.4 Q-2,-33.6 6,-31.4 M-4,-33.4 Q2,-35 8,-33.2" stroke="${OUT}" stroke-width="0.8" fill="none" opacity="0.35" stroke-linecap="round"/>`],
+      riscado: ['', fade(0.9) + `<path d="M-10,-14.6 Q-7.4,-19.6 -1.6,-21.2 M-9,-12.2 Q-6.4,-16.8 -0.6,-18.4" stroke="${skin}" stroke-width="1.1" fill="none" stroke-linecap="round"/>`],
       black: ['', `<path d="M-13,-6 Q-20,-14 -18,-24 Q-15,-36.5 -1,-36.5 Q13,-36.5 15,-24 Q15.5,-20 12.5,-18 Q8,-22 3,-21.5 Q-2,-20 -4,-14 Q-6,-9 -9,-6 Q-11,-4 -13,-6Z" fill="${G('hair')}" ${S}/>`],
       afro: ['', H('M-13.6,-5 Q-22,-12 -20.6,-26 Q-17.6,-40 -1,-40 Q14.6,-40 16.8,-28 Q17.4,-21.6 13.6,-18.6 Q9,-22.4 3.6,-21.8 Q-1.6,-20.6 -3.6,-14.6 Q-6,-8.6 -9,-5.4 Q-11.4,-3 -13.6,-5Z') + afroDots()],
       cacheado: ['', curls()],
@@ -489,14 +490,14 @@ class Jogador2D extends HTMLElement {
         topete: H(BK) + H('M-9,-33 Q-6,-42.6 2,-42.4 Q10,-41.6 10,-33.6 Q0,-37 -9,-33Z'),
         social: H(BK) + `<path d="M-4,-36 Q-6.4,-27 -9.6,-19" stroke="${OUT}" stroke-width="0.9" fill="none" opacity="0.45" stroke-linecap="round"/>`,
         franja: H(BK),
-        militar: fade(0.8) + H('M-12.6,-26 Q-13,-37 -8,-39 L8,-39 Q13,-37 12.6,-26 Q0,-29.6 -12.6,-26Z'),
+        militar: fade(0.8) + H('M-12.4,-26 Q-13,-38 0,-38.4 Q13,-38 12.4,-26 Q0,-29.6 -12.4,-26Z'),
         undercut: fade(0.42) + H('M-12,-24 Q-13.6,-38.6 0,-38.8 Q13.6,-38.6 12,-24 Q0,-28.4 -12,-24Z'),
         degrade: fade(0.42) + H(top),
         samurai: fade(0.42) + H(top) + `<circle cx="0" cy="-40.6" r="5" fill="${G('hair')}" ${S}/><rect x="-3" y="-37.6" width="6" height="2.4" rx="1" fill="#D8404A" stroke="${OUT}" stroke-width="1"/>`,
         moicano: fade(0.35) + H('M-4,-38.6 Q0,-41.4 4,-38.6 L3.4,-4.6 Q0,-3.6 -3.4,-4.6Z'),
         moicanoloiro: fade(0.35) + `<path d="M-4,-31 L-7,-41 L-2.4,-37.6 L0,-45 L2.4,-37.6 L7,-41 L4,-31 L3.4,-6 Q0,-5 -3.4,-6Z" fill="#F4EAB8" ${S}/>` +
           `<path d="M0,-30 V-7" stroke="${hair}" stroke-width="3" opacity="0.85"/>`,
-        riscado: fade(0.55) + `<path d="M-9,-19 L-6,-23 L-3,-19 L0,-23 L3,-19" stroke="#F4E6D4" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>`,
+        riscado: fade(0.9) + `<path d="M-9,-18 Q-4.6,-23.6 0,-23.6 Q4.6,-23.6 9,-18 M-8,-15.4 Q-4,-20.4 0,-20.4 Q4,-20.4 8,-15.4" stroke="${skin}" stroke-width="1.1" fill="none" stroke-linecap="round"/>`,
         afro: H('M-16,-8 Q-23,-18 -21,-32 Q-16.6,-46 0,-46 Q16.6,-46 21,-32 Q23,-18 16,-8 Q8,-4 0,-4 Q-8,-4 -16,-8Z') + dots(),
         longo: H('M-13.6,-20 Q-15,-37.4 0,-37.4 Q15,-37.4 13.6,-20 L14.6,6 Q0,10 -14.6,6Z') + `<path d="M-5,-20 L-6,6 M5,-20 L6,6" stroke="${OUT}" stroke-width="0.8" opacity="0.3"/>`,
         mullet: H('M-8.6,-8 Q-9.6,4 -7.4,8.6 Q0,10.6 7.4,8.6 Q9.6,4 8.6,-8Z') + H(BK),

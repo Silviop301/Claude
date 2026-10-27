@@ -254,7 +254,7 @@
       $('cc-flag').innerHTML = U.flag(cty().flag);
       $('cr-cty').textContent = cty().id;
       const nb = $('f-num'); nb.innerHTML = numBtn();
-      $('cc-photo').innerHTML = U.photo('normal', U.nationKit(st.country), who(), { num: String(st.num), lawn: true });
+      $('cc-photo').innerHTML = U.photo('normal', U.nationKit(st.country), who(), { num: String(st.num), lawn: true, vb: '-24 0 168 200' });
     };
     [['f-pos', 'pos'], ['f-foot', 'foot'], ['f-country', 'country']].forEach(([id, key]) =>
       $(id).querySelectorAll('button').forEach(b => b.onclick = () => {
@@ -315,18 +315,22 @@
           '<i style="background:' + bgOf(v) + '"></i>' + (it ? U.emo('🔒', 'xs') : '') + '</button>';
       }).join('') + '</div>'; };
       const gearBg = v => A.SWATCH[v] || A.GEAR[v];
-      const chipB = (key, v, l, on, it) => '<button data-k="' + key + '" data-v="' + v + '" class="' + (on ? 'on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + (isPv(key, v) ? ' pv' : '') + '">' + (it ? U.emo('🔒', 'xs') + ' ' : '') + l + '</button>';
-      const chip = (key, all) => { const list = free(key, all); return list.length < 2 ? '' : '<div class="cr-chips">' + list.map(([v, l]) => { const it = lockOf(key, v); return chipB(key, v, l, !it && String(lk[key]) === v, it); }).join('') + '</div>'; };
+      const chipB = (key, v, l, on, it, th) => '<button data-k="' + key + '" data-v="' + v + '" class="' + (on ? 'on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + (isPv(key, v) ? ' pv' : '') + (th ? ' th' : '') + '">' + (th || '') + (it ? U.emo('🔒', 'xs') + ' ' : '') + l + '</button>';
+      // Corte e barba com miniatura do rosto: o nome sozinho não mostra como fica
+      const face = (key, v) => U.photo('normal', kit, { pos: st.pos, look: Object.assign({}, lk, { extra: [], [key]: v }) }, { flat: true, vb: key === 'beard' ? '39 16 42 42' : '33 -3 54 54' });
+      const chip = (key, all, th) => { const list = free(key, all); return list.length < 2 ? '' : '<div class="cr-chips' + (th ? ' faces' : '') + '">' + list.map(([v, l]) => { const it = lockOf(key, v); return chipB(key, v, l, !it && String(lk[key]) === v, it, th && face(key, v)); }).join('') + '</div>'; };
       const row = (label, value, body) => !body ? '' : '<div class="cr-row"><div class="cr-lbl">' + label + (value ? ' <b>' + esc(value) + '</b>' : '') + '</div>' + body + '</div>';
       let rows = '';
       if (st.tab === 'corpo') rows = row('Pele', '', sw('skin', A.SKIN.map((_, i) => i), i => A.SKIN[i], A.SKIN.map((_, i) => 'Tom ' + (i + 1)))) +
-        row('Barba', 'cresce a partir dos 18', chip('beard', A.BEARDS.map(b => [b, BEARD_NAME[b]])));
-      if (st.tab === 'cabelo') rows = row('Corte', '', chip('hair', A.HAIRS.map(h => [h, HAIR_NAME[h]]))) +
+        row('Barba', 'cresce a partir dos 18', chip('beard', A.BEARDS.map(b => [b, BEARD_NAME[b]]), true));
+      if (st.tab === 'cabelo') rows = row('Corte', '', chip('hair', A.HAIRS.map(h => [h, HAIR_NAME[h]]), true)) +
         row('Cor do cabelo e da barba', '', sw('hc', A.HAIR_COLORS.map((_, i) => i), i => A.HAIR_COLORS[i], HC_NAME));
       if (st.tab === 'equip') rows = row('Chuteira', GEAR_NAME[lk.boot], sw('boot', BOOTS, gearBg)) +
         row('Sola', GEAR_NAME[lk.sole], sw('sole', BASIC.concat(['prata', 'ouro', 'cromo', 'holo']), gearBg));
       $('cr-rows').innerHTML = rows;
-      $('cr-big').innerHTML = (prev && note ? '<span class="cr-prev">Prévia · ' + esc(note.name) + '</span>' : '') + U.photo('normal', kit, who(), { crop: true, flat: true, num: String(st.num) });
+      const zoom = st.tab !== 'equip';
+      $('cr-big').classList.toggle('zoom', zoom);
+      $('cr-big').innerHTML = (prev && note ? '<span class="cr-prev">Prévia · ' + esc(note.name) + '</span>' : '') + U.photo('normal', kit, who(), Object.assign({ crop: true, flat: true, num: String(st.num) }, zoom ? { vb: '28 -6 64 74' } : {}));
       $('cr-paper').innerHTML = U.photo('normal', kit, who(), { num: String(st.num) });
       $('cr-joy').innerHTML = U.photo('celebra', kit, who(), { num: String(st.num) });
       $('cr-note').innerHTML = note ? '<div class="lk-note ' + U.rarCls(note.rk) + '">' + lockMsg(note) + '</div>' : '';
