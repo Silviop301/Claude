@@ -169,6 +169,12 @@ Tema: gramado à noite (`--pitch`), cartões de papel creme, ouro para a ação.
   destaque em display 800. Nada que informa abaixo de 12 px.
 - **Medidas:** cantos `--r-sm/md/lg/xl` (10/14/18/22), sombras `--sh-press` (tocável) e `--sh-float` (flutuando),
   espaço entre blocos de 12 px, toque de 44 px no mínimo.
+- **Componentes:** escolhido (abas, segmentados, chips) = trilho escuro com o escolhido em creme e texto escuro (no
+  papel, verde-escuro com texto creme); etiquetas (ARRISCADA, SEGURA, NOVA…) com 12 px e a cor dando o sentido; botão
+  secundário (`.btn.ghost`) de contorno fino, bem mais leve que o dourado; o que vale num lance é `U.lanceStakes(texto)`
+  ("Converteu: … · Errou: …" em duas linhas), na temporada e na Copa.
+- **Computador:** a carreira fica numa moldura de largura fixa (até 1120 px) com a barra do topo em uma linha; tela
+  curta desce para perto do meio (`lift` em `ui/desktop.js`). Tela que cresce depois de aberta entra em `NO_LIFT`.
 - **Visual novo (2026-10-27):** cada grupo de telas tem seu bloco no fim do `style.css` (V0 comuns e computador, V1 a V5 telas).
 
 ## Conferir na tela (Playwright)

@@ -4016,6 +4016,13 @@ html.desk .sheet:has(.sh-tabs) { height: min(calc(74vh / var(--z, 1)), 640px); }
   .rl-i-map .rl-cell { min-height: 46px; padding: 5px 4px 6px; }
   .rl-i-rules li { padding: 7px 0; font-size: 14px; line-height: 1.35; }
 }
+/* Celular pequeno (360×640): o "Começar" ainda aparece sem rolar */
+@media (max-height: 660px) {
+  .rl-intro { gap: 8px; }
+  .rl-i-map .rl-cell { min-height: 40px; padding: 4px 4px 5px; }
+  .rl-i-groups span { padding-top: 4px; }
+  .rl-i-rules li { padding: 5px 0; }
+}
 
 /* Computador: o palco já sai da coluna e ocupa a altura; o campo escuro em volta fica só no celular e no tablet.
    A dica é mais baixa (mouse) e o palco desconta a altura dela para caber inteiro na tela. */
