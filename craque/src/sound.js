@@ -1,8 +1,8 @@
-// Sons do CRAQUE, gerados na hora com Web Audio; só a bola na rede é gravação (assets/sons/rede.mp3).
+// Sons do CRAQUE, gerados na hora com Web Audio; a rede e a torcida do gol são gravações (assets/sons/).
 // O iPhone só libera áudio depois de um toque: o contexto nasce no primeiro toque na tela.
 // Para ouvir cada som fora do jogo: node tools/craque_sons.js (grava um WAV por som).
 (function (root) {
-  let ctx = null, master = null, room = null, noiseBuf = null, pinkBuf = null, netBuf = null;
+  let ctx = null, master = null, room = null, noiseBuf = null, pinkBuf = null, rec = {}, cheer = null;
   let on = true;
   const last = {};
   try { on = localStorage.getItem('craque-sound') !== 'off'; } catch (e) { /* sem armazenamento: fica ligado */ }
@@ -45,9 +45,11 @@
     const wet = ctx.createGain();
     wet.gain.value = 0.5;
     room.connect(wet); wet.connect(master);
-    // Bola na rede: gravação de verdade (40 KB). Enquanto não chega, o gol usa a rede sintetizada
-    if (root.fetch) fetch('assets/sons/rede.mp3?v=7805c0ba').then(r => r.arrayBuffer())
-      .then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { netBuf = b; }).catch(() => { /* fica a sintetizada */ });
+    // Gravações de verdade (rede 40 KB, torcida 60 KB). Enquanto não chegam, o gol usa os sons sintetizados
+    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=9c4a53aa']].forEach(([k, url]) => {
+      fetch(url).then(r => r.arrayBuffer())
+        .then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { rec[k] = b; }).catch(() => { /* fica a sintetizada */ });
+    });
   }
   if (root.addEventListener) root.addEventListener('pointerdown', init, { passive: true });
 
@@ -62,6 +64,16 @@
   function out(node, echo) {
     node.connect(master);
     if (echo) { const s = ctx.createGain(); s.gain.value = echo; node.connect(s); s.connect(room); }
+  }
+  // Toca uma gravação; a torcida é uma só: um gol novo apaga a comemoração anterior em vez de somar
+  function play(k, t, gain, echo) {
+    const src = ctx.createBufferSource(), g = ctx.createGain();
+    src.buffer = rec[k]; g.gain.value = gain;
+    src.connect(g); out(g, echo);
+    src.start(t);
+    if (k !== 'torcida') return;
+    if (cheer) { cheer.g.gain.setTargetAtTime(0.0001, t, 0.08); cheer.src.stop(t + 0.5); }
+    cheer = { src, g };
   }
   function tone(type, f0, f1, t, dur, peak, o) {
     o = o || {};
@@ -185,13 +197,8 @@
     },
     // Gol: a bola estufa a rede e a torcida explode, cada vez mais aberta
     goal(t) {
-      if (netBuf) {
-        const src = ctx.createBufferSource(), g = ctx.createGain();
-        src.buffer = netBuf; g.gain.value = 0.75;
-        src.connect(g); out(g, 0.15);
-        src.start(t);
-      } else noise(t, 0.35, 0.16, 0.01, 'bandpass', 2600, 900, 0.9);
-      crowd(t + 0.04, { vowel: 'o', dur: 2.9, a: 0.25, hold: 1.6, spread: 0.2, peak: 1, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.8, 1.2], [2.9, 0.95]], shouts: 14, shoutGain: 1.1, bend: [1, 1.15] });
+      if (rec.rede) play('rede', t, 0.75, 0.15); else noise(t, 0.35, 0.16, 0.01, 'bandpass', 2600, 900, 0.9);
+      if (rec.torcida) play('torcida', t + 0.05, 0.3, 0.1); else crowd(t + 0.04, { vowel: 'o', dur: 2.9, a: 0.25, hold: 1.6, spread: 0.2, peak: 1, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.8, 1.2], [2.9, 0.95]], shouts: 14, shoutGain: 1.1, bend: [1, 1.15] });
     },
     // Erro: o "uhhh" da torcida, que começa alto e vai murchando
     miss(t) {
@@ -211,7 +218,7 @@
     fanfare(t) {
       [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.36]].forEach(([f, dt]) => tone('sawtooth', f, f, t + dt, 0.2, 0.13, { a: 0.02, lp: 2400, echo: 0.3 }));
       [523, 659, 784, 1047].forEach(f => tone('sawtooth', f, f, t + 0.5, 1.2, 0.07, { a: 0.03, lp: 1800, echo: 0.4 }));
-      crowd(t + 0.4, { vowel: 'a', dur: 2.2, a: 0.3, hold: 1.2, spread: 0.3, peak: 0.6, sections: 5, color: [[0, 0.95], [0.5, 1.1], [2.2, 0.95]], shouts: 10, shoutGain: 0.8, bend: [1, 1.1] });
+      if (rec.torcida) play('torcida', t + 0.35, 0.14, 0.1); else crowd(t + 0.4, { vowel: 'a', dur: 2.2, a: 0.3, hold: 1.2, spread: 0.3, peak: 0.6, sections: 5, color: [[0, 0.95], [0.5, 1.1], [2.2, 0.95]], shouts: 10, shoutGain: 0.8, bend: [1, 1.1] });
     },
     // Contador da temporada: "tic" curto a cada gol/assistência
     tick(t) {

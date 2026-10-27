@@ -8,7 +8,7 @@ const { chromium } = require('playwright');
 const OUT = process.argv[2] || '/tmp/climbix-sons';
 const SRC = fs.readFileSync(process.argv[3] || path.join(__dirname, '../craque/src/sound.js'), 'utf8');
 const NAMES = ['tap', 'tick', 'coin', 'kick', 'whistle', 'goal', 'miss', 'levelup', 'fanfare', 'paper'];
-const SR = 44100, LEN = 4.5;
+const SR = 44100, LEN = 6;
 
 function wav(chans) {
   const n = chans[0].length, nc = chans.length, b = Buffer.alloc(44 + n * nc * 2);
