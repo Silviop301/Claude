@@ -1693,6 +1693,14 @@ body.sala-on { overflow: hidden; }
 .cr-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .cr-chips button { min-height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .1); color: var(--paper); font: 600 15px var(--body); cursor: pointer; }
 .cr-chips button.on { background: var(--paper); color: var(--ink); font-weight: 700; }
+/* Corte e barba com miniatura do rosto */
+.cr-chips.faces button { display: inline-flex; align-items: center; gap: 7px; padding: 0 14px 0 4px; }
+.cr-chips.faces svg { width: 34px; height: 34px; flex: none; border-radius: 50%; background: rgba(255, 255, 255, .14); }
+.cr-chips.faces button.on svg { background: #DCE8DF; }
+/* Prévia de perto (abas Corpo e Cabelo): rosto e ombros, sem o gramado */
+.cr-big.zoom { align-items: center; }
+.cr-big.zoom::before, .cr-big.zoom::after { display: none; }
+.cr-big.zoom svg { height: 100%; }
 .cr-lock { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; padding: 8px 10px; border-radius: 10px; background: rgba(242, 194, 48, .14); font: 600 14px/1.3 var(--body); color: #FBE7A6; }
 @media (max-width: 350px) { .cr-stage { grid-template-columns: minmax(0, 1fr) 84px; } .cr-big { height: 236px; } .cr-big svg { height: 224px; } }
 
