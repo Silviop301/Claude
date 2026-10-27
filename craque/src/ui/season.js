@@ -565,13 +565,20 @@
       const sc = res.src;
       if (!sc) return '';
       const num = (v, dec) => (dec ? v.toFixed(1).replace('.', ',') : String(v));
-      const chip = (t, v, unit, sign) => '<span class="sr-c' + (!v || !sign ? '' : v > 0 ? ' up' : ' down') + '">' + esc(t) +
-        (v ? ' <b>' + (sign && v > 0 ? '+' : v < 0 ? '−' : '') + num(Math.abs(v), unit === '') + unit + '</b>' : '') + '</span>';
+      // whole: número inteiro sem unidade (gols); o "0" aparece quando o sinal importa (sorte zero)
+      const chip = (t, v, unit, sign, whole) => '<span class="sr-c' + (!v || !sign ? '' : v > 0 ? ' up' : ' down') + '">' + esc(t) +
+        (v || whole && sign ? ' <b>' + (sign && v > 0 ? '+' : v < 0 ? '−' : '') + num(Math.abs(v), unit === '' && !whole) + unit + '</b>' : '') + '</span>';
       const row = (lbl, val, chips) => '<div class="sr-row"><span class="sr-l">' + lbl + ' <b>' + val + '</b></span><div class="sr-cs">' + chips + '</div></div>';
       const gk = res.pos === 'GOL';
+      // Gols (versão 2): em gols, do esperado ao total; o sorteio do ano e o lance decisivo à parte
+      const ex = sc.gv === 2 && sc.exp, total = gk ? res.cleanSheets : res.goals;
+      const golChips = ex ? sc.gol.map((x, i) => chip(x[0], x[1], '', i > 0, true)).join('') +
+          '<span class="sr-c sr-exp">Esperado <b>' + ex.n + '</b> · normal entre ' + ex.lo + ' e ' + ex.hi + '</span>' +
+          chip('Sorte do ano', ex.got - ex.n, '', true, true) + (total - ex.got ? chip('Lance decisivo', total - ex.got, '', true, true) : '')
+        : sc.gol.map(x => chip(x[0], x[1], '%', true)).join('');
       return '<div class="src-card">' +
-        row('Minutos', res.games + ' de ' + sc.max + ' jogos', sc.min.map((x, i) => chip(x[0], x[1], '%', i > 0)).join('')) +
-        (res.games ? row(gk ? 'Sem sofrer gol' : 'Gols', gk ? res.cleanSheets : res.goals, sc.gol.map((x, i) => chip(x[0], x[1], '%', true)).join('')) : '') +
+        row('Participação', res.games + ' de ' + sc.max + ' jogos', sc.min.map((x, i) => chip(x[0], x[1], '%', i > 0)).join('')) +
+        (res.games ? row(gk ? 'Sem sofrer gol' : 'Gols', total, golChips) : '') +
         (sc.nota.length ? row('Nota', res.rating.toFixed(1).replace('.', ','), sc.nota.map((x, i) => chip(x[0], x[1], '', i > 0)).join('')) : '') +
         '</div>';
     })();
