@@ -163,8 +163,10 @@
     // (time de divisão de baixo só leva como zebra rara)
     const countryTop = S.cupTop(club);
     const pCup = clamp(0.02 + (sEff - countryTop + 3) / 26 + titleBonus * 0.2, 0.003, 0.2);
-    let league = r() < pLeague;
-    let cup = r() < pCup;
+    // Temporada de briga em que o sorteio do lance pesou menos o clássico (engine/moments.js): taças um pouco mais difíceis
+    const raceK = c.momentRace && c.momentAge === c.age ? S.RACE_ODDS : 1;
+    let league = r() < pLeague * raceK;
+    let cup = r() < pCup * raceK;
     // Jogo decisivo (minigame) manda no resultado
     const M = c.mod.moment || null;
     if (M && M.type === 'cup') cup = M.ok;
@@ -181,7 +183,7 @@
     const libF = { 'bra-a': 1, arg: 0.8 }[club.league] || 0.35;
     const pCont = club.tier < 3 ? 0 : libert ? clamp(0.08 * libF * Math.exp((sEff - 72) / 2.5) + titleBonus * 0.1, 0.003, 0.35)
       : clamp((sEff - 80) / 40 + titleBonus * 0.3, 0.01, 0.2) * (club.tier === 5 ? 1 : club.tier === 4 ? 0.4 : 0.25);
-    let cont = club.tier >= 3 && r() < pCont;
+    let cont = club.tier >= 3 && r() < pCont * raceK;
     const contName = S.contName(club);
     if (M && M.type === 'cont' && contName) cont = M.ok; // final continental decidida no minigame
     const titles = [];
