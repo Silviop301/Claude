@@ -66,6 +66,23 @@
   --t-label: 600 12px var(--display);
   color-scheme: dark;
 }
+/* Paleta e medidas comuns (guia visual no CLAUDE.md): regra nova usa estas variáveis em vez de cor solta */
+:root {
+  /* texto sobre o verde: principal, apoio, rótulo/nota e desligado (todos com contraste AA no gramado) */
+  --tx-1: #FBF8EF; --tx-2: #D3E4D9; --tx-3: #B9CDBF; --tx-4: #9DB5A6;
+  /* texto sobre o papel creme */
+  --ink-2: #5E6B63;
+  /* superfícies: bloco escuro translúcido, bloco em destaque, borda; placar/ao vivo quase preto */
+  --panel: rgba(255, 255, 255, .06); --panel-2: rgba(255, 255, 255, .1); --panel-line: rgba(255, 255, 255, .12);
+  --board: #07110C; --board-2: #0E1A14;
+  /* ouro: claro (sobre escuro), sombra do botão, legível sobre o papel */
+  --gold-2: #F4D675; --gold-deep: #A9861C; --gold-ink: #8A6400;
+  /* ganho e perda: sobre o verde e sobre o papel; certo (azul) sobre o papel */
+  --up: #7BE3A0; --up-ink: #1E7A45; --down: #FF9AA2; --down-ink: #B83A2E; --info-ink: #1D4C9E;
+  /* cantos e sombras */
+  --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-xl: 22px;
+  --sh-press: 0 3px 0 rgba(0, 0, 0, .35); --sh-float: 0 12px 28px rgba(0, 0, 0, .3);
+}
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { height: 100%; }
@@ -3494,3 +3511,22 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 /* ===== Conferência (E10) ===== */
 /* O carimbo do resultado entra com scale(2,2): crescendo do canto de cima à direita a página não rola para o lado por um instante */
 .ob3-stamp { transform-origin: 100% 0; }
+
+/* ===== Visual novo (2026-10-27): um bloco por grupo de telas; cada bloco usa as variáveis do topo (--tx-*, --panel, --r-*) ===== */
+/* ----- V0: componentes comuns e computador (botões, abas, etiquetas, janelas, barra do topo, moldura no computador) ----- */
+/* ----- fim V0 ----- */
+
+/* ----- V1: início e telas de fora (Minhas carreiras, ranking, conquistas, conta, configurações, opinião) ----- */
+/* ----- fim V1 ----- */
+
+/* ----- V2: pré-temporada, decisões e mercado (pré-temporada, ficha, evento, base, janela, pouco espaço) ----- */
+/* ----- fim V2 ----- */
+
+/* ----- V3: lances e minigames (lance, minigames, resultado, treino, reta final, Relâmpago) ----- */
+/* ----- fim V3 ----- */
+
+/* ----- V4: temporada, Copa e fim de carreira (ao vivo, resumo, jornal, X, Copa/Mundial, fim) ----- */
+/* ----- fim V4 ----- */
+
+/* ----- V5: cartas e coleção (carta nova, álbum, coleção, carta 3D, Sala de Troféus, pacotinhos, itens) ----- */
+/* ----- fim V5 ----- */
