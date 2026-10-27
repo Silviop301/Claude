@@ -23,14 +23,22 @@ function wav(chans) {
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch();
   const page = await browser.newPage();
+  // A página finge estar em craque/ para o som gravado (assets/sons/*.mp3) carregar como no jogo
+  const ROOT = path.join(__dirname, '../craque');
+  await page.route('http://climbix.local/**', r => {
+    const f = path.join(ROOT, new URL(r.request().url()).pathname.replace(/^\/craque\//, ''));
+    if (fs.existsSync(f) && fs.statSync(f).isFile()) r.fulfill({ body: fs.readFileSync(f) }); else r.fulfill({ status: 200, body: '<html></html>', contentType: 'text/html' });
+  });
   for (const name of NAMES) {
-    await page.setContent('<html></html>');
+    await page.goto('http://climbix.local/craque/');
     const chans = await page.evaluate(async ([src, name, SR, LEN]) => {
       // O jogo cria o contexto com new AudioContext(): aqui ele vira um contexto offline
       let off = null;
       window.AudioContext = function () { off = new OfflineAudioContext(2, SR * LEN, SR); return off; };
       try { localStorage.removeItem('craque-sound'); } catch (e) { /* ok */ }
       (0, eval)(src);
+      window.CRAQUE_SFX.play('-');                 // cria o contexto e começa a baixar as gravações
+      await new Promise(r => setTimeout(r, 400));
       window.CRAQUE_SFX.play(name);
       if (!off) return null;
       const buf = await off.startRendering();

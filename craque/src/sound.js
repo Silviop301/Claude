@@ -1,8 +1,8 @@
-// Sons do CRAQUE, gerados na hora com Web Audio (nenhum arquivo para baixar).
+// Sons do CRAQUE, gerados na hora com Web Audio; só a bola na rede é gravação (assets/sons/rede.mp3).
 // O iPhone só libera áudio depois de um toque: o contexto nasce no primeiro toque na tela.
 // Para ouvir cada som fora do jogo: node tools/craque_sons.js (grava um WAV por som).
 (function (root) {
-  let ctx = null, master = null, room = null, noiseBuf = null, pinkBuf = null;
+  let ctx = null, master = null, room = null, noiseBuf = null, pinkBuf = null, netBuf = null;
   let on = true;
   const last = {};
   try { on = localStorage.getItem('craque-sound') !== 'off'; } catch (e) { /* sem armazenamento: fica ligado */ }
@@ -45,6 +45,9 @@
     const wet = ctx.createGain();
     wet.gain.value = 0.5;
     room.connect(wet); wet.connect(master);
+    // Bola na rede: gravação de verdade (40 KB). Enquanto não chega, o gol usa a rede sintetizada
+    if (root.fetch) fetch('assets/sons/rede.mp3?v=7805c0ba').then(r => r.arrayBuffer())
+      .then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { netBuf = b; }).catch(() => { /* fica a sintetizada */ });
   }
   if (root.addEventListener) root.addEventListener('pointerdown', init, { passive: true });
 
@@ -180,9 +183,14 @@
       noise(t, 0.04, 0.3, 0.002, 'bandpass', 1300, 700, 1.2);
       noise(t, 0.02, 0.12, 0.002, 'highpass', 3500);
     },
-    // Gol: a rede balança e a torcida explode, cada vez mais aberta
+    // Gol: a bola estufa a rede e a torcida explode, cada vez mais aberta
     goal(t) {
-      noise(t, 0.35, 0.16, 0.01, 'bandpass', 2600, 900, 0.9);
+      if (netBuf) {
+        const src = ctx.createBufferSource(), g = ctx.createGain();
+        src.buffer = netBuf; g.gain.value = 0.75;
+        src.connect(g); out(g, 0.15);
+        src.start(t);
+      } else noise(t, 0.35, 0.16, 0.01, 'bandpass', 2600, 900, 0.9);
       crowd(t + 0.04, { vowel: 'o', dur: 2.9, a: 0.25, hold: 1.6, spread: 0.2, peak: 1, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.8, 1.2], [2.9, 0.95]], shouts: 14, shoutGain: 1.1, bend: [1, 1.15] });
     },
     // Erro: o "uhhh" da torcida, que começa alto e vai murchando
