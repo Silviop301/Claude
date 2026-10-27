@@ -79,10 +79,11 @@
           '<button class="btn al-share" id="al-share">Compartilhar a história</button>';
       }
       wrap.innerHTML = prog + '<button class="al-x" aria-label="Fechar">✕</button>' + body;
-      const cv = wrap.querySelector('canvas');
-      if (fr.kind === 'season') window.CRAQUE_CARD(cv, U.cardData(c, { ovr: fr.s.ovr1, attrs: attrsOf(c, fr.s), club: fr.s.club, age: fr.s.age, season: true, traits: fr.s.traits }));
-      else if (fr.kind === 'special') window.CRAQUE_CARD(cv, U.cardData(c, fr.card));
-      else window.CRAQUE_CARD(cv, finalCard);
+      // A carta só aparece desenhada inteira (escudo e fonte da assinatura carregam depois): até lá, a silhueta dela
+      const cv = wrap.querySelector('canvas'), host = cv.parentElement, ready = () => host.classList.remove('ld');
+      host.classList.add('ld');
+      Promise.resolve(window.CRAQUE_CARD(cv, fr.kind === 'season' ? U.cardData(c, { ovr: fr.s.ovr1, attrs: attrsOf(c, fr.s), club: fr.s.club, age: fr.s.age, season: true, traits: fr.s.traits })
+        : fr.kind === 'special' ? U.cardData(c, fr.card) : finalCard)).then(ready, ready);
       wrap.querySelector('.al-x').onclick = e => { e.stopPropagation(); close(); };
       const sh = wrap.querySelector('#al-share');
       if (sh) sh.onclick = async e => { e.stopPropagation(); sh.textContent = 'Preparando…'; const r = await window.CRAQUE_SHARE(await storyImage(c, f, finalCard), c.name + '-historia'); sh.textContent = r === 'download' ? 'Imagem salva' : 'Compartilhar a história'; };
