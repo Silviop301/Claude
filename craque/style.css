@@ -3523,6 +3523,138 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 /* ----- fim V2 ----- */
 
 /* ----- V3: lances e minigames (lance, minigames, resultado, treino, reta final, Relâmpago) ----- */
+/* Lance decisivo (ui/match.js momentIntro): título, contexto em texto de apoio e o que vale em duas linhas (ganho/perda) */
+.ob5-head { gap: 8px; }
+.ob5-head .ob5-txt { font: 500 15px/1.4 var(--body); color: var(--tx-2); text-wrap: pretty; }
+.lc-stakes { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 7px 12px; margin-top: 2px; padding: 11px 14px;
+  border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--panel-line); }
+.lc-st { display: contents; }
+.lc-st b { display: inline-flex; align-items: center; gap: 7px; font: 700 12px/1.25 var(--display); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+.lc-st b::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.lc-st span { font: 600 15px/1.3 var(--body); color: var(--tx-1); }
+.lc-st > span:only-child { grid-column: 1 / -1; }
+.lc-st.win b { color: var(--up); }
+.lc-st.lose b { color: var(--down); }
+/* O que pesa da carta (chips) e "Como funciona": blocos de apoio, sem dourado (o dourado fica para a escolha) */
+.chips.ob5-facts .chip { padding: 5px 10px; background: var(--panel); border: 1px solid var(--panel-line); color: var(--tx-2); font: 500 13px/1.25 var(--body); }
+.ob5-how summary { gap: 8px; color: var(--tx-2); font: 600 14px var(--body); }
+.ob5-how summary::after { content: '+'; order: -1; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--panel-2);
+  border: 1px solid var(--panel-line); color: var(--tx-1); font: 800 16px/1 var(--display); }
+.ob5-how[open] summary::after { content: '−'; }
+.ob5-how > p { color: var(--tx-2); }
+/* Os dois estilos: cartões de papel iguais (nenhum é o melhor), chance pela carta em número grande; o dourado marca o toque */
+.ob5-q { margin: 6px 0 -2px; font: 800 22px/1.1 var(--display); color: var(--tx-1); }
+.btn.opt.style.ob5-st, .btn.opt.style.ob5-st.s1 { gap: 4px; padding: 12px 12px 14px; border-radius: var(--r-lg); background: var(--paper); color: var(--ink);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, .35), 0 12px 24px rgba(0, 0, 0, .22); }
+.btn.opt.style.ob5-st:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, .35), inset 0 0 0 3px var(--gold); }
+.btn.opt.style.ob5-st .ob5-st-top .tw { width: 32px; height: 32px; }
+.btn.opt.style.ob5-st .st-pct { gap: 3px; color: var(--ink-2); opacity: 1; font: 700 12px/1 var(--body); letter-spacing: 0; }
+.btn.opt.style.ob5-st .st-pct b { color: var(--ink); font-size: 34px; }
+.btn.opt.style.ob5-st .ob5-st-nm { margin-top: 2px; color: var(--ink); font-size: 25px; }
+.btn.opt.style.ob5-st small { color: var(--ink-2); font: 600 13px/1.3 var(--body); opacity: 1; }
+.desk .btn.opt.style.ob5-st:hover { box-shadow: 0 4px 0 rgba(0, 0, 0, .35), 0 12px 24px rgba(0, 0, 0, .22), inset 0 0 0 3px var(--gold); }
+/* Rodapé: decidir no automático e treinar, em tom de apoio */
+.btn.ghost.ob5-auto small { color: var(--tx-3); }
+.ob5-train { background: var(--panel); border-color: var(--panel-line); color: var(--tx-1); }
+
+/* Resultado do lance: no alto como o resultado do evento (placar, o grito com luz atrás e os botões logo abaixo).
+   O grito ganha uma área própria e alta, para a tela não ficar com meia tela vazia nem os botões longe dele. */
+#screen > .ob5-res, .trn > .ob5-res { justify-content: center; gap: 10px; min-height: clamp(200px, 36svh, 340px); padding: 24px 8px; border-radius: var(--r-xl);
+  background: radial-gradient(closest-side, var(--lc-glow, transparent), transparent); }
+.ob5-res.ok { --lc-glow: rgba(95, 214, 144, .17); }
+.ob5-res.ko { --lc-glow: rgba(255, 107, 115, .13); }
+#screen > .ob5-res .mr-big { font-size: clamp(48px, 17vw, 72px); }
+#screen > .ob5-res .mr-txt, .trn > .ob5-res .mr-txt { max-width: 34ch; font: 600 17px/1.4 var(--body); color: var(--tx-1); }
+.lc-acts { display: flex; flex-direction: column; gap: 12px; }
+.ob5-res > .ob5-prize { align-self: stretch; margin-top: 14px; text-align: left; }
+
+/* Minigame: a área do lance vira o campo de jogo (luz no meio, cantos escuros), a cena no centro e a dica numa pílula logo abaixo.
+   A área inteira já recebe o toque (kick.js onTap); o fundo só mostra isso. */
+#screen > .ob5-board.mini + #kick, .trn > #trn-mini { margin: 0 -8px; padding: 14px 8px 18px; border-radius: var(--r-xl);
+  background: radial-gradient(95% 55% at 50% 42%, rgba(255, 255, 255, .07), rgba(0, 0, 0, 0) 70%), rgba(0, 0, 0, .2); }
+.kick-help { display: block; width: fit-content; max-width: 100%; min-height: 44px; margin: 2px auto 0; padding: 11px 18px;
+  border-radius: 22px; background: rgba(5, 10, 7, .62); border: 1px solid var(--panel-line); box-shadow: var(--sh-press);
+  color: var(--tx-1); font: 600 16px/1.3 var(--body); text-align: center; text-wrap: balance; }
+.kick-help b { color: var(--gold-2); font-weight: 700; }
+.kick-help::before { content: ''; display: inline-block; width: 10px; height: 10px; margin: 0 10px 2px 0; vertical-align: middle; border-radius: 50%; background: var(--gold);
+  animation: lc-ping 1.3s ease-out infinite; }
+@keyframes lc-ping { 0% { box-shadow: 0 0 0 0 rgba(242, 194, 48, .7); } 80%, 100% { box-shadow: 0 0 0 10px rgba(242, 194, 48, 0); } }
+.kick-help.off { visibility: hidden; }
+.kick-help.done::before { display: none; }
+@media (prefers-reduced-motion: reduce) { .kick-help::before { animation: none; } }
+
+/* Treino (ui/training.js): tela cheia em coluna; na abertura o bloco (lance, passos e botão) fica no meio da altura;
+   passos numa linha do tempo; o jogo ocupa o meio da tela */
+.trn { min-height: 100%; }
+.trn-head b { font-size: 20px; }
+.trn-intro > .trn-head { min-height: 44px; }
+.trn-intro > .trn-hero { margin-top: auto; display: flex; align-items: center; gap: 14px; }
+.trn-ico { flex: none; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--panel-2); box-shadow: inset 0 0 0 2px rgba(242, 194, 48, .55); }
+.trn-hero h2 { margin: 0; font: 800 34px/1 var(--display); text-transform: uppercase; }
+.trn-intro > :last-child { margin-bottom: auto; }
+.trn > .lead { font: 500 16px/1.4 var(--body); color: var(--tx-2); }
+.trn-steps.ob5-steps { gap: 0; padding: 16px 16px 16px 14px; border-radius: var(--r-lg); background: var(--panel); border: 1px solid var(--panel-line); }
+.ob5-steps li { position: relative; gap: 14px; padding: 0 0 18px; border: 0; border-radius: 0; background: none; font: 500 16px/1.4 var(--body); color: var(--tx-1); }
+.ob5-steps li:last-child { padding-bottom: 0; }
+.ob5-steps li:not(:last-child)::before { content: ''; position: absolute; left: 16px; top: 38px; bottom: 4px; width: 2px; border-radius: 2px; background: rgba(242, 194, 48, .35); }
+.trn > #trn-mini { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.trn-tip { color: var(--tx-2); font: 500 15px/1.4 var(--body); text-wrap: pretty; }
+.trn .ob5-res .mr-big { font-size: clamp(44px, 15vw, 60px); }
+/* Menu do treino: linhas com o ícone à esquerda; os lances da sua posição em destaque */
+.trn-menu .btn.ghost { display: grid; grid-template-columns: 36px 1fr; align-items: center; column-gap: 12px; padding: 12px 16px; text-align: left; font-size: 19px; }
+.trn-menu .btn.ghost > .tw { grid-row: span 2; width: 30px; height: 30px; justify-self: center; }
+.trn-menu .btn.ghost > small { grid-column: 2; margin: 0; color: var(--tx-3); }
+.trn-menu .btn.ghost.mine { background: var(--panel); box-shadow: inset 0 0 0 2px rgba(242, 194, 48, .55); }
+.trn-menu .btn.ghost.mine > small { color: var(--gold-2); }
+
+/* Carreira Relâmpago, entrada (ui/relampago.js intro): as 5 casas desenhadas como no jogo e as regras em lista com ícone */
+.rl-intro { display: flex; flex-direction: column; gap: 12px; }
+.rl-i-lead { margin: 0; font: 500 16px/1.4 var(--body); color: var(--tx-2); }
+.rl-i-lead b { color: var(--tx-1); }
+.rl-i-map { display: flex; flex-direction: column; gap: 6px; }
+.rl-i-map .rl-board { margin: 0; }
+.rl-i-map .rl-cell { min-height: 62px; justify-content: space-between; padding: 7px 4px 8px; }
+.rl-i-balls { display: flex; gap: 3px; }
+.rl-i-balls i { width: 6px; height: 6px; border-radius: 50%; background: var(--tx-3); }
+.rl-i-groups { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.rl-i-groups span { display: flex; align-items: center; justify-content: center; gap: 6px; padding-top: 6px; border-top: 2px solid var(--panel-line);
+  font: 700 12px/1.2 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--tx-3); }
+.rl-i-groups span:first-child { grid-column: span 3; }
+.rl-i-groups span:last-child { grid-column: span 2; }
+.rl-i-groups .tw { width: 16px; height: 16px; }
+.rl-i-rules { list-style: none; margin: 0; padding: 2px 14px; border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--panel-line); }
+.rl-i-rules li { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: start; gap: 12px; padding: 11px 0; font: 500 15px/1.4 var(--body); color: var(--tx-2); }
+.rl-i-rules li + li { border-top: 1px solid var(--panel-line); }
+.rl-i-rules li .tw { width: 22px; height: 22px; margin-top: 1px; }
+.rl-i-rules b { color: var(--tx-1); font-weight: 700; }
+
+/* Tela baixa: regras do Relâmpago mais juntas para o nome e o "Começar" aparecerem sem rolar tanto */
+@media (max-height: 700px) {
+  .rl-intro { gap: 10px; }
+  .rl-i-map .rl-cell { min-height: 46px; padding: 5px 4px 6px; }
+  .rl-i-rules li { padding: 7px 0; font-size: 14px; line-height: 1.35; }
+}
+
+/* Computador: o palco já sai da coluna e ocupa a altura; o campo escuro em volta fica só no celular e no tablet.
+   A dica é mais baixa (mouse) e o palco desconta a altura dela para caber inteiro na tela. */
+html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0; padding: 0; background: none; }
+.desk .kick-help { min-height: 0; padding: 7px 16px; font-size: 17px; }
+.desk .kick-stage { --kw: min(720px, 94vw, calc((100dvh - 262px) * 1.125)); }
+.desk .trn .kick-stage { --kw: min(720px, 94vw, calc((100dvh - 300px) * 1.125)); }
+/* Lance no computador: cartões de estilo maiores (ícone e chance no alto, nome e explicação embaixo, alinhados entre os dois) */
+@media (min-width: 1000px) {
+  .btn.opt.style.ob5-st { padding: 16px 16px 18px; }
+  .btn.opt.style.ob5-st .ob5-st-top { min-height: 92px; align-items: flex-start; }
+  .btn.opt.style.ob5-st .ob5-st-top .tw { width: 40px; height: 40px; }
+  .btn.opt.style.ob5-st .st-pct b { font-size: 42px; }
+  .btn.opt.style.ob5-st .ob5-st-nm { font-size: 30px; }
+  .btn.opt.style.ob5-st small { font-size: 14px; }
+}
+@media (min-width: 1280px) and (min-height: 860px) {
+  html.desk .kick-stage { --kw: min(720px, 94vw, calc((100dvh / var(--z) - 262px) * 1.125)); }
+  html.desk .trn .kick-stage { --kw: min(720px, 94vw, calc((100dvh / var(--z) - 300px) * 1.125)); }
+  html.desk #screen > .ob5-res, html.desk .trn > .ob5-res { min-height: clamp(200px, calc(36svh / var(--z)), 340px); }
+}
 /* ----- fim V3 ----- */
 
 /* ----- V4: temporada, Copa e fim de carreira (ao vivo, resumo, jornal, X, Copa/Mundial, fim) ----- */

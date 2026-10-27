@@ -76,13 +76,16 @@
     render('<button class="back-link" id="rl-back">‹ Voltar</button>' +
       '<div class="eyebrow">Modo rápido</div><h2>Carreira Relâmpago</h2>' +
       (d ? '<div class="card dz-res rl-vs-top">' + U.emo('🎯', 'md') + '<div><small>Desafio de ' + esc(d.n) + '</small><b>' + S.rlScore(d.s, d.p).total + ' pontos pra bater</b><span>Os prêmios escondidos são os mesmos que ' + esc(d.n) + ' teve. Uma chance só.</span></div></div>' : '') +
-      '<div class="card rl-rules">' +
-        '<p><b>5 casas montam a carreira:</b> Base, Auge, Último clube, G/A e Títulos. Cada casa tem <b>5 bolas</b>.</p>' +
-        '<p>' + U.emo('👆', 'sm') + ' <b>Você escolhe qual bola chutar</b>, uma de cada vez.</p>' +
-        '<p>' + U.emo('⚽', 'sm') + ' Nos clubes, cada bola esconde um time: vale <b>a primeira que entrar</b>. Errou as 5, fica o mais fraco.</p>' +
-        '<p>' + U.emo('🏆', 'sm') + ' Em G/A e Títulos cada bola esconde gols e assistências ou um título. <b>Você leva o de cada bola que entrar</b>, e pode perder justo a da Bola de Ouro.</p>' +
-        '<p>' + U.emo('😤', 'sm') + ' A mira <b>acelera a cada casa</b>.</p>' +
-      '</div>' +
+      // As 5 casas desenhadas como no quadro do jogo (clubes e prêmios) e as regras em lista, cada uma com o seu ícone
+      '<div class="rl-intro"><p class="rl-i-lead"><b>5 casas montam a carreira.</b> Cada casa tem <b>5 bolas</b>.</p>' +
+        '<div class="rl-i-map"><div class="rl-board">' + S.RL_SLOTS.map(sl => '<div class="rl-cell"><small>' + sl.name + '</small><span class="rl-i-balls" aria-hidden="true">' + '<i></i>'.repeat(5) + '</span></div>').join('') + '</div>' +
+          '<div class="rl-i-groups"><span>' + U.emo('⚽', 'xs') + ' Clubes</span><span>' + U.emo('🏆', 'xs') + ' Prêmios</span></div></div>' +
+        '<ul class="rl-i-rules">' +
+          '<li>' + U.emo('👆', 'sm') + '<span><b>Você escolhe qual bola chutar</b>, uma de cada vez.</span></li>' +
+          '<li>' + U.emo('⚽', 'sm') + '<span>Nos clubes, cada bola esconde um time: vale <b>a primeira que entrar</b>. Errou as 5, fica o mais fraco.</span></li>' +
+          '<li>' + U.emo('🏆', 'sm') + '<span>Em G/A e Títulos cada bola esconde gols e assistências ou um título. <b>Você leva o de cada bola que entrar</b>, e pode perder justo a da Bola de Ouro.</span></li>' +
+          '<li>' + U.emo('😤', 'sm') + '<span>A mira <b>acelera a cada casa</b>.</span></li>' +
+        '</ul></div>' +
       '<div class="field"><label for="rl-name">Seu nome no desafio</label><input id="rl-name" maxlength="20" autocomplete="nickname" placeholder="Ex.: Vitinho" value="' + esc(name) + '"></div>' +
       '<button class="btn" id="rl-start">' + (d ? 'Jogar o desafio' : 'Começar') + '</button>');
     $('rl-back').onclick = () => U.home();
