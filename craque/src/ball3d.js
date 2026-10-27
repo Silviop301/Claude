@@ -510,6 +510,7 @@ function card3d(host, data, opts) {
     raf = requestAnimationFrame(loop);
     const api = {
       update: d => apply(d),
+      spin: () => { vyaw = 0.36; }, // uma volta e para de frente
       dispose() { cancelAnimationFrame(raf); if (io) io.disconnect(); removeEventListener('resize', fit); removeEventListener('deviceorientation', onTilt); renderer.dispose(); pm.dispose(); cv.remove(); },
     };
     return api;

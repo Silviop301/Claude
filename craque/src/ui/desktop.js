@@ -55,6 +55,8 @@
     tgt.dispatchEvent(new PointerEvent('pointerdown', o)); tgt.dispatchEvent(new PointerEvent('pointerup', o));
     tgt.dispatchEvent(new MouseEvent('click', o));
   }
+  // Avançar uma camada de toque: na revelação de carta o meio é a carta (clique nela só gira), então clica no fundo
+  const tapLayer = layer => (/\bwalkout\b/.test(layer.className) ? layer.click() : clickAt(layer));
   // Botão principal: o primeiro botão cheio visível (sem as opções de evento, que pedem 1–4)
   const primary = root => [...root.querySelectorAll('.btn:not(.ghost):not(:disabled)')]
     .find(b => visible(b) && !b.closest('.choices') && !b.classList.contains('opt'));
@@ -78,7 +80,7 @@
     if (k === 'Escape') {
       const x = [...scope.querySelectorAll('.cfg-x, .sp-x, .sl-sh-x, #sl-x, #trn-x, [aria-label^="Fechar"]')].find(visible);
       if (x) { x.click(); return done(); }
-      if (layer && TAP_LAYER.test(layer.className)) { clickAt(layer); return done(); }
+      if (layer && TAP_LAYER.test(layer.className)) { tapLayer(layer); return done(); }
       return;
     }
     // Álbum: ← volta, →/Espaço avança
@@ -95,7 +97,7 @@
     // Jornal, revelação de carta, comemoração, pacotinho: avança
     if (layer && TAP_LAYER.test(layer.className)) {
       const b = primary(layer);
-      if (b) b.click(); else clickAt(layer);
+      if (b) b.click(); else tapLayer(layer);
       return done();
     }
     // Resumo da temporada mostrando os blocos: Espaço pula para o fim
