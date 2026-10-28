@@ -1535,6 +1535,10 @@ body.sala-on { overflow: hidden; }
 .sala { position: fixed; inset: 0; z-index: 70; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   background: linear-gradient(180deg, #145235, #0F3D2A 45%); color: var(--paper); }
 .sala > * { max-width: 480px; margin-left: auto; margin-right: auto; }
+/* A estante desce até o pé da tela, seja qual for a altura do topo (70vh era só um piso) */
+.sala { display: flex; flex-direction: column; }
+.sala > .sl-top, .sala > .sl-case { width: 100%; flex: none; }
+.sala > .sl-case { flex: 1 0 auto; }
 .sl-top { position: relative; padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 0; overflow: hidden; }
 .sl-deco { position: absolute; top: 70px; right: -60px; width: 230px; height: 260px; border-radius: 50% 50% 46% 46% / 40% 40% 60% 60%; border: 22px solid rgba(255, 255, 255, .045); pointer-events: none; }
 .sl-title { position: relative; display: flex; align-items: center; gap: 12px; }
