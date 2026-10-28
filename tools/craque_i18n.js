@@ -156,8 +156,6 @@ const FILE_EN = [
   ['ui/season.js', "(pe.n > 1 ? ' points' : ' point') + ' development'", "(pe.n > 1 ? ' development points' : ' development point')"],
   ['ui/season.js', "', a ' + rc.gap", "', ' + rc.gap"],
   ['ui/season.js', "'finished ' + tb.pos + 'th place ' + D.na(tb.league)", "'finished ' + tb.pos + 'th ' + D.na(tb.league)"],
-  ['ui/season.js', "res.titles.map(t => t.name).join(' and ')", "D.andList(res.titles.map(t => t.name))"],
-  ['ui/social.js', "r.titles.map(x => x.name).join(' and ')", "D.andList(r.titles.map(x => x.name))"],
   ['ui/offers.js', "? 'renovar' : 'assinar')", "? 'renew' : 'sign')"],
   ['engine/season.js', "'decidido'", "'decided'"],
   ['engine/season.js', "' for ' + D.o(cur.name) + ': the big leap", "' to ' + D.o(cur.name) + ': the big leap"],
@@ -199,6 +197,7 @@ const DATA_EN = `
   const the = n => (/^(La |LaLiga|Ligue |Liga |Serie |Série |MLS|HNL|Allsvenskan|Eliteserien|Ekstraklasa|Botola|TFF|J[12] |K League)/.test(n) ? '' : 'the ') + n;
   D.fem = () => false; D.da = n => 'of ' + the(n); D.na = n => 'in ' + the(n); D.paraA = n => 'to ' + the(n);
   D.andList = a => (a.length > 1 ? a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : a.join('')); // 'A, B and C'
+  D.aTaca = the; // 'the FA Cup', 'La Liga'
 })(typeof window !== 'undefined' ? window.CRAQUE_DATA : globalThis.CRAQUE_DATA);
 `;
 

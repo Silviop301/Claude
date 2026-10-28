@@ -439,13 +439,15 @@
   // Jornal da temporada (a capa em si fica em ui/paper.js)
   function lede(res, cl) {
     const tb = res.table;
-    const pos = tb.pos === 1 ? 'terminou campeão ' + D.da(tb.league) : 'terminou em ' + tb.pos + 'º lugar ' + D.na(tb.league);
+    const pos = tb.pos === 1 ? (D.fem(cl.name) ? 'terminou campeã ' : 'terminou campeão ') + D.da(tb.league) : 'terminou em ' + tb.pos + 'º lugar ' + D.na(tb.league);
     const perf = !res.games ? G.c.name + ' quase não entrou em campo, e ' + D.o(cl.name) + ' ' + pos + '.'
       : res.rating >= 7.5 && tb.pos >= 11 ? G.c.name + ' foi o nome ' + D.do(cl.name) + ', mas o time não acompanhou e ' + pos + '.'
       : res.rating >= 7.5 ? G.c.name + ' foi o nome ' + D.do(cl.name) + ', que ' + pos + '.'
       : res.rating >= 6.8 ? 'Com atuações seguras de ' + G.c.name + ', ' + D.o(cl.name) + ' ' + pos + '.'
       : 'Em temporada irregular de ' + G.c.name + ', ' + D.o(cl.name) + ' ' + pos + '.';
-    return perf + (res.titles.length ? ' A torcida comemorou ' + res.titles.map(t => t.name).join(' e ') + '.' : '');
+    // A liga ganha já está na frase de cima: a torcida comemora as outras taças, com artigo ("a Copa do Rei e a Supercopa")
+    const more = res.titles.filter(t => !(t.id === 'league' && tb.pos === 1)).map(t => D.aTaca(t.name));
+    return perf + (more.length ? (more.length < res.titles.length ? ' A torcida também comemorou ' : ' A torcida comemorou ') + D.andList(more) + '.' : '');
   }
   function showPaper(res, onClose) {
     // Temporada sem notícia: o jornal não sai (a manchete fica só no resumo); cartas reveladas seguem valendo

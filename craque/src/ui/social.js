@@ -224,7 +224,7 @@
     const vs = m && m.vs ? D.o(club(m.vs).name) : 'o adversário', nota = r ? (Math.round(r.rating * 10) / 10).toFixed(1).replace('.', ',') : '';
     const fill = t => t.replace(/\{n\}/g, c.name).replace(/\{num\}/g, c.number || 10).replace(/\{time\}/g, cl).replace(/\{cor\}/g, heart(c.club))
       .replace(/\{aoTime\}/g, D.ao(cl)).replace(/\{doTime\}/g, D.do(cl)).replace(/\{noTime\}/g, D.no(cl)).replace(/\{idade\}/g, c.age)
-      .replace(/\{stat\}/g, r ? statOf(r) : '').replace(/\{titulos\}/g, r ? r.titles.map(x => x.name).join(' e ') : '').replace(/\{jogos\}/g, r ? r.games : '')
+      .replace(/\{stat\}/g, r ? statOf(r) : '').replace(/\{titulos\}/g, r ? D.andList(r.titles.map(x => x.name)) : '').replace(/\{jogos\}/g, r ? r.games : '')
       .replace(/\{nota\}/g, nota).replace(/\{pos\}/g, r && r.table ? r.table.pos : '').replace(/\{pts\}/g, r && r.table ? r.table.pts : '')
       .replace(/\{naLiga\}/g, r && r.table ? D.na(r.table.league) : '').replace(/\{min\}/g, m ? m.minute || 90 : '').replace(/\{vs\}/g, vs).replace(/\{contraVs\}/g, 'contra ' + vs)
       .replace(/\{numeros\}/g, careerOf(c)).replace(/\{temps\}/g, P(c.seasons.length, 'temporada', 'temporadas')).replace(/\{gols\}/g, T.goals || 0).replace(/\{assist\}/g, T.assists || 0);

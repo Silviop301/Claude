@@ -691,11 +691,14 @@
   D.pelo = n => g(n, 'pelo', 'pela');
   D.ao = n => g(n, 'ao', 'à');
 
-  // Artigos: "o Brasileirão", "a Premier League"
-  const MASC = ['Brasileirão', 'Championship', 'Scottish Championship', 'USL Championship'];
+  // Artigos: "o Brasileirão", "a Premier League" (ligas e taças; as supercopas da França e do México são masculinas)
+  const MASC = ['Brasileirão', 'Championship', 'Scottish Championship', 'USL Championship', 'Troféu dos Campeões', 'Campeão de Campeões'];
   D.da = n => (MASC.includes(n) ? 'do ' : 'da ') + n;
   D.na = n => (MASC.includes(n) ? 'no ' : 'na ') + n;
   D.paraA = n => (MASC.includes(n) ? 'para o ' : 'para a ') + n;
+  D.aTaca = n => (MASC.includes(n) ? 'o ' : 'a ') + n;
+  // Lista em texto corrido: "A, B e C"
+  D.andList = a => (a.length > 1 ? a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1] : a.join(''));
 
   D.countryOf = club => D.LEAGUE_BY_ID[club.league].country;
   // Ligas do dinheiro (salários altíssimos, pouco prestígio)
