@@ -118,6 +118,7 @@
   const NO_LIFT = '.s-hero, #wc-list, #kick, .kick-stage, .cc-side, #b-new, #b-start, #b-go';
   function lift() {
     if (!scr) return;
+    if (scr.dataset.same) { delete scr.dataset.same; return; } // mesma tela redesenhada (U.render same): fica onde está
     scr.style.marginTop = '';
     if (!wide.matches || scr.classList.contains('center') || scr.querySelector(NO_LIFT)) return;
     if (barEl.hidden && !scr.querySelector('.of-rail')) return; // só na carreira (com a barra) e nas propostas da base
@@ -127,7 +128,9 @@
     if (free > 48) scr.style.marginTop = Math.round(free * 0.42) + 'px';
   }
   if (scr) {
-    new MutationObserver(lift).observe(scr, { childList: true });
+    // Só a dica entrando ou saindo ("Entendi") não é tela nova: não mede de novo (a tela pulava)
+    const tipOnly = ms => ms.every(m => [...m.addedNodes, ...m.removedNodes].every(n => n.classList && n.classList.contains('tip-card')));
+    new MutationObserver(ms => { if (!tipOnly(ms)) lift(); }).observe(scr, { childList: true });
     let rq = 0;
     addEventListener('resize', () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(lift); });
     if (wide.addEventListener) wide.addEventListener('change', lift);

@@ -61,6 +61,9 @@
     shownAt = performance.now();
     // Telas curtas (resultado de evento ou de lance) ficam no meio da tela, sem meia tela vazia embaixo
     screen.classList.toggle('center', !!(opts && opts.center));
+    // same: a mesma tela redesenhada (pré-temporada depois da escolha): sem a entrada de tela nova (piscava) e sem
+    // medir de novo o respiro do computador (ui/desktop.js, a tela descia)
+    if (opts && opts.same) { screen.dataset.same = '1'; window.scrollTo(0, 0); return; }
     screen.style.animation = 'none';
     void screen.offsetWidth;
     screen.style.animation = '';

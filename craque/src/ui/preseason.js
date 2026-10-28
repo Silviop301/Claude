@@ -188,7 +188,8 @@
   function preseason() { undo = []; prep(false); }
   function invest() { prep(true); } // retomar depois de já ter escolhido a característica
 
-  function prep(traitDone, justAdded) {
+  // again: a mesma pré-temporada redesenhada (depois da escolha ou do Desfazer): fica no lugar, sem piscar
+  function prep(traitDone, justAdded, again) {
     G.c.train = S.autoTrain(G.c); // foco nos treinos pela idade
     const all = S.seasonChoices(G.c), preCh = G.c.preCh;
     if (traitDone) preCh.done = true;
@@ -203,6 +204,8 @@
     const fisio = D.INVEST.find(t => !t.attr);
     const coins = D.INVEST.some(t => (G.c.inv[t.id] || 0) < S.investMax(t.id));
     const star = U.emo('⭐', 'xs');
+    // Dica da pré-temporada ainda na tela: volta depois do redesenho (escolha, Desfazer); antes sumia de vez
+    const keepTip = screen.querySelector('.tip-card[data-k="pre"]');
     render(
       '<div class="pre-head"><div><div class="eyebrow">Pré-temporada · ' + year() + (G.c.farewell ? ' · temporada de despedida' : '') + '</div>' +
         '<h2>Prepare a temporada</h2></div>' +
@@ -227,9 +230,11 @@
       // Foco nos treinos: automático pela idade, só informado
       '<p class="muted small train-txt" id="train-txt"></p>' +
       (!hasInv && coins ? '<p class="muted small prep-note">' + star + ' Pontos de evolução: ' + (G.c.pe || 0) + '. Você ganha com nota ' + String(S.PE_R1).replace('.', ',') + '+ (' + String(S.PE_R2).replace('.', ',') + '+ vale 2), títulos e prêmios.</p>' : '') +
-      '<div class="inv-bar fade">' + (undo.length ? '<button class="btn ghost" id="b-undo">Desfazer</button>' : '') + '<button class="btn" id="b-skip">Jogar a temporada</button></div>'
+      '<div class="inv-bar fade">' + (undo.length ? '<button class="btn ghost" id="b-undo">Desfazer</button>' : '') + '<button class="btn" id="b-skip">Jogar a temporada</button></div>',
+      again ? { same: true } : null
     );
     U.tip('pre');
+    if (keepTip) { keepTip.style.animation = 'none'; const at = screen.querySelector('.inv-bar'); if (at) at.before(keepTip); else screen.append(keepTip); }
     const skip = $('b-skip');
     const go = () => { undo = []; delete G.c.preCh; U.eventOrSeason(); };
     const showUndo = () => {
@@ -241,7 +246,7 @@
       if (!undo.length) return;
       G.c = JSON.parse(undo.pop());
       save(); sfx('tick');
-      prep(!!(G.c.preCh && G.c.preCh.done));
+      prep(!!(G.c.preCh && G.c.preCh.done), null, true);
     };
     if ($('b-undo')) $('b-undo').onclick = doUndo;
     // "Seguir" só libera depois de escolher a característica; os pontos podem ficar guardados
@@ -284,7 +289,7 @@
       preCh.done = true;
       showPreview(null);
       bar();
-      applyAnim(from, () => prep(true, done));
+      applyAnim(from, () => prep(true, done, true));
     });
     screen.querySelectorAll('[data-v]').forEach(b => b.onclick = () => {
       const id = b.dataset.v;
