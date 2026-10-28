@@ -110,7 +110,8 @@
 
   function open(view, c) {
     careerShown = c || null;
-    st.view = view || 'col';
+    // Sem carreira (Minhas carreiras depois de aposentar): só a Coleção
+    st.view = careerOf() ? view || 'col' : 'col';
     sawCol = false;
     const d = data();
     // Abre na aba da taça nova mais recente (ou em Ligas)
@@ -193,7 +194,7 @@
     wrap.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { st.tab = b.dataset.tab; paint(); });
     wrap.querySelectorAll('.sl-case .ni').forEach(b => { b.onclick = () => detail(b.dataset.k); b.oncontextmenu = e => e.preventDefault(); });
   }
-  const seg = () => '<div class="sl-seg">' + [['col', 'Coleção'], ['car', 'Esta carreira']].map(([id, l]) => '<button data-view="' + id + '"' + (st.view === id ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>';
+  const seg = () => !careerOf() ? '' : '<div class="sl-seg">' + [['col', 'Coleção'], ['car', 'Esta carreira']].map(([id, l]) => '<button data-view="' + id + '"' + (st.view === id ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>';
 
   // Como conquistar cada taça que falta
   function howTo(k) {
