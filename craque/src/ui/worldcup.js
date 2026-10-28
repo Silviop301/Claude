@@ -278,7 +278,7 @@
     const type = S.kickSetupType({ kick: m.type }), def = type === 'save' || type === 'tackle';
     const k = S.kickSetup(G.c, type, S.autoStyle(G.c, type)), d = g.gf - g.ga, ko = run.stage >= 3;
     // No fim do jogo o lance decide; antes disso ele muda o placar e o resto do jogo ainda acontece
-    const late = m.minute >= 78, left = 90 - m.minute;
+    const late = m.minute >= 78 && !(g.rest && (g.rest.gf || g.rest.ga)), left = 90 - m.minute; // ainda tem gol depois: não é o fim
     const gain = d === 0 ? (late ? (ko ? 'classifica' : 'vitória') : 'sai na frente') : d === -1 ? (late ? (ko ? 'leva para os pênaltis' : 'empata') : 'empata') : d >= 1 ? 'amplia' : 'diminui';
     // Defensor: o que acontece se falhar (gol deles)
     const lose = d >= 2 ? 'diminuem' : d === 1 ? (late && ko ? 'empatam e levam para os pênaltis' : 'empatam') : d === 0 ? (late ? (ko ? 'eliminado' : 'derrota') : 'saem na frente') : 'aumentam';

@@ -117,7 +117,9 @@
       const m = r() < 0.45 ? r.int(78, 89) : r.int(12, 77);
       const us = game.ours.filter(x => x.min < m).length, them = game.theirs.filter(x => x < m).length;
       const d = def ? us - them : them - us; // 0 ou 1 = lance que decide
-      const cost = d === 0 || d === 1 ? 0 : Math.abs(d - 0.5);
+      // No fim o lance decide de verdade: minuto tardio com gol depois dele fica para último caso
+      const after = m >= 78 && (game.ours.some(x => x.min >= m) || game.theirs.some(x => x >= m));
+      const cost = (d === 0 || d === 1 ? 0 : Math.abs(d - 0.5)) + (after ? 9 : 0);
       if (cost < bestCost) { best = m; bestCost = cost; }
       if (!cost) break;
     }
