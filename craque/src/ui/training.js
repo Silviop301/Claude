@@ -78,7 +78,7 @@
       w.innerHTML = '<div class="trn">' + head + board() + '<p class="trn-tip">' + esc(dr.steps[dr.steps.length - 1]) + '</p><div id="trn-mini"></div></div>';
       bind();
       sfx('whistle');
-      U.playMini(w.querySelector('#trn-mini'), st, (ok, why) => { if (!w.isConnected) return; tries++; if (ok) hits++; result(ok, why); }, trainee(st));
+      U.playMini(w.querySelector('#trn-mini'), st, (ok, why) => { if (!w.isConnected) return; tries++; if (ok) hits++; if (tries === 1) markTrained(st); result(ok, why); }, trainee(st));
     };
     const WHY = { defesa: 'O goleiro defendeu.', trave: 'Na trave!', fora: 'Foi para fora.', alto: 'Foi por cima.', barreira: 'Parou na barreira.', cedo: 'Você chegou cedo.', impedido: 'Demorou e ele ficou impedido.' };
     const result = (ok, why) => {
@@ -96,7 +96,7 @@
     intro();
   }
 
-  // Antes do primeiro lance de cada tipo, o treino; depois, direto ao lance
+  // Antes do primeiro lance de cada tipo, o treino (se ainda não treinou aquele tipo); depois, direto ao lance
   const gateTrain = (st, real) => () => (trained(st) ? real() : training(st, { real }));
 
   // Menu das Configurações: os 5 lances, os da sua posição primeiro
