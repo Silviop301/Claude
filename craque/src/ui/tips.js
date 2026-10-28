@@ -12,7 +12,7 @@
     pre: ['Prepare a temporada', 'Escolha uma característica: ela deixa sua carta mais forte para sempre e tem um efeito próprio. Os pontos de evolução compram treinos, e dá para guardar para a próxima temporada.'],
     evento: ['Decisões que mudam a carreira', 'Cada opção mostra a chance de dar certo e o que ganha ou perde. Não existe resposta certa: a arriscada rende mais, mas pode dar errado de verdade. Atributos valem para sempre; forma e minutos, só esta temporada.'],
     lance: ['Jogo decisivo', 'Agora é com você: o lance decide o jogo e às vezes o título. Antes do primeiro de cada tipo, você treina sem valer nada. Se preferir, "Deixar o jogo decidir" usa a chance da sua carta.'],
-    resumo: ['Fim da temporada', 'Jogos, gols e nota puxam a evolução da carta: toque em "Detalhes da temporada" para ver o que ajudou e o que atrapalhou. Postar nas redes vale uma vez por temporada, e o botão mostra o que você ganha ou arrisca.'],
+    resumo: ['Fim da temporada', 'Jogos, gols e nota puxam a evolução da carta: abra "Detalhes da temporada" para ver o que ajudou e o que atrapalhou. Postar nas redes vale uma vez por temporada, e o botão mostra o que você ganha ou arrisca.'],
     janela: ['Janela de transferências', 'Compare o papel no elenco (titular joga mais) e o salário. Ficar também é uma opção, e trocar de clube muda a torcida que te apoia.'],
     fim: ['Sua carta final', 'Em "Editar carta" você escolhe a assinatura e o acabamento; depois é só compartilhar com os amigos. Os pacotinhos liberam números, visuais, assinaturas e acabamentos novos, e item repetido vira fichas, que você troca por um item travado.'],
   };
