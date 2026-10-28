@@ -88,7 +88,7 @@
     render('<button class="back-link" id="b-back-home">‹ Início</button><div class="eyebrow">Suas carreiras</div><h2>Minhas carreiras</h2>' +
       '<div class="mc-side">' + U.salaHome() +
       '<div class="home-grid">' +
-      '<button class="hg" id="b-col"><i>' + U.ICON.cards + '</i><b>Coleção</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carta' : ' cartas') + '</small></button>' +
+      '<button class="hg" id="b-col"><i>' + U.ICON.cards + '</i><b>Coleção</b><small>' + U.collectionCards() + (U.collectionCards() === 1 ? ' carta' : ' cartas') + '</small></button>' +
       '<button class="hg" id="b-ach"><i>' + U.ICON.medal + '</i><b>Conquistas</b><small>' + U.achCount() + ' de ' + S.ACHIEVEMENTS.length + '</small></button>' +
       '</div></div>' +
       '<section class="mc-hall"><div class="eyebrow">Hall da Fama</div>' +
@@ -171,7 +171,9 @@
       '<p class="cr-desc">' + (ch ? esc(ch.desc) : 'Sem regra extra. Um desafio cumprido soma pontos na nota final.') + '</p>';
   }
   function bindOrigin(st, redraw) {
-    const note = (it, why) => { const el = $('cr-onote'); if (el) el.innerHTML = '<div class="cr-lock">' + U.emo('🔒', 'sm') + '<span><b>' + esc(it.name) + '</b> · ' + why + '</span></div>'; };
+    // O aviso fica no fim da página: rola até ele para não ficar atrás do botão preso embaixo
+    const note = (it, why) => { const el = $('cr-onote'); if (!el) return; el.innerHTML = '<div class="cr-lock">' + U.emo('🔒', 'sm') + '<span><b>' + esc(it.name) + '</b> · ' + why + '</span></div>';
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); };
     screen.querySelectorAll('[data-origin]').forEach(b => b.onclick = () => {
       const it = S.ORIGIN_BY_ID[b.dataset.origin];
       if (!U.achHas(it.need)) return note(it, 'libere com a conquista "' + achName(it.need) + '"');

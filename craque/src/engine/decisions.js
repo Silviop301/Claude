@@ -653,7 +653,7 @@
     ],
   });
   S.stake('saudade', {
-    build: c => ({ title: 'Saudade de casa', text: 'Primeiro ano em ' + D.countryOf(club(c)) + '. Frio, comida diferente e a família longe.' }),
+    build: c => ({ title: 'Saudade de casa', text: 'Primeiro ano ' + D.emPais(D.countryOf(club(c))) + '. Frio, comida diferente e a família longe.' }),
     options: c => [
       safe('Trazer a família', { money: -120000, form: 0.06 }, 'Com a família por perto, o futebol voltou a fluir.'),
       risk('Aguentar sozinho', P(0.4,X.t(c, 'adaptavel', 0.25), X.t(c, 'pro', 0.05)),
@@ -766,7 +766,7 @@
     ],
   });
   S.stake('adaptacao', {
-    build: c => ({ title: 'Adaptação em ' + D.countryOf(club(c)), text: 'Idioma, clima e um futebol diferente. O começo está difícil.' }),
+    build: c => ({ title: 'Adaptação ' + D.emPais(D.countryOf(club(c))), text: 'Idioma, clima e um futebol diferente. O começo está difícil.' }),
     options: c => [
       safe('Contratar professor e chef', { money: -80000, form: 0.04 }, 'Em dois meses você já pedia café no idioma local.'),
       risk('Aprender na marra', P(0.5, X.t(c, 'adaptavel', 0.25), X.edge(c, 0.02)),

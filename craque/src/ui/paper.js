@@ -228,7 +228,7 @@
   function clubWorldPaper(c, run, onClose) {
     const nick = c.name, cl = D.CLUB_BY_ID[run.club];
     const stats = S.defKick(c.pos) ? D.plural(run.games.filter(x => x.cs).length, 'jogo', 'jogos') + ' sem sofrer gol no Mundial' : run.g + (run.g === 1 ? ' gol' : ' gols') + ' e ' + run.a + (run.a === 1 ? ' assistência' : ' assistências') + ' no Mundial';
-    return paper({ c, year: run.year, extra: 'Mundial de Clubes ' + run.year, head: D.O(cl.name) + ' é campeão do mundo! ' + nick + ' ergue a taça',
+    return paper({ c, year: run.year, extra: 'Mundial de Clubes ' + run.year, head: D.O(cl.name) + (D.fem(cl.name) ? ' é campeã do mundo! ' : ' é campeão do mundo! ') + nick + ' ergue a taça',
       pose: 'taca', kit: kitOf(cl.id), caption: nick + ' com a taça do Mundial', stats,
       lede: 'Contra os melhores clubes do planeta, ' + D.o(cl.name) + ' chegou ao topo. A festa da torcida vai varar a madrugada.' }, onClose);
   }

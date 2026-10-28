@@ -315,7 +315,7 @@
   }
   function streakBox(kind, got, note) {
     const late = I.streakFlush(), T = I.streakTxt;
-    if (late.length && !note) note = '+' + late.map(x => T(x.r)).join(' e ') + ' de um dia anterior da sequência' + (!late.some(x => x.r.p) ? ': já estão na sua conta' : kind === 'home' ? ': já estão nos pacotinhos aqui embaixo' : ': abra na tela inicial');
+    if (late.length && !note) note = '+' + late.map(x => T(x.r)).join(' e ') + ' de um dia anterior da sequência' + (!late.some(x => x.r.p) ? ': já são suas' : kind === 'home' ? ': já estão nos pacotinhos aqui embaixo' : ': abra na tela inicial');
     const st = I.streak(), pend = st.cells.find(c => c.claim);
     const head = U.emo('🔥', 'sm') + ' ' + (got && kind === 'fin' ? 'Dia ' + got.day + ' da sequência liberado!' : st.n >= 1 ? (st.n > 1 ? st.n + ' dias seguidos' : '1 dia de sequência') : 'Sequência de dias');
     const sub = note || (pend ? 'Toque no dia para pegar ' + T(pend.r) : st.played ? 'Prêmio de hoje já pego. Amanhã: ' + T(st.next)
@@ -332,7 +332,7 @@
       e.stopPropagation();
       const kind = box.dataset.skind, got = I.streakClaim(b.dataset.sk);
       let note;
-      if (got) { sfx('levelup'); U.vibe([30, 40, 30]); note = '+' + I.streakTxt(got.r) + (got.r.p ? '! Abra na tela inicial' : '! Já estão na sua conta'); }
+      if (got) { sfx('levelup'); U.vibe([30, 40, 30]); note = '+' + I.streakTxt(got.r) + (got.r.p ? '! Abra na tela inicial' : '! Já são suas'); }
       else note = 'Termine uma carreira hoje para liberar o prêmio deste dia';
       const div = document.createElement('div');
       div.innerHTML = streakBox(kind, null, note);

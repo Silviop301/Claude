@@ -45,7 +45,7 @@
     const prodW = (S.PROD_W[c.pos] || 1) * S.levelOf(c, 'prod');
     // Cada parcela da pontuação, para a tela explicar de onde veio a nota
     const n = (x, w) => (x || 0) * w;
-    const P = D.plural, prodTxt = isDef ? P(T.cs || 0, 'jogo sem sofrer gol', 'jogos sem sofrer gol') + (c.pos === 'GOL' ? ', ' + P(T.penSaved || 0, 'pênalti defendido', 'pênaltis defendidos') : ', ' + P(T.tackles || 0, 'desarme', 'desarmes')) + ', ' + P(T.goals, 'gol', 'gols')
+    const P = D.plural, prodTxt = isDef ? P(T.cs || 0, 'jogo sem sofrer gol', 'jogos sem sofrer gol') + (c.pos === 'GOL' ? ', ' + P(T.penSaved || 0, 'pênalti defendido', 'pênaltis defendidos') : ', ' + P(T.tackles || 0, 'desarme', 'desarmes')) + (T.goals ? ', ' + P(T.goals, 'gol', 'gols') : '') // defensor sem gol: sem "0 gols"
       : P(T.goals, 'gol', 'gols') + ' e ' + P(T.assists, 'assistência', 'assistências');
     const awards = (T.scorer || 0) + (T.young || 0) + (T.team || 0);
     const levelTxt = k => { const l = S.levelOf(c, k); return Math.abs(l - 1) >= 0.02 ? ' (nível das ligas ×' + l.toFixed(2).replace('.', ',') + ')' : ''; };

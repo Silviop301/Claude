@@ -55,7 +55,7 @@
     if (d && !d.done) {
       const diff = f.score - d.s;
       res = '<div class="card dz-res ' + (diff > 0 ? 'win' : 'lose') + '">' + U.emo(diff > 0 ? '🏆' : '😤', 'md') +
-        '<div><small>Desafio de ' + esc(d.n) + '</small><b>' + (diff > 0 ? 'Você venceu por ' + pts(diff) + (diff === 1 ? ' ponto!' : ' pontos!') : diff === 0 ? 'Empate exato!' : 'Faltaram ' + pts(-diff) + (diff === -1 ? ' ponto' : ' pontos')) + '</b>' +
+        '<div><small>Desafio de ' + esc(d.n) + '</small><b>' + (diff > 0 ? 'Você venceu por ' + pts(diff) + (diff === 1 ? ' ponto!' : ' pontos!') : diff === 0 ? 'Empate exato!' : (diff === -1 ? 'Faltou 1 ponto' : 'Faltaram ' + pts(-diff) + ' pontos')) + '</b>' +
         '<span>' + pts(f.score) + ' (' + f.grade + ') contra ' + pts(d.s) + ' (' + d.g + ')' + (diff > 0 ? '. Devolva o desafio!' : '. Tente de novo ou desafie de volta.') + '</span></div></div>';
       if (diff > 0) store(KEY, Object.assign(d, { done: true }));
     }

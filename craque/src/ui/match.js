@@ -140,7 +140,7 @@
   const DEF_TXT = (m, mode) => {
     const vs = D.o(club(m.vs).name), save = mode === 'save';
     const what = save ? 'Pênalti contra' : 'Contra-ataque';
-    const goal = { cup: 'campeão da ' + m.comp, title: 'campeão da liga', acesso: 'acesso garantido', cont: 'campeão da ' + m.comp, classico: 'o clássico é seu, Torcida +8' }[m.type];
+    const goal = { cup: 'campeão da ' + m.comp, title: 'campeão da liga', acesso: 'acesso garantido', cont: 'campeão da ' + m.comp, classico: (m.score && m.score[0] === m.score[1] ? 'segura o empate' : 'o clássico é seu') + ', Torcida +8' }[m.type];
     return {
       tag: { cup: 'Final da ' + m.comp, title: 'Última rodada · ' + m.comp, acesso: 'Última rodada · ' + m.comp, cont: 'Final da ' + m.comp, classico: 'Clássico' }[m.type],
       title: save ? 'Pênalti contra nos acréscimos!' : 'Contra-ataque no último minuto!',
@@ -283,25 +283,29 @@
     // O estilo escolhido entra no texto (o chute forte, a saída do gol, o bote em pé, o lançamento)
     const st = S.kickSetupType(m), bold = S.styleOf(st, m) !== S.styleIds(st)[0];
     const goal = bold ? 'Bomba indefensável! ' : 'No cantinho! ';
+    // Placar depois do lance: o clássico pode terminar empatado (atrás por um e marcou; empatado e segurou)
+    const def = st === 'save' || st === 'tackle';
+    const sc = m.score ? [m.score[0] + (!def && ok ? 1 : 0), m.score[1] + (def && !ok ? 1 : 0)] : null;
+    const cEnd = !(sc && sc[0] === sc[1]) ? 'O clássico é seu.' : def ? 'Segurou o empate no clássico.' : 'Empate arrancado no fim do clássico!';
+    // Sem o motivo ("Deixar o jogo decidir"), a frase não repete o "Não entrou…" do título grande
     const txt = {
-      cup: ok ? goal + 'Campeão da ' + m.comp + '!' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
-      title: ok ? goal + 'O título é seu!' : (how || 'Não entrou.') + ' O título escapou nos detalhes.',
-      classico: m.kick === 'pen' ? (ok ? goal + 'O clássico é seu.' : (how || 'Não entrou.') + ' A torcida lamenta.')
-        : ok ? (bold ? 'Bomba de falta, golaço! ' : 'Golaço de falta colocada! ') + 'O clássico é seu.' : (how || 'Não foi dessa vez.') + ' A torcida lamenta.',
-      acesso: ok ? goal + 'O acesso é seu!' : (how || 'Não entrou.') + ' O acesso escapou na última rodada.',
-      cont: ok ? goal + 'É campeão da ' + m.comp + '! Seu nome entrou para a história do clube.' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
+      cup: ok ? goal + 'Campeão da ' + m.comp + '!' : how + ' Fica o vice da ' + m.comp + '.',
+      title: ok ? goal + 'O título é seu!' : how + ' O título escapou nos detalhes.',
+      classico: m.kick === 'pen' ? (ok ? goal + cEnd : how + ' A torcida lamenta.')
+        : ok ? (bold ? 'Bomba de falta, golaço! ' : 'Golaço de falta colocada! ') + cEnd : (how || 'Não foi dessa vez.') + ' A torcida lamenta.',
+      acesso: ok ? goal + 'O acesso é seu!' : how + ' O acesso escapou na última rodada.',
+      cont: ok ? goal + 'É campeão da ' + m.comp + '! Seu nome entrou para a história do clube.' : how + ' Fica o vice da ' + m.comp + '.',
     }[m.type];
     // Lances defensivos: texto próprio
     const defTxt = st === 'save' ? (ok ? (why === 'fora' ? (bold ? 'Você cresceu no gol e o batedor mandou para fora! ' : 'O batedor mandou para fora! ') : bold ? 'Saiu da linha e cresceu: que defesa! ' : 'Que defesa! ') : 'Não deu: a bola entrou. ')
       : st === 'tackle' ? (ok ? (bold ? 'Encaixou o corpo e ficou com a bola! ' : 'Carrinho perfeito, bola roubada! ') : why === 'cedo' ? 'Você chegou cedo e ele passou. ' : why === 'drible' ? 'Você chegou junto, mas ele driblou e marcou. ' : 'Chegou tarde: ele passou e marcou. ')
       : st === 'pass' ? (ok ? (bold ? 'Lançamento por cima na medida e o atacante não perdoou: assistência sua! ' : 'Bola enfiada na medida e o atacante não perdoou: assistência sua! ') : why === 'impedido' ? 'Demorou o passe e ele ficou impedido. ' : why === 'goleiro' ? 'O lançamento foi bom, mas o goleiro saiu e ficou com a bola. ' : 'A zaga cortou o passe. ') : null;
     const defEnd = { cup: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.', title: ok ? 'O título é seu!' : 'O título escapou.',
-      classico: ok ? 'O clássico é seu.' : 'A torcida lamenta.', acesso: ok ? 'O acesso é seu!' : 'O acesso escapou.', cont: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.' }[m.type];
-    const final = (defTxt !== null ? defTxt + defEnd : txt) + (m.rival ? ' ' + (ok ? 'Duelo direto com ' + m.rival.split(' ')[0] + ': ponto seu.' : 'Duelo direto: ponto para ' + m.rival.split(' ')[0] + '.') : '');
-    // Placar depois do lance e um título grande (gol, defesa, bote ou a lamentação)
-    const def = st === 'save' || st === 'tackle';
-    const sc = m.score ? [m.score[0] + (!def && ok ? 1 : 0), m.score[1] + (def && !ok ? 1 : 0)] : null;
-    const big = def ? (ok ? (st === 'save' ? 'DEFENDEU!' : 'ROUBOU!') : 'Gol deles…') : ok ? 'GOOOL!' : st === 'pass' ? 'Cortado…' : 'Não entrou…';
+      classico: ok ? cEnd : 'A torcida lamenta.', acesso: ok ? 'O acesso é seu!' : 'O acesso escapou.', cont: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.' }[m.type];
+    const final = (defTxt !== null ? defTxt + defEnd : txt).trim() + (m.rival ? ' ' + (ok ? 'Duelo direto com ' + m.rival.split(' ')[0] + ': ponto seu.' : 'Duelo direto: ponto para ' + m.rival.split(' ')[0] + '.') : '');
+    // Título grande (gol, defesa, bote ou a lamentação); o passe errado segue o motivo, como a faixa do minigame
+    const big = def ? (ok ? (st === 'save' ? 'DEFENDEU!' : 'ROUBOU!') : 'Gol deles…') : ok ? 'GOOOL!'
+      : st === 'pass' ? (why === 'impedido' ? 'Impedido…' : why === 'goleiro' ? 'Goleiro saiu…' : 'Cortado…') : 'Não entrou…';
     // Título grande (final continental ou liga principal) ganho no lance: faixa dourada, confete curto e "Comemorar"
     const LD = D.LADDER[club(G.c.club).league];
     const fest = ok && (m.type === 'cont' || (m.type === 'title' && !(LD && LD.up)));

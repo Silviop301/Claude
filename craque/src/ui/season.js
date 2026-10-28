@@ -25,12 +25,14 @@
   // Resenha da temporada: um programa sorteado comenta no seu estilo (D.MEDIA.shows), sobre o destaque do ano
   // (gols, assistências, idade, paredão, xerife) ou, sem destaque, sobre o ano (título, banco, lesão, nota).
   const GOAL_TALK = /\bgols?\b|gola[çc]o|dribl|pedalada|artilh/i;
+  // Jogou pouco (a mesma régua das manchetes: menos de 35% dos jogos): campeão do elenco, não dono da taça
+  const fewGames = res => !res.games || res.games < 10 || (res.part != null && res.part < 0.35);
   function resenha(res) {
     const shows = (D.MEDIA || {}).shows || [];
     if (!shows.length) return '';
     const cl = club(res.club);
     const ballon = res.awards.some(a => a.id === 'ballon');
-    const mood = ballon ? 'ballon' : res.titles.length ? 'title' : !res.games || res.games < 10 ? 'bench' : res.injury >= 25 ? 'injury'
+    const mood = ballon ? 'ballon' : fewGames(res) ? 'bench' : res.titles.length ? 'title' : res.injury >= 25 ? 'injury'
       : res.move && res.move.dir === 'down' ? 'down' : res.rating >= 7.6 ? 'great' : res.rating >= 7.0 ? 'good' : 'bad';
     const atk = res.pos === 'ATA' || res.pos === 'PON';
     const topic = res.games < 10 ? null : res.goals >= (atk ? 16 : 10) ? 'gols' : res.assists >= 10 ? 'assist'
@@ -439,20 +441,23 @@
   // Jornal da temporada (a capa em si fica em ui/paper.js)
   function lede(res, cl) {
     const tb = res.table;
-    const pos = tb.pos === 1 ? 'terminou campeão ' + D.da(tb.league) : 'terminou em ' + tb.pos + 'º lugar ' + D.na(tb.league);
-    const perf = !res.games ? G.c.name + ' quase não entrou em campo, e ' + D.o(cl.name) + ' ' + pos + '.'
+    const pos = tb.pos === 1 ? (D.fem(cl.name) ? 'terminou campeã ' : 'terminou campeão ') + D.da(tb.league) : 'terminou em ' + tb.pos + 'º lugar ' + D.na(tb.league);
+    const perf = fewGames(res) ? G.c.name + ' quase não entrou em campo, e ' + D.o(cl.name) + ' ' + pos + '.'
       : res.rating >= 7.5 && tb.pos >= 11 ? G.c.name + ' foi o nome ' + D.do(cl.name) + ', mas o time não acompanhou e ' + pos + '.'
       : res.rating >= 7.5 ? G.c.name + ' foi o nome ' + D.do(cl.name) + ', que ' + pos + '.'
       : res.rating >= 6.8 ? 'Com atuações seguras de ' + G.c.name + ', ' + D.o(cl.name) + ' ' + pos + '.'
       : 'Em temporada irregular de ' + G.c.name + ', ' + D.o(cl.name) + ' ' + pos + '.';
-    return perf + (res.titles.length ? ' A torcida comemorou ' + res.titles.map(t => t.name).join(' e ') + '.' : '');
+    // A liga ganha já está na frase de cima: a torcida comemora as outras taças, com artigo ("a Copa do Rei e a Supercopa")
+    const more = res.titles.filter(t => !(t.id === 'league' && tb.pos === 1)).map(t => D.aTaca(t.name));
+    return perf + (more.length ? (more.length < res.titles.length ? ' A torcida também comemorou ' : ' A torcida comemorou ') + D.andList(more) + '.' : '');
   }
   function showPaper(res, onClose) {
     // Temporada sem notícia: o jornal não sai (a manchete fica só no resumo); cartas reveladas seguem valendo
     if (res.quiet) {
       const up = U.tierReveal(G.c, res.ovr0, res.ovr1); if (up) save();
       const list = (up ? [null] : []).concat(res.cards || []);
-      return list.length ? U.walkouts(G.c, list, onClose) : onClose && onClose();
+      // A carta nova é da temporada que acabou: rodapé com a idade dela, como no álbum (a carreira já virou o ano)
+      return list.length ? U.walkouts(Object.assign({}, G.c, { age: res.age }), list, onClose) : onClose && onClose();
     }
     const cl = club(res.club), [main, ...rest] = res.headlines, nick = G.c.name;
     // Foto da capa conforme a temporada: taça, maca (lesão), comemoração ou pose normal
@@ -463,7 +468,7 @@
       stats: D.plural(res.games, 'jogo', 'jogos') + ' · ' + seasonStats(res).map(([v, l]) => (l === 'Gols' ? D.plural(v, 'gol', 'gols') : l === 'Assist.' ? D.plural(v, 'assistência', 'assistências') : l === 'Defesas' ? D.plural(v, 'defesa', 'defesas') : v + ' ' + l.toLowerCase())).join(' · ') + (res.games ? ' · nota ' + res.rating.toFixed(1).replace('.', ',') : ''),
       lede: lede(res, cl), subs: rest, column: res.column },
       // Depois do jornal: revelação da carta nova (subiu de faixa) e das cartas especiais da temporada
-      () => { const up = U.tierReveal(G.c, res.ovr0, res.ovr1); if (up) save(); U.walkouts(G.c, (up ? [null] : []).concat(res.cards || []), onClose); });
+      () => { const up = U.tierReveal(G.c, res.ovr0, res.ovr1); if (up) save(); U.walkouts(Object.assign({}, G.c, { age: res.age }), (up ? [null] : []).concat(res.cards || []), onClose); });
   }
 
   // Duelo com o rival de geração: duas barras de nota que enchem quando o bloco aparece; quem passou o outro ganha o selo
