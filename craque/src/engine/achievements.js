@@ -16,8 +16,8 @@
     { id: 'muralha', icon: '🧱', tone: 'gold', name: 'Muralha', desc: 'Termine 330 jogos sem sofrer gol (zagueiro ou goleiro)', test: c => (c.pos === 'ZAG' || c.pos === 'GOL') && (c.totals.cs || 0) >= 330 },
     { id: 'pegador', icon: '🧤', tone: 'gold', name: 'Pegador de pênalti', desc: 'Defenda 35 pênaltis como goleiro', test: c => (c.totals.penSaved || 0) >= 35 },
     { id: 'salvador', icon: '🛡️', tone: 'gold', name: 'Salvador', desc: 'Faça 12 defesas ou desarmes em lances decisivos', test: c => ((c.kicks || {}).saveOk || 0) + ((c.kicks || {}).tackleOk || 0) >= 12 },
-    { id: 'icone', icon: '💎', tone: 'purple', name: 'Carta ícone', desc: 'Chegue a nota 85', test: c => c.peak >= 85 },
-    { id: 'n95', icon: '💯', tone: 'purple', name: 'Perfeição', desc: 'Chegue a nota 95', test: c => c.peak >= 95 },
+    { id: 'icone', icon: '💎', tone: 'purple', name: 'Carta ícone', desc: 'Chegue a nota geral 85', test: c => c.peak >= 85 },
+    { id: 'n95', icon: '💯', tone: 'purple', name: 'Perfeição', desc: 'Chegue a nota geral 95', test: c => c.peak >= 95 },
     { id: 'ouro', icon: '🏅', tone: 'gold', name: 'Melhor do mundo', desc: 'Ganhe a Bola de Ouro', test: c => c.totals.ballon >= 1 },
     { id: 'ouro3', icon: '👑', tone: 'gold', name: 'Lenda', desc: 'Ganhe 3 Bolas de Ouro', test: c => c.totals.ballon >= 3 },
     { id: 'copa', icon: '🏆', tone: 'gold', name: 'Campeão do mundo', desc: 'Ganhe a Copa do Mundo', test: c => (c.totals.wc || 0) >= 1 },
@@ -42,7 +42,7 @@
     { id: 'falta', icon: '🎯', tone: 'gold', name: 'Especialista em falta', desc: 'Marque 6 gols de falta em lances decisivos', test: c => (c.kicks || {}).fkOk >= 6 },
     { id: 'notaS', icon: '⭐', tone: 'purple', name: 'Nota S', desc: 'Termine uma carreira com nota S', test: (c, f) => f.grade === 'S' },
     { id: 'auge', icon: '🎬', tone: 'gold', name: 'Parou no auge', desc: 'Anuncie a despedida e faça boa temporada', test: (c, f) => f.bonus.some(b => b.txt.startsWith('Parou no auge')) },
-    { id: 'eterno', icon: '🧓', tone: 'gold', name: 'Eterno', desc: 'Chegue aos 40 anos com nota 70 ou mais', test: c => !!c.eterno },
+    { id: 'eterno', icon: '🧓', tone: 'gold', name: 'Eterno', desc: 'Chegue aos 40 anos com nota geral 70 ou mais', test: c => !!c.eterno },
     { id: 'rico', icon: '💰', tone: 'gold', name: 'Magnata', desc: 'Termine com R$ 400 mi de patrimônio', test: c => c.money >= 4e8 },
   ];
 

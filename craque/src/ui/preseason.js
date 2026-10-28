@@ -160,11 +160,11 @@
     };
   }
 
-  // Esta temporada termina em ano de Copa? Mostra a nota que a seleção pede
+  // Esta temporada termina em ano de Copa? Mostra a nota geral que a seleção pede
   function wcHint() {
     if ((S.YEAR0 + G.c.season + 1) % 4 !== 2 || G.c.age + 1 < 18 || G.c.natRetired) return '';
     const n = D.NATION_BY_NAME[G.c.country], cut = S.wcCut(n, G.c), o = S.ovr(G.c);
-    return '<p class="wc-hint">' + U.flag(n.flag) + ' Ano de Copa: a seleção convoca com nota <b>' + cut + '</b>' + (o >= cut ? ' · você já está dentro' : ' · faltam ' + (cut - o)) + '</p>';
+    return '<p class="wc-hint">' + U.flag(n.flag) + ' Ano de Copa: a seleção convoca com nota geral <b>' + cut + '</b>' + (o >= cut ? ' · você já está dentro' : ' · faltam ' + (cut - o)) + '</p>';
   }
 
   // ---------- pré-temporada: característica e investimentos numa tela só ----------

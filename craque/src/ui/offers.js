@@ -148,7 +148,7 @@
     render(
       '<div class="eyebrow">Janela de transferências · ' + year() + '</div>' +
       '<h2 class="of-h">' + (noOffers ? 'Nenhum clube novo apareceu' : n + (n > 1 ? ' clubes querem você' : ' clube quer você')) + '</h2>' +
-      '<p class="of-sub">' + why + ' · nota ' + S.ovr(G.c) + ' · ' + U.emo('⭐', 'xs') + ' ' + S.fameLabel(G.c.fame) + '</p>' +
+      '<p class="of-sub">' + why + ' · nota geral ' + S.ovr(G.c) + ' · ' + U.emo('⭐', 'xs') + ' ' + S.fameLabel(G.c.fame) + '</p>' +
       // 5 cartões ou mais: no computador o de renovar cai na 2ª linha, fora da tela; o atalho leva até ele (só aparece lá)
       (all.length > 4 ? '<button class="link-btn of-renew" id="b-renew">Ou renove com ' + esc(D.o(club(G.c.club).name)) + ' ↓</button>' : '') +
       U.originNote(G.c) + offerRail(all, { terms }) + tools(win, false) +
