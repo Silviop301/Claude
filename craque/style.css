@@ -3659,6 +3659,12 @@ html.desk .sheet:has(.sh-tabs) { height: min(calc(74vh / var(--z, 1)), 640px); }
   body:has(#bar:not([hidden])) #app { background: none; box-shadow: none; }
   #bar:not([hidden]) { margin-inline: calc((100% - var(--bar-w)) / 2); }
 }
+/* Celular deitado (altura até 520 px): a barra do topo rola junto (presa, ela tomava um quarto da tela);
+   a barra de baixo continua presa, com o botão de seguir ao alcance do polegar */
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 999px) {
+  .bar { position: relative; top: auto; }
+  html:has(#bar:not([hidden])) { scroll-padding-top: 12px; }
+}
 /* ----- fim V0 ----- */
 
 /* ----- V1: início e telas de fora (Minhas carreiras, ranking, conquistas, conta, configurações, opinião) ----- */
@@ -3940,6 +3946,15 @@ html.desk .sheet:has(.sh-tabs) { height: min(calc(74vh / var(--z, 1)), 640px); }
 .lg-row::after { content: ''; position: absolute; left: 0; bottom: 0; height: 3px; width: var(--ch, 0); background: #E2B93B; border-radius: 0 2px 2px 0; }
 .lg-row:has(em.hi)::after { background: #1FA35A; } .lg-row:has(em.lo)::after { background: #D8404A; }
 .lg-row.armed::after { content: none; }
+/* Janela no computador com 5 cartões ou mais (4 propostas + renovar): a 2ª linha com a mesma largura da 1ª (antes o último
+   esticava sozinho); 3 por linha até caberem 4 de 240 px. Embaixo do subtítulo, o atalho "Ou renove com…" leva ao card de renovar */
+.of-renew { display: none; }
+@media (min-width: 1000px) {
+  .of-rail:has(> .of-card:nth-child(5)) > .of-card { flex: 0 0 calc((100% - 32px) / 3); max-width: none; }
+  .of-renew { display: block; width: fit-content; margin: -6px 0 0; padding: 0; font: 600 15px/1.35 var(--body); color: var(--tx-1); }
+  .desk .of-renew:hover { color: var(--gold-2); }
+}
+@media (min-width: 1040px) { .of-rail:has(> .of-card:nth-child(5)) > .of-card { flex-basis: calc((100% - 48px) / 4); } }
 /* ----- fim V2 ----- */
 
 /* ----- V3: lances e minigames (lance, minigames, resultado, treino, reta final, Relâmpago) ----- */
@@ -4357,5 +4372,15 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
   html.desk .al-card.small { width: min(58vw, 250px, max(130px, calc((100svh / var(--z) - 400px) / 1.433))); }
   html.desk .al-chart { height: min(150px, calc(18svh / var(--z))); }
   html.desk .bk-page { min-height: clamp(470px, calc(100svh / var(--z) - 210px), 660px); }
+}
+/* Celular deitado (altura até 520 px): a carta nova cabe entre o título e o "Toque para continuar" (antes o título
+   ficava por cima da nota); no álbum a página rola e o "Compartilhar a história" fica preso embaixo */
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 999px) {
+  .wo-card { width: min(74vw, 340px, calc((100svh - 170px) / 1.433)); }
+  .wo-card.card3d-host { min-height: 0; }
+  .wo-title { top: calc(env(safe-area-inset-top, 0px) + 16px); }
+  .wo-title b { font-size: clamp(26px, 9vmin, 46px); }
+  .album { overflow-y: auto; }
+  .album > .al-share { position: sticky; bottom: 0; z-index: 1; }
 }
 /* ----- fim V5 ----- */

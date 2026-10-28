@@ -238,9 +238,13 @@
     const nick = c.name, T = c.totals, main = D.CLUB_BY_ID[f.mainClub];
     const P = D.plural, cs = P(T.cs || 0, 'jogo sem sofrer gol', 'jogos sem sofrer gol');
     const nums = c.pos === 'GOL' ? cs : c.pos === 'ZAG' ? cs + ' e ' + P(T.goals, 'gol', 'gols') : P(T.goals, 'gol', 'gols') + ' e ' + P(T.assists, 'assistência', 'assistências');
+    // Na D, um feito de verdade no veredito ganha texto agridoce em vez do lamento
+    const feat = f.verdict !== 'Carreira sólida' && f.verdict !== 'Promessa que não vingou';
     const col = f.grade === 'S' ? { t: 'Um dos maiores', x: 'Contem aos netos que viram ' + nick + ' jogar. Eu conto aos meus.' }
       : f.grade === 'A' ? { t: 'Até logo, craque', x: 'O futebol fica mais pobre hoje. ' + nick + ' fez o que poucos fazem: deixou saudade antes de sair.' }
       : f.grade === 'B' ? { t: 'Carreira de respeito', x: 'Não foi o maior de todos, mas nunca fugiu da briga. ' + nick + ' sai de cabeça erguida.' }
+      : f.grade === 'C' ? { t: 'Carreira honesta', x: 'Nem sempre brilhou, mas nunca se escondeu, e cada clube guarda uma boa história dele. Valeu, ' + nick + '.' }
+      : feat ? { t: 'Entre a glória e o quase', x: 'Teve dias de craque, e isso ninguém tira. Mas o talento pedia mais do que ' + nick + ' entregou.' }
       : { t: 'O que poderia ter sido', x: 'Talento havia. Faltou alguma coisa que nem eu sei explicar. Boa sorte na nova vida, ' + nick + '.' };
     return paper({ c, year: YEAR0 + c.season, extra: 'Edição especial', head: 'Obrigado, ' + nick + '! O adeus aos ' + c.age + ' anos',
       pose: 'adeus', kit: kitOf(main.id), caption: nick + ' se despede da torcida', stats: T.games + ' jogos · ' + f.titles + (f.titles === 1 ? ' título' : ' títulos'),

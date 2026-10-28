@@ -534,7 +534,7 @@
     const moveTxt = !res.move || res.race === 'acesso' || res.race === 'degola' || res.race === true ? '' : res.move.dir === 'up' ? U.emo('⬆️', 'sm') + ' Acesso ' + D.paraA(res.move.toName) + '!' : U.emo('⬇️', 'sm') + ' Rebaixado ' + D.paraA(res.move.toName);
     // O que mexeu na nota: minutos, desempenho, lesão, idade e treinos (a soma bate com a variação)
     const great = res.games >= 15 && res.rating >= 7.5;
-    const why = (great && dOvr <= 0 ? '<p class="why-note">Grande temporada! Seu desempenho valeu ' + ((v => (v > 0 ? '+' : '') + v)((res.why.find(w => w.k === 'perf') || { v: 0 }).v)) + ' na nota' + (res.ovr0 >= G.c.pot - 3 ? ', mas você já está perto do seu teto' : '') + '. Também rendeu fama, torcida e propostas melhores.</p>' : '') +
+    const why = (great && dOvr <= 0 ? '<p class="why-note">Grande temporada! Seu desempenho valeu ' + ((v => (v > 0 ? '+' : '') + v)((res.why.find(w => w.k === 'perf') || { v: 0 }).v)) + ' na nota geral' + (res.ovr0 >= G.c.pot - 3 ? ', mas você já está perto do seu teto' : '') + '. Também rendeu fama, torcida e propostas melhores.</p>' : '') +
       (res.why.length ? '<ul class="why">' + res.why.map(w => '<li><span>' + esc(w.txt) + '</span><b class="' + (w.pot ? 'pot' : w.potDown ? 'down' : w.note ? 'note' : w.v > 0 ? 'up' : w.v < 0 ? 'down' : 'zero') + '">' + (w.pot ? 'teto ↑' : w.potDown ? 'teto ↓' : w.note ? U.emo('ℹ️', 'xs') : (w.v > 0 ? '+' : w.v < 0 ? '' : '±') + w.v) + '</b></li>').join('') + '</ul>' : '');
     const open = S.windowOpen(G.c);
     const contractTxt = G.c.contract > 0 ? 'Contrato: mais ' + G.c.contract + (G.c.contract > 1 ? ' temporadas' : ' temporada') + ' ' + D.no(esc(club(G.c.club).name)) : 'Seu contrato acabou: hora de decidir o futuro';
@@ -542,9 +542,9 @@
     const wcNow = S.isWcYear(G.c) && G.c.wcYearDone !== year();
     const call = wcNow ? S.wcCall(G.c) : null;
     let wcBlock = '';
-    if (call && call.called) wcBlock = '<div class="wc-call rv"><span class="wc-flag">' + U.flag(call.nation.flag) + '</span><div><b>Convocado para a Copa do Mundo ' + year() + '!</b><span>' + (call.starter ? 'Titular da seleção' : 'Vai como reserva (nota perto do corte de ' + call.cut + ')') + '</span></div></div>';
+    if (call && call.called) wcBlock = '<div class="wc-call rv"><span class="wc-flag">' + U.flag(call.nation.flag) + '</span><div><b>Convocado para a Copa do Mundo ' + year() + '!</b><span>' + (call.starter ? 'Titular da seleção' : 'Vai como reserva (nota geral perto do corte de ' + call.cut + ')') + '</span></div></div>';
     else if (call && call.retired) { wcBlock = '<p class="wc-miss rv">' + U.emo('👋', 'sm') + ' Copa de ' + year() + ' sem você, que já se despediu da seleção.</p>'; G.c.wcYearDone = year(); save(); }
-    else if (call && G.c.age >= 18) { wcBlock = '<p class="wc-miss rv">' + U.emo('🌍', 'sm') + ' Fora da Copa de ' + year() + ': ' + (S.ovr(G.c) >= call.cut ? 'aos ' + G.c.age + ' anos, a seleção preferiu apostar na nova geração.' : 'a seleção pedia nota ' + call.cut + ', você tem ' + S.ovr(G.c) + '.') + '</p>'; G.c.wcYearDone = year(); save(); }
+    else if (call && G.c.age >= 18) { wcBlock = '<p class="wc-miss rv">' + U.emo('🌍', 'sm') + ' Fora da Copa de ' + year() + ': ' + (S.ovr(G.c) >= call.cut ? 'aos ' + G.c.age + ' anos, a seleção preferiu apostar na nova geração.' : 'a seleção pedia nota geral ' + call.cut + ', você tem ' + S.ovr(G.c) + '.') + '</p>'; G.c.wcYearDone = year(); save(); }
     // Mundial de Clubes (a cada 4 anos): o clube classificado joga logo depois da temporada
     const cwcCall = S.isCwcYear(G.c) && G.c.cwcYearDone !== year() ? S.cwcCall(G.c) : null;
     if (cwcCall && cwcCall.called) wcBlock = '<div class="wc-call rv">' + crest(cwcCall.club.id, 'lg') + '<div><b>' + D.O(esc(cwcCall.club.name)) + ' está no Mundial de Clubes ' + year() + '!</b><span>' + (cwcCall.champ ? 'Vaga de campeão continental' : 'Vaga pelo ranking de clubes') + ' · 32 clubes, jogo a jogo</span></div></div>';
