@@ -202,6 +202,8 @@
       drawEd();
       const b = $('ed-trade'); if (b) b.onclick = () => U.tradeSheet(it.id, onTraded);
     }
+    // No computador as fileiras quebram em linhas (style.css): não há o que arrastar
+    const desk = U.tapWord && U.tapWord(true) === 'Clique';
     function drawEd() {
       const box = $('ed-box');
       if (!box) return;
@@ -212,7 +214,7 @@
         const it = signLock(k);
         return '<button data-sign="' + k + '" class="sig-b' + (cardData.sign === k ? ' on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + '">' +
           '<span style="font-family:' + esc(F.family) + ', cursive;font-size:' + sigSize + 'px">' + esc(shareName) + '</span><small>' + (it ? U.emo('🔒', 'xs') + ' ' : '') + F.label + '</small></button>';
-      }).join('') + '</div>' + (sigLocked ? '<p class="ed-cnt">' + (sigs.length - sigLocked) + ' liberadas · ' + sigLocked + ' nos pacotinhos · arraste para ver todas</p>' : '') +
+      }).join('') + '</div>' + (sigLocked ? '<p class="ed-cnt">' + (sigs.length - sigLocked) + ' liberadas · ' + sigLocked + (desk ? ' nos pacotinhos' : ' nos pacotinhos · arraste para ver todas') + '</p>' : '') +
         (msg ? '<p class="muted small sig-msg">' + msg + '</p>' : '');
       if (tab === 'finish') body = (curSp === 'final' ? '' : '<p class="muted small">O acabamento vale para a carta final.</p>') +
         '<div class="fin-grid"><button data-fin="" class="fin-b' + (!cardData.finish ? ' on' : '') + '"><i class="fin-sw std"></i><small>Padrão</small></button>' +
@@ -224,10 +226,13 @@
       if (tab === 'style') body = '<div class="sp-cards"><canvas data-sp="final" aria-label="Carta final"' + (curSp === 'final' ? ' class="on"' : '') + '></canvas>' +
         retired.cards.map((k, i) => '<canvas data-sp="' + i + '" aria-label="' + esc(U.SPECIAL_NAME[k.type]) + '"' + (curSp === String(i) ? ' class="on"' : '') + '></canvas>').join('') + '</div>';
       if (tab === 'crest') body = (curSp === 'final' ? '' : '<p class="muted small">O escudo vale para a carta final.</p>') + '<div class="crest-pick">' + clubsPlayed.map(id => '<button data-club="' + id + '"' + (cardData.crest === 'badges/' + id + '.png' ? ' class="on"' : '') + ' aria-label="' + esc(club(id).name) + '">' + crest(id) + '<span>' + esc(club(id).name) + '</span></button>').join('') + '</div>';
+      // A fileira redesenhada (escolher um item) fica onde estava; aberta agora, vai até a assinatura escolhida
+      const old = box.querySelector('.sig-grid, .fin-grid'), oldCls = old && old.className, oldX = old ? old.scrollLeft : 0;
       box.innerHTML = '<div class="ed-t">Edite sua carta</div>' + (TABS.length > 1 ? '<div class="ed-tabs">' + TABS.map(([k, l]) => '<button data-edtab="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>' : '') + body;
       box.querySelectorAll('[data-edtab]').forEach(b => b.onclick = () => { tab = b.dataset.edtab; msg = ''; drawEd(); });
-      const onSig = box.querySelector('.sig-b.on');
-      if (onSig) onSig.parentNode.scrollLeft = Math.max(0, onSig.offsetLeft - onSig.parentNode.offsetLeft - 24);
+      const row = box.querySelector('.sig-grid, .fin-grid'), onSig = box.querySelector('.sig-b.on');
+      if (row && row.className === oldCls) row.scrollLeft = oldX;
+      else if (onSig) onSig.parentNode.scrollLeft = Math.max(0, onSig.offsetLeft - onSig.parentNode.offsetLeft - 24);
       box.querySelectorAll('[data-sp]').forEach(sc => {
         window.CRAQUE_CARD(sc, spData(sc.dataset.sp));
         sc.onclick = () => { curSp = sc.dataset.sp; redraw(); drawEd(); };

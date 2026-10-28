@@ -2586,6 +2586,9 @@ html.desk .mo-wbox { --wd: min(270px, 68vw, calc(42svh / var(--z, 1))); }
 .ed-box .sig-grid::-webkit-scrollbar, .ed-box .fin-grid::-webkit-scrollbar { display: none; }
 .ed-box .sig-b { flex: 0 0 128px; scroll-snap-align: start; }
 .ed-box .fin-b { flex: 0 0 76px; scroll-snap-align: start; }
+/* Computador: a roda do mouse não rola de lado e não há arrasto, então as fileiras quebram em linhas (como a .of-rail) */
+html.desk .ed-box .sig-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); overflow: visible; margin: 0; padding: 2px 0 4px; }
+html.desk .ed-box .fin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); overflow: visible; margin: 0; padding: 2px 0 4px; }
 .ed-cnt { margin: -2px 0 0; font: 500 13px var(--body); color: #9DB5A6; }
 /* Prêmios da carreira (sequência de dias e pacotinhos) num bloco só */
 .fin-prizes { display: flex; flex-direction: column; background: rgba(255, 255, 255, .05); border-radius: 16px; padding: 12px 14px 4px; }
@@ -3211,7 +3214,7 @@ details.fin-more.o6-panel:not([open]) { display: none; }
 .go-bar::before { content: ''; position: absolute; z-index: -1; left: -16px; right: -16px; top: -36px; bottom: calc(-10px - env(safe-area-inset-bottom, 0px));
   background: linear-gradient(to bottom, rgba(15, 61, 42, 0), var(--pitch) 34px); pointer-events: none; }
 .go-bar .btn { box-shadow: 0 4px 0 rgba(0, 0, 0, .35), 0 6px 18px rgba(0, 0, 0, .35); }
-#screen:has(> .go-bar) .rv { scroll-margin-bottom: 96px; }
+#screen:has(> .go-bar) .rv, #screen:has(> .go-bar) #o6-ed { scroll-margin-bottom: 96px; }
 /* Fim de temporada: seguir e postar lado a lado (como era no fim do resumo) */
 .s-go { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 10px; align-items: stretch; margin-top: 12px; }
 .s-go > #b-next, .s-go > #b-post { margin: 0; width: 100%; min-height: 58px; }
