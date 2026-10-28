@@ -113,7 +113,7 @@
     render(
       '<button class="back-link" id="b-back-home">‹ Início</button>' +
       '<div class="eyebrow">' + year() + ' · ' + G.c.age + ' anos</div><h2>' + ACAD_TITLE[G.c.origin || 'base'] + '</h2>' +
-      '<p class="lead">' + (ACAD_LEAD[G.c.origin] || 'No clube grande você começa no banco e quase não joga; no menor, é titular e joga toda semana. Quem joga faz gols, ganha nota e pontos de evolução. Se não jogar, dá para pedir empréstimo no fim da temporada.') + '</p>' + U.originNote(G.c) +
+      '<p class="lead">' + (ACAD_LEAD[G.c.origin] || 'No clube grande você começa no banco e quase não joga; nos menores costuma sobrar mais espaço. Veja o papel em cada proposta: quem joga faz gols, ganha nota e pontos de evolução. Se não jogar, dá para pedir empréstimo no fim da temporada.') + '</p>' + U.originNote(G.c) +
       offerRail(offers) + tools(win, true)
     );
     U.tip('base');
