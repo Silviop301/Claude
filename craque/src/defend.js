@@ -67,7 +67,7 @@
     // Seta aponta para o lado do chute (↑ = meio)
     tell.setAttribute('transform', 'translate(0 ' + (30 - KH) + ') rotate(' + (side * 90) + ' 0 -48)');
 
-    let dive = null, t0 = performance.now(), done = false, armed = false;
+    let dive = null, t0 = performance.now(), last = t0, done = false, armed = false;
     setTimeout(() => { armed = true; }, 250);
     P.onTap(stage, e => {
       e.preventDefault();
@@ -78,6 +78,8 @@
     });
 
     (function run(now) {
+      if (P.covered(stage)) { t0 += now - last; last = now; return requestAnimationFrame(run); } // janela por cima: o lance espera
+      last = now;
       const t = now - t0;
       const u = Math.min(1, t / runMs);
       kicker.setAttribute('transform', 'translate(' + (k0.x + (k1.x - k0.x) * u) + ' ' + (k0.y + (k1.y - k0.y) * u) + ')');
@@ -179,8 +181,8 @@
     const b3 = P.ball3d(host, ball);
     const g = { u: 0, cut: 0, mode: 'run', def: { x: 258, y: 252 }, slide: null, aAnim: 'corrida', aT0: 0, ball: null };
     // Com a câmera nova, o atacante só sai depois que ela abre (0,7 s); antes disso o toque não conta
-    const HOLD = cine ? 700 : 0, go0 = performance.now() + HOLD;
-    let armed = false, t = 0, last = performance.now(), result = null;
+    const HOLD = cine ? 700 : 0;
+    let go0 = performance.now() + HOLD, armed = false, t = 0, last = performance.now(), result = null;
     setTimeout(() => { armed = true; }, Math.max(250, HOLD));
     // Câmera: abre no gol e depois acompanha a disputa (metade entre o atacante e o zagueiro)
     if (cine) {
@@ -208,6 +210,7 @@
     const kickBall = (from, to, r1, ms, arc) => { g.ball = { from, to, r1, ms, arc, t0: performance.now() }; };
     (function step(now) {
       if (!svg.isConnected) return b3.dispose();
+      if (P.covered(stage)) { go0 += now - last; if (g.ball) g.ball.t0 += now - last; last = now; return requestAnimationFrame(step); } // janela por cima: o lance espera
       const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
       if (g.mode === 'run' && now >= go0) g.u += dt / T;
       else if (g.mode === 'cut') g.u += dt / T * 0.35;
@@ -348,7 +351,8 @@
     const you = C.put('jogador-2d', Object.assign({ kit: 'atacante', view: 'costas', anim: 'chute', num: String(c.number || 8), nome: (c.name || '').split(' ').pop().toUpperCase().slice(0, 10) },
       me, kits.mine, me.boots ? { boots: me.boots } : {}), svg, ball);
     you.place(sx(-0.35, BG + 0.5), sy(BG + 0.5), hOf(BG + 0.5)); you.pose(0, 'chute');
-    const dur = setup.period * 1500 / offU, t0 = performance.now() + HOLD;
+    const dur = setup.period * 1500 / offU;
+    let t0 = performance.now() + HOLD, last = performance.now();
     let hit = null, armed = false, done = false;
     setTimeout(() => { armed = true; }, Math.max(250, HOLD));
     const uAt = t => Math.max(0, Math.min(1, t / dur));
@@ -361,11 +365,13 @@
     });
     (function run(now) {
       if (done) return;
+      if (P.covered(stage)) { t0 += now - last; last = now; return requestAnimationFrame(run); } // janela por cima: o lance espera
+      last = now;
       const t = now - t0, u = uAt(t);
       placeMate(u); mate.pose(Math.max(0, t / 620) % 1, 'corrida');
       if (u >= offU) return finish(false, 'impedido');
       requestAnimationFrame(run);
-    })(t0);
+    })(last);
 
     function finish(ok, why) {
       done = true;

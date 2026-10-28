@@ -330,7 +330,15 @@
     };
     document.addEventListener('pointerdown', h, true);
   }
-  root.CRAQUE_KICK_PARTS = { onTap, scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d, keeperSprite, keeperTint, animateWall, ball3d };
+  // Janela por cima do lance (Configurações, voltar ao início…): a última camada visível não tem o palco.
+  // Os lances com relógio (goleiro, zagueiro, meia) esperam ela fechar, sem perder o lance por baixo dela.
+  function covered(stage) {
+    if (!stage.isConnected) return false;
+    const ls = [...document.querySelectorAll(LAYER)].filter(w => w.getClientRects().length && getComputedStyle(w).visibility !== 'hidden');
+    const top = ls[ls.length - 1];
+    return !!top && !top.contains(stage);
+  }
+  root.CRAQUE_KICK_PARTS = { onTap, covered, scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d, keeperSprite, keeperTint, animateWall, ball3d };
 
   root.CRAQUE_KICK = function (el, opts) {
     const c = opts.c, m = opts.moment;
