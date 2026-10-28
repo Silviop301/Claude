@@ -32,6 +32,8 @@
     store(KEY, list);
   }
   const count = () => all().length;
+  // Cartas no álbum: a final de cada carreira e as especiais
+  const cards = () => all().reduce((a, e) => a + 1 + (e.specials || []).length, 0);
 
   // Miniatura: desenha a carta num canvas só e guarda a imagem pequena (poupa memória no celular)
   const thumbs = new Map();
@@ -68,7 +70,7 @@
 
   const rarHtml = s => (s.rar ? '<i class="col-rar ' + s.rar.toLowerCase().replace('é', 'e') + '">' + s.rar + '</i>' : '');
   const slotHtml = (s, key) => s.hit
-    ? '<button class="col-slot has" data-k="' + key + '" aria-label="' + esc(s.hit.d.name) + '"><img alt="">' + rarHtml(s) + '<span' + (flagLbl(s.label) ? ' class="flag"' : '') + '>' + (flagLbl(s.label) ? U.flag(s.label) : esc(s.label)) + '</span></button>'
+    ? '<button class="col-slot has" data-k="' + key + '" aria-label="' + esc(s.hit.d.name) + '"><img alt="" draggable="false">' + rarHtml(s) + '<span' + (flagLbl(s.label) ? ' class="flag"' : '') + '>' + (flagLbl(s.label) ? U.flag(s.label) : esc(s.label)) + '</span></button>'
     : '<div class="col-slot empty"><div class="col-ghost">?</div>' + rarHtml(s) + '<span' + (flagLbl(s.label) ? ' class="flag"' : '') + '>' + (s.rar ? '???' : flagLbl(s.label) ? U.flag(s.label) : esc(s.label)) + '</span></div>';
   const flagLbl = t => D.COUNTRIES.some(k => k.flag === t);
 
@@ -97,7 +99,7 @@
       '<div class="bk-idx">' + p.idx.map(s => '<button data-go="' + s.at + '"' + (s.have === s.all ? ' class="full"' : '') + '><span>' + esc(s.t) + '</span><i><em style="width:' + Math.round(s.have / s.all * 100) + '%"></em></i><b>' + s.have + '/' + s.all + '</b></button>').join('') + '</div>' +
       '<small>' + p.n + (p.n === 1 ? ' carreira' : ' carreiras') + (p.n ? ' · arraste para abrir' : ' · termine uma carreira para começar') + '</small></div>';
     let body;
-    if (p.list) body = p.list.map((e, j) => { const k = 'a' + i + '-' + j; byKey[k] = e.card; return '<button class="col-slot has" data-k="' + k + '" aria-label="' + esc(e.card.name) + '"><img alt=""><span>' + e.score + ' pts</span></button>'; }).join('');
+    if (p.list) body = p.list.map((e, j) => { const k = 'a' + i + '-' + j; byKey[k] = e.card; return '<button class="col-slot has" data-k="' + k + '" aria-label="' + esc(e.card.name) + '"><img alt="" draggable="false"><span>' + U.pts(e.score) + ' pts</span></button>'; }).join('');
     else body = p.slots.map((sl, j) => { const k = i + '-' + j; if (sl.hit) byKey[k] = sl.hit.d; return slotHtml(sl, k); }).join('');
     const have = p.all ? p.all.filter(sl => sl.hit).length : 0;
     return '<div class="bk-head">' + esc(p.t) + (p.all ? '<span>' + have + '/' + p.all.length + (have === p.all.length ? ' ✓' : '') + '</span>' : '') + '</div>' +
@@ -121,7 +123,8 @@
       // Sumário da capa: vai direto para a parte (uma folha vira, como nas setas)
       el.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => turn(+b.dataset.go - at); });
     };
-    const nav = () => { $('bk-n').textContent = at === 0 ? 'Capa' : 'Página ' + at + ' de ' + (pgs.length - 1); $('bk-prev').disabled = at === 0; $('bk-next').disabled = at >= pgs.length - 1; };
+    // Mostra a página de destino assim que a folha começa a virar (para trás, o at só muda no fim da animação)
+    const nav = (i = at) => { $('bk-n').textContent = i === 0 ? 'Capa' : 'Página ' + i + ' de ' + (pgs.length - 1); $('bk-prev').disabled = i === 0; $('bk-next').disabled = i >= pgs.length - 1; };
     fill($('bk-cur'), at); nav();
     let busy = false;
     // Virar: a folha gira pela lombada (esquerda); para trás, a folha anterior volta por cima
@@ -142,18 +145,19 @@
           .finished.then(() => { at = to; fill(cur, at); leaf.remove(); busy = false; });
       }
       if (U.sfx) U.sfx('paper');
-      nav();
+      nav(to);
     }
     $('bk-prev').onclick = () => turn(-1);
     $('bk-next').onclick = () => turn(1);
-    // Arrastar para o lado vira a página
-    let x0 = null, y0 = 0;
+    // Arrastar para o lado vira a página (e não abre a figurinha onde o arrasto começou)
+    let x0 = null, y0 = 0, swiped = false;
     bookEl.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; });
     bookEl.addEventListener('pointerup', e => {
       if (x0 === null) return;
       const dx = e.clientX - x0, dy = e.clientY - y0; x0 = null;
-      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) turn(dx < 0 ? 1 : -1);
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { turn(dx < 0 ? 1 : -1); swiped = true; setTimeout(() => { swiped = false; }, 0); }
     });
+    bookEl.addEventListener('click', e => { if (swiped) { swiped = false; e.stopPropagation(); e.preventDefault(); } }, true);
   }
 
   // Tela inicial sem carreira em andamento: a carta da última carreira flutua, com nota e recorde
@@ -162,8 +166,8 @@
     if (!list.length) return '';
     const e = list.reduce((a, b) => (b.at > a.at ? b : a)), best = Math.max(...list.map(x => x.score));
     return '<button class="last-card" id="b-last"><span class="lc-card"><img alt=""></span><span class="lc-info"><small>Última carreira</small>' +
-      '<b>' + esc(e.card.name) + '</b><span>Nota <em class="lc-g g-' + e.grade + '">' + e.grade + '</em> · ' + e.score + ' pts</span>' +
-      '<span class="lc-rec">' + (e.score >= best ? U.emo('🏆', 'xs') + ' Seu recorde' : 'Recorde: ' + best + ' pts') + '</span></span></button>';
+      '<b>' + esc(e.card.name) + '</b><span>Nota <em class="lc-g g-' + e.grade + '">' + e.grade + '</em> · ' + U.pts(e.score) + ' pts</span>' +
+      '<span class="lc-rec">' + (e.score >= best ? U.emo('🏆', 'xs') + ' Seu recorde' : 'Recorde: ' + U.pts(best) + ' pts') + '</span></span></button>';
   }
   function lastHomeBind() {
     const b = $('b-last');
@@ -186,5 +190,5 @@
     $('cv-share').onclick = () => U.shareCard(d, $('cv-share'));
   }
 
-  Object.assign(U, { collection, collect, collectPatch, collectionCount: count, lastHome, lastHomeBind });
+  Object.assign(U, { collection, collect, collectPatch, collectionCount: count, collectionCards: cards, lastHome, lastHomeBind });
 })();

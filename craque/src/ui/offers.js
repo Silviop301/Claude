@@ -21,7 +21,12 @@
     opts = opts && typeof opts === 'object' ? opts : {};
     const cl = club(o.club), lg = league(o.club);
     const kinds = { ask: ['Pedido seu', 'blue'], base: ['Base', ''], up: ['Clube maior', 'blue'], mid: ['Protagonista', 'green'], loan: ['Empréstimo · 1 ano', 'blue'], money: ['Proposta milionária', 'gold'], home: ['Volta pra casa', 'red'], stay: ['Renovar', ''] };
-    const [kname, kcls] = kinds[o.kind] || ['', ''];
+    // "Clube maior" só acima do clube atual (quem está no banco de um grande recebe proposta pela nota, de clube menor)
+    // e do Protagonista mais forte da mesma lista; "Protagonista" só com papel de titular
+    const cur = o.kind === 'up' && G.c && G.c.club ? club(G.c.club) : null;
+    let kk = o.kind === 'up' && ((cur && cl.strength <= cur.strength) || cl.strength <= (opts.midTop || 0)) ? 'mid' : o.kind;
+    if (kk === 'mid' && o.share < 0.78) kk = '';
+    const [kname, kcls] = kinds[kk] || ['', ''];
     const roleCls = o.share >= 0.78 ? 'green' : o.share >= 0.5 ? 'blue' : 'red';
     // O que o papel quer dizer na prática (quem chega agora não sabe que "banco" é quase não jogar)
     const roleNote = o.share >= 0.9 ? 'joga tudo' : o.share >= 0.78 ? 'joga quase sempre' : o.share >= 0.5 ? 'metade dos jogos' : o.share >= 0.3 ? 'entra pouco' : 'quase não joga';
@@ -45,7 +50,8 @@
   }
   // Carrossel dos cartões: rolagem por encaixe e pontinhos (no computador, lado a lado e sem pontinhos)
   function offerRail(list, opts) {
-    const cards = list.map((o, i) => offerCard(o, i, opts)).join('');
+    const midTop = Math.max(0, ...list.filter(o => o.kind === 'mid').map(o => club(o.club).strength));
+    const cards = list.map((o, i) => offerCard(o, i, Object.assign({ midTop }, opts))).join('');
     return '<div class="of-rail" id="of-rail">' + cards + '</div>' +
       (list.length > 1 ? '<div class="of-dots" aria-hidden="true">' + list.map((_, i) => '<i' + (i ? '' : ' class="on"') + '></i>').join('') + '</div>' +
         '<p class="of-hint">Arraste para ver ' + listNames(list.slice(1)) + '</p>' : '');
@@ -110,7 +116,7 @@
     render(
       '<button class="back-link" id="b-back-home">‹ Início</button>' +
       '<div class="eyebrow">' + year() + ' · ' + G.c.age + ' anos</div><h2>' + ACAD_TITLE[G.c.origin || 'base'] + '</h2>' +
-      '<p class="lead">' + (ACAD_LEAD[G.c.origin] || 'No clube grande você começa no banco e quase não joga; no menor, é titular e joga toda semana. Quem joga faz gols, ganha nota e pontos de evolução. Se não jogar, dá para pedir empréstimo no fim da temporada.') + '</p>' + U.originNote(G.c) +
+      '<p class="lead">' + (ACAD_LEAD[G.c.origin] || 'No clube grande você começa no banco e quase não joga; nos menores costuma sobrar mais espaço. Veja o papel em cada proposta: quem joga faz gols, ganha nota e pontos de evolução. Se não jogar, dá para pedir empréstimo no fim da temporada.') + '</p>' + U.originNote(G.c) +
       offerRail(offers) + tools(win, true)
     );
     U.tip('base');
@@ -148,7 +154,9 @@
     render(
       '<div class="eyebrow">Janela de transferências · ' + year() + '</div>' +
       '<h2 class="of-h">' + (noOffers ? 'Nenhum clube novo apareceu' : n + (n > 1 ? ' clubes querem você' : ' clube quer você')) + '</h2>' +
-      '<p class="of-sub">' + why + ' · nota ' + S.ovr(G.c) + ' · ' + U.emo('⭐', 'xs') + ' ' + S.fameLabel(G.c.fame) + '</p>' +
+      '<p class="of-sub">' + why + ' · nota geral ' + S.ovr(G.c) + ' · ' + U.emo('⭐', 'xs') + ' ' + S.fameLabel(G.c.fame) + '</p>' +
+      // 5 cartões ou mais: no computador o de renovar cai na 2ª linha, fora da tela; o atalho leva até ele (só aparece lá)
+      (all.length > 4 ? '<button class="link-btn of-renew" id="b-renew">Ou renove com ' + esc(D.o(club(G.c.club).name)) + ' ↓</button>' : '') +
       U.originNote(G.c) + offerRail(all, { terms }) + tools(win, false) +
       '<p class="muted small of-fame">' + U.emo('⭐', 'xs') + ' Fama traz propostas de clubes maiores, salários mais altos' + (G.c.fame >= 150 ? ', vaga mais fácil na seleção' : '') + ' e mais votos na Bola de Ouro.</p>' +
       (S.canRetire(G.c) ? '<button class="btn ghost" id="b-retire">Pendurar as chuteiras</button>' : '')
@@ -168,6 +176,7 @@
       win.term = b.dataset.term; save(); sfx('tap'); windowOffers(); scrollTo(0, y); railTo(Math.max(0, cur));
     });
     if ($('b-retire')) $('b-retire').onclick = U.finale;
+    if ($('b-renew')) $('b-renew').onclick = () => $('of-rail').lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
     bindTools(false, windowOffers);
     // Proposta nova do pedido ao empresário: destaca e mostra
     // Propostas novas do pedido ao empresário (até duas): destaca todas e rola até a primeira
@@ -188,7 +197,7 @@
       (win.askMsg && !academy ? '<p class="ask-msg">' + esc(win.askMsg) + '</p>' : '');
   }
   function bindTools(academy, redraw) {
-    $('b-reroll').onclick = () => U.ask('Pedir novas propostas?', 'As propostas atuais somem e chegam outras. Só dá para fazer isso uma vez' + (academy ? '.' : ' por janela.'), 'Pedir novas', () => { S.rerollOffers(G.c, academy); save(); sfx('whistle'); redraw(); });
+    $('b-reroll').onclick = () => U.ask('Pedir novas propostas?', 'As propostas atuais somem e chegam outras. Só dá para fazer isso uma vez' + (academy ? '.' : ' por janela.'), 'Pedir novas', () => { S.rerollOffers(G.c, academy); if (!academy) save(); sfx('whistle'); redraw(); }); // na base ainda não há clube: nada é salvo
     if ($('b-askl')) $('b-askl').onclick = leaguePicker;
   }
   // Escolha da liga: agrupada por país, com o nível e a chance de o empresário conseguir
@@ -237,7 +246,9 @@
       '<div class="card event-card ob3 t-red sq-card" style="--k1:' + kit[0] + ';--k2:' + (kit[1] || kit[0]) + '"><div class="ev-top"><span class="ob3-ic">' + crest(cl.id) + '</span>' +
       '<span class="ev-tag red">Pouco espaço</span></div>' +
       '<h2>' + last.games + (last.games === 1 ? ' jogo' : ' jogos') + ' ' + D.no(esc(cl.name)) + ' na última temporada</h2>' +
-      '<p class="ob3-txt">Hoje você é <b>' + role.name.toLowerCase() + '</b>: o técnico prefere outros. Contrato: ' + G.c.contract + (G.c.contract > 1 ? ' anos' : ' ano') + '. O que fazer?</p></div>' +
+      // Quem já tem carta de titular (evoluiu no ano, ou perdeu minutos por técnico, idade ou escolhas) não lê "o técnico prefere outros"
+      (role.share >= 0.78 ? '<p class="ob3-txt">Pelo nível, hoje você seria <b>' + role.name.toLowerCase() + '</b>, mas jogou pouco. Contrato: '
+        : '<p class="ob3-txt">Hoje você é <b>' + role.name.toLowerCase() + '</b>: o técnico prefere outros. Contrato: ') + G.c.contract + (G.c.contract > 1 ? ' anos' : ' ano') + '. O que fazer?</p></div>' +
       '<div class="choices ob3-opts">' +
       (sq.loans.length ? opt('loan', 'plain', '', 'Pedir empréstimo', '<small>Uma temporada como titular num clube menor (' + sq.loans.length + (sq.loans.length === 1 ? ' interessado' : ' interessados') + '). Depois você volta, com o contrato valendo.</small>') : '') +
       opt('talk', 'risk', 'Arriscada', 'Conversar com o técnico', '<span class="ob3-bar" aria-hidden="true"><i class="w" style="width:' + talk + '%"></i><i class="l"></i></span>' +

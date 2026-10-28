@@ -691,11 +691,19 @@
   D.pelo = n => g(n, 'pelo', 'pela');
   D.ao = n => g(n, 'ao', 'à');
 
-  // Artigos: "o Brasileirão", "a Premier League"
-  const MASC = ['Brasileirão', 'Championship', 'Scottish Championship', 'USL Championship'];
+  // Artigos: "o Brasileirão", "a Premier League" (ligas e taças; as supercopas da França e do México são masculinas)
+  const MASC = ['Brasileirão', 'Championship', 'Scottish Championship', 'USL Championship', 'Troféu dos Campeões', 'Campeão de Campeões'];
   D.da = n => (MASC.includes(n) ? 'do ' : 'da ') + n;
   D.na = n => (MASC.includes(n) ? 'no ' : 'na ') + n;
   D.paraA = n => (MASC.includes(n) ? 'para o ' : 'para a ') + n;
+  D.aTaca = n => (MASC.includes(n) ? 'o ' : 'a ') + n;
+  // Lista em texto corrido: "A, B e C"
+  D.andList = a => (a.length > 1 ? a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1] : a.join(''));
+  // Países (da liga ou da seleção): "a Alemanha", "o Japão", "os EUA", "Portugal"; "na Bélgica", "no Japão", "nos EUA", "em Portugal"
+  const PAIS_O = ['Brasil', 'Uruguai', 'Japão', 'México', 'Equador', 'Senegal', 'Canadá', 'Irã', 'Catar', 'Chile', 'Peru', 'Paraguai', 'Egito', 'Marrocos'];
+  const PAIS_SEM = ['Portugal', 'Gana', 'Camarões'];
+  D.artPais = p => (PAIS_SEM.includes(p) ? '' : p === 'EUA' ? 'os ' : PAIS_O.includes(p) ? 'o ' : 'a ');
+  D.emPais = p => (PAIS_SEM.includes(p) ? 'em ' : p === 'EUA' ? 'nos ' : PAIS_O.includes(p) ? 'no ' : 'na ') + p;
 
   D.countryOf = club => D.LEAGUE_BY_ID[club.league].country;
   // Ligas do dinheiro (salários altíssimos, pouco prestígio)
@@ -746,7 +754,7 @@
     { id: 'raca',      icon: '🔥', tone: 'blue', name: 'Raça',           pos: ALL, attr: {}, fx: m => '+' + d1(0.07 * m) + ' na nota · Torcida +' + Math.round(3 * m) + ' por temporada · ⚠️ +' + pc(5 * m) + ' lesões' },
     { id: 'frieza',    icon: '🧊', tone: 'blue', name: 'Frieza',         pos: ALL, attr: {}, fx: () => 'Mais margem de erro nos lances decisivos' },
     { id: 'adaptavel', icon: '🧳', tone: 'blue', name: 'Adaptável',      pos: ALL, attr: {}, fx: m => 'Chega em clube novo com Técnico e Torcida +' + Math.round(12 * m) },
-    { id: 'patriota',  icon: '🎌', tone: 'blue', name: 'Patriota',       pos: ALL, attr: {}, fx: m => 'Seleção convoca com nota ' + Math.round(2.5 * m) + ' abaixo · rende mais na Copa' },
+    { id: 'patriota',  icon: '🎌', tone: 'blue', name: 'Patriota',       pos: ALL, attr: {}, fx: m => 'Seleção convoca com nota geral ' + Math.round(2.5 * m) + ' abaixo · rende mais na Copa' },
     // Zagueiro
     { id: 'xerife',    icon: '🛡️', tone: 'sand', name: 'Xerife',         pos: ['ZAG'], attr: { def: 2 }, fx: m => 'Mais jogos sem sofrer gol (+' + d1(0.7 * m) + ' de força na defesa)' },
     { id: 'carrinho',  icon: '🦵', tone: 'sand', name: 'Carrinho',       pos: ['ZAG'], attr: { def: 1, fis: 1 }, fx: () => 'Faixa do desarme maior nos lances decisivos' },

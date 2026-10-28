@@ -34,7 +34,7 @@
   // Arte do item: o pedaço do boneco onde ele fica; assinatura, o nome escrito na fonte (fonte de página não entra em <img> SVG)
   function itemArt(it) {
     const F = it.cat === 'assinatura' && (window.CRAQUE_SIGN || {})[it.look.sign];
-    if (it.cat === 'acabamento') return '<img class="fin-art" src="assets/cartas/ac-' + it.look.finish + '.jpg" alt="">';
+    if (it.cat === 'acabamento') return '<img class="fin-art" src="assets/cartas/ac-' + it.look.finish + '.jpg" alt="" onerror="this.style.visibility=\'hidden\'">';
     if (F) return '<span class="sig-art" style="font-family:' + esc(F.family) + ', cursive' + (F.gold ? ';color:#F2C230' : '') + '">' + esc((G.c && G.c.name) || 'Climbix') + '</span>';
     return '<img src="' + itemImg(it) + '" alt="">';
   }
@@ -70,6 +70,8 @@
     const clear = () => { timers.forEach(clearTimeout); timers.length = 0; w.getAnimations && w.getAnimations({ subtree: true }).forEach(a => a.cancel()); };
     const close = () => { clear(); w.classList.add('out'); setTimeout(() => { w.remove(); onDone && onDone(); }, 220); };
     let res = null, phase = 'idle', idx = 0, busy = false, shownFichas = inv.fichas;
+    // Esc no computador (desktop.js): com o pacotinho parado, fecha (o clique no meio abriria um)
+    w._esc = () => phase === 'idle' && (phase = 'out', close(), true);
 
     function frame() {
       w.innerHTML = '<div class="pk-dim"></div><div class="pk-rays"></div>' +
@@ -313,7 +315,7 @@
   }
   function streakBox(kind, got, note) {
     const late = I.streakFlush(), T = I.streakTxt;
-    if (late.length && !note) note = '+' + late.map(x => T(x.r)).join(' e ') + ' de um dia anterior da sequência' + (!late.some(x => x.r.p) ? ': já estão na sua conta' : kind === 'home' ? ': já estão nos pacotinhos aqui embaixo' : ': abra na tela inicial');
+    if (late.length && !note) note = '+' + late.map(x => T(x.r)).join(' e ') + ' de um dia anterior da sequência' + (!late.some(x => x.r.p) ? ': já são suas' : kind === 'home' ? ': já estão nos pacotinhos aqui embaixo' : ': abra na tela inicial');
     const st = I.streak(), pend = st.cells.find(c => c.claim);
     const head = U.emo('🔥', 'sm') + ' ' + (got && kind === 'fin' ? 'Dia ' + got.day + ' da sequência liberado!' : st.n >= 1 ? (st.n > 1 ? st.n + ' dias seguidos' : '1 dia de sequência') : 'Sequência de dias');
     const sub = note || (pend ? 'Toque no dia para pegar ' + T(pend.r) : st.played ? 'Prêmio de hoje já pego. Amanhã: ' + T(st.next)
@@ -330,7 +332,7 @@
       e.stopPropagation();
       const kind = box.dataset.skind, got = I.streakClaim(b.dataset.sk);
       let note;
-      if (got) { sfx('levelup'); U.vibe([30, 40, 30]); note = '+' + I.streakTxt(got.r) + (got.r.p ? '! Abra na tela inicial' : '! Já estão na sua conta'); }
+      if (got) { sfx('levelup'); U.vibe([30, 40, 30]); note = '+' + I.streakTxt(got.r) + (got.r.p ? '! Abra na tela inicial' : '! Já são suas'); }
       else note = 'Termine uma carreira hoje para liberar o prêmio deste dia';
       const div = document.createElement('div');
       div.innerHTML = streakBox(kind, null, note);

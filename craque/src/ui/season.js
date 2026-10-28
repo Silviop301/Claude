@@ -25,12 +25,14 @@
   // Resenha da temporada: um programa sorteado comenta no seu estilo (D.MEDIA.shows), sobre o destaque do ano
   // (gols, assistências, idade, paredão, xerife) ou, sem destaque, sobre o ano (título, banco, lesão, nota).
   const GOAL_TALK = /\bgols?\b|gola[çc]o|dribl|pedalada|artilh/i;
+  // Jogou pouco (a mesma régua das manchetes: menos de 35% dos jogos): campeão do elenco, não dono da taça
+  const fewGames = res => !res.games || res.games < 10 || (res.part != null && res.part < 0.35);
   function resenha(res) {
     const shows = (D.MEDIA || {}).shows || [];
     if (!shows.length) return '';
     const cl = club(res.club);
     const ballon = res.awards.some(a => a.id === 'ballon');
-    const mood = ballon ? 'ballon' : res.titles.length ? 'title' : !res.games || res.games < 10 ? 'bench' : res.injury >= 25 ? 'injury'
+    const mood = ballon ? 'ballon' : fewGames(res) ? 'bench' : res.titles.length ? 'title' : res.injury >= 25 ? 'injury'
       : res.move && res.move.dir === 'down' ? 'down' : res.rating >= 7.6 ? 'great' : res.rating >= 7.0 ? 'good' : 'bad';
     const atk = res.pos === 'ATA' || res.pos === 'PON';
     const topic = res.games < 10 ? null : res.goals >= (atk ? 16 : 10) ? 'gols' : res.assists >= 10 ? 'assist'
@@ -439,20 +441,23 @@
   // Jornal da temporada (a capa em si fica em ui/paper.js)
   function lede(res, cl) {
     const tb = res.table;
-    const pos = tb.pos === 1 ? 'terminou campeão ' + D.da(tb.league) : 'terminou em ' + tb.pos + 'º lugar ' + D.na(tb.league);
-    const perf = !res.games ? G.c.name + ' quase não entrou em campo, e ' + D.o(cl.name) + ' ' + pos + '.'
+    const pos = tb.pos === 1 ? (D.fem(cl.name) ? 'terminou campeã ' : 'terminou campeão ') + D.da(tb.league) : 'terminou em ' + tb.pos + 'º lugar ' + D.na(tb.league);
+    const perf = fewGames(res) ? G.c.name + ' quase não entrou em campo, e ' + D.o(cl.name) + ' ' + pos + '.'
       : res.rating >= 7.5 && tb.pos >= 11 ? G.c.name + ' foi o nome ' + D.do(cl.name) + ', mas o time não acompanhou e ' + pos + '.'
       : res.rating >= 7.5 ? G.c.name + ' foi o nome ' + D.do(cl.name) + ', que ' + pos + '.'
       : res.rating >= 6.8 ? 'Com atuações seguras de ' + G.c.name + ', ' + D.o(cl.name) + ' ' + pos + '.'
       : 'Em temporada irregular de ' + G.c.name + ', ' + D.o(cl.name) + ' ' + pos + '.';
-    return perf + (res.titles.length ? ' A torcida comemorou ' + res.titles.map(t => t.name).join(' e ') + '.' : '');
+    // A liga ganha já está na frase de cima: a torcida comemora as outras taças, com artigo ("a Copa do Rei e a Supercopa")
+    const more = res.titles.filter(t => !(t.id === 'league' && tb.pos === 1)).map(t => D.aTaca(t.name));
+    return perf + (more.length ? (more.length < res.titles.length ? ' A torcida também comemorou ' : ' A torcida comemorou ') + D.andList(more) + '.' : '');
   }
   function showPaper(res, onClose) {
     // Temporada sem notícia: o jornal não sai (a manchete fica só no resumo); cartas reveladas seguem valendo
     if (res.quiet) {
       const up = U.tierReveal(G.c, res.ovr0, res.ovr1); if (up) save();
       const list = (up ? [null] : []).concat(res.cards || []);
-      return list.length ? U.walkouts(G.c, list, onClose) : onClose && onClose();
+      // A carta nova é da temporada que acabou: rodapé com a idade dela, como no álbum (a carreira já virou o ano)
+      return list.length ? U.walkouts(Object.assign({}, G.c, { age: res.age }), list, onClose) : onClose && onClose();
     }
     const cl = club(res.club), [main, ...rest] = res.headlines, nick = G.c.name;
     // Foto da capa conforme a temporada: taça, maca (lesão), comemoração ou pose normal
@@ -463,7 +468,7 @@
       stats: D.plural(res.games, 'jogo', 'jogos') + ' · ' + seasonStats(res).map(([v, l]) => (l === 'Gols' ? D.plural(v, 'gol', 'gols') : l === 'Assist.' ? D.plural(v, 'assistência', 'assistências') : l === 'Defesas' ? D.plural(v, 'defesa', 'defesas') : v + ' ' + l.toLowerCase())).join(' · ') + (res.games ? ' · nota ' + res.rating.toFixed(1).replace('.', ',') : ''),
       lede: lede(res, cl), subs: rest, column: res.column },
       // Depois do jornal: revelação da carta nova (subiu de faixa) e das cartas especiais da temporada
-      () => { const up = U.tierReveal(G.c, res.ovr0, res.ovr1); if (up) save(); U.walkouts(G.c, (up ? [null] : []).concat(res.cards || []), onClose); });
+      () => { const up = U.tierReveal(G.c, res.ovr0, res.ovr1); if (up) save(); U.walkouts(Object.assign({}, G.c, { age: res.age }), (up ? [null] : []).concat(res.cards || []), onClose); });
   }
 
   // Duelo com o rival de geração: duas barras de nota que enchem quando o bloco aparece; quem passou o outro ganha o selo
@@ -529,7 +534,7 @@
     const moveTxt = !res.move || res.race === 'acesso' || res.race === 'degola' || res.race === true ? '' : res.move.dir === 'up' ? U.emo('⬆️', 'sm') + ' Acesso ' + D.paraA(res.move.toName) + '!' : U.emo('⬇️', 'sm') + ' Rebaixado ' + D.paraA(res.move.toName);
     // O que mexeu na nota: minutos, desempenho, lesão, idade e treinos (a soma bate com a variação)
     const great = res.games >= 15 && res.rating >= 7.5;
-    const why = (great && dOvr <= 0 ? '<p class="why-note">Grande temporada! Seu desempenho valeu ' + ((v => (v > 0 ? '+' : '') + v)((res.why.find(w => w.k === 'perf') || { v: 0 }).v)) + ' na nota' + (res.ovr0 >= G.c.pot - 3 ? ', mas você já está perto do seu teto' : '') + '. Também rendeu fama, torcida e propostas melhores.</p>' : '') +
+    const why = (great && dOvr <= 0 ? '<p class="why-note">Grande temporada! Seu desempenho valeu ' + ((v => (v > 0 ? '+' : '') + v)((res.why.find(w => w.k === 'perf') || { v: 0 }).v)) + ' na nota geral' + (res.ovr0 >= G.c.pot - 3 ? ', mas você já está perto do seu teto' : '') + '. Também rendeu fama, torcida e propostas melhores.</p>' : '') +
       (res.why.length ? '<ul class="why">' + res.why.map(w => '<li><span>' + esc(w.txt) + '</span><b class="' + (w.pot ? 'pot' : w.potDown ? 'down' : w.note ? 'note' : w.v > 0 ? 'up' : w.v < 0 ? 'down' : 'zero') + '">' + (w.pot ? 'teto ↑' : w.potDown ? 'teto ↓' : w.note ? U.emo('ℹ️', 'xs') : (w.v > 0 ? '+' : w.v < 0 ? '' : '±') + w.v) + '</b></li>').join('') + '</ul>' : '');
     const open = S.windowOpen(G.c);
     const contractTxt = G.c.contract > 0 ? 'Contrato: mais ' + G.c.contract + (G.c.contract > 1 ? ' temporadas' : ' temporada') + ' ' + D.no(esc(club(G.c.club).name)) : 'Seu contrato acabou: hora de decidir o futuro';
@@ -537,9 +542,9 @@
     const wcNow = S.isWcYear(G.c) && G.c.wcYearDone !== year();
     const call = wcNow ? S.wcCall(G.c) : null;
     let wcBlock = '';
-    if (call && call.called) wcBlock = '<div class="wc-call rv"><span class="wc-flag">' + U.flag(call.nation.flag) + '</span><div><b>Convocado para a Copa do Mundo ' + year() + '!</b><span>' + (call.starter ? 'Titular da seleção' : 'Vai como reserva (nota perto do corte de ' + call.cut + ')') + '</span></div></div>';
+    if (call && call.called) wcBlock = '<div class="wc-call rv"><span class="wc-flag">' + U.flag(call.nation.flag) + '</span><div><b>Convocado para a Copa do Mundo ' + year() + '!</b><span>' + (call.starter ? 'Titular da seleção' : 'Vai como reserva (nota geral perto do corte de ' + call.cut + ')') + '</span></div></div>';
     else if (call && call.retired) { wcBlock = '<p class="wc-miss rv">' + U.emo('👋', 'sm') + ' Copa de ' + year() + ' sem você, que já se despediu da seleção.</p>'; G.c.wcYearDone = year(); save(); }
-    else if (call && G.c.age >= 18) { wcBlock = '<p class="wc-miss rv">' + U.emo('🌍', 'sm') + ' Fora da Copa de ' + year() + ': ' + (S.ovr(G.c) >= call.cut ? 'aos ' + G.c.age + ' anos, a seleção preferiu apostar na nova geração.' : 'a seleção pedia nota ' + call.cut + ', você tem ' + S.ovr(G.c) + '.') + '</p>'; G.c.wcYearDone = year(); save(); }
+    else if (call && G.c.age >= 18) { wcBlock = '<p class="wc-miss rv">' + U.emo('🌍', 'sm') + ' Fora da Copa de ' + year() + ': ' + (S.ovr(G.c) >= call.cut ? 'aos ' + G.c.age + ' anos, a seleção preferiu apostar na nova geração.' : 'a seleção pedia nota geral ' + call.cut + ', você tem ' + S.ovr(G.c) + '.') + '</p>'; G.c.wcYearDone = year(); save(); }
     // Mundial de Clubes (a cada 4 anos): o clube classificado joga logo depois da temporada
     const cwcCall = S.isCwcYear(G.c) && G.c.cwcYearDone !== year() ? S.cwcCall(G.c) : null;
     if (cwcCall && cwcCall.called) wcBlock = '<div class="wc-call rv">' + crest(cwcCall.club.id, 'lg') + '<div><b>' + D.O(esc(cwcCall.club.name)) + ' está no Mundial de Clubes ' + year() + '!</b><span>' + (cwcCall.champ ? 'Vaga de campeão continental' : 'Vaga pelo ranking de clubes') + ' · 32 clubes, jogo a jogo</span></div></div>';

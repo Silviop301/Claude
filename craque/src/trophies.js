@@ -60,12 +60,12 @@
   const METAL = { league2: 'silver', league: 'gold', cup: 'silver', ucl: 'silver', lib: 'gold', ballon: 'gold', wc: 'gold', cwc: 'gold', inter: 'gold' };
 
   // name: nome da competição. Se houver imagem da taça real (src/trophy-imgs.js), usa ela;
-  // se não houver (ou a imagem falhar), fica a taça desenhada.
+  // se não houver (ou a imagem falhar, como sem internet numa taça nunca vista), fica a taça desenhada (drawn).
   const WC_NAME = { wc: 'Copa do Mundo', lib: 'Libertadores', ucl: 'Liga dos Campeões', ballon: 'Bola de Ouro', cwc: 'Mundial de Clubes', inter: 'Copa Intercontinental' };
-  root.CRAQUE_TROPHY = function (type, size, name) {
-    const img = (root.CRAQUE_TROPHY_IMGS || {})[name || WC_NAME[type]];
+  root.CRAQUE_TROPHY = function (type, size, name, drawn) {
+    const img = !drawn && (root.CRAQUE_TROPHY_IMGS || {})[name || WC_NAME[type]];
     const s = size || 40;
-    if (img) return '<img class="trophy trophy-real" src="' + img + '" alt="" style="height:' + s + 'px;max-width:' + Math.round(s * 1.3) + 'px" onerror="this.outerHTML=window.CRAQUE_TROPHY(\'' + type + '\',' + s + ')">';
+    if (img) return '<img class="trophy trophy-real" src="' + img + '" alt="" style="height:' + s + 'px;max-width:' + Math.round(s * 1.3) + 'px" onerror="this.outerHTML=window.CRAQUE_TROPHY(\'' + type + '\',' + s + ',\'\',1)">';
     const shape = SHAPES[type] || SHAPES.league;
     const g = 'url(#tg-' + (METAL[type] || 'gold') + ')';
     return '<svg class="trophy" width="' + (size || 40) + '" height="' + (size || 40) + '" viewBox="0 0 64 64" aria-hidden="true">' + defs + shape(g) + '</svg>';

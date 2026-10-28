@@ -17,7 +17,7 @@
       // Carreira em andamento: a carta do jogador no lugar de um botão de texto
       (saved && saved.c ? (() => { const sc = saved.c, o = S.ovr(sc), t = tierCls(o), cl = club(sc.club);
         return '<button class="cont-card" id="b-cont"><span class="scard metal ' + t + '"><span class="sc-tier">' + TIER_NAME[t] + '</span><b>' + o + '</b><span class="sc-pos">' + sc.pos + '</span></span>' +
-          '<span class="cc-info"><small>Continuar carreira</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : U.lastHome()) + sc.age + ' anos</span></span><span class="cc-go">' + U.ICON['chevron-right'] + '</span></button>'; })() : U.lastHome()) +
+          '<span class="cc-info"><small>Continuar carreira</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : '') + sc.age + ' anos</span></span><span class="cc-go">' + U.ICON['chevron-right'] + '</span></button>'; })() : U.lastHome()) +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
       U.relampagoHome() +
       U.rankHome() +
@@ -40,7 +40,8 @@
       resume(saved.step);
     };
     U.backTo = null;
-    $('b-new').onclick = () => create();
+    // Com carreira em andamento, confirma antes: o save é um só e o novo jogador toma o lugar dela ao assinar
+    $('b-new').onclick = () => (saved && saved.c ? U.ask('Começar outra carreira?', 'A carreira de ' + saved.c.name + ' (' + saved.c.age + ' anos) será apagada quando o novo jogador assinar com um clube.', 'Nova carreira', create) : create());
     U.lastHomeBind();
     U.packHomeBind();
     U.streakBind(U.home); // pegou um pacotinho da sequência: a tela redesenha com o bloco de pacotinhos
@@ -87,7 +88,7 @@
     render('<button class="back-link" id="b-back-home">‹ Início</button><div class="eyebrow">Suas carreiras</div><h2>Minhas carreiras</h2>' +
       '<div class="mc-side">' + U.salaHome() +
       '<div class="home-grid">' +
-      '<button class="hg" id="b-col"><i>' + U.ICON.cards + '</i><b>Coleção</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carta' : ' cartas') + '</small></button>' +
+      '<button class="hg" id="b-col"><i>' + U.ICON.cards + '</i><b>Coleção</b><small>' + U.collectionCards() + (U.collectionCards() === 1 ? ' carta' : ' cartas') + '</small></button>' +
       '<button class="hg" id="b-ach"><i>' + U.ICON.medal + '</i><b>Conquistas</b><small>' + U.achCount() + ' de ' + S.ACHIEVEMENTS.length + '</small></button>' +
       '</div></div>' +
       '<section class="mc-hall"><div class="eyebrow">Hall da Fama</div>' +
@@ -115,7 +116,9 @@
     if (st === 'event') return U.eventScreen();
     if (st === 'invest') return U.invest();
     if (st === 'moment') return U.momentOrSeason();
-    return U.preseason();
+    // Fechou o jogo durante a temporada (o save já aponta para a pré-temporada, sem as opções dela):
+    // a decisão do pouco espaço no elenco vem antes, como no caminho normal (afterSeason)
+    return !G.c.preCh && S.benchCase(G.c) ? U.squad() : U.preseason();
   }
 
   // ---------- criação ----------
@@ -156,7 +159,7 @@
   // Origem e desafio (engine/origins.js): liberados por conquistas
   const achName = id => (S.ACHIEVEMENTS.find(a => a.id === id) || {}).name || id;
   const optChips = (list, cur, kind, st) => '<div class="cr-chips">' + list.map(o => {
-    const lock = !U.achHas(o.need), off = kind === 'challenge' && !S.challengeFits(o, st.country);
+    const lock = !U.achHas(o.need), off = kind === 'challenge' && !S.challengeFits(o, st.country, st.origin);
     return '<button data-' + kind + '="' + o.id + '" class="' + (cur === o.id ? 'on' : '') + (lock || off ? ' lock' : '') + '">' + (lock ? U.emo('🔒', 'xs') + ' ' : U.emo(o.icon, 'xs') + ' ') + esc(o.name) + '</button>';
   }).join('') + '</div>';
   function originRows(st) {
@@ -168,7 +171,9 @@
       '<p class="cr-desc">' + (ch ? esc(ch.desc) : 'Sem regra extra. Um desafio cumprido soma pontos na nota final.') + '</p>';
   }
   function bindOrigin(st, redraw) {
-    const note = (it, why) => { const el = $('cr-onote'); if (el) el.innerHTML = '<div class="cr-lock">' + U.emo('🔒', 'sm') + '<span><b>' + esc(it.name) + '</b> · ' + why + '</span></div>'; };
+    // O aviso fica no fim da página: rola até ele para não ficar atrás do botão preso embaixo
+    const note = (it, why) => { const el = $('cr-onote'); if (!el) return; el.innerHTML = '<div class="cr-lock">' + U.emo('🔒', 'sm') + '<span><b>' + esc(it.name) + '</b> · ' + why + '</span></div>';
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); };
     screen.querySelectorAll('[data-origin]').forEach(b => b.onclick = () => {
       const it = S.ORIGIN_BY_ID[b.dataset.origin];
       if (!U.achHas(it.need)) return note(it, 'libere com a conquista "' + achName(it.need) + '"');
@@ -177,7 +182,7 @@
     screen.querySelectorAll('[data-challenge]').forEach(b => b.onclick = () => {
       const it = S.CHALLENGE_BY_ID[b.dataset.challenge];
       if (it && !U.achHas(it.need)) return note(it, 'libere com a conquista "' + achName(it.need) + '"');
-      if (it && !S.challengeFits(it, st.country)) return note(it, 'só para quem nasceu fora da Europa');
+      if (it && !S.challengeFits(it, st.country, st.origin)) return note(it, S.EUROPE.includes(st.country) ? 'só para quem nasceu fora da Europa' : 'não combina com Vendido cedo (a base é na Europa)');
       st.challenge = it ? it.id : null; sfx('tap'); redraw();
     });
   }
@@ -252,7 +257,7 @@
       '<div class="inv-bar fade"><button class="btn" id="b-start">Começar carreira</button></div>'
     );
     const drawOrigin = () => {
-      if (st.challenge && !S.challengeFits(S.CHALLENGE_BY_ID[st.challenge], st.country)) st.challenge = null;
+      if (st.challenge && !S.challengeFits(S.CHALLENGE_BY_ID[st.challenge], st.country, st.origin)) st.challenge = null;
       $('cr-origin').innerHTML = originRows(st); $('cr-onote').innerHTML = ''; bindOrigin(st, drawOrigin);
     };
     const paint = () => {

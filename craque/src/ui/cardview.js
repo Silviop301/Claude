@@ -45,16 +45,22 @@
 
   // Compartilhar a carta: a imagem da carta + o link curto que abre a carta 3D.
   // Sem folha de compartilhar com arquivo: salva a imagem e copia o texto com o link
+  // Toque duplo: um compartilhamento só (antes baixava a imagem duas vezes), e o rótulo original é guardado uma vez
+  // (antes o 2º toque guardava "Preparando…" e o botão ficava preso nele)
   async function shareCard(d, btn) {
-    const old = btn ? btn.innerHTML : '';
-    if (btn) btn.textContent = 'Preparando…';
+    if (btn && btn._busy) return 'busy';
+    const old = btn ? (btn._label = btn._label || btn.innerHTML) : '';
+    if (btn) { btn._busy = true; clearTimeout(btn._rt); btn.textContent = 'Preparando…'; }
+    try { return await shareNow(d, btn, old); } finally { if (btn) { btn._busy = false; if (btn.textContent === 'Preparando…') btn.innerHTML = old; } }
+  }
+  async function shareNow(d, btn, old) {
     const cv = document.createElement('canvas');
     // Portal sem links para fora (CLIMBIX_SOLO): só a imagem e o texto
     const [url] = await Promise.all([window.CLIMBIX_SOLO ? '' : shortLink(d), window.CRAQUE_CARD(cv, d)]);
     const text = 'Olha a carta de ' + d.name + (url ? ' no Climbix! Veja em 3D: ' + url : ' no Climbix!');
     const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
     const file = blob && new File([blob], 'climbix-' + String(d.name).toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.png', { type: 'image/png' });
-    const done = (label, r) => { if (btn) { btn.innerHTML = label || old; if (label) setTimeout(() => { btn.innerHTML = old; }, 2500); } return r; };
+    const done = (label, r) => { if (btn) { btn.innerHTML = label || old; if (label) btn._rt = setTimeout(() => { btn.innerHTML = old; }, 2500); } return r; };
     try {
       if (file && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return done('', 'shared'); }
       if (navigator.share) { await navigator.share(url ? { title: 'Climbix', text, url } : { title: 'Climbix', text }); return done('', 'shared'); }
@@ -86,7 +92,7 @@
       '<button class="btn" id="cv-play">Criar a minha carreira</button>' +
       '<button class="btn ghost" id="cv-share">Compartilhar esta carta</button></div>');
     mount3d($('cv-host'), d);
-    $('cv-play').onclick = () => { history.replaceState(null, '', location.pathname); U.home(); };
+    $('cv-play').onclick = () => { history.replaceState(history.state, '', location.pathname); U.home(); };
     $('cv-share').onclick = () => shareCard(d, $('cv-share'));
   }
 
@@ -97,7 +103,7 @@
     if (SHORT.test(c)) {
       render('<div class="cv-page"><div class="eyebrow">Carta do Climbix</div><p class="muted">Carregando a carta…</p></div>');
       fetch(CARDS_API + '?a=get&id=' + c).then(r => r.json()).then(j => { const d = j && j.d && decode(j.d); if (d) cardView(d); else throw new Error('sem carta'); })
-        .catch(() => { history.replaceState(null, '', location.pathname); U.home(); });
+        .catch(() => { history.replaceState(history.state, '', location.pathname); U.home(); });
       return true;
     }
     const d = decode(c);

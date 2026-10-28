@@ -311,14 +311,14 @@
     }
   }
 
-  // opts: { c, moment, onDone(ok) }
+  // opts: { c, moment, onDone(ok), onResult(ok, why) }: onResult avisa na hora do chute (para salvar já), onDone depois do letreiro
   // Peças reaproveitadas pelo minigame do goleiro (defend.js)
   // Gol: sempre o desenho (o gol 3D pesava demais em celulares mais simples)
   function goal3d() { return Promise.resolve(null); }
   // Toque no lance: vale em qualquer lugar da tela (o polegar descansa abaixo do palco), não só no palco.
   // Ignora botões, links e campos, a barra do topo e o que estiver em outra camada (janela por cima).
   // O handler recebe o evento como antes (o goleiro lê clientX em relação ao palco).
-  const LAYER = '.ask-wrap, .cfg-wrap, .sheet-wrap, .sl-sheet-wrap, .trn-wrap, .paper-wrap, .walkout, .pk-wrap, .album, .bigmoment, .mo-wrap';
+  const LAYER = '.ask-wrap, .cfg-wrap, .sheet-wrap, .sala, .sl-sheet-wrap, .trn-wrap, .paper-wrap, .walkout, .pk-wrap, .album, .bigmoment, .mo-wrap';
   function onTap(stage, fn) {
     const home = stage.closest(LAYER);
     const h = e => {
@@ -330,7 +330,15 @@
     };
     document.addEventListener('pointerdown', h, true);
   }
-  root.CRAQUE_KICK_PARTS = { onTap, scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d, keeperSprite, keeperTint, animateWall, ball3d };
+  // Janela por cima do lance (Configurações, voltar ao início…): a última camada visível não tem o palco.
+  // Os lances com relógio (goleiro, zagueiro, meia) esperam ela fechar, sem perder o lance por baixo dela.
+  function covered(stage) {
+    if (!stage.isConnected) return false;
+    const ls = [...document.querySelectorAll(LAYER)].filter(w => w.getClientRects().length && getComputedStyle(w).visibility !== 'hidden');
+    const top = ls[ls.length - 1];
+    return !!top && !top.contains(stage);
+  }
+  root.CRAQUE_KICK_PARTS = { onTap, covered, scene, setBall, setKeeper, px, py, BALL, GX, GW, GY, ease, goal3d, keeperSprite, keeperTint, animateWall, ball3d };
 
   root.CRAQUE_KICK = function (el, opts) {
     const c = opts.c, m = opts.moment;
@@ -350,13 +358,15 @@
     const cine = root.CRAQUE_CINE ? root.CRAQUE_CINE(stage) : null, on = cine && cine.enabled;
     // Você, de costas, atrás da bola (só com a câmera nova)
     const C = root.CRAQUE_CHARS, kitsK = C ? C.kits(c, m.vs || (c.moment && c.moment.vs)) : null;
+    // Com a câmera nova, a mira só corre depois que ela abre (0,7 s); antes disso o toque não conta
+    const HOLD = on && C ? 700 : 0;
     let you = null;
     if (on && C) {
       const me = C.look(c);
       you = C.put('jogador-2d', Object.assign({ kit: 'atacante', view: 'costas', anim: 'chute', num: String(c.number || 9), nome: (c.name || '').split(' ').pop().toUpperCase().slice(0, 10) },
         me, kitsK.mine, me.boots ? { boots: me.boots } : {}), svg, ball);
       you.place(BALL.x - 15, BALL.y + 19, 118); you.pose(0, 'chute');
-      cine.intro(GX, 125, 1.75, 1300);
+      cine.intro(GX, 125, 1.75, HOLD);
     }
     // Bola 3D por cima do desenho (se o 3D não carregar, fica a bola desenhada)
     let gone = false, goal = null;
@@ -373,12 +383,12 @@
     setKeeper(keeper, setup.fk ? px(0.4 * side) - GX : 0, 0, 0);
     aim.setAttribute('opacity', '1');
 
-    let phase = 'x', lockX = 0, t0 = performance.now(), raf = 0, cur = { x: 0, y: 0.5 };
+    let phase = 'x', lockX = 0, t0 = performance.now() + HOLD, raf = 0, cur = { x: 0, y: 0.5 };
     // Tremedeira: duas senoides somadas, visível na mira (nada escondido)
     const wob = t => setup.wobble * (Math.sin(t * 0.017) + Math.sin(t * 0.029 + 1)) / 2;
     function loop(now) {
       if (!svg.isConnected) return; // saiu da tela (ex.: voltou ao início) no meio da mira: para o laço
-      const t = now - t0;
+      const t = Math.max(0, now - t0); // na abertura da câmera a mira espera no meio
       if (phase === 'x') {
         cur.x = 1.25 * tri(t / (setup.period * 1000) + 0.25) + wob(now);
         vline.setAttribute('x1', px(cur.x)); vline.setAttribute('x2', px(cur.x));
@@ -396,7 +406,7 @@
 
     const help = el.querySelector('#k-help');
     let armed = false;
-    setTimeout(() => { armed = true; }, 250); // o toque que abriu a tela não conta
+    setTimeout(() => { armed = true; }, Math.max(250, HOLD)); // o toque que abriu a tela não conta
     onTap(stage, e => {
       e.preventDefault();
       if (!armed) return;
@@ -443,6 +453,7 @@
       const kSide = setup.fk ? 0 : S().kickKeeper(setup, x, opts.keeperGuess || 0.38);
       if (setup.fk || kSide) keeper.classList.add('diving'); // estica os braços no pulo
       const res = S().kickResult(setup, x, y, kSide); // (a regra soma a subida do chute forte)
+      if (opts.onResult) opts.onResult(res.ok, res.why);
       // Para onde a bola vai no desenho
       let tx = px(dx), ty = py(Math.min(y + rise, 1.35)), tr = 8.5; // perto do gol a bola continua bem visível
       if (res.why === 'barreira') { ty = py(setup.wall) + 18; tr = 9.5; }

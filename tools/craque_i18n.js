@@ -122,7 +122,7 @@ const FILE_EN = [
   ['ui/desktop.js', '/oque/.test(t)', '/[Tt]ap/.test(t)'],
   ['ui/desktop.js', "(cap ? 'Click' : 'clique') : (cap ? 'Tap' : 'toque')", "(cap ? 'Click' : 'click') : (cap ? 'Tap' : 'tap')"],
   ['ui/desktop.js', "[/\\bToque\\b/g, 'Click'],", "[/\\bTap\\b/g, 'Click'],"],
-  ['ui/desktop.js', "[/\\btoque(?= (?:para|na tela|quando|numa|à (?:direita|esquerda)|de novo))/g, 'clique'],", "[/\\btap(?= (?:to|the screen|when|again|left|right|on))/g, 'click'],"],
+  ['ui/desktop.js', "[/\\btoque(?= (?:para|na tela|quando|numa|no lado|logo|à (?:direita|esquerda)|de novo))/g, 'clique'],", "[/\\btap(?= (?:to|the screen|when|again|left|right|on|a side|quickly))/g, 'click'],"],
   ['ui/desktop.js', "/\\b(Agora|primeiro|segundo|1º|2º|o) toque\\b(?! seu)/g", "/\\b(first|second|the) tap\\b/g"],
   ['ui/core.js', "'GOLS'", "'GOALS'"],
   ['ui/preseason.js', "{ new: 'NOVA', up: 'EVOLUIR' }", "{ new: 'NEW', up: 'UPGRADE' }"],
@@ -131,8 +131,7 @@ const FILE_EN = [
   ['card.js', "label: 'OURO' }", "label: 'GOLD' }"],
   ['card.js', "label: 'MURALHA',", "label: 'THE WALL',"],
   ['card.js', "label: 'XERIFE',", "label: 'SHERIFF',"],
-  ['ui/worldcup.js', "(n === 'Portugal' ? '' : ['Brazil', 'Uruguay'].includes(n) ? 'o ' : 'a ') + n", "n"],
-  ['ui/worldcup.js', "({ Brasil: 'do', Uruguai: 'do', Portugal: 'de' }[n] || 'da') + ' ' + n", "n"],
+  ['ui/worldcup.js', "({ 'o ': 'do ', 'a ': 'da ', 'os ': 'dos ', '': 'de ' }[D.artPais(n)]) + n", "D.artPais(n) + n"],
   ['ui/worldcup.js', "Called up by the national team ' + ofCountry(", "Called up by ' + ofCountry("],
   ['ui/worldcup.js', "'classifica'", "'goes through'"],
   ['ui/worldcup.js', "'empata'", "'equalises'"],
@@ -143,7 +142,7 @@ const FILE_EN = [
   ['ui/worldcup.js', "'eliminado'", "'knocked out'"],
   ['ui/worldcup.js', "'derrota'", "'defeat'"],
   ['ui/worldcup.js', "'aumentam'", "'they extend the lead'"],
-  ['ui/season.js', "'Play ' + (goWc ? 'a ' : 'o ') + tourLbl", "'Play the ' + tourLbl"],
+  ['ui/season.js', "'Play ' + (goWc ? 'a ' : 'o '))", "'Play the ')"],
   ['ui/album.js', "' a ' + c.age", "'–' + c.age"],
   ['ui/finale.js', "' a ' + G.c.age", "'–' + G.c.age"],
   ['ui/paper.js', "nick + ' é ' + D.do(to.name)", "nick + ' joins ' + to.name"],
@@ -156,8 +155,6 @@ const FILE_EN = [
   ['ui/season.js', "(pe.n > 1 ? ' points' : ' point') + ' development'", "(pe.n > 1 ? ' development points' : ' development point')"],
   ['ui/season.js', "', a ' + rc.gap", "', ' + rc.gap"],
   ['ui/season.js', "'finished ' + tb.pos + 'th place ' + D.na(tb.league)", "'finished ' + tb.pos + 'th ' + D.na(tb.league)"],
-  ['ui/season.js', "res.titles.map(t => t.name).join(' and ')", "D.andList(res.titles.map(t => t.name))"],
-  ['ui/social.js', "r.titles.map(x => x.name).join(' and ')", "D.andList(r.titles.map(x => x.name))"],
   ['ui/offers.js', "? 'renovar' : 'assinar')", "? 'renew' : 'sign')"],
   ['engine/season.js', "'decidido'", "'decided'"],
   ['engine/season.js', "' for ' + D.o(cur.name) + ': the big leap", "' to ' + D.o(cur.name) + ': the big leap"],
@@ -173,9 +170,14 @@ const FILE_EN = [
   ['ui/season.js', "f.lead ? 'A ' + p(f.lead) + ' behind", "f.lead ? p(f.lead) + ' behind"],
   ['ui/season.js', "'A ' + p(v) + ' behind the leader'", "p(v) + ' behind the leader'"],
   ['ui/season.js', "'A ' + p(v) + ' off the promotion zone'", "p(v) + ' off the promotion zone'"],
-  ['ui/worldcup.js', "run.games.filter(x => x.cs).length + ' clean sheets' + (run.g", "D.plural(run.games.filter(x => x.cs).length, 'clean sheet', 'clean sheets') + (run.g"],
-  ['ui/paper.js', "run.games.filter(x => x.cs).length + ' clean sheets at the World Cup'", "D.plural(run.games.filter(x => x.cs).length, 'clean sheet', 'clean sheets') + ' at the World Cup'"],
-  ['ui/paper.js', "run.games.filter(x => x.cs).length + ' clean sheets at the Club World Cup'", "D.plural(run.games.filter(x => x.cs).length, 'clean sheet', 'clean sheets') + ' at the Club World Cup'"],
+  // Fim da Copa (n() = número + rótulo, fora da extração) e jornal: "3 clean sheets", não "3 games without conceding"
+  ['ui/worldcup.js', "n(run.games.filter(x => x.cs).length, 'with a clean sheet', 'with a clean sheet')", "n(run.games.filter(x => x.cs).length, 'clean sheet', 'clean sheets')"],
+  ['ui/worldcup.js', "n(run.games.length, 'jogo', 'jogos')", "n(run.games.length, 'game', 'games')"],
+  ['ui/worldcup.js', "n(run.g, 'gol', 'gols')", "n(run.g, 'goal', 'goals')"],
+  ['ui/paper.js', "D.plural(run.games.filter(x => x.cs).length, 'game', 'games') + ' without conceding at the World Cup'", "D.plural(run.games.filter(x => x.cs).length, 'clean sheet', 'clean sheets') + ' at the World Cup'"],
+  ['ui/paper.js', "D.plural(run.games.filter(x => x.cs).length, 'game', 'games') + ' without conceding at the Club World Cup'", "D.plural(run.games.filter(x => x.cs).length, 'clean sheet', 'clean sheets') + ' at the Club World Cup'"],
+  ['ui/worldcup.js', "/^(Grupo|Fase de grupos)/.test(run.reached)", "/^Group/.test(run.reached)"],
+  ['ui/worldcup.js', "Semifinal: 'in the semi-finals'", "'Semi-final': 'in the semi-finals'"],
   ['ui/album.js', "s.cleanSheets + ' clean sheets'", "P(s.cleanSheets, 'clean sheet', 'clean sheets')"],
   ['ui/offers.js', "'igual'", "'unchanged'"],
   // Fichas do lance decisivo (match.js): adjetivos soltos
@@ -191,6 +193,31 @@ const FILE_EN = [
   ['engine/season.js', "' makes his senior debut ' + D.do(cur.name)", "' makes his senior debut for ' + cur.name"],
   ['engine/season.js', "s.goals + ' goals and ' + D.plural(s.cleanSheets", "s.goals + ' goals, ' + D.plural(s.cleanSheets"],
   ['ui/desktop.js', "/\\b([Dd])ois toques\\b/g, (m, d) => (d === 'D' ? 'Two' : 'dois')", "/\\b([Tt])wo taps\\b/g, (m, d) => (d === 'T' ? 'Two' : 'two')"],
+  // Telas novas (visual de 27/10, Relâmpago): placar, artigos, palavras soltas e comparações com texto
+  ['engine/season.js', "dr.int(0, 1)) + ' a ' + gl + ')'", "dr.int(0, 1)) + '–' + gl + ')'"],
+  ['engine/season.js', "' of ' + nick", "' from ' + nick"], // '12 goals from Nick', mas 'Pack 1 of 3'
+  ['ui/motion.js', "esc(name) + ' é ' + D.do(esc(to.name)) + '!</b><span>From ' + D.do(esc(from.name))", "esc(name) + ' joins ' + esc(to.name) + '!</b><span>From ' + esc(from.name)"],
+  ['ui/motion.js', "'/sem</b></li></ul>'", "'/wk</b></li></ul>'"],
+  ['ui/motion.js', "'Rating ' + f.grade", "'Grade ' + f.grade"],
+  ['ui/motion.js', "'Short by ' + U.pts(next[1] - f.score) + ' points short of grade '", "U.pts(next[1] - f.score) + ' points short of grade '"],
+  ['ui/finale.js', "'Short by ' + U.pts(next[1] - f.score) + ' points short of grade '", "U.pts(next[1] - f.score) + ' points short of grade '"],
+  ['ui/collection.js', "label: 'Rating ' + g", "label: 'Grade ' + g"],
+  ['ui/match.js', "{ cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar' }[st]", "{ cup: 'shoot', classico: 'shoot', save: 'save it', tackle: 'win the ball', pass: 'pass' }[st]"],
+  ['ui/match.js', "/^−|−\\d| cai|mais fraco|deixa de|não será/", "/^−|−\\d| drops|weaker|loses the|no more/"],
+  ['ui/relampago.js', "/Campeões/.test(name) ? 'ucl' : /Copa do Mundo/.test(name)", "/Champions League/.test(name) ? 'ucl' : /^World Cup/.test(name)"],
+  ['ui/relampago.js', "' G/A e '", "' G/A and '"],
+  ['ui/season.js', "<b>passou</b>", "<b>won</b>"],
+  ['ui/offers.js', "(o.years > 1 ? 'anos' : 'ano')", "(o.years > 1 ? 'years' : 'year')"],
+  ['ui/worldcup.js', "{ cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar' }[type]", "{ cup: 'shoot', classico: 'shoot', save: 'save it', tackle: 'win the ball', pass: 'pass' }[type]"],
+  ['ui/ranking.js', "'gols'], ['assists'", "'goals'], ['assists'"],
+  ['ui/ranking.js', "'bolas']]", "\"Ballons d'Or\"]]"],
+  ['ui/packs.js', "const WD = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];", "const WD = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];"], // dias da sequência
+  ['ui/packs.js', ": 'pacote')", ": 'pack')"],
+  ['ui/sheet.js', "(gk ? 'SG' : def ? 'SG/G' : 'G/A')", "(gk ? 'CS' : def ? 'CS/G' : 'G/A')"],
+  ['ui/relampago.js', "'</b><small>pontos</small></div></div>'", "'</b><small>points</small></div></div>'"],
+  ['ui/cloud.js', "'\">desconectar</button>'", "'\">disconnect</button>'"],
+  ['ui/cloud.js', "(a.pass ? 'trocar' : 'criar')", "(a.pass ? 'change' : 'set')"],
+  ['ui/cloud.js', "'Sign out?', 'The game carries on on this device; it just stops saving to the cloud.', 'Quit'", "'Sign out?', 'The game carries on on this device; it just stops saving to the cloud.', 'Sign out'"],
 ];
 const DATA_EN = `
 ;(function (D) { // versão em inglês: sem artigos do português
@@ -199,6 +226,8 @@ const DATA_EN = `
   const the = n => (/^(La |LaLiga|Ligue |Liga |Serie |Série |MLS|HNL|Allsvenskan|Eliteserien|Ekstraklasa|Botola|TFF|J[12] |K League)/.test(n) ? '' : 'the ') + n;
   D.fem = () => false; D.da = n => 'of ' + the(n); D.na = n => 'in ' + the(n); D.paraA = n => 'to ' + the(n);
   D.andList = a => (a.length > 1 ? a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : a.join('')); // 'A, B and C'
+  D.aTaca = the; // 'the FA Cup', 'La Liga'
+  D.artPais = p => (p === 'USA' ? 'the ' : ''); D.emPais = p => 'in ' + D.artPais(p) + p; // 'Germany', 'in the USA'
 })(typeof window !== 'undefined' ? window.CRAQUE_DATA : globalThis.CRAQUE_DATA);
 `;
 

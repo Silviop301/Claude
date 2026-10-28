@@ -137,7 +137,7 @@
     src.gv = 2;
     if (c.pos !== 'GOL') {
       const at = c.pos === 'ZAG' ? ['fis', 'fin', 'def'] : ['fin', 'rit', 'dri'];
-      const steps = [[at.map(k => D.ATTR_LABEL[k] + ' ' + Math.round(E[k])).join(' · ') + ' em ' + games + ' jogos', games * 0.9 * g0],
+      const steps = [[at.map(k => D.ATTR_LABEL[k] + ' ' + Math.round(E[k])).join(' · ') + ' em ' + D.plural(games, 'jogo', 'jogos'), games * 0.9 * g0],
         ['Força do time na liga', teamF], ['Fase e torcida', Math.max(0, 1 + formV)], ['Características', gMul], ['Escolhas do ano', 1 + c.mod.goal]];
       let v = 0, shown = 0;
       steps.forEach(([t, f], i) => { v = i ? v * f : f; const n = Math.round(v), d = n - shown; if (!i || d) src.gol.push([t, d]); shown = n; });
@@ -411,7 +411,8 @@
     if (c.pos === 'MEI' && assists >= Math.round((21 + club.tier + r.range(-2, 2)) * S.GOAL_SCALE)) awards.push({ id: 'scorer', name: 'Líder de assistências ' + D.da(lg.name) });
     if (c.pos === 'ZAG' && games >= 25 && rating >= 7.85 + r.range(-0.15, 0.15)) awards.push({ id: 'scorer', name: 'Melhor zagueiro ' + D.da(lg.name) });
     if (c.pos === 'GOL' && games >= 25 && cleanSheets >= 25 + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Luva de Ouro ' + D.da(lg.name) });
-    if (c.age <= 21 && rating >= 7.2 && club.tier >= 3) awards.push({ id: 'young', name: 'Melhor jovem ' + D.da(lg.name) });
+    // Melhor jovem pede temporada de verdade (S.BENCH_GAMES, a régua do "Pouco espaço"): nota de 2 jogos no banco não vale prêmio
+    if (c.age <= 21 && games >= S.BENCH_GAMES && rating >= 7.2 && club.tier >= 3) awards.push({ id: 'young', name: 'Melhor jovem ' + D.da(lg.name) });
     if (rating >= S.TEAM_R[c.pos] && games >= 20) awards.push({ id: 'team', name: 'Seleção ' + D.da(lg.name) });
     // Bola de Ouro: só em clubes de nível 4-5
     // Defensores entram pela muralha (jogos sem sofrer gol, defesas, pênaltis defendidos)
@@ -570,7 +571,7 @@
     const { c, games, rating } = x;
     const nota = String(rating.toFixed(1)).replace('.', ',');
     const items = [];
-    items.push({ k: 'min', txt: games >= 30 ? games + ' jogos: muito tempo em campo' : games >= 15 ? games + ' jogos em campo' : 'Poucos minutos (' + games + ' jogos)', raw: x.growth, keep: c.age <= 29 });
+    items.push({ k: 'min', txt: games >= 30 ? games + ' jogos: muito tempo em campo' : games >= 15 ? games + ' jogos em campo' : 'Poucos minutos (' + D.plural(games, 'jogo', 'jogos') + ')', raw: x.growth, keep: c.age <= 29 });
     if (games >= 10) items.push({ k: 'perf', txt: 'Desempenho: nota ' + nota + (rating >= 7.5 ? ' (ótima)' : rating >= 7 ? ' (boa)' : rating >= 6.6 ? ' (regular)' : ' (fraca)'), raw: x.perf, keep: true });
     if (x.injLoss >= 0.2) items.push({ k: 'inj', txt: 'Lesão: ' + x.injPct + '% da temporada fora', raw: -x.injLoss, keep: true });
     if (x.decline > 0) items.push({ k: 'age', txt: 'Idade (' + c.age + ' anos)' + (S.declMult(c) < 1 ? ', amenizada por Profissional' : ''), raw: -x.decline, keep: true });
@@ -737,7 +738,7 @@
     const def = c.pos === 'ZAG' || c.pos === 'GOL';
     const big = s.titles.find(t => t.id === 'cont');
     const trend = prev && prev.rating ? s.rating - prev.rating : 0;
-    const cl = D.o(cur.name), dcl = D.do(cur.name);
+    const cl = D.o(cur.name), CL = D.O(cur.name), dcl = D.do(cur.name); // CL: começo de frase
     // Cada assunto tem vários textos [título, coluna]; o cronista não repete o último que escreveu sobre o mesmo assunto
     const col = (k, opts) => { const [t, x] = opts[S.textAt(c, 'c.' + k, opts.length, past.filter(p => p.column && p.column.k === k).length)]; return { k, t, x }; };
     if (!s.games) return col('banco', [
@@ -758,7 +759,7 @@
     if (big && !(s.part != null && s.part < 0.35)) return col('final', [
       ['Noite de gala', 'Há jogadores que somem nas finais. ' + nick + ' cresce. A ' + big.name + ' tem a assinatura dele.'],
       ['Nasceu para isso', 'Final é outro jogo, e ' + nick + ' sabe jogar esse jogo. A ' + big.name + ' volta para casa com ' + cl + '.'],
-      ['Gigante', 'No jogo em que as pernas tremem, as de ' + nick + ' firmaram. ' + cl + ' tem a ' + big.name + ' e um ídolo.'],
+      ['Gigante', 'No jogo em que as pernas tremem, as de ' + nick + ' firmaram. ' + CL + ' tem a ' + big.name + ' e um ídolo.'],
       ['Noite para a história', 'Vão lembrar dessa ' + big.name + ' daqui a trinta anos. E vão lembrar de ' + nick + ' primeiro.'],
       ['Cara de final', 'Tem jogador de campeonato e tem jogador de final. ' + nick + ' é das duas espécies, o que é raríssimo.'],
       ['Continental', 'A ' + big.name + ' não aceita qualquer um. Aceitou ' + nick + ', e com louvor.']]);
@@ -770,7 +771,8 @@
       ['Último capítulo?', nick + ' está escrevendo as páginas finais. Que sejam à altura do livro inteiro.'],
       ['O relógio', 'Contra o relógio, até os craques perdem. ' + nick + ' perdeu alguns segundos este ano; o talento, nenhum.'],
       ['Saber sair', 'Os grandes escolhem a hora de sair. Os outros esperam ser lembrados disso. ' + nick + ' ainda pode escolher.']]);
-    if (s.rating >= 7.5 && cur.tier <= 2) return col('grande', [
+    // Elogio de temporada (grande, craque, jovem) só com jogos de verdade, como 'bom'; o banco cai em 'minutos'
+    if (s.rating >= 7.5 && s.games >= 12 && cur.tier <= 2) return col('grande', [
       ['Grande demais', nick + ' joga num nível acima do resto ' + dcl + '. Se ninguém de fora bater na porta, é porque não estão assistindo.'],
       ['A vitrine é pequena', 'Tem jogador que nasce para palco maior. ' + nick + ' está pronto; ' + cl + ' sabe disso.'],
       ['Diamante escondido', 'Os olheiros dos grandes deviam pagar ingresso para ver ' + nick + '. Ainda dá tempo de chegar antes dos outros.'],
@@ -779,7 +781,7 @@
       ['Está pronto', 'Já disse e repito: ' + nick + ' está pronto para coisa maior. Quem demorar vai pagar mais caro.'],
       ['Peixe grande', nick + ' é um peixe grande num aquário pequeno. O oceano está esperando.'],
       ['Alguém avise', 'Alguém avise os grandes clubes que ' + nick + ' existe. Eu já avisei nesta coluna três vezes.']]);
-    if (s.rating >= 7.5) return col(def ? 'craqueD' : 'craque', def ? [
+    if (s.rating >= 7.5 && s.games >= 12) return col(def ? 'craqueD' : 'craque', def ? [
       ['Fora da curva', 'Atacante que encara ' + nick + ' sai de campo pensando na vida. Defender também é talento.'],
       ['O jogo que ninguém vê', 'Não aparece nos melhores momentos, mas é dele o jogo que ninguém vê. Sem ' + nick + ', ' + cl + ' é outro time.'],
       ['Tranquilidade', 'Com ' + nick + ' atrás, o resto do time joga sem medo. Isso não sai em estatística.'],
@@ -801,12 +803,12 @@
       ['Sem teto', 'Não sei onde ' + nick + ' vai parar. Sei que ainda não parou.'],
       ['Bola no pé', 'Quando ' + nick + ' recebe, a jogada já está pensada. É uma delícia de assistir.']]);
     if (s.rating >= 7.3 && s.games >= 12) return col(def ? 'bomD' : 'bom', def ? [
-      ['Confiável', 'Não é todo ano que um defensor passa a temporada sem comprometer. ' + nick + ' passou. ' + cl + ' agradece.'],
+      ['Confiável', 'Não é todo ano que um defensor passa a temporada sem comprometer. ' + nick + ' passou. ' + CL + ' agradece.'],
       ['Sem sustos', 'Com ' + nick + ' em campo, o torcedor ' + dcl + ' dorme tranquilo. Boa temporada, sem alarde.'],
       ['Firme', nick + ' teve um ano sólido. Não é manchete, mas é o tipo de jogador que todo técnico quer.'],
       ['Regularidade', 'Defensor bom é aquele de quem ninguém fala mal. Falaram pouco de ' + nick + ' este ano: ótimo sinal.'],
       ['Concreto armado', 'Temporada de concreto armado de ' + nick + '. Sem enfeite, sem rachadura.'],
-      ['Pilar', cl + ' oscilou, mas ' + nick + ' não. Todo time precisa de um pilar assim.']] : [
+      ['Pilar', CL + ' oscilou, mas ' + nick + ' não. Todo time precisa de um pilar assim.']] : [
       ['Em alta', nick + ' fez uma grande temporada. Ainda não é o dono do campeonato, mas já é o dono do time.'],
       ['Subindo o sarrafo', 'Temporada acima da média de ' + nick + '. Agora o desafio é repetir, que é onde muitos param.'],
       ['Merecido', 'Quem acompanhou ' + nick + ' jogo a jogo sabe: o ano foi grande. Os números só confirmam.'],
@@ -816,7 +818,7 @@
       ['Passo à frente', nick + ' deu um passo à frente. O próximo é o mais difícil: virar referência.'],
       ['Bom sinal', 'Ano bom de ' + nick + ' sem precisar de manchete. É assim que se constroem as grandes carreiras.'],
       ['Cresceu', 'Dá para ver a diferença do ' + nick + ' de um ano atrás. Mais maduro, mais decisivo.']]);
-    if (c.age <= 19 && s.rating >= 6.9) return col('jovem', [
+    if (c.age <= 19 && s.rating >= 6.9 && s.games >= 12) return col('jovem', [
       ['Guardem esse nome', 'Com ' + c.age + ' anos, ' + nick + ' joga sem medo. Falta casca, sobra personalidade. O futuro é dele, se não se perder no caminho.'],
       ['Menino de ouro', 'Tem ' + c.age + ' anos e já joga como veterano. Só peço a ' + nick + ' uma coisa: não acredite em tudo que escrevem.'],
       ['Fome de bola', nick + ' tem ' + c.age + ' anos e joga como quem ainda tem tudo a provar. Que nunca perca isso.'],

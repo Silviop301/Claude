@@ -56,7 +56,7 @@
   function careerTab(c) {
     const T = c.totals, gk = c.pos === 'GOL', def = gk || c.pos === 'ZAG';
     const nums = [[def ? T.cs || 0 : T.goals, def ? 'Sem sofrer gol' : 'Gols'], [gk ? T.penSaved || 0 : def ? T.goals : T.assists, gk ? 'Pênaltis def.' : def ? 'Gols' : 'Assistências'],
-      [S.titleCount(T), 'Títulos'], [c.peak, 'Nota máxima']];
+      [S.titleCount(T), 'Títulos'], [c.peak, 'Nota geral máxima']];
     const stat = s => (gk ? s.cleanSheets || 0 : def ? (s.cleanSheets || 0) + '/' + s.goals : s.goals + '/' + s.assists);
     const rows = c.seasons.map((s, i) => '<tr><td>' + String(YEAR0 + i).slice(2) + '</td><td class="cl">' + crest(s.club, 'xs') + esc(club(s.club).name) + '</td><td>' + s.games + '</td><td>' + stat(s) + '</td>' +
       '<td>' + (s.games ? s.rating.toFixed(1).replace('.', ',') : '–') + '</td><td>' + (s.titles.length ? U.emo('🏆', 'xs') + (s.titles.length > 1 ? s.titles.length : '') : '') + (s.awards.some(a => a.id === 'ballon') ? trophy('ballon', 18) : '') + '</td></tr>').join('');

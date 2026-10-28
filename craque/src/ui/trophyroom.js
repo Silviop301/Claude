@@ -1,7 +1,8 @@
 // Interface — Sala de Troféus: estante de nichos com as 70 taças do jogo.
 // Coleção: soma todas as carreiras do aparelho (e da conta); só visual, não dá vantagem na carreira.
 // Esta carreira: as taças da carreira atual (ou da que acabou de terminar).
-// Cada conquista fica guardada com ano, clube, jogador e carreira; a primeira vez de cada taça é "NOVA" até ser tocada.
+// Cada conquista fica guardada com ano, clube, jogador e carreira; a primeira vez de cada taça é "NOVA" até ser tocada
+// ou até fechar a Sala depois de ver a Coleção (todas) ou "Esta carreira" (só as que ela trouxe).
 (function () {
   const U = window.CRAQUE_UI;
   const { D, G, $, esc, load, store, sfx, club, crest, YEAR0 } = U;
@@ -41,7 +42,7 @@
   }
 
   // ---------- coleção guardada ----------
-  // { e: [{ k: taça, y: ano, cl: clube, w: jogador, cid: carreira }], nova: [taças novas ainda não tocadas] }
+  // { e: [{ k: taça, y: ano, cl: clube, w: jogador, cid: carreira }], nova: [taças novas ainda não vistas] }
   const data = () => { const d = load(KEY) || {}; return { e: d.e || [], nova: d.nova || [] }; };
   const keyOf = x => x.k + '|' + x.y + '|' + x.cid;
   // Todas as taças de uma carreira, a partir das temporadas, da Copa do Mundo e do Mundial de Clubes
@@ -74,6 +75,8 @@
     return added;
   }
   const counts = (list) => { const n = {}; list.forEach(x => { n[x.k] = (n[x.k] || 0) + 1; }); return n; };
+  // Taças que entraram na coleção por esta carreira (a primeira vez delas foi nela)
+  const firstsOf = (d, c) => c ? new Set(d.e.filter(x => x.cid === c.uid).map(x => x.k).filter(k => d.e.find(x => x.k === k).cid === c.uid)) : new Set();
   function seen(k) { const d = data(); if (d.nova.includes(k)) { d.nova = d.nova.filter(x => x !== k); store(KEY, d); } }
   // Junta aparelho + nuvem (usado pela conta)
   function merge(a, b) {
@@ -94,20 +97,22 @@
     const tag = opts.cls ? 'span' : 'button';
     return '<' + tag + ' class="ni' + (n ? ' lit' : ' miss') + (gold ? ' gold' : '') + (n >= 2 ? ' multi' : '') + (legend ? ' leg' : '') + (opts.nova && n ? ' nova' : '') + (opts.cls ? ' ' + opts.cls : '') + '" data-k="' + esc(k) + '" aria-label="' + esc(k) + (n ? ', ' + n + '×' : ', falta') + '">' +
       '<span class="ni-box"><span class="ni-clip"><i class="ni-leg"></i><i class="ni-light"></i><i class="ni-bulb"></i></span><i class="ni-floor"></i>' +
-      '<img class="ni-img" src="' + img(k) + '" alt="" loading="lazy" decoding="async" draggable="false">' +
+      '<img class="ni-img" src="' + img(k) + '" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.onerror=null;this.src=window.CRAQUE_UI.salaImg(\'\')">' + // foto que nunca desceu (sem internet): a desenhada
       '<i class="ni-ring"></i><b class="ni-new">NOVA</b><b class="ni-cnt">×' + n + '</b></span>' +
       '<span class="ni-shelf"></span>' + (opts.plaque === false ? '' : '<span class="ni-plq">' + esc(k) + '</span>') + '</' + tag + '>';
   }
 
   // ---------- tela ----------
-  let st = { view: 'col', tab: 'paises' }, wrap = null;
+  let st = { view: 'col', tab: 'paises' }, wrap = null, sawCol = false;
   // Carreira mostrada em "Esta carreira": a atual, a que acabou de terminar ou a salva em andamento
   let careerShown = null;
   const careerOf = () => careerShown || G.c || ((load(U.SAVE) || {}).c) || null;
 
   function open(view, c) {
     careerShown = c || null;
-    st.view = view || 'col';
+    // Sem carreira (Minhas carreiras depois de aposentar): só a Coleção
+    st.view = careerOf() ? view || 'col' : 'col';
+    sawCol = false;
     const d = data();
     // Abre na aba da taça nova mais recente (ou em Ligas)
     if (st.view === 'col') { const k = d.nova[d.nova.length - 1]; const inf = k && catalog().info[k]; st.tab = inf ? (inf.kind === 'honra' ? 'honra' : 'paises') : st.tab; }
@@ -120,6 +125,9 @@
   }
   function close() {
     if (!wrap) return;
+    // Fechar conta como ver as novas: depois da Coleção saem todas; só com "Esta carreira", as que ela trouxe
+    const d = data(), f = sawCol ? null : firstsOf(d, careerOf()), nova = f ? d.nova.filter(k => !f.has(k)) : [];
+    if (nova.length !== d.nova.length) { d.nova = nova; store(KEY, d); }
     wrap.remove(); wrap = null; careerShown = null;
     document.body.classList.remove('sala-on');
     if (!G.c && document.getElementById('b-sala')) U.goBack(); // atualiza o contador (Minhas carreiras)
@@ -133,6 +141,7 @@
     const c = careerOf();
     let head, body;
     if (st.view === 'col') {
+      sawCol = true;
       const pct = Math.round(total / cat.total * 100);
       // Coleções curtas: metas para o próximo passo
       const mine = c && D.COUNTRIES.find(x => x.id === c.country);
@@ -158,7 +167,7 @@
       // Esta carreira: só o que ela ganhou, agrupado (honra, depois cada país)
       const mineE = c ? entriesOf(c) : [];
       const mc = counts(mineE);
-      const firsts = c ? new Set(d.e.filter(x => x.cid === c.uid).map(x => x.k).filter(k => d.e.find(x => x.k === k).cid === c.uid)) : new Set();
+      const firsts = firstsOf(d, c);
       const groups = [];
       const honra = HONRA.filter(k => mc[k]);
       if (honra.length) groups.push({ t: 'Galeria de honra', flag: '', items: honra, legend: true });
@@ -185,7 +194,7 @@
     wrap.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { st.tab = b.dataset.tab; paint(); });
     wrap.querySelectorAll('.sl-case .ni').forEach(b => { b.onclick = () => detail(b.dataset.k); b.oncontextmenu = e => e.preventDefault(); });
   }
-  const seg = () => '<div class="sl-seg">' + [['col', 'Coleção'], ['car', 'Esta carreira']].map(([id, l]) => '<button data-view="' + id + '"' + (st.view === id ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>';
+  const seg = () => !careerOf() ? '' : '<div class="sl-seg">' + [['col', 'Coleção'], ['car', 'Esta carreira']].map(([id, l]) => '<button data-view="' + id + '"' + (st.view === id ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>';
 
   // Como conquistar cada taça que falta
   function howTo(k) {
@@ -334,5 +343,5 @@
     return () => { clearTimeout(t); anims.forEach(a => { try { a.finish(); } catch (e) { /* ok */ } }); set(); };
   }
 
-  Object.assign(U, { salaNew: () => data().nova.length, trophyRoom: open, salaPlay: play, salaRecord: record, salaHome: homeCard, salaMerge: merge, SALA_KEY: KEY });
+  Object.assign(U, { salaNew: () => data().nova.length, trophyRoom: open, salaPlay: play, salaRecord: record, salaHome: homeCard, salaMerge: merge, salaImg: img, SALA_KEY: KEY });
 })();

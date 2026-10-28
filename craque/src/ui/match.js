@@ -3,10 +3,10 @@
   const U = window.CRAQUE_UI;
   const { tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar } = U;
   // ---------- evento ----------
-  let pendingEvent = null;
+  // O evento sorteado fica na carreira (G.c.pendEv), como o lance: recarregar a página mostra o mesmo, sem sortear de novo
   function eventOrSeason() {
-    pendingEvent = S.pickEvent(G.c);
-    if (!pendingEvent) return momentOrSeason();
+    G.c.pendEv = S.pickEvent(G.c);
+    if (!G.c.pendEv) { delete G.c.pendEv; return momentOrSeason(); }
     G.step = 'event';
     save();
     eventScreen();
@@ -54,9 +54,10 @@
   }
 
   function eventScreen() {
-    if (!pendingEvent) pendingEvent = S.pickEvent(G.c);
-    if (!pendingEvent) return momentOrSeason();
-    const ev = pendingEvent;
+    // Save de antes do evento guardado na carreira: sorteia uma vez e guarda
+    if (!G.c.pendEv) { G.c.pendEv = S.pickEvent(G.c); if (G.c.pendEv) save(); }
+    if (!G.c.pendEv) { delete G.c.pendEv; return momentOrSeason(); }
+    const ev = G.c.pendEv;
     // Proposta de transferência: compara com a situação de hoje antes de decidir
     const offer = S.eventOffer(G.c, ev);
     // Estilo ousado: cartão claro centrado (ícone grande, categoria, título, texto) e as opções com o mesmo peso visual.
@@ -77,7 +78,7 @@
       // Trocar de clube pede confirmação (dois toques)
       if (offer && b.dataset.i === '0' && !U.arm(b, '<b>Toque de novo para assinar</b>')) return;
       const prevClub = G.c.club, r = S.resolveEvent(G.c, ev, +b.dataset.i);
-      pendingEvent = null;
+      delete G.c.pendEv;
       bar();
       // O que mudou de verdade: o geral (quando mexeu) e cada efeito, verde quando ajuda e vermelho quando atrapalha
       const o1 = S.ovr(G.c), dOvr = r.ovrFrom != null ? o1 - r.ovrFrom : 0;
@@ -139,7 +140,7 @@
   const DEF_TXT = (m, mode) => {
     const vs = D.o(club(m.vs).name), save = mode === 'save';
     const what = save ? 'Pênalti contra' : 'Contra-ataque';
-    const goal = { cup: 'campeão da ' + m.comp, title: 'campeão da liga', acesso: 'acesso garantido', cont: 'campeão da ' + m.comp, classico: 'o clássico é seu, Torcida +8' }[m.type];
+    const goal = { cup: 'campeão da ' + m.comp, title: 'campeão da liga', acesso: 'acesso garantido', cont: 'campeão da ' + m.comp, classico: (m.score && m.score[0] === m.score[1] ? 'segura o empate' : 'o clássico é seu') + ', Torcida +8' }[m.type];
     return {
       tag: { cup: 'Final da ' + m.comp, title: 'Última rodada · ' + m.comp, acesso: 'Última rodada · ' + m.comp, cont: 'Final da ' + m.comp, classico: 'Clássico' }[m.type],
       title: save ? 'Pênalti contra nos acréscimos!' : 'Contra-ataque no último minuto!',
@@ -162,13 +163,14 @@
   // c: quem bate (o treino pode usar um jogador médio da posição do lance)
   // kitCtx (Copa e Mundial): { vs: nome do adversário, mine: sua seleção ou clube } para os uniformes certos
   // style: estilo escolhido na tela do lance (S.STYLES); sem ele, o lance de sempre
-  function playMini(el, setupType, onDone, c, kitCtx, style) {
+  // onResult(ok, why): o resultado na hora em que sai, antes do letreiro e da animação (o lance de verdade já salva ali)
+  function playMini(el, setupType, onDone, c, kitCtx, style, onResult) {
     c = c || G.c;
     window.CRAQUE_KIT_CTX = kitCtx || null;
-    if (setupType === 'save') return window.CRAQUE_SAVE(el, { c, onDone, style });
-    if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, { c, onDone, style });
-    if (setupType === 'pass') return window.CRAQUE_PASS(el, { c, onDone, style });
-    return window.CRAQUE_KICK(el, { c, moment: { type: setupType, style }, onDone });
+    if (setupType === 'save') return window.CRAQUE_SAVE(el, { c, onDone, onResult, style });
+    if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, { c, onDone, onResult, style });
+    if (setupType === 'pass') return window.CRAQUE_PASS(el, { c, onDone, onResult, style });
+    return window.CRAQUE_KICK(el, { c, moment: { type: setupType, style }, onDone, onResult });
   }
   // Os dois estilos do lance, lado a lado: nome, como muda o lance e a chance pela carta em cada um.
   // Nenhum é sempre o melhor: a chance pende para atributos diferentes e o jeito de jogar muda.
@@ -258,8 +260,10 @@
       // O placar escuro continua em cima da cena, numa faixa baixa (placar, minuto e competição)
       render(board(m, m.score, T.tag, true) + '<div id="kick"></div>');
       sfx('whistle');
-      // Saiu da tela no meio da cobrança (voltou ao início): o resultado não redesenha nada; ao retomar, a chance decide
-      playMini($('kick'), st, (ok, why) => { if (!$('kick')) return; momentEnd(m, ok, T, why); }, null, null, m.style);
+      // Saiu da tela no meio da cobrança (voltou ao início): o resultado não redesenha nada; ao retomar, a chance decide.
+      // O resultado salva assim que sai: fechar o jogo com o letreiro na tela não troca o que se viu pela chance da carta
+      playMini($('kick'), st, (ok, why) => { if (!$('kick')) return; momentEnd(m, ok, T, why); }, null, null, m.style,
+        (ok, why) => { if (!$('kick')) return; S.resolveMoment(G.c, ok, why); save(); });
     }));
     $('b-auto').onclick = () => {
       const ok = S.autoMoment(G.c);
@@ -279,25 +283,29 @@
     // O estilo escolhido entra no texto (o chute forte, a saída do gol, o bote em pé, o lançamento)
     const st = S.kickSetupType(m), bold = S.styleOf(st, m) !== S.styleIds(st)[0];
     const goal = bold ? 'Bomba indefensável! ' : 'No cantinho! ';
+    // Placar depois do lance: o clássico pode terminar empatado (atrás por um e marcou; empatado e segurou)
+    const def = st === 'save' || st === 'tackle';
+    const sc = m.score ? [m.score[0] + (!def && ok ? 1 : 0), m.score[1] + (def && !ok ? 1 : 0)] : null;
+    const cEnd = !(sc && sc[0] === sc[1]) ? 'O clássico é seu.' : def ? 'Segurou o empate no clássico.' : 'Empate arrancado no fim do clássico!';
+    // Sem o motivo ("Deixar o jogo decidir"), a frase não repete o "Não entrou…" do título grande
     const txt = {
-      cup: ok ? goal + 'Campeão da ' + m.comp + '!' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
-      title: ok ? goal + 'O título é seu!' : (how || 'Não entrou.') + ' O título escapou nos detalhes.',
-      classico: m.kick === 'pen' ? (ok ? goal + 'O clássico é seu.' : (how || 'Não entrou.') + ' A torcida lamenta.')
-        : ok ? (bold ? 'Bomba de falta, golaço! ' : 'Golaço de falta colocada! ') + 'O clássico é seu.' : (how || 'Não foi dessa vez.') + ' A torcida lamenta.',
-      acesso: ok ? goal + 'O acesso é seu!' : (how || 'Não entrou.') + ' O acesso escapou na última rodada.',
-      cont: ok ? goal + 'É campeão da ' + m.comp + '! Seu nome entrou para a história do clube.' : (how || 'Não entrou.') + ' Fica o vice da ' + m.comp + '.',
+      cup: ok ? goal + 'Campeão da ' + m.comp + '!' : how + ' Fica o vice da ' + m.comp + '.',
+      title: ok ? goal + 'O título é seu!' : how + ' O título escapou nos detalhes.',
+      classico: m.kick === 'pen' ? (ok ? goal + cEnd : how + ' A torcida lamenta.')
+        : ok ? (bold ? 'Bomba de falta, golaço! ' : 'Golaço de falta colocada! ') + cEnd : (how || 'Não foi dessa vez.') + ' A torcida lamenta.',
+      acesso: ok ? goal + 'O acesso é seu!' : how + ' O acesso escapou na última rodada.',
+      cont: ok ? goal + 'É campeão da ' + m.comp + '! Seu nome entrou para a história do clube.' : how + ' Fica o vice da ' + m.comp + '.',
     }[m.type];
     // Lances defensivos: texto próprio
     const defTxt = st === 'save' ? (ok ? (why === 'fora' ? (bold ? 'Você cresceu no gol e o batedor mandou para fora! ' : 'O batedor mandou para fora! ') : bold ? 'Saiu da linha e cresceu: que defesa! ' : 'Que defesa! ') : 'Não deu: a bola entrou. ')
       : st === 'tackle' ? (ok ? (bold ? 'Encaixou o corpo e ficou com a bola! ' : 'Carrinho perfeito, bola roubada! ') : why === 'cedo' ? 'Você chegou cedo e ele passou. ' : why === 'drible' ? 'Você chegou junto, mas ele driblou e marcou. ' : 'Chegou tarde: ele passou e marcou. ')
       : st === 'pass' ? (ok ? (bold ? 'Lançamento por cima na medida e o atacante não perdoou: assistência sua! ' : 'Bola enfiada na medida e o atacante não perdoou: assistência sua! ') : why === 'impedido' ? 'Demorou o passe e ele ficou impedido. ' : why === 'goleiro' ? 'O lançamento foi bom, mas o goleiro saiu e ficou com a bola. ' : 'A zaga cortou o passe. ') : null;
     const defEnd = { cup: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.', title: ok ? 'O título é seu!' : 'O título escapou.',
-      classico: ok ? 'O clássico é seu.' : 'A torcida lamenta.', acesso: ok ? 'O acesso é seu!' : 'O acesso escapou.', cont: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.' }[m.type];
-    const final = (defTxt !== null ? defTxt + defEnd : txt) + (m.rival ? ' ' + (ok ? 'Duelo direto com ' + m.rival.split(' ')[0] + ': ponto seu.' : 'Duelo direto: ponto para ' + m.rival.split(' ')[0] + '.') : '');
-    // Placar depois do lance e um título grande (gol, defesa, bote ou a lamentação)
-    const def = st === 'save' || st === 'tackle';
-    const sc = m.score ? [m.score[0] + (!def && ok ? 1 : 0), m.score[1] + (def && !ok ? 1 : 0)] : null;
-    const big = def ? (ok ? (st === 'save' ? 'DEFENDEU!' : 'ROUBOU!') : 'Gol deles…') : ok ? 'GOOOL!' : st === 'pass' ? 'Cortado…' : 'Não entrou…';
+      classico: ok ? cEnd : 'A torcida lamenta.', acesso: ok ? 'O acesso é seu!' : 'O acesso escapou.', cont: ok ? 'Campeão da ' + m.comp + '!' : 'Fica o vice da ' + m.comp + '.' }[m.type];
+    const final = (defTxt !== null ? defTxt + defEnd : txt).trim() + (m.rival ? ' ' + (ok ? 'Duelo direto com ' + m.rival.split(' ')[0] + ': ponto seu.' : 'Duelo direto: ponto para ' + m.rival.split(' ')[0] + '.') : '');
+    // Título grande (gol, defesa, bote ou a lamentação); o passe errado segue o motivo, como a faixa do minigame
+    const big = def ? (ok ? (st === 'save' ? 'DEFENDEU!' : 'ROUBOU!') : 'Gol deles…') : ok ? 'GOOOL!'
+      : st === 'pass' ? (why === 'impedido' ? 'Impedido…' : why === 'goleiro' ? 'Goleiro…' : 'Cortado…') : 'Não entrou…';
     // Título grande (final continental ou liga principal) ganho no lance: faixa dourada, confete curto e "Comemorar"
     const LD = D.LADDER[club(G.c.club).league];
     const fest = ok && (m.type === 'cont' || (m.type === 'title' && !(LD && LD.up)));

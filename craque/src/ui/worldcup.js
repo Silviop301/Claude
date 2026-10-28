@@ -5,8 +5,8 @@
   // ---------- Copa do Mundo ----------
   // "do Brasil", "da Argentina", "de Portugal"
   // "o Brasil", "a Argentina", "Portugal"
-  const theCountry = n => (n === 'Portugal' ? '' : ['Brasil', 'Uruguai'].includes(n) ? 'o ' : 'a ') + n;
-  const ofCountry = n => ({ Brasil: 'do', Uruguai: 'do', Portugal: 'de' }[n] || 'da') + ' ' + n;
+  const theCountry = n => D.artPais(n) + n;
+  const ofCountry = n => ({ 'o ': 'do ', 'a ': 'da ', 'os ': 'dos ', '': 'de ' }[D.artPais(n)]) + n;
   // Copa do Mundo ou Mundial de Clubes (mesma tela, mesmo motor)
   const isCwc = run => !!run && run.kind === 'cwc';
   const tName = run => (isCwc(run) ? 'Mundial de Clubes' : 'Copa do Mundo');
@@ -46,7 +46,8 @@
 
   // Como funciona o torneio: duas linhas de apoio com ícone (o cartão principal da tela é a convocação)
   const wcRules = () => '<div class="wc-rules"><p>' + U.emo('⚽', 'sm') + '<span>Fase de grupos com 3 jogos, depois mata-mata até a final.</span></p>' +
-    '<p>' + U.emo('🥅', 'sm') + '<span>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</span></p></div>';
+    '<p>' + U.emo('🥅', 'sm') + (G.c && G.c.pos === 'GOL' ? '<span>Empate no mata-mata vai para os <b>pênaltis</b>, e você defende o último.</span></p></div>'
+      : '<span>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</span></p></div>');
 
   function cwcIntro() {
     G.step = 'cwc';
@@ -278,7 +279,7 @@
     const type = S.kickSetupType({ kick: m.type }), def = type === 'save' || type === 'tackle';
     const k = S.kickSetup(G.c, type, S.autoStyle(G.c, type)), d = g.gf - g.ga, ko = run.stage >= 3;
     // No fim do jogo o lance decide; antes disso ele muda o placar e o resto do jogo ainda acontece
-    const late = m.minute >= 78, left = 90 - m.minute;
+    const late = m.minute >= 78 && !(g.rest && (g.rest.gf || g.rest.ga)), left = 90 - m.minute; // ainda tem gol depois: não é o fim
     const gain = d === 0 ? (late ? (ko ? 'classifica' : 'vitória') : 'sai na frente') : d === -1 ? (late ? (ko ? 'leva para os pênaltis' : 'empata') : 'empata') : d >= 1 ? 'amplia' : 'diminui';
     // Defensor: o que acontece se falhar (gol deles)
     const lose = d >= 2 ? 'diminuem' : d === 1 ? (late && ko ? 'empatam e levam para os pênaltis' : 'empatam') : d === 0 ? (late ? (ko ? 'eliminado' : 'derrota') : 'saem na frente') : 'aumentam';
@@ -300,7 +301,9 @@
     U.bindStyle(m, U.gateTrain(type, () => {
       run.momentStarted = true; save();
       render(wcBoard(run, g, liveMin(m.minute + "'"), tag, true) + '<div id="kick"></div>');
-      U.playMini($('kick'), type, (ok, why) => { if (!$('kick')) return; S.wcMoment(G.c, ok, why); save(); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }, m.style); // saiu da tela: ao retomar, a chance decide
+      // Saiu da tela: ao retomar, a chance decide. O resultado salva assim que sai (a 2ª chamada de S.wcMoment não faz nada)
+      U.playMini($('kick'), type, (ok, why) => { if (!$('kick')) return; S.wcMoment(G.c, ok, why); save(); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }, m.style,
+        (ok, why) => { if (!$('kick')) return; S.wcMoment(G.c, ok, why); save(); });
     }));
     $('b-auto').onclick = () => { S.wcMomentAuto(G.c); save(); wcPlay(); };
   }
@@ -326,7 +329,8 @@
     U.bindStyle(ps, U.gateTrain(type, () => {
       run.pensStarted = true; save();
       render(wcBoard(run, g, liveMin('Pênaltis'), tag, true) + '<div id="kick"></div>');
-      U.playMini($('kick'), type, ok => { if (!$('kick')) return; run.pensStarted = false; S.wcPens(G.c, ok); save(); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }, ps.style);
+      const pens = ok => { if (!$('kick')) return; run.pensStarted = false; S.wcPens(G.c, ok); save(); }; // vale na hora da cobrança (a 2ª chamada não faz nada)
+      U.playMini($('kick'), type, ok => { if (!$('kick')) return; pens(ok); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }, ps.style, pens);
     }));
     $('b-auto').onclick = () => { S.wcPensAuto(G.c); save(); wcPlay(); };
   }
@@ -343,7 +347,9 @@
     // Fim no estilo ousado (O2): faixa dourada (campeão), prateada (vice) ou da fase em que caiu, e os números em blocos
     const last = run.games[run.games.length - 1], big = cwc ? crest(run.club, 'xl') : '<span class="wc-bigflag">' + usMark(run) + '</span>';
     const PH = { 'Oitavas de final': 'nas oitavas', 'Quartas de final': 'nas quartas', Semifinal: 'na semifinal' };
-    const lost = g => (g ? 'para ' + themMark(g) + ' ' + esc(g.opp) + (g.pens ? ' nos pênaltis (' + g.gf + ' × ' + g.ga + ')' : ' por ' + g.gf + ' × ' + g.ga) : '');
+    // Artigo antes da bandeira ou do escudo: "para a 🇩🇪 Alemanha", "para os 🇺🇸 EUA", "para o [escudo] Bayern"
+    const art = g => (g.crest ? D.o(g.opp).slice(0, -g.opp.length) : D.artPais(g.opp));
+    const lost = g => (g ? 'para ' + art(g) + themMark(g) + ' ' + esc(g.opp) + (g.pens ? ' nos pênaltis (' + g.gf + ' × ' + g.ga + ')' : ' por ' + g.gf + ' × ' + g.ga) : '');
     const ge = last && last.groupEnd;
     const end = run.champion
       ? '<div class="wc-end champ">' + (cwc ? trophy('cwc', 96, 'Mundial de Clubes') : trophy('wc', 96)) + '<b class="wc-band gold">' + (cwc ? 'Campeão mundial!' : 'Campeão do mundo!') + '</b><span class="wc-end-who">' + usMark(run) + ' ' + usName(run) + ' · ' + run.year + '</span></div>'

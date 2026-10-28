@@ -19,9 +19,9 @@
     const i = S.GRADES.findIndex(([g]) => g === f.grade), next = i > 0 ? S.GRADES[i - 1] : null;
     return '<details class="more score-how"><summary>Como chegou a esta nota</summary>' +
       '<ul class="sh-parts">' + f.parts.map(p => '<li><span>' + esc(p.txt) + '</span><b' + (p.v < 0 ? ' class="neg"' : '') + '>' + (p.v < 0 ? '−' + -p.v : '+' + p.v) + '</b></li>').join('') +
-      '<li class="tot"><span>Total</span><b>' + f.score + '</b></li></ul>' +
+      '<li class="tot"><span>Total</span><b>' + U.pts(f.score) + '</b></li></ul>' +
       '<p class="sh-bands">' + S.GRADES.filter(([, min]) => min > 0).map(([g, min]) => g + ' a partir de ' + min).join(' · ') + '</p>' +
-      (next ? '<p class="sh-next">Faltaram ' + (next[1] - f.score) + ' pontos para a nota ' + next[0] + '.</p>' : '') + '</details>';
+      (next ? '<p class="sh-next">' + (next[1] - f.score === 1 ? 'Faltou 1 ponto para a nota ' : 'Faltaram ' + U.pts(next[1] - f.score) + ' pontos para a nota ') + next[0] + '.</p>' : '') + '</details>';
   }
 
   // Você contra o rival de geração (engine/rival.js), número a número
@@ -41,8 +41,8 @@
     // Quem é novo não sabe o que é "ponto": a linha diz de onde eles vêm (os pesos estão em S.SCORE_W)
     // (quanto faltou para a próxima nota já está na barra de pontos, logo acima)
     if (i > 0 && hall.length <= 2) out.push(['🎯', 'Pontos vêm de jogar bem, títulos (' + S.SCORE_W.title + ' cada), Bola de Ouro (' + S.SCORE_W.ballon + ') e Copa do Mundo (' + S.SCORE_W.wc + ')']);
-    if (rank === 1 && hall.length > 1) out.push(['🏅', 'Novo recorde: <b>+' + (f.score - hall[1].score) + '</b> sobre o anterior']);
-    else if (rank > 1) out.push(['🏅', 'Seu recorde é ' + hall[0].score + ' pts: faltaram <b>' + (hall[0].score - f.score) + '</b>']);
+    if (rank === 1 && hall.length > 1) out.push(['🏅', 'Novo recorde: <b>+' + U.pts(f.score - hall[1].score) + '</b> sobre o anterior']);
+    else if (rank > 1) out.push(['🏅', 'Seu recorde é ' + U.pts(hall[0].score) + (hall[0].score - f.score === 1 ? ' pts: faltou <b>' : ' pts: faltaram <b>') + U.pts(hall[0].score - f.score) + '</b>']);
     const R = S.rivalSummary && S.rivalSummary(c, f.titles);
     const h = c.rivalHist;
     if (R && R.rows.filter(([, a, b]) => a < b).length > R.rows.filter(([, a, b]) => a > b).length) {
@@ -63,7 +63,8 @@
   function pointsBar(f, rankTxt) {
     const G2 = S.GRADES, i = G2.findIndex(([g]) => g === f.grade), next = i > 0 ? G2[i - 1] : null, lo = G2[i] ? G2[i][1] : 0;
     const pct = next ? Math.max(4, Math.min(100, Math.round((f.score - lo) / Math.max(1, next[1] - lo) * 100))) : 100;
-    return '<div class="o6-pts"><div class="o6-pl"><b>' + f.score + ' pontos</b><span>' + (next ? 'faltaram ' + (next[1] - f.score) + ' para ' + next[0] : 'nota máxima') + '</span></div>' +
+    const miss = next ? next[1] - f.score : 0;
+    return '<div class="o6-pts"><div class="o6-pl"><b>' + U.pts(f.score) + ' pontos</b><span>' + (next ? (miss === 1 ? 'faltou 1 para ' : 'faltaram ' + U.pts(miss) + ' para ') + next[0] : 'nota máxima') + '</span></div>' +
       '<i><em style="width:' + pct + '%"></em></i>' + (rankTxt ? '<small>' + rankTxt + '</small>' : '') + '</div>';
   }
   // Revanche (engine/rival.js): só nas carreiras normais (ui/start.js marca rivalKeep). Quem levou a melhor fica guardado
@@ -202,6 +203,8 @@
       drawEd();
       const b = $('ed-trade'); if (b) b.onclick = () => U.tradeSheet(it.id, onTraded);
     }
+    // No computador as fileiras quebram em linhas (style.css): não há o que arrastar
+    const desk = U.tapWord && U.tapWord(true) === 'Clique';
     function drawEd() {
       const box = $('ed-box');
       if (!box) return;
@@ -212,7 +215,7 @@
         const it = signLock(k);
         return '<button data-sign="' + k + '" class="sig-b' + (cardData.sign === k ? ' on' : '') + (it ? ' lock ' + U.rarCls(it.rk) : '') + '">' +
           '<span style="font-family:' + esc(F.family) + ', cursive;font-size:' + sigSize + 'px">' + esc(shareName) + '</span><small>' + (it ? U.emo('🔒', 'xs') + ' ' : '') + F.label + '</small></button>';
-      }).join('') + '</div>' + (sigLocked ? '<p class="ed-cnt">' + (sigs.length - sigLocked) + ' liberadas · ' + sigLocked + ' nos pacotinhos · arraste para ver todas</p>' : '') +
+      }).join('') + '</div>' + (sigLocked ? '<p class="ed-cnt">' + (sigs.length - sigLocked) + ' liberadas · ' + sigLocked + (desk ? ' nos pacotinhos' : ' nos pacotinhos · arraste para ver todas') + '</p>' : '') +
         (msg ? '<p class="muted small sig-msg">' + msg + '</p>' : '');
       if (tab === 'finish') body = (curSp === 'final' ? '' : '<p class="muted small">O acabamento vale para a carta final.</p>') +
         '<div class="fin-grid"><button data-fin="" class="fin-b' + (!cardData.finish ? ' on' : '') + '"><i class="fin-sw std"></i><small>Padrão</small></button>' +
@@ -224,10 +227,13 @@
       if (tab === 'style') body = '<div class="sp-cards"><canvas data-sp="final" aria-label="Carta final"' + (curSp === 'final' ? ' class="on"' : '') + '></canvas>' +
         retired.cards.map((k, i) => '<canvas data-sp="' + i + '" aria-label="' + esc(U.SPECIAL_NAME[k.type]) + '"' + (curSp === String(i) ? ' class="on"' : '') + '></canvas>').join('') + '</div>';
       if (tab === 'crest') body = (curSp === 'final' ? '' : '<p class="muted small">O escudo vale para a carta final.</p>') + '<div class="crest-pick">' + clubsPlayed.map(id => '<button data-club="' + id + '"' + (cardData.crest === 'badges/' + id + '.png' ? ' class="on"' : '') + ' aria-label="' + esc(club(id).name) + '">' + crest(id) + '<span>' + esc(club(id).name) + '</span></button>').join('') + '</div>';
+      // A fileira redesenhada (escolher um item) fica onde estava; aberta agora, vai até a assinatura escolhida
+      const old = box.querySelector('.sig-grid, .fin-grid'), oldCls = old && old.className, oldX = old ? old.scrollLeft : 0;
       box.innerHTML = '<div class="ed-t">Edite sua carta</div>' + (TABS.length > 1 ? '<div class="ed-tabs">' + TABS.map(([k, l]) => '<button data-edtab="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>' : '') + body;
       box.querySelectorAll('[data-edtab]').forEach(b => b.onclick = () => { tab = b.dataset.edtab; msg = ''; drawEd(); });
-      const onSig = box.querySelector('.sig-b.on');
-      if (onSig) onSig.parentNode.scrollLeft = Math.max(0, onSig.offsetLeft - onSig.parentNode.offsetLeft - 24);
+      const row = box.querySelector('.sig-grid, .fin-grid'), onSig = box.querySelector('.sig-b.on');
+      if (row && row.className === oldCls) row.scrollLeft = oldX;
+      else if (onSig) onSig.parentNode.scrollLeft = Math.max(0, onSig.offsetLeft - onSig.parentNode.offsetLeft - 24);
       box.querySelectorAll('[data-sp]').forEach(sc => {
         window.CRAQUE_CARD(sc, spData(sc.dataset.sp));
         sc.onclick = () => { curSp = sc.dataset.sp; redraw(); drawEd(); };

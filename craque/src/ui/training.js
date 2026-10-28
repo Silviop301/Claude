@@ -22,7 +22,7 @@
     save: { name: 'Defender pênalti', pos: 'GOL', ico: '🧤', steps: [
       'O batedor corre para a bola. Fique de olho nele.',
       'Pouco antes do chute aparece uma seta mostrando o lado.',
-      'Toque na esquerda, no meio ou na direita da tela para pular. Cedo demais, ele troca o canto; tarde demais, não dá tempo.'] },
+      'Toque na esquerda, no meio ou na direita da tela para pular. Antes da seta é chute no escuro; tarde demais, não dá tempo.'] },
     tackle: { name: 'Carrinho', pos: 'ZAG', ico: '🛡️', steps: [
       'O atacante vem conduzindo a bola em direção ao seu gol.',
       'Há uma faixa verde no caminho dele.',
@@ -78,9 +78,9 @@
       w.innerHTML = '<div class="trn">' + head + board() + '<p class="trn-tip">' + esc(dr.steps[dr.steps.length - 1]) + '</p><div id="trn-mini"></div></div>';
       bind();
       sfx('whistle');
-      U.playMini(w.querySelector('#trn-mini'), st, (ok, why) => { if (!w.isConnected) return; tries++; if (ok) hits++; result(ok, why); }, trainee(st));
+      U.playMini(w.querySelector('#trn-mini'), st, (ok, why) => { if (!w.isConnected) return; tries++; if (ok) hits++; if (tries === 1) markTrained(st); result(ok, why); }, trainee(st));
     };
-    const WHY = { defesa: 'O goleiro defendeu.', trave: 'Na trave!', fora: 'Foi para fora.', alto: 'Foi por cima.', barreira: 'Parou na barreira.', cedo: 'Você chegou cedo.', impedido: 'Demorou e ele ficou impedido.' };
+    const WHY = { defesa: 'O goleiro defendeu.', trave: 'Na trave!', fora: 'Foi para fora.', alto: 'Foi por cima.', barreira: 'Parou na barreira.', cedo: 'Você chegou cedo.', impedido: 'Demorou e ele ficou impedido.', gol: 'Ele bateu e converteu.' };
     const result = (ok, why) => {
       const big = ok ? ({ save: 'DEFENDEU!', tackle: 'ROUBOU!', pass: 'ASSISTÊNCIA!' }[st] || 'GOL!') : 'Não foi…';
       w.innerHTML = '<div class="trn">' + head +
@@ -96,7 +96,7 @@
     intro();
   }
 
-  // Antes do primeiro lance de cada tipo, o treino; depois, direto ao lance
+  // Antes do primeiro lance de cada tipo, o treino (se ainda não treinou aquele tipo); depois, direto ao lance
   const gateTrain = (st, real) => () => (trained(st) ? real() : training(st, { real }));
 
   // Menu das Configurações: os 5 lances, os da sua posição primeiro

@@ -10,6 +10,8 @@
 
   const esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   const money = v => (v >= 1e6 ? (v / 1e6).toFixed(1).replace('.', ',') + ' mi' : v >= 1e3 ? Math.round(v / 1e3) + ' mil' : String(v));
+  // Pontos com ponto de milhar, igual em toda tela: 1.691
+  const pts = n => Number(n).toLocaleString('pt-BR');
   const club = id => D.CLUB_BY_ID[id];
   const league = id => D.LEAGUE_BY_ID[club(id).league];
   const stars = t => '★'.repeat(t) + '☆'.repeat(5 - t);
@@ -46,10 +48,24 @@
   const vibe = p => { if (cfg.vibe && navigator.vibrate) navigator.vibrate(p); };
   function save() { store(SAVE, G.c && !G.c.retired ? { c: G.c, step: G.step, at: Date.now() } : { c: null, at: Date.now() }); }
 
+  // Toque duplo: a tela troca no 1º toque e o 2º caía no que estivesse no mesmo lugar da tela nova (opção do
+  // evento, estilo do lance, característica, "Começar carreira"). Toque de gente logo depois da troca não conta;
+  // os robôs de teste usam .click() (isTrusted falso) e passam. "human" também serve ao U.arm.
+  const DUP = 500;
+  let shownAt = -Infinity, human = false;
+  document.addEventListener('click', e => {
+    human = e.isTrusted;
+    if (human && performance.now() - shownAt < DUP && screen.contains(e.target)) { e.preventDefault(); e.stopImmediatePropagation(); }
+  }, true);
+
   function render(html, opts) {
     screen.innerHTML = html;
+    if (!(opts && opts.same)) shownAt = performance.now(); // redesenho da mesma tela (por timer) não é tela nova
     // Telas curtas (resultado de evento ou de lance) ficam no meio da tela, sem meia tela vazia embaixo
     screen.classList.toggle('center', !!(opts && opts.center));
+    // same: a mesma tela redesenhada (pré-temporada depois da escolha): sem a entrada de tela nova (piscava) e sem
+    // medir de novo o respiro do computador (ui/desktop.js, a tela descia)
+    if (opts && opts.same) { screen.dataset.same = '1'; window.scrollTo(0, 0); return; }
     screen.style.animation = 'none';
     void screen.offsetWidth;
     screen.style.animation = '';
@@ -148,6 +164,12 @@
       if (a != null && a !== z[k]) b.textContent = Math.round(a + (z[k] - a) * e);
     });
   }
+  // Sai da carreira para o início (botão de casa da barra e voltar do celular): salva e tira o que estiver por cima
+  function toHome() {
+    save();
+    document.querySelectorAll('.paper-wrap, .walkout, .album, .trn-wrap').forEach(x => x.remove());
+    window.CRAQUE_UI.home();
+  }
   function bar() {
     const b = $('bar');
     if (!G.c || !G.c.club) { b.hidden = true; clubBg(null); return; }
@@ -168,11 +190,7 @@
     // Voltar ao início: a carreira fica salva e continua de onde parou
     $('b-home').onclick = e => {
       e.stopPropagation();
-      ask('Voltar ao início?', 'Sua carreira fica salva e você continua de onde parou.', 'Ir para o início', () => {
-        save();
-        document.querySelectorAll('.paper-wrap, .walkout, .album').forEach(x => x.remove());
-        window.CRAQUE_UI.home();
-      });
+      ask('Voltar ao início?', 'Sua carreira fica salva e você continua de onde parou.', 'Ir para o início', toHome);
     };
     $('b-snd').onclick = e => { e.stopPropagation(); window.CRAQUE_UI.settings(); };
     const T = G.c.totals, tot = totOf(G.c);
@@ -260,12 +278,14 @@
   }
 
   // Confirmação em dois toques: o 1º "vira" o card e mostra o que vai acontecer; o 2º confirma.
-  // Devolve true quando é o 2º toque (aí quem chamou executa a ação).
+  // Devolve true quando é o 2º toque (aí quem chamou executa a ação). O 2º toque de um toque duplo chega cedo
+  // demais: não confirma, e o card continua virado.
   function disarm(btn) { btn.classList.remove('armed'); const b = btn.querySelector('.arm-back'); if (b) b.remove(); }
   function arm(btn, back) {
-    if (btn.classList.contains('armed')) return true;
+    if (btn.classList.contains('armed')) return !human || performance.now() - (btn._armT || 0) >= DUP;
     document.querySelectorAll('.armed').forEach(disarm);
     btn.classList.add('armed');
+    btn._armT = performance.now();
     const b = document.createElement('span');
     b.className = 'arm-back';
     b.innerHTML = back;
@@ -280,5 +300,37 @@
   const tierCls = o => (o >= 85 ? 'icone' : o >= 75 ? 'ouro' : o >= 65 ? 'prata' : 'bronze');
   const TIER_NAME = { bronze: 'Bronze', prata: 'Prata', ouro: 'Ouro', icone: 'Ícone' };
 
-  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, clubBg };
+  // ---------- voltar do celular (e do navegador) ----------
+  // O jogo é uma página só: sem isto, o voltar do Android fechava o app de qualquer tela. Depois do primeiro toque entra
+  // UMA entrada-guarda no histórico; o voltar tira a guarda e cai aqui:
+  //  1. janela aberta (pergunta, ficha, configurações, Sala, treino, pacotinho...): fecha, igual ao Esc (ui/desktop.js);
+  //  2. tela inicial: deixa o navegador sair (sem guarda nova: o voltar nunca prende o jogador ali);
+  //  3. botão de fechar na tela (o post) ou "‹ Voltar"/"‹ Início": aperta ele;
+  //  4. no meio da carreira: pergunta se quer sair (a carreira fica salva); fora dela (resultado, fim de carreira), início.
+  // Nos casos 1, 3 e 4 a guarda volta. Versão de portal (o jogo dentro da página de outro site): não mexe no histórico.
+  if (!window.CLIMBIX_PORTAL && window.self === window.top && history.pushState) {
+    let guard = !!(history.state && history.state.climbix); // recarregou em cima da guarda: não grava outra
+    const push = () => { if (!guard) { guard = true; history.pushState({ climbix: 1 }, ''); } };
+    // Só com gesto do jogador: o Chrome pula, no voltar, a entrada gravada sem toque
+    addEventListener('click', push, true);
+    addEventListener('keydown', push, true);
+    // Sair: vai ao início e tira a guarda; o voltar cai na tela inicial e sai (no app instalado sem página anterior,
+    // fica no início e o próximo voltar fecha)
+    const quit = () => (G.c ? ask('Sair do jogo?', 'Sua carreira fica salva e você continua de onde parou.', 'Sair', () => { toHome(); history.back(); }) : 0);
+    addEventListener('popstate', e => {
+      if (e.state && e.state.climbix) { guard = true; return; } // "avançar" de volta para a guarda
+      guard = false;
+      const U = window.CRAQUE_UI, layer = U.frontLayer && U.frontLayer();
+      if (!layer && !G.c && screen.querySelector('#b-new')) return history.back();
+      push();
+      if (U.closeFront && U.closeFront()) return;
+      if (layer) return quit(); // janela sem fechar (treino antes do 1º lance)
+      const bk = [...screen.querySelectorAll('.back-link')].find(b => b.getClientRects().length);
+      if (bk) return bk.click();
+      if (G.c) return quit();
+      U.home();
+    });
+  }
+
+  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, clubBg };
 })();
