@@ -1303,9 +1303,10 @@ h2 { font-size: 34px; line-height: 1.02; }
 
 /* No computador: o jogo numa moldura, com estádio à noite em volta */
 @media (min-width: 760px) {
+  /* As luzes também presas à janela: rolando junto, repetiam a cada altura de tela e faziam uma emenda nas laterais */
   body { background:
-      radial-gradient(60% 45% at 12% 0%, rgba(255, 244, 200, .10), transparent 70%),
-      radial-gradient(60% 45% at 88% 0%, rgba(255, 244, 200, .10), transparent 70%),
+      radial-gradient(60% 45% at 12% 0%, rgba(255, 244, 200, .10), transparent 70%) fixed,
+      radial-gradient(60% 45% at 88% 0%, rgba(255, 244, 200, .10), transparent 70%) fixed,
       radial-gradient(90% 70% at 50% 100%, #145235, #0A2A1C 70%) fixed; }
   #app { background: var(--pitch); background-image: repeating-linear-gradient(0deg, transparent 0 56px, rgba(255, 255, 255, 0.025) 56px 112px);
     box-shadow: 0 0 0 1px rgba(255, 255, 255, .06), 0 30px 80px rgba(0, 0, 0, .55); border-radius: 0 0 22px 22px; }
