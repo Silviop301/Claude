@@ -237,12 +237,13 @@
         const k = Math.min(1, (t - g.cutT) / 0.45); g.cut = -38 * k * k * (3 - 2 * k);
         if (k >= 1 && g.mode === 'cut') { g.mode = 'run'; setAtk('corrida', now); }
       }
-      // Sem desarme: ele chega na área e bate no canto
-      if (g.mode === 'run' && g.u >= SHOOT) {
+      // Sem desarme: ele chega na área e bate no canto (com o bote no ar ele espera: só o atrasado deixa ele bater)
+      if (g.mode === 'run' && g.u >= SHOOT && !(g.slide && !g.slide.done && g.slide.kind !== 'tarde')) {
         g.mode = 'shoot'; setAtk('finalizacao', now);
         const a = at(g.u), h = H(a.y), side = Math.random() < 0.5 ? -1 : 1;
         const gx = P.px(side * (0.55 + Math.random() * 0.3)), gy = P.py(0.15 + Math.random() * 0.6);
         setTimeout(() => {
+          if (result) return; // o lance já se decidiu (desarme): a bola não vai mais para o gol
           sfx('kick');
           spr.dive(P.px(-side * 0.5), P.py(0.45), -side, 380, 40);
           kickBall([a.x + g.cut + 0.17 * h, a.y - 0.06 * h, 0.06 * h], [gx, gy, 6.5], 0, 460, 12);
