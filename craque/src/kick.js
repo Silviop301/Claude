@@ -318,7 +318,7 @@
   // Toque no lance: vale em qualquer lugar da tela (o polegar descansa abaixo do palco), não só no palco.
   // Ignora botões, links e campos, a barra do topo e o que estiver em outra camada (janela por cima).
   // O handler recebe o evento como antes (o goleiro lê clientX em relação ao palco).
-  const LAYER = '.ask-wrap, .cfg-wrap, .sheet-wrap, .sl-sheet-wrap, .trn-wrap, .paper-wrap, .walkout, .pk-wrap, .album, .bigmoment, .mo-wrap';
+  const LAYER = '.ask-wrap, .cfg-wrap, .sheet-wrap, .sala, .sl-sheet-wrap, .trn-wrap, .paper-wrap, .walkout, .pk-wrap, .album, .bigmoment, .mo-wrap';
   function onTap(stage, fn) {
     const home = stage.closest(LAYER);
     const h = e => {

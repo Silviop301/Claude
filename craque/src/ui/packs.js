@@ -70,6 +70,8 @@
     const clear = () => { timers.forEach(clearTimeout); timers.length = 0; w.getAnimations && w.getAnimations({ subtree: true }).forEach(a => a.cancel()); };
     const close = () => { clear(); w.classList.add('out'); setTimeout(() => { w.remove(); onDone && onDone(); }, 220); };
     let res = null, phase = 'idle', idx = 0, busy = false, shownFichas = inv.fichas;
+    // Esc no computador (desktop.js): com o pacotinho parado, fecha (o clique no meio abriria um)
+    w._esc = () => phase === 'idle' && (phase = 'out', close(), true);
 
     function frame() {
       w.innerHTML = '<div class="pk-dim"></div><div class="pk-rays"></div>' +
