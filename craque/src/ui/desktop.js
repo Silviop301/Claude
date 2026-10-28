@@ -60,6 +60,19 @@
   // Botão principal: o primeiro botão cheio visível (sem as opções de evento, que pedem 1–4)
   const primary = root => [...root.querySelectorAll('.btn:not(.ghost):not(:disabled)')]
     .find(b => visible(b) && !b.closest('.choices') && !b.classList.contains('opt'));
+  // Fecha a janela da frente (ou o post): o Esc daqui e o voltar do celular (ui/core.js) usam o mesmo. true se fechou
+  function closeFront() {
+    const layer = top(), scope = layer || document.getElementById('screen');
+    if (!scope) return false;
+    const x = [...scope.querySelectorAll('.cfg-x, .sp-x, .sl-sh-x, #sl-x, #sl-back, #trn-x, #pk-close, .ask [data-a="no"], [aria-label^="Fechar"]')].find(visible);
+    if (x) { x.click(); return true; }
+    // A camada sabe fechar sozinha (pacotinho parado: o clique no meio abriria um)
+    if (layer && layer._esc && layer._esc()) return true;
+    if (layer && TAP_LAYER.test(layer.className)) { tapLayer(layer); return true; }
+    return false;
+  }
+  U.frontLayer = top;
+  U.closeFront = closeFront;
 
   // Foco que veio do teclado (Tab): só ele deixa o Enter/Espaço com o botão em foco (o foco que sobra de um clique não)
   let kbdFocus = false;
@@ -82,14 +95,7 @@
       return done();
     }
     // Esc: fecha a janela da frente (ou o post)
-    if (k === 'Escape') {
-      const x = [...scope.querySelectorAll('.cfg-x, .sp-x, .sl-sh-x, #sl-x, #sl-back, #trn-x, #pk-close, .ask [data-a="no"], [aria-label^="Fechar"]')].find(visible);
-      if (x) { x.click(); return done(); }
-      // A camada sabe fechar sozinha (pacotinho parado: o clique no meio abriria um)
-      if (layer && layer._esc && layer._esc()) return done();
-      if (layer && TAP_LAYER.test(layer.className)) { tapLayer(layer); return done(); }
-      return;
-    }
+    if (k === 'Escape') { if (closeFront()) done(); return; }
     // Álbum: ← volta, →/Espaço avança
     if (layer && /\balbum\b/.test(layer.className) && (k === 'ArrowLeft' || k === 'ArrowRight' || go)) {
       clickAt(layer, k === 'ArrowLeft' ? 0.1 : 0.9); return done();

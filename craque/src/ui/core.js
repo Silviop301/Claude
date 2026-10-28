@@ -164,6 +164,12 @@
       if (a != null && a !== z[k]) b.textContent = Math.round(a + (z[k] - a) * e);
     });
   }
+  // Sai da carreira para o início (botão de casa da barra e voltar do celular): salva e tira o que estiver por cima
+  function toHome() {
+    save();
+    document.querySelectorAll('.paper-wrap, .walkout, .album, .trn-wrap').forEach(x => x.remove());
+    window.CRAQUE_UI.home();
+  }
   function bar() {
     const b = $('bar');
     if (!G.c || !G.c.club) { b.hidden = true; clubBg(null); return; }
@@ -184,11 +190,7 @@
     // Voltar ao início: a carreira fica salva e continua de onde parou
     $('b-home').onclick = e => {
       e.stopPropagation();
-      ask('Voltar ao início?', 'Sua carreira fica salva e você continua de onde parou.', 'Ir para o início', () => {
-        save();
-        document.querySelectorAll('.paper-wrap, .walkout, .album').forEach(x => x.remove());
-        window.CRAQUE_UI.home();
-      });
+      ask('Voltar ao início?', 'Sua carreira fica salva e você continua de onde parou.', 'Ir para o início', toHome);
     };
     $('b-snd').onclick = e => { e.stopPropagation(); window.CRAQUE_UI.settings(); };
     const T = G.c.totals, tot = totOf(G.c);
@@ -297,6 +299,38 @@
   // Faixa de cor da carta pela nota (bronze, prata, ouro, ícone)
   const tierCls = o => (o >= 85 ? 'icone' : o >= 75 ? 'ouro' : o >= 65 ? 'prata' : 'bronze');
   const TIER_NAME = { bronze: 'Bronze', prata: 'Prata', ouro: 'Ouro', icone: 'Ícone' };
+
+  // ---------- voltar do celular (e do navegador) ----------
+  // O jogo é uma página só: sem isto, o voltar do Android fechava o app de qualquer tela. Depois do primeiro toque entra
+  // UMA entrada-guarda no histórico; o voltar tira a guarda e cai aqui:
+  //  1. janela aberta (pergunta, ficha, configurações, Sala, treino, pacotinho...): fecha, igual ao Esc (ui/desktop.js);
+  //  2. tela inicial: deixa o navegador sair (sem guarda nova: o voltar nunca prende o jogador ali);
+  //  3. botão de fechar na tela (o post) ou "‹ Voltar"/"‹ Início": aperta ele;
+  //  4. no meio da carreira: pergunta se quer sair (a carreira fica salva); fora dela (resultado, fim de carreira), início.
+  // Nos casos 1, 3 e 4 a guarda volta. Versão de portal (o jogo dentro da página de outro site): não mexe no histórico.
+  if (!window.CLIMBIX_PORTAL && window.self === window.top && history.pushState) {
+    let guard = !!(history.state && history.state.climbix); // recarregou em cima da guarda: não grava outra
+    const push = () => { if (!guard) { guard = true; history.pushState({ climbix: 1 }, ''); } };
+    // Só com gesto do jogador: o Chrome pula, no voltar, a entrada gravada sem toque
+    addEventListener('click', push, true);
+    addEventListener('keydown', push, true);
+    // Sair: vai ao início e tira a guarda; o voltar cai na tela inicial e sai (no app instalado sem página anterior,
+    // fica no início e o próximo voltar fecha)
+    const quit = () => (G.c ? ask('Sair do jogo?', 'Sua carreira fica salva e você continua de onde parou.', 'Sair', () => { toHome(); history.back(); }) : 0);
+    addEventListener('popstate', e => {
+      if (e.state && e.state.climbix) { guard = true; return; } // "avançar" de volta para a guarda
+      guard = false;
+      const U = window.CRAQUE_UI, layer = U.frontLayer && U.frontLayer();
+      if (!layer && !G.c && screen.querySelector('#b-new')) return history.back();
+      push();
+      if (U.closeFront && U.closeFront()) return;
+      if (layer) return quit(); // janela sem fechar (treino antes do 1º lance)
+      const bk = [...screen.querySelectorAll('.back-link')].find(b => b.getClientRects().length);
+      if (bk) return bk.click();
+      if (G.c) return quit();
+      U.home();
+    });
+  }
 
   window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, clubBg };
 })();
