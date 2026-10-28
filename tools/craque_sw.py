@@ -3,6 +3,8 @@
 Rode sempre que arquivos do jogo forem adicionados/removidos:  python3 tools/craque_sw.py
 Estratégia: código e página (html/js/css) vêm da rede quando há conexão (atualizações chegam na hora)
 e do cache sem internet; imagens, escudos, ícones e o modelo 3D vêm do cache primeiro.
+Só o que o jogo precisa para abrir e jogar sem internet é baixado de antemão; escudos, taças, acabamentos
+e o 3D entram no cache na primeira vez que aparecem.
 """
 import hashlib, pathlib, re
 
@@ -29,11 +31,15 @@ for p in sorted(ROOT.rglob("*")):
         rel = p.relative_to(ROOT).as_posix()
         files.append("./" + versioned.get(rel, rel))
 digest = hashlib.sha1("".join(files).encode()).hexdigest()[:8]
-# Essencial (página, código, estilo, fontes, ícones do app) entra na instalação; o resto (escudos, taças,
-# emojis, modelo 3D) é guardado aos poucos depois que o jogo abre, para não disputar a rede com a primeira tela
+# Essencial (página, código, estilo, fontes que o estilo usa, ícones do app) entra na instalação; emojis, sons,
+# o goleiro dos lances e as texturas citadas no style.css (pequenos, toda carreira usa) são guardados aos poucos
+# depois que o jogo abre, para não disputar a rede com a primeira tela. Escudos, taças, acabamentos e o 3D
+# (quase 40 MB, e uma carreira vê poucos) ficam de fora: o fetch guarda cada um na primeira vez que aparece.
 core_re = re.compile(r"^\./(?:$|index\.html|style\.css|manifest\.webmanifest|sw\.js|src/|fonts/|icons/)")
-core = [f for f in files if core_re.match(f)]
-rest = [f for f in files if not core_re.match(f)]
+later_re = re.compile(r"^\./assets/(?:tw|sons|sprites)/")
+used = (ROOT / "style.css").read_text() + (ROOT / "index.html").read_text()
+core = [f for f in files if core_re.match(f) and (not f.startswith("./fonts/") or f[2:] in used)]
+rest = [f for f in files if not core_re.match(f) and (later_re.match(f) or f[2:] in used)]
 later = ",\n  ".join('"%s"' % f for f in rest)
 SW = """// Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
@@ -70,7 +76,7 @@ self.addEventListener('activate', e => {
 });
 
 // Código/página: rede primeiro (sempre a versão nova), cache se estiver sem internet.
-// Imagens, 3D e bibliotecas externas: cache primeiro.
+// Imagens, 3D e bibliotecas externas: cache primeiro; o que não está no cache entra nele na primeira vez.
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
@@ -113,4 +119,4 @@ man.write_text(mtxt)
 if "window.CLIMBIX_VER" not in html:
     html = html.replace('<script defer src="src/sound.js', "<script>window.CLIMBIX_VER = '" + ver + "';</script>\n<script defer src=\"src/sound.js", 1)
 idx.write_text(html)
-print("sw.js com", len(files), "arquivos (", len(core), "na instalação,", len(rest), "depois ) · cache", digest, "· versão", ver)
+print("sw.js com", len(core) + len(rest), "de", len(files), "arquivos (", len(core), "na instalação,", len(rest), "depois; o resto quando aparece ) · cache", digest, "· versão", ver)

@@ -97,7 +97,7 @@
     const tag = opts.cls ? 'span' : 'button';
     return '<' + tag + ' class="ni' + (n ? ' lit' : ' miss') + (gold ? ' gold' : '') + (n >= 2 ? ' multi' : '') + (legend ? ' leg' : '') + (opts.nova && n ? ' nova' : '') + (opts.cls ? ' ' + opts.cls : '') + '" data-k="' + esc(k) + '" aria-label="' + esc(k) + (n ? ', ' + n + '×' : ', falta') + '">' +
       '<span class="ni-box"><span class="ni-clip"><i class="ni-leg"></i><i class="ni-light"></i><i class="ni-bulb"></i></span><i class="ni-floor"></i>' +
-      '<img class="ni-img" src="' + img(k) + '" alt="" loading="lazy" decoding="async" draggable="false">' +
+      '<img class="ni-img" src="' + img(k) + '" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.onerror=null;this.src=window.CRAQUE_UI.salaImg(\'\')">' + // foto que nunca desceu (sem internet): a desenhada
       '<i class="ni-ring"></i><b class="ni-new">NOVA</b><b class="ni-cnt">×' + n + '</b></span>' +
       '<span class="ni-shelf"></span>' + (opts.plaque === false ? '' : '<span class="ni-plq">' + esc(k) + '</span>') + '</' + tag + '>';
   }
@@ -343,5 +343,5 @@
     return () => { clearTimeout(t); anims.forEach(a => { try { a.finish(); } catch (e) { /* ok */ } }); set(); };
   }
 
-  Object.assign(U, { salaNew: () => data().nova.length, trophyRoom: open, salaPlay: play, salaRecord: record, salaHome: homeCard, salaMerge: merge, SALA_KEY: KEY });
+  Object.assign(U, { salaNew: () => data().nova.length, trophyRoom: open, salaPlay: play, salaRecord: record, salaHome: homeCard, salaMerge: merge, salaImg: img, SALA_KEY: KEY });
 })();

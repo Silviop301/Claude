@@ -11,7 +11,7 @@ window.CRAQUE_UI.cloudBoot();
 if ('serviceWorker' in navigator && location.protocol !== 'file:' && !window.CLIMBIX_PORTAL) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js' + (window.CLIMBIX_VER ? '?v=' + window.CLIMBIX_VER : '')).catch(() => { /* sem offline, segue normal */ });
-    // Escudos, taças, emojis e o 3D vão para o offline aos poucos, com o jogo já aberto
+    // Emojis, sons e o goleiro dos lances vão para o offline aos poucos, com o jogo já aberto (escudos, taças e o 3D, quando aparecem)
     setTimeout(() => navigator.serviceWorker.ready.then(reg => reg.active && reg.active.postMessage('warm')).catch(() => {}), 6000);
   });
 }
