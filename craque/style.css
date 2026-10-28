@@ -3918,6 +3918,15 @@ html.desk .sheet:has(.sh-tabs) { height: min(calc(74vh / var(--z, 1)), 640px); }
 .lg-row::after { content: ''; position: absolute; left: 0; bottom: 0; height: 3px; width: var(--ch, 0); background: #E2B93B; border-radius: 0 2px 2px 0; }
 .lg-row:has(em.hi)::after { background: #1FA35A; } .lg-row:has(em.lo)::after { background: #D8404A; }
 .lg-row.armed::after { content: none; }
+/* Janela no computador com 5 cartões ou mais (4 propostas + renovar): a 2ª linha com a mesma largura da 1ª (antes o último
+   esticava sozinho); 3 por linha até caberem 4 de 240 px. Embaixo do subtítulo, o atalho "Ou renove com…" leva ao card de renovar */
+.of-renew { display: none; }
+@media (min-width: 1000px) {
+  .of-rail:has(> .of-card:nth-child(5)) > .of-card { flex: 0 0 calc((100% - 32px) / 3); max-width: none; }
+  .of-renew { display: block; width: fit-content; margin: -6px 0 0; padding: 0; font: 600 15px/1.35 var(--body); color: var(--tx-1); }
+  .desk .of-renew:hover { color: var(--gold-2); }
+}
+@media (min-width: 1040px) { .of-rail:has(> .of-card:nth-child(5)) > .of-card { flex-basis: calc((100% - 48px) / 4); } }
 /* ----- fim V2 ----- */
 
 /* ----- V3: lances e minigames (lance, minigames, resultado, treino, reta final, Relâmpago) ----- */
