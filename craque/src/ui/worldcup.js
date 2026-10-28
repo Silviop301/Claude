@@ -46,7 +46,8 @@
 
   // Como funciona o torneio: duas linhas de apoio com ícone (o cartão principal da tela é a convocação)
   const wcRules = () => '<div class="wc-rules"><p>' + U.emo('⚽', 'sm') + '<span>Fase de grupos com 3 jogos, depois mata-mata até a final.</span></p>' +
-    '<p>' + U.emo('🥅', 'sm') + '<span>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</span></p></div>';
+    '<p>' + U.emo('🥅', 'sm') + (G.c && G.c.pos === 'GOL' ? '<span>Empate no mata-mata vai para os <b>pênaltis</b>, e você defende o último.</span></p></div>'
+      : '<span>Empate no mata-mata vai para os <b>pênaltis</b>, e você bate o último.</span></p></div>');
 
   function cwcIntro() {
     G.step = 'cwc';

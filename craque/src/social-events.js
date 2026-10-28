@@ -441,7 +441,7 @@
     ],
     ingressos: [
       ['Comprei ingresso pra turma toda. O setor inteiro gritando meu nome 🎟️❤️', 'Eu tava nesse setor! Valeu, {n} 🎟️'],
-      ['Ingresso só pra família. Pra turma, prometo gol 😅🎟️', 'E o meu ingresso, {n}? 😂'],
+      ['Ingresso só pra família. Pra turma, prometo vitória 😅🎟️', 'E o meu ingresso, {n}? 😂'],
     ],
     hino: [
       [['Eu estava concentrado no hino. Respeito total pelo meu país 🙏', 'Dei minha explicação. Quem quiser entender, entende 🙏'],
