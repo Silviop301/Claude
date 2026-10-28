@@ -471,7 +471,7 @@ button:not(:disabled):active { scale: .97; }
 #after > .rv:last-child { display: flex; flex-direction: column; gap: 10px; }
 
 /* Jornal da temporada (popup) */
-.paper-wrap { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 16px;
+.paper-wrap { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 16px; cursor: pointer;
   background: rgba(4, 16, 10, 0.72); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: fade-in .25s ease; }
 .paper-wrap.out { animation: fade-out .25s ease forwards; }
 @keyframes fade-in { from { opacity: 0; } }
@@ -2194,6 +2194,17 @@ details.fin-more[open] { display: flex; flex-direction: column; gap: 12px; paddi
 .desk .btn.ghost:not(:disabled):hover { background: rgba(255,255,255,.06); }
 .desk .hg:hover, .desk .cont-card:hover, .desk .choices .btn:hover { transform: translateY(-1px); }
 .desk .fin-links button:hover, .desk .link-btn:hover { color: var(--gold); }
+/* Clicáveis com classe própria (fora do .btn): o mesmo tipo de resposta, no tom de onde estão (verde ou papel) */
+.desk button.offer.of-sign:not(.armed):hover { filter: brightness(1.07); }
+.desk .off-tools .tool:not(:disabled):hover, .desk .snd-mini:hover { background: rgba(255, 255, 255, .16); }
+.desk .choice:not(:disabled):not(:active):hover, .desk .lg-row:not(:active):hover { transform: translateY(-1px); }
+.desk button.mc-at:not(:disabled):hover { background: rgba(255, 255, 255, .75); }
+.desk .mcard.icone button.mc-at:not(:disabled):hover { background: rgba(255, 255, 255, .26); }
+.desk .sh-tabs button:not(.on):hover, .desk .of-seg button:not(.on):hover { background: rgba(19, 32, 26, .07); }
+.desk .sh-x:hover { filter: brightness(.94); }
+.desk details.more:not(.score-how) > summary:hover { color: var(--gold); }
+.desk #bar-ovr:hover { filter: brightness(1.12); }
+.desk .rel .m:hover { background: rgba(255, 255, 255, .07); box-shadow: 0 0 0 4px rgba(255, 255, 255, .07); border-radius: 6px; }
 .desk-hint { text-align: center; color: #93AD9D; font-size: 13px; margin: 2px 0 0; }
 /* Robôs do ranking */
 .sh-parts b.neg { color: #E8857A; }
