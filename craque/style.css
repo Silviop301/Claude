@@ -3418,6 +3418,10 @@ button.mc-at .pips { font-size: 11px; opacity: .85; }
 .rl-ob-c.pts b { color: var(--gold); }
 .rl-ob-nm { font: 800 26px/1 var(--display); text-transform: uppercase; color: var(--paper); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rl-head .rl-rule { margin: 8px 0; }
+/* Sair no meio: o X fica numa linha própria acima do placar (não encosta nos pontos) */
+.rl-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -6px 0 6px; }
+.rl-top .eyebrow { margin: 0; }
+.rl-quit { width: 44px; height: 44px; }
 /* Faixa das 5 casas em escuro */
 .rl-board .rl-cell { background: #050A07; border: 1px solid rgba(255, 255, 255, .1); }
 .rl-board .rl-cell.done:not(.out) { border-color: rgba(95, 214, 144, .45); }

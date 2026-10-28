@@ -153,7 +153,9 @@
     if (i >= 5) return result();
     const sl = S.RL_SLOTS[i], kicks = run.rounds[i], k = kicks.length;
     const rule = i < 3 ? 'Vale o clube da primeira bola que entrar' : 'Você leva o prêmio de cada bola que entrar';
-    render('<div class="rl-head"><div class="ob5-board rl-ob"><div class="rl-ob-c"><small>Casa</small><b>' + (i + 1) + '/5</b></div>' +
+    // X no alto (acima do placar): sai no meio, com aviso; o nome "Fechar…" também liga o Esc do computador
+    render('<div class="rl-head"><div class="rl-top"><div class="eyebrow">Carreira Relâmpago</div><button class="sp-x rl-quit" id="rl-quit" aria-label="Fechar a Carreira Relâmpago">' + U.ICON.x + '</button></div>' +
+      '<div class="ob5-board rl-ob"><div class="rl-ob-c"><small>Casa</small><b>' + (i + 1) + '/5</b></div>' +
       '<div class="ob5-mid"><b class="rl-ob-nm">' + sl.name + '</b><small>Cobrança ' + (k + 1) + ' de 5</small></div>' +
       '<div class="rl-ob-c pts"><small>Pontos</small><b id="rl-pts">' + ptsNow() + '</b></div></div>' +
       '<div class="rl-rule"><span>' + rule + '</span>' + dots(kicks) + '</div></div>' + boardHtml(i) +
@@ -164,6 +166,12 @@
       }).join('') + '</div></div>' +
       '<div class="rl-stage"><div id="rl-kick"></div><div class="rl-reveal" id="rl-reveal" hidden></div></div>');
     document.querySelectorAll('.rl-ball:not([disabled])').forEach(b => { b.onclick = () => kick(i, +b.dataset.b); });
+    // Desafio de amigo abandonado conta como jogado (os prêmios escondidos já apareceram): não volta na tela inicial
+    $('rl-quit').onclick = () => U.ask('Sair da Carreira Relâmpago?', run.vs ? 'O desafio de ' + run.vs.n + ' conta como jogado.' : 'Essa carreira não fica salva.', 'Sair', () => {
+      if (run && run.vs) store(KEY, Object.assign(load(KEY) || {}, { done: true }));
+      run = null;
+      U.home();
+    });
     // Bola 3D no lugar do emoji (se o 3D estiver ligado e carregar)
     const B = window.CRAQUE_BALL;
     if (B && B.snapshot && !(window.CLIMBIX_CFG && window.CLIMBIX_CFG.fx3d === false)) B.snapshot().then(url => {
@@ -175,9 +183,10 @@
   function kick(i, b) {
     const kicks = run.rounds[i], pick = $('rl-pick');
     if (pick) pick.remove();
-    const others = [0, 1, 2, 3, 4].filter(j => j !== b && stateOf(kicks, j) === undefined).map(j => BX[j]);
+    const others = [0, 1, 2, 3, 4].filter(j => j !== b && stateOf(kicks, j) === undefined).map(j => BX[j]), r0 = run;
+    // Saiu durante o chute (o letreiro ainda termina depois): a partida acabou, não revela nada
     window.CRAQUE_KICK($('rl-kick'), { c: kicker(), moment: { type: 'cup' }, setup: S.rlKickSetup(i), keeperGuess: S.RL_KEEPER,
-      ballX: BX[b], extraBalls: others, onDone: ok => { kicks.push([b, ok ? 1 : 0]); reveal(i, ok); } });
+      ballX: BX[b], extraBalls: others, onDone: ok => { if (run !== r0) return; kicks.push([b, ok ? 1 : 0]); reveal(i, ok); } });
   }
 
   // Depois de cada cobrança: o que a bola valia; quando a casa acaba, o prêmio e os pontos
