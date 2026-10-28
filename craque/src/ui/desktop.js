@@ -61,6 +61,11 @@
   const primary = root => [...root.querySelectorAll('.btn:not(.ghost):not(:disabled)')]
     .find(b => visible(b) && !b.closest('.choices') && !b.classList.contains('opt'));
 
+  // Foco que veio do teclado (Tab): só ele deixa o Enter/Espaço com o botão em foco (o foco que sobra de um clique não)
+  let kbdFocus = false;
+  addEventListener('pointerdown', () => { kbdFocus = false; }, true);
+  addEventListener('keydown', e => { if (e.key === 'Tab') kbdFocus = true; }, true);
+
   addEventListener('keydown', e => {
     if (!on() || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
     const t = e.target;
@@ -104,10 +109,13 @@
     }
     // Resumo da temporada mostrando os blocos: Espaço pula para o fim
     if (!layer && document.getElementById('skip-hint')) { scope.dispatchEvent(new MouseEvent('click', { bubbles: true })); return done(); }
-    // Botão em foco: o Enter/Espaço do próprio navegador já clica
-    if (t && t.tagName === 'BUTTON' && t !== document.body) return;
+    // Botão em foco pelo Tab, na janela da frente: o Enter/Espaço do próprio navegador já clica. O que sobrou de um
+    // clique (ou ficou atrás da janela aberta) não é clicado de novo: a tecla vai para o botão principal
+    const onBtn = t && t.tagName === 'BUTTON';
+    if (onBtn) { if (kbdFocus && (!layer || layer.contains(t))) return; t.blur(); }
     const b = primary(scope);
     if (b) { b.click(); return done(); }
+    if (onBtn) done();
   }, true);
 
   // ---------- Telas curtas na tela larga ----------
