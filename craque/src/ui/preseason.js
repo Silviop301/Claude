@@ -287,6 +287,7 @@
       else { const syn = S.addTrait(G.c, x.trait.id); done = '✓ ' + U.icoOf(x.trait, 'xs') + ' ' + x.trait.name + ' entrou' + (syn ? '<br><b>' + U.icoOf(syn, 'xs') + ' Combinação desbloqueada: ' + syn.name + '</b> · ' + attrTxt(syn.attr) + (syn.extra ? ' · ' + syn.extra : '') : ''); }
       if (S.buildDone(G.c)) done += '<br><b>' + U.emo('🏁', 'xs') + ' Build completo!</b> Suas 5 características estão no nível máximo.';
       preCh.done = true;
+      save(); // já vale: fechar o jogo durante a animação não perde a escolha
       showPreview(null);
       bar();
       applyAnim(from, () => prep(true, done, true));
