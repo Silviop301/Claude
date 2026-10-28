@@ -46,10 +46,24 @@
   const vibe = p => { if (cfg.vibe && navigator.vibrate) navigator.vibrate(p); };
   function save() { store(SAVE, G.c && !G.c.retired ? { c: G.c, step: G.step, at: Date.now() } : { c: null, at: Date.now() }); }
 
+  // Toque duplo: a tela troca no 1º toque e o 2º caía no que estivesse no mesmo lugar da tela nova (opção do
+  // evento, estilo do lance, característica, "Começar carreira"). Toque de gente logo depois da troca não conta;
+  // os robôs de teste usam .click() (isTrusted falso) e passam. "human" também serve ao U.arm.
+  const DUP = 500;
+  let shownAt = -Infinity, human = false;
+  document.addEventListener('click', e => {
+    human = e.isTrusted;
+    if (human && performance.now() - shownAt < DUP && screen.contains(e.target)) { e.preventDefault(); e.stopImmediatePropagation(); }
+  }, true);
+
   function render(html, opts) {
     screen.innerHTML = html;
+    shownAt = performance.now();
     // Telas curtas (resultado de evento ou de lance) ficam no meio da tela, sem meia tela vazia embaixo
     screen.classList.toggle('center', !!(opts && opts.center));
+    // same: a mesma tela redesenhada (pré-temporada depois da escolha): sem a entrada de tela nova (piscava) e sem
+    // medir de novo o respiro do computador (ui/desktop.js, a tela descia)
+    if (opts && opts.same) { screen.dataset.same = '1'; window.scrollTo(0, 0); return; }
     screen.style.animation = 'none';
     void screen.offsetWidth;
     screen.style.animation = '';
@@ -260,12 +274,14 @@
   }
 
   // Confirmação em dois toques: o 1º "vira" o card e mostra o que vai acontecer; o 2º confirma.
-  // Devolve true quando é o 2º toque (aí quem chamou executa a ação).
+  // Devolve true quando é o 2º toque (aí quem chamou executa a ação). O 2º toque de um toque duplo chega cedo
+  // demais: não confirma, e o card continua virado.
   function disarm(btn) { btn.classList.remove('armed'); const b = btn.querySelector('.arm-back'); if (b) b.remove(); }
   function arm(btn, back) {
-    if (btn.classList.contains('armed')) return true;
+    if (btn.classList.contains('armed')) return !human || performance.now() - (btn._armT || 0) >= DUP;
     document.querySelectorAll('.armed').forEach(disarm);
     btn.classList.add('armed');
+    btn._armT = performance.now();
     const b = document.createElement('span');
     b.className = 'arm-back';
     b.innerHTML = back;

@@ -3,10 +3,10 @@
   const U = window.CRAQUE_UI;
   const { tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar } = U;
   // ---------- evento ----------
-  let pendingEvent = null;
+  // O evento sorteado fica na carreira (G.c.pendEv), como o lance: recarregar a página mostra o mesmo, sem sortear de novo
   function eventOrSeason() {
-    pendingEvent = S.pickEvent(G.c);
-    if (!pendingEvent) return momentOrSeason();
+    G.c.pendEv = S.pickEvent(G.c);
+    if (!G.c.pendEv) { delete G.c.pendEv; return momentOrSeason(); }
     G.step = 'event';
     save();
     eventScreen();
@@ -54,9 +54,10 @@
   }
 
   function eventScreen() {
-    if (!pendingEvent) pendingEvent = S.pickEvent(G.c);
-    if (!pendingEvent) return momentOrSeason();
-    const ev = pendingEvent;
+    // Save de antes do evento guardado na carreira: sorteia uma vez e guarda
+    if (!G.c.pendEv) { G.c.pendEv = S.pickEvent(G.c); if (G.c.pendEv) save(); }
+    if (!G.c.pendEv) { delete G.c.pendEv; return momentOrSeason(); }
+    const ev = G.c.pendEv;
     // Proposta de transferência: compara com a situação de hoje antes de decidir
     const offer = S.eventOffer(G.c, ev);
     // Estilo ousado: cartão claro centrado (ícone grande, categoria, título, texto) e as opções com o mesmo peso visual.
@@ -77,7 +78,7 @@
       // Trocar de clube pede confirmação (dois toques)
       if (offer && b.dataset.i === '0' && !U.arm(b, '<b>Toque de novo para assinar</b>')) return;
       const prevClub = G.c.club, r = S.resolveEvent(G.c, ev, +b.dataset.i);
-      pendingEvent = null;
+      delete G.c.pendEv;
       bar();
       // O que mudou de verdade: o geral (quando mexeu) e cada efeito, verde quando ajuda e vermelho quando atrapalha
       const o1 = S.ovr(G.c), dOvr = r.ovrFrom != null ? o1 - r.ovrFrom : 0;
@@ -162,13 +163,14 @@
   // c: quem bate (o treino pode usar um jogador médio da posição do lance)
   // kitCtx (Copa e Mundial): { vs: nome do adversário, mine: sua seleção ou clube } para os uniformes certos
   // style: estilo escolhido na tela do lance (S.STYLES); sem ele, o lance de sempre
-  function playMini(el, setupType, onDone, c, kitCtx, style) {
+  // onResult(ok, why): o resultado na hora em que sai, antes do letreiro e da animação (o lance de verdade já salva ali)
+  function playMini(el, setupType, onDone, c, kitCtx, style, onResult) {
     c = c || G.c;
     window.CRAQUE_KIT_CTX = kitCtx || null;
-    if (setupType === 'save') return window.CRAQUE_SAVE(el, { c, onDone, style });
-    if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, { c, onDone, style });
-    if (setupType === 'pass') return window.CRAQUE_PASS(el, { c, onDone, style });
-    return window.CRAQUE_KICK(el, { c, moment: { type: setupType, style }, onDone });
+    if (setupType === 'save') return window.CRAQUE_SAVE(el, { c, onDone, onResult, style });
+    if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, { c, onDone, onResult, style });
+    if (setupType === 'pass') return window.CRAQUE_PASS(el, { c, onDone, onResult, style });
+    return window.CRAQUE_KICK(el, { c, moment: { type: setupType, style }, onDone, onResult });
   }
   // Os dois estilos do lance, lado a lado: nome, como muda o lance e a chance pela carta em cada um.
   // Nenhum é sempre o melhor: a chance pende para atributos diferentes e o jeito de jogar muda.
@@ -258,8 +260,10 @@
       // O placar escuro continua em cima da cena, numa faixa baixa (placar, minuto e competição)
       render(board(m, m.score, T.tag, true) + '<div id="kick"></div>');
       sfx('whistle');
-      // Saiu da tela no meio da cobrança (voltou ao início): o resultado não redesenha nada; ao retomar, a chance decide
-      playMini($('kick'), st, (ok, why) => { if (!$('kick')) return; momentEnd(m, ok, T, why); }, null, null, m.style);
+      // Saiu da tela no meio da cobrança (voltou ao início): o resultado não redesenha nada; ao retomar, a chance decide.
+      // O resultado salva assim que sai: fechar o jogo com o letreiro na tela não troca o que se viu pela chance da carta
+      playMini($('kick'), st, (ok, why) => { if (!$('kick')) return; momentEnd(m, ok, T, why); }, null, null, m.style,
+        (ok, why) => { if (!$('kick')) return; S.resolveMoment(G.c, ok, why); save(); });
     }));
     $('b-auto').onclick = () => {
       const ok = S.autoMoment(G.c);

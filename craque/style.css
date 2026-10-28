@@ -471,7 +471,7 @@ button:not(:disabled):active { scale: .97; }
 #after > .rv:last-child { display: flex; flex-direction: column; gap: 10px; }
 
 /* Jornal da temporada (popup) */
-.paper-wrap { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 16px;
+.paper-wrap { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 16px; cursor: pointer;
   background: rgba(4, 16, 10, 0.72); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: fade-in .25s ease; }
 .paper-wrap.out { animation: fade-out .25s ease forwards; }
 @keyframes fade-in { from { opacity: 0; } }
@@ -1303,9 +1303,10 @@ h2 { font-size: 34px; line-height: 1.02; }
 
 /* No computador: o jogo numa moldura, com estádio à noite em volta */
 @media (min-width: 760px) {
+  /* As luzes também presas à janela: rolando junto, repetiam a cada altura de tela e faziam uma emenda nas laterais */
   body { background:
-      radial-gradient(60% 45% at 12% 0%, rgba(255, 244, 200, .10), transparent 70%),
-      radial-gradient(60% 45% at 88% 0%, rgba(255, 244, 200, .10), transparent 70%),
+      radial-gradient(60% 45% at 12% 0%, rgba(255, 244, 200, .10), transparent 70%) fixed,
+      radial-gradient(60% 45% at 88% 0%, rgba(255, 244, 200, .10), transparent 70%) fixed,
       radial-gradient(90% 70% at 50% 100%, #145235, #0A2A1C 70%) fixed; }
   #app { background: var(--pitch); background-image: repeating-linear-gradient(0deg, transparent 0 56px, rgba(255, 255, 255, 0.025) 56px 112px);
     box-shadow: 0 0 0 1px rgba(255, 255, 255, .06), 0 30px 80px rgba(0, 0, 0, .55); border-radius: 0 0 22px 22px; }
@@ -2193,12 +2194,25 @@ details.fin-more[open] { display: flex; flex-direction: column; gap: 12px; paddi
 .desk .btn.ghost:not(:disabled):hover { background: rgba(255,255,255,.06); }
 .desk .hg:hover, .desk .cont-card:hover, .desk .choices .btn:hover { transform: translateY(-1px); }
 .desk .fin-links button:hover, .desk .link-btn:hover { color: var(--gold); }
+/* Clicáveis com classe própria (fora do .btn): o mesmo tipo de resposta, no tom de onde estão (verde ou papel) */
+.desk button.offer.of-sign:not(.armed):hover { filter: brightness(1.07); }
+.desk .off-tools .tool:not(:disabled):hover, .desk .snd-mini:hover { background: rgba(255, 255, 255, .16); }
+.desk .choice:not(:disabled):not(:active):hover, .desk .lg-row:not(:active):hover { transform: translateY(-1px); }
+.desk button.mc-at:not(:disabled):hover { background: rgba(255, 255, 255, .75); }
+.desk .mcard.icone button.mc-at:not(:disabled):hover { background: rgba(255, 255, 255, .26); }
+.desk .sh-tabs button:not(.on):hover, .desk .of-seg button:not(.on):hover { background: rgba(19, 32, 26, .07); }
+.desk .sh-x:hover { filter: brightness(.94); }
+.desk details.more:not(.score-how) > summary:hover { color: var(--gold); }
+.desk #bar-ovr:hover { filter: brightness(1.12); }
+.desk .rel .m:hover { background: rgba(255, 255, 255, .07); box-shadow: 0 0 0 4px rgba(255, 255, 255, .07); border-radius: 6px; }
 .desk-hint { text-align: center; color: #93AD9D; font-size: 13px; margin: 2px 0 0; }
 /* Robôs do ranking */
 .sh-parts b.neg { color: #E8857A; }
 
 /* Câmera e efeitos dos minigames (cine.js) */
 .k-cam { position: relative; transform-origin: 0 0; transition: filter .5s ease; }
+/* Zoom da câmera: o texto do SVG (placa de LED, números) não refaz o layout a cada quadro */
+.k-cam svg text { text-rendering: geometricPrecision; }
 .k-cam[data-grade="goal"] { filter: saturate(1.25) brightness(1.06) contrast(1.05); }
 .k-cam[data-grade="miss"] { filter: saturate(.55) brightness(.85); }
 .k-fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
@@ -2574,6 +2588,9 @@ html.desk .mo-wbox { --wd: min(270px, 68vw, calc(42svh / var(--z, 1))); }
 .ed-box .sig-grid::-webkit-scrollbar, .ed-box .fin-grid::-webkit-scrollbar { display: none; }
 .ed-box .sig-b { flex: 0 0 128px; scroll-snap-align: start; }
 .ed-box .fin-b { flex: 0 0 76px; scroll-snap-align: start; }
+/* Computador: a roda do mouse não rola de lado e não há arrasto, então as fileiras quebram em linhas (como a .of-rail) */
+html.desk .ed-box .sig-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); overflow: visible; margin: 0; padding: 2px 0 4px; }
+html.desk .ed-box .fin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); overflow: visible; margin: 0; padding: 2px 0 4px; }
 .ed-cnt { margin: -2px 0 0; font: 500 13px var(--body); color: #9DB5A6; }
 /* Prêmios da carreira (sequência de dias e pacotinhos) num bloco só */
 .fin-prizes { display: flex; flex-direction: column; background: rgba(255, 255, 255, .05); border-radius: 16px; padding: 12px 14px 4px; }
@@ -3199,7 +3216,7 @@ details.fin-more.o6-panel:not([open]) { display: none; }
 .go-bar::before { content: ''; position: absolute; z-index: -1; left: -16px; right: -16px; top: -36px; bottom: calc(-10px - env(safe-area-inset-bottom, 0px));
   background: linear-gradient(to bottom, rgba(15, 61, 42, 0), var(--pitch) 34px); pointer-events: none; }
 .go-bar .btn { box-shadow: 0 4px 0 rgba(0, 0, 0, .35), 0 6px 18px rgba(0, 0, 0, .35); }
-#screen:has(> .go-bar) .rv { scroll-margin-bottom: 96px; }
+#screen:has(> .go-bar) .rv, #screen:has(> .go-bar) #o6-ed { scroll-margin-bottom: 96px; }
 /* Fim de temporada: seguir e postar lado a lado (como era no fim do resumo) */
 .s-go { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 10px; align-items: stretch; margin-top: 12px; }
 .s-go > #b-next, .s-go > #b-post { margin: 0; width: 100%; min-height: 58px; }
@@ -4042,6 +4059,8 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .desk .kick-help { min-height: 0; padding: 7px 16px; font-size: 17px; }
 .desk .kick-stage { --kw: min(720px, 94vw, calc((100dvh - 262px) * 1.125)); }
 .desk .trn .kick-stage { --kw: min(720px, 94vw, calc((100dvh - 300px) * 1.125)); }
+/* Relâmpago: o carimbo do resultado cobre o palco inteiro, que aqui sai da coluna (mesma conta do --kw do .kick-stage) */
+.desk .rl-stage > .rl-reveal { --kw: min(720px, 94vw, calc((100dvh - 262px) * 1.125)); width: var(--kw); margin-left: calc(50% - var(--kw) / 2); }
 /* Lance no computador: cartões de estilo maiores (ícone e chance no alto, nome e explicação embaixo, alinhados entre os dois) */
 @media (min-width: 1000px) {
   .btn.opt.style.ob5-st { padding: 16px 16px 18px; }
@@ -4054,6 +4073,7 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 @media (min-width: 1280px) and (min-height: 860px) {
   html.desk .kick-stage { --kw: min(720px, 94vw, calc((100dvh / var(--z) - 262px) * 1.125)); }
   html.desk .trn .kick-stage { --kw: min(720px, 94vw, calc((100dvh / var(--z) - 300px) * 1.125)); }
+  html.desk .rl-stage > .rl-reveal { --kw: min(720px, 94vw, calc((100dvh / var(--z) - 262px) * 1.125)); }
   html.desk #screen > .ob5-res, html.desk .trn > .ob5-res { min-height: clamp(200px, calc(36svh / var(--z)), 340px); }
 }
 /* ----- fim V3 ----- */

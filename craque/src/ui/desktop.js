@@ -1,6 +1,6 @@
 // Interface — computador (mouse e teclado). Só liga onde há mouse de verdade (hover + ponteiro fino):
 //  - textos de "Toque…" viram "Clique…" (as telas são escritas para o celular);
-//  - atalhos: Espaço/Enter continua e cobra o lance, 1–4 escolhe a opção, ←/→ no lance do goleiro e no álbum, Esc fecha;
+//  - atalhos: Espaço/Enter continua e cobra o lance, 1–4 escolhe a opção, ←/→ no lance do goleiro, no álbum e no livro da coleção, Esc fecha;
 //  - o resto (lance maior, janelas no meio da tela, efeito ao passar o mouse) fica no style.css, em .desk.
 (function () {
   const U = window.CRAQUE_UI;
@@ -14,7 +14,7 @@
   // Só frases de instrução (não mexe em "pouco toque", "cada toque seu na bola"...)
   const SWAP = [
     [/\bToque\b/g, 'Clique'],
-    [/\btoque(?= (?:para|na tela|quando|numa|à (?:direita|esquerda)|de novo))/g, 'clique'],
+    [/\btoque(?= (?:para|na tela|quando|numa|no lado|logo|à (?:direita|esquerda)|de novo))/g, 'clique'],
     [/\b(Agora|primeiro|segundo|1º|2º|o) toque\b(?! seu)/g, '$1 clique'],
     [/\b([Dd])ois toques\b/g, (m, d) => (d === 'D' ? 'Dois' : 'dois') + ' cliques'],
   ];
@@ -41,7 +41,7 @@
   // ---------- Teclado ----------
   const visible = el => !!el && el.isConnected && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
   // Camadas por cima da tela (a última adicionada fica na frente)
-  const LAYERS = '.ask-wrap, .cfg-wrap, .sheet-wrap, .sl-sheet-wrap, .trn-wrap, .paper-wrap, .walkout, .pk-wrap, .album, .bigmoment, .mo-wrap';
+  const LAYERS = '.ask-wrap, .cfg-wrap, .sheet-wrap, .sala, .sl-sheet-wrap, .trn-wrap, .paper-wrap, .walkout, .pk-wrap, .album, .bigmoment, .mo-wrap';
   // Camadas que fecham ou avançam com um clique em qualquer lugar
   const TAP_LAYER = /\b(paper-wrap|walkout|bigmoment|album|pk-wrap|mo-wrap)\b/;
   const top = () => { const ls = [...document.querySelectorAll(LAYERS)].filter(visible); return ls[ls.length - 1] || null; };
@@ -61,6 +61,11 @@
   const primary = root => [...root.querySelectorAll('.btn:not(.ghost):not(:disabled)')]
     .find(b => visible(b) && !b.closest('.choices') && !b.classList.contains('opt'));
 
+  // Foco que veio do teclado (Tab): só ele deixa o Enter/Espaço com o botão em foco (o foco que sobra de um clique não)
+  let kbdFocus = false;
+  addEventListener('pointerdown', () => { kbdFocus = false; }, true);
+  addEventListener('keydown', e => { if (e.key === 'Tab') kbdFocus = true; }, true);
+
   addEventListener('keydown', e => {
     if (!on() || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
     const t = e.target;
@@ -78,8 +83,10 @@
     }
     // Esc: fecha a janela da frente (ou o post)
     if (k === 'Escape') {
-      const x = [...scope.querySelectorAll('.cfg-x, .sp-x, .sl-sh-x, #sl-x, #trn-x, [aria-label^="Fechar"]')].find(visible);
+      const x = [...scope.querySelectorAll('.cfg-x, .sp-x, .sl-sh-x, #sl-x, #sl-back, #trn-x, #pk-close, .ask [data-a="no"], [aria-label^="Fechar"]')].find(visible);
       if (x) { x.click(); return done(); }
+      // A camada sabe fechar sozinha (pacotinho parado: o clique no meio abriria um)
+      if (layer && layer._esc && layer._esc()) return done();
       if (layer && TAP_LAYER.test(layer.className)) { tapLayer(layer); return done(); }
       return;
     }
@@ -87,9 +94,14 @@
     if (layer && /\balbum\b/.test(layer.className) && (k === 'ArrowLeft' || k === 'ArrowRight' || go)) {
       clickAt(layer, k === 'ArrowLeft' ? 0.1 : 0.9); return done();
     }
-    // 1–4: opções do evento
+    // Livro da coleção: ←/→ viram a página
+    if (!layer && (k === 'ArrowLeft' || k === 'ArrowRight')) {
+      const b = document.getElementById(k === 'ArrowLeft' ? 'bk-prev' : 'bk-next');
+      if (visible(b)) { if (!b.disabled) b.click(); return done(); }
+    }
+    // 1–4: opções do evento, de "Pouco espaço", da característica e estilos do lance
     if (/^[1-4]$/.test(k)) {
-      const b = [...scope.querySelectorAll('.choices [data-i]')].filter(visible)[+k - 1];
+      const b = [...scope.querySelectorAll('.choices > button')].filter(visible)[+k - 1];
       if (b && !b.disabled) { b.click(); return done(); }
       return;
     }
@@ -102,10 +114,13 @@
     }
     // Resumo da temporada mostrando os blocos: Espaço pula para o fim
     if (!layer && document.getElementById('skip-hint')) { scope.dispatchEvent(new MouseEvent('click', { bubbles: true })); return done(); }
-    // Botão em foco: o Enter/Espaço do próprio navegador já clica
-    if (t && t.tagName === 'BUTTON' && t !== document.body) return;
+    // Botão em foco pelo Tab, na janela da frente: o Enter/Espaço do próprio navegador já clica. O que sobrou de um
+    // clique (ou ficou atrás da janela aberta) não é clicado de novo: a tecla vai para o botão principal
+    const onBtn = t && t.tagName === 'BUTTON';
+    if (onBtn) { if (kbdFocus && (!layer || layer.contains(t))) return; t.blur(); }
     const b = primary(scope);
     if (b) { b.click(); return done(); }
+    if (onBtn) done();
   }, true);
 
   // ---------- Telas curtas na tela larga ----------
@@ -118,6 +133,7 @@
   const NO_LIFT = '.s-hero, #wc-list, #kick, .kick-stage, .cc-side, #b-new, #b-start, #b-go';
   function lift() {
     if (!scr) return;
+    if (scr.dataset.same) { delete scr.dataset.same; return; } // mesma tela redesenhada (U.render same): fica onde está
     scr.style.marginTop = '';
     if (!wide.matches || scr.classList.contains('center') || scr.querySelector(NO_LIFT)) return;
     if (barEl.hidden && !scr.querySelector('.of-rail')) return; // só na carreira (com a barra) e nas propostas da base
@@ -127,7 +143,9 @@
     if (free > 48) scr.style.marginTop = Math.round(free * 0.42) + 'px';
   }
   if (scr) {
-    new MutationObserver(lift).observe(scr, { childList: true });
+    // Só a dica entrando ou saindo ("Entendi") não é tela nova: não mede de novo (a tela pulava)
+    const tipOnly = ms => ms.every(m => [...m.addedNodes, ...m.removedNodes].every(n => n.classList && n.classList.contains('tip-card')));
+    new MutationObserver(ms => { if (!tipOnly(ms)) lift(); }).observe(scr, { childList: true });
     let rq = 0;
     addEventListener('resize', () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(lift); });
     if (wide.addEventListener) wide.addEventListener('change', lift);

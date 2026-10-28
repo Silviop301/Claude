@@ -34,9 +34,8 @@ digest = hashlib.sha1("".join(files).encode()).hexdigest()[:8]
 core_re = re.compile(r"^\./(?:$|index\.html|style\.css|manifest\.webmanifest|sw\.js|src/|fonts/|icons/)")
 core = [f for f in files if core_re.match(f)]
 rest = [f for f in files if not core_re.match(f)]
-assets = ",\n  ".join('"%s"' % f for f in core)
 later = ",\n  ".join('"%s"' % f for f in rest)
-(ROOT / "sw.js").write_text("""// Gerado por tools/craque_sw.py — não editar à mão.
+SW = """// Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.
 const CACHE = 'craque-%s';
 const ASSETS = [
@@ -83,7 +82,7 @@ self.addEventListener('fetch', e => {
       const copy = res.clone();
       caches.open(CACHE).then(c => c.put(req, copy));
       return res;
-    }).catch(() => caches.match(req, { ignoreSearch: true })));
+    }).catch(() => caches.match(req).then(hit => hit || caches.match(req, { ignoreSearch: true }))));
     return;
   }
   e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => {
@@ -91,14 +90,20 @@ self.addEventListener('fetch', e => {
     return res;
   })));
 });
-""" % (digest, assets, later))
+"""
 # Versão pelo conteúdo do código: vai na URL de cada script/estilo e do service worker (?v=...).
 # O index.html não fica em cache no CDN; assim cada deploy força js/css novos mesmo com cache longo.
-code = sorted(p for p in ROOT.rglob("*") if p.is_file() and p.suffix in (".js", ".css") and p.name != "sw.js")
-ver = hashlib.sha1(b"".join(p.read_bytes() for p in code) + (ROOT / "sw.js").read_bytes()).hexdigest()[:8]
+# Calculada antes de gravar o sw.js, que guarda o código com a mesma versão (?v=) que a página pede:
+# sem isso a instalação baixava tudo de novo sem ?v= (e, no CDN, uma cópia velha de até 7 dias).
 idx = ROOT / "index.html"
 html = idx.read_text()
-html = re.sub(r'((?:src|href)="(?:src/[^"?]+\.js|style\.css))(?:\?v=[0-9a-f]+)?"', r'\1?v=' + ver + '"', html)
+VER_RE = r'((?:src|href)="(?:src/[^"?]+\.js|style\.css))(?:\?v=[0-9a-f]+)?"'
+paged = sorted({"./" + m.group(1).split('"')[-1] for m in re.finditer(VER_RE, html)})  # o que a página pede com ?v=
+code = sorted(p for p in ROOT.rglob("*") if p.is_file() and p.suffix in (".js", ".css") and p.name != "sw.js")
+ver = hashlib.sha1(b"".join(p.read_bytes() for p in code) + (SW % (digest, " ".join(core + paged), later)).encode()).hexdigest()[:8]
+assets = ",\n  ".join('"%s"' % (f + "?v=" + ver if f in paged else f) for f in core)
+(ROOT / "sw.js").write_text(SW % (digest, assets, later))
+html = re.sub(VER_RE, r'\1?v=' + ver + '"', html)
 html = re.sub(r"window\.CLIMBIX_VER = '[0-9a-f]*'", "window.CLIMBIX_VER = '" + ver + "'", html)
 # Ícones: versão pelo conteúdo (o CDN guarda imagens por 7 dias)
 html = re.sub(r'((?:href|content)="(icons/[^"?]+\.png))(?:\?v=[0-9a-f]+)?(")', lambda m: m.group(1) + "?v=" + fhash(ROOT / m.group(2)) + m.group(3), html)
