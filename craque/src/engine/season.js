@@ -770,7 +770,8 @@
       ['Último capítulo?', nick + ' está escrevendo as páginas finais. Que sejam à altura do livro inteiro.'],
       ['O relógio', 'Contra o relógio, até os craques perdem. ' + nick + ' perdeu alguns segundos este ano; o talento, nenhum.'],
       ['Saber sair', 'Os grandes escolhem a hora de sair. Os outros esperam ser lembrados disso. ' + nick + ' ainda pode escolher.']]);
-    if (s.rating >= 7.5 && cur.tier <= 2) return col('grande', [
+    // Elogio de temporada (grande, craque, jovem) só com jogos de verdade, como 'bom'; o banco cai em 'minutos'
+    if (s.rating >= 7.5 && s.games >= 12 && cur.tier <= 2) return col('grande', [
       ['Grande demais', nick + ' joga num nível acima do resto ' + dcl + '. Se ninguém de fora bater na porta, é porque não estão assistindo.'],
       ['A vitrine é pequena', 'Tem jogador que nasce para palco maior. ' + nick + ' está pronto; ' + cl + ' sabe disso.'],
       ['Diamante escondido', 'Os olheiros dos grandes deviam pagar ingresso para ver ' + nick + '. Ainda dá tempo de chegar antes dos outros.'],
@@ -779,7 +780,7 @@
       ['Está pronto', 'Já disse e repito: ' + nick + ' está pronto para coisa maior. Quem demorar vai pagar mais caro.'],
       ['Peixe grande', nick + ' é um peixe grande num aquário pequeno. O oceano está esperando.'],
       ['Alguém avise', 'Alguém avise os grandes clubes que ' + nick + ' existe. Eu já avisei nesta coluna três vezes.']]);
-    if (s.rating >= 7.5) return col(def ? 'craqueD' : 'craque', def ? [
+    if (s.rating >= 7.5 && s.games >= 12) return col(def ? 'craqueD' : 'craque', def ? [
       ['Fora da curva', 'Atacante que encara ' + nick + ' sai de campo pensando na vida. Defender também é talento.'],
       ['O jogo que ninguém vê', 'Não aparece nos melhores momentos, mas é dele o jogo que ninguém vê. Sem ' + nick + ', ' + cl + ' é outro time.'],
       ['Tranquilidade', 'Com ' + nick + ' atrás, o resto do time joga sem medo. Isso não sai em estatística.'],
@@ -816,7 +817,7 @@
       ['Passo à frente', nick + ' deu um passo à frente. O próximo é o mais difícil: virar referência.'],
       ['Bom sinal', 'Ano bom de ' + nick + ' sem precisar de manchete. É assim que se constroem as grandes carreiras.'],
       ['Cresceu', 'Dá para ver a diferença do ' + nick + ' de um ano atrás. Mais maduro, mais decisivo.']]);
-    if (c.age <= 19 && s.rating >= 6.9) return col('jovem', [
+    if (c.age <= 19 && s.rating >= 6.9 && s.games >= 12) return col('jovem', [
       ['Guardem esse nome', 'Com ' + c.age + ' anos, ' + nick + ' joga sem medo. Falta casca, sobra personalidade. O futuro é dele, se não se perder no caminho.'],
       ['Menino de ouro', 'Tem ' + c.age + ' anos e já joga como veterano. Só peço a ' + nick + ' uma coisa: não acredite em tudo que escrevem.'],
       ['Fome de bola', nick + ' tem ' + c.age + ' anos e joga como quem ainda tem tudo a provar. Que nunca perca isso.'],

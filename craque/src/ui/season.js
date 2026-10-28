@@ -25,12 +25,14 @@
   // Resenha da temporada: um programa sorteado comenta no seu estilo (D.MEDIA.shows), sobre o destaque do ano
   // (gols, assistências, idade, paredão, xerife) ou, sem destaque, sobre o ano (título, banco, lesão, nota).
   const GOAL_TALK = /\bgols?\b|gola[çc]o|dribl|pedalada|artilh/i;
+  // Jogou pouco (a mesma régua das manchetes: menos de 35% dos jogos): campeão do elenco, não dono da taça
+  const fewGames = res => !res.games || res.games < 10 || (res.part != null && res.part < 0.35);
   function resenha(res) {
     const shows = (D.MEDIA || {}).shows || [];
     if (!shows.length) return '';
     const cl = club(res.club);
     const ballon = res.awards.some(a => a.id === 'ballon');
-    const mood = ballon ? 'ballon' : res.titles.length ? 'title' : !res.games || res.games < 10 ? 'bench' : res.injury >= 25 ? 'injury'
+    const mood = ballon ? 'ballon' : fewGames(res) ? 'bench' : res.titles.length ? 'title' : res.injury >= 25 ? 'injury'
       : res.move && res.move.dir === 'down' ? 'down' : res.rating >= 7.6 ? 'great' : res.rating >= 7.0 ? 'good' : 'bad';
     const atk = res.pos === 'ATA' || res.pos === 'PON';
     const topic = res.games < 10 ? null : res.goals >= (atk ? 16 : 10) ? 'gols' : res.assists >= 10 ? 'assist'
@@ -440,7 +442,7 @@
   function lede(res, cl) {
     const tb = res.table;
     const pos = tb.pos === 1 ? (D.fem(cl.name) ? 'terminou campeã ' : 'terminou campeão ') + D.da(tb.league) : 'terminou em ' + tb.pos + 'º lugar ' + D.na(tb.league);
-    const perf = !res.games ? G.c.name + ' quase não entrou em campo, e ' + D.o(cl.name) + ' ' + pos + '.'
+    const perf = fewGames(res) ? G.c.name + ' quase não entrou em campo, e ' + D.o(cl.name) + ' ' + pos + '.'
       : res.rating >= 7.5 && tb.pos >= 11 ? G.c.name + ' foi o nome ' + D.do(cl.name) + ', mas o time não acompanhou e ' + pos + '.'
       : res.rating >= 7.5 ? G.c.name + ' foi o nome ' + D.do(cl.name) + ', que ' + pos + '.'
       : res.rating >= 6.8 ? 'Com atuações seguras de ' + G.c.name + ', ' + D.o(cl.name) + ' ' + pos + '.'
