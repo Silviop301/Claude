@@ -219,11 +219,13 @@
 
   function socialPost(ctx, next) {
     const c = G.c;
+    // Post do resumo (temporada ou despedida): a carreira já virou o ano; vale o ano e a idade da temporada jogada
+    const sr = ctx.res, yr = sr ? year() - 1 : year(), age = sr ? sr.age : c.age;
     const fx = fxApply(ctx), fame = c.fame || 0;
     const p = postOf(ctx), coms = commentsOf(p, ctx, fx), cl = club(p.club || c.club).name, T = c.totals || {}, r = p.res, m = p.m;
     const vs = m && m.vs ? D.o(club(m.vs).name) : 'o adversário', nota = r ? (Math.round(r.rating * 10) / 10).toFixed(1).replace('.', ',') : '';
     const fill = t => t.replace(/\{n\}/g, c.name).replace(/\{num\}/g, c.number || 10).replace(/\{time\}/g, cl).replace(/\{cor\}/g, heart(c.club))
-      .replace(/\{aoTime\}/g, D.ao(cl)).replace(/\{doTime\}/g, D.do(cl)).replace(/\{noTime\}/g, D.no(cl)).replace(/\{idade\}/g, c.age)
+      .replace(/\{aoTime\}/g, D.ao(cl)).replace(/\{doTime\}/g, D.do(cl)).replace(/\{noTime\}/g, D.no(cl)).replace(/\{idade\}/g, age)
       .replace(/\{stat\}/g, r ? statOf(r) : '').replace(/\{titulos\}/g, r ? D.andList(r.titles.map(x => x.name)) : '').replace(/\{jogos\}/g, r ? r.games : '')
       .replace(/\{nota\}/g, nota).replace(/\{pos\}/g, r && r.table ? r.table.pos : '').replace(/\{pts\}/g, r && r.table ? r.table.pts : '')
       .replace(/\{naLiga\}/g, r && r.table ? D.na(r.table.league) : '').replace(/\{min\}/g, m ? m.minute || 90 : '').replace(/\{vs\}/g, vs).replace(/\{contraVs\}/g, 'contra ' + vs)
@@ -249,12 +251,12 @@
     const when = String(10 + (likes % 12)).padStart(2, '0') + ':' + String(likes % 60).padStart(2, '0');
     render(
       // Fechar no topo e Continuar fixo embaixo: não precisa rolar até o fim do post
-      '<div class="sp-top"><div class="eyebrow">Temporada ' + year() + ' · ' + c.age + ' anos</div><button class="sp-x" id="b-post-x" aria-label="Fechar o post">' + U.ICON.x + '</button></div>' +
+      '<div class="sp-top"><div class="eyebrow">Temporada ' + yr + ' · ' + age + ' anos</div><button class="sp-x" id="b-post-x" aria-label="Fechar o post">' + U.ICON.x + '</button></div>' +
       '<p class="sp-fx' + (fx.none ? ' none' : fx.won === false ? ' ko' : '') + '">' + esc(fx.none ? fx.lbl : fx.res) + '</p>' +
       '<article class="xw">' +
       '<div class="xw-main"><header class="xw-head">' + ava(c.name, true) + '<div><b>' + esc(c.name) + '</b>' + (fame >= 80 ? XCHK : '') + '<small>@' + esc(me) + '</small></div></header>' +
       '<p class="xw-text">' + esc(p.text) + '</p>' +
-      '<p class="xw-when">' + when + ' · ' + year() + ' · <b>' + xn(nView, true) + '</b> visualizações</p>' +
+      '<p class="xw-when">' + when + ' · ' + yr + ' · <b>' + xn(nView, true) + '</b> visualizações</p>' +
       '<div class="xw-sum"><span><b>' + xn(nRt, true) + '</b> reposts</span><span><b>' + xn(likes, true) + '</b> curtidas</span></div>' +
       acts(nRep, nRt, likes, nView, true).replace('xw-acts', 'xw-acts big') + '</div>' +
       coms.map((x, i) => '<div class="xw-rep" style="--i:' + i + '">' + ava(x.nm || x.h) + '<div class="xw-rc"><p class="xw-rh"><b>' + esc(x.nm || pageName(x.h)) + '</b>' + (x.v ? XCHK : '') + ' <small>@' + esc(x.h) + ' · ' + hrs(i) + '</small></p>' +

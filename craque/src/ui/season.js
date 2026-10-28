@@ -454,7 +454,8 @@
     if (res.quiet) {
       const up = U.tierReveal(G.c, res.ovr0, res.ovr1); if (up) save();
       const list = (up ? [null] : []).concat(res.cards || []);
-      return list.length ? U.walkouts(G.c, list, onClose) : onClose && onClose();
+      // A carta nova é da temporada que acabou: rodapé com a idade dela, como no álbum (a carreira já virou o ano)
+      return list.length ? U.walkouts(Object.assign({}, G.c, { age: res.age }), list, onClose) : onClose && onClose();
     }
     const cl = club(res.club), [main, ...rest] = res.headlines, nick = G.c.name;
     // Foto da capa conforme a temporada: taça, maca (lesão), comemoração ou pose normal
@@ -465,7 +466,7 @@
       stats: D.plural(res.games, 'jogo', 'jogos') + ' · ' + seasonStats(res).map(([v, l]) => (l === 'Gols' ? D.plural(v, 'gol', 'gols') : l === 'Assist.' ? D.plural(v, 'assistência', 'assistências') : l === 'Defesas' ? D.plural(v, 'defesa', 'defesas') : v + ' ' + l.toLowerCase())).join(' · ') + (res.games ? ' · nota ' + res.rating.toFixed(1).replace('.', ',') : ''),
       lede: lede(res, cl), subs: rest, column: res.column },
       // Depois do jornal: revelação da carta nova (subiu de faixa) e das cartas especiais da temporada
-      () => { const up = U.tierReveal(G.c, res.ovr0, res.ovr1); if (up) save(); U.walkouts(G.c, (up ? [null] : []).concat(res.cards || []), onClose); });
+      () => { const up = U.tierReveal(G.c, res.ovr0, res.ovr1); if (up) save(); U.walkouts(Object.assign({}, G.c, { age: res.age }), (up ? [null] : []).concat(res.cards || []), onClose); });
   }
 
   // Duelo com o rival de geração: duas barras de nota que enchem quando o bloco aparece; quem passou o outro ganha o selo
