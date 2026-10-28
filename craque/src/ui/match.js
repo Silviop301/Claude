@@ -3,10 +3,10 @@
   const U = window.CRAQUE_UI;
   const { tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar } = U;
   // ---------- evento ----------
-  let pendingEvent = null;
+  // O evento sorteado fica na carreira (G.c.pendEv), como o lance: recarregar a página mostra o mesmo, sem sortear de novo
   function eventOrSeason() {
-    pendingEvent = S.pickEvent(G.c);
-    if (!pendingEvent) return momentOrSeason();
+    G.c.pendEv = S.pickEvent(G.c);
+    if (!G.c.pendEv) { delete G.c.pendEv; return momentOrSeason(); }
     G.step = 'event';
     save();
     eventScreen();
@@ -54,9 +54,10 @@
   }
 
   function eventScreen() {
-    if (!pendingEvent) pendingEvent = S.pickEvent(G.c);
-    if (!pendingEvent) return momentOrSeason();
-    const ev = pendingEvent;
+    // Save de antes do evento guardado na carreira: sorteia uma vez e guarda
+    if (!G.c.pendEv) { G.c.pendEv = S.pickEvent(G.c); if (G.c.pendEv) save(); }
+    if (!G.c.pendEv) { delete G.c.pendEv; return momentOrSeason(); }
+    const ev = G.c.pendEv;
     // Proposta de transferência: compara com a situação de hoje antes de decidir
     const offer = S.eventOffer(G.c, ev);
     // Estilo ousado: cartão claro centrado (ícone grande, categoria, título, texto) e as opções com o mesmo peso visual.
@@ -77,7 +78,7 @@
       // Trocar de clube pede confirmação (dois toques)
       if (offer && b.dataset.i === '0' && !U.arm(b, '<b>Toque de novo para assinar</b>')) return;
       const prevClub = G.c.club, r = S.resolveEvent(G.c, ev, +b.dataset.i);
-      pendingEvent = null;
+      delete G.c.pendEv;
       bar();
       // O que mudou de verdade: o geral (quando mexeu) e cada efeito, verde quando ajuda e vermelho quando atrapalha
       const o1 = S.ovr(G.c), dOvr = r.ovrFrom != null ? o1 - r.ovrFrom : 0;
