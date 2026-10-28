@@ -21,9 +21,11 @@
     opts = opts && typeof opts === 'object' ? opts : {};
     const cl = club(o.club), lg = league(o.club);
     const kinds = { ask: ['Pedido seu', 'blue'], base: ['Base', ''], up: ['Clube maior', 'blue'], mid: ['Protagonista', 'green'], loan: ['Empréstimo · 1 ano', 'blue'], money: ['Proposta milionária', 'gold'], home: ['Volta pra casa', 'red'], stay: ['Renovar', ''] };
-    // "Clube maior" compara com o clube atual: quem está no banco de um grande recebe proposta pela nota, de clube menor
+    // "Clube maior" só acima do clube atual (quem está no banco de um grande recebe proposta pela nota, de clube menor)
+    // e do Protagonista mais forte da mesma lista; "Protagonista" só com papel de titular
     const cur = o.kind === 'up' && G.c && G.c.club ? club(G.c.club) : null;
-    const kk = cur && cl.strength <= cur.strength ? (o.share >= 0.78 ? 'mid' : '') : o.kind;
+    let kk = o.kind === 'up' && ((cur && cl.strength <= cur.strength) || cl.strength <= (opts.midTop || 0)) ? 'mid' : o.kind;
+    if (kk === 'mid' && o.share < 0.78) kk = '';
     const [kname, kcls] = kinds[kk] || ['', ''];
     const roleCls = o.share >= 0.78 ? 'green' : o.share >= 0.5 ? 'blue' : 'red';
     // O que o papel quer dizer na prática (quem chega agora não sabe que "banco" é quase não jogar)
@@ -48,7 +50,8 @@
   }
   // Carrossel dos cartões: rolagem por encaixe e pontinhos (no computador, lado a lado e sem pontinhos)
   function offerRail(list, opts) {
-    const cards = list.map((o, i) => offerCard(o, i, opts)).join('');
+    const midTop = Math.max(0, ...list.filter(o => o.kind === 'mid').map(o => club(o.club).strength));
+    const cards = list.map((o, i) => offerCard(o, i, Object.assign({ midTop }, opts))).join('');
     return '<div class="of-rail" id="of-rail">' + cards + '</div>' +
       (list.length > 1 ? '<div class="of-dots" aria-hidden="true">' + list.map((_, i) => '<i' + (i ? '' : ' class="on"') + '></i>').join('') + '</div>' +
         '<p class="of-hint">Arraste para ver ' + listNames(list.slice(1)) + '</p>' : '');
