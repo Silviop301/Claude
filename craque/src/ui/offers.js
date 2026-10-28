@@ -21,7 +21,10 @@
     opts = opts && typeof opts === 'object' ? opts : {};
     const cl = club(o.club), lg = league(o.club);
     const kinds = { ask: ['Pedido seu', 'blue'], base: ['Base', ''], up: ['Clube maior', 'blue'], mid: ['Protagonista', 'green'], loan: ['Empréstimo · 1 ano', 'blue'], money: ['Proposta milionária', 'gold'], home: ['Volta pra casa', 'red'], stay: ['Renovar', ''] };
-    const [kname, kcls] = kinds[o.kind] || ['', ''];
+    // "Clube maior" compara com o clube atual: quem está no banco de um grande recebe proposta pela nota, de clube menor
+    const cur = o.kind === 'up' && G.c && G.c.club ? club(G.c.club) : null;
+    const kk = cur && cl.strength <= cur.strength ? (o.share >= 0.78 ? 'mid' : '') : o.kind;
+    const [kname, kcls] = kinds[kk] || ['', ''];
     const roleCls = o.share >= 0.78 ? 'green' : o.share >= 0.5 ? 'blue' : 'red';
     // O que o papel quer dizer na prática (quem chega agora não sabe que "banco" é quase não jogar)
     const roleNote = o.share >= 0.9 ? 'joga tudo' : o.share >= 0.78 ? 'joga quase sempre' : o.share >= 0.5 ? 'metade dos jogos' : o.share >= 0.3 ? 'entra pouco' : 'quase não joga';
@@ -237,7 +240,9 @@
       '<div class="card event-card ob3 t-red sq-card" style="--k1:' + kit[0] + ';--k2:' + (kit[1] || kit[0]) + '"><div class="ev-top"><span class="ob3-ic">' + crest(cl.id) + '</span>' +
       '<span class="ev-tag red">Pouco espaço</span></div>' +
       '<h2>' + last.games + (last.games === 1 ? ' jogo' : ' jogos') + ' ' + D.no(esc(cl.name)) + ' na última temporada</h2>' +
-      '<p class="ob3-txt">Hoje você é <b>' + role.name.toLowerCase() + '</b>: o técnico prefere outros. Contrato: ' + G.c.contract + (G.c.contract > 1 ? ' anos' : ' ano') + '. O que fazer?</p></div>' +
+      // Quem já tem carta de titular (evoluiu no ano, ou perdeu minutos por técnico, idade ou escolhas) não lê "o técnico prefere outros"
+      (role.share >= 0.78 ? '<p class="ob3-txt">Pelo nível, hoje você seria <b>' + role.name.toLowerCase() + '</b>, mas jogou pouco. Contrato: '
+        : '<p class="ob3-txt">Hoje você é <b>' + role.name.toLowerCase() + '</b>: o técnico prefere outros. Contrato: ') + G.c.contract + (G.c.contract > 1 ? ' anos' : ' ano') + '. O que fazer?</p></div>' +
       '<div class="choices ob3-opts">' +
       (sq.loans.length ? opt('loan', 'plain', '', 'Pedir empréstimo', '<small>Uma temporada como titular num clube menor (' + sq.loans.length + (sq.loans.length === 1 ? ' interessado' : ' interessados') + '). Depois você volta, com o contrato valendo.</small>') : '') +
       opt('talk', 'risk', 'Arriscada', 'Conversar com o técnico', '<span class="ob3-bar" aria-hidden="true"><i class="w" style="width:' + talk + '%"></i><i class="l"></i></span>' +
