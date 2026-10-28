@@ -311,7 +311,7 @@
     }
   }
 
-  // opts: { c, moment, onDone(ok) }
+  // opts: { c, moment, onDone(ok), onResult(ok, why) }: onResult avisa na hora do chute (para salvar já), onDone depois do letreiro
   // Peças reaproveitadas pelo minigame do goleiro (defend.js)
   // Gol: sempre o desenho (o gol 3D pesava demais em celulares mais simples)
   function goal3d() { return Promise.resolve(null); }
@@ -443,6 +443,7 @@
       const kSide = setup.fk ? 0 : S().kickKeeper(setup, x, opts.keeperGuess || 0.38);
       if (setup.fk || kSide) keeper.classList.add('diving'); // estica os braços no pulo
       const res = S().kickResult(setup, x, y, kSide); // (a regra soma a subida do chute forte)
+      if (opts.onResult) opts.onResult(res.ok, res.why);
       // Para onde a bola vai no desenho
       let tx = px(dx), ty = py(Math.min(y + rise, 1.35)), tr = 8.5; // perto do gol a bola continua bem visível
       if (res.why === 'barreira') { ty = py(setup.wall) + 18; tr = 9.5; }

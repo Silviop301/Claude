@@ -163,13 +163,14 @@
   // c: quem bate (o treino pode usar um jogador médio da posição do lance)
   // kitCtx (Copa e Mundial): { vs: nome do adversário, mine: sua seleção ou clube } para os uniformes certos
   // style: estilo escolhido na tela do lance (S.STYLES); sem ele, o lance de sempre
-  function playMini(el, setupType, onDone, c, kitCtx, style) {
+  // onResult(ok, why): o resultado na hora em que sai, antes do letreiro e da animação (o lance de verdade já salva ali)
+  function playMini(el, setupType, onDone, c, kitCtx, style, onResult) {
     c = c || G.c;
     window.CRAQUE_KIT_CTX = kitCtx || null;
-    if (setupType === 'save') return window.CRAQUE_SAVE(el, { c, onDone, style });
-    if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, { c, onDone, style });
-    if (setupType === 'pass') return window.CRAQUE_PASS(el, { c, onDone, style });
-    return window.CRAQUE_KICK(el, { c, moment: { type: setupType, style }, onDone });
+    if (setupType === 'save') return window.CRAQUE_SAVE(el, { c, onDone, onResult, style });
+    if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, { c, onDone, onResult, style });
+    if (setupType === 'pass') return window.CRAQUE_PASS(el, { c, onDone, onResult, style });
+    return window.CRAQUE_KICK(el, { c, moment: { type: setupType, style }, onDone, onResult });
   }
   // Os dois estilos do lance, lado a lado: nome, como muda o lance e a chance pela carta em cada um.
   // Nenhum é sempre o melhor: a chance pende para atributos diferentes e o jeito de jogar muda.
@@ -259,8 +260,10 @@
       // O placar escuro continua em cima da cena, numa faixa baixa (placar, minuto e competição)
       render(board(m, m.score, T.tag, true) + '<div id="kick"></div>');
       sfx('whistle');
-      // Saiu da tela no meio da cobrança (voltou ao início): o resultado não redesenha nada; ao retomar, a chance decide
-      playMini($('kick'), st, (ok, why) => { if (!$('kick')) return; momentEnd(m, ok, T, why); }, null, null, m.style);
+      // Saiu da tela no meio da cobrança (voltou ao início): o resultado não redesenha nada; ao retomar, a chance decide.
+      // O resultado salva assim que sai: fechar o jogo com o letreiro na tela não troca o que se viu pela chance da carta
+      playMini($('kick'), st, (ok, why) => { if (!$('kick')) return; momentEnd(m, ok, T, why); }, null, null, m.style,
+        (ok, why) => { if (!$('kick')) return; S.resolveMoment(G.c, ok, why); save(); });
     }));
     $('b-auto').onclick = () => {
       const ok = S.autoMoment(G.c);

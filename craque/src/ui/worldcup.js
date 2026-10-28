@@ -300,7 +300,9 @@
     U.bindStyle(m, U.gateTrain(type, () => {
       run.momentStarted = true; save();
       render(wcBoard(run, g, liveMin(m.minute + "'"), tag, true) + '<div id="kick"></div>');
-      U.playMini($('kick'), type, (ok, why) => { if (!$('kick')) return; S.wcMoment(G.c, ok, why); save(); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }, m.style); // saiu da tela: ao retomar, a chance decide
+      // Saiu da tela: ao retomar, a chance decide. O resultado salva assim que sai (a 2ª chamada de S.wcMoment não faz nada)
+      U.playMini($('kick'), type, (ok, why) => { if (!$('kick')) return; S.wcMoment(G.c, ok, why); save(); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }, m.style,
+        (ok, why) => { if (!$('kick')) return; S.wcMoment(G.c, ok, why); save(); });
     }));
     $('b-auto').onclick = () => { S.wcMomentAuto(G.c); save(); wcPlay(); };
   }
@@ -326,7 +328,8 @@
     U.bindStyle(ps, U.gateTrain(type, () => {
       run.pensStarted = true; save();
       render(wcBoard(run, g, liveMin('Pênaltis'), tag, true) + '<div id="kick"></div>');
-      U.playMini($('kick'), type, ok => { if (!$('kick')) return; run.pensStarted = false; S.wcPens(G.c, ok); save(); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }, ps.style);
+      const pens = ok => { if (!$('kick')) return; run.pensStarted = false; S.wcPens(G.c, ok); save(); }; // vale na hora da cobrança (a 2ª chamada não faz nada)
+      U.playMini($('kick'), type, ok => { if (!$('kick')) return; pens(ok); wcPlay(); }, null, { vs: g.opp, mine: cwc ? club(run.club).name : G.c.country }, ps.style, pens);
     }));
     $('b-auto').onclick = () => { S.wcPensAuto(G.c); save(); wcPlay(); };
   }

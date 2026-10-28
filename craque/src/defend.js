@@ -103,6 +103,7 @@
       const d = dive === null ? 0 : dive;
       const saved = miss || (d === side && (side === 0 || Math.abs(x) <= setup.diveReach));
       const why = miss ? 'fora' : saved ? 'defesa' : 'gol';
+      if (opts.onResult) opts.onResult(saved, why); // o resultado já vale (o lance salva antes da animação)
       const tx = P.px(Math.max(-1.25, Math.min(1.25, x))), ty = P.py(Math.min(y, 1.1));
       // Mergulho: na defesa a luva vai até a bola; senão, pula para o lado escolhido.
       // Bola pra fora: no lado certo a luva para bem perto da trave, nunca além (deitado, o corpo ainda cabe no gol)
@@ -197,6 +198,7 @@
     function end(ok, why) {
       if (result) return;
       result = { ok, why };
+      if (opts.onResult) opts.onResult(ok, ok ? 'desarme' : why);
       sfx(ok ? 'cheer' : 'miss');
       if (cine) { const a = at(g.u); if (ok) cine.win(a.x + 10, a.y - 20, colorsOf(kits.mine)); else cine.lose(why === 'passou' || why === 'tarde' || why === 'cedo' ? P.GX : null, 140, 4); }
       banner(el, ok ? 'DESARME!' : why === 'cedo' ? 'CHEGOU CEDO!' : why === 'tarde' ? 'CHEGOU TARDE!' : why === 'drible' ? 'DRIBLOU!' : 'GOL DELES', ok);
@@ -423,6 +425,7 @@
       })(s2);
     }
     function end(ok, why) {
+      if (opts.onResult) opts.onResult(ok, ok ? 'passe' : why);
       sfx(ok ? 'goal' : 'miss');
       if (cine) { if (ok) cine.win(180, GL - 10, colorsOf(kits.mine)); else cine.lose(null, null, why === 'impedido' ? 2 : 4); }
       banner(el, ok ? 'GOOOL!' : why === 'impedido' ? 'IMPEDIDO!' : why === 'goleiro' ? 'O GOLEIRO SAIU!' : 'CORTADO!', ok);
