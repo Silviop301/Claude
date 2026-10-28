@@ -1,6 +1,6 @@
 // Interface — computador (mouse e teclado). Só liga onde há mouse de verdade (hover + ponteiro fino):
 //  - textos de "Toque…" viram "Clique…" (as telas são escritas para o celular);
-//  - atalhos: Espaço/Enter continua e cobra o lance, 1–4 escolhe a opção, ←/→ no lance do goleiro e no álbum, Esc fecha;
+//  - atalhos: Espaço/Enter continua e cobra o lance, 1–4 escolhe a opção, ←/→ no lance do goleiro, no álbum e no livro da coleção, Esc fecha;
 //  - o resto (lance maior, janelas no meio da tela, efeito ao passar o mouse) fica no style.css, em .desk.
 (function () {
   const U = window.CRAQUE_UI;
@@ -14,7 +14,7 @@
   // Só frases de instrução (não mexe em "pouco toque", "cada toque seu na bola"...)
   const SWAP = [
     [/\bToque\b/g, 'Clique'],
-    [/\btoque(?= (?:para|na tela|quando|numa|à (?:direita|esquerda)|de novo))/g, 'clique'],
+    [/\btoque(?= (?:para|na tela|quando|numa|no lado|logo|à (?:direita|esquerda)|de novo))/g, 'clique'],
     [/\b(Agora|primeiro|segundo|1º|2º|o) toque\b(?! seu)/g, '$1 clique'],
     [/\b([Dd])ois toques\b/g, (m, d) => (d === 'D' ? 'Dois' : 'dois') + ' cliques'],
   ];
@@ -94,9 +94,14 @@
     if (layer && /\balbum\b/.test(layer.className) && (k === 'ArrowLeft' || k === 'ArrowRight' || go)) {
       clickAt(layer, k === 'ArrowLeft' ? 0.1 : 0.9); return done();
     }
-    // 1–4: opções do evento
+    // Livro da coleção: ←/→ viram a página
+    if (!layer && (k === 'ArrowLeft' || k === 'ArrowRight')) {
+      const b = document.getElementById(k === 'ArrowLeft' ? 'bk-prev' : 'bk-next');
+      if (visible(b)) { if (!b.disabled) b.click(); return done(); }
+    }
+    // 1–4: opções do evento, de "Pouco espaço", da característica e estilos do lance
     if (/^[1-4]$/.test(k)) {
-      const b = [...scope.querySelectorAll('.choices [data-i]')].filter(visible)[+k - 1];
+      const b = [...scope.querySelectorAll('.choices > button')].filter(visible)[+k - 1];
       if (b && !b.disabled) { b.click(); return done(); }
       return;
     }
