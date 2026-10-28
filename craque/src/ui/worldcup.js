@@ -6,7 +6,7 @@
   // "do Brasil", "da Argentina", "de Portugal"
   // "o Brasil", "a Argentina", "Portugal"
   const theCountry = n => D.artPais(n) + n;
-  const ofCountry = n => ({ Brasil: 'do', Uruguai: 'do', Portugal: 'de' }[n] || 'da') + ' ' + n;
+  const ofCountry = n => ({ 'o ': 'do ', 'a ': 'da ', 'os ': 'dos ', '': 'de ' }[D.artPais(n)]) + n;
   // Copa do Mundo ou Mundial de Clubes (mesma tela, mesmo motor)
   const isCwc = run => !!run && run.kind === 'cwc';
   const tName = run => (isCwc(run) ? 'Mundial de Clubes' : 'Copa do Mundo');

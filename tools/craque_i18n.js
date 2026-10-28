@@ -131,7 +131,7 @@ const FILE_EN = [
   ['card.js', "label: 'OURO' }", "label: 'GOLD' }"],
   ['card.js', "label: 'MURALHA',", "label: 'THE WALL',"],
   ['card.js', "label: 'XERIFE',", "label: 'SHERIFF',"],
-  ['ui/worldcup.js', "({ Brasil: 'do', Uruguai: 'do', Portugal: 'de' }[n] || 'da') + ' ' + n", "n"],
+  ['ui/worldcup.js', "({ 'o ': 'do ', 'a ': 'da ', 'os ': 'dos ', '': 'de ' }[D.artPais(n)]) + n", "D.artPais(n) + n"],
   ['ui/worldcup.js', "Called up by the national team ' + ofCountry(", "Called up by ' + ofCountry("],
   ['ui/worldcup.js', "'classifica'", "'goes through'"],
   ['ui/worldcup.js', "'empata'", "'equalises'"],

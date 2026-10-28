@@ -305,7 +305,7 @@
     const final = (defTxt !== null ? defTxt + defEnd : txt).trim() + (m.rival ? ' ' + (ok ? 'Duelo direto com ' + m.rival.split(' ')[0] + ': ponto seu.' : 'Duelo direto: ponto para ' + m.rival.split(' ')[0] + '.') : '');
     // Título grande (gol, defesa, bote ou a lamentação); o passe errado segue o motivo, como a faixa do minigame
     const big = def ? (ok ? (st === 'save' ? 'DEFENDEU!' : 'ROUBOU!') : 'Gol deles…') : ok ? 'GOOOL!'
-      : st === 'pass' ? (why === 'impedido' ? 'Impedido…' : why === 'goleiro' ? 'Goleiro saiu…' : 'Cortado…') : 'Não entrou…';
+      : st === 'pass' ? (why === 'impedido' ? 'Impedido…' : why === 'goleiro' ? 'Goleiro…' : 'Cortado…') : 'Não entrou…';
     // Título grande (final continental ou liga principal) ganho no lance: faixa dourada, confete curto e "Comemorar"
     const LD = D.LADDER[club(G.c.club).league];
     const fest = ok && (m.type === 'cont' || (m.type === 'title' && !(LD && LD.up)));

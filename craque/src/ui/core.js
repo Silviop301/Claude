@@ -60,7 +60,7 @@
 
   function render(html, opts) {
     screen.innerHTML = html;
-    shownAt = performance.now();
+    if (!(opts && opts.same)) shownAt = performance.now(); // redesenho da mesma tela (por timer) não é tela nova
     // Telas curtas (resultado de evento ou de lance) ficam no meio da tela, sem meia tela vazia embaixo
     screen.classList.toggle('center', !!(opts && opts.center));
     // same: a mesma tela redesenhada (pré-temporada depois da escolha): sem a entrada de tela nova (piscava) e sem

@@ -4091,6 +4091,8 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .desk .trn .kick-stage { --kw: min(720px, 94vw, calc((100dvh - 300px) * 1.125)); }
 /* Relâmpago: o carimbo do resultado cobre o palco inteiro, que aqui sai da coluna (mesma conta do --kw do .kick-stage) */
 .desk .rl-stage > .rl-reveal { --kw: min(720px, 94vw, calc((100dvh - 262px) * 1.125)); width: var(--kw); margin-left: calc(50% - var(--kw) / 2); }
+/* Relâmpago: a fileira do X (sair) fica acima do placar, então o palco desconta mais 48 px para a dica caber */
+.desk .rl-stage .kick-stage, .desk .rl-stage > .rl-reveal { --kw: min(720px, 94vw, calc((100dvh - 310px) * 1.125)); }
 /* Lance no computador: cartões de estilo maiores (ícone e chance no alto, nome e explicação embaixo, alinhados entre os dois) */
 @media (min-width: 1000px) {
   .btn.opt.style.ob5-st { padding: 16px 16px 18px; }
@@ -4104,6 +4106,7 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
   html.desk .kick-stage { --kw: min(720px, 94vw, calc((100dvh / var(--z) - 262px) * 1.125)); }
   html.desk .trn .kick-stage { --kw: min(720px, 94vw, calc((100dvh / var(--z) - 300px) * 1.125)); }
   html.desk .rl-stage > .rl-reveal { --kw: min(720px, 94vw, calc((100dvh / var(--z) - 262px) * 1.125)); }
+  html.desk .rl-stage .kick-stage, html.desk .rl-stage > .rl-reveal { --kw: min(720px, 94vw, calc((100dvh / var(--z) - 310px) * 1.125)); }
   html.desk #screen > .ob5-res, html.desk .trn > .ob5-res { min-height: clamp(200px, calc(36svh / var(--z)), 340px); }
 }
 /* ----- fim V3 ----- */

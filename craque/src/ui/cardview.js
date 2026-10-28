@@ -92,7 +92,7 @@
       '<button class="btn" id="cv-play">Criar a minha carreira</button>' +
       '<button class="btn ghost" id="cv-share">Compartilhar esta carta</button></div>');
     mount3d($('cv-host'), d);
-    $('cv-play').onclick = () => { history.replaceState(null, '', location.pathname); U.home(); };
+    $('cv-play').onclick = () => { history.replaceState(history.state, '', location.pathname); U.home(); };
     $('cv-share').onclick = () => shareCard(d, $('cv-share'));
   }
 
@@ -103,7 +103,7 @@
     if (SHORT.test(c)) {
       render('<div class="cv-page"><div class="eyebrow">Carta do Climbix</div><p class="muted">Carregando a carta…</p></div>');
       fetch(CARDS_API + '?a=get&id=' + c).then(r => r.json()).then(j => { const d = j && j.d && decode(j.d); if (d) cardView(d); else throw new Error('sem carta'); })
-        .catch(() => { history.replaceState(null, '', location.pathname); U.home(); });
+        .catch(() => { history.replaceState(history.state, '', location.pathname); U.home(); });
       return true;
     }
     const d = decode(c);
