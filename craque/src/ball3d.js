@@ -9,7 +9,14 @@ const report3d = (() => { const seen = new Set(); return (what, e) => { if (seen
   window.CLIMBIX_REPORT && window.CLIMBIX_REPORT('3D: ' + what + (e ? ': ' + ((e && e.message) || e) : ''), e && e.stack); }; })();
 // O navegador pode descartar o 3D (memória da placa de vídeo): registra uma vez por tipo
 function watchLost(renderer, what) {
-  renderer.domElement.addEventListener('webglcontextlost', () => report3d('contexto perdido (' + what + ')'), { once: true });
+  renderer.domElement.addEventListener('webglcontextlost', () => { if (!renderer.__bye) report3d('contexto perdido (' + what + ')'); }, { once: true });
+}
+// Libera o 3D de vez: só dispose() não solta o contexto WebGL (os modelos em cache seguram cada renderer),
+// e depois de ~16 contextos o navegador derruba os mais antigos. A perda proposital não vai para o registro.
+function release(renderer) {
+  renderer.__bye = true;
+  renderer.dispose();
+  try { renderer.forceContextLoss(); } catch (e) { /* ok */ }
 }
 // Aparelho bem fraco (até 2 núcleos ou até 2 GB): 3D com resolução um pouco menor (os quadros por segundo não mudam)
 const WEAK = (navigator.hardwareConcurrency || 8) <= 2 || (navigator.deviceMemory || 8) <= 2;
@@ -68,6 +75,9 @@ function mount(el) {
   fit();
 
   let ball = null, spinX = 0, spinY = 0.012, drag = null, t0 = performance.now(), raf = 0;
+  const onResize = () => { fit(); if (still && ball) renderer.render(scene, cam); };
+  // Saiu da tela inicial: libera a GPU
+  const bye = () => { removeEventListener('resize', onResize); release(renderer); };
   modelReady.then(m => {
     if (!el.isConnected) return;
     ball = m.clone();
@@ -94,7 +104,7 @@ function mount(el) {
   if ('IntersectionObserver' in window) new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(el);
   const loop = now => {
     // Saiu da tela inicial: libera a GPU
-    if (!el.isConnected) { renderer.dispose(); removeEventListener('resize', fit); return; }
+    if (!el.isConnected) return bye();
     raf = requestAnimationFrame(loop);
     if (!ball || document.hidden || !visible) return;
     const k = last ? Math.min(3, (now - last) / 16.7) : 1; // mesma velocidade com menos quadros
@@ -109,7 +119,9 @@ function mount(el) {
     renderer.render(scene, cam);
   };
   if (!still) raf = requestAnimationFrame(loop);
-  addEventListener('resize', () => { fit(); if (still && ball) renderer.render(scene, cam); });
+  // Bola parada: sem o laço, confere de vez em quando se a tela inicial saiu
+  else { const iv = setInterval(() => { if (!el.isConnected) { clearInterval(iv); bye(); } }, 1000); }
+  addEventListener('resize', onResize);
 }
 
 // Bola 3D do minigame: uma tela transparente por cima da cena em SVG (viewBox w×h),
@@ -152,7 +164,7 @@ function flyer(host, w, h) {
         b.scale.setScalar(s0 * (2 * r) / diam);
         scene.add(b);
       },
-      dispose() { renderer.dispose(); cv.remove(); removeEventListener('resize', fit); },
+      dispose() { release(renderer); cv.remove(); removeEventListener('resize', fit); },
     };
     addEventListener('resize', fit);
     return api;
@@ -178,7 +190,7 @@ function snapshot() {
     scene.add(ball);
     renderer.render(scene, cam);
     const url = renderer.domElement.toDataURL('image/png');
-    renderer.dispose();
+    release(renderer);
     return url;
   }).catch(() => null);
 }
@@ -270,7 +282,7 @@ function goal(svg, m) {
       },
       // Bola na trave: o gol todo treme
       shake() { play(500, u => { g.position.x = 0.05 * Math.sin(u * 40) * (1 - u); }, 'shake'); },
-      dispose() { cancelAnimationFrame(anim); renderer.dispose(); },
+      dispose() { cancelAnimationFrame(anim); release(renderer); },
     };
   }).catch(() => null);
 }
@@ -440,7 +452,7 @@ function card3d(host, data, opts) {
       }
     }
     await apply(data);
-    if (!host.isConnected) { renderer.dispose(); cv.remove(); return null; }
+    if (!host.isConnected) { release(renderer); cv.remove(); return null; }
 
     const fit = () => {
       const w = host.clientWidth || 300, h = host.clientHeight || 420;
@@ -511,7 +523,7 @@ function card3d(host, data, opts) {
     const api = {
       update: d => apply(d),
       spin: () => { vyaw = 0.36; }, // uma volta e para de frente
-      dispose() { cancelAnimationFrame(raf); if (io) io.disconnect(); removeEventListener('resize', fit); removeEventListener('deviceorientation', onTilt); renderer.dispose(); pm.dispose(); cv.remove(); },
+      dispose() { cancelAnimationFrame(raf); if (io) io.disconnect(); removeEventListener('resize', fit); removeEventListener('deviceorientation', onTilt); pm.dispose(); release(renderer); cv.remove(); },
     };
     return api;
   }).catch(e => { console.warn('carta 3D', e); report3d('carta', e); return null; });
@@ -648,7 +660,7 @@ function newspaper(host, page, onClose) {
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   const dispose = () => {
     cancelAnimationFrame(raf); removeEventListener('resize', resize);
-    geo.dispose(); tex.dispose(); inkTex.dispose(); ink.dispose(); grain.dispose(); front.dispose(); back.dispose(); pm.dispose(); renderer.dispose();
+    geo.dispose(); tex.dispose(); inkTex.dispose(); ink.dispose(); grain.dispose(); front.dispose(); back.dispose(); pm.dispose(); release(renderer);
   };
 
   function frame(now) {
