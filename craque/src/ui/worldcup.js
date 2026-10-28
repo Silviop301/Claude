@@ -5,7 +5,7 @@
   // ---------- Copa do Mundo ----------
   // "do Brasil", "da Argentina", "de Portugal"
   // "o Brasil", "a Argentina", "Portugal"
-  const theCountry = n => (n === 'Portugal' ? '' : ['Brasil', 'Uruguai'].includes(n) ? 'o ' : 'a ') + n;
+  const theCountry = n => D.artPais(n) + n;
   const ofCountry = n => ({ Brasil: 'do', Uruguai: 'do', Portugal: 'de' }[n] || 'da') + ' ' + n;
   // Copa do Mundo ou Mundial de Clubes (mesma tela, mesmo motor)
   const isCwc = run => !!run && run.kind === 'cwc';
@@ -343,7 +343,9 @@
     // Fim no estilo ousado (O2): faixa dourada (campeão), prateada (vice) ou da fase em que caiu, e os números em blocos
     const last = run.games[run.games.length - 1], big = cwc ? crest(run.club, 'xl') : '<span class="wc-bigflag">' + usMark(run) + '</span>';
     const PH = { 'Oitavas de final': 'nas oitavas', 'Quartas de final': 'nas quartas', Semifinal: 'na semifinal' };
-    const lost = g => (g ? 'para ' + themMark(g) + ' ' + esc(g.opp) + (g.pens ? ' nos pênaltis (' + g.gf + ' × ' + g.ga + ')' : ' por ' + g.gf + ' × ' + g.ga) : '');
+    // Artigo antes da bandeira ou do escudo: "para a 🇩🇪 Alemanha", "para os 🇺🇸 EUA", "para o [escudo] Bayern"
+    const art = g => (g.crest ? D.o(g.opp).slice(0, -g.opp.length) : D.artPais(g.opp));
+    const lost = g => (g ? 'para ' + art(g) + themMark(g) + ' ' + esc(g.opp) + (g.pens ? ' nos pênaltis (' + g.gf + ' × ' + g.ga + ')' : ' por ' + g.gf + ' × ' + g.ga) : '');
     const ge = last && last.groupEnd;
     const end = run.champion
       ? '<div class="wc-end champ">' + (cwc ? trophy('cwc', 96, 'Mundial de Clubes') : trophy('wc', 96)) + '<b class="wc-band gold">' + (cwc ? 'Campeão mundial!' : 'Campeão do mundo!') + '</b><span class="wc-end-who">' + usMark(run) + ' ' + usName(run) + ' · ' + run.year + '</span></div>'

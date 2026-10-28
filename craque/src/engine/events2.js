@@ -54,7 +54,7 @@
       id: 'saudade', icon: '🏠', tone: 'blue', weight: 4, max: 1,
       when: c => c.age <= 22 && abroad(c) && atClub(c) <= 1,
       build: c => ({
-        title: 'Saudade de casa', text: 'Primeiro ano em ' + D.countryOf(club(c)) + '. Frio, comida diferente e a família longe.',
+        title: 'Saudade de casa', text: 'Primeiro ano ' + D.emPais(D.countryOf(club(c))) + '. Frio, comida diferente e a família longe.',
         options: [opt('Trazer a família', 'R$ 120 mil · forma +6%'), opt('Aguentar sozinho', '50%: amadurece (Técnico +8) · 50%: forma −8%')],
       }),
       resolve: (c, ev, i, r) => {
@@ -554,7 +554,7 @@
       id: 'adaptacao', icon: '🌍', tone: 'blue', weight: 4, max: 2,
       when: c => c.age >= 23 && abroad(c) && atClub(c) === 0,
       build: c => ({
-        title: 'Adaptação em ' + D.countryOf(club(c)), text: 'Idioma, clima e um futebol diferente. O começo está difícil.',
+        title: 'Adaptação ' + D.emPais(D.countryOf(club(c))), text: 'Idioma, clima e um futebol diferente. O começo está difícil.',
         options: [opt('Contratar professor e chef', 'R$ 80 mil · forma +6%'), opt('Aprender na marra', '40%: forma −8% · 60%: adaptado (Técnico +6)')],
       }),
       resolve: (c, ev, i, r) => {

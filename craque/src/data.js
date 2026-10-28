@@ -699,6 +699,11 @@
   D.aTaca = n => (MASC.includes(n) ? 'o ' : 'a ') + n;
   // Lista em texto corrido: "A, B e C"
   D.andList = a => (a.length > 1 ? a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1] : a.join(''));
+  // Países (da liga ou da seleção): "a Alemanha", "o Japão", "os EUA", "Portugal"; "na Bélgica", "no Japão", "nos EUA", "em Portugal"
+  const PAIS_O = ['Brasil', 'Uruguai', 'Japão', 'México', 'Equador', 'Senegal', 'Canadá', 'Irã', 'Catar', 'Chile', 'Peru', 'Paraguai', 'Egito', 'Marrocos'];
+  const PAIS_SEM = ['Portugal', 'Gana', 'Camarões'];
+  D.artPais = p => (PAIS_SEM.includes(p) ? '' : p === 'EUA' ? 'os ' : PAIS_O.includes(p) ? 'o ' : 'a ');
+  D.emPais = p => (PAIS_SEM.includes(p) ? 'em ' : p === 'EUA' ? 'nos ' : PAIS_O.includes(p) ? 'no ' : 'na ') + p;
 
   D.countryOf = club => D.LEAGUE_BY_ID[club.league].country;
   // Ligas do dinheiro (salários altíssimos, pouco prestígio)

@@ -131,7 +131,6 @@ const FILE_EN = [
   ['card.js', "label: 'OURO' }", "label: 'GOLD' }"],
   ['card.js', "label: 'MURALHA',", "label: 'THE WALL',"],
   ['card.js', "label: 'XERIFE',", "label: 'SHERIFF',"],
-  ['ui/worldcup.js', "(n === 'Portugal' ? '' : ['Brazil', 'Uruguay'].includes(n) ? 'o ' : 'a ') + n", "n"],
   ['ui/worldcup.js', "({ Brasil: 'do', Uruguai: 'do', Portugal: 'de' }[n] || 'da') + ' ' + n", "n"],
   ['ui/worldcup.js', "Called up by the national team ' + ofCountry(", "Called up by ' + ofCountry("],
   ['ui/worldcup.js', "'classifica'", "'goes through'"],
@@ -198,6 +197,7 @@ const DATA_EN = `
   D.fem = () => false; D.da = n => 'of ' + the(n); D.na = n => 'in ' + the(n); D.paraA = n => 'to ' + the(n);
   D.andList = a => (a.length > 1 ? a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : a.join('')); // 'A, B and C'
   D.aTaca = the; // 'the FA Cup', 'La Liga'
+  D.artPais = p => (p === 'USA' ? 'the ' : ''); D.emPais = p => 'in ' + D.artPais(p) + p; // 'Germany', 'in the USA'
 })(typeof window !== 'undefined' ? window.CRAQUE_DATA : globalThis.CRAQUE_DATA);
 `;
 
