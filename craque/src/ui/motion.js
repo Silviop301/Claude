@@ -50,7 +50,7 @@
       w.classList.remove('shake'); void w.offsetWidth; w.classList.add('shake');
       if (U.sfx) U.sfx(f.grade === 'S' || f.grade === 'A' ? 'cheer' : 'whistle');
       const i = G.findIndex(([g]) => g === f.grade), next = i > 0 ? G[i - 1] : null;
-      verdict.innerHTML = 'Nota ' + f.grade + ' · ' + esc(f.verdict) + '<small>' + (next ? 'Faltaram ' + (next[1] - f.score) + ' pontos para a nota ' + next[0] + '.' : 'Nota máxima.') + '</small>';
+      verdict.innerHTML = 'Nota ' + f.grade + ' · ' + esc(f.verdict) + '<small>' + (next ? (next[1] - f.score === 1 ? 'Faltou 1 ponto para a nota ' : 'Faltaram ' + U.pts(next[1] - f.score) + ' pontos para a nota ') + next[0] + '.' : 'Nota máxima.') + '</small>';
       verdict.classList.add('in');
       w.querySelector('.mo-hint').textContent = 'Toque para ver a carta';
       timers.push(setTimeout(close, 2600));

@@ -19,9 +19,9 @@
     const i = S.GRADES.findIndex(([g]) => g === f.grade), next = i > 0 ? S.GRADES[i - 1] : null;
     return '<details class="more score-how"><summary>Como chegou a esta nota</summary>' +
       '<ul class="sh-parts">' + f.parts.map(p => '<li><span>' + esc(p.txt) + '</span><b' + (p.v < 0 ? ' class="neg"' : '') + '>' + (p.v < 0 ? '−' + -p.v : '+' + p.v) + '</b></li>').join('') +
-      '<li class="tot"><span>Total</span><b>' + f.score + '</b></li></ul>' +
+      '<li class="tot"><span>Total</span><b>' + U.pts(f.score) + '</b></li></ul>' +
       '<p class="sh-bands">' + S.GRADES.filter(([, min]) => min > 0).map(([g, min]) => g + ' a partir de ' + min).join(' · ') + '</p>' +
-      (next ? '<p class="sh-next">Faltaram ' + (next[1] - f.score) + ' pontos para a nota ' + next[0] + '.</p>' : '') + '</details>';
+      (next ? '<p class="sh-next">' + (next[1] - f.score === 1 ? 'Faltou 1 ponto para a nota ' : 'Faltaram ' + U.pts(next[1] - f.score) + ' pontos para a nota ') + next[0] + '.</p>' : '') + '</details>';
   }
 
   // Você contra o rival de geração (engine/rival.js), número a número
@@ -41,8 +41,8 @@
     // Quem é novo não sabe o que é "ponto": a linha diz de onde eles vêm (os pesos estão em S.SCORE_W)
     // (quanto faltou para a próxima nota já está na barra de pontos, logo acima)
     if (i > 0 && hall.length <= 2) out.push(['🎯', 'Pontos vêm de jogar bem, títulos (' + S.SCORE_W.title + ' cada), Bola de Ouro (' + S.SCORE_W.ballon + ') e Copa do Mundo (' + S.SCORE_W.wc + ')']);
-    if (rank === 1 && hall.length > 1) out.push(['🏅', 'Novo recorde: <b>+' + (f.score - hall[1].score) + '</b> sobre o anterior']);
-    else if (rank > 1) out.push(['🏅', 'Seu recorde é ' + hall[0].score + ' pts: faltaram <b>' + (hall[0].score - f.score) + '</b>']);
+    if (rank === 1 && hall.length > 1) out.push(['🏅', 'Novo recorde: <b>+' + U.pts(f.score - hall[1].score) + '</b> sobre o anterior']);
+    else if (rank > 1) out.push(['🏅', 'Seu recorde é ' + U.pts(hall[0].score) + (hall[0].score - f.score === 1 ? ' pts: faltou <b>' : ' pts: faltaram <b>') + U.pts(hall[0].score - f.score) + '</b>']);
     const R = S.rivalSummary && S.rivalSummary(c, f.titles);
     const h = c.rivalHist;
     if (R && R.rows.filter(([, a, b]) => a < b).length > R.rows.filter(([, a, b]) => a > b).length) {
@@ -63,7 +63,8 @@
   function pointsBar(f, rankTxt) {
     const G2 = S.GRADES, i = G2.findIndex(([g]) => g === f.grade), next = i > 0 ? G2[i - 1] : null, lo = G2[i] ? G2[i][1] : 0;
     const pct = next ? Math.max(4, Math.min(100, Math.round((f.score - lo) / Math.max(1, next[1] - lo) * 100))) : 100;
-    return '<div class="o6-pts"><div class="o6-pl"><b>' + f.score + ' pontos</b><span>' + (next ? 'faltaram ' + (next[1] - f.score) + ' para ' + next[0] : 'nota máxima') + '</span></div>' +
+    const miss = next ? next[1] - f.score : 0;
+    return '<div class="o6-pts"><div class="o6-pl"><b>' + U.pts(f.score) + ' pontos</b><span>' + (next ? (miss === 1 ? 'faltou 1 para ' : 'faltaram ' + U.pts(miss) + ' para ') + next[0] : 'nota máxima') + '</span></div>' +
       '<i><em style="width:' + pct + '%"></em></i>' + (rankTxt ? '<small>' + rankTxt + '</small>' : '') + '</div>';
   }
   // Revanche (engine/rival.js): só nas carreiras normais (ui/start.js marca rivalKeep). Quem levou a melhor fica guardado

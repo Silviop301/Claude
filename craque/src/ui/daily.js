@@ -40,7 +40,7 @@
     return '<button class="daily" id="b-daily"><span class="dl-seal">' + U.ICON['calendar-days'] + '</span><span class="dl-top">Carreira do dia · ' + shortDate(key) + '</span>' +
       '<b>' + esc(sp.name) + ' <span>' + U.flag(flag) + ' ' + D.POS[sp.pos].name + ' · ' + sp.number + '</span></b>' +
       (sp.origin !== 'base' || sp.challenge ? '<span class="dl-sub dl-rule">' + [S.ORIGIN_BY_ID[sp.origin], S.CHALLENGE_BY_ID[sp.challenge]].filter(o => o && o.id !== 'base').map(o => U.emo(o.icon, 'xs') + ' ' + esc(o.name)).join(' · ') + '</span>' : '') +
-      '<span class="dl-sub">' + (best ? 'Seu melhor hoje: nota ' + best.grade + ' · ' + best.score + ' pts' : 'Desafio de hoje: todos jogam com ele. Quem vai mais longe?') + '</span></button>';
+      '<span class="dl-sub">' + (best ? 'Seu melhor hoje: nota ' + best.grade + ' · ' + U.pts(best.score) + ' pts' : 'Desafio de hoje: todos jogam com ele. Quem vai mais longe?') + '</span></button>';
   }
 
   // Fim de carreira do dia: guarda o melhor resultado e prepara o texto para compartilhar
@@ -50,7 +50,7 @@
     const r = { score: f.score, grade: f.grade, verdict: f.verdict, goals: c.totals.goals, assists: c.totals.assists, titles: f.titles, ballon: c.totals.ballon, wc: c.totals.wc || 0 };
     const best = !prev || r.score > prev.score;
     if (best) { all[c.daily] = r; store(KEY, all); }
-    const txt = 'Climbix do dia ' + shortDate(c.daily) + ' — ' + c.name + ': nota ' + r.grade + ' · ' + r.score + ' pts\n' +
+    const txt = 'Climbix do dia ' + shortDate(c.daily) + ' — ' + c.name + ': nota ' + r.grade + ' · ' + U.pts(r.score) + ' pts\n' +
       D.plural(r.goals, 'gol', 'gols') + ' · ' + r.assists + ' assist. · ' + D.plural(r.titles, 'título', 'títulos') + (r.ballon ? ' · ' + D.plural(r.ballon, 'Bola de Ouro', 'Bolas de Ouro') : '') + (r.wc ? ' · campeão do mundo' : '') + '\n' + r.verdict;
     setTimeout(() => {
       const b = $('b-daily-share');
@@ -63,7 +63,7 @@
       };
     }, 0);
     return '<div class="daily-res"><span class="dl-top">' + U.ICON['calendar-days'] + ' Carreira do dia · ' + shortDate(c.daily) + '</span>' +
-      '<b>' + (best ? (prev ? 'Novo melhor do dia!' : 'Resultado do dia registrado') : 'Seu melhor hoje continua: ' + prev.score + ' pts') + '</b>' +
+      '<b>' + (best ? (prev ? 'Novo melhor do dia!' : 'Resultado do dia registrado') : 'Seu melhor hoje continua: ' + U.pts(prev.score) + ' pts') + '</b>' +
       '<button class="btn" id="b-daily-share">Compartilhar resultado do dia</button></div>';
   }
 
