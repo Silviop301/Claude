@@ -51,7 +51,8 @@
         .then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { rec[k] = b; }).catch(() => { /* fica a sintetizada */ });
     });
   }
-  if (root.addEventListener) root.addEventListener('pointerdown', init, { passive: true });
+  // Som desligado: nada é montado nem baixado (ligar nas Configurações chama play('coin'), já dentro do toque)
+  if (root.addEventListener) root.addEventListener('pointerdown', () => { if (on) init(); }, { passive: true });
 
   const rnd = (a, b) => a + Math.random() * (b - a);
   // Envelope simples: sobe em a segundos, segura, desce até t+dur
