@@ -17,7 +17,7 @@
       // Carreira em andamento: a carta do jogador no lugar de um botão de texto
       (saved && saved.c ? (() => { const sc = saved.c, o = S.ovr(sc), t = tierCls(o), cl = club(sc.club);
         return '<button class="cont-card" id="b-cont"><span class="scard metal ' + t + '"><span class="sc-tier">' + TIER_NAME[t] + '</span><b>' + o + '</b><span class="sc-pos">' + sc.pos + '</span></span>' +
-          '<span class="cc-info"><small>Continuar carreira</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : U.lastHome()) + sc.age + ' anos</span></span><span class="cc-go">' + U.ICON['chevron-right'] + '</span></button>'; })() : U.lastHome()) +
+          '<span class="cc-info"><small>Continuar carreira</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : '') + sc.age + ' anos</span></span><span class="cc-go">' + U.ICON['chevron-right'] + '</span></button>'; })() : U.lastHome()) +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
       U.relampagoHome() +
       U.rankHome() +
@@ -40,7 +40,8 @@
       resume(saved.step);
     };
     U.backTo = null;
-    $('b-new').onclick = () => create();
+    // Com carreira em andamento, confirma antes: o save é um só e o novo jogador toma o lugar dela ao assinar
+    $('b-new').onclick = () => (saved && saved.c ? U.ask('Começar outra carreira?', 'A carreira de ' + saved.c.name + ' (' + saved.c.age + ' anos) será apagada quando o novo jogador assinar com um clube.', 'Nova carreira', create) : create());
     U.lastHomeBind();
     U.packHomeBind();
     U.streakBind(U.home); // pegou um pacotinho da sequência: a tela redesenha com o bloco de pacotinhos

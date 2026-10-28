@@ -188,7 +188,7 @@
       (win.askMsg && !academy ? '<p class="ask-msg">' + esc(win.askMsg) + '</p>' : '');
   }
   function bindTools(academy, redraw) {
-    $('b-reroll').onclick = () => U.ask('Pedir novas propostas?', 'As propostas atuais somem e chegam outras. Só dá para fazer isso uma vez' + (academy ? '.' : ' por janela.'), 'Pedir novas', () => { S.rerollOffers(G.c, academy); save(); sfx('whistle'); redraw(); });
+    $('b-reroll').onclick = () => U.ask('Pedir novas propostas?', 'As propostas atuais somem e chegam outras. Só dá para fazer isso uma vez' + (academy ? '.' : ' por janela.'), 'Pedir novas', () => { S.rerollOffers(G.c, academy); if (!academy) save(); sfx('whistle'); redraw(); }); // na base ainda não há clube: nada é salvo
     if ($('b-askl')) $('b-askl').onclick = leaguePicker;
   }
   // Escolha da liga: agrupada por país, com o nível e a chance de o empresário conseguir
