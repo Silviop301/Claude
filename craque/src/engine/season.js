@@ -411,7 +411,8 @@
     if (c.pos === 'MEI' && assists >= Math.round((21 + club.tier + r.range(-2, 2)) * S.GOAL_SCALE)) awards.push({ id: 'scorer', name: 'Líder de assistências ' + D.da(lg.name) });
     if (c.pos === 'ZAG' && games >= 25 && rating >= 7.85 + r.range(-0.15, 0.15)) awards.push({ id: 'scorer', name: 'Melhor zagueiro ' + D.da(lg.name) });
     if (c.pos === 'GOL' && games >= 25 && cleanSheets >= 25 + r.range(-2, 2)) awards.push({ id: 'scorer', name: 'Luva de Ouro ' + D.da(lg.name) });
-    if (c.age <= 21 && rating >= 7.2 && club.tier >= 3) awards.push({ id: 'young', name: 'Melhor jovem ' + D.da(lg.name) });
+    // Melhor jovem pede temporada de verdade (S.BENCH_GAMES, a régua do "Pouco espaço"): nota de 2 jogos no banco não vale prêmio
+    if (c.age <= 21 && games >= S.BENCH_GAMES && rating >= 7.2 && club.tier >= 3) awards.push({ id: 'young', name: 'Melhor jovem ' + D.da(lg.name) });
     if (rating >= S.TEAM_R[c.pos] && games >= 20) awards.push({ id: 'team', name: 'Seleção ' + D.da(lg.name) });
     // Bola de Ouro: só em clubes de nível 4-5
     // Defensores entram pela muralha (jogos sem sofrer gol, defesas, pênaltis defendidos)
