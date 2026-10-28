@@ -26,11 +26,12 @@
   S.CHALLENGES = [
     { id: 'fiel', icon: '💍', name: 'Um clube só', need: 'estreia', v: 120,
       desc: 'Jogue a carreira inteira pelo primeiro clube, sem empréstimo. Cumprido: +120 pts.' },
-    { id: 'semeuropa', icon: '🌎', name: 'Sem Europa', need: 'estreia', v: 60, when: c => !S.EUROPE.includes(c.country),
+    { id: 'semeuropa', icon: '🌎', name: 'Sem Europa', need: 'estreia', v: 60, when: c => !S.EUROPE.includes(c.country) && c.origin !== 'exportado',
       desc: 'Nunca jogue numa liga europeia. Cumprido: +60 pts.' },
   ];
   S.CHALLENGE_BY_ID = Object.fromEntries(S.CHALLENGES.map(o => [o.id, o]));
-  S.challengeFits = (ch, country) => !ch.when || ch.when({ country });
+  // origin (opcional): Vendido cedo começa numa base europeia, então não combina com Sem Europa
+  S.challengeFits = (ch, country, origin) => !ch.when || ch.when({ country, origin });
 
   // Idade em que a carreira começou (16, ou 19 na revelação tardia)
   S.startAge = c => c.age0 || 16;
@@ -40,7 +41,7 @@
     const o = S.ORIGIN_BY_ID[origin] ? origin : 'base';
     c.origin = o;
     const ch = S.CHALLENGE_BY_ID[challenge];
-    c.challenge = ch && S.challengeFits(ch, c.country) ? challenge : null;
+    c.challenge = ch && S.challengeFits(ch, c.country, o) ? challenge : null;
     c.chFail = false;
     if (o === 'filho') c.fame = 45;
     if (o === 'tardia') {

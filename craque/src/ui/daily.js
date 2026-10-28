@@ -17,7 +17,7 @@
     const foot = r() < 0.75 ? 'D' : 'E', country = r.pick(D.COUNTRIES).id;
     // Origem e desafio do dia (engine/origins.js): todo mundo joga com os mesmos, liberados ou não
     const origin = r() < 0.4 ? 'base' : r.pick(S.ORIGINS.filter(o => o.id !== 'base')).id;
-    const chs = S.CHALLENGES.filter(x => S.challengeFits(x, country));
+    const chs = S.CHALLENGES.filter(x => S.challengeFits(x, country, origin));
     const challenge = chs.length && r() < 0.5 ? r.pick(chs).id : null;
     const NUMS = { ATA: [9, 7, 11, 19, 99], MEI: [10, 8, 20, 17, 23], ZAG: [4, 3, 2, 5, 14], GOL: [1, 12, 23, 31, 99] };
     // Nome conforme a nacionalidade do garoto do dia

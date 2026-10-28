@@ -159,7 +159,7 @@
   // Origem e desafio (engine/origins.js): liberados por conquistas
   const achName = id => (S.ACHIEVEMENTS.find(a => a.id === id) || {}).name || id;
   const optChips = (list, cur, kind, st) => '<div class="cr-chips">' + list.map(o => {
-    const lock = !U.achHas(o.need), off = kind === 'challenge' && !S.challengeFits(o, st.country);
+    const lock = !U.achHas(o.need), off = kind === 'challenge' && !S.challengeFits(o, st.country, st.origin);
     return '<button data-' + kind + '="' + o.id + '" class="' + (cur === o.id ? 'on' : '') + (lock || off ? ' lock' : '') + '">' + (lock ? U.emo('🔒', 'xs') + ' ' : U.emo(o.icon, 'xs') + ' ') + esc(o.name) + '</button>';
   }).join('') + '</div>';
   function originRows(st) {
@@ -180,7 +180,7 @@
     screen.querySelectorAll('[data-challenge]').forEach(b => b.onclick = () => {
       const it = S.CHALLENGE_BY_ID[b.dataset.challenge];
       if (it && !U.achHas(it.need)) return note(it, 'libere com a conquista "' + achName(it.need) + '"');
-      if (it && !S.challengeFits(it, st.country)) return note(it, 'só para quem nasceu fora da Europa');
+      if (it && !S.challengeFits(it, st.country, st.origin)) return note(it, S.EUROPE.includes(st.country) ? 'só para quem nasceu fora da Europa' : 'não combina com Vendido cedo (a base é na Europa)');
       st.challenge = it ? it.id : null; sfx('tap'); redraw();
     });
   }
@@ -255,7 +255,7 @@
       '<div class="inv-bar fade"><button class="btn" id="b-start">Começar carreira</button></div>'
     );
     const drawOrigin = () => {
-      if (st.challenge && !S.challengeFits(S.CHALLENGE_BY_ID[st.challenge], st.country)) st.challenge = null;
+      if (st.challenge && !S.challengeFits(S.CHALLENGE_BY_ID[st.challenge], st.country, st.origin)) st.challenge = null;
       $('cr-origin').innerHTML = originRows(st); $('cr-onote').innerHTML = ''; bindOrigin(st, drawOrigin);
     };
     const paint = () => {
