@@ -45,16 +45,22 @@
 
   // Compartilhar a carta: a imagem da carta + o link curto que abre a carta 3D.
   // Sem folha de compartilhar com arquivo: salva a imagem e copia o texto com o link
+  // Toque duplo: um compartilhamento só (antes baixava a imagem duas vezes), e o rótulo original é guardado uma vez
+  // (antes o 2º toque guardava "Preparando…" e o botão ficava preso nele)
   async function shareCard(d, btn) {
-    const old = btn ? btn.innerHTML : '';
-    if (btn) btn.textContent = 'Preparando…';
+    if (btn && btn._busy) return 'busy';
+    const old = btn ? (btn._label = btn._label || btn.innerHTML) : '';
+    if (btn) { btn._busy = true; clearTimeout(btn._rt); btn.textContent = 'Preparando…'; }
+    try { return await shareNow(d, btn, old); } finally { if (btn) { btn._busy = false; if (btn.textContent === 'Preparando…') btn.innerHTML = old; } }
+  }
+  async function shareNow(d, btn, old) {
     const cv = document.createElement('canvas');
     // Portal sem links para fora (CLIMBIX_SOLO): só a imagem e o texto
     const [url] = await Promise.all([window.CLIMBIX_SOLO ? '' : shortLink(d), window.CRAQUE_CARD(cv, d)]);
     const text = 'Olha a carta de ' + d.name + (url ? ' no Climbix! Veja em 3D: ' + url : ' no Climbix!');
     const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
     const file = blob && new File([blob], 'climbix-' + String(d.name).toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.png', { type: 'image/png' });
-    const done = (label, r) => { if (btn) { btn.innerHTML = label || old; if (label) setTimeout(() => { btn.innerHTML = old; }, 2500); } return r; };
+    const done = (label, r) => { if (btn) { btn.innerHTML = label || old; if (label) btn._rt = setTimeout(() => { btn.innerHTML = old; }, 2500); } return r; };
     try {
       if (file && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return done('', 'shared'); }
       if (navigator.share) { await navigator.share(url ? { title: 'Climbix', text, url } : { title: 'Climbix', text }); return done('', 'shared'); }
