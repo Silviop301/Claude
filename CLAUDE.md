@@ -29,24 +29,25 @@ Este arquivo é a fonte única de orientação. Leia-o antes de abrir código; e
   mexe em `craque/**` no branch de deploy (ou `main`). Quem decide quando publicar é o Silvio.
 - Antes de publicar, ou ao adicionar/remover arquivo do jogo: `python3 tools/craque_sw.py`.
 
-## Ciclo de desenvolvimento (autônomo)
+## Evolução contínua (ciclo autônomo)
 
-Pedido do Silvio (2026-10-29): Claude valida o jogo e o código, lista melhorias em todos os aspectos, resume e
-corrige; o Silvio só testa e opina. "Rodar um ciclo" = estes passos, sem perguntar no meio:
+Base: `docs/prompt-mestre-evolucao.md` (do Silvio, 2026-10-29). Claude evolui o jogo sozinho; o Silvio testa e opina.
+Histórico, decisões e próximos objetivos: **`EVOLUCAO_CONTINUA.md`** (raiz). Leia antes de cada rodada; não repita o
+que lá está como recusado sem evidência nova.
 
-1. **Checagens automáticas:** `bash tools/craque_ciclo.sh /tmp/ciclo` (~25 min; `RAPIDO=1` ~5 min). Lê `resumo.txt`.
-2. **Olhar:** as fotos de `cel/` e `pc/` (montagem com `montage` de 5 por imagem economiza tokens), as transcrições
-   (`tr-cel/`) atrás de incoerência entre telas, e o código das áreas que mudaram desde o último ciclo
-   (`git log` desde a data em `docs/ciclos.md`).
-3. **Lentes**, uma passada curta cada: bugs · diversão/equilíbrio · visual (celular 390 e 360, computador 1440) ·
-   textos · desempenho e offline · aparelhos (deitado, tablet) · som · SEO e site · erros reais (`craque_erros.py`).
-   Não repetir o que `docs/ciclos.md` já marcou como decidido ou recusado.
-4. **Resumo ao Silvio** em pt-BR, até ~10 linhas: o que achou, o que vai corrigir, o que precisa da opinião dele.
-5. **Corrigir** o que é bug ou melhoria clara num branch + PR rascunho (base `claude/gracious-darwin-9gdlfp`),
-   um commit por item; mudança de rumo do jogo (regra, equilíbrio grande, tela nova) vai como pergunta, não como PR.
-   Antes do PR: `craque_ciclo.sh RAPIDO=1` sem problemas novos, foto antes/depois do que mudou visualmente,
-   `python3 tools/craque_sw.py`. **Merge é do Silvio** (merge = produção).
-6. **Registrar** em `docs/ciclos.md` (data, achados, corrigido, deixado e por quê).
+- **Seis pilares:** 1 técnica · 2 UI/UX · 3 direção de arte · 4 gameplay e diversão · 5 inovação · 6 validação.
+  Atenção ao longo das rodadas: técnica 25%, UI/UX + arte 25%, gameplay 30%, inovação + polimento 20%. Bug fácil
+  não pode travar o avanço visual e criativo.
+- **Rodada = etapas A–G:** diagnóstico → oportunidades (impacto, esforço, risco) → seleção (poucas, perceptíveis) →
+  implementação → validação → revisão crítica (ficou melhor? senão revisa ou reverte) → registro.
+- **Validação mínima:** `bash tools/craque_ciclo.sh /tmp/ciclo` (simulador, auditorias, erros reais do site, carreiras
+  pela interface no celular e no computador, caça de textos, fotos de todas as telas; `RAPIDO=1` sem fotos). Foto antes
+  e depois de toda mudança visual (`craque_telas.js` com `SO=`; `montage` de 5 fotos por imagem economiza tokens).
+- **Entrega:** branch `claude/...` + PR rascunho por rodada (base `claude/gracious-darwin-9gdlfp`), um commit por
+  melhoria, `python3 tools/craque_sw.py` antes. **Merge é do Silvio** (merge = produção). Relatório no formato da
+  seção 9 do prompt (ciclo, diagnóstico, alterações, impacto, validação, pendências, próximo ciclo), separando o
+  que foi implementado, testado e só proposto.
+- **Pedir aprovação antes:** mudança que altera a proposta do jogo, regra de pontuação/nota, save sem migração.
 
 ## Comandos (da raiz)
 
