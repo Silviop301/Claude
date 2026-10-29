@@ -145,3 +145,14 @@ Proibido também: cartão com faixa colorida na lateral.
   (é o que acontece de fato, e dá para pular). Ainda não tem copas, janela no meio do ano nem decisões espalhadas
   pela temporada; é a próxima parte do modo.
 - **Próxima:** perfil com metas e mapa "Domínio mundial" (ordem do Silvio), prancha da identidade visual e revisão dos textos.
+
+### Rodada 5b · 2026-10-29 · Rodada ao vivo (pedido do Silvio: "parecido com o Brasfoot")
+
+- **Implementado e testado:** cada gol de cada jogo tem minuto (`ev` em `S.fullSeason`; os seus gols e assistências
+  marcados; o gol do lance decisivo convertido sai no fim). "Jogar a rodada N" passa a rodada ao vivo: relógio de 0' a
+  90' (+ acréscimos), intervalo, placar do seu jogo no quadro escuro com os lances ("Gol de <você>!"), os outros jogos
+  mudando de placar (o jogo com gol acende) e a tabela mudando junto. "Mais rápido" (~4 s por rodada; normal ~10 s) e
+  "Fim da rodada". "Avançar 5" e "Até o fim" pulam sem ao vivo e param antes do jogo decisivo para ele ser jogado ao vivo.
+- **Validação:** 8 carreiras Completas no celular e 4 no computador pela interface (269 rodadas ao vivo), 0 problemas;
+  textos 0 suspeitos; fotos ao vivo em 390, 360, 1280×720 e 1440×900.
+- **Tempo:** jogando todas as rodadas ao vivo, uma temporada de 38 rodadas leva ~7 min (perto dos 10 min pedidos).

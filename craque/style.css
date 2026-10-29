@@ -4433,7 +4433,7 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .fs-rr > b { font: 700 15px var(--display); color: var(--tx-1); min-width: 44px; text-align: center; }
 .fs-tbl { background: var(--board); border-radius: var(--r-md); padding: 6px 4px 8px; border: 1px solid var(--panel-line); }
 .fs-th, .fs-tr { display: grid; grid-template-columns: 26px 22px 1fr 34px 28px 28px 36px; align-items: center; gap: 2px; padding: 4px 6px; }
-.fs-th { grid-template-columns: 26px 1fr 34px 28px 28px 36px; font: var(--t-label); color: var(--tx-3); text-transform: uppercase; letter-spacing: .06em; }
+.fs-th { position: sticky; top: -6px; z-index: 1; background: var(--board); grid-template-columns: 26px 1fr 34px 28px 28px 36px; font: var(--t-label); color: var(--tx-3); text-transform: uppercase; letter-spacing: .06em; }
 .fs-th > *, .fs-tr > i, .fs-tr > b, .fs-tr > em { text-align: center; font-style: normal; }
 .fs-th > span { text-align: left; padding-left: 24px; }
 .fs-tr { font: 500 14px/1.2 var(--body); color: var(--tx-2); border-radius: 6px; }
@@ -4449,6 +4449,24 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .fs-legend { display: flex; gap: 14px; justify-content: center; margin: 8px 0 0; font: var(--t-label); color: var(--tx-3); }
 .fs-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .fs-legend span::before { content: ''; width: 12px; height: 12px; border-radius: 3px; }
+/* Rodada ao vivo: placar no quadro escuro, minuto pulsando, lances do seu jogo e o jogo com gol acendendo na lista */
+.fs-card.live { background: var(--board); color: var(--tx-1); box-shadow: inset 0 0 0 1px var(--panel-line), var(--sh-float); }
+.fs-card.live .fs-lbl { color: var(--gold-2); display: flex; align-items: center; justify-content: center; gap: 8px; }
+.fs-card.live .fs-tm.me span { color: var(--up); }
+.fs-card.live .fs-sc > b i, .fs-card.live .fs-line { color: var(--tx-3); }
+.fs-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--down); animation: fs-pulse 1s ease-in-out infinite; }
+@keyframes fs-pulse { 50% { opacity: .25; } }
+.fs-ev { list-style: none; margin: 6px 0 0; padding: 6px 0 0; border-top: 1px dashed currentColor; display: grid; gap: 3px; font: var(--t-small); }
+.fs-card:not(.live) .fs-ev { border-color: rgba(19, 32, 26, .18); }
+.fs-card.live .fs-ev { border-color: var(--panel-line); }
+.fs-ev li { display: flex; gap: 8px; align-items: baseline; }
+.fs-ev li i { font: 700 13px var(--display); font-style: normal; min-width: 38px; opacity: .75; }
+.fs-ev li.me { font-weight: 700; }
+.fs-card:not(.live) .fs-ev li.me { color: var(--up-ink); }
+.fs-card.live .fs-ev li.me { color: var(--gold-2); }
+.fs-rr.hot > b { background: var(--gold); color: var(--ink); border-radius: 6px; }
+.fs-skip .btn.ghost.on { box-shadow: inset 0 0 0 2px var(--gold); color: var(--gold-2); }
+@media (prefers-reduced-motion: reduce) { .fs-dot { animation: none; } }
 /* Tela larga: seu jogo à esquerda, a tabela inteira à direita (rola sozinha, com a sua linha à vista) */
 @media (min-width: 1000px) { #app:has(#screen > .fs) { max-width: 1040px; } }
 @media (min-width: 1000px) and (min-height: 560px) {
