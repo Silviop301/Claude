@@ -31,7 +31,7 @@ Este arquivo é a fonte única de orientação. Leia-o antes de abrir código; e
 
 ## Evolução contínua (ciclo autônomo)
 
-Base: `docs/prompt-mestre-evolucao.md` (do Silvio, 2026-10-29). Claude evolui o jogo sozinho; o Silvio testa e opina.
+Base: `docs/prompt-mestre-evolucao.md` (do Silvio, 2026-10-29). Claude evolui e publica o jogo sozinho; o Silvio testa e opina.
 Histórico, decisões e próximos objetivos: **`EVOLUCAO_CONTINUA.md`** (raiz). Leia antes de cada rodada; não repita o
 que lá está como recusado sem evidência nova.
 
@@ -43,8 +43,10 @@ que lá está como recusado sem evidência nova.
 - **Validação mínima:** `bash tools/craque_ciclo.sh /tmp/ciclo` (simulador, auditorias, erros reais do site, carreiras
   pela interface no celular e no computador, caça de textos, fotos de todas as telas; `RAPIDO=1` sem fotos). Foto antes
   e depois de toda mudança visual (`craque_telas.js` com `SO=`; `montage` de 5 fotos por imagem economiza tokens).
-- **Entrega:** branch `claude/...` + PR rascunho por rodada (base `claude/gracious-darwin-9gdlfp`), um commit por
-  melhoria, `python3 tools/craque_sw.py` antes. **Merge é do Silvio** (merge = produção). Relatório no formato da
+- **Entrega:** branch `claude/...` + PR por rodada (base `claude/gracious-darwin-9gdlfp`), um commit por melhoria,
+  `python3 tools/craque_sw.py` antes. **Claude pode publicar sozinho** (o Silvio autorizou em 2026-10-29): merge só
+  depois da validação, e avisar o que entrou no ar. Depois de mexer em CSS, refazer as fotos de **todas** as telas no
+  computador (1280×720 e 1440×900) e no celular, não só a da mudança: `craque_telas_diff.py` aponta o que mudou. Relatório no formato da
   seção 9 do prompt (ciclo, diagnóstico, alterações, impacto, validação, pendências, próximo ciclo), separando o
   que foi implementado, testado e só proposto.
 - **Pedir aprovação antes:** mudança que altera a proposta do jogo, regra de pontuação/nota, save sem migração.
@@ -68,6 +70,7 @@ NODE_PATH=$(npm root -g) node tools/craque_sons.js [pasta]   # grava cada som do
 python3 tools/craque_portal.py [itch]               # pacote para portal (dist/climbix-itch.zip): sem api/sw/escudos, que vêm de climbix.app
 bash tools/craque_ciclo.sh /tmp/ciclo                # checagens do ciclo num resumo (RAPIDO=1 mais curto)
 python3 tools/craque_lint_textos.py /tmp/ciclo/tr-cel   # plural, contração e placeholder errados no texto das telas
+python3 tools/craque_telas_diff.py /tmp/antes /tmp/depois   # telas que mudaram entre duas rodadas do craque_telas.js
 ```
 
 Não há build, lint nem testes unitários: a validação é o simulador + o e2e + olhar a tela.
