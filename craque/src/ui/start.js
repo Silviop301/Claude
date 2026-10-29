@@ -250,6 +250,8 @@
       '<label class="cc-name-w"><input class="cc-name" id="f-name" maxlength="18" value="' + esc(st.name) + '" aria-label="Nome na camisa">' + U.ICON.pencil +
         '<button type="button" class="cc-name-dice" id="b-name" aria-label="Sortear nome">' + U.emo('🎲', 'sm') + '</button></label></div>' +
       '<div class="cc-acts"><button class="cr-dice" id="b-dice1">' + U.emo('🎲', 'sm') + ' Outro visual</button><button class="cr-dice" id="b-look">' + U.emo('✏️', 'sm') + ' Personalizar</button></div></div>' +
+      // Modo: a carreira de sempre (~9 min) ou a Completa (a liga de cada temporada jogo a jogo, com a tabela inteira)
+      '<div class="cr-lbl">Modo</div><div class="seg" id="f-mode">' + [['rapida', 'Rápida · 9 min'], ['completa', 'Completa · jogo a jogo']].map(([v, l]) => '<button data-v="' + v + '"' + ((st.mode || 'rapida') === v ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>' +
       '<div class="cr-lbl">Posição</div><div class="seg pos4" id="f-pos">' + [['ATA', 'Atacante'], ['MEI', 'Meia'], ['ZAG', 'Zagueiro'], ['GOL', 'Goleiro']].map(([v, l]) => '<button data-v="' + v + '"' + (st.pos === v ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>' +
       '<div class="cr-lbl">Pé bom</div><div class="seg" id="f-foot"><button data-v="D"' + (st.foot === 'D' ? ' class="on"' : '') + '>Destro</button><button data-v="E"' + (st.foot === 'E' ? ' class="on"' : '') + '>Canhoto</button></div>' +
       '<div class="cr-lbl">País · <b id="cr-cty"></b></div><div class="cr-flags" id="f-country">' + D.COUNTRIES.map(k => '<button data-v="' + k.id + '"' + (k.id === st.country ? ' class="on"' : '') + ' aria-label="' + k.id + '">' + U.flag(k.flag, 'sm') + '</button>').join('') + '</div>' +
@@ -266,7 +268,7 @@
       const nb = $('f-num'); nb.innerHTML = numBtn();
       $('cc-photo').innerHTML = U.photo('normal', U.nationKit(st.country), who(), { num: String(st.num), lawn: true, vb: '-24 0 168 200' });
     };
-    [['f-pos', 'pos'], ['f-foot', 'foot'], ['f-country', 'country']].forEach(([id, key]) =>
+    [['f-pos', 'pos'], ['f-foot', 'foot'], ['f-country', 'country'], ['f-mode', 'mode']].forEach(([id, key]) =>
       $(id).querySelectorAll('button').forEach(b => b.onclick = () => {
         $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
         st[key] = b.dataset.v;
@@ -292,6 +294,7 @@
 
   function start(st) {
     G.c = S.newCareer({ name: st.name.trim() || 'Craque', pos: st.pos, foot: st.foot, country: st.country, number: st.num });
+    if (st.mode === 'completa') G.c.mode = 'completa';
     S.setOrigin(G.c, U.achHas((S.ORIGIN_BY_ID[st.origin] || {}).need) ? st.origin : 'base', st.challenge);
     // Só entra o que está liberado (a prévia fica de fora)
     G.c.look = onlyLook(I.clean(st.look));
