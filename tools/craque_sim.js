@@ -1,5 +1,6 @@
 // Simula milhares de carreiras do CRAQUE com um "jogador robô" para checar ritmo e variedade.
 // Uso: node tools/craque_sim.js [n] [casual]  ·  ORIGIN=tardia CHAL=fiel node tools/craque_sim.js (origem e desafio)
+//      MODO=completa node tools/craque_sim.js (Carreira Completa: temporada jogo a jogo)
 const D = require('../craque/src/data.js');
 const S = require('../craque/src/sim.js');
 const N = +process.argv[2] || 2000;
@@ -49,7 +50,18 @@ for (let n = 0; n < N; n++) {
       c.stats = c.stats || {}; c.stats[ev.id] = (c.stats[ev.id] || 0) + 1;
     }
     // Jogo decisivo: o robô deixa o jogo decidir (mesma chance que a tela mostra)
-    if (!process.env.NOMOMENT && S.pickMoment(c)) { c.mstats = c.mstats || { n: 0, ok: 0 }; c.mstats.n++; if (S.autoMoment(c)) c.mstats.ok++; decisions++; }
+    // MODO=completa: a temporada jogo a jogo (engine/fullcareer.js); os lances decisivos acontecem nas finais e no clássico,
+    // e o robô investe os pontos de evolução assim que eles entram
+    if (process.env.MODO === 'completa') {
+      c.mode = 'completa'; S.fcStart(c);
+      let nx;
+      while ((nx = S.fcNext(c))) {
+        if (nx.moment) { c.mstats = c.mstats || { n: 0, ok: 0 }; c.mstats.n++; if (S.fcAutoMoment(c, nx.moment)) c.mstats.ok++; decisions++; }
+        S.fcPlay(c);
+        const w = D.POS[c.pos].w, opts = D.INVEST.filter(t => S.canInvest(c, t.id));
+        if (opts.length && SMART) { const score = t => (t.attr ? w[Object.keys(t.attr)[0]] : 0.15) / (1 + (c.inv[t.id] || 0)); S.invest(c, opts.sort((a, b) => score(b) - score(a))[0].id); }
+      }
+    } else if (!process.env.NOMOMENT && S.pickMoment(c)) { c.mstats = c.mstats || { n: 0, ok: 0 }; c.mstats.n++; if (S.autoMoment(c)) c.mstats.ok++; decisions++; }
     // Foco nos treinos: TRAIN=id força um; o esperto treina forte enquanto jovem e leve quando veterano
     c.train = process.env.TRAIN || (SMART ? (c.age <= 28 ? 'forte' : c.age >= 32 ? 'leve' : 'normal') : D.TRAIN[Math.floor(Math.random() * D.TRAIN.length)].id);
     S.playSeason(c);
