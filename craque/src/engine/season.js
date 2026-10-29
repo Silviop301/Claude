@@ -128,6 +128,7 @@
     const src = { max: maxGames, min: [[role.name + ' (carta ' + o + ', time ' + club.strength + ')', pc(role.share)]], gol: [], nota: [] };
     const coachV = (c.rel.coach - REL0) / 90, modV = c.mod.min + (c.promise || 0);
     if (Math.abs(coachV) >= 0.03) src.min.push(['Técnico', pc(coachV)]);
+    src.choiceMin = Math.abs(modV) >= 0.03 ? pc(modV) : 0;
     if (Math.abs(modV) >= 0.03) src.min.push([c.promise ? 'Promessa do técnico' : 'Escolhas do ano', pc(modV)]);
     if (c.age <= 17) src.min.push(['Idade', -20]);
     if (injShare > 0) src.min.push(['Lesão', -pc(injShare)]);
@@ -143,6 +144,9 @@
       steps.forEach(([t, f], i) => { v = i ? v * f : f; const n = Math.round(v), d = n - shown; if (!i || d) src.gol.push([t, d]); shown = n; });
       const sd = Math.sqrt(v + (0.08 * v) ** 2);
       src.exp = { n: shown, lo: Math.max(0, Math.round(v - 1.28 * sd)), hi: Math.round(v + 1.28 * sd), got: goals };
+      // Quanto das escolhas do ano (eventos, conversas) foi para os gols esperados: aparece no resumo, fora dos detalhes
+      const noMod = Math.max(0.05, 1 + formV - c.mod.form), mul = Math.max(0, 1 + formV) / noMod * (1 + c.mod.goal);
+      src.choiceGoals = mul > 0 ? Math.round(v - v / mul) : 0;
     } else {
       const v = games * pCS, sd = Math.sqrt(v * (1 - pCS));
       src.gol.push(['Defesa do time: ' + pc(pCS) + '% de chance por jogo', Math.round(v)]);
@@ -421,7 +425,7 @@
     c.wcBoost = 0;
     // Cada Bola de Ouro anterior aumenta a exigência (a concorrência cresce)
     // Defensor raramente ganha a Bola de Ouro (como na vida real)
-    const pBallon = club.tier >= 4 && o >= 86 ? clamp(1 / (1 + Math.exp(-(bScore - 103 - 9 * c.totals.ballon) / 7)) * (club.tier === 5 ? 0.6 : 0.2) * (isDef ? 0.45 : 1), 0, 0.6) : 0;
+    const pBallon = club.tier >= 4 && o >= 86 ? clamp(1 / (1 + Math.exp(-(bScore - 105 - 9 * c.totals.ballon) / 7)) * (club.tier === 5 ? 0.6 : 0.2) * (isDef ? 0.45 : 1), 0, 0.6) : 0;
     let ballon = r() < pBallon;
     // O rival de geração (engine/rival.js) também pode ter ganho a votação: só um leva
     const ballonLost = ballon && !!S.rivalWinsVote && S.rivalWinsVote(c, o);
