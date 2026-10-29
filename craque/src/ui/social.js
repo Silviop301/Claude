@@ -141,7 +141,9 @@
     if (!isEv && chance(mood === 'down' ? 0.45 : 0.7)) rest.push({ h: base + 'oficial', nm: cl.name, v: true, t: pk('c.club.' + mood, SO.club[mood]) });
     // Página de notícia ("🚨 |", "📊 |") falando do fato do post; nos posts bons, às vezes é página de meme
     const nk = ctx.kind === 'season' || ctx.kind === 'moment' ? ctx.kind + '.' + mood : p.sub === 'transfer' ? 'transfer' : mood === 'bye' ? 'bye' : 'event';
-    const news = (SO.news || {})[nk];
+    // Título vindo do banco (poucos jogos ou nota fraca) não ganha página elogiando os números
+    const weak = ctx.kind === 'season' && mood === 'up' && (ctx.res.games < 10 || ctx.res.rating < 7);
+    const news = weak ? null : (SO.news || {})[nk];
     if (chance(fame >= 80 ? 0.6 : 0.3)) {
       if (news && (mood === 'down' || chance(0.7))) { const nh = fresh('h.news', SO.newsHandles); rest.push({ h: nh, nm: pageName(nh), v: true, t: pk('c.news.' + nk, news) }); }
       else if (!isEv && mood !== 'down') { const pg = fresh('c.pages', SO.pages); rest.push({ h: pg[0], nm: pageName(pg[0]), v: true, t: pg[1] }); }
@@ -226,7 +228,7 @@
     const vs = m && m.vs ? D.o(club(m.vs).name) : 'o adversário', nota = r ? (Math.round(r.rating * 10) / 10).toFixed(1).replace('.', ',') : '';
     const fill = t => t.replace(/\{n\}/g, c.name).replace(/\{num\}/g, c.number || 10).replace(/\{time\}/g, cl).replace(/\{cor\}/g, heart(c.club))
       .replace(/\{aoTime\}/g, D.ao(cl)).replace(/\{doTime\}/g, D.do(cl)).replace(/\{noTime\}/g, D.no(cl)).replace(/\{idade\}/g, age)
-      .replace(/\{stat\}/g, r ? statOf(r) : '').replace(/\{titulos\}/g, r ? D.andList(r.titles.map(x => x.name)) : '').replace(/\{jogos\}/g, r ? r.games : '')
+      .replace(/\{stat\}/g, r ? statOf(r) : '').replace(/\{titulos\}/g, r ? D.andList(r.titles.map(x => x.name)) : '').replace(/\{jogos\} jogos/g, r ? P(r.games, 'jogo', 'jogos') : '').replace(/\{jogos\}/g, r ? r.games : '')
       .replace(/\{nota\}/g, nota).replace(/\{pos\}/g, r && r.table ? r.table.pos : '').replace(/\{pts\}/g, r && r.table ? r.table.pts : '')
       .replace(/\{naLiga\}/g, r && r.table ? D.na(r.table.league) : '').replace(/\{min\}/g, m ? m.minute || 90 : '').replace(/\{vs\}/g, vs).replace(/\{contraVs\}/g, 'contra ' + vs)
       .replace(/\{numeros\}/g, careerOf(c)).replace(/\{temps\}/g, P(c.seasons.length, 'temporada', 'temporadas')).replace(/\{gols\}/g, T.goals || 0).replace(/\{assist\}/g, T.assists || 0);

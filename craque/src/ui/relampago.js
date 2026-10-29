@@ -259,7 +259,7 @@
     const col = (who, sc, me) => '<div class="rl-col' + (me ? ' me' : '') + '"><div class="rl-col-h"><b>' + esc(who) + '</b></div>' +
       sc.slots.map(s => '<div class="rl-mini' + (s.goal ? '' : ' out') + '"><small>' + s.name + '</small>' + coneMini(s.cone) + '</div>').join('') + '</div>';
     const grade = sc => '<span class="rl-grade g-' + sc.grade + '">' + sc.grade + '</span>';
-    const kicksTxt = f.slots.reduce((a, s) => a + s.goals, 0) + ' gols em ' + f.slots.reduce((a, s) => a + s.kicks, 0) + ' cobranças';
+    const kicksTxt = D.plural(f.slots.reduce((a, s) => a + s.goals, 0), 'gol', 'gols') + ' em ' + D.plural(f.slots.reduce((a, s) => a + s.kicks, 0), 'cobrança', 'cobranças');
     // Placar escuro: no duelo, "VOCÊ 52 x 30 RAFA" com a nota de cada um; sozinho, nota, nome e pontos
     const board = g ? '<div class="ob5-board rl-sb"><div class="rl-sb-t me"><b>' + esc(run.name) + '</b>' + grade(f) + '</div>' +
         '<b class="ob5-g' + (diff >= 0 ? ' win' : '') + '">' + f.total + '</b><span class="ob5-x">x</span><b class="ob5-g' + (diff <= 0 ? ' win' : '') + '">' + g.total + '</b>' +
