@@ -23,6 +23,8 @@
     const E = S.eff(c);
     const ovr0 = S.ovr(c);
     const role = S.role(c, club);
+    // Carreira Completa integrada (engine/fullcareer.js): o ano já foi jogado jogo a jogo; os números dele valem
+    const FO = c.fc && c.fc.done && c.fc.season === c.season ? c.fc.out : null;
 
     // Lesão: risco base + idade + eventos
     let injShare = c.mod.inj;
@@ -34,17 +36,19 @@
     if (r() < injRisk) {
       injShare = Math.max(injShare, r.range(0.08, 0.32));
     }
-    if (injShare > 0) injName = r.pick(['lesão na coxa', 'entorse no tornozelo', 'lesão no joelho', 'problema muscular', 'lesão na panturrilha', 'estiramento na virilha', 'fratura no pé', 'luxação no ombro', 'inflamação no tendão', 'lesão no posterior da coxa']); // só o nome muda: o sorteio é um só
+    if (FO) { injShare = FO.injShare; injName = FO.injName; }
+    else if (injShare > 0) injName = r.pick(['lesão na coxa', 'entorse no tornozelo', 'lesão no joelho', 'problema muscular', 'lesão na panturrilha', 'estiramento na virilha', 'fratura no pé', 'luxação no ombro', 'inflamação no tendão', 'lesão no posterior da coxa']); // só o nome muda: o sorteio é um só
 
     if (c.farewell) c.mod.min += 0.1; // temporada de despedida: o técnico faz questão
     // Promessa do técnico (conversa depois de uma temporada no banco) vale por uma temporada
     // Técnico: confiança decide minutos (40 de diferença para o neutro ≈ 45% dos jogos)
     let share = clamp(role.share + c.mod.min + (c.promise || 0) + (c.rel.coach - REL0) / 90 + (c.age <= 17 ? -0.2 : 0), 0.05, 0.97);
     share *= 1 - injShare;
+    if (FO) share = FO.share;
     // Jogos possíveis: rodadas da liga (ida e volta, no mínimo 20 times) mais as copas
     const lgSize = Math.max(20, D.CLUBS.filter(x => x.league === club.league).length);
     const maxGames = 2 * (lgSize - 1) + (club.tier >= 3 ? 8 : 4);
-    const games = Math.max(0, Math.round(maxGames * share));
+    const games = FO ? FO.games : Math.max(0, Math.round(maxGames * share));
     // Participação: quem jogou pouco é campeão do elenco, não dono da taça (fama, torcida e textos usam isso)
     const part = clamp(games / (maxGames * 0.6), 0, 1), mine = part >= 0.35;
 
@@ -78,7 +82,8 @@
     let goals = 0, assists = 0;
     const highlights = [];
     let hat = 0, poker = 0;
-    for (let i = 0; i < games; i++) {
+    if (FO) { goals = FO.goals; assists = FO.assists; }
+    else for (let i = 0; i < games; i++) {
       const g = r.poisson(g90 * 0.9);
       const a = r.poisson(a90 * 0.9);
       goals += g;
@@ -113,6 +118,7 @@
       for (let i = 0; i < penFaced; i++) if (r() < pPen) penSaved++;
     }
     if (c.pos === 'ZAG') tackles = r.poisson(games * clamp(0.12 + (E.def - 60) / 150, 0.05, 0.45));
+    if (FO) ({ cleanSheets, saves, penFaced, penSaved, tackles } = FO);
     if (isDef && games >= 20 && cleanSheets / games >= 0.45) rec('cs', cleanSheets, '🧱 Muralha: ' + cleanSheets + ' jogos sem sofrer gol');
     if (penSaved >= 2) rec('pen', penSaved, '🧤 ' + penSaved + ' pênaltis defendidos na temporada');
 
@@ -120,7 +126,7 @@
     const perGame = games ? (isDef
       ? (cleanSheets / games) * 0.85 + (goals * 1.2 + assists * 0.5) / S.GOAL_SCALE / games + (saves / games) * 0.35 + penSaved * 0.03 + (tackles / games) * 0.2
       : (goals + assists * 0.7) / S.GOAL_SCALE / games) : 0;
-    const rating = games ? clamp(round1(6.1 + S.RATING_ADJ[c.pos] + perGame * 2.4 * (isDef ? 0.75 : 1) + Math.min(o - club.strength, S.RATING_GAP) * 0.03 + 0.06 * tm('drible') + 0.08 * tm('libero') + 0.07 * tm('raca') + 0.06 * tm('estrela') + r.gauss() * 0.25), 5.0, 9.6) : 0;
+    const rating = FO ? FO.rating : games ? clamp(round1(6.1 + S.RATING_ADJ[c.pos] + perGame * 2.4 * (isDef ? 0.75 : 1) + Math.min(o - club.strength, S.RATING_GAP) * 0.03 + 0.06 * tm('drible') + 0.08 * tm('libero') + 0.07 * tm('raca') + 0.06 * tm('estrela') + r.gauss() * 0.25), 5.0, 9.6) : 0;
 
     // De onde vieram minutos, gols e nota (só para a tela da temporada): as mesmas contas acima, em partes.
     // Cada parte: [texto, valor]; o valor vira "+" ou "−" na tela (0 = só informação)
@@ -188,7 +194,8 @@
     if (M && M.type === 'acesso' && !M.ok) league = false; // perdeu o acesso na última rodada: não foi campeão
     // O lance decisivo entra na estatística do tipo certo: pênalti defendido, desarme ou gol
     const mk = M && S.kickSetupType(M);
-    if (M && mk === 'save') { penFaced += 1; if (M.ok) { penSaved += 1; saves += 1; } }
+    if (FO) { league = FO.league; cup = FO.cup; } // os lances da Completa já estão nos números do ano
+    else if (M && mk === 'save') { penFaced += 1; if (M.ok) { penSaved += 1; saves += 1; } }
     else if (M && mk === 'tackle') { if (M.ok) tackles += 1; }
     else if (M && mk === 'pass') { if (M.ok) assists += 1; } // passe decisivo: assistência
     else if (M && M.ok) goals += 1;
@@ -200,6 +207,7 @@
     let cont = club.tier >= 3 && r() < pCont * raceK;
     const contName = S.contName(club);
     if (M && M.type === 'cont' && contName) cont = M.ok; // final continental decidida no minigame
+    if (FO) cont = FO.cont && !!contName;
     const titles = [];
     if (league) titles.push({ id: 'league', name: lg.name });
     if (cup) titles.push({ id: 'cup', name: lg.cup || 'Copa nacional' });
@@ -219,7 +227,7 @@
     // Segunda taça continental (Sul-Americana, Liga Europa, Liga Conferência, Champions da Ásia/Concacaf)
     const cont2Name = S.cont2Name(club);
     const pCont2 = cont2Name ? clamp((sEff - (club.tier >= 4 ? 74 : club.tier === 3 ? 63 : 56)) / 40 + titleBonus * 0.2, 0.02, 0.12) * (cont ? 0 : 1) : 0;
-    const cont2 = !!cont2Name && r() < pCont2;
+    const cont2 = FO ? FO.cont2 && !!cont2Name : !!cont2Name && r() < pCont2;
     if (cont2) titles.push({ id: 'cont2', name: cont2Name });
     // Supercopa nacional: quem ganhou a liga no ano anterior, no mesmo clube
     const prevS = c.seasons[c.seasons.length - 1], superName = S.superName(club);
@@ -294,6 +302,7 @@
     const LD = D.LADDER[club.league];
     const table = { pos, pts: shown[pos - 1], gap: league ? 0 : Math.max(1, shown[0] - shown[pos - 1]), league: lg.name,
       lead: league ? Math.max(1, shown[0] - shown[1]) : 0, n: nTeams, rounds, ids: order, all: shown, promo: LD && LD.up ? LD.promo : 0, releg: LD && LD.down ? LD.releg : 0, m: M ? M.type : null };
+    if (FO) { pos = FO.pos; Object.assign(table, FO.table); }
     // Acesso / rebaixamento pela posição final
     let move = null;
     if (LD && LD.up && pos <= LD.promo) move = { dir: 'up', to: LD.up };
@@ -507,7 +516,7 @@
     // Dinheiro e totais
     c.money += c.wage * 52;
     // Pontos de evolução: o que você fez em campo vira treino
-    const pe = S.peGain({ games, rating, titles, awards });
+    const pe = FO ? { n: FO.pe, why: FO.pe ? [['Jogo a jogo', FO.pe]] : [] } : S.peGain({ games, rating, titles, awards });
     // Foco nos treinos: chance de ponto extra (fora do limite da temporada); lesão séria perde o bônus
     const tr = S.trainOf(c);
     if (tr.p1 || tr.p2) {
@@ -515,7 +524,7 @@
       if (injShare >= 0.2) pe.train = { id: tr.id, n: 0, lost: true };
       else { pe.train = { id: tr.id, n: extra }; pe.n += extra; }
     }
-    c.pe = (c.pe || 0) + pe.n;
+    c.pe = (c.pe || 0) + pe.n - (FO ? FO.pe : 0); // na Completa os pontos já entraram jogo a jogo
     const T = c.totals;
     T.games += games; T.goals += goals; T.assists += assists;
     T.cs = (T.cs || 0) + cleanSheets; T.saves = (T.saves || 0) + saves; T.penSaved = (T.penSaved || 0) + penSaved; T.tackles = (T.tackles || 0) + tackles;
@@ -546,7 +555,7 @@
       cleanSheets, saves, penSaved, tackles, pos: c.pos, part: Math.round(part * 100) / 100,
       ovr0, ovr1, fame0: Math.round(fame0), fame1: Math.round(c.fame), injury: injName ? Math.round(injShare * 100) : 0,
       coach0: Math.round(coach0), coach1: Math.round(c.rel.coach), fans0: Math.round(fans0), fans1: Math.round(c.rel.fans),
-      highlights, event: c.lastEvent || null, table, why, farewell: !!c.farewell, moment: M, // moment: o lance decisivo do ano (Carreira Completa)
+      highlights, event: c.lastEvent || null, table, why, farewell: !!c.farewell, moment: M, full: !!FO, // moment: o lance decisivo do ano; full: jogado jogo a jogo
       attrs: S.eff(c), cards, pe, src, // foto da carta desta temporada (para o álbum) e cartas especiais ganhas
       traits: c.traits.map(id => ({ id, lv: S.traitLevel(c, id) })), // características como estavam nesta temporada (álbum)
     };

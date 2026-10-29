@@ -165,5 +165,6 @@
     };
   };
 
+  S._schedule = schedule; // também para a Carreira Completa integrada (engine/fullcareer.js)
   if (typeof module !== 'undefined') module.exports = S;
 })(typeof window !== 'undefined' ? window : globalThis);

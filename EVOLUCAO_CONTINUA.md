@@ -171,3 +171,21 @@ Proibido também: cartão com faixa colorida na lateral.
   de carreira que se separa); carreiras Completas pela interface no celular e no computador 0 problemas; textos 0.
 - **Próxima (pedido do Silvio):** Completa integrada de verdade: calendário único com liga, copa nacional e
   continental; cada jogo simulado com o jogador do dia; pontos de evolução jogo a jogo; decisões e janela no meio.
+
+### Rodada 7 · 2026-10-29 · Carreira Completa integrada (pedido do Silvio: "precisa ser integrado")
+
+- **Calendário único:** liga, copa nacional (mata-mata no tamanho do país) e continental (Libertadores/Sul-Americana,
+  Champions/Liga Europa etc., com fase de grupos de 4 e mata-mata) intercalados, jogo a jogo, no motor
+  `craque/src/engine/fullcareer.js` (`S.fcStart/fcNext/fcPlay/fcFinish`, semente própria em `c.fc.seed`). Cada jogo
+  usa a força do jogador naquele dia (titular, banco, rodízio ou lesão); a temporada (`S.playSeason`) passa a ler os
+  números jogados (`c.fc.out`) em vez de sortear. O modo rápido não mudou.
+- **Evolução jogo a jogo:** nota ≥ 7,4 dá +0,2, ≥ 8,2 dá +0,4, taça dá +1 (teto `S.PE_CAP` por temporada). A fração
+  fica guardada; ponto inteiro já pode ser gasto em "Evoluir agora" entre os jogos e vale no jogo seguinte.
+- **Lances decisivos** nas finais de copa e continental, no clássico e na última rodada que decide título/acesso.
+- **Tela (`craque/src/ui/fullcareer.js`):** próximo jogo, tabela com abas Liga/Grupo, competições, calendário,
+  pontos de evolução; jogo ao vivo com os outros jogos da rodada; tela de taça.
+- **Validação:** simulador 600 carreiras Completas: A19 B39 C23 D12 S8 (rápido A25 B33 C18 D13 S11), gols e taças
+  perto do rápido, ~13 min; goleiro fica mais difícil (S 2%). Carreiras pela interface: celular 8 e computador 0
+  problemas. Fotos de todas as telas no celular e 1280×720.
+- **Pendente:** decidir com o Silvio se a nota da Completa ganha cortes próprios (mais difícil hoje); janela de
+  transferências e decisões espalhadas no meio da temporada (parte 3).

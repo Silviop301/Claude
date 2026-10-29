@@ -112,6 +112,8 @@
 
   // ---------- jogo decisivo (minigame) ----------
   function momentOrSeason() {
+    // Carreira Completa: a temporada jogo a jogo (ui/fullcareer.js); os lances acontecem nas finais e no clássico
+    if (G.c.mode === 'completa' && U.fcHub) return U.fcHub();
     const m = S.pickMoment(G.c);
     if (!m) return U.season();
     G.step = 'moment';
@@ -263,17 +265,17 @@
       // Saiu da tela no meio da cobrança (voltou ao início): o resultado não redesenha nada; ao retomar, a chance decide.
       // O resultado salva assim que sai: fechar o jogo com o letreiro na tela não troca o que se viu pela chance da carta
       playMini($('kick'), st, (ok, why) => { if (!$('kick')) return; momentEnd(m, ok, T, why); }, null, null, m.style,
-        (ok, why) => { if (!$('kick')) return; S.resolveMoment(G.c, ok, why); save(); });
+        (ok, why) => { if (!$('kick')) return; if (m.fc) S.fcMoment(G.c, m, ok, why); else S.resolveMoment(G.c, ok, why); save(); });
     }));
     $('b-auto').onclick = () => {
-      const ok = S.autoMoment(G.c);
+      const ok = m.fc ? S.fcAutoMoment(G.c, m) : S.autoMoment(G.c);
       save();
       momentResult(ok, T, m);
     };
   }
 
   function momentEnd(m, ok, T, why) {
-    S.resolveMoment(G.c, ok, why);
+    if (m.fc) S.fcMoment(G.c, m, ok, why); else S.resolveMoment(G.c, ok, why);
     save();
     momentResult(ok, T, m, why);
   }
@@ -318,7 +320,7 @@
       '<div class="ob5-res ' + (ok ? 'ok' : 'ko') + '"><div class="mr-big">' + big + '</div><p class="mr-txt">' + final + '</p>' +
       (fest ? '<div class="ob5-prize">' + trophy(titleType({ id: m.type === 'cont' ? 'cont' : 'league', name: m.comp }), 52, m.comp) +
         '<span><small>Campeão</small><b>' + esc(m.comp) + '</b></span></div>' : '') + '</div>' +
-      '<div class="lc-acts"><button class="btn" id="b-next">' + (fest ? 'Comemorar' : m.pre ? 'Fechar a temporada' : 'Jogar a temporada') + '</button>' + U.postBtn({ kind: 'moment', ok, m }) + '</div>' // no alto, como o resultado do evento
+      '<div class="lc-acts"><button class="btn" id="b-next">' + (m.fc ? 'Ver o jogo' : fest ? 'Comemorar' : m.pre ? 'Fechar a temporada' : 'Jogar a temporada') + '</button>' + U.postBtn({ kind: 'moment', ok, m }) + '</div>' // no alto, como o resultado do evento
     );
     if (side >= 0) {
       const g = screen.querySelectorAll('.ob5-board .ob5-g')[side];
@@ -326,8 +328,10 @@
     }
     if (fest) confetti();
     if (ok) U.vibe([40, 60, 40]);
-    $('b-next').onclick = U.season;
-    U.postBind({ kind: 'moment', ok, m, why }, U.season);
+    // Carreira Completa: depois do lance, o jogo ao vivo (com o resultado que o lance decidiu)
+    const go = m.fc ? U.fcAfterMoment : U.season;
+    $('b-next').onclick = go;
+    U.postBind({ kind: 'moment', ok, m, why }, go);
     // Final continental: edição extra do jornal
     const btn = $('b-next');
     if (m.type === 'cont') setTimeout(() => { if (btn.isConnected) U.finalPaper(G.c, m, ok); }, 900);
