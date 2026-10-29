@@ -2351,8 +2351,12 @@ button.sk-d { font: inherit; color: inherit; cursor: pointer; }
   #screen:has(> .s-hero) > * { grid-column: 1; }
   #screen:has(> .s-hero) > #after { grid-column: 2; grid-row: 1 / -1; }
   /* Pré-temporada: a carta fica parada à esquerda; as escolhas à direita */
-  #screen:has(> .inv-bar):not(:has(> .cc-side)) { display: grid; grid-template-columns: 400px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 28px; align-items: start; }
-  #screen:has(> .inv-bar):not(:has(> .cc-side)) > * { grid-column: 2; }
+  /* Personalizar visual: o jogador grande fica parado à esquerda; abas e opções à direita */
+  #screen:has(> .cr-stage) { display: grid; grid-template-columns: 420px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 28px; align-items: start; }
+  #screen:has(> .cr-stage) > * { grid-column: 2; }
+  #screen:has(> .cr-stage) > .cr-stage { grid-column: 1; grid-row: 1 / -1; position: sticky; top: 16px; margin-top: 64px; }
+  #screen:has(> .inv-bar):not(:has(> .cc-side)):not(:has(> .cr-stage)) { display: grid; grid-template-columns: 400px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 28px; align-items: start; }
+  #screen:has(> .inv-bar):not(:has(> .cc-side)):not(:has(> .cr-stage)) > * { grid-column: 2; }
   #screen:has(> .inv-bar) > .mcard { grid-column: 1; grid-row: 1 / -1; }
 }
 .cc-side { display: contents; }
@@ -2570,6 +2574,7 @@ html.desk .mo-wbox { --wd: min(270px, 68vw, calc(42svh / var(--z, 1))); }
 .story .rival-line.hot p { color: #FFB4B9; }
 #after > .star-line, #after > .pe-gain, #after > .wc-miss { margin: 0; background: none; color: #CFE0D4; padding: 0 2px; font-size: 14px; }
 #after > .star-line b, #after > .pe-gain b { color: var(--paper); }
+#after > .choice-line b.up { color: var(--up); } #after > .choice-line b.down { color: var(--down); }
 /* Evento: o papel ganha o tom do tipo (faixa no topo e um leve degradê), sem mudar o peso do texto */
 .event-card[class*=' t-'] { --tn: transparent; --tb: var(--paper); background: linear-gradient(180deg, var(--tb), var(--paper) 120px); box-shadow: inset 0 5px 0 var(--tn), 0 3px 0 rgba(0, 0, 0, .35); }
 .event-card.t-green { --tn: #1FA35A; --tb: #E2F2E6; } .event-card.t-red { --tn: #D8404A; --tb: #F8E3E2; }

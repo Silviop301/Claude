@@ -149,9 +149,9 @@
   };
 
   // Força das apostas: multiplica tudo o que uma opção mexe (atributos, teto, forma, minutos, lesão, técnico, torcida).
-  // Com 1, decidir bem rendia só ~3% mais pontos que decidir ao acaso; com 2, ~9% (tools/craque_decisoes.js).
-  S.STAKE_K = 2;      // ganhos
-  S.STAKE_LOSS = 2;   // perdas
+  // Com 1, decidir bem rendia só ~3% mais pontos que decidir ao acaso; com 2, ~6%; com 3, ~9% (tools/craque_decisoes.js).
+  S.STAKE_K = 3;      // ganhos
+  S.STAKE_LOSS = 3;   // perdas
   const scaleFx = fx => {
     if (!fx || (S.STAKE_K === 1 && S.STAKE_LOSS === 1)) return fx;
     const f = Object.assign({}, fx), sc = n => Math.sign(n) * Math.max(1, Math.round(Math.abs(n) * (n > 0 ? S.STAKE_K : S.STAKE_LOSS)));

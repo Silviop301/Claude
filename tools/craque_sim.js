@@ -131,3 +131,5 @@ const secs = q(res.map(r => r.decisions * 6 + r.seasons * 5), .5);
 console.log('Duração estimada (6 s por decisão + 5 s de resumo por temporada):', Math.floor(secs / 60) + 'min' + (secs % 60) + 's');
 
 console.log('Conquistas (% das carreiras):', S.ACHIEVEMENTS.map(a => a.id + ' ' + Math.round((ACH[a.id] || 0) / N * 100) + '%').join(' · '));
+// Cortes de S.GRADES que dariam a distribuição alvo (S11/A26/B31/C19/D13) com estas carreiras: para recalibrar
+{ const sc = res.map(r => r.score); console.log('Cortes para o alvo S11/A26/B31/C19/D13: S ' + q(sc, 0.89) + ' · A ' + q(sc, 0.63) + ' · B ' + q(sc, 0.32) + ' · C ' + q(sc, 0.13) + ' (atuais: ' + S.GRADES.slice(0, 4).map(g => g.join(' ')).join(' · ') + ')'); }

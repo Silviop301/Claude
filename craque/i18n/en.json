@@ -9717,5 +9717,13 @@
  "<b class=\"wc-band phase\">Eliminado ": "<b class=\"wc-band phase\">Knocked out ",
  "</b><span class=\"wc-end-who\">Caiu ": "</b><span class=\"wc-end-who\">Lost ",
  "Seu Mundial": "Your Club World Cup",
- "Sua Copa": "Your World Cup"
+ "Sua Copa": "Your World Cup",
+ " (já no total)</p>": " (already in the total)</p>",
+ "cobrança": "kick",
+ "cobranças": "kicks",
+ "dos ": "of the ",
+ "de ": "of ",
+ "<b class=\"": "<b class=\"",
+ "%</b> de minutos": "%</b> minutes",
+ " Suas escolhas no ano: ": " Your choices this year: "
 }

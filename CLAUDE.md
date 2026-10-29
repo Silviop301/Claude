@@ -29,6 +29,26 @@ Este arquivo é a fonte única de orientação. Leia-o antes de abrir código; e
   mexe em `craque/**` no branch de deploy (ou `main`). Quem decide quando publicar é o Silvio.
 - Antes de publicar, ou ao adicionar/remover arquivo do jogo: `python3 tools/craque_sw.py`.
 
+## Evolução contínua (ciclo autônomo)
+
+Base: `docs/prompt-mestre-evolucao.md` (do Silvio, 2026-10-29). Claude evolui o jogo sozinho; o Silvio testa e opina.
+Histórico, decisões e próximos objetivos: **`EVOLUCAO_CONTINUA.md`** (raiz). Leia antes de cada rodada; não repita o
+que lá está como recusado sem evidência nova.
+
+- **Seis pilares:** 1 técnica · 2 UI/UX · 3 direção de arte · 4 gameplay e diversão · 5 inovação · 6 validação.
+  Atenção ao longo das rodadas: técnica 25%, UI/UX + arte 25%, gameplay 30%, inovação + polimento 20%. Bug fácil
+  não pode travar o avanço visual e criativo.
+- **Rodada = etapas A–G:** diagnóstico → oportunidades (impacto, esforço, risco) → seleção (poucas, perceptíveis) →
+  implementação → validação → revisão crítica (ficou melhor? senão revisa ou reverte) → registro.
+- **Validação mínima:** `bash tools/craque_ciclo.sh /tmp/ciclo` (simulador, auditorias, erros reais do site, carreiras
+  pela interface no celular e no computador, caça de textos, fotos de todas as telas; `RAPIDO=1` sem fotos). Foto antes
+  e depois de toda mudança visual (`craque_telas.js` com `SO=`; `montage` de 5 fotos por imagem economiza tokens).
+- **Entrega:** branch `claude/...` + PR rascunho por rodada (base `claude/gracious-darwin-9gdlfp`), um commit por
+  melhoria, `python3 tools/craque_sw.py` antes. **Merge é do Silvio** (merge = produção). Relatório no formato da
+  seção 9 do prompt (ciclo, diagnóstico, alterações, impacto, validação, pendências, próximo ciclo), separando o
+  que foi implementado, testado e só proposto.
+- **Pedir aprovação antes:** mudança que altera a proposta do jogo, regra de pontuação/nota, save sem migração.
+
 ## Comandos (da raiz)
 
 ```
@@ -46,6 +66,8 @@ DESKTOP=1 TR=/tmp/tr node tools/craque_e2e.js 3 1280 3      # idem no computador
 python3 tools/craque_erros.py                       # erros reais dos jogadores (climbix.app)
 NODE_PATH=$(npm root -g) node tools/craque_sons.js [pasta]   # grava cada som do jogo (sound.js) em WAV, com volume de cada um
 python3 tools/craque_portal.py [itch]               # pacote para portal (dist/climbix-itch.zip): sem api/sw/escudos, que vêm de climbix.app
+bash tools/craque_ciclo.sh /tmp/ciclo                # checagens do ciclo num resumo (RAPIDO=1 mais curto)
+python3 tools/craque_lint_textos.py /tmp/ciclo/tr-cel   # plural, contração e placeholder errados no texto das telas
 ```
 
 Não há build, lint nem testes unitários: a validação é o simulador + o e2e + olhar a tela.
