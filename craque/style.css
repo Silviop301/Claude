@@ -2357,7 +2357,7 @@ button.sk-d { font: inherit; color: inherit; cursor: pointer; }
   #screen:has(> .cr-stage) > .cr-stage { grid-column: 1; grid-row: 1 / -1; position: sticky; top: 16px; margin-top: 64px; }
   #screen:has(> .inv-bar):not(:has(> .cc-side)):not(:has(> .cr-stage)) { display: grid; grid-template-columns: 400px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 28px; align-items: start; }
   #screen:has(> .inv-bar):not(:has(> .cc-side)):not(:has(> .cr-stage)) > * { grid-column: 2; }
-  #screen:has(> .inv-bar) > .mcard { grid-column: 1; grid-row: 1 / -1; }
+  #screen:has(> .inv-bar):not(:has(> .cc-side)):not(:has(> .cr-stage)) > .mcard { grid-column: 1; grid-row: 1 / -1; }
 }
 .cc-side { display: contents; }
 details.more .src-card { margin: 2px 0 8px; }
