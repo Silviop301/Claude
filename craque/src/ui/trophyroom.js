@@ -343,5 +343,5 @@
     return () => { clearTimeout(t); anims.forEach(a => { try { a.finish(); } catch (e) { /* ok */ } }); set(); };
   }
 
-  Object.assign(U, { salaNew: () => data().nova.length, trophyRoom: open, salaPlay: play, salaRecord: record, salaHome: homeCard, salaMerge: merge, salaImg: img, SALA_KEY: KEY });
+  Object.assign(U, { salaCat: catalog, salaCounts: () => counts(data().e), salaNew: () => data().nova.length, trophyRoom: open, salaPlay: play, salaRecord: record, salaHome: homeCard, salaMerge: merge, salaImg: img, SALA_KEY: KEY });
 })();

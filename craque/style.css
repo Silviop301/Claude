@@ -4456,10 +4456,11 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .fs-card.live .fs-sc > b i, .fs-card.live .fs-line { color: var(--tx-3); }
 .fs-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--down); animation: fs-pulse 1s ease-in-out infinite; }
 @keyframes fs-pulse { 50% { opacity: .25; } }
-.fs-ev { list-style: none; margin: 6px 0 0; padding: 6px 0 0; border-top: 1px dashed currentColor; display: grid; gap: 3px; font: var(--t-small); }
-.fs-card:not(.live) .fs-ev { border-color: rgba(19, 32, 26, .18); }
-.fs-card.live .fs-ev { border-color: var(--panel-line); }
-.fs-ev li { display: flex; gap: 8px; align-items: baseline; }
+.fs-ev2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 6px 0 0; padding: 6px 0 0; border-top: 1px dashed rgba(19, 32, 26, .18); min-height: 24px; }
+.fs-card.live .fs-ev2 { border-color: var(--panel-line); }
+.fs-ev { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; align-content: start; font: var(--t-small); }
+.fs-ev li { display: flex; gap: 6px; align-items: baseline; animation: enter .3s ease-out; }
+.fs-ev.a li { flex-direction: row-reverse; text-align: right; }
 .fs-ev li i { font: 700 13px var(--display); font-style: normal; min-width: 38px; opacity: .75; }
 .fs-ev li.me { font-weight: 700; }
 .fs-card:not(.live) .fs-ev li.me { color: var(--up-ink); }
@@ -4476,3 +4477,49 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
   html.desk .fs-tbl { max-height: calc(100svh / var(--z, 1) - var(--bar-h, 0px) - 60px); }
 }
 /* ----- fim V6 ----- */
+
+/* ----- V7 Domínio mundial (ui/world.js) ----- */
+.wd-home i { width: 64px; display: grid; place-items: center; }
+.wd-map { display: block; width: 100%; height: auto; }
+.wd-map path { stroke-width: .8; stroke-linejoin: round; transition: filter .2s; }
+.wd-map.mini path { stroke-width: 1.4; }
+.wd-map path.on { filter: brightness(1.3) saturate(1.1); }
+.wd-map path[data-c=""] { pointer-events: none; }
+.wd-map:not(.mini) path:not([data-c=""]) { cursor: pointer; }
+.wd-tag { cursor: pointer; }
+.wd-tag rect { fill: var(--board); fill-opacity: .88; stroke: var(--panel-line); stroke-width: .6; }
+.wd-tag text { font: 700 14px var(--display); fill: var(--gold-2); text-anchor: middle; }
+.wd-tag.on rect { fill: var(--paper); fill-opacity: 1; }
+.wd-tag.on text { fill: var(--ink); }
+.wd-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.wd-head h2 { margin: 0; font: var(--t-h1); color: var(--tx-1); }
+.wd-pct { font: var(--t-num); color: var(--gold); }
+.wd-sub { margin: -6px 0 0; font: var(--t-body); color: var(--tx-2); }
+.wd-board { background: var(--board); border-radius: var(--r-lg); padding: 10px 6px; border: 1px solid var(--panel-line); }
+.wd-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; background: rgba(0, 0, 0, .22); padding: 6px; border-radius: var(--r-md); }
+.wd-tabs button { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 44px; padding: 8px 12px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--tx-2); font: 700 15px var(--display); text-align: left; cursor: pointer; }
+.wd-tabs button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wd-tabs button b { font: 700 14px var(--display); color: var(--tx-3); }
+.wd-tabs button.on { background: var(--paper); color: var(--ink); }
+.wd-tabs button.on b { color: var(--ink-2); }
+.wd-list { display: grid; gap: 12px; }
+.wd-gh { font: var(--t-item); color: var(--tx-1); display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.wd-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.wd-it { position: relative; display: grid; justify-items: center; align-content: start; gap: 4px; padding: 8px 6px; border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--panel-line); text-align: center; }
+.wd-it img { width: 48px; height: 56px; object-fit: contain; filter: grayscale(1) brightness(.55); opacity: .5; }
+.wd-it span { font: 600 13px/1.15 var(--body); color: var(--tx-4); }
+.wd-it.won { background: var(--panel-2); }
+.wd-it.won img { filter: none; opacity: 1; }
+.wd-it.won span { color: var(--tx-1); }
+.wd-it b { position: absolute; top: 6px; right: 8px; font: 700 13px var(--display); color: var(--gold-2); }
+@media (min-width: 1000px) {
+  /* Mapa e continentes à esquerda; as taças do continente escolhido à direita, rolando sozinhas */
+  #app:has(#screen > .wd-board) { max-width: 1120px; }
+  #screen:has(> .wd-board) { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); grid-template-rows: repeat(4, auto) 1fr; column-gap: 24px; align-items: start; }
+  #screen:has(> .wd-board) > * { grid-column: 1; }
+  #screen:has(> .wd-board) > .back-link { justify-self: start; }
+  #screen:has(> .wd-board) > .wd-list { grid-column: 2; grid-row: 1 / -1; max-height: calc(100svh - 120px); overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
+  html.desk #screen:has(> .wd-board) > .wd-list { max-height: calc(100svh / var(--z, 1) - 120px); }
+  .wd-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+/* ----- fim V7 ----- */

@@ -25,6 +25,7 @@
       (played ? U.streakHome() : '') +
       U.packHome() +
       // Coleção, Sala de Troféus, Conquistas e Hall da Fama ficam numa tela só
+      (played || Object.keys(U.salaCounts()).length ? U.worldHome() : '') +
       '<button class="hg mine-btn" id="b-mine"><i>' + U.ICON.cards + '</i><b>Minhas carreiras</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carreira' : ' carreiras') +
         (U.salaNew() ? ' · <em>+' + U.salaNew() + (U.salaNew() === 1 ? ' taça nova' : ' taças novas') + '</em>' : '') + '</small></button>' +
       (played ? U.feedbackHome() : '') +
@@ -46,6 +47,7 @@
     U.packHomeBind();
     U.streakBind(U.home); // pegou um pacotinho da sequência: a tela redesenha com o bloco de pacotinhos
     $('b-mine').onclick = mine;
+    U.worldHomeBind();
     U.challengeHomeBind();
     U.relampagoHomeBind();
     if ($('b-opiniao')) $('b-opiniao').onclick = () => U.feedback('inicio', {}, home);

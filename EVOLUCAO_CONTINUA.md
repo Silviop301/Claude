@@ -156,3 +156,18 @@ Proibido também: cartão com faixa colorida na lateral.
 - **Validação:** 8 carreiras Completas no celular e 4 no computador pela interface (269 rodadas ao vivo), 0 problemas;
   textos 0 suspeitos; fotos ao vivo em 390, 360, 1280×720 e 1440×900.
 - **Tempo:** jogando todas as rodadas ao vivo, uma temporada de 38 rodadas leva ~7 min (perto dos 10 min pedidos).
+
+### Rodada 6 · 2026-10-29 · Domínio mundial + ajustes da rodada ao vivo
+
+- **Domínio mundial (pedido do Silvio, ideia do World Soccer Champs):** tela com o mapa-múndi e a % de taças já
+  ganhas em cada continente (América do Sul, América do Norte, Europa, África, Ásia e Oceania) e no "Mundo" (Copa,
+  Mundial, Intercontinental, Bola de Ouro), somando todas as carreiras (coleção da Sala). Tocar num continente lista
+  as taças dele por país, ganhas em cor e as que faltam apagadas. Botão na tela inicial com o mini mapa e a % total.
+  Mapa gerado de Natural Earth 1:110m (`craque/src/world-map.js`, 37 KB). Só visual.
+- **Rodada ao vivo (opinião do Silvio):** ~30 s por rodada (antes 10 s; "Mais rápido" ~10 s); escudos não piscam mais
+  (tabela e placares atualizam no lugar, sem refazer o HTML); os gols do seu jogo em duas colunas, mandante à esquerda
+  e visitante à direita, como no placar da TV.
+- **Validação:** fotos do mapa no celular e em 1280×720; fotos de todas as telas antes/depois (mudanças só nas telas
+  de carreira que se separa); carreiras Completas pela interface no celular e no computador 0 problemas; textos 0.
+- **Próxima (pedido do Silvio):** Completa integrada de verdade: calendário único com liga, copa nacional e
+  continental; cada jogo simulado com o jogador do dia; pontos de evolução jogo a jogo; decisões e janela no meio.
