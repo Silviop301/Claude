@@ -104,6 +104,7 @@ function stepInPage(opts) {
   }
   // Carreira Completa: a liga rodada a rodada (às vezes uma, às vezes cinco, às vezes até o fim) e o resumo
   if ($('fs-done')) return label('liga:resumo ' + click($('fs-done')));
+  if ($('fs-skipm')) return label('liga:aovivo ' + click(Math.random() < 0.3 ? $('fs-fast') : $('fs-skipm')));
   if ($('fs-next')) return label('liga ' + click(rnd([$('fs-next'), $('fs-5'), $('fs-end'), $('fs-end')])));
   // Criação 2 de 2: sortear o visual e começar
   if ($('b-go')) { if ($('b-dice') && Math.random() < 0.5) $('b-dice').click(); return label('create:go ' + click($('b-go'))); }
