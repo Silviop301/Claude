@@ -9,8 +9,8 @@
   const nameOf = id => (D.CLUB_BY_ID[id] ? D.CLUB_BY_ID[id].name : 'Time ' + Math.abs(id));
   const rate = r => r.toFixed(1).replace('.', ',');
   const clock = t => (t > 90 ? '90+' + (t - 90) : t) + "'";
-  // Milissegundos por minuto de jogo (normal e rápido): a rodada leva uns 10 s, ou 4 s no rápido
-  const PACE = [110, 40];
+  // Milissegundos por minuto de jogo (normal e rápido): a rodada leva uns 30 s, ou 10 s no rápido
+  const PACE = [330, 110];
 
   // Volta false quando a liga não tem tabela (o resumo segue sozinho)
   function fullSeason(res, done) {
@@ -60,27 +60,37 @@
       return k === R ? F.sortRows(F.frames[k - 1]) : F.frames[k - 1].slice().sort(order);
     };
     const zone = pos => (F.promo && pos <= F.promo ? ' z-up' : F.releg && pos > n - F.releg ? ' z-down' : !F.promo && pos === 1 ? ' z-top' : '');
+    // A tabela é montada uma vez; depois as linhas só trocam de lugar e de números (refazer o HTML recarregava os
+    // escudos, que piscavam a cada minuto da rodada ao vivo)
+    let rowEl = null;
     function table() {
-      const rows = standings();
-      $('fs-tbl').innerHTML = '<div class="fs-th"><i>#</i><span>Time</span><b>P</b><em>J</em><em>V</em><em>SG</em></div>' +
-        rows.map((x, j) => '<div class="fs-tr' + zone(j + 1) + (x.i === me ? ' me' : '') + '"><i>' + (j + 1) + '</i>' + crest(x.id, 'xs') + '<span>' + esc(nameOf(x.id)) + '</span>' +
-          '<b>' + x.p + '</b><em>' + x.j + '</em><em>' + x.v + '</em><em>' + (x.gp - x.gc > 0 ? '+' : '') + (x.gp - x.gc) + '</em></div>').join('') +
-        '<p class="fs-legend">' + (F.promo ? '<span class="z-up">Acesso</span>' : '<span class="z-top">Título</span>') + (F.releg ? '<span class="z-down">Rebaixamento</span>' : '') + '</p>';
-      const mine = $('fs-tbl').querySelector('.me');
+      const rows = standings(), box = $('fs-tbl');
+      if (!rowEl) {
+        rowEl = {};
+        box.innerHTML = '<div class="fs-th"><i>#</i><span>Time</span><b>P</b><em>J</em><em>V</em><em>SG</em></div><div class="fs-rows"></div>' +
+          '<p class="fs-legend">' + (F.promo ? '<span class="z-up">Acesso</span>' : '<span class="z-top">Título</span>') + (F.releg ? '<span class="z-down">Rebaixamento</span>' : '') + '</p>';
+        rows.forEach(x => { const d = document.createElement('div'); d.innerHTML = '<i></i>' + crest(x.id, 'xs') + '<span>' + esc(nameOf(x.id)) + '</span><b></b><em></em><em></em><em></em>'; rowEl[x.i] = d; });
+      }
+      const list = box.querySelector('.fs-rows');
+      rows.forEach((x, j) => {
+        const d = rowEl[x.i], c = d.children, sg = x.gp - x.gc;
+        d.className = 'fs-tr' + zone(j + 1) + (x.i === me ? ' me' : '');
+        c[0].textContent = j + 1; c[3].textContent = x.p; c[4].textContent = x.j; c[5].textContent = x.v; c[6].textContent = (sg > 0 ? '+' : '') + sg;
+        if (list.children[j] !== d) list.insertBefore(d, list.children[j] || null);
+      });
+      const mine = box.querySelector('.me');
       // A tabela tem altura fixa no computador: a sua linha fica à vista
       if (mine && mine.parentNode.scrollHeight > mine.parentNode.clientHeight) mine.parentNode.scrollTop = mine.offsetTop - mine.parentNode.clientHeight / 2;
       return rows.findIndex(x => x.i === me) + 1;
     }
     const gameOf = ri => F.mine.find(x => x.ri === ri);
     // Lances do seu jogo até o minuto t: seus gols e assistências com o seu nome, os outros com o nome do time
-    function plays(g, t) {
-      const h = g.home ? myId : F.ids[g.vs], a = g.home ? F.ids[g.vs] : myId, who = G.c.name;
-      return g.ev.filter(e => e.m <= t).map(e => {
-        const team = e.s === 'h' ? h : a, ours = team === myId;
-        const txt = e.me ? 'Gol de ' + esc(who) + '!' : e.as ? 'Gol do ' + esc(nameOf(team)) + ', assistência de ' + esc(who) : 'Gol do ' + esc(nameOf(team));
-        return '<li class="' + (e.me || e.as ? 'me' : ours ? 'us' : 'them') + '"><i>' + clock(e.m) + '</i>' + txt + '</li>';
-      }).join('');
+    // Um lance do seu jogo; cada time na sua coluna, como no placar da TV (mandante à esquerda)
+    function play1(e) {
+      const who = esc(G.c.name);
+      return '<li class="' + (e.me || e.as ? 'me' : '') + '"><i>' + clock(e.m) + '</i><span>' + (e.me ? 'Gol de ' + who : e.as ? 'Gol, assistência de ' + who : 'Gol') + '</span></li>';
     }
+    const plays = (g, t, side) => g.ev.filter(e => e.m <= t && e.s === side).map(play1).join('');
     // Seu jogo da rodada ri (0 a R-1): antes, ao vivo (t) ou encerrado; placar com o mandante à esquerda
     function matchCard(ri, state, t) {
       const g = gameOf(ri);
@@ -88,21 +98,22 @@
       const h = g.home ? myId : F.ids[g.vs], a = g.home ? F.ids[g.vs] : myId;
       const m = F.rounds[ri].find(x => x.h === me || x.a === me);
       const [gh, ga] = state === 'live' ? partial(m, t) : g.home ? [g.gf, g.ga] : [g.ga, g.gf];
+      const live1 = state === 'live';
       const mf = g.home ? gh : ga, mg = g.home ? ga : gh;
       const out = mf > mg ? 'win' : mf < mg ? 'loss' : 'draw';
       const side = id => '<div class="fs-tm' + (id === myId ? ' me' : '') + '">' + crest(id, 'md') + '<span>' + esc(nameOf(id)) + '</span></div>';
       const lbl = state === 'next' ? 'Próximo jogo · rodada ' + (ri + 1)
-        : state === 'live' ? '<span class="fs-dot" aria-hidden="true"></span>' + (t === 45 && live && live.half ? 'Intervalo' : 'Ao vivo · ' + clock(t))
+        : live1 ? '<span class="fs-dot" aria-hidden="true"></span><span id="fs-lt">' + liveLbl(t) + '</span>'
         : 'Rodada ' + (ri + 1) + ' · ' + (out === 'win' ? 'Vitória' : out === 'loss' ? 'Derrota' : 'Empate');
       const line = state === 'next' ? (g.decisive ? U.emo('🎯', 'xs') + ' O jogo do seu lance decisivo' : g.home ? 'Em casa' : 'Fora de casa')
         : !g.on ? 'Você ficou fora deste jogo'
         : state === 'live' ? 'Você está em campo'
         : [g.goals ? g.goals + (g.goals === 1 ? ' gol' : ' gols') : '', g.assists ? g.assists + (g.assists === 1 ? ' assistência' : ' assistências') : '', 'nota ' + rate(g.rating)].filter(Boolean).join(' · ');
-      const ev = state === 'next' ? '' : plays(g, state === 'live' ? t : 99);
+      const tt = live1 ? t : 99, eh = state === 'next' ? '' : plays(g, tt, 'h'), ea = state === 'next' ? '' : plays(g, tt, 'a');
       return '<div class="fs-card ' + (state === 'done' ? out : state) + (g.decisive ? ' dec' : '') + '">' +
         '<div class="fs-lbl">' + lbl + '</div>' +
-        '<div class="fs-sc">' + side(h) + '<b>' + (state === 'next' ? '<i>×</i>' : gh + '<i>×</i>' + ga) + '</b>' + side(a) + '</div>' +
-        (ev ? '<ul class="fs-ev">' + ev + '</ul>' : '') +
+        '<div class="fs-sc">' + side(h) + '<b>' + (state === 'next' ? '<i>×</i>' : '<span id="fs-sh">' + gh + '</span><i>×</i><span id="fs-sa">' + ga + '</span>') + '</b>' + side(a) + '</div>' +
+        (live1 || eh || ea ? '<div class="fs-ev2"><ul class="fs-ev" id="fs-evh">' + eh + '</ul><ul class="fs-ev a" id="fs-eva">' + ea + '</ul></div>' : '') +
         '<p class="fs-line">' + line + '</p></div>';
     }
     // Seus números na liga até a rodada k
@@ -120,10 +131,10 @@
     function roundList(ri, t) {
       if (ri < 0) { $('fs-round').innerHTML = ''; return; }
       const rd = F.rounds[ri].filter(m => m.h !== me && m.a !== me);
-      $('fs-round').innerHTML = '<div class="fs-rlbl">' + (t === undefined ? 'Outros jogos da rodada ' + (ri + 1) : 'Outros jogos · ' + clock(t)) + '</div>' + rd.map(m => {
+      $('fs-round').innerHTML = '<div class="fs-rlbl">' + (t === undefined ? 'Outros jogos da rodada ' + (ri + 1) : 'Outros jogos da rodada ' + (ri + 1) + ' · ao vivo') + '</div>' + rd.map(m => {
         const [gh, ga] = t === undefined ? [m.gh, m.ga] : partial(m, t);
         const hot = t !== undefined && m.ev.some(e => e.m <= t && e.m > t - 5); // acende por 5 minutos de jogo
-        return '<div class="fs-rr' + (hot ? ' hot' : '') + '"><span>' + esc(nameOf(F.ids[m.h])) + '</span>' + crest(F.ids[m.h], 'xs') + '<b>' + gh + ' × ' + ga + '</b>' + crest(F.ids[m.a], 'xs') + '<span>' + esc(nameOf(F.ids[m.a])) + '</span></div>';
+        return '<div class="fs-rr' + (hot ? ' hot' : '') + '" data-m="' + F.rounds[ri].indexOf(m) + '"><span>' + esc(nameOf(F.ids[m.h])) + '</span>' + crest(F.ids[m.h], 'xs') + '<b>' + gh + ' × ' + ga + '</b>' + crest(F.ids[m.a], 'xs') + '<span>' + esc(nameOf(F.ids[m.a])) + '</span></div>';
       }).join('');
     }
     const nextLine = ri => { const g = gameOf(ri); return g ? (g.home ? 'em casa contra ' : 'fora contra ') + esc(nameOf(F.ids[g.vs])) + (g.decisive ? ' ' + U.emo('🎯', 'xs') : '') : 'folga'; };
@@ -151,12 +162,27 @@
       $('fs-match').scrollIntoView({ block: 'nearest' });
     }
     // ---------- rodada ao vivo ----------
-    function liveFrame() {
+    const liveLbl = t => (t === 45 && live && live.half ? 'Intervalo' : t >= (live ? live.end : 90) ? 'Fim de jogo' : 'Ao vivo · ' + clock(t));
+    // O quadro da rodada é montado no apito inicial; a cada minuto só mudam relógio, placares, lances e tabela
+    function liveFrame(first) {
       const t = live.t;
-      $('fs-h').textContent = 'Rodada ' + (k + 1) + ' · ' + (t === 45 && live.half ? 'intervalo' : t >= live.end ? 'fim de jogo' : 'ao vivo');
-      $('fs-match').innerHTML = matchCard(k, 'live', t);
-      roundList(k, t);
-      table();
+      $('fs-h').textContent = 'Rodada ' + (k + 1) + ' · ' + (t === 45 && live.half ? 'intervalo' : 'ao vivo');
+      if (first) { $('fs-match').innerHTML = matchCard(k, 'live', t); roundList(k, t); table(); return; }
+      if ($('fs-lt')) $('fs-lt').textContent = liveLbl(t);
+      const g = gameOf(k), mm = F.rounds[k].find(x => x.h === me || x.a === me);
+      if (g && mm) {
+        const [gh, ga] = partial(mm, t);
+        $('fs-sh').textContent = gh; $('fs-sa').textContent = ga;
+        mm.ev.filter(e => e.m === t).forEach(e => { $(e.s === 'h' ? 'fs-evh' : 'fs-eva').insertAdjacentHTML('beforeend', play1(e)); });
+      } else if ($('fs-match').querySelector('.fs-bye')) $('fs-match').querySelector('.fs-bye').textContent = 'Seu time folga nesta rodada · ' + liveLbl(t);
+      let goal = false;
+      $('fs-round').querySelectorAll('.fs-rr').forEach(el => {
+        const m = F.rounds[k][+el.dataset.m], [gh, ga] = partial(m, t);
+        el.querySelector('b').textContent = gh + ' × ' + ga;
+        el.classList.toggle('hot', m.ev.some(e => e.m <= t && e.m > t - 5)); // acende por 5 minutos de jogo
+        if (m.ev.some(e => e.m === t)) goal = true;
+      });
+      if (goal || (mm && mm.ev.some(e => e.m === t)) || t === 1) table(); // a tabela só se mexe quando sai gol
     }
     function liveActs() {
       $('fs-acts').innerHTML = '<div class="fs-skip"><button class="btn ghost' + (fast ? ' on' : '') + '" id="fs-fast">' + (fast ? 'Velocidade normal' : 'Mais rápido') + '</button><button class="btn ghost" id="fs-skipm">Fim da rodada</button></div>';
@@ -168,14 +194,14 @@
       const end = Math.max(90, ...F.rounds[k].map(m => (m.ev.length ? m.ev[m.ev.length - 1].m : 0)));
       live = { t: 0, end, half: false };
       sfx('whistle');
-      liveActs(); liveFrame();
+      liveActs(); liveFrame(true);
       $('fs-match').scrollIntoView({ block: 'nearest' });
       tick();
     }
     function tick() {
       // Saiu da tela (fechou, recarregou): o relógio para
       if (!live || !$('fs-match')) return;
-      if (live.t === 45 && !live.half) { live.half = true; sfx('whistle'); liveFrame(); live.timer = setTimeout(tick, fast ? 300 : 900); return; }
+      if (live.t === 45 && !live.half) { live.half = true; sfx('whistle'); liveFrame(); live.timer = setTimeout(tick, fast ? 600 : 1800); return; }
       live.half = false;
       live.t++;
       const mg = gameOf(k), m = mg && F.rounds[k].find(x => x.h === me || x.a === me);
