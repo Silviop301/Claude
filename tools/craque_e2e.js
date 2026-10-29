@@ -10,7 +10,7 @@
 //        node tools/craque_e2e.js 5 320 2    → teste rápido em 320 px
 // Variáveis: BASE (padrão http://localhost:8765/craque/) · POS=ATA,GOL (só estas posições) · OUT=arquivo.json (relatório
 // completo) · SHOTS=pasta (foto de cada problema) · SLOW=1 (sem acelerar os temporizadores) · DESKTOP=1 (mouse, sem toque)
-// · CFG='{"papers":"special","cups":"play"}' (configuração do jogo) · TR=pasta (transcrição: texto de cada tela + estado da
+// · MODO=completa (Carreira Completa) · CFG='{"papers":"special","cups":"play"}' (configuração do jogo) · TR=pasta (transcrição: texto de cada tela + estado da
 // carreira, para caçar incoerências entre telas)
 // Playwright precisa estar instalado (o Chromium já está em /opt/pw-browsers).
 const { chromium } = require('playwright');
@@ -44,7 +44,7 @@ function initScript(slow) {
 // Um passo: olha a tela e faz o que um jogador faria. Devolve { did, screen } (o que clicou e um resumo da tela).
 // Roda dentro da página (sem Playwright) para ser rápido.
 function stepInPage(opts) {
-  const { pos, country, chance } = opts;
+  const { pos, country, chance, mode } = opts;
   const $ = id => document.getElementById(id);
   const q = s => document.querySelector(s);
   const qa = s => Array.from(document.querySelectorAll(s));
@@ -96,11 +96,15 @@ function stepInPage(opts) {
   if ($('b-start')) {
     const pb = q('#f-pos button[data-v="' + pos + '"]'); if (pb) pb.click();
     const cb = q('#f-country button[data-v="' + country + '"]'); if (cb) cb.click();
+    if (mode) { const mb = q('#f-mode button[data-v="' + mode + '"]'); if (mb) mb.click(); }
     const nm = $('f-name'); if (nm) { nm.value = rnd(['Zé Pequeno', "D'Alessandro", 'Kauã <b>x</b>', 'Luís Ângelo', 'Rafa', 'O\'Neil']); nm.dispatchEvent(new Event('input')); }
     if (Math.random() < 0.3) $('b-dice1').click();
     if (Math.random() < 0.3) return label('create:look ' + click($('b-look')));
     return label('create:start ' + click($('b-start')));
   }
+  // Carreira Completa: a liga rodada a rodada (às vezes uma, às vezes cinco, às vezes até o fim) e o resumo
+  if ($('fs-done')) return label('liga:resumo ' + click($('fs-done')));
+  if ($('fs-next')) return label('liga ' + click(rnd([$('fs-next'), $('fs-5'), $('fs-end'), $('fs-end')])));
   // Criação 2 de 2: sortear o visual e começar
   if ($('b-go')) { if ($('b-dice') && Math.random() < 0.5) $('b-dice').click(); return label('create:go ' + click($('b-go'))); }
   // Copa / Mundial: começar (simula direto pela configuração)
@@ -214,7 +218,7 @@ async function career(page, pos, idx, issues, stats) {
   };
   for (; steps < 4000; steps++) {
     let r;
-    try { r = await page.evaluate(stepInPage, { pos, country, chance }); } catch (e) { note('erro-teste', e.message, '?'); break; }
+    try { r = await page.evaluate(stepInPage, { pos, country, chance, mode: process.env.MODO }); } catch (e) { note('erro-teste', e.message, '?'); break; }
     const kind = r.did.split(' ')[0]; cov[kind] = (cov[kind] || 0) + 1;
     if (r.done) break;
     if (/^next/.test(r.did) && /^Temporada /.test(r.screen)) seasons++;

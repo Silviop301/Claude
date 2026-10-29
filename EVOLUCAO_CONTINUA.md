@@ -14,6 +14,26 @@ Cada rodada acrescenta uma entrada no Registro e atualiza o Diagnóstico e o Rot
 | 5 Inovação | Já existem rival, ganchos, Relâmpago, desafio por link, coleção. | Algo que torne a carreira pessoal e memorável (ex.: objetivo pessoal escolhido no começo, momentos que voltam). |
 | 6 Validação | `tools/craque_ciclo.sh` junta tudo num resumo; `craque_lint_textos.py` caça plural/contração/placeholder. | Validar com jogadores reais (opinião no jogo, ranking). |
 
+## Direção (Silvio, 2026-10-29)
+
+Amigos enjoaram depois de algumas carreiras. O Climbix deixa de ser só a carreira de um garoto dos 16 aos 36 e vira
+um jogo de futebol com vários modos e motivo para voltar: Carreira Rápida (a de 9 min), Carreira Completa (jogo a jogo,
+tabela inteira), Relâmpago e Modo Treinador (usa o motor de liga de `engine/fixtures.js`), com uma progressão que fica
+entre os modos (perfil com nível, metas da semana, temporada de ranking, liga entre amigos). Ordem escolhida pelo Silvio:
+Completa → perfil e metas → Treinador. O perfil traz o mapa "Domínio mundial" (ideia do World Soccer Champs): cada
+continente com a % de troféus já ganhos ali, somando todos os modos, para dar a meta longa de zerar o jogo. Isso passa à frente das rodadas de polimento abaixo.
+
+**Visual original (Silvio, 2026-10-29):** o jogo não pode ter cara de "feito por IA". Sinais a tirar: emoji como ícone em
+quase toda linha, rótulo pequeno em caixa alta sobre cada título, cartões arredondados com sombra suave todos iguais.
+Direção a propor: cultura impressa do futebol brasileiro (álbum de figurinha, ingresso, jornal esportivo, placar de
+estádio, carimbo), ícones próprios no lugar dos emojis, formato próprio por tela. Prancha antes/depois para o Silvio
+aprovar antes de mexer no jogo; entra logo depois da Carreira Completa.
+
+**Mais perto do real e texto sem cara de IA (Silvio, 2026-10-29):** o que os amigos mais gostaram foi o X e os
+podcasters, porque reconhecem. Telas em formatos conhecidos (tabela igual à da TV). Revisar todo o texto do jogo para
+tirar frase certinha, "não é X, é Y", trios, bordão em toda linha; mais curto, torto, com gíria. Junto da rodada visual.
+Proibido também: cartão com faixa colorida na lateral.
+
 ## Roteiro (rodadas menores e verificáveis)
 
 1. **Técnica + validação** (feita, abaixo): ferramenta do ciclo, bugs de texto, tela de personalizar no computador.
@@ -23,6 +43,9 @@ Cada rodada acrescenta uma entrada no Registro e atualiza o Diagnóstico e o Rot
 3. ~~**UI/UX no computador:**~~ (feita, abaixo) resumo da temporada, ranking e ficha sem buracos; fim de carreira mais curto.
 4. ~~**Gameplay: escolhas que voltam.**~~ (feita, abaixo) Mais aberturas de evento e eventos que só aparecem em fases certas.
 5. **Inovação:** uma ideia nova de carreira pessoal, proposta ao Silvio antes (muda a proposta do jogo).
+7. **Organização do código (pedido do Silvio, 2026-10-29):** checagem de tipos do TypeScript no JS atual
+   (`// @ts-check` / `tsc --checkJs`, sem trocar de linguagem), dividir os arquivos acima de 100 KB e tirar
+   duplicação. Entra no pilar técnico a cada rodada, aos poucos, sem mudar o jogo.
 6. **Arte:** direção nova para personagens (precisa arte nova; propor caminho e custo antes de executar).
 
 ## Registro
@@ -98,3 +121,27 @@ Cada rodada acrescenta uma entrada no Registro e atualiza o Diagnóstico e o Rot
 - **Próxima:** Carreira Completa (modo novo, escolhido pelo Silvio em 2026-10-29): temporada de liga jogo a jogo com
   a tabela inteira, ao lado da carreira de 9 minutos.
 
+
+### Rodada 5 · 2026-10-29 · Carreira Completa, primeira parte (pilares 4 e 5)
+
+- **Pedido:** carreira mais longa e com mais detalhe, jogo a jogo e com a tabela inteira, como modo novo ao lado da
+  carreira de 9 minutos (escolha do Silvio).
+- **Implementado e testado:**
+  - `engine/fixtures.js` (`S.fullSeason`): turno e returno, placar de todos os jogos e tabela rodada a rodada que
+    termina com a mesma posição e o mesmo campeão da temporada simulada (o equilíbrio continua o do motor). O jogo do
+    lance decisivo de título/acesso vai para a última rodada, com o resultado do lance. Ligas com menos de 20 times
+    completam com clubes reais da divisão de baixo. Seus jogos, gols, assistências e nota repartidos rodada a rodada.
+  - `ui/fullseason.js`: seu jogo da rodada (placar com escudos, sua linha), seus números na liga, outros jogos e a
+    tabela inteira com zonas (quadradinho colorido na posição, como na TV). "Próxima rodada", "Avançar 5" (para no jogo
+    do lance decisivo) e "Até o fim"; depois o resumo da temporada de sempre. No computador, jogo à esquerda e tabela
+    à direita.
+  - Escolha "Modo: Rápida · 9 min / Completa · jogo a jogo" na criação do jogador; `craque_e2e.js` com `MODO=completa`.
+- **Validação:** 2.218 temporadas no Node: posição e campeão iguais aos do motor em 100%, ~50 ms por temporada;
+  simulador sem mudança (S11/A26/B33/C17/D13, 9min46s); carreiras pela interface: 8 Completas no celular, 4 no
+  computador e 8 normais, 0 problemas; textos 0 suspeitos; fotos de todas as telas antes/depois no celular e em
+  1280×720 (só mudaram telas de animação e carreira que se separa, além da criação com o Modo); fotos da tela nova em
+  390, 360, 1280×720 e 1440×900.
+- **Revisão crítica:** a tabela e os placares convencem; aos 16 anos quase todas as rodadas dizem "Você não jogou"
+  (é o que acontece de fato, e dá para pular). Ainda não tem copas, janela no meio do ano nem decisões espalhadas
+  pela temporada; é a próxima parte do modo.
+- **Próxima:** perfil com metas e mapa "Domínio mundial" (ordem do Silvio), prancha da identidade visual e revisão dos textos.

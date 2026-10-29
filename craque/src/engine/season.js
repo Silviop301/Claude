@@ -546,7 +546,7 @@
       cleanSheets, saves, penSaved, tackles, pos: c.pos, part: Math.round(part * 100) / 100,
       ovr0, ovr1, fame0: Math.round(fame0), fame1: Math.round(c.fame), injury: injName ? Math.round(injShare * 100) : 0,
       coach0: Math.round(coach0), coach1: Math.round(c.rel.coach), fans0: Math.round(fans0), fans1: Math.round(c.rel.fans),
-      highlights, event: c.lastEvent || null, table, why, farewell: !!c.farewell,
+      highlights, event: c.lastEvent || null, table, why, farewell: !!c.farewell, moment: M, // moment: o lance decisivo do ano (Carreira Completa)
       attrs: S.eff(c), cards, pe, src, // foto da carta desta temporada (para o álbum) e cartas especiais ganhas
       traits: c.traits.map(id => ({ id, lv: S.traitLevel(c, id) })), // características como estavam nesta temporada (álbum)
     };

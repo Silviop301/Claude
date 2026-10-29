@@ -4396,3 +4396,65 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
   .album > .al-share { position: sticky; bottom: 0; z-index: 1; }
 }
 /* ----- fim V5 ----- */
+
+/* ----- V6 Carreira Completa: a liga rodada a rodada (ui/fullseason.js) ----- */
+.fs { display: grid; gap: 12px; }
+.fs-main { display: grid; gap: 12px; align-content: start; }
+.fs-main > h2 { margin: -6px 0 0; font: var(--t-h1); color: var(--tx-1); }
+.fs-card { background: var(--paper); color: var(--ink); border-radius: var(--r-lg); padding: 12px 14px 12px; box-shadow: var(--sh-float); }
+.fs-card.dec { box-shadow: 0 0 0 3px var(--gold), var(--sh-float); }
+.fs-lbl { font: var(--t-label); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); text-align: center; }
+.fs-card.win .fs-lbl { color: var(--up-ink); }
+.fs-card.loss .fs-lbl { color: var(--down-ink); }
+.fs-sc { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 8px 0 4px; }
+.fs-sc > b { font: var(--t-num); white-space: nowrap; }
+.fs-sc > b i { font-style: normal; font-weight: 600; font-size: 26px; color: var(--ink-2); margin: 0 6px; vertical-align: 6px; }
+.fs-tm { display: grid; justify-items: center; gap: 4px; text-align: center; min-width: 0; }
+.fs-tm .crest { width: 44px; height: 44px; margin: 0; }
+.fs-tm span { font: 700 15px/1.1 var(--display); overflow-wrap: anywhere; }
+.fs-tm.me span { color: var(--up-ink); }
+.fs-line { margin: 4px 0 0; text-align: center; font: var(--t-small); color: var(--ink-2); }
+.fs-bye { background: var(--panel); border: 1px solid var(--panel-line); border-radius: var(--r-lg); padding: 16px; text-align: center; color: var(--tx-2); }
+.fs-nx { margin: 8px 2px 0; font: var(--t-small); color: var(--tx-3); text-align: center; }
+.fs-me { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--panel); border: 1px solid var(--panel-line); border-radius: var(--r-md); padding: 8px 4px; }
+.fs-me > div { display: grid; justify-items: center; gap: 2px; }
+.fs-me b { font: 800 24px/1 var(--display); color: var(--tx-1); }
+.fs-me span { font: var(--t-label); color: var(--tx-3); text-transform: uppercase; letter-spacing: .06em; }
+.fs-acts { display: grid; gap: 8px; }
+.fs-acts .btn { margin: 0; }
+.fs-skip { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fs-skip .btn.ghost { min-height: 44px; padding: 10px; font-size: 16px; }
+.fs-round { display: grid; gap: 2px; }
+.fs-rlbl { font: var(--t-label); letter-spacing: .12em; text-transform: uppercase; color: var(--label, var(--gold)); margin: 4px 0 4px; }
+.fs-rr { display: grid; grid-template-columns: 1fr auto auto auto 1fr; align-items: center; gap: 6px; font: var(--t-small); color: var(--tx-2); padding: 3px 0; }
+.fs-rr > span:first-child { text-align: right; }
+.fs-rr > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fs-rr .crest.xs { margin: 0; }
+.fs-rr > b { font: 700 15px var(--display); color: var(--tx-1); min-width: 44px; text-align: center; }
+.fs-tbl { background: var(--board); border-radius: var(--r-md); padding: 6px 4px 8px; border: 1px solid var(--panel-line); }
+.fs-th, .fs-tr { display: grid; grid-template-columns: 26px 22px 1fr 34px 28px 28px 36px; align-items: center; gap: 2px; padding: 4px 6px; }
+.fs-th { grid-template-columns: 26px 1fr 34px 28px 28px 36px; font: var(--t-label); color: var(--tx-3); text-transform: uppercase; letter-spacing: .06em; }
+.fs-th > *, .fs-tr > i, .fs-tr > b, .fs-tr > em { text-align: center; font-style: normal; }
+.fs-th > span { text-align: left; padding-left: 24px; }
+.fs-tr { font: 500 14px/1.2 var(--body); color: var(--tx-2); border-radius: 6px; }
+.fs-tr > i { font: 700 14px/22px var(--display); color: var(--tx-3); width: 22px; height: 22px; border-radius: 4px; justify-self: center; }
+.fs-tr .crest.xs { margin: 0; }
+.fs-tr > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 4px; }
+.fs-tr > b { font: 800 16px var(--display); color: var(--tx-1); }
+.fs-tr.z-up > i, .fs-legend .z-up::before { background: var(--up-ink); color: var(--tx-1); }
+.fs-tr.z-down > i, .fs-legend .z-down::before { background: var(--down-ink); color: var(--tx-1); }
+.fs-tr.z-top > i, .fs-legend .z-top::before { background: var(--gold); color: var(--ink); }
+.fs-tr.me { background: var(--paper); color: var(--ink); }
+.fs-tr.me > i, .fs-tr.me > b { color: var(--ink); }
+.fs-legend { display: flex; gap: 14px; justify-content: center; margin: 8px 0 0; font: var(--t-label); color: var(--tx-3); }
+.fs-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.fs-legend span::before { content: ''; width: 12px; height: 12px; border-radius: 3px; }
+/* Tela larga: seu jogo à esquerda, a tabela inteira à direita (rola sozinha, com a sua linha à vista) */
+@media (min-width: 1000px) { #app:has(#screen > .fs) { max-width: 1040px; } }
+@media (min-width: 1000px) and (min-height: 560px) {
+  .fs { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .fs-side { position: sticky; top: calc(var(--bar-h, 0px) + 12px); }
+  .fs-tbl { max-height: calc(100svh - var(--bar-h, 0px) - 60px); overflow-y: auto; scrollbar-width: thin; }
+  html.desk .fs-tbl { max-height: calc(100svh / var(--z, 1) - var(--bar-h, 0px) - 60px); }
+}
+/* ----- fim V6 ----- */

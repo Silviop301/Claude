@@ -298,12 +298,17 @@
     G.step = S.isWcYear(G.c) && G.c.wcYearDone !== year() && S.wcCall(G.c).called ? 'wc'
       : S.isCwcYear(G.c) && G.c.cwcYearDone !== year() && S.cwcCall(G.c).called ? 'cwc' : S.windowOpen(G.c) ? 'offers' : 'preseason';
     save();
+    // Carreira Completa: antes do resumo, a liga rodada a rodada (ui/fullseason.js); o resumo já não refaz a corrida
+    if (G.c.mode === 'completa' && U.fullSeason && U.fullSeason(res, () => show(res, preM, true))) return;
+    show(res, preM, false);
+  }
+  function show(res, preM, full) {
     const cl = club(res.club);
     const [c1, c2] = seasonStats(res);
     const t0c = tierCls(res.ovr0);
     const race = raceOf(res);
     res.race = race ? race.kind : false;
-    if (race && race.last && (preM === 'title' || preM === 'acesso')) race.from = race.frames.length - 1;
+    if (race && (full || (race.last && (preM === 'title' || preM === 'acesso')))) race.from = race.frames.length - 1;
     // Cores do clube no topo (as do escudo, as mesmas do fundo da tela)
     const kit = (window.CRAQUE_KITS || {})[cl.id] || ['#1F6B3E', '#0B1F14'];
     render(
