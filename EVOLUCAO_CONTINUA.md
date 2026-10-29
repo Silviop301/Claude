@@ -17,7 +17,7 @@ Cada rodada acrescenta uma entrada no Registro e atualiza o Diagnóstico e o Rot
 ## Roteiro (rodadas menores e verificáveis)
 
 1. **Técnica + validação** (feita, abaixo): ferramenta do ciclo, bugs de texto, tela de personalizar no computador.
-2. **Gameplay: decisões que pesam.** Medir por evento quanto cada escolha muda a carreira (`craque_decisoes.js`),
+2. ~~**Gameplay: decisões que pesam.**~~ (feita, abaixo) Medir por evento quanto cada escolha muda a carreira (`craque_decisoes.js`),
    reforçar as de efeito invisível e mostrar a consequência quando ela volta. Meta: decidir bem ≥ +12% sem mudar a
    distribuição de notas.
 3. **UI/UX no computador:** resumo da temporada, ranking e ficha sem buracos; fim de carreira mais curto.
@@ -42,3 +42,25 @@ Cada rodada acrescenta uma entrada no Registro e atualiza o Diagnóstico e o Rot
 - **Pendências (decisão de design, de 2026-10-28):** recarregar durante a temporada ao vivo pula o resumo; Tab preso e
   Espaço/Enter na abertura do lance; nomes longos de uma palavra no placar da Copa.
 - **Próxima:** rodada 2 (decisões que pesam), porque é o pilar de maior peso e o número mais fraco do diagnóstico.
+
+### Rodada 2 · 2026-10-29 · Gameplay: decisões que pesam (pilar 4)
+
+- **Diagnóstico:** decidir bem rendia ~6,5% a mais de pontos que decidir ao acaso (1.500 carreiras por modo), e o
+  efeito de uma escolha só aparecia dentro de "Detalhes da temporada", fechado. A escolha era sentida pouco.
+- **Oportunidades pesadas:** (a) apostas mais fortes (`S.STAKE_K/LOSS`) · esforço baixo, risco de inflar notas;
+  (b) mostrar o que as escolhas renderam no resumo · esforço baixo, impacto direto na percepção; (c) mais ganchos que
+  voltam temporadas depois · esforço alto (fica para depois). Selecionadas: a + b.
+- **Implementado e testado:**
+  - `S.STAKE_K` e `S.STAKE_LOSS` 2 → 3: ganhos e perdas das decisões 50% maiores (ex.: forma +10% vira +15%).
+  - Recalibração: `S.GRADES` 1890/1330/905/675 e limiar da Bola de Ouro 103 → 105 (`engine/season.js`).
+  - Resumo da temporada: linha "🎯 Suas escolhas no ano: +15% de minutos · +2 gols" (verde ganho, vermelho perda),
+    calculada no motor (`src.choiceMin`, `src.choiceGoals`) com as mesmas contas dos detalhes. Some quando é zero.
+  - `craque_sim.js` agora imprime os cortes de nota que dariam a distribuição alvo (recalibrar fica de uma rodada só).
+- **Validação:** notas S11/A26/B32/C18/D13 (alvo S11/A26/B31/C19/D13), Bola de Ouro 23,5% (antes 22,4%),
+  duração 9min46s (antes 9min34s); decidir bem vs ao acaso 7,9 a 9,0% em duas rodadas de 1.500 (antes 6,1 a 7,6%);
+  decisões 0 alertas; estilos 0 alertas; 8 carreiras pela interface 0 problemas; a linha apareceu em 40 resumos
+  (24 ganhos, 16 perdas).
+- **Revisão crítica:** o ganho em número é modesto (+2 pontos percentuais); o que mais muda é ver a consequência no
+  resumo. Subir mais as apostas (K=4 daria ~11%) inflaria a Bola de Ouro e deixaria perdas de −60% de minutos comuns.
+- **Pendências:** meta de ≥ 12% não alcançada só com apostas; o próximo passo para isso é a (c), ganchos que voltam.
+- **Próxima recomendada:** rodada 3 (UI/UX no computador), para alternar de pilar; a (c) entra na rodada 4.
