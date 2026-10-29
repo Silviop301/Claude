@@ -104,6 +104,14 @@ function stepInPage(opts) {
   }
   // Carreira Completa: a liga rodada a rodada (às vezes uma, às vezes cinco, às vezes até o fim) e o resumo
   if ($('fs-done')) return label('liga:resumo ' + click($('fs-done')));
+  // Carreira Completa integrada (ui/fullcareer.js): jogar, simular, evoluir, pular o ao vivo, festa da taça
+  if ($('fc-go')) return label('completa:taca ' + click($('fc-go')));
+  if ($('fc-skip')) return label('completa:aovivo ' + click(Math.random() < 0.3 ? $('fc-fast') : $('fc-skip')));
+  if ($('fc-next')) return label('completa:proximo ' + click($('fc-next')));
+  if (q('.fc-iv:not(.off)') && Math.random() < 0.7) return label('completa:compra ' + click(q('.fc-iv:not(.off)')));
+  if ($('fc-back')) return label('completa:volta ' + click($('fc-back')));
+  if ($('fc-evo') && Math.random() < 0.5) return label('completa:evoluir ' + click($('fc-evo')));
+  if ($('fc-play')) return label('completa:jogo ' + click(rnd([$('fc-play'), $('fc-play'), $('fc-5'), $('fc-end')])));
   if ($('fs-skipm')) return label('liga:aovivo ' + click(Math.random() < 0.3 ? $('fs-fast') : $('fs-skipm')));
   if ($('fs-next')) return label('liga ' + click(rnd([$('fs-next'), $('fs-5'), $('fs-end'), $('fs-end')])));
   // Criação 2 de 2: sortear o visual e começar

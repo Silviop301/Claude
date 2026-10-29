@@ -118,6 +118,7 @@
     if (st === 'event') return U.eventScreen();
     if (st === 'invest') return U.invest();
     if (st === 'moment') return U.momentOrSeason();
+    if (st === 'fc') return U.fcHub(); // Carreira Completa: no meio da temporada jogo a jogo
     // Fechou o jogo durante a temporada (o save já aponta para a pré-temporada, sem as opções dela):
     // a decisão do pouco espaço no elenco vem antes, como no caminho normal (afterSeason)
     return !G.c.preCh && S.benchCase(G.c) ? U.squad() : U.preseason();

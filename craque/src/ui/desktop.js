@@ -136,7 +136,7 @@
   // depois de aberta), a Copa e os minigames.
   const wide = matchMedia('(min-width: 1000px) and (min-height: 560px)');
   const scr = document.getElementById('screen'), barEl = document.getElementById('bar');
-  const NO_LIFT = '.s-hero, .fs, #wc-list, #kick, .kick-stage, .cc-side, #b-new, #b-start, #b-go';
+  const NO_LIFT = '.s-hero, .fs, .fc-inv, #wc-list, #kick, .kick-stage, .cc-side, #b-new, #b-start, #b-go';
   function lift() {
     if (!scr) return;
     if (scr.dataset.same) { delete scr.dataset.same; return; } // mesma tela redesenhada (U.render same): fica onde está

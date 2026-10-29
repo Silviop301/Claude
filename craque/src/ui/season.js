@@ -299,6 +299,7 @@
       : S.isCwcYear(G.c) && G.c.cwcYearDone !== year() && S.cwcCall(G.c).called ? 'cwc' : S.windowOpen(G.c) ? 'offers' : 'preseason';
     save();
     // Carreira Completa: antes do resumo, a liga rodada a rodada (ui/fullseason.js); o resumo já não refaz a corrida
+    if (res.full) return show(res, preM, true); // jogada jogo a jogo (ui/fullcareer.js): a corrida do resumo não se repete
     if (G.c.mode === 'completa' && U.fullSeason && U.fullSeason(res, () => show(res, preM, true))) return;
     show(res, preM, false);
   }
