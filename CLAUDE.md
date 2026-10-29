@@ -62,7 +62,7 @@ node tools/craque_audit_eventos.js [ids]            # auditoria das decisões (e
 node tools/craque_textos.js                         # repetição de textos entre carreiras
 node tools/craque_itens_sim.js                      # carreiras para liberar todos os itens
 node tools/craque_estilos.js                        # estilos dos lances decisivos: nenhum pode dominar (esperado: 0 alertas)
-NODE_PATH=$(npm root -g) node tools/craque_e2e.js 2 390 4   # carreiras pela interface (Playwright)
+NODE_PATH=$(npm root -g) node tools/craque_e2e.js 2 390 4   # carreiras pela interface (Playwright); MODO=completa na Carreira Completa
 NODE_PATH=$(npm root -g) node tools/craque_telas.js /tmp/antes   # foto de cada tela (carreira com sorteio fixo + telas de fora + minigames); DESKTOP=1 ... 1440 900 no computador, SO=evento,lance só algumas
 DESKTOP=1 TR=/tmp/tr node tools/craque_e2e.js 3 1280 3      # idem no computador, gravando o texto de cada tela em /tmp/tr
 python3 tools/craque_erros.py                       # erros reais dos jogadores (climbix.app)
@@ -106,6 +106,7 @@ dividem ajudantes por `CRAQUE_SIM._`. O motor não usa DOM: roda no navegador e 
 | `rival.js` | Rival em paralelo (sorteio próprio); envolve `S.playSeason` |
 | `origins.js` | Origens e desafios (liberados por conquistas) |
 | `contract.js` | Termos do contrato e proposta no meio do contrato |
+| `fixtures.js` | Carreira Completa: calendário e placares da liga que batem com a tabela da temporada (`S.fullSeason`) |
 
 ### Dados e textos — `craque/src/`
 
@@ -133,6 +134,7 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
 | `offers.js`, `preseason.js` | Base, janela/propostas; pré-temporada |
 | `match.js` | Eventos e jogo decisivo (`optHint`) |
 | `season.js` | Temporada: contadores, corrida/mini tabela (`raceOf`, `miniTable`), resenha, resumo |
+| `fullseason.js` | Carreira Completa (`c.mode = 'completa'`): a liga rodada a rodada antes do resumo |
 | `worldcup.js`, `finale.js` | Copa do Mundo; fim de carreira e próxima meta |
 | `paper.js`, `social.js` | Jornal; posts no X (`commentsOf`, `person`) |
 | `walkout.js`, `album.js`, `cardview.js` | Revelação de carta, álbum, carta 3D compartilhada |
