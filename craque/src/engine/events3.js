@@ -281,6 +281,74 @@
         return { ok: false, text: 'O técnico ficou sem entender e passou a faixa para outro.', fx: {} };
       },
     },
+    {
+      id: 'v_revanche', from: 'rival_provoca', icon: '⚔️', tone: 'red',
+      when: c => !!(c.rival && c.rival.name) && !!c.club && c.age <= 33,
+      build: (c, r, h) => ({
+        memory: ago(c, h) + ', você respondeu a provocação de ' + c.rival.name + ' na mesma moeda.',
+        title: 'O duelo virou atração', text: 'A troca de farpas não morreu. A TV vai transmitir o próximo jogo de vocês como "o duelo da geração" e a pergunta é uma só: quem decide?',
+        options: [opt('Prometer gol no duelo', '50%: Fama +10 · forma +6% · 50%: Fama −6 · Torcida −6'), opt('Elogiar ele antes do jogo', 'Torcida +4 · forma +2%')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.5) return { ok: true, text: 'Prometeu e cumpriu. O gol saiu e o vídeo da promessa voltou a circular.', fx: { fame: 10, form: 0.06 } };
+          bump(c, 'fans', -6);
+          return { ok: false, text: 'Não marcou, e a promessa virou meme na conta dele.', fx: { fame: -6 } };
+        }
+        bump(c, 'fans', 4);
+        return { ok: true, text: '"Ele é craque, e eu também." A frase esfriou a briga e a torcida gostou.', fx: { form: 0.02 } };
+      },
+    },
+    {
+      id: 'v_staff', from: 'staff_particular', icon: '🏋️', tone: 'green',
+      when: c => !!c.club && c.age <= 34,
+      build: (c, r, h) => ({
+        memory: ago(c, h) + ', você contratou uma equipe particular de treino.',
+        title: 'O preparador quer o seu nome', text: 'O preparador daquela equipe abriu um centro de treinamento e quer você como a cara do lugar. Vai ter gravação nas folgas.',
+        options: [opt('Virar a cara do centro', '55%: Fama +8 · Torcida +4 · 45%: forma −5% · Técnico −4'), opt('Agradecer e seguir', 'forma +3%')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.55) { bump(c, 'fans', 4); return { ok: true, text: 'A campanha pegou: garoto de escolinha treinando "igual a você".', fx: { fame: 8 } }; }
+          bump(c, 'coach', -4);
+          return { ok: false, text: 'As gravações comeram as folgas. O cansaço apareceu em campo e o técnico notou.', fx: { form: -0.05 } };
+        }
+        return { ok: true, text: 'Você agradeceu e usou o que aprendeu lá no treino do clube.', fx: { form: 0.03 } };
+      },
+    },
+    {
+      id: 'v_recaida', from: 'fisgada', icon: '🩹', tone: 'red',
+      when: c => !!c.club && c.age <= 33,
+      build: (c, r, h) => ({
+        memory: ago(c, h) + ', você jogou com uma fisgada e ela virou estiramento.',
+        title: 'A coxa reclamou de novo', text: 'Na véspera de um jogo grande, o mesmo músculo daquele estiramento travou. O técnico pergunta se você vai.',
+        options: [opt('Jogar mesmo assim', '55%: Técnico +6 · forma +4% · 45%: lesão (perde 15% da temporada)'), opt('Fazer o tratamento completo', '−6% de minutos')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.55) { bump(c, 'coach', 6); return { ok: true, text: 'Desta vez o músculo aguentou, e você ainda saiu como o melhor em campo.', fx: { form: 0.04 } }; }
+          return { ok: false, text: 'A história se repetiu: estiramento no mesmo lugar.', fx: { inj: 0.15 } };
+        }
+        return { ok: true, text: 'Tratamento completo. Desta vez você aprendeu.', fx: { min: -0.06 } };
+      },
+    },
+    {
+      id: 'v_ficou', from: 'nao_vende', icon: '🚩', tone: 'green',
+      when: (c, h) => !!c.club && c.club === h.d.club,
+      build: (c, r, h) => ({
+        memory: ago(c, h) + ', o clube não quis te vender e você decidiu ficar.',
+        title: '"Ele ficou"', text: 'A torcida fez uma faixa com a frase e o clube quer você como vice-capitão. Liderar o elenco pesa nos jogos grandes.',
+        options: [opt('Aceitar e liderar', '60%: Técnico +8 · Torcida +8 · 40%: forma −6% (a pressão pesa)'), opt('Agradecer e seguir quieto', 'Torcida +4')],
+      }),
+      resolve: (c, ev, i, r) => {
+        if (i === 0) {
+          if (r() < 0.6) { bump(c, 'coach', 8); bump(c, 'fans', 8); return { ok: true, text: 'Você assumiu o vestiário. Os mais novos agora te procuram antes dos jogos.', fx: {} }; }
+          return { ok: false, text: 'A cobrança de líder pesou e o seu futebol caiu por uns meses.', fx: { form: -0.06 } };
+        }
+        bump(c, 'fans', 4);
+        return { ok: true, text: 'Um aceno para a faixa no aquecimento. A arquibancada respondeu.', fx: {} };
+      },
+    },
   ].map(e => Object.assign({ weight: 0, hook: true }, e));
 
   // Escolhas que deixam gancho: [evento, opção, deu certo?, id do gancho, mín, máx, dados]
@@ -304,6 +372,10 @@
     ['vestiario', 0, true, 'v_vestiario', 1, 2, c => ({ club: c.club })],
     ['protesto', 0, true, 'v_mosaico', 2, 3, c => ({ club: c.club })],
     ['capitao', 1, null, 'v_capitao', 2, 3, c => ({ club: c.club })],
+    ['rival_provoca', 0, null, 'v_revanche', 1, 2],
+    ['staff_particular', 0, true, 'v_staff', 2, 3],
+    ['fisgada', 0, false, 'v_recaida', 2, 3],
+    ['nao_vende', 1, null, 'v_ficou', 2, 3, c => ({ club: c.club })],
   ];
   S.HOOK_SEEDS = SEEDS;
 
