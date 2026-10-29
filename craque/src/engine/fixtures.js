@@ -120,6 +120,25 @@
       const avg = ons.reduce((s, x) => s + x.rating, 0) / ons.length;
       ons.forEach(x => { x.rating = Math.max(4.5, Math.min(10, Math.round((x.rating - avg + res.rating) * 10) / 10)); });
     }
+    // Minuto de cada gol (para a rodada ao vivo): 91+ são os acréscimos. No seu jogo, quais gols são seus e em quais
+    // você deu a assistência; o lance decisivo convertido vira o gol do fim do jogo
+    const minute = () => (r() < 0.07 ? 91 + Math.floor(r() * 5) : 1 + Math.floor(r() * 90));
+    games.forEach(g => {
+      g.ev = [];
+      for (let i = 0; i < g.gh; i++) g.ev.push({ m: minute(), s: 'h' });
+      for (let i = 0; i < g.ga; i++) g.ev.push({ m: minute(), s: 'a' });
+      g.ev.sort((x, y) => x.m - y.m);
+    });
+    line.forEach(x => {
+      if (!x.on) return;
+      const mine = x.g.ev.filter(e => e.s === (x.g.a === me ? 'h' : 'a'));
+      const pick = mine.map(e => [r(), e]).sort((a, b) => a[0] - b[0]).map(y => y[1]);
+      pick.slice(0, x.goals).forEach(e => { e.me = 1; });
+      pick.slice(x.goals, x.goals + x.assists).forEach(e => { e.as = 1; });
+      // O gol da vitória no jogo do lance decisivo sai no fim
+      if (x.g === fixed && M.ok && mine.length) { const last = mine[mine.length - 1]; if (last.m < 80) last.m = 84 + Math.floor(r() * 10); x.g.ev.sort((a, b) => a.m - b.m); }
+    });
+
     // Tabela rodada a rodada (pontos, jogos, vitórias, saldo)
     const row = () => ids.map((id, i) => ({ i, id, p: 0, j: 0, v: 0, e: 0, d: 0, gp: 0, gc: 0 }));
     const cur = row(), frames = [];
@@ -138,10 +157,10 @@
     const ord = sortRows(frames[frames.length - 1]);
     const exact = e === 0;
     return {
-      ids, me, exact, rounds: byRound.map(rg => rg.map(g => ({ h: g.a, a: g.b, gh: g.gh, ga: g.ga }))), frames, sortRows,
+      ids, me, exact, rounds: byRound.map(rg => rg.map(g => ({ h: g.a, a: g.b, gh: g.gh, ga: g.ga, ev: g.ev }))), frames, sortRows,
       final: ord,
       mine: line.map(x => ({ ri: x.g.ri, home: x.g.a === me, vs: x.g.a === me ? x.g.b : x.g.a, gf: myGf(x), ga: x.g.a === me ? x.g.ga : x.g.gh,
-        on: x.on, goals: x.goals, assists: x.assists, rating: x.rating, decisive: x.g === fixed })),
+        on: x.on, goals: x.goals, assists: x.assists, rating: x.rating, decisive: x.g === fixed, ev: x.g.ev })),
       pos: tb.pos, promo: tb.promo, releg: tb.releg, league: tb.league,
     };
   };
