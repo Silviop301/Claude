@@ -2351,8 +2351,12 @@ button.sk-d { font: inherit; color: inherit; cursor: pointer; }
   #screen:has(> .s-hero) > * { grid-column: 1; }
   #screen:has(> .s-hero) > #after { grid-column: 2; grid-row: 1 / -1; }
   /* Pré-temporada: a carta fica parada à esquerda; as escolhas à direita */
-  #screen:has(> .inv-bar):not(:has(> .cc-side)) { display: grid; grid-template-columns: 400px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 28px; align-items: start; }
-  #screen:has(> .inv-bar):not(:has(> .cc-side)) > * { grid-column: 2; }
+  /* Personalizar visual: o jogador grande fica parado à esquerda; abas e opções à direita */
+  #screen:has(> .cr-stage) { display: grid; grid-template-columns: 420px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 28px; align-items: start; }
+  #screen:has(> .cr-stage) > * { grid-column: 2; }
+  #screen:has(> .cr-stage) > .cr-stage { grid-column: 1; grid-row: 1 / -1; position: sticky; top: 16px; margin-top: 64px; }
+  #screen:has(> .inv-bar):not(:has(> .cc-side)):not(:has(> .cr-stage)) { display: grid; grid-template-columns: 400px minmax(0, 1fr); grid-template-rows: repeat(24, auto) 1fr; column-gap: 28px; align-items: start; }
+  #screen:has(> .inv-bar):not(:has(> .cc-side)):not(:has(> .cr-stage)) > * { grid-column: 2; }
   #screen:has(> .inv-bar) > .mcard { grid-column: 1; grid-row: 1 / -1; }
 }
 .cc-side { display: contents; }
