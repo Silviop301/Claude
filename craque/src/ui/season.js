@@ -11,6 +11,14 @@
   }
 
   // Pontos de evolução da temporada: desempenho (com limite) + bônus do foco nos treinos
+  // O que as escolhas do ano (eventos, conversas, promessas) renderam em minutos e gols: a decisão aparece no resultado
+  function choiceLine(res) {
+    const sc = res.src || {}, sg = n => (n > 0 ? '+' : '−') + Math.abs(n), cls = n => n > 0 ? 'up' : 'down';
+    const parts = [];
+    if (sc.choiceMin && res.games) parts.push('<b class="' + cls(sc.choiceMin) + '">' + sg(sc.choiceMin) + '%</b> de minutos');
+    if (sc.choiceGoals && res.games && G.c.pos !== 'GOL') parts.push('<b class="' + cls(sc.choiceGoals) + '">' + sg(sc.choiceGoals) + '</b> ' + (Math.abs(sc.choiceGoals) === 1 ? 'gol' : 'gols'));
+    return parts.length ? '<p class="star-line choice-line rv">' + U.emo('🎯', 'xs') + ' Suas escolhas no ano: ' + parts.join(' · ') + '</p>' : '';
+  }
   function peLine(pe) {
     if (!pe || (!pe.n && !(pe.train && pe.train.lost))) return '';
     const tr = pe.train, t = tr && D.TRAIN_BY_ID[tr.id];
@@ -606,6 +614,7 @@
       // Craque carregando um time fraco (a partir do 2º ano) e o clube crescendo com ele
       (res.carry >= 1 || res.grow ? '<p class="star-line rv">' + U.emo('💪', 'xs') + ' ' + (res.carry >= 1 ? 'Você carregou o time: <b>+' + res.carry + ' de força</b> nos jogos' : '') +
         (res.grow ? (res.carry >= 1 ? '. ' : '') + 'Com você, ' + D.o(esc(res.grow.name)) + ' se reforçou: força <b>' + res.grow.from + ' → ' + res.grow.to + '</b>' : '') + '</p>' : '') +
+      choiceLine(res) +
       // Pontos de evolução ganhos nesta temporada (e por quê)
       peLine(res.pe) +
       '<details class="more rv"><summary>Detalhes da temporada</summary>' + srcBlock +

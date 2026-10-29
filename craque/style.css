@@ -2574,6 +2574,7 @@ html.desk .mo-wbox { --wd: min(270px, 68vw, calc(42svh / var(--z, 1))); }
 .story .rival-line.hot p { color: #FFB4B9; }
 #after > .star-line, #after > .pe-gain, #after > .wc-miss { margin: 0; background: none; color: #CFE0D4; padding: 0 2px; font-size: 14px; }
 #after > .star-line b, #after > .pe-gain b { color: var(--paper); }
+#after > .choice-line b.up { color: var(--up); } #after > .choice-line b.down { color: var(--down); }
 /* Evento: o papel ganha o tom do tipo (faixa no topo e um leve degradê), sem mudar o peso do texto */
 .event-card[class*=' t-'] { --tn: transparent; --tb: var(--paper); background: linear-gradient(180deg, var(--tb), var(--paper) 120px); box-shadow: inset 0 5px 0 var(--tn), 0 3px 0 rgba(0, 0, 0, .35); }
 .event-card.t-green { --tn: #1FA35A; --tb: #E2F2E6; } .event-card.t-red { --tn: #D8404A; --tb: #F8E3E2; }

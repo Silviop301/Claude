@@ -9722,5 +9722,8 @@
  "cobrança": "kick",
  "cobranças": "kicks",
  "dos ": "of the ",
- "de ": "of "
+ "de ": "of ",
+ "<b class=\"": "<b class=\"",
+ "%</b> de minutos": "%</b> minutes",
+ " Suas escolhas no ano: ": " Your choices this year: "
 }
