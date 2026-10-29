@@ -20,7 +20,7 @@ Cada rodada acrescenta uma entrada no Registro e atualiza o Diagnóstico e o Rot
 2. ~~**Gameplay: decisões que pesam.**~~ (feita, abaixo) Medir por evento quanto cada escolha muda a carreira (`craque_decisoes.js`),
    reforçar as de efeito invisível e mostrar a consequência quando ela volta. Meta: decidir bem ≥ +12% sem mudar a
    distribuição de notas.
-3. **UI/UX no computador:** resumo da temporada, ranking e ficha sem buracos; fim de carreira mais curto.
+3. ~~**UI/UX no computador:**~~ (feita, abaixo) resumo da temporada, ranking e ficha sem buracos; fim de carreira mais curto.
 4. **Gameplay: variedade no meio da carreira.** Mais aberturas de evento e eventos que só aparecem em fases certas.
 5. **Inovação:** uma ideia nova de carreira pessoal, proposta ao Silvio antes (muda a proposta do jogo).
 6. **Arte:** direção nova para personagens (precisa arte nova; propor caminho e custo antes de executar).
@@ -64,3 +64,22 @@ Cada rodada acrescenta uma entrada no Registro e atualiza o Diagnóstico e o Rot
   resumo. Subir mais as apostas (K=4 daria ~11%) inflaria a Bola de Ouro e deixaria perdas de −60% de minutos comuns.
 - **Pendências:** meta de ≥ 12% não alcançada só com apostas; o próximo passo para isso é a (c), ganchos que voltam.
 - **Próxima recomendada:** rodada 3 (UI/UX no computador), para alternar de pilar; a (c) entra na rodada 4.
+
+### Rodada 3 · 2026-10-29 · UI/UX no computador (pilares 2 e 6)
+
+- **Diagnóstico:** fotos de todas as telas em 1280×720 (o notebook mais comum) e 1440×900. Achado principal: a
+  pré-temporada no computador tinha perdido as 2 colunas (carta por cima das escolhas, coluna esquerda vazia). Era
+  regressão da rodada 1: a regra nova do "Personalizar visual" (`:not(:has(...))`) ficou mais forte que a regra que
+  põe a carta na coluna 1. As fotos da rodada 1 eram só da tela mexida, por isso não pegaram.
+- **Implementado, testado e publicado:** correção da pré-temporada (PR #74, no ar); `tools/craque_telas_diff.py`
+  compara duas rodadas de fotos e mostra lado a lado o que mudou; regra no `CLAUDE.md`: depois de CSS, refazer as
+  fotos de todas as telas.
+- **Revisão crítica:** fora a regressão, as telas no computador estão em ordem (2 colunas na criação, pré-temporada,
+  temporada, evento, janela; modais centrados). A ficha tem altura fixa de propósito (as abas não pulam); o ranking
+  só parece vazio sem internet. Ganho adicional aqui seria pequeno, então a rodada fecha.
+- **Limite conhecido:** a carreira das fotos pode se separar depois dos primeiros lances, então da Copa em diante a
+  comparação mostra outra carreira, não regressão.
+- **Autonomia:** desde 2026-10-29 o Silvio autorizou Claude a publicar sozinho depois de validar.
+- **Próxima recomendada:** rodada 4, gameplay: escolhas que voltam temporadas depois (ganchos) e variedade no meio
+  da carreira, o caminho para decidir bem valer ≥ 12%.
+
