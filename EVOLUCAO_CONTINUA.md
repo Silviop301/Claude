@@ -21,7 +21,7 @@ Cada rodada acrescenta uma entrada no Registro e atualiza o Diagnóstico e o Rot
    reforçar as de efeito invisível e mostrar a consequência quando ela volta. Meta: decidir bem ≥ +12% sem mudar a
    distribuição de notas.
 3. ~~**UI/UX no computador:**~~ (feita, abaixo) resumo da temporada, ranking e ficha sem buracos; fim de carreira mais curto.
-4. **Gameplay: variedade no meio da carreira.** Mais aberturas de evento e eventos que só aparecem em fases certas.
+4. ~~**Gameplay: escolhas que voltam.**~~ (feita, abaixo) Mais aberturas de evento e eventos que só aparecem em fases certas.
 5. **Inovação:** uma ideia nova de carreira pessoal, proposta ao Silvio antes (muda a proposta do jogo).
 6. **Arte:** direção nova para personagens (precisa arte nova; propor caminho e custo antes de executar).
 
@@ -82,4 +82,19 @@ Cada rodada acrescenta uma entrada no Registro e atualiza o Diagnóstico e o Rot
 - **Autonomia:** desde 2026-10-29 o Silvio autorizou Claude a publicar sozinho depois de validar.
 - **Próxima recomendada:** rodada 4, gameplay: escolhas que voltam temporadas depois (ganchos) e variedade no meio
   da carreira, o caminho para decidir bem valer ≥ 12%.
+
+### Rodada 4 · 2026-10-29 · Gameplay: escolhas que voltam (pilar 4)
+
+- **Diagnóstico:** em 600 carreiras, ~14 eventos por carreira e só ~1 escolha voltava depois como consequência
+  (gancho). Os eventos mais comuns sem continuação: provocação do rival, equipe particular, fisgada, clube não vende.
+- **Implementado e testado:** 4 continuações novas em `engine/events3.js` (`v_revanche`, `v_staff`, `v_recaida`,
+  `v_ficou`), cada uma com uma opção arriscada e uma segura, lembrando a escolha antiga ("Há 2 temporadas, você...").
+  Textos traduzidos no inglês.
+- **Validação:** ganchos que voltam por carreira 0,99 → 1,37; decidir bem vs ao acaso 11,1% (antes 7,9 a 9,0%);
+  notas S11/A26/B32/C18/D13 sem recalibrar; Bola de Ouro 24%; 9min46s; decisões 0 alertas; carreiras pela
+  interface no celular e no computador 0 problemas; foto dos eventos novos.
+- **Revisão crítica:** é a mudança que mais mexeu no "decidir bem" até aqui e conta história. A meta de 12% está
+  perto (variação de ±1 entre rodadas do simulador).
+- **Próxima:** Carreira Completa (modo novo, escolhido pelo Silvio em 2026-10-29): temporada de liga jogo a jogo com
+  a tabela inteira, ao lado da carreira de 9 minutos.
 
