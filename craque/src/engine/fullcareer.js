@@ -65,7 +65,7 @@
     const club = D.CLUB_BY_ID[c.club], lg = D.LEAGUE_BY_ID[club.league];
     // A fração de ponto que sobrou do ano anterior continua na barra (não conta para o limite deste ano)
     const carry = c.fc && c.fc.season === c.season - 1 ? c.fc.peFrac || 0 : 0;
-    const fc = { season: c.season, club: club.id, seed: ((Number(c.tseed) || 1) * 2654435761 + c.season * 97 + 13) >>> 0, i: 0, log: [], peFrac: carry, peCarry: carry, peGot: 0, out: null, done: false };
+    const fc = { season: c.season, club: club.id, seed: (Math.imul(Number(c.tseed) || 1, 2654435761) + c.season * 97 + 13) >>> 0, /* imul: a conta comum passava de 2^53 e o ano sumia (calendário igual todo ano) */ i: 0, log: [], peFrac: carry, peCarry: carry, peGot: 0, out: null, done: false };
     const { r, save } = rngOf(fc);
     // Liga: turno e returno com os times embaralhados
     const teams = leagueTeams(club);
@@ -289,7 +289,7 @@
       save();
     }
     const comps = { lg: fc.lg.name, cup: fc.cup.name, cont: fc.cont ? fc.cont.name : '' };
-    const next = { e, vs, home, comp, compName: comps[comp], stage, knock, on: fc.pending.on, why: fc.pending.why, injury: fc.injOut > 0 ? fc.injName : null };
+    const next = { e, vs, home, comp, compName: comps[comp], stage, knock, on: fc.pending.on, why: fc.pending.why, injury: fc.injOut > 0 ? fc.injName : null, injLeft: fc.injOut };
     // Lance decisivo: finais (copa e continental), o clássico da liga e a última rodada valendo título ou acesso
     if (vs && next.on && !fc.pending.mDone) {
       if (fc.pending.m === undefined) { fc.pending.m = momentFor(c, fc, next); }
@@ -317,13 +317,15 @@
     if (!type) return null;
     const lg = D.LEAGUE_BY_ID[club.league];
     const m = { type, vs: nx.vs, comp: type === 'cup' ? fc.cup.name : type === 'cont' ? fc.cont.name : lg.name, fc: true };
-    if (type === 'cont' || type === 'acesso') m.kick = 'pen';
-    if (S.posKick(c.pos)) m.kick = S.posKick(c.pos);
-    if (type === 'classico' && c.pos === 'ATA') m.kick = 'fk';
-    if (type === 'classico' && c.pos === 'MEI') m.kick = 'pass';
-    const def = !!S.defKick(c.pos);
-    m.score = def ? [1, 0] : type === 'classico' ? [0, 0] : [1, 1];
-    m.minute = S.kickType(m) === 'pen' || S.kickType(m) === 'save' ? '90+2' : '86';
+    // Cada lance sorteia o minuto, o placar (empatado para quem ataca, vencendo por um para quem defende) e, para o
+    // atacante, pênalti ou falta: o mesmo lance de sempre ficava previsível (falta aos 86', pênalti aos 90+2)
+    const { r, save } = rngOf(fc);
+    const def = !!S.defKick(c.pos), big = type !== 'classico';
+    m.kick = S.posKick(c.pos) || (r() < 0.55 ? 'pen' : 'fk');
+    const pickW = list => { let x = r() * list.reduce((a, w) => a + w[1], 0); for (const [v, w] of list) { x -= w; if (x < 0) return v; } return list[0][0]; };
+    m.score = def ? pickW([[[1, 0], 7], [[2, 1], 3]]) : pickW([[[0, 0], 4.5], [[1, 1], 4], [[2, 2], 1.5]]);
+    m.minute = pickW(big ? [['90+2', 3], ['90+4', 1], ['88', 2], ['83', 2], ['76', 1.5], ['69', 1]] : [['86', 2], ['79', 2], ['72', 1.5], ['90+1', 2], ['64', 1]]);
+    save();
     const us = D.o(club.name), them = D.o(D.CLUB_BY_ID[m.vs].name);
     m.ctx = { cup: 'Final ' + D.da(m.comp) + ': quem vencer leva a taça.', cont: 'Final ' + D.da(m.comp) + ': quem vencer é campeão continental.',
       title: 'Última rodada: ' + us + ' e ' + them + ' brigam pelo título. Quem vencer leva.', acesso: 'Última rodada: a vitória garante o acesso.',
