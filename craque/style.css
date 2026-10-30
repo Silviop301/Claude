@@ -4583,6 +4583,53 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .fc-iv.off { background: var(--panel); color: var(--tx-4); box-shadow: none; cursor: default; }
 .fc-iv.off small, .fc-iv.off em { color: var(--tx-4); }
 @media (min-width: 1000px) { #app:has(#screen > .fc), #app:has(#screen .fc-inv) { max-width: 1040px; } }
+/* A semana entre os jogos: energia e forma sempre à vista; aberta, vira o cartão principal (papel) com as seis ações */
+.fc-wk { display: grid; gap: 8px; }
+.fc-wk:empty { display: none; }
+.fc-st { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; align-items: center; gap: 8px 10px; min-height: 36px; }
+.fc-st > span { font: 700 14px var(--display); color: var(--tx-3); }
+.fc-st > b { font: 800 18px/1 var(--display); color: var(--tx-1); min-width: 1.6em; text-align: right; }
+.fc-st > b.fo { font-size: 15px; min-width: 0; }
+.fc-en { height: 8px; border-radius: 4px; background: rgba(0, 0, 0, .3); overflow: hidden; }
+.fc-en i { display: block; height: 100%; border-radius: 4px; background: var(--up); transition: width .4s; }
+.fc-en.low i { background: var(--gold); }
+.fc-en.out i { background: var(--down); }
+.fc-st b.low, .fc-wk-p b.low { color: var(--gold-2); }
+.fc-st b.out, .fc-wk-p b.out { color: var(--down); }
+.fc-st b.up { color: var(--up); }
+.fc-st b.down { color: var(--down); }
+.fc-wk-sum { margin: 0; font: var(--t-small); color: var(--tx-2); }
+.fc-auto { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font: 600 14px var(--body); color: var(--tx-2); cursor: pointer; }
+.fc-auto input { width: 20px; height: 20px; margin: 0; accent-color: var(--gold); }
+.fc-wk.open { background: var(--paper); color: var(--ink); border-radius: var(--r-lg); padding: 12px; box-shadow: var(--sh-float); }
+.fc-wk.open .fc-st > span { color: var(--ink-2); }
+.fc-wk.open .fc-st > b { color: var(--ink); }
+.fc-wk.open .fc-st b.low, .fc-wk.open .fc-wk-p b.low { color: #9A6A00; }
+.fc-wk.open .fc-st b.out, .fc-wk.open .fc-wk-p b.out { color: var(--down-ink); }
+.fc-wk.open .fc-st b.up { color: var(--up-ink); }
+.fc-wk.open .fc-st b.down { color: var(--down-ink); }
+.fc-wk.open .fc-en { background: var(--paper-2); }
+.fc-wk.open .fc-en i { background: var(--up-ink); }
+.fc-wk.open .fc-en.low i { background: #C99A1E; }
+.fc-wk.open .fc-en.out i { background: var(--down-ink); }
+.fc-wk.open .fc-auto { color: var(--ink-2); min-height: 36px; }
+.fc-wk.open .fc-auto input { accent-color: var(--up-ink); }
+.fc-wk-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--paper-2); padding-top: 8px; }
+.fc-wk-h > b { font: 800 17px var(--display); }
+.fc-wk-g { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+@media (min-width: 560px) { .fc-wk-g { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.fc-wa { display: grid; gap: 2px; align-content: start; min-height: 64px; padding: 8px 10px; border-radius: var(--r-sm); border: 1px solid var(--paper-2); background: #fff; color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
+.fc-wa b { font: 700 15px/1.15 var(--display); }
+.fc-wa b em { font-style: normal; font-size: 13px; }
+.fc-wa small { font: 500 12px/1.25 var(--body); color: var(--ink-2); }
+.fc-wa i { font: 700 12px var(--display); font-style: normal; }
+.fc-wa i.up { color: var(--up-ink); }
+.fc-wa i.down { color: var(--down-ink); }
+.fc-wa.on { background: var(--up-ink); border-color: var(--up-ink); color: var(--paper); }
+.fc-wa.on small, .fc-wa.on i.up, .fc-wa.on i.down { color: var(--paper); }
+.fc-wa:disabled { opacity: .45; cursor: default; }
+.fc-wk-p { margin: 0; font: var(--t-small); color: var(--ink-2); }
+.fc-wk-p b { font: 800 16px var(--display); color: var(--up-ink); }
 /* ----- fim V8 ----- */
 
 /* ===== V9 · Perfil (ui/profile.js): nível, metas da semana, Domínio mundial e números de todas as carreiras ===== */

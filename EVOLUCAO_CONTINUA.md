@@ -244,3 +244,19 @@ Proibido também: cartão com faixa colorida na lateral.
 - **Proposta "Vida entre os jogos" aprovada pelo Silvio** (doc claude.ai/artifact/7Cc2mBqQj93iJT7jshdUj2): compras com
   o dinheiro da carreira podem dar atributo; energia < 30 tira do jogo; a Completa pode ser longa (de vários dias);
   incluir relacionamentos, carros e apostas (só dinheiro do jogo).
+
+### Rodada 11 · 2026-10-30 · Completa: vida entre os jogos, parte 1 (energia, forma e a semana)
+
+- **Energia (0–100):** jogar gasta 20–30 (o treino físico poupa 30% nos 4 jogos seguintes); a semana recupera 5 sozinha
+  (30 se você não jogou). Abaixo de 50 rende menos (nota e gols); abaixo de 30 a lesão dobra e o técnico poupa você
+  metade das vezes (um terço nas decisões). Cheia a cada pré-temporada.
+- **Forma (−2 a +2):** a nota de cada jogo contra a sua média do ano (sequência boa sobe, ruim desce; banco tira um
+  pouco); mexe na nota (±0,24) e nos gols (±10%). Metade passa para o ano seguinte.
+- **A semana:** depois de cada data do calendário, duas ações antes do próximo jogo: treino técnico (+0,05 de evolução,
+  limite próprio de 0,5 por ano, fora do limite dos jogos), treino físico, descanso, fisioterapia (paga, tira um jogo de
+  lesão), patrocínio (dinheiro e fama), entrevista (fama, 25% de polêmica com o técnico). A escalação sai depois da
+  semana. "Semana automática" repete a última escolha da pessoa e troca o que cansa por descanso se a energia ia ficar
+  abaixo de 60; "Simular 5 jogos" usa a automática.
+- **Equilíbrio:** o robô usa a automática. Treino com limite de 0,8/ano subia S para 16%; com 0,5, Completa S12 A30 B33
+  C16 D9 (antes S12 A27 B34 C19 D7), ~12 min. Modo rápido sem mudança. Forma medida pela nota absoluta inflava S para
+  30% (média +1,35): por isso é relativa à média.
