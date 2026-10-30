@@ -213,3 +213,20 @@ Proibido também: cartão com faixa colorida na lateral.
 - **Tela:** nível com barra, metas, Domínio mundial (o mapa volta para o Perfil) e números de todas as carreiras.
   Botão na tela inicial logo abaixo da Relâmpago, no lugar do botão do mapa.
 - Só visual e pacotinhos: não muda nota nem sorte.
+
+### Rodada 9 · 2026-10-30 · Completa: continuidade e clareza (avaliação de uma IA jogando, filtrada)
+
+- **Lance e jogo contam a mesma história:** jogo com lance decisivo tem o placar roteirizado (`scripted` em
+  engine/fullcareer.js): chega ao placar do lance no minuto do lance e o resultado segue ele (atacante: gol seu ou
+  assistência no passe; erro na final, o adversário mata no fim; defensor: segura ou cede o empate, pênaltis perdidos na
+  final). Corrigido também: depois do lance o `fcNext` não devolvia mais o lance (clássico podia repetir).
+- **Topo atualizado jogo a jogo:** gols, assistências (ou S/GOL) e taças do ano em andamento entram no topo (core.js `totOf`/`titlesOf`).
+- **Resumo:** "X de N jogos" usa os jogos do calendário (`FO.slots`); a conta da nota não mudou.
+- **Evolução:** a barra mostra para gastar, ganho no ano e o limite (2); a fração que sobra passa para o ano seguinte;
+  resumo diz "+N no ano, ganhos jogo a jogo e já somados · para gastar agora".
+- **Sub-20 deixou de ser armadilha:** antes "Ir" valia −43 contra 15 de "Ficar"; agora 35 contra 37 (sem perda de teto, chance 30%,
+  ficar ganha forma). O rodapé "não rende nada a mais" agora considera ganho de fama.
+- **Validação:** 256 lances simulados com placar igual ao do lance; simulador Completa S13 A25 B35 C18 D9, rápido sem mudança;
+  carreiras Completas pela interface no celular e no computador 0 problemas.
+- **Ficou para a próxima:** escolha curta antes de alguns jogos, lances variados (minuto, placar, tipo, peso), sub-20 menos
+  punitivo, texto "não rende nada a mais" com ganho de fama, previsão de volta da lesão; conferir negociação e calendário.

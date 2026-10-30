@@ -9981,5 +9981,19 @@
  " dias": " days",
  "<div class=\"pf-sec\"><div class=\"pf-sh\"><h3>Todas as carreiras</h3></div><div class=\"pf-nums\">": "<div class=\"pf-sec\"><div class=\"pf-sh\"><h3>All careers</h3></div><div class=\"pf-nums\">",
  "melhor nota": "best grade",
- "<p class=\"pf-how\">Toda carreira terminada dá XP (mais com nota alta e títulos). Cada nível novo e cada meta cumprida dão pacotinho.</p></div></div>": "<p class=\"pf-how\">Every finished career gives XP (more with a high grade and titles). Each new level and each goal done gives a pack.</p></div></div>"
+ "<p class=\"pf-how\">Toda carreira terminada dá XP (mais com nota alta e títulos). Cada nível novo e cada meta cumprida dão pacotinho.</p></div></div>": "<p class=\"pf-how\">Every finished career gives XP (more with a high grade and titles). Each new level and each goal done gives a pack.</p></div></div>",
+ "ganhos jogo a jogo e já somados": "earned match by match and already added",
+ "Limite do ano atingido: ": "Season limit reached: ",
+ " pontos. A barra volta a encher na próxima temporada.": " points. The bar fills again next season.",
+ "No ano: ": "This season: ",
+ " pontos (limite). Todo jogo enche a barra, e nota alta enche mais.": " points (limit). Every match fills the bar, and a high rating fills it faster.",
+ " Para gastar: ": " To spend: ",
+ " ponto.": " point.",
+ " pontos.": " points.",
+ " Com 1 ponto inteiro, dá para evoluir.": " With 1 full point you can evolve.",
+ "limite de ": "limit of ",
+ " por ano pelo desempenho": " per season from performance",
+ "para gastar agora: ": "to spend now: ",
+ " no ano": " this season",
+ "Ficou no banco da seleção, aprendeu vendo os melhores, mas perdeu espaço no clube.": "You sat on the national team bench and learned from the best, but lost your place at the club."
 }
