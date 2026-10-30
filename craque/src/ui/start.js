@@ -8,7 +8,7 @@
   const MODES = {
     rapida: { ic: '⏱️', name: 'Carreira Rápida', sub: 'Uma temporada por tela', k: 'Duração', v: '9 min', sec: 'A·01', cont: 'b-cont', neu: 'b-new' },
     completa: { ic: '🏟️', name: 'Jogo a Jogo', full: 'Carreira Jogo a Jogo', sub: 'Cada rodada, treino e contrato', k: 'Save de', v: 'dias', sec: 'B·02', cont: 'b-cont-fc', neu: 'b-new-fc' },
-    relampago: { ic: '⚡', name: 'Relâmpago', sub: '5 casas, desafie um amigo', k: 'Duração', v: '1 min', sec: 'C·03', neu: 'b-relampago' },
+    relampago: { ic: '⚡', name: 'Relâmpago', sub: '5 casas, sozinho ou X1', k: 'Duração', v: '1 min', sec: 'C·03', neu: 'b-relampago' },
   };
   const tk = (cls, id, body, stub, extra) => (id ? '<button class="tk ' + cls + '" id="' + id + '">' : '<div class="tk ' + cls + '" aria-disabled="true">') +
     '<span class="tk-in"><span class="tk-paper"><span class="tk-frame">' + body + '</span></span><span class="tk-stub">' + stub + '</span></span>' + (extra || '') + (id ? '</button>' : '</div>');
