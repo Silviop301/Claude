@@ -4643,6 +4643,8 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .fc-attr button { flex: 1 1 0; min-height: 40px; font-size: 14px; }
 .fc-si { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 12px; border-radius: var(--r-sm); background: var(--panel); border: 1px solid var(--panel-line); }
 .fc-si span { display: grid; gap: 2px; min-width: 0; }
+.fc-si.im { grid-template-columns: 64px minmax(0, 1fr) auto; padding-left: 8px; }
+.fc-si-im { width: 64px; height: 64px; padding: 5px; border-radius: 12px; background: var(--paper); object-fit: contain; box-shadow: 0 2px 0 rgba(0,0,0,.25); }
 .fc-si b { font: 700 15px var(--display); color: var(--tx-1); }
 .fc-si small { font: var(--t-small); color: var(--tx-3); }
 .fc-buy { min-height: 44px; min-width: 104px; padding: 0 12px; border-radius: var(--r-sm); border: 1px solid var(--panel-line); background: transparent; color: var(--tx-1); font: 700 14px var(--display); cursor: pointer; white-space: nowrap; }

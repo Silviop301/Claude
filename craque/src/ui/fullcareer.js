@@ -127,6 +127,7 @@
   }
   // Apps do celular: cada um abre uma tela com volta para o celular
   const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Palpites do Zé' };
+  const LOJA_IMG = ['chuteira-g1', 'chuteira-g2', 'chuteira-g3', 'luvas-g1', 'luvas-g2', 'luvas-g3', 'pt', 'physio', 'nutri', 'video'];
   function go(k) {
     if (k === 'evo') return evolve();
     if (k === 'ag') { agOpen = -1; return agenda(); }
@@ -483,7 +484,9 @@
     const g = c.gear && c.gear.until >= c.season ? c.gear : null, gNow = g ? S.FC_SHOP.gear.find(x => x.id === g.id) : null;
     const left = g ? (g.until > c.season ? 'até a próxima temporada' : 'até o fim da temporada') : '';
     const btn = (kind, id, label, ok, on) => '<button class="fc-buy' + (on ? ' on' : '') + '" data-k="' + kind + '" data-id="' + id + '"' + (ok ? '' : ' disabled') + '>' + label + '</button>';
-    const row = (name, fx, right) => '<div class="fc-si"><span><b>' + esc(name) + '</b><small>' + esc(fx) + '</small></span>' + right + '</div>';
+    // Imagem do item (assets/loja); os que ainda não têm arte ficam sem
+    const img = f => (LOJA_IMG.includes(f) ? '<img class="fc-si-im" src="assets/loja/' + f + '.webp" alt="" draggable="false" loading="lazy">' : '');
+    const row = (name, fx, right, f) => '<div class="fc-si' + (f && img(f) ? ' im' : '') + '">' + (f ? img(f) : '') + '<span><b>' + esc(name) + '</b><small>' + esc(fx) + '</small></span>' + right + '</div>';
     const week = S.fcStaffWeek(c);
     el.innerHTML =
       '<div class="fc-cash"><span>Seu dinheiro</span><b>' + R(cash) + '</b><small>Salário de ' + R(c.wage || 0) + ' por semana' + (week ? ' · equipe: −' + R(week) + ' por semana' : '') + '</small></div>' +
@@ -491,19 +494,19 @@
         (g ? '<p class="fc-own">Você usa: ' + esc(S.fcGearName(c, gNow)) + ' · +' + g.b + ' em ' + esc(D.label(c.pos, g.attr)) + ', ' + left + '</p>' : '<p class="fc-own">Sem equipamento especial.</p>') +
         '<div class="seg fc-attr">' + attrs.map(k => '<button data-a="' + k + '"' + (k === gearAttr ? ' class="on"' : '') + '>' + esc(D.label(c.pos, k)) + '</button>').join('') + '</div>' +
         S.FC_SHOP.gear.map(x => { const p = S.fcGearPrice(c, x.id);
-          return row(S.fcGearName(c, x), '+' + x.b + ' em ' + D.label(c.pos, gearAttr) + (x.en ? ', cansa ' + x.en + ' a menos por jogo' : '') + ' · ' + (x.seasons > 1 ? x.seasons + ' temporadas' : '1 temporada'), btn('gear', x.id, R(p), cash >= p)); }).join('') +
+          return row(S.fcGearName(c, x), '+' + x.b + ' em ' + D.label(c.pos, gearAttr) + (x.en ? ', cansa ' + x.en + ' a menos por jogo' : '') + ' · ' + (x.seasons > 1 ? x.seasons + ' temporadas' : '1 temporada'), btn('gear', x.id, R(p), cash >= p), (c.pos === 'GOL' ? 'luvas-' : 'chuteira-') + x.id); }).join('') +
       '</div>' +
       '<div class="fc-ss"><h3>Equipe pessoal</h3><p class="fc-own">Paga por semana. Se o dinheiro acabar, o contrato cai.</p>' +
         S.FC_SHOP.staff.map(x => { const on = !!(c.staff && c.staff[x.id]), p = S.fcStaffCost(c, x.id);
-          return row(x.name, x.fx + ' · ' + R(p) + ' por semana', btn('staff', x.id, on ? 'Dispensar' : 'Contratar', on || cash >= p * 4, on)); }).join('') +
+          return row(x.name, x.fx + ' · ' + R(p) + ' por semana', btn('staff', x.id, on ? 'Dispensar' : 'Contratar', on || cash >= p * 4, on), x.id); }).join('') +
       '</div>' +
       '<div class="fc-ss"><h3>Patrimônio</h3>' +
         S.FC_SHOP.life.map(x => { const own = !!(c.life && c.life[x.id]), p = S.fcLifePrice(c, x.id);
-          return row(x.name, x.fx + ' (+' + x.fame + ' de fama)', own ? '<em class="fc-own-tag">Comprado</em>' : btn('life', x.id, R(p), cash >= p)); }).join('') +
+          return row(x.name, x.fx + ' (+' + x.fame + ' de fama)', own ? '<em class="fc-own-tag">Comprado</em>' : btn('life', x.id, R(p), cash >= p), x.id); }).join('') +
       '</div>' +
       '<div class="fc-ss"><h3>Carro</h3>' +
         S.FC_SHOP.cars.map((x, k) => { const at = S.fcCarAt(c), p = S.fcCarPrice(c, x.id);
-          return row(x.name, x.fx + ' (+' + x.fame + ' de fama)', k === at ? '<em class="fc-own-tag">Seu carro</em>' : k < at ? '<em class="fc-own-tag old">Abaixo do seu</em>' : btn('car', x.id, R(p), cash >= p)); }).join('') +
+          return row(x.name, x.fx + ' (+' + x.fame + ' de fama)', k === at ? '<em class="fc-own-tag">Seu carro</em>' : k < at ? '<em class="fc-own-tag old">Abaixo do seu</em>' : btn('car', x.id, R(p), cash >= p), x.id); }).join('') +
       '</div>' +
       '<p class="fc-shop-note">Tudo daqui vale só nesta carreira. Os itens da coleção continuam só visuais.</p>';
     el.querySelectorAll('.fc-attr button').forEach(b => { b.onclick = () => { sfx('tap'); gearAttr = b.dataset.a; shopBox(); }; });
