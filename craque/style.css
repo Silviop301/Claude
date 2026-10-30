@@ -4650,6 +4650,16 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .fc-buy.on { background: var(--paper); color: var(--ink); border-color: var(--paper); }
 .fc-own-tag { font: 700 12px var(--display); font-style: normal; text-transform: uppercase; letter-spacing: .08em; color: var(--up); }
 .fc-shop-note { margin: 0; font: var(--t-small); color: var(--tx-3); }
+.fc-ins { display: grid; gap: 4px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--paper-2); }
+.fc-ins-seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding: 3px; border-radius: var(--r-sm); background: var(--paper-2); }
+.fc-ins-seg button { min-height: 40px; padding: 0 4px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-2); font: 700 13px/1.1 var(--display); cursor: pointer; }
+.fc-ins-seg button.on { background: var(--up-ink); color: var(--paper); }
+.fc-ins-fx { margin: 0; text-align: center; font: var(--t-small); color: var(--ink-2); }
+.fc-req { margin: 6px 0 0; text-align: center; font: 600 14px var(--body); color: var(--ink-2); }
+.fc-req b { color: var(--ink); }
+#fc-acts .fc-req { margin: 0; color: var(--tx-2); }
+#fc-acts .fc-req.ok { color: var(--up); }
+#fc-acts .fc-req.no { color: var(--tx-3); }
 /* ----- fim V8 ----- */
 
 /* ===== V9 · Perfil (ui/profile.js): nível, metas da semana, Domínio mundial e números de todas as carreiras ===== */

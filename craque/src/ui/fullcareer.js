@@ -124,7 +124,8 @@
     if (state === 'next') {
       const who = x.week ? 'A escalação sai depois da sua semana' : x.injury ? 'Lesionado (' + esc(x.injury) + '): ' + (x.injLeft > 1 ? 'fora por mais ' + x.injLeft + ' jogos' : 'volta no próximo jogo') : x.on ? 'Você começa jogando' : x.why === 'banco' ? 'Você fica no banco' : x.why === 'cansaço' ? 'Energia baixa: o técnico vai poupar você' : 'O técnico vai poupar você neste jogo';
       return '<div class="fs-card next' + (x.moment ? ' dec' : '') + '"><div class="fs-lbl">' + tag + '</div><div class="fs-sc">' + side(h) + '<b><i>×</i></b>' + side(a) + '</div>' +
-        '<p class="fs-line">' + (x.home ? 'Em casa' : 'Fora de casa') + ' · ' + who + '</p>' + (x.moment ? '<p class="fc-dec">' + U.emo('🎯', 'xs') + ' Jogo com lance decisivo seu</p>' : '') + '</div>';
+        '<p class="fs-line">' + (x.home ? 'Em casa' : 'Fora de casa') + ' · ' + who + '</p>' + (x.moment ? '<p class="fc-dec">' + U.emo('🎯', 'xs') + ' Jogo com lance decisivo seu</p>' : '') +
+        (x.on && !x.week ? insBox(x) : '') + '</div>';
     }
     const live = state === 'live', m = x.res;
     const [gh, ga] = live ? x.score(t) : x.home ? [m.gf, m.ga] : [m.ga, m.gf];
@@ -139,6 +140,16 @@
       '<div class="fs-sc">' + side(h) + '<b><span id="fc-sh">' + gh + '</span><i>×</i><span id="fc-sa">' + ga + '</span></b>' + side(a) + '</div>' +
       '<div class="fs-ev2"><ul class="fs-ev" id="fc-evh">' + evs('h') + '</ul><ul class="fs-ev a" id="fc-eva">' + evs('a') + '</ul></div>' +
       '<p class="fs-line">' + line + '</p></div>';
+  }
+  // Orientação do jogo (um toque; fica a da última vez) e o pedido do técnico, quando houver
+  function insBox(x) {
+    const c = G.c, cur = S.fcIns(c), list = S.fcInsList(c), I = list.find(i => i.id === cur) || list[0];
+    return (x.req ? '<p class="fc-req">Pedido do técnico: <b>' + esc(S.FC_REQ[x.req].txt) + '</b></p>' : '') +
+      '<div class="fc-ins"><div class="seg fc-ins-seg" role="radiogroup" aria-label="Orientação">' + list.map(i => '<button data-i="' + i.id + '" role="radio" aria-checked="' + (i.id === cur) + '"' + (i.id === cur ? ' class="on"' : '') + '>' + esc(i.name) + '</button>').join('') + '</div>' +
+      '<p class="fc-ins-fx">' + esc(I.fx) + '</p></div>';
+  }
+  function bindIns() {
+    document.querySelectorAll('.fc-ins-seg button').forEach(b => { b.onclick = () => { sfx('tap'); S.fcSetIns(G.c, b.dataset.i); save(); const nx = S.fcNext(G.c); if (nx) { $('fc-match').innerHTML = card('next', nx); bindIns(); } }; });
   }
   function play1(e) {
     const who = esc(G.c.name);
@@ -197,7 +208,7 @@
     if (a.id === 'spons') return '+R$ ' + U.money(S.fcSponsPay(c)) + ' e fama';
     return 'Fama, com risco de polêmica';
   }
-  function weekBox() {
+  function weekBox(only) { // only: só energia e forma (tela de resultado: a semana vem depois)
     const c = G.c, fc = c.fc, el = $('fc-wk');
     if (!el) return;
     if (fc.en === undefined) { el.innerHTML = ''; return; }
@@ -205,6 +216,7 @@
     const meter = e => '<div class="fc-en ' + lvl(e) + '"><i style="width:' + e + '%"></i></div>';
     const status = '<div class="fc-st"><span>Energia</span>' + meter(fc.en) + '<b class="' + lvl(fc.en) + '">' + Math.round(fc.en) + '</b><span>Forma</span><b class="fo ' + (fc.fo >= 0.25 ? 'up' : fc.fo <= -0.25 ? 'down' : '') + '">' + formTxt(fc.fo || 0) + '</b></div>';
     const auto = '<label class="fc-auto"><input type="checkbox" id="fc-auto"' + (c.fcAuto ? ' checked' : '') + '><span>Semana automática</span></label>';
+    if (only) { el.className = 'fc-wk'; el.innerHTML = status; return; }
     if (!fc.wkDue) {
       // Semana fechada: o que ela fez
       const w = fc.wkSum && fc.wkSum.at === fc.i ? fc.wkSum : null, nm = id => S.FC_WEEK.find(a => a.id === id).name;
@@ -280,7 +292,7 @@
     if (!nx) return finishSeason();
     const pos = table(); tabs();
     $('fc-h').textContent = nx.week ? 'Sua semana' : 'Próximo jogo';
-    $('fc-match').innerHTML = card('next', nx);
+    $('fc-match').innerHTML = card('next', nx); bindIns();
     peBox(); meBox(); compsBox(pos); calBox(); weekBox(); shopBox();
     $('fc-round').innerHTML = '';
     nav();
@@ -356,6 +368,7 @@
     let t = 0, half = false, timer = 0;
     $('fc-h').textContent = nx.compName + ' · ao vivo';
     $('fc-match').innerHTML = card('live', x, 0);
+    weekBox(true);
     // Outros jogos da rodada (liga e grupo); na copa e no mata-mata, os outros confrontos da fase
     $('fc-round').innerHTML = out.others.length ? '<div class="fs-rlbl">' + (lg ? 'Outros jogos da rodada' : grp ? 'O outro jogo do grupo' : 'Outros confrontos da fase') + '</div>' +
       out.others.map((g, k) => '<div class="fs-rr" data-k="' + k + '"><span>' + esc(nameOf(g.h)) + '</span>' + crest(g.h, 'xs') + '<b>0 × 0</b>' + crest(g.a, 'xs') + '<span>' + esc(nameOf(g.a)) + '</span></div>').join('') : '';
@@ -419,8 +432,9 @@
     tblKey = null; const pos = table(); tabs(); nav();
     $('fc-h').textContent = x.compName + ' · fim de jogo';
     $('fc-match').innerHTML = x.vs ? card('done', x) : card('done', x);
-    peBox(); meBox(); compsBox(pos); calBox();
-    const gain = out.pe ? '<p class="fc-gain">+' + num1(out.pe) + ' de evolução</p>' : '';
+    peBox(); meBox(); compsBox(pos); calBox(); weekBox(true);
+    const gain = (out.req ? '<p class="fc-req ' + (out.req.ok ? 'ok' : 'no') + '">' + (out.req.ok ? 'Pedido do técnico cumprido: ' : 'Pedido do técnico não cumprido: ') + esc(out.req.txt.toLowerCase()) + (out.req.ok ? '. Ele gostou.' : '.') + '</p>' : '') +
+      (out.pe ? '<p class="fc-gain">+' + num1(out.pe) + ' de evolução</p>' : '');
     $('fc-acts').innerHTML = gain + '<button class="btn" id="fc-next">' + (G.c.fc.done ? 'Ver resumo da temporada' : 'Próximo jogo') + '</button>';
     $('fc-next').onclick = () => (out.title ? celebrate(out, paintOrEnd) : paintOrEnd());
   }
