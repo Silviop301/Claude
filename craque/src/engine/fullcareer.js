@@ -256,6 +256,32 @@
   // Gasto da equipe por semana
   S.fcStaffWeek = c => Object.keys(c.staff || {}).reduce((s, k) => s + S.fcStaffCost(c, k), 0);
 
+  // ---------- antes do jogo: orientação de um toque e, às vezes, um pedido do técnico ----------
+  const INS = [
+    { id: 'eq', name: 'Equilibrado', fx: 'O jogo de sempre', g: 1, a: 1, r: 0, sd: 1, en: 1 },
+    { id: 'gol', name: 'Buscar o gol', fx: 'Mais gols seus, menos assistências, nota oscila mais', g: 1.06, a: 0.75, r: -0.05, sd: 1.35, en: 1.1, att: true },
+    { id: 'time', name: 'Jogar para o time', fx: 'Mais assistências e o técnico gosta, menos gols seus', g: 0.88, a: 1.1, r: 0, sd: 0.9, en: 1, att: true, coach: 0.3 },
+    { id: 'poupar', name: 'Poupar o físico', fx: 'Gasta metade da energia, rende um pouco menos', g: 0.95, a: 0.95, r: -0.05, sd: 1, en: 0.5 },
+  ];
+  const INS_BY = Object.fromEntries(INS.map(x => [x.id, x]));
+  S.fcInsList = c => INS.filter(x => !x.att || c.pos !== 'GOL'); // goleiro: só equilibrado ou poupar
+  S.fcIns = c => (c.fc && c.fc.ins && INS_BY[c.fc.ins] && (c.pos !== 'GOL' || !INS_BY[c.fc.ins].att) ? c.fc.ins : 'eq');
+  S.fcSetIns = (c, id) => { if (c.fc && INS_BY[id]) c.fc.ins = id; };
+  // Pedido do técnico (um jogo em cada sete, mais ou menos): cumprir dá relação e forma; falhar tira um pouco de relação
+  const REQ = {
+    gol: { txt: 'Marque um gol', ok: m => m.goals >= 1, pos: ['ATA', 'MEI'] },
+    ast: { txt: 'Dê uma assistência', ok: m => m.assists >= 1, pos: ['ATA', 'MEI'] },
+    nota: { txt: 'Nota 7 ou mais', ok: m => m.rating >= 7, pos: ['ATA', 'MEI', 'ZAG', 'GOL'] },
+    zero: { txt: 'Não sofra gol', ok: m => m.ga === 0, pos: ['ZAG', 'GOL'] },
+    vence: { txt: 'Saia com a vitória', ok: m => m.won, pos: ['ATA', 'MEI', 'ZAG', 'GOL'] },
+  };
+  S.FC_REQ = REQ;
+  function pickReq(c, r) {
+    if (r() >= 0.15) return null;
+    const ids = Object.keys(REQ).filter(k => REQ[k].pos.includes(c.pos));
+    return r.pick(ids);
+  }
+
   function myRates(c, club) {
     const E = S.eff(c), o = S.ovr(c), role = S.role(c, club), tm = id => S.tm(c, id), sy = id => S.syn(c, id);
     const share = clamp(role.share + c.mod.min + (c.promise || 0) + (c.rel.coach - REL0) / 90 + (c.age <= 17 ? -0.2 : 0) + (c.farewell ? 0.1 : 0), 0.05, 0.97);
@@ -286,7 +312,10 @@
     // Energia e forma (vida entre os jogos): cansado rende menos e se machuca mais; forma mexe na nota e nos gols
     const L = lifeOf(c);
     g90 *= L.mul; a90 *= L.mul; trt += L.r;
-    return { share, g90, a90, isDef, def, att, saves, pPen, tackles, injRisk: Math.min(0.6, injRisk * L.inj), o, teamBoost, trt, role };
+    // Orientação do jogo (escolhida antes de jogar)
+    const I = INS_BY[S.fcIns(c)] || INS_BY.eq;
+    g90 *= I.g; a90 *= I.a; trt += I.r;
+    return { share, g90, a90, isDef, def, att, saves, pPen, tackles, injRisk: Math.min(0.6, injRisk * L.inj), o, teamBoost, trt, role, sd: I.sd };
   }
 
   // Gols de um jogo pela força dos dois (mando de 3 pontos); minuto de cada gol
@@ -345,7 +374,7 @@
       const res3 = ug > tg ? 3 : ug === tg ? 1 : 0;
       const perGame = X.isDef ? (cs ? 0.85 : 0) + (mg * 1.2 + ma * 0.5) / S.GOAL_SCALE + saves * 0.35 + penSaved * 0.6 + tackles * 0.2 : (mg + ma * 0.7) / S.GOAL_SCALE;
       rating = clamp(Math.round((6.1 + S.RATING_ADJ[c.pos] + perGame * 2.4 * (X.isDef ? 0.75 : 1) + Math.min(X.o - club.strength, S.RATING_GAP) * 0.03 + X.trt +
-        (res3 === 3 ? 0.2 : res3 === 0 ? -0.25 : 0) + r.gauss() * 0.55) * 10) / 10, 4.5, 10);
+        (res3 === 3 ? 0.2 : res3 === 0 ? -0.25 : 0) + r.gauss() * 0.55 * X.sd) * 10) / 10, 4.5, 10);
     }
     let won = ug > tg;
     if (knock && ug === tg) won = force === undefined ? pens(r, us, them) : force;
@@ -356,7 +385,7 @@
     const res3 = ug > tg ? 3 : ug === tg ? 1 : 0;
     const perGame = X.isDef ? (cs ? 0.85 : 0) + (mg * 1.2 + ma * 0.5) / S.GOAL_SCALE + saves * 0.35 + penSaved * 0.6 + tackles * 0.2 : (mg + ma * 0.7) / S.GOAL_SCALE;
     return clamp(Math.round((6.1 + S.RATING_ADJ[c.pos] + perGame * 2.4 * (X.isDef ? 0.75 : 1) + Math.min(X.o - club.strength, S.RATING_GAP) * 0.03 + X.trt +
-      (res3 === 3 ? 0.2 : res3 === 0 ? -0.25 : 0) + r.gauss() * 0.55) * 10) / 10, 4.5, 10);
+      (res3 === 3 ? 0.2 : res3 === 0 ? -0.25 : 0) + r.gauss() * 0.55 * X.sd) * 10) / 10, 4.5, 10);
   }
   // Jogo com lance decisivo: o placar chega ao do lance (m.score no m.minute) e o resultado segue o lance, para a
   // transmissão contar a mesma história. Atacante: acertou, gol seu (ou assistência, no passe); errou, na final o
@@ -431,12 +460,12 @@
         if (on && fc.en !== undefined && fc.en < EN_OUT && r() < (knock && e.st >= 3 ? 0.33 : 0.5)) { on = false; why = 'cansaço'; }
         if (!on && !why) why = X.share < 0.35 ? 'banco' : 'rodízio';
       }
-      fc.pending = { i: fc.i, on, why };
+      fc.pending = { i: fc.i, on, why, req: on && fc.en !== undefined ? pickReq(c, r) : null };
       save();
     }
     const comps = { lg: fc.lg.name, cup: fc.cup.name, cont: fc.cont ? fc.cont.name : '' };
-    const P = fc.pending || { on: null, why: '' };
-    const next = { e, vs, home, comp, compName: comps[comp], stage, knock, on: P.on, why: P.why, week: !!fc.wkDue, injury: fc.injOut > 0 ? fc.injName : null, injLeft: fc.injOut };
+    const P = fc.pending || { on: null, why: '', req: null };
+    const next = { e, vs, home, comp, compName: comps[comp], stage, knock, on: P.on, why: P.why, week: !!fc.wkDue, req: P.req || null, injury: fc.injOut > 0 ? fc.injName : null, injLeft: fc.injOut };
     // Lance decisivo: finais (copa e continental), o clássico da liga e a última rodada valendo título ou acesso
     if (vs && next.on && fc.pending && !fc.pending.mDone) {
       if (fc.pending.m === undefined) { fc.pending.m = momentFor(c, fc, next); }
@@ -516,7 +545,7 @@
         out.pe = give(c, fc, g);
         // Energia gasta no jogo (o treino físico poupa nas próximas semanas) e forma pela nota
         if (fc.en !== undefined) {
-          out.en = Math.round((20 + r() * 10) * (fc.fit > 0 ? 0.7 : 1)) - (c.gear && c.gear.en ? c.gear.en : 0);
+          out.en = Math.max(0, Math.round((20 + r() * 10) * (fc.fit > 0 ? 0.7 : 1) * INS_BY[S.fcIns(c)].en) - (c.gear && c.gear.en ? c.gear.en : 0));
           if (fc.fit > 0) fc.fit--;
           fc.en = clamp(fc.en - out.en, 0, 100);
         }
@@ -529,6 +558,16 @@
       }
       fc.log.push({ i: fc.i, comp: nx.comp, stage: nx.stage, vs: nx.vs, home: nx.home, gf: my.gf, ga: my.ga, on: my.on, goals: my.goals, assists: my.assists, rating: my.rating, won: my.won, pens: my.pens, dec: force !== undefined });
       if (mo && mo.type === 'classico') fc.derbyDone = true;
+      if (my.on && fc.en !== undefined) {
+        const I = INS_BY[S.fcIns(c)];
+        if (I.coach) c.rel.coach = clamp(c.rel.coach + I.coach, 0, 100);
+        const rq = nx.req ? REQ[nx.req] : null;
+        if (rq) {
+          out.req = { id: nx.req, txt: rq.txt, ok: !!rq.ok(my) };
+          c.rel.coach = clamp(c.rel.coach + (out.req.ok ? 5 : -2), 0, 100);
+          if (out.req.ok) fc.fo = clamp(Math.round(((fc.fo || 0) + 0.3) * 100) / 100, -2, 2);
+        }
+      }
     }
     if (e.k === 'lg') {
       fc.lg.rounds[e.ri].forEach(([a, b]) => {
