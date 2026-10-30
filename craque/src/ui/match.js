@@ -129,11 +129,14 @@
     momentIntro(m);
   }
 
+  // Minuto do lance no texto: nos acréscimos (90+) ou o minuto (a Carreira Completa sorteia o minuto do lance)
+  const late = m => !m.minute || /\+/.test(String(m.minute));
+  const atMin = m => (late(m) ? 'nos acréscimos' : 'aos ' + m.minute + ' minutos');
   const MOMENT_TXT = {
-    cup: m => ({ tag: 'Final da ' + m.comp, title: 'Pênalti nos acréscimos!', text: 'Final contra ' + D.o(club(m.vs).name) + ', empate no placar. A bola é sua.', stakes: 'Converteu: campeão da ' + m.comp + ' · Errou: vice' }),
-    title: m => ({ tag: 'Última rodada · ' + m.comp, title: 'Pênalti valendo o título!', text: 'Contra ' + D.o(club(m.vs).name) + ', quem vencer é campeão.', stakes: 'Converteu: campeão da liga · Errou: vice' }),
+    cup: m => ({ tag: 'Final da ' + m.comp, title: (m.kick === 'fk' ? 'Falta' : 'Pênalti') + (late(m) ? ' nos acréscimos!' : " aos " + m.minute + "'!"), text: 'Final contra ' + D.o(club(m.vs).name) + ', empate no placar. A bola é sua.', stakes: 'Converteu: campeão da ' + m.comp + ' · Errou: vice' }),
+    title: m => ({ tag: 'Última rodada · ' + m.comp, title: (m.kick === 'fk' ? 'Falta' : 'Pênalti') + ' valendo o título!', text: 'Contra ' + D.o(club(m.vs).name) + ', quem vencer é campeão.', stakes: 'Converteu: campeão da liga · Errou: vice' }),
     cont: m => ({ tag: 'Final da ' + m.comp, title: (m.kick === 'fk' ? 'Falta na final' : 'Pênalti na final') + ' da ' + m.comp + '!',
-      text: 'Decisão contra ' + D.o(club(m.vs).name) + ', ' + (m.kick === 'fk' ? 'falta na entrada da área aos 88 minutos.' : 'pênalti nos acréscimos com o placar empatado.'),
+      text: 'Decisão contra ' + D.o(club(m.vs).name) + ', ' + (m.kick === 'fk' ? 'falta na entrada da área ' + (m.minute ? atMin(m) : 'aos 88 minutos') + '.' : 'pênalti ' + atMin(m) + ' com o placar empatado.'),
       stakes: 'Converteu: campeão da ' + m.comp + ' · Errou: vice' }),
     acesso: m => ({ tag: 'Última rodada · ' + m.comp, title: (m.kick === 'fk' ? 'Falta' : 'Pênalti') + ' valendo o acesso!',
       text: 'Contra ' + D.o(club(m.vs).name) + (m.kick === 'fk' ? ', falta na entrada da área.' : ', pênalti a seu favor.'), stakes: 'Converteu: acesso garantido · Errou: fica para o ano que vem' }),
@@ -148,7 +151,7 @@
     const goal = { cup: 'campeão da ' + m.comp, title: 'campeão da liga', acesso: 'acesso garantido', cont: 'campeão da ' + m.comp, classico: (m.score && m.score[0] === m.score[1] ? 'segura o empate' : 'o clássico é seu') + ', Torcida +8' }[m.type];
     return {
       tag: { cup: 'Final da ' + m.comp, title: 'Última rodada · ' + m.comp, acesso: 'Última rodada · ' + m.comp, cont: 'Final da ' + m.comp, classico: 'Clássico' }[m.type],
-      title: save ? 'Pênalti contra nos acréscimos!' : 'Contra-ataque no último minuto!',
+      title: save ? 'Pênalti contra ' + atMin(m) + '!' : late(m) ? 'Contra-ataque no último minuto!' : 'Contra-ataque perigoso ' + atMin(m) + '!',
       text: (save ? 'O camisa 9 ' + D.do(club(m.vs).name) + ' vai bater.' : 'O atacante ' + D.do(club(m.vs).name) + ' arrancou sozinho.') + ' Tudo depende de você contra ' + vs + '.',
       stakes: (save ? 'Defendeu: ' : 'Desarmou: ') + goal + ' · ' + (m.type === 'classico' ? 'Falhou: gol deles' : m.type === 'acesso' ? 'Falhou: o acesso escapa' : 'Falhou: vice'),
       what,
