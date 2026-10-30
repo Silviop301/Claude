@@ -16,11 +16,11 @@
   // De onde veio a nota: cada parcela, o total e quanto faltou para a próxima faixa
   function scoreHow(f) {
     if (!f.parts) return '';
-    const i = S.GRADES.findIndex(([g]) => g === f.grade), next = i > 0 ? S.GRADES[i - 1] : null;
+    const GB = f.bands || S.GRADES, i = GB.findIndex(([g]) => g === f.grade), next = i > 0 ? GB[i - 1] : null;
     return '<details class="more score-how"><summary>Como chegou a esta nota</summary>' +
       '<ul class="sh-parts">' + f.parts.map(p => '<li><span>' + esc(p.txt) + '</span><b' + (p.v < 0 ? ' class="neg"' : '') + '>' + (p.v < 0 ? '−' + -p.v : '+' + p.v) + '</b></li>').join('') +
       '<li class="tot"><span>Total</span><b>' + U.pts(f.score) + '</b></li></ul>' +
-      '<p class="sh-bands">' + S.GRADES.filter(([, min]) => min > 0).map(([g, min]) => g + ' a partir de ' + min).join(' · ') + '</p>' +
+      '<p class="sh-bands">' + GB.filter(([, min]) => min > 0).map(([g, min]) => g + ' a partir de ' + min).join(' · ') + '</p>' +
       (next ? '<p class="sh-next">' + (next[1] - f.score === 1 ? 'Faltou 1 ponto para a nota ' : 'Faltaram ' + U.pts(next[1] - f.score) + ' pontos para a nota ') + next[0] + '.</p>' : '') + '</details>';
   }
 
@@ -37,7 +37,7 @@
   }
   // Para a próxima: o que faltou nesta carreira (próxima nota, recorde, rival) vira a meta da seguinte
   function nextGoal(c, f, hall, rank) {
-    const out = [], G2 = S.GRADES, i = G2.findIndex(([g]) => g === f.grade);
+    const out = [], G2 = f.bands || S.GRADES, i = G2.findIndex(([g]) => g === f.grade);
     // Quem é novo não sabe o que é "ponto": a linha diz de onde eles vêm (os pesos estão em S.SCORE_W)
     // (quanto faltou para a próxima nota já está na barra de pontos, logo acima)
     if (i > 0 && hall.length <= 2) out.push(['🎯', 'Pontos vêm de jogar bem, títulos (' + S.SCORE_W.title + ' cada), Bola de Ouro (' + S.SCORE_W.ballon + ') e Copa do Mundo (' + S.SCORE_W.wc + ')']);
@@ -61,7 +61,7 @@
   }
   // Barra de pontos: onde a carreira parou dentro da faixa da nota e quanto faltou para a próxima
   function pointsBar(f, rankTxt) {
-    const G2 = S.GRADES, i = G2.findIndex(([g]) => g === f.grade), next = i > 0 ? G2[i - 1] : null, lo = G2[i] ? G2[i][1] : 0;
+    const G2 = f.bands || S.GRADES, i = G2.findIndex(([g]) => g === f.grade), next = i > 0 ? G2[i - 1] : null, lo = G2[i] ? G2[i][1] : 0;
     const pct = next ? Math.max(4, Math.min(100, Math.round((f.score - lo) / Math.max(1, next[1] - lo) * 100))) : 100;
     const miss = next ? next[1] - f.score : 0;
     return '<div class="o6-pts"><div class="o6-pl"><b>' + U.pts(f.score) + ' pontos</b><span>' + (next ? (miss === 1 ? 'faltou 1 para ' : 'faltaram ' + U.pts(miss) + ' para ') + next[0] : 'nota máxima') + '</span></div>' +

@@ -123,7 +123,7 @@
       if (!c.chFail) {
         const p = { k: 'bonus', txt: 'Desafio cumprido: ' + ch.name, v: ch.v };
         f.parts.push(p);
-        f.score += ch.v; f.grade = S.gradeOf(f.score);
+        f.score += ch.v; f.grade = S.gradeOf(f.score, c);
       }
     }
     return f;
