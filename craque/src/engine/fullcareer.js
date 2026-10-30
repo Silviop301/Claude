@@ -462,6 +462,7 @@
   // transmissão contar a mesma história. Atacante: acertou, gol seu (ou assistência, no passe); errou, na final o
   // adversário mata no contra-ataque. Defensor: segurou, fica o placar; falhou, empate (na final, pênaltis perdidos)
   const minOf = s => { const [a, b] = String(s).split('+').map(Number); return a + (b || 0); };
+  S.fcMinOf = minOf;
   function scripted(c, fc, r, vs, home, knock, ok, mo) {
     const club = D.CLUB_BY_ID[c.club], X = myRates(c, club), on = true, def = !!S.defKick(c.pos), kick = S.kickType(mo);
     const mm = minOf(mo.minute), [su, st] = mo.score, me = home ? 'h' : 'a', op = home ? 'a' : 'h';
@@ -691,11 +692,11 @@
     const M = Object.assign({}, m, { ok: !!ok }, why ? { why } : {});
     if (!c.mod.moment || (MOM_W[m.type] || 0) >= (MOM_W[c.mod.moment.type] || 0)) c.mod.moment = M;
   };
+  // Sorteio à parte (derivado do estado, sem avançar o do jogo): o ao vivo já mostrou os lances de antes do minuto
   S.fcAutoMoment = function (c, m) {
-    const { r, save } = rngOf(c.fc), st = S.kickSetupType(m);
+    const r = S.rng(((c.fc.seed ^ 0x5bd1e995) >>> 0) + c.fc.i), st = S.kickSetupType(m);
     if (!m.style) m.style = S.autoStyle(c, st);
     const ok = r() < S.kickSetup(c, st, m.style).chance;
-    save();
     S.fcMoment(c, m, ok);
     return ok;
   };

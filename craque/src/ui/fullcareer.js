@@ -127,6 +127,7 @@
   }
   // Apps do celular: cada um abre uma tela com volta para o celular
   const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Palpites do Zé' };
+  const LOJA_IMG = ['chuteira-g1', 'chuteira-g2', 'chuteira-g3', 'luvas-g1', 'luvas-g2', 'luvas-g3', 'pt', 'physio', 'nutri', 'video'];
   function go(k) {
     if (k === 'evo') return evolve();
     if (k === 'ag') { agOpen = -1; return agenda(); }
@@ -483,7 +484,9 @@
     const g = c.gear && c.gear.until >= c.season ? c.gear : null, gNow = g ? S.FC_SHOP.gear.find(x => x.id === g.id) : null;
     const left = g ? (g.until > c.season ? 'até a próxima temporada' : 'até o fim da temporada') : '';
     const btn = (kind, id, label, ok, on) => '<button class="fc-buy' + (on ? ' on' : '') + '" data-k="' + kind + '" data-id="' + id + '"' + (ok ? '' : ' disabled') + '>' + label + '</button>';
-    const row = (name, fx, right) => '<div class="fc-si"><span><b>' + esc(name) + '</b><small>' + esc(fx) + '</small></span>' + right + '</div>';
+    // Imagem do item (assets/loja); os que ainda não têm arte ficam sem
+    const img = f => (LOJA_IMG.includes(f) ? '<img class="fc-si-im" src="assets/loja/' + f + '.webp" alt="" draggable="false" loading="lazy">' : '');
+    const row = (name, fx, right, f) => '<div class="fc-si' + (f && img(f) ? ' im' : '') + '">' + (f ? img(f) : '') + '<span><b>' + esc(name) + '</b><small>' + esc(fx) + '</small></span>' + right + '</div>';
     const week = S.fcStaffWeek(c);
     el.innerHTML =
       '<div class="fc-cash"><span>Seu dinheiro</span><b>' + R(cash) + '</b><small>Salário de ' + R(c.wage || 0) + ' por semana' + (week ? ' · equipe: −' + R(week) + ' por semana' : '') + '</small></div>' +
@@ -491,19 +494,19 @@
         (g ? '<p class="fc-own">Você usa: ' + esc(S.fcGearName(c, gNow)) + ' · +' + g.b + ' em ' + esc(D.label(c.pos, g.attr)) + ', ' + left + '</p>' : '<p class="fc-own">Sem equipamento especial.</p>') +
         '<div class="seg fc-attr">' + attrs.map(k => '<button data-a="' + k + '"' + (k === gearAttr ? ' class="on"' : '') + '>' + esc(D.label(c.pos, k)) + '</button>').join('') + '</div>' +
         S.FC_SHOP.gear.map(x => { const p = S.fcGearPrice(c, x.id);
-          return row(S.fcGearName(c, x), '+' + x.b + ' em ' + D.label(c.pos, gearAttr) + (x.en ? ', cansa ' + x.en + ' a menos por jogo' : '') + ' · ' + (x.seasons > 1 ? x.seasons + ' temporadas' : '1 temporada'), btn('gear', x.id, R(p), cash >= p)); }).join('') +
+          return row(S.fcGearName(c, x), '+' + x.b + ' em ' + D.label(c.pos, gearAttr) + (x.en ? ', cansa ' + x.en + ' a menos por jogo' : '') + ' · ' + (x.seasons > 1 ? x.seasons + ' temporadas' : '1 temporada'), btn('gear', x.id, R(p), cash >= p), (c.pos === 'GOL' ? 'luvas-' : 'chuteira-') + x.id); }).join('') +
       '</div>' +
       '<div class="fc-ss"><h3>Equipe pessoal</h3><p class="fc-own">Paga por semana. Se o dinheiro acabar, o contrato cai.</p>' +
         S.FC_SHOP.staff.map(x => { const on = !!(c.staff && c.staff[x.id]), p = S.fcStaffCost(c, x.id);
-          return row(x.name, x.fx + ' · ' + R(p) + ' por semana', btn('staff', x.id, on ? 'Dispensar' : 'Contratar', on || cash >= p * 4, on)); }).join('') +
+          return row(x.name, x.fx + ' · ' + R(p) + ' por semana', btn('staff', x.id, on ? 'Dispensar' : 'Contratar', on || cash >= p * 4, on), x.id); }).join('') +
       '</div>' +
       '<div class="fc-ss"><h3>Patrimônio</h3>' +
         S.FC_SHOP.life.map(x => { const own = !!(c.life && c.life[x.id]), p = S.fcLifePrice(c, x.id);
-          return row(x.name, x.fx + ' (+' + x.fame + ' de fama)', own ? '<em class="fc-own-tag">Comprado</em>' : btn('life', x.id, R(p), cash >= p)); }).join('') +
+          return row(x.name, x.fx + ' (+' + x.fame + ' de fama)', own ? '<em class="fc-own-tag">Comprado</em>' : btn('life', x.id, R(p), cash >= p), x.id); }).join('') +
       '</div>' +
       '<div class="fc-ss"><h3>Carro</h3>' +
         S.FC_SHOP.cars.map((x, k) => { const at = S.fcCarAt(c), p = S.fcCarPrice(c, x.id);
-          return row(x.name, x.fx + ' (+' + x.fame + ' de fama)', k === at ? '<em class="fc-own-tag">Seu carro</em>' : k < at ? '<em class="fc-own-tag old">Abaixo do seu</em>' : btn('car', x.id, R(p), cash >= p)); }).join('') +
+          return row(x.name, x.fx + ' (+' + x.fame + ' de fama)', k === at ? '<em class="fc-own-tag">Seu carro</em>' : k < at ? '<em class="fc-own-tag old">Abaixo do seu</em>' : btn('car', x.id, R(p), cash >= p), x.id); }).join('') +
       '</div>' +
       '<p class="fc-shop-note">Tudo daqui vale só nesta carreira. Os itens da coleção continuam só visuais.</p>';
     el.querySelectorAll('.fc-attr button').forEach(b => { b.onclick = () => { sfx('tap'); gearAttr = b.dataset.a; shopBox(); }; });
@@ -529,28 +532,39 @@
   }
   const paintOrEnd = () => (G.c.fc.done ? finishSeason() : hub());
 
-  // Joga o próximo: com lance decisivo, o minigame vem primeiro (o resultado decide o jogo); depois o jogo ao vivo
+  // Joga o próximo: com lance decisivo, o jogo ao vivo para no minuto do lance, o minigame decide e o jogo segue dali
+  // Minuto do lance já jogado neste jogo (0 se não houve): o ao vivo recomeça dali
+  const doneMin = () => { const P = G.c.fc.pending; return P && P.mDone && P.m ? S.fcMinOf(P.m.minute) : 0; };
   function start(nx) {
+    if (doneMin()) return live({ from: doneMin() }); // lance já jogado (saiu e voltou ao jogo)
     if (nx.moment) {
       const m = nx.moment;
       if (m.started || U.cfg.moments === 'auto') { S.fcAutoMoment(G.c, m); save(); return live(); }
       save();
-      return U.momentIntro(m);
+      return live({ stop: m });
     }
     live();
   }
-  // Depois do lance (ui/match.js chama): o jogo ao vivo, já com o resultado que o lance decidiu
-  function afterMoment() { live(); }
+  // Depois do lance (ui/match.js chama): o jogo ao vivo continua do minuto do lance, com o resultado que ele decidiu
+  function afterMoment() { live(doneMin() ? { from: doneMin() } : undefined); }
 
   // ---------- jogo ao vivo ----------
-  function live() {
+  // o.stop: lance decisivo ainda por jogar; o ao vivo roda até o minuto dele num ensaio (o jogo é desfeito em seguida;
+  // os lances de antes não dependem do resultado) e abre o minigame. o.from: começa no minuto do lance, já decidido.
+  function live(o) {
+    o = o || {};
     const c = G.c;
     const nx = S.fcNext(c);
     if (!nx) return finishSeason();
     // Tabela antes do jogo (o ao vivo soma os placares parciais por cima dela)
     const en0 = c.fc.en;
-    const out = S.fcPlay(c);
-    save();
+    let out;
+    if (o.stop) {
+      const snap = JSON.stringify(c);
+      out = S.fcPlay(c, true);
+      const back = JSON.parse(snap); Object.keys(c).forEach(k => delete c[k]); Object.assign(c, back);
+    } else { out = S.fcPlay(c); save(); }
+    const stopAt = o.stop ? S.fcMinOf(o.stop.minute) : 0, t0 = o.from ? o.from - 1 : 0;
     matchView();
     const x = Object.assign({}, nx, { res: out.my, en0 });
     const lg = nx.e.k === 'lg', grp = nx.e.k === 'cont' && nx.e.st < 6;
@@ -568,33 +582,36 @@
     const part = (g, t) => { let h = 0, a = 0; g.ev.forEach(e => { if (e.m <= t) { if (e.s === 'h') h++; else a++; } }); return [h, a]; };
     // O motor já somou o jogo na tabela: o ao vivo mostra a de antes mais os placares parciais
     const undo = lg ? 'lg' : grp ? 'cont' : null, view = undo === 'cont' ? 'cont' : 'lg';
-    if (undo) games.forEach(([a, b, g]) => sub(undo === 'lg' ? c.fc.lg.tab : c.fc.cont.gtab, a, b, part(g, 99)));
+    if (undo && !o.stop) games.forEach(([a, b, g]) => sub(undo === 'lg' ? c.fc.lg.tab : c.fc.cont.gtab, a, b, part(g, 99)));
     if (grp) tblView = 'cont'; else if (lg) tblView = 'lg';
     tblKey = null; tabs();
     x.score = t => (out.my ? part({ ev: out.my.ev }, t) : [0, 0]);
     const end = Math.max(90, ...[out.my].concat(out.others).filter(Boolean).map(g => (g.ev.length ? g.ev[g.ev.length - 1].m : 0)));
-    let t = 0, half = false, timer = 0;
+    let t = t0, half = false, timer = 0;
     $('fc-h').textContent = nx.compName + ' · ao vivo';
-    $('fc-match').innerHTML = card('live', x, 0);
+    $('fc-match').innerHTML = card('live', x, t);
     const fl = x.vs && out.my ? flowOf(c, x, out) : null, flSeen = new Set();
-    if (fl) $('fc-flow').innerHTML = flowBox(c, x, fl);
+    if (fl) { $('fc-flow').innerHTML = flowBox(c, x, fl); fl.lances.forEach(l => { if (l.m <= t0) flSeen.add(l); }); }
     weekBox(true);
     // Outros jogos da rodada (liga e grupo); na copa e no mata-mata, os outros confrontos da fase
     $('fc-round').innerHTML = out.others.length ? '<div class="fs-rlbl">' + (lg ? 'Outros jogos da rodada' : grp ? 'O outro jogo do grupo' : 'Outros confrontos da fase') + '</div>' +
       out.others.map((g, k) => '<div class="fs-rr" data-k="' + k + '"><span>' + esc(nameOf(g.h)) + '</span>' + crest(g.h, 'xs') + '<b>0 × 0</b>' + crest(g.a, 'xs') + '<span>' + esc(nameOf(g.a)) + '</span></div>').join('') : '';
     $('fc-acts').innerHTML = '<div class="fs-skip"><button class="btn ghost' + (fast ? ' on' : '') + '" id="fc-fast">' + (fast ? 'Velocidade normal' : 'Mais rápido') + '</button><button class="btn ghost" id="fc-skip">Fim do jogo</button></div>';
     $('fc-fast').onclick = () => { fast = !fast; $('fc-fast').textContent = fast ? 'Velocidade normal' : 'Mais rápido'; $('fc-fast').classList.toggle('on', fast); };
-    $('fc-skip').onclick = () => { t = end; frame(); done(); };
+    if (o.stop) $('fc-skip').textContent = 'Ir ao lance';
+    $('fc-skip').onclick = () => { clearTimeout(timer); if (o.stop) { const t1 = t; t = stopAt; frame(t1); return pause(); } t = end; frame(); done(); };
     $('fc-match').scrollIntoView({ block: 'nearest' });
     sfx('whistle');
     const liveTab = () => ({ [view]: games.map(([a, b, g]) => [a, b].concat(part(g, t))) });
-    function frame() {
+    // Antes do lance só entra o que veio antes do minuto dele
+    const shown = e => !o.stop || e.m < stopAt;
+    function frame(since) { // since: pulou de minuto (só o lance pendente)
       const lt = $('fc-lt'); if (lt) lt.textContent = (half ? 'Intervalo' : t >= end ? 'Fim de jogo' : esc(nx.compName) + ' · ' + clock(t));
       if (out.my && $('fc-sh')) {
-        const [h, a] = x.score(t); $('fc-sh').textContent = h; $('fc-sa').textContent = a;
-        out.my.ev.filter(e => e.m === t).forEach(e => { $(e.s === 'h' ? 'fc-evh' : 'fc-eva').insertAdjacentHTML('beforeend', play1(e)); if ((e.s === 'h') === nx.home) sfx('cheer'); });
+        const [h, a] = x.score(o.stop ? Math.min(t, stopAt - 1) : t); $('fc-sh').textContent = h; $('fc-sa').textContent = a;
+        out.my.ev.filter(e => (since !== undefined ? e.m > since && e.m <= t : e.m === t) && shown(e)).forEach(e => { $(e.s === 'h' ? 'fc-evh' : 'fc-eva').insertAdjacentHTML('beforeend', play1(e)); if ((e.s === 'h') === nx.home) sfx('cheer'); });
       }
-      if (fl) flowAt(c, x, fl, t, flSeen);
+      if (fl) flowAt(c, x, fl, o.stop ? Math.min(t, stopAt - 1) : t, flSeen);
       let goal = false;
       document.querySelectorAll('#fc-round .fs-rr').forEach(el => {
         const g = out.others[+el.dataset.k], [h, a] = part(g, t);
@@ -609,8 +626,17 @@
       if (t === 45 && !half) { half = true; sfx('whistle'); frame(); timer = setTimeout(tick, fast ? 600 : 1800); return; }
       half = false; t++;
       frame();
+      if (o.stop && t >= stopAt) return pause();
       if (t >= end) return done();
       timer = setTimeout(tick, PACE[fast ? 1 : 0]);
+    }
+    // O jogo para no minuto do lance: o placar escuro avisa e o minigame abre (ui/match.js)
+    function pause() {
+      clearTimeout(timer);
+      const lt = $('fc-lt'); if (lt) lt.textContent = 'Lance decisivo · ' + clock(stopAt);
+      $('fc-acts').innerHTML = '';
+      sfx('whistle');
+      timer = setTimeout(() => { if ($('fc-match')) U.momentIntro(o.stop); }, 1400);
     }
     let finished = false;
     function done() {
