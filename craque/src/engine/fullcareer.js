@@ -11,7 +11,8 @@
 
   const rngOf = fc => { const r = S.rng(fc.seed); return { r, save: () => { fc.seed = r.state(); } }; };
   const str = id => (D.CLUB_BY_ID[id] ? D.CLUB_BY_ID[id].strength : 55);
-  const PE_STEP = { good: 0.2, great: 0.4 };
+  // Todo jogo em campo enche um pouco a barra; nota boa enche mais
+  const PE_STEP = { low: 0.05, ok: 0.1, good: 0.2, great: 0.4 }, PE_OK = 6.5;
   // Ajuste da produção jogo a jogo para os números do ano baterem com a carreira rápida (tools/craque_sim.js com MODO=completa)
   const FC_K = { g: 1.12, a: 1.7 }; // ponto de evolução por jogo bom (nota 7,4+) e ótimo (8,2+)
 
@@ -58,6 +59,8 @@
   const CONT_AT = [0.15, 0.22, 0.3, 0.38, 0.45, 0.52, 0.62, 0.72, 0.82, 0.93];
   const CONT_ST = ['Grupo · 1ª rodada', 'Grupo · 2ª rodada', 'Grupo · 3ª rodada', 'Grupo · 4ª rodada', 'Grupo · 5ª rodada', 'Grupo · 6ª rodada', 'Oitavas de final', 'Quartas de final', 'Semifinal', 'Final'];
 
+  const EV_AT = [0.3, 0.7];
+
   S.fcStart = function (c) {
     const club = D.CLUB_BY_ID[c.club], lg = D.LEAGUE_BY_ID[club.league];
     const fc = { season: c.season, club: club.id, seed: ((Number(c.tseed) || 1) * 2654435761 + c.season * 97 + 13) >>> 0, i: 0, log: [], peFrac: 0, peGot: 0, out: null, done: false };
@@ -99,6 +102,8 @@
     const myGames = R + 5 + (fc.cont ? 10 : 0);
     fc.injOut = Math.round((c.mod.inj || 0) * myGames);
     fc.injMiss = 0; fc.injName = fc.injOut ? 'lesão' : null;
+    // Eventos entre os jogos: duas datas no ano (cada uma pode ou não trazer um evento, como na pré-temporada do modo rápido)
+    fc.evAt = EV_AT.map(f => Math.max(1, Math.round(f * fc.cal.length))); fc.evNext = 0; fc.evIds = [];
     fc.acc = { games: 0, goals: 0, assists: 0, cs: 0, saves: 0, pen: 0, penFaced: 0, tackles: 0, rsum: 0, slots: 0 };
     save();
     // O sorteio do lance decisivo da temporada não vale aqui: os lances acontecem nos jogos (finais e clássicos)
@@ -317,7 +322,7 @@
       if (my.on) {
         A.games++; A.goals += my.goals; A.assists += my.assists; A.cs += my.cs ? 1 : 0; A.saves += my.saves; A.pen += my.penSaved; A.penFaced += my.penFaced; A.tackles += my.tackles; A.rsum += my.rating;
         // Pontos de evolução jogo a jogo (até o limite do ano)
-        const g = my.rating >= S.PE_R2 ? PE_STEP.great : my.rating >= S.PE_R1 ? PE_STEP.good : 0;
+        const g = my.rating >= S.PE_R2 ? PE_STEP.great : my.rating >= S.PE_R1 ? PE_STEP.good : my.rating >= PE_OK ? PE_STEP.ok : PE_STEP.low;
         out.pe = give(c, fc, g);
       }
       fc.log.push({ i: fc.i, comp: nx.comp, stage: nx.stage, vs: nx.vs, home: nx.home, gf: my.gf, ga: my.ga, on: my.on, goals: my.goals, assists: my.assists, rating: my.rating, won: my.won, pens: my.pens, dec: force !== undefined });
@@ -404,6 +409,27 @@
     return out;
   };
   S.FC_CUP_ST = CUP_ST; S.FC_CONT_ST = CONT_ST;
+
+  // ---------- eventos entre os jogos ----------
+  // Chegou uma data de evento? Sorteia um (ou nenhum) que não troque de clube no meio do calendário
+  S.fcEventDue = c => { const fc = c.fc; return !!fc && !fc.done && !!fc.evAt && fc.evNext < fc.evAt.length && fc.i >= fc.evAt[fc.evNext]; };
+  S.fcPickEvent = function (c) {
+    if (!S.fcEventDue(c)) return null;
+    c.fc.evNext++;
+    return S.pickEvent(c, { mid: true });
+  };
+  // Escolha resolvida no meio do ano: guarda o evento (não repete no mesmo ano) e a lesão vale nos próximos jogos
+  const resolve0 = S.resolveEvent;
+  S.resolveEvent = function (c, ev, idx) {
+    const fc = c.fc && !c.fc.done && c.fc.season === c.season && c.fc.i > 0 ? c.fc : null, inj0 = c.mod.inj || 0;
+    const out = resolve0(c, ev, idx);
+    if (fc) {
+      (fc.evIds = fc.evIds || []).push(ev.id);
+      const d = (c.mod.inj || 0) - inj0;
+      if (d > 0) { fc.injOut = Math.max(fc.injOut, Math.max(1, Math.round(d * (fc.cal.length - fc.i)))); fc.injName = 'lesão'; if (fc.pending) fc.pending = null; }
+    }
+    return out;
+  };
 
   // Pontos de evolução mostrados (inteiros já no banco + a fração do ano)
   S.fcPe = c => (c.pe || 0) + (c.fc ? c.fc.peFrac : 0);

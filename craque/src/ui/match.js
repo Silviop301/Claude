@@ -4,7 +4,9 @@
   const { tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar } = U;
   // ---------- evento ----------
   // O evento sorteado fica na carreira (G.c.pendEv), como o lance: recarregar a página mostra o mesmo, sem sortear de novo
+  // Carreira Completa: os eventos vêm entre os jogos (ui/fullcareer.js), não antes da temporada
   function eventOrSeason() {
+    if (G.c.mode === 'completa') return momentOrSeason();
     G.c.pendEv = S.pickEvent(G.c);
     if (!G.c.pendEv) { delete G.c.pendEv; return momentOrSeason(); }
     G.step = 'event';
@@ -55,7 +57,7 @@
 
   function eventScreen() {
     // Save de antes do evento guardado na carreira: sorteia uma vez e guarda
-    if (!G.c.pendEv) { G.c.pendEv = S.pickEvent(G.c); if (G.c.pendEv) save(); }
+    if (!G.c.pendEv && G.c.mode !== 'completa') { G.c.pendEv = S.pickEvent(G.c); if (G.c.pendEv) save(); }
     if (!G.c.pendEv) { delete G.c.pendEv; return momentOrSeason(); }
     const ev = G.c.pendEv;
     // Proposta de transferência: compara com a situação de hoje antes de decidir
@@ -65,7 +67,7 @@
     const tone = ev.hookOf ? 'back' : evDef(ev).tone || '', kinds = ev.options.map(optKind);
     const two = ev.options.length === 2 && !offer;
     render(
-      '<div class="eyebrow">Durante a temporada · ' + year() + '</div>' +
+      '<div class="eyebrow">' + (G.c.mode === 'completa' ? 'Entre os jogos' : 'Durante a temporada') + ' · ' + year() + '</div>' +
       '<div class="card event-card ob3' + (tone ? ' t-' + tone : '') + '"><div class="ev-top"><span class="ob3-ic">' + U.icoOf(ev, 'lg') + '</span>' +
       '<span class="ev-tag ' + (tone || 'blue') + '">' + (ev.hookOf ? 'Consequência' : TONE_LBL[tone] || 'Decisão') + '</span></div>' +
       (ev.memory ? '<p class="ev-mem">' + U.emo('🔁', 'xs') + ' ' + esc(ev.memory) + '</p>' : '') + '<h2>' + esc(ev.title) + '</h2><p class="ob3-txt">' + esc(ev.text) + '</p></div>' +
@@ -97,12 +99,12 @@
       U.riskRoll(st && !st.safe ? st.p : 0, r.ok, pick, () => U.transferMove(prevClub, G.c.club, G.c.name, () => {
       // Resultado no mesmo lugar do cartão do evento (no alto, com o mesmo rótulo), lembrando o que foi escolhido
       render(
-        '<div class="eyebrow">Durante a temporada · ' + year() + '</div>' +
+        '<div class="eyebrow">' + (G.c.mode === 'completa' ? 'Entre os jogos' : 'Durante a temporada') + ' · ' + year() + '</div>' +
         '<div class="card ev-res ob3-res ' + (r.ok ? 'ok' : 'ko') + (stamp === 'calm' ? ' calm' : '') + '">' + (stamp ? '<span class="ob3-stamp s-' + stamp + '">' + STAMP[stamp] + '</span>' : '') +
         '<span class="er-ic">' + U.icoOf(ev, 'lg') + '</span><div class="eyebrow">' + esc(ev.title) + '</div>' +
         '<span class="er-pick"><small>Sua escolha</small>' + esc(pick) + '</span>' +
         '<p class="er-txt">' + esc(r.text) + '</p>' + fxRow + '</div>' +
-        '<button class="btn" id="b-next">Jogar a temporada</button>' + U.postBtn(pctx)
+        '<button class="btn" id="b-next">' + (G.c.mode === 'completa' ? 'Voltar aos jogos' : 'Jogar a temporada') + '</button>' + U.postBtn(pctx)
       );
       $('b-next').onclick = momentOrSeason;
       U.postBind(pctx, momentOrSeason);
