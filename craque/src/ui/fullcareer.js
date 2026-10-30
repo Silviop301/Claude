@@ -15,7 +15,7 @@
   // Abaixo do jogo, uma aba por vez: tabela, jogos (calendário), competições e seus números; ao vivo, a rodada.
   // Em tela larga a tabela fica sempre do lado e as abas cuidam do resto.
   const wide = () => window.matchMedia && window.matchMedia('(min-width: 1000px) and (min-height: 560px)').matches;
-  const PANES = [['tbl', 'Tabela'], ['cal', 'Jogos'], ['comp', 'Torneios'], ['me', 'Você'], ['round', 'Rodada']];
+  const PANES = [['round', 'Rodada'], ['tbl', 'Tabela'], ['cal', 'Jogos'], ['comp', 'Torneios'], ['me', 'Você']];
   let pane = 'tbl';
 
   // ---------- tela central ----------
@@ -80,7 +80,8 @@
     const rows = standings(view, live && live[view]), n = rows.length;
     const zone = view === 'cont' ? pos => (pos <= 2 ? ' z-up' : '') : pos => (fc.lg.promo && pos <= fc.lg.promo ? ' z-up' : fc.lg.releg && pos > n - fc.lg.releg ? ' z-down' : !fc.lg.promo && pos === 1 ? ' z-top' : '');
     // Montada uma vez por tabela; depois as linhas só trocam de lugar e de números (os escudos não piscam)
-    if (tblKey !== view) {
+    const fresh = tblKey !== view;
+    if (fresh) {
       tblKey = view; rowEl = {};
       box.innerHTML = '<div class="fs-th"><i>#</i><span>Time</span><b>P</b><em>J</em><em>V</em><em>SG</em></div><div class="fs-rows"></div>' +
         '<p class="fs-legend">' + (view === 'cont' ? '<span class="z-up">Mata-mata</span>' : (fc.lg.promo ? '<span class="z-up">Acesso</span>' : '<span class="z-top">Título</span>') + (fc.lg.releg ? '<span class="z-down">Rebaixamento</span>' : '')) + '</p>';
@@ -93,8 +94,12 @@
       ch[0].textContent = j + 1; ch[3].textContent = x.p; ch[4].textContent = x.j; ch[5].textContent = x.v; ch[6].textContent = (sg > 0 ? '+' : '') + sg;
       if (list.children[j] !== d) list.insertBefore(d, list.children[j] || null);
     });
+    // Só ao montar: a sua linha no meio do quadro (depois, quem rola é você). Medida pela tela, dividida pelo zoom
     const mine = box.querySelector('.me');
-    if (mine && box.scrollHeight > box.clientHeight) box.scrollTop = mine.offsetTop - box.clientHeight / 2;
+    if (fresh && mine && box.scrollHeight > box.clientHeight) {
+      const zk = U.zk ? U.zk() : 1, a = mine.getBoundingClientRect(), b = box.getBoundingClientRect();
+      box.scrollTop += (a.top - b.top) / zk - box.clientHeight / 2 + a.height / zk / 2;
+    }
     return rows.findIndex(x => x.i === 0) + 1;
   }
   function tabs() {
@@ -251,8 +256,8 @@
     $('fc-fast').onclick = () => { fast = !fast; $('fc-fast').textContent = fast ? 'Velocidade normal' : 'Mais rápido'; $('fc-fast').classList.toggle('on', fast); };
     $('fc-skip').onclick = () => { t = end; frame(); done(); };
     if ($('fc-evo')) $('fc-evo').remove(); // evoluir só entre os jogos
-    // Ao vivo: no celular, a tabela mexendo (a rodada fica na aba ao lado); em tela larga, a rodada
-    nav(wide() ? 'round' : pane === 'round' ? 'round' : 'tbl');
+    // Ao vivo: a rodada primeiro (a tabela mexendo fica na aba ao lado; em tela larga, do lado)
+    nav(out.others.length ? 'round' : null);
     $('fc-match').scrollIntoView({ block: 'nearest' });
     sfx('whistle');
     const liveTab = () => ({ [view]: games.map(([a, b, g]) => [a, b].concat(part(g, t))) });

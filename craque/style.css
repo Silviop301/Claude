@@ -4540,7 +4540,7 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .fc[data-tab="tbl"] .fc-pane[data-p="tbl"], .fc[data-tab="cal"] .fc-pane[data-p="cal"], .fc[data-tab="comp"] .fc-pane[data-p="comp"],
 .fc[data-tab="me"] .fc-pane[data-p="me"], .fc[data-tab="round"] .fc-pane[data-p="round"] { display: block; }
 /* No celular a tabela rola dentro dela (com a sua linha à vista), para a tela não virar uma lista comprida */
-.fc .fs-tbl { max-height: min(60svh, 400px); overflow-y: auto; scrollbar-width: thin; }
+.fc .fs-tbl { max-height: min(60svh, 400px); overflow-y: auto; scrollbar-width: thin; overflow-anchor: none; }
 .fc-tabs .seg button { min-height: 36px; font-size: 13px; }
 @media (min-width: 1000px) and (min-height: 560px) {
   .fc .fs-side.fc-pane { display: block; }
