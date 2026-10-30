@@ -4660,6 +4660,24 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 #fc-acts .fc-req { margin: 0; color: var(--tx-2); }
 #fc-acts .fc-req.ok { color: var(--up); }
 #fc-acts .fc-req.no { color: var(--tx-3); }
+.fc-own-tag.old { color: var(--tx-4); }
+.fc-love { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 36px; }
+.fc-love span { font: 700 15px var(--display); color: var(--tx-1); }
+.fc-love b { font: 800 18px var(--display); color: var(--tx-1); }
+.fc-love b.up { color: var(--up); }
+.fc-love b.down { color: var(--down); }
+.fc-bet-g { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 6px 0; font: 700 15px var(--display); color: var(--tx-1); }
+.fc-bet-g .crest.xs { margin: 0; }
+.fc-bet-o { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.fc-bet-o button { display: grid; gap: 2px; justify-items: center; min-height: 56px; padding: 6px 4px; border-radius: var(--r-sm); border: 1px solid var(--panel-line); background: var(--panel); color: var(--tx-1); cursor: pointer; }
+.fc-bet-o button small { font: 600 12px/1.2 var(--body); color: var(--tx-3); text-align: center; overflow: hidden; text-overflow: ellipsis; max-width: 100%; white-space: nowrap; }
+.fc-bet-o button b { font: 800 18px var(--display); }
+.fc-bet-o button.on { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+.fc-bet-o button.on small { color: var(--ink-2); }
+.fc-bet-s { display: flex; }
+.fc-bet-s button { flex: 1 1 0; min-height: 40px; font-size: 14px; }
+.fc-bet-go { margin: 0; }
+.fc-bet-on { margin: 0; font: var(--t-small); color: var(--tx-2); }
 /* ----- fim V8 ----- */
 
 /* ===== V9 · Perfil (ui/profile.js): nível, metas da semana, Domínio mundial e números de todas as carreiras ===== */
