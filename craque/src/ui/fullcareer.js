@@ -136,6 +136,95 @@
     $('fc-wkgo').onclick = () => { if (G.c.fc.wkDue) { S.fcWeek(G.c, myPick()); sfx('tap'); save(); bar(); } unpick(); hub(); };
   }
 
+
+  // ---------- o jogo minuto a minuto: onde está a bola e a sua nota ----------
+  // Só apresentação: parte do resultado que o motor já decidiu (gols, nota final, defesas, desarmes) e conta o caminho até ele.
+  // bx[t] = posição da bola de 0 (sua área) a 100 (área deles); nota[t] = sua nota até o minuto t; lances = o que você fez.
+  const LANCES = {
+    up: { ATA: ['Bom drible na entrada da área', 'Finalização perigosa, o goleiro espalma', 'Ganha a dividida e sai jogando', 'Puxa o contra-ataque'],
+      MEI: ['Lançamento perfeito', 'Bela tabela pelo meio', 'Rouba a bola no meio-campo', 'Chute de fora que assusta'],
+      ZAG: ['Corte providencial', 'Antecipação na hora certa', 'Ganha pelo alto na área', 'Sai jogando com classe'],
+      GOL: ['Sai bem do gol e fica com a bola', 'Reposição rápida que vira ataque', 'Segura firme o cruzamento', 'Fecha o ângulo e o atacante erra'] },
+    down: { ATA: ['Perde a bola na frente', 'Chuta torto, longe do gol', 'Fica em impedimento', 'Some do jogo por uns minutos'],
+      MEI: ['Erra o passe e cede o contra-ataque', 'Perde a dividida', 'Cartão amarelo por falta boba', 'Lento na saída de bola'],
+      ZAG: ['Leva drible na lateral', 'Falta perigosa na entrada da área', 'Cartão amarelo', 'Perde o atacante de vista'],
+      GOL: ['Rebate a bola para o meio da área', 'Sai mal no cruzamento', 'Reposição errada', 'Hesita na saída'] } };
+  function flowOf(c, x, out) {
+    const m = out.my, me = x.home ? 'h' : 'a', fc = c.fc;
+    const r = S.rng(((Number(c.tseed) || 1) * 31 + fc.season * 977 + fc.i * 7919) >>> 0);
+    const N = 100, nota = new Array(N + 1).fill(6), bx = new Array(N + 1).fill(50), lances = [];
+    if (!m) return { nota, bx, lances, on: false };
+    const pos = c.pos, def = pos === 'GOL' || pos === 'ZAG';
+    const steps = [], usedTxt = new Set(); // [minuto, variação, texto, bom]
+    const one = list => { const free = list.filter(t => !usedTxt.has(t)), t = r.pick(free.length ? free : list); usedTxt.add(t); return t; };
+    if (m.on) {
+      m.ev.forEach(e => {
+        if (e.me) steps.push([e.m, 1, 'Gol!', 1]);
+        else if (e.as) steps.push([e.m, 0.6, 'Assistência para o gol', 1]);
+        else if (e.s === me) steps.push([e.m, 0.1, '', 1]);
+        else steps.push([e.m, def ? -0.4 : -0.2, def ? 'Gol sofrido' : '', 0]);
+      });
+      const spot = () => 3 + Math.floor(r() * 86);
+      for (let i = 0; i < (m.saves || 0); i++) steps.push([spot(), 0.2, 'Defesa difícil', 1]);
+      for (let i = 0; i < Math.min(4, m.tackles || 0); i++) steps.push([spot(), 0.12, 'Desarme limpo', 1]);
+      // O resto da nota vem de lances soltos, a favor ou contra, até fechar na nota final do motor
+      let rest = m.rating - 6 - steps.reduce((a, s) => a + s[1], 0);
+      const n = 2 + Math.floor(r() * 3), pool = LANCES[rest >= 0 ? 'up' : 'down'][pos] || LANCES.up.ATA;
+      for (let i = 0; i < n; i++) steps.push([spot(), rest / n, one(pool), rest >= 0 ? 1 : 0]);
+      // Um lance contra e um a favor que se anulam: a nota balança mesmo num jogo morno
+      if (r() < 0.8) { const d = 0.1 + r() * 0.15; steps.push([spot(), d, one(LANCES.up[pos]), 1]); steps.push([spot(), -d, one(LANCES.down[pos]), 0]); }
+      steps.sort((a, b) => a[0] - b[0]);
+      let v = 6, k = 0;
+      for (let t = 0; t <= N; t++) {
+        while (k < steps.length && steps[k][0] === t) { v += steps[k][1]; if (steps[k][2]) lances.push({ m: t, txt: steps[k][2], up: steps[k][3], d: steps[k][1] }); k++; }
+        nota[t] = Math.max(3, Math.min(10, v));
+      }
+      const end = Math.max(90, ...m.ev.map(e => e.m)); for (let t = end; t <= N; t++) nota[t] = m.rating;
+    }
+    // A bola: deriva para quem é mais forte, corre para a área antes de cada gol e volta ao meio depois
+    const mine = D.CLUB_BY_ID[c.club], opp = x.vs && D.CLUB_BY_ID[x.vs];
+    const bias = opp ? Math.max(-1.5, Math.min(1.5, (mine.strength - opp.strength) / 6)) : 0;
+    const pull = new Array(N + 1).fill(null);
+    m.ev.forEach(e => { const tgt = e.s === me ? 96 : 4; for (let t = Math.max(0, e.m - 3); t <= e.m; t++) pull[t] = tgt; });
+    lances.forEach(l => { if (pull[l.m] === null) pull[l.m] = def ? (l.up ? 22 : 12) : (l.up ? 80 : 58); });
+    let b = 50;
+    for (let t = 0; t <= N; t++) {
+      if (pull[t] !== null) b += (pull[t] - b) * 0.55;
+      else b += (r() - 0.5) * 34 + bias * 3 + (50 - b) * 0.12;
+      b = Math.max(3, Math.min(97, b)); bx[t] = Math.round(b);
+      if (m.ev.some(e => e.m === t - 1)) b = 50; // saída de bola
+    }
+    return { nota, bx, lances, on: !!m.on };
+  }
+  function flowBox(c, x, f) {
+    const me = esc(nameOf(c.club)), op = esc(nameOf(x.vs));
+    return '<div class="fl-pitch" aria-hidden="true"><s class="mid"></s><s class="ar l"></s><s class="ar r"></s><span class="fl-l">' + me + '</span><span class="fl-r">' + op + '</span><i class="fl-ball" id="fl-ball"></i></div>' +
+      '<div class="fl-row"><p class="fl-zone" id="fl-zone">Bola rolando</p><p class="fl-pos">Posse <b id="fl-pos">50%</b></p></div>' +
+      (f.on ? '<div class="fl-me"><div class="fl-n"><small>Sua nota</small><b id="fl-n">6,0</b><em id="fl-d"></em></div><ul class="fl-lc" id="fl-lc"></ul></div>'
+        : '<p class="fl-off">' + (x.injury ? 'Você está fora, lesionado.' : 'Você está no banco.') + '</p>');
+  }
+  function flowAt(c, x, f, t, seen) {
+    const ball = $('fl-ball'); if (!ball) return;
+    const b = f.bx[Math.min(t, 100)];
+    ball.style.left = b + '%';
+    const me = nameOf(c.club), op = nameOf(x.vs);
+    $('fl-zone').textContent = b >= 75 ? 'Ataque do ' + me : b >= 58 ? me + ' no campo de ataque' : b <= 25 ? 'Pressão do ' + op : b <= 42 ? op + ' no ataque' : 'Disputa no meio-campo';
+    $('fl-zone').className = 'fl-zone' + (b >= 75 ? ' up' : b <= 25 ? ' down' : '');
+    let own = 0; for (let k = 0; k <= t && k <= 100; k++) if (f.bx[k] >= 50) own++;
+    $('fl-pos').textContent = Math.round(own / (Math.min(t, 100) + 1) * 100) + '%';
+    if (!f.on) return;
+    const n = f.nota[Math.min(t, 100)], p = f.nota[Math.max(0, Math.min(t, 100) - 1)];
+    $('fl-n').textContent = rate(n);
+    $('fl-n').className = n >= 7 ? 'up' : n < 6 ? 'down' : '';
+    f.lances.filter(l => l.m <= t && !seen.has(l)).forEach(l => {
+      seen.add(l);
+      $('fl-d').textContent = (l.d > 0 ? '▲ ' : '▼ ') + rate(Math.abs(l.d)); $('fl-d').className = l.d > 0 ? 'up' : 'down';
+      $('fl-lc').insertAdjacentHTML('afterbegin', '<li class="' + (l.up ? 'up' : 'down') + '"><i>' + clock(l.m) + '</i>' + esc(l.txt) + '</li>');
+      const li = $('fl-lc').children; while (li.length > 3) li[li.length - 1].remove();
+    });
+    if (n === p && t > 0 && !f.lances.some(l => l.m > t - 4 && l.m <= t)) $('fl-d').textContent = '';
+  }
+
   // ---------- jogo ao vivo ----------
   // Tela própria: o jogo, a rodada e a tabela (do lado em tela larga)
   function matchView() {
@@ -145,6 +234,7 @@
         '<div class="fs-main">' +
           '<div class="eyebrow">Temporada ' + (year()) + ' · ' + esc(nameOf(c.club)) + '</div><h2 id="fc-h"></h2>' +
           '<div class="fs-match" id="fc-match"></div>' +
+          '<div class="fc-flow" id="fc-flow"></div>' +
           '<div class="fc-wk" id="fc-wk"></div>' +
           '<div class="fs-acts" id="fc-acts"></div>' +
           '<div class="fs-round" id="fc-round"></div>' +
@@ -460,6 +550,8 @@
     let t = 0, half = false, timer = 0;
     $('fc-h').textContent = nx.compName + ' · ao vivo';
     $('fc-match').innerHTML = card('live', x, 0);
+    const fl = x.vs && out.my ? flowOf(c, x, out) : null, flSeen = new Set();
+    if (fl) $('fc-flow').innerHTML = flowBox(c, x, fl);
     weekBox(true);
     // Outros jogos da rodada (liga e grupo); na copa e no mata-mata, os outros confrontos da fase
     $('fc-round').innerHTML = out.others.length ? '<div class="fs-rlbl">' + (lg ? 'Outros jogos da rodada' : grp ? 'O outro jogo do grupo' : 'Outros confrontos da fase') + '</div>' +
@@ -476,6 +568,7 @@
         const [h, a] = x.score(t); $('fc-sh').textContent = h; $('fc-sa').textContent = a;
         out.my.ev.filter(e => e.m === t).forEach(e => { $(e.s === 'h' ? 'fc-evh' : 'fc-eva').insertAdjacentHTML('beforeend', play1(e)); if ((e.s === 'h') === nx.home) sfx('cheer'); });
       }
+      if (fl) flowAt(c, x, fl, t, flSeen);
       let goal = false;
       document.querySelectorAll('#fc-round .fs-rr').forEach(el => {
         const g = out.others[+el.dataset.k], [h, a] = part(g, t);
