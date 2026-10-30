@@ -4741,19 +4741,33 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .prc-hand { margin: 0; font: 400 19px/1.15 'Caveat Brush', var(--body); color: var(--paper); }
 .prc-hand span { font-size: 16px; color: var(--tx-2); }
 .prc-pitch-w { display: flex; gap: 8px; }
-.prc-pitch { position: relative; flex: 1; height: 168px; border: 2px solid rgba(251,248,239,.7); border-radius: 4px; }
+.prc-pitch { position: relative; flex: 1; height: 262px; border: 2px solid rgba(251,248,239,.7); border-radius: 4px; }
 .prc-pitch s { position: absolute; border: 2px solid rgba(251,248,239,.45); text-decoration: none; }
 .prc-pitch .mid { left: 0; right: 0; top: 50%; border-width: 2px 0 0; }
-.prc-pitch .ctr { left: 50%; top: 50%; width: 38px; height: 38px; margin: -19px 0 0 -19px; border-radius: 50%; }
-.prc-pitch .box.t { left: 28%; right: 28%; top: -2px; height: 24px; border-top: 0; }
-.prc-pitch .box.b { left: 28%; right: 28%; bottom: -2px; height: 24px; border-bottom: 0; }
-.prc-pitch i, .prc-bench i { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--paper); box-shadow: 0 2px 0 rgba(0,0,0,.35); font: 700 12px/22px var(--body); color: var(--ink); text-align: center; font-style: normal; }
-.prc-pitch i.me, .prc-bench i.me { width: 30px; height: 30px; margin: -15px 0 0 -15px; line-height: 26px; background: var(--gold); border: 2px solid var(--ink); font-size: 14px; z-index: 1; }
-.prc-pitch i.me.tbd { opacity: .6; border-style: dashed; }
-.prc-bench { width: 40px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.prc-bench small { font: 400 15px 'Caveat Brush', var(--body); color: var(--paper); }
-.prc-bench i { position: static; margin: 0; background: #A9BBAF; }
-.prc-bench i.me { margin: 0; }
+.prc-pitch .ctr { left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; }
+.prc-pitch .box.t { left: 28%; right: 28%; top: -2px; height: 30px; border-top: 0; }
+.prc-pitch .box.b { left: 28%; right: 28%; bottom: -2px; height: 30px; border-bottom: 0; }
+.prc-pitch i, .prc-bench i { position: absolute; width: 26px; height: 26px; margin: -18px 0 0 -13px; border-radius: 50%; background: var(--paper); box-shadow: 0 2px 0 rgba(0,0,0,.35); font: 800 12px/26px var(--body); color: var(--ink); text-align: center; font-style: normal; }
+.prc-pitch i em, .prc-bench i em { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); margin-top: 1px; font: 400 13px/1 'Caveat Brush', var(--body); color: var(--paper); white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+.prc-pitch i.me, .prc-bench i.me { width: 30px; height: 30px; margin: -20px 0 0 -15px; line-height: 26px; background: var(--gold); border: 2px solid var(--ink); font-size: 14px; z-index: 1; }
+.prc-pitch i.me em, .prc-bench i.me em { color: var(--gold); }
+.prc-pitch i.me.tbd { opacity: .75; border-style: dashed; }
+.prc-pitch i.cv, .prc-bench i.cv { box-shadow: 0 0 0 2px var(--gold), 0 2px 0 rgba(0,0,0,.35); }
+.prc-bench { width: 46px; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.prc-bench small { font: 400 15px 'Caveat Brush', var(--body); color: var(--paper); margin-bottom: -10px; }
+.prc-bench i { position: relative; margin: 0; background: #A9BBAF; }
+.prc-bench i.me, .prc-bench i.cv { margin: 0; }
+.prc-bench i.out { background: var(--down); color: var(--paper); }
+.prc-bench i em { max-width: 58px; overflow: hidden; text-overflow: ellipsis; }
+.prc-duel { display: grid; grid-template-columns: auto auto 1fr auto; align-items: baseline; gap: 2px 8px; padding: 8px 10px; border: 2px dashed rgba(251,248,239,.45); border-radius: 6px; font: 400 17px/1.15 'Caveat Brush', var(--body); color: var(--paper); }
+.prc-duel > span { grid-column: 1 / -1; color: var(--tx-3); font-size: 15px; }
+.prc-duel b { font-weight: 400; }
+.prc-duel b:first-of-type { color: var(--gold); }
+.prc-duel s { text-decoration: none; color: var(--tx-3); }
+.prc-duel b:nth-of-type(2) { grid-column: 3; justify-self: start; }
+.prc-duel strong { grid-column: 4; grid-row: 2 / 4; align-self: center; font: 800 32px/1 var(--display); color: var(--gold); text-align: right; }
+.prc-duel small { grid-column: 1 / 4; font: 400 15px/1.1 'Caveat Brush', var(--body); color: var(--tx-2); }
+.prc-duel p { grid-column: 1 / -1; margin: 2px 0 0; font: 500 13px/1.35 var(--body); color: var(--tx-2); }
 .prc-st.ok { color: var(--gold); }
 .prc-st.no { color: var(--down); }
 .prc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -4793,7 +4807,7 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 @media (min-width: 1000px) and (min-height: 560px) {
   #app:has(#screen .prc) { max-width: 940px; }
   .prc-cols { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; gap: 20px; }
-  .prc-pitch { height: 300px; }
+  .prc-pitch { height: 320px; }
 }
 
 /* Telas dos atalhos (treino, tabela, jogos, ficha, loja, Zé) */

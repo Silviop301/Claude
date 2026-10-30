@@ -10276,5 +10276,14 @@
  "<p class=\"lead\">Crie um garoto de 16 anos, escolha os clubes, decida e cobre os lances. No fim, a carta dele diz se virou lenda.</p>": "<p class=\"lead\">Create a 16-year-old kid, pick the clubs, make the calls and take the shots. In the end, his card tells if he became a legend.</p>",
  "Carreira jogo a jogo": "Match-by-match career",
  "Carreira rápida": "Quick career",
- "</div><h2 class=\"cr-title\">Quem é o garoto?</h2>": "</div><h2 class=\"cr-title\">Who is the kid?</h2>"
+ "</div><h2 class=\"cr-title\">Quem é o garoto?</h2>": "</div><h2 class=\"cr-title\">Who is the kid?</h2>",
+ " style=\"left:": " style=\"left:",
+ "Energia abaixo de ": "Energy below ",
+ ": o técnico pode te poupar.": ": the coach may rest you.",
+ "Sobe com a sua nota geral e com o técnico do seu lado.": "Goes up with your overall rating and the coach on your side.",
+ "Sobe com o técnico do seu lado.": "Goes up with the coach on your side.",
+ "A vaga é sua: mantenha a energia.": "The spot is yours: keep your energy up.",
+ "<div class=\"prc-duel\"><span>Briga pela vaga</span><b>Você ": "<div class=\"prc-duel\"><span>Fight for the spot</span><b>You ",
+ "chance de começar": "chance to start",
+ "chance de começar o jogo seguinte": "chance to start the next game"
 }

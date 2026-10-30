@@ -346,6 +346,13 @@
   S.FC_REQ = REQ;
 
 
+  // Chance de começar o próximo jogo (a mesma conta da escalação; com energia abaixo de 30 o técnico poupa metade das vezes)
+  S.fcStartP = function (c) {
+    const fc = c.fc, club = fc && D.CLUB_BY_ID[fc.club];
+    if (!club) return 0;
+    const p = myRates(c, club).share;
+    return fc.en !== undefined && fc.en < EN_OUT ? p / 2 : p;
+  };
   function myRates(c, club) {
     const E = S.eff(c), o = S.ovr(c), role = S.role(c, club), tm = id => S.tm(c, id), sy = id => S.syn(c, id);
     const share = clamp(role.share + c.mod.min + (c.promise || 0) + (c.rel.coach - REL0) / 90 + (c.age <= 17 ? -0.2 : 0) + (c.farewell ? 0.1 : 0), 0.05, 0.97);
