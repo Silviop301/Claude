@@ -10475,5 +10475,7 @@
  "<section class=\"hm-sec\"><h2>Escolha o jogo</h2><div class=\"hm-tks\">": "",
  "<span class=\"tk-t\"><b>Modo Treinador</b><small>Escale e comande o time</small></span>": "",
  "<span class=\"tk-stamp\">EM BREVE</span>": "",
- "<h2 class=\"tab-h\">Minhas carreiras</h2>": ""
+ "<h2 class=\"tab-h\">Minhas carreiras</h2>": "",
+ "Ir ao lance": "Skip to the big moment",
+ "Lance decisivo · ": "Big moment · "
 }
