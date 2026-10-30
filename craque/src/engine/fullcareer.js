@@ -272,9 +272,9 @@
 
   // ---------- apostas (só dinheiro do jogo) ----------
   // A rodada seguinte da liga inteira (menos o seu jogo), com quatro mercados por jogo: resultado, ambos marcam,
-  // mais de 2,5 gols e placar exato. Cupom de um jogo ou múltipla (até 4 jogos, as odds se multiplicam).
+  // mais de 2,5 gols e placar exato. Cupom de um jogo ou múltipla (até 6 jogos, de campeonatos diferentes, as odds se multiplicam).
   // Atleta apostar em futebol é proibido: o "faro da federação" começa em 3% e sobe a cada aposta da temporada (até 25%).
-  const BET_RISK0 = 0.03, BET_RISK_STEP = 0.015, BET_RISK_MAX = 0.25, BET_MAX_LEGS = 4, BET_BAN = 4;
+  const BET_RISK0 = 0.03, BET_RISK_STEP = 0.015, BET_RISK_MAX = 0.25, BET_MAX_LEGS = 6, BET_BAN = 4;
   S.fcSuspended = c => !!(c.fc && c.fc.injOut > 0 && /suspensão/.test(c.fc.injName || ''));
   S.fcBetRisk = c => Math.min(BET_RISK_MAX, BET_RISK0 + BET_RISK_STEP * ((c.fc && c.fc.betN) || 0));
   S.FC_BET_BAN = BET_BAN; S.FC_BET_MAX_LEGS = BET_MAX_LEGS;
@@ -305,16 +305,32 @@
     if (m === 'cs') return pick === gh + '-' + ga;
     return false;
   };
-  // A próxima rodada da liga ainda não jogada: os jogos sem o seu time, o clássico (mais equilibrado) primeiro
+  // Outros campeonatos no cardápio do Zé: as grandes ligas de fora (e o Brasileirão, se você joga em outra liga).
+  // Os confrontos e os placares saem de um sorteio próprio da rodada (não mexem nos jogos da sua temporada)
+  const BET_LEAGUES = ['ing', 'esp', 'bra-a', 'ita', 'ale', 'arg', 'fra', 'por'];
+  const betSeed = (c, ri, k) => ((Math.imul(Number(c.tseed) || 1, 2246822519) ^ Math.imul(c.season * 131 + ri * 7 + k, 3266489917)) >>> 0);
+  function extraGames(c, ri) {
+    const own = D.CLUB_BY_ID[c.club].league, pool = BET_LEAGUES.filter(id => id !== own && D.LEAGUE_BY_ID[id]);
+    const r = S.rng(betSeed(c, ri, 1)), picks = pool.slice(0, 2).concat([pool[2 + (ri % (pool.length - 2))]]); // duas fixas e uma que muda a cada rodada
+    return picks.map((lid, k) => {
+      const ids = D.CLUBS.filter(x => x.league === lid).map(x => x.id).sort(() => r() - 0.5).slice(0, 8);
+      const games = []; for (let j = 0; j + 1 < ids.length; j += 2) games.push({ h: ids[j], a: ids[j + 1], ext: k + 1 });
+      return { name: D.LEAGUE_BY_ID[lid].name, games };
+    });
+  }
+  // Placar de um jogo de outro campeonato (sorteio próprio, igual para o mesmo jogo)
+  const extraScore = (c, ri, g) => { const r = S.rng((betSeed(c, ri, 50 + g.ext) ^ (str(g.h) * 7919 + str(g.a))) >>> 0); return simple(r, g.h, g.a, str(g.h), str(g.a)); };
+  // A próxima rodada da liga ainda não jogada: os jogos sem o seu time (o mais equilibrado primeiro) e os de outros campeonatos
   S.fcBetRound = function (c) {
     const fc = c.fc;
     if (!fc || fc.done) return null;
     const e = fc.cal.slice(fc.i).find(x => x.k === 'lg');
     if (!e) return null;
-    const games = fc.lg.rounds[e.ri].filter(([a, b]) => a !== 0 && b !== 0).map(([a, b]) => ({ h: fc.lg.ids[a], a: fc.lg.ids[b] }));
-    if (!games.length) return null;
-    games.sort((x, y) => Math.abs(str(x.h) + 2 - str(x.a)) - Math.abs(str(y.h) + 2 - str(y.a)));
-    return { ri: e.ri, games: games.map(g => Object.assign(g, { odds: S.fcBetOdds(g.h, g.a) })) };
+    const mine = fc.lg.rounds[e.ri].filter(([a, b]) => a !== 0 && b !== 0).map(([a, b]) => ({ h: fc.lg.ids[a], a: fc.lg.ids[b], ext: 0 }));
+    mine.sort((x, y) => Math.abs(str(x.h) + 2 - str(x.a)) - Math.abs(str(y.h) + 2 - str(y.a)));
+    const groups = [{ name: fc.lg.name, games: mine }].concat(extraGames(c, e.ri)).filter(g => g.games.length);
+    groups.forEach(G => G.games.forEach(g => { g.lg = G.name; g.odds = S.fcBetOdds(g.h, g.a); }));
+    return { ri: e.ri, groups, games: [].concat(...groups.map(G => G.games)) };
   };
   S.fcBetStakes = c => [1, 4, 10].map(w => Math.max(1000, Math.round((c.wage || 0) * w / 1000) * 1000));
   S.fcBets = c => (c.fc && c.fc.bets) || [];
@@ -329,7 +345,7 @@
       seen[g.h] = 1;
       const o = l.m === 'cs' ? g.odds.cs[l.pick] : (g.odds[l.m] || [])[l.pick];
       if (!o) return null;
-      L.push({ h: g.h, a: g.a, m: l.m, pick: l.pick, odd: o });
+      L.push({ h: g.h, a: g.a, m: l.m, pick: l.pick, odd: o, ext: g.ext, lg: g.lg });
     }
     const risk = S.fcBetRisk(c);
     c.money -= stake;
@@ -351,11 +367,11 @@
     c.betLog = c.betLog || { n: 0, net: 0, caught: 0, won: 0 };
     let caught = false;
     out.bets = now.map(t => {
-      const legs = t.legs.map(l => { const g = out.others.find(x => x.h === l.h && x.a === l.a) || { gh: 0, ga: 0 }; return Object.assign({}, l, { gh: g.gh, ga: g.ga, win: S.fcBetWins(l.m, l.pick, g.gh, g.ga) }); });
+      const legs = t.legs.map(l => { const g = (l.ext ? extraScore(c, t.ri, l) : out.others.find(x => x.h === l.h && x.a === l.a)) || { gh: 0, ga: 0 }; return Object.assign({}, l, { gh: g.gh, ga: g.ga, win: S.fcBetWins(l.m, l.pick, g.gh, g.ga) }); });
       const win = legs.every(l => l.win), pay = win ? Math.round(t.stake * t.odd) : 0;
       c.money = (c.money || 0) + pay;
       c.betLog.n++; c.betLog.net += pay - t.stake; if (win) c.betLog.won = (c.betLog.won || 0) + 1;
-      (c.betLog.last = c.betLog.last || []).unshift({ s: c.season, ri: t.ri, n: legs.length, net: pay - t.stake, l: legs.length === 1 ? { h: legs[0].h, a: legs[0].a, m: legs[0].m, pick: legs[0].pick } : null });
+      (c.betLog.last = c.betLog.last || []).unshift({ s: c.season, ri: t.ri, n: legs.length, net: pay - t.stake, l: legs.length === 1 ? { h: legs[0].h, a: legs[0].a, m: legs[0].m, pick: legs[0].pick, lg: legs[0].lg } : null });
       c.betLog.last.length = Math.min(c.betLog.last.length, 8);
       if (t.caught) caught = true;
       return { legs, stake: t.stake, odd: t.odd, pay, win };

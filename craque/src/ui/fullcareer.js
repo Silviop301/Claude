@@ -461,7 +461,7 @@
     return 'Placar ' + l.pick.replace('-', ' × ');
   }
   // Pernas escolhidas no cupom, na ordem dos jogos
-  function betLegs(R) { return R ? R.games.filter(g => betSel[g.h]).map(g => Object.assign({ h: g.h, a: g.a }, betSel[g.h], { odd: betSel[g.h].m === 'cs' ? g.odds.cs[betSel[g.h].pick] : g.odds[betSel[g.h].m][betSel[g.h].pick] })) : []; }
+  function betLegs(R) { return R ? R.games.filter(g => betSel[g.h]).map(g => Object.assign({ h: g.h, a: g.a, ext: g.ext, lg: g.lg }, betSel[g.h], { odd: betSel[g.h].m === 'cs' ? g.odds.cs[betSel[g.h].pick] : g.odds[betSel[g.h].m][betSel[g.h].pick] })) : []; }
   function betBox(c, R$) {
     const fc = c.fc, risk = S.fcBetRisk(c), n = fc.betN || 0;
     const faro = '<div class="ze-faro"><p><span>Faro da federação</span><b>' + pctTxt(risk) + ' de ser pego</b></p><i><u style="width:' + Math.round(risk / 0.25 * 100) + '%"></u></i>' +
@@ -472,8 +472,7 @@
     if (!R) return head + '<p class="fc-own">Sem rodada da liga pela frente.</p>';
     Object.keys(betSel).forEach(h => { if (!R.games.some(g => String(g.h) === h)) delete betSel[h]; });
     const B = (h, m, pick, lab, o) => { const s = betSel[h], on = s && s.m === m && s.pick === pick; return '<button class="ze-o' + (on ? ' on' : '') + '" data-h="' + h + '" data-m="' + m + '" data-p="' + pick + '"><small>' + esc(lab) + '</small><b>' + oddTxt(o) + '</b></button>'; };
-    const list = betAll ? R.games : R.games.slice(0, 3);
-    const games = list.map(g => {
+    const card = g => {
       const s = betSel[g.h], cs = csOpen === g.h;
       const csBtn = '<button class="ze-o ze-cs' + (s && s.m === 'cs' ? ' on' : '') + '" data-csopen="' + g.h + '"><small>Placar exato</small><b>' + (s && s.m === 'cs' ? s.pick.replace('-', ' × ') : '…') + '</b></button>';
       const k = csG[0] + '-' + csG[1];
@@ -483,8 +482,15 @@
       return '<div class="ze-g"><p>' + crest(g.h, 'xs') + '<b>' + esc(nameOf(g.h)) + ' × ' + esc(nameOf(g.a)) + '</b>' + crest(g.a, 'xs') + '</p>' +
         '<div class="ze-x">' + B(g.h, 'x', 0, nameOf(g.h), g.odds.x[0]) + B(g.h, 'x', 1, 'Empate', g.odds.x[1]) + B(g.h, 'x', 2, nameOf(g.a), g.odds.x[2]) + '</div>' +
         '<div class="ze-m">' + B(g.h, 'btts', 0, 'Ambos marcam', g.odds.btts[0]) + B(g.h, 'o25', 0, '+2,5 gols', g.odds.o25[0]) + B(g.h, 'o25', 1, '−2,5 gols', g.odds.o25[1]) + csBtn + '</div>' + csBox + '</div>';
+    };
+    // Um bloco por campeonato: o seu primeiro; fechado, cada um mostra dois jogos (e os que já estão no cupom)
+    let hidden = 0;
+    const games = R.groups.map((G, k) => {
+      const show = betAll ? G.games : G.games.filter((g, j) => j < 2 || betSel[g.h] || csOpen === g.h);
+      hidden += G.games.length - show.length;
+      return '<h3 class="ze-rd">' + (k ? esc(G.name) : 'Rodada ' + (R.ri + 1) + ' · ' + esc(G.name)) + '</h3>' + show.map(card).join('');
     }).join('');
-    const more = R.games.length > 3 ? '<button class="btn ghost ze-more" id="ze-more">' + (betAll ? 'Mostrar menos' : 'Mais ' + (R.games.length - 3) + ' jogos da rodada') + '</button>' : '';
+    const more = hidden || betAll ? '<button class="btn ghost ze-more" id="ze-more">' + (betAll ? 'Mostrar menos' : 'Mais ' + hidden + ' jogos') + '</button>' : '';
     // Cupom: odd multiplicada, chance de acertar (sem a margem da casa) e o risco desta aposta
     const legs = betLegs(R), st = S.fcBetStakes(c);
     if (!st.includes(betStake)) betStake = st[0];
@@ -492,12 +498,12 @@
     if (legs.length) {
       const o = Math.round(legs.reduce((s, l) => s * l.odd, 1) * 100) / 100, ch = legs.reduce((s, l) => s * 0.9 / l.odd, 1);
       slip = '<div class="ze-slip"><p><span>' + (legs.length === 1 ? 'Cupom simples' : 'Múltipla de ' + legs.length) + '</span><b>odd ' + oddTxt(o) + '</b></p>' +
-        '<ul>' + legs.map(l => '<li>' + esc(nameOf(l.h)) + ' × ' + esc(nameOf(l.a)) + ': <b>' + esc(legTxt(l)) + '</b> <em>' + oddTxt(l.odd) + '</em></li>').join('') + '</ul>' +
+        '<ul>' + legs.map(l => '<li>' + (l.ext ? '<small>' + esc(l.lg) + '</small> ' : '') + esc(nameOf(l.h)) + ' × ' + esc(nameOf(l.a)) + ': <b>' + esc(legTxt(l)) + '</b> <em>' + oddTxt(l.odd) + '</em></li>').join('') + '</ul>' +
         '<div class="seg ze-stk">' + st.map(v => '<button data-s="' + v + '"' + (v === betStake ? ' class="on"' : '') + ((c.money || 0) >= v ? '' : ' disabled') + '>' + R$(v) + '</button>').join('') + '</div>' +
         '<button class="btn" id="ze-go"' + ((c.money || 0) < betStake ? ' disabled' : '') + '>Apostar ' + R$(betStake) + ' · paga ' + R$(Math.round(betStake * o)) + '</button>' +
-        '<small>Chance de acertar: ' + pctTxt(ch) + '. Chance de ser pego nesta aposta: ' + pctTxt(risk) + '.' + (legs.length < S.FC_BET_MAX_LEGS ? ' Toque em outro jogo para fazer múltipla.' : '') + '</small></div>';
+        '<small>Chance de acertar: ' + pctTxt(ch) + '. Chance de ser pego nesta aposta: ' + pctTxt(risk) + '.' + (legs.length < S.FC_BET_MAX_LEGS ? ' Junte jogos de campeonatos diferentes para fazer múltipla.' : '') + '</small></div>';
     }
-    return head + '<h3 class="ze-rd">Rodada ' + (R.ri + 1) + ' · ' + esc(fc.lg.name) + '</h3>' + games + more + slip;
+    return head + games + more + slip;
   }
   function extratoBox(c, R$) {
     const L = c.betLog || { n: 0, net: 0, caught: 0, won: 0 };
