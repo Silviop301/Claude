@@ -105,6 +105,9 @@ function stepInPage(opts) {
   if ($('fs-done')) return label('liga:resumo ' + click($('fs-done')));
   // Carreira Completa integrada (ui/fullcareer.js): jogar, simular, evoluir, pular o ao vivo, festa da taça
   if ($('fc-go')) return label('completa:taca ' + click($('fc-go')));
+  // Jogo ao vivo: troca o esforço e às vezes toma o energético antes de pular
+  if ($('fc-skip') && q('.fc-ef-seg button') && Math.random() < 0.3) return label('completa:esforco ' + click(rnd([...document.querySelectorAll('.fc-ef-seg button')])));
+  if ($('fc-skip') && q('#fc-drink:not(:disabled)') && Math.random() < 0.2) return label('completa:energetico ' + click($('fc-drink')));
   if ($('fc-skip')) return label('completa:aovivo ' + click(Math.random() < 0.3 ? $('fc-fast') : $('fc-skip')));
   if ($('fc-next')) return label('completa:proximo ' + click($('fc-next')));
   if (q('.fc-iv:not(.off)') && Math.random() < 0.7) return label('completa:compra ' + click(q('.fc-iv:not(.off)')));

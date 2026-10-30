@@ -741,6 +741,30 @@
     if (fc.i >= fc.cal.length) S.fcFinish(c);
     return out;
   };
+  // Esforço no jogo ao vivo (escolhido na tela, minuto a minuto): gasta mais ou menos energia e mexe na nota.
+  // O placar não muda (já está decidido). Energético: uma lata por jogo, devolve energia e custa dinheiro da carreira.
+  S.FC_EFF = [{ id: 'low', name: 'Poupar', en: 0.6, r: -0.3 }, { id: 'mid', name: 'Normal', en: 1, r: 0 }, { id: 'high', name: 'Tudo', en: 1.5, r: 0.3 }];
+  S.FC_DRINK_EN = 12;
+  S.fcDrinkPrice = c => price(c, 0.25, 1500);
+  // mins: minutos jogados em cada nível (na ordem de S.FC_EFF); drink: tomou o energético. Volta { extra, d } ou null
+  S.fcEffort = function (c, out, mins, drink) {
+    const fc = c.fc, my = out && out.my;
+    if (!fc || !my || !my.on || fc.en === undefined || out.en === undefined) return null;
+    const tot = mins.reduce((a, b) => a + b, 0);
+    const mult = tot ? mins.reduce((a, m, k) => a + m * S.FC_EFF[k].en, 0) / tot : 1, dr = tot ? mins.reduce((a, m, k) => a + m * S.FC_EFF[k].r, 0) / tot : 0;
+    if (drink && (c.money || 0) < S.fcDrinkPrice(c)) drink = false;
+    if (drink) c.money -= S.fcDrinkPrice(c);
+    const extra = Math.round(out.en * (mult - 1)) - (drink ? S.FC_DRINK_EN : 0);
+    const en1 = clamp(fc.en - extra, 0, 100);
+    out.en += fc.en - en1; fc.en = en1;
+    const r1 = clamp(Math.round((my.rating + dr) * 10) / 10, 4.5, 10), d = Math.round((r1 - my.rating) * 10) / 10;
+    if (d) {
+      my.rating = r1; fc.acc.rsum += d;
+      const L = fc.log[fc.log.length - 1]; if (L) L.rating = r1;
+      fc.fo = clamp(Math.round(((fc.fo || 0) + d * 0.4) * 100) / 100, -2, 2);
+    }
+    return { extra, d, drink: !!drink };
+  };
   // Lance decisivo do jogo resolvido (minigame ou a chance da carta): o resultado do jogo segue ele.
   // Fica em c.mod.moment o lance mais importante do ano, para as manchetes e o resumo da temporada
   const MOM_W = { cont: 5, cup: 4, title: 4, acesso: 3, classico: 1 };

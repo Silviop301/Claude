@@ -12,6 +12,7 @@
   const clock = t => (t > 90 ? '90+' + (t - 90) : t) + "'";
   const PACE = [330, 110]; // milissegundos por minuto de jogo: normal (~30 s) e rápido (~10 s)
   let fast = false;
+  let eff = null; // esforço do jogo ao vivo: nível escolhido, minutos em cada nível (S.FC_EFF) e o energético
   // Em tela larga a tabela fica ao lado do jogo ao vivo
   const wide = () => window.matchMedia && window.matchMedia('(min-width: 1000px) and (min-height: 560px)').matches;
 
@@ -242,7 +243,7 @@
     let own = 0; for (let k = 0; k <= t && k <= 100; k++) if (f.bx[k] >= 50) own++;
     $('fl-pos').textContent = Math.round(own / (Math.min(t, 100) + 1) * 100) + '%';
     if (!f.on) return;
-    const n = f.nota[Math.min(t, 100)], p = f.nota[Math.max(0, Math.min(t, 100) - 1)];
+    const n = Math.max(4.5, Math.min(10, f.nota[Math.min(t, 100)] + (f.off || 0))), p = f.nota[Math.max(0, Math.min(t, 100) - 1)] + (f.off || 0); // off: o esforço até agora
     $('fl-n').textContent = rate(n);
     $('fl-n').className = n >= 7 ? 'up' : n < 6 ? 'down' : '';
     f.lances.filter(l => l.m <= t && !seen.has(l)).forEach(l => {
@@ -738,10 +739,11 @@
     if (doneMin()) return live({ from: doneMin() }); // lance já jogado (saiu e voltou ao jogo)
     if (nx.moment) {
       const m = nx.moment;
-      if (m.started || U.cfg.moments === 'auto') { S.fcAutoMoment(G.c, m); save(); return live(); }
-      save();
+      if (m.started || U.cfg.moments === 'auto') { S.fcAutoMoment(G.c, m); save(); eff = null; return live(); }
+      save(); eff = null;
       return live({ stop: m });
     }
+    eff = null;
     live();
   }
   // Depois do lance (ui/match.js chama): o jogo ao vivo continua do minuto do lance, com o resultado que ele decidiu
@@ -791,7 +793,30 @@
     $('fc-match').innerHTML = card('live', x, t);
     const fl = x.vs && out.my ? flowOf(c, x, out) : null, flSeen = new Set();
     if (fl) { $('fc-flow').innerHTML = flowBox(c, x, fl); fl.lances.forEach(l => { if (l.m <= t0) flSeen.add(l); }); }
-    weekBox(true);
+    // Energia descendo minuto a minuto e o esforço escolhido na hora (quem está em campo); senão, o quadro de sempre
+    const onPitch = !!(out.my && out.my.on && c.fc.en !== undefined && out.en !== undefined), enBase = out.en || 0;
+    if (!eff) eff = { lvl: 1, mins: [0, Math.max(0, t0), 0], drink: false };
+    const spentOf = () => eff.mins.reduce((a, m, k) => a + m * S.FC_EFF[k].en, 0) * enBase / 90;
+    const lvlOf = e => (e < S.FC_EN_OUT ? 'out' : e < S.FC_EN_LOW ? 'low' : 'ok');
+    const enNow = () => Math.max(0, Math.min(100, Math.round((x.en0 === undefined ? 100 : x.en0) - spentOf() + (eff.drink ? S.FC_DRINK_EN : 0))));
+    function effBox() {
+      const e = enNow(), dp = S.fcDrinkPrice(c), canDrink = !eff.drink && t < 60 && (c.money || 0) >= dp;
+      $('fc-wk').className = 'fc-wk fc-ef';
+      $('fc-wk').innerHTML = '<div class="fc-st"><span>Energia</span><div class="fc-en ' + lvlOf(e) + '"><i style="width:' + e + '%"></i></div><b class="' + lvlOf(e) + '">' + e + '</b></div>' +
+        '<div class="fc-ef-row"><span>Esforço</span><div class="seg fc-ef-seg">' + S.FC_EFF.map((f, k) => '<button data-e="' + k + '"' + (k === eff.lvl ? ' class="on"' : '') + '>' + f.name + '</button>').join('') + '</div></div>' +
+        '<p class="fc-ef-hint">' + ['Poupa energia, mas a nota cai um pouco.', 'Gasto normal de energia.', 'Nota sobe, mas a energia desce bem mais rápido.'][eff.lvl] + '</p>' +
+        (eff.drink ? '<p class="fc-ef-hint up">Energético tomado: +' + S.FC_DRINK_EN + ' de energia.</p>' : t < 60 ? '<button class="btn ghost fc-drink" id="fc-drink"' + (canDrink ? '' : ' disabled') + '>Energético pro 2º tempo · R$ ' + U.money(dp) + '<small>+' + S.FC_DRINK_EN + ' de energia' + ((c.money || 0) < dp ? ' · sem dinheiro' : '') + '</small></button>' : '');
+      $('fc-wk').querySelectorAll('[data-e]').forEach(b => { b.onclick = () => { sfx('tap'); eff.lvl = +b.dataset.e; effBox(); }; });
+      if ($('fc-drink')) $('fc-drink').onclick = () => { if ((c.money || 0) < dp) return; sfx('coin'); eff.drink = true; effBox(); };
+    }
+    // Só o número e a barra (a cada minuto), sem redesenhar os botões
+    function effTick() {
+      const e = enNow(), b = document.querySelector('.fc-ef .fc-st b'), m = document.querySelector('.fc-ef .fc-en');
+      if (!b || !m) return;
+      b.textContent = e; b.className = lvlOf(e); m.className = 'fc-en ' + lvlOf(e); m.firstChild.style.width = e + '%';
+      if (t === 60 && $('fc-drink')) effBox();
+    }
+    if (onPitch) effBox(); else weekBox(true);
     // Outros jogos da rodada (liga e grupo); na copa e no mata-mata, os outros confrontos da fase
     $('fc-round').innerHTML = out.others.length ? '<div class="fs-rlbl">' + (lg ? 'Outros jogos da rodada' : grp ? 'O outro jogo do grupo' : 'Outros confrontos da fase') + '</div>' +
       out.others.map((g, k) => '<div class="fs-rr' + ((out.bets || []).some(t => t.legs.some(l => l.h === g.h && l.a === g.a)) ? ' zb' : '') + '" data-k="' + k + '"><span>' + esc(nameOf(g.h)) + '</span>' + crest(g.h, 'xs') + '<b>0 × 0</b>' + crest(g.a, 'xs') + '<span>' + esc(nameOf(g.a)) + '</span></div>').join('') : '';
@@ -810,6 +835,7 @@
         const [h, a] = x.score(o.stop ? Math.min(t, stopAt - 1) : t); $('fc-sh').textContent = h; $('fc-sa').textContent = a;
         out.my.ev.filter(e => (since !== undefined ? e.m > since && e.m <= t : e.m === t) && shown(e)).forEach(e => { $(e.s === 'h' ? 'fc-evh' : 'fc-eva').insertAdjacentHTML('beforeend', play1(e)); if ((e.s === 'h') === nx.home) sfx('cheer'); });
       }
+      if (fl && onPitch) fl.off = eff.mins.reduce((a, m, k) => a + m * S.FC_EFF[k].r, 0) / 90;
       if (fl) flowAt(c, x, fl, o.stop ? Math.min(t, stopAt - 1) : t, flSeen);
       let goal = false;
       document.querySelectorAll('#fc-round .fs-rr').forEach(el => {
@@ -824,6 +850,7 @@
       if (!$('fc-match')) return; // saiu da tela: o jogo já está salvo
       if (t === 45 && !half) { half = true; sfx('whistle'); frame(); timer = setTimeout(tick, fast ? 600 : 1800); return; }
       half = false; t++;
+      if (onPitch && t <= 90) { eff.mins[eff.lvl]++; effTick(); }
       frame();
       if (o.stop && t >= stopAt) return pause();
       if (t >= end) return done();
@@ -841,6 +868,8 @@
     function done() {
       if (finished) return; finished = true;
       clearTimeout(timer);
+      // Esforço: os minutos que faltaram (pulou para o fim) contam no nível escolhido; a energia e a nota fecham no motor
+      if (onPitch) { eff.mins[eff.lvl] += Math.max(0, 90 - eff.mins.reduce((a, b) => a + b, 0)); S.fcEffort(c, out, eff.mins, eff.drink); eff = null; save(); }
       // A tabela volta a ter o jogo somado
       if (undo) games.forEach(([a, b, g]) => add(undo === 'lg' ? c.fc.lg.tab : c.fc.cont.gtab, a, b, part(g, 99)));
       sfx('whistle');
