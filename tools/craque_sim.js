@@ -60,7 +60,7 @@ for (let n = 0; n < N; n++) {
       if (process.env.SHOP !== 'gear') for (const k of (process.env.STAFF ? process.env.STAFF.split(',') : ['video', 'pt', 'physio']).concat(c.age >= 29 && !process.env.STAFF ? ['nutri'] : [])) if (!(c.staff && c.staff[k]) && (c.money || 0) >= S.fcStaffCost(c, k) * 60) S.fcBuy(c, 'staff', k);
     };
     if (process.env.MODO === 'completa') {
-      c.mode = 'completa'; S.fcStart(c); if (process.env.FC_INS) S.fcSetIns(c, process.env.FC_INS); // FC_INS: orientação fixa (eq, gol, time, poupar)
+      c.mode = 'completa'; S.fcStart(c);
       let nx;
       while ((nx = S.fcNext(c))) {
         if (S.fcEventDue(c)) { const ev = S.fcPickEvent(c); if (ev) doEvent(ev); continue; }

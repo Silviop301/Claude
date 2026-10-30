@@ -91,12 +91,11 @@ function stepInPage(opts) {
     click($('b-again')); return { did: 'finale', screen: 'finale', done: true };
   }
   // Tela inicial: nova carreira
-  if ($('b-new') && !$('b-start')) return label('home:new ' + click($('b-new')));
+  if ($('b-new') && !$('b-start')) return label('home:new ' + click(mode === 'completa' && $('b-new-fc') ? $('b-new-fc') : $('b-new')));
   // Criação 1 de 2: posição, país e nome
   if ($('b-start')) {
     const pb = q('#f-pos button[data-v="' + pos + '"]'); if (pb) pb.click();
     const cb = q('#f-country button[data-v="' + country + '"]'); if (cb) cb.click();
-    if (mode) { const mb = q('#f-mode button[data-v="' + mode + '"]'); if (mb) mb.click(); }
     const nm = $('f-name'); if (nm) { nm.value = rnd(['Zé Pequeno', "D'Alessandro", 'Kauã <b>x</b>', 'Luís Ângelo', 'Rafa', 'O\'Neil']); nm.dispatchEvent(new Event('input')); }
     if (Math.random() < 0.3) $('b-dice1').click();
     if (Math.random() < 0.3) return label('create:look ' + click($('b-look')));
@@ -109,25 +108,22 @@ function stepInPage(opts) {
   if ($('fc-skip')) return label('completa:aovivo ' + click(Math.random() < 0.3 ? $('fc-fast') : $('fc-skip')));
   if ($('fc-next')) return label('completa:proximo ' + click($('fc-next')));
   if (q('.fc-iv:not(.off)') && Math.random() < 0.7) return label('completa:compra ' + click(q('.fc-iv:not(.off)')));
-  if ($('fc-back')) return label('completa:volta ' + click($('fc-back')));
   if ($('fc-evo') && Math.random() < 0.5) return label('completa:evoluir ' + click($('fc-evo')));
-  // A semana: às vezes troca ações, liga a automática ou simula direto; depois fecha
+  // Telas da prancheta: a semana (troca ações, liga a automática, confirma), a loja e os palpites do Zé; depois volta
   if ($('fc-wkgo')) {
     const x = Math.random();
     if (x < 0.35 && q('.fc-wa:not(:disabled)')) return label('completa:semana-acao ' + click(rnd([...document.querySelectorAll('.fc-wa:not(:disabled)')])));
     if (x < 0.42 && $('fc-auto')) return label('completa:semana-auto ' + click($('fc-auto')));
-    if (x < 0.5) return label('completa:semana-simula ' + click($('fc-5')));
     return label('completa:semana ' + click($('fc-wkgo')));
   }
-  // Loja (aba aberta): compra, contrata ou troca o atributo da chuteira de vez em quando
-  if ($('fc') && $('fc').dataset.tab === 'shop' && Math.random() < 0.5) {
-    const all = [...document.querySelectorAll('#fc-shop .fc-buy:not(:disabled), #fc-shop .fc-attr button:not(.on), #fc-shop .fc-bet-o button, #fc-shop .fc-bet-s button:not(:disabled), #fc-bet-go:not(:disabled)')];
-    if (all.length) return label('completa:loja ' + click(rnd(all)));
+  if ($('fc-scr') && Math.random() < 0.5) {
+    const all = [...document.querySelectorAll('#fc-shop .fc-buy:not(:disabled), #fc-shop .fc-attr button:not(.on), .fc-bet-o button, .fc-bet-s button:not(:disabled), #fc-bet-go:not(:disabled), #fc-tabs button')];
+    if (all.length) return label('completa:tela ' + click(rnd(all)));
   }
-  if ($('fc-auto') && $('fc-auto').checked && Math.random() < 0.1) return label('completa:semana-manual ' + click($('fc-auto')));
-  if ($('fc-play') && q('.fc-ins-seg button:not(.on)') && Math.random() < 0.15) return label('completa:orientacao ' + click(rnd([...document.querySelectorAll('.fc-ins-seg button:not(.on)')])));
-  if ($('fc-play') && q('#fc-nav button:not(.on)') && Math.random() < 0.25) return label('completa:aba ' + click(rnd([...document.querySelectorAll('#fc-nav button:not(.on)')])));
-  if ($('fc-play')) return label('completa:jogo ' + click(rnd([$('fc-play'), $('fc-play'), $('fc-5'), $('fc-end')])));
+  if ($('fc-back')) return label('completa:volta ' + click($('fc-back')));
+  // Prancheta: abre um atalho ou um item do "Antes do jogo", ou joga / simula
+  if ($('fc-play') && Math.random() < 0.3) { const go = [...document.querySelectorAll('#fc [data-go]')]; if (go.length) return label('completa:atalho ' + click(rnd(go))); }
+  if ($('fc-play')) return label('completa:jogo ' + click(rnd([$('fc-play'), $('fc-play'), $('fc-play'), $('fc-5'), $('fc-end')])));
   if ($('fs-skipm')) return label('liga:aovivo ' + click(Math.random() < 0.3 ? $('fs-fast') : $('fs-skipm')));
   if ($('fs-next')) return label('liga ' + click(rnd([$('fs-next'), $('fs-5'), $('fs-end'), $('fs-end')])));
   // Criação 2 de 2: sortear o visual e começar

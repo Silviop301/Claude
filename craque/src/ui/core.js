@@ -5,7 +5,9 @@
   const sfx = n => { if (window.CRAQUE_SFX) window.CRAQUE_SFX.play(n); };
   const $ = id => document.getElementById(id);
   const screen = $('screen');
-  const SAVE = 'craque-v5', HALL = 'craque-hall-v1';
+  // Um save por jogo: a carreira rápida e a carreira jogo a jogo (c.mode 'completa') andam em paralelo
+  const SAVE = 'craque-v5', SAVE_FC = 'climbix-jogo-v1', HALL = 'craque-hall-v1';
+  const saveKey = c => (c && c.mode === 'completa' ? SAVE_FC : SAVE);
   const YEAR0 = 2026;
 
   const esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -46,7 +48,10 @@
   window.CLIMBIX_CFG = cfg;
   const setCfg = (k, v) => { cfg[k] = v; store(CFG_KEY, cfg); };
   const vibe = p => { if (cfg.vibe && navigator.vibrate) navigator.vibrate(p); };
-  function save() { store(SAVE, G.c && !G.c.retired ? { c: G.c, step: G.step, at: Date.now() } : { c: null, at: Date.now() }); }
+  function save() { store(saveKey(G.c), G.c && !G.c.retired ? { c: G.c, step: G.step, at: Date.now() } : { c: null, at: Date.now() }); }
+  // Saves de antes da separação: a carreira jogo a jogo que estava no save único passa para o dela
+  (function () { const s = load(SAVE), f = load(SAVE_FC);
+    if (s && s.c && s.c.mode === 'completa' && !(f && f.c)) { store(SAVE_FC, s); store(SAVE, { c: null, at: Date.now() }); } })();
 
   // Toque duplo: a tela troca no 1º toque e o 2º caía no que estivesse no mesmo lugar da tela nova (opção do
   // evento, estilo do lance, característica, "Começar carreira"). Toque de gente logo depois da troca não conta;
@@ -249,8 +254,11 @@
   // Emojis do jogo como Twemoji (SVG guardado em assets/tw), iguais em todo aparelho.
   // Nome do arquivo: codepoints em hexa separados por "-", sem o fe0f (exceto em sequências com ZWJ, como no Twemoji).
   const twCode = e => [...(e.includes('\u200D') ? e : e.replace(/\uFE0F/g, ''))].map(ch => ch.codePointAt(0).toString(16)).join('-');
+  // Emojis com ícone desenhado para o jogo (assets/ic, gerado por tools/craque_icones.py); o resto segue no Twemoji
+  const IC = new Set('1f0cf 1f300 1f30d 1f30e 1f310 1f319 1f31f 1f320 1f331 1f37d 1f382 1f389 1f38c 1f393 1f396 1f397 1f399 1f39e 1f39f 1f3a4 1f3a8 1f3a9 1f3ac 1f3ae 1f3af 1f3b0 1f3b2 1f3b5 1f3b6 1f3b8 1f3ba 1f3bc 1f3c1 1f3c3 1f3c5 1f3c6 1f3cb 1f3ce 1f3d7 1f3da 1f3db 1f3df 1f3e0 1f3e2 1f3e6 1f3e8 1f3f0 1f3f7 1f3f9 1f414 1f436 1f441 1f446 1f44b 1f451 1f453 1f454 1f45f 1f468 1f468-200d-1f466 1f469 1f46f 1f476 1f480 1f487 1f48d 1f48e 1f49e 1f4a1 1f4a5 1f4a8 1f4aa 1f4ac 1f4af 1f4b0 1f4b5 1f4b8 1f4bc 1f4c8 1f4ca 1f4cb 1f4d0 1f4d2 1f4d6 1f4da 1f4dc 1f4dd 1f4de 1f4e1 1f4e2 1f4e3 1f4e6 1f4f0 1f4f1 1f4f8 1f4f9 1f4fa 1f501 1f504 1f50d 1f512 1f513 1f519 1f51f 1f525 1f52d 1f56f 1f574 1f579 1f57a 1f58b 1f5de 1f5e3 1f5ef 1f5ff 1f608 1f624 1f648 1f68c 1f6a8 1f6a9 1f6aa 1f6ab 1f6cb 1f6cf 1f6d1 1f6e1 1f6e2 1f6f8 1f7e1 1f7e8 1f912 1f915 1f91a 1f91d 1f932 1f938 1f941 1f945 1f947 1f94a 1f957 1f976 1f97e 1f981 1f98a 1f992 1f9b5 1f9b6 1f9ca 1f9d1-200d-1f3eb 1f9d1-200d-1f91d-200d-1f9d1 1f9d1-200d-2695-fe0f 1f9d2 1f9d3 1f9d8 1f9e0 1f9e4 1f9ed 1f9f1 1f9f3 1f9f4 1fa72 1fa79 1fa7a 1fa7b 1fa84 1fa91 1fa9c 1fae7 2194 231a 23e9 23ed 23f1 23f3 2601 2694 2696 26a0 26a1 26bd 2702 2705 2708 270d 270f 2764 2796 27a1 2b06 2b07 2b50'.split(' '));
+  const emoSrc = e => { const c = twCode(e); return IC.has(c) ? 'assets/ic/' + c + '.webp' : 'assets/tw/' + c + '.svg'; };
   // size: 'xs' 16 · 'sm' 20 · 'md' 28 · 'lg' 40
-  const emo = (e, size) => (e ? '<img class="tw tw-' + (size || 'sm') + '" src="assets/tw/' + twCode(e) + '.svg" alt="" draggable="false">' : '');
+  const emo = (e, size) => (e ? '<img class="tw tw-' + (size || 'sm') + '" src="' + emoSrc(e) + '" alt="" draggable="false">' : '');
   // Ícone de um item de dados (característica, investimento, evento, conquista): o emoji do campo icon
   // Bandeira de país (no Windows o emoji vira letras): Twemoji no tamanho do texto ao redor
   const flag = (f, size) => emo(f, size || 'tx');
@@ -341,5 +349,5 @@
     });
   }
 
-  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, clubBg };
+  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, HALL, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, clubBg };
 })();

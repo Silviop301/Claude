@@ -4721,3 +4721,117 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 
 /* Janela: os pedidos do contrato num bloco só, acima dos cartões (valem para qualquer proposta) */
 .of-terms-top { background: var(--paper); color: var(--ink); border-radius: var(--r-lg); padding: 10px 12px; box-shadow: var(--sh-press); }
+
+/* ----- V9 Carreira Jogo a Jogo: início com os dois jogos, prancheta, atalhos e jornal (ui/start.js, ui/fullcareer.js) ----- */
+.mode2 { display: grid; gap: 12px; }
+.mode-c { display: grid; gap: 10px; padding: 14px; border-radius: var(--r-lg); background: var(--panel); border: 1px solid var(--panel-line); }
+.mode-c.completa { background: linear-gradient(180deg, rgba(242,194,48,.12), rgba(242,194,48,.04)); border-color: rgba(242,194,48,.35); }
+.mode-h { display: flex; gap: 12px; align-items: center; }
+.mode-h .tw { width: 48px; height: 48px; }
+.mode-h b { display: block; font: 800 24px/1.05 var(--display); color: var(--tx-1); }
+.mode-h small { display: block; font: var(--t-small); color: var(--tx-2); margin-top: 2px; }
+.mode-c .cont-card { margin: 0; }
+.mode-c .btn { margin: 0; }
+
+/* Prancheta */
+.prc { display: grid; gap: 12px; }
+.prc-cols { display: grid; gap: 12px; }
+.prc-board { background: #4A3423; border-radius: var(--r-lg); padding: 8px; box-shadow: var(--sh-press); }
+.prc-felt { background: var(--pitch-2); border-radius: 10px; padding: 10px 12px 12px; display: grid; gap: 8px; }
+.prc-hand { margin: 0; font: 400 19px/1.15 'Caveat Brush', var(--body); color: var(--paper); }
+.prc-hand span { font-size: 16px; color: var(--tx-2); }
+.prc-pitch-w { display: flex; gap: 8px; }
+.prc-pitch { position: relative; flex: 1; height: 168px; border: 2px solid rgba(251,248,239,.7); border-radius: 4px; }
+.prc-pitch s { position: absolute; border: 2px solid rgba(251,248,239,.45); text-decoration: none; }
+.prc-pitch .mid { left: 0; right: 0; top: 50%; border-width: 2px 0 0; }
+.prc-pitch .ctr { left: 50%; top: 50%; width: 38px; height: 38px; margin: -19px 0 0 -19px; border-radius: 50%; }
+.prc-pitch .box.t { left: 28%; right: 28%; top: -2px; height: 24px; border-top: 0; }
+.prc-pitch .box.b { left: 28%; right: 28%; bottom: -2px; height: 24px; border-bottom: 0; }
+.prc-pitch i, .prc-bench i { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--paper); box-shadow: 0 2px 0 rgba(0,0,0,.35); font: 700 12px/22px var(--body); color: var(--ink); text-align: center; font-style: normal; }
+.prc-pitch i.me, .prc-bench i.me { width: 30px; height: 30px; margin: -15px 0 0 -15px; line-height: 26px; background: var(--gold); border: 2px solid var(--ink); font-size: 14px; z-index: 1; }
+.prc-pitch i.me.tbd { opacity: .6; border-style: dashed; }
+.prc-bench { width: 40px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.prc-bench small { font: 400 15px 'Caveat Brush', var(--body); color: var(--paper); }
+.prc-bench i { position: static; margin: 0; background: #A9BBAF; }
+.prc-bench i.me { margin: 0; }
+.prc-st.ok { color: var(--gold); }
+.prc-st.no { color: var(--down); }
+.prc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.prc-chips span { font: 700 13px/1 var(--body); padding: 6px 8px; border-radius: 6px; background: var(--paper); color: var(--ink); }
+.prc-chips span.warn { background: #F4D675; }
+.prc-chips span.bad { background: #F3B0A8; color: #6E1D16; }
+.prc-right { display: grid; gap: 12px; align-content: start; }
+.prc-note { position: relative; background: var(--paper); color: var(--ink); border-radius: 4px; padding: 12px 14px 8px; transform: rotate(-.5deg); box-shadow: 0 4px 0 rgba(0,0,0,.35); display: grid; }
+.prc-note::before, .prc-note::after { content: ''; position: absolute; top: -7px; width: 14px; height: 14px; border-radius: 50%; background: var(--gold); border: 2px solid var(--ink); }
+.prc-note::before { left: 18px; } .prc-note::after { right: 18px; }
+.prc-note > b.prc-hand { color: var(--ink); font-size: 24px; margin-bottom: 2px; }
+.prc-td { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; border: 0; border-bottom: 1px solid rgba(19,32,26,.12); background: none; color: var(--ink); text-align: left; cursor: pointer; }
+.prc-td:last-child { border-bottom: 0; }
+.prc-td:disabled { cursor: default; opacity: 1; }
+.prc-td > i { flex: none; width: 18px; height: 18px; border: 2px solid var(--ink); border-radius: 3px; display: grid; place-items: center; }
+.prc-td > i svg { width: 14px; height: 14px; color: var(--up-ink); stroke-width: 3.4; }
+.prc-td span { flex: 1; font: 400 20px/1.1 'Caveat Brush', var(--body); }
+.prc-td.done span { color: var(--ink-2); }
+.prc-td em { font: 700 12px/1 var(--body); font-style: normal; padding: 4px 7px; border-radius: 5px; background: var(--paper-2); }
+.prc-td em.red { background: var(--down-ink); color: #fff; }
+.prc-td em.gold { background: var(--gold); color: var(--ink); }
+.prc-ics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.prc-ic { min-height: 64px; padding: 4px 2px; border: 0; background: none; color: var(--tx-1); display: grid; justify-items: center; align-content: center; gap: 4px; font: 600 13px/1.1 var(--body); cursor: pointer; border-radius: var(--r-sm); }
+.prc-ic:hover { background: var(--panel); }
+.prc-ic .tw-md { width: 34px; height: 34px; }
+.prc-ic.ze span { font: 400 16px/1 'Caveat Brush', var(--body); color: var(--tx-2); }
+.prc-tk { display: flex; align-items: stretch; width: 100%; min-height: 72px; padding: 0; border: 0; border-radius: var(--r-md); background: var(--gold); color: var(--ink); box-shadow: 0 4px 0 var(--gold-deep); cursor: pointer; text-align: left; }
+.prc-tk:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--gold-deep); }
+.prc-tk-m { flex: 1; min-width: 0; padding: 8px 14px; display: grid; align-content: center; }
+.prc-tk-m b { font: 800 30px/1 var(--display); }
+.prc-tk-m small { font: 600 14px/1.2 var(--body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prc-tk-s { width: 72px; border-left: 2px dashed var(--ink); display: grid; place-content: center; text-align: center; }
+.prc-tk-s small { font: 700 12px var(--body); }
+.prc-tk-s b { font: 800 32px/1 var(--display); }
+.prc-sim { display: flex; justify-content: center; gap: 18px; }
+.prc-sim .link-btn { min-height: 44px; color: var(--tx-3); font: 600 14px var(--body); }
+@media (min-width: 1000px) and (min-height: 560px) {
+  #app:has(#screen .prc) { max-width: 940px; }
+  .prc-cols { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; gap: 20px; }
+  .prc-pitch { height: 300px; }
+}
+
+/* Telas dos atalhos (treino, tabela, jogos, ficha, loja, Zé) */
+.fc-scr { display: grid; gap: 12px; }
+.fc-scr h2 { margin: 0; }
+.fc-scr > .back-link { justify-self: start; margin: 0; }
+.fc-scr .fs-tbl { max-height: none; }
+.fc-ze { margin: 0; font: italic 500 15px/1.4 var(--body); color: var(--tx-2); }
+@media (min-width: 1000px) and (min-height: 560px) { #app:has(#screen .fc-scr) { max-width: 760px; } }
+
+/* Jogo ao vivo em tela própria: no celular a rodada e a tabela ficam embaixo do jogo */
+.fc.live .fs-side { display: block; }
+
+/* Jornal depois do jogo */
+.jn-w { display: grid; gap: 12px; }
+.jn { background: var(--paper); color: var(--ink); padding: 14px 16px 16px; box-shadow: var(--sh-float); display: grid; gap: 10px; }
+.jn header h1 { margin: 0; text-align: center; font: 700 34px/1 'Playfair Display', Georgia, serif; color: var(--ink); }
+.jn header p { margin: 6px 0 0; display: flex; justify-content: space-between; gap: 8px; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 3px 0; font: 600 12px var(--body); }
+.jn h2 { margin: 0; font: 800 38px/.98 var(--display); text-transform: uppercase; color: var(--ink); }
+.jn-sub { margin: 0; font: 500 16px/1.4 Georgia, serif; color: var(--ink); }
+.jn-g { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid var(--ink); padding-top: 8px; }
+.jn-sc { display: grid; gap: 6px; align-content: start; }
+.jn-bd { background: var(--board); color: var(--paper); padding: 8px 6px; display: grid; gap: 2px; text-align: center; }
+.jn-bd span { font: 600 12px/1.2 var(--body); color: var(--tx-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jn-bd b { font: 800 30px/1 var(--display); }
+.jn-sc small { font: 500 12px var(--body); color: var(--ink-2); }
+.jn-sc ul { margin: 0; padding: 0; list-style: none; font: 500 13px/1.4 var(--body); }
+.jn-sc li b { font-weight: 700; }
+.jn-bt { border: 2px solid var(--ink); padding: 6px 8px; display: grid; gap: 3px; align-content: start; font: 500 13px/1.3 var(--body); }
+.jn-bt > b { border-bottom: 1px solid var(--ink); padding-bottom: 2px; }
+.jn-bt div { display: flex; justify-content: space-between; gap: 6px; }
+.jn-bt div b.up { color: var(--up-ink); }
+.jn-bt div b.down { color: var(--down-ink); }
+.jn-o { border-top: 2px solid var(--ink); padding-top: 6px; display: grid; gap: 4px; }
+.jn-o > b { font: 700 15px Georgia, serif; }
+.jn-o div { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; font: 500 13px/1.35 var(--body); }
+.jn-f { display: grid; gap: 8px; }
+.jn-f p { margin: 0; font: 500 13px/1.35 var(--body); }
+.jn-ze { border: 1px dashed var(--ink); padding: 6px 8px; font-family: Georgia, serif !important; font-style: italic; }
+@media (min-width: 1000px) and (min-height: 560px) { #app:has(#screen .jn-w) { max-width: 640px; } }
+/* ----- fim V9 ----- */

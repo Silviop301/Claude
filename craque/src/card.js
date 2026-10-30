@@ -333,7 +333,7 @@
 
   // data: { name, pos, peak, attrs, flag, crest (url), grade, verdict, goals, assists, titles, ballon, traits:[{icon,lv}], years,
   //         sign (assinatura, ver SIGN), curve/tSeasons/startAge (verso) }
-  // Características no rodapé: o Twemoji de cada uma (SVG em assets/tw), com o nível (2 ou 3) ao lado.
+  // Características no rodapé: o ícone de cada uma (desenhado ou Twemoji, U.emoSrc), com o nível (2 ou 3) ao lado.
   // As imagens são pré-carregadas antes de desenhar a carta (senão sairiam em branco no primeiro reveal e no compartilhamento).
   const twCode = e => [...(e.includes('\u200D') ? e : e.replace(/\uFE0F/g, ''))].map(ch => ch.codePointAt(0).toString(16)).join('-');
   const TW_IMG = {};
@@ -342,7 +342,7 @@
     const code = twCode(e);
     if (!TW_IMG[code]) {
       const img = new Image();
-      img.src = 'assets/tw/' + code + '.svg';
+      img.src = window.CRAQUE_UI && CRAQUE_UI.emoSrc ? CRAQUE_UI.emoSrc(e) : 'assets/tw/' + code + '.svg';
       TW_IMG[code] = (img.decode ? img.decode() : new Promise((ok, no) => { img.onload = ok; img.onerror = no; })).then(() => img, () => null);
     }
     return TW_IMG[code];
