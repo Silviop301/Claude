@@ -198,7 +198,10 @@
   }
   function flowBox(c, x, f) {
     const me = esc(nameOf(c.club)), op = esc(nameOf(x.vs));
-    return '<div class="fl-pitch" aria-hidden="true"><s class="mid"></s><s class="ar l"></s><s class="ar r"></s><span class="fl-l">' + me + '</span><span class="fl-r">' + op + '</span><i class="fl-ball" id="fl-ball"></i></div>' +
+    // Campo inclinado como na câmera de TV (perspectiva em CSS); a bola fica em pé sobre a grama, com sombra
+    return '<div class="fl-cam" aria-hidden="true"><div class="fl-pitch"><s class="mid"></s><s class="ctr"></s><s class="ar l"></s><s class="ar r"></s><s class="gl l"></s><s class="gl r"></s>' +
+      '<b class="fl-sh" id="fl-sh"></b><i class="fl-ball" id="fl-ball"></i></div></div>' +
+      '<div class="fl-tm"><span class="fl-l">' + me + '</span><span class="fl-r">' + op + '</span></div>' +
       '<div class="fl-row"><p class="fl-zone" id="fl-zone">Bola rolando</p><p class="fl-pos">Posse <b id="fl-pos">50%</b></p></div>' +
       (f.on ? '<div class="fl-me"><div class="fl-n"><small>Sua nota</small><b id="fl-n">6,0</b><em id="fl-d"></em></div><ul class="fl-lc" id="fl-lc"></ul></div>'
         : '<p class="fl-off">' + (x.injury ? 'Você está fora, lesionado.' : 'Você está no banco.') + '</p>');
@@ -206,7 +209,10 @@
   function flowAt(c, x, f, t, seen) {
     const ball = $('fl-ball'); if (!ball) return;
     const b = f.bx[Math.min(t, 100)];
-    ball.style.left = b + '%';
+    // Altura no campo: só para a bola não andar numa linha reta (sobe e desce entre as laterais)
+    const y = Math.round(50 + 30 * Math.sin(t * 0.37 + b * 0.05) * Math.cos(t * 0.11)) + '%';
+    ball.style.left = b + '%'; ball.style.top = y;
+    const sh = $('fl-sh'); if (sh) { sh.style.left = b + '%'; sh.style.top = y; }
     const me = nameOf(c.club), op = nameOf(x.vs);
     $('fl-zone').textContent = b >= 75 ? 'Ataque do ' + me : b >= 58 ? me + ' no campo de ataque' : b <= 25 ? 'Pressão do ' + op : b <= 42 ? op + ' no ataque' : 'Disputa no meio-campo';
     $('fl-zone').className = 'fl-zone' + (b >= 75 ? ' up' : b <= 25 ? ' down' : '');
