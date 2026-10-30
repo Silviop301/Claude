@@ -119,6 +119,11 @@ function stepInPage(opts) {
     if (x < 0.5) return label('completa:semana-simula ' + click($('fc-5')));
     return label('completa:semana ' + click($('fc-wkgo')));
   }
+  // Loja (aba aberta): compra, contrata ou troca o atributo da chuteira de vez em quando
+  if ($('fc') && $('fc').dataset.tab === 'shop' && Math.random() < 0.5) {
+    const all = [...document.querySelectorAll('#fc-shop .fc-buy:not(:disabled), #fc-shop .fc-attr button:not(.on)')];
+    if (all.length) return label('completa:loja ' + click(rnd(all)));
+  }
   if ($('fc-auto') && $('fc-auto').checked && Math.random() < 0.1) return label('completa:semana-manual ' + click($('fc-auto')));
   if ($('fc-play') && q('#fc-nav button:not(.on)') && Math.random() < 0.25) return label('completa:aba ' + click(rnd([...document.querySelectorAll('#fc-nav button:not(.on)')])));
   if ($('fc-play')) return label('completa:jogo ' + click(rnd([$('fc-play'), $('fc-play'), $('fc-5'), $('fc-end')])));

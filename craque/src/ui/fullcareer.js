@@ -16,7 +16,7 @@
   // Abaixo do jogo, uma aba por vez: tabela, jogos (calendário), competições e seus números; ao vivo, a rodada.
   // Em tela larga a tabela fica sempre do lado e as abas cuidam do resto.
   const wide = () => window.matchMedia && window.matchMedia('(min-width: 1000px) and (min-height: 560px)').matches;
-  const PANES = [['round', 'Rodada'], ['tbl', 'Tabela'], ['cal', 'Jogos'], ['comp', 'Torneios'], ['me', 'Você']];
+  const PANES = [['round', 'Rodada'], ['tbl', 'Tabela'], ['cal', 'Jogos'], ['comp', 'Torneios'], ['me', 'Você'], ['shop', 'Loja']];
   let pane = 'tbl';
 
   // ---------- tela central ----------
@@ -45,6 +45,7 @@
           '<div class="fc-pane" data-p="cal"><div class="fc-cal" id="fc-cal"></div></div>' +
           '<div class="fc-pane" data-p="comp"><div class="fc-comps" id="fc-comps"></div></div>' +
           '<div class="fc-pane" data-p="me"><div class="fs-me" id="fc-me"></div></div>' +
+          '<div class="fc-pane" data-p="shop"><div class="fc-shop" id="fc-shop"></div></div>' +
           '<div class="fc-pane" data-p="round"><div class="fs-round" id="fc-round"></div></div>' +
         '</div>' +
         '<div class="fs-side fc-pane" data-p="tbl"><div class="fc-tabs" id="fc-tabs"></div><div class="fs-tbl" id="fc-tbl"></div></div>' +
@@ -209,7 +210,8 @@
       const w = fc.wkSum && fc.wkSum.at === fc.i ? fc.wkSum : null, nm = id => S.FC_WEEK.find(a => a.id === id).name;
       const what = w ? '<p class="fc-wk-sum">' + (c.fcAuto ? 'Semana automática: ' : 'Semana: ') + w.acts.map(nm).join(' + ') + ' · energia ' + Math.round(w.en0) + ' → ' + Math.round(w.en1) +
         (w.pe ? ' · +' + num2(w.pe) + ' de evolução' : '') + (w.money > 0 ? ' · +R$ ' + U.money(w.money) : '') + (w.inj ? ' · lesão: 1 jogo a menos' : '') +
-        (w.polem ? '. A entrevista virou polêmica e o técnico não gostou.' : '') + '</p>' : '';
+        (w.polem ? '. A entrevista virou polêmica e o técnico não gostou.' : '') +
+        (w.dropped && w.dropped.length ? '. Sem dinheiro para pagar: ' + w.dropped.map(k => S.FC_SHOP.staff.find(x => x.id === k).name).join(', ') + ' saiu.' : '') + '</p>' : '';
       el.className = 'fc-wk';
       el.innerHTML = status + what + (w ? auto : '');
       bindAuto();
@@ -238,13 +240,48 @@
     if (a) a.onchange = () => { G.c.fcAuto = a.checked; if (a.checked && G.c.fc.wkDue) { S.fcWeek(G.c, myPick()); unpick(); bar(); } save(); paint(); };
   }
 
+  // ---------- loja: o dinheiro da carreira vira vantagem nesta carreira ----------
+  let gearAttr = null;
+  function shopBox() {
+    const c = G.c, el = $('fc-shop');
+    if (!el) return;
+    const R = v => 'R$ ' + U.money(v), cash = c.money || 0, attrs = S.fcGearAttrs(c);
+    if (!attrs.includes(gearAttr)) gearAttr = attrs[0];
+    const g = c.gear && c.gear.until >= c.season ? c.gear : null, gNow = g ? S.FC_SHOP.gear.find(x => x.id === g.id) : null;
+    const left = g ? (g.until > c.season ? 'até a próxima temporada' : 'até o fim da temporada') : '';
+    const btn = (kind, id, label, ok, on) => '<button class="fc-buy' + (on ? ' on' : '') + '" data-k="' + kind + '" data-id="' + id + '"' + (ok ? '' : ' disabled') + '>' + label + '</button>';
+    const row = (name, fx, right) => '<div class="fc-si"><span><b>' + esc(name) + '</b><small>' + esc(fx) + '</small></span>' + right + '</div>';
+    const week = S.fcStaffWeek(c);
+    el.innerHTML =
+      '<div class="fc-cash"><span>Seu dinheiro</span><b>' + R(cash) + '</b><small>Salário de ' + R(c.wage || 0) + ' por semana' + (week ? ' · equipe: −' + R(week) + ' por semana' : '') + '</small></div>' +
+      '<div class="fc-ss"><h3>' + (c.pos === 'GOL' ? 'Luvas' : 'Chuteira') + '</h3>' +
+        (g ? '<p class="fc-own">Você usa: ' + esc(S.fcGearName(c, gNow)) + ' · +' + g.b + ' em ' + esc(D.label(c.pos, g.attr)) + ', ' + left + '</p>' : '<p class="fc-own">Sem equipamento especial.</p>') +
+        '<div class="seg fc-attr">' + attrs.map(k => '<button data-a="' + k + '"' + (k === gearAttr ? ' class="on"' : '') + '>' + esc(D.label(c.pos, k)) + '</button>').join('') + '</div>' +
+        S.FC_SHOP.gear.map(x => { const p = S.fcGearPrice(c, x.id);
+          return row(S.fcGearName(c, x), '+' + x.b + ' em ' + D.label(c.pos, gearAttr) + (x.en ? ', cansa ' + x.en + ' a menos por jogo' : '') + ' · ' + (x.seasons > 1 ? x.seasons + ' temporadas' : '1 temporada'), btn('gear', x.id, R(p), cash >= p)); }).join('') +
+      '</div>' +
+      '<div class="fc-ss"><h3>Equipe pessoal</h3><p class="fc-own">Paga por semana. Se o dinheiro acabar, o contrato cai.</p>' +
+        S.FC_SHOP.staff.map(x => { const on = !!(c.staff && c.staff[x.id]), p = S.fcStaffCost(c, x.id);
+          return row(x.name, x.fx + ' · ' + R(p) + ' por semana', btn('staff', x.id, on ? 'Dispensar' : 'Contratar', on || cash >= p * 4, on)); }).join('') +
+      '</div>' +
+      '<div class="fc-ss"><h3>Estilo de vida</h3>' +
+        S.FC_SHOP.life.map(x => { const own = !!(c.life && c.life[x.id]), p = S.fcLifePrice(c, x.id);
+          return row(x.name, x.fx + ' (+' + x.fame + ' de fama)', own ? '<em class="fc-own-tag">Comprado</em>' : btn('life', x.id, R(p), cash >= p)); }).join('') +
+      '</div>' +
+      '<p class="fc-shop-note">Tudo daqui vale só nesta carreira. Os itens da coleção continuam só visuais.</p>';
+    el.querySelectorAll('.fc-attr button').forEach(b => { b.onclick = () => { sfx('tap'); gearAttr = b.dataset.a; shopBox(); }; });
+    el.querySelectorAll('.fc-buy').forEach(b => { b.onclick = () => {
+      if (S.fcBuy(c, b.dataset.k, b.dataset.id, gearAttr)) { sfx(b.dataset.k === 'staff' && !(c.staff && c.staff[b.dataset.id]) ? 'tap' : 'coin'); save(); bar(); shopBox(); weekBox(); }
+    }; });
+  }
+
   function paint() {
     const c = G.c, nx = S.fcNext(c);
     if (!nx) return finishSeason();
     const pos = table(); tabs();
     $('fc-h').textContent = nx.week ? 'Sua semana' : 'Próximo jogo';
     $('fc-match').innerHTML = card('next', nx);
-    peBox(); meBox(); compsBox(pos); calBox(); weekBox();
+    peBox(); meBox(); compsBox(pos); calBox(); weekBox(); shopBox();
     $('fc-round').innerHTML = '';
     nav();
     const go = nx.week ? '<button class="btn" id="fc-wkgo">Fechar a semana</button>' : '<button class="btn" id="fc-play">' + (nx.moment ? 'Jogar a decisão' : 'Jogar') + '</button>';

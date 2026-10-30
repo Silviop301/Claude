@@ -110,6 +110,8 @@
     D.INVEST.forEach(t => { if (t.attr && inv[t.id]) for (const k in t.attr) b[k] += t.attr[k] * inv[t.id]; });
     // Marcas das decisões (engine/stakes.js): o que um evento deu ou tirou fica para sempre, fora do teto
     if (c.xb) for (const k in c.xb) b[k] += c.xb[k];
+    // Equipamento comprado na Carreira Completa (engine/fullcareer.js): vale só naquela carreira, enquanto durar
+    if (c.shopB) for (const k in c.shopB) b[k] += c.shopB[k];
     // Ponto de bônus que passaria do 99 não se perde todo: cada 2 acima do 99 viram 1 no atributo mais importante da posição abaixo de 99
     let extra = 0;
     D.ATTRS.forEach(k => { const v = Math.round(c.attrs[k]) + b[k]; extra += Math.max(0, v - 99); out[k] = clamp(v, 20, 99); });
@@ -216,7 +218,7 @@
   S.tm = (c, id) => (c.traits.includes(id) ? D.TRAIT_LV[lvOf(c, id)] : 0);
   // Profissional envelhece mais devagar
   // Declínio pela idade: Profissional segura; escolhas de fim de carreira (cuidar do corpo) também (c.longev)
-  S.declMult = c => Math.max(0.4, (1 - 0.25 * S.tm(c, 'pro')) * (1 - 0.15 * (c.longev || 0)));
+  S.declMult = c => Math.max(0.4, (1 - 0.25 * S.tm(c, 'pro')) * (1 - 0.15 * (c.longev || 0)) * (c.staff && c.staff.nutri ? 0.85 : 1)); // nutricionista: Carreira Completa
 
   const completesSyn = (c, id, without) => D.SYNERGIES.find(s => {
     const has = x => c.traits.includes(x) && x !== without;

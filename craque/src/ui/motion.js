@@ -20,7 +20,7 @@
     if (!f || !f.parts || !f.parts.length || still()) return done && done();
     // Ordem: o que soma, depois o que desconta, e a despedida por último (é quando a nota costuma virar)
     const parts = f.parts.filter(p => p.v > 0 && p.k !== 'bonus').concat(f.parts.filter(p => p.v < 0), f.parts.filter(p => p.v > 0 && p.k === 'bonus'));
-    const G = S.GRADES, bands = G.filter(([, m]) => m > 0), MAX = Math.max(f.score, bands[0][1]) * 1.1;
+    const G = f.bands || S.GRADES, bands = G.filter(([, m]) => m > 0), MAX = Math.max(f.score, bands[0][1]) * 1.1;
     const gradeOf = s => G.find(([, m]) => s >= m)[0];
     const w = layer('mo-score');
     w.innerHTML = '<div class="mo-card" role="dialog" aria-label="Nota da carreira">' +

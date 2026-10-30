@@ -514,7 +514,7 @@
     const why = S.whyOf({ c, games, rating, growth, perf, injLoss, injPct: Math.round(injShare * 100), decline, luck, room, potUp, dOvr: ovr1 - ovr0 });
 
     // Dinheiro e totais
-    c.money += c.wage * 52;
+    c.money += FO ? Math.max(0, c.wage * 52 - (FO.paid || 0)) : c.wage * 52; // na Completa o salário já caiu semana a semana
     // Pontos de evolução: o que você fez em campo vira treino
     const pe = FO ? { n: FO.pe, full: true, why: FO.pe ? [['ganhos jogo a jogo e já somados', FO.pe]] : [] } : S.peGain({ games, rating, titles, awards });
     // Foco nos treinos: chance de ponto extra (fora do limite da temporada); lesão séria perde o bônus

@@ -260,3 +260,14 @@ Proibido também: cartão com faixa colorida na lateral.
 - **Equilíbrio:** o robô usa a automática. Treino com limite de 0,8/ano subia S para 16%; com 0,5, Completa S12 A30 B33
   C16 D9 (antes S12 A27 B34 C19 D7), ~12 min. Modo rápido sem mudança. Forma medida pela nota absoluta inflava S para
   30% (média +1,35): por isso é relativa à média.
+
+### Rodada 12 · 2026-10-30 · Completa: vida entre os jogos, parte 2 (loja)
+
+- **Loja (aba "Loja" na tela de rodadas):** preços em semanas de salário (acompanham a liga). Chuteira (luvas no goleiro)
+  de treino +1, profissional +2 (cansa 3 a menos por jogo) e de ponta +3 (2 temporadas), num dos 3 atributos que mais
+  pesam na posição (`c.gear`, bônus em `c.shopB` dentro de `S.eff`). Equipe pessoal paga por semana (preparador físico
+  +8 de energia, fisioterapeuta lesões 30% mais curtas, nutricionista declínio ×0,85, analista de vídeo nota +0,08,
+  assessoria fama e entrevista sem polêmica); sem dinheiro o contrato cai. Carro e casa: fama e torcida, uma vez.
+- **Salário semana a semana na Completa** (o resumo da temporada paga só o que faltar), para a loja já servir no 1º ano.
+- **Nota da Completa com corte próprio** (`S.GRADES_FC` 2190/1610/1145/855, aprovado pelo Silvio): o robô que compra
+  fica em S11 A26 B31 C19 D13; sem comprar, S6. Modo rápido sem mudança. Goleiro na Completa: S 2% (olhar depois).
