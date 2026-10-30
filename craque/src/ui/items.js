@@ -289,7 +289,9 @@
     const days = Object.assign({}, a.days, b.days);
     // Prêmio pego em qualquer aparelho some dos dois: vale a lista do salvo mais recente
     Object.keys(days).forEach(k => { days[k] = Math.max((a.days || {})[k] || 0, (b.days || {})[k] || 0); });
-    return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news), days });
+    // Perfil (ui/profile.js): metas do salvo mais recente; o XP fica com o maior
+    const prof = newer.prof || a.prof || b.prof ? Object.assign({}, newer.prof || a.prof || b.prof, { xp: Math.max((a.prof || {}).xp || 0, (b.prof || {}).xp || 0) }) : undefined;
+    return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news), days }, prof ? { prof } : {});
   }
 
   U.ITEMS = { FREE, KEY, CAT, BY_ID, RAR, RAR_NAME, CHANCE, PITY, DUP, COST, itemOf, need, has, get, put, clean, counts,

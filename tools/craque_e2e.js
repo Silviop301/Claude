@@ -195,8 +195,8 @@ function scanInPage(BAD_SRC) {
 
 async function tour(page, issues) {
   const note = (kind, detail, screen) => issues.push({ kind, pos: '-', career: -1, country: '-', screen, detail: String(detail).slice(0, 300) });
-  // Início → Ranking → Minhas carreiras (Conquistas, Coleção e Sala voltam para lá) → Início → Configurações e Conta
-  const seq = [['b-rank', 'b-back-home'], ['b-mine', null], ['b-ach', 'b-back'], ['b-col', 'b-back-home'], ['b-sala', 'sl-back'], ['b-back-home', null], ['b-sound', null], ['b-cloud', 'b-back-home']];
+  // Início → Perfil (Domínio mundial volta para ele) → Ranking → Minhas carreiras (Conquistas, Coleção e Sala voltam para lá) → Início → Configurações e Conta
+  const seq = [['b-prof', null], ['b-world', 'wd-back'], ['pf-back', null], ['b-rank', 'b-back-home'], ['b-mine', null], ['b-ach', 'b-back'], ['b-col', 'b-back-home'], ['b-sala', 'sl-back'], ['b-back-home', null], ['b-sound', null], ['b-cloud', 'b-back-home']];
   for (const [open, back] of seq) {
     const ok = await page.evaluate(id => { const b = document.getElementById(id); if (b) b.click(); return !!b; }, open);
     if (!ok) continue;
