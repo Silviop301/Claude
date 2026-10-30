@@ -116,14 +116,18 @@ function stepInPage(opts) {
     if (x < 0.42 && $('fc-auto')) return label('completa:semana-auto ' + click($('fc-auto')));
     return label('completa:semana ' + click($('fc-wkgo')));
   }
+  // Agenda (app do celular): troca a ação de um dia e volta com "Pronto"
+  if ($('fc-agok')) {
+    if (q('.ag-o:not(:disabled)')) return label('completa:agenda-acao ' + click(rnd([...document.querySelectorAll('.ag-o:not(:disabled)')])));
+    if (q('.ag-d.slot:not(:disabled)') && Math.random() < 0.5) return label('completa:agenda-dia ' + click(rnd([...document.querySelectorAll('.ag-d.slot:not(:disabled)')])));
+    return label('completa:agenda-pronto ' + click($('fc-agok')));
+  }
   if ($('fc-scr') && Math.random() < 0.5) {
     const all = [...document.querySelectorAll('#fc-shop .fc-buy:not(:disabled), #fc-shop .fc-attr button:not(.on), .fc-bet-o button, .fc-bet-s button:not(:disabled), #fc-bet-go:not(:disabled), #fc-tabs button')];
     if (all.length) return label('completa:tela ' + click(rnd(all)));
   }
   if ($('fc-back')) return label('completa:volta ' + click($('fc-back')));
-  // Agenda: troca a ação de um dia, abre um atalho ou um recado, ou joga / simula
-  if (q('.ag-o:not(:disabled)')) return label('completa:agenda-acao ' + click(rnd([...document.querySelectorAll('.ag-o:not(:disabled)')])));
-  if (q('.ag-d.slot:not(:disabled)') && Math.random() < 0.25) return label('completa:agenda-dia ' + click(rnd([...document.querySelectorAll('.ag-d.slot:not(:disabled)')])));
+  // Celular: abre um app ou uma notificação, ou joga / simula
   if ($('fc-play') && Math.random() < 0.3) { const go = [...document.querySelectorAll('#fc [data-go]')]; if (go.length) return label('completa:atalho ' + click(rnd(go))); }
   if ($('fc-play')) return label('completa:jogo ' + click(rnd([$('fc-play'), $('fc-play'), $('fc-play'), $('fc-5'), $('fc-end')])));
   if ($('fs-skipm')) return label('liga:aovivo ' + click(Math.random() < 0.3 ? $('fs-fast') : $('fs-skipm')));
