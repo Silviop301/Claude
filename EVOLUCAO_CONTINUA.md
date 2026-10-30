@@ -201,3 +201,15 @@ Proibido também: cartão com faixa colorida na lateral.
   tabela rola por dentro com a sua linha à vista; no computador a tabela segue do lado. Barra de evolução numa linha.
 - **Validação:** simulador Completa 1500: S14 A27 B32 C18 D9 (antes S8 A19; rápido S11 A25 B33 C18 D13, sem mudança);
   auditoria 0 alertas; carreiras pela interface no celular e no computador; fotos do hub, abas, ao vivo e evento.
+
+### Rodada 8 · 2026-10-30 · Perfil e metas da semana (camada de volta, pilares 4 e 5)
+
+- **Perfil (`craque/src/ui/profile.js`):** nível de jogador com XP de toda carreira terminada (100 + nota + títulos;
+  Completa +50; Relâmpago 30 + nota), faixas Peneira, Base, Profissional, Titular, Craque, Ídolo, Lenda; cada nível novo
+  dá pacotinho. Guardado no inventário (`inv.prof`, vai para a nuvem; o XP fica com o maior dos aparelhos).
+- **Metas da semana:** três por semana (renovam na segunda), uma fácil, uma média e uma difícil, sorteadas pela data
+  (iguais para todos) e sem duas da mesma família; cada uma dá XP e pacotinho. Conferidas no fim de carreira e da
+  Relâmpago; o fim mostra "+XP", nível novo e meta cumprida.
+- **Tela:** nível com barra, metas, Domínio mundial (o mapa volta para o Perfil) e números de todas as carreiras.
+  Botão na tela inicial logo abaixo da Relâmpago, no lugar do botão do mapa.
+- Só visual e pacotinhos: não muda nota nem sorte.
