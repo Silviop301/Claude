@@ -54,13 +54,18 @@ for (let n = 0; n < N; n++) {
     // Jogo decisivo: o robô deixa o jogo decidir (mesma chance que a tela mostra)
     // MODO=completa: a temporada jogo a jogo (engine/fullcareer.js); os lances decisivos acontecem nas finais e no clássico,
     // e o robô investe os pontos de evolução assim que eles entram
+    // Loja da Completa (NOSHOP=1 desliga): o robô compra a melhor chuteira que cabe com folga e contrata a equipe que dá para manter
+    const shop = c => {
+      if (process.env.SHOP !== 'staff' && (!c.gear || c.gear.until < c.season)) { const g = ['g3', 'g2', 'g1'].find(id => (c.money || 0) >= S.fcGearPrice(c, id) * 2); if (g) S.fcBuy(c, 'gear', g, S.fcGearAttrs(c)[0]); }
+      if (process.env.SHOP !== 'gear') for (const k of (process.env.STAFF ? process.env.STAFF.split(',') : ['video', 'pt', 'physio']).concat(c.age >= 29 && !process.env.STAFF ? ['nutri'] : [])) if (!(c.staff && c.staff[k]) && (c.money || 0) >= S.fcStaffCost(c, k) * 60) S.fcBuy(c, 'staff', k);
+    };
     if (process.env.MODO === 'completa') {
       c.mode = 'completa'; S.fcStart(c);
       let nx;
       while ((nx = S.fcNext(c))) {
         if (S.fcEventDue(c)) { const ev = S.fcPickEvent(c); if (ev) doEvent(ev); continue; }
         // A semana entre os jogos: o robô usa a automática (FC_WEEK=0 desliga energia e forma, para comparar)
-        if (c.fc.wkDue) { S.fcWeek(c); continue; }
+        if (c.fc.wkDue) { S.fcWeek(c); if (!process.env.NOSHOP) shop(c); continue; }
         if (process.env.FOSTAT) { global.FO = global.FO || []; FO.push([c.fc.fo, c.fc.en]); }
         if (nx.moment) { c.mstats = c.mstats || { n: 0, ok: 0 }; c.mstats.n++; if (S.fcAutoMoment(c, nx.moment)) c.mstats.ok++; decisions++; }
         S.fcPlay(c);
@@ -150,4 +155,4 @@ console.log('Duração estimada (6 s por decisão + 5 s de resumo por temporada)
 
 console.log('Conquistas (% das carreiras):', S.ACHIEVEMENTS.map(a => a.id + ' ' + Math.round((ACH[a.id] || 0) / N * 100) + '%').join(' · '));
 // Cortes de S.GRADES que dariam a distribuição alvo (S11/A26/B31/C19/D13) com estas carreiras: para recalibrar
-{ const sc = res.map(r => r.score); console.log('Cortes para o alvo S11/A26/B31/C19/D13: S ' + q(sc, 0.89) + ' · A ' + q(sc, 0.63) + ' · B ' + q(sc, 0.32) + ' · C ' + q(sc, 0.13) + ' (atuais: ' + S.GRADES.slice(0, 4).map(g => g.join(' ')).join(' · ') + ')'); }
+{ const sc = res.map(r => r.score); console.log('Cortes para o alvo S11/A26/B31/C19/D13: S ' + q(sc, 0.89) + ' · A ' + q(sc, 0.63) + ' · B ' + q(sc, 0.32) + ' · C ' + q(sc, 0.13) + ' (atuais: ' + S.gradesOf(process.env.MODO === 'completa' ? { mode: 'completa' } : null).slice(0, 4).map(g => g.join(' ')).join(' · ') + ')'); }

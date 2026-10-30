@@ -67,6 +67,10 @@
     const carry = c.fc && c.fc.season === c.season - 1 ? c.fc.peFrac || 0 : 0;
     const fc = { season: c.season, club: club.id, seed: (Math.imul(Number(c.tseed) || 1, 2654435761) + c.season * 97 + 13) >>> 0, /* imul: a conta comum passava de 2^53 e o ano sumia (calendário igual todo ano) */ i: 0, log: [], peFrac: carry, peCarry: carry, peGot: 0, out: null, done: false };
     // Vida entre os jogos: energia (0-100, cheia na pré-temporada), forma (-2 a +2, metade passa de um ano para o outro)
+    // Equipamento vencido sai (comprado na loja, dura uma ou duas temporadas)
+    if (c.gear && c.gear.until < c.season) c.gear = null;
+    S.fcShopSync(c);
+    fc.paid = 0;
     Object.assign(fc, { en: 100, fo: c.fc && c.fc.season === c.season - 1 ? Math.round((c.fc.fo || 0) * 50) / 100 : 0, fit: 0, peTrain: 0, wkDue: false, wkPlan: c.fc && c.fc.wkPlan ? c.fc.wkPlan : ['tec', 'rest'] });
     const { r, save } = rngOf(fc);
     // Liga: turno e returno com os times embaralhados
@@ -125,7 +129,8 @@
     const fc = c.fc;
     if (!fc || fc.en === undefined || fc.season !== c.season) return { mul: 1, r: 0, inj: 1 };
     const tired = fc.en < EN_LOW ? (EN_LOW - fc.en) / EN_LOW : 0, fo = fc.fo || 0;
-    return { mul: (1 - 0.2 * tired) * (1 + 0.05 * fo), r: 0.12 * fo - 0.5 * tired, inj: fc.en < EN_OUT ? 2 : 1 };
+    const video = c.staff && c.staff.video ? 0.08 : 0; // analista de vídeo: você chega sabendo o que o adversário faz
+    return { mul: (1 - 0.2 * tired) * (1 + 0.05 * fo), r: 0.12 * fo - 0.5 * tired + video, inj: fc.en < EN_OUT ? 2 : 1 };
   }
   S.FC_EN_LOW = EN_LOW; S.FC_EN_OUT = EN_OUT;
   // Ações da semana (duas por semana). en: energia; o resto acontece em weekDo
@@ -140,7 +145,7 @@
   ];
   const WEEK_BY = Object.fromEntries(WEEK.map(a => [a.id, a]));
   S.FC_WEEK = WEEK; S.FC_TRAIN_CAP = TRAIN_CAP;
-  const weekBase = fc => (fc.wkPlayed ? 5 : 30); // a semana já recupera sozinha (mais se você não jogou)
+  const weekBase = (fc, c) => (fc.wkPlayed ? 5 : 30) + (c && c.staff && c.staff.pt ? 8 : 0); // preparador físico: +8 // a semana já recupera sozinha (mais se você não jogou)
   S.fcSponsPay = c => Math.max(1000, Math.round((c.wage || 0) * 0.8 / 100) * 100);
   S.fcPhysioCost = c => Math.max(2000, Math.round((c.wage || 0) / 100) * 100);
   // A ação vale agora? (fisioterapia é paga; treino técnico para no limite do ano)
@@ -151,7 +156,7 @@
     return true;
   };
   // Energia depois da semana com estas ações
-  S.fcWeekEnergy = (c, acts) => clamp(c.fc.en + weekBase(c.fc) + acts.reduce((s, id) => s + WEEK_BY[id].en, 0), 0, 100);
+  S.fcWeekEnergy = (c, acts) => clamp(c.fc.en + weekBase(c.fc, c) + acts.reduce((s, id) => s + WEEK_BY[id].en, 0), 0, 100);
   // Semana automática: repete a última escolhida por você; lesionado faz fisioterapia (ou descansa); troca o que cansa por descanso se a energia ia ficar baixa
   S.fcWeekAuto = function (c) {
     const fc = c.fc;
@@ -168,7 +173,15 @@
     if (acts) fc.wkPlan = acts.slice(0, 2); // a escolha da pessoa vira o plano da semana automática
     acts = (acts || S.fcWeekAuto(c)).slice(0, 2);
     const { r, save } = rngOf(fc), out = { acts: [], en0: fc.en, pe: 0, money: 0, fame: 0, coach: 0, inj: 0, polem: false };
-    fc.en = clamp(fc.en + weekBase(fc), 0, 100);
+    fc.en = clamp(fc.en + weekBase(fc, c), 0, 100);
+    // Salário da semana entra; a equipe pessoal sai (sem dinheiro, o contrato cai)
+    const pay = Math.round((c.wage || 0) * 52 / fc.cal.length);
+    c.money = (c.money || 0) + pay; fc.paid = (fc.paid || 0) + pay; out.pay = pay; out.staff = 0; out.dropped = [];
+    for (const k in (c.staff || {})) {
+      const cost = S.fcStaffCost(c, k);
+      if ((c.money || 0) >= cost) { c.money -= cost; out.staff += cost; if (k === 'press') c.fame += 0.5; }
+      else { delete c.staff[k]; out.dropped.push(k); }
+    }
     acts.forEach(id => {
       if (!WEEK_BY[id] || !S.fcWeekOk(c, id, [])) id = 'rest'; // o estado já tem as ações anteriores (dinheiro, treino)
       out.acts.push(id);
@@ -179,7 +192,8 @@
       else if (id === 'spons') { const p = S.fcSponsPay(c); c.money = (c.money || 0) + p; out.money += p; c.fame += 1; out.fame += 1; }
       else if (id === 'talk') {
         c.fame += 2; out.fame += 2;
-        if (r() < 0.25) { out.polem = true; c.rel.coach = clamp(c.rel.coach - 4, 0, 100); out.coach -= 4; }
+        // A assessoria de imprensa segura a polêmica
+        if (r() < (c.staff && c.staff.press ? 0 : 0.25)) { out.polem = true; c.rel.coach = clamp(c.rel.coach - 4, 0, 100); out.coach -= 4; }
       }
     });
     out.en1 = fc.en; out.at = fc.i;
@@ -188,6 +202,59 @@
     save();
     return out;
   };
+
+  // ---------- loja: o dinheiro da carreira compra vantagem, só nesta carreira ----------
+  // Preços em semanas de salário (acompanham a liga), com um piso para o começo da carreira
+  const SHOP = {
+    gear: [
+      { id: 'g1', name: 'de treino', wk: 2, b: 1, seasons: 1 },
+      { id: 'g2', name: 'profissional', wk: 6, b: 2, seasons: 1, en: 3 },
+      { id: 'g3', name: 'de ponta', wk: 15, b: 3, seasons: 2, en: 5 },
+    ],
+    staff: [
+      { id: 'pt', name: 'Preparador físico', w: 0.3, fx: '+8 de energia por semana' },
+      { id: 'physio', name: 'Fisioterapeuta particular', w: 0.4, fx: 'Lesões 30% mais curtas' },
+      { id: 'nutri', name: 'Nutricionista', w: 0.3, fx: 'A idade pesa menos no físico' },
+      { id: 'video', name: 'Analista de vídeo', w: 0.5, fx: 'Nota +0,08 por jogo' },
+      { id: 'press', name: 'Assessoria de imprensa', w: 0.3, fx: 'Mais fama e entrevista sem polêmica' },
+    ],
+    life: [
+      { id: 'car', name: 'Carro novo', wk: 20, fame: 4, fans: 2, fx: 'Fama e torcida' },
+      { id: 'house', name: 'Casa nova', wk: 50, fame: 6, fans: 4, fx: 'Mais fama e torcida' },
+    ],
+  };
+  S.FC_SHOP = SHOP;
+  const price = (c, wk, floor) => Math.max(floor * wk, Math.round((c.wage || 0) * wk / 1000) * 1000);
+  S.fcGearName = (c, g) => (c.pos === 'GOL' ? 'Luvas ' : 'Chuteira ') + g.name;
+  S.fcGearPrice = (c, id) => price(c, SHOP.gear.find(g => g.id === id).wk, 2000);
+  S.fcStaffCost = (c, id) => price(c, SHOP.staff.find(g => g.id === id).w, 1500);
+  S.fcLifePrice = (c, id) => price(c, SHOP.life.find(g => g.id === id).wk, 5000);
+  // Atributos que o equipamento pode subir: os três que mais pesam na posição
+  S.fcGearAttrs = c => S.attrOrder(c.pos).slice(0, 3);
+  S.fcShopSync = c => { c.shopB = c.gear && c.gear.until >= c.season ? { [c.gear.attr]: c.gear.b } : null; };
+  // Compra: equipamento (troca o atual), equipe (liga ou desliga; paga por semana) e estilo de vida (uma vez na carreira)
+  S.fcBuy = function (c, kind, id, attr) {
+    if (kind === 'gear') {
+      const g = SHOP.gear.find(x => x.id === id), p = S.fcGearPrice(c, id);
+      if (!g || (c.money || 0) < p || !S.fcGearAttrs(c).includes(attr)) return false;
+      c.money -= p; c.gear = { id, attr, b: g.b, en: g.en || 0, until: c.season + g.seasons - 1 }; S.fcShopSync(c); return true;
+    }
+    if (kind === 'staff') {
+      c.staff = c.staff || {};
+      if (c.staff[id]) { delete c.staff[id]; return true; }
+      if ((c.money || 0) < S.fcStaffCost(c, id) * 4) return false; // contrata quem tem para pagar um mês
+      c.staff[id] = 1; return true;
+    }
+    if (kind === 'life') {
+      const l = SHOP.life.find(x => x.id === id), p = S.fcLifePrice(c, id);
+      c.life = c.life || {};
+      if (!l || c.life[id] || (c.money || 0) < p) return false;
+      c.money -= p; c.life[id] = c.season; c.fame += l.fame; c.rel.fans = clamp(c.rel.fans + l.fans, 0, 100); return true;
+    }
+    return false;
+  };
+  // Gasto da equipe por semana
+  S.fcStaffWeek = c => Object.keys(c.staff || {}).reduce((s, k) => s + S.fcStaffCost(c, k), 0);
 
   function myRates(c, club) {
     const E = S.eff(c), o = S.ovr(c), role = S.role(c, club), tm = id => S.tm(c, id), sy = id => S.syn(c, id);
@@ -356,7 +423,8 @@
       let on = false, why = '';
       if (vs) {
         if (fc.injOut > 0) { why = 'lesão'; }
-        else if (r() < X.injRisk / 30) { fc.injOut = 1 + Math.floor(r.range(0.08, 0.32) * 40); fc.injName = r.pick(['lesão na coxa', 'entorse no tornozelo', 'problema muscular', 'lesão na panturrilha', 'estiramento na virilha', 'lesão no joelho']); why = 'lesão'; }
+        // Fisioterapeuta particular: lesão 30% mais curta
+        else if (r() < X.injRisk / 30) { fc.injOut = 1 + Math.floor(r.range(0.08, 0.32) * 40 * (c.staff && c.staff.physio ? 0.7 : 1)); fc.injName = r.pick(['lesão na coxa', 'entorse no tornozelo', 'problema muscular', 'lesão na panturrilha', 'estiramento na virilha', 'lesão no joelho']); why = 'lesão'; }
         // Jogo grande (finais, mata-mata continental): o técnico escala quem está melhor
         else on = r() < (knock && e.st >= 3 ? Math.min(0.97, X.share + 0.15) : X.share);
         // Sem energia, o técnico poupa (metade das vezes; em decisão, só um terço)
@@ -448,7 +516,7 @@
         out.pe = give(c, fc, g);
         // Energia gasta no jogo (o treino físico poupa nas próximas semanas) e forma pela nota
         if (fc.en !== undefined) {
-          out.en = Math.round((20 + r() * 10) * (fc.fit > 0 ? 0.7 : 1));
+          out.en = Math.round((20 + r() * 10) * (fc.fit > 0 ? 0.7 : 1)) - (c.gear && c.gear.en ? c.gear.en : 0);
           if (fc.fit > 0) fc.fit--;
           fc.en = clamp(fc.en - out.en, 0, 100);
         }
@@ -562,7 +630,7 @@
     if (fc) {
       (fc.evIds = fc.evIds || []).push(ev.id);
       const d = (c.mod.inj || 0) - inj0;
-      if (d > 0) { fc.injOut = Math.max(fc.injOut, Math.max(1, Math.round(d * (fc.cal.length - fc.i)))); fc.injName = 'lesão'; if (fc.pending) fc.pending = null; }
+      if (d > 0) { fc.injOut = Math.max(fc.injOut, Math.max(1, Math.round(d * (fc.cal.length - fc.i) * (c.staff && c.staff.physio ? 0.7 : 1)))); fc.injName = 'lesão'; if (fc.pending) fc.pending = null; }
     }
     return out;
   };
@@ -581,7 +649,7 @@
       share: A.slots ? A.games / A.slots : 0, slots: A.slots, games: A.games, goals: A.goals, assists: A.assists, cleanSheets: A.cs, saves: A.saves, penSaved: A.pen, penFaced: A.penFaced, tackles: A.tackles,
       rating: A.games ? Math.round(A.rsum / A.games * 10) / 10 : 0, injShare: A.slots ? fc.injMiss / A.slots : 0, injName: fc.injMiss ? fc.injName : null,
       league: pos === 1, cup: fc.cup.out === 'won', cont: !!fc.cont && fc.cont.kind === 'cont' && fc.cont.out === 'won', cont2: !!fc.cont && fc.cont.kind === 'cont2' && fc.cont.out === 'won',
-      contIn: fc.cont ? fc.cont.name : null, pos, pe: fc.peGot,
+      contIn: fc.cont ? fc.cont.name : null, pos, pe: fc.peGot, paid: fc.paid || 0,
       table: { pos, pts: all[pos - 1], gap: pos === 1 ? 0 : Math.max(1, all[0] - all[pos - 1]), lead: pos === 1 ? Math.max(1, all[0] - all[1]) : 0, n, rounds: lg.rounds.length,
         ids: ord.map(i => lg.ids[i]), all, promo: lg.promo, releg: lg.releg, m: null },
     };
