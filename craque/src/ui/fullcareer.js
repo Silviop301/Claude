@@ -52,17 +52,42 @@
     $('fc-5').onclick = () => quick(5);
     $('fc-end').onclick = () => quick(999);
   }
-  // Campinho da prancheta: o time em 4-3-3 com você em dourado (no banco, lesionado ou poupado, você sai do campo)
+  // Campinho da prancheta: o elenco em 4-3-3 com nome e nota. Na sua posição, a briga pela vaga: você contra o
+  // concorrente (nota perto da força do clube, a mesma conta do papel no elenco) e a chance de começar
   const SLOT = { GOL: 0, ZAG: 2, MEI: 6, ATA: 9 };
-  const SPOTS = [[50, 92], [12, 68], [37, 74], [63, 74], [88, 68], [26, 46], [50, 52], [74, 46], [16, 18], [50, 10], [84, 18]];
+  const SPOTS = [[50, 91], [12, 70], [37, 76], [63, 76], [88, 70], [20, 47], [50, 53], [80, 47], [16, 18], [50, 11], [84, 18]];
+  const LINE = ['GOL', 'ZAG', 'ZAG', 'ZAG', 'ZAG', 'MEI', 'MEI', 'MEI', 'ATA', 'ATA', 'ATA'];
+  let squadK = '', squadV = null;
+  // Elenco do clube na temporada: sempre o mesmo para o mesmo clube e ano (só aparência; o motor não usa)
+  function squad(c) {
+    const fc = c.fc, club = D.CLUB_BY_ID[fc.club], k = fc.club + ':' + fc.season + ':' + (c.tseed || 0);
+    if (k === squadK) return squadV;
+    const r = S.rng((Math.imul(Number(c.tseed) || 1, 40503) ^ (fc.season * 7919) ^ (club.strength * 131)) >>> 0);
+    const ct = D.countryOf(club), used = new Set([c.name]);
+    const name = () => { let n = ''; for (let i = 0; i < 8 && (!n || used.has(n)); i++) n = D.randomName(r() < 0.85 ? ct : 'Brasil', r); used.add(n); return n; };
+    const st = club.strength, nota = d => Math.max(35, Math.min(94, Math.round(st + d)));
+    const xi = LINE.map(() => ({ n: name(), v: nota(r.range(-4, 3)) }));
+    const bench = [0, 1, 2].map(() => ({ n: name(), v: nota(r.range(-9, -3)) }));
+    const rival = { n: name(), v: nota(0) }; // o dono da sua posição: nota = força do clube
+    return (squadK = k, squadV = { xi, bench, rival });
+  }
+  const short = n => { const w = n.split(' '); return w.length > 1 && w[w.length - 1].length > 2 ? w[w.length - 1] : n; };
   function pitch(c, nx) {
-    const on = nx.vs && nx.on && !nx.injury, mine = SLOT[c.pos];
-    const tbd = nx.vs && nx.on === null && !nx.injury, bench = nx.vs && nx.on === false && !nx.injury; // tbd: a escalação sai depois da semana
-    const dot = (k, [x, y]) => '<i class="' + (k === mine && (on || tbd) ? 'me' + (tbd ? ' tbd' : '') : '') + '" style="left:' + x + '%;top:' + y + '%">' + (k === mine && (on || tbd) ? c.number || '' : '') + '</i>';
-    const why = !nx.vs ? 'folga' : nx.week && nx.on === null ? 'escalação depois da semana' : nx.injury ? (/suspensão/.test(nx.injury) ? 'suspenso' : 'lesionado') + (nx.injLeft > 1 ? ', fora por ' + nx.injLeft + ' jogos' : ', volta no próximo') : nx.on ? 'titular' : nx.why === 'cansaço' ? 'poupado: energia baixa' : nx.why === 'banco' ? 'no banco' : 'poupado';
-    return '<div class="prc-pitch-w"><div class="prc-pitch" aria-hidden="true"><s class="mid"></s><s class="ctr"></s><s class="box t"></s><s class="box b"></s>' + SPOTS.map((p, k) => dot(k, p)).join('') + '</div>' +
-      '<div class="prc-bench"><small>Banco</small>' + [0, 1, 2, 3].map(k => '<i class="' + (k === 0 && bench ? 'me' : '') + '">' + (k === 0 && bench ? c.number || '' : '') + '</i>').join('') + '</div></div>' +
-      '<p class="prc-hand prc-st ' + (on ? 'ok' : nx.week && nx.on === null ? '' : 'no') + '">' + (c.number ? c.number + ': ' : '') + esc(why) + '</p>';
+    const sq = squad(c), mine = SLOT[c.pos], o = S.ovr(c);
+    const on = nx.vs && nx.on && !nx.injury, tbd = nx.vs && nx.on === null && !nx.injury, iIn = on || tbd; // tbd: a escalação sai depois da semana
+    const pl = (cls, txt, nm, sty) => '<i class="' + cls + '"' + (sty || '') + '>' + txt + (nm ? '<em>' + esc(short(nm)) + '</em>' : '') + '</i>';
+    const at = ([x, y]) => ' style="left:' + x + '%;top:' + y + '%"';
+    const dots = SPOTS.map((p, k) => k !== mine ? pl('', sq.xi[k].v, sq.xi[k].n, at(p))
+      : iIn ? pl('me' + (tbd ? ' tbd' : ''), c.number || o, 'Você', at(p)) : pl('cv', sq.rival.v, sq.rival.n, at(p))).join('');
+    const bench = [iIn ? pl('cv', sq.rival.v, sq.rival.n) : nx.injury ? pl('out', '+', 'DM') : pl('me', c.number || o, 'Você')].concat(sq.bench.map(b => pl('', b.v, b.n))).join('');
+    const why = !nx.vs ? 'folga' : nx.injury ? (/suspensão/.test(nx.injury) ? 'suspenso' : 'lesionado') + (nx.injLeft > 1 ? ', fora por ' + nx.injLeft + ' jogos' : ', volta no próximo') : nx.on ? 'titular' : nx.on === null ? 'escalação depois da semana' : nx.why === 'cansaço' ? 'poupado: energia baixa' : nx.why === 'banco' ? 'no banco' : 'poupado';
+    // A briga pela vaga: nota sua × nota do concorrente e a chance de começar (o que mexe nela vem junto)
+    const p = Math.round(S.fcStartP(c) * 100), en = c.fc.en === undefined ? 100 : c.fc.en;
+    const tip = en < S.FC_EN_OUT ? 'Energia abaixo de ' + S.FC_EN_OUT + ': o técnico pode te poupar.' : o < sq.rival.v ? 'Sobe com a sua nota geral e com o técnico do seu lado.' : c.rel.coach < 50 ? 'Sobe com o técnico do seu lado.' : 'A vaga é sua: mantenha a energia.';
+    const duel = nx.vs && !nx.injury ? '<div class="prc-duel"><span>Briga pela vaga</span><b>Você ' + o + '</b><s>×</s><b>' + esc(short(sq.rival.n)) + ' ' + sq.rival.v + '</b><strong>' + p + '%</strong><small>' + (nx.on === null ? 'chance de começar' : 'chance de começar o jogo seguinte') + '</small><p>' + esc(tip) + '</p></div>' : '';
+    return '<div class="prc-pitch-w"><div class="prc-pitch" aria-hidden="true"><s class="mid"></s><s class="ctr"></s><s class="box t"></s><s class="box b"></s>' + dots + '</div>' +
+      '<div class="prc-bench"><small>Banco</small>' + bench + '</div></div>' +
+      '<p class="prc-hand prc-st ' + (on ? 'ok' : nx.on === null && !nx.injury ? '' : 'no') + '">' + (c.number ? c.number + ': ' : '') + esc(why) + '</p>' + duel;
   }
   function chips(c) {
     const fc = c.fc, en = Math.round(fc.en === undefined ? 100 : fc.en);
