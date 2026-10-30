@@ -118,7 +118,9 @@
     const fresh = ach && ach.fresh ? ach.fresh.length : 0;
     const rankTxt = rank === 1 ? (hall.length > 1 ? 'Novo recorde no seu Hall da Fama!' : '') : '#' + rank + ' no seu Hall da Fama';
     const first = careerStats(G.c)[0];
-    const prizes = U.streakFinale(skGot) + U.packFinale(packWhy);
+    // Perfil: XP da carreira e metas da semana (os pacotinhos delas entram na fila junto)
+    const prof = U.profileCareer(G.c, f);
+    const prizes = U.profileFinale(prof) + U.streakFinale(skGot) + U.packFinale(packWhy);
     // Tela curta: carta com a medalha da nota, os números, a barra de pontos, Compartilhar e Desafiar, os prêmios numa faixa,
     // e links pequenos que abrem a edição da carta e o resumo (álbum, troféus, ranking, números, conquistas, de onde veio a nota)
     render(

@@ -4584,3 +4584,42 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .fc-iv.off small, .fc-iv.off em { color: var(--tx-4); }
 @media (min-width: 1000px) { #app:has(#screen > .fc), #app:has(#screen .fc-inv) { max-width: 1040px; } }
 /* ----- fim V8 ----- */
+
+/* ===== V9 · Perfil (ui/profile.js): nível, metas da semana, Domínio mundial e números de todas as carreiras ===== */
+.pf-home { grid-template-rows: auto auto auto; }
+.pf-home .pf-bar { grid-column: 2; margin-top: 4px; }
+.hg i.pf-lv { background: var(--gold); width: 40px; height: 40px; border-radius: 12px; }
+.hg i.pf-lv b { font: 800 20px/1 var(--display); color: var(--ink); }
+.pf-bar { display: block; height: 6px; border-radius: 3px; background: rgba(0, 0, 0, .3); overflow: hidden; }
+.pf-bar em { display: block; height: 100%; background: var(--gold); border-radius: 3px; }
+.pf-bar.big { height: 10px; border-radius: 5px; }
+.pf-h { margin: 4px 0 0; font: var(--t-h1); color: var(--tx-1); }
+.pf-top { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; background: var(--paper); color: var(--ink); border-radius: var(--r-lg); padding: 14px 16px; box-shadow: var(--sh-press); }
+.pf-badge { width: 76px; height: 84px; border-radius: 14px; background: var(--pitch); color: var(--gold-2); display: grid; place-items: center; align-content: center; gap: 2px; }
+.pf-badge small { font: 700 12px var(--display); text-transform: uppercase; letter-spacing: .08em; color: var(--tx-2); }
+.pf-badge b { font: 800 40px/1 var(--display); }
+.pf-rk { display: grid; gap: 6px; min-width: 0; }
+.pf-rk > b { font: 800 26px/1 var(--display); }
+.pf-rk small { font: var(--t-small); color: var(--ink-2); }
+.pf-rk .pf-bar { background: rgba(0, 0, 0, .12); }
+.pf-sec { display: grid; gap: 8px; margin-top: 12px; }
+.pf-sh { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.pf-sh h3 { margin: 0; font: 800 20px var(--display); color: var(--tx-1); }
+.pf-sh small { font: var(--t-small); color: var(--tx-3); }
+.pf-goal { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: center; padding: 10px 12px; border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--panel-line); }
+.pf-goal b { display: block; font: 700 16px/1.2 var(--display); color: var(--tx-1); }
+.pf-goal small { font: var(--t-small); color: var(--tx-2); }
+.pf-ck { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--tx-4); display: grid; place-items: center; }
+.pf-ck .ico { width: 16px; height: 16px; }
+.pf-goal.done .pf-ck { background: var(--up); border-color: var(--up); color: var(--pitch); }
+.pf-goal.done b { color: var(--tx-2); text-decoration: line-through; text-decoration-color: var(--tx-4); }
+.pf-nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--panel-line); border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--panel-line); }
+.pf-nums div { display: grid; gap: 2px; justify-items: center; padding: 10px 4px; background: color-mix(in srgb, var(--board) 55%, var(--pitch)); }
+.pf-nums b { font: 800 24px/1 var(--display); color: var(--tx-1); }
+.pf-nums span { font: var(--t-small); color: var(--tx-3); text-align: center; }
+.pf-how { margin: 0; font: var(--t-small); color: var(--tx-3); }
+.pf-fin { display: grid; gap: 2px; justify-items: center; text-align: center; }
+.pf-fin b { font: 800 22px var(--display); color: var(--gold-2); }
+.pf-fin span { font: var(--t-small); color: var(--tx-2); }
+.pf-fin .pf-ok { color: var(--up); font-weight: 700; }
+@media (min-width: 1000px) and (min-height: 560px) { #app:has(#screen .pf) { max-width: 760px; } }

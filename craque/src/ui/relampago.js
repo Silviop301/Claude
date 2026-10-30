@@ -272,7 +272,7 @@
       (combos || after !== '<div class="rl-after"></div>' ? '<div class="rl-res">' + combos + after + '</div>' : '') +
       '<details class="ob5-how rl-det"><summary>Casa a casa' + (g ? ' (' + kicksTxt + ')' : '') + '</summary>' + rows(f) + '</details>' +
       '<details class="ob5-how rl-det"><summary>Como a nota é feita</summary>' + gradeHow(f) + '</details>' +
-      U.streakFinale(run.sk.got) +
+      U.profileFinale(U.profileRel(run, f)) + U.streakFinale(run.sk.got) +
       (window.CLIMBIX_SOLO ? '' : '<button class="btn" id="rl-share">' + U.emo('🎯', 'sm') + ' ' + (g && diff > 0 ? 'Devolver o desafio' : 'Desafiar um amigo') + '<small>Ele cobra com os mesmos times escondidos</small></button>') +
       '<button class="btn ghost" id="rl-again">Jogar de novo</button>' +
       '<button class="link-btn" id="rl-home">Voltar ao início</button>');

@@ -62,7 +62,7 @@
     sel = sel || sc.per.filter(x => x.ct.id !== 'mundo').sort((a, b) => b.pct - a.pct)[0].ct.id; // abre no continente mais dominado
     const cur = sc.per.find(x => x.ct.id === sel);
     render(
-      '<button class="back-link" id="wd-back">‹ Início</button>' +
+      '<button class="back-link" id="wd-back">‹ ' + (U.backTo ? 'Voltar' : 'Início') + '</button>' +
       '<div class="wd-head"><h2>Domínio mundial</h2><b class="wd-pct">' + sc.pct + '%</b></div>' +
       '<p class="wd-sub">' + sc.won + ' de ' + sc.total + ' taças do jogo, somando todas as suas carreiras. Zere o mapa.</p>' +
       '<div class="wd-board">' + mapSvg(sc, sel) + '</div>' +
@@ -73,7 +73,7 @@
         '</div></div>').join('') + '</div>', { same: again }
     );
     if (again) window.scrollTo(0, y); // trocar de continente não volta a tela para o topo
-    $('wd-back').onclick = () => U.home();
+    $('wd-back').onclick = () => U.goBack(); // do Perfil volta para ele; da tela inicial, para ela
     document.querySelectorAll('[data-c]').forEach(el => { if (el.dataset.c) el.onclick = () => { sfx('tap'); open(el.dataset.c); }; });
   }
 

@@ -20,12 +20,13 @@
           '<span class="cc-info"><small>Continuar carreira</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : '') + sc.age + ' anos</span></span><span class="cc-go">' + U.ICON['chevron-right'] + '</span></button>'; })() : U.lastHome()) +
       '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
       U.relampagoHome() +
+      // Perfil: nível, metas da semana e o Domínio mundial (ui/profile.js)
+      (played || Object.keys(U.salaCounts()).length ? U.profileHome() : '') +
       U.rankHome() +
       // Primeira visita: sequência de dias e pedido de opinião só depois de existir uma carreira (fichas e pacotinhos ainda não querem dizer nada)
       (played ? U.streakHome() : '') +
       U.packHome() +
       // Coleção, Sala de Troféus, Conquistas e Hall da Fama ficam numa tela só
-      (played || Object.keys(U.salaCounts()).length ? U.worldHome() : '') +
       '<button class="hg mine-btn" id="b-mine"><i>' + U.ICON.cards + '</i><b>Minhas carreiras</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carreira' : ' carreiras') +
         (U.salaNew() ? ' · <em>+' + U.salaNew() + (U.salaNew() === 1 ? ' taça nova' : ' taças novas') + '</em>' : '') + '</small></button>' +
       (played ? U.feedbackHome() : '') +
@@ -47,7 +48,7 @@
     U.packHomeBind();
     U.streakBind(U.home); // pegou um pacotinho da sequência: a tela redesenha com o bloco de pacotinhos
     $('b-mine').onclick = mine;
-    U.worldHomeBind();
+    U.profileHomeBind();
     U.challengeHomeBind();
     U.relampagoHomeBind();
     if ($('b-opiniao')) $('b-opiniao').onclick = () => U.feedback('inicio', {}, home);
