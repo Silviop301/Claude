@@ -26,7 +26,7 @@
     if (e && e.k === 'lg' && fc.lg) {
       const R = fc.lg.rounds.length, m = fc.lg.rounds[e.ri].find(([a, b]) => a === 0 || b === 0);
       const vs = m && club(fc.lg.ids[m[0] === 0 ? m[1] : m[0]]);
-      line = '<span>Rodada <b>' + (e.ri + 1) + '</b> de ' + R + '</span>' + (vs ? '<span>Próximo <b>x ' + esc(vs.short || vs.name) + '</b> (' + (m[0] === 0 ? 'casa' : 'fora') + ')</span>' : '');
+      line = '<span>Rodada <b>' + (e.ri + 1) + '</b> de ' + R + '</span>' + (vs ? '<span class="tk-vs"><b>x ' + esc(vs.short || vs.name) + '</b> (' + (m[0] === 0 ? 'casa' : 'fora') + ')</span>' : '');
       no = String(e.ri + 1).padStart(4, '0') + '-' + R;
     }
     return tk('tk-cont', M.cont, '<span class="tk-who">' + (cl ? crest(cl.id, 'lg') : '') + '<span><small>' + (M.full || M.name) + '</small><b>' + esc(sc.name) + '</b>' +
