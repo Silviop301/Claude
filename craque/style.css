@@ -4852,17 +4852,24 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 
 /* Jogo ao vivo da Carreira Jogo a Jogo: a bola no campo, a posse e a sua nota minuto a minuto */
 .fc-flow:empty { display: none; }
-.fc-flow { display: grid; gap: 8px; padding: 12px; border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--panel-line); }
-.fl-pitch { position: relative; height: 74px; border: 2px solid rgba(251,248,239,.55); border-radius: 4px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 10%, transparent 10% 20%); overflow: hidden; }
-.fl-pitch s { position: absolute; text-decoration: none; border: 2px solid rgba(251,248,239,.35); }
-.fl-pitch .mid { top: 0; bottom: 0; left: 50%; border-width: 0 0 0 2px; }
-.fl-pitch .ar { top: 22%; bottom: 22%; width: 11%; }
-.fl-pitch .ar.l { left: -2px; border-left: 0; }
-.fl-pitch .ar.r { right: -2px; border-right: 0; }
-.fl-pitch span { position: absolute; bottom: 4px; font: 700 12px var(--body); color: var(--tx-3); max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fl-l { left: 8px; } .fl-r { right: 8px; }
+.fc-flow { container-type: inline-size; display: grid; gap: 8px; padding: 12px; border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--panel-line); }
+.fl-cam { perspective: 600px; perspective: 170cqw; perspective-origin: 50% -40%; aspect-ratio: 1.95; overflow: hidden; margin: -4px -12px 0; padding-top: 8px; border-radius: var(--r-sm) var(--r-sm) 0 0; background: linear-gradient(#173f2b, #1f5c39); }
+.fl-pitch { position: relative; width: 70%; margin: 0 auto; aspect-ratio: 1.4; transform-origin: 50% 0; transform: rotateX(56deg); transform-style: preserve-3d; border: 3px solid rgba(251,248,239,.7);
+  background: repeating-linear-gradient(90deg, #2b7a4b 0 8.33%, #256d43 8.33% 16.66%); }
+.fl-pitch s { position: absolute; text-decoration: none; border: 3px solid rgba(251,248,239,.6); }
+.fl-pitch .mid { top: 0; bottom: 0; left: 50%; border-width: 0 0 0 3px; }
+.fl-pitch .ctr { left: 50%; top: 50%; width: 22%; height: 30%; transform: translate(-50%, -50%); border-radius: 50%; }
+.fl-pitch .ar { top: 22%; bottom: 22%; width: 14%; }
+.fl-pitch .ar.l { left: -3px; border-left: 0; }
+.fl-pitch .ar.r { right: -3px; border-right: 0; }
+.fl-pitch .gl { top: 40%; bottom: 40%; width: 3%; background: rgba(251,248,239,.25); }
+.fl-pitch .gl.l { left: -3%; border-right: 0; } .fl-pitch .gl.r { right: -3%; border-left: 0; }
+.fl-sh { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: rgba(0,0,0,.35); transition: left .3s ease, top .3s ease; }
+.fl-ball { position: absolute; left: 50%; top: 50%; width: 17px; height: 17px; margin: -17px 0 0 -8.5px; border-radius: 50%; transform-origin: 50% 100%; transform: rotateX(-56deg);
+  background: radial-gradient(circle at 35% 30%, #fff 0 30%, #e9e3d2 60%, #b9b29f 100%); box-shadow: 0 0 0 3px rgba(242,194,48,.45); transition: left .3s ease, top .3s ease; }
+.fl-tm { display: flex; justify-content: space-between; gap: 8px; margin-top: -2px; }
+.fl-tm span { font: 700 12px var(--body); color: var(--tx-3); max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fl-l::after { content: ' →'; } .fl-r::before { content: '← '; }
-.fl-ball { position: absolute; top: 38%; left: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--paper); box-shadow: 0 0 0 3px rgba(242,194,48,.35), 0 2px 0 rgba(0,0,0,.4); transition: left .3s ease; }
 .fl-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .fl-zone { margin: 0; font: 700 15px var(--body); color: var(--tx-1); }
 .fl-zone.up { color: var(--up); } .fl-zone.down { color: var(--down); }
