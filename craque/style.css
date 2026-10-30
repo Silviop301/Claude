@@ -4623,3 +4623,6 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .pf-fin span { font: var(--t-small); color: var(--tx-2); }
 .pf-fin .pf-ok { color: var(--up); font-weight: 700; }
 @media (min-width: 1000px) and (min-height: 560px) { #app:has(#screen .pf) { max-width: 760px; } }
+
+/* Janela: os pedidos do contrato num bloco só, acima dos cartões (valem para qualquer proposta) */
+.of-terms-top { background: var(--paper); color: var(--ink); border-radius: var(--r-lg); padding: 10px 12px; box-shadow: var(--sh-press); }

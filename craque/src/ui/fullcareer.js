@@ -117,7 +117,7 @@
     const side = id => '<div class="fs-tm' + (id === my ? ' me' : '') + '">' + crest(id, 'md') + '<span>' + esc(nameOf(id)) + '</span></div>';
     const tag = esc(x.compName) + ' · ' + esc(x.stage);
     if (state === 'next') {
-      const who = x.injury ? 'Lesionado (' + esc(x.injury) + '): fora deste jogo' : x.on ? 'Você começa jogando' : x.why === 'banco' ? 'Você fica no banco' : 'O técnico vai poupar você neste jogo';
+      const who = x.injury ? 'Lesionado (' + esc(x.injury) + '): ' + (x.injLeft > 1 ? 'fora por mais ' + x.injLeft + ' jogos' : 'volta no próximo jogo') : x.on ? 'Você começa jogando' : x.why === 'banco' ? 'Você fica no banco' : 'O técnico vai poupar você neste jogo';
       return '<div class="fs-card next' + (x.moment ? ' dec' : '') + '"><div class="fs-lbl">' + tag + '</div><div class="fs-sc">' + side(h) + '<b><i>×</i></b>' + side(a) + '</div>' +
         '<p class="fs-line">' + (x.home ? 'Em casa' : 'Fora de casa') + ' · ' + who + '</p>' + (x.moment ? '<p class="fc-dec">' + U.emo('🎯', 'xs') + ' Jogo com lance decisivo seu</p>' : '') + '</div>';
     }

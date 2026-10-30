@@ -147,8 +147,9 @@
     const tm = S.TERM_BY_ID[win.term];
     const why = ended ? 'Seu contrato com ' + D.o(esc(club(G.c.club).name)) + ' acabou' : G.c.clauseOpen ? 'Sua cláusula de saída abriu o mercado' : 'Seu empresário abriu o mercado';
     const n = offers.length;
-    // Pedidos do contrato (valem para qualquer proposta): dentro de cada cartão, o mesmo seletor
-    const terms = '<div class="of-terms"><span class="of-tl">O que pedir na mesa</span><div class="of-seg terms">' +
+    // Pedidos do contrato (valem para qualquer proposta): um seletor só, acima dos cartões (dentro de cada cartão
+    // parecia que valia só para aquele clube)
+    const terms = '<div class="of-terms of-terms-top"><span class="of-tl">O que pedir na mesa · vale para qualquer proposta</span><div class="of-seg terms">' +
       S.TERMS.map(t => '<button data-term="' + t.id + '"' + (t.id === win.term ? ' class="on"' : '') + ' aria-label="' + esc(t.name) + '">' + U.emo(t.icon, 'xs') + '<small>' + esc(t.name.replace(/^Mais /, '').split(' ')[0].replace(/^./, x => x.toUpperCase())) + '</small></button>').join('') +
       '</div><p class="term-desc">' + esc(tm.desc) + '</p></div>';
     render(
@@ -157,7 +158,7 @@
       '<p class="of-sub">' + why + ' · nota geral ' + S.ovr(G.c) + ' · ' + U.emo('⭐', 'xs') + ' ' + S.fameLabel(G.c.fame) + '</p>' +
       // 5 cartões ou mais: no computador o de renovar cai na 2ª linha, fora da tela; o atalho leva até ele (só aparece lá)
       (all.length > 4 ? '<button class="link-btn of-renew" id="b-renew">Ou renove com ' + esc(D.o(club(G.c.club).name)) + ' ↓</button>' : '') +
-      U.originNote(G.c) + offerRail(all, { terms }) + tools(win, false) +
+      U.originNote(G.c) + terms + offerRail(all, {}) + tools(win, false) +
       '<p class="muted small of-fame">' + U.emo('⭐', 'xs') + ' Fama traz propostas de clubes maiores, salários mais altos' + (G.c.fame >= 150 ? ', vaga mais fácil na seleção' : '') + ' e mais votos na Bola de Ouro.</p>' +
       (S.canRetire(G.c) ? '<button class="btn ghost" id="b-retire">Pendurar as chuteiras</button>' : '')
     );
