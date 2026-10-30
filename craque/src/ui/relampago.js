@@ -51,17 +51,17 @@
   }
 
   // ---------- tela inicial ----------
-  function homeHtml() {
+  function homeHtml(bare) { // bare: só o cartão do desafio (o ingresso do modo fica na bilheteria)
     const d = active();
     const old = load(KEY);
     if (!d && old && (old.again || (!old.done && played().includes(old.s)))) return '<div class="card dz-home rl-dz"><button class="dz-x" id="rl-x" aria-label="Fechar">' + U.ICON.x + '</button>' +
-      '<div class="dz-top">' + U.emo('⚡', 'md') + '<div><small>Desafio relâmpago</small><b>Você já jogou esse desafio</b><span>Cada desafio vale uma vez só. Desafie de volta com uma carreira nova</span></div></div></div>' + btn();
+      '<div class="dz-top">' + U.emo('⚡', 'md') + '<div><small>Desafio relâmpago</small><b>Você já jogou esse desafio</b><span>Cada desafio vale uma vez só. Desafie de volta com uma carreira nova</span></div></div></div>' + (bare ? '' : btn());
     const card = d ? (() => { const f = S.rlScore(d.s, d.p);
       return '<div class="card dz-home rl-dz"><button class="dz-x" id="rl-x" aria-label="Descartar desafio">' + U.ICON.x + '</button>' +
         '<div class="dz-top">' + U.emo('⚡', 'md') + '<div><small>Desafio relâmpago</small><b>' + esc(d.n) + ' fez ' + f.total + ' pontos</b>' +
         '<span>Nota ' + f.grade + ' · mesmos sorteios pra você</span></div></div>' +
         '<button class="btn rl-go" id="rl-accept">Aceitar desafio</button></div>'; })() : '';
-    return card + btn();
+    return card + (bare ? '' : btn());
   }
   const btn = () => '<button class="hg rl-btn" id="b-relampago"><i>' + U.emo('⚡', 'sm') + '</i><b>Carreira Relâmpago</b><small>5 casas, 5 bolas cada. Desafie um amigo</small></button>';
   function homeBind() {

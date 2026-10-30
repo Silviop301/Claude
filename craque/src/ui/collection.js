@@ -174,7 +174,7 @@
     if (!b) return;
     const list = all(), e = list.reduce((a, x) => (x.at > a.at ? x : a));
     thumb(e.card, b.querySelector('img'));
-    b.onclick = () => view(e.card, U.home, 'Início');
+    b.onclick = () => view(e.card, U.mine, 'Carreiras');
   }
 
   // Uma carta da coleção em 3D (arrastar gira); compartilhar manda o link dela

@@ -315,7 +315,7 @@
   }
   function streakBox(kind, got, note) {
     const late = I.streakFlush(), T = I.streakTxt;
-    if (late.length && !note) note = '+' + late.map(x => T(x.r)).join(' e ') + ' de um dia anterior da sequência' + (!late.some(x => x.r.p) ? ': já são suas' : kind === 'home' ? ': já estão nos pacotinhos aqui embaixo' : ': abra na tela inicial');
+    if (late.length && !note) note = '+' + late.map(x => T(x.r)).join(' e ') + ' de um dia anterior da sequência' + (!late.some(x => x.r.p) ? ': já são suas' : ': abra na tela inicial');
     const st = I.streak(), pend = st.cells.find(c => c.claim);
     const head = U.emo('🔥', 'sm') + ' ' + (got && kind === 'fin' ? 'Dia ' + got.day + ' da sequência liberado!' : st.n >= 1 ? (st.n > 1 ? st.n + ' dias seguidos' : '1 dia de sequência') : 'Sequência de dias');
     const sub = note || (pend ? 'Toque no dia para pegar ' + T(pend.r) : st.played ? 'Prêmio de hoje já pego. Amanhã: ' + T(st.next)

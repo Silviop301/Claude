@@ -354,5 +354,5 @@
   }
 
   window.CLIMBIX_CLOUD = { touch, sync };
-  Object.assign(U, { cloudName: () => { const a = acc(); return a ? a.user : 'Conta'; }, cloudLine: homeLine, cloud: screen, cloudBoot: boot, cloudMerge: merge });
+  Object.assign(U, { cloudStatus: () => (acc() ? stTxt() : null), cloudName: () => { const a = acc(); return a ? a.user : 'Conta'; }, cloudLine: homeLine, cloud: screen, cloudBoot: boot, cloudMerge: merge });
 })();
