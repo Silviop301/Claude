@@ -196,7 +196,7 @@
       ctr.firstChild.classList.add('lit');
       for (let i = 0; i < k; i++) {
         const t = document.createElement('img');
-        t.src = 'assets/tw/1f39f.svg'; t.className = 'pk-tk'; t.alt = '';
+        t.src = U.emoSrc('🎟️'); t.className = 'pk-tk'; t.alt = '';
         w.appendChild(t);
         const mx = (sx + ex) / 2 - 70 + i * 20, my = Math.min(sy, ey) + 60 - i * 10;
         const a = t.animate([{ transform: 'translate(' + sx + 'px,' + sy + 'px) scale(.5)', opacity: 0 }, { transform: 'translate(' + sx + 'px,' + sy + 'px) scale(1)', opacity: 1, offset: .15 },

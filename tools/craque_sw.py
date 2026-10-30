@@ -27,7 +27,7 @@ for p in sorted((ROOT / "src").rglob("*.js")):
         p.write_text(new)
 files = ["./"]
 for p in sorted(ROOT.rglob("*")):
-    if p.is_file() and p.name not in ("sw.js", "README.md") and p.suffix in (".html", ".css", ".js", ".png", ".jpg", ".svg", ".glb", ".mp3", ".webmanifest", ".woff2"):
+    if p.is_file() and p.name not in ("sw.js", "README.md") and p.suffix in (".html", ".css", ".js", ".png", ".jpg", ".svg", ".glb", ".mp3", ".webp", ".webmanifest", ".woff2"):
         rel = p.relative_to(ROOT).as_posix()
         files.append("./" + versioned.get(rel, rel))
 digest = hashlib.sha1("".join(files).encode()).hexdigest()[:8]
@@ -36,7 +36,7 @@ digest = hashlib.sha1("".join(files).encode()).hexdigest()[:8]
 # depois que o jogo abre, para não disputar a rede com a primeira tela. Escudos, taças, acabamentos e o 3D
 # (quase 40 MB, e uma carreira vê poucos) ficam de fora: o fetch guarda cada um na primeira vez que aparece.
 core_re = re.compile(r"^\./(?:$|index\.html|style\.css|manifest\.webmanifest|sw\.js|src/|fonts/|icons/)")
-later_re = re.compile(r"^\./assets/(?:tw|sons|sprites)/")
+later_re = re.compile(r"^\./assets/(?:tw|ic|sons|sprites)/")
 used = (ROOT / "style.css").read_text() + (ROOT / "index.html").read_text()
 core = [f for f in files if core_re.match(f) and (not f.startswith("./fonts/") or f[2:] in used)]
 rest = [f for f in files if not core_re.match(f) and (later_re.match(f) or f[2:] in used)]

@@ -63,7 +63,7 @@
     const hero = splash && screen.querySelector('.hero');
     if (hero) { splash.classList.remove('splash'); splash.querySelector('.ball3d').id = 'ball3d'; hero.replaceWith(splash); }
     // Sem 3D (desligado, sem WebGL ou a biblioteca não chegou): bola desenhada no lugar, para o topo não ficar vazio
-    const flatBall = () => { const el = $('ball3d'); if (el && !el.querySelector('canvas') && !el.classList.contains('flat')) { el.classList.add('flat'); el.innerHTML = '<img src="assets/tw/26bd.svg" alt="">'; } };
+    const flatBall = () => { const el = $('ball3d'); if (el && !el.querySelector('canvas') && !el.classList.contains('flat')) { el.classList.add('flat'); el.innerHTML = '<img src="' + U.emoSrc('⚽') + '" alt="">'; } };
     const mountBall = () => {
       const el = $('ball3d');
       if (!el || !U.cfg.fx3d) return flatBall();
