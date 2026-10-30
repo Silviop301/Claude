@@ -1,6 +1,5 @@
-// Interface — Carreira Jogo a Jogo (c.mode 'completa'; motor em engine/fullcareer.js). O centro é a agenda da
-// semana: os dias até o próximo jogo (dois com as ações da semana), os recados e os atalhos (tabela, jogos,
-// ficha, loja, palpites do Zé). Cada jogo passa ao vivo (relógio de 0' a 90', placares e tabela mudando) e termina
+// Interface — Carreira Jogo a Jogo (c.mode 'completa'; motor em engine/fullcareer.js). O centro é o celular
+// do jogador: notificações (técnico, agenda, preparador, Zé) e apps (agenda da semana, tabela, jogos, ficha, loja, Zé). Cada jogo passa ao vivo (relógio de 0' a 90', placares e tabela mudando) e termina
 // na capa do jornal. Finais e o clássico abrem o lance decisivo antes do jogo. No fim do calendário, o resumo de sempre.
 (function () {
   const U = window.CRAQUE_UI;
@@ -36,7 +35,48 @@
     // Semana automática: fecha sozinha e a agenda mostra o que foi feito
     if (c.fc.wkDue && c.fcAuto) { S.fcWeek(c); save(); }
     agOpen = -1;
-    agenda();
+    phone();
+  }
+  // ---------- o celular (tela central) ----------
+  // O hub é a tela do celular do jogador: relógio com o próximo jogo, notificações (técnico, agenda, preparador, Zé)
+  // que levam às telas, os apps e o ingresso para o jogo.
+  const APPS = [['ag', '📒', 'Agenda'], ['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['me', '📈', 'Ficha'], ['shop', '🏷️', 'Loja'], ['bet', '🎰', 'Zé']];
+  function phone() {
+    const c = G.c, nx = S.fcNext(c), fc = c.fc;
+    const gd = dayOf(nx.e), eve = DAYS[(gd + 6) % 7];
+    const hh = 17 + (fc.i * 7) % 5, mm = (fc.i * 23 + 11) % 60, clk = hh + ':' + String(mm).padStart(2, '0');
+    const en = Math.round(fc.en === undefined ? 100 : fc.en);
+    const when = ['agora', '8 min', '25 min', '1 h', '2 h', '3 h'];
+    render('<div class="ph" id="fc"><div class="ph-cols"><div class="ph-scr">' +
+      '<div class="ph-bar"><span>' + eve + ' ' + clk + '</span><span class="' + (en < S.FC_EN_OUT ? 'out' : en < S.FC_EN_LOW ? 'low' : '') + '">Energia ' + en + '%</span></div>' +
+      '<div class="ph-clock">' + clk + '</div>' +
+      '<p class="ph-date">' + (nx.vs ? 'Amanhã: x ' + esc(nameOf(nx.vs)) + ', ' + (nx.home ? 'em casa' : 'fora') + ' · ' + esc(nx.compName) : 'Amanhã: folga do time · ' + esc(nx.compName)) + '</p>' +
+      '<div class="ph-ns">' + pings(c, nx).map((n, k) => '<button class="ph-n"' + (n.go ? ' data-go="' + n.go + '"' : ' disabled') + '><b>' + esc(n.who) + ' <i>· ' + when[Math.min(k, when.length - 1)] + '</i></b><span>' + esc(n.txt) + '</span></button>').join('') + '</div>' +
+      '<div class="ph-apps">' + APPS.map(([k, e, n]) => '<button class="ph-app" data-go="' + k + '"><i>' + U.emo(e, 'md') + '</i><span>' + n + '</span></button>').join('') + '</div>' +
+      '</div><div class="ph-side">' +
+        '<button class="prc-tk" id="fc-play"><span class="prc-tk-m"><b>' + (nx.moment ? 'Jogar a decisão' : nx.vs ? 'Ir pro jogo' : 'Seguir') + '</b><small>' +
+          (nx.vs ? esc(nameOf(nx.home ? c.club : nx.vs)) + ' × ' + esc(nameOf(nx.home ? nx.vs : c.club)) : esc(nx.compName)) + '</small></span><span class="prc-tk-s"><small>jogo</small><b>' + (fc.i + 1) + '</b></span></button>' +
+        '<div class="prc-sim"><button class="link-btn" id="fc-5">Simular 5 jogos</button><button class="link-btn" id="fc-end">Simular até o fim</button></div>' +
+      '</div></div></div>');
+    document.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go); }; });
+    $('fc-play').onclick = () => { if (G.c.fc.wkDue) { S.fcWeek(G.c, myPick()); unpick(); } start(S.fcNext(G.c)); };
+    $('fc-5').onclick = () => quick(5);
+    $('fc-end').onclick = () => quick(999);
+  }
+  // Notificações do celular: quem fala e o que pede; cada uma abre a tela dela
+  function pings(c, nx) {
+    const fc = c.fc, out = [], n = (go, who, txt) => out.push({ go, who, txt });
+    const p = Math.round(S.fcStartP(c) * 100);
+    if (nx.injury) n(null, /suspensão/.test(nx.injury) ? 'Diretoria' : 'Departamento médico', /suspensão/.test(nx.injury) ? 'Suspenso por causa da aposta: fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') : nx.injury.charAt(0).toUpperCase() + nx.injury.slice(1) + ': fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') + (fc.wkDue ? ' Fisioterapia na semana ajuda.' : ''));
+    else if (nx.vs) n(null, 'Técnico', nx.on === null ? 'Escalo o time depois do treino da semana. Hoje você tem ' + p + '% de chance de começar.' : nx.on ? 'Amanhã você começa jogando. Conto contigo.' : nx.why === 'cansaço' ? 'Vou te poupar amanhã, você tá sem perna. Descansa.' : nx.why === 'banco' ? 'Amanhã você começa no banco. Treina forte que a chance aparece.' : 'Amanhã vou rodar o elenco e você fica fora.');
+    const A = id => (S.FC_WEEK.find(a => a.id === id) || S.FC_WEEK[2]).name.toLowerCase();
+    if (fc.wkDue) { if (!pick) pick = S.fcWeekAuto(c); n('ag', 'Agenda', 'Semana marcada: ' + A(pick[0]) + ' e ' + A(pick[1]) + '. Toque para mudar.'); }
+    else if (fc.wkSum && fc.wkSum.at === fc.i) n('ag', 'Agenda', 'Semana feita: ' + fc.wkSum.acts.map(A).join(' e ') + '. Energia ' + Math.round(fc.wkSum.en0) + ' → ' + Math.round(fc.wkSum.en1) + '.');
+    if ((c.pe || 0) >= 1 && S.canInvestAny(c)) n('evo', 'Preparador', 'Você tem ' + c.pe + (c.pe === 1 ? ' ponto' : ' pontos') + ' para gastar na ficha.');
+    if (fc.wkDue && (fc.en === undefined ? 100 : fc.en) < S.FC_EN_LOW) n('ag', 'Preparador físico', 'Energia ' + Math.round(fc.en) + '. Marca um descanso na agenda.');
+    if (fc.bet) n('bet', 'Zé', 'Teu palpite: ' + (fc.bet.pick === 1 ? 'empate' : nameOf(fc.bet.pick === 0 ? fc.bet.h : fc.bet.a)) + '. Sai na próxima rodada.');
+    else if (S.fcBetGame(c)) n('bet', 'Zé', 'Tenho um jogo bom pra rodada. Quer ver?');
+    return out;
   }
   function agenda() {
     const c = G.c, nx = S.fcNext(c), fc = c.fc;
@@ -71,43 +111,25 @@
     const en = Math.round(open ? S.fcWeekEnergy(c, pick) : fc.en === undefined ? 100 : fc.en);
     const lvl = e => (e < S.FC_EN_OUT ? 'out' : e < S.FC_EN_LOW ? 'low' : 'ok');
     const sum = done ? '<p class="ag-sum">' + (c.fcAuto ? 'Semana automática' : 'Semana fechada') + ': energia ' + Math.round(done.en0) + ' → ' + Math.round(done.en1) + (done.pe ? ' · +' + num2(done.pe) + ' de evolução' : '') + (done.money > 0 ? ' · +R$ ' + U.money(done.money) : '') + (done.polem ? '. A entrevista virou polêmica e o técnico não gostou.' : '') + '</p>' : '';
-    render('<div class="ag" id="fc"><div class="ag-cols">' +
-      '<div class="ag-book"><header><b>Semana ' + (fc.i + 1) + '</b><span>' + esc(fc.lg.name) + (me ? ' · ' + esc(nameOf(c.club)) + ' ' + me + 'º' : '') + '</span></header>' +
+    render('<div class="fc-scr ag" id="fc-scr"><button class="back-link" id="fc-back">‹ Celular</button>' +
+      '<div class="ag-book"><header><b>Agenda</b><span>' + esc(fc.lg.name) + (me ? ' · ' + esc(nameOf(c.club)) + ' ' + me + 'º' : '') + '</span></header>' +
         (open ? '<p class="ag-hint">Toque num dia marcado para trocar o que você faz.</p>' : '') +
         rows + game + sum +
         '<div class="ag-box"><div><small>' + (open ? 'Energia no jogo' : 'Energia') + '</small><b class="' + lvl(en) + '">' + en + '</b></div><div><small>Forma</small><b>' + formTxt(fc.fo || 0) + '</b></div><div><small>Técnico</small><b>' + Math.round(c.rel.coach) + '</b></div></div>' +
       '</div>' +
-      '<div class="ag-side">' + notes(c) +
-        '<div class="prc-ics">' + [['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['me', '📈', 'Ficha'], ['shop', '🏷️', 'Loja'], ['bet', '🎰', 'Palpites']].map(([k, e, n]) =>
-          '<button class="prc-ic" data-go="' + k + '">' + U.emo(e, 'md') + '<span>' + n + '</span></button>').join('') + '</div>' +
-        '<button class="prc-tk" id="fc-play"><span class="prc-tk-m"><b>' + (nx.moment ? 'Jogar a decisão' : nx.vs ? 'Jogar' : 'Seguir') + '</b><small>' +
-          (nx.vs ? esc(nameOf(nx.home ? c.club : nx.vs)) + ' × ' + esc(nameOf(nx.home ? nx.vs : c.club)) : esc(nx.compName)) + '</small></span><span class="prc-tk-s"><small>jogo</small><b>' + (fc.i + 1) + '</b></span></button>' +
-        '<label class="fc-auto ag-auto"><input type="checkbox" id="fc-auto"' + (c.fcAuto ? ' checked' : '') + '><span>Repetir esta semana sozinho</span></label>' +
-        '<div class="prc-sim"><button class="link-btn" id="fc-5">Simular 5 jogos</button><button class="link-btn" id="fc-end">Simular até o fim</button></div>' +
-      '</div></div></div>');
-    document.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go); }; });
+      '<label class="fc-auto ag-auto"><input type="checkbox" id="fc-auto"' + (c.fcAuto ? ' checked' : '') + '><span>Repetir esta semana sozinho</span></label>' +
+      '<button class="btn" id="fc-agok">Pronto</button></div>');
+    $('fc-back').onclick = phone; $('fc-agok').onclick = () => { sfx('tap'); phone(); };
     document.querySelectorAll('.ag-d.slot').forEach(b => { b.onclick = () => { sfx('tap'); const k = +b.dataset.slot; agOpen = agOpen === k ? -1 : k; agenda(); }; });
     document.querySelectorAll('.ag-o').forEach(b => { b.onclick = () => { sfx('tap'); pick[agOpen] = b.dataset.id; touched = true; agOpen = -1; agenda(); }; });
     $('fc-auto').onchange = e => { c.fcAuto = e.target.checked; if (c.fcAuto && c.fc.wkDue) { S.fcWeek(c, myPick()); unpick(); bar(); } save(); agOpen = -1; agenda(); };
-    $('fc-play').onclick = () => { if (G.c.fc.wkDue) { S.fcWeek(G.c, myPick()); unpick(); } start(S.fcNext(G.c)); };
-    $('fc-5').onclick = () => quick(5);
-    $('fc-end').onclick = () => quick(999);
+    window.scrollTo(0, 0);
   }
-  // Recados: o que pede atenção antes do jogo, cada um leva para a tela dele
-  function notes(c) {
-    const fc = c.fc, items = [];
-    const it = (go, who, txt) => items.push('<button class="ag-n"' + (go ? ' data-go="' + go + '"' : ' disabled') + '><b>' + esc(who) + '</b><span>' + esc(txt) + '</span></button>');
-    if ((c.pe || 0) >= 1 && S.canInvestAny(c)) it('evo', 'Preparador', 'Você tem ' + c.pe + (c.pe === 1 ? ' ponto' : ' pontos') + ' para gastar na ficha.');
-    if (fc.injOut > 0 && !S.fcSuspended(c) && fc.wkDue) it(null, 'Departamento médico', 'Fisioterapia na semana tira 1 jogo da lesão.');
-    if (fc.wkDue && (fc.en === undefined ? 100 : fc.en) < S.FC_EN_LOW) it(null, 'Preparador físico', 'Energia ' + Math.round(fc.en) + '. Um descanso na semana faz diferença.');
-    if (fc.bet) it('bet', 'Zé', 'Teu palpite: ' + (fc.bet.pick === 1 ? 'empate' : nameOf(fc.bet.pick === 0 ? fc.bet.h : fc.bet.a)) + '. Sai na próxima rodada.');
-    else if (S.fcBetGame(c)) it('bet', 'Zé', 'Tenho um jogo bom pra rodada. Quer ver?');
-    return '<div class="ag-notes"><b>Recados</b>' + (items.length ? items.join('') : '<p>Nenhum recado. Bom jogo!</p>') + '</div>';
-  }
-  // Atalhos da agenda: cada um abre uma tela com volta para a agenda
+  // Apps do celular: cada um abre uma tela com volta para o celular
   const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Palpites do Zé' };
   function go(k) {
     if (k === 'evo') return evolve();
+    if (k === 'ag') { agOpen = -1; return agenda(); }
     const c = G.c, body = {
       wk: '<div class="fc-wk" id="fc-wk"></div><div class="fs-acts" id="fc-acts"></div>',
       tbl: '<div class="fc-tabs" id="fc-tabs"></div><div class="fs-tbl" id="fc-tbl"></div>',
@@ -116,8 +138,8 @@
       shop: '<div class="fc-shop" id="fc-shop"></div>',
       bet: '<div class="fc-shop" id="fc-bet"></div>',
     }[k];
-    render('<div class="fc-scr" id="fc-scr"><button class="back-link" id="fc-back">‹ Agenda</button><h2>' + TITLE[k] + '</h2>' + body + '</div>');
-    $('fc-back').onclick = () => { unpick(); hub(); };
+    render('<div class="fc-scr" id="fc-scr"><button class="back-link" id="fc-back">‹ Celular</button><h2>' + TITLE[k] + '</h2>' + body + '</div>');
+    $('fc-back').onclick = phone;
     if (k === 'wk') { weekBox(); weekActs(); }
     else if (k === 'tbl') { tblKey = null; table(); tabs(); }
     else if (k === 'cal') { compsBox(standings('lg').findIndex(x => x.i === 0) + 1); calBox(); }
@@ -130,7 +152,7 @@
   function weekActs() {
     const el = $('fc-acts');
     if (!el) return;
-    el.innerHTML = '<button class="btn" id="fc-wkgo">' + (G.c.fc.wkDue ? 'Confirmar a semana' : 'Voltar à agenda') + '</button>';
+    el.innerHTML = '<button class="btn" id="fc-wkgo">' + (G.c.fc.wkDue ? 'Confirmar a semana' : 'Voltar ao celular') + '</button>';
     $('fc-wkgo').onclick = () => { if (G.c.fc.wkDue) { S.fcWeek(G.c, myPick()); sfx('tap'); save(); bar(); } unpick(); hub(); };
   }
 
@@ -654,7 +676,7 @@
           (out.pe ? row('Evolução', '+' + num1(out.pe), 'up') : '') + '</div></div>' +
       (others ? '<div class="jn-o"><b>Os outros jogos</b><div>' + others + '</div></div>' : '') +
       '<div class="jn-f"><p>' + esc(nameOf(c.club)) + ' está em ' + lgPos + 'º na ' + esc(fc.lg.name) + ', com ' + fc.lg.tab[0].p + (fc.lg.tab[0].p === 1 ? ' ponto.' : ' pontos.') + '</p>' + ze + '</div>' +
-      '</article><button class="btn" id="fc-next">' + (done ? 'Ver resumo da temporada' : 'Voltar à agenda') + '</button></div>');
+      '</article><button class="btn" id="fc-next">' + (done ? 'Ver resumo da temporada' : 'Voltar ao celular') + '</button></div>');
     $('fc-next').onclick = () => (out.title ? celebrate(out, paintOrEnd) : paintOrEnd());
   }
   // Taça ganha: tela curta de festa
@@ -669,7 +691,7 @@
   function evolve() {
     const c = G.c, E = S.eff(c);
     const rows = D.INVEST.filter(t => (c.inv[t.id] || 0) < S.investMax(t.id) && !S.investCapped(c, t.id));
-    render('<button class="back-link" id="fc-back">‹ Agenda</button><div class="eyebrow">Evoluir</div><h2>Gaste seus pontos</h2>' +
+    render('<button class="back-link" id="fc-back">‹ Celular</button><div class="eyebrow">Evoluir</div><h2>Gaste seus pontos</h2>' +
       '<p class="fc-sub">Você tem <b>' + (c.pe || 0) + '</b> ' + ((c.pe || 0) === 1 ? 'ponto' : 'pontos') + '. O que você compra agora já vale no próximo jogo.</p>' +
       '<div class="fc-inv">' + rows.map(t => { const p = S.investPrice(c, t.id), ok = S.canInvest(c, t.id), at = t.attr ? Object.keys(t.attr)[0] : null;
         return '<button class="fc-iv' + (ok ? '' : ' off') + '" data-id="' + t.id + '"' + (ok ? '' : ' disabled') + '><span><b>' + esc(t.name) + '</b><small>' + (at ? esc(D.ATTR_LABEL[at]) + ' ' + Math.round(E[at]) + ' → ' + Math.round(E[at] + t.attr[at]) : 'Menos lesão') + '</small></span><em>' + p + (p === 1 ? ' ponto' : ' pontos') + '</em></button>'; }).join('') + '</div>');

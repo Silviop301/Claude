@@ -321,3 +321,6 @@ Proibido também: cartão com faixa colorida na lateral.
   (liga no domingo, copa/continental na quarta), dois dias com as ações da semana (toque troca), o resto com a rotina
   do clube, o dia do jogo com a sua situação e a chance de começar, recados (preparador, DM, Zé) e atalhos.
   Motor igual (`S.fcWeek` com duas ações): equilíbrio não muda.
+- **Celular vira o hub** (o Silvio tinha clicado na agenda por engano; o que ele queria era o celular): tela do aparelho
+  com relógio e o próximo jogo, notificações (técnico com a chance de começar, agenda, preparador, Zé) que abrem as
+  telas, apps (Agenda, Tabela, Jogos, Ficha, Loja, Zé) e o ingresso do jogo. A agenda virou um app com "Pronto".
