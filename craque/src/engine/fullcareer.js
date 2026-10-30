@@ -731,6 +731,7 @@
       }
     }
     betResolve(c, fc, e, out);
+    if (S.fcFixResolve) { S.fcFixResolve(c, fc, out, r); S.fcBichoResolve(c, fc, out, r); } // engine/cassino.js
     if (out.title) out.pe += give(c, fc, 1);
     fc.pending = null;
     fc.i++;
