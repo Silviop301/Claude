@@ -4849,3 +4849,35 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .jn-ze { border: 1px dashed var(--ink); padding: 6px 8px; font-family: Georgia, serif !important; font-style: italic; }
 @media (min-width: 1000px) and (min-height: 560px) { #app:has(#screen .jn-w) { max-width: 640px; } }
 /* ----- fim V9 ----- */
+
+/* Jogo ao vivo da Carreira Jogo a Jogo: a bola no campo, a posse e a sua nota minuto a minuto */
+.fc-flow:empty { display: none; }
+.fc-flow { display: grid; gap: 8px; padding: 12px; border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--panel-line); }
+.fl-pitch { position: relative; height: 74px; border: 2px solid rgba(251,248,239,.55); border-radius: 4px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 10%, transparent 10% 20%); overflow: hidden; }
+.fl-pitch s { position: absolute; text-decoration: none; border: 2px solid rgba(251,248,239,.35); }
+.fl-pitch .mid { top: 0; bottom: 0; left: 50%; border-width: 0 0 0 2px; }
+.fl-pitch .ar { top: 22%; bottom: 22%; width: 11%; }
+.fl-pitch .ar.l { left: -2px; border-left: 0; }
+.fl-pitch .ar.r { right: -2px; border-right: 0; }
+.fl-pitch span { position: absolute; bottom: 4px; font: 700 12px var(--body); color: var(--tx-3); max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fl-l { left: 8px; } .fl-r { right: 8px; }
+.fl-l::after { content: ' →'; } .fl-r::before { content: '← '; }
+.fl-ball { position: absolute; top: 38%; left: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--paper); box-shadow: 0 0 0 3px rgba(242,194,48,.35), 0 2px 0 rgba(0,0,0,.4); transition: left .3s ease; }
+.fl-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.fl-zone { margin: 0; font: 700 15px var(--body); color: var(--tx-1); }
+.fl-zone.up { color: var(--up); } .fl-zone.down { color: var(--down); }
+.fl-pos { margin: 0; font: 500 13px var(--body); color: var(--tx-3); }
+.fl-pos b { color: var(--tx-1); }
+.fl-me { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; border-top: 1px solid var(--panel-line); padding-top: 8px; }
+.fl-n { display: grid; justify-items: center; min-width: 72px; }
+.fl-n small { font: 600 12px var(--body); color: var(--tx-3); }
+.fl-n b { font: 800 36px/1 var(--display); color: var(--tx-1); }
+.fl-n b.up { color: var(--up); } .fl-n b.down { color: var(--down); }
+.fl-n em { font: 700 13px var(--body); font-style: normal; min-height: 16px; }
+.fl-n em.up { color: var(--up); } .fl-n em.down { color: var(--down); }
+.fl-lc { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font: 500 14px/1.3 var(--body); color: var(--tx-2); }
+.fl-lc li i { font-style: normal; font-weight: 700; color: var(--tx-3); margin-right: 6px; }
+.fl-lc li.up::before, .fl-lc li.down::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--up); }
+.fl-lc li.down::before { background: var(--down); }
+.fl-lc li:first-child { color: var(--tx-1); }
+.fl-off { margin: 0; font: 500 14px var(--body); color: var(--tx-3); }
