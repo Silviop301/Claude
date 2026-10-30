@@ -5,11 +5,11 @@
 // com #climbix-oauth=<código>. O código só vale junto com o verifier deste aparelho.
 (function () {
   const U = window.CRAQUE_UI;
-  const { G, esc, $, load, store, render, bar, SAVE, HALL } = U;
+  const { G, esc, $, load, store, render, bar, SAVE, SAVE_FC, HALL } = U;
   const API = window.CLIMBIX_ACCOUNT_API || (/climbix\.app$/.test(location.hostname) ? '/api/account.php' : 'https://climbix.app/api/account.php');
   const OAPI = API.replace(/account\.php$/, 'oauth.php');
   const AKEY = 'climbix-account', PKEY = 'climbix-player', OKEY = 'climbix-oauth';
-  const KEYS = { save: SAVE, hall: HALL, col: 'climbix-colecao-v1', ach: 'craque-ach-v1', daily: 'craque-daily-v1', sala: 'climbix-sala-v1', itens: 'climbix-itens-v1', reset: 'climbix-reset' };
+  const KEYS = { save: SAVE, fc: SAVE_FC, hall: HALL, col: 'climbix-colecao-v1', ach: 'craque-ach-v1', daily: 'craque-daily-v1', sala: 'climbix-sala-v1', itens: 'climbix-itens-v1', reset: 'climbix-reset' };
   // keepalive deixa o save terminar de subir com o app fechando, mas o navegador recusa corpo acima de 64 KB:
   // save grande (coleção cheia) vai sem keepalive
   const post = (a, body, url) => { const b = JSON.stringify(body);
@@ -34,6 +34,7 @@
     // Carreira: a salva mais recentemente (fim de carreira também conta, para não "ressuscitar" uma antiga)
     const at = s => (s && s.at) || 0;
     o.save = at(b.save) > at(a.save) ? b.save : a.save || b.save || null;
+    o.fc = at(b.fc) > at(a.fc) ? b.fc : a.fc || b.fc || null;
     // Coleção: junta as carreiras (a mesma carreira não entra duas vezes)
     const seen = new Set(), col = [];
     (a.col || []).concat(b.col || []).forEach(e => { const k = e && e.at + ':' + (e.card && e.card.name); if (e && !seen.has(k)) { seen.add(k); col.push(e); } });
@@ -187,7 +188,7 @@
   // Apaga carreiras, coleção, Hall da Fama, conquistas, Sala de Troféus, carreira do dia e itens.
   // Ficam: a conta, o nome no ranking, as configurações e o som. Com conta, a nuvem também recomeça
   // (o marcador "reset" faz os outros aparelhos descartarem o progresso antigo na próxima sincronização).
-  const WIPE = [SAVE, HALL, KEYS.col, KEYS.ach, KEYS.daily, KEYS.sala, KEYS.itens, 'climbix-seen-v1', 'climbix-rank-queue'];
+  const WIPE = [SAVE, SAVE_FC, HALL, KEYS.col, KEYS.ach, KEYS.daily, KEYS.sala, KEYS.itens, 'climbix-seen-v1', 'climbix-rank-queue'];
   const RESET = '<div class="acc-reset"><b>Reiniciar progresso</b><p>Começa o jogo do zero neste aparelho' + ' e na nuvem, se você tiver conta.</p>' +
     '<button class="btn ghost acc-danger" id="b-reset">Reiniciar progresso</button></div>';
   function bindReset() {

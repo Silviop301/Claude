@@ -142,7 +142,6 @@
     { id: 'physio', name: 'Fisioterapia', en: 15 },
     { id: 'spons', name: 'Patrocínio', en: -15 },
     { id: 'talk', name: 'Entrevista', en: -5 },
-    { id: 'love', name: 'Família e amigos', en: 10 },
   ];
   const WEEK_BY = Object.fromEntries(WEEK.map(a => [a.id, a]));
   S.FC_WEEK = WEEK; S.FC_TRAIN_CAP = TRAIN_CAP;
@@ -157,11 +156,11 @@
     return true;
   };
   // Energia depois da semana com estas ações
-  S.fcWeekEnergy = (c, acts) => clamp(c.fc.en + weekBase(c.fc, c) + acts.reduce((s, id) => s + WEEK_BY[id].en, 0), 0, 100);
+  S.fcWeekEnergy = (c, acts) => clamp(c.fc.en + weekBase(c.fc, c) + acts.reduce((s, id) => s + (WEEK_BY[id] || WEEK_BY.rest).en, 0), 0, 100);
   // Semana automática: repete a última escolhida por você; lesionado faz fisioterapia (ou descansa); troca o que cansa por descanso se a energia ia ficar baixa
   S.fcWeekAuto = function (c) {
     const fc = c.fc;
-    let a = (fc.wkPlan || ['tec', 'rest']).slice(0, 2);
+    let a = (fc.wkPlan || ['tec', 'rest']).slice(0, 2).map(id => (WEEK_BY[id] ? id : 'rest')); // ação que saiu do jogo vira descanso
     if (fc.injOut > 0 && !S.fcSuspended(c)) a = [S.fcWeekOk(c, 'physio', []) ? 'physio' : 'rest', 'rest'];
     a = a.map((id, k) => (S.fcWeekOk(c, id, a.slice(0, k)) ? id : 'rest'));
     for (const k of [1, 0]) if (S.fcWeekEnergy(c, a) < 60 && WEEK_BY[a[k]].en < 0) a[k] = 'rest';
@@ -191,14 +190,12 @@
       else if (id === 'fis') fc.fit = 4;
       else if (id === 'physio') { const p = S.fcPhysioCost(c); c.money = Math.max(0, (c.money || 0) - p); out.money -= p; if (fc.injOut > 0 && !S.fcSuspended(c)) { fc.injOut--; out.inj++; } }
       else if (id === 'spons') { const p = S.fcSponsPay(c); c.money = (c.money || 0) + p; out.money += p; c.fame += 1; out.fame += 1; }
-      else if (id === 'love') { /* energia e relação (loveWeek) */ }
       else if (id === 'talk') {
         c.fame += 2; out.fame += 2;
         // A assessoria de imprensa segura a polêmica
         if (r() < (c.staff && c.staff.press ? 0 : 0.25)) { out.polem = true; c.rel.coach = clamp(c.rel.coach - 4, 0, 100); out.coach -= 4; }
       }
     });
-    loveWeek(c, fc, r, out.acts, out);
     out.en1 = fc.en; out.at = fc.i;
     fc.wkLast = out.acts.slice(); fc.wkDue = false; fc.wkSum = out;
     if (fc.pending && fc.pending.i === fc.i && !fc.pending.mDone) fc.pending = null; // a escalação sai depois da semana
@@ -230,7 +227,6 @@
     ],
     life: [
       { id: 'house', name: 'Casa nova', wk: 50, fame: 6, fans: 4, fx: 'Mais fama e torcida' },
-      { id: 'ring', name: 'Pedido de casamento', wk: 12, fame: 3, fans: 2, fx: 'Com quem você namora: a relação fica firme' },
     ],
   };
   S.FC_SHOP = SHOP;
@@ -266,32 +262,13 @@
     if (kind === 'life') {
       const l = SHOP.life.find(x => x.id === id), p = l ? S.fcLifePrice(c, id) : 0;
       c.life = c.life || {};
-      if (!l || c.life[id] || (c.money || 0) < p || (id === 'ring' && !S.fcCanPropose(c))) return false;
-      if (id === 'ring') { c.love.stage = 'casado'; c.love.v = Math.max(c.love.v, 85); }
+      if (!l || c.life[id] || (c.money || 0) < p) return false;
       c.money -= p; c.life[id] = c.season; c.fame += l.fame; c.rel.fans = clamp(c.rel.fans + l.fans, 0, 100); return true;
     }
     return false;
   };
   // Gasto da equipe por semana
   S.fcStaffWeek = c => Object.keys(c.staff || {}).reduce((s, k) => s + S.fcStaffCost(c, k), 0);
-
-  // ---------- relacionamento: c.love { stage: solteiro/namorando/casado, v: 0-100, who } ----------
-  // Solteiro conhece alguém de vez em quando (mais fácil com fama); a relação cai sem tempo junto e termina abaixo de 15.
-  // Relação boa dá um empurrão na forma toda semana; ruim, o contrário
-  const LOVE_NAMES = ['Ana', 'Bia', 'Carol', 'Duda', 'Gabi', 'Isa', 'Ju', 'Lari', 'Lu', 'Mari', 'Nat', 'Rafa', 'Tati', 'Vivi', 'Bruno', 'Caio', 'Léo', 'Rafa'];
-  S.fcCanPropose = c => !!(c.love && c.love.stage === 'namorando' && c.love.v >= 70);
-  function loveWeek(c, fc, r, acts, out) {
-    const L = c.love = c.love || { stage: 'solteiro', v: 0 };
-    const time = acts.filter(x => x === 'love').length;
-    if (L.stage === 'solteiro') {
-      if (r() < 0.012 + Math.min(0.03, c.fame / 4000) + time * 0.03) { L.stage = 'namorando'; L.v = 60; L.who = r.pick(LOVE_NAMES.slice(0, 15)); out.love = 'novo'; }
-      return;
-    }
-    L.v = clamp(L.v - (L.stage === 'casado' ? 1 : 2) + time * 8, 0, 100);
-    if (L.v < 15) { out.love = 'fim'; out.loveWho = L.who; L.stage = 'solteiro'; L.v = 0; L.who = null; fc.fo = clamp((fc.fo || 0) - 0.5, -2, 2); return; }
-    const d = L.v >= 70 ? 0.04 : L.v < 30 ? -0.04 : 0;
-    if (d) fc.fo = clamp(Math.round(((fc.fo || 0) + d) * 100) / 100, -2, 2);
-  }
 
   // ---------- apostas (só dinheiro do jogo) ----------
   // Um jogo da próxima rodada da liga (sem o seu time): vitória do mandante, empate ou do visitante, pela força dos dois.
@@ -356,7 +333,7 @@
   ];
   const INS_BY = Object.fromEntries(INS.map(x => [x.id, x]));
   S.fcInsList = c => INS.filter(x => !x.att || c.pos !== 'GOL'); // goleiro: só equilibrado ou poupar
-  S.fcIns = c => (c.fc && c.fc.ins && INS_BY[c.fc.ins] && (c.pos !== 'GOL' || !INS_BY[c.fc.ins].att) ? c.fc.ins : 'eq');
+  S.fcIns = () => 'eq'; // orientação antes do jogo saiu da carreira jogo a jogo (2026-10-30): sempre equilibrado
   S.fcSetIns = (c, id) => { if (c.fc && INS_BY[id]) c.fc.ins = id; };
   // Pedido do técnico (um jogo em cada sete, mais ou menos): cumprir dá relação e forma; falhar tira um pouco de relação
   const REQ = {
@@ -367,11 +344,7 @@
     vence: { txt: 'Saia com a vitória', ok: m => m.won, pos: ['ATA', 'MEI', 'ZAG', 'GOL'] },
   };
   S.FC_REQ = REQ;
-  function pickReq(c, r) {
-    if (r() >= 0.15) return null;
-    const ids = Object.keys(REQ).filter(k => REQ[k].pos.includes(c.pos));
-    return r.pick(ids);
-  }
+
 
   function myRates(c, club) {
     const E = S.eff(c), o = S.ovr(c), role = S.role(c, club), tm = id => S.tm(c, id), sy = id => S.syn(c, id);
@@ -551,7 +524,7 @@
         if (on && fc.en !== undefined && fc.en < EN_OUT && r() < (knock && e.st >= 3 ? 0.33 : 0.5)) { on = false; why = 'cansaço'; }
         if (!on && !why) why = X.share < 0.35 ? 'banco' : 'rodízio';
       }
-      fc.pending = { i: fc.i, on, why, req: on && fc.en !== undefined ? pickReq(c, r) : null };
+      fc.pending = { i: fc.i, on, why, req: null }; // pedidos do técnico saíram (2026-10-30)
       save();
     }
     const comps = { lg: fc.lg.name, cup: fc.cup.name, cont: fc.cont ? fc.cont.name : '' };

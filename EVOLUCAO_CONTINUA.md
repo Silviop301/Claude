@@ -292,3 +292,22 @@ Proibido também: cartão com faixa colorida na lateral.
 - **Apostas (só dinheiro do jogo):** um jogo da próxima rodada da liga sem o seu time, cotação pela força dos dois
   (casa fica com 10%), três valores (1, 4 ou 10 semanas de salário). Atleta apostar é proibido: 6% de chance de
   descobrirem a cada aposta (suspensão de 4 jogos, técnico −10, fama −8, torcida −6); fisioterapia não encurta suspensão.
+
+### Rodada 15 · 2026-10-30 · Duas carreiras separadas e a prancheta (pedido do Silvio)
+
+- O Silvio não gostou das rodadas 13 e 14 como estavam e pediu para separar a carreira de 10 minutos da carreira
+  estilo Brasfoot/New Star Soccer. Depois de um canvas de design e de três direções pedidas a um chat sem contexto,
+  escolheu "C + jornal e Zé da B".
+- **Tela inicial com duas entradas** (Carreira Rápida e Carreira Jogo a Jogo), cada uma com o próprio save
+  (`craque-v5` e `climbix-jogo-v1`; um save de Completa antigo migra sozinho). Seletor de modo da criação saiu.
+- **Hub-prancheta** (`ui/fullcareer.js`): campinho com a sua posição (titular, banco, poupado, lesionado ou "escalação
+  depois da semana"), chips de energia/forma/técnico/torcida, bilhete "Antes do jogo" que leva às ações, fileira de
+  atalhos (Tabela, Jogos, Ficha, Loja, Palpites) e o ingresso dourado "Jogar". Cada atalho abre tela própria com
+  "‹ Prancheta".
+- **Depois do jogo, o "Diário da Rodada"**: manchete sobre você, placar, boletim do atleta (nota, gols/sem sofrer gol,
+  assistências, energia antes → depois, forma, evolução), outros jogos, classificação e o recado do Zé sobre o palpite.
+- **Saíram:** orientação antes do jogo, pedido do técnico e namoro/casamento. Ficaram loja (equipamento, equipe,
+  patrimônio: casa e carros) e apostas, agora com a voz do Zé.
+- **Ícones desenhados** (6 folhas aprovadas) no lugar dos emojis onde há desenho (`assets/ic/`, `tools/craque_icones.py`).
+- Validação: simulador (Completa S11/A26/B32/C18/D13, rápida S11/A26/B33/C18/D13, sem recalibrar), e2e Completa no
+  celular e no computador e rápida, 0 problemas; fotos de todas as telas antes/depois.

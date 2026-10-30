@@ -3,22 +3,33 @@
   const U = window.CRAQUE_UI;
   const { tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar } = U;
   // ---------- início ----------
+  // Um dos dois jogos na tela inicial: o que é, e continuar (a carta do jogador) ou começar
+  const MODES = {
+    rapida: { ic: '⏱️', name: 'Carreira Rápida', txt: 'Do garoto de 16 anos à carta final em uns 9 minutos. Uma temporada por tela.', cont: 'b-cont', neu: 'b-new' },
+    completa: { ic: '🏟️', name: 'Carreira Jogo a Jogo', txt: 'Cada rodada, cada semana de treino, cada contrato. Um save que dura dias.', cont: 'b-cont-fc', neu: 'b-new-fc' },
+  };
+  function modeCard(mode, sv) {
+    const M = MODES[mode], has = sv && sv.c;
+    const card = has ? (() => { const sc = sv.c, o = S.ovr(sc), t = tierCls(o), cl = club(sc.club);
+      return '<button class="cont-card" id="' + M.cont + '"><span class="scard metal ' + t + '"><span class="sc-tier">' + TIER_NAME[t] + '</span><b>' + o + '</b><span class="sc-pos">' + sc.pos + '</span></span>' +
+        '<span class="cc-info"><small>Continuar</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : '') + sc.age + ' anos</span></span><span class="cc-go">' + U.ICON['chevron-right'] + '</span></button>'; })() : '';
+    return '<section class="mode-c ' + mode + '"><div class="mode-h">' + U.emo(M.ic, 'lg') + '<span><b>' + M.name + '</b><small>' + M.txt + '</small></span></div>' + card +
+      '<button class="btn' + (has || mode === 'completa' ? ' ghost' : '') + '" id="' + M.neu + '">' + (has ? 'Nova carreira' : 'Começar') + '</button></section>';
+  }
   function home() {
     G.c = null; G.step = null; bar();
-    const saved = load(SAVE);
-    const played = !!(saved && saved.c) || U.collectionCount() > 0 || (load(HALL) || []).length > 0;
+    const saved = load(SAVE), savedFc = load(U.SAVE_FC);
+    const played = !!(saved && saved.c) || !!(savedFc && savedFc.c) || U.collectionCount() > 0 || (load(HALL) || []).length > 0;
     // Título de abertura (já desenhado pelo index.html antes dos scripts): a tela inicial reaproveita o mesmo
     // elemento em vez de criar outro, para a primeira tela não "piscar" nem contar de novo como carregamento
     const splash = document.querySelector('#screen > .hero.splash');
     render(
       '<div class="hero"><div class="ball3d" id="ball3d" aria-hidden="true"></div><div class="eyebrow">Carreira de futebol</div><h1>CLIMBIX</h1></div>' +
-      '<p class="lead">Uma carreira inteira em uns 9 minutos: crie um garoto de 16 anos, escolha os clubes, decida e cobre os lances. No fim, a carta dele diz se virou lenda.</p>' +
+      '<p class="lead">Crie um garoto de 16 anos, escolha os clubes, decida e cobre os lances. No fim, a carta dele diz se virou lenda.</p>' +
       U.challengeHome() +
-      // Carreira em andamento: a carta do jogador no lugar de um botão de texto
-      (saved && saved.c ? (() => { const sc = saved.c, o = S.ovr(sc), t = tierCls(o), cl = club(sc.club);
-        return '<button class="cont-card" id="b-cont"><span class="scard metal ' + t + '"><span class="sc-tier">' + TIER_NAME[t] + '</span><b>' + o + '</b><span class="sc-pos">' + sc.pos + '</span></span>' +
-          '<span class="cc-info"><small>Continuar carreira</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : '') + sc.age + ' anos</span></span><span class="cc-go">' + U.ICON['chevron-right'] + '</span></button>'; })() : U.lastHome()) +
-      '<button class="btn' + (saved && saved.c ? ' ghost' : '') + '" id="b-new">Nova carreira</button>' +
+      // Dois jogos, cada um com o seu save: a carreira rápida e a carreira jogo a jogo
+      (!(saved && saved.c) && !(savedFc && savedFc.c) ? U.lastHome() : '') +
+      '<div class="mode2">' + modeCard('rapida', saved) + modeCard('completa', savedFc) + '</div>' +
       U.relampagoHome() +
       // Perfil: nível, metas da semana e o Domínio mundial (ui/profile.js)
       (played || Object.keys(U.salaCounts()).length ? U.profileHome() : '') +
@@ -32,18 +43,22 @@
       (played ? U.feedbackHome() : '') +
       '<div class="home-foot"><button class="link-btn home-snd" id="b-sound"></button>' + (window.CLIMBIX_SOLO ? '' : '<button class="link-btn home-snd" id="b-cloud"></button>') + '</div>' + U.deskHint()
     );
-    if ($('b-cont')) $('b-cont').onclick = () => {
-      G.c = saved.c;
+    const cont = sv => {
+      G.c = sv.c;
       // saves de antes dos investimentos
       G.c.inv = G.c.inv || {}; G.c.buys = G.c.buys || 0;
       if (G.c.pe === undefined) G.c.pe = S.PE_START; // saves de antes dos pontos de evolução
       G.c.leagueOf = G.c.leagueOf || {}; G.c.clubBoost = G.c.clubBoost || {};
       S.applyLeagues(G.c); // quem subiu e quem caiu nesta carreira
-      resume(saved.step);
+      resume(sv.step);
     };
+    if ($('b-cont')) $('b-cont').onclick = () => cont(saved);
+    if ($('b-cont-fc')) $('b-cont-fc').onclick = () => cont(savedFc);
     U.backTo = null;
-    // Com carreira em andamento, confirma antes: o save é um só e o novo jogador toma o lugar dela ao assinar
-    $('b-new').onclick = () => (saved && saved.c ? U.ask('Começar outra carreira?', 'A carreira de ' + saved.c.name + ' (' + saved.c.age + ' anos) será apagada quando o novo jogador assinar com um clube.', 'Nova carreira', create) : create());
+    // Com carreira em andamento no mesmo jogo, confirma antes: o novo jogador toma o lugar dela ao assinar
+    const newIn = (sv, mode) => () => (sv && sv.c ? U.ask('Começar outra carreira?', 'A carreira de ' + sv.c.name + ' (' + sv.c.age + ' anos) será apagada quando o novo jogador assinar com um clube.', 'Nova carreira', () => create(null, mode)) : create(null, mode));
+    $('b-new').onclick = newIn(saved, 'rapida');
+    $('b-new-fc').onclick = newIn(savedFc, 'completa');
     U.lastHomeBind();
     U.packHomeBind();
     U.streakBind(U.home); // pegou um pacotinho da sequência: a tela redesenha com o bloco de pacotinhos
@@ -237,8 +252,10 @@
     if (o) o.onclick = e => { e.stopPropagation(); onOpen(); };
   }
 
-  function create(prev) {
+  function create(prev, mode) {
     const st = prev && prev.look ? prev : newSt();
+    // O jogo vem de quem chamou (tela inicial); "jogar de novo" no fim repete o da carreira que acabou
+    if (mode) st.mode = mode; else if (!st.mode) st.mode = G.c && G.c.mode === 'completa' ? 'completa' : 'rapida';
     const cty = () => D.COUNTRIES.find(k => k.id === st.country) || D.COUNTRIES[0];
     // Aos 16 anos: a barba escolhida só aparece quando ele crescer (avatar.beardAtAge)
     const who = () => ({ name: st.name, pos: st.pos, number: st.num, look: st.look, age: 16 });
@@ -246,7 +263,7 @@
     const numBtn = () => '<small>Nº</small><b>' + st.num + '</b><i class="cc-caret" aria-hidden="true"></i>';
     render(
       '<button class="back-link" id="b-back-home">‹ Início</button>' +
-      '<div class="eyebrow">Nova carreira</div><h2 class="cr-title">Quem é o garoto?</h2>' +
+      '<div class="eyebrow">' + (st.mode === 'completa' ? 'Carreira jogo a jogo' : 'Carreira rápida') + '</div><h2 class="cr-title">Quem é o garoto?</h2>' +
       // cc-side: só agrupa carta e botões (no computador vira a coluna da esquerda; no celular não muda nada)
       '<div class="cc-side"><div class="cc"><div class="cc-top"><button class="cc-num" id="f-num" aria-label="Número da camisa: ' + st.num + '. Trocar">' + numBtn() + '</button>' +
       '<span class="cc-flag" id="cc-flag"></span></div>' +
@@ -254,8 +271,6 @@
       '<label class="cc-name-w"><input class="cc-name" id="f-name" maxlength="18" value="' + esc(st.name) + '" aria-label="Nome na camisa">' + U.ICON.pencil +
         '<button type="button" class="cc-name-dice" id="b-name" aria-label="Sortear nome">' + U.emo('🎲', 'sm') + '</button></label></div>' +
       '<div class="cc-acts"><button class="cr-dice" id="b-dice1">' + U.emo('🎲', 'sm') + ' Outro visual</button><button class="cr-dice" id="b-look">' + U.emo('✏️', 'sm') + ' Personalizar</button></div></div>' +
-      // Modo: a carreira de sempre (~9 min) ou a Completa (a liga de cada temporada jogo a jogo, com a tabela inteira)
-      '<div class="cr-lbl">Modo</div><div class="seg" id="f-mode">' + [['rapida', 'Rápida · 9 min'], ['completa', 'Completa · jogo a jogo']].map(([v, l]) => '<button data-v="' + v + '"' + ((st.mode || 'rapida') === v ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>' +
       '<div class="cr-lbl">Posição</div><div class="seg pos4" id="f-pos">' + [['ATA', 'Atacante'], ['MEI', 'Meia'], ['ZAG', 'Zagueiro'], ['GOL', 'Goleiro']].map(([v, l]) => '<button data-v="' + v + '"' + (st.pos === v ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>' +
       '<div class="cr-lbl">Pé bom</div><div class="seg" id="f-foot"><button data-v="D"' + (st.foot === 'D' ? ' class="on"' : '') + '>Destro</button><button data-v="E"' + (st.foot === 'E' ? ' class="on"' : '') + '>Canhoto</button></div>' +
       '<div class="cr-lbl">País · <b id="cr-cty"></b></div><div class="cr-flags" id="f-country">' + D.COUNTRIES.map(k => '<button data-v="' + k.id + '"' + (k.id === st.country ? ' class="on"' : '') + ' aria-label="' + k.id + '">' + U.flag(k.flag, 'sm') + '</button>').join('') + '</div>' +
@@ -272,7 +287,7 @@
       const nb = $('f-num'); nb.innerHTML = numBtn();
       $('cc-photo').innerHTML = U.photo('normal', U.nationKit(st.country), who(), { num: String(st.num), lawn: true, vb: '-24 0 168 200' });
     };
-    [['f-pos', 'pos'], ['f-foot', 'foot'], ['f-country', 'country'], ['f-mode', 'mode']].forEach(([id, key]) =>
+    [['f-pos', 'pos'], ['f-foot', 'foot'], ['f-country', 'country']].forEach(([id, key]) =>
       $(id).querySelectorAll('button').forEach(b => b.onclick = () => {
         $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
         st[key] = b.dataset.v;

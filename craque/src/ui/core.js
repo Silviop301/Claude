@@ -5,7 +5,9 @@
   const sfx = n => { if (window.CRAQUE_SFX) window.CRAQUE_SFX.play(n); };
   const $ = id => document.getElementById(id);
   const screen = $('screen');
-  const SAVE = 'craque-v5', HALL = 'craque-hall-v1';
+  // Um save por jogo: a carreira rápida e a carreira jogo a jogo (c.mode 'completa') andam em paralelo
+  const SAVE = 'craque-v5', SAVE_FC = 'climbix-jogo-v1', HALL = 'craque-hall-v1';
+  const saveKey = c => (c && c.mode === 'completa' ? SAVE_FC : SAVE);
   const YEAR0 = 2026;
 
   const esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -46,7 +48,10 @@
   window.CLIMBIX_CFG = cfg;
   const setCfg = (k, v) => { cfg[k] = v; store(CFG_KEY, cfg); };
   const vibe = p => { if (cfg.vibe && navigator.vibrate) navigator.vibrate(p); };
-  function save() { store(SAVE, G.c && !G.c.retired ? { c: G.c, step: G.step, at: Date.now() } : { c: null, at: Date.now() }); }
+  function save() { store(saveKey(G.c), G.c && !G.c.retired ? { c: G.c, step: G.step, at: Date.now() } : { c: null, at: Date.now() }); }
+  // Saves de antes da separação: a carreira jogo a jogo que estava no save único passa para o dela
+  (function () { const s = load(SAVE), f = load(SAVE_FC);
+    if (s && s.c && s.c.mode === 'completa' && !(f && f.c)) { store(SAVE_FC, s); store(SAVE, { c: null, at: Date.now() }); } })();
 
   // Toque duplo: a tela troca no 1º toque e o 2º caía no que estivesse no mesmo lugar da tela nova (opção do
   // evento, estilo do lance, característica, "Começar carreira"). Toque de gente logo depois da troca não conta;
@@ -344,5 +349,5 @@
     });
   }
 
-  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, clubBg };
+  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, HALL, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, clubBg };
 })();
