@@ -131,7 +131,7 @@
     // De onde vieram minutos, gols e nota (só para a tela da temporada): as mesmas contas acima, em partes.
     // Cada parte: [texto, valor]; o valor vira "+" ou "−" na tela (0 = só informação)
     const pc = v => Math.round(v * 100);
-    const src = { max: maxGames, min: [[role.name + ' (carta ' + o + ', time ' + club.strength + ')', pc(role.share)]], gol: [], nota: [] };
+    const src = { max: FO && FO.slots ? FO.slots : maxGames, /* Completa: os jogos do calendário de verdade */ min: [[role.name + ' (carta ' + o + ', time ' + club.strength + ')', pc(role.share)]], gol: [], nota: [] };
     const coachV = (c.rel.coach - REL0) / 90, modV = c.mod.min + (c.promise || 0);
     if (Math.abs(coachV) >= 0.03) src.min.push(['Técnico', pc(coachV)]);
     src.choiceMin = Math.abs(modV) >= 0.03 ? pc(modV) : 0;
@@ -516,7 +516,7 @@
     // Dinheiro e totais
     c.money += c.wage * 52;
     // Pontos de evolução: o que você fez em campo vira treino
-    const pe = FO ? { n: FO.pe, why: FO.pe ? [['Jogo a jogo', FO.pe]] : [] } : S.peGain({ games, rating, titles, awards });
+    const pe = FO ? { n: FO.pe, full: true, why: FO.pe ? [['ganhos jogo a jogo e já somados', FO.pe]] : [] } : S.peGain({ games, rating, titles, awards });
     // Foco nos treinos: chance de ponto extra (fora do limite da temporada); lesão séria perde o bônus
     const tr = S.trainOf(c);
     if (tr.p1 || tr.p2) {

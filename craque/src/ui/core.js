@@ -147,10 +147,18 @@
     });
   }
   // Números do topo por posição: goleiro (sem sofrer gol, pênaltis defendidos), zagueiro (gols, sem sofrer gol)
+  // Carreira Completa: o ano em andamento (engine/fullcareer.js) já conta no topo, jogo a jogo; o S.playSeason só
+  // soma nos totais no fim do ano (aí c.season avança e isto zera)
+  const yearOf = c => (c.mode === 'completa' && c.fc && c.fc.season === c.season ? c.fc : null);
   function totOf(c) {
-    const T = c.totals;
-    return c.pos === 'GOL' ? [[T.cs || 0, 'S/ GOL'], [T.penSaved || 0, 'PÊN. DEF']]
-      : c.pos === 'ZAG' ? [[T.cs || 0, 'S/ GOL'], [T.goals, 'GOLS']] : [[T.goals, 'GOLS'], [T.assists, 'ASSIST']];
+    const T = c.totals, A = (yearOf(c) || {}).acc || {}, n = k => A[k] || 0;
+    return c.pos === 'GOL' ? [[(T.cs || 0) + n('cs'), 'S/ GOL'], [(T.penSaved || 0) + n('pen'), 'PÊN. DEF']]
+      : c.pos === 'ZAG' ? [[(T.cs || 0) + n('cs'), 'S/ GOL'], [T.goals + n('goals'), 'GOLS']] : [[T.goals + n('goals'), 'GOLS'], [T.assists + n('assists'), 'ASSIST']];
+  }
+  // Taças: as do ano em andamento entram assim que são ganhas (a liga, no fim do calendário)
+  function titlesOf(c) {
+    const fc = yearOf(c);
+    return S.titleCount(c.totals) + (fc ? (fc.cup && fc.cup.out === 'won' ? 1 : 0) + (fc.cont && fc.cont.out === 'won' ? 1 : 0) + (fc.out && fc.out.league ? 1 : 0) : 0);
   }
   // Temporada ao vivo: gols e assistências do topo sobem junto com o quadro (e = 0…1). As taças só no fim,
   // para não entregar o título antes da hora. No bar() seguinte, o totCount só faz o brilho.
@@ -194,7 +202,7 @@
     };
     $('b-snd').onclick = e => { e.stopPropagation(); window.CRAQUE_UI.settings(); };
     const T = G.c.totals, tot = totOf(G.c);
-    const totV = tot.map(([v]) => v).concat(S.titleCount(T));
+    const totV = tot.map(([v]) => v).concat(titlesOf(G.c));
     $('bar-tot').innerHTML = tot.map(([v, l]) => '<span><b>' + v + '</b><small>' + l + '</small></span>').join('') + '<span><b>' + totV[2] + '</b><small>TAÇAS</small></span>';
     totCount(totV);
     const o = S.ovr(G.c);

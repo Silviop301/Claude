@@ -635,10 +635,11 @@
   S.stake('sub20', {
     build: () => ({ title: 'Convocado para a seleção sub-20', text: 'O torneio coincide com jogos importantes do clube.' }),
     options: c => [
+      // Seleção é experiência mesmo dando errado: o lado ruim é perder espaço e ritmo no clube, não o teto (era uma armadilha)
       risk('Ir para a seleção', P(0.3, X.edge(c, 0.03), X.t(c, 'patriota', 0.15)),
-        out('brilha', { fame: 16, main: 1, pot: T(c, 1, 21) }, 'Brilhou na seleção e o país inteiro conheceu seu nome.'),
-        out('reserva na seleção', { fame: 4, coach: -10, min: -0.1, pot: T(c, -1, 21) }, 'Ficou no banco da seleção e ainda perdeu espaço no clube, no momento de crescer.')),
-      safe('Ficar no clube', { coach: 10, min: 0.1 }, 'O clube valorizou sua escolha.'),
+        out('brilha', { fame: 16, pot: T(c, 1, 21) }, 'Brilhou na seleção e o país inteiro conheceu seu nome.'),
+        out('reserva na seleção', { fame: 6, coach: -8, min: -0.07, form: -0.05 }, 'Ficou no banco da seleção, aprendeu vendo os melhores, mas perdeu espaço no clube.')),
+      safe('Ficar no clube', { coach: 10, min: 0.1, form: 0.04 }, 'O clube valorizou sua escolha.'),
     ],
   });
   S.stake('olheiro', {

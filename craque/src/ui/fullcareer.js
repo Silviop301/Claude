@@ -143,10 +143,13 @@
   // Pontos de evolução: a fração do ano enche a barra; com 1 ponto inteiro, dá para evoluir agora
   function peBox() {
     const c = G.c, fc = c.fc, whole = c.pe || 0;
-    const can = whole >= 1 && S.canInvestAny(c);
+    const can = whole >= 1 && S.canInvestAny(c), yr = S.fcPeYear(c), full = yr >= S.PE_CAP - 0.001;
+    // O que a pessoa precisa saber: quanto tem para gastar, quanto ganhou no ano e o limite do ano
     $('fc-pe').innerHTML = '<div class="fc-pe-row"><span>Evolução</span><div class="fc-pe-bar"><i style="width:' + Math.round(fc.peFrac * 100) + '%"></i></div><b>' + num1(whole + fc.peFrac) + '</b>' +
       (can ? '<button class="btn ghost fc-evo" id="fc-evo">Evoluir</button>' : '') + '</div>' +
-      (can ? '' : '<p>Todo jogo enche a barra, e nota alta enche mais. Com 1 ponto inteiro, dá para evoluir.</p>');
+      '<p>' + (full ? 'Limite do ano atingido: ' + S.PE_CAP + ' de ' + S.PE_CAP + ' pontos. A barra volta a encher na próxima temporada.'
+        : 'No ano: ' + num1(yr) + ' de ' + S.PE_CAP + ' pontos (limite). Todo jogo enche a barra, e nota alta enche mais.') +
+      (whole >= 1 ? ' Para gastar: ' + whole + (whole === 1 ? ' ponto.' : ' pontos.') : ' Com 1 ponto inteiro, dá para evoluir.') + '</p>';
     if ($('fc-evo')) $('fc-evo').onclick = evolve;
   }
   function meBox() {
@@ -308,6 +311,7 @@
 
   // Resultado: o cartão do jogo, os pontos ganhos e "Próximo jogo"
   function result(x, out) {
+    bar(); // gols, assistências e taças do topo já contam este jogo
     tblKey = null; const pos = table(); tabs(); nav();
     $('fc-h').textContent = x.compName + ' · fim de jogo';
     $('fc-match').innerHTML = x.vs ? card('done', x) : card('done', x);

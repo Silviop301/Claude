@@ -63,7 +63,9 @@
 
   S.fcStart = function (c) {
     const club = D.CLUB_BY_ID[c.club], lg = D.LEAGUE_BY_ID[club.league];
-    const fc = { season: c.season, club: club.id, seed: ((Number(c.tseed) || 1) * 2654435761 + c.season * 97 + 13) >>> 0, i: 0, log: [], peFrac: 0, peGot: 0, out: null, done: false };
+    // A fração de ponto que sobrou do ano anterior continua na barra (não conta para o limite deste ano)
+    const carry = c.fc && c.fc.season === c.season - 1 ? c.fc.peFrac || 0 : 0;
+    const fc = { season: c.season, club: club.id, seed: ((Number(c.tseed) || 1) * 2654435761 + c.season * 97 + 13) >>> 0, i: 0, log: [], peFrac: carry, peCarry: carry, peGot: 0, out: null, done: false };
     const { r, save } = rngOf(fc);
     // Liga: turno e returno com os times embaralhados
     const teams = leagueTeams(club);
@@ -164,7 +166,8 @@
   const pens = (r, sh, sa) => r() < clamp(0.5 + (sh - sa) / 80, 0.3, 0.7);
 
   // O seu jogo: produção pelo jogador do dia; o resultado pode vir decidido de um lance (force: true venceu, false perdeu)
-  function myMatch(c, fc, r, vs, home, comp, knock, force) {
+  function myMatch(c, fc, r, vs, home, comp, knock, force, mo) {
+    if (mo && force !== undefined) return scripted(c, fc, r, vs, home, knock, force, mo);
     const club = D.CLUB_BY_ID[c.club], X = myRates(c, club), on = fc.pending ? fc.pending.on : false;
     const us = club.strength + X.teamBoost + (on ? X.att : 0), them = str(vs);
     const L = comp === 'cont' ? LAM_C : LAM_D;
@@ -205,6 +208,40 @@
     let won = ug > tg;
     if (knock && ug === tg) won = force === undefined ? pens(r, us, them) : force;
     return { vs, home, gf: ug, ga: tg, on, goals: mg, assists: ma, cs: on && cs, saves, penFaced, penSaved, tackles, rating, ev, won, pens: knock && ug === tg };
+  }
+  // Nota do jogo (as mesmas partes da nota da temporada)
+  function rateOf(c, X, club, r, ug, tg, mg, ma, cs, saves, penSaved, tackles) {
+    const res3 = ug > tg ? 3 : ug === tg ? 1 : 0;
+    const perGame = X.isDef ? (cs ? 0.85 : 0) + (mg * 1.2 + ma * 0.5) / S.GOAL_SCALE + saves * 0.35 + penSaved * 0.6 + tackles * 0.2 : (mg + ma * 0.7) / S.GOAL_SCALE;
+    return clamp(Math.round((6.1 + S.RATING_ADJ[c.pos] + perGame * 2.4 * (X.isDef ? 0.75 : 1) + Math.min(X.o - club.strength, S.RATING_GAP) * 0.03 + X.trt +
+      (res3 === 3 ? 0.2 : res3 === 0 ? -0.25 : 0) + r.gauss() * 0.55) * 10) / 10, 4.5, 10);
+  }
+  // Jogo com lance decisivo: o placar chega ao do lance (m.score no m.minute) e o resultado segue o lance, para a
+  // transmissão contar a mesma história. Atacante: acertou, gol seu (ou assistência, no passe); errou, na final o
+  // adversário mata no contra-ataque. Defensor: segurou, fica o placar; falhou, empate (na final, pênaltis perdidos)
+  const minOf = s => { const [a, b] = String(s).split('+').map(Number); return a + (b || 0); };
+  function scripted(c, fc, r, vs, home, knock, ok, mo) {
+    const club = D.CLUB_BY_ID[c.club], X = myRates(c, club), on = true, def = !!S.defKick(c.pos), kick = S.kickType(mo);
+    const mm = minOf(mo.minute), [su, st] = mo.score, me = home ? 'h' : 'a', op = home ? 'a' : 'h';
+    const before = m => 3 + Math.floor(r() * Math.max(1, m - 8));
+    const ev = [];
+    for (let i = 0; i < su; i++) ev.push({ m: before(mm), s: me });
+    for (let i = 0; i < st; i++) ev.push({ m: before(mm), s: op });
+    let ug = su, tg = st, pensLost = false;
+    if (!def) {
+      if (ok) { ev.push(Object.assign({ m: mm, s: me, dec: 1 }, kick === 'pass' ? { as: 1 } : { me: 1 })); ug++; }
+      else if (knock) { ev.push({ m: mm + 2, s: op }); tg++; }
+    } else if (!ok) { ev.push({ m: mm, s: op, dec: 1 }); tg++; if (knock && tg === ug) pensLost = true; }
+    ev.sort((x, y) => x.m - y.m);
+    // Os gols de antes: alguns seus, pela sua média
+    const early = ev.filter(e => e.s === me && !e.dec), pick = early.map(e => [r(), e]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+    const mg0 = Math.min(early.length, r.poisson(X.g90 * FC_K.g)), ma0 = Math.min(early.length - mg0, r.poisson(X.a90 * FC_K.a));
+    pick.slice(0, mg0).forEach(e => { e.me = 1; }); pick.slice(mg0, mg0 + ma0).forEach(e => { e.as = 1; });
+    const mg = ev.filter(e => e.me).length, ma = ev.filter(e => e.as).length, cs = tg === 0;
+    const saves = c.pos === 'GOL' ? r.poisson(X.saves) + (def && ok ? 1 : 0) : 0, tackles = c.pos === 'ZAG' ? r.poisson(X.tackles) + (def && ok ? 1 : 0) : 0;
+    const rating = rateOf(c, X, club, r, ug, tg, mg, ma, cs, saves, 0, tackles);
+    const won = ug > tg || (knock && ug === tg && !pensLost && ok);
+    return { vs, home, gf: ug, ga: tg, on, goals: mg, assists: ma, cs, saves, penFaced: 0, penSaved: 0, tackles, rating, ev, won, pens: knock && ug === tg };
   }
 
   // ---------- próximo jogo ----------
@@ -312,9 +349,11 @@
     if (!nx) return null;
     if (force === undefined && fc.pending && fc.pending.mDone) force = fc.pending.mOk;
     const { r, save } = rngOf(fc), club = D.CLUB_BY_ID[c.club], e = nx.e;
+    // O lance do jogo (depois de jogado, o fcNext não o devolve mais: fica em pending.m)
+    const mo = nx.moment || (fc.pending && fc.pending.m) || null;
     const out = { e, nx, my: null, others: [], title: null, pe: 0 };
     if (nx.vs) {
-      const my = myMatch(c, fc, r, nx.vs, nx.home, nx.comp, nx.knock, force);
+      const my = myMatch(c, fc, r, nx.vs, nx.home, nx.comp, nx.knock, force, mo);
       out.my = my;
       const A = fc.acc;
       A.slots++;
@@ -326,7 +365,7 @@
         out.pe = give(c, fc, g);
       }
       fc.log.push({ i: fc.i, comp: nx.comp, stage: nx.stage, vs: nx.vs, home: nx.home, gf: my.gf, ga: my.ga, on: my.on, goals: my.goals, assists: my.assists, rating: my.rating, won: my.won, pens: my.pens, dec: force !== undefined });
-      if (nx.moment && nx.moment.type === 'classico') fc.derbyDone = true;
+      if (mo && mo.type === 'classico') fc.derbyDone = true;
     }
     if (e.k === 'lg') {
       fc.lg.rounds[e.ri].forEach(([a, b]) => {
@@ -388,7 +427,7 @@
   // Soma pontos de evolução (fração guardada; cada ponto inteiro entra em c.pe na hora). Limite do ano: S.PE_CAP
   function give(c, fc, x) {
     if (!x) return 0;
-    const room = S.PE_CAP - fc.peGot - fc.peFrac;
+    const room = S.PE_CAP - S.fcPeYear({ fc });
     x = Math.max(0, Math.min(x, room));
     fc.peFrac = Math.round((fc.peFrac + x) * 100) / 100;
     while (fc.peFrac >= 1) { fc.peFrac = Math.round((fc.peFrac - 1) * 100) / 100; fc.peGot++; c.pe = (c.pe || 0) + 1; }
@@ -433,6 +472,8 @@
 
   // Pontos de evolução mostrados (inteiros já no banco + a fração do ano)
   S.fcPe = c => (c.pe || 0) + (c.fc ? c.fc.peFrac : 0);
+  // Ganho no ano (o que conta para o limite): inteiros do ano + fração, menos a fração que veio do ano anterior
+  S.fcPeYear = c => (c.fc ? Math.round((c.fc.peGot + c.fc.peFrac - (c.fc.peCarry || 0)) * 100) / 100 : 0);
 
   // Fim do calendário: os números do ano para S.playSeason (c.fc.out)
   S.fcFinish = function (c) {
@@ -440,7 +481,7 @@
     const pos = ord.indexOf(0) + 1, n = lg.ids.length;
     const all = ord.map(i => lg.tab[i].p);
     fc.out = {
-      share: A.slots ? A.games / A.slots : 0, games: A.games, goals: A.goals, assists: A.assists, cleanSheets: A.cs, saves: A.saves, penSaved: A.pen, penFaced: A.penFaced, tackles: A.tackles,
+      share: A.slots ? A.games / A.slots : 0, slots: A.slots, games: A.games, goals: A.goals, assists: A.assists, cleanSheets: A.cs, saves: A.saves, penSaved: A.pen, penFaced: A.penFaced, tackles: A.tackles,
       rating: A.games ? Math.round(A.rsum / A.games * 10) / 10 : 0, injShare: A.slots ? fc.injMiss / A.slots : 0, injName: fc.injMiss ? fc.injName : null,
       league: pos === 1, cup: fc.cup.out === 'won', cont: !!fc.cont && fc.cont.kind === 'cont' && fc.cont.out === 'won', cont2: !!fc.cont && fc.cont.kind === 'cont2' && fc.cont.out === 'won',
       contIn: fc.cont ? fc.cont.name : null, pos, pe: fc.peGot,
