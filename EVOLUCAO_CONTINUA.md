@@ -311,3 +311,13 @@ Proibido também: cartão com faixa colorida na lateral.
 - **Ícones desenhados** (6 folhas aprovadas) no lugar dos emojis onde há desenho (`assets/ic/`, `tools/craque_icones.py`).
 - Validação: simulador (Completa S11/A26/B32/C18/D13, rápida S11/A26/B33/C18/D13, sem recalibrar), e2e Completa no
   celular e no computador e rápida, 0 problemas; fotos de todas as telas antes/depois.
+
+### Rodada 16 · 2026-10-30 · Jogo a Jogo: jogo ao vivo e a agenda como hub (pedidos do Silvio)
+
+- **Jogo ao vivo** (PRs #92–#94): campo 3D no ângulo da TV com a bola indo ao ataque/defesa e a posse; a sua nota
+  começa em 6,0 e muda com cada lance seu até fechar na nota do motor (só apresentação, `flowOf`).
+- **Escalação com elenco e briga pela vaga** (PR #91) não agradou; fica como ideia para o Modo Treinador.
+- **Agenda da semana vira o hub** (escolha do Silvio entre celular, vestiário e agenda): os dias entre um jogo e outro
+  (liga no domingo, copa/continental na quarta), dois dias com as ações da semana (toque troca), o resto com a rotina
+  do clube, o dia do jogo com a sua situação e a chance de começar, recados (preparador, DM, Zé) e atalhos.
+  Motor igual (`S.fcWeek` com duas ações): equilíbrio não muda.

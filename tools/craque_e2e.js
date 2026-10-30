@@ -121,7 +121,9 @@ function stepInPage(opts) {
     if (all.length) return label('completa:tela ' + click(rnd(all)));
   }
   if ($('fc-back')) return label('completa:volta ' + click($('fc-back')));
-  // Prancheta: abre um atalho ou um item do "Antes do jogo", ou joga / simula
+  // Agenda: troca a ação de um dia, abre um atalho ou um recado, ou joga / simula
+  if (q('.ag-o:not(:disabled)')) return label('completa:agenda-acao ' + click(rnd([...document.querySelectorAll('.ag-o:not(:disabled)')])));
+  if (q('.ag-d.slot:not(:disabled)') && Math.random() < 0.25) return label('completa:agenda-dia ' + click(rnd([...document.querySelectorAll('.ag-d.slot:not(:disabled)')])));
   if ($('fc-play') && Math.random() < 0.3) { const go = [...document.querySelectorAll('#fc [data-go]')]; if (go.length) return label('completa:atalho ' + click(rnd(go))); }
   if ($('fc-play')) return label('completa:jogo ' + click(rnd([$('fc-play'), $('fc-play'), $('fc-play'), $('fc-5'), $('fc-end')])));
   if ($('fs-skipm')) return label('liga:aovivo ' + click(Math.random() < 0.3 ? $('fs-fast') : $('fs-skipm')));
