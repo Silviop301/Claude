@@ -230,3 +230,17 @@ Proibido também: cartão com faixa colorida na lateral.
   carreiras Completas pela interface no celular e no computador 0 problemas.
 - **Ficou para a próxima:** escolha curta antes de alguns jogos, lances variados (minuto, placar, tipo, peso), sub-20 menos
   punitivo, texto "não rende nada a mais" com ganho de fama, previsão de volta da lesão; conferir negociação e calendário.
+
+### Rodada 10 · 2026-10-30 · Completa: lances variados e o que a avaliação apontou
+
+- **Lances variados:** cada lance da Completa sorteia minuto (69' a 90+4 nas decisões, 64' a 90+1 nos clássicos),
+  placar (empatado para quem ataca: 0×0, 1×1, 2×2; vencendo por um para quem defende) e, para o atacante, pênalti ou
+  falta. Textos dizem o minuto ("aos 76 minutos" ou "nos acréscimos"). 348 lances simulados: 105 combinações.
+- **Lesão:** o próximo jogo diz por quantos jogos você ainda fica fora.
+- **Negociação:** o seletor de pedidos (padrão, salário, minutos, cláusula) saiu de dentro de cada cartão e virou um
+  bloco só acima das propostas: vale para qualquer uma (dentro do cartão parecia valer só para aquele clube).
+- **Calendário igual todo ano (erro real):** a semente do ano (`tseed * 2654435761 + ano`) passava de 2^53 e o ano
+  sumia no arredondamento; agora `Math.imul`. Calendário, sorteios e jogos da Completa mudam de ano para ano.
+- **Proposta "Vida entre os jogos" aprovada pelo Silvio** (doc claude.ai/artifact/7Cc2mBqQj93iJT7jshdUj2): compras com
+  o dinheiro da carreira podem dar atributo; energia < 30 tira do jogo; a Completa pode ser longa (de vários dias);
+  incluir relacionamentos, carros e apostas (só dinheiro do jogo).
