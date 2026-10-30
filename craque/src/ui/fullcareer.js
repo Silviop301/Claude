@@ -8,6 +8,7 @@
 
   const nameOf = id => (D.CLUB_BY_ID[id] ? D.CLUB_BY_ID[id].name : '?');
   const rate = r => r.toFixed(1).replace('.', ',');
+  const num2 = x => String(Math.round(x * 100) / 100).replace('.', ',');
   const num1 = x => (Math.round(x * 10) / 10).toFixed(1).replace('.', ',');
   const clock = t => (t > 90 ? '90+' + (t - 90) : t) + "'";
   const PACE = [330, 110]; // milissegundos por minuto de jogo: normal (~30 s) e rápido (~10 s)
@@ -30,11 +31,14 @@
       if (ev) { c.pendEv = ev; G.step = 'event'; save(); return U.eventScreen(); }
       save();
     }
+    // Semana automática: fecha sozinha e a tela mostra o que foi feito
+    if (c.fc.wkDue && c.fcAuto) { S.fcWeek(c); save(); }
     render(
       '<div class="fs fc" id="fc">' +
         '<div class="fs-main">' +
           '<div class="eyebrow">Temporada ' + (year()) + ' · ' + esc(nameOf(c.club)) + '</div><h2 id="fc-h"></h2>' +
           '<div class="fs-match" id="fc-match"></div>' +
+          '<div class="fc-wk" id="fc-wk"></div>' +
           '<div class="fs-acts" id="fc-acts"></div>' +
           '<div class="fc-pe" id="fc-pe"></div>' +
           '<div class="seg fc-nav" id="fc-nav" role="tablist"></div>' +
@@ -117,7 +121,7 @@
     const side = id => '<div class="fs-tm' + (id === my ? ' me' : '') + '">' + crest(id, 'md') + '<span>' + esc(nameOf(id)) + '</span></div>';
     const tag = esc(x.compName) + ' · ' + esc(x.stage);
     if (state === 'next') {
-      const who = x.injury ? 'Lesionado (' + esc(x.injury) + '): ' + (x.injLeft > 1 ? 'fora por mais ' + x.injLeft + ' jogos' : 'volta no próximo jogo') : x.on ? 'Você começa jogando' : x.why === 'banco' ? 'Você fica no banco' : 'O técnico vai poupar você neste jogo';
+      const who = x.week ? 'A escalação sai depois da sua semana' : x.injury ? 'Lesionado (' + esc(x.injury) + '): ' + (x.injLeft > 1 ? 'fora por mais ' + x.injLeft + ' jogos' : 'volta no próximo jogo') : x.on ? 'Você começa jogando' : x.why === 'banco' ? 'Você fica no banco' : x.why === 'cansaço' ? 'Energia baixa: o técnico vai poupar você' : 'O técnico vai poupar você neste jogo';
       return '<div class="fs-card next' + (x.moment ? ' dec' : '') + '"><div class="fs-lbl">' + tag + '</div><div class="fs-sc">' + side(h) + '<b><i>×</i></b>' + side(a) + '</div>' +
         '<p class="fs-line">' + (x.home ? 'Em casa' : 'Fora de casa') + ' · ' + who + '</p>' + (x.moment ? '<p class="fc-dec">' + U.emo('🎯', 'xs') + ' Jogo com lance decisivo seu</p>' : '') + '</div>';
     }
@@ -176,18 +180,78 @@
       next.map(p => '<div class="fc-ci">' + tag(p.k) + (p.vs ? crest(p.vs, 'xs') + '<span>' + (p.home ? '' : '@ ') + esc(nameOf(p.vs)) + '</span>' : '<i></i><span>' + esc(p.bye ? 'Folga' : 'Adversário no sorteio') + '</span>') + '<b>' + esc(p.stage.replace(/^Grupo · /, 'G ')) + '</b></div>').join('');
   }
 
+  // ---------- a semana entre os jogos ----------
+  // Energia e forma sempre à vista; com a semana aberta, as seis ações (duas por semana) e a energia que fica para o jogo
+  let pick = null, touched = false; // touched: a pessoa mexeu (só aí a escolha vira o plano da semana automática)
+  const myPick = () => (touched && pick ? pick.slice() : undefined);
+  const unpick = () => { pick = null; touched = false; };
+  const sgn = (x, f) => (x > 0 ? '+' : x < 0 ? '−' : '') + f(Math.abs(x));
+  function formTxt(fo) { return fo >= 0.8 ? 'Em alta' : fo >= 0.25 ? 'Boa' : fo > -0.25 ? 'Normal' : fo > -0.8 ? 'Em baixa' : 'Má fase'; }
+  function wkFx(c, a) {
+    const fc = c.fc;
+    if (a.id === 'tec') return S.fcWeekOk(c, 'tec', []) ? '+' + num2(0.05) + ' de evolução' : 'Limite de treino do ano';
+    if (a.id === 'fis') return 'Cansa menos nos próximos 4 jogos';
+    if (a.id === 'rest') return 'Recupera energia';
+    if (a.id === 'physio') return 'R$ ' + U.money(S.fcPhysioCost(c)) + (fc.injOut > 0 ? ' · 1 jogo a menos de lesão' : ' · recupera energia');
+    if (a.id === 'spons') return '+R$ ' + U.money(S.fcSponsPay(c)) + ' e fama';
+    return 'Fama, com risco de polêmica';
+  }
+  function weekBox() {
+    const c = G.c, fc = c.fc, el = $('fc-wk');
+    if (!el) return;
+    if (fc.en === undefined) { el.innerHTML = ''; return; }
+    const lvl = e => (e < S.FC_EN_OUT ? 'out' : e < S.FC_EN_LOW ? 'low' : 'ok');
+    const meter = e => '<div class="fc-en ' + lvl(e) + '"><i style="width:' + e + '%"></i></div>';
+    const status = '<div class="fc-st"><span>Energia</span>' + meter(fc.en) + '<b class="' + lvl(fc.en) + '">' + Math.round(fc.en) + '</b><span>Forma</span><b class="fo ' + (fc.fo >= 0.25 ? 'up' : fc.fo <= -0.25 ? 'down' : '') + '">' + formTxt(fc.fo || 0) + '</b></div>';
+    const auto = '<label class="fc-auto"><input type="checkbox" id="fc-auto"' + (c.fcAuto ? ' checked' : '') + '><span>Semana automática</span></label>';
+    if (!fc.wkDue) {
+      // Semana fechada: o que ela fez
+      const w = fc.wkSum && fc.wkSum.at === fc.i ? fc.wkSum : null, nm = id => S.FC_WEEK.find(a => a.id === id).name;
+      const what = w ? '<p class="fc-wk-sum">' + (c.fcAuto ? 'Semana automática: ' : 'Semana: ') + w.acts.map(nm).join(' + ') + ' · energia ' + Math.round(w.en0) + ' → ' + Math.round(w.en1) +
+        (w.pe ? ' · +' + num2(w.pe) + ' de evolução' : '') + (w.money > 0 ? ' · +R$ ' + U.money(w.money) : '') + (w.inj ? ' · lesão: 1 jogo a menos' : '') +
+        (w.polem ? '. A entrevista virou polêmica e o técnico não gostou.' : '') + '</p>' : '';
+      el.className = 'fc-wk';
+      el.innerHTML = status + what + (w ? auto : '');
+      bindAuto();
+      return;
+    }
+    if (!pick) pick = S.fcWeekAuto(c);
+    pick = pick.map((id, k) => (S.fcWeekOk(c, id, pick.slice(0, k)) ? id : 'rest'));
+    const n = id => pick.filter(x => x === id).length;
+    const tired = S.fcWeekEnergy(c, pick);
+    el.className = 'fc-wk open';
+    el.innerHTML = status +
+      '<div class="fc-wk-h"><b>Duas ações até o próximo jogo</b>' + auto + '</div>' +
+      '<div class="fc-wk-g">' + S.FC_WEEK.map(a => {
+        const ok = n(a.id) > 0 || S.fcWeekOk(c, a.id, [pick[1]]); // tocar troca a ação mais antiga
+        return '<button class="fc-wa' + (n(a.id) ? ' on' : '') + '" data-id="' + a.id + '"' + (ok ? '' : ' disabled') + ' aria-pressed="' + (n(a.id) ? 'true' : 'false') + '">' +
+          '<b>' + esc(a.name) + (n(a.id) === 2 ? ' <em>×2</em>' : '') + '</b><small>' + esc(wkFx(c, a)) + '</small><i class="' + (a.en > 0 ? 'up' : 'down') + '">' + sgn(a.en, String) + ' energia</i></button>';
+      }).join('') + '</div>' +
+      '<p class="fc-wk-p">Energia no próximo jogo: <b class="' + lvl(tired) + '">' + Math.round(tired) + '</b>' +
+        (tired < S.FC_EN_OUT ? ' · abaixo de ' + S.FC_EN_OUT + ', o técnico pode poupar você e a lesão fica mais provável' : tired < S.FC_EN_LOW ? ' · abaixo de ' + S.FC_EN_LOW + ', você rende menos' : '') + '</p>';
+    // Toque: a ação entra no lugar da mais antiga (tocar duas vezes na mesma vale as duas ações)
+    el.querySelectorAll('.fc-wa').forEach(b => { b.onclick = () => { sfx('tap'); pick = [pick[1], b.dataset.id]; touched = true; weekBox(); }; });
+    bindAuto();
+  }
+  function bindAuto() {
+    const a = $('fc-auto');
+    if (a) a.onchange = () => { G.c.fcAuto = a.checked; if (a.checked && G.c.fc.wkDue) { S.fcWeek(G.c, myPick()); unpick(); bar(); } save(); paint(); };
+  }
+
   function paint() {
     const c = G.c, nx = S.fcNext(c);
     if (!nx) return finishSeason();
     const pos = table(); tabs();
-    $('fc-h').textContent = 'Próximo jogo';
+    $('fc-h').textContent = nx.week ? 'Sua semana' : 'Próximo jogo';
     $('fc-match').innerHTML = card('next', nx);
-    peBox(); meBox(); compsBox(pos); calBox();
+    peBox(); meBox(); compsBox(pos); calBox(); weekBox();
     $('fc-round').innerHTML = '';
     nav();
-    $('fc-acts').innerHTML = '<button class="btn" id="fc-play">' + (nx.moment ? 'Jogar a decisão' : 'Jogar') + '</button>' +
+    const go = nx.week ? '<button class="btn" id="fc-wkgo">Fechar a semana</button>' : '<button class="btn" id="fc-play">' + (nx.moment ? 'Jogar a decisão' : 'Jogar') + '</button>';
+    $('fc-acts').innerHTML = go +
       '<div class="fs-skip"><button class="btn ghost" id="fc-5">Simular 5 jogos</button><button class="btn ghost" id="fc-end">Simular até o fim</button></div>';
-    $('fc-play').onclick = () => start(nx);
+    if (nx.week) $('fc-wkgo').onclick = () => { S.fcWeek(G.c, myPick()); unpick(); sfx('tap'); save(); bar(); paint(); };
+    else $('fc-play').onclick = () => start(nx);
     $('fc-5').onclick = () => quick(5);
     $('fc-end').onclick = () => quick(999);
   }
@@ -196,7 +260,10 @@
   function quick(n) {
     const c = G.c;
     let k = 0, nx;
-    while (k < n && (nx = S.fcNext(c)) && !(k > 0 && (nx.moment || S.fcEventDue(c)))) {
+    while (k < n) {
+      if (c.fc.wkDue) { S.fcWeek(c, k === 0 ? myPick() : undefined); unpick(); } // a semana: a marcada na tela, depois a automática
+      nx = S.fcNext(c);
+      if (!nx || (k > 0 && (nx.moment || S.fcEventDue(c)))) break;
       if (nx.moment) { S.fcAutoMoment(c, nx.moment); }
       const out = S.fcPlay(c); k++;
       if (out && out.title) { save(); return celebrate(out, paintOrEnd); }
