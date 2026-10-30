@@ -46,7 +46,8 @@
   // a vantagem é escapar do custo da segura (ex.: os R$ 30 mil das aulas de idioma), e o texto diz isso
   function riskNote(c, ev) {
     const risky = ev.options.filter(o => o.st && !o.st.safe && !o.locked), safes = ev.options.filter(o => o.st && o.st.safe && !o.locked);
-    if (!risky.length || risky.some(o => S.fxValue(c, o.st.win.fx || {}) > 0)) return 'A arriscada pode render mais, mas pode dar errado de verdade.';
+    // Ganho de fama não entra no valor (fxValue), mas é ganho: conta como rendimento
+    if (!risky.length || risky.some(o => S.fxValue(c, o.st.win.fx || {}) > 0 || ((o.st.win.fx || {}).fame || 0) > 0)) return 'A arriscada pode render mais, mas pode dar errado de verdade.';
     const cost = safes.map(o => S.fxParts(c, o.st.safe.fx || {}).filter(x => /^−|−\d| cai|mais fraco|deixa de|não será/.test(x))).find(x => x.length) || [];
     const cash = cost.find(x => /^−R\$ /.test(x)), other = cost.filter(x => x !== cash);
     const why = cash ? 'economizar os ' + cash.slice(1) + ' da segura' + (other.length ? ' (e ' + other.join(', ') + ')' : '')
