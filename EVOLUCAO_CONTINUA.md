@@ -271,3 +271,13 @@ Proibido também: cartão com faixa colorida na lateral.
 - **Salário semana a semana na Completa** (o resumo da temporada paga só o que faltar), para a loja já servir no 1º ano.
 - **Nota da Completa com corte próprio** (`S.GRADES_FC` 2190/1610/1145/855, aprovado pelo Silvio): o robô que compra
   fica em S11 A26 B31 C19 D13; sem comprar, S6. Modo rápido sem mudança. Goleiro na Completa: S 2% (olhar depois).
+
+### Rodada 13 · 2026-10-30 · Completa: vida entre os jogos, parte 3a (antes do jogo)
+
+- **Orientação de um toque no cartão do próximo jogo** (fica a da última vez, `c.fc.ins`): Equilibrado; Buscar o gol
+  (gols ×1,06, assistências ×0,75, nota oscila mais, cansa 10% mais); Jogar para o time (assistências ×1,1, gols ×0,88,
+  técnico +0,3 por jogo); Poupar o físico (metade da energia, rende um pouco menos). Goleiro: só Equilibrado ou Poupar.
+  Medido com o robô fixo em cada uma: nenhuma é sempre melhor (primeira versão, gols ×1,15, dava S 30% ao atacante que
+  sempre buscava o gol; jogar para o time dava S 34% ao meia).
+- **Pedido do técnico** (~15% dos jogos em que você começa): marque um gol, dê uma assistência, nota 7+, não sofra gol
+  ou vença. Cumprir: técnico +5 e forma +0,3; falhar: técnico −2. O resultado aparece na tela do fim de jogo.
