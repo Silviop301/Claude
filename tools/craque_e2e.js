@@ -121,7 +121,7 @@ function stepInPage(opts) {
   }
   // Loja (aba aberta): compra, contrata ou troca o atributo da chuteira de vez em quando
   if ($('fc') && $('fc').dataset.tab === 'shop' && Math.random() < 0.5) {
-    const all = [...document.querySelectorAll('#fc-shop .fc-buy:not(:disabled), #fc-shop .fc-attr button:not(.on)')];
+    const all = [...document.querySelectorAll('#fc-shop .fc-buy:not(:disabled), #fc-shop .fc-attr button:not(.on), #fc-shop .fc-bet-o button, #fc-shop .fc-bet-s button:not(:disabled), #fc-bet-go:not(:disabled)')];
     if (all.length) return label('completa:loja ' + click(rnd(all)));
   }
   if ($('fc-auto') && $('fc-auto').checked && Math.random() < 0.1) return label('completa:semana-manual ' + click($('fc-auto')));

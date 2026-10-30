@@ -281,3 +281,14 @@ Proibido também: cartão com faixa colorida na lateral.
   sempre buscava o gol; jogar para o time dava S 34% ao meia).
 - **Pedido do técnico** (~15% dos jogos em que você começa): marque um gol, dê uma assistência, nota 7+, não sofra gol
   ou vença. Cumprir: técnico +5 e forma +0,3; falhar: técnico −2. O resultado aparece na tela do fim de jogo.
+
+### Rodada 14 · 2026-10-30 · Completa: vida entre os jogos, parte 3b (vida pessoal, carros e apostas)
+
+- **Relacionamento (`c.love`):** solteiro conhece alguém de vez em quando (mais com fama e com a ação nova da semana
+  "Família e amigos", +10 de energia). Namorando, a relação cai 2 por semana (casado, 1) e cada "Família e amigos" dá
+  +8; abaixo de 15 termina (forma −0,5). Relação 70+ dá +0,04 de forma por semana; abaixo de 30, −0,04. Pedido de
+  casamento na loja (namorando com 70+).
+- **Carros:** popular, sedã, esportivo e superesportivo (fama; o último tira torcida). Casa nova continua.
+- **Apostas (só dinheiro do jogo):** um jogo da próxima rodada da liga sem o seu time, cotação pela força dos dois
+  (casa fica com 10%), três valores (1, 4 ou 10 semanas de salário). Atleta apostar é proibido: 6% de chance de
+  descobrirem a cada aposta (suspensão de 4 jogos, técnico −10, fama −8, torcida −6); fisioterapia não encurta suspensão.

@@ -142,6 +142,7 @@
     { id: 'physio', name: 'Fisioterapia', en: 15 },
     { id: 'spons', name: 'Patrocínio', en: -15 },
     { id: 'talk', name: 'Entrevista', en: -5 },
+    { id: 'love', name: 'Família e amigos', en: 10 },
   ];
   const WEEK_BY = Object.fromEntries(WEEK.map(a => [a.id, a]));
   S.FC_WEEK = WEEK; S.FC_TRAIN_CAP = TRAIN_CAP;
@@ -161,7 +162,7 @@
   S.fcWeekAuto = function (c) {
     const fc = c.fc;
     let a = (fc.wkPlan || ['tec', 'rest']).slice(0, 2);
-    if (fc.injOut > 0) a = [S.fcWeekOk(c, 'physio', []) ? 'physio' : 'rest', 'rest'];
+    if (fc.injOut > 0 && !S.fcSuspended(c)) a = [S.fcWeekOk(c, 'physio', []) ? 'physio' : 'rest', 'rest'];
     a = a.map((id, k) => (S.fcWeekOk(c, id, a.slice(0, k)) ? id : 'rest'));
     for (const k of [1, 0]) if (S.fcWeekEnergy(c, a) < 60 && WEEK_BY[a[k]].en < 0) a[k] = 'rest';
     return a;
@@ -188,14 +189,16 @@
       fc.en = clamp(fc.en + WEEK_BY[id].en, 0, 100);
       if (id === 'tec') { fc.peTrain = Math.round(((fc.peTrain || 0) + TRAIN_STEP) * 100) / 100; out.pe += TRAIN_STEP; fc.peFrac = Math.round((fc.peFrac + TRAIN_STEP) * 100) / 100; while (fc.peFrac >= 1) { fc.peFrac = Math.round((fc.peFrac - 1) * 100) / 100; fc.peGot++; c.pe = (c.pe || 0) + 1; } }
       else if (id === 'fis') fc.fit = 4;
-      else if (id === 'physio') { const p = S.fcPhysioCost(c); c.money = Math.max(0, (c.money || 0) - p); out.money -= p; if (fc.injOut > 0) { fc.injOut--; out.inj++; } }
+      else if (id === 'physio') { const p = S.fcPhysioCost(c); c.money = Math.max(0, (c.money || 0) - p); out.money -= p; if (fc.injOut > 0 && !S.fcSuspended(c)) { fc.injOut--; out.inj++; } }
       else if (id === 'spons') { const p = S.fcSponsPay(c); c.money = (c.money || 0) + p; out.money += p; c.fame += 1; out.fame += 1; }
+      else if (id === 'love') { /* energia e relação (loveWeek) */ }
       else if (id === 'talk') {
         c.fame += 2; out.fame += 2;
         // A assessoria de imprensa segura a polêmica
         if (r() < (c.staff && c.staff.press ? 0 : 0.25)) { out.polem = true; c.rel.coach = clamp(c.rel.coach - 4, 0, 100); out.coach -= 4; }
       }
     });
+    loveWeek(c, fc, r, out.acts, out);
     out.en1 = fc.en; out.at = fc.i;
     fc.wkLast = out.acts.slice(); fc.wkDue = false; fc.wkSum = out;
     if (fc.pending && fc.pending.i === fc.i && !fc.pending.mDone) fc.pending = null; // a escalação sai depois da semana
@@ -218,9 +221,16 @@
       { id: 'video', name: 'Analista de vídeo', w: 0.5, fx: 'Nota +0,08 por jogo' },
       { id: 'press', name: 'Assessoria de imprensa', w: 0.3, fx: 'Mais fama e entrevista sem polêmica' },
     ],
+    // Carros: do popular ao superesportivo (cada um troca o anterior); o último a torcida acha exagero
+    cars: [
+      { id: 'c1', name: 'Carro popular', wk: 6, fame: 1, fans: 1, fx: 'O primeiro carro: a torcida gosta' },
+      { id: 'c2', name: 'Sedã importado', wk: 20, fame: 3, fans: 1, fx: 'Chega no treino com estilo' },
+      { id: 'c3', name: 'Esportivo', wk: 50, fame: 6, fans: 0, fx: 'Vira assunto nas redes' },
+      { id: 'c4', name: 'Superesportivo', wk: 120, fame: 10, fans: -3, fx: 'Fama alta; parte da torcida acha exagero' },
+    ],
     life: [
-      { id: 'car', name: 'Carro novo', wk: 20, fame: 4, fans: 2, fx: 'Fama e torcida' },
       { id: 'house', name: 'Casa nova', wk: 50, fame: 6, fans: 4, fx: 'Mais fama e torcida' },
+      { id: 'ring', name: 'Pedido de casamento', wk: 12, fame: 3, fans: 2, fx: 'Com quem você namora: a relação fica firme' },
     ],
   };
   S.FC_SHOP = SHOP;
@@ -229,6 +239,8 @@
   S.fcGearPrice = (c, id) => price(c, SHOP.gear.find(g => g.id === id).wk, 2000);
   S.fcStaffCost = (c, id) => price(c, SHOP.staff.find(g => g.id === id).w, 1500);
   S.fcLifePrice = (c, id) => price(c, SHOP.life.find(g => g.id === id).wk, 5000);
+  S.fcCarPrice = (c, id) => price(c, SHOP.cars.find(g => g.id === id).wk, 5000);
+  S.fcCarAt = c => (c.life && c.life.car ? SHOP.cars.findIndex(x => x.id === c.life.car) : -1);
   // Atributos que o equipamento pode subir: os três que mais pesam na posição
   S.fcGearAttrs = c => S.attrOrder(c.pos).slice(0, 3);
   S.fcShopSync = c => { c.shopB = c.gear && c.gear.until >= c.season ? { [c.gear.attr]: c.gear.b } : null; };
@@ -245,16 +257,95 @@
       if ((c.money || 0) < S.fcStaffCost(c, id) * 4) return false; // contrata quem tem para pagar um mês
       c.staff[id] = 1; return true;
     }
-    if (kind === 'life') {
-      const l = SHOP.life.find(x => x.id === id), p = S.fcLifePrice(c, id);
+    if (kind === 'car') {
+      const k = SHOP.cars.findIndex(x => x.id === id), l = SHOP.cars[k], p = l ? S.fcCarPrice(c, id) : 0;
       c.life = c.life || {};
-      if (!l || c.life[id] || (c.money || 0) < p) return false;
+      if (!l || k <= S.fcCarAt(c) || (c.money || 0) < p) return false;
+      c.money -= p; c.life.car = id; c.fame += l.fame; c.rel.fans = clamp(c.rel.fans + l.fans, 0, 100); return true;
+    }
+    if (kind === 'life') {
+      const l = SHOP.life.find(x => x.id === id), p = l ? S.fcLifePrice(c, id) : 0;
+      c.life = c.life || {};
+      if (!l || c.life[id] || (c.money || 0) < p || (id === 'ring' && !S.fcCanPropose(c))) return false;
+      if (id === 'ring') { c.love.stage = 'casado'; c.love.v = Math.max(c.love.v, 85); }
       c.money -= p; c.life[id] = c.season; c.fame += l.fame; c.rel.fans = clamp(c.rel.fans + l.fans, 0, 100); return true;
     }
     return false;
   };
   // Gasto da equipe por semana
   S.fcStaffWeek = c => Object.keys(c.staff || {}).reduce((s, k) => s + S.fcStaffCost(c, k), 0);
+
+  // ---------- relacionamento: c.love { stage: solteiro/namorando/casado, v: 0-100, who } ----------
+  // Solteiro conhece alguém de vez em quando (mais fácil com fama); a relação cai sem tempo junto e termina abaixo de 15.
+  // Relação boa dá um empurrão na forma toda semana; ruim, o contrário
+  const LOVE_NAMES = ['Ana', 'Bia', 'Carol', 'Duda', 'Gabi', 'Isa', 'Ju', 'Lari', 'Lu', 'Mari', 'Nat', 'Rafa', 'Tati', 'Vivi', 'Bruno', 'Caio', 'Léo', 'Rafa'];
+  S.fcCanPropose = c => !!(c.love && c.love.stage === 'namorando' && c.love.v >= 70);
+  function loveWeek(c, fc, r, acts, out) {
+    const L = c.love = c.love || { stage: 'solteiro', v: 0 };
+    const time = acts.filter(x => x === 'love').length;
+    if (L.stage === 'solteiro') {
+      if (r() < 0.012 + Math.min(0.03, c.fame / 4000) + time * 0.03) { L.stage = 'namorando'; L.v = 60; L.who = r.pick(LOVE_NAMES.slice(0, 15)); out.love = 'novo'; }
+      return;
+    }
+    L.v = clamp(L.v - (L.stage === 'casado' ? 1 : 2) + time * 8, 0, 100);
+    if (L.v < 15) { out.love = 'fim'; out.loveWho = L.who; L.stage = 'solteiro'; L.v = 0; L.who = null; fc.fo = clamp((fc.fo || 0) - 0.5, -2, 2); return; }
+    const d = L.v >= 70 ? 0.04 : L.v < 30 ? -0.04 : 0;
+    if (d) fc.fo = clamp(Math.round(((fc.fo || 0) + d) * 100) / 100, -2, 2);
+  }
+
+  // ---------- apostas (só dinheiro do jogo) ----------
+  // Um jogo da próxima rodada da liga (sem o seu time): vitória do mandante, empate ou do visitante, pela força dos dois.
+  // Atleta apostar em futebol é proibido: a cada aposta, 6% de chance de descobrirem (suspensão, técnico e fama)
+  const BET_CAUGHT = 0.06;
+  S.fcSuspended = c => !!(c.fc && c.fc.injOut > 0 && /suspensão/.test(c.fc.injName || ''));
+  const pois = (l, k) => { let p = Math.exp(-l); for (let i = 1; i <= k; i++) p *= l / i; return p; };
+  function odds3(hs, as) {
+    const [lh, la] = lam(hs, as); let h = 0, d = 0, a = 0;
+    for (let i = 0; i <= 9; i++) for (let j = 0; j <= 9; j++) { const p = pois(lh, i) * pois(la, j); if (i > j) h += p; else if (i === j) d += p; else a += p; }
+    const t = h + d + a, f = x => Math.max(1.05, Math.round(0.9 / (x / t) * 100) / 100); // casa fica com 10%
+    return [f(h), f(d), f(a)];
+  }
+  // Próxima rodada da liga que ainda não foi jogada e um jogo dela (o mais equilibrado, para valer a pena pensar)
+  S.fcBetGame = function (c) {
+    const fc = c.fc;
+    if (!fc || fc.done || fc.bet) return null;
+    const e = fc.cal.slice(fc.i).find(x => x.k === 'lg');
+    if (!e) return null;
+    const games = fc.lg.rounds[e.ri].filter(([a, b]) => a !== 0 && b !== 0).map(([a, b]) => ({ ri: e.ri, h: fc.lg.ids[a], a: fc.lg.ids[b] }));
+    if (!games.length) return null;
+    games.sort((x, y) => Math.abs(str(x.h) + 2 - str(x.a)) - Math.abs(str(y.h) + 2 - str(y.a)));
+    const g = games[(fc.i + e.ri) % Math.min(3, games.length)];
+    return Object.assign(g, { odds: odds3(str(g.h), str(g.a)) });
+  };
+  S.fcBetStakes = c => [1, 4, 10].map(w => Math.max(1000, Math.round((c.wage || 0) * w / 1000) * 1000));
+  S.fcBet = function (c, pick, stake) {
+    const g = S.fcBetGame(c);
+    if (!g || ![0, 1, 2].includes(pick) || !(stake > 0) || (c.money || 0) < stake) return false;
+    c.money -= stake;
+    c.fc.bet = { ri: g.ri, h: g.h, a: g.a, pick, stake, odd: g.odds[pick] };
+    const { r, save } = rngOf(c.fc);
+    if (r() < BET_CAUGHT) c.fc.bet.caught = true; // a federação descobre quando o jogo acontecer
+    save();
+    return true;
+  };
+  // Resolve a aposta quando a rodada dela é jogada (dentro do fcPlay)
+  function betResolve(c, fc, e, out) {
+    const b = fc.bet;
+    if (!b || e.k !== 'lg' || e.ri !== b.ri) return;
+    const g = out.others.find(x => x.h === b.h && x.a === b.a);
+    fc.bet = null;
+    if (!g) return;
+    const res = g.gh > g.ga ? 0 : g.gh === g.ga ? 1 : 2, win = res === b.pick, pay = win ? Math.round(b.stake * b.odd) : 0;
+    c.money = (c.money || 0) + pay;
+    out.bet = { h: b.h, a: b.a, gh: g.gh, ga: g.ga, pick: b.pick, stake: b.stake, pay, win };
+    c.betLog = c.betLog || { n: 0, net: 0, caught: 0 }; c.betLog.n++; c.betLog.net += pay - b.stake;
+    if (b.caught) {
+      out.bet.caught = true; c.betLog.caught++;
+      fc.injOut = Math.max(fc.injOut, 4); fc.injName = 'suspensão por aposta'; // fora dos próximos 4 jogos
+      c.rel.coach = clamp(c.rel.coach - 10, 0, 100); c.fame = Math.max(0, c.fame - 8); c.rel.fans = clamp(c.rel.fans - 6, 0, 100);
+    }
+  }
+
 
   // ---------- antes do jogo: orientação de um toque e, às vezes, um pedido do técnico ----------
   const INS = [
@@ -598,6 +689,7 @@
         else { ct.out = 'lost'; ct.lostAt = e.st; }
       }
     }
+    betResolve(c, fc, e, out);
     if (out.title) out.pe += give(c, fc, 1);
     fc.pending = null;
     fc.i++;

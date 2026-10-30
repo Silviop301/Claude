@@ -122,7 +122,7 @@
     const side = id => '<div class="fs-tm' + (id === my ? ' me' : '') + '">' + crest(id, 'md') + '<span>' + esc(nameOf(id)) + '</span></div>';
     const tag = esc(x.compName) + ' · ' + esc(x.stage);
     if (state === 'next') {
-      const who = x.week ? 'A escalação sai depois da sua semana' : x.injury ? 'Lesionado (' + esc(x.injury) + '): ' + (x.injLeft > 1 ? 'fora por mais ' + x.injLeft + ' jogos' : 'volta no próximo jogo') : x.on ? 'Você começa jogando' : x.why === 'banco' ? 'Você fica no banco' : x.why === 'cansaço' ? 'Energia baixa: o técnico vai poupar você' : 'O técnico vai poupar você neste jogo';
+      const who = x.week ? 'A escalação sai depois da sua semana' : x.injury ? (/suspensão/.test(x.injury) ? 'Suspenso (aposta): ' : 'Lesionado (' + esc(x.injury) + '): ') + (x.injLeft > 1 ? 'fora por mais ' + x.injLeft + ' jogos' : 'volta no próximo jogo') : x.on ? 'Você começa jogando' : x.why === 'banco' ? 'Você fica no banco' : x.why === 'cansaço' ? 'Energia baixa: o técnico vai poupar você' : 'O técnico vai poupar você neste jogo';
       return '<div class="fs-card next' + (x.moment ? ' dec' : '') + '"><div class="fs-lbl">' + tag + '</div><div class="fs-sc">' + side(h) + '<b><i>×</i></b>' + side(a) + '</div>' +
         '<p class="fs-line">' + (x.home ? 'Em casa' : 'Fora de casa') + ' · ' + who + '</p>' + (x.moment ? '<p class="fc-dec">' + U.emo('🎯', 'xs') + ' Jogo com lance decisivo seu</p>' : '') +
         (x.on && !x.week ? insBox(x) : '') + '</div>';
@@ -205,6 +205,7 @@
     if (a.id === 'fis') return 'Cansa menos nos próximos 4 jogos';
     if (a.id === 'rest') return 'Recupera energia';
     if (a.id === 'physio') return 'R$ ' + U.money(S.fcPhysioCost(c)) + (fc.injOut > 0 ? ' · 1 jogo a menos de lesão' : ' · recupera energia');
+    if (a.id === 'love') return !c.love || c.love.stage === 'solteiro' ? 'Recupera energia e ajuda a conhecer alguém' : 'Recupera energia e cuida da relação';
     if (a.id === 'spons') return '+R$ ' + U.money(S.fcSponsPay(c)) + ' e fama';
     return 'Fama, com risco de polêmica';
   }
@@ -223,6 +224,7 @@
       const what = w ? '<p class="fc-wk-sum">' + (c.fcAuto ? 'Semana automática: ' : 'Semana: ') + w.acts.map(nm).join(' + ') + ' · energia ' + Math.round(w.en0) + ' → ' + Math.round(w.en1) +
         (w.pe ? ' · +' + num2(w.pe) + ' de evolução' : '') + (w.money > 0 ? ' · +R$ ' + U.money(w.money) : '') + (w.inj ? ' · lesão: 1 jogo a menos' : '') +
         (w.polem ? '. A entrevista virou polêmica e o técnico não gostou.' : '') +
+        (w.love === 'novo' ? '. Você começou a namorar ' + esc(G.c.love.who) + '.' : w.love === 'fim' ? '. ' + esc(w.loveWho || '') + ' terminou com você, e a forma sentiu.' : '') +
         (w.dropped && w.dropped.length ? '. Sem dinheiro para pagar: ' + w.dropped.map(k => S.FC_SHOP.staff.find(x => x.id === k).name).join(', ') + ' saiu.' : '') + '</p>' : '';
       el.className = 'fc-wk';
       el.innerHTML = status + what + (w ? auto : '');
@@ -254,6 +256,36 @@
 
   // ---------- loja: o dinheiro da carreira vira vantagem nesta carreira ----------
   let gearAttr = null;
+  // Relacionamento: com quem, como está e o que fazer
+  function loveRow(c) {
+    const L = c.love || { stage: 'solteiro', v: 0 };
+    if (L.stage === 'solteiro') return '<p class="fc-own">Solteiro. "Família e amigos" na semana ajuda a conhecer alguém (a fama também).</p>';
+    const lvl = L.v >= 70 ? 'up' : L.v < 30 ? 'down' : '';
+    return '<div class="fc-love"><span>' + (L.stage === 'casado' ? 'Casado com ' : 'Namorando ') + esc(L.who || '') + '</span><div class="fc-en ' + (L.v < 30 ? 'out' : L.v < 50 ? 'low' : 'ok') + '"><i style="width:' + Math.round(L.v) + '%"></i></div><b class="' + lvl + '">' + Math.round(L.v) + '</b></div>' +
+      '<p class="fc-own">' + (L.v >= 70 ? 'Relação firme: a forma agradece toda semana.' : L.v < 30 ? 'A relação esfriou: sem tempo junto, acaba (e a forma sente).' : 'Cai um pouco toda semana; "Família e amigos" na semana segura.') + '</p>';
+  }
+  // Aposta: um jogo da próxima rodada (sem o seu time), com o aviso de que atleta apostar é proibido
+  let betPick = null, betStake = 0;
+  function betBox(c, R) {
+    const fc = c.fc, b = fc.bet;
+    const head = '<div class="fc-ss"><h3>Apostas</h3><p class="fc-own">Atleta apostando em futebol é proibido. A cada aposta, há risco de descobrirem: suspensão de 4 jogos, técnico e torcida contra.</p>';
+    if (b) return head + '<p class="fc-bet-on">Aposta feita: ' + R(b.stake) + ' em ' + (b.pick === 1 ? 'empate' : esc(nameOf(b.pick === 0 ? b.h : b.a))) + ' (' + esc(nameOf(b.h)) + ' × ' + esc(nameOf(b.a)) + '), paga ' + R(Math.round(b.stake * b.odd)) + '. Sai na próxima rodada da liga.</p></div>';
+    const g = S.fcBetGame(c);
+    if (!g) return head + '<p class="fc-own">Sem rodada da liga pela frente.</p></div>';
+    const st = S.fcBetStakes(c);
+    if (!st.includes(betStake)) betStake = st[0];
+    const lab = ['Vitória ' + nameOf(g.h), 'Empate', 'Vitória ' + nameOf(g.a)];
+    return head + '<div class="fc-bet-g">' + crest(g.h, 'xs') + '<span>' + esc(nameOf(g.h)) + ' × ' + esc(nameOf(g.a)) + '</span>' + crest(g.a, 'xs') + '</div>' +
+      '<div class="fc-bet-o">' + g.odds.map((o, k) => '<button data-b="' + k + '"' + (betPick === k ? ' class="on"' : '') + '><small>' + esc(lab[k]) + '</small><b>' + o.toFixed(2).replace('.', ',') + '</b></button>').join('') + '</div>' +
+      '<div class="seg fc-bet-s">' + st.map(v => '<button data-s="' + v + '"' + (v === betStake ? ' class="on"' : '') + (c.money >= v ? '' : ' disabled') + '>' + R(v) + '</button>').join('') + '</div>' +
+      '<button class="btn ghost fc-bet-go" id="fc-bet-go"' + (betPick === null || (c.money || 0) < betStake ? ' disabled' : '') + '>' + (betPick === null ? 'Escolha um resultado' : 'Apostar ' + R(betStake) + ' · paga ' + R(Math.round(betStake * g.odds[betPick]))) + '</button></div>';
+  }
+  function bindBet() {
+    document.querySelectorAll('.fc-bet-o button').forEach(b => { b.onclick = () => { sfx('tap'); betPick = +b.dataset.b; shopBox(); }; });
+    document.querySelectorAll('.fc-bet-s button').forEach(b => { b.onclick = () => { sfx('tap'); betStake = +b.dataset.s; shopBox(); }; });
+    const go = $('fc-bet-go');
+    if (go) go.onclick = () => { if (S.fcBet(G.c, betPick, betStake)) { sfx('coin'); betPick = null; save(); bar(); shopBox(); } };
+  }
   function shopBox() {
     const c = G.c, el = $('fc-shop');
     if (!el) return;
@@ -276,11 +308,16 @@
         S.FC_SHOP.staff.map(x => { const on = !!(c.staff && c.staff[x.id]), p = S.fcStaffCost(c, x.id);
           return row(x.name, x.fx + ' · ' + R(p) + ' por semana', btn('staff', x.id, on ? 'Dispensar' : 'Contratar', on || cash >= p * 4, on)); }).join('') +
       '</div>' +
-      '<div class="fc-ss"><h3>Estilo de vida</h3>' +
-        S.FC_SHOP.life.map(x => { const own = !!(c.life && c.life[x.id]), p = S.fcLifePrice(c, x.id);
+      '<div class="fc-ss"><h3>Vida pessoal</h3>' + loveRow(c) +
+        S.FC_SHOP.life.filter(x => x.id !== 'ring' || S.fcCanPropose(c) || (c.life && c.life.ring)).map(x => { const own = !!(c.life && c.life[x.id]), p = S.fcLifePrice(c, x.id);
           return row(x.name, x.fx + ' (+' + x.fame + ' de fama)', own ? '<em class="fc-own-tag">Comprado</em>' : btn('life', x.id, R(p), cash >= p)); }).join('') +
       '</div>' +
+      '<div class="fc-ss"><h3>Carro</h3>' +
+        S.FC_SHOP.cars.map((x, k) => { const at = S.fcCarAt(c), p = S.fcCarPrice(c, x.id);
+          return row(x.name, x.fx + ' (+' + x.fame + ' de fama)', k === at ? '<em class="fc-own-tag">Seu carro</em>' : k < at ? '<em class="fc-own-tag old">Abaixo do seu</em>' : btn('car', x.id, R(p), cash >= p)); }).join('') +
+      '</div>' + betBox(c, R) +
       '<p class="fc-shop-note">Tudo daqui vale só nesta carreira. Os itens da coleção continuam só visuais.</p>';
+    bindBet();
     el.querySelectorAll('.fc-attr button').forEach(b => { b.onclick = () => { sfx('tap'); gearAttr = b.dataset.a; shopBox(); }; });
     el.querySelectorAll('.fc-buy').forEach(b => { b.onclick = () => {
       if (S.fcBuy(c, b.dataset.k, b.dataset.id, gearAttr)) { sfx(b.dataset.k === 'staff' && !(c.staff && c.staff[b.dataset.id]) ? 'tap' : 'coin'); save(); bar(); shopBox(); weekBox(); }
@@ -434,6 +471,8 @@
     $('fc-match').innerHTML = x.vs ? card('done', x) : card('done', x);
     peBox(); meBox(); compsBox(pos); calBox(); weekBox(true);
     const gain = (out.req ? '<p class="fc-req ' + (out.req.ok ? 'ok' : 'no') + '">' + (out.req.ok ? 'Pedido do técnico cumprido: ' : 'Pedido do técnico não cumprido: ') + esc(out.req.txt.toLowerCase()) + (out.req.ok ? '. Ele gostou.' : '.') + '</p>' : '') +
+      (out.bet ? '<p class="fc-req ' + (out.bet.win ? 'ok' : 'no') + '">Aposta: ' + esc(nameOf(out.bet.h)) + ' ' + out.bet.gh + ' × ' + out.bet.ga + ' ' + esc(nameOf(out.bet.a)) + (out.bet.win ? ', você ganhou R$ ' + U.money(out.bet.pay) : ', perdeu R$ ' + U.money(out.bet.stake)) + '.' +
+        (out.bet.caught ? ' A federação descobriu: suspensão de 4 jogos.' : '') + '</p>' : '') +
       (out.pe ? '<p class="fc-gain">+' + num1(out.pe) + ' de evolução</p>' : '');
     $('fc-acts').innerHTML = gain + '<button class="btn" id="fc-next">' + (G.c.fc.done ? 'Ver resumo da temporada' : 'Próximo jogo') + '</button>';
     $('fc-next').onclick = () => (out.title ? celebrate(out, paintOrEnd) : paintOrEnd());
