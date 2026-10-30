@@ -4953,8 +4953,11 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
 .tk-who small { display: block; font: 600 12px/1.2 var(--body); color: #5A5748; }
 .tk-who b { display: block; font: 800 24px/1.05 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tk-who span span, .tk-who > span > span { display: block; font: 500 13px/1.25 var(--body); color: #3B3A32; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tk-line { display: flex; gap: 14px; flex-wrap: wrap; border-top: 1px solid rgba(27, 27, 23, .18); padding-top: 6px; font: 500 12px/1.2 var(--body); color: #5A5748; }
+.tk-line { display: flex; gap: 12px; white-space: nowrap; min-width: 0; border-top: 1px solid rgba(27, 27, 23, .18); padding-top: 6px; font: 500 12px/1.2 var(--body); color: #5A5748; }
 .tk-line b { font-size: 14px; color: #1B1B17; }
+/* uma linha só dentro da moldura: adversário de nome longo corta com reticências */
+.tk-line > span { flex: none; }
+.tk-line > .tk-vs { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .tk-cont .tk-stub { background: #F2C230; gap: 5px; --tk-sub: #4A3E12; }
 .tk-cont .tk-stub b { writing-mode: initial; transform: none; font-size: 18px; }
 .tk-bars { width: 52px; height: 16px; margin-top: 2px; background: repeating-linear-gradient(90deg, #1B1B17 0 2px, transparent 2px 3px, #1B1B17 3px 4px, transparent 4px 7px, #1B1B17 7px 10px, transparent 10px 11px); }
@@ -5043,3 +5046,19 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
 .cfg2 .cfg-credit { margin: 0; text-align: center; font-size: 11px; color: rgba(244, 238, 220, .6); }
 /* No celular a configuração ocupa a tela inteira; no computador fica um painel no meio */
 @media (max-width: 759px) { .cfg-wrap:has(.cfg2) { align-items: stretch; } .cfg2 { width: 100%; max-height: none; border-radius: 0; padding-top: calc(14px + env(safe-area-inset-top, 0px)); } }
+/* Carreira Relâmpago às cegas: modo (sozinho ou X1), casas lacradas durante a partida e a carreira abrindo casa por casa no fim */
+.rl-modes { display: flex; flex-direction: column; gap: 8px; }
+.rl-modes .btn small { display: block; font: 600 12px var(--body); opacity: .8; letter-spacing: 0; text-transform: none; }
+.rl-cell.sealed .tw { width: 18px; height: 18px; margin-top: 2px; opacity: .85; }
+.rl-cell.sealed em { color: var(--label); }
+.rl-reveal.blind { gap: 10px; }
+.rl-reveal.blind > small { max-width: 300px; line-height: 1.35; }
+.rl-seal { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 18px 16px; margin-bottom: 10px; }
+.rl-seal b { font: 800 20px var(--display); }
+.rl-seal span { font-size: 14px; line-height: 1.4; color: var(--muted); }
+.rl-unveil .rl-cell, .rl-unveil .rl-mini, .rl-late { animation: rl-in .45s cubic-bezier(.2, 1.4, .4, 1) var(--d, 0s) both; }
+@keyframes rl-in { from { opacity: 0; transform: translateY(8px) scale(.94); } }
+.rl-skip .rl-unveil .rl-cell, .rl-skip .rl-unveil .rl-mini, .rl-skip .rl-late { animation-delay: 0s !important; animation-duration: .2s; }
+.rl-mini.win small { color: var(--gold); }
+.rl-mini.win small::after { content: ' +'; }
+@media (prefers-reduced-motion: reduce) { .rl-unveil .rl-cell, .rl-unveil .rl-mini, .rl-late { animation: none; } }

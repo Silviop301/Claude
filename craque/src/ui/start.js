@@ -8,7 +8,7 @@
   const MODES = {
     rapida: { ic: '⏱️', name: 'Carreira Rápida', sub: 'Uma temporada por tela', k: 'Duração', v: '9 min', sec: 'A·01', cont: 'b-cont', neu: 'b-new' },
     completa: { ic: '🏟️', name: 'Jogo a Jogo', full: 'Carreira Jogo a Jogo', sub: 'Cada rodada, treino e contrato', k: 'Save de', v: 'dias', sec: 'B·02', cont: 'b-cont-fc', neu: 'b-new-fc' },
-    relampago: { ic: '⚡', name: 'Relâmpago', sub: '5 casas, desafie um amigo', k: 'Duração', v: '1 min', sec: 'C·03', neu: 'b-relampago' },
+    relampago: { ic: '⚡', name: 'Relâmpago', sub: '5 casas, sozinho ou X1', k: 'Duração', v: '1 min', sec: 'C·03', neu: 'b-relampago' },
   };
   const tk = (cls, id, body, stub, extra) => (id ? '<button class="tk ' + cls + '" id="' + id + '">' : '<div class="tk ' + cls + '" aria-disabled="true">') +
     '<span class="tk-in"><span class="tk-paper"><span class="tk-frame">' + body + '</span></span><span class="tk-stub">' + stub + '</span></span>' + (extra || '') + (id ? '</button>' : '</div>');
@@ -26,7 +26,7 @@
     if (e && e.k === 'lg' && fc.lg) {
       const R = fc.lg.rounds.length, m = fc.lg.rounds[e.ri].find(([a, b]) => a === 0 || b === 0);
       const vs = m && club(fc.lg.ids[m[0] === 0 ? m[1] : m[0]]);
-      line = '<span>Rodada <b>' + (e.ri + 1) + '</b> de ' + R + '</span>' + (vs ? '<span>Próximo <b>x ' + esc(vs.short || vs.name) + '</b> (' + (m[0] === 0 ? 'casa' : 'fora') + ')</span>' : '');
+      line = '<span>Rodada <b>' + (e.ri + 1) + '</b> de ' + R + '</span>' + (vs ? '<span class="tk-vs"><b>x ' + esc(vs.short || vs.name) + '</b> (' + (m[0] === 0 ? 'casa' : 'fora') + ')</span>' : '');
       no = String(e.ri + 1).padStart(4, '0') + '-' + R;
     }
     return tk('tk-cont', M.cont, '<span class="tk-who">' + (cl ? crest(cl.id, 'lg') : '') + '<span><small>' + (M.full || M.name) + '</small><b>' + esc(sc.name) + '</b>' +
