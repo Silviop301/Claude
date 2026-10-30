@@ -9928,5 +9928,16 @@
  "<button class=\"fc-iv": "<button class=\"fc-iv",
  " off": " off",
  "Menos lesão": "Fewer injuries",
- "Ver o jogo": "See the match"
+ "Ver o jogo": "See the match",
+ "Tabela": "Table",
+ "Jogos": "Matches",
+ "Torneios": "Competitions",
+ "Rodada": "Round",
+ "<button role=\"tab\" data-p=\"": "<button role=\"tab\" data-p=\"",
+ "<div class=\"fc-pe-row\"><span>Evolução</span><div class=\"fc-pe-bar\"><i style=\"width:": "<div class=\"fc-pe-row\"><span>Evolution</span><div class=\"fc-pe-bar\"><i style=\"width:",
+ "<button class=\"btn ghost fc-evo\" id=\"fc-evo\">Evoluir</button>": "<button class=\"btn ghost fc-evo\" id=\"fc-evo\">Evolve</button>",
+ "<p>Todo jogo enche a barra, e nota alta enche mais. Com 1 ponto inteiro, dá para evoluir.</p>": "<p>Every match fills the bar, and a high rating fills it faster. With 1 full point you can evolve.</p>",
+ "Entre os jogos": "Between matches",
+ "Durante a temporada": "During the season",
+ "Voltar aos jogos": "Back to the matches"
 }

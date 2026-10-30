@@ -189,3 +189,15 @@ Proibido também: cartão com faixa colorida na lateral.
   problemas. Fotos de todas as telas no celular e 1280×720.
 - **Pendente:** decidir com o Silvio se a nota da Completa ganha cortes próprios (mais difícil hoje); janela de
   transferências e decisões espalhadas no meio da temporada (parte 3).
+
+### Rodada 7b · 2026-10-30 · Completa: a tela de rodadas no centro (opinião do Silvio)
+
+- **Eventos entre os jogos:** na Completa a pré-temporada vai direto para os jogos; duas datas no ano (30% e 70% do
+  calendário) podem trazer um evento ("Entre os jogos", volta com "Voltar aos jogos"). Sem troca de clube no meio do
+  ano (`S.pickEvent(c, { mid: true })`) e sem repetir evento no mesmo ano; lesão de evento tira dos próximos jogos.
+  "Simular" para nas datas de evento.
+- **Evolução todo jogo:** em campo, nota < 6,5 dá +0,05, ≥ 6,5 +0,1, ≥ 7,4 +0,2, ≥ 8,2 +0,4 (teto do ano igual).
+- **Tela mais curta:** abaixo do jogo, uma aba por vez (Tabela, Jogos, Torneios, Você; Rodada no ao vivo); no celular a
+  tabela rola por dentro com a sua linha à vista; no computador a tabela segue do lado. Barra de evolução numa linha.
+- **Validação:** simulador Completa 1500: S14 A27 B32 C18 D9 (antes S8 A19; rápido S11 A25 B33 C18 D13, sem mudança);
+  auditoria 0 alertas; carreiras pela interface no celular e no computador; fotos do hub, abas, ao vivo e evento.
