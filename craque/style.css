@@ -4525,14 +4525,28 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 /* ----- fim V7 ----- */
 
 /* ----- V8 Carreira Completa integrada (ui/fullcareer.js) ----- */
-.fc-pe { background: var(--panel); border: 1px solid var(--panel-line); border-radius: var(--r-md); padding: 10px 12px; display: grid; gap: 6px; }
-.fc-pe-top { display: flex; justify-content: space-between; align-items: baseline; }
-.fc-pe-top span { font: var(--t-label); text-transform: uppercase; letter-spacing: .12em; color: var(--tx-3); }
-.fc-pe-top b { font: 800 26px/1 var(--display); color: var(--gold-2); }
+.fc-pe { display: grid; gap: 4px; }
+.fc-pe-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px; min-height: 44px; }
+.fc-pe-row > span { font: 700 15px var(--display); color: var(--tx-2); }
+.fc-pe-row > b { font: 800 22px/1 var(--display); color: var(--gold-2); min-width: 2.2em; text-align: right; }
 .fc-pe-bar { height: 8px; border-radius: 4px; background: rgba(0, 0, 0, .3); overflow: hidden; }
 .fc-pe-bar i { display: block; height: 100%; background: var(--gold); border-radius: 4px; transition: width .4s; }
-.fc-pe p { margin: 0; font: var(--t-small); color: var(--tx-2); }
-.fc-pe .btn { margin: 2px 0 0; min-height: 44px; }
+.fc-pe p { margin: 0; font: var(--t-small); color: var(--tx-3); }
+.fc-pe .btn { margin: 0; min-height: 40px; padding: 0 14px; width: auto; }
+/* Abas abaixo do jogo: uma de cada vez (em tela larga a tabela fica do lado) */
+.fc-nav { display: flex; }
+.fc-nav button { flex: 1 1 0; min-width: 0; min-height: 40px; padding: 0 4px; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fc .fc-pane { display: none; }
+.fc[data-tab="tbl"] .fc-pane[data-p="tbl"], .fc[data-tab="cal"] .fc-pane[data-p="cal"], .fc[data-tab="comp"] .fc-pane[data-p="comp"],
+.fc[data-tab="me"] .fc-pane[data-p="me"], .fc[data-tab="round"] .fc-pane[data-p="round"] { display: block; }
+/* No celular a tabela rola dentro dela (com a sua linha à vista), para a tela não virar uma lista comprida */
+.fc .fs-tbl { max-height: min(60svh, 400px); overflow-y: auto; scrollbar-width: thin; }
+.fc-tabs .seg button { min-height: 36px; font-size: 13px; }
+@media (min-width: 1000px) and (min-height: 560px) {
+  .fc .fs-side.fc-pane { display: block; }
+  .fc .fs-tbl { max-height: calc(100svh - var(--bar-h, 0px) - 110px); }
+  html.desk .fc .fs-tbl { max-height: calc(100svh / var(--z, 1) - var(--bar-h, 0px) - 110px); }
+}
 .fc-comps { display: grid; gap: 1px; background: var(--panel-line); border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--panel-line); }
 .fc-comp { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 12px; background: var(--pitch); background: color-mix(in srgb, var(--board) 55%, var(--pitch)); }
 .fc-comp span { font: 700 15px var(--display); color: var(--tx-1); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

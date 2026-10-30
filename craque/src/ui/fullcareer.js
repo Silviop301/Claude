@@ -12,6 +12,11 @@
   const clock = t => (t > 90 ? '90+' + (t - 90) : t) + "'";
   const PACE = [330, 110]; // milissegundos por minuto de jogo: normal (~30 s) e rápido (~10 s)
   let fast = false;
+  // Abaixo do jogo, uma aba por vez: tabela, jogos (calendário), competições e seus números; ao vivo, a rodada.
+  // Em tela larga a tabela fica sempre do lado e as abas cuidam do resto.
+  const wide = () => window.matchMedia && window.matchMedia('(min-width: 1000px) and (min-height: 560px)').matches;
+  const PANES = [['tbl', 'Tabela'], ['cal', 'Jogos'], ['comp', 'Torneios'], ['me', 'Você'], ['round', 'Rodada']];
+  let pane = 'tbl';
 
   // ---------- tela central ----------
   function hub() {
@@ -19,23 +24,42 @@
     if (!c.fc || c.fc.season !== c.season) S.fcStart(c);
     G.step = 'fc'; save(); bar();
     if (c.fc.done || !S.fcNext(c)) return finishSeason();
+    // Data de evento: entre um jogo e outro, a vida fora de campo (ui/match.js; a escolha volta para cá)
+    if (S.fcEventDue(c)) {
+      const ev = S.fcPickEvent(c);
+      if (ev) { c.pendEv = ev; G.step = 'event'; save(); return U.eventScreen(); }
+      save();
+    }
     render(
-      '<div class="fs fc">' +
+      '<div class="fs fc" id="fc">' +
         '<div class="fs-main">' +
           '<div class="eyebrow">Temporada ' + (year()) + ' · ' + esc(nameOf(c.club)) + '</div><h2 id="fc-h"></h2>' +
           '<div class="fs-match" id="fc-match"></div>' +
           '<div class="fs-acts" id="fc-acts"></div>' +
           '<div class="fc-pe" id="fc-pe"></div>' +
-          '<div class="fs-me" id="fc-me"></div>' +
-          '<div class="fc-comps" id="fc-comps"></div>' +
-          '<div class="fs-round" id="fc-round"></div>' +
-          '<div class="fc-cal" id="fc-cal"></div>' +
+          '<div class="seg fc-nav" id="fc-nav" role="tablist"></div>' +
+          '<div class="fc-pane" data-p="cal"><div class="fc-cal" id="fc-cal"></div></div>' +
+          '<div class="fc-pane" data-p="comp"><div class="fc-comps" id="fc-comps"></div></div>' +
+          '<div class="fc-pane" data-p="me"><div class="fs-me" id="fc-me"></div></div>' +
+          '<div class="fc-pane" data-p="round"><div class="fs-round" id="fc-round"></div></div>' +
         '</div>' +
-        '<div class="fs-side"><div class="fc-tabs" id="fc-tabs"></div><div class="fs-tbl" id="fc-tbl"></div></div>' +
+        '<div class="fs-side fc-pane" data-p="tbl"><div class="fc-tabs" id="fc-tabs"></div><div class="fs-tbl" id="fc-tbl"></div></div>' +
       '</div>'
     );
     tblKey = null;
     paint();
+  }
+  // Abas: Rodada só existe com outros jogos na tela; em tela larga, Tabela sai (ela já está do lado)
+  function nav(want) {
+    const el = $('fc-nav'), box = $('fc');
+    if (!el) return;
+    const hasRound = !!($('fc-round') && $('fc-round').innerHTML);
+    const list = PANES.filter(([k]) => (k !== 'round' || hasRound) && (k !== 'tbl' || !wide()));
+    if (want) pane = want;
+    if (!list.some(([k]) => k === pane)) pane = list[0][0];
+    box.dataset.tab = pane;
+    el.innerHTML = list.map(([k, n]) => '<button role="tab" data-p="' + k + '"' + (k === pane ? ' class="on" aria-selected="true"' : '') + '>' + n + '</button>').join('');
+    el.querySelectorAll('button').forEach(b => { b.onclick = () => { sfx('tap'); nav(b.dataset.p); if (pane === 'tbl') { tblKey = null; table(); } }; });
   }
 
   // Classificação: liga (com zonas) ou o grupo do continental. tab: a tabela do motor; live: placares parciais a somar
@@ -114,10 +138,10 @@
   // Pontos de evolução: a fração do ano enche a barra; com 1 ponto inteiro, dá para evoluir agora
   function peBox() {
     const c = G.c, fc = c.fc, whole = c.pe || 0;
-    $('fc-pe').innerHTML = '<div class="fc-pe-top"><span>Pontos de evolução</span><b>' + num1(whole + fc.peFrac) + '</b></div>' +
-      '<div class="fc-pe-bar"><i style="width:' + Math.round(fc.peFrac * 100) + '%"></i></div>' +
-      '<p>Jogo com nota 7,4 ou mais vale ponto; taça também.' + (whole >= 1 ? '' : ' Com 1 ponto inteiro, dá para evoluir entre os jogos.') + '</p>' +
-      (whole >= 1 && S.canInvestAny(c) ? '<button class="btn ghost fc-evo" id="fc-evo">Evoluir agora</button>' : '');
+    const can = whole >= 1 && S.canInvestAny(c);
+    $('fc-pe').innerHTML = '<div class="fc-pe-row"><span>Evolução</span><div class="fc-pe-bar"><i style="width:' + Math.round(fc.peFrac * 100) + '%"></i></div><b>' + num1(whole + fc.peFrac) + '</b>' +
+      (can ? '<button class="btn ghost fc-evo" id="fc-evo">Evoluir</button>' : '') + '</div>' +
+      (can ? '' : '<p>Todo jogo enche a barra, e nota alta enche mais. Com 1 ponto inteiro, dá para evoluir.</p>');
     if ($('fc-evo')) $('fc-evo').onclick = evolve;
   }
   function meBox() {
@@ -152,6 +176,7 @@
     $('fc-match').innerHTML = card('next', nx);
     peBox(); meBox(); compsBox(pos); calBox();
     $('fc-round').innerHTML = '';
+    nav();
     $('fc-acts').innerHTML = '<button class="btn" id="fc-play">' + (nx.moment ? 'Jogar a decisão' : 'Jogar') + '</button>' +
       '<div class="fs-skip"><button class="btn ghost" id="fc-5">Simular 5 jogos</button><button class="btn ghost" id="fc-end">Simular até o fim</button></div>';
     $('fc-play').onclick = () => start(nx);
@@ -159,11 +184,11 @@
     $('fc-end').onclick = () => quick(999);
   }
 
-  // Simula sem o ao vivo; para antes de jogo com lance decisivo (esse você joga)
+  // Simula sem o ao vivo; para antes de jogo com lance decisivo (esse você joga) e nas datas de evento
   function quick(n) {
     const c = G.c;
     let k = 0, nx;
-    while (k < n && (nx = S.fcNext(c)) && !(nx.moment && k > 0)) {
+    while (k < n && (nx = S.fcNext(c)) && !(k > 0 && (nx.moment || S.fcEventDue(c)))) {
       if (nx.moment) { S.fcAutoMoment(c, nx.moment); }
       const out = S.fcPlay(c); k++;
       if (out && out.title) { save(); return celebrate(out, paintOrEnd); }
@@ -226,6 +251,8 @@
     $('fc-fast').onclick = () => { fast = !fast; $('fc-fast').textContent = fast ? 'Velocidade normal' : 'Mais rápido'; $('fc-fast').classList.toggle('on', fast); };
     $('fc-skip').onclick = () => { t = end; frame(); done(); };
     if ($('fc-evo')) $('fc-evo').remove(); // evoluir só entre os jogos
+    // Ao vivo: no celular, a tabela mexendo (a rodada fica na aba ao lado); em tela larga, a rodada
+    nav(wide() ? 'round' : pane === 'round' ? 'round' : 'tbl');
     $('fc-match').scrollIntoView({ block: 'nearest' });
     sfx('whistle');
     const liveTab = () => ({ [view]: games.map(([a, b, g]) => [a, b].concat(part(g, t))) });
@@ -276,7 +303,7 @@
 
   // Resultado: o cartão do jogo, os pontos ganhos e "Próximo jogo"
   function result(x, out) {
-    tblKey = null; const pos = table(); tabs();
+    tblKey = null; const pos = table(); tabs(); nav();
     $('fc-h').textContent = x.compName + ' · fim de jogo';
     $('fc-match').innerHTML = x.vs ? card('done', x) : card('done', x);
     peBox(); meBox(); compsBox(pos); calBox();
