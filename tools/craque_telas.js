@@ -235,7 +235,7 @@ const LIVE = { 'temporada-ao-vivo': 0, 'reta-final': 120, 'copa-jogos': 300 };
   await home();
   if (await click('#b-sound')) { await shot('configuracoes', 600); await click('.cfg-wrap .cfg-x'); }
   await home();
-  if (await click('#b-cloud')) await shot('conta', 700);
+  if (await click('#b-sound') && await click('.cfg-wrap #cfg-acc')) await shot('conta', 700);
   await home();
   if (await ev(() => { if (!window.CRAQUE_UI.feedback) return false; window.CRAQUE_UI.feedback('inicio', {}, window.CRAQUE_UI.home); return true; })) await shot('opiniao', 700);
   await home();

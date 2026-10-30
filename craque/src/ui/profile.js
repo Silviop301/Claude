@@ -122,27 +122,35 @@
       if (e.grade && (!t.best || GR[e.grade] > GR[t.best])) t.best = e.grade; });
     return t;
   }
+  // Carteirinha de sócio: número tirado do id do ranking (o mesmo em todo aparelho da conta), desde a primeira carreira
+  const MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  function member() {
+    const pid = U.rankPlayer ? U.rankPlayer().pid : '', n = String(hash('socio-' + pid) % 1e6).padStart(6, '0');
+    const list = load('climbix-colecao-v1') || [], at = list.reduce((m, e) => Math.min(m, e.at || m), Date.now()), d = new Date(at);
+    return { no: n.slice(0, 3) + '.' + n.slice(3), since: MES[d.getMonth()] + ' de ' + d.getFullYear() };
+  }
   function open() {
-    const p = prof(), L = level(p.xp), wk = week(), T = totals(), left = daysLeft();
+    U.G.c = null; U.G.step = null; U.bar();
+    const p = prof(), L = level(p.xp), wk = week(), T = totals(), left = daysLeft(), M = member();
     const goal = g => { const d = GOAL_BY[g.id], n = d.n || 1, pr = PRIZE[d.tier];
       return '<div class="pf-goal' + (g.done ? ' done' : '') + '"><span class="pf-ck" aria-hidden="true">' + (g.done ? U.ICON.check : '') + '</span>' +
-        '<div><b>' + esc(d.t) + '</b><small>' + (g.done ? 'Cumprida' : (n > 1 ? (g.p || 0) + ' de ' + n + ' · ' : '') + 'vale') + ' +' + pr.xp + ' XP e ' + (pr.p > 1 ? pr.p + ' pacotinhos' : '1 pacotinho') + '</small></div></div>'; };
+        '<div><b>' + esc(d.t) + (n > 1 && !g.done ? ' <em>' + (g.p || 0) + '/' + n + '</em>' : '') + '</b><small>' + (pr.p > 1 ? pr.p + ' pacotinhos' : '1 pacotinho') + '</small></div><strong>+' + pr.xp + ' XP</strong></div>'; };
     const num = (v, l) => '<div><b>' + v + '</b><span>' + l + '</span></div>';
     render(
-      '<div class="pf"><button class="back-link" id="pf-back">‹ Início</button>' +
-      '<h2 class="pf-h">Perfil</h2>' +
-      '<div class="pf-top"><div class="pf-badge"><small>Nível</small><b>' + L.lv + '</b></div><div class="pf-rk"><b>' + rankOf(L.lv) + '</b>' +
+      '<div class="pf"><h2 class="tab-h">Perfil</h2>' +
+      '<div class="pf-card"><div class="pf-badge"><small>nível</small><b>' + L.lv + '</b></div><div class="pf-rk"><small>Sócio nº ' + M.no + ' · desde ' + M.since + '</small><b>' + rankOf(L.lv) + '</b>' +
         '<span class="pf-bar big"><em style="width:' + Math.round(L.cur / L.next * 100) + '%"></em></span><small>' + L.cur + ' de ' + L.next + ' XP para o nível ' + (L.lv + 1) + '</small></div></div>' +
-      '<div class="pf-sec"><div class="pf-sh"><h3>Metas da semana</h3><small>' + (left === 1 ? 'renovam amanhã' : 'renovam em ' + left + ' dias') + '</small></div>' + wk.goals.map(goal).join('') + '</div>' +
+      '<div class="pf-sec"><div class="pf-sh"><h3>Metas da semana</h3><small>' + (left === 1 ? 'renovam amanhã' : 'renovam em ' + left + ' dias') + '</small></div><div class="pf-goals">' + wk.goals.map(goal).join('') + '</div></div>' +
+      '<div class="pf-sec pf-sk">' + U.streakHome() + '</div>' +
       (window.CRAQUE_WORLD ? '<div class="pf-sec">' + U.worldHome() + '</div>' : '') +
       '<div class="pf-sec"><div class="pf-sh"><h3>Todas as carreiras</h3></div><div class="pf-nums">' +
         num(T.n, T.n === 1 ? 'carreira' : 'carreiras') + num(T.goals, 'gols') + num(T.assists, 'assistências') + num(T.titles, 'títulos') +
         num(T.ballon, T.ballon === 1 ? 'Bola de Ouro' : 'Bolas de Ouro') + num(T.best || '–', 'melhor nota') + '</div>' +
-        '<p class="pf-how">Toda carreira terminada dá XP (mais com nota alta e títulos). Cada nível novo e cada meta cumprida dão pacotinho.</p></div></div>'
+        '<p class="pf-how">Toda carreira terminada dá XP (mais com nota alta e títulos). Cada nível novo e cada meta cumprida dão pacotinho.</p></div></div>' + U.tabs('profile')
     );
-    $('pf-back').onclick = () => U.home();
     U.backTo = open;
     U.worldHomeBind();
+    U.streakBind(open); // pegou o prêmio do dia: redesenha (o pacotinho vai para a fila da tela inicial)
   }
 
   Object.assign(U, { profile: open, profileHome: homeHtml, profileHomeBind: homeBind, profileCareer: career, profileRel: relampago, profileFinale: finaleHtml,

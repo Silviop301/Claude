@@ -203,6 +203,10 @@ Tema: gramado à noite (`--pitch`), cartões de papel creme, ouro para a ação.
 - **Computador:** a carreira fica numa moldura de largura fixa (até 1120 px) com a barra do topo em uma linha; tela
   curta desce para perto do meio (`lift` em `ui/desktop.js`). Tela que cresce depois de aberta entra em `NO_LIFT`.
 - **Visual novo (2026-10-27):** cada grupo de telas tem seu bloco no fim do `style.css` (V0 comuns e computador, V1 a V5 telas).
+- **Bilheteria (2026-10-30):** a tela inicial é uma bilheteria: cada modo é um ingresso `.tk` (papel, moldura, picote e
+  canhoto; os cortes em semicírculo são máscara em `.tk-in`, cor do papel por variável `--paper`/`--stub-bg`). Início,
+  Minhas carreiras, Ranking e Perfil têm a barra de baixo `U.tabs(atual)` (ui/start.js) no lugar do "‹ Voltar". As
+  configurações (ui/settings.js) são uma tela: chave `.sw` para liga/desliga, `.cfg-seg2` na linha, conta no topo.
 
 ## Conferir na tela (Playwright)
 

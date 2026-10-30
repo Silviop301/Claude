@@ -4,20 +4,20 @@
   const U = window.CRAQUE_UI;
   const { esc } = U;
   const canVibe = typeof navigator !== 'undefined' && !!navigator.vibrate;
-  // Dois grupos: o que muda a partida e o que muda o visual/som
+  // Duas caixas: chaves de liga/desliga (som e tela) e escolhas curtas na linha (o que muda a partida). Salva no toque
   const GROUPS = () => [
-    { t: 'Partida', rows: [
-      { k: 'moments', ic: 'circle-dot', t: 'Lances decisivos', d: 'Cobrar você mesmo ou deixar a sua carta decidir', opts: [['play', 'Jogar'], ['auto', 'Decidir sozinho']] },
-      { k: 'cups', ic: 'globe', t: 'Copa e Mundial', d: 'Jogar jogo a jogo ou ver só o resultado', opts: [['play', 'Jogar'], ['sim', 'Simular direto']] },
-      { k: 'tips', ic: 'info', t: 'Dicas', d: 'Explicação curta na primeira vez de cada tela', opts: [[true, 'Ligadas'], [false, 'Desligadas']], note: 'Ligar de novo mostra todas as dicas outra vez' },
-      { k: 'fast', ic: 'fast-forward', t: 'Resumo da temporada', d: 'Números contando e telas de título', opts: [[false, 'Normal'], [true, 'Rápido']] },
+    { t: 'Som e tela', rows: [
+      { k: 'sound', t: 'Som' },
+    ].concat(canVibe ? [{ k: 'vibe', t: 'Vibração' }] : []).concat([
+      { k: 'fx3d', t: 'Efeitos 3D', d: 'desligue se o celular esquentar' },
+    ]) },
+    { t: 'Na partida', rows: [
+      { k: 'moments', t: 'Lances decisivos', d: 'Cobrar ou deixar a carta decidir', opts: [['play', 'Jogar'], ['auto', 'Auto']] },
+      { k: 'cups', t: 'Copa e Mundial', d: 'Jogo a jogo ou só o placar', opts: [['play', 'Jogar'], ['sim', 'Simular']] },
+      { k: 'fast', t: 'Fim de temporada', d: 'Números contando', opts: [[false, 'Normal'], [true, 'Rápido']] },
+      { k: 'papers', t: 'Jornais', d: 'Capa no fim do ano', opts: [['all', 'Todos'], ['special', 'Especiais'], ['none', 'Não']] },
+      { k: 'tips', t: 'Dicas', d: 'Religar mostra todas outra vez' },
     ] },
-    { t: 'Visual e som', rows: [
-      { k: 'papers', ic: 'newspaper', t: 'Jornais', d: 'Capa do jornal no fim da temporada', opts: [['all', 'Todos'], ['special', 'Só especiais'], ['none', 'Nenhum']],
-        note: 'Especiais: transferências, finais, Copa e despedida' },
-      { k: 'fx3d', ic: 'sparkles', t: 'Efeitos 3D', d: 'Cartas, bola e jornal em 3D', opts: [[true, 'Ligados'], [false, 'Desligados']], note: 'Desligue se o celular esquentar ou travar' },
-      { k: 'sound', ic: 'volume-2', t: 'Som', opts: [[true, 'Ligado'], [false, 'Desligado']] },
-    ].concat(canVibe ? [{ k: 'vibe', ic: 'smartphone', t: 'Vibração', opts: [[true, 'Ligada'], [false, 'Desligada']] }] : []) },
   ];
   const value = k => (k === 'tips' ? U.tipsOn() : k === 'sound' ? !!(window.CRAQUE_SFX && window.CRAQUE_SFX.on) : window.CLIMBIX_CFG[k]);
 
@@ -53,18 +53,26 @@
     document.querySelectorAll('.cfg-wrap').forEach(x => x.remove());
     const w = document.createElement('div');
     w.className = 'cfg-wrap';
+    const solo = !!window.CLIMBIX_SOLO;
     const paint = () => {
-      const row = r => '<div class="cfg-row"><div class="cfg-t"><i>' + U.ICON[r.ic] + '</i><div><b>' + esc(r.t) + '</b>' + (r.d ? '<small>' + esc(r.d) + '</small>' : '') + '</div></div>' +
-        '<div class="seg cfg-seg">' + r.opts.map(([v, l]) => '<button data-k="' + r.k + '" data-v="' + v + '"' + (value(r.k) === v ? ' class="on"' : '') + '>' + esc(l) + '</button>').join('') + '</div>' +
-        (r.note ? '<p class="cfg-note">' + U.ICON.info + esc(r.note) + '</p>' : '') + '</div>';
-      w.innerHTML = '<div class="cfg" role="dialog" aria-modal="true" aria-label="Configurações"><div class="cfg-head"><b>Configurações</b><button class="cfg-x" aria-label="Fechar">' + U.ICON.x + '</button></div>' +
-        '<button class="btn ghost fb-btn" id="cfg-fb">' + U.emo('💬', 'sm') + '<span>Dar opinião sobre o jogo</span>' + U.ICON['chevron-right'] + '</button>' +
-        GROUPS().map(g => '<div class="cfg-grp"><div class="eyebrow">' + g.t + '</div><div class="cfg-box">' + g.rows.map(row).join('') + '</div></div>').join('') +
-        '<button class="btn ghost" id="cfg-train">' + U.emo('🏟️', 'xs') + ' Treinar lances</button>' +
-        '<button class="btn" id="cfg-ok">Pronto</button>' +
+      const y = w.querySelector('.cfg') ? w.querySelector('.cfg').scrollTop : 0;
+      const sw = r => { const on = !!value(r.k);
+        return '<button class="sw' + (on ? ' on' : '') + '" data-k="' + r.k + '" data-v="' + !on + '" role="switch" aria-checked="' + on + '" aria-label="' + esc(r.t) + '"><i></i></button>'; };
+      const seg = r => '<span class="cfg-seg2" role="group" aria-label="' + esc(r.t) + '">' + r.opts.map(([v, l]) =>
+        '<button data-k="' + r.k + '" data-v="' + v + '" aria-pressed="' + (value(r.k) === v) + '"' + (value(r.k) === v ? ' class="on"' : '') + '>' + esc(l) + '</button>').join('') + '</span>';
+      const row = r => '<div class="cfg-r"><span class="cfg-rt"><b>' + esc(r.t) + '</b>' + (r.d ? '<small>' + esc(r.d) + '</small>' : '') + '</span>' + (r.opts ? seg(r) : sw(r)) + '</div>';
+      const name = U.cloudName(), st = U.cloudStatus ? U.cloudStatus() : null;
+      // Conta: carteirinha com canhoto (o mesmo ingresso da tela inicial)
+      const conta = solo ? '' : '<button class="tk tk-acc" id="cfg-acc"><span class="tk-in"><span class="tk-paper"><span class="tk-frame">' +
+        '<i class="tk-cloud">' + U.ICON.cloud + '</i><span class="tk-t"><small>' + (st ? 'Sua conta' : 'Salve na nuvem') + '</small><b>' + esc(st ? name : 'Criar conta') + '</b>' +
+        '<small id="cloud-st">' + esc(st || 'jogue em outro aparelho') + '</small></span></span></span><span class="tk-stub"><b>' + (st ? 'Conta' : 'Entrar') + ' ›</b></span></span></button>';
+      const link = (id, ic, t) => '<button class="cfg-link" id="' + id + '">' + U.emo(ic, 'sm') + '<span>' + t + '</span>' + U.ICON['chevron-right'] + '</button>';
+      w.innerHTML = '<div class="cfg cfg2" role="dialog" aria-modal="true" aria-label="Configurações"><div class="cfg-head"><b>Configurações</b><button class="cfg-x" aria-label="Fechar">' + U.ICON.x + '</button></div>' +
+        conta + GROUPS().map(g => '<div class="cfg-grp"><h3>' + g.t + '</h3><div class="cfg-box">' + g.rows.map(row).join('') + '</div></div>').join('') +
+        '<div class="cfg-links">' + link('cfg-train', '🥅', 'Treinar lances') + link('cfg-fb', '💬', 'Dar opinião sobre o jogo') + link('cfg-news', '📣', 'Novidades da versão ' + VERSION) + '</div>' +
         // Crédito exigido pela licença dos emojis
-        '<p class="cfg-credit"><button class="link-btn" id="cfg-news">Climbix ' + VERSION + ' · ver novidades</button></p>' +
         '<p class="cfg-credit">Emojis: <a href="https://github.com/jdecked/twemoji" target="_blank" rel="noopener">Twemoji</a> (CC-BY 4.0)</p></div>';
+      w.querySelector('.cfg').scrollTop = y;
       w.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
         const k = b.dataset.k, raw = b.dataset.v, v = raw === 'true' ? true : raw === 'false' ? false : raw;
         if (k === 'tips') U.tipsSet(v);
@@ -75,10 +83,11 @@
       });
       const close = () => { w.remove(); if (U.G.c) U.bar(); };
       w.querySelector('.cfg-x').onclick = close;
-      w.querySelector('#cfg-ok').onclick = close;
       w.querySelector('#cfg-train').onclick = () => { close(); U.trainMenu(); };
       w.querySelector('#cfg-fb').onclick = () => { close(); U.feedback('config'); };
       w.querySelector('#cfg-news').onclick = () => { close(); whatsNew(true); };
+      // A conta é uma tela inteira: no meio da carreira pergunta antes (a carreira fica salva)
+      if (w.querySelector('#cfg-acc')) w.querySelector('#cfg-acc').onclick = () => { close(); if (U.G.c) U.ask('Abrir a conta?', 'Sua carreira fica salva e você continua de onde parou.', 'Abrir conta', () => U.cloud('login')); else U.cloud('login'); };
     };
     w.onclick = e => { if (e.target === w) { w.remove(); if (U.G.c) U.bar(); } };
     paint();
