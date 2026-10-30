@@ -25,9 +25,11 @@
     const base = pe.n - (tr && tr.n ? tr.n : 0), sum = pe.why.reduce((a, w) => a + w[1], 0);
     const parts = pe.why.map(w => esc(w[0]));
     if (sum > base) parts.push('máximo de ' + S.PE_CAP + ' pelo desempenho');
+    // Completa: os pontos do ano já entraram jogo a jogo; diz o limite e quanto há para gastar agora
+    if (pe.full) parts.push('limite de ' + S.PE_CAP + ' por ano pelo desempenho', 'para gastar agora: ' + (G.c.pe || 0));
     if (tr && tr.lost) parts.push(t.name.toLowerCase() === 'normal' ? 'lesão: sem bônus do treino' : 'treino ' + t.name.toLowerCase() + ': a lesão tirou o bônus');
     else if (tr && tr.n) parts.push(U.emo(t.icon, 'xs') + ' treino ' + t.name.toLowerCase() + ': +' + tr.n + ' extra');
-    return '<p class="pe-gain rv">' + U.emo('⭐', 'xs') + ' <b>' + (pe.n ? '+' + pe.n + (pe.n > 1 ? ' pontos' : ' ponto') + ' de evolução' : 'Nenhum ponto de evolução') + '</b> · ' + parts.join(' · ') + '</p>';
+    return '<p class="pe-gain rv">' + U.emo('⭐', 'xs') + ' <b>' + (pe.n ? '+' + pe.n + (pe.n > 1 ? ' pontos' : ' ponto') + ' de evolução' + (pe.full ? ' no ano' : '') : 'Nenhum ponto de evolução') + '</b> · ' + parts.join(' · ') + '</p>';
   }
 
   // Resenha da temporada: um programa sorteado comenta no seu estilo (D.MEDIA.shows), sobre o destaque do ano
