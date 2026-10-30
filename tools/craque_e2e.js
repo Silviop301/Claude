@@ -111,6 +111,7 @@ function stepInPage(opts) {
   if (q('.fc-iv:not(.off)') && Math.random() < 0.7) return label('completa:compra ' + click(q('.fc-iv:not(.off)')));
   if ($('fc-back')) return label('completa:volta ' + click($('fc-back')));
   if ($('fc-evo') && Math.random() < 0.5) return label('completa:evoluir ' + click($('fc-evo')));
+  if ($('fc-play') && q('#fc-nav button:not(.on)') && Math.random() < 0.25) return label('completa:aba ' + click(rnd([...document.querySelectorAll('#fc-nav button:not(.on)')])));
   if ($('fc-play')) return label('completa:jogo ' + click(rnd([$('fc-play'), $('fc-play'), $('fc-5'), $('fc-end')])));
   if ($('fs-skipm')) return label('liga:aovivo ' + click(Math.random() < 0.3 ? $('fs-fast') : $('fs-skipm')));
   if ($('fs-next')) return label('liga ' + click(rnd([$('fs-next'), $('fs-5'), $('fs-end'), $('fs-end')])));

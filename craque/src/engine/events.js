@@ -424,16 +424,17 @@
   S.lockUnaffordable = lockUnaffordable;
 
   // Sorteia um evento que faça sentido agora (ou nenhum). Não repete os das 2 últimas temporadas.
-  S.pickEvent = function (c) {
-    const { r, save } = rngOf(c);
+  // opt.mid: no meio do calendário da Carreira Completa (engine/fullcareer.js): sem troca de clube e sem repetir o do ano
+  S.pickEvent = function (c, opt) {
+    const { r, save } = rngOf(c), mid = !!(opt && opt.mid);
     // Consequência de uma escolha antiga (engine/events3.js): quando vence, passa na frente do sorteio
     const due = S.hookDue && S.hookDue(c);
     if (due) {
       const hd = S.HOOK_DEFS[due.id], built = hd.build(c, r, due);
       save();
-      return lockUnaffordable(c, Object.assign({ id: hd.id, icon: hd.icon, tone: hd.tone, hookOf: due.id }, built));
+      if (!mid || !built || !built.dest) return lockUnaffordable(c, Object.assign({ id: hd.id, icon: hd.icon, tone: hd.tone, hookOf: due.id }, built));
     }
-    const recent = c.seasons.slice(-2).map(s => s.event).filter(Boolean);
+    const recent = c.seasons.slice(-2).map(s => s.event).filter(Boolean).concat(mid && c.fc && c.fc.evIds ? c.fc.evIds : []);
     // Alguns eventos têm limite por carreira (max)
     const seen = c.evCount || {};
     const pool = S.EVENT_DEFS.filter(e => !e.hook && !recent.includes(e.id) && (seen[e.id] || 0) < (e.max || 99) && e.when(c));
@@ -446,7 +447,7 @@
       let x = r() * sum, def = left[0];
       for (const e of left) { x -= e.weight; if (x < 0) { def = e; break; } }
       const built = def.build(c, r);
-      if (built) {
+      if (built && !(mid && built.dest)) {
         save();
         // Abertura com outras palavras (src/events-text.js, só no navegador): mesma situação, texto variado
         const alt = D.EV_INTRO && D.EV_INTRO[def.id];

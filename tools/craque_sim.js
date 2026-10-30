@@ -38,8 +38,8 @@ for (let n = 0; n < N; n++) {
       const t = SMART ? opts.sort((a, b) => score(b) - score(a))[0] : opts[Math.floor(Math.random() * opts.length)];
       S.invest(c, t.id); decisions++;
     }
-    const ev = S.pickEvent(c);
-    if (ev) {
+    // MODO=completa: os eventos vêm entre os jogos (engine/fullcareer.js), não na pré-temporada
+    const doEvent = ev => {
       let i = Math.random() < 0.5 ? 0 : 1;
       // Eventos com aposta (engine/stakes.js): o esperto lê a chance e o que está em jogo (valor escondido ev); nos outros, o mapa antigo
       if (SMART) i = ev.options.every(o => o.ev !== undefined) && !ev.dest ? ev.options.map((o, k) => [o.ev, k]).sort((a, b) => b[0] - a[0])[0][1]
@@ -48,7 +48,9 @@ for (let n = 0; n < N; n++) {
       if (ev.dest && i === 0 && S.breaksChallenge(c, { club: ev.dest })) i = 1;
       S.resolveEvent(c, ev, i); decisions++;
       c.stats = c.stats || {}; c.stats[ev.id] = (c.stats[ev.id] || 0) + 1;
-    }
+    };
+    const ev0 = process.env.MODO === 'completa' ? null : S.pickEvent(c);
+    if (ev0) doEvent(ev0);
     // Jogo decisivo: o robô deixa o jogo decidir (mesma chance que a tela mostra)
     // MODO=completa: a temporada jogo a jogo (engine/fullcareer.js); os lances decisivos acontecem nas finais e no clássico,
     // e o robô investe os pontos de evolução assim que eles entram
@@ -56,6 +58,7 @@ for (let n = 0; n < N; n++) {
       c.mode = 'completa'; S.fcStart(c);
       let nx;
       while ((nx = S.fcNext(c))) {
+        if (S.fcEventDue(c)) { const ev = S.fcPickEvent(c); if (ev) doEvent(ev); continue; }
         if (nx.moment) { c.mstats = c.mstats || { n: 0, ok: 0 }; c.mstats.n++; if (S.fcAutoMoment(c, nx.moment)) c.mstats.ok++; decisions++; }
         S.fcPlay(c);
         const w = D.POS[c.pos].w, opts = D.INVEST.filter(t => S.canInvest(c, t.id));
