@@ -104,15 +104,13 @@
     G.step = null;
     const p = player();
     edit = edit === true || !!msg;
-    render('<button class="back-link" id="b-back-home">‹ Voltar</button>' +
-      '<div class="rk-head">' + podium(56) + '<div><div class="eyebrow">Ranking</div><h2>Quem fez a maior carreira?</h2></div></div>' +
+    render('<div class="rk-head">' + podium(56) + '<div><div class="eyebrow">Ranking</div><h2>Quem fez a maior carreira?</h2></div></div>' +
       '<div class="rk-side">' + (!p.nick || edit ? nickForm(p, msg) : '') +
       '<div class="rk-tabs">' + PERIODS.map(([id, l]) => '<button data-p="' + id + '">' + l + '</button>').join('') + '</div>' +
       '<div class="rk-chips">' + METRICS.map(([id, l]) => '<button data-m="' + id + '">' + l + '</button>').join('') + '</div>' +
       '<p class="muted small rk-sub"></p></div>' +
       '<div id="rk-list" class="rk-list"></div>' +
-      (p.nick && !edit ? '<button class="link-btn rk-edit" id="rk-edit">Mudar meu nome (' + esc(p.nick) + ')</button>' : ''));
-    $('b-back-home').onclick = U.goBack;
+      (p.nick && !edit ? '<button class="link-btn rk-edit" id="rk-edit">Mudar meu nome (' + esc(p.nick) + ')</button>' : '') + U.tabs('ranking'));
     // Trocar aba ou categoria não redesenha a tela: só o destaque, o subtítulo e a lista (a rolagem fica onde estava)
     screen().querySelectorAll('[data-p]').forEach(b => b.onclick = () => { st.p = b.dataset.p; refresh(); });
     screen().querySelectorAll('[data-m]').forEach(b => b.onclick = () => { st.m = b.dataset.m; refresh(); });

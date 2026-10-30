@@ -209,9 +209,11 @@ function scanInPage(BAD_SRC) {
 async function tour(page, issues) {
   const note = (kind, detail, screen) => issues.push({ kind, pos: '-', career: -1, country: '-', screen, detail: String(detail).slice(0, 300) });
   // Início → Perfil (Domínio mundial volta para ele) → Ranking → Minhas carreiras (Conquistas, Coleção e Sala voltam para lá) → Início → Configurações e Conta
-  const seq = [['b-prof', null], ['b-world', 'wd-back'], ['pf-back', null], ['b-rank', 'b-back-home'], ['b-mine', null], ['b-ach', 'b-back'], ['b-col', 'b-back-home'], ['b-sala', 'sl-back'], ['b-back-home', null], ['b-sound', null], ['b-cloud', 'b-back-home']];
+  // (seletores: as quatro telas principais trocam pela barra de baixo)
+  const T = k => '.tabs [data-tab="' + k + '"]';
+  const seq = [['#b-prof', null], ['#b-world', '#wd-back'], [T('ranking'), null], [T('mine'), null], ['#b-ach', '#b-back'], ['#b-col', '#b-back-home'], ['#b-sala', '#sl-back'], [T('home'), null], ['#b-sound', null], ['.cfg-wrap #cfg-acc', '#b-back-home']];
   for (const [open, back] of seq) {
-    const ok = await page.evaluate(id => { const b = document.getElementById(id); if (b) b.click(); return !!b; }, open);
+    const ok = await page.evaluate(id => { const b = document.querySelector(id); if (b) b.click(); return !!b; }, open);
     if (!ok) continue;
     await page.waitForTimeout(80);
     // Na Sala e na coleção: abre um detalhe / vira uma página
@@ -222,7 +224,7 @@ async function tour(page, issues) {
     if (scan.bad) note('texto', scan.bad, 'tela:' + open);
     if (scan.overflow) note('layout', scan.overflow, 'tela:' + open);
     if (scan.img) note('imagem', scan.img, 'tela:' + open);
-    await page.evaluate(id => { document.querySelectorAll('.sl-sheet-wrap #sl-close, .cfg-wrap .cfg-x').forEach(x => x.click()); const b = id && document.getElementById(id); if (b) b.click(); }, back);
+    await page.evaluate(id => { document.querySelectorAll('.sl-sheet-wrap #sl-close').forEach(x => x.click()); if (id !== null) document.querySelectorAll('.cfg-wrap .cfg-x').forEach(x => x.click()); const b = id && document.querySelector(id); if (b) b.click(); }, back);
     await page.waitForTimeout(60);
   }
   await page.waitForFunction(() => document.getElementById('b-new'));

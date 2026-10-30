@@ -3,45 +3,71 @@
   const U = window.CRAQUE_UI;
   const { tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar } = U;
   // ---------- início ----------
-  // Um dos dois jogos na tela inicial: o que é, e continuar (a carta do jogador) ou começar
+  // Bilheteria: cada modo é um ingresso de estádio (papel com moldura impressa, picote e canhoto com o código do setor).
+  // Os cortes em semicírculo na linha do picote são máscara no CSS (.tk-in), o fundo da tela aparece pelo corte
   const MODES = {
-    rapida: { ic: '⏱️', name: 'Carreira Rápida', txt: 'Do garoto de 16 anos à carta final em uns 9 minutos. Uma temporada por tela.', cont: 'b-cont', neu: 'b-new' },
-    completa: { ic: '🏟️', name: 'Carreira Jogo a Jogo', txt: 'Cada rodada, cada semana de treino, cada contrato. Um save que dura dias.', cont: 'b-cont-fc', neu: 'b-new-fc' },
+    rapida: { ic: '⏱️', name: 'Carreira Rápida', sub: 'Uma temporada por tela', k: 'Duração', v: '9 min', sec: 'A·01', cont: 'b-cont', neu: 'b-new' },
+    completa: { ic: '🏟️', name: 'Jogo a Jogo', full: 'Carreira Jogo a Jogo', sub: 'Cada rodada, treino e contrato', k: 'Save de', v: 'dias', sec: 'B·02', cont: 'b-cont-fc', neu: 'b-new-fc' },
+    relampago: { ic: '⚡', name: 'Relâmpago', sub: '5 casas, desafie um amigo', k: 'Duração', v: '1 min', sec: 'C·03', neu: 'b-relampago' },
   };
-  function modeCard(mode, sv) {
-    const M = MODES[mode], has = sv && sv.c;
-    const card = has ? (() => { const sc = sv.c, o = S.ovr(sc), t = tierCls(o), cl = club(sc.club);
-      return '<button class="cont-card" id="' + M.cont + '"><span class="scard metal ' + t + '"><span class="sc-tier">' + TIER_NAME[t] + '</span><b>' + o + '</b><span class="sc-pos">' + sc.pos + '</span></span>' +
-        '<span class="cc-info"><small>Continuar</small><b>' + esc(sc.name) + '</b><span>' + (cl ? crest(cl.id, 'xs') + esc(cl.name) + ' · ' : '') + sc.age + ' anos</span></span><span class="cc-go">' + U.ICON['chevron-right'] + '</span></button>'; })() : '';
-    return '<section class="mode-c ' + mode + '"><div class="mode-h">' + U.emo(M.ic, 'lg') + '<span><b>' + M.name + '</b><small>' + M.txt + '</small></span></div>' + card +
-      '<button class="btn' + (has || mode === 'completa' ? ' ghost' : '') + '" id="' + M.neu + '">' + (has ? 'Nova carreira' : 'Começar') + '</button></section>';
+  const tk = (cls, id, body, stub, extra) => (id ? '<button class="tk ' + cls + '" id="' + id + '">' : '<div class="tk ' + cls + '" aria-disabled="true">') +
+    '<span class="tk-in"><span class="tk-paper"><span class="tk-frame">' + body + '</span></span><span class="tk-stub">' + stub + '</span></span>' + (extra || '') + (id ? '</button>' : '</div>');
+  function modeTicket(mode) {
+    const M = MODES[mode];
+    return tk('tk-' + mode, M.neu, U.emo(M.ic, 'lg') + '<span class="tk-t"><b>' + M.name + '</b><small>' + M.sub + '</small></span><span class="tk-k">' + M.k + '<b>' + M.v + '</b></span>',
+      '<b>Entrar</b><small>' + M.sec + '</small>');
   }
+  // O jogo em andamento: ingresso grande com o canhoto "Continuar"
+  function contTicket(mode, sc) {
+    const M = MODES[mode], cl = club(sc.club), fc = sc.fc;
+    let line = '<span>Temporada <b>' + (YEAR0 + sc.season) + '</b></span><span>Geral <b>' + S.ovr(sc) + '</b></span>', no = String(YEAR0 + sc.season);
+    // Jogo a jogo no meio da liga: rodada e o próximo adversário (só leitura do calendário; S.fcNext mexe no save)
+    const e = fc && !fc.done && fc.cal && fc.cal[fc.i];
+    if (e && e.k === 'lg' && fc.lg) {
+      const R = fc.lg.rounds.length, m = fc.lg.rounds[e.ri].find(([a, b]) => a === 0 || b === 0);
+      const vs = m && club(fc.lg.ids[m[0] === 0 ? m[1] : m[0]]);
+      line = '<span>Rodada <b>' + (e.ri + 1) + '</b> de ' + R + '</span>' + (vs ? '<span>Próximo <b>x ' + esc(vs.short || vs.name) + '</b> (' + (m[0] === 0 ? 'casa' : 'fora') + ')</span>' : '');
+      no = String(e.ri + 1).padStart(4, '0') + '-' + R;
+    }
+    return tk('tk-cont', M.cont, '<span class="tk-who">' + (cl ? crest(cl.id, 'lg') : '') + '<span><small>' + (M.full || M.name) + '</small><b>' + esc(sc.name) + '</b>' +
+      '<span>' + (cl ? esc(cl.name) + ' · ' : '') + sc.age + ' anos · ' + sc.pos + '</span></span></span><span class="tk-line">' + line + '</span>',
+      '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l11 8-11 8z" fill="currentColor"/></svg><b>Continuar</b><i class="tk-bars" aria-hidden="true"></i><small>Nº ' + no + '</small>');
+  }
+  // Barra de baixo das quatro telas principais (Jogar, Carreiras, Ranking, Perfil)
+  const TABS = [['home', 'Jogar', '<circle cx="12" cy="12" r="9"/><path d="M12 7.5l4 2.9-1.5 4.7h-5L8 10.4z"/>'],
+    ['mine', 'Carreiras', '<rect x="4" y="5" width="11" height="15" rx="1.5"/><path d="M9 3h9.5A1.5 1.5 0 0120 4.5V17"/>'],
+    ['ranking', 'Ranking', '<path d="M3 20h18M5 20v-6h4v6M10 20V9h4v11M15 20v-8h4v8"/>'],
+    ['profile', 'Perfil', '<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-4 4-5.6 7.5-5.6s6.3 1.6 7.5 5.6"/>']];
+  U.tabs = cur => {
+    const dot = U.ITEMS && U.ITEMS.streak().cells.some(c => c.claim); // prêmio da sequência para pegar: fica no Perfil
+    return '<nav class="tabs" aria-label="Seções">' + TABS.map(([k, l, ic]) => '<button data-tab="' + k + '"' + (k === cur ? ' class="on" aria-current="page"' : '') + '>' +
+      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ic + '</svg>' + l +
+      (k === 'profile' && dot ? '<em class="tabs-dot" aria-label="prêmio para pegar"></em>' : '') + '</button>').join('') + '</nav>';
+  };
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('.tabs [data-tab]');
+    if (!b || b.classList.contains('on')) return;
+    sfx('tap'); U.backTo = null; U[b.dataset.tab]();
+  });
   function home() {
     G.c = null; G.step = null; bar();
     const saved = load(SAVE), savedFc = load(U.SAVE_FC);
-    const played = !!(saved && saved.c) || !!(savedFc && savedFc.c) || U.collectionCount() > 0 || (load(HALL) || []).length > 0;
-    // Título de abertura (já desenhado pelo index.html antes dos scripts): a tela inicial reaproveita o mesmo
-    // elemento em vez de criar outro, para a primeira tela não "piscar" nem contar de novo como carregamento
-    const splash = document.querySelector('#screen > .hero.splash');
+    const saves = [['rapida', saved], ['completa', savedFc]].filter(([, sv]) => sv && sv.c).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
+    const L = U.PROFILE.level((U.ITEMS.get().prof || {}).xp), st = U.ITEMS.streak(), packs = U.ITEMS.get().packs.length;
+    const also = ([mode, sv]) => '<button class="hm-line" id="' + MODES[mode].cont + '">' + U.emo(MODES[mode].ic, 'xs') + '<span>Também jogando: <b>' + esc(sv.c.name) + '</b>' +
+      (club(sv.c.club) ? ', ' + esc(club(sv.c.club).name) : '') + ', ' + sv.c.age + ' anos</span><em>' + (mode === 'rapida' ? 'Rápida' : 'Jogo a Jogo') + ' ›</em></button>';
     render(
-      '<div class="hero"><div class="ball3d" id="ball3d" aria-hidden="true"></div><div class="eyebrow">Carreira de futebol</div><h1>CLIMBIX</h1></div>' +
-      '<p class="lead">Crie um garoto de 16 anos, escolha os clubes, decida e cobre os lances. No fim, a carta dele diz se virou lenda.</p>' +
-      U.challengeHome() +
-      // Dois jogos, cada um com o seu save: a carreira rápida e a carreira jogo a jogo
-      (!(saved && saved.c) && !(savedFc && savedFc.c) ? U.lastHome() : '') +
-      '<div class="mode2">' + modeCard('rapida', saved) + modeCard('completa', savedFc) + '</div>' +
-      U.relampagoHome() +
-      // Perfil: nível, metas da semana e o Domínio mundial (ui/profile.js)
-      (played || Object.keys(U.salaCounts()).length ? U.profileHome() : '') +
-      U.rankHome() +
-      // Primeira visita: sequência de dias e pedido de opinião só depois de existir uma carreira (fichas e pacotinhos ainda não querem dizer nada)
-      (played ? U.streakHome() : '') +
-      U.packHome() +
-      // Coleção, Sala de Troféus, Conquistas e Hall da Fama ficam numa tela só
-      '<button class="hg mine-btn" id="b-mine"><i>' + U.ICON.cards + '</i><b>Minhas carreiras</b><small>' + U.collectionCount() + (U.collectionCount() === 1 ? ' carreira' : ' carreiras') +
-        (U.salaNew() ? ' · <em>+' + U.salaNew() + (U.salaNew() === 1 ? ' taça nova' : ' taças novas') + '</em>' : '') + '</small></button>' +
-      (played ? U.feedbackHome() : '') +
-      '<div class="home-foot"><button class="link-btn home-snd" id="b-sound"></button>' + (window.CLIMBIX_SOLO ? '' : '<button class="link-btn home-snd" id="b-cloud"></button>') + '</div>' + U.deskHint()
+      '<div class="hm">' +
+      '<div class="hm-top"><h1 class="hm-logo">CLIMBIX</h1>' +
+        (st.n ? '<span class="hm-streak" title="Dias seguidos">' + U.emo('🔥', 'sm') + st.n + '</span>' : '') +
+        '<button class="hm-lv" id="b-prof" aria-label="Perfil, nível ' + L.lv + '"><b>' + L.lv + '</b><i><em style="width:' + Math.round(L.cur / L.next * 100) + '%"></em></i></button>' +
+        '<button class="hm-cfg" id="b-sound" aria-label="Configurações">' + U.GEAR_SVG + '</button></div>' +
+      U.challengeHome() + U.relampagoHome(true) +
+      (saves.length ? '<section class="hm-sec"><h2>Seu jogo</h2>' + contTicket(saves[0][0], saves[0][1].c) + (saves[1] ? also(saves[1]) : '') + '</section>' : '') +
+      (packs ? '<button class="hm-line" id="b-hb-packs">' + U.emo('📦', 'xs') + '<span><b>' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</b> para abrir</span><em>Abrir ›</em></button>' : '') +
+      '<section class="hm-sec"><h2>Escolha o jogo</h2><div class="hm-tks">' + modeTicket('rapida') + modeTicket('completa') + modeTicket('relampago') +
+        tk('tk-soon', null, U.emo('📋', 'lg') + '<span class="tk-t"><b>Modo Treinador</b><small>Escale e comande o time</small></span>', '', '<span class="tk-stamp">EM BREVE</span>') +
+      '</div></section>' + U.deskHint() + '</div>' + U.tabs('home')
     );
     const cont = sv => {
       G.c = sv.c;
@@ -59,39 +85,11 @@
     const newIn = (sv, mode) => () => (sv && sv.c ? U.ask('Começar outra carreira?', 'A carreira de ' + sv.c.name + ' (' + sv.c.age + ' anos) será apagada quando o novo jogador assinar com um clube.', 'Nova carreira', () => create(null, mode)) : create(null, mode));
     $('b-new').onclick = newIn(saved, 'rapida');
     $('b-new-fc').onclick = newIn(savedFc, 'completa');
-    U.lastHomeBind();
     U.packHomeBind();
-    U.streakBind(U.home); // pegou um pacotinho da sequência: a tela redesenha com o bloco de pacotinhos
-    $('b-mine').onclick = mine;
-    U.profileHomeBind();
+    $('b-prof').onclick = () => { sfx('tap'); U.profile(); };
     U.challengeHomeBind();
     U.relampagoHomeBind();
-    if ($('b-opiniao')) $('b-opiniao').onclick = () => U.feedback('inicio', {}, home);
-    $('b-rank').onclick = () => U.ranking();
-    if ($('b-cloud')) {
-      $('b-cloud').innerHTML = U.emo('☁️', 'xs') + ' ' + esc(U.cloudName());
-      $('b-cloud').onclick = () => U.cloud('login');
-    }
-    const snd = $('b-sound');
-    if (snd) { snd.innerHTML = '<span class="gear-ic">' + U.GEAR_SVG + '</span> Configurações'; snd.onclick = U.settings; }
-    // A bola 3D espera o módulo 3D terminar de carregar (na primeira visita ele chega depois da tela)
-    const hero = splash && screen.querySelector('.hero');
-    if (hero) { splash.classList.remove('splash'); splash.querySelector('.ball3d').id = 'ball3d'; hero.replaceWith(splash); }
-    // Sem 3D (desligado, sem WebGL ou a biblioteca não chegou): bola desenhada no lugar, para o topo não ficar vazio
-    const flatBall = () => { const el = $('ball3d'); if (el && !el.querySelector('canvas') && !el.classList.contains('flat')) { el.classList.add('flat'); el.innerHTML = '<img src="' + U.emoSrc('⚽') + '" alt="">'; } };
-    const mountBall = () => {
-      const el = $('ball3d');
-      if (!el || !U.cfg.fx3d) return flatBall();
-      if (!window.CRAQUE_BALL) return;
-      // Não apagar o conteúdo aqui: o módulo 3D pode já ter montado a bola neste elemento ao carregar
-      // (apagar tirava o canvas e, 6 s depois, entrava a bola desenhada no lugar da 3D)
-      try { window.CRAQUE_BALL.mount(el); } catch (e) { flatBall(); }
-    };
-    if (window.CRAQUE_BALL || !U.cfg.fx3d) mountBall();
-    else {
-      addEventListener('craque-ball-ready', mountBall, { once: true });
-      if (window.CRAQUE_BALL_FAIL) flatBall(); else { addEventListener('craque-ball-fail', flatBall, { once: true }); setTimeout(flatBall, 6000); }
-    }
+    $('b-sound').onclick = U.settings;
     if (U.whatsNew) U.whatsNew();
   }
 
@@ -103,8 +101,8 @@
     // Linha do Hall da Fama: nota (mesma etiqueta do ranking), jogador e números, pontuação à direita
     const stats = h => (h.pos === 'GOL' ? h.cs + ' sem sofrer gol · ' + h.penSaved + ' pên. def. · ' : h.pos === 'ZAG' ? h.cs + ' sem sofrer gol · ' + D.plural(h.goals, 'gol', 'gols') + ' · ' : D.plural(h.goals, 'gol', 'gols') + ' · ' + h.assists + ' assist. · ') +
       D.plural(h.titles, 'taça', 'taças') + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '');
-    render('<button class="back-link" id="b-back-home">‹ Início</button><div class="eyebrow">Suas carreiras</div><h2>Minhas carreiras</h2>' +
-      '<div class="mc-side">' + U.salaHome() +
+    render('<h2 class="tab-h">Minhas carreiras</h2>' +
+      '<div class="mc-side">' + U.lastHome() + U.salaHome() +
       '<div class="home-grid">' +
       '<button class="hg" id="b-col"><i>' + U.ICON.cards + '</i><b>Coleção</b><small>' + U.collectionCards() + (U.collectionCards() === 1 ? ' carta' : ' cartas') + '</small></button>' +
       '<button class="hg" id="b-ach"><i>' + U.ICON.medal + '</i><b>Conquistas</b><small>' + U.achCount() + ' de ' + S.ACHIEVEMENTS.length + '</small></button>' +
@@ -113,8 +111,8 @@
       (hall.length ? '<div class="mc-list">' +
         hall.map((h, i) => '<div class="mc-row' + (i ? '' : ' best') + '"><span class="rk-g g' + esc(h.grade) + '">' + esc(h.grade) + '</span><span class="mc-who"><b>' + esc(h.name) + ' · ' + esc(h.verdict) + '</b>' +
           '<small>' + stats(h) + '</small></span><span class="mc-pts">' + Number(h.score).toLocaleString('pt-BR') + '<small>pts</small></span></div>').join('') + '</div>'
-        : '<p class="mc-empty">' + U.ICON.trophy + '<span>Termine uma carreira para ela aparecer aqui.</span></p>') + '</section>');
-    $('b-back-home').onclick = home;
+        : '<p class="mc-empty">' + U.ICON.trophy + '<span>Termine uma carreira para ela aparecer aqui.</span></p>') + '</section>' + U.tabs('mine'));
+    U.lastHomeBind();
     $('b-col').onclick = U.collection;
     $('b-ach').onclick = U.achievements;
     $('b-sala').onclick = () => U.trophyRoom('col');
