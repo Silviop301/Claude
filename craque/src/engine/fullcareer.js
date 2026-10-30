@@ -66,6 +66,8 @@
     // A fração de ponto que sobrou do ano anterior continua na barra (não conta para o limite deste ano)
     const carry = c.fc && c.fc.season === c.season - 1 ? c.fc.peFrac || 0 : 0;
     const fc = { season: c.season, club: club.id, seed: (Math.imul(Number(c.tseed) || 1, 2654435761) + c.season * 97 + 13) >>> 0, /* imul: a conta comum passava de 2^53 e o ano sumia (calendário igual todo ano) */ i: 0, log: [], peFrac: carry, peCarry: carry, peGot: 0, out: null, done: false };
+    // Vida entre os jogos: energia (0-100, cheia na pré-temporada), forma (-2 a +2, metade passa de um ano para o outro)
+    Object.assign(fc, { en: 100, fo: c.fc && c.fc.season === c.season - 1 ? Math.round((c.fc.fo || 0) * 50) / 100 : 0, fit: 0, peTrain: 0, wkDue: false, wkPlan: c.fc && c.fc.wkPlan ? c.fc.wkPlan : ['tec', 'rest'] });
     const { r, save } = rngOf(fc);
     // Liga: turno e returno com os times embaralhados
     const teams = leagueTeams(club);
@@ -117,6 +119,76 @@
 
   // ---------- o seu jogador num jogo ----------
   // As contas de S.playSeason, por jogo, com o jogador de hoje
+  // ---------- vida entre os jogos: energia, forma e a semana ----------
+  const EN_LOW = 50, EN_OUT = 30; // abaixo de 50 rende menos; abaixo de 30 a lesão dobra e o técnico pode poupar
+  function lifeOf(c) {
+    const fc = c.fc;
+    if (!fc || fc.en === undefined || fc.season !== c.season) return { mul: 1, r: 0, inj: 1 };
+    const tired = fc.en < EN_LOW ? (EN_LOW - fc.en) / EN_LOW : 0, fo = fc.fo || 0;
+    return { mul: (1 - 0.2 * tired) * (1 + 0.05 * fo), r: 0.12 * fo - 0.5 * tired, inj: fc.en < EN_OUT ? 2 : 1 };
+  }
+  S.FC_EN_LOW = EN_LOW; S.FC_EN_OUT = EN_OUT;
+  // Ações da semana (duas por semana). en: energia; o resto acontece em weekDo
+  const TRAIN_STEP = 0.05, TRAIN_CAP = +((typeof process !== 'undefined' && process.env && process.env.FC_TC) || 0.5); // evolução do treino técnico: por treino e no ano, fora do limite dos jogos (FC_TC no simulador)
+  const WEEK = [
+    { id: 'tec', name: 'Treino técnico', en: -10 },
+    { id: 'fis', name: 'Treino físico', en: -10 },
+    { id: 'rest', name: 'Descanso', en: 25 },
+    { id: 'physio', name: 'Fisioterapia', en: 15 },
+    { id: 'spons', name: 'Patrocínio', en: -15 },
+    { id: 'talk', name: 'Entrevista', en: -5 },
+  ];
+  const WEEK_BY = Object.fromEntries(WEEK.map(a => [a.id, a]));
+  S.FC_WEEK = WEEK; S.FC_TRAIN_CAP = TRAIN_CAP;
+  const weekBase = fc => (fc.wkPlayed ? 5 : 30); // a semana já recupera sozinha (mais se você não jogou)
+  S.fcSponsPay = c => Math.max(1000, Math.round((c.wage || 0) * 0.8 / 100) * 100);
+  S.fcPhysioCost = c => Math.max(2000, Math.round((c.wage || 0) / 100) * 100);
+  // A ação vale agora? (fisioterapia é paga; treino técnico para no limite do ano)
+  S.fcWeekOk = (c, id, picked) => {
+    const fc = c.fc, n = (picked || []).filter(x => x === id).length + 1;
+    if (id === 'physio') return (c.money || 0) >= S.fcPhysioCost(c) * n;
+    if (id === 'tec') return (fc.peTrain || 0) + TRAIN_STEP * n <= TRAIN_CAP + 1e-9;
+    return true;
+  };
+  // Energia depois da semana com estas ações
+  S.fcWeekEnergy = (c, acts) => clamp(c.fc.en + weekBase(c.fc) + acts.reduce((s, id) => s + WEEK_BY[id].en, 0), 0, 100);
+  // Semana automática: repete a última escolhida por você; lesionado faz fisioterapia (ou descansa); troca o que cansa por descanso se a energia ia ficar baixa
+  S.fcWeekAuto = function (c) {
+    const fc = c.fc;
+    let a = (fc.wkPlan || ['tec', 'rest']).slice(0, 2);
+    if (fc.injOut > 0) a = [S.fcWeekOk(c, 'physio', []) ? 'physio' : 'rest', 'rest'];
+    a = a.map((id, k) => (S.fcWeekOk(c, id, a.slice(0, k)) ? id : 'rest'));
+    for (const k of [1, 0]) if (S.fcWeekEnergy(c, a) < 60 && WEEK_BY[a[k]].en < 0) a[k] = 'rest';
+    return a;
+  };
+  // Fecha a semana: aplica as duas ações e a recuperação. Volta o que mudou (para a tela mostrar)
+  S.fcWeek = function (c, acts) {
+    const fc = c.fc;
+    if (!fc || !fc.wkDue) return null;
+    if (acts) fc.wkPlan = acts.slice(0, 2); // a escolha da pessoa vira o plano da semana automática
+    acts = (acts || S.fcWeekAuto(c)).slice(0, 2);
+    const { r, save } = rngOf(fc), out = { acts: [], en0: fc.en, pe: 0, money: 0, fame: 0, coach: 0, inj: 0, polem: false };
+    fc.en = clamp(fc.en + weekBase(fc), 0, 100);
+    acts.forEach(id => {
+      if (!WEEK_BY[id] || !S.fcWeekOk(c, id, [])) id = 'rest'; // o estado já tem as ações anteriores (dinheiro, treino)
+      out.acts.push(id);
+      fc.en = clamp(fc.en + WEEK_BY[id].en, 0, 100);
+      if (id === 'tec') { fc.peTrain = Math.round(((fc.peTrain || 0) + TRAIN_STEP) * 100) / 100; out.pe += TRAIN_STEP; fc.peFrac = Math.round((fc.peFrac + TRAIN_STEP) * 100) / 100; while (fc.peFrac >= 1) { fc.peFrac = Math.round((fc.peFrac - 1) * 100) / 100; fc.peGot++; c.pe = (c.pe || 0) + 1; } }
+      else if (id === 'fis') fc.fit = 4;
+      else if (id === 'physio') { const p = S.fcPhysioCost(c); c.money = Math.max(0, (c.money || 0) - p); out.money -= p; if (fc.injOut > 0) { fc.injOut--; out.inj++; } }
+      else if (id === 'spons') { const p = S.fcSponsPay(c); c.money = (c.money || 0) + p; out.money += p; c.fame += 1; out.fame += 1; }
+      else if (id === 'talk') {
+        c.fame += 2; out.fame += 2;
+        if (r() < 0.25) { out.polem = true; c.rel.coach = clamp(c.rel.coach - 4, 0, 100); out.coach -= 4; }
+      }
+    });
+    out.en1 = fc.en; out.at = fc.i;
+    fc.wkLast = out.acts.slice(); fc.wkDue = false; fc.wkSum = out;
+    if (fc.pending && fc.pending.i === fc.i && !fc.pending.mDone) fc.pending = null; // a escalação sai depois da semana
+    save();
+    return out;
+  };
+
   function myRates(c, club) {
     const E = S.eff(c), o = S.ovr(c), role = S.role(c, club), tm = id => S.tm(c, id), sy = id => S.syn(c, id);
     const share = clamp(role.share + c.mod.min + (c.promise || 0) + (c.rel.coach - REL0) / 90 + (c.age <= 17 ? -0.2 : 0) + (c.farewell ? 0.1 : 0), 0.05, 0.97);
@@ -143,8 +215,11 @@
     const tackles = c.pos === 'ZAG' ? clamp(0.12 + (E.def - 60) / 150, 0.05, 0.45) : 0;
     const injRisk = clamp((0.065 + Math.max(0, c.age - 30) * 0.02) * clamp(1 - (E.fis - 60) / 90, 0.6, 1.25) * (1 - 0.25 * (c.inv.fisio || 0)) *
       (1 - 0.15 * tm('pro') + 0.05 * tm('raca')) * S.trainOf(c).inj, 0.02, 0.5);
-    const trt = 0.06 * tm('drible') + 0.08 * tm('libero') + 0.07 * tm('raca') + 0.06 * tm('estrela');
-    return { share, g90, a90, isDef, def, att, saves, pPen, tackles, injRisk, o, teamBoost, trt, role };
+    let trt = 0.06 * tm('drible') + 0.08 * tm('libero') + 0.07 * tm('raca') + 0.06 * tm('estrela');
+    // Energia e forma (vida entre os jogos): cansado rende menos e se machuca mais; forma mexe na nota e nos gols
+    const L = lifeOf(c);
+    g90 *= L.mul; a90 *= L.mul; trt += L.r;
+    return { share, g90, a90, isDef, def, att, saves, pPen, tackles, injRisk: Math.min(0.6, injRisk * L.inj), o, teamBoost, trt, role };
   }
 
   // Gols de um jogo pela força dos dois (mando de 3 pontos); minuto de cada gol
@@ -275,7 +350,8 @@
       }
     }
     // Você joga? (decide uma vez por jogo; lesão tira do time)
-    if (!fc.pending || fc.pending.i !== fc.i) {
+    // Com a semana aberta, a escalação ainda não saiu (depende da energia depois dela)
+    if (!fc.wkDue && (!fc.pending || fc.pending.i !== fc.i)) {
       const { r, save } = rngOf(fc), X = myRates(c, club);
       let on = false, why = '';
       if (vs) {
@@ -283,15 +359,18 @@
         else if (r() < X.injRisk / 30) { fc.injOut = 1 + Math.floor(r.range(0.08, 0.32) * 40); fc.injName = r.pick(['lesão na coxa', 'entorse no tornozelo', 'problema muscular', 'lesão na panturrilha', 'estiramento na virilha', 'lesão no joelho']); why = 'lesão'; }
         // Jogo grande (finais, mata-mata continental): o técnico escala quem está melhor
         else on = r() < (knock && e.st >= 3 ? Math.min(0.97, X.share + 0.15) : X.share);
+        // Sem energia, o técnico poupa (metade das vezes; em decisão, só um terço)
+        if (on && fc.en !== undefined && fc.en < EN_OUT && r() < (knock && e.st >= 3 ? 0.33 : 0.5)) { on = false; why = 'cansaço'; }
         if (!on && !why) why = X.share < 0.35 ? 'banco' : 'rodízio';
       }
       fc.pending = { i: fc.i, on, why };
       save();
     }
     const comps = { lg: fc.lg.name, cup: fc.cup.name, cont: fc.cont ? fc.cont.name : '' };
-    const next = { e, vs, home, comp, compName: comps[comp], stage, knock, on: fc.pending.on, why: fc.pending.why, injury: fc.injOut > 0 ? fc.injName : null, injLeft: fc.injOut };
+    const P = fc.pending || { on: null, why: '' };
+    const next = { e, vs, home, comp, compName: comps[comp], stage, knock, on: P.on, why: P.why, week: !!fc.wkDue, injury: fc.injOut > 0 ? fc.injName : null, injLeft: fc.injOut };
     // Lance decisivo: finais (copa e continental), o clássico da liga e a última rodada valendo título ou acesso
-    if (vs && next.on && !fc.pending.mDone) {
+    if (vs && next.on && fc.pending && !fc.pending.mDone) {
       if (fc.pending.m === undefined) { fc.pending.m = momentFor(c, fc, next); }
       next.moment = fc.pending.m;
     }
@@ -347,7 +426,9 @@
   // Joga o próximo item do calendário. force: resultado do lance decisivo (true/false) quando houve.
   // Volta { e, my (seu jogo ou null), others: [{h, a, gh, ga, ev}] (ids), title (taça ganha agora), pe (pontos ganhos) }
   S.fcPlay = function (c, force) {
-    const fc = c.fc, nx = S.fcNext(c);
+    const fc = c.fc;
+    if (fc && fc.wkDue) S.fcWeek(c); // semana não fechada (simulador, simular N jogos): a automática
+    const nx = S.fcNext(c);
     if (!nx) return null;
     if (force === undefined && fc.pending && fc.pending.mDone) force = fc.pending.mOk;
     const { r, save } = rngOf(fc), club = D.CLUB_BY_ID[c.club], e = nx.e;
@@ -365,6 +446,18 @@
         // Pontos de evolução jogo a jogo (até o limite do ano)
         const g = my.rating >= S.PE_R2 ? PE_STEP.great : my.rating >= S.PE_R1 ? PE_STEP.good : my.rating >= PE_OK ? PE_STEP.ok : PE_STEP.low;
         out.pe = give(c, fc, g);
+        // Energia gasta no jogo (o treino físico poupa nas próximas semanas) e forma pela nota
+        if (fc.en !== undefined) {
+          out.en = Math.round((20 + r() * 10) * (fc.fit > 0 ? 0.7 : 1));
+          if (fc.fit > 0) fc.fit--;
+          fc.en = clamp(fc.en - out.en, 0, 100);
+        }
+      }
+      if (fc.en !== undefined) {
+        // Forma: a nota contra a sua média (sequência boa sobe, ruim desce); banco tira um pouco
+        const A = fc.acc, avg = A.games > 1 ? (A.rsum - my.rating) / (A.games - 1) : my.rating;
+        const d = !my.on ? (fc.injOut > 0 ? 0 : -0.06) : clamp((my.rating - avg) * 0.45, -0.6, 0.6);
+        const f0 = fc.fo || 0; fc.fo = clamp(Math.round((f0 * 0.85 + d) * 100) / 100, -2, 2); out.fo = Math.round((fc.fo - f0) * 100) / 100;
       }
       fc.log.push({ i: fc.i, comp: nx.comp, stage: nx.stage, vs: nx.vs, home: nx.home, gf: my.gf, ga: my.ga, on: my.on, goals: my.goals, assists: my.assists, rating: my.rating, won: my.won, pens: my.pens, dec: force !== undefined });
       if (mo && mo.type === 'classico') fc.derbyDone = true;
@@ -401,6 +494,8 @@
     if (out.title) out.pe += give(c, fc, 1);
     fc.pending = null;
     fc.i++;
+    // Depois de cada data do calendário, a semana até a próxima
+    if (fc.en !== undefined) { fc.wkDue = true; fc.wkPlayed = !!(out.my && out.my.on); }
     save();
     if (fc.i >= fc.cal.length) S.fcFinish(c);
     return out;
@@ -475,7 +570,7 @@
   // Pontos de evolução mostrados (inteiros já no banco + a fração do ano)
   S.fcPe = c => (c.pe || 0) + (c.fc ? c.fc.peFrac : 0);
   // Ganho no ano (o que conta para o limite): inteiros do ano + fração, menos a fração que veio do ano anterior
-  S.fcPeYear = c => (c.fc ? Math.round((c.fc.peGot + c.fc.peFrac - (c.fc.peCarry || 0)) * 100) / 100 : 0);
+  S.fcPeYear = c => (c.fc ? Math.round((c.fc.peGot + c.fc.peFrac - (c.fc.peCarry || 0) - (c.fc.peTrain || 0)) * 100) / 100 : 0); // o treino da semana tem limite próprio
 
   // Fim do calendário: os números do ano para S.playSeason (c.fc.out)
   S.fcFinish = function (c) {

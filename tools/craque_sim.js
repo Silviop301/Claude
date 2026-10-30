@@ -59,6 +59,9 @@ for (let n = 0; n < N; n++) {
       let nx;
       while ((nx = S.fcNext(c))) {
         if (S.fcEventDue(c)) { const ev = S.fcPickEvent(c); if (ev) doEvent(ev); continue; }
+        // A semana entre os jogos: o robô usa a automática (FC_WEEK=0 desliga energia e forma, para comparar)
+        if (c.fc.wkDue) { S.fcWeek(c); continue; }
+        if (process.env.FOSTAT) { global.FO = global.FO || []; FO.push([c.fc.fo, c.fc.en]); }
         if (nx.moment) { c.mstats = c.mstats || { n: 0, ok: 0 }; c.mstats.n++; if (S.fcAutoMoment(c, nx.moment)) c.mstats.ok++; decisions++; }
         S.fcPlay(c);
         const w = D.POS[c.pos].w, opts = D.INVEST.filter(t => S.canInvest(c, t.id));
