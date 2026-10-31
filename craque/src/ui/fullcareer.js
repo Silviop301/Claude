@@ -108,13 +108,15 @@
     const parts = fx => S.fcInvParts(c, fx).map(esc).join(' · ') || 'nada muda';
     const head = '<p class="iv-w"><b>' + day + '</b><span><small>' + esc(wn) + '</small>' + esc(S.fcInvText(c, x)) + '</span></p>';
     if (x.ans) {
-      const o = x.ans === 'a' ? d.a : x.ok ? d.b.win : d.b.lose, lab = x.ans === 'a' ? d.a.l : d.b.l;
-      return '<div class="ag-iv done ' + (x.ans === 'b' ? (x.ok ? 'win' : 'lose') : '') + '">' + head + '<p class="iv-r"><b>' + esc(lab) + (x.ans === 'b' ? ' · ' + esc(o.tag) + ' (tirou ' + x.roll + ', precisava até ' + x.p + ')' : '') + '</b><span>' + parts(o.fx) + '</span></p></div>';
+      const o = x.ans === 'a' || (x.ans === 'b' && d.b.later) ? (x.ans === 'a' ? d.a : d.b) : x.ok ? d.b.win : d.b.lose, lab = x.ans === 'a' ? d.a.l : d.b.l;
+      const roll = x.ans === 'b' && !d.b.later ? ' · ' + esc(o.tag) + ' (tirou ' + x.roll + ', precisava até ' + x.p + ')' : '';
+      return '<div class="ag-iv done ' + (roll ? (x.ok ? 'win' : 'lose') : '') + '">' + head + '<p class="iv-r"><b>' + esc(lab) + roll + '</b><span>' + parts(o.fx) + (x.ans === 'b' && d.b.later ? ' · ' + esc(d.b.later) : '') + '</span></p></div>';
     }
-    const p = Math.round(((d.b.press && c.staff && c.staff.press) ? d.b.press : d.b.p) * 100);
+    const p = Math.round(((d.b.press && c.staff && c.staff.press) ? d.b.press : (d.b.p || 1)) * 100);
+    const riskTxt = d.b.later ? parts(d.b.fx) + '<i>' + esc(d.b.later) + '</i>' : '<i class="up">' + p + '%: ' + parts(d.b.win.fx) + '</i><i class="down">' + (100 - p) + '%: ' + parts(d.b.lose.fx) + '</i>';
     return '<div class="ag-iv">' + head + '<div class="iv-o">' +
       '<button class="iv-b safe" data-inv="' + k + '" data-a="a"><em>SEGURA</em><b>' + esc(d.a.l) + '</b><small>' + parts(d.a.fx) + '</small></button>' +
-      '<button class="iv-b risk" data-inv="' + k + '" data-a="b"><em>ARRISCADA</em><b>' + esc(d.b.l) + '</b><small><i class="up">' + p + '%: ' + parts(d.b.win.fx) + '</i><i class="down">' + (100 - p) + '%: ' + parts(d.b.lose.fx) + '</i></small></button>' +
+      '<button class="iv-b risk" data-inv="' + k + '" data-a="b"><em>ARRISCADA</em><b>' + esc(d.b.l) + '</b><small>' + riskTxt + '</small></button>' +
       '</div><p class="iv-n">Sem resposta: ' + parts(d.ig.fx) + '</p></div>';
   }
   function agenda() {

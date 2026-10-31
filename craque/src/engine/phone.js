@@ -511,7 +511,7 @@
     return v;
   };
   const pOf = (c, o) => (o.press && c.staff && c.staff.press ? o.press : o.p);
-  S.fcInvEV = (c, inv, k) => { const d = INV_BY[inv.id]; if (k === 'ig') return S.fcInvValue(c, d.ig.fx); if (k === 'a') return S.fcInvValue(c, d.a.fx); const p = pOf(c, d.b); return p * S.fcInvValue(c, d.b.win.fx) + (1 - p) * S.fcInvValue(c, d.b.lose.fx); };
+  S.fcInvEV = (c, inv, k) => { const d = INV_BY[inv.id]; if (k === 'ig') return S.fcInvValue(c, d.ig.fx); if (k === 'a') return S.fcInvValue(c, d.a.fx); if (d.b.later) return S.fcInvValue(c, d.b.fx) + (d.b.ev || 0); const p = pOf(c, d.b); return p * S.fcInvValue(c, d.b.win.fx) + (1 - p) * S.fcInvValue(c, d.b.lose.fx); };
   // O efeito na tela: "−10 energia", "+R$ 3 mil", "Fama +2", "Biel gosta", "Técnico −3", "+evolução"
   S.fcInvParts = function (c, fx) {
     const P = [], money = n => 'R$ ' + (Math.abs(n) >= 1e6 ? (Math.abs(n) / 1e6).toFixed(1).replace('.', ',') + ' mi' : Math.round(Math.abs(n) / 1000) + ' mil');
@@ -542,7 +542,7 @@
     P.invAt = fc.season * 1000 + fc.i; P.wk = (P.wk || 0) + 1; P.invLast = P.invLast || {}; P.invN = P.invS === c.season ? P.invN || {} : {}; P.invS = c.season;
     const r = rngFor(c, 0x1A7E + (c.season || 0) * 613 + fc.i * 29);
     const n = r() < 0.5 ? 0 : r() < 0.76 ? 1 : 2;
-    const ok = INV.filter(d => (d.p !== 'cap' || P.p.cap) && (P.invN[d.id] || 0) < 2 && P.wk - (P.invLast[d.id] || -99) >= 5 && (!d.need || (c.money || 0) >= d.need * 2 * weekPay(c)));
+    const ok = INV.filter(d => !d.story && (d.p !== 'cap' || P.p.cap) && (P.invN[d.id] || 0) < 2 && P.wk - (P.invLast[d.id] || -99) >= 5 && (!d.need || (c.money || 0) >= d.need * 2 * weekPay(c)));
     fc.inv = [];
     for (let k = 0; k < n && ok.length; k++) {
       const d = ok.splice(Math.floor(r() * ok.length), 1)[0];
@@ -551,7 +551,102 @@
       fc.inv.push({ id: d.id, ti, x: d.id === 'emprestimo' ? nm(c) : '', ans: null });
       P.invLast[d.id] = P.wk; P.invN[d.id] = (P.invN[d.id] || 0) + 1;
     }
+    storyTick(c, r);
   }
+  // ---------- histórias que voltam (fase 2, parte 3) ----------
+  // Uma história é uma sequência de 3 a 5 passos espalhados pelas temporadas: um convite que decide o rumo e mensagens que
+  // contam o que veio depois (com um segundo convite quando dá problema). Estado em c.ppl.st[id] = { n: passo, due:
+  // temporada do próximo passo, f: o que você decidiu }. No máximo uma história começa por temporada; cada passo sai numa
+  // semana a partir do 6º jogo do ano, nunca junto com outro convite da mesma pessoa.
+  const go = (c, id, n, wait, f) => { const st = c.ppl.st[id]; st.n = n; st.due = c.season + (wait || 0); if (f) Object.assign(st.f, f); };
+  const end = (c, id) => { const st = c.ppl.st[id]; st.n = 0; st.done = c.season; };
+  INV.push(
+    { id: 'bar1', story: 'bar', p: 'parca', t: ['mano tive uma ideia. bar com o teu nome no bairro. tu entra com a grana e eu toco. bora?'],
+      a: { l: 'Desejar boa sorte', fx: { rel: { parca: 1 } }, re: 'de boa mano, vou atrás de outro sócio' },
+      b: { l: 'Entrar de sócio', ev: 6, later: 'O bar pode dar lucro ou problema nas próximas temporadas', fx: { wk: -6, rel: { parca: 6 } }, re: 'É NÓIS mano kkkk vou pendurar tua camisa na parede' },
+      ig: { fx: { rel: { parca: -4 } }, re: 'achei que tu ia topar. deixa quieto' },
+      then: (c, a) => (a === 'b' ? go(c, 'bar', 2, 1, { in: 1 }) : go(c, 'bar', 2, 1, { in: 0 })) },
+    { id: 'bar3', story: 'bar', p: 'parca', t: ['mano deu ruim, o fiscal fechou o bar. preciso de uma grana pra reabrir'],
+      a: { l: 'Mandar uma parte', fx: { wk: -1.2, rel: { parca: 2 } }, re: 'valeu mano, já ajuda. vou ver o resto com o banco' },
+      b: { l: 'Mandar tudo', ev: 4, later: 'Reaberto, o bar pode voltar a dar lucro', fx: { wk: -2.5, rel: { parca: 7 } }, re: 'mano tu salvou o bar. não esqueço nunca' },
+      ig: { fx: { rel: { parca: -8 } }, re: 'tudo bem. fechei o bar. foi bom enquanto durou' },
+      then: (c, a) => (a === 'b' ? go(c, 'bar', 4, 1, { help: 1 }) : a === 'a' ? go(c, 'bar', 4, 1, { help: 0.5 }) : end(c, 'bar')) },
+    { id: 'casa1', story: 'casa', p: 'mae', t: ['Filho eu e seu pai queremos voltar pra nossa cidade. A casa de lá tá caindo aos pedaços'],
+      a: { l: 'Ajudar na reforma', fx: { wk: -1.5, rel: { mae: 5 } }, re: 'Obrigada filho, seu pai já chamou o pedreiro' },
+      b: { l: 'Comprar uma casa nova', ev: 2, later: 'Eles se mudam no ano que vem, e a cidade inteira fica sabendo', fx: { wk: -6, rel: { mae: 12 } }, re: 'FILHO!!! Seu pai não consegue nem falar. Te amo' },
+      ig: { fx: { rel: { mae: -6 } }, re: 'Tudo bem filho. A gente dá um jeito', mem: 'casa' },
+      then: (c, a) => (a === 'ig' ? end(c, 'casa') : go(c, 'casa', 2, 1, { casa: a === 'b' ? 1 : 0 })) },
+    { id: 'pat1', story: 'pat', p: 'emp', t: ['Fechei um patrocínio de três anos com uma marca grande. Muito dinheiro, mas tem cláusula de gravação.'],
+      a: { l: 'Não assinar', fx: { rel: { emp: -2 } }, re: 'Você que sabe. Contrato assim não aparece de novo.', mem: 'pat' },
+      b: { l: 'Assinar', ev: 0, later: 'Paga todo ano; a marca pode pedir gravação em semana de jogo', fx: { wk: 1, rel: { emp: 5 } }, re: 'Assinado! Meu garoto agora é garoto-propaganda.' },
+      ig: { fx: { rel: { emp: -5 } }, re: 'A marca cansou de esperar. Fechou com outro.', mem: 'pat' },
+      then: (c, a) => (a === 'b' ? go(c, 'pat', 2, 1, { y: 0 }) : (a === 'a' && remember(c, 'emp', 'pat', ''), end(c, 'pat'))) },
+  );
+  INV.forEach(x => { INV_BY[x.id] = x; });
+  Object.assign(MEM, {
+    casa: { p: 'mae', t: 'Seu pai ainda fala da casa da nossa cidade. Ele passa na frente e fica olhando' },
+    pat: { p: 'emp', t: 'Lembra do patrocínio de três anos que você não quis? A marca virou a maior do país. Só dizendo.' },
+  });
+  const STORIES = [
+    { id: 'bar', from: 2, ok: c => (c.money || 0) >= 8 * weekPay(c) },
+    { id: 'casa', from: 4, ok: c => (c.money || 0) >= 14 * weekPay(c) },
+    { id: 'pat', from: 3, ok: c => (c.fame || 0) >= 10 },
+  ];
+  // Passos que são mensagens (ou um convite quando o rumo pede)
+  function storyStep(c, id, r) {
+    const st = c.ppl.st[id], f = st.f, P = c.ppl;
+    const say1 = (p, t, fx) => { if (fx) applyInv(c, fx); post(c, p, t, S.fcTone(c, p)); };
+    const invite = iid => { c.fc.inv.push({ id: iid, ti: 0, x: '', ans: null }); };
+    if (st.n === 1) return invite(id + '1');
+    if (id === 'bar') {
+      if (st.n === 2) { if (!f.in) { say1('parca', 'de boa mano, o primo do Kauã entrou de sócio no teu lugar. o bar tá indo'); return end(c, id); }
+        say1('parca', 'o bar tá lotado nos dias de jogo kkkk tua camisa tá na parede'); return go(c, id, 3, 1); }
+      if (st.n === 3) { if (r() < 0.5) { say1('parca', 'mano o bar deu lucro, tua parte tá aqui. é nóis', { wk: 9 }); return go(c, id, 5, 2, { good: 1 }); } return invite('bar3'); }
+      if (st.n === 4) { if (f.help === 1 && r() < 0.7) { say1('parca', 'reabrimos e tá bombando kkkk tua parte do mês caiu aí', { wk: 6 }); return go(c, id, 5, 2, { good: 1 }); }
+        say1('parca', f.help === 1 ? 'não deu mano, fechou de vez. mas valeu, irmão. tu foi o único que ajudou' : 'reabri pequeno, só no fim de semana. valeu pela força'); return f.help === 1 ? go(c, id, 5, 2) : end(c, id); }
+      if (st.n === 5) { say1('parca', 'tu foi o único que nunca me largou. no teu jogo de despedida o bairro inteiro vai tá lá', { rel: { parca: 5 }, fame: 1 }); remember(c, 'parca', 'bar', ''); return end(c, id); }
+    }
+    if (id === 'casa') {
+      if (st.n === 2) { if (f.casa) { say1('mae', 'Filho a casa nova tem varanda que dá pro campinho onde vc começou. Seu pai fica lá o dia todo', { fans: 2 }); return go(c, id, 3, 2); }
+        say1('mae', 'A reforma ficou linda filho. Seu pai pintou o portão com as cores do seu time kkk'); return end(c, id); }
+      if (st.n === 3) { say1('mae', 'Os meninos do campinho agora jogam com camisa com seu nome. Seu pai que deu pra todos', { fame: 1, rel: { mae: 3 } }); return end(c, id); }
+    }
+    if (id === 'pat') {
+      if (st.n === 2) {
+        f.y = (f.y || 0) + 1;
+        say1('emp', 'Caiu a parcela do patrocínio. ' + (f.y < 3 ? 'Ano ' + f.y + ' de 3.' : 'Última do contrato.'), { wk: 1.5 });
+        if (r() < 0.5) say1('emp', 'A marca exigiu uma gravação na véspera do jogo. Cláusula é cláusula, garoto.', { en: -25, coach: -2 });
+        return f.y >= 3 ? go(c, id, 3, 1) : go(c, id, 2, 1);
+      }
+      if (st.n === 3) { say1('emp', 'Acabou o contrato com a marca. Eles gostaram: quando quiser renovar, me liga.', { rel: { emp: 3 } }); return end(c, id); }
+    }
+  }
+  function storyTick(c, r) {
+    const P = c.ppl, fc = c.fc;
+    P.st = P.st || {}; P.s0 = P.s0 === undefined ? c.season : P.s0;
+    if (fc.i < 6) return; // o começo do ano é dos jogos
+    const busy = new Set(fc.inv.map(x => INV_BY[x.id].p));
+    // Um passo por semana, de uma história que já está andando
+    for (const S0 of STORIES) {
+      const st = P.st[S0.id];
+      if (!st || !st.n || st.due > c.season || st.at === c.season * 1000 + fc.i) continue;
+      const pid = INV_BY[S0.id + '1'].p;
+      if (busy.has(pid) || r() > 0.25) continue;
+      st.at = c.season * 1000 + fc.i; st.due = 999; // o passo decide quando volta
+      storyStep(c, S0.id, r);
+      if (st.due === 999) st.due = c.season + 1;
+      return;
+    }
+    // Uma história nova por temporada, no máximo
+    if (P.stS === c.season || r() > 0.12) return;
+    const can = STORIES.filter(x => !P.st[x.id] && c.season - P.s0 >= x.from && x.ok(c) && !busy.has(INV_BY[x.id + '1'].p));
+    if (!can.length) return;
+    const x = can[Math.floor(r() * can.length)];
+    P.st[x.id] = { n: 1, due: 999, f: {}, at: c.season * 1000 + fc.i }; P.stS = c.season; // a resposta do convite marca o próximo passo
+    storyStep(c, x.id, r);
+  }
+  S.fcStories = c => (c.ppl && c.ppl.st) || {};
+
   S.fcInvites = c => (c.fc && c.fc.wkDue && c.fc.inv) || [];
   S.fcInvText = (c, inv) => fill(c, INV_BY[inv.id].t[inv.ti], { x: inv.x });
   S.fcInvDef = inv => INV_BY[inv.id];
@@ -562,10 +657,12 @@
     const d = INV_BY[inv.id], r = rngFor(c, 0x5A5E + (c.season || 0) * 211 + fc.i * 41 + k);
     let o, ok = true;
     if (ans === 'a') o = d.a;
+    else if (d.b.later) o = d.b; // história: o que acontece vem nas próximas temporadas
     else { const roll = Math.floor(r() * 100) + 1, p = Math.round(pOf(c, d.b) * 100); ok = roll <= p; o = ok ? d.b.win : d.b.lose; inv.roll = roll; inv.p = p; }
     applyInv(c, o.fx); inv.ans = ans; inv.ok = ok; inv.tag = o.tag || '';
     post(c, d.p, fill(c, o.re, { x: inv.x }), S.fcTone(c, d.p));
     if (ans === 'a' && d.id === 'niver') remember(c, 'parca', 'niver', '');
+    if (d.then) d.then(c, ans, ok);
     return { ok, tag: o.tag || '', parts: S.fcInvParts(c, o.fx) };
   };
   // Fecha a semana: o que ficou sem resposta
@@ -578,6 +675,7 @@
       applyInv(c, d.ig.fx); inv.ans = 'ig';
       post(c, d.p, fill(c, d.ig.re, { x: inv.x }), S.fcTone(c, d.p));
       if (d.ig.mem) remember(c, d.p, d.ig.mem, '');
+      if (d.then) d.then(c, 'ig', false);
     });
     if (out) out.inv = fc.inv.map(x => ({ id: x.id, ans: x.ans, ok: x.ok }));
     fc.inv = null;

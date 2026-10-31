@@ -15,7 +15,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 |---|---|---|
 | 0 · Preparar | Os números chegam ao servidor (`api/stats.php`, `src/stats.js`, `tools/craque_numeros.py`) e quem joga o Jogo a Jogo vê o aviso do save novo | no ar (PR #108) |
 | 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **no ar** (PRs #109 a #114): jogos vividos/resumidos/banco, lance em todo jogo, tela limpa, rodada como na TV, faixa "Seu ano", metas da semana e XP por temporada. Tempo real do ano a medir pela contagem (o Silvio pediu para não cortar pelo previsto) |
-| 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | **em andamento**: parte 1 (as pessoas e o Chat, PR #116), parte 2 (um treino e os convites da semana) |
+| 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | **em andamento**: parte 1 (as pessoas e o Chat, PR #116), parte 2 (um treino e os convites, PR #117), parte 3 (histórias que voltam) |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | |
 | 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | |
@@ -474,3 +474,16 @@ Proibido também: cartão com faixa colorida na lateral.
 - **Repetição** em 60 carreiras: ~21 convites por temporada, no máximo 2 do mesmo tipo numa temporada, cada texto menos
   de uma vez por temporada. Equilíbrio (300 carreiras): robô que escolhe bem S13/A25/B32/C19/D11; sem responder nada
   S14/A23/B32/C20/D12; ao acaso S11/A21/B34/C18/D15. Decidir bem vale pouco, como os eventos, e a nota não se mexeu.
+
+### Fase 2 do plano, parte 3 · 2026-10-31 · Histórias que voltam
+
+- Três histórias de 3 a 5 passos espalhados pelas temporadas (`storyTick` em engine/phone.js, estado em `c.ppl.st`): o
+  **bar do parça** (entrar de sócio; na temporada seguinte o bar lota; depois lucro ou o fiscal fecha e ele pede ajuda;
+  quem ajudou recebe o "tu foi o único que nunca me largou"), a **casa da mãe** na cidade natal (reforma ou casa nova; a
+  casa nova rende torcida e os meninos do campinho com a sua camisa) e o **patrocínio de três anos** do empresário
+  (parcela todo ano, e a cláusula pode cobrar gravação na véspera do jogo). Uma história começa por temporada no máximo,
+  a partir do 6º jogo do ano.
+- O passo que decide é um convite da agenda com a arriscada "vem depois" (sem sorteio na hora: o texto diz o que pode
+  acontecer); os outros passos são mensagens no Chat. Recusar ou não responder também fica guardado e volta numa mensagem.
+- Medido em 60 carreiras: as três histórias aparecem e terminam em quase todas, pelos caminhos diferentes. A nota do Jogo
+  a Jogo ficou igual dentro do ruído.
