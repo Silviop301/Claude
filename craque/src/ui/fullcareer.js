@@ -41,9 +41,11 @@
   // ---------- o celular (tela central) ----------
   // O hub é a tela do celular do jogador: relógio com o próximo jogo, notificações (técnico, agenda, preparador, Zé)
   // que levam às telas, os apps e o ingresso para o jogo.
-  const APPS = [['ag', '📒', 'Agenda'], ['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['me', '📈', 'Ficha'], ['shop', '🏷️', 'Loja'], ['bet', '🎰', 'Zé']];
+  const APPS = [['msg', '💬', 'Chat'], ['ag', '📒', 'Agenda'], ['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['me', '📈', 'Ficha'], ['shop', '🏷️', 'Loja'], ['bet', '🎰', 'Zé']];
   function phone() {
     const c = G.c, nx = S.fcNext(c), fc = c.fc, kind = S.fcKind(c, nx);
+    if (S.fcPhonePre) S.fcPhonePre(c, nx); // as pessoas do celular (engine/phone.js): lesão, jogo grande
+    const unread = (c.ppl && c.ppl.unread) || 0;
     const gd = dayOf(nx.e), eve = DAYS[(gd + 6) % 7];
     const hh = 17 + (fc.i * 7) % 5, mm = (fc.i * 23 + 11) % 60, clk = hh + ':' + String(mm).padStart(2, '0');
     const en = Math.round(fc.en === undefined ? 100 : fc.en);
@@ -53,7 +55,7 @@
       '<div class="ph-clock">' + clk + '</div>' +
       '<p class="ph-date">' + (nx.vs ? 'Amanhã: x ' + esc(nameOf(nx.vs)) + ', ' + (nx.home ? 'em casa' : 'fora') + ' · ' + esc(nx.compName) : 'Amanhã: folga do time · ' + esc(nx.compName)) + '</p>' +
       '<div class="ph-ns">' + pings(c, nx).map((n, k) => '<button class="ph-n"' + (n.go ? ' data-go="' + n.go + '"' : ' disabled') + '><b>' + esc(n.who) + ' <i>· ' + when[Math.min(k, when.length - 1)] + '</i></b><span>' + esc(n.txt) + '</span></button>').join('') + '</div>' +
-      '<div class="ph-apps">' + APPS.map(([k, e, n]) => '<button class="ph-app" data-go="' + k + '"><i>' + U.emo(e, 'md') + '</i><span>' + n + '</span></button>').join('') + '</div>' +
+      '<div class="ph-apps">' + APPS.map(([k, e, n]) => '<button class="ph-app" data-go="' + k + '"><i>' + U.emo(e, 'md') + (k === 'msg' && unread ? '<em class="ph-badge">' + Math.min(unread, 99) + '</em>' : '') + '</i><span>' + n + '</span></button>').join('') + '</div>' +
       '</div><div class="ph-side">' +
         '<p class="prc-kind ' + kind + '">' + kindTxt(c, nx, kind) + '</p>' +
         '<button class="prc-tk" id="fc-play"><span class="prc-tk-m"><b>' + (nx.moment ? 'Jogar a decisão' : kind === 'vivo' ? 'Ir pro jogo' : nx.vs ? 'Jogar' : 'Seguir') + '</b><small>' +
@@ -75,8 +77,12 @@
   function pings(c, nx) {
     const fc = c.fc, out = [], n = (go, who, txt) => out.push({ go, who, txt });
     const p = Math.round(S.fcStartP(c) * 100);
+    // Quem escreveu desde o último jogo (as duas mais novas), antes das notificações do clube
+    const who = id => { const k = S.fcContact(c, id); return id === 'mae' ? k.name : k.name + ', ' + k.role; };
+    if (S.fcPhoneNew) S.fcPhoneNew(c).slice(-2).reverse().forEach(m => n('msg', who(m.p), m.t));
+    const coach = c.ppl ? who('coach') : 'Técnico';
     if (nx.injury) n(null, /suspensão/.test(nx.injury) ? 'Diretoria' : 'Departamento médico', /suspensão/.test(nx.injury) ? (/manipula/.test(fc.injName) ? 'Suspenso pelo caso do cartão combinado: fora por mais ' : 'Suspenso por causa da aposta: fora por mais ') + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') : nx.injury.charAt(0).toUpperCase() + nx.injury.slice(1) + ': fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') + (fc.wkDue ? ' Fisioterapia na semana ajuda.' : ''));
-    else if (nx.vs) n(null, 'Técnico', nx.on === null ? 'Escalo o time depois do treino da semana. Hoje você tem ' + p + '% de chance de começar.' : nx.on ? 'Amanhã você começa jogando. Conto contigo.' : nx.why === 'cansaço' ? 'Vou te poupar amanhã, você tá sem perna. Descansa.' : nx.why === 'banco' ? 'Amanhã você começa no banco. Treina forte que a chance aparece.' : 'Amanhã vou rodar o elenco e você fica fora.');
+    else if (nx.vs) n(null, coach, nx.on === null ? 'Escalo o time depois do treino da semana. Hoje você tem ' + p + '% de chance de começar.' : nx.on ? 'Amanhã você começa jogando. Conto contigo.' : nx.why === 'cansaço' ? 'Vou te poupar amanhã, você tá sem perna. Descansa.' : nx.why === 'banco' ? 'Amanhã você começa no banco. Treina forte que a chance aparece.' : 'Amanhã vou rodar o elenco e você fica fora.');
     const A = id => (S.FC_WEEK.find(a => a.id === id) || S.FC_WEEK[2]).name.toLowerCase();
     if (fc.wkDue) { if (!pick) pick = S.fcWeekAuto(c); n('ag', 'Agenda', 'Semana marcada: ' + A(pick[0]) + ' e ' + A(pick[1]) + '. Toque para mudar.'); }
     else if (fc.wkSum && fc.wkSum.at === fc.i) n('ag', 'Agenda', 'Semana feita: ' + fc.wkSum.acts.map(A).join(' e ') + '. Energia ' + Math.round(fc.wkSum.en0) + ' → ' + Math.round(fc.wkSum.en1) + '.');
@@ -139,11 +145,35 @@
     $('fc-auto').onchange = e => { c.fcAuto = e.target.checked; if (c.fcAuto && c.fc.wkDue) { S.fcWeek(c, myPick()); unpick(); bar(); } save(); agOpen = -1; agenda(); };
     window.scrollTo(0, 0);
   }
+  // ---------- Chat: as conversas com as pessoas do celular (engine/phone.js) ----------
+  // A lista (uma conversa por pessoa, a mais recente em cima) e, tocando, a conversa inteira em balões.
+  // A relação não aparece em número: só no tom do que cada um escreve.
+  let chatOpen = null;
+  function chat() {
+    const c = G.c, th = S.fcThreads(c), fc = c.fc;
+    if (c.ppl) c.ppl.unread = 0;
+    save();
+    const when = m => (m.s === c.season ? (m.at >= fc.i ? 'agora' : 'jogo ' + m.at) : String(year() - c.season + m.s));
+    const t = chatOpen && th.find(x => x.id === chatOpen);
+    let body;
+    if (t) {
+      body = '<div class="ch-head"><i>' + U.emo(t.c.icon, 'sm') + '</i><div><b>' + esc(t.c.name) + '</b><small>' + esc(t.c.role) + '</small></div></div>' +
+        '<div class="ch-log">' + t.msgs.slice(-30).map(m => '<p class="ch-b"><span>' + esc(m.t) + '</span><small>' + esc(when(m)) + '</small></p>').join('') + '</div>';
+    } else {
+      body = th.length ? '<div class="ch-list">' + th.map(x => { const m = x.msgs[x.msgs.length - 1]; return '<button class="ch-row" data-ch="' + x.id + '"><i>' + U.emo(x.c.icon, 'sm') + '</i><span><b>' + esc(x.c.name) + (x.id === 'mae' ? '' : ' <small>' + esc(x.c.role) + '</small>') + '</b><em>' + esc(m.t) + '</em></span><small>' + esc(when(m)) + '</small></button>'; }).join('') + '</div>' :
+        '<p class="ch-none">Ninguém escreveu ainda. Depois dos jogos a família, os amigos e o pessoal do clube mandam mensagem.</p>';
+    }
+    render('<div class="fc-scr ch" id="fc-scr"><button class="back-link" id="fc-back">' + (t ? '‹ Conversas' : '‹ Celular') + '</button><h2>' + (t ? 'Conversa' : 'Chat') + '</h2>' + body + '</div>');
+    $('fc-back').onclick = () => { sfx('tap'); if (t) { chatOpen = null; chat(); } else phone(); };
+    document.querySelectorAll('[data-ch]').forEach(b => { b.onclick = () => { sfx('tap'); chatOpen = b.dataset.ch; chat(); }; });
+    if (t) { const lg = document.querySelector('.ch-log'); if (lg && lg.lastElementChild) lg.lastElementChild.scrollIntoView({ block: 'end' }); } else window.scrollTo(0, 0);
+  }
   // Apps do celular: cada um abre uma tela com volta para o celular
   const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Zé' };
   const LOJA_IMG = ['chuteira-g1', 'chuteira-g2', 'chuteira-g3', 'luvas-g1', 'luvas-g2', 'luvas-g3', 'pt', 'physio', 'nutri', 'video', 'press', 'c1', 'c2', 'c3', 'c4', 'house'];
   function go(k) {
     if (k === 'evo') return evolve();
+    if (k === 'msg') { chatOpen = null; return chat(); }
     if (k === 'ag') { agOpen = -1; return agenda(); }
     const c = G.c, body = {
       wk: '<div class="fc-wk" id="fc-wk"></div><div class="fs-acts" id="fc-acts"></div>',

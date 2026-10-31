@@ -79,7 +79,7 @@ const INIT = `
 
   // O celular e cada app
   await shot('celular');
-  const apps = [['ag', 'agenda'], ['tbl', 'tabela'], ['cal', 'jogos'], ['me', 'ficha'], ['shop', 'loja'], ['bet', 'ze']];
+  const apps = [['msg', 'chat-vazio'], ['ag', 'agenda'], ['tbl', 'tabela'], ['cal', 'jogos'], ['me', 'ficha'], ['shop', 'loja'], ['bet', 'ze']];
   for (const [k, nome] of apps) {
     await tap('.ph-app[data-go="' + k + '"]');
     await shot('app-' + nome);
@@ -127,6 +127,13 @@ const INIT = `
   await tap('#fc-next');
   for (let k = 0; k < 10 && !(await has('#fc-play')) && !(await has('#screen .btn.opt[data-i]')); k++) await wait(300);
   if (await has('#fc-skip2')) { await tap('#fc-skip2'); await shot('resumir'); await tap('#fc-next'); await wait(600); }
+  // As pessoas do celular (fase 2): as mensagens do caminho, a lista do Chat e uma conversa
+  if (await has('.ph-app[data-go="msg"]')) {
+    await shot('celular-com-mensagens');
+    await tap('.ph-app[data-go="msg"]'); await shot('chat');
+    if (await has('[data-ch]')) { await tap('[data-ch]'); await shot('chat-conversa'); await tap('#fc-back'); }
+    await tap('#fc-back'); await wait(400);
+  }
 
   // Até um jogo com lance (simula os do meio com a carta decidindo) e a parada do lance
   const got = await page.evaluate(() => {

@@ -2,6 +2,7 @@
 // No navegador, o index.html carrega engine/*.js diretamente, nesta mesma ordem.
 const D = require('./data.js');
 globalThis.CRAQUE_DATA = globalThis.CRAQUE_DATA || D;
+require('./names.js'); // nomes sorteados (as pessoas do celular no Jogo a Jogo)
 const S = require('./engine/core.js');
-['events', 'events2', 'stakes', 'decisions', 'events3', 'moments', 'worldcup', 'season', 'market', 'finish', 'achievements', 'rival', 'origins', 'contract', 'relampago', 'fixtures', 'fullcareer', 'cassino'].forEach(part => require('./engine/' + part + '.js'));
+['events', 'events2', 'stakes', 'decisions', 'events3', 'moments', 'worldcup', 'season', 'market', 'finish', 'achievements', 'rival', 'origins', 'contract', 'relampago', 'fixtures', 'fullcareer', 'cassino', 'phone'].forEach(part => require('./engine/' + part + '.js'));
 module.exports = S;

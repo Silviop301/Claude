@@ -5459,3 +5459,25 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
 .fb-list li em { font: 800 15px var(--display); font-style: normal; color: var(--ink-2); }
 .fb-list li.win b { color: var(--up-ink); }
 .fb-list li.loss b { color: var(--down-ink); }
+
+/* Chat do Jogo a Jogo (fase 2): as pessoas do celular. Lista em papel, conversa em balões; a relação só no tom do texto */
+.ph-app i { position: relative; }
+.ph-badge { position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--down); color: #fff; font: 800 12px/20px var(--body); font-style: normal; text-align: center; box-shadow: 0 0 0 2px var(--pitch, #0b2016); }
+@media (max-width: 999.98px) { .ph-apps { grid-template-columns: repeat(7, minmax(0, 1fr)); } .ph-app i { width: 42px; height: 42px; } .ph-app i .tw-md { width: 24px; height: 24px; } }
+@media (min-width: 1000px) and (min-height: 560px) { .ph-apps { grid-template-columns: repeat(7, minmax(0, 1fr)); } .ph-app i { width: 46px; height: 46px; } }
+.ch-list { display: grid; background: var(--paper); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--sh-float); }
+.ch-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 64px; padding: 10px 14px; border: 0; border-top: 1px solid rgba(19, 32, 26, .1); background: none; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+.ch-row:first-child { border-top: 0; }
+.ch-row:active { background: rgba(19, 32, 26, .06); }
+.ch-row > i, .ch-head > i { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: rgba(19, 32, 26, .08); }
+.ch-row span { display: grid; gap: 2px; min-width: 0; }
+.ch-row b { font: 700 15px var(--body); } .ch-row b small { font: 500 12px var(--body); color: var(--ink-2); }
+.ch-row em { font: 500 14px/1.3 var(--body); font-style: normal; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ch-row > small { font: 500 12px var(--body); color: var(--ink-2); align-self: start; padding-top: 4px; }
+.ch-head { display: flex; gap: 10px; align-items: center; padding: 10px 14px; background: var(--paper); border-radius: var(--r-lg) var(--r-lg) 0 0; color: var(--ink); margin-bottom: -12px; }
+.ch-head > i { background: rgba(19, 32, 26, .08); }
+.ch-head b { display: block; font: 700 16px var(--body); } .ch-head small { font: 500 12px var(--body); color: var(--ink-2); }
+.ch-log { display: grid; gap: 8px; align-content: start; padding: 14px; min-height: 240px; background: var(--panel); border: 1px solid var(--panel-line); border-top: 0; border-radius: 0 0 var(--r-lg) var(--r-lg); }
+.ch-b { margin: 0; justify-self: start; max-width: 86%; display: grid; gap: 2px; padding: 8px 12px; border-radius: 4px 16px 16px 16px; background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.ch-b span { font: 500 15px/1.35 var(--body); } .ch-b small { justify-self: end; font: 500 12px var(--body); color: var(--ink-2); }
+.ch-none { margin: 0; padding: 16px; border-radius: var(--r-lg); background: var(--panel); border: 1px solid var(--panel-line); color: var(--tx-2); font: 500 16px/1.4 var(--body); }
