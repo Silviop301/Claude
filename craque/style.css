@@ -4896,6 +4896,19 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .mz-fix.on { border-style: solid; border-color: var(--gold-deep); }
 .mz-fix .btn.ghost { background: transparent; color: var(--ink); border: 2px solid var(--ink); }
 .jn-fix { border: 2px solid #C8323A; padding: 6px 8px; font-family: Georgia, serif !important; }
+/* Faixa de progresso depois do jogo vivido (plano, fase 1): meta do ano, evolução e a linha da tabela */
+.pg { display: grid; gap: 10px; margin-top: 12px; padding: 12px 14px; border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--panel-line); }
+.pg .eyebrow { margin: 0; }
+.pg-t { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 5px; }
+.pg-t span { font: 600 14px var(--body); color: var(--tx-2); }
+.pg-t b { font: 700 15px var(--body); color: var(--tx-1); text-align: right; }
+.pg-t b i { font-style: normal; color: var(--up); margin-left: 4px; }
+.pg-b { height: 10px; border-radius: 999px; background: rgba(255,255,255,.1); overflow: hidden; }
+.pg-b u { display: block; height: 100%; border-radius: inherit; background: var(--up); transition: width .9s cubic-bezier(.2,.8,.2,1); }
+.pg-r.done .pg-b u { background: var(--gold); }
+.pg-r.done .pg-t b { color: var(--gold); }
+.pg-tb { margin: 0; font: 600 14px/1.35 var(--body); color: var(--tx-2); }
+@media (prefers-reduced-motion: reduce) { .pg-b u { transition: none; } }
 /* Rodada como na TV (plano, fase 1): plantão do último gol de fora, o rival direto e as setas de quem sobe e desce */
 .fs-tv { margin: 0 0 6px; padding: 7px 10px; border-radius: var(--r-sm); background: var(--board); border-left: 3px solid var(--gold); font: 600 14px/1.3 var(--body); color: var(--tx-1); }
 .fs-tv.new { animation: fsTv .5s ease-out; }

@@ -1234,9 +1234,42 @@
           (out.gear ? row(c.pos === 'GOL' ? 'Luvas' : 'Chuteira', out.gear.left > 0 ? out.gear.left + (out.gear.left === 1 ? ' jogo' : ' jogos') : 'rasgou', out.gear.left <= 5 ? 'down' : '') : '') + '</div></div>' +
       (others ? '<div class="jn-o"><b>Os outros jogos</b><div>' + others + '</div></div>' : '') +
       '<div class="jn-f"><p>' + esc(nameOf(c.club)) + ' está em ' + lgPos + 'º na ' + esc(fc.lg.name) + ', com ' + fc.lg.tab[0].p + (fc.lg.tab[0].p === 1 ? ' ponto.' : ' pontos.') + '</p>' + fx + '</div>' +
-      '</article>' + zeCard + '<button class="btn" id="fc-next">' + (done ? 'Ver resumo da temporada' : 'Voltar ao celular') + '</button></div>');
+      '</article>' + (m.on ? progStrip(c, out, m) : '') + zeCard + '<button class="btn" id="fc-next">' + (done ? 'Ver resumo da temporada' : 'Voltar ao celular') + '</button></div>');
+    // As barras enchem do valor de antes do jogo até o de agora
+    setTimeout(() => document.querySelectorAll('.pg-b u').forEach(u => { u.style.width = u.dataset.w + '%'; }), 350);
     if (tk.length) setTimeout(() => sfx(net > 0 ? 'coin' : 'tap'), 500);
     $('fc-next').onclick = () => (out.title ? celebrate(out, () => flyBack(x)) : flyBack(x));
+  }
+  // Faixa de progresso (plano, fase 1) depois de cada jogo vivido: o que subiu neste jogo e quanto falta para as metas do
+  // ano: a meta da posição, a evolução do ano e a linha da tabela mais perto (título, acesso ou G4, sair da zona)
+  function progStrip(c, out, m) {
+    const fc = c.fc, mt = S.fcMeta(c), rows = [];
+    const bar = (lbl, have, n, add, txt) => {
+      const p0 = Math.min(100, Math.round((have - add) / n * 100)), p1 = Math.min(100, Math.round(have / n * 100));
+      return '<div class="pg-r' + (have >= n ? ' done' : '') + '"><div class="pg-t"><span>' + lbl + '</span><b>' + txt + (add > 0 ? ' <i>+' + (add % 1 ? num1(add) : add) + '</i>' : '') + '</b></div>' +
+        '<div class="pg-b"><u style="width:' + p0 + '%" data-w="' + p1 + '"></u></div></div>';
+    };
+    if (mt) {
+      const add = mt.k === 'goals' ? m.goals || 0 : mt.k === 'assists' ? m.assists || 0 : m.ga === 0 ? 1 : 0;
+      const nm = { goals: ['gol', 'gols'], assists: ['assistência', 'assistências'], cs: ['jogo sem sofrer gol', 'jogos sem sofrer gol'] }[mt.k];
+      rows.push(bar('Meta do ano', mt.have, mt.n, add, mt.have >= mt.n ? D.plural(mt.have, nm[0], nm[1]) + ': batida!' : mt.have + ' de ' + D.plural(mt.n, nm[0], nm[1])));
+    }
+    const py = S.fcPeYear(c);
+    rows.push(bar('Evolução do ano', py, S.PE_CAP, out.pe || 0, py >= S.PE_CAP ? 'no limite do ano' : num1(py) + ' de ' + S.PE_CAP));
+    const tb = tableGap(c);
+    return '<section class="pg"><div class="eyebrow">Seu ano</div>' + rows.join('') + (tb ? '<p class="pg-tb">' + tb + '</p>' : '') + '</section>';
+  }
+  // A linha da tabela mais perto de você, em pontos
+  function tableGap(c) {
+    const fc = c.fc, rows = standings('lg'), n = rows.length, me = rows.findIndex(x => x.i === 0);
+    if (me < 0 || !rows[me].j) return '';
+    const pts = rows[me].p, pos = me + 1, top = fc.lg.promo || 4, name = fc.lg.promo ? 'o acesso' : 'o G4', zone = fc.lg.releg ? n - fc.lg.releg : n;
+    const dif = k => Math.max(0, rows[k - 1].p - pts); // pontos até a posição k
+    const pp = v => D.plural(v, 'ponto', 'pontos');
+    if (pos === 1) { const d = pts - rows[1].p; return d > 0 ? 'Líder, ' + pp(d) + ' à frente do 2º.' : 'Líder, empatado em pontos com o 2º.'; }
+    if (pos > zone) return pos + 'º, na zona: ' + pp(dif(zone) + 1) + ' para sair.';
+    if (pos > top) return pos + 'º: ' + pp(dif(top)) + ' para ' + name + '.';
+    return pos + 'º: ' + pp(dif(1)) + ' para a liderança.';
   }
   const flyBack = x => (G.c.fc.done || !x.vs ? paintOrEnd() : fly(x, true, paintOrEnd));
   // Viagem entre o celular e o jogo: avião para jogo fora, ônibus para jogo em casa; a tela troca no meio do caminho
