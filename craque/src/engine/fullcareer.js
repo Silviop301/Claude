@@ -67,8 +67,7 @@
     const carry = c.fc && c.fc.season === c.season - 1 ? c.fc.peFrac || 0 : 0;
     const fc = { season: c.season, club: club.id, seed: (Math.imul(Number(c.tseed) || 1, 2654435761) + c.season * 97 + 13) >>> 0, /* imul: a conta comum passava de 2^53 e o ano sumia (calendário igual todo ano) */ i: 0, log: [], peFrac: carry, peCarry: carry, peGot: 0, out: null, done: false };
     // Vida entre os jogos: energia (0-100, cheia na pré-temporada), forma (-2 a +2, metade passa de um ano para o outro)
-    // Equipamento vencido sai (comprado na loja, dura uma ou duas temporadas)
-    if (c.gear && c.gear.until < c.season) c.gear = null;
+    // Equipamento gasto sai (comprado na loja, dura um número de jogos em campo)
     S.fcShopSync(c);
     fc.paid = 0;
     Object.assign(fc, { en: 100, fo: c.fc && c.fc.season === c.season - 1 ? Math.round((c.fc.fo || 0) * 50) / 100 : 0, fit: 0, peTrain: 0, wkDue: false, wkPlan: c.fc && c.fc.wkPlan ? c.fc.wkPlan : ['tec', 'rest'] });
@@ -207,9 +206,10 @@
   // Preços em semanas de salário (acompanham a liga), com um piso para o começo da carreira
   const SHOP = {
     gear: [
-      { id: 'g1', name: 'de treino', wk: 2, b: 1, seasons: 1 },
-      { id: 'g2', name: 'profissional', wk: 6, b: 2, seasons: 1, en: 3 },
-      { id: 'g3', name: 'de ponta', wk: 15, b: 3, seasons: 2, en: 5 },
+      // games: jogos em campo até gastar (a de treino gasta rápido; a de ponta dura umas duas temporadas de titular)
+      { id: 'g1', name: 'de treino', wk: 2, b: 1, games: 20 },
+      { id: 'g2', name: 'profissional', wk: 6, b: 2, games: 35, en: 3 },
+      { id: 'g3', name: 'de ponta', wk: 15, b: 3, games: 70, en: 5 },
     ],
     staff: [
       { id: 'pt', name: 'Preparador físico', w: 0.3, fx: '+8 de energia por semana' },
@@ -239,13 +239,19 @@
   S.fcCarAt = c => (c.life && c.life.car ? SHOP.cars.findIndex(x => x.id === c.life.car) : -1);
   // Atributos que o equipamento pode subir: os três que mais pesam na posição
   S.fcGearAttrs = c => S.attrOrder(c.pos).slice(0, 3);
-  S.fcShopSync = c => { c.shopB = c.gear && c.gear.until >= c.season ? { [c.gear.attr]: c.gear.b } : null; };
+  // Save antigo (equipamento por temporada): vira jogos, o que sobrou da duração nova; vencido sai
+  S.fcShopSync = c => {
+    const g = c.gear;
+    if (g && g.left === undefined) { const d = SHOP.gear.find(x => x.id === g.id); if (g.until >= c.season && d) { g.games = d.games; g.left = d.games; } else c.gear = null; delete g.until; }
+    if (c.gear && !(c.gear.left > 0)) c.gear = null;
+    c.shopB = c.gear ? { [c.gear.attr]: c.gear.b } : null;
+  };
   // Compra: equipamento (troca o atual), equipe (liga ou desliga; paga por semana) e estilo de vida (uma vez na carreira)
   S.fcBuy = function (c, kind, id, attr) {
     if (kind === 'gear') {
       const g = SHOP.gear.find(x => x.id === id), p = S.fcGearPrice(c, id);
       if (!g || (c.money || 0) < p || !S.fcGearAttrs(c).includes(attr)) return false;
-      c.money -= p; c.gear = { id, attr, b: g.b, en: g.en || 0, until: c.season + g.seasons - 1 }; S.fcShopSync(c); return true;
+      c.money -= p; c.gear = { id, attr, b: g.b, en: g.en || 0, games: g.games, left: g.games }; if (c.fc) c.fc.gearOut = null; S.fcShopSync(c); return true;
     }
     if (kind === 'staff') {
       c.staff = c.staff || {};
@@ -675,6 +681,8 @@
         // Pontos de evolução jogo a jogo (até o limite do ano)
         const g = my.rating >= S.PE_R2 ? PE_STEP.great : my.rating >= S.PE_R1 ? PE_STEP.good : my.rating >= PE_OK ? PE_STEP.ok : PE_STEP.low;
         out.pe = give(c, fc, g);
+        // Equipamento: cada jogo em campo gasta um; no último, rasga e sai (a loja vende outro)
+        if (c.gear) { c.gear.left--; out.gear = { id: c.gear.id, left: c.gear.left, games: c.gear.games }; if (c.gear.left <= 0) { fc.gearOut = c.gear.id; c.gear = null; S.fcShopSync(c); } }
         // Energia gasta no jogo (o treino físico poupa nas próximas semanas) e forma pela nota
         if (fc.en !== undefined) {
           out.en = Math.max(0, Math.round((20 + r() * 10) * (fc.fit > 0 ? 0.7 : 1) * INS_BY[S.fcIns(c)].en) - (c.gear && c.gear.en ? c.gear.en : 0));
