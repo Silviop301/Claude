@@ -343,7 +343,7 @@
     const nx = fc && !fc.done ? S.fcNext(c) : null;
     const big = nx ? S.fcBig(c, nx) : '';
     const out = play.apply(this, arguments);
-    if (out && c.mode === 'completa') after(c, out, big);
+    if (out && c.mode === 'completa') { after(c, out, big); if (c.fc && c.fc.wkDue && c.ppl) invOpen(c); }
     return out;
   };
   function after(c, out, big) {
@@ -428,6 +428,168 @@
     const by = {};
     P.inbox.forEach((m, k) => { (by[m.p] = by[m.p] || []).push(Object.assign({ k }, m)); });
     return Object.keys(by).map(id => ({ id, c: S.fcContact(c, id), msgs: by[id] })).sort((a, b) => b.msgs[b.msgs.length - 1].k - a.msgs[a.msgs.length - 1].k);
+  };
+
+  // ---------- convites da semana (fase 2, parte 2) ----------
+  // Chegam no celular quando a semana abre (0 a 2 por semana) e ocupam um dia da agenda. Cada um tem uma opção segura
+  // (ganho pequeno e certo) e uma arriscada (pode dar muito, com um lado ruim de verdade); não responder é a terceira
+  // escolha, e a pessoa lembra. A resposta sai na hora (o sorteio da arriscada também), não dá para voltar atrás.
+  // fx: en (energia), wk (salários da semana: + recebe, − paga), fame, fans, coach, pe (passo de treino), rel {pessoa: n}
+  // Na tela, a relação aparece como "Biel gosta" ou "Biel fica chateado", nunca o número.
+  const INV = [
+    { id: 'niver', p: 'parca', t: ['mano aniversário da minha mãe sábado, ela perguntou se tu vem 🥺', 'sábado tem niver da minha coroa, ela fez questão de te chamar', 'mano minha mãe faz 60 sábado. vai ter bolo e pagode, tu vem?'],
+      a: { l: 'Mandar um presente', fx: { wk: -0.25, rel: { parca: 2 } }, re: 'valeu pelo presente mano, ela amou. mas sentiu tua falta kkkk' },
+      b: { l: 'Ir à festa', p: 0.7, win: { tag: 'Noite boa', fx: { en: -8, rel: { parca: 7, mae: 2 } }, re: 'mano minha mãe não para de falar que tu veio kkkk valeu demais' },
+        lose: { tag: 'Virou madrugada', fx: { en: -22, coach: -3, rel: { parca: 7 } }, re: 'kkkkk tu dormiu no sofá mano. chegou atrasado no treino né' } },
+      ig: { fx: { rel: { parca: -7 } }, re: 'visualizou e não respondeu né. de boa', mem: 'niver' } },
+    { id: 'gravacao', p: 'emp', t: ['Gravação pra uma marca de energético amanhã cedo. Paga bem.', 'Uma marca de tênis quer você num comercial. Uma manhã só, dinheiro bom.', 'Campanha de celular pra gravar amanhã. É rápido e o cachê é ótimo.'],
+      a: { l: 'Recusar', fx: { rel: { emp: -2 } }, re: 'Tudo bem. Mas dinheiro assim não aparece toda semana.' },
+      b: { l: 'Gravar', p: 0.6, win: { tag: 'Comercial no ar', fx: { wk: 0.8, fame: 2, en: -8, rel: { emp: 4 } }, re: 'Ficou ótimo, meu garoto! Já tem outra marca perguntando.' },
+        lose: { tag: 'Virou meme', fx: { wk: 0.8, fans: -4, en: -8 }, re: 'O vídeo virou meme. Calma, semana que vem ninguém lembra.' } },
+      ig: { fx: { rel: { emp: -5 } }, re: 'Te liguei três vezes. A marca fechou com outro.', mem: 'marca' } },
+    { id: 'aluguel', p: 'mae', need: 2, t: ['Filho a tia Neide precisa de ajuda com o aluguel, só esse mês', 'Filho seu primo perdeu o emprego. Será que dá pra ajudar com o aluguel dele?', 'Filho não queria pedir mas a casa da sua avó precisa de reforma no telhado'],
+      a: { l: 'Mandar metade', fx: { wk: -1, rel: { mae: 3 } }, re: 'Obrigada filho, já ajuda muito. Deus te abençoe' },
+      b: { l: 'Pagar tudo', p: 0.6, win: { tag: 'Resolvido', fx: { wk: -1.5, rel: { mae: 10 } }, re: 'Filho vc é um anjo. A família toda tá agradecida' },
+        lose: { tag: 'Virou todo mês', fx: { wk: -3, rel: { mae: 10 } }, re: 'Filho... pediram de novo esse mês. Desculpa, sei que é muito' } },
+      ig: { fx: { rel: { mae: -8 } }, re: 'Tudo bem filho. A gente se vira aqui', mem: 'aluguel' } },
+    { id: 'faltas', p: 'coach', t: ['Quem quiser ficar depois do treino batendo falta, fico até as 13h.', 'Treino extra de finalização amanhã depois do almoço. Opcional.', 'Vou ficar trabalhando posicionamento com quem quiser depois do treino.'],
+      a: { l: 'Ir para casa descansar', fx: { en: 5 }, re: 'Tudo bem. Descanso também é treino.' },
+      b: { l: 'Ficar no treino extra', p: 0.75, win: { tag: 'Treino bom', fx: { pe: 1, coach: 3, en: -10 }, re: 'Gostei de ver. É assim que se ganha vaga.' },
+        lose: { tag: 'Sentiu a coxa', fx: { en: -22, coach: 1 }, re: 'Exagerou. Vai pro gelo e descansa.' } },
+      ig: { fx: { coach: -1 }, re: 'Senti tua falta no treino extra.' } },
+    { id: 'exclusiva', p: 'jor', t: ['Exclusiva amanhã? Prometo uma pergunta só sobre a seleção.', 'Quero fazer um perfil seu pro programa de domingo. Topa?', 'Tem meia hora amanhã? Matéria grande sobre a sua fase.'],
+      a: { l: 'Recusar com educação', fx: { rel: { jor: -1 } }, re: 'Entendo. Fica pra próxima.' },
+      b: { l: 'Dar a entrevista', p: 0.65, press: 0.85, win: { tag: 'Matéria boa', fx: { fame: 3, en: -4, rel: { jor: 5 } }, re: 'Ficou linda a matéria. Obrigada!' },
+        lose: { tag: 'Frase polêmica', fx: { fame: 1, coach: -4, en: -4, rel: { cap: -5 } }, re: 'Sua frase sobre o técnico virou manchete. Não fui eu que escolhi o título!' } },
+      ig: { fx: { rel: { jor: -4 } }, re: 'Sem resposta, vou escrever com o que eu tenho.' } },
+    { id: 'emprestimo', p: 'cap', need: 1, t: ['Vou emprestar uma grana pro {x}, ele tá apertado. Entra comigo?', 'O {x} tá enrolado com dívida. O grupo vai ajudar. Tá dentro?', 'Vaquinha pro {x}, a casa dele alagou. Contribui?'],
+      a: { l: 'Dizer que não pode', fx: { rel: { cap: -1 } }, re: 'Beleza, sem problema.' },
+      b: { l: 'Emprestar', p: 0.5, win: { tag: 'Devolveu', fx: { rel: { cap: 6 }, coach: 1 }, re: 'O {x} devolveu tudo e mandou um abraço. Isso é grupo.' },
+        lose: { tag: 'Não voltou', fx: { wk: -1, rel: { cap: 6 } }, re: 'O {x} sumiu com a grana. Foi mal, moleque. Não esqueço que você ajudou.' } },
+      ig: { fx: { rel: { cap: -4 } }, re: 'Te chamei e nada. O grupo reparou.' } },
+    { id: 'post', p: 'emp', t: ['Marca de chuteira quer um post seu. Simples, ou uma campanha grande?', 'Um app de delivery quer você. Post rápido ou campanha com gravação?', 'Marca de relógio na linha. Story simples ou ensaio de fotos completo?'],
+      a: { l: 'Só o post', fx: { wk: 0.4 }, re: 'Feito. Pinga na conta essa semana.' },
+      b: { l: 'Campanha grande', p: 0.65, win: { tag: 'Campanha no ar', fx: { wk: 1.5, fame: 2, en: -10, rel: { emp: 3 } }, re: 'Campanha no ar e teu rosto em todo ponto de ônibus!' },
+        lose: { tag: 'Campanha cancelada', fx: { en: -10, rel: { emp: -1 } }, re: 'A marca cancelou depois da gravação. Mercado é assim.' } },
+      ig: { fx: { rel: { emp: -4 } }, re: 'Perdemos a marca. Responde o celular, garoto.' } },
+    { id: 'churrasco', p: 'cap', t: ['Churrasco do elenco sábado. Aparece', 'Resenha do grupo depois do treino de sábado. Conto contigo', 'Aniversário do roupeiro sábado, o grupo todo vai'],
+      a: { l: 'Passar rapidinho', fx: { en: -3, rel: { cap: 2 } }, re: 'Valeu por aparecer.' },
+      b: { l: 'Ficar até o fim', p: 0.7, win: { tag: 'Grupo fechado', fx: { en: -10, coach: 1, rel: { cap: 6 } }, re: 'Que resenha! O grupo tá fechado contigo.' },
+        lose: { tag: 'Exagerou', fx: { en: -20, coach: -3, rel: { cap: 3 } }, re: 'Moleque, o técnico ficou sabendo da hora que você saiu.' } },
+      ig: { fx: { rel: { cap: -5 } }, re: 'Faltou só você no churrasco.' } },
+    { id: 'resenha', p: 'parca', t: ['e aí sumido, sexta tem resenha lá em casa', 'mano sexta tem pagode no bar do seu Zé, a turma toda vai', 'bora jogar uma bola com a rapaziada do bairro sexta? igual antigamente'],
+      a: { l: 'Passar só pra dar oi', fx: { en: -4, rel: { parca: 2 } }, re: 'valeu ter vindo mano, mesmo que rapidinho' },
+      b: { l: 'Virar a noite', p: 0.65, win: { tag: 'Noite lendária', fx: { en: -10, rel: { parca: 7 } }, re: 'mano que noite kkkk igual nos velhos tempos' },
+        lose: { tag: 'Foto vazou', fx: { en: -10, fans: -2, coach: -2, rel: { parca: 5 } }, re: 'mano vazou uma foto tua de madrugada kkkk foi mal, não fui eu' } },
+      ig: { fx: { rel: { parca: -5 } }, re: 'tá famoso demais pros parça né kkkk', mem: 'resenha' } },
+    { id: 'visita', p: 'mae', t: ['Filho posso ir te ver no fim de semana? Saudade', 'Filho seu pai quer ver um jogo seu no estádio. A gente pode ir?', 'Filho tô com saudade. Que tal eu passar uns dias ai?'],
+      a: { l: 'Mandar passagem e ingresso', fx: { wk: -0.3, rel: { mae: 3 } }, re: 'Obrigada filho! Vou torcer da arquibancada' },
+      b: { l: 'Receber em casa', p: 0.6, win: { tag: 'Comida de mãe', fx: { en: 5, rel: { mae: 6 } }, re: 'Deixei comida congelada pra semana toda. Te amo' },
+        lose: { tag: 'Veio a família toda', fx: { en: -12, wk: -0.8, rel: { mae: 6 } }, re: 'Desculpa filho, seus tios quiseram vir junto kkk' } },
+      ig: { fx: { rel: { mae: -7 } }, re: 'Tudo bem. Fica pra outra vez', mem: 'visita' } },
+    { id: 'podcast', p: 'jor', t: ['Vou apresentar um podcast novo. Topa ser o primeiro convidado?', 'Mesa redonda ao vivo domingo à noite. Quer vir?', 'Live com a torcida no meu canal amanhã. Uma hora só.'],
+      a: { l: 'Recusar', fx: { rel: { jor: -1 } }, re: 'Tranquilo. Fica o convite.' },
+      b: { l: 'Ir ao programa', p: 0.6, press: 0.8, win: { tag: 'Bombou', fx: { fame: 3, fans: 1, en: -6, rel: { jor: 4 } }, re: 'Recorde de audiência! Volta quando quiser.' },
+        lose: { tag: 'Falou demais', fx: { fame: 2, coach: -5, en: -6 }, re: 'Aquela parte sobre o banco repercutiu. O clube não gostou.' } },
+      ig: { fx: { rel: { jor: -3 } }, re: 'Achei que ia responder. Chamei outro.' } },
+  ];
+  const INV_BY = Object.fromEntries(INV.map(x => [x.id, x]));
+  S.FC_INV = INV;
+  Object.assign(MEM, {
+    niver: { p: 'parca', t: 'lembra quando tu furou o niver da minha mãe? ela ainda fala kkkk. mas sexta tu vem né' },
+    marca: { p: 'emp', t: 'Lembra da marca que você deixou passar? Hoje é a maior do país. Só dizendo.' },
+    aluguel: { p: 'mae', t: 'Lembra quando a tia Neide precisou e vc não respondeu? Ela já esqueceu. Eu não' },
+    resenha: { p: 'parca', t: 'mano fizeram um churrasco dos amigos de escola e ninguém te chamou. achei que tu nem ia querer kkkk' },
+    visita: { p: 'mae', t: 'Seu pai guardou o ingresso daquele jogo que a gente não foi. Ainda tá na carteira dele' },
+  });
+  const weekPay = c => Math.round((c.wage || 0) * 52 / Math.max(1, (c.fc && c.fc.cal ? c.fc.cal.length : 46)));
+  // Valor de um efeito em "semanas" (só para o robô e a auditoria): energia, dinheiro em salários, fama, torcida, técnico,
+  // treino e relação. Escala pequena, da semana: não é a mesma régua dos eventos da temporada
+  S.fcInvValue = function (c, fx) {
+    let v = (fx.en || 0) * 0.1 + (fx.wk || 0) * 1 + (fx.fame || 0) * 0.4 + (fx.fans || 0) * 0.3 + (fx.coach || 0) * 0.3 + (fx.pe || 0) * 1.5;
+    for (const k in (fx.rel || {})) v += fx.rel[k] * 0.12;
+    return v;
+  };
+  const pOf = (c, o) => (o.press && c.staff && c.staff.press ? o.press : o.p);
+  S.fcInvEV = (c, inv, k) => { const d = INV_BY[inv.id]; if (k === 'ig') return S.fcInvValue(c, d.ig.fx); if (k === 'a') return S.fcInvValue(c, d.a.fx); const p = pOf(c, d.b); return p * S.fcInvValue(c, d.b.win.fx) + (1 - p) * S.fcInvValue(c, d.b.lose.fx); };
+  // O efeito na tela: "−10 energia", "+R$ 3 mil", "Fama +2", "Biel gosta", "Técnico −3", "+evolução"
+  S.fcInvParts = function (c, fx) {
+    const P = [], money = n => 'R$ ' + (Math.abs(n) >= 1e6 ? (Math.abs(n) / 1e6).toFixed(1).replace('.', ',') + ' mi' : Math.round(Math.abs(n) / 1000) + ' mil');
+    if (fx.en) P.push((fx.en > 0 ? '+' : '−') + Math.abs(fx.en) + ' energia');
+    if (fx.wk) P.push((fx.wk > 0 ? '+' : '−') + money(Math.max(1000, Math.round(Math.abs(fx.wk) * weekPay(c) / 1000) * 1000)));
+    if (fx.pe) P.push('+' + String(S.FC_TRAIN_STEP).replace('.', ',') + ' de evolução');
+    if (fx.fame) P.push('Fama ' + (fx.fame > 0 ? '+' : '−') + Math.abs(fx.fame));
+    if (fx.fans) P.push('Torcida ' + (fx.fans > 0 ? '+' : '−') + Math.abs(fx.fans));
+    if (fx.coach) P.push('Técnico ' + (fx.coach > 0 ? '+' : '−') + Math.abs(fx.coach));
+    for (const k in (fx.rel || {})) { const n = S.fcContact(c, k).name; P.push(k === 'mae' ? (fx.rel[k] > 0 ? 'Sua mãe gosta' : 'Sua mãe fica chateada') : n + (fx.rel[k] > 0 ? ' gosta' : ' fica chateado')); }
+    return P;
+  };
+  function applyInv(c, fx) {
+    const fc = c.fc;
+    if (fx.en) fc.en = clamp(fc.en + fx.en, 0, 100);
+    if (fx.wk) { const m = Math.max(1000, Math.round(Math.abs(fx.wk) * weekPay(c) / 1000) * 1000) * Math.sign(fx.wk); c.money = Math.max(0, (c.money || 0) + m); }
+    if (fx.fame) c.fame += fx.fame;
+    if (fx.fans) c.rel.fans = clamp(c.rel.fans + fx.fans, 0, 100);
+    if (fx.coach) c.rel.coach = clamp(c.rel.coach + fx.coach, 0, 100);
+    if (fx.pe) S.fcTrainPe(c);
+    for (const k in (fx.rel || {})) rel(c, k, fx.rel[k]);
+  }
+  const nm = c => { const n = D.randomName ? D.randomName(leagueCountry(c), rngFor(c, 0xD0 + c.fc.i)) : 'Kauã'; return n.split(' ')[0]; };
+  // Abre a semana: sorteia os convites (no máximo 2 do mesmo tipo por temporada e com 5 semanas de folga entre eles)
+  function invOpen(c) {
+    const P = c.ppl, fc = c.fc;
+    if (!fc.wkDue || P.invAt === fc.season * 1000 + fc.i) return;
+    P.invAt = fc.season * 1000 + fc.i; P.wk = (P.wk || 0) + 1; P.invLast = P.invLast || {}; P.invN = P.invS === c.season ? P.invN || {} : {}; P.invS = c.season;
+    const r = rngFor(c, 0x1A7E + (c.season || 0) * 613 + fc.i * 29);
+    const n = r() < 0.5 ? 0 : r() < 0.76 ? 1 : 2;
+    const ok = INV.filter(d => (d.p !== 'cap' || P.p.cap) && (P.invN[d.id] || 0) < 2 && P.wk - (P.invLast[d.id] || -99) >= 5 && (!d.need || (c.money || 0) >= d.need * 2 * weekPay(c)));
+    fc.inv = [];
+    for (let k = 0; k < n && ok.length; k++) {
+      const d = ok.splice(Math.floor(r() * ok.length), 1)[0];
+      if (fc.inv.some(x => INV_BY[x.id].p === d.p)) continue; // uma pessoa, um convite por semana
+      P.invT = P.invT || {}; const ti = ((P.invT[d.id] === undefined ? Math.floor(r() * d.t.length) - 1 : P.invT[d.id]) + 1) % d.t.length; P.invT[d.id] = ti; // os textos se revezam
+      fc.inv.push({ id: d.id, ti, x: d.id === 'emprestimo' ? nm(c) : '', ans: null });
+      P.invLast[d.id] = P.wk; P.invN[d.id] = (P.invN[d.id] || 0) + 1;
+    }
+  }
+  S.fcInvites = c => (c.fc && c.fc.wkDue && c.fc.inv) || [];
+  S.fcInvText = (c, inv) => fill(c, INV_BY[inv.id].t[inv.ti], { x: inv.x });
+  S.fcInvDef = inv => INV_BY[inv.id];
+  // Responde: 'a' (segura) ou 'b' (arriscada, sorteada agora). Volta o que aconteceu
+  S.fcInvAnswer = function (c, k, ans) {
+    const fc = c.fc, inv = (fc.inv || [])[k];
+    if (!inv || inv.ans || !fc.wkDue || (ans !== 'a' && ans !== 'b')) return null;
+    const d = INV_BY[inv.id], r = rngFor(c, 0x5A5E + (c.season || 0) * 211 + fc.i * 41 + k);
+    let o, ok = true;
+    if (ans === 'a') o = d.a;
+    else { const roll = Math.floor(r() * 100) + 1, p = Math.round(pOf(c, d.b) * 100); ok = roll <= p; o = ok ? d.b.win : d.b.lose; inv.roll = roll; inv.p = p; }
+    applyInv(c, o.fx); inv.ans = ans; inv.ok = ok; inv.tag = o.tag || '';
+    post(c, d.p, fill(c, o.re, { x: inv.x }), S.fcTone(c, d.p));
+    if (ans === 'a' && d.id === 'niver') remember(c, 'parca', 'niver', '');
+    return { ok, tag: o.tag || '', parts: S.fcInvParts(c, o.fx) };
+  };
+  // Fecha a semana: o que ficou sem resposta
+  S.fcInvClose = function (c, out) {
+    const fc = c.fc;
+    if (!c.ppl || !fc.inv) return;
+    (fc.inv || []).forEach(inv => {
+      if (inv.ans) return;
+      const d = INV_BY[inv.id];
+      applyInv(c, d.ig.fx); inv.ans = 'ig';
+      post(c, d.p, fill(c, d.ig.re, { x: inv.x }), S.fcTone(c, d.p));
+      if (d.ig.mem) remember(c, d.p, d.ig.mem, '');
+    });
+    if (out) out.inv = fc.inv.map(x => ({ id: x.id, ans: x.ans, ok: x.ok }));
+    fc.inv = null;
+  };
+  // Robô (simulador e auditoria): responde cada convite pela melhor média; RND=1 responde ao acaso
+  S.fcInvAuto = function (c, rnd) {
+    S.fcInvites(c).forEach((inv, k) => {
+      if (inv.ans) return;
+      const opts = ['a', 'b', 'ig'];
+      const pick = rnd ? opts[Math.floor(Math.random() * 3)] : opts.sort((x, y) => S.fcInvEV(c, inv, y) - S.fcInvEV(c, inv, x))[0];
+      if (pick !== 'ig') S.fcInvAnswer(c, k, pick);
+    });
   };
 
   if (typeof module !== 'undefined') module.exports = S;

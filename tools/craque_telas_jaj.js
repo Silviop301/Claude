@@ -134,6 +134,14 @@ const INIT = `
     if (await has('[data-ch]')) { await tap('[data-ch]'); await shot('chat-conversa'); await tap('#fc-back'); }
     await tap('#fc-back'); await wait(400);
   }
+  // Convites da semana na agenda (fase 2, parte 2): garante dois para a foto, responde o arriscado
+  const temConvite = await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; if (!window.CRAQUE_SIM.fcInvites) return false; c.fc.wkDue = true; // só para a foto: a semana aberta de novo
+    if (!(c.fc.inv || []).length) c.fc.inv = [{ id: 'niver', ti: 0, x: '', ans: null }, { id: 'faltas', ti: 0, x: '', ans: null }]; return true; });
+  if (temConvite) {
+    await tap('.ph-app[data-go="ag"]'); await shot('agenda-convites');
+    if (await has('[data-inv][data-a="b"]')) { await tap('[data-inv][data-a="b"]'); await shot('agenda-convite-respondido'); }
+    await tap('#fc-agok'); await wait(400);
+  }
 
   // Até um jogo com lance (simula os do meio com a carta decidindo) e a parada do lance
   const got = await page.evaluate(() => {

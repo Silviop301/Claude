@@ -17,8 +17,8 @@
   const wide = () => window.matchMedia && window.matchMedia('(min-width: 1000px) and (min-height: 560px)').matches;
 
   // ---------- agenda da semana (tela central) ----------
-  // A semana entre um jogo e outro como página de agenda: os dias até o jogo, dois deles com as ações da semana
-  // (S.fcWeek: as mesmas duas ações de sempre), os outros com a rotina do clube. Liga no domingo, copa e continental na quarta.
+  // A semana entre um jogo e outro como página de agenda: os dias até o jogo, o primeiro com o treino da semana
+  // (S.fcWeek), os seguintes com os convites do celular (engine/phone.js) e o resto com a rotina do clube. Liga no domingo, copa e continental na quarta.
   const DAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
   const dayOf = e => (e && e.k === 'lg' ? 6 : 2);
   let agOpen = -1; // dia de ação aberto para trocar
@@ -83,8 +83,11 @@
     const coach = c.ppl ? who('coach') : 'Técnico';
     if (nx.injury) n(null, /suspensão/.test(nx.injury) ? 'Diretoria' : 'Departamento médico', /suspensão/.test(nx.injury) ? (/manipula/.test(fc.injName) ? 'Suspenso pelo caso do cartão combinado: fora por mais ' : 'Suspenso por causa da aposta: fora por mais ') + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') : nx.injury.charAt(0).toUpperCase() + nx.injury.slice(1) + ': fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') + (fc.wkDue ? ' Fisioterapia na semana ajuda.' : ''));
     else if (nx.vs) n(null, coach, nx.on === null ? 'Escalo o time depois do treino da semana. Hoje você tem ' + p + '% de chance de começar.' : nx.on ? 'Amanhã você começa jogando. Conto contigo.' : nx.why === 'cansaço' ? 'Vou te poupar amanhã, você tá sem perna. Descansa.' : nx.why === 'banco' ? 'Amanhã você começa no banco. Treina forte que a chance aparece.' : 'Amanhã vou rodar o elenco e você fica fora.');
-    const A = id => (S.FC_WEEK.find(a => a.id === id) || S.FC_WEEK[2]).name.toLowerCase();
-    if (fc.wkDue) { if (!pick) pick = S.fcWeekAuto(c); n('ag', 'Agenda', 'Semana marcada: ' + A(pick[0]) + ' e ' + A(pick[1]) + '. Toque para mudar.'); }
+    const A = id => (S.FC_WEEK.find(a => a.id === id) || S.FC_WEEK[2]).name.toLowerCase().replace(/^treino /, '');
+    // Convites da semana ainda sem resposta (cada um abre a agenda, onde se responde)
+    const open = S.fcInvites(c).filter(x => !x.ans);
+    open.slice(0, 2).forEach(x => n('ag', who(S.fcInvDef(x).p), S.fcInvText(c, x)));
+    if (fc.wkDue) { if (!pick) pick = S.fcWeekAuto(c); n('ag', 'Agenda', 'Treino da semana: ' + A(pick[0]) + (open.length ? '. ' + (open.length === 1 ? '1 convite' : open.length + ' convites') + ' esperando resposta.' : '. Toque para mudar.')); }
     else if (fc.wkSum && fc.wkSum.at === fc.i) n('ag', 'Agenda', 'Semana feita: ' + fc.wkSum.acts.map(A).join(' e ') + '. Energia ' + Math.round(fc.wkSum.en0) + ' → ' + Math.round(fc.wkSum.en1) + '.');
     // Roupeiro: a chuteira (ou luva) acabando ou já rasgada
     const gw = c.pos === 'GOL' ? 'luva' : 'chuteira';
@@ -98,6 +101,22 @@
     else if (S.fcBetRound(c) && !(fc.zeMad > fc.i)) n('bet', 'Zé', 'A rodada tá aberta, com jogo de fora também. Quer ver?');
     return out;
   }
+  // Um convite na agenda: quem chamou, o recado e as duas respostas (a segura com o que dá, a arriscada com a chance de cada
+  // lado). Sem tocar em nada, a semana fecha sem resposta, e isso a pessoa também lembra. Respondido: o que aconteceu.
+  function invCard(c, x, k, day) {
+    const d = S.fcInvDef(x), who = S.fcContact(c, d.p), wn = d.p === 'mae' ? 'Mãe' : who.name + ', ' + who.role;
+    const parts = fx => S.fcInvParts(c, fx).map(esc).join(' · ') || 'nada muda';
+    const head = '<p class="iv-w"><b>' + day + '</b><span><small>' + esc(wn) + '</small>' + esc(S.fcInvText(c, x)) + '</span></p>';
+    if (x.ans) {
+      const o = x.ans === 'a' ? d.a : x.ok ? d.b.win : d.b.lose, lab = x.ans === 'a' ? d.a.l : d.b.l;
+      return '<div class="ag-iv done ' + (x.ans === 'b' ? (x.ok ? 'win' : 'lose') : '') + '">' + head + '<p class="iv-r"><b>' + esc(lab) + (x.ans === 'b' ? ' · ' + esc(o.tag) + ' (tirou ' + x.roll + ', precisava até ' + x.p + ')' : '') + '</b><span>' + parts(o.fx) + '</span></p></div>';
+    }
+    const p = Math.round(((d.b.press && c.staff && c.staff.press) ? d.b.press : d.b.p) * 100);
+    return '<div class="ag-iv">' + head + '<div class="iv-o">' +
+      '<button class="iv-b safe" data-inv="' + k + '" data-a="a"><em>SEGURA</em><b>' + esc(d.a.l) + '</b><small>' + parts(d.a.fx) + '</small></button>' +
+      '<button class="iv-b risk" data-inv="' + k + '" data-a="b"><em>ARRISCADA</em><b>' + esc(d.b.l) + '</b><small><i class="up">' + p + '%: ' + parts(d.b.win.fx) + '</i><i class="down">' + (100 - p) + '%: ' + parts(d.b.lose.fx) + '</i></small></button>' +
+      '</div><p class="iv-n">Sem resposta: ' + parts(d.ig.fx) + '</p></div>';
+  }
   function agenda() {
     const c = G.c, nx = S.fcNext(c), fc = c.fc;
     const lg = standings('lg'), posOf = id => lg.findIndex(x => x.id === id) + 1, me = posOf(c.club);
@@ -105,32 +124,41 @@
     // Os dias: do dia seguinte ao último jogo até a véspera deste
     const gd = dayOf(nx.e), pd = fc.i > 0 ? dayOf(fc.cal[fc.i - 1]) : 6;
     const days = []; for (let d = (pd + 1) % 7; d !== gd; d = (d + 1) % 7) days.push(d);
-    const slots = days.length >= 4 ? [0, 2] : [0, 1];
     const open = fc.wkDue, done = !open && fc.wkSum && fc.wkSum.at === fc.i ? fc.wkSum : null;
-    if (open) { if (!pick) pick = S.fcWeekAuto(c); pick = pick.map((id, k) => (S.fcWeekOk(c, id, pick.slice(0, k)) ? id : 'rest')); }
+    if (open) { if (!pick) pick = S.fcWeekAuto(c); if (!S.fcWeekOk(c, pick[0], [])) pick = ['rest']; }
     const acts = open ? pick : done ? done.acts : null;
     const A = id => S.FC_WEEK.find(a => a.id === id) || S.FC_WEEK[2];
     const city = nameOf(nx.vs || c.club);
     const routine = k => (k === days.length - 1 && nx.vs ? (nx.home ? 'Concentração' : 'Viagem para jogar com o ' + city) : k === 0 && fc.i > 0 ? 'Recuperação com o elenco' : ['Treino com o elenco', 'Treino tático', 'Treino com o elenco', 'Coletiva no CT'][k % 4]);
-    const rows = days.map((d, k) => {
-      const si = slots.indexOf(k);
-      if (si < 0 || !acts) return '<div class="ag-d fix"><b>' + DAYS[d] + '</b><span>' + esc(routine(k)) + '</span></div>';
-      const a = A(acts[si]);
-      const row = '<button class="ag-d slot' + (agOpen === si ? ' on' : '') + (open ? '' : ' done') + '" data-slot="' + si + '"' + (open ? '' : ' disabled') + '><b>' + DAYS[d] + '</b><span>' + esc(a.name) + '</span><em class="' + (a.en > 0 ? 'up' : 'down') + '">' + sgn(a.en, String) + '</em>' + (open ? '<i aria-hidden="true">trocar</i>' : '<i class="ok" aria-hidden="true">' + U.ICON.check + '</i>') + '</button>';
-      if (!open || agOpen !== si) return row;
-      const other = pick[1 - si];
+    // O treino da semana no primeiro dia; os convites do celular nos dias seguintes (sobrando convite, ele entra mesmo assim)
+    const invs = open ? S.fcInvites(c) : [], tslot = 0, islot = k => (k >= 1 && k - 1 < invs.length && k < days.length - (nx.vs ? 1 : 0) ? k - 1 : -1);
+    const used = new Set();
+    const trainRow = d => {
+      const a = A(acts[0]);
+      const row = '<button class="ag-d slot' + (agOpen === 0 ? ' on' : '') + (open ? '' : ' done') + '" data-slot="0"' + (open ? '' : ' disabled') + '><b>' + DAYS[d] + '</b><span>' + esc(a.name) + '</span><em class="' + (a.en > 0 ? 'up' : 'down') + '">' + sgn(a.en, String) + '</em>' + (open ? '<i aria-hidden="true">trocar</i>' : '<i class="ok" aria-hidden="true">' + U.ICON.check + '</i>') + '</button>';
+      if (!open || agOpen !== 0) return row;
       return row + '<div class="ag-pick">' + S.FC_WEEK.map(o => {
-        const ok = S.fcWeekOk(c, o.id, [other]);
+        const ok = S.fcWeekOk(c, o.id, []);
         return '<button class="ag-o' + (o.id === a.id ? ' on' : '') + '" data-id="' + o.id + '"' + (ok ? '' : ' disabled') + '><b>' + esc(o.name) + '</b><small>' + esc(wkFx(c, o)) + '</small><em class="' + (o.en > 0 ? 'up' : 'down') + '">' + sgn(o.en, String) + '</em></button>';
       }).join('') + '</div>';
-    }).join('');
+    };
+    const R = days.map((d, k) => {
+      if (k === tslot && acts) return trainRow(d);
+      const ii = islot(k);
+      if (ii >= 0) { used.add(ii); return invCard(c, invs[ii], ii, DAYS[d]); }
+      return '<div class="ag-d fix"><b>' + DAYS[d] + '</b><span>' + esc(routine(k)) + '</span></div>';
+    });
+    // Semana curta: os convites que sobraram entram antes da viagem ou da concentração
+    const extra = invs.map((x, k) => (used.has(k) ? '' : invCard(c, x, k, DAYS[days[Math.max(0, Math.min(k + 1, days.length - (nx.vs ? 2 : 1)))]]))).join('');
+    const cut = nx.vs && R.length > 1 ? R.length - 1 : R.length;
+    const rows = R.slice(0, cut).join('') + extra + R.slice(cut).join('');
     // O dia do jogo: adversário e a sua situação (titular, banco, lesão ou a chance de começar antes da escalação)
     const st = !nx.vs ? 'Seu time folga nesta rodada' : nx.injury ? (/suspensão/.test(nx.injury) ? 'Suspenso' : 'Lesionado') + (nx.injLeft > 1 ? ': fora por ' + nx.injLeft + ' jogos' : ': volta no próximo') :
       nx.on === null ? 'Escalação depois da semana · ' + Math.round(S.fcStartP(c) * 100) + '% de chance de começar' : nx.on ? 'Você começa jogando' : nx.why === 'cansaço' ? 'Poupado: energia baixa' : nx.why === 'banco' ? 'Você fica no banco' : 'Poupado neste jogo';
     const game = '<div class="ag-d game"><b>' + DAYS[gd] + '</b><span>' + (nx.vs ? 'x ' + esc(nameOf(nx.vs)) + ', ' + (nx.home ? 'em casa' : 'fora') + (vsPos ? ' · ' + vsPos + 'º' : '') : 'Folga') + '<small>' + esc(nx.compName) + ' · ' + esc(nx.stage) + '. ' + esc(st) + '</small></span></div>';
     const en = Math.round(open ? S.fcWeekEnergy(c, pick) : fc.en === undefined ? 100 : fc.en);
     const lvl = e => (e < S.FC_EN_OUT ? 'out' : e < S.FC_EN_LOW ? 'low' : 'ok');
-    const sum = done ? '<p class="ag-sum">' + (c.fcAuto ? 'Semana automática' : 'Semana fechada') + ': energia ' + Math.round(done.en0) + ' → ' + Math.round(done.en1) + (done.pe ? ' · +' + num2(done.pe) + ' de evolução' : '') + (done.money > 0 ? ' · +R$ ' + U.money(done.money) : '') + (done.polem ? '. A entrevista virou polêmica e o técnico não gostou.' : '') + '</p>' : '';
+    const sum = done ? '<p class="ag-sum">' + (c.fcAuto ? 'Semana automática' : 'Semana fechada') + ': energia ' + Math.round(done.en0) + ' → ' + Math.round(done.en1) + (done.pe ? ' · +' + num2(done.pe) + ' de evolução' : '') + (done.money > 0 ? ' · +R$ ' + U.money(done.money) : '') + '</p>' : '';
     render('<div class="fc-scr ag" id="fc-scr"><button class="back-link" id="fc-back">‹ Celular</button>' +
       '<div class="ag-book"><header><b>Agenda</b><span>' + esc(fc.lg.name) + (me ? ' · ' + esc(nameOf(c.club)) + ' ' + me + 'º' : '') + '</span></header>' +
         (open ? '<p class="ag-hint">Toque num dia marcado para trocar o que você faz.</p>' : '') +
@@ -141,7 +169,9 @@
       '<button class="btn" id="fc-agok">Pronto</button></div>');
     $('fc-back').onclick = phone; $('fc-agok').onclick = () => { sfx('tap'); phone(); };
     document.querySelectorAll('.ag-d.slot').forEach(b => { b.onclick = () => { sfx('tap'); const k = +b.dataset.slot; agOpen = agOpen === k ? -1 : k; agenda(); }; });
-    document.querySelectorAll('.ag-o').forEach(b => { b.onclick = () => { sfx('tap'); pick[agOpen] = b.dataset.id; touched = true; agOpen = -1; agenda(); }; });
+    document.querySelectorAll('.ag-o').forEach(b => { b.onclick = () => { sfx('tap'); pick = [b.dataset.id]; touched = true; agOpen = -1; agenda(); }; });
+    // Convite: a resposta sai na hora (a arriscada sorteia agora) e não volta atrás
+    document.querySelectorAll('[data-inv]').forEach(b => { b.onclick = () => { const r = S.fcInvAnswer(c, +b.dataset.inv, b.dataset.a); if (!r) return; sfx(r.ok ? 'coin' : 'tap'); save(); bar(); agenda(); }; });
     $('fc-auto').onchange = e => { c.fcAuto = e.target.checked; if (c.fcAuto && c.fc.wkDue) { S.fcWeek(c, myPick()); unpick(); bar(); } save(); agOpen = -1; agenda(); };
     window.scrollTo(0, 0);
   }
@@ -453,7 +483,7 @@
   }
 
   // ---------- a semana entre os jogos ----------
-  // Energia e forma sempre à vista; com a semana aberta, as seis ações (duas por semana) e a energia que fica para o jogo
+  // Energia e forma sempre à vista; com a semana aberta, o treino (um por semana) e a energia que fica para o jogo
   let pick = null, touched = false; // touched: a pessoa mexeu (só aí a escolha vira o plano da semana automática)
   const myPick = () => (touched && pick ? pick.slice() : undefined);
   const unpick = () => { pick = null; touched = false; };
@@ -465,8 +495,7 @@
     if (a.id === 'fis') return 'Cansa menos nos próximos 4 jogos';
     if (a.id === 'rest') return 'Recupera energia';
     if (a.id === 'physio') return 'R$ ' + U.money(S.fcPhysioCost(c)) + (fc.injOut > 0 ? ' · 1 jogo a menos de lesão' : ' · recupera energia');
-    if (a.id === 'spons') return '+R$ ' + U.money(S.fcSponsPay(c)) + ' e fama';
-    return 'Fama, com risco de polêmica';
+    return '';
   }
   function weekBox(only) { // only: só energia e forma (tela de resultado: a semana vem depois)
     const c = G.c, fc = c.fc, el = $('fc-wk');
@@ -482,7 +511,6 @@
       const w = fc.wkSum && fc.wkSum.at === fc.i ? fc.wkSum : null, nm = id => S.FC_WEEK.find(a => a.id === id).name;
       const what = w ? '<p class="fc-wk-sum">' + (c.fcAuto ? 'Semana automática: ' : 'Semana: ') + w.acts.map(nm).join(' + ') + ' · energia ' + Math.round(w.en0) + ' → ' + Math.round(w.en1) +
         (w.pe ? ' · +' + num2(w.pe) + ' de evolução' : '') + (w.money > 0 ? ' · +R$ ' + U.money(w.money) : '') + (w.inj ? ' · lesão: 1 jogo a menos' : '') +
-        (w.polem ? '. A entrevista virou polêmica e o técnico não gostou.' : '') +
         (w.dropped && w.dropped.length ? '. Sem dinheiro para pagar: ' + w.dropped.map(k => S.FC_SHOP.staff.find(x => x.id === k).name).join(', ') + ' saiu.' : '') + '</p>' : '';
       el.className = 'fc-wk';
       el.innerHTML = status + what + (w ? auto : '');
@@ -490,21 +518,20 @@
       return;
     }
     if (!pick) pick = S.fcWeekAuto(c);
-    pick = pick.map((id, k) => (S.fcWeekOk(c, id, pick.slice(0, k)) ? id : 'rest'));
-    const n = id => pick.filter(x => x === id).length;
+    if (!S.fcWeekOk(c, pick[0], [])) pick = ['rest'];
+    const n = id => (pick[0] === id ? 1 : 0);
     const tired = S.fcWeekEnergy(c, pick);
     el.className = 'fc-wk open';
     el.innerHTML = status +
-      '<div class="fc-wk-h"><b>Duas ações até o próximo jogo</b>' + auto + '</div>' +
+      '<div class="fc-wk-h"><b>O treino até o próximo jogo</b>' + auto + '</div>' +
       '<div class="fc-wk-g">' + S.FC_WEEK.map(a => {
-        const ok = n(a.id) > 0 || S.fcWeekOk(c, a.id, [pick[1]]); // tocar troca a ação mais antiga
+        const ok = n(a.id) > 0 || S.fcWeekOk(c, a.id, []);
         return '<button class="fc-wa' + (n(a.id) ? ' on' : '') + '" data-id="' + a.id + '"' + (ok ? '' : ' disabled') + ' aria-pressed="' + (n(a.id) ? 'true' : 'false') + '">' +
-          '<b>' + esc(a.name) + (n(a.id) === 2 ? ' <em>×2</em>' : '') + '</b><small>' + esc(wkFx(c, a)) + '</small><i class="' + (a.en > 0 ? 'up' : 'down') + '">' + sgn(a.en, String) + ' energia</i></button>';
+          '<b>' + esc(a.name) + '</b><small>' + esc(wkFx(c, a)) + '</small><i class="' + (a.en > 0 ? 'up' : 'down') + '">' + sgn(a.en, String) + ' energia</i></button>';
       }).join('') + '</div>' +
       '<p class="fc-wk-p">Energia no próximo jogo: <b class="' + lvl(tired) + '">' + Math.round(tired) + '</b>' +
         (tired < S.FC_EN_OUT ? ' · abaixo de ' + S.FC_EN_OUT + ', o técnico pode poupar você e a lesão fica mais provável' : tired < S.FC_EN_LOW ? ' · abaixo de ' + S.FC_EN_LOW + ', você rende menos' : '') + '</p>';
-    // Toque: a ação entra no lugar da mais antiga (tocar duas vezes na mesma vale as duas ações)
-    el.querySelectorAll('.fc-wa').forEach(b => { b.onclick = () => { sfx('tap'); pick = [pick[1], b.dataset.id]; touched = true; weekBox(); }; });
+    el.querySelectorAll('.fc-wa').forEach(b => { b.onclick = () => { sfx('tap'); pick = [b.dataset.id]; touched = true; weekBox(); }; });
     bindAuto();
   }
   function bindAuto() {

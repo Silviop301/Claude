@@ -132,6 +132,8 @@ function stepInPage(opts) {
   // Agenda (app do celular): troca a ação de um dia e volta com "Pronto"
   if ($('fc-agok')) {
     if (q('.ag-o:not(:disabled)')) return label('completa:agenda-acao ' + click(rnd([...document.querySelectorAll('.ag-o:not(:disabled)')])));
+    // Convites do celular (fase 2): às vezes responde (segura ou arriscada), às vezes deixa sem resposta
+    if (q('[data-inv]') && Math.random() < 0.6) return label('completa:convite ' + click(rnd([...document.querySelectorAll('[data-inv]')])));
     if (q('.ag-d.slot:not(:disabled)') && Math.random() < 0.5) return label('completa:agenda-dia ' + click(rnd([...document.querySelectorAll('.ag-d.slot:not(:disabled)')])));
     return label('completa:agenda-pronto ' + click($('fc-agok')));
   }

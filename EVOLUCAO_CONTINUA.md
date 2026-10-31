@@ -15,7 +15,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 |---|---|---|
 | 0 · Preparar | Os números chegam ao servidor (`api/stats.php`, `src/stats.js`, `tools/craque_numeros.py`) e quem joga o Jogo a Jogo vê o aviso do save novo | no ar (PR #108) |
 | 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **no ar** (PRs #109 a #114): jogos vividos/resumidos/banco, lance em todo jogo, tela limpa, rodada como na TV, faixa "Seu ano", metas da semana e XP por temporada. Tempo real do ano a medir pela contagem (o Silvio pediu para não cortar pelo previsto) |
-| 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | **em andamento**: parte 1 (as pessoas e o Chat) |
+| 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | **em andamento**: parte 1 (as pessoas e o Chat, PR #116), parte 2 (um treino e os convites da semana) |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | |
 | 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | |
@@ -457,3 +457,20 @@ Proibido também: cartão com faixa colorida na lateral.
   ruído). Save antigo: as pessoas nascem na primeira vez que o celular abre.
 - Relação nesta parte só se mexe com título, marca de gols e mudança para fora do país; os convites (parte 2) é que vão
   mexer de verdade.
+
+### Fase 2 do plano, parte 2 · 2026-10-31 · A semana nova: um treino e os convites
+
+- **Um treino por semana** (técnico, físico, descanso; fisioterapia na lesão) no lugar das duas ações. A energia de cada
+  treino soma o par de antes (treino + descanso = +15), então o ritmo de energia não mudou. Plano antigo de duas ações vira
+  o primeiro treino dele (save sem migração). Patrocínio e entrevista saíram da semana e viraram convites.
+- **Convites do celular** (`S.FC_INV` em engine/phone.js, 11 tipos de 6 pessoas): de 0 a 2 por semana, um por pessoa, no
+  máximo 2 do mesmo tipo por temporada e 5 semanas entre eles, com os três textos de cada tipo em rodízio. Cada um tem
+  segura (pouco e certo), arriscada (chance na tela, sorteio na hora, lado ruim de verdade) e **sem resposta**, que a
+  pessoa lembra (mensagem e, em alguns, memória que volta duas temporadas depois). Na agenda, cada convite ocupa um dia;
+  respondido, mostra o que saiu ("tirou 83, precisava até 70"). Semana automática ou Resumir: ficam sem resposta.
+- **Auditoria** (`craque_audit_eventos.js`, seção nova): régua da semana (`S.fcInvValue`): 0 alertas (nenhuma resposta
+  domina, segura sem ganho permanente, arriscada com lado ruim). Com assessoria de imprensa (paga) a entrevista e o
+  podcast ficam mais seguros de propósito: aparece, não conta como alerta.
+- **Repetição** em 60 carreiras: ~21 convites por temporada, no máximo 2 do mesmo tipo numa temporada, cada texto menos
+  de uma vez por temporada. Equilíbrio (300 carreiras): robô que escolhe bem S13/A25/B32/C19/D11; sem responder nada
+  S14/A23/B32/C20/D12; ao acaso S11/A21/B34/C18/D15. Decidir bem vale pouco, como os eventos, e a nota não se mexeu.

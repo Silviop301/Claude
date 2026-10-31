@@ -132,15 +132,14 @@
     return { mul: (1 - 0.2 * tired) * (1 + 0.05 * fo), r: 0.12 * fo - 0.5 * tired + video, inj: fc.en < EN_OUT ? 2 : 1 };
   }
   S.FC_EN_LOW = EN_LOW; S.FC_EN_OUT = EN_OUT;
-  // Ações da semana (duas por semana). en: energia; o resto acontece em weekDo
+  // O treino da semana (um por semana, fase 2 do plano; antes eram duas ações). en: energia além da recuperação da semana
+  // (os números somam o par de antes: treino + descanso). Patrocínio e entrevista viraram convites do celular (engine/phone.js)
   const TRAIN_STEP = 0.05, TRAIN_CAP = +((typeof process !== 'undefined' && process.env && process.env.FC_TC) || 0.5); // evolução do treino técnico: por treino e no ano, fora do limite dos jogos (FC_TC no simulador)
   const WEEK = [
-    { id: 'tec', name: 'Treino técnico', en: -10 },
-    { id: 'fis', name: 'Treino físico', en: -10 },
-    { id: 'rest', name: 'Descanso', en: 25 },
-    { id: 'physio', name: 'Fisioterapia', en: 15 },
-    { id: 'spons', name: 'Patrocínio', en: -15 },
-    { id: 'talk', name: 'Entrevista', en: -5 },
+    { id: 'tec', name: 'Treino técnico', en: 15 },
+    { id: 'fis', name: 'Treino físico', en: 15 },
+    { id: 'rest', name: 'Descanso', en: 45 },
+    { id: 'physio', name: 'Fisioterapia', en: 40 },
   ];
   const WEEK_BY = Object.fromEntries(WEEK.map(a => [a.id, a]));
   S.FC_WEEK = WEEK; S.FC_TRAIN_CAP = TRAIN_CAP;
@@ -155,22 +154,32 @@
     return true;
   };
   // Energia depois da semana com estas ações
-  S.fcWeekEnergy = (c, acts) => clamp(c.fc.en + weekBase(c.fc, c) + acts.reduce((s, id) => s + (WEEK_BY[id] || WEEK_BY.rest).en, 0), 0, 100);
-  // Semana automática: repete a última escolhida por você; lesionado faz fisioterapia (ou descansa); troca o que cansa por descanso se a energia ia ficar baixa
+  S.fcWeekEnergy = (c, acts) => clamp(c.fc.en + weekBase(c.fc, c) + (WEEK_BY[acts[0]] || WEEK_BY.rest).en, 0, 100);
+  // Semana automática: repete o último treino escolhido por você (plano antigo de duas ações: o primeiro treino dele);
+  // lesionado faz fisioterapia (ou descansa); troca o treino por descanso se a energia ia ficar baixa
   S.fcWeekAuto = function (c) {
-    const fc = c.fc;
-    let a = (fc.wkPlan || ['tec', 'rest']).slice(0, 2).map(id => (WEEK_BY[id] ? id : 'rest')); // ação que saiu do jogo vira descanso
-    if (fc.injOut > 0 && !S.fcSuspended(c)) a = [S.fcWeekOk(c, 'physio', []) ? 'physio' : 'rest', 'rest'];
-    a = a.map((id, k) => (S.fcWeekOk(c, id, a.slice(0, k)) ? id : 'rest'));
-    for (const k of [1, 0]) if (S.fcWeekEnergy(c, a) < 60 && WEEK_BY[a[k]].en < 0) a[k] = 'rest';
-    return a;
+    const fc = c.fc, plan = fc.wkPlan || ['tec'];
+    let id = plan.find(x => x === 'tec' || x === 'fis') || 'rest';
+    if (fc.injOut > 0 && !S.fcSuspended(c)) id = S.fcWeekOk(c, 'physio', []) ? 'physio' : 'rest';
+    if (!S.fcWeekOk(c, id, [])) id = 'rest';
+    if (id !== 'rest' && id !== 'physio' && S.fcWeekEnergy(c, [id]) < 60) id = 'rest';
+    return [id];
   };
+  // Um passo de treino técnico (o treino da semana ou um convite do técnico): fora do limite dos jogos, até TRAIN_CAP no ano
+  S.fcTrainPe = function (c) {
+    const fc = c.fc;
+    if (!S.fcWeekOk(c, 'tec', [])) return 0;
+    fc.peTrain = Math.round(((fc.peTrain || 0) + TRAIN_STEP) * 100) / 100; fc.peFrac = Math.round((fc.peFrac + TRAIN_STEP) * 100) / 100;
+    while (fc.peFrac >= 1) { fc.peFrac = Math.round((fc.peFrac - 1) * 100) / 100; fc.peGot++; c.pe = (c.pe || 0) + 1; }
+    return TRAIN_STEP;
+  };
+  S.FC_TRAIN_STEP = TRAIN_STEP;
   // Fecha a semana: aplica as duas ações e a recuperação. Volta o que mudou (para a tela mostrar)
   S.fcWeek = function (c, acts) {
     const fc = c.fc;
     if (!fc || !fc.wkDue) return null;
-    if (acts) fc.wkPlan = acts.slice(0, 2); // a escolha da pessoa vira o plano da semana automática
-    acts = (acts || S.fcWeekAuto(c)).slice(0, 2);
+    if (acts) fc.wkPlan = acts.slice(0, 1); // a escolha da pessoa vira o plano da semana automática
+    acts = (acts || S.fcWeekAuto(c)).slice(0, 1);
     const { r, save } = rngOf(fc), out = { acts: [], en0: fc.en, pe: 0, money: 0, fame: 0, coach: 0, inj: 0, polem: false };
     fc.en = clamp(fc.en + weekBase(fc, c), 0, 100);
     // Salário da semana entra; a equipe pessoal sai (sem dinheiro, o contrato cai)
@@ -185,16 +194,12 @@
       if (!WEEK_BY[id] || !S.fcWeekOk(c, id, [])) id = 'rest'; // o estado já tem as ações anteriores (dinheiro, treino)
       out.acts.push(id);
       fc.en = clamp(fc.en + WEEK_BY[id].en, 0, 100);
-      if (id === 'tec') { fc.peTrain = Math.round(((fc.peTrain || 0) + TRAIN_STEP) * 100) / 100; out.pe += TRAIN_STEP; fc.peFrac = Math.round((fc.peFrac + TRAIN_STEP) * 100) / 100; while (fc.peFrac >= 1) { fc.peFrac = Math.round((fc.peFrac - 1) * 100) / 100; fc.peGot++; c.pe = (c.pe || 0) + 1; } }
+      if (id === 'tec') out.pe += S.fcTrainPe(c);
       else if (id === 'fis') fc.fit = 4;
       else if (id === 'physio') { const p = S.fcPhysioCost(c); c.money = Math.max(0, (c.money || 0) - p); out.money -= p; if (fc.injOut > 0 && !S.fcSuspended(c)) { fc.injOut--; out.inj++; } }
-      else if (id === 'spons') { const p = S.fcSponsPay(c); c.money = (c.money || 0) + p; out.money += p; c.fame += 1; out.fame += 1; }
-      else if (id === 'talk') {
-        c.fame += 2; out.fame += 2;
-        // A assessoria de imprensa segura a polêmica
-        if (r() < (c.staff && c.staff.press ? 0 : 0.25)) { out.polem = true; c.rel.coach = clamp(c.rel.coach - 4, 0, 100); out.coach -= 4; }
-      }
     });
+    // Convites sem resposta: a pessoa lembra (engine/phone.js)
+    if (S.fcInvClose) S.fcInvClose(c, out);
     out.en1 = fc.en; out.at = fc.i;
     fc.wkLast = out.acts.slice(); fc.wkDue = false; fc.wkSum = out;
     if (fc.pending && fc.pending.i === fc.i && !fc.pending.mDone) fc.pending = null; // a escalação sai depois da semana

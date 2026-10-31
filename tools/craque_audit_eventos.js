@@ -43,3 +43,24 @@ if (ids.length) out.filter(r => ids.includes(r.id)).forEach(r => {
   const prob = [!r.kinds.includes('R') && 'sem risco', r.safePerm > 0.3 && 'segura com ganho permanente', r.riskNoDown > 0.3 && 'risco sem lado ruim', r.dom > 0.5 && 'uma opção domina'].filter(Boolean);
   console.log(r.id.padEnd(18), r.kinds.join(''), 'valores', JSON.stringify(r.ev), r.labels.join(' | '), prob.length ? '  ⚠ ' + prob.join('; ') : '  ok');
 });
+
+// Convites do celular (Jogo a Jogo, engine/phone.js): segura certa e sem ganho permanente, arriscada com lado ruim de
+// verdade, e nenhuma das três respostas (segura, arriscada, sem resposta) bem melhor que as outras na régua da semana
+{
+  const c = JSON.parse(JSON.stringify(samples[0])); c.mode = 'completa'; c.staff = {};
+  const bad = [];
+  console.log('\nconvites do celular', S.FC_INV.length);
+  for (const d of S.FC_INV) {
+    for (const press of [false, true]) {
+      if (press && !d.b.press) continue;
+      c.staff = press ? { press: 1 } : {};
+      const inv = { id: d.id }, ev = { a: S.fcInvEV(c, inv, 'a'), b: S.fcInvEV(c, inv, 'b'), ig: S.fcInvEV(c, inv, 'ig') };
+      const s = Object.values(ev).sort((x, y) => y - x), gap = s[0] - s[1];
+      const prob = [d.a.fx.pe && 'segura com ganho permanente', !(S.fcInvValue(c, d.b.lose.fx) < S.fcInvValue(c, d.b.win.fx) && Object.values(d.b.lose.fx).some(v => typeof v === 'number' ? v < 0 : Object.values(v).some(x => x < 0))) && 'risco sem lado ruim',
+        gap > Math.max(0.6, 0.5 * Math.abs(s[0])) && 'uma resposta domina'].filter(Boolean);
+      if (prob.length && !press) bad.push(d.id); // com assessoria (paga) a entrevista fica mais segura de propósito: só mostra
+      if (!ids.length || ids.includes(d.id)) console.log((d.id + (press ? '+assessoria' : '')).padEnd(24), 'segura', ev.a.toFixed(2), '· arriscada', ev.b.toFixed(2), '(' + Math.round((press ? d.b.press : d.b.p) * 100) + '%) · sem resposta', ev.ig.toFixed(2), prob.length ? '  ⚠ ' + prob.join('; ') : '  ok');
+    }
+  }
+  console.log('convites com alerta:', bad.length);
+}
