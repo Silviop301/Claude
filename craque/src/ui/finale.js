@@ -83,6 +83,7 @@
 
   function finale() {
     const f = S.finish(G.c);
+    if (window.CLIMBIX_STAT) window.CLIMBIX_STAT('end', G.c.mode || 'rapida', 0, 'c' + G.c.tseed); // contagem anônima
     rivalCarry(G.c, f);
     const ach = U.achRecord(G.c, f);
     // Pacotinhos da carreira: fim de carreira, nota, títulos grandes, conquistas novas e carreira do dia

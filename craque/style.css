@@ -5390,3 +5390,8 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
 @keyframes flyBack { from { transform: translate(calc(100vw + 20px), -140px) rotate(8deg); } to { transform: translate(-120px, 60px) rotate(12deg); } }
 @keyframes busGo { from { transform: translateX(-120px); } to { transform: translateX(calc(100vw + 20px)); } }
 @keyframes busBack { from { transform: translateX(calc(100vw + 20px)); } to { transform: translateX(-120px); } }
+
+/* Aviso do save novo do Jogo a Jogo (plano, fase 0): no celular e na criação */
+.fc-aviso { display: grid; gap: 10px; }
+.fc-aviso p { margin: 0; line-height: 1.45; }
+.cr-aviso { margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--gold); border-radius: 10px; font-size: 14px; line-height: 1.4; }

@@ -295,6 +295,7 @@
     const preM = G.c.mod && G.c.mod.moment && G.c.mod.moment.pre ? G.c.mod.moment.type : null;
     const res = S.playSeason(G.c);
     U.rankSave(G.c); // ranking: nota máxima, gols e títulos já contam durante a carreira
+    if (window.CLIMBIX_STAT) window.CLIMBIX_STAT('season', G.c.mode || 'rapida', G.c.season, 'c' + G.c.tseed + '|' + G.c.season); // contagem anônima
     sfx('whistle');
     // Em ano de Copa com convocação, fechar o jogo no resumo não pula a Copa
     G.step = S.isWcYear(G.c) && G.c.wcYearDone !== year() && S.wcCall(G.c).called ? 'wc'

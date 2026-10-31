@@ -25,6 +25,9 @@ node tools/craque_decisoes.js > "$OUT/decisoes.log" 2>&1; tail -1 "$OUT/decisoes
 say "-- Erros reais no site (versão no ar primeiro)"
 SSL_CERT_FILE=${SSL_CERT_FILE:-/root/.ccr/ca-bundle.crt} timeout 60 python3 tools/craque_erros.py > "$OUT/erros.log" 2>&1
 grep -E "^ *[0-9]+x" "$OUT/erros.log" | head -8 | tee -a "$R"
+say "-- Contagem anônima (linha de base do plano; fase em andamento na seção 'Plano em andamento' do EVOLUCAO_CONTINUA.md)"
+SSL_CERT_FILE=${SSL_CERT_FILE:-/root/.ccr/ca-bundle.crt} timeout 60 python3 tools/craque_numeros.py 14 > "$OUT/numeros.log" 2>&1
+grep -E "^(Rápida|Jogo a Jogo|Relâmpago|Treinador) " "$OUT/numeros.log" | tee -a "$R"
 say "-- Carreiras pela interface ($N por posição)"
 TR="$OUT/tr-cel" timeout 1500 node tools/craque_e2e.js $N 390 4 > "$OUT/e2e-cel.log" 2>&1; grep -A12 "^Problemas" "$OUT/e2e-cel.log" | sed 's/^/celular: /' | tee -a "$R"
 DESKTOP=1 TR="$OUT/tr-pc" timeout 1500 node tools/craque_e2e.js $((N / 2 > 0 ? N / 2 : 1)) 1280 4 > "$OUT/e2e-pc.log" 2>&1; grep -A12 "^Problemas" "$OUT/e2e-pc.log" | sed 's/^/computador: /' | tee -a "$R"

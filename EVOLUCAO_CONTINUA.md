@@ -3,6 +3,32 @@
 Acompanhamento do processo de `docs/prompt-mestre-evolucao.md` (como rodar: seção "Evolução contínua" do `CLAUDE.md`).
 Cada rodada acrescenta uma entrada no Registro e atualiza o Diagnóstico e o Roteiro.
 
+## Plano em andamento: Jogo a Jogo e Modo Treinador (2026-10-31)
+
+**Toda rodada do ciclo agora pega só o próximo item da fase em andamento.** O plano completo, com as respostas do
+Silvio, está no doc "Plano da atualização: Jogo a Jogo e Modo Treinador" (https://claude.ai/artifact/UxvwGePFjmXLfwcHYt62ta).
+Ideia nova não entra no meio: vai para a lista "Depois do plano" do doc. Uma parte = um PR com base no branch de deploy,
+direto no ar depois da validação. Carreira Rápida e Relâmpago estão congeladas (só correção de erro real do site).
+Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (progrediu e se divertiu? o que irritou? o que faltou?).
+
+| Fase | Pronto quando | Estado |
+|---|---|---|
+| 0 · Preparar | Os números chegam ao servidor (`api/stats.php`, `src/stats.js`, `tools/craque_numeros.py`) e quem joga o Jogo a Jogo vê o aviso do save novo | **em andamento** |
+| 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | |
+| 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | |
+| 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | |
+| 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | |
+| 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | |
+| 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | |
+| 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | |
+| 8 · Treinador v2 | No simulador, nenhuma tática ou instrução vence em todos os casos | |
+| 9 · Do jogador ao técnico | Uma carreira passa de jogador a técnico levando a história e os títulos | |
+
+Regras que valem em toda fase: depois da fase 1, toda parte traz migração do save (a carreira continua de onde parou);
+cada jogo vivido termina com uma faixa de progresso visível; telas limpas (um cartão principal, um botão dourado).
+Linha de base: `python3 tools/craque_numeros.py` (novos, D1, D7, sessões por modo e duração, carreiras por modo e até
+que temporada chegam). Metas em número só depois de duas semanas de contagem.
+
 ## Diagnóstico dos seis pilares (2026-10-29, versão no ar 88a9d26 / sw craque-89e222da)
 
 | Pilar | Estado | Maiores oportunidades |
@@ -324,3 +350,14 @@ Proibido também: cartão com faixa colorida na lateral.
 - **Celular vira o hub** (o Silvio tinha clicado na agenda por engano; o que ele queria era o celular): tela do aparelho
   com relógio e o próximo jogo, notificações (técnico com a chance de começar, agenda, preparador, Zé) que abrem as
   telas, apps (Agenda, Tabela, Jogos, Ficha, Loja, Zé) e o ingresso do jogo. A agenda virou um app com "Pronto".
+
+### Fase 0 do plano · 2026-10-31 · Preparar (contagem anônima e aviso do save)
+
+- **Contagem anônima** (`craque/api/stats.php` + `craque/src/stats.js`): o jogo manda só eventos sem identidade e o
+  servidor soma por dia (dia + evento + modo + faixa). Eventos: primeira visita, voltou no dia seguinte (D1), voltou do
+  7º ao 13º dia (D7), sessão (modo e faixa de minutos com o jogo na tela), carreira começou, temporada terminou (número),
+  carreira terminou. Aparelho que já tinha jogo salvo fica fora de novos/D1/D7, para a linha de base ser só de gente nova.
+  Testes em localhost não mandam (`?statlog=1` liga). Leitura: `python3 tools/craque_numeros.py [dias]`.
+- **Aviso do save novo**: notificação "Climbix" no topo do celular do Jogo a Jogo até tocar em Entendi
+  (`climbix-aviso-save-v1`), e uma linha na criação da carreira jogo a jogo.
+- **Plano no ciclo**: seção "Plano em andamento" acima; `craque_ciclo.sh` mostra a contagem no resumo.
