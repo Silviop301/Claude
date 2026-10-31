@@ -741,11 +741,11 @@
     if (ri === 0) return 'estreia';
     if ((D.RIVALS[c.club] || []).includes(nx.vs)) return 'classico';
     if (ri === R - 1) return 'ultima';
-    // Da 6ª rodada em diante: contra o líder (jogo grande) e, no último terço, a briga direta (adversário perto
+    // Da 6ª rodada em diante: contra um dos três primeiros (jogo grande) e, no último terço, a briga direta (adversário perto
     // na tabela, os dois perto de uma linha que vale: título, G4, acesso, queda)
     if (ri < 5) return '';
     const ord = order(fc.lg.tab), n = ord.length, me = ord.indexOf(0) + 1, vi = fc.lg.ids.indexOf(nx.vs), them = ord.indexOf(vi) + 1;
-    if (vi >= 0 && them === 1 && me > 3) return 'topo';
+    if (vi >= 0 && them <= 3 && me > 3) return 'topo';
     if (ri < R / 3 || vi < 0 || Math.abs(me - them) > 3 || Math.abs(fc.lg.tab[0].p - fc.lg.tab[vi].p) > 4) return '';
     const lines = [1, fc.lg.promo ? fc.lg.promo : 4].concat(fc.lg.releg ? [n - fc.lg.releg] : []);
     const near = p => lines.some(k => (p <= k ? k - p : p - k - 1) <= 2);

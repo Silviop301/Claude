@@ -312,9 +312,13 @@
       rows.forEach(x => { const d = document.createElement('div'); d.innerHTML = '<i></i>' + crest(x.id, 'xs') + '<span>' + esc(nameOf(x.id)) + '</span><b></b><em></em><em></em><em></em>'; rowEl[x.i] = d; });
     }
     const list = box.querySelector('.fs-rows');
+    // Com a bola rolando: a posição antes da rodada (setas de quem sobe e desce) e o seu rival direto destacado
+    const base = standings(view), pos0 = {}; base.forEach((x, j) => { pos0[x.i] = j + 1; });
+    const rv = view === 'lg' ? rivalOf(base) : -1;
     rows.forEach((x, j) => {
-      const d = rowEl[x.i], ch = d.children, sg = x.gp - x.gc;
-      d.className = 'fs-tr' + zone(j + 1) + (x.i === 0 ? ' me' : '');
+      const d = rowEl[x.i], ch = d.children, sg = x.gp - x.gc, mv = live && base[0].j ? pos0[x.i] - (j + 1) : 0; // na 1ª rodada a ordem de antes não diz nada
+      d.className = 'fs-tr' + zone(j + 1) + (x.i === 0 ? ' me' : '') + (x.i === rv ? ' rv' : '');
+      ch[2].innerHTML = esc(nameOf(x.id)) + (x.i === rv ? '<small class="fs-rv">rival</small>' : '') + (mv ? '<small class="fs-mv ' + (mv > 0 ? 'up' : 'down') + '">' + (mv > 0 ? '▲' : '▼') + Math.abs(mv) + '</small>' : '');
       ch[0].textContent = j + 1; ch[3].textContent = x.p; ch[4].textContent = x.j; ch[5].textContent = x.v; ch[6].textContent = (sg > 0 ? '+' : '') + sg;
       if (list.children[j] !== d) list.insertBefore(d, list.children[j] || null);
     });
@@ -325,6 +329,24 @@
       box.scrollTop += (a.top - b.top) / zk - box.clientHeight / 2 + a.height / zk / 2;
     }
     return rows.findIndex(x => x.i === 0) + 1;
+  }
+  // Rival direto na liga (índice na tabela, -1 sem rival): perto de uma linha que vale (título, acesso ou G4, queda), quem
+  // está do outro lado dela e mais perto em pontos; longe das linhas, o time logo acima (o 2º, para quem lidera)
+  function rivalOf(rows) {
+    const fc = G.c.fc, n = rows.length, me = rows.findIndex(x => x.i === 0);
+    if (me < 0 || n < 2 || !rows[0].j) return -1;
+    const lines = [1, fc.lg.promo || 4].concat(fc.lg.releg ? [n - fc.lg.releg] : []); // linha k: entre a k-ésima e a k+1-ésima
+    let best = null;
+    lines.forEach(k => {
+      const above = me < k;
+      if (Math.abs(above ? k - me - 1 : me - k) > 2) return;
+      const other = above ? k : k - 1; // o primeiro do outro lado da linha
+      if (other === me || other < 0 || other >= n) return;
+      const gap = Math.abs(rows[other].p - rows[me].p);
+      if (gap <= 6 && (!best || gap < best.gap)) best = { i: rows[other].i, gap };
+    });
+    if (best) return best.i;
+    return rows[me === 0 ? 1 : me - 1].i;
   }
   function tabs() {
     const fc = G.c.fc, el = $('fc-tabs');
@@ -851,7 +873,7 @@
   // Simula sem o ao vivo; para antes de jogo com lance decisivo (esse você joga) e nas datas de evento
   // Tipo do próximo jogo, numa linha acima do ingresso: vivido (e por quê), resumido ou no banco
   const WHY = { decisao: 'Decisão', mata: 'Mata-mata', continental: 'Noite continental', estreia: 'Estreia do ano', classico: 'Clássico', ultima: 'Última rodada',
-    briga: 'Briga direta na tabela', topo: 'Contra o líder', escolha: 'Você escolheu viver' };
+    briga: 'Briga direta na tabela', topo: 'Contra um dos três primeiros', escolha: 'Você escolheu viver' };
   function kindTxt(c, nx, kind) {
     if (kind === 'vivo') return '<b>Jogo grande</b> · ' + WHY[S.fcBig(c, nx)] + ': você vive o jogo inteiro';
     if (kind === 'banco') return '<b>Você fica no banco</b> · o jogo passa rápido';
@@ -1054,8 +1076,13 @@
     }
     if (onPitch) effBox(); else weekBox(true);
     // Outros jogos da rodada (liga e grupo); na copa e no mata-mata, os outros confrontos da fase
-    $('fc-round').innerHTML = out.others.length ? '<div class="fs-rlbl">' + (lg ? 'Outros jogos da rodada' : grp ? 'O outro jogo do grupo' : 'Outros confrontos da fase') + '</div>' +
-      out.others.map((g, k) => '<div class="fs-rr' + ((out.bets || []).some(t => t.legs.some(l => l.h === g.h && l.a === g.a)) ? ' zb' : '') + '" data-k="' + k + '"><span>' + esc(nameOf(g.h)) + '</span>' + crest(g.h, 'xs') + '<b>0 × 0</b>' + crest(g.a, 'xs') + '<span>' + esc(nameOf(g.a)) + '</span></div>').join('') : '';
+    // Como na TV: o jogo do seu rival direto primeiro e um plantão com o último gol de fora (e o que ele faz com você)
+    const rvI = lg ? rivalOf(standings('lg')) : -1, rvId = rvI >= 0 ? c.fc.lg.ids[rvI] : null;
+    const ordK = out.others.map((g, k) => k).sort((a, b) => (out.others[b].h === rvId || out.others[b].a === rvId) - (out.others[a].h === rvId || out.others[a].a === rvId));
+    $('fc-round').innerHTML = out.others.length ? '<div class="fs-rlbl">' + (lg ? 'Outros jogos da rodada' : grp ? 'O outro jogo do grupo' : 'Outros confrontos da fase') + '</div><p class="fs-tv" id="fc-tv" hidden></p>' +
+      ordK.map(k => { const g = out.others[k], rv = g.h === rvId || g.a === rvId;
+        return '<div class="fs-rr' + ((out.bets || []).some(t => t.legs.some(l => l.h === g.h && l.a === g.a)) ? ' zb' : '') + (rv ? ' rv' : '') + '" data-k="' + k + '"><span>' + esc(nameOf(g.h)) + '</span>' + crest(g.h, 'xs') + '<b>0 × 0</b>' + crest(g.a, 'xs') + '<span>' + esc(nameOf(g.a)) + '</span></div>'; }).join('') : '';
+    let myPos = 0;
     // Botões com a bola rolando: velocidade e pular (para o fim ou para o lance)
     function liveActs() {
       $('fc-acts').innerHTML = '<div class="fs-skip"><button class="btn ghost' + (fast ? ' on' : '') + '" id="fc-fast">' + (fast ? 'Velocidade normal' : 'Mais rápido') + '</button><button class="btn ghost" id="fc-skip">' + (o.stop ? 'Ir ao lance' : 'Fim do jogo') + '</button></div>';
@@ -1080,13 +1107,26 @@
       if (fl && onPitch) fl.off = eff.mins.reduce((a, m, k) => a + m * S.FC_EFF[k].r, 0) / 90;
       if (fl) flowAt(c, x, fl, o.stop ? Math.min(t, stopAt - 1) : t, flSeen);
       let goal = false;
+      let tv = null;
       document.querySelectorAll('#fc-round .fs-rr').forEach(el => {
         const g = out.others[+el.dataset.k], [h, a] = part(g, t);
         el.querySelector('b').textContent = h + ' × ' + a;
         el.classList.toggle('hot', g.ev.some(e => e.m <= t && e.m > t - 5));
-        if (g.ev.some(e => e.m === t)) goal = true;
+        const e = g.ev.filter(e => (since !== undefined ? e.m > since : e.m === t) && e.m <= t).pop();
+        if (e) { goal = true; if (!tv || e.m >= tv.e.m) tv = { e, g, h, a }; }
       });
-      if (undo && (goal || t <= 1 || (out.my && out.my.ev.some(e => e.m === t)))) table(liveTab());
+      if (undo && (goal || t <= 1 || (out.my && out.my.ev.some(e => e.m === t)))) {
+        const p = table(liveTab());
+        if (tv) {
+          const who = tv.e.s === 'h' ? tv.g.h : tv.g.a, mv = myPos && p !== myPos && lg ? ' · você ' + (p < myPos ? 'sobe' : 'cai') + ' para ' + p + 'º' : '';
+          plantao(clock(tv.e.m) + ' · Gol ' + D.do(nameOf(who)) + (who === rvId ? ', seu rival' : '') + ': ' + nameOf(tv.g.h) + ' ' + tv.h + ' × ' + tv.a + ' ' + nameOf(tv.g.a) + mv);
+        }
+        myPos = p;
+      }
+    }
+    function plantao(txt) {
+      const el = $('fc-tv'); if (!el) return;
+      el.hidden = false; el.textContent = txt; el.classList.remove('new'); void el.offsetWidth; el.classList.add('new');
     }
     function tick() {
       if (!$('fc-match')) return; // saiu da tela: o jogo já está salvo
@@ -1124,7 +1164,8 @@
       result(x, out);
     }
     // Antes do apito: o jogo começa no botão (o esforço já pode ser escolhido); voltando ao lance, segue direto
-    if (o.from) { liveActs(); sfx('whistle'); timer = setTimeout(tick, 400); }
+    // Voltando do lance (do minuto dele): a tabela entra já com os placares parciais (senão ficava vazia até o próximo gol)
+    if (o.from) { if (undo) table(liveTab()); liveActs(); sfx('whistle'); timer = setTimeout(tick, 400); }
     else {
       const lt = $('fc-lt'); if (lt) lt.textContent = esc(nx.compName) + ' · antes do jogo';
       stopActs('fc-kick', 'Começar o jogo', onPitch ? 'Escolha o esforço antes do apito' : '', () => { liveActs(); timer = setTimeout(tick, 300); });

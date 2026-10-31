@@ -6,7 +6,7 @@
 //   NODE_PATH=$(npm root -g) node tools/craque_telas_jaj.js <pasta> [largura] [altura]
 //   ex.: node tools/craque_telas_jaj.js /tmp/jaj-antes            → celular 390×844
 //        DESKTOP=1 node tools/craque_telas_jaj.js /tmp/jaj-pc 1440 900
-// Variáveis: POS=ATA (posição) · SEED=1 · BASE=http://localhost:8765/craque/
+// Variáveis: POS=ATA (posição) · SEED=1 · BASE=http://localhost:8765/craque/ · FULL=1 (página inteira)
 // Sai: <pasta>/NN-nome.png e <pasta>/telas.json (nome, arquivo, título, erros). Compare antes e depois pelo nome.
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
@@ -51,7 +51,7 @@ const INIT = `
     const name = String(n).padStart(2, '0') + '-' + key;
     await wait(250);
     const title = await page.evaluate(() => { const e = document.querySelector('#screen h2, #screen h1'); return e ? e.textContent.trim().replace(/\s+/g, ' ').slice(0, 70) : ''; }).catch(() => '');
-    await page.screenshot({ path: path.join(OUT, name + '.png'), animations: 'disabled' }).catch(e => console.log('foto falhou', key, e.message));
+    await page.screenshot({ path: path.join(OUT, name + '.png'), animations: 'disabled', fullPage: !!process.env.FULL }).catch(e => console.log('foto falhou', key, e.message));
     index.push({ key, file: name + '.png', title });
     console.log(name, '·', title);
   }
