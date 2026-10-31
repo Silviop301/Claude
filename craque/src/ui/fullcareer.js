@@ -73,6 +73,10 @@
     const A = id => (S.FC_WEEK.find(a => a.id === id) || S.FC_WEEK[2]).name.toLowerCase();
     if (fc.wkDue) { if (!pick) pick = S.fcWeekAuto(c); n('ag', 'Agenda', 'Semana marcada: ' + A(pick[0]) + ' e ' + A(pick[1]) + '. Toque para mudar.'); }
     else if (fc.wkSum && fc.wkSum.at === fc.i) n('ag', 'Agenda', 'Semana feita: ' + fc.wkSum.acts.map(A).join(' e ') + '. Energia ' + Math.round(fc.wkSum.en0) + ' → ' + Math.round(fc.wkSum.en1) + '.');
+    // Roupeiro: a chuteira (ou luva) acabando ou já rasgada
+    const gw = c.pos === 'GOL' ? 'luva' : 'chuteira';
+    if (c.gear && c.gear.left <= 5) n('shop', 'Roupeiro', 'Tua ' + gw + ' tá no fim: ' + (c.gear.left === 1 ? 'aguenta só mais 1 jogo.' : 'aguenta mais ' + c.gear.left + ' jogos.'));
+    else if (!c.gear && fc.gearOut) n('shop', 'Roupeiro', c.pos === 'GOL' ? 'Tuas luvas rasgaram. Passa na loja e compra outras.' : 'Tua chuteira rasgou. Passa na loja e compra outra.');
     if ((c.pe || 0) >= 1 && S.canInvestAny(c)) n('evo', 'Preparador', 'Você tem ' + c.pe + (c.pe === 1 ? ' ponto' : ' pontos') + ' para gastar na ficha.');
     if (fc.wkDue && (fc.en === undefined ? 100 : fc.en) < S.FC_EN_LOW) n('ag', 'Preparador físico', 'Energia ' + Math.round(fc.en) + '. Marca um descanso na agenda.');
     const fx = S.fcZeOffer(c), bets = S.fcBets(c);
@@ -681,8 +685,12 @@
     if (!el) return;
     const R = v => 'R$ ' + U.money(v), cash = c.money || 0, attrs = S.fcGearAttrs(c);
     if (!attrs.includes(gearAttr)) gearAttr = attrs[0];
-    const g = c.gear && c.gear.until >= c.season ? c.gear : null, gNow = g ? S.FC_SHOP.gear.find(x => x.id === g.id) : null;
-    const left = g ? (g.until > c.season ? 'até a próxima temporada' : 'até o fim da temporada') : '';
+    const g = c.gear && c.gear.left > 0 ? c.gear : null, gNow = g ? S.FC_SHOP.gear.find(x => x.id === g.id) : null;
+    const gw = c.pos === 'GOL' ? 'luvas' : 'chuteira';
+    // O que está no pé: imagem, bônus e a vida que sobra (barra de desgaste)
+    const worn = g ? '<div class="fc-eq"><img src="assets/loja/' + gw + '-' + g.id + '.webp" alt="" draggable="false"><span><small>' + (c.pos === 'GOL' ? 'Equipadas' : 'Equipada') + '</small><b>' + esc(S.fcGearName(c, gNow)) + '</b><em>+' + g.b + ' em ' + esc(D.label(c.pos, g.attr)) + (g.en ? ' · cansa ' + g.en + ' a menos' : '') + '</em>' +
+      '<i class="fc-eq-bar ' + (g.left <= 5 ? 'low' : '') + '"><i style="width:' + Math.round(g.left / g.games * 100) + '%"></i></i><em>' + (g.left === 1 ? 'Último jogo' : 'Mais ' + g.left + ' de ' + g.games + ' jogos') + '</em></span></div>'
+      : '<p class="fc-own">' + (c.pos === 'GOL' ? (c.fc && c.fc.gearOut ? 'Suas luvas rasgaram. ' : '') + 'Sem luvas especiais: compre um par e ele entra no próximo jogo.' : (c.fc && c.fc.gearOut ? 'Sua chuteira rasgou. ' : '') + 'Sem chuteira especial: compre uma e ela entra no próximo jogo.') + '</p>';
     const btn = (kind, id, label, ok, on) => '<button class="fc-buy' + (on ? ' on' : '') + '" data-k="' + kind + '" data-id="' + id + '"' + (ok ? '' : ' disabled') + '>' + label + '</button>';
     // Imagem do item (assets/loja); os que ainda não têm arte ficam sem
     const img = f => (LOJA_IMG.includes(f) ? '<img class="fc-si-im" src="assets/loja/' + f + '.webp" alt="" draggable="false" loading="lazy">' : '');
@@ -691,10 +699,10 @@
     el.innerHTML =
       '<div class="fc-cash"><span>Seu dinheiro</span><b>' + R(cash) + '</b><small>Salário de ' + R(c.wage || 0) + ' por semana' + (week ? ' · equipe: −' + R(week) + ' por semana' : '') + '</small></div>' +
       '<div class="fc-ss"><h3>' + (c.pos === 'GOL' ? 'Luvas' : 'Chuteira') + '</h3>' +
-        (g ? '<p class="fc-own">Você usa: ' + esc(S.fcGearName(c, gNow)) + ' · +' + g.b + ' em ' + esc(D.label(c.pos, g.attr)) + ', ' + left + '</p>' : '<p class="fc-own">Sem equipamento especial.</p>') +
+        worn + (g ? '<p class="fc-own">' + (c.pos === 'GOL' ? 'Comprar outro par troca o que está nas mãos.' : 'Comprar outra troca a que está no pé.') + '</p>' : '') +
         '<div class="seg fc-attr">' + attrs.map(k => '<button data-a="' + k + '"' + (k === gearAttr ? ' class="on"' : '') + '>' + esc(D.label(c.pos, k)) + '</button>').join('') + '</div>' +
         S.FC_SHOP.gear.map(x => { const p = S.fcGearPrice(c, x.id);
-          return row(S.fcGearName(c, x), '+' + x.b + ' em ' + D.label(c.pos, gearAttr) + (x.en ? ', cansa ' + x.en + ' a menos por jogo' : '') + ' · ' + (x.seasons > 1 ? x.seasons + ' temporadas' : '1 temporada'), btn('gear', x.id, R(p), cash >= p), (c.pos === 'GOL' ? 'luvas-' : 'chuteira-') + x.id); }).join('') +
+          return row(S.fcGearName(c, x), '+' + x.b + ' em ' + D.label(c.pos, gearAttr) + (x.en ? ', cansa ' + x.en + ' a menos por jogo' : '') + ' · ' + 'dura ' + x.games + ' jogos', btn('gear', x.id, R(p), cash >= p), (c.pos === 'GOL' ? 'luvas-' : 'chuteira-') + x.id); }).join('') +
       '</div>' +
       '<div class="fc-ss"><h3>Equipe pessoal</h3><p class="fc-own">Paga por semana. Se o dinheiro acabar, o contrato cai.</p>' +
         S.FC_SHOP.staff.map(x => { const on = !!(c.staff && c.staff[x.id]), p = S.fcStaffCost(c, x.id);
@@ -930,7 +938,8 @@
         '<div class="jn-bt"><b>Boletim do atleta</b>' +
           (m.on ? row('Nota', rate(m.rating)) + (c.pos === 'GOL' || c.pos === 'ZAG' ? row('Sem sofrer gol', m.ga === 0 ? 'sim' : 'não') : row('Gols', m.goals || 0)) + row('Assistências', m.assists || 0) : row('Em campo', 'não')) +
           row('Energia', en0 + ' → ' + en1, en1 < en0 ? 'down' : 'up') + row('Forma', formTxt(fc.fo || 0).toLowerCase()) +
-          (out.pe ? row('Evolução', '+' + num1(out.pe), 'up') : '') + '</div></div>' +
+          (out.pe ? row('Evolução', '+' + num1(out.pe), 'up') : '') +
+          (out.gear ? row(c.pos === 'GOL' ? 'Luvas' : 'Chuteira', out.gear.left > 0 ? out.gear.left + (out.gear.left === 1 ? ' jogo' : ' jogos') : 'rasgou', out.gear.left <= 5 ? 'down' : '') : '') + '</div></div>' +
       (others ? '<div class="jn-o"><b>Os outros jogos</b><div>' + others + '</div></div>' : '') +
       '<div class="jn-f"><p>' + esc(nameOf(c.club)) + ' está em ' + lgPos + 'º na ' + esc(fc.lg.name) + ', com ' + fc.lg.tab[0].p + (fc.lg.tab[0].p === 1 ? ' ponto.' : ' pontos.') + '</p>' + fx + ze + bi + '</div>' +
       '</article><button class="btn" id="fc-next">' + (done ? 'Ver resumo da temporada' : 'Voltar ao celular') + '</button></div>');
