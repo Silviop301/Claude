@@ -67,7 +67,8 @@ for (let n = 0; n < N; n++) {
       while ((nx = S.fcNext(c))) {
         if (S.fcEventDue(c)) { const ev = S.fcPickEvent(c); if (ev) { doEvent(ev); const y = RIT[c.season]; if (y && y.length) y[y.length - 1].ev++; } continue; }
         // A semana entre os jogos: o robô usa a automática (FC_WEEK=0 desliga energia e forma, para comparar)
-        if (c.fc.wkDue) { S.fcWeek(c); if (!process.env.NOSHOP) shop(c); continue; }
+        // Convites do celular (fase 2): o robô responde pela melhor média (CONVITE=acaso responde ao acaso; CONVITE=nao deixa sem resposta)
+        if (c.fc.wkDue) { if (process.env.CONVITE !== 'nao') S.fcInvAuto(c, process.env.CONVITE === 'acaso'); S.fcWeek(c); if (!process.env.NOSHOP) shop(c); continue; }
         if (process.env.FOSTAT) { global.FO = global.FO || []; FO.push([c.fc.fo, c.fc.en]); }
         if (nx.moment) { c.mstats = c.mstats || { n: 0, ok: 0 }; c.mstats.n++; if (S.fcAutoMoment(c, nx.moment)) c.mstats.ok++; decisions++; }
         // Ritmo (plano, fase 1): o tipo de cada jogo do ano, para o tempo da temporada
