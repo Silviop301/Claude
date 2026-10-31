@@ -49,8 +49,8 @@ if (ids.length) out.filter(r => ids.includes(r.id)).forEach(r => {
 {
   const c = JSON.parse(JSON.stringify(samples[0])); c.mode = 'completa'; c.staff = {};
   const bad = [];
-  console.log('\nconvites do celular', S.FC_INV.length);
-  for (const d of S.FC_INV) {
+  console.log('\nconvites do celular', S.FC_INV.filter(x => !x.story).length);
+  for (const d of S.FC_INV.filter(x => !x.story)) { // as histórias (b.later) se resolvem em outras temporadas: conferidas à parte
     for (const press of [false, true]) {
       if (press && !d.b.press) continue;
       c.staff = press ? { press: 1 } : {};
