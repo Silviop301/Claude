@@ -4896,6 +4896,18 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .mz-fix.on { border-style: solid; border-color: var(--gold-deep); }
 .mz-fix .btn.ghost { background: transparent; color: var(--ink); border: 2px solid var(--ink); }
 .jn-fix { border: 2px solid #C8323A; padding: 6px 8px; font-family: Georgia, serif !important; }
+/* Rodada como na TV (plano, fase 1): plantão do último gol de fora, o rival direto e as setas de quem sobe e desce */
+.fs-tv { margin: 0 0 6px; padding: 7px 10px; border-radius: var(--r-sm); background: var(--board); border-left: 3px solid var(--gold); font: 600 14px/1.3 var(--body); color: var(--tx-1); }
+.fs-tv.new { animation: fsTv .5s ease-out; }
+@keyframes fsTv { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.fs-rr.rv { border-radius: 6px; background: rgba(255,154,162,.12); }
+.fs-tr.rv { box-shadow: inset 3px 0 0 var(--down); }
+.fs-tr > span small { margin-left: 5px; font: 700 12px var(--body); }
+.fs-rv { color: var(--down); text-transform: uppercase; letter-spacing: .04em; }
+.fs-tr.me .fs-rv { color: var(--down-ink); }
+.fs-mv.up { color: var(--up); } .fs-mv.down { color: var(--down); }
+.fs-tr.me .fs-mv.up { color: var(--up-ink); } .fs-tr.me .fs-mv.down { color: var(--down-ink); }
+@media (prefers-reduced-motion: reduce) { .fs-tv.new { animation: none; } }
 .fs-rr.zb { border-radius: 6px; background: rgba(242,194,48,.14); }
 .fs-rr.zb > b { color: var(--gold-2); }
 /* ----- fim V8 ----- */

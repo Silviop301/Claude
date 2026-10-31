@@ -14,7 +14,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | Fase | Pronto quando | Estado |
 |---|---|---|
 | 0 · Preparar | Os números chegam ao servidor (`api/stats.php`, `src/stats.js`, `tools/craque_numeros.py`) e quem joga o Jogo a Jogo vê o aviso do save novo | no ar (PR #108) |
-| 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **em andamento**: parte 1 (jogos vividos, resumidos e no banco; save novo), parte 2 (um lance seu em todo jogo), parte 3 (tela limpa no celular e no ao vivo) |
+| 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **em andamento**: parte 1 (jogos vividos, resumidos e no banco; save novo), parte 2 (um lance seu em todo jogo), parte 3 (tela limpa no celular e no ao vivo), parte 4 (rodada como na TV) |
 | 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | |
@@ -406,3 +406,16 @@ Proibido também: cartão com faixa colorida na lateral.
 - **Correção**: no intervalo, o gol do minuto 45 aparecia duas vezes na lista do placar (`frame(t)` no intervalo).
 - Já cumpriam a regra (um cartão principal e um botão dourado): cartão do jogo resumido, lance, jornal, resumir.
   Fotos antes/depois em /mnt/project-files/climbix/fase1/ (antes = antes da fase 1; depois = celular).
+
+### Fase 1 do plano, parte 4 · 2026-10-31 · Rodada ao vivo como na TV
+
+- **Plantão** (`#fc-tv`, ui/fullcareer.js): no ao vivo da liga e do grupo continental, uma faixa acima dos outros jogos
+  mostra o último gol de fora ("17' · Gol do Vasco: Fluminense 0 × 2 Vasco") e o que ele faz com você ("· você cai para 5º").
+- **Rival direto** (`rivalOf`): perto de uma linha que vale (título, acesso ou G4, queda), o time do outro lado dela mais
+  perto em pontos (até 6); longe das linhas, o time logo acima. Na tabela: filete vermelho e a etiqueta "rival"; o jogo
+  dele vem primeiro na lista da rodada, com fundo vermelho leve; o plantão diz "seu rival".
+- **Setas**: com a bola rolando, cada time mostra quantas posições subiu ou caiu desde o começo da rodada (não na 1ª).
+- **Correção**: voltando do lance (do minuto dele), a tabela ficava vazia até o próximo gol; agora entra na hora.
+- **Jogo grande "topo" volta a ser contra um dos três primeiros**: o Silvio pediu para não cortar nada pelo tempo
+  previsto (2026-10-31): medir quanto leva de verdade e só então ajustar. ~76 min por temporada no modelo.
+- `craque_telas_jaj.js` ganhou `FULL=1` (foto da página inteira).
