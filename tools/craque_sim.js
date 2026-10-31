@@ -5,10 +5,12 @@ const D = require('../craque/src/data.js');
 const S = require('../craque/src/sim.js');
 const N = +process.argv[2] || 2000;
 const res = [];
+const RIT = { car: 0 }; // MODO=completa: tipos de jogo por temporada (ritmo da fase 1 do plano)
 // Dois perfis de robô: "casual" (escolhas aleatórias) e "esperto" (joga como um humano estratégico:
 // busca sinergias, sobe para clubes maiores sem perder a titularidade, aceita as boas oportunidades).
 const SMART = process.argv[3] !== 'casual';
 for (let n = 0; n < N; n++) {
+  RIT.car = n;
   const POSS = process.env.POS ? process.env.POS.split(',') : ['ATA', 'MEI', 'ZAG', 'GOL'];
   const pos = POSS[n % POSS.length];
   const c = S.newCareer({ name: 'Robô', pos, foot: 'D', country: D.COUNTRIES[Math.floor(n / POSS.length) % D.COUNTRIES.length].id }, 1000 + n);
@@ -63,11 +65,15 @@ for (let n = 0; n < N; n++) {
       c.mode = 'completa'; S.fcStart(c);
       let nx;
       while ((nx = S.fcNext(c))) {
-        if (S.fcEventDue(c)) { const ev = S.fcPickEvent(c); if (ev) doEvent(ev); continue; }
+        if (S.fcEventDue(c)) { const ev = S.fcPickEvent(c); if (ev) { doEvent(ev); const y = RIT[c.season]; if (y && y.length) y[y.length - 1].ev++; } continue; }
         // A semana entre os jogos: o robô usa a automática (FC_WEEK=0 desliga energia e forma, para comparar)
         if (c.fc.wkDue) { S.fcWeek(c); if (!process.env.NOSHOP) shop(c); continue; }
         if (process.env.FOSTAT) { global.FO = global.FO || []; FO.push([c.fc.fo, c.fc.en]); }
         if (nx.moment) { c.mstats = c.mstats || { n: 0, ok: 0 }; c.mstats.n++; if (S.fcAutoMoment(c, nx.moment)) c.mstats.ok++; decisions++; }
+        // Ritmo (plano, fase 1): o tipo de cada jogo do ano, para o tempo da temporada
+        { const k = S.fcKind(c, nx), y = (RIT[c.season] = RIT[c.season] || []); let row = y[y.length - 1];
+          if (!row || row.car !== RIT.car) y.push(row = { car: RIT.car, vivo: 0, resumo: 0, banco: 0, folga: 0, ev: 0, why: {} });
+          row[k]++; if (k === 'vivo') { const w = S.fcBig(c, nx); row.why[w] = (row.why[w] || 0) + 1; } }
         S.fcPlay(c);
         const w = D.POS[c.pos].w, opts = D.INVEST.filter(t => S.canInvest(c, t.id));
         if (opts.length && SMART) { const score = t => (t.attr ? w[Object.keys(t.attr)[0]] : 0.15) / (1 + (c.inv[t.id] || 0)); S.invest(c, opts.sort((a, b) => score(b) - score(a))[0].id); }
@@ -156,3 +162,19 @@ console.log('Duração estimada (6 s por decisão + 5 s de resumo por temporada)
 console.log('Conquistas (% das carreiras):', S.ACHIEVEMENTS.map(a => a.id + ' ' + Math.round((ACH[a.id] || 0) / N * 100) + '%').join(' · '));
 // Cortes de S.GRADES que dariam a distribuição alvo (S11/A26/B31/C19/D13) com estas carreiras: para recalibrar
 { const sc = res.map(r => r.score); console.log('Cortes para o alvo S11/A26/B31/C19/D13: S ' + q(sc, 0.89) + ' · A ' + q(sc, 0.63) + ' · B ' + q(sc, 0.32) + ' · C ' + q(sc, 0.13) + ' (atuais: ' + S.gradesOf(process.env.MODO === 'completa' ? { mode: 'completa' } : null).slice(0, 4).map(g => g.join(' ')).join(' · ') + ')'); }
+
+// Ritmo do Jogo a Jogo (plano, fase 1): alvo ~1 h por temporada e ~15 jogos vividos. Tempo estimado por jogo:
+// vivido 195 s (semana no celular, viagem, jogo ao vivo e jornal), resumido 30 s, no banco 8 s, folga 4 s,
+// evento 25 s, e 120 s por temporada (pré-temporada, janela e resumo).
+if (process.env.MODO === 'completa') {
+  const T = { vivo: 195, resumo: 30, banco: 8, folga: 4 };
+  const rows = Object.keys(RIT).filter(k => k !== 'car').flatMap(k => RIT[k].map(r => Object.assign({ season: +k }, r)));
+  const mins = r => (r.vivo * T.vivo + r.resumo * T.resumo + r.banco * T.banco + r.folga * T.folga + r.ev * 25 + 120) / 60;
+  const fmt = rs => 'jogos ' + q(rs.map(r => r.vivo + r.resumo + r.banco + r.folga), 0.5) + ' · vividos ' + q(rs.map(r => r.vivo), 0.5) + ' (' + q(rs.map(r => r.vivo), 0.1) + '-' + q(rs.map(r => r.vivo), 0.9) + ')' +
+    ' · resumidos ' + q(rs.map(r => r.resumo), 0.5) + ' · banco ' + q(rs.map(r => r.banco), 0.5) + ' · tempo ' + Math.round(q(rs.map(mins), 0.5)) + ' min (' + Math.round(q(rs.map(mins), 0.1)) + '-' + Math.round(q(rs.map(mins), 0.9)) + ')';
+  console.log('Ritmo por temporada (mediana, faixa 10-90%): ' + fmt(rows));
+  [[0, 0], [1, 3], [4, 9], [10, 30]].forEach(([a, b]) => { const rs = rows.filter(r => r.season >= a && r.season <= b); if (rs.length) console.log('  temporadas ' + (a + 1) + (b > a ? '-' + (b + 1) : '') + ': ' + fmt(rs)); });
+  const why = {}; rows.forEach(r => Object.entries(r.why).forEach(([k, n]) => { why[k] = (why[k] || 0) + n; }));
+  console.log('  por que vivido (média por temporada): ' + Object.entries(why).sort((a, b) => b[1] - a[1]).map(([k, n]) => k + ' ' + (n / rows.length).toFixed(1)).join(' · '));
+  console.log('  carreira inteira: ' + Math.round(q(Object.values(rows.reduce((o, r) => { o[r.car] = (o[r.car] || 0) + mins(r); return o; }, {})), 0.5) / 60) + ' h (mediana)');
+}

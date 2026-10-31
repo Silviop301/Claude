@@ -81,6 +81,27 @@
     else try { localStorage.removeItem(RIVAL_KEY); } catch (e) {}
   }
 
+  // Dados da carta final (fim de carreira e carreira antiga do Jogo a Jogo que vira carta)
+  function cardOf(c, f) {
+    const T = c.totals, cty = D.COUNTRIES.find(x => x.id === c.country);
+    const cardData = {
+      name: c.name, number: c.number, wc: T.wc || 0, pos: c.pos, peak: c.peak, attrs: c.peakAttrs || c.attrs, flag: cty.flag,
+      crest: 'badges/' + f.mainClub + '.png', grade: f.grade, verdict: f.verdict, look: U.lookOf(c), shirt: U.kitOf(f.mainClub),
+      goals: T.goals, assists: T.assists, titles: f.titles, ballon: T.ballon,
+      cs: T.cs || 0, penSaved: T.penSaved || 0, tackles: T.tackles || 0,
+      traits: c.traits.map(id => ({ id, icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(c, id) })),
+    };
+    Object.assign(cardData, U.trail(c));
+    // O jogador assina a carta no fim da carreira: começa na Clássica e troca entre as liberadas
+    cardData.sign = 'delafield';
+    return cardData;
+  }
+  // Save novo do Jogo a Jogo (plano, fase 1): a carreira de antes vira carta na coleção, sem a tela do fim.
+  // Sem nenhuma temporada fechada não há carta para fazer. Volta o nome do jogador quando virou carta.
+  function fcLegacy(c) {
+    if (!c || !c.seasons || !c.seasons.length) return null;
+    try { const f = S.finish(c); U.collect(c, f, cardOf(c, f)); return c.name; } catch (e) { return null; }
+  }
   function finale() {
     const f = S.finish(G.c);
     if (window.CLIMBIX_STAT) window.CLIMBIX_STAT('end', G.c.mode || 'rapida', 0, 'c' + G.c.tseed); // contagem anônima
@@ -100,16 +121,7 @@
     const rank = hall.findIndex(h => h.score === f.score && h.name === G.c.name) + 1;
     store(HALL, hall.slice(0, 10));
     const cty = D.COUNTRIES.find(x => x.id === G.c.country);
-    const cardData = {
-      name: G.c.name, number: G.c.number, wc: G.c.totals.wc || 0, pos: G.c.pos, peak: G.c.peak, attrs: G.c.peakAttrs || G.c.attrs, flag: cty.flag,
-      crest: 'badges/' + f.mainClub + '.png', grade: f.grade, verdict: f.verdict, look: U.lookOf(G.c), shirt: U.kitOf(f.mainClub),
-      goals: T.goals, assists: T.assists, titles: f.titles, ballon: T.ballon,
-      cs: T.cs || 0, penSaved: T.penSaved || 0, tackles: T.tackles || 0,
-      traits: G.c.traits.map(id => ({ id, icon: D.TRAIT_BY_ID[id].icon, lv: S.traitLevel(G.c, id) })),
-    };
-    Object.assign(cardData, U.trail(G.c));
-    // O jogador assina a carta no fim da carreira: começa na Clássica e troca entre as liberadas
-    cardData.sign = 'delafield';
+    const cardData = cardOf(G.c, f);
     const colAt = U.collect(G.c, f, cardData); // a carta entra na coleção
     U.salaRecord(G.c); // e as taças, na Sala de Troféus
     const shareName = G.c.name;
@@ -277,5 +289,5 @@
     $('b-hall').onclick = () => { U.home(); setTimeout(() => { const h = document.querySelector('.hall'); if (h) h.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 250); };
   }
 
-  Object.assign(U, { finale, careerStatsOf: careerStats });
+  Object.assign(U, { finale, careerStatsOf: careerStats, fcLegacy });
 })();

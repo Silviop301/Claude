@@ -13,8 +13,8 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 
 | Fase | Pronto quando | Estado |
 |---|---|---|
-| 0 · Preparar | Os números chegam ao servidor (`api/stats.php`, `src/stats.js`, `tools/craque_numeros.py`) e quem joga o Jogo a Jogo vê o aviso do save novo | **em andamento** |
-| 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | |
+| 0 · Preparar | Os números chegam ao servidor (`api/stats.php`, `src/stats.js`, `tools/craque_numeros.py`) e quem joga o Jogo a Jogo vê o aviso do save novo | no ar (PR #108) |
+| 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **em andamento**: parte 1 (jogos vividos, resumidos e no banco; save novo) |
 | 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | |
@@ -361,3 +361,19 @@ Proibido também: cartão com faixa colorida na lateral.
 - **Aviso do save novo**: notificação "Climbix" no topo do celular do Jogo a Jogo até tocar em Entendi
   (`climbix-aviso-save-v1`), e uma linha na criação da carreira jogo a jogo.
 - **Plano no ciclo**: seção "Plano em andamento" acima; `craque_ciclo.sh` mostra a contagem no resumo.
+
+### Fase 1 do plano, parte 1 · 2026-10-31 · Jogos vividos, resumidos e no banco (save novo)
+
+- **Tipo de jogo** (`S.fcBig`, `S.fcKind` em engine/fullcareer.js): vivido (decisão com lance, copa a partir da 2ª fase,
+  todo jogo continental, estreia do ano, clássico, contra um dos três primeiros da 6ª rodada em diante, briga direta no
+  último terço perto de uma linha que vale, última rodada, ou "Viver este jogo"); resumido (jogo comum em que você
+  joga: um cartão com placar, sua nota e um fato); no banco (placar e pronto). "Resumir até o próximo jogo grande"
+  substitui "Simular 5 jogos" e "Simular até o fim" (o plano troca o simular pelo resumir) e mostra a lista dos jogos.
+- **Ritmo medido** (`MODO=completa node tools/craque_sim.js`, linhas "Ritmo"): mediana de 15 vividos e ~66 min por
+  temporada (1ª temporada ~21 min: o garoto fica muito no banco; da 11ª em diante ~74 min); carreira inteira ~22 h.
+  Equilíbrio igual (o tipo de jogo só muda a apresentação).
+- **Save novo, uma vez só**: carreira jogo a jogo sem `c.fcv === 2` vira carta na coleção (`U.fcLegacy`) e a tela
+  inicial avisa uma vez. O aviso no celular da fase 0 saiu (cumpriu o papel). Daqui em diante toda parte traz migração.
+- **Fotos do Jogo a Jogo**: `tools/craque_telas_jaj.js` (antes em /mnt/project-files/climbix/fase1/antes).
+- Pendência anotada: na 1ª temporada o garoto fica no banco em ~22 de 39 jogos; vale olhar na parte de tela limpa ou
+  na fase 4 (empréstimo na janela).

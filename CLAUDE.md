@@ -59,6 +59,7 @@ que lá está como recusado sem evidência nova.
 ```
 python3 -m http.server 8765                         # jogo em http://127.0.0.1:8765/craque/
 node tools/craque_sim.js 3000                       # equilíbrio: distribuição de notas, títulos, duração
+MODO=completa node tools/craque_sim.js 300          # Jogo a Jogo: notas e o ritmo (jogos vividos/resumidos/banco e minutos por temporada; alvo ~15 e ~1 h)
 ORIGIN=tardia CHAL=fiel DEAL=salario node tools/craque_sim.js   # origem/desafio/contrato fixos
 node tools/craque_decisoes.js                       # quanto vale decidir bem (melhor vs aleatório)
 node tools/craque_audit_eventos.js [ids]            # auditoria das decisões (esperado: 0 alertas)
@@ -75,6 +76,7 @@ python3 tools/craque_portal.py [itch]               # pacote para portal (dist/c
 bash tools/craque_ciclo.sh /tmp/ciclo                # checagens do ciclo num resumo (RAPIDO=1 mais curto)
 python3 tools/craque_lint_textos.py /tmp/ciclo/tr-cel   # plural, contração e placeholder errados no texto das telas
 python3 tools/craque_telas_diff.py /tmp/antes /tmp/depois   # telas que mudaram entre duas rodadas do craque_telas.js
+NODE_PATH=$(npm root -g) node tools/craque_telas_jaj.js /tmp/jaj   # fotos do Jogo a Jogo (criação, celular e apps, partida, jornal, lance, fim da temporada); DESKTOP=1 ... 1440 900
 ```
 
 Não há build, lint nem testes unitários: a validação é o simulador + o e2e + olhar a tela.
@@ -111,6 +113,7 @@ dividem ajudantes por `CRAQUE_SIM._`. O motor não usa DOM: roda no navegador e 
 | `origins.js` | Origens e desafios (liberados por conquistas) |
 | `contract.js` | Termos do contrato e proposta no meio do contrato |
 | `fixtures.js` | Carreira Completa: calendário e placares da liga que batem com a tabela da temporada (`S.fullSeason`) |
+| `fullcareer.js` | Jogo a Jogo: calendário, semana, loja, apostas, partida; tipo de jogo `S.fcKind` (vivido, resumido, banco) |
 
 ### Dados e textos — `craque/src/`
 

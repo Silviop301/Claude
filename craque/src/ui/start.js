@@ -49,8 +49,20 @@
     if (!b || b.classList.contains('on')) return;
     sfx('tap'); U.backTo = null; U[b.dataset.tab]();
   });
+  // Save novo do Jogo a Jogo (plano, fase 1, uma vez só): carreira de antes (sem c.fcv 2) vira carta na coleção
+  const FCV = 2, JAJ_NEW = 'climbix-jaj-novo';
+  function fcCheck() {
+    const sv = load(U.SAVE_FC);
+    if (!sv || !sv.c || sv.c.fcv === FCV) return;
+    const name = U.fcLegacy(sv.c);
+    store(U.SAVE_FC, { c: null, at: Date.now() });
+    store(JAJ_NEW, { name, at: Date.now() });
+  }
   function home() {
     G.c = null; G.step = null; bar();
+    fcCheck();
+    const jn = load(JAJ_NEW), jnLine = jn && !jn.seen ? '<button class="hm-line hm-jn" id="b-jaj-novo">' + U.emo('🏟️', 'xs') + '<span><b>O Jogo a Jogo foi refeito.</b> ' +
+      (jn.name ? 'A carreira de ' + esc(jn.name) + ' virou carta na sua coleção.' : 'A carreira de antes ficou para trás.') + '</span><em>Ok</em></button>' : '';
     const saved = load(SAVE), savedFc = load(U.SAVE_FC);
     const saves = [['rapida', saved], ['completa', savedFc]].filter(([, sv]) => sv && sv.c).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
     const L = U.PROFILE.level((U.ITEMS.get().prof || {}).xp), st = U.ITEMS.streak(), packs = U.ITEMS.get().packs.length;
@@ -62,7 +74,7 @@
         (st.n ? '<span class="hm-streak" title="Dias seguidos">' + U.emo('🔥', 'sm') + st.n + '</span>' : '') +
         '<button class="hm-lv" id="b-prof" aria-label="Perfil, nível ' + L.lv + '"><b>' + L.lv + '</b><i><em style="width:' + Math.round(L.cur / L.next * 100) + '%"></em></i></button>' +
         '<button class="hm-cfg" id="b-sound" aria-label="Configurações">' + U.GEAR_SVG + '</button></div>' +
-      U.challengeHome() + U.relampagoHome(true) +
+      jnLine + U.challengeHome() + U.relampagoHome(true) +
       (saves.length ? '<section class="hm-sec"><h2>Seu jogo</h2>' + contTicket(saves[0][0], saves[0][1].c) + (saves[1] ? also(saves[1]) : '') + '</section>' : '') +
       (packs ? '<button class="hm-line" id="b-hb-packs">' + U.emo('📦', 'xs') + '<span><b>' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</b> para abrir</span><em>Abrir ›</em></button>' : '') +
       '<section class="hm-sec"><h2>Escolha o jogo</h2><div class="hm-tks">' + modeTicket('rapida') + modeTicket('completa') + modeTicket('relampago') +
@@ -70,6 +82,7 @@
       '</div></section>' + U.deskHint() + '</div>' + U.tabs('home')
     );
     const cont = sv => {
+      if (sv.c.mode === 'completa' && sv.c.fcv !== FCV) return home(); // veio da nuvem de antes do save novo
       G.c = sv.c;
       // saves de antes dos investimentos
       G.c.inv = G.c.inv || {}; G.c.buys = G.c.buys || 0;
@@ -85,6 +98,7 @@
     const newIn = (sv, mode) => () => (sv && sv.c ? U.ask('Começar outra carreira?', 'A carreira de ' + sv.c.name + ' (' + sv.c.age + ' anos) será apagada quando o novo jogador assinar com um clube.', 'Nova carreira', () => create(null, mode)) : create(null, mode));
     $('b-new').onclick = newIn(saved, 'rapida');
     $('b-new-fc').onclick = newIn(savedFc, 'completa');
+    if ($('b-jaj-novo')) $('b-jaj-novo').onclick = () => { store(JAJ_NEW, Object.assign(jn, { seen: true })); sfx('tap'); home(); };
     U.packHomeBind();
     $('b-prof').onclick = () => { sfx('tap'); U.profile(); };
     U.challengeHomeBind();
@@ -262,7 +276,6 @@
     render(
       '<button class="back-link" id="b-back-home">‹ Início</button>' +
       '<div class="eyebrow">' + (st.mode === 'completa' ? 'Carreira jogo a jogo' : 'Carreira rápida') + '</div><h2 class="cr-title">Quem é o garoto?</h2>' +
-      (st.mode === 'completa' ? '<p class="cr-aviso">Atenção: o Jogo a Jogo está sendo refeito e esta carreira recomeça do zero numa das próximas atualizações (vira carta no álbum).</p>' : '') +
       // cc-side: só agrupa carta e botões (no computador vira a coluna da esquerda; no celular não muda nada)
       '<div class="cc-side"><div class="cc"><div class="cc-top"><button class="cc-num" id="f-num" aria-label="Número da camisa: ' + st.num + '. Trocar">' + numBtn() + '</button>' +
       '<span class="cc-flag" id="cc-flag"></span></div>' +
@@ -312,7 +325,7 @@
 
   function start(st) {
     G.c = S.newCareer({ name: st.name.trim() || 'Craque', pos: st.pos, foot: st.foot, country: st.country, number: st.num });
-    if (st.mode === 'completa') G.c.mode = 'completa';
+    if (st.mode === 'completa') { G.c.mode = 'completa'; G.c.fcv = FCV; }
     S.setOrigin(G.c, U.achHas((S.ORIGIN_BY_ID[st.origin] || {}).need) ? st.origin : 'base', st.challenge);
     // Só entra o que está liberado (a prévia fica de fora)
     G.c.look = onlyLook(I.clean(st.look));

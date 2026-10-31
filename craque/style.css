@@ -5391,7 +5391,27 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
 @keyframes busGo { from { transform: translateX(-120px); } to { transform: translateX(calc(100vw + 20px)); } }
 @keyframes busBack { from { transform: translateX(calc(100vw + 20px)); } to { transform: translateX(-120px); } }
 
-/* Aviso do save novo do Jogo a Jogo (plano, fase 0): no celular e na criação */
-.fc-aviso { display: grid; gap: 10px; }
-.fc-aviso p { margin: 0; line-height: 1.45; }
-.cr-aviso { margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--gold); border-radius: 10px; font-size: 14px; line-height: 1.4; }
+/* Jogo a Jogo, fase 1: tipo do próximo jogo, jogo resumido e o resumo de vários jogos (um cartão de papel por tela) */
+.prc-kind { margin: 0 0 8px; font: 500 14px/1.35 var(--body); color: var(--tx-2); }
+.prc-kind b { color: var(--tx-1); font-weight: 700; }
+.prc-kind.vivo b { color: var(--gold); }
+.prc-sim { flex-wrap: wrap; gap: 4px 18px; }
+.fb-h { margin: 2px 0 12px; }
+.fb { display: grid; gap: 10px; text-align: center; margin-bottom: 12px; }
+.fb-sc { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.fb-sc .crest { width: 52px; height: 52px; margin: 0; }
+.fb-sc b { font: 800 44px/1 var(--display); color: var(--ink); }
+.fb-tm { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font: 700 14px var(--body); color: var(--ink-2); }
+.fb-pen { color: var(--ink-2); font-size: 13px; }
+.fb-me { margin: 0; font: 500 16px var(--body); color: var(--ink); }
+.fb-me b { font: 800 22px var(--display); }
+.fb-f { margin: 0; padding-top: 10px; border-top: 1px solid rgba(19, 32, 26, .15); font: 700 17px/1.3 var(--display); color: var(--ink); }
+.fb.win .fb-sc b { color: var(--up-ink); }
+.fb.loss .fb-sc b { color: var(--down-ink); }
+.fb-list { margin-bottom: 12px; }
+.fb-list .fb-me { margin-bottom: 8px; }
+.fb-list ul { list-style: none; margin: 0; padding: 0; display: grid; }
+.fb-list li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(19, 32, 26, .12); font: 500 14px var(--body); color: var(--ink); }
+.fb-list li em { font: 800 15px var(--display); font-style: normal; color: var(--ink-2); }
+.fb-list li.win b { color: var(--up-ink); }
+.fb-list li.loss b { color: var(--down-ink); }

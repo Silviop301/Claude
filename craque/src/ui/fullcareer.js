@@ -43,7 +43,7 @@
   // que levam às telas, os apps e o ingresso para o jogo.
   const APPS = [['ag', '📒', 'Agenda'], ['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['me', '📈', 'Ficha'], ['shop', '🏷️', 'Loja'], ['bet', '🎰', 'Zé']];
   function phone() {
-    const c = G.c, nx = S.fcNext(c), fc = c.fc;
+    const c = G.c, nx = S.fcNext(c), fc = c.fc, kind = S.fcKind(c, nx);
     const gd = dayOf(nx.e), eve = DAYS[(gd + 6) % 7];
     const hh = 17 + (fc.i * 7) % 5, mm = (fc.i * 23 + 11) % 60, clk = hh + ':' + String(mm).padStart(2, '0');
     const en = Math.round(fc.en === undefined ? 100 : fc.en);
@@ -55,32 +55,25 @@
       '<div class="ph-ns">' + pings(c, nx).map((n, k) => '<button class="ph-n"' + (n.go ? ' data-go="' + n.go + '"' : ' disabled') + '><b>' + esc(n.who) + ' <i>· ' + when[Math.min(k, when.length - 1)] + '</i></b><span>' + esc(n.txt) + '</span></button>').join('') + '</div>' +
       '<div class="ph-apps">' + APPS.map(([k, e, n]) => '<button class="ph-app" data-go="' + k + '"><i>' + U.emo(e, 'md') + '</i><span>' + n + '</span></button>').join('') + '</div>' +
       '</div><div class="ph-side">' +
-        '<button class="prc-tk" id="fc-play"><span class="prc-tk-m"><b>' + (nx.moment ? 'Jogar a decisão' : nx.vs ? 'Ir pro jogo' : 'Seguir') + '</b><small>' +
+        '<p class="prc-kind ' + kind + '">' + kindTxt(c, nx, kind) + '</p>' +
+        '<button class="prc-tk" id="fc-play"><span class="prc-tk-m"><b>' + (nx.moment ? 'Jogar a decisão' : kind === 'vivo' ? 'Ir pro jogo' : nx.vs ? 'Jogar' : 'Seguir') + '</b><small>' +
           (nx.vs ? esc(nameOf(nx.home ? c.club : nx.vs)) + ' × ' + esc(nameOf(nx.home ? nx.vs : c.club)) : esc(nx.compName)) + '</small></span><span class="prc-tk-s"><small>jogo</small><b>' + (fc.i + 1) + '</b></span></button>' +
-        '<div class="prc-sim"><button class="link-btn" id="fc-5">Simular 5 jogos</button><button class="link-btn" id="fc-end">Simular até o fim</button></div>' +
+        '<div class="prc-sim">' + (kind === 'resumo' ? '<button class="link-btn" id="fc-live">Viver este jogo</button>' : '') +
+          (kind !== 'vivo' ? '<button class="link-btn" id="fc-skip2">Resumir até o próximo jogo grande</button>' : '') + '</div>' +
       '</div></div></div>');
     document.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go); }; });
-    $('fc-play').onclick = () => { if (G.c.fc.wkDue) { S.fcWeek(G.c, myPick()); unpick(); } const n = S.fcNext(G.c); n.vs ? fly(n, false, () => start(n)) : start(n); };
-    $('fc-5').onclick = () => quick(5);
-    $('fc-end').onclick = () => quick(999);
-  }
-  // O Jogo a Jogo vai ser refeito (ritmo, telas, celular com pessoas) e o save recomeça uma vez, na fase 1 do plano
-  const AVISO = 'climbix-aviso-save-v1';
-  function aviso() {
-    render('<div class="fc-scr" id="fc-scr"><button class="back-link" id="fc-back">‹ Celular</button><h2>O Jogo a Jogo vai recomeçar</h2>' +
-      '<div class="card fc-aviso"><p>O Jogo a Jogo está sendo refeito: temporada mais longa, um lance seu em cada jogo, rodada ao vivo com cara de TV e telas mais limpas.</p>' +
-      '<p>Para isso, <b>a carreira jogo a jogo de agora recomeça do zero</b> numa das próximas atualizações. É uma vez só: depois disso, toda novidade chega sem apagar o que você já jogou.</p>' +
-      '<p>A carreira que você tem hoje vira uma carta no seu álbum. A Carreira Rápida, a Relâmpago, a coleção e o perfil não mudam.</p></div>' +
-      '<button class="btn" id="fc-ok">Entendi</button></div>');
-    $('fc-back').onclick = phone;
-    $('fc-ok').onclick = () => { U.store(AVISO, 1); sfx('tap'); phone(); };
-    window.scrollTo(0, 0);
+    $('fc-play').onclick = () => {
+      if (G.c.fc.wkDue) { S.fcWeek(G.c, myPick()); unpick(); }
+      const n = S.fcNext(G.c), k = S.fcKind(G.c, n);
+      if (k !== 'vivo') return brief(n);
+      n.vs ? fly(n, false, () => start(n)) : start(n);
+    };
+    if ($('fc-live')) $('fc-live').onclick = () => { sfx('tap'); S.fcLive(G.c); save(); phone(); };
+    if ($('fc-skip2')) $('fc-skip2').onclick = () => skipTo();
   }
   // Notificações do celular: quem fala e o que pede; cada uma abre a tela dela
   function pings(c, nx) {
     const fc = c.fc, out = [], n = (go, who, txt) => out.push({ go, who, txt });
-    // Aviso do save novo (plano, fase 0): fica no topo até a pessoa ler e tocar em Entendi
-    if (!U.load(AVISO)) n('aviso', 'Climbix', 'Aviso: numa das próximas atualizações o Jogo a Jogo recomeça do zero. Toque para saber mais.');
     const p = Math.round(S.fcStartP(c) * 100);
     if (nx.injury) n(null, /suspensão/.test(nx.injury) ? 'Diretoria' : 'Departamento médico', /suspensão/.test(nx.injury) ? (/manipula/.test(fc.injName) ? 'Suspenso pelo caso do cartão combinado: fora por mais ' : 'Suspenso por causa da aposta: fora por mais ') + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') : nx.injury.charAt(0).toUpperCase() + nx.injury.slice(1) + ': fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') + (fc.wkDue ? ' Fisioterapia na semana ajuda.' : ''));
     else if (nx.vs) n(null, 'Técnico', nx.on === null ? 'Escalo o time depois do treino da semana. Hoje você tem ' + p + '% de chance de começar.' : nx.on ? 'Amanhã você começa jogando. Conto contigo.' : nx.why === 'cansaço' ? 'Vou te poupar amanhã, você tá sem perna. Descansa.' : nx.why === 'banco' ? 'Amanhã você começa no banco. Treina forte que a chance aparece.' : 'Amanhã vou rodar o elenco e você fica fora.');
@@ -151,7 +144,6 @@
   const LOJA_IMG = ['chuteira-g1', 'chuteira-g2', 'chuteira-g3', 'luvas-g1', 'luvas-g2', 'luvas-g3', 'pt', 'physio', 'nutri', 'video', 'press', 'c1', 'c2', 'c3', 'c4', 'house'];
   function go(k) {
     if (k === 'evo') return evolve();
-    if (k === 'aviso') return aviso();
     if (k === 'ag') { agOpen = -1; return agenda(); }
     const c = G.c, body = {
       wk: '<div class="fc-wk" id="fc-wk"></div><div class="fs-acts" id="fc-acts"></div>',
@@ -857,19 +849,62 @@
   }
 
   // Simula sem o ao vivo; para antes de jogo com lance decisivo (esse você joga) e nas datas de evento
-  function quick(n) {
-    const c = G.c;
-    let k = 0, nx;
-    while (k < n) {
-      if (c.fc.wkDue) { S.fcWeek(c, k === 0 ? myPick() : undefined); unpick(); } // a semana: a marcada na tela, depois a automática
+  // Tipo do próximo jogo, numa linha acima do ingresso: vivido (e por quê), resumido ou no banco
+  const WHY = { decisao: 'Decisão', mata: 'Mata-mata', continental: 'Noite continental', estreia: 'Estreia do ano', classico: 'Clássico', ultima: 'Última rodada',
+    briga: 'Briga direta na tabela', topo: 'Contra um dos três primeiros', escolha: 'Você escolheu viver' };
+  function kindTxt(c, nx, kind) {
+    if (kind === 'vivo') return '<b>Jogo grande</b> · ' + WHY[S.fcBig(c, nx)] + ': você vive o jogo inteiro';
+    if (kind === 'banco') return '<b>Você fica no banco</b> · o jogo passa rápido';
+    if (kind === 'folga') return '<b>Folga</b> · seu time não joga nesta data';
+    return '<b>Jogo comum</b> · passa em resumo: placar, sua nota e o que importou';
+  }
+  // Jogo resumido, no banco ou folga: joga na hora e mostra um cartão só (placar, sua nota e um fato)
+  function brief(nx) {
+    const c = G.c, en0 = c.fc.en, out = S.fcPlay(c);
+    save(); bar(); sfx('whistle');
+    const x = Object.assign({}, nx, { en0 });
+    const go = () => (out.title ? celebrate(out, paintOrEnd) : paintOrEnd());
+    render(briefCard(c, x, out, true) + '<button class="btn" id="fc-next">' + (G.c.fc.done ? 'Ver resumo da temporada' : 'Voltar ao celular') + '</button>');
+    $('fc-next').onclick = go;
+  }
+  function briefCard(c, x, out, big) {
+    const m = out.my || {}, kind = !x.vs ? 'folga' : m.on ? 'resumo' : 'banco';
+    const res = !x.vs ? 'none' : x.knock ? (m.won ? 'win' : 'loss') : m.gf > m.ga ? 'win' : m.gf < m.ga ? 'loss' : 'draw';
+    const [h1] = headline(c, x, m, res);
+    const [gh, ga] = x.home ? [m.gf, m.ga] : [m.ga, m.gf];
+    const line = kind === 'resumo' ? 'Nota <b>' + rate(m.rating) + '</b>' + (m.goals ? ' · ' + D.plural(m.goals, 'gol', 'gols') : '') + (m.assists ? ' · ' + D.plural(m.assists, 'assistência', 'assistências') : '') +
+        ((c.pos === 'GOL' || c.pos === 'ZAG') && m.ga === 0 ? ' · sem sofrer gol' : '')
+      : kind === 'banco' ? (x.injury ? esc(x.injury.charAt(0).toUpperCase() + x.injury.slice(1)) + ': você viu de fora.' : 'Você ficou no banco.') : 'Seu time folgou nesta data.';
+    const sc = x.vs ? '<div class="fb-sc">' + crest(x.home ? c.club : x.vs, 'md') + '<b>' + gh + ' × ' + ga + '</b>' + crest(x.home ? x.vs : c.club, 'md') + '</div>' +
+      '<div class="fb-tm"><span>' + esc(nameOf(x.home ? c.club : x.vs)) + '</span><span>' + esc(nameOf(x.home ? x.vs : c.club)) + '</span></div>' + (m.pens ? '<small class="fb-pen">decidido nos pênaltis</small>' : '') : '';
+    return '<div class="eyebrow">' + esc(x.compName) + ' · ' + esc(x.stage) + '</div>' +
+      (big ? '<h2 class="fb-h">' + (kind === 'resumo' ? 'Jogo resumido' : kind === 'banco' ? 'Do banco' : 'Folga') + '</h2>' : '') +
+      '<div class="card fb ' + res + '">' + sc + '<p class="fb-me">' + line + '</p>' + (x.vs ? '<p class="fb-f">' + h1 + '</p>' : '') + '</div>';
+  }
+  // Resumir: passa os jogos comuns (semana automática, carta decidindo) até o próximo jogo grande, um evento ou o fim
+  function skipTo() {
+    const c = G.c, rows = [];
+    let nx, title = null;
+    for (let k = 0; k < 60; k++) {
+      if (c.fc.wkDue) { S.fcWeek(c, k === 0 ? myPick() : undefined); unpick(); }
       nx = S.fcNext(c);
-      if (!nx || (k > 0 && (nx.moment || S.fcEventDue(c)))) break;
-      if (nx.moment) { S.fcAutoMoment(c, nx.moment); }
-      const out = S.fcPlay(c); k++;
-      if (out && out.title) { save(); return celebrate(out, paintOrEnd); }
+      if (!nx || (k > 0 && (S.fcKind(c, nx) === 'vivo' || S.fcEventDue(c)))) break;
+      if (nx.moment) S.fcAutoMoment(c, nx.moment);
+      const out = S.fcPlay(c);
+      if (!out) break;
+      rows.push([nx, out]);
+      if (out.title) { title = out; break; }
     }
-    sfx('whistle'); save();
-    paintOrEnd();
+    sfx('whistle'); save(); bar();
+    const me = rows.filter(([, o]) => o.my && o.my.on), rs = me.map(([, o]) => o.my.rating);
+    const W = rows.filter(([n, o]) => o.my && (n.knock ? o.my.won : o.my.gf > o.my.ga)).length, E = rows.filter(([n, o]) => o.my && !n.knock && o.my.gf === o.my.ga).length;
+    const li = ([n, o]) => { const m = o.my; if (!m) return '<li><span>' + esc(n.compName) + '</span><em>folga</em></li>';
+      const [gh, ga] = n.home ? [m.gf, m.ga] : [m.ga, m.gf], r = n.knock ? (m.won ? 'win' : 'loss') : m.gf > m.ga ? 'win' : m.gf < m.ga ? 'loss' : 'draw';
+      return '<li class="' + r + '"><span>' + esc(nameOf(n.home ? c.club : n.vs)) + ' <b>' + gh + ' × ' + ga + '</b> ' + esc(nameOf(n.home ? n.vs : c.club)) + '</span><em>' + (m.on ? rate(m.rating) : 'banco') + '</em></li>'; };
+    render('<div class="eyebrow">Resumo · ' + year() + '</div><h2 class="fb-h">' + D.plural(rows.length, 'jogo resumido', 'jogos resumidos') + '</h2>' +
+      '<div class="card fb-list"><p class="fb-me">' + W + 'V ' + E + 'E ' + (rows.length - W - E) + 'D' + (rs.length ? ' · sua nota média <b>' + rate(rs.reduce((a, b) => a + b, 0) / rs.length) + '</b>' : '') + '</p><ul>' + rows.map(li).join('') + '</ul></div>' +
+      '<button class="btn" id="fc-next">' + (G.c.fc.done ? 'Ver resumo da temporada' : 'Voltar ao celular') + '</button>');
+    $('fc-next').onclick = () => (title ? celebrate(title, paintOrEnd) : paintOrEnd());
   }
   const paintOrEnd = () => (G.c.fc.done ? finishSeason() : hub());
 
