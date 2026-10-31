@@ -542,118 +542,236 @@
     if (ok) ok.onclick = () => { const legs = betLegs(S.fcBetRound(G.c)); if (S.fcBet(G.c, legs, betStake)) { sfx('coin'); betSel = {}; csOpen = null; save(); bar(); betRender(); } };
   }
   // ---------- mesa dos fundos (engine/cassino.js): uma noite entre um jogo e outro, quatro jogos ----------
+  // O sorteio sai do motor na hora do clique; a tela só anima até mostrar o que já saiu (roda, rolos, cartas)
   let zeGame = null, rolBet = 'red', rolNum = 7, casStake = 0, casLast = null, bichoG = 15, bichoMode = 'cab', casBusy = false;
+  let rolRot = 0, bjSeen = { p: 0, d: 0, open: false }, slotLast = [0, 1, 2], bichoStamp = false;
+  const calm = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const MESA_ICO = {
-    rol: '<svg viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="25" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="28" cy="28" r="15" fill="none" stroke="currentColor" stroke-width="2"/><path d="M28 3v10M28 43v10M3 28h10M43 28h10M10 10l7 7M39 39l7 7M46 10l-7 7M17 39l-7 7" stroke="currentColor" stroke-width="2"/><circle cx="28" cy="28" r="4" fill="currentColor"/></svg>',
-    slot: '<svg viewBox="0 0 56 56" aria-hidden="true"><rect x="4" y="10" width="48" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><path d="M20 10v36M36 10v36" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="28" r="4" fill="currentColor"/><circle cx="28" cy="28" r="4" fill="currentColor"/><circle cx="44" cy="28" r="4" fill="currentColor"/></svg>',
-    bj: '<svg viewBox="0 0 56 56" aria-hidden="true"><rect x="6" y="8" width="26" height="38" rx="4" fill="none" stroke="currentColor" stroke-width="2.5" transform="rotate(-10 19 27)"/><rect x="24" y="10" width="26" height="38" rx="4" fill="none" stroke="currentColor" stroke-width="2.5" transform="rotate(8 37 29)"/></svg>',
-    bicho: '<svg viewBox="0 0 56 56" aria-hidden="true"><rect x="6" y="6" width="44" height="44" rx="4" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M6 20h44M6 34h44M20 6v44M34 6v44" stroke="currentColor" stroke-width="1.5"/><circle cx="27" cy="27" r="5" fill="currentColor"/></svg>',
+    rol: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29" fill="#6B4423"/><circle cx="32" cy="32" r="25" fill="#161616"/>' +
+      Array.from({ length: 12 }, (_, k) => '<path d="M32 32 L' + (32 + 25 * Math.sin(k * Math.PI / 6)).toFixed(1) + ' ' + (32 - 25 * Math.cos(k * Math.PI / 6)).toFixed(1) + ' A25 25 0 0 1 ' + (32 + 25 * Math.sin((k + 1) * Math.PI / 6)).toFixed(1) + ' ' + (32 - 25 * Math.cos((k + 1) * Math.PI / 6)).toFixed(1) + 'Z" fill="' + (k === 0 ? '#1F8A4C' : k % 2 ? '#C8323A' : '#161616') + '"/>').join('') +
+      '<circle cx="32" cy="32" r="14" fill="#8A5A2B" stroke="#E2B44A" stroke-width="2"/><circle cx="32" cy="32" r="3.5" fill="#E2B44A"/><circle cx="47" cy="16" r="3.2" fill="#FBF8EF"/></svg>',
+    slot: '<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="12" width="50" height="40" rx="8" fill="#E2B44A"/><rect x="10" y="20" width="40" height="24" rx="4" fill="#FBF8EF"/><path d="M23.3 20v24M36.6 20v24" stroke="#13201A" stroke-width="2"/><text x="16.6" y="37" font-family="Barlow Condensed,Arial" font-weight="800" font-size="14" text-anchor="middle" fill="#C8323A">7</text><text x="30" y="37" font-family="Barlow Condensed,Arial" font-weight="800" font-size="14" text-anchor="middle" fill="#C8323A">7</text><text x="43.3" y="37" font-family="Barlow Condensed,Arial" font-weight="800" font-size="14" text-anchor="middle" fill="#C8323A">7</text><path d="M55 30h4V12" stroke="#FBF8EF" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="59" cy="10" r="4" fill="#C8323A"/></svg>',
+    bj: '<svg viewBox="0 0 64 64" aria-hidden="true"><g transform="rotate(-14 24 34)"><rect x="10" y="14" width="28" height="40" rx="4" fill="#FBF8EF" stroke="#13201A" stroke-width="2"/><text x="15" y="25" font-family="Barlow Condensed,Arial" font-weight="800" font-size="10" fill="#13201A">A</text><text x="24" y="42" font-family="Arial" font-size="16" text-anchor="middle" fill="#13201A">♠</text></g><g transform="rotate(10 40 32)"><rect x="26" y="12" width="28" height="40" rx="4" fill="#FBF8EF" stroke="#13201A" stroke-width="2"/><text x="31" y="23" font-family="Barlow Condensed,Arial" font-weight="800" font-size="10" fill="#C8323A">K</text><text x="40" y="40" font-family="Arial" font-size="16" text-anchor="middle" fill="#C8323A">♥</text></g></svg>',
+    bicho: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M12 6h40v52l-5-4-5 4-5-4-5 4-5-4-5 4-5-4-5 4z" fill="#FBF8EF" stroke="#13201A" stroke-width="2"/><path d="M18 18h28M18 26h28M18 34h18" stroke="#9AA59F" stroke-width="2"/><ellipse cx="40" cy="38" rx="9" ry="6" fill="none" stroke="#C8323A" stroke-width="2.5" transform="rotate(-8 40 38)"/><text x="40" y="42" font-family="Courier New,monospace" font-weight="700" font-size="10" text-anchor="middle" fill="#13201A">16</text></svg>',
   };
   const GAMES = [['rol', 'Roleta', 'a casa leva 2,7%'], ['slot', 'Caça-níquel', 'devolve 92% em média'], ['bj', 'Vinte e um', 'a casa leva uns 5%'], ['bicho', 'Bicho', 'sai com o próximo jogo']];
   // Símbolo do caça-níquel: o cartão vermelho é desenhado (não há ícone dele)
   const sym = (k, sz) => (S.SLOT[k].id === 'card' ? '<b class="mz-rc ' + sz + '" aria-label="Cartão vermelho"></b>' : U.emo(S.SLOT[k].e, sz));
-  const SUIT = ['♠', '♥', '♦', '♣'], FACE = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
-  const cardHtml = x => '<i class="mz-card' + (x.s === 1 || x.s === 2 ? ' red' : '') + '">' + (FACE[x.v] || x.v) + '<small>' + SUIT[x.s] + '</small></i>';
-  function stakeSeg(c, R$) {
+  const SUIT = ['♠\uFE0E', '♥\uFE0E', '♦\uFE0E', '♣\uFE0E'], FACE = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
+  // Carta: canto com valor e naipe, naipe grande no meio. cls: 'new' entra voando do baralho, 'flip' vira
+  const cardHtml = (x, cls, delay) => '<i class="mz-card' + (x.s === 1 || x.s === 2 ? ' red' : '') + (cls ? ' ' + cls : '') + '"' + (delay ? ' style="animation-delay:' + delay + 's"' : '') + '><em>' + (FACE[x.v] || x.v) + '<small>' + SUIT[x.s] + '</small></em><b>' + SUIT[x.s] + '</b><em class="r">' + (FACE[x.v] || x.v) + '<small>' + SUIT[x.s] + '</small></em></i>';
+  const backHtml = cls => '<i class="mz-card back' + (cls ? ' ' + cls : '') + '"></i>';
+  const chipLab = v => (v >= 1e6 ? String(Math.round(v / 1e5) / 10).replace('.', ',') + ' mi' : Math.round(v / 1000) + ' mil');
+  function stakeSeg(c) {
     const ch = S.fcChips(c), left = S.fcNightLeft(c);
     if (!ch.includes(casStake)) casStake = ch[0];
-    return '<div class="seg mz-chips">' + ch.map(v => '<button data-cs="' + v + '"' + (v === casStake ? ' class="on"' : '') + (v <= left ? '' : ' disabled') + '>' + R$(v) + '</button>').join('') + '</div>';
+    return '<div class="mz-chips" role="group" aria-label="Valor da aposta">' + ch.map((v, k) => '<button class="mz-chip c' + k + (v === casStake ? ' on' : '') + '" data-cs="' + v + '"' + (v <= left ? '' : ' disabled') + ' aria-label="R$ ' + U.money(v) + '"><span>' + chipLab(v) + '</span></button>').join('') + '</div>';
+  }
+  // Roleta europeia: a ordem real das casas na roda
+  const WHEEL = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+  const STEP = 360 / 37;
+  const colOf = n => (n === 0 ? 'gr' : S.ROULETTE_RED.includes(n) ? 'rd' : 'bk');
+  let wheelSvg = null;
+  function wheel() {
+    if (wheelSvg) return wheelSvg;
+    const P = (r, a) => { const t = (a - 90) * Math.PI / 180; return (100 + r * Math.cos(t)).toFixed(2) + ' ' + (100 + r * Math.sin(t)).toFixed(2); };
+    const seg = WHEEL.map((n, i) => {
+      const a0 = i * STEP - STEP / 2, a1 = a0 + STEP, fill = n === 0 ? '#1F8A4C' : S.ROULETTE_RED.includes(n) ? '#B8262F' : '#151515';
+      return '<path d="M' + P(90, a0) + ' A90 90 0 0 1 ' + P(90, a1) + ' L' + P(62, a1) + ' A62 62 0 0 0 ' + P(62, a0) + 'Z" fill="' + fill + '" stroke="#C9A04A" stroke-width=".6"/>' +
+        '<text transform="translate(' + P(80, i * STEP) + ') rotate(' + (i * STEP).toFixed(2) + ')" text-anchor="middle" dominant-baseline="central" font-family="Barlow Condensed,Arial" font-weight="700" font-size="9.5" fill="#FBF8EF">' + n + '</text>';
+    }).join('');
+    const cross = [0, 90].map(a => '<rect x="97" y="72" width="6" height="56" rx="3" fill="#E2B44A" transform="rotate(' + a + ' 100 100)"/>').join('');
+    wheelSvg = '<svg viewBox="0 0 200 200" aria-hidden="true"><defs><radialGradient id="mzCone" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#B07A3E"/><stop offset="1" stop-color="#5A3418"/></radialGradient></defs>' +
+      '<circle cx="100" cy="100" r="99" fill="#3B2412"/><circle cx="100" cy="100" r="92" fill="#C9A04A"/>' + seg +
+      '<circle cx="100" cy="100" r="62" fill="url(#mzCone)" stroke="#C9A04A" stroke-width="2"/>' +
+      [0, 1, 2, 3, 4, 5, 6, 7].map(k => '<path d="M100 100 L' + P(60, k * 45) + '" stroke="rgba(0,0,0,.18)" stroke-width="1"/>').join('') +
+      cross + '<circle cx="100" cy="100" r="11" fill="#E2B44A"/><circle cx="100" cy="100" r="5" fill="#8A6400"/></svg>';
+    return wheelSvg;
+  }
+  // Ângulo da roda que deixa a casa n embaixo do ponteiro (no topo), sempre girando para a frente
+  function rolTarget(n) {
+    const want = ((-WHEEL.indexOf(n) * STEP) % 360 + 360) % 360, cur = ((rolRot % 360) + 360) % 360;
+    return rolRot + 360 * 5 + ((want - cur + 360) % 360);
+  }
+  function resMsg(L) {
+    if (!L) return '<p class="mz-res idle" id="mz-res">' + (zeGame === 'bicho' ? 'O resultado sai com o próximo jogo.' : 'Escolha a ficha e jogue.') + '</p>';
+    return '<p class="mz-res ' + (L.net > 0 ? 'up' : L.net < 0 ? 'down' : '') + ' pop" id="mz-res">' + L.txt + '</p>';
   }
   function mesaBox(c, R$) {
     const fc = c.fc;
     if (!S.fcNightOpen(c)) {
       zeGame = null;
       const can = S.fcNightCan(c);
-      return '<div class="mz-in"><p class="fc-ze">"Aqui ninguém viu ninguém. Mas se o técnico souber, não fui eu que te chamei."</p>' +
+      return '<div class="mz-in"><div class="mz-sign"><b>Mesa dos fundos</b><small>Bar do Zé · entra pela cozinha</small></div>' +
+        '<p class="fc-ze">"Aqui ninguém viu ninguém. Mas se o técnico souber, não fui eu que te chamei."</p>' +
         '<ul class="mz-cost"><li><span>Energia</span><b class="down">−' + S.FC_NIGHT_EN + ' agora</b></li><li><span>Chance de foto</span><b>' + Math.round(S.FC_NIGHT_PHOTO * 100) + '% (fama −4, técnico −6)</b></li><li><span>Fichas da noite</span><b>até R$ ' + U.money(S.fcNightLimit(c)) + '</b></li></ul>' +
-        '<button class="btn" id="mz-open"' + (can ? '' : ' disabled') + '>' + (can ? 'Ir para a mesa hoje' : (c.money || 0) < 1000 ? 'Sem dinheiro para a mesa' : 'A mesa abre de novo depois do próximo jogo') + '</button>' +
+        '<button class="btn" id="mz-open"' + (can ? '' : ' disabled') + '>' + (can ? 'Entrar pela cozinha' : (c.money || 0) < 1000 ? 'Sem dinheiro para a mesa' : 'A mesa abre de novo depois do próximo jogo') + '</button>' +
         '<small class="fc-own">Uma noite entre um jogo e outro. A casa sempre leva vantagem: ninguém fica rico aqui.</small></div>';
     }
     const n = fc.night, left = S.fcNightLeft(c);
-    const top = '<div class="mz-top"><div><small>Fichas da noite</small><b>R$ ' + U.money(left) + '</b></div><div><small>Na noite</small><b class="' + (n.net >= 0 ? 'up' : 'down') + '">' + (n.net >= 0 ? '+' : '−') + R$(Math.abs(n.net)) + '</b></div></div>' +
-      (n.photo && !zeGame ? '<p class="mz-photo">Saiu foto sua no bar. A imprensa comentou e o técnico não gostou.</p>' : '');
-    if (!zeGame) return top + '<div class="mz-games">' + GAMES.map(([k, t, s]) => '<button class="mz-g mz-' + k + '" data-g="' + k + '">' + MESA_ICO[k] + '<b>' + t + '</b><small>' + s + '</small></button>').join('') + '</div>';
-    const back = '<button class="back-link mz-back" id="mz-back">‹ Mesa</button>';
+    const top = '<div class="mz-top"><div><small>Fichas da noite</small><b id="mz-left">R$ ' + U.money(left) + '</b></div><div><small>Na noite</small><b class="' + (n.net >= 0 ? 'up' : 'down') + '">' + (n.net >= 0 ? '+' : '−') + R$(Math.abs(n.net)) + '</b></div></div>';
+    if (!zeGame) return '<div class="mz-sign sm"><b>Mesa dos fundos</b><small>aberta até o Zé cansar</small></div>' + top +
+      (n.photo ? '<p class="mz-photo">Saiu foto sua no bar. A imprensa comentou e o técnico não gostou.</p>' : '') +
+      '<div class="mz-games">' + GAMES.map(([k, t, s]) => '<button class="mz-g mz-' + k + '" data-g="' + k + '"><span class="mz-art">' + MESA_ICO[k] + '</span><b>' + t + '</b><small>' + s + '</small></button>').join('') + '</div>';
+    const back = '<div class="mz-head"><button class="back-link mz-back" id="mz-back">‹ Mesa</button><b>' + GAMES.find(g => g[0] === zeGame)[1] + '</b></div>';
     const L = casLast && casLast.g === zeGame ? casLast : null;
-    const msg = L ? '<p class="mz-res ' + (L.net > 0 ? 'up' : L.net < 0 ? 'down' : '') + '">' + L.txt + '</p>' : '';
     if (zeGame === 'rol') {
-      const n0 = L ? L.n : null;
-      const B = S.ROULETTE_BETS, opt = Object.keys(B).map(k => '<button class="mz-o' + (rolBet === k ? ' on' : '') + (k === 'red' ? ' rd' : k === 'black' ? ' bk' : '') + '" data-rb="' + k + '"><b>' + B[k][0] + '</b><small>paga ' + B[k][1] + '×</small></button>').join('');
-      const num = '<div class="mz-num"><button class="mz-o' + (rolBet === 'num' ? ' on' : '') + '" data-rb="num"><b>Número ' + rolNum + '</b><small>paga 36×</small></button><div class="ze-st"><button data-rn="-1" aria-label="Número menor">−</button><button data-rn="1" aria-label="Número maior">+</button></div></div>';
-      const ch = rolBet === 'num' ? 1 / 37 : S.ROULETTE_BETS[rolBet][1] === 3 ? 12 / 37 : 18 / 37;
-      return back + top + '<div class="mz-wheel"><div class="mz-w" id="mz-w"></div><div class="mz-hub"><b class="' + (n0 === null ? '' : n0 === 0 ? 'gr' : S.ROULETTE_RED.includes(n0) ? 'rd' : 'bk') + '" id="mz-n">' + (n0 === null ? '?' : n0) + '</b></div><i class="mz-ptr"></i></div>' + msg +
-        '<div class="mz-opts">' + opt + '</div>' + num + stakeSeg(c, R$) +
-        '<button class="btn" id="mz-go"' + (casStake > left ? ' disabled' : '') + '>Girar · ' + R$(casStake) + '</button><small class="fc-own">Chance de ganhar: ' + (Math.round(ch * 1000) / 10).toFixed(1).replace('.', ',') + '%.</small>';
+      const last = L ? L.n : null, B = S.ROULETTE_BETS;
+      const cell = (k, cls) => '<button class="mz-bet' + (cls ? ' ' + cls : '') + (rolBet === k ? ' on' : '') + '" data-rb="' + k + '"><b>' + B[k][0] + '</b><small>' + B[k][1] + '×</small>' + (rolBet === k ? '<i class="mz-mk" aria-hidden="true"></i>' : '') + '</button>';
+      const ch = rolBet === 'num' ? 1 / 37 : B[rolBet][1] === 3 ? 12 / 37 : 18 / 37;
+      const hist = (n.rol || []).slice(0, 8).map(x => '<i class="' + colOf(x) + '">' + x + '</i>').join('');
+      return back + top +
+        '<div class="mz-wheel"><div class="mz-rim"></div><div class="mz-w" id="mz-w" style="transform:rotate(' + rolRot + 'deg)">' + wheel() + '</div>' +
+          '<div class="mz-orbit" id="mz-orbit"><i class="mz-ball' + (last === null ? ' off' : ' in') + '" id="mz-ball"></i></div><i class="mz-ptr" aria-hidden="true"></i></div>' +
+        '<div class="mz-last"><span>Últimos</span><div id="mz-hist">' + (hist || '<em>nenhum ainda</em>') + '</div></div>' + resMsg(L) +
+        '<div class="mz-felt"><div class="mz-row3">' + cell('d1') + cell('d2') + cell('d3') + '</div><div class="mz-row3">' + cell('low') + cell('even') + cell('high') + '</div><div class="mz-row3">' + cell('red', 'rd') + cell('black', 'bk') + cell('odd') + '</div>' +
+          '<div class="mz-numrow"><button class="mz-st" data-rn="-1" aria-label="Número menor">−</button><button class="mz-bet num ' + colOf(rolNum) + (rolBet === 'num' ? ' on' : '') + '" data-rb="num"><b>Número ' + rolNum + '</b><small>36×</small>' + (rolBet === 'num' ? '<i class="mz-mk" aria-hidden="true"></i>' : '') + '</button><button class="mz-st" data-rn="1" aria-label="Número maior">+</button></div></div>' +
+        stakeSeg(c) + '<button class="btn" id="mz-go"' + (casStake > left ? ' disabled' : '') + '>Girar · ' + R$(casStake) + '</button><small class="fc-own mz-odds">Chance de ganhar: ' + (Math.round(ch * 1000) / 10).toFixed(1).replace('.', ',') + '%.</small>';
     }
     if (zeGame === 'slot') {
-      const reels = L ? L.reels : [0, 1, 2];
-      return back + top + '<div class="mz-slot"><b class="mz-sname">Golaço 777</b><div class="mz-reels">' + reels.map((k, i) => '<i id="mz-r' + i + '">' + sym(k, 'lg') + '</i>').join('') + '</div></div>' + msg +
+      const reels = L ? L.reels : slotLast, win = L && L.net > 0;
+      return back + top + '<div class="mz-slot' + (win ? ' win' : '') + (L && L.hit === 3 ? ' big' : '') + '" id="mz-slot"><div class="mz-bulbs" aria-hidden="true">' + '<i></i>'.repeat(11) + '</div><b class="mz-sname">Golaço 777</b>' +
+        '<div class="mz-reels">' + reels.map((k, i) => '<div class="mz-reel" id="mz-r' + i + '"><div class="mz-strip"><i>' + sym((k + 4) % 5, 'lg') + '</i><i class="mid' + (win && L.hit && (L.hit === 3 || reels.filter(x => x === k).length >= 2) ? ' hit' : '') + '">' + sym(k, 'lg') + '</i><i>' + sym((k + 1) % 5, 'lg') + '</i></div></div>').join('') + '<i class="mz-line" aria-hidden="true"></i></div>' +
+        '<div class="mz-bulbs" aria-hidden="true">' + '<i></i>'.repeat(11) + '</div><div class="mz-lever" id="mz-lever" aria-hidden="true"><i></i></div></div>' + resMsg(L) +
         '<ul class="mz-pay">' + S.SLOT.map(x => '<li><span>' + sym(S.SLOT.indexOf(x), 'sm') + ' ' + x.name + '</span><b>3: ' + (x.three < 0 ? 'perde o dobro' : x.three + '×') + ' · 2: ' + String(x.two).replace('.', ',') + '×</b></li>').join('') + '</ul>' +
-        stakeSeg(c, R$) + '<button class="btn" id="mz-go"' + (casStake > left ? ' disabled' : '') + '>Puxar a alavanca · ' + R$(casStake) + '</button>';
+        stakeSeg(c) + '<button class="btn" id="mz-go"' + (casStake > left ? ' disabled' : '') + '>Puxar a alavanca · ' + R$(casStake) + '</button>';
     }
     if (zeGame === 'bj') {
-      const h = S.fcBjHand(c) || (L && L.hand) || null, live = !!S.fcBjHand(c);
-      const table = h ? '<div class="mz-bj"><small>Zé (banca)' + (live ? ' · mostra ' + Math.min(10, h.d[0].v === 1 ? 11 : h.d[0].v) : ' · ' + S.bjTotal(h.d)) + '</small><div>' + (live ? cardHtml(h.d[0]) + '<i class="mz-card back"></i>' : h.d.map(cardHtml).join('')) + '</div>' +
-        '<p>Banca para no 17 · vinte e um de cara paga 2,5×</p><div>' + h.p.map(cardHtml).join('') + '</div><b>Você: ' + S.bjTotal(h.p) + '</b><small>Na mesa: ' + R$(h.stake) + '</small></div>' :
-        '<div class="mz-bj"><p>Banca para no 17 · vinte e um de cara paga 2,5×</p></div>';
-      const acts = live ? '<div class="mz-acts"><button class="btn" data-bj="hit">Pedir</button><button class="btn" data-bj="stand">Parar</button><button class="btn ghost" data-bj="double"' + (h.p.length === 2 && h.stake * 2 <= left ? '' : ' disabled') + '>Dobrar</button></div>' :
-        stakeSeg(c, R$) + '<button class="btn" id="mz-go"' + (casStake > left ? ' disabled' : '') + '>Dar as cartas · ' + R$(casStake) + '</button>';
+      const live = S.fcBjHand(c), h = live || (L && L.hand) || null;
+      let table = '<div class="mz-bjt"><p class="mz-print">Banca para no 17<small>vinte e um de cara paga 2,5×</small></p><div class="mz-deck" aria-hidden="true"></div>';
+      if (h) {
+        // Cartas novas entram voando; no fim, a carta virada da banca vira e as que ela compra chegam uma a uma
+        const dNew = k => k >= bjSeen.d, pNew = k => k >= bjSeen.p;
+        const dealer = live ? cardHtml(h.d[0], dNew(0) ? 'new' : '', dNew(0) ? 0.1 : 0) + backHtml(dNew(1) ? 'new' : '') :
+          h.d.map((x, k) => (k === 1 && !bjSeen.open ? cardHtml(x, 'flip', 0.15) : k >= 2 && dNew(k) ? cardHtml(x, 'new', 0.15 + 0.45 * (k - 1)) : cardHtml(x))).join('');
+        const dTot = live ? Math.min(11, h.d[0].v === 1 ? 11 : h.d[0].v > 10 ? 10 : h.d[0].v) : S.bjTotal(h.d);
+        table += '<div class="mz-hand"><span class="mz-tot' + (!live && dTot > 21 ? ' bust' : '') + '">' + dTot + '</span><div class="mz-cards">' + dealer + '</div><small>Zé, a banca</small></div>' +
+          '<div class="mz-hand me"><div class="mz-cards">' + h.p.map((x, k) => cardHtml(x, pNew(k) ? 'new' : '', pNew(k) ? (bjSeen.p ? 0.05 : [0, 0.2][k] || 0) : 0)).join('') + '</div><span class="mz-tot' + (S.bjTotal(h.p) > 21 ? ' bust' : S.bjTotal(h.p) === 21 ? ' bj' : '') + '">' + S.bjTotal(h.p) + '</span><small>Você · ' + R$(h.stake) + ' na mesa</small></div>';
+        const dealt = !live ? Math.max(0, h.d.length - 2) : 0;
+        bjSeen = { p: h.p.length, d: h.d.length, open: !live, wait: live ? 0 : 0.5 + 0.45 * dealt };
+      } else table += '<div class="mz-hand empty"><small>Ponha a ficha e o Zé dá as cartas.</small></div>';
+      table += '</div>';
+      const acts = live ? '<div class="mz-acts"><button class="btn" data-bj="hit">Pedir</button><button class="btn mz-stand" data-bj="stand">Parar</button><button class="btn ghost" data-bj="double"' + (h.p.length === 2 && h.stake * 2 <= left ? '' : ' disabled') + '>Dobrar</button></div>' :
+        stakeSeg(c) + '<button class="btn" id="mz-go"' + (casStake > left ? ' disabled' : '') + '>' + (h ? 'Nova mão · ' : 'Dar as cartas · ') + R$(casStake) + '</button>';
+      const msg = L && !live ? resMsg(L).replace('class="mz-res', 'style="animation-delay:' + (bjSeen.wait || 0) + 's" class="mz-res') : '';
       return back + top + table + msg + acts;
     }
-    // bicho
-    const pend = (fc.bicho || []).map(b => '<li>' + esc(S.BICHOS[b.g]) + ' · ' + S.BICHO_MODES[b.mode][0].toLowerCase() + ' · ' + R$(b.stake) + '</li>').join('');
-    return back + top + '<p class="fc-own">Escolha um bicho. O resultado sai no jornal, junto com o próximo jogo.</p>' +
-      '<div class="mz-bichos">' + S.BICHOS.map((nm, k) => '<button data-bg="' + k + '"' + (bichoG === k ? ' class="on"' : '') + '><b>' + String(k + 1).padStart(2, '0') + '</b><small>' + nm + '</small></button>').join('') + '</div>' +
+    // bicho: talão de papel, o bicho escolhido circulado a caneta
+    const pend = (fc.bicho || []).map((b, k, a) => '<li class="mz-tick' + (bichoStamp && k === a.length - 1 ? ' stamp' : '') + '"><b>' + String(b.g + 1).padStart(2, '0') + ' · ' + esc(S.BICHOS[b.g]) + '</b><span>' + S.BICHO_MODES[b.mode][0] + ' · ' + R$(b.stake) + '</span><i>anotado</i></li>').join('');
+    bichoStamp = false;
+    return back + top + '<div class="mz-talao"><header><b>Jogo do bicho</b><small>Banca do Zé · vale o escrito</small></header>' +
+      '<div class="mz-bichos">' + S.BICHOS.map((nm, k) => '<button data-bg="' + k + '"' + (bichoG === k ? ' class="on"' : '') + '><b>' + String(k + 1).padStart(2, '0') + '</b><small>' + nm + '</small></button>').join('') + '</div></div>' +
       '<div class="seg mz-mode">' + Object.keys(S.BICHO_MODES).map(k => '<button data-bm="' + k + '"' + (bichoMode === k ? ' class="on"' : '') + '>' + S.BICHO_MODES[k][0] + ' · ' + String(S.BICHO_MODES[k][1]).replace('.', ',') + '×</button>').join('') + '</div>' +
-      stakeSeg(c, R$) + '<button class="btn" id="mz-go"' + (casStake > left ? ' disabled' : '') + '>Jogar ' + R$(casStake) + ' no ' + esc(S.BICHOS[bichoG]) + '</button>' +
-      (pend ? '<div class="ze-placed"><h3>Seus jogos</h3><ul>' + pend + '</ul></div>' : '');
+      stakeSeg(c) + '<button class="btn" id="mz-go"' + (casStake > left ? ' disabled' : '') + '>Jogar ' + R$(casStake) + ' no ' + esc(S.BICHOS[bichoG]) + '</button>' +
+      (pend ? '<ul class="mz-ticks">' + pend + '</ul><small class="fc-own">O resultado sai no jornal, junto com o próximo jogo.</small>' : '');
+  }
+  // Prêmio contando de 0 até o valor e moedas pulando (só quando ganha)
+  function casWin(net) {
+    const el = $('mz-res');
+    if (!el || net <= 0 || calm()) return;
+    const box = document.createElement('div'); box.className = 'mz-coins'; box.setAttribute('aria-hidden', 'true');
+    for (let k = 0; k < 14; k++) { const i = document.createElement('i'); i.style.setProperty('--x', (Math.random() * 220 - 110).toFixed(0) + 'px'); i.style.setProperty('--y', (-60 - Math.random() * 90).toFixed(0) + 'px'); i.style.animationDelay = (Math.random() * 0.15).toFixed(2) + 's'; box.appendChild(i); }
+    el.appendChild(box); setTimeout(() => box.remove(), 1400);
   }
   function bindMesa() {
     const c = G.c, R$ = v => 'R$ ' + U.money(v), redo = () => { save(); bar(); betRender(); };
     const op = $('mz-open'); if (op) op.onclick = () => { if (S.fcNight(c)) { sfx('paper'); redo(); } };
-    document.querySelectorAll('.mz-g').forEach(b => { b.onclick = () => { sfx('tap'); zeGame = b.dataset.g; casLast = null; betRender(); window.scrollTo(0, 0); }; });
-    const bk = $('mz-back'); if (bk) bk.onclick = () => { sfx('tap'); zeGame = null; betRender(); window.scrollTo(0, 0); };
-    document.querySelectorAll('.mz-chips button').forEach(b => { b.onclick = () => { sfx('tap'); casStake = +b.dataset.cs; betRender(); }; });
-    document.querySelectorAll('[data-rb]').forEach(b => { b.onclick = () => { sfx('tap'); rolBet = b.dataset.rb; betRender(); }; });
-    document.querySelectorAll('[data-rn]').forEach(b => { b.onclick = () => { sfx('tap'); rolNum = (rolNum + +b.dataset.rn + 37) % 37; rolBet = 'num'; betRender(); }; });
+    document.querySelectorAll('.mz-g').forEach(b => { b.onclick = () => { sfx('tap'); zeGame = b.dataset.g; casLast = null; bjSeen = { p: 0, d: 0, open: false }; betRender(); window.scrollTo(0, 0); }; });
+    const bk = $('mz-back'); if (bk) bk.onclick = () => { if (casBusy) return; sfx('tap'); zeGame = null; betRender(); window.scrollTo(0, 0); };
+    document.querySelectorAll('.mz-chip').forEach(b => { b.onclick = () => { if (casBusy) return; sfx('coin'); casStake = +b.dataset.cs; betRender(); }; });
+    document.querySelectorAll('[data-rb]').forEach(b => { b.onclick = () => { if (casBusy) return; sfx('tap'); rolBet = b.dataset.rb; betRender(); }; });
+    document.querySelectorAll('[data-rn]').forEach(b => { b.onclick = () => { if (casBusy) return; sfx('tap'); rolNum = (rolNum + +b.dataset.rn + 37) % 37; rolBet = 'num'; betRender(); }; });
     document.querySelectorAll('[data-bg]').forEach(b => { b.onclick = () => { sfx('tap'); bichoG = +b.dataset.bg; betRender(); }; });
     document.querySelectorAll('[data-bm]').forEach(b => { b.onclick = () => { sfx('tap'); bichoMode = b.dataset.bm; betRender(); }; });
-    document.querySelectorAll('[data-bj]').forEach(b => { b.onclick = () => { const o = S.fcBjAct(c, b.dataset.bj); if (o && o.done) bjDone(o); else sfx('paper'); redo(); }; });
+    document.querySelectorAll('[data-bj]').forEach(b => { b.onclick = () => { if (casBusy) return; const o = S.fcBjAct(c, b.dataset.bj); if (o && o.done) bjDone(o); else sfx('paper'); redo(); bjAfter(); }; });
     const go = $('mz-go');
     if (!go) return;
     go.onclick = () => {
       if (casBusy) return;
-      if (zeGame === 'rol') {
-        const o = S.fcRoulette(c, rolBet === 'num' ? rolNum : rolBet, casStake);
-        if (!o) return;
-        save(); bar(); casBusy = true; sfx('tick');
-        const w = $('mz-w'), nEl = $('mz-n');
-        if (w) w.style.transform = 'rotate(' + (1440 + Math.floor(Math.random() * 360)) + 'deg)';
-        if (nEl) { nEl.textContent = '…'; nEl.className = ''; }
-        setTimeout(() => { casBusy = false; casLast = { g: 'rol', n: o.n, net: o.net, txt: 'Deu ' + o.n + (o.n === 0 ? ' (zero, da casa)' : o.red ? ' vermelho' : ' preto') + '. ' + (o.win ? 'Ganhou ' + R$(o.back - casStake + casStake) + '.' : 'Perdeu ' + R$(casStake) + '.') }; sfx(o.win ? 'coin' : 'miss'); betRender(); }, 1700);
-      } else if (zeGame === 'slot') {
-        const o = S.fcSlot(c, casStake);
-        if (!o) return;
-        save(); bar(); casBusy = true;
-        const els = [0, 1, 2].map(i => $('mz-r' + i)); let t = 0;
-        const iv = setInterval(() => { t++; els.forEach((el, i) => { if (el && t < 6 + i * 4) el.innerHTML = sym((t + i * 2) % 5, 'lg'); else if (el) el.innerHTML = sym(o.reels[i], 'lg'); }); sfx('tick'); if (t >= 14) { clearInterval(iv); fin(); } }, 90);
-        const fin = () => { casBusy = false; casLast = { g: 'slot', reels: o.reels, net: o.net, txt: o.mult < 0 ? 'Três cartões vermelhos: perdeu ' + R$(casStake - o.back) + '.' : o.hit === 3 ? 'Três ' + S.SLOT[o.reels[0]].name.toLowerCase() + 's! Ganhou ' + R$(o.back) + '.' : o.hit === 2 ? (o.net > 0 ? 'Duas iguais: voltaram ' + R$(o.back) + '.' : o.net === 0 ? 'Duas iguais: o dinheiro volta.' : 'Duas iguais: voltaram ' + R$(o.back) + '.') : 'Nada. Perdeu ' + R$(casStake) + '.' }; sfx(o.net > 0 ? (o.hit === 3 ? 'fanfare' : 'coin') : 'miss'); betRender(); };
-      } else if (zeGame === 'bj') {
+      if (zeGame === 'rol') rolSpin(c, R$);
+      else if (zeGame === 'slot') slotSpin(c, R$);
+      else if (zeGame === 'bj') {
         const o = S.fcBjDeal(c, casStake);
         if (!o) return;
-        casLast = null; sfx('paper');
+        casLast = null; bjSeen = { p: 0, d: 0, open: false }; sfx('paper');
         if (o.done) bjDone(o);
-        redo();
+        redo(); bjAfter();
       } else if (zeGame === 'bicho') {
-        if (S.fcBicho(c, bichoG, bichoMode, casStake)) { sfx('coin'); casLast = { g: 'bicho', net: 0, txt: 'Anotado: ' + S.BICHOS[bichoG] + ', ' + S.BICHO_MODES[bichoMode][0].toLowerCase() + '. Sai com o próximo jogo.' }; redo(); }
+        if (S.fcBicho(c, bichoG, bichoMode, casStake)) { sfx('paper'); bichoStamp = true; casLast = null; redo(); }
       }
     };
+  }
+  // Roleta: a roda gira para a frente e para com a casa sorteada no ponteiro; a bolinha corre ao contrário,
+  // perde velocidade, cai para dentro e para na mesma casa. O tique-taque desacelera junto
+  function rolSpin(c, R$) {
+    const stake = casStake, o = S.fcRoulette(c, rolBet === 'num' ? rolNum : rolBet, stake);
+    if (!o) return;
+    save(); bar(); casBusy = true;
+    const n = c.fc.night; (n.rol = n.rol || []).unshift(o.n); n.rol.length = Math.min(n.rol.length, 12);
+    const fin = () => {
+      casBusy = false;
+      casLast = { g: 'rol', n: o.n, net: o.net, txt: '<b class="mz-pill ' + colOf(o.n) + '">' + o.n + '</b> ' + (o.n === 0 ? 'Zero: da casa.' : o.red ? 'Vermelho.' : 'Preto.') + ' ' + (o.win ? 'Ganhou ' + R$(o.back) + '!' : 'Perdeu ' + R$(stake) + '.') };
+      sfx(o.win ? 'coin' : 'miss'); betRender(); casWin(o.net);
+    };
+    const from = rolRot, target = rolTarget(o.n), w = $('mz-w'), orbit = $('mz-orbit'), ball = $('mz-ball');
+    rolRot = target;
+    if (calm() || !w || !w.animate) { fin(); return; }
+    const T = 4200;
+    w.style.transform = 'rotate(' + target + 'deg)';
+    w.animate([{ transform: 'rotate(' + from + 'deg)' }, { transform: 'rotate(' + target + 'deg)' }], { duration: T, easing: 'cubic-bezier(.12,.62,.1,1)' });
+    if (orbit && ball) {
+      ball.classList.remove('off', 'in');
+      orbit.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(-1800deg)' }], { duration: T, easing: 'cubic-bezier(.2,.55,.15,1)', fill: 'forwards' });
+      ball.animate([{ top: '1.5%' }, { top: '1.5%', offset: 0.62 }, { top: '5%', offset: 0.72 }, { top: '3.5%', offset: 0.78 }, { top: '7.3%', offset: 0.88 }, { top: '7.3%' }], { duration: T, fill: 'forwards' });
+    }
+    const res = $('mz-res'); if (res) { res.className = 'mz-res idle'; res.textContent = 'Apostas encerradas. A bolinha está rodando…'; }
+    let t = 0, gap = 60;
+    const tick = () => { if (t > T - 250) return; sfx('tick'); t += gap; gap *= 1.09; setTimeout(tick, gap); };
+    tick();
+    setTimeout(fin, T + 250);
+  }
+  // Caça-níquel: cada rolo é uma fita de símbolos que desce rápido (borrada) e para com um tranco, um depois do outro
+  function slotSpin(c, R$) {
+    const stake = casStake, o = S.fcSlot(c, stake);
+    if (!o) return;
+    save(); bar(); casBusy = true;
+    const fin = () => {
+      casBusy = false; slotLast = o.reels;
+      const nm = S.SLOT[o.reels[0]].name.toLowerCase();
+      casLast = { g: 'slot', reels: o.reels, net: o.net, hit: o.hit, txt: o.mult < 0 ? 'Três cartões vermelhos: perdeu ' + R$(stake - o.back) + '.' : o.hit === 3 ? 'Três ' + (nm === 'rede' ? 'redes' : nm + 's') + '! Ganhou ' + R$(o.back) + '!' : o.hit === 2 ? (o.net > 0 ? 'Duas iguais: ganhou ' + R$(o.back) + '.' : o.net === 0 ? 'Duas iguais: o dinheiro volta.' : 'Duas iguais: voltaram ' + R$(o.back) + '.') : 'Nada. Perdeu ' + R$(stake) + '.' };
+      sfx(o.net > 0 ? (o.hit === 3 ? 'fanfare' : 'coin') : 'miss'); betRender(); casWin(o.net);
+    };
+    const lever = $('mz-lever'); if (lever) { lever.classList.remove('pull'); void lever.offsetWidth; lever.classList.add('pull'); }
+    const res = $('mz-res'); if (res) { res.className = 'mz-res idle'; res.textContent = 'Rodando…'; }
+    if (calm()) { fin(); return; }
+    sfx('whistle');
+    const H = ($('mz-r0') || { offsetHeight: 100 }).offsetHeight / 3 || 34;
+    o.reels.forEach((k, i) => {
+      const el = $('mz-r' + i);
+      if (!el) return;
+      const N = 18 + i * 7, cells = [];
+      for (let j = 0; j < N; j++) cells.push(sym(Math.floor(Math.random() * 5), 'lg'));
+      cells.push(sym((k + 4) % 5, 'lg'), sym(k, 'lg'), sym((k + 1) % 5, 'lg'));
+      const cur = slotLast[i];
+      el.innerHTML = '<div class="mz-strip spin">' + [sym((cur + 4) % 5, 'lg'), sym(cur, 'lg'), sym((cur + 1) % 5, 'lg')].concat(cells).map((h, j) => '<i>' + h + '</i>').join('') + '</div>';
+      const st = el.firstChild, dist = (cells.length) * H, dur = 1100 + i * 450;
+      st.animate([{ transform: 'translateY(0)', filter: 'blur(0)' }, { transform: 'translateY(-' + (dist * 0.15) + 'px)', filter: 'blur(2px)', offset: 0.12 }, { transform: 'translateY(-' + (dist * 0.92) + 'px)', filter: 'blur(2px)', offset: 0.8 }, { transform: 'translateY(-' + (dist + 6) + 'px)', filter: 'blur(0)', offset: 0.93 }, { transform: 'translateY(-' + dist + 'px)', filter: 'blur(0)' }], { duration: dur, easing: 'linear', fill: 'forwards' });
+      setTimeout(() => sfx('kick'), dur * 0.93);
+    });
+    setTimeout(fin, 1100 + 2 * 450 + 350);
+  }
+  // Vinte e um: segura os botões até as cartas chegarem (a banca compra uma a uma no fim)
+  function bjAfter() {
+    const w = bjSeen.wait || 0;
+    if (!w || calm()) return;
+    casBusy = true;
+    for (let k = 0; k * 0.45 + 0.6 < w; k++) setTimeout(() => sfx('paper'), (0.15 + 0.45 * k) * 1000);
+    setTimeout(() => { casBusy = false; if (casLast && casLast.g === 'bj') { sfx(casLast.net > 0 ? 'coin' : casLast.net < 0 ? 'miss' : 'tap'); casWin(casLast.net); } }, w * 1000);
   }
   function bjDone(o) {
     const R$ = v => 'R$ ' + U.money(v), p = S.bjTotal(o.p), d = S.bjTotal(o.d);
     const txt = o.nat ? (o.net > 0 ? 'Vinte e um de cara! Ganhou ' + R$(o.net) + '.' : 'Vinte e um dos dois: empate.') : p > 21 ? 'Estourou com ' + p + '. Perdeu ' + R$(o.stake) + '.' : o.net > 0 ? (d > 21 ? 'A banca estourou com ' + d + '.' : p + ' contra ' + d + '.') + ' Ganhou ' + R$(o.net) + '.' : o.net === 0 ? p + ' a ' + d + ': empate, o dinheiro volta.' : p + ' contra ' + d + ' da banca. Perdeu ' + R$(o.stake) + '.';
     casLast = { g: 'bj', hand: o, net: o.net, txt };
-    sfx(o.net > 0 ? 'coin' : o.net < 0 ? 'miss' : 'tap');
   }
   // A tentação: proposta do Zé para o seu próximo jogo
   function fixBox(c, R$) {
