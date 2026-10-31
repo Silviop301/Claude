@@ -64,9 +64,23 @@
     $('fc-5').onclick = () => quick(5);
     $('fc-end').onclick = () => quick(999);
   }
+  // O Jogo a Jogo vai ser refeito (ritmo, telas, celular com pessoas) e o save recomeça uma vez, na fase 1 do plano
+  const AVISO = 'climbix-aviso-save-v1';
+  function aviso() {
+    render('<div class="fc-scr" id="fc-scr"><button class="back-link" id="fc-back">‹ Celular</button><h2>O Jogo a Jogo vai recomeçar</h2>' +
+      '<div class="card fc-aviso"><p>O Jogo a Jogo está sendo refeito: temporada mais longa, um lance seu em cada jogo, rodada ao vivo com cara de TV e telas mais limpas.</p>' +
+      '<p>Para isso, <b>a carreira jogo a jogo de agora recomeça do zero</b> numa das próximas atualizações. É uma vez só: depois disso, toda novidade chega sem apagar o que você já jogou.</p>' +
+      '<p>A carreira que você tem hoje vira uma carta no seu álbum. A Carreira Rápida, a Relâmpago, a coleção e o perfil não mudam.</p></div>' +
+      '<button class="btn" id="fc-ok">Entendi</button></div>');
+    $('fc-back').onclick = phone;
+    $('fc-ok').onclick = () => { U.store(AVISO, 1); sfx('tap'); phone(); };
+    window.scrollTo(0, 0);
+  }
   // Notificações do celular: quem fala e o que pede; cada uma abre a tela dela
   function pings(c, nx) {
     const fc = c.fc, out = [], n = (go, who, txt) => out.push({ go, who, txt });
+    // Aviso do save novo (plano, fase 0): fica no topo até a pessoa ler e tocar em Entendi
+    if (!U.load(AVISO)) n('aviso', 'Climbix', 'Aviso: numa das próximas atualizações o Jogo a Jogo recomeça do zero. Toque para saber mais.');
     const p = Math.round(S.fcStartP(c) * 100);
     if (nx.injury) n(null, /suspensão/.test(nx.injury) ? 'Diretoria' : 'Departamento médico', /suspensão/.test(nx.injury) ? (/manipula/.test(fc.injName) ? 'Suspenso pelo caso do cartão combinado: fora por mais ' : 'Suspenso por causa da aposta: fora por mais ') + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') : nx.injury.charAt(0).toUpperCase() + nx.injury.slice(1) + ': fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') + (fc.wkDue ? ' Fisioterapia na semana ajuda.' : ''));
     else if (nx.vs) n(null, 'Técnico', nx.on === null ? 'Escalo o time depois do treino da semana. Hoje você tem ' + p + '% de chance de começar.' : nx.on ? 'Amanhã você começa jogando. Conto contigo.' : nx.why === 'cansaço' ? 'Vou te poupar amanhã, você tá sem perna. Descansa.' : nx.why === 'banco' ? 'Amanhã você começa no banco. Treina forte que a chance aparece.' : 'Amanhã vou rodar o elenco e você fica fora.');
@@ -137,6 +151,7 @@
   const LOJA_IMG = ['chuteira-g1', 'chuteira-g2', 'chuteira-g3', 'luvas-g1', 'luvas-g2', 'luvas-g3', 'pt', 'physio', 'nutri', 'video', 'press', 'c1', 'c2', 'c3', 'c4', 'house'];
   function go(k) {
     if (k === 'evo') return evolve();
+    if (k === 'aviso') return aviso();
     if (k === 'ag') { agOpen = -1; return agenda(); }
     const c = G.c, body = {
       wk: '<div class="fc-wk" id="fc-wk"></div><div class="fs-acts" id="fc-acts"></div>',

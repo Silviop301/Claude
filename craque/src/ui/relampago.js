@@ -138,6 +138,7 @@
       store(NAME, n === 'Você' ? '' : n);
       run = { seed: d ? d.s : S.rlNewSeed(), rounds: [], name: n, vs: d, x1 };
       markPlayed(run.seed);
+      if (window.CLIMBIX_STAT) window.CLIMBIX_STAT('start', 'relampago'); // contagem anônima
       play();
     };
     $('rl-start').onclick = () => go(false);
@@ -409,6 +410,7 @@
     // Fim: combos somam, o placar vai para o total, a nota carimba e, no X1, o vencedor
     function finale() {
       if (over) return; over = true;
+      if (window.CLIMBIX_STAT) window.CLIMBIX_STAT('end', 'relampago');
       timers.forEach(clearTimeout); timers = [];
       const diff = g ? f.total - g.total : 0;
       $('rlv-a').textContent = f.total; if (g) $('rlv-b').textContent = g.total;

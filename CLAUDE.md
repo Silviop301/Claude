@@ -31,6 +31,9 @@ Este arquivo é a fonte única de orientação. Leia-o antes de abrir código; e
 
 ## Evolução contínua (ciclo autônomo)
 
+**Desde 2026-10-31 o ciclo segue o plano Jogo a Jogo + Treinador:** cada rodada pega só o próximo item da fase em
+andamento (seção "Plano em andamento" do `EVOLUCAO_CONTINUA.md`); ideia nova vai para "Depois do plano".
+
 Base: `docs/prompt-mestre-evolucao.md` (do Silvio, 2026-10-29). Claude evolui e publica o jogo sozinho; o Silvio testa e opina.
 Histórico, decisões e próximos objetivos: **`EVOLUCAO_CONTINUA.md`** (raiz). Leia antes de cada rodada; não repita o
 que lá está como recusado sem evidência nova.
@@ -66,6 +69,7 @@ NODE_PATH=$(npm root -g) node tools/craque_e2e.js 2 390 4   # carreiras pela int
 NODE_PATH=$(npm root -g) node tools/craque_telas.js /tmp/antes   # foto de cada tela (carreira com sorteio fixo + telas de fora + minigames); DESKTOP=1 ... 1440 900 no computador, SO=evento,lance só algumas
 DESKTOP=1 TR=/tmp/tr node tools/craque_e2e.js 3 1280 3      # idem no computador, gravando o texto de cada tela em /tmp/tr
 python3 tools/craque_erros.py                       # erros reais dos jogadores (climbix.app)
+python3 tools/craque_numeros.py [dias]              # contagem anônima: novos, D1/D7, sessões, carreiras por modo (linha de base do plano)
 NODE_PATH=$(npm root -g) node tools/craque_sons.js [pasta]   # grava cada som do jogo (sound.js) em WAV, com volume de cada um
 python3 tools/craque_portal.py [itch]               # pacote para portal (dist/climbix-itch.zip): sem api/sw/escudos, que vêm de climbix.app
 bash tools/craque_ciclo.sh /tmp/ciclo                # checagens do ciclo num resumo (RAPIDO=1 mais curto)
@@ -80,7 +84,7 @@ Não há build, lint nem testes unitários: a validação é o simulador + o e2e
 HTML/CSS/JS puro, **scripts clássicos sem build**, carregados por `craque/index.html` nesta ordem
 (a ordem importa: cada arquivo acrescenta funções a objetos globais):
 
-`errors → sound → data → names → social-data → social-events → events-text → engine/* → trophy-imgs, trophies,
+`errors → stats → sound → data → names → social-data → social-events → events-text → engine/* → trophy-imgs, trophies,
 card, cine, kick, defend, kits, kits-real, avatar, chars → ui/core → ui/* → main → ball3d`
 
 Objetos globais: `CRAQUE_DATA` (`D`, dados), `CRAQUE_SIM` (`S`, motor), `CRAQUE_UI` (`U`, telas;
@@ -147,7 +151,7 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
 ### Servidor — `craque/api/` (PHP + SQLite fora do `public_html`)
 
 `account.php` (contas), `oauth.php` (Google/GitHub/Discord), `rank.php`, `c.php` (link curto da carta),
-`feedback.php`, `errors.php`. Nada pessoal é guardado além da conta.
+`feedback.php`, `errors.php`, `stats.php` (contagem anônima por dia, sem id; o jogo manda por `src/stats.js`). Nada pessoal é guardado além da conta.
 
 ### Ferramentas que geram arquivos
 

@@ -262,6 +262,7 @@
     render(
       '<button class="back-link" id="b-back-home">‹ Início</button>' +
       '<div class="eyebrow">' + (st.mode === 'completa' ? 'Carreira jogo a jogo' : 'Carreira rápida') + '</div><h2 class="cr-title">Quem é o garoto?</h2>' +
+      (st.mode === 'completa' ? '<p class="cr-aviso">Atenção: o Jogo a Jogo está sendo refeito e esta carreira recomeça do zero numa das próximas atualizações (vira carta no álbum).</p>' : '') +
       // cc-side: só agrupa carta e botões (no computador vira a coluna da esquerda; no celular não muda nada)
       '<div class="cc-side"><div class="cc"><div class="cc-top"><button class="cc-num" id="f-num" aria-label="Número da camisa: ' + st.num + '. Trocar">' + numBtn() + '</button>' +
       '<span class="cc-flag" id="cc-flag"></span></div>' +
@@ -320,6 +321,7 @@
     G.c.rivalKeep = !(dz && !dz.done);
     G.c.rivalBack = G.c.rivalKeep && back && back.name ? { name: String(back.name), country: String(back.country), me: +back.me || 0, him: +back.him || 0 } : null;
     U.store(LAST, G.c.look);
+    if (window.CLIMBIX_STAT) window.CLIMBIX_STAT('start', G.c.mode || 'rapida', 0, 'c' + G.c.tseed); // contagem anônima
     U.academy();
   }
 
