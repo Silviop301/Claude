@@ -105,6 +105,10 @@ function stepInPage(opts) {
   if ($('fs-done')) return label('liga:resumo ' + click($('fs-done')));
   // Carreira Completa integrada (ui/fullcareer.js): jogar, simular, evoluir, pular o ao vivo, festa da taça
   if ($('fc-go')) return label('completa:taca ' + click($('fc-go')));
+  // O seu lance do jogo (com os lances no automático ele não aparece): deixa a carta decidir e volta ao jogo
+  if ($('fc-lauto')) return label('completa:lance ' + click($('fc-lauto')));
+  if ($('b-auto') && q('.ob5-foot')) return label('lance:auto ' + click($('b-auto'))); // lance decisivo com CFG moments play
+  if ($('fc-lback')) return label('completa:lance-volta ' + click($('fc-lback')));
   // Antes do jogo e intervalo: às vezes troca o esforço / toma o energético, depois segue
   if ($('fc-kick') || $('fc-2t')) {
     if (q('.fc-ef-seg button') && Math.random() < 0.3) return label('completa:esforco ' + click(rnd([...document.querySelectorAll('.fc-ef-seg button')])));

@@ -14,7 +14,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | Fase | Pronto quando | Estado |
 |---|---|---|
 | 0 · Preparar | Os números chegam ao servidor (`api/stats.php`, `src/stats.js`, `tools/craque_numeros.py`) e quem joga o Jogo a Jogo vê o aviso do save novo | no ar (PR #108) |
-| 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **em andamento**: parte 1 (jogos vividos, resumidos e no banco; save novo) |
+| 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **em andamento**: parte 1 (jogos vividos, resumidos e no banco; save novo), parte 2 (um lance seu em todo jogo) |
 | 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | |
@@ -365,7 +365,7 @@ Proibido também: cartão com faixa colorida na lateral.
 ### Fase 1 do plano, parte 1 · 2026-10-31 · Jogos vividos, resumidos e no banco (save novo)
 
 - **Tipo de jogo** (`S.fcBig`, `S.fcKind` em engine/fullcareer.js): vivido (decisão com lance, copa a partir da 2ª fase,
-  todo jogo continental, estreia do ano, clássico, contra um dos três primeiros da 6ª rodada em diante, briga direta no
+  todo jogo continental, estreia do ano, clássico, contra um dos três primeiros da 6ª rodada em diante (na parte 2: só o líder), briga direta no
   último terço perto de uma linha que vale, última rodada, ou "Viver este jogo"); resumido (jogo comum em que você
   joga: um cartão com placar, sua nota e um fato); no banco (placar e pronto). "Resumir até o próximo jogo grande"
   substitui "Simular 5 jogos" e "Simular até o fim" (o plano troca o simular pelo resumir) e mostra a lista dos jogos.
@@ -377,3 +377,22 @@ Proibido também: cartão com faixa colorida na lateral.
 - **Fotos do Jogo a Jogo**: `tools/craque_telas_jaj.js` (antes em /mnt/project-files/climbix/fase1/antes).
 - Pendência anotada: na 1ª temporada o garoto fica no banco em ~22 de 39 jogos; vale olhar na parte de tela limpa ou
   na fase 4 (empréstimo na janela).
+
+### Fase 1 do plano, parte 2 · 2026-10-31 · Um lance seu em todo jogo em que você entra
+
+- **Lance comum** (`lanceFor`, `S.fcLance`, `S.fcAutoLance` em engine/fullcareer.js; `c.fc.pending.l`): todo jogo em que
+  você entra sem lance decisivo tem um lance seu num minuto sorteado. Atacante: pênalti ou falta; meia: bola enfiada
+  (assistência); goleiro: pênalti contra; zagueiro: contra-ataque ou bola nas costas; atacante e meia que marcam pouco
+  ganham às vezes uma pressão na saída de bola (só mexe na nota). `FC_LANCE=0` desliga no simulador.
+- **Sem mudar a média**: o lance troca parte do que o jogo sortearia. O ataque tira dos gols (ou das assistências do
+  meia, limitadas aos gols dos companheiros: `emin`/`asRate`) a chance do lance virar gol; a defesa tira do adversário o
+  que deixa a chance de não sofrer gol igual; o duelo e o lance defensivo mexem na nota centrados na chance (+0,4·(1−p)
+  ou −0,4·p). Atacante tem o lance de gol em menos jogos (`LANCE_Q·0,6`): a nota dele encosta no 10 e o gol quase
+  certo tirava a variação (nota subia 0,36 sem gol a mais). Medido em pares (mesmo jogo com e sem lance): notas e gols
+  iguais em ±0,08. Notas finais S15/A24/B30/C18/D14 contra S14/A23/B34/C19/D11 sem o lance.
+- **Tela** (ui/fullcareer.js): no ao vivo o jogo para no minuto ("Seu lance · 67'"), abre um cartão com placar, a
+  situação, o que vale (`U.lanceStakes`), os dois estilos e "Deixar o jogo decidir"; depois o grito e "Voltar ao jogo".
+  No jogo resumido o lance vem antes do cartão, e o cartão ganha a linha "Seu lance aos 67': pênalti convertido".
+  Lances no automático (configuração) e o "Resumir" deixam a carta decidir.
+- **Jogo grande "topo"** agora é só contra o líder (antes: um dos três primeiros), para o tempo do ano não passar muito
+  de 1 h com o lance: ~73 min por temporada no modelo (vivido 210 s, resumido 42 s), 14 vividos.

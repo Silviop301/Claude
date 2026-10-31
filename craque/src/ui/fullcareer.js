@@ -851,7 +851,7 @@
   // Simula sem o ao vivo; para antes de jogo com lance decisivo (esse você joga) e nas datas de evento
   // Tipo do próximo jogo, numa linha acima do ingresso: vivido (e por quê), resumido ou no banco
   const WHY = { decisao: 'Decisão', mata: 'Mata-mata', continental: 'Noite continental', estreia: 'Estreia do ano', classico: 'Clássico', ultima: 'Última rodada',
-    briga: 'Briga direta na tabela', topo: 'Contra um dos três primeiros', escolha: 'Você escolheu viver' };
+    briga: 'Briga direta na tabela', topo: 'Contra o líder', escolha: 'Você escolheu viver' };
   function kindTxt(c, nx, kind) {
     if (kind === 'vivo') return '<b>Jogo grande</b> · ' + WHY[S.fcBig(c, nx)] + ': você vive o jogo inteiro';
     if (kind === 'banco') return '<b>Você fica no banco</b> · o jogo passa rápido';
@@ -860,7 +860,10 @@
   }
   // Jogo resumido, no banco ou folga: joga na hora e mostra um cartão só (placar, sua nota e um fato)
   function brief(nx) {
-    const c = G.c, en0 = c.fc.en, out = S.fcPlay(c);
+    const c = G.c, P = c.fc.pending, m = nx.lance;
+    // O seu lance vem antes do resumo (no automático, ou se saiu no meio do minigame, a carta decide no fcPlay)
+    if (m && P && !P.lDone && !m.started && U.cfg.moments !== 'auto') return lanceScreen(m, null, () => brief(nx));
+    const en0 = c.fc.en, out = S.fcPlay(c);
     save(); bar(); sfx('whistle');
     const x = Object.assign({}, nx, { en0 });
     const go = () => (out.title ? celebrate(out, paintOrEnd) : paintOrEnd());
@@ -879,7 +882,14 @@
       '<div class="fb-tm"><span>' + esc(nameOf(x.home ? c.club : x.vs)) + '</span><span>' + esc(nameOf(x.home ? x.vs : c.club)) + '</span></div>' + (m.pens ? '<small class="fb-pen">decidido nos pênaltis</small>' : '') : '';
     return '<div class="eyebrow">' + esc(x.compName) + ' · ' + esc(x.stage) + '</div>' +
       (big ? '<h2 class="fb-h">' + (kind === 'resumo' ? 'Jogo resumido' : kind === 'banco' ? 'Do banco' : 'Folga') + '</h2>' : '') +
-      '<div class="card fb ' + res + '">' + sc + '<p class="fb-me">' + line + '</p>' + (x.vs ? '<p class="fb-f">' + h1 + '</p>' : '') + '</div>';
+      '<div class="card fb ' + res + '">' + sc + '<p class="fb-me">' + line + '</p>' + (out.lance && m.on ? lanceLine(out.lance) : '') + (x.vs ? '<p class="fb-f">' + h1 + '</p>' : '') + '</div>';
+  }
+  // O seu lance no cartão do jogo: o minuto e como terminou
+  function lanceLine(l) {
+    const st = S.kickSetupType(l), def = st === 'save' || (st === 'tackle' && !l.duel);
+    const what = st === 'save' ? (l.ok ? 'pênalti defendido' : 'pênalti sofrido') : def ? (l.ok ? 'desarme no contra-ataque' : 'o atacante passou e marcou') : l.duel ? (l.ok ? 'bola roubada na pressão' : 'perdeu a dividida') :
+      st === 'pass' ? (l.ok ? 'assistência na medida' : 'passe cortado') : (l.kick === 'fk' ? 'falta ' : 'pênalti ') + (l.ok ? 'convertido' : 'perdido');
+    return '<p class="fb-l ' + (l.ok ? 'up' : 'down') + '">Seu lance aos ' + esc(l.minute) + "': " + what + '</p>';
   }
   // Resumir: passa os jogos comuns (semana automática, carta decidindo) até o próximo jogo grande, um evento ou o fim
   function skipTo() {
@@ -910,17 +920,68 @@
 
   // Joga o próximo: com lance decisivo, o jogo ao vivo para no minuto do lance, o minigame decide e o jogo segue dali
   // Minuto do lance já jogado neste jogo (0 se não houve): o ao vivo recomeça dali
-  const doneMin = () => { const P = G.c.fc.pending; return P && P.mDone && P.m ? S.fcMinOf(P.m.minute) : 0; };
+  const doneMin = () => { const P = G.c.fc.pending; return P && P.mDone && P.m ? S.fcMinOf(P.m.minute) : P && P.lDone && P.l && P.lSeen ? S.fcMinOf(P.l.minute) : 0; };
   function start(nx) {
     if (doneMin()) return live({ from: doneMin() }); // lance já jogado (saiu e voltou ao jogo)
-    if (nx.moment) {
-      const m = nx.moment;
-      if (m.started || U.cfg.moments === 'auto') { S.fcAutoMoment(G.c, m); save(); eff = null; return live(); }
+    const m = nx.moment || nx.lance;
+    if (m) {
+      // Lance decisivo ou o seu lance do jogo: no automático (ou saiu no meio do minigame) a carta decide
+      if (m.started || U.cfg.moments === 'auto') { if (nx.moment) S.fcAutoMoment(G.c, m); else S.fcAutoLance(G.c, m); save(); eff = null; return live(); }
       save(); eff = null;
       return live({ stop: m });
     }
     eff = null;
     live();
+  }
+
+  // ---------- o seu lance do jogo (plano, fase 1) ----------
+  // Todo jogo em que você entra tem um lance seu, no minuto em que acontece: um cartão com a situação, o que vale e os
+  // dois estilos; o minigame decide e o jogo segue dali. sc: placar até o lance (no ao vivo); go: o que vem depois
+  const LANCE_TXT = (m, c) => {
+    const vs = D.do(nameOf(m.vs)), at = ' aos ' + m.minute + "'";
+    if (m.kick === 'save') return { title: 'Pênalti contra o seu time!', text: 'O batedor ' + vs + ' ajeita a bola' + at + '. É você contra ele.', stakes: 'Defendeu: nota sobe e o placar segura · Sofreu: gol deles' };
+    if (c.pos === 'ZAG') return m.sit === 'bola' ? { title: 'Bola nas costas da zaga!', text: 'O atacante ' + vs + ' escapou' + at + ' e só você chega a tempo.', stakes: 'Desarmou: nota sobe e o perigo passa · Passou: gol deles' }
+      : { title: 'Contra-ataque perigoso!', text: 'O atacante ' + vs + ' arrancou sozinho' + at + '. Você é o último homem.', stakes: 'Desarmou: nota sobe e o perigo passa · Passou: gol deles' };
+    if (m.duel) return { title: 'Pressão na saída de bola!', text: 'O zagueiro ' + vs + ' sai jogando perto de você' + at + '. Roubar ali vale ouro.', stakes: 'Roubou: nota sobe · Perdeu: nota cai' };
+    if (m.kick === 'pass') return { title: 'A bola é sua no meio-campo!', text: { diagonal: 'O atacante faz a diagonal nas costas da zaga' + at + '.', contra: 'Contra-ataque' + at + ': o atacante dispara pelo meio.', tabela: 'Tabela na entrada da área' + at + ': o atacante pede a bola.' }[m.sit] || 'O atacante pede a bola' + at + '.', stakes: 'Acertou: assistência sua · Errou: a zaga corta' };
+    if (m.kick === 'fk') return { title: 'Falta na entrada da área!', text: 'A barreira ' + vs + ' se arma' + at + '. A bola é sua.', stakes: 'Converteu: gol seu · Errou: chance perdida' };
+    return { title: 'Pênalti para você!', text: (m.sit === 'mao' ? 'Mão na área' + at + ' e o juiz aponta a marca.' : 'Derrubaram você na área' + at + ' e o juiz aponta a marca.'), stakes: 'Converteu: gol seu · Errou: chance perdida' };
+  };
+  const lanceBoard = (m, sc, mini) => '<div class="ob5-board' + (sc ? '' : ' no-score') + (mini ? ' mini' : '') + '">' + crest(m.home ? G.c.club : m.vs) + '<b class="ob5-g">' + (sc ? sc[0] : '') + '</b>' +
+    '<span class="ob5-mid"><span class="ob5-min"><i aria-hidden="true"></i>' + m.minute + "'</span><small>" + esc(m.comp) + '</small></span>' +
+    '<b class="ob5-g">' + (sc ? sc[1] : '') + '</b>' + crest(m.home ? m.vs : G.c.club) + '</div>';
+  function lanceScreen(m, sc, go) {
+    const c = G.c, st = S.kickSetupType(m), T = LANCE_TXT(m, c), k = S.kickSetup(c, st, S.autoStyle(c, st));
+    render('<div class="eyebrow">Seu lance · ' + esc(m.comp) + '</div>' + lanceBoard(m, sc) +
+      '<div class="ob5-head"><h2>' + T.title + '</h2><p class="ob5-txt">' + esc(T.text) + '</p>' + U.lanceStakes(T.stakes) + '</div>' +
+      '<p class="st-lead ob5-q">Como você vai ' + { cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar' }[st] + '?</p>' + U.styleBtns(st, true) +
+      '<div class="ob5-foot"><button class="btn ghost ob5-auto" id="fc-lauto">Deixar o jogo decidir<small>' + Math.round(k.chance * 100) + '% pela sua carta</small></button>' +
+      '<button class="ob5-train mom-train" id="b-train">' + U.emo('🏟️', 'xs') + ' Treinar antes</button></div>');
+    $('b-train').onclick = () => U.training(st);
+    // No resumo (sem placar ao vivo) o cartão do jogo já conta como foi: segue direto
+    const fin = ok => { c.fc.pending.lSeen = true; save(); if (sc) lanceEnd(m, ok, sc, go); else go(); };
+    U.bindStyle(m, U.gateTrain(st, () => {
+      m.started = true; save();
+      render(lanceBoard(m, sc, true) + '<div id="kick"></div>');
+      sfx('whistle');
+      U.playMini($('kick'), st, ok => { if ($('kick')) fin(ok); }, null, null, m.style,
+        (ok, why) => { if (!$('kick')) return; S.fcLance(c, m, ok, why); save(); });
+    }));
+    $('fc-lauto').onclick = () => fin(S.fcAutoLance(c, m));
+  }
+  // Resultado do lance: o grito, uma linha e voltar ao jogo
+  function lanceEnd(m, ok, sc, go) {
+    const c = G.c, st = S.kickSetupType(m), def = st === 'save' || (st === 'tackle' && !m.duel);
+    const big = ok ? (st === 'save' ? 'DEFENDEU!' : st === 'tackle' ? 'ROUBOU!' : st === 'pass' ? 'ASSISTÊNCIA!' : 'GOOOL!') : def ? 'Gol deles…' : st === 'tackle' ? 'Passou…' : st === 'pass' ? 'Cortado…' : 'Não entrou…';
+    const txt = ok ? (def ? 'O perigo passou e a nota sobe.' : m.duel ? 'Bola roubada no campo deles: a nota sobe.' : st === 'pass' ? 'Bola na medida e o atacante não perdoou.' : 'Gol seu' + (m.kick === 'fk' ? ' de falta.' : ' de pênalti.'))
+      : def ? 'A bola entrou. Ainda dá tempo de reagir.' : m.duel ? 'Ele escapou: a nota cai um pouco.' : 'A chance passou. O jogo segue.';
+    const side = ok && m.goal ? (m.home ? 0 : 1) : !ok && def ? (m.home ? 1 : 0) : -1; // gol seu (ou do atacante que você serviu) ou gol deles
+    if (sc && side >= 0) { sc = sc.slice(); sc[side]++; }
+    render('<div class="eyebrow">Seu lance · ' + esc(m.comp) + '</div>' + lanceBoard(m, sc) +
+      '<div class="ob5-res ' + (ok ? 'ok' : 'ko') + '"><div class="mr-big">' + big + '</div><p class="mr-txt">' + txt + '</p></div>' +
+      '<div class="lc-acts"><button class="btn" id="fc-lback">' + (sc ? 'Voltar ao jogo' : 'Ver o jogo') + '</button></div>');
+    if (ok) U.vibe([40, 60, 40]);
+    $('fc-lback').onclick = go;
   }
   // Depois do lance (ui/match.js chama): o jogo ao vivo continua do minuto do lance, com o resultado que ele decidiu
   function afterMoment() { live(doneMin() ? { from: doneMin() } : undefined); }
@@ -1045,10 +1106,11 @@
     // O jogo para no minuto do lance: o placar escuro avisa e o minigame abre (ui/match.js)
     function pause() {
       clearTimeout(timer);
-      const lt = $('fc-lt'); if (lt) lt.textContent = 'Lance decisivo · ' + clock(stopAt);
+      const jogo = o.stop.type === 'jogo', lt = $('fc-lt'); if (lt) lt.textContent = (jogo ? 'Seu lance · ' : 'Lance decisivo · ') + clock(stopAt);
       $('fc-acts').innerHTML = '';
       sfx('whistle');
-      timer = setTimeout(() => { if ($('fc-match')) U.momentIntro(o.stop); }, 1400);
+      const sc = x.score(stopAt - 1), m = o.stop;
+      timer = setTimeout(() => { if ($('fc-match')) (jogo ? lanceScreen(m, sc, () => live({ from: stopAt })) : U.momentIntro(o.stop)); }, 1400);
     }
     let finished = false;
     function done() {

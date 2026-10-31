@@ -474,26 +474,33 @@
   const pens = (r, sh, sa) => r() < clamp(0.5 + (sh - sa) / 80, 0.3, 0.7);
 
   // O seu jogo: produção pelo jogador do dia; o resultado pode vir decidido de um lance (force: true venceu, false perdeu)
-  function myMatch(c, fc, r, vs, home, comp, knock, force, mo) {
+  function myMatch(c, fc, r, vs, home, comp, knock, force, mo, lc, lok) {
     if (mo && force !== undefined) return scripted(c, fc, r, vs, home, knock, force, mo);
     const club = D.CLUB_BY_ID[c.club], X = myRates(c, club), on = fc.pending ? fc.pending.on : false;
+    // Lance comum (plano, fase 1): o gol (ou a assistência) que ele vale sai da média do jogo, para a conta não inflar;
+    // no defensor, o gol que ele evita sai dos gols do adversário (e o desarme ou a defesa, da média dele). O duelo
+    // (pressão na saída de bola) só mexe na nota. O lance entra depois de todo o sorteio do jogo, então o ao vivo
+    // mostra os mesmos lances de antes do minuto qualquer que seja o resultado
+    const LC = on && lc ? lc : null, Lp = LC ? LC.p : 0, Latk = !!(LC && LC.goal), Ldef = !!(LC && X.isDef), Lq = LC && !X.isDef ? LC.q || 0 : 0;
+    // O lance troca parte do que o jogo sortearia, sem mudar a média: o ataque tira a chance do lance virar gol (Lq) dos
+    // gols ou assistências; a defesa tira do adversário o que deixa a chance de não sofrer gol igual
     const us = club.strength + X.teamBoost + (on ? X.att : 0), them = str(vs);
     const L = comp === 'cont' ? LAM_C : LAM_D;
     let [lu, lt] = home ? lam(us, them, L) : lam(them, us, L).reverse();
     if (on && X.isDef) lt *= Math.exp(-X.def / 22);
     // Seus gols saem do total do time (o craque marca parte dos gols que o time faria)
-    let mg = on ? r.poisson(X.g90 * FC_K.g) : 0;
-    let ug = mg + r.poisson(Math.max(0.05, lu - (on ? X.g90 * FC_K.g : 0)));
-    let tg = r.poisson(lt);
+    let mg = on ? r.poisson(Math.max(0, X.g90 * FC_K.g - (c.pos !== 'MEI' ? Lq : 0))) : 0;
+    const tm = Math.max(0.05, lu - (on ? X.g90 * FC_K.g : 0)), tmL = c.pos === 'MEI' ? Math.max(0.05, tm - Lq) : tm;
+    let ug = mg + r.poisson(tmL);
+    let tg = r.poisson(Math.max(0, lt + (Ldef ? Math.log(Math.max(0.05, Lp)) : 0)));
     // Resultado decidido no lance: venceu (gol seu no fim, ou o zero segurado) ou perdeu
     if (force === true && ug <= tg) { ug = tg + 1; if (on && !X.isDef) mg++; }
     if (force === false && ug >= tg) { if (knock) tg = ug + 1; else if (ug > tg) ug = tg; else tg = ug + 1; mg = Math.min(mg, ug); }
     // Assistência sua é gol do time (o placar sobe junto, se precisar)
-    const ma = on ? Math.min(ug - mg, r.poisson(X.a90 * FC_K.a)) : 0;
-    const cs = tg === 0;
-    const saves = on && c.pos === 'GOL' ? r.poisson(X.saves) : 0;
+    let ma = on ? Math.min(ug - mg, r.poisson(c.pos === 'MEI' && Lq ? asRate(tm, X.a90 * FC_K.a, Lq) : X.a90 * FC_K.a)) : 0;
+    let saves = on && c.pos === 'GOL' ? r.poisson(X.saves) : 0;
     const penFaced = on && c.pos === 'GOL' ? (r() < 0.11 ? 1 : 0) : 0, penSaved = penFaced && r() < X.pPen ? 1 : 0;
-    const tackles = on && c.pos === 'ZAG' ? r.poisson(X.tackles) : 0;
+    let tackles = on && c.pos === 'ZAG' ? r.poisson(X.tackles) : 0;
     // Minutos dos gols; os seus marcados (e as assistências nos outros gols do time)
     const ev = [];
     for (let i = 0; i < ug; i++) ev.push({ m: minute(r), s: home ? 'h' : 'a' });
@@ -505,17 +512,39 @@
     pick.slice(mg, mg + ma).forEach(e => { e.as = 1; });
     // Lance decisivo vencido: o gol da vitória é no fim
     if (force === true && ours.length) { const last = ours[ours.length - 1]; if (last.m < 84) last.m = 84 + Math.floor(r() * 8); ev.sort((x, y) => x.m - y.m); }
+    // O lance comum, no minuto dele: gol seu (pênalti ou falta), assistência sua (meia), gol deles se o defensor falhou
+    if (LC) {
+      const lm = minOf(LC.minute), me = home ? 'h' : 'a';
+      if (Latk && lok) { ev.push(Object.assign({ m: lm, s: me, lance: 1 }, c.pos === 'MEI' ? { as: 1 } : { me: 1 })); ug++; if (c.pos === 'MEI') ma++; else mg++; }
+      else if (Ldef && !lok) { ev.push({ m: lm, s: home ? 'a' : 'h', lance: 1 }); tg++; }
+      ev.sort((x, y) => x.m - y.m);
+    }
+    const cs = tg === 0;
     // Nota do jogo: as mesmas partes da nota da temporada
     let rating = 0;
     if (on) {
       const res3 = ug > tg ? 3 : ug === tg ? 1 : 0;
       const perGame = X.isDef ? (cs ? 0.85 : 0) + (mg * 1.2 + ma * 0.5) / S.GOAL_SCALE + saves * 0.35 + penSaved * 0.6 + tackles * 0.2 : (mg + ma * 0.7) / S.GOAL_SCALE;
       rating = clamp(Math.round((6.1 + S.RATING_ADJ[c.pos] + perGame * 2.4 * (X.isDef ? 0.75 : 1) + Math.min(X.o - club.strength, S.RATING_GAP) * 0.03 + X.trt +
-        (res3 === 3 ? 0.2 : res3 === 0 ? -0.25 : 0) + r.gauss() * 0.55 * X.sd) * 10) / 10, 4.5, 10);
+        (res3 === 3 ? 0.2 : res3 === 0 ? -0.25 : 0) + r.gauss() * 0.55 * X.sd + (LC && (LC.duel || Ldef) ? (lok ? 0.4 * (1 - Lp) : -0.4 * Lp) : 0)) * 10) / 10, 4.5, 10);
     }
     let won = ug > tg;
     if (knock && ug === tg) won = force === undefined ? pens(r, us, them) : force;
     return { vs, home, gf: ug, ga: tg, on, goals: mg, assists: ma, cs: on && cs, saves, penFaced, penSaved, tackles, rating, ev, won, pens: knock && ug === tg };
+  }
+  // Assistências do meia com o lance: a média que, limitada aos gols dos companheiros (já sem o lance), dá a de sempre
+  // menos a chance do lance virar assistência (q). Média de min(T, A) com T e A de Poisson: soma de P(T≥k)·P(A≥k)
+  function emin(t, a) {
+    let pt = Math.exp(-t), pa = Math.exp(-a), ct = pt, ca = pa, s = 0;
+    for (let k = 1; k < 16; k++) { s += (1 - ct) * (1 - ca); pt *= t / k; pa *= a / k; ct += pt; ca += pa; }
+    return s;
+  }
+  function asRate(t, a, q) {
+    const want = emin(t, a) - q, t2 = Math.max(0.05, t - q);
+    if (want <= 0) return 0;
+    let lo = 0, hi = a;
+    for (let i = 0; i < 20; i++) { const mid = (lo + hi) / 2; if (emin(t2, mid) > want) hi = mid; else lo = mid; }
+    return lo;
   }
   // Nota do jogo (as mesmas partes da nota da temporada)
   function rateOf(c, X, club, r, ug, tg, mg, ma, cs, saves, penSaved, tackles) {
@@ -609,7 +638,54 @@
       if (fc.pending.m === undefined) { fc.pending.m = momentFor(c, fc, next); }
       next.moment = fc.pending.m;
     }
+    // O seu lance (plano, fase 1): todo jogo em que você entra sem decisão tem um lance comum, no minuto em que acontece
+    if (vs && next.on && fc.pending && !fc.pending.m && !LANCE_OFF) {
+      if (fc.pending.l === undefined) fc.pending.l = lanceFor(c, fc, next);
+      if (!fc.pending.lDone) next.lance = fc.pending.l;
+    }
     return next;
+  };
+  // Lance comum: a posição diz o tipo (atacante: pênalti ou falta; meia: o passe; zagueiro: o bote; goleiro: o pênalti
+  // contra), o minuto e a situação variam. p: a chance pela carta, que tira da média do jogo o que o lance vale.
+  // FC_LANCE=0 no simulador desliga (para comparar)
+  const LANCE_Q = +((typeof process !== 'undefined' && process.env && process.env.FC_LQ) || 0.8);
+  const LANCE_OFF = typeof process !== 'undefined' && process.env && process.env.FC_LANCE === '0';
+  // Atacante e meia: o lance vale gol (ou assistência) numa parte dos jogos, na medida da média dele (quem marca pouco
+  // não ganha um gol por jogo); nos outros é o duelo, a pressão na saída de bola, que só mexe na nota
+  function lanceFor(c, fc, nx) {
+    const { r, save } = rngOf(fc), X = myRates(c, D.CLUB_BY_ID[c.club]);
+    const minute = String(Math.min(90, 6 + Math.floor(r() * 84)));
+    const pick = (kick, sit) => { const m = { type: 'jogo', vs: nx.vs, comp: nx.compName, fc: true, kick, minute, sit, home: nx.home }; const st = S.kickSetupType(m); m.p = S.kickSetup(c, st, S.autoStyle(c, st)).chance; return m; };
+    let m;
+    if (X.isDef) m = pick(S.defKick(c.pos), c.pos === 'GOL' ? 'pen' : r.pick(['contra', 'contra', 'bola']));
+    else {
+      // Meia: a média de assistências que de fato entram (limitadas aos gols dos companheiros), não a do papel
+      const club = D.CLUB_BY_ID[c.club], us = club.strength + X.teamBoost + X.att, them = str(nx.vs), LL = nx.comp === 'cont' ? LAM_C : LAM_D;
+      const lu = nx.home ? lam(us, them, LL)[0] : lam(them, us, LL)[1], tm = Math.max(0.05, lu - X.g90 * FC_K.g);
+      const meia = c.pos === 'MEI', lm = meia ? emin(tm, X.a90 * FC_K.a) : X.g90 * FC_K.g;
+      const g = meia ? pick('pass', r.pick(['diagonal', 'contra', 'tabela'])) : r() < 0.5 ? pick('pen', r.pick(['derrubado', 'mao'])) : pick('fk', 'falta');
+      const q = Math.min(1, (meia ? LANCE_Q : LANCE_Q * 0.6) * lm / g.p); // atacante menos: a nota dele encosta no 10 e o gol certo do lance tira a variação
+      if (r() < q) m = Object.assign(g, { goal: true });
+      else m = Object.assign(pick('tackle', 'pressao'), { duel: true });
+      m.q = q * g.p;
+    }
+    save();
+    return m;
+  }
+  S.fcLance = function (c, m, ok, why) {
+    const fc = c.fc;
+    if (!fc.pending) S.fcNext(c);
+    if (!fc.pending || fc.pending.lDone) return;
+    fc.pending.lDone = true; fc.pending.lOk = !!ok; if (why) fc.pending.lWhy = why;
+    const L = c.fcL = c.fcL || { n: 0, ok: 0 }; L.n++; if (ok) L.ok++;
+  };
+  // Sem jogar: a chance pela carta, com sorteio à parte (o do jogo não anda)
+  S.fcAutoLance = function (c, m) {
+    const r = S.rng(((c.fc.seed ^ 0x2545f491) >>> 0) + c.fc.i), st = S.kickSetupType(m);
+    if (!m.style) m.style = S.autoStyle(c, st);
+    const ok = r() < S.kickSetup(c, st, m.style).chance;
+    S.fcLance(c, m, ok);
+    return ok;
   };
   function momentFor(c, fc, nx) {
     const club = D.CLUB_BY_ID[c.club];
@@ -665,11 +741,11 @@
     if (ri === 0) return 'estreia';
     if ((D.RIVALS[c.club] || []).includes(nx.vs)) return 'classico';
     if (ri === R - 1) return 'ultima';
-    // Da 6ª rodada em diante: contra um dos três primeiros (jogo grande) e, no último terço, a briga direta (adversário perto
+    // Da 6ª rodada em diante: contra o líder (jogo grande) e, no último terço, a briga direta (adversário perto
     // na tabela, os dois perto de uma linha que vale: título, G4, acesso, queda)
     if (ri < 5) return '';
     const ord = order(fc.lg.tab), n = ord.length, me = ord.indexOf(0) + 1, vi = fc.lg.ids.indexOf(nx.vs), them = ord.indexOf(vi) + 1;
-    if (vi >= 0 && them <= 3 && me > 3) return 'topo';
+    if (vi >= 0 && them === 1 && me > 3) return 'topo';
     if (ri < R / 3 || vi < 0 || Math.abs(me - them) > 3 || Math.abs(fc.lg.tab[0].p - fc.lg.tab[vi].p) > 4) return '';
     const lines = [1, fc.lg.promo ? fc.lg.promo : 4].concat(fc.lg.releg ? [n - fc.lg.releg] : []);
     const near = p => lines.some(k => (p <= k ? k - p : p - k - 1) <= 2);
@@ -700,9 +776,13 @@
     const { r, save } = rngOf(fc), club = D.CLUB_BY_ID[c.club], e = nx.e;
     // O lance do jogo (depois de jogado, o fcNext não o devolve mais: fica em pending.m)
     const mo = nx.moment || (fc.pending && fc.pending.m) || null;
-    const out = { e, nx, my: null, others: [], title: null, pe: 0 };
+    // O lance comum: jogado (pending.lOk), ensaio do ao vivo (force) ou, sem ninguém jogar, a carta decide
+    const lc = !mo && fc.pending && fc.pending.l ? fc.pending.l : null;
+    if (lc && !fc.pending.lDone && force === undefined) S.fcAutoLance(c, lc);
+    const lok = lc ? (fc.pending.lDone ? fc.pending.lOk : !!force) : undefined;
+    const out = { e, nx, my: null, others: [], title: null, pe: 0, lance: lc ? Object.assign({}, lc, { ok: lok }) : null };
     if (nx.vs) {
-      const my = myMatch(c, fc, r, nx.vs, nx.home, nx.comp, nx.knock, force, mo);
+      const my = myMatch(c, fc, r, nx.vs, nx.home, nx.comp, nx.knock, lc ? undefined : force, mo, lc, lok);
       out.my = my;
       const A = fc.acc;
       A.slots++;
