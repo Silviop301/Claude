@@ -14,7 +14,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | Fase | Pronto quando | Estado |
 |---|---|---|
 | 0 · Preparar | Os números chegam ao servidor (`api/stats.php`, `src/stats.js`, `tools/craque_numeros.py`) e quem joga o Jogo a Jogo vê o aviso do save novo | no ar (PR #108) |
-| 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **em andamento**: parte 1 (jogos vividos, resumidos e no banco; save novo), parte 2 (um lance seu em todo jogo), parte 3 (tela limpa no celular e no ao vivo), parte 4 (rodada como na TV), parte 5 (faixa "Seu ano"), parte 6 (metas da semana e XP por temporada) |
+| 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **no ar** (PRs #109 a #114): jogos vividos/resumidos/banco, lance em todo jogo, tela limpa, rodada como na TV, faixa "Seu ano", metas da semana e XP por temporada. Tempo real do ano a medir pela contagem (o Silvio pediu para não cortar pelo previsto) |
 | 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | |
