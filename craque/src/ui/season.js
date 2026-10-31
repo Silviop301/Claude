@@ -302,6 +302,7 @@
       : S.isCwcYear(G.c) && G.c.cwcYearDone !== year() && S.cwcCall(G.c).called ? 'cwc' : S.windowOpen(G.c) ? 'offers' : 'preseason';
     save();
     // Carreira Completa: antes do resumo, a liga rodada a rodada (ui/fullseason.js); o resumo já não refaz a corrida
+    if (res.full && U.profileJajSeason) res.prof = U.profileJajSeason(G.c, res); // Jogo a Jogo: XP do perfil por temporada
     if (res.full) return show(res, preM, true); // jogada jogo a jogo (ui/fullcareer.js): a corrida do resumo não se repete
     if (G.c.mode === 'completa' && U.fullSeason && U.fullSeason(res, () => show(res, preM, true))) return;
     show(res, preM, false);
@@ -327,7 +328,7 @@
       '<div class="counter"><b id="k-a">0</b><span>' + c2[1] + '</span></div><div class="counter rate"><b id="k-n">–</b><span>Nota</span></div></div></div>' +
         // Lesão séria: a carta pisca em vermelho e o curativo cai com o tanto da temporada perdida
         (res.injury >= 15 ? '<span class="sc-inj">' + U.emo('🩹', 'xs') + ' Lesão: ' + res.injury + '% da temporada fora</span>' : '') + '</div>' +
-      (race ? '<div class="race" id="race"></div>' : '') +
+      (race ? '<div class="race" id="race"></div>' : '') + (res.prof ? U.profileFinale(res.prof) : '') +
       // Lances do ano entrando como ticker enquanto a temporada corre (no resumo, o principal fica em "O que falaram")
       '<div class="feed" id="feed"></div><div id="after"></div><p class="skip-hint" id="skip-hint">Toque para pular</p>'
     );

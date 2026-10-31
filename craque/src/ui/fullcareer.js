@@ -886,6 +886,7 @@
     // O seu lance vem antes do resumo (no automático, ou se saiu no meio do minigame, a carta decide no fcPlay)
     if (m && P && !P.lDone && !m.started && U.cfg.moments !== 'auto') return lanceScreen(m, null, () => brief(nx));
     const en0 = c.fc.en, out = S.fcPlay(c);
+    out.wk = weekGoals(nx, out);
     save(); bar(); sfx('whistle');
     const x = Object.assign({}, nx, { en0 });
     const go = () => (out.title ? celebrate(out, paintOrEnd) : paintOrEnd());
@@ -904,7 +905,7 @@
       '<div class="fb-tm"><span>' + esc(nameOf(x.home ? c.club : x.vs)) + '</span><span>' + esc(nameOf(x.home ? x.vs : c.club)) + '</span></div>' + (m.pens ? '<small class="fb-pen">decidido nos pênaltis</small>' : '') : '';
     return '<div class="eyebrow">' + esc(x.compName) + ' · ' + esc(x.stage) + '</div>' +
       (big ? '<h2 class="fb-h">' + (kind === 'resumo' ? 'Jogo resumido' : kind === 'banco' ? 'Do banco' : 'Folga') + '</h2>' : '') +
-      '<div class="card fb ' + res + '">' + sc + '<p class="fb-me">' + line + '</p>' + (out.lance && m.on ? lanceLine(out.lance) : '') + (x.vs ? '<p class="fb-f">' + h1 + '</p>' : '') + '</div>';
+      '<div class="card fb ' + res + '">' + sc + '<p class="fb-me">' + line + '</p>' + (out.lance && m.on ? lanceLine(out.lance) : '') + (x.vs ? '<p class="fb-f">' + h1 + '</p>' : '') + '</div>' + wkLine(out.wk);
   }
   // O seu lance no cartão do jogo: o minuto e como terminou
   function lanceLine(l) {
@@ -924,6 +925,7 @@
       if (nx.moment) S.fcAutoMoment(c, nx.moment);
       const out = S.fcPlay(c);
       if (!out) break;
+      out.wk = weekGoals(nx, out);
       rows.push([nx, out]);
       if (out.title) { title = out; break; }
     }
@@ -934,10 +936,17 @@
       const [gh, ga] = n.home ? [m.gf, m.ga] : [m.ga, m.gf], r = n.knock ? (m.won ? 'win' : 'loss') : m.gf > m.ga ? 'win' : m.gf < m.ga ? 'loss' : 'draw';
       return '<li class="' + r + '"><span>' + esc(nameOf(n.home ? c.club : n.vs)) + ' <b>' + gh + ' × ' + ga + '</b> ' + esc(nameOf(n.home ? n.vs : c.club)) + '</span><em>' + (m.on ? rate(m.rating) : 'banco') + '</em></li>'; };
     render('<div class="eyebrow">Resumo · ' + year() + '</div><h2 class="fb-h">' + D.plural(rows.length, 'jogo resumido', 'jogos resumidos') + '</h2>' +
-      '<div class="card fb-list"><p class="fb-me">' + W + 'V ' + E + 'E ' + (rows.length - W - E) + 'D' + (rs.length ? ' · sua nota média <b>' + rate(rs.reduce((a, b) => a + b, 0) / rs.length) + '</b>' : '') + '</p><ul>' + rows.map(li).join('') + '</ul></div>' +
+      '<div class="card fb-list"><p class="fb-me">' + W + 'V ' + E + 'E ' + (rows.length - W - E) + 'D' + (rs.length ? ' · sua nota média <b>' + rate(rs.reduce((a, b) => a + b, 0) / rs.length) + '</b>' : '') + '</p><ul>' + rows.map(li).join('') + '</ul></div>' + wkLine(rows.flatMap(([, o]) => o.wk || [])) +
       '<button class="btn" id="fc-next">' + (G.c.fc.done ? 'Ver resumo da temporada' : 'Voltar ao celular') + '</button>');
     $('fc-next').onclick = () => (title ? celebrate(title, paintOrEnd) : paintOrEnd());
   }
+  // Metas da semana do perfil (ui/profile.js) andam a cada jogo jogado; volta as cumpridas agora (ou null)
+  function weekGoals(nx, out) {
+    if (!U.profileJajGame || !out || !out.my || !out.my.on) return null;
+    const r = U.profileJajGame(G.c, out, (D.RIVALS[G.c.club] || []).includes(nx.vs));
+    return r && r.done.length ? r.done : null;
+  }
+  const wkLine = done => (done || []).map(d => '<p class="pg-wk">' + U.emo('🎯', 'xs') + ' Meta da semana cumprida: ' + esc(d.t) + ' · <b>+' + d.xp + ' XP</b></p>').join('');
   const paintOrEnd = () => (G.c.fc.done ? finishSeason() : hub());
 
   // Joga o próximo: com lance decisivo, o jogo ao vivo para no minuto do lance, o minigame decide e o jogo segue dali
@@ -1023,7 +1032,7 @@
       const snap = JSON.stringify(c);
       out = S.fcPlay(c, true);
       const back = JSON.parse(snap); Object.keys(c).forEach(k => delete c[k]); Object.assign(c, back);
-    } else { out = S.fcPlay(c); save(); }
+    } else { out = S.fcPlay(c); out.wk = weekGoals(nx, out); save(); }
     const stopAt = o.stop ? S.fcMinOf(o.stop.minute) : 0, t0 = o.from ? o.from - 1 : 0;
     matchView();
     const x = Object.assign({}, nx, { res: out.my, en0 });
@@ -1257,7 +1266,7 @@
     const py = S.fcPeYear(c);
     rows.push(bar('Evolução do ano', py, S.PE_CAP, out.pe || 0, py >= S.PE_CAP ? 'no limite do ano' : num1(py) + ' de ' + S.PE_CAP));
     const tb = tableGap(c);
-    return '<section class="pg"><div class="eyebrow">Seu ano</div>' + rows.join('') + (tb ? '<p class="pg-tb">' + tb + '</p>' : '') + '</section>';
+    return '<section class="pg"><div class="eyebrow">Seu ano</div>' + rows.join('') + (tb ? '<p class="pg-tb">' + tb + '</p>' : '') + wkLine(out.wk) + '</section>';
   }
   // A linha da tabela mais perto de você, em pontos
   function tableGap(c) {
@@ -1307,6 +1316,7 @@
 
   // ---------- fim do calendário ----------
   function finishSeason() {
+    G.c.fcMetaEnd = S.fcMeta(G.c); // a meta do ano, para o XP da temporada (ui/profile.js)
     if (!G.c.fc.done) S.fcFinish(G.c);
     save();
     U.season();
