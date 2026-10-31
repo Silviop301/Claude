@@ -229,6 +229,10 @@
     tick(t) {
       tone('triangle', 1760, 1500, t, 0.035, 0.05);
     },
+    // Viagem (avião ou ônibus passando): sopro que sobe e desce
+    whoosh(t) {
+      noise(t, 0.9, 0.22, 0.25, 'bandpass', 400, 1600, 1.2);
+    },
     // Jornal chegando
     paper(t) {
       noise(t, 0.35, 0.3, 0.05, 'bandpass', 1500, 4000, 0.7);

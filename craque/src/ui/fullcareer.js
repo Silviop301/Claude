@@ -60,7 +60,7 @@
         '<div class="prc-sim"><button class="link-btn" id="fc-5">Simular 5 jogos</button><button class="link-btn" id="fc-end">Simular até o fim</button></div>' +
       '</div></div></div>');
     document.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go); }; });
-    $('fc-play').onclick = () => { if (G.c.fc.wkDue) { S.fcWeek(G.c, myPick()); unpick(); } start(S.fcNext(G.c)); };
+    $('fc-play').onclick = () => { if (G.c.fc.wkDue) { S.fcWeek(G.c, myPick()); unpick(); } const n = S.fcNext(G.c); n.vs ? fly(n, false, () => start(n)) : start(n); };
     $('fc-5').onclick = () => quick(5);
     $('fc-end').onclick = () => quick(999);
   }
@@ -926,12 +926,12 @@
     const lvlOf = e => (e < S.FC_EN_OUT ? 'out' : e < S.FC_EN_LOW ? 'low' : 'ok');
     const enNow = () => Math.max(0, Math.min(100, Math.round((x.en0 === undefined ? 100 : x.en0) - spentOf() + (eff.drink ? S.FC_DRINK_EN : 0))));
     function effBox() {
-      const e = enNow(), dp = S.fcDrinkPrice(c), canDrink = !eff.drink && t < 60 && (c.money || 0) >= dp;
+      const e = enNow(), dp = S.fcDrinkPrice(c), canDrink = !eff.drink && half && (c.money || 0) >= dp;
       $('fc-wk').className = 'fc-wk fc-ef';
       $('fc-wk').innerHTML = '<div class="fc-st"><span>Energia</span><div class="fc-en ' + lvlOf(e) + '"><i style="width:' + e + '%"></i></div><b class="' + lvlOf(e) + '">' + e + '</b></div>' +
         '<div class="fc-ef-row"><span>Esforço</span><div class="seg fc-ef-seg">' + S.FC_EFF.map((f, k) => '<button data-e="' + k + '"' + (k === eff.lvl ? ' class="on"' : '') + '>' + f.name + '</button>').join('') + '</div></div>' +
         '<p class="fc-ef-hint">' + ['Poupa energia, mas a nota cai um pouco.', 'Gasto normal de energia.', 'Nota sobe, mas a energia desce bem mais rápido.'][eff.lvl] + '</p>' +
-        (eff.drink ? '<p class="fc-ef-hint up">Energético tomado: +' + S.FC_DRINK_EN + ' de energia.</p>' : t < 60 ? '<button class="btn ghost fc-drink" id="fc-drink"' + (canDrink ? '' : ' disabled') + '>Energético pro 2º tempo · R$ ' + U.money(dp) + '<small>+' + S.FC_DRINK_EN + ' de energia' + ((c.money || 0) < dp ? ' · sem dinheiro' : '') + '</small></button>' : '');
+        (eff.drink ? '<p class="fc-ef-hint up">Energético tomado: +' + S.FC_DRINK_EN + ' de energia.</p>' : half ? '<button class="btn ghost fc-drink" id="fc-drink"' + (canDrink ? '' : ' disabled') + '>Energético pro 2º tempo · R$ ' + U.money(dp) + '<small>+' + S.FC_DRINK_EN + ' de energia' + ((c.money || 0) < dp ? ' · sem dinheiro' : '') + '</small></button>' : '');
       $('fc-wk').querySelectorAll('[data-e]').forEach(b => { b.onclick = () => { sfx('tap'); eff.lvl = +b.dataset.e; effBox(); }; });
       if ($('fc-drink')) $('fc-drink').onclick = () => { if ((c.money || 0) < dp) return; sfx('coin'); eff.drink = true; effBox(); };
     }
@@ -940,18 +940,23 @@
       const e = enNow(), b = document.querySelector('.fc-ef .fc-st b'), m = document.querySelector('.fc-ef .fc-en');
       if (!b || !m) return;
       b.textContent = e; b.className = lvlOf(e); m.className = 'fc-en ' + lvlOf(e); m.firstChild.style.width = e + '%';
-      if (t === 60 && $('fc-drink')) effBox();
     }
     if (onPitch) effBox(); else weekBox(true);
     // Outros jogos da rodada (liga e grupo); na copa e no mata-mata, os outros confrontos da fase
     $('fc-round').innerHTML = out.others.length ? '<div class="fs-rlbl">' + (lg ? 'Outros jogos da rodada' : grp ? 'O outro jogo do grupo' : 'Outros confrontos da fase') + '</div>' +
       out.others.map((g, k) => '<div class="fs-rr' + ((out.bets || []).some(t => t.legs.some(l => l.h === g.h && l.a === g.a)) ? ' zb' : '') + '" data-k="' + k + '"><span>' + esc(nameOf(g.h)) + '</span>' + crest(g.h, 'xs') + '<b>0 × 0</b>' + crest(g.a, 'xs') + '<span>' + esc(nameOf(g.a)) + '</span></div>').join('') : '';
-    $('fc-acts').innerHTML = '<div class="fs-skip"><button class="btn ghost' + (fast ? ' on' : '') + '" id="fc-fast">' + (fast ? 'Velocidade normal' : 'Mais rápido') + '</button><button class="btn ghost" id="fc-skip">Fim do jogo</button></div>';
-    $('fc-fast').onclick = () => { fast = !fast; $('fc-fast').textContent = fast ? 'Velocidade normal' : 'Mais rápido'; $('fc-fast').classList.toggle('on', fast); };
-    if (o.stop) $('fc-skip').textContent = 'Ir ao lance';
-    $('fc-skip').onclick = () => { clearTimeout(timer); if (o.stop) { const t1 = t; t = stopAt; frame(t1); return pause(); } t = end; frame(); done(); };
+    // Botões com a bola rolando: velocidade e pular (para o fim ou para o lance)
+    function liveActs() {
+      $('fc-acts').innerHTML = '<div class="fs-skip"><button class="btn ghost' + (fast ? ' on' : '') + '" id="fc-fast">' + (fast ? 'Velocidade normal' : 'Mais rápido') + '</button><button class="btn ghost" id="fc-skip">' + (o.stop ? 'Ir ao lance' : 'Fim do jogo') + '</button></div>';
+      $('fc-fast').onclick = () => { fast = !fast; $('fc-fast').textContent = fast ? 'Velocidade normal' : 'Mais rápido'; $('fc-fast').classList.toggle('on', fast); };
+      $('fc-skip').onclick = () => { clearTimeout(timer); if (o.stop) { const t1 = t; t = stopAt; frame(t1); return pause(); } t = end; frame(); done(); };
+    }
+    // Parada (antes do jogo e no intervalo): um botão dourado segue; dá tempo de escolher o esforço e o energético
+    function stopActs(id, label, sub, go) {
+      $('fc-acts').innerHTML = '<button class="btn fc-kick" id="' + id + '">' + label + (sub ? '<small>' + sub + '</small>' : '') + '</button>';
+      $(id).onclick = () => { sfx('whistle'); go(); };
+    }
     $('fc-match').scrollIntoView({ block: 'nearest' });
-    sfx('whistle');
     const liveTab = () => ({ [view]: games.map(([a, b, g]) => [a, b].concat(part(g, t))) });
     // Antes do lance só entra o que veio antes do minuto dele
     const shown = e => !o.stop || e.m < stopAt;
@@ -974,7 +979,12 @@
     }
     function tick() {
       if (!$('fc-match')) return; // saiu da tela: o jogo já está salvo
-      if (t === 45 && !half) { half = true; sfx('whistle'); frame(); timer = setTimeout(tick, fast ? 600 : 1800); return; }
+      if (t === 45 && !half) {
+        // Intervalo: o jogo para; o energético só aparece aqui
+        half = true; sfx('whistle'); frame();
+        if (onPitch) effBox();
+        return stopActs('fc-2t', 'Começar o 2º tempo', onPitch ? 'Escolha o esforço' + (eff.drink ? '' : ' e se toma o energético') : '', () => { liveActs(); timer = setTimeout(() => { if (onPitch) effBox(); tick(); }, 300); });
+      }
       half = false; t++;
       if (onPitch && t <= 90) { eff.mins[eff.lvl]++; effTick(); }
       frame();
@@ -1001,7 +1011,12 @@
       sfx('whistle');
       result(x, out);
     }
-    timer = setTimeout(tick, 400);
+    // Antes do apito: o jogo começa no botão (o esforço já pode ser escolhido); voltando ao lance, segue direto
+    if (o.from) { liveActs(); sfx('whistle'); timer = setTimeout(tick, 400); }
+    else {
+      const lt = $('fc-lt'); if (lt) lt.textContent = esc(nx.compName) + ' · antes do jogo';
+      stopActs('fc-kick', 'Começar o jogo', onPitch ? 'Escolha o esforço antes do apito' : '', () => { liveActs(); timer = setTimeout(tick, 300); });
+    }
   }
   const sub = (tab, a, b, [gh, ga]) => {
     const A = tab[a], B = tab[b];
@@ -1041,12 +1056,18 @@
     const row = (k, v, cls) => '<div><span>' + k + '</span><b class="' + (cls || '') + '">' + v + '</b></div>';
     const en1 = Math.round(fc.en === undefined ? 100 : fc.en), en0 = Math.round(x.en0 === undefined ? en1 : x.en0);
     const others = out.others.slice(0, 6).map(g => { const [a, b] = goalsOf(g); return '<span>' + esc(nameOf(g.h)) + ' ' + a + ' × ' + b + ' ' + esc(nameOf(g.a)) + '</span>'; }).join('');
-    const ze = out.bets ? '<p class="jn-ze">' + out.bets.map(t => t.legs.length === 1 ? esc(nameOf(t.legs[0].h)) + ' ' + t.legs[0].gh + ' × ' + t.legs[0].ga + ' ' + esc(nameOf(t.legs[0].a)) + ' (' + esc(legTxt(t.legs[0])) + '): ' + (t.win ? 'pagou R$ ' + U.money(t.pay) + '.' : 'R$ ' + U.money(t.stake) + ' a menos.') :
-        'Múltipla de ' + t.legs.length + ' (' + t.legs.filter(l => l.win).length + ' de ' + t.legs.length + '): ' + (t.win ? 'pagou R$ ' + U.money(t.pay) + '!' : 'R$ ' + U.money(t.stake) + ' a menos.')).join(' ') +
-      (out.betCaught ? ' E a federação descobriu: ' + S.FC_BET_BAN + ' jogos de suspensão.' : '') + ' <i>— Zé</i></p>' : '';
-    const bi = out.bicho ? '<p class="jn-ze">Deu ' + esc(S.BICHOS[out.bicho.head]) + ' na cabeça (' + String(out.bicho.prem[0]).padStart(4, '0') + '). ' + out.bicho.bets.map(b => (b.win ? 'Seu ' + S.BICHOS[b.g] + ' pagou R$ ' + U.money(b.back) + '.' : S.BICHOS[b.g] + ' não deu.')).join(' ') + ' <i>— Zé</i></p>' : '';
     const fx = out.fix && !out.fix.off ? (out.fix.caught ? '<p class="jn-fix"><b>Escândalo: ' + esc(c.name) + ' combinou cartão com apostador.</b> Mensagens vazaram, o amarelo aos ' + out.fix.min + "' estava acertado. Suspensão de " + S.FC_FIX_BAN + ' jogos, e a torcida pede explicações.</p>' :
       '<p class="jn-ze">Amarelo aos ' + out.fix.min + "', como combinado. R$ " + U.money(out.fix.pay) + ' na conta, e ninguém percebeu. <i>— Zé</i></p>') : out.fix && out.fix.off ? '<p class="jn-ze">Você não entrou em campo: o combinado caiu. <i>— Zé</i></p>' : '';
+    // Apostas da rodada: bilhete do Zé fora do jornal, com carimbo e o saldo em destaque
+    const tk = [];
+    (out.bets || []).forEach(t => tk.push({ what: t.legs.length === 1 ? nameOf(t.legs[0].h) + ' ' + t.legs[0].gh + ' × ' + t.legs[0].ga + ' ' + nameOf(t.legs[0].a) : 'Múltipla de ' + t.legs.length,
+      how: t.legs.length === 1 ? legTxt(t.legs[0]) : t.legs.filter(l => l.win).length + ' de ' + t.legs.length + ' acertos', win: t.win, net: t.win ? t.pay - t.stake : -t.stake }));
+    if (out.bicho) out.bicho.bets.forEach(b => tk.push({ what: 'Bicho: ' + S.BICHOS[b.g], how: 'deu ' + S.BICHOS[out.bicho.head] + ' na cabeça', win: b.win, net: b.win ? b.back - b.stake : -b.stake }));
+    const net = tk.reduce((a, t) => a + t.net, 0), sgnR = v => (v >= 0 ? '+R$ ' : '−R$ ') + U.money(Math.abs(v));
+    const zeCard = tk.length ? '<section class="zb-res ' + (net > 0 ? 'win' : 'loss') + '"><header><b>Apostas da rodada</b><span>com o Zé</span></header>' +
+      tk.map(t => '<div class="zb-tk ' + (t.win ? 'win' : 'loss') + '"><span><b>' + esc(t.what) + '</b><small>' + esc(t.how) + '</small></span><i>' + (t.win ? 'Pagou' : 'Perdeu') + '</i><em>' + sgnR(t.net) + '</em></div>').join('') +
+      '<div class="zb-net"><span>Saldo da rodada</span><b>' + sgnR(net) + '</b></div>' +
+      (out.betCaught ? '<p class="zb-caught">A federação descobriu: ' + S.FC_BET_BAN + ' jogos de suspensão.</p>' : '') + '</section>' : '';
     const done = G.c.fc.done;
     render('<div class="jn-w"><article class="jn">' +
       '<header><h1>Diário da Rodada</h1><p><span>nº ' + (fc.i) + '</span><span>' + esc(x.compName) + ' · ' + year() + '</span><span>R$ 3,00</span></p></header>' +
@@ -1059,9 +1080,24 @@
           (out.pe ? row('Evolução', '+' + num1(out.pe), 'up') : '') +
           (out.gear ? row(c.pos === 'GOL' ? 'Luvas' : 'Chuteira', out.gear.left > 0 ? out.gear.left + (out.gear.left === 1 ? ' jogo' : ' jogos') : 'rasgou', out.gear.left <= 5 ? 'down' : '') : '') + '</div></div>' +
       (others ? '<div class="jn-o"><b>Os outros jogos</b><div>' + others + '</div></div>' : '') +
-      '<div class="jn-f"><p>' + esc(nameOf(c.club)) + ' está em ' + lgPos + 'º na ' + esc(fc.lg.name) + ', com ' + fc.lg.tab[0].p + (fc.lg.tab[0].p === 1 ? ' ponto.' : ' pontos.') + '</p>' + fx + ze + bi + '</div>' +
-      '</article><button class="btn" id="fc-next">' + (done ? 'Ver resumo da temporada' : 'Voltar ao celular') + '</button></div>');
-    $('fc-next').onclick = () => (out.title ? celebrate(out, paintOrEnd) : paintOrEnd());
+      '<div class="jn-f"><p>' + esc(nameOf(c.club)) + ' está em ' + lgPos + 'º na ' + esc(fc.lg.name) + ', com ' + fc.lg.tab[0].p + (fc.lg.tab[0].p === 1 ? ' ponto.' : ' pontos.') + '</p>' + fx + '</div>' +
+      '</article>' + zeCard + '<button class="btn" id="fc-next">' + (done ? 'Ver resumo da temporada' : 'Voltar ao celular') + '</button></div>');
+    if (tk.length) setTimeout(() => sfx(net > 0 ? 'coin' : 'tap'), 500);
+    $('fc-next').onclick = () => (out.title ? celebrate(out, () => flyBack(x)) : flyBack(x));
+  }
+  const flyBack = x => (G.c.fc.done || !x.vs ? paintOrEnd() : fly(x, true, paintOrEnd));
+  // Viagem entre o celular e o jogo: avião para jogo fora, ônibus para jogo em casa; a tela troca no meio do caminho
+  function fly(x, back, next) {
+    if (U.cfg.fast || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return next();
+    const away = !x.home, city = nameOf(x.vs);
+    const el = document.createElement('div');
+    el.className = 'fc-fly' + (back ? ' back' : '') + (away ? ' air' : ' bus');
+    el.innerHTML = '<div class="fc-fly-v">' + U.emo(away ? '✈️' : '🚌', 'lg') + '</div><p>' + (back ? (away ? 'Voltando para casa' : 'De volta ao CT') : away ? 'Viagem para jogar com o ' + esc(city) : 'Rumo ao estádio') + '</p>';
+    document.body.appendChild(el);
+    sfx('whoosh');
+    setTimeout(next, 750);
+    setTimeout(() => el.classList.add('out'), 1300);
+    setTimeout(() => el.remove(), 1700);
   }
   // Taça ganha: tela curta de festa
   function celebrate(out, next) {

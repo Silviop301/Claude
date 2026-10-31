@@ -5351,3 +5351,42 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
 .rlv-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 2; }
 .rlv-confetti i { position: absolute; top: -20px; width: 8px; height: 14px; border-radius: 2px; animation: bm-fall 2s linear 3 both; opacity: .9; }
 @media (max-height: 700px) { .rlv-pz, .rlv:not(.duel) .rlv-pz { height: 84px; } .rlv-casa b { font-size: 24px; } }
+
+/* Jogo a Jogo: parada antes do jogo e no intervalo, apostas da rodada e a viagem celular ↔ jogo */
+.fc-kick { display: grid; gap: 2px; justify-items: center; width: 100%; min-height: 56px; }
+.fc-kick small { font: 600 13px var(--body); opacity: .75; }
+.zb-res { display: grid; gap: 6px; padding: 12px 14px 14px; border-radius: var(--r-md); background: #1B1408; border: 2px solid var(--gold); color: var(--tx-1); box-shadow: var(--sh-float); animation: zbIn .5s cubic-bezier(.2,1.4,.4,1) .2s both; }
+.zb-res.loss { border-color: var(--down); }
+.zb-res header { display: flex; justify-content: space-between; align-items: baseline; }
+.zb-res header b { font: 800 22px var(--display); color: var(--gold); }
+.zb-res.loss header b { color: var(--tx-1); }
+.zb-res header span { font: 400 18px 'Caveat Brush', var(--body); color: var(--tx-2); }
+.zb-tk { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px dashed rgba(255,255,255,.18); }
+.zb-tk > span { display: grid; gap: 2px; min-width: 0; }
+.zb-tk b { font: 700 14px var(--body); } .zb-tk small { font: 500 12px var(--body); color: var(--tx-3); }
+.zb-tk i { font: 800 13px var(--display); font-style: normal; text-transform: uppercase; letter-spacing: .04em; padding: 3px 8px; border: 2px solid currentColor; border-radius: 6px; transform: rotate(-6deg); }
+.zb-tk.win i { color: var(--up); } .zb-tk.loss i { color: var(--down); }
+.zb-tk em { font: 800 18px var(--display); font-style: normal; text-align: right; min-width: 5.5em; }
+.zb-tk.win em { color: var(--up); } .zb-tk.loss em { color: var(--down); }
+.zb-net { display: flex; justify-content: space-between; align-items: baseline; padding-top: 8px; border-top: 2px solid rgba(255,255,255,.3); }
+.zb-net span { font: 700 14px var(--display); color: var(--tx-2); }
+.zb-net b { font: 800 34px/1 var(--display); color: var(--up); }
+.zb-res.loss .zb-net b { color: var(--down); }
+.zb-caught { margin: 0; font: 700 14px var(--body); color: var(--down); }
+@keyframes zbIn { from { opacity: 0; transform: scale(.9) translateY(10px); } to { opacity: 1; transform: none; } }
+.fc-fly { position: fixed; inset: 0; z-index: 90; pointer-events: none; display: grid; place-items: end center; padding-bottom: 22vh;
+  background: linear-gradient(180deg, rgba(40,90,130,.92), rgba(14,36,26,.95)); animation: flyBg .35s ease both; }
+.fc-fly.out { animation: flyOut .4s ease both; }
+.fc-fly p { margin: 0; font: 800 22px var(--display); color: var(--paper); text-shadow: 0 2px 8px rgba(0,0,0,.4); }
+.fc-fly-v { position: absolute; left: 0; top: 50%; animation: flyGo 1.5s cubic-bezier(.45,.05,.4,1) both; }
+.fc-fly-v .tw-lg { width: 96px; height: 96px; filter: drop-shadow(0 8px 10px rgba(0,0,0,.35)); }
+.fc-fly.bus .fc-fly-v { top: 58%; animation-name: busGo; }
+.fc-fly.back .fc-fly-v { animation-name: flyBack; }
+.fc-fly.back.bus .fc-fly-v { animation-name: busBack; }
+.fc-fly.back .fc-fly-v img { transform: scaleX(-1); }
+@keyframes flyBg { from { opacity: 0; } to { opacity: 1; } }
+@keyframes flyOut { to { opacity: 0; } }
+@keyframes flyGo { from { transform: translate(-120px, 80px) rotate(-8deg); } to { transform: translate(calc(100vw + 20px), -140px) rotate(-14deg); } }
+@keyframes flyBack { from { transform: translate(calc(100vw + 20px), -140px) rotate(8deg); } to { transform: translate(-120px, 60px) rotate(12deg); } }
+@keyframes busGo { from { transform: translateX(-120px); } to { transform: translateX(calc(100vw + 20px)); } }
+@keyframes busBack { from { transform: translateX(calc(100vw + 20px)); } to { transform: translateX(-120px); } }
