@@ -15,7 +15,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 |---|---|---|
 | 0 · Preparar | Os números chegam ao servidor (`api/stats.php`, `src/stats.js`, `tools/craque_numeros.py`) e quem joga o Jogo a Jogo vê o aviso do save novo | no ar (PR #108) |
 | 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **no ar** (PRs #109 a #114): jogos vividos/resumidos/banco, lance em todo jogo, tela limpa, rodada como na TV, faixa "Seu ano", metas da semana e XP por temporada. Tempo real do ano a medir pela contagem (o Silvio pediu para não cortar pelo previsto) |
-| 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | **em andamento**: parte 1 (as pessoas e o Chat, PR #116), parte 2 (um treino e os convites, PR #117), parte 3 (histórias que voltam) |
+| 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | **no ar** (PRs #116 a #119): pessoas do celular e Chat, um treino por semana e convites (segura, arriscada, sem resposta), histórias que voltam, repercussão no X, na TV e no jornal |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | |
 | 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | |
@@ -487,3 +487,14 @@ Proibido também: cartão com faixa colorida na lateral.
   acontecer); os outros passos são mensagens no Chat. Recusar ou não responder também fica guardado e volta numa mensagem.
 - Medido em 60 carreiras: as três histórias aparecem e terminam em quase todas, pelos caminhos diferentes. A nota do Jogo
   a Jogo ficou igual dentro do ruído.
+
+### Fase 2 do plano, parte 4 · 2026-10-31 · Repercussão no X, na TV e no jornal
+
+- O que vira público num convite ou numa história (`S.FC_NEWS` em engine/phone.js: comercial, meme, entrevista boa ou
+  polêmica, programa, foto de madrugada, churrasco que acabou tarde, campanha, casa dos pais, bar, patrocínio) sai como
+  notificação **X · assunto do momento** no celular, às vezes com a fala de um programa de TV (`D.MEDIA.shows`), e no
+  próximo jogo como **Fora de campo**, no jornal da rodada ou no cartão do jogo resumido. Cada notícia aparece uma vez em
+  cada lugar e fica à vista até o jogo seguinte. Só texto: nota e sorte não mudam.
+- **Fase 2 pronta**: auditoria dos convites com 0 alertas; em 60 carreiras de 20 temporadas, ~21 convites por temporada,
+  no máximo 2 do mesmo tipo por temporada e cada texto menos de uma vez por temporada; ~11 mensagens por temporada, com o
+  texto mais repetido de uma carreira inteira aparecendo 10 vezes (mediana).

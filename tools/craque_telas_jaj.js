@@ -141,6 +141,7 @@ const INIT = `
     await tap('.ph-app[data-go="ag"]'); await shot('agenda-convites');
     if (await has('[data-inv][data-a="b"]')) { await tap('[data-inv][data-a="b"]'); await shot('agenda-convite-respondido'); }
     await tap('#fc-agok'); await wait(400);
+    await shot('celular-repercussao'); // a resposta virou assunto no X (fase 2, parte 4)
   }
 
   // Até um jogo com lance (simula os do meio com a carta decidindo) e a parada do lance

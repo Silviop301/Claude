@@ -647,6 +647,43 @@
   }
   S.fcStories = c => (c.ppl && c.ppl.st) || {};
 
+  // ---------- repercussão (fase 2, parte 4) ----------
+  // O que vira público sai no X (notificação no celular), no jornal da próxima rodada ("Fora de campo") e, às vezes, num
+  // programa de TV (D.MEDIA.shows). {me} o seu nome curto, {club} o clube, {show} quem falou e onde
+  const NEWS = {
+    'gravacao.win': { j: '{me} estrela comercial e vira assunto na cidade', x: 'o comercial do {me} passou no intervalo e eu já sei a música de cor kkkk' },
+    'gravacao.lose': { j: 'Comercial de {me} vira piada nas redes', x: 'KKKKKKK alguém viu o comercial do {me}? ator não é, isso eu garanto', tv: 'Esse comercial aí, sinceramente, eu não teria gravado. Foca na bola, garoto!' },
+    'exclusiva.win': { j: 'Em entrevista, {me} fala da infância e emociona', x: 'a entrevista do {me} me fez chorar no ônibus. que história' },
+    'exclusiva.lose': { j: '{me} critica o técnico e esquenta o vestiário', x: 'o {me} falou do técnico na entrevista e o clima no {club} vai ferver kkkk', tv: 'Jogador tem que falar dentro de campo! Essa entrevista foi um tiro no pé.' },
+    'podcast.win': { j: 'Participação de {me} em programa bate recorde', x: 'o {me} no programa foi engraçado demais, já virou corte em todo lugar' },
+    'podcast.lose': { j: '{me} fala demais no ar e o clube não gosta', x: 'o {me} reclamou do banco ao vivo kkkk a diretoria deve ter adorado', tv: 'Moleque, reclamar do banco ao vivo? Eu já fiz isso e me arrependi. Escuta o tio aqui.' },
+    'resenha.lose': { j: 'Foto de {me} de madrugada circula na véspera do jogo', x: 'flagraram o {me} às 4 da manhã num pagode kkkk e o jogo é amanhã', tv: 'Pagode na véspera do jogo? No meu tempo o treinador ia te buscar pela orelha!' },
+    'churrasco.lose': { j: 'Churrasco do elenco do {club} termina tarde e técnico fica sabendo', x: 'o churrasco do {club} foi até de manhã segundo meu primo que mora do lado kkkk' },
+    'post.win': { j: '{me} é o novo rosto de campanha nacional', x: 'a cara do {me} em todo ponto de ônibus da cidade kkkk tô vendo ele até no sonho' },
+    'pat1.b': { j: '{me} assina patrocínio de três anos com marca gigante', x: 'o {me} fechou com marca grande, agora é garoto-propaganda kkkk' },
+    'casa1.b': { j: '{me} dá casa nova aos pais na cidade natal', x: 'o {me} deu uma casa pros pais. respeito total, isso é coisa de craque' },
+    'bar1.b': { j: '{me} vira sócio de bar no bairro onde cresceu', x: 'abriram um bar com a camisa do {me} na parede, já marquei de ir domingo' },
+  };
+  S.FC_NEWS = NEWS;
+  function news(c, key) {
+    const n = NEWS[key];
+    if (!n) return;
+    const P = c.ppl, shows = (D.MEDIA && D.MEDIA.shows) || [], r = rngFor(c, 0x7E57 + (c.fc ? c.fc.i : 0) * 7 + key.length);
+    const sh = n.tv && shows.length && r() < 0.6 ? shows[Math.floor(r() * shows.length)] : null;
+    P.news = (P.news || []).filter(x => !(x.j0 && x.x0) && x.s >= c.season - 1).slice(-8); // as já mostradas nos dois lugares saem
+    P.news.push({ k: key, j: fill(c, n.j, {}), x: fill(c, n.x, {}), tv: sh ? { who: sh.who, where: sh.where, t: n.tv } : null, s: c.season, at: c.fc ? c.fc.i : 0, j0: false, x0: false });
+  }
+  // A notícia que ainda não saiu no X (celular) ou no jornal (cartão do jogo). Fica à vista até o próximo jogo: a marca é
+  // o jogo em que ela apareceu, e a tela pode desenhar de novo sem a notícia sumir
+  S.fcNewsFor = function (c, where) {
+    const P = c.ppl, fc = c.fc;
+    if (!P || !P.news || !fc) return null;
+    const k = where === 'x' ? 'x0' : 'j0', now = c.season * 1000 + fc.i;
+    const n = P.news.find(x => !x[k] || x[k] === now);
+    if (n) n[k] = now;
+    return n || null;
+  };
+
   S.fcInvites = c => (c.fc && c.fc.wkDue && c.fc.inv) || [];
   S.fcInvText = (c, inv) => fill(c, INV_BY[inv.id].t[inv.ti], { x: inv.x });
   S.fcInvDef = inv => INV_BY[inv.id];
@@ -663,6 +700,7 @@
     post(c, d.p, fill(c, o.re, { x: inv.x }), S.fcTone(c, d.p));
     if (ans === 'a' && d.id === 'niver') remember(c, 'parca', 'niver', '');
     if (d.then) d.then(c, ans, ok);
+    news(c, d.b.later ? (ans === 'b' ? inv.id + '.b' : '') : inv.id + '.' + (ans === 'b' ? (ok ? 'win' : 'lose') : 'a'));
     return { ok, tag: o.tag || '', parts: S.fcInvParts(c, o.fx) };
   };
   // Fecha a semana: o que ficou sem resposta

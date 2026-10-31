@@ -75,20 +75,24 @@
   }
   // Notificações do celular: quem fala e o que pede; cada uma abre a tela dela
   function pings(c, nx) {
-    const fc = c.fc, out = [], n = (go, who, txt) => out.push({ go, who, txt });
+    const fc = c.fc, out = [], n = (go, who, txt, pr) => out.push({ go, who, txt, pr: pr || 5, k: out.length });
     const p = Math.round(S.fcStartP(c) * 100);
     // Quem escreveu desde o último jogo (as duas mais novas), antes das notificações do clube
     const who = id => { const k = S.fcContact(c, id); return id === 'mae' ? k.name : k.name + ', ' + k.role; };
-    if (S.fcPhoneNew) S.fcPhoneNew(c).slice(-2).reverse().forEach(m => n('msg', who(m.p), m.t));
-    const coach = c.ppl ? who('coach') : 'Técnico';
-    if (nx.injury) n(null, /suspensão/.test(nx.injury) ? 'Diretoria' : 'Departamento médico', /suspensão/.test(nx.injury) ? (/manipula/.test(fc.injName) ? 'Suspenso pelo caso do cartão combinado: fora por mais ' : 'Suspenso por causa da aposta: fora por mais ') + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') : nx.injury.charAt(0).toUpperCase() + nx.injury.slice(1) + ': fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') + (fc.wkDue ? ' Fisioterapia na semana ajuda.' : ''));
-    else if (nx.vs) n(null, coach, nx.on === null ? 'Escalo o time depois do treino da semana. Hoje você tem ' + p + '% de chance de começar.' : nx.on ? 'Amanhã você começa jogando. Conto contigo.' : nx.why === 'cansaço' ? 'Vou te poupar amanhã, você tá sem perna. Descansa.' : nx.why === 'banco' ? 'Amanhã você começa no banco. Treina forte que a chance aparece.' : 'Amanhã vou rodar o elenco e você fica fora.');
+    if (S.fcPhoneNew) S.fcPhoneNew(c).slice(-2).reverse().forEach((m, k) => n('msg', who(m.p), m.t, 3 + k));
+    const coach = c.ppl ? who('coach') : 'Técnico', n1 = (g, w, t) => n(g, w, t, 1);
+    if (nx.injury) n1(null, /suspensão/.test(nx.injury) ? 'Diretoria' : 'Departamento médico', /suspensão/.test(nx.injury) ? (/manipula/.test(fc.injName) ? 'Suspenso pelo caso do cartão combinado: fora por mais ' : 'Suspenso por causa da aposta: fora por mais ') + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') : nx.injury.charAt(0).toUpperCase() + nx.injury.slice(1) + ': fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') + (fc.wkDue ? ' Fisioterapia na semana ajuda.' : ''));
+    else if (nx.vs) n1(null, coach, nx.on === null ? 'Escalo o time depois do treino da semana. Hoje você tem ' + p + '% de chance de começar.' : nx.on ? 'Amanhã você começa jogando. Conto contigo.' : nx.why === 'cansaço' ? 'Vou te poupar amanhã, você tá sem perna. Descansa.' : nx.why === 'banco' ? 'Amanhã você começa no banco. Treina forte que a chance aparece.' : 'Amanhã vou rodar o elenco e você fica fora.');
     const A = id => (S.FC_WEEK.find(a => a.id === id) || S.FC_WEEK[2]).name.toLowerCase().replace(/^treino /, '');
+    // Repercussão: o que virou assunto no X (e, às vezes, num programa de TV)
+    const n4 = (g, w, t) => n(g, w, t, 4);
+    const nw = S.fcNewsFor && S.fcNewsFor(c, 'x');
+    if (nw) { n('msg', 'X · assunto do momento', nw.x, 3); if (nw.tv) n('msg', nw.tv.who + ' ' + nw.tv.where, nw.tv.t, 4); }
     // Convites da semana ainda sem resposta (cada um abre a agenda, onde se responde)
     const open = S.fcInvites(c).filter(x => !x.ans);
-    open.slice(0, 2).forEach(x => n('ag', who(S.fcInvDef(x).p), S.fcInvText(c, x)));
-    if (fc.wkDue) { if (!pick) pick = S.fcWeekAuto(c); n('ag', 'Agenda', 'Treino da semana: ' + A(pick[0]) + (open.length ? '. ' + (open.length === 1 ? '1 convite' : open.length + ' convites') + ' esperando resposta.' : '. Toque para mudar.')); }
-    else if (fc.wkSum && fc.wkSum.at === fc.i) n('ag', 'Agenda', 'Semana feita: ' + fc.wkSum.acts.map(A).join(' e ') + '. Energia ' + Math.round(fc.wkSum.en0) + ' → ' + Math.round(fc.wkSum.en1) + '.');
+    open.slice(0, 2).forEach((x, k) => n('ag', who(S.fcInvDef(x).p), S.fcInvText(c, x), 2 + k * 2));
+    if (fc.wkDue) { if (!pick) pick = S.fcWeekAuto(c); n4('ag', 'Agenda', 'Treino da semana: ' + A(pick[0]) + (open.length ? '. ' + (open.length === 1 ? '1 convite' : open.length + ' convites') + ' esperando resposta.' : '. Toque para mudar.')); }
+    else if (fc.wkSum && fc.wkSum.at === fc.i) n4('ag', 'Agenda', 'Semana feita: ' + fc.wkSum.acts.map(A).join(' e ') + '. Energia ' + Math.round(fc.wkSum.en0) + ' → ' + Math.round(fc.wkSum.en1) + '.');
     // Roupeiro: a chuteira (ou luva) acabando ou já rasgada
     const gw = c.pos === 'GOL' ? 'luva' : 'chuteira';
     if (c.gear && c.gear.left <= 5) n('shop', 'Roupeiro', 'Tua ' + gw + ' tá no fim: ' + (c.gear.left === 1 ? 'aguenta só mais 1 jogo.' : 'aguenta mais ' + c.gear.left + ' jogos.'));
@@ -99,7 +103,8 @@
     if (fx && fx.st === 'open') n('bet', 'Zé', 'Tenho uma proposta pro teu próximo jogo. Só entre nós.');
     else if (bets.length) n('bet', 'Zé', bets.length === 1 ? 'Teu cupom tá feito. Sai na próxima rodada.' : 'Teus ' + bets.length + ' cupons tão feitos. Saem na próxima rodada.');
     else if (S.fcBetRound(c) && !(fc.zeMad > fc.i)) n('bet', 'Zé', 'A rodada tá aberta, com jogo de fora também. Quer ver?');
-    return out;
+    // Tela limpa: as quatro mais importantes (o resto está nos apps); o Chat mostra o contador do que ficou de fora
+    return out.sort((a, b) => a.pr - b.pr || a.k - b.k).slice(0, 4);
   }
   // Um convite na agenda: quem chamou, o recado e as duas respostas (a segura com o que dá, a arriscada com a chance de cada
   // lado). Sem tocar em nada, a semana fecha sem resposta, e isso a pessoa também lembra. Respondido: o que aconteceu.
@@ -964,9 +969,11 @@
       '<div class="fb-tm"><span>' + esc(nameOf(x.home ? c.club : x.vs)) + '</span><span>' + esc(nameOf(x.home ? x.vs : c.club)) + '</span></div>' + (m.pens ? '<small class="fb-pen">decidido nos pênaltis</small>' : '') : '';
     return '<div class="eyebrow">' + esc(x.compName) + ' · ' + esc(x.stage) + '</div>' +
       (big ? '<h2 class="fb-h">' + (kind === 'resumo' ? 'Jogo resumido' : kind === 'banco' ? 'Do banco' : 'Folga') + '</h2>' : '') +
-      '<div class="card fb ' + res + '">' + sc + '<p class="fb-me">' + line + '</p>' + (out.lance && m.on ? lanceLine(out.lance) : '') + (x.vs ? '<p class="fb-f">' + h1 + '</p>' : '') + '</div>' + wkLine(out.wk);
+      '<div class="card fb ' + res + '">' + sc + '<p class="fb-me">' + line + '</p>' + (out.lance && m.on ? lanceLine(out.lance) : '') + (x.vs ? '<p class="fb-f">' + h1 + '</p>' : '') + fora(G.c) + '</div>' + wkLine(out.wk);
   }
   // O seu lance no cartão do jogo: o minuto e como terminou
+  // Fora de campo: a notícia da semana (convite que virou público) no jornal ou no cartão do jogo
+  function fora(c) { const n = S.fcNewsFor && S.fcNewsFor(c, 'j'); return n ? '<p class="jn-fora"><b>Fora de campo</b> ' + esc(n.j) + '</p>' : ''; }
   function lanceLine(l) {
     const st = S.kickSetupType(l), def = st === 'save' || (st === 'tackle' && !l.duel);
     const what = st === 'save' ? (l.ok ? 'pênalti defendido' : 'pênalti sofrido') : def ? (l.ok ? 'desarme no contra-ataque' : 'o atacante passou e marcou') : l.duel ? (l.ok ? 'bola roubada na pressão' : 'perdeu a dividida') :
@@ -1301,7 +1308,7 @@
           (out.pe ? row('Evolução', '+' + num1(out.pe), 'up') : '') +
           (out.gear ? row(c.pos === 'GOL' ? 'Luvas' : 'Chuteira', out.gear.left > 0 ? out.gear.left + (out.gear.left === 1 ? ' jogo' : ' jogos') : 'rasgou', out.gear.left <= 5 ? 'down' : '') : '') + '</div></div>' +
       (others ? '<div class="jn-o"><b>Os outros jogos</b><div>' + others + '</div></div>' : '') +
-      '<div class="jn-f"><p>' + esc(nameOf(c.club)) + ' está em ' + lgPos + 'º na ' + esc(fc.lg.name) + ', com ' + fc.lg.tab[0].p + (fc.lg.tab[0].p === 1 ? ' ponto.' : ' pontos.') + '</p>' + fx + '</div>' +
+      '<div class="jn-f">' + fora(c) + '<p>' + esc(nameOf(c.club)) + ' está em ' + lgPos + 'º na ' + esc(fc.lg.name) + ', com ' + fc.lg.tab[0].p + (fc.lg.tab[0].p === 1 ? ' ponto.' : ' pontos.') + '</p>' + fx + '</div>' +
       '</article>' + (m.on ? progStrip(c, out, m) : '') + zeCard + '<button class="btn" id="fc-next">' + (done ? 'Ver resumo da temporada' : 'Voltar ao celular') + '</button></div>');
     // As barras enchem do valor de antes do jogo até o de agora
     setTimeout(() => document.querySelectorAll('.pg-b u').forEach(u => { u.style.width = u.dataset.w + '%'; }), 350);
