@@ -954,6 +954,19 @@
   // Pontos de evolução mostrados (inteiros já no banco + a fração do ano)
   S.fcPe = c => (c.pe || 0) + (c.fc ? c.fc.peFrac : 0);
   // Ganho no ano (o que conta para o limite): inteiros do ano + fração, menos a fração que veio do ano anterior
+  // Meta do ano da posição (plano, fase 1: faixa de progresso): gols do atacante, assistências do meia, jogos sem sofrer
+  // gol da defesa. Fixada na primeira vez que alguém pergunta na temporada: um pouco acima do que a carta faria no ano
+  S.fcMeta = function (c) {
+    const fc = c.fc;
+    if (!fc || !fc.acc || !fc.lg) return null;
+    if (!fc.meta) {
+      const X = myRates(c, D.CLUB_BY_ID[c.club]), games = (fc.lg.rounds.length + 3) * X.share;
+      const k = c.pos === 'ATA' ? 'goals' : c.pos === 'MEI' ? 'assists' : 'cs';
+      const rate = k === 'goals' ? X.g90 * FC_K.g : k === 'assists' ? X.a90 * FC_K.a * 0.55 : 0.4;
+      fc.meta = { k, n: Math.max(k === 'cs' ? 4 : 3, Math.round(rate * games * 1.15)) };
+    }
+    return { k: fc.meta.k, n: fc.meta.n, have: fc.acc[fc.meta.k] || 0 };
+  };
   S.fcPeYear = c => (c.fc ? Math.round((c.fc.peGot + c.fc.peFrac - (c.fc.peCarry || 0) - (c.fc.peTrain || 0)) * 100) / 100 : 0); // o treino da semana tem limite próprio
 
   // Fim do calendário: os números do ano para S.playSeason (c.fc.out)
