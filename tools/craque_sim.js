@@ -56,7 +56,7 @@ for (let n = 0; n < N; n++) {
     // e o robô investe os pontos de evolução assim que eles entram
     // Loja da Completa (NOSHOP=1 desliga): o robô compra a melhor chuteira que cabe com folga e contrata a equipe que dá para manter
     const shop = c => {
-      if (process.env.SHOP !== 'staff' && (!c.gear || c.gear.until < c.season)) { const g = ['g3', 'g2', 'g1'].find(id => (c.money || 0) >= S.fcGearPrice(c, id) * 2); if (g) S.fcBuy(c, 'gear', g, S.fcGearAttrs(c)[0]); }
+      if (process.env.SHOP !== 'staff' && !c.gear) { const g = ['g3', 'g2', 'g1'].find(id => (c.money || 0) >= S.fcGearPrice(c, id) * 2); if (g) S.fcBuy(c, 'gear', g, S.fcGearAttrs(c)[0]); }
       if (process.env.SHOP !== 'gear') for (const k of (process.env.STAFF ? process.env.STAFF.split(',') : ['video', 'pt', 'physio']).concat(c.age >= 29 && !process.env.STAFF ? ['nutri'] : [])) if (!(c.staff && c.staff[k]) && (c.money || 0) >= S.fcStaffCost(c, k) * 60) S.fcBuy(c, 'staff', k);
     };
     if (process.env.MODO === 'completa') {
