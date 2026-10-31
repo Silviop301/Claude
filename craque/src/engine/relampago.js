@@ -112,7 +112,7 @@
       prev.push(r.cone);
       const club = i < 3;
       slots.push({ key: S.RL_SLOTS[i].key, name: S.RL_SLOTS[i].name, cone: r.cone, goals: r.goals, kicks: rounds[i].length,
-        goal: club ? r.ball >= 0 : r.goals > 0, pts: r.cone.pts, best: club ? r.cone.rank === 0 : r.goals === 5 });
+        goal: club ? r.ball >= 0 : r.goals > 0, ball: club ? r.ball : -1, pts: r.cone.pts, best: club ? r.cone.rank === 0 : r.goals === 5 });
     }
     return slots;
   };
@@ -129,6 +129,18 @@
     const total = Math.round(slots.reduce((a, s) => a + s.pts, 0) + combos.reduce((a, c) => a + c.pts, 0));
     const grade = S.RL_GRADES.find(g => total >= g[1])[0];
     return { slots, combos, total, grade };
+  };
+  // As 5 bolas da casa i com o prêmio que cada uma escondia e o que aconteceu com ela: got (o prêmio é seu), miss (chutou e
+  // errou), left (nem chutou: a casa já tinha acabado) e fall (clube: nenhuma entrou e sobrou o desta bola, o mais fraco)
+  S.rlBalls = function (seed, rounds, i) {
+    const prev = S.rlCareer(seed, rounds).slice(0, i).map(s => s.cone), kicks = rounds[i];
+    const r = S.rlRound(seed, i, prev, kicks), club = i < 3;
+    return [0, 1, 2, 3, 4].map(j => {
+      const k = kicks.find(x => x[0] === j), prize = r.hidden(j);
+      let st = !k ? 'left' : club ? (j === r.ball ? 'got' : 'miss') : k[1] ? 'got' : 'miss';
+      if (club && r.ball < 0 && prize === r.cone) st = 'fall';
+      return { prize, st };
+    });
   };
   // O que escapou: em cada casa, o melhor prêmio escondido que o jogador não levou (clube melhor que o seu, ou a bola
   // de G/A ou de título que ele errou), do que mais valia para o que menos valia

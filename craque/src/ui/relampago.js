@@ -151,16 +151,16 @@
       const s = slots[k];
       // Às cegas: casa fechada mostra só as bolas que entraram, o prêmio fica lacrado até o fim
       return '<div class="rl-cell' + (k === i ? ' now' : '') + (s ? ' done sealed' + (s.goal ? '' : ' out') : '') + '"><small>' + sl.name + '</small>' +
-        (s ? U.emo('🔒', 'xs') + '<em>' + (k < 3 ? (s.goal ? 'gol na ' + s.kicks + 'ª' : 'nenhuma') : s.goals + ' de 5') + '</em>' : '<span class="rl-q">?</span>') + '</div>';
+        (s ? U.emo('🔒', 'xs') + '<em>' + (k < 3 ? (s.goal ? 'bola ' + (s.ball + 1) : 'nenhuma') : s.goals + ' de 5') + '</em>' : '<span class="rl-q">?</span>') + '</div>';
     }).join('') + '</div>';
   }
-  // Quadro revelado (fim da partida sozinho): cada casa abre uma depois da outra
-  const boardOpen = (seed, rounds) => '<div class="rl-board rl-unveil">' + S.rlCareer(seed, rounds).map((s, k) =>
-    '<div class="rl-cell done' + (s.goal ? '' : ' out') + '" style="--d:' + (0.3 + k * 0.55).toFixed(2) + 's"><small>' + s.name + '</small>' + coneMini(s.cone) + '</div>').join('') + '</div>';
+  // Quadro revelado (resultado sozinho, depois da revelação)
+  const boardOpen = (seed, rounds) => '<div class="rl-board rl-unveil">' + S.rlCareer(seed, rounds).map(s =>
+    '<div class="rl-cell done' + (s.goal ? '' : ' out') + '"><small>' + s.name + '</small>' + coneMini(s.cone) + '</div>').join('') + '</div>';
   // Prêmio pequeno (quadro de cima e resultado)
   function coneMini(c) {
     if (c.id) return crest(c.id, 'xs') + '<em>' + esc(c.name) + '</em>';
-    if ('ga' in c) return '<b class="rl-ga">' + c.ga + '</b>';
+    if ('ga' in c) return '<span class="rl-gam"><b>' + c.gols + '</b> gols<b>' + c.ast + '</b> assist.</span>';
     return '<span class="rl-tr">' + c.items.map(([n, q]) => trophyImg(n, 18) + '<i>' + q + '</i>').join('') + '</span><em>' + esc(c.name) + '</em>';
   }
   // Jogador das cobranças (só para o desenho do batedor e do uniforme): nasce da semente
@@ -251,7 +251,7 @@
   function rows(f) {
     return f.slots.map(s => '<div class="rl-row' + (s.best ? ' best' : s.goal ? '' : ' out') + '"><small>' + s.name + '</small><span class="rl-val">' + coneVal(s.cone) + '</span><b><i>' + how(s) + '</i> +' + Math.round(s.pts) + '</b></div>').join('');
   }
-  const how = s => s.cone.id ? (s.goal ? 'gol na ' + s.kicks + 'ª' : 'nenhuma entrou') : s.goals + ' de 5';
+  const how = s => s.cone.id ? (s.goal ? 'bola ' + (s.ball + 1) : 'nenhuma entrou') : s.goals + ' de 5';
   function coneVal(c) {
     if (c.id) return crest(c.id, 'xs') + esc(c.name);
     if ('ga' in c) return esc(c.name);
@@ -299,11 +299,12 @@
     $('rl-share').onclick = () => shareX1($('rl-share'), r);
   }
 
-  // Resultado: sozinho, a carreira abre casa por casa; no X1, as duas lado a lado e no fim quem ganhou.
+  // Resultado: primeiro a revelação (unveil), depois a tela com tudo.
   // me/opp: { name, seed, rounds }. pr: XP da partida (só quando acabou de jogar; ao abrir um duelo recebido, nada conta)
-  function show(me, opp, pr) {
+  const show = (me, opp, pr) => unveil(me, opp, () => page(me, opp, pr));
+  function page(me, opp, pr) {
     const live = !!pr, f = S.rlScore(me.seed, me.rounds), g = opp ? S.rlScore(me.seed, opp.rounds) : null;
-    const diff = g ? f.total - g.total : 0, T = (0.3 + 5 * 0.55).toFixed(2) + 's', late = ' rl-late" style="--d:' + T;
+    const diff = g ? f.total - g.total : 0;
     const nx = S.rlNext(f.total), miss = live ? S.rlMissed(me.seed, me.rounds).slice(0, 3) : [];
     const after = !live ? '' : '<div class="rl-after">' +
       (run.best.old && f.total > run.best.old ? '<b class="rl-rec">' + U.emo('🏅', 'xs') + ' Novo recorde! Antes: ' + run.best.old + '</b>'
@@ -314,14 +315,14 @@
     const combos = f.combos.length ? '<div class="rl-combos">' + f.combos.map(c => '<span>' + U.emo('🔥', 'xs') + ' <b>' + c.name + '</b> ' + c.desc + (c.pts ? ' (+' + c.pts + ')' : '') + '</span>').join('') + '</div>' : '';
     // Coluna de cada um: a casa abre ao mesmo tempo dos dois lados, e quem levou mais pontos nela fica marcado
     const col = (who, sc, other, mine) => '<div class="rl-col' + (mine ? ' me' : '') + '"><div class="rl-col-h"><b>' + esc(who) + '</b></div>' +
-      sc.slots.map((s, k) => '<div class="rl-mini' + (s.goal ? '' : ' out') + (s.pts > other.slots[k].pts ? ' win' : '') + '" style="--d:' + (0.3 + k * 0.55).toFixed(2) + 's"><small>' + s.name + '</small>' + coneMini(s.cone) + '</div>').join('') + '</div>';
+      sc.slots.map((s, k) => '<div class="rl-mini' + (s.goal ? '' : ' out') + (s.pts > other.slots[k].pts ? ' win' : '') + '"><small>' + s.name + '</small>' + coneMini(s.cone) + '</div>').join('') + '</div>';
     const grade = sc => '<span class="rl-grade g-' + sc.grade + '">' + sc.grade + '</span>';
     const kicksTxt = D.plural(f.slots.reduce((a, s) => a + s.goals, 0), 'gol', 'gols') + ' em ' + D.plural(f.slots.reduce((a, s) => a + s.kicks, 0), 'cobrança', 'cobranças');
     // Placar escuro: no duelo, "VOCÊ 52 x 30 RAFA" com a nota de cada um; sozinho, nota, nome e pontos
-    const board = g ? '<div class="ob5-board rl-sb' + late + '"><div class="rl-sb-t me"><b>' + esc(me.name) + '</b>' + grade(f) + '</div>' +
+    const board = g ? '<div class="ob5-board rl-sb"><div class="rl-sb-t me"><b>' + esc(me.name) + '</b>' + grade(f) + '</div>' +
         '<b class="ob5-g' + (diff >= 0 ? ' win' : '') + '">' + f.total + '</b><span class="ob5-x">x</span><b class="ob5-g' + (diff <= 0 ? ' win' : '') + '">' + g.total + '</b>' +
         '<div class="rl-sb-t"><b>' + esc(opp.name) + '</b>' + grade(g) + '</div></div>'
-      : '<div class="ob5-board rl-sb solo' + late + '">' + grade(f) + '<div class="ob5-mid"><b class="rl-ob-nm">' + esc(me.name) + '</b><small>' + kicksTxt + '</small></div>' +
+      : '<div class="ob5-board rl-sb solo">' + grade(f) + '<div class="ob5-mid"><b class="rl-ob-nm">' + esc(me.name) + '</b><small>' + kicksTxt + '</small></div>' +
         '<div class="rl-ob-c pts"><b>' + f.total + '</b><small>pontos</small></div></div>';
     const title = g ? (diff > 0 ? (live ? 'Você ganhou!' : esc(me.name) + ', você ganhou!') : diff === 0 ? 'Empate!' : esc(opp.name) + ' ganhou') : 'Sua carreira';
     const btns = !live ? '<button class="btn" id="rl-again">' + U.emo('⚡', 'sm') + ' Novo X1</button>'
@@ -329,24 +330,106 @@
         : '<button class="btn" id="rl-share">' + U.emo('📣', 'sm') + ' Compartilhar a carreira</button>') +
         '<button class="btn ghost" id="rl-again">Jogar de novo</button>';
     render('<div class="rl-show" id="rl-show"><div class="rl-rh"><div class="eyebrow">' + (g ? 'X1 relâmpago' : 'Carreira Relâmpago') + '</div>' +
-      '<h2 class="' + late + '">' + title + '</h2></div>' + board +
+      '<h2>' + title + '</h2></div>' + board +
       '<div class="rl-unveil" id="rl-unveil">' + (g ? '<div class="rl-duel">' + col(me.name, f, g, true) + col(opp.name, g, f) + '</div>' : boardOpen(me.seed, me.rounds)) + '</div>' +
-      (combos || after ? '<div class="rl-res' + late + '">' + combos + after + '</div>' : '') +
+      (combos || after ? '<div class="rl-res">' + combos + after + '</div>' : '') +
       '<details class="ob5-how rl-det"><summary>Casa a casa (' + kicksTxt + ')</summary>' + rows(f) + '</details>' +
       '<details class="ob5-how rl-det"><summary>Como a nota é feita</summary>' + gradeHow(f) + '</details>' +
       (live ? U.profileFinale(pr) + U.streakFinale(run.sk.got) : '') + btns +
       '<button class="link-btn" id="rl-home">Voltar ao início</button></div>');
-    // Toque na tela: abre tudo de uma vez
-    const host = $('rl-show');
-    if (host) host.addEventListener('pointerdown', () => host.classList.add('rl-skip'), { once: true });
-    const r0 = run;
-    setTimeout(() => { if (run === r0 && $('rl-unveil')) sfx(!g || diff >= 0 ? 'goal' : 'kick'); }, parseFloat(T) * 1000);
     $('rl-again').onclick = () => intro();
     $('rl-home').onclick = () => U.home();
     if (live) U.streakBind();
     const b = $('rl-share');
     if (b) b.onclick = () => g ? shareDuel(b) : shareSolo(b, f);
   }
+  // Revelação: casa por casa aparecem as 5 bolas, o prêmio de cada uma vira, a bola que entrou sobe com o prêmio e as outras
+  // ficam com o prêmio perdido riscado; o placar sobe junto. No X1 cada um tem a sua fileira (mesmos prêmios nas mesmas bolas). No fim o placar cresce, a nota cai como
+  // carimbo e, no X1, aparece quem ganhou com confete. Toque na tela: pula para o fim.
+  function unveil(me, opp, done) {
+    const f = S.rlScore(me.seed, me.rounds), g = opp ? S.rlScore(me.seed, opp.rounds) : null;
+    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return done();
+    // Uma fileira de 5 bolas por jogador, cada uma com o prêmio que escondia embaixo (lacrado até virar)
+    const row = (who, side) => '<div class="rlv-side" data-s="' + side + '">' + (g ? '<b class="rlv-who">' + esc(who) + '</b>' : '') +
+      '<div class="rlv-row">' + [0, 1, 2, 3, 4].map(j => '<div class="rlv-b"><span class="rlv-ball">' + U.emo('⚽', 'sm') + '<i>' + (j + 1) + '</i></span>' +
+        '<div class="rlv-pz"><div class="rlv-in"><div class="rlv-back">' + U.emo('🔒', 'xs') + '</div><div class="rlv-front"></div></div></div><em class="rlv-tag"></em></div>').join('') + '</div>' +
+      '<b class="rlv-plus"></b></div>';
+    const sb = g ? '<div class="ob5-board rlv-sb"><b class="rlv-n">' + esc(me.name) + '</b><b class="ob5-g" id="rlv-a">0</b><span class="ob5-x">x</span><b class="ob5-g" id="rlv-b">0</b><b class="rlv-n">' + esc(opp.name) + '</b></div>'
+      : '<div class="ob5-board rlv-sb solo"><b class="rlv-n">' + esc(me.name) + '</b><span><b class="ob5-g" id="rlv-a">0</b><small>pontos</small></span></div>';
+    render('<div class="rlv' + (g ? ' duel' : '') + '" id="rlv"><div class="rlv-top"><div class="eyebrow">' + (g ? 'X1 relâmpago' : 'Carreira Relâmpago') + '</div>' +
+      '<h2 id="rlv-h">' + (g ? 'Abrindo o X1' : 'Abrindo a carreira') + '</h2></div>' + sb +
+      '<div class="rlv-casa"><small id="rlv-k"></small><b id="rlv-nm"></b><span id="rlv-rule"></span></div>' +
+      '<div class="rlv-cards">' + row(me.name, 'a') + (g ? row(opp.name, 'b') : '') + '</div>' +
+      '<div class="rlv-strip">' + S.RL_SLOTS.map(sl => '<span><small>' + sl.name + '</small><i></i></span>').join('') + '</div>' +
+      '<div class="rlv-end" id="rlv-end"></div><button class="link-btn rlv-skip" id="rlv-skip">Pular</button></div>');
+    const root = $('rlv'), sides = [...root.querySelectorAll('.rlv-side')], strip = [...root.querySelectorAll('.rlv-strip span')];
+    const runs = [me.rounds].concat(g ? [opp.rounds] : []);
+    let tot = [0, 0], timers = [], over = false;
+    const later = (fn, ms) => timers.push(setTimeout(() => { if ($('rlv') === root) fn(); }, ms));
+    // Placar contando até o novo valor
+    const count = (el, from, to) => { const t0 = performance.now(), d = 600;
+      const tick = t => { if (!el.isConnected) return; const k = Math.min(1, (t - t0) / d); el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(tick); };
+      requestAnimationFrame(tick); };
+    // Prêmio pequeno de cada bola: clube (escudo e nome), gols e assistências separados, ou o título
+    const pz = c => c.id ? crest(c.id, 'sm') + '<em>' + esc(c.name) + '</em>'
+      : 'ga' in c ? '<span class="rlv-ga"><b>' + c.gols + '</b><i>gols</i><b>' + c.ast + '</b><i>assist.</i></span>'
+      : '<span class="rlv-ti">' + trophyImg(c.items[0][0], 22) + '<b>' + c.items[0][1] + '×</b></span><em>' + esc(c.items[0][0]) + '</em>';
+    const TAG = { got: 'é seu', miss: 'errou', left: 'sobrou', fall: 'ficou' };
+    function casa(k) {
+      const sl = S.RL_SLOTS[k], A = f.slots[k], B = g && g.slots[k];
+      $('rlv-k').textContent = 'Casa ' + (k + 1) + ' de 5';
+      const nm = $('rlv-nm'); nm.textContent = sl.name; nm.classList.remove('pop'); void nm.offsetWidth; nm.classList.add('pop');
+      $('rlv-rule').textContent = k < 3 ? 'Vale o clube da bola que entrou' : 'Você leva o prêmio de cada bola que entrou';
+      strip.forEach((el, j) => el.classList.toggle('now', j === k));
+      const balls = runs.map(rd => S.rlBalls(me.seed, rd, k));
+      sides.forEach((sd, p) => { sd.querySelector('.rlv-plus').className = 'rlv-plus';
+        sd.querySelectorAll('.rlv-b').forEach((el, j) => { const b = balls[p][j]; el.className = 'rlv-b';
+          el.querySelector('.rlv-front').innerHTML = pz(b.prize); el.querySelector('.rlv-tag').textContent = ''; }); });
+      sfx('tick');
+      // As cartas viram uma a uma, da bola 1 à 5
+      [0, 1, 2, 3, 4].forEach(j => later(() => { sides.forEach(sd => sd.querySelectorAll('.rlv-b')[j].classList.add('open')); sfx('paper'); }, 350 + j * 110));
+      // A bola que entrou sobe com o prêmio; as outras ficam com o prêmio perdido riscado
+      later(() => {
+        sides.forEach((sd, p) => sd.querySelectorAll('.rlv-b').forEach((el, j) => { const st = balls[p][j].st; el.classList.add(st); el.querySelector('.rlv-tag').textContent = TAG[st]; }));
+        sfx(balls.some(bs => bs.some(b => b.st === 'got')) ? 'coin' : 'miss');
+      }, 1150);
+      later(() => {
+        const pa = A.pts, pb = B ? B.pts : 0;
+        sides.forEach((sd, p) => { const pl = sd.querySelector('.rlv-plus'); pl.textContent = '+' + Math.round(p ? pb : pa) + ' pts'; pl.className = 'rlv-plus on' + (g ? ((p ? pb > pa : pa > pb) ? ' win' : '') : ''); });
+        const na = Math.round(tot[0] + pa), nb = Math.round(tot[1] + pb);
+        count($('rlv-a'), Math.round(tot[0]), na); if (g) count($('rlv-b'), Math.round(tot[1]), nb);
+        tot = [tot[0] + pa, tot[1] + pb];
+        strip[k].classList.add('done'); strip[k].querySelector('i').innerHTML = g ? (pa > pb ? esc(me.name.slice(0, 1)) : pb > pa ? esc(opp.name.slice(0, 1)) : '=') : '+' + Math.round(pa);
+        if (g && pa !== pb) strip[k].classList.add(pa > pb ? 'a' : 'b');
+        sfx('tap');
+      }, 1750);
+      later(() => (k < 4 ? casa(k + 1) : finale()), 3000);
+    }
+    // Fim: combos somam, o placar vai para o total, a nota carimba e, no X1, o vencedor
+    function finale() {
+      if (over) return; over = true;
+      timers.forEach(clearTimeout); timers = [];
+      const diff = g ? f.total - g.total : 0;
+      $('rlv-a').textContent = f.total; if (g) $('rlv-b').textContent = g.total;
+      root.classList.add('fin');
+      if (g) { const a = root.querySelector('#rlv-a'), b = root.querySelector('#rlv-b'); a.classList.toggle('win', diff >= 0); b.classList.toggle('win', diff <= 0); }
+      const stamp = sc => '<span class="rl-grade big g-' + sc.grade + '">' + sc.grade + '</span>';
+      const who = g ? (diff > 0 ? me.name : diff < 0 ? opp.name : '') : '';
+      const conf = (!g || diff !== 0) ? '<div class="rlv-confetti" aria-hidden="true">' + Array.from({ length: 34 }, (_, k) => '<i style="left:' + ((k * 37) % 100) + '%;background:' + ['#F4C430', '#5FD690', '#fff', '#FF6B73', '#8FD6AE'][k % 5] + ';animation-delay:' + ((k * 0.11) % 1).toFixed(2) + 's;animation-duration:' + (1.5 + (k % 5) * 0.25).toFixed(2) + 's"></i>').join('') + '</div>' : '';
+      $('rlv-h').textContent = g ? (diff === 0 ? 'Empate!' : who + ' ganhou!') : 'Sua carreira';
+      $('rlv-end').innerHTML = conf + '<div class="rlv-stamps">' + (g ? '<span>' + stamp(f) + '<small>' + esc(me.name) + '</small></span><span>' + stamp(g) + '<small>' + esc(opp.name) + '</small></span>' : '<span>' + stamp(f) + '<small>nota</small></span>') + '</div>' +
+        (f.combos.length ? '<div class="rlv-combos">' + f.combos.map(c => '<span>' + U.emo('🔥', 'xs') + ' ' + c.name + '</span>').join('') + '</div>' : '') +
+        '<button class="btn" id="rlv-go">Ver a carreira inteira</button>';
+      $('rlv-skip').remove();
+      sfx(g && diff < 0 ? 'miss' : 'fanfare');
+      $('rlv-go').onclick = done;
+    }
+    $('rlv-skip').onclick = e => { e.stopPropagation(); finale(); };
+    root.addEventListener('pointerdown', e => { if (!over && !e.target.closest('button')) finale(); });
+    later(() => casa(0), 500);
+  }
+
   // Duelo recebido de volta (quem desafiou abre o link do amigo): mesmo resultado, do lado de quem desafiou
   function duelView(du) {
     G.c = null; U.bar();
@@ -363,12 +446,12 @@
   // Sozinho: a carreira em texto e o endereço do jogo (sem desafio: o X1 é o modo de desafiar)
   function shareSolo(b, f) {
     const get = k => f.slots.find(s => s.key === k).cone;
-    send(b, 'Minha Carreira Relâmpago no Climbix, chutando às cegas: ' + get('base').name + ' → ' + get('auge').name + ' → ' + get('ultimo').name + ', ' + get('ga').ga + ' G/A e ' + get('tit').name +
+    send(b, 'Minha Carreira Relâmpago no Climbix, chutando às cegas: ' + get('base').name + ' → ' + get('auge').name + ' → ' + get('ultimo').name + ', ' + get('ga').gols + ' gols, ' + get('ga').ast + ' assistências e ' + get('tit').name +
       '. ' + f.total + ' pontos (nota ' + f.grade + '). Monta a sua ⚡', base());
   }
   const shareX1 = (b, r) => send(b, 'Te chamei pro X1 na Carreira Relâmpago do Climbix ⚡ Meu resultado tá lacrado: só abre quando você jogar. Mesmos prêmios escondidos, uma chance só.', base() + '?r=' + encode(r));
   const shareDuel = b => send(b, 'Joguei o seu X1 na Carreira Relâmpago. Abre pra ver quem ganhou 👀',
     base() + '?r=' + encode({ name: run.vs.n, seed: run.seed, rounds: run.vs.p }, { name: run.name, rounds: run.rounds }));
 
-  Object.assign(U, { relampagoFromLink: fromLink, relampagoHome: homeHtml, relampagoHomeBind: homeBind, relampago: intro, relampagoEncode: encode, relampagoDecode: decode });
+  Object.assign(U, { relampagoFromLink: fromLink, relampagoHome: homeHtml, relampagoHomeBind: homeBind, relampago: intro, relampagoEncode: encode, relampagoDecode: decode, relampagoShow: show });
 })();
