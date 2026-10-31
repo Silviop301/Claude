@@ -114,6 +114,8 @@ dividem ajudantes por `CRAQUE_SIM._`. O motor não usa DOM: roda no navegador e 
 | `contract.js` | Termos do contrato e proposta no meio do contrato |
 | `fixtures.js` | Carreira Completa: calendário e placares da liga que batem com a tabela da temporada (`S.fullSeason`) |
 | `fullcareer.js` | Jogo a Jogo: calendário, semana, loja, apostas, partida; tipo de jogo `S.fcKind` (vivido, resumido, banco) |
+| `cassino.js` | Jogo a Jogo: mesa dos fundos do Zé e a tentação |
+| `phone.js` | Jogo a Jogo: as pessoas do celular (`c.ppl`: relação só no tom, memória), mensagens depois e antes do jogo, Chat |
 
 ### Dados e textos — `craque/src/`
 

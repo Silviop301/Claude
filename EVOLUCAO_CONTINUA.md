@@ -15,7 +15,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 |---|---|---|
 | 0 · Preparar | Os números chegam ao servidor (`api/stats.php`, `src/stats.js`, `tools/craque_numeros.py`) e quem joga o Jogo a Jogo vê o aviso do save novo | no ar (PR #108) |
 | 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **no ar** (PRs #109 a #114): jogos vividos/resumidos/banco, lance em todo jogo, tela limpa, rodada como na TV, faixa "Seu ano", metas da semana e XP por temporada. Tempo real do ano a medir pela contagem (o Silvio pediu para não cortar pelo previsto) |
-| 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | |
+| 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | **em andamento**: parte 1 (as pessoas e o Chat) |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | |
 | 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | |
@@ -438,3 +438,22 @@ Proibido também: cartão com faixa colorida na lateral.
   cartão do jogo, na faixa "Seu ano" ou na lista do Resumir. Semana em curso com meta antiga troca pela nova (migração).
 - **XP por temporada** (`U.profileJajSeason`, no resumo da temporada): 50 + 15 por título (até 60) + 30 se bateu a meta
   do ano, uma vez por temporada (`c.profSeas`). O bônus de +50 XP do fim da Carreira Completa saiu (já ganha por ano).
+
+### Fase 2 do plano, parte 1 · 2026-10-31 · As pessoas do celular
+
+- Amostra aprovada pelo Silvio ("pode seguir"). Motor novo `engine/phone.js` (carregado depois do `cassino.js`; o
+  `sim.js` passou a carregar `names.js`). Cada carreira do Jogo a Jogo sorteia as suas pessoas pelo país do jogador: mãe,
+  parça (apelido), empresário, jornalista e, a cada clube, técnico ("Professor" no Brasil, "Mister" fora) e capitão; o
+  rival é o de `rival.js`. Relação de 0 a 100 que aparece só no tom (bem com você ≥ 70, normal, magoada < 40; o técnico
+  usa `c.rel.coach`, o rival compara as cartas) e memória de fatos (primeiro gol, primeiro título, clube onde começou,
+  lesão longa) que volta numa mensagem duas temporadas depois.
+- As mensagens saem depois do jogo quando ele diz algo (marca de gols da carreira, jogo grande, dois gols, nota muito alta
+  ou baixa, sequência no banco), com folga entre uma e outra e a mesma reação descansando 8 jogos; antes do jogo, a mãe
+  na lesão e o capitão no clássico ou na decisão (`S.fcPhonePre`, chamado pela tela). As reações de gol da mãe e do parça
+  saem montadas (começo + o que viu + fecho). Medido em 60 carreiras: ~11 mensagens por temporada; o texto mais repetido
+  numa carreira inteira aparece 10 vezes (mediana; 13 no p90).
+- Tela: as duas mensagens novas aparecem no topo das notificações do celular; app novo **Chat** (lista de conversas e a
+  conversa em balões, contador de não lidas). Sorteio próprio: nota, placar e sorte não mudam (simulador igual dentro do
+  ruído). Save antigo: as pessoas nascem na primeira vez que o celular abre.
+- Relação nesta parte só se mexe com título, marca de gols e mudança para fora do país; os convites (parte 2) é que vão
+  mexer de verdade.
