@@ -138,7 +138,7 @@ function stepInPage(opts) {
   if ($('fc-back')) return label('completa:volta ' + click($('fc-back')));
   // Celular: abre um app ou uma notificação, ou joga / simula
   if ($('fc-play') && Math.random() < 0.3) { const go = [...document.querySelectorAll('#fc [data-go]')]; if (go.length) return label('completa:atalho ' + click(rnd(go))); }
-  if ($('fc-play')) return label('completa:jogo ' + click(rnd([$('fc-play'), $('fc-play'), $('fc-play'), $('fc-5'), $('fc-end')])));
+  if ($('fc-play')) return label('completa:jogo ' + click(rnd([$('fc-play'), $('fc-play'), $('fc-play'), $('fc-live') || $('fc-play'), $('fc-skip2') || $('fc-play')])));
   if ($('fs-skipm')) return label('liga:aovivo ' + click(Math.random() < 0.3 ? $('fs-fast') : $('fs-skipm')));
   if ($('fs-next')) return label('liga ' + click(rnd([$('fs-next'), $('fs-5'), $('fs-end'), $('fs-end')])));
   // Criação 2 de 2: sortear o visual e começar

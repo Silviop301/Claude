@@ -648,6 +648,37 @@
       title: 'Última rodada: segurando a vitória, o título é seu.', acesso: 'Última rodada: segurando a vitória, o acesso é seu.', classico: 'Vencendo o clássico: segure e os três pontos são seus.' }[type];
     return m;
   }
+  // ---------- o tipo de jogo (plano, fase 1: a temporada em cerca de 1 hora) ----------
+  // Vivido (inteiro, ao vivo, com a semana no celular), resumido (placar, sua nota e um fato) ou no banco. Só os jogos
+  // que importam são vividos: decisão com lance, mata-mata da copa a partir das quartas e do continental, a estreia do
+  // ano na liga e no continental, clássico, a última rodada, a briga direta na reta final e o que a pessoa escolher viver.
+  // Volta o motivo ('' se for um jogo comum). FC_BIG=0 no simulador desliga (todo jogo comum).
+  const BIG_OFF = typeof process !== 'undefined' && process.env && process.env.FC_BIG === '0';
+  S.fcBig = function (c, nx) {
+    const fc = c.fc;
+    if (!nx || !nx.vs || BIG_OFF) return '';
+    if ((fc.liveI || []).includes(fc.i)) return 'escolha';
+    if (nx.moment) return 'decisao';
+    if (nx.comp === 'cup') return nx.e.st >= 1 ? 'mata' : '';
+    if (nx.comp === 'cont') return nx.knock ? 'mata' : 'continental';
+    const R = fc.lg.rounds.length, ri = nx.e.ri;
+    if (ri === 0) return 'estreia';
+    if ((D.RIVALS[c.club] || []).includes(nx.vs)) return 'classico';
+    if (ri === R - 1) return 'ultima';
+    // Da 6ª rodada em diante: contra um dos três primeiros (jogo grande) e, no último terço, a briga direta (adversário perto
+    // na tabela, os dois perto de uma linha que vale: título, G4, acesso, queda)
+    if (ri < 5) return '';
+    const ord = order(fc.lg.tab), n = ord.length, me = ord.indexOf(0) + 1, vi = fc.lg.ids.indexOf(nx.vs), them = ord.indexOf(vi) + 1;
+    if (vi >= 0 && them <= 3 && me > 3) return 'topo';
+    if (ri < R / 3 || vi < 0 || Math.abs(me - them) > 3 || Math.abs(fc.lg.tab[0].p - fc.lg.tab[vi].p) > 4) return '';
+    const lines = [1, fc.lg.promo ? fc.lg.promo : 4].concat(fc.lg.releg ? [n - fc.lg.releg] : []);
+    const near = p => lines.some(k => (p <= k ? k - p : p - k - 1) <= 2);
+    return near(me) && near(them) ? 'briga' : '';
+  };
+  S.fcKind = (c, nx) => (!nx || !nx.vs ? 'folga' : nx.on === false ? 'banco' : S.fcBig(c, nx) ? 'vivo' : 'resumo');
+  // "Viver este jogo": o próximo jogo comum passa a ser vivido
+  S.fcLive = c => { const fc = c.fc; fc.liveI = (fc.liveI || []).filter(i => i >= fc.i); if (!fc.liveI.includes(fc.i)) fc.liveI.push(fc.i); };
+
   // Ordem da tabela (índices dos times): pontos, vitórias, saldo, gols
   const order = tab => tab.map((x, i) => i).sort((a, b) => tab[b].p - tab[a].p || tab[b].v - tab[a].v || (tab[b].gp - tab[b].gc) - (tab[a].gp - tab[a].gc) || tab[b].gp - tab[a].gp || a - b);
   S.fcOrder = order;
