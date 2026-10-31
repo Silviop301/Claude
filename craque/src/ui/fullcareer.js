@@ -1092,7 +1092,7 @@
       if (!$('fc-match')) return; // saiu da tela: o jogo já está salvo
       if (t === 45 && !half) {
         // Intervalo: o jogo para; o energético só aparece aqui
-        half = true; sfx('whistle'); frame();
+        half = true; sfx('whistle'); frame(t); // frame(t): não repete o gol do minuto 45 na lista
         if (onPitch) effBox();
         return stopActs('fc-2t', 'Começar o 2º tempo', onPitch ? 'Escolha o esforço' + (eff.drink ? '' : ' e se toma o energético') : '', () => { liveActs(); timer = setTimeout(() => { if (onPitch) effBox(); tick(); }, 300); });
       }

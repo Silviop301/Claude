@@ -5039,6 +5039,20 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
   .ph-app i .tw-md { width: 28px; height: 28px; }
 }
 
+/* Tela limpa (plano, fase 1): no celular o ingresso do jogo cabe sem rolar; relógio menor e os apps numa fileira */
+@media (max-width: 999.98px) {
+  .ph-scr { gap: 8px; padding-bottom: 12px; }
+  .ph-clock { font-size: 46px; margin-top: 0; }
+  .ph-date { margin-bottom: 2px; }
+  .ph-n { padding: 6px 12px; min-height: 44px; }
+  .ph-apps { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; margin-top: 2px; }
+  .ph-app { font-size: 12px; padding: 0; }
+  .ph-app i { width: 44px; height: 44px; border-radius: 12px; }
+  .ph-app i .tw-md { width: 26px; height: 26px; }
+  /* No ao vivo o placar já diz a competição e o minuto: o título repetido sai */
+  .fc.live #fc-h { display: none; }
+}
+
 /* Telas dos atalhos (treino, tabela, jogos, ficha, loja, Zé) */
 .fc-scr { display: grid; gap: 12px; }
 .fc-scr h2 { margin: 0; }

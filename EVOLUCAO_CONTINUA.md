@@ -14,7 +14,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | Fase | Pronto quando | Estado |
 |---|---|---|
 | 0 · Preparar | Os números chegam ao servidor (`api/stats.php`, `src/stats.js`, `tools/craque_numeros.py`) e quem joga o Jogo a Jogo vê o aviso do save novo | no ar (PR #108) |
-| 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **em andamento**: parte 1 (jogos vividos, resumidos e no banco; save novo), parte 2 (um lance seu em todo jogo) |
+| 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **em andamento**: parte 1 (jogos vividos, resumidos e no banco; save novo), parte 2 (um lance seu em todo jogo), parte 3 (tela limpa no celular e no ao vivo) |
 | 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | |
@@ -396,3 +396,13 @@ Proibido também: cartão com faixa colorida na lateral.
   Lances no automático (configuração) e o "Resumir" deixam a carta decidir.
 - **Jogo grande "topo"** agora é só contra o líder (antes: um dos três primeiros), para o tempo do ano não passar muito
   de 1 h com o lance: ~73 min por temporada no modelo (vivido 210 s, resumido 42 s), 14 vividos.
+
+### Fase 1 do plano, parte 3 · 2026-10-31 · Tela limpa no Jogo a Jogo
+
+- **Celular** (style.css, bloco "Tela limpa" antes das telas dos atalhos): no celular (até 999 px) o relógio cai para
+  46 px e os seis apps ficam numa fileira, como no computador. O ingresso dourado do jogo agora aparece sem rolar em
+  390×844 (antes ficava pela metade ou abaixo da dobra com três notificações).
+- **Ao vivo**: o título "Brasileirão · ao vivo" sai no celular (o placar escuro já diz a competição e o minuto).
+- **Correção**: no intervalo, o gol do minuto 45 aparecia duas vezes na lista do placar (`frame(t)` no intervalo).
+- Já cumpriam a regra (um cartão principal e um botão dourado): cartão do jogo resumido, lance, jornal, resumir.
+  Fotos antes/depois em /mnt/project-files/climbix/fase1/ (antes = antes da fase 1; depois = celular).
