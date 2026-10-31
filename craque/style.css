@@ -5405,6 +5405,9 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
 .fb-pen { color: var(--ink-2); font-size: 13px; }
 .fb-me { margin: 0; font: 500 16px var(--body); color: var(--ink); }
 .fb-me b { font: 800 22px var(--display); }
+.fb-l { margin: 0; font: 700 14px var(--body); }
+.fb-l.up { color: var(--up-ink); }
+.fb-l.down { color: var(--down-ink); }
 .fb-f { margin: 0; padding-top: 10px; border-top: 1px solid rgba(19, 32, 26, .15); font: 700 17px/1.3 var(--display); color: var(--ink); }
 .fb.win .fb-sc b { color: var(--up-ink); }
 .fb.loss .fb-sc b { color: var(--down-ink); }

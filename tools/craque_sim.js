@@ -164,10 +164,10 @@ console.log('Conquistas (% das carreiras):', S.ACHIEVEMENTS.map(a => a.id + ' ' 
 { const sc = res.map(r => r.score); console.log('Cortes para o alvo S11/A26/B31/C19/D13: S ' + q(sc, 0.89) + ' · A ' + q(sc, 0.63) + ' · B ' + q(sc, 0.32) + ' · C ' + q(sc, 0.13) + ' (atuais: ' + S.gradesOf(process.env.MODO === 'completa' ? { mode: 'completa' } : null).slice(0, 4).map(g => g.join(' ')).join(' · ') + ')'); }
 
 // Ritmo do Jogo a Jogo (plano, fase 1): alvo ~1 h por temporada e ~15 jogos vividos. Tempo estimado por jogo:
-// vivido 195 s (semana no celular, viagem, jogo ao vivo e jornal), resumido 30 s, no banco 8 s, folga 4 s,
+// vivido 210 s (semana no celular, viagem, jogo ao vivo com o seu lance e jornal), resumido 42 s (com o lance), no banco 8 s, folga 4 s,
 // evento 25 s, e 120 s por temporada (pré-temporada, janela e resumo).
 if (process.env.MODO === 'completa') {
-  const T = { vivo: 195, resumo: 30, banco: 8, folga: 4 };
+  const T = { vivo: 210, resumo: 42, banco: 8, folga: 4 };
   const rows = Object.keys(RIT).filter(k => k !== 'car').flatMap(k => RIT[k].map(r => Object.assign({ season: +k }, r)));
   const mins = r => (r.vivo * T.vivo + r.resumo * T.resumo + r.banco * T.banco + r.folga * T.folga + r.ev * 25 + 120) / 60;
   const fmt = rs => 'jogos ' + q(rs.map(r => r.vivo + r.resumo + r.banco + r.folga), 0.5) + ' · vividos ' + q(rs.map(r => r.vivo), 0.5) + ' (' + q(rs.map(r => r.vivo), 0.1) + '-' + q(rs.map(r => r.vivo), 0.9) + ')' +

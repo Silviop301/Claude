@@ -93,8 +93,15 @@ const INIT = `
   for (let k = 0; k < 45; k++) {
     if (await has('#screen .btn.opt[data-i]')) { await tap('#screen .btn.opt[data-i]'); await page.waitForSelector('#b-next', { timeout: 8000 }); await tap('#b-next'); await page.waitForSelector('#fc-play', { timeout: 15000 }); }
     await tap('#fc-play');
-    await page.waitForSelector('#fc-kick, #fc-next', { timeout: 15000 });
+    await page.waitForSelector('#fc-kick, #fc-next, #fc-lauto', { timeout: 15000 });
     if (await has('#fc-kick')) break;
+    // O seu lance antes do resumo (fase 1, parte 2): a parada, a carta decide e o resultado
+    if (await has('#fc-lauto')) {
+      if (!seen.has('lance-comum')) { seen.add('lance-comum'); await shot('lance-comum'); }
+      await tap('#fc-lauto'); // no resumo o cartão do jogo já mostra como foi o lance
+      await page.waitForSelector('#fc-next', { timeout: 15000 });
+      if (!seen.has('jogo-com-lance')) { seen.add('jogo-com-lance'); await shot('jogo-com-lance'); }
+    }
     const kind = await page.evaluate(() => (document.querySelector('.fb-h') || {}).textContent || 'resumo');
     const key = 'jogo-' + (/banco/i.test(kind) ? 'banco' : /folga/i.test(kind) ? 'folga' : 'resumido');
     if (!seen.has(key)) { seen.add(key); await shot(key); }
@@ -107,8 +114,14 @@ const INIT = `
   await shot('partida-antes');
   await page.click('#fc-kick'); await wait(300);
   await shot('partida-ao-vivo');
-  await page.waitForSelector('#fc-2t, #fc-next', { timeout: 40000 });
+  // O lance do jogo pode vir antes ou depois do intervalo
+  const lance = async () => { if (!(await has('#fc-lauto'))) return; await shot('lance-ao-vivo'); await tap('#fc-lauto'); await shot('lance-ao-vivo-fim'); await tap('#fc-lback'); };
+  await page.waitForSelector('#fc-2t, #fc-next, #fc-lauto', { timeout: 40000 });
+  await lance();
+  await page.waitForSelector('#fc-2t, #fc-next, #fc-lauto', { timeout: 40000 });
   if (await has('#fc-2t')) { await shot('partida-intervalo'); await page.click('#fc-2t'); }
+  await page.waitForSelector('#fc-next, #fc-lauto', { timeout: 40000 });
+  await lance();
   await page.waitForSelector('#fc-next', { timeout: 40000 });
   await shot('jornal');
   await tap('#fc-next');
