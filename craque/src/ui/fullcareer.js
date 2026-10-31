@@ -12,6 +12,7 @@
   const clock = t => (t > 90 ? '90+' + (t - 90) : t) + "'";
   const PACE = [330, 110]; // milissegundos por minuto de jogo: normal (~30 s) e rápido (~10 s)
   let fast = false;
+  let eff = null; // esforço do jogo ao vivo: nível escolhido, minutos em cada nível (S.FC_EFF) e o energético
   // Em tela larga a tabela fica ao lado do jogo ao vivo
   const wide = () => window.matchMedia && window.matchMedia('(min-width: 1000px) and (min-height: 560px)').matches;
 
@@ -67,15 +68,17 @@
   function pings(c, nx) {
     const fc = c.fc, out = [], n = (go, who, txt) => out.push({ go, who, txt });
     const p = Math.round(S.fcStartP(c) * 100);
-    if (nx.injury) n(null, /suspensão/.test(nx.injury) ? 'Diretoria' : 'Departamento médico', /suspensão/.test(nx.injury) ? 'Suspenso por causa da aposta: fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') : nx.injury.charAt(0).toUpperCase() + nx.injury.slice(1) + ': fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') + (fc.wkDue ? ' Fisioterapia na semana ajuda.' : ''));
+    if (nx.injury) n(null, /suspensão/.test(nx.injury) ? 'Diretoria' : 'Departamento médico', /suspensão/.test(nx.injury) ? (/manipula/.test(fc.injName) ? 'Suspenso pelo caso do cartão combinado: fora por mais ' : 'Suspenso por causa da aposta: fora por mais ') + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') : nx.injury.charAt(0).toUpperCase() + nx.injury.slice(1) + ': fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') + (fc.wkDue ? ' Fisioterapia na semana ajuda.' : ''));
     else if (nx.vs) n(null, 'Técnico', nx.on === null ? 'Escalo o time depois do treino da semana. Hoje você tem ' + p + '% de chance de começar.' : nx.on ? 'Amanhã você começa jogando. Conto contigo.' : nx.why === 'cansaço' ? 'Vou te poupar amanhã, você tá sem perna. Descansa.' : nx.why === 'banco' ? 'Amanhã você começa no banco. Treina forte que a chance aparece.' : 'Amanhã vou rodar o elenco e você fica fora.');
     const A = id => (S.FC_WEEK.find(a => a.id === id) || S.FC_WEEK[2]).name.toLowerCase();
     if (fc.wkDue) { if (!pick) pick = S.fcWeekAuto(c); n('ag', 'Agenda', 'Semana marcada: ' + A(pick[0]) + ' e ' + A(pick[1]) + '. Toque para mudar.'); }
     else if (fc.wkSum && fc.wkSum.at === fc.i) n('ag', 'Agenda', 'Semana feita: ' + fc.wkSum.acts.map(A).join(' e ') + '. Energia ' + Math.round(fc.wkSum.en0) + ' → ' + Math.round(fc.wkSum.en1) + '.');
     if ((c.pe || 0) >= 1 && S.canInvestAny(c)) n('evo', 'Preparador', 'Você tem ' + c.pe + (c.pe === 1 ? ' ponto' : ' pontos') + ' para gastar na ficha.');
     if (fc.wkDue && (fc.en === undefined ? 100 : fc.en) < S.FC_EN_LOW) n('ag', 'Preparador físico', 'Energia ' + Math.round(fc.en) + '. Marca um descanso na agenda.');
-    if (fc.bet) n('bet', 'Zé', 'Teu palpite: ' + (fc.bet.pick === 1 ? 'empate' : nameOf(fc.bet.pick === 0 ? fc.bet.h : fc.bet.a)) + '. Sai na próxima rodada.');
-    else if (S.fcBetGame(c)) n('bet', 'Zé', 'Tenho um jogo bom pra rodada. Quer ver?');
+    const fx = S.fcZeOffer(c), bets = S.fcBets(c);
+    if (fx && fx.st === 'open') n('bet', 'Zé', 'Tenho uma proposta pro teu próximo jogo. Só entre nós.');
+    else if (bets.length) n('bet', 'Zé', bets.length === 1 ? 'Teu cupom tá feito. Sai na próxima rodada.' : 'Teus ' + bets.length + ' cupons tão feitos. Saem na próxima rodada.');
+    else if (S.fcBetRound(c) && !(fc.zeMad > fc.i)) n('bet', 'Zé', 'A rodada tá aberta, com jogo de fora também. Quer ver?');
     return out;
   }
   function agenda() {
@@ -126,7 +129,7 @@
     window.scrollTo(0, 0);
   }
   // Apps do celular: cada um abre uma tela com volta para o celular
-  const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Palpites do Zé' };
+  const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Zé' };
   const LOJA_IMG = ['chuteira-g1', 'chuteira-g2', 'chuteira-g3', 'luvas-g1', 'luvas-g2', 'luvas-g3', 'pt', 'physio', 'nutri', 'video', 'press', 'c1', 'c2', 'c3', 'c4', 'house'];
   function go(k) {
     if (k === 'evo') return evolve();
@@ -240,7 +243,7 @@
     let own = 0; for (let k = 0; k <= t && k <= 100; k++) if (f.bx[k] >= 50) own++;
     $('fl-pos').textContent = Math.round(own / (Math.min(t, 100) + 1) * 100) + '%';
     if (!f.on) return;
-    const n = f.nota[Math.min(t, 100)], p = f.nota[Math.max(0, Math.min(t, 100) - 1)];
+    const n = Math.max(4.5, Math.min(10, f.nota[Math.min(t, 100)] + (f.off || 0))), p = f.nota[Math.max(0, Math.min(t, 100) - 1)] + (f.off || 0); // off: o esforço até agora
     $('fl-n').textContent = rate(n);
     $('fl-n').className = n >= 7 ? 'up' : n < 6 ? 'down' : '';
     f.lances.filter(l => l.m <= t && !seen.has(l)).forEach(l => {
@@ -327,7 +330,7 @@
     const side = id => '<div class="fs-tm' + (id === my ? ' me' : '') + '">' + crest(id, 'md') + '<span>' + esc(nameOf(id)) + '</span></div>';
     const tag = esc(x.compName) + ' · ' + esc(x.stage);
     if (state === 'next') {
-      const who = x.week ? 'A escalação sai depois da sua semana' : x.injury ? (/suspensão/.test(x.injury) ? 'Suspenso (aposta): ' : 'Lesionado (' + esc(x.injury) + '): ') + (x.injLeft > 1 ? 'fora por mais ' + x.injLeft + ' jogos' : 'volta no próximo jogo') : x.on ? 'Você começa jogando' : x.why === 'banco' ? 'Você fica no banco' : x.why === 'cansaço' ? 'Energia baixa: o técnico vai poupar você' : 'O técnico vai poupar você neste jogo';
+      const who = x.week ? 'A escalação sai depois da sua semana' : x.injury ? (/suspensão/.test(x.injury) ? (/manipula/.test(x.injury) ? 'Suspenso (cartão combinado): ' : 'Suspenso (aposta): ') : 'Lesionado (' + esc(x.injury) + '): ') + (x.injLeft > 1 ? 'fora por mais ' + x.injLeft + ' jogos' : 'volta no próximo jogo') : x.on ? 'Você começa jogando' : x.why === 'banco' ? 'Você fica no banco' : x.why === 'cansaço' ? 'Energia baixa: o técnico vai poupar você' : 'O técnico vai poupar você neste jogo';
       return '<div class="fs-card next' + (x.moment ? ' dec' : '') + '"><div class="fs-lbl">' + tag + '</div><div class="fs-sc">' + side(h) + '<b><i>×</i></b>' + side(a) + '</div>' +
         '<p class="fs-line">' + (x.home ? 'Em casa' : 'Fora de casa') + ' · ' + who + '</p>' + (x.moment ? '<p class="fc-dec">' + U.emo('🎯', 'xs') + ' Jogo com lance decisivo seu</p>' : '') + '</div>';
     }
@@ -448,33 +451,230 @@
 
   // ---------- loja: o dinheiro da carreira vira vantagem nesta carreira ----------
   let gearAttr = null;
-  // Aposta: um jogo da próxima rodada (sem o seu time), com o aviso de que atleta apostar é proibido
-  let betPick = null, betStake = 0;
-  function betBox(c, R) {
-    const fc = c.fc, b = fc.bet;
-    const head = '<div class="fc-ss"><p class="fc-ze">"Palpite certo, sigilo total." Atleta apostando em futebol é proibido: a cada aposta, há risco de descobrirem. Aí são 4 jogos de suspensão, com técnico e torcida contra.</p>';
-    if (b) return head + '<p class="fc-bet-on">Aposta feita: ' + R(b.stake) + ' em ' + (b.pick === 1 ? 'empate' : esc(nameOf(b.pick === 0 ? b.h : b.a))) + ' (' + esc(nameOf(b.h)) + ' × ' + esc(nameOf(b.a)) + '), paga ' + R(Math.round(b.stake * b.odd)) + '. Sai na próxima rodada da liga.</p></div>';
-    const g = S.fcBetGame(c);
-    if (!g) return head + '<p class="fc-own">Sem rodada da liga pela frente.</p></div>';
-    const st = S.fcBetStakes(c);
+  // Zé: palpites da rodada da liga inteira (sem o seu jogo), cupom simples ou múltipla e o extrato da carreira.
+  // Atleta apostar é proibido: o faro da federação (chance de ser pego) aparece sempre e sobe a cada aposta
+  let zeTab = 'bet', betSel = {}, betStake = 0, csOpen = null, csG = [1, 0], betAll = false;
+  const oddTxt = o => o.toFixed(2).replace('.', ',');
+  const pctTxt = p => (p < 0.1 ? (Math.round(p * 1000) / 10).toFixed(1).replace('.', ',') : String(Math.round(p * 100))) + '%';
+  function legTxt(l) {
+    if (l.m === 'x') return l.pick === 1 ? 'Empate' : 'Vitória ' + nameOf(l.pick === 0 ? l.h : l.a);
+    if (l.m === 'btts') return l.pick === 0 ? 'Ambos marcam' : 'Só um marca (ou nenhum)';
+    if (l.m === 'o25') return l.pick === 0 ? 'Mais de 2,5 gols' : 'Menos de 2,5 gols';
+    return 'Placar ' + l.pick.replace('-', ' × ');
+  }
+  // Pernas escolhidas no cupom, na ordem dos jogos
+  function betLegs(R) { return R ? R.games.filter(g => betSel[g.h]).map(g => Object.assign({ h: g.h, a: g.a, ext: g.ext, lg: g.lg }, betSel[g.h], { odd: betSel[g.h].m === 'cs' ? g.odds.cs[betSel[g.h].pick] : g.odds[betSel[g.h].m][betSel[g.h].pick] })) : []; }
+  function betBox(c, R$) {
+    const fc = c.fc, risk = S.fcBetRisk(c), n = fc.betN || 0;
+    const faro = '<div class="ze-faro"><p><span>Faro da federação</span><b>' + pctTxt(risk) + ' de ser pego</b></p><i><u style="width:' + Math.round(risk / 0.25 * 100) + '%"></u></i>' +
+      '<small>' + (n ? n + (n === 1 ? ' aposta' : ' apostas') + ' nesta temporada.' : 'Nenhuma aposta nesta temporada.') + ' Pego = ' + S.FC_BET_BAN + ' jogos de suspensão, técnico e torcida contra.</small></div>';
+    const placed = S.fcBets(c).map(t => '<li><span>' + t.legs.map(l => esc(nameOf(l.h)) + ' × ' + esc(nameOf(l.a)) + ': <b>' + esc(legTxt(l)) + '</b>').join('<br>') + '</span><em>' + R$(t.stake) + ' · paga ' + R$(Math.round(t.stake * t.odd)) + '</em></li>').join('');
+    const head = faro + (placed ? '<div class="ze-placed"><h3>Seus cupons</h3><ul>' + placed + '</ul><small>Saem na próxima rodada da liga.</small></div>' : '');
+    const R = S.fcBetRound(c);
+    if (!R) return head + '<p class="fc-own">Sem rodada da liga pela frente.</p>';
+    Object.keys(betSel).forEach(h => { if (!R.games.some(g => String(g.h) === h)) delete betSel[h]; });
+    const B = (h, m, pick, lab, o) => { const s = betSel[h], on = s && s.m === m && s.pick === pick; return '<button class="ze-o' + (on ? ' on' : '') + '" data-h="' + h + '" data-m="' + m + '" data-p="' + pick + '"><small>' + esc(lab) + '</small><b>' + oddTxt(o) + '</b></button>'; };
+    const card = g => {
+      const s = betSel[g.h], cs = csOpen === g.h;
+      const csBtn = '<button class="ze-o ze-cs' + (s && s.m === 'cs' ? ' on' : '') + '" data-csopen="' + g.h + '"><small>Placar exato</small><b>' + (s && s.m === 'cs' ? s.pick.replace('-', ' × ') : '…') + '</b></button>';
+      const k = csG[0] + '-' + csG[1];
+      const csBox = cs ? '<div class="ze-csbox"><div class="ze-st"><button data-cs="0" data-d="-1" aria-label="Menos gols do mandante">−</button><b>' + csG[0] + '</b><button data-cs="0" data-d="1" aria-label="Mais gols do mandante">+</button></div><span>×</span>' +
+        '<div class="ze-st"><button data-cs="1" data-d="-1" aria-label="Menos gols do visitante">−</button><b>' + csG[1] + '</b><button data-cs="1" data-d="1" aria-label="Mais gols do visitante">+</button></div>' +
+        B(g.h, 'cs', k, 'Odd', g.odds.cs[k]) + '</div>' : '';
+      return '<div class="ze-g"><p>' + crest(g.h, 'xs') + '<b>' + esc(nameOf(g.h)) + ' × ' + esc(nameOf(g.a)) + '</b>' + crest(g.a, 'xs') + '</p>' +
+        '<div class="ze-x">' + B(g.h, 'x', 0, nameOf(g.h), g.odds.x[0]) + B(g.h, 'x', 1, 'Empate', g.odds.x[1]) + B(g.h, 'x', 2, nameOf(g.a), g.odds.x[2]) + '</div>' +
+        '<div class="ze-m">' + B(g.h, 'btts', 0, 'Ambos marcam', g.odds.btts[0]) + B(g.h, 'o25', 0, '+2,5 gols', g.odds.o25[0]) + B(g.h, 'o25', 1, '−2,5 gols', g.odds.o25[1]) + csBtn + '</div>' + csBox + '</div>';
+    };
+    // Um bloco por campeonato: o seu primeiro; fechado, cada um mostra dois jogos (e os que já estão no cupom)
+    let hidden = 0;
+    const games = R.groups.map((G, k) => {
+      const show = betAll ? G.games : G.games.filter((g, j) => j < 2 || betSel[g.h] || csOpen === g.h);
+      hidden += G.games.length - show.length;
+      return '<h3 class="ze-rd">' + (k ? esc(G.name) : 'Rodada ' + (R.ri + 1) + ' · ' + esc(G.name)) + '</h3>' + show.map(card).join('');
+    }).join('');
+    const more = hidden || betAll ? '<button class="btn ghost ze-more" id="ze-more">' + (betAll ? 'Mostrar menos' : 'Mais ' + hidden + ' jogos') + '</button>' : '';
+    // Cupom: odd multiplicada, chance de acertar (sem a margem da casa) e o risco desta aposta
+    const legs = betLegs(R), st = S.fcBetStakes(c);
     if (!st.includes(betStake)) betStake = st[0];
-    const lab = ['Vitória ' + nameOf(g.h), 'Empate', 'Vitória ' + nameOf(g.a)];
-    return head + '<div class="fc-bet-g">' + crest(g.h, 'xs') + '<span>' + esc(nameOf(g.h)) + ' × ' + esc(nameOf(g.a)) + '</span>' + crest(g.a, 'xs') + '</div>' +
-      '<div class="fc-bet-o">' + g.odds.map((o, k) => '<button data-b="' + k + '"' + (betPick === k ? ' class="on"' : '') + '><small>' + esc(lab[k]) + '</small><b>' + o.toFixed(2).replace('.', ',') + '</b></button>').join('') + '</div>' +
-      '<div class="seg fc-bet-s">' + st.map(v => '<button data-s="' + v + '"' + (v === betStake ? ' class="on"' : '') + (c.money >= v ? '' : ' disabled') + '>' + R(v) + '</button>').join('') + '</div>' +
-      '<button class="btn ghost fc-bet-go" id="fc-bet-go"' + (betPick === null || (c.money || 0) < betStake ? ' disabled' : '') + '>' + (betPick === null ? 'Escolha um resultado' : 'Apostar ' + R(betStake) + ' · paga ' + R(Math.round(betStake * g.odds[betPick]))) + '</button></div>';
+    let slip = '';
+    if (legs.length) {
+      const o = Math.round(legs.reduce((s, l) => s * l.odd, 1) * 100) / 100, ch = legs.reduce((s, l) => s * 0.9 / l.odd, 1);
+      slip = '<div class="ze-slip"><p><span>' + (legs.length === 1 ? 'Cupom simples' : 'Múltipla de ' + legs.length) + '</span><b>odd ' + oddTxt(o) + '</b></p>' +
+        '<ul>' + legs.map(l => '<li>' + (l.ext ? '<small>' + esc(l.lg) + '</small> ' : '') + esc(nameOf(l.h)) + ' × ' + esc(nameOf(l.a)) + ': <b>' + esc(legTxt(l)) + '</b> <em>' + oddTxt(l.odd) + '</em></li>').join('') + '</ul>' +
+        '<div class="seg ze-stk">' + st.map(v => '<button data-s="' + v + '"' + (v === betStake ? ' class="on"' : '') + ((c.money || 0) >= v ? '' : ' disabled') + '>' + R$(v) + '</button>').join('') + '</div>' +
+        '<button class="btn" id="ze-go"' + ((c.money || 0) < betStake ? ' disabled' : '') + '>Apostar ' + R$(betStake) + ' · paga ' + R$(Math.round(betStake * o)) + '</button>' +
+        '<small>Chance de acertar: ' + pctTxt(ch) + '. Chance de ser pego nesta aposta: ' + pctTxt(risk) + '.' + (legs.length < S.FC_BET_MAX_LEGS ? ' Junte jogos de campeonatos diferentes para fazer múltipla.' : '') + '</small></div>';
+    }
+    return head + games + more + slip;
+  }
+  function extratoBox(c, R$) {
+    const L = c.betLog || { n: 0, net: 0, caught: 0, won: 0 }, K = c.casLog, F = c.fixLog;
+    const cas = K && K.n ? '<h3 class="ze-rd">Mesa dos fundos</h3><div class="ze-ext"><div><b>' + K.n + '</b><small>jogadas</small></div><div><b class="up">+' + R$(K.best || 0) + '</b><small>maior prêmio</small></div><div><b class="' + (K.net >= 0 ? 'up' : 'down') + '">' + (K.net >= 0 ? '+' : '−') + R$(Math.abs(K.net)) + '</b><small>saldo</small></div></div>' +
+      '<ul class="ze-hist">' + [['rol', 'Roleta'], ['slot', 'Caça-níquel'], ['bj', 'Vinte e um'], ['bicho', 'Bicho']].filter(([k]) => K[k]).map(([k, t]) => '<li><span>' + t + '</span><b class="' + (K[k] >= 0 ? 'up' : 'down') + '">' + (K[k] >= 0 ? '+' : '−') + R$(Math.abs(K[k])) + '</b></li>').join('') + '</ul>' : '';
+    const fix = F && F.n ? '<p class="fc-own">Combinou cartão com o Zé ' + F.n + (F.n === 1 ? ' vez' : ' vezes') + (F.caught ? ', descoberto em ' + F.caught + '.' : ', sem ninguém descobrir.') + '</p>' : '';
+    if (!L.n) return '<p class="fc-own">Nenhuma aposta resolvida ainda nesta carreira.</p>' + cas + fix;
+    const rows = (L.last || []).map(x => '<li><span>' + x.s + ' · rod. ' + (x.ri + 1) + ' · ' + (x.l ? esc(nameOf(x.l.h)) + ' × ' + esc(nameOf(x.l.a)) + ': ' + esc(legTxt(x.l)) : 'múltipla de ' + x.n) + '</span><b class="' + (x.net >= 0 ? 'up' : 'down') + '">' + (x.net >= 0 ? '+' : '−') + R$(Math.abs(x.net)) + '</b></li>').join('');
+    return '<div class="ze-ext"><div><b>' + L.n + '</b><small>apostas</small></div><div><b>' + (L.won || 0) + '</b><small>acertos</small></div><div><b class="' + (L.net >= 0 ? 'up' : 'down') + '">' + (L.net >= 0 ? '+' : '−') + R$(Math.abs(L.net)) + '</b><small>saldo</small></div></div>' +
+      (L.caught ? '<p class="fc-own">Pego pela federação ' + L.caught + (L.caught === 1 ? ' vez.' : ' vezes.') + '</p>' : '') + (rows ? '<ul class="ze-hist">' + rows + '</ul>' : '') + cas + fix;
   }
   function bindBet() {
-    document.querySelectorAll('.fc-bet-o button').forEach(b => { b.onclick = () => { sfx('tap'); betPick = +b.dataset.b; betRender(); }; });
-    document.querySelectorAll('.fc-bet-s button').forEach(b => { b.onclick = () => { sfx('tap'); betStake = +b.dataset.s; betRender(); }; });
-    const ok = $('fc-bet-go');
-    if (ok) ok.onclick = () => { if (S.fcBet(G.c, betPick, betStake)) { sfx('coin'); betPick = null; save(); bar(); betRender(); } };
+    document.querySelectorAll('.ze-tabs button').forEach(b => { b.onclick = () => { sfx('tap'); zeTab = b.dataset.t; betRender(); }; });
+    document.querySelectorAll('.ze-o[data-m]').forEach(b => {
+      b.onclick = () => {
+        sfx('tap');
+        const h = b.dataset.h, m = b.dataset.m, p = m === 'cs' ? b.dataset.p : +b.dataset.p, s = betSel[h];
+        if (s && s.m === m && s.pick === p) delete betSel[h];
+        else if (s || Object.keys(betSel).length < S.FC_BET_MAX_LEGS) betSel[h] = { m, pick: p };
+        if (m === 'cs') csOpen = null;
+        betRender();
+      };
+    });
+    document.querySelectorAll('[data-csopen]').forEach(b => { b.onclick = () => { sfx('tap'); const h = b.dataset.csopen; csOpen = csOpen === h ? null : h; const s = betSel[h]; csG = s && s.m === 'cs' ? s.pick.split('-').map(Number) : [1, 0]; betRender(); }; });
+    document.querySelectorAll('.ze-st button').forEach(b => { b.onclick = () => { sfx('tap'); const k = +b.dataset.cs; csG[k] = Math.max(0, Math.min(5, csG[k] + +b.dataset.d)); betRender(); }; });
+    document.querySelectorAll('.ze-stk button').forEach(b => { b.onclick = () => { sfx('tap'); betStake = +b.dataset.s; betRender(); }; });
+    const more = $('ze-more');
+    if (more) more.onclick = () => { sfx('tap'); betAll = !betAll; betRender(); };
+    const ok = $('ze-go');
+    if (ok) ok.onclick = () => { const legs = betLegs(S.fcBetRound(G.c)); if (S.fcBet(G.c, legs, betStake)) { sfx('coin'); betSel = {}; csOpen = null; save(); bar(); betRender(); } };
+  }
+  // ---------- mesa dos fundos (engine/cassino.js): uma noite entre um jogo e outro, quatro jogos ----------
+  let zeGame = null, rolBet = 'red', rolNum = 7, casStake = 0, casLast = null, bichoG = 15, bichoMode = 'cab', casBusy = false;
+  const MESA_ICO = {
+    rol: '<svg viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="25" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="28" cy="28" r="15" fill="none" stroke="currentColor" stroke-width="2"/><path d="M28 3v10M28 43v10M3 28h10M43 28h10M10 10l7 7M39 39l7 7M46 10l-7 7M17 39l-7 7" stroke="currentColor" stroke-width="2"/><circle cx="28" cy="28" r="4" fill="currentColor"/></svg>',
+    slot: '<svg viewBox="0 0 56 56" aria-hidden="true"><rect x="4" y="10" width="48" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><path d="M20 10v36M36 10v36" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="28" r="4" fill="currentColor"/><circle cx="28" cy="28" r="4" fill="currentColor"/><circle cx="44" cy="28" r="4" fill="currentColor"/></svg>',
+    bj: '<svg viewBox="0 0 56 56" aria-hidden="true"><rect x="6" y="8" width="26" height="38" rx="4" fill="none" stroke="currentColor" stroke-width="2.5" transform="rotate(-10 19 27)"/><rect x="24" y="10" width="26" height="38" rx="4" fill="none" stroke="currentColor" stroke-width="2.5" transform="rotate(8 37 29)"/></svg>',
+    bicho: '<svg viewBox="0 0 56 56" aria-hidden="true"><rect x="6" y="6" width="44" height="44" rx="4" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M6 20h44M6 34h44M20 6v44M34 6v44" stroke="currentColor" stroke-width="1.5"/><circle cx="27" cy="27" r="5" fill="currentColor"/></svg>',
+  };
+  const GAMES = [['rol', 'Roleta', 'a casa leva 2,7%'], ['slot', 'Caça-níquel', 'devolve 92% em média'], ['bj', 'Vinte e um', 'a casa leva uns 5%'], ['bicho', 'Bicho', 'sai com o próximo jogo']];
+  // Símbolo do caça-níquel: o cartão vermelho é desenhado (não há ícone dele)
+  const sym = (k, sz) => (S.SLOT[k].id === 'card' ? '<b class="mz-rc ' + sz + '" aria-label="Cartão vermelho"></b>' : U.emo(S.SLOT[k].e, sz));
+  const SUIT = ['♠', '♥', '♦', '♣'], FACE = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
+  const cardHtml = x => '<i class="mz-card' + (x.s === 1 || x.s === 2 ? ' red' : '') + '">' + (FACE[x.v] || x.v) + '<small>' + SUIT[x.s] + '</small></i>';
+  function stakeSeg(c, R$) {
+    const ch = S.fcChips(c), left = S.fcNightLeft(c);
+    if (!ch.includes(casStake)) casStake = ch[0];
+    return '<div class="seg mz-chips">' + ch.map(v => '<button data-cs="' + v + '"' + (v === casStake ? ' class="on"' : '') + (v <= left ? '' : ' disabled') + '>' + R$(v) + '</button>').join('') + '</div>';
+  }
+  function mesaBox(c, R$) {
+    const fc = c.fc;
+    if (!S.fcNightOpen(c)) {
+      zeGame = null;
+      const can = S.fcNightCan(c);
+      return '<div class="mz-in"><p class="fc-ze">"Aqui ninguém viu ninguém. Mas se o técnico souber, não fui eu que te chamei."</p>' +
+        '<ul class="mz-cost"><li><span>Energia</span><b class="down">−' + S.FC_NIGHT_EN + ' agora</b></li><li><span>Chance de foto</span><b>' + Math.round(S.FC_NIGHT_PHOTO * 100) + '% (fama −4, técnico −6)</b></li><li><span>Fichas da noite</span><b>até R$ ' + U.money(S.fcNightLimit(c)) + '</b></li></ul>' +
+        '<button class="btn" id="mz-open"' + (can ? '' : ' disabled') + '>' + (can ? 'Ir para a mesa hoje' : (c.money || 0) < 1000 ? 'Sem dinheiro para a mesa' : 'A mesa abre de novo depois do próximo jogo') + '</button>' +
+        '<small class="fc-own">Uma noite entre um jogo e outro. A casa sempre leva vantagem: ninguém fica rico aqui.</small></div>';
+    }
+    const n = fc.night, left = S.fcNightLeft(c);
+    const top = '<div class="mz-top"><div><small>Fichas da noite</small><b>R$ ' + U.money(left) + '</b></div><div><small>Na noite</small><b class="' + (n.net >= 0 ? 'up' : 'down') + '">' + (n.net >= 0 ? '+' : '−') + R$(Math.abs(n.net)) + '</b></div></div>' +
+      (n.photo && !zeGame ? '<p class="mz-photo">Saiu foto sua no bar. A imprensa comentou e o técnico não gostou.</p>' : '');
+    if (!zeGame) return top + '<div class="mz-games">' + GAMES.map(([k, t, s]) => '<button class="mz-g mz-' + k + '" data-g="' + k + '">' + MESA_ICO[k] + '<b>' + t + '</b><small>' + s + '</small></button>').join('') + '</div>';
+    const back = '<button class="back-link mz-back" id="mz-back">‹ Mesa</button>';
+    const L = casLast && casLast.g === zeGame ? casLast : null;
+    const msg = L ? '<p class="mz-res ' + (L.net > 0 ? 'up' : L.net < 0 ? 'down' : '') + '">' + L.txt + '</p>' : '';
+    if (zeGame === 'rol') {
+      const n0 = L ? L.n : null;
+      const B = S.ROULETTE_BETS, opt = Object.keys(B).map(k => '<button class="mz-o' + (rolBet === k ? ' on' : '') + (k === 'red' ? ' rd' : k === 'black' ? ' bk' : '') + '" data-rb="' + k + '"><b>' + B[k][0] + '</b><small>paga ' + B[k][1] + '×</small></button>').join('');
+      const num = '<div class="mz-num"><button class="mz-o' + (rolBet === 'num' ? ' on' : '') + '" data-rb="num"><b>Número ' + rolNum + '</b><small>paga 36×</small></button><div class="ze-st"><button data-rn="-1" aria-label="Número menor">−</button><button data-rn="1" aria-label="Número maior">+</button></div></div>';
+      const ch = rolBet === 'num' ? 1 / 37 : S.ROULETTE_BETS[rolBet][1] === 3 ? 12 / 37 : 18 / 37;
+      return back + top + '<div class="mz-wheel"><div class="mz-w" id="mz-w"></div><div class="mz-hub"><b class="' + (n0 === null ? '' : n0 === 0 ? 'gr' : S.ROULETTE_RED.includes(n0) ? 'rd' : 'bk') + '" id="mz-n">' + (n0 === null ? '?' : n0) + '</b></div><i class="mz-ptr"></i></div>' + msg +
+        '<div class="mz-opts">' + opt + '</div>' + num + stakeSeg(c, R$) +
+        '<button class="btn" id="mz-go"' + (casStake > left ? ' disabled' : '') + '>Girar · ' + R$(casStake) + '</button><small class="fc-own">Chance de ganhar: ' + (Math.round(ch * 1000) / 10).toFixed(1).replace('.', ',') + '%.</small>';
+    }
+    if (zeGame === 'slot') {
+      const reels = L ? L.reels : [0, 1, 2];
+      return back + top + '<div class="mz-slot"><b class="mz-sname">Golaço 777</b><div class="mz-reels">' + reels.map((k, i) => '<i id="mz-r' + i + '">' + sym(k, 'lg') + '</i>').join('') + '</div></div>' + msg +
+        '<ul class="mz-pay">' + S.SLOT.map(x => '<li><span>' + sym(S.SLOT.indexOf(x), 'sm') + ' ' + x.name + '</span><b>3: ' + (x.three < 0 ? 'perde o dobro' : x.three + '×') + ' · 2: ' + String(x.two).replace('.', ',') + '×</b></li>').join('') + '</ul>' +
+        stakeSeg(c, R$) + '<button class="btn" id="mz-go"' + (casStake > left ? ' disabled' : '') + '>Puxar a alavanca · ' + R$(casStake) + '</button>';
+    }
+    if (zeGame === 'bj') {
+      const h = S.fcBjHand(c) || (L && L.hand) || null, live = !!S.fcBjHand(c);
+      const table = h ? '<div class="mz-bj"><small>Zé (banca)' + (live ? ' · mostra ' + Math.min(10, h.d[0].v === 1 ? 11 : h.d[0].v) : ' · ' + S.bjTotal(h.d)) + '</small><div>' + (live ? cardHtml(h.d[0]) + '<i class="mz-card back"></i>' : h.d.map(cardHtml).join('')) + '</div>' +
+        '<p>Banca para no 17 · vinte e um de cara paga 2,5×</p><div>' + h.p.map(cardHtml).join('') + '</div><b>Você: ' + S.bjTotal(h.p) + '</b><small>Na mesa: ' + R$(h.stake) + '</small></div>' :
+        '<div class="mz-bj"><p>Banca para no 17 · vinte e um de cara paga 2,5×</p></div>';
+      const acts = live ? '<div class="mz-acts"><button class="btn" data-bj="hit">Pedir</button><button class="btn" data-bj="stand">Parar</button><button class="btn ghost" data-bj="double"' + (h.p.length === 2 && h.stake * 2 <= left ? '' : ' disabled') + '>Dobrar</button></div>' :
+        stakeSeg(c, R$) + '<button class="btn" id="mz-go"' + (casStake > left ? ' disabled' : '') + '>Dar as cartas · ' + R$(casStake) + '</button>';
+      return back + top + table + msg + acts;
+    }
+    // bicho
+    const pend = (fc.bicho || []).map(b => '<li>' + esc(S.BICHOS[b.g]) + ' · ' + S.BICHO_MODES[b.mode][0].toLowerCase() + ' · ' + R$(b.stake) + '</li>').join('');
+    return back + top + '<p class="fc-own">Escolha um bicho. O resultado sai no jornal, junto com o próximo jogo.</p>' +
+      '<div class="mz-bichos">' + S.BICHOS.map((nm, k) => '<button data-bg="' + k + '"' + (bichoG === k ? ' class="on"' : '') + '><b>' + String(k + 1).padStart(2, '0') + '</b><small>' + nm + '</small></button>').join('') + '</div>' +
+      '<div class="seg mz-mode">' + Object.keys(S.BICHO_MODES).map(k => '<button data-bm="' + k + '"' + (bichoMode === k ? ' class="on"' : '') + '>' + S.BICHO_MODES[k][0] + ' · ' + String(S.BICHO_MODES[k][1]).replace('.', ',') + '×</button>').join('') + '</div>' +
+      stakeSeg(c, R$) + '<button class="btn" id="mz-go"' + (casStake > left ? ' disabled' : '') + '>Jogar ' + R$(casStake) + ' no ' + esc(S.BICHOS[bichoG]) + '</button>' +
+      (pend ? '<div class="ze-placed"><h3>Seus jogos</h3><ul>' + pend + '</ul></div>' : '');
+  }
+  function bindMesa() {
+    const c = G.c, R$ = v => 'R$ ' + U.money(v), redo = () => { save(); bar(); betRender(); };
+    const op = $('mz-open'); if (op) op.onclick = () => { if (S.fcNight(c)) { sfx('paper'); redo(); } };
+    document.querySelectorAll('.mz-g').forEach(b => { b.onclick = () => { sfx('tap'); zeGame = b.dataset.g; casLast = null; betRender(); window.scrollTo(0, 0); }; });
+    const bk = $('mz-back'); if (bk) bk.onclick = () => { sfx('tap'); zeGame = null; betRender(); window.scrollTo(0, 0); };
+    document.querySelectorAll('.mz-chips button').forEach(b => { b.onclick = () => { sfx('tap'); casStake = +b.dataset.cs; betRender(); }; });
+    document.querySelectorAll('[data-rb]').forEach(b => { b.onclick = () => { sfx('tap'); rolBet = b.dataset.rb; betRender(); }; });
+    document.querySelectorAll('[data-rn]').forEach(b => { b.onclick = () => { sfx('tap'); rolNum = (rolNum + +b.dataset.rn + 37) % 37; rolBet = 'num'; betRender(); }; });
+    document.querySelectorAll('[data-bg]').forEach(b => { b.onclick = () => { sfx('tap'); bichoG = +b.dataset.bg; betRender(); }; });
+    document.querySelectorAll('[data-bm]').forEach(b => { b.onclick = () => { sfx('tap'); bichoMode = b.dataset.bm; betRender(); }; });
+    document.querySelectorAll('[data-bj]').forEach(b => { b.onclick = () => { const o = S.fcBjAct(c, b.dataset.bj); if (o && o.done) bjDone(o); else sfx('paper'); redo(); }; });
+    const go = $('mz-go');
+    if (!go) return;
+    go.onclick = () => {
+      if (casBusy) return;
+      if (zeGame === 'rol') {
+        const o = S.fcRoulette(c, rolBet === 'num' ? rolNum : rolBet, casStake);
+        if (!o) return;
+        save(); bar(); casBusy = true; sfx('tick');
+        const w = $('mz-w'), nEl = $('mz-n');
+        if (w) w.style.transform = 'rotate(' + (1440 + Math.floor(Math.random() * 360)) + 'deg)';
+        if (nEl) { nEl.textContent = '…'; nEl.className = ''; }
+        setTimeout(() => { casBusy = false; casLast = { g: 'rol', n: o.n, net: o.net, txt: 'Deu ' + o.n + (o.n === 0 ? ' (zero, da casa)' : o.red ? ' vermelho' : ' preto') + '. ' + (o.win ? 'Ganhou ' + R$(o.back - casStake + casStake) + '.' : 'Perdeu ' + R$(casStake) + '.') }; sfx(o.win ? 'coin' : 'miss'); betRender(); }, 1700);
+      } else if (zeGame === 'slot') {
+        const o = S.fcSlot(c, casStake);
+        if (!o) return;
+        save(); bar(); casBusy = true;
+        const els = [0, 1, 2].map(i => $('mz-r' + i)); let t = 0;
+        const iv = setInterval(() => { t++; els.forEach((el, i) => { if (el && t < 6 + i * 4) el.innerHTML = sym((t + i * 2) % 5, 'lg'); else if (el) el.innerHTML = sym(o.reels[i], 'lg'); }); sfx('tick'); if (t >= 14) { clearInterval(iv); fin(); } }, 90);
+        const fin = () => { casBusy = false; casLast = { g: 'slot', reels: o.reels, net: o.net, txt: o.mult < 0 ? 'Três cartões vermelhos: perdeu ' + R$(casStake - o.back) + '.' : o.hit === 3 ? 'Três ' + S.SLOT[o.reels[0]].name.toLowerCase() + 's! Ganhou ' + R$(o.back) + '.' : o.hit === 2 ? (o.net > 0 ? 'Duas iguais: voltaram ' + R$(o.back) + '.' : o.net === 0 ? 'Duas iguais: o dinheiro volta.' : 'Duas iguais: voltaram ' + R$(o.back) + '.') : 'Nada. Perdeu ' + R$(casStake) + '.' }; sfx(o.net > 0 ? (o.hit === 3 ? 'fanfare' : 'coin') : 'miss'); betRender(); };
+      } else if (zeGame === 'bj') {
+        const o = S.fcBjDeal(c, casStake);
+        if (!o) return;
+        casLast = null; sfx('paper');
+        if (o.done) bjDone(o);
+        redo();
+      } else if (zeGame === 'bicho') {
+        if (S.fcBicho(c, bichoG, bichoMode, casStake)) { sfx('coin'); casLast = { g: 'bicho', net: 0, txt: 'Anotado: ' + S.BICHOS[bichoG] + ', ' + S.BICHO_MODES[bichoMode][0].toLowerCase() + '. Sai com o próximo jogo.' }; redo(); }
+      }
+    };
+  }
+  function bjDone(o) {
+    const R$ = v => 'R$ ' + U.money(v), p = S.bjTotal(o.p), d = S.bjTotal(o.d);
+    const txt = o.nat ? (o.net > 0 ? 'Vinte e um de cara! Ganhou ' + R$(o.net) + '.' : 'Vinte e um dos dois: empate.') : p > 21 ? 'Estourou com ' + p + '. Perdeu ' + R$(o.stake) + '.' : o.net > 0 ? (d > 21 ? 'A banca estourou com ' + d + '.' : p + ' contra ' + d + '.') + ' Ganhou ' + R$(o.net) + '.' : o.net === 0 ? p + ' a ' + d + ': empate, o dinheiro volta.' : p + ' contra ' + d + ' da banca. Perdeu ' + R$(o.stake) + '.';
+    casLast = { g: 'bj', hand: o, net: o.net, txt };
+    sfx(o.net > 0 ? 'coin' : o.net < 0 ? 'miss' : 'tap');
+  }
+  // A tentação: proposta do Zé para o seu próximo jogo
+  function fixBox(c, R$) {
+    const f = S.fcZeOffer(c);
+    if (!f) return '';
+    const nx = S.fcNext(c);
+    if (f.st === 'yes') return '<div class="mz-fix on"><b>Combinado com o Zé</b><p>Amarelo até os ' + f.min + "' contra o " + esc(nameOf(nx.vs)) + '. Se você entrar em campo, recebe ' + R$(f.pay) + '. Risco de escândalo: ' + Math.round(S.FC_FIX_SCANDAL * 100) + '%.</p></div>';
+    if (f.st === 'no') return '';
+    return '<div class="mz-fix"><b>Mensagem do Zé</b><p>"Leva um amarelo até os ' + f.min + "' contra o " + esc(nameOf(nx.vs)) + ' e te pago ' + R$(f.pay) + '. Ninguém vai saber."</p>' +
+      '<small>Se descobrirem (' + Math.round(S.FC_FIX_SCANDAL * 100) + '%): ' + S.FC_FIX_BAN + ' jogos de suspensão, técnico −20, torcida −15, fama −10 e manchete no jornal.</small>' +
+      '<div class="mz-acts"><button class="btn" id="fix-yes">Topar</button><button class="btn ghost" id="fix-no">Recusar</button></div></div>';
   }
   function betRender() {
     const el = $('fc-bet');
     if (!el) return;
-    el.innerHTML = '<div class="fc-cash"><span>Seu dinheiro</span><b>R$ ' + U.money(G.c.money || 0) + '</b></div>' + betBox(G.c, v => 'R$ ' + U.money(v));
-    bindBet();
+    const c = G.c, R$ = v => 'R$ ' + U.money(v);
+    const tabs = [['bet', 'Palpites'], ['mesa', 'Mesa dos fundos'], ['ext', 'Extrato']];
+    el.innerHTML = '<div class="fc-cash"><span>Seu dinheiro</span><b>R$ ' + U.money(c.money || 0) + '</b></div>' + (zeTab === 'mesa' && zeGame ? '' : fixBox(c, R$)) +
+      (zeTab === 'mesa' && zeGame ? '' : '<div class="seg ze-tabs">' + tabs.map(([k, t]) => '<button data-t="' + k + '"' + (zeTab === k ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>') +
+      (zeTab === 'ext' ? extratoBox(c, R$) : zeTab === 'mesa' ? mesaBox(c, R$) : '<p class="fc-ze">"Palpite certo, sigilo total."</p>' + betBox(c, R$));
+    el.classList.toggle('mz', zeTab === 'mesa');
+    bindBet(); bindMesa();
+    const fy = $('fix-yes'), fn = $('fix-no');
+    if (fy) fy.onclick = () => { if (S.fcZeAnswer(c, true)) { sfx('coin'); save(); betRender(); } };
+    if (fn) fn.onclick = () => { if (S.fcZeAnswer(c, false)) { sfx('tap'); save(); betRender(); } };
   }
   function shopBox() {
     const c = G.c, el = $('fc-shop');
@@ -539,10 +739,11 @@
     if (doneMin()) return live({ from: doneMin() }); // lance já jogado (saiu e voltou ao jogo)
     if (nx.moment) {
       const m = nx.moment;
-      if (m.started || U.cfg.moments === 'auto') { S.fcAutoMoment(G.c, m); save(); return live(); }
-      save();
+      if (m.started || U.cfg.moments === 'auto') { S.fcAutoMoment(G.c, m); save(); eff = null; return live(); }
+      save(); eff = null;
       return live({ stop: m });
     }
+    eff = null;
     live();
   }
   // Depois do lance (ui/match.js chama): o jogo ao vivo continua do minuto do lance, com o resultado que ele decidiu
@@ -592,10 +793,33 @@
     $('fc-match').innerHTML = card('live', x, t);
     const fl = x.vs && out.my ? flowOf(c, x, out) : null, flSeen = new Set();
     if (fl) { $('fc-flow').innerHTML = flowBox(c, x, fl); fl.lances.forEach(l => { if (l.m <= t0) flSeen.add(l); }); }
-    weekBox(true);
+    // Energia descendo minuto a minuto e o esforço escolhido na hora (quem está em campo); senão, o quadro de sempre
+    const onPitch = !!(out.my && out.my.on && c.fc.en !== undefined && out.en !== undefined), enBase = out.en || 0;
+    if (!eff) eff = { lvl: 1, mins: [0, Math.max(0, t0), 0], drink: false };
+    const spentOf = () => eff.mins.reduce((a, m, k) => a + m * S.FC_EFF[k].en, 0) * enBase / 90;
+    const lvlOf = e => (e < S.FC_EN_OUT ? 'out' : e < S.FC_EN_LOW ? 'low' : 'ok');
+    const enNow = () => Math.max(0, Math.min(100, Math.round((x.en0 === undefined ? 100 : x.en0) - spentOf() + (eff.drink ? S.FC_DRINK_EN : 0))));
+    function effBox() {
+      const e = enNow(), dp = S.fcDrinkPrice(c), canDrink = !eff.drink && t < 60 && (c.money || 0) >= dp;
+      $('fc-wk').className = 'fc-wk fc-ef';
+      $('fc-wk').innerHTML = '<div class="fc-st"><span>Energia</span><div class="fc-en ' + lvlOf(e) + '"><i style="width:' + e + '%"></i></div><b class="' + lvlOf(e) + '">' + e + '</b></div>' +
+        '<div class="fc-ef-row"><span>Esforço</span><div class="seg fc-ef-seg">' + S.FC_EFF.map((f, k) => '<button data-e="' + k + '"' + (k === eff.lvl ? ' class="on"' : '') + '>' + f.name + '</button>').join('') + '</div></div>' +
+        '<p class="fc-ef-hint">' + ['Poupa energia, mas a nota cai um pouco.', 'Gasto normal de energia.', 'Nota sobe, mas a energia desce bem mais rápido.'][eff.lvl] + '</p>' +
+        (eff.drink ? '<p class="fc-ef-hint up">Energético tomado: +' + S.FC_DRINK_EN + ' de energia.</p>' : t < 60 ? '<button class="btn ghost fc-drink" id="fc-drink"' + (canDrink ? '' : ' disabled') + '>Energético pro 2º tempo · R$ ' + U.money(dp) + '<small>+' + S.FC_DRINK_EN + ' de energia' + ((c.money || 0) < dp ? ' · sem dinheiro' : '') + '</small></button>' : '');
+      $('fc-wk').querySelectorAll('[data-e]').forEach(b => { b.onclick = () => { sfx('tap'); eff.lvl = +b.dataset.e; effBox(); }; });
+      if ($('fc-drink')) $('fc-drink').onclick = () => { if ((c.money || 0) < dp) return; sfx('coin'); eff.drink = true; effBox(); };
+    }
+    // Só o número e a barra (a cada minuto), sem redesenhar os botões
+    function effTick() {
+      const e = enNow(), b = document.querySelector('.fc-ef .fc-st b'), m = document.querySelector('.fc-ef .fc-en');
+      if (!b || !m) return;
+      b.textContent = e; b.className = lvlOf(e); m.className = 'fc-en ' + lvlOf(e); m.firstChild.style.width = e + '%';
+      if (t === 60 && $('fc-drink')) effBox();
+    }
+    if (onPitch) effBox(); else weekBox(true);
     // Outros jogos da rodada (liga e grupo); na copa e no mata-mata, os outros confrontos da fase
     $('fc-round').innerHTML = out.others.length ? '<div class="fs-rlbl">' + (lg ? 'Outros jogos da rodada' : grp ? 'O outro jogo do grupo' : 'Outros confrontos da fase') + '</div>' +
-      out.others.map((g, k) => '<div class="fs-rr" data-k="' + k + '"><span>' + esc(nameOf(g.h)) + '</span>' + crest(g.h, 'xs') + '<b>0 × 0</b>' + crest(g.a, 'xs') + '<span>' + esc(nameOf(g.a)) + '</span></div>').join('') : '';
+      out.others.map((g, k) => '<div class="fs-rr' + ((out.bets || []).some(t => t.legs.some(l => l.h === g.h && l.a === g.a)) ? ' zb' : '') + '" data-k="' + k + '"><span>' + esc(nameOf(g.h)) + '</span>' + crest(g.h, 'xs') + '<b>0 × 0</b>' + crest(g.a, 'xs') + '<span>' + esc(nameOf(g.a)) + '</span></div>').join('') : '';
     $('fc-acts').innerHTML = '<div class="fs-skip"><button class="btn ghost' + (fast ? ' on' : '') + '" id="fc-fast">' + (fast ? 'Velocidade normal' : 'Mais rápido') + '</button><button class="btn ghost" id="fc-skip">Fim do jogo</button></div>';
     $('fc-fast').onclick = () => { fast = !fast; $('fc-fast').textContent = fast ? 'Velocidade normal' : 'Mais rápido'; $('fc-fast').classList.toggle('on', fast); };
     if (o.stop) $('fc-skip').textContent = 'Ir ao lance';
@@ -611,6 +835,7 @@
         const [h, a] = x.score(o.stop ? Math.min(t, stopAt - 1) : t); $('fc-sh').textContent = h; $('fc-sa').textContent = a;
         out.my.ev.filter(e => (since !== undefined ? e.m > since && e.m <= t : e.m === t) && shown(e)).forEach(e => { $(e.s === 'h' ? 'fc-evh' : 'fc-eva').insertAdjacentHTML('beforeend', play1(e)); if ((e.s === 'h') === nx.home) sfx('cheer'); });
       }
+      if (fl && onPitch) fl.off = eff.mins.reduce((a, m, k) => a + m * S.FC_EFF[k].r, 0) / 90;
       if (fl) flowAt(c, x, fl, o.stop ? Math.min(t, stopAt - 1) : t, flSeen);
       let goal = false;
       document.querySelectorAll('#fc-round .fs-rr').forEach(el => {
@@ -625,6 +850,7 @@
       if (!$('fc-match')) return; // saiu da tela: o jogo já está salvo
       if (t === 45 && !half) { half = true; sfx('whistle'); frame(); timer = setTimeout(tick, fast ? 600 : 1800); return; }
       half = false; t++;
+      if (onPitch && t <= 90) { eff.mins[eff.lvl]++; effTick(); }
       frame();
       if (o.stop && t >= stopAt) return pause();
       if (t >= end) return done();
@@ -642,6 +868,8 @@
     function done() {
       if (finished) return; finished = true;
       clearTimeout(timer);
+      // Esforço: os minutos que faltaram (pulou para o fim) contam no nível escolhido; a energia e a nota fecham no motor
+      if (onPitch) { eff.mins[eff.lvl] += Math.max(0, 90 - eff.mins.reduce((a, b) => a + b, 0)); S.fcEffort(c, out, eff.mins, eff.drink); eff = null; save(); }
       // A tabela volta a ter o jogo somado
       if (undo) games.forEach(([a, b, g]) => add(undo === 'lg' ? c.fc.lg.tab : c.fc.cont.gtab, a, b, part(g, 99)));
       sfx('whistle');
@@ -687,9 +915,12 @@
     const row = (k, v, cls) => '<div><span>' + k + '</span><b class="' + (cls || '') + '">' + v + '</b></div>';
     const en1 = Math.round(fc.en === undefined ? 100 : fc.en), en0 = Math.round(x.en0 === undefined ? en1 : x.en0);
     const others = out.others.slice(0, 6).map(g => { const [a, b] = goalsOf(g); return '<span>' + esc(nameOf(g.h)) + ' ' + a + ' × ' + b + ' ' + esc(nameOf(g.a)) + '</span>'; }).join('');
-    const ze = out.bet ? '<p class="jn-ze">' + esc(nameOf(out.bet.h)) + ' ' + out.bet.gh + ' × ' + out.bet.ga + ' ' + esc(nameOf(out.bet.a)) + '. ' +
-      (out.bet.win ? 'Seu palpite pagou R$ ' + U.money(out.bet.pay) + '.' : 'Não foi dessa vez: R$ ' + U.money(out.bet.stake) + ' a menos.') +
-      (out.bet.caught ? ' E a federação descobriu: 4 jogos de suspensão.' : '') + ' <i>— Zé</i></p>' : '';
+    const ze = out.bets ? '<p class="jn-ze">' + out.bets.map(t => t.legs.length === 1 ? esc(nameOf(t.legs[0].h)) + ' ' + t.legs[0].gh + ' × ' + t.legs[0].ga + ' ' + esc(nameOf(t.legs[0].a)) + ' (' + esc(legTxt(t.legs[0])) + '): ' + (t.win ? 'pagou R$ ' + U.money(t.pay) + '.' : 'R$ ' + U.money(t.stake) + ' a menos.') :
+        'Múltipla de ' + t.legs.length + ' (' + t.legs.filter(l => l.win).length + ' de ' + t.legs.length + '): ' + (t.win ? 'pagou R$ ' + U.money(t.pay) + '!' : 'R$ ' + U.money(t.stake) + ' a menos.')).join(' ') +
+      (out.betCaught ? ' E a federação descobriu: ' + S.FC_BET_BAN + ' jogos de suspensão.' : '') + ' <i>— Zé</i></p>' : '';
+    const bi = out.bicho ? '<p class="jn-ze">Deu ' + esc(S.BICHOS[out.bicho.head]) + ' na cabeça (' + String(out.bicho.prem[0]).padStart(4, '0') + '). ' + out.bicho.bets.map(b => (b.win ? 'Seu ' + S.BICHOS[b.g] + ' pagou R$ ' + U.money(b.back) + '.' : S.BICHOS[b.g] + ' não deu.')).join(' ') + ' <i>— Zé</i></p>' : '';
+    const fx = out.fix && !out.fix.off ? (out.fix.caught ? '<p class="jn-fix"><b>Escândalo: ' + esc(c.name) + ' combinou cartão com apostador.</b> Mensagens vazaram, o amarelo aos ' + out.fix.min + "' estava acertado. Suspensão de " + S.FC_FIX_BAN + ' jogos, e a torcida pede explicações.</p>' :
+      '<p class="jn-ze">Amarelo aos ' + out.fix.min + "', como combinado. R$ " + U.money(out.fix.pay) + ' na conta, e ninguém percebeu. <i>— Zé</i></p>') : out.fix && out.fix.off ? '<p class="jn-ze">Você não entrou em campo: o combinado caiu. <i>— Zé</i></p>' : '';
     const done = G.c.fc.done;
     render('<div class="jn-w"><article class="jn">' +
       '<header><h1>Diário da Rodada</h1><p><span>nº ' + (fc.i) + '</span><span>' + esc(x.compName) + ' · ' + year() + '</span><span>R$ 3,00</span></p></header>' +
@@ -701,7 +932,7 @@
           row('Energia', en0 + ' → ' + en1, en1 < en0 ? 'down' : 'up') + row('Forma', formTxt(fc.fo || 0).toLowerCase()) +
           (out.pe ? row('Evolução', '+' + num1(out.pe), 'up') : '') + '</div></div>' +
       (others ? '<div class="jn-o"><b>Os outros jogos</b><div>' + others + '</div></div>' : '') +
-      '<div class="jn-f"><p>' + esc(nameOf(c.club)) + ' está em ' + lgPos + 'º na ' + esc(fc.lg.name) + ', com ' + fc.lg.tab[0].p + (fc.lg.tab[0].p === 1 ? ' ponto.' : ' pontos.') + '</p>' + ze + '</div>' +
+      '<div class="jn-f"><p>' + esc(nameOf(c.club)) + ' está em ' + lgPos + 'º na ' + esc(fc.lg.name) + ', com ' + fc.lg.tab[0].p + (fc.lg.tab[0].p === 1 ? ' ponto.' : ' pontos.') + '</p>' + fx + ze + bi + '</div>' +
       '</article><button class="btn" id="fc-next">' + (done ? 'Ver resumo da temporada' : 'Voltar ao celular') + '</button></div>');
     $('fc-next').onclick = () => (out.title ? celebrate(out, paintOrEnd) : paintOrEnd());
   }
