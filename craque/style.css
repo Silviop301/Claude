@@ -4907,6 +4907,8 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .pg-b u { display: block; height: 100%; border-radius: inherit; background: var(--up); transition: width .9s cubic-bezier(.2,.8,.2,1); }
 .pg-r.done .pg-b u { background: var(--gold); }
 .pg-r.done .pg-t b { color: var(--gold); }
+.pg-wk { margin: 8px 0 0; font: 600 14px/1.35 var(--body); color: var(--gold); }
+.pg .pg-wk { margin: 0; }
 .pg-tb { margin: 0; font: 600 14px/1.35 var(--body); color: var(--tx-2); }
 @media (prefers-reduced-motion: reduce) { .pg-b u { transition: none; } }
 /* Rodada como na TV (plano, fase 1): plantão do último gol de fora, o rival direto e as setas de quem sobe e desce */

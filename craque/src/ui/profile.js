@@ -18,23 +18,24 @@
   const RANKS = [[1, 'Peneira'], [5, 'Base'], [10, 'Profissional'], [20, 'Titular'], [30, 'Craque'], [40, 'Ídolo'], [50, 'Lenda']];
   const rankOf = lv => RANKS.filter(r => lv >= r[0]).pop()[1];
 
-  // XP do fim de uma carreira: base, nota e títulos; a Completa (mais longa) vale um pouco mais. Relâmpago, menos.
+  // XP do fim de uma carreira: base, nota e títulos. Relâmpago, menos; o Jogo a Jogo ganha por temporada (jajXp).
   const GXP = { S: 150, A: 100, B: 60, C: 30, D: 10 };
   const RXP = { S: 50, A: 35, B: 20, C: 10, D: 0 };
-  const careerXp = (c, f) => 100 + (GXP[f.grade] || 0) + Math.min(100, (f.titles || 0) * 4) + (c.mode === 'completa' ? 50 : 0);
+  const careerXp = (c, f) => 100 + (GXP[f.grade] || 0) + Math.min(100, (f.titles || 0) * 4); // o Jogo a Jogo já ganha XP a cada temporada
   const relXp = f => 30 + (RXP[f.grade] || 0);
 
   // ---------- metas da semana ----------
   // x: { kind: 'car', c, f } (carreira terminada) ou { kind: 'rel', f } (Relâmpago). add: quanto a meta anda (n = alvo)
   const GR = { S: 5, A: 4, B: 3, C: 2, D: 1 };
   const car = x => x.kind === 'car';
+  const jaj = x => x.kind === 'jaj' && x.my; // um jogo jogado no Jogo a Jogo (o save é longo: as metas andam jogo a jogo)
   const tro = (x, type) => Object.values(x.c.trophies || {}).reduce((a, t) => a + (t.type === type ? t.n : 0), 0);
   const clubs = x => new Set((x.c.spells || []).filter(s => s.seasons).map(s => s.club)).size;
   const GOALS = [
     // fáceis
     { id: 'car2', tier: 1, n: 2, t: 'Termine 2 carreiras', add: x => car(x) },
     { id: 'rel2', tier: 1, fam: 'rel', n: 2, t: 'Jogue 2 Relâmpagos', add: x => x.kind === 'rel' },
-    { id: 'comp', tier: 1, fam: 'comp', t: 'Termine uma Carreira Completa', add: x => car(x) && x.c.mode === 'completa' },
+    { id: 'jaj15', tier: 1, fam: 'jaj', n: 15, t: 'Jogue 15 jogos no Jogo a Jogo', add: x => jaj(x) && x.my.on },
     { id: 'tit10', tier: 1, fam: 'tit', t: 'Ganhe 10 títulos numa carreira', add: x => car(x) && x.f.titles >= 10 },
     { id: 'clubs4', tier: 1, t: 'Jogue em 4 clubes numa carreira', add: x => car(x) && clubs(x) >= 4 },
     { id: 'ucl', tier: 1, fam: 'cont', t: 'Ganhe a Liga dos Campeões', add: x => car(x) && tro(x, 'ucl') > 0 },
@@ -43,13 +44,15 @@
     { id: 'relA', tier: 2, fam: 'rel', t: 'Tire nota A ou S na Relâmpago', add: x => x.kind === 'rel' && GR[x.f.grade] >= 4 },
     { id: 'tit20', tier: 2, fam: 'tit', t: 'Ganhe 20 títulos numa carreira', add: x => car(x) && x.f.titles >= 20 },
     { id: 'wc', tier: 2, fam: 'wc', t: 'Seja campeão da Copa do Mundo', add: x => car(x) && tro(x, 'wc') > 0 },
+    { id: 'jajcl', tier: 2, fam: 'jaj', t: 'Vença um clássico no Jogo a Jogo', add: x => jaj(x) && x.my.won && x.classico },
+    { id: 'jajl5', tier: 2, fam: 'jaj', n: 5, t: 'Acerte 5 lances seus no Jogo a Jogo', add: x => jaj(x) && !!(x.out.lance && x.out.lance.ok) },
     { id: 'gk', tier: 2, t: 'Termine uma carreira de goleiro com nota B ou melhor', add: x => car(x) && x.c.pos === 'GOL' && GR[x.f.grade] >= 3 },
     // difíceis
     { id: 'gradeS', tier: 3, fam: 'nota', t: 'Termine uma carreira com nota S', add: x => car(x) && x.f.grade === 'S' },
     { id: 'ballon2', tier: 3, t: 'Ganhe 2 Bolas de Ouro numa carreira', add: x => car(x) && tro(x, 'ballon') >= 2 },
     { id: 'lenda', tier: 3, fam: 'wc', t: 'Ganhe a Copa do Mundo e a Bola de Ouro na mesma carreira', add: x => car(x) && tro(x, 'wc') > 0 && tro(x, 'ballon') > 0 },
     { id: 'cwc2', tier: 3, t: 'Ganhe 2 Mundiais de Clubes numa carreira', add: x => car(x) && tro(x, 'cwc') >= 2 },
-    { id: 'compA', tier: 3, fam: 'comp', t: 'Nota A ou S numa Carreira Completa', add: x => car(x) && x.c.mode === 'completa' && GR[x.f.grade] >= 4 },
+    { id: 'jajmeta', tier: 3, fam: 'jaj', t: 'Bata a meta do ano no Jogo a Jogo', add: x => x.kind === 'jajs' && x.meta },
     { id: 'lib', tier: 3, fam: 'cont', t: 'Ganhe a Libertadores', add: x => car(x) && tro(x, 'lib') > 0 },
   ];
   const GOAL_BY = Object.fromEntries(GOALS.map(g => [g.id, g]));
@@ -70,6 +73,9 @@
       p.wk = { k, goals: [1, 2, 3].map(t => ({ id: pick(t), p: 0 })) };
       U.ITEMS.put();
     }
+    // Metas da Carreira Completa que saíram (save longo, fase 1 do plano): a semana em curso troca pelas do Jogo a Jogo
+    const OLD = { comp: 'jaj15', compA: 'jajmeta' };
+    p.wk.goals.forEach(g => { if (!GOAL_BY[g.id] && OLD[g.id]) { g.id = OLD[g.id]; g.p = 0; g.done = false; } });
     return p.wk;
   }
   const daysLeft = () => { const m = monday(new Date()); m.setDate(m.getDate() + 7); return Math.max(1, Math.ceil((m - new Date()) / 864e5)); };
@@ -96,6 +102,15 @@
     return (c.profRes = credit({ kind: 'car', c, f }, careerXp(c, f)));
   }
   const relampago = (run, f) => run.prof || (run.prof = credit({ kind: 'rel', f }, relXp(f)));
+  // Jogo a Jogo: cada jogo anda as metas da semana (sem XP); cada temporada fechada dá XP, sem esperar o fim da carreira
+  const jajGame = (c, out, classico) => (out && out.my ? credit({ kind: 'jaj', c, my: out.my, out, classico }, 0) : null);
+  const jajXp = (titles, meta) => 50 + Math.min(60, titles * 15) + (meta ? 30 : 0);
+  function jajSeason(c, res) {
+    if (c.profSeas === c.season) return null; // já creditada (a tela pode ser redesenhada)
+    c.profSeas = c.season;
+    const mt = c.fcMetaEnd, meta = !!(mt && mt.have >= mt.n);
+    return credit({ kind: 'jajs', c, meta }, jajXp(res.titles.length, meta));
+  }
 
   // Faixa nos prêmios do fim: XP ganho, nível novo e metas cumpridas
   function finaleHtml(r) {
@@ -146,13 +161,13 @@
       '<div class="pf-sec"><div class="pf-sh"><h3>Todas as carreiras</h3></div><div class="pf-nums">' +
         num(T.n, T.n === 1 ? 'carreira' : 'carreiras') + num(T.goals, 'gols') + num(T.assists, 'assistências') + num(T.titles, 'títulos') +
         num(T.ballon, T.ballon === 1 ? 'Bola de Ouro' : 'Bolas de Ouro') + num(T.best || '–', 'melhor nota') + '</div>' +
-        '<p class="pf-how">Toda carreira terminada dá XP (mais com nota alta e títulos). Cada nível novo e cada meta cumprida dão pacotinho.</p></div></div>' + U.tabs('profile')
+        '<p class="pf-how">Toda carreira terminada dá XP (mais com nota alta e títulos); no Jogo a Jogo, cada temporada. Cada nível novo e cada meta cumprida dão pacotinho.</p></div></div>' + U.tabs('profile')
     );
     U.backTo = open;
     U.worldHomeBind();
     U.streakBind(open); // pegou o prêmio do dia: redesenha (o pacotinho vai para a fila da tela inicial)
   }
 
-  Object.assign(U, { profile: open, profileHome: homeHtml, profileHomeBind: homeBind, profileCareer: career, profileRel: relampago, profileFinale: finaleHtml,
-    PROFILE: { level, rankOf, week, GOALS, PRIZE, careerXp, relXp, wkKey } });
+  Object.assign(U, { profile: open, profileHome: homeHtml, profileHomeBind: homeBind, profileCareer: career, profileRel: relampago, profileFinale: finaleHtml, profileJajGame: jajGame, profileJajSeason: jajSeason,
+    PROFILE: { level, rankOf, week, GOALS, PRIZE, careerXp, relXp, jajXp, wkKey } });
 })();

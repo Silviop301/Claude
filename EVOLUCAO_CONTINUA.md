@@ -14,7 +14,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | Fase | Pronto quando | Estado |
 |---|---|---|
 | 0 · Preparar | Os números chegam ao servidor (`api/stats.php`, `src/stats.js`, `tools/craque_numeros.py`) e quem joga o Jogo a Jogo vê o aviso do save novo | no ar (PR #108) |
-| 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **em andamento**: parte 1 (jogos vividos, resumidos e no banco; save novo), parte 2 (um lance seu em todo jogo), parte 3 (tela limpa no celular e no ao vivo), parte 4 (rodada como na TV), parte 5 (faixa "Seu ano") |
+| 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **em andamento**: parte 1 (jogos vividos, resumidos e no banco; save novo), parte 2 (um lance seu em todo jogo), parte 3 (tela limpa no celular e no ao vivo), parte 4 (rodada como na TV), parte 5 (faixa "Seu ano"), parte 6 (metas da semana e XP por temporada) |
 | 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | |
@@ -428,3 +428,13 @@ Proibido também: cartão com faixa colorida na lateral.
   ("11º: 3 pontos para o G4", "Líder, 4 pontos à frente do 2º", "na zona: 2 pontos para sair"). As barras enchem do valor
   de antes do jogo até o de agora, com o ganho do jogo em verde. Meta calculada na hora: save antigo segue sem migrar.
 - A fase 6 (metas, legado) troca a meta da posição pelas metas do ano de clube, empresário e você.
+
+### Fase 1 do plano, parte 6 · 2026-10-31 · Metas da semana e XP do perfil no save longo
+
+- **Metas da semana** (ui/profile.js): saem "Termine uma Carreira Completa" e "Nota A ou S numa Carreira Completa" (o save
+  longo não termina numa semana). Entram, na família `jaj`: "Jogue 15 jogos no Jogo a Jogo" (fácil), "Vença um clássico
+  no Jogo a Jogo" e "Acerte 5 lances seus no Jogo a Jogo" (médias), "Bata a meta do ano no Jogo a Jogo" (difícil). Andam
+  a cada jogo jogado (`U.profileJajGame`, chamado no ao vivo, no resumido e no Resumir); a meta cumprida aparece no
+  cartão do jogo, na faixa "Seu ano" ou na lista do Resumir. Semana em curso com meta antiga troca pela nova (migração).
+- **XP por temporada** (`U.profileJajSeason`, no resumo da temporada): 50 + 15 por título (até 60) + 30 se bateu a meta
+  do ano, uma vez por temporada (`c.profSeas`). O bônus de +50 XP do fim da Carreira Completa saiu (já ganha por ano).
