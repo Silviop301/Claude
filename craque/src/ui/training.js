@@ -27,13 +27,17 @@
       'O atacante vem conduzindo a bola em direção ao seu gol.',
       'Há uma faixa verde no caminho dele.',
       'Toque quando ele pisar na faixa verde para dar o carrinho. Cedo, ele passa; tarde, ele chuta.'] },
+    drible: { name: 'Drible', pos: 'ATA', ico: '🌀', steps: [
+      'O campo aparece visto de cima: você é a bolinha com o anel dourado, vindo com a bola.',
+      'O zagueiro vem ao seu encontro e, num momento, inclina o corpo para um lado.',
+      'Toque na metade da tela do lado livre enquanto ele estiver inclinado. Antes, ele lê o drible; tarde, ele fecha.'] },
     pass: { name: 'Passe decisivo', pos: 'MEI', ico: '👟', steps: [
       'O atacante corre entre os zagueiros procurando espaço.',
       'Há uma faixa verde: é a brecha na defesa.',
       'Toque quando ele passar pela faixa verde para enfiar a bola. Se demorar, ele fica impedido.'] },
   };
   // Lances da sua posição (atacante treina pênalti e falta)
-  const OF_POS = { ATA: ['cup', 'classico'], MEI: ['pass'], ZAG: ['tackle'], GOL: ['save'] };
+  const OF_POS = { ATA: ['cup', 'classico', 'drible'], MEI: ['pass'], ZAG: ['tackle'], GOL: ['save'] };
 
   // Jogador do treino: a sua carta quando o lance é da sua posição; senão, um jogador médio da posição do lance
   function trainee(st) {
@@ -80,7 +84,7 @@
       sfx('whistle');
       U.playMini(w.querySelector('#trn-mini'), st, (ok, why) => { if (!w.isConnected) return; tries++; if (ok) hits++; if (tries === 1) markTrained(st); result(ok, why); }, trainee(st));
     };
-    const WHY = { defesa: 'O goleiro defendeu.', trave: 'Na trave!', fora: 'Foi para fora.', alto: 'Foi por cima.', barreira: 'Parou na barreira.', cedo: 'Você chegou cedo.', impedido: 'Demorou e ele ficou impedido.', gol: 'Ele bateu e converteu.' };
+    const WHY = { defesa: 'O goleiro defendeu.', trave: 'Na trave!', fora: 'Foi para fora.', alto: 'Foi por cima.', barreira: 'Parou na barreira.', cedo: 'Você chegou cedo.', lado: 'Foi para o lado em que ele estava.', recupera: 'Ele se recuperou e tomou a bola.', tarde: 'Demorou e ele fechou.', impedido: 'Demorou e ele ficou impedido.', gol: 'Ele bateu e converteu.' };
     const result = (ok, why) => {
       const big = ok ? ({ save: 'DEFENDEU!', tackle: 'ROUBOU!', pass: 'ASSISTÊNCIA!' }[st] || 'GOL!') : 'Não foi…';
       w.innerHTML = '<div class="trn">' + head +
