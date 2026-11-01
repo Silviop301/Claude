@@ -7,8 +7,8 @@ const S = require('../craque/src/sim.js');
 const N = +process.argv[2] || 400;
 const SKILL = { bom: 0.05, medio: 0.12, ruim: 0.22 }; // erro do toque, em segundos (desvio padrão)
 const gauss = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
-const TYPES = ['cup', 'classico', 'save', 'tackle', 'pass', 'drible', 'passe3'];
-const POS = { cup: 'ATA', classico: 'ATA', save: 'GOL', tackle: 'ZAG', pass: 'MEI', drible: 'ATA', passe3: 'MEI' };
+const TYPES = ['cup', 'classico', 'save', 'tackle', 'pass']; // os lances livres (mano, passe3, bote, saida) têm um estilo só: tools/craque_livre.js
+const POS = { cup: 'ATA', classico: 'ATA', save: 'GOL', tackle: 'ZAG', pass: 'MEI' };
 
 // Um lance jogado por um humano com erro sd (s). Devolve true se deu certo.
 function play(k, type, sd) {
@@ -25,19 +25,6 @@ function play(k, type, sd) {
   if (type === 'tackle') {
     const ok = Math.abs(gauss() * sd) < k.win * k.period / 2; // janela em segundos: win·period
     return ok && !(k.dribble && R() < k.dribble);
-  }
-  if (type === 'drible') {
-    // Ver o zagueiro inclinar, escolher o lado e tocar: reação 190 ms + 1,1·erro (como o goleiro), variando 0,6·erro.
-    // Às vezes o jogador se antecipa (toca antes de ele inclinar) ou erra o lado, mais quanto pior ele joga
-    if (R() < sd * 0.6 || R() < sd * 0.4) return false;
-    const rt = 0.19 + sd * 1.1 + gauss() * sd * 0.6;
-    return rt < k.win && !(k.recover && R() < k.recover);
-  }
-  if (type === 'passe3') {
-    // Ver qual dos três ficou livre e tocar nele: a mesma reação do drible com um pouco mais de leitura (três opções)
-    if (R() < sd * 0.6 || R() < sd * 0.5) return false;
-    const rt = 0.21 + sd * 1.1 + gauss() * sd * 0.6;
-    return rt < k.win && !(k.keeperOut && R() < k.keeperOut);
   }
   if (type === 'pass') {
     const ok = Math.abs(gauss() * sd) < 0.75 * Math.min(0.3 / 0.94, k.win) * k.period;

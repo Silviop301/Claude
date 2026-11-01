@@ -5509,17 +5509,32 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
 .jn-fora b { display: block; font: 800 12px var(--body); letter-spacing: .08em; text-transform: uppercase; color: #8A2E27; }
 .card.fb .jn-fora { margin: 8px 0 0; }
 
-/* Prancheta (board.js): o campo visto de cima dos lances novos do Jogo a Jogo */
-.bd-svg { display: block; width: 100%; height: auto; }
-.bd-grass { fill: #1E6B3C; } .bd-stripe { fill: #1A6236; }
-.bd-line rect, .bd-line path { fill: none; stroke: rgba(240, 248, 240, .7); stroke-width: 2; } .bd-line circle { fill: rgba(240, 248, 240, .7); }
-.bd-goal { fill: rgba(255, 255, 255, .85); stroke: #fff; stroke-width: 1.5; transform-box: fill-box; transform-origin: center; }
-.bd-goal.shake { animation: net-shake .5s ease 2; }
-.bd-p circle { filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .35)); }
-.bd-p text { font: 800 17px var(--display); text-anchor: middle; }
-.bd-p .bd-halo { fill: none; stroke: var(--gold); stroke-width: 3; filter: none; }
-.bd-ball { fill: #fff; stroke: #1a1a1a; stroke-width: 1.4; }
-.bd-lean { fill: none; stroke: #FF6B5E; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
-.bd-gap { fill: rgba(242, 194, 48, .42); stroke: var(--gold); stroke-width: 2; stroke-dasharray: 5 4; }
-.bd-lane { stroke: var(--gold); stroke-width: 4; stroke-dasharray: 8 6; stroke-linecap: round; }
-.bd-off { stroke: rgba(255, 255, 255, .35); stroke-width: 1.5; stroke-dasharray: 3 5; }
+/* Lances livres do Jogo a Jogo (livre.js): campo de cima, analógico e botão fixos embaixo da tela */
+.lv-host { justify-content: flex-start !important; min-height: 0 !important; gap: 8px; }
+.lv-stage { --lh: min(calc(100svh - var(--bar-h, 0px) - 330px), 560px); width: max(180px, calc(var(--lh) * .75)); max-width: 100%; margin: 0 auto; cursor: default; touch-action: none; }
+.desk .kick-stage.lv-stage { --lh: min(calc(100dvh - var(--bar-h, 0px) - 300px), 620px); width: max(240px, calc(var(--lh) * .75)); margin: 0 auto; }
+.lv-cv { display: block; width: 100%; height: auto; }
+.lv-stage.lv-net { animation: net-shake .5s ease 2; }
+.lv-help { margin-bottom: calc(150px + env(safe-area-inset-bottom, 0px)) !important; }
+.lv-pad { position: fixed; z-index: 40; left: 50%; bottom: 0; transform: translateX(-50%); width: min(560px, 100%); display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px calc(14px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(rgba(6, 26, 16, 0), rgba(6, 26, 16, .9) 34%); touch-action: none; user-select: none; -webkit-user-select: none; }
+.lv-stick { position: relative; width: 124px; height: 124px; border-radius: 50%; flex: none; touch-action: none; cursor: grab;
+  background: radial-gradient(circle, #1D4A31 0, #123322 70%); border: 2px solid var(--panel-line); box-shadow: inset 0 2px 8px rgba(0, 0, 0, .35); }
+.lv-stick::after { content: ''; position: absolute; inset: 38%; border-radius: 50%; border: 1px dashed rgba(234, 243, 236, .2); }
+.lv-knob { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; background: var(--tx-1); box-shadow: var(--sh-press, 0 3px 0 rgba(0, 0, 0, .4)); pointer-events: none; }
+.lv-act { width: 100px; height: 100px; flex: none; border-radius: 50%; border: 0; background: var(--gold); color: var(--ink); font: 800 20px/1 var(--display); letter-spacing: .03em; text-transform: uppercase;
+  box-shadow: 0 5px 0 #9C7A12; touch-action: none; cursor: pointer; }
+.lv-act small { display: block; margin-top: 4px; font: 600 12px var(--body); letter-spacing: 0; text-transform: none; opacity: .75; }
+.lv-act.on, .lv-act:active { transform: translateY(3px); box-shadow: 0 2px 0 #9C7A12; }
+.trn .lv-pad { z-index: 80; }
+.choices.style-grid.ob5-styles.one { grid-template-columns: minmax(0, 1fr); }
+@media (max-height: 700px) {
+  .lv-stage { --lh: calc(100svh - var(--bar-h, 0px) - 300px); }
+  .lv-pad { padding: 12px 18px calc(8px + env(safe-area-inset-bottom, 0px)); }
+  .lv-stick { width: 104px; height: 104px; } .lv-knob { width: 50px; height: 50px; margin: -25px 0 0 -25px; }
+  .lv-act { width: 88px; height: 88px; font-size: 18px; }
+  .lv-help { margin-bottom: calc(124px + env(safe-area-inset-bottom, 0px)) !important; font-size: 15px !important; min-height: 0 !important; padding: 6px 12px !important; }
+}
+@media (min-width: 1280px) and (min-height: 860px) {
+  html.desk .kick-stage.lv-stage { --lh: min(calc(100dvh / var(--z) - var(--bar-h, 0px) - 300px), 620px); }
+}
