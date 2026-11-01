@@ -27,17 +27,29 @@
       'O atacante vem conduzindo a bola em direção ao seu gol.',
       'Há uma faixa verde no caminho dele.',
       'Toque quando ele pisar na faixa verde para dar o carrinho. Cedo, ele passa; tarde, ele chuta.'] },
-    drible: { name: 'Drible', pos: 'ATA', ico: '🌀', steps: [
-      'O campo aparece visto de cima: você é a bolinha com o anel dourado, vindo com a bola.',
-      'O zagueiro vem ao seu encontro e, num momento, inclina o corpo para um lado.',
-      'Toque na metade da tela do lado livre enquanto ele estiver inclinado. Antes, ele lê o drible; tarde, ele fecha.'] },
+    mano: { name: 'Mano a mano', pos: 'ATA', ico: '🌀', steps: [
+      'Campo visto de cima: você é a bolinha com o anel dourado. O analógico embaixo, à esquerda, leva você.',
+      'O zagueiro reage atrasado: mude de direção para deixá-lo para trás. Demorou, a cobertura chega.',
+      'O botão à direita chuta no canto para onde o analógico aponta (solto: longe do goleiro). Quanto mais perto, mais certeiro.'] },
+    passe3: { name: 'Passe com três opções', pos: 'MEI', ico: '🎯', steps: [
+      'Campo visto de cima: você conduz a bola com o analógico embaixo, à esquerda.',
+      'Três companheiros correm marcados. A linha dourada mostra quem está livre; a vermelha tem zagueiro no caminho.',
+      'Aponte o analógico para o livre e toque no botão para passar. O volante vem pressionar; se demorar, ele fica impedido.'] },
+    bote: { name: 'Bote no mano a mano', pos: 'ZAG', ico: '🛡️', steps: [
+      'Campo visto de cima: o atacante vem com a bola rumo ao seu gol. O analógico leva você.',
+      'Fique entre ele e o gol. Se a linha do chute ficar aberta, ele bate.',
+      'O botão dá o carrinho para onde o analógico aponta: de frente e bem perto. Longe ou na finta dele, você vai ao chão.'] },
+    saida: { name: 'Saída do goleiro', pos: 'GOL', ico: '🧤', steps: [
+      'Campo visto de cima: o atacante sai cara a cara com você. O analógico leva você.',
+      'Saia do gol na direção dele para fechar o ângulo: ele bate no lado mais aberto.',
+      'O botão mergulha para o lado do analógico, uma vez só. Ficar parado na linha deixa os cantos abertos.'] },
     pass: { name: 'Passe decisivo', pos: 'MEI', ico: '👟', steps: [
       'O atacante corre entre os zagueiros procurando espaço.',
       'Há uma faixa verde: é a brecha na defesa.',
       'Toque quando ele passar pela faixa verde para enfiar a bola. Se demorar, ele fica impedido.'] },
   };
   // Lances da sua posição (atacante treina pênalti e falta)
-  const OF_POS = { ATA: ['cup', 'classico', 'drible'], MEI: ['pass'], ZAG: ['tackle'], GOL: ['save'] };
+  const OF_POS = { ATA: ['cup', 'classico', 'mano'], MEI: ['pass', 'passe3'], ZAG: ['tackle', 'bote'], GOL: ['save', 'saida'] };
 
   // Jogador do treino: a sua carta quando o lance é da sua posição; senão, um jogador médio da posição do lance
   function trainee(st) {
@@ -84,9 +96,9 @@
       sfx('whistle');
       U.playMini(w.querySelector('#trn-mini'), st, (ok, why) => { if (!w.isConnected) return; tries++; if (ok) hits++; if (tries === 1) markTrained(st); result(ok, why); }, trainee(st));
     };
-    const WHY = { defesa: 'O goleiro defendeu.', trave: 'Na trave!', fora: 'Foi para fora.', alto: 'Foi por cima.', barreira: 'Parou na barreira.', cedo: 'Você chegou cedo.', lado: 'Foi para o lado em que ele estava.', recupera: 'Ele se recuperou e tomou a bola.', tarde: 'Demorou e ele fechou.', impedido: 'Demorou e ele ficou impedido.', gol: 'Ele bateu e converteu.' };
+    const WHY = { defesa: 'O goleiro defendeu.', trave: 'Na trave!', fora: 'Foi para fora.', alto: 'Foi por cima.', barreira: 'Parou na barreira.', cedo: 'Você chegou cedo.', lado: 'Foi para o lado em que ele estava.', marcado: 'Ele estava marcado e a zaga cortou.', goleiro: 'O goleiro saiu e ficou com a bola.', recupera: 'Ele se recuperou e tomou a bola.', tarde: 'Demorou e ele fechou.', impedido: 'Demorou e ele ficou impedido.', gol: 'Ele bateu e converteu.', desarme: 'O zagueiro tomou a bola.', tempo: 'Demorou e a cobertura chegou.', bloqueio: 'O chute bateu no zagueiro.', pressao: 'O volante chegou e roubou a bola.', cortado: 'Tinha zagueiro na linha do passe.', passou: 'Ele passou e marcou.' };
     const result = (ok, why) => {
-      const big = ok ? ({ save: 'DEFENDEU!', tackle: 'ROUBOU!', pass: 'ASSISTÊNCIA!' }[st] || 'GOL!') : 'Não foi…';
+      const big = ok ? ({ save: 'DEFENDEU!', saida: 'DEFENDEU!', tackle: 'ROUBOU!', bote: 'ROUBOU!', pass: 'ASSISTÊNCIA!', passe3: 'ASSISTÊNCIA!' }[st] || 'GOL!') : 'Não foi…';
       w.innerHTML = '<div class="trn">' + head +
         board() + '<div class="ob5-res ' + (ok ? 'ok' : 'ko') + '"><div class="mr-big">' + big + '</div><p class="mr-txt">' + esc(ok ? 'Isso! É assim no jogo de verdade.' : (WHY[why] || 'Tente de novo: o tempo certo é tudo.')) + '</p></div>' +
         '<button class="btn' + (opts.real ? ' ghost' : '') + '" id="trn-go">Treinar de novo</button>' +
