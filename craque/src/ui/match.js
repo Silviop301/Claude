@@ -172,11 +172,12 @@
   // kitCtx (Copa e Mundial): { vs: nome do adversário, mine: sua seleção ou clube } para os uniformes certos
   // style: estilo escolhido na tela do lance (S.STYLES); sem ele, o lance de sempre
   // onResult(ok, why): o resultado na hora em que sai, antes do letreiro e da animação (o lance de verdade já salva ali)
-  function playMini(el, setupType, onDone, c, kitCtx, style, onResult) {
+  // extra: opções a mais do minigame (duel: o bote da pressão na saída de bola, sem chute ao gol)
+  function playMini(el, setupType, onDone, c, kitCtx, style, onResult, extra) {
     c = c || G.c;
     window.CRAQUE_KIT_CTX = kitCtx || null;
     if (setupType === 'save') return window.CRAQUE_SAVE(el, { c, onDone, onResult, style });
-    if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, { c, onDone, onResult, style });
+    if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, Object.assign({ c, onDone, onResult, style }, extra));
     if (setupType === 'pass') return window.CRAQUE_PASS(el, { c, onDone, onResult, style });
     return window.CRAQUE_KICK(el, { c, moment: { type: setupType, style }, onDone, onResult });
   }
