@@ -151,6 +151,9 @@
   // Você (visual da criação) espera à direita e dá o carrinho no toque. Faixa verde: onde ele precisa estar no toque.
   root.CRAQUE_TACKLE = function (el, opts) {
     const P = root.CRAQUE_KICK_PARTS, C = root.CRAQUE_CHARS, c = opts.c, setup = S().kickSetup(c, 'tackle', opts.style), standing = !!setup.dribble;
+    // duel: a pressão na saída de bola (atacante e meia no Jogo a Jogo). Sem desarme ele escapa e toca de lado: não há
+    // chute ao gol, porque o lance só mexe na nota (antes a rede balançava e o placar não mudava)
+    const duel = !!opts.duel;
     el.innerHTML = '<div class="kick-stage">' + P.scene({ fk: false }, 1) + '<div class="kick-banner"></div></div>' +
       '<p class="kick-help">Toque quando o atacante pisar na <b>faixa verde</b>' + (standing ? ' para encaixar o corpo' : '') + '</p>';
     const svg = el.querySelector('svg'), stage = el.querySelector('.kick-stage'), ball = svg.querySelector('#k-ball');
@@ -202,8 +205,8 @@
       result = { ok, why };
       if (opts.onResult) opts.onResult(ok, ok ? 'desarme' : why);
       sfx(ok ? 'cheer' : 'miss');
-      if (cine) { const a = at(g.u); if (ok) cine.win(a.x + 10, a.y - 20, colorsOf(kits.mine)); else cine.lose(why === 'passou' || why === 'tarde' || why === 'cedo' ? P.GX : null, 140, 4); }
-      banner(el, ok ? 'DESARME!' : why === 'cedo' ? 'CHEGOU CEDO!' : why === 'tarde' ? 'CHEGOU TARDE!' : why === 'drible' ? 'DRIBLOU!' : 'GOL DELES', ok);
+      if (cine) { const a = at(g.u); if (ok) cine.win(a.x + 10, a.y - 20, colorsOf(kits.mine)); else cine.lose(!duel && (why === 'passou' || why === 'tarde' || why === 'cedo') ? P.GX : null, 140, 4); }
+      banner(el, ok ? 'DESARME!' : why === 'cedo' ? 'CHEGOU CEDO!' : why === 'tarde' ? 'CHEGOU TARDE!' : why === 'drible' ? 'DRIBLOU!' : duel ? 'ESCAPOU!' : 'GOL DELES', ok);
       setTimeout(() => { b3.dispose(); if (cine) cine.dispose(); opts.onDone(ok, ok ? 'desarme' : why); }, 1500);
     }
     // A bola sai do pé (desarme ou chute) e vai até um ponto
@@ -241,6 +244,10 @@
       if (g.mode === 'run' && g.u >= SHOOT && !(g.slide && !g.slide.done && g.slide.kind !== 'tarde')) {
         g.mode = 'shoot'; setAtk('finalizacao', now);
         const a = at(g.u), h = H(a.y), side = Math.random() < 0.5 ? -1 : 1;
+        if (duel) {
+          // Escapou: toca para o companheiro na ponta, longe do gol
+          setTimeout(() => { if (result) return; sfx('kick'); kickBall([a.x + g.cut + 0.17 * h, a.y - 0.06 * h, 0.06 * h], [-30, a.y + 30, 4], 0, 520, 6); setTimeout(() => end(false, !g.slide ? 'passou' : g.slide.kind), 400); }, 180);
+        } else {
         const gx = P.px(side * (0.55 + Math.random() * 0.3)), gy = P.py(0.15 + Math.random() * 0.6);
         setTimeout(() => {
           if (result) return; // o lance já se decidiu (desarme): a bola não vai mais para o gol
@@ -249,6 +256,7 @@
           kickBall([a.x + g.cut + 0.17 * h, a.y - 0.06 * h, 0.06 * h], [gx, gy, 6.5], 0, 460, 12);
           setTimeout(() => { svg.querySelector('#k-net').classList.add('shake'); end(false, !g.slide ? 'passou' : g.slide.kind); }, 470);
         }, 180);
+        }
       }
       // Desenho: atacante, zagueiro (quem está mais perto da câmera fica na frente) e a bola
       const a = at(g.u), ah = H(a.y), ax = a.x + g.cut, ay = a.y + g.cut * 0.15;

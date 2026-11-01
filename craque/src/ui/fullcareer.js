@@ -1062,7 +1062,7 @@
       render(lanceBoard(m, sc, true) + '<div id="kick"></div>');
       sfx('whistle');
       U.playMini($('kick'), st, ok => { if ($('kick')) fin(ok); }, null, null, m.style,
-        (ok, why) => { if (!$('kick')) return; S.fcLance(c, m, ok, why); save(); });
+        (ok, why) => { if (!$('kick')) return; S.fcLance(c, m, ok, why); save(); }, { duel: !!m.duel });
     }));
     $('fc-lauto').onclick = () => fin(S.fcAutoLance(c, m));
   }
