@@ -5508,3 +5508,16 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
 .jn-fora { margin: 0 0 6px; padding: 6px 8px; border-left: 3px solid #8A2E27; background: rgba(138,46,39,.07); font: 500 14px/1.35 var(--body); color: var(--ink); }
 .jn-fora b { display: block; font: 800 12px var(--body); letter-spacing: .08em; text-transform: uppercase; color: #8A2E27; }
 .card.fb .jn-fora { margin: 8px 0 0; }
+
+/* Prancheta (board.js): o campo visto de cima dos lances novos do Jogo a Jogo */
+.bd-svg { display: block; width: 100%; height: auto; }
+.bd-grass { fill: #1E6B3C; } .bd-stripe { fill: #1A6236; }
+.bd-line rect, .bd-line path { fill: none; stroke: rgba(240, 248, 240, .7); stroke-width: 2; } .bd-line circle { fill: rgba(240, 248, 240, .7); }
+.bd-goal { fill: rgba(255, 255, 255, .85); stroke: #fff; stroke-width: 1.5; transform-box: fill-box; transform-origin: center; }
+.bd-goal.shake { animation: net-shake .5s ease 2; }
+.bd-p circle { filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .35)); }
+.bd-p text { font: 800 17px var(--display); text-anchor: middle; }
+.bd-p .bd-halo { fill: none; stroke: var(--gold); stroke-width: 3; filter: none; }
+.bd-ball { fill: #fff; stroke: #1a1a1a; stroke-width: 1.4; }
+.bd-lean { fill: none; stroke: #FF6B5E; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+.bd-gap { fill: rgba(242, 194, 48, .42); stroke: var(--gold); stroke-width: 2; stroke-dasharray: 5 4; }
