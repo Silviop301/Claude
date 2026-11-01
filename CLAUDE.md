@@ -66,6 +66,7 @@ node tools/craque_audit_eventos.js [ids]            # auditoria das decisões (e
 node tools/craque_textos.js                         # repetição de textos entre carreiras
 node tools/craque_itens_sim.js                      # carreiras para liberar todos os itens
 node tools/craque_estilos.js                        # estilos dos lances decisivos: nenhum pode dominar (esperado: 0 alertas)
+node tools/craque_livre.js [n] [cenas]               # lances livres do Jogo a Jogo: robô vs chance pela carta (esperado: 0 alertas; WHY=1 detalha)
 NODE_PATH=$(npm root -g) node tools/craque_e2e.js 2 390 4   # carreiras pela interface (Playwright); MODO=completa na Carreira Completa
 NODE_PATH=$(npm root -g) node tools/craque_telas.js /tmp/antes   # foto de cada tela (carreira com sorteio fixo + telas de fora + minigames); DESKTOP=1 ... 1440 900 no computador, SO=evento,lance só algumas
 DESKTOP=1 TR=/tmp/tr node tools/craque_e2e.js 3 1280 3      # idem no computador, gravando o texto de cada tela em /tmp/tr
@@ -129,7 +130,7 @@ dividem ajudantes por `CRAQUE_SIM._`. O motor não usa DOM: roda no navegador e 
 
 ### Apresentação — `craque/src/`
 
-`kick.js` (pênalti/falta), `defend.js` (goleiro, zagueiro, meia), `cine.js` (câmera e efeitos; `?cine=0`
+`kick.js` (pênalti/falta), `defend.js` (goleiro, zagueiro, meia), `livre.js` (Jogo a Jogo: lances de movimento livre vistos de cima, analógico e botão fixos embaixo; `S.LIVRE`, `S.livreK`), `cine.js` (câmera e efeitos; `?cine=0`
 desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da criação, `c.look`),
 `card.js` (carta em canvas), `trophies.js`, `ball3d.js` (bola 3D da tela inicial), `kits-real.js`
 (uniformes reais), `sound.js` (Web Audio), `errors.js` (envia erros ao servidor).
