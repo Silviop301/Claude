@@ -38,7 +38,7 @@
   // Zagueiro e goleiro têm lances defensivos: 'tackle' (desarme) e 'save' (defender pênalti)
   S.kickType = m => m.kick || (m.type === 'classico' ? 'fk' : 'pen');
   // Meia: o lance dele é o passe decisivo (bola enfiada para o atacante), pela PAS e não pela FIN
-  S.kickSetupType = m => ({ fk: 'classico', save: 'save', tackle: 'tackle', pass: 'pass', drible: 'drible' }[S.kickType(m)] || 'cup');
+  S.kickSetupType = m => ({ fk: 'classico', save: 'save', tackle: 'tackle', pass: 'pass', drible: 'drible', passe3: 'passe3' }[S.kickType(m)] || 'cup');
   S.defKick = pos => (pos === 'GOL' ? 'save' : pos === 'ZAG' ? 'tackle' : null);
   S.posKick = pos => S.defKick(pos) || (pos === 'MEI' ? 'pass' : null);
 
@@ -169,6 +169,11 @@
       { id: 'corte', name: 'Corte seco', ico: '⚡', hint: 'Ele fica inclinado pouco tempo, mas quem passa sai livre.' },
       { id: 'pedalada', name: 'Pedalada', ico: '🌀', hint: 'Ele fica inclinado mais tempo, mas às vezes volta e toma a bola.' },
     ],
+    // Passe com três opções (Jogo a Jogo, meia): só o lance comum
+    passe3: [
+      { id: 'curto', name: 'No pé', ico: '👟', hint: 'A linha fica aberta pouco tempo, mas a bola chega limpa.' },
+      { id: 'lancamento', name: 'Lançamento', ico: '🌙', hint: 'A linha fica aberta mais tempo, mas o goleiro às vezes sai e fica com a bola.' },
+    ],
   };
   S.styleIds = type => S.STYLES[S.STYLES[type] ? type : 'cup'].map(x => x.id);
   S.styleDef = (type, id) => S.STYLES[S.STYLES[type] ? type : 'cup'].find(x => x.id === id) || S.STYLES[S.STYLES[type] ? type : 'cup'][0];
@@ -197,6 +202,10 @@
       // Pedalada: a janela fica bem maior, mas mesmo no lado certo ele às vezes recupera
       k.win = Math.round(k.win * 1.25 * 100) / 100; k.recover = 0.25;
       k.chance = Math.round(clamp(k.chance + tilt('rit', 'dri'), 0.2, 0.88) * 100) / 100;
+    } else if (type === 'passe3') {
+      // Lançamento: a linha fica aberta mais tempo, mas o goleiro pode sair
+      k.win = Math.round(k.win * 1.2 * 100) / 100; k.keeperOut = 0.28;
+      k.chance = Math.round(clamp(k.chance + tilt('fis', 'pas'), 0.2, 0.88) * 100) / 100;
     } else if (type === 'pass') {
       // Por cima: brecha larga, bola no ar por mais tempo (menos tempo antes do impedimento), goleiro pode sair
       k.win = Math.round(k.win * 1.3 * 1000) / 1000; k.period = Math.round(k.period * 0.9 * 100) / 100; k.keeperOut = 0.1;
@@ -234,6 +243,12 @@
       const win = Math.round(clamp(0.255 + (E.dri - 50) / 300 + lv('drible') * 0.03 + lv('tecnica') * 0.02, 0.2, 0.46) * 100) / 100;
       const chance = clamp(0.34 + (E.dri - 60) / 85 + lv('drible') * 0.04 + lv('tecnica') * 0.03 + lv('frieza') * 0.06, 0.2, 0.88);
       return { mode: 'drible', win, chance: Math.round(chance * 100) / 100 };
+    }
+    if (type === 'passe3') {
+      // Meia vendo os três companheiros: a linha do livre fica aberta win segundos; PAS, Visão de Jogo e Garçom alargam
+      const win = Math.round(clamp(0.28 + (E.pas - 50) / 300 + lv('visao') * 0.03 + lv('garcom') * 0.02 + sy('maestro') * 0.02, 0.24, 0.52) * 100) / 100;
+      const chance = clamp(0.32 + (E.pas - 60) / 75 + lv('visao') * 0.05 + lv('garcom') * 0.04 + lv('frieza') * 0.06 + sy('maestro') * 0.05, 0.2, 0.88);
+      return { mode: 'passe3', win, chance: Math.round(chance * 100) / 100 };
     }
     if (type === 'tackle') {
       // Zagueiro: tocar quando o atacante passa pela zona certa. DEF alarga a zona; RIT deixa o lance mais lento
@@ -300,7 +315,7 @@
   S.countKick = function (c, type, ok) {
     const k = c.kicks = c.kicks || { n: 0, ok: 0, fkOk: 0 };
     k.n++;
-    if (ok) { k.ok++; if (type === 'fk') k.fkOk++; if (type === 'save') k.saveOk = (k.saveOk || 0) + 1; if (type === 'tackle') k.tackleOk = (k.tackleOk || 0) + 1; if (type === 'pass') k.passOk = (k.passOk || 0) + 1; if (type === 'drible') k.dribOk = (k.dribOk || 0) + 1; }
+    if (ok) { k.ok++; if (type === 'fk') k.fkOk++; if (type === 'save') k.saveOk = (k.saveOk || 0) + 1; if (type === 'tackle') k.tackleOk = (k.tackleOk || 0) + 1; if (type === 'pass') k.passOk = (k.passOk || 0) + 1; if (type === 'drible') k.dribOk = (k.dribOk || 0) + 1; if (type === 'passe3') k.passOk = (k.passOk || 0) + 1; }
   };
   // why: como o lance terminou no minigame (defesa, barreira, fora, impedido...). Resultado, manchete e post
   // contam a partir dele; sem why (a chance decidiu) os textos ficam neutros

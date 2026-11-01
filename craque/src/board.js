@@ -3,6 +3,7 @@
 //  CRAQUE_BOARD.make(el, opts): monta o campo (meia-cancha, gol em cima) e devolve ajudantes para pôr jogadores e bola
 //  CRAQUE_DRIBBLE (atacante): o zagueiro vem e inclina o corpo para um lado; toque no lado livre enquanto ele está
 //                 inclinado. Cedo, ele lê o drible; tarde, ele fecha; lado errado, ele fica com a bola. DRI alarga o tempo.
+//  CRAQUE_PASS3 (meia): três companheiros correm marcados; toque no que ficar livre enquanto a linha do passe está aberta.
 (function (root) {
   const S = () => root.CRAQUE_SIM;
   const sfx = n => { if (root.CRAQUE_SFX) root.CRAQUE_SFX.play(n); };
@@ -139,6 +140,102 @@
         }
       } else if (anim) {
         lean.setAttribute('opacity', 0); gap.setAttribute('opacity', 0);
+        anim(Math.min(1, (t - anim.t0) / 1.1));
+      }
+      requestAnimationFrame(step);
+    })(performance.now());
+  };
+
+  // ---------- passe com três opções (meia) ----------
+  // Três companheiros correm para a área, cada um com um zagueiro colado. Num momento, o zagueiro de um deles se
+  // distrai e abre a linha do passe (a linha dourada aparece): toque no companheiro livre enquanto ela está aberta.
+  // Antes de abrir, qualquer passe é cortado; no marcado, cortado; tarde, ele passa da linha e fica impedido.
+  root.CRAQUE_PASS3 = function (el, opts) {
+    const P = root.CRAQUE_KICK_PARTS, c = opts.c, setup = S().kickSetup(c, 'passe3', opts.style);
+    const B = make(el, { c, help: 'Toque no companheiro que ficar <b>livre</b> (a linha dourada)' });
+    const { stage } = B;
+    const LX = [72, 180, 288], free = Math.floor(Math.random() * 3);
+    const me = B.me(GX, 292), gk = B.keeper(GX, 30);
+    const run = LX.map((x, i) => B.mate(x + (Math.random() * 16 - 8), 200 + (i === 1 ? 14 : 0), [7, 9, 11][i]));
+    const mk = LX.map((x, i) => B.foe(run[i].x, run[i].y - 30, [3, 4, 2][i]));
+    const y0 = run.map(r => r.y), x0 = run.map(r => r.x), MOFF = [16, x0[1] > GX ? -16 : 16, -16];
+    const OPEN = 1.0 + Math.random() * 0.5, WIN = setup.win, T = OPEN + WIN;
+    let t = 0, last = performance.now(), phase = 'run', result = null, armed = false, openK = 0;
+    const lane = B.shape('line', { class: 'bd-lane', x1: GX, y1: 280, x2: GX, y2: 280, opacity: 0 });
+    const offs = B.shape('line', { class: 'bd-off', x1: 10, x2: 350, y1: 120, y2: 120, opacity: 0.5 }); // linha do impedimento
+    B.ball(GX, 272);
+    setTimeout(() => { armed = true; }, 250);
+    function choose(i) {
+      if (!armed || result) return;
+      if (phase === 'run') return end(false, 'cedo', i);
+      if (phase !== 'open') return;
+      if (i !== free) return end(false, 'marcado', i);
+      if (setup.keeperOut && Math.random() < setup.keeperOut) return end(false, 'goleiro', i);
+      end(true, 'passe', i);
+    }
+    P.onTap(stage, e => {
+      e.preventDefault();
+      const r = stage.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W;
+      choose(x < 126 ? 0 : x < 234 ? 1 : 2);
+    });
+    const key = e => { if (!stage.isConnected) return document.removeEventListener('keydown', key); const i = { ArrowLeft: 0, ArrowUp: 1, ArrowDown: 1, ArrowRight: 2 }[e.key]; if (i !== undefined) { e.preventDefault(); choose(i); } };
+    document.addEventListener('keydown', key);
+    let anim = null;
+    function end(ok, why, i) {
+      if (result) return;
+      result = { ok, why };
+      if (opts.onResult) opts.onResult(ok, ok ? 'passe' : why);
+      const t0 = t, tgt = i === undefined ? run[free] : run[i], from = { x: tgt.x, y: tgt.y }, cut = i === undefined ? mk[free] : mk[i];
+      const kSide = Math.random() < 0.5 ? -1 : 1;
+      if (ok) {
+        anim = k => {
+          // a bola chega nele, ele domina e bate no canto; o goleiro pula para o outro lado
+          const a = Math.min(1, k / 0.4), sh = Math.max(0, (k - 0.5) / 0.35);
+          tgt.at(lerp(from.x, lerp(from.x, GX, 0.4), ease(Math.min(1, k / 0.5))), lerp(from.y, 92, ease(Math.min(1, k / 0.5))));
+          if (k < 0.4) B.ball(lerp(GX, from.x, ease(a)), lerp(272, from.y, ease(a)));
+          else if (k < 0.5) B.ball(tgt.x, tgt.y - 18);
+          else B.ball(lerp(tgt.x, GX - kSide * 24, ease(Math.min(1, sh))), lerp(tgt.y - 18, 8, ease(Math.min(1, sh))));
+          gk.at(GX + kSide * 26 * ease(Math.max(0, Math.min(1, (k - 0.55) / 0.3))), 30);
+          if (sh >= 1 && !anim.done) { anim.done = true; B.net(); sfx('goal'); }
+        };
+        sfx('kick');
+      } else if (why === 'goleiro') {
+        anim = k => { const a = ease(Math.min(1, k / 0.45)); B.ball(lerp(GX, from.x, a), lerp(272, from.y - 30, a)); gk.at(lerp(GX, from.x, ease(Math.min(1, k / 0.4))), lerp(30, from.y - 34, ease(Math.min(1, k / 0.4)))); };
+        sfx('miss');
+      } else if (why === 'tarde') {
+        anim = k => { const a = ease(Math.min(1, k / 0.4)); run.forEach((r, j) => r.at(x0[j], lerp(132, 104, a))); mk.forEach((m, j) => m.at(run[j].x + MOFF[j], 122)); B.ball(GX, 272 - 6 * a); };
+        sfx('whistle');
+      } else {
+        // cortado: o zagueiro dele entra na frente e a bola fica com ele
+        const mx = (GX + from.x) / 2, my = (272 + from.y) / 2;
+        anim = k => { const a = ease(Math.min(1, k / 0.35)); cut.at(lerp(cut.x, mx, a), lerp(cut.y, my, a)); B.ball(lerp(GX, mx, ease(Math.min(1, k / 0.4))), lerp(272, my + 8, ease(Math.min(1, k / 0.4)))); };
+        sfx('miss');
+      }
+      anim.t0 = t0;
+      B.banner(ok ? 'ASSISTÊNCIA!' : why === 'cedo' ? 'CEDO DEMAIS!' : why === 'marcado' ? 'CORTADO!' : why === 'goleiro' ? 'O GOLEIRO SAIU!' : 'IMPEDIDO!', ok);
+      if (ok) sfx('cheer');
+      setTimeout(() => opts.onDone(ok, ok ? 'passe' : why), 1700);
+    }
+    (function step(now) {
+      if (!stage.isConnected) return document.removeEventListener('keydown', key);
+      if (P.covered(stage)) { last = now; return requestAnimationFrame(step); } // janela por cima: o lance espera
+      const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
+      if (!result) {
+        const k = Math.min(1, t / T);
+        run.forEach((r, j) => r.at(x0[j], lerp(y0[j], 132, k)));
+        // o marcador vai colado, um pouco à frente e de lado; o do livre se afasta
+        mk.forEach((m, j) => {
+          const o = j === free ? openK : 0, dir = j === 0 ? 1 : j === 2 ? -1 : (x0[1] > GX ? -1 : 1);
+          m.at(run[j].x + MOFF[j] + dir * 30 * o, run[j].y - 30 - 8 * o);
+        });
+        if (phase === 'run' && t >= OPEN) phase = 'open';
+        if (phase === 'open') {
+          openK = Math.min(1, (t - OPEN) / 0.15);
+          lane.setAttribute('x2', run[free].x); lane.setAttribute('y2', run[free].y); lane.setAttribute('opacity', openK);
+          if (t >= T) { phase = 'shut'; end(false, 'tarde'); }
+        }
+      } else if (anim) {
+        lane.setAttribute('opacity', 0); offs.setAttribute('opacity', 0);
         anim(Math.min(1, (t - anim.t0) / 1.1));
       }
       requestAnimationFrame(step);

@@ -180,6 +180,7 @@
     if (setupType === 'tackle') return window.CRAQUE_TACKLE(el, Object.assign({ c, onDone, onResult, style }, extra));
     if (setupType === 'pass') return window.CRAQUE_PASS(el, { c, onDone, onResult, style });
     if (setupType === 'drible') return window.CRAQUE_DRIBBLE(el, { c, onDone, onResult, style });
+    if (setupType === 'passe3') return window.CRAQUE_PASS3(el, { c, onDone, onResult, style });
     return window.CRAQUE_KICK(el, { c, moment: { type: setupType, style }, onDone, onResult });
   }
   // Os dois estilos do lance, lado a lado: nome, como muda o lance e a chance pela carta em cada um.
@@ -201,6 +202,8 @@
   function miniFacts(setupType) {
     const k = S.kickSetup(G.c, setupType), E = S.eff(G.c), L = kk => D.label(G.c.pos, kk);
     const lv = id => (G.c.traits.includes(id) ? S.traitLevel(G.c, id) : 0);
+    if (setupType === 'passe3') return ['<span class="chip">' + L('pas') + ' ' + E.pas + ' · linha aberta ' + (k.win >= 0.4 ? 'por muito tempo' : k.win >= 0.31 ? 'por um tempo médio' : 'por pouco tempo') + '</span>']
+      .concat(lv('visao') ? ['<span class="chip">' + U.emo('👁️', 'xs') + ' Visão de Jogo: mais tempo</span>'] : []);
     if (setupType === 'drible') return ['<span class="chip">' + L('dri') + ' ' + E.dri + ' · tempo para driblar ' + (k.win >= 0.45 ? 'longo' : k.win >= 0.34 ? 'médio' : 'curto') + '</span>']
       .concat(lv('drible') ? ['<span class="chip">' + U.emo('🌀', 'xs') + ' Drible Curto: mais tempo</span>'] : []).concat(lv('tecnica') ? ['<span class="chip">' + U.emo('🪄', 'xs') + ' Técnica: mais tempo</span>'] : []);
     if (setupType === 'save') return ['<span class="chip">' + L('fin') + ' ' + E.fin + ' · sinal do batedor ' + (k.tellMs >= 190 ? 'longo' : k.tellMs >= 130 ? 'médio' : 'curto') + '</span>',
@@ -222,9 +225,10 @@
     save: 'O batedor corre; pouco antes do chute aparece uma seta mostrando o lado. Toque na esquerda, no meio ou na direita para pular.',
     tackle: 'O atacante vem conduzindo rumo ao seu gol. Toque quando ele pisar na faixa verde para dar o carrinho.',
     drible: 'Campo visto de cima: você vem com a bola e o zagueiro vem ao seu encontro. Quando ele inclinar o corpo para um lado, toque na metade livre da tela (ou use as setas). Antes de ele inclinar, ele lê o drible; se demorar, ele fecha.',
+    passe3: 'Campo visto de cima: três companheiros correm para a área, cada um com um zagueiro colado. Quando um deles ficar livre, aparece a linha dourada do passe: toque nele (ou use as setas). Antes disso o passe é cortado; se demorar, ele fica impedido.',
     pass: 'O atacante corre entre a zaga e o último zagueiro. Toque quando ele passar pela faixa verde: a bola passa pela brecha e ele finaliza. Se demorar, ele fica impedido.',
   };
-  const MINI_BTN = { cup: 'Bater o pênalti', classico: 'Bater a falta', save: 'Defender o pênalti', tackle: 'Dar o bote', pass: 'Enfiar a bola', drible: 'Partir para o drible' };
+  const MINI_BTN = { cup: 'Bater o pênalti', classico: 'Bater a falta', save: 'Defender o pênalti', tackle: 'Dar o bote', pass: 'Enfiar a bola', drible: 'Partir para o drible', passe3: 'Escolher o passe' };
 
   // O que vale o lance em duas linhas: ganho em verde, perda em vermelho ("Converteu: X · Errou: Y").
   // Sem a parte da perda (clássico do atacante), só a linha do ganho.

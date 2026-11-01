@@ -668,9 +668,10 @@
       const club = D.CLUB_BY_ID[c.club], us = club.strength + X.teamBoost + X.att, them = str(nx.vs), LL = nx.comp === 'cont' ? LAM_C : LAM_D;
       const lu = nx.home ? lam(us, them, LL)[0] : lam(them, us, LL)[1], tm = Math.max(0.05, lu - X.g90 * FC_K.g);
       const meia = c.pos === 'MEI', lm = meia ? emin(tm, X.a90 * FC_K.a) : X.g90 * FC_K.g;
-      // Atacante: pênalti, falta ou o drible no mano a mano (prancheta), um terço cada
+      // Atacante: pênalti, falta ou o drible no mano a mano (prancheta), um terço cada; meia: o passe de sempre ou o de
+      // três opções (prancheta), metade cada
       const ak = r();
-      const g = meia ? pick('pass', r.pick(['diagonal', 'contra', 'tabela'])) : ak < 0.34 ? pick('pen', r.pick(['derrubado', 'mao'])) : ak < 0.67 ? pick('fk', 'falta') : pick('drible', r.pick(['meio', 'ponta']));
+      const g = meia ? (r() < 0.5 ? pick('pass', r.pick(['diagonal', 'contra', 'tabela'])) : pick('passe3', r.pick(['contra', 'area']))) : ak < 0.34 ? pick('pen', r.pick(['derrubado', 'mao'])) : ak < 0.67 ? pick('fk', 'falta') : pick('drible', r.pick(['meio', 'ponta']));
       const q = Math.min(1, (meia ? LANCE_Q : LANCE_Q * 0.6) * lm / g.p); // atacante menos: a nota dele encosta no 10 e o gol certo do lance tira a variação
       if (r() < q) m = Object.assign(g, { goal: true });
       else m = Object.assign(pick('tackle', 'pressao'), { duel: true });
