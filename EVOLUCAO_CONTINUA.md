@@ -19,7 +19,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | **no ar** (PRs #130, #132, #133 e a parte 4): aperto 16–18%, devendo no fim 3% |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | **no ar** (PRs #135, #136 e a parte 3): janela do meio do ano, troca de clube, sondagens, empresário, aumento, pedido de saída e empréstimo |
 | 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | **no ar** (PRs #138, #139 e a parte 3): torneio do continente, convocação pelo celular, concentração e um jogo por tela, seleção no jornal |
-| 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | |
+| 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | em andamento: parte 1 (metas do ano e legado ao lado da nota) |
 | 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | |
 | 8 · Treinador v2 | No simulador, nenhuma tática ou instrução vence em todos os casos | |
 | 9 · Do jogador ao técnico | Uma carreira passa de jogador a técnico levando a história e os títulos | |
@@ -650,3 +650,24 @@ Proibido também: cartão com faixa colorida na lateral.
 - **Fase 5 pronta.** Critério: uma Copa do Mundo e um torneio do continente passam inteiros, jogo a jogo, nas carreiras pela
   interface. e2e no Jogo a Jogo: 8 + 8 + 12 carreiras passando por convocação, concentração e jogos (`wc:jogo`, `wc:volta`)
   de Copas e torneios do continente; uma rodada teve 1 problema que não se repetiu nas duas seguintes (20 carreiras, 0).
+
+### Fase 6 do plano, parte 1 · 2026-11-04 · Metas do ano e pontos de legado (a nota fica)
+- `engine/legado.js` (novo): três metas por temporada no Jogo a Jogo. A do clube é a meta da posição de antes (gols,
+  assistências ou jogos sem sofrer gol); cumprir dá +6 de técnico, falhar −4. A do empresário: quem pouco joga, jogar um
+  tanto de jogos; quem está logo abaixo do corte da seleção, ser chamado; os outros, a nota média da vitrine (perto da
+  mediana da posição: ATA 8,2, MEI 8,0, ZAG 7,6, GOL 7,7, um pouco mais para a carta forte); mexe na relação com ele (+6/−3).
+  O sonho: escolha 1 de 3 na agenda (um título; o prêmio da posição; Bola de Ouro com carta 82+, melhor jovem até 20 anos,
+  senão terminar entre os quatro). O tamanho segue a dificuldade no simulador (5, 10, 20 ou 35 de legado).
+- Pontos de legado (`S.legacy`): metas cumpridas, títulos (liga 30, copa 15, continental 45, Mundial 40), prêmios (Bola de
+  Ouro 90, prêmio da posição 12 a 40 conforme a posição, porque o do goleiro sai bem menos), ídolo (temporadas no mesmo
+  clube depois da quarta ×6 e os títulos lá ×4) e seleção (Copa 120, torneio do continente 50, jogos 1, gols 2). Aqui o
+  título do continente ganha peso, como ficou combinado na fase 5.
+- Na tela: bloco "Metas do ano" na agenda (barra de progresso, escolha do sonho), aviso no celular enquanto o sonho não foi
+  escolhido, "Metas do ano" no resumo da temporada com o legado somado, e "Legado da carreira" na ficha.
+- Simulador (300 carreiras): metas cumpridas clube 60%, empresário 38%, sonho 36%. Legado mediano ATA 1882, MEI 1440,
+  ZAG 1518, GOL 1289 (antes da correção do goleiro); de onde vem: títulos 34-49%, prêmios 13-28%, metas ~22%, seleção 5-10%,
+  ídolo 6-9%. Correlação com a nota 0,95. Notas iguais às de antes (a nota não muda nesta parte).
+- Combinado: a nota S a D só sai do Jogo a Jogo depois da resposta do Silvio sobre os cortes (conversa do treino).
+- Ferramentas: `craque_sim.js` imprime "Metas cumpridas" e o legado por posição (SONHO=id força um sonho);
+  `craque_invariantes.js` confere as metas de cada temporada e o legado; e2e escolhe o sonho; fotos `agenda-metas` e
+  `agenda-sonho` em `craque_telas_jaj.js`.

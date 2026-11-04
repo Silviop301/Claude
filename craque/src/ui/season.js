@@ -307,6 +307,13 @@
     if (G.c.mode === 'completa' && U.fullSeason && U.fullSeason(res, () => show(res, preM, true))) return;
     show(res, preM, false);
   }
+  // Metas do ano (Jogo a Jogo, engine/legado.js): quais foram cumpridas e o legado que somaram
+  function metasBlock(res) {
+    if (!res.metas || !res.metas.length) return '';
+    const W = { club: 'Clube', emp: 'Empresário', me: 'Seu sonho' }, got = res.metas.filter(x => x.ok).reduce((a, x) => a + S.GOAL_SIZE[x.size], 0);
+    return '<p class="sx-lbl rv">Metas do ano</p><div class="sx-metas rv">' + res.metas.map(x => '<div class="' + (x.ok ? 'ok' : 'no') + '"><i>' + (x.ok ? '✓' : '✗') + '</i><span><small>' + W[x.side] + '</small>' + esc(x.txt) + '</span><b>' + (x.ok ? '+' + S.GOAL_SIZE[x.size] : '—') + '</b></div>').join('') +
+      '<p>' + (got ? '+' + got + ' de legado nas metas' : 'Nenhuma meta cumprida neste ano') + (S.legacy ? ' · legado da carreira: <b>' + S.legacy(G.c).pts.toLocaleString('pt-BR') + '</b>' : '') + '</p></div>';
+  }
   function show(res, preM, full) {
     const cl = club(res.club);
     const [c1, c2] = seasonStats(res);
@@ -613,6 +620,7 @@
       (res.titles.length ? '<div class="titles">' + res.titles.map(t => '<div class="title-won rv">' + trophy(titleType(t), 60, t.name) + '<span>Campeão<br><b>' + esc(t.name) + '</b></span></div>').join('') + '</div>' : '') +
       '<div class="awards">' + res.awards.map(a => '<div class="award rv' + (a.id === 'ballon' ? ' ballon' : '') + '">' + (a.id === 'ballon' ? trophy('ballon', 44) + ' ' : U.emo('🥇', 'sm') + ' ') + a.name + '</div>').join('') +
         (res.milestones || []).map(m => '<div class="award milestone rv">' + U.emo(m.icon, 'sm') + ' ' + esc(m.txt) + '</div>').join('') + '</div>' +
+      metasBlock(res) +
       // A história do ano num bloco só, em linhas com peso menor que a carta, a nota e a tabela
       '<p class="sx-lbl rv">O que falaram</p><div class="story rv">' + hl +
       '<div class="news rv"><div class="np">' + U.emo('📰', 'xs') + ' Nos jornais</div><p>' + esc(res.headlines[0] || '') + '</p></div>' +
