@@ -5659,3 +5659,5 @@ button.mz-fix { display: grid; gap: 4px; width: 100%; text-align: left; font: in
 .mk-offers .of-card { flex: none; width: 100%; max-width: none; margin: 0; }
 .mk-terms { margin: 0; font: 600 13px var(--body); color: var(--ink-2); }
 .mk-offers > .btn.ghost { justify-self: stretch; }
+.mk-sd { grid-template-columns: auto minmax(0, 1fr); }
+.mk-pref { margin: 0; font: 700 13px var(--body); color: var(--up-ink); }

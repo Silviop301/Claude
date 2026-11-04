@@ -114,9 +114,14 @@ const INIT = `
   // Fase 4: o app Mercado antes da janela, com a janela aberta (duas propostas) e depois de assinar (a liga nova na tabela)
   if (!process.env.SEM_MERCADO && await page.evaluate(() => !!window.CRAQUE_SIM.fcMove)) {
     await tap('.ph-app[data-go="mkt"]'); await shot('mercado-antes'); await tap('#fc-back');
+    // Sondagem: dois jogos antes da janela
+    await page.evaluate(() => { const S = window.CRAQUE_SIM, D = window.CRAQUE_DATA, c = window.CRAQUE_UI.G.c, fc = c.fc, cur = D.CLUB_BY_ID[c.club];
+      const up = D.CLUBS.filter(x => x.league !== cur.league && x.strength > cur.strength + 3).sort((a, b) => a.strength - b.strength).slice(0, 2);
+      fc.mwAt = fc.i + 2; fc.mw = { at: fc.i + 2, s: c.season, sond: up.map(x => Object.assign(S.offerFor(c, x.id, 'up'), { mid: true })), offers: [], st: 'rumor', told: true, g0: fc.acc.games, r0: fc.acc.rsum }; });
+    await shot('celular-sondagem'); await tap('.ph-app[data-go="mkt"]'); await shot('mercado-sondagem'); await tap('#fc-back');
     await page.evaluate(() => { const S = window.CRAQUE_SIM, D = window.CRAQUE_DATA, c = window.CRAQUE_UI.G.c, fc = c.fc, cur = D.CLUB_BY_ID[c.club];
       const up = D.CLUBS.filter(x => x.league !== cur.league && x.strength > cur.strength + 3).sort((a, b) => a.strength - b.strength)[0], mid = D.CLUBS.filter(x => x.league === cur.league && x.id !== cur.id && x.strength < cur.strength)[0];
-      fc.mwAt = fc.i; fc.mw = { at: fc.i, s: c.season, offers: [up, mid].filter(Boolean).map((x, k) => Object.assign(S.offerFor(c, x.id, k ? 'mid' : 'up'), { mid: true })), st: 'open' }; });
+      fc.mwAt = fc.i; fc.mw = { at: fc.i, s: c.season, offers: [up, mid].filter(Boolean).map((x, k) => Object.assign(S.offerFor(c, x.id, k ? 'mid' : 'up', k ? 0 : Math.round(c.wage * 1.5 / 1000) * 1000), { mid: true })), st: 'open' }; });
     await shot('celular-janela');
     await tap('.ph-app[data-go="mkt"]'); await shot('mercado-janela');
     await page.evaluate(() => { const b = document.querySelector('.pa-body'); if (b) b.scrollTop = 9999; }); await shot('mercado-propostas');

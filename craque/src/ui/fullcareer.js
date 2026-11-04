@@ -121,6 +121,8 @@
     else if (fc.wkSum && fc.wkSum.at === fc.i) n4('ag', 'Agenda', 'Semana feita: ' + fc.wkSum.acts.map(A).join(' e ') + '. ' + (S.fcTrOpen(c) ? 'Ainda dá para treinar com lances antes do jogo: +1 num atributo.' : 'Energia ' + Math.round(fc.wkSum.en0) + ' → ' + Math.round(fc.wkSum.en1) + '.'));
     // Mercado: a janela do meio do ano aberta com propostas
     const mw = S.fcWin && S.fcWin(c);
+    const sd = S.fcSond ? S.fcSond(c) : [];
+    if (sd.length) n('mkt', 'Mercado', 'Sondagem: ' + D.o(nameOf(sd[0].club)) + (sd.length > 1 ? ' e mais um clube perguntaram' : ' perguntou') + ' por você. A janela abre em ' + D.plural(Math.max(1, S.fcWinState(c).at - fc.i), 'jogo', 'jogos') + '.', 2);
     if (mw && mw.offers.length) n('mkt', 'Mercado', (mw.offers.length > 1 ? mw.offers.length + ' propostas' : 'Proposta ' + D.do(nameOf(mw.offers[0].club))) + ' na mesa. A janela fecha ' + (S.fcWinLeft(c) > 1 ? 'em ' + S.fcWinLeft(c) + ' jogos.' : 'depois do próximo jogo.'), 1);
     // Banco: a conta no vermelho (as saídas estão no app)
     if (S.fcDebt && S.fcDebt(c) > 0) n('bank', 'Banco', 'Conta no vermelho: R$ ' + U.money(S.fcDebt(c)) + ' de dívida. Toque para ver as saídas.', 2);
@@ -991,15 +993,22 @@
       head = '<p class="eyebrow">Janela do meio do ano · aberta</p><h3 class="mk-h">' + (open.offers.length ? (open.offers.length > 1 ? open.offers.length + ' propostas na mesa' : 'Uma proposta na mesa') : 'Nenhuma proposta por enquanto') + '</h3>' +
         '<p class="mk-p">' + (open.offers.length ? 'Assinando, você joga pelo clube novo já no próximo jogo. A copa e o continental ficam com ' + D.o(nameOf(c.club)) + '.' : 'Ninguém ligou ainda. Jogo bom chama atenção, e quem está sobrando no banco também recebe proposta.') +
         ' Fecha ' + (left > 1 ? 'em ' + left + ' jogos.' : 'depois do próximo jogo.') + '</p>';
-      body = open.offers.map((o, i) => { const lv = S.fcLuvasOf ? S.fcLuvasOf(c, o) : 0;
-        return U.offerCard(o, i, { terms: '<p class="mk-terms">' + (o.wage > c.wage ? 'Salário ' + Math.round((o.wage / Math.max(1, c.wage) - 1) * 100) + '% maior' : o.wage < c.wage ? 'Salário ' + Math.round((1 - o.wage / Math.max(1, c.wage)) * 100) + '% menor' : 'Mesmo salário') + (lv ? ' · luvas de ' + R(lv) + ' ao assinar' : '') + '</p>' }); }).join('') +
+      const pk = S.fcEmpPick ? S.fcEmpPick(open) : -1;
+      body = open.offers.map((o, i) => { const lv = S.fcLuvasOf ? S.fcLuvasOf(c, o) : 0, fee = S.fcFeeOf ? S.fcFeeOf(c, o) : 0;
+        return U.offerCard(o, i, { terms: (i === pk ? '<p class="mk-pref">' + U.emo('💼', 'xs') + ' O empresário prefere esta: paga mais</p>' : '') + '<p class="mk-terms">' + (o.wage > c.wage ? 'Salário ' + Math.round((o.wage / Math.max(1, c.wage) - 1) * 100) + '% maior' : o.wage < c.wage ? 'Salário ' + Math.round((1 - o.wage / Math.max(1, c.wage)) * 100) + '% menor' : 'Mesmo salário') +
+          (lv ? ' · luvas de ' + R(lv) : '') + (fee ? ' · comissão do empresário ' + R(fee) : '') + '</p>' }); }).join('') +
         (open.offers.length ? '<button class="btn ghost" id="mk-stay">Ficar ' + D.no(nameOf(c.club)) + '</button>' : '');
+    } else if (w && w.st === 'rumor') {
+      const k = Math.max(0, w.at - fc.i);
+      head = '<p class="eyebrow">Janela do meio do ano · abre em ' + D.plural(k, 'jogo', 'jogos') + '</p><h3 class="mk-h">' + (w.sond.length ? (w.sond.length > 1 ? w.sond.length + ' clubes perguntaram por você' : 'Um clube perguntou por você') : 'Nenhuma sondagem por enquanto') + '</h3>' +
+        '<p class="mk-p">' + (w.sond.length ? 'Ainda não é proposta. Jogando bem até a janela (nota média 6,8 ou mais), a chance de virar proposta é de ' + Math.round(S.FC_SOND.ok * 100) + '%; jogando mal, ' + Math.round(S.FC_SOND.ko * 100) + '%.' : 'O empresário segue ligando. Jogo bom chama atenção.') + '</p>';
+      body = w.sond.map(o => '<div class="fc-si mk-sd">' + crest(o.club, 'xs') + '<span><b>' + esc(nameOf(o.club)) + '</b><small>' + esc(D.LEAGUE_BY_ID[D.CLUB_BY_ID[o.club].league].name) + ' · força ' + D.CLUB_BY_ID[o.club].strength + ' · ' + esc(o.role) + '</small></span></div>').join('');
     } else if (w && w.st === 'signed' && fc.moved) {
       const L0 = fc.lg0;
       head = '<p class="eyebrow">Janela do meio do ano · fechada</p><h3 class="mk-h">Você trocou de clube</h3>' +
         '<p class="mk-p">Saiu ' + D.do(nameOf(fc.moved.from)) + (L0 ? ' (' + L0.pos + 'º ' + D.no(L0.name) + ')' : '') + ' e chegou ' + D.ao(nameOf(fc.moved.to)) + ' na rodada ' + (fc.moved.ri0 + 1) + ' ' + D.do(fc.lg.name) + '. A próxima janela é no fim da temporada.</p>';
     } else if (w) {
-      head = '<p class="eyebrow">Janela do meio do ano · fechada</p><h3 class="mk-h">' + (w.stay ? 'Você ficou' : 'A janela passou') + '</h3><p class="mk-p">' + (w.offers.length ? (w.stay ? 'Recusou ' + (w.offers.length > 1 ? 'as propostas' : 'a proposta') + ' e segue ' + D.no(nameOf(c.club)) + '.' : 'Ninguém fechou a tempo.') : 'Nenhum clube fez proposta desta vez.') + ' A próxima janela é no fim da temporada.</p>';
+      head = '<p class="eyebrow">Janela do meio do ano · fechada</p><h3 class="mk-h">' + (w.stay ? 'Você ficou' : 'A janela passou') + '</h3><p class="mk-p">' + (w.offers.length ? (w.stay ? 'Recusou ' + (w.offers.length > 1 ? 'as propostas' : 'a proposta') + ' e segue ' + D.no(nameOf(c.club)) + '.' : 'Ninguém fechou a tempo.') : w.lost ? 'Quem tinha perguntado esfriou e não fez proposta.' : 'Nenhum clube fez proposta desta vez.') + ' A próxima janela é no fim da temporada.</p>';
     } else {
       const k = Math.max(0, at - fc.i);
       const no = c.loan || c.clubSince === c.age || c.age < 18;
