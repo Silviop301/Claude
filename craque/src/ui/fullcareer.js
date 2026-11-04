@@ -744,7 +744,7 @@
         bjSeen = { p: h.p.length, d: h.d.length, open: !live, wait: live ? 0 : 0.5 + 0.45 * dealt };
       } else table += '<div class="mz-hand empty"><small>Ponha a ficha e o Zé dá as cartas.</small></div>';
       table += '</div>';
-      const acts = live ? '<div class="mz-acts"><button class="btn" data-bj="hit">Pedir</button><button class="btn mz-stand" data-bj="stand">Parar</button><button class="btn ghost" data-bj="double"' + (h.p.length === 2 && h.stake * 2 <= left ? '' : ' disabled') + '>Dobrar</button></div>' :
+      const acts = live ? '<div class="mz-acts"><button class="btn" data-bj="hit">Pedir</button><button class="btn mz-stand" data-bj="stand">Parar</button><button class="btn ghost" data-bj="double"' + (h.p.length === 2 && (h.paid ? h.stake : h.stake * 2) <= left ? '' : ' disabled') + '>Dobrar</button></div>' :
         stakeSeg(c) + '<button class="btn" id="mz-go"' + (casStake > left ? ' disabled' : '') + '>' + (h ? 'Nova mão · ' : 'Dar as cartas · ') + R$(casStake) + '</button>';
       const msg = L && !live ? resMsg(L).replace('class="mz-res', 'style="animation-delay:' + (bjSeen.wait || 0) + 's" class="mz-res') : '';
       return back + top + table + msg + acts;
