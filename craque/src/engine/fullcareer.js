@@ -70,7 +70,7 @@
     // Equipamento gasto sai (comprado na loja, dura um número de jogos em campo)
     S.fcShopSync(c);
     fc.paid = 0;
-    Object.assign(fc, { en: 100, fo: c.fc && c.fc.season === c.season - 1 ? Math.round((c.fc.fo || 0) * 50) / 100 : 0, fit: 0, peTrain: 0, wkDue: false, wkPlan: c.fc && c.fc.wkPlan ? c.fc.wkPlan : ['tec', 'rest'] });
+    Object.assign(fc, { en: 100, fo: c.fc && c.fc.season === c.season - 1 ? Math.round((c.fc.fo || 0) * 50) / 100 : 0, fit: 0, peTrain: 0, trN: 0, wkDue: false, wkPlan: c.fc && c.fc.wkPlan ? c.fc.wkPlan : ['tec', 'rest'] });
     const { r, save } = rngOf(fc);
     // Liga: turno e returno com os times embaralhados
     const teams = leagueTeams(club);
@@ -143,6 +143,47 @@
   ];
   const WEEK_BY = Object.fromEntries(WEEK.map(a => [a.id, a]));
   S.FC_WEEK = WEEK; S.FC_TRAIN_CAP = TRAIN_CAP;
+  const peTrainOk = (fc, n) => (fc.peTrain || 0) + TRAIN_STEP * (n || 1) <= TRAIN_CAP + 1e-9;
+  // Treino com lances: no treino técnico da semana você escolhe um atributo e joga TR_SESS lances antes do jogo.
+  // Jogados todos (errar também conta: é treino), +1 nesse atributo, que fica na carreira (c.trB, em S.eff). No máximo TR_CAP por temporada.
+  // Sem jogar os lances (semana automática, simulador), o treino técnico vale o de antes (+0,05 de evolução).
+  const TR_SESS = 3, TR_CAP = +((typeof process !== 'undefined' && process.env && process.env.FC_TRC) || 2);
+  const TR_DRILLS = { fin: ['cara', 'cabeca', 'dois'], dri: ['mano', 'cara'], pas: ['passe3', 'dois'], rit: ['mano', 'pressao', 'bote'], def: ['bote', 'pressao'], fis: ['cabeca', 'pressao'] };
+  const TR_DRILLS_GK = { rit: ['saida'], fin: ['save'], pas: ['saida'], dri: ['save'], def: ['saida'], fis: ['saida', 'save'] };
+  S.FC_TR_SESS = TR_SESS; S.FC_TR_CAP = TR_CAP;
+  S.fcTrDrills = (c, a) => (c.pos === 'GOL' ? TR_DRILLS_GK : TR_DRILLS)[a];
+  S.fcTrDrill = (c, a, k) => { const L = S.fcTrDrills(c, a); return L[k % L.length]; };
+  S.fcTrLeft = c => Math.max(0, TR_CAP - ((c.fc && c.fc.trN) || 0));
+  S.fcTr = c => (c.fc && c.fc.tr && c.fc.tr.s === c.season && c.fc.tr.i === c.fc.i ? c.fc.tr : null); // o treino com lances desta semana
+  const TR_MAX = +((typeof process !== 'undefined' && process.env && process.env.FC_TRM) || 99); // no máximo isto por atributo na carreira
+  S.FC_TR_MAX = TR_MAX;
+  S.fcTrAttrOk = (c, a) => !!TR_DRILLS[a] && S.eff(c)[a] < 99 && ((c.trB && c.trB[a]) || 0) < TR_MAX;
+  // Atributo sugerido: o último escolhido; senão o mais importante da posição abaixo de 99
+  S.fcTrAttr = c => { const t = S.fcTr(c); if (t) return t.a; return c.fcTrA && S.fcTrAttrOk(c, c.fcTrA) ? c.fcTrA : S.attrOrder(c.pos).find(a => S.fcTrAttrOk(c, a)) || null; };
+  // Dá para treinar com lances agora? O treino da semana é o técnico (escolhido ou já fechado), há jogo pela frente e sobra limite no ano
+  S.fcTrOpen = function (c, pick) {
+    const fc = c.fc, t = S.fcTr(c);
+    if (!fc || fc.done || !S.fcNext(c)) return false;
+    if (t) return !t.ok;
+    if (S.fcTrLeft(c) <= 0) return false;
+    if (fc.wkDue) return (pick || S.fcWeekAuto(c))[0] === 'tec';
+    return !!(fc.wkSum && fc.wkSum.at === fc.i && fc.wkSum.acts[0] === 'tec');
+  };
+  // Uma sessão jogada (ok: acertou o lance). A primeira trava o atributo e o treino técnico da semana. Volta { n, ok (completou agora), a }
+  S.fcTrSession = function (c, a, ok) {
+    const fc = c.fc;
+    let t = S.fcTr(c);
+    if (!t) { if (!S.fcTrOpen(c, ['tec']) || !S.fcTrAttrOk(c, a)) return null; t = fc.tr = { s: c.season, i: fc.i, a, n: 0, hits: 0 }; c.fcTrA = a; }
+    if (t.ok) return { n: t.n, ok: false, a: t.a };
+    t.n++; if (ok) t.hits++;
+    let done = false;
+    if (t.n >= TR_SESS) {
+      t.ok = true; done = true; fc.trN = (fc.trN || 0) + 1;
+      c.trB = c.trB || {}; c.trB[t.a] = (c.trB[t.a] || 0) + 1;
+      fc.trGot = (fc.trGot || 0) + 1;
+    }
+    return { n: t.n, ok: done, a: t.a, hits: t.hits };
+  };
   const weekBase = (fc, c) => (fc.wkPlayed ? 5 : 30) + (c && c.staff && c.staff.pt ? 8 : 0); // preparador físico: +8 // a semana já recupera sozinha (mais se você não jogou)
   S.fcSponsPay = c => Math.max(1000, Math.round((c.wage || 0) * 0.8 / 100) * 100);
   S.fcPhysioCost = c => Math.max(2000, Math.round((c.wage || 0) / 100) * 100);
@@ -150,7 +191,7 @@
   S.fcWeekOk = (c, id, picked) => {
     const fc = c.fc, n = (picked || []).filter(x => x === id).length + 1;
     if (id === 'physio') return (c.money || 0) >= S.fcPhysioCost(c) * n;
-    if (id === 'tec') return (fc.peTrain || 0) + TRAIN_STEP * n <= TRAIN_CAP + 1e-9;
+    if (id === 'tec') return peTrainOk(fc, n) || S.fcTrLeft(c) > 0;
     return true;
   };
   // Energia depois da semana com estas ações
@@ -161,14 +202,14 @@
     const fc = c.fc, plan = fc.wkPlan || ['tec'];
     let id = plan.find(x => x === 'tec' || x === 'fis') || 'rest';
     if (fc.injOut > 0 && !S.fcSuspended(c)) id = S.fcWeekOk(c, 'physio', []) ? 'physio' : 'rest';
-    if (!S.fcWeekOk(c, id, [])) id = 'rest';
+    if (!S.fcWeekOk(c, id, []) || (id === 'tec' && !peTrainOk(fc) && !S.fcTr(c))) id = 'rest'; // sem os lances, o técnico parado no limite não vale nada
     if (id !== 'rest' && id !== 'physio' && S.fcWeekEnergy(c, [id]) < 60) id = 'rest';
     return [id];
   };
   // Um passo de treino técnico (o treino da semana ou um convite do técnico): fora do limite dos jogos, até TRAIN_CAP no ano
   S.fcTrainPe = function (c) {
     const fc = c.fc;
-    if (!S.fcWeekOk(c, 'tec', [])) return 0;
+    if (!peTrainOk(fc)) return 0;
     fc.peTrain = Math.round(((fc.peTrain || 0) + TRAIN_STEP) * 100) / 100; fc.peFrac = Math.round((fc.peFrac + TRAIN_STEP) * 100) / 100;
     while (fc.peFrac >= 1) { fc.peFrac = Math.round((fc.peFrac - 1) * 100) / 100; fc.peGot++; c.pe = (c.pe || 0) + 1; }
     return TRAIN_STEP;
@@ -180,6 +221,8 @@
     if (!fc || !fc.wkDue) return null;
     if (acts) fc.wkPlan = acts.slice(0, 1); // a escolha da pessoa vira o plano da semana automática
     acts = (acts || S.fcWeekAuto(c)).slice(0, 1);
+    const tr = S.fcTr(c);
+    if (tr) acts = ['tec']; // começou o treino com lances: a semana é de treino técnico
     const { r, save } = rngOf(fc), out = { acts: [], en0: fc.en, pe: 0, money: 0, fame: 0, coach: 0, inj: 0, polem: false };
     fc.en = clamp(fc.en + weekBase(fc, c), 0, 100);
     // Salário da semana entra; a equipe pessoal sai (sem dinheiro, o contrato cai)
@@ -191,10 +234,10 @@
       else { delete c.staff[k]; out.dropped.push(k); }
     }
     acts.forEach(id => {
-      if (!WEEK_BY[id] || !S.fcWeekOk(c, id, [])) id = 'rest'; // o estado já tem as ações anteriores (dinheiro, treino)
+      if (!WEEK_BY[id] || (!(tr && id === 'tec') && !S.fcWeekOk(c, id, []))) id = 'rest'; // o estado já tem as ações anteriores (dinheiro, treino)
       out.acts.push(id);
       fc.en = clamp(fc.en + WEEK_BY[id].en, 0, 100);
-      if (id === 'tec') out.pe += S.fcTrainPe(c);
+      if (id === 'tec') { if (tr && tr.ok) out.tr = tr.a; else out.pe += S.fcTrainPe(c); } // treino com lances completo: o +1 no atributo no lugar da evolução
       else if (id === 'fis') fc.fit = 4;
       else if (id === 'physio') { const p = S.fcPhysioCost(c); c.money = Math.max(0, (c.money || 0) - p); out.money -= p; if (fc.injOut > 0 && !S.fcSuspended(c)) { fc.injOut--; out.inj++; } }
     });

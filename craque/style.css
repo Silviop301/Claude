@@ -5020,6 +5020,28 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .ag-o em.up { color: var(--up-ink); } .ag-o em.down { color: var(--down-ink); }
 .ag-o.on { background: var(--pitch-2); color: var(--paper); border-color: var(--pitch-2); } .ag-o.on small { color: var(--tx-2); } .ag-o.on em { color: var(--paper); }
 .ag-o:disabled { opacity: .45; cursor: default; }
+/* Treino com lances (treino técnico da semana): atributo, 3 lances e o +1 */
+.ag-tr { display: grid; gap: 8px; margin: 2px 0 6px 44px; padding: 10px 12px; border: 1.5px solid var(--ink); border-radius: var(--r-sm); background: #FFFDF6; }
+.ag-tr-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ag-tr-h b { font: 800 16px var(--display); }
+.ag-tr-dots, .trn-dots { display: inline-flex; gap: 5px; }
+.ag-tr-dots i, .trn-dots i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--pitch-2); }
+.ag-tr-dots i.on { background: var(--pitch-2); }
+.ag-tr-p, .ag-tr-ok, .ag-tr-off { margin: 0; font: 500 13px/1.35 var(--body); color: var(--ink-2); }
+.ag-tr-ok { font-weight: 700; color: var(--up-ink); font-size: 15px; }
+.ag-tr-off { margin: 2px 0 6px 44px; }
+.ag-tr-at { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.ag-ta { display: grid; justify-items: center; gap: 0; min-height: 44px; padding: 4px 0; border: 1px solid rgba(19,32,26,.3); border-radius: var(--r-sm); background: none; color: var(--ink); cursor: pointer; }
+.ag-ta b { font: 700 12px var(--body); letter-spacing: .04em; } .ag-ta small { font: 800 17px/1.1 var(--display); }
+.ag-ta.on { background: var(--pitch-2); border-color: var(--pitch-2); color: var(--paper); }
+.ag-ta:disabled { opacity: .4; cursor: default; }
+.ag-tr-go { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 6px 12px; border: 0; border-radius: var(--r-sm); background: var(--pitch-2); color: var(--paper); font: 700 15px var(--body); cursor: pointer; box-shadow: var(--sh-press); }
+.ag-tr-go:active { transform: translateY(1px); }
+.ag-tr-n { font: 600 12px var(--body); color: var(--ink-2); justify-self: end; }
+.trn-prog { display: grid; justify-items: center; gap: 6px; }
+.trn-prog .trn-dots i { border-color: var(--gold); } .trn-prog .trn-dots i.on { background: var(--gold); }
+.trn-prog small { color: var(--tx-2); font: 500 14px var(--body); }
+.trn-up { color: var(--up); font: 800 22px var(--display); }
 .ag-sum { margin: 8px 0 0; font: 500 13px/1.35 var(--body); color: var(--ink-2); }
 .ag-box { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
 .ag-box div { border: 1.5px solid var(--ink); border-radius: 6px; padding: 5px 8px; display: grid; }
