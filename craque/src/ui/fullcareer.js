@@ -986,7 +986,7 @@
     if (!el) return;
     const w = S.fcWinState(c), open = S.fcWin(c), R = v => 'R$ ' + U.money(v);
     const at = fc.mwAt !== undefined ? fc.mwAt : Math.max(2, Math.round(S.FC_WIN.at * fc.cal.length));
-    let head = '', body = '';
+    let head = '', body = '', more = '';
     if (open) {
       open.seen = true;
       const left = S.fcWinLeft(c);
@@ -998,6 +998,14 @@
         return U.offerCard(o, i, { terms: (i === pk ? '<p class="mk-pref">' + U.emo('💼', 'xs') + ' O empresário prefere esta: paga mais</p>' : '') + '<p class="mk-terms">' + (o.wage > c.wage ? 'Salário ' + Math.round((o.wage / Math.max(1, c.wage) - 1) * 100) + '% maior' : o.wage < c.wage ? 'Salário ' + Math.round((1 - o.wage / Math.max(1, c.wage)) * 100) + '% menor' : 'Mesmo salário') +
           (lv ? ' · luvas de ' + R(lv) : '') + (fee ? ' · comissão do empresário ' + R(fee) : '') + '</p>' }); }).join('') +
         (open.offers.length ? '<button class="btn ghost" id="mk-stay">Ficar ' + D.no(nameOf(c.club)) + '</button>' : '');
+      // Outras saídas: pedir aumento (renovação) ou pedir para sair
+      const rn = open.renew, rp = Math.round(S.fcRenewP(c) * 100), F = S.SQUAD_FX || { outCoach: -5, outFans: -5 }, nw = S.fcRenewOf(c);
+      const row = (name, fx, right) => '<div class="fc-si"><span><b>' + esc(name) + '</b><small>' + fx + '</small></span>' + right + '</div>';
+      more = '<div class="fc-ss"><h3>Com ' + esc(D.o(nameOf(c.club))) + '</h3>' +
+        row('Pedir aumento', rn ? (rn.ok ? 'Renovado: ' + R(rn.wage) + ' por semana até daqui a ' + D.plural(rn.years, 'ano', 'anos') + ' (tirou ' + rn.roll + ', precisava de até ' + rn.p + ')' : 'A diretoria disse não (tirou ' + rn.roll + ', precisava de até ' + rn.p + '). Técnico −' + Math.abs(S.FC_RENEW.fail)) :
+          rp + '% de chance · ' + R(nw.wage) + ' por semana e mais ' + S.FC_RENEW.years + ' anos de contrato. Não dá: técnico −' + Math.abs(S.FC_RENEW.fail), '<button class="fc-buy" id="mk-renew"' + (S.fcRenewOk(c) ? '' : ' disabled') + '>' + (rn ? (rn.ok ? 'Feito' : 'Recusado') : 'Pedir') + '</button>') +
+        row('Pedir para sair', open.out ? 'Pedido feito: técnico −' + Math.abs(F.outCoach) + ', torcida −' + Math.abs(F.outFans) + '. Sem trocar agora, a janela do fim do ano abre' : 'O empresário arruma mais uma proposta agora. Técnico −' + Math.abs(F.outCoach) + ' e torcida −' + Math.abs(F.outFans) + '; sem trocar, a janela do fim do ano abre',
+          '<button class="fc-buy" id="mk-out"' + (S.fcAskOutOk(c) ? '' : ' disabled') + '>' + (open.out ? 'Pedido' : 'Pedir') + '</button>') + '</div>';
     } else if (w && w.st === 'rumor') {
       const k = Math.max(0, w.at - fc.i);
       head = '<p class="eyebrow">Janela do meio do ano · abre em ' + D.plural(k, 'jogo', 'jogos') + '</p><h3 class="mk-h">' + (w.sond.length ? (w.sond.length > 1 ? w.sond.length + ' clubes perguntaram por você' : 'Um clube perguntou por você') : 'Nenhuma sondagem por enquanto') + '</h3>' +
@@ -1016,14 +1024,17 @@
         '<p class="mk-p">' + (c.loan ? 'Quem está emprestado não troca de clube no meio do ano.' : c.age < 18 ? 'Menor de idade não troca de clube no meio da temporada. A janela abre a partir dos 18 anos.' : c.clubSince === c.age ? 'Você acabou de chegar: o clube não te vende nesta temporada.' : 'No meio da temporada os clubes podem fazer proposta. Quem joga bem chama atenção.') + '</p>';
     }
     const cur = '<div class="fc-ss"><h3>Seu contrato</h3><div class="fc-si"><span><b>' + esc(nameOf(c.club)) + '</b><small>' + R(c.wage) + ' por semana · ' + D.plural(Math.max(1, c.contract), 'ano', 'anos') + (c.contract > 1 ? ' restantes' : ' restante') + '</small></span></div></div>';
-    el.innerHTML = '<div class="mk-top">' + head + '</div>' + (body ? '<div class="mk-offers">' + body + '</div>' : '') + cur;
+    el.innerHTML = '<div class="mk-top">' + head + '</div>' + (body ? '<div class="mk-offers">' + body + '</div>' : '') + more + cur;
     el.querySelectorAll('.of-sign').forEach(b => { b.onclick = () => {
       const o = open.offers[+b.dataset.i];
-      U.ask('Assinar com ' + D.o(nameOf(o.club)) + '?', 'Você sai ' + D.do(nameOf(c.club)) + ' agora, no meio da temporada. O técnico e a torcida daqui não esquecem.', 'Assinar', () => {
+      const ln = o.kind === 'loan';
+      U.ask(ln ? 'Ir emprestado para ' + D.o(nameOf(o.club)) + '?' : 'Assinar com ' + D.o(nameOf(o.club)) + '?', ln ? 'Até o fim da temporada, para jogar. ' + D.O(nameOf(c.club)) + ' segue pagando o salário e você volta no fim do ano.' : 'Você sai ' + D.do(nameOf(c.club)) + ' agora, no meio da temporada. O técnico e a torcida daqui não esquecem.', ln ? 'Ir emprestado' : 'Assinar', () => {
         if (S.fcWinSign(c, +b.dataset.i)) { sfx('coin'); save(); bar(); mktBox(); }
       });
     }; });
     if ($('mk-stay')) $('mk-stay').onclick = () => { sfx('tap'); S.fcWinStay(c); save(); mktBox(); };
+    if ($('mk-renew')) $('mk-renew').onclick = () => U.ask('Pedir aumento?', 'Chance de ' + Math.round(S.fcRenewP(c) * 100) + '%. Se a diretoria disser não, o técnico não gosta (−' + Math.abs(S.FC_RENEW.fail) + ').', 'Pedir', () => { const x = S.fcRenew(c); if (x) { sfx(x.ok ? 'coin' : 'tap'); save(); bar(); mktBox(); } });
+    if ($('mk-out')) $('mk-out').onclick = () => U.ask('Pedir para sair?', 'O técnico e a torcida não gostam. O empresário procura mais uma proposta agora.', 'Pedir', () => { if (S.fcAskOut(c) !== null) { sfx('tap'); save(); bar(); mktBox(); } });
   }
   function bankBox() {
     const c = G.c, el = $('fc-bank');

@@ -125,6 +125,8 @@ const INIT = `
     await shot('celular-janela');
     await tap('.ph-app[data-go="mkt"]'); await shot('mercado-janela');
     await page.evaluate(() => { const b = document.querySelector('.pa-body'); if (b) b.scrollTop = 9999; }); await shot('mercado-propostas');
+    if (await has('#mk-renew:not(:disabled)')) { await tap('#mk-renew'); await tap('.ask-wrap [data-a="ok"]'); await page.evaluate(() => { const b = document.querySelector('.pa-body'); if (b) b.scrollTop = 9999; }); await shot('mercado-aumento'); }
+    await page.evaluate(() => { const b = document.querySelector('.pa-body'); if (b) b.scrollTop = 0; });
     await tap('.mk-offers .of-sign[data-i="0"]'); await shot('mercado-confirmar');
     await tap('.ask-wrap [data-a="ok"]'); await shot('mercado-assinou'); await tap('#fc-back');
     await tap('.ph-app[data-go="tbl"]'); await shot('tabela-clube-novo'); await tap('#fc-back');
