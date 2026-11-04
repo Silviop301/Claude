@@ -159,6 +159,7 @@ const INIT = `
   // Um jogo inteiro: antes do apito, ao vivo, intervalo e o jornal
   await wait(1500); // viagem de avião ou ônibus
   await shot('partida-antes');
+  await page.evaluate(() => { window.CLIMBIX_NAT = 1; window.CRAQUE_UI.G.c.age = Math.max(window.CRAQUE_UI.G.c.age, 19); }); // fase 5: a linha da seleção no jornal
   await page.click('#fc-kick'); await wait(300);
   await shot('partida-ao-vivo');
   // O lance do jogo pode vir antes ou depois do intervalo

@@ -18,7 +18,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | **no ar** (PRs #116 a #119): pessoas do celular e Chat, um treino por semana e convites (segura, arriscada, sem resposta), histórias que voltam, repercussão no X, na TV e no jornal |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | **no ar** (PRs #130, #132, #133 e a parte 4): aperto 16–18%, devendo no fim 3% |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | **no ar** (PRs #135, #136 e a parte 3): janela do meio do ano, troca de clube, sondagens, empresário, aumento, pedido de saída e empréstimo |
-| 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | em andamento: parte 1 (torneio do continente) |
+| 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | **no ar** (PRs #138, #139 e a parte 3): torneio do continente, convocação pelo celular, concentração e um jogo por tela, seleção no jornal |
 | 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | |
 | 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | |
 | 8 · Treinador v2 | No simulador, nenhuma tática ou instrução vence em todos os casos | |
@@ -641,3 +641,12 @@ Proibido também: cartão com faixa colorida na lateral.
   - "Simular até o fim" (e "Simular o torneio" na convocação) seguem na lista corrida.
 - Validação: Copa América inteira pela interface no celular e no computador (sem erros); e2e no Jogo a Jogo com 8 carreiras,
   0 problemas, passando por convocação, concentração e jogos (`wc:jogo`, `wc:volta`).
+
+### Fase 5 do plano, parte 3 · 2026-11-04 · A seleção no jornal (fase 5 pronta)
+
+- O jornal do Jogo a Jogo, de vez em quando (a cada 8 jogos, a partir dos 17 anos), traz a seleção: a posição do país no
+  ranking (`S.natRank`, pela força), o próximo torneio (`S.natNext`: Copa do Mundo ou o do continente, com o ano) e a sua
+  situação na lista (nome certo, na briga ou a nota que a seleção pede). Eliminatórias e amistosos ficam fora do jogo.
+- **Fase 5 pronta.** Critério: uma Copa do Mundo e um torneio do continente passam inteiros, jogo a jogo, nas carreiras pela
+  interface. e2e no Jogo a Jogo: 8 + 8 + 12 carreiras passando por convocação, concentração e jogos (`wc:jogo`, `wc:volta`)
+  de Copas e torneios do continente; uma rodada teve 1 problema que não se repetiu nas duas seguintes (20 carreiras, 0).

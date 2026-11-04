@@ -511,6 +511,14 @@
     el.querySelectorAll('button').forEach(b => { b.onclick = () => { tblView = b.dataset.v; tabs(); table(); }; });
   }
 
+  // Seleção no jornal (plano, fase 5), de vez em quando: o ranking do país, o próximo torneio e a sua situação na lista
+  function natLine(c) {
+    const fc = c.fc, nx = S.natNext && S.natNext(c);
+    if (!nx || (fc.i % 8 !== 4 && !window.CLIMBIX_NAT) || c.age < 17) return '';
+    const call = S.wcCall(c), o = S.ovr(c), rk = S.natRank(c.country);
+    const me = call.retired ? 'Você já se despediu da seleção.' : o >= call.cut + 5 ? 'Você é nome certo na lista.' : o >= call.cut ? 'Você está na lista, mas a vaga não é garantida.' : 'Para ser convocado, a seleção pede nota geral ' + call.cut + ' (você tem ' + o + ').';
+    return '<p class="jn-nat">' + U.flag(D.NATION_BY_NAME[c.country].flag) + ' ' + esc(c.country) + ' é ' + rk + 'º no ranking de seleções. Próximo torneio: ' + esc(nx.name) + ' ' + nx.year + '. ' + me + '</p>';
+  }
   // Cartão do jogo: o próximo (antes), ao vivo ou o resultado
   function card(state, x, t) {
     const fc = G.c.fc, my = G.c.club;
@@ -1519,7 +1527,7 @@
           (out.pe ? row('Evolução', '+' + num1(out.pe), 'up') : '') +
           (out.gear ? row(c.pos === 'GOL' ? 'Luvas' : 'Chuteira', out.gear.left > 0 ? out.gear.left + (out.gear.left === 1 ? ' jogo' : ' jogos') : 'rasgou', out.gear.left <= 5 ? 'down' : '') : '') + '</div></div>' +
       (others ? '<div class="jn-o"><b>Os outros jogos</b><div>' + others + '</div></div>' : '') +
-      '<div class="jn-f">' + fora(c) + '<p>' + esc(nameOf(c.club)) + ' está em ' + lgPos + 'º na ' + esc(fc.lg.name) + ', com ' + fc.lg.tab[0].p + (fc.lg.tab[0].p === 1 ? ' ponto.' : ' pontos.') + '</p>' + fx + '</div>' +
+      '<div class="jn-f">' + fora(c) + '<p>' + esc(nameOf(c.club)) + ' está em ' + lgPos + 'º na ' + esc(fc.lg.name) + ', com ' + fc.lg.tab[0].p + (fc.lg.tab[0].p === 1 ? ' ponto.' : ' pontos.') + '</p>' + natLine(c) + fx + '</div>' +
       '</article>' + (m.on ? progStrip(c, out, m) : '') + zeCard + '<button class="btn" id="fc-next">' + (done ? 'Ver resumo da temporada' : 'Voltar ao celular') + '</button></div>');
     // As barras enchem do valor de antes do jogo até o de agora
     setTimeout(() => document.querySelectorAll('.pg-b u').forEach(u => { u.style.width = u.dataset.w + '%'; }), 350);
