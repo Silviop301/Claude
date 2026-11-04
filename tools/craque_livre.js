@@ -31,7 +31,10 @@ const BOT = {
     if (S.past && me.y < 170 + lvl * 60 + Math.random() * 20) { S.stick = { x: 0, y: 0 }; L.act(); } },
   passe3: (S, L, lvl) => { if (!S.own) return; go(S, { x: S.me.x, y: S.me.y }, lvl); const open = S.mates.filter(m => !S.foes.some(o => segD(o, S.ball, m) < 18 + lvl * 10)); if (open.length && S.t > 0.5 + Math.random() * lvl) { const m = open[0], vx = m.x - S.ball.x, vy = m.y - S.ball.y, l = Math.hypot(vx, vy); S.stick = { x: vx / l, y: vy / l }; L.act(); } },
   bote: (S, L, lvl) => { const a = S.atk, gd = Math.hypot(GX - a.x, 20 - a.y); go(S, { x: a.x + (GX - a.x) / gd * 30, y: a.y + (20 - a.y) / gd * 30 }, lvl); if (d(S.me, a) < 40 + lvl * 14 && Math.random() < 0.1) { const vx = a.x - S.me.x, vy = a.y - S.me.y, l = Math.hypot(vx, vy); S.stick = { x: vx / l, y: vy / l }; L.act(); } },
-  saida: (S, L, lvl) => { const a = S.atk; if (lvl === 1) { S.stick = { x: 0, y: 0 }; return; } const k = (70 - 20) / Math.max(1, a.y - 20); go(S, { x: GX + (a.x - GX) * k, y: 70 }, lvl); },
+  saida: (S, L, lvl) => { const a = S.atk;
+    // Viu a linha do chute: pula para onde ela cruza a sua altura (o bom reage em ~0,22 s, o médio em ~0,32 s; o desleixado não pula)
+    if (S.aim && !S.dived && lvl < 1 && S.t - S.aim.t > 0.22 + lvl * 0.2) { const k = (a.y - S.me.y) / Math.max(1, a.y - 20), x = a.x + (S.aim.x - a.x) * k, dx = x - S.me.x; S.stick = { x: Math.sign(dx) * Math.min(1, Math.abs(dx) / 20), y: 0 }; if (Math.abs(dx) > 8) L.act(); return; }
+    if (lvl === 1) { S.stick = { x: 0, y: 0 }; return; } const k = (70 - 20) / Math.max(1, a.y - 20); go(S, { x: GX + (a.x - GX) * k, y: 70 }, lvl); },
 };
 const POS = { pressao: 'ATA', cara: 'ATA', dois: 'ATA', cabeca: 'ATA', mano: 'ATA', passe3: 'MEI', bote: 'ZAG', saida: 'GOL' };
 const N = +process.argv[2] || 300;
@@ -48,7 +51,8 @@ for (const kind of (process.argv[3] || S.LIVRE.join(',')).split(',')) for (const
     pct.push(Math.round(ok / N * 100));
     if (process.env.WHY) console.log('   ', ['bom', 'médio', 'desleixado'][lvl * 2], JSON.stringify(why));
   }
-  const ref = (pct[0] + pct[1]) / 2, bad = Math.abs(ref - k.chance * 100) > 8 || pct[0] < pct[1] - 5; // quem joga razoável: entre o bom e o médio
+  const ref = kind === 'saida' ? pct[1] : (pct[0] + pct[1]) / 2, // goleiro: o robô bom lê a linha do chute na hora (humano não); a régua é o médio
+    bad = Math.abs(ref - k.chance * 100) > 8 || pct[0] < pct[1] - 5; // quem joga razoável: entre o bom e o médio
   if (bad) alerts++;
   console.log(kind.padEnd(8), String(at).padEnd(6), String(k.K).padEnd(5), String(Math.round(k.chance * 100)).padStart(4) + '%', pct.map(p => String(p).padStart(5) + '%').join(' '), bad ? ' ⚠' : '');
 }

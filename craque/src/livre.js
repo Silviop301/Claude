@@ -29,7 +29,7 @@
     mano: 'Passe pelo zagueiro e <b>chute</b>: a bola vai no canto para onde o analógico aponta',
     passe3: 'Aponte o analógico para o companheiro <b>livre</b> e passe',
     bote: 'Fique entre ele e o gol; <b>carrinho</b> de frente e perto',
-    saida: 'Saia do gol para <b>fechar o ângulo</b>; pular mergulha para o lado',
+    saida: 'Saia para <b>fechar o ângulo</b>; quando a linha vermelha aparecer, <b>pule</b> na direção dela',
   };
 
   root.CRAQUE_LIVRE = function (el, opts) {
@@ -100,6 +100,7 @@
 
     // 2 contra 1: o analógico aponta para o companheiro? (o botão toca em vez de chutar)
     function passAim() { const m = S.mates && S.mates[0], st = S.stick, sm = Math.hypot(st.x, st.y); if (!m || sm < 0.3) return false; const vx = m.x - S.ball.x, vy = m.y - S.ball.y, l = Math.hypot(vx, vy) || 1; return (vx * st.x + vy * st.y) / (l * sm) > 0.7; }
+    const WINDUP = 0.32; // goleiro: tempo entre aparecer a linha do chute e a bola sair
     function step(dt) {
       if (S.over) { if (S.ball.fly) flyBall(); return; }
       S.t += dt;
@@ -109,6 +110,10 @@
         S.me.x += S.dash.x * S.dash.v * dt; S.me.y += S.dash.y * S.dash.v * dt; S.dash.t -= dt;
         if ((kind === 'bote' || kind === 'pressao') && dist(S.me, S.atk) < 17) S.dash.t = 0; // chegou nele: o bote acontece ali
         if (kind === 'cabeca' && dist(S.me, { x: S.cross.x1, y: S.cross.y1 }) < 6) S.dash.t = 0; // o pulo para na bola
+        if (kind === 'saida' && S.aim && S.dash) { // o mergulho para na linha do chute (passou dela, parou)
+          const a = S.atk, k = (a.y - S.me.y) / Math.max(1, a.y - GY), xk = a.x + (S.aim.x - a.x) * k;
+          if ((xk - S.me.x) * S.dash.x < 0) { S.me.x = xk; S.dash.t = 0; }
+        }
         if (S.dash.t <= 0) { const d = S.dash; S.dash = null; if (d.end) d.end(); }
       } else if (sm > 0.12 && !((kind === 'bote' || kind === 'pressao') && S.stun > 0) && !(kind === 'saida' && S.shot)) { S.me.x += st.x / Math.max(1, sm) * vMe * dt; S.me.y += st.y / Math.max(1, sm) * vMe * dt; }
       if (kind === 'saida') { S.me.x = clamp(S.me.x, GX - POST - 20, GX + POST + 20); S.me.y = clamp(S.me.y, 30, 110); }
@@ -203,9 +208,10 @@
         if (S.t > 9 && !S.shot) return finish(true, 'recuou', 'AFASTADO!');
       } else {
         const a = S.atk, cut = a.y < S.shootY + 50 ? (a.x < GX ? 1 : -1) * 60 : 0; // perto da hora, corta para o meio
-        if (!S.shot) { toward(a, { x: GX + (a.x < GX ? -30 : 30) + cut, y: S.shootY - 10 }, 85, dt); S.ball.x = a.x; S.ball.y = a.y - 14; }
-        if (a.y <= S.shootY - (S.me.y < 46 ? 6 : 0) && !S.shot) { // goleiro parado na linha: ele chega mais perto antes de bater
-          S.shot = 1;
+        if (!S.shot && !S.aim) { toward(a, { x: GX + (a.x < GX ? -30 : 30) + cut, y: S.shootY - 10 }, 85, dt); S.ball.x = a.x; S.ball.y = a.y - 14; }
+        // Ele arma o chute: a linha da bola aparece WINDUP segundos antes (tempo para você reagir) e aí ele bate
+        if (S.aim && !S.shot && S.t - S.aim.t >= WINDUP) { S.shot = 1; shoot(a, S.aim.x, 3); S.ball.fly.dur = Math.max(0.18, Math.hypot(a.x - S.aim.x, a.y - GY) / 750); }
+        if (a.y <= S.shootY - (S.me.y < 46 ? 6 : 0) && !S.shot && !S.aim) { // goleiro parado na linha: ele chega mais perto antes de bater
           // Bate onde a bola passa mais longe do seu alcance (o ponto em que a linha do chute cruza a sua altura)
           const me = S.me; let best = null;
           for (let x = GX - POST + 6; x <= GX + POST - 6; x += 2) {
@@ -213,7 +219,7 @@
             const m = Math.abs(xk - me.x) - 12 - 56 * Math.sqrt(K) * Math.max(0, tf - 0.08) + Math.random() * 6;
             if (!best || m > best.m) best = { x, m };
           }
-          shoot(a, best.x, 3);
+          S.aim = { x: best.x, t: S.t };
         }
       }
       if (S.ball.fly) flyBall();
@@ -236,7 +242,7 @@
       // Chute: o goleiro pula para onde a bola cruza a altura dele; quem estiver no caminho bloqueia
       const keeper = kind === 'saida' ? S.me : S.kp;
       if (f.xk === undefined) { const kk = (f.y0 - keeper.y) / Math.max(1, f.y0 - f.y1); f.xk = f.x0 + (f.x1 - f.x0) * clamp(kk, 0, 1); }
-      if (S.t - f.t0 > (kind === 'saida' ? 0.08 : 0.12)) toward(keeper, { x: f.xk, y: keeper.y }, kind === 'saida' ? 56 * Math.sqrt(K) : kind === 'cara' ? 45 / Math.sqrt(K) : kind === 'cabeca' ? 40 / Math.sqrt(K) : ATK.includes(kind) ? 48 / Math.sqrt(K) : 40, 1 / 60);
+      if (kind !== 'saida' && S.t - f.t0 > 0.12) toward(keeper, { x: f.xk, y: keeper.y }, kind === 'saida' ? 56 * Math.sqrt(K) : kind === 'cara' ? 45 / Math.sqrt(K) : kind === 'cabeca' ? 40 / Math.sqrt(K) : ATK.includes(kind) ? 48 / Math.sqrt(K) : 40, 1 / 60);
       const block = S.t - f.t0 < 0.06 || kind === 'cabeca' ? null : (S.foes || []).concat(kind === 'bote' ? [S.me] : []).find(o => dist(o, S.ball) < (kind === 'bote' ? 9 : 11));
       if (block && ATK.includes(kind)) { f.end = 1; return lose('bloqueio', 'TRAVADO…'); }
       if (block && kind === 'bote') { f.end = 1; return finish(true, 'travou', 'TRAVOU!'); }
@@ -267,7 +273,7 @@
           if (d < 26 && front && Math.random() < pr) { S.own = null; S.ball.x = S.me.x; return finish(true, 'desarme'); }
           S.stun = 0.8; // errou o bote: você vai ao chão
         } };
-      } else if (kind === 'saida' && !S.dash && !S.dived) { const dv = dir || { x: 0, y: 1 }; S.dived = 1; S.dash = { x: dv.x, y: dv.y, v: 210, t: 0.22 }; }
+      } else if (kind === 'saida' && !S.dash && !S.dived) { const dv = dir || { x: 0, y: 1 }; S.dived = 1; S.dash = { x: dv.x, y: dv.y, v: 100 * Math.sqrt(K), t: 0.2 }; }
     }
 
     // ---------- desenho ----------
@@ -293,6 +299,11 @@
       if (!S.over && kind === 'passe3' && S.own) { const m = target(); if (m) { g.strokeStyle = '#F2C230'; g.lineWidth = 3; g.beginPath(); g.arc(m.x, m.y, 19, 0, 7); g.stroke(); } }
       if (!S.over && kind === 'dois' && S.own) { const m = S.mates[0], on = passAim(); g.strokeStyle = on ? '#F2C230' : 'rgba(242,194,48,.35)'; g.setLineDash(on ? [8, 6] : [3, 6]); g.lineWidth = on ? 3 : 2; g.beginPath(); g.moveTo(S.ball.x, S.ball.y); g.lineTo(m.x, m.y); g.stroke(); g.setLineDash([]); }
       if (kind === 'cabeca' && !S.headed && S.t > S.cross.t0 - 0.3) { g.strokeStyle = '#F2C230'; g.lineWidth = 2; g.setLineDash([4, 4]); g.beginPath(); g.arc(S.cross.x1, S.cross.y1, 14, 0, 7); g.stroke(); g.setLineDash([]); }
+      if (kind === 'saida' && S.aim && !S.shot) { // a linha do chute que ele armou
+        const k = Math.min(1, (S.t - S.aim.t) / WINDUP); g.strokeStyle = 'rgba(255,122,110,' + (0.55 + 0.45 * k) + ')'; g.lineWidth = 3; g.setLineDash([7, 5]);
+        g.beginPath(); g.moveTo(S.ball.x, S.ball.y); g.lineTo(S.aim.x, GY); g.stroke(); g.setLineDash([]);
+        g.fillStyle = '#FF7A6E'; g.beginPath(); g.arc(S.aim.x, GY - 2, 5, 0, 7); g.fill();
+      }
       if (S.kp) dot(S.kp, ['#26282B', '#F2F2EC'], 1);
       (S.mates || []).forEach(m => dot(m, MINE, m.num));
       (S.foes || []).forEach(f => dot(f, OPP, f.num));
