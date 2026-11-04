@@ -16,7 +16,7 @@
   // ---------- manutenção do status ----------
   // Fração do preço pago, por semana: seguro, garagem, funcionários, condomínio. Um superesportivo comprado no auge custa quase
   // um salário por semana quando o contrato seguinte for menor
-  const MT = { car: 0.007, house: 0.0045 };
+  const MT = { car: 0.007, house: 0.0045, grife: 0.012 };
   S.FC_MT = MT;
   // Save antigo (carro ou casa sem manutenção guardada): conta pelo preço de hoje
   S.fcMoneySync = function (c) {
@@ -26,6 +26,7 @@
     if (L.car && L.mt.car === undefined) { L.paid.car = S.fcCarPrice(c, L.car); L.mt.car = k1000(L.paid.car * MT.car); }
     if (S.fcOwns(c, 'house') && L.mt.house === undefined) { L.paid.house = S.fcLifePrice(c, 'house'); L.mt.house = k1000(L.paid.house * MT.house); }
   };
+  S.FC_STATUS = ['car', 'house', 'grife']; // o que tem manutenção e se vende no Banco
   S.fcUpkeep = c => { const m = c.life && c.life.mt; return m ? Object.keys(m).reduce((a, k) => a + (m[k] || 0), 0) : 0; };
   S.fcUpkeepOf = (c, kind, id) => k1000((kind === 'car' ? S.fcCarPrice(c, id) : S.fcLifePrice(c, id)) * (kind === 'car' ? MT.car : MT[id]));
   const buy = S.fcBuy;
@@ -98,28 +99,99 @@
     else if (had && !out.debt) say(c, 'emp', DEBT_TXT.clear);
     if (out.worry && M.wS !== c.season) { M.wS = c.season; say(c, (c.age || 20) < 24 || (M.wN || 0) % 2 === 0 ? 'mae' : 'parca', (c.age || 20) < 24 || (M.wN || 0) % 2 === 0 ? DEBT_TXT.worry : DEBT_TXT.worryParca); M.wN = (M.wN || 0) + 1; }
     M.maxDebt = Math.max(M.maxDebt || 0, out.debt / wp);
+    invWeek(c, out);
     return out;
+  };
+
+  // ---------- investimentos (fase 3, parte 4) ----------
+  // Apartamento para alugar: aluguel toda semana (cerca de 6% do preço no ano); a cada temporada o valor de venda muda
+  // (90% a 115% do pago) e, uma vez em cinco, um problema (inquilino some, reforma) custa 6% do preço.
+  // Negócio do primo: o dinheiro fica preso até o começo da temporada seguinte; 35% volta triplicado, 65% volta 20%.
+  // Um de cada por vez. Sorteio próprio, derivado da carreira e da temporada.
+  const INVEST = { imovel: { wk: 40, rent: 0.0012, bad: 0.2, badCost: 0.06, lo: 0.9, hi: 1.15 }, startup: { p: 0.35, win: 3, lose: 0.2, stakes: [4, 12, 30] } };
+  S.FC_INVEST = INVEST;
+  const rngS = (c, salt) => S.rng(((Math.imul(Number(c.tseed) || 1, 2246822519) ^ Math.imul((c.season || 0) * 89 + salt, 3266489917)) >>> 0) || 1);
+  S.fcInvs = c => (c.fin && c.fin.inv) || [];
+  S.fcInvPrice = c => k1000(INVEST.imovel.wk * weekPay(c));
+  S.fcInvStakes = c => INVEST.startup.stakes.map(w => k1000(w * weekPay(c)));
+  S.fcInvHas = (c, id) => S.fcInvs(c).some(x => x.id === id);
+  S.fcInvBuy = function (c, id, stake) {
+    if (!on(c) || (c.debt || 0) > 0 || S.fcInvHas(c, id)) return null;
+    const v = id === 'imovel' ? S.fcInvPrice(c) : S.fcInvStakes(c).includes(stake) ? stake : 0;
+    if (!v || (c.money || 0) < v) return null;
+    c.money -= v;
+    const M = (c.fin = c.fin || {}), x = { id, paid: v, val: v, s: c.season };
+    (M.inv = M.inv || []).push(x); M.invN = (M.invN || 0) + 1;
+    if (id === 'startup') say(c, 'parca', 'mano meu primo já tá com o teu dinheiro. disse que no começo da próxima temporada tu vê o resultado. confia no pai kkkk');
+    return x;
+  };
+  S.fcInvSell = function (c, k) {
+    const L = S.fcInvs(c), x = L[k];
+    if (!x || x.id !== 'imovel') return 0;
+    L.splice(k, 1);
+    S.fcCredit(c, x.val);
+    return x.val;
+  };
+  // Semana: aluguel; virada de temporada: o imóvel muda de valor (e às vezes dá problema) e o negócio do primo sai
+  function invWeek(c, out) {
+    const L = S.fcInvs(c), M = c.fin;
+    if (!L.length) return;
+    const newS = M.invS !== c.season;
+    M.invS = c.season;
+    for (let k = L.length - 1; k >= 0; k--) {
+      const x = L[k];
+      if (x.id === 'imovel') {
+        const r = Math.round(x.paid * INVEST.imovel.rent); S.fcCredit(c, r); out.rent = r;
+        if (newS && x.s !== c.season) {
+          const g = rngS(c, 11 + k), I = INVEST.imovel;
+          x.val = k1000(x.paid * (I.lo + g() * (I.hi - I.lo)));
+          if (g() < I.bad) { const cost = k1000(x.paid * I.badCost); S.fcCharge(c, cost); out.imBad = cost; say(c, 'emp', 'Problema no apartamento: o inquilino sumiu e deixou o imóvel destruído. A reforma custou {x}.', { x: R(cost) }); }
+        }
+      } else if (x.id === 'startup' && x.s !== c.season) {
+        const g = rngS(c, 23), I = INVEST.startup, win = g() < I.p, back = k1000(x.paid * (win ? I.win : I.lose));
+        L.splice(k, 1); S.fcCredit(c, back); out.startup = { win, back, paid: x.paid };
+        (M.stLog = M.stLog || []).push({ s: c.season, win, net: back - x.paid });
+        say(c, 'parca', win ? 'MANO O NEGÓCIO DO MEU PRIMO BOMBOU!! caiu {x} na tua conta. eu falei que era coisa séria kkkk' : 'mano… o negócio do meu primo fechou. só conseguiu devolver {x}. ele tá morrendo de vergonha, eu também', { x: R(back) });
+      }
+    }
+  }
+
+  // ---------- festa (status de uma noite) ----------
+  // Uma por temporada: fama e torcida, o parça gosta, e a semana seguinte começa sem perna
+  const PARTY = { wk: 6, fame: 3, fans: 2, en: -10 };
+  S.FC_PARTY = PARTY;
+  S.fcPartyPrice = c => Math.max(10000, k1000(PARTY.wk * weekPay(c)));
+  S.fcPartyOk = c => on(c) && !((c.debt || 0) > 0) && (c.fin || {}).partyS !== c.season && (c.money || 0) >= S.fcPartyPrice(c);
+  S.fcParty = function (c) {
+    if (!S.fcPartyOk(c)) return false;
+    const p = S.fcPartyPrice(c), M = (c.fin = c.fin || {});
+    c.money -= p; M.partyS = c.season; M.partyN = (M.partyN || 0) + 1;
+    c.fame += PARTY.fame; c.rel.fans = clamp(c.rel.fans + PARTY.fans, 0, 100);
+    c.fc.en = clamp(c.fc.en + PARTY.en, 0, 100);
+    if (S.fcRel) S.fcRel(c, 'parca', 4);
+    say(c, 'parca', 'QUE FESTA FOI ESSA MANO kkkkk até agora tô ouvindo o pagode na cabeça. tu é brabo');
+    return true;
   };
 
   // ---------- quebrar e voltar: as saídas do vermelho ----------
   // Adiantamento do empresário (paga a dívida agora; volta com 20% a mais, descontado do salário), vender o carro ou a casa
   // (pelo valor de revenda, e a manutenção some), a ajuda da mãe (só com a relação boa, uma vez a cada 3 temporadas) e
   // renovar ganhando menos (luvas na hora, salário 20% menor e mais um ano de contrato).
-  const ADV = { wk: 10, fee: 0.2, cut: 0.3 }, SELL = { car: 0.6, house: 0.85 }, HELP = { wk: 8, gap: 3 }, CUT = { wage: 0.8, luvas: 12 };
+  const ADV = { wk: 10, fee: 0.2, cut: 0.3 }, SELL = { car: 0.6, house: 0.85, grife: 0.2 }, HELP = { wk: 8, gap: 3 }, CUT = { wage: 0.8, luvas: 12 };
   S.FC_ADV = ADV; S.FC_SELL = SELL;
   const debtOn = c => on(c) && (c.debt || 0) > 0;
   S.fcSellValue = (c, key) => k1000(((c.life && c.life.paid && c.life.paid[key]) || 0) * SELL[key]);
   S.fcSell = function (c, key) {
     S.fcMoneySync(c);
     const L = c.life;
-    if (!L || !(key === 'car' ? L.car : S.fcOwns(c, 'house'))) return 0;
-    const v = S.fcSellValue(c, key), d = key === 'car' ? S.FC_SHOP.cars.find(x => x.id === L.car) : S.FC_SHOP.life.find(x => x.id === 'house');
-    if (key === 'car') delete L.car; else delete L.house;
+    if (!L || !(key === 'car' ? L.car : S.fcOwns(c, key))) return 0;
+    const v = S.fcSellValue(c, key), d = key === 'car' ? S.FC_SHOP.cars.find(x => x.id === L.car) : S.FC_SHOP.life.find(x => x.id === key);
+    delete L[key];
     delete L.mt[key]; delete L.paid[key];
     c.fame = Math.max(0, c.fame - Math.round(((d && d.fame) || 0) / 2));
     S.fcCredit(c, v);
     const M = (c.fin = c.fin || {}); M.sold = (M.sold || 0) + 1;
-    if (c.ppl && S._.phNews) S._.phNews(c, key === 'car' ? 'venda.car' : 'venda.house');
+    if (c.ppl && S._.phNews && key !== 'grife') S._.phNews(c, key === 'car' ? 'venda.car' : 'venda.house');
     return v;
   };
   S.fcAdvanceOk = c => debtOn(c) && !(c.fin && c.fin.adv) && (c.fin || {}).advS !== c.season;
@@ -162,6 +234,8 @@
     out.push({ id: 'adv', ok: S.fcAdvanceOk(c), v: debtOn(c) ? S.fcAdvanceOf(c) : 0 });
     if (L.car) out.push({ id: 'car', ok: true, v: S.fcSellValue(c, 'car') });
     if (S.fcOwns(c, 'house')) out.push({ id: 'house', ok: true, v: S.fcSellValue(c, 'house') });
+    if (S.fcOwns(c, 'grife')) out.push({ id: 'grife', ok: true, v: S.fcSellValue(c, 'grife') });
+    (S.fcInvs(c) || []).forEach((x, k) => { if (x.id === 'imovel') out.push({ id: 'imovel', k, ok: true, v: x.val }); });
     if (c.ppl) out.push({ id: 'help', ok: S.fcHelpOk(c), v: debtOn(c) ? S.fcHelpOf(c) : 0 });
     out.push({ id: 'cut', ok: S.fcCutOk(c), v: S.fcCutOf(c).luvas, wage: S.fcCutOf(c).wage });
     return out;

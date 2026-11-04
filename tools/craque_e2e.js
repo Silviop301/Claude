@@ -138,7 +138,7 @@ function stepInPage(opts) {
     return label('completa:agenda-pronto ' + click($('fc-agok')));
   }
   if ($('fc-scr') && Math.random() < 0.5) {
-    const all = [...document.querySelectorAll('#fc-shop .fc-buy:not(:disabled), #fc-shop .fc-attr button:not(.on), .fc-bet-o button, .fc-bet-s button:not(:disabled), #fc-bet-go:not(:disabled), #fc-tabs button, #ze-ask:not(:disabled), [data-zt]:not(:disabled), [data-zf], [data-ch], .ph-dock [data-go]')]; // fase 3: Zé no Chat e a barra de baixo
+    const all = [...document.querySelectorAll('#fc-shop .fc-buy:not(:disabled), #fc-shop .fc-attr button:not(.on), .fc-bet-o button, .fc-bet-s button:not(:disabled), #fc-bet-go:not(:disabled), #fc-tabs button, #ze-ask:not(:disabled), [data-zt]:not(:disabled), [data-zf], [data-ch], .ph-dock [data-go], [data-way]:not(:disabled), #fc-party:not(:disabled)')]; // fase 3: Zé no Chat, a barra de baixo, o Banco e a festa
     if (all.length) return label('completa:tela ' + click(rnd(all)));
   }
   if ($('fc-back')) return label('completa:volta ' + click($('fc-back')));

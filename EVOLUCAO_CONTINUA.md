@@ -16,7 +16,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | 0 · Preparar | Os números chegam ao servidor (`api/stats.php`, `src/stats.js`, `tools/craque_numeros.py`) e quem joga o Jogo a Jogo vê o aviso do save novo | no ar (PR #108) |
 | 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **no ar** (PRs #109 a #114): jogos vividos/resumidos/banco, lance em todo jogo, tela limpa, rodada como na TV, faixa "Seu ano", metas da semana e XP por temporada. Tempo real do ano a medir pela contagem (o Silvio pediu para não cortar pelo previsto) |
 | 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | **no ar** (PRs #116 a #119): pessoas do celular e Chat, um treino por semana e convites (segura, arriscada, sem resposta), histórias que voltam, repercussão no X, na TV e no jornal |
-| 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | |
+| 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | **no ar** (PRs #130, #132, #133 e a parte 4): aperto 16–18%, devendo no fim 3% |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | |
 | 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | |
 | 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | |
@@ -555,3 +555,20 @@ Proibido também: cartão com faixa colorida na lateral.
   (`S.fcOwns`).
 - No simulador, o robô no vermelho procura uma saída: o cauteloso e o normal a partir de 2 semanas de dívida, o
   gastador a partir de 8.
+
+### Fase 3 do plano, parte 4 · 2026-11-04 · Investimentos, festa e grife (fase 3 pronta)
+
+- **Investir** (no Banco, `S.FC_INVEST`; não dá para investir devendo):
+  - **Apartamento para alugar** (40 semanas de salário): rende aluguel toda semana, cerca de 6% do preço no ano. A cada
+    temporada o valor de venda muda (90% a 115% do pago), e uma vez em cinco um problema custa 6% do preço. Vende quando quiser.
+  - **Negócio do primo do parça** (4, 12 ou 30 semanas): o dinheiro fica preso até a temporada seguinte. 35% volta
+    triplicado; 65% volta só 20%. O parça conta o resultado no Chat.
+- **Status novo**:
+  - **Guarda-roupa de grife** (Loja, patrimônio): +3 de fama, com coleção nova cobrada por semana (1,2% do preço).
+  - **Festa** (Loja, uma por temporada): +3 de fama e +2 de torcida, e o parça gosta, mas a semana começa com −10 de energia.
+- Simulador: o normal e o cauteloso compram o apartamento quando sobra dinheiro; o gastador põe no negócio do primo, compra
+  grife e dá festa. Os prompts das 4 imagens novas estão em project-files/climbix/fase3/prompts-arte-dinheiro.md.
+- **Fase 3 pronta**, medida em 300 carreiras duas vezes: aperto 16% e 18%, terminou devendo 3% e 3% (alvo 15 a 25% e menos
+  de 5%). Por perfil: o gastador aperta em ~60% das carreiras e termina devendo em ~12%; o cauteloso nunca. Notas S17 e S20
+  contra a linha de base S22 de hoje: quem gasta com status e risco compra menos equipamento e equipe (o corte de notas está
+  com o pessoal do treino com lances).
