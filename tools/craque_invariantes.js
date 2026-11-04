@@ -103,6 +103,8 @@ function season(car, c, B) {
     let nx;
     while ((nx = S.fcNext(c))) {
       if (S.fcEventDue(c)) { const ev = S.fcPickEvent(c); if (ev) doEvent(c, B, ev); continue; }
+      // Metas do ano (fase 6): às vezes escolhe o sonho, às vezes deixa sem; um sonho fora das três opções não pode entrar
+      if (S.fcGoals(c) && !c.fc.goals.dream && B() < 0.7) { if (S.fcDream(c, 'nada')) fail(car, 'sonho fora das opções aceito'); S.fcDream(c, pick(B, S.fcDreamOpts(c))); }
       if (c.fc.wkDue) {
         S.fcInvites(c).forEach((inv, k) => { const a = pick(B, ['a', 'b', 'ig']); if (a !== 'ig') S.fcInvAnswer(c, k, a); });
         // Janela do meio do ano (fase 4): assina uma proposta, fica ou força uma troca para um clube qualquer (liga de outro tamanho)
@@ -134,6 +136,8 @@ function season(car, c, B) {
     if (is(c) && call(c).called) { start(c); let g; while ((g = S.wcNext(c))) { if (g.live) S.wcMomentAuto(c); if (g.pens) S.wcPensAuto(c); } }
   }
   check(car, c, 'fim da T' + c.season);
+  if (c.mode === 'completa') { const L = S.legacy(c); if (!(L.pts >= 0 && isFinite(L.pts))) fail(car, 'legado inválido ' + L.pts); const h = c.goalHist && c.goalHist[c.goalHist.length - 1];
+    if (!h || h.s !== c.season - 1 || h.g.length < 2) fail(car, 'metas do ano não conferidas na T' + (c.season - 1)); }
   if (S.mustRetire(c)) { c.retired = true; return false; }
   if (S.windowOpen(c)) {
     const offers = S.offers(c, false).concat([S.stayOffer(c)]).filter(o => !(c.challenge && !c.chFail && S.breaksChallenge(c, o)));

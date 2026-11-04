@@ -85,6 +85,13 @@ const INIT = `
     await shot('app-' + nome);
     if (await has('#fc-agok')) await tap('#fc-agok'); else if (await has('#fc-back')) await tap('#fc-back');
   }
+  // Fase 6: as metas do ano na agenda, com o sonho escolhido, e o legado na ficha
+  if (await page.evaluate(() => !!window.CRAQUE_SIM.fcGoals)) {
+    await tap('.ph-app[data-go="ag"]');
+    await page.evaluate(() => { const g = document.querySelector('.ag-goals'); if (g) g.scrollIntoView({ block: 'center' }); }); await shot('agenda-metas');
+    if (await has('[data-dream]')) { await tap('[data-dream]'); await page.evaluate(() => { const g = document.querySelector('.ag-goals'); if (g) g.scrollIntoView({ block: 'center' }); }); await shot('agenda-sonho'); }
+    await tap('#fc-agok');
+  }
   // Fase 3, parte 2: o Zé no Chat (palpite, aposta ali mesmo e a proposta do amarelo)
   if (await page.evaluate(() => !!window.CRAQUE_SIM.fcZeAsk)) {
     await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; c.money = Math.max(c.money || 0, 400000); });
@@ -228,8 +235,10 @@ const INIT = `
     U.save(); U.fcHub();
   });
   await wait(1500);
-  for (let k = 0; k < 20 && !(await has('#b-next')); k++) { await page.mouse.click(W / 2, H / 2); await wait(300); }
+  for (let k = 0; k < 20 && !(await has('#b-next')) && !(await has('#sx-live')); k++) { await page.mouse.click(W / 2, H / 2); await wait(300); }
   await shot('fim-temporada');
+  for (let k = 0; k < 20 && (await has('#sx-live')) && !(await has('.sx-metas')); k++) await wait(400);
+  if (await has('.sx-metas')) { await page.evaluate(() => { document.querySelectorAll('.rv').forEach(e => e.classList.add('in')); document.querySelector('.sx-metas').scrollIntoView({ block: 'center' }); }); await wait(400); await shot('fim-temporada-metas'); }
 
   const errs = errors.concat(await page.evaluate(() => window.__errs).catch(() => []));
   fs.writeFileSync(path.join(OUT, 'telas.json'), JSON.stringify({ w: W, h: H, pos: POS, seed: SEED, screens: index, errors: errs }, null, 1));

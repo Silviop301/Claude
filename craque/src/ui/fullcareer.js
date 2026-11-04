@@ -113,6 +113,7 @@
     if (nw) { n('msg', 'X · assunto do momento', nw.x, 3); if (nw.tv) n('msg', nw.tv.who + ' ' + nw.tv.where, nw.tv.t, 4); }
     // Convites da semana ainda sem resposta (cada um abre a agenda, onde se responde)
     const open = S.fcInvites(c).filter(x => !x.ans);
+    if (S.fcGoals && S.fcGoals(c) && !fc.goals.dream) n('ag', 'Agenda', 'Metas do ano: o clube e o empresário já passaram as deles. Falta escolher o seu sonho da temporada.', 2);
     open.slice(0, 2).forEach((x, k) => n('ag', who(S.fcInvDef(x).p), S.fcInvText(c, x), 2 + k * 2));
     const trt = S.fcTr(c);
     if (trt && trt.ok && fc.wkDue) n4('ag', 'Agenda', 'Treino com lances feito: +1 em ' + D.label(c.pos, trt.a) + '. Confira a semana antes do jogo.');
@@ -219,12 +220,14 @@
         (open ? '<p class="ag-hint">Toque num dia marcado para trocar o que você faz.</p>' : '') +
         rows + game + sum +
         '<div class="ag-box"><div><small>' + (open ? 'Energia no jogo' : 'Energia') + '</small><b class="' + lvl(en) + '">' + en + '</b></div><div><small>Forma</small><b>' + formTxt(fc.fo || 0) + '</b></div><div><small>Técnico</small><b>' + Math.round(c.rel.coach) + '</b></div></div>' +
+        goalsBox(c) +
       '</div>' +
       '<label class="fc-auto ag-auto"><input type="checkbox" id="fc-auto"' + (c.fcAuto ? ' checked' : '') + '><span>Repetir esta semana sozinho</span></label>' +
       '<button class="btn" id="fc-agok">Pronto</button>', { cls: 'ag' });
     $('fc-agok').onclick = () => { sfx('tap'); phone(); };
     document.querySelectorAll('.ag-d.slot').forEach(b => { b.onclick = () => { sfx('tap'); const k = +b.dataset.slot; agOpen = agOpen === k ? -1 : k; agenda(); }; });
     document.querySelectorAll('.ag-o').forEach(b => { b.onclick = () => { sfx('tap'); pick = [b.dataset.id]; touched = true; agOpen = -1; agenda(); }; });
+    document.querySelectorAll('[data-dream]').forEach(b => { b.onclick = () => { if (S.fcDream(c, b.dataset.dream)) { sfx('coin'); save(); agenda(); } }; });
     document.querySelectorAll('[data-ta]').forEach(b => { b.onclick = () => { sfx('tap'); trA = b.dataset.ta; agenda(); }; });
     const tg = $('ag-trgo');
     if (tg) tg.onclick = () => { sfx('tap'); if (open) { pick = ['tec']; touched = true; } U.fcDrill(c, tg.dataset.a, () => { if (G.c === c && $('fc-scr')) agenda(); }); };
@@ -232,6 +235,21 @@
     document.querySelectorAll('[data-inv]').forEach(b => { b.onclick = () => { const r = S.fcInvAnswer(c, +b.dataset.inv, b.dataset.a); if (!r) return; sfx(r.ok ? 'coin' : 'tap'); save(); bar(); agenda(); }; });
     $('fc-auto').onchange = e => { c.fcAuto = e.target.checked; if (c.fcAuto && c.fc.wkDue) { S.fcWeek(c, myPick()); unpick(); bar(); } save(); agOpen = -1; agenda(); };
     window.scrollTo(0, 0);
+  }
+  // Metas do ano (engine/legado.js, plano fase 6): a do clube, a do empresário e o seu sonho (escolhido aqui, uma vez)
+  const SIDE = { club: 'Clube', emp: 'Empresário', me: 'Seu sonho' };
+  const legOf = z => '+' + S.GOAL_SIZE[z] + ' de legado';
+  function goalsBox(c) {
+    const rows = S.fcGoals ? S.fcGoals(c) : null;
+    if (!rows) return '';
+    const one = g => {
+      if (g.side === 'me' && !g.dream) return '<div class="ag-g pick"><small>' + SIDE.me + ' · escolha um, vale o ano todo</small><div class="ag-gd">' +
+        S.fcDreamOpts(c).map(id => '<button data-dream="' + id + '"><b>' + esc(S.FC_DREAMS[id].name(c)) + '</b><small>' + legOf(S.fcDreamSize(c, id)) + '</small></button>').join('') + '</div></div>';
+      const n = g.n, h = g.have, done = n !== undefined && h !== null && h >= n;
+      const prog = n === undefined || h === null ? '' : '<div class="ag-gb"><u style="width:' + Math.min(100, Math.round(h / n * 100)) + '%"></u></div><em>' + (g.side === 'emp' && /Nota/.test(g.txt) ? 'agora ' + rate(h) : h + ' de ' + n) + '</em>';
+      return '<div class="ag-g' + (done ? ' done' : '') + '"><small>' + SIDE[g.side] + ' · ' + legOf(g.size) + '</small><b>' + esc(g.txt) + (done ? ' ✓' : '') + '</b>' + prog + '</div>';
+    };
+    return '<div class="ag-goals"><h4>Metas do ano</h4>' + rows.map(one).join('') + '</div>';
   }
   // ---------- Chat: as conversas com as pessoas do celular (engine/phone.js) ----------
   // A lista (uma conversa por pessoa, a mais recente em cima) e, tocando, a conversa inteira em balões.
@@ -301,7 +319,7 @@
       wk: '<div class="fc-wk" id="fc-wk"></div><div class="fs-acts" id="fc-acts"></div>',
       tbl: '<div class="fc-tabs" id="fc-tabs"></div><div class="fs-tbl" id="fc-tbl"></div>',
       cal: '<div class="fc-comps" id="fc-comps"></div><div class="fc-cal" id="fc-cal"></div>',
-      me: '<div class="fs-me" id="fc-me"></div><div class="fc-pe" id="fc-pe"></div>',
+      me: '<div class="fs-me" id="fc-me"></div><div class="fc-leg" id="fc-leg"></div><div class="fc-pe" id="fc-pe"></div>',
       shop: '<div class="fc-shop" id="fc-shop"></div>',
       bet: '<div class="fc-shop" id="fc-bet"></div>',
       bank: '<div class="fc-shop" id="fc-bank"></div>',
@@ -311,7 +329,7 @@
     if (k === 'wk') { weekBox(); weekActs(); }
     else if (k === 'tbl') { tblKey = null; table(); tabs(); }
     else if (k === 'cal') { compsBox(standings('lg').findIndex(x => x.i === 0) + 1); calBox(); }
-    else if (k === 'me') { meBox(); peBox(); }
+    else if (k === 'me') { meBox(); legBox(); peBox(); }
     else if (k === 'shop') shopBox();
     else if (k === 'bet') betRender();
     else if (k === 'bank') bankBox();
@@ -566,6 +584,16 @@
     const A = G.c.fc.acc, gk = G.c.pos === 'GOL' || G.c.pos === 'ZAG';
     $('fc-me').innerHTML = '<div><b>' + A.games + '</b><span>Jogos</span></div>' + (gk ? '<div><b>' + A.cs + '</b><span>Sem sofrer gol</span></div>' : '<div><b>' + A.goals + '</b><span>Gols</span></div>') +
       '<div><b>' + A.assists + '</b><span>Assist.</span></div><div><b>' + (A.games ? rate(A.rsum / A.games) : '–') + '</b><span>Nota</span></div>';
+  }
+  // Pontos de legado da carreira (engine/legado.js): somam desde a primeira temporada
+  const LEG_LBL = { metas: 'Metas', titulos: 'Títulos', premios: 'Prêmios', idolo: 'Ídolo', selecao: 'Seleção' };
+  function legBox() {
+    const el = $('fc-leg');
+    if (!el || !S.legacy) return;
+    const L = S.legacy(G.c);
+    el.innerHTML = '<div class="fs-rlbl">Legado da carreira</div><div class="lg-top"><b>' + L.pts.toLocaleString('pt-BR') + '</b><span>pontos de legado</span></div>' +
+      '<div class="lg-by">' + Object.keys(LEG_LBL).map(k => '<div><small>' + LEG_LBL[k] + '</small><b>' + L.by[k].toLocaleString('pt-BR') + '</b></div>').join('') + '</div>' +
+      '<p class="lg-note">Metas cumpridas, títulos, prêmios, anos de ídolo num clube e a seleção somam desde a primeira temporada.</p>';
   }
   // Situação em cada competição
   function compsBox(pos) {
