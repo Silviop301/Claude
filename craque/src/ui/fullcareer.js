@@ -44,8 +44,8 @@
   // Como num iPhone: a grade de apps em cima e a barra fixa de baixo com os quatro principais (dentro dos apps ela continua
   // no pé da tela, com o app aberto marcado). O Zé é um contato do Chat; as apostas e a mesa são o app Apostas.
   const DOCK = [['msg', '💬', 'Chat'], ['ag', '📒', 'Agenda'], ['bet', '🎰', 'Apostas'], ['shop', '🏷️', 'Loja']];
-  const GRID = [['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['me', '📈', 'Ficha'], ['bank', '🏦', 'Banco']];
-  const appBtn = (c, [k, e, n], on) => { const u = k === 'msg' ? (c.ppl && c.ppl.unread) || 0 : 0;
+  const GRID = [['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['me', '📈', 'Ficha'], ['bank', '🏦', 'Banco'], ['mkt', '🤝', 'Mercado']];
+  const appBtn = (c, [k, e, n], on) => { const mw = k === 'mkt' && S.fcWin && S.fcWin(c), u = k === 'msg' ? (c.ppl && c.ppl.unread) || 0 : mw && !mw.seen ? mw.offers.length : 0;
     return '<button class="ph-app' + (on ? ' on' : '') + '" data-go="' + k + '"' + (on ? ' aria-current="page"' : '') + '><i>' + U.emo(e, 'md') + (u ? '<em class="ph-badge">' + Math.min(u, 99) + '</em>' : '') + '</i><span>' + n + '</span></button>'; };
   const dock = (c, cur) => '<nav class="ph-dock" aria-label="Apps">' + DOCK.map(a => appBtn(c, a, a[0] === cur)).join('') + '</nav>';
   // Barra de status do aparelho: dia e hora da véspera do jogo, energia
@@ -71,6 +71,7 @@
     const c = G.c, nx = S.fcNext(c), fc = c.fc, kind = S.fcKind(c, nx);
     if (S.fcPhonePre) S.fcPhonePre(c, nx); // as pessoas do celular (engine/phone.js): lesão, jogo grande
     if (S.fcZeSync) S.fcZeSync(c); // a proposta do Zé chega como mensagem (engine/money.js)
+    if (S.fcWinState) S.fcWinState(c); // a janela do meio do ano abre (engine/transfer.js)
     const sb = sbar(c), clk = sb.clk;
     const when = ['agora', '8 min', '25 min', '1 h', '2 h', '3 h'];
     render('<div class="ph" id="fc"><div class="ph-cols"><div class="ph-scr">' + sb.html +
@@ -118,6 +119,9 @@
     else if (trt && !trt.ok) n4('ag', 'Agenda', 'Treino com lances: ' + trt.n + ' de ' + S.FC_TR_SESS + '. Falta' + (S.FC_TR_SESS - trt.n > 1 ? 'm ' : ' ') + (S.FC_TR_SESS - trt.n) + ' para o +1 em ' + D.label(c.pos, trt.a) + '.');
     else if (fc.wkDue) { if (!pick) pick = S.fcWeekAuto(c); n4('ag', 'Agenda', 'Treino da semana: ' + A(pick[0]) + (pick[0] === 'tec' && S.fcTrOpen(c, pick) ? ' com lances (+1 num atributo)' : '') + (open.length ? '. ' + (open.length === 1 ? '1 convite' : open.length + ' convites') + ' esperando resposta.' : '. Toque para mudar.')); }
     else if (fc.wkSum && fc.wkSum.at === fc.i) n4('ag', 'Agenda', 'Semana feita: ' + fc.wkSum.acts.map(A).join(' e ') + '. ' + (S.fcTrOpen(c) ? 'Ainda dá para treinar com lances antes do jogo: +1 num atributo.' : 'Energia ' + Math.round(fc.wkSum.en0) + ' → ' + Math.round(fc.wkSum.en1) + '.'));
+    // Mercado: a janela do meio do ano aberta com propostas
+    const mw = S.fcWin && S.fcWin(c);
+    if (mw && mw.offers.length) n('mkt', 'Mercado', (mw.offers.length > 1 ? mw.offers.length + ' propostas' : 'Proposta ' + D.do(nameOf(mw.offers[0].club))) + ' na mesa. A janela fecha ' + (S.fcWinLeft(c) > 1 ? 'em ' + S.fcWinLeft(c) + ' jogos.' : 'depois do próximo jogo.'), 1);
     // Banco: a conta no vermelho (as saídas estão no app)
     if (S.fcDebt && S.fcDebt(c) > 0) n('bank', 'Banco', 'Conta no vermelho: R$ ' + U.money(S.fcDebt(c)) + ' de dívida. Toque para ver as saídas.', 2);
     // Roupeiro: a chuteira (ou luva) acabando ou já rasgada
@@ -284,7 +288,7 @@
     document.querySelectorAll('[data-go2]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go2); }; });
   }
   // Apps do celular: cada um abre dentro do aparelho, com a barra de baixo
-  const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Apostas', evo: 'Evoluir', bank: 'Banco' };
+  const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Apostas', evo: 'Evoluir', bank: 'Banco', mkt: 'Mercado' };
   const LOJA_IMG = ['chuteira-g1', 'chuteira-g2', 'chuteira-g3', 'luvas-g1', 'luvas-g2', 'luvas-g3', 'pt', 'physio', 'nutri', 'video', 'press', 'c1', 'c2', 'c3', 'c4', 'house'];
   function go(k) {
     if (k === 'evo') return evolve();
@@ -299,6 +303,7 @@
       shop: '<div class="fc-shop" id="fc-shop"></div>',
       bet: '<div class="fc-shop" id="fc-bet"></div>',
       bank: '<div class="fc-shop" id="fc-bank"></div>',
+      mkt: '<div class="fc-mkt" id="fc-mkt"></div>',
     }[k];
     appScr(k, TITLE[k], body);
     if (k === 'wk') { weekBox(); weekActs(); }
@@ -308,6 +313,7 @@
     else if (k === 'shop') shopBox();
     else if (k === 'bet') betRender();
     else if (k === 'bank') bankBox();
+    else if (k === 'mkt') mktBox();
     if (c && $('fc-scr')) window.scrollTo(0, 0);
   }
   // Botão da tela de treino: fecha a semana e volta (semana já fechada: só volta)
@@ -446,7 +452,7 @@
     return S.fcOrder(tab).map(i => Object.assign({ i, id: L.ids[i] }, tab[i]));
   }
   function table(live) {
-    const fc = G.c.fc, view = tblView === 'cont' && fc.cont && fc.cont.gtab ? 'cont' : 'lg', box = $('fc-tbl');
+    const fc = G.c.fc, view = tblView === 'cont' && !fc.moved && fc.cont && fc.cont.gtab ? 'cont' : 'lg', box = $('fc-tbl');
     if (!box) return 0;
     const rows = standings(view, live && live[view]), n = rows.length;
     const zone = view === 'cont' ? pos => (pos <= 2 ? ' z-up' : '') : pos => (fc.lg.promo && pos <= fc.lg.promo ? ' z-up' : fc.lg.releg && pos > n - fc.lg.releg ? ' z-down' : !fc.lg.promo && pos === 1 ? ' z-top' : '');
@@ -497,7 +503,8 @@
   }
   function tabs() {
     const fc = G.c.fc, el = $('fc-tabs');
-    if (!fc.cont || !fc.cont.gtab || fc.cont.md.length === 0) { el.innerHTML = '<div class="fc-tl">' + esc(fc.lg.name) + '</div>'; return; }
+    if (fc.moved) tblView = 'lg'; // trocou no meio do ano: o grupo continental ficou com o clube de antes
+    if (fc.moved || !fc.cont || !fc.cont.gtab || fc.cont.md.length === 0) { el.innerHTML = '<div class="fc-tl">' + esc(fc.lg.name) + '</div>'; return; }
     el.innerHTML = '<div class="seg fc-seg"><button data-v="lg"' + (tblView === 'lg' ? ' class="on"' : '') + '>' + esc(fc.lg.name) + '</button><button data-v="cont"' + (tblView === 'cont' ? ' class="on"' : '') + '>Grupo · ' + esc(fc.cont.name) + '</button></div>';
     el.querySelectorAll('button').forEach(b => { b.onclick = () => { tblView = b.dataset.v; tabs(); table(); }; });
   }
@@ -553,7 +560,7 @@
   // Situação em cada competição
   function compsBox(pos) {
     const fc = G.c.fc, cup = fc.cup, ct = fc.cont;
-    const st = (o, list, lostAt, cur) => (o === 'won' ? 'Campeão!' : o === 'lost' ? 'Eliminado: ' + list[lostAt].toLowerCase() : o === 'group' ? 'Eliminado na fase de grupos' : cur);
+    const st = (o, list, lostAt, cur) => (o === 'moved' ? 'Ficou com ' + D.o(nameOf(fc.moved ? fc.moved.from : '')) : o === 'won' ? 'Campeão!' : o === 'lost' ? 'Eliminado: ' + list[lostAt].toLowerCase() : o === 'group' ? 'Eliminado na fase de grupos' : cur);
     const nextSt = (k, list) => { const e = fc.cal.slice(fc.i).find(x => x.k === k); return e ? list[e.st] : '—'; };
     const items = [[fc.lg.name, pos ? pos + 'º lugar · ' + fc.lg.tab[0].p + ' pts' : 'Começa já'],
       [cup.name, st(cup.out, S.FC_CUP_ST, cup.lostAt, 'Próxima: ' + nextSt('cup', S.FC_CUP_ST).toLowerCase())]];
@@ -970,6 +977,45 @@
     el.querySelectorAll('[data-go2]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go2); }; });
   }
   // ---------- Banco (fase 3): o saldo, a dívida, o que entra e sai por semana e as saídas do vermelho ----------
+  // Mercado: a janela do meio do ano (engine/transfer.js). Antes dela, quando abre; aberta, as propostas (assinar leva
+  // para o clube novo na hora) e ficar; depois, o que aconteceu. Embaixo, o contrato de hoje
+  function mktBox() {
+    const c = G.c, el = $('fc-mkt'), fc = c.fc;
+    if (!el) return;
+    const w = S.fcWinState(c), open = S.fcWin(c), R = v => 'R$ ' + U.money(v);
+    const at = fc.mwAt !== undefined ? fc.mwAt : Math.max(2, Math.round(S.FC_WIN.at * fc.cal.length));
+    let head = '', body = '';
+    if (open) {
+      open.seen = true;
+      const left = S.fcWinLeft(c);
+      head = '<p class="eyebrow">Janela do meio do ano · aberta</p><h3 class="mk-h">' + (open.offers.length ? (open.offers.length > 1 ? open.offers.length + ' propostas na mesa' : 'Uma proposta na mesa') : 'Nenhuma proposta por enquanto') + '</h3>' +
+        '<p class="mk-p">' + (open.offers.length ? 'Assinando, você joga pelo clube novo já no próximo jogo. A copa e o continental ficam com ' + D.o(nameOf(c.club)) + '.' : 'Ninguém ligou ainda. Jogo bom chama atenção, e quem está sobrando no banco também recebe proposta.') +
+        ' Fecha ' + (left > 1 ? 'em ' + left + ' jogos.' : 'depois do próximo jogo.') + '</p>';
+      body = open.offers.map((o, i) => { const lv = S.fcLuvasOf ? S.fcLuvasOf(c, o) : 0;
+        return U.offerCard(o, i, { terms: '<p class="mk-terms">' + (o.wage > c.wage ? 'Salário ' + Math.round((o.wage / Math.max(1, c.wage) - 1) * 100) + '% maior' : o.wage < c.wage ? 'Salário ' + Math.round((1 - o.wage / Math.max(1, c.wage)) * 100) + '% menor' : 'Mesmo salário') + (lv ? ' · luvas de ' + R(lv) + ' ao assinar' : '') + '</p>' }); }).join('') +
+        (open.offers.length ? '<button class="btn ghost" id="mk-stay">Ficar ' + D.no(nameOf(c.club)) + '</button>' : '');
+    } else if (w && w.st === 'signed' && fc.moved) {
+      const L0 = fc.lg0;
+      head = '<p class="eyebrow">Janela do meio do ano · fechada</p><h3 class="mk-h">Você trocou de clube</h3>' +
+        '<p class="mk-p">Saiu ' + D.do(nameOf(fc.moved.from)) + (L0 ? ' (' + L0.pos + 'º ' + D.no(L0.name) + ')' : '') + ' e chegou ' + D.ao(nameOf(fc.moved.to)) + ' na rodada ' + (fc.moved.ri0 + 1) + ' ' + D.do(fc.lg.name) + '. A próxima janela é no fim da temporada.</p>';
+    } else if (w) {
+      head = '<p class="eyebrow">Janela do meio do ano · fechada</p><h3 class="mk-h">' + (w.stay ? 'Você ficou' : 'A janela passou') + '</h3><p class="mk-p">' + (w.offers.length ? (w.stay ? 'Recusou ' + (w.offers.length > 1 ? 'as propostas' : 'a proposta') + ' e segue ' + D.no(nameOf(c.club)) + '.' : 'Ninguém fechou a tempo.') : 'Nenhum clube fez proposta desta vez.') + ' A próxima janela é no fim da temporada.</p>';
+    } else {
+      const k = Math.max(0, at - fc.i);
+      const no = c.loan || c.clubSince === c.age || c.age < 18;
+      head = '<p class="eyebrow">Janela do meio do ano</p><h3 class="mk-h">' + (c.loan ? 'Emprestado até o fim do ano' : no ? 'Sem janela nesta temporada' : k > 0 ? 'Abre em ' + D.plural(k, 'jogo', 'jogos') : 'Fechada') + '</h3>' +
+        '<p class="mk-p">' + (c.loan ? 'Quem está emprestado não troca de clube no meio do ano.' : c.age < 18 ? 'Menor de idade não troca de clube no meio da temporada. A janela abre a partir dos 18 anos.' : c.clubSince === c.age ? 'Você acabou de chegar: o clube não te vende nesta temporada.' : 'No meio da temporada os clubes podem fazer proposta. Quem joga bem chama atenção.') + '</p>';
+    }
+    const cur = '<div class="fc-ss"><h3>Seu contrato</h3><div class="fc-si"><span><b>' + esc(nameOf(c.club)) + '</b><small>' + R(c.wage) + ' por semana · ' + D.plural(Math.max(1, c.contract), 'ano', 'anos') + (c.contract > 1 ? ' restantes' : ' restante') + '</small></span></div></div>';
+    el.innerHTML = '<div class="mk-top">' + head + '</div>' + (body ? '<div class="mk-offers">' + body + '</div>' : '') + cur;
+    el.querySelectorAll('.of-sign').forEach(b => { b.onclick = () => {
+      const o = open.offers[+b.dataset.i];
+      U.ask('Assinar com ' + D.o(nameOf(o.club)) + '?', 'Você sai ' + D.do(nameOf(c.club)) + ' agora, no meio da temporada. O técnico e a torcida daqui não esquecem.', 'Assinar', () => {
+        if (S.fcWinSign(c, +b.dataset.i)) { sfx('coin'); save(); bar(); mktBox(); }
+      });
+    }; });
+    if ($('mk-stay')) $('mk-stay').onclick = () => { sfx('tap'); S.fcWinStay(c); save(); mktBox(); };
+  }
   function bankBox() {
     const c = G.c, el = $('fc-bank');
     if (!el) return;
@@ -1125,7 +1171,8 @@
     for (let k = 0; k < 60; k++) {
       if (c.fc.wkDue) { S.fcWeek(c, k === 0 ? myPick() : undefined); unpick(); }
       nx = S.fcNext(c);
-      if (!nx || (k > 0 && (S.fcKind(c, nx) === 'vivo' || S.fcEventDue(c)))) break;
+      const mw = S.fcWin && S.fcWin(c);
+      if (!nx || (k > 0 && (S.fcKind(c, nx) === 'vivo' || S.fcEventDue(c) || (mw && mw.offers.length && !mw.seen)))) break;
       if (nx.moment) S.fcAutoMoment(c, nx.moment);
       const out = S.fcPlay(c);
       if (!out) break;

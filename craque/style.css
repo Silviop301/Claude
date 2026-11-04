@@ -5649,3 +5649,13 @@ button.mz-fix { display: grid; gap: 4px; width: 100%; text-align: left; font: in
 .bk-l b.up { color: var(--up); } .bk-l b.down { color: var(--down); }
 .bk-st { display: grid; gap: 6px; }
 .bk-st .fc-buy { min-width: 96px; }
+/* Jogo a Jogo, app Mercado (fase 4): a janela do meio do ano */
+.fc-mkt { display: grid; gap: 14px; }
+.mk-top { display: grid; gap: 4px; }
+.mk-top .eyebrow { margin: 0; }
+.mk-h { margin: 0; font: 800 22px/1.15 var(--display); color: var(--tx-1); }
+.mk-p { margin: 0; font: 400 15px/1.4 var(--body); color: var(--tx-2); }
+.mk-offers { display: grid; gap: 12px; }
+.mk-offers .of-card { flex: none; width: 100%; max-width: none; margin: 0; }
+.mk-terms { margin: 0; font: 600 13px var(--body); color: var(--ink-2); }
+.mk-offers > .btn.ghost { justify-self: stretch; }
