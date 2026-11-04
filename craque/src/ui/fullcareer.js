@@ -1057,7 +1057,7 @@
     const c = G.c, st = S.kickSetupType(m), T = LANCE_TXT(m, c), k = S.kickSetup(c, st, S.autoStyle(c, st));
     render('<div class="eyebrow">Seu lance · ' + esc(m.comp) + '</div>' + lanceBoard(m, sc) +
       '<div class="ob5-head"><h2>' + T.title + '</h2><p class="ob5-txt">' + esc(T.text) + '</p>' + U.lanceStakes(T.stakes) + '</div>' +
-      '<p class="st-lead ob5-q">Como você vai ' + { cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar', mano: 'passar por ele', cara: 'encarar o goleiro', dois: 'decidir', cabeca: 'atacar a bola', passe3: 'passar', bote: 'marcar', saida: 'sair do gol' }[st] + '?</p>' + U.styleBtns(st, true) +
+      '<p class="st-lead ob5-q">Como você vai ' + { cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar', mano: 'passar por ele', pressao: 'pressionar', cara: 'encarar o goleiro', dois: 'decidir', cabeca: 'atacar a bola', passe3: 'passar', bote: 'marcar', saida: 'sair do gol' }[st] + '?</p>' + U.styleBtns(st, true) +
       '<div class="ob5-foot"><button class="btn ghost ob5-auto" id="fc-lauto">Deixar o jogo decidir<small>' + Math.round(k.chance * 100) + '% pela sua carta</small></button>' +
       '<button class="ob5-train mom-train" id="b-train">' + U.emo('🏟️', 'xs') + ' Treinar antes</button></div>');
     $('b-train').onclick = () => U.training(st);
@@ -1075,7 +1075,7 @@
   // Resultado do lance: o grito, uma linha e voltar ao jogo
   function lanceEnd(m, ok, sc, go, why) {
     const c = G.c, st = S.kickSetupType(m), def = st === 'save' || st === 'saida' || st === 'bote' || (st === 'tackle' && !m.duel);
-    const big = ok ? (st === 'save' || st === 'saida' ? 'DEFENDEU!' : st === 'tackle' || (st === 'bote' && (!why || why === 'desarme')) ? 'ROUBOU!' : st === 'bote' ? (why === 'travou' ? 'TRAVOU!' : 'SALVOU!') : st === 'pass' || st === 'passe3' ? 'ASSISTÊNCIA!' : 'GOOOL!') : def ? 'Gol deles…' : st === 'tackle' ? 'Passou…' : st === 'pass' || st === 'passe3' ? 'Cortado…' : st === 'mano' ? 'Perdeu a bola…' : 'Não entrou…';
+    const big = ok ? (st === 'save' || st === 'saida' ? 'DEFENDEU!' : st === 'tackle' || st === 'pressao' || (st === 'bote' && (!why || why === 'desarme')) ? 'ROUBOU!' : st === 'bote' ? (why === 'travou' ? 'TRAVOU!' : 'SALVOU!') : st === 'pass' || st === 'passe3' ? 'ASSISTÊNCIA!' : 'GOOOL!') : def ? 'Gol deles…' : st === 'tackle' || st === 'pressao' ? 'Escapou…' : st === 'pass' || st === 'passe3' ? 'Cortado…' : st === 'mano' ? 'Perdeu a bola…' : 'Não entrou…';
     const txt = ok ? (def ? 'O perigo passou e a nota sobe.' : m.duel ? 'Bola roubada no campo deles: a nota sobe.' : st === 'pass' || st === 'passe3' ? 'Bola na medida e o atacante não perdoou.' : st === 'mano' ? 'Passou pelo zagueiro e bateu no canto.' : st === 'cara' ? 'Frio na cara do goleiro.' : st === 'dois' ? (why === 'toque' ? 'Tocou na hora certa: gol do companheiro e assistência sua.' : 'Bateu na hora certa e marcou.') : st === 'cabeca' ? 'Subiu mais que o marcador e testou no canto.' : 'Gol seu' + (m.kick === 'fk' ? ' de falta.' : ' de pênalti.'))
       : def ? 'A bola entrou. Ainda dá tempo de reagir.' : m.duel ? 'Ele escapou: a nota cai um pouco.' : 'A chance passou. O jogo segue.';
     const side = ok && m.goal ? (m.home ? 0 : 1) : !ok && def ? (m.home ? 1 : 0) : -1; // gol seu (ou do atacante que você serviu) ou gol deles

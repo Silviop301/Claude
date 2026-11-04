@@ -677,7 +677,7 @@
       const g = meia ? (r() < 0.5 ? pick('pass', r.pick(['diagonal', 'contra', 'tabela'])) : pick('passe3', r.pick(['contra', 'area']))) : ak < 0.2 ? pick('pen', r.pick(['derrubado', 'mao'])) : ak < 0.36 ? pick('fk', 'falta') : ak < 0.52 ? pick('drible', r.pick(['meio', 'ponta'])) : ak < 0.68 ? pick('cara', r.pick(['lancamento', 'rebote'])) : ak < 0.84 ? pick('dois', 'contra') : pick('cabeca', r.pick(['cruzamento', 'escanteio']));
       const q = Math.min(1, (meia ? LANCE_Q : LANCE_Q * 0.6) * lm / g.p); // atacante menos: a nota dele encosta no 10 e o gol certo do lance tira a variação
       if (r() < q) m = Object.assign(g, { goal: true });
-      else m = Object.assign(pick('tackle', 'pressao'), { duel: true });
+      else m = Object.assign(pick('pressao', 'pressao'), { duel: true }); // a pressão na saída de bola (movimento livre)
       m.q = q * g.p;
     }
     save();
