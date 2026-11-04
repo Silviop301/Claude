@@ -85,6 +85,17 @@ const INIT = `
     await shot('app-' + nome);
     if (await has('#fc-agok')) await tap('#fc-agok'); else if (await has('#fc-back')) await tap('#fc-back');
   }
+  // Fase 3, parte 2: o Zé no Chat (palpite, aposta ali mesmo e a proposta do amarelo)
+  if (await page.evaluate(() => !!window.CRAQUE_SIM.fcZeAsk)) {
+    await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; c.money = Math.max(c.money || 0, 400000); });
+    await tap('.ph-app[data-go="msg"]'); await tap('[data-ch="ze"]');
+    if (await has('#ze-ask')) { await tap('#ze-ask'); await shot('chat-ze-palpite'); }
+    if (await has('[data-zt]')) { await tap('[data-zt]'); await shot('chat-ze-aposta'); }
+    await page.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, c = U.G.c; c.fc.fix = { i: c.fc.i, pay: S.fcFixPay(c), min: 23, st: 'open' }; S.fcZeSync(c); });
+    await tap('#fc-back'); await tap('[data-ch="ze"]'); await shot('chat-ze-proposta');
+    await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; c.fc.fix = null; });
+    await tap('#fc-home');
+  }
   // Fase 3: loja com carro e casa (manutenção por semana) e a conta no vermelho
   if (await page.evaluate(() => !!window.CRAQUE_SIM.fcUpkeep)) {
     await page.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, c = U.G.c; c.money = 0; c.life = c.life || {}; c.life.car = 'c3'; c.life.house = c.season;
@@ -134,7 +145,7 @@ const INIT = `
   await shot('jornal');
   await tap('#fc-next');
   for (let k = 0; k < 10 && !(await has('#fc-play')) && !(await has('#screen .btn.opt[data-i]')); k++) await wait(300);
-  if (await has('#fc-skip2')) { await tap('#fc-skip2'); await shot('resumir'); await tap('#fc-next'); await wait(600); }
+  if (await has('#fc-skip2')) { await tap('#fc-skip2'); await shot('resumir'); await tap('#fc-next'); for (let k = 0; k < 15 && !(await has('#fc-play')); k++) await wait(400); }
   // As pessoas do celular (fase 2): as mensagens do caminho, a lista do Chat e uma conversa
   if (await has('.ph-app[data-go="msg"]')) {
     await shot('celular-com-mensagens');
@@ -145,7 +156,7 @@ const INIT = `
   // Convites da semana na agenda (fase 2, parte 2): garante dois para a foto, responde o arriscado
   const temConvite = await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; if (!window.CRAQUE_SIM.fcInvites) return false; c.fc.wkDue = true; // só para a foto: a semana aberta de novo
     if (!(c.fc.inv || []).length) c.fc.inv = [{ id: 'bar1', ti: 0, x: '', ans: null }, { id: 'faltas', ti: 0, x: '', ans: null }]; c.ppl.st = c.ppl.st || {}; c.ppl.st.bar = c.ppl.st.bar || { n: 1, due: 999, f: {} }; return true; });
-  if (temConvite) {
+  if (temConvite && (await has('.ph-app[data-go="ag"]'))) {
     await tap('.ph-app[data-go="ag"]'); await shot('agenda-convites');
     if (await has('[data-inv][data-a="b"]')) { await tap('[data-inv][data-a="b"]'); await shot('agenda-convite-respondido'); }
     await tap('#fc-agok'); await wait(400);

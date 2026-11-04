@@ -146,5 +146,95 @@
     return ret;
   };
 
+  // ---------- o Zé no Chat: conversa, palpites e a proposta ----------
+  // O Zé é um contato do celular. Você pede um palpite (até 2 por rodada), ele manda um jogo da rodada com a cotação, e dá
+  // para apostar ali mesmo (o cupom é o mesmo do app de apostas: o faro da federação conta igual). A proposta do amarelo
+  // chega na conversa dele. Mensagens suas ficam no mesmo histórico (m.me), sem contar como não lida.
+  const ZE_TIPS = 2;
+  const zeP = c => { const P = S.fcPeople(c); if (P && !P.p.ze) P.p.ze = { n: 'Zé', rel: 60, mem: [] }; return P; };
+  const me = (c, t) => { const P = zeP(c); if (!P) return null; const m = { p: 'ze', t, at: c.fc ? c.fc.i : 0, s: c.season, me: true }; P.inbox.push(m); if (P.inbox.length > 120) P.inbox.splice(0, P.inbox.length - 120); return m; };
+  const ze = (c, t, v, extra) => { if (!zeP(c)) return null; const m = say(c, 'ze', t, v); if (m && extra) Object.assign(m, extra); return m; };
+  const nm = id => (D.CLUB_BY_ID[id] ? D.CLUB_BY_ID[id].name : id);
+  const odd = o => String(o.toFixed(2)).replace('.', ',');
+  const TIP_TXT = {
+    'x0': ['esse aqui é barbada: {h} ganha do {a} em casa. paga {o}', '{h} em casa contra o {a}? vitória do {h}, anota. paga {o}'],
+    'x2': ['o {a} vai buscar o resultado na casa do {h}, confia. paga {o}', 'pode ir no {a} fora de casa. o {h} tá em crise, me contaram. paga {o}'],
+    'x1': ['{h} x {a} tem cheiro de empate. paga {o}, é pra quem tem coragem kkk', 'empate em {h} x {a}. dois times com medo de perder. paga {o}'],
+    'o250': ['{h} x {a} vai ter gol pra caramba, mais de 2,5. paga {o}', 'mais de 2,5 gols em {h} x {a}. as duas defesas são uma peneira. paga {o}'],
+    'o251': ['{h} x {a} vai ser truncado, menos de 2,5 gols. paga {o}', 'jogo amarrado: menos de 2,5 em {h} x {a}. paga {o}'],
+    'btts0': ['os dois marcam em {h} x {a}, pode anotar. paga {o}', 'ambos marcam em {h} x {a}. nenhum dos dois sabe defender kkk paga {o}'],
+  };
+  S.fcZeMad = c => !!(c.fc && c.fc.zeMad > c.fc.i);
+  // Palpites da rodada aberta: [{ h, a, m, pick, odd, lg }]; null sem rodada
+  S.fcZeTips = function (c) {
+    const fc = c.fc, R = fc && S.fcBetRound(c);
+    if (!R) return null;
+    if (!fc.zeT || fc.zeT.ri !== R.ri || fc.zeT.s !== c.season) fc.zeT = { ri: R.ri, s: c.season, tips: [] };
+    return fc.zeT.tips;
+  };
+  S.fcZeCanTip = c => { const t = S.fcZeTips(c); return !!t && t.length < ZE_TIPS && !S.fcZeMad(c); };
+  // Pede um palpite: a sua mensagem e a resposta do Zé (com o palpite anexado). Volta a mensagem do Zé
+  S.fcZeAsk = function (c) {
+    const fc = c.fc, tips = S.fcZeTips(c);
+    if (!tips) { me(c, 'zé, manda um palpite aí'); return ze(c, 'rodada fechada agora, parceiro. depois do teu jogo eu abro de novo'); }
+    me(c, tips.length ? 'manda outro aí' : 'zé, manda um palpite aí');
+    if (S.fcZeMad(c)) { const m = c.ppl.inbox[c.ppl.inbox.length - 1]; m.seen = true; return null; } // visualizou e não respondeu
+    if (tips.length >= ZE_TIPS) return ze(c, 'chega de palpite por hoje. o resto é contigo, que eu não sou vidente kkk');
+    const R = S.fcBetRound(c), used = new Set(tips.map(t => t.h));
+    const r = S.rng(((Math.imul(Number(c.tseed) || 1, 2654435761) ^ Math.imul(c.season * 97 + R.ri * 13 + tips.length, 2246822519)) >>> 0) || 1);
+    const games = R.games.filter(g => !used.has(g.h));
+    const g = games[Math.floor(r() * games.length)] || R.games[0];
+    const fav = g.odds.x[0] <= g.odds.x[2] ? 0 : 2;
+    const opts = [['x', fav, 4], ['x', 2 - fav, 1], ['x', 1, 1], ['o25', 0, 2], ['o25', 1, 1.5], ['btts', 0, 2]];
+    let u = r() * opts.reduce((a, o) => a + o[2], 0), pk = opts[0];
+    for (const o of opts) if ((u -= o[2]) <= 0) { pk = o; break; }
+    const o = g.odds[pk[0]][pk[1]], tip = { h: g.h, a: g.a, m: pk[0], pick: pk[1], odd: o, lg: g.lg };
+    tips.push(tip);
+    const pool = TIP_TXT[pk[0] + pk[1]];
+    return ze(c, pool[Math.floor(r() * pool.length)], { h: nm(g.h), a: nm(g.a), o: odd(o) }, { tip: Object.assign({ ri: R.ri }, tip) });
+  };
+  // Aposta no palpite de uma mensagem do Zé (índice no histórico do celular). Volta o cupom ou null
+  S.fcZeBet = function (c, k, stake) {
+    const P = c.ppl, m = P && P.inbox[k];
+    if (!m || m.p !== 'ze' || !m.tip || m.tip.done || m.tip.ri !== (S.fcBetRound(c) || {}).ri) return null;
+    const t = S.fcBet(c, [{ h: m.tip.h, a: m.tip.a, m: m.tip.m, pick: m.tip.pick }], stake);
+    if (!t) return null;
+    m.tip.done = stake;
+    me(c, 'bota ' + R(stake) + ' nessa');
+    ze(c, r1(c, ['anotado. sai na rodada 🤝', 'fechado. agora é torcer kkk', 'tá no cupom. sigilo total, como sempre']));
+    return t;
+  };
+  const r1 = (c, list) => list[((c.fc ? c.fc.i : 0) + (c.ppl ? c.ppl.inbox.length : 0)) % list.length];
+  // A proposta do amarelo chega como mensagem do Zé (uma vez); a resposta sai pela conversa
+  S.fcZeSync = function (c) {
+    const f = c.mode === 'completa' && c.fc ? S.fcZeOffer(c) : null;
+    if (!f || f.st !== 'open' || f.posted) return null;
+    f.posted = true;
+    const nx = S.fcNext(c);
+    return ze(c, 'papo reto: leva um amarelo até os {min}\' contra o {vs} e te pago {x}. ninguém vai saber', { min: f.min, vs: nm(nx.vs), x: R(f.pay) }, { fix: f.i });
+  };
+  S.fcZeFix = function (c, yes) {
+    const f = c.fc && c.fc.fix;
+    if (!f || !S.fcZeAnswer(c, yes)) return false;
+    me(c, yes ? 'fechado. amarelo até os ' + f.min + "'" : 'tô fora, zé. não mexo com isso');
+    if (yes) ze(c, 'é nóis. depois do jogo o dinheiro cai. e apaga essa conversa kkk');
+    else ze(c, 'tranquilo. finge que eu nem falei nada');
+    return true;
+  };
+  // Depois da rodada: o Zé conta como foram os cupons e paga o combinado
+  const playZ = S.fcPlay;
+  S.fcPlay = function (c, force) {
+    const out = playZ(c, force);
+    if (out && c.mode === 'completa' && c.ppl) {
+      if (out.bets && out.bets.length && !out.betCaught) {
+        const net = out.bets.reduce((a, b) => a + b.pay - b.stake, 0), won = out.bets.filter(b => b.win).length;
+        ze(c, won ? (net > 0 ? 'BATEU! a rodada te pagou {x} de lucro. eu não falei? 😎' : 'acertou um, mas no total ficou {x} no vermelho. faz parte') : out.bets.length > 1 ? 'nenhum cupom bateu. a rodada tava maluca, a próxima é nossa' : 'não deu dessa vez. a próxima a gente acerta, confia', { x: R(Math.abs(net)) });
+      }
+      if (out.betCaught) ze(c, 'apaga tudo. a federação tá em cima. não me liga mais por uns tempos');
+      if (out.fix && out.fix.pay && !out.fix.caught) ze(c, 'caiu na conta: {x}. foi um prazer kkk', { x: R(out.fix.pay) });
+    }
+    return out;
+  };
+
   if (typeof module !== 'undefined') module.exports = S;
 })(typeof window !== 'undefined' ? window : globalThis);
