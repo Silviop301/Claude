@@ -4645,6 +4645,9 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .fc-cash span { font: 700 15px var(--display); color: var(--tx-2); }
 .fc-cash b { font: 800 24px/1 var(--display); color: var(--gold-2); }
 .fc-cash small { grid-column: 1 / -1; font: var(--t-small); color: var(--tx-3); }
+.fc-debt { grid-column: 1 / -1; margin: 6px 0 0; padding: 8px 10px; border-radius: var(--r-sm); background: color-mix(in srgb, var(--down) 16%, transparent); font: var(--t-small); color: var(--tx-2); }
+.fc-debt b { display: block; font: 800 16px var(--display); color: var(--down); }
+.fc-wk-sum.down { color: var(--down); }
 .fc-ss { display: grid; gap: 6px; }
 .fc-ss h3 { margin: 4px 0 0; font: 800 17px var(--display); color: var(--tx-1); }
 .fc-own { margin: 0; font: var(--t-small); color: var(--tx-3); }

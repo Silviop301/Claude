@@ -59,10 +59,18 @@ for (let n = 0; n < N; n++) {
     // Loja da Completa (NOSHOP=1 desliga): o robô compra a melhor chuteira que cabe com folga e contrata a equipe que dá para manter
     const shop = c => {
       if (process.env.SHOP !== 'staff' && !c.gear) { const g = ['g3', 'g2', 'g1'].find(id => (c.money || 0) >= S.fcGearPrice(c, id) * 2); if (g) S.fcBuy(c, 'gear', g, S.fcGearAttrs(c)[0]); }
+      // Status (fase 3): perfil de gasto do robô (PERFIL=cauteloso|normal|gastador; sem PERFIL, sorteado por carreira 40/35/25)
+      const pf = c.perfil, mg = pf === 'gastador' ? 1.2 : pf === 'normal' ? 4 : 0;
+      if (mg && !(c.debt > 0)) {
+        const cars = S.FC_SHOP.cars, at = S.fcCarAt(c);
+        for (let k = cars.length - 1; k > at; k--) if ((c.money || 0) >= S.fcCarPrice(c, cars[k].id) * mg) { S.fcBuy(c, 'car', cars[k].id); break; }
+        if (!(c.life && c.life.house) && (c.money || 0) >= S.fcLifePrice(c, 'house') * mg) S.fcBuy(c, 'life', 'house');
+      }
       if (process.env.SHOP !== 'gear') for (const k of (process.env.STAFF ? process.env.STAFF.split(',') : ['video', 'pt', 'physio']).concat(c.age >= 29 && !process.env.STAFF ? ['nutri'] : [])) if (!(c.staff && c.staff[k]) && (c.money || 0) >= S.fcStaffCost(c, k) * 60) S.fcBuy(c, 'staff', k);
     };
     if (process.env.MODO === 'completa') {
       c.mode = 'completa'; S.fcStart(c);
+      if (!c.perfil) { const u = Math.random(); c.perfil = process.env.PERFIL || (u < 0.4 ? 'cauteloso' : u < 0.75 ? 'normal' : 'gastador'); }
       let nx;
       while ((nx = S.fcNext(c))) {
         if (S.fcEventDue(c)) { const ev = S.fcPickEvent(c); if (ev) { doEvent(ev); const y = RIT[c.season]; if (y && y.length) y[y.length - 1].ev++; } continue; }
@@ -123,7 +131,7 @@ for (let n = 0; n < N; n++) {
   }
   const f = S.finish(c);
   (globalThis.ACH = globalThis.ACH || {}); S.achievementsOf(c, f).forEach(id => { ACH[id] = (ACH[id] || 0) + 1; });
-  res.push({ score: f.score, cs: c.totals.cs || 0, penSaved: c.totals.penSaved || 0, tackles: c.totals.tackles || 0, build:c.traits.slice().sort().join('+'), idol: f.verdict.startsWith('Ídolo'), farewell: !!c.farewell, seasons: c.season, decisions, goals: c.totals.goals, assists: c.totals.assists, titles: f.titles, ballon: c.totals.ballon, peak: c.peak, grade: f.grade, verdict: f.verdict, pos, clubs: f.nClubs, games: c.totals.games, events: Object.values(c.stats || {}).reduce((a, b) => a + b, 0), buys: c.buys, invOvr: S.ovr(c) - S.ovrOf(S.preview(c, {}).attrs, c.pos) + (() => { const inv = c.inv; c.inv = {}; const o = S.ovr(c); c.inv = inv; return S.ovr(c) - o; })(), firstBuy: c.firstBuyAge || 0, peLeft: c.pe || 0, money: Math.round(c.money / 1e6), moments: (c.mstats || {}).n || 0, wcApps: c.totals.wcApps || 0, wc: c.totals.wc || 0, wcGoals: c.totals.wcGoals || 0, cwcApps: c.totals.cwcApps || 0, cwc: c.totals.cwc || 0, inter: c.totals.inter || 0, momentsOk: (c.mstats || {}).ok || 0, cards: (c.cards || []).length });
+  res.push({ perfil: c.perfil, aperto: ((c.fin && c.fin.maxDebt) || 0) >= 1, quebrou: (c.debt || 0) > 0, maxDebt: (c.fin && c.fin.maxDebt) || 0, score: f.score, cs: c.totals.cs || 0, penSaved: c.totals.penSaved || 0, tackles: c.totals.tackles || 0, build:c.traits.slice().sort().join('+'), idol: f.verdict.startsWith('Ídolo'), farewell: !!c.farewell, seasons: c.season, decisions, goals: c.totals.goals, assists: c.totals.assists, titles: f.titles, ballon: c.totals.ballon, peak: c.peak, grade: f.grade, verdict: f.verdict, pos, clubs: f.nClubs, games: c.totals.games, events: Object.values(c.stats || {}).reduce((a, b) => a + b, 0), buys: c.buys, invOvr: S.ovr(c) - S.ovrOf(S.preview(c, {}).attrs, c.pos) + (() => { const inv = c.inv; c.inv = {}; const o = S.ovr(c); c.inv = inv; return S.ovr(c) - o; })(), firstBuy: c.firstBuyAge || 0, peLeft: c.pe || 0, money: Math.round(c.money / 1e6), moments: (c.mstats || {}).n || 0, wcApps: c.totals.wcApps || 0, wc: c.totals.wc || 0, wcGoals: c.totals.wcGoals || 0, cwcApps: c.totals.cwcApps || 0, cwc: c.totals.cwc || 0, inter: c.totals.inter || 0, momentsOk: (c.mstats || {}).ok || 0, cards: (c.cards || []).length });
 }
 console.log('Robô:', SMART ? 'esperto' : 'casual');
 console.log('Builds finais diferentes:', new Set(res.map(r => r.build)).size, 'em', N, 'carreiras · Ídolos:', (res.filter(r => r.idol).length / N * 100).toFixed(1) + '% · Com despedida:', (res.filter(r => r.farewell).length / N * 100).toFixed(0) + '%');
@@ -170,6 +178,10 @@ console.log('Conquistas (% das carreiras):', S.ACHIEVEMENTS.map(a => a.id + ' ' 
 // vivido 210 s (semana no celular, viagem, jogo ao vivo com o seu lance e jornal), resumido 42 s (com o lance), no banco 8 s, folga 4 s,
 // evento 25 s, e 120 s por temporada (pré-temporada, janela e resumo).
 if (process.env.MODO === 'completa') {
+  // Dinheiro (fase 3): alvo 15-25% das carreiras passam por um aperto (entram no vermelho) e menos de 5% terminam devendo
+  const pc = (rs, f) => (rs.length ? Math.round(100 * rs.filter(f).length / rs.length) : 0) + '%';
+  console.log('Dinheiro: aperto ' + pc(res, r => r.aperto) + ' · terminou devendo ' + pc(res, r => r.quebrou) + ' · maior dívida (semanas, mediana de quem apertou) ' + q(res.filter(r => r.aperto).map(r => r.maxDebt).concat([0]), 0.5).toFixed(1) + ' (alvo 15-25% e <5%)');
+  ['cauteloso', 'normal', 'gastador'].forEach(p => { const rs = res.filter(r => r.perfil === p); if (rs.length) console.log('  ' + p + ' (' + rs.length + '): aperto ' + pc(rs, r => r.aperto) + ' · devendo no fim ' + pc(rs, r => r.quebrou) + ' · saldo final mediano R$ ' + q(rs.map(r => r.money), 0.5) + ' mi · nota média ' + (rs.reduce((a, r) => a + r.score, 0) / rs.length).toFixed(0)); });
   const T = { vivo: 210, resumo: 42, banco: 8, folga: 4 };
   const rows = Object.keys(RIT).filter(k => k !== 'car').flatMap(k => RIT[k].map(r => Object.assign({ season: +k }, r)));
   const mins = r => (r.vivo * T.vivo + r.resumo * T.resumo + r.banco * T.banco + r.folga * T.folga + r.ev * 25 + 120) / 60;
