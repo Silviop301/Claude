@@ -977,7 +977,7 @@
   function lanceLine(l) {
     const st = S.kickSetupType(l), def = st === 'save' || st === 'saida' || st === 'bote' || (st === 'tackle' && !l.duel);
     const what = st === 'save' ? (l.ok ? 'pênalti defendido' : 'pênalti sofrido') : st === 'saida' ? (l.ok ? 'fechou o ângulo no mano a mano' : 'ele tirou de você e marcou') : def ? (l.ok ? 'desarme no contra-ataque' : 'o atacante passou e marcou') : l.duel ? (l.ok ? 'bola roubada na pressão' : 'perdeu a dividida') :
-      st === 'pass' || st === 'passe3' ? (l.ok ? 'assistência na medida' : 'passe cortado') : st === 'mano' ? (l.ok ? 'passou pelo zagueiro e marcou' : 'perdeu o mano a mano') : (l.kick === 'fk' ? 'falta ' : 'pênalti ') + (l.ok ? 'convertido' : 'perdido');
+      st === 'pass' || st === 'passe3' ? (l.ok ? 'assistência na medida' : 'passe cortado') : st === 'mano' ? (l.ok ? 'passou pelo zagueiro e marcou' : 'perdeu o mano a mano') : st === 'cara' ? (l.ok ? 'gol no cara a cara' : 'perdeu o cara a cara') : st === 'dois' ? (l.ok ? (l.why === 'toque' ? 'tocou no 2 contra 1 e deu a assistência' : 'bateu no 2 contra 1 e marcou') : 'desperdiçou o 2 contra 1') : st === 'cabeca' ? (l.ok ? 'gol de cabeça' : 'perdeu a cabeçada') : (l.kick === 'fk' ? 'falta ' : 'pênalti ') + (l.ok ? 'convertido' : 'perdido');
     return '<p class="fb-l ' + (l.ok ? 'up' : 'down') + '">Seu lance aos ' + esc(l.minute) + "': " + what + '</p>';
   }
   // Resumir: passa os jogos comuns (semana automática, carta decidindo) até o próximo jogo grande, um evento ou o fim
@@ -1043,6 +1043,9 @@
     if (m.duel) return { title: 'Pressão na saída de bola!', text: 'O zagueiro ' + vs + ' sai jogando perto de você' + at + '. Roubar ali vale ouro.', stakes: 'Roubou: nota sobe · Perdeu: nota cai' };
     if (m.kick === 'pass') return { title: 'A bola é sua no meio-campo!', text: { diagonal: 'O atacante faz a diagonal nas costas da zaga' + at + '.', contra: 'Contra-ataque' + at + ': o atacante dispara pelo meio.', tabela: 'Tabela na entrada da área' + at + ': o atacante pede a bola.' }[m.sit] || 'O atacante pede a bola' + at + '.', stakes: 'Acertou: assistência sua · Errou: a zaga corta' };
     if (m.kick === 'passe3') return { title: 'Três opções na frente!', text: (m.sit === 'area' ? 'Você domina na entrada da área' + at + ' e três companheiros pedem a bola.' : 'Contra-ataque' + at + ': você conduz e três companheiros correm marcados.') + ' Um deles vai ficar livre.', stakes: 'Achou o livre: assistência sua · Errou: a zaga corta' };
+    if (m.kick === 'cara') return { title: 'Cara a cara com o goleiro!', text: (m.sit === 'rebote' ? 'O rebote sobra limpo para você' + at + '.' : 'Lançamento nas costas da zaga' + at + ' e você sai sozinho.') + ' O goleiro ' + vs + ' vem fechando.', stakes: 'Fez: gol seu · Perdeu: a chance passa' };
+    if (m.kick === 'dois') return { title: 'Dois contra um!', text: 'Contra-ataque' + at + ': você e um companheiro contra o último zagueiro ' + vs + '. Tocar ou bater?', stakes: 'Gol: seu, ou assistência se tocou · Errou: a chance passa' };
+    if (m.kick === 'cabeca') return { title: m.sit === 'escanteio' ? 'Escanteio na área!' : 'Cruzamento na área!', text: (m.sit === 'escanteio' ? 'A bola vem do escanteio' + at + '.' : 'O lateral vai cruzar' + at + '.') + ' Seu marcador ' + vs + ' está colado.', stakes: 'Cabeceou no canto: gol seu · Perdeu: a zaga afasta' };
     if (m.kick === 'drible') return { title: 'Mano a mano com o zagueiro!', text: (m.sit === 'ponta' ? 'Você recebe aberto na ponta' + at + ' e corta para dentro.' : 'A bola sobra para você no meio' + at + ' e só o zagueiro ' + vs + ' está na frente.') + ' Passou por ele, sai na cara do gol.', stakes: 'Driblou: gol seu · Perdeu: a chance passa' };
     if (m.kick === 'fk') return { title: 'Falta na entrada da área!', text: 'A barreira ' + vs + ' se arma' + at + '. A bola é sua.', stakes: 'Converteu: gol seu · Errou: chance perdida' };
     return { title: 'Pênalti para você!', text: (m.sit === 'mao' ? 'Mão na área' + at + ' e o juiz aponta a marca.' : 'Derrubaram você na área' + at + ' e o juiz aponta a marca.'), stakes: 'Converteu: gol seu · Errou: chance perdida' };
@@ -1054,7 +1057,7 @@
     const c = G.c, st = S.kickSetupType(m), T = LANCE_TXT(m, c), k = S.kickSetup(c, st, S.autoStyle(c, st));
     render('<div class="eyebrow">Seu lance · ' + esc(m.comp) + '</div>' + lanceBoard(m, sc) +
       '<div class="ob5-head"><h2>' + T.title + '</h2><p class="ob5-txt">' + esc(T.text) + '</p>' + U.lanceStakes(T.stakes) + '</div>' +
-      '<p class="st-lead ob5-q">Como você vai ' + { cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar', mano: 'passar por ele', passe3: 'passar', bote: 'marcar', saida: 'sair do gol' }[st] + '?</p>' + U.styleBtns(st, true) +
+      '<p class="st-lead ob5-q">Como você vai ' + { cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar', mano: 'passar por ele', cara: 'encarar o goleiro', dois: 'decidir', cabeca: 'atacar a bola', passe3: 'passar', bote: 'marcar', saida: 'sair do gol' }[st] + '?</p>' + U.styleBtns(st, true) +
       '<div class="ob5-foot"><button class="btn ghost ob5-auto" id="fc-lauto">Deixar o jogo decidir<small>' + Math.round(k.chance * 100) + '% pela sua carta</small></button>' +
       '<button class="ob5-train mom-train" id="b-train">' + U.emo('🏟️', 'xs') + ' Treinar antes</button></div>');
     $('b-train').onclick = () => U.training(st);
@@ -1073,7 +1076,7 @@
   function lanceEnd(m, ok, sc, go, why) {
     const c = G.c, st = S.kickSetupType(m), def = st === 'save' || st === 'saida' || st === 'bote' || (st === 'tackle' && !m.duel);
     const big = ok ? (st === 'save' || st === 'saida' ? 'DEFENDEU!' : st === 'tackle' || (st === 'bote' && (!why || why === 'desarme')) ? 'ROUBOU!' : st === 'bote' ? (why === 'travou' ? 'TRAVOU!' : 'SALVOU!') : st === 'pass' || st === 'passe3' ? 'ASSISTÊNCIA!' : 'GOOOL!') : def ? 'Gol deles…' : st === 'tackle' ? 'Passou…' : st === 'pass' || st === 'passe3' ? 'Cortado…' : st === 'mano' ? 'Perdeu a bola…' : 'Não entrou…';
-    const txt = ok ? (def ? 'O perigo passou e a nota sobe.' : m.duel ? 'Bola roubada no campo deles: a nota sobe.' : st === 'pass' || st === 'passe3' ? 'Bola na medida e o atacante não perdoou.' : st === 'mano' ? 'Passou pelo zagueiro e bateu no canto.' : 'Gol seu' + (m.kick === 'fk' ? ' de falta.' : ' de pênalti.'))
+    const txt = ok ? (def ? 'O perigo passou e a nota sobe.' : m.duel ? 'Bola roubada no campo deles: a nota sobe.' : st === 'pass' || st === 'passe3' ? 'Bola na medida e o atacante não perdoou.' : st === 'mano' ? 'Passou pelo zagueiro e bateu no canto.' : st === 'cara' ? 'Frio na cara do goleiro.' : st === 'dois' ? (why === 'toque' ? 'Tocou na hora certa: gol do companheiro e assistência sua.' : 'Bateu na hora certa e marcou.') : st === 'cabeca' ? 'Subiu mais que o marcador e testou no canto.' : 'Gol seu' + (m.kick === 'fk' ? ' de falta.' : ' de pênalti.'))
       : def ? 'A bola entrou. Ainda dá tempo de reagir.' : m.duel ? 'Ele escapou: a nota cai um pouco.' : 'A chance passou. O jogo segue.';
     const side = ok && m.goal ? (m.home ? 0 : 1) : !ok && def ? (m.home ? 1 : 0) : -1; // gol seu (ou do atacante que você serviu) ou gol deles
     if (sc && side >= 0) { sc = sc.slice(); sc[side]++; }
