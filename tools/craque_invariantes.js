@@ -130,7 +130,7 @@ function season(car, c, B) {
     if (S.pickMoment(c)) S.autoMoment(c);
   }
   S.playSeason(c);
-  for (const [is, call, start] of [[S.isWcYear, S.wcCall, S.wcStart], [S.isCwcYear, S.cwcCall, S.cwcStart]]) {
+  for (const [is, call, start] of [[S.isWcYear, S.wcCall, S.wcStart], [S.isNatContYear, S.wcCall, S.natContStart], [S.isCwcYear, S.cwcCall, S.cwcStart]]) {
     if (is(c) && call(c).called) { start(c); let g; while ((g = S.wcNext(c))) { if (g.live) S.wcMomentAuto(c); if (g.pens) S.wcPensAuto(c); } }
   }
   check(car, c, 'fim da T' + c.season);

@@ -298,7 +298,7 @@
     if (window.CLIMBIX_STAT) window.CLIMBIX_STAT('season', G.c.mode || 'rapida', G.c.season, 'c' + G.c.tseed + '|' + G.c.season); // contagem anônima
     sfx('whistle');
     // Em ano de Copa com convocação, fechar o jogo no resumo não pula a Copa
-    G.step = S.isWcYear(G.c) && G.c.wcYearDone !== year() && S.wcCall(G.c).called ? 'wc'
+    G.step = S.natTour(G.c) && G.c.wcYearDone !== year() && S.wcCall(G.c).called ? 'wc'
       : S.isCwcYear(G.c) && G.c.cwcYearDone !== year() && S.cwcCall(G.c).called ? 'cwc' : S.windowOpen(G.c) ? 'offers' : 'preseason';
     save();
     // Carreira Completa: antes do resumo, a liga rodada a rodada (ui/fullseason.js); o resumo já não refaz a corrida
@@ -557,12 +557,13 @@
     const open = S.windowOpen(G.c);
     const contractTxt = G.c.contract > 0 ? 'Contrato: mais ' + G.c.contract + (G.c.contract > 1 ? ' temporadas' : ' temporada') + ' ' + D.no(esc(club(G.c.club).name)) : 'Seu contrato acabou: hora de decidir o futuro';
     // Copa do Mundo: convocação logo depois da temporada, em ano de Copa
-    const wcNow = S.isWcYear(G.c) && G.c.wcYearDone !== year();
+    // Jogo a Jogo: nos anos pares sem Copa, o torneio do continente (Eurocopa, Copa América...)
+    const wcNow = !!S.natTour(G.c) && G.c.wcYearDone !== year(), tn = S.natTourName(G.c);
     const call = wcNow ? S.wcCall(G.c) : null;
     let wcBlock = '';
-    if (call && call.called) wcBlock = '<div class="wc-call rv"><span class="wc-flag">' + U.flag(call.nation.flag) + '</span><div><b>Convocado para a Copa do Mundo ' + year() + '!</b><span>' + (call.starter ? 'Titular da seleção' : 'Vai como reserva (nota geral perto do corte de ' + call.cut + ')') + '</span></div></div>';
-    else if (call && call.retired) { wcBlock = '<p class="wc-miss rv">' + U.emo('👋', 'sm') + ' Copa de ' + year() + ' sem você, que já se despediu da seleção.</p>'; G.c.wcYearDone = year(); save(); }
-    else if (call && G.c.age >= 18) { wcBlock = '<p class="wc-miss rv">' + U.emo('🌍', 'sm') + ' Fora da Copa de ' + year() + ': ' + (S.ovr(G.c) >= call.cut ? 'aos ' + G.c.age + ' anos, a seleção preferiu apostar na nova geração.' : 'a seleção pedia nota geral ' + call.cut + ', você tem ' + S.ovr(G.c) + '.') + '</p>'; G.c.wcYearDone = year(); save(); }
+    if (call && call.called) wcBlock = '<div class="wc-call rv"><span class="wc-flag">' + U.flag(call.nation.flag) + '</span><div><b>Convocado para ' + D.aTaca(tn) + ' ' + year() + '!</b><span>' + (call.starter ? 'Titular da seleção' : 'Vai como reserva (nota geral perto do corte de ' + call.cut + ')') + '</span></div></div>';
+    else if (call && call.retired) { wcBlock = '<p class="wc-miss rv">' + U.emo('👋', 'sm') + ' ' + tn + ' ' + year() + ' sem você, que já se despediu da seleção.</p>'; G.c.wcYearDone = year(); save(); }
+    else if (call && G.c.age >= 18) { wcBlock = '<p class="wc-miss rv">' + U.emo('🌍', 'sm') + ' Fora ' + D.da(tn) + ' ' + year() + ': ' + (S.ovr(G.c) >= call.cut ? 'aos ' + G.c.age + ' anos, a seleção preferiu apostar na nova geração.' : 'a seleção pedia nota geral ' + call.cut + ', você tem ' + S.ovr(G.c) + '.') + '</p>'; G.c.wcYearDone = year(); save(); }
     // Mundial de Clubes (a cada 4 anos): o clube classificado joga logo depois da temporada
     const cwcCall = S.isCwcYear(G.c) && G.c.cwcYearDone !== year() ? S.cwcCall(G.c) : null;
     if (cwcCall && cwcCall.called) wcBlock = '<div class="wc-call rv">' + crest(cwcCall.club.id, 'lg') + '<div><b>' + D.O(esc(cwcCall.club.name)) + ' está no Mundial de Clubes ' + year() + '!</b><span>' + (cwcCall.champ ? 'Vaga de campeão continental' : 'Vaga pelo ranking de clubes') + ' · 32 clubes, jogo a jogo</span></div></div>';
@@ -570,7 +571,7 @@
     const goCwc = !!(cwcCall && cwcCall.called);
     const goWc = call && call.called;
     const goTour = goWc || goCwc, tourIntro = goWc ? U.wcIntro : U.cwcIntro;
-    const tourLbl = goWc ? 'Copa do Mundo ' + year() + ' ' + U.emo('🌍', 'sm') : 'Mundial de Clubes ' + year() + ' ' + U.emo('🌐', 'sm');
+    const tourLbl = goWc ? tn + ' ' + year() + ' ' + U.emo('🌍', 'sm') : 'Mundial de Clubes ' + year() + ' ' + U.emo('🌐', 'sm');
     let actions;
     const pctx = { kind: fin ? 'farewell' : 'season', res };
     // Seguir e postar numa barra presa embaixo, ao alcance do polegar (a tela mais repetida da carreira)

@@ -121,8 +121,9 @@ for (let n = 0; n < N; n++) {
     c.train = process.env.TRAIN || (SMART ? (c.age <= 28 ? 'forte' : c.age >= 32 ? 'leve' : 'normal') : D.TRAIN[Math.floor(Math.random() * D.TRAIN.length)].id);
     S.playSeason(c);
     // Copa do Mundo: o robô joga se for convocado (pênaltis pela chance)
-    if (S.isWcYear(c) && S.wcCall(c).called) {
-      S.wcStart(c); decisions++;
+    // Jogo a Jogo (fase 5): nos anos pares sem Copa, o torneio do continente
+    if (S.natTour(c) && S.wcCall(c).called) {
+      if (S.natTour(c) === 'nat2') S.natContStart(c); else S.wcStart(c); decisions++;
       let g; while ((g = S.wcNext(c))) {
         if (g.live) { S.wcMomentAuto(c); decisions++; }
         if (g.pens) S.wcPensAuto(c);
@@ -158,7 +159,7 @@ for (let n = 0; n < N; n++) {
   }
   const f = S.finish(c);
   (globalThis.ACH = globalThis.ACH || {}); S.achievementsOf(c, f).forEach(id => { ACH[id] = (ACH[id] || 0) + 1; });
-  res.push({ midMoves: c.midMoves || 0, perfil: c.perfil, aperto: ((c.fin && c.fin.maxDebt) || 0) >= 1, quebrou: (c.debt || 0) > 0, maxDebt: (c.fin && c.fin.maxDebt) || 0, score: f.score, cs: c.totals.cs || 0, penSaved: c.totals.penSaved || 0, tackles: c.totals.tackles || 0, build:c.traits.slice().sort().join('+'), idol: f.verdict.startsWith('Ídolo'), farewell: !!c.farewell, seasons: c.season, decisions, goals: c.totals.goals, assists: c.totals.assists, titles: f.titles, ballon: c.totals.ballon, peak: c.peak, grade: f.grade, verdict: f.verdict, pos, clubs: f.nClubs, games: c.totals.games, events: Object.values(c.stats || {}).reduce((a, b) => a + b, 0), buys: c.buys, invOvr: S.ovr(c) - S.ovrOf(S.preview(c, {}).attrs, c.pos) + (() => { const inv = c.inv; c.inv = {}; const o = S.ovr(c); c.inv = inv; return S.ovr(c) - o; })(), firstBuy: c.firstBuyAge || 0, peLeft: c.pe || 0, money: Math.round(c.money / 1e6), moments: (c.mstats || {}).n || 0, wcApps: c.totals.wcApps || 0, wc: c.totals.wc || 0, wcGoals: c.totals.wcGoals || 0, cwcApps: c.totals.cwcApps || 0, cwc: c.totals.cwc || 0, inter: c.totals.inter || 0, momentsOk: (c.mstats || {}).ok || 0, cards: (c.cards || []).length });
+  res.push({ natCont: c.totals.natCont || 0, natApps: (c.wcHist || []).filter(h => h.kind === 'nat2').length, midMoves: c.midMoves || 0, perfil: c.perfil, aperto: ((c.fin && c.fin.maxDebt) || 0) >= 1, quebrou: (c.debt || 0) > 0, maxDebt: (c.fin && c.fin.maxDebt) || 0, score: f.score, cs: c.totals.cs || 0, penSaved: c.totals.penSaved || 0, tackles: c.totals.tackles || 0, build:c.traits.slice().sort().join('+'), idol: f.verdict.startsWith('Ídolo'), farewell: !!c.farewell, seasons: c.season, decisions, goals: c.totals.goals, assists: c.totals.assists, titles: f.titles, ballon: c.totals.ballon, peak: c.peak, grade: f.grade, verdict: f.verdict, pos, clubs: f.nClubs, games: c.totals.games, events: Object.values(c.stats || {}).reduce((a, b) => a + b, 0), buys: c.buys, invOvr: S.ovr(c) - S.ovrOf(S.preview(c, {}).attrs, c.pos) + (() => { const inv = c.inv; c.inv = {}; const o = S.ovr(c); c.inv = inv; return S.ovr(c) - o; })(), firstBuy: c.firstBuyAge || 0, peLeft: c.pe || 0, money: Math.round(c.money / 1e6), moments: (c.mstats || {}).n || 0, wcApps: c.totals.wcApps || 0, wc: c.totals.wc || 0, wcGoals: c.totals.wcGoals || 0, cwcApps: c.totals.cwcApps || 0, cwc: c.totals.cwc || 0, inter: c.totals.inter || 0, momentsOk: (c.mstats || {}).ok || 0, cards: (c.cards || []).length });
 }
 console.log('Robô:', SMART ? 'esperto' : 'casual');
 console.log('Builds finais diferentes:', new Set(res.map(r => r.build)).size, 'em', N, 'carreiras · Ídolos:', (res.filter(r => r.idol).length / N * 100).toFixed(1) + '% · Com despedida:', (res.filter(r => r.farewell).length / N * 100).toFixed(0) + '%');
@@ -170,7 +171,7 @@ const pr = (label, key, filter) => {
 pr('Temporadas', 'seasons'); pr('Decisões', 'decisions');
 pr('Gols (ATA)', 'goals', r => r.pos === 'ATA'); pr('Assistências (MEI)', 'assists', r => r.pos === 'MEI');
 pr('Jogos', 'games'); pr('Eventos por carreira', 'events'); pr('Títulos', 'titles'); pr('Pico OVR', 'peak'); pr('Clubes', 'clubs');
-pr('Compras (investimentos)', 'buys'); pr('OVR vindo de compras', 'invOvr'); pr('Idade da 1ª compra', 'firstBuy'); pr('Saldo final (mi)', 'money'); pr('Pontos não usados', 'peLeft'); pr('Jogos decisivos', 'moments'); pr('Copas disputadas', 'wcApps'); pr('Gols em Copas', 'wcGoals');
+pr('Compras (investimentos)', 'buys'); pr('OVR vindo de compras', 'invOvr'); pr('Idade da 1ª compra', 'firstBuy'); pr('Saldo final (mi)', 'money'); pr('Pontos não usados', 'peLeft'); pr('Jogos decisivos', 'moments'); pr('Copas disputadas', 'wcApps'); pr('Gols em Copas', 'wcGoals'); if (process.env.MODO === 'completa') { pr('Torneios do continente disputados', 'natApps'); pr('Torneios do continente ganhos', 'natCont'); }
 console.log('Carreiras com Copa disputada:', (res.filter(r => r.wcApps > 0).length / N * 100).toFixed(0) + '% · campeão do mundo:', (res.filter(r => r.wc > 0).length / N * 100).toFixed(1) + '% · 2+ títulos:', (res.filter(r => r.wc > 1).length / N * 100).toFixed(1) + '%');
 console.log('Carreiras com Mundial de Clubes:', (res.filter(r => r.cwcApps > 0).length / N * 100).toFixed(0) + '% · campeão:', (res.filter(r => r.cwc > 0).length / N * 100).toFixed(1) + '% · Intercontinental:', (res.filter(r => r.inter > 0).length / N * 100).toFixed(1) + '%');
 console.log('Acerto nos jogos decisivos:', (res.reduce((a, r) => a + r.momentsOk, 0) / Math.max(1, res.reduce((a, r) => a + r.moments, 0)) * 100).toFixed(0) + '%');

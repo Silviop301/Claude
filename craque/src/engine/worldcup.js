@@ -70,6 +70,49 @@
     return c.wcRun;
   };
 
+  // ---------- torneio do continente (Jogo a Jogo, plano fase 5) ----------
+  // Nos anos pares sem Copa (2028, 2032...) a seleção joga o torneio do continente: Eurocopa, Copa América, Copa Ouro,
+  // Copa Africana ou Copa da Ásia. Mesmo motor da Copa (c.wcRun, kind 'nat2'): grupo de quatro e mata-mata, 7 jogos.
+  // Continente com poucas seleções na lista recebe convidados de fora (como a Copa América e a Copa Ouro fazem).
+  const NAT_CONF = {
+    sul: ['Brasil', 'Argentina', 'Uruguai', 'Colômbia', 'Equador', 'Chile', 'Paraguai', 'Peru', 'Bolívia', 'Venezuela'],
+    eur: ['Portugal', 'Espanha', 'Inglaterra', 'Itália', 'Alemanha', 'França', 'Holanda', 'Bélgica', 'Croácia', 'Suíça', 'Dinamarca', 'Sérvia', 'Polônia', 'Turquia', 'Áustria', 'Escócia', 'Grécia', 'Noruega', 'Suécia', 'República Tcheca'],
+    conc: ['México', 'EUA', 'Canadá'],
+    caf: ['Marrocos', 'Egito', 'Senegal', 'Nigéria', 'Camarões', 'Gana', 'Tunísia'],
+    asia: ['Japão', 'Coreia do Sul', 'Arábia Saudita', 'Catar', 'Irã', 'Austrália'],
+  };
+  const NAT_CUP = { sul: 'Copa América', eur: 'Eurocopa', conc: 'Copa Ouro', caf: 'Copa Africana', asia: 'Copa da Ásia' };
+  const NAT_GUESTS = { sul: ['México', 'EUA', 'Canadá'], conc: ['Japão', 'Coreia do Sul', 'Catar', 'Equador', 'Austrália'] };
+  S.NAT_CONF = NAT_CONF; S.NAT_CUP = NAT_CUP;
+  S.natConf = name => Object.keys(NAT_CONF).find(k => NAT_CONF[k].includes(name)) || 'eur';
+  S.natContName = c => NAT_CUP[S.natConf(c.country)];
+  // Seleções do torneio (sem a sua): o continente e, faltando, os convidados e as mais parecidas de fora da Europa e da América do Sul
+  S.natContField = function (c) {
+    const cf = S.natConf(c.country), have = n => !!D.NATION_BY_NAME[n];
+    let f = NAT_CONF[cf].concat(NAT_GUESTS[cf] || []).filter(n => have(n) && n !== c.country);
+    if (f.length < 9) {
+      const avg = f.reduce((a, n) => a + D.NATION_BY_NAME[n].str, 0) / Math.max(1, f.length);
+      D.NATIONS.filter(n => !f.includes(n.name) && n.name !== c.country && !NAT_CONF.eur.includes(n.name) && !NAT_CONF.sul.includes(n.name))
+        .sort((a, b) => Math.abs(a.str - avg) - Math.abs(b.str - avg)).slice(0, 9 - f.length).forEach(n => f.push(n.name));
+    }
+    return f;
+  };
+  // Que torneio de seleções há depois desta temporada: 'wc' (Copa do Mundo), 'nat2' (continente, só no Jogo a Jogo) ou null
+  S.isNatContYear = c => c.mode === 'completa' && c.season > 0 && (S.YEAR0 + c.season) % 4 === 0;
+  S.natTour = c => (S.isWcYear(c) ? 'wc' : S.isNatContYear(c) ? 'nat2' : null);
+  S.natTourName = c => (S.natTour(c) === 'nat2' ? S.natContName(c) : 'Copa do Mundo');
+  S.natContStart = function (c) {
+    const { r, save } = rngOf(c);
+    const call = S.wcCall(c), pool = S.natContField(c).sort((a, b) => D.NATION_BY_NAME[b].str - D.NATION_BY_NAME[a].str);
+    const third = Math.max(1, Math.floor(pool.length / 3)), used = [];
+    const take = list => { const p = list.filter(n => !used.includes(n)); const n = r.pick(p.length ? p : pool.filter(x => !used.includes(x))); used.push(n); return n; };
+    const group = [take(pool.slice(0, third)), take(pool.slice(third, 2 * third)), take(pool.slice(2 * third))];
+    c.wcRun = { kind: 'nat2', name: S.natContName(c), year: S.YEAR0 + c.season, nation: c.country, cut: call.cut, starter: call.starter, share: call.starter ? 0.92 : 0.45,
+      group, used, pool, games: [], stage: 0, pts: 0, out: false, champion: false, pending: null, g: 0, a: 0, groupMoment: r.int(0, 2) };
+    save();
+    return c.wcRun;
+  };
+
   // Próximo jogo. Retorna o jogo; se for mata-mata empatado, game.pens = true e espera S.wcPens.
   // Próximo jogo. Três saídas possíveis:
   //  game.live  → lance decisivo no fim do jogo: espera S.wcMoment (minigame) antes de fechar o placar
@@ -82,6 +125,12 @@
     let opp;
     if (run.kind === 'cwc') opp = cwcOpp(c, run, r);
     else if (run.stage < 3) opp = D.NATION_BY_NAME[run.group[run.stage]];
+    else if (run.kind === 'nat2') {
+      // Torneio do continente: o mata-mata vai afunilando para as mais fortes que sobraram
+      const left = run.pool.filter(n => !run.used.includes(n)), top = left.slice(0, [left.length, 6, 4, 2][run.stage - 3] || 2);
+      const nm = r.pick(top.length ? top : run.pool);
+      run.used.push(nm); opp = D.NATION_BY_NAME[nm];
+    }
     else {
       // Mata-mata: adversários cada vez mais fortes
       const want = 82 + (run.stage - 3) * 2;
@@ -290,6 +339,7 @@
     run.out = !run.champion;
     run.reached = reached;
     if (run.kind === 'cwc') return cwcEnd(c, run, reached);
+    if (run.kind === 'nat2') return natContEnd(c, run, reached);
     c.totals.wcApps = (c.totals.wcApps || 0) + 1;
     c.totals.wcGoals = (c.totals.wcGoals || 0) + run.g;
     addTotals(c, run, true);
@@ -303,6 +353,19 @@
     }
     c.wcHist = c.wcHist || [];
     c.wcHist.push({ year: run.year, nation: run.nation, reached, g: run.g, a: run.a, champion: run.champion });
+  }
+  // Fim do torneio do continente: jogos e gols pela seleção, a taça e um pouco de fama (o peso na nota fica para a fase 6)
+  function natContEnd(c, run, reached) {
+    addTotals(c, run, true);
+    c.fame += run.g * 1.5 + (run.champion ? 30 : run.stage >= 5 ? 8 : 0);
+    if (run.champion) {
+      c.totals.natCont = (c.totals.natCont || 0) + 1;
+      c.trophies[run.name] = c.trophies[run.name] || { type: 'natcont', n: 0 };
+      c.trophies[run.name].n++;
+      c.wcBoost = Math.max(c.wcBoost || 0, 10);
+    }
+    c.wcHist = c.wcHist || [];
+    c.wcHist.push({ kind: 'nat2', name: run.name, year: run.year, nation: run.nation, reached, g: run.g, a: run.a, champion: run.champion });
   }
   S.wcDone = c => !c.wcRun || c.wcRun.out || c.wcRun.champion;
 
