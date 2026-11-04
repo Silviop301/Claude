@@ -10,8 +10,8 @@
 
   // ---------- quem é quem ----------
   const BASE = { mae: 75, parca: 62, emp: 60, jor: 55, cap: 60 };
-  const ROLE = { mae: 'mãe', parca: 'parça de infância', emp: 'empresário', jor: 'jornalista', cap: 'capitão', coach: 'técnico', rival: 'rival' };
-  const ICON = { mae: '❤️', parca: '🤙', emp: '💼', jor: '🎙️', cap: '💪', coach: '📋', rival: '⚔️' };
+  const ROLE = { mae: 'mãe', parca: 'parça de infância', emp: 'empresário', jor: 'jornalista', cap: 'capitão', coach: 'técnico', rival: 'rival', ze: 'apostas' };
+  const ICON = { mae: '❤️', parca: '🤙', emp: '💼', jor: '🎙️', cap: '💪', coach: '📋', rival: '⚔️', ze: '🎰' };
   const NICK_BR = ['Biel', 'Teteu', 'Dudu', 'Juninho', 'Pedrinho', 'Lipe', 'Gui', 'Vitinho', 'Netinho', 'Bruninho', 'Rafinha', 'Léo', 'Kauê', 'Digão'];
   const EMP_BR = ['Marcão', 'Carlão', 'Toninho', 'Juca', 'Ricardão', 'Beto', 'Serginho', 'Edinho'];
   const JOR_F_PT = ['Tati', 'Bia', 'Carol', 'Renata', 'Luana', 'Paula', 'Camila', 'Júlia', 'Fernanda', 'Mariana'];
@@ -419,7 +419,7 @@
   S.fcPhoneNew = function (c) {
     const P = c.ppl, fc = c.fc;
     if (!P || !fc) return [];
-    return P.inbox.filter(m => m.s === c.season && m.at === fc.i);
+    return P.inbox.filter(m => m.s === c.season && m.at === fc.i && !m.me);
   };
   // Conversas: uma por pessoa, a mais recente em cima
   S.fcThreads = function (c) {

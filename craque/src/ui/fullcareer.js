@@ -41,21 +41,43 @@
   // ---------- o celular (tela central) ----------
   // O hub é a tela do celular do jogador: relógio com o próximo jogo, notificações (técnico, agenda, preparador, Zé)
   // que levam às telas, os apps e o ingresso para o jogo.
-  const APPS = [['msg', '💬', 'Chat'], ['ag', '📒', 'Agenda'], ['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['me', '📈', 'Ficha'], ['shop', '🏷️', 'Loja'], ['bet', '🎰', 'Zé']];
+  // Como num iPhone: a grade de apps em cima e a barra fixa de baixo com os quatro principais (dentro dos apps ela continua
+  // no pé da tela, com o app aberto marcado). O Zé é um contato do Chat; as apostas e a mesa são o app Apostas.
+  const DOCK = [['msg', '💬', 'Chat'], ['ag', '📒', 'Agenda'], ['bet', '🎰', 'Apostas'], ['shop', '🏷️', 'Loja']];
+  const GRID = [['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['me', '📈', 'Ficha']];
+  const appBtn = (c, [k, e, n], on) => { const u = k === 'msg' ? (c.ppl && c.ppl.unread) || 0 : 0;
+    return '<button class="ph-app' + (on ? ' on' : '') + '" data-go="' + k + '"' + (on ? ' aria-current="page"' : '') + '><i>' + U.emo(e, 'md') + (u ? '<em class="ph-badge">' + Math.min(u, 99) + '</em>' : '') + '</i><span>' + n + '</span></button>'; };
+  const dock = (c, cur) => '<nav class="ph-dock" aria-label="Apps">' + DOCK.map(a => appBtn(c, a, a[0] === cur)).join('') + '</nav>';
+  // Barra de status do aparelho: dia e hora da véspera do jogo, energia
+  function sbar(c) {
+    const fc = c.fc, nx = S.fcNext(c), gd = dayOf(nx.e), eve = DAYS[(gd + 6) % 7];
+    const hh = 17 + (fc.i * 7) % 5, mm = (fc.i * 23 + 11) % 60, clk = hh + ':' + String(mm).padStart(2, '0');
+    const en = Math.round(fc.en === undefined ? 100 : fc.en);
+    return { clk, html: '<div class="ph-bar"><span>' + eve + ' ' + clk + '</span><span class="' + (en < S.FC_EN_OUT ? 'out' : en < S.FC_EN_LOW ? 'low' : '') + '">Energia ' + en + '%</span></div>' };
+  }
+  // Um app aberto dentro do aparelho: cabeçalho com a volta, o conteúdo rolando por dentro e a barra de baixo
+  function appScr(cur, title, body, o) {
+    o = o || {};
+    const c = G.c;
+    render('<div class="ph pa" id="fc"><div class="ph-scr pa-scr">' + sbar(c).html +
+      '<header class="pa-h"><button class="pa-back" id="fc-back">‹ ' + (o.back || 'Início') + '</button><b>' + title + '</b><span></span></header>' +
+      '<div class="fc-scr pa-body' + (o.cls ? ' ' + o.cls : '') + '" id="fc-scr">' + body + '</div>' + (o.foot || '') +
+      dock(c, cur) + '<button class="ph-home" id="fc-home" aria-label="Voltar para o início do celular"></button></div></div>');
+    $('fc-back').onclick = () => { sfx('tap'); phone(); };
+    $('fc-home').onclick = () => { sfx('tap'); phone(); };
+    document.querySelectorAll('.ph-dock [data-go]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go); }; });
+  }
   function phone() {
     const c = G.c, nx = S.fcNext(c), fc = c.fc, kind = S.fcKind(c, nx);
     if (S.fcPhonePre) S.fcPhonePre(c, nx); // as pessoas do celular (engine/phone.js): lesão, jogo grande
-    const unread = (c.ppl && c.ppl.unread) || 0;
-    const gd = dayOf(nx.e), eve = DAYS[(gd + 6) % 7];
-    const hh = 17 + (fc.i * 7) % 5, mm = (fc.i * 23 + 11) % 60, clk = hh + ':' + String(mm).padStart(2, '0');
-    const en = Math.round(fc.en === undefined ? 100 : fc.en);
+    if (S.fcZeSync) S.fcZeSync(c); // a proposta do Zé chega como mensagem (engine/money.js)
+    const sb = sbar(c), clk = sb.clk;
     const when = ['agora', '8 min', '25 min', '1 h', '2 h', '3 h'];
-    render('<div class="ph" id="fc"><div class="ph-cols"><div class="ph-scr">' +
-      '<div class="ph-bar"><span>' + eve + ' ' + clk + '</span><span class="' + (en < S.FC_EN_OUT ? 'out' : en < S.FC_EN_LOW ? 'low' : '') + '">Energia ' + en + '%</span></div>' +
+    render('<div class="ph" id="fc"><div class="ph-cols"><div class="ph-scr">' + sb.html +
       '<div class="ph-clock">' + clk + '</div>' +
       '<p class="ph-date">' + (nx.vs ? 'Amanhã: x ' + esc(nameOf(nx.vs)) + ', ' + (nx.home ? 'em casa' : 'fora') + ' · ' + esc(nx.compName) : 'Amanhã: folga do time · ' + esc(nx.compName)) + '</p>' +
       '<div class="ph-ns">' + pings(c, nx).map((n, k) => '<button class="ph-n"' + (n.go ? ' data-go="' + n.go + '"' : ' disabled') + '><b>' + esc(n.who) + ' <i>· ' + when[Math.min(k, when.length - 1)] + '</i></b><span>' + esc(n.txt) + '</span></button>').join('') + '</div>' +
-      '<div class="ph-apps">' + APPS.map(([k, e, n]) => '<button class="ph-app" data-go="' + k + '"><i>' + U.emo(e, 'md') + (k === 'msg' && unread ? '<em class="ph-badge">' + Math.min(unread, 99) + '</em>' : '') + '</i><span>' + n + '</span></button>').join('') + '</div>' +
+      '<div class="ph-apps">' + GRID.map(a => appBtn(c, a)).join('') + '</div>' + dock(c) +
       '</div><div class="ph-side">' +
         '<p class="prc-kind ' + kind + '">' + kindTxt(c, nx, kind) + '</p>' +
         '<button class="prc-tk" id="fc-play"><span class="prc-tk-m"><b>' + (nx.moment ? 'Jogar a decisão' : kind === 'vivo' ? 'Ir pro jogo' : nx.vs ? 'Jogar' : 'Seguir') + '</b><small>' +
@@ -79,7 +101,7 @@
     const p = Math.round(S.fcStartP(c) * 100);
     // Quem escreveu desde o último jogo (as duas mais novas), antes das notificações do clube
     const who = id => { const k = S.fcContact(c, id); return id === 'mae' ? k.name : k.name + ', ' + k.role; };
-    if (S.fcPhoneNew) S.fcPhoneNew(c).slice(-2).reverse().forEach((m, k) => n('msg', who(m.p), m.t, 3 + k));
+    if (S.fcPhoneNew) S.fcPhoneNew(c).slice(-2).reverse().forEach((m, k) => n(m.p === 'ze' ? 'ze' : 'msg', m.p === 'ze' ? 'Zé' : who(m.p), m.t, 3 + k));
     const coach = c.ppl ? who('coach') : 'Técnico', n1 = (g, w, t) => n(g, w, t, 1);
     if (nx.injury) n1(null, /suspensão/.test(nx.injury) ? 'Diretoria' : 'Departamento médico', /suspensão/.test(nx.injury) ? (/manipula/.test(fc.injName) ? 'Suspenso pelo caso do cartão combinado: fora por mais ' : 'Suspenso por causa da aposta: fora por mais ') + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') : nx.injury.charAt(0).toUpperCase() + nx.injury.slice(1) + ': fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') + (fc.wkDue ? ' Fisioterapia na semana ajuda.' : ''));
     else if (nx.vs) n1(null, coach, nx.on === null ? 'Escalo o time depois do treino da semana. Hoje você tem ' + p + '% de chance de começar.' : nx.on ? 'Amanhã você começa jogando. Conto contigo.' : nx.why === 'cansaço' ? 'Vou te poupar amanhã, você tá sem perna. Descansa.' : nx.why === 'banco' ? 'Amanhã você começa no banco. Treina forte que a chance aparece.' : 'Amanhã vou rodar o elenco e você fica fora.');
@@ -103,9 +125,9 @@
     if ((c.pe || 0) >= 1 && S.canInvestAny(c)) n('evo', 'Preparador', 'Você tem ' + c.pe + (c.pe === 1 ? ' ponto' : ' pontos') + ' para gastar na ficha.');
     if (fc.wkDue && (fc.en === undefined ? 100 : fc.en) < S.FC_EN_LOW) n('ag', 'Preparador físico', 'Energia ' + Math.round(fc.en) + '. Marca um descanso na agenda.');
     const fx = S.fcZeOffer(c), bets = S.fcBets(c);
-    if (fx && fx.st === 'open') n('bet', 'Zé', 'Tenho uma proposta pro teu próximo jogo. Só entre nós.');
+    if (fx && fx.st === 'open') n('ze', 'Zé', 'Tenho uma proposta pro teu próximo jogo. Só entre nós.');
     else if (bets.length) n('bet', 'Zé', bets.length === 1 ? 'Teu cupom tá feito. Sai na próxima rodada.' : 'Teus ' + bets.length + ' cupons tão feitos. Saem na próxima rodada.');
-    else if (S.fcBetRound(c) && !(fc.zeMad > fc.i)) n('bet', 'Zé', 'A rodada tá aberta, com jogo de fora também. Quer ver?');
+    else if (S.fcBetRound(c) && !(fc.zeMad > fc.i)) n('ze', 'Zé', 'A rodada tá aberta, com jogo de fora também. Quer um palpite?');
     // Tela limpa: as quatro mais importantes (o resto está nos apps); o Chat mostra o contador do que ficou de fora
     return out.sort((a, b) => a.pr - b.pr || a.k - b.k).slice(0, 4);
   }
@@ -185,15 +207,14 @@
     const en = Math.round(open ? S.fcWeekEnergy(c, pick) : fc.en === undefined ? 100 : fc.en);
     const lvl = e => (e < S.FC_EN_OUT ? 'out' : e < S.FC_EN_LOW ? 'low' : 'ok');
     const sum = done ? '<p class="ag-sum">' + (c.fcAuto ? 'Semana automática' : 'Semana fechada') + ': energia ' + Math.round(done.en0) + ' → ' + Math.round(done.en1) + (done.pe ? ' · +' + num2(done.pe) + ' de evolução' : '') + (done.tr ? ' · +1 em ' + D.label(c.pos, done.tr) : '') + (done.money > 0 ? ' · +R$ ' + U.money(done.money) : '') + '</p>' : '';
-    render('<div class="fc-scr ag" id="fc-scr"><button class="back-link" id="fc-back">‹ Celular</button>' +
-      '<div class="ag-book"><header><b>Agenda</b><span>' + esc(fc.lg.name) + (me ? ' · ' + esc(nameOf(c.club)) + ' ' + me + 'º' : '') + '</span></header>' +
+    appScr('ag', 'Agenda', '<div class="ag-book"><header><b>Agenda</b><span>' + esc(fc.lg.name) + (me ? ' · ' + esc(nameOf(c.club)) + ' ' + me + 'º' : '') + '</span></header>' +
         (open ? '<p class="ag-hint">Toque num dia marcado para trocar o que você faz.</p>' : '') +
         rows + game + sum +
         '<div class="ag-box"><div><small>' + (open ? 'Energia no jogo' : 'Energia') + '</small><b class="' + lvl(en) + '">' + en + '</b></div><div><small>Forma</small><b>' + formTxt(fc.fo || 0) + '</b></div><div><small>Técnico</small><b>' + Math.round(c.rel.coach) + '</b></div></div>' +
       '</div>' +
       '<label class="fc-auto ag-auto"><input type="checkbox" id="fc-auto"' + (c.fcAuto ? ' checked' : '') + '><span>Repetir esta semana sozinho</span></label>' +
-      '<button class="btn" id="fc-agok">Pronto</button></div>');
-    $('fc-back').onclick = phone; $('fc-agok').onclick = () => { sfx('tap'); phone(); };
+      '<button class="btn" id="fc-agok">Pronto</button>', { cls: 'ag' });
+    $('fc-agok').onclick = () => { sfx('tap'); phone(); };
     document.querySelectorAll('.ag-d.slot').forEach(b => { b.onclick = () => { sfx('tap'); const k = +b.dataset.slot; agOpen = agOpen === k ? -1 : k; agenda(); }; });
     document.querySelectorAll('.ag-o').forEach(b => { b.onclick = () => { sfx('tap'); pick = [b.dataset.id]; touched = true; agOpen = -1; agenda(); }; });
     document.querySelectorAll('[data-ta]').forEach(b => { b.onclick = () => { sfx('tap'); trA = b.dataset.ta; agenda(); }; });
@@ -213,26 +234,60 @@
     if (c.ppl) c.ppl.unread = 0;
     save();
     const when = m => (m.s === c.season ? (m.at >= fc.i ? 'agora' : 'jogo ' + m.at) : String(year() - c.season + m.s));
+    // O Zé fica sempre na lista (é por ele que se pede palpite), mesmo antes da primeira mensagem
+    if (!th.some(x => x.id === 'ze')) th.push({ id: 'ze', c: { id: 'ze', name: 'Zé', role: 'apostas', icon: '🎰' }, msgs: [{ t: 'Manda mensagem que eu te passo um palpite da rodada.', s: c.season, at: fc.i }] });
     const t = chatOpen && th.find(x => x.id === chatOpen);
     let body;
     if (t) {
       body = '<div class="ch-head"><i>' + U.emo(t.c.icon, 'sm') + '</i><div><b>' + esc(t.c.name) + '</b><small>' + esc(t.c.role) + '</small></div></div>' +
-        '<div class="ch-log">' + t.msgs.slice(-30).map(m => '<p class="ch-b"><span>' + esc(m.t) + '</span><small>' + esc(when(m)) + '</small></p>').join('') + '</div>';
+        '<div class="ch-log">' + t.msgs.slice(-30).map(m => '<p class="ch-b' + (m.me ? ' me' : '') + '"><span>' + esc(m.t) + '</span><small>' + esc(when(m)) + (m.me && m.seen ? ' · visualizado' : '') + '</small></p>' + (t.id === 'ze' ? zeCard(c, m) : '')).join('') + '</div>';
     } else {
       body = th.length ? '<div class="ch-list">' + th.map(x => { const m = x.msgs[x.msgs.length - 1]; return '<button class="ch-row" data-ch="' + x.id + '"><i>' + U.emo(x.c.icon, 'sm') + '</i><span><b>' + esc(x.c.name) + (x.id === 'mae' ? '' : ' <small>' + esc(x.c.role) + '</small>') + '</b><em>' + esc(m.t) + '</em></span><small>' + esc(when(m)) + '</small></button>'; }).join('') + '</div>' :
         '<p class="ch-none">Ninguém escreveu ainda. Depois dos jogos a família, os amigos e o pessoal do clube mandam mensagem.</p>';
     }
-    render('<div class="fc-scr ch" id="fc-scr"><button class="back-link" id="fc-back">' + (t ? '‹ Conversas' : '‹ Celular') + '</button><h2>' + (t ? 'Conversa' : 'Chat') + '</h2>' + body + '</div>');
-    $('fc-back').onclick = () => { sfx('tap'); if (t) { chatOpen = null; chat(); } else phone(); };
+    appScr('msg', t ? esc(t.c.name) : 'Chat', body, { cls: 'ch' + (t && t.id === 'ze' ? ' ze' : ''), back: t ? 'Conversas' : 'Início', foot: t && t.id === 'ze' ? zeReply(c) : '' });
+    if (t) $('fc-back').onclick = () => { sfx('tap'); chatOpen = null; chat(); };
+    if (t && t.id === 'ze') zeBind(c);
     document.querySelectorAll('[data-ch]').forEach(b => { b.onclick = () => { sfx('tap'); chatOpen = b.dataset.ch; chat(); }; });
     if (t) { const lg = document.querySelector('.ch-log'); if (lg && lg.lastElementChild) lg.lastElementChild.scrollIntoView({ block: 'end' }); } else window.scrollTo(0, 0);
   }
-  // Apps do celular: cada um abre uma tela com volta para o celular
-  const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Zé' };
+  // ---------- o Zé no Chat (engine/money.js): palpite com a cotação, aposta ali mesmo e a proposta do amarelo ----------
+  const tipName = (t) => (t.m === 'x' ? (t.pick === 1 ? 'Empate' : 'Vitória do ' + nameOf(t.pick === 0 ? t.h : t.a)) : t.m === 'o25' ? (t.pick === 0 ? 'Mais de 2,5 gols' : 'Menos de 2,5 gols') : 'Ambos marcam');
+  function zeCard(c, m) {
+    const R$ = v => 'R$ ' + U.money(v), fc = c.fc;
+    if (m.tip) {
+      const t = m.tip, R = S.fcBetRound(c), live = R && R.ri === t.ri && !t.done, k = m.k; // m é cópia (S.fcThreads): k é a posição no histórico
+      const head = '<b>' + esc(nameOf(t.h)) + ' × ' + esc(nameOf(t.a)) + '</b><small>' + esc(t.lg || '') + ' · ' + esc(tipName(t)) + ' · paga ' + String(t.odd.toFixed(2)).replace('.', ',') + '</small>';
+      if (t.done) return '<div class="ze-tip done">' + head + '<em>Você apostou ' + R$(t.done) + ' · paga ' + R$(Math.round(t.done * t.odd)) + '</em></div>';
+      if (!live) return '<div class="ze-tip off">' + head + '<em>A rodada já passou</em></div>';
+      return '<div class="ze-tip">' + head + '<div class="ze-tip-s">' + S.fcBetStakes(c).map(v => '<button data-zt="' + k + '" data-v="' + v + '"' + ((c.money || 0) >= v ? '' : ' disabled') + '>' + R$(v) + '</button>').join('') + '</div>' +
+        '<small class="ze-tip-r">Apostar é proibido para atleta: a cada aposta da temporada o faro da federação sobe (agora ' + Math.round(S.fcBetRisk(c) * 100) + '%).</small></div>';
+    }
+    const f = fc.fix;
+    if (m.fix !== undefined && f && f.i === m.fix && m.fix === fc.i && f.st === 'open')
+      return '<div class="ze-tip fix"><small>Se descobrirem (' + Math.round(S.FC_FIX_SCANDAL * 100) + '%): ' + S.FC_FIX_BAN + ' jogos de suspensão, técnico −20, torcida −15, fama −10 e manchete no jornal.</small>' +
+        '<div class="ze-tip-a"><button class="btn ghost" data-zf="1">Topar</button><button class="btn ghost" data-zf="0">Tô fora</button></div></div>';
+    return '';
+  }
+  function zeReply(c) {
+    const can = S.fcZeCanTip(c), R = S.fcBetRound(c), tips = S.fcZeTips(c) || [];
+    return '<div class="ch-reply"><button class="ch-q" id="ze-ask"' + (R && !can ? ' disabled' : '') + '>' + (!R ? 'Manda um palpite' : !can ? (S.fcZeMad(c) ? 'O Zé não está respondendo' : 'Sem mais palpites nesta rodada') : tips.length ? 'Manda outro palpite' : 'Manda um palpite') + '</button>' +
+      '<button class="ch-q ghost" data-go2="bet">Abrir Apostas</button></div>';
+  }
+  function zeBind(c) {
+    const a = $('ze-ask');
+    if (a) a.onclick = () => { sfx('tap'); S.fcZeAsk(c); if (c.ppl) c.ppl.unread = 0; save(); chat(); };
+    document.querySelectorAll('[data-zt]').forEach(b => { b.onclick = () => { if (S.fcZeBet(c, +b.dataset.zt, +b.dataset.v)) { sfx('coin'); if (c.ppl) c.ppl.unread = 0; save(); bar(); chat(); } }; });
+    document.querySelectorAll('[data-zf]').forEach(b => { b.onclick = () => { if (S.fcZeFix(c, b.dataset.zf === '1')) { sfx(b.dataset.zf === '1' ? 'coin' : 'tap'); if (c.ppl) c.ppl.unread = 0; save(); chat(); } }; });
+    document.querySelectorAll('[data-go2]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go2); }; });
+  }
+  // Apps do celular: cada um abre dentro do aparelho, com a barra de baixo
+  const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Apostas', evo: 'Evoluir' };
   const LOJA_IMG = ['chuteira-g1', 'chuteira-g2', 'chuteira-g3', 'luvas-g1', 'luvas-g2', 'luvas-g3', 'pt', 'physio', 'nutri', 'video', 'press', 'c1', 'c2', 'c3', 'c4', 'house'];
   function go(k) {
     if (k === 'evo') return evolve();
     if (k === 'msg') { chatOpen = null; return chat(); }
+    if (k === 'ze') { chatOpen = 'ze'; return chat(); }
     if (k === 'ag') { agOpen = -1; return agenda(); }
     const c = G.c, body = {
       wk: '<div class="fc-wk" id="fc-wk"></div><div class="fs-acts" id="fc-acts"></div>',
@@ -242,8 +297,7 @@
       shop: '<div class="fc-shop" id="fc-shop"></div>',
       bet: '<div class="fc-shop" id="fc-bet"></div>',
     }[k];
-    render('<div class="fc-scr" id="fc-scr"><button class="back-link" id="fc-back">‹ Celular</button><h2>' + TITLE[k] + '</h2>' + body + '</div>');
-    $('fc-back').onclick = phone;
+    appScr(k, TITLE[k], body);
     if (k === 'wk') { weekBox(); weekActs(); }
     else if (k === 'tbl') { tblKey = null; table(); tabs(); }
     else if (k === 'cal') { compsBox(standings('lg').findIndex(x => x.i === 0) + 1); calBox(); }
@@ -897,23 +951,19 @@
     const nx = S.fcNext(c);
     if (f.st === 'yes') return '<div class="mz-fix on"><b>Combinado com o Zé</b><p>Amarelo até os ' + f.min + "' contra o " + esc(nameOf(nx.vs)) + '. Se você entrar em campo, recebe ' + R$(f.pay) + '. Risco de escândalo: ' + Math.round(S.FC_FIX_SCANDAL * 100) + '%.</p></div>';
     if (f.st === 'no') return '';
-    return '<div class="mz-fix"><b>Mensagem do Zé</b><p>"Leva um amarelo até os ' + f.min + "' contra o " + esc(nameOf(nx.vs)) + ' e te pago ' + R$(f.pay) + '. Ninguém vai saber."</p>' +
-      '<small>Se descobrirem (' + Math.round(S.FC_FIX_SCANDAL * 100) + '%): ' + S.FC_FIX_BAN + ' jogos de suspensão, técnico −20, torcida −15, fama −10 e manchete no jornal.</small>' +
-      '<div class="mz-acts"><button class="btn" id="fix-yes">Topar</button><button class="btn ghost" id="fix-no">Recusar</button></div></div>';
+    return '<button class="mz-fix" data-go2="ze"><b>Mensagem do Zé</b><p>Ele tem uma proposta para o seu próximo jogo. Toque para abrir a conversa.</p></button>';
   }
   function betRender() {
     const el = $('fc-bet');
     if (!el) return;
     const c = G.c, R$ = v => 'R$ ' + U.money(v);
-    const tabs = [['bet', 'Palpites'], ['mesa', 'Mesa dos fundos'], ['ext', 'Extrato']];
+    const tabs = [['bet', 'Rodada'], ['mesa', 'Mesa dos fundos'], ['ext', 'Extrato']];
     el.innerHTML = '<div class="fc-cash"><span>Seu dinheiro</span><b>R$ ' + U.money(c.money || 0) + '</b></div>' + (zeTab === 'mesa' && zeGame ? '' : fixBox(c, R$)) +
       (zeTab === 'mesa' && zeGame ? '' : '<div class="seg ze-tabs">' + tabs.map(([k, t]) => '<button data-t="' + k + '"' + (zeTab === k ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>') +
       (zeTab === 'ext' ? extratoBox(c, R$) : zeTab === 'mesa' ? mesaBox(c, R$) : '<p class="fc-ze">"Palpite certo, sigilo total."</p>' + betBox(c, R$));
     el.classList.toggle('mz', zeTab === 'mesa');
     bindBet(); bindMesa();
-    const fy = $('fix-yes'), fn = $('fix-no');
-    if (fy) fy.onclick = () => { if (S.fcZeAnswer(c, true)) { sfx('coin'); save(); betRender(); } };
-    if (fn) fn.onclick = () => { if (S.fcZeAnswer(c, false)) { sfx('tap'); save(); betRender(); } };
+    el.querySelectorAll('[data-go2]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go2); }; });
   }
   function shopBox() {
     const c = G.c, el = $('fc-shop');
@@ -1422,11 +1472,10 @@
   function evolve() {
     const c = G.c, E = S.eff(c);
     const rows = D.INVEST.filter(t => (c.inv[t.id] || 0) < S.investMax(t.id) && !S.investCapped(c, t.id));
-    render('<button class="back-link" id="fc-back">‹ Celular</button><div class="eyebrow">Evoluir</div><h2>Gaste seus pontos</h2>' +
+    appScr('evo', 'Evoluir', '' +
       '<p class="fc-sub">Você tem <b>' + (c.pe || 0) + '</b> ' + ((c.pe || 0) === 1 ? 'ponto' : 'pontos') + '. O que você compra agora já vale no próximo jogo.</p>' +
       '<div class="fc-inv">' + rows.map(t => { const p = S.investPrice(c, t.id), ok = S.canInvest(c, t.id), at = t.attr ? Object.keys(t.attr)[0] : null;
         return '<button class="fc-iv' + (ok ? '' : ' off') + '" data-id="' + t.id + '"' + (ok ? '' : ' disabled') + '><span><b>' + esc(t.name) + '</b><small>' + (at ? esc(D.ATTR_LABEL[at]) + ' ' + Math.round(E[at]) + ' → ' + Math.round(E[at] + t.attr[at]) : 'Menos lesão') + '</small></span><em>' + p + (p === 1 ? ' ponto' : ' pontos') + '</em></button>'; }).join('') + '</div>');
-    $('fc-back').onclick = hub;
     document.querySelectorAll('.fc-iv:not(.off)').forEach(b => { b.onclick = () => { if (S.invest(c, b.dataset.id)) { sfx('levelup'); save(); bar(); evolve(); } }; });
   }
 

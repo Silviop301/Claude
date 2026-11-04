@@ -5596,3 +5596,49 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
 @media (min-width: 1280px) and (min-height: 860px) {
   html.desk .kick-stage.lv-stage { --lh: min(calc(100dvh / var(--z) - var(--bar-h, 0px) - 300px), 620px); }
 }
+
+/* Celular como iPhone (fase 3, parte 2): grade de apps, barra de baixo fixa (dock) e os apps abrindo dentro do aparelho */
+.ph-scr > .ph-apps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 4px; margin-top: 4px; }
+.ph-dock { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 8px 6px 6px; margin: 2px -4px 0; border-radius: 24px;
+  background: rgba(247,240,222,.13); border: 1px solid rgba(247,240,222,.14); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.ph-dock .ph-app { font-size: 12px; }
+.ph-dock .ph-app.on i { box-shadow: 0 0 0 2px var(--gold), 0 3px 0 rgba(0,0,0,.28); }
+.ph-dock .ph-app.on span { color: var(--gold); }
+.ph-scr .ph-app i { width: 50px; height: 50px; border-radius: 14px; }
+.ph-scr .ph-app i .tw-md { width: 30px; height: 30px; }
+.ph-home { flex: none; align-self: center; width: 140px; height: 18px; margin: 2px 0 -8px; padding: 0; border: 0; background: none; cursor: pointer; }
+.ph-home::before { content: ''; display: block; width: 120px; height: 5px; margin: 0 auto; border-radius: 3px; background: rgba(247,240,222,.75); }
+/* App aberto: o aparelho ocupa a tela; o conteúdo rola por dentro e a barra de baixo fica no lugar */
+.ph.pa { width: 100%; }
+.ph-scr.pa-scr { width: 100%; max-width: 440px; gap: 6px; padding: 10px 10px 12px; height: clamp(500px, calc(100svh / var(--z, 1) - 150px), 980px); }
+.pa-h { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 44px; margin: -4px 0 0; }
+.pa-h b { font: 800 19px/1.1 var(--display); color: var(--paper); text-align: center; }
+.pa-back { justify-self: start; min-height: 44px; padding: 0 6px; border: 0; background: none; color: var(--gold); font: 600 15px var(--body); cursor: pointer; }
+.ph-scr > .pa-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; align-content: start; grid-auto-rows: max-content; padding: 2px 4px 10px; scrollbar-width: none; }
+.ph-scr > .pa-body::-webkit-scrollbar { display: none; }
+@media (min-width: 1000px) and (min-height: 560px) {
+  #app:has(#screen .ph.pa) { max-width: 860px; }
+  .ph-scr.pa-scr { max-width: 520px; height: clamp(520px, calc(100svh / var(--z, 1) - 170px), 860px); }
+  .ph-scr > .ph-apps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 999.98px) { .ph-scr > .ph-apps { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+/* Chat: as suas mensagens à direita; o Zé com o palpite e as respostas rápidas */
+.ch-b.me { justify-self: end; background: #2F7A52; color: var(--paper); border-radius: 16px 4px 16px 16px; }
+.ch-b.me small { color: rgba(247,240,222,.75); }
+.ze-tip { justify-self: start; }
+.pa-body .ch-log { grid-template-columns: minmax(0, 1fr); }
+.ze-tip { display: grid; gap: 6px; margin: -2px 0 4px; padding: 10px 12px; max-width: 88%; border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--panel-line); }
+.ze-tip b { font: 800 15px var(--display); color: var(--tx-1); }
+.ze-tip small { font: var(--t-small); color: var(--tx-3); }
+.ze-tip em { font: 700 13px var(--body); font-style: normal; color: var(--gold); }
+.ze-tip.off em { color: var(--tx-3); }
+.ze-tip-s, .ze-tip-a { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.ze-tip-a { grid-template-columns: 1fr 1fr; }
+.ze-tip-s button { min-height: 44px; border-radius: var(--r-sm); border: 1px solid rgba(232,184,74,.5); background: rgba(232,184,74,.12); color: var(--gold); font: 700 14px var(--body); cursor: pointer; }
+.ze-tip-s button:disabled { opacity: .45; cursor: default; }
+.ze-tip.fix { border-color: rgba(255,154,162,.4); }
+.ch-reply { flex: none; display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 2px 0 4px; }
+.ch-q { min-height: 44px; padding: 0 14px; border-radius: 22px; border: 0; background: var(--paper); color: var(--ink); font: 700 14px var(--body); cursor: pointer; }
+.ch-q.ghost { background: none; border: 1px solid rgba(247,240,222,.35); color: var(--tx-1); }
+.ch-q:disabled { opacity: .55; cursor: default; }
+button.mz-fix { display: grid; gap: 4px; width: 100%; text-align: left; font: inherit; cursor: pointer; }

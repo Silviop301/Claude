@@ -518,3 +518,18 @@ Proibido também: cartão com faixa colorida na lateral.
 - Medido em 300 carreiras: aperto 8%, terminou devendo 2% (gastador 29% e 5%; cauteloso 0%). O alvo da fase (15 a 25%) fica
   para as próximas partes, que trazem gastos e riscos novos (pedidos da família, investimentos e status).
 - `craque_invariantes.js` agora compra carro e casa e confere a dívida (0 falhas).
+
+### Fase 3 do plano, parte 2 · 2026-11-04 · Celular como iPhone, app Apostas e o Zé no Chat (pedidos do Silvio)
+
+- Silvio: "o celular precisa ter a interface mais parecida com iphone, com os botões na parte de baixo" e "os jogos e
+  apostas devem ser um app nesse celular, e o Zé um contato pra conversar e fazer os palpites".
+- Celular: a grade de apps fica em cima (Tabela, Jogos, Ficha) e a barra fixa de baixo (dock) tem os quatro principais:
+  Chat, Agenda, Apostas e Loja. Os apps abrem **dentro do aparelho** (`appScr` em ui/fullcareer.js): cabeçalho com
+  "‹ Início", o conteúdo rola por dentro, a barra de baixo continua no pé com o app aberto marcado, e a barrinha de baixo
+  volta para o início.
+- App **Apostas** (era "Zé"): a rodada, a mesa dos fundos e o extrato. A proposta do amarelo saiu dali e virou conversa.
+- **Zé no Chat** (engine/money.js): ele fica sempre na lista de conversas. "Manda um palpite" traz um jogo da rodada
+  com o mercado e a cotação (até 2 por rodada; o palpite é a cotação normal da casa, sem vantagem), e dá para apostar ali
+  mesmo (o mesmo cupom do app, com o faro da federação contando igual). Depois da rodada ele conta como foram os cupons.
+  A proposta do amarelo chega como mensagem dele, com "Topar" e "Tô fora". Recusar deixa ele sem responder por uns
+  jogos ("visualizado").
