@@ -53,7 +53,7 @@
       (s.titles || []).forEach(t => add(t.name, YEAR0 + i, s.club));
       if ((s.awards || []).some(a => a.id === 'ballon')) add('Bola de Ouro', YEAR0 + i, s.club);
     });
-    (c.wcHist || []).forEach(h => { if (h.champion) add('Copa do Mundo', h.year, null); });
+    (c.wcHist || []).forEach(h => { if (h.champion) add(h.kind === 'nat2' ? h.name : 'Copa do Mundo', h.year, null); });
     (c.cwcHist || []).forEach(h => { if (h.champion) add('Mundial de Clubes', h.year, h.club); });
     return out;
   }

@@ -9,7 +9,8 @@
   const ofCountry = n => ({ 'o ': 'do ', 'a ': 'da ', 'os ': 'dos ', '': 'de ' }[D.artPais(n)]) + n;
   // Copa do Mundo ou Mundial de Clubes (mesma tela, mesmo motor)
   const isCwc = run => !!run && run.kind === 'cwc';
-  const tName = run => (isCwc(run) ? 'Mundial de Clubes' : 'Copa do Mundo');
+  const tName = run => (isCwc(run) ? 'Mundial de Clubes' : run && run.kind === 'nat2' ? run.name : 'Copa do Mundo');
+  const isNat2 = run => !!run && run.kind === 'nat2'; // torneio do continente (Jogo a Jogo)
   // Nosso lado no placar: bandeira da seleção ou escudo do clube
   const usMark = run => (isCwc(run) ? crest(run.club, 'xs') : U.flag(D.NATION_BY_NAME[G.c.country].flag));
   const themMark = g => (g.crest ? crest(g.crest, 'xs') : U.flag(g.flag));
@@ -71,13 +72,13 @@
     save();
     natBg();
     render(
-      '<div class="wc-hero"><div class="eyebrow">Copa do Mundo ' + year() + '</div><span class="wc-mark"><span class="wc-bigflag">' + U.flag(call.nation.flag) + '</span></span><h2>Convocado pela seleção ' + ofCountry(G.c.country) + '!</h2>' +
+      '<div class="wc-hero"><div class="eyebrow">' + esc(S.natTourName ? S.natTourName(G.c) : 'Copa do Mundo') + ' ' + year() + '</div><span class="wc-mark"><span class="wc-bigflag">' + U.flag(call.nation.flag) + '</span></span><h2>Convocado pela seleção ' + ofCountry(G.c.country) + '!</h2>' +
       '<p class="lead">' + (call.starter ? 'Você chega como titular. O país inteiro está de olho.' : (G.c.pos === 'GOL' ? 'Você vai como goleiro reserva: se o titular se machucar ou for poupado, a vaga é sua.' : 'Você vai como reserva: entra no segundo tempo e pode decidir.')) + '</p></div>' +
       wcRules() +
       '<button class="btn" id="b-wc">' + (U.cfg.cups === 'sim' ? 'Simular a Copa' : 'Começar a Copa') + '</button>'
     );
     if (G.c.wcCallShown !== year()) { G.c.wcCallShown = year(); save(); U.callUp(G.c, call); } // lista da seleção (motion.js)
-    $('b-wc').onclick = () => { simAll = U.cfg.cups === 'sim'; S.wcStart(G.c); save(); wcPlay(); };
+    $('b-wc').onclick = () => { simAll = U.cfg.cups === 'sim'; if (S.natTour && S.natTour(G.c) === 'nat2') S.natContStart(G.c); else S.wcStart(G.c); save(); wcPlay(); };
   }
 
   // Tabela do grupo (engine/worldcup.js, run.tbl): os dois primeiros passam
@@ -337,7 +338,7 @@
 
   function wcFinal() {
     screen.onclick = null;
-    const run = G.c.wcRun, cwc = isCwc(run);
+    const run = G.c.wcRun, cwc = isCwc(run), nat2 = isNat2(run);
     if (cwc) G.c.cwcYearDone = run.year; else G.c.wcYearDone = run.year;
     save();
     bar();
@@ -352,22 +353,23 @@
     const lost = g => (g ? 'para ' + art(g) + themMark(g) + ' ' + esc(g.opp) + (g.pens ? ' nos pênaltis (' + g.gf + ' × ' + g.ga + ')' : ' por ' + g.gf + ' × ' + g.ga) : '');
     const ge = last && last.groupEnd;
     const end = run.champion
-      ? '<div class="wc-end champ">' + (cwc ? trophy('cwc', 96, 'Mundial de Clubes') : trophy('wc', 96)) + '<b class="wc-band gold">' + (cwc ? 'Campeão mundial!' : 'Campeão do mundo!') + '</b><span class="wc-end-who">' + usMark(run) + ' ' + usName(run) + ' · ' + run.year + '</span></div>'
+      ? '<div class="wc-end champ">' + (cwc ? trophy('cwc', 96, 'Mundial de Clubes') : nat2 ? trophy('natcont', 96, run.name) : trophy('wc', 96)) + '<b class="wc-band gold">' + (cwc ? 'Campeão mundial!' : nat2 ? 'Campeão ' + D.da(run.name) + '!' : 'Campeão do mundo!') + '</b><span class="wc-end-who">' + usMark(run) + ' ' + usName(run) + ' · ' + run.year + '</span></div>'
       : run.reached === 'Final'
-        ? '<div class="wc-end vice">' + big + '<b class="wc-band silver">' + (cwc ? 'Vice-campeão mundial' : 'Vice-campeão do mundo') + '</b><span class="wc-end-who">Perdeu a final ' + lost(last) + '</span></div>'
+        ? '<div class="wc-end vice">' + big + '<b class="wc-band silver">' + (cwc ? 'Vice-campeão mundial' : nat2 ? 'Vice-campeão ' + D.da(run.name) : 'Vice-campeão do mundo') + '</b><span class="wc-end-who">Perdeu a final ' + lost(last) + '</span></div>'
         : /^(Grupo|Fase de grupos)/.test(run.reached)
           ? '<div class="wc-end out">' + big + '<b class="wc-band phase">Eliminado na fase de grupos</b><span class="wc-end-who">' + (ge ? (ge.pos ? ge.pos + 'º lugar no grupo com ' : 'Terminou com ') + D.plural(ge.pts, 'ponto', 'pontos') : usName(run) + ' · ' + run.year) + '</span></div>'
           : '<div class="wc-end out">' + big + '<b class="wc-band phase">Eliminado ' + (PH[run.reached] || esc(run.reached.toLowerCase())) + '</b><span class="wc-end-who">Caiu ' + lost(last) + '</span></div>';
     const n = (v, one, many) => '<span><b>' + v + '</b>' + (v === 1 ? one : many) + '</span>';
     // O fim num cartão só: bandeira (ou escudo), a faixa do resultado e, embaixo, os seus números no torneio
     $('wc-after').innerHTML = end.replace(/<\/div>$/, '') +
-      '<p class="sx-lbl">' + (cwc ? 'Seu Mundial' : 'Sua Copa') + '</p><div class="wc-end-stats">' + n(run.games.length, 'jogo', 'jogos') + (S.defKick(G.c.pos)
+      '<p class="sx-lbl">' + (cwc ? 'Seu Mundial' : nat2 ? 'Sua ' + run.name : 'Sua Copa') + '</p><div class="wc-end-stats">' + n(run.games.length, 'jogo', 'jogos') + (S.defKick(G.c.pos)
         ? n(run.games.filter(x => x.cs).length, 'sem sofrer gol', 'sem sofrer gol') + (run.g ? n(run.g, 'gol', 'gols') : '')
         : n(run.g, 'gol', 'gols') + n(run.a, 'assistência', 'assistências')) + '</div></div>' +
       '<button class="btn" id="b-next">' + (S.mustRetire(G.c) ? 'Ver sua carreira' : 'Seguir a carreira') + '</button>';
     if (run.champion) {
       const btn = $('b-next');
-      U.celebrate([{ art: cwc ? trophy('cwc', 150, 'Mundial de Clubes') : trophy('wc', 150), top: cwc ? 'Campeão mundial!' : 'Campeão do mundo!', name: (cwc ? 'Mundial de Clubes ' : 'Copa do Mundo ') + run.year }],
+      if (nat2) U.celebrate([{ art: trophy('natcont', 150, run.name), top: 'Campeão ' + D.da(run.name) + '!', name: run.name + ' ' + run.year }], () => {});
+      else U.celebrate([{ art: cwc ? trophy('cwc', 150, 'Mundial de Clubes') : trophy('wc', 150), top: cwc ? 'Campeão mundial!' : 'Campeão do mundo!', name: (cwc ? 'Mundial de Clubes ' : 'Copa do Mundo ') + run.year }],
         () => { if (btn.isConnected) (cwc ? U.clubWorldPaper : U.worldCupPaper)(G.c, run, () => run.card && U.walkout(G.c, null, run.card)); });
     }
     $('wc-after').scrollIntoView({ block: 'nearest', behavior: 'smooth' });

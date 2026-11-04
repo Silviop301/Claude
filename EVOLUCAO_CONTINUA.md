@@ -18,7 +18,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | **no ar** (PRs #116 a #119): pessoas do celular e Chat, um treino por semana e convites (segura, arriscada, sem resposta), histórias que voltam, repercussão no X, na TV e no jornal |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | **no ar** (PRs #130, #132, #133 e a parte 4): aperto 16–18%, devendo no fim 3% |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | **no ar** (PRs #135, #136 e a parte 3): janela do meio do ano, troca de clube, sondagens, empresário, aumento, pedido de saída e empréstimo |
-| 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | |
+| 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | em andamento: parte 1 (torneio do continente) |
 | 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | |
 | 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | |
 | 8 · Treinador v2 | No simulador, nenhuma tática ou instrução vence em todos os casos | |
@@ -618,3 +618,13 @@ Proibido também: cartão com faixa colorida na lateral.
   `craque_invariantes.js`: 0 falhas em 120 carreiras com cerca de 900 trocas, empréstimos, aumentos e pedidos de saída. Simulador
   (400): 0,8 troca no meio do ano por carreira (a maioria para clube maior, ~4% empréstimos), notas S18 contra S19 sem a
   janela, dinheiro igual; e2e 0 problemas.
+
+### Fase 5 do plano, parte 1 · 2026-11-04 · O torneio do continente
+
+- No Jogo a Jogo, nos anos pares sem Copa (2028, 2032...), a seleção joga o torneio do continente (`S.natTour`,
+  `S.natContStart`): **Eurocopa, Copa América, Copa Ouro, Copa Africana ou Copa da Ásia**, pela confederação do país
+  (`S.NAT_CONF`). É o mesmo motor da Copa (`c.wcRun`, kind `nat2`): grupo de quatro e mata-mata, 7 jogos, com lances e
+  pênaltis. Continente com poucas seleções recebe convidados (México, EUA e Canadá na Copa América; Japão, Coreia, Catar... na
+  Copa Ouro). Assim há um torneio grande a cada 2 anos. A convocação usa a regra de hoje (`S.wcCall`).
+- O título entra na Sala de Troféus e dá fama (+30), mas ainda não soma na nota final: o peso fica para a fase 6 (legado).
+- Simulador (400): mediana de 4 torneios do continente por carreira, notas iguais (S18). Invariantes 0 falhas; e2e 0 problemas.
