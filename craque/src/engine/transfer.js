@@ -12,7 +12,13 @@
   const say = (c, id, t, v) => (S._.phPost ? S._.phPost(c, id, t, v) : null);
 
   // at: onde abre (fração do calendário); len: quantas datas fica aberta; chances de proposta
-  const WIN = { at: 0.5, len: 2, base: 0.02, perf: 0.2, gap: 120, top: 0.25, bench: 0.35, money: 0.06, max: 2 };
+  const WIN = { at: 0.5, len: 2, base: 0.03, perf: 0.2, gap: 120, top: 0.3, bench: 0.4, money: 0.07, max: 2 };
+  // Sondagens: chegam 4 jogos antes da janela; viram proposta conforme você joga até lá (nota média 6,8 ou mais: 85%; sem
+  // jogar: 65%; abaixo: 45%). Empresário de bem com você (tom bom) traz mais sondagens e de clubes um pouco mais fortes.
+  // fee: a comissão dele em semanas do salário novo; pref: o quanto a relação muda ao seguir ou não a preferência dele
+  const SOND = { early: 4, ok: 0.85, none: 0.65, ko: 0.45, good: 0.08, goodUp: 2 };
+  const EMP = { fee: 1, pref: 3, against: -4 };
+  S.FC_SOND = SOND; S.FC_EMP = EMP;
   S.FC_WIN = WIN;
   const winAt = fc => (fc.mwAt !== undefined ? fc.mwAt : (fc.mwAt = Math.max(2, Math.round(WIN.at * fc.cal.length))));
   // Quem pode receber proposta no meio do ano: maior de idade, sem empréstimo, sem despedida
@@ -27,8 +33,9 @@
     const used = new Set([c.club]), out = [];
     const pick = f => { const pool = D.CLUBS.filter(x => !used.has(x.id) && f(x)); if (!pool.length) return null; const cl = r.pick(pool); used.add(cl.id); return cl; };
     const add = (cl, kind) => { if (cl && out.length < WIN.max) out.push(Object.assign(S.offerFor(c, cl.id, kind), { mid: true })); };
-    const pUp = clamp(WIN.base + (rt - 6.8) * WIN.perf + Math.max(0, o - cur.strength) / WIN.gap, 0.02, WIN.top);
-    if (r() < pUp) add(pick(x => x.strength > cur.strength + 2 && x.strength <= o + 5), 'up');
+    const good = S.fcTone && c.ppl && S.fcTone(c, 'emp') === 'bom';
+    const pUp = clamp(WIN.base + (rt - 6.8) * WIN.perf + Math.max(0, o - cur.strength) / WIN.gap + (good ? SOND.good : 0), 0.02, WIN.top + (good ? SOND.good : 0));
+    if (r() < pUp) add(pick(x => x.strength > cur.strength + 2 && x.strength <= o + 5 + (good ? SOND.goodUp : 0)), 'up');
     if (share < 0.4 && r() < WIN.bench) add(pick(x => x.strength < cur.strength && x.strength >= o - 10 && S.role(c, x).share >= 0.6), 'mid');
     if (c.age >= 27 && r() < WIN.money) add(pick(x => D.MONEY.includes(x.league) && x.strength >= o - 12), 'money');
     save();
@@ -38,14 +45,38 @@
   S.fcWinState = function (c) {
     if (!on(c) || !can(c) && !(c.fc.mw)) return null;
     const fc = c.fc, at = winAt(fc);
-    if (!fc.mw && fc.i >= at && fc.i < at + WIN.len && can(c)) {
-      fc.mw = { at, s: c.season, offers: build(c, fc), st: 'open' };
+    // Sondagens antes da janela: o empresário conta quem perguntou; o X e o jornal falam do boato
+    if (!fc.mw && fc.i >= at - SOND.early && fc.i < at && can(c)) {
+      const sd = build(c, fc);
+      fc.mw = { at, s: c.season, sond: sd, offers: [], st: 'rumor', told: false, g0: fc.acc.games, r0: fc.acc.rsum };
+      if (sd.length && c.ppl) {
+        const nm = k => D.CLUB_BY_ID[sd[k].club].name;
+        say(c, 'emp', sd.length > 1 ? '{a} e {b} perguntaram por você. Ainda não é proposta: se você seguir bem até a janela, vira.' : '{a} perguntou por você. Ainda não é proposta: se você seguir bem até a janela, vira.', { a: D.O(nm(0)), b: sd[1] ? D.o(nm(1)) : '' });
+        if (S._.phNews && S.FC_NEWS) {
+          S.FC_NEWS['janela.boato'] = { j: 'Mercado: ' + D.O(nm(0)) + ' sonda {me} para a janela do meio do ano', x: 'tão falando que ' + D.o(nm(0)) + ' quer o {me}... se for verdade o {club} vai ter que segurar com dinheiro kkkk' };
+          S._.phNews(c, 'janela.boato');
+        }
+      }
+    }
+    // Abriu: as sondagens viram proposta (ou não) pelo que você jogou desde elas
+    if (fc.mw && fc.mw.st === 'rumor' && fc.i >= fc.mw.at) {
+      const w0 = fc.mw, g = fc.acc.games - w0.g0, avg = g ? (fc.acc.rsum - w0.r0) / g : 0;
+      const p = !g ? SOND.none : avg >= 6.8 ? SOND.ok : SOND.ko;
+      const { r, save } = L().rngOf(fc);
+      w0.offers = can(c) ? w0.sond.filter(() => r() < p) : [];
+      w0.lost = w0.sond.length - w0.offers.length; w0.st = 'open';
+      save();
+      if (c.ppl && w0.lost && !w0.offers.length) say(c, 'emp', 'A janela abriu e esfriou: quem tinha perguntado não fez proposta. Joga bem que eles voltam.');
+    }
+    if (!fc.mw && fc.i >= at && fc.i < at + WIN.len && can(c)) fc.mw = { at, s: c.season, offers: build(c, fc), st: 'open', told: false }; // sem sondagem antes (a janela abriu direto)
+    if (fc.mw && fc.mw.st === 'open' && fc.mw.told === false) {
+      fc.mw.told = true;
       const of = fc.mw.offers;
       if (of.length && c.ppl) say(c, 'emp', of.length > 1 ? 'Janela aberta e o telefone tocou: {a} e {b} querem você agora. Olha no app Mercado.' : 'Janela aberta: {a} quer você agora, no meio da temporada. Olha no app Mercado.',
         { a: D.O(D.CLUB_BY_ID[of[0].club].name), b: of[1] ? D.o(D.CLUB_BY_ID[of[1].club].name) : '' });
     }
     const w = fc.mw;
-    if (w && w.st === 'open' && fc.i >= w.at + WIN.len) w.st = 'closed';
+    if (w && (w.st === 'open' || w.st === 'rumor') && fc.i >= w.at + WIN.len) w.st = 'closed';
     return w || null;
   };
   S.fcWin = c => { const w = S.fcWinState(c); return w && w.st === 'open' ? w : null; };
@@ -54,9 +85,27 @@
   S.fcWinSign = function (c, k) {
     const w = S.fcWin(c), of = w && w.offers[k];
     if (!of) return null;
-    const mv = S.fcMove(c, of);
-    if (mv) { w.st = 'signed'; w.signed = k; }
+    const pk = S.fcEmpPick(w), mv = S.fcMove(c, of);
+    if (mv) {
+      w.st = 'signed'; w.signed = k;
+      // Seguiu (ou não) a preferência do empresário: a que paga mais
+      if (pk >= 0 && S.fcRel) { S.fcRel(c, 'emp', k === pk ? EMP.pref : EMP.against); if (k !== pk && c.ppl) say(c, 'emp', 'Tudo bem, a escolha é tua. Mas {a} pagava mais, e quem cuida do teu futuro sou eu.', { a: D.o(D.CLUB_BY_ID[w.offers[pk].club].name) }); }
+    }
     return mv;
+  };
+  // A proposta que o empresário prefere: a que paga mais (com duas ou mais na mesa)
+  S.fcEmpPick = w => { if (!w || w.offers.length < 2) return -1; const b = w.offers.reduce((b, o, i, a) => (o.wage > a[b].wage ? i : b), 0); return w.offers.filter(o => o.wage === w.offers[b].wage).length > 1 ? -1 : b; }; // empate: sem preferência
+  S.fcSond = c => { const w = S.fcWinState(c); return w && w.st === 'rumor' ? w.sond : []; };
+  // Comissão do empresário em toda troca de clube no Jogo a Jogo (não na base nem no empréstimo): semanas do salário novo
+  S.fcFeeOf = (c, offer) => (c.mode !== 'completa' || !offer || offer.club === c.club || offer.kind === 'base' || offer.kind === 'loan' ? 0 : Math.round((offer.wage || 0) * EMP.fee / 1000) * 1000);
+  const join = S.join;
+  S.join = function (c, offer) {
+    const fee = S.fcFeeOf(c, offer), ret = join(c, offer);
+    if (fee > 0 && S.fcCharge) {
+      S.fcCharge(c, fee);
+      if (c.ppl) say(c, 'emp', 'Minha parte da negociação: {x}, uma semana do teu salário novo. Já descontei.', { x: 'R$ ' + (fee >= 1e6 ? (fee / 1e6).toFixed(1).replace('.', ',') + ' mi' : Math.round(fee / 1000) + ' mil') });
+    }
+    return ret;
   };
 
   // ---------- a troca de clube no meio do ano ----------

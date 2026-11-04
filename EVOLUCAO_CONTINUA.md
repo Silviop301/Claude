@@ -17,7 +17,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **no ar** (PRs #109 a #114): jogos vividos/resumidos/banco, lance em todo jogo, tela limpa, rodada como na TV, faixa "Seu ano", metas da semana e XP por temporada. Tempo real do ano a medir pela contagem (o Silvio pediu para não cortar pelo previsto) |
 | 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | **no ar** (PRs #116 a #119): pessoas do celular e Chat, um treino por semana e convites (segura, arriscada, sem resposta), histórias que voltam, repercussão no X, na TV e no jornal |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | **no ar** (PRs #130, #132, #133 e a parte 4): aperto 16–18%, devendo no fim 3% |
-| 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | em andamento: parte 1 (janela do meio do ano e troca de clube) |
+| 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | em andamento: partes 1 (janela do meio do ano e troca de clube) e 2 (sondagens, boato, empresário) |
 | 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | |
 | 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | |
 | 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | |
@@ -591,3 +591,14 @@ Proibido também: cartão com faixa colorida na lateral.
   qualquer: 0 falhas em 120 carreiras (800+ trocas). Simulador (1000 carreiras): 0,8 troca no meio do ano por carreira,
   notas S18 contra S19 sem a janela, dinheiro e ritmo iguais. O robô troca se o clube novo é mais forte (bem mais forte quando
   ainda está vivo na copa ou no continental, porque trocar perde a taça). `JANELA=nao` desliga.
+
+### Fase 4 do plano, parte 2 · 2026-11-04 · Sondagens, boato e o empresário
+
+- **Sondagens** (`S.FC_SOND`): quatro jogos antes da janela o empresário conta no Chat quem perguntou por você, e o boato sai
+  no X e no jornal. Na janela, cada sondagem vira proposta conforme você jogou desde então (nota média 6,8 ou mais: 85%; sem
+  jogar: 65%; abaixo: 45%). O app Mercado mostra os clubes que perguntaram e essas chances; quando esfria, o empresário avisa.
+- **Empresário** (`S.FC_EMP`): de bem com você (tom bom), traz mais sondagens e de clubes um pouco mais fortes. Prefere a
+  proposta que paga mais (marcada no cartão; empate não tem preferência): seguir dá +3 na relação, ir contra dá −4 e uma
+  mensagem. Cobra comissão em toda troca de clube do Jogo a Jogo (uma semana do salário novo, mostrada no cartão).
+- Validação: invariantes 0 falhas; simulador (600): 0,8 troca no meio do ano por carreira, notas S18, dinheiro igual; e2e 0
+  problemas; fotos da sondagem no celular e no app, das propostas com a preferência e da troca.
