@@ -60,6 +60,7 @@ que lá está como recusado sem evidência nova.
 python3 -m http.server 8765                         # jogo em http://127.0.0.1:8765/craque/
 node tools/craque_sim.js 3000                       # equilíbrio: distribuição de notas, títulos, duração
 MODO=completa node tools/craque_sim.js 300          # Jogo a Jogo: notas e o ritmo (jogos vividos/resumidos/banco e minutos por temporada; alvo ~15 e ~1 h)
+MODO=completa TREINO=nao node tools/craque_sim.js 300   # Jogo a Jogo sem o treino com lances (o robô padrão treina; FC_TRC=n muda o limite de 2 por temporada)
 ORIGIN=tardia CHAL=fiel DEAL=salario node tools/craque_sim.js   # origem/desafio/contrato fixos
 node tools/craque_decisoes.js                       # quanto vale decidir bem (melhor vs aleatório)
 node tools/craque_audit_eventos.js [ids]            # auditoria das decisões (esperado: 0 alertas)

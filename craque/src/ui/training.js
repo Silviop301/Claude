@@ -67,6 +67,9 @@
   // Lances da sua posição (atacante treina pênalti e falta)
   const OF_POS = { ATA: ['cup', 'classico', 'mano', 'cara', 'dois', 'cabeca', 'pressao'], MEI: ['pass', 'passe3', 'pressao'], ZAG: ['tackle', 'bote'], GOL: ['save', 'saida'] };
 
+  const WHY = { defesa: 'O goleiro defendeu.', trave: 'Na trave!', fora: 'Foi para fora.', alto: 'Foi por cima.', barreira: 'Parou na barreira.', cedo: 'Você chegou cedo.', lado: 'Foi para o lado em que ele estava.', marcado: 'Ele estava marcado e a zaga cortou.', goleiro: 'O goleiro saiu e ficou com a bola.', recupera: 'Ele se recuperou e tomou a bola.', tarde: 'Demorou e ele fechou.', impedido: 'Demorou e ele ficou impedido.', gol: 'Ele bateu e converteu.', desarme: 'O zagueiro tomou a bola.', tempo: 'Demorou e a cobertura chegou.', bloqueio: 'O chute bateu no zagueiro.', pressao: 'O volante chegou e roubou a bola.', cortado: 'Tinha zagueiro na linha do passe.', passou: 'Ele passou e marcou.', abafou: 'O goleiro chegou na bola antes.', disputa: 'O marcador chegou primeiro na bola.', longe: 'Você não chegou no ponto da bola.', toque: 'Tocou e o companheiro fez.', escapou: 'Ele passou por você.', tocou: 'Demorou e ele tocou de lado.' };
+  const bigOf = (st, ok) => (ok ? ({ save: 'DEFENDEU!', saida: 'DEFENDEU!', tackle: 'ROUBOU!', bote: 'ROUBOU!', pressao: 'ROUBOU!', pass: 'ASSISTÊNCIA!', passe3: 'ASSISTÊNCIA!' }[st] || 'GOL!') : 'Não foi…');
+
   // Jogador do treino: a sua carta quando o lance é da sua posição; senão, um jogador médio da posição do lance
   function trainee(st) {
     const pos = DRILLS[st].pos;
@@ -112,9 +115,8 @@
       sfx('whistle');
       U.playMini(w.querySelector('#trn-mini'), st, (ok, why) => { if (!w.isConnected) return; tries++; if (ok) hits++; if (tries === 1) markTrained(st); result(ok, why); }, trainee(st));
     };
-    const WHY = { defesa: 'O goleiro defendeu.', trave: 'Na trave!', fora: 'Foi para fora.', alto: 'Foi por cima.', barreira: 'Parou na barreira.', cedo: 'Você chegou cedo.', lado: 'Foi para o lado em que ele estava.', marcado: 'Ele estava marcado e a zaga cortou.', goleiro: 'O goleiro saiu e ficou com a bola.', recupera: 'Ele se recuperou e tomou a bola.', tarde: 'Demorou e ele fechou.', impedido: 'Demorou e ele ficou impedido.', gol: 'Ele bateu e converteu.', desarme: 'O zagueiro tomou a bola.', tempo: 'Demorou e a cobertura chegou.', bloqueio: 'O chute bateu no zagueiro.', pressao: 'O volante chegou e roubou a bola.', cortado: 'Tinha zagueiro na linha do passe.', passou: 'Ele passou e marcou.', abafou: 'O goleiro chegou na bola antes.', disputa: 'O marcador chegou primeiro na bola.', longe: 'Você não chegou no ponto da bola.', toque: 'Tocou e o companheiro fez.', escapou: 'Ele passou por você.', tocou: 'Demorou e ele tocou de lado.' };
     const result = (ok, why) => {
-      const big = ok ? ({ save: 'DEFENDEU!', saida: 'DEFENDEU!', tackle: 'ROUBOU!', bote: 'ROUBOU!', pressao: 'ROUBOU!', pass: 'ASSISTÊNCIA!', passe3: 'ASSISTÊNCIA!' }[st] || 'GOL!') : 'Não foi…';
+      const big = bigOf(st, ok);
       w.innerHTML = '<div class="trn">' + head +
         board() + '<div class="ob5-res ' + (ok ? 'ok' : 'ko') + '"><div class="mr-big">' + big + '</div><p class="mr-txt">' + esc(ok ? 'Isso! É assim no jogo de verdade.' : (WHY[why] || 'Tente de novo: o tempo certo é tudo.')) + '</p></div>' +
         '<button class="btn' + (opts.real ? ' ghost' : '') + '" id="trn-go">Treinar de novo</button>' +
@@ -147,5 +149,61 @@
     w.querySelectorAll('[data-st]').forEach(b => b.onclick = () => training(b.dataset.st));
   }
 
-  Object.assign(U, { training, gateTrain, trainMenu, trainedLance: trained });
+  // Treino da semana do Jogo a Jogo (engine/fullcareer.js, S.fcTrSession): 3 lances com a sua carta, um por vez; jogados os 3, +1
+  // no atributo escolhido. Fechar no meio não conta a sessão. back: volta para a agenda (redesenha)
+  function fcDrill(c, a, back) {
+    document.querySelectorAll('.trn-wrap').forEach(x => x.remove());
+    const w = document.createElement('div');
+    w.className = 'trn-wrap fc-drill';
+    document.body.appendChild(w);
+    const N = S.FC_TR_SESS, L = D.label(c.pos, a);
+    const close = () => { w.remove(); back && back(); };
+    const head = '<div class="trn-head"><b>' + U.emo('🏋️', 'sm') + ' Treino da semana · ' + esc(L) + '</b><button class="cfg-x" id="trn-x" aria-label="Fechar">' + U.ICON.x + '</button></div>';
+    const dots = n => '<span class="trn-dots" aria-label="' + n + ' de ' + N + '">' + Array.from({ length: N }, (_, k) => '<i class="' + (k < n ? 'on' : '') + '"></i>').join('') + '</span>';
+    const board = (k, name) => '<div class="ob5-board mini trn-board">' + U.crest(c.club) +
+      '<span class="ob5-mid"><span class="ob5-min trn-live">Treino</span><small>Lance ' + (k + 1) + ' de ' + N + '</small></span>' +
+      '<span class="trn-sc"><small>' + esc(name) + '</small></span></div>';
+    const next = () => {
+      const t = S.fcTr(c), k = t ? t.n : 0, st = S.fcTrDrill(c, a, k), dr = DRILLS[st];
+      if (!trained(st)) { // lance que você nunca jogou: o passo a passo antes
+        w.innerHTML = '<div class="trn trn-intro">' + head + '<div class="trn-hero"><span class="trn-ico">' + U.emo(dr.ico, 'lg') + '</span><h2>' + esc(dr.name) + '</h2></div>' +
+          '<ol class="trn-steps ob5-steps">' + dr.steps.map((x, i) => '<li><b>' + (i + 1) + '</b><span>' + esc(x) + '</span></li>').join('') + '</ol>' +
+          '<button class="btn" id="trn-go">Começar o lance</button></div>';
+        bind({ 'trn-go': () => play(k, st) });
+        return;
+      }
+      play(k, st);
+    };
+    const play = (k, st) => {
+      const dr = DRILLS[st];
+      w.innerHTML = '<div class="trn">' + head + board(k, dr.name) + '<p class="trn-tip">' + esc(dr.steps[dr.steps.length - 1]) + '</p><div id="trn-mini"></div></div>';
+      bind({});
+      sfx('whistle');
+      U.playMini(w.querySelector('#trn-mini'), st, (ok, why) => {
+        if (!w.isConnected) return;
+        markTrained(st);
+        const r = S.fcTrSession(c, a, ok);
+        U.save();
+        result(st, ok, why, r);
+      }, c);
+    };
+    const result = (st, ok, why, r) => {
+      const n = r ? r.n : 0, E = S.eff(c);
+      if (r && r.ok) sfx('levelup');
+      w.innerHTML = '<div class="trn">' + head + '<div class="ob5-res ' + (ok ? 'ok' : 'ko') + '"><div class="mr-big">' + bigOf(st, ok) + '</div><p class="mr-txt">' +
+          esc(ok ? 'Isso!' : (WHY[why] || 'Não saiu, mas treino é isso.')) + (ok || !r ? '' : ' Errar também conta.') + '</p></div>' +
+        '<div class="trn-prog">' + dots(n) + (r && r.ok ? '<b class="trn-up">+1 em ' + esc(L) + ' · agora ' + E[a] + '</b><small>Fica na carreira.</small>' : '<small>' + n + ' de ' + N + ' lances do treino</small>') + '</div>' +
+        (r && !r.ok && n < N ? '<button class="btn" id="trn-go">Próximo lance</button><button class="btn ghost" id="trn-out">Voltar à agenda</button>' : '<button class="btn" id="trn-out">Voltar à agenda</button>') + '</div>';
+      bind({ 'trn-go': next });
+    };
+    function bind(m) {
+      const on = (id, f) => { const b = w.querySelector('#' + id); if (b) b.onclick = f; };
+      on('trn-x', close); on('trn-out', close);
+      for (const id in m) on(id, m[id]);
+    }
+    next();
+  }
+  const drillName = st => (DRILLS[st] ? DRILLS[st].name : st);
+
+  Object.assign(U, { training, gateTrain, trainMenu, trainedLance: trained, fcDrill, drillName });
 })();
