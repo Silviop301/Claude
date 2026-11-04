@@ -5415,22 +5415,47 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
 .zb-res.loss .zb-net b { color: var(--down); }
 .zb-caught { margin: 0; font: 700 14px var(--body); color: var(--down); }
 @keyframes zbIn { from { opacity: 0; transform: scale(.9) translateY(10px); } to { opacity: 1; transform: none; } }
-.fc-fly { position: fixed; inset: 0; z-index: 90; pointer-events: none; display: grid; place-items: end center; padding-bottom: 22vh;
-  background: linear-gradient(180deg, rgba(40,90,130,.92), rgba(14,36,26,.95)); animation: flyBg .35s ease both; }
+/* Viagem para o jogo: cartão de largura fixa com a rota; o veículo cruza só a rota, então a velocidade é igual em qualquer tela */
+.fc-fly { position: fixed; inset: 0; z-index: 90; pointer-events: none; display: grid; place-items: center; padding: 16px;
+  background: linear-gradient(180deg, #2a6690 0%, #5b97b8 74%, #2f6b3f 74.2%, #173a24 100%); animation: flyBg .3s ease both; overflow: hidden; }
+.fc-fly.air { background: linear-gradient(180deg, #1f5a86 0%, #6aa7c9 70%, #a9cfe0 100%); }
+.fc-fly.back { background: linear-gradient(180deg, #1b2c4a 0%, #4a5f86 74%, #24402e 74.2%, #0f2418 100%); }
+.fc-fly.air.back { background: linear-gradient(180deg, #121d36 0%, #3c5480 70%, #6f86a8 100%); }
+.fc-fly::before, .fc-fly::after { content: ''; position: absolute; width: 140px; height: 40px; border-radius: 20px; background: rgba(255,255,255,.18); top: 16%; left: 12%; animation: flCloud 2.2s linear both; }
+.fc-fly::after { width: 90px; height: 28px; top: 28%; left: 70%; animation-duration: 2.6s; }
+.fc-fly.bus::before, .fc-fly.bus::after { opacity: .7; }
 .fc-fly.out { animation: flyOut .4s ease both; }
-.fc-fly p { margin: 0; font: 800 22px var(--display); color: var(--paper); text-shadow: 0 2px 8px rgba(0,0,0,.4); }
-.fc-fly-v { position: absolute; left: 0; top: 50%; animation: flyGo 1.5s cubic-bezier(.45,.05,.4,1) both; }
-.fc-fly-v .tw-lg { width: 96px; height: 96px; filter: drop-shadow(0 8px 10px rgba(0,0,0,.35)); }
-.fc-fly.bus .fc-fly-v { top: 58%; animation-name: busGo; }
-.fc-fly.back .fc-fly-v { animation-name: flyBack; }
-.fc-fly.back.bus .fc-fly-v { animation-name: busBack; }
-.fc-fly.back .fc-fly-v img { transform: scaleX(-1); }
+.fl-card { position: relative; z-index: 1; width: min(100%, 360px); padding: 18px 16px 20px; border-radius: 18px; background: rgba(10,22,30,.42); box-shadow: 0 10px 30px rgba(0,0,0,.25); display: grid; justify-items: center; gap: 10px; text-align: center; animation: flCard .45s cubic-bezier(.2,.9,.3,1.2) both; }
+.fl-card .eyebrow { color: rgba(255,255,255,.75); margin: 0; }
+.fl-card h3 { margin: 4px 0 0; font: 800 24px/1.15 var(--display); color: var(--paper); text-shadow: 0 2px 8px rgba(0,0,0,.4); }
+.fl-card p { margin: 0; font: 600 15px/1.35 var(--body); color: rgba(255,255,255,.85); }
+.fc-fly.win .fl-card p { color: #9be7a9; } .fc-fly.loss .fl-card p { color: #ffb4a8; }
+.fl-route { width: 100%; display: grid; grid-template-columns: 68px minmax(0, 1fr) 68px; align-items: end; gap: 6px; }
+.fl-end { display: grid; justify-items: center; gap: 4px; min-width: 0; animation: flEnd .35s ease both; }
+.fl-end:last-child { animation-delay: .9s; }
+.fl-end .crest, .fl-end .tw-md { width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0,0,0,.35)); }
+.fl-end small { font: 700 11px/1.15 var(--body); color: rgba(255,255,255,.8); max-width: 68px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fl-track { position: relative; height: 84px; margin-bottom: 22px; }
+.fl-path, .fl-done { position: absolute; left: 0; bottom: 0; height: 10px; border-radius: 5px; }
+.fl-path { right: 0; background: #3a3f45; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+.fl-path::after { content: ''; position: absolute; left: 6px; right: 6px; top: 4px; height: 2px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.7) 0 10px, transparent 10px 20px); }
+.fl-done { width: 0; background: var(--gold); opacity: .85; animation: flDone 1.25s cubic-bezier(.45,.05,.4,1) .15s both; }
+.fc-fly.air .fl-path { background: none; box-shadow: none; height: 2px; bottom: 4px; border-top: 2px dashed rgba(255,255,255,.55); }
+.fc-fly.air .fl-path::after { display: none; }
+.fc-fly.air .fl-done { height: 3px; bottom: 4px; }
+.fl-v { position: absolute; left: 0; bottom: 6px; width: 64px; animation: flGo 1.25s cubic-bezier(.45,.05,.4,1) .15s both; }
+.fl-v .tw-lg { display: block; width: 64px; height: 64px; filter: drop-shadow(0 6px 6px rgba(0,0,0,.35)); }
+.fc-fly.bus .fl-v .tw-lg { animation: flBump .22s ease-in-out infinite alternate; }
+.fc-fly.air .fl-v { animation-name: flGo, flArc; animation-timing-function: cubic-bezier(.45,.05,.4,1), ease-in-out; }
 @keyframes flyBg { from { opacity: 0; } to { opacity: 1; } }
 @keyframes flyOut { to { opacity: 0; } }
-@keyframes flyGo { from { transform: translate(-120px, 80px) rotate(-8deg); } to { transform: translate(calc(100vw + 20px), -140px) rotate(-14deg); } }
-@keyframes flyBack { from { transform: translate(calc(100vw + 20px), -140px) rotate(8deg); } to { transform: translate(-120px, 60px) rotate(12deg); } }
-@keyframes busGo { from { transform: translateX(-120px); } to { transform: translateX(calc(100vw + 20px)); } }
-@keyframes busBack { from { transform: translateX(calc(100vw + 20px)); } to { transform: translateX(-120px); } }
+@keyframes flCard { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes flCloud { from { transform: translateX(0); } to { transform: translateX(-60px); } }
+@keyframes flEnd { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
+@keyframes flGo { from { left: 0; } to { left: calc(100% - 64px); } }
+@keyframes flDone { to { width: 100%; } }
+@keyframes flBump { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+@keyframes flArc { 0% { bottom: 6px; transform: rotate(-4deg); } 50% { bottom: 30px; transform: rotate(0); } 100% { bottom: 6px; transform: rotate(8deg); } }
 
 /* Jogo a Jogo, fase 1: tipo do próximo jogo, jogo resumido e o resumo de vários jogos (um cartão de papel por tela) */
 .prc-kind { margin: 0 0 8px; font: 500 14px/1.35 var(--body); color: var(--tx-2); }
