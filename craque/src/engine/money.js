@@ -24,7 +24,7 @@
     if (!L || !c.fc) return;
     L.mt = L.mt || {}; L.paid = L.paid || {};
     if (L.car && L.mt.car === undefined) { L.paid.car = S.fcCarPrice(c, L.car); L.mt.car = k1000(L.paid.car * MT.car); }
-    if (L.house && L.mt.house === undefined) { L.paid.house = S.fcLifePrice(c, 'house'); L.mt.house = k1000(L.paid.house * MT.house); }
+    if (S.fcOwns(c, 'house') && L.mt.house === undefined) { L.paid.house = S.fcLifePrice(c, 'house'); L.mt.house = k1000(L.paid.house * MT.house); }
   };
   S.fcUpkeep = c => { const m = c.life && c.life.mt; return m ? Object.keys(m).reduce((a, k) => a + (m[k] || 0), 0) : 0; };
   S.fcUpkeepOf = (c, kind, id) => k1000((kind === 'car' ? S.fcCarPrice(c, id) : S.fcLifePrice(c, id)) * (kind === 'car' ? MT.car : MT[id]));
@@ -67,7 +67,7 @@
   const say = (c, id, t, v) => (S._.phPost ? S._.phPost(c, id, t, v) : null);
 
   const DEBT_TXT = {
-    start: 'Te avisando: a conta entrou no vermelho. Carro, casa e equipe estão custando mais do que entra. O banco cobra {j}% por semana em cima de {x}, e o salário vai pagando primeiro.',
+    start: 'Te avisando: a conta entrou no vermelho. Carro, casa e equipe estão custando mais do que entra. O banco cobra {j}% por semana em cima de {x}, e o salário vai pagando primeiro. Abre o Banco no celular que tem saída: eu adianto, dá pra vender alguma coisa ou renovar ganhando menos.',
     worry: 'Filho, fiquei sabendo das contas. Dinheiro a gente recupera, mas não deixa isso tirar o teu sono.',
     worryParca: 'mano tão falando que tu tá devendo na praça kkkk é verdade? se precisar de conversa eu tô aqui',
     clear: 'Dívida quitada. Agora segura os gastos, que a próxima não precisa existir.',
@@ -84,6 +84,9 @@
     const up = S.fcUpkeep(c);
     out.upkeep = up;
     if (up) S.fcCharge(c, up);
+    // Parcela do adiantamento do empresário: uma fatia do salário até pagar tudo
+    const A = c.fin && c.fin.adv;
+    if (A && A.left > 0) { const v = Math.min(A.left, Math.round(wp * ADV.cut)); S.fcCharge(c, v); A.left -= v; out.adv = v; if (A.left <= 0) c.fin.adv = null; }
     // Juros e pagamento com o que sobrou
     if (c.debt > 0) { const j = Math.round(c.debt * DEBT.rate); c.debt += j; out.interest = j; }
     out.repay = repay(c);
@@ -97,6 +100,76 @@
     M.maxDebt = Math.max(M.maxDebt || 0, out.debt / wp);
     return out;
   };
+
+  // ---------- quebrar e voltar: as saídas do vermelho ----------
+  // Adiantamento do empresário (paga a dívida agora; volta com 20% a mais, descontado do salário), vender o carro ou a casa
+  // (pelo valor de revenda, e a manutenção some), a ajuda da mãe (só com a relação boa, uma vez a cada 3 temporadas) e
+  // renovar ganhando menos (luvas na hora, salário 20% menor e mais um ano de contrato).
+  const ADV = { wk: 10, fee: 0.2, cut: 0.3 }, SELL = { car: 0.6, house: 0.85 }, HELP = { wk: 8, gap: 3 }, CUT = { wage: 0.8, luvas: 12 };
+  S.FC_ADV = ADV; S.FC_SELL = SELL;
+  const debtOn = c => on(c) && (c.debt || 0) > 0;
+  S.fcSellValue = (c, key) => k1000(((c.life && c.life.paid && c.life.paid[key]) || 0) * SELL[key]);
+  S.fcSell = function (c, key) {
+    S.fcMoneySync(c);
+    const L = c.life;
+    if (!L || !(key === 'car' ? L.car : S.fcOwns(c, 'house'))) return 0;
+    const v = S.fcSellValue(c, key), d = key === 'car' ? S.FC_SHOP.cars.find(x => x.id === L.car) : S.FC_SHOP.life.find(x => x.id === 'house');
+    if (key === 'car') delete L.car; else delete L.house;
+    delete L.mt[key]; delete L.paid[key];
+    c.fame = Math.max(0, c.fame - Math.round(((d && d.fame) || 0) / 2));
+    S.fcCredit(c, v);
+    const M = (c.fin = c.fin || {}); M.sold = (M.sold || 0) + 1;
+    if (c.ppl && S._.phNews) S._.phNews(c, key === 'car' ? 'venda.car' : 'venda.house');
+    return v;
+  };
+  S.fcAdvanceOk = c => debtOn(c) && !(c.fin && c.fin.adv) && (c.fin || {}).advS !== c.season;
+  S.fcAdvanceOf = c => k1000(Math.min(ADV.wk * weekPay(c), (c.debt || 0) + weekPay(c)));
+  S.fcAdvance = function (c) {
+    if (!S.fcAdvanceOk(c)) return 0;
+    const v = S.fcAdvanceOf(c), M = (c.fin = c.fin || {});
+    M.adv = { left: k1000(v * (1 + ADV.fee)), v }; M.advS = c.season; M.advN = (M.advN || 0) + 1;
+    S.fcCredit(c, v);
+    say(c, 'emp', 'Mandei {x}. Volta com 20% a mais, um pedaço do teu salário por semana até fechar. E segura a onda, combinado?', { x: R(v) });
+    return v;
+  };
+  S.fcHelpOk = c => debtOn(c) && !!c.ppl && S.fcTone(c, 'mae') === 'bom' && !((c.fin || {}).helpS > c.season - HELP.gap);
+  S.fcHelpOf = c => k1000(Math.min(HELP.wk * weekPay(c), c.debt || 0));
+  S.fcHelp = function (c) {
+    if (!S.fcHelpOk(c)) return 0;
+    const v = S.fcHelpOf(c), M = (c.fin = c.fin || {});
+    M.helpS = c.season; M.helpN = (M.helpN || 0) + 1;
+    S.fcCredit(c, v);
+    if (S.fcRel) S.fcRel(c, 'mae', -6);
+    say(c, 'mae', 'Filho, mandei o que a gente tinha guardado. Não precisa devolver agora. Só me promete que vai se cuidar com dinheiro');
+    return v;
+  };
+  S.fcCutOk = c => debtOn(c) && (c.debt || 0) > 4 * weekPay(c) && !c.loan && (c.contract || 0) >= 1 && (c.fin || {}).cutS !== c.season;
+  S.fcCutOf = c => { const w = k1000((c.wage || 0) * CUT.wage); return { wage: w, luvas: k1000(w * CUT.luvas) }; };
+  S.fcCut = function (c) {
+    if (!S.fcCutOk(c)) return null;
+    const o = S.fcCutOf(c), M = (c.fin = c.fin || {});
+    M.cutS = c.season; M.cutN = (M.cutN || 0) + 1;
+    c.wage = o.wage; c.contract = (c.contract || 0) + 1;
+    S.fcCredit(c, o.luvas);
+    c.luvas = { v: o.luvas, s: c.season, club: c.club, cut: true };
+    say(c, 'emp', 'Fechei a renovação: {x} de luvas agora, salário menor e mais um ano. Não é o contrato dos sonhos, mas tira a corda do pescoço.', { x: R(o.luvas) });
+    return o;
+  };
+  // As saídas, para a tela (ok: dá agora; v: quanto entra)
+  S.fcWays = function (c) {
+    S.fcMoneySync(c);
+    const L = c.life || {}, out = [];
+    out.push({ id: 'adv', ok: S.fcAdvanceOk(c), v: debtOn(c) ? S.fcAdvanceOf(c) : 0 });
+    if (L.car) out.push({ id: 'car', ok: true, v: S.fcSellValue(c, 'car') });
+    if (S.fcOwns(c, 'house')) out.push({ id: 'house', ok: true, v: S.fcSellValue(c, 'house') });
+    if (c.ppl) out.push({ id: 'help', ok: S.fcHelpOk(c), v: debtOn(c) ? S.fcHelpOf(c) : 0 });
+    out.push({ id: 'cut', ok: S.fcCutOk(c), v: S.fcCutOf(c).luvas, wage: S.fcCutOf(c).wage });
+    return out;
+  };
+  if (S.FC_NEWS) Object.assign(S.FC_NEWS, {
+    'venda.car': { j: '{me} vende o carrão e aparece de carro popular no treino', x: 'o {me} chegou no CT de carro popular kkkk ou tá humilde ou tá devendo' },
+    'venda.house': { j: '{me} põe a mansão à venda', x: 'a casa do {me} tá à venda no site de imóveis. alguém sabe o que aconteceu?' },
+  });
 
   // ---------- bônus do ano: meta e títulos ----------
   // Em semanas de salário, pagos no fim do calendário (o empresário avisa)

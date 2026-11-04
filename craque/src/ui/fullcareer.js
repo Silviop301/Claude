@@ -44,7 +44,7 @@
   // Como num iPhone: a grade de apps em cima e a barra fixa de baixo com os quatro principais (dentro dos apps ela continua
   // no pé da tela, com o app aberto marcado). O Zé é um contato do Chat; as apostas e a mesa são o app Apostas.
   const DOCK = [['msg', '💬', 'Chat'], ['ag', '📒', 'Agenda'], ['bet', '🎰', 'Apostas'], ['shop', '🏷️', 'Loja']];
-  const GRID = [['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['me', '📈', 'Ficha']];
+  const GRID = [['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['me', '📈', 'Ficha'], ['bank', '🏦', 'Banco']];
   const appBtn = (c, [k, e, n], on) => { const u = k === 'msg' ? (c.ppl && c.ppl.unread) || 0 : 0;
     return '<button class="ph-app' + (on ? ' on' : '') + '" data-go="' + k + '"' + (on ? ' aria-current="page"' : '') + '><i>' + U.emo(e, 'md') + (u ? '<em class="ph-badge">' + Math.min(u, 99) + '</em>' : '') + '</i><span>' + n + '</span></button>'; };
   const dock = (c, cur) => '<nav class="ph-dock" aria-label="Apps">' + DOCK.map(a => appBtn(c, a, a[0] === cur)).join('') + '</nav>';
@@ -118,6 +118,8 @@
     else if (trt && !trt.ok) n4('ag', 'Agenda', 'Treino com lances: ' + trt.n + ' de ' + S.FC_TR_SESS + '. Falta' + (S.FC_TR_SESS - trt.n > 1 ? 'm ' : ' ') + (S.FC_TR_SESS - trt.n) + ' para o +1 em ' + D.label(c.pos, trt.a) + '.');
     else if (fc.wkDue) { if (!pick) pick = S.fcWeekAuto(c); n4('ag', 'Agenda', 'Treino da semana: ' + A(pick[0]) + (pick[0] === 'tec' && S.fcTrOpen(c, pick) ? ' com lances (+1 num atributo)' : '') + (open.length ? '. ' + (open.length === 1 ? '1 convite' : open.length + ' convites') + ' esperando resposta.' : '. Toque para mudar.')); }
     else if (fc.wkSum && fc.wkSum.at === fc.i) n4('ag', 'Agenda', 'Semana feita: ' + fc.wkSum.acts.map(A).join(' e ') + '. ' + (S.fcTrOpen(c) ? 'Ainda dá para treinar com lances antes do jogo: +1 num atributo.' : 'Energia ' + Math.round(fc.wkSum.en0) + ' → ' + Math.round(fc.wkSum.en1) + '.'));
+    // Banco: a conta no vermelho (as saídas estão no app)
+    if (S.fcDebt && S.fcDebt(c) > 0) n('bank', 'Banco', 'Conta no vermelho: R$ ' + U.money(S.fcDebt(c)) + ' de dívida. Toque para ver as saídas.', 2);
     // Roupeiro: a chuteira (ou luva) acabando ou já rasgada
     const gw = c.pos === 'GOL' ? 'luva' : 'chuteira';
     if (c.gear && c.gear.left <= 5) n('shop', 'Roupeiro', 'Tua ' + gw + ' tá no fim: ' + (c.gear.left === 1 ? 'aguenta só mais 1 jogo.' : 'aguenta mais ' + c.gear.left + ' jogos.'));
@@ -282,7 +284,7 @@
     document.querySelectorAll('[data-go2]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go2); }; });
   }
   // Apps do celular: cada um abre dentro do aparelho, com a barra de baixo
-  const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Apostas', evo: 'Evoluir' };
+  const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Apostas', evo: 'Evoluir', bank: 'Banco' };
   const LOJA_IMG = ['chuteira-g1', 'chuteira-g2', 'chuteira-g3', 'luvas-g1', 'luvas-g2', 'luvas-g3', 'pt', 'physio', 'nutri', 'video', 'press', 'c1', 'c2', 'c3', 'c4', 'house'];
   function go(k) {
     if (k === 'evo') return evolve();
@@ -296,6 +298,7 @@
       me: '<div class="fs-me" id="fc-me"></div><div class="fc-pe" id="fc-pe"></div>',
       shop: '<div class="fc-shop" id="fc-shop"></div>',
       bet: '<div class="fc-shop" id="fc-bet"></div>',
+      bank: '<div class="fc-shop" id="fc-bank"></div>',
     }[k];
     appScr(k, TITLE[k], body);
     if (k === 'wk') { weekBox(); weekActs(); }
@@ -304,6 +307,7 @@
     else if (k === 'me') { meBox(); peBox(); }
     else if (k === 'shop') shopBox();
     else if (k === 'bet') betRender();
+    else if (k === 'bank') bankBox();
     if (c && $('fc-scr')) window.scrollTo(0, 0);
   }
   // Botão da tela de treino: fecha a semana e volta (semana já fechada: só volta)
@@ -965,6 +969,46 @@
     bindBet(); bindMesa();
     el.querySelectorAll('[data-go2]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go2); }; });
   }
+  // ---------- Banco (fase 3): o saldo, a dívida, o que entra e sai por semana e as saídas do vermelho ----------
+  function bankBox() {
+    const c = G.c, el = $('fc-bank');
+    if (!el) return;
+    const R = v => 'R$ ' + U.money(v), cash = c.money || 0, debt = S.fcDebt(c), wp = S.fcWeekPay(c), F = c.fin || {};
+    const staff = S.fcStaffWeek(c), upk = S.fcUpkeep(c), adv = F.adv && F.adv.left > 0 ? Math.min(F.adv.left, Math.round(wp * S.FC_ADV.cut)) : 0, jur = Math.round(debt * S.FC_DEBT.rate);
+    const line = (n, v, cls) => '<p class="bk-l"><span>' + n + '</span><b class="' + (cls || '') + '">' + v + '</b></p>';
+    const flow = line('Salário', '+' + R(wp), 'up') + (staff ? line('Equipe pessoal', '−' + R(staff), 'down') : '') + (upk ? line('Carro e casa', '−' + R(upk), 'down') : '') +
+      (adv ? line('Adiantamento (faltam ' + R(F.adv.left) + ')', '−' + R(adv), 'down') : '') + (jur ? line('Juros da dívida', '−' + R(jur), 'down') : '');
+    const left = wp - staff - upk - adv - jur;
+    const W = S.fcWays(c), by = id => W.find(w => w.id === id);
+    const btn = (id, label, ok) => '<button class="fc-buy" data-way="' + id + '"' + (ok ? '' : ' disabled') + '>' + label + '</button>';
+    const row = (name, fx, right) => '<div class="fc-si"><span><b>' + esc(name) + '</b><small>' + fx + '</small></span>' + right + '</div>';
+    const a = by('adv'), h = by('help'), cu = by('cut');
+    const help = h ? (h.ok ? '+' + R(h.v) + ' agora. Ela ajuda, mas fica preocupada' : S.fcTone(c, 'mae') !== 'bom' ? 'Só quando a relação com ela está boa' : debt ? 'Ela já ajudou há pouco tempo' : 'Só quando você estiver devendo') : '';
+    const ways = debt ? '<div class="fc-ss"><h3>Sair do vermelho</h3><p class="fc-own">Cada saída custa alguma coisa. O salário também paga a dívida sozinho, mas os juros correm.</p>' +
+      row('Adiantamento do empresário', a.ok ? '+' + R(a.v) + ' agora. Volta ' + R(Math.round(a.v * (1 + S.FC_ADV.fee) / 1000) * 1000) + ', ' + Math.round(S.FC_ADV.cut * 100) + '% do salário por semana' : F.adv ? 'Ainda pagando o anterior' : 'Um por temporada', btn('adv', 'Pedir', a.ok)) +
+      (h ? row('Ajuda da mãe', help, btn('help', 'Pedir', h.ok)) : '') +
+      row('Renovar ganhando menos', cu.ok ? R(cu.v) + ' de luvas agora. Salário cai para ' + R(cu.wage) + ' por semana e o contrato ganha mais um ano' : debt <= 4 * wp ? 'Só com a dívida acima de 4 semanas de salário' : 'Sem contrato para renovar agora', btn('cut', 'Renovar', cu.ok)) +
+      '</div>' : '';
+    const L = c.life || {}, car = L.car && S.FC_SHOP.cars.find(x => x.id === L.car), own = [];
+    if (car) own.push(row(car.name, 'Manutenção ' + R((L.mt && L.mt.car) || 0) + ' por semana · vende por ' + R(S.fcSellValue(c, 'car')) + ' (fama −' + Math.round(car.fame / 2) + ')', btn('car', 'Vender', true)));
+    if (S.fcOwns(c, 'house')) own.push(row('Casa', 'Manutenção ' + R((L.mt && L.mt.house) || 0) + ' por semana · vende por ' + R(S.fcSellValue(c, 'house')) + ' (fama −3)', btn('house', 'Vender', true)));
+    const lv = c.luvas && c.luvas.s === c.season ? '<p class="fc-own">Luvas desta temporada: ' + R(c.luvas.v) + (c.luvas.cut ? ' (renovação com desconto)' : '') + '.</p>' : '';
+    el.innerHTML =
+      '<div class="fc-cash"><span>Saldo</span><b>' + R(cash) + '</b><small>Bônus do fim do ano: meta e títulos pagam semanas de salário extra.</small>' +
+        (debt ? '<p class="fc-debt"><b>Dívida ' + R(debt) + '</b> Juros de ' + String(S.FC_DEBT.rate * 100).replace('.', ',') + '% por semana. O salário paga a dívida primeiro, e a loja não vende carro nem casa até quitar.</p>' : '') + '</div>' +
+      '<div class="fc-ss"><h3>Por semana</h3><div class="bk-flow">' + flow + line('Sobra', (left >= 0 ? '+' : '−') + R(Math.abs(left)), left >= 0 ? 'up' : 'down') + '</div>' + lv + '</div>' +
+      ways +
+      (own.length ? '<div class="fc-ss"><h3>Patrimônio</h3>' + own.join('') + '</div>' : '');
+    const done = () => { save(); bar(); bankBox(); };
+    el.querySelectorAll('[data-way]').forEach(b => { b.onclick = () => {
+      const id = b.dataset.way;
+      if (id === 'adv') { if (S.fcAdvance(c)) { sfx('coin'); done(); } return; }
+      if (id === 'help') { if (S.fcHelp(c)) { sfx('coin'); done(); } return; }
+      if (id === 'cut') return U.ask('Renovar ganhando menos?', 'Entram ' + R(cu.v) + ' de luvas agora, o salário cai para ' + R(cu.wage) + ' por semana e o contrato ganha mais um ano.', 'Renovar', () => { if (S.fcCut(c)) { sfx('coin'); done(); } });
+      const nm = id === 'car' ? car.name.toLowerCase() : 'casa';
+      U.ask('Vender ' + (id === 'car' ? 'o ' : 'a ') + nm + '?', 'Entram ' + R(S.fcSellValue(c, id)) + ', a manutenção acaba e a fama cai um pouco. Para ter de novo, só comprando outra vez.', 'Vender', () => { if (S.fcSell(c, id)) { sfx('coin'); done(); } });
+    }; });
+  }
   function shopBox() {
     const c = G.c, el = $('fc-shop');
     if (!el) return;
@@ -996,7 +1040,7 @@
           return row(x.name, x.fx + ' · ' + R(p) + ' por semana', btn('staff', x.id, on ? 'Dispensar' : 'Contratar', on || cash >= p * 4, on), x.id); }).join('') +
       '</div>' +
       '<div class="fc-ss"><h3>Patrimônio</h3>' +
-        S.FC_SHOP.life.map(x => { const own = !!(c.life && c.life[x.id]), p = S.fcLifePrice(c, x.id);
+        S.FC_SHOP.life.map(x => { const own = S.fcOwns(c, x.id), p = S.fcLifePrice(c, x.id);
           return row(x.name, x.fx + ' (+' + x.fame + ' de fama)' + (own ? ' · manutenção ' + R((c.life.mt && c.life.mt[x.id]) || 0) + ' por semana' : upTxt('life', x.id)), own ? '<em class="fc-own-tag">Comprado</em>' : btn('life', x.id, R(p), cash >= p && !debt), x.id); }).join('') +
       '</div>' +
       '<div class="fc-ss"><h3>Carro</h3>' +

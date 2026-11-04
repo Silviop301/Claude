@@ -533,3 +533,25 @@ Proibido também: cartão com faixa colorida na lateral.
   mesmo (o mesmo cupom do app, com o faro da federação contando igual). Depois da rodada ele conta como foram os cupons.
   A proposta do amarelo chega como mensagem dele, com "Topar" e "Tô fora". Recusar deixa ele sem responder por uns
   jogos ("visualizado").
+
+### Fase 3 do plano, parte 3 · 2026-11-04 · Quebrar e voltar: o app Banco
+
+- App **Banco** (🏦, na grade do celular), com:
+  - o saldo e a dívida;
+  - o que entra e sai por semana: salário, equipe, carro e casa, parcela do adiantamento, juros e a sobra;
+  - as saídas do vermelho;
+  - o patrimônio, com "Vender".
+- Com a conta no vermelho, aparece a notificação "Banco" no celular. A mensagem do empresário aponta para o app.
+- Saídas (engine/money.js, `S.fcWays`), cada uma com um custo:
+  - **Adiantamento do empresário**: até 10 semanas de salário na hora. Volta com 20% a mais, descontando 30% do
+    salário por semana. Um por temporada.
+  - **Vender o carro** (60% do preço pago) ou **a casa** (85%): a manutenção acaba e a fama cai metade do que a compra
+    deu. A venda vira notícia no X e no jornal. Dá para vender mesmo sem dívida.
+  - **Ajuda da mãe**: até 8 semanas de salário, só com a relação boa e uma vez a cada 3 temporadas. Ela fica
+    preocupada (relação −6).
+  - **Renovar ganhando menos**: com a dívida acima de 4 semanas, 12 semanas de luvas na hora, salário 20% menor e
+    mais um ano de contrato.
+- Correção: a casa comprada na primeira temporada (guardada como temporada 0) aparecia como não comprada
+  (`S.fcOwns`).
+- No simulador, o robô no vermelho procura uma saída: o cauteloso e o normal a partir de 2 semanas de dívida, o
+  gastador a partir de 8.

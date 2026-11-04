@@ -64,9 +64,21 @@ for (let n = 0; n < N; n++) {
       if (mg && !(c.debt > 0)) {
         const cars = S.FC_SHOP.cars, at = S.fcCarAt(c);
         for (let k = cars.length - 1; k > at; k--) if ((c.money || 0) >= S.fcCarPrice(c, cars[k].id) * mg) { S.fcBuy(c, 'car', cars[k].id); break; }
-        if (!(c.life && c.life.house) && (c.money || 0) >= S.fcLifePrice(c, 'house') * mg) S.fcBuy(c, 'life', 'house');
+        if (!S.fcOwns(c, 'house') && (c.money || 0) >= S.fcLifePrice(c, 'house') * mg) S.fcBuy(c, 'life', 'house');
       }
       if (process.env.SHOP !== 'gear') for (const k of (process.env.STAFF ? process.env.STAFF.split(',') : ['video', 'pt', 'physio']).concat(c.age >= 29 && !process.env.STAFF ? ['nutri'] : [])) if (!(c.staff && c.staff[k]) && (c.money || 0) >= S.fcStaffCost(c, k) * 60) S.fcBuy(c, 'staff', k);
+    };
+    // Fase 3: no vermelho, o robô procura uma saída (o gastador só quando a dívida passa de 8 semanas): adiantamento,
+    // ajuda da mãe, vender o carro, a casa e, por último, renovar ganhando menos. NOVOLTA=1 desliga
+    const volta = c => {
+      if (!(c.debt > 0)) return;
+      const wp = S.fcWeekPay(c);
+      if (c.debt < (c.perfil === 'gastador' ? 8 : 2) * wp) return;
+      if (S.fcAdvanceOk(c)) return S.fcAdvance(c);
+      if (S.fcHelpOk(c)) return S.fcHelp(c);
+      if (c.life && c.life.car) return S.fcSell(c, 'car');
+      if (S.fcOwns(c, 'house')) return S.fcSell(c, 'house');
+      if (S.fcCutOk(c)) return S.fcCut(c);
     };
     if (process.env.MODO === 'completa') {
       c.mode = 'completa'; S.fcStart(c);
@@ -78,7 +90,7 @@ for (let n = 0; n < N; n++) {
         // Convites do celular (fase 2): o robô responde pela melhor média (CONVITE=acaso responde ao acaso; CONVITE=nao deixa sem resposta)
         if (c.fc.wkDue) { if (process.env.CONVITE !== 'nao') S.fcInvAuto(c, process.env.CONVITE === 'acaso');
           // Treino com lances: o robô joga os 3 lances do treino técnico sempre que pode (TREINO=nao nunca; TREINO=0.3 em 30% das semanas)
-          if (process.env.TREINO !== 'nao' && S.fcTrOpen(c) && Math.random() < (process.env.TREINO ? +process.env.TREINO || 1 : 1)) { const a = S.fcTrAttr(c); for (let k = 0; k < S.FC_TR_SESS && a; k++) S.fcTrSession(c, a, true); } S.fcWeek(c); if (!process.env.NOSHOP) shop(c); continue; }
+          if (process.env.TREINO !== 'nao' && S.fcTrOpen(c) && Math.random() < (process.env.TREINO ? +process.env.TREINO || 1 : 1)) { const a = S.fcTrAttr(c); for (let k = 0; k < S.FC_TR_SESS && a; k++) S.fcTrSession(c, a, true); } S.fcWeek(c); if (!process.env.NOSHOP) shop(c); if (!process.env.NOVOLTA) volta(c); continue; }
         if (process.env.FOSTAT) { global.FO = global.FO || []; FO.push([c.fc.fo, c.fc.en]); }
         if (nx.moment) { c.mstats = c.mstats || { n: 0, ok: 0 }; c.mstats.n++; if (S.fcAutoMoment(c, nx.moment)) c.mstats.ok++; decisions++; }
         // Ritmo (plano, fase 1): o tipo de cada jogo do ano, para o tempo da temporada
