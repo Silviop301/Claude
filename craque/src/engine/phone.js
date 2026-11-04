@@ -728,5 +728,9 @@
     });
   };
 
+  // Para as outras partes do Jogo a Jogo (engine/money.js): mensagem de uma pessoa e notícia
+  S._.phPost = (c, id, t, v) => { S.fcPeople(c); return post(c, id, fill(c, t, v || {}), S.fcTone(c, id)); };
+  S._.phNews = (c, key) => { S.fcPeople(c); news(c, key); };
+
   if (typeof module !== 'undefined') module.exports = S;
 })(typeof window !== 'undefined' ? window : globalThis);

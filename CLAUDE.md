@@ -118,6 +118,7 @@ dividem ajudantes por `CRAQUE_SIM._`. O motor não usa DOM: roda no navegador e 
 | `fullcareer.js` | Jogo a Jogo: calendário, semana, loja, apostas, partida; tipo de jogo `S.fcKind` (vivido, resumido, banco) |
 | `cassino.js` | Jogo a Jogo: mesa dos fundos do Zé e a tentação |
 | `phone.js` | Jogo a Jogo: as pessoas do celular (`c.ppl`: relação só no tom, memória), mensagens depois e antes do jogo, Chat |
+| `money.js` | Jogo a Jogo: manutenção do carro e da casa, dívida com juros (`c.debt`, `S.fcCharge`/`S.fcCredit`), bônus do ano e luvas |
 
 ### Dados e textos — `craque/src/`
 

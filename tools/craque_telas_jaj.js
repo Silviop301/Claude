@@ -85,6 +85,14 @@ const INIT = `
     await shot('app-' + nome);
     if (await has('#fc-agok')) await tap('#fc-agok'); else if (await has('#fc-back')) await tap('#fc-back');
   }
+  // Fase 3: loja com carro e casa (manutenção por semana) e a conta no vermelho
+  if (await page.evaluate(() => !!window.CRAQUE_SIM.fcUpkeep)) {
+    await page.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, c = U.G.c; c.money = 0; c.life = c.life || {}; c.life.car = 'c3'; c.life.house = c.season;
+      c.life.paid = { car: S.fcCarPrice(c, 'c3'), house: S.fcLifePrice(c, 'house') }; c.life.mt = { car: S.fcUpkeepOf(c, 'car', 'c3'), house: S.fcUpkeepOf(c, 'life', 'house') }; c.debt = S.fcWeekPay(c) * 6; });
+    await tap('.ph-app[data-go="shop"]'); await shot('loja-divida');
+    if (await has('#fc-back')) await tap('#fc-back');
+    await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; c.debt = 0; c.life = {}; });
+  }
 
   // Jogos resumidos ou no banco (um cartão só) até o primeiro jogo vivido; depois o "Resumir" de uma vez
   // (versões antes da fase 1 do plano não têm jogo resumido: o primeiro jogo já é vivido)

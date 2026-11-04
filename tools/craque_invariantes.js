@@ -34,6 +34,7 @@ function check(car, c, where) {
   if (c.peak > 99) fail(car, where + ': pico acima de 99');
   if (!(c.fame >= 0)) fail(car, where + ': fama negativa');
   if (!((c.money || 0) >= 0)) fail(car, where + ': dinheiro negativo');
+  if (c.debt !== undefined && !(c.debt >= 0 && isFinite(c.debt))) fail(car, where + ': dívida inválida ' + c.debt);
   ['coach', 'fans'].forEach(k => { if (!(c.rel[k] >= 0 && c.rel[k] <= 100)) fail(car, where + ': relação ' + k + ' fora de 0–100 (' + c.rel[k] + ')'); });
   if (c.club && !D.CLUB_BY_ID[c.club]) fail(car, where + ': clube inexistente ' + c.club);
   if (c.age !== 16 + c.season) fail(car, where + ': idade ' + c.age + ' na temporada ' + c.season);
@@ -53,6 +54,7 @@ const doEvent = (c, B, ev) => { let i = Math.floor(B() * ev.options.length); if 
 function jajExtras(car, c, B) {
   if (B() < 0.08 && !c.gear) { const g = pick(B, ['g1', 'g2', 'g3']); if ((c.money || 0) >= S.fcGearPrice(c, g)) S.fcBuy(c, 'gear', g, S.fcGearAttrs(c)[0]); }
   if (B() < 0.05) { const k = pick(B, ['video', 'pt', 'physio', 'nutri', 'press']); S.fcBuy(c, 'staff', k); }
+  if (B() < 0.04) { if (B() < 0.5) S.fcBuy(c, 'life', 'house'); else S.fcBuy(c, 'car', pick(B, ['c1', 'c2', 'c3', 'c4'])); } // fase 3: patrimônio com manutenção (pode virar dívida)
   if (B() < 0.15) { const R = S.fcBetRound(c); if (R && R.games.length) { const g = pick(B, R.games); S.fcBet(c, [{ h: g.h, a: g.a, m: 'x', pick: Math.floor(B() * 3) }], pick(B, S.fcBetStakes(c))); } }
   if (B() < 0.15 && S.fcNightCan(c)) {
     S.fcNight(c);

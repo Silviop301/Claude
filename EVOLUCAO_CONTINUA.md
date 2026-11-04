@@ -498,3 +498,23 @@ Proibido também: cartão com faixa colorida na lateral.
 - **Fase 2 pronta**: auditoria dos convites com 0 alertas; em 60 carreiras de 20 temporadas, ~21 convites por temporada,
   no máximo 2 do mesmo tipo por temporada e cada texto menos de uma vez por temporada; ~11 mensagens por temporada, com o
   texto mais repetido de uma carreira inteira aparecendo 10 vezes (mediana).
+
+### Fase 3 do plano, parte 1 · 2026-11-04 · Dívida, manutenção do status, bônus e luvas
+
+- Antes, medido em 60 carreiras: o robô gastava até perto de zero, mas ninguém quebrava (o saldo parava em zero e
+  nada cobrava por semana).
+- engine/money.js (só no Jogo a Jogo):
+  - **Manutenção**: carro e casa cobram por semana uma fração do preço pago (carro 0,7%, casa 0,45%). O valor fica fixo
+    na compra, então quando o salário cai ela pesa mais.
+  - **Dívida** (`c.debt`): o que a manutenção não cobre vira dívida, com juros de 0,8% por semana. O salário paga a
+    dívida primeiro, e devendo a loja não vende carro nem casa. Com a dívida acima de 4 semanas de salário, a cabeça
+    pesa (−4 de energia na semana). O empresário avisa quando a conta entra no vermelho e quando ela é quitada; a mãe
+    ou o parça falam quando pesa.
+  - **Bônus do ano**, em semanas de salário: meta 4, liga 6, acesso 4, copa 3, continental 6 (o segundo torneio 3).
+  - **Luvas** ao assinar: 8 semanas do salário novo (12 em proposta de dinheiro, 4 na renovação).
+- O fim da carreira mostra "Terminou devendo".
+- No simulador, cada carreira do robô tem um perfil de gasto (`PERFIL`: cauteloso, normal ou gastador, sorteados
+  40/35/25), e a saída mostra aperto (dívida de 1 semana ou mais) e quem terminou devendo.
+- Medido em 300 carreiras: aperto 8%, terminou devendo 2% (gastador 29% e 5%; cauteloso 0%). O alvo da fase (15 a 25%) fica
+  para as próximas partes, que trazem gastos e riscos novos (pedidos da família, investimentos e status).
+- `craque_invariantes.js` agora compra carro e casa e confere a dívida (0 falhas).
