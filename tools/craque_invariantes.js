@@ -55,6 +55,7 @@ function jajExtras(car, c, B) {
   if (B() < 0.08 && !c.gear) { const g = pick(B, ['g1', 'g2', 'g3']); if ((c.money || 0) >= S.fcGearPrice(c, g)) S.fcBuy(c, 'gear', g, S.fcGearAttrs(c)[0]); }
   if (B() < 0.05) { const k = pick(B, ['video', 'pt', 'physio', 'nutri', 'press']); S.fcBuy(c, 'staff', k); }
   if (B() < 0.04) { if (B() < 0.5) S.fcBuy(c, 'life', 'house'); else S.fcBuy(c, 'car', pick(B, ['c1', 'c2', 'c3', 'c4'])); } // fase 3: patrimônio com manutenção (pode virar dívida)
+  if (B() < 0.05 && c.debt > 0) { const w = pick(B, ['adv', 'help', 'car', 'house', 'cut']); if (w === 'adv') S.fcAdvance(c); else if (w === 'help') S.fcHelp(c); else if (w === 'cut') S.fcCut(c); else S.fcSell(c, w); } // as saídas do vermelho
   if (B() < 0.15) { const R = S.fcBetRound(c); if (R && R.games.length) { const g = pick(B, R.games); S.fcBet(c, [{ h: g.h, a: g.a, m: 'x', pick: Math.floor(B() * 3) }], pick(B, S.fcBetStakes(c))); } }
   if (B() < 0.15 && S.fcNightCan(c)) {
     S.fcNight(c);

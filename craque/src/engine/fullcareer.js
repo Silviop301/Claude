@@ -284,6 +284,8 @@
   S.fcStaffCost = (c, id) => price(c, SHOP.staff.find(g => g.id === id).w, 1500);
   S.fcLifePrice = (c, id) => price(c, SHOP.life.find(g => g.id === id).wk, 5000);
   S.fcCarPrice = (c, id) => price(c, SHOP.cars.find(g => g.id === id).wk, 5000);
+  // Casa comprada na primeira temporada guarda 0 (a temporada): ter é a chave existir
+  S.fcOwns = (c, id) => !!c.life && c.life[id] !== undefined && c.life[id] !== null && c.life[id] !== false;
   S.fcCarAt = c => (c.life && c.life.car ? SHOP.cars.findIndex(x => x.id === c.life.car) : -1);
   // Atributos que o equipamento pode subir: os três que mais pesam na posição
   S.fcGearAttrs = c => S.attrOrder(c.pos).slice(0, 3);
@@ -316,7 +318,7 @@
     if (kind === 'life') {
       const l = SHOP.life.find(x => x.id === id), p = l ? S.fcLifePrice(c, id) : 0;
       c.life = c.life || {};
-      if (!l || c.life[id] || (c.money || 0) < p) return false;
+      if (!l || S.fcOwns(c, id) || (c.money || 0) < p) return false;
       c.money -= p; c.life[id] = c.season; c.fame += l.fame; c.rel.fans = clamp(c.rel.fans + l.fans, 0, 100); return true;
     }
     return false;

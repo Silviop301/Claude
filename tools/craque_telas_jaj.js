@@ -102,6 +102,7 @@ const INIT = `
       c.life.paid = { car: S.fcCarPrice(c, 'c3'), house: S.fcLifePrice(c, 'house') }; c.life.mt = { car: S.fcUpkeepOf(c, 'car', 'c3'), house: S.fcUpkeepOf(c, 'life', 'house') }; c.debt = S.fcWeekPay(c) * 6; });
     await tap('.ph-app[data-go="shop"]'); await shot('loja-divida');
     if (await has('#fc-back')) await tap('#fc-back');
+    if (await has('.ph-app[data-go="bank"]')) { await shot('celular-no-vermelho'); await tap('.ph-app[data-go="bank"]'); await shot('banco-divida'); if (await has('[data-way="adv"]:not(:disabled)')) { await tap('[data-way="adv"]'); await shot('banco-adiantamento'); } await tap('#fc-back'); }
     await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; c.debt = 0; c.life = {}; });
   }
 
