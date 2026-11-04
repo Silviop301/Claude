@@ -5054,6 +5054,13 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .ph-app i .tw-md { width: 34px; height: 34px; }
 .ph-app:active i { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.28); }
 .ph-side { display: grid; gap: 4px; align-content: start; }
+/* Altura fixa do aparelho: com poucas notificações ele não encolhe (não vira um celular quadrado); com muitas,
+   as notificações rolam por dentro e os apps ficam no pé da tela */
+.ph-scr { display: flex; flex-direction: column; height: clamp(420px, calc(100svh / var(--z, 1) - 330px), 540px); }
+.ph-scr::before { align-self: center; flex: none; }
+.ph-scr > * { flex: none; }
+.ph-scr > .ph-ns { flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start; grid-auto-rows: max-content; scrollbar-width: none; }
+.ph-scr > .ph-ns::-webkit-scrollbar { display: none; }
 @media (min-width: 1000px) and (min-height: 560px) {
   #app:has(#screen .ph) { max-width: 860px; }
   .ph-cols { max-width: 820px; grid-template-columns: 400px minmax(0, 1fr); align-items: center; gap: 28px; }
@@ -5064,6 +5071,7 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
   .ph-app { font-size: 12px; }
   .ph-app i { width: 48px; height: 48px; border-radius: 13px; }
   .ph-app i .tw-md { width: 28px; height: 28px; }
+  .ph-scr { height: clamp(480px, calc(100svh / var(--z, 1) - 200px), 620px); }
 }
 
 /* Tela limpa (plano, fase 1): no celular o ingresso do jogo cabe sem rolar; relógio menor e os apps numa fileira */
