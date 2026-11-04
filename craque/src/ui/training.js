@@ -31,6 +31,10 @@
       'Campo visto de cima: você é a bolinha com o anel dourado. O analógico embaixo, à esquerda, leva você.',
       'O zagueiro reage atrasado: mude de direção para deixá-lo para trás. Demorou, a cobertura chega.',
       'O botão à direita chuta no canto para onde o analógico aponta (solto: longe do goleiro). Quanto mais perto, mais certeiro.'] },
+    pressao: { name: 'Pressão na saída', pos: 'ATA', ico: '🔥', steps: [
+      'O zagueiro deles sai jogando com a bola e quer chegar ao meio-campo (para baixo).',
+      'Fique entre ele e a saída. Ele desvia e às vezes finge um lado.',
+      'O botão dá o bote para onde o analógico aponta: de frente e bem perto. Errou, você vai ao chão por um instante.'] },
     cara: { name: 'Cara a cara', pos: 'ATA', ico: '🥅', steps: [
       'Campo visto de cima: você sai sozinho com a bola e o goleiro vem fechando o ângulo.',
       'Chute cedo, no canto para onde o analógico aponta, ou drible o goleiro e toque para o gol vazio.',
@@ -61,7 +65,7 @@
       'Toque quando ele passar pela faixa verde para enfiar a bola. Se demorar, ele fica impedido.'] },
   };
   // Lances da sua posição (atacante treina pênalti e falta)
-  const OF_POS = { ATA: ['cup', 'classico', 'mano', 'cara', 'dois', 'cabeca'], MEI: ['pass', 'passe3'], ZAG: ['tackle', 'bote'], GOL: ['save', 'saida'] };
+  const OF_POS = { ATA: ['cup', 'classico', 'mano', 'cara', 'dois', 'cabeca', 'pressao'], MEI: ['pass', 'passe3', 'pressao'], ZAG: ['tackle', 'bote'], GOL: ['save', 'saida'] };
 
   // Jogador do treino: a sua carta quando o lance é da sua posição; senão, um jogador médio da posição do lance
   function trainee(st) {
@@ -108,9 +112,9 @@
       sfx('whistle');
       U.playMini(w.querySelector('#trn-mini'), st, (ok, why) => { if (!w.isConnected) return; tries++; if (ok) hits++; if (tries === 1) markTrained(st); result(ok, why); }, trainee(st));
     };
-    const WHY = { defesa: 'O goleiro defendeu.', trave: 'Na trave!', fora: 'Foi para fora.', alto: 'Foi por cima.', barreira: 'Parou na barreira.', cedo: 'Você chegou cedo.', lado: 'Foi para o lado em que ele estava.', marcado: 'Ele estava marcado e a zaga cortou.', goleiro: 'O goleiro saiu e ficou com a bola.', recupera: 'Ele se recuperou e tomou a bola.', tarde: 'Demorou e ele fechou.', impedido: 'Demorou e ele ficou impedido.', gol: 'Ele bateu e converteu.', desarme: 'O zagueiro tomou a bola.', tempo: 'Demorou e a cobertura chegou.', bloqueio: 'O chute bateu no zagueiro.', pressao: 'O volante chegou e roubou a bola.', cortado: 'Tinha zagueiro na linha do passe.', passou: 'Ele passou e marcou.', abafou: 'O goleiro chegou na bola antes.', disputa: 'O marcador chegou primeiro na bola.', longe: 'Você não chegou no ponto da bola.', toque: 'Tocou e o companheiro fez.' };
+    const WHY = { defesa: 'O goleiro defendeu.', trave: 'Na trave!', fora: 'Foi para fora.', alto: 'Foi por cima.', barreira: 'Parou na barreira.', cedo: 'Você chegou cedo.', lado: 'Foi para o lado em que ele estava.', marcado: 'Ele estava marcado e a zaga cortou.', goleiro: 'O goleiro saiu e ficou com a bola.', recupera: 'Ele se recuperou e tomou a bola.', tarde: 'Demorou e ele fechou.', impedido: 'Demorou e ele ficou impedido.', gol: 'Ele bateu e converteu.', desarme: 'O zagueiro tomou a bola.', tempo: 'Demorou e a cobertura chegou.', bloqueio: 'O chute bateu no zagueiro.', pressao: 'O volante chegou e roubou a bola.', cortado: 'Tinha zagueiro na linha do passe.', passou: 'Ele passou e marcou.', abafou: 'O goleiro chegou na bola antes.', disputa: 'O marcador chegou primeiro na bola.', longe: 'Você não chegou no ponto da bola.', toque: 'Tocou e o companheiro fez.', escapou: 'Ele passou por você.', tocou: 'Demorou e ele tocou de lado.' };
     const result = (ok, why) => {
-      const big = ok ? ({ save: 'DEFENDEU!', saida: 'DEFENDEU!', tackle: 'ROUBOU!', bote: 'ROUBOU!', pass: 'ASSISTÊNCIA!', passe3: 'ASSISTÊNCIA!' }[st] || 'GOL!') : 'Não foi…';
+      const big = ok ? ({ save: 'DEFENDEU!', saida: 'DEFENDEU!', tackle: 'ROUBOU!', bote: 'ROUBOU!', pressao: 'ROUBOU!', pass: 'ASSISTÊNCIA!', passe3: 'ASSISTÊNCIA!' }[st] || 'GOL!') : 'Não foi…';
       w.innerHTML = '<div class="trn">' + head +
         board() + '<div class="ob5-res ' + (ok ? 'ok' : 'ko') + '"><div class="mr-big">' + big + '</div><p class="mr-txt">' + esc(ok ? 'Isso! É assim no jogo de verdade.' : (WHY[why] || 'Tente de novo: o tempo certo é tudo.')) + '</p></div>' +
         '<button class="btn' + (opts.real ? ' ghost' : '') + '" id="trn-go">Treinar de novo</button>' +
