@@ -101,6 +101,13 @@
   S.isNatContYear = c => c.mode === 'completa' && c.season > 0 && (S.YEAR0 + c.season) % 4 === 0;
   S.natTour = c => (S.isWcYear(c) ? 'wc' : S.isNatContYear(c) ? 'nat2' : null);
   S.natTourName = c => (S.natTour(c) === 'nat2' ? S.natContName(c) : 'Copa do Mundo');
+  // Ranking de seleções (para o jornal): sai da força de cada uma (as eliminatórias e os amistosos ficam fora do jogo)
+  S.natRank = name => { const L = D.NATIONS.slice().sort((a, b) => b.str - a.str); const i = L.findIndex(n => n.name === name); return i < 0 ? L.length : i + 1; };
+  // O próximo torneio de seleções a partir do fim desta temporada: { name, year }
+  S.natNext = function (c) {
+    for (let k = 0; k < 5; k++) { const x = { season: c.season + k, mode: c.mode, country: c.country }; const t = S.natTour(x); if (t) return { name: t === 'nat2' ? S.natContName(x) : 'Copa do Mundo', year: S.YEAR0 + x.season }; }
+    return null;
+  };
   S.natContStart = function (c) {
     const { r, save } = rngOf(c);
     const call = S.wcCall(c), pool = S.natContField(c).sort((a, b) => D.NATION_BY_NAME[b].str - D.NATION_BY_NAME[a].str);
