@@ -548,6 +548,12 @@
     sp.games += games; sp.goals += goals; sp.assists += assists; sp.titles += titles.length; sp.to = c.age;
     sp.cs = (sp.cs || 0) + cleanSheets;
     sp.seasons = (sp.seasons || 0) + 1;
+    // Trocou de clube no meio do ano (Jogo a Jogo): os jogos de antes da troca ficam na passagem anterior
+    if (FO && FO.pre && c.spells.length >= 2) {
+      const pv = c.spells[c.spells.length - 2], P = FO.pre;
+      ['games', 'goals', 'assists', 'cs'].forEach(k => { pv[k] = (pv[k] || 0) + (P[k] || 0); sp[k] = Math.max(0, (sp[k] || 0) - (P[k] || 0)); });
+      pv.to = c.age;
+    }
 
     const res = {
       season: c.season, loan: c.loan ? c.loan.parent : null, promise: !!c.promise,

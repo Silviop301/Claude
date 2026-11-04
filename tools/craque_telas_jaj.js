@@ -38,7 +38,7 @@ const INIT = `
   await ctx.addInitScript(INIT);
   const page = await ctx.newPage();
   const errors = [];
-  page.on('pageerror', e => errors.push(e.message));
+  page.on('pageerror', e => { errors.push(e.message); console.log('ERRO NA PÁGINA', e.message, (e.stack || '').split('\n').slice(0, 3).join(' ')); });
   await page.route(/cdn\.jsdelivr\.net|unpkg\.com|cdnjs|\/api\//, r => r.abort());
   await page.goto(BASE + 'index.html', { waitUntil: 'load' });
   await page.waitForFunction(() => window.CRAQUE_UI && document.getElementById('b-new-fc'));
@@ -111,9 +111,24 @@ const INIT = `
     await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; c.debt = 0; c.life = {}; });
   }
 
+  // Fase 4: o app Mercado antes da janela, com a janela aberta (duas propostas) e depois de assinar (a liga nova na tabela)
+  if (!process.env.SEM_MERCADO && await page.evaluate(() => !!window.CRAQUE_SIM.fcMove)) {
+    await tap('.ph-app[data-go="mkt"]'); await shot('mercado-antes'); await tap('#fc-back');
+    await page.evaluate(() => { const S = window.CRAQUE_SIM, D = window.CRAQUE_DATA, c = window.CRAQUE_UI.G.c, fc = c.fc, cur = D.CLUB_BY_ID[c.club];
+      const up = D.CLUBS.filter(x => x.league !== cur.league && x.strength > cur.strength + 3).sort((a, b) => a.strength - b.strength)[0], mid = D.CLUBS.filter(x => x.league === cur.league && x.id !== cur.id && x.strength < cur.strength)[0];
+      fc.mwAt = fc.i; fc.mw = { at: fc.i, s: c.season, offers: [up, mid].filter(Boolean).map((x, k) => Object.assign(S.offerFor(c, x.id, k ? 'mid' : 'up'), { mid: true })), st: 'open' }; });
+    await shot('celular-janela');
+    await tap('.ph-app[data-go="mkt"]'); await shot('mercado-janela');
+    await page.evaluate(() => { const b = document.querySelector('.pa-body'); if (b) b.scrollTop = 9999; }); await shot('mercado-propostas');
+    await tap('.mk-offers .of-sign[data-i="0"]'); await shot('mercado-confirmar');
+    await tap('.ask-wrap [data-a="ok"]'); await shot('mercado-assinou'); await tap('#fc-back');
+    await tap('.ph-app[data-go="tbl"]'); await shot('tabela-clube-novo'); await tap('#fc-back');
+    await tap('.ph-app[data-go="cal"]'); await shot('jogos-clube-novo'); await tap('#fc-back');
+  }
+
   // Jogos resumidos ou no banco (um cartão só) até o primeiro jogo vivido; depois o "Resumir" de uma vez
   // (versões antes da fase 1 do plano não têm jogo resumido: o primeiro jogo já é vivido)
-  await page.evaluate(() => { window.CRAQUE_UI.G.c.fc.pending && window.CRAQUE_UI.G.c.fc.pending.m && (window.CRAQUE_UI.G.c.fc.pending.m = null); });
+  await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; c.fc.derbyDone = true; if (!c.fc.wkDue) window.CRAQUE_SIM.fcNext(c); c.fc.pending && c.fc.pending.m && (c.fc.pending.m = null); }); // sem decisão (clássico, final) no caminho das fotos
   const seen = new Set();
   for (let k = 0; k < 45; k++) {
     if (await has('#screen .btn.opt[data-i]')) { await tap('#screen .btn.opt[data-i]'); await page.waitForSelector('#b-next', { timeout: 8000 }); await tap('#b-next'); await page.waitForSelector('#fc-play', { timeout: 15000 }); }

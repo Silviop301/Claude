@@ -8,6 +8,7 @@
 //  3. Save: a carreira passa por JSON (como no localStorage e na nuvem) no meio do caminho e, com as mesmas escolhas,
 //     termina igualzinha à que não passou. Se não termina, há estado fora de `c` ou valor que o JSON não guarda.
 //  4. Mesa do Zé: a aposta não some sem ser cobrada (mão de vinte e um largada no meio, dinheiro gasto antes de perder).
+//  5. Liga do Jogo a Jogo fecha certa, também depois de trocar de clube na janela do meio do ano.
 const D = require('../craque/src/data.js');
 const S = require('../craque/src/sim.js');
 
@@ -40,6 +41,20 @@ function check(car, c, where) {
   if (c.age !== 16 + c.season) fail(car, where + ': idade ' + c.age + ' na temporada ' + c.season);
   if (c.fc && c.fc.en !== undefined && !(c.fc.en >= 0 && c.fc.en <= 100)) fail(car, where + ': energia fora de 0–100');
 }
+
+// 5. Liga do Jogo a Jogo no fim do calendário (inclusive depois de trocar de clube no meio do ano): todo time jogou todas
+//    as rodadas, gols marcados = sofridos, pontos batem com vitórias e empates, e você está na tabela
+function leagueOk(car, c) {
+  const fc = c.fc, lg = fc && fc.lg;
+  if (!lg || !fc.done) return fail(car, 'T' + c.season + ': calendário terminou sem fechar a temporada');
+  const R = lg.rounds.length, T = lg.tab, sum = k => T.reduce((a, x) => a + x[k], 0);
+  if (T.some(x => x.j !== R)) fail(car, 'T' + c.season + (fc.moved ? ' (trocou no meio)' : '') + ': time com jogos diferentes de ' + R + ' rodadas (' + T.map(x => x.j).join(',') + ')');
+  if (sum('gp') !== sum('gc')) fail(car, 'T' + c.season + ': gols marcados e sofridos não batem');
+  if (T.some(x => x.p !== 3 * x.v + x.e || x.v + x.e + x.d !== x.j)) fail(car, 'T' + c.season + ': pontos não batem com o placar');
+  if (lg.ids[0] !== c.club) fail(car, 'T' + c.season + ': você não está na tabela da liga do seu clube');
+  if (fc.moved) moves++;
+}
+let moves = 0;
 
 // ---------- um passo de cada vez (o robô escolhe ao acaso) ----------
 const pick = (B, a) => a[Math.floor(B() * a.length)];
@@ -90,6 +105,13 @@ function season(car, c, B) {
       if (S.fcEventDue(c)) { const ev = S.fcPickEvent(c); if (ev) doEvent(c, B, ev); continue; }
       if (c.fc.wkDue) {
         S.fcInvites(c).forEach((inv, k) => { const a = pick(B, ['a', 'b', 'ig']); if (a !== 'ig') S.fcInvAnswer(c, k, a); });
+        // Janela do meio do ano (fase 4): assina uma proposta, fica ou força uma troca para um clube qualquer (liga de outro tamanho)
+        const w = S.fcWin(c);
+        if (w && B() < 0.6) {
+          if (w.offers.length && B() < 0.6) S.fcWinSign(c, Math.floor(B() * w.offers.length));
+          else if (B() < 0.5) { const cl = pick(B, D.CLUBS.filter(x => x.id !== c.club)); S.fcMove(c, S.offerFor(c, cl.id, 'up')); w.st = 'signed'; }
+          else S.fcWinStay(c);
+        }
         S.fcWeek(c, B() < 0.5 ? null : [pick(B, S.FC_WEEK).id]);
         continue;
       }
@@ -99,6 +121,7 @@ function season(car, c, B) {
       const o = D.INVEST.filter(t => S.canInvest(c, t.id)); if (o.length && B() < 0.5) S.invest(c, pick(B, o).id);
       check(car, c, 'jogo T' + c.season);
     }
+    leagueOk(car, c);
   } else {
     preSeason(c, B);
     const ev = S.pickEvent(c); if (ev) doEvent(c, B, ev);
@@ -144,7 +167,7 @@ for (let n = 0; n < N; n++) {
     fail(car, 'save: carreira salva e carregada na T' + cut + ' terminou diferente (' + diff.slice(0, 5).join(', ') + ')');
   }
 }
-console.log(N + ' carreiras · ' + steps + ' conferências · ' + roundTrips + ' saves no meio · ' + ((Date.now() - T0) / 1000).toFixed(1) + ' s');
+console.log(N + ' carreiras · ' + steps + ' conferências · ' + roundTrips + ' saves no meio · ' + moves + ' trocas no meio do ano · ' + ((Date.now() - T0) / 1000).toFixed(1) + ' s');
 fails.forEach(f => console.log('FALHA ' + f.car + ': ' + f.msg));
 console.log(fails.length ? fails.length + ' falhas' : '0 falhas');
 process.exitCode = fails.length ? 1 : 0;

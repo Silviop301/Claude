@@ -1035,12 +1035,15 @@
       share: A.slots ? A.games / A.slots : 0, slots: A.slots, games: A.games, goals: A.goals, assists: A.assists, cleanSheets: A.cs, saves: A.saves, penSaved: A.pen, penFaced: A.penFaced, tackles: A.tackles,
       rating: A.games ? Math.round(A.rsum / A.games * 10) / 10 : 0, injShare: A.slots ? fc.injMiss / A.slots : 0, injName: fc.injMiss ? fc.injName : null,
       league: pos === 1, cup: fc.cup.out === 'won', cont: !!fc.cont && fc.cont.kind === 'cont' && fc.cont.out === 'won', cont2: !!fc.cont && fc.cont.kind === 'cont2' && fc.cont.out === 'won',
-      contIn: fc.cont ? fc.cont.name : null, pos, pe: fc.peGot, paid: fc.paid || 0,
+      contIn: fc.cont ? fc.cont.name : null, pos, pe: fc.peGot, paid: fc.paid || 0, pre: fc.pre || null, /* pre: o que fez no clube de antes, quando trocou no meio do ano */
       table: { pos, pts: all[pos - 1], gap: pos === 1 ? 0 : Math.max(1, all[0] - all[pos - 1]), lead: pos === 1 ? Math.max(1, all[0] - all[1]) : 0, n, rounds: lg.rounds.length,
         ids: ord.map(i => lg.ids[i]), all, promo: lg.promo, releg: lg.releg, m: null },
     };
     fc.done = true;
   };
+
+  // Para a troca de clube no meio do ano (engine/transfer.js)
+  S._.fcLib = { leagueTeams, simple, addTab, order, rngOf, str };
 
   if (typeof module !== 'undefined') module.exports = S;
 })(typeof window !== 'undefined' ? window : globalThis);

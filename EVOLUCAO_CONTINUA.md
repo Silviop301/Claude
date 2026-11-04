@@ -17,7 +17,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **no ar** (PRs #109 a #114): jogos vividos/resumidos/banco, lance em todo jogo, tela limpa, rodada como na TV, faixa "Seu ano", metas da semana e XP por temporada. Tempo real do ano a medir pela contagem (o Silvio pediu para não cortar pelo previsto) |
 | 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | **no ar** (PRs #116 a #119): pessoas do celular e Chat, um treino por semana e convites (segura, arriscada, sem resposta), histórias que voltam, repercussão no X, na TV e no jornal |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | **no ar** (PRs #130, #132, #133 e a parte 4): aperto 16–18%, devendo no fim 3% |
-| 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | |
+| 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | em andamento: parte 1 (janela do meio do ano e troca de clube) |
 | 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | |
 | 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | |
 | 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | |
@@ -572,3 +572,22 @@ Proibido também: cartão com faixa colorida na lateral.
   de 5%). Por perfil: o gastador aperta em ~60% das carreiras e termina devendo em ~12%; o cauteloso nunca. Notas S17 e S20
   contra a linha de base S22 de hoje: quem gasta com status e risco compra menos equipamento e equipe (o corte de notas está
   com o pessoal do treino com lances).
+
+### Fase 4 do plano, parte 1 · 2026-11-04 · A janela do meio do ano e a troca de clube
+
+- **Janela do meio do ano** (`engine/transfer.js`, `S.FC_WIN`): abre na metade do calendário e fica aberta por dois jogos.
+  Quem joga bem num clube abaixo do seu nível recebe proposta de um clube maior; quem está sobrando no banco, de um clube
+  onde jogaria; o veterano, às vezes, da liga do dinheiro. Até duas propostas; o empresário avisa no Chat. Não abre para menor
+  de 18, emprestado, na temporada de despedida nem para quem acabou de chegar ao clube.
+- **App Mercado** (🤝, no celular): antes da janela, quando abre; aberta, os cartões das propostas (salário comparado ao de
+  hoje e luvas) com "Assinar" (confirmação) e "Ficar"; depois, o que aconteceu; embaixo, o contrato de hoje. O "Resumir até o
+  próximo jogo grande" para quando a janela abre com proposta.
+- **Troca no meio do ano** (`S.fcMove`): a liga do clube novo começa na rodada em que está (as rodadas de antes são jogadas
+  sem você e a tabela chega com os pontos do time), ocupando as datas de liga que restam; a copa e o continental ficam com o
+  clube de antes ("Ficou com o …"); palpites abertos da liga antiga voltam; a torcida antiga lembra (−10). Os jogos e gols de
+  antes da troca ficam na passagem anterior (`fc.pre`); o X e o jornal noticiam.
+- **Validação**: `craque_invariantes.js` ganhou a regra 5 (a liga fecha certa no fim do calendário: todo time com todas as
+  rodadas, gols e pontos batendo, você na tabela do seu clube), com o robô assinando, ficando ou forçando troca para um clube
+  qualquer: 0 falhas em 120 carreiras (800+ trocas). Simulador (1000 carreiras): 0,8 troca no meio do ano por carreira,
+  notas S18 contra S19 sem a janela, dinheiro e ritmo iguais. O robô troca se o clube novo é mais forte (bem mais forte quando
+  ainda está vivo na copa ou no continental, porque trocar perde a taça). `JANELA=nao` desliga.
