@@ -628,3 +628,16 @@ Proibido também: cartão com faixa colorida na lateral.
   Copa Ouro). Assim há um torneio grande a cada 2 anos. A convocação usa a regra de hoje (`S.wcCall`).
 - O título entra na Sala de Troféus e dá fama (+30), mas ainda não soma na nota final: o peso fica para a fase 6 (legado).
 - Simulador (400): mediana de 4 torneios do continente por carreira, notas iguais (S18). Invariantes 0 falhas; e2e 0 problemas.
+
+### Fase 5 do plano, parte 2 · 2026-11-04 · Seleção no estilo do Jogo a Jogo
+
+- No Jogo a Jogo, a tela da Copa do modo rápido (todos os jogos numa lista corrida) sai:
+  - **Convocação pelo celular**: o técnico da seleção (ou do clube, no Mundial de Clubes) manda a mensagem, abre a lista de
+    convocados, e "Ir para a concentração".
+  - **Concentração** entre os jogos: o próximo jogo (fase e adversário; no mata-mata, "no sorteio"), a tabela do grupo e o
+    caminho até aqui.
+  - **Um jogo por tela**: o relógio corre (toque acelera), para no lance (minigame) e nos pênaltis, e no fim mostra o resultado,
+    a tabela do grupo e "Voltar à concentração". No último jogo, a tela final de sempre.
+  - "Simular até o fim" (e "Simular o torneio" na convocação) seguem na lista corrida.
+- Validação: Copa América inteira pela interface no celular e no computador (sem erros); e2e no Jogo a Jogo com 8 carreiras,
+  0 problemas, passando por convocação, concentração e jogos (`wc:jogo`, `wc:volta`).

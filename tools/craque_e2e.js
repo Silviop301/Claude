@@ -186,6 +186,9 @@ function stepInPage(opts) {
   // Pedido de liga aberto: escolhe uma (dois toques)
   const lg = qa('.sheet-wrap [data-lg]'); if (lg.length) return label('askl ' + twice(rnd(lg)));
   // Copa em andamento (simulando): só espera
+  // Jogo a Jogo (fase 5): concentração, um jogo por tela e a volta
+  if ($('sel-go')) return label('wc:jogo ' + click(Math.random() < 0.03 ? $('sel-sim') : $('sel-go')));
+  if ($('sel-back')) return label('wc:volta ' + click($('sel-back')));
   if ($('wc-list')) { if ($('b-sima') && Math.random() < 0.02) { $('b-sima').click(); return label('wc:sima'); } if ($('b-simg') && Math.random() < 0.3) { $('b-simg').click(); return label('wc:skipg'); } return label('wc:play'); }
   return label('nada');
 }
