@@ -17,7 +17,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | 1 · Ritmo e partida | Temporada em ~1 h no simulador e pela interface; um cartão principal por tela (regra "Tela limpa", fotos antes/depois); faixa de progresso em todo jogo vivido; **o save do Jogo a Jogo recomeça aqui, uma vez só**; metas da semana trocam e o XP do perfil vem por temporada | **no ar** (PRs #109 a #114): jogos vividos/resumidos/banco, lance em todo jogo, tela limpa, rodada como na TV, faixa "Seu ano", metas da semana e XP por temporada. Tempo real do ano a medir pela contagem (o Silvio pediu para não cortar pelo previsto) |
 | 2 · Celular com pessoas | Nenhum convite com clique óbvio na auditoria; 20 temporadas sem convite repetido demais | **no ar** (PRs #116 a #119): pessoas do celular e Chat, um treino por semana e convites (segura, arriscada, sem resposta), histórias que voltam, repercussão no X, na TV e no jornal |
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | **no ar** (PRs #130, #132, #133 e a parte 4): aperto 16–18%, devendo no fim 3% |
-| 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | em andamento: partes 1 (janela do meio do ano e troca de clube) e 2 (sondagens, boato, empresário) |
+| 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | **no ar** (PRs #135, #136 e a parte 3): janela do meio do ano, troca de clube, sondagens, empresário, aumento, pedido de saída e empréstimo |
 | 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | |
 | 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | |
 | 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | |
@@ -602,3 +602,19 @@ Proibido também: cartão com faixa colorida na lateral.
   mensagem. Cobra comissão em toda troca de clube do Jogo a Jogo (uma semana do salário novo, mostrada no cartão).
 - Validação: invariantes 0 falhas; simulador (600): 0,8 troca no meio do ano por carreira, notas S18, dinheiro igual; e2e 0
   problemas; fotos da sondagem no celular e no app, das propostas com a preferência e da troca.
+
+### Fase 4 do plano, parte 3 · 2026-11-04 · Pedir aumento, pedir para sair e empréstimo no meio do ano (fase 4 pronta)
+
+- Na janela do meio do ano, o app Mercado ganhou "Com o {clube}":
+  - **Pedir aumento** (`S.fcRenew`, `S.FC_RENEW`): renovação com +25% de salário e mais 2 anos, com luvas de renovação.
+    A chance vem da nota do ano e da relação com o técnico (10% a 90%, mostrada antes). Um "não" custa −3 com o técnico.
+  - **Pedir para sair** (`S.fcAskOut`): técnico −5 e torcida −5. O empresário arruma mais uma proposta na hora, de um clube
+    do seu nível onde você jogaria; sem trocar agora, a janela do fim do ano abre.
+  - **Esperar** é o "Ficar".
+- **Empréstimo no meio do ano**: quem tem até 23 anos e está no banco recebe proposta de empréstimo até o fim da temporada
+  (o clube dono segue pagando; sem luvas nem comissão). A liga do clube do empréstimo entra como na troca, e no fim do ano
+  ele volta (`S.endLoan`).
+- **Fase 4 pronta.** Critério: trocar de clube no meio do ano não quebra o calendário nem a tabela. Regra 5 do
+  `craque_invariantes.js`: 0 falhas em 120 carreiras com cerca de 900 trocas, empréstimos, aumentos e pedidos de saída. Simulador
+  (400): 0,8 troca no meio do ano por carreira (a maioria para clube maior, ~4% empréstimos), notas S18 contra S19 sem a
+  janela, dinheiro igual; e2e 0 problemas.

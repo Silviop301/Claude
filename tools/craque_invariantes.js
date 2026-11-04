@@ -110,6 +110,8 @@ function season(car, c, B) {
         if (w && B() < 0.6) {
           if (w.offers.length && B() < 0.6) S.fcWinSign(c, Math.floor(B() * w.offers.length));
           else if (B() < 0.5) { const cl = pick(B, D.CLUBS.filter(x => x.id !== c.club)); S.fcMove(c, S.offerFor(c, cl.id, 'up')); w.st = 'signed'; }
+          else if (B() < 0.3) S.fcRenew(c);
+          else if (B() < 0.4) S.fcAskOut(c);
           else S.fcWinStay(c);
         }
         S.fcWeek(c, B() < 0.5 ? null : [pick(B, S.FC_WEEK).id]);

@@ -6,7 +6,8 @@
 (function (root) {
   const D = root.CRAQUE_DATA || require('../data.js');
   const S = root.CRAQUE_SIM || require('./core.js');
-  const { clamp } = S._;
+  const { clamp, REL0 } = S._;
+  const k1000 = v => Math.round(v / 1000) * 1000;
   const L = () => S._.fcLib;
   const on = c => c && c.mode === 'completa' && c.fc && !c.fc.done && c.fc.season === c.season;
   const say = (c, id, t, v) => (S._.phPost ? S._.phPost(c, id, t, v) : null);
@@ -18,7 +19,11 @@
   // fee: a comissão dele em semanas do salário novo; pref: o quanto a relação muda ao seguir ou não a preferência dele
   const SOND = { early: 4, ok: 0.85, none: 0.65, ko: 0.45, good: 0.08, goodUp: 2 };
   const EMP = { fee: 1, pref: 3, against: -4 };
-  S.FC_SOND = SOND; S.FC_EMP = EMP;
+  // Na janela também dá para pedir aumento (renovação: +25% e mais 2 anos; a chance pela nota e pela relação com o técnico)
+  // ou pedir para sair (técnico e torcida não gostam; o empresário arruma mais uma proposta e, sem trocar, a janela do fim
+  // do ano abre). LOAN_AGE: até essa idade o banco rende empréstimo
+  const RENEW = { raise: 1.25, years: 2, fail: -3 }, LOAN_AGE = 23;
+  S.FC_SOND = SOND; S.FC_EMP = EMP; S.FC_RENEW = RENEW;
   S.FC_WIN = WIN;
   const winAt = fc => (fc.mwAt !== undefined ? fc.mwAt : (fc.mwAt = Math.max(2, Math.round(WIN.at * fc.cal.length))));
   // Quem pode receber proposta no meio do ano: maior de idade, sem empréstimo, sem despedida
@@ -36,7 +41,11 @@
     const good = S.fcTone && c.ppl && S.fcTone(c, 'emp') === 'bom';
     const pUp = clamp(WIN.base + (rt - 6.8) * WIN.perf + Math.max(0, o - cur.strength) / WIN.gap + (good ? SOND.good : 0), 0.02, WIN.top + (good ? SOND.good : 0));
     if (r() < pUp) add(pick(x => x.strength > cur.strength + 2 && x.strength <= o + 5 + (good ? SOND.goodUp : 0)), 'up');
-    if (share < 0.4 && r() < WIN.bench) add(pick(x => x.strength < cur.strength && x.strength >= o - 10 && S.role(c, x).share >= 0.6), 'mid');
+    // No banco: o jovem (até 23) recebe empréstimo até o fim do ano (o clube segue pagando); o mais velho, proposta de quem o quer jogando
+    if (share < 0.4 && r() < WIN.bench) {
+      if (c.age <= LOAN_AGE) { const cl = pick(x => x.strength < cur.strength - 2 && x.strength >= o - 12 && S.role(c, x).share >= 0.6); if (cl && out.length < WIN.max) out.push(Object.assign(S.offerFor(c, cl.id, 'loan', c.wage), { years: 1, mid: true })); }
+      else add(pick(x => x.strength < cur.strength && x.strength >= o - 10 && S.role(c, x).share >= 0.6), 'mid');
+    }
     if (c.age >= 27 && r() < WIN.money) add(pick(x => D.MONEY.includes(x.league) && x.strength >= o - 12), 'money');
     save();
     return out;
@@ -95,6 +104,36 @@
   };
   // A proposta que o empresário prefere: a que paga mais (com duas ou mais na mesa)
   S.fcEmpPick = w => { if (!w || w.offers.length < 2) return -1; const b = w.offers.reduce((b, o, i, a) => (o.wage > a[b].wage ? i : b), 0); return w.offers.filter(o => o.wage === w.offers[b].wage).length > 1 ? -1 : b; }; // empate: sem preferência
+  S.fcRenewP = function (c) {
+    const A = c.fc.acc, rt = A.games >= 4 ? A.rsum / A.games : 6.6;
+    return clamp(0.35 + (rt - 6.8) * 0.5 + (c.rel.coach - REL0) / 150, 0.1, 0.9);
+  };
+  S.fcRenewOk = c => { const w = S.fcWin(c); return !!w && !w.renew && !w.out && c.clubSince !== undefined; };
+  S.fcRenewOf = c => ({ club: c.club, kind: 'stay', wage: k1000(c.wage * RENEW.raise), years: (c.contract || 0) + RENEW.years });
+  S.fcRenew = function (c) {
+    if (!S.fcRenewOk(c)) return null;
+    const w = S.fcWin(c), p = Math.round(S.fcRenewP(c) * 100), { r, save } = L().rngOf(c.fc), roll = S.roll100(r), ok = roll <= p;
+    save();
+    w.renew = { ok, p, roll };
+    if (ok) { const of = S.fcRenewOf(c); S.join(c, of); w.renew.wage = of.wage; w.renew.years = of.years; }
+    else { c.rel.coach = clamp(c.rel.coach + RENEW.fail, 0, 100); if (c.ppl) say(c, 'emp', 'Conversei com a diretoria e não rolou. Disseram que aumento agora só no fim do contrato.'); }
+    return w.renew;
+  };
+  S.fcAskOutOk = c => { const w = S.fcWin(c); return !!w && !w.out; };
+  S.fcAskOut = function (c) {
+    if (!S.fcAskOutOk(c)) return null;
+    const w = S.fcWin(c), fc = c.fc, cur = D.CLUB_BY_ID[c.club], o = S.ovr(c), { r, save } = L().rngOf(fc);
+    w.out = true; c.wantsOut = true;
+    const F = S.SQUAD_FX || { outCoach: -5, outFans: -5 };
+    c.rel.coach = clamp(c.rel.coach + F.outCoach, 0, 100); c.rel.fans = clamp(c.rel.fans + F.outFans, 0, 100);
+    const used = new Set([c.club].concat(w.offers.map(x => x.club)));
+    const pool = D.CLUBS.filter(x => !used.has(x.id) && Math.abs(x.strength - Math.min(o, cur.strength + 4)) <= 4 && S.role(c, x).share >= 0.5);
+    let of = null;
+    if (pool.length) { of = Object.assign(S.offerFor(c, r.pick(pool).id, 'mid'), { mid: true }); w.offers.push(of); }
+    save();
+    if (c.ppl) say(c, 'emp', of ? 'Entendi o recado. Liguei pra meio mundo e {a} topou: tá no app Mercado.' : 'Entendi o recado, mas ninguém fechou agora. No fim do ano a gente resolve.', { a: of ? D.o(D.CLUB_BY_ID[of.club].name) : '' });
+    return of || false;
+  };
   S.fcSond = c => { const w = S.fcWinState(c); return w && w.st === 'rumor' ? w.sond : []; };
   // Comissão do empresário em toda troca de clube no Jogo a Jogo (não na base nem no empréstimo): semanas do salário novo
   S.fcFeeOf = (c, offer) => (c.mode !== 'completa' || !offer || offer.club === c.club || offer.kind === 'base' || offer.kind === 'loan' ? 0 : Math.round((offer.wage || 0) * EMP.fee / 1000) * 1000);
@@ -123,8 +162,9 @@
     // O clube de antes: onde estava quando você saiu
     const o0 = lib.order(fc.lg.tab);
     fc.lg0 = { club: from, name: fc.lg.name, pos: o0.indexOf(0) + 1, n: fc.lg.ids.length, pts: fc.lg.tab[0].p };
-    S.join(c, offer);
-    c.fansBy[from] = Math.max(0, (c.fansBy[from] || 0) - 10); // sair no meio do ano: a torcida de lá lembra
+    if (offer.kind === 'loan') S.loanOut(c, offer); else S.join(c, offer);
+    c.wantsOut = false;
+    if (offer.kind !== 'loan') c.fansBy[from] = Math.max(0, (c.fansBy[from] || 0) - 10); // sair no meio do ano: a torcida de lá lembra
     const club = D.CLUB_BY_ID[c.club], lgD = D.LEAGUE_BY_ID[club.league], LD = D.LADDER[club.league];
     const { r, save } = lib.rngOf(fc);
     const teams = lib.leagueTeams(club), perm = teams.map((_, i) => i).sort(() => r() - 0.5), sch = S._schedule(teams.length);
