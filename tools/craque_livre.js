@@ -15,6 +15,14 @@ const segD = (q, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + 
 // lvl: 0 bom, 0,5 médio, 1 desleixado (ruído no analógico e decisões piores)
 const go = (S, t, lvl) => { const dx = t.x - S.me.x + (Math.random() - 0.5) * 60 * lvl, dy = t.y - S.me.y + (Math.random() - 0.5) * 60 * lvl, l = Math.hypot(dx, dy); S.stick = l < 4 ? { x: 0, y: 0 } : { x: dx / l * Math.min(1, l / 20), y: dy / l * Math.min(1, l / 20) }; };
 const BOT = {
+  // Cara a cara: vai ao gol pelo meio e chuta quando o goleiro chega perto (o desleixado chuta tarde)
+  cara: (S, L, lvl) => { const me = S.me; if (!S.own) return; go(S, { x: GX + (me.x - GX) * 0.5, y: 60 }, lvl); if (d(me, S.kp) < 70 - lvl * 30 + Math.random() * 10) { S.stick = { x: 0, y: 0 }; L.act(); } },
+  // 2 contra 1: conduz; com o zagueiro perto, toca se ele veio em você, senão chuta
+  dois: (S, L, lvl) => { const me = S.me, df = S.foes[0], m = S.mates[0]; if (!S.own) return; go(S, { x: me.x + 10, y: me.y - 60 }, lvl);
+    if (d(df, me) < 75 - lvl * 25 || me.y < 170) { const toMe = d(df, me) < d(df, m) || Math.random() < lvl * 0.4; if (toMe) { const vx = m.x - S.ball.x, vy = m.y - S.ball.y, l = Math.hypot(vx, vy); S.stick = { x: vx / l, y: vy / l }; } else S.stick = { x: 0, y: 0 }; L.act(); } },
+  // Cabeçada: corre para o ponto assim que a bola sai (o desleixado sai tarde) e pula perto
+  cabeca: (S, L, lvl) => { const cr = S.cross; if (S.headed) return; if (S.t > cr.t0 + 0.1 + lvl * 0.5) go(S, { x: cr.x1, y: cr.y1 }, lvl * 0.5); else S.stick = { x: 0, y: 0 };
+    const k = (S.t - cr.t0) / cr.dur; if (k > 0.85 && d(S.me, { x: cr.x1, y: cr.y1 }) < 45) L.act(); },
   // Atacante: diagonal para longe do zagueiro; passou dele, volta para o meio e chuta (o desleixado chuta de longe e mais aberto)
   mano: (S, L, lvl) => { const me = S.me, df = S.foes[0]; if (!S.own) return; const side = df.x > me.x ? -1 : 1; if (me.y < df.y - 12) S.past = 1;
     go(S, S.past ? { x: GX + (me.x - GX) * (0.4 + lvl * 0.5), y: 130 } : { x: me.x + side * 70, y: me.y - 60 }, lvl);
@@ -23,7 +31,7 @@ const BOT = {
   bote: (S, L, lvl) => { const a = S.atk, gd = Math.hypot(GX - a.x, 20 - a.y); go(S, { x: a.x + (GX - a.x) / gd * 30, y: a.y + (20 - a.y) / gd * 30 }, lvl); if (d(S.me, a) < 40 + lvl * 14 && Math.random() < 0.1) { const vx = a.x - S.me.x, vy = a.y - S.me.y, l = Math.hypot(vx, vy); S.stick = { x: vx / l, y: vy / l }; L.act(); } },
   saida: (S, L, lvl) => { const a = S.atk; if (lvl === 1) { S.stick = { x: 0, y: 0 }; return; } const k = (70 - 20) / Math.max(1, a.y - 20); go(S, { x: GX + (a.x - GX) * k, y: 70 }, lvl); },
 };
-const POS = { mano: 'ATA', passe3: 'MEI', bote: 'ZAG', saida: 'GOL' };
+const POS = { cara: 'ATA', dois: 'ATA', cabeca: 'ATA', mano: 'ATA', passe3: 'MEI', bote: 'ZAG', saida: 'GOL' };
 const N = +process.argv[2] || 300;
 let alerts = 0;
 console.log('cena     atrib  K     carta   bom  médio  desleixado');

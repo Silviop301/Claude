@@ -202,7 +202,7 @@
     const k = S.kickSetup(G.c, setupType), E = S.eff(G.c), L = kk => D.label(G.c.pos, kk);
     const lv = id => (G.c.traits.includes(id) ? S.traitLevel(G.c, id) : 0);
     if (S.LIVRE.includes(setupType)) { // movimento livre: a velocidade vem da carta
-      const A = { mano: ['dri', 'rit'], passe3: ['pas'], bote: ['def', 'rit'], saida: ['fis', 'def'] }[setupType];
+      const A = { cara: ['fin', 'dri'], dois: ['pas', 'fin'], cabeca: ['fis', 'fin'], mano: ['dri', 'rit'], passe3: ['pas'], bote: ['def', 'rit'], saida: ['fis', 'def'] }[setupType];
       return [A.map(a => L(a) + ' ' + E[a]).join(' · ') + ' · ' + (k.K >= 1.08 ? 'rápido' : k.K >= 0.96 ? 'na média' : 'lento') + ' no lance'].map(t => '<span class="chip">' + t + '</span>');
     }
     if (setupType === 'save') return ['<span class="chip">' + L('fin') + ' ' + E.fin + ' · sinal do batedor ' + (k.tellMs >= 190 ? 'longo' : k.tellMs >= 130 ? 'médio' : 'curto') + '</span>',
@@ -224,12 +224,15 @@
     save: 'O batedor corre; pouco antes do chute aparece uma seta mostrando o lado. Toque na esquerda, no meio ou na direita para pular.',
     tackle: 'O atacante vem conduzindo rumo ao seu gol. Toque quando ele pisar na faixa verde para dar o carrinho.',
     mano: 'Campo visto de cima. O analógico embaixo à esquerda leva você; o botão à direita chuta no canto para onde o analógico aponta. O zagueiro reage atrasado: mude de direção para passar. Depois de uns segundos, a cobertura chega por trás.',
+    cara: 'Campo visto de cima. Você sai sozinho e o goleiro vem fechando o ângulo. O analógico leva você; o botão chuta no canto para onde ele aponta. Chute antes de ele chegar ou drible e toque para o gol vazio. O zagueiro vem correndo atrás.',
+    dois: 'Campo visto de cima. Você e um companheiro contra o último zagueiro. Com o analógico apontado para o companheiro, o botão toca (linha dourada); apontado para o gol, chuta. Se o zagueiro vier em você, toque; se ele ficar no companheiro, bata.',
+    cabeca: 'Campo visto de cima. Vem o cruzamento: o círculo dourado mostra onde a bola cai. Chegue lá antes do seu marcador (o botão dá um pulo para o ponto) e a cabeçada vai no canto para onde o analógico aponta.',
     bote: 'Campo visto de cima. Fique entre o atacante e o gol com o analógico; o botão dá o carrinho para onde ele aponta. De frente e bem perto quase sempre dá; longe ou no meio da finta dele, você vai ao chão.',
     saida: 'Campo visto de cima. Saia do gol com o analógico para fechar o ângulo: ele bate no lado mais aberto. O botão mergulha para o lado do analógico, uma vez só.',
     passe3: 'Campo visto de cima. Conduza com o analógico e aponte para o companheiro com a linha dourada (sem zagueiro no caminho); o botão passa. O volante vem pressionar você, e se demorar o atacante fica impedido.',
     pass: 'O atacante corre entre a zaga e o último zagueiro. Toque quando ele passar pela faixa verde: a bola passa pela brecha e ele finaliza. Se demorar, ele fica impedido.',
   };
-  const MINI_BTN = { cup: 'Bater o pênalti', classico: 'Bater a falta', save: 'Defender o pênalti', tackle: 'Dar o bote', pass: 'Enfiar a bola', mano: 'Partir pra cima', passe3: 'Achar o livre', bote: 'Fechar o atacante', saida: 'Sair do gol' };
+  const MINI_BTN = { cup: 'Bater o pênalti', classico: 'Bater a falta', save: 'Defender o pênalti', tackle: 'Dar o bote', pass: 'Enfiar a bola', mano: 'Partir pra cima', cara: 'Encarar o goleiro', dois: 'Decidir o lance', cabeca: 'Atacar a bola', passe3: 'Achar o livre', bote: 'Fechar o atacante', saida: 'Sair do gol' };
 
   // O que vale o lance em duas linhas: ganho em verde, perda em vermelho ("Converteu: X · Errou: Y").
   // Sem a parte da perda (clássico do atacante), só a linha do ganho.
