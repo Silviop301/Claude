@@ -103,6 +103,11 @@ const INIT = `
     await tap('.ph-app[data-go="shop"]'); await shot('loja-divida');
     if (await has('#fc-back')) await tap('#fc-back');
     if (await has('.ph-app[data-go="bank"]')) { await shot('celular-no-vermelho'); await tap('.ph-app[data-go="bank"]'); await shot('banco-divida'); if (await has('[data-way="adv"]:not(:disabled)')) { await tap('[data-way="adv"]'); await shot('banco-adiantamento'); } await tap('#fc-back'); }
+    if (await page.evaluate(() => !!window.CRAQUE_SIM.fcInvBuy)) {
+      await page.evaluate(() => { const S = window.CRAQUE_SIM, c = window.CRAQUE_UI.G.c; c.debt = 0; if (c.fin) c.fin.adv = null; c.money = S.fcInvPrice(c) * 3; S.fcInvBuy(c, 'imovel'); });
+      await tap('.ph-app[data-go="bank"]'); await page.evaluate(() => { const b = document.querySelector('.pa-body'); if (b) b.scrollTop = 400; }); await shot('banco-investir'); await tap('#fc-back');
+      await tap('.ph-app[data-go="shop"]'); await page.evaluate(() => { const f = document.getElementById('fc-party'); if (f) f.scrollIntoView({ block: 'center' }); }); await shot('loja-festa'); await tap('#fc-back');
+    }
     await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; c.debt = 0; c.life = {}; });
   }
 

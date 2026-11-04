@@ -275,6 +275,7 @@
     ],
     life: [
       { id: 'house', name: 'Casa nova', wk: 50, fame: 6, fans: 4, fx: 'Mais fama e torcida' },
+      { id: 'grife', name: 'Guarda-roupa de grife', wk: 10, fame: 3, fans: 1, fx: 'Chega nos eventos chamando atenção' }, // fase 3: status com manutenção (coleção nova toda temporada)
     ],
   };
   S.FC_SHOP = SHOP;

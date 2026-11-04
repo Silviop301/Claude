@@ -975,10 +975,12 @@
     if (!el) return;
     const R = v => 'R$ ' + U.money(v), cash = c.money || 0, debt = S.fcDebt(c), wp = S.fcWeekPay(c), F = c.fin || {};
     const staff = S.fcStaffWeek(c), upk = S.fcUpkeep(c), adv = F.adv && F.adv.left > 0 ? Math.min(F.adv.left, Math.round(wp * S.FC_ADV.cut)) : 0, jur = Math.round(debt * S.FC_DEBT.rate);
+    const INV = S.fcInvs(c), im = INV.find(x => x.id === 'imovel'), st = INV.find(x => x.id === 'startup');
+    const rent = im ? Math.round(im.paid * S.FC_INVEST.imovel.rent) : 0;
     const line = (n, v, cls) => '<p class="bk-l"><span>' + n + '</span><b class="' + (cls || '') + '">' + v + '</b></p>';
-    const flow = line('Salário', '+' + R(wp), 'up') + (staff ? line('Equipe pessoal', '−' + R(staff), 'down') : '') + (upk ? line('Carro e casa', '−' + R(upk), 'down') : '') +
+    const flow = line('Salário', '+' + R(wp), 'up') + (im ? line('Aluguel do apartamento', '+' + R(rent), 'up') : '') + (staff ? line('Equipe pessoal', '−' + R(staff), 'down') : '') + (upk ? line('Carro e casa', '−' + R(upk), 'down') : '') +
       (adv ? line('Adiantamento (faltam ' + R(F.adv.left) + ')', '−' + R(adv), 'down') : '') + (jur ? line('Juros da dívida', '−' + R(jur), 'down') : '');
-    const left = wp - staff - upk - adv - jur;
+    const left = wp + rent - staff - upk - adv - jur;
     const W = S.fcWays(c), by = id => W.find(w => w.id === id);
     const btn = (id, label, ok) => '<button class="fc-buy" data-way="' + id + '"' + (ok ? '' : ' disabled') + '>' + label + '</button>';
     const row = (name, fx, right) => '<div class="fc-si"><span><b>' + esc(name) + '</b><small>' + fx + '</small></span>' + right + '</div>';
@@ -992,12 +994,22 @@
     const L = c.life || {}, car = L.car && S.FC_SHOP.cars.find(x => x.id === L.car), own = [];
     if (car) own.push(row(car.name, 'Manutenção ' + R((L.mt && L.mt.car) || 0) + ' por semana · vende por ' + R(S.fcSellValue(c, 'car')) + ' (fama −' + Math.round(car.fame / 2) + ')', btn('car', 'Vender', true)));
     if (S.fcOwns(c, 'house')) own.push(row('Casa', 'Manutenção ' + R((L.mt && L.mt.house) || 0) + ' por semana · vende por ' + R(S.fcSellValue(c, 'house')) + ' (fama −3)', btn('house', 'Vender', true)));
+    if (S.fcOwns(c, 'grife')) own.push(row('Guarda-roupa de grife', 'Coleção nova: ' + R((L.mt && L.mt.grife) || 0) + ' por semana · vende por ' + R(S.fcSellValue(c, 'grife')) + ' (fama −1)', btn('grife', 'Vender', true)));
+    if (im) own.push(row('Apartamento para alugar', 'Pago ' + R(im.paid) + ' · vale hoje ' + R(im.val) + ' · aluguel ' + R(rent) + ' por semana', btn('imovel', 'Vender', true)));
+    // Investir: o apartamento (renda e algum susto) e o negócio do primo (triplica ou some)
+    const I = S.FC_INVEST, ip = S.fcInvPrice(c), canInv = !debt;
+    const inv = '<div class="fc-ss"><h3>Investir</h3>' +
+      (im ? '' : row('Apartamento para alugar', 'Aluguel de ' + R(Math.round(ip * I.imovel.rent)) + ' por semana. A cada temporada o valor muda (' + Math.round(I.imovel.lo * 100) + '% a ' + Math.round(I.imovel.hi * 100) + '% do pago) e, uma vez em cinco, um problema custa ' + Math.round(I.imovel.badCost * 100) + '% do preço', btn('im-buy', R(ip), canInv && cash >= ip))) +
+      (st ? row('Negócio do primo do ' + esc(c.ppl ? S.fcContact(c, 'parca').name : 'parça'), 'Você pôs ' + R(st.paid) + '. O resultado sai no começo da próxima temporada', '<em class="fc-own-tag">Esperando</em>') :
+        row('Negócio do primo do ' + esc(c.ppl ? S.fcContact(c, 'parca').name : 'parça'), 'O dinheiro fica preso até a próxima temporada. ' + Math.round(I.startup.p * 100) + '%: volta ' + I.startup.win + ' vezes. ' + Math.round((1 - I.startup.p) * 100) + '%: volta só ' + Math.round(I.startup.lose * 100) + '%',
+          '<span class="bk-st">' + S.fcInvStakes(c).map(v => btn('st-' + v, R(v), canInv && cash >= v)).join('') + '</span>')) +
+      (debt ? '<p class="fc-own">Devendo, o banco não deixa investir.</p>' : '') + '</div>';
     const lv = c.luvas && c.luvas.s === c.season ? '<p class="fc-own">Luvas desta temporada: ' + R(c.luvas.v) + (c.luvas.cut ? ' (renovação com desconto)' : '') + '.</p>' : '';
     el.innerHTML =
       '<div class="fc-cash"><span>Saldo</span><b>' + R(cash) + '</b><small>Bônus do fim do ano: meta e títulos pagam semanas de salário extra.</small>' +
         (debt ? '<p class="fc-debt"><b>Dívida ' + R(debt) + '</b> Juros de ' + String(S.FC_DEBT.rate * 100).replace('.', ',') + '% por semana. O salário paga a dívida primeiro, e a loja não vende carro nem casa até quitar.</p>' : '') + '</div>' +
       '<div class="fc-ss"><h3>Por semana</h3><div class="bk-flow">' + flow + line('Sobra', (left >= 0 ? '+' : '−') + R(Math.abs(left)), left >= 0 ? 'up' : 'down') + '</div>' + lv + '</div>' +
-      ways +
+      ways + inv +
       (own.length ? '<div class="fc-ss"><h3>Patrimônio</h3>' + own.join('') + '</div>' : '');
     const done = () => { save(); bar(); bankBox(); };
     el.querySelectorAll('[data-way]').forEach(b => { b.onclick = () => {
@@ -1005,8 +1017,11 @@
       if (id === 'adv') { if (S.fcAdvance(c)) { sfx('coin'); done(); } return; }
       if (id === 'help') { if (S.fcHelp(c)) { sfx('coin'); done(); } return; }
       if (id === 'cut') return U.ask('Renovar ganhando menos?', 'Entram ' + R(cu.v) + ' de luvas agora, o salário cai para ' + R(cu.wage) + ' por semana e o contrato ganha mais um ano.', 'Renovar', () => { if (S.fcCut(c)) { sfx('coin'); done(); } });
-      const nm = id === 'car' ? car.name.toLowerCase() : 'casa';
-      U.ask('Vender ' + (id === 'car' ? 'o ' : 'a ') + nm + '?', 'Entram ' + R(S.fcSellValue(c, id)) + ', a manutenção acaba e a fama cai um pouco. Para ter de novo, só comprando outra vez.', 'Vender', () => { if (S.fcSell(c, id)) { sfx('coin'); done(); } });
+      if (id === 'im-buy') return U.ask('Comprar o apartamento?', 'Saem ' + R(ip) + ' agora. Ele rende aluguel toda semana e você pode vender quando quiser pelo valor do momento.', 'Comprar', () => { if (S.fcInvBuy(c, 'imovel')) { sfx('coin'); done(); } });
+      if (id.startsWith('st-')) { const v = +id.slice(3); return U.ask('Pôr ' + R(v) + ' no negócio?', 'O dinheiro fica preso até a próxima temporada. ' + Math.round(I.startup.p * 100) + '% de chance de voltar ' + R(v * I.startup.win) + '; senão volta ' + R(Math.round(v * I.startup.lose / 1000) * 1000) + '.', 'Investir', () => { if (S.fcInvBuy(c, 'startup', v)) { sfx('coin'); done(); } }); }
+      if (id === 'imovel') return U.ask('Vender o apartamento?', 'Entram ' + R(im.val) + ' (o valor de hoje) e o aluguel acaba.', 'Vender', () => { if (S.fcInvSell(c, S.fcInvs(c).indexOf(im))) { sfx('coin'); done(); } });
+      const nm = id === 'car' ? car.name.toLowerCase() : id === 'grife' ? 'guarda-roupa de grife' : 'casa';
+      U.ask('Vender ' + (id === 'car' || id === 'grife' ? 'o ' : 'a ') + nm + '?', 'Entram ' + R(S.fcSellValue(c, id)) + ', a manutenção acaba e a fama cai um pouco. Para ter de novo, só comprando outra vez.', 'Vender', () => { if (S.fcSell(c, id)) { sfx('coin'); done(); } });
     }; });
   }
   function shopBox() {
@@ -1043,13 +1058,16 @@
         S.FC_SHOP.life.map(x => { const own = S.fcOwns(c, x.id), p = S.fcLifePrice(c, x.id);
           return row(x.name, x.fx + ' (+' + x.fame + ' de fama)' + (own ? ' · manutenção ' + R((c.life.mt && c.life.mt[x.id]) || 0) + ' por semana' : upTxt('life', x.id)), own ? '<em class="fc-own-tag">Comprado</em>' : btn('life', x.id, R(p), cash >= p && !debt), x.id); }).join('') +
       '</div>' +
+      '<div class="fc-ss"><h3>Festa</h3>' + row('Dar uma festa', '+' + S.FC_PARTY.fame + ' de fama e +' + S.FC_PARTY.fans + ' de torcida, o parça adora. A semana começa sem perna (' + S.FC_PARTY.en + ' de energia). Uma por temporada',
+        (c.fin || {}).partyS === c.season ? '<em class="fc-own-tag">Feita</em>' : '<button class="fc-buy" id="fc-party"' + (S.fcPartyOk(c) ? '' : ' disabled') + '>' + R(S.fcPartyPrice(c)) + '</button>') + '</div>' +
       '<div class="fc-ss"><h3>Carro</h3>' +
         S.FC_SHOP.cars.map((x, k) => { const at = S.fcCarAt(c), p = S.fcCarPrice(c, x.id);
           return row(x.name, x.fx + ' (+' + x.fame + ' de fama)' + (k === at ? ' · manutenção ' + R((c.life.mt && c.life.mt.car) || 0) + ' por semana' : k > at ? upTxt('car', x.id) : ''), k === at ? '<em class="fc-own-tag">Seu carro</em>' : k < at ? '<em class="fc-own-tag old">Abaixo do seu</em>' : btn('car', x.id, R(p), cash >= p && !debt), x.id); }).join('') +
       '</div>' +
       '<p class="fc-shop-note">Tudo daqui vale só nesta carreira. Os itens da coleção continuam só visuais.</p>';
     el.querySelectorAll('.fc-attr button').forEach(b => { b.onclick = () => { sfx('tap'); gearAttr = b.dataset.a; shopBox(); }; });
-    el.querySelectorAll('.fc-buy').forEach(b => { b.onclick = () => {
+    if ($('fc-party')) $('fc-party').onclick = () => { if (S.fcParty(c)) { sfx('coin'); save(); bar(); shopBox(); } };
+    el.querySelectorAll('.fc-buy[data-k]').forEach(b => { b.onclick = () => {
       if (S.fcBuy(c, b.dataset.k, b.dataset.id, gearAttr)) { sfx(b.dataset.k === 'staff' && !(c.staff && c.staff[b.dataset.id]) ? 'tap' : 'coin'); save(); bar(); shopBox(); weekBox(); }
     }; });
   }

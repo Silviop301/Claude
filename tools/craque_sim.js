@@ -65,6 +65,13 @@ for (let n = 0; n < N; n++) {
         const cars = S.FC_SHOP.cars, at = S.fcCarAt(c);
         for (let k = cars.length - 1; k > at; k--) if ((c.money || 0) >= S.fcCarPrice(c, cars[k].id) * mg) { S.fcBuy(c, 'car', cars[k].id); break; }
         if (!S.fcOwns(c, 'house') && (c.money || 0) >= S.fcLifePrice(c, 'house') * mg) S.fcBuy(c, 'life', 'house');
+        if (!S.fcOwns(c, 'grife') && (c.money || 0) >= S.fcLifePrice(c, 'grife') * mg * 1.5) S.fcBuy(c, 'life', 'grife');
+        if (S.fcPartyOk(c) && (c.money || 0) >= S.fcPartyPrice(c) * mg * 2) S.fcParty(c);
+      }
+      // Investimentos (fase 3, parte 4): o apartamento para quem tem folga; o negócio do primo é coisa de gastador
+      if (!(c.debt > 0)) {
+        if (pf !== 'gastador' && !S.fcInvHas(c, 'imovel') && (c.money || 0) >= S.fcInvPrice(c) * (pf === 'cauteloso' ? 3 : 2)) S.fcInvBuy(c, 'imovel');
+        if (pf === 'gastador' && !S.fcInvHas(c, 'startup')) { const st = S.fcInvStakes(c).filter(v => (c.money || 0) >= v * 1.5).pop(); if (st) S.fcInvBuy(c, 'startup', st); }
       }
       if (process.env.SHOP !== 'gear') for (const k of (process.env.STAFF ? process.env.STAFF.split(',') : ['video', 'pt', 'physio']).concat(c.age >= 29 && !process.env.STAFF ? ['nutri'] : [])) if (!(c.staff && c.staff[k]) && (c.money || 0) >= S.fcStaffCost(c, k) * 60) S.fcBuy(c, 'staff', k);
     };
@@ -76,6 +83,8 @@ for (let n = 0; n < N; n++) {
       if (c.debt < (c.perfil === 'gastador' ? 8 : 2) * wp) return;
       if (S.fcAdvanceOk(c)) return S.fcAdvance(c);
       if (S.fcHelpOk(c)) return S.fcHelp(c);
+      if (S.fcOwns(c, 'grife')) return S.fcSell(c, 'grife');
+      { const k = S.fcInvs(c).findIndex(x => x.id === 'imovel'); if (k >= 0) return S.fcInvSell(c, k); }
       if (c.life && c.life.car) return S.fcSell(c, 'car');
       if (S.fcOwns(c, 'house')) return S.fcSell(c, 'house');
       if (S.fcCutOk(c)) return S.fcCut(c);
