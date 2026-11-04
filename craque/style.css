@@ -5661,3 +5661,15 @@ button.mz-fix { display: grid; gap: 4px; width: 100%; text-align: left; font: in
 .mk-offers > .btn.ghost { justify-self: stretch; }
 .mk-sd { grid-template-columns: auto minmax(0, 1fr); }
 .mk-pref { margin: 0; font: 700 13px var(--body); color: var(--up-ink); }
+/* Jogo a Jogo, seleção (fase 5): a ligação, a concentração e um jogo por tela */
+.sel-ph { margin: 8px 0 4px; }
+.sel-ph .ph-scr { height: auto; min-height: 0; width: min(100%, 320px); }
+.sel-ph .ph-clock { font-size: 56px; }
+.sel-ph .ph-n { cursor: default; }
+.sel-h { margin: 8px 0 0; }
+.sel-k { margin: 4px 0 0; font: 800 26px/1.1 var(--display); color: var(--tx-1); }
+.sel-next { display: grid; gap: 6px; padding: 14px 16px; border-radius: var(--r-lg); background: var(--paper); color: var(--ink); box-shadow: var(--sh-float); }
+.sel-next .st { font: 700 12px var(--display); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
+.sel-next .line { display: flex; align-items: center; justify-content: space-between; gap: 10px; font: 800 18px var(--display); }
+.sel-next .line b { color: var(--ink-2); }
+.sel-one .wc-game { font-size: 110%; }

@@ -53,6 +53,7 @@
   function cwcIntro() {
     G.step = 'cwc';
     if (isCwc(G.c.wcRun) && G.c.wcRun.year === year()) { save(); return wcPlay(); }
+    if (jaj()) { save(); return selCall(true); }
     const call = S.cwcCall(G.c), cl = call.club;
     save();
     render(
@@ -68,6 +69,7 @@
   function wcIntro() {
     G.step = 'wc';
     if (G.c.wcRun && !isCwc(G.c.wcRun) && G.c.wcRun.year === year()) { save(); return wcPlay(); }
+    if (jaj()) { save(); return selCall(false); }
     const call = S.wcCall(G.c);
     save();
     natBg();
@@ -188,7 +190,7 @@
     tick();
   }
 
-  function wcPlay() {
+  function wcList() {
     const run = G.c.wcRun;
     G.step = isCwc(run) ? 'cwc' : 'wc';
     if (!isCwc(run)) natBg();
@@ -269,6 +271,91 @@
     setTimeout(next, simAll ? 40 : 500);
   }
 
+  // ---------- Jogo a Jogo (plano, fase 5): cada jogo do torneio vivido, um por vez ----------
+  // No Jogo a Jogo a tela da Copa do modo rápido (todos os jogos numa lista corrida) sai: a convocação chega pelo celular,
+  // entre um jogo e outro fica a concentração (o próximo jogo, a tabela do grupo e o caminho) e cada jogo tem a sua tela,
+  // com o relógio, o lance e o fim de jogo. "Simular até o fim" segue na lista corrida.
+  const jaj = () => G.c && G.c.mode === 'completa';
+  function wcPlay() { return jaj() && !simAll ? selHub() : wcList(); }
+  const selTop = run => '<div class="eyebrow">' + esc(tName(run)) + ' ' + run.year + ' · ' + usMark(run) + ' ' + usName(run) + '</div>';
+  // A ligação do técnico (seleção) ou do clube (Mundial): o celular com a notificação e a lista
+  function selCall(cwc) {
+    const c = G.c, call = cwc ? S.cwcCall(c) : S.wcCall(c), tn = cwc ? 'Mundial de Clubes' : S.natTourName(c);
+    const who = cwc ? 'Técnico ' + D.do(club(c.club).name) : 'Técnico da seleção', nick = String(c.name || '').split(' ')[0];
+    const msg = cwc ? nick + ', o Mundial de Clubes é nosso agora. ' + (call.starter ? 'Você é peça-chave.' : 'Começa no banco, mas pode decidir.') + ' Concentração amanhã.'
+      : nick + ', você está na lista ' + D.da(tn) + '. ' + (call.starter ? 'Chega como titular: o país conta contigo.' : 'Vai como reserva, mas quero você pronto para entrar.') + ' Apresentação amanhã.';
+    if (!cwc) natBg();
+    render('<div class="eyebrow">' + esc(tn) + ' ' + year() + '</div>' +
+      '<div class="ph sel-ph"><div class="ph-scr"><div class="ph-bar"><span>' + year() + '</span><span>' + U.emo('📞', 'xs') + '</span></div>' +
+      '<div class="ph-clock">' + (cwc ? crest(c.club, 'lg') : U.flag(D.NATION_BY_NAME[c.country].flag)) + '</div>' +
+      '<div class="ph-ns"><div class="ph-n"><b>' + esc(who) + ' <i>· agora</i></b><span>' + esc(msg) + '</span></div></div></div></div>' +
+      '<h2 class="sel-h">' + (cwc ? D.O(esc(club(c.club).name)) + ' no Mundial de Clubes!' : 'Convocado para ' + esc(D.aTaca(tn)) + '!') + '</h2>' +
+      '<p class="lead">Grupo de quatro e mata-mata: até 7 jogos, um de cada vez.</p>' +
+      '<button class="btn" id="b-wc">Ir para a concentração</button><button class="link-btn" id="b-wcsim">Simular o torneio</button>');
+    if (!cwc && G.c.wcCallShown !== year()) { G.c.wcCallShown = year(); save(); U.callUp(G.c, call); } // lista da seleção (motion.js)
+    const go = sim => { simAll = sim; if (cwc) S.cwcStart(G.c); else if (S.natTour(G.c) === 'nat2') S.natContStart(G.c); else S.wcStart(G.c); save(); wcPlay(); };
+    $('b-wc').onclick = () => { sfx('tap'); go(false); };
+    $('b-wcsim').onclick = () => U.ask('Simular o torneio?', 'Os jogos passam direto. Seus lances e pênaltis saem pela chance da sua carta.', 'Simular', () => go(true));
+  }
+  // Concentração: o próximo jogo, a tabela do grupo e o caminho até aqui
+  function selHub() {
+    const run = G.c.wcRun;
+    G.step = isCwc(run) ? 'cwc' : 'wc';
+    screen.onclick = null;
+    if (!isCwc(run)) natBg();
+    const last = run.games[run.games.length - 1];
+    if (run.live) return wcLive0();
+    if (last && last.resumeAt !== undefined && !last.live) return selGame(last, last.resumeAt); // depois do lance, o jogo continua
+    if (run.pending) return selGame0(wcPens);
+    if (run.out || run.champion) return selEnd();
+    const st = S.WC_STAGES[run.stage] || '', grp = run.stage < 3 && !isCwc(run) ? run.group[run.stage] : null;
+    const opp = grp ? D.NATION_BY_NAME[grp] : null;
+    render(selTop(run) + '<p class="sel-k">Concentração</p><div class="sel-next"><span class="st">' + esc(st) + '</span>' +
+      '<div class="line"><span class="us">' + usMark(run) + ' ' + usName(run) + '</span><b>×</b><span class="them">' + (opp ? U.flag(opp.flag) + ' ' + esc(opp.name) : 'Adversário no sorteio') + '</span></div></div>' +
+      '<div id="wc-tbl"></div><div class="wc-path" id="wc-path"></div>' +
+      '<button class="btn" id="sel-go">Ir pro jogo</button><button class="link-btn" id="sel-sim">Simular até o fim</button>');
+    drawGroup(run, run.games.length);
+    if ($('wc-path')) $('wc-path').innerHTML = run.games.map(g => { const r = g.pens && g.pensWon !== undefined ? (g.pensWon ? 'w' : 'l') : g.gf > g.ga ? 'w' : g.gf < g.ga ? 'l' : 'd'; return '<span class="wp ' + r + '"><small>' + esc(g.stage.replace(/^Grupo · (\d)º jogo$/, 'Jogo $1').replace(' de final', '')) + '</small><b>' + g.gf + '×' + g.ga + '</b>' + themMark(g) + (g.pens && g.pensWon !== undefined ? '<i>pên.</i>' : '') + '</span>'; }).join('');
+    $('sel-go').onclick = () => { sfx('whistle'); const g = S.wcNext(G.c); save(); if (!g) return selEnd(); selGame(g, 0); };
+    $('sel-sim').onclick = () => U.ask('Simular até o fim?', 'Os jogos restantes passam direto. Seus lances e pênaltis saem pela chance da sua carta.', 'Simular', () => { simAll = true; wcList(); });
+  }
+  // A tela de um jogo (o relógio corre de "from"); no lance para e abre o lance; no fim, o resultado e a volta
+  function selGame0(then) {
+    const run = G.c.wcRun, g = run.games[run.games.length - 1];
+    render(selTop(run) + '<div class="wc-list sel-one" id="wc-list"></div><div id="wc-after"></div>');
+    if (g) { const div = document.createElement('div'); div.innerHTML = wcRow(g); $('wc-list').appendChild(div.firstChild); }
+    then();
+  }
+  function wcLive0() { selGame0(wcLive); }
+  function selGame(g, from) {
+    const run = G.c.wcRun;
+    render(selTop(run) + '<div class="wc-list sel-one" id="wc-list"></div><div id="wc-after"></div><p class="skip-hint" id="wc-hint">Toque para acelerar</p>');
+    let fast = false;
+    setTimeout(() => { screen.onclick = () => { fast = true; }; }, 60);
+    const el = liveRow(g);
+    $('wc-list').appendChild(el);
+    const to = g.live ? g.moment.minute : 90;
+    runClock(el, g, from || 0, to, () => (fast ? 1 : 0), () => {
+      if (g.live) { el.classList.add('paused'); return setTimeout(() => (U.cfg.moments === 'auto' ? (S.wcMomentAuto(G.c), save(), wcPlay()) : wcLive()), fast ? 100 : 500); }
+      if (g.resumeAt !== undefined) { delete g.resumeAt; save(); }
+      screen.onclick = null;
+      const h = $('wc-hint'); if (h) h.remove();
+      const div = document.createElement('div'); div.innerHTML = wcRow(g); el.replaceWith(div.firstChild);
+      sfx(g.gf > g.ga ? 'cheer' : g.gf < g.ga ? 'miss' : 'whistle');
+      if (run.pending) return setTimeout(() => (U.cfg.moments === 'auto' ? (S.wcPensAuto(G.c), save(), wcPlay()) : wcPens()), 600);
+      const end = run.out || run.champion;
+      $('wc-after').innerHTML = (run.games.length <= 3 && !isCwc(run) ? '<div id="wc-tbl"></div>' : '') + '<button class="btn" id="sel-back">' + (end ? 'Ver o fim do torneio' : 'Voltar à concentração') + '</button>';
+      if ($('wc-tbl')) $('wc-tbl').innerHTML = groupTable(run, run.games.length);
+      $('sel-back').onclick = () => { sfx('tap'); selHub(); };
+    });
+  }
+  // Fim do torneio: a tela final de sempre (faixa, números, troféu)
+  function selEnd() {
+    const run = G.c.wcRun;
+    render(selTop(run) + '<div class="wc-list" id="wc-list">' + run.games.map(wcRow).join('') + '</div><div id="wc-after"></div>');
+    wcFinal();
+  }
+
   // Lance decisivo nos minutos finais: pênalti ou falta a favor, no minigame
   function wcLive() {
     screen.onclick = null;
@@ -287,7 +374,7 @@
     const cwc = isCwc(run), who = cwc ? D.o(esc(club(run.club).name)) : theCountry(G.c.country);
     const h = $('wc-hint'); if (h) h.remove();
     // O que está em jogo nesta fase
-    const NEXT = { 3: 'vai às quartas', 4: 'vai à semifinal', 5: 'vai à final', 6: cwc ? 'é campeão mundial' : 'é campeão do mundo' };
+    const NEXT = { 3: 'vai às quartas', 4: 'vai à semifinal', 5: 'vai à final', 6: cwc ? 'é campeão mundial' : isNat2(run) ? 'é campeão ' + D.da(run.name) : 'é campeão do mundo' };
     const ctx = (late ? 'Reta final! ' : 'Ainda faltam ' + left + ' minutos. ') + (ko ? 'Mata-mata: quem vencer ' + NEXT[run.stage] + '.' : run.stage === 2 ? 'Último jogo do grupo: ' + run.pts + (run.pts === 1 ? ' ponto' : ' pontos') + ' até aqui.' : 'Fase de grupos: ' + run.pts + (run.pts === 1 ? ' ponto' : ' pontos') + ' em ' + run.stage + (run.stage === 1 ? ' jogo.' : ' jogos.'));
     const paused = document.querySelector('.wc-game.paused'); if (paused) paused.style.display = 'none'; // o lance já mostra placar e minuto
     const tag = g.stage;
@@ -322,7 +409,7 @@
     $('wc-after').innerHTML = '<div class="wc-o5">' + wcBoard(run, g, liveMin('Pênaltis'), tag) +
       '<div class="ob5-head"><h2>' + (gk ? 'Defenda o último!' : 'Você bate o último!') + '</h2>' +
       '<p class="ob5-txt">Terminou ' + g.gf + ' × ' + g.ga + ' e a disputa está empatada. ' + (gk ? 'O último batedor deles vem para a bola.' : 'A última cobrança é sua.') + '</p>' +
-      U.lanceStakes((gk ? 'Defendeu: ' : 'Converteu: ') + (run.stage === 6 ? (cwc ? 'campeão mundial' : 'campeão do mundo') : cwc ? 'o time avança' : 'a seleção avança') + ' · ' + (gk ? 'Sofreu' : 'Errou') + ': eliminado') + '</div>' +
+      U.lanceStakes((gk ? 'Defendeu: ' : 'Converteu: ') + (run.stage === 6 ? (cwc ? 'campeão mundial' : isNat2(run) ? 'campeão ' + D.da(run.name) : 'campeão do mundo') : cwc ? 'o time avança' : 'a seleção avança') + ' · ' + (gk ? 'Sofreu' : 'Errou') + ': eliminado') + '</div>' +
       o5Body(type) + o5Foot(type, k) + '</div>';
     const rows = document.querySelectorAll('#wc-list > .wc-game'); if (rows.length) rows[rows.length - 1].style.display = 'none'; // o placar já mostra o jogo
     $('wc-after').scrollIntoView({ block: 'start', behavior: 'smooth' });
