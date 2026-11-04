@@ -85,8 +85,8 @@ self.addEventListener('fetch', e => {
   const code = url.origin === location.origin && /(\\/|\\.html|\\.js|\\.css|\\.webmanifest)$/.test(url.pathname);
   if (code) {
     e.respondWith(fetch(req).then(res => {
-      const copy = res.clone();
-      caches.open(CACHE).then(c => c.put(req, copy));
+      // Só guarda resposta boa: erro do servidor (500, 404 no meio do deploy) não pode tomar o lugar do arquivo no offline
+      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
       return res;
     }).catch(() => caches.match(req).then(hit => hit || caches.match(req, { ignoreSearch: true }))));
     return;

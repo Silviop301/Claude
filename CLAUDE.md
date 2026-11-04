@@ -10,7 +10,7 @@ Este arquivo é a fonte única de orientação. Leia-o antes de abrir código; e
 
 1. **Nunca leia arquivo grande inteiro.** Use `grep -n` para achar a função e leia só o trecho
    (`sed -n 'A,Bp'` ou Read com offset/limit). Arquivos acima de 40 KB:
-   `style.css` (190 KB), `data.js`, `engine/events2.js`, `engine/decisions.js` (~110 KB cada),
+   `style.css` (~480 KB), `data.js`, `engine/events2.js`, `engine/decisions.js` (~110 KB cada),
    `engine/season.js` (78 KB), `social-data.js`, `chars.js`, `avatar.js`, `social-events.js`, `sw.js`.
 2. **Não abra arquivos gerados** (uma linha gigante, sem valor para ler): `craque/sw.js`,
    `craque/src/kits.js`, `craque/src/trophy-imgs.js`. Gere de novo com a ferramenta (tabela abaixo).
@@ -67,6 +67,7 @@ node tools/craque_textos.js                         # repetição de textos entr
 node tools/craque_itens_sim.js                      # carreiras para liberar todos os itens
 node tools/craque_estilos.js                        # estilos dos lances decisivos: nenhum pode dominar (esperado: 0 alertas)
 node tools/craque_livre.js [n] [cenas]               # lances livres do Jogo a Jogo: robô vs chance pela carta (esperado: 0 alertas; WHY=1 detalha)
+node tools/craque_invariantes.js [n] [semente]       # regras do motor (sem NaN, faixas 0–100/0–99, dinheiro >= 0) e save no meio que termina igual; esperado 0 falhas
 NODE_PATH=$(npm root -g) node tools/craque_e2e.js 2 390 4   # carreiras pela interface (Playwright); MODO=completa na Carreira Completa
 NODE_PATH=$(npm root -g) node tools/craque_telas.js /tmp/antes   # foto de cada tela (carreira com sorteio fixo + telas de fora + minigames); DESKTOP=1 ... 1440 900 no computador, SO=evento,lance só algumas
 DESKTOP=1 TR=/tmp/tr node tools/craque_e2e.js 3 1280 3      # idem no computador, gravando o texto de cada tela em /tmp/tr
@@ -80,7 +81,7 @@ python3 tools/craque_telas_diff.py /tmp/antes /tmp/depois   # telas que mudaram 
 NODE_PATH=$(npm root -g) node tools/craque_telas_jaj.js /tmp/jaj   # fotos do Jogo a Jogo (criação, celular e apps, partida, jornal, lance, fim da temporada); DESKTOP=1 ... 1440 900
 ```
 
-Não há build, lint nem testes unitários: a validação é o simulador + o e2e + olhar a tela.
+Não há build, lint nem testes unitários: a validação é o simulador + `craque_invariantes.js` (regressão do motor e do save) + o e2e + olhar a tela.
 
 ## Arquitetura
 

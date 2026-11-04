@@ -162,7 +162,8 @@
       // Voltar a um clube onde foi ídolo: a torcida lembra
       // Adaptável chega com Técnico e Torcida mais simpáticos
       const ad = Math.round(12 * S.tm(c, 'adaptavel'));
-      c.rel = { coach: REL0 + ad, fans: (c.fansBy[club.id] ? Math.max(REL0, c.fansBy[club.id] - 10) : REL0) + ad };
+      // (relação vai de 0 a 100: ídolo que volta sendo Adaptável passava de 100)
+      c.rel = { coach: Math.min(100, REL0 + ad), fans: Math.min(100, (c.fansBy[club.id] ? Math.max(REL0, c.fansBy[club.id] - 10) : REL0) + ad) };
       c.captain = false;
       c.renew = 0;
       c.club = club.id;

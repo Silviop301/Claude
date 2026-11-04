@@ -60,6 +60,9 @@
   }
   function home() {
     G.c = null; G.step = null; bar();
+    // Sem carreira aberta: clubes nas divisões e forças originais (a carreira que estava aberta mexeu nelas, e a
+    // Relâmpago, que sorteia pela força, dava pontos diferentes para o mesmo desafio)
+    S.applyLeagues(null);
     fcCheck();
     const jn = load(JAJ_NEW), jnLine = jn && !jn.seen ? '<button class="hm-line hm-jn" id="b-jaj-novo">' + U.emo('🏟️', 'xs') + '<span><b>O Jogo a Jogo foi refeito.</b> ' +
       (jn.name ? 'A carreira de ' + esc(jn.name) + ' virou carta na sua coleção.' : 'A carreira de antes ficou para trás.') + '</span><em>Ok</em></button>' : '';

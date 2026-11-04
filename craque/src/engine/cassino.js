@@ -30,14 +30,19 @@
   // Quanto ainda dá para pôr na mesa esta noite
   S.fcNightLeft = c => (S.fcNightOpen(c) ? Math.max(0, Math.min(c.money || 0, c.fc.night.lim + c.fc.night.net)) : 0);
   S.fcChips = c => { const b = Math.max(1000, Math.round(S.fcNightLimit(c) / 12 / 1000) * 1000); return [b, b * 2, b * 5]; };
-  function settle(c, stake, back, game) {
-    const fc = c.fc, net = back - stake;
-    c.money = Math.max(0, (c.money || 0) + net); fc.night.net += net;
+  const casLog = (c, net, game) => {
     const L = c.casLog = c.casLog || { n: 0, net: 0, best: 0 };
     L.n++; L.net += net; if (net > L.best) L.best = net;
     L[game] = (L[game] || 0) + net;
     return net;
+  };
+  function settle(c, stake, back, game) {
+    const fc = c.fc, net = back - stake;
+    c.money = Math.max(0, (c.money || 0) + net); fc.night.net += net;
+    return casLog(c, net, game);
   }
+  // Aposta que sai na hora (vinte e um): a mão pode ficar aberta e a pessoa sair da mesa, então a aposta não espera o fim
+  const pay = (c, v) => { c.money = (c.money || 0) - v; c.fc.night.net -= v; };
   const canStake = (c, stake) => S.fcNightOpen(c) && stake > 0 && stake <= S.fcNightLeft(c);
 
   // ---------- roleta (37 casas, o zero é da casa) ----------
@@ -95,14 +100,18 @@
     else if (dNat || (d <= 21 && d > p)) back = 0;
     else if (d === p) back = bj.stake;
     else back = bj.stake * 2;
-    bj.done = true; bj.back = back; bj.net = settle(c, bj.stake, back, 'bj');
+    bj.done = true; bj.back = back;
+    // Mão de save antigo (sem "paid"): a aposta ainda não tinha saído
+    if (bj.paid) { c.money = (c.money || 0) + back; fc.night.net += back; bj.net = casLog(c, back - bj.stake, 'bj'); }
+    else bj.net = settle(c, bj.stake, back, 'bj');
     fc.bj = null;
     return bj;
   }
   S.fcBjDeal = function (c, stake) {
     if (S.fcBjHand(c) || !canStake(c, stake)) return null;
     const { r, save } = rngOf(c.fc);
-    const bj = { stake, p: [draw(r), draw(r)], d: [draw(r), draw(r)] };
+    const bj = { stake, p: [draw(r), draw(r)], d: [draw(r), draw(r)], paid: true };
+    pay(c, stake); // antes só saía no fim: largar a mão e gastar o dinheiro antes tirava o risco de perder
     c.fc.bj = bj;
     if (S.bjTotal(bj.p) === 21) { bj.nat = true; const o = bjEnd(c, bj, r); save(); return o; }
     save();
@@ -115,7 +124,8 @@
     const { r, save } = rngOf(c.fc);
     let o = bj;
     if (act === 'double') {
-      if (bj.p.length !== 2 || !canStake(c, bj.stake * 2)) { save(); return bj; }
+      if (bj.p.length !== 2 || !canStake(c, bj.paid ? bj.stake : bj.stake * 2)) { save(); return bj; }
+      if (bj.paid) pay(c, bj.stake);
       bj.stake *= 2; bj.p.push(draw(r)); o = bjEnd(c, bj, r);
     } else if (act === 'hit') { bj.p.push(draw(r)); if (S.bjTotal(bj.p) >= 21) o = bjEnd(c, bj, r); }
     else if (act === 'stand') o = bjEnd(c, bj, r);

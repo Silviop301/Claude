@@ -18,6 +18,8 @@ curl -s -o /dev/null http://localhost:8765/craque/ || { python3 -m http.server 8
 say "== Ciclo $(date -u +%F) · $(git rev-parse --short HEAD) · sw $(grep -o 'craque-[a-f0-9]*' craque/sw.js | head -1)"
 say "-- Equilíbrio (alvo S11/A26/B31/C19/D13, ~9 min)"
 node tools/craque_sim.js 3000 > "$OUT/sim.log" 2>&1; grep -E "^Notas finais|^Duração|^Acerto" "$OUT/sim.log" | tee -a "$R"
+say "-- Regras do motor e save no meio (esperado 0 falhas)"
+node tools/craque_invariantes.js $([ -n "${RAPIDO:-}" ] && echo 40 || echo 120) > "$OUT/invariantes.log" 2>&1; tail -4 "$OUT/invariantes.log" | tee -a "$R"
 say "-- Decisões (esperado 0 alertas)"
 node tools/craque_audit_eventos.js > "$OUT/eventos.log" 2>&1; tail -3 "$OUT/eventos.log" | tee -a "$R"
 node tools/craque_estilos.js > "$OUT/estilos.log" 2>&1; grep "^Alertas" "$OUT/estilos.log" | sed 's/^/estilos: /' | tee -a "$R"
