@@ -2,6 +2,8 @@
 # tira o fundo creme ligado à borda de cada célula e escreve em ui/core.js a lista de emojis que têm desenho.
 # O nome do arquivo é o mesmo código do Twemoji (U.twCode); emoji sem desenho continua no Twemoji (assets/tw).
 # Uso: python3 tools/craque_icones.py [pasta com folha-1.png … folha-6.png]  (padrão: arte/icones)
+# Se a pasta tiver recortes/folhaN_PP.png (ícones já recortados, 128 px, fundo transparente), usa esses arquivos
+# no lugar de recortar as folhas (desde 2026-11-04 os recortes vêm prontos do ChatGPT).
 import sys, re, pathlib, numpy as np
 from PIL import Image, ImageDraw
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
@@ -80,19 +82,25 @@ def cut(im, bg, box):
     return sq.resize((S, S), Image.LANCZOS)
 
 OUT.mkdir(parents=True, exist_ok=True)
+REC = SRC / 'recortes' if (SRC / 'recortes' / 'folha1_01.png').exists() else None
 codes = []
 for f, (cols, rows) in GRID.items():
-    im = Image.open(SRC / ('folha-%d.png' % f)).convert('RGB')
-    bg, cx, cy = cells(im, cols, rows)
+    if not REC:
+        im = Image.open(SRC / ('folha-%d.png' % f)).convert('RGB')
+        bg, cx, cy = cells(im, cols, rows)
     nomes = FOLHAS[f].split()
     assert len(nomes) == cols * rows, 'folha %d: %d nomes para %d células' % (f, len(nomes), cols * rows)
     for r in range(rows):
         for k in range(cols):
             es = nomes[r * cols + k]
             if es == '-': continue
-            pad = 6
-            box = (max(0, cx[k][0] - pad), max(0, cy[r][0] - pad), min(im.width, cx[k][1] + pad), min(im.height, cy[r][1] + pad))
-            ic = cut(im, bg, box)
+            if REC:
+                ic = Image.open(REC / ('folha%d_%02d.png' % (f, r * cols + k + 1))).convert('RGBA')
+                if ic.size != (S, S): ic = ic.resize((S, S), Image.LANCZOS)
+            else:
+                pad = 6
+                box = (max(0, cx[k][0] - pad), max(0, cy[r][0] - pad), min(im.width, cx[k][1] + pad), min(im.height, cy[r][1] + pad))
+                ic = cut(im, bg, box)
             for e in es.split(','):
                 c = tw_code(e); codes.append(c)
                 ic.save(OUT / (c + '.webp'), 'WEBP', quality=88, method=6)
