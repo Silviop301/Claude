@@ -229,7 +229,7 @@
     dois: 'Campo visto de cima. Você e um companheiro contra o último zagueiro. Com o analógico apontado para o companheiro, o botão toca (linha dourada); apontado para o gol, chuta. Se o zagueiro vier em você, toque; se ele ficar no companheiro, bata.',
     cabeca: 'Campo visto de cima. Vem o cruzamento: o círculo dourado mostra onde a bola cai. Chegue lá antes do seu marcador (o botão dá um pulo para o ponto) e a cabeçada vai no canto para onde o analógico aponta.',
     bote: 'Campo visto de cima. Fique entre o atacante e o gol com o analógico; o botão dá o carrinho para onde ele aponta. De frente e bem perto quase sempre dá; longe ou no meio da finta dele, você vai ao chão.',
-    saida: 'Campo visto de cima. Saia do gol com o analógico para fechar o ângulo: ele bate no lado mais aberto. O botão mergulha para o lado do analógico, uma vez só.',
+    saida: 'Campo visto de cima. Saia do gol com o analógico para fechar o ângulo. Antes do chute aparece a linha vermelha de onde a bola vai: aí o botão mergulha para o lado do analógico (uma vez só). Parado, sem pular, a bola entra.',
     passe3: 'Campo visto de cima. Conduza com o analógico e aponte para o companheiro com a linha dourada (sem zagueiro no caminho); o botão passa. O volante vem pressionar você, e se demorar o atacante fica impedido.',
     pass: 'O atacante corre entre a zaga e o último zagueiro. Toque quando ele passar pela faixa verde: a bola passa pela brecha e ele finaliza. Se demorar, ele fica impedido.',
   };

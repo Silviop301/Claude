@@ -58,7 +58,7 @@
     saida: { name: 'Saída do goleiro', pos: 'GOL', ico: '🧤', steps: [
       'Campo visto de cima: o atacante sai cara a cara com você. O analógico leva você.',
       'Saia do gol na direção dele para fechar o ângulo: ele bate no lado mais aberto.',
-      'O botão mergulha para o lado do analógico, uma vez só. Ficar parado na linha deixa os cantos abertos.'] },
+      'Antes do chute aparece uma linha vermelha mostrando para onde a bola vai. Aí aponte o analógico para o lado dela e aperte o botão para mergulhar.'] },
     pass: { name: 'Passe decisivo', pos: 'MEI', ico: '👟', steps: [
       'O atacante corre entre os zagueiros procurando espaço.',
       'Há uma faixa verde: é a brecha na defesa.',

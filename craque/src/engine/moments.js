@@ -240,7 +240,7 @@
     if (S.LIVRE.includes(type)) {
       // Movimento livre: a carta dá a velocidade (K); a chance é a de quem joga razoável com aquela velocidade
       // (medida com o robô de tools/craque_livre.js)
-      const u = (S.livreK(c, type) - 0.85) / 0.35, f = { mano: [0.48, 0.12], passe3: [0.52, 0.1], bote: [0.62, 0.2], saida: [0.42, 0.16], cara: [0.52, 0.06], dois: [0.47, 0.12], cabeca: [0.27, 0.25], pressao: [0.47, 0.33] }[type];
+      const u = (S.livreK(c, type) - 0.85) / 0.35, f = { mano: [0.48, 0.12], passe3: [0.52, 0.1], bote: [0.62, 0.2], saida: [0.58, 0.08], cara: [0.52, 0.06], dois: [0.47, 0.12], cabeca: [0.27, 0.25], pressao: [0.47, 0.33] }[type];
       return { mode: type, K: S.livreK(c, type), chance: Math.round(clamp(f[0] + f[1] * u + lv('frieza') * 0.03, 0.2, 0.88) * 100) / 100 };
     }
     if (type === 'tackle') {
