@@ -40,7 +40,7 @@
     if (c.age >= 18 && !call.retired && o >= call.cut - 4 && o < call.cut) return { k: 'selecao', size: 'm' };
     return { k: 'nota', n: Math.round((NOTA[c.pos] + clamp((o - 75) * 0.02, -0.3, 0.3)) * 10) / 10, min: 10, size: 'm' };
   }
-  const EMP_TXT = { jogos: g => 'Jogar ' + g.n + ' jogos no ano', selecao: () => 'Ser chamado para a seleção', nota: g => 'Nota média ' + g.n + ' (com ' + g.min + ' jogos ou mais)' };
+  const EMP_TXT = { jogos: g => 'Jogar ' + g.n + ' jogos no ano', selecao: () => 'Ser chamado para a seleção', nota: g => 'Nota média ' + String(g.n).replace('.', ',') + ' (com ' + g.min + ' jogos ou mais)' };
   const META_TXT = { goals: 'gols', assists: 'assistências', cs: 'jogos sem sofrer gol' };
 
   // As metas do ano (cria na primeira vez): { club, emp, dream (id escolhido ou null) }

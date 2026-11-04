@@ -669,5 +669,5 @@ Proibido também: cartão com faixa colorida na lateral.
   ídolo 6-9%. Correlação com a nota 0,95. Notas iguais às de antes (a nota não muda nesta parte).
 - Combinado: a nota S a D só sai do Jogo a Jogo depois da resposta do Silvio sobre os cortes (conversa do treino).
 - Ferramentas: `craque_sim.js` imprime "Metas cumpridas" e o legado por posição (SONHO=id força um sonho);
-  `craque_invariantes.js` confere as metas de cada temporada e o legado; e2e escolhe o sonho; fotos `agenda-metas`,
-  `agenda-sonho` e `fim-temporada-metas` em `craque_telas_jaj.js`.
+  `craque_invariantes.js` confere as metas de cada temporada e o legado; e2e escolhe o sonho; fotos `agenda-metas` e
+  `agenda-sonho` em `craque_telas_jaj.js`.

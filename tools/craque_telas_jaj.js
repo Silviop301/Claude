@@ -235,10 +235,8 @@ const INIT = `
     U.save(); U.fcHub();
   });
   await wait(1500);
-  for (let k = 0; k < 20 && !(await has('#b-next')) && !(await has('#sx-live')); k++) { await page.mouse.click(W / 2, H / 2); await wait(300); }
+  for (let k = 0; k < 20 && !(await has('#b-next')); k++) { await page.mouse.click(W / 2, H / 2); await wait(300); }
   await shot('fim-temporada');
-  for (let k = 0; k < 20 && (await has('#sx-live')) && !(await has('.sx-metas')); k++) await wait(400);
-  if (await has('.sx-metas')) { await page.evaluate(() => { document.querySelectorAll('.rv').forEach(e => e.classList.add('in')); document.querySelector('.sx-metas').scrollIntoView({ block: 'center' }); }); await wait(400); await shot('fim-temporada-metas'); }
 
   const errs = errors.concat(await page.evaluate(() => window.__errs).catch(() => []));
   fs.writeFileSync(path.join(OUT, 'telas.json'), JSON.stringify({ w: W, h: H, pos: POS, seed: SEED, screens: index, errors: errs }, null, 1));
