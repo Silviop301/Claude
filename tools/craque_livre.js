@@ -10,11 +10,13 @@ const fake = () => { const o = { style: {}, classList: { add() {}, remove() {} }
 global.window = global; global.CRAQUE_SIM = S; global.document = { addEventListener() {}, removeEventListener() {}, documentElement: { classList: { contains: () => false } } };
 global.requestAnimationFrame = () => {}; global.setTimeout = f => { f(); return 0; }; global.clearTimeout = () => {};
 require('../craque/src/livre.js');
-const GX = 180, d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const GX = 180, H0 = 460, d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const segD = (q, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy || 1, k = Math.max(0, Math.min(1, ((q.x - a.x) * dx + (q.y - a.y) * dy) / l)); return Math.hypot(a.x + dx * k - q.x, a.y + dy * k - q.y); };
 // lvl: 0 bom, 0,5 médio, 1 desleixado (ruído no analógico e decisões piores)
 const go = (S, t, lvl) => { const dx = t.x - S.me.x + (Math.random() - 0.5) * 60 * lvl, dy = t.y - S.me.y + (Math.random() - 0.5) * 60 * lvl, l = Math.hypot(dx, dy); S.stick = l < 4 ? { x: 0, y: 0 } : { x: dx / l * Math.min(1, l / 20), y: dy / l * Math.min(1, l / 20) }; };
 const BOT = {
+  // Pressão: fica entre ele e a saída (embaixo) e dá o bote perto
+  pressao: (S, L, lvl) => { const a = S.atk, gd = Math.hypot(GX - a.x, H0 - a.y); go(S, { x: a.x + (GX - a.x) / gd * 30, y: a.y + (H0 - a.y) / gd * 30 }, lvl); if (d(S.me, a) < 40 + lvl * 14 && Math.random() < 0.1) { const vx = a.x - S.me.x, vy = a.y - S.me.y, l = Math.hypot(vx, vy); S.stick = { x: vx / l, y: vy / l }; L.act(); } },
   // Cara a cara: vai ao gol pelo meio e chuta quando o goleiro chega perto (o desleixado chuta tarde)
   cara: (S, L, lvl) => { const me = S.me; if (!S.own) return; go(S, { x: GX + (me.x - GX) * 0.5, y: 60 }, lvl); if (d(me, S.kp) < 70 - lvl * 30 + Math.random() * 10) { S.stick = { x: 0, y: 0 }; L.act(); } },
   // 2 contra 1: conduz; com o zagueiro perto, toca se ele veio em você, senão chuta
@@ -31,7 +33,7 @@ const BOT = {
   bote: (S, L, lvl) => { const a = S.atk, gd = Math.hypot(GX - a.x, 20 - a.y); go(S, { x: a.x + (GX - a.x) / gd * 30, y: a.y + (20 - a.y) / gd * 30 }, lvl); if (d(S.me, a) < 40 + lvl * 14 && Math.random() < 0.1) { const vx = a.x - S.me.x, vy = a.y - S.me.y, l = Math.hypot(vx, vy); S.stick = { x: vx / l, y: vy / l }; L.act(); } },
   saida: (S, L, lvl) => { const a = S.atk; if (lvl === 1) { S.stick = { x: 0, y: 0 }; return; } const k = (70 - 20) / Math.max(1, a.y - 20); go(S, { x: GX + (a.x - GX) * k, y: 70 }, lvl); },
 };
-const POS = { cara: 'ATA', dois: 'ATA', cabeca: 'ATA', mano: 'ATA', passe3: 'MEI', bote: 'ZAG', saida: 'GOL' };
+const POS = { pressao: 'ATA', cara: 'ATA', dois: 'ATA', cabeca: 'ATA', mano: 'ATA', passe3: 'MEI', bote: 'ZAG', saida: 'GOL' };
 const N = +process.argv[2] || 300;
 let alerts = 0;
 console.log('cena     atrib  K     carta   bom  médio  desleixado');
