@@ -1319,7 +1319,8 @@
     // As barras enchem do valor de antes do jogo até o de agora
     setTimeout(() => document.querySelectorAll('.pg-b u').forEach(u => { u.style.width = u.dataset.w + '%'; }), 350);
     if (tk.length) setTimeout(() => sfx(net > 0 ? 'coin' : 'tap'), 500);
-    $('fc-next').onclick = () => (out.title ? celebrate(out, () => flyBack(x)) : flyBack(x));
+    const trip = { gf: m.gf, ga: m.ga, pens: m.pens, res };
+    $('fc-next').onclick = () => (out.title ? celebrate(out, () => flyBack(x, trip)) : flyBack(x, trip));
   }
   // Faixa de progresso (plano, fase 1) depois de cada jogo vivido: o que subiu neste jogo e quanto falta para as metas do
   // ano: a meta da posição, a evolução do ano e a linha da tabela mais perto (título, acesso ou G4, sair da zona)
@@ -1352,19 +1353,36 @@
     if (pos > top) return pos + 'º: ' + pp(dif(top)) + ' para ' + name + '.';
     return pos + 'º: ' + pp(dif(1)) + ' para a liderança.';
   }
-  const flyBack = x => (G.c.fc.done || !x.vs ? paintOrEnd() : fly(x, true, paintOrEnd));
-  // Viagem entre o celular e o jogo: avião para jogo fora, ônibus para jogo em casa; a tela troca no meio do caminho
-  function fly(x, back, next) {
+  const flyBack = (x, r) => (G.c.fc.done || !x.vs ? paintOrEnd() : fly(x, true, paintOrEnd, r));
+  // Viagem entre o celular e o jogo: avião para jogo fora, ônibus para jogo em casa. Um cartão de largura fixa com a rota
+  // de onde o time sai até onde vai (escudos ou ícones), o veículo cruzando a rota e o que está em jogo; na volta, o placar.
+  // A rota tem a mesma largura em qualquer tela, então a velocidade não muda do celular para o monitor. A tela troca por baixo.
+  function fly(x, back, next, r) {
     if (U.cfg.fast || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return next();
-    const away = !x.home, city = nameOf(x.vs);
+    const c = G.c, away = !x.home, them = esc(nameOf(x.vs)), me = esc(nameOf(c.club));
+    const end = (img, lbl) => '<span class="fl-end">' + img + '<small>' + lbl + '</small></span>';
+    const mine = end(crest(c.club, 'md'), me), theirs = end(crest(x.vs, 'md'), them);
+    const stad = end(U.emo('🏟️', 'md'), 'Estádio'), ct = end(U.emo('🏨', 'md'), 'Hotel');
+    const [a, b] = away ? (back ? [theirs, mine] : [mine, theirs]) : back ? [stad, end(U.emo('🏠', 'md'), 'Casa')] : [ct, stad];
+    let h, s;
+    if (!back) {
+      h = away ? 'Viagem até a casa do ' + them : 'Rumo ao estádio';
+      s = away ? 'Estádio deles, torcida contra.' : 'Casa cheia contra o ' + them + '.';
+    } else {
+      h = away ? 'Voltando para casa' : 'Hora de ir para casa';
+      s = r && r.gf != null ? (r.res === 'win' ? 'Vitória por ' : r.res === 'loss' ? 'Derrota por ' : 'Empate em ') + r.gf + ' × ' + r.ga + (r.pens ? ' e pênaltis' : '') +
+        (r.res === 'win' ? ' na bagagem.' : r.res === 'loss' ? '. Cabeça no próximo.' : '.') : '';
+    }
     const el = document.createElement('div');
-    el.className = 'fc-fly' + (back ? ' back' : '') + (away ? ' air' : ' bus');
-    el.innerHTML = '<div class="fc-fly-v">' + U.emo(away ? '✈️' : '🚌', 'lg') + '</div><p>' + (back ? (away ? 'Voltando para casa' : 'De volta ao CT') : away ? 'Viagem para jogar com o ' + esc(city) : 'Rumo ao estádio') + '</p>';
+    el.className = 'fc-fly' + (back ? ' back' : '') + (away ? ' air' : ' bus') + (r && r.res ? ' ' + r.res : '');
+    el.innerHTML = '<div class="fl-card"><div class="eyebrow">' + (back ? 'Fim de jogo' : esc(x.compName) + ' · jogo ' + (c.fc.i + 1)) + '</div>' +
+      '<div class="fl-route">' + a + '<div class="fl-track"><i class="fl-path"></i><i class="fl-done"></i><div class="fl-v">' + U.emo(away ? '✈️' : '🚌', 'lg') + '</div></div>' + b + '</div>' +
+      '<h3>' + h + '</h3>' + (s ? '<p>' + s + '</p>' : '') + '</div>';
     document.body.appendChild(el);
     sfx('whoosh');
     setTimeout(next, 750);
-    setTimeout(() => el.classList.add('out'), 1300);
-    setTimeout(() => el.remove(), 1700);
+    setTimeout(() => el.classList.add('out'), 1750);
+    setTimeout(() => el.remove(), 2150);
   }
   // Taça ganha: tela curta de festa
   function celebrate(out, next) {
@@ -1394,5 +1412,5 @@
     U.season();
   }
 
-  Object.assign(U, { fcHub: hub, fcAfterMoment: afterMoment });
+  Object.assign(U, { fcHub: hub, fcAfterMoment: afterMoment, fcFly: fly });
 })();
