@@ -555,6 +555,16 @@
       MEI: ['Erra o passe e cede o contra-ataque', 'Perde a dividida', 'Cartão amarelo por falta boba', 'Lento na saída de bola'],
       ZAG: ['Leva drible na lateral', 'Falta perigosa na entrada da área', 'Cartão amarelo', 'Perde o atacante de vista'],
       GOL: ['Rebate a bola para o meio da área', 'Sai mal no cruzamento', 'Reposição errada', 'Hesita na saída'] } };
+  // O que cada lance seu faz no campinho (ui/livesim.js): a jogada acontece e só então a linha entra na narração
+  const LACT = { 'Bom drible na entrada da área': 'drible', 'Finalização perigosa, o goleiro espalma': 'chute', 'Ganha a dividida e sai jogando': 'desarme', 'Puxa o contra-ataque': 'conduz',
+    'Lançamento perfeito': 'passe', 'Bela tabela pelo meio': 'passe', 'Rouba a bola no meio-campo': 'desarme', 'Chute de fora que assusta': 'fora',
+    'Corte providencial': 'corte', 'Antecipação na hora certa': 'corte', 'Ganha pelo alto na área': 'corte', 'Sai jogando com classe': 'conduz',
+    'Sai bem do gol e fica com a bola': 'pega', 'Reposição rápida que vira ataque': 'passe', 'Segura firme o cruzamento': 'pega', 'Fecha o ângulo e o atacante erra': 'oppfora',
+    'Perde a bola na frente': 'perde', 'Chuta torto, longe do gol': 'fora', 'Fica em impedimento': 'impedido', 'Some do jogo por uns minutos': 'none',
+    'Erra o passe e cede o contra-ataque': 'erra', 'Perde a dividida': 'perde', 'Cartão amarelo por falta boba': 'falta', 'Lento na saída de bola': 'perde',
+    'Leva drible na lateral': 'driblado', 'Falta perigosa na entrada da área': 'falta', 'Cartão amarelo': 'falta', 'Perde o atacante de vista': 'driblado',
+    'Rebate a bola para o meio da área': 'rebate', 'Sai mal no cruzamento': 'saimal', 'Reposição errada': 'erra', 'Hesita na saída': 'perde',
+    'Defesa difícil': 'defesa', 'Desarme limpo': 'desarme' };
   function flowOf(c, x, out) {
     const m = out.my, me = x.home ? 'h' : 'a', fc = c.fc;
     const r = S.rng(((Number(c.tseed) || 1) * 31 + fc.season * 977 + fc.i * 7919) >>> 0);
@@ -1682,7 +1692,7 @@
     x.score = t => (out.my ? part({ ev: out.my.ev }, t) : [0, 0]);
     const end = Math.max(90, ...[out.my].concat(out.others).filter(Boolean).map(g => (g.ev.length ? g.ev[g.ev.length - 1].m : 0)));
     const N = Math.max(95, end);
-    let t = t0, half = false, timer = 0;
+    let t = t0, half = false, timer = 0, nextTick = false, holdS = 0;
     $('fc-h').textContent = nx.compName + ' · ao vivo';
     const meSide = nx.home ? 'h' : 'a', meName = nameOf(c.club), opName = nameOf(x.vs);
     const fl = x.vs && out.my ? flowOf(c, x, out) : null, flSeen = new Set();
@@ -1698,7 +1708,7 @@
     function zoneSim(i) {
       const b = $('lp-band'), z = $('lp-zone'), pe = $('lp-pos'); if (!z) return;
       const mine = i.side === 0, tm = mine ? meName : opName, lado = i.ay < 30 ? ' pela esquerda' : i.ay > 70 ? ' pela direita' : ' pelo meio';
-      const txt = i.mode === 'goal' ? 'Gol!' : i.mode === 'ko' || i.mode === 'wait' || i.mode === 'half' ? 'Saída de bola' : i.mode === 'tiro' ? 'Tiro de meta ' + D.do(tm) :
+      const txt = i.mode === 'goal' ? 'Gol!' : i.mode === 'falta' ? (i.why || 'Falta') : i.mode === 'ko' || i.mode === 'wait' || i.mode === 'half' ? 'Saída de bola' : i.mode === 'tiro' ? 'Tiro de meta ' + D.do(tm) :
         i.ax >= 67 ? tm + ' ataca' + lado : i.ax <= 33 ? tm + ' sai jogando' : tm + ' troca passes no meio';
       const play = i.mode === 'play';
       const bc = 'lp-band lpz ' + (i.sx < 100 / 3 ? 'l' : i.sx > 200 / 3 ? 'r' : 'c') + (play ? (mine ? ' me' : ' op') : ''), zc = 'lp-tag lp-zone' + (play ? (mine ? ' up' : ' down') : ''), pt = 'Posse ' + Math.round(i.posse * 100) + '%';
@@ -1708,7 +1718,7 @@
       if (pe && pe.textContent !== pt) pe.textContent = pt;
     }
     function narrSim(k, d) {
-      if (half || finished || (o.stop && t >= stopAt - 1)) return;
+      if (half || finished || (o.stop && t >= stopAt - 1) || lcPend.size) return;
       const big = k === 'defesa' || k === 'fora';
       if (t - lastNarr < (big ? 1 : 2) || (fl && fl.lances.some(l => Math.abs(l.m - t) <= 1)) || out.my.ev.some(e => Math.abs(e.m - t) <= 1)) return;
       const tm = esc(d.side ? opName : meName), how = d.how === 'cabeca' ? ' de cabeça' : d.how === 'fora' ? ' de fora da área' : '';
@@ -1733,9 +1743,12 @@
     const stars = () => (fl && fl.on ? fl.lances.filter(l => !(o.stop && l.m >= stopAt)).map(l => ({ m: l.m, down: !l.up })) : []).concat(bigM && (!o.stop || t >= stopAt) ? [{ m: bigM, big: true }] : []);
     if (x.vs) $('fc-match').innerHTML = sbLive(x); else $('fc-match').innerHTML = card('live', x, t);
     // Os jogadores que decidem (ui/livesim.js): o motor só diz quem está melhor e quando sai cada gol
-    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), t0, speed: () => (fast ? 3 : 1), onEv: (k, d) => narrSim(k, d), onFrame: i => zoneSim(i), flip: !nx.home, kits: U.LP.kits(U.LP.kitFor(meName, c.club), U.LP.kitFor(opName, x.vs), !!nx.home),
+    const lcPend = new Set(); // seus lances que o campinho ainda está jogando (a linha sai quando a jogada acontece)
+    // A rede balançou no campinho: o placar vira já (não espera o fim do minuto)
+    const onGoal = m => { if (nextTick && !finished && t === m - 1) { clearTimeout(timer); timer = setTimeout(tick, 120); } };
+    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), t0, speed: () => (fast ? 3 : 1), onEv: (k, d) => narrSim(k, d), onFrame: i => zoneSim(i), onGoal, flip: !nx.home, kits: U.LP.kits(U.LP.kitFor(meName, c.club), U.LP.kitFor(opName, x.vs), !!nx.home),
       seed: (Number(c.tseed) || 1) * 7 + c.fc.season * 101 + c.fc.i * 13 + t0,
-      goals: out.my.ev.filter(e => !o.stop || e.m < stopAt).map(e => ({ m: e.m, side: e.s === (nx.home ? 'h' : 'a') ? 0 : 1, me: !!e.me, as: !!e.as })) }) : null;
+      goals: out.my.ev.filter(e => (!o.stop || e.m < stopAt) && !(o.from && e.m === o.from)).map(e => ({ m: e.m, side: e.s === (nx.home ? 'h' : 'a') ? 0 : 1, me: !!e.me, as: !!e.as })) }) : null;
     const pitch = () => { if (!fl) return; $('fc-flow').innerHTML = flowBox(c, x, fl, meIdx); U.LP.resetTrail(); if (sim) sim.attach($('lp-cv')); };
     pitch();
     if (fl) fl.lances.forEach(l => { if (l.m <= t0) flSeen.add(l); });
@@ -1801,7 +1814,7 @@
       $('fc-fast').onclick = () => spd(true);
       // Pulou: os minutos que passaram gastam o fôlego (e podem tirar você) antes de mostrar o que aconteceu
       const catchUp = to => { for (let m = t + 1; m <= to; m++) drain(m); };
-      $('fc-skip').onclick = () => { clearTimeout(timer); if (o.stop) { const t1 = t; catchUp(stopAt); t = stopAt; frame(t1); return pause(); } const t1 = t; catchUp(end); t = end; frame(t1); done(); };
+      $('fc-skip').onclick = () => { clearTimeout(timer); nextTick = false; if (o.stop) { const t1 = t; catchUp(stopAt); t = stopAt; frame(t1); return pause(); } const t1 = t; catchUp(end); t = end; frame(t1); done(); };
     }
     // Parada (antes do jogo e no intervalo): um botão dourado segue; dá tempo de escolher o esforço e o energético
     function stopActs(id, label, sub, go) {
@@ -1867,7 +1880,6 @@
         // A faixa "quem manda" e o fim de jogo usam o que o campinho mostrou no minuto que acabou (quem teve a bola e onde)
         const avg = sim.minute(T, b); sim.energy(onPitch ? enNow() : null);
         if (avg !== null && T > 0 && T <= 100) { fl.bx[T - 1] = Math.round(avg); fl.dom = U.LP.dom(fl.bx); }
-        if (fl.on && since === undefined && fl.lances.some(l => l.m === T)) sim.lance();
         by = sim.ballAt()[1]; if (meIdx >= 0) path[T] = sim.meAt();
       } else {
         by = U.LP.ballY(T, b);
@@ -1883,18 +1895,31 @@
       // Narração de fundo, de tempos em tempos (no minuto a minuto, não quando pulou)
       if (!sim && since === undefined && T - lastNarr >= 5 && nr() < 0.3 && !fl.lances.some(l => l.m === T) && !out.my.ev.some(e => e.m === T)) { lastNarr = T; feed(T, esc(narr(nr, b, by, meName, opName)), ''); }
       if (!fl.on) return;
-      const n = Math.max(4.5, Math.min(10, fl.nota[Math.min(T, 100)] + (fl.off || 0)));
+      // A nota só mexe quando o lance acontece no campinho
+      let pd = 0; lcPend.forEach(l => { pd += l.d; });
+      const n = Math.max(4.5, Math.min(10, fl.nota[Math.min(T, 100)] - pd + (fl.off || 0)));
       $('fl-n').textContent = rate(n);
       $('fl-n').className = n >= 7 ? 'up' : n < 6 ? 'down' : '';
       fl.lances.filter(l => l.m <= T && !flSeen.has(l)).forEach(l => {
         flSeen.add(l);
+        // Minuto a minuto: o campinho joga o lance (a bola chega em você e acontece o que o texto diz) e a linha sai junto
+        if (sim && since === undefined && l.m === T && !GOALTXT[l.txt] && LACT[l.txt]) {
+          lcPend.add(l);
+          sim.lance(LACT[l.txt], () => { if (!lcPend.delete(l) || !$('fl-n')) return; showLance(l); const nn = Math.max(4.5, Math.min(10, fl.nota[Math.min(tt(), 100)] + (fl.off || 0))); $('fl-n').textContent = rate(nn); $('fl-n').className = nn >= 7 ? 'up' : nn < 6 ? 'down' : ''; });
+          return;
+        }
+        showLance(l);
+      });
+      if (T > 0 && !fl.lances.some(l => l.m > T - 4 && l.m <= T)) $('fl-d').textContent = '';
+    }
+    function showLance(l) {
+      {
         const dd = dTxt(l.d);
         $('fl-d').textContent = dd; $('fl-d').className = l.d > 0 ? 'up' : 'down';
         $('fl-last').textContent = l.txt;
         if (!GOALTXT[l.txt]) feed(l.m, '<b class="lp-nm">' + esc(sobre(c)) + '</b>: ' + esc(l.txt) + ' <em class="' + (l.up ? 'up' : 'down') + '">' + dd + '</em>', 'me' + (l.up ? '' : ' bad'), l.up);
         mine();
-      });
-      if (T > 0 && !fl.lances.some(l => l.m > T - 4 && l.m <= T)) $('fl-d').textContent = '';
+      }
     }
     // Seus lances (coluna da esquerda no computador; lista do fim de jogo)
     const dTxt = d => (Math.abs(d) < 0.05 ? '' : (d > 0 ? '▲ ' : '▼ ') + rate(Math.abs(d)));
@@ -1944,16 +1969,22 @@
         return stopActs('fc-2t', 'Começar o 2º tempo', onPitch ? 'Escolha o esforço' + (eff.drink ? '' : ' e se toma o energético') : '', () => {
           $('fc').classList.remove('lp-hv'); pitch(); if (sim) sim.second(); liveActs(); timer = setTimeout(() => { if (onPitch) effBox(); tick(); }, 300); });
       }
-      half = false; t++;
+      half = false; nextTick = false;
+      // Gol no próximo minuto que o campinho ainda não fez: o relógio espera a jogada (depois de 5 s, bate de onde estiver)
+      if (sim && sim.pending(t + 1) && holdS < 12) {
+        holdS += 0.1 * (fast ? 3 : 1); if (holdS >= 5) sim.force(t + 1);
+        nextTick = true; timer = setTimeout(tick, 100); return;
+      }
+      holdS = 0; t++;
       if (onPitch && t <= 90) { drain(t); effTick(); }
       frame();
       if (o.stop && t >= stopAt) return pause();
       if (t >= end) return done();
-      timer = setTimeout(tick, PACE[fast ? 1 : 0]);
+      nextTick = true; timer = setTimeout(tick, PACE[fast ? 1 : 0]);
     }
     // O jogo para no minuto do lance: o placar avisa, a bola chega em você e o minigame abre (ui/match.js)
     function pause() {
-      clearTimeout(timer);
+      clearTimeout(timer); nextTick = false;
       const jogo = o.stop.type === 'jogo', lt = $('fc-lt'); if (lt) lt.textContent = clock(stopAt);
       if (sim) { sim.lance(); setTimeout(() => sim.freeze(true), 1100); }
       else if (fl && fl.on) { U.LP.place(U.LP.spots(stopAt, fl.bx[Math.min(stopAt, 100)], meIdx, true), meIdx); }
