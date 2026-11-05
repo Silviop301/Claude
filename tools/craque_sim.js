@@ -115,7 +115,9 @@ for (let n = 0; n < N; n++) {
         { const k = S.fcKind(c, nx), y = (RIT[c.season] = RIT[c.season] || []); let row = y[y.length - 1];
           if (!row || row.car !== RIT.car) y.push(row = { car: RIT.car, vivo: 0, resumo: 0, banco: 0, folga: 0, ev: 0, why: {} });
           row[k]++; if (k === 'vivo') { const w = S.fcBig(c, nx); row.why[w] = (row.why[w] || 0) + 1; } }
-        S.fcPlay(c);
+        { const o = S.fcPlay(c), m = o && o.my; // faltas, cartões e suspensões (FC_CARD)
+          if (m && m.fo) { const CS = (global.CS = global.CS || { g: 0, on: 0, fo: 0, yc: 0, rc: 0, of: 0, myY: 0, myR: 0, sus: 0, pos: {} }); CS.g++; ['fo', 'yc', 'rc', 'of'].forEach(k => { CS[k] += m[k].h + m[k].a; });
+            if (m.on) { CS.on++; const P = (CS.pos[c.pos] = CS.pos[c.pos] || [0, 0, 0, 0]); P[0]++; if (m.meCard) { if (m.meCard.yc) { CS.myY++; P[1]++; } if (m.meCard.rc) { CS.myR++; P[2]++; } } if (o.card && o.card.sus) { CS.sus++; P[3]++; } } } }
         const w = D.POS[c.pos].w, opts = D.INVEST.filter(t => S.canInvest(c, t.id));
         if (opts.length && SMART) { const score = t => (t.attr ? w[Object.keys(t.attr)[0]] : 0.15) / (1 + (c.inv[t.id] || 0)); S.invest(c, opts.sort((a, b) => score(b) - score(a))[0].id); }
       }
@@ -209,6 +211,7 @@ console.log('Conquistas (% das carreiras):', S.ACHIEVEMENTS.map(a => a.id + ' ' 
 // Ritmo do Jogo a Jogo (plano, fase 1): alvo ~1 h por temporada e ~15 jogos vividos. Tempo estimado por jogo:
 // vivido 210 s (semana no celular, viagem, jogo ao vivo com o seu lance e jornal), resumido 42 s (com o lance), no banco 8 s, folga 4 s,
 // evento 25 s, e 120 s por temporada (pré-temporada, janela e resumo).
+if (global.CS) { const C = global.CS, g = C.g * 2; console.log('Cartões (por time e jogo): faltas ' + (C.fo / g).toFixed(1) + ', amarelos ' + (C.yc / g).toFixed(2) + ', vermelhos ' + (C.rc / g).toFixed(3) + ', impedimentos ' + (C.of / g).toFixed(1) + ' · seus (por jogo em campo): amarelo ' + (C.myY / C.on).toFixed(3) + ', vermelho ' + (C.myR / C.on).toFixed(4) + ', suspensões ' + (C.sus / C.on).toFixed(3) + ' · ' + Object.keys(C.pos).map(k => k + ' ' + (C.pos[k][3] / C.pos[k][0] * 100).toFixed(1) + '% suspenso').join(', ')); }
 if (process.env.MODO === 'completa') {
   // Dinheiro (fase 3): alvo 15-25% das carreiras passam por um aperto (entram no vermelho) e menos de 5% terminam devendo
   const pc = (rs, f) => (rs.length ? Math.round(100 * rs.filter(f).length / rs.length) : 0) + '%';
