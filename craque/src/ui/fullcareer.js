@@ -59,34 +59,30 @@
   function appScr(cur, title, body, o) {
     o = o || {};
     const c = G.c;
-    render('<div class="ph pa" id="fc"><div class="ph-scr pa-scr">' + sbar(c).html +
+    // O aparelho tem o mesmo tamanho do início do celular e o ingresso do jogo continua ao lado (antes o app crescia
+    // quando o ingresso sumia); a barra do jogador some, o widget dela fica no início do celular
+    render('<div class="ph pa" id="fc"><div class="ph-cols"><div class="ph-scr pa-scr">' + sbar(c).html +
       '<header class="pa-h"><button class="pa-back" id="fc-back">‹ ' + (o.back || 'Início') + '</button><b>' + title + '</b><span></span></header>' +
       '<div class="fc-scr pa-body' + (o.cls ? ' ' + o.cls : '') + '" id="fc-scr">' + body + '</div>' + (o.foot || '') +
-      dock(c, cur) + '<button class="ph-home" id="fc-home" aria-label="Voltar para o início do celular"></button></div></div>');
+      dock(c, cur) + '<button class="ph-home" id="fc-home" aria-label="Voltar para o início do celular"></button></div>' + side(c) + '</div></div>');
+    document.body.classList.add('ph-nobar');
+    sideBind();
     $('fc-back').onclick = () => { sfx('tap'); phone(); };
     $('fc-home').onclick = () => { sfx('tap'); phone(); };
     document.querySelectorAll('.ph-dock [data-go]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go); }; });
   }
-  function phone() {
-    const c = G.c, nx = S.fcNext(c), fc = c.fc, kind = S.fcKind(c, nx);
-    if (S.fcPhonePre) S.fcPhonePre(c, nx); // as pessoas do celular (engine/phone.js): lesão, jogo grande
-    if (S.fcZeSync) S.fcZeSync(c); // a proposta do Zé chega como mensagem (engine/money.js)
-    if (S.fcWinState) S.fcWinState(c); // a janela do meio do ano abre (engine/transfer.js)
-    const sb = sbar(c), clk = sb.clk;
-    const when = ['agora', '8 min', '25 min', '1 h', '2 h', '3 h'];
-    render('<div class="ph" id="fc"><div class="ph-cols"><div class="ph-scr">' + sb.html +
-      '<div class="ph-clock">' + clk + '</div>' +
-      '<p class="ph-date">' + (nx.vs ? 'Amanhã: x ' + esc(nameOf(nx.vs)) + ', ' + (nx.home ? 'em casa' : 'fora') + ' · ' + esc(nx.compName) : 'Amanhã: folga do time · ' + esc(nx.compName)) + '</p>' +
-      '<div class="ph-ns">' + pings(c, nx).map((n, k) => '<button class="ph-n"' + (n.go ? ' data-go="' + n.go + '"' : ' disabled') + '><b>' + esc(n.who) + ' <i>· ' + when[Math.min(k, when.length - 1)] + '</i></b><span>' + esc(n.txt) + '</span></button>').join('') + '</div>' +
-      '<div class="ph-apps">' + GRID.map(a => appBtn(c, a)).join('') + '</div>' + dock(c) +
-      '</div><div class="ph-side">' +
+  // Ao lado do aparelho (embaixo, no celular): o tipo do jogo, o ingresso e os atalhos de resumir
+  function side(c) {
+    const nx = S.fcNext(c), fc = c.fc, kind = S.fcKind(c, nx);
+    return '<div class="ph-side">' +
         '<p class="prc-kind ' + kind + '">' + kindTxt(c, nx, kind) + '</p>' +
         '<button class="prc-tk" id="fc-play"><span class="prc-tk-m"><b>' + (nx.moment ? 'Jogar a decisão' : kind === 'vivo' ? 'Ir pro jogo' : nx.vs ? 'Jogar' : 'Seguir') + '</b><small>' +
           (nx.vs ? esc(nameOf(nx.home ? c.club : nx.vs)) + ' × ' + esc(nameOf(nx.home ? nx.vs : c.club)) : esc(nx.compName)) + '</small></span><span class="prc-tk-s"><small>jogo</small><b>' + (fc.i + 1) + '</b></span></button>' +
         '<div class="prc-sim">' + (kind === 'resumo' ? '<button class="link-btn" id="fc-live">Viver este jogo</button>' : '') +
           (kind !== 'vivo' ? '<button class="link-btn" id="fc-skip2">Resumir até o próximo jogo grande</button>' : '') + '</div>' +
-      '</div></div></div>');
-    document.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go); }; });
+      '</div>';
+  }
+  function sideBind() {
     $('fc-play').onclick = () => {
       if (G.c.fc.wkDue) { S.fcWeek(G.c, myPick()); unpick(); }
       const n = S.fcNext(G.c), k = S.fcKind(G.c, n);
@@ -95,6 +91,25 @@
     };
     if ($('fc-live')) $('fc-live').onclick = () => { sfx('tap'); S.fcLive(G.c); save(); phone(); };
     if ($('fc-skip2')) $('fc-skip2').onclick = () => skipTo();
+  }
+  function phone() {
+    const c = G.c, nx = S.fcNext(c);
+    if (S.fcPhonePre) S.fcPhonePre(c, nx); // as pessoas do celular (engine/phone.js): lesão, jogo grande
+    if (S.fcZeSync) S.fcZeSync(c); // a proposta do Zé chega como mensagem (engine/money.js)
+    if (S.fcWinState) S.fcWinState(c); // a janela do meio do ano abre (engine/transfer.js)
+    const sb = sbar(c);
+    const when = ['agora', '8 min', '25 min', '1 h', '2 h', '3 h'];
+    // Tela de bloqueio: a barra do jogador entra no aparelho como widget, no lugar do relógio grande (a hora já
+    // está na barra de status), e o aparelho ganha a altura que ela ocupava em cima
+    render('<div class="ph" id="fc"><div class="ph-cols"><div class="ph-scr ph-lock">' + sb.html +
+      '<p class="ph-date">' + (nx.vs ? 'Amanhã: x ' + esc(nameOf(nx.vs)) + ', ' + (nx.home ? 'em casa' : 'fora') + ' · ' + esc(nx.compName) : 'Amanhã: folga do time · ' + esc(nx.compName)) + '</p>' +
+      '<div class="ph-ns">' + pings(c, nx).map((n, k) => '<button class="ph-n"' + (n.go ? ' data-go="' + n.go + '"' : ' disabled') + '><b>' + esc(n.who) + ' <i>· ' + when[Math.min(k, when.length - 1)] + '</i></b><span>' + esc(n.txt) + '</span></button>').join('') + '</div>' +
+      '<div class="ph-apps">' + GRID.map(a => appBtn(c, a)).join('') + '</div>' + dock(c) +
+      '</div>' + side(c) + '</div></div>');
+    bar();
+    U.barInPhone(document.querySelector('#fc .ph-scr'), document.querySelector('#fc .ph-bar'));
+    document.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go); }; });
+    sideBind();
   }
   // Notificações do celular: quem fala e o que pede; cada uma abre a tela dela
   function pings(c, nx) {

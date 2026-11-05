@@ -64,6 +64,7 @@
   }, true);
 
   function render(html, opts) {
+    barHome();
     screen.innerHTML = html;
     if (!(opts && opts.same)) shownAt = performance.now(); // redesenho da mesma tela (por timer) não é tela nova
     // Telas curtas (resultado de evento ou de lance) ficam no meio da tela, sem meia tela vazia embaixo
@@ -75,6 +76,22 @@
     void screen.offsetWidth;
     screen.style.animation = '';
     window.scrollTo(0, 0);
+  }
+
+  // Jogo a Jogo: no celular a barra do jogador vira o widget do aparelho (barInPhone, ui/fullcareer.js) e, num app
+  // aberto, some (o app usa a altura toda). Toda tela nova a devolve ao topo antes de trocar o conteúdo.
+  function barHome() {
+    const b = $('bar');
+    if (!b) return;
+    if (b.parentNode !== screen.parentNode) screen.parentNode.insertBefore(b, screen);
+    b.classList.remove('in-ph');
+    document.body.classList.remove('ph-nobar');
+  }
+  function barInPhone(scr, after) {
+    const b = $('bar');
+    if (!b || !scr || b.hidden) return;
+    b.classList.add('in-ph');
+    scr.insertBefore(b, after ? after.nextSibling : scr.firstChild);
   }
 
   // ---------- cor do clube ----------
@@ -188,7 +205,7 @@
     if (!G.c || !G.c.club) { b.hidden = true; clubBg(null); return; }
     b.hidden = false;
     if (G.step === 'wc' && G.c.wcRun && window.CRAQUE_UI.natBg) window.CRAQUE_UI.natBg(); else clubBg(G.c.club);
-    requestAnimationFrame(() => document.documentElement.style.setProperty('--bar-h', b.offsetHeight + 'px'));
+    requestAnimationFrame(() => { if (!b.classList.contains('in-ph') && !document.body.classList.contains('ph-nobar')) document.documentElement.style.setProperty('--bar-h', b.offsetHeight + 'px'); });
     const cl = club(G.c.club), lg = league(G.c.club);
     // Nome e clube (a idade aparece no topo de cada tela; o som fica na linha dos medidores)
     $('bar-name').innerHTML = '<span class="bn">' + esc(G.c.name) + '</span>';
@@ -349,5 +366,5 @@
     });
   }
 
-  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, clubBg };
+  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg };
 })();
