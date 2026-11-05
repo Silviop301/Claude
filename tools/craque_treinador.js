@@ -1,6 +1,7 @@
 // Modo Treinador: o robô técnico joga carreiras de 10 temporadas e mostra se títulos, metas e demissões ficam realistas.
 // Uso (na raiz): node tools/craque_treinador.js [carreiras] [temporadas]     (padrão 200 carreiras de 10 temporadas)
-// INICIO=baixo|livre fixa o começo (padrão: metade cada). O robô deixa o auxiliar escalar, troca os cansados e as
+// INICIO=baixo|livre fixa o começo (padrão: metade cada). ROBO=esperto: antes de cada jogo escolhe a formação e o estilo
+// que dão mais pontos esperados contra o plano do rival (mede quanto vale acertar a tática; mais lento). O robô deixa o auxiliar escalar, troca os cansados e as
 // lesões, gasta a experiência em rodízio e aceita proposta de clube maior no fim da temporada quando a fama deixa.
 const D = require('../craque/src/data.js');
 const S = require('../craque/src/sim.js');
@@ -8,6 +9,8 @@ const N = +process.argv[2] || 200, T = +process.argv[3] || 10;
 const prng = s => { let a = s >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
 Math.random = prng(11);
 const str = id => D.CLUB_BY_ID[id].strength;
+const pois = (l, k) => { let f = 1; for (let i = 2; i <= k; i++) f *= i; return Math.exp(-l) * Math.pow(l, k) / f; };
+const ptsOf = (a, b) => { let w = 0, d = 0; for (let x = 0; x <= 8; x++) for (let y = 0; y <= 8; y++) { const p = pois(a, x) * pois(b, y); if (x > y) w += p; else if (x === y) d += p; } return 3 * w + d; };
 const pct = (a, b) => (b ? (100 * a / b).toFixed(0) + '%' : '-');
 const st = { seasons: 0, sacked: 0, met: 0, won: 0, up: 0, down: 0, games: 0, goals: 0, hw: 0, dr: 0, aw: 0, ult: 0, ultOk: 0, moves: 0, ms: 0,
   byGoal: {}, titlesPer: [], sacksPer: [], fameEnd: [], strEnd: [], stops: 0, subs: 0, nan: 0, byStart: {} };
@@ -26,6 +29,11 @@ for (let n = 0; n < N; n++) {
       const nx = S.coNext(co);
       if (!nx) break;
       if (nx.bye) { S.coSkipRound(co); continue; }
+      if (process.env.ROBO === 'esperto') {
+        let best = null, bv = -1;
+        Object.keys(S.CO_FORMS).forEach(f => S.CO_STYLES.forEach(st => { const pv = S.coPreview(co, f, st), v = ptsOf(pv.xg[0], pv.xg[1]); if (v > bv) { bv = v; best = [f, st]; } }));
+        co.form = best[0]; co.style = best[1]; co.xi = S.coAutoXI(co.squad, co.form).xi;
+      }
       const hadUlt = !!co.board.ult;
       const m = S.coMatchStart(co);
       while (!m.done) { const sp = S.coMatchStep(co, m); if (sp && sp.t !== 'fim') st.stops++; S.coAutoStop(co, m); }

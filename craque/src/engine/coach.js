@@ -17,23 +17,54 @@
   // ---------- números do modo (calibrados com tools/craque_treinador.js) ----------
   const CO = S.CO = {
     squad: { GOL: 3, ZAG: 5, LAT: 4, MEI: 8, ATA: 5 },
-    lamH: 1.32, lamA: 1.06, k: env('CO_K', 36), home: 2, mid: 0.3,
-    styleFx: { atacar: { att: 2.5, def: -2.5, en: 1.15 }, equilibrar: { att: 0, def: 0, en: 1 }, segurar: { att: -3, def: 2.5, en: 0.9 } },
+    lamH: 1.32, lamA: 1.06, k: env('CO_K', 36), home: 2, kT: env('CO_KT', 0.3),
     enGame: 12, enRest: 8, enOff: 20, enOpp: 80, inj: 0.011, red: 0.012, subs: 5,
     conf0: 60, confK: env('CO_CK', 3), ppg: 1.34, ultAt: env('CO_ULT', 25), ultN: 3, ultNeed: 2, ultMin: 6,
     fame0: { baixo: 5, livre: 25 }, skillMax: 10,
   };
-  // Formações: as vagas depois do goleiro (defesa, meio, ataque), com a posição de cada vaga
-  const FORMS = S.CO_FORMS = {
-    '4-4-2': { d: ['LAT', 'ZAG', 'ZAG', 'LAT'], m: ['MEI', 'MEI', 'MEI', 'MEI'], a: ['ATA', 'ATA'] },
-    '4-3-3': { d: ['LAT', 'ZAG', 'ZAG', 'LAT'], m: ['MEI', 'MEI', 'MEI'], a: ['ATA', 'ATA', 'ATA'] },
-    '3-5-2': { d: ['ZAG', 'ZAG', 'ZAG'], m: ['LAT', 'MEI', 'MEI', 'MEI', 'LAT'], a: ['ATA', 'ATA'] },
-    '4-2-3-1': { d: ['LAT', 'ZAG', 'ZAG', 'LAT'], m: ['MEI', 'MEI', 'MEI', 'MEI', 'MEI'], a: ['ATA'] },
-    '5-3-2': { d: ['LAT', 'ZAG', 'ZAG', 'ZAG', 'LAT'], m: ['MEI', 'MEI', 'MEI'], a: ['ATA', 'ATA'] },
+  // ---------- tática ----------
+  // Formações: cada vaga tem posição, lado (W = aberta pelo lado; sem W = pelo meio) e linha (d defesa, m meio, am meia
+  // de ligação, a ataque). O confronto conta gente: meio contra meio (posse), lados contra quem marca o lado, atacantes
+  // do meio contra zagueiros (2 atacantes contra 3 zagueiros não respiram; 1 contra 2 fica isolado).
+  const FSPEC = {
+    '4-4-2': 'LAT.W ZAG ZAG LAT.W|MEI.W MEI MEI MEI.W|ATA ATA',
+    '4-3-3': 'LAT.W ZAG ZAG LAT.W|MEI MEI MEI|ATA.W ATA ATA.W',
+    '4-2-3-1': 'LAT.W ZAG ZAG LAT.W|MEI MEI|MEI.W MEI MEI.W|ATA',
+    '4-5-1': 'LAT.W ZAG ZAG LAT.W|MEI.W MEI MEI MEI MEI.W|ATA',
+    '3-5-2': 'ZAG ZAG ZAG|LAT.W MEI MEI MEI LAT.W|ATA ATA',
+    '3-4-3': 'ZAG ZAG ZAG|LAT.W MEI MEI LAT.W|ATA.W ATA ATA.W',
+    '5-3-2': 'LAT.W ZAG ZAG ZAG LAT.W|MEI MEI MEI|ATA ATA',
   };
-  S.CO_STYLES = ['atacar', 'equilibrar', 'segurar'];
-  const slotsOf = form => ['GOL'].concat(FORMS[form].d, FORMS[form].m, FORMS[form].a);
-  const sectorOf = (form, i) => (i === 0 ? 'g' : i <= FORMS[form].d.length ? 'd' : i <= FORMS[form].d.length + FORMS[form].m.length ? 'm' : 'a');
+  // Quanto a formação expõe ou protege (att: as chances que você cria; def: as que você deixa o outro criar)
+  const FORM_FX = S.CO_FORM_FX = { '4-4-2': [1, 0.95], '4-3-3': [1.04, 1.03], '4-2-3-1': [1.01, 0.99], '4-5-1': [0.93, 0.94], '3-5-2': [1.03, 1], '3-4-3': [1.07, 1.07], '5-3-2': [0.94, 0.9] };
+  const FORMS = S.CO_FORMS = {};
+  Object.keys(FSPEC).forEach(f => {
+    const g = FSPEC[f].split('|'), lines = g.map((x, i) => (i === 0 ? 'd' : i === g.length - 1 ? 'a' : i === 2 && g.length === 4 ? 'am' : 'm'));
+    const slots = [{ pos: 'GOL', w: false, ln: 'g' }];
+    g.forEach((grp, i) => grp.split(' ').forEach(t => { const [pos, w] = t.split('.'); slots.push({ pos, w: w === 'W', ln: lines[i] }); }));
+    FORMS[f] = { att: FORM_FX[f][0], def: FORM_FX[f][1], slots, d: slots.filter(x => x.ln === 'd').map(x => x.pos), m: slots.filter(x => x.ln === 'm' || x.ln === 'am').map(x => x.pos), a: slots.filter(x => x.ln === 'a').map(x => x.pos) };
+  });
+  // Estilos: ctrl = quanto segura a bola; press = rouba no campo deles (cansa: en); line = altura da defesa (alta deixa
+  // espaço nas costas); counter = mata no contra-ataque; wide = joga pelos lados; build = quanto sofre com a pressão
+  // ao sair jogando; patience = fura retranca (ignora parte do def do outro); att e def multiplicam as chances
+  const STY = S.CO_STY = {
+    equilibrado: { name: 'Equilibrado', ctrl: 1, press: 0.35, line: 0.5, counter: 0.35, wide: 0.5, build: 1, patience: 0.15, att: 1, def: 1, en: 1,
+      tip: 'Sem ponto fraco grande, sem vantagem grande' },
+    posse: { name: 'Posse de bola', ctrl: 1.3, press: 0.25, line: 0.65, counter: 0.1, wide: 0.45, build: 1.45, patience: 0.6, att: 0.97, def: 0.94, en: 0.95,
+      tip: 'Fica com a bola e fura retranca; sofre contra pressão alta' },
+    pressao: { name: 'Pressão alta', ctrl: 1.05, press: 1.1, line: 0.95, counter: 0.2, wide: 0.5, build: 0.9, patience: 0.2, att: 1.03, def: 1.06, en: 1.4,
+      tip: 'Rouba a bola lá na frente e cansa; deixa espaço nas costas' },
+    contra: { name: 'Contra-ataque', ctrl: 0.78, press: 0.1, line: 0.2, counter: 1.25, wide: 0.4, build: 0.85, patience: 0, att: 0.9, def: 0.88, en: 1,
+      tip: 'Dá a bola e mata na velocidade; trava contra retranca' },
+    retranca: { name: 'Retranca', ctrl: 0.72, press: 0, line: 0, counter: 0.8, wide: 0.2, build: 0.55, patience: 0, att: 0.74, def: 0.66, en: 0.9,
+      tip: 'Fecha a área; sofre com toque de bola e cruzamento' },
+    lados: { name: 'Jogo pelos lados', ctrl: 0.95, press: 0.3, line: 0.6, counter: 0.25, wide: 0.95, build: 1, patience: 0.5, att: 1.02, def: 1.05, en: 1.1,
+      tip: 'Cruza e abre a defesa; precisa de gente aberta e sofre nos lados' },
+  };
+  S.CO_STYLES = Object.keys(STY);
+  const sty = k => STY[k] || STY.equilibrado;
+  const slotsOf = form => FORMS[form].slots.map(x => x.pos);
+  const sectorOf = (form, i) => { const l = FORMS[form].slots[i].ln; return l === 'am' ? 'm' : l; };
   S.coSlots = slotsOf;
   // Jogador fora da posição rende menos
   const FIT = { ZAG: { LAT: 0.92, MEI: 0.85 }, LAT: { ZAG: 0.9, MEI: 0.9, ATA: 0.8 }, MEI: { LAT: 0.88, ZAG: 0.82, ATA: 0.9 }, ATA: { MEI: 0.88, LAT: 0.78 } };
@@ -79,40 +110,62 @@
     return { xi, bench };
   }
   S.coAutoXI = autoXI;
-  S.coBestForm = sq => bestForm(sq.filter(ok));
-  // Formação do adversário: a que dá mais força para o elenco dele
-  function bestForm(squad) {
-    let best = '4-4-2', bv = -1e9;
-    ['4-4-2', '4-3-3', '4-2-3-1', '3-5-2'].forEach(f => { const t = power(squad, f, autoXI(squad, f).xi, 'equilibrar'); const v = t.A + t.D; if (v > bv) { bv = v; best = f; } });
-    return best;
-  }
-
-  // ---------- força do time ----------
+  // ---------- força do time e confronto ----------
   const byId = squad => { const m = {}; squad.forEach(p => { m[p.id] = p; }); return m; };
   const eff = (p, sl) => p.ovr * fit(p.pos, sl) * (0.8 + 0.2 * (p.en === undefined ? 100 : p.en) / 100) * (p.out ? 0.5 : 1) * (1 + ((p.mo === undefined ? 60 : p.mo) - 60) / 1200);
-  // A: ataque, D: defesa, M: meio. Mais gente num setor soma (e tira de outro); o estilo empurra para um lado
-  function power(squad, form, xi, style, red) {
-    const m = byId(squad), slots = slotsOf(form), sec = { g: [], d: [], m: [], a: [] };
-    xi.forEach((id, i) => { const p = m[id]; if (p) sec[sectorOf(form, i)].push(eff(p, slots[i])); });
-    const avg = a => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 30);
-    const F = FORMS[form], sf = CO.styleFx[style] || CO.styleFx.equilibrar;
-    const lack = 11 - xi.filter(id => m[id]).length; // expulso ou sem jogador (vaga null): o time sente
-    const d = avg(sec.d) + 1.4 * (F.d.length - 4) + sf.def, mi = avg(sec.m) + 1.4 * (F.m.length - 4), a = avg(sec.a) + 1.6 * (F.a.length - 2) + sf.att, g = sec.g.length ? sec.g[0] : 35;
-    return { A: 0.65 * a + 0.35 * mi - 3 * lack, D: 0.55 * d + 0.25 * mi + 0.2 * g - 3 * lack, M: mi - 2.5 * lack };
+  // Forma de um lado em campo: quanto tem em cada parte (cada jogador vale ~1 = 70 de força na vaga)
+  function shape(s) {
+    const m = byId(s.squad), F = FORMS[s.form], o = { q: 0, n: 0, ncb: 0, ncf: 0, wb: 0, cb: 0, fb: 0, cm: 0, wm: 0, cf: 0, wf: 0, en: 0 };
+    s.xi.forEach((id, i) => {
+      const p = id && m[id], sl = F.slots[i]; if (!p || !sl) return;
+      const e = eff(p, sl.pos) / 70;
+      o.q += e; o.n++; o.en += (p.en === undefined ? 100 : p.en);
+      if (sl.ln === 'd') { if (sl.w) o.fb += e; else { o.cb += e; o.ncb++; } }
+      else if (sl.ln === 'm') { if (sl.w && sl.pos === 'LAT') o.wb += e; else if (sl.w) o.wm += e; else o.cm += e; }
+      else if (sl.ln === 'am') { if (sl.w) o.wm += e; else { o.cm += 0.5 * e; o.cf += 0.5 * e; o.ncf += 0.5; } }
+      else if (sl.ln === 'a') { if (sl.w) o.wf += e; else { o.cf += e; o.ncf++; } }
+    });
+    o.q = o.q / 11 * 70; o.en = o.n ? o.en / o.n / 100 : 1; o.bonus = s.bonus || 0;
+    return o;
   }
+  // O que X cria contra Y (sem contar a força geral): posse, lados, área, pressão e contra-ataque
+  function edge(X, Y, sx, sy, pX) {
+    // Lados: quem ataca aberto (o lateral só sobe se não tiver ponta do outro lado prendendo) contra quem marca o lado
+    const push = X.fb * sx.wide * 0.6 * (1 - 0.7 * Math.min(1, Y.wf / 2));
+    const fa = X.wm + X.wf + 0.6 * X.wb + push, fd = Y.fb + 0.9 * Y.wb + 0.5 * Y.wm + 0.25 * Y.wf + 0.35 * Math.max(0, Y.ncb - 2), fdl = fd * (0.75 + 0.25 * sy.line);
+    // Área: atacantes do meio contra zagueiros; zagueiro a mais que os atacantes + 1 não marca ninguém (sobra)
+    const cbUse = Y.ncb ? Y.cb * Math.min(1, (X.ncf + 1) / Y.ncb) : 0;
+    const ca = X.cf + 0.35 * X.cm, cd = 0.85 * (cbUse + 0.35 * Y.cm);
+    const flank = Math.log((fa + 0.4) / (fdl + 0.4)), central = Math.log((ca + 0.4) / (cd + 0.4));
+    // O time ataca por onde tem gente (e o estilo puxa): a fraqueza do outro lado só conta se você ataca por ali
+    const wsh = clamp(fa / (fa + ca || 1) + (sx.wide - 0.5) * 0.5, 0.1, 0.9);
+    const press = sx.press * (1 - pX) * X.en * sy.build;
+    const counter = sx.counter * sy.line * (1 - pX) * (X.wf + X.cf) / 2;
+    return { flank, central, wsh, press, counter, poss: pX, T: 1.3 * (wsh * flank * (1 + (sx.wide - 0.5) * 0.8) + (1 - wsh) * central) + 1.0 * press + 1.6 * counter + 2 * (pX - 0.5) };
+  }
+  // Gols esperados de cada lado no jogo inteiro (H em casa). Volta também o porquê, para a tela do confronto
+  function matchup(H, A, neutral) {
+    const h = shape(H), a = shape(A), sh = sty(H.style), sa = sty(A.style);
+    const ch = Math.pow((h.cm + 0.3 * h.wm) * sh.ctrl, 1.6), ca = Math.pow((a.cm + 0.3 * a.wm) * sa.ctrl, 1.6);
+    const pH = clamp(ch / (ch + ca || 1), 0.28, 0.72);
+    const eh = edge(h, a, sh, sa, pH), ea = edge(a, h, sa, sh, 1 - pH);
+    const lh = (neutral ? (CO.lamH + CO.lamA) / 2 : CO.lamH) * Math.exp((h.q - a.q + h.bonus + (neutral ? 0 : CO.home)) / CO.k + CO.kT * eh.T) * sh.att * Math.pow(sa.def, 1 - sh.patience) * FORMS[H.form].att * FORMS[A.form].def;
+    const la = (neutral ? (CO.lamH + CO.lamA) / 2 : CO.lamA) * Math.exp((a.q - h.q + a.bonus) / CO.k + CO.kT * ea.T) * sa.att * Math.pow(sh.def, 1 - sa.patience) * FORMS[A.form].att * FORMS[H.form].def;
+    return { lh, la, h: eh, a: ea, sh: h, sa: a };
+  }
+  S.coMatchup = matchup;
+  S.coShape = shape;
+  // Força para comparar formações do mesmo elenco (o auxiliar do rival escolhe por ela)
+  function power(squad, form, xi) { const o = shape({ squad, form, xi }); return { A: o.q, D: o.q, M: o.q }; }
   S.coPower = power;
-  // Gols esperados de cada lado no jogo inteiro
-  function lams(ph, pa) {
-    const me = (ph.M - pa.M) * CO.mid;
-    return [CO.lamH * Math.exp((ph.A - pa.D + me + CO.home) / CO.k), CO.lamA * Math.exp((pa.A - ph.D - me) / CO.k)];
-  }
+  const lams = (H, A) => { const r = matchup(H, A); return [r.lh, r.la]; };
   S.coLams = lams;
 
   // ---------- carreira ----------
   S.coNew = function (o) {
     const co = { mode: 'treinador', name: o.name || 'Técnico', country: o.country || 'Brasil', look: o.look || null, start: o.start === 'livre' ? 'livre' : 'baixo',
       season: 0, club: null, fame: CO.fame0[o.start === 'livre' ? 'livre' : 'baixo'], xp: { pts: 0, leitura: 0, motiv: 0, negoc: 0 },
-      seed: (o.seed || (Math.random() * 4294967295)) >>> 0, leagueOf: {}, clubBoost: {}, hist: [], titles: [], pid: 0, form: '4-4-2', style: 'equilibrar' };
+      seed: (o.seed || (Math.random() * 4294967295)) >>> 0, leagueOf: {}, clubBoost: {}, hist: [], titles: [], pid: 0, form: '4-4-2', style: 'equilibrado' };
     return co;
   };
   const rngCo = co => { const r = S.rng(co.seed); return { r, save: () => { co.seed = r.state(); } }; };
@@ -198,12 +251,33 @@
     const home = g[0] === me, vs = ss.ids[home ? g[1] : g[0]];
     return { round: ss.i + 1, of: ss.rounds.length, vs, home, ult: co.board.ult };
   };
-  // Elenco do adversário pronto para o jogo (formação e titulares do auxiliar dele)
-  function oppSide(co, vs) {
-    const sq = genSquad(vs, co.season); sq.forEach(p => { p.en = CO.enOpp; });
-    const form = bestForm(sq), a = autoXI(sq, form);
-    return { club: vs, squad: sq, form, style: 'equilibrar', xi: a.xi, bench: a.bench, subs: CO.subs, red: 0 };
+  // Plano do rival: cada clube tem a sua escola (formação e dois estilos sorteados pelo id); no jogo, o mais fraco fecha
+  // e o mais forte propõe. É o que o olheiro mostra antes do jogo
+  const SCHOOL_F = ['4-4-2', '4-3-3', '4-2-3-1', '4-4-2', '4-5-1', '3-5-2', '4-3-3', '5-3-2', '4-2-3-1', '3-4-3'];
+  const SCHOOL_S = [['posse', 'equilibrado'], ['pressao', 'equilibrado'], ['equilibrado', 'contra'], ['lados', 'equilibrado'], ['posse', 'pressao'], ['equilibrado', 'retranca'], ['lados', 'contra']];
+  function school(clubId) { const h = hash('escola|' + clubId); return { form: SCHOOL_F[h % SCHOOL_F.length], styles: SCHOOL_S[(h >>> 8) % SCHOOL_S.length] }; }
+  S.coSchool = school;
+  function plan(clubId, d, home) {
+    const sc = school(clubId);
+    let style = d > 3 || (home && d > -2) ? sc.styles[0] : sc.styles[1];
+    let form = sc.form;
+    if (d < -6) { style = (hash('f|' + clubId) & 1) ? 'retranca' : 'contra'; if (form === '3-4-3' || form === '4-3-3') form = '4-5-1'; }
+    return { form, style };
   }
+  function oppSide(co, vs, home) {
+    const sq = genSquad(vs, co.season); sq.forEach(p => { p.en = CO.enOpp; });
+    const d = D.CLUB_BY_ID[vs].strength - D.CLUB_BY_ID[co.club].strength;
+    const pl = plan(vs, d, home), a = autoXI(sq, pl.form);
+    return { club: vs, squad: sq, form: pl.form, style: pl.style, plan: pl, xi: a.xi, bench: a.bench, subs: CO.subs, red: 0 };
+  }
+  // Prévia do próximo jogo: o rival como deve vir e o confronto contra o seu time de agora
+  S.coPreview = function (co, form, style) {
+    const nx = S.coNext(co); if (!nx || nx.bye) return null;
+    const them = oppSide(co, nx.vs, !nx.home), xi = co.xi.filter(id => co.squad.some(p => p.id === id && ok(p))).length === 11 ? co.xi : autoXI(co.squad, form || co.form).xi;
+    const us = { squad: co.squad, form: form || co.form, style: style || co.style, xi, bonus: co.xp.leitura * 0.2 };
+    const r = nx.home ? matchup(us, them) : matchup(them, us);
+    return { them, nx, xg: nx.home ? [r.lh, r.la] : [r.la, r.lh], us: nx.home ? r.h : r.a, op: nx.home ? r.a : r.h, ush: nx.home ? r.sh : r.sa, osh: nx.home ? r.sa : r.sh, poss: nx.home ? r.h.poss : r.a.poss };
+  };
   S.coOpp = (co, vs) => oppSide(co, vs);
 
   // ---------- partida minuto a minuto ----------
@@ -212,8 +286,8 @@
     const nx = S.coNext(co);
     if (!nx || nx.bye) return null;
     co.xi = co.xi.filter(id => co.squad.some(p => p.id === id && ok(p))).length === 11 ? co.xi : autoXI(co.squad, co.form).xi;
-    const us = { club: co.club, squad: co.squad, form: co.form, style: co.style, xi: co.xi.slice(), bench: (co.bench || []).filter(id => co.squad.some(p => p.id === id && ok(p))), subs: CO.subs, red: 0, mine: true };
-    const them = oppSide(co, nx.vs);
+    const us = { club: co.club, squad: co.squad, form: co.form, style: co.style, bonus: co.xp.leitura * 0.2, xi: co.xi.slice(), bench: (co.bench || []).filter(id => co.squad.some(p => p.id === id && ok(p))), subs: CO.subs, red: 0, mine: true };
+    const them = oppSide(co, nx.vs, !nx.home);
     if (!us.bench.length) us.bench = autoXI(co.squad, co.form).bench;
     return { min: 0, gh: 0, ga: 0, home: nx.home, us, them, ev: [], stop: null, done: false, half: false, vs: nx.vs, round: nx.round, played: {} };
   };
@@ -226,9 +300,9 @@
     while (!stop && m.min < 90) {
       m.min++;
       const H = m.home ? m.us : m.them, A = m.home ? m.them : m.us;
-      const [lh, la] = lams(power(H.squad, H.form, H.xi, H.style, H.red), power(A.squad, A.form, A.xi, A.style, A.red));
+      const [lh, la] = lams(H, A);
       // Cansaço: quem está em campo perde energia aos poucos (o estilo de ataque cansa mais)
-      [m.us, m.them].forEach(s => s.xi.forEach(id => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / 90 * (CO.styleFx[s.style] || CO.styleFx.equilibrar).en); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }));
+      [m.us, m.them].forEach(s => s.xi.forEach(id => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / 90 * sty(s.style).en); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }));
       if (r() < lh / 90) { m.gh++; const sc = scorer(r, H); m.ev.push({ m: m.min, t: 'gol', s: sideName(m, H), p: sc }); stop = { t: 'gol', s: sideName(m, H), p: sc }; }
       else if (r() < la / 90) { m.ga++; const sc = scorer(r, A); m.ev.push({ m: m.min, t: 'gol', s: sideName(m, A), p: sc }); stop = { t: 'gol', s: sideName(m, A), p: sc }; }
       // Vermelho e lesão (só os seus param o jogo; os do rival entram no relato)
@@ -240,6 +314,10 @@
       if (!stop && m.min === 45 && !m.half) { m.half = true; stop = { t: 'intervalo' }; }
       // O auxiliar do rival troca os cansados no segundo tempo
       if (m.min === 60 || m.min === 70 || m.min === 80) tiredSubs(m.them);
+      // O técnico rival muda o plano: perdendo no fim, se joga; ganhando, fecha
+      if (m.min === 65 || m.min === 78) { const T = m.them, diff = (T === H ? m.gh - m.ga : m.ga - m.gh);
+        const want = diff < 0 ? (m.min === 78 ? 'pressao' : 'lados') : diff > 0 && m.min === 78 ? 'retranca' : null;
+        if (want && T.style !== want) { T.style = want; m.ev.push({ m: m.min, t: 'tatica', s: 'them', p: STY[want].name }); } }
     }
     if (m.min >= 90 && !stop) { m.done = true; stop = { t: 'fim' }; }
     m.stop = stop;
@@ -279,7 +357,7 @@
   // Muda formação ou estilo no meio do jogo: os mesmos jogadores redistribuídos pelo auxiliar nas vagas novas
   S.coMatchTactic = function (co, m, form, style) {
     const s = m.us;
-    if (style && CO.styleFx[style]) s.style = style;
+    if (style && STY[style]) s.style = style;
     if (form && FORMS[form] && form !== s.form) {
       const on = s.squad.filter(p => s.xi.includes(p.id)), a = autoXI(on, form);
       s.form = form; s.xi = a.xi.filter(Boolean);
@@ -376,7 +454,8 @@
     const up = ss.promo && pos <= ss.promo, down = ss.releg && pos > n - ss.releg;
     // Fama: título, meta, campanha acima do esperado; cai com rebaixamento e demissão
     const f0 = co.fame;
-    let df = (won ? 10 : 0) + (met ? 5 : -2) + clamp(B.goal.exp - pos, -4, 6) * 0.8 + (up ? 4 : 0) - (down ? 8 : 0) - (co.sacked ? 10 : 0);
+    let df = (won ? 10 : 0) + (met ? 5 : -2) + clamp(B.goal.exp - pos, -4, 6) * 0.8 + (up ? 4 : 0) - (down && !co.sacked ? 8 : 0) - (co.sacked ? 10 : 0);
+    df = Math.max(-15, df); // uma temporada ruim tira no máximo 15
     co.fame = clamp(Math.round(co.fame + df), 0, 100);
     // Experiência: um ponto por temporada, dois por título, um pela meta
     const gx = (co.sacked ? 0 : 1) + (won ? 2 : 0) + (met ? 1 : 0);
