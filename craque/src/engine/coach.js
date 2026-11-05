@@ -18,7 +18,10 @@
   const CO = S.CO = {
     squad: { GOL: 3, ZAG: 5, LAT: 4, MEI: 8, ATA: 5 },
     lamH: 1.32, lamA: 1.06, ch: 3.2, k: env('CO_K', 36), home: 2, kT: env('CO_KT', 0.3),
-    enGame: 12, enRest: 8, enOff: 20, enOpp: 80, inj: 0.011, red: 0.012, subs: 5,
+    enGame: 12, enRest: 8, enOff: 20, enOpp: 80, inj: 0.011, subs: 5,
+    // Faltas e cartões por time e por jogo: foul faltas (o estilo muda), yel amarelos por falta, redD vermelho direto por falta,
+    // ycMax amarelos que suspendem; off impedimentos; foulShow das faltas sem cartão que o campinho apita (as perigosas)
+    foul: 12, yel: 0.17, redD: 0.004, ycMax: 3, off: 2.2, foulShow: 0.14,
     conf0: 60, confK: env('CO_CK', 3), ppg: 1.34, ultAt: env('CO_ULT', 25), ultN: 3, ultNeed: 2, ultMin: 6,
     fame0: { baixo: 5, livre: 25 }, skillMax: 10,
   };
@@ -235,7 +238,7 @@
     const ss = co.ss = { season: co.season, club: club.id, i: 0, name: lg.name, ids, rounds: sch.map(rd => rd.map(([a, b]) => [perm[a], perm[b]])),
       tab: ids.map(() => ({ p: 0, j: 0, v: 0, e: 0, d: 0, gp: 0, gc: 0 })), promo: LD.up ? LD.promo : 0, releg: LD.down ? LD.releg : 0, log: [], done: false };
     co.board = { goal: boardGoal(club, ids, ss), conf: CO.conf0, ult: null };
-    co.squad.forEach(p => { p.en = 100; p.out = 0; p.sus = 0; });
+    co.squad.forEach(p => { p.en = 100; p.out = 0; p.sus = 0; p.yc = 0; p.ycSus = 0; });
     co.subsLeft = CO.subs;
     save();
     return ss;
@@ -323,11 +326,31 @@
         return true;
       };
       if (!chance(H, lh)) chance(A, la);
-      // Vermelho e lesão (só os seus param o jogo; os do rival entram no relato)
+      // Faltas, cartões, impedimento e lesão (o seu vermelho e a sua lesão param o jogo; os do rival entram no relato)
       [m.us, m.them].forEach(s => {
         if (stop && stop.t !== 'gol') return;
-        if (r() < CO.red / 90) { const k = r.int(1, s.xi.length - 1), id = s.xi[k]; if (!id) return; s.xi[k] = null; s.red++; const p = s.squad.find(x => x.id === id); if (p && s.mine) p.sus = 2; m.ev.push({ m: m.min, t: 'vermelho', s: sideName(m, s), p: p ? p.n : '' }); if (s.mine) stop = { t: 'vermelho', p: p && p.n }; }
-        else if (r() < CO.inj * 11 / 90) { const k = r.int(0, s.xi.length - 1), id = s.xi[k], p = s.squad.find(x => x.id === id); if (!p) return; p.out = r.int(1, 6) + 1; m.ev.push({ m: m.min, t: 'lesao', s: sideName(m, s), p: p.n }); if (s.mine) stop = { t: 'lesao', p: p.n, id, k }; else autoSub(s, k); }
+        const sd = sideName(m, s), o = s === m.us ? m.them : m.us, st = sty(s.style), cnt = k => { m[k] = m[k] || { us: 0, them: 0 }; m[k][sd]++; };
+        if (r() < CO.foul / 90 * (0.8 + 0.45 * st.press + 0.2 * (1 - st.ctrl))) {
+          cnt('fo');
+          const k = foulPick(r, s), id = s.xi[k], p = id && s.squad.find(x => x.id === id); if (!p) return;
+          s.bk = s.bk || {};
+          const bk = !!s.bk[id], card = r() < CO.redD ? 'direto' : r() < CO.yel * (bk ? 0.7 : 1) ? (bk ? '2am' : 'am') : '';
+          if (card === 'am') {
+            s.bk[id] = 1; cnt('yc');
+            if (s.mine) (m.ycAdd = m.ycAdd || []).push(id);
+            m.ev.push({ m: m.min, t: 'amarelo', s: sd, p: p.n, pos: slotsOf(s.form)[k] });
+          } else if (card) {
+            if (bk) { cnt('yc'); if (m.ycAdd) m.ycAdd = m.ycAdd.filter(x => x !== id); } // os amarelos do vermelho não acumulam
+            cnt('rc'); s.xi[k] = null; s.red++; if (s.mine) p.sus = 2;
+            m.ev.push({ m: m.min, t: 'vermelho', s: sd, p: p.n, how: card, pos: slotsOf(s.form)[k] });
+            if (s.mine) stop = { t: 'vermelho', p: p.n, how: card, id };
+          } else if (r() < CO.foulShow) m.ev.push({ m: m.min, t: 'falta', s: sd, p: p.n, pos: slotsOf(s.form)[k] });
+        } else if (r() < CO.off / 90 * (0.55 + 0.9 * sty(o.style).line) * (0.8 + 0.4 * st.counter)) {
+          const at = s.xi.map((id, k) => [id, k]).filter(([id, k]) => id && /ATA|MEI/.test(slotsOf(s.form)[k])), q = at.length ? r.pick(at) : null;
+          if (!q) return;
+          cnt('of'); const p = s.squad.find(x => x.id === q[0]);
+          m.ev.push({ m: m.min, t: 'impedimento', s: sd, p: p ? p.n : '', pos: slotsOf(s.form)[q[1]] });
+        } else if (r() < CO.inj * 11 / 90) { const k = r.int(0, s.xi.length - 1), id = s.xi[k], p = s.squad.find(x => x.id === id); if (!p) return; p.out = r.int(1, 6) + 1; m.ev.push({ m: m.min, t: 'lesao', s: sd, p: p.n }); if (s.mine) stop = { t: 'lesao', p: p.n, id, k }; else autoSub(s, k); }
       });
       if (!stop && m.min === 45 && !m.half) { m.half = true; stop = { t: 'intervalo' }; }
       // O auxiliar do rival troca os cansados no segundo tempo
@@ -342,6 +365,14 @@
     save();
     return stop;
   };
+  // Quem faz a falta: zagueiro, volante e lateral mais; goleiro quase nunca; quem já tem amarelo se cuida
+  const FOUL_W = { GOL: 0.08, ZAG: 1.4, LAT: 1.15, MEI: 1.2, ATA: 0.65 };
+  function foulPick(r, s) {
+    const slots = slotsOf(s.form), w = s.xi.map((id, i) => (id ? FOUL_W[slots[i]] * (s.bk && s.bk[id] ? 0.6 : 1) : 0));
+    let x = r() * w.reduce((a, b) => a + b, 0);
+    for (let i = 0; i < w.length; i++) { x -= w[i]; if (x <= 0 && w[i]) return i; }
+    return w.findIndex(v => v > 0);
+  }
   function scorer(r, s) {
     const m = byId(s.squad), slots = slotsOf(s.form);
     const w = s.xi.map((id, i) => { const p = m[id]; if (!p) return 0; const sl = slots[i]; return (sl === 'ATA' ? 5 : sl === 'MEI' ? 2 : sl === 'GOL' ? 0 : 0.6) * (p.ovr / 70); });
@@ -407,6 +438,12 @@
     if (good[0][0] > 0) { said.push(good[0][1]); tags.push(good[0][2]); }
     if (!said.length) said.push('Jogo parelho até aqui. Ninguém manda no meio, ninguém sobra nos lados.');
     if (tired.length) { tags.push(last(tired[0].n) + ' cansado'); if (said.length < 2) said.push(last(tired[0].n) + ' está no limite.'); }
+    // Com amarelo e chegando forte: o auxiliar lembra (tirar o amarelado evita ficar com um a menos)
+    const bk = m.us.bk ? m.us.xi.filter(id => id && m.us.bk[id] && by[id]).map(id => by[id]) : [];
+    if (bk.length) { tags.push(last(bk[0].n) + ' amarelado'); if (said.length < 2) said.push(last(bk[0].n) + ' já tem amarelo e está chegando forte.'); }
+    const oRed = (m.rc || {}).them || 0, uRed = (m.rc || {}).us || 0;
+    if (oRed > uRed) { tags.unshift('Um a mais ↑'); said.unshift('Eles estão com um a menos. Hora de empurrar.'); said.length = Math.min(said.length, 2); }
+    else if (uRed > oRed) { tags.unshift('Um a menos ↓'); }
     return { txt: said.join(' '), tags, side: bad[0][0] > 0 && bad[0][2].startsWith('Lado') ? side : null };
   };
   // Posse de bola sua até aqui (0 a 1)
@@ -530,8 +567,11 @@
       else if (p.ovr >= teamAvg(co) - 2) p.mo = clamp(p.mo - 2 * (1 - motiv), 0, 100);
     });
     // Lesão e vermelho já contam o jogo de hoje (out = n + 1, sus = 2): desconta 1 de todos
-    co.squad.forEach(p => { if (p.out) p.out--; if (p.sus) p.sus--; });
-    const log = { r: m.round, vs: m.vs, home: m.home, gf, ga, res, ev: m.ev.filter(e => e.t === 'gol' && e.s === 'us').map(e => e.p) };
+    co.squad.forEach(p => { if (p.out) p.out--; if (p.sus) p.sus--; if (!p.sus) p.ycSus = 0; });
+    // Amarelos acumulados: no CO.ycMax, um jogo de suspensão e a conta zera (quem foi expulso já cumpre pelo vermelho)
+    const ycOut = [];
+    (m.ycAdd || []).forEach(id => { const p = co.squad.find(x => x.id === id); if (!p) return; p.yc = (p.yc || 0) + 1; if (p.yc >= CO.ycMax) { p.yc = 0; if (!p.sus) { p.sus = 1; p.ycSus = 1; ycOut.push(p.n); } } });
+    const log = { r: m.round, vs: m.vs, home: m.home, gf, ga, res, ycOut, ev: m.ev.filter(e => e.t === 'gol' && e.s === 'us').map(e => e.p) };
     log.cad = cadNote(co, m, log);
     ss.log.push(log);
     board(co, log);

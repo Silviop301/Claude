@@ -218,7 +218,7 @@
     const who = id => { const k = S.fcContact(c, id); return id === 'mae' ? k.name : k.name + ', ' + k.role; };
     if (S.fcPhoneNew) S.fcPhoneNew(c).slice(-2).reverse().forEach((m, k) => n(m.p === 'ze' ? 'ze' : 'ch:' + m.p, m.p === 'ze' ? 'Zé' : who(m.p), m.t, 3 + k));
     const coach = c.ppl ? who('coach') : 'Técnico', n1 = (g, w, t) => n(g, w, t, 1);
-    if (nx.injury) n1(null, /suspensão/.test(nx.injury) ? 'Diretoria' : 'Departamento médico', /suspensão/.test(nx.injury) ? (/manipula/.test(fc.injName) ? 'Suspenso pelo caso do cartão combinado: fora por mais ' : 'Suspenso por causa da aposta: fora por mais ') + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') : nx.injury.charAt(0).toUpperCase() + nx.injury.slice(1) + ': fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') + (fc.wkDue ? ' Fisioterapia na semana ajuda.' : ''));
+    if (nx.injury) n1(null, /suspensão/.test(nx.injury) ? 'Diretoria' : 'Departamento médico', /suspensão/.test(nx.injury) ? (/manipula/.test(fc.injName) ? 'Suspenso pelo caso do cartão combinado: fora por mais ' : /vermelho/.test(fc.injName) ? 'Suspenso pelo cartão vermelho: fora por mais ' : /amarelos/.test(fc.injName) ? 'Suspenso pelo terceiro amarelo: fora por mais ' : 'Suspenso por causa da aposta: fora por mais ') + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') : nx.injury.charAt(0).toUpperCase() + nx.injury.slice(1) + ': fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') + (fc.wkDue ? ' Fisioterapia na semana ajuda.' : ''));
     else if (nx.vs) n1(null, coach, nx.on === null ? 'Escalo o time depois do treino da semana. Hoje você tem ' + p + '% de chance de começar.' : nx.on ? 'Amanhã você começa jogando. Conto contigo.' : nx.why === 'cansaço' ? 'Vou te poupar amanhã, você tá sem perna. Descansa.' : nx.why === 'banco' ? 'Amanhã você começa no banco. Treina forte que a chance aparece.' : 'Amanhã vou rodar o elenco e você fica fora.');
     const A = id => (S.FC_WEEK.find(a => a.id === id) || S.FC_WEEK[2]).name.toLowerCase().replace(/^treino /, '');
     // Repercussão: o que virou assunto no X (e, às vezes, num programa de TV)
@@ -617,7 +617,7 @@
   // Placar do ao vivo: escudos, placar, minuto e a faixa "quem manda no jogo"
   function sbLive(x) {
     const my = G.c.club, h = x.home ? my : x.vs, a = x.home ? x.vs : my;
-    const side = id => '<div class="lp-tm' + (id === my ? ' me' : '') + '">' + crest(id, 'md') + '<span>' + esc(nameOf(id)) + '</span></div>';
+    const side = id => '<div class="lp-tm' + (id === my ? ' me' : '') + '">' + crest(id, 'md') + '<span>' + esc(nameOf(id)) + '</span><i class="lp-rcs" id="lp-rc-' + (id === h ? 'h' : 'a') + '"></i></div>';
     return '<div class="lp-sb" id="lp-sb"><div class="lp-sbr">' + side(h) +
       '<div class="lp-sc"><b><span id="fc-sh">0</span><i>x</i><span id="fc-sa">0</span></b><small class="lp-min" id="fc-lt">0\'</small></div>' + side(a) + '</div>' +
       '<div class="lp-lbl lp-whor"><span>Quem manda no jogo</span><span id="lp-who"></span></div><div id="lp-strip"></div></div>';
@@ -629,6 +629,23 @@
   }
   function notaBox(f) {
     return f.on ? '<div class="lp-nota"><small>Sua nota</small><div><b id="fl-n">6,0</b><em id="fl-d"></em></div><p id="fl-last"></p></div>' : '';
+  }
+  // Faltas, cartões e impedimento na narração (o motor diz a posição de quem fez; o texto varia pelo minuto)
+  const CPOS = { GOL: 'o goleiro', ZAG: 'o zagueiro', LAT: 'o lateral', VOL: 'o volante', MEI: 'o meia', PON: 'o ponta', ATA: 'o atacante' };
+  const CWHY = {
+    falta: ['chega atrasado e derruba', 'para o contra-ataque na falta', 'puxa a camisa na entrada da área', 'entra forte na dividida'],
+    amarelo: ['Chegou atrasado e o juiz não perdoou.', 'Parou o contra-ataque com falta.', 'Puxou a camisa e levou.', 'Reclamou demais com o juiz.', 'Entrada dura no meio-campo.'],
+    direto: ['Entrada com a sola, sem chance de defesa.', 'Agressão longe da bola, o juiz viu.', 'Último homem, derrubou quem ia sair cara a cara.'],
+    imp: ['saiu antes da hora', 'estava adiantado por meio corpo', 'ficou na banheira', 'não voltou a tempo'],
+  };
+  const cdIc = t => (t === 'amarelo' ? '<i class="cd-y"></i>' : t === 'vermelho' ? '<i class="cd-r"></i>' : '');
+  function cardTxt(c, e, who) {
+    const pk = a => a[e.m % a.length], p = e.me ? '<b class="lp-nm">' + esc(sobre(c)) + '</b>' : CPOS[e.pos] || 'o jogador', pw = e.me ? p : p + ' ' + esc(D.do(who));
+    if (e.t === 'falta') return 'Falta: ' + pw + ' ' + pk(CWHY.falta) + '.';
+    if (e.t === 'impedimento') return '<b>Impedimento.</b> ' + (e.me ? p : pw.charAt(0).toUpperCase() + pw.slice(1)) + ' ' + pk(CWHY.imp) + '.';
+    if (e.t === 'amarelo') return cdIc('amarelo') + ' <b>Amarelo para ' + (e.me ? 'você' : pw) + '.</b> ' + pk(CWHY.amarelo);
+    return (e.how === '2am' ? cdIc('amarelo') : '') + cdIc('vermelho') + ' <b>' + (e.how === '2am' ? 'Segundo amarelo, ' : 'Vermelho direto, ') + (e.me ? 'você está expulso' : pw + ' expulso') + '.</b> ' +
+      (e.how === '2am' ? '' : pk(CWHY.direto) + ' ') + (e.me ? 'Fora do próximo jogo.' : esc(who) + ' fica com um a menos.');
   }
   // A narração: o mais novo em cima; os seus lances em dourado
   function feed(m, html, cls, star) {
@@ -779,7 +796,7 @@
     const side = id => '<div class="fs-tm' + (id === my ? ' me' : '') + '">' + crest(id, 'md') + '<span>' + esc(nameOf(id)) + '</span></div>';
     const tag = esc(x.compName) + ' · ' + esc(x.stage);
     if (state === 'next') {
-      const who = x.week ? 'A escalação sai depois da sua semana' : x.injury ? (/suspensão/.test(x.injury) ? (/manipula/.test(x.injury) ? 'Suspenso (cartão combinado): ' : 'Suspenso (aposta): ') : 'Lesionado (' + esc(x.injury) + '): ') + (x.injLeft > 1 ? 'fora por mais ' + x.injLeft + ' jogos' : 'volta no próximo jogo') : x.on ? 'Você começa jogando' : x.why === 'banco' ? 'Você fica no banco' : x.why === 'cansaço' ? 'Energia baixa: o técnico vai poupar você' : 'O técnico vai poupar você neste jogo';
+      const who = x.week ? 'A escalação sai depois da sua semana' : x.injury ? (/suspensão/.test(x.injury) ? (/manipula/.test(x.injury) ? 'Suspenso (cartão combinado): ' : /vermelho/.test(x.injury) ? 'Suspenso (cartão vermelho): ' : /amarelos/.test(x.injury) ? 'Suspenso (3 amarelos): ' : 'Suspenso (aposta): ') : 'Lesionado (' + esc(x.injury) + '): ') + (x.injLeft > 1 ? 'fora por mais ' + x.injLeft + ' jogos' : 'volta no próximo jogo') : x.on ? 'Você começa jogando' : x.why === 'banco' ? 'Você fica no banco' : x.why === 'cansaço' ? 'Energia baixa: o técnico vai poupar você' : 'O técnico vai poupar você neste jogo';
       return '<div class="fs-card next' + (x.moment ? ' dec' : '') + '"><div class="fs-lbl">' + tag + '</div><div class="fs-sc">' + side(h) + '<b><i>×</i></b>' + side(a) + '</div>' +
         '<p class="fs-line">' + (x.home ? 'Em casa' : 'Fora de casa') + ' · ' + who + '</p>' + (x.moment ? '<p class="fc-dec">' + U.emo('🎯', 'xs') + ' Jogo com lance decisivo seu</p>' : '') + '</div>';
     }
@@ -1765,6 +1782,12 @@
     function drain(m) {
       if (!onPitch || eff.subAt || m > 90) return;
       eff.mins[eff.lvl]++; eff.st = Math.max(0, eff.st - stR[eff.lvl]);
+      // Com amarelo, o esforço chama o segundo (o Tudo bem mais): vermelho na hora (S.fcLiveRed); a linha sai no frame
+      const mc = out.my.meCard;
+      if (!o.stop && mc && mc.yc && mc.yc < m && !mc.rc && Math.random() < S.FC_LIVE_2AM[eff.lvl]) {
+        const n = fl && fl.on ? Math.max(4.5, Math.min(10, fl.nota[Math.min(m, 100)] + (fl.off || 0))) - (fl.off || 0) : out.my.rating;
+        if (S.fcLiveRed(c, out, m, n)) { save(); return; }
+      }
       if (!o.stop && m >= S.FC_ST.from && m <= 86 && eff.st <= S.FC_ST.sub) subOut(m);
     }
     function subOut(m) {
@@ -1776,18 +1799,50 @@
       feed(m, '<b class="lp-nm">' + esc(sobre(c)) + '</b> sai sem fôlego. Nota final <b>' + rate(n) + '</b>', 'me bad');
       save(); effBox();
     }
+    // Expulso no minuto m: sai do campinho (o motor já tirou os gols e a nota de depois), a energia para, o banner avisa
+    function redOut(m) {
+      if (!eff || eff.subAt) return;
+      eff.subAt = m; eff.red = true;
+      if (fl) { fl.lances = fl.lances.filter(l => l.m <= m); for (let k = m + 1; k <= 100; k++) fl.nota[k] = fl.nota[m]; }
+      if (sim) sim.sub();
+      U.LP.banner('EXPULSO', 'Fora do próximo jogo', 'down');
+      sfx('whistle'); save(); effBox();
+    }
+    // Um cartão, falta ou impedimento do motor: o campinho apita e mostra; a linha sai depois (live) ou na hora (pulou)
+    const cardSeen = new Set();
+    function redMarks() {
+      ['h', 'a'].forEach(sd => { const el = $('lp-rc-' + sd); if (el) el.innerHTML = '<i class="cd-r"></i>'.repeat([...cardSeen].filter(e => e.t === 'vermelho' && e.s === sd).length); });
+    }
+    function cardEv(e, live) {
+      if (cardSeen.has(e)) return;
+      const ours = e.s === meSide, who = ours ? meName : opName;
+      if (e.me && eff && eff.subAt && !eff.red && e.m > eff.subAt) { cardSeen.add(e); return; } // já tinha saído sem fôlego
+      const show = () => {
+        if (cardSeen.has(e)) return; cardSeen.add(e);
+        if (!$('fc-feed')) return;
+        feed(e.m, cardTxt(c, e, who), 'cd ' + (ours ? 'us' : 'th') + (e.me ? ' me' : '') + (e.t === 'vermelho' && ours ? ' bad' : ''));
+        redMarks();
+        if (e.me && e.t === 'amarelo') { const cd = out.card || {}; U.LP.banner('CARTÃO AMARELO', cd.three ? 'Terceiro do ano: fora do próximo jogo' : cd.n === S.FC_CARD.ycMax - 1 ? 'Pendurado. E mais um hoje é expulsão' : 'Mais um hoje e é expulsão', 'down'); if (onPitch && eff) effBox(); }
+        if (e.me && e.t === 'vermelho' && onPitch) redOut(e.m);
+      };
+      const R = { side: ours ? 0 : 1, pos: e.pos, kind: e.t, me: !!e.me, how: e.how };
+      if (sim && live) sim.ref(R, show);
+      else { if (sim && e.t === 'vermelho') sim.ref(Object.assign({ quiet: true }, R), null); show(); }
+    }
     function effBox() {
       const e = enNow();
+      if (eff.subAt && eff.red) { $('fc-wk').className = 'fc-wk fc-ef'; $('fc-wk').innerHTML = '<div class="fc-st"><span>Energia</span><div class="fc-en out"><i style="width:' + e + '%"></i></div><b class="out">' + e + '</b></div><p class="fc-ef-hint down"><i class="cd-r"></i> Expulso aos ' + eff.subAt + "'. Você está fora do próximo jogo.</p>"; return; }
       if (eff.subAt) { $('fc-wk').className = 'fc-wk fc-ef'; $('fc-wk').innerHTML = '<div class="fc-st"><span>Energia</span><div class="fc-en out"><i style="width:' + e + '%"></i></div><b class="out">' + e + '</b></div><p class="fc-ef-hint">Substituído aos ' + eff.subAt + "' · sem fôlego. Depois do jogo a energia volta a subir.</p>"; return; }
       const dp = S.fcDrinkPrice(c), canDrink = !eff.drink && half && (c.money || 0) >= dp;
       $('fc-wk').className = 'fc-wk fc-ef';
       $('fc-wk').innerHTML = '<div class="fc-st"><span>Energia</span><div class="fc-en ' + lvlOf(e) + '"><i style="width:' + e + '%"></i></div><b class="' + lvlOf(e) + '">' + e + '</b></div>' +
         '<div class="fc-ef-row"><span>Esforço</span><div class="seg fc-ef-seg">' + S.FC_EFF.map((f, k) => '<button data-e="' + k + '"' + (k === eff.lvl ? ' class="on"' : '') + '>' + f.name + '</button>').join('') + '</div></div>' +
-        '<p class="fc-ef-hint">' + ['Poupa energia, mas a nota cai um pouco.', 'Gasto normal de energia.', 'Nota sobe, mas o fôlego acaba antes: sem energia no 2º tempo, o técnico tira você.'][eff.lvl] + '</p>' +
+        '<p class="fc-ef-hint">' + (booked() ? ['<i class="cd-y"></i> Com amarelo: poupar quase não arrisca o segundo.', '<i class="cd-y"></i> Com amarelo: cuidado nas divididas.', '<i class="cd-y"></i> Com amarelo, o Tudo arrisca o segundo e a expulsão.'] : ['Poupa energia, mas a nota cai um pouco.', 'Gasto normal de energia.', 'Nota sobe, mas o fôlego acaba antes: sem energia no 2º tempo, o técnico tira você.'])[eff.lvl] + '</p>' +
         (eff.drink ? '<p class="fc-ef-hint up">Energético tomado: +' + S.FC_DRINK_EN + ' de energia.</p>' : half ? '<button class="btn ghost fc-drink" id="fc-drink"' + (canDrink ? '' : ' disabled') + '>Energético pro 2º tempo · R$ ' + U.money(dp) + '<small>+' + S.FC_DRINK_EN + ' de energia' + ((c.money || 0) < dp ? ' · sem dinheiro' : '') + '</small></button>' : '');
       $('fc-wk').querySelectorAll('[data-e]').forEach(b => { b.onclick = () => { sfx('tap'); eff.lvl = +b.dataset.e; effBox(); }; });
       if ($('fc-drink')) $('fc-drink').onclick = () => { if ((c.money || 0) < dp) return; sfx('coin'); eff.drink = true; eff.st = Math.min(100, eff.st + S.FC_DRINK_EN); effBox(); };
     }
+    const booked = () => [...cardSeen].some(e => e.me && e.t === 'amarelo');
     // Só o número e a barra (a cada minuto), sem redesenhar os botões
     function effTick() {
       const e = enNow(), b = document.querySelector('.fc-ef .fc-st b'), m = document.querySelector('.fc-ef .fc-en');
@@ -1846,7 +1901,8 @@
           }
         });
       }
-      if (fl && onPitch) fl.off = eff.mins.reduce((a, m, k) => a + m * S.FC_EFF[k].r, 0) / 90;
+      if (out.my && out.my.cards) out.my.cards.filter(e => (since !== undefined ? e.m > since && e.m <= t : e.m === t) && shown(e)).forEach(e => cardEv(e, since === undefined && e.m === t));
+      if (fl && onPitch && eff) fl.off = eff.mins.reduce((a, m, k) => a + m * S.FC_EFF[k].r, 0) / 90;
       if (fl) lpAt(T, since);
       if ($('lp-strip') && fl) {
         $('lp-strip').innerHTML = U.LP.strip(fl.dom, T, N, stars(), 0);
@@ -2020,6 +2076,13 @@
         const li = mineList(99);
         if (li) body += '<div class="lp-lbl">Seus lances</div><ul class="lp-ml">' + li + '</ul>';
       } else body = '<p class="lp-off">' + (x.injury ? 'Você ficou fora, lesionado.' : 'Você não entrou em campo.') + '</p>';
+      // Faltas, impedimentos e cartões dos dois times (o seu primeiro) e o cartão que pesa no próximo jogo
+      if (m.fo) {
+        const o2 = meSide === 'h' ? 'a' : 'h', pr = k => m[k][meSide] + ' · ' + m[k][o2];
+        body += '<div class="lp-cst"><span>Faltas <b>' + pr('fo') + '</b></span><span>Impedimentos <b>' + pr('of') + '</b></span><span>Cartões <b><i class="cd-y"></i>' + pr('yc') + (m.rc.h + m.rc.a ? ' <i class="cd-r"></i>' + pr('rc') : '') + '</b></span></div>';
+        const cd = out.card;
+        if (cd) body += '<p class="lp-sus ' + (cd.sus ? 'out' : 'pend') + '">' + (cd.sus ? '<b>Suspenso</b> ' + (cd.rc ? 'Cartão vermelho' : 'Terceiro amarelo') + ': você fica fora do próximo jogo.' : cd.n === S.FC_CARD.ycMax - 1 ? '<b>Pendurado</b> ' + cd.n + ' amarelos no ano. O próximo te tira de um jogo.' : '<b>Amarelo</b> ' + cd.n + ' no ano. No ' + S.FC_CARD.ycMax + 'º, um jogo de suspensão.') + '</p>';
+      }
       $('fc-flow').innerHTML = '<div class="lp-endb">' + body + '</div>';
       if (lg) {
         const p = standings('lg').findIndex(r => r.i === 0) + 1;

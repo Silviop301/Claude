@@ -108,7 +108,7 @@
     // Lesão de evento (c.mod.inj): os primeiros jogos do ano no departamento médico
     const myGames = R + 5 + (fc.cont ? 10 : 0);
     fc.injOut = Math.round((c.mod.inj || 0) * myGames);
-    fc.injMiss = 0; fc.injName = fc.injOut ? 'lesão' : null;
+    fc.injMiss = 0; fc.injName = fc.injOut ? 'lesão' : null; fc.yc = 0;
     // Eventos entre os jogos: duas datas no ano (cada uma pode ou não trazer um evento, como na pré-temporada do modo rápido)
     fc.evAt = EV_AT.map(f => Math.max(1, Math.round(f * fc.cal.length))); fc.evNext = 0; fc.evIds = [];
     fc.acc = { games: 0, goals: 0, assists: 0, cs: 0, saves: 0, pen: 0, penFaced: 0, tackles: 0, rsum: 0, slots: 0 };
@@ -535,6 +535,55 @@
   // Mata-mata: empate vai para os pênaltis (um pouco a favor do mais forte)
   const pens = (r, sh, sa) => r() < clamp(0.5 + (sh - sa) / 80, 0.3, 0.7);
 
+  // ---------- faltas, cartões e impedimento ----------
+  // Por time e por jogo: foul faltas, yel amarelos por falta, red vermelhos (direto ou segundo amarelo) dos companheiros e do
+  // rival, off impedimentos, show das faltas sem cartão que o campinho apita (as perigosas). me: o seu jogador por posição,
+  // [amarelo, vermelho direto, segundo amarelo depois do primeiro] (metade do real: suspensão demais derrubava a nota da carreira). ycMax amarelos suspendem um jogo (a conta zera).
+  // Com um a menos, o time faz kRed menos gols e o outro kAdv mais, no tempo que falta
+  const FC_CARD = S.FC_CARD = { foul: 12, yel: 0.16, red: 0.12, off: 2, show: 0.14, ycMax: 3, kRed: 0.25, kAdv: 0.22,
+    me: { GOL: [0.015, 0.0015, 0.02], ZAG: [0.11, 0.005, 0.05], MEI: [0.08, 0.004, 0.04], ATA: [0.04, 0.002, 0.03] }, rYc: -0.25, rRc: -1.2,
+    meK: +((typeof process !== 'undefined' && process.env && process.env.FC_CARDME) || 1) }; // FC_CARDME=0: sem os seus cartões (para medir)
+  const CARD_W = { GOL: 0.08, ZAG: 1.4, LAT: 1.15, VOL: 1.3, MEI: 1, PON: 0.8, ATA: 0.65 }, OFF_W = { ATA: 3, PON: 1.6, MEI: 0.6 };
+  const wPick = (r, W) => { const k = Object.keys(W); let x = r() * k.reduce((a, b) => a + W[b], 0); for (const q of k) { x -= W[q]; if (x <= 0) return q; } return k[0]; };
+  // Os lances de um jogo: ev [{ m, t: falta|amarelo|vermelho|impedimento, s: h|a, pos, me?, how? }] e as contas por time.
+  // me: o seu jogador está em campo (pos: a posição dele); noRed: jogo de lance decisivo (o placar já está escrito)
+  function cardsOf(r, home, me, pos, noRed) {
+    const ev = [], K = { fo: { h: 0, a: 0 }, yc: { h: 0, a: 0 }, rc: { h: 0, a: 0 }, of: { h: 0, a: 0 }, red: { h: 0, a: 0 }, me: null };
+    const mine = home ? 'h' : 'a', mn = () => 1 + Math.floor(r() * 90);
+    ['h', 'a'].forEach(s => {
+      const nf = r.poisson(FC_CARD.foul), ny = r.poisson(FC_CARD.yel * FC_CARD.foul), no = r.poisson(FC_CARD.off);
+      K.fo[s] = nf + ny; K.of[s] = no;
+      for (let i = 0; i < nf; i++) if (r() < FC_CARD.show) ev.push({ m: mn(), t: 'falta', s, pos: wPick(r, CARD_W) });
+      for (let i = 0; i < ny; i++) { ev.push({ m: mn(), t: 'amarelo', s, pos: wPick(r, CARD_W) }); K.yc[s]++; }
+      for (let i = 0; i < no; i++) ev.push({ m: mn(), t: 'impedimento', s, pos: wPick(r, OFF_W) });
+      if (!noRed && r() < FC_CARD.red) { const two = r() < 0.55, m = 20 + Math.floor(r() * 71); ev.push({ m, t: 'vermelho', s, pos: wPick(r, CARD_W), how: two ? '2am' : 'direto' }); K.rc[s]++; if (two) K.yc[s]++; K.red[s] = m; }
+    });
+    // O seu jogador: amarelo, segundo amarelo ou vermelho direto pela posição (o rumo do jogo não muda isso)
+    if (me) {
+      const P = (FC_CARD.me[pos] || FC_CARD.me.MEI).map(v => v * FC_CARD.meK);
+      if (!noRed && r() < P[1]) { const m = 15 + Math.floor(r() * 76); K.me = { rc: m, how: 'direto' }; }
+      else if (r() < P[0]) {
+        const y = 5 + Math.floor(r() * 80); K.me = { yc: y };
+        if (!noRed && r() < P[2]) { K.me.rc = Math.min(90, y + 3 + Math.floor(r() * (90 - y))); K.me.how = '2am'; }
+      }
+      if (K.me) {
+        if (K.me.yc) { ev.push({ m: K.me.yc, t: 'amarelo', s: mine, pos, me: 1 }); K.yc[mine]++; K.fo[mine]++; }
+        if (K.me.rc) { ev.push({ m: K.me.rc, t: 'vermelho', s: mine, pos, me: 1, how: K.me.how }); K.rc[mine]++; K.fo[mine]++; if (!K.red[mine] || K.red[mine] > K.me.rc) K.red[mine] = K.me.rc; }
+      }
+    }
+    ev.sort((x, y) => x.m - y.m);
+    K.ev = ev;
+    return K;
+  }
+  // Minuto de um gol do lado s com expulsões: depois do vermelho do time, menos; depois do vermelho do outro, mais
+  function minuteRed(r, s, red) {
+    const o = s === 'h' ? 'a' : 'h', w = m => (red[s] && m > red[s] ? 1 - FC_CARD.kRed : 1) * (red[o] && m > red[o] ? 1 + FC_CARD.kAdv : 1);
+    for (let i = 0; i < 24; i++) { const m = minute(r); if (r() * (1 + FC_CARD.kAdv) < w(m)) return m; }
+    return minute(r);
+  }
+  // A parte do jogo que cada time joga com um a menos (ou a mais) muda a média de gols
+  const redK = (red, s) => { const o = s === 'h' ? 'a' : 'h', f = m => (m ? (90 - m) / 90 : 0); return (1 - FC_CARD.kRed * f(red[s])) * (1 + FC_CARD.kAdv * f(red[o])); };
+
   // O seu jogo: produção pelo jogador do dia; o resultado pode vir decidido de um lance (force: true venceu, false perdeu)
   function myMatch(c, fc, r, vs, home, comp, knock, force, mo, lc, lok) {
     if (mo && force !== undefined) return scripted(c, fc, r, vs, home, knock, force, mo);
@@ -550,11 +599,14 @@
     const L = comp === 'cont' ? LAM_C : LAM_D;
     let [lu, lt] = home ? lam(us, them, L) : lam(them, us, L).reverse();
     if (on && X.isDef) lt *= Math.exp(-X.def / 22);
+    // Faltas, cartões e impedimentos (antes dos gols: quem fica com um a menos sente no placar)
+    const ms = home ? 'h' : 'a', os = home ? 'a' : 'h', K = cardsOf(r, home, on, c.pos), kU = redK(K.red, ms), kT = redK(K.red, os);
+    const meOut = K.me && K.me.rc ? K.me.rc / 90 : 1; // expulso, você marca só até sair
     // Seus gols saem do total do time (o craque marca parte dos gols que o time faria)
-    let mg = on ? r.poisson(Math.max(0, X.g90 * FC_K.g - (c.pos !== 'MEI' ? Lq : 0))) : 0;
-    const tm = Math.max(0.05, lu - (on ? X.g90 * FC_K.g : 0)), tmL = c.pos === 'MEI' ? Math.max(0.05, tm - Lq) : tm;
+    let mg = on ? r.poisson(Math.max(0, X.g90 * FC_K.g * kU * meOut - (c.pos !== 'MEI' ? Lq : 0))) : 0;
+    const tm = Math.max(0.05, lu - (on ? X.g90 * FC_K.g : 0)) * kU, tmL = c.pos === 'MEI' ? Math.max(0.05, tm - Lq) : tm;
     let ug = mg + r.poisson(tmL);
-    let tg = r.poisson(Math.max(0, lt + (Ldef ? Math.log(Math.max(0.05, Lp)) : 0)));
+    let tg = r.poisson(Math.max(0, lt * kT + (Ldef ? Math.log(Math.max(0.05, Lp)) : 0)));
     // Resultado decidido no lance: venceu (gol seu no fim, ou o zero segurado) ou perdeu
     if (force === true && ug <= tg) { ug = tg + 1; if (on && !X.isDef) mg++; }
     if (force === false && ug >= tg) { if (knock) tg = ug + 1; else if (ug > tg) ug = tg; else tg = ug + 1; mg = Math.min(mg, ug); }
@@ -565,11 +617,14 @@
     let tackles = on && c.pos === 'ZAG' ? r.poisson(X.tackles) : 0;
     // Minutos dos gols; os seus marcados (e as assistências nos outros gols do time)
     const ev = [];
-    for (let i = 0; i < ug; i++) ev.push({ m: minute(r), s: home ? 'h' : 'a' });
-    for (let i = 0; i < tg; i++) ev.push({ m: minute(r), s: home ? 'a' : 'h' });
+    for (let i = 0; i < ug; i++) ev.push({ m: minuteRed(r, ms, K.red), s: ms });
+    for (let i = 0; i < tg; i++) ev.push({ m: minuteRed(r, os, K.red), s: os });
     ev.sort((x, y) => x.m - y.m);
     const ours = ev.filter(e => e.s === (home ? 'h' : 'a'));
-    const pick = ours.map(e => [r(), e]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+    // Seus gols e assistências só antes de você sair (expulso)
+    const pick = ours.map(e => [K.me && K.me.rc && e.m > K.me.rc ? 2 + r() : r(), e]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+    if (K.me && K.me.rc) { const before = ours.filter(e => e.m <= K.me.rc).length; mg = Math.min(mg, before); }
+    if (K.me && K.me.rc) ma = Math.min(ma, Math.max(0, ours.filter(e => e.m <= K.me.rc).length - mg));
     pick.slice(0, mg).forEach(e => { e.me = 1; });
     pick.slice(mg, mg + ma).forEach(e => { e.as = 1; });
     // Lance decisivo vencido: o gol da vitória é no fim
@@ -590,11 +645,13 @@
       const res3 = ug > tg ? 3 : ug === tg ? 1 : 0;
       const perGame = X.isDef ? (cs ? 0.85 : 0) + (mg * 1.2 + ma * 0.5) / S.GOAL_SCALE + saves * 0.35 + penSaved * 0.6 + tackles * 0.2 : (mg + ma * 0.7) / S.GOAL_SCALE;
       rating = clamp(Math.round((6.1 + S.RATING_ADJ[c.pos] + perGame * 2.4 * (X.isDef ? 0.75 : 1) + Math.min(X.o - club.strength, S.RATING_GAP) * 0.03 + X.trt +
-        (res3 === 3 ? 0.2 : res3 === 0 ? -0.25 : 0) + r.gauss() * 0.55 * X.sd + (LC && (LC.duel || Ldef) ? (lok ? 0.4 * (1 - Lp) : -0.4 * Lp) : 0)) * 10) / 10, 4.5, 10);
+        (res3 === 3 ? 0.2 : res3 === 0 ? -0.25 : 0) + r.gauss() * 0.55 * X.sd + (LC && (LC.duel || Ldef) ? (lok ? 0.4 * (1 - Lp) : -0.4 * Lp) : 0) +
+        (K.me ? (K.me.rc ? FC_CARD.rRc : FC_CARD.rYc) : 0)) * 10) / 10, 4.5, 10);
     }
     let won = ug > tg;
     if (knock && ug === tg) won = force === undefined ? pens(r, us, them) : force;
-    return { vs, home, gf: ug, ga: tg, on, goals: mg, assists: ma, cs: on && cs, saves, penFaced, penSaved, tackles, rating, ev, won, pens: knock && ug === tg };
+    return { vs, home, gf: ug, ga: tg, on, goals: mg, assists: ma, cs: on && cs, saves, penFaced, penSaved, tackles, rating, ev, won, pens: knock && ug === tg,
+      cards: K.ev, fo: K.fo, yc: K.yc, rc: K.rc, of: K.of, meCard: K.me };
   }
   // Assistências do meia com o lance: a média que, limitada aos gols dos companheiros (já sem o lance), dá a de sempre
   // menos a chance do lance virar assistência (q). Média de min(T, A) com T e A de Poisson: soma de P(T≥k)·P(A≥k)
@@ -643,7 +700,9 @@
     const saves = c.pos === 'GOL' ? r.poisson(X.saves) + (def && ok ? 1 : 0) : 0, tackles = c.pos === 'ZAG' ? r.poisson(X.tackles) + (def && ok ? 1 : 0) : 0;
     const rating = rateOf(c, X, club, r, ug, tg, mg, ma, cs, saves, 0, tackles);
     const won = ug > tg || (knock && ug === tg && !pensLost && ok);
-    return { vs, home, gf: ug, ga: tg, on, goals: mg, assists: ma, cs, saves, penFaced: 0, penSaved: 0, tackles, rating, ev, won, pens: knock && ug === tg };
+    const K = cardsOf(r, home, false, c.pos, true);
+    return { vs, home, gf: ug, ga: tg, on, goals: mg, assists: ma, cs, saves, penFaced: 0, penSaved: 0, tackles, rating, ev, won, pens: knock && ug === tg,
+      cards: K.ev, fo: K.fo, yc: K.yc, rc: K.rc, of: K.of, meCard: null };
   }
 
   // ---------- próximo jogo ----------
@@ -682,7 +741,7 @@
       const { r, save } = rngOf(fc), X = myRates(c, club);
       let on = false, why = '';
       if (vs) {
-        if (fc.injOut > 0) { why = 'lesão'; }
+        if (fc.injOut > 0) { why = S.fcSuspended(c) ? 'suspensão' : 'lesão'; }
         // Fisioterapeuta particular: lesão 30% mais curta
         else if (r() < X.injRisk / 30) { fc.injOut = 1 + Math.floor(r.range(0.08, 0.32) * 40 * (c.staff && c.staff.physio ? 0.7 : 1)); fc.injName = r.pick(['lesão na coxa', 'entorse no tornozelo', 'problema muscular', 'lesão na panturrilha', 'estiramento na virilha', 'lesão no joelho']); why = 'lesão'; }
         // Jogo grande (finais, mata-mata continental): o técnico escala quem está melhor
@@ -854,7 +913,8 @@
       out.my = my;
       const A = fc.acc;
       A.slots++;
-      if (fc.injOut > 0 && !my.on) { fc.injOut--; fc.injMiss++; }
+      if (fc.injOut > 0 && !my.on) { if (!S.fcSuspended(c)) fc.injMiss++; fc.injOut--; }
+      if (my.on && my.meCard) out.card = cardFx(c, fc, my.meCard);
       if (my.on) {
         A.games++; A.goals += my.goals; A.assists += my.assists; A.cs += my.cs ? 1 : 0; A.saves += my.saves; A.pen += my.penSaved; A.penFaced += my.penFaced; A.tackles += my.tackles; A.rsum += my.rating;
         // Pontos de evolução jogo a jogo (até o limite do ano)
@@ -943,6 +1003,35 @@
   };
   // Substituído no minuto m (sem fôlego): o placar não muda, mas gol e assistência seus depois disso viram do time e a nota
   // fica a que você tinha quando saiu (rating, da partida ao vivo)
+  // O cartão do seu jogador depois do jogo: vermelho tira do próximo; o amarelo soma e, no terceiro, também
+  function cardFx(c, fc, K) {
+    if (K.rc) {
+      fc.injOut = Math.max(fc.injOut, 1); fc.injName = 'suspensão (cartão vermelho)';
+      c.rel.coach = clamp(c.rel.coach - 4, 0, 100);
+      return { rc: K.rc, how: K.how, sus: 1 };
+    }
+    fc.yc = (fc.yc || 0) + 1;
+    if (fc.yc >= FC_CARD.ycMax) { fc.yc = 0; fc.injOut = Math.max(fc.injOut, 1); fc.injName = 'suspensão (3 amarelos)'; return { yc: K.yc, sus: 1, three: true }; }
+    return { yc: K.yc, n: fc.yc };
+  }
+  S.fcYc = c => (c.fc && c.fc.yc) || 0; // amarelos acumulados (pendurado com FC_CARD.ycMax - 1)
+  // Ao vivo, com amarelo e o esforço lá em cima, vem o segundo: vermelho no minuto m (sai como substituído, nota cai, suspenso)
+  S.FC_LIVE_2AM = [0.0005, 0.0015, 0.004]; // por minuto, por esforço (Poupar, Normal, Tudo)
+  S.fcLiveRed = function (c, out, m, rating) {
+    const fc = c.fc, my = out && out.my;
+    if (!fc || !my || !my.on || !my.meCard || !my.meCard.yc || my.meCard.rc || my.subAt) return null;
+    const card = out.card || {};
+    // O amarelo de hoje não soma (vira vermelho); se tinha completado os três, a suspensão continua a mesma
+    if (!card.three && fc.yc > 0) fc.yc--;
+    my.meCard.rc = m; my.meCard.how = '2am';
+    my.cards.push({ m, t: 'vermelho', s: my.home ? 'h' : 'a', pos: c.pos, me: 1, how: '2am' });
+    const s = my.home ? 'h' : 'a'; my.rc[s]++; my.yc[s]++;
+    fc.injOut = Math.max(fc.injOut, 1); fc.injName = 'suspensão (cartão vermelho)';
+    c.rel.coach = clamp(c.rel.coach - 4, 0, 100);
+    out.card = { rc: m, how: '2am', sus: 1 };
+    S.fcSub(c, out, m, (rating === undefined ? my.rating : rating) + FC_CARD.rRc);
+    return out.card;
+  };
   S.fcSub = function (c, out, m, rating) {
     const fc = c.fc, my = out && out.my;
     if (!fc || !my || !my.on || my.subAt) return null;
