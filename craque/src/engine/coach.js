@@ -426,7 +426,7 @@
       const mu = matchup(H, A, true), x = mu.lh / mu.la, u = mu.h, o = mu.a;
       // O porquê, por setor: o que mais pesou a favor e contra
       const sec = { meio: u.poss - 0.5, lados: u.flank * u.wsh - o.flank * o.wsh, area: u.central * (1 - u.wsh) - o.central * (1 - o.wsh), pressao: u.press - o.press, contra: 1.6 * (u.counter - o.counter) };
-      return { v: x > 1 + CAD_K ? 'up' : x < 1 - CAD_K ? 'down' : 'eq', x, sec };
+      return { v: H.form === A.form && H.style === A.style ? 'eq' : x > 1 + CAD_K ? 'up' : x < 1 - CAD_K ? 'down' : 'eq', x, sec };
     };
     const T = { sty: {}, frm: {} };
     S.CO_STYLES.forEach(a => S.CO_STYLES.forEach(b => { T.sty[a + '|' + b] = cell(side('4-4-2', a), side('4-4-2', b)); }));
@@ -435,7 +435,15 @@
     return (CAD_T = T);
   }
   S.coCadTruth = cadTruth;
-  const cadOf = co => co.cad || (co.cad = { sty: {}, frm: {}, riv: {}, aux: [] });
+  // O espelho (o mesmo estilo ou a mesma formação dos dois lados) é sempre "=": nem o lápis erra ali. Saves de antes
+  // desta regra podem ter uma seta a lápis no espelho: vira "=" ao abrir
+  const cadMirror = ab => { const [a, b] = ab.split('|'); return a === b; };
+  const cadOf = co => {
+    if (!co.cad) co.cad = { sty: {}, frm: {}, riv: {}, aux: [] };
+    else if (!co.cad.mir) { ['sty', 'frm'].forEach(k => Object.keys(co.cad[k]).forEach(ab => { if (cadMirror(ab)) { const c = co.cad[k][ab]; c.v = 'eq'; c.ok = true; c.fix = false; } })); }
+    co.cad.mir = 1;
+    return co.cad;
+  };
   S.coCad = cadOf;
   S.CO_CAD_SEC = { meio: 'Meio de campo', lados: 'Lados', area: 'Área', pressao: 'Pressão', contra: 'Contra-ataque' };
   // Quantas casas anota por jogo e a chance de o lápis estar certo
@@ -472,7 +480,7 @@
       if (c && c.pen) { if (seen.length < 1) seen.push({ k, ab, v: c.v }); return; }
       if (notes.length >= per) return;
       if (!c) {
-        const ok = r() < acc, v = ok ? t.v : r.pick(['up', 'down', 'eq'].filter(x => x !== t.v));
+        const ok = cadMirror(ab) || r() < acc, v = ok ? t.v : r.pick(['up', 'down', 'eq'].filter(x => x !== t.v));
         cad[k][ab] = { v, pen: false, ok, from: [from] };
         notes.push({ k, ab, v, pen: false, prev: null });
       } else {
