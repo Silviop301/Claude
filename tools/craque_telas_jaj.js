@@ -81,13 +81,13 @@ const INIT = `
   await shot('celular');
   const apps = [['msg', 'chat-vazio'], ['ag', 'agenda'], ['tbl', 'tabela'], ['cal', 'jogos'], ['me', 'ficha'], ['shop', 'loja'], ['bet', 'ze']];
   for (const [k, nome] of apps) {
-    await tap('.ph-app[data-go="' + k + '"]');
+    await tap('.p2-app[data-go="' + k + '"]');
     await shot('app-' + nome);
     if (await has('#fc-agok')) await tap('#fc-agok'); else if (await has('#fc-back')) await tap('#fc-back');
   }
   // Fase 6: as metas do ano na agenda, com o sonho escolhido, e o legado na ficha
   if (await page.evaluate(() => !!window.CRAQUE_SIM.fcGoals)) {
-    await tap('.ph-app[data-go="ag"]');
+    await tap('.p2-app[data-go="ag"]');
     await page.evaluate(() => { const g = document.querySelector('.ag-goals'); if (g) g.scrollIntoView({ block: 'center' }); }); await shot('agenda-metas');
     if (await has('[data-dream]')) { await tap('[data-dream]'); await page.evaluate(() => { const g = document.querySelector('.ag-goals'); if (g) g.scrollIntoView({ block: 'center' }); }); await shot('agenda-sonho'); }
     await tap('#fc-agok');
@@ -95,49 +95,49 @@ const INIT = `
   // Fase 3, parte 2: o Zé no Chat (palpite, aposta ali mesmo e a proposta do amarelo)
   if (await page.evaluate(() => !!window.CRAQUE_SIM.fcZeAsk)) {
     await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; c.money = Math.max(c.money || 0, 400000); });
-    await tap('.ph-app[data-go="msg"]'); await tap('[data-ch="ze"]');
+    await tap('.p2-app[data-go="msg"]'); await tap('[data-ch="ze"]');
     if (await has('#ze-ask')) { await tap('#ze-ask'); await shot('chat-ze-palpite'); }
     if (await has('[data-zt]')) { await tap('[data-zt]'); await shot('chat-ze-aposta'); }
     await page.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, c = U.G.c; c.fc.fix = { i: c.fc.i, pay: S.fcFixPay(c), min: 23, st: 'open' }; S.fcZeSync(c); });
     await tap('#fc-back'); await tap('[data-ch="ze"]'); await shot('chat-ze-proposta');
     await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; c.fc.fix = null; });
-    await tap('#fc-home');
+    await tap('#fc-back'); await tap('#fc-back');
   }
   // Fase 3: loja com carro e casa (manutenção por semana) e a conta no vermelho
   if (await page.evaluate(() => !!window.CRAQUE_SIM.fcUpkeep)) {
     await page.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, c = U.G.c; c.money = 0; c.life = c.life || {}; c.life.car = 'c3'; c.life.house = c.season;
       c.life.paid = { car: S.fcCarPrice(c, 'c3'), house: S.fcLifePrice(c, 'house') }; c.life.mt = { car: S.fcUpkeepOf(c, 'car', 'c3'), house: S.fcUpkeepOf(c, 'life', 'house') }; c.debt = S.fcWeekPay(c) * 6; });
-    await tap('.ph-app[data-go="shop"]'); await shot('loja-divida');
+    await tap('.p2-app[data-go="shop"]'); await shot('loja-divida');
     if (await has('#fc-back')) await tap('#fc-back');
-    if (await has('.ph-app[data-go="bank"]')) { await shot('celular-no-vermelho'); await tap('.ph-app[data-go="bank"]'); await shot('banco-divida'); if (await has('[data-way="adv"]:not(:disabled)')) { await tap('[data-way="adv"]'); await shot('banco-adiantamento'); } await tap('#fc-back'); }
+    if (await has('.p2-app[data-go="bank"]')) { await shot('celular-no-vermelho'); await tap('.p2-app[data-go="bank"]'); await shot('banco-divida'); if (await has('[data-way="adv"]:not(:disabled)')) { await tap('[data-way="adv"]'); await shot('banco-adiantamento'); } await tap('#fc-back'); }
     if (await page.evaluate(() => !!window.CRAQUE_SIM.fcInvBuy)) {
       await page.evaluate(() => { const S = window.CRAQUE_SIM, c = window.CRAQUE_UI.G.c; c.debt = 0; if (c.fin) c.fin.adv = null; c.money = S.fcInvPrice(c) * 3; S.fcInvBuy(c, 'imovel'); });
-      await tap('.ph-app[data-go="bank"]'); await page.evaluate(() => { const b = document.querySelector('.pa-body'); if (b) b.scrollTop = 400; }); await shot('banco-investir'); await tap('#fc-back');
-      await tap('.ph-app[data-go="shop"]'); await page.evaluate(() => { const f = document.getElementById('fc-party'); if (f) f.scrollIntoView({ block: 'center' }); }); await shot('loja-festa'); await tap('#fc-back');
+      await tap('.p2-app[data-go="bank"]'); await page.evaluate(() => { const b = document.querySelector('.pa-body'); if (b) b.scrollTop = 400; }); await shot('banco-investir'); await tap('#fc-back');
+      await tap('.p2-app[data-go="shop"]'); await page.evaluate(() => { const f = document.getElementById('fc-party'); if (f) f.scrollIntoView({ block: 'center' }); }); await shot('loja-festa'); await tap('#fc-back');
     }
     await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; c.debt = 0; c.life = {}; });
   }
 
   // Fase 4: o app Mercado antes da janela, com a janela aberta (duas propostas) e depois de assinar (a liga nova na tabela)
   if (!process.env.SEM_MERCADO && await page.evaluate(() => !!window.CRAQUE_SIM.fcMove)) {
-    await tap('.ph-app[data-go="mkt"]'); await shot('mercado-antes'); await tap('#fc-back');
+    await tap('.p2-app[data-go="mkt"]'); await shot('mercado-antes'); await tap('#fc-back');
     // Sondagem: dois jogos antes da janela
     await page.evaluate(() => { const S = window.CRAQUE_SIM, D = window.CRAQUE_DATA, c = window.CRAQUE_UI.G.c, fc = c.fc, cur = D.CLUB_BY_ID[c.club];
       const up = D.CLUBS.filter(x => x.league !== cur.league && x.strength > cur.strength + 3).sort((a, b) => a.strength - b.strength).slice(0, 2);
       fc.mwAt = fc.i + 2; fc.mw = { at: fc.i + 2, s: c.season, sond: up.map(x => Object.assign(S.offerFor(c, x.id, 'up'), { mid: true })), offers: [], st: 'rumor', told: true, g0: fc.acc.games, r0: fc.acc.rsum }; });
-    await shot('celular-sondagem'); await tap('.ph-app[data-go="mkt"]'); await shot('mercado-sondagem'); await tap('#fc-back');
+    await shot('celular-sondagem'); await tap('.p2-app[data-go="mkt"]'); await shot('mercado-sondagem'); await tap('#fc-back');
     await page.evaluate(() => { const S = window.CRAQUE_SIM, D = window.CRAQUE_DATA, c = window.CRAQUE_UI.G.c, fc = c.fc, cur = D.CLUB_BY_ID[c.club];
       const up = D.CLUBS.filter(x => x.league !== cur.league && x.strength > cur.strength + 3).sort((a, b) => a.strength - b.strength)[0], mid = D.CLUBS.filter(x => x.league === cur.league && x.id !== cur.id && x.strength < cur.strength)[0];
       fc.mwAt = fc.i; fc.mw = { at: fc.i, s: c.season, offers: [up, mid].filter(Boolean).map((x, k) => Object.assign(S.offerFor(c, x.id, k ? 'mid' : 'up', k ? 0 : Math.round(c.wage * 1.5 / 1000) * 1000), { mid: true })), st: 'open' }; });
     await shot('celular-janela');
-    await tap('.ph-app[data-go="mkt"]'); await shot('mercado-janela');
+    await tap('.p2-app[data-go="mkt"]'); await shot('mercado-janela');
     await page.evaluate(() => { const b = document.querySelector('.pa-body'); if (b) b.scrollTop = 9999; }); await shot('mercado-propostas');
     if (await has('#mk-renew:not(:disabled)')) { await tap('#mk-renew'); await tap('.ask-wrap [data-a="ok"]'); await page.evaluate(() => { const b = document.querySelector('.pa-body'); if (b) b.scrollTop = 9999; }); await shot('mercado-aumento'); }
     await page.evaluate(() => { const b = document.querySelector('.pa-body'); if (b) b.scrollTop = 0; });
     await tap('.mk-offers .of-sign[data-i="0"]'); await shot('mercado-confirmar');
     await tap('.ask-wrap [data-a="ok"]'); await shot('mercado-assinou'); await tap('#fc-back');
-    await tap('.ph-app[data-go="tbl"]'); await shot('tabela-clube-novo'); await tap('#fc-back');
-    await tap('.ph-app[data-go="cal"]'); await shot('jogos-clube-novo'); await tap('#fc-back');
+    await tap('.p2-app[data-go="tbl"]'); await shot('tabela-clube-novo'); await tap('#fc-back');
+    await tap('.p2-app[data-go="cal"]'); await shot('jogos-clube-novo'); await tap('#fc-back');
   }
 
   // Jogos resumidos ou no banco (um cartão só) até o primeiro jogo vivido; depois o "Resumir" de uma vez
@@ -183,17 +183,17 @@ const INIT = `
   for (let k = 0; k < 10 && !(await has('#fc-play')) && !(await has('#screen .btn.opt[data-i]')); k++) await wait(300);
   if (await has('#fc-skip2')) { await tap('#fc-skip2'); await shot('resumir'); await tap('#fc-next'); for (let k = 0; k < 15 && !(await has('#fc-play')); k++) await wait(400); }
   // As pessoas do celular (fase 2): as mensagens do caminho, a lista do Chat e uma conversa
-  if (await has('.ph-app[data-go="msg"]')) {
+  if (await has('.p2-app[data-go="msg"]')) {
     await shot('celular-com-mensagens');
-    await tap('.ph-app[data-go="msg"]'); await shot('chat');
+    await tap('.p2-app[data-go="msg"]'); await shot('chat');
     if (await has('[data-ch]')) { await tap('[data-ch]'); await shot('chat-conversa'); await tap('#fc-back'); }
     await tap('#fc-back'); await wait(400);
   }
   // Convites da semana na agenda (fase 2, parte 2): garante dois para a foto, responde o arriscado
   const temConvite = await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; if (!window.CRAQUE_SIM.fcInvites) return false; c.fc.wkDue = true; // só para a foto: a semana aberta de novo
     if (!(c.fc.inv || []).length) c.fc.inv = [{ id: 'bar1', ti: 0, x: '', ans: null }, { id: 'faltas', ti: 0, x: '', ans: null }]; c.ppl.st = c.ppl.st || {}; c.ppl.st.bar = c.ppl.st.bar || { n: 1, due: 999, f: {} }; return true; });
-  if (temConvite && (await has('.ph-app[data-go="ag"]'))) {
-    await tap('.ph-app[data-go="ag"]'); await shot('agenda-convites');
+  if (temConvite && (await has('.p2-app[data-go="ag"]'))) {
+    await tap('.p2-app[data-go="ag"]'); await shot('agenda-convites');
     if (await has('[data-inv][data-a="b"]')) { await tap('[data-inv][data-a="b"]'); await shot('agenda-convite-respondido'); }
     await tap('#fc-agok'); await wait(400);
     await shot('celular-repercussao'); // a resposta virou assunto no X (fase 2, parte 4)

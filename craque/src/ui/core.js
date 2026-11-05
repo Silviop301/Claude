@@ -366,5 +366,5 @@
     });
   }
 
-  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg };
+  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg, totOf, titlesOf, toHome };
 })();
