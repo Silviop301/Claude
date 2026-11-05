@@ -168,6 +168,26 @@ const INIT = `
   await shot('partida-antes');
   await page.evaluate(() => { window.CLIMBIX_NAT = 1; window.CRAQUE_UI.G.c.age = Math.max(window.CRAQUE_UI.G.c.age, 19); }); // fase 5: a linha da seleção no jornal
   await page.click('#fc-kick'); await wait(300);
+  // CONF=1: confere a cada 200 ms se a legenda, a faixa clara e a posse batem com a bola do campinho (ui/livesim.js), e tira
+  // fotos em sequência no 1× (partida-quadro-N) para ver o movimento
+  if (process.env.CONF) {
+    await page.evaluate(() => {
+      const R = window.__conf = { n: 0, bad: [] };
+      setInterval(() => {
+        const sim = window.CRAQUE_UI.LP._sim, z = document.getElementById('lp-zone'), b = document.getElementById('lp-band'), pe = document.getElementById('lp-pos');
+        if (!sim || !z || !b || !document.getElementById('lp-cv')) return;
+        const i = sim.info(); if (i.mode !== 'play') return;
+        R.n++;
+        const third = i.sx < 100 / 3 ? 'l' : i.sx > 200 / 3 ? 'r' : 'c', mineTxt = /^[^:]*/.exec(z.textContent)[0];
+        const head = document.querySelectorAll('.lp-tm'), me = document.querySelector('.lp-tm.me span').textContent, op = [...head].find(e => !e.classList.contains('me')).querySelector('span').textContent;
+        const team = i.side === 0 ? me : op;
+        if (!b.classList.contains(third) && Math.abs(i.sx - 100 / 3) > 4 && Math.abs(i.sx - 200 / 3) > 4) R.bad.push('faixa ' + b.className + ' bola ' + i.sx.toFixed(0));
+        if (!mineTxt.startsWith(team) && !/Gol|Saída|Tiro/.test(mineTxt)) R.bad.push('legenda "' + z.textContent + '" com a bola do ' + team);
+        if (pe.textContent !== 'Posse ' + Math.round(i.posse * 100) + '%' && Math.abs(parseInt(pe.textContent.slice(6)) - i.posse * 100) > 2) R.bad.push('posse ' + pe.textContent + ' x ' + Math.round(i.posse * 100));
+      }, 200);
+    });
+    for (let q = 1; q <= 6; q++) { await wait(1700); await shot('partida-quadro-' + q); }
+  }
   await page.click('#fc-fast', { timeout: 5000 }).catch(() => {}); await wait(9000); // 3× (a partida em 1× dura uns 2 minutos)
   await shot('partida-ao-vivo');
   // O lance do jogo pode vir antes ou depois do intervalo
@@ -181,6 +201,7 @@ const INIT = `
   await lance();
   await page.waitForSelector('#fc-jn, #fc-next', { timeout: 60000 });
   if (await has('#fc-jn')) { await shot('partida-fim'); await tap('#fc-jn'); await page.waitForSelector('#fc-next', { timeout: 8000 }); }
+  if (process.env.CONF) { const R = await page.evaluate(() => window.__conf); console.log('CONFERÊNCIA campinho x textos:', R.n, 'checagens ·', R.bad.length, 'desencontros', JSON.stringify(R.bad.slice(0, 8))); }
   await shot('jornal');
   await tap('#fc-next');
   for (let k = 0; k < 10 && !(await has('#fc-play')) && !(await has('#screen .btn.opt[data-i]')); k++) await wait(300);

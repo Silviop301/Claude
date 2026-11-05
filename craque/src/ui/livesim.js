@@ -16,6 +16,8 @@
   const segD = (px, py, ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy || 1, u = cl(((px - ax) * dx + (py - ay) * dy) / l2, 0, 1); return Math.hypot(px - ax - dx * u, py - ay - dy * u); };
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   const toW = (s, x, y) => (s ? [L - x, WD - y] : [x, y]);
+  // Avançar vale por si (time que só roda a bola atrás não é futebol), quem chega perto chuta, e o bote dá certo 3 vezes em 10
+  const PROG = 0.05, SHOT = 1.6, TK = 0.3;
   const tf = (s, o) => (s ? [L - o.x, WD - o.y] : [o.x, o.y]);
 
   // o: { me: índice do seu jogador (-1 fora), num, seed, goals: [{ m, side: 0 seu time | 1, me, as }], t0, speed(): 1|3 }
@@ -38,6 +40,7 @@
     let curT = o.t0 || 0, mClk = 0, bxT = 50, lastPasser = null, lastPassClk = -9, frozen = false, en = null, cv = null, g = null, W = 0, H = 0, dpr = 1, raf = 0, last = 0, alive = true;
     const goals = (o.goals || []).map(e => ({ m: e.m, side: e.side, me: !!e.me, as: !!e.as, done: e.m <= (o.t0 || 0) && (o.t0 || 0) > 0 }));
     let due = null; // o gol do motor que está para sair
+    const acc = { x: 0, n: 0 }, pt = [0, 0]; // quem mandou no minuto (média) e tempo de posse de cada time
 
     function lineOf(s) { let m = 0; T[1 - s].forEach(q => { if (q.r !== 'GK') m = Math.max(m, tf(s, q)[0]); }); return Math.max(m, L / 2); }
     function shapeOf(p, has, bx, by, line) {
@@ -144,15 +147,16 @@
         const od = passOdds(s, tx, ty, lofted, q, kind === 'costas');
         let val = V(tx, ty) + (kind === 'costas' ? 0.06 : 0) + (kind === 'cruz' ? 0.05 : 0) + (q === lastPasser && q.go > 0 && clk - lastPassClk < 2.5 ? 0.02 : 0) + (isMe(q) && tx > 70 ? 0.03 : 0);
         if (tx < bx - 2) val *= 0.9;
+        val += PROG * (tx - bx) / 30;
         opts.push({ type: 'pass', kind, q, wx: od.wx, wy: od.wy, lofted, od, p: od.p, u: od.p * val - (1 - od.p) * lossAt((bx + tx) / 2, (by + ty) / 2) });
       }
       if (p.r !== 'GK') for (const a of [0, 0.6, -0.6]) {
         const tx = cl(bx + Math.cos(a) * 9, 2, 101), ty = cl(by + Math.sin(a) * 9, 3, 65), [wx, wy] = toW(s, tx, ty);
         let near = 99; for (const op of opp) near = Math.min(near, segD(op.x, op.y, p.x, p.y, wx, wy));
         const drib = press < 3.2, pk = drib ? cl(0.42 + (near - 1.5) * 0.08 + (bias[s] - 1) * 0.6, 0.12, 0.6) : cl(sig((near - 2.2) * 1.8) + (bias[s] - 1) * 0.4, 0.05, 0.97);
-        opts.push({ type: 'carry', kind: drib ? 'drible' : 'conduz', wx, wy, p: pk, presser, u: pk * V(tx, ty) - (1 - pk) * lossAt(bx, by) + (!drib && near > 5 ? 0.008 : 0) });
+        opts.push({ type: 'carry', kind: drib ? 'drible' : 'conduz', wx, wy, p: pk, presser, u: pk * (V(tx, ty) + PROG * Math.cos(a) * 9 / 30) - (1 - pk) * lossAt(bx, by) + (!drib && near > 5 ? 0.008 : 0) });
       }
-      if (p.r !== 'GK' && bx > 62) { const xg = shotXg(s, bx, by, false); opts.push({ type: 'shot', kind: Math.hypot(L - bx, 34 - by) > 20 ? 'fora' : 'chute', u: xg }); }
+      if (p.r !== 'GK' && bx > 62) { const xg = shotXg(s, bx, by, false); opts.push({ type: 'shot', kind: Math.hypot(L - bx, 34 - by) > 20 ? 'fora' : 'chute', u: xg * SHOT }); }
       if (!opts.length) { ball.hold = 0.3; return; }
       let best = opts[0], bu = -1e9;
       for (const op of opts) { const u = op.u * (1 + 0.28 * gauss() * p.risk) + 0.004 * gauss(); if (u > bu) { bu = u; best = op; } }
@@ -220,6 +224,9 @@
       return toW(s, x, y);
     }
     function play(dt) {
+      // Quem manda no minuto: ter a bola e levar para a frente (com a bola atrás quase empata; sem ela, perde)
+      const sd = ball.owner ? ball.owner.side : poss, ax = tf(sd, ball)[0] / L * 100, ctl = cl(55 + (ax - 25) * 0.6, 40, 100);
+      acc.x += sd ? 100 - ctl : ctl; acc.n++; pt[sd] += dt;
       // Quem está melhor vem do motor (a bola de flowOf); o resto é o jogo
       momT -= dt; if (momT <= 0) { momT = 4 + rnd() * 5; mom = gauss() * 0.08; }
       const nxt = goals.find(e => !e.done && e.m >= curT - 1 && e.m <= curT + 3);
@@ -264,7 +271,7 @@
         if (ball.rcv <= 0 && p.r !== 'GK' && !(due && due.side === p.side)) for (const d of T[1 - p.side]) {
           if (d.cd > 0 || d.stun > 0 || d.r === 'GK' || dist(d, p) > 1.7) continue;
           d.cd = 0.8;
-          if (rnd() < cl(0.3 - (bias[p.side] - 1) * 0.8, 0.1, 0.55)) { setOwner(d); emit('desarme', d.side, d, p); break; }
+          if (rnd() < cl(TK - (bias[p.side] - 1) * 0.8, 0.08, 0.5)) { setOwner(d); emit('desarme', d.side, d, p); break; }
           d.stun = 0.45;
         }
         if (ball.owner === p && !ball.carry && ball.hold <= 0) decide(p);
@@ -334,7 +341,8 @@
 
     // ---------- desenho (o gramado listrado vem do CSS) ----------
     const PAD = 10;
-    const X = x => PAD + x / L * (W - 2 * PAD), Y = y => PAD + y / WD * (H - 2 * PAD);
+    // Fora de casa o seu time fica à direita (como no placar) e ataca para a esquerda: só o desenho espelha
+    const X = x => PAD + (o.flip ? L - x : x) / L * (W - 2 * PAD), Y = y => PAD + y / WD * (H - 2 * PAD);
     function size() {
       if (!cv) return;
       const r = cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1;
@@ -343,14 +351,16 @@
       cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
     }
     function lines() {
+      // As linhas são simétricas: desenha sem espelhar (espelhado, as larguras sairiam negativas)
+      const XL = x => PAD + x / L * (W - 2 * PAD);
       g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 2;
-      g.strokeRect(X(0), Y(0), X(L) - X(0), Y(WD) - Y(0));
-      g.beginPath(); g.moveTo(X(52.5), Y(0)); g.lineTo(X(52.5), Y(WD)); g.stroke();
-      g.beginPath(); g.ellipse(X(52.5), Y(34), X(9.15) - X(0), Y(9.15) - Y(0), 0, 0, Math.PI * 2); g.stroke();
-      const bw = X(16.5) - X(0), sw = X(5.5) - X(0);
-      g.strokeRect(X(0), Y(13.85), bw, Y(54.15) - Y(13.85)); g.strokeRect(X(L) - bw, Y(13.85), bw, Y(54.15) - Y(13.85));
-      g.strokeRect(X(0), Y(24.85), sw, Y(43.15) - Y(24.85)); g.strokeRect(X(L) - sw, Y(24.85), sw, Y(43.15) - Y(24.85));
-      g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(X(0) - 4, Y(GL), 4, Y(GR) - Y(GL)); g.fillRect(X(L), Y(GL), 4, Y(GR) - Y(GL));
+      g.strokeRect(XL(0), Y(0), XL(L) - XL(0), Y(WD) - Y(0));
+      g.beginPath(); g.moveTo(XL(52.5), Y(0)); g.lineTo(XL(52.5), Y(WD)); g.stroke();
+      g.beginPath(); g.ellipse(XL(52.5), Y(34), XL(9.15) - XL(0), Y(9.15) - Y(0), 0, 0, Math.PI * 2); g.stroke();
+      const bw = XL(16.5) - XL(0), sw = XL(5.5) - XL(0);
+      g.strokeRect(XL(0), Y(13.85), bw, Y(54.15) - Y(13.85)); g.strokeRect(XL(L) - bw, Y(13.85), bw, Y(54.15) - Y(13.85));
+      g.strokeRect(XL(0), Y(24.85), sw, Y(43.15) - Y(24.85)); g.strokeRect(XL(L) - sw, Y(24.85), sw, Y(43.15) - Y(24.85));
+      g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(XL(0) - 4, Y(GL), 4, Y(GR) - Y(GL)); g.fillRect(XL(L), Y(GL), 4, Y(GR) - Y(GL));
     }
     function dot(p, k) {
       const x = X(p.x), y = Y(p.y), me = isMe(p), r = (me ? 9.5 : 6.2) * k;
@@ -405,6 +415,7 @@
       const dt = Math.min(0.05, (ts - (last || ts)) / 1000) * (o.speed ? o.speed() : 1); last = ts;
       if (!frozen && !document.hidden) { const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
       draw();
+      if (o.onFrame) o.onFrame(api.info());
       raf = requestAnimationFrame(loop);
     }
     // Começo: no apito todos no seu campo; voltando do seu lance, a bola com o seu time no meio
@@ -417,7 +428,17 @@
         cv = el; g = el.getContext('2d'); size(); draw();
         if (!raf && alive) { last = 0; raf = requestAnimationFrame(loop); }
       },
-      minute(t, bx) { if (t - curT > 1) goals.forEach(e => { if (e.m < t) e.done = true; }); curT = t; bxT = bx; mClk = clk; },
+      // Novo minuto: volta quem mandou no minuto que acabou (0 eles, 50 igual, 100 você: posse e campo juntos), ou null
+      minute(t, bx) {
+        const avg = acc.n > 0 && t === curT + 1 ? acc.x / acc.n : null; acc.x = 0; acc.n = 0;
+        if (t - curT > 1) goals.forEach(e => { if (e.m < t) e.done = true; });
+        curT = t; bxT = bx; mClk = clk; return avg;
+      },
+      // O que a tela escreve sai daqui: quem tem a bola, onde ela está (no sentido de quem ataca) e a posse até agora
+      info() {
+        const side = ball.owner ? ball.owner.side : poss, [ax, ay] = tf(side, ball), tot = pt[0] + pt[1];
+        return { mode, side, ax: ax / L * 100, ay: ay / WD * 100, sx: (o.flip ? L - ball.x : ball.x) / L * 100, posse: (pt[0] + 4) / (tot + 8) }; // a posse começa em 50% e anda com o jogo
+      },
       // Seu lance: a bola chega em você (passe do companheiro, ou você corta a jogada deles)
       lance() {
         if (ME < 0 || mode !== 'play') return;
