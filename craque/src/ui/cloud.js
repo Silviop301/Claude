@@ -9,7 +9,7 @@
   const API = window.CLIMBIX_ACCOUNT_API || (/climbix\.app$/.test(location.hostname) ? '/api/account.php' : 'https://climbix.app/api/account.php');
   const OAPI = API.replace(/account\.php$/, 'oauth.php');
   const AKEY = 'climbix-account', PKEY = 'climbix-player', OKEY = 'climbix-oauth';
-  const KEYS = { save: SAVE, fc: SAVE_FC, hall: HALL, hallJaj: U.HALL_JAJ, col: 'climbix-colecao-v1', ach: 'craque-ach-v1', daily: 'craque-daily-v1', sala: 'climbix-sala-v1', itens: 'climbix-itens-v1', reset: 'climbix-reset' };
+  const KEYS = { save: SAVE, fc: SAVE_FC, hall: HALL, hallJaj: U.HALL_JAJ, amigos: 'climbix-amigos-v1', col: 'climbix-colecao-v1', ach: 'craque-ach-v1', daily: 'craque-daily-v1', sala: 'climbix-sala-v1', itens: 'climbix-itens-v1', reset: 'climbix-reset' };
   // keepalive deixa o save terminar de subir com o app fechando, mas o navegador recusa corpo acima de 64 KB:
   // save grande (coleção cheia) vai sem keepalive
   const post = (a, body, url) => { const b = JSON.stringify(body);
