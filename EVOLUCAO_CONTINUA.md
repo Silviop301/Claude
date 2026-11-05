@@ -19,7 +19,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | **no ar** (PRs #130, #132, #133 e a parte 4): aperto 16–18%, devendo no fim 3% |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | **no ar** (PRs #135, #136 e a parte 3): janela do meio do ano, troca de clube, sondagens, empresário, aumento, pedido de saída e empréstimo |
 | 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | **no ar** (PRs #138, #139 e a parte 3): torneio do continente, convocação pelo celular, concentração e um jogo por tela, seleção no jornal |
-| 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | em andamento: parte 1 (metas do ano e legado ao lado da nota) |
+| 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | em andamento: parte 1 (metas do ano e legado), parte 2 (legado no lugar da nota e Seu Hall) |
 | 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | |
 | 8 · Treinador v2 | No simulador, nenhuma tática ou instrução vence em todos os casos | |
 | 9 · Do jogador ao técnico | Uma carreira passa de jogador a técnico levando a história e os títulos | |
@@ -671,3 +671,17 @@ Proibido também: cartão com faixa colorida na lateral.
 - Ferramentas: `craque_sim.js` imprime "Metas cumpridas" e o legado por posição (SONHO=id força um sonho);
   `craque_invariantes.js` confere as metas de cada temporada e o legado; e2e escolhe o sonho; fotos `agenda-metas` e
   `agenda-sonho` em `craque_telas_jaj.js`.
+
+### Fase 6 do plano, parte 2 · 2026-11-05 · O legado no lugar da nota e o Seu Hall
+- Decisão do Silvio (2026-11-05, conversa do treino): a calibragem da nota do modo padrão não serve para o Jogo a Jogo
+  ("imagina a pessoa jogando 2 semanas seguidas certinho e tirando D"). O Jogo a Jogo termina com o legado; a nota S a D
+  fica só na Carreira Rápida. Ele também quer um motor próprio para o Jogo a Jogo e outro para o Treinador: o do
+  Treinador já está na fase 8; a simulação do Jogo a Jogo fica como está até ele pedir mais.
+- Fim de carreira do Jogo a Jogo: a animação "Sua nota" virou "Seu legado" (cada fonte numa linha, o total correndo),
+  a medalha da nota virou a do legado, sem barra de pontos e sem "faltaram N para a nota"; "De onde veio o legado" no
+  resumo. A letra que sobra (`S.legacyTone`: S 2600+, A 1900+, B 1300+, senão C, nunca D) só dá o tom do jornal da
+  despedida e a cor da carta. "Promessa que não vingou" vira "Carreira de muita luta".
+- Seu Hall (Minhas carreiras): "Seu Hall · Jogo a Jogo" com as carreiras pelo legado, a carta de cada uma (toque abre
+  a carta em 3D), anos, pico, títulos e de onde veio o legado. Guardado em `climbix-hall-jaj-v1` (vai para a nuvem com
+  a conta). O Hall de antes vira "Carreira Rápida". "Última carreira" mostra o legado quando foi Jogo a Jogo.
+- Falta na fase 6: o ranking Mundial por legado (servidor) e os Amigos.

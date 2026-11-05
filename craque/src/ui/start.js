@@ -114,7 +114,7 @@
   function mine() {
     G.c = null; G.step = null; bar();
     U.backTo = mine;
-    const hall = load(HALL) || [];
+    const hall = load(HALL) || [], hasJaj = (load(U.HALL_JAJ) || []).length > 0;
     // Linha do Hall da Fama: nota (mesma etiqueta do ranking), jogador e números, pontuação à direita
     const stats = h => (h.pos === 'GOL' ? h.cs + ' sem sofrer gol · ' + h.penSaved + ' pên. def. · ' : h.pos === 'ZAG' ? h.cs + ' sem sofrer gol · ' + D.plural(h.goals, 'gol', 'gols') + ' · ' : D.plural(h.goals, 'gol', 'gols') + ' · ' + h.assists + ' assist. · ') +
       D.plural(h.titles, 'taça', 'taças') + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '');
@@ -124,15 +124,29 @@
       '<button class="hg" id="b-col"><i>' + U.ICON.cards + '</i><b>Coleção</b><small>' + U.collectionCards() + (U.collectionCards() === 1 ? ' carta' : ' cartas') + '</small></button>' +
       '<button class="hg" id="b-ach"><i>' + U.ICON.medal + '</i><b>Conquistas</b><small>' + U.achCount() + ' de ' + S.ACHIEVEMENTS.length + '</small></button>' +
       '</div></div>' +
-      '<section class="mc-hall"><div class="eyebrow">Hall da Fama</div>' +
+      jajHall() + (hasJaj && !hall.length ? '' :
+      '<section class="mc-hall"><div class="eyebrow">Hall da Fama' + (hasJaj ? ' · Carreira Rápida' : '') + '</div>' +
       (hall.length ? '<div class="mc-list">' +
         hall.map((h, i) => '<div class="mc-row' + (i ? '' : ' best') + '"><span class="rk-g g' + esc(h.grade) + '">' + esc(h.grade) + '</span><span class="mc-who"><b>' + esc(h.name) + ' · ' + esc(h.verdict) + '</b>' +
           '<small>' + stats(h) + '</small></span><span class="mc-pts">' + Number(h.score).toLocaleString('pt-BR') + '<small>pts</small></span></div>').join('') + '</div>'
-        : '<p class="mc-empty">' + U.ICON.trophy + '<span>Termine uma carreira para ela aparecer aqui.</span></p>') + '</section>' + U.tabs('mine'));
+        : '<p class="mc-empty">' + U.ICON.trophy + '<span>Termine uma carreira para ela aparecer aqui.</span></p>') + '</section>') + U.tabs('mine'));
     U.lastHomeBind();
+    document.querySelectorAll('.hj-card img').forEach(im => { const h = (load(U.HALL_JAJ) || [])[+im.dataset.k]; if (h && h.card && U.cardThumb) U.cardThumb(h.card, im); });
+    document.querySelectorAll('.hj-row').forEach(b => { b.onclick = () => { const h = (load(U.HALL_JAJ) || [])[+b.dataset.k]; if (h && h.card && U.cardView) { sfx('tap'); U.cardView(h.card, mine, 'Carreiras'); } }; });
     $('b-col').onclick = U.collection;
     $('b-ach').onclick = U.achievements;
     $('b-sala').onclick = () => U.trophyRoom('col');
+  }
+  // Seu Hall do Jogo a Jogo (plano, fase 6): as carreiras encerradas pelos pontos de legado, cada uma com a sua carta
+  const LEG_LBL = { titulos: 'títulos', premios: 'prêmios', metas: 'metas', selecao: 'seleção', idolo: 'ídolo' };
+  function jajHall() {
+    const hj = load(U.HALL_JAJ) || [];
+    if (!hj.length) return '';
+    const from = h => Object.keys(LEG_LBL).filter(k => h.by && h.by[k] > 0).sort((a, b) => h.by[b] - h.by[a]).slice(0, 3).map(k => LEG_LBL[k] + ' ' + h.by[k].toLocaleString('pt-BR')).join(' · ');
+    return '<section class="mc-hall hj"><div class="eyebrow">Seu Hall · Jogo a Jogo</div><div class="mc-list">' +
+      hj.slice(0, 10).map((h, i) => '<button class="mc-row hj-row' + (i ? '' : ' best') + '" data-k="' + i + '"><span class="hj-card"><img alt="" data-k="' + i + '"><em>' + (i + 1) + 'º</em></span><span class="mc-who"><b>' + esc(h.name) + '</b>' +
+        '<small>' + D.POS[h.pos].name + ' · ' + h.yr[0] + '–' + h.yr[1] + ' · pico ' + h.peak + ' · ' + D.plural(h.titles, 'título', 'títulos') + '</small><small class="hj-by">' + esc(from(h)) + '</small></span>' +
+        '<span class="mc-pts">' + h.leg.toLocaleString('pt-BR') + '<small>legado</small></span></button>').join('') + '</div></section>';
   }
   // Voltar das telas de "Minhas carreiras" (Coleção, Conquistas, Sala): volta para lá; senão, para o início
   U.goBack = () => (U.backTo || home)();

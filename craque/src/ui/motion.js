@@ -16,7 +16,37 @@
   const layer = cls => { const w = document.createElement('div'); w.className = 'mo-wrap ' + cls; document.body.appendChild(w); return w; };
 
   // ---------- Nota final ----------
+  // Jogo a Jogo: o legado entra no lugar (cada fonte uma linha, o total corre, sem faixas de nota)
+  const LEG_TXT = { metas: 'Metas do ano cumpridas', titulos: 'Títulos', premios: 'Prêmios', idolo: 'Ídolo de clube', selecao: 'Seleção' };
+  function legReveal(L, f, done) {
+    const parts = Object.keys(LEG_TXT).filter(k => L.by[k] > 0).map(k => ({ txt: LEG_TXT[k], v: L.by[k] }));
+    if (!parts.length || still()) return done && done();
+    const w = layer('mo-score leg');
+    w.innerHTML = '<div class="mo-card" role="dialog" aria-label="Legado da carreira">' +
+      '<div class="mo-top"><div><small>Fim de carreira</small><b>Seu legado</b></div><div class="mo-stamp leg">★</div></div>' +
+      '<div class="mo-total"><b>0</b><span>pontos de legado</span></div>' +
+      '<ul class="mo-parts">' + parts.map(p => '<li><span>' + esc(p.txt) + '</span><b>+' + p.v.toLocaleString('pt-BR') + '</b></li>').join('') + '</ul>' +
+      '<div class="mo-verdict"></div><p class="mo-hint">Toque para pular</p></div>';
+    const tot = w.querySelector('.mo-total b'), lis = [...w.querySelectorAll('.mo-parts li')], verdict = w.querySelector('.mo-verdict');
+    let cur = 0, target = 0, raf = 0, timers = [], ended = false, closed = false;
+    const close = () => { if (closed) return; closed = true; timers.forEach(clearTimeout); cancelAnimationFrame(raf); w.classList.add('out'); setTimeout(() => w.remove(), 220); if (done) done(); };
+    const end = () => {
+      if (ended) return; ended = true; timers.forEach(clearTimeout); timers = []; cancelAnimationFrame(raf);
+      lis.forEach(li => li.classList.add('in')); tot.textContent = L.pts.toLocaleString('pt-BR');
+      w.querySelector('.mo-stamp').classList.add('final');
+      if (U.sfx) U.sfx('cheer');
+      verdict.innerHTML = esc(f.verdict) + '<small>Sua carreira entrou no Hall da Fama.</small>';
+      verdict.classList.add('in');
+      w.querySelector('.mo-hint').textContent = 'Toque para ver a carta';
+      timers.push(setTimeout(close, 2600));
+    };
+    const STEP = Math.max(180, Math.min(320, 2000 / parts.length));
+    lis.forEach((li, i) => timers.push(setTimeout(() => { li.classList.add('in'); target += parts[i].v; if (i === lis.length - 1) timers.push(setTimeout(end, 520)); }, 250 + i * STEP)));
+    (function tick() { cur += (target - cur) * 0.22; if (Math.abs(target - cur) < 0.5) cur = target; tot.textContent = Math.round(cur).toLocaleString('pt-BR'); if (!ended) raf = requestAnimationFrame(tick); })();
+    w.addEventListener('click', () => (ended ? close() : end()));
+  }
   function scoreReveal(f, done) {
+    if (f && f.leg) return legReveal(f.leg, f, done);
     if (!f || !f.parts || !f.parts.length || still()) return done && done();
     // Ordem: o que soma, depois o que desconta, e a despedida por último (é quando a nota costuma virar)
     const parts = f.parts.filter(p => p.v > 0 && p.k !== 'bonus').concat(f.parts.filter(p => p.v < 0), f.parts.filter(p => p.v > 0 && p.k === 'bonus'));
