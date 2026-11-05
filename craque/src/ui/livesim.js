@@ -31,7 +31,7 @@
     const T = [mk(F433, 0), mk(F442, 1)], ALL = T[0].concat(T[1]);
     const isMe = p => ME >= 0 && p.side === 0 && p.k === ME;
     const ball = { x: 52.5, y: 34, owner: null, fly: null, loose: null, carry: null, hold: 0, rcv: 0 };
-    let poss = 0, mode = 'ko', modeT = 1.2, koSide = 0, hero = null, bias = [1, 1], mom = 0, momT = 0, runT = 2, defT = 0, clk = 0;
+    let poss = 0, mode = o.t0 > 0 ? 'ko' : 'wait', modeT = 1.2, koSide = 0, hero = null, bias = [1, 1], mom = 0, momT = 0, runT = 2, defT = 0, clk = 0;
     let curT = o.t0 || 0, mClk = 0, bxT = 50, lastPasser = null, lastPassClk = -9, frozen = false, en = null, cv = null, g = null, W = 0, H = 0, dpr = 1, raf = 0, last = 0, alive = true;
     const goals = (o.goals || []).map(e => ({ m: e.m, side: e.side, me: !!e.me, as: !!e.as, done: e.m <= (o.t0 || 0) && (o.t0 || 0) > 0 }));
     let due = null; // o gol do motor que está para sair
@@ -279,7 +279,8 @@
     function startPlay() { mode = 'play'; const k = kicker(koSide); ball.x = 52.5; ball.y = 34; setOwner(k); lastPasser = k; lastPassClk = clk; fly(k, T[koSide][6].x, T[koSide][6].y, T[koSide][6], false, 'curto', false); }
     function step(dt) {
       clk += dt;
-      if (mode === 'play') play(dt);
+      if (mode === 'wait') { ALL.forEach(p => { [p.tx, p.ty] = koShape(p, p.side); }); ball.x = 52.5; ball.y = 34; }
+      else if (mode === 'play') play(dt);
       else if (mode === 'ko' || mode === 'half') {
         ALL.forEach(p => { [p.tx, p.ty] = koShape(p, p.side); });
         modeT -= dt;
@@ -420,6 +421,8 @@
         if (ball.owner || ball.loose) fly(from, me.x + 1, me.y, me, dist(from, me) > 30, 'curto', from.side !== 0);
         else if (ball.fly && !ball.fly.shot) { ball.fly.to = me; ball.fly.x1 = me.x + 1; ball.fly.y1 = me.y; ball.fly.cut = ball.fly.from.side !== 0; }
       },
+      // Antes do apito todos parados na formação de saída; go() é o apito
+      go() { if (mode === 'wait') { mode = 'ko'; modeT = 0.3; } },
       half() { mode = 'half'; koSide = 1; ball.owner = ball.fly = ball.loose = ball.carry = null; },
       second() { mode = 'ko'; modeT = 0.4; koSide = 1; },
       freeze(v) { frozen = !!v; },
