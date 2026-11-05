@@ -1,6 +1,6 @@
 // Carreira Relâmpago: modo rápido de pênaltis. Cada casa da carreira (Base, Auge, Último clube, G/A, Títulos) tem 5 bolas,
 // e o jogador escolhe qual bola cobrar a cada vez. Nas casas de clube cada bola esconde um clube e vale a primeira que
-// entrar (nenhuma entrou: fica o mais fraco). Em G/A e Títulos cada bola esconde um prêmio sorteado (gols e assistências, ou um
+// entrar (nenhuma entrou: sai um clube fraco de surpresa, de fora das 5 bolas). Em G/A e Títulos cada bola esconde um prêmio sorteado (gols e assistências, ou um
 // título) e você leva o de cada bola que entrar. Tudo sai de uma semente: quem recebe o link de desafio tem os mesmos
 // prêmios escondidos nas mesmas bolas.
 (function (root) {
@@ -45,7 +45,10 @@
     const ga = [0, 1, 2, 3, 4].map(() => ({ gols: 5 * n(3, 26), ast: 5 * n(1, 16) }));
     const tit = TIT_KINDS.map(([k, a, b, pts]) => ({ k, q: n(a, b), pts }));
     for (let k = 4; k > 0; k--) { const j = Math.floor(r() * (k + 1)); [tit[k], tit[j]] = [tit[j], tit[k]]; }
-    memo = { seed, dr: { base, auge, ultimo, perm, ga, tit } };
+    // Errou as 5: um clube fraco de surpresa em cada casa de clube (sorteado por último, para não mudar o resto do sorteio)
+    const weak = D.CLUBS.filter(c => c.tier === 1 && c.strength <= 48);
+    const fall = [0, 1, 2].map(() => take(weak));
+    memo = { seed, dr: { base, auge, ultimo, perm, ga, tit, fall } };
     return memo.dr;
   }
 
@@ -78,7 +81,7 @@
   const titPrize = (b, cl) => { const n = titleName(b.k, cl); return { items: [[n, b.q]], name: b.q + ' ' + n, pts: b.q * b.pts, kind: b.k }; };
 
   // Casa i já jogada com estas cobranças, na ordem em que saíram: [bola (0 a 4), 1 = gol / 0 = errou].
-  // Clube: a primeira bola que entrou (ou o mais fraco).
+  // Clube: a primeira bola que entrou (nenhuma entrou: o clube fraco de surpresa, dr.fall[i]).
   // G/A e Títulos: soma o prêmio de cada bola que entrou. done: a casa acabou (clube termina no primeiro gol; as outras, nas 5 bolas).
   // hidden(j): o prêmio que a bola j escondia.
   S.rlRound = function (seed, i, prev, kicks) {
@@ -99,7 +102,8 @@
     }
     const clubs = slotClubs(seed, i, prev), perm = dr.perm[i];
     const at = kicks.find(k => k[1]);
-    const cone = at ? clubs[perm[at[0]]] : clubs[4];
+    const fl = dr.fall[i], surprise = Object.assign({ id: fl.id, name: fl.name, pts: r1(W[S.RL_SLOTS[i].key] * fOf(fl)), k: 5, rank: 5, surprise: true });
+    const cone = at ? clubs[perm[at[0]]] : surprise;
     return { cone, goals, done: !!at || kicks.length >= 5, ball: at ? at[0] : -1, hidden: j => clubs[perm[j]] };
   };
 
@@ -131,14 +135,13 @@
     return { slots, combos, total, grade };
   };
   // As 5 bolas da casa i com o prêmio que cada uma escondia e o que aconteceu com ela: got (o prêmio é seu), miss (chutou e
-  // errou), left (nem chutou: a casa já tinha acabado) e fall (clube: nenhuma entrou e sobrou o desta bola, o mais fraco)
+  // errou) e left (nem chutou: a casa já tinha acabado). Clube sem gol: as 5 são miss e o clube é a surpresa (r.cone)
   S.rlBalls = function (seed, rounds, i) {
     const prev = S.rlCareer(seed, rounds).slice(0, i).map(s => s.cone), kicks = rounds[i];
     const r = S.rlRound(seed, i, prev, kicks), club = i < 3;
     return [0, 1, 2, 3, 4].map(j => {
       const k = kicks.find(x => x[0] === j), prize = r.hidden(j);
-      let st = !k ? 'left' : club ? (j === r.ball ? 'got' : 'miss') : k[1] ? 'got' : 'miss';
-      if (club && r.ball < 0 && prize === r.cone) st = 'fall';
+      const st = !k ? 'left' : club ? (j === r.ball ? 'got' : 'miss') : k[1] ? 'got' : 'miss';
       return { prize, st };
     });
   };
