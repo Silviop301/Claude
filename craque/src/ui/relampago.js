@@ -148,7 +148,9 @@
     try { if (KP().keeperSprite) { const g = KP().keeperSprite(svg); g.stand(KP().GX); g.idle(); } } catch (e) { /* fica o goleiro desenhado */ }
     // Na casa: as bolas que ainda faltam na marca, como no chute
     const ball = svg.querySelector('#k-ball');
-    if (xs && ball && KP().setBall) xs.forEach((x, n) => { const b = n ? ball.cloneNode(true) : ball; if (n) { b.removeAttribute('id'); ball.parentNode.insertBefore(b, ball); } KP().setBall(b, x, KP().BALL.y, KP().BALL.r); });
+    if (xs && ball && KP().setBall) xs.forEach((x, n) => { const b = n ? ball.cloneNode(true) : ball; if (n) { b.removeAttribute('id'); b.setAttribute('class', 'rx-sb'); ball.parentNode.insertBefore(b, ball); } KP().setBall(b, x, KP().BALL.y, KP().BALL.r); });
+    // A bola é a mesma foto da bola 3D do ingresso de escolha (não o desenho chapado do SVG)
+    if (ball && U.emoSrc) { const src = U.emoSrc('⚽'); [ball].concat(Array.from(svg.querySelectorAll('.rx-sb'))).forEach(g => { g.innerHTML = '<image href="' + src + '" x="-12" y="-12" width="24" height="24"/>'; }); }
   }
 
   // ---------- entrada: já no campo, com o cartão das regras por cima ----------
