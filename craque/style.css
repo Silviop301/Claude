@@ -6993,7 +6993,6 @@ button.fi-g, button.p2-gr { cursor: pointer; min-height: 44px; }
 .amz-band b { font: 800 18px/1.1 var(--display); color: #FFB23F; }
 .amz-band small { font: 500 13px var(--body); color: var(--tx-2); }
 #fc-shop .fc-buy:not(:disabled):not(.on) { background: #FFB23F; color: var(--ink); border-color: #FFB23F; }
-.ch .ch-head { position: sticky; top: 0; z-index: 2; box-shadow: 0 2px 6px rgba(0, 0, 0, .25); }
 .ch .ch-head + .ch-log { border-top-left-radius: 0; border-top-right-radius: 0; }
 
 /* Agenda: o sonho do ano pendente é uma escolha clara (bloco dourado, opções em bilhete creme, marca e confirma) */

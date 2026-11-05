@@ -265,10 +265,11 @@
   function invOpts(c, x, k) {
     const d = S.fcInvDef(x);
     const parts = fx => S.fcInvParts(c, fx).map(esc).join(' · ') || 'nada muda';
+    const done = fx => S.fcInvParts(c, fx).filter(x => !/ gosta$| chatead[oa]$/.test(x)).map(esc).join(' · ') || 'feito'; // depois de responder, a relação fica só no tom da conversa
     if (x.ans) {
       const roll = x.ans === 'b' && !d.b.later, o = x.ans === 'a' ? d.a : d.b.later ? d.b : x.ok ? d.b.win : d.b.lose, lab = x.ans === 'a' ? d.a.l : d.b.l;
       const k2 = roll ? (x.ok ? 'Deu certo' : 'Não deu') : 'Sua resposta';
-      return '<div class="ag-res ' + (roll ? (x.ok ? 'win' : 'lose') : '') + '"><em>' + k2 + '</em><b>' + esc(lab) + (roll ? ': ' + esc(o.tag.charAt(0).toLowerCase() + o.tag.slice(1)) : '') + '</b><span>' + parts(o.fx) + (x.ans === 'b' && d.b.later ? ' · ' + esc(d.b.later) : '') + '</span></div>';
+      return '<div class="ag-res ' + (roll ? (x.ok ? 'win' : 'lose') : '') + '"><em>' + k2 + '</em><b>' + esc(lab) + (roll ? ': ' + esc(o.tag.charAt(0).toLowerCase() + o.tag.slice(1)) : '') + '</b><span>' + done(o.fx) + (x.ans === 'b' && d.b.later ? ' · ' + esc(d.b.later) : '') + '</span></div>';
     }
     const p = Math.round(((d.b.press && c.staff && c.staff.press) ? d.b.press : (d.b.p || 1)) * 100);
     const riskTxt = d.b.later ? parts(d.b.fx) + '<i>' + esc(d.b.later) + '</i>' : '<i class="up">Dá certo: ' + parts(d.b.win.fx) + '</i><i class="down">Não dá: ' + parts(d.b.lose.fx) + '</i>';
@@ -411,7 +412,7 @@
   // A lista (uma conversa por pessoa, a mais recente em cima) e, tocando, a conversa inteira em balões.
   // A relação não aparece em número: só no tom do que cada um escreve.
   let chatOpen = null, trA = null; // trA: atributo do treino com lances escolhido na agenda (antes do primeiro lance)
-  let chTyping = null, chFx = null; // a pessoa digitando a resposta (por um instante) e o efeito da última resposta
+  let chTyping = null; // a pessoa digitando a resposta (por um instante)
   // ZapZap (o antigo Chat): a lista com quem espera resposta em cima e, tocando, a conversa. Cada mensagem pede resposta
   // até o próximo jogo (três respostas embaixo, engine/phone.js S.fcReply) e o convite da semana se responde ali também
   function chat() {
@@ -441,7 +442,6 @@
       });
       mine.forEach(o => { if (ivAt(o) < 0) log += ivHtml(o); });
       if (typing) log += '<p class="ch-dots" aria-label="' + esc(t.c.name) + ' está digitando"><i></i><i></i><i></i></p>';
-      else if (chFx && chFx.id === t.id) log += '<p class="ch-fx' + (chFx.bad ? ' bad' : '') + '">' + esc(chFx.txt) + '</p>';
       body = '<div class="ch-head"><i>' + U.emo(t.c.icon, 'sm') + '</i><div><b>' + esc(t.c.name) + '</b><small class="' + (typing ? 'on' : '') + '">' + (typing ? 'digitando…' : esc(t.c.role)) + '</small></div></div>' +
         '<div class="ch-log">' + log + '</div>';
       const ask = !typing && t.msgs.find(m => S.fcReplies(c, m));
@@ -459,15 +459,13 @@
         '<p class="ch-none">Ninguém escreveu ainda. Depois dos jogos a família, os amigos e o pessoal do clube mandam mensagem.</p>';
     }
     appScr('msg', t ? esc(t.c.name) : APP_NAME.msg, body, { cls: 'ch' + (t && t.id === 'ze' ? ' ze' : ''), back: t ? 'Conversas' : 'Início', foot });
-    if (t) $('fc-back').onclick = () => { sfx('tap'); chatOpen = null; chTyping = null; chFx = null; chat(); };
+    if (t) $('fc-back').onclick = () => { sfx('tap'); chatOpen = null; chTyping = null; chat(); };
     if (t && t.id === 'ze') zeBind(c);
-    document.querySelectorAll('[data-ch]').forEach(b => { b.onclick = () => { sfx('tap'); chatOpen = b.dataset.ch; chFx = null; chat(); }; });
+    document.querySelectorAll('[data-ch]').forEach(b => { b.onclick = () => { sfx('tap'); chatOpen = b.dataset.ch; chat(); }; });
     document.querySelectorAll('[data-rp]').forEach(b => { b.onclick = () => {
       const id = t.id, r = S.fcReply(c, +b.dataset.rp, +b.dataset.i);
       if (!r) return;
       sfx('tap'); save(); bar();
-      const bad = r.parts.some(x => /chateado|chateada|−/.test(x));
-      chFx = { id, txt: r.parts.length ? r.parts.join(' · ') : 'Nada muda', bad };
       chTyping = id; chat();
       setTimeout(() => { if (chTyping !== id) return; chTyping = null; if (chatOpen === id && document.querySelector('.p2-body.ch')) { sfx('paper'); chat(); } }, 1100);
     }; });
@@ -511,7 +509,7 @@
     if (k === 'evo') return evolve();
     if (k === 'msg') { chatOpen = null; return chat(); }
     if (k === 'ze') { chatOpen = 'ze'; return chat(); }
-    if (k.slice(0, 3) === 'ch:') { chatOpen = k.slice(3); chFx = null; return chat(); }
+    if (k.slice(0, 3) === 'ch:') { chatOpen = k.slice(3); return chat(); }
     if (k === 'ag') { agGoals = false; return agenda(); }
     const c = G.c, body = {
       wk: '<div class="fc-wk" id="fc-wk"></div><div class="fs-acts" id="fc-acts"></div>',
