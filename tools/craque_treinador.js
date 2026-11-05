@@ -13,7 +13,7 @@ const pois = (l, k) => { let f = 1; for (let i = 2; i <= k; i++) f *= i; return 
 const ptsOf = (a, b) => { let w = 0, d = 0; for (let x = 0; x <= 8; x++) for (let y = 0; y <= 8; y++) { const p = pois(a, x) * pois(b, y); if (x > y) w += p; else if (x === y) d += p; } return 3 * w + d; };
 const pct = (a, b) => (b ? (100 * a / b).toFixed(0) + '%' : '-');
 const st = { seasons: 0, sacked: 0, met: 0, won: 0, up: 0, down: 0, games: 0, goals: 0, hw: 0, dr: 0, aw: 0, ult: 0, ultOk: 0, moves: 0, ms: 0,
-  byGoal: {}, titlesPer: [], sacksPer: [], fameEnd: [], strEnd: [], stops: 0, subs: 0, nan: 0, byStart: {} };
+  fin: { n: 0, red: 0, saldoPos: 0, endRed: 0, minWk: [], saldoPct: [], caixaWk: [] }, byGoal: {}, titlesPer: [], sacksPer: [], fameEnd: [], strEnd: [], stops: 0, subs: 0, nan: 0, byStart: {} };
 for (let n = 0; n < N; n++) {
   const start = process.env.INICIO || (n % 2 ? 'livre' : 'baixo');
   const co = S.coNew({ name: 'Robô', country: n % 3 ? 'Brasil' : (n % 3 === 1 ? 'Inglaterra' : 'Espanha'), start, seed: 1000 + n * 7919 });
@@ -25,6 +25,7 @@ for (let n = 0; n < N; n++) {
   for (let s = 0; s < T; s++) {
     const t0 = Date.now();
     S.coStart(co);
+    let seasonRed = false;
     while (!co.ss.done && !co.sacked) {
       const nx = S.coNext(co);
       if (!nx) break;
@@ -38,6 +39,7 @@ for (let n = 0; n < N; n++) {
       const m = S.coMatchStart(co);
       while (!m.done) { const sp = S.coMatchStep(co, m); if (sp && sp.t !== 'fim') st.stops++; S.coAutoStop(co, m); }
       st.subs += 5 - m.us.subs;
+      if (co.fin && co.fin.caixa < 0) seasonRed = true;
       S.coMatchEnd(co, m);
       st.games++; st.goals += m.gh + m.ga;
       if (m.gh > m.ga) st.hw++; else if (m.gh === m.ga) st.dr++; else st.aw++;
@@ -52,6 +54,8 @@ for (let n = 0; n < N; n++) {
     if (out.sacked) { st.sacked++; sacks++; st.byGoal[g].sacked++; }
     if (out.won) { st.won++; titles++; st.byGoal[g].won++; }
     if (out.up) st.up++; if (out.down) st.down++;
+    // Finanças: saldo da temporada, caixa em semanas de folha, temporadas que passaram pelo vermelho
+    if (out.fin && !out.sacked) { const f = out.fin, fol = Math.max(1, S.coFolha(co)); st.fin.n++; if (f.saldo > 0) st.fin.saldoPos++; if (f.caixa < 0) st.fin.endRed++; if (seasonRed) st.fin.red++; st.fin.saldoPct.push(f.ent ? f.saldo / f.ent : 0); st.fin.caixaWk.push(f.caixa / fol); }
     while (co.xp.pts > 0) { const k = ['leitura', 'motiv', 'negoc'][co.xp.pts % 3]; if (!S.coSkill(co, k)) break; }
     if (!Number.isFinite(co.fame) || co.squad.some(p => !Number.isFinite(p.ovr))) st.nan++;
     if (out.offers) S.coSign(co, pick(out.offers));
@@ -70,6 +74,8 @@ console.log(`Ultimato: ${st.ult} (${pct(st.ult, st.seasons)} das temporadas), sa
 console.log('Por meta: ' + Object.keys(st.byGoal).map(k => { const g = st.byGoal[k]; return `${k} ${g.n} (cumpriu ${pct(g.met, g.n)}, demitido ${pct(g.sacked, g.n)}, campeão ${pct(g.won, g.n)})`; }).join(' · '));
 console.log(`Títulos por carreira: média ${avg(st.titlesPer)} [${dist(st.titlesPer)}]; demissões: média ${avg(st.sacksPer)} [${dist(st.sacksPer)}]`);
 Object.keys(st.byStart).forEach(k => { const b = st.byStart[k]; console.log(`Começo ${k}: títulos ${(b.t / b.n).toFixed(1)}, demissões ${(b.s / b.n).toFixed(1)}, fama no fim ${(b.f / b.n).toFixed(0)}, força do clube no fim ${(b.str / b.n).toFixed(0)}`); });
+const med = a => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.floor(b.length / 2)] : 0; };
+console.log(`Finanças: saldo positivo ${pct(st.fin.saldoPos, st.fin.n)} das temporadas, passou pelo vermelho ${pct(st.fin.red, st.fin.n)}, fechou no vermelho ${pct(st.fin.endRed, st.fin.n)}; saldo mediano ${(100 * med(st.fin.saldoPct)).toFixed(0)}% da receita; caixa no fim ${med(st.fin.caixaWk).toFixed(0)} semanas de folha (mediana)`);
 console.log(`Tempo do motor: ${(st.ms / st.seasons).toFixed(0)} ms por temporada` + (st.nan ? `; ALERTA: ${st.nan} números quebrados` : ''));
 // Save: a mesma carreira, uma passando por JSON no meio de cada temporada, tem de terminar igual
 {

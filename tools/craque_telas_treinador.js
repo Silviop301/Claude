@@ -34,8 +34,15 @@ require('fs').mkdirSync(OUT, { recursive: true });
   await p.evaluate(() => window.scrollTo(0, 0)); await shot('time-433-pressao');
   await click('#b-co-ok'); await shot('central');
   await click('#b-co-tab'); await shot('tabela'); await click('#b-co-back');
-  let games = 0, guard = 0;
+  let games = 0, guard = 0, finShot = false;
   while (guard++ < 80) {
+    if (games >= 7 && !finShot && await p.$('#b-co-fin')) {
+      finShot = true;
+      await click('#b-co-fin'); await shot('financas');
+      await click('[data-ft="seg"]'); await shot('financas-a-seguir');
+      await click('[data-ft="sal"]'); await shot('financas-salarios');
+      await click('#b-cf-back');
+    }
     if (await p.$('#b-co-play')) {
       await click('#b-co-play');
       if (!(await p.$('#b-co-go'))) continue;
