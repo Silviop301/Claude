@@ -173,65 +173,122 @@
   }
   const scout = them => '<p class="co-scout">' + U.emo('🔭', 'xs') + ' Olheiro: o ' + esc(club(them.club).short || club(them.club).name) + ' deve vir no <b>' + them.form + '</b>, ' + S.CO_STY[them.style].name.toLowerCase() + '.</p>';
   const avail = p => p && !p.out && !p.sus;
+  // Ícones dos estilos (traço, cor do texto) e o desenho pequeno de cada formação, para os popups de tática
+  const STY_IC = {
+    equilibrado: '<path d="M12 4v16M5 8h14M5 8l-3 6h6zM19 8l-3 6h6z"/>',
+    posse: '<path d="M20 12a8 8 0 1 1-3-6.2"/><path d="M20 4v5h-5"/>',
+    pressao: '<path d="M6 14l6-6 6 6M6 20l6-6 6 6"/>',
+    contra: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+    retranca: '<path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/>',
+    lados: '<path d="M9 12H3M6 9l-3 3 3 3M15 12h6M18 9l3 3-3 3M12 5v14"/>',
+  };
+  const styIco = k => '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (STY_IC[k] || STY_IC.equilibrado) + '</svg>';
+  const FORM_TIP = { '4-4-2': 'Equilibrada, dois na frente', '4-3-3': 'Ataca pelos lados', '4-2-3-1': 'Meio cheio, um centroavante', '4-5-1': 'Segura o meio', '3-5-2': 'Alas sobem, três atrás', '3-4-3': 'Muito ataque, pouca proteção', '5-3-2': 'Fecha atrás, sai no contra' };
+  const formMini = f => '<svg class="co-fmini" viewBox="0 0 60 80" aria-hidden="true"><rect x="3" y="3" width="54" height="74" rx="4"/><line x1="3" y1="40" x2="57" y2="40"/>' +
+    spots(f).map(([x, y]) => '<circle cx="' + (3 + x * 0.54).toFixed(1) + '" cy="' + (3 + y * 0.74).toFixed(1) + '" r="3.6"/>').join('') + '</svg>';
+  const CHEV = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+  const XICO = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  // Popup no meio da tela, com o fundo escurecido: fecha no X, tocando fora ou com Esc
+  function pop(html, label, onBind) {
+    closePop();
+    const w = document.createElement('div');
+    w.className = 'co-pop'; w.id = 'co-pop';
+    w.innerHTML = '<div class="co-pop-c" role="dialog" aria-modal="true" aria-label="' + esc(label) + '">' + html + '</div>';
+    document.body.appendChild(w);
+    w.onclick = e => { if (e.target === w) { sfx('tap'); closePop(); } };
+    const x = w.querySelector('[data-pop-x]'); if (x) x.onclick = () => { sfx('tap'); closePop(); };
+    pop.esc = e => { if (e.key === 'Escape') closePop(); };
+    document.addEventListener('keydown', pop.esc);
+    onBind && onBind(w);
+    const f = w.querySelector('button:not([disabled])'); if (f) f.focus({ preventScroll: true });
+  }
+  function closePop() { const w = document.getElementById('co-pop'); if (w) w.remove(); if (pop.esc) document.removeEventListener('keydown', pop.esc); pop.esc = null; }
   function team(toPlay) {
     G.c = null; bar();
     const by = {}; co.squad.forEach(p => { by[p.id] = p; });
     // Titulares que não podem jogar (lesão, suspensão) saem antes de abrir: o auxiliar põe outro
     if (co.xi.some(id => !avail(by[id])) || co.xi.length < 11) { const a = S.coAutoXI(co.squad, co.form); co.xi = a.xi; }
-    let sel = null;
-    const nx = S.coNext(co), vs = nx && !nx.bye && club(nx.vs);
+    let swap = null; // índice do titular que vai trocar de lugar com outro titular
+    const nx = S.coNext(co), vs = nx && !nx.bye && club(nx.vs), cl = club(co.club);
+    const vsStrip = () => {
+      if (!vs) return '';
+      const t = S.coTable(co), pos = id => t.findIndex(x => x.id === id) + 1;
+      return '<div class="co-tvs">' + crest(cl.id, 'co-tvc') + '<span><b>' + esc(cl.short || cl.name) + '</b><small>' + ordTxt(pos(cl.id)) + ' · ' + (nx.home ? 'em casa' : 'fora') + '</small></span>' +
+        '<em>x</em><span class="r"><b>' + esc(vs.short || vs.name) + '</b><small>' + ordTxt(pos(vs.id)) + '</small></span>' + crest(vs.id, 'co-tvc') + '</div>';
+    };
+    const scoutBub = them => '<div class="co-bub"><i class="co-bub-a" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10" cy="10" r="6"/><path d="M15 15l5 5"/></svg></i>' +
+      '<p>O ' + esc(club(them.club).short || club(them.club).name) + ' deve vir no <b>' + them.form + '</b>, ' + S.CO_STY[them.style].name.toLowerCase() + '.<small>Olheiro</small></p></div>';
     const draw = () => {
       const slots = S.coSlots(co.form), sp = spots(co.form);
-      const bench = co.squad.filter(p => !co.xi.includes(p.id)).sort((a, b) => ['GOL', 'ZAG', 'LAT', 'MEI', 'ATA'].indexOf(a.pos) - ['GOL', 'ZAG', 'LAT', 'MEI', 'ATA'].indexOf(b.pos) || b.ovr - a.ovr);
       const pv = S.coPreview(co);
       const shirt = (id, i) => { const p = by[id]; if (!p) return '';
         const off = p.pos !== slots[i];
-        return '<button class="co-sh' + (sel && sel.i === i ? ' sel' : '') + (off ? ' off' : '') + '" data-xi="' + i + '" style="left:' + sp[i][0] + '%;top:' + sp[i][1] + '%">' +
+        return '<button class="co-sh' + (swap === i ? ' sel' : '') + (off ? ' off' : '') + '" data-xi="' + i + '" style="left:' + sp[i][0] + '%;top:' + sp[i][1] + '%" aria-label="' + esc(p.n) + ', ' + slots[i] + ', ' + p.ovr + '">' +
           '<i>' + p.ovr + '</i><b>' + esc(last(p.n)) + '</b><small>' + slots[i] + (off ? ' · ' + p.pos : '') + '</small><em class="' + enCls(p.en) + '" style="width:' + Math.round(p.en) + '%"></em></button>'; };
-      const row = p => '<button class="co-pl' + (sel && sel.id === p.id ? ' sel' : '') + (avail(p) ? '' : ' dis') + '" data-b="' + p.id + '"' + (avail(p) ? '' : ' disabled') + '>' +
-        '<span class="co-pos">' + p.pos + '</span><span class="co-pn"><b>' + esc(p.n) + '</b><small>' + p.age + ' anos' + (p.out ? ' · lesionado, ' + D.plural(p.out, 'jogo', 'jogos') : p.sus ? ' · suspenso' : p.mo < 45 ? ' · chateado' : p.mo > 75 ? ' · motivado' : '') + '</small></span>' +
-        '<span class="co-en ' + enCls(p.en) + '"><em style="width:' + Math.round(p.en) + '%"></em></span><b class="co-ov">' + p.ovr + '</b></button>';
       $('co-team').innerHTML =
-        '<div class="co-forms">' + Object.keys(S.CO_FORMS).map(f => '<button data-f="' + f + '"' + (f === co.form ? ' class="on"' : '') + '>' + f + '</button>').join('') + '</div>' +
-        '<div class="co-styles">' + S.CO_STYLES.map(k => '<button data-s="' + k + '"' + (k === co.style ? ' class="on"' : '') + '>' + S.CO_STY[k].name + '</button>').join('') + '</div>' +
+        vsStrip() + (pv ? scoutBub(pv.them) : '') +
+        '<div class="co-tac-h">Sua tática</div>' +
+        '<div class="co-tac"><button class="co-pick" id="b-co-form"><small>Formação</small><b>' + co.form + '</b>' + CHEV + '</button>' +
+          '<button class="co-pick" id="b-co-sty"><small>Estilo</small><b>' + esc(S.CO_STY[co.style].name) + '</b>' + CHEV + '</button></div>' +
         '<p class="co-stip">' + S.CO_STY[co.style].tip + '.</p>' +
-        (pv ? scout(pv.them) + mview(pv) : '') +
         '<div class="co-pitch" aria-label="Titulares no campo"><i class="co-pl-l"></i>' + co.xi.map(shirt).join('') + '</div>' +
-        '<p class="co-tip">' + (sel ? 'Agora toque em outro titular para trocar de lugar ou num reserva para entrar.' : 'Toque num titular e depois em outro jogador para trocar.') + '</p>' +
-        '<div class="co-box"><div class="eyebrow">Elenco · ' + co.squad.length + ' jogadores</div><div class="co-bench">' + bench.map(row).join('') + '</div></div>';
+        '<p class="co-tip">' + (swap !== null ? 'Toque no titular que vai trocar de lugar com ' + esc(last(by[co.xi[swap]].n)) + '.' : 'Toque num jogador para ver quem pode entrar no lugar dele.') + '</p>' +
+        // Espaço do Caderno do técnico: o que você já descobriu do confronto (o resto fica como "?")
+        '<div id="co-caderno">' + (U.coCaderno && pv ? U.coCaderno(co, pv) : '') + '</div>';
       bind();
     };
-    const bind = () => {
-      document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => {
+    // Quem pode entrar no lugar de um titular: mesma posição primeiro (a melhor opção marcada), depois fora de posição
+    const subPop = i => {
+      const slot = S.coSlots(co.form)[i], cur = by[co.xi[i]];
+      const rest = co.squad.filter(p => !co.xi.includes(p.id));
+      const score = p => p.ovr * (0.6 + 0.4 * p.en / 100);
+      const same = rest.filter(p => p.pos === slot).sort((a, b) => avail(b) - avail(a) || score(b) - score(a));
+      const other = rest.filter(p => p.pos !== slot && (p.pos === 'GOL') === (slot === 'GOL')).sort((a, b) => avail(b) - avail(a) || b.ovr - a.ovr);
+      const best = same.find(avail);
+      const note = p => p.out ? 'lesionado, ' + D.plural(p.out, 'jogo', 'jogos') : p.sus ? 'suspenso' :
+        [p.age + ' anos', p === best ? 'melhor opção' : '', p.en < 55 ? 'cansado' : '', p.mo < 45 ? 'chateado' : p.mo > 75 ? 'motivado' : ''].filter(Boolean).join(' · ');
+      const row = p => '<button class="co-pl' + (p === best ? ' best' : '') + (avail(p) ? '' : ' dis') + '" data-sub="' + p.id + '"' + (avail(p) ? '' : ' disabled') + '>' +
+        '<span class="co-pos">' + p.pos + '</span><span class="co-pn"><b>' + esc(p.n) + '</b><small>' + note(p) + '</small></span>' +
+        '<span class="co-en ' + enCls(p.en) + '"><em style="width:' + Math.round(p.en) + '%"></em></span><b class="co-ov">' + p.ovr + '</b></button>';
+      pop('<div class="co-pop-h"><b class="co-pop-ov">' + cur.ovr + '</b><span><b>' + esc(cur.n) + '</b><small>' + slot + ' · ' + cur.age + ' anos · energia ' + Math.round(cur.en) + '%</small></span><button class="co-pop-x" data-pop-x aria-label="Fechar">' + XICO + '</button></div>' +
+        '<div class="co-pop-b">' + (same.length ? '<div class="co-pop-l">Quem pode entrar no lugar dele</div>' + same.map(row).join('') : '<div class="co-pop-l">Ninguém da posição no elenco</div>') +
+        (other.length ? '<div class="co-pop-l">Fora de posição</div>' + other.map(row).join('') : '') + '</div>' +
+        '<button class="btn ghost co-pop-sw" id="b-co-swap">Trocar de lugar com outro titular</button>', 'Trocar ' + cur.n, w => {
+        w.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => { sfx('tap'); co.xi[i] = b.dataset.sub; co.autoXI = false; closePop(); draw(); });
+        $('b-co-swap').onclick = () => { sfx('tap'); swap = i; closePop(); draw(); };
+      });
+    };
+    const formPop = () => pop('<div class="co-pop-h"><span><b>Formação</b>' + (nx && !nx.bye && S.coPreview(co) ? '<small>O ' + esc(vs.short || vs.name) + ' deve vir no ' + S.coPreview(co).them.form + '</small>' : '') + '</span><button class="co-pop-x" data-pop-x aria-label="Fechar">' + XICO + '</button></div>' +
+      '<div class="co-pop-b co-fgrid">' + Object.keys(S.CO_FORMS).map(f => '<button class="co-fc' + (f === co.form ? ' on' : '') + '" data-f="' + f + '">' + formMini(f) + '<span><b>' + f + '</b><small>' + (FORM_TIP[f] || '') + '</small></span></button>').join('') + '</div>', 'Escolher formação', w => {
+      w.querySelectorAll('[data-f]').forEach(b => b.onclick = () => {
         sfx('tap'); const f = b.dataset.f;
         if (co.autoXI) co.xi = S.coAutoXI(co.squad, f).xi;
         else { const on = co.squad.filter(p => co.xi.includes(p.id)); co.xi = S.coAutoXI(on, f).xi.filter(Boolean); if (co.xi.length < 11) co.xi = S.coAutoXI(co.squad, f).xi; }
-        co.form = f; sel = null; draw();
+        co.form = f; swap = null; closePop(); draw();
       });
-      document.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { sfx('tap'); co.style = b.dataset.s; draw(); });
+    });
+    const styPop = () => pop('<div class="co-pop-h"><span><b>Estilo de jogo</b>' + (nx && !nx.bye && S.coPreview(co) ? '<small>O ' + esc(vs.short || vs.name) + ' joga ' + S.CO_STY[S.coPreview(co).them.style].name.toLowerCase() + '</small>' : '') + '</span><button class="co-pop-x" data-pop-x aria-label="Fechar">' + XICO + '</button></div>' +
+      '<div class="co-pop-b">' + S.CO_STYLES.map(k => '<button class="co-stc' + (k === co.style ? ' on' : '') + '" data-s="' + k + '"><i>' + styIco(k) + '</i><span><b>' + esc(S.CO_STY[k].name) + '</b><small>' + STY_SHORT[k] + '</small></span></button>').join('') + '</div>', 'Escolher estilo', w => {
+      w.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { sfx('tap'); co.style = b.dataset.s; closePop(); draw(); });
+    });
+    const bind = () => {
+      $('b-co-form').onclick = () => { sfx('tap'); formPop(); };
+      $('b-co-sty').onclick = () => { sfx('tap'); styPop(); };
       document.querySelectorAll('[data-xi]').forEach(b => b.onclick = () => {
         const i = +b.dataset.xi; sfx('tap');
-        if (!sel) sel = { i };
-        else if (sel.i === i) sel = null;
-        else if (sel.i !== undefined) { const t = co.xi[i]; co.xi[i] = co.xi[sel.i]; co.xi[sel.i] = t; co.autoXI = false; sel = null; }
-        else { co.xi[i] = sel.id; co.autoXI = false; sel = null; }
-        draw();
-      });
-      document.querySelectorAll('[data-b]').forEach(b => b.onclick = () => {
-        const id = b.dataset.b; sfx('tap');
-        if (sel && sel.i !== undefined) { co.xi[sel.i] = id; co.autoXI = false; sel = null; }
-        else sel = sel && sel.id === id ? null : { id };
-        draw();
+        if (swap === null) return subPop(i);
+        if (swap !== i) { const t = co.xi[i]; co.xi[i] = co.xi[swap]; co.xi[swap] = t; co.autoXI = false; }
+        swap = null; draw();
       });
     };
     render(U.modeHead({ mode: 'co', nav: 'back', id: 'b-co-back', label: 'Voltar ao clube', title: 'Seu time', sub: vs ? 'Próximo jogo · x ' + esc(vs.short || vs.name) : 'Time e elenco' }) +
       '<div id="co-team"></div>' +
       '<div class="inv-bar fade co-bar"><button class="btn ghost" id="b-co-aux">Sugestão do auxiliar</button>' + (toPlay && vs ? '<button class="btn" id="b-co-go">Jogar</button>' : '<button class="btn" id="b-co-ok">Pronto</button>') + '</div>');
     U.modeHeadBind();
-    $('b-co-back').onclick = () => { sfx('tap'); keepBench(); save(); hub(); };
-    $('b-co-aux').onclick = () => { sfx('tap'); const a = S.coAutoXI(co.squad, co.form); co.xi = a.xi; co.autoXI = true; sel = null; draw(); };
-    if ($('b-co-ok')) $('b-co-ok').onclick = () => { sfx('tap'); keepBench(); save(); hub(); };
-    if ($('b-co-go')) $('b-co-go').onclick = () => { sfx('tap'); keepBench(); play(); };
+    $('b-co-back').onclick = () => { sfx('tap'); closePop(); keepBench(); save(); hub(); };
+    $('b-co-aux').onclick = () => { sfx('tap'); const a = S.coAutoXI(co.squad, co.form); co.xi = a.xi; co.autoXI = true; swap = null; draw(); };
+    if ($('b-co-ok')) $('b-co-ok').onclick = () => { sfx('tap'); closePop(); keepBench(); save(); hub(); };
+    if ($('b-co-go')) $('b-co-go').onclick = () => { sfx('tap'); closePop(); keepBench(); play(); };
     draw();
   }
   // Banco: os 9 melhores que podem jogar e não são titulares

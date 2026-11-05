@@ -26,9 +26,12 @@ require('fs').mkdirSync(OUT, { recursive: true });
   await click('[data-sign]'); await shot('chegada');
   await click('#b-co-in'); await shot('time');
   // troca: um titular com um reserva; muda formação e estilo
-  await click('[data-xi="5"]'); await shot('time-selecionado');
-  await click('.co-pl:not(.dis)');
-  await click('[data-f="4-3-3"]'); await click('[data-s="pressao"]'); await shot('time-433-pressao');
+  await click('[data-xi="5"]'); await shot('time-popup-troca');
+  await click('.co-pop .co-pl:not(.dis)');
+  await click('[data-xi="2"]'); await click('#b-co-swap'); await shot('time-trocar-lugar'); await click('[data-xi="3"]');
+  await click('#b-co-form'); await shot('time-popup-formacao'); await click('[data-f="4-3-3"]');
+  await click('#b-co-sty'); await shot('time-popup-estilo'); await click('[data-s="pressao"]');
+  await p.evaluate(() => window.scrollTo(0, 0)); await shot('time-433-pressao');
   await click('#b-co-ok'); await shot('central');
   await click('#b-co-tab'); await shot('tabela'); await click('#b-co-back');
   let games = 0, guard = 0;
