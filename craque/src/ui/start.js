@@ -52,10 +52,22 @@
       (cl ? esc(cl.short || cl.name) + ' · ' : '') + sc.age + ' anos · ' + sc.pos + '</small><small>' + at + '</small></span><i class="tk-go" aria-hidden="true">' + PLAY_SVG + '</i></button>';
   }
   const svName = sv => (sv.co || sv.c).name;
+  // Excluir carreiras: "Editar" no ingresso troca o ▶ de cada linha por uma lixeira e o canhoto vira "Pronto"
+  const TRASH_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5M14 11v5"/></svg>';
+  const editing = new Set();
   function saveTicket(mode) {
     const M = MODES[mode], sl = slotsOf(mode), n = sl.filter(Boolean).length;
     const last = sl.map((sv, i) => [sv, i]).filter(([sv]) => sv).sort((x, y) => (y[0].at || 0) - (x[0].at || 0))[0];
-    const head = '<span class="tk-hd">' + U.emo(M.ic, 'lg') + '<span class="tk-t"><b>' + M.name + '</b><small>' + (n ? M.dur + ' · ' + n + ' de 2 vagas' : M.sub) + '</small></span></span>';
+    const ed = n && editing.has(mode);
+    if (!n) editing.delete(mode);
+    const head = '<span class="tk-hd">' + U.emo(M.ic, 'lg') + '<span class="tk-t"><b>' + M.name + '</b><small>' + (ed ? 'Toque na carreira para excluir' : n ? M.dur + ' · ' + n + ' de 2 vagas' : M.sub) + '</small></span>' +
+      (n && !ed ? '<button class="tk-ed" data-ed="' + mode + '">Editar</button>' : '') + '</span>';
+    if (ed) {
+      const del = sl.map((sv, i) => sv ? slotRow(mode, sv, i).replace('class="tk-vg"', 'class="tk-vg del" aria-label="Excluir ' + esc(svName(sv)) + '"').replace(/data-vg="([^"]*)"/, 'data-del="$1"')
+        .replace(/<i class="tk-go"[\s\S]*?<\/i>/, '<i class="tk-go tk-trash" aria-hidden="true">' + TRASH_SVG + '</i>') : '').join('');
+      return '<div class="tk tk-sv tk-' + mode + ' editing"><span class="tk-in"><span class="tk-paper"><span class="tk-frame">' + head + del + '</span></span><span class="tk-stub">' +
+        '<button class="tk-s-cont tk-s-one" data-ed="' + mode + '"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Pronto</b><small>' + M.sec + '</small></button></span></span></div>';
+    }
     const other = sl.find(Boolean);
     const rows = n ? sl.map((sv, i) => sv ? slotRow(mode, sv, i) : '<button class="tk-vg free" data-new="' + mode + ':' + i + '"><i class="tk-plus" aria-hidden="true">' + PLUS_SVG + '</i>' +
       '<span class="tk-vt"><b>Vaga livre</b><small>Comece outra sem perder ' + (mode === 'treinador' ? 'o ' : 'a de ') + esc(firstName(svName(other))) + '</small></span></button>').join('') : '';
@@ -152,6 +164,19 @@
       if (!sv) return home();
       if (mode === 'treinador') return U.coResume(sv);
       cont(sv);
+    });
+    // Editar / Pronto e excluir (com confirmação; a vaga vazia grava por cima e vai para a nuvem como as outras)
+    document.querySelectorAll('.hm [data-ed]').forEach(b => b.onclick = () => { const m = b.dataset.ed; sfx('tap'); editing.has(m) ? editing.delete(m) : editing.add(m); home(); });
+    document.querySelectorAll('.hm [data-del]').forEach(b => b.onclick = () => {
+      const [mode, slot] = b.dataset.del.split(':'), sv = svAt(mode, +slot);
+      if (!sv) return home();
+      const co = mode === 'treinador', c = sv.co || sv.c;
+      U.ask('Excluir a carreira de ' + c.name + '?', (co ? 'O técnico' : 'O jogador') + ' some deste aparelho e da sua conta na nuvem. Não dá para desfazer.', 'Excluir carreira', () => {
+        const base = co ? U.SAVE_CO : SLOT_BASE[mode]();
+        store(U.slotKey(base, +slot), co ? { co: null, at: Date.now() } : { c: null, at: Date.now() });
+        sfx('tap'); home();
+      });
+      const ok = document.querySelector('.ask-wrap:last-of-type [data-a="ok"]'); if (ok) ok.classList.add('danger'); // apagar é vermelho, não ouro
     });
     document.querySelectorAll('.hm [data-new]').forEach(b => b.onclick = () => { const [mode, slot] = b.dataset.new.split(':'); sfx('tap'); begin(mode, +slot); });
     document.querySelectorAll('.hm [data-mode]').forEach(b => b.onclick = () => {
