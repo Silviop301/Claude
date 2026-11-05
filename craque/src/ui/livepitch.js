@@ -34,6 +34,9 @@
   // O campinho: linhas, faixa de ataque, bolinhas, você em dourado, a bola, o rastro e os avisos
   LP.pitch = function (o) {
     o = o || {};
+    // Com os jogadores que decidem (ui/livesim.js): um canvas desenha linhas, jogadores e bola
+    if (o.cv) return '<div class="lp-pitch lp-cvm" id="lp-pitch" aria-hidden="true"><b class="lp-band" id="lp-band"></b><canvas class="lp-cv" id="lp-cv"></canvas>' +
+      '<span class="lp-tag lp-pos" id="lp-pos">Posse 50%</span><span class="lp-tag lp-zone" id="lp-zone"></span><div class="lp-ban" id="lp-ban" hidden></div></div>';
     let dots = '';
     for (let k = 0; k < 11; k++) if (k !== o.me) dots += '<i class="lp-d us"></i>';
     for (let k = 0; k < 11; k++) dots += '<i class="lp-d th"></i>';
