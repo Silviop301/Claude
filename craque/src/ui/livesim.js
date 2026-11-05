@@ -313,6 +313,54 @@
     }
     // Apito (falta, impedimento): todos param um instante e a bola fica com quem vai cobrar
     function whistle(why, taker) { mode = 'falta'; modeT = 1.5; stopWhy = why; ball.owner = ball.fly = ball.loose = ball.carry = null; foulTo = taker; }
+    // O juiz (o motor já decidiu): falta, cartão ou impedimento de quem joga na posição pos do lado side. O campinho para,
+    // o cartão sobe em cima de quem fez, e só então a narração escreve (cb). O expulso sai da lógica na hora (o time joga com
+    // um a menos) e fica parado no lugar até o apito acabar; depois sai andando pela lateral mais perto
+    let refFx = null, offLine = null;
+    const leaving = [];
+    const ROLE_OF = { GOL: /GK/, ZAG: /CB/, LAT: /LB|RB/, VOL: /DM|CM/, MEI: /CM|DM|LM|RM/, PON: /LW|RW|LM|RM/, ATA: /ST|LW|RW/ };
+    function whoDid(side, pos, me) {
+      if (me && side === 0 && ME >= 0) return T[0][ME];
+      const re = ROLE_OF[pos], L0 = T[side].filter(p => !isMe(p) && (pos === 'GOL' ? p.r === 'GK' : p.r !== 'GK')), Lr = re ? L0.filter(p => re.test(p.r)) : [];
+      return (Lr.length ? Lr : L0).sort((a, b) => dist(a, ball) - dist(b, ball))[0] || null;
+    }
+    function goOff(p, wait) {
+      const s = p.side, i = T[s].indexOf(p); if (i < 0) return;
+      const wasMe = isMe(p);
+      T[s].splice(i, 1);
+      if (s === 0 && ME >= 0) { if (i === ME) { ME = -1; en = null; if (lc) lcDone(); } else if (i < ME) ME--; }
+      ALL = T[0].concat(T[1]);
+      ALL.forEach(q => { if (q.mark === p) q.mark = null; });
+      if (ball.owner === p) { ball.owner = null; setOwner(at(s, 6)); }
+      if (ball.fly && ball.fly.to === p) ball.fly.to = at(s, 6);
+      if (ball.loose && ball.loose.to === p) ball.loose.to = at(s, 6);
+      if (foulTo === p) foulTo = at(s, 6);
+      leaving.push({ p, wasMe, wait: wait || 0, t: 0, ty: p.y < WD / 2 ? -1 : WD + 1 });
+    }
+    function refDo(o) {
+      const kind = o.kind, p = whoDid(o.side, o.pos, o.me);
+      if (!p) return false;
+      if (kind === 'impedimento') {
+        const s = o.side, line = lineOf(s), [px, py] = tf(s, p);
+        // o mais adiantado do ataque; se está atrás da linha por pouco, passa dela (a bola chegou nele)
+        const q = T[s].filter(x => x.r !== 'GK' && !isMe(x)).sort((a, b) => tf(s, b)[0] - tf(s, a)[0])[0] || p;
+        const [qx, qy] = tf(s, q); if (qx < line + 0.6 && line - qx < 7) { [q.x, q.y] = toW(s, Math.min(L - 3, line + 0.9), qy); }
+        void px; void py;
+        ball.x = q.x; ball.y = q.y;
+        const d = T[1 - s].filter(x => x.r !== 'GK').sort((a, b) => dist(a, q) - dist(b, q))[0] || at(1 - s, 0);
+        whistle('Impedimento', d); modeT = 1.8;
+        offLine = { s, x: line, t: 1.8 }; refFx = { p: q, kind, t: 1.8 };
+        return true;
+      }
+      const v = T[1 - o.side].filter(x => x.r !== 'GK').sort((a, b) => dist(a, p) - dist(b, p))[0];
+      if (v) { ball.x = (v.x + p.x) / 2; ball.y = (v.y + p.y) / 2; v.stun = 1.6; v.down = 1.6; }
+      whistle('Falta', v || at(1 - o.side, 6));
+      const card = kind === 'amarelo' || kind === 'vermelho';
+      modeT = card ? 2.3 : 1.3;
+      if (card) refFx = { p, kind, how: o.how, t: 2.3 };
+      if (kind === 'vermelho') goOff(p, 2.3);
+      return true;
+    }
     let foulTo = null;
     // Seu lance sem a bola: eles atacam perto de você (ou na sua área, se você é o goleiro)
     function defAct(dt) {
@@ -454,6 +502,10 @@
     function step(dt) { step1(dt); if (back && mode === 'ko') { step1(dt); step1(dt); } }
     function step1(dt) {
       clk += dt;
+      if (refFx && (refFx.t -= dt) <= 0) refFx = null;
+      if (offLine && (offLine.t -= dt) <= 0) offLine = null;
+      for (let i = leaving.length - 1; i >= 0; i--) { const q = leaving[i]; q.wait -= dt; if (q.wait > 0) continue; q.t += dt; q.p.y += cl(q.ty - q.p.y, -3.6 * dt, 3.6 * dt); if (q.t > 6 || q.p.y < -0.5 || q.p.y > WD + 0.5) leaving.splice(i, 1); }
+      ALL.forEach(p => { if (p.down) p.down = Math.max(0, p.down - dt); });
       if (mode === 'wait') { ALL.forEach(p => { [p.tx, p.ty] = koShape(p, p.side); }); ball.x = 52.5; ball.y = 34; }
       else if (mode === 'play') play(dt);
       else if (mode === 'ko' || mode === 'half') {
@@ -541,7 +593,7 @@
       const kt = p.r === 'GK' ? [KT.gk[p.side], '#1D1D1F'] : p.side ? KT.opp : KT.mine, shirt = me ? '#F2C230' : kt[0];
       // A borda é o calção (se some na camisa, preto ou branco)
       g.fillStyle = shirt; g.strokeStyle = me ? '#0F3D2A' : cdist(kt[1], kt[0]) > 120 ? kt[1] : lum(kt[0]) > 0.55 ? '#1D1D1F' : '#F4F1E8'; g.lineWidth = 2 * k;
-      g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.beginPath(); if (p.down) g.ellipse(x, y, r * 1.2, r * 0.62, 0.5, 0, Math.PI * 2); else g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke();
       g.globalAlpha = 1;
       const a = Math.atan2(p.fy, p.fx);
       g.strokeStyle = me || lum(shirt) > 0.55 ? 'rgba(19,32,26,.75)' : 'rgba(255,255,255,.85)'; g.lineWidth = 1.6 * k;
@@ -568,6 +620,13 @@
       g.font = '800 ' + Math.round(11 * k) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'right'; g.textBaseline = 'middle'; g.fillText(String(v), x0 + w - 4 * k, y0 + h / 2 + 0.5);
       g.textAlign = 'center';
     }
+    // Cartão: retângulo inclinado com sombra (w×h ~ 11×15 px)
+    function card(x, y, col, k, rot) {
+      g.save(); g.translate(x, y); g.rotate(rot || 0);
+      g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(-5.5 * k + 1.5, -15 * k + 2.5, 11 * k, 15 * k);
+      g.fillStyle = col; g.strokeStyle = '#13201A'; g.lineWidth = 1.4 * k; g.beginPath(); g.roundRect(-5.5 * k, -15 * k, 11 * k, 15 * k, 2 * k); g.fill(); g.stroke();
+      g.restore();
+    }
     function draw() {
       if (!g) return;
       g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
@@ -576,6 +635,29 @@
       if (ball.fly) { g.strokeStyle = ball.fly.shot ? 'rgba(242,194,48,.8)' : 'rgba(255,255,255,.35)'; g.lineWidth = 1.5 * k; g.setLineDash([4 * k, 4 * k]); g.beginPath(); g.moveTo(X(ball.fly.x0), Y(ball.fly.y0)); g.lineTo(X(ball.x), Y(ball.y)); g.stroke(); g.setLineDash([]); }
       ALL.forEach(p => { if (!isMe(p)) dot(p, k); });
       if (ME >= 0) dot(T[0][ME], k);
+      // Quem foi expulso sai andando (um pouco apagado); o cartão em cima de quem fez; a linha do impedimento
+      leaving.forEach(q => { const p = q.p, x = X(p.x), y = Y(p.y), r = (q.wasMe ? 9.5 : 6.2) * k, kt = p.side ? KT.opp : KT.mine;
+        g.globalAlpha = 0.7; g.fillStyle = q.wasMe ? '#F2C230' : kt[0]; g.strokeStyle = '#F4F1E8'; g.lineWidth = 2 * k; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke(); g.globalAlpha = 1;
+        if (q.wasMe) { g.fillStyle = '#13201A'; g.font = '800 ' + Math.round(12 * k) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(o.num || 9), x, y + 0.5); }
+        if (!refFx || refFx.p !== p) card(x + 5 * k, y - r - 2 * k, '#D8404A', k * 0.7, -0.14); });
+      if (offLine) {
+        const [wx] = toW(offLine.s, offLine.x, 0), lx = X(wx);
+        g.fillStyle = 'rgba(242,194,48,.10)'; const x2 = X(toW(offLine.s, L, 0)[0]); g.fillRect(Math.min(lx, x2), Y(0), Math.abs(x2 - lx), Y(WD) - Y(0));
+        g.strokeStyle = '#F2C230'; g.lineWidth = 2 * k; g.setLineDash([5 * k, 4 * k]); g.beginPath(); g.moveTo(lx, Y(0)); g.lineTo(lx, Y(WD)); g.stroke(); g.setLineDash([]);
+        // a bandeira do bandeirinha, levantada na lateral de cima
+        const fy = Y(0) - 1; g.strokeStyle = '#FBF8EF'; g.lineWidth = 1.8 * k; g.beginPath(); g.moveTo(lx, fy + 12 * k); g.lineTo(lx, fy - 8 * k); g.stroke();
+        g.fillStyle = '#F2C230'; g.fillRect(lx, fy - 8 * k, 6 * k, 4 * k); g.fillStyle = '#D8404A'; g.fillRect(lx + 6 * k, fy - 8 * k, 6 * k, 4 * k); g.fillRect(lx, fy - 4 * k, 6 * k, 4 * k); g.fillStyle = '#F2C230'; g.fillRect(lx + 6 * k, fy - 4 * k, 6 * k, 4 * k);
+      }
+      if (refFx) {
+        const p = refFx.p, x = X(p.x), y = Y(p.y), up = Math.min(1, (2.3 - refFx.t) * 4);
+        if (refFx.kind === 'impedimento') { g.strokeStyle = 'rgba(216,64,74,.9)'; g.lineWidth = 3 * k; g.beginPath(); g.arc(x, y, 10 * k, 0, Math.PI * 2); g.stroke(); }
+        else if (refFx.kind !== 'falta') {
+          const red = refFx.kind === 'vermelho';
+          g.strokeStyle = red ? 'rgba(216,64,74,.6)' : 'rgba(242,194,48,.55)'; g.lineWidth = 3.5 * k; g.beginPath(); g.arc(x, y, 10 * k, 0, Math.PI * 2); g.stroke();
+          if (red && refFx.how === '2am') card(x - 3 * k, y - 15 * k - up * 6 * k, '#F2C230', k, 0.16);
+          card(x + 4 * k, y - 15 * k - up * 6 * k, red ? '#D8404A' : '#F2C230', k, red ? -0.14 : 0.16);
+        }
+      }
       const bx = X(ball.x), by = Y(ball.y), air = ball.fly ? Math.sin(Math.min(1, ball.fly.t) * Math.PI) * (ball.fly.loft || 0) * 0.9 * k : 0;
       g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(bx + 1, by + 3, 4 * k, 2.5 * k, 0, 0, Math.PI * 2); g.fill();
       g.fillStyle = '#fff'; g.strokeStyle = '#13201A'; g.lineWidth = 1.5 * k; g.beginPath(); g.arc(bx, by - air, (4.5 + air / 12) * k, 0, Math.PI * 2); g.fill(); g.stroke();
@@ -647,6 +729,14 @@
         goals.push(e);
         // now: a tela esperou demais, quem vai bater bate de onde estiver; sem now: desiste do lance
         return now => { if (e.done) return; if (now) { if (due !== e && mode === 'play') { due = e; e.t0 = clk; e.asDone = false; e.rx = 88; e.ry = 34; } e.now = true; return; } e.done = true; if (due === e) due = null; };
+      },
+      // O juiz: { side: 0 seu time | 1, pos, kind: falta|amarelo|vermelho|impedimento, me, how }. cb quando o lance aparece
+      // (com a bola parada, num gol saindo ou no seu lance, a linha sai na hora; o vermelho tira o jogador do mesmo jeito)
+      ref(r0, cb) {
+        const free = mode === 'play' && !lc && !due && !r0.quiet;
+        if (free && refDo(r0)) { if (cb) setTimeout(cb, r0.kind === 'falta' ? 500 : 900 / Math.max(1, o.speed ? o.speed() : 1)); return; }
+        if (r0.kind === 'vermelho') { const p = whoDid(r0.side, r0.pos, r0.me); if (p) goOff(p, 0); }
+        if (cb) cb();
       },
       // Treinador: mudou a formação (ou alguém foi expulso: a lista vem menor); cada um corre para o lugar novo
       lineup(s, form) {
