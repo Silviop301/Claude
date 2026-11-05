@@ -39,15 +39,6 @@
     phone();
   }
   // ---------- o celular (tela central) ----------
-  // O hub é a tela do celular do jogador: relógio com o próximo jogo, notificações (técnico, agenda, preparador, Zé)
-  // que levam às telas, os apps e o ingresso para o jogo.
-  // Como num iPhone: a grade de apps em cima e a barra fixa de baixo com os quatro principais (dentro dos apps ela continua
-  // no pé da tela, com o app aberto marcado). O Zé é um contato do Chat; as apostas e a mesa são o app Apostas.
-  const DOCK = [['msg', '💬', 'Chat'], ['ag', '📒', 'Agenda'], ['bet', '🎰', 'Apostas'], ['shop', '🏷️', 'Loja']];
-  const GRID = [['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['me', '📈', 'Ficha'], ['bank', '🏦', 'Banco'], ['mkt', '🤝', 'Mercado']];
-  const appBtn = (c, [k, e, n], on) => { const mw = k === 'mkt' && S.fcWin && S.fcWin(c), u = k === 'msg' ? (c.ppl && c.ppl.unread) || 0 : mw && !mw.seen ? mw.offers.length : 0;
-    return '<button class="ph-app' + (on ? ' on' : '') + '" data-go="' + k + '"' + (on ? ' aria-current="page"' : '') + '><i>' + U.emo(e, 'md') + (u ? '<em class="ph-badge">' + Math.min(u, 99) + '</em>' : '') + '</i><span>' + n + '</span></button>'; };
-  const dock = (c, cur) => '<nav class="ph-dock" aria-label="Apps">' + DOCK.map(a => appBtn(c, a, a[0] === cur)).join('') + '</nav>';
   // Barra de status do aparelho: dia e hora da véspera do jogo, energia
   function sbar(c) {
     const fc = c.fc, nx = S.fcNext(c), gd = dayOf(nx.e), eve = DAYS[(gd + 6) % 7];
@@ -55,26 +46,27 @@
     const en = Math.round(fc.en === undefined ? 100 : fc.en);
     return { clk, html: '<div class="ph-bar"><span>' + eve + ' ' + clk + '</span><span class="' + (en < S.FC_EN_OUT ? 'out' : en < S.FC_EN_LOW ? 'low' : '') + '">Energia ' + en + '%</span></div>' };
   }
-  // Um app aberto dentro do aparelho: cabeçalho com a volta, o conteúdo rolando por dentro e a barra de baixo
+  // Um app aberto: a tela inteira é o celular (sem moldura desenhada). Topo com voltar, ícone e nome do app; o conteúdo
+  // rola no meio; o ingresso do jogo fica sempre no mesmo lugar e do mesmo tamanho que no início
+  const APP_EMO = { msg: '💬', ag: '📒', wk: '📒', bet: '🎰', shop: '🏷️', tbl: '📊', cal: '📋', me: '📈', evo: '📈', bank: '🏦', mkt: '🤝' };
+  const BACK_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function appScr(cur, title, body, o) {
     o = o || {};
     const c = G.c;
-    // O aparelho tem o mesmo tamanho do início do celular e o ingresso do jogo continua ao lado (antes o app crescia
-    // quando o ingresso sumia); a barra do jogador some, o widget dela fica no início do celular
-    render('<div class="ph pa" id="fc"><div class="ph-cols"><div class="ph-scr pa-scr">' + sbar(c).html +
-      '<header class="pa-h"><button class="pa-back" id="fc-back">‹ ' + (o.back || 'Início') + '</button><b>' + title + '</b><span></span></header>' +
-      '<div class="fc-scr pa-body' + (o.cls ? ' ' + o.cls : '') + '" id="fc-scr">' + body + '</div>' + (o.foot || '') +
-      dock(c, cur) + '<button class="ph-home" id="fc-home" aria-label="Voltar para o início do celular"></button></div>' + side(c) + '</div></div>');
-    document.body.classList.add('ph-nobar');
+    render('<div class="p2 pa" id="fc"><header class="p2-ah"><button class="p2-ic" id="fc-back" aria-label="Voltar' + (o.back ? ' para ' + o.back : ' ao início do celular') + '">' + BACK_SVG + '</button>' +
+      (APP_EMO[cur] ? '<i class="p2-ai">' + U.emo(APP_EMO[cur], 'sm') + '</i>' : '') + '<b>' + title + '</b>' + (o.right || '') + '</header>' +
+      '<div class="fc-scr pa-body p2-body' + (o.cls ? ' ' + o.cls : '') + '" id="fc-scr">' + body + '</div>' + (o.foot || '') +
+      side(c) + '</div>');
+    p2Chrome();
     sideBind();
     $('fc-back').onclick = () => { sfx('tap'); phone(); };
-    $('fc-home').onclick = () => { sfx('tap'); phone(); };
-    document.querySelectorAll('.ph-dock [data-go]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go); }; });
   }
+  // Fora da carreira de sempre: a barra do jogador some no celular (o widget Jogador mostra o mesmo)
+  function p2Chrome() { document.body.classList.add('ph-nobar'); }
   // Ao lado do aparelho (embaixo, no celular): o tipo do jogo, o ingresso e os atalhos de resumir
   function side(c) {
     const nx = S.fcNext(c), fc = c.fc, kind = S.fcKind(c, nx);
-    return '<div class="ph-side">' +
+    return '<div class="ph-side p2-foot">' +
         '<p class="prc-kind ' + kind + '">' + kindTxt(c, nx, kind) + '</p>' +
         '<button class="prc-tk" id="fc-play"><span class="prc-tk-m"><b>' + (nx.moment ? 'Jogar a decisão' : kind === 'vivo' ? 'Ir pro jogo' : nx.vs ? 'Jogar' : 'Seguir') + '</b><small>' +
           (nx.vs ? esc(nameOf(nx.home ? c.club : nx.vs)) + ' × ' + esc(nameOf(nx.home ? nx.vs : c.club)) : esc(nx.compName)) + '</small></span><span class="prc-tk-s"><small>jogo</small><b>' + (fc.i + 1) + '</b></span></button>' +
@@ -92,23 +84,60 @@
     if ($('fc-live')) $('fc-live').onclick = () => { sfx('tap'); S.fcLive(G.c); save(); phone(); };
     if ($('fc-skip2')) $('fc-skip2').onclick = () => skipTo();
   }
+  // Início do celular (proposta B do canvas "Celular do Jogo a Jogo"): a tela inteira é o aparelho. Em cima o dia e a
+  // energia, configurações e sair; a notificação mais nova em faixa (+N abre as outras); os widgets Jogador (abre a
+  // Ficha) e Próximo jogo (abre a Tabela); os nove apps em grade; o ingresso embaixo, igual em todo app.
+  const GRID2 = [['msg', '💬', 'Chat'], ['ag', '📒', 'Agenda'], ['me', '📈', 'Ficha'], ['bank', '🏦', 'Banco'], ['shop', '🏷️', 'Loja'],
+    ['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['mkt', '🤝', 'Mercado'], ['bet', '🎰', 'Apostas']];
+  const GEAR = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4z M19.4 13.5l1.6 1.2-1.8 3.1-1.9-.7a7.6 7.6 0 0 1-2 1.2l-.3 2h-3.6l-.3-2a7.6 7.6 0 0 1-2-1.2l-1.9.7-1.8-3.1 1.6-1.2a7.4 7.4 0 0 1 0-2.4L3.4 9.3l1.8-3.1 1.9.7a7.6 7.6 0 0 1 2-1.2l.3-2h3.6l.3 2a7.6 7.6 0 0 1 2 1.2l1.9-.7 1.8 3.1-1.6 1.2a7.4 7.4 0 0 1 0 2.4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+  const EXIT = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4.5 3 12l7.5 7.5M3.8 12h17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const DAYS_LONG = { Seg: 'Segunda', Ter: 'Terça', Qua: 'Quarta', Qui: 'Quinta', Sex: 'Sexta', 'Sáb': 'Sábado', Dom: 'Domingo' };
+  let nAll = false; // notificações abertas (todas) ou só a mais nova
+  function meter(lbl, v, cls) { return '<span>' + lbl + '</span><i class="p2-mb"><i class="' + (cls || '') + '" style="width:' + Math.max(0, Math.min(100, Math.round(v))) + '%"></i></i>'; }
+  function wPlayer(c) {
+    const o = S.ovr(c), tot = U.totOf(c), tt = U.titlesOf(c);
+    return '<button class="p2-w p2-wme" data-go="me" aria-label="Jogador: abrir a Ficha"><span class="p2-who"><span class="ovr metal ' + U.tierCls(o) + '">' + o + '</span>' +
+      '<span class="p2-nm"><b>' + esc(c.name) + '</b><small>' + crest(c.club, 'xs') + esc(nameOf(c.club)) + '</small></span></span>' +
+      '<span class="p2-ms">' + meter('Técnico', c.rel.coach) + meter('Torcida', c.rel.fans) + meter('Fama', c.fame / 3, 'fame') + '</span>' +
+      '<small class="p2-tot">' + tot.map(([v, l]) => v + ' ' + l.toLowerCase()).join(' · ') + ' · ' + tt + (tt === 1 ? ' taça' : ' taças') + '</small></button>';
+  }
+  function wNext(c, nx) {
+    if (!nx.vs) return '<button class="p2-w p2-wnx" data-go="cal" aria-label="Próximo jogo: abrir Jogos"><small class="p2-ey">Amanhã</small><span class="p2-vs">' + crest(c.club, 'lg') + '</span><b>Folga do time</b><small>' + esc(nx.compName) + '</small></button>';
+    const p = Math.round(S.fcStartP(c) * 100);
+    const st = nx.injury ? ['fora', 'lesionado'] : nx.on === null ? ['', p + '% de começar'] : nx.on ? ['on', 'titular'] : ['', nx.why === 'cansaço' ? 'poupado' : 'banco'];
+    return '<button class="p2-w p2-wnx" data-go="' + (nx.comp === 'lg' ? 'tbl' : 'cal') + '" aria-label="Próximo jogo: abrir a ' + (nx.comp === 'lg' ? 'Tabela' : 'lista de jogos') + '">' +
+      '<small class="p2-ey">Amanhã · ' + (nx.home ? 'em casa' : 'fora') + '</small>' +
+      '<span class="p2-vs">' + crest(nx.home ? c.club : nx.vs, 'lg') + '<em>×</em>' + crest(nx.home ? nx.vs : c.club, 'lg') + '</span>' +
+      '<b>x ' + esc(nameOf(nx.vs)) + '</b><small>' + esc(nx.compName) + (nx.stage ? ' · ' + esc(nx.stage.toLowerCase()) : '') + ' <em class="p2-st ' + st[0] + '">' + st[1] + '</em></small></button>';
+  }
   function phone() {
-    const c = G.c, nx = S.fcNext(c);
+    const c = G.c, nx = S.fcNext(c), fc = c.fc;
     if (S.fcPhonePre) S.fcPhonePre(c, nx); // as pessoas do celular (engine/phone.js): lesão, jogo grande
     if (S.fcZeSync) S.fcZeSync(c); // a proposta do Zé chega como mensagem (engine/money.js)
     if (S.fcWinState) S.fcWinState(c); // a janela do meio do ano abre (engine/transfer.js)
-    const sb = sbar(c);
+    const sb = sbar(c), gd = dayOf(nx.e), eve = DAYS[(gd + 6) % 7];
+    const en = Math.round(fc.en === undefined ? 100 : fc.en);
     const when = ['agora', '8 min', '25 min', '1 h', '2 h', '3 h'];
-    // Tela de bloqueio: a barra do jogador entra no aparelho como widget, no lugar do relógio grande (a hora já
-    // está na barra de status), e o aparelho ganha a altura que ela ocupava em cima
-    render('<div class="ph" id="fc"><div class="ph-cols"><div class="ph-scr ph-lock">' + sb.html +
-      '<p class="ph-date">' + (nx.vs ? 'Amanhã: x ' + esc(nameOf(nx.vs)) + ', ' + (nx.home ? 'em casa' : 'fora') + ' · ' + esc(nx.compName) : 'Amanhã: folga do time · ' + esc(nx.compName)) + '</p>' +
-      '<div class="ph-ns">' + pings(c, nx).map((n, k) => '<button class="ph-n"' + (n.go ? ' data-go="' + n.go + '"' : ' disabled') + '><b>' + esc(n.who) + ' <i>· ' + when[Math.min(k, when.length - 1)] + '</i></b><span>' + esc(n.txt) + '</span></button>').join('') + '</div>' +
-      '<div class="ph-apps">' + GRID.map(a => appBtn(c, a)).join('') + '</div>' + dock(c) +
-      '</div>' + side(c) + '</div></div>');
-    bar();
-    U.barInPhone(document.querySelector('#fc .ph-scr'), document.querySelector('#fc .ph-bar'));
-    document.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go); }; });
+    const ps = pings(c, nx), first = ps.slice(0, nAll ? ps.length : 1);
+    const ping = (n, k) => '<button class="p2-n"' + (n.go ? ' data-go="' + n.go + '"' : ' disabled') + '><span class="p2-nt"><b>' + esc(n.who) + ' <i>· ' + when[Math.min(k, when.length - 1)] + '</i></b><span>' + esc(n.txt) + '</span></span>' +
+      (k === 0 && ps.length > 1 ? '<em class="p2-more" id="p2-more" role="button" tabindex="0" aria-label="' + (nAll ? 'Mostrar só a mais nova' : 'Ver as outras ' + (ps.length - 1) + ' notificações') + '">' + (nAll ? '−' : '+' + (ps.length - 1)) + '</em>' : '') + '</button>';
+    const app = ([k, e, n]) => { const mw = k === 'mkt' && S.fcWin && S.fcWin(c);
+      const u = k === 'msg' ? (c.ppl && c.ppl.unread) || 0 : k === 'mkt' ? (mw && !mw.seen ? mw.offers.length : 0) : k === 'me' ? ((c.pe || 0) >= 1 && S.canInvestAny(c) ? Math.floor(c.pe) : 0) : 0;
+      return '<button class="p2-app" data-go="' + k + '"><i>' + U.emo(e, 'md') + (u ? '<em class="ph-badge">' + Math.min(u, 99) + '</em>' : '') + '</i><span>' + n + '</span></button>'; };
+    render('<div class="p2" id="fc">' +
+      '<header class="p2-top"><span class="p2-day"><b>' + (DAYS_LONG[eve] || eve) + ', ' + sb.clk + '</b><small>Jogo ' + (fc.i + 1) + ' do ano · <span class="p2-en ' + (en < S.FC_EN_OUT ? 'out' : en < S.FC_EN_LOW ? 'low' : '') + '">Energia ' + en + '%</span></small></span>' +
+        '<button class="p2-ic" id="p2-cfg" aria-label="Configurações">' + GEAR + '</button><button class="p2-ic" id="p2-exit" aria-label="Voltar ao início do jogo">' + EXIT + '</button></header>' +
+      '<div class="p2-mid">' +
+        (ps.length ? '<div class="p2-ns' + (nAll ? ' all' : '') + '">' + first.map(ping).join('') + '</div>' : '') +
+        '<div class="p2-ws">' + wPlayer(c) + wNext(c, nx) + '</div>' +
+        '<nav class="p2-apps" aria-label="Apps">' + GRID2.map(app).join('') + '</nav>' +
+      '</div>' + side(c) + '</div>');
+    bar(); p2Chrome();
+    document.querySelectorAll('#fc [data-go]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go); }; });
+    const more = $('p2-more');
+    if (more) { const t = e => { e.stopPropagation(); sfx('tap'); nAll = !nAll; phone(); }; more.onclick = t; more.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') t(e); }; }
+    $('p2-cfg').onclick = () => { sfx('tap'); U.settings(); };
+    $('p2-exit').onclick = () => { sfx('tap'); U.ask('Voltar ao início?', 'Sua carreira fica salva e você continua de onde parou.', 'Ir para o início', U.toHome); };
     sideBind();
   }
   // Notificações do celular: quem fala e o que pede; cada uma abre a tela dela
