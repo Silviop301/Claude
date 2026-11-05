@@ -130,14 +130,14 @@ function stepInPage(opts) {
     if (x < 0.42 && $('fc-auto')) return label('completa:semana-auto ' + click($('fc-auto')));
     return label('completa:semana ' + click($('fc-wkgo')));
   }
-  // Agenda (app do celular): troca a ação de um dia e volta com "Pronto"
-  if ($('fc-agok')) {
-    if (q('.ag-o:not(:disabled)')) return label('completa:agenda-acao ' + click(rnd([...document.querySelectorAll('.ag-o:not(:disabled)')])));
-    // Convites do celular (fase 2): às vezes responde (segura ou arriscada), às vezes deixa sem resposta
+  // Agenda (app do celular): troca o treino da semana, responde convites, escolhe o sonho, abre as metas; volta pela seta
+  if ($('ag')) {
     if (q('[data-dream]') && Math.random() < 0.7) return label('completa:sonho ' + click(rnd([...document.querySelectorAll('[data-dream]')]))); // fase 6: o sonho do ano
+    // Convites do celular (fase 2): às vezes responde (segura ou arriscada), às vezes deixa sem resposta
     if (q('[data-inv]') && Math.random() < 0.6) return label('completa:convite ' + click(rnd([...document.querySelectorAll('[data-inv]')])));
-    if (q('.ag-d.slot:not(:disabled)') && Math.random() < 0.5) return label('completa:agenda-dia ' + click(rnd([...document.querySelectorAll('.ag-d.slot:not(:disabled)')])));
-    return label('completa:agenda-pronto ' + click($('fc-agok')));
+    if (q('.ag-o:not(:disabled):not(.on)') && Math.random() < 0.35) return label('completa:agenda-acao ' + click(rnd([...document.querySelectorAll('.ag-o:not(:disabled):not(.on)')])));
+    if ($('ag-gl') && Math.random() < 0.1) return label('completa:metas ' + click($('ag-gl')));
+    return label('completa:agenda-voltar ' + click($('fc-back')));
   }
   if ($('fc-scr') && Math.random() < 0.5) {
     const all = [...document.querySelectorAll('#fc-shop .fc-buy:not(:disabled), #fc-shop .fc-attr button:not(.on), .fc-bet-o button, .fc-bet-s button:not(:disabled), #fc-bet-go:not(:disabled), #fc-tabs button, #ze-ask:not(:disabled), [data-zt]:not(:disabled), [data-zf], [data-ch], #fc-back, [data-way]:not(:disabled), #fc-party:not(:disabled), .mk-offers .of-sign, #mk-stay, #mk-renew:not(:disabled), #mk-out:not(:disabled)')]; // fase 3: Zé no Chat, a barra de baixo, o Banco e a festa; fase 4: o Mercado
