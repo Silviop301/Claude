@@ -112,7 +112,7 @@
   // Tudo o que já foi usado nas carreiras salvas (em andamento e na coleção) fica liberado: ninguém perde nada
   function grantUsed(o) {
     const used = [];
-    [U.SAVE, U.SAVE_FC].forEach(k => { const sv = load(k); if (sv && sv.c) used.push({ look: sv.c.look, number: sv.c.number }); });
+    [U.SAVE, U.SAVE_FC, U.slotKey(U.SAVE, 1), U.slotKey(U.SAVE_FC, 1)].forEach(k => { const sv = load(k); if (sv && sv.c) used.push({ look: sv.c.look, number: sv.c.number }); });
     const last = load('climbix-ultimo-visual'); if (last && typeof last === 'object') used.push({ look: last });
     (load('climbix-colecao-v1') || []).forEach(e => e && e.card && used.push({ look: e.card.look, number: e.card.number }));
     used.forEach(u => {

@@ -5460,6 +5460,58 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
 .tk-cont .tk-stub { background: #F2C230; gap: 5px; --tk-sub: #4A3E12; }
 .tk-cont .tk-stub b { writing-mode: initial; transform: none; font-size: 18px; }
 .tk-bars { width: 52px; height: 16px; margin-top: 2px; background: repeating-linear-gradient(90deg, #1B1B17 0 2px, transparent 2px 3px, #1B1B17 3px 4px, transparent 4px 7px, #1B1B17 7px 10px, transparent 10px 11px); }
+/* Vagas no ingresso (2026-11-05): modos com save mostram as duas vagas; canhoto dividido Continuar / Novo */
+.tk-sv { --stub: 76px; --cut: 9px; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .35)); cursor: default; }
+.tk-sv .tk-in { height: auto; border-radius: 10px; }
+.tk-sv .tk-paper { padding: 7px; }
+.tk-sv .tk-frame { flex-direction: column; align-items: stretch; gap: 0; padding: 0; border-radius: 5px; }
+.tk-hd { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 7px 10px; }
+.tk-hd .tw-lg { width: 38px; height: 38px; }
+.tk-hd .tk-t small { margin-top: 2px; }
+.tk-vg { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 58px; padding: 6px 10px; border: 0; border-top: 1px dashed rgba(27, 27, 23, .28);
+  background: none; color: #1B1B17; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.tk-vg:active { background: rgba(255, 255, 255, .22); }
+@media (hover: hover) { .tk-vg:hover { background: rgba(255, 255, 255, .18); } }
+.tk-vg .crest, .tk-vg > .tw { width: 36px; height: 36px; flex: none; margin: 0; }
+.tk-vt { flex: 1; min-width: 0; }
+.tk-vt b { display: block; font: 800 19px/1.05 var(--display); color: #1B1B17; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tk-vt small { display: block; font: 500 12px/1.25 var(--body); color: #3B3A32; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tk-go { width: 28px; height: 28px; flex: none; border-radius: 50%; display: grid; place-items: center; background: #1B1B17; color: var(--gold); }
+.tk-go svg { width: 12px; height: 12px; }
+.tk-vg.free .tk-vt b, .tk-vg.free .tk-vt small { color: var(--tk-sub); }
+.tk-plus { width: 36px; height: 36px; flex: none; border: 1.5px dashed rgba(27, 27, 23, .45); border-radius: 50%; display: grid; place-items: center; color: var(--tk-sub); }
+.tk-sv .tk-stub { padding: 0; gap: 0; justify-content: stretch; align-items: stretch; border-left: 2px dotted rgba(27, 27, 23, .4); }
+.tk-s-cont, .tk-s-new { flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 4px; border: 0;
+  color: #1B1B17; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.tk-s-cont { flex-grow: 1.25; background: var(--gold); }
+.tk-s-new { background: var(--stub-bg); border-top: 2px dotted rgba(27, 27, 23, .4); }
+.tk-s-cont b, .tk-s-new b { writing-mode: horizontal-tb; transform: none; font: 800 16px/1 var(--display); }
+.tk-s-cont small, .tk-s-new small { max-width: 68px; font: 600 10px/1.1 var(--body); color: #4A3E12; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tk-s-cont:active, .tk-s-new:active { filter: brightness(.94); }
+.tk-rapida.tk-sv .tk-s-cont { background: #1B1B17; color: var(--gold); }
+.tk-rapida.tk-sv .tk-s-cont small { color: #E3D49A; }
+.tk-rapida.tk-sv .tk-go { background: #1B1B17; }
+/* Novo jogo com as vagas cheias: escolher qual carreira sai */
+.vg-wrap { place-items: end center; padding: 0; }
+.vg-ask { width: min(100%, 520px); border-radius: 18px 18px 0 0; padding: 16px 16px calc(18px + env(safe-area-inset-bottom, 0px)); gap: 10px; background: #F4EEDC; }
+.vg-top { display: flex; align-items: center; gap: 10px; }
+.vg-top > span { min-width: 0; }
+.vg-top b { display: block; }
+.vg-top small { display: block; margin-top: 3px; font: 500 13px/1.3 var(--body); color: #45433A; }
+.vg-ask > p { margin: 0; font: 600 14px/1.35 var(--body); color: #1B1B17; }
+.vg-ask .vg-op { border: 1.5px solid rgba(27, 27, 23, .18); border-radius: 10px; background: #FBF8EF; padding: 10px 12px; }
+.vg-ask .vg-op .tk-vt b { font: 800 20px/1.05 var(--display); }
+.vg-ask .vg-op.on { border-color: #A8241C; background: #FBEFE9; }
+.vg-rd { width: 22px; height: 22px; flex: none; border-radius: 50%; border: 2px solid rgba(27, 27, 23, .4); display: grid; place-items: center; }
+.vg-op.on .vg-rd { border-color: #A8241C; }
+.vg-op.on .vg-rd::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: #A8241C; }
+.vg-ask .vg-note { padding: 9px 11px; border-radius: 8px; background: rgba(168, 36, 28, .08); font: 500 12.5px/1.35 var(--body); color: #7A1C15; }
+.vg-ask .vg-go { background: #A8241C; color: #FBF8EF; }
+/* iPhone instalado (iOS 26): sem uma faixa fixa no topo o sistema borra o que passa embaixo da barra de status (o efeito
+   de borda de rolagem pegava o logo e o topo das telas). Com uma faixa sólida da cor do campo, a borda fica reta. */
+@media (display-mode: standalone) {
+  body::after { content: ''; position: fixed; z-index: 6; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); background: var(--pitch); pointer-events: none; }
+}
 
 .hm { display: flex; flex-direction: column; gap: 12px; }
 .hm-top { display: flex; align-items: center; gap: 8px; }

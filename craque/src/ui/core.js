@@ -7,7 +7,9 @@
   const screen = $('screen');
   // Um save por jogo: a carreira rápida e a carreira jogo a jogo (c.mode 'completa') andam em paralelo
   const SAVE = 'craque-v5', SAVE_FC = 'climbix-jogo-v1', HALL = 'craque-hall-v1', HALL_JAJ = 'climbix-hall-jaj-v1'; // HALL_JAJ: Seu Hall do Jogo a Jogo (legado)
-  const saveKey = c => (c && c.mode === 'completa' ? SAVE_FC : SAVE);
+  // Duas vagas por modo: a 2ª vaga (c.slot 1) grava na mesma chave com '-2' no fim
+  const slotKey = (base, slot) => (slot ? base + '-2' : base);
+  const saveKey = c => slotKey(c && c.mode === 'completa' ? SAVE_FC : SAVE, c && c.slot);
   const YEAR0 = 2026;
 
   const esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -381,5 +383,5 @@
   }
   // Liga a engrenagem do topo comum (o voltar/início cada tela liga no seu id)
   function modeHeadBind(o) { const b = $((o && o.cfg) || 'mh-cfg'); if (b) b.onclick = () => { sfx('tap'); window.CRAQUE_UI.settings(); }; }
-  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg, totOf, titlesOf, toHome, modeHead, modeHeadBind };
+  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, slotKey, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg, totOf, titlesOf, toHome, modeHead, modeHeadBind };
 })();

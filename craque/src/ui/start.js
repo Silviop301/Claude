@@ -6,10 +6,10 @@
   // Bilheteria: cada modo é um ingresso de estádio (papel com moldura impressa, picote e canhoto com o código do setor).
   // Os cortes em semicírculo na linha do picote são máscara no CSS (.tk-in), o fundo da tela aparece pelo corte
   const MODES = {
-    rapida: { ic: '⏱️', name: 'Carreira Rápida', sub: 'Uma temporada por tela', k: 'Duração', v: '9 min', sec: 'A·01', cont: 'b-cont', neu: 'b-new' },
-    completa: { ic: '🏟️', name: 'Jogo a Jogo', full: 'Carreira Jogo a Jogo', sub: 'Cada rodada, treino e contrato', k: 'Save de', v: 'dias', sec: 'B·02', cont: 'b-cont-fc', neu: 'b-new-fc' },
+    rapida: { ic: '⏱️', name: 'Carreira Rápida', sub: 'Uma temporada por tela', dur: '9 min', k: 'Duração', v: '9 min', sec: 'A·01', cont: 'b-cont', neu: 'b-new' },
+    completa: { ic: '🏟️', name: 'Jogo a Jogo', full: 'Jogo a Jogo', sub: 'Cada rodada, treino e contrato', dur: 'Save de dias', k: 'Save de', v: 'dias', sec: 'B·02', cont: 'b-cont-fc', neu: 'b-new-fc' },
     relampago: { ic: '⚡', name: 'Relâmpago', sub: '5 casas, sozinho ou X1', k: 'Duração', v: '1 min', sec: 'C·03', neu: 'b-relampago' },
-    treinador: { ic: '📋', name: 'Treinador', sub: 'Escale, mude a tática, aguente a diretoria', k: 'Save de', v: 'dias', sec: 'D·04', neu: 'b-new-co' },
+    treinador: { ic: '📋', name: 'Treinador', full: 'Modo Treinador', sub: 'Escale, mude a tática, aguente a diretoria', dur: 'Save de dias', k: 'Save de', v: 'dias', sec: 'D·04', cont: 'b-cont-co', neu: 'b-new-co' },
   };
   const tk = (cls, id, body, stub, extra) => (id ? '<button class="tk ' + cls + '" id="' + id + '">' : '<div class="tk ' + cls + '" aria-disabled="true">') +
     '<span class="tk-in"><span class="tk-paper"><span class="tk-frame">' + body + '</span></span><span class="tk-stub">' + stub + '</span></span>' + (extra || '') + (id ? '</button>' : '</div>');
@@ -18,21 +18,74 @@
     return tk('tk-' + mode, M.neu, U.emo(M.ic, 'lg') + '<span class="tk-t"><b>' + M.name + '</b><small>' + M.sub + '</small></span><span class="tk-k">' + M.k + '<b>' + M.v + '</b></span>',
       '<b>Entrar</b><small>' + M.sec + '</small>');
   }
-  // O jogo em andamento: ingresso grande com o canhoto "Continuar"
-  function contTicket(mode, sc) {
-    const M = MODES[mode], cl = club(sc.club), fc = sc.fc;
-    let line = '<span>Temporada <b>' + (YEAR0 + sc.season) + '</b></span><span>Geral <b>' + S.ovr(sc) + '</b></span>', no = String(YEAR0 + sc.season);
+  // Modos com save (plano das vagas, 2026-11-05): duas vagas por modo no próprio ingresso. Cada carreira salva é uma
+  // linha (toque continua aquela); vaga vazia é "Vaga livre". O canhoto se divide: Continuar (a última jogada no modo)
+  // em cima, Novo embaixo. Sem nenhuma carreira, o canhoto é um só: Começar.
+  const PLAY_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l11 8-11 8z" fill="currentColor"/></svg>';
+  const PLUS_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  const SLOT_BASE = { rapida: () => SAVE, completa: () => U.SAVE_FC };
+  function slotsOf(mode) {
+    return [0, 1].map(slot => {
+      if (mode === 'treinador') return U.coSaved(slot);
+      const sv = load(U.slotKey(SLOT_BASE[mode](), slot));
+      return sv && sv.c && !(mode === 'completa' && sv.c.fcv !== FCV) ? sv : null;
+    });
+  }
+  const firstName = n => String(n || '').split(' ').filter(Boolean)[0] || '';
+  // Linha de uma carreira salva: escudo, nome e onde ela está
+  function slotRow(mode, sv, slot) {
+    if (mode === 'treinador') {
+      const c = sv.co, cl = c.club && club(c.club), ss = c.ss;
+      const at = ss && !ss.done ? 'Rodada ' + Math.min(ss.i + 1, ss.rounds.length) + ' de ' + ss.rounds.length : 'Temporada ' + (YEAR0 + c.season);
+      return '<button class="tk-vg" data-vg="' + mode + ':' + slot + '">' + (cl ? crest(cl.id) : U.emo('📋', 'md')) + '<span class="tk-vt"><b>' + esc(c.name) + '</b><small>' +
+        (cl ? esc(cl.short || cl.name) : 'Sem clube') + ' · técnico</small><small>' + at + '</small></span><i class="tk-go" aria-hidden="true">' + PLAY_SVG + '</i></button>';
+    }
+    const sc = sv.c, cl = club(sc.club), fc = sc.fc;
+    let at = 'Temporada ' + (YEAR0 + sc.season);
     // Jogo a jogo no meio da liga: rodada e o próximo adversário (só leitura do calendário; S.fcNext mexe no save)
     const e = fc && !fc.done && fc.cal && fc.cal[fc.i];
     if (e && e.k === 'lg' && fc.lg) {
-      const R = fc.lg.rounds.length, m = fc.lg.rounds[e.ri].find(([a, b]) => a === 0 || b === 0);
-      const vs = m && club(fc.lg.ids[m[0] === 0 ? m[1] : m[0]]);
-      line = '<span>Rodada <b>' + (e.ri + 1) + '</b> de ' + R + '</span>' + (vs ? '<span class="tk-vs"><b>x ' + esc(vs.short || vs.name) + '</b> (' + (m[0] === 0 ? 'casa' : 'fora') + ')</span>' : '');
-      no = String(e.ri + 1).padStart(4, '0') + '-' + R;
+      const m = fc.lg.rounds[e.ri].find(([x, y]) => x === 0 || y === 0), vs = m && club(fc.lg.ids[m[0] === 0 ? m[1] : m[0]]);
+      at = 'Rodada ' + (e.ri + 1) + ' de ' + fc.lg.rounds.length + (vs ? ' · x ' + esc(vs.short || vs.name) + (m[0] === 0 ? ' (casa)' : ' (fora)') : '');
     }
-    return tk('tk-cont', M.cont, '<span class="tk-who">' + (cl ? crest(cl.id, 'lg') : '') + '<span><small>' + (M.full || M.name) + '</small><b>' + esc(sc.name) + '</b>' +
-      '<span>' + (cl ? esc(cl.name) + ' · ' : '') + sc.age + ' anos · ' + sc.pos + '</span></span></span><span class="tk-line">' + line + '</span>',
-      '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l11 8-11 8z" fill="currentColor"/></svg><b>Continuar</b><i class="tk-bars" aria-hidden="true"></i><small>Nº ' + no + '</small>');
+    return '<button class="tk-vg" data-vg="' + mode + ':' + slot + '">' + (cl ? crest(cl.id) : U.emo('⚽', 'md')) + '<span class="tk-vt"><b>' + esc(sc.name) + '</b><small>' +
+      (cl ? esc(cl.short || cl.name) + ' · ' : '') + sc.age + ' anos · ' + sc.pos + '</small><small>' + at + '</small></span><i class="tk-go" aria-hidden="true">' + PLAY_SVG + '</i></button>';
+  }
+  const svName = sv => (sv.co || sv.c).name;
+  function saveTicket(mode) {
+    const M = MODES[mode], sl = slotsOf(mode), n = sl.filter(Boolean).length;
+    const last = sl.map((sv, i) => [sv, i]).filter(([sv]) => sv).sort((x, y) => (y[0].at || 0) - (x[0].at || 0))[0];
+    const head = '<span class="tk-hd">' + U.emo(M.ic, 'lg') + '<span class="tk-t"><b>' + M.name + '</b><small>' + (n ? M.dur + ' · ' + n + ' de 2 vagas' : M.sub) + '</small></span></span>';
+    const other = sl.find(Boolean);
+    const rows = n ? sl.map((sv, i) => sv ? slotRow(mode, sv, i) : '<button class="tk-vg free" data-new="' + mode + ':' + i + '"><i class="tk-plus" aria-hidden="true">' + PLUS_SVG + '</i>' +
+      '<span class="tk-vt"><b>Vaga livre</b><small>Comece outra sem perder ' + (mode === 'treinador' ? 'o ' : 'a de ') + esc(firstName(svName(other))) + '</small></span></button>').join('') : '';
+    const stub = n ? '<button class="tk-s-cont" id="' + M.cont + '" data-vg="' + mode + ':' + last[1] + '">' + PLAY_SVG + '<b>Continuar</b><small>' + esc(firstName(svName(last[0]))) + '</small></button>' +
+        '<button class="tk-s-new" id="' + M.neu + '" data-mode="' + mode + '">' + PLUS_SVG + '<b>Novo</b><small>' + M.sec + '</small></button>'
+      : '<button class="tk-s-cont tk-s-one" id="' + M.neu + '" data-mode="' + mode + '">' + PLAY_SVG + '<b>Começar</b><small>' + M.sec + '</small></button>';
+    return '<div class="tk tk-sv tk-' + mode + '"><span class="tk-in"><span class="tk-paper"><span class="tk-frame">' + head + rows + '</span></span><span class="tk-stub">' + stub + '</span></span></div>';
+  }
+  // Novo jogo com as duas vagas cheias: a pessoa escolhe qual carreira sai (a mais antiga vem marcada).
+  // Nada é apagado aqui: a carreira só some quando a nova grava por cima (jogador assinou, técnico viu as propostas)
+  function slotPick(mode, sl, go) {
+    const M = MODES[mode], co = mode === 'treinador';
+    let pick = (sl[0].at || 0) <= (sl[1].at || 0) ? 0 : 1;
+    const w = document.createElement('div');
+    w.className = 'ask-wrap vg-wrap';
+    const draw = () => {
+      const nm = esc(svName(sl[pick]));
+      w.innerHTML = '<div class="ask vg-ask" role="dialog" aria-modal="true" aria-label="Novo jogo">' +
+        '<div class="vg-top">' + U.emo(M.ic, 'lg') + '<span><b>Novo jogo</b><small>As duas vagas ' + (mode === 'completa' ? 'do ' : 'da ') + esc(M.full || M.name) + ' estão ocupadas.</small></span></div>' +
+        '<p>Qual carreira sai para a nova entrar?</p>' +
+        sl.map((sv, i) => slotRow(mode, sv, i).replace('class="tk-vg"', 'class="tk-vg vg-op' + (i === pick ? ' on' : '') + '" aria-pressed="' + (i === pick) + '"').replace(/data-vg="[^"]*"/, 'data-s="' + i + '"').replace(/<i class="tk-go"[\s\S]*?<\/i>/, '<i class="vg-rd" aria-hidden="true"></i>')).join('') +
+        '<p class="vg-note">' + nm + ' só é apagado quando ' + (co ? 'o novo técnico for ver as propostas' : 'o novo jogador assinar com um clube') + '. Se você desistir antes, ele continua salvo.</p>' +
+        '<button class="btn vg-go" data-a="ok">Trocar ' + esc(firstName(svName(sl[pick]))) + ' por um novo ' + (co ? 'técnico' : 'jogador') + '</button><button class="btn ghost" data-a="no">Cancelar</button></div>';
+      w.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { pick = +b.dataset.s; sfx('tap'); draw(); });
+      w.querySelector('[data-a="no"]').onclick = () => w.remove();
+      w.querySelector('[data-a="ok"]').onclick = () => { w.remove(); go(pick); };
+    };
+    w.onclick = e => { if (e.target === w) w.remove(); };
+    draw();
+    document.body.appendChild(w);
   }
   // Barra de baixo das quatro telas principais (Jogar, Carreiras, Ranking, Perfil)
   const TABS = [['home', 'Jogar', '<circle cx="12" cy="12" r="9"/><path d="M12 7.5l4 2.9-1.5 4.7h-5L8 10.4z"/>'],
@@ -53,11 +106,13 @@
   // Save novo do Jogo a Jogo (plano, fase 1, uma vez só): carreira de antes (sem c.fcv 2) vira carta na coleção
   const FCV = 2, JAJ_NEW = 'climbix-jaj-novo';
   function fcCheck() {
-    const sv = load(U.SAVE_FC);
-    if (!sv || !sv.c || sv.c.fcv === FCV) return;
-    const name = U.fcLegacy(sv.c);
-    store(U.SAVE_FC, { c: null, at: Date.now() });
-    store(JAJ_NEW, { name, at: Date.now() });
+    [0, 1].forEach(slot => {
+      const k = U.slotKey(U.SAVE_FC, slot), sv = load(k);
+      if (!sv || !sv.c || sv.c.fcv === FCV) return;
+      const name = U.fcLegacy(sv.c);
+      store(k, { c: null, at: Date.now() });
+      store(JAJ_NEW, { name, at: Date.now() });
+    });
   }
   function home() {
     G.c = null; G.step = null; bar();
@@ -67,12 +122,7 @@
     fcCheck();
     const jn = load(JAJ_NEW), jnLine = jn && !jn.seen ? '<button class="hm-line hm-jn" id="b-jaj-novo">' + U.emo('🏟️', 'xs') + '<span><b>O Jogo a Jogo foi refeito.</b> ' +
       (jn.name ? 'A carreira de ' + esc(jn.name) + ' virou carta na sua coleção.' : 'A carreira de antes ficou para trás.') + '</span><em>Ok</em></button>' : '';
-    const saved = load(SAVE), savedFc = load(U.SAVE_FC);
-    const savedCo = U.coSaved();
-    const saves = [['rapida', saved], ['completa', savedFc]].filter(([, sv]) => sv && sv.c).concat(savedCo ? [['treinador', savedCo]] : []).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
     const L = U.PROFILE.level((U.ITEMS.get().prof || {}).xp), st = U.ITEMS.streak(), packs = U.ITEMS.get().packs.length;
-    const also = ([mode, sv]) => mode === 'treinador' ? U.coAlso(sv) : '<button class="hm-line" id="' + MODES[mode].cont + '">' + U.emo(MODES[mode].ic, 'xs') + '<span>Também jogando: <b>' + esc(sv.c.name) + '</b>' +
-      (club(sv.c.club) ? ', ' + esc(club(sv.c.club).name) : '') + ', ' + sv.c.age + ' anos</span><em>' + (mode === 'rapida' ? 'Rápida' : 'Jogo a Jogo') + ' ›</em></button>';
     render(
       '<div class="hm">' +
       '<div class="hm-top"><h1 class="hm-logo">CLIMBIX</h1>' +
@@ -80,9 +130,8 @@
         '<button class="hm-lv" id="b-prof" aria-label="Perfil, nível ' + L.lv + '"><b>' + L.lv + '</b><i><em style="width:' + Math.round(L.cur / L.next * 100) + '%"></em></i></button>' +
         '<button class="hm-cfg" id="b-sound" aria-label="Configurações">' + U.GEAR_SVG + '</button></div>' +
       jnLine + U.challengeHome() + U.relampagoHome(true) +
-      (saves.length ? '<section class="hm-sec"><h2>Seu jogo</h2>' + (saves[0][0] === 'treinador' ? U.coContTicket(saves[0][1], tk) : contTicket(saves[0][0], saves[0][1].c)) + saves.slice(1, 3).map(also).join('') + '</section>' : '') +
       (packs ? '<button class="hm-line" id="b-hb-packs">' + U.emo('📦', 'xs') + '<span><b>' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</b> para abrir</span><em>Abrir ›</em></button>' : '') +
-      '<section class="hm-sec"><h2>Escolha o jogo</h2><div class="hm-tks">' + modeTicket('rapida') + modeTicket('completa') + modeTicket('relampago') + modeTicket('treinador') +
+      '<section class="hm-sec"><h2>Escolha o jogo</h2><div class="hm-tks">' + saveTicket('rapida') + saveTicket('completa') + modeTicket('relampago') + saveTicket('treinador') +
       '</div></section>' + U.deskHint() + '</div>' + U.tabs('home')
     );
     const cont = sv => {
@@ -95,19 +144,28 @@
       S.applyLeagues(G.c); // quem subiu e quem caiu nesta carreira
       resume(sv.step);
     };
-    if ($('b-cont')) $('b-cont').onclick = () => cont(saved);
-    if ($('b-cont-fc')) $('b-cont-fc').onclick = () => cont(savedFc);
+    // Continuar uma carreira (linha da vaga ou o canhoto) e começar outra (vaga livre ou o canhoto Novo)
+    const svAt = (mode, slot) => slotsOf(mode)[slot];
+    const begin = (mode, slot) => (mode === 'treinador' ? U.coCreate(slot) : create(null, mode, slot));
+    document.querySelectorAll('.hm [data-vg]').forEach(b => b.onclick = () => {
+      const [mode, slot] = b.dataset.vg.split(':'), sv = svAt(mode, +slot);
+      if (!sv) return home();
+      if (mode === 'treinador') return U.coResume(sv);
+      cont(sv);
+    });
+    document.querySelectorAll('.hm [data-new]').forEach(b => b.onclick = () => { const [mode, slot] = b.dataset.new.split(':'); sfx('tap'); begin(mode, +slot); });
+    document.querySelectorAll('.hm [data-mode]').forEach(b => b.onclick = () => {
+      const mode = b.dataset.mode, sl = slotsOf(mode), free = sl.findIndex(x => !x);
+      sfx('tap');
+      if (free >= 0) return begin(mode, free);
+      slotPick(mode, sl, slot => begin(mode, slot));
+    });
     U.backTo = null;
-    // Com carreira em andamento no mesmo jogo, confirma antes: o novo jogador toma o lugar dela ao assinar
-    const newIn = (sv, mode) => () => (sv && sv.c ? U.ask('Começar outra carreira?', 'A carreira de ' + sv.c.name + ' (' + sv.c.age + ' anos) será apagada quando o novo jogador assinar com um clube.', 'Nova carreira', () => create(null, mode)) : create(null, mode));
-    $('b-new').onclick = newIn(saved, 'rapida');
-    $('b-new-fc').onclick = newIn(savedFc, 'completa');
     if ($('b-jaj-novo')) $('b-jaj-novo').onclick = () => { store(JAJ_NEW, Object.assign(jn, { seen: true })); sfx('tap'); home(); };
     U.packHomeBind();
     $('b-prof').onclick = () => { sfx('tap'); U.profile(); };
     U.challengeHomeBind();
     U.relampagoHomeBind();
-    U.coHomeBind();
     $('b-sound').onclick = U.settings;
     if (U.whatsNew) U.whatsNew();
   }
@@ -283,10 +341,11 @@
     if (o) o.onclick = e => { e.stopPropagation(); onOpen(); };
   }
 
-  function create(prev, mode) {
+  function create(prev, mode, slot) {
     const st = prev && prev.look ? prev : newSt();
-    // O jogo vem de quem chamou (tela inicial); "jogar de novo" no fim repete o da carreira que acabou
-    if (mode) st.mode = mode; else if (!st.mode) st.mode = G.c && G.c.mode === 'completa' ? 'completa' : 'rapida';
+    // O jogo vem de quem chamou (tela inicial); "jogar de novo" no fim repete o da carreira que acabou (e a vaga dela)
+    if (mode) { st.mode = mode; st.slot = slot ? 1 : 0; }
+    else if (!st.mode) { st.mode = G.c && G.c.mode === 'completa' ? 'completa' : 'rapida'; st.slot = G.c && G.c.slot ? 1 : 0; }
     const cty = () => D.COUNTRIES.find(k => k.id === st.country) || D.COUNTRIES[0];
     // Aos 16 anos: a barba escolhida só aparece quando ele crescer (avatar.beardAtAge)
     const who = () => ({ name: st.name, pos: st.pos, number: st.num, look: st.look, age: 16 });
@@ -345,6 +404,7 @@
   function start(st) {
     G.c = S.newCareer({ name: st.name.trim() || 'Craque', pos: st.pos, foot: st.foot, country: st.country, number: st.num });
     if (st.mode === 'completa') { G.c.mode = 'completa'; G.c.fcv = FCV; }
+    if (st.slot) G.c.slot = 1; // 2ª vaga do modo
     S.setOrigin(G.c, U.achHas((S.ORIGIN_BY_ID[st.origin] || {}).need) ? st.origin : 'base', st.challenge);
     // Só entra o que está liberado (a prévia fica de fora)
     G.c.look = onlyLook(I.clean(st.look));
