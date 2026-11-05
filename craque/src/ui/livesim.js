@@ -134,10 +134,11 @@
       own.forEach(p => {
         if (p.r === 'GK') { const d = Math.hypot(ball.x - gx, ball.y - gy) || 1, k = Math.min(6, 1.2 + d * 0.07); p.tx = gx + (ball.x - gx) / d * k; p.ty = gy + (ball.y - gy) / d * k * 0.9; return; }
         const [zx, zy] = shapeOf(p, false, bx, by, 0); let [wx, wy] = toW(s, zx, zy);
-        if (p === pr && dist(pr, tgt) < 12 + 26 * ST[s].press && !(owner && owner.r === 'GK')) {
+        const hunt = due && due.side === s; // o gol do motor é deles: vão buscar a bola de qualquer jeito
+        if (p === pr && (hunt || dist(pr, tgt) < 12 + 26 * ST[s].press) && !(owner && owner.r === 'GK')) {
           // Quem pressiona fica a uns 2,6 m, do lado do gol (fecha o caminho sem grudar); de vez em quando dá o bote (lg)
           if (owner) {
-            if (p.lg <= 0 && p.cd <= 0 && dist(p, owner) < 4.5 && rnd() < dt * (0.3 + 0.9 * ST[s].press)) p.lg = 0.7;
+            if (p.lg <= 0 && (p.cd <= 0 || hunt) && dist(p, owner) < 4.5 && (hunt || rnd() < dt * (0.3 + 0.9 * ST[s].press))) { p.lg = 0.7; p.cd = 0; }
             const d = Math.hypot(gx - owner.x, gy - owner.y) || 1, k = p.lg > 0 ? 0.8 : 2.2 + (1 - Math.min(1, ST[s].press)) * 1.4;
             wx = owner.x + (gx - owner.x) / d * k; wy = owner.y + (gy - owner.y) / d * k;
           } else { wx = tgt.x; wy = tgt.y; }
@@ -260,12 +261,12 @@
       else ty = rnd() < 0.5 ? GL - 1 - rnd() * 4 : GR + 1 + rnd() * 4;
       const d = Math.hypot(tx - ball.x, ty - ball.y);
       api._lastShot = { x: tf(s, ball)[0], out };
-      ball.fly = { x0: ball.x, y0: ball.y, x1: tx, y1: ty, t: 0, dur: forced ? cl(d / 28, 0.3, 1) : Math.max(0.3, d / (kind === 'cabeca' ? 15 : 25)), shot: true, out, side: s, from: p, kind, lc: !!want, loft: kind === 'cabeca' ? 2 : kind === 'fora' ? 5 : 2.5, curve: gauss() * 2 };
+      ball.fly = { x0: ball.x, y0: ball.y, x1: tx, y1: ty, t: 0, dur: forced ? Math.max(0.3, d / 30) : Math.max(0.3, d / (kind === 'cabeca' ? 15 : 25)), shot: true, out, side: s, from: p, kind, lc: !!want, loft: kind === 'cabeca' ? 2 : kind === 'fora' ? 5 : 2.5, curve: gauss() * 2 };
       ball.owner = null; ball.carry = null; ball.loose = null;
     }
-    const WHY = {}; let why = '?'; // diagnóstico (_state().WHY): por que a posse trocou de lado
+    const WHY = {}; let why = '?', lastWhy = ''; // diagnóstico (_state().WHY): por que a posse trocou de lado
     function setOwner(p, quick) {
-      if (ball.owner ? ball.owner.side !== p.side : poss !== p.side) WHY[why] = (WHY[why] || 0) + 1; why = '?';
+      if (ball.owner ? ball.owner.side !== p.side : poss !== p.side) WHY[why] = (WHY[why] || 0) + 1; lastWhy = why; why = '?';
       ball.owner = p; ball.fly = null; ball.loose = null; ball.carry = null; ball.rcv = 0.3; p.run = 0; p.go = 0;
       let press = 99; for (const q of T[1 - p.side]) press = Math.min(press, dist(q, p));
       const won = p.side !== poss, fast = won && rnd() < ST[p.side].counter * 0.6; // roubou e o time é de contra-ataque: sai rápido
@@ -413,7 +414,7 @@
       // O relógio da jogada só anda com a bola rolando (saída depois de outro gol não conta): gol do motor demorando 9 s vira lançamento
       if (due) { due.age = (due.age || 0) + dt; if (due.out === 'gol' || due.out === undefined) { if (due.age > 9 && due.cb) due.now = true; } }
       if (due && ball.owner && ball.owner.side !== due.side && ball.owner.r !== 'GK') {
-        const th = T[due.side].filter(q => q.r !== 'GK').sort((a, b2) => dist(a, ball.owner) - dist(b2, ball.owner))[0]; why = 'rouboDue'; setOwner(th);
+        const th = T[due.side].filter(q => q.r !== 'GK').sort((a, b2) => dist(a, ball.owner) - dist(b2, ball.owner))[0]; th.lg = Math.max(th.lg, 0.8); th.cd = 0; th.tx = ball.owner.x; th.ty = ball.owner.y; th.sprint = 1; // vai dar o bote (e ganha)
       }
       // Quem vai marcar o gol do motor corre para a área enquanto a jogada sai
       if (due && poss === due.side) { const sc = scorerOf(due); if (ball.owner !== sc && !(ball.fly && ball.fly.to === sc)) { sc.run = Math.max(sc.run, 0.4); sc.runX = due.rx; sc.runY = due.ry; } }
@@ -472,12 +473,14 @@
         if (ball.carry) { p.tx = ball.carry.x; p.ty = ball.carry.y; p.sprint = 1; p.drib = 1; ball.carry.t -= dt; if (ball.carry.t <= 0 || Math.hypot(p.x - ball.carry.x, p.y - ball.carry.y) < 1) { ball.carry = null; ball.hold = 0.2 + rnd() * 0.3; } }
         else { let pr = 99; for (const q of T[1 - p.side]) pr = Math.min(pr, dist(q, p)); const adv = p.r === 'GK' ? 0 : pr > 7 ? 3 : pr > 4 ? 1.2 : -0.6; p.tx = p.x + dir * adv; p.ty = p.y + (34 - p.y) * 0.02; ball.hold -= dt; }
         const sp = Math.hypot(p.vx, p.vy), touch = sp > 2 ? 0.7 + 1.3 * Math.abs(Math.sin(clk * 6 + p.ph)) : 0.7;
-        ball.x = p.x + (sp > 1 ? p.vx / sp : dir) * touch; ball.y = p.y + (sp > 1 ? p.vy / sp : 0) * touch + 0.3;
+        // A bola vai até o pé do dono deslizando (nunca pula: virar o corpo, receber longe ou recomeçar não teleporta a bola)
+        { const bxw = p.x + (sp > 1 ? p.vx / sp : dir) * touch, byw = p.y + (sp > 1 ? p.vy / sp : 0) * touch + 0.3, dd = Math.hypot(bxw - ball.x, byw - ball.y), mx = 20 * dt;
+          if (dd <= mx) { ball.x = bxw; ball.y = byw; } else { ball.x += (bxw - ball.x) * mx / dd; ball.y += (byw - ball.y) * mx / dd; } }
         // O bote: quem chega perto tenta tirar; se erra, fica para trás um instante (no gol do motor, ninguém tira)
         if (ball.rcv <= 0 && p.r !== 'GK' && !(due && due.side === p.side) && !lc) for (const d of T[1 - p.side]) {
           if (d.cd > 0 || d.stun > 0 || d.r === 'GK' || d.lg <= 0 || dist(d, p) > 1.7) continue;
           d.cd = 1.6 + rnd() * 1.2; d.lg = 0;
-          if (rnd() < cl(TK - (bias[p.side] - 1) * 0.8, 0.08, 0.5)) { why = 'bote'; setOwner(d); emit('desarme', d.side, d, p); break; }
+          if ((due && due.side === d.side) || rnd() < cl(TK - (bias[p.side] - 1) * 0.8, 0.08, 0.5)) { why = 'bote'; setOwner(d); emit('desarme', d.side, d, p); break; }
           d.stun = 0.45;
         }
         if (lc && lc.have && DEF[lc.k] && p === lc.q) defAct(dt);
@@ -530,10 +533,10 @@
         ball.x += (sx - ball.x) * Math.min(1, dt * 2.5); ball.y += (sy - ball.y) * Math.min(1, dt * 2.5);
         T[s].forEach(p => { if (p !== gk) { const [x, y] = shapeOf(p, true, 6, 34, lineOf(s)); [p.tx, p.ty] = toW(s, x, y); } });
         T[1 - s].forEach(p => { if (p.r !== 'GK') { const [x, y] = shapeOf(p, false, L - 6, 34, 0); [p.tx, p.ty] = toW(1 - s, x, y); } });
-        if (modeT <= 0 || (due && due.side === s)) { mode = 'play'; ball.x = sx; ball.y = sy; setOwner(gk); }
+        if (modeT <= 0 || (due && due.side === s)) { mode = 'play'; setOwner(gk); } // a bola rola até o goleiro (sem pular para a marca)
       }
       if (lc && mode !== 'play') lcDone();
-      if (mode === 'ko' || mode === 'half') { ball.x += (52.5 - ball.x) * Math.min(1, dt * 3); ball.y += (34 - ball.y) * Math.min(1, dt * 3); }
+      if (mode === 'ko' || mode === 'half') { const dd = Math.hypot(52.5 - ball.x, 34 - ball.y), k = dd > 0.01 ? Math.min(1, 16 * dt / dd) : 1; ball.x += (52.5 - ball.x) * k; ball.y += (34 - ball.y) * k; } // volta ao meio rolando, não voando
       // Andar: cada um reage no seu tempo, acelera e freia; ninguém vira na hora nem atravessa o companheiro
       ALL.forEach(p => {
         p.lg = Math.max(0, (p.lg || 0) - dt); p.cd = Math.max(0, p.cd - dt); p.stun = Math.max(0, p.stun - dt); p.run = Math.max(0, p.run - dt); p.go = Math.max(0, p.go - dt);
@@ -713,7 +716,7 @@
         if (ball.owner === me) { if (lc) { lc.have = true; ball.hold = Math.min(ball.hold, 0.35); ball.carry = null; } return; }
         const from = ball.owner || (ball.fly && ball.fly.from) || at(poss, 6);
         if (ball.owner || ball.loose) fly(from, me.x + 1, me.y, me, dist(from, me) > 30, 'curto', from.side !== 0);
-        else if (ball.fly && !ball.fly.shot) { ball.fly.to = me; ball.fly.x1 = me.x + 1; ball.fly.y1 = me.y; ball.fly.cut = ball.fly.from.side !== 0; }
+        else if (ball.fly && !ball.fly.shot) { const f = ball.fly; f.to = me; f.x0 = ball.x; f.y0 = ball.y; f.x1 = me.x + 1; f.y1 = me.y; f.t = 0; f.dur = Math.max(0.25, Math.hypot(f.x1 - f.x0, f.y1 - f.y0) / 18); f.cut = f.from.side !== 0; } // desvia a partir de onde a bola está (sem pular)
       },
       // Antes do apito todos parados na formação de saída; go() é o apito
       // Substituído: você vira um jogador como os outros e o marcador some
@@ -757,7 +760,7 @@
       meAt() { if (ME < 0) return null; const p = T[0][ME]; return [p.x / L * 100, p.y / WD * 100]; },
       ballAt() { return [ball.x / L * 100, ball.y / WD * 100]; },
       stop() { alive = false; if (raf) cancelAnimationFrame(raf); raf = 0; window.removeEventListener('resize', onResize); },
-      _step: step, _state: () => ({ ALLX: ALL, WHY, mode, poss, ball, due, goals, lc, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length })
+      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, ALLX: ALL, WHY, mode, poss, ball, due, goals, lc, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
     };
     LP._sim = api;
     return api;
