@@ -101,15 +101,18 @@
       if (p.go > 0) return toW(s, p.goX, p.goY);
       const [bx, by] = tf(s, ball), [sx, sy] = shapeOf(p, true, bx, by, line);
       let best = toW(s, sx, sy), bs = -1e9;
-      for (let i = 0; i < 8; i++) {
-        const a = i * 0.8 + rnd() * 0.7, r = i === 0 ? 0 : 3 + rnd() * 7;
+      // Procura o espaço: longe de onde os adversários VÃO estar (posição + velocidade), com a linha do passe limpa,
+      // nem colado na bola nem longe demais dela, sem empilhar com o companheiro e sem largar muito a sua faixa
+      for (let i = 0; i < 12; i++) {
+        const a = i * 0.52 + rnd() * 0.5, r = i === 0 ? 0 : 3 + rnd() * 11;
         let cx = cl(sx + Math.cos(a) * r, 2, 103), cy = cl(sy + Math.sin(a) * r, 3, 65);
         if (p.d > 0.6) cx = Math.min(cx, Math.max(line - 0.8, bx - 2));
         const [wx, wy] = toW(s, cx, cy);
-        let open = 12, lane = 10, crowd = 0;
-        for (const q of T[1 - s]) { open = Math.min(open, Math.hypot(q.x - wx, q.y - wy)); lane = Math.min(lane, segD(q.x, q.y, ball.x, ball.y, wx, wy)); }
-        for (const q of T[s]) if (q !== p) { const d = Math.hypot(q.x - wx, q.y - wy); if (d < 8) crowd += 8 - d; }
-        const sc = open * 0.5 + lane * 0.7 + (cx - sx) * 0.12 - Math.hypot(cx - sx, cy - sy) * 0.3 - crowd * 0.6 + rnd() * 1.2;
+        let open = 16, lane = 12, crowd = 0;
+        for (const q of T[1 - s]) { open = Math.min(open, Math.hypot(q.x + q.vx * 0.45 - wx, q.y + q.vy * 0.45 - wy)); lane = Math.min(lane, segD(q.x, q.y, ball.x, ball.y, wx, wy)); }
+        for (const q of T[s]) if (q !== p) { const d = Math.hypot(q.x - wx, q.y - wy); if (d < 9) crowd += 9 - d; }
+        const db = Math.hypot(wx - ball.x, wy - ball.y), near = db < 7 ? (7 - db) * 0.8 : db > 34 ? (db - 34) * 0.12 : 0;
+        const sc = open * 0.6 + lane * 0.8 + (cx - sx) * 0.15 - Math.hypot(cx - sx, cy - sy) * 0.22 - crowd * 0.6 - near + rnd() * 0.8;
         if (sc > bs) { bs = sc; best = [wx, wy]; }
       }
       return best;
@@ -369,13 +372,36 @@
       const s = poss, line = lineOf(s), owner = ball.owner;
       runT -= dt;
       if (runT <= 0 && owner && owner.side === s && owner.r !== 'GK') {
-        runT = 1 + rnd() * 1.6;
+        runT = 0.6 + rnd() * 0.8;
         const bx = tf(s, ball)[0];
         const c = T[s].filter(q => q !== owner && q.d > 0.45 && q.run <= 0 && line - tf(s, q)[0] < 14 && bx > 28);
         if (c.length) {
           const r = s === 0 && ME >= 0 && c.includes(T[0][ME]) && rnd() < 0.5 ? T[0][ME] : c[Math.floor(rnd() * c.length)], qy = tf(s, r)[1];
-          r.run = 1.5; r.runX = Math.min(95, line + 8 + rnd() * 6); r.runY = cl(qy + (34 - qy) * 0.35 + gauss() * 4, 8, 60);
+          // A corrida vai no buraco da linha de defesa mais perto dele (entre dois zagueiros, ou entre o lateral e a lateral do campo)
+          const ys = [2].concat(T[1 - s].filter(q => q.r !== 'GK' && line - tf(s, q)[0] < 9).map(q => tf(s, q)[1]).sort((a, b) => a - b), [66]);
+          let gy = qy, gd = 1e9; for (let k = 1; k < ys.length; k++) if (ys[k] - ys[k - 1] > 7) { const m = (ys[k] + ys[k - 1]) / 2, d = Math.abs(m - qy); if (d < gd) { gd = d; gy = m; } }
+          r.run = 1.5; r.runX = Math.min(95, line + 7 + rnd() * 6); r.runY = cl(gy + gauss() * 2, 6, 62);
           if (dist(r, owner) < 45 && rnd() < 0.65) ball.hold = Math.min(ball.hold, 0.3 + rnd() * 0.25);
+        }
+      }
+      // Desmarque: marcado de perto, dá um pique curto para longe do marcador (para o lado da bola, ou nas costas se é
+      // atacante e tem buraco); quem está com a bola pressionado ganha um companheiro que vem dar o apoio no ângulo livre
+      if (owner && owner.side === s) {
+        let opr = 99; for (const q of T[1 - s]) opr = Math.min(opr, dist(q, owner));
+        let sup = null, sd = 99;
+        T[s].forEach(p => {
+          if (p === owner || p.r === 'GK' || p.run > 0 || p.go > 0 || p.stun > 0) return;
+          const db = dist(p, ball); if (db < sd && db > 5) { sd = db; sup = p; }
+          let mk = null, md = 99; for (const q of T[1 - s]) { const d = dist(q, p); if (d < md) { md = d; mk = q; } }
+          if (md > 3.8 || db > 42 || rnd() > dt * 1.4) return;
+          const [px, py] = tf(s, p), [mx, my] = tf(s, mk), [ox, oy] = tf(s, ball);
+          if (p.d > 0.6 && px > line - 4 && rnd() < 0.5) { p.run = 1.3; p.runX = Math.min(95, line + 6 + rnd() * 5); p.runY = cl(py + (py - my) * 1.5, 6, 62); return; }
+          let ux = (px - mx) + (ox - px) * 0.15, uy = (py - my) + (oy - py) * 0.15; const ul = Math.hypot(ux, uy) || 1;
+          p.go = 0.9; p.goX = cl(px + ux / ul * 7.5, 3, p.d > 0.6 ? Math.max(line - 0.8, ox - 2) : 100); p.goY = cl(py + uy / ul * 7.5, 4, 64);
+        });
+        if (sup && opr < 3.2 && owner.r !== 'GK' && rnd() < dt * 2.5) {
+          const [ox, oy] = tf(s, owner), side = oy < 34 ? 1 : -1;
+          sup.go = 1; sup.goX = cl(ox - 5, 3, 100); sup.goY = cl(oy + side * 9, 4, 64);
         }
       }
       // Bola no lado, perto da área: os atacantes entram na área (primeiro e segundo pau) esperando o cruzamento
