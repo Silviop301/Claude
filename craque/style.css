@@ -5385,6 +5385,8 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
   .lp-v .fs-main { grid-template-columns: 270px minmax(0, 1fr); gap: 16px; align-items: start; }
   .lp-v .fs-main > .eyebrow, .lp-v .fs-main > h2 { display: none; }
   .lp-ctr { display: grid; gap: 10px; min-width: 0; }
+  .lp-v .lp-mecol, .lp-v .lp-ctr > * { order: 0; }
+  .lp-v .lp-pitch { aspect-ratio: auto; height: 290px; }
   .lp-v .lp-mecol { display: grid; gap: 12px; align-content: start; }
   .lp-v #fc-acts { position: static; background: none; padding: 0; }
   .lp-v .lp-me-c { grid-template-columns: minmax(0, 1fr); }
