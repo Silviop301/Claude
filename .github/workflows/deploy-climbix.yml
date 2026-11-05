@@ -152,3 +152,10 @@ jobs:
           DATA="$(dirname "$TARGET")/climbix-data"
           printf '%s' "$FB_SENHA" | $SSH "$SSH_USER@$SSH_HOST" "mkdir -p $DATA && umask 077 && cat > $DATA/feedback-senha"
           echo "Leitura das opiniões ligada em https://climbix.app/respostas.html"
+
+      # Opiniões por e-mail: cada opinião nova já vai sozinha (api/feedback.php). Aqui manda o que ficou para trás
+      # (na primeira vez, tudo o que já existia, numa leva só). Falha aqui não derruba o deploy.
+      - name: Opiniões por e-mail
+        if: steps.key.outputs.ok == 'true'
+        run: |
+          curl -sS -m 60 -X POST "https://climbix.app/api/feedback.php?a=mail" || echo "::warning::Não deu para chamar o envio das opiniões."
