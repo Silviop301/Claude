@@ -135,13 +135,69 @@
         (nx.bye ? '' : scout(S.coPreview(co).them)) + moodLine() +
         '<button class="btn" id="b-co-play">' + (nx.bye ? 'Ver a rodada' : 'Escalar e jogar') + '</button></div>' +
       '<div class="co-side"><div class="co-box"><div class="eyebrow">Tabela ' + form5() + '</div>' + table(false) + '<button class="btn ghost sm" id="b-co-tab">Tabela inteira</button></div>' +
-      '<div class="co-acts"><button class="btn ghost" id="b-co-team">Time e elenco</button><button class="btn ghost" id="b-co-cad">Caderno</button></div></div>');
+      '<div class="co-acts co-acts3"><button class="btn ghost" id="b-co-team">Time e elenco</button><button class="btn ghost" id="b-co-cad">Caderno</button><button class="btn ghost" id="b-co-fin">Finanças</button></div></div>');
     U.modeHeadBind();
     $('b-co-play').onclick = () => { sfx('tap'); if (nx.bye) { S.coSkipRound(co); save(); return hub(); } team(true); };
     $('b-co-team').onclick = () => { sfx('tap'); team(false); };
     $('b-co-cad').onclick = () => { sfx('tap'); caderno(hub); };
+    $('b-co-fin').onclick = () => { sfx('tap'); fin(); };
     $('b-co-tab').onclick = () => { sfx('tap'); render(U.modeHead({ mode: 'co', nav: 'back', id: 'b-co-back', label: 'Voltar ao clube', title: 'Tabela', sub: esc(ss.name) + ' ' + yr() }) + '<div class="co-box">' + table(true) + '</div>'); U.modeHeadBind(); $('b-co-back').onclick = hub; };
     $('b-co-out').onclick = () => { sfx('tap'); save(); co = null; U.home(); };
+  }
+
+  // ---------- finanças: caixa, verba, folha; abas com a temporada, o que vem e os salários ----------
+  const mi = v => { const a = Math.abs(v), t = a >= 1e6 ? (a / 1e6).toFixed(a < 1e7 ? 2 : 1).replace(/\.?0+$/, '').replace('.', ',') + ' mi' : a >= 1e3 ? Math.round(a / 1e3) + ' mil' : String(Math.round(a)); return t; };
+  const brl = v => (v < 0 ? '− ' : '') + 'R$ ' + mi(v);
+  const sgn = v => (v > 0 ? '+ ' : v < 0 ? '− ' : '') + mi(v);
+  function finPres(f) {
+    const wk = S.coFinSemanas(co);
+    if (f.caixa < 0) return ['"Estamos no vermelho, professor. O conselho já sabe."', 'no-limite'];
+    if (wk < 6) return ['"O caixa está curto. Nada de loucura."', 'preocupado'];
+    if (f.verba > 0) return ['"Pode usar a verba. O resto do caixa paga os salários."', 'tranquilo'];
+    return ['"Sem verba por enquanto. Primeiro a gente arruma a casa."', 'tranquilo'];
+  }
+  function fin(tab) {
+    G.c = null; bar();
+    tab = tab || 'tmp';
+    const f = S.coFin(co), ss = co.ss, folha = S.coFolha(co), wk = S.coFinSemanas(co), x = f.ss;
+    const pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
+    const row = (t, v, max, neg) => '<div class="cf-li"><span>' + t + '</span><i class="cf-mini"><em class="' + (neg ? 'o' : '') + '" style="width:' + Math.round(100 * Math.min(1, v / Math.max(1, max))) + '%"></em></i><b class="' + (neg ? 'dn' : 'up') + '">' + (v ? (neg ? '− ' : '+ ') + mi(v) : '0') + '</b></div>';
+    const homes = ss ? ss.log.filter(l => l.home).length : 0;
+    const big = Math.max(x.bil, x.tv, x.pat, x.sal, x.comp, x.prem, x.vend, 1);
+    const ent = x.bil + x.tv + x.pat + x.prem + x.vend, sai = x.sal + x.comp, saldo = ent - sai;
+    const panes = {
+      tmp: row('Bilheteria · ' + D.plural(homes, 'jogo', 'jogos') + ' em casa', x.bil, big) + row('Cota de TV', x.tv, big) + row('Patrocínio', x.pat, big) +
+        (x.prem ? row('Prêmios', x.prem, big) : '') + (x.vend ? row('Vendas', x.vend, big) : '') + row('Salários', x.sal, big, true) + row('Contratações', x.comp, big, true) +
+        '<i class="cf-ln"></i><div class="cf-li cf-tot"><span>Saldo até agora</span><b class="' + (saldo >= 0 ? 'up' : 'dn') + '">' + sgn(saldo) + '</b></div>',
+      seg: S.coFinNext(co).map(n => '<div class="cf-li"><span>' + esc(n.txt) + '</span><b>' + (n.aprox ? '~ ' : '') + mi(n.v) + '</b></div>').join('') || '<p class="cf-empty">A temporada acabou.</p>',
+      sal: co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 5).map(p => '<div class="cf-pl"><span class="cf-pos">' + p.pos + '</span><span class="cf-pn"><b>' + esc(last(p.n) || p.n) + '</b><small>' + p.age + ' anos</small></span><b class="cf-ov">' + p.ovr + '</b><span class="cf-w">' + mi(p.wage) + '<small>até ' + (yr() + Math.max(0, p.ct - 1)) + '</small></span></div>').join(''),
+    };
+    const nx = S.coNext(co), vs = nx && !nx.bye && club(nx.vs), pr = finPres(f);
+    render(U.modeHead({ mode: 'co', nav: 'back', id: 'b-cf-back', label: 'Voltar ao clube', title: 'Finanças', sub: esc(club(co.club).short || club(co.club).name) + ' · ' + yr() + (ss ? ' · rodada ' + Math.min(ss.i + 1, ss.rounds.length) + ' de ' + ss.rounds.length : '') }) +
+      '<div class="cf">' +
+      '<div class="cf-card"><div><small class="cf-k">Caixa do clube</small><div class="cf-big' + (f.caixa < 0 ? ' dn' : '') + '">' + brl(f.caixa) + '</div><p class="cf-sm">' +
+        (f.caixa < 0 ? 'No vermelho: a cada rodada assim, a diretoria perde a paciência.' : 'Paga ' + D.plural(wk, 'semana', 'semanas') + ' de salário mesmo sem entrar nada.') + '</p></div>' +
+        '<div class="cf-two"><div class="cf-tile"><small class="cf-k">Verba para contratar</small><b class="g">' + mi(f.verba) + '</b><small class="cf-sm">o mercado abre numa próxima parte</small></div>' +
+        '<div class="cf-tile"><small class="cf-k">Folha por semana</small><b>' + mi(folha) + ' <span>de ' + mi(f.teto) + '</span></b><i class="cf-track"><em style="width:' + pct + '%"></em></i></div></div></div>' +
+      '<div class="cad-tabs cf-tabs"><button data-ft="tmp">Temporada</button><button data-ft="seg">A seguir</button><button data-ft="sal">Salários</button></div>' +
+      '<div class="cf-panel">' + panes[tab] + '</div>' +
+      '<p class="cf-pres"><b>Presidente</b> ' + pr[0] + '</p>' +
+      (vs ? '<div class="inv-bar fade co-bar"><button class="btn" id="b-cf-play">Escalar e jogar · ' + esc(vs.short || vs.name) + '</button></div>' : '') +
+      '</div>');
+    U.modeHeadBind();
+    document.querySelectorAll('[data-ft]').forEach(b => { b.classList.toggle('on', b.dataset.ft === tab); b.onclick = () => { sfx('tap'); fin(b.dataset.ft); }; });
+    $('b-cf-back').onclick = () => { sfx('tap'); hub(); };
+    if ($('b-cf-play')) $('b-cf-play').onclick = () => { sfx('tap'); team(true); };
+  }
+  // Balanço no fim da temporada
+  function finEnd(b) {
+    if (!b) return '';
+    const x = b.ss, L2 = (t, v, neg) => v ? '<div class="cf-li"><span>' + t + '</span><b class="' + (neg ? 'dn' : '') + '">' + (neg ? '− ' : '') + mi(v) + '</b></div>' : '';
+    return '<div class="co-box cf-bal"><div class="eyebrow">' + (b.verba === undefined ? 'Balanço até a saída ' : 'Balanço do ano ') + '<span class="cf-stamp ' + (b.saldo >= 0 ? 'up' : 'dn') + '">' + (b.saldo >= 0 ? 'no azul' : 'no vermelho') + '</span></div>' +
+      '<div class="cf-big ' + (b.saldo >= 0 ? 'up' : 'dn') + '">' + sgn(b.saldo) + '</div>' +
+      '<div class="cf-gr">' + L2('Bilheteria', x.bil) + L2('Salários', x.sal, true) + L2('Cota de TV', x.tv) + L2('Contratações', x.comp, true) + L2('Patrocínio', x.pat) + L2('Prêmios', x.prem) + L2('Vendas', x.vend) + '</div>' +
+      (b.verba !== undefined ? '<div class="cf-two"><div class="cf-tile d"><small class="cf-k">Verba para ' + (YEAR0 + b.season + 1) + '</small><b>' + mi(b.verba) + '</b><small class="cf-sm">era ' + mi(b.verba0) + '</small></div>' +
+        '<div class="cf-tile d"><small class="cf-k">Teto da folha</small><b>' + mi(b.teto) + '</b><small class="cf-sm">era ' + mi(b.teto0) + '</small></div></div>' : '') + '</div>';
   }
 
   // ---------- time: formação, estilo e titulares ----------
@@ -803,6 +859,7 @@
         '<div class="co-end"><div class="co-big-n">' + crest(cl.id, 'co-vc') + '<b>' + ordTxt(out.pos) + '</b><small>de ' + out.n + '</small></div>' +
           '<div class="co-meta"><small>Meta</small><b>' + S.CO_GOAL_TXT[out.goal.k] + '</b><span class="' + (out.met ? 'up' : 'down') + '">' + (out.met ? 'cumprida' : out.sacked ? 'demitido' : 'não cumprida') + '</span></div></div>' +
         '<div class="co-box co-fame"><div class="eyebrow">Fama</div><div class="co-fbar"><em style="width:' + out.fame[1] + '%"></em></div><p><b>' + out.fame[1] + '</b> <span class="' + (df >= 0 ? 'up' : 'down') + '">' + (df >= 0 ? '+' : '') + df + '</span> · ' + FAME_TXT(out.fame[1]) + '</p></div>' +
+        finEnd(out.fin) +
         '<div class="co-box"><div class="eyebrow">Experiência · ' + (out.xp ? '+' + out.xp + ' ' + (out.xp > 1 ? 'pontos' : 'ponto') : 'nenhum ponto') + (co.xp.pts ? ' · ' + co.xp.pts + ' para usar' : '') + '</div>' + skills() + '</div>' +
         (out.kids && out.kids.length ? '<p class="co-note">' + U.emo('🌱', 'xs') + ' Subiram da base: ' + out.kids.map(esc).join(', ') + '.</p>' : '') +
         (out.left && out.left.length ? '<p class="co-note">Saíram: ' + out.left.slice(0, 5).map(x => esc(x.n) + ' (' + x.why + ')').join(', ') + '.</p>' : '') +
