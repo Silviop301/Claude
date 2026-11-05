@@ -591,7 +591,7 @@
         const b = lvBall(m, mo); $('lv-ball').style.left = b[0] + '%'; $('lv-ball').style.top = b[1] + '%';
       } else if (sim) {
         // Mudou a formação (sua ou deles) ou alguém foi expulso: o campinho reposiciona
-        [m.us, m.them].forEach((s, k) => { const key = s.form + ':' + s.xi.filter(Boolean).length; if (key !== lineKey[k]) { lineKey[k] = key; sim.lineup(k, simForm(s)); } });
+        [m.us, m.them].forEach((s, k) => { const key = s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style; if (key !== lineKey[k]) { lineKey[k] = key; sim.lineup(k, simForm(s)); sim.style(k, S.CO_STY[s.style]); } });
       }
       $('lv-fu').textContent = m.us.form; $('lv-ft').textContent = m.them.form;
       if (!read || m.min % 10 === 0 || m.stop) read = S.coRead(co, m);
@@ -612,7 +612,7 @@
       $('b-lv-end').onclick = () => { sfx('tap'); finish(); };
     };
     // Os lances novos do motor vão para o campinho. Chance: a linha da narração sai quando a bola chega (ou em 9 s).
-    // Gol: o relógio espera a rede balançar (com 12 s quem vai marcar bate da entrada da área; no máximo 20 s) e só então o placar vira. Volta a espera do gol, ou null
+    // Gol: o relógio espera a rede balançar (o campinho força a jogada aos 9 s de bola rolando; a tela desiste só aos 30 s) e só então o placar vira. Volta a espera do gol, ou null
     const toSim = () => {
       if (!sim) return null;
       const gl = [];
@@ -632,9 +632,9 @@
           let done = false, tm = 0, tf = 0;
           const fin = () => { if (done) return; done = true; clearTimeout(tm); clearTimeout(tf); hidden.delete(e); if (--n > 0 || wait !== go) return; wait = null; paint(); sfx('tap'); go(); };
           const cancel = sim.shot(side, 'gol', fin);
-          // em segundos do campinho (a 3× passam três vezes mais rápido): aos 12 s quem vai marcar bate da entrada da área, aos 20 s desiste
+          // em segundos do campinho (a 3× passam três vezes mais rápido)
           const f3 = co.speed === '3' ? 1 / 3 : 1;
-          tf = setTimeout(() => cancel(true), 12000 * f3); tm = setTimeout(() => { cancel(); fin(); }, 20000 * f3);
+          tm = setTimeout(() => { cancel(); fin(); }, 30000 * f3); // último recurso: o campinho já lança direto na área aos 9 s de bola rolando
         });
       };
     };
@@ -813,8 +813,8 @@
         if (z.className !== zc) z.className = zc;
       };
       sim = LP.sim({ me: -1, t0: m.min, flip: !m.home, kits: KT, speed: () => (co.speed === '3' ? 3 : 1), onFrame: zone,
-        seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)] });
-      lineKey = [m.us.form + ':' + m.us.xi.filter(Boolean).length, m.them.form + ':' + m.them.xi.filter(Boolean).length];
+        seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]] });
+      lineKey = [m.us, m.them].map(s => s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style);
       sim.attach($('lp-cv'));
     }
     paint();
