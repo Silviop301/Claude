@@ -445,7 +445,10 @@
     // ---------- desenho (o gramado listrado vem do CSS) ----------
     const PAD = 10;
     // Fora de casa o seu time fica à direita (como no placar) e ataca para a esquerda: só o desenho espelha
-    const X = x => PAD + (o.flip ? L - x : x) / L * (W - 2 * PAD), Y = y => PAD + y / WD * (H - 2 * PAD);
+    // No 2º tempo os times trocam de lado: o desenho espelha de novo
+    let half2 = (o.t0 || 0) >= 45;
+    const mir = () => !!o.flip !== half2;
+    const X = x => PAD + (mir() ? L - x : x) / L * (W - 2 * PAD), Y = y => PAD + y / WD * (H - 2 * PAD);
     function size() {
       if (!cv) return;
       const r = cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1;
@@ -541,7 +544,7 @@
       // O que a tela escreve sai daqui: quem tem a bola, onde ela está (no sentido de quem ataca) e a posse até agora
       info() {
         const side = ball.owner ? ball.owner.side : poss, [ax, ay] = tf(side, ball), tot = pt[0] + pt[1];
-        return { mode, why: stopWhy, side, ax: ax / L * 100, ay: ay / WD * 100, sx: (o.flip ? L - ball.x : ball.x) / L * 100, posse: (pt[0] + 4) / (tot + 8) }; // a posse começa em 50% e anda com o jogo
+        return { mode, why: stopWhy, side, ax: ax / L * 100, ay: ay / WD * 100, sx: (mir() ? L - ball.x : ball.x) / L * 100, posse: (pt[0] + 4) / (tot + 8) }; // a posse começa em 50% e anda com o jogo
       },
       // Seu lance: a bola chega em você (passe do companheiro, ou você corta a jogada deles)
       lance(k, cb) {
@@ -574,7 +577,7 @@
       pending(m) { return mode !== 'wait' && goals.some(e => !e.done && e.m === m); },
       go() { if (mode === 'wait') { mode = 'ko'; modeT = 0.3; } },
       half() { if (lc) lcDone(); mode = 'half'; koSide = 1; ball.owner = ball.fly = ball.loose = ball.carry = null; },
-      second() { mode = 'ko'; modeT = 0.4; koSide = 1; },
+      second() { half2 = true; mode = 'ko'; modeT = 0.4; koSide = 1; },
       freeze(v) { frozen = !!v; },
       energy(v) { en = v === null || v === undefined ? null : cl(v, 0, 100); },
       meAt() { if (ME < 0) return null; const p = T[0][ME]; return [p.x / L * 100, p.y / WD * 100]; },
