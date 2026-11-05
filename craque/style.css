@@ -5761,3 +5761,10 @@ body.ph-nobar #bar { display: none; }
   .ph-lock > .ph-apps { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .ph-lock .ph-app i { width: 46px; height: 46px; }
 }
+/* Ranking: Amigos (fase 6) */
+.rk-fr { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.fr-list { display: flex; flex-direction: column; gap: 8px; }
+.fr-item .rk-who small + small { margin-top: 1px; }
+.fr-x { flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; color: #5B6B62; font: 700 22px/1 var(--body); cursor: pointer; }
+.fr-x:hover { background: rgba(0, 0, 0, .06); }
+.rk-fr .rk-msg { color: #FFB4A9; }

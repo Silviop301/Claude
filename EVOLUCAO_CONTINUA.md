@@ -19,7 +19,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | 3 · Dinheiro com risco | No simulador, 15% a 25% das carreiras passam por aperto e menos de 5% terminam quebradas | **no ar** (PRs #130, #132, #133 e a parte 4): aperto 16–18%, devendo no fim 3% |
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | **no ar** (PRs #135, #136 e a parte 3): janela do meio do ano, troca de clube, sondagens, empresário, aumento, pedido de saída e empréstimo |
 | 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | **no ar** (PRs #138, #139 e a parte 3): torneio do continente, convocação pelo celular, concentração e um jogo por tela, seleção no jornal |
-| 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | em andamento: parte 1 (metas do ano e legado), parte 2 (legado no lugar da nota e Seu Hall) |
+| 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | **no ar** (PRs #141, #142 e a parte 3): metas do ano, legado no lugar da nota, Seu Hall, ranking por legado e Amigos |
 | 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | |
 | 8 · Treinador v2 | No simulador, nenhuma tática ou instrução vence em todos os casos | |
 | 9 · Do jogador ao técnico | Uma carreira passa de jogador a técnico levando a história e os títulos | |
@@ -685,3 +685,15 @@ Proibido também: cartão com faixa colorida na lateral.
   a carta em 3D), anos, pico, títulos e de onde veio o legado. Guardado em `climbix-hall-jaj-v1` (vai para a nuvem com
   a conta). O Hall de antes vira "Carreira Rápida". "Última carreira" mostra o legado quando foi Jogo a Jogo.
 - Falta na fase 6: o ranking Mundial por legado (servidor) e os Amigos.
+
+### Fase 6 do plano, parte 3 · 2026-11-05 · Ranking por legado e Amigos (fase 6 pronta)
+- `api/rank.php`: colunas `mode` e `leg` (criadas sozinhas no banco que já existe). O jogo manda o modo e o legado a
+  cada temporada; Jogo a Jogo não manda nota. Nova categoria `m=legado` (só Jogo a Jogo, inclusive em andamento) e a
+  Pontuação passa a ser só da Carreira Rápida. `?a=friends&n=a|b` devolve, por apelido, o maior legado, a maior
+  pontuação e a carreira mais recente.
+- Ranking: chip "Legado" primeiro. Embaixo, "Amigos": seguir um apelido (confere se existe), lista pelo legado com a
+  carreira de agora ("jogando agora" ou "encerrada") e a melhor da Carreira Rápida; × deixa de seguir. Os apelidos
+  seguidos ficam em `climbix-amigos-v1` (vão com a conta).
+- Testado com o PHP local (banco no formato antigo + migração): salvar, ranking por legado, pontuação sem Jogo a Jogo,
+  amigos achados e não achados; fotos `ranking-legado` e `ranking-amigos`.
+- Fase 6 pronta. Próxima: fase 7, Treinador v1 (confirmar com o Silvio a proposta de fama e experiência do técnico).

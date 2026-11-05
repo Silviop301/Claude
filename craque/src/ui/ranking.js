@@ -5,7 +5,7 @@
   const U = window.CRAQUE_UI;
   const { G, D, S, esc, $, load, store, render } = U;
   const API = window.CLIMBIX_API || (/climbix\.app$/.test(location.hostname) ? '/api/rank.php' : 'https://climbix.app/api/rank.php');
-  const PKEY = 'climbix-player', QKEY = 'climbix-rank-queue';
+  const PKEY = 'climbix-player', QKEY = 'climbix-rank-queue', FKEY = 'climbix-amigos-v1'; // FKEY: apelidos seguidos (Amigos)
   const hex = n => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => b.toString(16).padStart(2, '0')).join('');
 
   function player() {
@@ -19,10 +19,10 @@
 
   function payload(c, f) {
     if (!c.uid) c.uid = hex(10);
-    const T = c.totals, main = D.CLUB_BY_ID[(f && f.mainClub) || c.club];
-    return {
+    const T = c.totals, main = D.CLUB_BY_ID[(f && f.mainClub) || c.club], jaj = c.mode === 'completa';
+    return { mode: jaj ? 'completa' : 'rapida', leg: jaj && S.legacy ? S.legacy(c).pts : 0, // Jogo a Jogo: conta pelo legado (fase 6)
       id: c.uid, name: c.name, pos: c.pos, country: c.country, club: main ? main.name : '', daily: c.daily || null, done: !!f,
-      score: f ? f.score : 0, grade: f ? f.grade : '', peak: c.peak, goals: T.goals, assists: T.assists,
+      score: f ? f.score : 0, grade: f && !jaj ? f.grade : '', peak: c.peak, goals: T.goals, assists: T.assists,
       best_goals: Math.max(0, ...c.seasons.map(s => s.goals || 0)), titles: S.titleCount(T), ballon: T.ballon, seasons: c.seasons.length,
     };
   }
@@ -43,7 +43,7 @@
   }
 
   // Categorias: [id na API, rótulo, unidade]. A carreira do dia saiu por enquanto (a disputa é na carreira normal)
-  const METRICS = [['score', 'Pontuação', 'pts'], ['peak', 'Overall máximo', 'OVR'], ['goals', 'Gols', 'gols'], ['assists', 'Assistências', 'assist.'],
+  const METRICS = [['legado', 'Legado', 'legado'], ['score', 'Pontuação', 'pts'], ['peak', 'Overall máximo', 'OVR'], ['goals', 'Gols', 'gols'], ['assists', 'Assistências', 'assist.'],
     ['titles', 'Títulos', 'títulos'], ['ballon', 'Bolas de Ouro', 'bolas']];
   const PERIODS = [['week', 'Semana'], ['all', 'Geral'], ['day', 'Hoje']];
   const POS = { ATA: 'Atacante', MEI: 'Meia', ZAG: 'Zagueiro', GOL: 'Goleiro' };
@@ -80,7 +80,8 @@
 
   // Subtítulo conforme período e categoria
   const when = () => (st.p === 'day' ? 'hoje' : st.p === 'week' ? 'nesta semana' : 'de todos os tempos');
-  const subTxt = () => (st.m === 'score' ? 'Pontuação final das carreiras encerradas ' + when() + '. Vale a melhor carreira de cada um.'
+  const subTxt = () => (st.m === 'legado' ? 'Pontos de legado das carreiras do Jogo a Jogo ' + when() + ', inclusive as em andamento. Vale a melhor de cada um.'
+    : st.m === 'score' ? 'Pontuação final das carreiras encerradas da Carreira Rápida ' + when() + '. Vale a melhor carreira de cada um.'
     : 'Melhor carreira de cada jogador ' + when() + ', inclusive as em andamento.');
 
   // Bloco da tela inicial: o pódio e a sua posição na semana (chega depois, sem travar a tela)
@@ -109,14 +110,57 @@
       '<div class="rk-tabs">' + PERIODS.map(([id, l]) => '<button data-p="' + id + '">' + l + '</button>').join('') + '</div>' +
       '<div class="rk-chips">' + METRICS.map(([id, l]) => '<button data-m="' + id + '">' + l + '</button>').join('') + '</div>' +
       '<p class="muted small rk-sub"></p></div>' +
-      '<div id="rk-list" class="rk-list"></div>' +
+      '<div id="rk-list" class="rk-list"></div>' + friendsBox() +
       (p.nick && !edit ? '<button class="link-btn rk-edit" id="rk-edit">Mudar meu nome (' + esc(p.nick) + ')</button>' : '') + U.tabs('ranking'));
     // Trocar aba ou categoria não redesenha a tela: só o destaque, o subtítulo e a lista (a rolagem fica onde estava)
     screen().querySelectorAll('[data-p]').forEach(b => b.onclick = () => { st.p = b.dataset.p; refresh(); });
     screen().querySelectorAll('[data-m]').forEach(b => b.onclick = () => { st.m = b.dataset.m; refresh(); });
     if ($('rk-edit')) $('rk-edit').onclick = () => ranking(true);
     bindNick(m => ranking(false, m));
+    friendsBind();
     refresh(true);
+  }
+  // ---------- Amigos (plano, fase 6): apelidos que você segue, com o maior legado e a carreira mais recente ----------
+  const follows = () => load(FKEY) || [];
+  function friendsBox() {
+    return '<section class="rk-fr"><div class="eyebrow">Amigos</div>' +
+      '<div class="rk-row"><input id="fr-nick" maxlength="16" autocomplete="off" placeholder="Apelido do amigo no ranking"><button class="btn ghost" id="fr-add">Seguir</button></div>' +
+      '<p class="rk-msg" id="fr-msg" hidden></p><div id="fr-list" class="fr-list">' + (follows().length ? '<p class="muted small">Carregando…</p>' : '<p class="muted small">Siga o apelido de um amigo para ver o legado e a carreira dele aqui.</p>') + '</div></section>';
+  }
+  function friendsBind() {
+    const add = $('fr-add');
+    if (!add) return;
+    const msg = t => { const m = $('fr-msg'); if (m) { m.textContent = t || ''; m.hidden = !t; } };
+    add.onclick = () => {
+      const n = $('fr-nick').value.trim(), key = n.toLowerCase(), list = follows(), me = (player().nick || '').toLowerCase();
+      if (n.length < 2) return msg('Escreva o apelido do amigo, como ele aparece no ranking.');
+      if (key === me) return msg('Esse é você.');
+      if (list.some(x => x.toLowerCase() === key)) return msg('Você já segue ' + n + '.');
+      add.disabled = true;
+      fetch(API + '?a=friends&n=' + encodeURIComponent(key)).then(r => r.json()).then(d => {
+        add.disabled = false;
+        const f = d.friends && d.friends[0];
+        if (!f || !f.found) return msg('Ninguém com esse apelido no ranking.');
+        store(FKEY, list.concat([f.nick]).slice(-30)); $('fr-nick').value = ''; msg(''); if (U.sfx) U.sfx('tap'); friendsLoad();
+      }).catch(() => { add.disabled = false; msg('Sem conexão com o ranking agora.'); });
+    };
+    friendsLoad();
+  }
+  function friendsLoad() {
+    const list = follows(), el = $('fr-list');
+    if (!el || !list.length) return;
+    fetch(API + '?a=friends&n=' + encodeURIComponent(list.join('|').toLowerCase())).then(r => r.json()).then(d => {
+      const el2 = $('fr-list');
+      if (!el2) return;
+      const rows = (d.friends || []).filter(f => f.found).sort((a, b) => ((b.leg && b.leg.leg) || 0) - ((a.leg && a.leg.leg) || 0));
+      el2.innerHTML = rows.map(f => {
+        const L = f.last, now = L ? esc(L.name) + ' · ' + (POS[L.pos] || '') + (L.club ? ' · ' + esc(L.club) : '') + (L.done ? ' · encerrada' : ' · jogando agora') : 'Sem carreira ainda';
+        return '<div class="rk-item fr-item"><span class="rk-who"><b>' + esc(f.nick) + '</b><small>' + now + '</small>' +
+          (f.score ? '<small>Carreira Rápida: ' + fmt(f.score.score) + ' pts' + (f.score.grade ? ' · nota ' + esc(f.score.grade) : '') + '</small>' : '') + '</span>' +
+          '<span class="rk-v">' + (f.leg ? fmt(f.leg.leg) : '–') + '<small>legado</small></span><button class="fr-x" data-fx="' + esc(f.nick) + '" aria-label="Deixar de seguir ' + esc(f.nick) + '">×</button></div>';
+      }).join('') || '<p class="muted small">Ninguém encontrado.</p>';
+      el2.querySelectorAll('[data-fx]').forEach(b => { b.onclick = () => { store(FKEY, follows().filter(x => x.toLowerCase() !== b.dataset.fx.toLowerCase())); b.closest('.fr-item').remove(); }; });
+    }).catch(() => { const el2 = $('fr-list'); if (el2) el2.innerHTML = '<p class="muted small">Sem conexão com o ranking agora.</p>'; });
   }
   let req = 0; // só a última lista pedida aparece (toques rápidos não misturam resultados)
   function refresh(first) {
