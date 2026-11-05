@@ -1775,7 +1775,7 @@
       const lt = $('fc-lt'); if (lt) lt.textContent = 'Antes do jogo';
       if (fl) lpAt(0);
       if ($('lp-strip') && fl) $('lp-strip').innerHTML = U.LP.strip(fl.dom, 0, N, [], 0);
-      stopActs('fc-kick', 'Começar o jogo', onPitch ? 'Escolha o esforço antes do apito' : '', () => { liveActs(); timer = setTimeout(tick, 300); });
+      stopActs('fc-kick', 'Começar o jogo', onPitch ? 'Escolha o esforço antes do apito' : '', () => { if (sim) sim.go(); liveActs(); timer = setTimeout(tick, 300); });
     }
   }
   const sub = (tab, a, b, [gh, ga]) => {
