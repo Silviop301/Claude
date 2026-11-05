@@ -105,13 +105,17 @@
     G.step = null;
     const p = player();
     edit = edit === true || !!msg;
-    render('<div class="rk-head">' + podium(56) + '<div><div class="eyebrow">Ranking</div><h2>Quem fez a maior carreira?</h2></div></div>' +
-      '<div class="rk-side">' + (!p.nick || edit ? nickForm(p, msg) : '') +
-      '<div class="rk-tabs">' + PERIODS.map(([id, l]) => '<button data-p="' + id + '">' + l + '</button>').join('') + '</div>' +
-      '<div class="rk-chips">' + METRICS.map(([id, l]) => '<button data-m="' + id + '">' + l + '</button>').join('') + '</div>' +
-      '<p class="muted small rk-sub"></p></div>' +
+    // Igual à home: topo, rótulo discreto e ingressos. Sem apelido, um ingresso coral chama para escolher (o formulário só abre no toque)
+    const nickTk = U.tk('tk-tab tk-coral rk-nick-tk', 'rk-nick-go', '<span class="tk-t"><b>Escolha seu apelido</b><small>Para seus amigos te acharem aqui</small></span>', '<b>Escolher</b>');
+    render(U.topBar() +
+      '<div class="rk-side">' + (edit ? nickForm(p, msg) : !p.nick ? nickTk : '') +
+      '<div class="tab-sh"><h2>Ranking</h2><div class="rk-tabs" role="group" aria-label="Período">' + PERIODS.map(([id, l]) => '<button data-p="' + id + '">' + l + '</button>').join('') + '</div></div>' +
+      '<div class="rk-chips" role="group" aria-label="Medida">' + METRICS.map(([id, l]) => '<button data-m="' + id + '">' + l + '</button>').join('') + '</div>' +
+      '<p class="rk-sub"></p></div>' +
       '<div id="rk-list" class="rk-list"></div>' + friendsBox() +
       (p.nick && !edit ? '<button class="link-btn rk-edit" id="rk-edit">Mudar meu nome (' + esc(p.nick) + ')</button>' : '') + U.tabs('ranking'));
+    U.topBarBind();
+    if ($('rk-nick-go')) $('rk-nick-go').onclick = () => { if (U.sfx) U.sfx('tap'); ranking(true); };
     // Trocar aba ou categoria não redesenha a tela: só o destaque, o subtítulo e a lista (a rolagem fica onde estava)
     screen().querySelectorAll('[data-p]').forEach(b => b.onclick = () => { st.p = b.dataset.p; refresh(); });
     screen().querySelectorAll('[data-m]').forEach(b => b.onclick = () => { st.m = b.dataset.m; refresh(); });
@@ -123,9 +127,11 @@
   // ---------- Amigos (plano, fase 6): apelidos que você segue, com o maior legado e a carreira mais recente ----------
   const follows = () => load(FKEY) || [];
   function friendsBox() {
-    return '<section class="rk-fr"><div class="eyebrow">Amigos</div>' +
-      '<div class="rk-row"><input id="fr-nick" maxlength="16" autocomplete="off" placeholder="Apelido do amigo no ranking"><button class="btn ghost" id="fr-add">Seguir</button></div>' +
-      '<p class="rk-msg" id="fr-msg" hidden></p><div id="fr-list" class="fr-list">' + (follows().length ? '<p class="muted small">Carregando…</p>' : '<p class="muted small">Siga o apelido de um amigo para ver o legado e a carreira dele aqui.</p>') + '</div></section>';
+    const n = follows().length;
+    return '<section class="rk-fr tab-sec"><div class="tab-sh"><h2>Amigos</h2>' + (n ? '<span>' + n + ' seguindo</span>' : '') + '</div>' +
+      '<div class="sumula"><div class="sumula-in"><div id="fr-list" class="fr-list">' + (n ? '<p class="fr-note">Carregando…</p>' : '<p class="fr-note">Siga o apelido de um amigo para ver o legado e a carreira dele aqui.</p>') + '</div>' +
+      '<div class="rk-row fr-add"><input id="fr-nick" maxlength="16" autocomplete="off" placeholder="Apelido do amigo" aria-label="Apelido do amigo no ranking"><button class="btn" id="fr-add">Seguir</button></div>' +
+      '<p class="rk-msg" id="fr-msg" hidden></p></div></div></section>';
   }
   function friendsBind() {
     const add = $('fr-add');
@@ -158,9 +164,9 @@
         return '<div class="rk-item fr-item"><span class="rk-who"><b>' + esc(f.nick) + '</b><small>' + now + '</small>' +
           (f.score ? '<small>Carreira Rápida: ' + fmt(f.score.score) + ' pts' + (f.score.grade ? ' · nota ' + esc(f.score.grade) : '') + '</small>' : '') + '</span>' +
           '<span class="rk-v">' + (f.leg ? fmt(f.leg.leg) : '–') + '<small>legado</small></span><button class="fr-x" data-fx="' + esc(f.nick) + '" aria-label="Deixar de seguir ' + esc(f.nick) + '">×</button></div>';
-      }).join('') || '<p class="muted small">Ninguém encontrado.</p>';
+      }).join('') || '<p class="fr-note">Ninguém encontrado.</p>';
       el2.querySelectorAll('[data-fx]').forEach(b => { b.onclick = () => { store(FKEY, follows().filter(x => x.toLowerCase() !== b.dataset.fx.toLowerCase())); b.closest('.fr-item').remove(); }; });
-    }).catch(() => { const el2 = $('fr-list'); if (el2) el2.innerHTML = '<p class="muted small">Sem conexão com o ranking agora.</p>'; });
+    }).catch(() => { const el2 = $('fr-list'); if (el2) el2.innerHTML = '<p class="fr-note">Sem conexão com o ranking agora.</p>'; });
   }
   let req = 0; // só a última lista pedida aparece (toques rápidos não misturam resultados)
   function refresh(first) {
@@ -182,23 +188,25 @@
     fetch(API + '?a=top&m=' + st.m + '&p=' + st.p + '&pid=' + p.pid).then(r => r.json()).then(d => {
       const el2 = $('rk-list');
       if (!el2 || my !== req) return;
-      if (!d.rows || !d.rows.length) { el2.innerHTML = '<div class="rk-state rk-empty">' + U.ICON.trophy + '<b>Ninguém ainda ' + when() + '.</b><span>Termine uma carreira e seja o primeiro!</span>' + GHOST + '</div>'; return; }
+      if (!d.rows || !d.rows.length) { el2.innerHTML = sheet('<div class="rk-state rk-empty">' + U.ICON.trophy + '<b>Ninguém ainda ' + when() + '.</b><span>Termine uma carreira e seja o primeiro!</span></div>'); return; }
       const top = d.rows.slice(0, 3), rest = d.rows.slice(3);
-      // Pódio: 2º à esquerda, 1º no meio (mais alto), 3º à direita
-      const step = (r, i) => !r ? '<div class="rk-step empty"></div>' : '<div class="rk-step s' + (i + 1) + (r.me ? ' me' : '') + '"><span class="rk-medal">' + (i + 1) + '</span>' +
-        '<b class="rk-nk">' + esc(r.nick) + '</b><small>' + esc(r.name) + '</small>' + gradeTag(st.m === 'score' ? r.grade : '') + val(r) + '<i class="rk-block"></i></div>';
-      el2.innerHTML = '<div class="rk-podium">' + step(top[1], 1) + step(top[0], 0) + step(top[2], 2) + '</div>' +
-        rest.map((r, i) => '<div class="rk-item' + (r.me ? ' me' : '') + '"><span class="rk-pos">' + (i + 4) + 'º</span>' +
-          '<span class="rk-who"><b>' + esc(r.nick) + '</b><small>' + who(r) + '</small></span>' + (st.m === 'score' ? gradeTag(r.grade) : '') + val(r) + '</div>').join('') +
+      // Pódio: três ingressos (ouro, prata, bronze) com a posição no canhoto; do 4º em diante, a súmula
+      const MED = ['tk-gold tk-ink', 'tk-silver', 'tk-bronze'];
+      const kv = r => '<span class="tk-k">' + (unit || '') + '<b>' + fmt(r.v) + '</b></span>';
+      const pod = (r, i) => U.tk('tk-tab tk-pod ' + MED[i] + (r.me ? ' me' : ''), null, (i ? '' : U.emo('🥇', 'lg')) + '<span class="tk-t"><b>' + esc(r.nick) + (r.me ? ' · você' : '') + '</b><small>' + who(r) + '</small></span>' +
+        gradeTag(st.m === 'score' ? r.grade : '') + kv(r), '<b>' + (i + 1) + 'º</b>');
+      el2.innerHTML = '<div class="rk-pod">' + top.map(pod).join('') + '</div>' +
+        (rest.length ? sheet(rest.map((r, i) => '<div class="rk-item' + (r.me ? ' me' : '') + '"><span class="rk-pos">' + (i + 4) + 'º</span>' +
+          (st.m === 'score' ? gradeTag(r.grade) : '') + '<span class="rk-who"><b>' + esc(r.nick) + '</b><small>' + who(r) + '</small></span>' + val(r) + '</div>').join('')) : '') +
         // Sua posição: sempre à vista, mesmo fora do top 30
-        (d.me && d.me.rank > d.rows.length ? '<div class="rk-item me rk-mine"><span class="rk-pos">' + d.me.rank + 'º</span><span class="rk-who"><b>Você</b><small>' + esc(d.me.name || '') + '</small></span>' + (st.m === 'score' ? gradeTag(d.me.grade) : '') + val(d.me) + '</div>'
-          : !d.me && p.nick ? '<p class="muted small rk-none">Você ainda não aparece aqui ' + when() + '.</p>' : '') +
-        '<p class="muted small rk-count">' + d.players + (d.players === 1 ? ' jogador' : ' jogadores') + ' nesta lista.</p>';
-    }).catch(() => { const el2 = $('rk-list'); if (el2 && my === req) el2.innerHTML = '<div class="rk-state rk-off">' + U.ICON.cloud + '<b>Sem conexão com o ranking agora.</b><span>Suas carreiras ficam guardadas e são enviadas depois.</span>' + GHOST + '</div>'; });
+        (d.me && d.me.rank > d.rows.length ? U.tk('tk-tab tk-gold tk-ink rk-mine', null, gradeTag(st.m === 'score' ? d.me.grade : '') + '<span class="tk-t"><b>Você</b><small>' + esc(d.me.name || '') + '</small></span>' + kv(d.me), '<b>' + d.me.rank + 'º</b>')
+          : !d.me && p.nick ? '<p class="rk-none">Você ainda não aparece aqui ' + when() + '.</p>' : '') +
+        '<p class="rk-count">' + d.players + (d.players === 1 ? ' jogador' : ' jogadores') + ' nesta lista.</p>';
+    }).catch(() => { const el2 = $('rk-list'); if (el2 && my === req) el2.innerHTML = sheet('<div class="rk-state rk-off">' + U.ICON.cloud + '<b>Sem conexão com o ranking agora.</b><span>Suas carreiras ficam guardadas e são enviadas depois.</span></div>'); });
   }
   const screen = () => document.getElementById('screen');
-  // Pódio vazio (sem conexão ou sem ninguém): os três degraus apagados no pé do quadro
-  const GHOST = '<div class="rk-ghost" aria-hidden="true"><i></i><i></i><i></i></div>';
+  // Súmula de papel (lista, vazio, sem conexão), como as da aba Carreiras
+  const sheet = html => '<div class="sumula"><div class="sumula-in">' + html + '</div></div>';
 
   // No fim da carreira: envia e, se ainda não tem nome, convida a entrar no ranking
   function finaleRank() {

@@ -55,6 +55,12 @@
     const sc = score();
     return '<button class="hg wd-home" id="b-world"><i>' + mapSvg(sc, null, true) + '</i><b>Domínio mundial · ' + sc.pct + '%</b><small>' + sc.won + ' de ' + sc.total + ' taças do jogo</small></button>';
   }
+  // Ingresso do Perfil: as taças do jogo que você já ganhou, a porcentagem no canhoto
+  function homeTk() {
+    if (!U.salaCat || !window.CRAQUE_WORLD) return '';
+    const sc = score();
+    return U.tabTk('tk-yel', 'b-world', '🌍', 'Domínio mundial', sc.won + ' de ' + sc.total + ' taças do jogo', sc.pct + '%', 'do mapa');
+  }
   function homeBind() { if ($('b-world')) $('b-world').onclick = () => open(); }
 
   function open(sel) {
@@ -77,5 +83,5 @@
     document.querySelectorAll('[data-c]').forEach(el => { if (el.dataset.c) el.onclick = () => { sfx('tap'); open(el.dataset.c); }; });
   }
 
-  Object.assign(U, { worldMap: open, worldHome: homeHtml, worldHomeBind: homeBind });
+  Object.assign(U, { worldMap: open, worldHome: homeHtml, worldTk: homeTk, worldHomeBind: homeBind });
 })();

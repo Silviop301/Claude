@@ -230,17 +230,11 @@
   }
 
   // ---------- entrada na tela inicial ----------
+  // Ingresso ouro na aba Carreiras (como a Carreira Rápida da home): taças na estante no canhoto
   function homeCard() {
-    const cat = catalog(), d = data(), n = counts(d.e), total = Object.keys(n).filter(k => cat.info[k]).length;
-    // As duas últimas taças ganhas e a próxima lendária que falta
-    const last = [...new Set(d.e.slice().reverse().map(x => x.k))].slice(0, 2).reverse();
-    const next = HONRA.find(k => !n[k]);
-    const minis = last.map(k => niche(k, 1, { plaque: false, legend: HONRA.includes(k), cls: 'mini' })).concat(next ? [niche(next, 0, { plaque: false, legend: true, cls: 'mini' })] : []);
-    while (minis.length < 3) minis.unshift(niche(HONRA[minis.length], 0, { plaque: false, legend: true, cls: 'mini' }));
-    const nova = d.nova.length;
-    return '<button class="sl-home' + (nova ? ' has-new' : '') + '" id="b-sala"><span class="sl-minis">' + minis.join('') + '</span>' +
-      '<span class="sl-h-txt"><b>Sala de Troféus</b><small><em>' + total + '</em> / ' + cat.total + ' taças</small></span>' +
-      (nova ? '<span class="sl-h-new">+' + nova + (nova === 1 ? ' NOVA' : ' NOVAS') + '</span>' : '<span class="sl-h-go">' + U.ICON['chevron-right'] + '</span>') + '</button>';
+    const cat = catalog(), d = data(), n = counts(d.e), total = Object.keys(n).filter(k => cat.info[k]).length, nova = d.nova.length;
+    return U.tabTk('tk-gold tk-ink' + (nova ? ' has-new' : ''), 'b-sala', '🏆', 'Sala de Troféus',
+      nova ? '<em class="tk-new">+' + nova + (nova === 1 ? ' taça nova' : ' taças novas') + '</em> na estante' : 'Cada taça que você levantou', total, 'de ' + cat.total);
   }
 
   // ---------- a taça entrando na estante ----------
