@@ -137,7 +137,19 @@
       return '<div class="rx-c' + (k === i ? ' now' : '') + cls + '"><small>' + nm + '</small>' + inner + '</div>';
     }).join('') + '</div>';
   }
-  const field = () => '<div class="rx-field" aria-hidden="true"><i class="rx-goal"></i><i class="rx-line"></i></div>';
+  // O campo antes do chute é a mesma cena do minigame (kick.js), parada: gol, rede, goleiro e a bola na marca
+  const KP = () => window.CRAQUE_KICK_PARTS;
+  const field = () => KP() && KP().scene
+    ? '<div class="rx-field rx-kf" aria-hidden="true"><div class="kick-stage">' + KP().scene({}, 1) + '</div></div>'
+    : '<div class="rx-field" aria-hidden="true"><i class="rx-goal"></i><i class="rx-line"></i></div>';
+  function dressField(xs) {
+    const svg = document.querySelector('.rx-kf svg'); if (!svg) return;
+    ['k-aim', 'k-vline', 'k-hline', 'k-dot'].forEach(id => { const e = svg.querySelector('#' + id); if (e) e.style.display = 'none'; });
+    try { if (KP().keeperSprite) { const g = KP().keeperSprite(svg); g.stand(KP().GX); g.idle(); } } catch (e) { /* fica o goleiro desenhado */ }
+    // Na casa: as bolas que ainda faltam na marca, como no chute
+    const ball = svg.querySelector('#k-ball');
+    if (xs && ball && KP().setBall) xs.forEach((x, n) => { const b = n ? ball.cloneNode(true) : ball; if (n) { b.removeAttribute('id'); ball.parentNode.insertBefore(b, ball); } KP().setBall(b, x, KP().BALL.y, KP().BALL.r); });
+  }
 
   // ---------- entrada: já no campo, com o cartão das regras por cima ----------
   function intro() {
@@ -156,7 +168,7 @@
         '<label class="rx-fld"><span>Seu nome</span><input id="rl-name" maxlength="20" autocomplete="nickname" placeholder="Ex.: Vitinho" value="' + esc(name) + '"></label>' + seg + '</div></div>' +
       '<div class="rx-foot"><span class="rx-fk" id="rl-fk">' + (d ? (d.h ? '<b>X1</b> · os dois resultados abrem no fim' : '<b>Desafio</b> · bata os pontos de ' + esc(d.n)) : fk(false)) + '</span>' +
         ticket('rl-start', d ? (d.h ? 'Jogar o X1' : 'Jogar o desafio') : 'Começar', '25 bolas · a mira acelera a cada casa', 'casa', '1') + '</div></div>');
-    headBind();
+    headBind(); dressField([180]);
     $('rl-back').onclick = () => U.home();
     let x1 = false;
     document.querySelectorAll('.rx-seg button').forEach(b => b.onclick = () => {
@@ -231,7 +243,7 @@
       '<div class="rx-foot" id="rl-foot"><span class="rx-fk"><b>Escolha a bola</b> · cobrança ' + (k + 1) + ' de 5</span>' +
         '<div class="tk tk-relampago rx-tk rx-dock" id="rl-pick"><span class="tk-in"><span class="tk-paper"><span class="tk-frame">' + [0, 1, 2, 3, 4].map(ball).join('') + '</span></span>' +
         stubHtml('casa', i + 1) + '</span></div></div></div>');
-    headBind();
+    headBind(); dressField([0, 1, 2, 3, 4].filter(j => stateOf(kicks, j) === undefined).map(j => BX[j]));
     document.querySelectorAll('.rx-ball:not([disabled])').forEach(b => { b.onclick = () => kick(i, +b.dataset.b); });
     if ($('rl-tip-ok')) $('rl-tip-ok').onclick = () => { const t = $('rl-tip'), s = load(TIPS) || {}; s[t.dataset.k] = 1; store(TIPS, s); t.remove(); };
     // Desafio de amigo abandonado conta como jogado (os prêmios escondidos já apareceram): não volta na tela inicial
