@@ -144,7 +144,7 @@
       jnLine + U.challengeHome() + U.relampagoHome(true) +
       (packs ? '<button class="hm-line" id="b-hb-packs">' + U.emo('📦', 'xs') + '<span><b>' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</b> para abrir</span><em>Abrir ›</em></button>' : '') +
       '<section class="hm-sec"><h2>Escolha o jogo</h2><div class="hm-tks">' + saveTicket('rapida') + saveTicket('completa') + modeTicket('relampago') + saveTicket('treinador') +
-      '</div></section>' + U.deskHint() + '</div>' + U.tabs('home')
+      '</div></section>' + U.installHome() + U.deskHint() + '</div>' + U.tabs('home')
     );
     const cont = sv => {
       if (sv.c.mode === 'completa' && sv.c.fcv !== FCV) return home(); // veio da nuvem de antes do save novo
@@ -193,6 +193,7 @@
     U.relampagoHomeBind();
     $('b-sound').onclick = U.settings;
     if (U.whatsNew) U.whatsNew();
+    U.installHomeBind();
   }
 
   // Minhas carreiras: tudo o que ficou das carreiras encerradas (as telas daqui voltam para cá)
