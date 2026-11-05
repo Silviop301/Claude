@@ -30,8 +30,8 @@
     return null;
   }
 
-  const DOTS = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>';
   const SHARE = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#1E6FD9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/></svg>';
+  const MORE = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
   const ADD = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
   const DOWN = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>';
   const ARROW = '<svg viewBox="0 0 24 24" width="38" height="38" aria-hidden="true"><path d="M12 22l-8-9h5V2h6v11h5z" fill="#F2C230" stroke="#13201A" stroke-width="1.2"/></svg>';
@@ -43,12 +43,13 @@
 
   // Passos de cada aparelho: [ícone, texto com <b>]
   function steps(p) {
-    if (p === 'ios') return [[DOTS, 'Toque em <b>•••</b> na barra do Safari, embaixo'], [SHARE, 'Toque em <b>Compartilhar</b>'], [ADD, 'Escolha <b>Adicionar à Tela de Início</b> e depois <b>Adicionar</b>']];
+    // iOS 26 (testado num iPhone real): Compartilhar fica no meio da barra de baixo; a opção mora atrás de "Ver Mais"
+    if (p === 'ios') return [[SHARE, 'Toque em <b>Compartilhar</b>, no meio da barra de baixo'], [MORE, 'Na janela que abre, toque em <b>Ver Mais</b>'], [ADD, 'Escolha <b>Adicionar à Tela de Início</b> e depois <b>Adicionar</b>']];
     if (p === 'ios18') return [[SHARE, 'Toque em <b>Compartilhar</b> na barra do Safari, embaixo'], [ADD, 'Escolha <b>Adicionar à Tela de Início</b> e depois <b>Adicionar</b>']];
     return [[SHARE, 'Toque em <b>Compartilhar</b>, no alto da tela'], [ADD, 'Escolha <b>Adicionar à Tela de Início</b> e depois <b>Adicionar</b>']];
   }
   // Onde fica o botão do primeiro passo (a seta aponta para lá)
-  const SPOT = { ios: 'br', ios18: 'bc', ipad: 'tr', iosapp: 'tr' };
+  const SPOT = { ios: 'bc', ios18: 'bc', ipad: 'tr', iosapp: 'tr' };
 
   let wrap = null;
   function close() { if (wrap) { wrap.remove(); wrap = null; } }
@@ -65,6 +66,7 @@
         '<p class="ins-note">' + (canPrompt ? 'O botão abre a janela do próprio Chrome. Se ela não aparecer: ' : 'No Chrome: ') + 'menu <b>⋮</b> › <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>).</p>' +
         '<button class="ins-later" data-a="later">Agora não</button>'
       : '<ol class="ins-steps">' + steps(p).map(([ic, t], i) => '<li><em>' + (i + 1) + '</em><span>' + t + '</span><i>' + ic + '</i></li>').join('') + '</ol>' +
+        (p === 'ios' ? '<p class="ins-note">Barra do Safari só com <b>•••</b>? Toque nele primeiro e depois em Compartilhar.</p>' : '') +
         '<div class="ins-row"><button class="ins-later" data-a="later">Agora não</button><button class="btn ins-go" data-a="show">Mostrar onde fica</button></div>';
     wrap = document.createElement('div');
     wrap.className = 'ins-wrap';
