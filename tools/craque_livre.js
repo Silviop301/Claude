@@ -14,9 +14,11 @@ const GX = 180, H0 = 460, d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const segD = (q, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy || 1, k = Math.max(0, Math.min(1, ((q.x - a.x) * dx + (q.y - a.y) * dy) / l)); return Math.hypot(a.x + dx * k - q.x, a.y + dy * k - q.y); };
 // lvl: 0 bom, 0,5 médio, 1 desleixado (ruído no analógico e decisões piores)
 const go = (S, t, lvl) => { const dx = t.x - S.me.x + (Math.random() - 0.5) * 60 * lvl, dy = t.y - S.me.y + (Math.random() - 0.5) * 60 * lvl, l = Math.hypot(dx, dy); S.stick = l < 4 ? { x: 0, y: 0 } : { x: dx / l * Math.min(1, l / 20), y: dy / l * Math.min(1, l / 20) }; };
+// Bote: o bom espera a bola solta (anel dourado); o médio às vezes não espera; o desleixado dá o bote quando chega perto
+const tk = (S, a, lvl) => d(S.me, a) < 40 + lvl * 14 && Math.random() < 0.1 && (S.loose ? Math.random() < 1 - lvl * 0.3 : Math.random() < lvl * 0.5);
 const BOT = {
   // Pressão: fica entre ele e a saída (embaixo) e dá o bote perto
-  pressao: (S, L, lvl) => { const a = S.atk, gd = Math.hypot(GX - a.x, H0 - a.y); go(S, { x: a.x + (GX - a.x) / gd * 30, y: a.y + (H0 - a.y) / gd * 30 }, lvl); if (d(S.me, a) < 40 + lvl * 14 && Math.random() < 0.1) { const vx = a.x - S.me.x, vy = a.y - S.me.y, l = Math.hypot(vx, vy); S.stick = { x: vx / l, y: vy / l }; L.act(); } },
+  pressao: (S, L, lvl) => { const a = S.atk, gd = Math.hypot(GX - a.x, H0 - a.y); go(S, { x: a.x + (GX - a.x) / gd * 30, y: a.y + (H0 - a.y) / gd * 30 }, lvl); if (tk(S, a, lvl)) { const vx = S.ball.x - S.me.x, vy = S.ball.y - S.me.y, l = Math.hypot(vx, vy); S.stick = { x: vx / l, y: vy / l }; L.act(); } },
   // Cara a cara: vai ao gol pelo meio e chuta quando o goleiro chega perto (o desleixado chuta tarde)
   cara: (S, L, lvl) => { const me = S.me; if (!S.own) return; go(S, { x: GX + (me.x - GX) * 0.5, y: 60 }, lvl); if (d(me, S.kp) < 70 - lvl * 30 + Math.random() * 10) { S.stick = { x: 0, y: 0 }; L.act(); } },
   // 2 contra 1: conduz; com o zagueiro perto, toca se ele veio em você, senão chuta
@@ -30,7 +32,7 @@ const BOT = {
     go(S, S.past ? { x: GX + (me.x - GX) * (0.4 + lvl * 0.5), y: 130 } : { x: me.x + side * 70, y: me.y - 60 }, lvl);
     if (S.past && me.y < 170 + lvl * 60 + Math.random() * 20) { S.stick = { x: 0, y: 0 }; L.act(); } },
   passe3: (S, L, lvl) => { if (!S.own) return; go(S, { x: S.me.x, y: S.me.y }, lvl); const open = S.mates.filter(m => !S.foes.some(o => segD(o, S.ball, m) < 18 + lvl * 10)); if (open.length && S.t > 0.5 + Math.random() * lvl) { const m = open[0], vx = m.x - S.ball.x, vy = m.y - S.ball.y, l = Math.hypot(vx, vy); S.stick = { x: vx / l, y: vy / l }; L.act(); } },
-  bote: (S, L, lvl) => { const a = S.atk, gd = Math.hypot(GX - a.x, 20 - a.y); go(S, { x: a.x + (GX - a.x) / gd * 30, y: a.y + (20 - a.y) / gd * 30 }, lvl); if (d(S.me, a) < 40 + lvl * 14 && Math.random() < 0.1) { const vx = a.x - S.me.x, vy = a.y - S.me.y, l = Math.hypot(vx, vy); S.stick = { x: vx / l, y: vy / l }; L.act(); } },
+  bote: (S, L, lvl) => { const a = S.atk, gd = Math.hypot(GX - a.x, 20 - a.y); go(S, { x: a.x + (GX - a.x) / gd * 30, y: a.y + (20 - a.y) / gd * 30 }, lvl); if (tk(S, a, lvl)) { const vx = S.ball.x - S.me.x, vy = S.ball.y - S.me.y, l = Math.hypot(vx, vy); S.stick = { x: vx / l, y: vy / l }; L.act(); } },
   saida: (S, L, lvl) => { const a = S.atk;
     // Viu a linha do chute: pula para onde ela cruza a sua altura (o bom reage em ~0,22 s, o médio em ~0,32 s; o desleixado não pula)
     if (S.aim && !S.dived && lvl < 1 && S.t - S.aim.t > 0.22 + lvl * 0.2) { const k = (a.y - S.me.y) / Math.max(1, a.y - 20), x = a.x + (S.aim.x - a.x) * k, dx = x - S.me.x; S.stick = { x: Math.sign(dx) * Math.min(1, Math.abs(dx) / 20), y: 0 }; if (Math.abs(dx) > 8) L.act(); return; }

@@ -3,7 +3,7 @@
 //  CRAQUE_LIVRE(el, { c, kind, onResult(ok, why), onDone(ok, why) })
 //   kind 'mano'   (atacante): passe pelo zagueiro antes de a cobertura chegar e chute no canto
 //        'passe3' (meia):     conduza e passe para o companheiro livre (a linha vermelha é cortada)
-//        'bote'   (zagueiro): fique entre ele e o gol e dê o carrinho de frente
+//        'bote'   (zagueiro): fique entre ele e o gol e dê o carrinho quando a bola fica solta (anel dourado)
 //        'saida'  (goleiro):  saia do gol para fechar o ângulo; ele bate no lado mais aberto
 //        'pressao' (atacante e meia): o zagueiro deles sai jogando; feche a saída (embaixo) e roube no bote
 //        'cara'   (atacante): sozinho contra o goleiro, que sai; chute antes ou drible ele (o zagueiro vem de trás)
@@ -22,13 +22,13 @@
   const ATK = ['mano', 'cara', 'dois', 'cabeca'];
   const LABEL = { pressao: ['Bote', 'roubar'], cara: ['Chutar', 'no canto'], dois: ['Chutar', 'ou tocar'], cabeca: ['Arrancar', 'até a bola'], mano: ['Chutar', 'no canto'], passe3: ['Passar', 'pra quem aponta'], bote: ['Carrinho', 'bote'], saida: ['Pular', 'mergulho'] };
   const HELP = {
-    pressao: 'Fique entre ele e a saída (embaixo) e dê o <b>bote</b> de frente e perto',
+    pressao: 'Fique entre ele e a saída (embaixo); <b>bote</b> quando ele <b>soltar a bola</b> (anel dourado)',
     cara: 'Ele sai do gol: <b>chute</b> antes de ele chegar ou drible e toque para o gol vazio',
     dois: 'Aponte para o companheiro e o botão <b>toca</b>; para o gol, ele <b>chuta</b>',
     cabeca: 'Corra para o <b>círculo</b> e fique nele: a cabeçada sai <b>sozinha</b> quando a bola chegar, no canto do analógico',
     mano: 'Passe pelo zagueiro e <b>chute</b>: a bola vai no canto para onde o analógico aponta',
-    passe3: 'Aponte o analógico para o companheiro <b>livre</b> e passe',
-    bote: 'Fique entre ele e o gol; <b>carrinho</b> de frente e perto',
+    passe3: 'Aponte o analógico para o companheiro <b>livre</b> (linha dourada) e passe antes do volante chegar',
+    bote: 'Fique entre ele e o gol; <b>carrinho</b> quando ele <b>soltar a bola</b> (anel dourado)',
     saida: 'Saia para <b>fechar o ângulo</b>; quando a linha vermelha aparecer, <b>pule</b> na direção dela',
   };
 
@@ -100,6 +100,15 @@
 
     // 2 contra 1: o analógico aponta para o companheiro? (o botão toca em vez de chutar)
     function passAim() { const m = S.mates && S.mates[0], st = S.stick, sm = Math.hypot(st.x, st.y); if (!m || sm < 0.3) return false; const vx = m.x - S.ball.x, vy = m.y - S.ball.y, l = Math.hypot(vx, vy) || 1; return (vx * st.x + vy * st.y) / (l * sm) > 0.7; }
+    // Bote: de tempos em tempos ele dá um toque mais longo e a bola fica solta (anel dourado): é a hora do carrinho
+    function carry(a, dy) {
+      if (S.nextTouch == null) S.nextTouch = 0.9 + Math.random() * 0.5;
+      if (!S.loose && S.t >= S.nextTouch) { S.loose = { t0: S.t }; S.nextTouch = S.t + LOOSE + 0.6 + Math.random() * 0.6; }
+      if (S.loose && S.t - S.loose.t0 > LOOSE) S.loose = null;
+      const k = S.loose ? Math.sin(Math.PI * (S.t - S.loose.t0) / LOOSE) : 0;
+      S.ball.x = a.x; S.ball.y = a.y + dy * (14 + 16 * k);
+    }
+    const LOOSE = 0.42;
     const WINDUP = 0.32; // goleiro: tempo entre aparecer a linha do chute e a bola sair
     function step(dt) {
       if (S.over) { if (S.ball.fly) flyBall(); return; }
@@ -108,7 +117,7 @@
       const vMe = (kind === 'saida' ? 150 : kind === 'bote' ? 118 : 112) * K, st = S.stick, sm = Math.min(1, Math.hypot(st.x, st.y));
       if (S.dash) { // carrinho ou mergulho: um impulso rápido na direção escolhida
         S.me.x += S.dash.x * S.dash.v * dt; S.me.y += S.dash.y * S.dash.v * dt; S.dash.t -= dt;
-        if ((kind === 'bote' || kind === 'pressao') && dist(S.me, S.atk) < 17) S.dash.t = 0; // chegou nele: o bote acontece ali
+        if ((kind === 'bote' || kind === 'pressao') && (dist(S.me, S.atk) < 17 || dist(S.me, S.ball) < 10)) S.dash.t = 0; // chegou nele: o bote acontece ali
         if (kind === 'cabeca' && dist(S.me, { x: S.cross.x1, y: S.cross.y1 }) < 6) S.dash.t = 0; // o pulo para na bola
         if (kind === 'saida' && S.aim && S.dash) { // o mergulho para na linha do chute (passou dela, parou)
           const a = S.atk, k = (a.y - S.me.y) / Math.max(1, a.y - GY), xk = a.x + (S.aim.x - a.x) * k;
@@ -175,12 +184,12 @@
         S.foes.forEach(f => {
           if (f.press) { if (S.t > 1.2) toward(f, { x: me.x, y: me.y - 10 }, 55 / K, dt); return; }
           // Marcador: entre a bola e o companheiro, com atraso; às vezes se distrai e solta a marcação
-          f.drift = Math.max(0, f.drift - dt); if (Math.random() < dt * 0.35 && S.t > 1) f.drift = 1.1 + Math.random() * 0.6;
+          f.drift = Math.max(0, f.drift - dt); if (Math.random() < dt * 0.45 && S.t > 1) f.drift = 1.1 + Math.random() * 0.6;
           const m = S.mates[f.mark], pm = past(m, f.drift > 0 ? 0.9 : 0.22), bx = S.ball.x - pm.x, by = S.ball.y - pm.y, bl = Math.hypot(bx, by) || 1;
           toward(f, f.drift > 0 ? { x: pm.x - (f.mark - 1) * 40 - 20, y: pm.y - 30 } : { x: pm.x + bx / bl * 22, y: pm.y + by / bl * 22 }, 78 / K, dt);
         });
         kpAngle(me);
-        if (S.own) { S.ball.x = me.x; S.ball.y = me.y - 14; if (dist(pr, S.ball) < 14) return lose('pressao'); }
+        if (S.own) { S.ball.x = me.x; S.ball.y = me.y - 14; S.grab = dist(pr, S.ball) < 16 ? (S.grab || 0) + dt : 0; if (S.grab > 0.3) return lose('pressao'); }
         if (S.t > S.limit && S.own) return lose('impedido', 'IMPEDIDO!');
       } else if (kind === 'pressao') {
         // O zagueiro deles quer sair jogando para baixo (longe do gol dele); com você na frente, desvia e às vezes finge um lado
@@ -190,7 +199,7 @@
         if (ahead && dm < 42 && !S.feint && Math.random() < dt * 2.5) S.feint = { t: S.t, s: me.x > a.x ? 1 : -1 };
         if (S.feint && S.t - S.feint.t < 0.45) { tx = a.x + S.feint.s * 80; ty = a.y + 10; }
         if (S.feint && S.t - S.feint.t > 1.6) S.feint = null;
-        toward(a, { x: tx, y: ty }, 88 / Math.sqrt(K), dt); a.x = clamp(a.x, 20, W - 20); S.ball.x = a.x; S.ball.y = a.y + 14;
+        toward(a, { x: tx, y: ty }, 88 / Math.sqrt(K), dt); a.x = clamp(a.x, 20, W - 20); carry(a, 1);
         if (a.y > 360) return lose('escapou', 'ESCAPOU…');
         if (S.t > S.limit) return lose('tocou', 'TOCOU DE LADO…');
       } else if (kind === 'bote') {
@@ -201,7 +210,7 @@
         if (ahead && dm < 42 && !S.feint && Math.random() < dt * 2.5) S.feint = { t: S.t, s: me.x > a.x ? 1 : -1 };
         if (S.feint && S.t - S.feint.t < 0.45) { tx = a.x + S.feint.s * 80; ty = a.y - 10; }
         if (S.feint && S.t - S.feint.t > 1.6) S.feint = null;
-        if (!S.shot) { toward(a, { x: tx, y: ty }, 94 / Math.sqrt(K), dt); a.x = clamp(a.x, 20, W - 20); S.ball.x = a.x; S.ball.y = a.y - 14; }
+        if (!S.shot) { toward(a, { x: tx, y: ty }, 94 / Math.sqrt(K), dt); a.x = clamp(a.x, 20, W - 20); carry(a, -1); }
         kpAngle(a);
         const lane = segD(me, a, { x: GX, y: GY }) > 16;
         if (!S.shot && (a.y < 130 || (a.y < 190 && lane && dm > 26))) { S.shot = 1; shoot(a, GX + (S.kp.x < GX ? 1 : -1) * (POST - 9), 6); } // no canto longe do goleiro
@@ -267,9 +276,9 @@
         const a = S.atk, dv = dir || (() => { const dx = a.x - S.me.x, dy = a.y - S.me.y, l = Math.hypot(dx, dy) || 1; return { x: dx / l, y: dy / l }; })();
         S.dash = { x: dv.x, y: dv.y, v: 230, t: 0.18, end: () => {
           if (S.over) return;
-          const d = dist(S.me, a), front = kind === 'pressao' ? S.me.y > a.y - 10 : S.me.y < a.y + 10;
-          // Quanto mais perto e de frente, mais certo; no meio da finta dele, quase nunca
-          const pr = clamp((0.95 - (d - 10) / 22) * Math.sqrt(K), 0.1, 0.9) * (S.feint && S.t - S.feint.t < 0.45 ? 0.3 : 1);
+          const d = Math.min(dist(S.me, a), dist(S.me, S.ball)), front = kind === 'pressao' ? S.me.y > a.y - 10 : S.me.y < a.y + 10;
+          // Bola solta (anel dourado), perto e de frente: quase certo; bola no pé dele: difícil; no meio da finta, quase nunca
+          const pr = (S.loose ? clamp((1.05 - (d - 8) / 26) * Math.sqrt(K), 0.15, 0.95) : clamp((0.5 - (d - 10) / 40) * Math.sqrt(K), 0.05, 0.45)) * (S.feint && S.t - S.feint.t < 0.45 ? 0.3 : 1);
           if (d < 26 && front && Math.random() < pr) { S.own = null; S.ball.x = S.me.x; return finish(true, 'desarme'); }
           S.stun = 0.8; // errou o bote: você vai ao chão
         } };
@@ -320,6 +329,11 @@
       if (kind !== 'bote' && kind !== 'saida' && S.limit && !S.over) { // o tempo que sobra
         const left = Math.max(0, S.limit - S.t) / S.limit; g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(20, H - 8, W - 40, 4); g.fillStyle = left < 0.3 ? '#FF7A6E' : '#F2C230'; g.fillRect(20, H - 8, (W - 40) * left, 4);
       }
+      if (kind === 'passe3' && S.own && !S.over) { const pr = S.foes[3], dp = dist(pr, S.me); if (dp < 80) { // o volante chegando: anel vermelho em você que fecha
+        const k = clamp((80 - dp) / 64, 0, 1); g.strokeStyle = 'rgba(255,122,110,' + (0.4 + 0.6 * k) + ')'; g.lineWidth = 3; g.beginPath(); g.arc(S.me.x, S.me.y, 34 - 14 * k, 0, 7); g.stroke();
+        g.fillStyle = '#FF7A6E'; g.font = '800 12px Barlow, sans-serif'; g.textAlign = 'center'; g.fillText('PASSE JÁ!', S.me.x, S.me.y + 34); } }
+      if (S.loose && !S.over && S.own) { const k = (S.t - S.loose.t0) / LOOSE; g.strokeStyle = '#F2C230'; g.lineWidth = 3; g.beginPath(); g.arc(S.ball.x, S.ball.y, 9 + 5 * Math.sin(Math.PI * k), 0, 7); g.stroke();
+        g.fillStyle = '#F2C230'; g.font = '800 12px Barlow, sans-serif'; g.textAlign = 'center'; g.fillText('SOLTOU!', S.ball.x, S.ball.y + (kind === 'bote' ? -18 : 26)); }
       const bh = S.ball.h || 0; // bola alta (cruzamento): sombra no chão e a bola maior e acima
       if (bh > 0.05) { g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.arc(S.ball.x, S.ball.y, 5, 0, 7); g.fill(); }
       g.fillStyle = '#fff'; g.strokeStyle = '#1a1a1a'; g.lineWidth = 1.5; g.beginPath(); g.arc(S.ball.x, S.ball.y - bh * 26, 5 + bh * 4, 0, 7); g.fill(); g.stroke();

@@ -34,7 +34,7 @@
     pressao: { name: 'Pressão na saída', pos: 'ATA', ico: '🔥', steps: [
       'O zagueiro deles sai jogando com a bola e quer chegar ao meio-campo (para baixo).',
       'Fique entre ele e a saída. Ele desvia e às vezes finge um lado.',
-      'O botão dá o bote para onde o analógico aponta: de frente e bem perto. Errou, você vai ao chão por um instante.'] },
+      'De vez em quando ele solta a bola num toque mais longo: aparece um anel dourado. É a hora do bote (o botão), de frente e perto. Com a bola no pé dele é difícil, e errou, você vai ao chão.'] },
     cara: { name: 'Cara a cara', pos: 'ATA', ico: '🥅', steps: [
       'Campo visto de cima: você sai sozinho com a bola e o goleiro vem fechando o ângulo.',
       'Chute cedo, no canto para onde o analógico aponta, ou drible o goleiro e toque para o gol vazio.',
@@ -54,7 +54,7 @@
     bote: { name: 'Bote no mano a mano', pos: 'ZAG', ico: '🛡️', steps: [
       'Campo visto de cima: o atacante vem com a bola rumo ao seu gol. O analógico leva você.',
       'Fique entre ele e o gol. Se a linha do chute ficar aberta, ele bate.',
-      'O botão dá o carrinho para onde o analógico aponta: de frente e bem perto. Longe ou na finta dele, você vai ao chão.'] },
+      'De vez em quando ele solta a bola num toque mais longo: aparece um anel dourado. É a hora do carrinho (o botão), de frente e perto. Com a bola no pé dele é difícil, e errou, você vai ao chão.'] },
     saida: { name: 'Saída do goleiro', pos: 'GOL', ico: '🧤', steps: [
       'Campo visto de cima: o atacante sai cara a cara com você. O analógico leva você.',
       'Saia do gol na direção dele para fechar o ângulo: ele bate no lado mais aberto.',

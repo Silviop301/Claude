@@ -175,8 +175,8 @@
     // Jogo a Jogo, movimento livre: um jeito só (você decide jogando, com o analógico)
     mano: [{ id: 'livre', name: 'Partir pra cima', ico: '🕹️', hint: 'Analógico leva você; o botão chuta no canto para onde ele aponta.' }],
     passe3: [{ id: 'livre', name: 'Achar o livre', ico: '🕹️', hint: 'Conduza e aponte o analógico para o companheiro sem ninguém na linha.' }],
-    bote: [{ id: 'livre', name: 'Fechar e dar o bote', ico: '🕹️', hint: 'Fique entre ele e o gol e dê o carrinho de frente, bem perto.' }],
-    pressao: [{ id: 'livre', name: 'Pressionar', ico: '🕹️', hint: 'Feche a saída dele e dê o bote de frente e perto.' }],
+    bote: [{ id: 'livre', name: 'Fechar e dar o bote', ico: '🕹️', hint: 'Fique entre ele e o gol e dê o carrinho quando ele soltar a bola (anel dourado).' }],
+    pressao: [{ id: 'livre', name: 'Pressionar', ico: '🕹️', hint: 'Feche a saída dele e dê o bote quando ele soltar a bola (anel dourado).' }],
     cara: [{ id: 'livre', name: 'Encarar o goleiro', ico: '🕹️', hint: 'Chute antes de ele chegar ou drible e toque para o gol vazio.' }],
     dois: [{ id: 'livre', name: 'Decidir no 2 contra 1', ico: '🕹️', hint: 'Analógico no companheiro: o botão toca. No gol: o botão chuta.' }],
     cabeca: [{ id: 'livre', name: 'Atacar a bola', ico: '🕹️', hint: 'Fique no círculo antes do marcador: a cabeçada sai sozinha, no canto do analógico.' }],
@@ -240,7 +240,7 @@
     if (S.LIVRE.includes(type)) {
       // Movimento livre: a carta dá a velocidade (K); a chance é a de quem joga razoável com aquela velocidade
       // (medida com o robô de tools/craque_livre.js)
-      const u = (S.livreK(c, type) - 0.85) / 0.35, f = { mano: [0.48, 0.12], passe3: [0.52, 0.1], bote: [0.62, 0.2], saida: [0.58, 0.08], cara: [0.52, 0.06], dois: [0.47, 0.12], cabeca: [0.44, 0.27], pressao: [0.47, 0.33] }[type];
+      const u = (S.livreK(c, type) - 0.85) / 0.35, f = { mano: [0.48, 0.12], passe3: [0.62, 0.1], bote: [0.64, 0.2], saida: [0.58, 0.08], cara: [0.52, 0.06], dois: [0.47, 0.12], cabeca: [0.44, 0.27], pressao: [0.47, 0.33] }[type];
       return { mode: type, K: S.livreK(c, type), chance: Math.round(clamp(f[0] + f[1] * u + lv('frieza') * 0.03, 0.2, 0.88) * 100) / 100 };
     }
     if (type === 'tackle') {
