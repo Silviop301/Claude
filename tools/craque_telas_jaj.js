@@ -212,6 +212,22 @@ const INIT = `
     await shot('celular-com-mensagens');
     await tap('.p2-app[data-go="msg"]'); await shot('chat');
     if (await has('[data-ch]')) { await tap('[data-ch]'); await shot('chat-conversa'); await tap('#fc-back'); }
+    // ZapZap: uma mensagem da mãe pedindo resposta, a resposta escolhida, a mãe digitando e respondendo
+    await page.evaluate(() => { const c = window.CRAQUE_UI.G.c, P = c.ppl; P.inbox.push({ p: 'mae', t: 'Filho vi o gol!! Seu pai chorou na sala kkk Te amo, come direito ai', at: c.fc.i, s: c.season, tone: 'bom', sit: 'gol', ask: 1 }); });
+    await tap('#fc-back'); await tap('.p2-app[data-go="msg"]'); await shot('zap-lista');
+    await tap('[data-ch="mae"]'); await shot('zap-responder');
+    if (await has('[data-rp]')) { await tap('[data-rp]'); await shot('zap-digitando'); await wait(1500); await shot('zap-respondido'); }
+    await tap('#fc-back'); await tap('#fc-back'); await wait(400);
+    // Bet171: o cassino e o Foguetinho (sobe, saca)
+    await page.evaluate(() => { const c = window.CRAQUE_UI.G.c; c.money = Math.max(c.money || 0, 400000); });
+    await tap('.p2-app[data-go="bet"]'); await shot('bet171');
+    if (await has('.mz-g[data-g="crash"]:not(:disabled)')) {
+      await tap('.mz-g[data-g="crash"]'); await shot('bet171-foguetinho');
+      await tap('#mz-go'); await wait(1200); await shot('bet171-foguetinho-voando');
+      if (await has('#mz-go.cash')) await page.click('#mz-go').catch(() => {});
+      await wait(600); await shot('bet171-foguetinho-fim');
+      await wait(1200); if (await has('#mz-back')) await tap('#mz-back');
+    }
     await tap('#fc-back'); await wait(400);
   }
   // Convites da semana na agenda (fase 2, parte 2): garante dois para a foto, responde o arriscado
@@ -221,6 +237,9 @@ const INIT = `
     await tap('.p2-app[data-go="ag"]'); await shot('agenda-convites');
     if (await has('[data-inv][data-a="b"]')) { await tap('[data-inv][data-a="b"]'); await shot('agenda-convite-respondido'); }
     await tap('#fc-back'); await wait(400);
+    // O mesmo convite no ZapZap (o da faltas ainda aberto: responde ali)
+    const quem = await page.evaluate(() => { const S = window.CRAQUE_SIM, c = window.CRAQUE_UI.G.c, o = S.fcInvites(c).find(x => !x.ans); return o ? S.fcInvDef(o).p : null; });
+    if (quem) { await tap('.p2-app[data-go="msg"]'); await tap('[data-ch="' + quem + '"]'); await shot('zap-convite'); await tap('#fc-back'); await tap('#fc-back'); await wait(400); }
     await shot('celular-repercussao'); // a resposta virou assunto no X (fase 2, parte 4)
   }
 

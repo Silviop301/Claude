@@ -309,15 +309,15 @@
       const cap = t => t.charAt(0).toUpperCase() + t.slice(1), low = id === 'parca';
       let t = r.pick(mx.a) + (low ? ' ' : ', ') + mx.b[+key.split('.').pop()];
       const z = r.pick(mx.z); if (z) t += (low ? ' ' : /[!?]$/.test(t) ? ' ' : '. ') + (low ? z : cap(z));
-      return post(c, id, fill(c, low ? t : cap(t), v || {}), tone);
+      return post(c, id, fill(c, low ? t : cap(t), v || {}), tone, { sit, ask: 1 });
     }
     const keys = pool.map((_, k) => id + '.' + sit + '.' + tone + '.' + k), free = keys.filter(k => !P.seen.includes(k));
     const key = r.pick(free.length ? free : keys), t = pool[+key.split('.').pop()];
     P.seen.push(key); if (P.seen.length > 60) P.seen.splice(0, P.seen.length - 60);
-    return post(c, id, fill(c, t, v || {}), tone);
+    return post(c, id, fill(c, t, v || {}), tone, { sit, ask: 1 });
   }
-  function post(c, id, t, tone) {
-    const P = c.ppl, m = { p: id, t, at: c.fc ? c.fc.i : 0, s: c.season, tone };
+  function post(c, id, t, tone, x) {
+    const P = c.ppl, m = Object.assign({ p: id, t, at: c.fc ? c.fc.i : 0, s: c.season, tone }, x || {});
     P.inbox.push(m); if (P.inbox.length > 120) P.inbox.splice(0, P.inbox.length - 120);
     P.unread = (P.unread || 0) + 1;
     if (S.fcPhoneHook) S.fcPhoneHook(c, m); // ferramentas: contar e medir repetição
@@ -331,7 +331,7 @@
     const [id, m] = r.pick(due);
     if (m.k === 'base' && m.x === (D.CLUB_BY_ID[c.club] || {}).name) return null; // ainda no primeiro clube: nada a lembrar
     m.used = true;
-    return post(c, id, fill(c, MEM[m.k].t, { x: m.x }), S.fcTone(c, id));
+    return post(c, id, fill(c, MEM[m.k].t, { x: m.x }), S.fcTone(c, id), { sit: 'mem', ask: 1 });
   }
   const pickW = (r, list) => { const s = list.reduce((a, x) => a + x[1], 0); let u = r() * s; for (const x of list) if ((u -= x[1]) <= 0) return x[0]; return list[list.length - 1][0]; };
 
@@ -342,6 +342,7 @@
     if (fc && fc.wkDue) S.fcWeek(c); // como no S.fcPlay: a semana fecha antes de olhar o jogo (senão a escalação sai duas vezes)
     const nx = fc && !fc.done ? S.fcNext(c) : null;
     const big = nx ? S.fcBig(c, nx) : '';
+    if (c.ppl && fc) vacuo(c);
     const out = play.apply(this, arguments);
     if (out && c.mode === 'completa') { after(c, out, big); if (c.fc && c.fc.wkDue && c.ppl) invOpen(c); }
     return out;
@@ -429,6 +430,106 @@
     P.inbox.forEach((m, k) => { (by[m.p] = by[m.p] || []).push(Object.assign({ k }, m)); });
     return Object.keys(by).map(id => ({ id, c: S.fcContact(c, id), msgs: by[id] })).sort((a, b) => b.msgs[b.msgs.length - 1].k - a.msgs[a.msgs.length - 1].k);
   };
+
+  // ---------- responder no ZapZap ----------
+  // Toda mensagem de uma pessoa (o Zé tem a conversa dele) pede resposta até o próximo jogo: três respostas (carinho,
+  // curta, zoeira), cada uma com um efeito pequeno, e a pessoa responde de volta. Sem resposta até o jogo, quem é próximo
+  // fica um pouco chateado (relação −1) e, se você viu a mensagem, às vezes cobra o "visualizou e não respondeu".
+  // Efeitos pequenos de propósito: são de 10 a 20 mensagens por temporada. RP[pessoa][clima] = [carinho, curta, zoeira]
+  const SAD = /ruim|banco|lesao|derrota|longe/;
+  const R3 = (t, re, fx) => ({ t, re: Array.isArray(re) ? re : [re], fx: fx || {} });
+  const RP = {
+    mae: {
+      up: [R3('Te amo mãe! Beijo pro pai', ['Ele tá rindo à toa aqui. Te amo meu filho', 'Deus te abençoe filho. Come direito ai', 'Seu pai mandou um joinha. Ele ainda não aprendeu a digitar kkk'], { rel: { mae: 2 } }),
+        R3('Valeu mãe', ['De nada filho. Dorme cedo hoje', 'Tá bom filho. Liga quando der']),
+        R3('Mãe, para de mandar áudio de 5 minutos kkk', ['Áudio é o jeito que eu consigo falar com vc! Para de ser bobo kkk', 'Vou mandar um de 10 agora pra vc aprender kkk'], { rel: { mae: 1 } })],
+      down: [R3('Tô bem mãe, não se preocupa. Te amo', ['Graças a Deus. Qualquer coisa me liga', 'Fiquei mais tranquila agora. Te amo filho'], { rel: { mae: 2 } }),
+        R3('Tô bem', ['Hum. Tá bom então', 'Só isso? Tá bom filho']),
+        R3('Relaxa mãe, o juiz que tava ruim kkk', ['Foi o que seu pai falou! Cabeça erguida', 'kkkk vc puxou seu pai, a culpa é sempre do juiz'], { rel: { mae: 1 } })],
+    },
+    parca: {
+      up: [R3('valeu irmão, tu é brabo', ['é nós mano, desde o campinho', 'tamo junto sempre, não esquece da quebrada'], { rel: { parca: 1 } }),
+        R3('vlw', ['vlw o que mano kkkk tá famoso né', 'tranquilo']),
+        R3('paga a pizza que tu ganhou do primo kkkk', ['kkkkk tá anotado, sábado lá em casa', 'pizza nada, churrasco kkkk tu que traz a carne'], { rel: { parca: 2 } })],
+      down: [R3('valeu mano, semana que vem eu volto', ['confio em tu mano', 'é isso, cabeça erguida'], { rel: { parca: 1 } }),
+        R3('de boa', ['tranquilo então']),
+        R3('pior foi tu no futevôlei domingo kkkk', ['kkkkkkk golpe baixo mano', 'kkkk pelo menos eu não cobro pênalti'], { rel: { parca: 2 } })],
+    },
+    emp: {
+      up: [R3('Valeu pela força! Bora pra cima', ['É isso, garoto. O telefone já tá tocando', 'Assim fica fácil o meu trabalho.'], { rel: { emp: 2 } }),
+        R3('Ok', ['Ok? Te ligo amanhã.', 'Tá bom. Foco no próximo.']),
+        R3('Já dá pra pedir aumento? kkk', ['Calma que eu cuido disso. Mais uns jogos assim e a gente senta com a diretoria.', 'Deixa comigo. Quem fala de dinheiro sou eu.'], { rel: { emp: 1 } })],
+      down: [R3('Foi mal, vou dar a volta por cima', ['É assim que se fala. Ninguém lembra jogo ruim, lembra reação.', 'Isso. Eu seguro a imprensa, você faz a sua parte.'], { rel: { emp: 2 } }),
+        R3('Ok', ['Responde direito, garoto. Sou eu que te defendo lá dentro.'], { rel: { emp: -1 } }),
+        R3('Diz que eu tava gripado kkk', ['Já disse, já disse. Mas não repete isso pra ninguém.'])],
+    },
+    jor: {
+      up: [R3('Obrigado! Foi um jogo especial', ['Posso usar essa frase na matéria?', 'Que bom ver você assim. Vai sair amanhã.'], { rel: { jor: 2 } }),
+        R3('Valeu', ['Anotado.']),
+        R3('Escreve aí: o melhor ainda tá por vir', ['Manchete garantida!', 'Já virou o título da coluna.'], { fame: 1, rel: { jor: 1 } })],
+      down: [R3('Vou trabalhar pra melhorar. Pode publicar isso', ['Respeito. Vai sair do jeito que você falou.'], { rel: { jor: 2 } }),
+        R3('Sem comentários', ['Vou publicar só isso, então.'], { rel: { jor: -1 } }),
+        R3('Escreve que a culpa foi do gramado kkk', ['Vou fingir que não li isso. Por enquanto.'], { coach: -1, rel: { jor: 1 } })],
+    },
+    cap: {
+      up: [R3('Valeu capitão, é nós', ['Grupo fechado. Bora pro próximo', 'Isso aí, moleque.'], { rel: { cap: 2 } }),
+        R3('Valeu', ['Isso aí.']),
+        R3('Hoje a resenha é por tua conta kkk', ['kkkk combinado, mas só depois do treino', 'Fechado. Mas quem chegar atrasado paga.'], { rel: { cap: 1 } })],
+      down: [R3('Desculpa, deixei o time na mão. Semana que vem eu respondo', ['Todo mundo erra. Cabeça no lugar e treina.', 'É isso. O grupo tá contigo.'], { rel: { cap: 2 } }),
+        R3('Bola pra frente', ['É isso.']),
+        R3('Pelo menos o uniforme tava bonito kkk', ['Não é hora de brincadeira, moleque.'], { rel: { cap: -2 } })],
+    },
+    coach: {
+      up: [R3('Obrigado, professor. Vou seguir trabalhando', ['É assim. Humildade e treino.', 'Gostei. Segue nesse ritmo.'], { coach: 1 }),
+        R3('Valeu', ['Treino amanhã às 9.']),
+        R3('Então amanhã eu começo jogando, né? kkk', ['Vamos ver no treino. Não se acha.'], { coach: -1 })],
+      down: [R3('Entendi, professor. Vou mostrar no treino', ['Quero ver isso em campo.', 'É essa a resposta que eu queria.'], { coach: 1 }),
+        R3('Ok', ['Ok.']),
+        R3('Professor, o senhor tá de marcação comigo kkk', ['Marcação é o que você não fez no domingo.'], { coach: -2 })],
+    },
+    rival: {
+      up: [R3('Respeito. Teu jogo também foi grande', ['Respeito. Mas o próximo é meu.', 'Valeu. Nos vemos na premiação.']),
+        R3('kk', ['Visualizou e mandou kk. Tá com medo kkk']),
+        R3('Vai ter que treinar mais pra me alcançar kkk', ['Guarda essa mensagem. Vou te mostrar quando ganhar a Bola de Ouro.', 'Print tirado. A gente conversa no fim do ano.'], { fans: 1 })],
+    },
+  };
+  RP.rival.down = RP.rival.up;
+  S.FC_REPLY = RP;
+  const RTAG = { jor: ['simpático', 'seco', 'frase de efeito'], rival: ['respeito', 'seco', 'provocar'], coach: ['humilde', 'seco', 'brincar'] };
+  const replyOf = m => { const set = RP[m.p]; return set ? set[SAD.test(m.sit || '') ? 'down' : 'up'] : null; };
+  // As respostas de uma mensagem (null quando não pede ou já passou): [{t, tag}]
+  S.fcReplies = function (c, m) {
+    const fc = c.fc, set = m && !m.me && m.ask && !m.ans && m.s === c.season && fc && m.at === fc.i ? replyOf(m) : null;
+    return set ? set.map((x, i) => ({ t: x.t, tag: (RTAG[m.p] || ['carinho', 'curto', 'zoeira'])[i] })) : null;
+  };
+  // Responde a mensagem k da caixa com a opção i (0, 1, 2): sua mensagem, o efeito e a resposta da pessoa
+  S.fcReply = function (c, k, i) {
+    const P = c.ppl, m = P && P.inbox[k];
+    if (!S.fcReplies(c, m) || !(i >= 0 && i < 3)) return null;
+    const o = replyOf(m)[i], fc = c.fc, r = rngFor(c, 0x2E9 + (c.season || 0) * 71 + fc.i * 13 + k);
+    m.ans = i + 1;
+    P.inbox.push({ p: m.p, t: o.t, at: fc.i, s: c.season, me: true, seen: true });
+    applyInv(c, o.fx);
+    post(c, m.p, r.pick(o.re), S.fcTone(c, m.p), { re: 1 });
+    P.unread = Math.max(0, (P.unread || 0) - 1); // a resposta chega com a conversa aberta
+    return { parts: S.fcInvParts(c, o.fx) };
+  };
+  // Abriu a conversa: o que estava lá foi visto (vale para o "visualizou e não respondeu")
+  S.fcChatSeen = function (c, id) { if (c.ppl) c.ppl.inbox.forEach(m => { if (m.p === id && !m.me) m.vu = 1; }); };
+  // Quantas mensagens ainda pedem resposta (o número no ícone do ZapZap)
+  S.fcAsks = c => (c.ppl && c.fc ? c.ppl.inbox.filter(m => S.fcReplies(c, m)).length : 0);
+  const VACUO = { mae: ['Vi que vc visualizou. Tudo bem filho, sei que vc tá ocupado', 'Visualizou e não respondeu né. Tudo bem'], parca: ['visualizou e não respondeu né kkkk tá famoso demais', 'deixou no vácuo mano kkkk de boa'] };
+  // Antes do jogo: o que ficou sem resposta
+  function vacuo(c) {
+    const P = c.ppl, fc = c.fc, r = rngFor(c, 0x7AC + (c.season || 0) * 53 + fc.i * 7);
+    let said = false;
+    P.inbox.forEach(m => {
+      if (m.me || !m.ask || m.ans || m.s !== c.season || m.at !== fc.i) return;
+      m.ans = -1;
+      if (m.p === 'mae' || m.p === 'parca' || m.p === 'cap') rel(c, m.p, -1);
+      if (!said && m.vu && VACUO[m.p] && r() < 0.35) { said = true; post(c, m.p, r.pick(VACUO[m.p]), S.fcTone(c, m.p), { at: fc.i + 1, vac: 1 }); P.unread = (P.unread || 0); }
+    });
+  }
 
   // ---------- convites da semana (fase 2, parte 2) ----------
   // Chegam no celular quando a semana abre (0 a 2 por semana) e ocupam um dia da agenda. Cada um tem uma opção segura
@@ -697,7 +798,7 @@
     else if (d.b.later) o = d.b; // história: o que acontece vem nas próximas temporadas
     else { const roll = Math.floor(r() * 100) + 1, p = Math.round(pOf(c, d.b) * 100); ok = roll <= p; o = ok ? d.b.win : d.b.lose; inv.roll = roll; inv.p = p; }
     applyInv(c, o.fx); inv.ans = ans; inv.ok = ok; inv.tag = o.tag || '';
-    post(c, d.p, fill(c, o.re, { x: inv.x }), S.fcTone(c, d.p));
+    post(c, d.p, fill(c, o.re, { x: inv.x }), S.fcTone(c, d.p), { inv: inv.id });
     if (ans === 'a' && d.id === 'niver') remember(c, 'parca', 'niver', '');
     if (d.then) d.then(c, ans, ok);
     news(c, d.b.later ? (ans === 'b' ? inv.id + '.b' : '') : inv.id + '.' + (ans === 'b' ? (ok ? 'win' : 'lose') : 'a'));
