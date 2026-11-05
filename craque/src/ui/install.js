@@ -32,6 +32,8 @@
 
   const SHARE = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#1E6FD9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/></svg>';
   const MORE = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  const KEBAB = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="12" cy="5" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="19" r="2" fill="currentColor"/></svg>';
+  const INST = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 7v6M9 10l3 3 3-3M8 20h8"/></svg>';
   const ADD = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
   const DOWN = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>';
   const ARROW = '<svg viewBox="0 0 24 24" width="38" height="38" aria-hidden="true"><path d="M12 22l-8-9h5V2h6v11h5z" fill="#F2C230" stroke="#13201A" stroke-width="1.2"/></svg>';
@@ -45,11 +47,13 @@
   function steps(p) {
     // iOS 26 (testado num iPhone real): Compartilhar fica no meio da barra de baixo; a opção mora atrás de "Ver Mais"
     if (p === 'ios') return [[SHARE, 'Toque em <b>Compartilhar</b>, no meio da barra de baixo'], [MORE, 'Na janela que abre, toque em <b>Ver Mais</b>'], [ADD, 'Escolha <b>Adicionar à Tela de Início</b> e depois <b>Adicionar</b>']];
+    // Android/Chrome (testado num celular real): menu ⋮ no alto, à direita › Instalar e criar atalho › Instalar
+    if (p === 'android') return [[KEBAB, 'Toque em <b>⋮</b>, no canto de cima à direita'], [INST, 'Toque em <b>Instalar e criar atalho</b>'], [DOWN, 'Escolha <b>Instalar</b>']];
     if (p === 'ios18') return [[SHARE, 'Toque em <b>Compartilhar</b> na barra do Safari, embaixo'], [ADD, 'Escolha <b>Adicionar à Tela de Início</b> e depois <b>Adicionar</b>']];
     return [[SHARE, 'Toque em <b>Compartilhar</b>, no alto da tela'], [ADD, 'Escolha <b>Adicionar à Tela de Início</b> e depois <b>Adicionar</b>']];
   }
   // Onde fica o botão do primeiro passo (a seta aponta para lá)
-  const SPOT = { ios: 'bc', ios18: 'bc', ipad: 'tr', iosapp: 'tr' };
+  const SPOT = { android: 'tr', ios: 'bc', ios18: 'bc', ipad: 'tr', iosapp: 'tr' };
 
   let wrap = null;
   function close() { if (wrap) { wrap.remove(); wrap = null; } }
@@ -60,10 +64,10 @@
     const and = p === 'android', canPrompt = and && !!deferred;
     const head = '<div class="ins-head"><img src="icons/icon-192.png" alt="" width="60" height="60"><div><b>Leve o Climbix pro celular</b><p>' +
       (and ? 'Um toque e ele vira app: tela cheia e ícone na tela inicial.' : 'Abre em tela cheia, sem a barra do navegador, direto da Tela de Início.') + '</p></div></div>';
-    const body = and
+    const body = canPrompt
       ? '<div class="ins-perks">' + PERKS.map(([ic, t]) => '<div>' + ic + '<b>' + t + '</b></div>').join('') + '</div>' +
-        '<button class="btn ins-go" data-a="go">' + DOWN + (canPrompt ? 'Instalar o app' : 'Entendi') + '</button>' +
-        '<p class="ins-note">' + (canPrompt ? 'O botão abre a janela do próprio Chrome. Se ela não aparecer: ' : 'No Chrome: ') + 'menu <b>⋮</b> › <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>).</p>' +
+        '<button class="btn ins-go" data-a="go">' + DOWN + 'Instalar o app</button>' +
+        '<p class="ins-note">O botão abre a janela do próprio Chrome. Se ela não aparecer: menu <b>⋮</b> no alto › <b>Instalar e criar atalho</b> › <b>Instalar</b>.</p>' +
         '<button class="ins-later" data-a="later">Agora não</button>'
       : '<ol class="ins-steps">' + steps(p).map(([ic, t], i) => '<li><em>' + (i + 1) + '</em><span>' + t + '</span><i>' + ic + '</i></li>').join('') + '</ol>' +
         (p === 'ios' ? '<p class="ins-note">Barra do Safari só com <b>•••</b>? Toque nele primeiro e depois em Compartilhar.</p>' : '') +
