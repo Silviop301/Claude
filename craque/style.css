@@ -6200,7 +6200,11 @@ body .co-res .co-pres, .co-res .co-pres { color: var(--tx-1); }
 .p2-nm b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 19px; line-height: 1.02; overflow-wrap: anywhere; }
 
 /* ===== Relâmpago alinhado (2026-11-05): topo dos modos, ingresso coral embaixo, entrada no campo, a bola abre no gol ===== */
-.rx-scr { display: flex; flex-direction: column; gap: 12px; min-height: calc(100svh - 28px); max-width: 520px; margin: 0 auto; box-sizing: border-box; }
+.rx-scr { display: flex; flex-direction: column; gap: 12px; min-height: calc(100svh - 28px); width: 100%; max-width: 520px; margin: 0 auto; box-sizing: border-box; }
+/* O campo é a cena do minigame de chute, parada (kick.js): fica no topo do palco, com o resto do gramado embaixo */
+.rx-field.rx-kf { background: #2B8A51; border: 0; align-self: start; }
+.rx-kf .kick-stage { box-shadow: none; border-radius: 0; pointer-events: none; }
+.rx-kf .kick-stage { width: 100%; max-width: none; margin: 0; }
 .rx-ah { display: flex; align-items: center; gap: 10px; min-height: 44px; }
 .rx-hb { width: 44px; height: 44px; flex: none; border: 0; border-radius: 50%; padding: 0; display: grid; place-items: center; background: rgba(0, 0, 0, .3); color: var(--tx-1); cursor: pointer; }
 .rx-hi { width: 38px; height: 38px; flex: none; border-radius: 11px; background: var(--paper); display: grid; place-items: center; }
