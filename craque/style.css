@@ -6198,6 +6198,172 @@ body .co-res .co-pres, .co-res .co-pres { color: var(--tx-1); }
   .p2-day b { font-size: 21px; }
 }
 .p2-nm b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 19px; line-height: 1.02; overflow-wrap: anywhere; }
+
+/* ===== Relâmpago alinhado (2026-11-05): topo dos modos, ingresso coral embaixo, entrada no campo, a bola abre no gol ===== */
+.rx-scr { display: flex; flex-direction: column; gap: 12px; min-height: calc(100svh - 28px); max-width: 520px; margin: 0 auto; box-sizing: border-box; }
+.rx-ah { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.rx-hb { width: 44px; height: 44px; flex: none; border: 0; border-radius: 50%; padding: 0; display: grid; place-items: center; background: rgba(0, 0, 0, .3); color: var(--tx-1); cursor: pointer; }
+.rx-hi { width: 38px; height: 38px; flex: none; border-radius: 11px; background: var(--paper); display: grid; place-items: center; }
+.rx-hi .tw { width: 26px; height: 26px; }
+.rx-ht { flex: 1; min-width: 0; font: 800 28px/1 var(--display); color: var(--tx-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rx-chip { flex: none; padding: 8px 11px; border-radius: 999px; background: rgba(0, 0, 0, .3); font: 600 13px/1 var(--body); color: var(--tx-2); }
+.rx-sc { flex: none; display: flex; align-items: baseline; gap: 5px; padding: 7px 12px; border-radius: 12px; background: var(--board, #07150E); }
+.rx-sc small { font: 600 12px/1 var(--body); color: var(--tx-3); }
+.rx-sc b { font: 800 24px/1 var(--display); color: var(--gold); font-variant-numeric: tabular-nums; }
+.rx-casas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.rx-c { height: 52px; border-radius: 10px; background: #07150E; border: 1.5px solid rgba(255, 255, 255, .08); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; overflow: hidden; }
+.rx-c small { font: 700 12px/1 var(--display); color: #A9DDBB; white-space: nowrap; }
+.rx-c .rx-q { font: 800 17px/1 var(--display); font-style: normal; color: #6F8F7C; }
+.rx-c .crest.xs { width: 22px; height: 22px; margin: 0; }
+.rx-c .rx-cp { font: 800 15px/1 var(--display); color: #5FD690; }
+.rx-c.now { border-color: var(--gold); }
+.rx-c.done { background: var(--paper); border-color: rgba(242, 194, 48, .7); animation: rx-in .45s cubic-bezier(.2, 1.4, .4, 1); }
+.rx-c.done small { color: var(--ink-2); }
+.rx-c.done .rx-cp { color: #167A44; }
+.rx-c.done.out { border-color: rgba(216, 64, 74, .7); }
+.rx-play .rx-c.done .tw { width: 18px; height: 18px; }
+.rx-sub { display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 500 14px/1.2 var(--body); color: var(--tx-2); }
+.rx-sub .rl-dots { flex: none; }
+.rx-stage { position: relative; flex: 1; min-height: 330px; display: grid; border-radius: 18px; }
+.rx-stage > * { grid-area: 1 / 1; min-width: 0; }
+.rx-field { position: relative; border-radius: 18px; overflow: hidden; border: 1px solid rgba(255, 255, 255, .12); background: repeating-linear-gradient(180deg, #2E8C50 0 34px, #2A844B 34px 68px); }
+.rx-goal { position: absolute; top: 22px; left: 50%; width: 64%; height: 150px; transform: translateX(-50%); border: 4px solid #EDEDE6; border-bottom: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, .22) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .22) 1px, transparent 1px); background-size: 11px 11px; }
+.rx-line { position: absolute; top: 172px; left: 0; right: 0; height: 3px; background: #EDEDE6; }
+/* Entrada: o cartão creme das regras por cima do campo */
+.rx-sheet { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 2; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px;
+  background: var(--paper); color: var(--ink); box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
+.rx-sheet h2 { margin: 0; font: 800 24px/1 var(--display); color: var(--ink); }
+.rx-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rx-lines li { display: flex; align-items: center; gap: 10px; font: 500 15px/1.3 var(--body); }
+.rx-lines .tw { width: 24px; height: 24px; flex: none; }
+.rx-fld { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 12px; border: 1.5px solid #D9D2BE; border-radius: 12px; background: #fff; }
+.rx-fld span { font: 600 13px/1 var(--body); color: var(--ink-2); white-space: nowrap; }
+.rx-fld input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; font: 700 17px/1 var(--body); color: var(--ink); }
+.rx-fld:focus-within { border-color: #167A44; }
+.rx-seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 12px; background: #EAE3CF; }
+.rx-seg button { height: 40px; border: 0; border-radius: 9px; background: transparent; font: 700 16px/1 var(--display); color: #46534B; cursor: pointer; }
+.rx-seg button.on { background: #13201A; color: var(--paper); }
+.rx-vs { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: #EAE3CF; }
+.rx-vs span { display: flex; flex-direction: column; gap: 2px; }
+.rx-vs small { font: 600 12px/1 var(--body); color: var(--ink-2); }
+.rx-vs b { font: 800 19px/1.1 var(--display); }
+.rx-vs em { font: 500 13px/1.3 var(--body); font-style: normal; color: #46534B; }
+/* Embaixo: a linha de apoio e o ingresso coral do modo */
+.rx-foot { display: flex; flex-direction: column; gap: 6px; }
+.rx-fk { font: 500 13px/1.25 var(--body); color: var(--tx-2); }
+.rx-fk b { color: var(--tx-1); font-weight: 700; }
+.rx-tk { --stub: 64px; --cut: 8px; --tk-h: 72px; }
+.rx-tk .tk-in { border-radius: 12px; }
+.rx-tk .tk-t b { font-size: 27px; }
+.rx-tk .tk-t small { font-size: 13px; font-weight: 600; }
+.rx-tk .tk-stub small { font-size: 11px; }
+.rx-tk .tk-stub b.rx-sv { writing-mode: horizontal-tb; transform: none; font: 800 26px/1 var(--display); }
+.rx-tk .tk-stub .tw { width: 24px; height: 24px; }
+.rx-dock { cursor: default; }
+.rx-dock .tk-frame { justify-content: space-around; gap: 4px; padding: 0 4px; }
+.rx-ball { position: relative; width: 48px; height: 48px; flex: none; padding: 0; border-radius: 50%; border: 3px solid #13201A; background: var(--paper); display: grid; place-items: center; cursor: pointer; box-sizing: border-box; }
+.rx-ball .tw, .rx-ball .rl-b3 { width: 32px; height: 32px; }
+.rx-ball i { position: absolute; right: -6px; bottom: -5px; width: 19px; height: 19px; border-radius: 50%; background: #13201A; color: var(--paper); font: 800 12px/19px var(--display); font-style: normal; text-align: center; }
+.rx-ball[disabled] { opacity: .35; cursor: default; }
+.rx-ball.g[disabled] { background: #5FD690; }
+.rx-ball.x[disabled] { background: #F4A39A; }
+.rx-ball:not([disabled]):active { transform: scale(.94); }
+/* Dica da casa, uma vez por tipo */
+.rx-tip { position: absolute; left: 12px; right: 12px; bottom: 14px; z-index: 3; display: flex; flex-direction: column; gap: 8px; padding: 14px 14px 12px; border-radius: 14px;
+  background: var(--paper); color: var(--ink); box-shadow: 0 8px 20px rgba(0, 0, 0, .3); animation: rx-in .4s cubic-bezier(.2, 1.4, .4, 1); }
+.rx-tip::after { content: ''; position: absolute; left: 50%; bottom: -8px; width: 16px; height: 16px; background: var(--paper); transform: translateX(-50%) rotate(45deg); }
+.rx-tip > b { display: flex; align-items: center; gap: 8px; font: 800 18px/1 var(--display); }
+.rx-tip p { margin: 0; font: 500 15px/1.35 var(--body); }
+.rx-ok { align-self: flex-end; min-height: 40px; padding: 0 16px; border: 0; border-radius: 10px; background: #13201A; color: var(--paper); font: 700 15px/1 var(--display); cursor: pointer; }
+/* Errou (ou X1 às cegas): carimbo por cima do campo */
+.rx-res { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; border-radius: 18px;
+  background: rgba(5, 10, 7, .6); text-align: center; animation: enter .25s ease-out; }
+.rx-res p { margin: 0; max-width: 300px; padding: 10px 14px; border-radius: 12px; background: rgba(7, 21, 14, .88); font: 500 15px/1.35 var(--body); color: var(--tx-1); }
+.rx-res p b { color: var(--gold); }
+.rx-stamp { display: inline-block; padding: 4px 22px 6px; border-radius: 14px; font: 800 60px/1 var(--display); transform: rotate(-4deg); box-shadow: 0 4px 0 rgba(0, 0, 0, .3);
+  background: #7CF0A4; color: #13201A; animation: rx-stamp .45s cubic-bezier(.2, 1.4, .4, 1) both; }
+.rx-res.ko .rx-stamp { background: var(--red); color: var(--paper); }
+/* Gol: a bola sai da rede, cresce, racha e solta a carta com o que tinha */
+.rx-open { position: absolute; inset: 0; z-index: 3; overflow: hidden; border-radius: 18px; background: rgba(4, 14, 9, .66); animation: enter .3s ease-out both; }
+.rx-st1 { position: absolute; left: 50%; top: 40%; margin-left: -80px; width: 160px; text-align: center; animation: rx-stamp .4s cubic-bezier(.2, 1.4, .4, 1) both, rx-out .25s .65s forwards; }
+.rx-open.bad { background: rgba(26, 6, 8, .62); }
+.rx-pop { position: absolute; left: 0; right: 0; top: 0; height: 300px; display: grid; place-items: center; }
+.rx-open.has-oth .rx-pop { height: calc(100% - 140px); max-height: 300px; }
+.rx-rays { position: absolute; left: 50%; top: 50%; width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: 50%; opacity: 0;
+  background: repeating-conic-gradient(from 0deg, rgba(242, 194, 48, .32) 0 9deg, transparent 9deg 22deg);
+  -webkit-mask: radial-gradient(circle, #000 20%, transparent 68%); mask: radial-gradient(circle, #000 20%, transparent 68%); animation: rx-spin 9s linear infinite, rx-fade .4s .8s forwards; }
+.rx-open.bad .rx-rays { background: repeating-conic-gradient(from 0deg, rgba(216, 64, 74, .3) 0 9deg, transparent 9deg 22deg); }
+.rx-bigball { position: absolute; left: 50%; top: 50%; width: 120px; height: 120px; margin: -60px 0 0 -60px; animation: rx-rise .75s cubic-bezier(.3, 1.3, .5, 1) both, rx-out .01s .8s forwards; }
+.rx-bigball .tw, .rx-half .tw { width: 120px; height: 120px; }
+.rx-half { position: absolute; left: 50%; width: 120px; height: 60px; margin-left: -60px; overflow: hidden; opacity: 0; }
+.rx-half.t { top: calc(50% - 60px); animation: rx-show .01s .8s forwards, rx-upleft .6s .8s cubic-bezier(.2, .8, .3, 1) forwards; }
+.rx-half.b { top: 50%; animation: rx-show .01s .8s forwards, rx-downright .6s .8s cubic-bezier(.2, .8, .3, 1) forwards; }
+.rx-half.b .tw { margin-top: -60px; }
+.rx-card { position: relative; width: 220px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 14px 14px; border-radius: 18px; text-align: center;
+  background: var(--paper); color: var(--ink); box-shadow: 0 0 0 3px var(--gold), 0 14px 30px rgba(0, 0, 0, .45); animation: rx-card .6s .9s cubic-bezier(.2, 1.4, .4, 1) both; }
+.rx-open.bad .rx-card { box-shadow: 0 0 0 3px var(--red), 0 14px 30px rgba(0, 0, 0, .45); }
+.rx-card > small { font: 700 13px/1 var(--display); color: var(--ink-2); }
+.rx-card .crest.lg { width: 78px; height: 78px; margin: 0; animation: rx-pop .5s 1.15s cubic-bezier(.2, 1.4, .4, 1) both; }
+.rx-card .trophy, .rx-card img:not(.crest) { width: 64px; height: 64px; object-fit: contain; animation: rx-pop .5s 1.15s cubic-bezier(.2, 1.4, .4, 1) both; }
+.rx-pn { font: 800 26px/1.05 var(--display); }
+.rx-nums { display: flex; gap: 16px; align-items: flex-end; margin: 4px 0; }
+.rx-nums span { display: flex; flex-direction: column; align-items: center; }
+.rx-nums b { font: 800 54px/.9 var(--display); animation: rx-roll .6s 1.1s both; }
+.rx-nums span + span b { animation-delay: 1.35s; }
+.rx-nums em { font: 600 13px/1 var(--body); font-style: normal; color: var(--ink-2); }
+.rx-pt { margin-top: 2px; padding: 6px 12px; border-radius: 10px; background: #167A44; color: var(--paper); font: 800 20px/1 var(--display); animation: rx-pop .45s 1.5s cubic-bezier(.2, 1.4, .4, 1) both; }
+.rx-open.bad .rx-pt { background: #6B7570; }
+/* Embaixo da carta: os outros clubes em cinza, ou as bolas de prêmio que você errou antes */
+.rx-oth { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+.rx-oh { font: 700 14px/1 var(--display); color: var(--tx-2); text-align: center; animation: rx-fade .3s 1.5s both; }
+.rx-og { display: grid; gap: 6px; }
+.rx-og.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.rx-og.n5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.rx-oc { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px 7px; border-radius: 12px; background: #2B3A32; border: 1px solid rgba(255, 255, 255, .1); text-align: center;
+  animation: rx-flip .5s cubic-bezier(.2, 1.2, .4, 1) both; }
+.rx-oc:nth-child(1) { animation-delay: 1.6s; } .rx-oc:nth-child(2) { animation-delay: 1.75s; } .rx-oc:nth-child(3) { animation-delay: 1.9s; } .rx-oc:nth-child(4) { animation-delay: 2.05s; } .rx-oc:nth-child(5) { animation-delay: 2.2s; }
+.rx-oi { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.rx-oc .crest.sm, .rx-oc img { width: 34px; height: 34px; margin: 0; object-fit: contain; filter: grayscale(1); opacity: .75; }
+.rx-oc .rx-oi b { font: 700 13px/1.05 var(--display); color: #D5DDD8; min-height: 28px; display: flex; align-items: center; justify-content: center; overflow-wrap: break-word; hyphens: auto; max-width: 100%; }
+.rx-oc small { font: 600 12px/1 var(--body); color: #B9C4BE; }
+.rx-oc small.x { color: #FFB0A8; }
+.rx-esc { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: #07150E; border: 1.5px dashed rgba(216, 64, 74, .7); animation: rx-flip .5s 1.6s cubic-bezier(.2, 1.2, .4, 1) both; }
+.rx-esc .rx-oi { flex-direction: row; flex: 1; gap: 8px; }
+.rx-esc .rx-oi img { width: 34px; height: 34px; object-fit: contain; filter: grayscale(.4); }
+.rx-esc .rx-oi b { font: 700 15px/1.2 var(--body); color: var(--tx-1); }
+.rx-esc .rx-ga { display: flex; flex-direction: column; }
+.rx-esc { flex-wrap: wrap; row-gap: 6px; }
+.rx-et { order: -1; width: 100%; font: 600 12px/1 var(--body); color: #FFB0A8; }
+.rx-esc i { flex: none; font: 800 18px/1 var(--display); font-style: normal; color: #FFB0A8; text-decoration: line-through; }
+.rx-fin { display: flex; flex-direction: column; gap: 6px; animation: rx-up .45s both; }
+.rx-fin.late { animation-delay: 1.7s; }
+/* Fim: cartão das 5 casas, ingresso fixo embaixo */
+.rx-end { gap: 12px; }
+.rx-list { padding: 4px 14px; }
+.rx-list .rl-row { border-color: #E4DDC9; }
+.rx-stick { position: sticky; bottom: 0; z-index: 4; margin-top: auto; padding: 10px 0 calc(6px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(180deg, rgba(15, 61, 42, 0), var(--pitch) 30%); }
+.rx-again { align-self: center; min-height: 44px; }
+@keyframes rx-in { from { transform: scale(.5); opacity: 0; } }
+@keyframes rx-stamp { from { transform: rotate(-14deg) scale(2.6); opacity: 0; } to { transform: rotate(-4deg) scale(1); opacity: 1; } }
+@keyframes rx-out { to { opacity: 0; visibility: hidden; } }
+@keyframes rx-show { to { opacity: 1; } }
+@keyframes rx-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rx-rise { from { transform: translate(80px, -110px) scale(.25); opacity: .6; } 70% { transform: none; opacity: 1; } 80% { transform: rotate(-10deg) scale(1.05); } 90% { transform: rotate(10deg) scale(1.08); } to { transform: none; } }
+@keyframes rx-upleft { to { transform: translate(-120px, -150px) rotate(-50deg); opacity: 0; } }
+@keyframes rx-downright { to { transform: translate(120px, 170px) rotate(50deg); opacity: 0; } }
+@keyframes rx-card { from { transform: scale(.1) rotate(-12deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes rx-pop { from { transform: scale(0); opacity: 0; } 70% { transform: scale(1.2); opacity: 1; } to { transform: scale(1); opacity: 1; } }
+@keyframes rx-roll { from { transform: translateY(24px); opacity: 0; filter: blur(3px); } to { transform: none; opacity: 1; filter: none; } }
+@keyframes rx-spin { to { transform: rotate(360deg); } }
+@keyframes rx-flip { from { transform: perspective(600px) rotateY(90deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes rx-up { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .rx-open *, .rx-open, .rx-fin, .rx-c.done, .rx-tip, .rx-res, .rx-stamp { animation: none !important; }
+  .rx-bigball, .rx-half, .rx-st1 { display: none; }
+  .rx-rays { opacity: 1; }
+}
+html.desk .rx-scr { min-height: calc(100svh / var(--z, 1) - 28px); }
 /* Treinador · partida ao vivo (proposta aprovada em 2026-11-05): placar com a faixa de quem manda, campinho, números,
    auxiliar, lance a lance e a barra de baixo (ritmo + Parar e mexer). Parada = cartão que sobe; trocas e tática em tela cheia */
 .lv { --lv-ink: #13201A; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding-bottom: 96px; }
