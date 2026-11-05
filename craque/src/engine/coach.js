@@ -306,6 +306,9 @@
       m.poss = (m.poss || 0) + (m.home ? mu.h.poss : 1 - mu.h.poss);
       // Quem manda no jogo, minuto a minuto (0 a 100, do seu lado): a faixa da tela e do resultado
       (m.mom = m.mom || []).push(Math.round(100 * (m.home ? lh : la) / (lh + la || 1)));
+      // Para o caderno: quanto tempo cada confronto de estilo e de formação ficou em campo, e como o rival jogou
+      const pm = m.pm = m.pm || {}, tm = m.tm = m.tm || {}, ks = 'sty:' + m.us.style + '|' + m.them.style, kf = 'frm:' + m.us.form + '|' + m.them.form, kt = m.them.form + '|' + m.them.style;
+      pm[ks] = (pm[ks] || 0) + 1; pm[kf] = (pm[kf] || 0) + 1; tm[kt] = (tm[kt] || 0) + 1;
       // Cansaço: quem está em campo perde energia aos poucos (o estilo de ataque cansa mais)
       [m.us, m.them].forEach(s => s.xi.forEach(id => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / 90 * sty(s.style).en); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }));
       // Chances: cada gol esperado vira CO.ch chances; uma em CO.ch entra (as outras são defesa, para fora ou na trave)
@@ -408,6 +411,91 @@
   };
   // Posse de bola sua até aqui (0 a 1)
   S.coPoss = m => (m.min ? m.poss / m.min : 0.5);
+  // ---------- caderno do técnico ----------
+  // O que cada estilo e cada formação faz contra os outros não aparece no começo: o técnico anota depois dos jogos,
+  // primeiro a lápis (pode estar errado; a Leitura de jogo acerta mais) e, vendo o mesmo confronto de novo, a caneta
+  // (o valor certo). A verdade de cada casa é o confronto entre dois times iguais (estilos no 4-4-2, formações no
+  // equilibrado): ↑ você leva vantagem, ↓ sofre, = parelho
+  let CAD_T = null;
+  const CAD_K = 0.04;
+  function cadTruth() {
+    if (CAD_T) return CAD_T;
+    const sq = []; Object.keys(CO.squad).forEach(pos => { for (let k = 0; k < CO.squad[pos]; k++) sq.push({ id: pos + k, n: '', pos, ovr: 70, en: 100, mo: 60 }); });
+    const side = (form, style) => ({ squad: sq, form, style, xi: autoXI(sq, form).xi, bonus: 0 });
+    const cell = (H, A) => {
+      const mu = matchup(H, A, true), x = mu.lh / mu.la, u = mu.h, o = mu.a;
+      // O porquê, por setor: o que mais pesou a favor e contra
+      const sec = { meio: u.poss - 0.5, lados: u.flank * u.wsh - o.flank * o.wsh, area: u.central * (1 - u.wsh) - o.central * (1 - o.wsh), pressao: u.press - o.press, contra: 1.6 * (u.counter - o.counter) };
+      return { v: x > 1 + CAD_K ? 'up' : x < 1 - CAD_K ? 'down' : 'eq', x, sec };
+    };
+    const T = { sty: {}, frm: {} };
+    S.CO_STYLES.forEach(a => S.CO_STYLES.forEach(b => { T.sty[a + '|' + b] = cell(side('4-4-2', a), side('4-4-2', b)); }));
+    const F = Object.keys(FORMS);
+    F.forEach(a => F.forEach(b => { T.frm[a + '|' + b] = cell(side(a, 'equilibrado'), side(b, 'equilibrado')); }));
+    return (CAD_T = T);
+  }
+  S.coCadTruth = cadTruth;
+  const cadOf = co => co.cad || (co.cad = { sty: {}, frm: {}, riv: {}, aux: [] });
+  S.coCad = cadOf;
+  S.CO_CAD_SEC = { meio: 'Meio de campo', lados: 'Lados', area: 'Área', pressao: 'Pressão', contra: 'Contra-ataque' };
+  // Quantas casas anota por jogo e a chance de o lápis estar certo
+  S.coCadPer = co => 1 + (co.xp.leitura >= 4 ? 1 : 0);
+  S.coCadAcc = co => Math.min(0.95, 0.6 + 0.05 * co.xp.leitura);
+  // A casa como o técnico vê: null (nunca viu) ou { v, pen, ok, from }
+  S.coCadGet = (co, k, a, b) => (cadOf(co)[k][a + '|' + b] || null);
+  // Palpite do auxiliar antes do jogo (um por rodada): o estilo que ele usaria contra o estilo esperado do rival;
+  // acerta o melhor em uns 60%, no resto chuta outro
+  S.CO_AUX_ACC = 0.6;
+  S.coHint = function (co) {
+    const nx = S.coNext(co); if (!nx || nx.bye) return null;
+    const key = co.season + '|' + nx.round, cad = cadOf(co);
+    if (cad.hint && cad.hint.k === key) return cad.hint;
+    const them = oppSide(co, nx.vs, !nx.home), T = cadTruth(), r = S.rng(hash(String(co.name) + '|' + co.club + '|' + key + '|aux'));
+    const rank = S.CO_STYLES.slice().sort((a, b) => T.sty[b + '|' + them.style].x - T.sty[a + '|' + them.style].x);
+    const style = r() < S.CO_AUX_ACC ? rank[0] : r.pick(rank.slice(1));
+    return (cad.hint = { k: key, vs: nx.vs, them: them.style, style });
+  };
+  S.CO_AUX_VS = { equilibrado: 'um time equilibrado', posse: 'um time que gosta da bola', pressao: 'pressão alta', contra: 'time de contra-ataque', retranca: 'retranca', lados: 'time que joga pelos lados' };
+  S.CO_AUX_DO = { equilibrado: 'eu iria no equilibrado', posse: 'eu ficaria com a bola', pressao: 'eu apertaria a saída deles', contra: 'eu esperaria e sairia no contra-ataque', retranca: 'eu fecharia a casinha', lados: 'eu abriria o jogo pelos lados' };
+  S.coHintTxt = h => 'Contra ' + S.CO_AUX_VS[h.them] + ', ' + S.CO_AUX_DO[h.style] + ', professor.';
+  // Anota depois do jogo: os confrontos que ficaram em campo por mais tempo (estilo e formação separados)
+  function cadNote(co, m, log) {
+    const cad = cadOf(co), T = cadTruth(), { r, save } = rngCo(co), acc = S.coCadAcc(co), per = S.coCadPer(co);
+    // Estilo e formação se alternam (começa pelo lado com menos anotações), cada um do que mais tempo ficou em campo
+    const pm = m.pm || {}, by = k => Object.keys(pm).filter(x => x.startsWith(k + ':') && pm[x] >= 15).sort((a, b) => pm[b] - pm[a]);
+    const ls = by('sty'), lf = by('frm'), first = Object.keys(cad.frm).length < Object.keys(cad.sty).length ? [lf, ls] : [ls, lf], cand = [];
+    for (let i = 0; i < Math.max(ls.length, lf.length); i++) first.forEach(l => { if (l[i]) cand.push(l[i]); });
+    const from = { s: co.season, r: m.round, vs: m.vs, gf: log.gf, ga: log.ga };
+    const notes = [], seen = [];
+    cand.forEach(key => {
+      const [k, ab] = key.split(':'), c = cad[k][ab], t = T[k][ab];
+      if (c && c.pen) { if (seen.length < 1) seen.push({ k, ab, v: c.v }); return; }
+      if (notes.length >= per) return;
+      if (!c) {
+        const ok = r() < acc, v = ok ? t.v : r.pick(['up', 'down', 'eq'].filter(x => x !== t.v));
+        cad[k][ab] = { v, pen: false, ok, from: [from] };
+        notes.push({ k, ab, v, pen: false, prev: null });
+      } else {
+        const prev = c.v; c.v = t.v; c.pen = true; c.fix = prev !== t.v; c.from.push(from);
+        notes.push({ k, ab, v: t.v, pen: true, prev });
+      }
+    });
+    save();
+    // O rival: como ele jogou (o que mais tempo ficou em campo)
+    const rv = cad.riv[m.vs] || (cad.riv[m.vs] = { n: 0 });
+    const tm = m.tm || {}, tk = Object.keys(tm).sort((a, b) => tm[b] - tm[a])[0], [tf, ts] = tk ? tk.split('|') : [m.them.form, m.them.style];
+    rv.n++; rv.form = tf; rv.style = ts; rv.s = co.season; rv.r = m.round;
+    // O palpite do auxiliar: só conta se você jogou daquele jeito a maior parte do jogo
+    let hint = null;
+    if (cad.hint && cad.hint.k === co.season + '|' + m.round) {
+      const h = cad.hint, main = cand.find(x => x.startsWith('sty:'));
+      if (main && main.slice(4) === h.style + '|' + h.them) { const ok = T.sty[h.style + '|' + h.them].v === 'up'; cad.aux.push(ok ? 1 : 0); if (cad.aux.length > 5) cad.aux.shift(); hint = { txt: h, st: ok ? 'ok' : 'bad' }; }
+      else hint = { txt: h, st: 'nt' };
+      delete cad.hint;
+    }
+    return { notes, seen, hint };
+  }
+  S.coCadSeen = co => { const c = cadOf(co), n = o => Object.keys(o).length; return { sty: n(c.sty), frm: n(c.frm), styPen: Object.keys(c.sty).filter(k => c.sty[k].pen).length, frmPen: Object.keys(c.frm).filter(k => c.frm[k].pen).length }; };
   // O auxiliar troca quem caiu (lesão) e os muito cansados: o que o robô e o "resumir" usam
   S.coAutoStop = function (co, m) {
     const s = m.us, st = m.stop;
@@ -436,6 +524,7 @@
     // Lesão e vermelho já contam o jogo de hoje (out = n + 1, sus = 2): desconta 1 de todos
     co.squad.forEach(p => { if (p.out) p.out--; if (p.sus) p.sus--; });
     const log = { r: m.round, vs: m.vs, home: m.home, gf, ga, res, ev: m.ev.filter(e => e.t === 'gol' && e.s === 'us').map(e => e.p) };
+    log.cad = cadNote(co, m, log);
     ss.log.push(log);
     board(co, log);
     ss.i++;
