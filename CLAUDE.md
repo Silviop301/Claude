@@ -61,7 +61,7 @@ python3 -m http.server 8765                         # jogo em http://127.0.0.1:8
 node tools/craque_sim.js 3000                       # equilíbrio: distribuição de notas, títulos, duração
 MODO=completa node tools/craque_sim.js 300          # Jogo a Jogo: notas e o ritmo (jogos vividos/resumidos/banco e minutos por temporada; alvo ~15 e ~1 h)
 MODO=completa JANELA=nao node tools/craque_sim.js 300   # Jogo a Jogo sem a janela do meio do ano (o robô troca de clube nela)
-MODO=completa TREINO=nao node tools/craque_sim.js 300   # Jogo a Jogo sem o treino com lances (o robô padrão treina; FC_TRC=n muda o limite de 2 por temporada)
+MODO=completa TREINO=nao node tools/craque_sim.js 300   # Jogo a Jogo sem o treino com lances (o robô padrão treina toda semana e acerta 60% dos lances: TREINO_ACERTO; FC_TRC=n põe limite por temporada)
 ORIGIN=tardia CHAL=fiel DEAL=salario node tools/craque_sim.js   # origem/desafio/contrato fixos
 node tools/craque_decisoes.js                       # quanto vale decidir bem (melhor vs aleatório)
 node tools/craque_audit_eventos.js [ids]            # auditoria das decisões (esperado: 0 alertas)

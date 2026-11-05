@@ -91,6 +91,7 @@ for (let n = 0; n < N; n++) {
     };
     if (process.env.MODO === 'completa') {
       c.mode = 'completa'; S.fcStart(c);
+      { const OA = (global.OA = global.OA || {}); (OA[c.age] = OA[c.age] || []).push(S.ovr(c)); } // OVR por idade (começo da temporada)
       if (!c.perfil) { const u = Math.random(); c.perfil = process.env.PERFIL || (u < 0.4 ? 'cauteloso' : u < 0.75 ? 'normal' : 'gastador'); }
       let nx;
       while ((nx = S.fcNext(c))) {
@@ -101,7 +102,7 @@ for (let n = 0; n < N; n++) {
         // Convites do celular (fase 2): o robô responde pela melhor média (CONVITE=acaso responde ao acaso; CONVITE=nao deixa sem resposta)
         if (c.fc.wkDue) { if (process.env.CONVITE !== 'nao') S.fcInvAuto(c, process.env.CONVITE === 'acaso');
           // Treino com lances: o robô joga os 3 lances do treino técnico sempre que pode (TREINO=nao nunca; TREINO=0.3 em 30% das semanas)
-          if (process.env.TREINO !== 'nao' && S.fcTrOpen(c) && Math.random() < (process.env.TREINO ? +process.env.TREINO || 1 : 1)) { const a = S.fcTrAttr(c); for (let k = 0; k < S.FC_TR_SESS && a; k++) S.fcTrSession(c, a, true); } // Janela do meio do ano (fase 4): o robô assina se for um clube mais forte onde joga, ou se está sobrando e o novo dá minutos (JANELA=nao nunca)
+          if (process.env.TREINO !== 'nao' && S.fcTrOpen(c) && Math.random() < (process.env.TREINO ? +process.env.TREINO || 1 : 1)) { const a = S.fcTrAttr(c); for (let k = 0; k < S.FC_TR_SESS && a; k++) S.fcTrSession(c, a, Math.random() < +(process.env.TREINO_ACERTO || 0.6)); } // acerta 60% dos lances (TREINO_ACERTO) // Janela do meio do ano (fase 4): o robô assina se for um clube mais forte onde joga, ou se está sobrando e o novo dá minutos (JANELA=nao nunca)
           { const w = process.env.JANELA !== 'nao' && S.fcWin(c);
             if (w) { const cur = D.CLUB_BY_ID[c.club], sh = c.fc.acc.slots ? c.fc.acc.games / c.fc.acc.slots : 1;
               const alive = (c.fc.cont && !c.fc.cont.out) || !c.fc.cup.out; // ainda vivo na copa ou no continental: trocar perde a taça
@@ -233,3 +234,4 @@ if (process.env.MODO === 'completa') {
   console.log('  por que vivido (média por temporada): ' + Object.entries(why).sort((a, b) => b[1] - a[1]).map(([k, n]) => k + ' ' + (n / rows.length).toFixed(1)).join(' · '));
   console.log('  carreira inteira: ' + Math.round(q(Object.values(rows.reduce((o, r) => { o[r.car] = (o[r.car] || 0) + mins(r); return o; }, {})), 0.5) / 60) + ' h (mediana)');
 }
+if (global.OA) { const md = a => { a = a.slice().sort((x, y) => x - y); return a[Math.floor(a.length / 2)]; }; console.log('OVR por idade (mediana): ' + [17, 18, 19, 20, 22, 24, 26, 28, 30, 33].filter(k => OA[k]).map(k => k + ' anos ' + md(OA[k])).join(' · ')); }
