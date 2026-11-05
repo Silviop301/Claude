@@ -1550,6 +1550,19 @@
     const POS = { GK: 'o goleiro', LB: 'o lateral', RB: 'o lateral', CB: 'o zagueiro', DM: 'o volante', CM: 'o meia', LM: 'o meia', RM: 'o meia', LW: 'o ponta', RW: 'o ponta', ST: 'o centroavante' };
     const nmP = k => (k === 'me' ? '<b class="lp-nm">' + esc(sobre(c)) + '</b>' : POS[k] || 'o jogador');
     const deP = k => (k === 'me' ? 'de <b class="lp-nm">' + esc(sobre(c)) + '</b>' : 'd' + (POS[k] || 'o jogador'));
+    // Faixa clara, legenda e posse saem da bola do campinho (a cada quadro, só escreve o que mudou), do lado em que ela está na tela
+    function zoneSim(i) {
+      const b = $('lp-band'), z = $('lp-zone'), pe = $('lp-pos'); if (!z) return;
+      const mine = i.side === 0, tm = mine ? meName : opName, lado = i.ay < 30 ? ' pela esquerda' : i.ay > 70 ? ' pela direita' : ' pelo meio';
+      const txt = i.mode === 'goal' ? 'Gol!' : i.mode === 'ko' || i.mode === 'wait' || i.mode === 'half' ? 'Saída de bola' : i.mode === 'tiro' ? 'Tiro de meta ' + D.do(tm) :
+        i.ax >= 67 ? tm + ' ataca' + lado : i.ax <= 33 ? tm + ' sai jogando' : tm + ' troca passes no meio';
+      const play = i.mode === 'play';
+      const bc = 'lp-band lpz ' + (i.sx < 100 / 3 ? 'l' : i.sx > 200 / 3 ? 'r' : 'c') + (play ? (mine ? ' me' : ' op') : ''), zc = 'lp-tag lp-zone' + (play ? (mine ? ' up' : ' down') : ''), pt = 'Posse ' + Math.round(i.posse * 100) + '%';
+      if (b && b.className !== bc) b.className = bc;
+      if (z.textContent !== txt) z.textContent = txt;
+      if (z.className !== zc) z.className = zc;
+      if (pe && pe.textContent !== pt) pe.textContent = pt;
+    }
     function narrSim(k, d) {
       if (half || finished || (o.stop && t >= stopAt - 1)) return;
       const big = k === 'defesa' || k === 'fora';
@@ -1576,7 +1589,7 @@
     const stars = () => (fl && fl.on ? fl.lances.filter(l => !(o.stop && l.m >= stopAt)).map(l => ({ m: l.m, down: !l.up })) : []).concat(bigM && (!o.stop || t >= stopAt) ? [{ m: bigM, big: true }] : []);
     if (x.vs) $('fc-match').innerHTML = sbLive(x); else $('fc-match').innerHTML = card('live', x, t);
     // Os jogadores que decidem (ui/livesim.js): o motor só diz quem está melhor e quando sai cada gol
-    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), t0, speed: () => (fast ? 3 : 1), onEv: (k, d) => narrSim(k, d),
+    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), t0, speed: () => (fast ? 3 : 1), onEv: (k, d) => narrSim(k, d), onFrame: i => zoneSim(i), flip: !nx.home,
       seed: (Number(c.tseed) || 1) * 7 + c.fc.season * 101 + c.fc.i * 13 + t0,
       goals: out.my.ev.filter(e => !o.stop || e.m < stopAt).map(e => ({ m: e.m, side: e.s === (nx.home ? 'h' : 'a') ? 0 : 1, me: !!e.me, as: !!e.as })) }) : null;
     const pitch = () => { if (!fl) return; $('fc-flow').innerHTML = flowBox(c, x, fl, meIdx); U.LP.resetTrail(); if (sim) sim.attach($('lp-cv')); };
@@ -1707,7 +1720,9 @@
       const b = fl.bx[Math.min(T, 100)];
       let by;
       if (sim) {
-        sim.minute(T, b); sim.energy(onPitch ? enNow() : null);
+        // A faixa "quem manda" e o fim de jogo usam o que o campinho mostrou no minuto que acabou (quem teve a bola e onde)
+        const avg = sim.minute(T, b); sim.energy(onPitch ? enNow() : null);
+        if (avg !== null && T > 0 && T <= 100) { fl.bx[T - 1] = Math.round(avg); fl.dom = U.LP.dom(fl.bx); }
         if (fl.on && since === undefined && fl.lances.some(l => l.m === T)) sim.lance();
         by = sim.ballAt()[1]; if (meIdx >= 0) path[T] = sim.meAt();
       } else {
@@ -1718,9 +1733,9 @@
         if (meIdx >= 0) path[T] = sp.us[meIdx];
       }
       const lado = by < 38 ? 'pela esquerda' : by > 62 ? 'pela direita' : 'pelo meio';
-      U.LP.band(b, b >= 68 ? meName + ' ataca ' + lado : b <= 32 ? opName + ' ataca ' + lado : b >= 55 ? meName + ' no campo de ataque' : b <= 45 ? opName + ' no campo de ataque' : 'Disputa no meio-campo');
+      if (!sim) U.LP.band(b, b >= 68 ? meName + ' ataca ' + lado : b <= 32 ? opName + ' ataca ' + lado : b >= 55 ? meName + ' no campo de ataque' : b <= 45 ? opName + ' no campo de ataque' : 'Disputa no meio-campo');
       let own = 0; for (let k = 0; k <= T && k <= 100; k++) if (fl.bx[k] >= 50) own++;
-      const pe = $('lp-pos'); if (pe) pe.textContent = 'Posse ' + Math.round(own / (Math.min(T, 100) + 1) * 100) + '%';
+      const pe = $('lp-pos'); if (pe && !sim) pe.textContent = 'Posse ' + Math.round(own / (Math.min(T, 100) + 1) * 100) + '%';
       // Narração de fundo, de tempos em tempos (no minuto a minuto, não quando pulou)
       if (!sim && since === undefined && T - lastNarr >= 5 && nr() < 0.3 && !fl.lances.some(l => l.m === T) && !out.my.ev.some(e => e.m === T)) { lastNarr = T; feed(T, esc(narr(nr, b, by, meName, opName)), ''); }
       if (!fl.on) return;
