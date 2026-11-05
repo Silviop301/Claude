@@ -313,7 +313,8 @@
       lcDone();
     }
     // Apito (falta, impedimento): todos param um instante e a bola fica com quem vai cobrar
-    function whistle(why, taker) { mode = 'falta'; modeT = 1.5; stopWhy = why; ball.owner = ball.fly = ball.loose = ball.carry = null; foulTo = taker; }
+    // A cobrança sai de onde foi a infração (spot; sem spot, onde a bola está): a bola rola até lá e o cobrador vai até ela
+    function whistle(why, taker, spot) { mode = 'falta'; modeT = 1.5; stopWhy = why; foulSpot = spot ? { x: spot.x, y: spot.y } : { x: ball.x, y: ball.y }; ball.owner = ball.fly = ball.loose = ball.carry = null; foulTo = taker; }
     // O juiz (o motor já decidiu): falta, cartão ou impedimento de quem joga na posição pos do lado side. O campinho para,
     // o cartão sobe em cima de quem fez, e só então a narração escreve (cb). O expulso sai da lógica na hora (o time joga com
     // um a menos) e fica parado no lugar até o apito acabar; depois sai andando pela lateral mais perto
@@ -342,27 +343,52 @@
       const kind = o.kind, p = whoDid(o.side, o.pos, o.me);
       if (!p) return false;
       if (kind === 'impedimento') {
-        const s = o.side, line = lineOf(s), [px, py] = tf(s, p);
-        // o mais adiantado do ataque; se está atrás da linha por pouco, passa dela (a bola chegou nele)
-        const q = T[s].filter(x => x.r !== 'GK' && !isMe(x)).sort((a, b) => tf(s, b)[0] - tf(s, a)[0])[0] || p;
-        const [qx, qy] = tf(s, q); if (qx < line + 0.6 && line - qx < 7) { [q.x, q.y] = toW(s, Math.min(L - 3, line + 0.9), qy); }
-        void px; void py;
-        ball.x = q.x; ball.y = q.y;
-        const d = T[1 - s].filter(x => x.r !== 'GK').sort((a, b) => dist(a, q) - dist(b, q))[0] || at(1 - s, 0);
-        whistle('Impedimento', d); modeT = 1.8;
-        offLine = { s, x: line, t: 1.8 }; refFx = { p: q, kind, t: 1.8 };
-        return true;
+        // Nada de teleporte: o mais adiantado do ataque passa da linha correndo, recebe o passe lá e o apito sai onde ele
+        // recebeu (offStep); a cobrança é dali. Sem a bola, o ataque espera tê-la um pouco antes do passe
+        const s = o.side, own = ball.owner && ball.owner.side === s ? ball.owner : null;
+        const q = T[s].filter(x => x.r !== 'GK' && !isMe(x) && x !== own).sort((a, b) => tf(s, b)[0] - tf(s, a)[0])[0];
+        if (!q) return false;
+        offPend = { s, q, t: 0, f: null };
+        return 'pend';
       }
-      const v = T[1 - o.side].filter(x => x.r !== 'GK').sort((a, b) => dist(a, p) - dist(b, p))[0];
-      if (v) { ball.x = (v.x + p.x) / 2; ball.y = (v.y + p.y) / 2; v.stun = 1.6; v.down = 1.6; }
-      whistle('Falta', v || at(1 - o.side, 6));
+      // Quem sofre é quem está com a bola (senão o mais perto de quem fez); a falta é no lugar dele, e a bola rola até lá
+      const own = ball.owner && ball.owner.side !== o.side && ball.owner.r !== 'GK' ? ball.owner : null;
+      const v = own || T[1 - o.side].filter(x => x.r !== 'GK').sort((a, b) => dist(a, p) - dist(b, p))[0];
+      if (v) { v.stun = 1.6; v.down = 1.6; if (!own) { p.tx = v.x; p.ty = v.y; } }
+      whistle('Falta', v || at(1 - o.side, 6), v);
       const card = kind === 'amarelo' || kind === 'vermelho';
       modeT = card ? 2.3 : 1.3;
       if (card) refFx = { p, kind, how: o.how, t: 2.3 };
       if (kind === 'vermelho') goOff(p, 2.3);
       return true;
     }
-    let foulTo = null;
+    let foulTo = null, foulSpot = null, offPend = null;
+    // Impedimento a caminho: 1) quem vai ficar impedido corre para além da linha; 2) com a bola no ataque, sai o passe para
+    // ele; 3) a bola chega e o apito sai ali. Se o jogo parar antes (gol, seu lance, outra parada), fica só na narração
+    function offEnd(ok) { const P = offPend; offPend = null; if (P && P.cb) setTimeout(P.cb, ok ? 500 / Math.max(1, o.speed ? o.speed() : 1) : 0); }
+    function offStep(dt) {
+      const P = offPend, s = P.s, q = P.q;
+      if (mode !== 'play' || lc || due || T[s].indexOf(q) < 0) return offEnd(false);
+      P.t += dt;
+      const line = lineOf(s), [qx, qy] = tf(s, q), rx = Math.min(L - 4, Math.max(qx, line + 2));
+      if (!P.f) {
+        q.run = Math.max(q.run || 0, 0.5); q.runX = rx; q.runY = qy;
+        const own = ball.owner && ball.owner.side === s && ball.owner !== q ? ball.owner : null;
+        if (own && (qx > line + 0.4 || P.t > 1.2)) {
+          const [wx, wy] = toW(s, Math.max(rx, qx + 1.5), qy);
+          fly(own, wx, wy, q, Math.hypot(wx - own.x, wy - own.y) > 26, 'costas', false); ball.fly.dur = Math.min(ball.fly.dur, 1.2); P.f = ball.fly; P.line = line;
+        } else if (P.t > 3.5) offEnd(false);
+        return;
+      }
+      if (ball.fly === P.f) return;
+      if (ball.owner === q || (ball.loose && ball.loose.f === P.f)) {
+        const d = T[1 - s].filter(x => x.r !== 'GK').sort((a, b) => dist(a, q) - dist(b, q))[0] || at(1 - s, 0);
+        whistle('Impedimento', d, ball); modeT = 1.8;
+        offLine = { s, x: P.line, t: 1.8 }; refFx = { p: q, kind: 'impedimento', t: 1.8 };
+        return offEnd(true);
+      }
+      offEnd(false); // a bola não chegou nele (cortaram no caminho)
+    }
     // Seu lance sem a bola: eles atacam perto de você (ou na sua área, se você é o goleiro)
     function defAct(dt) {
       const me = T[0][ME], q = lc.q, k = lc.k; lc.t2 = (lc.t2 || 0) + dt;
@@ -507,6 +533,7 @@
       clk += dt;
       if (refFx && (refFx.t -= dt) <= 0) refFx = null;
       if (offLine && (offLine.t -= dt) <= 0) offLine = null;
+      if (offPend) offStep(dt);
       for (let i = leaving.length - 1; i >= 0; i--) { const q = leaving[i]; q.wait -= dt; if (q.wait > 0) continue; q.t += dt; q.p.y += cl(q.ty - q.p.y, -3.6 * dt, 3.6 * dt); if (q.t > 6 || q.p.y < -0.5 || q.p.y > WD + 0.5) leaving.splice(i, 1); }
       ALL.forEach(p => { if (p.down) p.down = Math.max(0, p.down - dt); });
       if (mode === 'wait') { ALL.forEach(p => { [p.tx, p.ty] = koShape(p, p.side); }); ball.x = 52.5; ball.y = 34; }
@@ -525,8 +552,19 @@
         T[1 - s].forEach(p => { [p.tx, p.ty] = koShape(p, p.side); });
         if (modeT <= 0) { mode = 'ko'; modeT = 0.6; back = 1; }
       } else if (mode === 'falta') {
-        modeT -= dt; ALL.forEach(p => { p.tx = p.x; p.ty = p.y; });
-        if (modeT <= 0) { mode = 'play'; stopWhy = ''; const q = foulTo || at(poss, 6); foulTo = null; if (q.side !== poss) ALL.forEach(x => { x.th = 0; }); ball.x = q.x; ball.y = q.y; setOwner(q); }
+        // Todos param; a bola rola até o lugar da infração, o cobrador vai até ela (atrás da bola) e quem é do outro
+        // time e está em cima recua um pouco. Só recomeça com o cobrador na bola
+        modeT -= dt;
+        const q = foulTo || at(poss, 6), sp = foulSpot || { x: ball.x, y: ball.y }, dir = q.side ? -1 : 1;
+        ALL.forEach(p => {
+          if (p === q) return;
+          const d = dist(p, sp);
+          if (p.side !== q.side && d < 4.5 && p.r !== 'GK') { const a = Math.atan2(p.y - sp.y, p.x - sp.x); p.tx = sp.x + Math.cos(a) * 5; p.ty = sp.y + Math.sin(a) * 5; }
+          else { p.tx = p.x; p.ty = p.y; }
+        });
+        const bd = Math.hypot(sp.x - ball.x, sp.y - ball.y), kb = bd > 0.01 ? Math.min(bd * dt * 4, 16 * dt) / bd : 0; ball.x += (sp.x - ball.x) * kb; ball.y += (sp.y - ball.y) * kb;
+        q.tx = cl(sp.x - dir * 0.9, 0.5, L - 0.5); q.ty = sp.y; q.sprint = dist(q, sp) > 3 ? 1 : 0;
+        if (modeT <= 0 && (dist(q, sp) < 1.6 || modeT < -3)) { mode = 'play'; stopWhy = ''; foulTo = foulSpot = null; if (q.side !== poss) ALL.forEach(x => { x.th = 0; }); setOwner(q); }
       } else if (mode === 'tiro') {
         modeT -= dt; const s = poss, gk = T[s][0], [sx, sy] = toW(s, 5.5, 34);
         gk.tx = sx; gk.ty = sy;
@@ -737,7 +775,9 @@
       // (com a bola parada, num gol saindo ou no seu lance, a linha sai na hora; o vermelho tira o jogador do mesmo jeito)
       ref(r0, cb) {
         const free = mode === 'play' && !lc && !due && !r0.quiet;
-        if (free && refDo(r0)) { if (cb) setTimeout(cb, r0.kind === 'falta' ? 500 : 900 / Math.max(1, o.speed ? o.speed() : 1)); return; }
+        const r = free && !offPend ? refDo(r0) : false;
+        if (r === 'pend') { offPend.cb = cb; return; }
+        if (r) { if (cb) setTimeout(cb, r0.kind === 'falta' ? 500 : 900 / Math.max(1, o.speed ? o.speed() : 1)); return; }
         if (r0.kind === 'vermelho') { const p = whoDid(r0.side, r0.pos, r0.me); if (p) goOff(p, 0); }
         if (cb) cb();
       },
@@ -760,7 +800,7 @@
       meAt() { if (ME < 0) return null; const p = T[0][ME]; return [p.x / L * 100, p.y / WD * 100]; },
       ballAt() { return [ball.x / L * 100, ball.y / WD * 100]; },
       stop() { alive = false; if (raf) cancelAnimationFrame(raf); raf = 0; window.removeEventListener('resize', onResize); },
-      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, ALLX: ALL, WHY, mode, poss, ball, due, goals, lc, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
+      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, ALLX: ALL, WHY, mode, poss, ball, due, goals, lc, offPend, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
     };
     LP._sim = api;
     return api;
