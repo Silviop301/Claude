@@ -584,6 +584,7 @@
     const tick = () => {
       if (open || wait) return;
       if (m.done) return end();
+      if (sim) sim.go(); // o apito (se a velocidade mudou antes dele, o timer do começo foi trocado)
       if (sim && h1 && !h2) { h2 = true; sim.second(); }
       const st = S.coMatchStep(co, m, m.min + 1);
       if (sim) { const v = m.mom && m.mom[m.min - 1]; sim.minute(m.min, v === undefined ? 50 : v); }
