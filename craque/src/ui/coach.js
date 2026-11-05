@@ -135,7 +135,7 @@
     if (!nx) return finishSeason();
     const vs = !nx.bye && club(nx.vs);
     const ult = B.ult ? '<div class="co-ult"><b>Ultimato</b><span>Vença ' + B.ult.need + ' dos próximos ' + B.ult.of + ': ' + B.ult.got + ' de ' + B.ult.need + ' vitórias, ' + (B.ult.of - B.ult.n) + ' jogos para isso.</span></div>' : '';
-    render('<div class="co-head">' + crest(cl.id, 'co-hc') + '<div><small>' + esc(ss.name) + ' · ' + yr() + '</small><b>' + esc(cl.name) + '</b><span>' + esc(co.name) + ' · fama ' + co.fame + '</span></div></div>' +
+    render(U.modeHead({ mode: 'co', nav: 'home', id: 'b-co-out', label: 'Voltar ao início do jogo', title: crest(cl.id, 'xs') + esc(cl.name), sub: esc(ss.name) + ' ' + yr() + ' · ' + esc(co.name) + ' · fama ' + co.fame }) +
       ult +
       '<div class="co-next">' + (nx.bye ? '<div class="eyebrow">Rodada ' + nx.round + ' de ' + nx.of + '</div><h2>Sem jogo nesta rodada</h2><p class="lead">O time descansa. Os outros jogam.</p>' :
         '<div class="eyebrow">Rodada ' + nx.round + ' de ' + nx.of + ' · ' + (nx.home ? 'em casa' : 'fora') + '</div>' +
@@ -145,10 +145,11 @@
         (nx.bye ? '' : scout(S.coPreview(co).them)) + moodLine() +
         '<button class="btn" id="b-co-play">' + (nx.bye ? 'Ver a rodada' : 'Escalar e jogar') + '</button></div>' +
       '<div class="co-side"><div class="co-box"><div class="eyebrow">Tabela ' + form5() + '</div>' + table(false) + '<button class="btn ghost sm" id="b-co-tab">Tabela inteira</button></div>' +
-      '<div class="co-acts"><button class="btn ghost" id="b-co-team">Time e elenco</button><button class="btn ghost" id="b-co-out">Sair para o início</button></div></div>');
+      '<div class="co-acts"><button class="btn ghost" id="b-co-team">Time e elenco</button></div></div>');
+    U.modeHeadBind();
     $('b-co-play').onclick = () => { sfx('tap'); if (nx.bye) { S.coSkipRound(co); save(); return hub(); } team(true); };
     $('b-co-team').onclick = () => { sfx('tap'); team(false); };
-    $('b-co-tab').onclick = () => { sfx('tap'); render('<button class="back-link" id="b-co-back">‹ Voltar</button><div class="eyebrow">' + esc(ss.name) + ' · ' + yr() + '</div><h2>Tabela</h2><div class="co-box">' + table(true) + '</div>'); $('b-co-back').onclick = hub; };
+    $('b-co-tab').onclick = () => { sfx('tap'); render(U.modeHead({ mode: 'co', nav: 'back', id: 'b-co-back', label: 'Voltar ao clube', title: 'Tabela', sub: esc(ss.name) + ' ' + yr() }) + '<div class="co-box">' + table(true) + '</div>'); U.modeHeadBind(); $('b-co-back').onclick = hub; };
     $('b-co-out').onclick = () => { sfx('tap'); save(); co = null; U.home(); };
   }
 
@@ -233,9 +234,10 @@
         draw();
       });
     };
-    render('<button class="back-link" id="b-co-back">‹ Clube</button><div class="eyebrow">' + (vs ? 'Próximo jogo · x ' + esc(vs.short || vs.name) : 'Time e elenco') + '</div>' +
-      '<h2>Seu time</h2><div id="co-team"></div>' +
+    render(U.modeHead({ mode: 'co', nav: 'back', id: 'b-co-back', label: 'Voltar ao clube', title: 'Seu time', sub: vs ? 'Próximo jogo · x ' + esc(vs.short || vs.name) : 'Time e elenco' }) +
+      '<div id="co-team"></div>' +
       '<div class="inv-bar fade co-bar"><button class="btn ghost" id="b-co-aux">Sugestão do auxiliar</button>' + (toPlay && vs ? '<button class="btn" id="b-co-go">Jogar</button>' : '<button class="btn" id="b-co-ok">Pronto</button>') + '</div>');
+    U.modeHeadBind();
     $('b-co-back').onclick = () => { sfx('tap'); keepBench(); save(); hub(); };
     $('b-co-aux').onclick = () => { sfx('tap'); const a = S.coAutoXI(co.squad, co.form); co.xi = a.xi; co.autoXI = true; sel = null; draw(); };
     if ($('b-co-ok')) $('b-co-ok').onclick = () => { sfx('tap'); keepBench(); save(); hub(); };

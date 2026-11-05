@@ -359,12 +359,27 @@
       push();
       if (U.closeFront && U.closeFront()) return;
       if (layer) return quit(); // janela sem fechar (treino antes do 1º lance)
-      const bk = [...screen.querySelectorAll('.back-link')].find(b => b.getClientRects().length);
+      const bk = [...screen.querySelectorAll('.back-link, .mh-nav')].find(b => b.getClientRects().length);
       if (bk) return bk.click();
       if (G.c) return quit();
       U.home();
     });
   }
 
-  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg, totOf, titlesOf, toHome };
+
+  // Topo comum dos modos (canvas "Navegação, Ficha e meta", 2026-11-05): à esquerda a casa (só na tela principal do modo,
+  // volta à Bilheteria) ou a seta (dentro do modo, volta um nível), nunca as duas; no meio a etiqueta do modo, o título e
+  // a linha de apoio; à direita a engrenagem, sempre. o: { mode: 'jaj'|'co'|'rl'|'cr', nav: 'home'|'back', id, label, title, sub, cfg, right }
+  const MODES = { jaj: ['🏟️', 'Jogo a Jogo'], co: ['📋', 'Treinador'], rl: ['⚡', 'Relâmpago'], cr: ['⏱️', 'Carreira Rápida'] };
+  const NAV_SVG = { home: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7M5.5 9.5V20h13V9.5" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    back: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' };
+  function modeHead(o) {
+    const m = MODES[o.mode] || MODES.jaj, nav = o.nav === 'back' ? 'back' : 'home';
+    return '<header class="mh"><button class="mh-b mh-nav" id="' + (o.id || 'mh-nav') + '" aria-label="' + esc(o.label || (nav === 'home' ? 'Voltar ao início do jogo' : 'Voltar')) + '">' + NAV_SVG[nav] + '</button>' +
+      '<span class="mh-t"><span class="mh-chip">' + emo(m[0], 'xs') + m[1] + '</span><b>' + o.title + '</b>' + (o.sub ? '<small>' + o.sub + '</small>' : '') + '</span>' +
+      (o.right || '') + '<button class="mh-b" id="' + (o.cfg || 'mh-cfg') + '" aria-label="Configurações">' + GEAR_SVG + '</button></header>';
+  }
+  // Liga a engrenagem do topo comum (o voltar/início cada tela liga no seu id)
+  function modeHeadBind(o) { const b = $((o && o.cfg) || 'mh-cfg'); if (b) b.onclick = () => { sfx('tap'); window.CRAQUE_UI.settings(); }; }
+  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg, totOf, titlesOf, toHome, modeHead, modeHeadBind };
 })();
