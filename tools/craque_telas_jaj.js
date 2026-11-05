@@ -90,7 +90,11 @@ const INIT = `
   if (await page.evaluate(() => !!window.CRAQUE_SIM.fcGoals)) {
     await tap('.p2-app[data-go="ag"]');
     await page.evaluate(() => { const g = document.querySelector('.ag-goals'); if (g) g.scrollIntoView({ block: 'center' }); }); await shot('agenda-metas');
-    if (await has('[data-dream]')) { await tap('[data-dream]'); await page.evaluate(() => { const g = document.querySelector('.ag-goals'); if (g) g.scrollIntoView({ block: 'center' }); }); await shot('agenda-sonho'); }
+    if (await has('[data-dream]')) {
+      const center = () => page.evaluate(() => { const g = document.querySelector('.ag-dr') || document.querySelector('.ag-goals'); if (g) g.scrollIntoView({ block: 'center' }); });
+      await tap('[data-dream]'); await center(); await shot('agenda-sonho-marcado');
+      await tap('#ag-dr-go'); await center(); await shot('agenda-sonho');
+    }
     await tap('#fc-back');
   }
   // Fase 3, parte 2: o Zé no Chat (palpite, aposta ali mesmo e a proposta do amarelo)

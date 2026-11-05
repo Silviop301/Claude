@@ -283,6 +283,7 @@
   const WK_EMO = { tec: '⚽', fis: '🏋️', rest: '🛏️', physio: '🩺' };
   const WK_SHORT = { tec: 'Técnico', fis: 'Físico', rest: 'Descanso', physio: 'Fisio' };
   let agGoals = false; // metas do ano abertas
+  let dreamSel = null; // sonho marcado na agenda, ainda sem confirmar
   function agenda() {
     const c = G.c, nx = S.fcNext(c), fc = c.fc;
     const keep = $('ag') && $('fc-scr') ? $('fc-scr').scrollTop : -1; // tocar numa opção redesenha sem pular para o topo
@@ -373,7 +374,8 @@
         '<label class="fc-auto ag-auto"><input type="checkbox" id="fc-auto"' + (c.fcAuto ? ' checked' : '') + '><span>Repetir esta semana sozinho</span></label>' +
       '</div>', { cls: 'ag' });
     document.querySelectorAll('.ag-o').forEach(b => { b.onclick = () => { if (b.classList.contains('on')) return; sfx('tap'); pick = [b.dataset.id]; touched = true; agenda(); }; });
-    document.querySelectorAll('[data-dream]').forEach(b => { b.onclick = () => { if (S.fcDream(c, b.dataset.dream)) { sfx('coin'); save(); agGoals = true; agenda(); } }; });
+    document.querySelectorAll('[data-dream]').forEach(b => { b.onclick = () => { sfx('tap'); dreamSel = b.dataset.dream; agenda(); }; });
+    if ($('ag-dr-go')) $('ag-dr-go').onclick = () => { if (dreamSel && S.fcDream(c, dreamSel)) { dreamSel = null; sfx('coin'); save(); agGoals = true; agenda(); } };
     document.querySelectorAll('[data-ta]').forEach(b => { b.onclick = () => { sfx('tap'); trA = b.dataset.ta; agenda(); }; });
     if ($('ag-gl')) $('ag-gl').onclick = () => { sfx('tap'); agGoals = !agGoals; agenda(); };
     const tg = $('ag-trgo');
@@ -390,11 +392,18 @@
     const rows = S.fcGoals ? S.fcGoals(c) : null;
     if (!rows) return '';
     const one = g => {
-      if (g.side === 'me' && !g.dream) return '<div class="ag-g pick"><small>' + SIDE.me + ' · escolha um, vale o ano todo</small><div class="ag-gd">' +
-        S.fcDreamOpts(c).map(id => '<button data-dream="' + id + '"><b>' + esc(S.FC_DREAMS[id].name(c)) + '</b><small>' + legOf(S.fcDreamSize(c, id)) + '</small></button>').join('') + '</div></div>';
+      // O sonho pendente é uma escolha, não um número: bloco dourado com opções em bilhete, marca ao tocar e confirma embaixo
+      if (g.side === 'me' && !g.dream) {
+        const ops = S.fcDreamOpts(c);
+        if (!ops.includes(dreamSel)) dreamSel = null;
+        return '<div class="ag-g pick ag-dr"><header><span class="ag-dr-t">' + U.emo('⭐', 'sm') + 'Escolha seu sonho</span><i class="ag-dr-tag">Falta escolher</i></header>' +
+          '<p class="ag-dr-s">Toque em um. Vale o ano todo e não muda depois.</p><div class="ag-gd" role="radiogroup" aria-label="Seu sonho do ano">' +
+          ops.map(id => { const on = dreamSel === id; return '<button role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-dream="' + id + '"><i class="ag-dr-r" aria-hidden="true"></i><b>' + esc(S.FC_DREAMS[id].name(c)) + '</b><small>+' + S.GOAL_SIZE[S.fcDreamSize(c, id)] + '<span>legado</span></small></button>'; }).join('') +
+          '</div><button class="ag-dr-go" id="ag-dr-go"' + (dreamSel ? '' : ' disabled') + '>' + (dreamSel ? 'Confirmar sonho' : 'Escolha um sonho acima') + '</button></div>';
+      }
       const n = g.n, h = g.have, done = n !== undefined && h !== null && h >= n;
       const prog = n === undefined || h === null ? '' : '<div class="ag-gb"><u style="width:' + Math.min(100, Math.round(h / n * 100)) + '%"></u></div><em>' + (g.side === 'emp' && /Nota/.test(g.txt) ? 'agora ' + rate(h) : h + ' de ' + n) + '</em>';
-      return '<div class="ag-g' + (done ? ' done' : '') + '"><small>' + SIDE[g.side] + ' · ' + legOf(g.size) + '</small><b>' + esc(g.txt) + (done ? ' ✓' : '') + '</b>' + prog + '</div>';
+      return '<div class="ag-g' + (done ? ' done' : '') + (g.side === 'me' ? ' dream' : '') + '"><small>' + (g.side === 'me' ? U.emo('⭐', 'xs') : '') + SIDE[g.side] + ' · ' + legOf(g.size) + '</small><b>' + esc(g.txt) + (done ? ' ✓' : '') + '</b>' + prog + '</div>';
     };
     return '<div class="ag-goals"><h4>Metas do ano</h4>' + rows.map(one).join('') + '</div>';
   }
