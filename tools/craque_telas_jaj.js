@@ -191,6 +191,13 @@ const INIT = `
         if (pe.textContent !== 'Posse ' + Math.round(i.posse * 100) + '%' && Math.abs(parseInt(pe.textContent.slice(6)) - i.posse * 100) > 2) R.bad.push('posse ' + pe.textContent + ' x ' + Math.round(i.posse * 100));
       }, 200);
     });
+    // Gol: o placar muda logo depois de a rede balançar no campinho; recomeço: ninguém no campo do outro quando a bola sai
+    await page.evaluate(() => {
+      const R = window.__conf; R.nets = []; R.scores = []; R.koBad = 0; R.ko = 0; let last = '';
+      const loop = () => { const sim = window.CRAQUE_UI.LP._sim; if (sim) { const st = sim._state(); if (st.mode !== last) { if (st.mode === 'goal') R.nets.push(performance.now()); if (last === 'ko' && st.mode === 'play') { R.ko++; if (st.wrong) R.koBad++; } last = st.mode; } } requestAnimationFrame(loop); };
+      loop();
+      let sc = ''; setInterval(() => { const h = document.getElementById('fc-sh'), a = document.getElementById('fc-sa'); if (!h || !a) return; const v = h.textContent + 'x' + a.textContent; if (sc && v !== sc && v !== '0x0') R.scores.push(performance.now()); sc = v; }, 30);
+    });
     for (let q = 1; q <= 6; q++) { await wait(1700); await shot('partida-quadro-' + q); }
   }
   await page.click('#fc-fast', { timeout: 5000 }).catch(() => {}); await wait(9000); // 3× (a partida em 1× dura uns 2 minutos)
@@ -206,7 +213,8 @@ const INIT = `
   await lance();
   await page.waitForSelector('#fc-jn, #fc-next', { timeout: 60000 });
   if (await has('#fc-jn')) { await shot('partida-fim'); await tap('#fc-jn'); await page.waitForSelector('#fc-next', { timeout: 8000 }); }
-  if (process.env.CONF) { const R = await page.evaluate(() => window.__conf); console.log('CONFERÊNCIA campinho x textos:', R.n, 'checagens ·', R.bad.length, 'desencontros', JSON.stringify(R.bad.slice(0, 8))); }
+  if (process.env.CONF) { const R = await page.evaluate(() => window.__conf); console.log('CONFERÊNCIA campinho x textos:', R.n, 'checagens ·', R.bad.length, 'desencontros', JSON.stringify(R.bad.slice(0, 8)));
+    console.log('GOLS: rede x placar (s, placar depois da rede):', R.scores.map(t => { const n = R.nets.filter(x => x <= t + 50).pop(); return n === undefined ? 'sem rede' : ((t - n) / 1000).toFixed(2); }).join(' '), '· recomeços', R.ko, 'com alguém no campo errado', R.koBad); }
   await shot('jornal');
   await tap('#fc-next');
   for (let k = 0; k < 10 && !(await has('#fc-play')) && !(await has('#screen .btn.opt[data-i]')); k++) await wait(300);
