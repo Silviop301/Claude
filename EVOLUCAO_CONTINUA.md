@@ -20,7 +20,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | **no ar** (PRs #135, #136 e a parte 3): janela do meio do ano, troca de clube, sondagens, empresário, aumento, pedido de saída e empréstimo |
 | 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | **no ar** (PRs #138, #139 e a parte 3): torneio do continente, convocação pelo celular, concentração e um jogo por tela, seleção no jornal |
 | 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | **no ar** (PRs #141, #142 e a parte 3): metas do ano, legado no lugar da nota, Seu Hall, ranking por legado e Amigos |
-| 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | em andamento: parte 1 (motor), parte 2 (telas + tática de verdade) |
+| 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | em andamento: parte 1 (motor), parte 2 (telas + tática de verdade), parte 3 (partida ao vivo), parte 4 (caderno do técnico) |
 | 8 · Treinador v2 | No simulador, nenhuma tática ou instrução vence em todos os casos | |
 | 9 · Do jogador ao técnico | Uma carreira passa de jogador a técnico levando a história e os títulos | |
 
@@ -742,3 +742,19 @@ Proibido também: cartão com faixa colorida na lateral.
   dos 90' com a marca da sua mudança, chutes/no gol/posse e a linha do tempo. Computador: três colunas.
 - Jogo largado no meio não volta atrás (`co.live`): o auxiliar termina o jogo.
 - Classe `.lv-help` já era do livre.js: o texto de ajuda das trocas é `.lv-hint`.
+
+### Fase 7, parte 4 · 2026-11-05 · Caderno do técnico
+- Decisão do Silvio: confronto de tática se descobre jogando (como Game Dev Tycoon), nada explícito no começo da
+  carreira, seta e palavra, nunca número. Proposta visual aprovada antes do código ("Gostei do caderno").
+- Motor (`engine/coach.js`): a verdade de cada casa é o confronto entre dois times iguais (`S.coCadTruth`: estilos no
+  4-4-2, formações no equilibrado; ↑ acima de 4% de vantagem, ↓ abaixo, = no meio; 8↑ 8↓ 20= nos estilos, 7↑ 6↓ 36=
+  nas formações). A partida conta quanto tempo cada confronto ficou em campo (`m.pm`) e como o rival jogou (`m.tm`).
+  Depois do jogo (`cadNote`, em `log.cad`): anota 1 casa por jogo (2 com Leitura de jogo 4), alternando estilo e
+  formação; a primeira vez a lápis (certo com 60% + 5% por ponto de Leitura, até 95%), a segunda a caneta (o valor
+  certo, "corrigido" se o lápis errou). Rivais guardam a formação e o estilo do último jogo. Palpite do auxiliar
+  (`S.coHint`, um por rodada, acerta o melhor estilo em 60%): só conta se você jogou daquele jeito; `co.cad.aux`
+  guarda os 5 últimos. Save sem migração: `co.cad` nasce quando precisa.
+- Telas (`ui/coach.js`): "Do seu caderno" em Seu time (no `#co-caderno` da tela nova, via `U.coCaderno`) e na Tática
+  ao vivo (no lugar do confronto em palavras, que saiu), Palpite do auxiliar com PODE ERRAR, "Anotado no caderno" no
+  resultado, tela do caderno (Estilos, Formações, Rivais; no computador as duas páginas lado a lado) e a anotação
+  aberta (seta, lápis ou caneta, porquê por setor, de que jogos veio). Botão Caderno na central do clube.

@@ -39,6 +39,16 @@ require('fs').mkdirSync(OUT, { recursive: true });
     if (await p.$('#b-co-play')) {
       await click('#b-co-play');
       if (!(await p.$('#b-co-go'))) continue;
+      if (games === 5) {
+        // caderno: o bloco antes do jogo, a tela com as abas, uma anotação aberta
+        await shot('time-caderno');
+        await click('#b-cad-open'); await shot('caderno');
+        if (await p.$('.cad-page [data-cad]')) { await p.evaluate(() => document.querySelector('.cad-page [data-cad]').click()); await p.waitForTimeout(500); await shot('caderno-anotacao'); await click('#b-cad-x'); }
+        const tab = async k => { await click(desk ? '.cad-tabs.wide [data-ct="' + (k === 'riv' ? 'riv' : 'sty') + '"]' : '.cad-tabs:not(.wide) [data-ct="' + k + '"]'); };
+        await tab('frm'); await shot('caderno-formacoes');
+        await tab('riv'); await shot('caderno-rivais');
+        await click('#b-cad-back');
+      }
       await click('#b-co-go'); games++;
       if (games === 1) {
         // primeiro jogo ao vivo: um pouco no 1×, para com "Parar e mexer", troca arrastando no campinho, troca dois
@@ -69,7 +79,7 @@ require('fs').mkdirSync(OUT, { recursive: true });
         await p.waitForSelector('#b-lv-end', { timeout: 30000 });
         await p.reload({ waitUntil: 'load' }); await p.waitForTimeout(1500);
         await click('#b-cont-co'); await shot('largou-no-meio');
-      } else { if (await p.$('.lv-sheet.on #b-lv-go')) await click('#b-lv-go'); await click('[data-sp="fim"]'); await click('#b-lv-end'); }
+      } else { if (await p.$('.lv-sheet.on #b-lv-go')) await click('#b-lv-go'); await click('[data-sp="fim"]'); await click('#b-lv-end'); if (games === 4) await shot('resultado-caderno'); }
       continue;
     }
     if (await p.$('#b-co-next')) { await click('#b-co-next'); continue; }
