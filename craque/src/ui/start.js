@@ -99,17 +99,31 @@
     draw();
     document.body.appendChild(w);
   }
-  // Barra de baixo das quatro telas principais (Jogar, Carreiras, Ranking, Perfil)
-  const TABS = [['home', 'Jogar', '<circle cx="12" cy="12" r="9"/><path d="M12 7.5l4 2.9-1.5 4.7h-5L8 10.4z"/>'],
-    ['mine', 'Carreiras', '<rect x="4" y="5" width="11" height="15" rx="1.5"/><path d="M9 3h9.5A1.5 1.5 0 0120 4.5V17"/>'],
-    ['ranking', 'Ranking', '<path d="M3 20h18M5 20v-6h4v6M10 20V9h4v11M15 20v-8h4v8"/>'],
-    ['profile', 'Perfil', '<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-4 4-5.6 7.5-5.6s6.3 1.6 7.5 5.6"/>']];
+  // Barra de baixo das quatro telas principais (Jogar, Carreiras, Ranking, Perfil): os mesmos ícones desenhados dos
+  // ingressos (bola, taça, medalha de 1º, boneco). Desligada fica apagada em cinza; ligada, colorida e com o nome em ouro
+  const TABS = [['home', 'Jogar', '⚽'], ['mine', 'Carreiras', '🏆'], ['ranking', 'Ranking', '🥇'], ['profile', 'Perfil', '👨']];
   U.tabs = cur => {
     const dot = U.ITEMS && U.ITEMS.streak().cells.some(c => c.claim); // prêmio da sequência para pegar: fica no Perfil
     return '<nav class="tabs" aria-label="Seções">' + TABS.map(([k, l, ic]) => '<button data-tab="' + k + '"' + (k === cur ? ' class="on" aria-current="page"' : '') + '>' +
-      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ic + '</svg>' + l +
+      '<img class="tabs-ic" src="' + U.emoSrc(ic) + '" alt="" draggable="false">' + l +
       (k === 'profile' && dot ? '<em class="tabs-dot" aria-label="prêmio para pegar"></em>' : '') + '</button>').join('') + '</nav>';
   };
+  // Topo das quatro telas principais, igual ao da home: logo, sequência, nível (vai ao Perfil) e engrenagem
+  U.topBar = (lv = true) => {
+    const L = U.PROFILE.level((U.ITEMS.get().prof || {}).xp), st = U.ITEMS.streak();
+    return '<div class="hm-top"><h1 class="hm-logo">CLIMBIX</h1>' +
+      (st.n ? '<span class="hm-streak" title="Dias seguidos">' + U.emo('🔥', 'sm') + st.n + '</span>' : '') +
+      (lv ? '<button class="hm-lv" id="b-prof" aria-label="Perfil, nível ' + L.lv + '"><b>' + L.lv + '</b><i><em style="width:' + Math.round(L.cur / L.next * 100) + '%"></em></i></button>' : '') +
+      '<button class="hm-cfg" id="b-sound" aria-label="Configurações">' + U.GEAR_SVG + '</button></div>';
+  };
+  U.topBarBind = () => {
+    if ($('b-prof')) $('b-prof').onclick = () => { sfx('tap'); U.profile(); };
+    if ($('b-sound')) $('b-sound').onclick = U.settings;
+  };
+  // Ingresso das abas (.tk-tab): papel com canhoto deitado, o número no canhoto
+  U.tk = tk;
+  U.tabTk = (cls, id, ic, title, sub, big, small) => tk('tk-tab ' + cls, id, U.emo(ic, 'lg') + '<span class="tk-t"><b>' + title + '</b><small>' + sub + '</small></span>',
+    '<b>' + big + '</b>' + (small ? '<small>' + small + '</small>' : ''));
   document.addEventListener('click', e => {
     const b = e.target.closest && e.target.closest('.tabs [data-tab]');
     if (!b || b.classList.contains('on')) return;
@@ -134,13 +148,10 @@
     fcCheck();
     const jn = load(JAJ_NEW), jnLine = jn && !jn.seen ? '<button class="hm-line hm-jn" id="b-jaj-novo">' + U.emo('🏟️', 'xs') + '<span><b>O Jogo a Jogo foi refeito.</b> ' +
       (jn.name ? 'A carreira de ' + esc(jn.name) + ' virou carta na sua coleção.' : 'A carreira de antes ficou para trás.') + '</span><em>Ok</em></button>' : '';
-    const L = U.PROFILE.level((U.ITEMS.get().prof || {}).xp), st = U.ITEMS.streak(), packs = U.ITEMS.get().packs.length;
+    const packs = U.ITEMS.get().packs.length;
     render(
       '<div class="hm">' +
-      '<div class="hm-top"><h1 class="hm-logo">CLIMBIX</h1>' +
-        (st.n ? '<span class="hm-streak" title="Dias seguidos">' + U.emo('🔥', 'sm') + st.n + '</span>' : '') +
-        '<button class="hm-lv" id="b-prof" aria-label="Perfil, nível ' + L.lv + '"><b>' + L.lv + '</b><i><em style="width:' + Math.round(L.cur / L.next * 100) + '%"></em></i></button>' +
-        '<button class="hm-cfg" id="b-sound" aria-label="Configurações">' + U.GEAR_SVG + '</button></div>' +
+      U.topBar() +
       jnLine + U.challengeHome() + U.relampagoHome(true) +
       (packs ? '<button class="hm-line" id="b-hb-packs">' + U.emo('📦', 'xs') + '<span><b>' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</b> para abrir</span><em>Abrir ›</em></button>' : '') +
       '<section class="hm-sec"><h2>Escolha o jogo</h2><div class="hm-tks">' + saveTicket('rapida') + saveTicket('completa') + modeTicket('relampago') + saveTicket('treinador') +
@@ -188,10 +199,9 @@
     U.backTo = null;
     if ($('b-jaj-novo')) $('b-jaj-novo').onclick = () => { store(JAJ_NEW, Object.assign(jn, { seen: true })); sfx('tap'); home(); };
     U.packHomeBind();
-    $('b-prof').onclick = () => { sfx('tap'); U.profile(); };
+    U.topBarBind();
     U.challengeHomeBind();
     U.relampagoHomeBind();
-    $('b-sound').onclick = U.settings;
     if (U.whatsNew) U.whatsNew();
     U.installHomeBind();
   }
@@ -204,18 +214,20 @@
     // Linha do Hall da Fama: nota (mesma etiqueta do ranking), jogador e números, pontuação à direita
     const stats = h => (h.pos === 'GOL' ? h.cs + ' sem sofrer gol · ' + h.penSaved + ' pên. def. · ' : h.pos === 'ZAG' ? h.cs + ' sem sofrer gol · ' + D.plural(h.goals, 'gol', 'gols') + ' · ' : D.plural(h.goals, 'gol', 'gols') + ' · ' + h.assists + ' assist. · ') +
       D.plural(h.titles, 'taça', 'taças') + (h.ballon ? ' · ' + h.ballon + ' Bola' + (h.ballon > 1 ? 's' : '') + ' de Ouro' : '');
-    render('<h2 class="tab-h">Minhas carreiras</h2>' +
-      '<div class="mc-side">' + U.lastHome() + U.salaHome() +
-      '<div class="home-grid">' +
-      '<button class="hg" id="b-col"><i>' + U.ICON.cards + '</i><b>Coleção</b><small>' + U.collectionCards() + (U.collectionCards() === 1 ? ' carta' : ' cartas') + '</small></button>' +
-      '<button class="hg" id="b-ach"><i>' + U.ICON.medal + '</i><b>Conquistas</b><small>' + U.achCount() + ' de ' + S.ACHIEVEMENTS.length + '</small></button>' +
-      '</div></div>' +
+    // Igual à home: topo, rótulo discreto e ingressos; o Hall da Fama é uma súmula de papel com linhas picotadas
+    const sheet = rows => '<div class="sumula"><div class="sumula-in"><div class="mc-list">' + rows + '</div></div></div>';
+    render(U.topBar() +
+      '<section class="mc-side tab-sec"><div class="tab-sh"><h2>Sua estante</h2></div><div class="hm-tks">' + U.lastHome() + U.salaHome() +
+      U.tabTk('tk-yel', 'b-col', '🃏', 'Coleção', 'As cartas dos seus jogadores', U.collectionCards(), U.collectionCards() === 1 ? 'carta' : 'cartas') +
+      U.tabTk('tk-yel', 'b-ach', '🏅', 'Conquistas', 'Feitos raros de carreira', U.achCount(), 'de ' + S.ACHIEVEMENTS.length) +
+      '</div></section>' +
       jajHall() + (hasJaj && !hall.length ? '' :
-      '<section class="mc-hall"><div class="eyebrow">Hall da Fama' + (hasJaj ? ' · Carreira Rápida' : '') + '</div>' +
-      (hall.length ? '<div class="mc-list">' +
-        hall.map((h, i) => '<div class="mc-row' + (i ? '' : ' best') + '"><span class="rk-g g' + esc(h.grade) + '">' + esc(h.grade) + '</span><span class="mc-who"><b>' + esc(h.name) + ' · ' + esc(h.verdict) + '</b>' +
-          '<small>' + stats(h) + '</small></span><span class="mc-pts">' + Number(h.score).toLocaleString('pt-BR') + '<small>pts</small></span></div>').join('') + '</div>'
-        : '<p class="mc-empty">' + U.ICON.trophy + '<span>Termine uma carreira para ela aparecer aqui.</span></p>') + '</section>') + U.tabs('mine'));
+      '<section class="mc-hall tab-sec"><div class="tab-sh"><h2>Hall da Fama</h2>' + (hasJaj ? '<span>Carreira Rápida</span>' : '') + '</div>' +
+      sheet(hall.map((h, i) => '<div class="mc-row' + (i ? '' : ' best') + '"><span class="rk-g g' + esc(h.grade) + '">' + esc(h.grade) + '</span><span class="mc-who"><b>' + esc(h.name) + ' · ' + esc(h.verdict) + '</b>' +
+          '<small>' + stats(h) + '</small></span><span class="mc-pts">' + Number(h.score).toLocaleString('pt-BR') + '<small>pts</small></span></div>').join('') +
+        '<div class="mc-row mc-free"><i aria-hidden="true"></i><span>' + (hall.length ? 'Termine outra carreira para ela entrar aqui.' : 'Termine uma carreira para ela aparecer aqui.') + '</span></div>') +
+      '</section>') + U.tabs('mine'));
+    U.topBarBind();
     U.lastHomeBind();
     document.querySelectorAll('.hj-card img').forEach(im => { const h = (load(U.HALL_JAJ) || [])[+im.dataset.k]; if (h && h.card && U.cardThumb) U.cardThumb(h.card, im); });
     document.querySelectorAll('.hj-row').forEach(b => { b.onclick = () => { const h = (load(U.HALL_JAJ) || [])[+b.dataset.k]; if (h && h.card && U.cardView) { sfx('tap'); U.cardView(h.card, mine, 'Carreiras'); } }; });
@@ -229,10 +241,10 @@
     const hj = load(U.HALL_JAJ) || [];
     if (!hj.length) return '';
     const from = h => Object.keys(LEG_LBL).filter(k => h.by && h.by[k] > 0).sort((a, b) => h.by[b] - h.by[a]).slice(0, 3).map(k => LEG_LBL[k] + ' ' + h.by[k].toLocaleString('pt-BR')).join(' · ');
-    return '<section class="mc-hall hj"><div class="eyebrow">Seu Hall · Jogo a Jogo</div><div class="mc-list">' +
+    return '<section class="mc-hall hj tab-sec"><div class="tab-sh"><h2>Seu Hall · Jogo a Jogo</h2></div><div class="sumula"><div class="sumula-in"><div class="mc-list">' +
       hj.slice(0, 10).map((h, i) => '<button class="mc-row hj-row' + (i ? '' : ' best') + '" data-k="' + i + '"><span class="hj-card"><img alt="" data-k="' + i + '"><em>' + (i + 1) + 'º</em></span><span class="mc-who"><b>' + esc(h.name) + '</b>' +
         '<small>' + D.POS[h.pos].name + ' · ' + h.yr[0] + '–' + h.yr[1] + ' · pico ' + h.peak + ' · ' + D.plural(h.titles, 'título', 'títulos') + '</small><small class="hj-by">' + esc(from(h)) + '</small></span>' +
-        '<span class="mc-pts">' + h.leg.toLocaleString('pt-BR') + '<small>legado</small></span></button>').join('') + '</div></section>';
+        '<span class="mc-pts">' + h.leg.toLocaleString('pt-BR') + '<small>legado</small></span></button>').join('') + '</div></div></div></section>';
   }
   // Voltar das telas de "Minhas carreiras" (Coleção, Conquistas, Sala): volta para lá; senão, para o início
   U.goBack = () => (U.backTo || home)();

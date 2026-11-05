@@ -6758,6 +6758,179 @@ button.fi-g, button.p2-gr { cursor: pointer; min-height: 44px; }
 .ins-how { min-height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: var(--gold); color: var(--ink); font: 800 16px var(--display); white-space: nowrap; }
 .ins-x { width: 32px; height: 40px; border: 0; background: transparent; color: var(--tx-3); display: grid; place-items: center; }
 .ins-x svg { width: 16px; height: 16px; }
+
+/* ============ Abas Carreiras, Ranking e Perfil no estilo da home (2026-11-05) ============ */
+/* Barra de baixo: ícones desenhados (os mesmos dos ingressos); desligada apagada em cinza, ligada colorida com tracinho ouro */
+.tabs-ic { width: 28px; height: 28px; filter: grayscale(.9); opacity: .55; transition: transform .15s ease, opacity .15s ease; }
+.tabs button.on .tabs-ic { filter: none; opacity: 1; transform: scale(1.1); }
+.tabs button.on::before { content: ''; position: absolute; top: -1px; left: 32%; right: 32%; height: 3px; border-radius: 0 0 3px 3px; background: var(--gold); }
+/* Telas das abas: mesma pilha da home, rótulo discreto como "Escolha o jogo" */
+#screen:has(> .tabs) > .hm-top { margin-bottom: 12px; }
+.tab-sec { display: flex; flex-direction: column; gap: 8px; margin: 0 0 16px; }
+.tab-sh { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 24px; }
+.tab-sh h2 { margin: 0; font: 700 17px var(--display); color: rgba(244, 238, 220, .78); }
+.tab-sh > span { font: 500 13px var(--body); color: var(--tx-3); }
+/* Ingresso das abas: canhoto deitado (número grande + legenda), altura pelo conteúdo */
+.tk-tab { --stub: 68px; }
+.tk-tab .tk-in { height: auto; min-height: 68px; }
+.tk-tab .tk-frame { padding: 6px 10px; }
+.tk-tab .tk-stub { gap: 3px; padding: 4px 2px; text-align: center; }
+.tk-tab .tk-stub b { writing-mode: horizontal-tb; transform: none; font: 800 22px/1 var(--display); }
+.tk-tab .tk-stub small { font: 600 11px/1.1 var(--body); }
+.tk-tab .tw-lg { width: 40px; height: 40px; }
+.tk-tab .tk-t b { font-size: 20px; line-height: 1.05; }
+.tk-tab .tk-t small { font-size: 12.5px; line-height: 1.25; }
+.tk-tab .tk-t small .tw { width: 15px; height: 15px; vertical-align: -3px; margin-right: 3px; }
+.tk-gold { --paper: #F2C230; --stub-bg: #E3B21C; --frame: rgba(27, 27, 23, .25); --tk-sub: #4A3E12; }
+.tk-coral { --paper: #EE7A4E; --stub-bg: #E06A3E; --frame: rgba(27, 27, 23, .25); --tk-sub: #3A2012; }
+.tk-gold .tk-paper, .tk-coral .tk-paper { background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .14) 0 1px, transparent 1px 7px); }
+.tk-silver { --paper: #E3E6E1; --stub-bg: #D0D5CE; --tk-sub: #3E443F; }
+.tk-bronze { --paper: #EBC49E; --stub-bg: #DDB187; --tk-sub: #4A3220; }
+.tk-ink .tk-stub { background: #1B1B17; color: var(--gold); border-left-color: rgba(242, 194, 48, .5); }
+.tk-ink .tk-stub small { color: #E8DFC2; }
+.tk-yel .tk-stub { background: var(--gold); --tk-sub: #4A3E12; }
+.tk-coral .tk-stub { background: #1B1B17; color: #EE7A4E; border-left-color: rgba(238, 122, 78, .5); }
+.tk-coral .tk-stub b { font-size: 17px; }
+.tk-new { font-style: normal; font-weight: 700; color: #1B1B17; background: rgba(255, 255, 255, .55); border-radius: 4px; padding: 0 4px; }
+/* Súmula: folha de papel com moldura e linhas picotadas (Hall da Fama, ranking do 4º em diante, amigos, números) */
+.sumula { filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .35)); color: #1B1B17; }
+.sumula-in { border-radius: 8px; padding: 6px; background-color: #F4EEDC; background-image: repeating-linear-gradient(135deg, rgba(27, 27, 23, .035) 0 1px, transparent 1px 7px); }
+.sumula-in > * { border: 1px solid rgba(27, 27, 23, .22); border-radius: 4px; overflow: hidden; }
+.sumula-in > * + * { margin-top: 6px; }
+.sumula .mc-list, .sumula .fr-list { display: flex; flex-direction: column; gap: 0; }
+/* Carreiras */
+.sumula .mc-row { min-height: 58px; padding: 7px 10px; gap: 10px; border: 0; border-top: 1px dashed rgba(27, 27, 23, .28); border-radius: 0; background: none; color: #1B1B17; text-align: left; width: 100%; font: inherit; }
+.sumula .mc-row:first-child { border-top: 0; }
+.sumula .mc-row.best { background: rgba(242, 194, 48, .28); border-color: rgba(27, 27, 23, .28); }
+.sumula .mc-row .rk-g { width: 30px; height: 30px; border-radius: 8px; font-size: 17px; box-shadow: none; }
+.sumula .mc-who b { font: 800 18px/1.1 var(--display); color: #1B1B17; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sumula .mc-who small { font: 500 12px/1.3 var(--body); color: #45433A; }
+.sumula .mc-who .hj-by { color: #5A5748; }
+.sumula .mc-pts { font: 800 19px/1 var(--display); color: #1B1B17; }
+.sumula .mc-row.best .mc-pts { color: #1B1B17; }
+.sumula .mc-pts small { font: 600 11px var(--body); color: #5A5748; }
+.sumula .hj-row { grid-template-columns: 40px minmax(0, 1fr) auto; min-height: 66px; }
+.sumula .hj-card { width: 40px; height: 56px; background: rgba(27, 27, 23, .1); }
+.sumula .hj-card em { background: #1B1B17; color: var(--gold); }
+.mc-row.mc-free { grid-template-columns: auto minmax(0, 1fr); font: 500 14px/1.3 var(--body); color: #5E6B63; }
+.mc-free i { width: 30px; height: 30px; border-radius: 8px; border: 1.5px dashed rgba(27, 27, 23, .35); box-sizing: border-box; }
+.tk-last .tk-pre { font-weight: 600; color: #5A5748; }
+.tk-last .lc-card { flex: none; display: block; width: 40px; height: 56px; }
+.tk-last .lc-card img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 4px; }
+.tk-last .lc-g { font: 800 14px var(--display); font-style: normal; padding: 0 5px; border-radius: 4px; background: #DCD5BE; color: #1B1B17; }
+.tk-last .lc-g.g-S { background: var(--gold); }
+/* Ranking */
+.rk-side > .tab-sh { margin-top: 2px; }
+.rk-side .rk-tabs { display: flex; gap: 2px; margin: 0; padding: 3px; border-radius: 999px; background: #0A2A1D; border: 1px solid rgba(244, 238, 220, .14); }
+.rk-side .rk-tabs button { flex: none; min-height: 36px; padding: 0 12px; border-radius: 999px; background: none; color: rgba(244, 238, 220, .8); font: 700 15px var(--display); }
+.rk-side .rk-tabs button.on { background: #F4EEDC; color: #1B1B17; }
+.rk-side .rk-chips { margin: 0; padding-bottom: 2px; }
+.rk-side .rk-chips button { min-height: 40px; padding: 0 14px; border-radius: 6px; border: 1px dashed rgba(244, 238, 220, .35); background: none; color: var(--tx-2); font: 700 15px var(--display); }
+.rk-side .rk-chips button.on { background: var(--gold); border: 1px solid var(--gold); color: #1B1B17; }
+.rk-side .rk-sub { margin: 0; font: 500 13px/1.35 var(--body); color: var(--tx-3); }
+.rk-pod { display: flex; flex-direction: column; gap: 8px; }
+.tk-pod .tk-t small, .rk-mine .tk-t small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tk-pod .tk-k, .rk-mine .tk-k { flex: none; text-align: right; font: 500 11px/1.15 var(--body); color: var(--tk-sub); }
+.tk-pod .tk-k b, .rk-mine .tk-k b { display: block; font: 800 20px/1.05 var(--display); color: #1B1B17; font-variant-numeric: tabular-nums; }
+.tk-pod .tk-stub b, .rk-mine .tk-stub b { font-size: 24px; }
+.tk-pod.tk-gold .tk-in { min-height: 80px; }
+.tk-pod.tk-gold .tk-t b { font-size: 23px; }
+.tk-pod.me .tk-frame { border: 2px solid #1B1B17; }
+.rk-list { display: flex; flex-direction: column; gap: 10px; }
+.rk-list .sumula .rk-item { min-height: 52px; padding: 6px 10px; gap: 10px; border: 0; border-top: 1px dashed rgba(27, 27, 23, .28); border-radius: 0; background: none; color: #1B1B17; outline: 0; }
+.rk-list .sumula .rk-item:first-child { border-top: 0; }
+.rk-list .sumula .rk-pos { width: 30px; color: #5A5748; font: 800 18px var(--display); text-align: left; }
+.rk-list .sumula .rk-who b { color: #1B1B17; }
+.rk-list .sumula .rk-who small { color: #45433A; }
+.rk-list .sumula .rk-item .rk-v { color: #1B1B17; font-size: 19px; }
+.rk-list .sumula .rk-item .rk-v small { color: #5A5748; }
+.rk-list .sumula .rk-item .rk-g { margin: 0; }
+.rk-list .sumula .rk-item.me { background: rgba(242, 194, 48, .3); border: 0; border-top: 1px dashed rgba(27, 27, 23, .28); }
+.rk-list .sumula .rk-item.me .rk-pos, .rk-list .sumula .rk-item.me .rk-who b { color: #1B1B17; }
+.rk-list .rk-mine { position: sticky; bottom: 74px; z-index: 3; box-shadow: none; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .35)) drop-shadow(0 8px 14px rgba(0, 0, 0, .3)); }
+.rk-list .sumula .rk-state { padding: 22px 16px; border: 1px solid rgba(27, 27, 23, .22); border-radius: 4px; background: none; color: #1B1B17; }
+.rk-list .sumula .rk-state b { color: #1B1B17; }
+.rk-list .sumula .rk-state span { color: #45433A; }
+.rk-list .sumula .rk-state > .ico { color: #A9861C; }
+.rk-list .rk-count, .rk-list .rk-none { margin: 0; font: 500 13px var(--body); text-align: center; color: var(--tx-3); }
+.rk-skel > i, .rk-skel-pod { background: rgba(244, 238, 220, .08); border: 0; }
+.rk-skel-pod { height: 170px; }
+.rk-fr { margin-top: 6px; }
+.rk-fr .fr-note { margin: 0; padding: 12px; font: 500 14px/1.35 var(--body); color: #45433A; }
+.rk-fr .fr-item { min-height: 56px; padding: 6px 4px 6px 10px; gap: 8px; border: 0; border-top: 1px dashed rgba(27, 27, 23, .28); border-radius: 0; background: none; color: #1B1B17; }
+.rk-fr .fr-item:first-child { border-top: 0; }
+.rk-fr .fr-item .rk-v { font-size: 19px; color: #1B1B17; }
+.rk-fr .fr-x { color: #5A5748; width: 44px; height: 44px; }
+.rk-fr .fr-add { margin: 6px 0 0; padding: 6px; border: 1px solid rgba(27, 27, 23, .22); border-radius: 4px; }
+.rk-fr .fr-add input { height: 44px; padding: 0 12px; border-radius: 6px; border: 1px solid rgba(27, 27, 23, .25); background: #FBF8EF; font: 500 15px var(--body); }
+.rk-fr .fr-add .btn { height: 44px; padding: 0 16px; border-radius: 6px; background: #1B1B17; color: var(--gold); box-shadow: none; font: 800 16px var(--display); }
+.rk-fr .rk-msg { margin: 6px 4px 2px; border: 0; color: #A8241C; font: 600 13px var(--body); }
+.rk-nick { margin: 0; border-radius: 8px; background: #F4EEDC; box-shadow: 0 2px 0 rgba(0, 0, 0, .35); }
+/* Perfil: carteirinha de sócio é o ingresso grande (nível no canhoto ouro), metas com o XP no canhoto */
+.pf { display: flex; flex-direction: column; }
+.pf .pf-sec { margin: 0 0 16px; gap: 8px; }
+.pf-card { --stub: 92px; --cut: 10px; margin: 0 0 16px; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .35)); }
+.pf-card .tk-in { min-height: 120px; border-radius: 10px; }
+.pf-card .tk-paper { padding: 8px; }
+.pf-card .tk-frame { flex-direction: column; align-items: stretch; justify-content: space-between; gap: 8px; padding: 9px 10px 8px; border-radius: 5px; }
+.pf-card .tk-stub { background: var(--gold); --tk-sub: #4A3E12; gap: 4px; }
+.pf-card .tk-stub b { font-size: 42px; }
+.pf-card .tk-stub small { font-size: 12px; }
+.pf-who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pf-who > span { min-width: 0; }
+.pf-who small { display: block; font: 600 12px/1.25 var(--body); color: #5A5748; }
+.pf-who b { display: block; font: 800 26px/1.05 var(--display); }
+.pf-xp { display: flex; flex-direction: column; gap: 4px; padding-top: 7px; border-top: 1px solid rgba(27, 27, 23, .18); }
+.pf-xp .pf-bar { background: rgba(27, 27, 23, .14); height: 8px; }
+.pf-xp .pf-bar em { background: #1E7A45; }
+.pf-xp small { font: 500 12px/1.2 var(--body); color: #45433A; }
+.pf-xp small b { color: #1B1B17; font-weight: 700; }
+.pf-goal { display: block; padding: 0; border: 0; background: none; grid-template-columns: none; }
+.pf-goal .pf-ck { flex: none; width: 26px; height: 26px; border-radius: 6px; border: 2px solid rgba(27, 27, 23, .45); background: none; display: grid; place-items: center; }
+.pf-goal .tk-t b em { font-style: normal; color: #5A5748; }
+.pf-goal.done { --paper: #E9E3CF; }
+.pf-goal.done .pf-ck { background: #1E7A45; border-color: #1E7A45; color: #fff; }
+.pf-goal.done .pf-ck .ico { width: 16px; height: 16px; }
+.pf-goal.done .tk-t b { text-decoration: line-through; text-decoration-thickness: 2px; color: #5A5748; }
+/* Sequência de dias no Perfil: rolo de 7 ingressos picotados, hoje em ouro */
+.pf-sk .sk { padding: 0; background: none; border-radius: 0; gap: 8px; }
+.pf-sk .sk-h { display: flex; flex-direction: column; gap: 2px; }
+.pf-sk .sk-h b { font: 700 17px var(--display); color: rgba(244, 238, 220, .78); display: flex; align-items: center; gap: 4px; }
+.pf-sk .sk-h b .tw { width: 18px; height: 18px; }
+.pf-sk .sk-h small { margin: 0; font: 500 13px/1.3 var(--body); color: var(--tx-3); }
+.pf-sk .sk-cal { gap: 0; border-radius: 8px; overflow: hidden; background-color: #F4EEDC; background-image: repeating-linear-gradient(135deg, rgba(27, 27, 23, .035) 0 1px, transparent 1px 7px); filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .35)); }
+.pf-sk .sk-d { min-height: 80px; align-content: center; padding: 8px 2px; border: 0; border-left: 2px dotted rgba(27, 27, 23, .4); border-radius: 0; background: none; opacity: 1; color: #1B1B17; font: inherit; }
+.pf-sk .sk-d:first-child { border-left: 0; }
+.pf-sk .sk-d .sk-wd { font: 700 12px/1 var(--display); color: #5A5748; }
+.pf-sk .sk-d b { font: 800 15px/1 var(--display); color: #1B1B17; }
+.pf-sk .sk-d .tw { width: 22px; height: 22px; }
+.pf-sk .sk-d.done { background: rgba(27, 27, 23, .08); }
+.pf-sk .sk-d.done b { color: #5A5748; }
+.pf-sk .sk-d.today { background: var(--gold); box-shadow: inset 0 0 0 2px #1B1B17; }
+.pf-sk .sk-d.today b, .pf-sk .sk-d.claim b { color: #1B1B17; }
+.pf-sk .sk-d.claim { background: var(--gold); box-shadow: inset 0 0 0 2px #1B1B17; }
+.pf-sk .sk.won .sk-h small { color: var(--gold-2); }
+.pf .sumula .pf-nums { gap: 0; background: none; }
+.pf .sumula .pf-nums div { min-height: 66px; align-content: center; padding: 8px 4px; background: none; border-left: 1px dashed rgba(27, 27, 23, .28); border-top: 1px dashed rgba(27, 27, 23, .28); }
+.pf .sumula .pf-nums div:nth-child(3n + 1) { border-left: 0; }
+.pf .sumula .pf-nums div:nth-child(-n + 3) { border-top: 0; }
+.pf .sumula .pf-nums b { font: 800 26px/1 var(--display); color: #1B1B17; }
+.pf .sumula .pf-nums span { font: 500 12px/1.2 var(--body); color: #45433A; }
+.pf .pf-how { margin-top: 2px; }
+/* Computador: topo de ponta a ponta nas telas em duas colunas */
+@media (min-width: 1000px) {
+  #screen:has(> .rk-side) > .hm-top { grid-column: 1 / -1; }
+  /* Carreiras: a barra de baixo no pé da tela (a grade parava logo abaixo do conteúdo) */
+  #screen:has(> .mc-side) { grid-template-rows: auto auto auto 1fr auto; }
+  #screen:has(> .mc-side) > .hm-top { grid-row: 1; }
+  #screen:has(> .mc-side) > .mc-side { grid-row: 2 / 5; }
+  #screen:has(> .mc-side) > .tabs { grid-row: 5; align-self: end; }
+  #screen:has(> .rk-side) > .rk-list { grid-row: 2 / -1; }
+  .rk-list .rk-mine { bottom: 10px; }
+}
+.pf-goal .tk-t b { color: #1B1B17; font: 800 19px/1.1 var(--display); }
+.pf-goal .tk-t small { color: var(--tk-sub); }
+
 /* Apps paródia do celular (canvas "Apps do celular", 2026-11-05): ícones desenhados e o ZapZap com respostas */
 .p2-app i.sv, .p2-ai.sv { background: none; overflow: visible; }
 .p2-app i.sv > svg { display: block; width: 100%; height: 100%; border-radius: inherit; }

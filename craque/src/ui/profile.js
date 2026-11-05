@@ -147,22 +147,26 @@
   function open() {
     U.G.c = null; U.G.step = null; U.bar();
     const p = prof(), L = level(p.xp), wk = week(), T = totals(), left = daysLeft(), M = member();
+    // Igual à home: topo (sem o nível, que já está na carteirinha), rótulos discretos e ingressos com o prêmio no canhoto
     const goal = g => { const d = GOAL_BY[g.id], n = d.n || 1, pr = PRIZE[d.tier];
-      return '<div class="pf-goal' + (g.done ? ' done' : '') + '"><span class="pf-ck" aria-hidden="true">' + (g.done ? U.ICON.check : '') + '</span>' +
-        '<div><b>' + esc(d.t) + (n > 1 && !g.done ? ' <em>' + (g.p || 0) + '/' + n + '</em>' : '') + '</b><small>' + (pr.p > 1 ? pr.p + ' pacotinhos' : '1 pacotinho') + '</small></div><strong>+' + pr.xp + ' XP</strong></div>'; };
+      return U.tk('tk-tab pf-goal ' + (g.done ? 'done' : 'tk-yel'), null, '<span class="pf-ck" aria-hidden="true">' + (g.done ? U.ICON.check : '') + '</span>' +
+        '<span class="tk-t"><b>' + esc(d.t) + (n > 1 && !g.done ? ' <em>' + (g.p || 0) + '/' + n + '</em>' : '') + '</b><small>' + U.emo('📦', 'xs') + (pr.p > 1 ? pr.p + ' pacotinhos' : '1 pacotinho') + (g.done ? ', já ganhos' : '') + '</small></span>',
+        '<b>+' + pr.xp + '</b><small>' + (g.done ? 'feito' : 'XP') + '</small>'); };
     const num = (v, l) => '<div><b>' + v + '</b><span>' + l + '</span></div>';
-    render(
-      '<div class="pf"><h2 class="tab-h">Perfil</h2>' +
-      '<div class="pf-card"><div class="pf-badge"><small>nível</small><b>' + L.lv + '</b></div><div class="pf-rk"><small>Sócio nº ' + M.no + ' · desde ' + M.since + '</small><b>' + rankOf(L.lv) + '</b>' +
-        '<span class="pf-bar big"><em style="width:' + Math.round(L.cur / L.next * 100) + '%"></em></span><small>' + L.cur + ' de ' + L.next + ' XP para o nível ' + (L.lv + 1) + '</small></div></div>' +
-      '<div class="pf-sec"><div class="pf-sh"><h3>Metas da semana</h3><small>' + (left === 1 ? 'renovam amanhã' : 'renovam em ' + left + ' dias') + '</small></div><div class="pf-goals">' + wk.goals.map(goal).join('') + '</div></div>' +
-      '<div class="pf-sec pf-sk">' + U.streakHome() + '</div>' +
-      (window.CRAQUE_WORLD ? '<div class="pf-sec">' + U.worldHome() + '</div>' : '') +
-      '<div class="pf-sec"><div class="pf-sh"><h3>Todas as carreiras</h3></div><div class="pf-nums">' +
+    render(U.topBar(false) +
+      '<div class="pf">' +
+      U.tk('tk-tab pf-card', null, '<span class="pf-who">' + U.emo('🎟️', 'lg') + '<span><small>Sócio nº ' + M.no + ' · desde ' + M.since + '</small><b>' + rankOf(L.lv) + '</b></span></span>' +
+        '<span class="pf-xp"><span class="pf-bar big"><em style="width:' + Math.round(L.cur / L.next * 100) + '%"></em></span><small><b>' + L.cur + ' de ' + L.next + ' XP</b> para o nível ' + (L.lv + 1) + '</small></span>',
+        '<small>nível</small><b>' + L.lv + '</b><span class="tk-bars"></span>') +
+      '<section class="pf-sec tab-sec"><div class="tab-sh"><h2>Metas da semana</h2><span>' + (left === 1 ? 'renovam amanhã' : 'renovam em ' + left + ' dias') + '</span></div><div class="hm-tks">' + wk.goals.map(goal).join('') + '</div></section>' +
+      '<section class="pf-sec tab-sec pf-sk">' + U.streakHome() + '</section>' +
+      (window.CRAQUE_WORLD && U.worldTk ? '<section class="pf-sec tab-sec">' + U.worldTk() + '</section>' : '') +
+      '<section class="pf-sec tab-sec"><div class="tab-sh"><h2>Todas as carreiras</h2></div><div class="sumula"><div class="sumula-in"><div class="pf-nums">' +
         num(T.n, T.n === 1 ? 'carreira' : 'carreiras') + num(T.goals, 'gols') + num(T.assists, 'assistências') + num(T.titles, 'títulos') +
-        num(T.ballon, T.ballon === 1 ? 'Bola de Ouro' : 'Bolas de Ouro') + num(T.best || '–', 'melhor nota') + '</div>' +
-        '<p class="pf-how">Toda carreira terminada dá XP (mais com nota alta e títulos); no Jogo a Jogo, cada temporada. Cada nível novo e cada meta cumprida dão pacotinho.</p></div></div>' + U.tabs('profile')
+        num(T.ballon, T.ballon === 1 ? 'Bola de Ouro' : 'Bolas de Ouro') + num(T.best || '–', 'melhor nota') + '</div></div></div>' +
+        '<p class="pf-how">Toda carreira terminada dá XP (mais com nota alta e títulos); no Jogo a Jogo, cada temporada. Cada nível novo e cada meta cumprida dão pacotinho.</p></section></div>' + U.tabs('profile')
     );
+    U.topBarBind();
     U.backTo = open;
     U.worldHomeBind();
     U.streakBind(open); // pegou o prêmio do dia: redesenha (o pacotinho vai para a fila da tela inicial)

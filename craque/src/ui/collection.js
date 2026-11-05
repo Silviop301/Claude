@@ -165,15 +165,15 @@
     const list = all();
     if (!list.length) return '';
     const e = list.reduce((a, b) => (b.at > a.at ? b : a)), best = Math.max(...list.map(x => x.score));
-    return '<button class="last-card" id="b-last"><span class="lc-card"><img alt=""></span><span class="lc-info"><small>Última carreira</small>' +
-      '<b>' + esc(e.card.name) + '</b>' + (e.leg !== undefined ? legLine(e, list) :
-      '<span>Nota <em class="lc-g g-' + e.grade + '">' + e.grade + '</em> · ' + U.pts(e.score) + ' pts</span>' +
-      '<span class="lc-rec">' + (e.score >= best ? U.emo('🏆', 'xs') + ' Seu recorde' : 'Recorde: ' + U.pts(best) + ' pts') + '</span>') + '</span></button>';
+    // Ingresso creme com a carta no lugar do ícone: a última carreira, com nota e recorde
+    return U.tk('tk-tab tk-last tk-yel', 'b-last', '<span class="lc-card"><img alt=""></span><span class="tk-t"><small class="tk-pre">Última carreira</small><b>' + esc(e.card.name) + '</b>' +
+      (e.leg !== undefined ? legLine(e, list) : '<small>Nota <em class="lc-g g-' + e.grade + '">' + e.grade + '</em> · ' + U.pts(e.score) + ' pts · ' +
+        (e.score >= best ? 'seu recorde' : 'recorde ' + U.pts(best)) + '</small>') + '</span>', '<b>Ver</b><small>a carta</small>');
   }
   // Última carreira do Jogo a Jogo: o legado no lugar da nota, e o recorde entre as do Jogo a Jogo
   function legLine(e, list) {
     const best = Math.max(...list.filter(x => x.leg !== undefined).map(x => x.leg));
-    return '<span>Jogo a Jogo · ' + e.leg.toLocaleString('pt-BR') + ' de legado</span><span class="lc-rec">' + (e.leg >= best ? U.emo('🏆', 'xs') + ' Seu maior legado' : 'Recorde: ' + best.toLocaleString('pt-BR')) + '</span>';
+    return '<small>Jogo a Jogo · ' + e.leg.toLocaleString('pt-BR') + ' de legado · ' + (e.leg >= best ? 'seu maior' : 'recorde ' + best.toLocaleString('pt-BR')) + '</small>';
   }
   function lastHomeBind() {
     const b = $('b-last');
