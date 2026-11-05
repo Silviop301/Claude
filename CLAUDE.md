@@ -168,7 +168,7 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
 ### Servidor — `craque/api/` (PHP + SQLite fora do `public_html`)
 
 `account.php` (contas), `oauth.php` (Google/GitHub/Discord), `rank.php`, `c.php` (link curto da carta),
-`feedback.php`, `errors.php`, `stats.php` (contagem anônima por dia, sem id; o jogo manda por `src/stats.js`). Nada pessoal é guardado além da conta.
+`feedback.php`, `errors.php`, `stats.php` (contagem anônima por dia, sem id; o jogo manda por `src/stats.js`). Nada pessoal é guardado além da conta. Cada opinião nova vai por e-mail (HTML) para o Silvio pelo `mail()` da Hostinger (`FB_EMAIL` em `feedback.php`; `climbix-data/feedback-mail-id` = último id mandado; o deploy chama `?a=mail` para mandar o que ficou para trás).
 
 ### Ferramentas que geram arquivos
 
