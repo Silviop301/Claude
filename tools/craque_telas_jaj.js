@@ -34,6 +34,7 @@ const INIT = `
   const browser = await chromium.launch();
   const opts = { viewport: { width: W, height: H }, serviceWorkers: 'block', locale: 'pt-BR' };
   if (!process.env.DESKTOP) Object.assign(opts, { isMobile: true, hasTouch: true });
+  if (process.env.DSF) opts.deviceScaleFactor = +process.env.DSF;
   const ctx = await browser.newContext(opts);
   await ctx.addInitScript(INIT);
   const page = await ctx.newPage();

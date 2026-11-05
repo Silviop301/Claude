@@ -122,9 +122,9 @@
     const ps = pings(c, nx), first = ps.slice(0, nAll ? ps.length : 1);
     const ping = (n, k) => '<button class="p2-n"' + (n.go ? ' data-go="' + n.go + '"' : ' disabled') + '><span class="p2-nt"><b>' + esc(n.who) + ' <i>· ' + when[Math.min(k, when.length - 1)] + '</i></b><span>' + esc(n.txt) + '</span></span>' +
       (k === 0 && ps.length > 1 ? '<em class="p2-more" id="p2-more" role="button" tabindex="0" aria-label="' + (nAll ? 'Mostrar só a mais nova' : 'Ver as outras ' + (ps.length - 1) + ' notificações') + '">' + (nAll ? '−' : '+' + (ps.length - 1)) + '</em>' : '') + '</button>';
-    const app = ([k, e, n]) => { const mw = k === 'mkt' && S.fcWin && S.fcWin(c);
-      const u = k === 'msg' ? (c.ppl && c.ppl.unread) || 0 : k === 'mkt' ? (mw && !mw.seen ? mw.offers.length : 0) : k === 'me' ? ((c.pe || 0) >= 1 && S.canInvestAny(c) ? Math.floor(c.pe) : 0) : 0;
-      return '<button class="p2-app" data-go="' + k + '"><i>' + U.emo(e, 'md') + (u ? '<em class="ph-badge">' + Math.min(u, 99) + '</em>' : '') + '</i><span>' + n + '</span></button>'; };
+    const due = pendings(c);
+    const app = ([k, e, n]) => { const u = due[k] || 0, lb = k === 'ag' && due.tr ? 'Treino' : n;
+      return '<button class="p2-app' + (u ? ' due' : '') + (lb !== n ? ' tr' : '') + '" data-go="' + k + '" aria-label="' + n + (u ? ': ' + u + (u === 1 ? ' pendência' : ' pendências') : '') + '"><i>' + U.emo(e, 'md') + (u ? '<em class="ph-badge">' + Math.min(u, 99) + '</em>' : '') + '</i><span>' + lb + '</span></button>'; };
     render('<div class="p2" id="fc">' +
       U.modeHead({ mode: 'jaj', nav: 'home', id: 'p2-exit', cfg: 'p2-cfg', title: (DAYS_LONG[eve] || eve) + ', ' + sb.clk,
         sub: 'Jogo ' + (fc.i + 1) + ' do ano · <span class="p2-en ' + (en < S.FC_EN_OUT ? 'out' : en < S.FC_EN_LOW ? 'low' : '') + '">Energia ' + en + '%</span>' }) +
@@ -141,6 +141,24 @@
     $('p2-cfg').onclick = () => { sfx('tap'); U.settings(); };
     $('p2-exit').onclick = () => { sfx('tap'); U.ask('Voltar ao início?', 'Sua carreira fica salva e você continua de onde parou.', 'Ir para o início', U.toHome); };
     sideBind();
+  }
+  // O que espera um toque do jogador em cada app (a bolinha vermelha com o número). Some quando a coisa é feita, não
+  // quando o app é aberto (só o Chat zera ao abrir). tr: o treino com lances da semana ainda por jogar (a Agenda vira "Treino")
+  function pendings(c) {
+    const fc = c.fc, u = {}, add = (k, v) => { if (v > 0) u[k] = (u[k] || 0) + v; };
+    add('msg', (c.ppl && c.ppl.unread) || 0);
+    const fx = S.fcZeOffer && S.fcZeOffer(c);
+    if (fx && fx.st === 'open' && !u.msg) add('msg', 1); // a proposta do Zé se responde no Chat
+    const tr = S.fcTrOpen(c, fc.wkDue ? pick || S.fcWeekAuto(c) : null);
+    if (tr) { add('ag', 1); u.tr = 1; }
+    add('ag', S.fcInvites(c).filter(x => !x.ans).length);
+    if (S.fcGoals && S.fcGoals(c) && !fc.goals.dream) add('ag', 1);
+    add('me', (c.pe || 0) >= 1 && S.canInvestAny(c) ? Math.floor(c.pe) : 0);
+    if (S.fcDebt && S.fcDebt(c) > 0) add('bank', 1);
+    if ((c.gear && c.gear.left <= 5) || (!c.gear && fc.gearOut)) add('shop', 1);
+    const mw = S.fcWin && S.fcWin(c);
+    if (mw && mw.offers.length) add('mkt', mw.offers.length); // propostas na mesa até assinar ou ficar
+    return u;
   }
   // Faixa "perto de acontecer" no espaço que sobrava entre os apps e o ingresso: o que vem amanhã (estreia) ou como foi o
   // último jogo, a meta do ano mais perto de sair e os pontos para gastar antes do jogo
