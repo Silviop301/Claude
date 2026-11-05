@@ -44,9 +44,9 @@
       'Analógico apontado para o companheiro: a linha fica dourada e o botão toca. Para o gol: o botão chuta.',
       'Se o zagueiro vier em você, toque; se ficar no companheiro, bata. Tocou e ele fez: assistência sua.'] },
     cabeca: { name: 'Cabeçada', pos: 'ATA', ico: '🎯', steps: [
-      'Vem o cruzamento: o círculo dourado mostra onde a bola vai cair.',
-      'Corra para lá antes do seu marcador. O botão dá um pulo curto até o ponto.',
-      'Quem chega primeiro cabeceia. A bola vai no canto para onde o analógico aponta.'] },
+      'Vem o cruzamento: o círculo mostra onde a bola cai e o anel em volta fecha até ela chegar.',
+      'Corra para o círculo e fique nele. Verde: a bola é sua. Vermelho: o marcador chegou antes.',
+      'Não precisa apertar na hora: a cabeçada sai sozinha, no canto para onde o analógico aponta. O botão dá uma arrancada.'] },
     passe3: { name: 'Passe com três opções', pos: 'MEI', ico: '🎯', steps: [
       'Campo visto de cima: você conduz a bola com o analógico embaixo, à esquerda.',
       'Três companheiros correm marcados. A linha dourada mostra quem está livre; a vermelha tem zagueiro no caminho.',

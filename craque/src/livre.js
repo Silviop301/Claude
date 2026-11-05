@@ -8,7 +8,7 @@
 //        'pressao' (atacante e meia): o zagueiro deles sai jogando; feche a saída (embaixo) e roube no bote
 //        'cara'   (atacante): sozinho contra o goleiro, que sai; chute antes ou drible ele (o zagueiro vem de trás)
 //        'dois'   (atacante): 2 contra 1; o botão toca se o analógico aponta para o companheiro, senão chuta
-//        'cabeca' (atacante): cruzamento; chegue no ponto antes do marcador (o botão dá o pulo) e cabeceie no canto
+//        'cabeca' (atacante): cruzamento; fique no círculo antes do marcador e a cabeçada sai sozinha (o botão arranca)
 // A carta entra pela velocidade (K, S.livreK em engine/moments.js): atributo do lance perto de 50 dá 0,85; perto de 91, 1,2.
 (function (root) {
   const W = 360, H = 480, GX = 180, GY = 20, POST = 38; // gol em cima: traves em GX±POST
@@ -20,12 +20,12 @@
   function toward(p, t, v, dt) { const dx = t.x - p.x, dy = t.y - p.y, d = Math.hypot(dx, dy); if (d < 0.5) return; const s = Math.min(d, v * dt); p.x += dx / d * s; p.y += dy / d * s; }
   function segD(q, a, b) { const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy || 1, k = clamp(((q.x - a.x) * dx + (q.y - a.y) * dy) / l, 0, 1); return Math.hypot(a.x + dx * k - q.x, a.y + dy * k - q.y); }
   const ATK = ['mano', 'cara', 'dois', 'cabeca'];
-  const LABEL = { pressao: ['Bote', 'roubar'], cara: ['Chutar', 'no canto'], dois: ['Chutar', 'ou tocar'], cabeca: ['Pular', 'cabeceio'], mano: ['Chutar', 'no canto'], passe3: ['Passar', 'pra quem aponta'], bote: ['Carrinho', 'bote'], saida: ['Pular', 'mergulho'] };
+  const LABEL = { pressao: ['Bote', 'roubar'], cara: ['Chutar', 'no canto'], dois: ['Chutar', 'ou tocar'], cabeca: ['Arrancar', 'até a bola'], mano: ['Chutar', 'no canto'], passe3: ['Passar', 'pra quem aponta'], bote: ['Carrinho', 'bote'], saida: ['Pular', 'mergulho'] };
   const HELP = {
     pressao: 'Fique entre ele e a saída (embaixo) e dê o <b>bote</b> de frente e perto',
     cara: 'Ele sai do gol: <b>chute</b> antes de ele chegar ou drible e toque para o gol vazio',
     dois: 'Aponte para o companheiro e o botão <b>toca</b>; para o gol, ele <b>chuta</b>',
-    cabeca: 'Chegue no <b>ponto</b> antes do marcador; a cabeçada vai para onde o analógico aponta',
+    cabeca: 'Corra para o <b>círculo</b> e fique nele: a cabeçada sai <b>sozinha</b> quando a bola chegar, no canto do analógico',
     mano: 'Passe pelo zagueiro e <b>chute</b>: a bola vai no canto para onde o analógico aponta',
     passe3: 'Aponte o analógico para o companheiro <b>livre</b> e passe',
     bote: 'Fique entre ele e o gol; <b>carrinho</b> de frente e perto',
@@ -55,10 +55,10 @@
     } else if (kind === 'cara') { S.me = P(GX + (Math.random() * 60 - 30), 300, myNum); S.kp = kp; S.foes = [P(GX + (Math.random() < 0.5 ? -80 : 80), 440, 4)]; S.own = S.me; S.limit = 6; }
     else if (kind === 'dois') { S.me = P(GX - 55, 360, myNum); S.mates = [Object.assign(P(GX + 65, 350, 9), { lane: { x: GX + 45, y: 80 } })]; S.foes = [P(GX + 5, 210, 4)]; S.kp = kp; S.own = S.me; S.limit = 6; }
     else if (kind === 'cabeca') {
-      S.me = P(GX + 50, 230, myNum); S.foes = [P(GX + 30, 205, 4)]; S.kp = kp; S.own = null;
+      S.me = P(GX + 50, 220, myNum); S.foes = [P(GX + 40, 245, 4)]; S.kp = kp; S.own = null;
       const fromR = Math.random() < 0.5;
       S.cross = { x0: fromR ? W - 18 : 18, y0: 40 + Math.random() * 50, x1: GX + (Math.random() * 100 - 50), y1: 78 + Math.random() * 42, t0: 0.7, dur: 1.45 };
-      if (!fromR) { S.me.x = GX - 50; S.foes[0].x = GX - 30; }
+      if (!fromR) { S.me.x = GX - 50; S.foes[0].x = GX - 40; }
     } else if (kind === 'pressao') { S.me = P(GX, 300, myNum); S.atk = P(GX + (Math.random() * 100 - 50), 110, 4); S.kp = kp; S.own = S.atk; S.atkSide = Math.random() < 0.5 ? -1 : 1; S.limit = 6; }
     else if (kind === 'bote') { S.me = P(GX, 190, myNum); S.atk = P(GX + (Math.random() * 120 - 60), 400, 9); S.kp = kp; S.own = S.atk; S.atkSide = Math.random() < 0.5 ? -1 : 1; }
     else { S.me = P(GX, 34, 1); S.atk = P(Math.random() < 0.5 ? 60 : 300, 330, 9); S.own = S.atk; S.shootY = 130 + Math.random() * 90; }
@@ -156,8 +156,8 @@
         // Marcador: cola em você; depois de ver a bola sair, vai no ponto (atrasado)
         // Quem chega primeiro no ponto segura a posição; o outro fica no corpo a corpo
         if (!S.meAt && dist(me, land) < 16) S.meAt = S.t; if (!S.mkAt && dist(mk, land) < 16) S.mkAt = S.t;
-        const mkT = S.t > cr.t0 + 0.4 ? (S.meAt && !S.mkAt && dist(me, land) < 18 ? { x: land.x + (mk.x - me.x) * 0.9, y: land.y + (mk.y - me.y) * 0.9 } : land) : { x: me.x + (GX - me.x) * 0.2, y: me.y - 16 };
-        toward(mk, mkT, 80 / Math.sqrt(K), dt);
+        const mkT = S.t > cr.t0 + 0.6 ? (S.meAt && !S.mkAt && dist(me, land) < 18 ? { x: land.x + (mk.x - me.x) * 0.9, y: land.y + (mk.y - me.y) * 0.9 } : land) : { x: me.x + (GX - me.x) * 0.2, y: me.y + 18 }; // antes do cruzamento ele marca por trás
+        toward(mk, mkT, 74 / Math.sqrt(K), dt);
         const sep = dist(mk, me); if (sep < 22 && sep > 0.1) { mk.x = me.x + (mk.x - me.x) / sep * 22; mk.y = me.y + (mk.y - me.y) / sep * 22; } // corpo a corpo: um não passa por dentro do outro
         kpAngle(land);
         if (!S.headed) {
@@ -165,7 +165,7 @@
           if (k > 0) { const kk = Math.min(1, k); S.ball.x = lerp(cr.x0, cr.x1, kk); S.ball.y = lerp(cr.y0, cr.y1, kk); S.ball.h = Math.sin(Math.PI * kk) * 0.9; }
           if (k >= 1) {
             S.headed = 1; S.ball.h = 0; const dm = dist(me, land), dk = dist(mk, land), first = S.meAt && (!S.mkAt || S.meAt <= S.mkAt);
-            if (dm < 22 && (first || dm < dk - 4)) { shoot({ x: land.x, y: land.y + 10 }, aimX(), 6 / K); S.ball.fly.dur *= 1.1; }
+            if (dm < 24 && (first || dm < dk - 4)) { shoot({ x: land.x, y: land.y + 10 }, aimX(), 6 / K); S.ball.fly.dur *= 1.1; }
             else return lose(dk < dm ? 'disputa' : 'longe', dk < dm ? 'CORTOU…' : 'PASSOU…');
           }
         }
@@ -242,7 +242,7 @@
       // Chute: o goleiro pula para onde a bola cruza a altura dele; quem estiver no caminho bloqueia
       const keeper = kind === 'saida' ? S.me : S.kp;
       if (f.xk === undefined) { const kk = (f.y0 - keeper.y) / Math.max(1, f.y0 - f.y1); f.xk = f.x0 + (f.x1 - f.x0) * clamp(kk, 0, 1); }
-      if (kind !== 'saida' && S.t - f.t0 > 0.12) toward(keeper, { x: f.xk, y: keeper.y }, kind === 'saida' ? 56 * Math.sqrt(K) : kind === 'cara' ? 45 / Math.sqrt(K) : kind === 'cabeca' ? 40 / Math.sqrt(K) : ATK.includes(kind) ? 48 / Math.sqrt(K) : 40, 1 / 60);
+      if (kind !== 'saida' && S.t - f.t0 > 0.12) toward(keeper, { x: f.xk, y: keeper.y }, kind === 'saida' ? 56 * Math.sqrt(K) : kind === 'cara' ? 45 / Math.sqrt(K) : kind === 'cabeca' ? 32 / Math.sqrt(K) : ATK.includes(kind) ? 48 / Math.sqrt(K) : 40, 1 / 60);
       const block = S.t - f.t0 < 0.06 || kind === 'cabeca' ? null : (S.foes || []).concat(kind === 'bote' ? [S.me] : []).find(o => dist(o, S.ball) < (kind === 'bote' ? 9 : 11));
       if (block && ATK.includes(kind)) { f.end = 1; return lose('bloqueio', 'TRAVADO…'); }
       if (block && kind === 'bote') { f.end = 1; return finish(true, 'travou', 'TRAVOU!'); }
@@ -298,7 +298,14 @@
       if (!S.over && (kind === 'mano' || kind === 'cara' || (kind === 'dois' && !passAim())) && S.own) { const ax = aimX(); g.strokeStyle = 'rgba(242,194,48,.55)'; g.setLineDash([4, 6]); g.lineWidth = 2; g.beginPath(); g.moveTo(S.ball.x, S.ball.y); g.lineTo(ax, GY); g.stroke(); g.setLineDash([]); g.fillStyle = '#F2C230'; g.beginPath(); g.arc(ax, GY - 3, 4, 0, 7); g.fill(); }
       if (!S.over && kind === 'passe3' && S.own) { const m = target(); if (m) { g.strokeStyle = '#F2C230'; g.lineWidth = 3; g.beginPath(); g.arc(m.x, m.y, 19, 0, 7); g.stroke(); } }
       if (!S.over && kind === 'dois' && S.own) { const m = S.mates[0], on = passAim(); g.strokeStyle = on ? '#F2C230' : 'rgba(242,194,48,.35)'; g.setLineDash(on ? [8, 6] : [3, 6]); g.lineWidth = on ? 3 : 2; g.beginPath(); g.moveTo(S.ball.x, S.ball.y); g.lineTo(m.x, m.y); g.stroke(); g.setLineDash([]); }
-      if (kind === 'cabeca' && !S.headed && S.t > S.cross.t0 - 0.3) { g.strokeStyle = '#F2C230'; g.lineWidth = 2; g.setLineDash([4, 4]); g.beginPath(); g.arc(S.cross.x1, S.cross.y1, 14, 0, 7); g.stroke(); g.setLineDash([]); }
+      if (kind === 'cabeca' && !S.headed) { // onde a bola cai: o anel fecha até a hora da cabeçada; verde = a bola é sua, vermelho = do marcador
+        const cr = S.cross, land = { x: cr.x1, y: cr.y1 }, k = clamp((S.t - cr.t0) / cr.dur, 0, 1), dm = dist(S.me, land), dk = dist(S.foes[0], land);
+        const mine = dm < 24 && (S.meAt && (!S.mkAt || S.meAt <= S.mkAt) || dm < dk - 4), theirs = !mine && dk < 24;
+        const col = mine ? '#4CD07D' : theirs ? '#FF7A6E' : '#F2C230';
+        g.fillStyle = mine ? 'rgba(76,208,125,.22)' : theirs ? 'rgba(255,122,110,.2)' : 'rgba(242,194,48,.16)'; g.beginPath(); g.arc(land.x, land.y, 22, 0, 7); g.fill();
+        g.strokeStyle = col; g.lineWidth = 2.5; g.beginPath(); g.arc(land.x, land.y, 22, 0, 7); g.stroke();
+        if (k > 0) { g.lineWidth = 2; g.setLineDash([4, 4]); g.beginPath(); g.arc(land.x, land.y, 22 + 46 * (1 - k), 0, 7); g.stroke(); g.setLineDash([]); }
+      }
       if (kind === 'saida' && S.aim && !S.shot) { // a linha do chute que ele armou
         const k = Math.min(1, (S.t - S.aim.t) / WINDUP); g.strokeStyle = 'rgba(255,122,110,' + (0.55 + 0.45 * k) + ')'; g.lineWidth = 3; g.setLineDash([7, 5]);
         g.beginPath(); g.moveTo(S.ball.x, S.ball.y); g.lineTo(S.aim.x, GY); g.stroke(); g.setLineDash([]);
