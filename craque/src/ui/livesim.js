@@ -168,7 +168,8 @@
         if (mid && p === mid) due.asDone = true;
         // Gol só de perto da área: quem vai marcar e ainda está longe conduz para dentro antes de bater
         const near = due.out && due.out !== 'gol'; // chance que não entra (Treinador): pode bater de mais longe
-        const inBox = due.now || (bx > (near ? 70 : 79) && Math.abs(by - 34) < (near ? 22 : 17)); // now: a tela já esperou demais, bate de onde estiver
+        // now: a tela já esperou demais; bate de mais longe, mas nunca do meio-campo (só da entrada da área para a frente)
+        const inBox = (due.now && bx > 70 && Math.abs(by - 34) < 24) || (bx > (near ? 70 : 79) && Math.abs(by - 34) < (near ? 22 : 17));
         if (p === sc && !inBox) { const [wx, wy] = toW(s, Math.min(bx + 12, 90), 34 + (by - 34) * 0.4); ball.carry = { x: wx, y: wy, t: 0.8 }; return; }
         // Chegou cedo? Prepara (ajeita para o lado) até o minuto do gol, para a rede balançar junto com o placar
         if (inBox && (p === sc || (!due.me && !mid)) && curT < due.m - 1) { const [wx, wy] = toW(s, Math.min(bx + 1.5, 92), cl(by + (by < 34 ? 3 : -3), 22, 46)); ball.carry = { x: wx, y: wy, t: 0.35 }; return; }
@@ -239,6 +240,7 @@
       else if (out === 'def') { ty = cl(gk.y + gauss() * 1.6, GL + 0.4, GR - 0.4); tx = gk.x + (s ? 0.6 : -0.6); }
       else ty = rnd() < 0.5 ? GL - 1 - rnd() * 4 : GR + 1 + rnd() * 4;
       const d = Math.hypot(tx - ball.x, ty - ball.y);
+      api._lastShot = { x: tf(s, ball)[0], out };
       ball.fly = { x0: ball.x, y0: ball.y, x1: tx, y1: ty, t: 0, dur: forced ? cl(d / 28, 0.3, 1) : Math.max(0.3, d / (kind === 'cabeca' ? 15 : 25)), shot: true, out, side: s, from: p, kind, lc: !!want, loft: kind === 'cabeca' ? 2 : kind === 'fora' ? 5 : 2.5, curve: gauss() * 2 };
       ball.owner = null; ball.carry = null; ball.loose = null;
     }
