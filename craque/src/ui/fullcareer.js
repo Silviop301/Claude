@@ -493,8 +493,9 @@
       '<div class="lp-sc"><b><span id="fc-sh">0</span><i>x</i><span id="fc-sa">0</span></b><small class="lp-min" id="fc-lt">0\'</small></div>' + side(a) + '</div>' +
       '<div class="lp-lbl lp-whor"><span>Quem manda no jogo</span><span id="lp-who"></span></div><div id="lp-strip"></div></div>';
   }
+  const numOf = c => (c.pos === 'GOL' ? 1 : c.pos === 'ZAG' ? 4 : c.pos === 'MEI' ? 10 : 9);
   function flowBox(c, x, f, meIdx) {
-    return U.LP.pitch({ me: f.on ? meIdx : -1, num: c.pos === 'GOL' ? 1 : c.pos === 'ZAG' ? 4 : c.pos === 'MEI' ? 10 : 9 }) +
+    return U.LP.pitch({ cv: !!U.LP.sim, me: f.on ? meIdx : -1, num: numOf(c) }) +
       (f.on ? '' : '<p class="lp-off">' + (x.injury ? 'Você está fora, lesionado. Acompanha da arquibancada.' : 'Você está no banco. Acompanha de perto.') + '</p>');
   }
   function notaBox(f) {
@@ -1523,7 +1524,11 @@
     const bigM = o.stop ? stopAt : o.from || 0;
     const stars = () => (fl && fl.on ? fl.lances.filter(l => !(o.stop && l.m >= stopAt)).map(l => ({ m: l.m, down: !l.up })) : []).concat(bigM && (!o.stop || t >= stopAt) ? [{ m: bigM, big: true }] : []);
     if (x.vs) $('fc-match').innerHTML = sbLive(x); else $('fc-match').innerHTML = card('live', x, t);
-    const pitch = () => { if (!fl) return; $('fc-flow').innerHTML = flowBox(c, x, fl, meIdx); U.LP.resetTrail(); };
+    // Os jogadores que decidem (ui/livesim.js): o motor só diz quem está melhor e quando sai cada gol
+    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), t0, speed: () => (fast ? 3 : 1),
+      seed: (Number(c.tseed) || 1) * 7 + c.fc.season * 101 + c.fc.i * 13 + t0,
+      goals: out.my.ev.filter(e => !o.stop || e.m < stopAt).map(e => ({ m: e.m, side: e.s === (nx.home ? 'h' : 'a') ? 0 : 1, me: !!e.me, as: !!e.as })) }) : null;
+    const pitch = () => { if (!fl) return; $('fc-flow').innerHTML = flowBox(c, x, fl, meIdx); U.LP.resetTrail(); if (sim) sim.attach($('lp-cv')); };
     pitch();
     if (fl) fl.lances.forEach(l => { if (l.m <= t0) flSeen.add(l); });
     $('fc-nota').innerHTML = fl ? notaBox(fl) : '';
@@ -1626,11 +1631,19 @@
     }
     // O campinho e você no minuto T
     function lpAt(T, since) {
-      const b = fl.bx[Math.min(T, 100)], by = U.LP.ballY(T, b);
-      const toMe = fl.on && (fl.lances.some(l => l.m === T) || (o.stop && T >= stopAt - 1) || (o.from && T === o.from));
-      const sp = U.LP.spots(T, b, meIdx, toMe);
-      U.LP.place(sp, meIdx);
-      if (meIdx >= 0) path[T] = sp.us[meIdx];
+      const b = fl.bx[Math.min(T, 100)];
+      let by;
+      if (sim) {
+        sim.minute(T, b); sim.energy(onPitch ? enNow() : null);
+        if (fl.on && since === undefined && fl.lances.some(l => l.m === T)) sim.lance();
+        by = sim.ballAt()[1]; if (meIdx >= 0) path[T] = sim.meAt();
+      } else {
+        by = U.LP.ballY(T, b);
+        const toMe = fl.on && (fl.lances.some(l => l.m === T) || (o.stop && T >= stopAt - 1) || (o.from && T === o.from));
+        const sp = U.LP.spots(T, b, meIdx, toMe);
+        U.LP.place(sp, meIdx);
+        if (meIdx >= 0) path[T] = sp.us[meIdx];
+      }
       const lado = by < 38 ? 'pela esquerda' : by > 62 ? 'pela direita' : 'pelo meio';
       U.LP.band(b, b >= 68 ? meName + ' ataca ' + lado : b <= 32 ? opName + ' ataca ' + lado : b >= 55 ? meName + ' no campo de ataque' : b <= 45 ? opName + ' no campo de ataque' : 'Disputa no meio-campo');
       let own = 0; for (let k = 0; k <= T && k <= 100; k++) if (fl.bx[k] >= 50) own++;
@@ -1693,11 +1706,11 @@
       if (!$('fc-match')) return; // saiu da tela: o jogo já está salvo
       if (t === 45 && !half) {
         // Intervalo: o jogo para; o energético só aparece aqui
-        half = true; sfx('whistle'); frame(t); // frame(t): não repete o gol do minuto 45 na lista
+        half = true; sfx('whistle'); frame(t); if (sim) sim.half(); // frame(t): não repete o gol do minuto 45 na lista
         if (fl) halfView();
         if (onPitch) effBox();
         return stopActs('fc-2t', 'Começar o 2º tempo', onPitch ? 'Escolha o esforço' + (eff.drink ? '' : ' e se toma o energético') : '', () => {
-          $('fc').classList.remove('lp-hv'); pitch(); liveActs(); timer = setTimeout(() => { if (onPitch) effBox(); tick(); }, 300); });
+          $('fc').classList.remove('lp-hv'); pitch(); if (sim) sim.second(); liveActs(); timer = setTimeout(() => { if (onPitch) effBox(); tick(); }, 300); });
       }
       half = false; t++;
       if (onPitch && t <= 90) { eff.mins[eff.lvl]++; effTick(); }
@@ -1710,7 +1723,8 @@
     function pause() {
       clearTimeout(timer);
       const jogo = o.stop.type === 'jogo', lt = $('fc-lt'); if (lt) lt.textContent = clock(stopAt);
-      if (fl && fl.on) { U.LP.place(U.LP.spots(stopAt, fl.bx[Math.min(stopAt, 100)], meIdx, true), meIdx); }
+      if (sim) { sim.lance(); setTimeout(() => sim.freeze(true), 1100); }
+      else if (fl && fl.on) { U.LP.place(U.LP.spots(stopAt, fl.bx[Math.min(stopAt, 100)], meIdx, true), meIdx); }
       U.LP.banner(jogo ? 'SEU LANCE' : 'LANCE DECISIVO', clock(stopAt), 'gold');
       $('fc-acts').innerHTML = '';
       sfx('whistle');
@@ -1720,7 +1734,7 @@
     let finished = false;
     function done() {
       if (finished) return; finished = true;
-      clearTimeout(timer);
+      clearTimeout(timer); if (sim) sim.stop();
       // Esforço: os minutos que faltaram (pulou para o fim) contam no nível escolhido; a energia e a nota fecham no motor
       if (onPitch) { eff.mins[eff.lvl] += Math.max(0, 90 - eff.mins.reduce((a, b) => a + b, 0)); S.fcEffort(c, out, eff.mins, eff.drink); eff = null; save(); }
       // A tabela volta a ter o jogo somado
