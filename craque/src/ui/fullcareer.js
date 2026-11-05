@@ -69,20 +69,21 @@
     const nx = S.fcNext(c), fc = c.fc, kind = S.fcKind(c, nx);
     return '<div class="ph-side p2-foot">' +
         '<p class="prc-kind ' + kind + '">' + kindTxt(c, nx, kind) + '</p>' +
-        '<button class="prc-tk" id="fc-play"><span class="prc-tk-m"><b>' + (nx.moment ? 'Jogar a decisão' : kind === 'vivo' ? 'Ir pro jogo' : nx.vs ? 'Jogar' : 'Seguir') + '</b><small>' +
+        '<button class="prc-tk" id="fc-play"><span class="prc-tk-m"><b>' + (nx.moment ? 'Jogar a decisão' : nx.vs ? 'Ir pro jogo' : 'Seguir') + '</b><small>' +
           (nx.vs ? esc(nameOf(nx.home ? c.club : nx.vs)) + ' × ' + esc(nameOf(nx.home ? nx.vs : c.club)) : esc(nx.compName)) + '</small></span><span class="prc-tk-s"><small>jogo</small><b>' + (fc.i + 1) + '</b></span></button>' +
-        '<div class="prc-sim">' + (kind === 'resumo' ? '<button class="link-btn" id="fc-live">Viver este jogo</button>' : '') +
+        // Todo jogo é vivido; resumir é escolha (o da decisão não se resume)
+        '<div class="prc-sim">' + (nx.vs && !nx.moment ? '<button class="link-btn" id="fc-brief">Resumir este jogo</button>' : '') +
           (kind !== 'vivo' ? '<button class="link-btn" id="fc-skip2">Resumir até o próximo jogo grande</button>' : '') + '</div>' +
       '</div>';
   }
   function sideBind() {
     $('fc-play').onclick = () => {
       if (G.c.fc.wkDue) { S.fcWeek(G.c, myPick()); unpick(); }
-      const n = S.fcNext(G.c), k = S.fcKind(G.c, n);
-      if (k !== 'vivo') return brief(n);
-      n.vs ? fly(n, false, () => start(n)) : start(n);
+      const n = S.fcNext(G.c);
+      if (!n.vs) return brief(n);
+      fly(n, false, () => start(n));
     };
-    if ($('fc-live')) $('fc-live').onclick = () => { sfx('tap'); S.fcLive(G.c); save(); phone(); };
+    if ($('fc-brief')) $('fc-brief').onclick = () => { sfx('tap'); if (G.c.fc.wkDue) { S.fcWeek(G.c, myPick()); unpick(); } brief(S.fcNext(G.c)); };
     if ($('fc-skip2')) $('fc-skip2').onclick = () => skipTo();
   }
   // Início do celular (proposta B do canvas "Celular do Jogo a Jogo"): a tela inteira é o aparelho. Em cima o dia e a
@@ -1321,9 +1322,9 @@
     briga: 'Briga direta na tabela', topo: 'Contra um dos três primeiros', escolha: 'Você escolheu viver' };
   function kindTxt(c, nx, kind) {
     if (kind === 'vivo') return '<b>Jogo grande</b> · ' + WHY[S.fcBig(c, nx)] + ': você vive o jogo inteiro';
-    if (kind === 'banco') return '<b>Você fica no banco</b> · o jogo passa rápido';
+    if (kind === 'banco') return '<b>Você fica no banco</b> · acompanha o jogo de perto';
     if (kind === 'folga') return '<b>Folga</b> · seu time não joga nesta data';
-    return '<b>Jogo comum</b> · passa em resumo: placar, sua nota e o que importou';
+    return '<b>Jogo da rodada</b> · você vive o jogo inteiro (ou resume, se quiser)';
   }
   // Jogo resumido, no banco ou folga: joga na hora e mostra um cartão só (placar, sua nota e um fato)
   function brief(nx) {
@@ -1520,12 +1521,38 @@
     const meIdx = fl && fl.on ? U.LP.meIndex(c.pos) : -1;
     const path = []; // onde você esteve a cada minuto (o mapa do intervalo)
     const nr = S.rng(((Number(c.tseed) || 1) * 17 + c.fc.i * 131 + 7) >>> 0); let lastNarr = t0;
+    // A narração sai do que acontece no campinho (ui/livesim.js): passe que conta, drible, desarme, chute, defesa.
+    // Uma linha a cada dois minutos no máximo (chute e defesa passam na frente), fora do minuto de gol e dos seus lances
+    const POS = { GK: 'o goleiro', LB: 'o lateral', RB: 'o lateral', CB: 'o zagueiro', DM: 'o volante', CM: 'o meia', LM: 'o meia', RM: 'o meia', LW: 'o ponta', RW: 'o ponta', ST: 'o centroavante' };
+    const nmP = k => (k === 'me' ? '<b class="lp-nm">' + esc(sobre(c)) + '</b>' : POS[k] || 'o jogador');
+    const deP = k => (k === 'me' ? 'de <b class="lp-nm">' + esc(sobre(c)) + '</b>' : 'd' + (POS[k] || 'o jogador'));
+    function narrSim(k, d) {
+      if (half || finished || (o.stop && t >= stopAt - 1)) return;
+      const big = k === 'defesa' || k === 'fora';
+      if (t - lastNarr < (big ? 1 : 2) || (fl && fl.lances.some(l => Math.abs(l.m - t) <= 1)) || out.my.ev.some(e => Math.abs(e.m - t) <= 1)) return;
+      const tm = esc(d.side ? opName : meName), how = d.how === 'cabeca' ? ' de cabeça' : d.how === 'fora' ? ' de fora da área' : '';
+      const L = {
+        costas: tm + ': lançamento nas costas da zaga para ' + nmP(d.b),
+        inv: tm + ': ' + nmP(d.a) + ' inverte o jogo',
+        longo: tm + ': bola longa ' + deP(d.a) + ' para ' + nmP(d.b),
+        cruz: tm + ': ' + nmP(d.a) + ' cruza na área',
+        drible: tm + ': ' + nmP(d.a) + ' passa pelo marcador',
+        desarme: tm + ': ' + nmP(d.a) + ' desarma ' + (d.b === 'me' ? nmP(d.b) : nmP(d.b) + ' ' + esc(D.do(d.side ? meName : opName))),
+        corte: tm + ': ' + nmP(d.a) + ' corta o passe',
+        defesa: 'Defesa do goleiro ' + esc(D.do(d.side ? meName : opName)) + ' no chute ' + deP(d.a) + how,
+        fora: tm + ': ' + nmP(d.a) + ' chuta' + how + ' e a bola sai'
+      }[k];
+      if (!L) return;
+      lastNarr = t;
+      const mine = d.a === 'me' || d.b === 'me';
+      feed(t, L.replace(/: o /, ': O ').replace(/^o /, 'O '), mine ? 'me' + (k === 'desarme' && d.b === 'me' ? ' bad' : '') : '', mine && k !== 'fora' && !(k === 'desarme' && d.b === 'me') && d.side === 0);
+    }
     // O minuto do seu lance decisivo (estrela grande na faixa)
     const bigM = o.stop ? stopAt : o.from || 0;
     const stars = () => (fl && fl.on ? fl.lances.filter(l => !(o.stop && l.m >= stopAt)).map(l => ({ m: l.m, down: !l.up })) : []).concat(bigM && (!o.stop || t >= stopAt) ? [{ m: bigM, big: true }] : []);
     if (x.vs) $('fc-match').innerHTML = sbLive(x); else $('fc-match').innerHTML = card('live', x, t);
     // Os jogadores que decidem (ui/livesim.js): o motor só diz quem está melhor e quando sai cada gol
-    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), t0, speed: () => (fast ? 3 : 1),
+    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), t0, speed: () => (fast ? 3 : 1), onEv: (k, d) => narrSim(k, d),
       seed: (Number(c.tseed) || 1) * 7 + c.fc.season * 101 + c.fc.i * 13 + t0,
       goals: out.my.ev.filter(e => !o.stop || e.m < stopAt).map(e => ({ m: e.m, side: e.s === (nx.home ? 'h' : 'a') ? 0 : 1, me: !!e.me, as: !!e.as })) }) : null;
     const pitch = () => { if (!fl) return; $('fc-flow').innerHTML = flowBox(c, x, fl, meIdx); U.LP.resetTrail(); if (sim) sim.attach($('lp-cv')); };
@@ -1536,18 +1563,38 @@
     // Energia descendo minuto a minuto e o esforço escolhido na hora (quem está em campo); senão, o quadro de sempre
     const onPitch = !!(out.my && out.my.on && c.fc.en !== undefined && out.en !== undefined), enBase = out.en || 0;
     if (!eff) eff = { lvl: 1, mins: [0, Math.max(0, t0), 0], drink: false };
-    const spentOf = () => eff.mins.reduce((a, m, k) => a + m * S.FC_EFF[k].en, 0) * enBase / 90;
-    const lvlOf = e => (e < S.FC_EN_OUT ? 'out' : e < S.FC_EN_LOW ? 'low' : 'ok');
-    const enNow = () => Math.max(0, Math.min(100, Math.round((x.en0 === undefined ? 100 : x.en0) - spentOf() + (eff.drink ? S.FC_DRINK_EN : 0))));
+    // Fôlego (S.fcStRate): sai da energia de antes do jogo e cai minuto a minuto; sem fôlego no 2º tempo, o técnico tira você
+    const stR = S.FC_EFF.map((f, k) => S.fcStRate(c, k));
+    if (eff.st === undefined) { eff.st = (x.en0 === undefined ? 100 : x.en0) - Math.max(0, t0) * stR[1]; eff.subAt = (out.my && out.my.subAt) || 0; }
+    void enBase;
+    const lvlOf = e => (e <= S.FC_ST.sub ? 'out' : e < S.FC_EN_LOW ? 'low' : 'ok');
+    const enNow = () => Math.max(0, Math.min(100, Math.round(eff.st)));
+    // Um minuto em campo: gasta o fôlego no esforço escolhido; acabou no 2º tempo (fora do lance que ainda vai vir), sai
+    function drain(m) {
+      if (!onPitch || eff.subAt || m > 90) return;
+      eff.mins[eff.lvl]++; eff.st = Math.max(0, eff.st - stR[eff.lvl]);
+      if (!o.stop && m >= S.FC_ST.from && m <= 86 && eff.st <= S.FC_ST.sub) subOut(m);
+    }
+    function subOut(m) {
+      const n = fl && fl.on ? Math.max(4.5, Math.min(10, fl.nota[Math.min(m, 100)] + (fl.off || 0))) : out.my.rating;
+      S.fcSub(c, out, m, n - (fl && fl.on ? fl.off || 0 : 0)); // o esforço entra no fim (S.fcEffort) eff.subAt = m;
+      if (fl) { fl.lances = fl.lances.filter(l => l.m <= m); for (let k = m + 1; k <= 100; k++) fl.nota[k] = fl.nota[m]; }
+      if (sim) sim.sub();
+      U.LP.banner('SUBSTITUIÇÃO', 'Você sai sem fôlego aos ' + m + "'", 'down');
+      feed(m, '<b class="lp-nm">' + esc(sobre(c)) + '</b> sai sem fôlego. Nota final <b>' + rate(n) + '</b>', 'me bad');
+      save(); effBox();
+    }
     function effBox() {
-      const e = enNow(), dp = S.fcDrinkPrice(c), canDrink = !eff.drink && half && (c.money || 0) >= dp;
+      const e = enNow();
+      if (eff.subAt) { $('fc-wk').className = 'fc-wk fc-ef'; $('fc-wk').innerHTML = '<div class="fc-st"><span>Energia</span><div class="fc-en out"><i style="width:' + e + '%"></i></div><b class="out">' + e + '</b></div><p class="fc-ef-hint">Substituído aos ' + eff.subAt + "' · sem fôlego. Depois do jogo a energia volta a subir.</p>"; return; }
+      const dp = S.fcDrinkPrice(c), canDrink = !eff.drink && half && (c.money || 0) >= dp;
       $('fc-wk').className = 'fc-wk fc-ef';
       $('fc-wk').innerHTML = '<div class="fc-st"><span>Energia</span><div class="fc-en ' + lvlOf(e) + '"><i style="width:' + e + '%"></i></div><b class="' + lvlOf(e) + '">' + e + '</b></div>' +
         '<div class="fc-ef-row"><span>Esforço</span><div class="seg fc-ef-seg">' + S.FC_EFF.map((f, k) => '<button data-e="' + k + '"' + (k === eff.lvl ? ' class="on"' : '') + '>' + f.name + '</button>').join('') + '</div></div>' +
-        '<p class="fc-ef-hint">' + ['Poupa energia, mas a nota cai um pouco.', 'Gasto normal de energia.', 'Nota sobe, mas a energia desce bem mais rápido.'][eff.lvl] + '</p>' +
+        '<p class="fc-ef-hint">' + ['Poupa energia, mas a nota cai um pouco.', 'Gasto normal de energia.', 'Nota sobe, mas o fôlego acaba antes: sem energia no 2º tempo, o técnico tira você.'][eff.lvl] + '</p>' +
         (eff.drink ? '<p class="fc-ef-hint up">Energético tomado: +' + S.FC_DRINK_EN + ' de energia.</p>' : half ? '<button class="btn ghost fc-drink" id="fc-drink"' + (canDrink ? '' : ' disabled') + '>Energético pro 2º tempo · R$ ' + U.money(dp) + '<small>+' + S.FC_DRINK_EN + ' de energia' + ((c.money || 0) < dp ? ' · sem dinheiro' : '') + '</small></button>' : '');
       $('fc-wk').querySelectorAll('[data-e]').forEach(b => { b.onclick = () => { sfx('tap'); eff.lvl = +b.dataset.e; effBox(); }; });
-      if ($('fc-drink')) $('fc-drink').onclick = () => { if ((c.money || 0) < dp) return; sfx('coin'); eff.drink = true; effBox(); };
+      if ($('fc-drink')) $('fc-drink').onclick = () => { if ((c.money || 0) < dp) return; sfx('coin'); eff.drink = true; eff.st = Math.min(100, eff.st + S.FC_DRINK_EN); effBox(); };
     }
     // Só o número e a barra (a cada minuto), sem redesenhar os botões
     function effTick() {
@@ -1571,7 +1618,9 @@
       const spd = v => { fast = v; $('fc-slow').classList.toggle('on', !v); $('fc-fast').classList.toggle('on', v); };
       $('fc-slow').onclick = () => spd(false);
       $('fc-fast').onclick = () => spd(true);
-      $('fc-skip').onclick = () => { clearTimeout(timer); if (o.stop) { const t1 = t; t = stopAt; frame(t1); return pause(); } const t1 = t; t = end; frame(t1); done(); };
+      // Pulou: os minutos que passaram gastam o fôlego (e podem tirar você) antes de mostrar o que aconteceu
+      const catchUp = to => { for (let m = t + 1; m <= to; m++) drain(m); };
+      $('fc-skip').onclick = () => { clearTimeout(timer); if (o.stop) { const t1 = t; catchUp(stopAt); t = stopAt; frame(t1); return pause(); } const t1 = t; catchUp(end); t = end; frame(t1); done(); };
     }
     // Parada (antes do jogo e no intervalo): um botão dourado segue; dá tempo de escolher o esforço e o energético
     function stopActs(id, label, sub, go) {
@@ -1649,7 +1698,7 @@
       let own = 0; for (let k = 0; k <= T && k <= 100; k++) if (fl.bx[k] >= 50) own++;
       const pe = $('lp-pos'); if (pe) pe.textContent = 'Posse ' + Math.round(own / (Math.min(T, 100) + 1) * 100) + '%';
       // Narração de fundo, de tempos em tempos (no minuto a minuto, não quando pulou)
-      if (since === undefined && T - lastNarr >= 5 && nr() < 0.3 && !fl.lances.some(l => l.m === T) && !out.my.ev.some(e => e.m === T)) { lastNarr = T; feed(T, esc(narr(nr, b, by, meName, opName)), ''); }
+      if (!sim && since === undefined && T - lastNarr >= 5 && nr() < 0.3 && !fl.lances.some(l => l.m === T) && !out.my.ev.some(e => e.m === T)) { lastNarr = T; feed(T, esc(narr(nr, b, by, meName, opName)), ''); }
       if (!fl.on) return;
       const n = Math.max(4.5, Math.min(10, fl.nota[Math.min(T, 100)] + (fl.off || 0)));
       $('fl-n').textContent = rate(n);
@@ -1713,7 +1762,7 @@
           $('fc').classList.remove('lp-hv'); pitch(); if (sim) sim.second(); liveActs(); timer = setTimeout(() => { if (onPitch) effBox(); tick(); }, 300); });
       }
       half = false; t++;
-      if (onPitch && t <= 90) { eff.mins[eff.lvl]++; effTick(); }
+      if (onPitch && t <= 90) { drain(t); effTick(); }
       frame();
       if (o.stop && t >= stopAt) return pause();
       if (t >= end) return done();
@@ -1731,12 +1780,12 @@
       const sc = x.score(stopAt - 1), m = o.stop;
       timer = setTimeout(() => { if ($('fc-match')) (jogo ? lanceScreen(m, sc, () => live({ from: stopAt })) : U.momentIntro(o.stop)); }, 1600);
     }
-    let finished = false;
+    let finished = false, stEnd = null;
     function done() {
       if (finished) return; finished = true;
       clearTimeout(timer); if (sim) sim.stop();
       // Esforço: os minutos que faltaram (pulou para o fim) contam no nível escolhido; a energia e a nota fecham no motor
-      if (onPitch) { eff.mins[eff.lvl] += Math.max(0, 90 - eff.mins.reduce((a, b) => a + b, 0)); S.fcEffort(c, out, eff.mins, eff.drink); eff = null; save(); }
+      if (onPitch) { stEnd = enNow(); if (!eff.subAt) eff.mins[eff.lvl] += Math.max(0, 90 - eff.mins.reduce((a, b) => a + b, 0)); S.fcEffort(c, out, eff.mins, eff.drink); eff = null; save(); }
       // A tabela volta a ter o jogo somado
       if (undo) games.forEach(([a, b, g]) => add(undo === 'lg' ? c.fc.lg.tab : c.fc.cont.gtab, a, b, part(g, 99)));
       sfx('whistle');
@@ -1755,7 +1804,7 @@
       let body = '';
       if (fl && fl.on) {
         const gk = c.pos === 'GOL' || c.pos === 'ZAG';
-        body = '<div class="lp-lbl">Sua partida</div>' + statBoxes([['Nota', rate(m.rating), 1], gk ? ['Defesas', m.saves || 0] : ['Gols', m.goals || 0], gk ? ['Desarmes', m.tackles || 0] : ['Assist.', m.assists || 0], ['Energia', Math.round(c.fc.en === undefined ? 100 : c.fc.en)]]);
+        body = '<div class="lp-lbl">Sua partida</div>' + statBoxes([['Nota', rate(m.rating), 1], gk ? ['Defesas', m.saves || 0] : ['Gols', m.goals || 0], gk ? ['Desarmes', m.tackles || 0] : ['Assist.', m.assists || 0], ['Energia', (stEnd !== null ? stEnd + ' → ' : '') + Math.round(c.fc.en === undefined ? 100 : c.fc.en)]]);
         const li = mineList(99);
         if (li) body += '<div class="lp-lbl">Seus lances</div><ul class="lp-ml">' + li + '</ul>';
       } else body = '<p class="lp-off">' + (x.injury ? 'Você ficou fora, lesionado.' : 'Você não entrou em campo.') + '</p>';

@@ -932,6 +932,32 @@
   // O placar não muda (já está decidido). Energético: uma lata por jogo, devolve energia e custa dinheiro da carreira.
   S.FC_EFF = [{ id: 'low', name: 'Poupar', en: 0.6, r: -0.3 }, { id: 'mid', name: 'Normal', en: 1, r: 0 }, { id: 'high', name: 'Tudo', en: 1.5, r: 0.3 }];
   S.FC_DRINK_EN = 12;
+  // Fôlego na partida ao vivo: a barra sai da energia de antes do jogo e cai minuto a minuto até perto do fim (no Normal,
+  // com Físico 60, termina perto de 25); no "Tudo" o jogo todo chega a FC_ST.sub por volta dos 60 e o técnico tira você.
+  // O Físico estica o fôlego (90 aguenta uns 15 minutos a mais que 60); goleiro gasta menos. Depois do jogo a energia volta
+  // para a de antes menos o cansaço do jogo (out.en), como sempre.
+  S.FC_ST = { per: 0.88, sub: 20, gk: 0.6, from: 46 };
+  S.fcStRate = function (c, lvl) {
+    const fis = (S.preview(c, {}).attrs || {}).fis || 60;
+    return S.FC_ST.per * S.FC_EFF[lvl].en * clamp(1.3 - fis / 200, 0.8, 1.15) * (c.pos === 'GOL' ? S.FC_ST.gk : 1);
+  };
+  // Substituído no minuto m (sem fôlego): o placar não muda, mas gol e assistência seus depois disso viram do time e a nota
+  // fica a que você tinha quando saiu (rating, da partida ao vivo)
+  S.fcSub = function (c, out, m, rating) {
+    const fc = c.fc, my = out && out.my;
+    if (!fc || !my || !my.on || my.subAt) return null;
+    my.subAt = m;
+    let g = 0, a = 0;
+    my.ev.forEach(e => { if (e.m > m) { if (e.me) { e.me = false; g++; } if (e.as) { e.as = false; a++; } } });
+    my.goals -= g; my.assists -= a; fc.acc.goals -= g; fc.acc.assists -= a;
+    const L = fc.log[fc.log.length - 1];
+    if (L) { L.goals = my.goals; L.assists = my.assists; L.subAt = m; }
+    if (rating !== undefined) {
+      const r1 = clamp(Math.round(rating * 10) / 10, 4.5, 10), d = Math.round((r1 - my.rating) * 10) / 10;
+      my.rating = r1; fc.acc.rsum += d; if (L) L.rating = r1;
+    }
+    return { g, a };
+  };
   S.fcDrinkPrice = c => price(c, 0.25, 1500);
   // mins: minutos jogados em cada nível (na ordem de S.FC_EFF); drink: tomou o energético. Volta { extra, d } ou null
   S.fcEffort = function (c, out, mins, drink) {
