@@ -325,6 +325,9 @@
     d.onclick = e => { if (e.target === d) close(); };
   }
   const avail = p => p && !p.out && !p.sus;
+  // Cartões no elenco: pendurado (um amarelo da suspensão) e o motivo da suspensão
+  const pend = p => (p.yc || 0) === S.CO.ycMax - 1;
+  const susTxt = p => (p.ycSus ? 'suspenso, 3º amarelo' : 'suspenso, vermelho');
   // Ícones dos estilos (traço, cor do texto) e o desenho pequeno de cada formação, para os popups de tática
   const STY_IC = {
     equilibrado: '<path d="M12 4v16M5 8h14M5 8l-3 6h6zM19 8l-3 6h6z"/>',
@@ -370,15 +373,24 @@
     };
     const scoutBub = them => '<div class="co-bub"><i class="co-bub-a" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10" cy="10" r="6"/><path d="M15 15l5 5"/></svg></i>' +
       '<p>O ' + esc(club(them.club).short || club(them.club).name) + ' deve vir no <b>' + them.form + '</b>, ' + S.CO_STY[them.style].name.toLowerCase() + '.<small>Olheiro</small></p></div>';
+    // Quem está fora por cartão e quem está pendurado (o auxiliar avisa antes do jogo)
+    const cardNote = () => {
+      const out = co.squad.filter(p => p.sus), pd = co.squad.filter(p => !p.sus && pend(p) && co.xi.includes(p.id));
+      if (!out.length && !pd.length) return '';
+      return '<div class="co-bub co-cards"><i class="co-bub-a" aria-hidden="true"><span class="co-yc"></span></i><p>' +
+        (out.length ? 'Fora por cartão: ' + out.map(p => '<b>' + esc(last(p.n)) + '</b> (' + (p.ycSus ? '3º amarelo' : 'vermelho') + ')').join(', ') + '. ' : '') +
+        (pd.length ? (pd.length === 1 ? '<b>' + esc(last(pd[0].n)) + '</b> está pendurado' : 'Pendurados: ' + pd.map(p => '<b>' + esc(last(p.n)) + '</b>').join(', ')) + ': mais um amarelo e fica fora do próximo jogo.' : '') +
+        '<small>Auxiliar</small></p></div>';
+    };
     const draw = () => {
       const slots = S.coSlots(co.form), sp = spots(co.form);
       const pv = S.coPreview(co);
       const shirt = (id, i) => { const p = by[id]; if (!p) return '';
         const off = p.pos !== slots[i];
         return '<button class="co-sh' + (swap === i ? ' sel' : '') + (off ? ' off' : '') + '" data-xi="' + i + '" style="left:' + sp[i][0] + '%;top:' + sp[i][1] + '%" aria-label="' + esc(p.n) + ', ' + slots[i] + ', ' + p.ovr + '">' +
-          '<i>' + p.ovr + '</i><b>' + esc(last(p.n)) + '</b><small>' + slots[i] + (off ? ' · ' + p.pos : '') + '</small><em class="' + enCls(p.en) + '" style="width:' + Math.round(p.en) + '%"></em></button>'; };
+          '<i>' + p.ovr + '</i><b>' + esc(last(p.n)) + (pend(p) ? '<span class="co-yc" title="Pendurado"></span>' : '') + '</b><small>' + slots[i] + (off ? ' · ' + p.pos : '') + '</small><em class="' + enCls(p.en) + '" style="width:' + Math.round(p.en) + '%"></em></button>'; };
       $('co-team').innerHTML =
-        vsStrip() + (pv ? scoutBub(pv.them) : '') +
+        vsStrip() + (pv ? scoutBub(pv.them) : '') + cardNote() +
         '<div class="co-tac-h">Sua tática</div>' +
         '<div class="co-tac"><button class="co-pick" id="b-co-form"><small>Formação</small><b>' + co.form + '</b>' + CHEV + '</button>' +
           '<button class="co-pick" id="b-co-sty"><small>Estilo</small><b>' + esc(S.CO_STY[co.style].name) + '</b>' + CHEV + '</button></div>' +
@@ -397,8 +409,8 @@
       const same = rest.filter(p => p.pos === slot).sort((a, b) => avail(b) - avail(a) || score(b) - score(a));
       const other = rest.filter(p => p.pos !== slot && (p.pos === 'GOL') === (slot === 'GOL')).sort((a, b) => avail(b) - avail(a) || b.ovr - a.ovr);
       const best = same.find(avail);
-      const note = p => p.out ? 'lesionado, ' + D.plural(p.out, 'jogo', 'jogos') : p.sus ? 'suspenso' :
-        [p.age + ' anos', p === best ? 'melhor opção' : '', p.en < 55 ? 'cansado' : '', p.mo < 45 ? 'chateado' : p.mo > 75 ? 'motivado' : ''].filter(Boolean).join(' · ');
+      const note = p => p.out ? 'lesionado, ' + D.plural(p.out, 'jogo', 'jogos') : p.sus ? susTxt(p) :
+        [p.age + ' anos', p === best ? 'melhor opção' : '', pend(p) ? 'pendurado' : '', p.en < 55 ? 'cansado' : '', p.mo < 45 ? 'chateado' : p.mo > 75 ? 'motivado' : ''].filter(Boolean).join(' · ');
       const row = p => '<button class="co-pl' + (p === best ? ' best' : '') + (avail(p) ? '' : ' dis') + '" data-sub="' + p.id + '"' + (avail(p) ? '' : ' disabled') + '>' +
         '<span class="co-pos">' + p.pos + '</span><span class="co-pn"><b>' + esc(p.n) + '</b><small>' + note(p) + '</small></span>' +
         '<span class="co-en ' + enCls(p.en) + '"><em style="width:' + Math.round(p.en) + '%"></em></span><b class="co-ov">' + p.ovr + '</b></button>';
@@ -506,7 +518,10 @@
     const who = e.s === 'us' ? nm(co.club) : nm(m.vs);
     const t = e.t === 'gol' ? '<b>GOL do ' + esc(who) + '!</b> ' + esc(e.p || '') + (e.l ? ' ' + LANE[e.l] : '') :
       e.t === 'chance' ? (e.k === 'defesa' ? esc(e.p) + ' chuta ' + (e.l ? LANE[e.l] + ' ' : '') + 'e o goleiro defende' : e.k === 'fora' ? esc(e.p) + ' finaliza para fora' : e.k === 'trave' ? esc(e.p) + ' acerta a trave!' : 'Chute de ' + esc(e.p) + ' travado pela zaga') :
-      e.t === 'vermelho' ? '<span class="co-red"></span> ' + esc(e.p) + ' é expulso (' + esc(who) + ')' :
+      e.t === 'vermelho' ? (e.how === '2am' ? '<span class="co-yc"></span> ' : '') + '<span class="co-red"></span> <b>' + esc(e.p) + ' é expulso</b> (' + esc(who) + ')' + (e.how === '2am' ? ', segundo amarelo' : e.how === 'direto' ? ', vermelho direto' : '') :
+      e.t === 'amarelo' ? '<span class="co-yc"></span> Amarelo para ' + esc(e.p) + ' (' + esc(who) + ')' :
+      e.t === 'falta' ? 'Falta de ' + esc(e.p) + ' (' + esc(who) + ')' + (e.m % 3 ? '' : ' perto da área') :
+      e.t === 'impedimento' ? 'Impedimento: ' + esc(e.p) + ' saiu antes da hora (' + esc(who) + ')' :
       e.t === 'lesao' ? esc(e.p) + ' sente e pede para sair (' + esc(who) + ')' :
       e.t === 'tatica' ? (e.s === 'us' ? 'Você muda para ' + esc(e.p) : 'O ' + esc(who) + ' muda para <b>' + esc(e.p).toLowerCase() + '</b>') :
       e.t === 'troca' ? 'Sai ' + esc(e.p) + ', entra <b>' + esc(e.q) + '</b>' :
@@ -561,11 +576,12 @@
       '<div class="lv-pitch" id="lv-pitch"><div class="lv-f"><i class="c"></i><i class="b l"></i><i class="b r"></i></div><div id="lv-zone"></div><div id="lv-dots"></div><span class="lv-ball" id="lv-ball"></span>' +
         '<div class="lv-forms"><span><i class="us"></i><b id="lv-fu"></b></span><span><i class="th"></i><b id="lv-ft"></b></span></div></div>';
     render('<div class="lv">' +
-      '<div class="lv-board"><div class="lv-sc"><span>' + crestB(H.id) + '<b>' + esc(H.short || H.name) + '</b></span>' +
-        '<div class="lv-mid"><em id="lv-score">0 <i>x</i> 0</em><small id="lv-clock"><i></i>0\'</small></div><span>' + crestB(A.id) + '<b>' + esc(A.short || A.name) + '</b></span></div>' +
+      '<div class="lv-board"><div class="lv-sc"><span>' + crestB(H.id) + '<b>' + esc(H.short || H.name) + '</b><i class="lv-crd" id="lv-cd-h"></i></span>' +
+        '<div class="lv-mid"><em id="lv-score">0 <i>x</i> 0</em><small id="lv-clock"><i></i>0\'</small></div><span>' + crestB(A.id) + '<b>' + esc(A.short || A.name) + '</b><i class="lv-crd" id="lv-cd-a"></i></span></div>' +
         '<div class="lv-momh"><small>Quem manda no jogo</small><small id="lv-momw"></small></div><div id="lv-mom"></div></div>' +
       pitchHtml +
       '<div class="lv-stats"><div><small>Chutes</small><b id="lv-sh">0 · 0</b></div><div><small>No gol</small><b id="lv-ot">0 · 0</b></div><div><small>Posse</small><b id="lv-ps">50%</b></div></div>' +
+      '<div class="lv-cst" id="lv-cst"></div>' +
       '<div class="lv-aux" id="lv-aux"></div>' +
       '<ul class="lv-feed" id="lv-feed"><li><i>0\'</i><span>Bola rolando. ' + esc(nm(co.club)) + ' no ' + m.us.form + ', ' + esc(S.CO_STY[m.us.style].name.toLowerCase()) + '; ' + esc(nm(m.vs)) + ' no ' + m.them.form + '.</span></li></ul>' +
       '<div class="lv-bar"><div class="lv-speed" id="lv-speed">' + ['1', '3'].map(k => '<button data-sp="' + k + '"' + (k === co.speed ? ' class="on"' : '') + '>' + SPEED[k][0] + '</button>').join('') +
@@ -583,6 +599,13 @@
       const ps = S.coPoss(m), pu = m.home ? ps : 1 - ps, sh = m.sh || { us: 0, them: 0 }, ot = m.ot || { us: 0, them: 0 };
       const hs = m.home ? [sh.us, sh.them] : [sh.them, sh.us], ho = m.home ? [ot.us, ot.them] : [ot.them, ot.us];
       $('lv-sh').textContent = hs[0] + ' · ' + hs[1]; $('lv-ot').textContent = ho[0] + ' · ' + ho[1];
+      // Cartões embaixo do escudo e a linha de faltas, impedimentos e cartões (só o que o campinho já mostrou)
+      const vis = t => m.ev.filter(e => e.t === t && !hidden.has(e)), cnt = (t, sd) => vis(t).filter(e => e.s === sd).length;
+      const hsd = m.home ? 'us' : 'them', asd = m.home ? 'them' : 'us';
+      [['h', hsd], ['a', asd]].forEach(([k, sd]) => { const el = $('lv-cd-' + k); if (el) el.innerHTML = '<span class="co-yc"></span>'.repeat(Math.max(0, cnt('amarelo', sd) - vis('vermelho').filter(e => e.s === sd && e.how === '2am').length)) + '<span class="co-red"></span>'.repeat(cnt('vermelho', sd)); });
+      const fo = m.fo || { us: 0, them: 0 }, of = m.of || { us: 0, them: 0 }, hv2 = o => (m.home ? [o.us, o.them] : [o.them, o.us]);
+      const yH = cnt('amarelo', hsd) + vis('vermelho').filter(e => e.s === hsd && e.how === '2am').length, yA = cnt('amarelo', asd) + vis('vermelho').filter(e => e.s === asd && e.how === '2am').length;
+      if ($('lv-cst')) $('lv-cst').innerHTML = '<span>Faltas<b>' + hv2(fo).join(' · ') + '</b></span><span>Impedim.<b>' + hv2(of).join(' · ') + '</b></span><span>Cartões<b><span class="co-yc"></span> ' + yH + ' · ' + yA + (cnt('vermelho', hsd) + cnt('vermelho', asd) ? ' <span class="co-red"></span> ' + cnt('vermelho', hsd) + ' · ' + cnt('vermelho', asd) : '') + '</b></span>';
       $('lv-ps').innerHTML = Math.round((m.home ? pu : 1 - pu) * 100) + '<small>%</small>';
       $('lv-mom').innerHTML = momSvg(m);
       const mo = mom(); $('lv-momw').textContent = m.min < 5 ? 'começo de jogo' : mo > 56 ? nm(co.club) + ' por cima' : mo < 44 ? nm(m.vs) + ' por cima' : 'jogo parelho';
@@ -618,6 +641,14 @@
       const gl = [];
       m.ev.forEach(e => {
         if (sent.has(e)) return; sent.add(e);
+        // Juiz: o campinho apita e mostra o cartão; a linha sai depois (ou em 6 s, se o lance não couber)
+        if (e.t === 'falta' || e.t === 'amarelo' || e.t === 'vermelho' || e.t === 'impedimento') {
+          hidden.add(e);
+          const done = () => { if (hidden.delete(e)) paint(); };
+          sim.ref({ side: e.s === 'us' ? 0 : 1, pos: e.pos, kind: e.t, how: e.how }, done);
+          setTimeout(done, 6000);
+          return;
+        }
         if (e.t !== 'gol' && e.t !== 'chance') return;
         const side = e.s === 'us' ? 0 : 1, out = e.t === 'gol' ? 'gol' : e.k === 'defesa' || e.k === 'travado' ? 'def' : 'fora';
         hidden.add(e);
@@ -659,23 +690,45 @@
     };
     const toEnd = () => { clearTimeout(timer); wait = null; if (sim) sim.stop(); sim = null; hidden.clear(); while (!m.done) { S.coMatchStep(co, m); S.coAutoStop(co, m); } read = null; end(); };
     // O cartão da parada
+    // Parada do vermelho: o auxiliar sugere fechar o time (a formação mais segura com 10), manter, ou tirar quem tem amarelo
+    const CLOSE = { '4-4-2': '4-5-1', '4-3-3': '4-5-1', '4-2-3-1': '4-5-1', '4-5-1': '5-3-2', '3-5-2': '5-3-2', '3-4-3': '3-5-2', '5-3-2': '5-3-2' };
+    const bookedOut = () => { const s = m.us, by = {}; s.squad.forEach(p => { by[p.id] = p; }); return s.xi.filter(id => id && s.bk && s.bk[id]).map(id => by[id]).filter(Boolean).sort((a, b) => a.en - b.en)[0] || null; };
+    function redOpts(st) {
+      const s = m.us, f = CLOSE[s.form] || '4-5-1', bk = bookedOut();
+      return '<div class="lv-opts"><small class="lv-bh">O auxiliar sugere</small>' +
+        (f !== s.form ? '<button class="lv-opt" data-ro="close"><i>' + f + '</i><span><b>Fechar o time</b><small>Com um a menos, o ' + f + ' fecha o buraco no meio. Segura o resultado.</small></span></button>' : '') +
+        '<button class="lv-opt" data-ro="keep"><i>' + s.form + '</i><span><b>Manter como está</b><small>Arrisca mais, mas o time cansa e eles chegam mais.</small></span></button>' +
+        (bk && s.subs && s.bench.length ? '<button class="lv-opt" data-ro="bk"><i class="y"><span class="co-yc"></span></i><span><b>Tirar o ' + esc(last(bk.n)) + '</b><small>Tem amarelo e ' + Math.round(bk.en) + '% de energia. Mais um cartão e você fica com 9.</small></span></button>' : '') + '</div>';
+    }
+    function redPick(k) {
+      const s = m.us;
+      if (k === 'close') { const f = CLOSE[s.form] || '4-5-1'; if (f !== s.form) { S.coMatchTactic(co, m, f); m.ev.push({ m: m.min, t: 'tatica', s: 'us', p: f + ', ' + S.CO_STY[s.style].name.toLowerCase() }); if (firstMove === null) firstMove = m.min; } }
+      if (k === 'bk') {
+        const p = bookedOut(); if (!p || !s.subs) return;
+        const by = {}; s.squad.forEach(q => { by[q.id] = q; });
+        const inn = s.bench.map(id => by[id]).filter(Boolean).sort((a, b) => (b.pos === p.pos) - (a.pos === p.pos) || b.ovr - a.ovr)[0];
+        if (inn && S.coSub(co, m, p.id, inn.id)) { m.ev.push({ m: m.min, t: 'troca', s: 'us', p: last(p.n), q: last(inn.n) }); if (firstMove === null) firstMove = m.min; }
+      }
+      paint();
+    }
     const sheet = st => {
       clearTimeout(timer); open = true; read = S.coRead(co, m);
-      if (sim) { clearTimeout(frz); frz = setTimeout(() => { if (open && sim) sim.freeze(true); }, st.t === 'gol' ? 2600 : 700); }
+      if (sim) { clearTimeout(frz); frz = setTimeout(() => { if (open && sim) sim.freeze(true); }, st.t === 'gol' || st.t === 'vermelho' ? 2600 : 700); }
       const s = m.us, us = st.s === 'us';
       const T = { gol: 'Gol do ' + (us ? nm(co.club) : nm(m.vs)), intervalo: 'Intervalo', vermelho: 'Expulso', lesao: 'Lesão', pausa: 'Jogo parado' }[st.t] || 'Parada';
       const tag = { gol: us ? 'Gol' : 'Gol sofrido', intervalo: 'Intervalo', vermelho: 'Cartão vermelho', lesao: 'Lesão', pausa: 'Você parou' }[st.t] || 'Parada';
       const sh = m.sh || { us: 0, them: 0 };
       const txt = st.t === 'gol' ? esc(st.p || '') + ' marca' + (st.l ? ' ' + LANE[st.l] : '') + '.' :
         st.t === 'intervalo' ? 'Primeiro tempo: ' + D.plural(sh.us, 'chute', 'chutes') + ' seus contra ' + sh.them + ' deles.' :
-        st.t === 'vermelho' ? esc(st.p || '') + ' foi expulso. Com um a menos, fechar o time costuma segurar o resultado.' :
+        st.t === 'vermelho' ? (st.how === '2am' ? 'Segundo amarelo.' : 'Vermelho direto.') + ' O time fica com 10 até o fim e ele perde o próximo jogo.' :
         st.t === 'lesao' ? esc(st.p || '') + ' não aguenta. Troque agora ou o time joga com ele mancando.' : 'O jogo espera você.';
       $('lv-sheet').innerHTML = '<div class="lv-sh"><i class="lv-grab"></i><div class="lv-st-h"><small class="' + (st.t === 'gol' && !us || st.t === 'vermelho' || st.t === 'lesao' ? 'bad' : '') + '">' + m.min + '\' · ' + tag + '</small><b>' + m.gh + ' x ' + m.ga + '</b></div>' +
-        '<h2>' + esc(T) + '</h2><p>' + txt + '</p><div class="lv-aux in">' + auxBox(read).replace('Auxiliar, no banco', 'O auxiliar leu assim') + '</div>' +
+        '<h2>' + (st.t === 'vermelho' ? '<span class="co-red"></span> ' + esc(st.p || '') + ' foi expulso' : esc(T)) + '</h2><p>' + txt + '</p>' + (st.t === 'vermelho' ? redOpts(st) : '<div class="lv-aux in">' + auxBox(read).replace('Auxiliar, no banco', 'O auxiliar leu assim') + '</div>') +
         '<div class="lv-acts"><button class="lv-big" id="b-lv-sub"' + (s.subs ? '' : ' disabled') + '>' + ICO.sub + '<b>Trocar</b><small>' + (s.subs ? D.plural(s.subs, 'troca', 'trocas') : 'sem trocas') + '</small></button>' +
         '<button class="lv-big" id="b-lv-tac">' + ICO.tac + '<b>Tática</b><small>' + s.form + ' · ' + esc(S.CO_STY[s.style].name) + '</small></button></div>' +
         '<button class="btn" id="b-lv-go">Seguir o jogo</button></div>';
       $('lv-sheet').classList.add('on');
+      $('lv-sheet').querySelectorAll('[data-ro]').forEach(b => b.onclick = () => { sfx('tap'); redPick(b.dataset.ro); $('lv-sheet').querySelectorAll('[data-ro]').forEach(x => x.classList.toggle('on', x === b)); });
       $('b-lv-go').onclick = () => { sfx('tap'); $('lv-sheet').classList.remove('on'); open = false; if (sim) { clearTimeout(frz); sim.freeze(false); } if (co.speed === 'fim') return toEnd(); timer = setTimeout(tick, 400); };
       $('b-lv-sub').onclick = () => { sfx('tap'); subs(st); };
       $('b-lv-tac').onclick = () => { sfx('tap'); tactic(st); };
@@ -716,7 +769,7 @@
         const sort = l => l.sort((a, b) => avail(b) - avail(a) || score(b) - score(a));
         const same = sort(bench.filter(p => p.pos === slot)), other = sort(bench.filter(p => p.pos !== slot && (p.pos === 'GOL') === (slot === 'GOL')));
         const best = s.subs ? same.find(avail) || other.find(avail) : null;
-        const note = p => p.out ? 'lesionado' : p.sus ? 'suspenso' : [p === best ? 'sugestão' : '', p.age ? p.age + ' anos' : '', p.en < 55 ? 'cansado' : ''].filter(Boolean).join(' · ');
+        const note = p => p.out ? 'lesionado' : p.sus ? susTxt(p) : [p === best ? 'sugestão' : '', m.us.bk && m.us.bk[p.id] ? 'com amarelo' : '', p.age ? p.age + ' anos' : '', p.en < 55 ? 'cansado' : ''].filter(Boolean).join(' · ');
         const row = p => { const ok = s.subs && avail(p); return '<button class="co-pl' + (p === best ? ' best' : '') + (ok ? '' : ' dis') + '" data-lsub="' + p.id + '"' + (ok ? '' : ' disabled') + '>' +
           '<span class="co-pos">' + p.pos + '</span><span class="co-pn"><b>' + esc(p.n) + '</b><small>' + note(p) + '</small></span>' +
           '<span class="co-en ' + enCls(p.en) + '"><em style="width:' + Math.round(p.en) + '%"></em></span><b class="co-ov">' + p.ovr + '</b></button>'; };
@@ -820,10 +873,21 @@
     paint();
     timer = setTimeout(() => { if (sim) sim.go(); timer = setTimeout(tick, 900); }, 600);
   }
+  // Cartões de um lado no fim (amarelo e vermelho) e quem do seu time fica fora do próximo jogo por cartão
+  const cardsTxt = (m, sd) => '<span class="co-yc"></span>' + ((m.yc || {})[sd] || 0) + ((m.rc || {})[sd] ? ' <span class="co-red"></span>' + m.rc[sd] : '');
+  function susBox(m, log) {
+    const red = m.ev.filter(e => e.t === 'vermelho' && e.s === 'us').map(e => e.p), yc = log.ycOut || [];
+    const pd = co.squad.filter(p => !p.sus && pend(p) && (m.ycAdd || []).includes(p.id));
+    if (!red.length && !yc.length && !pd.length) return '';
+    return '<div class="lv-susb"><small>Cartões que pesam no próximo jogo</small>' +
+      red.map(n => '<p><span class="co-red"></span><b>' + esc(last(n)) + '</b> · vermelho<em class="out">Fora 1 jogo</em></p>').join('') +
+      yc.map(n => '<p><span class="co-yc"></span><b>' + esc(last(n)) + '</b> · 3º amarelo<em class="out">Fora 1 jogo</em></p>').join('') +
+      pd.map(p => '<p><span class="co-yc"></span><b>' + esc(last(p.n)) + '</b> · 2º amarelo no ano<em>Pendurado</em></p>').join('') + '</div>';
+  }
   function result(m, log, aux, move) {
     const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
-    const tl = m.ev.filter(e => ['gol', 'vermelho', 'tatica', 'troca'].includes(e.t) || (e.t === 'lesao' && e.s === 'us')).map(e => {
-      const mine = e.s === 'us', ic = e.t === 'gol' ? ICO.ball(mine ? '#FBF8EF' : '#9DB5A6') : e.t === 'vermelho' ? '<span class="co-red"></span>' : e.t === 'lesao' ? U.emo('🩹', 'xs') : ICO.sub;
+    const tl = m.ev.filter(e => ['gol', 'vermelho', 'amarelo', 'tatica', 'troca'].includes(e.t) || (e.t === 'lesao' && e.s === 'us')).map(e => {
+      const mine = e.s === 'us', ic = e.t === 'gol' ? ICO.ball(mine ? '#FBF8EF' : '#9DB5A6') : e.t === 'vermelho' ? '<span class="co-red"></span>' : e.t === 'amarelo' ? '<span class="co-yc"></span>' : e.t === 'lesao' ? U.emo('🩹', 'xs') : ICO.sub;
       const tx = e.t === 'tatica' ? (mine ? 'Você muda para ' + esc(e.p) : 'Mudaram para ' + esc(e.p)) : e.t === 'troca' ? 'Sai ' + esc(e.p) + ', entra ' + esc(e.q) : esc(e.p || '');
       return '<li class="' + e.s + ' ' + e.t + (mine && (e.t === 'troca' || e.t === 'tatica') ? ' you' : '') + '"><i>' + e.m + '\'</i>' + ic + '<span>' + tx + (e.t === 'troca' || (e.t === 'tatica' && mine) ? '' : ' · <small>' + esc(mine ? cl.short || cl.name : vs.short || vs.name) + '</small>') + '</span></li>'; }).join('');
     const word = log.res === 'v' ? 'Vitória' : log.res === 'e' ? 'Empate' : 'Derrota', B = co.board;
@@ -837,7 +901,10 @@
     render('<div class="co-res lv-res"><div class="lv-board"><div class="lv-eb">Rodada ' + log.r + ' · ' + word + (aux ? ' · com o auxiliar' : '') + '</div>' +
       '<div class="lv-sc"><span>' + crestB(H.id) + '<b>' + esc(H.short || H.name) + '</b></span><div class="lv-mid"><em>' + m.gh + ' <i>x</i> ' + m.ga + '</em></div><span>' + crestB(A.id) + '<b>' + esc(A.short || A.name) + '</b></span></div>' +
       (m.mom && m.mom.length ? momSvg(m, move !== null && move !== undefined ? move : null) + (move !== null && move !== undefined ? '<small class="lv-mkt">Sua mudança aos ' + move + '\'</small>' : '') : '') + '</div>' +
-      (m.sh ? '<div class="lv-cmps">' + cmp('Chutes', s1, s2) + cmp('No gol', o1, o2) + cmp('Posse', ph, 100 - ph, ph + '%', (100 - ph) + '%') + '</div>' : '') +
+      (m.sh ? '<div class="lv-cmps">' + cmp('Chutes', s1, s2) + cmp('No gol', o1, o2) + cmp('Posse', ph, 100 - ph, ph + '%', (100 - ph) + '%') +
+        (m.fo ? cmp('Faltas', ...hv(m.fo.us, m.fo.them)) + cmp('Impedimentos', ...hv((m.of || {}).us || 0, (m.of || {}).them || 0)) +
+          cmp('Cartões', ...hv(((m.yc || {}).us || 0) + ((m.rc || {}).us || 0) * 2, ((m.yc || {}).them || 0) + ((m.rc || {}).them || 0) * 2), ...hv(cardsTxt(m, 'us'), cardsTxt(m, 'them'))) : '') + '</div>' : '') +
+      susBox(m, log) +
       (tl ? '<ul class="lv-tl">' + tl + '</ul>' : '<p class="lead co-nil">Jogo truncado, sem gols.</p>') +
       cadAfter(log.cad) + ultTxt + (co.sacked ? '' : moodLine()) +
       '<button class="btn" id="b-co-next">' + (co.sacked ? 'Falar com o presidente' : 'Continuar') + '</button></div>');

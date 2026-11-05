@@ -120,7 +120,7 @@ dividem ajudantes por `CRAQUE_SIM._`. O motor não usa DOM: roda no navegador e 
 | `origins.js` | Origens e desafios (liberados por conquistas) |
 | `contract.js` | Termos do contrato e proposta no meio do contrato |
 | `fixtures.js` | Carreira Completa: calendário e placares da liga que batem com a tabela da temporada (`S.fullSeason`) |
-| `fullcareer.js` | Jogo a Jogo: calendário, semana, loja, apostas, partida; tipo de jogo `S.fcKind` (vivido, resumido, banco) |
+| `fullcareer.js` | Jogo a Jogo: calendário, semana, loja, apostas, partida; tipo de jogo `S.fcKind` (vivido, resumido, banco); faltas, cartões e impedimento `S.FC_CARD` (sorteados antes dos gols: o vermelho pesa no placar; 3 amarelos ou vermelho = 1 jogo fora; o Treinador usa `S.CO.foul/yel/redD/off` em `engine/coach.js`; o campinho mostra com `U.LP.sim().ref`) |
 | `cassino.js` | Jogo a Jogo: mesa dos fundos do Zé e a tentação |
 | `phone.js` | Jogo a Jogo: as pessoas do celular (`c.ppl`: relação só no tom, memória), mensagens depois e antes do jogo, Chat |
 | `money.js` | Jogo a Jogo, dinheiro: manutenção do status, dívida com juros (`c.debt`, `S.fcCharge`/`S.fcCredit`), bônus e luvas, saídas do vermelho (`S.fcWays`), investimentos (`S.FC_INVEST`), festa e o Zé no Chat |
