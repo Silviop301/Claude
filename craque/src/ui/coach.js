@@ -471,18 +471,44 @@
     if (e) { const us = e.s === 'us', top = e.l === 'c' ? 50 : (e.l === 'e') === us ? 22 : 78; return [us ? 88 : 12, top]; }
     return [50 + (mom - 50) * 0.7 + Math.sin(m.min * 0.9) * 12, 50 + Math.sin(m.min * 1.3) * 26];
   }
+  // A formação de verdade para o campinho com jogadores que decidem (ui/livesim.js): [papel, profundidade 0-1, largura 0-100],
+  // goleiro primeiro e o resto do mais recuado ao mais adiantado; expulso não entra (a lista fica menor)
+  function simForm(s) {
+    const sl = S.CO_FORMS[s.form].slots, sp = spots(s.form), am = sl.some(x => x.ln === 'am');
+    const DP = { g: 0, d: 0.17, m: am ? 0.42 : 0.48, am: 0.66, a: 0.88 }, out = [];
+    sl.forEach((x, i) => {
+      if (!s.xi[i] || !sp[i]) return;
+      const lat = sp[i][0], w = Math.max(8, Math.min(92, 50 + (lat - 50) * 1.25));
+      const r = x.pos === 'GOL' ? 'GK' : x.pos === 'LAT' ? (lat < 50 ? 'LB' : 'RB') : x.pos === 'ZAG' ? 'CB' : x.pos === 'ATA' ? 'ST' : x.w ? (lat < 50 ? 'LM' : 'RM') : 'CM';
+      out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w]);
+    });
+    const gk = out.filter(p => p[0] === 'GK'), rest = out.filter(p => p[0] !== 'GK').sort((a, b) => a[1] - b[1]);
+    if (!gk.length && rest.length) { const g0 = rest.shift(); g0[0] = 'GK'; g0[1] = 0; g0[2] = 50; gk.push(g0); }
+    return gk.concat(rest);
+  }
   function live(m) {
     G.c = null; bar();
     co.speed = OLD_SPEED[co.speed] || co.speed || '1';
     if (!SPEED[co.speed] || co.speed === 'fim') co.speed = '1';
     const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
     let timer = null, seen = new Set(), read = null, open = false, firstMove = null;
+    // O campinho com jogadores que decidem (o mesmo do Jogo a Jogo): o motor do Treinador manda em quem está melhor e nos
+    // lances (gols e chances); a bola joga cada lance e só então o placar e a narração mostram
+    const LP = U.LP, useSim = !!(LP && LP.sim);
+    const KT = useSim ? LP.kits(LP.kitFor(cl.name, cl.id), LP.kitFor(vs.name, vs.id), !!m.home) : null;
+    const hidden = new Set(), sent = new Set(); // lances que o campinho ainda está jogando / já mandados para ele
+    let sim = null, wait = null, h1 = m.min >= 45, h2 = m.min > 45, frz = 0, lineKey = ['', ''];
+    const pitchHtml = useSim ?
+      '<div class="lp-pitch lp-cvm lv-cvp" id="lp-pitch" aria-hidden="true"><b class="lp-band" id="lp-band"></b><canvas class="lp-cv" id="lp-cv"></canvas>' +
+        '<span class="lp-tag lv-read" id="lv-zone" hidden></span><span class="lp-tag lp-zone" id="lp-zone"></span>' +
+        '<div class="lv-forms"><span><i style="background:' + KT.mine[0] + '"></i><b id="lv-fu"></b></span><span><i style="background:' + KT.opp[0] + '"></i><b id="lv-ft"></b></span></div></div>' :
+      '<div class="lv-pitch" id="lv-pitch"><div class="lv-f"><i class="c"></i><i class="b l"></i><i class="b r"></i></div><div id="lv-zone"></div><div id="lv-dots"></div><span class="lv-ball" id="lv-ball"></span>' +
+        '<div class="lv-forms"><span><i class="us"></i><b id="lv-fu"></b></span><span><i class="th"></i><b id="lv-ft"></b></span></div></div>';
     render('<div class="lv">' +
       '<div class="lv-board"><div class="lv-sc"><span>' + crestB(H.id) + '<b>' + esc(H.short || H.name) + '</b></span>' +
         '<div class="lv-mid"><em id="lv-score">0 <i>x</i> 0</em><small id="lv-clock"><i></i>0\'</small></div><span>' + crestB(A.id) + '<b>' + esc(A.short || A.name) + '</b></span></div>' +
         '<div class="lv-momh"><small>Quem manda no jogo</small><small id="lv-momw"></small></div><div id="lv-mom"></div></div>' +
-      '<div class="lv-pitch" id="lv-pitch"><div class="lv-f"><i class="c"></i><i class="b l"></i><i class="b r"></i></div><div id="lv-zone"></div><div id="lv-dots"></div><span class="lv-ball" id="lv-ball"></span>' +
-        '<div class="lv-forms"><span><i class="us"></i><b id="lv-fu"></b></span><span><i class="th"></i><b id="lv-ft"></b></span></div></div>' +
+      pitchHtml +
       '<div class="lv-stats"><div><small>Chutes</small><b id="lv-sh">0 · 0</b></div><div><small>No gol</small><b id="lv-ot">0 · 0</b></div><div><small>Posse</small><b id="lv-ps">50%</b></div></div>' +
       '<div class="lv-aux" id="lv-aux"></div>' +
       '<ul class="lv-feed" id="lv-feed"><li><i>0\'</i><span>Bola rolando. ' + esc(nm(co.club)) + ' no ' + m.us.form + ', ' + esc(S.CO_STY[m.us.style].name.toLowerCase()) + '; ' + esc(nm(m.vs)) + ' no ' + m.them.form + '.</span></li></ul>' +
@@ -493,8 +519,10 @@
     const mom = () => { const v = m.mom || []; const w = v.slice(-6); return w.length ? w.reduce((a, b) => a + b, 0) / w.length : 50; };
     const auxBox = r => '<span class="lv-ai">' + ICO.aux + '</span><div><small>Auxiliar, no banco</small><span>"' + esc(r.txt) + '"</span>' +
       (r.tags.length ? '<p class="lv-tags">' + r.tags.map(t => '<em>' + esc(t) + '</em>').join('') + '</p>' : '') + '</div>';
+    const homeGoal = e => (e.s === 'us') === !!m.home;
     const paint = () => {
-      $('lv-score').innerHTML = m.gh + ' <i>x</i> ' + m.ga;
+      let hh = 0, ha = 0; hidden.forEach(e => { if (e.t === 'gol') { if (homeGoal(e)) hh++; else ha++; } });
+      $('lv-score').innerHTML = (m.gh - hh) + ' <i>x</i> ' + (m.ga - ha);
       $('lv-clock').innerHTML = '<i></i>' + m.min + '\'';
       const ps = S.coPoss(m), pu = m.home ? ps : 1 - ps, sh = m.sh || { us: 0, them: 0 }, ot = m.ot || { us: 0, them: 0 };
       const hs = m.home ? [sh.us, sh.them] : [sh.them, sh.us], ho = m.home ? [ot.us, ot.them] : [ot.them, ot.us];
@@ -502,37 +530,80 @@
       $('lv-ps').innerHTML = Math.round((m.home ? pu : 1 - pu) * 100) + '<small>%</small>';
       $('lv-mom').innerHTML = momSvg(m);
       const mo = mom(); $('lv-momw').textContent = m.min < 5 ? 'começo de jogo' : mo > 56 ? nm(co.club) + ' por cima' : mo < 44 ? nm(m.vs) + ' por cima' : 'jogo parelho';
-      $('lv-dots').innerHTML = lvDots(m.us, true, mo, m.min) + lvDots(m.them, false, 100 - mo, m.min);
-      const b = lvBall(m, mo); $('lv-ball').style.left = b[0] + '%'; $('lv-ball').style.top = b[1] + '%';
+      if (!useSim) {
+        $('lv-dots').innerHTML = lvDots(m.us, true, mo, m.min) + lvDots(m.them, false, 100 - mo, m.min);
+        const b = lvBall(m, mo); $('lv-ball').style.left = b[0] + '%'; $('lv-ball').style.top = b[1] + '%';
+      } else if (sim) {
+        // Mudou a formação (sua ou deles) ou alguém foi expulso: o campinho reposiciona
+        [m.us, m.them].forEach((s, k) => { const key = s.form + ':' + s.xi.filter(Boolean).length; if (key !== lineKey[k]) { lineKey[k] = key; sim.lineup(k, simForm(s)); } });
+      }
       $('lv-fu').textContent = m.us.form; $('lv-ft').textContent = m.them.form;
       if (!read || m.min % 10 === 0 || m.stop) read = S.coRead(co, m);
       $('lv-aux').innerHTML = auxBox(read);
       // A faixa de onde eles chegam: a direita da tela é o seu ataque; a sua direita fica embaixo
-      $('lv-zone').innerHTML = read.side ? '<i class="' + (read.side === 'direita' ? 'bot' : 'top') + '"></i><b class="' + (read.side === 'direita' ? 'bot' : 'top') + '">Atacam pela sua ' + read.side + '</b>' : '';
-      const fresh = m.ev.filter(e => !seen.has(e));
+      if (!useSim) $('lv-zone').innerHTML = read.side ? '<i class="' + (read.side === 'direita' ? 'bot' : 'top') + '"></i><b class="' + (read.side === 'direita' ? 'bot' : 'top') + '">Atacam pela sua ' + read.side + '</b>' : '';
+      else { const z = $('lv-zone'); z.hidden = !read.side; if (read.side) z.textContent = 'Atacam pela sua ' + read.side; }
+      const fresh = m.ev.filter(e => !seen.has(e) && !hidden.has(e));
       if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => feedLine(m, e)).join('')); if (fresh.some(e => e.t === 'gol')) sfx('tap'); }
     };
-    const finish = () => { clearTimeout(timer); const log = S.coMatchEnd(co, m); delete co.live; save('hub'); result(m, log, false, firstMove); };
+    const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; save('hub'); result(m, log, false, firstMove); };
     const end = () => {
-      clearTimeout(timer); paint(); open = true;
+      clearTimeout(timer); hidden.clear(); paint(); open = true;
+      if (sim) { clearTimeout(frz); frz = setTimeout(() => sim.freeze(true), 1500); }
       $('lv-sheet').innerHTML = '<div class="lv-sh"><i class="lv-grab"></i><div class="lv-st-h"><small>90\' · Fim de jogo</small><b>' + m.gh + ' x ' + m.ga + '</b></div>' +
         '<h2>' + (ourGoals() > theirGoals() ? 'Vitória' : ourGoals() < theirGoals() ? 'Derrota' : 'Empate') + '</h2><button class="btn" id="b-lv-end">Ver o resultado</button></div>';
       $('lv-sheet').classList.add('on');
       $('b-lv-end').onclick = () => { sfx('tap'); finish(); };
     };
-    const tick = () => {
-      if (open) return;
-      if (m.done) return end();
-      const st = S.coMatchStep(co, m, m.min + 1);
-      paint();
-      if (st && st.t !== 'fim' && !(co.speed === '3' && st.t === 'gol')) return sheet(st);
-      if (m.done) return end();
-      timer = setTimeout(tick, SPEED[co.speed][1]);
+    // Os lances novos do motor vão para o campinho. Chance: a linha da narração sai quando a bola chega (ou em 9 s).
+    // Gol: o relógio espera a rede balançar (com 5 s quem vai marcar bate de onde estiver; no máximo 9 s) e só então o placar vira. Volta a espera do gol, ou null
+    const toSim = () => {
+      if (!sim) return null;
+      const gl = [];
+      m.ev.forEach(e => {
+        if (sent.has(e)) return; sent.add(e);
+        if (e.t !== 'gol' && e.t !== 'chance') return;
+        const side = e.s === 'us' ? 0 : 1, out = e.t === 'gol' ? 'gol' : e.k === 'defesa' || e.k === 'travado' ? 'def' : 'fora';
+        hidden.add(e);
+        if (out === 'gol') return gl.push([side, e]);
+        const cancel = sim.shot(side, out, () => { if (hidden.delete(e)) paint(); });
+        setTimeout(() => { if (hidden.delete(e)) { cancel(); paint(); } }, 9000);
+      });
+      if (!gl.length) return null;
+      return go => {
+        let n = gl.length;
+        gl.forEach(([side, e]) => {
+          let done = false, tm = 0, tf = 0;
+          const fin = () => { if (done) return; done = true; clearTimeout(tm); clearTimeout(tf); hidden.delete(e); if (--n > 0 || wait !== go) return; wait = null; paint(); sfx('tap'); go(); };
+          const cancel = sim.shot(side, 'gol', fin);
+          const f3 = co.speed === '3' ? 0.5 : 1;
+          tf = setTimeout(() => cancel(true), 5000 * f3); tm = setTimeout(() => { cancel(); fin(); }, 9000 * f3);
+        });
+      };
     };
-    const toEnd = () => { clearTimeout(timer); while (!m.done) { S.coMatchStep(co, m); S.coAutoStop(co, m); } read = null; end(); };
+    const tick = () => {
+      if (open || wait) return;
+      if (m.done) return end();
+      if (sim) sim.go(); // o apito (se a velocidade mudou antes dele, o timer do começo foi trocado)
+      if (sim && h1 && !h2) { h2 = true; sim.second(); }
+      const st = S.coMatchStep(co, m, m.min + 1);
+      if (sim) { const v = m.mom && m.mom[m.min - 1]; sim.minute(m.min, v === undefined ? 50 : v); }
+      const gw = toSim();
+      paint();
+      const go = () => {
+        if (sim && m.min >= 45 && !h1) { h1 = true; sim.half(); }
+        if (st && st.t !== 'fim' && !(co.speed === '3' && st.t === 'gol')) return sheet(st);
+        if (m.done) return end();
+        timer = setTimeout(tick, SPEED[co.speed][1]);
+      };
+      if (gw) { wait = go; return gw(go); }
+      go();
+    };
+    const toEnd = () => { clearTimeout(timer); wait = null; if (sim) sim.stop(); sim = null; hidden.clear(); while (!m.done) { S.coMatchStep(co, m); S.coAutoStop(co, m); } read = null; end(); };
     // O cartão da parada
     const sheet = st => {
       clearTimeout(timer); open = true; read = S.coRead(co, m);
+      if (sim) { clearTimeout(frz); frz = setTimeout(() => { if (open && sim) sim.freeze(true); }, st.t === 'gol' ? 2600 : 700); }
       const s = m.us, us = st.s === 'us';
       const T = { gol: 'Gol do ' + (us ? nm(co.club) : nm(m.vs)), intervalo: 'Intervalo', vermelho: 'Expulso', lesao: 'Lesão', pausa: 'Jogo parado' }[st.t] || 'Parada';
       const tag = { gol: us ? 'Gol' : 'Gol sofrido', intervalo: 'Intervalo', vermelho: 'Cartão vermelho', lesao: 'Lesão', pausa: 'Você parou' }[st.t] || 'Parada';
@@ -547,7 +618,7 @@
         '<button class="lv-big" id="b-lv-tac">' + ICO.tac + '<b>Tática</b><small>' + s.form + ' · ' + esc(S.CO_STY[s.style].name) + '</small></button></div>' +
         '<button class="btn" id="b-lv-go">Seguir o jogo</button></div>';
       $('lv-sheet').classList.add('on');
-      $('b-lv-go').onclick = () => { sfx('tap'); $('lv-sheet').classList.remove('on'); open = false; if (co.speed === 'fim') return toEnd(); timer = setTimeout(tick, 400); };
+      $('b-lv-go').onclick = () => { sfx('tap'); $('lv-sheet').classList.remove('on'); open = false; if (sim) { clearTimeout(frz); sim.freeze(false); } if (co.speed === 'fim') return toEnd(); timer = setTimeout(tick, 400); };
       $('b-lv-sub').onclick = () => { sfx('tap'); subs(st); };
       $('b-lv-tac').onclick = () => { sfx('tap'); tactic(st); };
     };
@@ -569,13 +640,35 @@
         const bench = s.bench.map(id => by[id]).filter(Boolean);
         d.innerHTML = '<div class="lv-fh"><div><small>' + m.min + '\' · ' + m.gh + ' x ' + m.ga + ' · Parada</small><h2>Mexer no time</h2></div>' +
           '<span class="lv-pips" aria-label="' + D.plural(s.subs, 'troca restante', 'trocas restantes') + '">' + [0, 1, 2, 3, 4].map(i => '<i class="' + (i < s.subs ? 'on' : '') + '"></i>').join('') + '</span></div>' +
-          '<p class="lv-hint">' + (sel ? 'Agora toque ou solte no jogador que vai trocar com ele.' : 'Arraste um reserva até um titular para trocar. Arraste um titular até outro para trocar os dois de posição.') + '</p>' +
+          '<p class="lv-hint">' + (sel ? 'Agora toque no jogador que vai trocar com ' + esc(last((sel.xi !== undefined ? by[s.xi[sel.xi]] : by[sel.b] || {}).n)) + '.' : 'Toque num titular para ver quem do banco pode entrar no lugar dele. Também dá para arrastar.') + '</p>' +
           '<div class="lv-vp" id="lv-vp"><div class="lv-vf"><i class="c"></i><i class="b t"></i><i class="b u"></i></div>' + s.xi.map(tok).join('') + '</div>' +
           '<div class="lv-bh"><small>Banco</small><small>' + (s.subs ? 'arraste para o campo' : 'sem trocas') + '</small></div>' +
           '<div class="lv-bench">' + (bench.length ? bench.map(p => '<button class="lv-bc' + (sel && sel.b === p.id ? ' sel' : '') + '" data-dbn="' + p.id + '"' + (s.subs ? '' : ' disabled') + '><small>' + p.pos + ' · ' + p.ovr + '</small><b>' + esc(p.n) + '</b><i><em class="' + enCls(p.en) + '" style="width:' + Math.round(p.en) + '%"></em></i></button>').join('') : '<p class="co-tip">Ninguém no banco.</p>') + '</div>' +
           '<div class="lv-fb"><button class="btn" id="b-lv-back">Pronto</button></div>';
         $('b-lv-back').onclick = () => { sfx('tap'); back(st); };
         bindDrag();
+      };
+      // Quem do banco pode entrar no lugar do titular i: mesma posição primeiro, a sugestão (o melhor disponível, contando o
+      // cansaço) em destaque; depois fora de posição. Dali também dá para trocar o titular de lugar com outro titular
+      const pick = i => {
+        const slot = S.coSlots(s.form)[i], cur = by[s.xi[i]]; if (!cur) return;
+        const bench = s.bench.map(id => by[id]).filter(Boolean), score = p => p.ovr * (0.6 + 0.4 * p.en / 100);
+        const sort = l => l.sort((a, b) => avail(b) - avail(a) || score(b) - score(a));
+        const same = sort(bench.filter(p => p.pos === slot)), other = sort(bench.filter(p => p.pos !== slot && (p.pos === 'GOL') === (slot === 'GOL')));
+        const best = s.subs ? same.find(avail) || other.find(avail) : null;
+        const note = p => p.out ? 'lesionado' : p.sus ? 'suspenso' : [p === best ? 'sugestão' : '', p.age ? p.age + ' anos' : '', p.en < 55 ? 'cansado' : ''].filter(Boolean).join(' · ');
+        const row = p => { const ok = s.subs && avail(p); return '<button class="co-pl' + (p === best ? ' best' : '') + (ok ? '' : ' dis') + '" data-lsub="' + p.id + '"' + (ok ? '' : ' disabled') + '>' +
+          '<span class="co-pos">' + p.pos + '</span><span class="co-pn"><b>' + esc(p.n) + '</b><small>' + note(p) + '</small></span>' +
+          '<span class="co-en ' + enCls(p.en) + '"><em style="width:' + Math.round(p.en) + '%"></em></span><b class="co-ov">' + p.ovr + '</b></button>'; };
+        const tired = cur.out ? ' · machucado' : cur.en < 55 ? ' · cansado' : '';
+        pop('<div class="co-pop-h"><b class="co-pop-ov">' + cur.ovr + '</b><span><b>' + esc(cur.n) + '</b><small>' + slot + ' · energia ' + Math.round(cur.en) + '%' + tired + '</small></span><button class="co-pop-x" data-pop-x aria-label="Fechar">' + XICO + '</button></div>' +
+          '<div class="co-pop-b">' + (s.subs ? '' : '<div class="co-pop-l">Sem trocas: as cinco já foram usadas</div>') +
+            (same.length ? '<div class="co-pop-l">Quem pode entrar no lugar dele</div>' + same.map(row).join('') : '<div class="co-pop-l">Ninguém da posição no banco</div>') +
+            (other.length ? '<div class="co-pop-l">Fora de posição</div>' + other.map(row).join('') : '') + '</div>' +
+          '<button class="btn ghost co-pop-sw" id="b-lv-swap">Trocar de lugar com outro titular</button>', 'Trocar ' + cur.n, w => {
+          w.querySelectorAll('[data-lsub]').forEach(b => b.onclick = () => { act({ xi: i }, { b: b.dataset.lsub }); closePop(); draw(); });
+          $('b-lv-swap').onclick = () => { sfx('tap'); sel = { xi: i }; closePop(); draw(); };
+        });
       };
       // Faz a troca entre a origem e o destino (titular ou reserva)
       const act = (a, b) => {
@@ -591,22 +684,26 @@
         d.querySelectorAll('[data-dxi],[data-dbn]').forEach(el => {
           if (el.disabled) return;
           el.onpointerdown = ev => {
-            ev.preventDefault();
+            if (!el.dataset.dbn) ev.preventDefault(); // no banco o navegador precisa do gesto para rolar
             const src = srcOf(el), x0 = ev.clientX, y0 = ev.clientY; let ghost = null;
             const mv = e2 => {
+              if (!ghost && el.dataset.dbn && Math.abs(e2.clientX - x0) > Math.abs(e2.clientY - y0) + 2) return; // para o lado: é rolagem
               if (!ghost && Math.hypot(e2.clientX - x0, e2.clientY - y0) > 8) { ghost = el.cloneNode(true); ghost.classList.add('lv-ghost'); ghost.removeAttribute('style'); document.body.appendChild(ghost); el.classList.add('drag'); }
               if (ghost) { const z = U.zk ? U.zk() : 1; ghost.style.left = e2.clientX / z + 'px'; ghost.style.top = e2.clientY / z + 'px';
                 d.querySelectorAll('.over').forEach(o => o.classList.remove('over')); ghost.style.display = 'none'; const t = document.elementFromPoint(e2.clientX, e2.clientY); ghost.style.display = '';
                 const tg = t && t.closest('[data-dxi],[data-dbn]'); if (tg && tg !== el) tg.classList.add('over'); }
             };
+            // No banco, arrastar para o lado rola a lista (o navegador cancela o ponteiro); só puxar para cima pega o reserva
+            const cancel = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel); if (ghost) { ghost.remove(); ghost = null; } el.classList.remove('drag'); };
             const up = e2 => {
-              window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up);
+              window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel);
               if (ghost) { ghost.remove(); const t = document.elementFromPoint(e2.clientX, e2.clientY), tg = t && t.closest('[data-dxi],[data-dbn]'); sel = null; if (tg && tg !== el) act(src, srcOf(tg)); draw(); return; }
-              // Toque: escolhe; o segundo toque troca
+              // Toque: com alguém escolhido, troca; num titular, abre quem pode entrar no lugar dele; no reserva, escolhe
               if (sel) { const a = sel; sel = null; if (a.xi === src.xi && a.b === src.b) return draw(); act(a, src); return draw(); }
+              if (src.xi !== undefined) { sfx('tap'); return pick(src.xi); }
               sel = src; sfx('tap'); draw();
             };
-            window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
+            window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', cancel);
           };
         });
       };
@@ -639,11 +736,28 @@
       sfx('tap'); const k = b.dataset.sp;
       if (k === 'fim') { co.speed = 'fim'; if (!open) toEnd(); return; }
       co.speed = k; $('lv-speed').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-      if (!open) { clearTimeout(timer); timer = setTimeout(tick, SPEED[k][1]); }
+      if (!open && !wait) { clearTimeout(timer); timer = setTimeout(tick, SPEED[k][1]); }
     });
-    $('b-lv-stop').onclick = () => { if (open || m.done) return; sfx('tap'); sheet({ t: 'pausa' }); };
+    $('b-lv-stop').onclick = () => { if (open || wait || m.done) return; sfx('tap'); sheet({ t: 'pausa' }); };
+    if (useSim) {
+      const nmU = nm(co.club), nmT = nm(m.vs);
+      const zone = i => {
+        const b = $('lp-band'), z = $('lp-zone'); if (!z) return;
+        const mine = i.side === 0, tm = mine ? nmU : nmT, lado = i.ay < 30 ? ' pela esquerda' : i.ay > 70 ? ' pela direita' : ' pelo meio';
+        const txt = i.mode === 'goal' ? 'Gol!' : i.mode === 'ko' || i.mode === 'wait' || i.mode === 'half' ? 'Saída de bola' : i.mode === 'tiro' ? 'Tiro de meta' :
+          i.ax >= 67 ? tm + ' ataca' + lado : i.ax <= 33 ? tm + ' sai jogando' : tm + ' troca passes';
+        const play = i.mode === 'play', bc = 'lp-band lpz ' + (i.sx < 100 / 3 ? 'l' : i.sx > 200 / 3 ? 'r' : 'c') + (play ? (mine ? ' me' : ' op') : ''), zc = 'lp-tag lp-zone' + (play ? (mine ? ' up' : ' down') : '');
+        if (b && b.className !== bc) b.className = bc;
+        if (z.textContent !== txt) z.textContent = txt;
+        if (z.className !== zc) z.className = zc;
+      };
+      sim = LP.sim({ me: -1, t0: m.min, flip: !m.home, kits: KT, speed: () => (co.speed === '3' ? 3 : 1), onFrame: zone,
+        seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)] });
+      lineKey = [m.us.form + ':' + m.us.xi.filter(Boolean).length, m.them.form + ':' + m.them.xi.filter(Boolean).length];
+      sim.attach($('lp-cv'));
+    }
     paint();
-    timer = setTimeout(tick, 600);
+    timer = setTimeout(() => { if (sim) sim.go(); timer = setTimeout(tick, 900); }, 600);
   }
   function result(m, log, aux, move) {
     const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
