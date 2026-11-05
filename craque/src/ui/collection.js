@@ -17,7 +17,7 @@
     const list = all();
     const specials = (c.cards || []).map(k => U.specialFinal(card, c, k));
     const at = Date.now();
-    list.push({ at, country: c.country, pos: c.pos, peak: c.peak, grade: f.grade, score: f.score, card, specials });
+    list.push({ at, country: c.country, pos: c.pos, peak: c.peak, grade: f.grade, score: f.score, leg: f.leg ? f.leg.pts : undefined, card, specials }); // leg: Jogo a Jogo (legado no lugar da nota)
     // Cheio: sai a carta de menor pontuação
     if (list.length > MAX) list.sort((a, b) => b.score - a.score).length = MAX;
     store(KEY, list);
@@ -166,8 +166,14 @@
     if (!list.length) return '';
     const e = list.reduce((a, b) => (b.at > a.at ? b : a)), best = Math.max(...list.map(x => x.score));
     return '<button class="last-card" id="b-last"><span class="lc-card"><img alt=""></span><span class="lc-info"><small>Última carreira</small>' +
-      '<b>' + esc(e.card.name) + '</b><span>Nota <em class="lc-g g-' + e.grade + '">' + e.grade + '</em> · ' + U.pts(e.score) + ' pts</span>' +
-      '<span class="lc-rec">' + (e.score >= best ? U.emo('🏆', 'xs') + ' Seu recorde' : 'Recorde: ' + U.pts(best) + ' pts') + '</span></span></button>';
+      '<b>' + esc(e.card.name) + '</b>' + (e.leg !== undefined ? legLine(e, list) :
+      '<span>Nota <em class="lc-g g-' + e.grade + '">' + e.grade + '</em> · ' + U.pts(e.score) + ' pts</span>' +
+      '<span class="lc-rec">' + (e.score >= best ? U.emo('🏆', 'xs') + ' Seu recorde' : 'Recorde: ' + U.pts(best) + ' pts') + '</span>') + '</span></button>';
+  }
+  // Última carreira do Jogo a Jogo: o legado no lugar da nota, e o recorde entre as do Jogo a Jogo
+  function legLine(e, list) {
+    const best = Math.max(...list.filter(x => x.leg !== undefined).map(x => x.leg));
+    return '<span>Jogo a Jogo · ' + e.leg.toLocaleString('pt-BR') + ' de legado</span><span class="lc-rec">' + (e.leg >= best ? U.emo('🏆', 'xs') + ' Seu maior legado' : 'Recorde: ' + best.toLocaleString('pt-BR')) + '</span>';
   }
   function lastHomeBind() {
     const b = $('b-last');
@@ -190,5 +196,5 @@
     $('cv-share').onclick = () => U.shareCard(d, $('cv-share'));
   }
 
-  Object.assign(U, { collection, collect, collectPatch, collectionCount: count, collectionCards: cards, lastHome, lastHomeBind });
+  Object.assign(U, { cardThumb: thumb, cardView: view, collection, collect, collectPatch, collectionCount: count, collectionCards: cards, lastHome, lastHomeBind });
 })();

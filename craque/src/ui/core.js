@@ -6,7 +6,7 @@
   const $ = id => document.getElementById(id);
   const screen = $('screen');
   // Um save por jogo: a carreira rápida e a carreira jogo a jogo (c.mode 'completa') andam em paralelo
-  const SAVE = 'craque-v5', SAVE_FC = 'climbix-jogo-v1', HALL = 'craque-hall-v1';
+  const SAVE = 'craque-v5', SAVE_FC = 'climbix-jogo-v1', HALL = 'craque-hall-v1', HALL_JAJ = 'climbix-hall-jaj-v1'; // HALL_JAJ: Seu Hall do Jogo a Jogo (legado)
   const saveKey = c => (c && c.mode === 'completa' ? SAVE_FC : SAVE);
   const YEAR0 = 2026;
 
@@ -349,5 +349,5 @@
     });
   }
 
-  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, HALL, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, clubBg };
+  window.CRAQUE_UI = { zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, clubBg };
 })();
