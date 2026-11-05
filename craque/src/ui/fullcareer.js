@@ -53,12 +53,13 @@
   function appScr(cur, title, body, o) {
     o = o || {};
     const c = G.c;
-    render('<div class="p2 pa" id="fc"><header class="p2-ah"><button class="p2-ic" id="fc-back" aria-label="Voltar' + (o.back ? ' para ' + o.back : ' ao início do celular') + '">' + BACK_SVG + '</button>' +
-      (APP_EMO[cur] ? '<i class="p2-ai">' + U.emo(APP_EMO[cur], 'sm') + '</i>' : '') + '<b>' + title + '</b>' + (o.right || '') + '</header>' +
+    render('<div class="p2 pa" id="fc">' + U.modeHead({ mode: 'jaj', nav: 'back', id: 'fc-back', cfg: 'fc-cfg', label: 'Voltar' + (o.back ? ' para ' + o.back : ' ao início do celular'),
+      title: (APP_EMO[cur] ? '<i class="p2-ai">' + U.emo(APP_EMO[cur], 'md') + '</i>' : '') + title, right: o.right }) +
       '<div class="fc-scr pa-body p2-body' + (o.cls ? ' ' + o.cls : '') + '" id="fc-scr">' + body + '</div>' + (o.foot || '') +
       side(c) + '</div>');
     p2Chrome();
     sideBind();
+    U.modeHeadBind({ cfg: 'fc-cfg' });
     $('fc-back').onclick = () => { sfx('tap'); phone(); };
   }
   // Fora da carreira de sempre: a barra do jogador some no celular (o widget Jogador mostra o mesmo)
@@ -87,7 +88,7 @@
   // Início do celular (proposta B do canvas "Celular do Jogo a Jogo"): a tela inteira é o aparelho. Em cima o dia e a
   // energia, configurações e sair; a notificação mais nova em faixa (+N abre as outras); os widgets Jogador (abre a
   // Ficha) e Próximo jogo (abre a Tabela); os nove apps em grade; o ingresso embaixo, igual em todo app.
-  const GRID2 = [['msg', '💬', 'Chat'], ['ag', '📒', 'Agenda'], ['me', '📈', 'Ficha'], ['bank', '🏦', 'Banco'], ['shop', '🏷️', 'Loja'],
+  const GRID2 = [['msg', '💬', 'Chat'], ['ag', '📒', 'Agenda'], ['me', '📈', 'Ficha'], ['bank', '🏦', 'Finanças'], ['shop', '🏷️', 'Loja'],
     ['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['mkt', '🤝', 'Mercado'], ['bet', '🎰', 'Apostas']];
   const GEAR = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4z M19.4 13.5l1.6 1.2-1.8 3.1-1.9-.7a7.6 7.6 0 0 1-2 1.2l-.3 2h-3.6l-.3-2a7.6 7.6 0 0 1-2-1.2l-1.9.7-1.8-3.1 1.6-1.2a7.4 7.4 0 0 1 0-2.4L3.4 9.3l1.8-3.1 1.9.7a7.6 7.6 0 0 1 2-1.2l.3-2h3.6l.3 2a7.6 7.6 0 0 1 2 1.2l1.9-.7 1.8 3.1-1.6 1.2a7.4 7.4 0 0 1 0 2.4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
   const EXIT = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4.5 3 12l7.5 7.5M3.8 12h17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -125,13 +126,14 @@
       const u = k === 'msg' ? (c.ppl && c.ppl.unread) || 0 : k === 'mkt' ? (mw && !mw.seen ? mw.offers.length : 0) : k === 'me' ? ((c.pe || 0) >= 1 && S.canInvestAny(c) ? Math.floor(c.pe) : 0) : 0;
       return '<button class="p2-app" data-go="' + k + '"><i>' + U.emo(e, 'md') + (u ? '<em class="ph-badge">' + Math.min(u, 99) + '</em>' : '') + '</i><span>' + n + '</span></button>'; };
     render('<div class="p2" id="fc">' +
-      '<header class="p2-top"><span class="p2-day"><b>' + (DAYS_LONG[eve] || eve) + ', ' + sb.clk + '</b><small>Jogo ' + (fc.i + 1) + ' do ano · <span class="p2-en ' + (en < S.FC_EN_OUT ? 'out' : en < S.FC_EN_LOW ? 'low' : '') + '">Energia ' + en + '%</span></small></span>' +
-        '<button class="p2-ic" id="p2-cfg" aria-label="Configurações">' + GEAR + '</button><button class="p2-ic" id="p2-exit" aria-label="Voltar ao início do jogo">' + EXIT + '</button></header>' +
+      U.modeHead({ mode: 'jaj', nav: 'home', id: 'p2-exit', cfg: 'p2-cfg', title: (DAYS_LONG[eve] || eve) + ', ' + sb.clk,
+        sub: 'Jogo ' + (fc.i + 1) + ' do ano · <span class="p2-en ' + (en < S.FC_EN_OUT ? 'out' : en < S.FC_EN_LOW ? 'low' : '') + '">Energia ' + en + '%</span>' }) +
       '<div class="p2-mid">' +
         (ps.length ? '<div class="p2-ns' + (nAll ? ' all' : '') + '">' + first.map(ping).join('') + '</div>' : '') +
         '<div class="p2-ws">' + wPlayer(c) + wNext(c, nx) + '</div>' +
-        '<nav class="p2-apps" aria-label="Apps">' + GRID2.map(app).join('') + '</nav>' +
-      '</div>' + side(c) + '</div>');
+        '<nav class="p2-apps" aria-label="Apps">' + GRID2.map(app).join('') + '</nav>' + goalStrip(c, nx) +
+      '</div>' + side(c) + (wide() ? aside(c) : '') + '</div>');
+    if (wide()) $('fc').classList.add('p2-2c');
     bar(); p2Chrome();
     document.querySelectorAll('#fc [data-go]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go); }; });
     const more = $('p2-more');
@@ -139,6 +141,34 @@
     $('p2-cfg').onclick = () => { sfx('tap'); U.settings(); };
     $('p2-exit').onclick = () => { sfx('tap'); U.ask('Voltar ao início?', 'Sua carreira fica salva e você continua de onde parou.', 'Ir para o início', U.toHome); };
     sideBind();
+  }
+  // Faixa "perto de acontecer" no espaço que sobrava entre os apps e o ingresso: o que vem amanhã (estreia) ou como foi o
+  // último jogo, a meta do ano mais perto de sair e os pontos para gastar antes do jogo
+  function goalStrip(c, nx) {
+    const fc = c.fc, last = fc.log[fc.log.length - 1], rows = [];
+    const head = fc.i === 0 && nx.vs ? 'Amanhã é sua estreia: ' + esc(nx.compName)
+      : last ? 'Último jogo: ' + last.gf + '–' + last.ga + ' contra ' + esc(nameOf(last.vs)) + (last.on && last.rating ? ' · nota ' + rate(last.rating) : '') : '';
+    const gs = (S.fcGoals ? S.fcGoals(c) || [] : []).filter(g => typeof g.have === 'number' && g.n && g.have < g.n);
+    gs.sort((a, b) => b.have / b.n - a.have / a.n);
+    const g = gs[0];
+    if (g) rows.push('<div class="p2-gr">' + U.emo(g.side === 'club' ? '⚽' : '🤝', 'md') + '<span><b>' + (g.side === 'club' ? 'Meta do clube: ' : 'Empresário: ') + esc(g.txt) + '</b>' +
+      '<i class="p2-gb"><i style="width:' + Math.max(2, Math.round(g.have / g.n * 100)) + '%"></i></i></span><em>' + String(g.have).replace('.', ',') + ' de ' + String(g.n).replace('.', ',') + (g.size ? ' · +' + S.GOAL_SIZE[g.size] : '') + '</em></div>');
+    if ((c.pe || 0) >= 1 && S.canInvestAny(c)) rows.push('<button class="p2-gr" data-go="evo">' + U.emo('📈', 'md') + '<span><b>' + c.pe + (c.pe === 1 ? ' ponto' : ' pontos') + ' para gastar antes do jogo</b></span><em class="go">Evoluir ›</em></button>');
+    if (!head && !rows.length) return '';
+    return '<div class="p2-goal">' + (head ? '<h3>' + head + '</h3>' : '') + rows.join('') + '</div>';
+  }
+  // Tela larga: a tabela e os jogos da próxima rodada da liga ao lado do celular (no celular ficam no app Tabela)
+  function aside(c) {
+    const fc = c.fc, rows = standings('lg'), n = rows.length, me = Math.max(0, rows.findIndex(x => x.i === 0));
+    const a = Math.max(0, Math.min(me - 3, n - 8)), view = rows.slice(a, a + 8);
+    const tb = '<div class="p2-tb"><div class="p2-ah2"><h3>' + esc(fc.lg.name) + '</h3><small>' + (rows[0].j ? 'depois de ' + D.plural(rows[0].j, 'rodada', 'rodadas') : 'antes da rodada 1') + ' · J · Pts</small></div>' +
+      view.map((x, k) => '<div class="p2-tr' + (x.i === 0 ? ' me' : '') + '"><i>' + (a + k + 1) + '</i>' + crest(x.id, 'xs') + '<span>' + esc(nameOf(x.id)) + '</span><em>' + x.j + '</em><b>' + x.p + '</b></div>').join('') +
+      '<button class="btn ghost sm" data-go="tbl">Tabela inteira</button></div>';
+    const e = fc.cal.slice(fc.i).find(x => x.k === 'lg'), R = e && fc.lg.rounds[e.ri];
+    const games = R ? R.slice().sort((x, y) => (x[0] === 0 || x[1] === 0 ? -1 : 0) - (y[0] === 0 || y[1] === 0 ? -1 : 0)).slice(0, 5) : [];
+    const rd = games.length ? '<div class="p2-rd"><div class="p2-ah2"><h3>Jogos da rodada ' + (e.ri + 1) + '</h3><small>ficam ao vivo durante o seu jogo</small></div>' +
+      games.map(([h, w]) => '<div class="p2-gm' + (h === 0 || w === 0 ? ' me' : '') + '"><span>' + esc(nameOf(fc.lg.ids[h])) + '</span>' + crest(fc.lg.ids[h], 'xs') + '<em>×</em>' + crest(fc.lg.ids[w], 'xs') + '<span>' + esc(nameOf(fc.lg.ids[w])) + '</span></div>').join('') + '</div>' : '';
+    return '<aside class="p2-aside" aria-label="Tabela e rodada">' + tb + rd + '</aside>';
   }
   // Notificações do celular: quem fala e o que pede; cada uma abre a tela dela
   function pings(c, nx) {
@@ -170,7 +200,7 @@
     if (sd.length) n('mkt', 'Mercado', 'Sondagem: ' + D.o(nameOf(sd[0].club)) + (sd.length > 1 ? ' e mais um clube perguntaram' : ' perguntou') + ' por você. A janela abre em ' + D.plural(Math.max(1, S.fcWinState(c).at - fc.i), 'jogo', 'jogos') + '.', 2);
     if (mw && mw.offers.length) n('mkt', 'Mercado', (mw.offers.length > 1 ? mw.offers.length + ' propostas' : 'Proposta ' + D.do(nameOf(mw.offers[0].club))) + ' na mesa. A janela fecha ' + (S.fcWinLeft(c) > 1 ? 'em ' + S.fcWinLeft(c) + ' jogos.' : 'depois do próximo jogo.'), 1);
     // Banco: a conta no vermelho (as saídas estão no app)
-    if (S.fcDebt && S.fcDebt(c) > 0) n('bank', 'Banco', 'Conta no vermelho: R$ ' + U.money(S.fcDebt(c)) + ' de dívida. Toque para ver as saídas.', 2);
+    if (S.fcDebt && S.fcDebt(c) > 0) n('bank', 'Finanças', 'Conta no vermelho: R$ ' + U.money(S.fcDebt(c)) + ' de dívida. Toque para ver as saídas.', 2);
     // Roupeiro: a chuteira (ou luva) acabando ou já rasgada
     const gw = c.pos === 'GOL' ? 'luva' : 'chuteira';
     if (c.gear && c.gear.left <= 5) n('shop', 'Roupeiro', 'Tua ' + gw + ' tá no fim: ' + (c.gear.left === 1 ? 'aguenta só mais 1 jogo.' : 'aguenta mais ' + c.gear.left + ' jogos.'));
@@ -355,7 +385,7 @@
     document.querySelectorAll('[data-go2]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go2); }; });
   }
   // Apps do celular: cada um abre dentro do aparelho, com a barra de baixo
-  const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Apostas', evo: 'Evoluir', bank: 'Banco', mkt: 'Mercado' };
+  const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Apostas', evo: 'Evoluir', bank: 'Finanças', mkt: 'Mercado' };
   const LOJA_IMG = ['chuteira-g1', 'chuteira-g2', 'chuteira-g3', 'luvas-g1', 'luvas-g2', 'luvas-g3', 'pt', 'physio', 'nutri', 'video', 'press', 'c1', 'c2', 'c3', 'c4', 'house'];
   function go(k) {
     if (k === 'evo') return evolve();
@@ -366,7 +396,7 @@
       wk: '<div class="fc-wk" id="fc-wk"></div><div class="fs-acts" id="fc-acts"></div>',
       tbl: '<div class="fc-tabs" id="fc-tabs"></div><div class="fs-tbl" id="fc-tbl"></div>',
       cal: '<div class="fc-comps" id="fc-comps"></div><div class="fc-cal" id="fc-cal"></div>',
-      me: '<div class="fs-me" id="fc-me"></div><div class="fc-leg" id="fc-leg"></div><div class="fc-pe" id="fc-pe"></div>',
+      me: '<div class="fi-card" id="fc-fi"></div><div class="fi-next" id="fc-conq"></div>',
       shop: '<div class="fc-shop" id="fc-shop"></div>',
       bet: '<div class="fc-shop" id="fc-bet"></div>',
       bank: '<div class="fc-shop" id="fc-bank"></div>',
@@ -376,7 +406,7 @@
     if (k === 'wk') { weekBox(); weekActs(); }
     else if (k === 'tbl') { tblKey = null; table(); tabs(); }
     else if (k === 'cal') { compsBox(standings('lg').findIndex(x => x.i === 0) + 1); calBox(); }
-    else if (k === 'me') { meBox(); legBox(); peBox(); }
+    else if (k === 'me') ficha();
     else if (k === 'shop') shopBox();
     else if (k === 'bet') betRender();
     else if (k === 'bank') bankBox();
@@ -642,6 +672,42 @@
     return '<li class="' + (e.me || e.as ? 'me' : '') + '"><i>' + clock(e.m) + '</i><span>' + (e.me ? 'Gol de ' + who : e.as ? 'Gol, assistência de ' + who : 'Gol') + '</span></li>';
   }
 
+  // Ficha (canvas "Navegação, Ficha e meta"): o jogador na frente. Cartão creme com a carta, idade, posição e clube, o papel
+  // no elenco e até onde pode chegar; os seis atributos (os três que mais pesam na posição em cima) e os pontos para
+  // gastar. Embaixo, em vez de uma parede de zeros, as próximas conquistas (as metas do ano) e os números da carreira.
+  const GK_NAMES = { rit: 'Velocidade', fin: 'Reflexo', pas: 'Reposição', dri: 'Manejo', def: 'Posição', fis: 'Elasticidade' };
+  function ficha() {
+    const c = G.c, fc = c.fc, E = S.eff(c), o = S.ovr(c), P = D.POS[c.pos], cl = D.CLUB_BY_ID[c.club];
+    const names = c.pos === 'GOL' ? GK_NAMES : D.ATTR_NAMES;
+    const keys = D.ATTRS.slice().sort((a, b) => P.w[b] - P.w[a]);
+    const role = cl ? S.role(c, cl).name : '';
+    const whole = c.pe || 0, can = whole >= 1 && S.canInvestAny(c), yr = S.fcPeYear(c), full = yr >= S.PE_CAP - 0.001;
+    const at = (k, j) => { const v = Math.round(E[k]); return '<div class="fi-a' + (j > 2 ? ' lo' : '') + '"><span>' + names[k] + '</span><i><b style="width:' + Math.max(2, Math.min(100, v)) + '%"></b></i><em>' + v + '</em></div>'; };
+    const pe = can
+      ? '<div class="fi-pe"><span><b>' + whole + (whole === 1 ? ' ponto' : ' pontos') + ' para gastar</b><small>Vale já no próximo jogo</small></span><button class="fi-evo" id="fc-evo">Evoluir</button></div>'
+      : '<div class="fi-pe"><span><b>Evolução</b><small>' + (full ? 'Limite do ano atingido: ' + S.PE_CAP + ' de ' + S.PE_CAP + ' pontos.' : 'No ano: ' + num1(yr) + ' de ' + S.PE_CAP + ' pontos. Todo jogo enche a barra, nota alta enche mais.') + '</small></span>' +
+        '<span class="fi-pb"><i style="width:' + Math.round((fc.peFrac || 0) * 100) + '%"></i></span></div>';
+    $('fc-fi').innerHTML = '<div class="fi-top"><span class="ovr metal ' + U.tierCls(o) + ' fi-ovr"><b>' + o + '</b><small>' + c.pos + '</small>' + crest(c.club, 'xs') + '</span>' +
+      '<span class="fi-who"><b>' + esc(c.name) + '</b><small>' + c.age + ' anos · ' + P.name + ' · ' + esc(nameOf(c.club)) + '</small><span class="fi-chips">' +
+        (role ? '<i>' + role + '</i>' : '') + (c.pot > o && c.age < 30 ? '<i>Pode chegar a ' + c.pot + '</i>' : '') + '</span></span></div>' +
+      '<div class="fi-at">' + keys.map(at).join('') + '<p>As três de cima são as que mais contam para ' + P.name.toLowerCase() + '.</p></div>' + pe;
+    if ($('fc-evo')) $('fc-evo').onclick = () => { sfx('tap'); evolve(); };
+    // Próximas conquistas: as metas do ano que faltam (com o legado que valem) e os números da carreira em segundo plano
+    const A = fc.acc, gk = D.DEF_POS.includes(c.pos), L = S.legacy ? S.legacy(c) : null;
+    const rows = (S.fcGoals ? S.fcGoals(c) || [] : []).map(g => {
+      const pts = g.size ? ' · +' + S.GOAL_SIZE[g.size] : '';
+      if (g.side === 'me' && !g.txt) return '<button class="fi-g" data-go2="ag">' + U.emo('⭐', 'md') + '<span><b>Escolha o sonho do ano</b></span><em class="go">Agenda ›</em></button>';
+      const num = typeof g.have === 'number' && g.n, done = num && g.have >= g.n;
+      const lbl = (g.side === 'club' ? 'Meta do clube: ' : g.side === 'emp' ? 'Empresário: ' : 'Seu sonho: ') + esc(g.txt);
+      return '<div class="fi-g' + (done ? ' ok' : '') + '">' + U.emo(g.side === 'club' ? '⚽' : g.side === 'emp' ? '🤝' : '⭐', 'md') + '<span><b>' + lbl + '</b>' +
+        (num ? '<i class="fi-gb"><i style="width:' + Math.min(100, Math.round(g.have / g.n * 100)) + '%"></i></i>' : '') + '</span>' +
+        '<em>' + (num ? String(g.have).replace('.', ',') + ' de ' + String(g.n).replace('.', ',') : 'no fim do ano') + pts + '</em></div>';
+    });
+    $('fc-conq').innerHTML = '<h3>Próximas conquistas</h3>' + rows.join('') +
+      '<p class="fi-tot">Na carreira: ' + D.plural(A.games, 'jogo', 'jogos') + ' · ' + (gk ? D.plural(A.cs, 'jogo sem sofrer gol', 'jogos sem sofrer gol') : D.plural(A.goals, 'gol', 'gols')) + ' · ' +
+        D.plural(A.assists, 'assistência', 'assistências') + (A.games ? ' · nota ' + rate(A.rsum / A.games) : '') + (L ? ' · ' + L.pts.toLocaleString('pt-BR') + ' de legado' : '') + '</p>';
+    document.querySelectorAll('#fc-conq [data-go2]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go2); }; });
+  }
   // Pontos de evolução: a fração do ano enche a barra; com 1 ponto inteiro, dá para evoluir agora
   function peBox() {
     const c = G.c, fc = c.fc, whole = c.pe || 0;
