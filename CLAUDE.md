@@ -69,6 +69,7 @@ node tools/craque_textos.js                         # repetição de textos entr
 node tools/craque_itens_sim.js                      # carreiras para liberar todos os itens
 node tools/craque_estilos.js                        # estilos dos lances decisivos: nenhum pode dominar (esperado: 0 alertas)
 node tools/craque_livre.js [n] [cenas]               # lances livres do Jogo a Jogo: robô vs chance pela carta (esperado: 0 alertas; WHY=1 detalha)
+node tools/craque_treinador.js [n] [temporadas]     # Modo Treinador: robô técnico (metas, demissões, títulos, fama) e save no meio da temporada; INICIO=baixo|livre, CO_K/CO_CK/CO_ULT mexem no motor
 node tools/craque_invariantes.js [n] [semente]       # regras do motor (sem NaN, faixas 0–100/0–99, dinheiro >= 0) e save no meio que termina igual; esperado 0 falhas
 NODE_PATH=$(npm root -g) node tools/craque_e2e.js 2 390 4   # carreiras pela interface (Playwright); MODO=completa na Carreira Completa
 NODE_PATH=$(npm root -g) node tools/craque_telas.js /tmp/antes   # foto de cada tela (carreira com sorteio fixo + telas de fora + minigames); DESKTOP=1 ... 1440 900 no computador, SO=evento,lance só algumas
@@ -123,6 +124,7 @@ dividem ajudantes por `CRAQUE_SIM._`. O motor não usa DOM: roda no navegador e 
 | `money.js` | Jogo a Jogo, dinheiro: manutenção do status, dívida com juros (`c.debt`, `S.fcCharge`/`S.fcCredit`), bônus e luvas, saídas do vermelho (`S.fcWays`), investimentos (`S.FC_INVEST`), festa e o Zé no Chat |
 | `transfer.js` | Jogo a Jogo, mercado: a janela do meio do ano (`S.fcWin`, `S.FC_WIN`) e a troca de clube no meio da temporada (`S.fcMove`: liga nova na rodada em que está) |
 | `legado.js` | Jogo a Jogo: metas do ano (`S.fcGoals`: clube, empresário e o sonho escolhido, `S.fcDream`), conferidas no fim da temporada (`res.metas`, `c.goalHist`), e pontos de legado (`S.legacy`, pesos em `S.LEGACY_W`; no fim da carreira o legado substitui a nota S a D, e `S.legacyTone` só dá o tom do jornal e da carta) |
+| `coach.js` | Modo Treinador (`co.mode = 'treinador'`, save próprio): elencos de 25 sorteados por clube e temporada (`S.coGenSquad`), formações `S.CO_FORMS` e estilos, escalação do auxiliar (`S.coAutoXI`), partida minuto a minuto com paradas (`S.coMatchStart/Step/End`, trocas `S.coSub`, tática `S.coMatchTactic`), meta da diretoria (`S.coGoalFor`), confiança escondida e ultimato, fama e experiência (`S.coSeasonEnd`, `S.coSkill`); números em `S.CO` |
 
 ### Dados e textos — `craque/src/`
 
