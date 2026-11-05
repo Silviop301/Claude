@@ -6677,3 +6677,6 @@ button.fi-g, button.p2-gr { cursor: pointer; min-height: 44px; }
 .p2-2c .p2-gm { height: 34px; }
 .mh-t > small { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .co-acts > .btn:only-child { grid-column: 1 / -1; width: 100%; }
+/* Casa de prêmio que fechou num erro: as erradas abrem ali mesmo, embaixo do carimbo */
+.rx-shut .rx-oth { position: static; width: 100%; max-width: 340px; }
+.rx-shut .rx-esc { animation-delay: .5s; }

@@ -302,6 +302,19 @@
     let box;
     const stamp = (cls, txt, msg) => '<div class="rx-res ' + cls + '"><b class="rx-stamp">' + txt + '</b>' + (msg ? '<p>' + msg + '</p>' : '') + '</div>';
     const allMiss = club && r.done && !ok;
+    // Casa de prêmio que fechou num erro: não há mais gol para abrir as erradas, então abrem agora
+    if (!bl && !ok && !club && r.done) {
+      const miss = kicks.filter(x => !x[1] && !seen.includes(x[0]));
+      miss.forEach(x => seen.push(x[0]));
+      const strips = miss.map(x => { const p = r.hidden(x[0]);
+        return '<div class="rx-esc"><span class="rx-oi">' + prizeSmall(p) + '</span><span class="rx-et">A bola ' + (x[0] + 1) + ' que você errou tinha</span><i>+' + Math.round(p.pts) + '</i></div>'; }).join('');
+      stage.insertAdjacentHTML('beforeend', '<div class="rx-res ko rx-shut"><b class="rx-stamp">Errou</b><p>Acabaram as bolas de ' + S.RL_SLOTS[i].name + '. Abriram as que você errou:</p>' +
+        (strips ? '<div class="rx-oth">' + strips + '</div>' : '') + '</div>');
+      refresh();
+      foot('Casa fechada · <b>' + ptsTxt((S.rlCareer(run.seed, run.rounds)[i] || {}).pts || 0) + '</b>', false);
+      sfx('kick');
+      return;
+    }
     if (bl || (!ok && !allMiss)) {
       // Às cegas, ou errou com bolas sobrando: só o carimbo
       const msg = bl ? (ok ? 'O prêmio dessa bola é seu. Só abre quando o amigo jogar' : club && r.done ? 'Nenhuma entrou. Veio um clube de surpresa' : 'Essa bola ficou pra trás')
