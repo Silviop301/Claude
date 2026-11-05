@@ -728,13 +728,17 @@ Proibido também: cartão com faixa colorida na lateral.
 - Visual do técnico (aparência) fica para quando houver arte. Próximo: partida ao vivo com paradas e trocas.
 
 ### Fase 7, parte 3 · 2026-11-05 · Partida ao vivo do Treinador
-- Decisão do Silvio no cartão: partida ao vivo primeiro; o Caderno do técnico (setas descobertas jogo a jogo, à moda de
-  Game Dev Tycoon) vem na parte seguinte.
-- Motor: cada gol esperado vira chances narradas (defesa, para fora, trave, travado), chutes e posse contados no jogo
-  (`m.sh`, `S.coPoss`).
-- Tela ao vivo (`live` em `ui/coach.js`): placar fixo no topo com relógio e barra de posse, narração lance a lance,
-  velocidade normal, rápido (gol não para) e resumo. Paradas no gol, vermelho seu, lesão sua e intervalo, com trocas e
-  mudança de formação e estilo. Resultado ganhou chutes e posse e mostra as trocas.
-- Jogo largado no meio não volta atrás: `co.live` no save; ao voltar, o auxiliar termina o jogo.
-- `craque_telas_treinador.js` joga o 1º jogo ao vivo (troca e tática na parada) e recarrega no meio do 2º.
-
+- Decisões do Silvio: partida ao vivo antes do Caderno do técnico; nova regra "visual antes do código" (a primeira
+  versão codada não foi publicada; proposta em https://claude.ai/artifact/VG7gdG6mxshQCbWg7yYPDW, aprovada); trocas
+  arrastando no campinho; jogo mais longo (1× uns 2 min, 3× uns 40 s, ⏩ vai ao fim).
+- Motor: `S.coMatchStep(co, m, until)` anda minuto a minuto (parar quando quiser), `m.mom` (quem manda, 0 a 100 por
+  minuto), lance com o lado de onde veio (`e.l`: e, d, c), chutes no gol (`m.ot`), leitura do auxiliar `S.coRead`
+  (setor em que mais sofre, o que dá certo, cansados; palavras e setas).
+- Tela (`live` em `ui/coach.js`): placar com relógio e a faixa de quem manda (`U.lvMom`), campinho com as bolinhas dos
+  dois times, bola e a faixa de onde eles atacam, chutes/no gol/posse, o auxiliar, lance a lance e a barra de baixo
+  (1×, 3×, ⏩ e "Parar e mexer"). Parada: cartão que sobe com o lance, a leitura do auxiliar, Trocar e Tática. Trocas:
+  campinho em pé, arrastar reserva até titular (troca) ou titular até titular (trocam de posição), tocar também
+  funciona. Tática: formações em mini campos, estilos em cartões e o confronto em palavras. Resultado: placar, faixa
+  dos 90' com a marca da sua mudança, chutes/no gol/posse e a linha do tempo. Computador: três colunas.
+- Jogo largado no meio não volta atrás (`co.live`): o auxiliar termina o jogo.
+- Classe `.lv-help` já era do livre.js: o texto de ajuda das trocas é `.lv-hint`.

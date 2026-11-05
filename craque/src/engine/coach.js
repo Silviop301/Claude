@@ -112,6 +112,7 @@
   S.coAutoXI = autoXI;
   // ---------- força do time e confronto ----------
   const byId = squad => { const m = {}; squad.forEach(p => { m[p.id] = p; }); return m; };
+  const last = n => String(n || "").split(" ").filter(Boolean).pop() || "";
   const eff = (p, sl) => p.ovr * fit(p.pos, sl) * (0.8 + 0.2 * (p.en === undefined ? 100 : p.en) / 100) * (p.out ? 0.5 : 1) * (1 + ((p.mo === undefined ? 60 : p.mo) - 60) / 1200);
   // Forma de um lado em campo: quanto tem em cada parte (cada jogador vale ~1 = 70 de força na vaga)
   function shape(s) {
@@ -292,24 +293,30 @@
     return { min: 0, gh: 0, ga: 0, home: nx.home, us, them, ev: [], stop: null, done: false, half: false, vs: nx.vs, round: nx.round, played: {} };
   };
   const sideName = (m, s) => (s === m.us ? 'us' : 'them');
-  // Avança até a próxima parada (gol, vermelho, lesão, intervalo) ou o fim. Volta a parada
-  S.coMatchStep = function (co, m) {
+  // Avança até a próxima parada (gol, vermelho, lesão, intervalo) ou o fim; com `until`, para também naquele minuto
+  // (a tela ao vivo anda minuto a minuto, para a pessoa poder parar quando quiser). Volta a parada
+  S.coMatchStep = function (co, m, until) {
     if (m.done) return null;
     const { r, save } = rngCo(co);
     let stop = null;
-    while (!stop && m.min < 90) {
+    while (!stop && m.min < 90 && !(until && m.min >= until)) {
       m.min++;
       const H = m.home ? m.us : m.them, A = m.home ? m.them : m.us;
       const mu = matchup(H, A), lh = mu.lh, la = mu.la;
       m.poss = (m.poss || 0) + (m.home ? mu.h.poss : 1 - mu.h.poss);
+      // Quem manda no jogo, minuto a minuto (0 a 100, do seu lado): a faixa da tela e do resultado
+      (m.mom = m.mom || []).push(Math.round(100 * (m.home ? lh : la) / (lh + la || 1)));
       // Cansaço: quem está em campo perde energia aos poucos (o estilo de ataque cansa mais)
       [m.us, m.them].forEach(s => s.xi.forEach(id => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / 90 * sty(s.style).en); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }));
       // Chances: cada gol esperado vira CO.ch chances; uma em CO.ch entra (as outras são defesa, para fora ou na trave)
       const chance = (S0, lam) => {
         if (r() >= lam * CO.ch / 90) return false;
         const sc = scorer(r, S0), sd = sideName(m, S0); m.sh = m.sh || { us: 0, them: 0 }; m.sh[sd]++;
-        if (r() < 1 / CO.ch) { if (S0 === H) m.gh++; else m.ga++; m.ev.push({ m: m.min, t: 'gol', s: sd, p: sc }); stop = { t: 'gol', s: sd, p: sc }; }
-        else m.ev.push({ m: m.min, t: 'chance', s: sd, p: sc, k: r.pick(['defesa', 'defesa', 'fora', 'fora', 'trave', 'bloqueio']) });
+        // Por onde veio: pelos lados na proporção em que o time ataca por ali (e: esquerda, d: direita de quem ataca)
+        const wsh = (S0 === H ? mu.h : mu.a).wsh, l = r() < wsh ? (r() < 0.5 ? 'e' : 'd') : 'c';
+        m.ot = m.ot || { us: 0, them: 0 };
+        if (r() < 1 / CO.ch) { if (S0 === H) m.gh++; else m.ga++; m.ot[sd]++; m.ev.push({ m: m.min, t: 'gol', s: sd, p: sc, l }); stop = { t: 'gol', s: sd, p: sc, l }; }
+        else { const k = r.pick(['defesa', 'defesa', 'fora', 'fora', 'trave', 'bloqueio']); if (k === 'defesa') m.ot[sd]++; m.ev.push({ m: m.min, t: 'chance', s: sd, p: sc, k, l }); }
         return true;
       };
       if (!chance(H, lh)) chance(A, la);
@@ -371,6 +378,33 @@
       s.form = form; s.xi = Array.from({ length: 11 }, (_, i) => a.xi[i] || null);
     }
     return true;
+  };
+  // A leitura do auxiliar no meio do jogo: o setor em que mais se sofre e o que está dando certo (em palavras, sem número)
+  S.coRead = function (co, m) {
+    const H = m.home ? m.us : m.them, A = m.home ? m.them : m.us, mu = matchup(H, A), u = m.home ? mu.h : mu.a, o = m.home ? mu.a : mu.h;
+    const by = byId(m.us.squad), tired = m.us.xi.filter(id => by[id] && by[id].en < 55).map(id => by[id]).sort((a, b) => a.en - b.en);
+    // De que lado eles chegam mais (a direita de quem ataca é a sua esquerda)
+    const lanes = { e: 0, d: 0, c: 0 }; m.ev.filter(e => e.s === 'them' && e.l && e.m > m.min - 30).forEach(e => { lanes[e.l]++; });
+    const side = lanes.e > lanes.d ? 'direita' : lanes.d > lanes.e ? 'esquerda' : (m.round % 2 ? 'direita' : 'esquerda');
+    const bad = [
+      [o.flank * o.wsh - 0.05, 'Eles estão passando fácil pela nossa ' + side + '. Mais gente aberta ou três zagueiros fecham isso.', 'Lado ' + (side === 'direita' ? 'direito' : 'esquerdo') + ' ↓'],
+      [o.central * (1 - o.wsh) - 0.06, 'Os atacantes deles sobram na nossa área. Mais um zagueiro ajuda.', 'Área ↓'],
+      [o.press - 0.25, 'A pressão deles está pegando a gente na saída de bola.', 'Saída ↓'],
+      [o.counter * 1.6 - 0.25, 'Estamos deixando espaço nas costas para o contra-ataque deles.', 'Costas ↓'],
+      [(0.5 - S.coPoss(m)) - 0.06, 'Eles mandam no meio, a bola não para com a gente.', 'Meio ↓'],
+    ].sort((a, b) => b[0] - a[0]);
+    const good = [
+      [u.flank * u.wsh - 0.05, 'Nossos lados estão sobrando, professor.', 'Lados ↑'],
+      [u.central * (1 - u.wsh) - 0.06, 'Nossos atacantes estão levando a melhor na área.', 'Área ↑'],
+      [u.counter * 1.6 - 0.25, 'O contra-ataque está encaixando.', 'Contra-ataque ↑'],
+      [(S.coPoss(m) - 0.5) - 0.06, 'A bola é nossa no meio.', 'Meio ↑'],
+    ].sort((a, b) => b[0] - a[0]);
+    const tags = [], said = [];
+    if (bad[0][0] > 0) { said.push(bad[0][1]); tags.push(bad[0][2]); }
+    if (good[0][0] > 0) { said.push(good[0][1]); tags.push(good[0][2]); }
+    if (!said.length) said.push('Jogo parelho até aqui. Ninguém manda no meio, ninguém sobra nos lados.');
+    if (tired.length) { tags.push(last(tired[0].n) + ' cansado'); if (said.length < 2) said.push(last(tired[0].n) + ' está no limite.'); }
+    return { txt: said.join(' '), tags, side: bad[0][0] > 0 && bad[0][2].startsWith('Lado') ? side : null };
   };
   // Posse de bola sua até aqui (0 a 1)
   S.coPoss = m => (m.min ? m.poss / m.min : 0.5);

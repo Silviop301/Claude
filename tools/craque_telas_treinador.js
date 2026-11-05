@@ -38,25 +38,34 @@ require('fs').mkdirSync(OUT, { recursive: true });
       if (!(await p.$('#b-co-go'))) continue;
       await click('#b-co-go'); games++;
       if (games === 1) {
-        // primeiro jogo ao vivo: um pouco no normal, depois rápido até a primeira parada; troca e muda a tática
-        await p.waitForTimeout(2500); await shot('ao-vivo');
-        await click('[data-sp="rapido"]');
-        await p.waitForSelector('#b-lv-go, #b-lv-end', { timeout: 30000 });
-        if (await p.$('#b-lv-go')) {
-          await shot('parada');
-          await click('#b-lv-sub'); await click('[data-out]'); await shot('parada-troca'); await click('[data-in]');
-          await click('#b-lv-tac'); await click('[data-lf="5-3-2"]'); await shot('parada-tatica');
-          await click('#b-lv-go');
-        }
-        await click('[data-sp="resumo"]');
+        // primeiro jogo ao vivo: um pouco no 1×, para com "Parar e mexer", troca arrastando no campinho, troca dois
+        // titulares de posição tocando, muda a tática e vai ao fim
+        await p.waitForTimeout(4500); await shot('ao-vivo');
+        await click('[data-sp="3"]'); await p.waitForTimeout(3000);
+        if (await p.$('#b-lv-stop') && !(await p.$('.lv-sheet.on'))) await click('#b-lv-stop');
+        await p.waitForSelector('#b-lv-go', { timeout: 30000 }); await shot('parada');
+        await click('#b-lv-sub'); await shot('trocas');
+        const from = await p.$('[data-dbn]'), to = await p.$('[data-dxi="2"]');
+        if (from && to) { const A = await from.boundingBox(), B = await to.boundingBox();
+          await p.mouse.move(A.x + A.width / 2, A.y + A.height / 2); await p.mouse.down();
+          await p.mouse.move(A.x + 40, A.y - 60, { steps: 5 }); await p.mouse.move(B.x + B.width / 2, B.y + B.height / 2, { steps: 8 });
+          await shot('trocas-arrastando'); await p.mouse.up(); await p.waitForTimeout(400); }
+        await click('[data-dxi="9"]'); await click('[data-dxi="10"]'); await shot('trocas-feitas');
+        await click('#b-lv-back');
+        await click('#b-lv-tac'); await click('[data-lf="5-3-2"]'); await click('[data-ls="contra"]'); await shot('tatica');
+        await click('#b-lv-back'); await click('#b-lv-go');
+        await p.waitForTimeout(2500);
+        if (!(await p.$('.lv-sheet.on'))) await click('[data-sp="fim"]');
+        else { await click('#b-lv-go'); await click('[data-sp="fim"]'); }
         await p.waitForSelector('#b-lv-end', { timeout: 30000 }); await shot('fim-de-jogo');
         await click('#b-lv-end'); await shot('resultado');
       } else if (games === 2) {
         // largou no meio: recarrega antes de ver o resultado; o auxiliar termina o jogo
+        await click('[data-sp="fim"]');
         await p.waitForSelector('#b-lv-end', { timeout: 30000 });
         await p.reload({ waitUntil: 'load' }); await p.waitForTimeout(1500);
         await click('#b-cont-co'); await shot('largou-no-meio');
-      } else { await click('#b-lv-end'); }
+      } else { if (await p.$('.lv-sheet.on #b-lv-go')) await click('#b-lv-go'); await click('[data-sp="fim"]'); await click('#b-lv-end'); }
       continue;
     }
     if (await p.$('#b-co-next')) { await click('#b-co-next'); continue; }
