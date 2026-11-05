@@ -45,6 +45,31 @@
   const pay = (c, v) => { c.money = (c.money || 0) - v; c.fc.night.net -= v; };
   const canStake = (c, stake) => S.fcNightOpen(c) && stake > 0 && stake <= S.fcNightLeft(c);
 
+  // ---------- foguetinho (crash, no app Bet171) ----------
+  // O multiplicador sobe até explodir; sacar antes paga a aposta vezes o multiplicador da hora. O ponto da explosão sai do
+  // motor na hora da aposta (recarregar não refaz) e a casa leva 4%: X = 0,96/(1−u), nunca abaixo de 1,00 (explode na
+  // largada). Qualquer saque em m devolve em média 96% (m × chance de X passar de m = 0,96)
+  S.FC_CRASH_RTP = 0.96;
+  S.fcCrashGo = function (c, stake) {
+    const fc = c.fc;
+    if (!fc || fc.crash || !canStake(c, stake)) return null;
+    const { r, save } = rngOf(fc), u = r();
+    save();
+    const x = Math.max(1, Math.min(100, Math.floor(S.FC_CRASH_RTP / (1 - u) * 100) / 100));
+    fc.crash = { stake, x };
+    return { x };
+  };
+  // Saca no multiplicador m (0: não sacou, explodiu ou saiu da tela). Paga se m ficou abaixo do ponto da explosão
+  S.fcCrashEnd = function (c, m) {
+    const fc = c.fc, k = fc && fc.crash;
+    if (!k) return null;
+    fc.crash = null;
+    const ok = m >= 1 && m < k.x, back = ok ? Math.round(k.stake * m) : 0;
+    fc.crashHist = (fc.crashHist || []).concat(k.x).slice(-6);
+    const net = settle(c, k.stake, back, 'crash');
+    return { ok, x: k.x, m, back, net };
+  };
+
   // ---------- roleta (37 casas, o zero é da casa) ----------
   const RED = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
   S.ROULETTE_RED = RED;

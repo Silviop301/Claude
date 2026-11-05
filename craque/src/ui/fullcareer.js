@@ -47,12 +47,29 @@
   // Um app aberto: a tela inteira é o celular (sem moldura desenhada). Topo com voltar, ícone e nome do app; o conteúdo
   // rola no meio; o ingresso do jogo fica sempre no mesmo lugar e do mesmo tamanho que no início
   const APP_EMO = { msg: '💬', ag: '📒', wk: '📒', bet: '🎰', shop: '🏷️', tbl: '📊', cal: '📋', me: '📈', evo: '📈', bank: '🏦', mkt: '🤝' };
+  // Os apps são paródias (canvas "Apps do celular", 2026-11-05): nome e ícone desenhado aqui (sem logo de verdade). A
+  // Agenda fica com o nome e o ícone de sempre. APP_LBL é o nome curto embaixo do ícone, quando o nome não cabe
+  const APP_NAME = { msg: 'ZapZap', ag: 'Agenda', me: 'FutBim', bank: 'NuGrana', shop: 'Amazonas', tbl: 'SofáScore', cal: 'OneBola', mkt: 'TransferMarreco', bet: 'Bet171' };
+  const APP_LBL = { mkt: 'Marreco' };
+  const SV = (bg, inner) => '<svg viewBox="0 0 54 54" aria-hidden="true"><rect width="54" height="54" fill="' + bg + '"/>' + inner + '</svg>';
+  const APP_SVG = {
+    msg: SV('#1FA855', '<circle cx="27" cy="25" r="15" fill="#fff"/><path d="M14 42l3-11 8 5z" fill="#fff"/><text x="27" y="31.5" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="19" fill="#1FA855">Z</text>'),
+    me: SV('#13201A', '<path d="M16 10h22v26l-11 8-11-8z" fill="#F2C230"/><text x="27" y="29" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="15" fill="#13201A">99</text>'),
+    bank: SV('#7A2BD6', '<text x="27" y="34" text-anchor="middle" font-family="Barlow,sans-serif" font-weight="700" font-size="22" fill="#fff">ng</text>'),
+    shop: SV('#FFB23F', '<path d="M13 20h28v18a3 3 0 0 1-3 3H16a3 3 0 0 1-3-3z" fill="#C98B4A" stroke="#13201A" stroke-width="2"/><path d="M13 20l4-6h20l4 6M27 14v6" fill="none" stroke="#13201A" stroke-width="2" stroke-linejoin="round"/><path d="M6 47q5-4 10 0t10 0t10 0t10 0" fill="none" stroke="#1D4C9E" stroke-width="3" stroke-linecap="round"/>'),
+    tbl: SV('#2C6BEA', '<rect x="15" y="17" width="24" height="11" rx="4" fill="#fff"/><rect x="10" y="24" width="34" height="11" rx="4" fill="#fff"/><path d="M14 35v5M40 35v5" stroke="#fff" stroke-width="3" stroke-linecap="round"/>'),
+    cal: SV('#111', '<text x="20" y="37" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="26" fill="#fff">1</text><circle cx="34" cy="30" r="8" fill="#fff"/><path d="M34 26l3.5 2.6-1.3 4h-4.4l-1.3-4z" fill="#111"/>'),
+    mkt: SV('#1A8F8A', '<path d="M12 46q14-16 28 0z" fill="#fff"/><circle cx="25" cy="22" r="10" fill="#fff"/><path d="M33 21l10 3-10 3z" fill="#F2C230"/><circle cx="28" cy="19" r="2" fill="#13201A"/>'),
+    bet: SV('#D7263D', '<text x="27" y="20" text-anchor="middle" font-family="Barlow,sans-serif" font-weight="700" font-size="10" fill="#fff">bet</text><text x="27" y="38" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="20" fill="#F2C230">171</text>'),
+  };
+  // O ícone do app: o desenho próprio ou, sem desenho (Agenda, treino, evoluir), o emoji de sempre
+  const appIco = (k, sz) => (APP_SVG[k] ? APP_SVG[k] : U.emo(APP_EMO[k] || '📱', sz || 'md'));
   const BACK_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function appScr(cur, title, body, o) {
     o = o || {};
     const c = G.c;
     render('<div class="p2 pa" id="fc">' + U.modeHead({ mode: 'jaj', nav: 'back', id: 'fc-back', cfg: 'fc-cfg', label: 'Voltar' + (o.back ? ' para ' + o.back : ' ao início do celular'),
-      title: (APP_EMO[cur] ? '<i class="p2-ai">' + U.emo(APP_EMO[cur], 'md') + '</i>' : '') + title, right: o.right }) +
+      title: (APP_EMO[cur] ? '<i class="p2-ai' + (APP_SVG[cur] ? ' sv' : '') + '">' + appIco(cur) + '</i>' : '') + title, right: o.right }) +
       '<div class="fc-scr pa-body p2-body' + (o.cls ? ' ' + o.cls : '') + '" id="fc-scr">' + body + '</div>' + (o.foot || '') +
       side(c) + '</div>');
     p2Chrome();
@@ -87,8 +104,7 @@
   // Início do celular (proposta B do canvas "Celular do Jogo a Jogo"): a tela inteira é o aparelho. Em cima o dia e a
   // energia, configurações e sair; a notificação mais nova em faixa (+N abre as outras); os widgets Jogador (abre a
   // Ficha) e Próximo jogo (abre a Tabela); os nove apps em grade; o ingresso embaixo, igual em todo app.
-  const GRID2 = [['msg', '💬', 'Chat'], ['ag', '📒', 'Agenda'], ['me', '📈', 'Ficha'], ['bank', '🏦', 'Finanças'], ['shop', '🏷️', 'Loja'],
-    ['tbl', '📊', 'Tabela'], ['cal', '📋', 'Jogos'], ['mkt', '🤝', 'Mercado'], ['bet', '🎰', 'Apostas']];
+  const GRID2 = ['msg', 'ag', 'me', 'bank', 'shop', 'tbl', 'cal', 'mkt', 'bet'].map(k => [k, APP_EMO[k], APP_LBL[k] || APP_NAME[k]]);
   const GEAR = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4z M19.4 13.5l1.6 1.2-1.8 3.1-1.9-.7a7.6 7.6 0 0 1-2 1.2l-.3 2h-3.6l-.3-2a7.6 7.6 0 0 1-2-1.2l-1.9.7-1.8-3.1 1.6-1.2a7.4 7.4 0 0 1 0-2.4L3.4 9.3l1.8-3.1 1.9.7a7.6 7.6 0 0 1 2-1.2l.3-2h3.6l.3 2a7.6 7.6 0 0 1 2 1.2l1.9-.7 1.8 3.1-1.6 1.2a7.4 7.4 0 0 1 0 2.4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
   const EXIT = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4.5 3 12l7.5 7.5M3.8 12h17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const DAYS_LONG = { Seg: 'Segunda', Ter: 'Terça', Qua: 'Quarta', Qui: 'Quinta', Sex: 'Sexta', 'Sáb': 'Sábado', Dom: 'Domingo' };
@@ -96,7 +112,7 @@
   function meter(lbl, v, cls) { return '<span>' + lbl + '</span><i class="p2-mb"><i class="' + (cls || '') + '" style="width:' + Math.max(0, Math.min(100, Math.round(v))) + '%"></i></i>'; }
   function wPlayer(c) {
     const o = S.ovr(c), tot = U.totOf(c), tt = U.titlesOf(c);
-    return '<button class="p2-w p2-wme" data-go="me" aria-label="Jogador: abrir a Ficha"><span class="p2-who"><span class="ovr metal ' + U.tierCls(o) + '">' + o + '</span>' +
+    return '<button class="p2-w p2-wme" data-go="me" aria-label="Jogador: abrir o FutBim"><span class="p2-who"><span class="ovr metal ' + U.tierCls(o) + '">' + o + '</span>' +
       '<span class="p2-nm"><b>' + esc(c.name) + '</b><small>' + crest(c.club, 'xs') + esc(nameOf(c.club)) + '</small></span></span>' +
       '<span class="p2-ms">' + meter('Técnico', c.rel.coach) + meter('Torcida', c.rel.fans) + meter('Fama', c.fame / 3, 'fame') + '</span>' +
       '<small class="p2-tot">' + tot.map(([v, l]) => v + ' ' + l.toLowerCase()).join(' · ') + ' · ' + tt + (tt === 1 ? ' taça' : ' taças') + '</small></button>';
@@ -105,7 +121,7 @@
     if (!nx.vs) return '<button class="p2-w p2-wnx" data-go="cal" aria-label="Próximo jogo: abrir Jogos"><small class="p2-ey">Amanhã</small><span class="p2-vs">' + crest(c.club, 'lg') + '</span><b>Folga do time</b><small>' + esc(nx.compName) + '</small></button>';
     const p = Math.round(S.fcStartP(c) * 100);
     const st = nx.injury ? ['fora', 'lesionado'] : nx.on === null ? ['', p + '% de começar'] : nx.on ? ['on', 'titular'] : ['', nx.why === 'cansaço' ? 'poupado' : 'banco'];
-    return '<button class="p2-w p2-wnx" data-go="' + (nx.comp === 'lg' ? 'tbl' : 'cal') + '" aria-label="Próximo jogo: abrir a ' + (nx.comp === 'lg' ? 'Tabela' : 'lista de jogos') + '">' +
+    return '<button class="p2-w p2-wnx" data-go="' + (nx.comp === 'lg' ? 'tbl' : 'cal') + '" aria-label="Próximo jogo: abrir o ' + (nx.comp === 'lg' ? 'SofáScore' : 'OneBola') + '">' +
       '<small class="p2-ey">Amanhã · ' + (nx.home ? 'em casa' : 'fora') + '</small>' +
       '<span class="p2-vs">' + crest(nx.home ? c.club : nx.vs, 'lg') + '<em>×</em>' + crest(nx.home ? nx.vs : c.club, 'lg') + '</span>' +
       '<b>x ' + esc(nameOf(nx.vs)) + '</b><small>' + esc(nx.compName) + (nx.stage ? ' · ' + esc(nx.stage.toLowerCase()) : '') + ' <em class="p2-st ' + st[0] + '">' + st[1] + '</em></small></button>';
@@ -123,7 +139,7 @@
       (k === 0 && ps.length > 1 ? '<em class="p2-more" id="p2-more" role="button" tabindex="0" aria-label="' + (nAll ? 'Mostrar só a mais nova' : 'Ver as outras ' + (ps.length - 1) + ' notificações') + '">' + (nAll ? '−' : '+' + (ps.length - 1)) + '</em>' : '') + '</button>';
     const due = pendings(c);
     const app = ([k, e, n]) => { const u = due[k] || 0, lb = k === 'ag' && due.tr ? 'Treino' : n;
-      return '<button class="p2-app' + (u ? ' due' : '') + (lb !== n ? ' tr' : '') + '" data-go="' + k + '" aria-label="' + n + (u ? ': ' + u + (u === 1 ? ' pendência' : ' pendências') : '') + '"><i>' + U.emo(e, 'md') + (u ? '<em class="ph-badge">' + Math.min(u, 99) + '</em>' : '') + '</i><span>' + lb + '</span></button>'; };
+      return '<button class="p2-app' + (u ? ' due' : '') + (lb !== n ? ' tr' : '') + '" data-go="' + k + '" aria-label="' + n + (u ? ': ' + u + (u === 1 ? ' pendência' : ' pendências') : '') + '"><i' + (APP_SVG[k] ? ' class="sv"' : '') + '>' + appIco(k) + (u ? '<em class="ph-badge">' + Math.min(u, 99) + '</em>' : '') + '</i><span>' + lb + '</span></button>'; };
     render('<div class="p2" id="fc">' +
       U.modeHead({ mode: 'jaj', nav: 'home', id: 'p2-exit', cfg: 'p2-cfg', title: (DAYS_LONG[eve] || eve) + ', ' + sb.clk,
         sub: 'Jogo ' + (fc.i + 1) + ' do ano · <span class="p2-en ' + (en < S.FC_EN_OUT ? 'out' : en < S.FC_EN_LOW ? 'low' : '') + '">Energia ' + en + '%</span>' }) +
@@ -151,7 +167,7 @@
   // quando o app é aberto (só o Chat zera ao abrir). tr: o treino com lances da semana ainda por jogar (a Agenda vira "Treino")
   function pendings(c) {
     const fc = c.fc, u = {}, add = (k, v) => { if (v > 0) u[k] = (u[k] || 0) + v; };
-    add('msg', (c.ppl && c.ppl.unread) || 0);
+    add('msg', Math.max((c.ppl && c.ppl.unread) || 0, S.fcAsks ? S.fcAsks(c) : 0)); // o que chegou e o que pede resposta
     const fx = S.fcZeOffer && S.fcZeOffer(c);
     if (fx && fx.st === 'open' && !u.msg) add('msg', 1); // a proposta do Zé se responde no Chat
     const tr = S.fcTrOpen(c, fc.wkDue ? pick || S.fcWeekAuto(c) : null);
@@ -199,7 +215,7 @@
     const p = Math.round(S.fcStartP(c) * 100);
     // Quem escreveu desde o último jogo (as duas mais novas), antes das notificações do clube
     const who = id => { const k = S.fcContact(c, id); return id === 'mae' ? k.name : k.name + ', ' + k.role; };
-    if (S.fcPhoneNew) S.fcPhoneNew(c).slice(-2).reverse().forEach((m, k) => n(m.p === 'ze' ? 'ze' : 'msg', m.p === 'ze' ? 'Zé' : who(m.p), m.t, 3 + k));
+    if (S.fcPhoneNew) S.fcPhoneNew(c).slice(-2).reverse().forEach((m, k) => n(m.p === 'ze' ? 'ze' : 'ch:' + m.p, m.p === 'ze' ? 'Zé' : who(m.p), m.t, 3 + k));
     const coach = c.ppl ? who('coach') : 'Técnico', n1 = (g, w, t) => n(g, w, t, 1);
     if (nx.injury) n1(null, /suspensão/.test(nx.injury) ? 'Diretoria' : 'Departamento médico', /suspensão/.test(nx.injury) ? (/manipula/.test(fc.injName) ? 'Suspenso pelo caso do cartão combinado: fora por mais ' : 'Suspenso por causa da aposta: fora por mais ') + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') : nx.injury.charAt(0).toUpperCase() + nx.injury.slice(1) + ': fora por mais ' + nx.injLeft + (nx.injLeft === 1 ? ' jogo.' : ' jogos.') + (fc.wkDue ? ' Fisioterapia na semana ajuda.' : ''));
     else if (nx.vs) n1(null, coach, nx.on === null ? 'Escalo o time depois do treino da semana. Hoje você tem ' + p + '% de chance de começar.' : nx.on ? 'Amanhã você começa jogando. Conto contigo.' : nx.why === 'cansaço' ? 'Vou te poupar amanhã, você tá sem perna. Descansa.' : nx.why === 'banco' ? 'Amanhã você começa no banco. Treina forte que a chance aparece.' : 'Amanhã vou rodar o elenco e você fica fora.');
@@ -220,14 +236,14 @@
     // Mercado: a janela do meio do ano aberta com propostas
     const mw = S.fcWin && S.fcWin(c);
     const sd = S.fcSond ? S.fcSond(c) : [];
-    if (sd.length) n('mkt', 'Mercado', 'Sondagem: ' + D.o(nameOf(sd[0].club)) + (sd.length > 1 ? ' e mais um clube perguntaram' : ' perguntou') + ' por você. A janela abre em ' + D.plural(Math.max(1, S.fcWinState(c).at - fc.i), 'jogo', 'jogos') + '.', 2);
-    if (mw && mw.offers.length) n('mkt', 'Mercado', (mw.offers.length > 1 ? mw.offers.length + ' propostas' : 'Proposta ' + D.do(nameOf(mw.offers[0].club))) + ' na mesa. A janela fecha ' + (S.fcWinLeft(c) > 1 ? 'em ' + S.fcWinLeft(c) + ' jogos.' : 'depois do próximo jogo.'), 1);
+    if (sd.length) n('mkt', 'TransferMarreco', 'Sondagem: ' + D.o(nameOf(sd[0].club)) + (sd.length > 1 ? ' e mais um clube perguntaram' : ' perguntou') + ' por você. A janela abre em ' + D.plural(Math.max(1, S.fcWinState(c).at - fc.i), 'jogo', 'jogos') + '.', 2);
+    if (mw && mw.offers.length) n('mkt', 'TransferMarreco', (mw.offers.length > 1 ? mw.offers.length + ' propostas' : 'Proposta ' + D.do(nameOf(mw.offers[0].club))) + ' na mesa. A janela fecha ' + (S.fcWinLeft(c) > 1 ? 'em ' + S.fcWinLeft(c) + ' jogos.' : 'depois do próximo jogo.'), 1);
     // Banco: a conta no vermelho (as saídas estão no app)
-    if (S.fcDebt && S.fcDebt(c) > 0) n('bank', 'Finanças', 'Conta no vermelho: R$ ' + U.money(S.fcDebt(c)) + ' de dívida. Toque para ver as saídas.', 2);
+    if (S.fcDebt && S.fcDebt(c) > 0) n('bank', 'NuGrana', 'Conta no vermelho: R$ ' + U.money(S.fcDebt(c)) + ' de dívida. Toque para ver as saídas.', 2);
     // Roupeiro: a chuteira (ou luva) acabando ou já rasgada
     const gw = c.pos === 'GOL' ? 'luva' : 'chuteira';
     if (c.gear && c.gear.left <= 5) n('shop', 'Roupeiro', 'Tua ' + gw + ' tá no fim: ' + (c.gear.left === 1 ? 'aguenta só mais 1 jogo.' : 'aguenta mais ' + c.gear.left + ' jogos.'));
-    else if (!c.gear && fc.gearOut) n('shop', 'Roupeiro', c.pos === 'GOL' ? 'Tuas luvas rasgaram. Passa na loja e compra outras.' : 'Tua chuteira rasgou. Passa na loja e compra outra.');
+    else if (!c.gear && fc.gearOut) n('shop', 'Roupeiro', c.pos === 'GOL' ? 'Tuas luvas rasgaram. Pede outras no Amazonas, chega antes do apito.' : 'Tua chuteira rasgou. Pede outra no Amazonas, chega antes do apito.');
     if ((c.pe || 0) >= 1 && S.canInvestAny(c)) n('evo', 'Preparador', 'Você tem ' + c.pe + (c.pe === 1 ? ' ponto' : ' pontos') + ' para gastar na ficha.');
     if (fc.wkDue && (fc.en === undefined ? 100 : fc.en) < S.FC_EN_LOW) n('ag', 'Preparador físico', 'Energia ' + Math.round(fc.en) + '. Marca um descanso na agenda.');
     const fx = S.fcZeOffer(c), bets = S.fcBets(c);
@@ -242,19 +258,23 @@
   // também lembra. Respondido: o que escolheu e, na arriscada, só "Deu certo" ou "Não deu" (sem o número do sorteio).
   function invCard(c, x, k, day) {
     const d = S.fcInvDef(x), who = S.fcContact(c, d.p), wn = d.p === 'mae' ? 'Mãe' : who.name + ', ' + who.role;
+    return '<div class="ag-blk ag-iv"><p class="ag-lbl">Convite · ' + day + '</p><div class="ag-who"><i class="ag-av">' + U.emo(who.icon || '💬', 'sm') + '</i><p class="ag-bub"><small>' + esc(wn) + '</small>' + esc(S.fcInvText(c, x)) + '</p></div>' + invOpts(c, x, k) + '</div>';
+  }
+  // As respostas do convite (ou o que deu, depois de responder): na Agenda e no ZapZap
+  function invOpts(c, x, k) {
+    const d = S.fcInvDef(x);
     const parts = fx => S.fcInvParts(c, fx).map(esc).join(' · ') || 'nada muda';
-    const head = '<p class="ag-lbl">Convite · ' + day + '</p><div class="ag-who"><i class="ag-av">' + U.emo(who.icon || '💬', 'sm') + '</i><p class="ag-bub"><small>' + esc(wn) + '</small>' + esc(S.fcInvText(c, x)) + '</p></div>';
     if (x.ans) {
       const roll = x.ans === 'b' && !d.b.later, o = x.ans === 'a' ? d.a : d.b.later ? d.b : x.ok ? d.b.win : d.b.lose, lab = x.ans === 'a' ? d.a.l : d.b.l;
       const k2 = roll ? (x.ok ? 'Deu certo' : 'Não deu') : 'Sua resposta';
-      return '<div class="ag-blk ag-iv">' + head + '<div class="ag-res ' + (roll ? (x.ok ? 'win' : 'lose') : '') + '"><em>' + k2 + '</em><b>' + esc(lab) + (roll ? ': ' + esc(o.tag.charAt(0).toLowerCase() + o.tag.slice(1)) : '') + '</b><span>' + parts(o.fx) + (x.ans === 'b' && d.b.later ? ' · ' + esc(d.b.later) : '') + '</span></div></div>';
+      return '<div class="ag-res ' + (roll ? (x.ok ? 'win' : 'lose') : '') + '"><em>' + k2 + '</em><b>' + esc(lab) + (roll ? ': ' + esc(o.tag.charAt(0).toLowerCase() + o.tag.slice(1)) : '') + '</b><span>' + parts(o.fx) + (x.ans === 'b' && d.b.later ? ' · ' + esc(d.b.later) : '') + '</span></div>';
     }
     const p = Math.round(((d.b.press && c.staff && c.staff.press) ? d.b.press : (d.b.p || 1)) * 100);
     const riskTxt = d.b.later ? parts(d.b.fx) + '<i>' + esc(d.b.later) + '</i>' : '<i class="up">Dá certo: ' + parts(d.b.win.fx) + '</i><i class="down">Não dá: ' + parts(d.b.lose.fx) + '</i>';
-    return '<div class="ag-blk ag-iv">' + head + '<div class="iv-o">' +
+    return '<div class="iv-o">' +
       '<button class="iv-b safe" data-inv="' + k + '" data-a="a"><em>SEGURA</em><b>' + esc(d.a.l) + '</b><small>' + parts(d.a.fx) + '</small></button>' +
       '<button class="iv-b risk" data-inv="' + k + '" data-a="b"><em>ARRISCADA' + (d.b.later ? '' : ' · ' + p + '%') + '</em><b>' + esc(d.b.l) + '</b><small>' + riskTxt + '</small></button>' +
-      '</div><p class="iv-n">Sem resposta: ' + parts(d.ig.fx) + '</p></div>';
+      '</div><p class="iv-n">Sem resposta até o jogo: ' + parts(d.ig.fx) + '</p>';
   }
   // A Agenda (desenho aprovado em 2026-11-05): em cima a semana numa tira de dias (rotina do clube só um ponto, o dia do
   // jogo em ouro); depois o cartão "Antes do jogo" com o que é seu (treino da semana com as quatro opções à vista, o
@@ -381,26 +401,67 @@
   // A lista (uma conversa por pessoa, a mais recente em cima) e, tocando, a conversa inteira em balões.
   // A relação não aparece em número: só no tom do que cada um escreve.
   let chatOpen = null, trA = null; // trA: atributo do treino com lances escolhido na agenda (antes do primeiro lance)
+  let chTyping = null, chFx = null; // a pessoa digitando a resposta (por um instante) e o efeito da última resposta
+  // ZapZap (o antigo Chat): a lista com quem espera resposta em cima e, tocando, a conversa. Cada mensagem pede resposta
+  // até o próximo jogo (três respostas embaixo, engine/phone.js S.fcReply) e o convite da semana se responde ali também
   function chat() {
-    const c = G.c, th = S.fcThreads(c), fc = c.fc;
+    const c = G.c, fc = c.fc, th = S.fcThreads(c);
     if (c.ppl) c.ppl.unread = 0;
+    if (chatOpen && S.fcChatSeen) S.fcChatSeen(c, chatOpen);
     save();
     const when = m => (m.s === c.season ? (m.at >= fc.i ? 'agora' : 'jogo ' + m.at) : String(year() - c.season + m.s));
     // O Zé fica sempre na lista (é por ele que se pede palpite), mesmo antes da primeira mensagem
-    if (!th.some(x => x.id === 'ze')) th.push({ id: 'ze', c: { id: 'ze', name: 'Zé', role: 'apostas', icon: '🎰' }, msgs: [{ t: 'Manda mensagem que eu te passo um palpite da rodada.', s: c.season, at: fc.i }] });
+    if (!th.some(x => x.id === 'ze')) th.push({ id: 'ze', c: { id: 'ze', name: 'Zé', role: 'palpites', icon: '🎰' }, msgs: [{ t: 'Manda mensagem que eu te passo um palpite da rodada.', s: c.season, at: fc.i }] });
+    const invs = S.fcInvites(c).map((x, k) => ({ x, k, p: S.fcInvDef(x).p }));
+    invs.forEach(o => { if (!th.some(t => t.id === o.p)) th.unshift({ id: o.p, c: S.fcContact(c, o.p), msgs: [] }); });
+    const due = t => t.msgs.filter(m => S.fcReplies(c, m)).length + invs.filter(o => o.p === t.id && !o.x.ans).length;
+    th.sort((x, y) => (due(y) > 0) - (due(x) > 0));
     const t = chatOpen && th.find(x => x.id === chatOpen);
-    let body;
+    const TK = '<i class="ch-tk" aria-label="visualizado">✓✓</i>';
+    let body, foot = '';
     if (t) {
-      body = '<div class="ch-head"><i>' + U.emo(t.c.icon, 'sm') + '</i><div><b>' + esc(t.c.name) + '</b><small>' + esc(t.c.role) + '</small></div></div>' +
-        '<div class="ch-log">' + t.msgs.slice(-30).map(m => '<p class="ch-b' + (m.me ? ' me' : '') + '"><span>' + esc(m.t) + '</span><small>' + esc(when(m)) + (m.me && m.seen ? ' · visualizado' : '') + '</small></p>' + (t.id === 'ze' ? zeCard(c, m) : '')).join('') + '</div>';
+      const typing = chTyping === t.id, msgs = t.msgs.slice(-30), mine = invs.filter(o => o.p === t.id);
+      const shown = typing ? msgs.slice(0, -1) : msgs;
+      const ivAt = o => shown.findIndex(m => m.inv === o.x.id && m.s === c.season && m.at === fc.i);
+      const ivHtml = o => '<div class="ch-b ch-iv"><span>' + esc(S.fcInvText(c, o.x)) + '</span>' + invOpts(c, o.x, o.k) + '</div>';
+      let log = '';
+      shown.forEach((m, j) => {
+        mine.forEach(o => { if (ivAt(o) === j) log += ivHtml(o); });
+        log += '<p class="ch-b' + (m.me ? ' me' : '') + '"><span>' + esc(m.t) + '</span><small>' + esc(when(m)) + (m.me ? ' ' + TK : '') + '</small></p>' + (t.id === 'ze' ? zeCard(c, m) : '');
+      });
+      mine.forEach(o => { if (ivAt(o) < 0) log += ivHtml(o); });
+      if (typing) log += '<p class="ch-dots" aria-label="' + esc(t.c.name) + ' está digitando"><i></i><i></i><i></i></p>';
+      else if (chFx && chFx.id === t.id) log += '<p class="ch-fx' + (chFx.bad ? ' bad' : '') + '">' + esc(chFx.txt) + '</p>';
+      body = '<div class="ch-head"><i>' + U.emo(t.c.icon, 'sm') + '</i><div><b>' + esc(t.c.name) + '</b><small class="' + (typing ? 'on' : '') + '">' + (typing ? 'digitando…' : esc(t.c.role)) + '</small></div></div>' +
+        '<div class="ch-log">' + log + '</div>';
+      const ask = !typing && t.msgs.find(m => S.fcReplies(c, m));
+      if (t.id === 'ze') foot = zeReply(c);
+      else if (ask) foot = '<div class="ch-rp"><small>Responder</small>' + S.fcReplies(c, ask).map((r, i) => '<button class="ch-chip" data-rp="' + ask.k + '" data-i="' + i + '"><span>' + esc(r.t) + '</span><em class="t' + i + '">' + esc(r.tag) + '</em></button>').join('') +
+        '<small class="ch-vac">ou deixa no vácuo: ' + (t.id === 'mae' ? 'ela vê' : 'vê') + ' o visto azul</small></div>';
     } else {
-      body = th.length ? '<div class="ch-list">' + th.map(x => { const m = x.msgs[x.msgs.length - 1]; return '<button class="ch-row" data-ch="' + x.id + '"><i>' + U.emo(x.c.icon, 'sm') + '</i><span><b>' + esc(x.c.name) + (x.id === 'mae' ? '' : ' <small>' + esc(x.c.role) + '</small>') + '</b><em>' + esc(m.t) + '</em></span><small>' + esc(when(m)) + '</small></button>'; }).join('') + '</div>' :
+      const wait = th.filter(x => due(x) > 0).length;
+      body = th.length ? '<div class="ch-list">' + th.map(x => {
+        const m = x.msgs[x.msgs.length - 1], iv = invs.find(o => o.p === x.id && !o.x.ans), n = due(x);
+        const pv = iv ? '<b class="ch-tag">Convite</b>' + esc(S.fcInvText(c, iv.x)) : m ? (m.me ? TK + ' Você: ' : '') + esc(m.t) : '';
+        return '<button class="ch-row' + (n ? ' due' : '') + '" data-ch="' + x.id + '"><i>' + U.emo(x.c.icon, 'sm') + '</i><span><b>' + esc(x.c.name) + (x.id === 'mae' ? '' : ' <small>' + esc(x.c.role) + '</small>') + '</b><em>' + pv + '</em></span>' +
+          '<span class="ch-r"><small>' + (iv || !m ? 'agora' : esc(when(m))) + '</small>' + (n ? '<em class="ch-ct">' + n + '</em>' : '') + '</span></button>';
+      }).join('') + '</div>' + (wait ? '<p class="ch-wait">' + (wait === 1 ? '1 pessoa esperando' : wait + ' pessoas esperando') + ' resposta. Quem fica no vácuo até o jogo vê o <b>visualizou e não respondeu</b>.</p>' : '') :
         '<p class="ch-none">Ninguém escreveu ainda. Depois dos jogos a família, os amigos e o pessoal do clube mandam mensagem.</p>';
     }
-    appScr('msg', t ? esc(t.c.name) : 'Chat', body, { cls: 'ch' + (t && t.id === 'ze' ? ' ze' : ''), back: t ? 'Conversas' : 'Início', foot: t && t.id === 'ze' ? zeReply(c) : '' });
-    if (t) $('fc-back').onclick = () => { sfx('tap'); chatOpen = null; chat(); };
+    appScr('msg', t ? esc(t.c.name) : APP_NAME.msg, body, { cls: 'ch' + (t && t.id === 'ze' ? ' ze' : ''), back: t ? 'Conversas' : 'Início', foot });
+    if (t) $('fc-back').onclick = () => { sfx('tap'); chatOpen = null; chTyping = null; chFx = null; chat(); };
     if (t && t.id === 'ze') zeBind(c);
-    document.querySelectorAll('[data-ch]').forEach(b => { b.onclick = () => { sfx('tap'); chatOpen = b.dataset.ch; chat(); }; });
+    document.querySelectorAll('[data-ch]').forEach(b => { b.onclick = () => { sfx('tap'); chatOpen = b.dataset.ch; chFx = null; chat(); }; });
+    document.querySelectorAll('[data-rp]').forEach(b => { b.onclick = () => {
+      const id = t.id, r = S.fcReply(c, +b.dataset.rp, +b.dataset.i);
+      if (!r) return;
+      sfx('tap'); save(); bar();
+      const bad = r.parts.some(x => /chateado|chateada|−/.test(x));
+      chFx = { id, txt: r.parts.length ? r.parts.join(' · ') : 'Nada muda', bad };
+      chTyping = id; chat();
+      setTimeout(() => { if (chTyping !== id) return; chTyping = null; if (chatOpen === id && document.querySelector('.p2-body.ch')) { sfx('paper'); chat(); } }, 1100);
+    }; });
+    document.querySelectorAll('.ch [data-inv]').forEach(b => { b.onclick = () => { const r = S.fcInvAnswer(c, +b.dataset.inv, b.dataset.a); if (!r) return; sfx(r.ok ? 'coin' : 'tap'); save(); bar(); chat(); }; });
     if (t) { const lg = document.querySelector('.ch-log'); if (lg && lg.lastElementChild) lg.lastElementChild.scrollIntoView({ block: 'end' }); } else window.scrollTo(0, 0);
   }
   // ---------- o Zé no Chat (engine/money.js): palpite com a cotação, aposta ali mesmo e a proposta do amarelo ----------
@@ -424,22 +485,23 @@
   function zeReply(c) {
     const can = S.fcZeCanTip(c), R = S.fcBetRound(c), tips = S.fcZeTips(c) || [];
     return '<div class="ch-reply"><button class="ch-q" id="ze-ask"' + (R && !can ? ' disabled' : '') + '>' + (!R ? 'Manda um palpite' : !can ? (S.fcZeMad(c) ? 'O Zé não está respondendo' : 'Sem mais palpites nesta rodada') : tips.length ? 'Manda outro palpite' : 'Manda um palpite') + '</button>' +
-      '<button class="ch-q ghost" data-go2="bet">Abrir Apostas</button></div>';
+      '<button class="ch-q ghost" data-go2="bet">Ver extrato</button></div>';
   }
   function zeBind(c) {
     const a = $('ze-ask');
     if (a) a.onclick = () => { sfx('tap'); S.fcZeAsk(c); if (c.ppl) c.ppl.unread = 0; save(); chat(); };
     document.querySelectorAll('[data-zt]').forEach(b => { b.onclick = () => { if (S.fcZeBet(c, +b.dataset.zt, +b.dataset.v)) { sfx('coin'); if (c.ppl) c.ppl.unread = 0; save(); bar(); chat(); } }; });
     document.querySelectorAll('[data-zf]').forEach(b => { b.onclick = () => { if (S.fcZeFix(c, b.dataset.zf === '1')) { sfx(b.dataset.zf === '1' ? 'coin' : 'tap'); if (c.ppl) c.ppl.unread = 0; save(); chat(); } }; });
-    document.querySelectorAll('[data-go2]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go2); }; });
+    document.querySelectorAll('[data-go2]').forEach(b => { b.onclick = () => { sfx('tap'); if (b.dataset.go2 === 'bet') zeTab = 'ext'; go(b.dataset.go2); }; });
   }
   // Apps do celular: cada um abre dentro do aparelho, com a barra de baixo
-  const TITLE = { wk: 'Treino da semana', tbl: 'Tabela', cal: 'Jogos e torneios', me: 'Ficha', shop: 'Loja', bet: 'Apostas', evo: 'Evoluir', bank: 'Finanças', mkt: 'Mercado' };
+  const TITLE = Object.assign({ wk: 'Treino da semana', evo: 'Evoluir' }, APP_NAME);
   const LOJA_IMG = ['chuteira-g1', 'chuteira-g2', 'chuteira-g3', 'luvas-g1', 'luvas-g2', 'luvas-g3', 'pt', 'physio', 'nutri', 'video', 'press', 'c1', 'c2', 'c3', 'c4', 'house'];
   function go(k) {
     if (k === 'evo') return evolve();
     if (k === 'msg') { chatOpen = null; return chat(); }
     if (k === 'ze') { chatOpen = 'ze'; return chat(); }
+    if (k.slice(0, 3) === 'ch:') { chatOpen = k.slice(3); chFx = null; return chat(); }
     if (k === 'ag') { agGoals = false; return agenda(); }
     const c = G.c, body = {
       wk: '<div class="fc-wk" id="fc-wk"></div><div class="fs-acts" id="fc-acts"></div>',
@@ -867,7 +929,7 @@
   let gearAttr = null;
   // Zé: palpites da rodada da liga inteira (sem o seu jogo), cupom simples ou múltipla e o extrato da carreira.
   // Atleta apostar é proibido: o faro da federação (chance de ser pego) aparece sempre e sobe a cada aposta
-  let zeTab = 'bet', betSel = {}, betStake = 0, csOpen = null, csG = [1, 0], betAll = false;
+  let zeTab = 'cas', betSel = {}, betStake = 0, csOpen = null, csG = [1, 0], betAll = false;
   const oddTxt = o => o.toFixed(2).replace('.', ',');
   const pctTxt = p => (p < 0.1 ? (Math.round(p * 1000) / 10).toFixed(1).replace('.', ',') : String(Math.round(p * 100))) + '%';
   function legTxt(l) {
@@ -923,7 +985,7 @@
   }
   function extratoBox(c, R$) {
     const L = c.betLog || { n: 0, net: 0, caught: 0, won: 0 }, K = c.casLog, F = c.fixLog;
-    const cas = K && K.n ? '<h3 class="ze-rd">Mesa dos fundos</h3><div class="ze-ext"><div><b>' + K.n + '</b><small>jogadas</small></div><div><b class="up">+' + R$(K.best || 0) + '</b><small>maior prêmio</small></div><div><b class="' + (K.net >= 0 ? 'up' : 'down') + '">' + (K.net >= 0 ? '+' : '−') + R$(Math.abs(K.net)) + '</b><small>saldo</small></div></div>' +
+    const cas = K && K.n ? '<h3 class="ze-rd">Cassino Bet171</h3><div class="ze-ext"><div><b>' + K.n + '</b><small>jogadas</small></div><div><b class="up">+' + R$(K.best || 0) + '</b><small>maior prêmio</small></div><div><b class="' + (K.net >= 0 ? 'up' : 'down') + '">' + (K.net >= 0 ? '+' : '−') + R$(Math.abs(K.net)) + '</b><small>saldo</small></div></div>' +
       '<ul class="ze-hist">' + [['rol', 'Roleta'], ['slot', 'Caça-níquel'], ['bj', 'Vinte e um'], ['bicho', 'Bicho']].filter(([k]) => K[k]).map(([k, t]) => '<li><span>' + t + '</span><b class="' + (K[k] >= 0 ? 'up' : 'down') + '">' + (K[k] >= 0 ? '+' : '−') + R$(Math.abs(K[k])) + '</b></li>').join('') + '</ul>' : '';
     const fix = F && F.n ? '<p class="fc-own">Combinou cartão com o Zé ' + F.n + (F.n === 1 ? ' vez' : ' vezes') + (F.caught ? ', descoberto em ' + F.caught + '.' : ', sem ninguém descobrir.') + '</p>' : '';
     if (!L.n) return '<p class="fc-own">Nenhuma aposta resolvida ainda nesta carreira.</p>' + cas + fix;
@@ -951,7 +1013,7 @@
     const ok = $('ze-go');
     if (ok) ok.onclick = () => { const legs = betLegs(S.fcBetRound(G.c)); if (S.fcBet(G.c, legs, betStake)) { sfx('coin'); betSel = {}; csOpen = null; save(); bar(); betRender(); } };
   }
-  // ---------- mesa dos fundos (engine/cassino.js): uma noite entre um jogo e outro, quatro jogos ----------
+  // ---------- cassino do Bet171 (engine/cassino.js; era a mesa dos fundos): a primeira jogada da noite custa energia ----------
   // O sorteio sai do motor na hora do clique; a tela só anima até mostrar o que já saiu (roda, rolos, cartas)
   let zeGame = null, rolBet = 'red', rolNum = 7, casStake = 0, casLast = null, bichoG = 15, bichoMode = 'cab', casBusy = false;
   let rolRot = 0, bjSeen = { p: 0, d: 0, open: false }, slotLast = [0, 1, 2], bichoStamp = false;
@@ -962,9 +1024,10 @@
       '<circle cx="32" cy="32" r="14" fill="#8A5A2B" stroke="#E2B44A" stroke-width="2"/><circle cx="32" cy="32" r="3.5" fill="#E2B44A"/><circle cx="47" cy="16" r="3.2" fill="#FBF8EF"/></svg>',
     slot: '<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="12" width="50" height="40" rx="8" fill="#E2B44A"/><rect x="10" y="20" width="40" height="24" rx="4" fill="#FBF8EF"/><path d="M23.3 20v24M36.6 20v24" stroke="#13201A" stroke-width="2"/><text x="16.6" y="37" font-family="Barlow Condensed,Arial" font-weight="800" font-size="14" text-anchor="middle" fill="#C8323A">7</text><text x="30" y="37" font-family="Barlow Condensed,Arial" font-weight="800" font-size="14" text-anchor="middle" fill="#C8323A">7</text><text x="43.3" y="37" font-family="Barlow Condensed,Arial" font-weight="800" font-size="14" text-anchor="middle" fill="#C8323A">7</text><path d="M55 30h4V12" stroke="#FBF8EF" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="59" cy="10" r="4" fill="#C8323A"/></svg>',
     bj: '<svg viewBox="0 0 64 64" aria-hidden="true"><g transform="rotate(-14 24 34)"><rect x="10" y="14" width="28" height="40" rx="4" fill="#FBF8EF" stroke="#13201A" stroke-width="2"/><text x="15" y="25" font-family="Barlow Condensed,Arial" font-weight="800" font-size="10" fill="#13201A">A</text><text x="24" y="42" font-family="Arial" font-size="16" text-anchor="middle" fill="#13201A">♠</text></g><g transform="rotate(10 40 32)"><rect x="26" y="12" width="28" height="40" rx="4" fill="#FBF8EF" stroke="#13201A" stroke-width="2"/><text x="31" y="23" font-family="Barlow Condensed,Arial" font-weight="800" font-size="10" fill="#C8323A">K</text><text x="40" y="40" font-family="Arial" font-size="16" text-anchor="middle" fill="#C8323A">♥</text></g></svg>',
+    crash: '<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="8" width="56" height="48" rx="8" fill="#1A0D0B"/><path d="M10 50 Q34 48 50 18" fill="none" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round"/><path d="M47 13l9-3-3 9-4 1-3-3z" fill="#FBF8EF"/><circle cx="51.5" cy="14.5" r="1.6" fill="#2F6FD6"/><text x="22" y="30" font-family="Barlow Condensed,Arial" font-weight="800" font-size="13" text-anchor="middle" fill="#FFC23D">2,4×</text></svg>',
     bicho: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M12 6h40v52l-5-4-5 4-5-4-5 4-5-4-5 4-5-4-5 4z" fill="#FBF8EF" stroke="#13201A" stroke-width="2"/><path d="M18 18h28M18 26h28M18 34h18" stroke="#9AA59F" stroke-width="2"/><ellipse cx="40" cy="38" rx="9" ry="6" fill="none" stroke="#C8323A" stroke-width="2.5" transform="rotate(-8 40 38)"/><text x="40" y="42" font-family="Courier New,monospace" font-weight="700" font-size="10" text-anchor="middle" fill="#13201A">16</text></svg>',
   };
-  const GAMES = [['rol', 'Roleta', 'a casa leva 2,7%'], ['slot', 'Caça-níquel', 'devolve 92% em média'], ['bj', 'Vinte e um', 'a casa leva uns 5%'], ['bicho', 'Bicho', 'sai com o próximo jogo']];
+  const GAMES = [['crash', 'Foguetinho', 'saca antes de explodir'], ['rol', 'Roleta', 'a casa leva 2,7%'], ['slot', 'Caça-níquel', 'devolve 92% em média'], ['bj', 'Vinte e um', 'a casa leva uns 5%'], ['bicho', 'Bicho', 'sai com o próximo jogo']];
   // Símbolo do caça-níquel: o cartão vermelho é desenhado (não há ícone dele)
   const sym = (k, sz) => (S.SLOT[k].id === 'card' ? '<b class="mz-rc ' + sz + '" aria-label="Cartão vermelho"></b>' : U.emo(S.SLOT[k].e, sz));
   const SUIT = ['♠\uFE0E', '♥\uFE0E', '♦\uFE0E', '♣\uFE0E'], FACE = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
@@ -1009,22 +1072,30 @@
   }
   function mesaBox(c, R$) {
     const fc = c.fc;
+    const grid = () => '<div class="mz-games">' + GAMES.map(([k, t, s2]) => '<button class="mz-g mz-' + k + '" data-g="' + k + '"' + (S.fcNightOpen(c) || S.fcNightCan(c) ? '' : ' disabled') + '><span class="mz-art">' + MESA_ICO[k] + '</span><b>' + t + '</b><small>' + s2 + '</small></button>').join('') + '</div>';
+    const sign = '<div class="mz-sign b171"><b>Bet171</b><small>cassino online · jogue com responsabilidade (ou nem jogue, né)</small></div>';
     if (!S.fcNightOpen(c)) {
       zeGame = null;
       const can = S.fcNightCan(c);
-      return '<div class="mz-in"><div class="mz-sign"><b>Mesa dos fundos</b><small>Bar do Zé · entra pela cozinha</small></div>' +
-        '<p class="fc-ze">"Aqui ninguém viu ninguém. Mas se o técnico souber, não fui eu que te chamei."</p>' +
-        '<ul class="mz-cost"><li><span>Energia</span><b class="down">−' + S.FC_NIGHT_EN + ' agora</b></li><li><span>Chance de foto</span><b>' + Math.round(S.FC_NIGHT_PHOTO * 100) + '% (fama −4, técnico −6)</b></li><li><span>Fichas da noite</span><b>até R$ ' + U.money(S.fcNightLimit(c)) + '</b></li></ul>' +
-        '<button class="btn" id="mz-open"' + (can ? '' : ' disabled') + '>' + (can ? 'Entrar pela cozinha' : (c.money || 0) < 1000 ? 'Sem dinheiro para a mesa' : 'A mesa abre de novo depois do próximo jogo') + '</button>' +
-        '<small class="fc-own">Uma noite entre um jogo e outro. A casa sempre leva vantagem: ninguém fica rico aqui.</small></div>';
+      return '<div class="mz-in">' + sign +
+        '<ul class="mz-cost"><li><span>Jogar de madrugada</span><b class="down">−' + S.FC_NIGHT_EN + ' energia na primeira jogada</b></li><li><span>Vazar print</span><b>' + Math.round(S.FC_NIGHT_PHOTO * 100) + '% (fama −4, técnico −6)</b></li><li><span>Limite de hoje</span><b>R$ ' + U.money(S.fcNightLimit(c)) + '</b></li></ul>' +
+        (can ? '' : '<p class="mz-photo">' + ((c.money || 0) < 1000 ? 'Sem dinheiro na conta para jogar.' : 'Limite de hoje usado. Libera de novo depois do próximo jogo.') + '</p>') + grid() +
+        '<small class="fc-own">A casa sempre leva vantagem: ninguém fica rico aqui. Palpite de futebol é só com o Zé, no ZapZap.</small></div>';
     }
     const n = fc.night, left = S.fcNightLeft(c);
-    const top = '<div class="mz-top"><div><small>Fichas da noite</small><b id="mz-left">R$ ' + U.money(left) + '</b></div><div><small>Na noite</small><b class="' + (n.net >= 0 ? 'up' : 'down') + '">' + (n.net >= 0 ? '+' : '−') + R$(Math.abs(n.net)) + '</b></div></div>';
-    if (!zeGame) return '<div class="mz-sign sm"><b>Mesa dos fundos</b><small>aberta até o Zé cansar</small></div>' + top +
-      (n.photo ? '<p class="mz-photo">Saiu foto sua no bar. A imprensa comentou e o técnico não gostou.</p>' : '') +
-      '<div class="mz-games">' + GAMES.map(([k, t, s]) => '<button class="mz-g mz-' + k + '" data-g="' + k + '"><span class="mz-art">' + MESA_ICO[k] + '</span><b>' + t + '</b><small>' + s + '</small></button>').join('') + '</div>';
-    const back = '<div class="mz-head"><button class="back-link mz-back" id="mz-back">‹ Mesa</button><b>' + GAMES.find(g => g[0] === zeGame)[1] + '</b></div>';
+    const top = '<div class="mz-top"><div><small>Limite de hoje</small><b id="mz-left">R$ ' + U.money(left) + '</b></div><div><small>Hoje</small><b class="' + (n.net >= 0 ? 'up' : 'down') + '">' + (n.net >= 0 ? '+' : '−') + R$(Math.abs(n.net)) + '</b></div></div>';
+    if (fc.crash && !crRun) S.fcCrashEnd(c, 0); // saiu da tela (ou recarregou) com o foguete no ar: explodiu
+    if (!zeGame) return sign + top +
+      (n.photo ? '<p class="mz-photo">Vazou print seu jogando de madrugada. A imprensa comentou e o técnico não gostou.</p>' : '') + grid();
+    const back = '<div class="mz-head"><button class="back-link mz-back" id="mz-back">‹ Jogos</button><b>' + GAMES.find(g => g[0] === zeGame)[1] + '</b></div>';
     const L = casLast && casLast.g === zeGame ? casLast : null;
+    if (zeGame === 'crash') {
+      const H = (fc.crashHist || []).slice().reverse().map(x => '<i class="' + (x >= 2 ? 'hi' : 'lo') + '">' + crX(x) + '×</i>').join('');
+      return back + top + '<div class="cr-box"><div class="cr-hist" aria-label="Últimas explosões">' + (H || '<small>Ainda não voou hoje</small>') + '</div>' +
+        '<div class="cr-stage"><svg viewBox="0 0 340 190" preserveAspectRatio="none" aria-hidden="true"><path id="cr-path" d="M10 180" fill="none" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round"/></svg>' +
+        '<div class="cr-m"><b id="cr-x">1,00×</b><small id="cr-msg">aposta e saca antes de explodir</small></div></div>' +
+        stakeSeg(c) + '<button class="btn cr-go" id="mz-go">Apostar R$ ' + U.money(casStake) + '</button>' + resMsg(L) + '</div>';
+    }
     if (zeGame === 'rol') {
       const last = L ? L.n : null, B = S.ROULETTE_BETS;
       const cell = (k, cls) => '<button class="mz-bet' + (cls ? ' ' + cls : '') + (rolBet === k ? ' on' : '') + '" data-rb="' + k + '"><b>' + B[k][0] + '</b><small>' + B[k][1] + '×</small>' + (rolBet === k ? '<i class="mz-mk" aria-hidden="true"></i>' : '') + '</button>';
@@ -1086,7 +1157,7 @@
   function bindMesa() {
     const c = G.c, R$ = v => 'R$ ' + U.money(v), redo = () => { save(); bar(); betRender(); };
     const op = $('mz-open'); if (op) op.onclick = () => { if (S.fcNight(c)) { sfx('paper'); redo(); } };
-    document.querySelectorAll('.mz-g').forEach(b => { b.onclick = () => { sfx('tap'); zeGame = b.dataset.g; casLast = null; bjSeen = { p: 0, d: 0, open: false }; betRender(); window.scrollTo(0, 0); }; });
+    document.querySelectorAll('.mz-g').forEach(b => { b.onclick = () => { if (!S.fcNightOpen(c) && !S.fcNight(c)) return; sfx('tap'); zeGame = b.dataset.g; casLast = null; bjSeen = { p: 0, d: 0, open: false }; betRender(); window.scrollTo(0, 0); }; });
     const bk = $('mz-back'); if (bk) bk.onclick = () => { if (casBusy) return; sfx('tap'); zeGame = null; betRender(); window.scrollTo(0, 0); };
     document.querySelectorAll('.mz-chip').forEach(b => { b.onclick = () => { if (casBusy) return; sfx('coin'); casStake = +b.dataset.cs; betRender(); }; });
     document.querySelectorAll('[data-rb]').forEach(b => { b.onclick = () => { if (casBusy) return; sfx('tap'); rolBet = b.dataset.rb; betRender(); }; });
@@ -1098,7 +1169,8 @@
     if (!go) return;
     go.onclick = () => {
       if (casBusy) return;
-      if (zeGame === 'rol') rolSpin(c, R$);
+      if (zeGame === 'crash') crashFly(c);
+      else if (zeGame === 'rol') rolSpin(c, R$);
       else if (zeGame === 'slot') slotSpin(c, R$);
       else if (zeGame === 'bj') {
         const o = S.fcBjDeal(c, casStake);
@@ -1110,6 +1182,43 @@
         if (S.fcBicho(c, bichoG, bichoMode, casStake)) { sfx('paper'); bichoStamp = true; casLast = null; redo(); }
       }
     };
+  }
+  // Foguetinho: o motor já sabe onde explode (S.fcCrashGo); a tela sobe o multiplicador (dobra a cada 3,5 s) e o botão
+  // vira "Sacar". Sair da tela com o foguete no ar conta como explodiu
+  let crRun = null;
+  const crX = x => x.toFixed(2).replace('.', ',');
+  function crashFly(c) {
+    const o = S.fcCrashGo(c, casStake);
+    if (!o) return;
+    save(); sfx('tap');
+    casBusy = true; casLast = null;
+    const stake = casStake, t0 = performance.now(), K = Math.LN2 / 3500, btn = $('mz-go'), path = $('cr-path'), xe = $('cr-x'), msg = $('cr-msg');
+    btn.classList.add('cash'); msg.textContent = 'subindo…';
+    const res = $('mz-res'); if (res) { res.className = 'mz-res idle'; res.textContent = 'Saca antes de explodir.'; }
+    let m = 1;
+    const end = cashed => {
+      cancelAnimationFrame(crRun); crRun = null; casBusy = false;
+      const r = S.fcCrashEnd(c, cashed ? m : 0);
+      if (!r) return;
+      save(); bar();
+      casLast = { g: 'crash', net: r.net, txt: r.ok ? 'Sacou em ' + crX(m) + '×: +R$ ' + U.money(r.back - stake) : 'Explodiu em ' + crX(r.x) + '×. Foram R$ ' + U.money(stake) };
+      if (r.ok) { sfx('coin'); casWin(r.net); } else sfx('miss');
+      if ($('cr-x')) { xe.textContent = crX(r.ok ? m : r.x) + '×'; xe.className = r.ok ? 'up' : 'down'; msg.textContent = r.ok ? 'sacou! o foguete foi até ' + crX(r.x) + '×' : 'explodiu!'; setTimeout(() => { if (zeGame === 'crash' && $('cr-x')) betRender(); }, 1300); }
+    };
+    btn.textContent = 'Sacar R$ ' + U.money(stake);
+    btn.onclick = () => { if (crRun) end(true); };
+    const step = now => {
+      if (!$('cr-x')) { crRun = null; casBusy = false; S.fcCrashEnd(c, 0); save(); return; }
+      m = Math.floor(Math.exp(K * (now - t0)) * 100) / 100;
+      if (m >= o.x) { m = o.x; return end(false); }
+      xe.textContent = crX(m) + '×';
+      btn.textContent = 'Sacar R$ ' + U.money(Math.round(stake * m));
+      const n2 = Math.min(1, (m - 1) / 3), pts = [];
+      for (let k = 0; k <= 24; k++) { const x = k / 24 * n2; pts.push((10 + x * 320).toFixed(1) + ' ' + (180 - Math.pow(x, 1.8) * 165).toFixed(1)); }
+      path.setAttribute('d', 'M' + pts.join(' L'));
+      crRun = requestAnimationFrame(step);
+    };
+    crRun = requestAnimationFrame(step);
   }
   // Roleta: a roda gira para a frente e para com a casa sorteada no ponteiro; a bolinha corre ao contrário,
   // perde velocidade, cai para dentro e para na mesma casa. O tique-taque desacelera junto
@@ -1196,11 +1305,12 @@
     const el = $('fc-bet');
     if (!el) return;
     const c = G.c, R$ = v => 'R$ ' + U.money(v);
-    const tabs = [['bet', 'Rodada'], ['mesa', 'Mesa dos fundos'], ['ext', 'Extrato']];
-    el.innerHTML = '<div class="fc-cash"><span>Seu dinheiro</span><b>R$ ' + U.money(c.money || 0) + '</b></div>' + (zeTab === 'mesa' && zeGame ? '' : fixBox(c, R$)) +
-      (zeTab === 'mesa' && zeGame ? '' : '<div class="seg ze-tabs">' + tabs.map(([k, t]) => '<button data-t="' + k + '"' + (zeTab === k ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>') +
-      (zeTab === 'ext' ? extratoBox(c, R$) : zeTab === 'mesa' ? mesaBox(c, R$) : '<p class="fc-ze">"Palpite certo, sigilo total."</p>' + betBox(c, R$));
-    el.classList.toggle('mz', zeTab === 'mesa');
+    if (zeTab !== 'ext') zeTab = 'cas'; // palpite de futebol agora é só com o Zé, no ZapZap
+    const tabs = [['cas', 'Cassino'], ['ext', 'Extrato']];
+    el.innerHTML = '<div class="fc-cash"><span>Seu dinheiro</span><b>R$ ' + U.money(c.money || 0) + '</b></div>' + (zeTab === 'cas' && zeGame ? '' : fixBox(c, R$)) +
+      (zeTab === 'cas' && zeGame ? '' : '<div class="seg ze-tabs">' + tabs.map(([k, t]) => '<button data-t="' + k + '"' + (zeTab === k ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>') +
+      (zeTab === 'ext' ? extratoBox(c, R$) : mesaBox(c, R$));
+    el.classList.toggle('mz', zeTab === 'cas');
     bindBet(); bindMesa();
     el.querySelectorAll('[data-go2]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go2); }; });
   }
@@ -1298,7 +1408,7 @@
       (debt ? '<p class="fc-own">Devendo, o banco não deixa investir.</p>' : '') + '</div>';
     const lv = c.luvas && c.luvas.s === c.season ? '<p class="fc-own">Luvas desta temporada: ' + R(c.luvas.v) + (c.luvas.cut ? ' (renovação com desconto)' : '') + '.</p>' : '';
     el.innerHTML =
-      '<div class="fc-cash"><span>Saldo</span><b>' + R(cash) + '</b><small>Bônus do fim do ano: meta e títulos pagam semanas de salário extra.</small>' +
+      '<div class="fc-cash ng"><span>Olá, ' + esc(String(c.name || '').split(' ')[0]) + ' · saldo em conta</span><b>' + R(cash) + '</b><small>Salário de ' + R(wp) + ' cai toda semana, depois do jogo. Bônus do fim do ano: meta e títulos pagam semanas de salário extra.</small>' +
         (debt ? '<p class="fc-debt"><b>Dívida ' + R(debt) + '</b> Juros de ' + String(S.FC_DEBT.rate * 100).replace('.', ',') + '% por semana. O salário paga a dívida primeiro, e a loja não vende carro nem casa até quitar.</p>' : '') + '</div>' +
       '<div class="fc-ss"><h3>Por semana</h3><div class="bk-flow">' + flow + line('Sobra', (left >= 0 ? '+' : '−') + R(Math.abs(left)), left >= 0 ? 'up' : 'down') + '</div>' + lv + '</div>' +
       ways + inv +
@@ -1333,8 +1443,8 @@
     const row = (name, fx, right, f) => '<div class="fc-si' + (f && img(f) ? ' im' : '') + '">' + (f ? img(f) : '') + '<span><b>' + esc(name) + '</b><small>' + esc(fx) + '</small></span>' + right + '</div>';
     const week = S.fcStaffWeek(c), upk = S.fcUpkeep ? S.fcUpkeep(c) : 0, debt = S.fcDebt ? S.fcDebt(c) : 0;
     const upTxt = (kind, id) => (S.fcUpkeepOf ? ' · manutenção ' + R(S.fcUpkeepOf(c, kind, id)) + ' por semana' : '');
-    el.innerHTML =
-      '<div class="fc-cash"><span>Seu dinheiro</span><b>' + R(cash) + '</b><small>Salário de ' + R(c.wage || 0) + ' por semana' + (week ? ' · equipe: −' + R(week) + ' por semana' : '') + (upk ? ' · carro e casa: −' + R(upk) + ' por semana' : '') + '</small>' +
+    el.innerHTML = '<div class="amz-band"><span><b>Chega antes do apito</b><small>Comprou hoje, usa no jogo ' + (c.fc.i + 1) + '</small></span></div>' +
+      '<div class="fc-cash"><span>Saldo no NuGrana</span><b>' + R(cash) + '</b><small>Salário de ' + R(c.wage || 0) + ' por semana' + (week ? ' · equipe: −' + R(week) + ' por semana' : '') + (upk ? ' · carro e casa: −' + R(upk) + ' por semana' : '') + '</small>' +
         (debt ? '<p class="fc-debt"><b>Dívida ' + R(debt) + '</b> Juros de ' + String(S.FC_DEBT.rate * 100).replace('.', ',') + '% por semana. O salário paga a dívida primeiro, e a loja não vende carro nem casa até quitar.</p>' : '') + '</div>' +
       '<div class="fc-ss"><h3>' + (c.pos === 'GOL' ? 'Luvas' : 'Chuteira') + '</h3>' +
         worn + (g ? '<p class="fc-own">' + (c.pos === 'GOL' ? 'Comprar outro par troca o que está nas mãos.' : 'Comprar outra troca a que está no pé.') + '</p>' : '') +

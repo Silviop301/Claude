@@ -6758,3 +6758,67 @@ button.fi-g, button.p2-gr { cursor: pointer; min-height: 44px; }
 .ins-how { min-height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: var(--gold); color: var(--ink); font: 800 16px var(--display); white-space: nowrap; }
 .ins-x { width: 32px; height: 40px; border: 0; background: transparent; color: var(--tx-3); display: grid; place-items: center; }
 .ins-x svg { width: 16px; height: 16px; }
+/* Apps paródia do celular (canvas "Apps do celular", 2026-11-05): ícones desenhados e o ZapZap com respostas */
+.p2-app i.sv, .p2-ai.sv { background: none; overflow: visible; }
+.p2-app i.sv > svg { display: block; width: 100%; height: 100%; border-radius: inherit; }
+.p2-ai.sv > svg { display: block; width: 100%; height: 100%; border-radius: 10px; }
+.ch-row.due b { color: var(--ink); }
+.ch-r { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; align-self: start; padding-top: 4px; }
+.ch-r small { font: 600 12px var(--body); color: var(--ink-2); }
+.ch-row.due .ch-r small { color: #178A45; }
+.ch-ct { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: #1FA855; color: #fff; font: 700 12px/22px var(--body); font-style: normal; text-align: center; }
+.ch-tag { display: inline-block; margin-right: 5px; padding: 0 6px; border-radius: 6px; background: var(--gold); color: var(--ink); font: 700 11px/18px var(--body); text-transform: uppercase; vertical-align: 1px; }
+.ch-tk { font-style: normal; font-weight: 700; color: #2F6FD6; letter-spacing: -1px; }
+.ch-wait { margin: 0; padding: 10px 12px; border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--panel-line); font: 500 14px/1.35 var(--body); color: var(--tx-2); }
+.ch-wait b { color: var(--tx-1); }
+.ch-head small.on { color: #178A45; font-weight: 700; }
+.ch .ch-log { background-color: #0B2A1D; background-image: radial-gradient(rgba(255,255,255,.06) 1.2px, transparent 1.4px), radial-gradient(rgba(255,255,255,.04) 1.2px, transparent 1.4px); background-size: 22px 22px, 22px 22px; background-position: 0 0, 11px 11px; }
+.ch .ch-b.me { background: #C9F2D6; color: #0B2A1D; }
+.ch .ch-b.me small { color: #2C6A45; }
+.ch-iv { max-width: 94%; gap: 8px; }
+.ch-iv .iv-n { color: var(--down-ink); font-weight: 600; }
+.ch-dots { margin: 0; justify-self: start; display: flex; gap: 4px; padding: 12px 14px; border-radius: 4px 16px 16px 16px; background: var(--paper); }
+.ch-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-2); animation: ch-dot 1s infinite ease-in-out; }
+.ch-dots i:nth-child(2) { animation-delay: .15s; } .ch-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes ch-dot { 0%, 60%, 100% { transform: translateY(0); opacity: .5; } 30% { transform: translateY(-4px); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ch-dots i { animation: none; } }
+.ch-fx { margin: 2px 0 0; justify-self: center; padding: 4px 12px; border-radius: 12px; background: #C9F2D6; color: var(--ink); font: 700 13px/1.3 var(--body); text-align: center; animation: p2-pop .35s cubic-bezier(.3, 1.6, .5, 1) both; }
+.ch-fx.bad { background: #FBE6E3; color: var(--down-ink); }
+.ch-rp { flex: none; display: grid; gap: 8px; padding: 2px 0 6px; }
+.ch-rp > small { font: 600 13px var(--body); color: var(--tx-3); }
+.ch-rp > small.ch-vac { font-weight: 500; color: var(--tx-4); }
+.ch-chip { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 46px; padding: 6px 8px 6px 14px; border-radius: 23px; border: 0; background: var(--paper); color: var(--ink); font: 600 15px/1.25 var(--body); text-align: left; cursor: pointer; box-shadow: var(--sh-press); }
+.ch-chip:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, .35); }
+.ch-chip em { flex: none; padding: 2px 8px; border-radius: 10px; font: 700 12px/18px var(--body); font-style: normal; color: var(--ink); background: #E6E1D3; }
+.ch-chip em.t0 { background: #FFD3D6; } .ch-chip em.t2 { background: #FFE7A6; }
+/* Bet171: cassino online no lugar da mesa dos fundos, com o Foguetinho (crash) */
+.mz-sign.b171 b { color: #FFC23D; text-shadow: 0 0 6px rgba(255,120,40,.8), 0 0 18px rgba(215,38,61,.6); }
+.mz-g:disabled { opacity: .5; cursor: default; }
+.cr-box { display: grid; gap: 10px; }
+.cr-hist { display: flex; gap: 4px; flex-wrap: wrap; min-height: 22px; }
+.cr-hist i { padding: 2px 8px; border-radius: 8px; font: 700 12px/18px var(--body); font-style: normal; background: #3A1A14; color: var(--down); }
+.cr-hist i.hi { background: #123A24; color: var(--up); }
+.cr-hist small { font: 500 13px var(--body); color: var(--tx-3); }
+.cr-stage { position: relative; height: 190px; border-radius: var(--r-md); background-color: #0E0705; background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); background-size: 38px 38px; overflow: hidden; border: 1px solid rgba(255,90,31,.3); }
+.cr-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cr-m { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; pointer-events: none; }
+.cr-m b { font: 800 54px/1 var(--display); color: var(--tx-1); font-variant-numeric: tabular-nums; }
+.cr-m b.up { color: var(--up); } .cr-m b.down { color: var(--down); }
+.cr-m small { font: 700 14px var(--body); color: var(--tx-2); }
+.btn.cr-go { background: #FF5A1F; color: #fff; box-shadow: 0 4px 0 #9A2E08; }
+.btn.cr-go.cash { background: #22A45D; box-shadow: 0 4px 0 #136437; }
+.mz-g.mz-crash { background: radial-gradient(90% 80% at 30% 20%, #B8341A, #4A0F08); }
+.ch-row .ch-ct { color: #fff; font: 700 12px/22px var(--body); font-style: normal; white-space: nowrap; overflow: visible; }
+/* NuGrana (Finanças): o saldo no cartão roxo. Amazonas (Loja): a faixa "chega antes do apito" e o botão laranja */
+.fc-cash.ng { grid-template-columns: 1fr; gap: 4px; padding: 16px; border: 0; border-radius: var(--r-lg); background: #7A2BD6; box-shadow: var(--sh-float); }
+.fc-cash.ng span { font: 600 14px var(--body); color: #EFE4FF; }
+.fc-cash.ng b { font: 800 40px/1 var(--display); color: #fff; }
+.fc-cash.ng small { color: #EFE4FF; }
+.fc-cash.ng .fc-debt { color: #fff; }
+.amz-band { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--r-md); background: #13201A; border: 1px solid var(--panel-line); }
+.amz-band span { display: grid; }
+.amz-band b { font: 800 18px/1.1 var(--display); color: #FFB23F; }
+.amz-band small { font: 500 13px var(--body); color: var(--tx-2); }
+#fc-shop .fc-buy:not(:disabled):not(.on) { background: #FFB23F; color: var(--ink); border-color: #FFB23F; }
+.ch .ch-head { position: sticky; top: 0; z-index: 2; box-shadow: 0 2px 6px rgba(0, 0, 0, .25); }
+.ch .ch-head + .ch-log { border-top-left-radius: 0; border-top-right-radius: 0; }
