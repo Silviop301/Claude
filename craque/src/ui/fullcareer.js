@@ -137,6 +137,12 @@
     if (wide()) $('fc').classList.add('p2-2c');
     bar(); p2Chrome();
     document.querySelectorAll('#fc [data-go]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go); }; });
+    // Fechada, a notificação de cima abre a pilha (e o texto inteiro) ao ser tocada, como no celular de verdade; aberta, cada uma leva ao app dela
+    const top = !nAll && document.querySelector('#fc .p2-ns .p2-n'), tx = top && top.querySelector('.p2-nt > span');
+    if (top && (ps.length > 1 || tx.scrollWidth > tx.clientWidth + 1)) {
+      top.disabled = false; top.classList.add('fold');
+      top.onclick = () => { sfx('tap'); nAll = true; phone(); };
+    }
     const more = $('p2-more');
     if (more) { const t = e => { e.stopPropagation(); sfx('tap'); nAll = !nAll; phone(); }; more.onclick = t; more.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') t(e); }; }
     $('p2-cfg').onclick = () => { sfx('tap'); U.settings(); };

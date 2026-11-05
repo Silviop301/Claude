@@ -6208,7 +6208,7 @@ body .co-res .co-pres, .co-res .co-pres { color: var(--tx-1); }
 .p2-ns { display: grid; gap: 6px; }
 .p2-n { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 9px 12px; border: 0; border-radius: 18px; background: var(--paper); color: var(--ink); text-align: left; font: inherit; box-shadow: 0 2px 8px rgba(0, 0, 0, .25); cursor: pointer; }
 .p2-n:disabled { cursor: default; opacity: 1; }
-.p2-n[data-go]:active { transform: scale(.98); }
+.p2-n[data-go]:active, .p2-n.fold:active { transform: scale(.98); }
 .p2-nt { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .p2-nt b { font: 700 13px var(--body); color: var(--ink); } .p2-nt b i { font-style: normal; font-weight: 500; color: var(--ink-2); }
 .p2-nt > span { font: 500 14px/1.3 var(--body); color: var(--ink); }
