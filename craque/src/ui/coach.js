@@ -135,10 +135,11 @@
         (nx.bye ? '' : scout(S.coPreview(co).them)) + moodLine() +
         '<button class="btn" id="b-co-play">' + (nx.bye ? 'Ver a rodada' : 'Escalar e jogar') + '</button></div>' +
       '<div class="co-side"><div class="co-box"><div class="eyebrow">Tabela ' + form5() + '</div>' + table(false) + '<button class="btn ghost sm" id="b-co-tab">Tabela inteira</button></div>' +
-      '<div class="co-acts"><button class="btn ghost" id="b-co-team">Time e elenco</button></div></div>');
+      '<div class="co-acts"><button class="btn ghost" id="b-co-team">Time e elenco</button><button class="btn ghost" id="b-co-cad">Caderno</button></div></div>');
     U.modeHeadBind();
     $('b-co-play').onclick = () => { sfx('tap'); if (nx.bye) { S.coSkipRound(co); save(); return hub(); } team(true); };
     $('b-co-team').onclick = () => { sfx('tap'); team(false); };
+    $('b-co-cad').onclick = () => { sfx('tap'); caderno(hub); };
     $('b-co-tab').onclick = () => { sfx('tap'); render(U.modeHead({ mode: 'co', nav: 'back', id: 'b-co-back', label: 'Voltar ao clube', title: 'Tabela', sub: esc(ss.name) + ' ' + yr() }) + '<div class="co-box">' + table(true) + '</div>'); U.modeHeadBind(); $('b-co-back').onclick = hub; };
     $('b-co-out').onclick = () => { sfx('tap'); save(); co = null; U.home(); };
   }
@@ -151,27 +152,122 @@
     ['g', 'd', 'm', 'am', 'a'].forEach(ln => { const ix = sl.map((x, i) => i).filter(i => sl[i].ln === ln); ix.forEach((i, k) => { out[i] = [Math.round((k + 1) * 100 / (ix.length + 1)), Y[ln]]; }); });
     return out;
   }
-  // Confronto em palavras (sem números, decisão do Silvio): meio, lados, área e o encaixe do estilo
-  function mview(pv, fm, st) {
-    if (!pv) return '';
-    fm = fm || co.form; st = st || co.style;
-    const u = pv.us, o = pv.op;
-    // Contagem de gente por vaga (a força entra no cálculo, mas o que se mostra é quantos)
-    const cnt = f => { const sl = S.CO_FORMS[f].slots; return { cm: sl.filter(x => (x.ln === 'm' || x.ln === 'am') && !x.w).length,
-      wide: sl.filter(x => x.w && x.ln !== 'd').length, wdef: sl.filter(x => x.w && (x.ln === 'd' || x.pos === 'LAT')).length,
-      cf: sl.filter(x => x.ln === 'a' && !x.w).length, cb: sl.filter(x => x.ln === 'd' && !x.w).length }; };
-    const a = cnt(fm), b = cnt(pv.them.form), oc = S.CO_STY[pv.them.style].ctrl;
-    const word = (d, t) => (d > t ? ['up', 'vantagem sua'] : d < -t ? ['down', 'vantagem deles'] : ['eq', 'parelho']);
-    const row = (lbl, d, t, why) => { const [c, w] = word(d, t); return '<div class="co-mr ' + c + '"><small>' + lbl + '</small><b><i aria-hidden="true">' + (c === 'up' ? '▲' : c === 'down' ? '▼' : '=') + '</i>' + w + '</b><span>' + why + '</span></div>'; };
-    const sty = (1.0 * u.press + 1.6 * u.counter) - (1.0 * o.press + 1.6 * o.counter);
-    const r = pv.xg[0] / pv.xg[1];
-    return '<div class="co-mu"><div class="co-mu-h"><small>Confronto</small><b class="' + (r > 1.25 ? 'up' : r < 0.8 ? 'down' : 'eq') + '">' + (r > 1.5 ? 'Você é o favorito' : r > 1.15 ? 'Leve vantagem sua' : r < 0.67 ? 'Eles são favoritos' : r < 0.87 ? 'Leve vantagem deles' : 'Jogo parelho') + '</b></div>' +
-      row('Meio', pv.poss - 0.5, 0.04, a.cm + ' contra ' + b.cm + ' no meio' + (oc < 0.9 ? ', eles abrem mão da bola' : oc > 1.2 ? ', eles gostam da bola' : '')) +
-      row('Lados', u.flank * u.wsh - o.flank * o.wsh, 0.06, a.wide + (a.wide === 1 ? ' aberto' : ' abertos') + ' contra ' + b.wdef + ' laterais') +
-      row('Área', u.central - o.central, 0.08, a.cf + (a.cf === 1 ? ' atacante' : ' atacantes') + ' contra ' + b.cb + ' zagueiros') +
-      row('Estilo', sty, 0.06, S.CO_STY[st].name + ' contra ' + S.CO_STY[pv.them.style].name) + '</div>';
-  }
   const scout = them => '<p class="co-scout">' + U.emo('🔭', 'xs') + ' Olheiro: o ' + esc(club(them.club).short || club(them.club).name) + ' deve vir no <b>' + them.form + '</b>, ' + S.CO_STY[them.style].name.toLowerCase() + '.</p>';
+  // ---------- caderno do técnico ----------
+  // O que já se viu em campo: estilo × estilo e formação × formação, "?" no que nunca viu, lápis (pode estar errado)
+  // e caneta (certo). Nada de número: seta e palavra
+  const CAD_W = { up: ['↑', 'vantagem'], down: ['↓', 'sofre'], eq: ['=', 'parelho'] };
+  const cadName = (k, a) => (k === 'sty' ? S.CO_STY[a].name : a);
+  const cadCls = c => (!c ? '' : c.pen ? 'pen' + (c.v === 'down' ? ' bad' : c.v === 'eq' ? ' eq' : '') : 'lap');
+  const CAD_Q = {
+    up: { meio: 'A bola ficou com a gente no meio.', lados: 'Sobramos pelos lados.', area: 'Nossos atacantes levaram a melhor na área.', pressao: 'Roubamos a bola na saída deles.', contra: 'Eles sobem a linha toda e deixam as costas livres. É só esperar e lançar.' },
+    down: { meio: 'A bola foi deles o jogo todo.', lados: 'Passaram fácil pelos nossos lados.', area: 'Os atacantes deles sobraram na nossa área.', pressao: 'A pressão deles pegou a gente na saída de bola.', contra: 'Saímos para o jogo e tomamos contra-ataque.' },
+  };
+  const CAD_S = {
+    up: { meio: 'A bola é sua', lados: 'Sobra gente aberta', area: 'Ganha na área', pressao: 'Rouba na saída', contra: 'Espaço nas costas' },
+    down: { meio: 'A bola é deles', lados: 'Sofre nos lados', area: 'Perde na área', pressao: 'Sofre na saída', contra: 'Toma contra-ataque' },
+  };
+  // A frase escrita à mão: o setor que mais pesou para o lado da anotação
+  const cadQuote = (k, ab, v) => {
+    if (v === 'eq') return 'Ninguém mandou no jogo. Um anula o outro.';
+    const sec = S.coCadTruth()[k][ab].sec, ks = Object.keys(sec).sort((a, b) => (v === 'up' ? sec[b] - sec[a] : sec[a] - sec[b]));
+    return CAD_Q[v][ks[0]];
+  };
+  // Linhas "Do seu caderno": o seu plano contra o deles e o que mais já se anotou contra aquele estilo e formação
+  function cadLines(form, style, them, max) {
+    const out = [], seen = new Set();
+    const add = (k, a, b, force) => { const key = k + ':' + a + '|' + b; if (seen.has(key)) return; const c = S.coCadGet(co, k, a, b); if (!c && !force) return; seen.add(key); out.push({ k, a, b, c }); };
+    add('sty', style, them.style, true); add('frm', form, them.form, true);
+    const pen = (k, b, list) => list.map(a => ({ a, c: S.coCadGet(co, k, a, b) })).filter(x => x.c).sort((x, y) => (y.c.pen - x.c.pen) || ((y.c.v === 'up') - (x.c.v === 'up')));
+    pen('sty', them.style, S.CO_STYLES).forEach(x => add('sty', x.a, them.style));
+    pen('frm', them.form, Object.keys(S.CO_FORMS)).forEach(x => add('frm', x.a, them.form));
+    return out.slice(0, max || 4);
+  }
+  function cadBlock(form, style, them, live) {
+    const l = cadLines(form, style, them, live ? 4 : 4);
+    const ln = x => { const w = x.c && CAD_W[x.c.v];
+      return '<div class="cad-ln"><span>' + esc(cadName(x.k, x.a)) + ' × ' + esc(cadName(x.k, x.b)) + '</span><b class="' + (x.c ? (x.c.pen ? 'pen ' + x.c.v : 'lap') : 'nv') + '">' +
+        (x.c ? w[0] + ' ' + w[1] + (x.c.pen ? '' : ' · lápis') : '? nunca viu') + '</b></div>'; };
+    return '<div class="cad-card cad-pre"><div class="cad-hd"><span class="cad-hw">Do seu caderno</span>' + (live ? '<small>contra o plano de agora</small>' : '<button class="cad-open" id="b-cad-open">Abrir</button>') + '</div>' +
+      l.map(ln).join('') + '<p class="cad-ft">Só aparece o que você já viu em campo.' + (live ? '' : ' Trocar a tática mostra outras linhas.') + '</p></div>';
+  }
+  function hintCard() {
+    const h = S.coHint(co); if (!h) return '';
+    const a = S.coCad(co).aux, n = a.reduce((x, y) => x + y, 0);
+    return '<div class="cad-aux"><i aria-hidden="true">' + ICO_AUX + '</i><div><div class="cad-aux-h"><small>Palpite do auxiliar</small><em>PODE ERRAR</em></div>' +
+      '<p>"' + esc(S.coHintTxt(h)) + '"</p><small>' + (a.length === 1 ? (n ? 'Ele acertou o único palpite que você testou.' : 'Ele errou o único palpite que você testou.') : a.length ? 'Ele acertou ' + n + ' dos últimos ' + a.length + ' palpites que você testou.' : 'Ainda não deu para saber se ele acerta: teste um palpite.') + '</small></div></div>';
+  }
+  const ICO_PEN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1L19 8l-3-3L5 16z"/></svg>';
+  const ICO_AUX = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 12h3l3-7 4 14 3-7h3"/></svg>';
+  // Depois do jogo: o que entrou no caderno
+  function cadAfter(cad) {
+    if (!cad) return '';
+    const nn = cad.notes.length, row = [];
+    const tag = (c, pen) => '<span class="' + (pen ? 'pen ' + c : 'lap') + '">' + CAD_W[c][0] + '</span>';
+    cad.notes.forEach(x => { const [a, b] = x.ab.split('|');
+      row.push('<div class="cad-en"><div class="cad-et"><span>' + esc(cadName(x.k, a)) + ' × ' + esc(cadName(x.k, b)) + '</span><span class="cad-ch">' +
+        (x.prev ? tag(x.prev, false) : '<span class="nv">?</span>') + '<i aria-hidden="true">→</i>' + tag(x.v, x.pen) + '</span></div>' +
+        '<span class="cad-hw sm ' + (x.pen ? '' : 'lap') + '">"' + esc(cadQuote(x.k, x.ab, x.v)) + '" ' + (x.pen ? (x.prev !== x.v ? '(corrigido a caneta)' : '(virou caneta)') : '(lápis)') + '</span></div>'); });
+    cad.seen.forEach(x => { const [a, b] = x.ab.split('|');
+      row.push('<div class="cad-en"><div class="cad-et"><span>' + esc(cadName(x.k, a)) + ' × ' + esc(cadName(x.k, b)) + '</span><span class="cad-ch">' + tag(x.v, true) + '</span></div><small>Já estava no caderno. O jogo confirmou.</small></div>'); });
+    if (cad.hint) { const h = cad.hint, st = { ok: ['ACERTOU', 'up'], bad: ['ERROU', 'down'], nt: ['NÃO TESTADO', 'nt'] }[h.st];
+      row.push('<div class="cad-en"><div class="cad-et"><span>Palpite do auxiliar</span><em class="cad-tg ' + st[1] + '">' + st[0] + '</em></div><small>' +
+        (h.st === 'nt' ? '"' + esc(S.CO_AUX_DO[h.txt.style].replace(/^eu /, '')) + '" ficou para outro dia: você não jogou assim.' : h.st === 'ok' ? 'Você foi de ' + esc(S.CO_STY[h.txt.style].name.toLowerCase()) + ' e encaixou.' : 'Você foi de ' + esc(S.CO_STY[h.txt.style].name.toLowerCase()) + ' e não encaixou.') + '</small></div>'); }
+    if (!row.length) row.push('<div class="cad-en"><small>Nada novo hoje. Jogar de outro jeito, ou contra outro estilo, enche outras casas.</small></div>');
+    const per = S.coCadPer(co);
+    return '<div class="cad-card cad-post"><div class="cad-hd"><span class="cad-hw">Anotado no caderno</span>' + (nn ? '<em class="cad-new">' + nn + (nn > 1 ? ' NOVAS' : ' NOVA') + '</em>' : '') + '</div>' + row.join('') + '</div>' +
+      '<div class="cad-tipl"><b aria-hidden="true">' + ICO_PEN + '</b><span>' + (per > 1 ? 'Com <b>Leitura de jogo ' + co.xp.leitura + '</b> você anota duas coisas por jogo.' : 'Você anota uma coisa por jogo; com <b>Leitura de jogo 4</b>, duas, e o lápis erra menos.') + ' Ver o mesmo confronto de novo passa o lápis para caneta.</span></div>';
+  }
+  // A tela do caderno: abas Estilos, Formações e Rivais (no computador, estilos e formações lado a lado)
+  function caderno(back, tab) {
+    G.c = null; bar();
+    tab = tab || 'sty';
+    const cad = S.coCad(co), cnt = S.coCadSeen(co), F = Object.keys(S.CO_FORMS);
+    const SH = { equilibrado: 'Equil.', posse: 'Posse', pressao: 'Pressão', contra: 'Contra', retranca: 'Retr.', lados: 'Lados' };
+    const grid = (k, list, hd, lbl) => '<div class="cad-g ' + k + '" style="grid-template-columns:var(--cad-rl) repeat(' + list.length + ',minmax(0,1fr))"><span></span>' +
+      list.map(b => '<span class="cad-h">' + hd(b) + '</span>').join('') +
+      list.map(a => '<span class="cad-rl">' + lbl(a) + '</span>' + list.map(b => { const c = cad[k][a + '|' + b];
+        return c ? '<button class="cad-c ' + cadCls(c) + '" data-cad="' + k + ':' + a + '|' + b + '" aria-label="' + esc(cadName(k, a) + ' contra ' + cadName(k, b)) + '">' + CAD_W[c.v][0] + '</button>' : '<span class="cad-c">?</span>'; }).join('')).join('') + '</div>';
+    const page = (k, ttl, n, of, g) => '<div class="cad-card cad-page' + (tab === k ? ' on' : '') + '" data-pg="' + k + '"><div class="cad-hd"><span class="cad-hw">' + ttl + '</span><small>' + n + ' de ' + of + '</small></div>' + g + '</div>';
+    const riv = () => { const ids = Object.keys(cad.riv).sort((a, b) => (cad.riv[b].s - cad.riv[a].s) || (cad.riv[b].r - cad.riv[a].r));
+      return '<div class="cad-card cad-page' + (tab === 'riv' ? ' on' : '') + '" data-pg="riv"><div class="cad-hd"><span class="cad-hw">Como eles jogaram</span><small>' + D.plural(ids.length, 'rival', 'rivais') + '</small></div>' +
+        (ids.length ? ids.map(id => { const x = cad.riv[id], c = club(id);
+          return '<div class="cad-rv">' + crest(id, 'xs') + '<span><b>' + esc(c.short || c.name) + '</b><small>' + (x.n === 1 ? 'Rodada ' + x.r + ' de ' + (YEAR0 + x.s) : x.n + ' jogos · o último na rodada ' + x.r + ' de ' + (YEAR0 + x.s)) + '</small></span><em>' + x.form + '<i>' + esc(S.CO_STY[x.style].name) + '</i></em></div>'; }).join('')
+          : '<p class="cad-ft">Ainda vazio. Depois de cada jogo, o rival entra aqui com o jeito que jogou.</p>') + '</div>'; };
+    render(U.modeHead({ mode: 'co', nav: 'back', id: 'b-cad-back', label: 'Voltar', title: 'O que você já sabe', sub: 'Caderno do técnico · ' + D.plural(cnt.sty + cnt.frm, 'anotação', 'anotações') }) +
+      '<div class="cad">' +
+      '<div class="cad-tabs"><button data-ct="sty">Estilos</button><button data-ct="frm">Formações</button><button data-ct="riv">Rivais</button></div>' +
+      '<div class="cad-tabs wide"><button data-ct="sty">Estilos e formações</button><button data-ct="riv">Rivais</button></div>' +
+      '<div class="cad-leg"><span><b class="pen">↑</b> caneta, certo</span><span><b class="lap">↑</b> lápis, pode errar</span><span><b class="nv">?</b> não viu</span></div>' +
+      '<div class="cad-pages' + (tab === 'riv' ? ' riv' : '') + '">' +
+        page('sty', 'Meu estilo × o estilo deles', cnt.sty, 36, grid('sty', S.CO_STYLES, b => SH[b], a => esc(S.CO_STY[a].name))) +
+        page('frm', 'Minha formação × a deles', cnt.frm, 49, grid('frm', F, b => b, a => a)) + riv() + '</div>' +
+      '<p class="cad-note">Formação e estilo são anotados separados: um mesmo jogo pode encher uma casa de cada lado. Toque numa casa anotada para ver de onde veio.</p></div>');
+    U.modeHeadBind();
+    document.querySelectorAll('[data-ct]').forEach(b => { b.classList.toggle('on', b.dataset.ct === tab || (b.parentNode.classList.contains('wide') && tab !== 'riv' && b.dataset.ct === 'sty'));
+      b.onclick = () => { sfx('tap'); caderno(back, b.dataset.ct); }; });
+    document.querySelectorAll('[data-cad]').forEach(b => b.onclick = () => { sfx('tap'); const [k, ab] = b.dataset.cad.split(':'); cadSheet(k, ab, b); });
+    $('b-cad-back').onclick = () => { sfx('tap'); back(); };
+  }
+  // Uma anotação aberta: a seta, lápis ou caneta, o porquê por setor e de que jogos veio
+  function cadSheet(k, ab, btn) {
+    const c = S.coCad(co)[k][ab], [a, b] = ab.split('|'), w = CAD_W[c.v], sec = S.coCadTruth()[k][ab].sec;
+    document.querySelectorAll('.cad-c.sel').forEach(x => x.classList.remove('sel')); if (btn) btn.classList.add('sel');
+    const rows = c.pen ? Object.keys(sec).filter(s => Math.abs(sec[s]) > 0.03).sort((x, y) => Math.abs(sec[y]) - Math.abs(sec[x])).slice(0, 3) : [];
+    const d = document.createElement('div'); d.className = 'cad-ov'; d.id = 'cad-ov';
+    d.innerHTML = '<div class="cad-sh" role="dialog" aria-label="Anotação"><i class="cad-grab"></i>' +
+      '<div class="cad-sh-h"><small>' + (k === 'sty' ? 'Meu estilo × o deles' : 'Minha formação × a deles') + '</small><em class="' + (c.pen ? 'pen' : 'lap') + '">' + (c.pen ? 'CANETA' : 'LÁPIS') + ' · ' + D.plural(c.from.length, 'JOGO', 'JOGOS') + '</em></div>' +
+      '<div class="cad-sh-t"><b class="' + (c.pen ? 'pen ' + c.v : 'lap') + '">' + w[0] + '</b><div><h2>' + esc(cadName(k, a)) + '</h2><small>contra ' + esc(cadName(k, b).toLowerCase()) + '</small></div></div>' +
+      '<p class="cad-hw' + (c.pen ? '' : ' lap') + '">"' + (c.pen ? '' : 'Acho que: ') + esc(cadQuote(k, ab, c.v)) + '"</p>' +
+      (c.pen ? (rows.length ? '<div class="cad-sec"><small>Por setor</small>' + rows.map(s => { const v = sec[s] > 0 ? 'up' : 'down'; return '<div class="' + v + '"><span>' + S.CO_CAD_SEC[s] + '</span><b>' + CAD_W[v][0] + ' ' + CAD_S[v][s] + '</b></div>'; }).join('') + '</div>' : '')
+        : '<p class="cad-ft">A lápis: pode estar errado. Ver esse confronto de novo passa a limpo, a caneta.</p>') +
+      '<div class="cad-from"><small>De onde veio</small>' + c.from.map((f, i) => '<div><b>' + (f.s !== co.season ? (YEAR0 + f.s) + ' · ' : '') + 'R' + f.r + '</b><span>x ' + esc(nm(f.vs)) + ', ' + f.gf + ' x ' + f.ga + ' <i>' + (i === 0 ? '(lápis)' : c.fix ? '(corrigido a caneta)' : '(virou caneta)') + '</i></span></div>').join('') + '</div>' +
+      '<button class="btn" id="b-cad-x">Fechar</button></div>';
+    document.body.appendChild(d);
+    const close = () => { d.remove(); if (btn) btn.classList.remove('sel'); };
+    $('b-cad-x').onclick = () => { sfx('tap'); close(); };
+    d.onclick = e => { if (e.target === d) close(); };
+  }
   const avail = p => p && !p.out && !p.sus;
   // Ícones dos estilos (traço, cor do texto) e o desenho pequeno de cada formação, para os popups de tática
   const STY_IC = {
@@ -272,6 +368,7 @@
       w.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { sfx('tap'); co.style = b.dataset.s; closePop(); draw(); });
     });
     const bind = () => {
+      if ($('b-cad-open')) $('b-cad-open').onclick = () => { sfx('tap'); keepBench(); save(); caderno(() => team(toPlay)); };
       $('b-co-form').onclick = () => { sfx('tap'); formPop(); };
       $('b-co-sty').onclick = () => { sfx('tap'); styPop(); };
       document.querySelectorAll('[data-xi]').forEach(b => b.onclick = () => {
@@ -515,20 +612,18 @@
       };
       draw();
     };
-    // Tática no meio do jogo: a formação em mini campos, o estilo e como fica contra o plano de agora deles
+    // Tática no meio do jogo: a formação em mini campos, o estilo e o que o caderno diz contra o plano de agora deles
     const tactic = st => {
       const s = m.us, f0 = s.form, s0 = s.style;
       const d = full('');
       const mini = f => '<span class="lv-mp">' + spots(f).map(p => '<i style="left:' + p[0] + '%;top:' + p[1] + '%"></i>').join('') + '</span>';
       const draw = () => {
-        const H2 = m.home ? m.us : m.them, A2 = m.home ? m.them : m.us, mu = S.coMatchup(H2, A2);
-        const pv = { us: m.home ? mu.h : mu.a, op: m.home ? mu.a : mu.h, them: m.them, xg: m.home ? [mu.lh, mu.la] : [mu.la, mu.lh], poss: m.home ? mu.h.poss : mu.a.poss };
         const th = m.them, tc = club(th.club || m.vs);
         d.innerHTML = '<div class="lv-fh"><div><small>' + m.min + '\' · ' + m.gh + ' x ' + m.ga + ' · Parada</small><h2>Mudar a tática</h2></div></div>' +
           '<div class="lv-opp">' + crestB(tc.id, 'co-vc') + '<div><small>Eles agora</small><b>' + th.form + ' · ' + esc(S.CO_STY[th.style].name) + '</b></div></div>' +
           '<div class="lv-bh"><small>Formação</small></div><div class="lv-fms">' + Object.keys(S.CO_FORMS).map(f => '<button data-lf="' + f + '"' + (f === s.form ? ' class="on"' : '') + '>' + mini(f) + '<b>' + f + '</b></button>').join('') + '</div>' +
           '<div class="lv-bh"><small>Estilo</small></div><div class="lv-sts">' + S.CO_STYLES.map(k => '<button data-ls="' + k + '"' + (k === s.style ? ' class="on"' : '') + '><b>' + esc(S.CO_STY[k].name) + '</b><span>' + STY_SHORT[k] + '</span></button>').join('') + '</div>' +
-          '<div class="lv-bh"><small>Como fica contra eles</small></div>' + mview(pv, s.form, s.style) +
+          cadBlock(s.form, s.style, th, true) +
           '<div class="lv-fb"><button class="btn" id="b-lv-back">Pronto</button></div>';
         d.querySelectorAll('[data-lf]').forEach(b => b.onclick = () => { sfx('tap'); S.coMatchTactic(co, m, b.dataset.lf); draw(); });
         d.querySelectorAll('[data-ls]').forEach(b => b.onclick = () => { sfx('tap'); S.coMatchTactic(co, m, null, b.dataset.ls); draw(); });
@@ -569,7 +664,7 @@
       (m.mom && m.mom.length ? momSvg(m, move !== null && move !== undefined ? move : null) + (move !== null && move !== undefined ? '<small class="lv-mkt">Sua mudança aos ' + move + '\'</small>' : '') : '') + '</div>' +
       (m.sh ? '<div class="lv-cmps">' + cmp('Chutes', s1, s2) + cmp('No gol', o1, o2) + cmp('Posse', ph, 100 - ph, ph + '%', (100 - ph) + '%') + '</div>' : '') +
       (tl ? '<ul class="lv-tl">' + tl + '</ul>' : '<p class="lead co-nil">Jogo truncado, sem gols.</p>') +
-      ultTxt + (co.sacked ? '' : moodLine()) +
+      cadAfter(log.cad) + ultTxt + (co.sacked ? '' : moodLine()) +
       '<button class="btn" id="b-co-next">' + (co.sacked ? 'Falar com o presidente' : 'Continuar') + '</button></div>');
     $('b-co-next').onclick = () => { sfx('tap'); if (co.sacked) return sacked(); if (co.ss.done) return finishSeason(); hub(); };
   }
@@ -609,5 +704,5 @@
   const SK_TXT = { leitura: 'o time rende um pouco mais em todo jogo', motiv: 'derrota e banco abalam menos o elenco', negoc: 'vale no mercado (chega numa próxima parte)' };
   const FAME_TXT = f => (f >= 80 ? 'técnico de seleção' : f >= 60 ? 'disputado pelos grandes' : f >= 40 ? 'nome conhecido' : f >= 20 ? 'começando a aparecer' : 'ninguém conhece ainda');
 
-  Object.assign(U, { coCreate: create, coHub: () => co && hub() });
+  Object.assign(U, { coCreate: create, coHub: () => co && hub(), coCaderno: (c, pv) => (pv && pv.them ? cadBlock(c.form, c.style, pv.them) + hintCard() : '') });
 })();
