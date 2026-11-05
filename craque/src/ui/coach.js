@@ -6,7 +6,8 @@
   const { D, S, sfx, $, esc, money, club, league, crest, load, store, render, bar, G, YEAR0 } = U;
   const SAVE_CO = U.SAVE_CO = 'climbix-treinador-v1';
   let co = null;
-  const save = step => { if (co) co.step = step || co.step; store(SAVE_CO, co ? { co, at: Date.now() } : { co: null, at: Date.now() }); };
+  // Duas vagas: co.slot 1 grava em SAVE_CO + '-2'
+  const save = step => { if (co) co.step = step || co.step; store(U.slotKey(SAVE_CO, co && co.slot), co ? { co, at: Date.now() } : { co: null, at: Date.now() }); };
   const yr = () => YEAR0 + co.season;
   const last = n => String(n || '').split(' ').filter(Boolean).pop() || '';
   const posTxt = { GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', MEI: 'Meia', ATA: 'Atacante' };
@@ -14,22 +15,9 @@
   const enCls = e => (e >= 75 ? 'ok' : e >= 55 ? 'mid' : 'low');
 
   // ---------- ingresso da tela inicial ----------
-  U.coSaved = () => { const sv = load(SAVE_CO); return sv && sv.co && sv.co.mode === 'treinador' ? sv : null; };
-  U.coContTicket = (sv, tk) => {
-    const c = sv.co, cl = c.club && club(c.club), ss = c.ss;
-    const line = ss && !ss.done ? '<span>Rodada <b>' + Math.min(ss.i + 1, ss.rounds.length) + '</b> de ' + ss.rounds.length + '</span><span>Fama <b>' + c.fame + '</b></span>'
-      : '<span>Temporada <b>' + (YEAR0 + c.season) + '</b></span><span>Fama <b>' + c.fame + '</b></span>';
-    return tk('tk-cont', 'b-cont-co', '<span class="tk-who">' + (cl ? crest(cl.id, 'lg') : U.emo('📋', 'lg')) + '<span><small>Modo Treinador</small><b>' + esc(c.name) + '</b>' +
-      '<span>' + (cl ? esc(cl.name) : 'Sem clube') + ' · técnico</span></span></span><span class="tk-line">' + line + '</span>',
-      '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l11 8-11 8z" fill="currentColor"/></svg><b>Continuar</b><i class="tk-bars" aria-hidden="true"></i><small>Nº ' + String(YEAR0 + c.season) + '</small>');
-  };
-  U.coAlso = sv => '<button class="hm-line" id="b-cont-co">' + U.emo('📋', 'xs') + '<span>Também jogando: <b>' + esc(sv.co.name) + '</b>' +
-    (sv.co.club && club(sv.co.club) ? ', técnico do ' + esc(club(sv.co.club).name) : '') + '</span><em>Treinador ›</em></button>';
-  U.coHomeBind = () => {
-    const sv = U.coSaved();
-    if ($('b-cont-co')) $('b-cont-co').onclick = () => { sfx('tap'); resume(sv); };
-    if ($('b-new-co')) $('b-new-co').onclick = () => (sv ? U.ask('Começar outra carreira de técnico?', 'A carreira de ' + sv.co.name + ' será apagada quando o novo técnico assinar com um clube.', 'Novo técnico', create) : create());
-  };
+  U.coSaved = slot => { const sv = load(U.slotKey(SAVE_CO, slot)); return sv && sv.co && sv.co.mode === 'treinador' ? sv : null; };
+  U.coResume = sv => { sfx('tap'); resume(sv); };
+  U.coCreate = slot => create(slot);
   function resume(sv) {
     co = sv.co;
     G.c = null; bar();
@@ -43,7 +31,8 @@
   }
 
   // ---------- criação ----------
-  function create() {
+  function create(slot) {
+    slot = slot ? 1 : 0;
     const st = { name: D.randomName('Brasil'), country: 'Brasil', start: 'baixo', auto: true };
     const cty = () => D.COUNTRIES.find(k => k.id === st.country) || D.COUNTRIES[0];
     const START = [['baixo', 'Subir de baixo', 'Um clube pequeno de divisão de baixo. A fama vem com o tempo.'],
@@ -69,6 +58,7 @@
       sfx('tap');
       co = S.coNew({ name: ($('co-name').value.trim() || st.name).slice(0, 22), country: st.country, start: st.start });
       co.autoXI = true;
+      if (slot) co.slot = 1;
       offers(S.coOffers(co));
     };
     paint();
