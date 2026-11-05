@@ -10,7 +10,7 @@
   const num2 = x => String(Math.round(x * 100) / 100).replace('.', ',');
   const num1 = x => (Math.round(x * 10) / 10).toFixed(1).replace('.', ',');
   const clock = t => (t > 90 ? '90+' + (t - 90) : t) + "'";
-  const PACE = [330, 110]; // milissegundos por minuto de jogo: normal (~30 s) e rápido (~10 s)
+  const PACE = [1300, 430]; // milissegundos por minuto de jogo: 1× (~2 min, como a partida do Treinador) e 3× (~40 s)
   let fast = false;
   let eff = null; // esforço do jogo ao vivo: nível escolhido, minutos em cada nível (S.FC_EFF) e o energético
   // Em tela larga a tabela fica ao lado do jogo ao vivo
@@ -408,7 +408,7 @@
     const m = out.my, me = x.home ? 'h' : 'a', fc = c.fc;
     const r = S.rng(((Number(c.tseed) || 1) * 31 + fc.season * 977 + fc.i * 7919) >>> 0);
     const N = 100, nota = new Array(N + 1).fill(6), bx = new Array(N + 1).fill(50), lances = [];
-    if (!m) return { nota, bx, lances, on: false };
+    if (!m) return { nota, bx, lances, on: false, dom: U.LP.dom(bx) };
     const pos = c.pos, def = pos === 'GOL' || pos === 'ZAG';
     const steps = [], usedTxt = new Set(); // [minuto, variação, texto, bom]
     const one = list => { const free = list.filter(t => !usedTxt.has(t)), t = r.pick(free.length ? free : list); usedTxt.add(t); return t; };
@@ -449,56 +449,83 @@
       b = Math.max(3, Math.min(97, b)); bx[t] = Math.round(b);
       if (m.ev.some(e => e.m === t - 1)) b = 50; // saída de bola
     }
-    return { nota, bx, lances, on: !!m.on };
+    return { nota, bx, lances, on: !!m.on, dom: U.LP.dom(bx) };
   }
-  function flowBox(c, x, f) {
-    const me = esc(nameOf(c.club)), op = esc(nameOf(x.vs));
-    // Campo inclinado como na câmera de TV (perspectiva em CSS); a bola fica em pé sobre a grama, com sombra
-    return '<div class="fl-cam" aria-hidden="true"><div class="fl-pitch"><s class="mid"></s><s class="ctr"></s><s class="ar l"></s><s class="ar r"></s><s class="gl l"></s><s class="gl r"></s>' +
-      '<b class="fl-sh" id="fl-sh"></b><i class="fl-ball" id="fl-ball"></i></div></div>' +
-      '<div class="fl-tm"><span class="fl-l">' + me + '</span><span class="fl-r">' + op + '</span></div>' +
-      '<div class="fl-row"><p class="fl-zone" id="fl-zone">Bola rolando</p><p class="fl-pos">Posse <b id="fl-pos">50%</b></p></div>' +
-      (f.on ? '<div class="fl-me"><div class="fl-n"><small>Sua nota</small><b id="fl-n">6,0</b><em id="fl-d"></em></div><ul class="fl-lc" id="fl-lc"></ul></div>'
-        : '<p class="fl-off">' + (x.injury ? 'Você está fora, lesionado.' : 'Você está no banco.') + '</p>');
+  // ---------- a partida vista de cima (ui/livepitch.js): campinho, faixa, nota, narração ----------
+  const sobre = c => c.name.trim().split(/\s+/).pop();
+  const STAR = '<svg class="lp-st" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15,9 22,9.5 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9.5 9,9"/></svg>';
+  const GOALTXT = { 'Gol!': 1, 'Assistência para o gol': 1, 'Gol sofrido': 1 }; // já entram na narração como gol
+  // Placar do ao vivo: escudos, placar, minuto e a faixa "quem manda no jogo"
+  function sbLive(x) {
+    const my = G.c.club, h = x.home ? my : x.vs, a = x.home ? x.vs : my;
+    const side = id => '<div class="lp-tm' + (id === my ? ' me' : '') + '">' + crest(id, 'md') + '<span>' + esc(nameOf(id)) + '</span></div>';
+    return '<div class="lp-sb" id="lp-sb"><div class="lp-sbr">' + side(h) +
+      '<div class="lp-sc"><b><span id="fc-sh">0</span><i>x</i><span id="fc-sa">0</span></b><small class="lp-min" id="fc-lt">0\'</small></div>' + side(a) + '</div>' +
+      '<div class="lp-lbl lp-whor"><span>Quem manda no jogo</span><span id="lp-who"></span></div><div id="lp-strip"></div></div>';
   }
-  function flowAt(c, x, f, t, seen) {
-    const ball = $('fl-ball'); if (!ball) return;
-    const b = f.bx[Math.min(t, 100)];
-    // Altura no campo: só para a bola não andar numa linha reta (sobe e desce entre as laterais)
-    const y = Math.round(50 + 30 * Math.sin(t * 0.37 + b * 0.05) * Math.cos(t * 0.11)) + '%';
-    ball.style.left = b + '%'; ball.style.top = y;
-    const sh = $('fl-sh'); if (sh) { sh.style.left = b + '%'; sh.style.top = y; }
-    const me = nameOf(c.club), op = nameOf(x.vs);
-    $('fl-zone').textContent = b >= 75 ? 'Ataque do ' + me : b >= 58 ? me + ' no campo de ataque' : b <= 25 ? 'Pressão do ' + op : b <= 42 ? op + ' no ataque' : 'Disputa no meio-campo';
-    $('fl-zone').className = 'fl-zone' + (b >= 75 ? ' up' : b <= 25 ? ' down' : '');
-    let own = 0; for (let k = 0; k <= t && k <= 100; k++) if (f.bx[k] >= 50) own++;
-    $('fl-pos').textContent = Math.round(own / (Math.min(t, 100) + 1) * 100) + '%';
-    if (!f.on) return;
-    const n = Math.max(4.5, Math.min(10, f.nota[Math.min(t, 100)] + (f.off || 0))), p = f.nota[Math.max(0, Math.min(t, 100) - 1)] + (f.off || 0); // off: o esforço até agora
-    $('fl-n').textContent = rate(n);
-    $('fl-n').className = n >= 7 ? 'up' : n < 6 ? 'down' : '';
-    f.lances.filter(l => l.m <= t && !seen.has(l)).forEach(l => {
-      seen.add(l);
-      $('fl-d').textContent = (l.d > 0 ? '▲ ' : '▼ ') + rate(Math.abs(l.d)); $('fl-d').className = l.d > 0 ? 'up' : 'down';
-      $('fl-lc').insertAdjacentHTML('afterbegin', '<li class="' + (l.up ? 'up' : 'down') + '"><i>' + clock(l.m) + '</i>' + esc(l.txt) + '</li>');
-      const li = $('fl-lc').children; while (li.length > 3) li[li.length - 1].remove();
-    });
-    if (n === p && t > 0 && !f.lances.some(l => l.m > t - 4 && l.m <= t)) $('fl-d').textContent = '';
+  function flowBox(c, x, f, meIdx) {
+    return U.LP.pitch({ me: f.on ? meIdx : -1, num: c.pos === 'GOL' ? 1 : c.pos === 'ZAG' ? 4 : c.pos === 'MEI' ? 10 : 9 }) +
+      (f.on ? '' : '<p class="lp-off">' + (x.injury ? 'Você está fora, lesionado. Acompanha da arquibancada.' : 'Você está no banco. Acompanha de perto.') + '</p>');
+  }
+  function notaBox(f) {
+    return f.on ? '<div class="lp-nota"><small>Sua nota</small><div><b id="fl-n">6,0</b><em id="fl-d"></em></div><p id="fl-last"></p></div>' : '';
+  }
+  // A narração: o mais novo em cima; os seus lances em dourado
+  function feed(m, html, cls, star) {
+    const ul = $('fc-feed'); if (!ul) return;
+    ul.insertAdjacentHTML('afterbegin', '<li class="' + (cls || '') + '"><i>' + clock(m) + '</i><span>' + html + '</span>' + (star ? STAR : '') + '</li>');
+    while (ul.children.length > 8) ul.lastChild.remove();
+  }
+  const NARR = {
+    up: ['{me} chega com perigo pela {lado}', 'Cruzamento {do_me}, a zaga afasta', 'Escanteio para o {me}', '{me} troca passes na entrada da área', 'Chute de fora {do_me}, por cima'],
+    down: ['{op} aperta, a zaga {do_me} afasta', 'Chute {do_op}, por cima do gol', 'Escanteio para o {op}', '{op} chega pela {lado}', 'Falta perigosa para o {op}'],
+    mid: ['{me} troca passes no meio', 'Jogo truncado no meio-campo', 'Falta no meio-campo', '{op} tenta sair jogando', 'Bola longa, ninguém alcança']
+  };
+  function narr(r, b, y, me, op) {
+    const k = b >= 70 ? 'up' : b <= 30 ? 'down' : 'mid', lado = y < 38 ? 'esquerda' : y > 62 ? 'direita' : 'meio';
+    return r.pick(NARR[k]).replace('{lado}', lado === 'meio' ? 'meio' : lado).replace('pela meio', 'pelo meio')
+      .replace('{do_me}', D.do(me)).replace('{do_op}', D.do(op)).replace(/\{me\}/g, me).replace(/\{op\}/g, op);
+  }
+  // Os números do jogador até o minuto t (só apresentação, a partir dos lances e da nota)
+  function statsAt(c, f, t, ev, meSide) {
+    const L = f.lances.filter(l => l.m <= t), n = Math.max(4.5, Math.min(10, f.nota[Math.min(t, 100)] + (f.off || 0)));
+    const has = re => L.filter(l => re.test(l.txt)).length;
+    const base = { ATA: 34, MEI: 56, ZAG: 44, GOL: 26 }[c.pos] || 40;
+    const toq = Math.max(1, Math.round(base * Math.min(t, 90) / 90 * (0.85 + (n - 6) * 0.12)));
+    const gk = c.pos === 'GOL';
+    return { n, toq, a: gk ? has(/defesa|segura|fecha|sai bem/i) : has(/chut|finaliz|gol!|cabece/i), al: gk ? 'Defesas' : 'Chutes',
+      b: gk ? ev.filter(e => e.m <= t && e.s !== meSide).length : has(/desarme|rouba|corte|antecip|ganha|dividida/i), bl: gk ? 'Sofridos' : 'Desarmes' };
+  }
+  // Fala do técnico no intervalo: pela sua nota e pelo placar
+  function coachTalk(c, n, diff, ax) {
+    const sn = sobre(c), atk = c.pos === 'ATA' || c.pos === 'MEI';
+    if (n < 6) return sn + ', você sumiu no primeiro tempo. Quero você participando mais.';
+    if (diff < 0) return atk ? (ax < 55 && c.pos === 'ATA' ? sn + ', você está voltando demais. Fica lá na frente que a bola vai chegar.' : 'Estamos atrás. Preciso de você mais perto da área.') : 'Segura atrás que a gente busca o empate.';
+    if (n >= 7) return 'Tá jogando muito, ' + sn + '. Continua assim.';
+    if (diff > 0) return 'Bom primeiro tempo. Cabeça no lugar e não deixa voltar.';
+    return 'Jogo travado. Paciência, a chance vai aparecer.';
+  }
+  function statBoxes(items) {
+    return '<div class="lp-stats">' + items.map(([k, v, hi]) => '<div' + (hi ? ' class="hi"' : '') + '><small>' + k + '</small><b>' + v + '</b></div>').join('') + '</div>';
   }
 
   // ---------- jogo ao vivo ----------
-  // Tela própria: o jogo, a rodada e a tabela (do lado em tela larga)
+  // Tela própria: o placar com a faixa, o campinho, você (nota, energia, esforço), o plantão, a narração e a barra de baixo.
+  // No computador: você à esquerda, o jogo no meio, a tabela e a rodada à direita
   function matchView() {
-    const c = G.c;
     render(
-      '<div class="fs fc live" id="fc">' +
+      '<div class="fs fc live lp-v" id="fc">' +
         '<div class="fs-main">' +
-          '<div class="eyebrow">Temporada ' + (year()) + ' · ' + esc(nameOf(c.club)) + '</div><h2 id="fc-h"></h2>' +
-          '<div class="fs-match" id="fc-match"></div>' +
-          '<div class="fc-flow" id="fc-flow"></div>' +
-          '<div class="fc-wk" id="fc-wk"></div>' +
-          '<div class="fs-acts" id="fc-acts"></div>' +
-          '<div class="fs-round" id="fc-round"></div>' +
+          '<div class="eyebrow">Temporada ' + (year()) + ' · ' + esc(nameOf(G.c.club)) + '</div><h2 id="fc-h"></h2>' +
+          '<div class="lp-mecol" id="fc-mecol"><div class="lp-me-c" id="fc-mecard"><div id="fc-nota"></div><div class="fc-wk" id="fc-wk"></div></div><div class="lp-mine" id="fc-mine"></div></div>' +
+          '<div class="lp-ctr">' +
+            '<div class="fs-match" id="fc-match"></div>' +
+            '<div class="fc-flow lp-flow" id="fc-flow"></div>' +
+            '<p class="lp-tv" id="fc-tv" hidden></p>' +
+            '<ul class="lp-feed" id="fc-feed"></ul>' +
+            '<div class="fs-acts lp-acts" id="fc-acts"></div>' +
+            '<div class="fs-round" id="fc-round"></div>' +
+          '</div>' +
         '</div>' +
         '<div class="fs-side"><div class="fc-tabs" id="fc-tabs"></div><div class="fs-tbl" id="fc-tbl"></div></div>' +
       '</div>'
@@ -1344,6 +1371,7 @@
   function lanceScreen(m, sc, go) {
     const c = G.c, st = S.kickSetupType(m), T = LANCE_TXT(m, c), k = S.kickSetup(c, st, S.autoStyle(c, st));
     render('<div class="eyebrow">Seu lance · ' + esc(m.comp) + '</div>' + lanceBoard(m, sc) +
+      (sc ? U.LP.zoom(st, m.kick, 'Seu lance · ' + m.minute + "'") : '') + // no ao vivo, a câmera fecha na jogada
       '<div class="ob5-head"><h2>' + T.title + '</h2><p class="ob5-txt">' + esc(T.text) + '</p>' + U.lanceStakes(T.stakes) + '</div>' +
       '<p class="st-lead ob5-q">Como você vai ' + { cup: 'bater', classico: 'bater', save: 'defender', tackle: 'marcar', pass: 'passar', mano: 'passar por ele', pressao: 'pressionar', cara: 'encarar o goleiro', dois: 'decidir', cabeca: 'atacar a bola', passe3: 'passar', bote: 'marcar', saida: 'sair do gol' }[st] + '?</p>' + U.styleBtns(st, true) +
       '<div class="ob5-foot"><button class="btn ghost ob5-auto" id="fc-lauto">Deixar o jogo decidir<small>' + Math.round(k.chance * 100) + '% pela sua carta</small></button>' +
@@ -1414,13 +1442,26 @@
     if (undo && !o.stop) games.forEach(([a, b, g]) => sub(undo === 'lg' ? c.fc.lg.tab : c.fc.cont.gtab, a, b, part(g, 99)));
     if (grp) tblView = 'cont'; else if (lg) tblView = 'lg';
     tblKey = null; tabs();
+    const posBefore = lg ? standings('lg').findIndex(r => r.i === 0) + 1 : 0;
     x.score = t => (out.my ? part({ ev: out.my.ev }, t) : [0, 0]);
     const end = Math.max(90, ...[out.my].concat(out.others).filter(Boolean).map(g => (g.ev.length ? g.ev[g.ev.length - 1].m : 0)));
+    const N = Math.max(95, end);
     let t = t0, half = false, timer = 0;
     $('fc-h').textContent = nx.compName + ' · ao vivo';
-    $('fc-match').innerHTML = card('live', x, t);
+    const meSide = nx.home ? 'h' : 'a', meName = nameOf(c.club), opName = nameOf(x.vs);
     const fl = x.vs && out.my ? flowOf(c, x, out) : null, flSeen = new Set();
-    if (fl) { $('fc-flow').innerHTML = flowBox(c, x, fl); fl.lances.forEach(l => { if (l.m <= t0) flSeen.add(l); }); }
+    const meIdx = fl && fl.on ? U.LP.meIndex(c.pos) : -1;
+    const path = []; // onde você esteve a cada minuto (o mapa do intervalo)
+    const nr = S.rng(((Number(c.tseed) || 1) * 17 + c.fc.i * 131 + 7) >>> 0); let lastNarr = t0;
+    // O minuto do seu lance decisivo (estrela grande na faixa)
+    const bigM = o.stop ? stopAt : o.from || 0;
+    const stars = () => (fl && fl.on ? fl.lances.filter(l => !(o.stop && l.m >= stopAt)).map(l => ({ m: l.m, down: !l.up })) : []).concat(bigM && (!o.stop || t >= stopAt) ? [{ m: bigM, big: true }] : []);
+    if (x.vs) $('fc-match').innerHTML = sbLive(x); else $('fc-match').innerHTML = card('live', x, t);
+    const pitch = () => { if (!fl) return; $('fc-flow').innerHTML = flowBox(c, x, fl, meIdx); U.LP.resetTrail(); };
+    pitch();
+    if (fl) fl.lances.forEach(l => { if (l.m <= t0) flSeen.add(l); });
+    $('fc-nota').innerHTML = fl ? notaBox(fl) : '';
+    $('fc-mecard').classList.toggle('off', !(fl && fl.on));
     // Energia descendo minuto a minuto e o esforço escolhido na hora (quem está em campo); senão, o quadro de sempre
     const onPitch = !!(out.my && out.my.on && c.fc.en !== undefined && out.en !== undefined), enBase = out.en || 0;
     if (!eff) eff = { lvl: 1, mins: [0, Math.max(0, t0), 0], drink: false };
@@ -1448,15 +1489,18 @@
     // Como na TV: o jogo do seu rival direto primeiro e um plantão com o último gol de fora (e o que ele faz com você)
     const rvI = lg ? rivalOf(standings('lg')) : -1, rvId = rvI >= 0 ? c.fc.lg.ids[rvI] : null;
     const ordK = out.others.map((g, k) => k).sort((a, b) => (out.others[b].h === rvId || out.others[b].a === rvId) - (out.others[a].h === rvId || out.others[a].a === rvId));
-    $('fc-round').innerHTML = out.others.length ? '<div class="fs-rlbl">' + (lg ? 'Outros jogos da rodada' : grp ? 'O outro jogo do grupo' : 'Outros confrontos da fase') + '</div><p class="fs-tv" id="fc-tv" hidden></p>' +
+    $('fc-round').innerHTML = out.others.length ? '<div class="fs-rlbl">' + (lg ? 'Outros jogos da rodada' : grp ? 'O outro jogo do grupo' : 'Outros confrontos da fase') + '</div>' +
       ordK.map(k => { const g = out.others[k], rv = g.h === rvId || g.a === rvId;
         return '<div class="fs-rr' + ((out.bets || []).some(t => t.legs.some(l => l.h === g.h && l.a === g.a)) ? ' zb' : '') + (rv ? ' rv' : '') + '" data-k="' + k + '"><span>' + esc(nameOf(g.h)) + '</span>' + crest(g.h, 'xs') + '<b>0 × 0</b>' + crest(g.a, 'xs') + '<span>' + esc(nameOf(g.a)) + '</span></div>'; }).join('') : '';
     let myPos = 0;
-    // Botões com a bola rolando: velocidade e pular (para o fim ou para o lance)
+    // Barra de baixo com a bola rolando: 1× ou 3× e pular (para o seu lance ou para o fim)
     function liveActs() {
-      $('fc-acts').innerHTML = '<div class="fs-skip"><button class="btn ghost' + (fast ? ' on' : '') + '" id="fc-fast">' + (fast ? 'Velocidade normal' : 'Mais rápido') + '</button><button class="btn ghost" id="fc-skip">' + (o.stop ? 'Ir ao lance' : 'Fim do jogo') + '</button></div>';
-      $('fc-fast').onclick = () => { fast = !fast; $('fc-fast').textContent = fast ? 'Velocidade normal' : 'Mais rápido'; $('fc-fast').classList.toggle('on', fast); };
-      $('fc-skip').onclick = () => { clearTimeout(timer); if (o.stop) { const t1 = t; t = stopAt; frame(t1); return pause(); } t = end; frame(); done(); };
+      $('fc-acts').innerHTML = '<div class="lp-bar"><div class="seg lp-spd"><button id="fc-slow"' + (fast ? '' : ' class="on"') + '>1×</button><button id="fc-fast"' + (fast ? ' class="on"' : '') + '>3×</button></div>' +
+        '<button class="btn lp-skip' + (o.stop ? ' gold' : '') + '" id="fc-skip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l7 7-7 7M13 5l7 7-7 7"/></svg>' + (o.stop ? 'Pular até o seu lance' : 'Pular para o fim') + '</button></div>';
+      const spd = v => { fast = v; $('fc-slow').classList.toggle('on', !v); $('fc-fast').classList.toggle('on', v); };
+      $('fc-slow').onclick = () => spd(false);
+      $('fc-fast').onclick = () => spd(true);
+      $('fc-skip').onclick = () => { clearTimeout(timer); if (o.stop) { const t1 = t; t = stopAt; frame(t1); return pause(); } const t1 = t; t = end; frame(t1); done(); };
     }
     // Parada (antes do jogo e no intervalo): um botão dourado segue; dá tempo de escolher o esforço e o energético
     function stopActs(id, label, sub, go) {
@@ -1467,14 +1511,35 @@
     const liveTab = () => ({ [view]: games.map(([a, b, g]) => [a, b].concat(part(g, t))) });
     // Antes do lance só entra o que veio antes do minuto dele
     const shown = e => !o.stop || e.m < stopAt;
-    function frame(since) { // since: pulou de minuto (só o lance pendente)
-      const lt = $('fc-lt'); if (lt) lt.textContent = (half ? 'Intervalo' : t >= end ? 'Fim de jogo' : esc(nx.compName) + ' · ' + clock(t));
+    const tt = () => (o.stop ? Math.min(t, stopAt - 1) : t);
+    function goalTxt(e) {
+      const ours = e.s === meSide, who = ours ? meName : opName;
+      return e.me ? 'GOL de <b>' + esc(sobre(c)) + '</b>!' : e.as ? 'Gol ' + esc(D.do(who)) + ', passe de <b>' + esc(sobre(c)) + '</b>' : 'Gol ' + esc(D.do(who));
+    }
+    // Um minuto na tela: placar, campinho, faixa, nota, narração, rodada e tabela. since: pulou de minuto (mostra só o que importa)
+    function frame(since) {
+      const lt = $('fc-lt'); if (lt) lt.textContent = (half ? 'Intervalo' : t >= end ? 'Fim' : clock(t));
+      const T = tt();
+      let myGoal = false;
       if (out.my && $('fc-sh')) {
-        const [h, a] = x.score(o.stop ? Math.min(t, stopAt - 1) : t); $('fc-sh').textContent = h; $('fc-sa').textContent = a;
-        out.my.ev.filter(e => (since !== undefined ? e.m > since && e.m <= t : e.m === t) && shown(e)).forEach(e => { $(e.s === 'h' ? 'fc-evh' : 'fc-eva').insertAdjacentHTML('beforeend', play1(e)); if ((e.s === 'h') === nx.home) sfx('cheer'); });
+        const [h, a] = x.score(T); $('fc-sh').textContent = h; $('fc-sa').textContent = a;
+        out.my.ev.filter(e => (since !== undefined ? e.m > since && e.m <= t : e.m === t) && shown(e)).forEach(e => {
+          const ours = e.s === meSide; myGoal = true;
+          feed(e.m, goalTxt(e), 'gol ' + (ours ? 'us' : 'th') + (e.me || e.as ? ' me' : ''), e.me || e.as);
+          if (ours) sfx('cheer');
+          if (since === undefined || e.m === t) {
+            U.LP.banner(e.me ? 'GOL DE ' + esc(sobre(c)).toUpperCase() + '!' : 'GOL ' + esc(D.do(ours ? meName : opName)).toUpperCase() + (ours ? '!' : ''),
+              e.me || e.as ? (e.m === o.from ? 'Seu lance decisivo' : e.as ? 'Assistência sua' : '') : '', ours ? (e.me || e.as ? 'gold' : 'up') : 'down');
+            const sb = $('lp-sb'); if (sb) { sb.classList.remove('hot', 'cold'); void sb.offsetWidth; sb.classList.add(ours ? 'hot' : 'cold'); }
+          }
+        });
       }
       if (fl && onPitch) fl.off = eff.mins.reduce((a, m, k) => a + m * S.FC_EFF[k].r, 0) / 90;
-      if (fl) flowAt(c, x, fl, o.stop ? Math.min(t, stopAt - 1) : t, flSeen);
+      if (fl) lpAt(T, since);
+      if ($('lp-strip') && fl) {
+        $('lp-strip').innerHTML = U.LP.strip(fl.dom, T, N, stars(), 0);
+        const w = U.LP.who(fl.dom, T, meName, opName), el = $('lp-who'); if (el) { el.textContent = w[0]; el.className = w[1]; }
+      }
       let goal = false;
       let tv = null;
       document.querySelectorAll('#fc-round .fs-rr').forEach(el => {
@@ -1484,26 +1549,89 @@
         const e = g.ev.filter(e => (since !== undefined ? e.m > since : e.m === t) && e.m <= t).pop();
         if (e) { goal = true; if (!tv || e.m >= tv.e.m) tv = { e, g, h, a }; }
       });
-      if (undo && (goal || t <= 1 || (out.my && out.my.ev.some(e => e.m === t)))) {
+      if (undo && (goal || t <= 1 || myGoal)) {
         const p = table(liveTab());
         if (tv) {
-          const who = tv.e.s === 'h' ? tv.g.h : tv.g.a, mv = myPos && p !== myPos && lg ? ' · você ' + (p < myPos ? 'sobe' : 'cai') + ' para ' + p + 'º' : '';
-          plantao(clock(tv.e.m) + ' · Gol ' + D.do(nameOf(who)) + (who === rvId ? ', seu rival' : '') + ': ' + nameOf(tv.g.h) + ' ' + tv.h + ' × ' + tv.a + ' ' + nameOf(tv.g.a) + mv);
-        }
+          const who = tv.e.s === 'h' ? tv.g.h : tv.g.a, mv = myPos && p !== myPos && lg ? '. Com isso, você ' + (p < myPos ? 'sobe' : 'cai') + ' para <b>' + p + 'º</b>' : '';
+          plantao(clock(tv.e.m) + ' · Gol ' + esc(D.do(nameOf(who))) + (who === rvId ? ', seu rival' : '') + ': ' + esc(nameOf(tv.g.h)) + ' ' + tv.h + ' × ' + tv.a + ' ' + esc(nameOf(tv.g.a)) + mv);
+        } else if (myGoal && lg && myPos && p !== myPos) plantao('Com o gol, você ' + (p < myPos ? 'sobe' : 'cai') + ' para <b>' + p + 'º</b>', 'TABELA');
         myPos = p;
       }
     }
-    function plantao(txt) {
+    // O campinho e você no minuto T
+    function lpAt(T, since) {
+      const b = fl.bx[Math.min(T, 100)], by = U.LP.ballY(T, b);
+      const toMe = fl.on && (fl.lances.some(l => l.m === T) || (o.stop && T >= stopAt - 1) || (o.from && T === o.from));
+      const sp = U.LP.spots(T, b, meIdx, toMe);
+      U.LP.place(sp, meIdx);
+      if (meIdx >= 0) path[T] = sp.us[meIdx];
+      const lado = by < 38 ? 'pela esquerda' : by > 62 ? 'pela direita' : 'pelo meio';
+      U.LP.band(b, b >= 68 ? meName + ' ataca ' + lado : b <= 32 ? opName + ' ataca ' + lado : b >= 55 ? meName + ' no campo de ataque' : b <= 45 ? opName + ' no campo de ataque' : 'Disputa no meio-campo');
+      let own = 0; for (let k = 0; k <= T && k <= 100; k++) if (fl.bx[k] >= 50) own++;
+      const pe = $('lp-pos'); if (pe) pe.textContent = 'Posse ' + Math.round(own / (Math.min(T, 100) + 1) * 100) + '%';
+      // Narração de fundo, de tempos em tempos (no minuto a minuto, não quando pulou)
+      if (since === undefined && T - lastNarr >= 5 && nr() < 0.3 && !fl.lances.some(l => l.m === T) && !out.my.ev.some(e => e.m === T)) { lastNarr = T; feed(T, esc(narr(nr, b, by, meName, opName)), ''); }
+      if (!fl.on) return;
+      const n = Math.max(4.5, Math.min(10, fl.nota[Math.min(T, 100)] + (fl.off || 0)));
+      $('fl-n').textContent = rate(n);
+      $('fl-n').className = n >= 7 ? 'up' : n < 6 ? 'down' : '';
+      fl.lances.filter(l => l.m <= T && !flSeen.has(l)).forEach(l => {
+        flSeen.add(l);
+        const dd = dTxt(l.d);
+        $('fl-d').textContent = dd; $('fl-d').className = l.d > 0 ? 'up' : 'down';
+        $('fl-last').textContent = l.txt;
+        if (!GOALTXT[l.txt]) feed(l.m, '<b class="lp-nm">' + esc(sobre(c)) + '</b>: ' + esc(l.txt) + ' <em class="' + (l.up ? 'up' : 'down') + '">' + dd + '</em>', 'me' + (l.up ? '' : ' bad'), l.up);
+        mine();
+      });
+      if (T > 0 && !fl.lances.some(l => l.m > T - 4 && l.m <= T)) $('fl-d').textContent = '';
+    }
+    // Seus lances (coluna da esquerda no computador; lista do fim de jogo)
+    const dTxt = d => (Math.abs(d) < 0.05 ? '' : (d > 0 ? '▲ ' : '▼ ') + rate(Math.abs(d)));
+    function mineList(upto) {
+      const L = fl.lances.filter(l => l.m <= upto).map(l => ({ m: l.m, h: '<li><i>' + clock(l.m) + '</i><span>' + esc(l.txt) + '</span><em class="' + (l.d > 0 ? 'up' : 'down') + '">' + dTxt(l.d) + '</em></li>' }));
+      // O lance decisivo (o minigame) entra na lista com o que ele deu
+      if (o.from && o.from <= upto) {
+        const e = out.my.ev.find(e => e.m === o.from && (e.me || e.as)), ag = out.my.ev.find(e => e.m === o.from && e.s !== meSide);
+        L.push({ m: o.from, h: '<li class="big"><i>' + clock(o.from) + '</i><span>' + (e ? (e.me ? 'Gol seu' : 'Assistência sua') : ag ? 'Gol deles' : 'Não deu') + ' no seu lance decisivo</span><em></em></li>' });
+      }
+      return L.sort((a, b) => a.m - b.m).map(l => l.h).join('');
+    }
+    function mine() {
+      const el = $('fc-mine'); if (!el || !fl || !fl.on) return;
+      const li = mineList(tt());
+      el.innerHTML = '<div class="lp-lbl">Seus lances</div>' + (li ? '<ul class="lp-ml">' + li + '</ul>' : '<p class="lp-wait">Nada ainda. A bola vai chegar.</p>') +
+        (o.stop ? '<p class="lp-next">Seu lance decisivo ainda vai acontecer neste jogo.</p>' : '');
+    }
+    mine();
+    function plantao(html, tag) {
       const el = $('fc-tv'); if (!el) return;
-      el.hidden = false; el.textContent = txt; el.classList.remove('new'); void el.offsetWidth; el.classList.add('new');
+      el.hidden = false; el.innerHTML = '<span class="lp-tvk' + (tag ? ' tb' : '') + '">' + (tag || 'Plantão') + '</span><span>' + html + '</span>';
+      el.classList.remove('new'); void el.offsetWidth; el.classList.add('new');
+    }
+    // Intervalo: o seu 1º tempo (números, onde você jogou) e a fala do técnico no lugar do campinho
+    function halfView() {
+      $('fc').classList.add('lp-hv');
+      const [h, a] = x.score(45), diff = nx.home ? h - a : a - h;
+      let body = '';
+      if (fl && fl.on) {
+        const s = statsAt(c, fl, 45, out.my.ev, meSide), pts = path.filter(Boolean);
+        const ax = pts.length ? pts.reduce((q, p) => q + p[0], 0) / pts.length : 50;
+        const where = c.pos === 'GOL' ? 'Firme no gol' : c.pos === 'ATA' && ax < 55 ? 'Longe da área' : ax > 62 ? 'Mais no ataque' : ax < 38 ? 'Mais na defesa' : 'Mais no meio';
+        body = '<div class="lp-lbl">Seu 1º tempo</div>' + statBoxes([['Nota', rate(s.n), 1], ['Toques', s.toq], [s.al, s.a], [s.bl, s.b]]) +
+          (pts.length > 5 ? '<div class="lp-lbl lp-whor"><span>Onde você jogou</span><span class="gold">' + where + '</span></div>' + U.LP.heat(pts) : '') +
+          '<div class="lp-coach"><i aria-hidden="true">TC</i><div><small>O técnico, no vestiário</small><p>"' + esc(coachTalk(c, s.n, diff, ax)) + '"</p></div></div>';
+      } else body = '<div class="lp-coach"><i aria-hidden="true">TC</i><div><small>O técnico, no vestiário</small><p>"' + (diff < 0 ? 'Estamos atrás. Fica pronto que eu posso precisar de você.' : diff > 0 ? 'Bom primeiro tempo. Agora é segurar.' : 'Jogo travado. Paciência.') + '"</p></div></div>';
+      $('fc-flow').innerHTML = '<div class="lp-half">' + body + '</div>';
     }
     function tick() {
       if (!$('fc-match')) return; // saiu da tela: o jogo já está salvo
       if (t === 45 && !half) {
         // Intervalo: o jogo para; o energético só aparece aqui
         half = true; sfx('whistle'); frame(t); // frame(t): não repete o gol do minuto 45 na lista
+        if (fl) halfView();
         if (onPitch) effBox();
-        return stopActs('fc-2t', 'Começar o 2º tempo', onPitch ? 'Escolha o esforço' + (eff.drink ? '' : ' e se toma o energético') : '', () => { liveActs(); timer = setTimeout(() => { if (onPitch) effBox(); tick(); }, 300); });
+        return stopActs('fc-2t', 'Começar o 2º tempo', onPitch ? 'Escolha o esforço' + (eff.drink ? '' : ' e se toma o energético') : '', () => {
+          $('fc').classList.remove('lp-hv'); pitch(); liveActs(); timer = setTimeout(() => { if (onPitch) effBox(); tick(); }, 300); });
       }
       half = false; t++;
       if (onPitch && t <= 90) { eff.mins[eff.lvl]++; effTick(); }
@@ -1512,14 +1640,16 @@
       if (t >= end) return done();
       timer = setTimeout(tick, PACE[fast ? 1 : 0]);
     }
-    // O jogo para no minuto do lance: o placar escuro avisa e o minigame abre (ui/match.js)
+    // O jogo para no minuto do lance: o placar avisa, a bola chega em você e o minigame abre (ui/match.js)
     function pause() {
       clearTimeout(timer);
-      const jogo = o.stop.type === 'jogo', lt = $('fc-lt'); if (lt) lt.textContent = (jogo ? 'Seu lance · ' : 'Lance decisivo · ') + clock(stopAt);
+      const jogo = o.stop.type === 'jogo', lt = $('fc-lt'); if (lt) lt.textContent = clock(stopAt);
+      if (fl && fl.on) { U.LP.place(U.LP.spots(stopAt, fl.bx[Math.min(stopAt, 100)], meIdx, true), meIdx); }
+      U.LP.banner(jogo ? 'SEU LANCE' : 'LANCE DECISIVO', clock(stopAt), 'gold');
       $('fc-acts').innerHTML = '';
       sfx('whistle');
       const sc = x.score(stopAt - 1), m = o.stop;
-      timer = setTimeout(() => { if ($('fc-match')) (jogo ? lanceScreen(m, sc, () => live({ from: stopAt })) : U.momentIntro(o.stop)); }, 1400);
+      timer = setTimeout(() => { if ($('fc-match')) (jogo ? lanceScreen(m, sc, () => live({ from: stopAt })) : U.momentIntro(o.stop)); }, 1600);
     }
     let finished = false;
     function done() {
@@ -1530,13 +1660,41 @@
       // A tabela volta a ter o jogo somado
       if (undo) games.forEach(([a, b, g]) => add(undo === 'lg' ? c.fc.lg.tab : c.fc.cont.gtab, a, b, part(g, 99)));
       sfx('whistle');
-      result(x, out);
+      if (!x.vs || !out.my) return result(x, out);
+      endView();
+    }
+    // Fim de jogo: a faixa inteira com as suas estrelas, a sua partida, os seus lances e o que mudou na tabela; depois, o jornal
+    function endView() {
+      const m = out.my, root = $('fc');
+      root.classList.add('lp-end');
+      const mf = m.gf, mg = m.ga, res = x.knock ? (m.won ? 'win' : 'loss') : mf > mg ? 'win' : mf < mg ? 'loss' : 'draw';
+      const lt = $('fc-lt'); if (lt) { lt.textContent = res === 'win' ? 'Vitória' : res === 'loss' ? 'Derrota' : 'Empate'; lt.className = 'lp-min ' + res; }
+      const lbl = document.querySelector('.lp-whor span'); if (lbl) lbl.textContent = 'O jogo inteiro';
+      if (fl) { const av = fl.dom.slice(0, end + 1).reduce((a, v) => a + v, 0) / (end + 1), w = $('lp-who');
+        if (w) { w.textContent = av > 4 ? meName + ' mandou mais' : av < -4 ? opName + ' mandou mais' : 'Jogo equilibrado'; w.className = av > 4 ? 'up' : av < -4 ? 'down' : ''; } }
+      let body = '';
+      if (fl && fl.on) {
+        const gk = c.pos === 'GOL' || c.pos === 'ZAG';
+        body = '<div class="lp-lbl">Sua partida</div>' + statBoxes([['Nota', rate(m.rating), 1], gk ? ['Defesas', m.saves || 0] : ['Gols', m.goals || 0], gk ? ['Desarmes', m.tackles || 0] : ['Assist.', m.assists || 0], ['Energia', Math.round(c.fc.en === undefined ? 100 : c.fc.en)]]);
+        const li = mineList(99);
+        if (li) body += '<div class="lp-lbl">Seus lances</div><ul class="lp-ml">' + li + '</ul>';
+      } else body = '<p class="lp-off">' + (x.injury ? 'Você ficou fora, lesionado.' : 'Você não entrou em campo.') + '</p>';
+      $('fc-flow').innerHTML = '<div class="lp-endb">' + body + '</div>';
+      if (lg) {
+        const p = standings('lg').findIndex(r => r.i === 0) + 1;
+        plantao(p < posBefore ? 'Você sobe para <b>' + p + 'º</b>.' : p > posBefore ? 'Você cai para <b>' + p + 'º</b>.' : 'Você segue em <b>' + p + 'º</b>.', 'TABELA');
+        table();
+      }
+      $('fc-acts').innerHTML = '<button class="btn fc-kick" id="fc-jn">Ver o jornal</button>';
+      $('fc-jn').onclick = () => { sfx('tap'); result(x, out); };
     }
     // Antes do apito: o jogo começa no botão (o esforço já pode ser escolhido); voltando ao lance, segue direto
     // Voltando do lance (do minuto dele): a tabela entra já com os placares parciais (senão ficava vazia até o próximo gol)
-    if (o.from) { if (undo) table(liveTab()); liveActs(); sfx('whistle'); timer = setTimeout(tick, 400); }
+    if (o.from) { if (undo) { myPos = table(liveTab()); } frame(0); liveActs(); sfx('whistle'); timer = setTimeout(tick, 400); }
     else {
-      const lt = $('fc-lt'); if (lt) lt.textContent = esc(nx.compName) + ' · antes do jogo';
+      const lt = $('fc-lt'); if (lt) lt.textContent = 'Antes do jogo';
+      if (fl) lpAt(0);
+      if ($('lp-strip') && fl) $('lp-strip').innerHTML = U.LP.strip(fl.dom, 0, N, [], 0);
       stopActs('fc-kick', 'Começar o jogo', onPitch ? 'Escolha o esforço antes do apito' : '', () => { liveActs(); timer = setTimeout(tick, 300); });
     }
   }

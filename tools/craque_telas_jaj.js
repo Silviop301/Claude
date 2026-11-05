@@ -168,16 +168,19 @@ const INIT = `
   await shot('partida-antes');
   await page.evaluate(() => { window.CLIMBIX_NAT = 1; window.CRAQUE_UI.G.c.age = Math.max(window.CRAQUE_UI.G.c.age, 19); }); // fase 5: a linha da seleção no jornal
   await page.click('#fc-kick'); await wait(300);
+  await page.click('#fc-fast'); await wait(9000); // 3× (a partida em 1× dura uns 2 minutos)
   await shot('partida-ao-vivo');
   // O lance do jogo pode vir antes ou depois do intervalo
-  const lance = async () => { if (!(await has('#fc-lauto'))) return; await shot('lance-ao-vivo'); await tap('#fc-lauto'); await shot('lance-ao-vivo-fim'); await tap('#fc-lback'); };
-  await page.waitForSelector('#fc-2t, #fc-next, #fc-lauto', { timeout: 40000 });
+  const lance = async () => { if (!(await has('#fc-lauto'))) return; await shot('lance-ao-vivo'); await tap('#fc-lauto'); await shot('lance-ao-vivo-fim'); await tap('#fc-lback'); await wait(1200); await shot('partida-volta-do-lance'); if (await has('#fc-fast')) await page.click('#fc-fast'); };
+  await page.waitForSelector('#fc-2t, #fc-jn, #fc-next, #fc-lauto', { timeout: 40000 });
   await lance();
-  await page.waitForSelector('#fc-2t, #fc-next, #fc-lauto', { timeout: 40000 });
-  if (await has('#fc-2t')) { await shot('partida-intervalo'); await page.click('#fc-2t'); }
-  await page.waitForSelector('#fc-next, #fc-lauto', { timeout: 40000 });
+  if (await has('#fc-fast')) await page.click('#fc-fast');
+  await page.waitForSelector('#fc-2t, #fc-jn, #fc-next, #fc-lauto', { timeout: 40000 });
+  if (await has('#fc-2t')) { await shot('partida-intervalo'); await page.click('#fc-2t'); await wait(500); if (await has('#fc-fast')) await page.click('#fc-fast'); }
+  await page.waitForSelector('#fc-jn, #fc-next, #fc-lauto', { timeout: 40000 });
   await lance();
-  await page.waitForSelector('#fc-next', { timeout: 40000 });
+  await page.waitForSelector('#fc-jn, #fc-next', { timeout: 60000 });
+  if (await has('#fc-jn')) { await shot('partida-fim'); await tap('#fc-jn'); await page.waitForSelector('#fc-next', { timeout: 8000 }); }
   await shot('jornal');
   await tap('#fc-next');
   for (let k = 0; k < 10 && !(await has('#fc-play')) && !(await has('#screen .btn.opt[data-i]')); k++) await wait(300);
@@ -216,7 +219,7 @@ const INIT = `
     await wait(600);
     if (await has('#fc-play')) { await shot('celular-jogo-com-lance'); await tap('#fc-play'); }
     for (let k = 0; k < 10 && !(await has('#fc-kick')); k++) await wait(300);
-    if (await has('#fc-kick')) { await page.click('#fc-kick'); }
+    if (await has('#fc-kick')) { await page.click('#fc-kick'); await wait(300); if (await has('#fc-fast')) await page.click('#fc-fast'); }
     for (let k = 0; k < 300 && !(await has('#b-auto')) && !(await has('.mo-wrap')); k++) { if (await has('#fc-2t')) await page.click('#fc-2t').catch(() => {}); await wait(150); }
     await shot('lance');
   }
