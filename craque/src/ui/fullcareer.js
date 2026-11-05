@@ -21,7 +21,6 @@
   // (S.fcWeek), os seguintes com os convites do celular (engine/phone.js) e o resto com a rotina do clube. Liga no domingo, copa e continental na quarta.
   const DAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
   const dayOf = e => (e && e.k === 'lg' ? 6 : 2);
-  let agOpen = -1; // dia de ação aberto para trocar
   function hub() {
     const c = G.c;
     if (!c.fc || c.fc.season !== c.season) S.fcStart(c);
@@ -35,7 +34,6 @@
     }
     // Semana automática: fecha sozinha e a agenda mostra o que foi feito
     if (c.fc.wkDue && c.fcAuto) { S.fcWeek(c); save(); }
-    agOpen = -1;
     phone();
   }
   // ---------- o celular (tela central) ----------
@@ -239,27 +237,35 @@
     // Tela limpa: as quatro mais importantes (o resto está nos apps); o Chat mostra o contador do que ficou de fora
     return out.sort((a, b) => a.pr - b.pr || a.k - b.k).slice(0, 4);
   }
-  // Um convite na agenda: quem chamou, o recado e as duas respostas (a segura com o que dá, a arriscada com a chance de cada
-  // lado). Sem tocar em nada, a semana fecha sem resposta, e isso a pessoa também lembra. Respondido: o que aconteceu.
+  // Um convite na agenda: quem chamou (balão como no Chat) e as duas respostas (a segura com o que dá, a arriscada com a
+  // chance no selo e o que acontece se der certo ou não). Sem tocar em nada, a semana fecha sem resposta, e isso a pessoa
+  // também lembra. Respondido: o que escolheu e, na arriscada, só "Deu certo" ou "Não deu" (sem o número do sorteio).
   function invCard(c, x, k, day) {
     const d = S.fcInvDef(x), who = S.fcContact(c, d.p), wn = d.p === 'mae' ? 'Mãe' : who.name + ', ' + who.role;
     const parts = fx => S.fcInvParts(c, fx).map(esc).join(' · ') || 'nada muda';
-    const head = '<p class="iv-w"><b>' + day + '</b><span><small>' + esc(wn) + '</small>' + esc(S.fcInvText(c, x)) + '</span></p>';
+    const head = '<p class="ag-lbl">Convite · ' + day + '</p><div class="ag-who"><i class="ag-av">' + U.emo(who.icon || '💬', 'sm') + '</i><p class="ag-bub"><small>' + esc(wn) + '</small>' + esc(S.fcInvText(c, x)) + '</p></div>';
     if (x.ans) {
-      const o = x.ans === 'a' || (x.ans === 'b' && d.b.later) ? (x.ans === 'a' ? d.a : d.b) : x.ok ? d.b.win : d.b.lose, lab = x.ans === 'a' ? d.a.l : d.b.l;
-      const roll = x.ans === 'b' && !d.b.later ? ' · ' + esc(o.tag) + ' (tirou ' + x.roll + ', precisava até ' + x.p + ')' : '';
-      return '<div class="ag-iv done ' + (roll ? (x.ok ? 'win' : 'lose') : '') + '">' + head + '<p class="iv-r"><b>' + esc(lab) + roll + '</b><span>' + parts(o.fx) + (x.ans === 'b' && d.b.later ? ' · ' + esc(d.b.later) : '') + '</span></p></div>';
+      const roll = x.ans === 'b' && !d.b.later, o = x.ans === 'a' ? d.a : d.b.later ? d.b : x.ok ? d.b.win : d.b.lose, lab = x.ans === 'a' ? d.a.l : d.b.l;
+      const k2 = roll ? (x.ok ? 'Deu certo' : 'Não deu') : 'Sua resposta';
+      return '<div class="ag-blk ag-iv">' + head + '<div class="ag-res ' + (roll ? (x.ok ? 'win' : 'lose') : '') + '"><em>' + k2 + '</em><b>' + esc(lab) + (roll ? ': ' + esc(o.tag.charAt(0).toLowerCase() + o.tag.slice(1)) : '') + '</b><span>' + parts(o.fx) + (x.ans === 'b' && d.b.later ? ' · ' + esc(d.b.later) : '') + '</span></div></div>';
     }
     const p = Math.round(((d.b.press && c.staff && c.staff.press) ? d.b.press : (d.b.p || 1)) * 100);
-    const riskTxt = d.b.later ? parts(d.b.fx) + '<i>' + esc(d.b.later) + '</i>' : '<i class="up">' + p + '%: ' + parts(d.b.win.fx) + '</i><i class="down">' + (100 - p) + '%: ' + parts(d.b.lose.fx) + '</i>';
-    return '<div class="ag-iv">' + head + '<div class="iv-o">' +
+    const riskTxt = d.b.later ? parts(d.b.fx) + '<i>' + esc(d.b.later) + '</i>' : '<i class="up">Dá certo: ' + parts(d.b.win.fx) + '</i><i class="down">Não dá: ' + parts(d.b.lose.fx) + '</i>';
+    return '<div class="ag-blk ag-iv">' + head + '<div class="iv-o">' +
       '<button class="iv-b safe" data-inv="' + k + '" data-a="a"><em>SEGURA</em><b>' + esc(d.a.l) + '</b><small>' + parts(d.a.fx) + '</small></button>' +
-      '<button class="iv-b risk" data-inv="' + k + '" data-a="b"><em>ARRISCADA</em><b>' + esc(d.b.l) + '</b><small>' + riskTxt + '</small></button>' +
+      '<button class="iv-b risk" data-inv="' + k + '" data-a="b"><em>ARRISCADA' + (d.b.later ? '' : ' · ' + p + '%') + '</em><b>' + esc(d.b.l) + '</b><small>' + riskTxt + '</small></button>' +
       '</div><p class="iv-n">Sem resposta: ' + parts(d.ig.fx) + '</p></div>';
   }
+  // A Agenda (desenho aprovado em 2026-11-05): em cima a semana numa tira de dias (rotina do clube só um ponto, o dia do
+  // jogo em ouro); depois o cartão "Antes do jogo" com o que é seu (treino da semana com as quatro opções à vista, o
+  // treino com lances e os convites); embaixo, em painel, o jogo com energia, forma e técnico, e as metas do ano.
+  const WK_EMO = { tec: '⚽', fis: '🏋️', rest: '🛏️', physio: '🩺' };
+  const WK_SHORT = { tec: 'Técnico', fis: 'Físico', rest: 'Descanso', physio: 'Fisio' };
+  let agGoals = false; // metas do ano abertas
   function agenda() {
     const c = G.c, nx = S.fcNext(c), fc = c.fc;
-    const lg = standings('lg'), posOf = id => lg.findIndex(x => x.id === id) + 1, me = posOf(c.club);
+    const keep = $('ag') && $('fc-scr') ? $('fc-scr').scrollTop : -1; // tocar numa opção redesenha sem pular para o topo
+    const lg = standings('lg'), posOf = id => lg.findIndex(x => x.id === id) + 1;
     const vsPos = nx.vs && nx.e.k === 'lg' ? posOf(nx.vs) : 0;
     // Os dias: do dia seguinte ao último jogo até a véspera deste
     const gd = dayOf(nx.e), pd = fc.i > 0 ? dayOf(fc.cal[fc.i - 1]) : 6;
@@ -268,75 +274,93 @@
     if (open) { if (!pick) pick = S.fcWeekAuto(c); if (!S.fcWeekOk(c, pick[0], [])) pick = ['rest']; if (S.fcTr(c)) pick = ['tec']; }
     const acts = open ? pick : done ? done.acts : null;
     const A = id => S.FC_WEEK.find(a => a.id === id) || S.FC_WEEK[2];
-    const city = nameOf(nx.vs || c.club);
-    const routine = k => (k === days.length - 1 && nx.vs ? (nx.home ? 'Concentração' : 'Viagem para jogar com o ' + city) : k === 0 && fc.i > 0 ? 'Recuperação com o elenco' : ['Treino com o elenco', 'Treino tático', 'Treino com o elenco', 'Coletiva no CT'][k % 4]);
-    // O treino da semana no primeiro dia; os convites do celular nos dias seguintes (sobrando convite, ele entra mesmo assim)
-    const invs = open ? S.fcInvites(c) : [], tslot = 0, islot = k => (k >= 1 && k - 1 < invs.length && k < days.length - (nx.vs ? 1 : 0) ? k - 1 : -1);
-    const used = new Set();
-    const trainRow = d => {
-      const a = A(acts[0]);
-      const row = '<button class="ag-d slot' + (agOpen === 0 ? ' on' : '') + (open ? '' : ' done') + '" data-slot="0"' + (open ? '' : ' disabled') + '><b>' + DAYS[d] + '</b><span>' + esc(a.name) + '</span><em class="' + (a.en > 0 ? 'up' : 'down') + '">' + sgn(a.en, String) + '</em>' + (open ? '<i aria-hidden="true">trocar</i>' : '<i class="ok" aria-hidden="true">' + U.ICON.check + '</i>') + '</button>';
-      if (!open || agOpen !== 0) return row + trBlock();
-      return row + '<div class="ag-pick">' + S.FC_WEEK.map(o => {
-        const ok = S.fcTr(c) ? o.id === 'tec' : S.fcWeekOk(c, o.id, []); // começou o treino com lances: a semana fica no técnico
-        return '<button class="ag-o' + (o.id === a.id ? ' on' : '') + '" data-id="' + o.id + '"' + (ok ? '' : ' disabled') + '><b>' + esc(o.name) + '</b><small>' + esc(wkFx(c, o)) + '</small><em class="' + (o.en > 0 ? 'up' : 'down') + '">' + sgn(o.en, String) + '</em></button>';
-      }).join('') + '</div>' + trBlock();
-    };
+    const DAYL = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo'];
+    // O treino no primeiro dia; cada convite num dia seguinte (semana curta: no último antes da viagem ou concentração)
+    const invs = open ? S.fcInvites(c) : [];
+    const lastFree = Math.max(0, days.length - (nx.vs ? 2 : 1));
+    const invDay = ii => Math.max(0, Math.min(ii + 1, lastFree));
+    const tr = S.fcTr(c), trOpen = !!(open && S.fcTrOpen(c, acts) && !(tr && (tr.ok || tr.fail)));
+    const dreamOpen = !!(S.fcGoals && S.fcGoals(c) && !fc.goals.dream);
+    const todo = (trOpen ? 1 : 0) + invs.filter(x => !x.ans).length + (dreamOpen ? 1 : 0);
+
+    // A tira da semana
+    const chip = (d, cls, emos, txt) => '<li class="ag-wd' + (cls ? ' ' + cls : '') + '"><b>' + DAYS[d] + '</b>' + (emos.length ? '<span>' + emos.map(e => U.emo(e, 'xs')).join('') + '</span>' : '<i></i>') + '<em>' + txt + '</em></li>';
+    const strip = days.map((d, k) => {
+      const mine = invs.map((x, ii) => (invDay(ii) === k ? x : null)).filter(Boolean), emos = [], txt = [];
+      if (k === 0 && acts) { emos.push(WK_EMO[acts[0]] || '⚽'); txt.push(WK_SHORT[acts[0]] ? WK_SHORT[acts[0]].toLowerCase() : 'treino'); }
+      if (mine.length) { emos.push('💬'); txt.push(mine.length > 1 ? mine.length + ' convites' : 'convite'); }
+      if (emos.length) return chip(d, !done && ((k === 0 && trOpen) || mine.some(x => !x.ans)) ? 'me' : 'ok', emos.slice(0, 2), txt.join(' · '));
+      if (k === days.length - 1 && nx.vs) return nx.home ? chip(d, '', ['🏨'], 'hotel') : chip(d, '', ['🚌'], 'viagem');
+      return chip(d, '', [], 'clube');
+    }).join('') + chip(gd, 'game', nx.vs ? ['🏟️'] : [], nx.vs ? 'jogo' : 'folga');
+
     // Treino com lances (treino técnico): escolha o atributo, jogue 3 lances antes do jogo e ganhe +1 nele (S.fcTrSession)
     const trBlock = () => {
-      const t = S.fcTr(c), cap = S.FC_TR_CAP, used = cap - S.fcTrLeft(c), L = k => D.label(c.pos, k), E = S.eff(c);
-      const yr = '<small class="ag-tr-n">' + (cap >= 99 ? (c.fc.trGot || 0) + (c.fc.trGot === 1 ? ' treino completo' : ' treinos completos') + ' no ano' : used + ' de ' + cap + ' no ano') + '</small>';
+      const t = tr, cap = S.FC_TR_CAP, used = cap - S.fcTrLeft(c), L = k => D.label(c.pos, k), E = S.eff(c);
+      const yr = '<small class="ag-tr-n">' + (cap >= 99 ? (fc.trGot || 0) + (fc.trGot === 1 ? ' treino completo' : ' treinos completos') + ' no ano' : used + ' de ' + cap + ' no ano') + '</small>';
       if (!t && !S.fcTrOpen(c, acts)) return acts && acts[0] === 'tec' && S.fcTrLeft(c) <= 0 && !done ? '<p class="ag-tr-off">Treino com lances: os ' + cap + ' do ano já foram. Até a próxima temporada, o treino técnico vale +' + num2(S.FC_TRAIN_STEP) + ' de evolução.</p>' : '';
       const a = t ? t.a : trA && S.fcTrAttrOk(c, trA) ? trA : S.fcTrAttr(c);
       if (!a) return '';
       const N = S.FC_TR_SESS, n = t ? t.n : 0;
       const dots = '<span class="ag-tr-dots" aria-label="' + n + ' de ' + N + '">' + Array.from({ length: N }, (_, k) => '<i class="' + (k < n ? 'on' : '') + '"></i>').join('') + '</span>';
-      const head = '<div class="ag-tr"><div class="ag-tr-h"><b>Treino com lances</b>' + dots + '</div>';
+      const head = '<div class="ag-tr"><div class="ag-tr-h"><b>Treino com lances · +1 num atributo</b>' + dots + '</div>';
       if (t && t.ok) return head + '<p class="ag-tr-ok">+1 em ' + esc(L(a)) + ' · agora ' + E[a] + '. Fica na carreira.</p>' + yr + '</div>';
       if (t && t.fail) return head + '<p class="ag-tr-p">Sem o +1 desta vez: ' + t.hits + (t.hits === 1 ? ' acerto' : ' acertos') + ', precisava de ' + t.need + '. O treino técnico vale a evolução de sempre. Semana que vem tem mais.</p>' + yr + '</div>';
       const need = t ? t.need : S.fcTrNeed(c, a);
-      const needTx = need ? 'Com ' + esc(L(a)) + ' em ' + E[a] + ', precisa acertar ' + (need === 3 ? 'os 3' : need + ' dos 3') + '.' : 'Errar também conta.';
+      const needTx = need ? 'Acerte ' + (need === 3 ? 'os 3' : need + ' dos 3') + ' para ganhar <b>+1 em ' + esc(L(a)) + '</b>.' : 'Jogue os ' + N + ' para ganhar <b>+1 em ' + esc(L(a)) + '</b>. Errar também conta.';
       const chips = t ? '' : '<div class="ag-tr-at" role="radiogroup" aria-label="Atributo do treino">' + S.attrOrder(c.pos).map(k => { const ok = S.fcTrAttrOk(c, k);
         return '<button class="ag-ta' + (k === a ? ' on' : '') + '" data-ta="' + k + '" role="radio" aria-checked="' + (k === a) + '"' + (ok ? '' : ' disabled') + '><b>' + esc(L(k)) + '</b><small>' + E[k] + '</small></button>'; }).join('') + '</div>';
-      return head + '<p class="ag-tr-p">' + (t ? 'Faltam ' + (N - n) + (N - n === 1 ? ' lance' : ' lances') : 'Jogue ' + N + ' lances antes do jogo') + ': +1 em ' + esc(L(a)) + '. ' + needTx + (t && need ? ' Acertos: ' + t.hits + '.' : '') + '</p>' + chips +
-        '<button class="ag-tr-go" id="ag-trgo" data-a="' + a + '">' + U.emo('⚽', 'sm') + ' Lance ' + (n + 1) + ' de ' + N + ' · ' + esc(U.drillName(S.fcTrDrill(c, a, n))) + '</button>' + yr + '</div>';
+      return head + chips +
+        '<button class="ag-tr-go" id="ag-trgo" data-a="' + a + '">' + U.emo('⚽', 'sm') + ' Jogar lance ' + (n + 1) + ' de ' + N + ' · ' + esc(U.drillName(S.fcTrDrill(c, a, n))) + '</button>' +
+        '<p class="ag-tr-p">' + needTx + (t && need ? ' Acertos até agora: ' + t.hits + '.' : '') + '</p>' + yr + '</div>';
     };
-    const R = days.map((d, k) => {
-      if (k === tslot && acts) return trainRow(d);
-      const ii = islot(k);
-      if (ii >= 0) { used.add(ii); return invCard(c, invs[ii], ii, DAYS[d]); }
-      return '<div class="ag-d fix"><b>' + DAYS[d] + '</b><span>' + esc(routine(k)) + '</span></div>';
-    });
-    // Semana curta: os convites que sobraram entram antes da viagem ou da concentração
-    const extra = invs.map((x, k) => (used.has(k) ? '' : invCard(c, x, k, DAYS[days[Math.max(0, Math.min(k + 1, days.length - (nx.vs ? 2 : 1)))]]))).join('');
-    const cut = nx.vs && R.length > 1 ? R.length - 1 : R.length;
-    const rows = R.slice(0, cut).join('') + extra + R.slice(cut).join('');
+    // O treino da semana: as quatro opções sempre à vista, com a energia de cada uma
+    const trainBlk = () => {
+      if (!acts) return '';
+      const a = A(acts[0]);
+      const seg = S.FC_WEEK.map(o => {
+        const ok = open && (tr ? o.id === 'tec' : S.fcWeekOk(c, o.id, [])); // começou o treino com lances: a semana fica no técnico
+        return '<button class="ag-o' + (o.id === a.id ? ' on' : '') + '" data-id="' + o.id + '"' + (ok ? '' : ' disabled') + ' aria-pressed="' + (o.id === a.id) + '">' + U.emo(WK_EMO[o.id] || '⚽', 'sm') + '<b>' + esc(WK_SHORT[o.id] || o.name) + '</b><em>' + sgn(o.en, String) + U.emo('⚡', 'xs') + '</em></button>';
+      }).join('');
+      return '<div class="ag-blk"><p class="ag-lbl">Treino da semana · ' + DAYL[days[0]] + (done ? ' · feito' : '') + '</p><div class="ag-seg" role="group" aria-label="Treino da semana">' + seg + '</div>' +
+        '<p class="ag-why"><b>' + esc(a.name) + ':</b> ' + esc(wkFx(c, a)) + ' · ' + sgn(a.en, String) + ' de energia na semana.</p>' + trBlock() + '</div>';
+    };
+    const sorted = invs.map((x, ii) => ({ x, ii })).sort((p, q) => invDay(p.ii) - invDay(q.ii));
+    const blocks = trainBlk() + sorted.map(({ x, ii }) => invCard(c, x, ii, DAYL[days[invDay(ii)]] || DAYL[days[0]])).join('');
+    const pill = todo ? '<span class="ag-pill todo">' + todo + ' por fazer</span>' : done ? '<span class="ag-pill ok">Feito</span>' : '';
+    const card = blocks ? '<section class="ag-card"><header><h3>Antes do jogo</h3>' + pill + '</header>' + blocks + '</section>' : '';
+    // Semana pronta: nada esperando um toque seu (fechada, mostra o que a semana deu)
+    const sumTx = done ? 'Energia ' + Math.round(done.en0) + ' → ' + Math.round(done.en1) + (done.pe ? ' · +' + num2(done.pe) + ' de evolução' : '') + (done.tr ? ' · +1 em ' + D.label(c.pos, done.tr) : '') + (done.money > 0 ? ' · +R$ ' + U.money(done.money) : '') : 'Agora é com você no jogo.';
+    const ready = todo ? '' : '<div class="ag-ready">' + U.emo('✅', 'md') + '<p><b>' + (done ? (c.fcAuto ? 'Semana automática feita' : 'Semana feita') : 'Semana pronta') + '</b><span>' + sumTx + '</span></p></div>';
     // O dia do jogo: adversário e a sua situação (titular, banco, lesão ou a chance de começar antes da escalação)
-    const st = !nx.vs ? 'Seu time folga nesta rodada' : nx.injury ? (/suspensão/.test(nx.injury) ? 'Suspenso' : 'Lesionado') + (nx.injLeft > 1 ? ': fora por ' + nx.injLeft + ' jogos' : ': volta no próximo') :
-      nx.on === null ? 'Escalação depois da semana · ' + Math.round(S.fcStartP(c) * 100) + '% de chance de começar' : nx.on ? 'Você começa jogando' : nx.why === 'cansaço' ? 'Poupado: energia baixa' : nx.why === 'banco' ? 'Você fica no banco' : 'Poupado neste jogo';
-    const game = '<div class="ag-d game"><b>' + DAYS[gd] + '</b><span>' + (nx.vs ? 'x ' + esc(nameOf(nx.vs)) + ', ' + (nx.home ? 'em casa' : 'fora') + (vsPos ? ' · ' + vsPos + 'º' : '') : 'Folga') + '<small>' + esc(nx.compName) + ' · ' + esc(nx.stage) + '. ' + esc(st) + '</small></span></div>';
+    const st = !nx.vs ? 'Folga' : nx.injury ? (/suspensão/.test(nx.injury) ? 'Suspenso' : 'Lesionado') : nx.on === null ? Math.round(S.fcStartP(c) * 100) + '% de começar' : nx.on ? 'Titular' : nx.why === 'cansaço' ? 'Poupado: energia baixa' : nx.why === 'banco' ? 'Banco' : 'Poupado';
+    const stTx = nx.injury ? (nx.injLeft > 1 ? 'Fora por ' + nx.injLeft + ' jogos. ' : 'Volta no próximo jogo. ') : '';
     const en = Math.round(open ? S.fcWeekEnergy(c, pick) : fc.en === undefined ? 100 : fc.en);
     const lvl = e => (e < S.FC_EN_OUT ? 'out' : e < S.FC_EN_LOW ? 'low' : 'ok');
-    const sum = done ? '<p class="ag-sum">' + (c.fcAuto ? 'Semana automática' : 'Semana fechada') + ': energia ' + Math.round(done.en0) + ' → ' + Math.round(done.en1) + (done.pe ? ' · +' + num2(done.pe) + ' de evolução' : '') + (done.tr ? ' · +1 em ' + D.label(c.pos, done.tr) : '') + (done.money > 0 ? ' · +R$ ' + U.money(done.money) : '') + '</p>' : '';
-    appScr('ag', 'Agenda', '<div class="ag-book"><header><b>Agenda</b><span>' + esc(fc.lg.name) + (me ? ' · ' + esc(nameOf(c.club)) + ' ' + me + 'º' : '') + '</span></header>' +
-        (open ? '<p class="ag-hint">Toque num dia marcado para trocar o que você faz.</p>' : '') +
-        rows + game + sum +
-        '<div class="ag-box"><div><small>' + (open ? 'Energia no jogo' : 'Energia') + '</small><b class="' + lvl(en) + '">' + en + '</b></div><div><small>Forma</small><b>' + formTxt(fc.fo || 0) + '</b></div><div><small>Técnico</small><b>' + Math.round(c.rel.coach) + '</b></div></div>' +
-        goalsBox(c) +
-      '</div>' +
-      '<label class="fc-auto ag-auto"><input type="checkbox" id="fc-auto"' + (c.fcAuto ? ' checked' : '') + '><span>Repetir esta semana sozinho</span></label>' +
-      '<button class="btn" id="fc-agok">Pronto</button>', { cls: 'ag' });
-    $('fc-agok').onclick = () => { sfx('tap'); phone(); };
-    document.querySelectorAll('.ag-d.slot').forEach(b => { b.onclick = () => { sfx('tap'); const k = +b.dataset.slot; agOpen = agOpen === k ? -1 : k; agenda(); }; });
-    document.querySelectorAll('.ag-o').forEach(b => { b.onclick = () => { sfx('tap'); pick = [b.dataset.id]; touched = true; agOpen = -1; agenda(); }; });
-    document.querySelectorAll('[data-dream]').forEach(b => { b.onclick = () => { if (S.fcDream(c, b.dataset.dream)) { sfx('coin'); save(); agenda(); } }; });
+    const game = '<section class="ag-pn ag-game"><header><small>' + (DAYL[gd].charAt(0).toUpperCase() + DAYL[gd].slice(1)) + ' · o jogo</small><span class="ag-pill dk' + (nx.injury ? ' bad' : '') + '">' + esc(st) + '</span></header>' +
+      '<b class="ag-vs">' + (nx.vs ? 'x ' + esc(nameOf(nx.vs)) + ', ' + (nx.home ? 'em casa' : 'fora') + (vsPos ? ' · ' + vsPos + 'º' : '') : 'Seu time folga nesta rodada') + '</b>' +
+      '<p class="ag-comp">' + stTx + esc(nx.compName) + ' · ' + esc(nx.stage) + '</p>' +
+      '<div class="ag-box"><div><small>' + (open ? 'Energia no jogo' : 'Energia') + '</small><b class="' + lvl(en) + '">' + en + '</b></div><div><small>Forma</small><b>' + formTxt(fc.fo || 0) + '</b></div><div><small>Técnico</small><b>' + Math.round(c.rel.coach) + '</b></div></div></section>';
+    // Metas do ano: uma linha; abrem num toque (abertas sozinhas enquanto falta escolher o sonho)
+    const gl = S.fcGoals ? S.fcGoals(c) : null;
+    const gShort = g => (g.side === 'me' && !g.dream ? 'sonho: escolher' : g.n !== undefined && g.have !== null ? (g.side === 'emp' && /Nota/.test(g.txt) ? 'nota ' + rate(g.have) : Math.min(g.have, g.n) + ' de ' + g.n) : '');
+    const goals = !gl ? '' : (agGoals || dreamOpen) ? '<section class="ag-pn ag-gl">' + goalsBox(c) + (dreamOpen ? '' : '<button class="link-btn" id="ag-gl">Fechar metas</button>') + '</section>'
+      : '<button class="ag-pn ag-gl-c" id="ag-gl"><b>Metas do ano</b><span>' + gl.map(gShort).filter(Boolean).join(' · ') + '</span><em>Ver ›</em></button>';
+    appScr('ag', 'Agenda', '<div class="ag2" id="ag">' +
+        '<ol class="ag-wk" aria-label="A semana até o jogo">' + strip + '</ol>' +
+        ready + card + game + goals +
+        '<label class="fc-auto ag-auto"><input type="checkbox" id="fc-auto"' + (c.fcAuto ? ' checked' : '') + '><span>Repetir esta semana sozinho</span></label>' +
+      '</div>', { cls: 'ag' });
+    document.querySelectorAll('.ag-o').forEach(b => { b.onclick = () => { if (b.classList.contains('on')) return; sfx('tap'); pick = [b.dataset.id]; touched = true; agenda(); }; });
+    document.querySelectorAll('[data-dream]').forEach(b => { b.onclick = () => { if (S.fcDream(c, b.dataset.dream)) { sfx('coin'); save(); agGoals = true; agenda(); } }; });
     document.querySelectorAll('[data-ta]').forEach(b => { b.onclick = () => { sfx('tap'); trA = b.dataset.ta; agenda(); }; });
+    if ($('ag-gl')) $('ag-gl').onclick = () => { sfx('tap'); agGoals = !agGoals; agenda(); };
     const tg = $('ag-trgo');
     if (tg) tg.onclick = () => { sfx('tap'); if (open) { pick = ['tec']; touched = true; } U.fcDrill(c, tg.dataset.a, () => { if (G.c === c && $('fc-scr')) agenda(); }); };
     // Convite: a resposta sai na hora (a arriscada sorteia agora) e não volta atrás
     document.querySelectorAll('[data-inv]').forEach(b => { b.onclick = () => { const r = S.fcInvAnswer(c, +b.dataset.inv, b.dataset.a); if (!r) return; sfx(r.ok ? 'coin' : 'tap'); save(); bar(); agenda(); }; });
-    $('fc-auto').onchange = e => { c.fcAuto = e.target.checked; if (c.fcAuto && c.fc.wkDue) { S.fcWeek(c, myPick()); unpick(); bar(); } save(); agOpen = -1; agenda(); };
-    window.scrollTo(0, 0);
+    $('fc-auto').onchange = e => { c.fcAuto = e.target.checked; if (c.fcAuto && c.fc.wkDue) { S.fcWeek(c, myPick()); unpick(); bar(); } save(); agenda(); };
+    if (keep >= 0) $('fc-scr').scrollTop = keep; else window.scrollTo(0, 0);
   }
   // Metas do ano (engine/legado.js, plano fase 6): a do clube, a do empresário e o seu sonho (escolhido aqui, uma vez)
   const SIDE = { club: 'Clube', emp: 'Empresário', me: 'Seu sonho' };
@@ -416,7 +440,7 @@
     if (k === 'evo') return evolve();
     if (k === 'msg') { chatOpen = null; return chat(); }
     if (k === 'ze') { chatOpen = 'ze'; return chat(); }
-    if (k === 'ag') { agOpen = -1; return agenda(); }
+    if (k === 'ag') { agGoals = false; return agenda(); }
     const c = G.c, body = {
       wk: '<div class="fc-wk" id="fc-wk"></div><div class="fs-acts" id="fc-acts"></div>',
       tbl: '<div class="fc-tabs" id="fc-tabs"></div><div class="fs-tbl" id="fc-tbl"></div>',
