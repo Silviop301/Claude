@@ -1589,7 +1589,7 @@
     const stars = () => (fl && fl.on ? fl.lances.filter(l => !(o.stop && l.m >= stopAt)).map(l => ({ m: l.m, down: !l.up })) : []).concat(bigM && (!o.stop || t >= stopAt) ? [{ m: bigM, big: true }] : []);
     if (x.vs) $('fc-match').innerHTML = sbLive(x); else $('fc-match').innerHTML = card('live', x, t);
     // Os jogadores que decidem (ui/livesim.js): o motor só diz quem está melhor e quando sai cada gol
-    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), t0, speed: () => (fast ? 3 : 1), onEv: (k, d) => narrSim(k, d), onFrame: i => zoneSim(i), flip: !nx.home,
+    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), t0, speed: () => (fast ? 3 : 1), onEv: (k, d) => narrSim(k, d), onFrame: i => zoneSim(i), flip: !nx.home, kits: U.LP.kits(U.LP.kitFor(meName, c.club), U.LP.kitFor(opName, x.vs), !!nx.home),
       seed: (Number(c.tseed) || 1) * 7 + c.fc.season * 101 + c.fc.i * 13 + t0,
       goals: out.my.ev.filter(e => !o.stop || e.m < stopAt).map(e => ({ m: e.m, side: e.s === (nx.home ? 'h' : 'a') ? 0 : 1, me: !!e.me, as: !!e.as })) }) : null;
     const pitch = () => { if (!fl) return; $('fc-flow').innerHTML = flowBox(c, x, fl, meIdx); U.LP.resetTrail(); if (sim) sim.attach($('lp-cv')); };

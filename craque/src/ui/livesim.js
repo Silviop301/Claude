@@ -17,16 +17,44 @@
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   const toW = (s, x, y) => (s ? [L - x, WD - y] : [x, y]);
   // Avançar vale por si (time que só roda a bola atrás não é futebol), quem chega perto chuta, e o bote dá certo 3 vezes em 10
-  const PROG = 0.05, SHOT = 1.6, TK = 0.3;
+  const PROG = 0.05, SHOT = 3.2, TK = 0.3, DUE_AHEAD = 6; // a jogada do gol do motor começa uns 6 minutos (8 s) antes, para dar tempo de construir
   const tf = (s, o) => (s ? [L - o.x, WD - o.y] : [o.x, o.y]);
 
   // o: { me: índice do seu jogador (-1 fora), num, seed, goals: [{ m, side: 0 seu time | 1, me, as }], t0, speed(): 1|3 }
+  // Cores dos bonecos: o uniforme do clube (kits-real.js; senão as cores do escudo, kits.js). O mandante joga com o
+  // principal; o visitante troca para o reserva se a camisa parece com a do mandante (e, sem reserva bom, pega uma cor
+  // da paleta bem longe das duas). Goleiros com cor própria, longe dos dois times e do gramado.
+  const hx = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const cdist = (a, b) => { const x = hx(a), y = hx(b), r = (x[0] + y[0]) / 2, d = [x[0] - y[0], x[1] - y[1], x[2] - y[2]];
+    return Math.sqrt((2 + r / 256) * d[0] * d[0] + 4 * d[1] * d[1] + (2 + (255 - r) / 256) * d[2] * d[2]); };
+  const lum = h => { const [r, g2, b] = hx(h); return (0.299 * r + 0.587 * g2 + 0.114 * b) / 255; };
+  const PITCH = '#2F7A47', NEAR = 190;
+  const PAL = ['#C8323A', '#1F4FA8', '#F4F1E8', '#1D1D1F', '#E8742A', '#6B2D8F', '#7FC4EE', '#F7D117'];
+  const GKS = ['#FF8A1F', '#9B5DE5', '#20C5C5', '#E84A8A', '#B7E34B', '#1D1D1F', '#F4F1E8'];
+  LP.kitFor = function (name, id) {
+    const R = window.CRAQUE_KITS_REAL || {}, K = window.CRAQUE_KITS || {}, ok = h => typeof h === 'string' && /^#[0-9a-f]{6}$/i.test(h);
+    const k = R[name] ? R[name] : id && K[id] ? [K[id][0], K[id][1], K[id][1], K[id][0]] : null; // só o escudo: o reserva é a cor 2
+    return k && k.every(ok) ? k : null;
+  };
+  // mine/opp: [camisa, calção, camisa 2, calção 2] ou null; home: você é o mandante
+  LP.kits = function (mine, opp, home) {
+    const H = (home ? mine : opp) || ['#F4F1E8', '#1D1D1F'], A = (home ? opp : mine) || ['#1F4FA8', '#FFFFFF'];
+    const hk = [H[0], H[1]];
+    const far = c => cdist(c, hk[0]) > NEAR;
+    let ak = far(A[0]) ? [A[0], A[1]] : A[2] && far(A[2]) ? [A[2], A[3] || A[0]] : null;
+    if (!ak) { const c = PAL.slice().sort((a, b) => cdist(b, hk[0]) - cdist(a, hk[0]))[0]; ak = [c, lum(c) > 0.5 ? '#1D1D1F' : '#F4F1E8']; }
+    const gk = GKS.filter(c => cdist(c, hk[0]) > NEAR && cdist(c, ak[0]) > NEAR && cdist(c, PITCH) > 120);
+    const out = home ? [hk, ak] : [ak, hk];
+    return { mine: out[0], opp: out[1], gk: [gk[0] || '#FF8A1F', gk[1] || gk[0] || '#9B5DE5'] };
+  };
+
   LP.sim = function (o) {
     if (LP._sim) LP._sim.stop(); // uma partida por vez
     let seed = ((o.seed >>> 0) % 2147483646) + 1;
     const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
     const gauss = () => (rnd() + rnd() + rnd() - 1.5) / 1.5;
     let ME = o.me;
+    const KT = o.kits || LP.kits(null, null, true);
     const mk = (form, side) => form.map(([r, d, w], k) => ({ r, d, w: w * 0.68, k, side, x: 0, y: 0, tx: 0, ty: 0, gx: 0, gy: 0, vx: 0, vy: 0,
       rt: 0, th: 0, spd: 0.9 + rnd() * 0.22, risk: 0.7 + rnd() * 0.6, ph: k * 1.9 + side * 4.1, fx: side ? -1 : 1, fy: 0,
       run: 0, runX: 0, runY: 0, go: 0, goX: 0, goY: 0, stun: 0, cd: 0, sprint: 0, drib: 0, mark: null }));
@@ -127,9 +155,15 @@
         const sc = scorerOf(due), mid = due.as && ME >= 0 && s === 0 && !due.asDone ? T[0][ME] : null;
         if (mid && p !== mid && p !== sc) return fly(p, mid.x + (mid.side ? -1 : 1), mid.y, mid, false, 'curto', false);
         if (mid && p === mid) due.asDone = true;
-        if (p === sc || (bx > 80 && !due.me && !mid)) return shoot(p, bx > 84 && Math.abs(by - 34) < 15 && rnd() < 0.3 ? 'cabeca' : 'chute', 1);
-        const [qx] = tf(s, sc);
-        return fly(p, cl(sc.x + (s ? -2 : 2), 1, L - 1), sc.y, sc, Math.hypot(sc.x - p.x, sc.y - p.y) > 30, qx > bx + 15 ? 'costas' : 'curto', false);
+        // Gol só de perto da área: quem vai marcar e ainda está longe conduz para dentro antes de bater
+        const inBox = bx > 79 && Math.abs(by - 34) < 17;
+        if (p === sc && !inBox) { const [wx, wy] = toW(s, Math.min(bx + 12, 90), 34 + (by - 34) * 0.4); ball.carry = { x: wx, y: wy, t: 0.8 }; return; }
+        // Chegou cedo? Prepara (ajeita para o lado) até o minuto do gol, para a rede balançar junto com o placar
+        if (inBox && (p === sc || (!due.me && !mid)) && curT < due.m - 1) { const [wx, wy] = toW(s, Math.min(bx + 1.5, 92), cl(by + (by < 34 ? 3 : -3), 22, 46)); ball.carry = { x: wx, y: wy, t: 0.35 }; return; }
+        if (inBox && (p === sc || (!due.me && !mid))) return shoot(p, bx > 84 && Math.abs(by - 34) < 15 && rnd() < 0.3 ? 'cabeca' : 'chute', 1);
+        // O passe vai na frente de quem vai marcar, no caminho da área
+        const [qx, qy] = tf(s, sc), tx = cl(Math.max(qx + 6, Math.min(due.rx, qx + 12)), 2, 100), ty = cl(qy + (due.ry - qy) * 0.5, 4, 64), [wx, wy] = toW(s, tx, ty);
+        return fly(p, wx, wy, sc, Math.hypot(wx - p.x, wy - p.y) > 28, tx > bx + 15 ? 'costas' : 'curto', false);
       }
       let press = 99, presser = null; for (const op of opp) { const d = dist(op, p); if (d < press) { press = d; presser = op; } }
       const opts = [];
@@ -156,7 +190,7 @@
         const drib = press < 3.2, pk = drib ? cl(0.42 + (near - 1.5) * 0.08 + (bias[s] - 1) * 0.6, 0.12, 0.6) : cl(sig((near - 2.2) * 1.8) + (bias[s] - 1) * 0.4, 0.05, 0.97);
         opts.push({ type: 'carry', kind: drib ? 'drible' : 'conduz', wx, wy, p: pk, presser, u: pk * (V(tx, ty) + PROG * Math.cos(a) * 9 / 30) - (1 - pk) * lossAt(bx, by) + (!drib && near > 5 ? 0.008 : 0) });
       }
-      if (p.r !== 'GK' && bx > 62) { const xg = shotXg(s, bx, by, false); opts.push({ type: 'shot', kind: Math.hypot(L - bx, 34 - by) > 20 ? 'fora' : 'chute', u: xg * SHOT }); }
+      if (p.r !== 'GK' && bx > 70) { const xg = shotXg(s, bx, by, false); opts.push({ type: 'shot', kind: Math.hypot(L - bx, 34 - by) > 20 ? 'fora' : 'chute', u: xg * SHOT }); }
       if (!opts.length) { ball.hold = 0.3; return; }
       let best = opts[0], bu = -1e9;
       for (const op of opts) { const u = op.u * (1 + 0.28 * gauss() * p.risk) + 0.004 * gauss(); if (u > bu) { bu = u; best = op; } }
@@ -236,12 +270,14 @@
       // O minuto do gol chegou: a jogada sai (se o time não tem a bola, rouba a próxima)
       // (começa um pouco antes do minuto dele, para a bola entrar junto com o placar)
       if (!due) {
-        const e = goals.find(q => !q.done && (q.m <= curT || (q.m === curT + 2 && clk - mClk > 0.7)));
-        if (e) { due = e; due.t0 = clk; due.asDone = false; if (ball.owner && ball.owner.side === e.side) { ball.carry = null; ball.hold = Math.min(ball.hold, 0.1); } }
+        const e = goals.find(q => !q.done && (q.m <= curT + DUE_AHEAD));
+        if (e) { due = e; due.t0 = clk; due.asDone = false; due.rx = 86 + rnd() * 5; due.ry = 34 + gauss() * 7; if (ball.owner && ball.owner.side === e.side) { ball.carry = null; ball.hold = Math.min(ball.hold, 0.1); } }
       }
       if (due && ball.owner && ball.owner.side !== due.side && ball.owner.r !== 'GK') {
         const th = T[due.side].filter(q => q.r !== 'GK').sort((a, b2) => dist(a, ball.owner) - dist(b2, ball.owner))[0]; setOwner(th);
       }
+      // Quem vai marcar o gol do motor corre para a área enquanto a jogada sai
+      if (due && poss === due.side) { const sc = scorerOf(due); if (ball.owner !== sc && !(ball.fly && ball.fly.to === sc)) { sc.run = Math.max(sc.run, 0.4); sc.runX = due.rx; sc.runY = due.ry; } }
       const s = poss, line = lineOf(s), owner = ball.owner;
       runT -= dt;
       if (runT <= 0 && owner && owner.side === s && owner.r !== 'GK') {
@@ -367,12 +403,13 @@
       g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x + 1, y + 2.5, r, r * 0.6, 0, 0, Math.PI * 2); g.fill();
       if (me) { g.fillStyle = 'rgba(242,194,48,.35)'; g.beginPath(); g.arc(x, y, r + 4.5 * k, 0, Math.PI * 2); g.fill(); }
       g.globalAlpha = p.stun > 0 ? 0.65 : 1;
-      g.fillStyle = me ? '#F2C230' : p.side ? (p.r === 'GK' ? '#1D4C9E' : '#2A6FD6') : (p.r === 'GK' ? '#E8DFC4' : '#FBF8EF');
-      g.strokeStyle = '#0F3D2A'; g.lineWidth = 2 * k;
+      const kt = p.r === 'GK' ? [KT.gk[p.side], '#1D1D1F'] : p.side ? KT.opp : KT.mine, shirt = me ? '#F2C230' : kt[0];
+      // A borda é o calção (se some na camisa, preto ou branco)
+      g.fillStyle = shirt; g.strokeStyle = me ? '#0F3D2A' : cdist(kt[1], kt[0]) > 120 ? kt[1] : lum(kt[0]) > 0.55 ? '#1D1D1F' : '#F4F1E8'; g.lineWidth = 2 * k;
       g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke();
       g.globalAlpha = 1;
       const a = Math.atan2(p.fy, p.fx);
-      g.strokeStyle = me ? '#13201A' : p.side ? 'rgba(255,255,255,.85)' : 'rgba(19,32,26,.7)'; g.lineWidth = 1.6 * k;
+      g.strokeStyle = me || lum(shirt) > 0.55 ? 'rgba(19,32,26,.75)' : 'rgba(255,255,255,.85)'; g.lineWidth = 1.6 * k;
       g.beginPath(); g.arc(x, y, r - 2 * k, a - 0.5, a + 0.5); g.stroke();
       if (!me) return;
       g.fillStyle = '#13201A'; g.font = '800 ' + Math.round(12 * k) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
