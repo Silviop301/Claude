@@ -24,12 +24,15 @@
     let seed = ((o.seed >>> 0) % 2147483646) + 1;
     const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
     const gauss = () => (rnd() + rnd() + rnd() - 1.5) / 1.5;
-    const ME = o.me;
+    let ME = o.me;
     const mk = (form, side) => form.map(([r, d, w], k) => ({ r, d, w: w * 0.68, k, side, x: 0, y: 0, tx: 0, ty: 0, gx: 0, gy: 0, vx: 0, vy: 0,
       rt: 0, th: 0, spd: 0.9 + rnd() * 0.22, risk: 0.7 + rnd() * 0.6, ph: k * 1.9 + side * 4.1, fx: side ? -1 : 1, fy: 0,
       run: 0, runX: 0, runY: 0, go: 0, goX: 0, goY: 0, stun: 0, cd: 0, sprint: 0, drib: 0, mark: null }));
     const T = [mk(F433, 0), mk(F442, 1)], ALL = T[0].concat(T[1]);
     const isMe = p => ME >= 0 && p.side === 0 && p.k === ME;
+    // O que acontece no campinho vai para a narração (o: onEv(tipo, { side, a, b }); a e b: 'me' ou a posição)
+    const tag = p => (p ? (isMe(p) ? 'me' : p.r) : '');
+    const emit = (k, side, a, b, how) => { if (o.onEv && mode === 'play') o.onEv(k, { side, a: tag(a), b: tag(b), how: how || '' }); };
     const ball = { x: 52.5, y: 34, owner: null, fly: null, loose: null, carry: null, hold: 0, rcv: 0 };
     let poss = 0, mode = o.t0 > 0 ? 'ko' : 'wait', modeT = 1.2, koSide = 0, hero = null, bias = [1, 1], mom = 0, momT = 0, runT = 2, defT = 0, clk = 0;
     let curT = o.t0 || 0, mClk = 0, bxT = 50, lastPasser = null, lastPassClk = -9, frozen = false, en = null, cv = null, g = null, W = 0, H = 0, dpr = 1, raf = 0, last = 0, alive = true;
@@ -155,13 +158,14 @@
       for (const op of opts) { const u = op.u * (1 + 0.28 * gauss() * p.risk) + 0.004 * gauss(); if (u > bu) { bu = u; best = op; } }
       if (best.type === 'shot') return shoot(p, best.kind, 0);
       if (best.type === 'carry') {
-        if (best.kind === 'drible') { if (rnd() < best.p) { best.presser.stun = 1.3; ball.carry = { x: best.wx, y: best.wy, t: 1.1 }; } else setOwner(best.presser); }
+        if (best.kind === 'drible') { if (rnd() < best.p) { best.presser.stun = 1.3; ball.carry = { x: best.wx, y: best.wy, t: 1.1 }; emit('drible', s, p); } else { setOwner(best.presser); emit('desarme', 1 - s, best.presser, p); } }
         else ball.carry = { x: best.wx, y: best.wy, t: 1 + rnd() * 0.9 };
         return;
       }
       lastPasser = p; lastPassClk = clk;
       if (rnd() < best.p) {
         fly(p, best.wx, best.wy, best.q, best.lofted, best.kind, false);
+        if (best.kind !== 'curto') emit(best.kind, s, p, best.q);
         // Tocou curto e tem espaço? Corre para pedir de volta (é assim que nasce a tabela)
         if (best.kind === 'curto' && p.r !== 'GK' && bx > 30 && bx < 88 && rnd() < 0.3) { p.go = 1.4; p.goX = Math.min(bx + 12, p.d > 0.6 ? line - 0.8 : 100); p.goY = cl(by + (34 - by) * 0.2 + gauss() * 5, 4, 64); ball.fly.quick = true; }
       } else {
@@ -195,10 +199,12 @@
     }
     function receive(f) {
       const p = f.to; setOwner(p, f.quick);
+      if (f.cut && f.from && f.from.side !== p.side) emit('corte', p.side, p, f.from);
       if (!f.cut && f.kind === 'cruz') { const [bx, by] = tf(p.side, ball); if (bx > 84 && Math.abs(by - 34) < 15) shoot(p, 'cabeca', 0); }
     }
     function shotEnd(f) {
       const s = f.side, gk = T[1 - s][0];
+      if (f.out !== 'gol') emit(f.out === 'def' ? 'defesa' : 'fora', s, f.from, gk, f.kind);
       if (f.out === 'gol') { mode = 'goal'; modeT = 2.8; koSide = 1 - s; hero = f.from; if (due) { due.done = true; due = null; } }
       else if (f.out === 'def') setOwner(gk);
       else { mode = 'tiro'; modeT = 1.6; poss = 1 - s; }
@@ -258,7 +264,7 @@
         if (ball.rcv <= 0 && p.r !== 'GK' && !(due && due.side === p.side)) for (const d of T[1 - p.side]) {
           if (d.cd > 0 || d.stun > 0 || d.r === 'GK' || dist(d, p) > 1.7) continue;
           d.cd = 0.8;
-          if (rnd() < cl(0.3 - (bias[p.side] - 1) * 0.8, 0.1, 0.55)) { setOwner(d); break; }
+          if (rnd() < cl(0.3 - (bias[p.side] - 1) * 0.8, 0.1, 0.55)) { setOwner(d); emit('desarme', d.side, d, p); break; }
           d.stun = 0.45;
         }
         if (ball.owner === p && !ball.carry && ball.hold <= 0) decide(p);
@@ -422,6 +428,8 @@
         else if (ball.fly && !ball.fly.shot) { ball.fly.to = me; ball.fly.x1 = me.x + 1; ball.fly.y1 = me.y; ball.fly.cut = ball.fly.from.side !== 0; }
       },
       // Antes do apito todos parados na formação de saída; go() é o apito
+      // Substituído: você vira um jogador como os outros e o marcador some
+      sub() { ME = -1; en = null; },
       go() { if (mode === 'wait') { mode = 'ko'; modeT = 0.3; } },
       half() { mode = 'half'; koSide = 1; ball.owner = ball.fly = ball.loose = ball.carry = null; },
       second() { mode = 'ko'; modeT = 0.4; koSide = 1; },

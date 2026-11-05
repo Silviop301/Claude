@@ -5491,6 +5491,15 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
 .tk-rapida.tk-sv .tk-s-cont { background: #1B1B17; color: var(--gold); }
 .tk-rapida.tk-sv .tk-s-cont small { color: #E3D49A; }
 .tk-rapida.tk-sv .tk-go { background: #1B1B17; }
+/* Excluir: "Editar" no topo do ingresso; no modo de edição a linha mostra a lixeira vermelha */
+.tk-hd .tk-t { flex: 1; min-width: 0; }
+.tk-ed { flex: none; min-height: 44px; margin: -6px -4px -6px 0; padding: 0 8px; border: 0; background: none; font: 700 13px var(--body); color: var(--tk-sub);
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.tk-trash { background: #A8241C; color: #FBF8EF; }
+.ask .btn.danger { background: #A8241C; color: #FBF8EF; }
+.tk-trash svg { width: 14px; height: 14px; }
+.tk-sv.editing .tk-vg.del .tk-vt b { color: #7A1C15; }
+.tk-rapida.tk-sv .tk-go.tk-trash { background: #A8241C; }
 /* Novo jogo com as vagas cheias: escolher qual carreira sai */
 .vg-wrap { place-items: end center; padding: 0; }
 .vg-ask { width: min(100%, 520px); border-radius: 18px 18px 0 0; padding: 16px 16px calc(18px + env(safe-area-inset-bottom, 0px)); gap: 10px; background: #F4EEDC; }
@@ -6674,3 +6683,6 @@ button.fi-g, button.p2-gr { cursor: pointer; min-height: 44px; }
 .p2-app.tr i { box-shadow: 0 3px 0 rgba(0, 0, 0, .28), 0 0 0 2px var(--gold, #f2c14e); }
 @keyframes p2-pop { from { transform: scale(.3); } to { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .p2-app.due .ph-badge { animation: none; } }
+/* Casa de prêmio que fechou num erro: as erradas abrem ali mesmo, embaixo do carimbo */
+.rx-shut .rx-oth { position: static; width: 100%; max-width: 340px; }
+.rx-shut .rx-esc { animation-delay: .5s; }
