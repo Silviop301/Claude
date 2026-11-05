@@ -53,7 +53,8 @@ require('fs').mkdirSync(OUT, { recursive: true });
           await p.mouse.move(A.x + A.width / 2, A.y + A.height / 2); await p.mouse.down();
           await p.mouse.move(A.x + 40, A.y - 60, { steps: 5 }); await p.mouse.move(B.x + B.width / 2, B.y + B.height / 2, { steps: 8 });
           await shot('trocas-arrastando'); await p.mouse.up(); await p.waitForTimeout(400); }
-        await click('[data-dxi="9"]'); await click('[data-dxi="10"]'); await shot('trocas-feitas');
+        // tocar num titular abre a sugestão do banco para a posição; dali troca de lugar com outro titular
+        await click('[data-dxi="9"]'); await shot('trocas-sugestao'); await click('#b-lv-swap'); await click('[data-dxi="10"]'); await shot('trocas-feitas');
         await click('#b-lv-back');
         await click('#b-lv-tac'); await click('[data-lf="5-3-2"]'); await click('[data-ls="contra"]'); await shot('tatica');
         await click('#b-lv-back'); await click('#b-lv-go');
