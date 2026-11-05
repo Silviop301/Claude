@@ -48,12 +48,13 @@
   // rola no meio; o ingresso do jogo fica sempre no mesmo lugar e do mesmo tamanho que no início
   const APP_EMO = { msg: '💬', ag: '📒', wk: '📒', bet: '🎰', shop: '🏷️', tbl: '📊', cal: '📋', me: '📈', evo: '📈', bank: '🏦', mkt: '🤝' };
   // Os apps são paródias (canvas "Apps do celular", 2026-11-05): nome e ícone desenhado aqui (sem logo de verdade). A
-  // Agenda fica com o nome e o ícone de sempre. APP_LBL é o nome curto embaixo do ícone, quando o nome não cabe
+  // Agenda fica com o nome de sempre (o ícone é o do mockup). APP_LBL é o nome curto embaixo do ícone, quando o nome não cabe
   const APP_NAME = { msg: 'ZapZap', ag: 'Agenda', me: 'FutBim', bank: 'NuGrana', shop: 'Amazonas', tbl: 'SofáScore', cal: 'OneBola', mkt: 'TransferMarreco', bet: 'Bet171' };
   const APP_LBL = { mkt: 'Marreco' };
   const SV = (bg, inner) => '<svg viewBox="0 0 54 54" aria-hidden="true"><rect width="54" height="54" fill="' + bg + '"/>' + inner + '</svg>';
   const APP_SVG = {
     msg: SV('#1FA855', '<circle cx="27" cy="25" r="15" fill="#fff"/><path d="M14 42l3-11 8 5z" fill="#fff"/><text x="27" y="31.5" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="19" fill="#1FA855">Z</text>'),
+    ag: SV('#FBF8EF', '<rect x="10" y="12" width="34" height="32" rx="5" fill="#fff" stroke="#13201A" stroke-width="2.5"/><path d="M10 17a5 5 0 0 1 5-5h24a5 5 0 0 1 5 5v5H10z" fill="#D8404A"/><text x="27" y="39" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="16" fill="#13201A">17</text>'),
     me: SV('#13201A', '<path d="M16 10h22v26l-11 8-11-8z" fill="#F2C230"/><text x="27" y="29" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="15" fill="#13201A">99</text>'),
     bank: SV('#7A2BD6', '<text x="27" y="34" text-anchor="middle" font-family="Barlow,sans-serif" font-weight="700" font-size="22" fill="#fff">ng</text>'),
     shop: SV('#FFB23F', '<path d="M13 20h28v18a3 3 0 0 1-3 3H16a3 3 0 0 1-3-3z" fill="#C98B4A" stroke="#13201A" stroke-width="2"/><path d="M13 20l4-6h20l4 6M27 14v6" fill="none" stroke="#13201A" stroke-width="2" stroke-linejoin="round"/><path d="M6 47q5-4 10 0t10 0t10 0t10 0" fill="none" stroke="#1D4C9E" stroke-width="3" stroke-linecap="round"/>'),

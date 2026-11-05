@@ -4771,7 +4771,7 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .mz-g.mz-rol:hover .mz-art { transform: rotate(160deg); transition-duration: .9s; }
 .mz-g b { font: 800 24px var(--display); } .mz-g small { font: 600 12px var(--body); opacity: .85; }
 .mz-g.mz-rol { background: radial-gradient(90% 80% at 30% 20%, #1E7A48, #0D4428); }
-.mz-g.mz-slot { background: radial-gradient(90% 80% at 30% 20%, #A3333A, #5C1519); }
+.mz-g.mz-slot { margin-right: 0; padding: 12px; border-radius: 16px; gap: 2px; background: radial-gradient(90% 80% at 30% 20%, #A3333A, #5C1519); box-shadow: 0 6px 0 rgba(0,0,0,.35), inset 0 0 0 2px rgba(226,180,74,.35); } /* o cartão usa a mesma classe da máquina (.mz-slot): sem a margem e a moldura dela */
 .mz-g.mz-bj { background: radial-gradient(90% 80% at 30% 20%, #1D5E8C, #0C2E4A); }
 .mz-g.mz-bicho { background: radial-gradient(90% 80% at 30% 20%, #D9AE4C, #8F6418); color: var(--ink); }
 /* Fichas de cassino */
