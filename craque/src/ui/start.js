@@ -69,7 +69,8 @@
         '<button class="tk-s-cont tk-s-one" data-ed="' + mode + '"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Pronto</b><small>' + M.sec + '</small></button></span></span></div>';
     }
     const other = sl.find(Boolean);
-    const rows = n ? sl.map((sv, i) => sv ? slotRow(mode, sv, i) : '<button class="tk-vg free" data-new="' + mode + ':' + i + '"><i class="tk-plus" aria-hidden="true">' + PLUS_SVG + '</i>' +
+    // Vaga livre sempre embaixo das ocupadas, qualquer que seja o slot (o índice da vaga segue no data-*)
+    const rows = n ? sl.map((sv, i) => [sv, i]).sort((x, y) => !x[0] - !y[0]).map(([sv, i]) => sv ? slotRow(mode, sv, i) : '<button class="tk-vg free" data-new="' + mode + ':' + i + '"><i class="tk-plus" aria-hidden="true">' + PLUS_SVG + '</i>' +
       '<span class="tk-vt"><b>Vaga livre</b><small>Comece outra sem perder ' + (mode === 'treinador' ? 'o ' : 'a de ') + esc(firstName(svName(other))) + '</small></span></button>').join('') : '';
     const stub = n ? '<button class="tk-s-cont" id="' + M.cont + '" data-vg="' + mode + ':' + last[1] + '">' + PLAY_SVG + '<b>Continuar</b><small>' + esc(firstName(svName(last[0]))) + '</small></button>' +
         '<button class="tk-s-new" id="' + M.neu + '" data-mode="' + mode + '">' + PLUS_SVG + '<b>Novo</b><small>' + M.sec + '</small></button>'
