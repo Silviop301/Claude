@@ -42,6 +42,11 @@ for (let n = 0; n < N; n++) {
       if (co.fin && co.fin.caixa < 0) seasonRed = true;
       S.coMatchEnd(co, m);
       st.games++; st.goals += m.gh + m.ga;
+      // Faltas, cartões e impedimentos (por time e por jogo; o seu time e o rival juntos)
+      const cc = st.cards = st.cards || { fo: 0, yc: 0, rc: 0, of: 0, ycSus: 0, styRc: {} };
+      ['fo', 'yc', 'rc', 'of'].forEach(k => { if (m[k]) cc[k] += m[k].us + m[k].them; });
+      cc.ycSus += co.squad.filter(p => p.ycSus).length;
+      const sk = cc.styRc[co.style] = cc.styRc[co.style] || [0, 0]; sk[0]++; sk[1] += m.rc ? m.rc.us : 0;
       if (m.gh > m.ga) st.hw++; else if (m.gh === m.ga) st.dr++; else st.aw++;
       if (!hadUlt && co.board.ult) st.ult++;
       if (hadUlt && !co.board.ult && !co.sacked) st.ultOk++;
@@ -76,6 +81,7 @@ console.log(`Títulos por carreira: média ${avg(st.titlesPer)} [${dist(st.title
 Object.keys(st.byStart).forEach(k => { const b = st.byStart[k]; console.log(`Começo ${k}: títulos ${(b.t / b.n).toFixed(1)}, demissões ${(b.s / b.n).toFixed(1)}, fama no fim ${(b.f / b.n).toFixed(0)}, força do clube no fim ${(b.str / b.n).toFixed(0)}`); });
 const med = a => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.floor(b.length / 2)] : 0; };
 console.log(`Finanças: saldo positivo ${pct(st.fin.saldoPos, st.fin.n)} das temporadas, passou pelo vermelho ${pct(st.fin.red, st.fin.n)}, fechou no vermelho ${pct(st.fin.endRed, st.fin.n)}; saldo mediano ${(100 * med(st.fin.saldoPct)).toFixed(0)}% da receita; caixa no fim ${med(st.fin.caixaWk).toFixed(0)} semanas de folha (mediana)`);
+if (st.cards) { const c = st.cards, g = st.games * 2; console.log('Faltas por time e jogo: ' + (c.fo / g).toFixed(1) + ', amarelos ' + (c.yc / g).toFixed(2) + ', vermelhos ' + (c.rc / g).toFixed(3) + ' (1 a cada ' + Math.round(g / Math.max(1, c.rc)) + ' jogos), impedimentos ' + (c.of / g).toFixed(1) + '; suspensos por 3 amarelos ' + (c.ycSus / st.games).toFixed(2) + ' por jogo; seus vermelhos por estilo: ' + Object.keys(c.styRc).map(k => k + ' ' + (c.styRc[k][1] / c.styRc[k][0]).toFixed(3)).join(', ')); }
 console.log(`Tempo do motor: ${(st.ms / st.seasons).toFixed(0)} ms por temporada` + (st.nan ? `; ALERTA: ${st.nan} números quebrados` : ''));
 // Save: a mesma carreira, uma passando por JSON no meio de cada temporada, tem de terminar igual
 {
