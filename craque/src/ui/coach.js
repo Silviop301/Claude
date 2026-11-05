@@ -553,7 +553,7 @@
     const LP = U.LP, useSim = !!(LP && LP.sim);
     const KT = useSim ? LP.kits(LP.kitFor(cl.name, cl.id), LP.kitFor(vs.name, vs.id), !!m.home) : null;
     const hidden = new Set(), sent = new Set(); // lances que o campinho ainda está jogando / já mandados para ele
-    let sim = null, wait = null, h1 = m.min >= 45, h2 = m.min > 45, frz = 0, lineKey = ['', ''];
+    let sim = null, wait = null, wantStop = false, h1 = m.min >= 45, h2 = m.min > 45, frz = 0, lineKey = ['', ''];
     const pitchHtml = useSim ?
       '<div class="lp-pitch lp-cvm lv-cvp" id="lp-pitch" aria-hidden="true"><b class="lp-band" id="lp-band"></b><canvas class="lp-cv" id="lp-cv"></canvas>' +
         '<span class="lp-tag lv-read" id="lv-zone" hidden></span><span class="lp-tag lp-zone" id="lp-zone"></span>' +
@@ -612,7 +612,7 @@
       $('b-lv-end').onclick = () => { sfx('tap'); finish(); };
     };
     // Os lances novos do motor vão para o campinho. Chance: a linha da narração sai quando a bola chega (ou em 9 s).
-    // Gol: o relógio espera a rede balançar (com 5 s quem vai marcar bate de onde estiver; no máximo 9 s) e só então o placar vira. Volta a espera do gol, ou null
+    // Gol: o relógio espera a rede balançar (com 12 s quem vai marcar bate da entrada da área; no máximo 20 s) e só então o placar vira. Volta a espera do gol, ou null
     const toSim = () => {
       if (!sim) return null;
       const gl = [];
@@ -632,8 +632,9 @@
           let done = false, tm = 0, tf = 0;
           const fin = () => { if (done) return; done = true; clearTimeout(tm); clearTimeout(tf); hidden.delete(e); if (--n > 0 || wait !== go) return; wait = null; paint(); sfx('tap'); go(); };
           const cancel = sim.shot(side, 'gol', fin);
-          const f3 = co.speed === '3' ? 0.5 : 1;
-          tf = setTimeout(() => cancel(true), 5000 * f3); tm = setTimeout(() => { cancel(); fin(); }, 9000 * f3);
+          // em segundos do campinho (a 3× passam três vezes mais rápido): aos 12 s quem vai marcar bate da entrada da área, aos 20 s desiste
+          const f3 = co.speed === '3' ? 1 / 3 : 1;
+          tf = setTimeout(() => cancel(true), 12000 * f3); tm = setTimeout(() => { cancel(); fin(); }, 20000 * f3);
         });
       };
     };
@@ -648,6 +649,7 @@
       paint();
       const go = () => {
         if (sim && m.min >= 45 && !h1) { h1 = true; sim.half(); }
+        if (wantStop) { wantStop = false; $('b-lv-stop').classList.remove('on'); if (!m.done) return sheet(st && st.t !== 'fim' ? st : { t: 'pausa' }); }
         if (st && st.t !== 'fim' && !(co.speed === '3' && st.t === 'gol')) return sheet(st);
         if (m.done) return end();
         timer = setTimeout(tick, SPEED[co.speed][1]);
@@ -691,8 +693,10 @@
         const tok = (id, i) => { const sl = sp[i]; if (!sl) return '';
           if (!id) return '<span class="lv-tk gone" style="left:' + sl[0] + '%;top:' + sl[1] + '%"><i></i><b>expulso</b></span>';
           const p = by[id], low = p.en < 55, hurt = !!p.out;
+          // A energia de cada titular: o anel em volta do número enche e muda de cor (verde, amarelo, vermelho) e o % ao lado da posição
+          const en = Math.round(p.en), ec = enCls(p.en);
           return '<button class="lv-tk' + (low || hurt ? ' low' : '') + (sel && sel.xi === i ? ' sel' : '') + '" data-dxi="' + i + '" style="left:' + sl[0] + '%;top:' + sl[1] + '%">' +
-            (hurt ? '<em>machucado</em>' : low ? '<em>' + Math.round(p.en) + '% · cansado</em>' : '') + '<i' + (i ? '' : ' class="gk"') + '>' + p.ovr + '</i><b>' + esc(last(p.n)) + '</b><small>' + slots[i] + '</small></button>'; };
+            (hurt ? '<em>machucado</em>' : low ? '<em>cansado</em>' : '') + '<i class="en-' + ec + (i ? '' : ' gk') + '" style="--en:' + en + '%">' + p.ovr + '</i><b>' + esc(last(p.n)) + '</b><small>' + slots[i] + ' · <span class="en-' + ec + '">' + en + '%</span></small></button>'; };
         const bench = s.bench.map(id => by[id]).filter(Boolean);
         d.innerHTML = '<div class="lv-fh"><div><small>' + m.min + '\' · ' + m.gh + ' x ' + m.ga + ' · Parada</small><h2>Mexer no time</h2></div>' +
           '<span class="lv-pips" aria-label="' + D.plural(s.subs, 'troca restante', 'trocas restantes') + '">' + [0, 1, 2, 3, 4].map(i => '<i class="' + (i < s.subs ? 'on' : '') + '"></i>').join('') + '</span></div>' +
@@ -794,7 +798,8 @@
       co.speed = k; $('lv-speed').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
       if (!open && !wait) { clearTimeout(timer); timer = setTimeout(tick, SPEED[k][1]); }
     });
-    $('b-lv-stop').onclick = () => { if (open || wait || m.done) return; sfx('tap'); sheet({ t: 'pausa' }); };
+    // Durante a jogada de um gol que o motor já decidiu, o pedido fica guardado e o jogo para logo depois da rede balançar
+    $('b-lv-stop').onclick = () => { if (open || m.done) return; sfx('tap'); if (wait) { wantStop = true; $('b-lv-stop').classList.add('on'); return; } sheet({ t: 'pausa' }); };
     if (useSim) {
       const nmU = nm(co.club), nmT = nm(m.vs);
       const zone = i => {
