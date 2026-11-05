@@ -20,7 +20,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | **no ar** (PRs #135, #136 e a parte 3): janela do meio do ano, troca de clube, sondagens, empresário, aumento, pedido de saída e empréstimo |
 | 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | **no ar** (PRs #138, #139 e a parte 3): torneio do continente, convocação pelo celular, concentração e um jogo por tela, seleção no jornal |
 | 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | **no ar** (PRs #141, #142 e a parte 3): metas do ano, legado no lugar da nota, Seu Hall, ranking por legado e Amigos |
-| 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | em andamento: parte 1 (motor, `engine/coach.js` + `tools/craque_treinador.js`) |
+| 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | em andamento: parte 1 (motor), parte 2 (telas + tática de verdade) |
 | 8 · Treinador v2 | No simulador, nenhuma tática ou instrução vence em todos os casos | |
 | 9 · Do jogador ao técnico | Uma carreira passa de jogador a técnico levando a história e os títulos | |
 
@@ -712,4 +712,18 @@ Proibido também: cartão com faixa colorida na lateral.
   cansa, a troca só entra se o reserva rende mais, a moral volta para 60 e o esperado da diretoria usa o que o robô faz
   contra um igual (`S.CO.ppg`).
 - Próximo: a tela (ingresso Treinador, criação, propostas, elenco e escalação).
+
+### Fase 7, parte 2 · 2026-11-05 · Telas do Treinador e tática de verdade
+- Pedido do Silvio: "algo estratégico de verdade... uma formação melhor contra outra... afinidade com o público entusiasta
+  de simuladores". O confronto tático (era da fase 8) veio para cá. Decisões nos cartões: antes do jogo só setas e
+  palavras (sem números); funções por jogador ficam para a versão 2.
+- Motor: 7 formações (vaga com lado e linha), 6 estilos com ponto forte e fraco (posse fura retranca e sofre com pressão;
+  pressão perde para contra-ataque; contra-ataque trava na retranca; retranca sofre com posse e cruzamento; jogo pelos
+  lados precisa de gente aberta), confronto por setor, escola de cada clube e o rival mudando o plano aos 65' e 78'.
+  `tools/craque_taticas.js`: 0 alertas (com elencos iguais e com o seu 6 pontos mais fraco). Robô que escolhe a melhor
+  tática a cada jogo: meta 75% e demissão 6% contra 60% e 14% do robô que nunca muda.
+- Telas (`ui/coach.js`): ingresso Treinador, criação (nome, país, começo), propostas com a meta, chegada, central (próximo
+  jogo, olheiro, presidente, tabela), time (campo com toque para trocar, formação, estilo, confronto em setas e palavras),
+  resultado com o relato, demissão, fim da temporada com fama e pontos de experiência. Jogo ainda sai direto no resultado.
+- Visual do técnico (aparência) fica para quando houver arte. Próximo: partida ao vivo com paradas e trocas.
 

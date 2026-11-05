@@ -9,6 +9,7 @@
     rapida: { ic: '⏱️', name: 'Carreira Rápida', sub: 'Uma temporada por tela', k: 'Duração', v: '9 min', sec: 'A·01', cont: 'b-cont', neu: 'b-new' },
     completa: { ic: '🏟️', name: 'Jogo a Jogo', full: 'Carreira Jogo a Jogo', sub: 'Cada rodada, treino e contrato', k: 'Save de', v: 'dias', sec: 'B·02', cont: 'b-cont-fc', neu: 'b-new-fc' },
     relampago: { ic: '⚡', name: 'Relâmpago', sub: '5 casas, sozinho ou X1', k: 'Duração', v: '1 min', sec: 'C·03', neu: 'b-relampago' },
+    treinador: { ic: '📋', name: 'Treinador', sub: 'Escale, mude a tática, aguente a diretoria', k: 'Save de', v: 'dias', sec: 'D·04', neu: 'b-new-co' },
   };
   const tk = (cls, id, body, stub, extra) => (id ? '<button class="tk ' + cls + '" id="' + id + '">' : '<div class="tk ' + cls + '" aria-disabled="true">') +
     '<span class="tk-in"><span class="tk-paper"><span class="tk-frame">' + body + '</span></span><span class="tk-stub">' + stub + '</span></span>' + (extra || '') + (id ? '</button>' : '</div>');
@@ -67,9 +68,10 @@
     const jn = load(JAJ_NEW), jnLine = jn && !jn.seen ? '<button class="hm-line hm-jn" id="b-jaj-novo">' + U.emo('🏟️', 'xs') + '<span><b>O Jogo a Jogo foi refeito.</b> ' +
       (jn.name ? 'A carreira de ' + esc(jn.name) + ' virou carta na sua coleção.' : 'A carreira de antes ficou para trás.') + '</span><em>Ok</em></button>' : '';
     const saved = load(SAVE), savedFc = load(U.SAVE_FC);
-    const saves = [['rapida', saved], ['completa', savedFc]].filter(([, sv]) => sv && sv.c).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
+    const savedCo = U.coSaved();
+    const saves = [['rapida', saved], ['completa', savedFc]].filter(([, sv]) => sv && sv.c).concat(savedCo ? [['treinador', savedCo]] : []).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
     const L = U.PROFILE.level((U.ITEMS.get().prof || {}).xp), st = U.ITEMS.streak(), packs = U.ITEMS.get().packs.length;
-    const also = ([mode, sv]) => '<button class="hm-line" id="' + MODES[mode].cont + '">' + U.emo(MODES[mode].ic, 'xs') + '<span>Também jogando: <b>' + esc(sv.c.name) + '</b>' +
+    const also = ([mode, sv]) => mode === 'treinador' ? U.coAlso(sv) : '<button class="hm-line" id="' + MODES[mode].cont + '">' + U.emo(MODES[mode].ic, 'xs') + '<span>Também jogando: <b>' + esc(sv.c.name) + '</b>' +
       (club(sv.c.club) ? ', ' + esc(club(sv.c.club).name) : '') + ', ' + sv.c.age + ' anos</span><em>' + (mode === 'rapida' ? 'Rápida' : 'Jogo a Jogo') + ' ›</em></button>';
     render(
       '<div class="hm">' +
@@ -78,10 +80,9 @@
         '<button class="hm-lv" id="b-prof" aria-label="Perfil, nível ' + L.lv + '"><b>' + L.lv + '</b><i><em style="width:' + Math.round(L.cur / L.next * 100) + '%"></em></i></button>' +
         '<button class="hm-cfg" id="b-sound" aria-label="Configurações">' + U.GEAR_SVG + '</button></div>' +
       jnLine + U.challengeHome() + U.relampagoHome(true) +
-      (saves.length ? '<section class="hm-sec"><h2>Seu jogo</h2>' + contTicket(saves[0][0], saves[0][1].c) + (saves[1] ? also(saves[1]) : '') + '</section>' : '') +
+      (saves.length ? '<section class="hm-sec"><h2>Seu jogo</h2>' + (saves[0][0] === 'treinador' ? U.coContTicket(saves[0][1], tk) : contTicket(saves[0][0], saves[0][1].c)) + saves.slice(1, 3).map(also).join('') + '</section>' : '') +
       (packs ? '<button class="hm-line" id="b-hb-packs">' + U.emo('📦', 'xs') + '<span><b>' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</b> para abrir</span><em>Abrir ›</em></button>' : '') +
-      '<section class="hm-sec"><h2>Escolha o jogo</h2><div class="hm-tks">' + modeTicket('rapida') + modeTicket('completa') + modeTicket('relampago') +
-        tk('tk-soon', null, U.emo('📋', 'lg') + '<span class="tk-t"><b>Modo Treinador</b><small>Escale e comande o time</small></span>', '', '<span class="tk-stamp">EM BREVE</span>') +
+      '<section class="hm-sec"><h2>Escolha o jogo</h2><div class="hm-tks">' + modeTicket('rapida') + modeTicket('completa') + modeTicket('relampago') + modeTicket('treinador') +
       '</div></section>' + U.deskHint() + '</div>' + U.tabs('home')
     );
     const cont = sv => {
@@ -106,6 +107,7 @@
     $('b-prof').onclick = () => { sfx('tap'); U.profile(); };
     U.challengeHomeBind();
     U.relampagoHomeBind();
+    U.coHomeBind();
     $('b-sound').onclick = U.settings;
     if (U.whatsNew) U.whatsNew();
   }

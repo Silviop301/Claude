@@ -299,5 +299,5 @@
     });
   }
 
-  Object.assign(U, { offerCard, dealCompare, academy, windowOffers, squad });
+  Object.assign(U, { offerCard, dealCompare, academy, windowOffers, squad, bandColor });
 })();
