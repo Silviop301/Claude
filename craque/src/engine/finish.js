@@ -11,8 +11,9 @@
   S.PROD_W = { ATA: 1.04, MEI: 0.97, ZAG: 1.06, GOL: 1.17 };
   // Carreira Completa: a loja (equipamento e equipe pagos com o salário) deixa o jogador mais forte, então o corte é mais alto
   // (aprovado pelo Silvio em 2026-10-30; calibrado com o robô que compra, para S perto de 11%). 2026-11-04: o treino com lances
-  // (+1 num atributo por semana de treino completa, até 2 por temporada) também fortalece; recalibrado com o robô que treina
-  S.GRADES_FC = [['S', 2510], ['A', 1920], ['B', 1440], ['C', 1125], ['D', 0]];
+  // também fortalece. 2026-11-05: o Silvio não quer castigar quem joga direito; até a nota sair do Jogo a Jogo (fase 6) ficam os
+  // cortes de antes do treino: quem treina tira nota mais alta, quem não treina fica como antes
+  S.GRADES_FC = [['S', 2190], ['A', 1610], ['B', 1145], ['C', 855], ['D', 0]];
   S.gradesOf = c => (c && c.mode === 'completa' ? S.GRADES_FC : S.GRADES);
   S.gradeOf = (score, c) => S.gradesOf(c).find(([, min]) => score >= min)[0];
   // Nível das ligas onde você jogou: gol e prêmio num clube de elite valem mais que numa liga fraca (sem isso,

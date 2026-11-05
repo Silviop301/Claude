@@ -191,9 +191,11 @@
       const n = r ? r.n : 0, E = S.eff(c);
       if (r && r.ok) sfx('levelup');
       w.innerHTML = '<div class="trn">' + head + '<div class="ob5-res ' + (ok ? 'ok' : 'ko') + '"><div class="mr-big">' + bigOf(st, ok) + '</div><p class="mr-txt">' +
-          esc(ok ? 'Isso!' : (WHY[why] || 'Não saiu, mas treino é isso.')) + (ok || !r ? '' : ' Errar também conta.') + '</p></div>' +
-        '<div class="trn-prog">' + dots(n) + (r && r.ok ? '<b class="trn-up">+1 em ' + esc(L) + ' · agora ' + E[a] + '</b><small>Fica na carreira.</small>' : '<small>' + n + ' de ' + N + ' lances do treino</small>') + '</div>' +
-        (r && !r.ok && n < N ? '<button class="btn" id="trn-go">Próximo lance</button><button class="btn ghost" id="trn-out">Voltar à agenda</button>' : '<button class="btn" id="trn-out">Voltar à agenda</button>') + '</div>';
+          esc(ok ? 'Isso!' : (WHY[why] || 'Não saiu, mas treino é isso.')) + (ok || !r || r.need ? '' : ' Errar também conta.') + '</p></div>' +
+        '<div class="trn-prog">' + dots(n) + (r && r.ok ? '<b class="trn-up">+1 em ' + esc(L) + ' · agora ' + E[a] + '</b><small>Fica na carreira.</small>' :
+          r && r.fail ? '<small>Sem o +1 desta vez: precisava acertar ' + (r.need === 3 ? 'os 3' : r.need + ' dos 3') + '. Semana que vem tem mais.</small>' :
+          '<small>' + n + ' de ' + N + ' lances do treino' + (r && r.need ? ' · ' + r.hits + ' de ' + r.need + ' acertos' : '') + '</small>') + '</div>' +
+        (r && !r.ok && !r.fail && n < N ? '<button class="btn" id="trn-go">Próximo lance</button><button class="btn ghost" id="trn-out">Voltar à agenda</button>' : '<button class="btn" id="trn-out">Voltar à agenda</button>') + '</div>';
       bind({ 'trn-go': next });
     };
     function bind(m) {

@@ -186,7 +186,7 @@
     // Treino com lances (treino técnico): escolha o atributo, jogue 3 lances antes do jogo e ganhe +1 nele (S.fcTrSession)
     const trBlock = () => {
       const t = S.fcTr(c), cap = S.FC_TR_CAP, used = cap - S.fcTrLeft(c), L = k => D.label(c.pos, k), E = S.eff(c);
-      const yr = '<small class="ag-tr-n">' + used + ' de ' + cap + ' no ano</small>';
+      const yr = '<small class="ag-tr-n">' + (cap >= 99 ? (c.fc.trGot || 0) + (c.fc.trGot === 1 ? ' treino completo' : ' treinos completos') + ' no ano' : used + ' de ' + cap + ' no ano') + '</small>';
       if (!t && !S.fcTrOpen(c, acts)) return acts && acts[0] === 'tec' && S.fcTrLeft(c) <= 0 && !done ? '<p class="ag-tr-off">Treino com lances: os ' + cap + ' do ano já foram. Até a próxima temporada, o treino técnico vale +' + num2(S.FC_TRAIN_STEP) + ' de evolução.</p>' : '';
       const a = t ? t.a : trA && S.fcTrAttrOk(c, trA) ? trA : S.fcTrAttr(c);
       if (!a) return '';
@@ -194,9 +194,12 @@
       const dots = '<span class="ag-tr-dots" aria-label="' + n + ' de ' + N + '">' + Array.from({ length: N }, (_, k) => '<i class="' + (k < n ? 'on' : '') + '"></i>').join('') + '</span>';
       const head = '<div class="ag-tr"><div class="ag-tr-h"><b>Treino com lances</b>' + dots + '</div>';
       if (t && t.ok) return head + '<p class="ag-tr-ok">+1 em ' + esc(L(a)) + ' · agora ' + E[a] + '. Fica na carreira.</p>' + yr + '</div>';
+      if (t && t.fail) return head + '<p class="ag-tr-p">Sem o +1 desta vez: ' + t.hits + (t.hits === 1 ? ' acerto' : ' acertos') + ', precisava de ' + t.need + '. O treino técnico vale a evolução de sempre. Semana que vem tem mais.</p>' + yr + '</div>';
+      const need = t ? t.need : S.fcTrNeed(c, a);
+      const needTx = need ? 'Com ' + esc(L(a)) + ' em ' + E[a] + ', precisa acertar ' + (need === 3 ? 'os 3' : need + ' dos 3') + '.' : 'Errar também conta.';
       const chips = t ? '' : '<div class="ag-tr-at" role="radiogroup" aria-label="Atributo do treino">' + S.attrOrder(c.pos).map(k => { const ok = S.fcTrAttrOk(c, k);
         return '<button class="ag-ta' + (k === a ? ' on' : '') + '" data-ta="' + k + '" role="radio" aria-checked="' + (k === a) + '"' + (ok ? '' : ' disabled') + '><b>' + esc(L(k)) + '</b><small>' + E[k] + '</small></button>'; }).join('') + '</div>';
-      return head + '<p class="ag-tr-p">' + (t ? 'Faltam ' + (N - n) + (N - n === 1 ? ' lance' : ' lances') : 'Jogue ' + N + ' lances antes do jogo') + ': +1 em ' + esc(L(a)) + '. Errar também conta.</p>' + chips +
+      return head + '<p class="ag-tr-p">' + (t ? 'Faltam ' + (N - n) + (N - n === 1 ? ' lance' : ' lances') : 'Jogue ' + N + ' lances antes do jogo') + ': +1 em ' + esc(L(a)) + '. ' + needTx + (t && need ? ' Acertos: ' + t.hits + '.' : '') + '</p>' + chips +
         '<button class="ag-tr-go" id="ag-trgo" data-a="' + a + '">' + U.emo('⚽', 'sm') + ' Lance ' + (n + 1) + ' de ' + N + ' · ' + esc(U.drillName(S.fcTrDrill(c, a, n))) + '</button>' + yr + '</div>';
     };
     const R = days.map((d, k) => {

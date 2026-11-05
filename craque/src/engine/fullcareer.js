@@ -145,9 +145,10 @@
   S.FC_WEEK = WEEK; S.FC_TRAIN_CAP = TRAIN_CAP;
   const peTrainOk = (fc, n) => (fc.peTrain || 0) + TRAIN_STEP * (n || 1) <= TRAIN_CAP + 1e-9;
   // Treino com lances: no treino técnico da semana você escolhe um atributo e joga TR_SESS lances antes do jogo.
-  // Jogados todos (errar também conta: é treino), +1 nesse atributo, que fica na carreira (c.trB, em S.eff). No máximo TR_CAP por temporada.
+  // Jogados os 3 com os acertos exigidos (S.fcTrNeed: abaixo de 65 basta jogar, até 78 acertar 2, acima os 3), +1 nesse atributo
+  // de base. Toda semana (TR_CAP 99, a pedido do Silvio em 2026-11-05).
   // Sem jogar os lances (semana automática, simulador), o treino técnico vale o de antes (+0,05 de evolução).
-  const TR_SESS = 3, TR_CAP = +((typeof process !== 'undefined' && process.env && process.env.FC_TRC) || 2);
+  const TR_SESS = 3, TR_CAP = +((typeof process !== 'undefined' && process.env && process.env.FC_TRC) || 99); // 99: toda semana (o Silvio pediu mais treino; o que segura é o acerto exigido, S.fcTrNeed)
   const TR_DRILLS = { fin: ['cara', 'cabeca', 'dois'], dri: ['mano', 'cara'], pas: ['passe3', 'dois'], rit: ['mano', 'pressao', 'bote'], def: ['bote', 'pressao'], fis: ['cabeca', 'pressao'] };
   const TR_DRILLS_GK = { rit: ['saida'], fin: ['save'], pas: ['saida'], dri: ['save'], def: ['saida'], fis: ['saida', 'save'] };
   S.FC_TR_SESS = TR_SESS; S.FC_TR_CAP = TR_CAP;
@@ -157,14 +158,19 @@
   S.fcTr = c => (c.fc && c.fc.tr && c.fc.tr.s === c.season && c.fc.tr.i === c.fc.i ? c.fc.tr : null); // o treino com lances desta semana
   const TR_MAX = +((typeof process !== 'undefined' && process.env && process.env.FC_TRM) || 99); // no máximo isto por atributo na carreira
   S.FC_TR_MAX = TR_MAX;
-  S.fcTrAttrOk = (c, a) => !!TR_DRILLS[a] && S.eff(c)[a] < 99 && ((c.trB && c.trB[a]) || 0) < TR_MAX;
+  S.fcTrAttrOk = (c, a) => !!TR_DRILLS[a] && S.eff(c)[a] < TR_TOP && ((c.trB && c.trB[a]) || 0) < TR_MAX;
   // Atributo sugerido: o último escolhido; senão o mais importante da posição abaixo de 99
   S.fcTrAttr = c => { const t = S.fcTr(c); if (t) return t.a; return c.fcTrA && S.fcTrAttrOk(c, c.fcTrA) ? c.fcTrA : S.attrOrder(c.pos).find(a => S.fcTrAttrOk(c, a)) || null; };
+  // Acertos exigidos nos 3 lances para o +1: quanto mais alto o atributo, mais difícil (abaixo de 70 basta jogar)
+  // Acima de TR_TOP o treino não sobe mais (99: sem trava; o teto de verdade é o potencial, ver S.fcTrSession)
+  const TR_TOP = +((typeof process !== 'undefined' && process.env && process.env.FC_TRTOP) || 99), TR_N2 = +((typeof process !== 'undefined' && process.env && process.env.FC_TRN2) || 65), TR_N3 = +((typeof process !== 'undefined' && process.env && process.env.FC_TRN3) || 78);
+  S.FC_TR_TOP = TR_TOP;
+  S.fcTrNeed = (c, a) => { const v = S.eff(c)[a]; return v < TR_N2 ? 0 : v < TR_N3 ? 2 : 3; };
   // Dá para treinar com lances agora? O treino da semana é o técnico (escolhido ou já fechado), há jogo pela frente e sobra limite no ano
   S.fcTrOpen = function (c, pick) {
     const fc = c.fc, t = S.fcTr(c);
     if (!fc || fc.done || !S.fcNext(c)) return false;
-    if (t) return !t.ok;
+    if (t) return !t.ok && !t.fail;
     if (S.fcTrLeft(c) <= 0) return false;
     if (fc.wkDue) return (pick || S.fcWeekAuto(c))[0] === 'tec';
     return !!(fc.wkSum && fc.wkSum.at === fc.i && fc.wkSum.acts[0] === 'tec');
@@ -173,16 +179,21 @@
   S.fcTrSession = function (c, a, ok) {
     const fc = c.fc;
     let t = S.fcTr(c);
-    if (!t) { if (!S.fcTrOpen(c, ['tec']) || !S.fcTrAttrOk(c, a)) return null; t = fc.tr = { s: c.season, i: fc.i, a, n: 0, hits: 0 }; c.fcTrA = a; }
-    if (t.ok) return { n: t.n, ok: false, a: t.a };
+    if (!t) { if (!S.fcTrOpen(c, ['tec']) || !S.fcTrAttrOk(c, a)) return null; t = fc.tr = { s: c.season, i: fc.i, a, n: 0, hits: 0, need: S.fcTrNeed(c, a) }; c.fcTrA = a; }
+    if (t.ok || t.fail) return { n: t.n, ok: false, a: t.a, hits: t.hits, need: t.need, fail: !!t.fail };
     t.n++; if (ok) t.hits++;
     let done = false;
+    // Sem chance de chegar aos acertos exigidos: o treino da semana acaba sem o +1 (a evolução de sempre fica)
+    if (t.hits + (TR_SESS - t.n) < t.need) { t.fail = true; return { n: t.n, ok: false, a: t.a, hits: t.hits, need: t.need, fail: true }; }
     if (t.n >= TR_SESS) {
       t.ok = true; done = true; fc.trN = (fc.trN || 0) + 1;
-      c.trB = c.trB || {}; c.trB[t.a] = (c.trB[t.a] || 0) + 1;
+      // O +1 entra no atributo de base: o jogador chega mais cedo ao potencial (c.pot), mas o teto não muda — a evolução da
+      // temporada mira o potencial e desconta o que o treino adiantou. (c.trB era a versão de 2026-11-04: bônus por cima, segue valendo)
+      c.attrs[t.a] = Math.min(99, c.attrs[t.a] + 1);
+      c.trG = c.trG || {}; c.trG[t.a] = (c.trG[t.a] || 0) + 1;
       fc.trGot = (fc.trGot || 0) + 1;
     }
-    return { n: t.n, ok: done, a: t.a, hits: t.hits };
+    return { n: t.n, ok: done, a: t.a, hits: t.hits, need: t.need };
   };
   const weekBase = (fc, c) => (fc.wkPlayed ? 5 : 30) + (c && c.staff && c.staff.pt ? 8 : 0); // preparador físico: +8 // a semana já recupera sozinha (mais se você não jogou)
   S.fcSponsPay = c => Math.max(1000, Math.round((c.wage || 0) * 0.8 / 100) * 100);
