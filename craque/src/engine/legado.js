@@ -119,5 +119,10 @@
     return { pts: Math.round(pts), by };
   };
 
+  // Tom do fim de carreira no Jogo a Jogo (jornal da despedida, cor da carta): sai do legado e nunca é o pior. Quem jogou
+  // certinho por semanas não termina com "o que poderia ter sido" (o Silvio, 2026-11-05)
+  S.LEG_TONE = [['S', 2600], ['A', 1900], ['B', 1300], ['C', 0]];
+  S.legacyTone = pts => S.LEG_TONE.find(([, m]) => pts >= m)[0];
+
   if (typeof module !== 'undefined') module.exports = S;
 })(typeof window !== 'undefined' ? window : globalThis);

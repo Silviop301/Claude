@@ -122,7 +122,7 @@ dividem ajudantes por `CRAQUE_SIM._`. O motor não usa DOM: roda no navegador e 
 | `phone.js` | Jogo a Jogo: as pessoas do celular (`c.ppl`: relação só no tom, memória), mensagens depois e antes do jogo, Chat |
 | `money.js` | Jogo a Jogo, dinheiro: manutenção do status, dívida com juros (`c.debt`, `S.fcCharge`/`S.fcCredit`), bônus e luvas, saídas do vermelho (`S.fcWays`), investimentos (`S.FC_INVEST`), festa e o Zé no Chat |
 | `transfer.js` | Jogo a Jogo, mercado: a janela do meio do ano (`S.fcWin`, `S.FC_WIN`) e a troca de clube no meio da temporada (`S.fcMove`: liga nova na rodada em que está) |
-| `legado.js` | Jogo a Jogo: metas do ano (`S.fcGoals`: clube, empresário e o sonho escolhido, `S.fcDream`), conferidas no fim da temporada (`res.metas`, `c.goalHist`), e pontos de legado (`S.legacy`, pesos em `S.LEGACY_W`) |
+| `legado.js` | Jogo a Jogo: metas do ano (`S.fcGoals`: clube, empresário e o sonho escolhido, `S.fcDream`), conferidas no fim da temporada (`res.metas`, `c.goalHist`), e pontos de legado (`S.legacy`, pesos em `S.LEGACY_W`; no fim da carreira o legado substitui a nota S a D, e `S.legacyTone` só dá o tom do jornal e da carta) |
 
 ### Dados e textos — `craque/src/`
 

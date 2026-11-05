@@ -35,6 +35,13 @@
       (R.back && h ? '<span class="fr-hist">Revanche · placar histórico entre carreiras: ' + h.me + ' x ' + h.him + '</span>' : '') + '<table><tr><td></td><td>Você</td><td>' + esc(R.name.split(' ')[0]) + '</td></tr>' +
       R.rows.map(([l, a, b]) => '<tr><td>' + l + '</td><td>' + a + '</td><td>' + b + '</td></tr>').join('') + '</table></div>';
   }
+  // Jogo a Jogo: de onde veio o legado
+  const LEG_TXT = { metas: 'Metas do ano cumpridas', titulos: 'Títulos', premios: 'Prêmios', idolo: 'Ídolo de clube', selecao: 'Seleção' };
+  function legHow(L) {
+    return '<details class="more score-how"><summary>De onde veio o legado</summary><ul class="sh-parts">' +
+      Object.keys(LEG_TXT).map(k => '<li><span>' + LEG_TXT[k] + '</span><b>+' + L.by[k].toLocaleString('pt-BR') + '</b></li>').join('') +
+      '<li class="tot"><span>Total</span><b>' + L.pts.toLocaleString('pt-BR') + '</b></li></ul></details>';
+  }
   // Para a próxima: o que faltou nesta carreira (próxima nota, recorde, rival) vira a meta da seguinte
   function nextGoal(c, f, hall, rank) {
     const out = [], G2 = f.bands || S.GRADES, i = G2.findIndex(([g]) => g === f.grade);
@@ -104,6 +111,9 @@
   }
   function finale() {
     const f = S.finish(G.c);
+    // Jogo a Jogo (plano, fase 6): o legado no lugar da nota S a D; a letra que sobra só dá o tom (jornal, cor da carta)
+    const jaj = G.c.mode === 'completa' && S.legacy ? S.legacy(G.c) : null;
+    if (jaj) { f.grade = S.legacyTone(jaj.pts); f.leg = jaj; if (f.verdict === 'Promessa que não vingou') f.verdict = 'Carreira de muita luta'; }
     if (window.CLIMBIX_STAT) window.CLIMBIX_STAT('end', G.c.mode || 'rapida', 0, 'c' + G.c.tseed); // contagem anônima
     rivalCarry(G.c, f);
     const ach = U.achRecord(G.c, f);
@@ -116,20 +126,29 @@
     const T = G.c.totals;
     store(U.saveKey(G.c), { c: null, at: Date.now() });
     const hall = (load(HALL) || []);
-    hall.push({ name: G.c.name, grade: f.grade, score: f.score, verdict: f.verdict, goals: T.goals, assists: T.assists, titles: f.titles, ballon: T.ballon, pos: G.c.pos, cs: T.cs || 0, penSaved: T.penSaved || 0, peak: G.c.peak });
+    if (!jaj) hall.push({ name: G.c.name, grade: f.grade, score: f.score, verdict: f.verdict, goals: T.goals, assists: T.assists, titles: f.titles, ballon: T.ballon, pos: G.c.pos, cs: T.cs || 0, penSaved: T.penSaved || 0, peak: G.c.peak });
     hall.sort((a, b) => b.score - a.score);
-    const rank = hall.findIndex(h => h.score === f.score && h.name === G.c.name) + 1;
+    const rank = jaj ? 0 : hall.findIndex(h => h.score === f.score && h.name === G.c.name) + 1;
     store(HALL, hall.slice(0, 10));
     const cty = D.COUNTRIES.find(x => x.id === G.c.country);
     const cardData = cardOf(G.c, f);
     const colAt = U.collect(G.c, f, cardData); // a carta entra na coleção
+    // Jogo a Jogo (plano, fase 6): a carreira entra no Seu Hall pelos pontos de legado, com a carta
+    let jajRank = 0;
+    if (jaj) {
+      const hj = load(U.HALL_JAJ) || [], at = colAt || Date.now();
+      hj.push({ at, name: G.c.name, pos: G.c.pos, country: G.c.country, peak: G.c.peak, leg: jaj.pts, by: jaj.by, seasons: G.c.season, titles: f.titles, ballon: T.ballon, goals: T.goals, assists: T.assists, cs: T.cs || 0, grade: f.grade, score: f.score, card: cardData, yr: [YEAR0, YEAR0 + G.c.season] });
+      hj.sort((a, b) => b.leg - a.leg);
+      jajRank = hj.findIndex(h => h.at === at) + 1;
+      store(U.HALL_JAJ, hj.slice(0, 30));
+    }
     U.salaRecord(G.c); // e as taças, na Sala de Troféus
     const shareName = G.c.name;
     // Escudo da carta: começa no clube principal e dá para trocar por qualquer clube da carreira
     const clubsPlayed = [...new Set(G.c.spells.filter(sp => sp.seasons).map(sp => sp.club))];
     if (!clubsPlayed.includes(f.mainClub)) clubsPlayed.unshift(f.mainClub);
     const fresh = ach && ach.fresh ? ach.fresh.length : 0;
-    const rankTxt = rank === 1 ? (hall.length > 1 ? 'Novo recorde no seu Hall da Fama!' : '') : '#' + rank + ' no seu Hall da Fama';
+    const rankTxt = jaj ? '' : rank === 1 ? (hall.length > 1 ? 'Novo recorde no seu Hall da Fama!' : '') : '#' + rank + ' no seu Hall da Fama';
     const first = careerStats(G.c)[0];
     // Perfil: XP da carreira e metas da semana (os pacotinhos delas entram na fila junto)
     const prof = U.profileCareer(G.c, f);
@@ -140,12 +159,12 @@
       '<div class="eyebrow o6-eb">Fim de carreira · ' + YEAR0 + '–' + (YEAR0 + G.c.season) + '</div>' +
       '<h2 class="o6-v">' + esc(f.verdict) + '</h2>' +
       '<div class="o6-hero"><div class="fut card3d-host" id="fut-host"><canvas id="fut" aria-label="Card do jogador"></canvas></div>' +
-        '<div class="o6-medal g-' + f.grade + '"><small>Nota</small><b>' + f.grade + '</b></div></div>' +
+        (jaj ? '<div class="o6-medal leg"><small>Legado</small><b>' + jaj.pts.toLocaleString('pt-BR') + '</b></div></div>' : '<div class="o6-medal g-' + f.grade + '"><small>Nota</small><b>' + f.grade + '</b></div></div>') +
       '<div class="o6-nums"><div><b>' + first[0] + '</b><small>' + first[1].toLowerCase() + '</small></div><div><b>' + f.titles + '</b><small>' + (f.titles === 1 ? 'título' : 'títulos') + '</small></div>' +
         '<div><b>' + T.ballon + '</b><small>' + (T.ballon === 1 ? 'Bola de Ouro' : 'Bolas de Ouro') + '</small></div></div>' +
-      pointsBar(f, rankTxt) +
+      (jaj ? '<p class="o6-leg"><small>' + (jajRank === 1 ? ((load(U.HALL_JAJ) || []).length > 1 ? 'Novo recorde: o maior legado do seu Hall' : 'Sua primeira carreira no Hall da Fama') : '#' + jajRank + ' no seu Hall da Fama') + '</small></p>' : pointsBar(f, rankTxt)) +
       '<p class="mo-climb" id="mo-climb" hidden></p>' +
-      nextGoal(G.c, f, hall, rank) +
+      (jaj ? '' : nextGoal(G.c, f, hall, rank)) +
       '<div class="o6-dz">' + U.challengeFinale(G.c, f) + '</div>' +
       (prizes ? '<div class="fin-prizes o6-prizes">' + prizes + '</div>' : '') +
       '<div class="o6-links"><button class="link-btn" data-o6="ed">Editar carta</button><button class="link-btn" data-o6="more">Resumo' + (fresh ? ' <em>' + fresh + '</em>' : '') + '</button>' +
@@ -157,7 +176,7 @@
         '<button id="b-hall">' + U.emo('🏅', 'sm') + '<span>Hall da Fama</span></button></div>' +
       U.dailyFinish(G.c, f) + U.finaleRank() +
       '<div class="final">' +
-      '<div class="headrow"><div class="grade ' + f.grade + '">' + f.grade + '</div><div class="who"><b>' + esc(G.c.name) + '</b><span>' + U.flag(cty.flag) + ' ' + D.POS[G.c.pos].name + ' · ' + S.startAge(G.c) + ' a ' + G.c.age + ' anos · pico ' + G.c.peak + '</span></div></div>' +
+      '<div class="headrow">' + (jaj ? '' : '<div class="grade ' + f.grade + '">' + f.grade + '</div>') + '<div class="who"><b>' + esc(G.c.name) + '</b><span>' + U.flag(cty.flag) + ' ' + D.POS[G.c.pos].name + ' · ' + S.startAge(G.c) + ' a ' + G.c.age + ' anos · pico ' + G.c.peak + '</span></div></div>' +
       '<div class="stats"><div><b>' + T.games + '</b><span>Jogos</span></div>' + careerStats(G.c).map(([v, l]) => '<div><b>' + v + '</b><span>' + l + '</span></div>').join('') +
       '<div><b>' + f.titles + '</b><span>Títulos</span></div><div><b>' + T.ballon + '</b><span>Bolas de Ouro</span></div><div><b>' + f.nClubs + '</b><span>Clubes</span></div></div>' +
       (T.wcApps ? '<p class="muted small patr">' + U.emo('🌍', 'sm') + ' Copas do Mundo: ' + T.wcApps + (T.wcApps > 1 ? ' disputadas' : ' disputada') + ' · ' + (T.wc || 0) + (T.wc === 1 ? ' título' : ' títulos') + ' · ' + (T.natGames ? D.plural(T.natGames, 'jogo', 'jogos') + ', ' : '') + D.plural(T.wcGoals || 0, 'gol', 'gols') + ' (já no total)</p>' : '') +
@@ -170,7 +189,7 @@
           .map(([name, t]) => '<div>' + trophy(t.type, 52, name) + '<b>' + t.n + 'x</b><span>' + esc(name) + '</span></div>').join('') + '</div>' : '') +
       (f.bonus.length ? '<div class="room-title">Despedida</div><ul class="why">' + f.bonus.map(b => '<li><span>' + esc(b.txt) + '</span><b class="up">+' + b.v + '</b></li>').join('') + '</ul>' : '') +
       U.achBlock(ach) +
-      scoreHow(f) +
+      (jaj ? legHow(jaj) : scoreHow(f)) +
       '</div>' + (hall.length > 1 ? U.feedbackCard() : '') + '</details>' + // 1ª carreira: a opinião fica na tela inicial
       // Compartilhar e jogar de novo numa barra presa embaixo, ao alcance do polegar. Fica por último: o degradê dela
       // passa por baixo do que vem depois, então no meio da tela cortava o Desafiar
@@ -190,7 +209,7 @@
     // Edição especial do jornal com a despedida
     const retired = G.c;
     // A nota da carreira entra primeiro (motion.js); o jornal de despedida vem quando ela fecha
-    setTimeout(() => U.scoreReveal(f, () => setTimeout(() => U.farewellPaper(retired, f, () => U.rankClimb($('mo-climb'), f.score)), 300)), 250);
+    setTimeout(() => U.scoreReveal(f, () => setTimeout(() => U.farewellPaper(retired, f, () => (jaj ? null : U.rankClimb($('mo-climb'), f.score))), 300)), 250);
     const spData = k => (k === 'final' ? cardData : U.specialFinal(cardData, retired, retired.cards[+k]));
     let curSp = 'final';
     if ($('b-album')) $('b-album').onclick = () => U.album(retired, f, cardData);
