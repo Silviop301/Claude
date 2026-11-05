@@ -20,7 +20,7 @@ Fim de cada fase: relatório ao Silvio e 2 ou 3 perguntas curtas para a turma (p
 | 4 · Mercado em duas janelas | Trocar de clube no meio do ano não quebra calendário nem tabela | **no ar** (PRs #135, #136 e a parte 3): janela do meio do ano, troca de clube, sondagens, empresário, aumento, pedido de saída e empréstimo |
 | 5 · Seleção | Copa do Mundo e torneio do continente passam inteiros, jogo a jogo, nas carreiras pela interface | **no ar** (PRs #138, #139 e a parte 3): torneio do continente, convocação pelo celular, concentração e um jogo por tela, seleção no jornal |
 | 6 · Metas, legado e Hall da Fama | Toda carreira termina no Hall da Fama, com pontos de legado no lugar da nota S a D | **no ar** (PRs #141, #142 e a parte 3): metas do ano, legado no lugar da nota, Seu Hall, ranking por legado e Amigos |
-| 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | |
+| 7 · Treinador v1 | O robô técnico joga 10 temporadas no simulador, com títulos e demissões numa faixa realista | em andamento: parte 1 (motor, `engine/coach.js` + `tools/craque_treinador.js`) |
 | 8 · Treinador v2 | No simulador, nenhuma tática ou instrução vence em todos os casos | |
 | 9 · Do jogador ao técnico | Uma carreira passa de jogador a técnico levando a história e os títulos | |
 
@@ -697,3 +697,19 @@ Proibido também: cartão com faixa colorida na lateral.
 - Testado com o PHP local (banco no formato antigo + migração): salvar, ranking por legado, pontuação sem Jogo a Jogo,
   amigos achados e não achados; fotos `ranking-legado` e `ranking-amigos`.
 - Fase 6 pronta. Próxima: fase 7, Treinador v1 (confirmar com o Silvio a proposta de fama e experiência do técnico).
+
+### Fase 7, parte 1 · 2026-11-05 · Motor do Modo Treinador (sem tela ainda)
+- `engine/coach.js`: carreira de técnico separada do jogador (`co`), começo "de baixo" ou "qualquer clube", propostas
+  pela fama (uma costuma ser de quem briga lá em cima numa divisão menor), elenco de 25 sorteado por clube e temporada,
+  cinco formações e três estilos, escalação do auxiliar, partida minuto a minuto que para em gol, vermelho, lesão e
+  intervalo (5 trocas, muda formação e estilo), cansaço e moral, meta da diretoria pela posição esperada (com folga de 2),
+  confiança escondida no tom do presidente, ultimato "vença 2 dos próximos 3", fama e experiência como o Silvio confirmou
+  (leitura de jogo, motivação, negociação). Os outros jogos da rodada usam o placar simples do Jogo a Jogo.
+- `tools/craque_treinador.js` (200 carreiras × 10 temporadas): 2,55 gols por jogo, mandante 46% / empate 25% / visitante
+  29%; meta cumprida 55%, demitido em 17% das temporadas, ultimato em 23% (salvo 28%); títulos por carreira 1,8 em média
+  (45% sem nenhum), de baixo 0,9 e qualquer clube 2,6; o save no meio da temporada termina igual; 63 ms por temporada.
+- Calibragem: o robô perdia por cansaço (rival sempre descansado) e trocas que pioravam o time; agora o rival também
+  cansa, a troca só entra se o reserva rende mais, a moral volta para 60 e o esperado da diretoria usa o que o robô faz
+  contra um igual (`S.CO.ppg`).
+- Próximo: a tela (ingresso Treinador, criação, propostas, elenco e escalação).
+
