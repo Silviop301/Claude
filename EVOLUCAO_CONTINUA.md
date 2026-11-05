@@ -727,3 +727,14 @@ Proibido também: cartão com faixa colorida na lateral.
   resultado com o relato, demissão, fim da temporada com fama e pontos de experiência. Jogo ainda sai direto no resultado.
 - Visual do técnico (aparência) fica para quando houver arte. Próximo: partida ao vivo com paradas e trocas.
 
+### Fase 7, parte 3 · 2026-11-05 · Partida ao vivo do Treinador
+- Decisão do Silvio no cartão: partida ao vivo primeiro; o Caderno do técnico (setas descobertas jogo a jogo, à moda de
+  Game Dev Tycoon) vem na parte seguinte.
+- Motor: cada gol esperado vira chances narradas (defesa, para fora, trave, travado), chutes e posse contados no jogo
+  (`m.sh`, `S.coPoss`).
+- Tela ao vivo (`live` em `ui/coach.js`): placar fixo no topo com relógio e barra de posse, narração lance a lance,
+  velocidade normal, rápido (gol não para) e resumo. Paradas no gol, vermelho seu, lesão sua e intervalo, com trocas e
+  mudança de formação e estilo. Resultado ganhou chutes e posse e mostra as trocas.
+- Jogo largado no meio não volta atrás: `co.live` no save; ao voltar, o auxiliar termina o jogo.
+- `craque_telas_treinador.js` joga o 1º jogo ao vivo (troca e tática na parada) e recarrega no meio do 2º.
+

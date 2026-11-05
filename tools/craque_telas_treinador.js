@@ -12,7 +12,7 @@ require('fs').mkdirSync(OUT, { recursive: true });
   const errs = [];
   p.on('pageerror', e => errs.push('pageerror: ' + e.message));
   p.on('console', m => { if (m.type() === 'error' && !/three|cdn|favicon|net::/i.test(m.text())) errs.push('console: ' + m.text()); });
-  await p.addInitScript(() => { try { localStorage.setItem('climbix-dicas-v1', '{"off":true}'); localStorage.removeItem('climbix-treinador-v1'); } catch (e) {} });
+  await p.addInitScript(() => { try { localStorage.setItem('climbix-dicas-v1', '{"off":true}'); if (!sessionStorage.getItem('co-tour')) { localStorage.removeItem('climbix-treinador-v1'); sessionStorage.setItem('co-tour', '1'); } } catch (e) {} });
   await p.goto('http://127.0.0.1:8765/craque/', { waitUntil: 'load' });
   await p.waitForTimeout(1500);
   let n = 0;
@@ -33,7 +33,32 @@ require('fs').mkdirSync(OUT, { recursive: true });
   await click('#b-co-tab'); await shot('tabela'); await click('#b-co-back');
   let games = 0, guard = 0;
   while (guard++ < 80) {
-    if (await p.$('#b-co-play')) { await click('#b-co-play'); if (await p.$('#b-co-go')) { await click('#b-co-go'); games++; if (games === 1) await shot('resultado'); } continue; }
+    if (await p.$('#b-co-play')) {
+      await click('#b-co-play');
+      if (!(await p.$('#b-co-go'))) continue;
+      await click('#b-co-go'); games++;
+      if (games === 1) {
+        // primeiro jogo ao vivo: um pouco no normal, depois rápido até a primeira parada; troca e muda a tática
+        await p.waitForTimeout(2500); await shot('ao-vivo');
+        await click('[data-sp="rapido"]');
+        await p.waitForSelector('#b-lv-go, #b-lv-end', { timeout: 30000 });
+        if (await p.$('#b-lv-go')) {
+          await shot('parada');
+          await click('#b-lv-sub'); await click('[data-out]'); await shot('parada-troca'); await click('[data-in]');
+          await click('#b-lv-tac'); await click('[data-lf="5-3-2"]'); await shot('parada-tatica');
+          await click('#b-lv-go');
+        }
+        await click('[data-sp="resumo"]');
+        await p.waitForSelector('#b-lv-end', { timeout: 30000 }); await shot('fim-de-jogo');
+        await click('#b-lv-end'); await shot('resultado');
+      } else if (games === 2) {
+        // largou no meio: recarrega antes de ver o resultado; o auxiliar termina o jogo
+        await p.waitForSelector('#b-lv-end', { timeout: 30000 });
+        await p.reload({ waitUntil: 'load' }); await p.waitForTimeout(1500);
+        await click('#b-cont-co'); await shot('largou-no-meio');
+      } else { await click('#b-lv-end'); }
+      continue;
+    }
     if (await p.$('#b-co-next')) { await click('#b-co-next'); continue; }
     if (await p.$('#b-co-end')) { await shot('demitido'); await click('#b-co-end'); continue; }
     break;

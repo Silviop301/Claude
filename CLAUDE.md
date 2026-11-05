@@ -163,7 +163,7 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
 | `cloud.js`, `ranking.js` | Conta e save na nuvem; ranking online |
 | `sheet.js`, `settings.js`, `tips.js`, `training.js` | Ficha do jogador, configurações, dicas, treino |
 | `daily.js`, `challenge.js`, `feedback.js`, `desktop.js` | Carreira do dia, desafio por link, opinião, mouse/teclado |
-| `coach.js` | Modo Treinador (save `climbix-treinador-v1`): criação, propostas, central do clube, time (campo, formação, estilo, confronto em setas e palavras), resultado, fim da temporada |
+| `coach.js` | Modo Treinador (save `climbix-treinador-v1`): criação, propostas, central do clube, time (campo, formação, estilo, confronto em setas e palavras), partida ao vivo (`live`: velocidades, paradas com trocas e tática; `co.live` no save faz o auxiliar terminar o jogo largado), resultado, fim da temporada |
 
 ### Servidor — `craque/api/` (PHP + SQLite fora do `public_html`)
 

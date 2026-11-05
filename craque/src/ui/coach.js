@@ -37,6 +37,8 @@
     if (!co.club) return offers(co.offers || S.coOffers(co));
     if (co.step === 'end' && co.last) return seasonEnd(co.last);
     if (!co.ss) S.coStart(co);
+    if (co.live !== undefined && co.ss && co.live === co.ss.i) return auxFinish();
+    delete co.live;
     hub();
   }
 
@@ -246,21 +248,143 @@
   function play() {
     const m = S.coMatchStart(co);
     if (!m) return hub();
+    // Marca o jogo começado: se a pessoa sai no meio, o auxiliar termina (recarregar não desfaz o resultado)
+    co.live = co.ss.i; save('live');
+    live(m);
+  }
+  // Jogo largado no meio (fechou o app): o auxiliar comanda do começo ao fim
+  function auxFinish() {
+    const m = S.coMatchStart(co);
+    delete co.live;
+    if (!m) { save('hub'); return hub(); }
     S.coMatchRest(co, m);
     const log = S.coMatchEnd(co, m);
     save('hub');
-    result(m, log);
+    result(m, log, true);
   }
-  function result(m, log) {
+
+  // ---------- partida ao vivo ----------
+  // O motor anda até a próxima parada (S.coMatchStep); a tela conta os minutos até lá na velocidade escolhida e
+  // mostra os lances; na parada (gol, vermelho, lesão, intervalo) dá para trocar e mudar a tática
+  const SPEED = { normal: ['Normal', 330], rapido: ['Rápido', 110], resumo: ['Resumo', 0] };
+  const nm = id => { const c = club(id); return c.short || c.name; };
+  function feedLine(m, e) {
+    const who = e.s === 'us' ? nm(co.club) : nm(m.vs);
+    const t = e.t === 'gol' ? U.emo('⚽', 'xs') + ' <b>GOL do ' + esc(who) + '!</b> ' + esc(e.p || '') :
+      e.t === 'chance' ? (e.k === 'defesa' ? esc(e.p) + ' chuta e o goleiro defende' : e.k === 'fora' ? esc(e.p) + ' finaliza para fora' : e.k === 'trave' ? esc(e.p) + ' acerta a trave!' : 'Chute de ' + esc(e.p) + ' travado pela zaga') :
+      e.t === 'vermelho' ? '<span class="co-red"></span> ' + esc(e.p) + ' é expulso (' + esc(who) + ')' :
+      e.t === 'lesao' ? U.emo('🩹', 'xs') + ' ' + esc(e.p) + ' sente e pede para sair (' + esc(who) + ')' :
+      e.t === 'tatica' ? U.emo('📋', 'xs') + ' O ' + esc(who) + ' muda para ' + esc(e.p).toLowerCase() :
+      e.t === 'troca' ? U.emo('🔁', 'xs') + ' Sai ' + esc(e.p) + ', entra ' + esc(e.q) :
+      e.t === 'intervalo' ? 'Fim do primeiro tempo' : '';
+    return '<li class="' + e.s + ' ' + e.t + '"><i>' + e.m + '\'</i><span>' + t + '</span></li>';
+  }
+  function live(m) {
+    G.c = null; bar();
+    co.speed = co.speed || 'normal';
     const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
-    const ev = m.ev.filter(e => e.t !== 'lesao' || e.s === 'us').map(e => '<li class="' + e.s + ' ' + e.t + '"><i>' + e.m + '\'</i>' + (e.t === 'gol' ? U.emo('⚽', 'xs') : e.t === 'vermelho' ? '<span class="co-red"></span>' : e.t === 'tatica' ? U.emo('📋', 'xs') : U.emo('🩹', 'xs')) +
-      '<span>' + (e.t === 'tatica' ? 'Mudaram para ' + esc(e.p) : esc(e.p || '')) + '</span><small>' + esc((e.s === 'us' ? cl : vs).short || (e.s === 'us' ? cl : vs).name) + '</small></li>').join('');
+    let shown = 0, timer = null; const seen = new Set();
+    render('<div class="lv"><div class="lv-board"><span>' + crest(H.id, 'co-vc') + '<b>' + esc(H.short || H.name) + '</b></span>' +
+      '<div class="lv-mid"><em id="lv-score">0 <i>x</i> 0</em><small id="lv-clock">0\'</small></div><span>' + crest(A.id, 'co-vc') + '<b>' + esc(A.short || A.name) + '</b></span>' +
+      '<div class="lv-poss"><small>Posse</small><i><em id="lv-poss" style="width:50%"></em></i></div></div>' +
+      '<div class="seg lv-speed" id="lv-speed">' + Object.keys(SPEED).map(k => '<button data-sp="' + k + '"' + (k === co.speed ? ' class="on"' : '') + '>' + SPEED[k][0] + '</button>').join('') + '</div>' +
+      '<div id="lv-stop"></div><ul class="lv-feed" id="lv-feed"></ul></div>');
+    const paint = () => {
+      const gh = m.ev.filter(e => e.t === 'gol' && e.m <= shown && (e.s === 'us') === m.home).length, ga = m.ev.filter(e => e.t === 'gol' && e.m <= shown && (e.s === 'us') !== m.home).length;
+      $('lv-score').innerHTML = gh + ' <i>x</i> ' + ga;
+      $('lv-clock').textContent = shown + '\'';
+      const ps = S.coPoss(m), pu = m.home ? ps : 1 - ps; $('lv-poss').style.width = Math.round(pu * 100) + '%';
+      const fresh = m.ev.filter(e => e.m <= shown && !seen.has(e));
+      if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => feedLine(m, e)).join('')); if (fresh.some(e => e.t === 'gol')) sfx('tap'); }
+    };
+    const finish = () => { clearTimeout(timer); const log = S.coMatchEnd(co, m); delete co.live; save('hub'); result(m, log); };
+    // Avança: o motor vai até a próxima parada; a tela anda minuto a minuto até ela
+    const go = () => {
+      $('lv-stop').innerHTML = '';
+      if (co.speed === 'resumo') { while (!m.done) { S.coMatchStep(co, m); S.coAutoStop(co, m); } shown = 90; paint(); return end(); }
+      if (shown >= m.min) { if (m.done) return end(); S.coMatchStep(co, m); }
+      tick();
+    };
+    const tick = () => {
+      const ms = SPEED[co.speed][1];
+      if (co.speed === 'resumo') return go();
+      if (shown < m.min) { shown++; paint(); timer = setTimeout(tick, ms); return; }
+      const st = m.stop;
+      if (!st || st.t === 'fim' || m.done) return end();
+      // No rápido, só as paradas que pedem você (lesão, vermelho seu, intervalo); gol segue
+      if (co.speed === 'rapido' && st.t === 'gol') { S.coMatchStep(co, m); return tick(); }
+      stopPanel(st);
+    };
+    const end = () => {
+      paint();
+      $('lv-stop').innerHTML = '<div class="lv-st"><b>Fim de jogo</b><button class="btn" id="b-lv-end">Ver o resultado</button></div>';
+      $('b-lv-end').onclick = () => { sfx('tap'); finish(); };
+    };
+    const stopPanel = st => {
+      const s = m.us, by = {}; s.squad.forEach(p => { by[p.id] = p; });
+      const T = { gol: (st.s === 'us' ? 'Gol do ' + nm(co.club) : 'Gol do ' + nm(m.vs)) + (st.p ? ': ' + st.p : ''), intervalo: 'Intervalo', vermelho: 'Expulso: ' + (st.p || ''), lesao: 'Lesão: ' + (st.p || '') }[st.t] || 'Parada';
+      const tips = [];
+      if (st.t === 'lesao') tips.push('Ele não aguenta: troque agora ou o time joga com ele mancando.');
+      if (st.t === 'vermelho') tips.push('Com um a menos, fechar o time costuma segurar o resultado.');
+      const tired = s.xi.filter(id => id && by[id] && by[id].en < 60).map(id => last(by[id].n));
+      if (tired.length) tips.push('Cansados: ' + tired.slice(0, 3).join(', ') + '.');
+      $('lv-stop').innerHTML = '<div class="lv-st"><small>' + m.min + '\'</small><b>' + esc(T) + '</b>' + (tips.length ? '<p>' + tips.map(esc).join(' ') + '</p>' : '') +
+        '<div class="lv-acts"><button class="btn ghost" id="b-lv-sub">Trocar · ' + s.subs + '</button><button class="btn ghost" id="b-lv-tac">Tática</button><button class="btn" id="b-lv-go">Seguir</button></div><div id="lv-panel"></div></div>';
+      $('b-lv-go').onclick = () => { sfx('tap'); go(); };
+      $('b-lv-sub').onclick = () => { sfx('tap'); subs(st); };
+      $('b-lv-tac').onclick = () => { sfx('tap'); tactic(st); };
+    };
+    const subs = st => {
+      const s = m.us, by = {}; s.squad.forEach(p => { by[p.id] = p; });
+      const slots = S.coSlots(s.form);
+      let out = st.t === 'lesao' && st.id && s.xi.includes(st.id) ? st.id : null;
+      const draw = () => {
+        if (!s.subs) { $('lv-panel').innerHTML = '<p class="co-tip">Sem trocas.</p>'; return; }
+        const row = (p, attr, sl, on) => '<button class="co-pl' + (on ? ' sel' : '') + '" ' + attr + '><span class="co-pos">' + (sl || p.pos) + '</span><span class="co-pn"><b>' + esc(p.n) + '</b><small>' + (p.out ? 'machucado' : p.en < 60 ? 'cansado' : p.pos) + '</small></span><span class="co-en ' + enCls(p.en) + '"><em style="width:' + Math.round(p.en) + '%"></em></span><b class="co-ov">' + p.ovr + '</b></button>';
+        $('lv-panel').innerHTML = '<div class="co-box"><div class="eyebrow">' + (out ? 'Quem entra no lugar de ' + esc(last(by[out].n)) + '?' : 'Quem sai?') + ' · ' + s.subs + (s.subs === 1 ? ' troca' : ' trocas') + '</div><div class="co-bench">' +
+          (out ? s.bench.map(id => by[id]).filter(Boolean).map(p => row(p, 'data-in="' + p.id + '"')).join('') :
+            s.xi.map((id, i) => (id && by[id] ? row(by[id], 'data-out="' + id + '"', slots[i]) : '')).join('')) + '</div></div>';
+        document.querySelectorAll('[data-out]').forEach(b => b.onclick = () => { sfx('tap'); out = b.dataset.out; draw(); });
+        document.querySelectorAll('[data-in]').forEach(b => b.onclick = () => {
+          sfx('tap'); const inn = b.dataset.in;
+          if (S.coSub(co, m, out, inn)) { m.ev.push({ m: m.min, t: 'troca', s: 'us', p: last(by[out].n), q: last(by[inn].n) }); paint(); }
+          out = null; $('b-lv-sub').textContent = 'Trocar · ' + s.subs; draw();
+        });
+      };
+      draw();
+    };
+    const tactic = () => {
+      const s = m.us;
+      const draw = () => {
+        $('lv-panel').innerHTML = '<div class="co-box"><div class="co-forms">' + Object.keys(S.CO_FORMS).map(f => '<button data-lf="' + f + '"' + (f === s.form ? ' class="on"' : '') + '>' + f + '</button>').join('') + '</div>' +
+          '<div class="co-styles">' + S.CO_STYLES.map(k => '<button data-ls="' + k + '"' + (k === s.style ? ' class="on"' : '') + '>' + S.CO_STY[k].name + '</button>').join('') + '</div><p class="co-stip">' + S.CO_STY[s.style].tip + '.</p></div>';
+        document.querySelectorAll('[data-lf]').forEach(b => b.onclick = () => { sfx('tap'); S.coMatchTactic(co, m, b.dataset.lf); draw(); });
+        document.querySelectorAll('[data-ls]').forEach(b => b.onclick = () => { sfx('tap'); S.coMatchTactic(co, m, null, b.dataset.ls); draw(); });
+      };
+      draw();
+    };
+    $('lv-speed').querySelectorAll('button').forEach(b => b.onclick = () => {
+      sfx('tap'); co.speed = b.dataset.sp; $('lv-speed').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+      if (co.speed === 'resumo' && !$('b-lv-end')) { clearTimeout(timer); go(); }
+    });
+    paint(); go();
+  }
+  // Chutes e posse do jogo, do lado de quem joga em casa
+  function statLine(m) {
+    const pu = S.coPoss(m), ph = Math.round((m.home ? pu : 1 - pu) * 100), sh = m.home ? m.sh.us : m.sh.them, sa = m.home ? m.sh.them : m.sh.us;
+    return '<div class="co-stat"><span><b>' + sh + '</b>Chutes<b>' + sa + '</b></span><span><b>' + ph + '%</b>Posse<b>' + (100 - ph) + '%</b></span></div>';
+  }
+  function result(m, log, aux) {
+    const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
+    const ev = m.ev.filter(e => ['gol', 'vermelho', 'tatica', 'troca'].includes(e.t) || (e.t === 'lesao' && e.s === 'us')).map(e => '<li class="' + e.s + ' ' + e.t + '"><i>' + e.m + '\'</i>' + (e.t === 'gol' ? U.emo('⚽', 'xs') : e.t === 'vermelho' ? '<span class="co-red"></span>' : e.t === 'tatica' ? U.emo('📋', 'xs') : e.t === 'troca' ? U.emo('🔁', 'xs') : U.emo('🩹', 'xs')) +
+      '<span>' + (e.t === 'tatica' ? 'Mudaram para ' + esc(e.p) : e.t === 'troca' ? 'Sai ' + esc(e.p) + ', entra ' + esc(e.q) : esc(e.p || '')) + '</span><small>' + esc((e.s === 'us' ? cl : vs).short || (e.s === 'us' ? cl : vs).name) + '</small></li>').join('');
     const word = log.res === 'v' ? 'Vitória' : log.res === 'e' ? 'Empate' : 'Derrota', B = co.board;
     const ultTxt = co.sacked ? '' : B.ult && B.ult.n === 0 ? '<div class="co-ult"><b>Ultimato</b><span>O presidente chamou você: "Vença ' + B.ult.need + ' dos próximos ' + B.ult.of + ' ou está fora."</span></div>' :
       B.ult ? '<div class="co-ult"><b>Ultimato</b><span>' + B.ult.got + ' de ' + B.ult.need + ' vitórias, ' + (B.ult.of - B.ult.n) + ' jogos para isso.</span></div>' :
       B.passed && log.res === 'v' && B.conf === 45 ? '<div class="co-ok"><b>Ultimato cumprido</b><span>"Você ganhou tempo, professor."</span></div>' : '';
     render('<div class="co-res"><div class="eyebrow">Rodada ' + log.r + ' · ' + word + '</div>' +
       '<div class="co-score"><span>' + crest(H.id, 'co-vc') + '<b>' + esc(H.short || H.name) + '</b></span><em>' + m.gh + ' <i>x</i> ' + m.ga + '</em><span>' + crest(A.id, 'co-vc') + '<b>' + esc(A.short || A.name) + '</b></span></div>' +
+      (m.sh ? statLine(m) : '') +
       (ev ? '<ul class="co-ev">' + ev + '</ul>' : '<p class="lead co-nil">Jogo truncado, sem gols.</p>') +
       ultTxt + (co.sacked ? '' : moodLine()) +
       '<button class="btn" id="b-co-next">' + (co.sacked ? 'Falar com o presidente' : 'Continuar') + '</button></div>');

@@ -17,7 +17,7 @@
   // ---------- números do modo (calibrados com tools/craque_treinador.js) ----------
   const CO = S.CO = {
     squad: { GOL: 3, ZAG: 5, LAT: 4, MEI: 8, ATA: 5 },
-    lamH: 1.32, lamA: 1.06, k: env('CO_K', 36), home: 2, kT: env('CO_KT', 0.3),
+    lamH: 1.32, lamA: 1.06, ch: 3.2, k: env('CO_K', 36), home: 2, kT: env('CO_KT', 0.3),
     enGame: 12, enRest: 8, enOff: 20, enOpp: 80, inj: 0.011, red: 0.012, subs: 5,
     conf0: 60, confK: env('CO_CK', 3), ppg: 1.34, ultAt: env('CO_ULT', 25), ultN: 3, ultNeed: 2, ultMin: 6,
     fame0: { baixo: 5, livre: 25 }, skillMax: 10,
@@ -300,11 +300,19 @@
     while (!stop && m.min < 90) {
       m.min++;
       const H = m.home ? m.us : m.them, A = m.home ? m.them : m.us;
-      const [lh, la] = lams(H, A);
+      const mu = matchup(H, A), lh = mu.lh, la = mu.la;
+      m.poss = (m.poss || 0) + (m.home ? mu.h.poss : 1 - mu.h.poss);
       // Cansaço: quem está em campo perde energia aos poucos (o estilo de ataque cansa mais)
       [m.us, m.them].forEach(s => s.xi.forEach(id => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / 90 * sty(s.style).en); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }));
-      if (r() < lh / 90) { m.gh++; const sc = scorer(r, H); m.ev.push({ m: m.min, t: 'gol', s: sideName(m, H), p: sc }); stop = { t: 'gol', s: sideName(m, H), p: sc }; }
-      else if (r() < la / 90) { m.ga++; const sc = scorer(r, A); m.ev.push({ m: m.min, t: 'gol', s: sideName(m, A), p: sc }); stop = { t: 'gol', s: sideName(m, A), p: sc }; }
+      // Chances: cada gol esperado vira CO.ch chances; uma em CO.ch entra (as outras são defesa, para fora ou na trave)
+      const chance = (S0, lam) => {
+        if (r() >= lam * CO.ch / 90) return false;
+        const sc = scorer(r, S0), sd = sideName(m, S0); m.sh = m.sh || { us: 0, them: 0 }; m.sh[sd]++;
+        if (r() < 1 / CO.ch) { if (S0 === H) m.gh++; else m.ga++; m.ev.push({ m: m.min, t: 'gol', s: sd, p: sc }); stop = { t: 'gol', s: sd, p: sc }; }
+        else m.ev.push({ m: m.min, t: 'chance', s: sd, p: sc, k: r.pick(['defesa', 'defesa', 'fora', 'fora', 'trave', 'bloqueio']) });
+        return true;
+      };
+      if (!chance(H, lh)) chance(A, la);
       // Vermelho e lesão (só os seus param o jogo; os do rival entram no relato)
       [m.us, m.them].forEach(s => {
         if (stop && stop.t !== 'gol') return;
@@ -360,10 +368,12 @@
     if (style && STY[style]) s.style = style;
     if (form && FORMS[form] && form !== s.form) {
       const on = s.squad.filter(p => s.xi.includes(p.id)), a = autoXI(on, form);
-      s.form = form; s.xi = a.xi.filter(Boolean);
+      s.form = form; s.xi = Array.from({ length: 11 }, (_, i) => a.xi[i] || null);
     }
     return true;
   };
+  // Posse de bola sua até aqui (0 a 1)
+  S.coPoss = m => (m.min ? m.poss / m.min : 0.5);
   // O auxiliar troca quem caiu (lesão) e os muito cansados: o que o robô e o "resumir" usam
   S.coAutoStop = function (co, m) {
     const s = m.us, st = m.stop;
