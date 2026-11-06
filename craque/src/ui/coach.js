@@ -903,7 +903,7 @@
   function result(m, log, aux, move) {
     const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
     const tl = m.ev.filter(e => ['gol', 'vermelho', 'amarelo', 'tatica', 'troca'].includes(e.t) || (e.t === 'lesao' && e.s === 'us')).map(e => {
-      const mine = e.s === 'us', ic = e.t === 'gol' ? ICO.ball(mine ? '#FBF8EF' : '#9DB5A6') : e.t === 'vermelho' ? '<span class="co-red"></span>' : e.t === 'amarelo' ? '<span class="co-yc"></span>' : e.t === 'lesao' ? U.emo('🩹', 'xs') : ICO.sub;
+      const mine = e.s === 'us', ic = e.t === 'gol' ? ICO.ball(mine ? '#FBF8EF' : '#9DA7B5') : e.t === 'vermelho' ? '<span class="co-red"></span>' : e.t === 'amarelo' ? '<span class="co-yc"></span>' : e.t === 'lesao' ? U.emo('🩹', 'xs') : ICO.sub;
       const tx = e.t === 'tatica' ? (mine ? 'Você muda para ' + esc(e.p) : 'Mudaram para ' + esc(e.p)) : e.t === 'troca' ? 'Sai ' + esc(e.p) + ', entra ' + esc(e.q) : esc(e.p || '');
       return '<li class="' + e.s + ' ' + e.t + (mine && (e.t === 'troca' || e.t === 'tatica') ? ' you' : '') + '"><i>' + e.m + '\'</i>' + ic + '<span>' + tx + (e.t === 'troca' || (e.t === 'tatica' && mine) ? '' : ' · <small>' + esc(mine ? cl.short || cl.name : vs.short || vs.name) + '</small>') + '</span></li>'; }).join('');
     const word = log.res === 'v' ? 'Vitória' : log.res === 'e' ? 'Empate' : 'Derrota', B = co.board;
@@ -918,7 +918,7 @@
     // mudanças, os números numa linha e os cartões que pesam; Números, Lances (tudo) e Caderno (ponto quando há anotação nova)
     const key = m.ev.filter(e => e.t === 'gol' || e.t === 'vermelho' || ((e.t === 'tatica' || e.t === 'troca') && e.s === 'us') || (e.t === 'lesao' && e.s === 'us'));
     const nTl = (tl.match(/<li/g) || []).length;
-    const keyTl = key.map(e => { const mine = e.s === 'us', ic = e.t === 'gol' ? ICO.ball(mine ? '#FBF8EF' : '#9DB5A6') : e.t === 'vermelho' ? '<span class="co-red"></span>' : e.t === 'lesao' ? U.emo('🩹', 'xs') : ICO.sub;
+    const keyTl = key.map(e => { const mine = e.s === 'us', ic = e.t === 'gol' ? ICO.ball(mine ? '#FBF8EF' : '#9DA7B5') : e.t === 'vermelho' ? '<span class="co-red"></span>' : e.t === 'lesao' ? U.emo('🩹', 'xs') : ICO.sub;
       const tx = e.t === 'gol' ? '<b>Gol</b> · ' + esc(e.p || '') : e.t === 'vermelho' ? esc(e.p || '') + ' <small>· expulso</small>' : e.t === 'tatica' ? 'Você muda para ' + esc(e.p) : e.t === 'troca' ? 'Sai ' + esc(e.p) + ', entra ' + esc(e.q) : esc(e.p || '') + ' <small>· lesão</small>';
       return '<li class="' + e.s + ' ' + e.t + (e.t === 'tatica' || e.t === 'troca' ? ' you' : '') + '"><i>' + e.m + '\'</i>' + ic + '<span>' + tx + (e.t === 'gol' || e.t === 'vermelho' ? ' <small>· ' + esc(mine ? cl.short || cl.name : vs.short || vs.name) + '</small>' : '') + '</span></li>'; }).join('');
     const line = m.sh ? '<div class="lv-line"><span>Chutes <b>' + s1 + ' · ' + s2 + '</b></span><span>Posse <b>' + ph + '%</b></span>' + (m.fo ? '<span>Faltas <b>' + hv(m.fo.us, m.fo.them).join(' · ') + '</b></span>' : '<span>No gol <b>' + o1 + ' · ' + o2 + '</b></span>') + '</div>' : '';
