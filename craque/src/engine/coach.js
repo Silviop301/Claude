@@ -69,6 +69,20 @@
   const slotsOf = form => FORMS[form].slots.map(x => x.pos);
   const sectorOf = (form, i) => { const l = FORMS[form].slots[i].ln; return l === 'am' ? 'm' : l; };
   S.coSlots = slotsOf;
+  // Número de camisa fixo de cada jogador do elenco (p.num): quem não tem ganha o número clássico da posição que estiver livre
+  // (os melhores primeiro), senão o menor livre. Fica no jogador, então não muda com trocas nem de jogo para jogo.
+  const NUM_PREF = { GOL: [1, 12, 23], LAT: [2, 6, 13, 22], ZAG: [3, 4, 14, 15], MEI: [5, 8, 10, 7, 11, 16, 17, 18, 20], ATA: [9, 11, 7, 19, 21, 17] };
+  S.coNums = squad => {
+    if (!squad || !squad.length) return squad;
+    const used = new Set(squad.filter(p => p.num).map(p => p.num));
+    squad.filter(p => !p.num || (squad.find(q => q !== p && q.num === p.num && q.id < p.id) && (p.num = 0, true)))
+      .sort((a, b) => b.ovr - a.ovr).forEach(p => {
+        let n = (NUM_PREF[p.pos] || []).find(x => !used.has(x));
+        for (let x = 2; !n; x++) if (!used.has(x) && x !== 12 && x !== 23) n = x;
+        p.num = n; used.add(n);
+      });
+    return squad;
+  };
   // Jogador fora da posição rende menos
   const FIT = { ZAG: { LAT: 0.92, MEI: 0.85 }, LAT: { ZAG: 0.9, MEI: 0.9, ATA: 0.8 }, MEI: { LAT: 0.88, ZAG: 0.82, ATA: 0.9 }, ATA: { MEI: 0.88, LAT: 0.78 } };
   const fit = (pos, slot) => (pos === slot ? 1 : pos === 'GOL' || slot === 'GOL' ? 0.4 : (FIT[pos] && FIT[pos][slot]) || 0.7);
