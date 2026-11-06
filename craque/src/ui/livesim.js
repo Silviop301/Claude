@@ -360,18 +360,59 @@
         offPend = { s, q, t: 0, f: null };
         return 'pend';
       }
-      // Quem sofre é quem está com a bola (senão o mais perto de quem fez); a falta é no lugar dele, e a bola rola até lá
-      const own = ball.owner && ball.owner.side !== o.side && ball.owner.r !== 'GK' ? ball.owner : null;
-      const v = own || T[1 - o.side].filter(x => x.r !== 'GK').sort((a, b) => dist(a, p) - dist(b, p))[0];
-      if (v) { v.stun = 1.6; v.down = 1.6; if (!own) { p.tx = v.x; p.ty = v.y; } }
-      whistle('Falta', v || at(1 - o.side, 6), v);
+      // Falta e cartão só na disputa: espera o time que sofre ter a bola, quem faz vai no bote em quem está com ela e o
+      // apito sai no contato (foulStep). Nada de cartão em quem está longe da bola
+      foulPend = { o, t: 0, c: 0, p: null };
+      return 'pend';
+    }
+    function foulNow(o, p, v) {
+      const kind = o.kind;
+      v.stun = 1.6; v.down = 1.6;
+      whistle('Falta', v, v);
       const card = kind === 'amarelo' || kind === 'vermelho';
       modeT = card ? 2.3 : 1.3;
       if (card) refFx = { p, kind, how: o.how, t: 2.3 };
       if (kind === 'vermelho') goOff(p, 2.3);
-      return true;
     }
-    let foulTo = null, foulSpot = null, offPend = null;
+    // Quem faz: você (se o motor disse que foi você); senão quem joga na posição e está perto de quem tem a bola; senão o
+    // mais perto dele
+    function fouler(o, v) {
+      if (o.me && o.side === 0 && ME >= 0) return T[0][ME];
+      const re = ROLE_OF[o.pos], L0 = T[o.side].filter(p => !isMe(p) && p.r !== 'GK').sort((a, b) => dist(a, v) - dist(b, v));
+      return (re && L0.find(p => re.test(p.r) && dist(p, v) < 14)) || L0[0] || null;
+    }
+    function foulEnd(ok) {
+      const P = foulPend; foulPend = null; if (!P) return;
+      if (!ok && P.o.kind === 'vermelho') { const p = whoDid(P.o.side, P.o.pos, P.o.me); if (p) goOff(p, 0); }
+      if (P.cb) setTimeout(P.cb, ok ? (P.o.kind === 'falta' ? 500 : 900) / Math.max(1, o.speed ? o.speed() : 1) : 0);
+    }
+    function foulStep(dt) {
+      const P = foulPend, so = P.o.side;
+      if (mode !== 'play' || lc || due) return foulEnd(false);
+      P.t += dt;
+      let v = ball.owner && ball.owner.side !== so && ball.owner.r !== 'GK' ? ball.owner : null;
+      // o time que sofre demora a ter a bola: a disputa é com quem dele está mais perto da bola (e perto dela de verdade)
+      // com a bola no time de quem faz (passou do tempo): a falta é de quem tem a bola (ou de quem da posição está do lado
+      // dele) em quem chega para tirar; os dois se encontram
+      if (!v && P.t > 1.5 && ball.owner && ball.owner.side === so && ball.owner.r !== 'GK') {
+        const own = ball.owner, re = ROLE_OF[P.o.pos];
+        const n = T[1 - so].filter(x => x.r !== 'GK').sort((a, b) => dist(a, own) - dist(b, own))[0];
+        if (n && dist(n, own) < 12) {
+          const mate = re && T[so].find(x => x !== own && !isMe(x) && re.test(x.r) && dist(x, own) < 4);
+          const p = P.o.me && so === 0 && ME >= 0 ? T[0][ME] : re && !re.test(own.r) && mate ? mate : own;
+          if (P.p !== p) { P.p = p; P.c = 0; }
+          v = n; v.tx = own.x; v.ty = own.y; v.sprint = 1;
+        }
+      }
+      if (!v) { if (P.p) P.p.cd = 0; P.p = null; P.c = 0; if (P.t > 4.5) foulEnd(false); return; }
+      if (!P.p || T[so].indexOf(P.p) < 0 || dist(P.p, v) > 16) { if (P.p) P.p.cd = 0; P.p = fouler(P.o, v); P.c = 0; if (!P.p) return foulEnd(false); }
+      const p = P.p; P.c += dt;
+      p.tx = v.x; p.ty = v.y; p.sprint = 1; p.cd = 1; // vai no bote (sem desarme limpo: o lance é falta)
+      ball.hold = Math.max(ball.hold || 0, 0.25); // quem tem a bola segura um instante, o bote chega
+      if (dist(p, v) < 1.6 || (P.c > 2.2 && dist(p, v) < 5)) { foulPend = null; p.cd = 0; foulNow(P.o, p, v); P.cb && setTimeout(P.cb, (P.o.kind === 'falta' ? 500 : 900) / Math.max(1, o.speed ? o.speed() : 1)); return; }
+      if (P.t > 5.5) foulEnd(false);
+    }
+    let foulTo = null, foulSpot = null, offPend = null, foulPend = null;
     // Impedimento a caminho: 1) quem vai ficar impedido corre para além da linha; 2) com a bola no ataque, sai o passe para
     // ele; 3) a bola chega e o apito sai ali. Se o jogo parar antes (gol, seu lance, outra parada), fica só na narração
     function offEnd(ok) { const P = offPend; offPend = null; if (P && P.cb) setTimeout(P.cb, ok ? 500 / Math.max(1, o.speed ? o.speed() : 1) : 0); }
@@ -546,6 +587,7 @@
       if (refFx && (refFx.t -= dt) <= 0) refFx = null;
       if (offLine && (offLine.t -= dt) <= 0) offLine = null;
       if (offPend) offStep(dt);
+      if (foulPend) foulStep(dt);
       for (let i = leaving.length - 1; i >= 0; i--) { const q = leaving[i]; q.wait -= dt; if (q.wait > 0) continue; q.t += dt; q.p.y += cl(q.ty - q.p.y, -3.6 * dt, 3.6 * dt); if (q.t > 6 || q.p.y < -0.5 || q.p.y > WD + 0.5) leaving.splice(i, 1); }
       ALL.forEach(p => { if (p.down) p.down = Math.max(0, p.down - dt); });
       if (mode === 'wait') { ALL.forEach(p => { [p.tx, p.ty] = koShape(p, p.side); }); ball.x = 52.5; ball.y = 34; }
@@ -787,8 +829,8 @@
       // (com a bola parada, num gol saindo ou no seu lance, a linha sai na hora; o vermelho tira o jogador do mesmo jeito)
       ref(r0, cb) {
         const free = mode === 'play' && !lc && !due && !r0.quiet;
-        const r = free && !offPend ? refDo(r0) : false;
-        if (r === 'pend') { offPend.cb = cb; return; }
+        const r = free && !offPend && !foulPend ? refDo(r0) : false;
+        if (r === 'pend') { (offPend || foulPend).cb = cb; return; }
         if (r) { if (cb) setTimeout(cb, r0.kind === 'falta' ? 500 : 900 / Math.max(1, o.speed ? o.speed() : 1)); return; }
         if (r0.kind === 'vermelho') { const p = whoDid(r0.side, r0.pos, r0.me); if (p) goOff(p, 0); }
         if (cb) cb();
@@ -812,7 +854,7 @@
       meAt() { if (ME < 0) return null; const p = T[0][ME]; return [p.x / L * 100, p.y / WD * 100]; },
       ballAt() { return [ball.x / L * 100, ball.y / WD * 100]; },
       stop() { alive = false; if (raf) cancelAnimationFrame(raf); raf = 0; window.removeEventListener('resize', onResize); },
-      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, ALLX: ALL, WHY, mode, poss, ball, due, goals, lc, offPend, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
+      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, ALLX: ALL, WHY, mode, poss, ball, due, goals, lc, offPend, foulPend, refFx, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
     };
     LP._sim = api;
     return api;
