@@ -26,8 +26,13 @@
     if (!co.club) return offers(co.offers || S.coOffers(co));
     if (co.step === 'end' && co.last) return seasonEnd(co.last);
     if (!co.ss) S.coStart(co);
-    if (co.live !== undefined && co.ss && co.live === co.ss.i) return auxFinish();
-    delete co.live;
+    if (co.live !== undefined && co.ss && co.live === co.ss.i) {
+      // O app fechou no meio do jogo (no iPhone, sair e voltar pode recarregar a página): o jogo volta do minuto em que parou
+      const lm = co.liveM;
+      if (lm && lm.round === (S.coNext(co) || {}).round && !lm.done && lm.us && lm.them) { lm.us.squad = co.squad; return live(lm); }
+      return auxFinish();
+    }
+    delete co.live; delete co.liveM;
     hub();
   }
 
@@ -524,7 +529,7 @@
   function auxFinish() {
     markPre();
     const m = S.coMatchStart(co);
-    delete co.live;
+    delete co.live; delete co.liveM;
     if (!m) { save('hub'); return hub(); }
     S.coMatchRest(co, m);
     const log = S.coMatchEnd(co, m);
@@ -628,6 +633,7 @@
     const LP = U.LP, useSim = !!(LP && LP.sim);
     const KT = useSim ? LP.kits(LP.kitFor(cl.name, cl.id), LP.kitFor(vs.name, vs.id), !!m.home) : null;
     const hidden = new Set(), sent = new Set(); // lances que o campinho ainda está jogando / já mandados para ele
+    m.ev.forEach(e => sent.add(e)); // jogo retomado no meio: o que já aconteceu não volta a ser jogado no campinho
     let sim = null, wait = null, wantStop = false, h1 = m.min >= 45, h2 = m.min > 45, frz = 0, lineKey = ['', ''];
     const pitchHtml = useSim ?
       '<div class="lp-pitch lp-cvm lv-cvp" id="lp-pitch" aria-hidden="true"><b class="lp-band" id="lp-band"></b><canvas class="lp-cv" id="lp-cv"></canvas>' +
@@ -690,7 +696,7 @@
       if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => feedLine(m, e)).join('')); { const gl = fresh.filter(e => e.t === 'gol').pop(); if (gl) sfx(U.goalSnd(gl.s === 'us', !!m.home)); } }
       if (ctx) U.LD.livePaint(ctx);
     };
-    const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; save('hub'); result(m, log, false, firstMove); };
+    const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); save('hub'); result(m, log, false, firstMove); };
     const end = () => {
       clearTimeout(timer); hidden.clear(); paint(); open = true;
       if (sim) { clearTimeout(frz); frz = setTimeout(() => sim.freeze(true), 1500); }
@@ -976,10 +982,28 @@
     timer = setTimeout(() => { if (sim) sim.go(); timer = setTimeout(tick, 900); }, 600);
     // Vigia: o relógio parado sem nenhum popup aberto é jogo travado (o campinho não deu a saída ou não fez o gol).
     // Destrava sozinho, avisa o servidor com o estado e o jogo segue
+    // Sair do app no meio do jogo: pausa e guarda o minuto; ao voltar, segue de onde parou (o vigia não conta o tempo fora)
+    let away = false, snapMin = -1;
+    const snap = () => { if (m.done) return; co.liveM = m; snapMin = m.min; save('live'); };
+    const onVis = () => {
+      if (m.done || !document.body.contains($('lv-score') || document.body)) return off();
+      if (document.hidden) {
+        snap();
+        if (!open && !away) { away = true; clearTimeout(timer); if (sim) { clearTimeout(frz); sim.freeze(true); } }
+      } else if (away) {
+        away = false; wdT = Date.now();
+        if (sim) { clearTimeout(frz); sim.freeze(false); }
+        if (!wait) timer = setTimeout(tick, 600);
+      }
+    };
+    const off = () => { document.removeEventListener('visibilitychange', onVis); window.removeEventListener('pagehide', snap); };
+    document.addEventListener('visibilitychange', onVis); window.addEventListener('pagehide', snap);
     let wdMin = -1, wdT = Date.now();
     const wd = setInterval(() => {
       const sc = $('lv-score');
-      if (!sc || m.done || !document.body.contains(sc)) return clearInterval(wd);
+      if (!sc || m.done || !document.body.contains(sc)) { off(); return clearInterval(wd); }
+      if (m.min - snapMin >= 5) snap(); // de 5 em 5 minutos o jogo fica guardado
+      if (away) { wdT = Date.now(); return; }
       const busyUi = document.getElementById('ld-pop') || ($('lv-sheet') && $('lv-sheet').classList.contains('on')) || document.hidden;
       if (m.min !== wdMin || busyUi) { wdMin = m.min; wdT = Date.now(); return; }
       if (Date.now() - wdT < (wait ? 40000 : 15000)) return;
