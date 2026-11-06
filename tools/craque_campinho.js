@@ -36,19 +36,23 @@ function simForm(f) { const sl = slots(f), sp = spots(f), am = sl.some(x => x.ln
 const N = +process.argv[2] || 6, alerts = [], warn = (ok, msg) => { if (!ok) alerts.push(msg); };
 const ovF = (f, ov) => simForm(f).map(r => r.concat([ov]));
 const COMBOS = [['4-3-3', 'pressao', '4-4-2', 'retranca'], ['4-4-2', 'equilibrado', '4-3-3', 'posse'], ['3-5-2', 'lados', '4-2-3-1', 'contra'], ['4-2-3-1', 'posse', '5-3-2', 'pressao']];
-// Uma partida: 6000 passos de 0,02 s (~2 min de jogo, como o 1×); gols do motor nos minutos dados
+// Uma partida: 13000 passos de 0,02 s (a partida do 1×: 2,2 s por minuto, campinho a 1,25); gols do motor nos minutos dados.
+// As contagens saem por 2 min de campinho (KN), para as faixas de antes valerem
+const STEPS = 13000, SPM = 137, KN = STEPS / 6000;
 function match(o, goals) {
   const sim = LP.sim(Object.assign({ me: -1, goals: goals || [] }, o)); sim.go();
-  const m = { jump: 0, pr3: 0, n: 0, passes: 0, flips: 0, shots: [0, 0], f3: [0, 0], nets: 0, backX: [[], []], rein: { lat: 0, esc: 0, tiro: 0 }, stuck: 0, outPlay: 0, arOut: 0 };
+  const m = { pl: [[], []], cur: null, jump: 0, pr3: 0, n: 0, passes: 0, flips: 0, shots: [0, 0], f3: [0, 0], nets: 0, backX: [[], []], rein: { lat: 0, esc: 0, tiro: 0 }, stuck: 0, outPlay: 0, arOut: 0 };
   let lb = null, lo = null, lp = -1, goalsSeen = 0, lm = null, mt = 0;
-  for (let i = 0; i < 6000; i++) {
-    if (i % 65 === 0) sim.minute(Math.floor(i / 65) + 1, 50);
+  for (let i = 0; i < STEPS; i++) {
+    if (i % SPM === 0) sim.minute(Math.floor(i / SPM) + 1, 50);
     sim._step(0.02); const S = sim._state(), b = S.ball;
     // reinícios (lateral, escanteio, tiro de meta): contam, não travam; bandeirinha só na sua metade
     if (S.mode !== lm) { if (S.mode === 'rein') m.rein[S.rs.k]++; else if (S.mode === 'tiro') m.rein.tiro++; lm = S.mode; mt = 0; } else mt += 0.02;
     if (mt > 9 && S.mode !== 'play' && S.mode !== 'wait') { m.stuck++; mt = -99; }
     if (S.AR && S.AR.some(a => a.wl != null && (a.wl ? a.x > 52.5 + 1 : a.x < 52.5 - 1))) m.arOut++;
-    if (S.mode !== 'play') { lb = null; continue; }
+    if (S.mode !== 'play') { if (m.cur) m.pl[m.cur.s].push(m.cur.n); m.cur = null; lb = null; continue; }
+    // passes por posse de cada lado (a posse acaba quando o outro time pega ou a bola para)
+    if (b.owner) { if (!m.cur || m.cur.s !== b.owner.side) { if (m.cur) m.pl[m.cur.s].push(m.cur.n); m.cur = { s: b.owner.side, n: 0, o: b.owner }; } else if (b.owner !== m.cur.o) { m.cur.n++; m.cur.o = b.owner; } }
     if (!b.fly && (b.x < -1 || b.x > 106 || b.y < -1 || b.y > 69)) m.outPlay++;
     if (lb && Math.hypot(b.x - lb[0], b.y - lb[1]) > 1.6) m.jump++; lb = [b.x, b.y];
     if (b.owner && b.owner !== lo) { if (lo && lo.side === b.owner.side) m.passes++; lo = b.owner; }
@@ -63,17 +67,18 @@ function match(o, goals) {
   m.nets = goalsSeen; sim.stop(); return m;
 }
 const avg = a => a.reduce((u, v) => u + v, 0) / Math.max(1, a.length);
-let tot = { jump: 0, pr3: 0, n: 0, passes: 0, flips: 0, shots: 0, games: 0, lat: 0, esc: 0, tiro: 0, stuck: 0, outPlay: 0, arOut: 0 }; const line = {};
+let tot = { jump: 0, pr3: 0, n: 0, passes: 0, flips: 0, shots: 0, games: 0, lat: 0, esc: 0, tiro: 0, stuck: 0, outPlay: 0, arOut: 0 }; const line = {}, pps = {};
 COMBOS.forEach(([fa, sa, fb, sb], ci) => {
   for (let g = 0; g < N; g++) {
     const m = match({ seed: 900 + ci * 101 + g * 13, home: g % 2, forms: [simForm(fa), simForm(fb)], styles: [STY[sa], STY[sb]] });
     tot.jump += m.jump; tot.pr3 += m.pr3; tot.n += m.n; tot.passes += m.passes; tot.flips += m.flips; tot.shots += m.shots[0] + m.shots[1]; tot.games++;
     for (const k in m.rein) tot[k] += m.rein[k]; tot.stuck += m.stuck; tot.outPlay += m.outPlay; tot.arOut += m.arOut;
-    (line[sa] = line[sa] || []).push(avg(m.backX[0])); (line[sb] = line[sb] || []).push(avg(m.backX[1]));
+    (line[sa] = line[sa] || []).push(avg(m.backX[0])); (pps[sa] = pps[sa] || []).push(...m.pl[0]); (pps[sb] = pps[sb] || []).push(...m.pl[1]); (line[sb] = line[sb] || []).push(avg(m.backX[1]));
   }
 });
-const P = k => tot[k] / tot.games;
-console.log(`por jogo: passes ${P('passes').toFixed(0)} · trocas de posse ${P('flips').toFixed(0)} · chutes ${P('shots').toFixed(1)} · pulos da bola ${tot.jump} · pares a menos de 3 m ${(tot.pr3 / tot.n).toFixed(2)} por quadro`);
+const P = k => tot[k] / tot.games / KN;
+console.log('passes por posse: ' + Object.keys(pps).map(k => `${k} ${avg(pps[k]).toFixed(1)}`).join(' · '));
+console.log(`a cada 2 min de campinho: passes ${P('passes').toFixed(0)} · trocas de posse ${P('flips').toFixed(0)} · chutes ${P('shots').toFixed(1)} · pulos da bola ${tot.jump} · pares a menos de 3 m ${(tot.pr3 / tot.n).toFixed(2)} por quadro`);
 console.log(`reinícios por jogo: laterais ${P('lat').toFixed(1)} · escanteios ${P('esc').toFixed(1)} · tiros de meta ${P('tiro').toFixed(1)} · travados ${tot.stuck} · bola fora com o jogo rolando ${tot.outPlay} quadros · bandeirinha fora da sua metade ${tot.arOut} quadros`);
 console.log('linha de defesa por estilo (m da própria meta): ' + Object.keys(line).map(k => `${k} ${avg(line[k]).toFixed(0)}`).join(' · '));
 warn(tot.jump === 0, `a bola pulou ${tot.jump} vezes (teletransporte)`);
@@ -85,6 +90,7 @@ warn(tot.pr3 / tot.n < 0.8, `bonecos encostados demais: ${(tot.pr3 / tot.n).toFi
 warn(P('passes') >= 18, `poucos passes por jogo (${P('passes').toFixed(0)}, mínimo 18)`);
 warn(P('shots') >= 4 && P('shots') <= 14, `chutes por jogo fora da faixa 4-14 (${P('shots').toFixed(1)})`);
 warn(P('flips') >= 8 && P('flips') <= 24, `trocas de posse fora da faixa 8-24 (${P('flips').toFixed(0)})`);
+warn(avg(pps.posse) > avg(pps.contra) + 2 && avg(pps.posse) >= 4, `o estilo não aparece na posse: posse ${avg(pps.posse).toFixed(1)} passes por posse, contra ${avg(pps.contra).toFixed(1)} (posse precisa de 4+ e 2 a mais que o contra)`);
 warn(avg(line.retranca) + 8 < avg(line.pressao), `retranca (${avg(line.retranca).toFixed(0)} m) não defende bem mais baixo que pressão (${avg(line.pressao).toFixed(0)} m)`);
 // Overall: o time forte (85) contra o fraco (55) chuta mais e fica mais no último terço
 let sh = [0, 0], f3 = [0, 0];

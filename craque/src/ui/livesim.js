@@ -18,6 +18,8 @@
   const toW = (s, x, y) => (s ? [L - x, WD - y] : [x, y]);
   // Avançar vale por si (time que só roda a bola atrás não é futebol), quem chega perto chuta, e o bote dá certo 3 vezes em 10
   const DOTK = 0.65; // tamanho dos bonecos no desenho
+  const PASS_OK = 0.25, PASS_PAT = 0.4; // passe executado: quanto do risco o jogador salva (todos um pouco, o time de posse mais)
+  const NEED = 10, CRZ0 = 0.02, CRZ1 = 0.14; // NEED: passes antes de forçar no estilo mais paciente; cruzamento vale menos que antes (era 0,05 + 0,3 × lados)
   const PROG = 0.05, SHOT = 3.2, TK = 0.3, DUE_AHEAD = 6, AHEAD_S = 9; // a jogada do gol do motor começa uns 9 s do campinho antes (6 minutos sem o ritmo da tela), para dar tempo de construir
   const tf = (s, o) => (s ? [L - o.x, WD - o.y] : [o.x, o.y]);
 
@@ -308,6 +310,11 @@
         const [wx, wy] = toW(s, 50 + rnd() * 12, cl(by + gauss() * 12, 6, 62)); let nr = null, nd = 1e9; for (const q of ALL) { if (q.r === 'GK') continue; const d = Math.hypot(q.x - wx, q.y - wy); if (d < nd) { nd = d; nr = q; } }
         outCd = 3; return fly(p, wx, wy, nr, true, 'longo', nr.side !== s);
       }
+      // Ritmo: cada estilo troca um número de passes antes de forçar (posse ~6, equilibrado ~3, contra e ligação direta 0).
+      // Antes disso o time circula; lado fechado (3 deles perto) faz a bola voltar e trocar de lado. Gatilho para acelerar:
+      // alguém livre nas costas com o passe quase certo, ou a posse já ter rodado o bastante
+      const need = Math.round(NEED * pat), early = posN < need && !dm && !due && !lc && bx < 82;
+      let crowd = 0; for (const op of opp) if (dist(op, p) < 10) crowd++;
       const opts = [];
       for (const q of own) {
         if (q === p || (q.r === 'GK' && (bx > 40 || press > 6))) continue;
@@ -317,13 +324,13 @@
         let kind = 'curto', lofted = false, tx = qx + qv[0] * 0.45, ty = qy + qv[1] * 0.45;
         // Cruzamento: a bola no lado, perto da área, e alguém chegando na área (correndo ou já lá)
         const inB = (x, y) => x > 76 && Math.abs(y - 34) < 16, cx = q.run > 0 ? q.runX : qx, cy = q.run > 0 ? q.runY : qy;
-        if (bx > 58 && Math.abs(by - 34) > 11 && q.r !== 'GK' && inB(cx, cy)) { kind = 'cruz'; lofted = true; tx = cl(cx + 3, 86, 99); ty = cl(cy + (34 - cy) * 0.3, 26, 42); }
+        if (bx > 66 && Math.abs(by - 34) > 11 && q.r !== 'GK' && inB(cx, cy)) { kind = 'cruz'; lofted = true; tx = cl(cx + 3, 86, 99); ty = cl(cy + (34 - cy) * 0.3, 26, 42); }
         else if (q.run > 0.7) { kind = 'costas'; tx = q.runX; ty = q.runY; lofted = d0 > 24; }
         else if (Math.abs(ty - by) > 26 && d0 > 28) { kind = 'inv'; lofted = true; }
         else if (d0 > 32) { kind = 'longo'; lofted = true; }
         tx = cl(tx, 2, 103); ty = cl(ty, 2, 66);
         const od = passOdds(s, tx, ty, lofted, q, kind === 'costas');
-        let val = V(tx, ty) + (kind === 'costas' ? (lofted ? 0.06 - 0.05 * pat + 0.03 * dir : 0.06) : 0) + (kind === 'cruz' ? 0.05 + 0.3 * wd : 0) + (kind === 'inv' ? 0.02 * wd + 0.01 * pat : 0) + (isMe(q) && tx > 70 ? 0.03 : 0);
+        let val = V(tx, ty) + (kind === 'costas' ? (lofted ? 0.06 - 0.05 * pat + 0.03 * dir : 0.06) : 0) + (kind === 'cruz' ? CRZ0 + CRZ1 * wd : 0) + (kind === 'inv' ? 0.02 * wd + 0.01 * pat : 0) + (isMe(q) && tx > 70 ? 0.03 : 0);
         // Jogadas com nome: devolver para quem tocou e saiu correndo (tabela), o passe de primeira para quem já vinha (terceiro
         // homem), o pivô escorando para o meia que chega (parede), o lateral passando por fora (ultrapassagem)
         if (q === lastPasser && q.go > 0 && clk - lastPassClk < 2.5) val += 0.02 + 0.04 * pat;
@@ -335,6 +342,11 @@
         if (kind === 'curto' && d0 < 22) val += 0.008 + 0.012 * ST[s].ctrl + 0.03 * pat; // tocar curto e de primeira é o jogo de time profissional
         else if (lofted && kind !== 'cruz') val *= 0.92 - 0.3 * pat + (q.r === 'ST' ? 0.25 : 0.05) * dir; // ligação direta: o contra e a retranca procuram o centroavante
         if (p.r === 'GK' && d0 > 30) val *= 1 - 0.55 * pat; // posse: o goleiro sai jogando curto com o zagueiro aberto
+        if (bx > 92 && Math.abs(by - 34) > 9 && kind === 'curto' && tx > 80 && tx < bx - 3 && Math.abs(ty - 34) < 12) val += 0.04; // passe para trás da linha de fundo
+        if (early) {
+          if (kind === 'cruz' || kind === 'longo' || (kind === 'costas' && od.p < 0.9)) val *= 0.55;
+          else if (tx <= bx + 4) val += (0.01 + (crowd >= 3 ? 0.02 : 0)) * pat + (kind === 'inv' && crowd >= 3 ? 0.03 : 0);
+        }
         if (dm) val += (q === dm ? 0.03 : 0) + 0.0012 * Math.max(0, tx - bx); // jogada do gol do motor: andar para a área e achar quem vai marcar
         if (q.r === 'GK') val *= 0.6; // recuar para o goleiro é a última saída, não o caminho de sempre
         val += PROG * progK(s) * (tx - bx) / 30 * (bx < 52 ? 1.6 : 1); // no campo de defesa, subir vale mais: o time sai jogando
@@ -346,7 +358,7 @@
         const drib = press < 2.2, dq = (p.q - (presser ? presser.q : 0)) * 1.3, pk = drib ? cl(0.42 + (near - 1.5) * 0.08 + (bias[s] - 1) * 0.6 + dq, 0.1, 0.78) : cl(sig((near - 2.2) * 1.8) + (bias[s] - 1) * 0.4, 0.05, 0.97);
         opts.push({ type: 'carry', kind: drib ? 'drible' : 'conduz', wx, wy, p: pk, presser, u: Math.pow(pk, 1.5 + 1.2 * ST[s].ctrl) * (V(tx, ty) + PROG * progK(s) * Math.cos(a) * 9 / 30) - (1 - pk) * lossAt(bx, by) * lossK(s) + (!drib && near > 8 ? 0.004 : 0) - (!drib && near < 12 ? 0.02 * pat : 0) });
       }
-      if (p.r !== 'GK' && bx > 70 && !dm) { const xg = shotXg(s, bx, by, false); opts.push({ type: 'shot', kind: Math.hypot(L - bx, 34 - by) > 20 ? 'fora' : 'chute', u: xg * SHOT * (Math.abs(by - 34) > 11 ? 1 - 0.7 * ST[s].wide : 1) }); } // do lado, quem joga pelos lados prefere cruzar
+      if (p.r !== 'GK' && bx > 70 && !dm) { const xg = shotXg(s, bx, by, false); opts.push({ type: 'shot', kind: Math.hypot(L - bx, 34 - by) > 20 ? 'fora' : 'chute', u: xg * SHOT * (Math.abs(by - 34) > 11 ? 1 - 0.7 * ST[s].wide : 1) * (early && xg < 0.25 ? 0.4 : 1) }); } // do lado, quem joga pelos lados prefere cruzar
       if (!opts.length) { ball.hold = 0.3; return; }
       let best = opts[0], bu = -1e9;
       for (const op of opts) { const u = op.u * (1 + 0.28 * gauss() * p.risk) + 0.004 * gauss(); if (u > bu) { bu = u; best = op; } }
@@ -357,7 +369,7 @@
         return;
       }
       lastPasser = p; lastPassClk = clk;
-      if (dm || rnd() < best.p + (1 - best.p) * p.q * 1.2) { // quem passa melhor erra menos (só na hora, não muda a escolha)
+      if (dm || rnd() < best.p + (1 - best.p) * cl(p.q * 1.2 + PASS_OK + PASS_PAT * pat, -0.5, 0.85)) { // quem passa melhor erra menos (só na hora, não muda a escolha); time de posse treina o passe curto
         fly(p, best.wx, best.wy, best.q, best.lofted, best.kind, false);
         if (best.kind !== 'curto') emit(best.kind, s, p, best.q);
         const q = best.q, [qx, qy] = tf(s, q);
@@ -410,7 +422,7 @@
       const a = arFor(x);
       if ((k === 'lat' && ((a.top && y <= 0.5) || (!a.top && y >= WD - 0.5))) || k === 'esc' || k === 'tiro') { a.sig = 'point'; a.dir = sd; a.sigT = 2.2; }
     }
-    let rs = null, outCd = 0, lastSide = 0;
+    let rs = null, outCd = 0, lastSide = 0, posN = 0; // posN: passes certos da posse (o ritmo: circular antes de acelerar)
     function restart(k, s, x, y) {
       mode = 'rein'; modeT = 0; poss = s;
       const sp = { x, y }, pool = T[s].filter(p => p.r !== 'GK' && !isMe(p) || (isMe(p) && !lc));
@@ -491,17 +503,20 @@
       if (due && due.side === p.side) ball.hold = Math.min(ball.hold, 0.35);
       if (lc && !lc.have && !DEF[lc.k] && isMe(p)) { lc.have = true; ball.hold = 0.35; }
       if (lc && !lc.have && DEF[lc.k] && p === lc.q) { lc.have = true; ball.hold = 1; }
-      if (p.side !== poss) { poss = p.side; trail.length = 0; passH = null; ALL.forEach(q => { q.th = rnd() * 0.35; q.run = 0; q.go = 0; q.ovl = 0; }); }
+      if (p.side !== poss) { poss = p.side; posN = 0; trail.length = 0; passH = null; ALL.forEach(q => { q.th = rnd() * 0.35; q.run = 0; q.go = 0; q.ovl = 0; }); }
     }
+    // Passe para trás: da linha de fundo, pelo lado, de volta para quem chega na marca do pênalti
+    function cutback(s, f) { const [x0, y0] = tf(s, { x: f.x0, y: f.y0 }), [x1, y1] = tf(s, ball); return x0 > 92 && Math.abs(y0 - 34) > 9 && x1 > 80 && x1 < x0 - 3 && Math.abs(y1 - 34) < 12; }
     function receive(f) {
       const p = f.to, lo = ball.loose, lv = lo ? Math.hypot(lo.vx || 0, lo.vy || 0) : 0;
       why = f.cut ? 'corte' : 'passe'; setOwner(p, f.quick);
       // Rastro dos passes da posse e o nome da jogada que acabou de sair (uma etiqueta a cada 5 s, no máximo)
       if (!f.cut && f.from && f.from.side === p.side && f.from !== p && mode === 'play') {
+        posN++;
         trail.push({ x0: f.x0, y0: f.y0, x1: ball.x, y1: ball.y, t: 2.2 }); if (trail.length > 5) trail.shift();
         const a = f.from, pv = passH;
         const tg = pv && pv.to === a && pv.from === p && clk - pv.clk < 3.5 && f.kind === 'curto' ? 'TABELA' : a.third === p && clk - a.thirdT < 3 ? 'TERCEIRO HOMEM' : a.lay === p && clk - a.layT < 3 ? 'PAREDE' :
-          isFB(p) && p.ovl > 0 ? 'ULTRAPASSAGEM' : f.kind === 'inv' ? 'INVERSÃO' : (a.r === 'GK' || a.d < 0.3) && p.r === 'ST' && f.loft > 0 ? 'LIGAÇÃO DIRETA' : '';
+          isFB(p) && p.ovl > 0 ? 'ULTRAPASSAGEM' : cutback(p.side, f) ? 'PASSE PARA TRÁS' : f.kind === 'inv' ? 'INVERSÃO' : (a.r === 'GK' || a.d < 0.3) && p.r === 'ST' && f.loft > 0 ? 'LIGAÇÃO DIRETA' : '';
         if (tg) { const kp = tg + ':' + p.side; PLAYS[kp] = (PLAYS[kp] || 0) + 1; if (clk - tagClk > 5) { playTag = { txt: tg, p, t: 1.8 }; tagClk = clk; } }
         passH = { from: a, to: p, clk };
       }

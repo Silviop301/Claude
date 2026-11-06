@@ -75,7 +75,7 @@ NODE_PATH=$(npm root -g) node tools/craque_telas_treinador.js /tmp/co   # (antig
 NODE_PATH=$(npm root -g) node tools/craque_telas_deitado.js /tmp/ld [1,2,3]   # Treinador deitado (844x390): 1 escalação, semana, treino, olheiro, funções, batedores, preleção · 2 um jogo ao vivo · 3 a temporada até as propostas
 NODE_PATH=$(npm root -g) node tools/craque_home_deitada.js /tmp/hl   # home deitada (fotos: vazia, carreiras, vagas cheias, Relâmpago pedindo para girar, em pé)
 node tools/craque_invariantes.js [n] [semente]       # regras do motor (sem NaN, faixas 0–100/0–99, dinheiro >= 0) e save no meio que termina igual; esperado 0 falhas
-node tools/craque_campinho.js [jogos]               # campinho ao vivo (livesim.js) sem tela: pulos da bola, bonecos encostados, passes/chutes/posse, linha por estilo, overall, gols do motor na rede; esperado 0 alertas
+node tools/craque_campinho.js [jogos]               # campinho ao vivo (livesim.js) sem tela, partida do 1× (13000 passos): pulos da bola, bonecos encostados, passes/chutes/posse (por 2 min), passes por posse de cada estilo, linha por estilo, overall, gols do motor na rede; esperado 0 alertas
 NODE_PATH=$(npm root -g) node tools/craque_e2e.js 2 390 4   # carreiras pela interface (Playwright); MODO=completa na Carreira Completa
 NODE_PATH=$(npm root -g) node tools/craque_telas.js /tmp/antes   # foto de cada tela (carreira com sorteio fixo + telas de fora + minigames); DESKTOP=1 ... 1440 900 no computador, SO=evento,lance só algumas
 DESKTOP=1 TR=/tmp/tr node tools/craque_e2e.js 3 1280 3      # idem no computador, gravando o texto de cada tela em /tmp/tr
@@ -145,7 +145,7 @@ dividem ajudantes por `CRAQUE_SIM._`. O motor não usa DOM: roda no navegador e 
 
 ### Apresentação — `craque/src/`
 
-`ui/livesim.js` (campinho ao vivo dos dois modos: cada estilo circula a bola do seu jeito por `patOf`/`dirOf` (paciência e ligação direta), jogadas com nome (tabela, terceiro homem, parede, ultrapassagem, inversão, saída de trás, ligação direta; contagem em `_state().PLAYS`), rastro dos passes e etiqueta; a chance do motor (`due`) joga pelo estilo antes do passe direto; bonecos em `DOTK` 0,65), `kick.js` (pênalti/falta), `defend.js` (goleiro, zagueiro, meia), `livre.js` (Jogo a Jogo: lances de movimento livre vistos de cima, analógico e botão fixos embaixo; `S.LIVRE`, `S.livreK`), `cine.js` (câmera e efeitos; `?cine=0`
+`ui/livesim.js` (campinho ao vivo dos dois modos: cada estilo circula a bola do seu jeito por `patOf`/`dirOf` (paciência e ligação direta), jogadas com nome (tabela, terceiro homem, parede, ultrapassagem, inversão, saída de trás, ligação direta; contagem em `_state().PLAYS`), rastro dos passes e etiqueta; a chance do motor (`due`) joga pelo estilo antes do passe direto, com quem vai marcar esperando na linha (sem impedimento); ritmo: cada estilo troca `NEED`×paciência passes (`posN`) antes de forçar, lado fechado volta e troca de lado; bonecos em `DOTK` 0,65), `kick.js` (pênalti/falta), `defend.js` (goleiro, zagueiro, meia), `livre.js` (Jogo a Jogo: lances de movimento livre vistos de cima, analógico e botão fixos embaixo; `S.LIVRE`, `S.livreK`), `cine.js` (câmera e efeitos; `?cine=0`
 desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da criação, `c.look`),
 `card.js` (carta em canvas), `trophies.js`, `ball3d.js` (bola 3D da tela inicial), `kits-real.js`
 (uniformes reais), `sound.js` (Web Audio), `errors.js` (envia erros ao servidor).
