@@ -114,6 +114,43 @@
       return '<div class="rt-r' + (x.me ? ' me' : '') + (ss.promo && pos === ss.promo ? ' cut' : '') + (ss.releg && pos === n - ss.releg ? ' cut' : '') + '"><i>' + pos + '</i>' + crest(x.id, 'xs') +
         '<span>' + esc(club(x.id).name) + '</span><em>' + x.j + 'j</em><b>' + x.p + '</b></div>'; }).join('') + '</div>';
   }
+  // Tabela inteira: classificação (P J V E D SG), gols e forma (GP GC SG últimos 5), rodadas (placares e jogos que vêm)
+  function tabela(tab, rd) {
+    G.c = null; bar();
+    const ss = co.ss, t = S.coTable(co), n = t.length, R = ss.rounds.length, cur = Math.min(ss.i, R - 1);
+    rd = rd == null ? Math.max(0, ss.i - 1) : Math.max(0, Math.min(R - 1, rd));
+    const nm = id => { const c = club(id); return esc(c.short || c.name); };
+    const zone = pos => ss.promo && pos <= ss.promo ? ' up' : ss.releg && pos > n - ss.releg ? ' dn' : !ss.promo && pos === 1 ? ' up' : '';
+    const cut = pos => (ss.promo && pos === ss.promo) || (ss.releg && pos === n - ss.releg) ? ' cut' : '';
+    const sg = x => { const d = x.gp - x.gc; return '<em class="' + (d > 0 ? 'pos' : d < 0 ? 'neg' : '') + '">' + (d > 0 ? '+' : '') + d + '</em>'; };
+    const dots = f => { const a = (f || '').split(''); while (a.length < 5) a.unshift('-'); return '<span class="tb-f">' + a.map(c => '<i class="' + (c === '-' ? 'n' : c) + '"></i>').join('') + '</span>'; };
+    const row = (x, k, cells) => '<div class="tb-r' + zone(k + 1) + cut(k + 1) + (x.me ? ' me' : '') + '"><i>' + (k + 1) + '</i>' + crest(x.id, 'xs') + '<span>' + esc(club(x.id).name) + '</span>' + cells + '</div>';
+    let body;
+    if (tab === 'cls') body = '<div class="tb tb-cls" style="--n:' + n + '"><div class="tb-h"><i>#</i><span>Clube</span><b>P</b><em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em></div>' +
+      t.map((x, k) => row(x, k, '<b>' + x.p + '</b><em>' + x.j + '</em><em>' + x.v + '</em><em>' + x.e + '</em><em>' + x.d + '</em>' + sg(x))).join('') + '</div>';
+    else if (tab === 'gol') body = '<div class="tb tb-gol" style="--n:' + n + '"><div class="tb-h"><i>#</i><span>Clube</span><em>GP</em><em>GC</em><em>SG</em><small>Últimos 5</small></div>' +
+      t.map((x, k) => row(x, k, '<em>' + x.gp + '</em><em>' + x.gc + '</em>' + sg(x) + dots(x.f))).join('') + '</div>';
+    else {
+      const res = (ss.res || [])[rd], played = rd < ss.i, me = ss.ids.indexOf(co.club);
+      const list = played && res ? res.slice().sort((a, b) => (b[0] === me || b[1] === me) - (a[0] === me || a[1] === me)) :
+        ss.rounds[rd].map(([h, a]) => [h, a]).sort((a, b) => (b[0] === me || b[1] === me) - (a[0] === me || a[1] === me));
+      const pos = i => t.findIndex(x => x.id === ss.ids[i]) + 1;
+      body = '<div class="tb-nav"><button id="b-tb-prev" aria-label="Rodada anterior"' + (rd ? '' : ' disabled') + '>‹</button><b>Rodada ' + (rd + 1) + ' <small>de ' + R + (rd === cur && !ss.done ? ' · próxima' : played ? '' : ' · a jogar') + '</small></b><button id="b-tb-next" aria-label="Próxima rodada"' + (rd < R - 1 ? '' : ' disabled') + '>›</button></div>' +
+        (played && !res ? '<p class="cf-empty">Placares desta rodada não foram guardados (temporada começou antes desta versão).</p>' :
+        '<div class="tb-jg">' + list.map(([h, a, gh, ga]) => { const mine = h === me || a === me, sc = gh != null;
+          return '<div class="tb-g' + (mine ? ' me' : '') + '"><span class="h"><small>' + pos(h) + 'º</small><u>' + nm(ss.ids[h]) + '</u>' + crest(ss.ids[h], 'xs') + '</span>' +
+            '<b class="' + (sc ? '' : 'vs') + '">' + (sc ? '<em class="' + (gh > ga ? 'w' : '') + '">' + gh + '</em>×<em class="' + (ga > gh ? 'w' : '') + '">' + ga + '</em>' : '×') + '</b>' +
+            '<span class="a">' + crest(ss.ids[a], 'xs') + '<u>' + nm(ss.ids[a]) + '</u><small>' + pos(a) + 'º</small></span></div>'; }).join('') + '</div>');
+    }
+    const leg = tab === 'rod' ? '' : '<div class="tb-leg">' + (ss.promo ? '<span class="up">Acesso</span>' : '<span class="up">Campeão</span>') + (ss.releg ? '<span class="dn">Rebaixamento</span>' : '') + (tab === 'gol' ? '<span class="f"><i class="v"></i>V <i class="e"></i>E <i class="d"></i>D</span>' : '') + '</div>';
+    render(U.modeHead({ mode: 'co', nav: 'back', id: 'b-co-back', label: 'Voltar ao clube', title: 'Tabela', sub: esc(ss.name) + ' ' + yr() + ' · ' + (ss.done ? 'encerrada' : 'rodada ' + Math.min(ss.i + 1, R) + ' de ' + R) }) +
+      '<div class="cad-tabs tb-tabs"><button data-tb="cls">Classificação</button><button data-tb="gol">Gols e forma</button><button data-tb="rod">Rodadas</button></div>' +
+      '<div class="co-box tb-box">' + body + leg + '</div>');
+    U.modeHeadBind();
+    document.querySelectorAll('[data-tb]').forEach(b => { b.classList.toggle('on', b.dataset.tb === tab); b.onclick = () => { sfx('tap'); tabela(b.dataset.tb, rd); }; });
+    if ($('b-tb-prev')) { $('b-tb-prev').onclick = () => { sfx('tap'); tabela('rod', rd - 1); }; $('b-tb-next').onclick = () => { sfx('tap'); tabela('rod', rd + 1); }; }
+    $('b-co-back').onclick = () => { sfx('tap'); hub(); };
+  }
   function form5() {
     const l = co.ss.log.slice(-5);
     return l.length ? '<div class="co-form">' + l.map(x => '<i class="' + x.res + '" title="' + x.gf + 'x' + x.ga + '">' + x.res.toUpperCase() + '</i>').join('') + '</div>' : '';
@@ -141,7 +178,7 @@
     $('b-co-team').onclick = () => { sfx('tap'); team(false); };
     $('b-co-cad').onclick = () => { sfx('tap'); caderno(hub); };
     $('b-co-fin').onclick = () => { sfx('tap'); fin(); };
-    $('b-co-tab').onclick = () => { sfx('tap'); render(U.modeHead({ mode: 'co', nav: 'back', id: 'b-co-back', label: 'Voltar ao clube', title: 'Tabela', sub: esc(ss.name) + ' ' + yr() }) + '<div class="co-box">' + table(true) + '</div>'); U.modeHeadBind(); $('b-co-back').onclick = hub; };
+    $('b-co-tab').onclick = () => { sfx('tap'); tabela('cls'); };
     $('b-co-out').onclick = () => { sfx('tap'); save(); co = null; U.home(); };
   }
 
