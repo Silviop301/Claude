@@ -25,7 +25,7 @@
   }
   function fit() {
     const el = document.getElementById('ld'); if (!el) return;
-    const z = (U.zk && U.zk()) || 1, vw = window.innerWidth / z, vh = window.innerHeight / z, port = vh > vw * 1.05; // monitor grande tem zoom no html
+    const vw = el.clientWidth || window.innerWidth, vh = el.clientHeight || window.innerHeight, port = vh > vw * 1.05; // medidas do #ld (já sem o topo borrado do iPhone e com o zoom do monitor)
     el.classList.toggle('port', port);
     const k = Math.min(vw / W, vh / H);
     el.style.setProperty('--ldk', k.toFixed(4));
@@ -67,7 +67,7 @@
   // Linha de 4 ou mais: os de fora (laterais, alas, meias abertos) ficam mais à frente, como no canvas.
   function spotsL(form, mirror, full) {
     const sl = S.CO_FORMS[form].slots, am = sl.some(x => x.ln === 'am');
-    const X = full ? { g: 7, d: 21, m: am ? 42 : 48, am: 62, a: 80 } : { g: 6, d: 21, m: am ? 39 : 43, am: 53, a: 65 };
+    const X = full === 'sem' ? { g: 5, d: 16, m: am ? 27 : 31, am: 37, a: 45 } : full ? { g: 7, d: 21, m: am ? 42 : 48, am: 62, a: 80 } : { g: 6, d: 21, m: am ? 39 : 43, am: 53, a: 65 };
     const out = [];
     ['g', 'd', 'm', 'am', 'a'].forEach(ln => {
       const ix = sl.map((x, i) => i).filter(i => sl[i].ln === ln), n = ix.length;
@@ -75,9 +75,11 @@
         const y = n === 1 ? 42 : 7 + (k + 0.5) / n * 72; // embaixo fica o banco (Time) ou a contagem por setor (Semana)
         let x = X[ln];
         const outer = k === 0 || k === n - 1;
-        if (n >= 4 && outer && (full || ln === 'd')) x += full ? 10 : 5;
-        else if (ln === 'a' && n === 3 && outer) x -= full ? 7 : 4;
-        else if (n === 5 && k === 2 && ln === 'm') x -= full ? 5 : 3;
+        const sem = full === 'sem', F = sem ? 0 : full;
+        if (n >= 4 && outer && (F || ln === 'd')) x += F ? 10 : sem ? 4 : 5;
+        else if (ln === 'a' && n === 3 && outer) x -= F ? 7 : 3;
+        else if (sem && n >= 4 && ln !== 'd') x += k % 2 ? -3 : 3; // linha cheia no meio: em zigue-zague para os nomes não encostarem
+        else if (n === 5 && k === 2 && ln === 'm') x -= F ? 5 : 2;
         out[i] = [mirror ? 100 - x : x, Math.round(y)];
       });
     });
@@ -149,7 +151,7 @@
     const form = (co.ss.log || []).slice(-5).map(x => '<i class="' + x.res + '" title="' + x.gf + 'x' + x.ga + '"></i>').join('');
     const conf = Math.round(B.conf);
     const top = '<div class="ld-top">' + crest(cl.id, 'ld-cr') + '<b>' + ord(pos) + ' · ' + me.p + ' pts</b><span class="ld-f5">' + form + '</span><i class="ld-sep"></i>' +
-      '<span>Meta <b>' + esc(S.CO_GOAL_TXT[B.goal.k]) + (B.goal.k === 'titulo' ? '' : ' (até o ' + ord(B.goal.pos) + ')') + '</b></span>' +
+      '<span class="ld-meta" title="' + esc(S.CO_GOAL_TXT[B.goal.k]) + '">Meta <b>' + (B.goal.k === 'titulo' ? 'ser campeão' : 'até o ' + ord(B.goal.pos)) + '</b></span>' +
       '<span>Diretoria <em class="ld-bar"><u style="width:' + conf + '%" class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '"></u></em></span>' +
       (co.fin ? '<i class="ld-sep"></i><span><b>' + c.brl(co.fin.caixa) + '</b></span>' : '') +
       '<span class="ld-gr"></span><b class="ld-rd">' + (nx.bye ? 'SEM JOGO' : (nx.home ? 'EM CASA' : 'FORA')) + ' · RODADA ' + nx.round + '</b></div>';
@@ -157,8 +159,8 @@
     if (!nx.bye) {
       const pv = S.coPreview(co), them = pv.them, by = {}; co.squad.forEach(p => { by[p.id] = p; });
       const xi = pv.us && co.xi.length === 11 ? co.xi : S.coAutoXI(co.squad, co.form).xi;
-      const sl = S.coSlots(co.form), sp = spotsL(co.form, false);
-      const tsl = S.coSlots(them.form), tsp = spotsL(them.form, true), tby = {}; them.squad.forEach(p => { tby[p.id] = p; });
+      const sl = S.coSlots(co.form), sp = spotsL(co.form, false, 'sem'); // cada time no seu campo
+      const tsl = S.coSlots(them.form), tsp = spotsL(them.form, true, 'sem'), tby = {}; them.squad.forEach(p => { tby[p.id] = p; });
       pitch = xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { attr: ' data-go-time', tag: S.coSlotLbl(co.form, i) }) : '').join('') +
         them.xi.map((id, i) => tby[id] ? rivalDot(tsp[i][0], tsp[i][1], last(tby[id].n)) : '').join('');
       // Contagem por setor: a sua zaga contra o ataque deles, meio contra meio, o seu ataque contra a zaga deles
