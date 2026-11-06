@@ -73,6 +73,7 @@ node tools/craque_treinador.js [n] [temporadas]     # Modo Treinador: robô téc
 node tools/craque_taticas.js [formação estilo]       # Treinador: cada formação x estilo contra todas (pontos por jogo; GAP=6 com o seu time mais fraco); esperado 0 alertas (nada vence tudo, todo estilo e formação servem para algo)
 NODE_PATH=$(npm root -g) node tools/craque_telas_treinador.js /tmp/co   # Treinador pela interface: fotos de cada tela e uma temporada jogada pelos botões; DESKTOP=1 ... 1280 720
 node tools/craque_invariantes.js [n] [semente]       # regras do motor (sem NaN, faixas 0–100/0–99, dinheiro >= 0) e save no meio que termina igual; esperado 0 falhas
+node tools/craque_campinho.js [jogos]               # campinho ao vivo (livesim.js) sem tela: pulos da bola, bonecos encostados, passes/chutes/posse, linha por estilo, overall, gols do motor na rede; esperado 0 alertas
 NODE_PATH=$(npm root -g) node tools/craque_e2e.js 2 390 4   # carreiras pela interface (Playwright); MODO=completa na Carreira Completa
 NODE_PATH=$(npm root -g) node tools/craque_telas.js /tmp/antes   # foto de cada tela (carreira com sorteio fixo + telas de fora + minigames); DESKTOP=1 ... 1440 900 no computador, SO=evento,lance só algumas
 DESKTOP=1 TR=/tmp/tr node tools/craque_e2e.js 3 1280 3      # idem no computador, gravando o texto de cada tela em /tmp/tr

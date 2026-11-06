@@ -187,7 +187,7 @@
   function goalStrip(c, nx) {
     const fc = c.fc, last = fc.log[fc.log.length - 1], rows = [];
     const head = fc.i === 0 && nx.vs ? 'Amanhã é sua estreia: ' + esc(nx.compName)
-      : last ? 'Último jogo: ' + last.gf + '–' + last.ga + ' contra ' + esc(nameOf(last.vs)) + (last.on && last.rating ? ' · nota ' + rate(last.rating) : '') : '';
+      : last ? 'Último jogo: ' + (last.home ? esc(nameOf(c.club)) + ' ' + last.gf + '–' + last.ga + ' ' + esc(nameOf(last.vs)) : esc(nameOf(last.vs)) + ' ' + last.ga + '–' + last.gf + ' ' + esc(nameOf(c.club))) + (last.on && last.rating ? ' · nota ' + rate(last.rating) : '') : '';
     const gs = (S.fcGoals ? S.fcGoals(c) || [] : []).filter(g => typeof g.have === 'number' && g.n && g.have < g.n);
     gs.sort((a, b) => b.have / b.n - a.have / a.n);
     const g = gs[0];
@@ -897,8 +897,9 @@
     const fc = G.c.fc, past = fc.log.slice(-3), next = S.fcPreview(G.c, 5).slice(1);
     const tag = k => '<em class="fc-k ' + k + '">' + (k === 'lg' ? 'Liga' : k === 'cup' ? 'Copa' : 'Cont.') + '</em>';
     $('fc-cal').innerHTML = '<div class="fs-rlbl">Calendário</div>' +
-      past.map(l => '<div class="fc-ci done">' + tag(l.comp) + crest(l.vs, 'xs') + '<span>' + (l.home ? '' : '@ ') + esc(nameOf(l.vs)) + '</span><b class="' + (l.won || l.gf > l.ga ? 'up' : l.gf < l.ga ? 'down' : '') + '">' + l.gf + '–' + l.ga + (l.pens ? ' (p)' : '') + '</b></div>').join('') +
-      next.map(p => '<div class="fc-ci">' + tag(p.k) + (p.vs ? crest(p.vs, 'xs') + '<span>' + (p.home ? '' : '@ ') + esc(nameOf(p.vs)) + '</span>' : '<i></i><span>' + esc(p.bye ? 'Folga' : 'Adversário no sorteio') + '</span>') + '<b>' + esc(p.stage.replace(/^Grupo · /, 'G ')) + '</b></div>').join('');
+      // Mandante sempre à esquerda: escudo dele, placar (ou ×) e escudo do visitante; o nome é o do adversário, com casa ou fora
+      past.map(l => '<div class="fc-ci done">' + tag(l.comp) + '<span class="fc-hv">' + crest(l.home ? G.c.club : l.vs, 'xs') + '<b class="' + (l.won || l.gf > l.ga ? 'up' : l.gf < l.ga ? 'down' : '') + '">' + (l.home ? l.gf + '–' + l.ga : l.ga + '–' + l.gf) + '</b>' + crest(l.home ? l.vs : G.c.club, 'xs') + '</span><span>' + esc(nameOf(l.vs)) + (l.pens ? ' (pên.)' : '') + '</span><small class="fc-cf">' + (l.home ? 'casa' : 'fora') + '</small></div>').join('') +
+      next.map(p => '<div class="fc-ci">' + tag(p.k) + (p.vs ? '<span class="fc-hv">' + crest(p.home ? G.c.club : p.vs, 'xs') + '<b>×</b>' + crest(p.home ? p.vs : G.c.club, 'xs') + '</span><span>' + esc(nameOf(p.vs)) + ' · ' + esc(p.stage.replace(/^Grupo · /, 'G ')) + '</span><small class="fc-cf">' + (p.home ? 'casa' : 'fora') + '</small>' : '<i></i><span>' + esc(p.bye ? 'Folga' : 'Adversário no sorteio') + '</span><b>' + esc(p.stage.replace(/^Grupo · /, 'G ')) + '</b>') + '</div>').join('');
   }
 
   // ---------- a semana entre os jogos ----------
@@ -1761,7 +1762,7 @@
     const lcPend = new Set(); // seus lances que o campinho ainda está jogando (a linha sai quando a jogada acontece)
     // A rede balançou no campinho: o placar vira já (não espera o fim do minuto)
     const onGoal = m => { if (nextTick && !finished && t === m - 1) { clearTimeout(timer); timer = setTimeout(tick, 120); } };
-    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), t0, speed: () => (fast ? 3 : 1), onEv: (k, d) => narrSim(k, d), onFrame: i => zoneSim(i), onGoal, flip: !nx.home, kits: U.LP.kits(U.LP.kitFor(meName, c.club), U.LP.kitFor(opName, x.vs), !!nx.home),
+    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), meName: sobre(c), meOv: S.ovr(c), str: [(D.CLUB_BY_ID[c.club] || {}).strength, (D.CLUB_BY_ID[x.vs] || {}).strength], t0, speed: () => (fast ? 3 : 1), onEv: (k, d) => narrSim(k, d), onFrame: i => zoneSim(i), onGoal, flip: !nx.home, home: nx.home ? 0 : 1, kits: U.LP.kits(U.LP.kitFor(meName, c.club), U.LP.kitFor(opName, x.vs), !!nx.home),
       seed: (Number(c.tseed) || 1) * 7 + c.fc.season * 101 + c.fc.i * 13 + t0,
       goals: out.my.ev.filter(e => (!o.stop || e.m < stopAt) && !(o.from && e.m === o.from)).map(e => ({ m: e.m, side: e.s === (nx.home ? 'h' : 'a') ? 0 : 1, me: !!e.me, as: !!e.as })) }) : null;
     const pitch = () => { if (!fl) return; $('fc-flow').innerHTML = flowBox(c, x, fl, meIdx); U.LP.resetTrail(); if (sim) sim.attach($('lp-cv')); };
@@ -1893,7 +1894,7 @@
         out.my.ev.filter(e => (since !== undefined ? e.m > since && e.m <= t : e.m === t) && shown(e)).forEach(e => {
           const ours = e.s === meSide; myGoal = true;
           feed(e.m, goalTxt(e), 'gol ' + (ours ? 'us' : 'th') + (e.me || e.as ? ' me' : ''), e.me || e.as);
-          if (ours) sfx('cheer');
+          sfx(U.goalSnd(ours, !!nx.home));
           if (since === undefined || e.m === t) {
             U.LP.banner(e.me ? 'GOL DE ' + esc(sobre(c)).toUpperCase() + '!' : 'GOL ' + esc(D.do(ours ? meName : opName)).toUpperCase() + (ours ? '!' : ''),
               e.me || e.as ? (e.m === o.from ? 'Seu lance decisivo' : e.as ? 'Assistência sua' : '') : '', ours ? (e.me || e.as ? 'gold' : 'up') : 'down');
@@ -2069,12 +2070,12 @@
       const lbl = document.querySelector('.lp-whor span'); if (lbl) lbl.textContent = 'O jogo inteiro';
       if (fl) { const av = fl.dom.slice(0, end + 1).reduce((a, v) => a + v, 0) / (end + 1), w = $('lp-who');
         if (w) { w.textContent = av > 4 ? meName + ' mandou mais' : av < -4 ? opName + ' mandou mais' : 'Jogo equilibrado'; w.className = av > 4 ? 'up' : av < -4 ? 'down' : ''; } }
-      let body = '';
+      // Uma tela só no celular (sem rolar): Sua partida, Seus lances e Outros jogos viram abas; o botão do jornal logo abaixo
+      let body = '', li = '';
       if (fl && fl.on) {
         const gk = c.pos === 'GOL' || c.pos === 'ZAG';
-        body = '<div class="lp-lbl">Sua partida</div>' + statBoxes([['Nota', rate(m.rating), 1], gk ? ['Defesas', m.saves || 0] : ['Gols', m.goals || 0], gk ? ['Desarmes', m.tackles || 0] : ['Assist.', m.assists || 0], ['Energia', (stEnd !== null ? stEnd + ' → ' : '') + Math.round(c.fc.en === undefined ? 100 : c.fc.en)]]);
-        const li = mineList(99);
-        if (li) body += '<div class="lp-lbl">Seus lances</div><ul class="lp-ml">' + li + '</ul>';
+        body = statBoxes([['Nota', rate(m.rating), 1], gk ? ['Defesas', m.saves || 0] : ['Gols', m.goals || 0], gk ? ['Desarmes', m.tackles || 0] : ['Assist.', m.assists || 0], ['Energia', (stEnd !== null ? stEnd + ' → ' : '') + Math.round(c.fc.en === undefined ? 100 : c.fc.en)]]);
+        li = mineList(99);
       } else body = '<p class="lp-off">' + (x.injury ? 'Você ficou fora, lesionado.' : 'Você não entrou em campo.') + '</p>';
       // Faltas, impedimentos e cartões dos dois times (o seu primeiro) e o cartão que pesa no próximo jogo
       if (m.fo) {
@@ -2083,7 +2084,21 @@
         const cd = out.card;
         if (cd) body += '<p class="lp-sus ' + (cd.sus ? 'out' : 'pend') + '">' + (cd.sus ? '<b>Suspenso</b> ' + (cd.rc ? 'Cartão vermelho' : 'Terceiro amarelo') + ': você fica fora do próximo jogo.' : cd.n === S.FC_CARD.ycMax - 1 ? '<b>Pendurado</b> ' + cd.n + ' amarelos no ano. O próximo te tira de um jogo.' : '<b>Amarelo</b> ' + cd.n + ' no ano. No ' + S.FC_CARD.ycMax + 'º, um jogo de suspensão.') + '</p>';
       }
-      $('fc-flow').innerHTML = '<div class="lp-endb">' + body + '</div>';
+      const rd = $('fc-round'), rdH = rd ? rd.innerHTML.replace(/<div class="fs-rlbl">.*?<\/div>/, '') : '';
+      const nLi = (li.match(/<li/g) || []).length;
+      // No celular a classificação (que ficava embaixo de tudo) vira a última aba; no computador segue na coluna da direita
+      const tbOn = !!$('fc-tbl') && !matchMedia('(min-width: 1000px) and (min-height: 560px)').matches;
+      const tabs = [['eu', 'Sua partida']].concat(li ? [['ml', 'Seus lances <i>' + nLi + '</i>']] : []).concat(rdH ? [['rd', 'Outros jogos']] : []).concat(tbOn ? [['tb', 'Tabela']] : []);
+      const panes = { eu: body, ml: li ? '<ul class="lp-ml">' + li + '</ul>' : '', rd: rdH, tb: '' };
+      $('fc-flow').innerHTML = '<div class="lp-endb">' + (tabs.length > 1 ? '<div class="cad-tabs lp-etabs" role="tablist" style="grid-template-columns:repeat(' + tabs.length + ',minmax(0,1fr))">' +
+        tabs.map(([k, t]) => '<button role="tab" data-et="' + k + '"' + (k === 'eu' ? ' class="on" aria-selected="true"' : ' aria-selected="false"') + '>' + t + '</button>').join('') + '</div>' : '') +
+        tabs.map(([k]) => '<div class="lp-epn' + (k === 'eu' ? ' on' : '') + '" data-ep="' + k + '">' + panes[k] + '</div>').join('') + '</div>';
+      if (rdH) root.classList.add('lp-endt');
+      if (tbOn) { document.querySelector('[data-ep="tb"]').appendChild($('fc-tbl')); root.classList.add('lp-endtb'); }
+      document.querySelectorAll('[data-et]').forEach(bt => bt.onclick = () => { sfx('tap');
+        document.querySelectorAll('[data-et]').forEach(y => { y.classList.toggle('on', y === bt); y.setAttribute('aria-selected', y === bt ? 'true' : 'false'); });
+        document.querySelectorAll('[data-ep]').forEach(y => y.classList.toggle('on', y.dataset.ep === bt.dataset.et));
+        if (bt.dataset.et === 'tb') { tblKey = null; table(); } });
       if (lg) {
         const p = standings('lg').findIndex(r => r.i === 0) + 1;
         plantao(p < posBefore ? 'Você sobe para <b>' + p + 'º</b>.' : p > posBefore ? 'Você cai para <b>' + p + 'º</b>.' : 'Você segue em <b>' + p + 'º</b>.', 'TABELA');

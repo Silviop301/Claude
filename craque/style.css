@@ -4555,13 +4555,18 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .fc-comp.won b { color: var(--gold-2); font-weight: 800; }
 .fc-comp.out b { color: var(--tx-4); }
 .fc-cal { display: grid; gap: 2px; }
-.fc-ci { display: grid; grid-template-columns: 48px 22px minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 5px 2px; font: var(--t-small); color: var(--tx-2); border-bottom: 1px solid var(--panel-line); }
+.fc-ci { display: grid; grid-template-columns: 48px auto minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 5px 2px; font: var(--t-small); color: var(--tx-2); border-bottom: 1px solid var(--panel-line); }
 .fc-ci .crest.xs { margin: 0; }
 .fc-ci > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tx-1); }
 .fc-ci > b { font: 700 14px var(--display); color: var(--tx-3); text-align: right; }
 .fc-ci > b.up { color: var(--up); }
 .fc-ci > b.down { color: var(--down); }
 .fc-ci.done > span { color: var(--tx-2); }
+/* mandante à esquerda: escudo, placar (ou ×), escudo; casa/fora no fim da linha */
+.fc-ci > .fc-hv { display: flex; align-items: center; gap: 4px; overflow: visible; }
+.fc-hv b { font: 700 14px var(--display); color: var(--tx-3); min-width: 26px; text-align: center; }
+.fc-hv b.up { color: var(--up); } .fc-hv b.down { color: var(--down); }
+.fc-ci > .fc-cf { font: 600 11px var(--body, inherit); text-transform: uppercase; letter-spacing: .04em; color: var(--tx-3); }
 .fc-k { font: 700 12px var(--display); font-style: normal; text-transform: uppercase; letter-spacing: .06em; text-align: center; padding: 2px 0; border-radius: 4px; background: var(--panel-2); color: var(--tx-2); }
 .fc-k.cup { background: color-mix(in srgb, var(--blue) 45%, transparent); color: var(--tx-1); }
 .fc-k.cont { background: color-mix(in srgb, var(--gold) 35%, transparent); color: var(--tx-1); }
@@ -6019,6 +6024,9 @@ body.ph-nobar #bar { display: none; }
 .co-vs b, .co-score b { font: var(--t-item); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .co-vs small { font: var(--t-small); color: var(--ink-2); }
 .co-vs em { font: 800 22px var(--display); color: var(--ink-2); font-style: normal; }
+.co-vs span.me b { color: var(--gold-ink); }
+.co-mando { margin: 8px 0 0; text-align: center; font: var(--t-small); color: var(--ink-2); }
+.co-mando.up { color: var(--up-ink); } .co-mando.down { color: var(--down-ink); }
 .crest.co-vc { width: 56px; height: 56px; object-fit: contain; }
 .co-meta { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; padding: 10px 12px; border-radius: var(--r-sm); background: rgba(19, 32, 26, .06); }
 .co-meta small { grid-column: 1 / -1; }
@@ -7332,3 +7340,56 @@ button.cad-c { cursor: pointer; }
 .tb-g b.vs { font-size: 18px; color: var(--tx-4); }
 .tb-g.me { background: var(--paper); color: var(--ink); } .tb-g.me small, .tb-g.me b, .tb-g.me b em, .tb-g.me b em.w { color: var(--ink); }
 .tb-g u { text-decoration: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; } .tb-g small { flex: none; }
+/* Fim de jogo do Treinador numa tela só (390x844, sem rolar): placar compacto, abas e rodapé com presidente + Continuar */
+.lv-one { gap: 10px; min-height: calc(100svh - var(--bar-h, 0px) - var(--sat) - 40px); }
+.lv-one .lv-board { padding: 12px 14px 10px; gap: 6px; }
+.lv-one .crest.co-vc { width: 44px; height: 44px; }
+.lv-one .lv-mid em { font-size: 52px; }
+.lv-one .lv-mom { height: 34px; }
+.lv-momf { display: flex; justify-content: space-between; gap: 8px; }
+.lv-momf small:first-child { font: 700 11px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--tx-4); }
+.lv-momf .lv-mkt { font-size: 11px; }
+.lv-tabs button { height: 40px; font-size: 14px; padding: 0 2px; white-space: nowrap; }
+.lv-tabs button i { font-style: normal; color: var(--tx-4); margin-left: 2px; }
+.lv-tabs button.on i { color: var(--muted); }
+.lv-dot { display: inline-block; width: 7px; height: 7px; margin-left: 3px; border-radius: 50%; background: var(--gold); vertical-align: top; }
+.lv-pane { display: flex; flex-direction: column; }
+.lv-pn { display: none; flex-direction: column; gap: 10px; }
+.lv-pn.on { display: flex; }
+.lv-ph { display: flex; justify-content: space-between; font: 700 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--tx-3); }
+.lv-ph em { font-style: normal; color: var(--gold); }
+.lv-pn .lv-tl { gap: 9px; }
+.lv-pn .lv-tl li { font-size: 15px; }
+.lv-pn .lv-tl li small { font-size: 13px; }
+.lv-pn .lv-tl.all { gap: 3px; }
+.lv-pn .lv-tl.all li { font-size: 14px; min-height: 26px; }
+.lv-pn .lv-tl.all li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lv-line { display: flex; justify-content: space-between; gap: 8px; padding: 9px 12px; border-radius: 12px; background: var(--panel); font: 600 13px var(--body); color: var(--tx-2); }
+.lv-line b { color: var(--tx-1); }
+.lv-pn .lv-susb { margin: 0; }
+.lv-pn .cad-post, .lv-pn .cad-tipl { margin: 0; }
+.lv-pn .co-nil { margin: 0; }
+.lv-foot { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+.lv-foot .co-pres { margin: 0; flex-direction: row; align-items: baseline; gap: 10px; padding: 9px 12px; }
+.lv-foot .co-pres span { font-size: 14px; }
+.lv-foot .co-ult, .lv-foot .co-ok { margin: 0; padding: 9px 12px; }
+.lv-foot .btn { width: 100%; margin: 0; }
+
+/* Jogo a Jogo, fim de jogo: Sua partida, Seus lances e Outros jogos em abas (sem rolar no celular) */
+.lp-etabs button { height: 40px; font-size: 14px; padding: 0 2px; white-space: nowrap; }
+.lp-etabs button i { font-style: normal; color: var(--tx-4); margin-left: 2px; }
+.lp-etabs button.on i { color: var(--muted); }
+.lp-epn { display: none; gap: 10px; }
+.lp-epn.on { display: grid; }
+.lp-epn[data-ep="rd"] { gap: 2px; }
+.lp-epn .lp-cst, .lp-epn .lp-sus { margin: 0; }
+.lp-epn .lp-ml li { padding: 6px 12px; font-size: 14px; }
+.lp-v.lp-endt .fs-round { display: none; }
+.lp-v.lp-endtb .fs-side { display: none; }
+.lp-epn .fs-tbl { max-height: 340px; }
+.lp-epn .fs-rr { padding: 1px 0; }
+.lp-epn .fs-tbl { max-height: 300px; }
+/* O rival direto (classe rv) batia com a classe genérica .rv da entrada animada (opacity 0): a linha dele sumia na tabela e na rodada */
+.fs-rr.rv, .fs-tr.rv { opacity: 1; transform: none; pointer-events: auto; }
+/* No computador o caderno troca as abas pela versão larga (.cad-tabs some); as abas de Finanças e do fim de jogo continuam */
+@media (min-width: 1000px) { .cad-tabs.cf-tabs, .cad-tabs.lv-tabs, .cad-tabs.lp-etabs { display: grid; max-width: none; } }

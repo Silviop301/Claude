@@ -166,8 +166,11 @@
       ult +
       '<div class="co-next">' + (nx.bye ? '<div class="eyebrow">Rodada ' + nx.round + ' de ' + nx.of + '</div><h2>Sem jogo nesta rodada</h2><p class="lead">O time descansa. Os outros jogam.</p>' :
         '<div class="eyebrow">Rodada ' + nx.round + ' de ' + nx.of + ' · ' + (nx.home ? 'em casa' : 'fora') + '</div>' +
-        '<div class="co-vs"><span>' + crest(cl.id, 'co-vc') + '<b>' + esc(cl.short || cl.name) + '</b><small>' + ordTxt(pos) + '</small></span><em>x</em>' +
-          '<span>' + crest(vs.id, 'co-vc') + '<b>' + esc(vs.short || vs.name) + '</b><small>' + ordTxt(S.coTable(co).findIndex(x => x.id === vs.id) + 1) + '</small></span></div>') +
+        // Mandante sempre à esquerda; o seu time ganha o destaque (me) e a linha do mando diz o que a casa faz no jogo
+        (() => { const us = '<span class="me">' + crest(cl.id, 'co-vc') + '<b>' + esc(cl.short || cl.name) + '</b><small>' + ordTxt(pos) + '</small></span>',
+          them = '<span>' + crest(vs.id, 'co-vc') + '<b>' + esc(vs.short || vs.name) + '</b><small>' + ordTxt(S.coTable(co).findIndex(x => x.id === vs.id) + 1) + '</small></span>';
+          return '<div class="co-vs">' + (nx.home ? us : them) + '<em>x</em>' + (nx.home ? them : us) + '</div>' +
+            '<p class="co-mando ' + (nx.home ? 'up' : 'down') + '">' + (nx.home ? '▲ Em casa · a torcida empurra no começo' : '▼ Fora · eles vão apertar no começo') + '</p>'; })()) +
         '<div class="co-meta"><small>Meta</small><b>' + S.CO_GOAL_TXT[B.goal.k] + '</b><span>' + (B.goal.k === 'titulo' ? 'você está em ' + ordTxt(pos) : 'até o ' + ordTxt(B.goal.pos) + ' · hoje ' + ordTxt(pos)) + '</span></div>' +
         (nx.bye ? '' : scout(S.coPreview(co).them)) + moodLine() +
         '<button class="btn" id="b-co-play">' + (nx.bye ? 'Ver a rodada' : 'Escalar e jogar') + '</button></div>' +
@@ -592,7 +595,8 @@
       if (!s.xi[i] || !sp[i]) return;
       const lat = sp[i][0], w = Math.max(8, Math.min(92, 50 + (lat - 50) * 1.25));
       const r = x.pos === 'GOL' ? 'GK' : x.pos === 'LAT' ? (lat < 50 ? 'LB' : 'RB') : x.pos === 'ZAG' ? 'CB' : x.pos === 'ATA' ? 'ST' : x.w ? (lat < 50 ? 'LM' : 'RM') : 'CM';
-      out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w]);
+      const pl = (s.squad || []).find(q => q.id === s.xi[i]), ov = pl ? pl.ovr - (100 - (pl.en === undefined ? 100 : pl.en)) * 0.1 : undefined; // cansado rende menos
+      out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w, ov, pl ? { nm: last(pl.n) || pl.n, enf: () => (pl.en === undefined ? 100 : pl.en) } : null]); // energia ao vivo (o motor gasta minuto a minuto)
     });
     const gk = out.filter(p => p[0] === 'GK'), rest = out.filter(p => p[0] !== 'GK').sort((a, b) => a[1] - b[1]);
     if (!gk.length && rest.length) { const g0 = rest.shift(); g0[0] = 'GK'; g0[1] = 0; g0[2] = 50; gk.push(g0); }
@@ -655,7 +659,7 @@
         const b = lvBall(m, mo); $('lv-ball').style.left = b[0] + '%'; $('lv-ball').style.top = b[1] + '%';
       } else if (sim) {
         // Mudou a formação (sua ou deles) ou alguém foi expulso: o campinho reposiciona
-        [m.us, m.them].forEach((s, k) => { const key = s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style; if (key !== lineKey[k]) { lineKey[k] = key; sim.lineup(k, simForm(s)); sim.style(k, S.CO_STY[s.style]); } });
+        [m.us, m.them].forEach((s, k) => { const key = s.form + ':' + s.xi.join(',') + ':' + s.style; if (key !== lineKey[k]) { lineKey[k] = key; sim.lineup(k, simForm(s)); sim.style(k, S.CO_STY[s.style]); } });
       }
       $('lv-fu').textContent = m.us.form; $('lv-ft').textContent = m.them.form;
       if (!read || m.min % 10 === 0 || m.stop) read = S.coRead(co, m);
@@ -664,7 +668,7 @@
       if (!useSim) $('lv-zone').innerHTML = read.side ? '<i class="' + (read.side === 'direita' ? 'bot' : 'top') + '"></i><b class="' + (read.side === 'direita' ? 'bot' : 'top') + '">Atacam pela sua ' + read.side + '</b>' : '';
       else { const z = $('lv-zone'); z.hidden = !read.side; if (read.side) z.textContent = 'Atacam pela sua ' + read.side; }
       const fresh = m.ev.filter(e => !seen.has(e) && !hidden.has(e));
-      if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => feedLine(m, e)).join('')); if (fresh.some(e => e.t === 'gol')) sfx('tap'); }
+      if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => feedLine(m, e)).join('')); { const gl = fresh.filter(e => e.t === 'gol').pop(); if (gl) sfx(U.goalSnd(gl.s === 'us', !!m.home)); } }
     };
     const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; save('hub'); result(m, log, false, firstMove); };
     const end = () => {
@@ -914,7 +918,7 @@
         if (z.textContent !== txt) z.textContent = txt;
         if (z.className !== zc) z.className = zc;
       };
-      sim = LP.sim({ me: -1, t0: m.min, flip: !m.home, kits: KT, speed: () => (co.speed === '3' ? 3 : 1), onFrame: zone,
+      sim = LP.sim({ me: -1, t0: m.min, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1), onFrame: zone,
         seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]] });
       lineKey = [m.us, m.them].map(s => s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style);
       sim.attach($('lp-cv'));
@@ -947,16 +951,34 @@
     const hv = (a, b) => (m.home ? [a, b] : [b, a]);
     const cmp = (lbl, a, b, sa, sb) => '<div class="lv-cmp"><b>' + (sa || a) + '</b><div><small>' + lbl + '</small><p><i style="flex:' + (a || 0.01) + '"></i><i style="flex:' + (b || 0.01) + '"></i></p></div><b>' + (sb || b) + '</b></div>';
     const [s1, s2] = hv(sh.us, sh.them), [o1, o2] = hv(ot.us, ot.them);
-    render('<div class="co-res lv-res"><div class="lv-board"><div class="lv-eb">Rodada ' + log.r + ' · ' + word + (aux ? ' · com o auxiliar' : '') + '</div>' +
-      '<div class="lv-sc"><span>' + crestB(H.id) + '<b>' + esc(H.short || H.name) + '</b></span><div class="lv-mid"><em>' + m.gh + ' <i>x</i> ' + m.ga + '</em></div><span>' + crestB(A.id) + '<b>' + esc(A.short || A.name) + '</b></span></div>' +
-      (m.mom && m.mom.length ? momSvg(m, move !== null && move !== undefined ? move : null) + (move !== null && move !== undefined ? '<small class="lv-mkt">Sua mudança aos ' + move + '\'</small>' : '') : '') + '</div>' +
-      (m.sh ? '<div class="lv-cmps">' + cmp('Chutes', s1, s2) + cmp('No gol', o1, o2) + cmp('Posse', ph, 100 - ph, ph + '%', (100 - ph) + '%') +
+    // Uma tela só, sem rolar (390x844): placar e faixa compactos; o resto em abas. Resumo abre: gols, expulsões, suas
+    // mudanças, os números numa linha e os cartões que pesam; Números, Lances (tudo) e Caderno (ponto quando há anotação nova)
+    const key = m.ev.filter(e => e.t === 'gol' || e.t === 'vermelho' || ((e.t === 'tatica' || e.t === 'troca') && e.s === 'us') || (e.t === 'lesao' && e.s === 'us'));
+    const nTl = (tl.match(/<li/g) || []).length;
+    const keyTl = key.map(e => { const mine = e.s === 'us', ic = e.t === 'gol' ? ICO.ball(mine ? '#FBF8EF' : '#9DB5A6') : e.t === 'vermelho' ? '<span class="co-red"></span>' : e.t === 'lesao' ? U.emo('🩹', 'xs') : ICO.sub;
+      const tx = e.t === 'gol' ? '<b>Gol</b> · ' + esc(e.p || '') : e.t === 'vermelho' ? esc(e.p || '') + ' <small>· expulso</small>' : e.t === 'tatica' ? 'Você muda para ' + esc(e.p) : e.t === 'troca' ? 'Sai ' + esc(e.p) + ', entra ' + esc(e.q) : esc(e.p || '') + ' <small>· lesão</small>';
+      return '<li class="' + e.s + ' ' + e.t + (e.t === 'tatica' || e.t === 'troca' ? ' you' : '') + '"><i>' + e.m + '\'</i>' + ic + '<span>' + tx + (e.t === 'gol' || e.t === 'vermelho' ? ' <small>· ' + esc(mine ? cl.short || cl.name : vs.short || vs.name) + '</small>' : '') + '</span></li>'; }).join('');
+    const line = m.sh ? '<div class="lv-line"><span>Chutes <b>' + s1 + ' · ' + s2 + '</b></span><span>Posse <b>' + ph + '%</b></span>' + (m.fo ? '<span>Faltas <b>' + hv(m.fo.us, m.fo.them).join(' · ') + '</b></span>' : '<span>No gol <b>' + o1 + ' · ' + o2 + '</b></span>') + '</div>' : '';
+    const panes = {
+      res: '<small class="lv-ph">O que decidiu</small>' + (keyTl ? '<ul class="lv-tl">' + keyTl + '</ul>' : '<p class="lead co-nil">Jogo truncado, sem gols.</p>') + line + susBox(m, log),
+      num: m.sh ? '<div class="lv-cmps">' + cmp('Chutes', s1, s2) + cmp('No gol', o1, o2) + cmp('Posse', ph, 100 - ph, ph + '%', (100 - ph) + '%') +
         (m.fo ? cmp('Faltas', ...hv(m.fo.us, m.fo.them)) + cmp('Impedimentos', ...hv((m.of || {}).us || 0, (m.of || {}).them || 0)) +
-          cmp('Cartões', ...hv(((m.yc || {}).us || 0) + ((m.rc || {}).us || 0) * 2, ((m.yc || {}).them || 0) + ((m.rc || {}).them || 0) * 2), ...hv(cardsTxt(m, 'us'), cardsTxt(m, 'them'))) : '') + '</div>' : '') +
-      susBox(m, log) +
-      (tl ? '<ul class="lv-tl">' + tl + '</ul>' : '<p class="lead co-nil">Jogo truncado, sem gols.</p>') +
-      cadAfter(log.cad) + ultTxt + (co.sacked ? '' : moodLine()) +
-      '<button class="btn" id="b-co-next">' + (co.sacked ? 'Falar com o presidente' : 'Continuar') + '</button></div>');
+          cmp('Cartões', ...hv(((m.yc || {}).us || 0) + ((m.rc || {}).us || 0) * 2, ((m.yc || {}).them || 0) + ((m.rc || {}).them || 0) * 2), ...hv(cardsTxt(m, 'us'), cardsTxt(m, 'them'))) : '') + '</div>' : '<p class="lead co-nil">Sem números deste jogo.</p>',
+      lan: tl ? '<small class="lv-ph">O jogo inteiro <em>em dourado: você</em></small><ul class="lv-tl all">' + tl + '</ul>' : '<p class="lead co-nil">Jogo truncado, sem gols.</p>',
+      cad: cadAfter(log.cad)
+    };
+    const newCad = log.cad && log.cad.notes && log.cad.notes.length;
+    const tabs = [['res', 'Resumo'], ['num', 'Números'], ['lan', 'Lances' + (nTl ? ' <i>' + nTl + '</i>' : '')]].concat(log.cad ? [['cad', 'Caderno' + (newCad ? ' <b class="lv-dot" aria-label="anotação nova"></b>' : '')]] : []);
+    render('<div class="co-res lv-res lv-one"><div class="lv-board"><div class="lv-eb">Rodada ' + log.r + ' · ' + word + (aux ? ' · com o auxiliar' : '') + '</div>' +
+      '<div class="lv-sc"><span>' + crestB(H.id) + '<b>' + esc(H.short || H.name) + '</b></span><div class="lv-mid"><em>' + m.gh + ' <i>x</i> ' + m.ga + '</em></div><span>' + crestB(A.id) + '<b>' + esc(A.short || A.name) + '</b></span></div>' +
+      (m.mom && m.mom.length ? momSvg(m, move !== null && move !== undefined ? move : null) + '<div class="lv-momf"><small>Quem mandou no jogo</small>' + (move !== null && move !== undefined ? '<small class="lv-mkt">Sua mudança aos ' + move + '\'</small>' : '') + '</div>' : '') + '</div>' +
+      '<div class="cad-tabs lv-tabs" role="tablist" style="grid-template-columns:repeat(' + tabs.length + ',minmax(0,1fr))">' + tabs.map(([k, t]) => '<button role="tab" data-rt="' + k + '"' + (k === 'res' ? ' class="on" aria-selected="true"' : ' aria-selected="false"') + '>' + t + '</button>').join('') + '</div>' +
+      '<div class="lv-pane">' + Object.keys(panes).map(k => '<div class="lv-pn' + (k === 'res' ? ' on' : '') + '" data-rp="' + k + '">' + panes[k] + '</div>').join('') + '</div>' +
+      '<div class="lv-foot">' + ultTxt + (co.sacked ? '' : moodLine()) +
+      '<button class="btn" id="b-co-next">' + (co.sacked ? 'Falar com o presidente' : 'Continuar') + '</button></div></div>');
+    document.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.rt;
+      document.querySelectorAll('[data-rt]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+      document.querySelectorAll('[data-rp]').forEach(x => x.classList.toggle('on', x.dataset.rp === k)); if (k === 'cad') { const d = b.querySelector('.lv-dot'); if (d) d.remove(); } });
     $('b-co-next').onclick = () => { sfx('tap'); if (co.sacked) return sacked(); if (co.ss.done) return finishSeason(); hub(); };
   }
   function sacked() {

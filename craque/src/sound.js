@@ -205,6 +205,10 @@
     cheer(t) {
       if (rec.torcida) play('torcida', t, 0.25, 0.1); else crowd(t, { vowel: 'o', dur: 2.4, a: 0.25, hold: 1.2, spread: 0.2, peak: 0.8, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.6, 1.2], [2.4, 0.95]], shouts: 12, shoutGain: 1, bend: [1, 1.12] });
     },
+    // Gol fora de casa: a sua torcida é pouca e está longe (a mesma gravação, bem mais baixa)
+    cheerAway(t) {
+      if (rec.torcida) play('torcida', t, 0.08, 0.25); else crowd(t, { vowel: 'o', dur: 1.8, a: 0.2, hold: 0.8, spread: 0.2, peak: 0.3, sections: 3, color: [[0, 0.9], [0.4, 1.1], [1.8, 0.95]], shouts: 5, shoutGain: 0.6, bend: [1, 1.08] });
+    },
     // Erro: "uhhh" da torcida caindo (o som original, que o Silvio prefere)
     miss(t) {
       noise(t, 1.1, 0.22, 0.15, 'bandpass', 900, 280, 1.2);

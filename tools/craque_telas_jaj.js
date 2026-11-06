@@ -212,7 +212,11 @@ const INIT = `
   await page.waitForSelector('#fc-jn, #fc-next, #fc-lauto', { timeout: 40000 });
   await lance();
   await page.waitForSelector('#fc-jn, #fc-next', { timeout: 60000 });
-  if (await has('#fc-jn')) { await shot('partida-fim'); await tap('#fc-jn'); await page.waitForSelector('#fc-next', { timeout: 8000 }); }
+  if (await has('#fc-jn')) { await shot('partida-fim');
+    // Fim de jogo em abas: foto de cada uma; no celular nenhuma pode passar da altura da tela
+    for (const k of ['ml', 'rd', 'tb']) { if (!(await has('[data-et="' + k + '"]'))) continue; await tap('[data-et="' + k + '"]'); await shot('partida-fim-' + k);
+      const h = await page.evaluate(() => document.documentElement.scrollHeight); if (!process.env.DESKTOP && H <= 900 && h > H + 1) errors.push('partida-fim-' + k + ' rola: ' + h + 'px'); }
+    await tap('#fc-jn'); await page.waitForSelector('#fc-next', { timeout: 8000 }); }
   if (process.env.CONF) { const R = await page.evaluate(() => window.__conf); console.log('CONFERÊNCIA campinho x textos:', R.n, 'checagens ·', R.bad.length, 'desencontros', JSON.stringify(R.bad.slice(0, 8)));
     console.log('GOLS: rede x placar (s, placar depois da rede):', R.scores.map(t => { const n = R.nets.filter(x => x <= t + 50).pop(); return n === undefined ? 'sem rede' : ((t - n) / 1000).toFixed(2); }).join(' '), '· recomeços', R.ko, 'com alguém no campo errado', R.koBad); }
   await shot('jornal');
