@@ -34,6 +34,15 @@ require('fs').mkdirSync(OUT, { recursive: true });
   await p.evaluate(() => window.scrollTo(0, 0)); await shot('time-433-pressao');
   await click('#b-co-ok'); await shot('central');
   await click('#b-co-tab'); await shot('tabela'); await click('#b-co-back');
+  // Fim de jogo: uma tela só (390x844, sem rolar) com abas; foto de cada aba e problema se alguma passar da altura
+  const resTabs = async name => {
+    for (const k of ['res', 'num', 'lan', 'cad']) {
+      if (!(await p.$('[data-rt="' + k + '"]'))) continue;
+      await click('[data-rt="' + k + '"]'); await shot(name + '-' + k);
+      const h = await p.evaluate(() => document.documentElement.scrollHeight);
+      if (!desk && H <= 900 && h > H + 1) errs.push(name + '-' + k + ' rola: ' + h + 'px de altura');
+    }
+  };
   let games = 0, guard = 0, finShot = false;
   while (guard++ < 80) {
     if (games >= 7 && !finShot && await p.$('#b-co-fin')) {
@@ -79,14 +88,14 @@ require('fs').mkdirSync(OUT, { recursive: true });
         if (!(await p.$('.lv-sheet.on'))) await click('[data-sp="fim"]');
         else { await click('#b-lv-go'); await click('[data-sp="fim"]'); }
         await p.waitForSelector('#b-lv-end', { timeout: 30000 }); await shot('fim-de-jogo');
-        await click('#b-lv-end'); await shot('resultado');
+        await click('#b-lv-end'); await resTabs('resultado');
       } else if (games === 2) {
         // largou no meio: recarrega antes de ver o resultado; o auxiliar termina o jogo
         await click('[data-sp="fim"]');
         await p.waitForSelector('#b-lv-end', { timeout: 30000 });
         await p.reload({ waitUntil: 'load' }); await p.waitForTimeout(1500);
         await click('#b-cont-co'); await shot('largou-no-meio');
-      } else { if (await p.$('.lv-sheet.on #b-lv-go')) await click('#b-lv-go'); await click('[data-sp="fim"]'); await click('#b-lv-end'); if (games === 4) await shot('resultado-caderno'); }
+      } else { if (await p.$('.lv-sheet.on #b-lv-go')) await click('#b-lv-go'); await click('[data-sp="fim"]'); await click('#b-lv-end'); if (games === 4) await resTabs('resultado-caderno'); }
       continue;
     }
     if (await p.$('#b-co-next')) { await click('#b-co-next'); continue; }
