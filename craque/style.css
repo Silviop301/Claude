@@ -7399,3 +7399,15 @@ button.cad-c { cursor: pointer; }
 :root { --panel: #141517; --panel-2: #1E2023; --panel-line: rgba(255, 255, 255, .10); --board: #08090A; --board-2: #141517; }
 .bar { background: rgba(16, 17, 19, .96) !important; }
 .tbx, .lv-feed li, .ph-w { background-color: var(--panel); }
+
+/* Cartões no Mexer no time: amarelo no canto do número, pendurado com contorno, vermelho no lugar do expulso */
+.lv-cd { display: inline-block; width: 11px; height: 15px; border-radius: 2px; transform: rotate(12deg); box-shadow: 0 1px 2px rgba(0, 0, 0, .5); text-decoration: none; }
+.lv-tk i .lv-cd { position: absolute; top: -7px; right: -9px; z-index: 2; }
+.lv-cd.y { background: #F5D90A; } .lv-cd.r { background: #E5383B; }
+.lv-cd.p { background: rgba(7, 17, 12, .6); border: 2px solid #F5D90A; box-sizing: border-box; }
+.lv-tk.gone i .lv-cd { top: 50%; left: 50%; right: auto; transform: translate(-50%, -50%) rotate(12deg); }
+.lv-bc small { white-space: nowrap; } .lv-bc small .lv-cd { width: 9px; height: 12px; margin-left: 5px; vertical-align: -1px; }
+.co-pop .lv-cdh { display: flex; gap: 10px; align-items: center; margin: 4px 0 8px; padding: 8px 12px; border-radius: var(--r-sm); background: rgba(245, 217, 10, .12); color: #F5D90A; font-weight: 700; font-size: 14px; line-height: 1.3; }
+.co-pop .lv-cdh .lv-cd { flex: none; }
+.lv-lg { display: flex; align-items: center; gap: 6px; margin: -4px 0 8px; font-size: 12px; font-weight: 700; color: var(--tx-3); }
+.lv-lg .lv-cd { width: 9px; height: 12px; } .lv-lg .lv-cd.p { margin-left: 10px; }
