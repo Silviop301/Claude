@@ -69,6 +69,7 @@
   function offers(list, stay) {
     co.offers = list; if (!stay) save('offers');
     G.c = null; bar();
+    if (U.LD && U.LD.on()) return U.LD.propostas(list, stay);
     const first = !co.hist.length && !co.club;
     const card = id => {
       const cl = club(id), lg = league(id), g = S.coGoalFor(co, id), sq = S.coGenSquad(id, co.season), avg = Math.round(sq.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 11).reduce((a, p) => a + p.ovr, 0) / 11);
@@ -91,6 +92,7 @@
   // Chegada: o presidente diz a meta
   function welcome() {
     const cl = club(co.club), g = co.board.goal;
+    if (U.LD && U.LD.on()) return U.LD.welcome();
     render('<div class="co-msg"><div class="eyebrow">' + esc(cl.name) + ' · ' + yr() + '</div>' + crest(cl.id, 'co-big') +
       '<h2>Bem-vindo, professor.</h2><p class="lead">O presidente aperta sua mão: "Aqui a meta é uma só: <b>' + S.CO_GOAL_TXT[g.k].toLowerCase() + '</b>. ' +
       (g.k === 'titulo' ? 'Segundo lugar aqui é derrota."' : g.k === 'naocair' || g.k === 'digna' ? 'Ninguém espera milagre, mas vexame não."' : 'Confio no seu trabalho."') + '</p>' +
@@ -157,6 +159,7 @@
   }
   function hub() {
     G.c = null; bar();
+    if (U.LD && U.LD.on()) return U.LD.semana();
     save('hub');
     const nx = S.coNext(co), cl = club(co.club), ss = co.ss, B = co.board, pos = S.coPos(co);
     if (!nx) return finishSeason();
@@ -404,6 +407,7 @@
   function closePop() { const w = document.getElementById('co-pop'); if (w) w.remove(); if (pop.esc) document.removeEventListener('keydown', pop.esc); pop.esc = null; }
   function team(toPlay) {
     G.c = null; bar();
+    if (U.LD && U.LD.on()) return U.LD.time(toPlay);
     const by = {}; co.squad.forEach(p => { by[p.id] = p; });
     // Titulares que não podem jogar (lesão, suspensão) saem antes de abrir: o auxiliar põe outro
     if (co.xi.some(id => !avail(by[id])) || co.xi.length < 11) { const a = S.coAutoXI(co.squad, co.form); co.xi = a.xi; }
@@ -504,7 +508,10 @@
   const keepBench = () => { co.bench = co.squad.filter(p => avail(p) && !co.xi.includes(p.id)).sort((a, b) => b.ovr - a.ovr).slice(0, 9).map(p => p.id); };
 
   // ---------- jogo (nesta parte, direto o resultado) ----------
+  let pre = null; // posição, confiança e caixa antes do jogo (o "O que mudou" do fim de jogo deitado)
+  const markPre = () => { pre = { pos: S.coPos(co), conf: co.board.conf, caixa: co.fin ? co.fin.caixa : null }; };
   function play() {
+    markPre();
     const m = S.coMatchStart(co);
     if (!m) return hub();
     // Marca o jogo começado: se a pessoa sai no meio, o auxiliar termina (recarregar não desfaz o resultado)
@@ -513,6 +520,7 @@
   }
   // Jogo largado no meio (fechou o app): o auxiliar comanda do começo ao fim
   function auxFinish() {
+    markPre();
     const m = S.coMatchStart(co);
     delete co.live;
     if (!m) { save('hub'); return hub(); }
@@ -569,6 +577,9 @@
       e.t === 'lesao' ? esc(e.p) + ' sente e pede para sair (' + esc(who) + ')' :
       e.t === 'tatica' ? (e.s === 'us' ? 'Você muda para ' + esc(e.p) : 'O ' + esc(who) + ' muda para <b>' + esc(e.p).toLowerCase() + '</b>') :
       e.t === 'troca' ? 'Sai ' + esc(e.p) + ', entra <b>' + esc(e.q) + '</b>' :
+      e.t === 'grito' ? 'Você grita da beira do campo: <b>' + esc(e.p) + '</b>' :
+      e.t === 'grito-fim' ? 'O time volta ao plano de jogo' :
+      e.t === 'conversa' ? 'Conversa no vestiário: <b>' + esc(e.p).toLowerCase() + '</b>' :
       e.t === 'intervalo' ? 'Fim do primeiro tempo' : '';
     return '<li class="' + e.s + ' ' + e.t + '"><i>' + e.m + '\'</i><span>' + t + '</span></li>';
   }
@@ -597,7 +608,7 @@
       const lat = sp[i][0], w = Math.max(8, Math.min(92, 50 + (lat - 50) * 1.25));
       const r = x.pos === 'GOL' ? 'GK' : x.pos === 'LAT' ? (lat < 50 ? 'LB' : 'RB') : x.pos === 'ZAG' ? 'CB' : x.pos === 'ATA' ? 'ST' : x.w ? (lat < 50 ? 'LM' : 'RM') : 'CM';
       const pl = (s.squad || []).find(q => q.id === s.xi[i]), ov = pl ? pl.ovr - (100 - (pl.en === undefined ? 100 : pl.en)) * 0.1 : undefined; // cansado rende menos
-      out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w, ov, pl ? { num: pl.num, nm: last(pl.n) || pl.n, yc: () => !!(s.bk && s.bk[pl.id]), enf: () => (pl.en === undefined ? 100 : pl.en) } : null]); // energia ao vivo (o motor gasta minuto a minuto)
+      out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w, ov, pl ? { id: pl.id, num: pl.num, nm: last(pl.n) || pl.n, yc: () => !!(s.bk && s.bk[pl.id]), enf: () => (pl.en === undefined ? 100 : pl.en) } : null]); // energia ao vivo (o motor gasta minuto a minuto)
     });
     const gk = out.filter(p => p[0] === 'GK'), rest = out.filter(p => p[0] !== 'GK').sort((a, b) => a[1] - b[1]);
     if (!gk.length && rest.length) { const g0 = rest.shift(); g0[0] = 'GK'; g0[1] = 0; g0[2] = 50; gk.push(g0); }
@@ -622,7 +633,11 @@
         '<div class="lv-forms"><span><i style="background:' + KT.mine[0] + '"></i><b id="lv-fu"></b></span><span><i style="background:' + KT.opp[0] + '"></i><b id="lv-ft"></b></span></div></div>' :
       '<div class="lv-pitch" id="lv-pitch"><div class="lv-f"><i class="c"></i><i class="b l"></i><i class="b r"></i></div><div id="lv-zone"></div><div id="lv-dots"></div><span class="lv-ball" id="lv-ball"></span>' +
         '<div class="lv-forms"><span><i class="us"></i><b id="lv-fu"></b></span><span><i class="th"></i><b id="lv-ft"></b></span></div></div>';
-    render('<div class="lv">' +
+    const LDon = !!(U.LD && U.LD.on()); let ctx = null; // Treinador deitado: o mesmo jogo no palco de 844×390 (ui/coachland.js)
+    const feed0 = '<li><i>0\'</i><span>Bola rolando. ' + esc(nm(co.club)) + ' no ' + m.us.form + ', ' + esc(S.CO_STY[m.us.style].name.toLowerCase()) + '; ' + esc(nm(m.vs)) + ' no ' + m.them.form + '.</span></li>';
+    const speedHtml = '<div class="lv-speed" id="lv-speed">' + ['1', '3'].map(k => '<button data-sp="' + k + '"' + (k === co.speed ? ' class="on"' : '') + '>' + SPEED[k][0] + '</button>').join('') + '<button data-sp="fim" aria-label="Pular para o fim">' + ICO.ff + '</button></div>';
+    if (LDon) U.LD.show(U.LD.liveHtml({ H, A, m, pitchHtml, feed0, speedHtml, crestB, pause: ICO.pause }));
+    else render('<div class="lv">' +
       '<div class="lv-board"><div class="lv-sc"><span>' + crestB(H.id) + '<b>' + esc(H.short || H.name) + '</b><i class="lv-crd" id="lv-cd-h"></i></span>' +
         '<div class="lv-mid"><em id="lv-score">0 <i>x</i> 0</em><small id="lv-clock"><i></i>0\'</small></div><span>' + crestB(A.id) + '<b>' + esc(A.short || A.name) + '</b><i class="lv-crd" id="lv-cd-a"></i></span></div>' +
         '<div class="lv-momh"><small>Quem manda no jogo</small><small id="lv-momw"></small></div><div id="lv-mom"></div></div>' +
@@ -671,6 +686,7 @@
       else { const z = $('lv-zone'); z.hidden = !read.side; if (read.side) z.textContent = 'Atacam pela sua ' + read.side; }
       const fresh = m.ev.filter(e => !seen.has(e) && !hidden.has(e));
       if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => feedLine(m, e)).join('')); { const gl = fresh.filter(e => e.t === 'gol').pop(); if (gl) sfx(U.goalSnd(gl.s === 'us', !!m.home)); } }
+      if (ctx) U.LD.livePaint(ctx);
     };
     const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; save('hub'); result(m, log, false, firstMove); };
     const end = () => {
@@ -762,6 +778,7 @@
     }
     const sheet = st => {
       clearTimeout(timer); open = true; read = S.coRead(co, m);
+      if (ctx) { if (sim) { clearTimeout(frz); frz = setTimeout(() => { if (open && sim) sim.freeze(true); }, st.t === 'gol' || st.t === 'vermelho' ? 2600 : 700); } return U.LD.liveStop(ctx, st); }
       if (sim) { clearTimeout(frz); frz = setTimeout(() => { if (open && sim) sim.freeze(true); }, st.t === 'gol' || st.t === 'vermelho' ? 2600 : 700); }
       const s = m.us, us = st.s === 'us';
       const T = { gol: 'Gol do ' + (us ? nm(co.club) : nm(m.vs)), intervalo: 'Intervalo', vermelho: 'Expulso', lesao: 'Lesão', pausa: 'Jogo parado' }[st.t] || 'Parada';
@@ -909,6 +926,24 @@
       };
       draw();
     };
+    if (LDon) {
+      const byId = () => { const o = {}; m.us.squad.forEach(p => { o[p.id] = p; }); return o; };
+      const move = () => { if (firstMove === null) firstMove = m.min; };
+      ctx = { m, co, nm, last, LANE, feedLine: e => feedLine(m, e), cadLines, avail, pend, susTxt, posTxt, STY_SHORT, FORM_TIP,
+        get read() { return read || (read = S.coRead(co, m)); },
+        get open() { return open; }, get busy() { return open || !!wait || m.done; },
+        // Pausa para um popup (jogador tocado); volta false se o jogo não pode parar agora
+        pause() { if (open || wait || m.done) return false; clearTimeout(timer); open = true; read = S.coRead(co, m); if (sim) { clearTimeout(frz); sim.freeze(true); } return true; },
+        resume() { open = false; if (sim) { clearTimeout(frz); sim.freeze(false); } paint(); if (co.speed === 'fim') return toEnd(); timer = setTimeout(tick, 400); },
+        sub(outId, inId) { const by = byId(); if (!S.coSub(co, m, outId, inId)) return false; m.ev.push({ m: m.min, t: 'troca', s: 'us', p: last(by[outId].n), q: last(by[inId].n) }); move(); paint(); return true; },
+        swap(i, j) { const x = m.us.xi; const t = x[i]; x[i] = x[j]; x[j] = t; paint(); },
+        tac(f, st) { const s0 = m.us, f0 = s0.form, y0 = s0.style; S.coMatchTactic(co, m, f, st); if (s0.form !== f0 || s0.style !== y0) { m.ev.push({ m: m.min, t: 'tatica', s: 'us', p: s0.form + ', ' + S.CO_STY[s0.style].name.toLowerCase() }); move(); } paint(); },
+        shout(k) { if (!S.coShout(co, m, k)) return false; paint(); return true; },
+        talk(k) { return S.coTalk(co, m, k); },
+        redOpts: st => redOpts(st), redPick: k => redPick(k), paint: () => paint(),
+        stats() { const o = k => m[k] || { us: 0, them: 0 }; return { sh: o('sh'), ot: o('ot'), fo: o('fo'), of: o('of'), yc: o('yc'), rc: o('rc'), poss: S.coPoss(m) }; },
+      };
+    }
     $('lv-speed').querySelectorAll('button').forEach(b => b.onclick = () => {
       sfx('tap'); const k = b.dataset.sp;
       if (k === 'fim') { co.speed = 'fim'; if (!open) toEnd(); return; }
@@ -930,6 +965,7 @@
         if (z.className !== zc) z.className = zc;
       };
       sim = LP.sim({ me: -1, t0: m.min, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1), onFrame: zone,
+        onPick: (side, inf) => { if (ctx && side === 0 && inf && inf.id) U.LD.livePlayer(ctx, inf.id); },
         seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]] });
       lineKey = [m.us, m.them].map(s => s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style);
       sim.attach($('lp-cv'));
@@ -949,6 +985,7 @@
       pd.map(p => '<p><span class="co-yc"></span><b>' + esc(last(p.n)) + '</b> · 2º amarelo no ano<em>Pendurado</em></p>').join('') + '</div>';
   }
   function result(m, log, aux, move) {
+    if (U.LD && U.LD.on()) return U.LD.result(m, log, aux, move);
     const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
     const tl = m.ev.filter(e => ['gol', 'vermelho', 'amarelo', 'tatica', 'troca'].includes(e.t) || (e.t === 'lesao' && e.s === 'us')).map(e => {
       const mine = e.s === 'us', ic = e.t === 'gol' ? ICO.ball(mine ? '#FBF8EF' : '#9DB5A6') : e.t === 'vermelho' ? '<span class="co-red"></span>' : e.t === 'amarelo' ? '<span class="co-yc"></span>' : e.t === 'lesao' ? U.emo('🩹', 'xs') : ICO.sub;
@@ -1004,6 +1041,7 @@
   function finishSeason() { const out = S.coSeasonEnd(co); save('end'); seasonEnd(out); }
   function seasonEnd(out) {
     G.c = null; bar();
+    if (U.LD && U.LD.on()) return U.LD.temporada(out);
     const cl = club(out.club), df = out.fame[1] - out.fame[0];
     const head = out.sacked ? 'Demitido no meio do caminho' : out.won ? 'Campeão!' : out.up ? 'Subiu de divisão!' : out.down ? 'Rebaixado' : out.met ? 'Meta cumprida' : 'Meta não cumprida';
     const skills = () => '<div class="co-sk">' + Object.keys(S.CO_SKILLS).map(k => '<div class="co-skr"><span><b>' + S.CO_SKILLS[k] + '</b><small>' + SK_TXT[k] + '</small></span>' +
@@ -1029,5 +1067,8 @@
   const SK_TXT = { leitura: 'o time rende um pouco mais em todo jogo', motiv: 'derrota e banco abalam menos o elenco', negoc: 'vale no mercado (chega numa próxima parte)' };
   const FAME_TXT = f => (f >= 80 ? 'técnico de seleção' : f >= 60 ? 'disputado pelos grandes' : f >= 40 ? 'nome conhecido' : f >= 20 ? 'começando a aparecer' : 'ninguém conhece ainda');
 
+  // Para as telas deitadas (ui/coachland.js)
+  U._co = { get co() { return co; }, get pre() { return pre; }, save, sacked: () => sacked(), moodLine: () => moodLine(), susBox, exit: () => { save(); co = null; U.ldOff(); U.home(); }, hub, team, caderno, tabela, fin, finishSeason, play, live, result,
+    avail, pend, susTxt, posTxt, FORM_TIP, STY_SHORT, cadLines, cadName, CAD_W, CAD_S, cadQuote, feedLine: (m, e) => feedLine(m, e), offers: (l, st) => offers(l, st), welcome: () => welcome(), SK_TXT, ordTxt, mi, sgn, finPres: f => finPres(f), FAME_TXT, keepBench: () => keepBench(), brl, nm, last };
   Object.assign(U, { coCreate: create, coHub: () => co && hub(), coCaderno: (c, pv) => (pv && pv.them ? cadBlock(c.form, c.style, pv.them) + hintCard() : '') });
 })();

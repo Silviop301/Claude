@@ -66,6 +66,7 @@
   }, true);
 
   function render(html, opts) {
+    if (window.CRAQUE_UI && window.CRAQUE_UI.ldOff) window.CRAQUE_UI.ldOff(); // a tela deitada do Treinador (ui/coachland.js) sai quando outra tela abre
     barHome();
     screen.innerHTML = html;
     if (!(opts && opts.same)) shownAt = performance.now(); // redesenho da mesma tela (por timer) não é tela nova

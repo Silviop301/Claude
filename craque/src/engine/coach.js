@@ -66,6 +66,32 @@
   };
   S.CO_STYLES = Object.keys(STY);
   const sty = k => STY[k] || STY.equilibrado;
+  // Grito do técnico (partida ao vivo, um por vez, vale alguns minutos): mexe no estilo de agora por um tempo.
+  // Nada é de graça: pressionar cansa e abre as costas, segurar e recuar tiram o ataque. O robô não grita (equilíbrio igual)
+  const SHOUT = S.CO_SHOUT = {
+    pressionar: { name: 'Pressionar', sub: 'cansa mais', dur: 10, add: { press: 0.4, line: 0.2, build: 0.05 }, mul: { en: 1.5, att: 1.08, def: 1.06 }, tip: 'o time rouba lá na frente e cansa mais rápido' },
+    segurar: { name: 'Segurar', sub: 'gastar tempo', dur: 10, add: { ctrl: 0.2, press: -0.15, wide: -0.1 }, mul: { att: 0.84, def: 0.88, en: 0.85 }, tip: 'toca de lado, chega menos e sofre menos' },
+    lados: { name: 'Pelos lados', sub: 'abrir o jogo', dur: 10, add: { wide: 0.35, patience: 0.15 }, mul: { att: 1.03, def: 1.05 }, tip: 'a bola vai para as pontas, sobra espaço no meio para eles' },
+    recuar: { name: 'Recuar', sub: 'fechar a área', dur: 10, add: { line: -0.35, press: -0.25, counter: 0.2 }, mul: { att: 0.8, def: 0.8, en: 0.9 }, tip: 'todo mundo atrás da linha da bola, só sai no contra-ataque' },
+  };
+  // Conversa do intervalo (vale do 46' ao 60'): o efeito depende do placar; a moral do elenco sente na hora
+  const TALK = S.CO_TALK = {
+    calma: { name: 'Calma', tip: { win: 'Segura a vantagem: menos erro, menos chegada lá na frente.', draw: 'O time volta tranquilo: erra menos atrás.', lose: 'Calma perdendo: o time erra menos, mas não acorda.' },
+      fx: { win: { att: 0.97, def: 0.9 }, draw: { def: 0.95 }, lose: { def: 0.96, att: 0.98 } }, mo: { win: 2, draw: 1, lose: -1 } },
+    cobrar: { name: 'Cobrar', tip: { win: 'Cobrar ganhando irrita quem está jogando bem.', draw: 'O time volta ligado: chega mais, deixa mais espaço.', lose: 'Bronca perdendo: o time volta mordido.' },
+      fx: { win: { att: 1.02 }, draw: { att: 1.07, def: 1.03 }, lose: { att: 1.1, def: 1.04, press: 0.1 } }, mo: { win: -5, draw: -1, lose: 1 } },
+    elogiar: { name: 'Elogiar', tip: { win: 'O time volta confiante e solto.', draw: 'Confiança em alta, mas ninguém acelera.', lose: 'Elogio perdendo soa estranho para o grupo.' },
+      fx: { win: { att: 1.04, def: 0.98 }, draw: { att: 1.03 }, lose: { att: 1.01 } }, mo: { win: 4, draw: 3, lose: -2 } },
+  };
+  const talkState = (m, side) => { const d = (m.home === (side === m.us)) ? m.gh - m.ga : m.ga - m.gh; return d > 0 ? 'win' : d < 0 ? 'lose' : 'draw'; };
+  S.coTalkState = m => talkState(m, m.us);
+  const styOf = side => {
+    const b = sty(side.style), sh = side.shout && SHOUT[side.shout.k], tk = side.talk; if (!sh && !tk) return b;
+    const o = Object.assign({}, b);
+    if (sh) { Object.keys(sh.add).forEach(k => { o[k] = Math.max(0, o[k] + sh.add[k]); }); Object.keys(sh.mul).forEach(k => { o[k] *= sh.mul[k]; }); }
+    if (tk) { const fx = TALK[tk.k].fx[tk.st]; Object.keys(fx).forEach(k => { if (k === 'press') o[k] += fx[k]; else o[k] *= fx[k]; }); }
+    return o;
+  };
   const slotsOf = form => FORMS[form].slots.map(x => x.pos);
   const sectorOf = (form, i) => { const l = FORMS[form].slots[i].ln; return l === 'am' ? 'm' : l; };
   S.coSlots = slotsOf;
@@ -167,7 +193,7 @@
   }
   // Gols esperados de cada lado no jogo inteiro (H em casa). Volta também o porquê, para a tela do confronto
   function matchup(H, A, neutral) {
-    const h = shape(H), a = shape(A), sh = sty(H.style), sa = sty(A.style);
+    const h = shape(H), a = shape(A), sh = styOf(H), sa = styOf(A);
     const ch = Math.pow((h.cm + 0.3 * h.wm) * sh.ctrl, 1.6), ca = Math.pow((a.cm + 0.3 * a.wm) * sa.ctrl, 1.6);
     const pH = clamp(ch / (ch + ca || 1), 0.28, 0.72);
     const eh = edge(h, a, sh, sa, pH), ea = edge(a, h, sa, sh, 1 - pH);
@@ -314,7 +340,7 @@
     const us = { club: co.club, squad: co.squad, form: co.form, style: co.style, bonus: co.xp.leitura * 0.2, xi: co.xi.slice(), bench: (co.bench || []).filter(id => co.squad.some(p => p.id === id && ok(p))), subs: CO.subs, red: 0, mine: true };
     const them = oppSide(co, nx.vs, !nx.home);
     if (!us.bench.length) us.bench = autoXI(co.squad, co.form).bench;
-    return { min: 0, gh: 0, ga: 0, home: nx.home, us, them, ev: [], stop: null, done: false, half: false, classic: (D.RIVALS[co.club] || []).includes(nx.vs), vs: nx.vs, round: nx.round, played: {} };
+    return { min: 0, gh: 0, ga: 0, home: nx.home, us, them, ev: [], stop: null, done: false, half: false, classic: (D.RIVALS[co.club] || []).includes(nx.vs), vs: nx.vs, round: nx.round, played: {}, startXI: us.xi.slice() };
   };
   const sideName = (m, s) => (s === m.us ? 'us' : 'them');
   // Avança até a próxima parada (gol, vermelho, lesão, intervalo) ou o fim; com `until`, para também naquele minuto
@@ -325,6 +351,8 @@
     let stop = null;
     while (!stop && m.min < 90 && !(until && m.min >= until)) {
       m.min++;
+      if (m.us.talk && m.min > m.us.talk.until) delete m.us.talk;
+      if (m.us.shout && m.min > m.us.shout.until) { delete m.us.shout; m.ev.push({ m: m.min, t: 'grito-fim', s: 'us' }); }
       const H = m.home ? m.us : m.them, A = m.home ? m.them : m.us;
       const mu = matchup(H, A), lh = mu.lh, la = mu.la;
       m.poss = (m.poss || 0) + (m.home ? mu.h.poss : 1 - mu.h.poss);
@@ -334,7 +362,7 @@
       const pm = m.pm = m.pm || {}, tm = m.tm = m.tm || {}, ks = 'sty:' + m.us.style + '|' + m.them.style, kf = 'frm:' + m.us.form + '|' + m.them.form, kt = m.them.form + '|' + m.them.style;
       pm[ks] = (pm[ks] || 0) + 1; pm[kf] = (pm[kf] || 0) + 1; tm[kt] = (tm[kt] || 0) + 1;
       // Cansaço: quem está em campo perde energia aos poucos (o estilo de ataque cansa mais)
-      [m.us, m.them].forEach(s => s.xi.forEach(id => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / 90 * sty(s.style).en); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }));
+      [m.us, m.them].forEach(s => s.xi.forEach(id => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / 90 * styOf(s).en); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }));
       // Chances: cada gol esperado vira CO.ch chances; uma em CO.ch entra (as outras são defesa, para fora ou na trave)
       const chance = (S0, lam) => {
         if (r() >= lam * CO.ch / 90) return false;
@@ -350,7 +378,7 @@
       // Faltas, cartões, impedimento e lesão (o seu vermelho e a sua lesão param o jogo; os do rival entram no relato)
       [m.us, m.them].forEach(s => {
         if (stop && stop.t !== 'gol') return;
-        const sd = sideName(m, s), o = s === m.us ? m.them : m.us, st = sty(s.style), cnt = k => { m[k] = m[k] || { us: 0, them: 0 }; m[k][sd]++; };
+        const sd = sideName(m, s), o = s === m.us ? m.them : m.us, st = styOf(s), cnt = k => { m[k] = m[k] || { us: 0, them: 0 }; m[k][sd]++; };
         if (r() < CO.foul / 90 * (0.8 + 0.45 * st.press + 0.2 * (1 - st.ctrl))) {
           cnt('fo');
           const k = foulPick(r, s), id = s.xi[k], p = id && s.squad.find(x => x.id === id); if (!p) return;
@@ -366,7 +394,7 @@
             m.ev.push({ m: m.min, t: 'vermelho', s: sd, p: p.n, how: card, pos: slotsOf(s.form)[k] });
             if (s.mine) stop = { t: 'vermelho', p: p.n, how: card, id };
           } else if (r() < CO.foulShow) m.ev.push({ m: m.min, t: 'falta', s: sd, p: p.n, pos: slotsOf(s.form)[k] });
-        } else if (r() < CO.off / 90 * (0.55 + 0.9 * sty(o.style).line) * (0.8 + 0.4 * st.counter)) {
+        } else if (r() < CO.off / 90 * (0.55 + 0.9 * styOf(o).line) * (0.8 + 0.4 * st.counter)) {
           const at = s.xi.map((id, k) => [id, k]).filter(([id, k]) => id && /ATA|MEI/.test(slotsOf(s.form)[k])), q = at.length ? r.pick(at) : null;
           if (!q) return;
           cnt('of'); const p = s.squad.find(x => x.id === q[0]);
@@ -416,6 +444,34 @@
       if (best > eff(p, slots[k]) * 1.01) autoSub(s, k);
     });
   }
+  // Grito do técnico: um por vez, a partir do minuto de agora
+  S.coShout = function (co, m, k) {
+    if (m.done || m.us.shout || !SHOUT[k]) return false;
+    m.us.shout = { k, from: m.min, until: m.min + SHOUT[k].dur };
+    m.ev.push({ m: m.min, t: 'grito', s: 'us', p: SHOUT[k].name, k });
+    return true;
+  };
+  // Conversa do intervalo: uma por jogo, só no intervalo
+  S.coTalk = function (co, m, k) {
+    if (!TALK[k] || m.talked || m.min < 45 || m.min > 46) return false;
+    const st = talkState(m, m.us), d = TALK[k].mo[st];
+    m.us.talk = { k, st, until: 60 }; m.talked = k;
+    m.us.xi.forEach(id => { const p = id && m.us.squad.find(x => x.id === id); if (p) p.mo = Math.max(0, Math.min(100, (p.mo === undefined ? 60 : p.mo) + d)); });
+    m.ev.push({ m: m.min, t: 'conversa', s: 'us', p: TALK[k].name });
+    return true;
+  };
+  // Conversa com quem está chateado (segunda-feira): prometer chance, pedir paciência ou ser duro
+  S.CO_TALK1 = {
+    prometer: { name: 'Prometer chance', tip: 'Ele joga nos próximos 3 jogos ou fica pior do que antes', mo: 14 },
+    paciencia: { name: 'Pedir paciência', tip: 'Acalma um pouco, sem promessa', mo: 5 },
+    duro: { name: 'Ser duro', tip: '"Treine mais." Ele não gosta, mas para de pedir', mo: -4 },
+  };
+  S.coTalk1 = function (co, id, k) {
+    const p = co.squad.find(x => x.id === id), t = S.CO_TALK1[k]; if (!p || !t) return false;
+    p.mo = clamp((p.mo === undefined ? 60 : p.mo) + t.mo, 0, 100); p.talked = co.ss ? co.ss.i : 0;
+    if (k === 'prometer') { const nx = S.coNext(co); p.prom = (nx ? nx.round : 0) + 2; }
+    return true;
+  };
   // Troca (na parada): sai um titular, entra um do banco na mesma vaga
   S.coSub = function (co, m, outId, inId) {
     const s = m.us, k = s.xi.indexOf(outId);
@@ -584,6 +640,9 @@
       p.en = Math.min(100, p.en + (pl ? CO.enRest : CO.enOff));
       // Moral volta aos poucos para 60; vitória sobe, derrota desce (a motivação do técnico segura a queda)
       p.mo += (60 - p.mo) * 0.12;
+      // Jogos seguidos sem entrar (bn) e a promessa de chance feita na conversa (some: moral cai se não cumprir)
+      p.bn = pl ? 0 : (p.bn || 0) + 1;
+      if (p.prom) { if (pl) delete p.prom; else if (m.round >= p.prom) { p.mo = clamp(p.mo - 15, 0, 100); delete p.prom; p.broke = 1; } }
       if (pl) p.mo = clamp(p.mo + (res === 'v' ? 5 : res === 'd' ? -5 * (1 - motiv) : 0.5), 0, 100);
       else if (p.ovr >= teamAvg(co) - 2) p.mo = clamp(p.mo - 2 * (1 - motiv), 0, 100);
     });
@@ -593,6 +652,9 @@
     const ycOut = [];
     (m.ycAdd || []).forEach(id => { const p = co.squad.find(x => x.id === id); if (!p) return; p.yc = (p.yc || 0) + 1; if (p.yc >= CO.ycMax) { p.yc = 0; if (!p.sus) { p.sus = 1; p.ycSus = 1; ycOut.push(p.n); } } });
     const log = { r: m.round, vs: m.vs, home: m.home, gf, ga, res, ycOut, ev: m.ev.filter(e => e.t === 'gol' && e.s === 'us').map(e => e.p) };
+    log.rt = rateMatch(co, m, gf, ga);
+    log.rt.forEach(x => { const p = co.squad.find(q => q.id === x.id); if (!p) return; p.notes = (p.notes || []).concat([x.r]).slice(-5);
+      if (x.r >= 7.5) p.mo = clamp(p.mo + 2, 0, 100); else if (x.r < 5.5) p.mo = clamp(p.mo - 2, 0, 100); });
     log.cad = cadNote(co, m, log);
     ss.log.push(log);
     board(co, log);
@@ -601,6 +663,30 @@
     if (ss.i >= ss.rounds.length) ss.done = true;
     return log;
   };
+  // Notas do jogo (3 a 10) para quem jogou 10 minutos ou mais, com o porquê em poucas palavras. Sem sorteio do jogo:
+  // um hash do jogador e da rodada dá a variação (o save no meio termina igual)
+  const hsh = str => { let h = 2166136261; for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619); return (h >>> 0) / 4294967296; };
+  function rateMatch(co, m, gf, ga) {
+    const by = byId(co.squad), avg = teamAvg(co), ot = m.ot || { us: 0, them: 0 }, saves = Math.max(0, (ot.them || 0) - ga), start = m.startXI || [];
+    return Object.keys(m.played).map(id => {
+      const p = by[id], min = m.played[id]; if (!p || min < 10) return null;
+      const ev = m.ev.filter(e => e.s === 'us' && e.p === p.n);
+      const g = ev.filter(e => e.t === 'gol'), sh = ev.filter(e => e.t === 'chance').length, on = ev.filter(e => e.t === 'chance' && (e.k === 'defesa' || e.k === 'trave')).length;
+      const yc = ev.some(e => e.t === 'amarelo'), rc = ev.some(e => e.t === 'vermelho'), fo = ev.filter(e => e.t === 'falta').length;
+      const def = { GOL: 1, ZAG: 0.8, LAT: 0.6, MEI: 0.3, ATA: 0.1 }[p.pos] || 0.3, k = Math.min(1, min / 70);
+      let r = 6.2 + (p.ovr - avg) / 25 + (hsh(id + ':' + co.season + ':' + m.round) - 0.5) * 1.1;
+      r += k * ((gf > ga ? 0.35 : gf < ga ? -0.35 : 0) - def * ga * 0.32 + (ga === 0 ? def * 0.6 : 0) + (p.pos === 'GOL' ? Math.min(1.2, saves * 0.22) : 0));
+      r += g.length * 1.1 + on * 0.25 + sh * 0.08 - (yc ? 0.3 : 0) - (rc ? 1.6 : 0) - fo * 0.1;
+      r = clamp(Math.round(r * 10) / 10, 3, 10);
+      const sub = !start.includes(id);
+      const w = g.length ? (g.length > 1 ? g.length + ' gols' : 'gol') + (sub ? ' saindo do banco, aos ' + g[0].m + "'" : '') :
+        rc ? 'expulso' : p.pos === 'GOL' ? (ga === 0 ? 'não levou gol' + (saves ? ', ' + saves + (saves > 1 ? ' defesas' : ' defesa') : '') : saves ? saves + (saves > 1 ? ' defesas' : ' defesa') + ', ' + ga + (ga > 1 ? ' gols sofridos' : ' gol sofrido') : ga + (ga > 1 ? ' gols sofridos' : ' gol sofrido')) :
+        def >= 0.6 && ga === 0 ? 'atrás sem levar gol' : on ? (sh > 1 ? sh + ' chutes, ' : '') + on + ' no gol' : sh ? sh + (sh > 1 ? ' chutes' : ' chute') + ' para fora' :
+        yc ? 'amarelo' + (fo ? ' e ' + (fo + 1) + ' faltas' : '') : r < 5.6 ? (def >= 0.6 ? 'sofreu com o ataque deles' : 'sumiu do jogo') : r >= 7 ? (def >= 0.6 ? 'seguro atrás' : 'bom jogo') : sub ? 'entrou aos ' + (90 - min) + "'" : 'jogo discreto';
+      return { id, r, w, sub, min };
+    }).filter(Boolean).sort((a, b) => b.r - a.r);
+  }
+  S.coRateMatch = rateMatch;
   const teamAvg = co => { const s = co.squad.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 11); return s.reduce((a, p) => a + p.ovr, 0) / Math.max(1, s.length); };
   S.coTeamAvg = teamAvg;
   // res: lista de placares da rodada (ss.res[i]) para a aba Rodadas; f: últimos 5 resultados de cada time
