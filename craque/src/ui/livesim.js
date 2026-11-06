@@ -35,14 +35,17 @@
   LP.kitFor = function (name, id) {
     const R = window.CRAQUE_KITS_REAL || {}, K = window.CRAQUE_KITS || {}, ok = h => typeof h === 'string' && /^#[0-9a-f]{6}$/i.test(h);
     const k = R[name] ? R[name] : id && K[id] ? [K[id][0], K[id][1], K[id][1], K[id][0]] : null; // só o escudo: o reserva é a cor 2
-    return k && k.every(ok) ? k : null;
+    if (!k || !k.every(ok)) return null;
+    // desenho da camisa titular (listras, aros, faixa...): vai junto como .pat = [desenho, cor]
+    const P = (window.CRAQUE_KITS_PAT || {})[name], out = k.slice(); if (P && ok(P[1])) out.pat = P; return out;
   };
   // mine/opp: [camisa, calção, camisa 2, calção 2] ou null; home: você é o mandante
   LP.kits = function (mine, opp, home) {
     const H = (home ? mine : opp) || ['#F4F1E8', '#1D1D1F'], A = (home ? opp : mine) || ['#1F4FA8', '#FFFFFF'];
-    const hk = [H[0], H[1]];
+    const hk = [H[0], H[1]]; hk.pat = H.pat; // o mandante sempre de titular, com o desenho dela
     const far = c => cdist(c, hk[0]) > NEAR;
     let ak = far(A[0]) ? [A[0], A[1]] : A[2] && far(A[2]) ? [A[2], A[3] || A[0]] : null;
+    if (ak && ak[0] === A[0]) ak.pat = A.pat; // o reserva é liso
     if (!ak) { const c = PAL.slice().sort((a, b) => cdist(b, hk[0]) - cdist(a, hk[0]))[0]; ak = [c, lum(c) > 0.5 ? '#1D1D1F' : '#F4F1E8']; }
     const gk = GKS.filter(c => cdist(c, hk[0]) > NEAR && cdist(c, ak[0]) > NEAR && cdist(c, PITCH) > 120);
     const out = home ? [hk, ak] : [ak, hk];
@@ -985,7 +988,13 @@
         g.strokeStyle = col; g.lineCap = 'round'; g.beginPath(); g.arc(x, y, rr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.02, e / 100)); g.stroke(); g.lineCap = 'butt';
       }
       g.fillStyle = shirt; g.strokeStyle = edge; g.lineWidth = 1.6 * k;
-      g.beginPath(); if (p.down) g.ellipse(x, y, r * 1.2, r * 0.62, 0.5, 0, Math.PI * 2); else g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.beginPath(); if (p.down) g.ellipse(x, y, r * 1.2, r * 0.62, 0.5, 0, Math.PI * 2); else g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+      if (!me && p.r !== 'GK' && kt.pat) shirtPat(x, y, r, kt.pat, p.down, kt[0]);
+      g.stroke();
+      // Bico: para onde ele olha (corre ou vira para a bola), na borda do disco
+      if (!p.down) { const fx = mir() ? -p.fx : p.fx, fy = p.fy, fm = Math.hypot(fx, fy) || 1, ux = fx / fm, uy = fy / fm, a = r + 3.6 * k, b = r - 0.6 * k, w = 2.6 * k;
+        g.fillStyle = me ? '#F2C230' : '#FBF8EF'; g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 0.9 * k;
+        g.beginPath(); g.moveTo(x + ux * a, y + uy * a); g.lineTo(x + ux * b - uy * w, y + uy * b + ux * w); g.lineTo(x + ux * b + uy * w, y + uy * b - ux * w); g.closePath(); g.fill(); g.stroke(); }
       // Número sempre em branco ou preto (o que tiver mais contraste com a camisa) e com contorno: lê em qualquer uniforme
       const num = String(p.num || ''), dark = me || lum(shirt) > 0.5, txt = dark ? '#0B120E' : '#FFFFFF';
       g.font = '800 ' + Math.round((me ? 14 : num.length > 1 ? 12.5 : 14) * k) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -999,6 +1008,21 @@
       g.fillStyle = '#F2C230'; g.beginPath(); g.roundRect(x - tw / 2, ty, tw, 13 * kb, 4 * kb); g.fill();
       g.fillStyle = '#13201A'; g.font = '800 ' + Math.round(10.5 * kb) + 'px "Barlow Condensed", sans-serif'; g.fillText('VOCÊ', x, ty + 7 * kb);
       if (en !== null) energy(x, y + r + 4 * kb, kb);
+    }
+    // Desenho da camisa dentro do disco (fixo na tela, como um escudo): listras verticais, aros, faixa diagonal, faixa no peito,
+    // metade e metade ou xadrez, na segunda cor do clube
+    function shirtPat(x, y, r, pat, down, base) {
+      const [kind, c2] = pat; g.save(); g.beginPath(); if (down) g.ellipse(x, y, r * 1.2, r * 0.62, 0.5, 0, Math.PI * 2); else g.arc(x, y, r, 0, Math.PI * 2); g.clip(); g.fillStyle = c2;
+      const R = r * 1.25;
+      if (kind === 'listras') for (let i = -2; i <= 2; i++) g.fillRect(x + i * r * 0.62 - r * 0.15, y - R, r * 0.3, 2 * R);
+      else if (kind === 'aros') for (let i = -2; i <= 2; i++) g.fillRect(x - R, y + i * r * 0.62 - r * 0.15, 2 * R, r * 0.3);
+      else if (kind === 'faixa') { g.beginPath(); g.moveTo(x - R, y - R * 0.55); g.lineTo(x - R * 0.55, y - R); g.lineTo(x + R, y + R * 0.55); g.lineTo(x + R * 0.55, y + R); g.closePath(); g.fill(); }
+      else if (kind === 'faixah') g.fillRect(x - R, y - r * 0.26, 2 * R, r * 0.52);
+      else if (kind === 'meio') g.fillRect(x, y - R, R, 2 * R);
+      else if (kind === 'xadrez') { const q = r * 0.5; for (let i = -3; i < 3; i++) for (let j = -3; j < 3; j++) if ((i + j) & 1) g.fillRect(x + i * q, y + j * q, q, q); }
+      // listras e xadrez enchem o disco: o número ganha um fundo liso na cor da camisa para continuar lendo
+      if (base && (kind === 'listras' || kind === 'xadrez')) { g.fillStyle = base; g.beginPath(); g.arc(x, y, r * 0.52, 0, Math.PI * 2); g.fill(); }
+      g.restore();
     }
     // Toque num boneco: um cartão com número e nome (ou a posição), e a energia; some sozinho
     const POSN = { GK: 'Goleiro', LB: 'Lateral', RB: 'Lateral', CB: 'Zagueiro', DM: 'Volante', CM: 'Meia', LM: 'Meia', RM: 'Meia', LW: 'Ponta', RW: 'Ponta', ST: 'Atacante' };
@@ -1116,9 +1140,13 @@
         else if (REF.sig === 'alto') { g.moveTo(x, y); g.lineTo(x, y - 13 * k); }
         g.stroke(); g.lineCap = 'butt'; }
     }
+    let vig = null;
     function draw() {
       if (!g || W < 60 || H < 40) return; // tela ainda sem tamanho (palco recém-aberto): o laço mede de novo
       g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+      // Luz de estádio: o meio do gramado mais claro e os cantos mais escuros (o gramado listrado vem do CSS)
+      if (!vig || vig.w !== W || vig.h !== H) { vig = g.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, Math.hypot(W, H) * 0.56); vig.addColorStop(0, 'rgba(255,255,240,.05)'); vig.addColorStop(1, 'rgba(0,0,0,.26)'); vig.w = W; vig.h = H; }
+      g.fillStyle = vig; g.fillRect(0, 0, W, H);
       lines();
       // Bonecos, bola e árbitros em 65% (Silvio, 2026-11-06: o campo respirando vale mais que o número grande); placa, etiqueta,
       // o VOCÊ e o cartão do toque ficam no tamanho cheio (k0)
@@ -1163,8 +1191,8 @@
           card(x + 4 * k, y - 15 * k - up * 6 * k, red ? '#D8404A' : '#F2C230', k, red ? -0.14 : 0.16);
         }
       }
-      const bx = X(ball.x), by = Y(ball.y), air = ball.fly ? Math.sin(Math.min(1, ball.fly.t) * Math.PI) * (ball.fly.loft || 0) * 0.9 * k : 0;
-      g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(bx + 1, by + 3, 4 * k, 2.5 * k, 0, 0, Math.PI * 2); g.fill();
+      const bx = X(ball.x), by = Y(ball.y), air = ball.fly ? Math.sin(Math.min(1, ball.fly.t) * Math.PI) * (ball.fly.loft || 0) * 1.3 * k : 0;
+      { const hs = Math.min(1, air / (12 * k)); g.fillStyle = 'rgba(0,0,0,' + (0.32 - 0.16 * hs).toFixed(2) + ')'; g.beginPath(); g.ellipse(bx + 1 + air * 0.25, by + 2.5 + air * 0.1, (4 - 1.2 * hs) * k, (2.5 - 0.8 * hs) * k, 0, 0, Math.PI * 2); g.fill(); }
       g.fillStyle = '#fff'; g.strokeStyle = '#13201A'; g.lineWidth = 1.5 * k; g.beginPath(); g.arc(bx, by - air, (4.5 + air / 12) * k, 0, Math.PI * 2); g.fill(); g.stroke();
       if (tip) tipCard(k0);
     }
