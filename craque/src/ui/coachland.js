@@ -20,11 +20,15 @@
       document.body.appendChild(el);
       window.addEventListener('resize', fit);
       window.addEventListener('orientationchange', () => setTimeout(fit, 200));
+      if (window.visualViewport) { visualViewport.addEventListener('resize', fit); visualViewport.addEventListener('scroll', fit); }
     }
     return el;
   }
   function fit() {
     const el = document.getElementById('ld'); if (!el) return;
+    // iPhone: girar o celular (ou a página por baixo rolada) deixa a página deslocada; o palco fixo aparece num lugar e o
+    // toque cai em outro (acima). Com o palco aberto a página fica sempre no topo
+    if (document.body.classList.contains('ld-on') && (window.scrollY || window.scrollX || document.documentElement.scrollTop)) { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; }
     const vw = el.clientWidth || window.innerWidth, vh = el.clientHeight || window.innerHeight, port = vh > vw * 1.05; // medidas do #ld (já sem o topo borrado do iPhone e com o zoom do monitor)
     el.classList.toggle('port', port);
     const k = Math.min(vw / W, vh / H);
