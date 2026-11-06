@@ -25,7 +25,7 @@ require('fs').mkdirSync(OUT, { recursive: true });
   await click('#b-co-go');
   // O Treinador é deitado (ui/coachland.js); em pé aparece "Gire o celular". Este passeio testa as telas em pé ("Jogar em pé").
   // As telas deitadas têm o passeio delas: tools/craque_telas_deitado.js (844x390).
-  if (await p.$('#ld-stand')) { await shot('gire-o-celular'); await click('#ld-stand'); }
+  if (await p.$('#ld-turn')) { await shot('gire-o-celular'); if (!(await p.$('#ld-stand'))) { console.log('O Treinador é só deitado desde 2026-11-06 (sem "Jogar em pé"): use tools/craque_telas_deitado.js'); await b.close(); return; } await click('#ld-stand'); }
   await shot('propostas');
   await click('[data-sign]'); await shot('chegada');
   await click('#b-co-in'); await shot('time');

@@ -8024,26 +8024,36 @@ body.ld-on #ld { display: block; }
 .ld-side:has(.ld-2b) .ld-link { display: none; }
 .ld-side { min-height: 0; gap: 6px; } .ld-side .ld-2b .ld-b { min-height: 32px; padding-top: 4px; padding-bottom: 4px; }
 .ld-side .ld-card.paper > span:not(.ld-2b):not(.ld-lbl) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
-/* Treinador deitado, Formação e estilo (Silvio 2026-11-06: "a tela tá pequena demais"): o popup ocupa o palco inteiro,
-   letras maiores e os 6 estilos cabem sem rolar (grade de 6 linhas iguais) */
-.ld-pop-c.ld-tacp { width: 836px; height: 382px; max-height: 382px; padding: 10px 14px 12px; gap: 8px; }
-.ld-tacp .ld-ph b { font-size: 22px; } .ld-tacp .ld-ph small { font-size: 13px; color: var(--tx-2); }
-.ld-tacp .ld-pb { gap: 12px; }
-.ld-tacp .ld-fl { width: 236px; }
-.ld-tacp .ld-seg button { font-size: 14px !important; padding: 7px 0 !important; }
-.ld-tacp .ld-flist { max-height: none; flex: 1; min-height: 0; gap: 5px; }
-.ld-tacp .ld-fr > button:first-child { padding: 6px 10px !important; }
-.ld-tacp .ld-fr b { font-size: 19px; } .ld-tacp .ld-fr small { font-size: 12.5px; }
-.ld-tacp .ld-fm { gap: 7px; min-height: 0; }
-.ld-tacp .ld-mini { height: auto; flex: 1; min-height: 120px; }
-.ld-tacp .ld-pd { font-size: 12px; padding: 2px 6px; }
-.ld-tacp .ld-favb { font-size: 12.5px !important; padding: 4px 9px !important; }
-.ld-tacp .ld-fx { font-size: 13px; gap: 4px; } .ld-tacp .ld-fx b { font-size: 11px; }
-.ld-tacp .ld-cl { font-size: 13px; } .ld-tacp .ld-cl b { font-size: 13px; }
-.ld-tacp .ld-posw { font-size: 13px; } .ld-tacp .ld-posw b { font-size: 11px; }
-.ld-tacp .ld-sl { width: 232px; min-height: 0; }
-.ld-tacp .ld-slist { display: grid; grid-auto-rows: 1fr; gap: 4px; overflow: hidden; }
-.ld-tacp .ld-slist button { justify-content: center; padding: 2px 10px !important; min-height: 0; }
-.ld-tacp .ld-slist b { font-size: 16px; line-height: 1.05; } .ld-tacp .ld-slist small { font-size: 12px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ld-tacp .ld-sl { gap: 5px; } .ld-tacp .ld-slist { gap: 3px; }
-.ld-tacp .ld-gold { min-height: 46px; } .ld-tacp .ld-gold b { font-size: 20px; }
+/* Treinador deitado, Formação e estilo, uma tela só (Silvio 2026-11-06, opção B): popup no palco inteiro, letra de 15 a 22 px,
+   formações e estilos em botões grandes, campinho grande; caderno e posições na camada de detalhes (.ldx-det) */
+.ld-pop-c.ld-tacp { width: 836px; height: 382px; max-height: 382px; padding: 10px 14px 12px; gap: 8px; position: relative; }
+.ld-tacp .ld-ph b { font-size: 24px; } .ld-tacp .ld-ph small { font-size: 14px; color: var(--tx-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ld-tacp .ld-x { width: 44px; height: 44px; }
+.ldx-b { display: flex; gap: 14px; flex: 1; min-height: 0; }
+.ldx-l1 { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.ldx-chips { display: flex; gap: 8px; }
+.ldx-chip { min-height: 44px; padding: 0 14px !important; border-radius: 11px; background: #1E2023 !important; border: 2px solid transparent !important; font: 800 19px var(--display) !important; color: var(--tx-1) !important; white-space: nowrap; }
+.ldx-chip.on { border-color: var(--gold) !important; background: #2A2716 !important; }
+.ldx-chips .ldx-chip { flex: 1; padding: 0 6px !important; }
+.ldx-pitch { height: auto !important; flex: 1; min-height: 0; }
+.ldx-pitch .ld-pd { font-size: 14px; padding: 2px 7px; border-radius: 5px; }
+.ldx-pitch .ld-favb { font-size: 13px !important; padding: 5px 10px !important; }
+.ldx-ft { margin: 0; font: 600 15px/1.2 var(--body); color: var(--tx-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ldx-ft b { font: 800 16px var(--display); color: var(--tx-1); } .ldx-ft b.or { color: #FF9A3D; font-size: 15px; }
+.ldx-r { width: 264px; flex: none; display: flex; flex-direction: column; gap: 7px; min-height: 0; }
+.ldx-l { font: 800 13px var(--display); letter-spacing: .08em; color: var(--tx-3); }
+.ldx-l.up, .ldx-st b.up { color: #7BE3A0; } .ldx-l.dn, .ldx-st b.dn { color: #FF9AA2; } .ldx-l.or { color: #FF9A3D; } .ldx-l.gd { color: var(--gold-ink); }
+.ldx-sg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ldx-sg .ldx-chip { font-size: 18px !important; min-height: 42px; text-align: left; padding: 0 12px !important; }
+.ldx-st { margin: 0; font: 600 14px/1.3 var(--body); color: var(--tx-2); }
+.ldx-st b { font: 800 12px var(--display); letter-spacing: .06em; margin-right: 4px; }
+.ldx-a { align-self: flex-start; font: 700 14px var(--body) !important; color: var(--tx-1) !important; text-decoration: underline; text-underline-offset: 3px; padding: 2px 0 !important; min-height: 28px; }
+.ld-tacp .ld-gold { min-height: 50px; } .ld-tacp .ld-gold b { font-size: 21px; } .ld-tacp .ld-gold small { font-size: 13px; }
+.ldx-det { position: absolute; left: 0; right: 0; top: 58px; bottom: 0; padding: 0 14px 12px; border-radius: 0 0 16px 16px; background: #141517; display: flex; flex-direction: column; gap: 10px; z-index: 3; }
+.ldx-det[hidden] { display: none; }
+.ldx-dh { display: flex; align-items: center; justify-content: space-between; } .ldx-dh b { font: 800 21px var(--display); }
+.ldx-dg { display: flex; gap: 12px; flex: 1; min-height: 0; }
+.ldx-dc { flex: 1; background: #1E2023; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
+.ldx-dc p { margin: 0 0 4px; font: 600 16px/1.3 var(--body); color: var(--tx-1); }
+.ldx-dc.ldx-pp { background: var(--paper); color: var(--ink); } .ldx-dc.ldx-pp p { color: var(--ink); }
+.ldx-dc .ld-cadl { padding: 0; background: none; gap: 6px; } .ldx-dc .ld-cl { font-size: 15px; } .ldx-dc .ld-cl b { font-size: 15px; } .ldx-dc .ld-cl b small { font-size: 11px; }
