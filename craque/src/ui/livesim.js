@@ -278,12 +278,12 @@
         if (q === p || (q.r === 'GK' && (bx > 40 || press > 6))) continue;
         const [qx, qy] = tf(s, q), qv = s ? [-q.vx, -q.vy] : [q.vx, q.vy], d0 = Math.hypot(qx - bx, qy - by);
         if (d0 < 5 || d0 > (p.r === 'GK' ? 65 : 52)) continue;
+        if (q.r !== 'GK' && qx > Math.max(line, bx) + 0.3) continue; // impedido na hora do passe (vale para cruzamento e bola nas costas também)
         let kind = 'curto', lofted = false, tx = qx + qv[0] * 0.45, ty = qy + qv[1] * 0.45;
         // Cruzamento: a bola no lado, perto da área, e alguém chegando na área (correndo ou já lá)
         const inB = (x, y) => x > 76 && Math.abs(y - 34) < 16, cx = q.run > 0 ? q.runX : qx, cy = q.run > 0 ? q.runY : qy;
         if (bx > 58 && Math.abs(by - 34) > 11 && q.r !== 'GK' && inB(cx, cy)) { kind = 'cruz'; lofted = true; tx = cl(cx + 3, 86, 99); ty = cl(cy + (34 - cy) * 0.3, 26, 42); }
         else if (q.run > 0.7) { kind = 'costas'; tx = q.runX; ty = q.runY; lofted = d0 > 24; }
-        else if (q.d > 0.6 && qx > Math.max(line, bx) + 0.5) continue; // impedido
         else if (Math.abs(ty - by) > 26 && d0 > 28) { kind = 'inv'; lofted = true; }
         else if (d0 > 32) { kind = 'longo'; lofted = true; }
         tx = cl(tx, 2, 103); ty = cl(ty, 2, 66);
@@ -384,7 +384,7 @@
         ball.carry = { x: wx, y: wy, t: k === 'drible' ? 1.1 : 1.5 };
       } else if (k === 'perde') { if (near) setOwner(near); }
       else if (k === 'passe') {
-        const q = T[s].filter(x => x !== p && x.r !== 'GK').sort((a, b) => tf(s, b)[0] - tf(s, a)[0])[0];
+        const q = T[s].filter(x => x !== p && x.r !== 'GK' && tf(s, x)[0] <= Math.max(line, bx) + 0.3).sort((a, b) => tf(s, b)[0] - tf(s, a)[0])[0]; // o mais adiantado sem estar impedido
         if (q) { const [qx, qy] = tf(s, q), [wx, wy] = toW(s, Math.min(Math.max(qx, line) + 7, 97), qy); q.run = 1.4; q.runX = Math.min(Math.max(qx, line) + 7, 97); q.runY = qy; fly(p, wx, wy, q, Math.hypot(wx - p.x, wy - p.y) > 26, 'costas', false); }
       } else if (k === 'erra') {
         const q = T[s].filter(x => x !== p && x.r !== 'GK').sort((a, b) => dist(a, p) - dist(b, p))[1] || T[s][6], th = near || opp[6];
