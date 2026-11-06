@@ -24,7 +24,7 @@ async function page(b) {
     const { p, shot, click } = await page(b);
     await click('#b-new-co'); await click('#co-start button[data-v="livre"]'); await click('#b-co-go'); await click('#ldo-go'); await click('#ldn-go'); await click('#ldn-go');
     await shot('a01-time'); await click('[data-xi="5"]'); await shot('a02-troca'); await click('[data-pop-x]');
-    await click('#ld-form'); await shot('a03-tatica'); await click('[data-ft="3"]'); await shot('a04-tatica-3'); await click('[data-pop-x]');
+    await click('#ld-form'); await shot('a03-tatica'); await click('[data-ft="mais"]'); await shot('a04-tatica-3'); await p.waitForTimeout(500); await click('[data-det="1"]'); await shot('a04b-tatica-detalhes'); await click('[data-pop-x]');
     await click('[data-bp]'); await shot('a05-banco'); await click('[data-pop-x]');
     await click('#ld-ok'); await shot('a06-semana');
     await click('#ld-tr'); await click('[data-tk="lados"]'); await shot('a07-treino'); await click('[data-tt="Bola parada"]'); await shot('a08-treino-bola-parada'); await click('[data-tk="esc"]'); await click('#ldtr-go');

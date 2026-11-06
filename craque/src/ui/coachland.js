@@ -7,8 +7,7 @@
   const U = window.CRAQUE_UI;
   const { S, sfx, esc, club, crest } = U;
   const W = 844, H = 390;
-  let standUp = false; // "jogar em pé" nesta sessão
-  const on = () => !standUp; // o Treinador é deitado; em pé só se a pessoa pedir nesta sessão
+  const on = () => true; // o Treinador é sempre deitado
   const C = () => U._co; // ajudantes e estado do Treinador (ui/coach.js)
 
   // ---------- palco ----------
@@ -40,15 +39,16 @@
     document.body.classList.add('ld-on');
     const st = document.getElementById('ld-st');
     st.innerHTML = html;
-    document.getElementById('ld-turn').innerHTML = '<div class="ld-turn-c"><i aria-hidden="true">' + PHONE + '</i><b>Gire o celular</b><small>O Treinador deitado mostra o campo inteiro.</small>' +
-      (/class="lv ldl"/.test(html) ? '<small>No meio do jogo, só deitado. Depois do apito dá para jogar em pé.</small>' : '<button class="btn ghost sm" id="ld-stand">Jogar em pé</button>') + '</div>';
-    const sb = document.getElementById('ld-stand');
-    if (sb) sb.onclick = () => { sfx('tap'); standUp = true; off(); U.coStand(); };
+    // O Treinador é só deitado (Silvio 2026-11-06 tirou o "Jogar em pé"): em pé, só o aviso para girar
+    document.getElementById('ld-turn').innerHTML = '<div class="ld-turn-c"><i aria-hidden="true">' + PHONE + '</i><b>Gire o celular</b><small>O Treinador é jogado com o celular deitado.</small></div>';
+    lockLand();
     fit();
     st.querySelectorAll('[data-rail]').forEach(b => b.onclick = () => { sfx('tap'); go(b.dataset.rail); });
     bind && bind(st);
   }
-  function off() { document.body.classList.remove('ld-on'); closePop(); }
+  function off() { document.body.classList.remove('ld-on'); closePop(); try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {} }
+  // Android (app instalado ou tela cheia) deixa travar a tela deitada; o iPhone não deixa (fica o aviso para girar)
+  function lockLand() { try { const so = screen.orientation; if (so && so.lock) so.lock('landscape').catch(() => {}); } catch (e) {} }
   const PHONE = '<svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M20 9a8 8 0 0 1 0 6M4 9a8 8 0 0 0 0 6"/></svg>';
 
   // ---------- peças comuns ----------
@@ -303,16 +303,18 @@
     draw();
   }
 
-  // Formação e estilo no mesmo popup: lista por linha de defesa (cresce), prévia grande com as posições em cor.
+  // Formação e estilo, uma tela só (Silvio 2026-11-06, opção B: letra grande, só o essencial): formações em botões no
+  // topo (as de 4 atrás e "+3" para as outras), campinho grande com as vagas (laranja = fora da posição), forte/fraco numa
+  // linha; à direita os 6 estilos em botões e o Usar. Caderno contra o adversário e posições ficam a um toque (detalhes).
   // o = { form, style, squad, xi, auto, them, live (texto do jogo), onOk(form, style, xi), back }
   let fav = {}; try { fav = JSON.parse(localStorage.getItem('climbix-co-fav') || '{}'); } catch (e) {}
-  function tacPicker(o, tab, pf, ps) {
+  const STY_CHIP = { equilibrado: 'Equilibrado', posse: 'Posse', pressao: 'Pressão', contra: 'Contra', retranca: 'Retranca', lados: 'Lados' };
+  function tacPicker(o, tab, pf, ps, det) {
     const c = C(), by = {}; o.squad.forEach(p => { by[p.id] = p; });
     pf = pf || o.form; ps = ps || o.style;
-    const forms = Object.keys(S.CO_FORMS), back = f => +f.split('-')[0];
-    tab = tab || String(back(pf));
-    const shown = tab === 'fav' ? forms.filter(f => fav[f]) : forms.filter(f => String(back(f)) === tab);
-    const tabs = [['4', '4 atrás'], ['3', '3 atrás'], ['5', '5 atrás'], ['fav', '★']].filter(([k]) => k === 'fav' || forms.some(f => String(back(f)) === k));
+    const forms = Object.keys(S.CO_FORMS), four = forms.filter(f => f[0] === '4'), more = forms.filter(f => f[0] !== '4');
+    if (tab !== 'main' && tab !== 'mais') tab = four.includes(pf) ? 'main' : 'mais';
+    const shown = tab === 'main' ? four : more;
     // Os mesmos titulares redistribuídos (o auxiliar põe cada um na vaga em que rende mais)
     const xiNow = o.auto ? S.coAutoXI(o.squad.filter(c.avail), pf).xi : (() => { const onp = o.squad.filter(p => o.xi.includes(p.id)); const a = S.coAutoXI(onp, pf).xi.filter(Boolean); return a.length === onp.length ? S.coAutoXI(onp, pf).xi : S.coAutoXI(o.squad.filter(c.avail), pf).xi; })();
     const sl = S.coSlots(pf), sp = spotsL(pf, false, true);
@@ -320,27 +322,33 @@
     const prev = xiNow.map((id, i) => { const p = by[id]; if (!p) return ''; const f = p.pos === sl[i] ? 'ok' : S.coFit(p.pos, sl[i]) >= 0.88 ? 'sabe' : 'fora';
       return '<span class="ld-pd ' + f + '" style="left:' + sp[i][0] + '%;top:' + sp[i][1] + '%">' + sl[i] + '</span>'; }).join('');
     const cad = o.them ? cadHtml(c.cadLines(pf, ps, o.them, 2)) : '';
-    const sub = o.live || (o.them ? 'O ' + esc(club(o.them.club).short || club(o.them.club).name) + ' deve vir no ' + o.them.form + ', ' + esc(S.CO_STY[o.them.style].name.toLowerCase()) + '. Sem números: o que você sabe vem do caderno.' : '');
-    const tip = S.CO_STY[ps].tip.split(';');
+    const them = o.them ? 'O ' + esc(club(o.them.club).short || club(o.them.club).name) + ' deve vir no ' + o.them.form + ', ' + esc(S.CO_STY[o.them.style].name.toLowerCase()) + '.' : '';
+    const sub = o.live || them;
+    const stip = S.CO_STY[ps].tip.split(';');
+    const chip = (f, on, attr, t) => '<button class="ldx-chip' + (on ? ' on' : '') + '" ' + attr + '>' + t + '</button>';
+    const posTxt = nOff ? U.D.plural(nOff, 'jogador fora da posição', 'jogadores fora da posição') : 'todo mundo na posição dele';
+    const details = '<div class="ldx-det"' + (det ? '' : ' hidden') + '>' +
+      '<div class="ldx-dh"><b>' + pf + ' com ' + esc(S.CO_STY[ps].name) + '</b><button class="ldx-chip" data-det="0">Voltar</button></div>' +
+      '<div class="ldx-dg"><div class="ldx-dc"><small class="ldx-l up">ESTILO FORTE</small><p>' + esc(stip[0]) + '</p>' + (stip[1] ? '<small class="ldx-l dn">ESTILO FRACO</small><p>' + esc(stip[1].trim()) + '</p>' : '') +
+      '<small class="ldx-l ' + (nOff ? 'or' : 'up') + '">POSIÇÕES</small><p>' + posTxt + '</p></div>' +
+      '<div class="ldx-dc ldx-pp"><small class="ldx-l gd">DO SEU CADERNO</small>' + (them ? '<p>' + them + '</p>' : '') + (cad ? '<div class="ld-cadl">' + cad + '</div>' : '<p>Sem adversário para comparar.</p>') + '</div></div></div>';
     pop(popHead('Formação e estilo', sub, !!o.back) +
-      '<div class="ld-pb">' +
-      '<div class="ld-fl"><div class="ld-fl-h">' + lbl('FORMAÇÃO') + '<small>' + forms.length + ' no total</small></div>' +
-        '<div class="ld-seg">' + tabs.map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
-        '<div class="ld-flist">' + (shown.length ? shown.map(f => '<div class="ld-fr' + (f === pf ? ' on' : '') + '"><button data-f="' + f + '"><b>' + f + '</b><small>' + esc(c.FORM_TIP[f] || '') + '</small></button><button class="ld-star' + (fav[f] ? ' on' : '') + '" data-fav="' + f + '" aria-label="Favoritar ' + f + '" aria-pressed="' + !!fav[f] + '">' + (fav[f] ? '★' : '☆') + '</button></div>').join('') : '<p class="ld-none">Toque na ☆ de uma formação para ela aparecer aqui.</p>') + '</div></div>' +
-      '<div class="ld-fm"><div class="ld-mini">' + PITCH + prev + '<button class="ld-favb' + (fav[pf] ? ' on' : '') + '" data-fav="' + pf + '">' + (fav[pf] ? '★ Favorita' : '☆ Favoritar') + '</button></div>' +
-        '<div class="ld-fx"><span><b class="up">FORTE</b>' + esc(tip[0]) + '</span>' + (tip[1] ? '<span><b class="dn">FRACO</b>' + esc(tip[1].trim()) + '</span>' : '') + '</div>' +
-        (cad ? '<div class="ld-cadl">' + cad + '</div>' : '') +
-        '<span class="ld-posw' + (nOff ? ' warn' : '') + '"><b>POSIÇÕES</b> ' + (nOff ? nOff + ' jogador' + (nOff > 1 ? 'es ficam' : ' fica') + ' fora da posição dele' : 'todo mundo na posição dele') + '</span></div>' +
-      '<div class="ld-sl">' + lbl('ESTILO') + '<div class="ld-slist">' + S.CO_STYLES.map(k => '<button data-s="' + k + '"' + (k === ps ? ' class="on"' : '') + '><b>' + esc(S.CO_STY[k].name) + '</b><small>' + esc(c.STY_SHORT[k]) + '</small></button>').join('') + '</div>' +
-        '<button class="ld-gold" id="ld-tac-ok"><b>Usar ' + pf + '</b><small>com ' + esc(S.CO_STY[ps].name) + '</small></button></div></div>',
+      '<div class="ldx-b"><div class="ldx-l1">' +
+        '<div class="ldx-chips">' + shown.map(f => chip(f, f === pf, 'data-f="' + f + '"', f)).join('') + chip('', false, 'data-ft="' + (tab === 'main' ? 'mais' : 'main') + '"', tab === 'main' ? '+' + more.length : '‹ 4 atrás') + '</div>' +
+        '<div class="ld-mini ldx-pitch">' + PITCH + prev + '<button class="ld-favb' + (fav[pf] ? ' on' : '') + '" data-fav="' + pf + '">' + (fav[pf] ? '★ Favorita' : '☆ Favoritar') + '</button></div>' +
+        '<p class="ldx-ft"><b>' + pf + '</b> ' + esc(c.FORM_TIP[pf] || '') + (nOff ? ' · <b class="or">' + posTxt + '</b>' : '') + '</p></div>' +
+      '<div class="ldx-r"><small class="ldx-l">ESTILO</small><div class="ldx-sg">' + S.CO_STYLES.map(k => chip(k, k === ps, 'data-s="' + k + '"', STY_CHIP[k] || esc(S.CO_STY[k].name))).join('') + '</div>' +
+        '<p class="ldx-st"><b class="up">FORTE</b> ' + esc(stip[0].trim()) + (stip[1] ? '<br><b class="dn">FRACO</b> ' + esc(stip[1].trim()) : '') + '</p><button class="ldx-a" data-det="1">Ver no caderno e posições ›</button>' +
+        '<span class="ld-gr"></span><button class="ld-gold" id="ld-tac-ok"><b>Usar ' + pf + '</b><small>com ' + esc(S.CO_STY[ps].name) + '</small></button></div>' + details + '</div>',
       'Formação e estilo', w => {
         w.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); tacPicker(o, b.dataset.ft, pf, ps); });
         w.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { sfx('tap'); tacPicker(o, tab, b.dataset.f, ps); });
         w.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { sfx('tap'); tacPicker(o, tab, pf, b.dataset.s); });
+        w.querySelectorAll('[data-det]').forEach(b => b.onclick = () => { sfx('tap'); w.querySelector('.ldx-det').hidden = b.dataset.det !== '1'; });
         w.querySelectorAll('[data-fav]').forEach(b => b.onclick = () => { sfx('tap'); const f = b.dataset.fav; if (fav[f]) delete fav[f]; else fav[f] = 1; try { localStorage.setItem('climbix-co-fav', JSON.stringify(fav)); } catch (e) {} tacPicker(o, tab, pf, ps); });
         w.querySelector('#ld-tac-ok').onclick = () => { sfx('tap'); o.onOk(pf, ps, xiNow); };
         if (o.back) w.querySelector('[data-pop-back]').onclick = () => { sfx('tap'); o.back(); };
-      }, 'w770 ld-tacp', !!o.back);
+      }, 'ld-tacp', !!o.back);
   }
 
   // ---------- Partida ao vivo deitada (MainB): campinho grande com placar, grito e narração por cima; à direita o grito do
