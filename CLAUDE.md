@@ -205,7 +205,9 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
 
 ## Guia visual
 
-Tema: gramado à noite (`--pitch`), cartões de papel creme, ouro para a ação. Regra nova usa as variáveis do topo do
+Tema: gramado à noite (`--pitch`), cartões de papel creme, ouro para a ação. Painéis, tabelas, placar e barra do topo são
+carvão opaco (`--panel` #141517, `--board`; bloco no fim do `style.css`), não verde translúcido: o verde fica no fundo e
+nos campinhos (Silvio, 2026-11-06: "está muito verde"; ele recusou trocar o fundo). Regra nova usa as variáveis do topo do
 `style.css` (cor solta só para cores de clube, raridade e arte):
 
 - **Texto sobre o verde:** `--tx-1` principal, `--tx-2` apoio, `--tx-3` rótulo/nota, `--tx-4` desligado; rótulo
