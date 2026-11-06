@@ -17,7 +17,7 @@
   // ---------- números do modo (calibrados com tools/craque_treinador.js) ----------
   const CO = S.CO = {
     squad: { GOL: 3, ZAG: 5, LAT: 4, MEI: 8, ATA: 5 },
-    lamH: 1.32, lamA: 1.06, ch: 3.2, k: env('CO_K', 36), home: 2, kT: env('CO_KT', 0.3),
+    lamH: 1.32, lamA: 1.06, ch: 3.2, k: env('CO_K', 36), home: 2, kT: env('CO_KT', 0.3), kD: env('CO_KD', 40),
     enGame: 12, enRest: 8, enOff: 20, enOpp: 80, inj: 0.011, subs: 5,
     // Faltas e cartões por time e por jogo: foul faltas (o estilo muda), yel amarelos por falta, redD vermelho direto por falta,
     // ycMax amarelos que suspendem; off impedimentos; foulShow das faltas sem cartão que o campinho apita (as perigosas)
@@ -119,16 +119,20 @@
   const eff = (p, sl) => p.ovr * fit(p.pos, sl) * (0.8 + 0.2 * (p.en === undefined ? 100 : p.en) / 100) * (p.out ? 0.5 : 1) * (1 + ((p.mo === undefined ? 60 : p.mo) - 60) / 1200);
   // Forma de um lado em campo: quanto tem em cada parte (cada jogador vale ~1 = 70 de força na vaga)
   function shape(s) {
-    const m = byId(s.squad), F = FORMS[s.form], o = { q: 0, n: 0, ncb: 0, ncf: 0, wb: 0, cb: 0, fb: 0, cm: 0, wm: 0, cf: 0, wf: 0, en: 0 };
+    const m = byId(s.squad), F = FORMS[s.form], o = { q: 0, n: 0, ncb: 0, ncf: 0, wb: 0, cb: 0, fb: 0, cm: 0, wm: 0, cf: 0, wf: 0, en: 0, at: 0, nat: 0, df: 0, ndf: 0 };
     s.xi.forEach((id, i) => {
       const p = id && m[id], sl = F.slots[i]; if (!p || !sl) return;
       const e = eff(p, sl.pos) / 70;
       o.q += e; o.n++; o.en += (p.en === undefined ? 100 : p.en);
+      // Quem finaliza (ataque e meia de ligação) e quem defende a área (zaga, laterais pela metade e goleiro)
+      if (sl.ln === 'a' || sl.ln === 'am') { const k = sl.ln === 'a' ? 1 : 0.5; o.at += e * k; o.nat += k; }
+      if (sl.ln === 'd' || sl.ln === 'g') { const k = sl.ln === 'g' ? 0.5 : sl.w ? 0.5 : 1; o.df += e * k; o.ndf += k; }
       if (sl.ln === 'd') { if (sl.w) o.fb += e; else { o.cb += e; o.ncb++; } }
       else if (sl.ln === 'm') { if (sl.w && sl.pos === 'LAT') o.wb += e; else if (sl.w) o.wm += e; else o.cm += e; }
       else if (sl.ln === 'am') { if (sl.w) o.wm += e; else { o.cm += 0.5 * e; o.cf += 0.5 * e; o.ncf += 0.5; } }
       else if (sl.ln === 'a') { if (sl.w) o.wf += e; else { o.cf += e; o.ncf++; } }
     });
+    o.at = o.nat ? o.at / o.nat * 70 : o.q / 11 * 70; o.df = o.ndf ? o.df / o.ndf * 70 : o.q / 11 * 70;
     o.q = o.q / 11 * 70; o.en = o.n ? o.en / o.n / 100 : 1; o.bonus = s.bonus || 0;
     return o;
   }
@@ -153,8 +157,11 @@
     const ch = Math.pow((h.cm + 0.3 * h.wm) * sh.ctrl, 1.6), ca = Math.pow((a.cm + 0.3 * a.wm) * sa.ctrl, 1.6);
     const pH = clamp(ch / (ch + ca || 1), 0.28, 0.72);
     const eh = edge(h, a, sh, sa, pH), ea = edge(a, h, sa, sh, 1 - pH);
-    const lh = (neutral ? (CO.lamH + CO.lamA) / 2 : CO.lamH) * Math.exp((h.q - a.q + h.bonus + (neutral ? 0 : CO.home)) / CO.k + CO.kT * eh.T) * sh.att * Math.pow(sa.def, 1 - sh.patience) * FORMS[H.form].att * FORMS[A.form].def;
-    const la = (neutral ? (CO.lamH + CO.lamA) / 2 : CO.lamA) * Math.exp((a.q - h.q + a.bonus) / CO.k + CO.kT * ea.T) * sa.att * Math.pow(sh.def, 1 - sa.patience) * FORMS[A.form].att * FORMS[H.form].def;
+    // Duelo: o seu ataque contra a defesa deles, além da diferença geral dos times (atacante 70 contra zaga 50 sobra)
+    const duel = (X, Y) => clamp((X.at - Y.df) - (X.q - Y.q), -25, 25) / CO.kD;
+    eh.duel = duel(h, a); ea.duel = duel(a, h);
+    const lh = (neutral ? (CO.lamH + CO.lamA) / 2 : CO.lamH) * Math.exp((h.q - a.q + h.bonus + (neutral ? 0 : CO.home)) / CO.k + CO.kT * eh.T + eh.duel) * sh.att * Math.pow(sa.def, 1 - sh.patience) * FORMS[H.form].att * FORMS[A.form].def;
+    const la = (neutral ? (CO.lamH + CO.lamA) / 2 : CO.lamA) * Math.exp((a.q - h.q + a.bonus) / CO.k + CO.kT * ea.T + ea.duel) * sa.att * Math.pow(sh.def, 1 - sa.patience) * FORMS[A.form].att * FORMS[H.form].def;
     return { lh, la, h: eh, a: ea, sh: h, sa: a };
   }
   S.coMatchup = matchup;
