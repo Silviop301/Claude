@@ -144,7 +144,7 @@ dividem ajudantes por `CRAQUE_SIM._`. O motor não usa DOM: roda no navegador e 
 
 ### Apresentação — `craque/src/`
 
-`kick.js` (pênalti/falta), `defend.js` (goleiro, zagueiro, meia), `livre.js` (Jogo a Jogo: lances de movimento livre vistos de cima, analógico e botão fixos embaixo; `S.LIVRE`, `S.livreK`), `cine.js` (câmera e efeitos; `?cine=0`
+`ui/livesim.js` (campinho ao vivo dos dois modos: cada estilo circula a bola do seu jeito por `patOf`/`dirOf` (paciência e ligação direta), jogadas com nome (tabela, terceiro homem, parede, ultrapassagem, inversão, saída de trás, ligação direta; contagem em `_state().PLAYS`), rastro dos passes e etiqueta; a chance do motor (`due`) joga pelo estilo antes do passe direto; bonecos em `DOTK` 0,65), `kick.js` (pênalti/falta), `defend.js` (goleiro, zagueiro, meia), `livre.js` (Jogo a Jogo: lances de movimento livre vistos de cima, analógico e botão fixos embaixo; `S.LIVRE`, `S.livreK`), `cine.js` (câmera e efeitos; `?cine=0`
 desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da criação, `c.look`),
 `card.js` (carta em canvas), `trophies.js`, `ball3d.js` (bola 3D da tela inicial), `kits-real.js`
 (uniformes reais), `sound.js` (Web Audio), `errors.js` (envia erros ao servidor).
