@@ -47,7 +47,7 @@ function match(o, goals) {
     // reinícios (lateral, escanteio, tiro de meta): contam, não travam; bandeirinha só na sua metade
     if (S.mode !== lm) { if (S.mode === 'rein') m.rein[S.rs.k]++; else if (S.mode === 'tiro') m.rein.tiro++; lm = S.mode; mt = 0; } else mt += 0.02;
     if (mt > 9 && S.mode !== 'play' && S.mode !== 'wait') { m.stuck++; mt = -99; }
-    if (S.AR && (S.AR[0].x < 52.5 - 1 || S.AR[1].x > 52.5 + 1)) m.arOut++;
+    if (S.AR && (S.AR[0].x > 52.5 + 1 || S.AR[1].x < 52.5 - 1)) m.arOut++;
     if (S.mode !== 'play') { lb = null; continue; }
     if (!b.fly && (b.x < -1 || b.x > 106 || b.y < -1 || b.y > 69)) m.outPlay++;
     if (lb && Math.hypot(b.x - lb[0], b.y - lb[1]) > 1.6) m.jump++; lb = [b.x, b.y];

@@ -974,6 +974,21 @@
     }
     paint();
     timer = setTimeout(() => { if (sim) sim.go(); timer = setTimeout(tick, 900); }, 600);
+    // Vigia: o relógio parado sem nenhum popup aberto é jogo travado (o campinho não deu a saída ou não fez o gol).
+    // Destrava sozinho, avisa o servidor com o estado e o jogo segue
+    let wdMin = -1, wdT = Date.now();
+    const wd = setInterval(() => {
+      const sc = $('lv-score');
+      if (!sc || m.done || !document.body.contains(sc)) return clearInterval(wd);
+      const busyUi = document.getElementById('ld-pop') || ($('lv-sheet') && $('lv-sheet').classList.contains('on')) || document.hidden;
+      if (m.min !== wdMin || busyUi) { wdMin = m.min; wdT = Date.now(); return; }
+      if (Date.now() - wdT < (wait ? 40000 : 15000)) return;
+      if (window.CLIMBIX_REPORT) window.CLIMBIX_REPORT('treinador ao vivo travou', JSON.stringify({ min: m.min, open, wait: !!wait, speed: co.speed, ko: !!(sim && sim.koWait && sim.koWait()), ld: !!ctx }));
+      clearTimeout(timer); open = false; hidden.clear();
+      if (sim) { clearTimeout(frz); sim.freeze(false); if (sim.unhold) sim.unhold(); }
+      if (wait) { const g = wait; wait = null; g(); } else timer = setTimeout(tick, 200);
+      wdT = Date.now(); paint();
+    }, 2000);
   }
   // Cartões de um lado no fim (amarelo e vermelho) e quem do seu time fica fora do próximo jogo por cartão
   const cardsTxt = (m, sd) => '<span class="co-yc"></span>' + ((m.yc || {})[sd] || 0) + ((m.rc || {})[sd] ? ' <span class="co-red"></span>' + m.rc[sd] : '');

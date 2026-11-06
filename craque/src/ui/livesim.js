@@ -358,7 +358,7 @@
     function signal(s, x, y, k) {
       const sd = (s === 0 ? 1 : -1) * (mir() ? -1 : 1);
       REF.sig = 'braco'; REF.dir = sd; REF.sigT = 2.2;
-      const a = x > L / 2 ? AR[0] : AR[1];
+      const a = x > L / 2 ? AR[1] : AR[0];
       if ((k === 'lat' && ((a.top && y <= 0.5) || (!a.top && y >= WD - 0.5))) || k === 'esc' || k === 'tiro') { a.sig = 'point'; a.dir = sd; a.sigT = 2.2; }
     }
     let rs = null, outCd = 0, lastSide = 0;
@@ -602,7 +602,7 @@
       if (ball.owner === q || (ball.loose && ball.loose.f === P.f)) {
         const d = T[1 - s].filter(x => x.r !== 'GK').sort((a, b) => dist(a, q) - dist(b, q))[0] || at(1 - s, 0);
         whistle('Impedimento', d, ball); modeT = 1.8;
-        offLine = { s, x: P.line, t: 1.8 }; AR[toW(s, P.line, 0)[0] > L / 2 ? 0 : 1].flag = 1.8; refFx = { p: q, kind: 'impedimento', t: 1.8 };
+        offLine = { s, x: P.line, t: 1.8 }; AR[toW(s, P.line, 0)[0] > L / 2 ? 1 : 0].flag = 1.8; refFx = { p: q, kind: 'impedimento', t: 1.8 };
         return offEnd(true);
       }
       offEnd(false); // a bola não chegou nele (cortaram no caminho)
@@ -976,20 +976,20 @@
       g.restore();
     }
     // Arbitragem: o juiz anda na diagonal perto da bola e os bandeirinhas ficam em laterais opostas, cada um só na sua
-    // metade (de cima: a metade direita; de baixo: a esquerda), na altura do penúltimo defensor (ou da bola, se ela passou)
+    // metade, a que fica à direita dele olhando o campo (de cima: a metade esquerda da tela; de baixo: a direita), na altura do penúltimo defensor (ou da bola, se ela passou)
     // Uniforme: amarelo ou preto, o que mais se diferencia das camisas dos dois times e dos goleiros
     const REFC = (() => { const sh = [KT.mine[0], KT.opp[0], KT.gk[0], KT.gk[1]], sc = c => Math.min(...sh.map(x => cdist(c, x))); return sc('#F5D90A') >= sc('#161616') ? ['#F5D90A', '#161616'] : ['#161616', '#F5D90A']; })();
     const REF = { x: 52.5, y: 40, vx: 0, vy: 0, sig: null, sigT: 0 }, AR = [{ x: 52.5, y: -1.3, top: true, flag: 0 }, { x: 52.5, y: WD + 1.3, top: false, flag: 0 }];
     function offStepRef(dt) {
       const bx = ball.x, by = ball.y, right = bx > L / 2;
       // o juiz fica uns 12 m da bola, do lado oposto ao bandeirinha que está trabalhando, sem entrar na linha do passe
-      const tx = cl(bx + (right ? -8 : 8), 10, L - 10), ty = cl(by + (right ? 10 : -10), 5, WD - 5), d = Math.hypot(tx - REF.x, ty - REF.y), v = Math.min(d, (d > 12 ? 7.5 : 5) * dt);
+      const tx = cl(bx + (right ? -8 : 8), 10, L - 10), ty = cl(by + (right ? -10 : 10), 5, WD - 5), d = Math.hypot(tx - REF.x, ty - REF.y), v = Math.min(d, (d > 12 ? 7.5 : 5) * dt);
       if (d > 0.3) { REF.x += (tx - REF.x) / d * v; REF.y += (ty - REF.y) / d * v; }
       for (const p of ALL) { const dd = dist(p, REF); if (dd < 2.2 && dd > 0.01) { REF.x += (REF.x - p.x) / dd * (2.2 - dd) * 0.5; REF.y += (REF.y - p.y) / dd * (2.2 - dd) * 0.5; } }
       // bandeirinhas: penúltimo defensor de quem defende aquele gol (lado 1 defende o gol da direita, lado 0 o da esquerda)
       const pen = (s, sign) => { const xs = T[s].map(p => p.x).sort((a, b) => sign * (b - a)); return xs.length > 1 ? xs[1] : L / 2; };
       AR.forEach(a => {
-        const tx2 = a.top ? cl(Math.max(pen(1, 1), bx), L / 2, L) : cl(Math.min(pen(0, -1), bx), 0, L / 2), d2 = tx2 - a.x;
+        const tx2 = a.top ? cl(Math.min(pen(0, -1), bx), 0, L / 2) : cl(Math.max(pen(1, 1), bx), L / 2, L), d2 = tx2 - a.x;
         a.x += Math.sign(d2) * Math.min(Math.abs(d2), 7 * dt);
         if (a.flag > 0) a.flag = Math.max(0, a.flag - dt);
       });
@@ -1151,6 +1151,7 @@
       go() { if (mode === 'wait') { mode = 'ko'; modeT = 0.3; koHold = true; } },
       // true enquanto os times ainda se arrumam para a saída do 1º ou do 2º tempo: a tela não anda o minuto
       koWait() { return koHold && (mode === 'ko' || mode === 'wait'); },
+      unhold() { koHold = false; }, // a tela destrava o relógio (vigia do Treinador)
       half() { if (lc) lcDone(); mode = 'half'; koSide = 1; ball.owner = ball.fly = ball.loose = ball.carry = null; },
       second() { half2 = true; mode = 'ko'; modeT = 0.4; koSide = 1; koHold = true; },
       freeze(v) { frozen = !!v; },

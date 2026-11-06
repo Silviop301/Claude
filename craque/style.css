@@ -7981,3 +7981,7 @@ body.ld-on #ld { display: block; }
 .ldp-fx em { font: 700 13px var(--display) !important; } .ldp-fx em.up { color: #7FE0A3; } .ldp-fx em.dn { color: #FF9AA2; }
 .ldp-c.on .ldp-fx { background: rgba(19, 32, 26, .07); } .ldp-c.on .ldp-fx em.up { color: var(--up-ink, #1E7A43); } .ldp-c.on .ldp-fx em.dn { color: #B3261E; }
 .ldb-r { padding: 2px 6px; } .ldb-r button { height: 23px; }
+.ld-top { overflow: hidden; } .ld-top > .ld-meta { min-width: 0; flex-shrink: 1; overflow: hidden; } .ld-meta b { overflow: hidden; text-overflow: ellipsis; } .ld-top .ld-rd { flex: none; }
+.ld-st .ldl { padding-bottom: 0; } /* .lv do jogo em pé reserva 96px embaixo; deitado não */
+/* Deitado no iPhone instalado: o palco começa abaixo da faixa borrada do topo (--sat), ver display-mode: standalone */
+#ld { top: var(--sat); } #ld.port { top: 0; }
