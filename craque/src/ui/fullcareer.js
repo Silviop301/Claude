@@ -187,7 +187,7 @@
   function goalStrip(c, nx) {
     const fc = c.fc, last = fc.log[fc.log.length - 1], rows = [];
     const head = fc.i === 0 && nx.vs ? 'Amanhã é sua estreia: ' + esc(nx.compName)
-      : last ? 'Último jogo: ' + last.gf + '–' + last.ga + ' contra ' + esc(nameOf(last.vs)) + (last.on && last.rating ? ' · nota ' + rate(last.rating) : '') : '';
+      : last ? 'Último jogo: ' + (last.home ? esc(nameOf(c.club)) + ' ' + last.gf + '–' + last.ga + ' ' + esc(nameOf(last.vs)) : esc(nameOf(last.vs)) + ' ' + last.ga + '–' + last.gf + ' ' + esc(nameOf(c.club))) + (last.on && last.rating ? ' · nota ' + rate(last.rating) : '') : '';
     const gs = (S.fcGoals ? S.fcGoals(c) || [] : []).filter(g => typeof g.have === 'number' && g.n && g.have < g.n);
     gs.sort((a, b) => b.have / b.n - a.have / a.n);
     const g = gs[0];
@@ -897,8 +897,9 @@
     const fc = G.c.fc, past = fc.log.slice(-3), next = S.fcPreview(G.c, 5).slice(1);
     const tag = k => '<em class="fc-k ' + k + '">' + (k === 'lg' ? 'Liga' : k === 'cup' ? 'Copa' : 'Cont.') + '</em>';
     $('fc-cal').innerHTML = '<div class="fs-rlbl">Calendário</div>' +
-      past.map(l => '<div class="fc-ci done">' + tag(l.comp) + crest(l.vs, 'xs') + '<span>' + (l.home ? '' : '@ ') + esc(nameOf(l.vs)) + '</span><b class="' + (l.won || l.gf > l.ga ? 'up' : l.gf < l.ga ? 'down' : '') + '">' + l.gf + '–' + l.ga + (l.pens ? ' (p)' : '') + '</b></div>').join('') +
-      next.map(p => '<div class="fc-ci">' + tag(p.k) + (p.vs ? crest(p.vs, 'xs') + '<span>' + (p.home ? '' : '@ ') + esc(nameOf(p.vs)) + '</span>' : '<i></i><span>' + esc(p.bye ? 'Folga' : 'Adversário no sorteio') + '</span>') + '<b>' + esc(p.stage.replace(/^Grupo · /, 'G ')) + '</b></div>').join('');
+      // Mandante sempre à esquerda: escudo dele, placar (ou ×) e escudo do visitante; o nome é o do adversário, com casa ou fora
+      past.map(l => '<div class="fc-ci done">' + tag(l.comp) + '<span class="fc-hv">' + crest(l.home ? G.c.club : l.vs, 'xs') + '<b class="' + (l.won || l.gf > l.ga ? 'up' : l.gf < l.ga ? 'down' : '') + '">' + (l.home ? l.gf + '–' + l.ga : l.ga + '–' + l.gf) + '</b>' + crest(l.home ? l.vs : G.c.club, 'xs') + '</span><span>' + esc(nameOf(l.vs)) + (l.pens ? ' (pên.)' : '') + '</span><small class="fc-cf">' + (l.home ? 'casa' : 'fora') + '</small></div>').join('') +
+      next.map(p => '<div class="fc-ci">' + tag(p.k) + (p.vs ? '<span class="fc-hv">' + crest(p.home ? G.c.club : p.vs, 'xs') + '<b>×</b>' + crest(p.home ? p.vs : G.c.club, 'xs') + '</span><span>' + esc(nameOf(p.vs)) + ' · ' + esc(p.stage.replace(/^Grupo · /, 'G ')) + '</span><small class="fc-cf">' + (p.home ? 'casa' : 'fora') + '</small>' : '<i></i><span>' + esc(p.bye ? 'Folga' : 'Adversário no sorteio') + '</span><b>' + esc(p.stage.replace(/^Grupo · /, 'G ')) + '</b>') + '</div>').join('');
   }
 
   // ---------- a semana entre os jogos ----------
@@ -1761,7 +1762,7 @@
     const lcPend = new Set(); // seus lances que o campinho ainda está jogando (a linha sai quando a jogada acontece)
     // A rede balançou no campinho: o placar vira já (não espera o fim do minuto)
     const onGoal = m => { if (nextTick && !finished && t === m - 1) { clearTimeout(timer); timer = setTimeout(tick, 120); } };
-    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), t0, speed: () => (fast ? 3 : 1), onEv: (k, d) => narrSim(k, d), onFrame: i => zoneSim(i), onGoal, flip: !nx.home, kits: U.LP.kits(U.LP.kitFor(meName, c.club), U.LP.kitFor(opName, x.vs), !!nx.home),
+    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), meName: sobre(c), t0, speed: () => (fast ? 3 : 1), onEv: (k, d) => narrSim(k, d), onFrame: i => zoneSim(i), onGoal, flip: !nx.home, home: nx.home ? 0 : 1, kits: U.LP.kits(U.LP.kitFor(meName, c.club), U.LP.kitFor(opName, x.vs), !!nx.home),
       seed: (Number(c.tseed) || 1) * 7 + c.fc.season * 101 + c.fc.i * 13 + t0,
       goals: out.my.ev.filter(e => (!o.stop || e.m < stopAt) && !(o.from && e.m === o.from)).map(e => ({ m: e.m, side: e.s === (nx.home ? 'h' : 'a') ? 0 : 1, me: !!e.me, as: !!e.as })) }) : null;
     const pitch = () => { if (!fl) return; $('fc-flow').innerHTML = flowBox(c, x, fl, meIdx); U.LP.resetTrail(); if (sim) sim.attach($('lp-cv')); };
@@ -1893,7 +1894,7 @@
         out.my.ev.filter(e => (since !== undefined ? e.m > since && e.m <= t : e.m === t) && shown(e)).forEach(e => {
           const ours = e.s === meSide; myGoal = true;
           feed(e.m, goalTxt(e), 'gol ' + (ours ? 'us' : 'th') + (e.me || e.as ? ' me' : ''), e.me || e.as);
-          if (ours) sfx('cheer');
+          sfx(U.goalSnd(ours, !!nx.home));
           if (since === undefined || e.m === t) {
             U.LP.banner(e.me ? 'GOL DE ' + esc(sobre(c)).toUpperCase() + '!' : 'GOL ' + esc(D.do(ours ? meName : opName)).toUpperCase() + (ours ? '!' : ''),
               e.me || e.as ? (e.m === o.from ? 'Seu lance decisivo' : e.as ? 'Assistência sua' : '') : '', ours ? (e.me || e.as ? 'gold' : 'up') : 'down');

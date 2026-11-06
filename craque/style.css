@@ -4555,13 +4555,18 @@ html.desk #screen > .ob5-board.mini + #kick, .desk .trn > #trn-mini { margin: 0;
 .fc-comp.won b { color: var(--gold-2); font-weight: 800; }
 .fc-comp.out b { color: var(--tx-4); }
 .fc-cal { display: grid; gap: 2px; }
-.fc-ci { display: grid; grid-template-columns: 48px 22px minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 5px 2px; font: var(--t-small); color: var(--tx-2); border-bottom: 1px solid var(--panel-line); }
+.fc-ci { display: grid; grid-template-columns: 48px auto minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 5px 2px; font: var(--t-small); color: var(--tx-2); border-bottom: 1px solid var(--panel-line); }
 .fc-ci .crest.xs { margin: 0; }
 .fc-ci > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tx-1); }
 .fc-ci > b { font: 700 14px var(--display); color: var(--tx-3); text-align: right; }
 .fc-ci > b.up { color: var(--up); }
 .fc-ci > b.down { color: var(--down); }
 .fc-ci.done > span { color: var(--tx-2); }
+/* mandante à esquerda: escudo, placar (ou ×), escudo; casa/fora no fim da linha */
+.fc-ci > .fc-hv { display: flex; align-items: center; gap: 4px; overflow: visible; }
+.fc-hv b { font: 700 14px var(--display); color: var(--tx-3); min-width: 26px; text-align: center; }
+.fc-hv b.up { color: var(--up); } .fc-hv b.down { color: var(--down); }
+.fc-ci > .fc-cf { font: 600 11px var(--body, inherit); text-transform: uppercase; letter-spacing: .04em; color: var(--tx-3); }
 .fc-k { font: 700 12px var(--display); font-style: normal; text-transform: uppercase; letter-spacing: .06em; text-align: center; padding: 2px 0; border-radius: 4px; background: var(--panel-2); color: var(--tx-2); }
 .fc-k.cup { background: color-mix(in srgb, var(--blue) 45%, transparent); color: var(--tx-1); }
 .fc-k.cont { background: color-mix(in srgb, var(--gold) 35%, transparent); color: var(--tx-1); }
@@ -6019,6 +6024,9 @@ body.ph-nobar #bar { display: none; }
 .co-vs b, .co-score b { font: var(--t-item); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .co-vs small { font: var(--t-small); color: var(--ink-2); }
 .co-vs em { font: 800 22px var(--display); color: var(--ink-2); font-style: normal; }
+.co-vs span.me b { color: var(--gold-ink); }
+.co-mando { margin: 8px 0 0; text-align: center; font: var(--t-small); color: var(--ink-2); }
+.co-mando.up { color: var(--up-ink); } .co-mando.down { color: var(--down-ink); }
 .crest.co-vc { width: 56px; height: 56px; object-fit: contain; }
 .co-meta { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; padding: 10px 12px; border-radius: var(--r-sm); background: rgba(19, 32, 26, .06); }
 .co-meta small { grid-column: 1 / -1; }
