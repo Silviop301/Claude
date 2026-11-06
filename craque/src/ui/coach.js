@@ -350,6 +350,10 @@
     w.className = 'co-pop'; w.id = 'co-pop';
     w.innerHTML = '<div class="co-pop-c" role="dialog" aria-modal="true" aria-label="' + esc(label) + '">' + html + '</div>';
     document.body.appendChild(w);
+    // O toque que abriu o popup (pointerup) ainda gera um clique logo depois, e no celular ele cai no que estiver por baixo
+    // do dedo dentro do popup: sem essa trava, tocar num titular já escolhia o reserva da linha ali embaixo
+    const t0 = Date.now();
+    w.addEventListener('click', e => { if (Date.now() - t0 < 450) { e.stopPropagation(); e.preventDefault(); } }, true);
     w.onclick = e => { if (e.target === w) { sfx('tap'); closePop(); } };
     const x = w.querySelector('[data-pop-x]'); if (x) x.onclick = () => { sfx('tap'); closePop(); };
     pop.esc = e => { if (e.key === 'Escape') closePop(); };
@@ -740,6 +744,9 @@
     const subs = st => {
       const s = m.us, by = {}; s.squad.forEach(p => { by[p.id] = p; });
       let sel = null;
+      // Cada troca feita nesta parada pode ser desfeita até tocar em Pronto (nada aconteceu no jogo ainda)
+      const undo = [];
+      const snap = () => ({ xi: s.xi.slice(), bench: s.bench.slice(), subs: s.subs, gone: (s.gone || []).slice(), ev: m.ev.length, fm: firstMove });
       const d = full('');
       const draw = () => {
         const sp = spots(s.form), slots = S.coSlots(s.form);
@@ -757,8 +764,9 @@
           '<div class="lv-vp" id="lv-vp"><div class="lv-vf"><i class="c"></i><i class="b t"></i><i class="b u"></i></div>' + s.xi.map(tok).join('') + '</div>' +
           '<div class="lv-bh"><small>Banco</small><small>' + (s.subs ? 'arraste para o campo' : 'sem trocas') + '</small></div>' +
           '<div class="lv-bench">' + (bench.length ? bench.map(p => '<button class="lv-bc' + (sel && sel.b === p.id ? ' sel' : '') + '" data-dbn="' + p.id + '"' + (s.subs ? '' : ' disabled') + '><small>' + p.pos + ' · ' + p.ovr + '</small><b>' + esc(p.n) + '</b><i><em class="' + enCls(p.en) + '" style="width:' + Math.round(p.en) + '%"></em></i></button>').join('') : '<p class="co-tip">Ninguém no banco.</p>') + '</div>' +
-          '<div class="lv-fb"><button class="btn" id="b-lv-back">Pronto</button></div>';
+          '<div class="lv-fb">' + (undo.length ? '<div class="lv-fb2"><button class="btn ghost" id="b-lv-undo">Desfazer</button><button class="btn" id="b-lv-back">Pronto</button></div>' : '<button class="btn" id="b-lv-back">Pronto</button>') + '</div>';
         $('b-lv-back').onclick = () => { sfx('tap'); back(st); };
+        if (undo.length) $('b-lv-undo').onclick = () => { sfx('tap'); const u = undo.pop(); s.xi = u.xi; s.bench = u.bench; s.subs = u.subs; s.gone = u.gone; m.ev.length = u.ev; firstMove = u.fm; sel = null; draw(); };
         bindDrag();
       };
       // Quem do banco pode entrar no lugar do titular i: mesma posição primeiro, a sugestão (o melhor disponível, contando o
@@ -786,6 +794,10 @@
       // Faz a troca entre a origem e o destino (titular ou reserva)
       const act = (a, b) => {
         if (!a || !b) return;
+        const u = snap(); doAct(a, b);
+        if (s.xi.join() !== u.xi.join()) undo.push(u);
+      };
+      const doAct = (a, b) => {
         if (a.xi !== undefined && b.xi !== undefined) { if (a.xi === b.xi) return; const t = s.xi[a.xi]; s.xi[a.xi] = s.xi[b.xi]; s.xi[b.xi] = t; sfx('tap'); return; }
         const x = a.xi !== undefined ? a : b, n = a.b ? a : b;
         if (x.xi === undefined || !n.b) return;
