@@ -114,6 +114,43 @@
       return '<div class="rt-r' + (x.me ? ' me' : '') + (ss.promo && pos === ss.promo ? ' cut' : '') + (ss.releg && pos === n - ss.releg ? ' cut' : '') + '"><i>' + pos + '</i>' + crest(x.id, 'xs') +
         '<span>' + esc(club(x.id).name) + '</span><em>' + x.j + 'j</em><b>' + x.p + '</b></div>'; }).join('') + '</div>';
   }
+  // Tabela inteira: classificação (P J V E D SG), gols e forma (GP GC SG últimos 5), rodadas (placares e jogos que vêm)
+  function tabela(tab, rd) {
+    G.c = null; bar();
+    const ss = co.ss, t = S.coTable(co), n = t.length, R = ss.rounds.length, cur = Math.min(ss.i, R - 1);
+    rd = rd == null ? Math.max(0, ss.i - 1) : Math.max(0, Math.min(R - 1, rd));
+    const nm = id => { const c = club(id); return esc(c.short || c.name); };
+    const zone = pos => ss.promo && pos <= ss.promo ? ' up' : ss.releg && pos > n - ss.releg ? ' dn' : !ss.promo && pos === 1 ? ' up' : '';
+    const cut = pos => (ss.promo && pos === ss.promo) || (ss.releg && pos === n - ss.releg) ? ' cut' : '';
+    const sg = x => { const d = x.gp - x.gc; return '<em class="' + (d > 0 ? 'pos' : d < 0 ? 'neg' : '') + '">' + (d > 0 ? '+' : '') + d + '</em>'; };
+    const dots = f => { const a = (f || '').split(''); while (a.length < 5) a.unshift('-'); return '<span class="tb-f">' + a.map(c => '<i class="' + (c === '-' ? 'n' : c) + '"></i>').join('') + '</span>'; };
+    const row = (x, k, cells) => '<div class="tb-r' + zone(k + 1) + cut(k + 1) + (x.me ? ' me' : '') + '"><i>' + (k + 1) + '</i>' + crest(x.id, 'xs') + '<span>' + esc(club(x.id).name) + '</span>' + cells + '</div>';
+    let body;
+    if (tab === 'cls') body = '<div class="tbx tb-cls" style="--n:' + n + '"><div class="tb-h"><i>#</i><span>Clube</span><b>P</b><em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em></div>' +
+      t.map((x, k) => row(x, k, '<b>' + x.p + '</b><em>' + x.j + '</em><em>' + x.v + '</em><em>' + x.e + '</em><em>' + x.d + '</em>' + sg(x))).join('') + '</div>';
+    else if (tab === 'gol') body = '<div class="tbx tb-gol" style="--n:' + n + '"><div class="tb-h"><i>#</i><span>Clube</span><em>GP</em><em>GC</em><em>SG</em><small>Últimos 5</small></div>' +
+      t.map((x, k) => row(x, k, '<em>' + x.gp + '</em><em>' + x.gc + '</em>' + sg(x) + dots(x.f))).join('') + '</div>';
+    else {
+      const res = (ss.res || [])[rd], played = rd < ss.i, me = ss.ids.indexOf(co.club);
+      const list = played && res ? res.slice().sort((a, b) => (b[0] === me || b[1] === me) - (a[0] === me || a[1] === me)) :
+        ss.rounds[rd].map(([h, a]) => [h, a]).sort((a, b) => (b[0] === me || b[1] === me) - (a[0] === me || a[1] === me));
+      const pos = i => t.findIndex(x => x.id === ss.ids[i]) + 1;
+      body = '<div class="tb-nav"><button id="b-tb-prev" aria-label="Rodada anterior"' + (rd ? '' : ' disabled') + '>‹</button><b>Rodada ' + (rd + 1) + ' <small>de ' + R + (rd === cur && !ss.done ? ' · próxima' : played ? '' : ' · a jogar') + '</small></b><button id="b-tb-next" aria-label="Próxima rodada"' + (rd < R - 1 ? '' : ' disabled') + '>›</button></div>' +
+        (played && !res ? '<p class="cf-empty">Placares desta rodada não foram guardados (temporada começou antes desta versão).</p>' :
+        '<div class="tb-jg">' + list.map(([h, a, gh, ga]) => { const mine = h === me || a === me, sc = gh != null;
+          return '<div class="tb-g' + (mine ? ' me' : '') + '"><span class="h"><small>' + pos(h) + 'º</small><u>' + nm(ss.ids[h]) + '</u>' + crest(ss.ids[h], 'xs') + '</span>' +
+            '<b class="' + (sc ? '' : 'vs') + '">' + (sc ? '<em class="' + (gh > ga ? 'w' : '') + '">' + gh + '</em>×<em class="' + (ga > gh ? 'w' : '') + '">' + ga + '</em>' : '×') + '</b>' +
+            '<span class="a">' + crest(ss.ids[a], 'xs') + '<u>' + nm(ss.ids[a]) + '</u><small>' + pos(a) + 'º</small></span></div>'; }).join('') + '</div>');
+    }
+    const leg = tab === 'rod' ? '' : '<div class="tb-leg">' + (ss.promo ? '<span class="up">Acesso</span>' : '<span class="up">Campeão</span>') + (ss.releg ? '<span class="dn">Rebaixamento</span>' : '') + (tab === 'gol' ? '<span class="f"><i class="v"></i>V <i class="e"></i>E <i class="d"></i>D</span>' : '') + '</div>';
+    render(U.modeHead({ mode: 'co', nav: 'back', id: 'b-co-back', label: 'Voltar ao clube', title: 'Tabela', sub: esc(ss.name) + ' ' + yr() + ' · ' + (ss.done ? 'encerrada' : 'rodada ' + Math.min(ss.i + 1, R) + ' de ' + R) }) +
+      '<div class="cad-tabs tb-tabs"><button data-tb="cls">Classificação</button><button data-tb="gol">Gols e forma</button><button data-tb="rod">Rodadas</button></div>' +
+      '<div class="co-box tb-box">' + body + leg + '</div>');
+    U.modeHeadBind();
+    document.querySelectorAll('[data-tb]').forEach(b => { b.classList.toggle('on', b.dataset.tb === tab); b.onclick = () => { sfx('tap'); tabela(b.dataset.tb, rd); }; });
+    if ($('b-tb-prev')) { $('b-tb-prev').onclick = () => { sfx('tap'); tabela('rod', rd - 1); }; $('b-tb-next').onclick = () => { sfx('tap'); tabela('rod', rd + 1); }; }
+    $('b-co-back').onclick = () => { sfx('tap'); hub(); };
+  }
   function form5() {
     const l = co.ss.log.slice(-5);
     return l.length ? '<div class="co-form">' + l.map(x => '<i class="' + x.res + '" title="' + x.gf + 'x' + x.ga + '">' + x.res.toUpperCase() + '</i>').join('') + '</div>' : '';
@@ -144,7 +181,7 @@
     $('b-co-team').onclick = () => { sfx('tap'); team(false); };
     $('b-co-cad').onclick = () => { sfx('tap'); caderno(hub); };
     $('b-co-fin').onclick = () => { sfx('tap'); fin(); };
-    $('b-co-tab').onclick = () => { sfx('tap'); render(U.modeHead({ mode: 'co', nav: 'back', id: 'b-co-back', label: 'Voltar ao clube', title: 'Tabela', sub: esc(ss.name) + ' ' + yr() }) + '<div class="co-box">' + table(true) + '</div>'); U.modeHeadBind(); $('b-co-back').onclick = hub; };
+    $('b-co-tab').onclick = () => { sfx('tap'); tabela('cls'); };
     $('b-co-out').onclick = () => { sfx('tap'); save(); co = null; U.home(); };
   }
 
@@ -553,13 +590,14 @@
   // goleiro primeiro e o resto do mais recuado ao mais adiantado; expulso não entra (a lista fica menor)
   function simForm(s) {
     const sl = S.CO_FORMS[s.form].slots, sp = spots(s.form), am = sl.some(x => x.ln === 'am');
+    S.coNums(s.squad);
     const DP = { g: 0, d: 0.17, m: am ? 0.42 : 0.48, am: 0.66, a: 0.88 }, out = [];
     sl.forEach((x, i) => {
       if (!s.xi[i] || !sp[i]) return;
       const lat = sp[i][0], w = Math.max(8, Math.min(92, 50 + (lat - 50) * 1.25));
       const r = x.pos === 'GOL' ? 'GK' : x.pos === 'LAT' ? (lat < 50 ? 'LB' : 'RB') : x.pos === 'ZAG' ? 'CB' : x.pos === 'ATA' ? 'ST' : x.w ? (lat < 50 ? 'LM' : 'RM') : 'CM';
       const pl = (s.squad || []).find(q => q.id === s.xi[i]), ov = pl ? pl.ovr - (100 - (pl.en === undefined ? 100 : pl.en)) * 0.1 : undefined; // cansado rende menos
-      out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w, ov, pl ? { nm: last(pl.n) || pl.n, enf: () => (pl.en === undefined ? 100 : pl.en) } : null]); // energia ao vivo (o motor gasta minuto a minuto)
+      out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w, ov, pl ? { num: pl.num, nm: last(pl.n) || pl.n, enf: () => (pl.en === undefined ? 100 : pl.en) } : null]); // energia ao vivo (o motor gasta minuto a minuto)
     });
     const gk = out.filter(p => p[0] === 'GK'), rest = out.filter(p => p[0] !== 'GK').sort((a, b) => a[1] - b[1]);
     if (!gk.length && rest.length) { const g0 = rest.shift(); g0[0] = 'GK'; g0[1] = 0; g0[2] = 50; gk.push(g0); }
@@ -682,6 +720,7 @@
       if (m.done) return end();
       if (sim) sim.go(); // o apito (se a velocidade mudou antes dele, o timer do começo foi trocado)
       if (sim && h1 && !h2) { h2 = true; sim.second(); }
+      if (sim && sim.koWait && sim.koWait()) { timer = setTimeout(tick, 150); return; } // o relógio só anda depois do apito da saída
       const st = S.coMatchStep(co, m, m.min + 1);
       if (sim) { const v = m.mom && m.mom[m.min - 1]; sim.minute(m.min, v === undefined ? 50 : v); }
       const gw = toSim();
@@ -746,7 +785,7 @@
     // Trocas no campinho: arraste o reserva até o titular (troca) ou um titular até outro (trocam de posição).
     // Tocar num e depois no outro faz o mesmo.
     const subs = st => {
-      const s = m.us, by = {}; s.squad.forEach(p => { by[p.id] = p; });
+      const s = m.us, by = {}; S.coNums(s.squad); s.squad.forEach(p => { by[p.id] = p; });
       let sel = null;
       // Cada troca feita nesta parada pode ser desfeita até tocar em Pronto (nada aconteceu no jogo ainda)
       const undo = [];
@@ -760,14 +799,14 @@
           // A energia de cada titular: o anel em volta do número enche e muda de cor (verde, amarelo, vermelho) e o % ao lado da posição
           const en = Math.round(p.en), ec = enCls(p.en);
           return '<button class="lv-tk' + (low || hurt ? ' low' : '') + (sel && sel.xi === i ? ' sel' : '') + '" data-dxi="' + i + '" style="left:' + sl[0] + '%;top:' + sl[1] + '%">' +
-            (hurt ? '<em>machucado</em>' : low ? '<em>cansado</em>' : '') + '<i class="en-' + ec + (i ? '' : ' gk') + '" style="--en:' + en + '%">' + p.ovr + '</i><b>' + esc(last(p.n)) + '</b><small>' + slots[i] + ' · <span class="en-' + ec + '">' + en + '%</span></small></button>'; };
+            (hurt ? '<em>machucado</em>' : low ? '<em>cansado</em>' : '') + '<i class="en-' + ec + (i ? '' : ' gk') + '" style="--en:' + en + '%">' + (p.num || '') + '</i><b>' + esc(last(p.n)) + '</b><small>' + slots[i] + ' ' + p.ovr + ' · <span class="en-' + ec + '">' + en + '%</span></small></button>'; };
         const bench = s.bench.map(id => by[id]).filter(Boolean);
         d.innerHTML = '<div class="lv-fh"><div><small>' + m.min + '\' · ' + m.gh + ' x ' + m.ga + ' · Parada</small><h2>Mexer no time</h2></div>' +
           '<span class="lv-pips" aria-label="' + D.plural(s.subs, 'troca restante', 'trocas restantes') + '">' + [0, 1, 2, 3, 4].map(i => '<i class="' + (i < s.subs ? 'on' : '') + '"></i>').join('') + '</span></div>' +
           '<p class="lv-hint">' + (sel ? 'Agora toque no jogador que vai trocar com ' + esc(last((sel.xi !== undefined ? by[s.xi[sel.xi]] : by[sel.b] || {}).n)) + '.' : 'Toque num titular para ver quem do banco pode entrar no lugar dele. Também dá para arrastar.') + '</p>' +
           '<div class="lv-vp" id="lv-vp"><div class="lv-vf"><i class="c"></i><i class="b t"></i><i class="b u"></i></div>' + s.xi.map(tok).join('') + '</div>' +
           '<div class="lv-bh"><small>Banco</small><small>' + (s.subs ? 'arraste para o campo' : 'sem trocas') + '</small></div>' +
-          '<div class="lv-bench">' + (bench.length ? bench.map(p => '<button class="lv-bc' + (sel && sel.b === p.id ? ' sel' : '') + '" data-dbn="' + p.id + '"' + (s.subs ? '' : ' disabled') + '><small>' + p.pos + ' · ' + p.ovr + '</small><b>' + esc(p.n) + '</b><i><em class="' + enCls(p.en) + '" style="width:' + Math.round(p.en) + '%"></em></i></button>').join('') : '<p class="co-tip">Ninguém no banco.</p>') + '</div>' +
+          '<div class="lv-bench">' + (bench.length ? bench.map(p => '<button class="lv-bc' + (sel && sel.b === p.id ? ' sel' : '') + '" data-dbn="' + p.id + '"' + (s.subs ? '' : ' disabled') + '><small>' + (p.num ? '<u>' + p.num + '</u>' : '') + p.pos + ' · ' + p.ovr + '</small><b>' + esc(p.n) + '</b><i><em class="' + enCls(p.en) + '" style="width:' + Math.round(p.en) + '%"></em></i></button>').join('') : '<p class="co-tip">Ninguém no banco.</p>') + '</div>' +
           '<div class="lv-fb">' + (undo.length ? '<div class="lv-fb2"><button class="btn ghost" id="b-lv-undo">Desfazer</button><button class="btn" id="b-lv-back">Pronto</button></div>' : '<button class="btn" id="b-lv-back">Pronto</button>') + '</div>';
         $('b-lv-back').onclick = () => { sfx('tap'); back(st); };
         if (undo.length) $('b-lv-undo').onclick = () => { sfx('tap'); const u = undo.pop(); s.xi = u.xi; s.bench = u.bench; s.subs = u.subs; s.gone = u.gone; m.ev.length = u.ev; firstMove = u.fm; sel = null; draw(); };

@@ -69,6 +69,20 @@
   const slotsOf = form => FORMS[form].slots.map(x => x.pos);
   const sectorOf = (form, i) => { const l = FORMS[form].slots[i].ln; return l === 'am' ? 'm' : l; };
   S.coSlots = slotsOf;
+  // Número de camisa fixo de cada jogador do elenco (p.num): quem não tem ganha o número clássico da posição que estiver livre
+  // (os melhores primeiro), senão o menor livre. Fica no jogador, então não muda com trocas nem de jogo para jogo.
+  const NUM_PREF = { GOL: [1, 12, 23], LAT: [2, 6, 13, 22], ZAG: [3, 4, 14, 15], MEI: [5, 8, 10, 7, 11, 16, 17, 18, 20], ATA: [9, 11, 7, 19, 21, 17] };
+  S.coNums = squad => {
+    if (!squad || !squad.length) return squad;
+    const used = new Set(squad.filter(p => p.num).map(p => p.num));
+    squad.filter(p => !p.num || (squad.find(q => q !== p && q.num === p.num && q.id < p.id) && (p.num = 0, true)))
+      .sort((a, b) => b.ovr - a.ovr).forEach(p => {
+        let n = (NUM_PREF[p.pos] || []).find(x => !used.has(x));
+        for (let x = 2; !n; x++) if (!used.has(x) && x !== 12 && x !== 23) n = x;
+        p.num = n; used.add(n);
+      });
+    return squad;
+  };
   // Jogador fora da posição rende menos
   const FIT = { ZAG: { LAT: 0.92, MEI: 0.85 }, LAT: { ZAG: 0.9, MEI: 0.9, ATA: 0.8 }, MEI: { LAT: 0.88, ZAG: 0.82, ATA: 0.9 }, ATA: { MEI: 0.88, LAT: 0.78 } };
   const fit = (pos, slot) => (pos === slot ? 1 : pos === 'GOL' || slot === 'GOL' ? 0.4 : (FIT[pos] && FIT[pos][slot]) || 0.7);
@@ -243,7 +257,7 @@
     const ids = L().leagueTeams(club), perm = ids.map((_, i) => i).sort(() => r() - 0.5);
     const sch = S._schedule(ids.length);
     const ss = co.ss = { season: co.season, club: club.id, i: 0, name: lg.name, ids, rounds: sch.map(rd => rd.map(([a, b]) => [perm[a], perm[b]])),
-      tab: ids.map(() => ({ p: 0, j: 0, v: 0, e: 0, d: 0, gp: 0, gc: 0 })), promo: LD.up ? LD.promo : 0, releg: LD.down ? LD.releg : 0, log: [], done: false };
+      tab: ids.map(() => ({ p: 0, j: 0, v: 0, e: 0, d: 0, gp: 0, gc: 0 })), promo: LD.up ? LD.promo : 0, releg: LD.down ? LD.releg : 0, log: [], res: [], done: false };
     co.board = { goal: boardGoal(club, ids, ss), conf: CO.conf0, ult: null };
     co.squad.forEach(p => { p.en = 100; p.out = 0; p.sus = 0; p.yc = 0; p.ycSus = 0; });
     co.subsLeft = CO.subs;
@@ -560,7 +574,7 @@
   S.coMatchEnd = function (co, m) {
     const ss = co.ss, me = ss.ids.indexOf(co.club), vi = ss.ids.indexOf(m.vs);
     const [hi, ai] = m.home ? [me, vi] : [vi, me];
-    addTab(ss.tab, hi, ai, m.gh, m.ga);
+    addTab(ss.tab, hi, ai, m.gh, m.ga, resOf(ss));
     const gf = m.home ? m.gh : m.ga, ga = m.home ? m.ga : m.gh, res = gf > ga ? 'v' : gf < ga ? 'd' : 'e';
     roundRest(co, [me, vi]);
     // Elenco: quem jogou cansa, quem não jogou descansa; moral pelo resultado e por jogar ou não
@@ -589,11 +603,16 @@
   };
   const teamAvg = co => { const s = co.squad.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 11); return s.reduce((a, p) => a + p.ovr, 0) / Math.max(1, s.length); };
   S.coTeamAvg = teamAvg;
-  function addTab(tab, h, a, gh, ga) {
+  // res: lista de placares da rodada (ss.res[i]) para a aba Rodadas; f: últimos 5 resultados de cada time
+  function addTab(tab, h, a, gh, ga, res) {
     const H = tab[h], A = tab[a];
     H.j++; A.j++; H.gp += gh; H.gc += ga; A.gp += ga; A.gc += gh;
     if (gh > ga) { H.v++; H.p += 3; A.d++; } else if (gh < ga) { A.v++; A.p += 3; H.d++; } else { H.e++; A.e++; H.p++; A.p++; }
+    const f5 = (t, x) => { t.f = ((t.f || '') + x).slice(-5); };
+    f5(H, gh > ga ? 'v' : gh < ga ? 'd' : 'e'); f5(A, gh < ga ? 'v' : gh > ga ? 'd' : 'e');
+    if (res) res.push([h, a, gh, ga]);
   }
+  const resOf = ss => { ss.res = ss.res || []; return (ss.res[ss.i] = ss.res[ss.i] || []); };
   // Os outros jogos da rodada pela força dos clubes
   function roundRest(co, skip) {
     const ss = co.ss, { r, save } = rngCo(co), str = id => D.CLUB_BY_ID[id].strength;
@@ -601,7 +620,7 @@
       if (skip.includes(h) && skip.includes(a)) return;
       if (skip.includes(h) || skip.includes(a)) return;
       const g = L().simple(r, h, a, str(ss.ids[h]), str(ss.ids[a]));
-      addTab(ss.tab, h, a, g.gh, g.ga);
+      addTab(ss.tab, h, a, g.gh, g.ga, resOf(ss));
     });
     save();
   }

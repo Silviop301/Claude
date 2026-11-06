@@ -2024,6 +2024,7 @@
         return stopActs('fc-2t', 'Começar o 2º tempo', onPitch ? 'Escolha o esforço' + (eff.drink ? '' : ' e se toma o energético') : '', () => {
           $('fc').classList.remove('lp-hv'); pitch(); if (sim) sim.second(); liveActs(); timer = setTimeout(() => { if (onPitch) effBox(); tick(); }, 300); });
       }
+      if (sim && sim.koWait && sim.koWait()) { timer = setTimeout(tick, 150); return; } // o relógio só anda depois do apito da saída
       half = false; nextTick = false;
       // Gol no próximo minuto que o campinho ainda não fez: o relógio espera a jogada (depois de 5 s, bate de onde estiver)
       if (sim && sim.pending(t + 1) && holdS < 12) {
