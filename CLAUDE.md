@@ -205,12 +205,12 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
 
 ## Guia visual
 
-Tema: noite azul de estádio (`--pitch` é o fundo azul-escuro, não gramado), cartões de papel creme, ouro para a ação.
-Verde só onde é gramado de verdade (campinhos, minigames) e como sinal de ganho; fundo, painel, barra e texto de apoio
-nunca puxam para o verde (Silvio, 2026-11-06: "está muito verde"). Regra nova usa as variáveis do topo do
+Tema: gramado à noite (`--pitch`), cartões de papel creme, ouro para a ação. Painéis, tabelas, placar e barra do topo são
+grafite opaco (`--panel` #26282C, `--board`; bloco no fim do `style.css`), não verde translúcido: o verde fica no fundo e
+nos campinhos (Silvio, 2026-11-06: "está muito verde"; ele recusou trocar o fundo). Regra nova usa as variáveis do topo do
 `style.css` (cor solta só para cores de clube, raridade e arte):
 
-- **Texto sobre o fundo escuro:** `--tx-1` principal, `--tx-2` apoio, `--tx-3` rótulo/nota, `--tx-4` desligado; rótulo
+- **Texto sobre o verde:** `--tx-1` principal, `--tx-2` apoio, `--tx-3` rótulo/nota, `--tx-4` desligado; rótulo
   de seção (eyebrow) em `--label`, 12 px, caixa alta espaçada. Sobre o papel: `--ink` e `--ink-2`.
 - **Superfícies:** papel creme = o cartão principal da tela (decisão, proposta, informação); `--panel` (escuro
   translúcido, borda `--panel-line`) = blocos de apoio (números, tabelas, listas); `--board` = placar, ao vivo e
