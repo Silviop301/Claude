@@ -1706,7 +1706,11 @@
     tblKey = null; tabs();
     const posBefore = lg ? standings('lg').findIndex(r => r.i === 0) + 1 : 0;
     x.score = t => (out.my ? part({ ev: out.my.ev }, t) : [0, 0]);
-    const end = Math.max(90, ...[out.my].concat(out.others).filter(Boolean).map(g => (g.ev.length ? g.ev[g.ev.length - 1].m : 0)));
+    // Acréscimos: a placa do quarto árbitro no 45' (1 a 3) e no 90' (3 a 7), pelos gols do tempo e um pouco de sorte
+    const ar = S.rng(((Number(c.tseed) || 1) * 53 + c.fc.i * 389 + 11) >>> 0), gIn = (a, b) => (out.my ? out.my.ev.filter(e => e.m > a && e.m <= b).length : 0);
+    const A1 = Math.max(1, Math.min(3, Math.round(0.8 + 0.5 * gIn(0, 45) + ar() * 1.2))), A2 = Math.max(3, Math.min(7, Math.round(2.6 + 0.5 * gIn(45, 90) + ar() * 1.6)));
+    let st1 = 0;
+    const end = Math.max(90 + A2, ...[out.my].concat(out.others).filter(Boolean).map(g => (g.ev.length ? g.ev[g.ev.length - 1].m : 0)));
     const N = Math.max(95, end);
     let t = t0, half = false, timer = 0, nextTick = false, holdS = 0;
     $('fc-h').textContent = nx.compName + ' · ao vivo';
@@ -2017,6 +2021,12 @@
     }
     function tick() {
       if (!$('fc-match')) return; // saiu da tela: o jogo já está salvo
+      // Acréscimos do 1º tempo: o relógio fica em 45+1', 45+2'... e o campinho segue jogando
+      if (t === 45 && !half && st1 < A1 && !(o.stop && stopAt <= 46)) {
+        if (!st1) { if (sim && sim.board) sim.board({ add: A1 }); feed(45, 'O quarto árbitro levanta a placa: <b>mais ' + A1 + (A1 > 1 ? ' minutos' : ' minuto') + '</b>'); }
+        st1++; const lt = $('fc-lt'); if (lt) lt.textContent = '45+' + st1 + "'";
+        nextTick = true; timer = setTimeout(tick, PACE[fast ? 1 : 0]); return;
+      }
       if (t === 45 && !half) {
         // Intervalo: o jogo para; o energético só aparece aqui
         half = true; sfx('whistle'); frame(t); if (sim) sim.half(); // frame(t): não repete o gol do minuto 45 na lista
@@ -2033,6 +2043,7 @@
         nextTick = true; timer = setTimeout(tick, 100); return;
       }
       holdS = 0; t++;
+      if (t === 90 && end > 90) { if (sim && sim.board) sim.board({ add: end - 90 }); feed(90, 'O quarto árbitro levanta a placa: <b>mais ' + (end - 90) + (end - 90 > 1 ? ' minutos' : ' minuto') + '</b>'); }
       if (onPitch && t <= 90) { drain(t); effTick(); }
       frame();
       if (o.stop && t >= stopAt) return pause();

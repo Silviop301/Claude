@@ -19,6 +19,9 @@
     squad: { GOL: 3, ZAG: 5, LAT: 4, MEI: 8, ATA: 5 },
     lamH: 1.32, lamA: 1.06, ch: 3.2, k: env('CO_K', 36), home: 2, kT: env('CO_KT', 0.3), kD: env('CO_KD', 40),
     enGame: 12, enRest: 8, enOff: 20, enOpp: 80, inj: 0.011, subs: 5,
+    // Acréscimos: a1 1 a 3 no 1º tempo, a2 3 a 7 no 2º; mins = minutos jogados num jogo médio (90 + acréscimos): as taxas
+    // por minuto dividem por ele, para os acréscimos não aumentarem gols, faltas e cansaço
+    mins: 96,
     // Faltas e cartões por time e por jogo: foul faltas (o estilo muda), yel amarelos por falta, redD vermelho direto por falta,
     // ycMax amarelos que suspendem; off impedimentos; foulShow das faltas sem cartão que o campinho apita (as perigosas)
     foul: 12, yel: 0.08, redD: 0.002, kCl: 1.8, ycMax: 3, off: 2.2, foulShow: 0.14,
@@ -426,8 +429,11 @@
     if (m.done) return null;
     const { r, save } = rngCo(co);
     let stop = null;
-    while (!stop && m.min < 90 && !(until && m.min >= until)) {
-      m.min++;
+    let n = 0;
+    while (!stop && !(m.min >= 90 && m.st >= (m.a2 || 0)) && !(until && n > 0 && (m.min >= until || m.st > 0))) {
+      // Acréscimos: no 45' (antes do intervalo) e no 90' o relógio fica parado e conta 45+1, 45+2...
+      if ((m.min === 45 && !m.half) || m.min >= 90) m.st = (m.st || 0) + 1; else { m.st = 0; m.min++; }
+      n++; m.tk = (m.tk || 0) + 1; const ev0 = m.ev.length;
       if (m.us.talk && m.min > m.us.talk.until) delete m.us.talk;
       if (m.us.pre && m.min > m.us.pre.until) delete m.us.pre;
       if (m.us.shout && m.min > m.us.shout.until) { delete m.us.shout; m.ev.push({ m: m.min, t: 'grito-fim', s: 'us' }); }
@@ -440,10 +446,10 @@
       const pm = m.pm = m.pm || {}, tm = m.tm = m.tm || {}, ks = 'sty:' + m.us.style + '|' + m.them.style, kf = 'frm:' + m.us.form + '|' + m.them.form, kt = m.them.form + '|' + m.them.style;
       pm[ks] = (pm[ks] || 0) + 1; pm[kf] = (pm[kf] || 0) + 1; tm[kt] = (tm[kt] || 0) + 1;
       // Cansaço: quem está em campo perde energia aos poucos (o estilo de ataque cansa mais)
-      [m.us, m.them].forEach(s => { const sen = styOf(s).en; s.xi.forEach((id, i) => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / 90 * sen * (1 + 0.12 * Math.max(0, s.roles ? s.roles[i] || 0 : 0))); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }); });
+      [m.us, m.them].forEach(s => { const sen = styOf(s).en; s.xi.forEach((id, i) => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / CO.mins * sen * (1 + 0.12 * Math.max(0, s.roles ? s.roles[i] || 0 : 0))); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }); });
       // Chances: cada gol esperado vira CO.ch chances; uma em CO.ch entra (as outras são defesa, para fora ou na trave)
       const chance = (S0, lam) => {
-        if (r() >= lam * CO.ch / 90) return false;
+        if (r() >= lam * CO.ch / CO.mins) return false;
         const sc = scorer(r, S0), sd = sideName(m, S0); m.sh = m.sh || { us: 0, them: 0 }; m.sh[sd]++;
         // Por onde veio: pelos lados na proporção em que o time ataca por ali (e: esquerda, d: direita de quem ataca)
         const wsh = (S0 === H ? mu.h : mu.a).wsh, l = r() < wsh ? (r() < 0.5 ? 'e' : 'd') : 'c';
@@ -468,7 +474,7 @@
       [m.us, m.them].forEach(s => {
         if (stop && stop.t !== 'gol') return;
         const sd = sideName(m, s), o = s === m.us ? m.them : m.us, st = styOf(s), cnt = k => { m[k] = m[k] || { us: 0, them: 0 }; m[k][sd]++; };
-        if (r() < CO.foul / 90 * (0.8 + 0.45 * st.press + 0.2 * (1 - st.ctrl))) {
+        if (r() < CO.foul / CO.mins * (0.8 + 0.45 * st.press + 0.2 * (1 - st.ctrl))) {
           cnt('fo');
           const k = foulPick(r, s), id = s.xi[k], p = id && s.squad.find(x => x.id === id); if (!p) return;
           s.bk = s.bk || {};
@@ -483,14 +489,23 @@
             m.ev.push({ m: m.min, t: 'vermelho', s: sd, p: p.n, how: card, pos: slotsOf(s.form)[k] });
             if (s.mine) stop = { t: 'vermelho', p: p.n, how: card, id };
           } else if (r() < CO.foulShow) m.ev.push({ m: m.min, t: 'falta', s: sd, p: p.n, pos: slotsOf(s.form)[k] });
-        } else if (r() < CO.off / 90 * (0.55 + 0.9 * styOf(o).line) * (0.8 + 0.4 * st.counter)) {
+        } else if (r() < CO.off / CO.mins * (0.55 + 0.9 * styOf(o).line) * (0.8 + 0.4 * st.counter)) {
           const at = s.xi.map((id, k) => [id, k]).filter(([id, k]) => id && /ATA|MEI/.test(slotsOf(s.form)[k])), q = at.length ? r.pick(at) : null;
           if (!q) return;
           cnt('of'); const p = s.squad.find(x => x.id === q[0]);
           m.ev.push({ m: m.min, t: 'impedimento', s: sd, p: p ? p.n : '', pos: slotsOf(s.form)[q[1]] });
-        } else if (r() < CO.inj * 11 / 90) { const k = r.int(0, s.xi.length - 1), id = s.xi[k], p = s.squad.find(x => x.id === id); if (!p) return; p.out = r.int(1, 6) + 1; m.ev.push({ m: m.min, t: 'lesao', s: sd, p: p.n }); if (s.mine) stop = { t: 'lesao', p: p.n, id, k }; else autoSub(s, k); }
+        } else if (r() < CO.inj * 11 / CO.mins) { const k = r.int(0, s.xi.length - 1), id = s.xi[k], p = s.squad.find(x => x.id === id); if (!p) return; p.out = r.int(1, 6) + 1; m.ev.push({ m: m.min, t: 'lesao', s: sd, p: p.n }); if (s.mine) stop = { t: 'lesao', p: p.n, id, k }; else autoSub(s, k); }
       });
-      if (!stop && m.min === 45 && !m.half) { m.half = true; stop = { t: 'intervalo' }; }
+      // Os minutos jogados nos acréscimos ficam marcados nos lances (st: 45+st ou 90+st)
+      if (m.st) for (let i = ev0; i < m.ev.length; i++) m.ev[i].st = m.st;
+      // A placa do quarto árbitro: no 45' e no 90', pelo que parou o jogo (gols, trocas, cartões, lesões)
+      if (!m.st && (m.min === 45 || m.min === 90)) {
+        const h2 = m.min === 90, of = e => (h2 ? e.m > 45 : e.m <= 45), cnt = t => m.ev.filter(e => e.t === t && of(e)).length;
+        const lost = 0.5 * cnt('gol') + 0.35 * cnt('troca') + 0.25 * (cnt('amarelo') + cnt('vermelho')) + 0.8 * cnt('lesao') + r() * 1.2;
+        const a = h2 ? Math.max(3, Math.min(7, Math.round(2.6 + lost + (h2 ? 0.25 * ((m.us.subs < CO.subs ? CO.subs - m.us.subs : 0)) : 0)))) : Math.max(1, Math.min(3, Math.round(0.8 + lost)));
+        m[h2 ? 'a2' : 'a1'] = a; m.ev.push({ m: m.min, t: 'acrescimo', s: '', p: a });
+      }
+      if (!stop && m.min === 45 && !m.half && m.st >= (m.a1 || 0)) { m.half = true; m.st = 0; stop = { t: 'intervalo' }; }
       // O auxiliar do rival troca os cansados no segundo tempo
       if (m.min === 60 || m.min === 70 || m.min === 80) tiredSubs(m.them);
       // O técnico rival muda o plano: perdendo no fim, se joga; ganhando, fecha
@@ -498,7 +513,7 @@
         const want = diff < 0 ? (m.min === 78 ? 'pressao' : 'lados') : diff > 0 && m.min === 78 ? 'retranca' : null;
         if (want && T.style !== want) { T.style = want; m.ev.push({ m: m.min, t: 'tatica', s: 'them', p: STY[want].name }); } }
     }
-    if (m.min >= 90 && !stop) { m.done = true; stop = { t: 'fim' }; }
+    if (m.min >= 90 && m.st >= (m.a2 || 0) && !stop) { m.done = true; stop = { t: 'fim' }; }
     m.stop = stop;
     save();
     return stop;
@@ -611,10 +626,15 @@
     const oRed = (m.rc || {}).them || 0, uRed = (m.rc || {}).us || 0;
     if (oRed > uRed) { tags.unshift('Um a mais ↑'); said.unshift('Eles estão com um a menos. Hora de empurrar.'); said.length = Math.min(said.length, 2); }
     else if (uRed > oRed) { tags.unshift('Um a menos ↓'); }
+    // Nos acréscimos do fim, o auxiliar lembra quanto falta
+    if (m.min >= 90 && m.a2 && m.st < m.a2) { said.unshift('Mais ' + (m.a2 - (m.st || 0)) + (m.a2 - (m.st || 0) > 1 ? ' minutos' : ' minuto') + ', professor.'); said.length = Math.min(said.length, 2); }
     return { txt: said.join(' '), tags, side: bad[0][0] > 0 && bad[0][2].startsWith('Lado') ? side : null };
   };
   // Posse de bola sua até aqui (0 a 1)
-  S.coPoss = m => (m.min ? m.poss / m.min : 0.5);
+  S.coPoss = m => (m.tk || m.min ? m.poss / (m.tk || m.min) : 0.5);
+  // Relógio com acréscimos: 45+2', 90+4' (no jogo e em cada lance)
+  S.coClock = m => m.min + (m.st ? '+' + m.st : '') + '\'';
+  S.coEvMin = e => e.m + (e.st ? '+' + e.st : '') + '\'';
   // ---------- caderno do técnico ----------
   // O que cada estilo e cada formação faz contra os outros não aparece no começo: o técnico anota depois dos jogos,
   // primeiro a lápis (pode estar errado; a Leitura de jogo acerta mais) e, vendo o mesmo confronto de novo, a caneta
@@ -770,7 +790,7 @@
       r += g.length * 1.1 + on * 0.25 + sh * 0.08 - (yc ? 0.3 : 0) - (rc ? 1.6 : 0) - fo * 0.1;
       r = clamp(Math.round(r * 10) / 10, 3, 10);
       const sub = !start.includes(id);
-      const w = g.length ? (g.length > 1 ? g.length + ' gols' : 'gol') + (sub ? ' saindo do banco, aos ' + g[0].m + "'" : '') :
+      const w = g.length ? (g.length > 1 ? g.length + ' gols' : 'gol') + (sub ? ' saindo do banco, aos ' + S.coEvMin(g[0]) : '') :
         rc ? 'expulso' : p.pos === 'GOL' ? (ga === 0 ? 'não levou gol' + (saves ? ', ' + saves + (saves > 1 ? ' defesas' : ' defesa') : '') : saves ? saves + (saves > 1 ? ' defesas' : ' defesa') + ', ' + ga + (ga > 1 ? ' gols sofridos' : ' gol sofrido') : ga + (ga > 1 ? ' gols sofridos' : ' gol sofrido')) :
         def >= 0.6 && ga === 0 ? 'atrás sem levar gol' : on ? (sh > 1 ? sh + ' chutes, ' : '') + on + ' no gol' : sh ? sh + (sh > 1 ? ' chutes' : ' chute') + ' para fora' :
         yc ? 'amarelo' + (fo ? ' e ' + (fo + 1) + ' faltas' : '') : r < 5.6 ? (def >= 0.6 ? 'sofreu com o ataque deles' : 'sumiu do jogo') : r >= 7 ? (def >= 0.6 ? 'seguro atrás' : 'bom jogo') : sub ? 'entrou aos ' + (90 - min) + "'" : 'jogo discreto';
