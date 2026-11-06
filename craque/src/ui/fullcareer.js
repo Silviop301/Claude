@@ -2070,12 +2070,12 @@
       const lbl = document.querySelector('.lp-whor span'); if (lbl) lbl.textContent = 'O jogo inteiro';
       if (fl) { const av = fl.dom.slice(0, end + 1).reduce((a, v) => a + v, 0) / (end + 1), w = $('lp-who');
         if (w) { w.textContent = av > 4 ? meName + ' mandou mais' : av < -4 ? opName + ' mandou mais' : 'Jogo equilibrado'; w.className = av > 4 ? 'up' : av < -4 ? 'down' : ''; } }
-      let body = '';
+      // Uma tela só no celular (sem rolar): Sua partida, Seus lances e Outros jogos viram abas; o botão do jornal logo abaixo
+      let body = '', li = '';
       if (fl && fl.on) {
         const gk = c.pos === 'GOL' || c.pos === 'ZAG';
-        body = '<div class="lp-lbl">Sua partida</div>' + statBoxes([['Nota', rate(m.rating), 1], gk ? ['Defesas', m.saves || 0] : ['Gols', m.goals || 0], gk ? ['Desarmes', m.tackles || 0] : ['Assist.', m.assists || 0], ['Energia', (stEnd !== null ? stEnd + ' → ' : '') + Math.round(c.fc.en === undefined ? 100 : c.fc.en)]]);
-        const li = mineList(99);
-        if (li) body += '<div class="lp-lbl">Seus lances</div><ul class="lp-ml">' + li + '</ul>';
+        body = statBoxes([['Nota', rate(m.rating), 1], gk ? ['Defesas', m.saves || 0] : ['Gols', m.goals || 0], gk ? ['Desarmes', m.tackles || 0] : ['Assist.', m.assists || 0], ['Energia', (stEnd !== null ? stEnd + ' → ' : '') + Math.round(c.fc.en === undefined ? 100 : c.fc.en)]]);
+        li = mineList(99);
       } else body = '<p class="lp-off">' + (x.injury ? 'Você ficou fora, lesionado.' : 'Você não entrou em campo.') + '</p>';
       // Faltas, impedimentos e cartões dos dois times (o seu primeiro) e o cartão que pesa no próximo jogo
       if (m.fo) {
@@ -2084,7 +2084,21 @@
         const cd = out.card;
         if (cd) body += '<p class="lp-sus ' + (cd.sus ? 'out' : 'pend') + '">' + (cd.sus ? '<b>Suspenso</b> ' + (cd.rc ? 'Cartão vermelho' : 'Terceiro amarelo') + ': você fica fora do próximo jogo.' : cd.n === S.FC_CARD.ycMax - 1 ? '<b>Pendurado</b> ' + cd.n + ' amarelos no ano. O próximo te tira de um jogo.' : '<b>Amarelo</b> ' + cd.n + ' no ano. No ' + S.FC_CARD.ycMax + 'º, um jogo de suspensão.') + '</p>';
       }
-      $('fc-flow').innerHTML = '<div class="lp-endb">' + body + '</div>';
+      const rd = $('fc-round'), rdH = rd ? rd.innerHTML.replace(/<div class="fs-rlbl">.*?<\/div>/, '') : '';
+      const nLi = (li.match(/<li/g) || []).length;
+      // No celular a classificação (que ficava embaixo de tudo) vira a última aba; no computador segue na coluna da direita
+      const tbOn = !!$('fc-tbl') && !matchMedia('(min-width: 1000px) and (min-height: 560px)').matches;
+      const tabs = [['eu', 'Sua partida']].concat(li ? [['ml', 'Seus lances <i>' + nLi + '</i>']] : []).concat(rdH ? [['rd', 'Outros jogos']] : []).concat(tbOn ? [['tb', 'Tabela']] : []);
+      const panes = { eu: body, ml: li ? '<ul class="lp-ml">' + li + '</ul>' : '', rd: rdH, tb: '' };
+      $('fc-flow').innerHTML = '<div class="lp-endb">' + (tabs.length > 1 ? '<div class="cad-tabs lp-etabs" role="tablist" style="grid-template-columns:repeat(' + tabs.length + ',minmax(0,1fr))">' +
+        tabs.map(([k, t]) => '<button role="tab" data-et="' + k + '"' + (k === 'eu' ? ' class="on" aria-selected="true"' : ' aria-selected="false"') + '>' + t + '</button>').join('') + '</div>' : '') +
+        tabs.map(([k]) => '<div class="lp-epn' + (k === 'eu' ? ' on' : '') + '" data-ep="' + k + '">' + panes[k] + '</div>').join('') + '</div>';
+      if (rdH) root.classList.add('lp-endt');
+      if (tbOn) { document.querySelector('[data-ep="tb"]').appendChild($('fc-tbl')); root.classList.add('lp-endtb'); }
+      document.querySelectorAll('[data-et]').forEach(bt => bt.onclick = () => { sfx('tap');
+        document.querySelectorAll('[data-et]').forEach(y => { y.classList.toggle('on', y === bt); y.setAttribute('aria-selected', y === bt ? 'true' : 'false'); });
+        document.querySelectorAll('[data-ep]').forEach(y => y.classList.toggle('on', y.dataset.ep === bt.dataset.et));
+        if (bt.dataset.et === 'tb') { tblKey = null; table(); } });
       if (lg) {
         const p = standings('lg').findIndex(r => r.i === 0) + 1;
         plantao(p < posBefore ? 'Você sobe para <b>' + p + 'º</b>.' : p > posBefore ? 'Você cai para <b>' + p + 'º</b>.' : 'Você segue em <b>' + p + 'º</b>.', 'TABELA');
