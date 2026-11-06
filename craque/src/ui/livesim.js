@@ -1055,12 +1055,19 @@
     const wl = a => a.top !== mir(), arFor = x => AR.find(a => wl(a) === (x <= L / 2));
     function offStepRef(dt) {
       const bx = ball.x, by = ball.y, arTop = arFor(bx).top;
-      // o juiz corre na diagonal: uns 8 m à frente da bola (para onde o time com ela ataca) e uns 7 m para o lado oposto ao
-      // bandeirinha que está trabalhando, com o lance entre os dois; acompanha a bola até perto da linha de fundo e da lateral
-      const fw = (poss === 0 ? 1 : -1) * (mode === 'play' ? 8 : 4);
-      const tx = cl(bx + fw, 4, L - 4), ty = cl(by + (arTop ? 7 : -7), 2.5, WD - 2.5), d = Math.hypot(tx - REF.x, ty - REF.y), v = Math.min(d, (d > 10 ? 8.6 : d > 4 ? 7 : 4.5) * dt);
-      if (d > 0.3) { REF.x += (tx - REF.x) / d * v; REF.y += (ty - REF.y) / d * v; }
+      // O juiz acompanha de longe, na diagonal: uns 13 m para o lado oposto ao bandeirinha que trabalha e um pouco atrás da
+      // jogada, sempre a 10 m ou mais da bola; não entra na grande área (para na linha dela) e só corre quando o lance se
+      // afasta (Silvio, 2026-11-06: não fica em cima da bola nem vai até o goleiro)
+      const fw = (poss === 0 ? 1 : -1) * (mode === 'play' ? -3 : 0);
+      let tx = cl(bx + fw, 18, L - 18), ty = cl(by + (arTop ? 13 : -13), 4, WD - 4);
+      { const dx = tx - bx, dy = ty - by, db = Math.hypot(dx, dy) || 1; if (db < 10) { tx = bx + dx / db * 10; ty = by + dy / db * 10; } }
+      const inBox = (x, y) => (x < 17.5 || x > L - 17.5) && Math.abs(y - 34) < 21.2;
+      if (inBox(tx, ty)) tx = tx < L / 2 ? 18.5 : L - 18.5;
+      tx = cl(tx, 18.5 - (Math.abs(ty - 34) < 21.2 ? 0 : 14), L - 18.5 + (Math.abs(ty - 34) < 21.2 ? 0 : 14)); ty = cl(ty, 3, WD - 3);
+      const d = Math.hypot(tx - REF.x, ty - REF.y), v = d < 5 ? 0 : Math.min(d - 5, Math.min(6.2, 0.6 * d) * dt);
+      if (v > 0) { REF.x += (tx - REF.x) / d * v; REF.y += (ty - REF.y) / d * v; }
       for (const p of ALL) { const dd = dist(p, REF); if (dd < 2.2 && dd > 0.01) { REF.x += (REF.x - p.x) / dd * (2.2 - dd) * 0.5; REF.y += (REF.y - p.y) / dd * (2.2 - dd) * 0.5; } }
+      if (inBox(REF.x, REF.y)) REF.x = REF.x < L / 2 ? 17.5 : L - 17.5;
       // bandeirinhas: penúltimo defensor de quem defende aquele gol (lado 1 defende o gol da direita, lado 0 o da esquerda)
       const pen = (s, sign) => { const xs = T[s].map(p => p.x).sort((a, b) => sign * (b - a)); return xs.length > 1 ? xs[1] : L / 2; };
       AR.forEach(a => {
@@ -1072,9 +1079,9 @@
       if (REF.sigT > 0 && (REF.sigT -= dt) <= 0) REF.sig = null;
     }
     // Boneco da arbitragem: menor que os jogadores, sem número, com a cor do uniforme; o bandeirinha segura a bandeira
-    function official(x, y, k, flag, flagDir, vy) {
+    function official(x, y, k, flag, flagDir, vy, small) {
       vy = vy || -1; // para onde a bandeira levantada aponta: para dentro do campo (o bandeirinha de cima levanta para baixo na tela)
-      const r = 6.2 * k;
+      const r = 9.6 * k * (flag === undefined && !small ? 1 : 0.8); // o juiz do tamanho dos jogadores; bandeirinhas e quarto árbitro um pouco menores
       g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x + 1, y + 2, r + 1, (r + 1) * 0.6, 0, 0, Math.PI * 2); g.fill();
       g.fillStyle = REFC[0]; g.strokeStyle = REFC[1]; g.lineWidth = 1.6 * k; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke();
       if (flag === undefined) return;
@@ -1090,7 +1097,7 @@
     const Q4 = { b: null, t: 0 };
     function drawQ4(k) {
       const x = X(52.5), y = Y(WD) + 6 * k;
-      official(x, y, k * 0.9);
+      official(x, y, Math.max(k * DOTK, 0.75), undefined, 0, 0, true);
       if (!(Q4.t > 0) || !Q4.b) return;
       const b = Q4.b, parts = b.add ? [['+' + b.add, '#FFE14D']] : [[(b.out || []).join(' '), '#FF5C5C'], ['⇄', '#8A8A8A'], [(b.in || []).join(' '), '#5CFF8A']];
       g.font = '800 ' + Math.round(15 * k) + 'px "Barlow Condensed", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'left';
