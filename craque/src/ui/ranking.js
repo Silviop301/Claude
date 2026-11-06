@@ -20,7 +20,7 @@
   function payload(c, f) {
     if (!c.uid) c.uid = hex(10);
     const T = c.totals, main = D.CLUB_BY_ID[(f && f.mainClub) || c.club], jaj = c.mode === 'completa';
-    return { mode: jaj ? 'completa' : 'rapida', leg: jaj && S.legacy ? S.legacy(c).pts : 0, // Jogo a Jogo: conta pelo legado (fase 6)
+    return { mode: jaj ? 'completa' : 'rapida', leg: jaj && S.legacy ? S.legacy(c).pts : 0, // Rumo ao Topo: conta pelo legado (fase 6)
       id: c.uid, name: c.name, pos: c.pos, country: c.country, club: main ? main.name : '', daily: c.daily || null, done: !!f,
       score: f ? f.score : 0, grade: f && !jaj ? f.grade : '', peak: c.peak, goals: T.goals, assists: T.assists,
       best_goals: Math.max(0, ...c.seasons.map(s => s.goals || 0)), titles: S.titleCount(T), ballon: T.ballon, seasons: c.seasons.length,
@@ -80,7 +80,7 @@
 
   // Subtítulo conforme período e categoria
   const when = () => (st.p === 'day' ? 'hoje' : st.p === 'week' ? 'nesta semana' : 'de todos os tempos');
-  const subTxt = () => (st.m === 'legado' ? 'Pontos de legado das carreiras do Jogo a Jogo ' + when() + ', inclusive as em andamento. Vale a melhor de cada um.'
+  const subTxt = () => (st.m === 'legado' ? 'Pontos de legado das carreiras do Rumo ao Topo ' + when() + ', inclusive as em andamento. Vale a melhor de cada um.'
     : st.m === 'score' ? 'Pontuação final das carreiras encerradas da Carreira Rápida ' + when() + '. Vale a melhor carreira de cada um.'
     : 'Melhor carreira de cada jogador ' + when() + ', inclusive as em andamento.');
 

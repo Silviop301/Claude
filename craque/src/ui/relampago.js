@@ -155,7 +155,7 @@
 
   // ---------- entrada: já no campo, com o cartão das regras por cima ----------
   function intro() {
-    G.c = null; U.bar();
+    G.c = null; U.bar(); U.portMode = true; // modo em pé: com a home deitada, pede para girar (ui/core.js)
     const d = active(), name = load(NAME) || '', solo = !!window.CLIMBIX_SOLO;
     const vs = d ? '<div class="rx-vs">' + U.emo('🎯', 'sm') + '<span><small>' + (d.h ? 'X1 com ' : 'Desafio de ') + esc(d.n) + '</small>' +
       (d.h ? '<b>Resultado lacrado</b><em>Mesmos prêmios escondidos. Quando você terminar, os dois abrem juntos. Uma chance só.</em>'

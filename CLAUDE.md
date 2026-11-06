@@ -73,6 +73,7 @@ node tools/craque_treinador.js [n] [temporadas]     # Modo Treinador: robô téc
 node tools/craque_taticas.js [formação estilo]       # Treinador: cada formação x estilo contra todas (pontos por jogo; GAP=6 com o seu time mais fraco); esperado 0 alertas (nada vence tudo, todo estilo e formação servem para algo)
 NODE_PATH=$(npm root -g) node tools/craque_telas_treinador.js /tmp/co   # (antigo) Treinador em pé; desde 2026-11-06 o Treinador é só deitado: a ferramenta para no "Gire o celular"
 NODE_PATH=$(npm root -g) node tools/craque_telas_deitado.js /tmp/ld [1,2,3]   # Treinador deitado (844x390): 1 escalação, semana, treino, olheiro, funções, batedores, preleção · 2 um jogo ao vivo · 3 a temporada até as propostas
+NODE_PATH=$(npm root -g) node tools/craque_home_deitada.js /tmp/hl   # home deitada (fotos: vazia, carreiras, vagas cheias, Relâmpago pedindo para girar, em pé)
 node tools/craque_invariantes.js [n] [semente]       # regras do motor (sem NaN, faixas 0–100/0–99, dinheiro >= 0) e save no meio que termina igual; esperado 0 falhas
 node tools/craque_campinho.js [jogos]               # campinho ao vivo (livesim.js) sem tela: pulos da bola, bonecos encostados, passes/chutes/posse, linha por estilo, overall, gols do motor na rede; esperado 0 alertas
 NODE_PATH=$(npm root -g) node tools/craque_e2e.js 2 390 4   # carreiras pela interface (Playwright); MODO=completa na Carreira Completa
@@ -122,7 +123,7 @@ dividem ajudantes por `CRAQUE_SIM._`. O motor não usa DOM: roda no navegador e 
 | `origins.js` | Origens e desafios (liberados por conquistas) |
 | `contract.js` | Termos do contrato e proposta no meio do contrato |
 | `fixtures.js` | Carreira Completa: calendário e placares da liga que batem com a tabela da temporada (`S.fullSeason`) |
-| `fullcareer.js` | Jogo a Jogo: calendário, semana, loja, apostas, partida; tipo de jogo `S.fcKind` (vivido, resumido, banco); faltas, cartões e impedimento `S.FC_CARD` (sorteados antes dos gols: o vermelho pesa no placar; 3 amarelos ou vermelho = 1 jogo fora; o Treinador usa `S.CO.foul/yel/redD/off` em `engine/coach.js`; o campinho mostra com `U.LP.sim().ref`) |
+| `fullcareer.js` | Rumo ao Topo (ex-Jogo a Jogo; nome na tela desde 2026-11-06): calendário, semana, loja, apostas, partida; tipo de jogo `S.fcKind` (vivido, resumido, banco); faltas, cartões e impedimento `S.FC_CARD` (sorteados antes dos gols: o vermelho pesa no placar; 3 amarelos ou vermelho = 1 jogo fora; o Treinador usa `S.CO.foul/yel/redD/off` em `engine/coach.js`; o campinho mostra com `U.LP.sim().ref`) |
 | `cassino.js` | Jogo a Jogo: mesa dos fundos do Zé e a tentação |
 | `phone.js` | Jogo a Jogo: as pessoas do celular (`c.ppl`: relação só no tom, memória), mensagens depois e antes do jogo, Chat |
 | `money.js` | Jogo a Jogo, dinheiro: manutenção do status, dívida com juros (`c.debt`, `S.fcCharge`/`S.fcCredit`), bônus e luvas, saídas do vermelho (`S.fcWays`), investimentos (`S.FC_INVEST`), festa e o Zé no Chat |
@@ -154,7 +155,7 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
 | Arquivo | Tela |
 |---|---|
 | `core.js` | Estado `G`, ajudantes, salvar/carregar, barra do topo |
-| `start.js` | Tela inicial e criação do jogador |
+| `start.js` | Tela inicial e criação do jogador. **Home deitada** (`homeLand`, desde 2026-11-06 a home é sempre deitada no palco `U.LD`: trilho, 4 ingressos em pé, o aberto mostra as carreiras, vagas cheias em `landPick`); em pé pede para girar. Modos ainda em pé (carreira do jogador, Relâmpago) ligam `U.portMode` e, com o celular deitado, `render()` mostra "Gire o celular" (`.port-turn`, nunca no computador). Robôs de teste (`navigator.webdriver`) ficam na home em pé; `localStorage['climbix-deitado']='1'` liga a deitada (`U.landOk`) |
 | `offers.js`, `preseason.js` | Base, janela/propostas; pré-temporada |
 | `match.js` | Eventos e jogo decisivo (`optHint`) |
 | `season.js` | Temporada: contadores, corrida/mini tabela (`raceOf`, `miniTable`), resenha, resumo |
