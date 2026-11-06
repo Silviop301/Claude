@@ -7,7 +7,7 @@
   // Os cortes em semicírculo na linha do picote são máscara no CSS (.tk-in), o fundo da tela aparece pelo corte
   const MODES = {
     rapida: { ic: '⏱️', name: 'Carreira Rápida', sub: 'Uma temporada por tela', dur: '9 min', k: 'Duração', v: '9 min', sec: 'A·01', cont: 'b-cont', neu: 'b-new' },
-    completa: { ic: '🏟️', name: 'Jogo a Jogo', full: 'Jogo a Jogo', sub: 'Cada rodada, treino e contrato', dur: 'Save de dias', k: 'Save de', v: 'dias', sec: 'B·02', cont: 'b-cont-fc', neu: 'b-new-fc' },
+    completa: { ic: '🏟️', name: 'Rumo ao Topo', full: 'Rumo ao Topo', sub: 'Cada rodada, treino e contrato', dur: 'Save de dias', k: 'Save de', v: 'dias', sec: 'B·02', cont: 'b-cont-fc', neu: 'b-new-fc' },
     relampago: { ic: '⚡', name: 'Relâmpago', sub: '5 casas, sozinho ou X1', k: 'Duração', v: '1 min', sec: 'C·03', neu: 'b-relampago' },
     treinador: { ic: '📋', name: 'Treinador', full: 'Modo Treinador', sub: 'Escale, mude a tática, aguente a diretoria', dur: 'Save de dias', k: 'Save de', v: 'dias', sec: 'D·04', cont: 'b-cont-co', neu: 'b-new-co' },
   };
@@ -141,13 +141,30 @@
       store(JAJ_NEW, { name, at: Date.now() });
     });
   }
+  // Continuar uma carreira do jogador (vaga do ingresso, na home em pé ou deitada)
+  const svAt = (mode, slot) => slotsOf(mode)[slot];
+  const begin = (mode, slot) => (mode === 'treinador' ? U.coCreate(slot) : create(null, mode, slot));
+  function contCareer(sv) {
+    if (sv.c.mode === 'completa' && sv.c.fcv !== FCV) return home(); // veio da nuvem de antes do save novo
+    G.c = sv.c;
+    // saves de antes dos investimentos
+    G.c.inv = G.c.inv || {}; G.c.buys = G.c.buys || 0;
+    if (G.c.pe === undefined) G.c.pe = S.PE_START; // saves de antes dos pontos de evolução
+    G.c.leagueOf = G.c.leagueOf || {}; G.c.clubBoost = G.c.clubBoost || {};
+    S.applyLeagues(G.c); // quem subiu e quem caiu nesta carreira
+    U.portMode = true; resume(sv.step);
+  }
   function home() {
     G.c = null; G.step = null; bar();
     // Sem carreira aberta: clubes nas divisões e forças originais (a carreira que estava aberta mexeu nelas, e a
     // Relâmpago, que sorteia pela força, dava pontos diferentes para o mesmo desafio)
     S.applyLeagues(null);
     fcCheck();
-    const jn = load(JAJ_NEW), jnLine = jn && !jn.seen ? '<button class="hm-line hm-jn" id="b-jaj-novo">' + U.emo('🏟️', 'xs') + '<span><b>O Jogo a Jogo foi refeito.</b> ' +
+    U.portMode = false;
+    // Home deitada (Silvio 2026-11-06: o jogo todo deitado, a home sempre deitada). Desafio ou X1 chegando por link ainda
+    // usa a home em pé, que tem os cartões deles
+    if (U.landOk() && U.LD && !U.challengeHome() && !U.relampagoHome(true)) return homeLand();
+    const jn = load(JAJ_NEW), jnLine = jn && !jn.seen ? '<button class="hm-line hm-jn" id="b-jaj-novo">' + U.emo('🏟️', 'xs') + '<span><b>O Rumo ao Topo foi refeito.</b> ' +
       (jn.name ? 'A carreira de ' + esc(jn.name) + ' virou carta na sua coleção.' : 'A carreira de antes ficou para trás.') + '</span><em>Ok</em></button>' : '';
     const packs = U.ITEMS.get().packs.length;
     render(
@@ -158,19 +175,8 @@
       '<section class="hm-sec"><h2>Escolha o jogo</h2><div class="hm-tks">' + saveTicket('rapida') + saveTicket('completa') + modeTicket('relampago') + saveTicket('treinador') +
       '</div></section>' + U.installHome() + U.deskHint() + '</div>' + U.tabs('home')
     );
-    const cont = sv => {
-      if (sv.c.mode === 'completa' && sv.c.fcv !== FCV) return home(); // veio da nuvem de antes do save novo
-      G.c = sv.c;
-      // saves de antes dos investimentos
-      G.c.inv = G.c.inv || {}; G.c.buys = G.c.buys || 0;
-      if (G.c.pe === undefined) G.c.pe = S.PE_START; // saves de antes dos pontos de evolução
-      G.c.leagueOf = G.c.leagueOf || {}; G.c.clubBoost = G.c.clubBoost || {};
-      S.applyLeagues(G.c); // quem subiu e quem caiu nesta carreira
-      resume(sv.step);
-    };
+    const cont = sv => contCareer(sv);
     // Continuar uma carreira (linha da vaga ou o canhoto) e começar outra (vaga livre ou o canhoto Novo)
-    const svAt = (mode, slot) => slotsOf(mode)[slot];
-    const begin = (mode, slot) => (mode === 'treinador' ? U.coCreate(slot) : create(null, mode, slot));
     document.querySelectorAll('.hm [data-vg]').forEach(b => b.onclick = () => {
       const [mode, slot] = b.dataset.vg.split(':'), sv = svAt(mode, +slot);
       if (!sv) return home();
@@ -205,6 +211,118 @@
     U.relampagoHomeBind();
     if (U.whatsNew) U.whatsNew();
     U.installHomeBind();
+  }
+
+  // ---------- home deitada (2026-11-06, telas definidas HPrimeira e HCheio do canvas do modo estádio) ----------
+  // Palco deitado do Treinador (U.LD): trilho à esquerda (Jogar, Carreiras, Ranking, Perfil, Ajustes), os quatro modos como
+  // ingressos em pé lado a lado; o aberto cresce e mostra as carreiras (Continuar na última, ▶ nas outras, Nova carreira).
+  // Vagas cheias: o popup escolhe qual carreira sai. Letra grande (régua de 2026-11-06: 15 a 28 px).
+  // Robôs de teste (navigator.webdriver) ficam na home em pé, salvo localStorage climbix-deitado = 1
+  U.landOk = () => { try { const v = localStorage.getItem('climbix-deitado'); if (v === '1') return true; if (v === '0') return false; } catch (e) {} return !navigator.webdriver; };
+  const LAND_ORDER = ['rapida', 'completa', 'relampago', 'treinador'];
+  const LAND_CODE = { rapida: 'A-01', completa: 'B-02', relampago: 'C-03', treinador: 'D-04' };
+  const LAND_DESC = { rapida: 'Uma temporada por tela, do garoto de 16 anos até a carta final.', completa: 'Cada rodada, treino, contrato e a vida entre os jogos.',
+    relampago: '5 casas, 5 bolas em cada. Sozinho ou X1 com um amigo.', treinador: 'Você é o técnico: escale, mexa na tática, aguente a diretoria.' };
+  const LAND_PTS = { rapida: [['⏱️', 'Uma temporada por tela, carreira em 9 minutos'], ['🎯', 'Decisões e lances decisivos'], ['🃏', 'No fim, a sua carta para mostrar']],
+    completa: [['📅', 'Cada rodada: treino, jogo e semana'], ['📱', 'O celular do jogador: empresário, amigos, dinheiro'], ['🏆', 'Pontos de legado ao longo dos anos']],
+    relampago: [['👆', 'Escolha a bola e chute'], ['⚽', 'Fez o gol, a bola abre e mostra o prêmio'], ['🤝', 'Desafie um amigo no X1 pelo link']],
+    treinador: [['📋', 'Escalação, formação e estilo'], ['📒', 'O caderno: descubra o que vence o quê'], ['💼', 'Diretoria, finanças e propostas']] };
+  const landPts = m => '<ul class="hl-pts">' + LAND_PTS[m].map(([e, t]) => '<li>' + U.emo(e, 'sm') + '<span>' + t + '</span></li>').join('') + '</ul>';
+  const LAND_RAIL = [['home', 'Jogar', '⚽'], ['mine', 'Carreiras', '🏆'], ['ranking', 'Ranking', '🥇'], ['profile', 'Perfil', '👨'], ['settings', 'Ajustes', '⚙️']];
+  const agoTxt = t => { if (!t) return ''; const m = Math.max(1, Math.round((Date.now() - t) / 60000)); return m < 60 ? 'há ' + m + ' min' : m < 1440 ? 'há ' + Math.round(m / 60) + ' h' : 'há ' + Math.round(m / 1440) + (m < 2880 ? ' dia' : ' dias'); };
+  let landOpen = null;
+  function landLast() { // o modo da carreira jogada por último (ou o Treinador para quem nunca jogou)
+    let best = null, at = -1;
+    ['rapida', 'completa', 'treinador'].forEach(m => slotsOf(m).forEach(sv => { if (sv && (sv.at || 0) > at) { at = sv.at || 0; best = m; } }));
+    return best || 'treinador';
+  }
+  function homeLand() {
+    if (!landOpen) { try { landOpen = localStorage.getItem('climbix-home-modo'); } catch (e) {} }
+    if (!LAND_ORDER.includes(landOpen)) landOpen = landLast();
+    const packs = U.ITEMS.get().packs.length, streak = U.ITEMS && U.ITEMS.streak ? U.ITEMS.streak().days || 0 : 0;
+    const rail = '<nav class="hl-rail" aria-label="Seções">' + LAND_RAIL.map(([k, l, ic]) => '<button data-hl="' + k + '"' + (k === 'home' ? ' class="on" aria-current="page"' : '') + '>' +
+      '<img src="' + U.emoSrc(ic) + '" alt="" draggable="false"><b>' + l + '</b></button>').join('') + '</nav>';
+    const closed = m => {
+      const M = MODES[m], n = m === 'relampago' ? 0 : slotsOf(m).filter(Boolean).length;
+      return '<button class="hl-tk hl-' + m + '" data-open="' + m + '" aria-label="Abrir ' + esc(M.name) + '"><small>' + LAND_CODE[m] + '</small><b>' + esc(M.name) + '</b><em>' + (m === 'relampago' ? '1 min' : n + ' de 2') + '</em></button>';
+    };
+    const open = m => {
+      const M = MODES[m];
+      if (m === 'relampago') return '<div class="hl-open hl-' + m + '"><div class="hl-oh"><b>' + M.name + '</b><small>1 minuto</small></div><p class="hl-desc">' + LAND_DESC[m] + '</p>' + landPts(m) +
+        '<span class="hl-gr"></span><button class="hl-gold" id="hl-rl">' + PLAY_SVG + '<b>Jogar</b></button></div>';
+      const sl = slotsOf(m), n = sl.filter(Boolean).length;
+      const order = sl.map((sv, i) => [sv, i]).filter(([sv]) => sv).sort((x, y) => (y[0].at || 0) - (x[0].at || 0));
+      const row = ([sv, i], first) => {
+        const co = m === 'treinador', c = co ? sv.co : sv.c, cl = c.club && club(c.club);
+        let at;
+        if (co) { const ss = c.ss; at = (ss && !ss.done ? 'rodada ' + Math.min(ss.i + 1, ss.rounds.length) + ' de ' + ss.rounds.length : 'temporada ' + (YEAR0 + c.season)); }
+        else at = (c.pos ? c.pos + ' · ' + c.age + ' anos · ' : '') + 'temporada ' + (YEAR0 + c.season);
+        return '<div class="hl-row"><button class="hl-rb" data-vg="' + m + ':' + i + '">' + (cl ? crest(cl.id) : U.emo(M.ic, 'md')) + '<span><b>' + esc(c.name) + '</b><small>' +
+          (cl ? esc(cl.short || cl.name) + ' · ' : '') + at + (sv.at ? ' · ' + agoTxt(sv.at) : '') + '</small></span></button>' +
+          (first ? '<button class="hl-cont" data-vg="' + m + ':' + i + '"' + (M.cont ? ' id="' + M.cont + '"' : '') + '>' + PLAY_SVG + 'Continuar</button>' : '<button class="hl-play" data-vg="' + m + ':' + i + '" aria-label="Continuar ' + esc(c.name) + '">' + PLAY_SVG + '</button>') + '</div>';
+      };
+      return '<div class="hl-open hl-' + m + '"><div class="hl-oh"><b>' + esc(M.name) + '</b><small>' + (m === 'rapida' ? '9 min' : 'save de dias') + ' · ' + n + ' de 2 vagas</small>' +
+        (n ? '<button class="hl-ed" data-ed="' + m + '">' + (editing.has(m) ? 'Pronto' : 'Excluir') + '</button>' : '') + '</div>' +
+        (n ? '' : '<p class="hl-desc">' + LAND_DESC[m] + '</p>' + landPts(m)) +
+        order.map((x, k) => editing.has(m) ? '<div class="hl-row"><button class="hl-rb del" data-del="' + m + ':' + x[1] + '">' + U.emo('🗑️', 'md') + '<span><b>Excluir ' + esc((x[0].co || x[0].c).name) + '</b><small>Some deste aparelho e da nuvem</small></span></button></div>' : row(x, k === 0)).join('') +
+        (editing.has(m) ? '' : '<button class="hl-new" data-mode="' + m + '" id="' + M.neu + '">' + PLUS_SVG + '<span><b>' + (n ? 'Nova carreira' : 'Começar') + '</b><small>' + (n < 2 ? (n ? 'Vaga livre: comece outra sem perder a de agora' : 'Duas vagas: até duas carreiras salvas') : 'Vagas cheias: você escolhe qual sai') + '</small></span></button>') + '</div>';
+    };
+    const html = rail + '<div class="hl-main"><div class="hl-top"><b class="hl-logo">CLIMBIX</b><small>Toque num modo para abrir</small><span class="hl-gr"></span>' +
+      (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + ' para abrir</button>' : '') +
+      (streak ? '<span class="hl-chip">' + streak + (streak === 1 ? ' dia seguido' : ' dias seguidos') + '</span>' : '') + '</div>' +
+      '<div class="hl-tks">' + LAND_ORDER.map(m => m === landOpen ? open(m) : closed(m)).join('') + '</div></div>';
+    U.LD.show('<div class="hl">' + html + '</div>', st => {
+      st.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.hl; if (k === 'home') return; U.ldOff(); if (k === 'settings') return U.settings ? U.settings() : null; (U[k] || home)(); });
+      st.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { sfx('tap'); landOpen = b.dataset.open; editing.clear(); try { localStorage.setItem('climbix-home-modo', landOpen); } catch (e) {} homeLand(); });
+      st.querySelectorAll('[data-vg]').forEach(b => b.onclick = () => {
+        const [mode, slot] = b.dataset.vg.split(':'), sv = svAt(mode, +slot);
+        sfx('tap'); if (!sv) return home();
+        U.ldOff();
+        if (mode === 'treinador') return U.coResume(sv);
+        contCareer(sv);
+      });
+      st.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => { const m = b.dataset.ed; sfx('tap'); editing.has(m) ? editing.delete(m) : editing.add(m); homeLand(); });
+      st.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+        const [mode, slot] = b.dataset.del.split(':'), sv = svAt(mode, +slot); if (!sv) return homeLand();
+        const co = mode === 'treinador', c = sv.co || sv.c;
+        landAsk('Excluir a carreira de ' + esc(c.name) + '?', (co ? 'O técnico' : 'O jogador') + ' some deste aparelho e da sua conta na nuvem. Não dá para desfazer.', 'Excluir carreira', () => {
+          const base = co ? U.SAVE_CO : SLOT_BASE[mode]();
+          store(U.slotKey(base, +slot), co ? { co: null, at: Date.now() } : { c: null, at: Date.now() });
+          editing.delete(mode); homeLand();
+        }, true);
+      });
+      st.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
+        const mode = b.dataset.mode, sl = slotsOf(mode), free = sl.findIndex(x => !x);
+        sfx('tap');
+        if (free >= 0) { U.ldOff(); return begin(mode, free); }
+        landPick(mode, sl);
+      });
+      if (st.querySelector('#hl-rl')) st.querySelector('#hl-rl').onclick = () => { sfx('tap'); U.ldOff(); U.relampago(); };
+      if (st.querySelector('#hl-packs')) st.querySelector('#hl-packs').onclick = () => { sfx('tap'); U.ldOff(); U.openPacks ? U.openPacks(U.home) : (U.packsScreen && U.packsScreen()); };
+    }, 'O Climbix é jogado com o celular deitado.');
+  }
+  // Pergunta no palco deitado (excluir carreira)
+  function landAsk(t, s, ok, go, danger) {
+    U.LD.pop('<div class="hl-ask"><b>' + t + '</b><p>' + s + '</p><div class="hl-ab"><button class="hl-btn line" data-pop-x>Cancelar</button><button class="hl-btn ' + (danger ? 'red' : 'gold') + '" id="hl-ok">' + ok + '</button></div></div>',
+      t, w => { w.querySelector('#hl-ok').onclick = () => { sfx('tap'); U.LD.closePop(); go(); }; }, 'hl-pop');
+  }
+  // Vagas cheias (HCheio): qual carreira sai para a nova entrar; a mais antiga vem marcada. Nada é apagado aqui
+  function landPick(mode, sl) {
+    const M = MODES[mode], co = mode === 'treinador';
+    let pick = (sl[0].at || 0) <= (sl[1].at || 0) ? 0 : 1;
+    const draw = () => {
+      const nm = esc(svName(sl[pick]));
+      U.LD.pop('<div class="hl-pk"><div class="hl-pkl"><small>' + esc(M.name).toUpperCase() + ' · 2 DE 2 VAGAS</small><b>Qual ' + (co ? 'técnico' : 'jogador') + ' sai para o novo entrar?</b>' +
+        sl.map((sv, i) => { const c = sv.co || sv.c, cl = c.club && club(c.club); return '<button class="hl-pko' + (i === pick ? ' on' : '') + '" data-s="' + i + '">' + (cl ? crest(cl.id) : U.emo(M.ic, 'md')) +
+          '<span><b>' + esc(c.name) + '</b><small>' + (cl ? esc(cl.short || cl.name) + ' · ' : '') + (sv.at ? agoTxt(sv.at) : '') + '</small></span>' + (i === pick ? '<em>SAI</em>' : '') + '</button>'; }).join('') +
+        '</div><div class="hl-pkr"><p>' + nm + ' só é apagado quando ' + (co ? 'o novo técnico for ver as propostas' : 'o novo jogador assinar com um clube') + '. Desistiu antes? Ele continua salvo.</p>' +
+        '<span class="hl-gr"></span><button class="hl-btn gold" id="hl-pk-ok">Trocar ' + esc(firstName(svName(sl[pick]))) + ' por um novo</button><button class="hl-btn line" data-pop-x>Cancelar</button></div></div>',
+        'Vagas cheias', w => {
+          w.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { pick = +b.dataset.s; sfx('tap'); draw(); });
+          w.querySelector('#hl-pk-ok').onclick = () => { sfx('tap'); U.LD.closePop(); U.ldOff(); begin(mode, pick); };
+        }, 'hl-pop wide');
+    };
+    draw();
   }
 
   // Minhas carreiras: tudo o que ficou das carreiras encerradas (as telas daqui voltam para cá)
@@ -242,7 +360,7 @@
     const hj = load(U.HALL_JAJ) || [];
     if (!hj.length) return '';
     const from = h => Object.keys(LEG_LBL).filter(k => h.by && h.by[k] > 0).sort((a, b) => h.by[b] - h.by[a]).slice(0, 3).map(k => LEG_LBL[k] + ' ' + h.by[k].toLocaleString('pt-BR')).join(' · ');
-    return '<section class="mc-hall hj tab-sec"><div class="tab-sh"><h2>Seu Hall · Jogo a Jogo</h2></div><div class="sumula"><div class="sumula-in"><div class="mc-list">' +
+    return '<section class="mc-hall hj tab-sec"><div class="tab-sh"><h2>Seu Hall · Rumo ao Topo</h2></div><div class="sumula"><div class="sumula-in"><div class="mc-list">' +
       hj.slice(0, 10).map((h, i) => '<button class="mc-row hj-row' + (i ? '' : ' best') + '" data-k="' + i + '"><span class="hj-card"><img alt="" data-k="' + i + '"><em>' + (i + 1) + 'º</em></span><span class="mc-who"><b>' + esc(h.name) + '</b>' +
         '<small>' + D.POS[h.pos].name + ' · ' + h.yr[0] + '–' + h.yr[1] + ' · pico ' + h.peak + ' · ' + D.plural(h.titles, 'título', 'títulos') + '</small><small class="hj-by">' + esc(from(h)) + '</small></span>' +
         '<span class="mc-pts">' + h.leg.toLocaleString('pt-BR') + '<small>legado</small></span></button>').join('') + '</div></div></div></section>';
@@ -381,6 +499,7 @@
   }
 
   function create(prev, mode, slot) {
+    U.portMode = true; // criação do jogador: em pé (com a home deitada, pede para girar)
     const st = prev && prev.look ? prev : newSt();
     // O jogo vem de quem chamou (tela inicial); "jogar de novo" no fim repete o da carreira que acabou (e a vaga dela)
     if (mode) { st.mode = mode; st.slot = slot ? 1 : 0; }

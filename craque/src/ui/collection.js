@@ -173,7 +173,7 @@
   // Última carreira do Jogo a Jogo: o legado no lugar da nota, e o recorde entre as do Jogo a Jogo
   function legLine(e, list) {
     const best = Math.max(...list.filter(x => x.leg !== undefined).map(x => x.leg));
-    return '<small>Jogo a Jogo · ' + e.leg.toLocaleString('pt-BR') + ' de legado · ' + (e.leg >= best ? 'seu maior' : 'recorde ' + best.toLocaleString('pt-BR')) + '</small>';
+    return '<small>Rumo ao Topo · ' + e.leg.toLocaleString('pt-BR') + ' de legado · ' + (e.leg >= best ? 'seu maior' : 'recorde ' + best.toLocaleString('pt-BR')) + '</small>';
   }
   function lastHomeBind() {
     const b = $('b-last');

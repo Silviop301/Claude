@@ -34,13 +34,13 @@
     el.style.setProperty('--ldk', k.toFixed(4));
   }
   // Mostra uma tela no palco. html = conteúdo do palco; bind(st) liga os botões
-  function show(html, bind) {
+  function show(html, bind, turn) {
     const el = host();
     document.body.classList.add('ld-on');
     const st = document.getElementById('ld-st');
     st.innerHTML = html;
     // O Treinador é só deitado (Silvio 2026-11-06 tirou o "Jogar em pé"): em pé, só o aviso para girar
-    document.getElementById('ld-turn').innerHTML = '<div class="ld-turn-c"><i aria-hidden="true">' + PHONE + '</i><b>Gire o celular</b><small>O Treinador é jogado com o celular deitado.</small></div>';
+    document.getElementById('ld-turn').innerHTML = '<div class="ld-turn-c"><i aria-hidden="true">' + PHONE + '</i><b>Gire o celular</b><small>' + (turn || 'O Treinador é jogado com o celular deitado.') + '</small></div>';
     lockLand();
     fit();
     st.querySelectorAll('[data-rail]').forEach(b => b.onclick = () => { sfx('tap'); go(b.dataset.rail); });

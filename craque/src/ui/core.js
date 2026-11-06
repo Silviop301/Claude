@@ -6,7 +6,7 @@
   const $ = id => document.getElementById(id);
   const screen = $('screen');
   // Um save por jogo: a carreira rápida e a carreira jogo a jogo (c.mode 'completa') andam em paralelo
-  const SAVE = 'craque-v5', SAVE_FC = 'climbix-jogo-v1', HALL = 'craque-hall-v1', HALL_JAJ = 'climbix-hall-jaj-v1'; // HALL_JAJ: Seu Hall do Jogo a Jogo (legado)
+  const SAVE = 'craque-v5', SAVE_FC = 'climbix-jogo-v1', HALL = 'craque-hall-v1', HALL_JAJ = 'climbix-hall-jaj-v1'; // HALL_JAJ: Seu Hall do Rumo ao Topo (legado)
   // Duas vagas por modo: a 2ª vaga (c.slot 1) grava na mesma chave com '-2' no fim
   const slotKey = (base, slot) => (slot ? base + '-2' : base);
   const saveKey = c => slotKey(c && c.mode === 'completa' ? SAVE_FC : SAVE, c && c.slot);
@@ -68,6 +68,10 @@
   function render(html, opts) {
     if (window.CRAQUE_UI && window.CRAQUE_UI.ldOff) window.CRAQUE_UI.ldOff(); // a tela deitada do Treinador (ui/coachland.js) sai quando outra tela abre
     barHome();
+    // Home deitada (2026-11-06): os modos que ainda são em pé (carreira do jogador, Relâmpago) pedem para girar o celular
+    // quando ele está deitado (U.portMode; CSS .port-turn só no celular deitado, nunca no computador)
+    document.body.classList.toggle('need-port', !!(window.CRAQUE_UI.portMode && window.CRAQUE_UI.landOk && window.CRAQUE_UI.landOk()));
+    if (!document.getElementById('port-turn')) { const pt = document.createElement('div'); pt.id = 'port-turn'; pt.className = 'port-turn'; pt.innerHTML = '<div><i aria-hidden="true">📱</i><b>Gire o celular</b><small>Este modo ainda é jogado em pé.</small></div>'; document.body.appendChild(pt); }
     screen.innerHTML = html;
     if (!(opts && opts.same)) shownAt = performance.now(); // redesenho da mesma tela (por timer) não é tela nova
     // Telas curtas (resultado de evento ou de lance) ficam no meio da tela, sem meia tela vazia embaixo
@@ -373,7 +377,7 @@
   // Topo comum dos modos (canvas "Navegação, Ficha e meta", 2026-11-05): à esquerda a casa (só na tela principal do modo,
   // volta à Bilheteria) ou a seta (dentro do modo, volta um nível), nunca as duas; no meio a etiqueta do modo, o título e
   // a linha de apoio; à direita a engrenagem, sempre. o: { mode: 'jaj'|'co'|'rl'|'cr', nav: 'home'|'back', id, label, title, sub, cfg, right }
-  const MODES = { jaj: ['🏟️', 'Jogo a Jogo'], co: ['📋', 'Treinador'], rl: ['⚡', 'Relâmpago'], cr: ['⏱️', 'Carreira Rápida'] };
+  const MODES = { jaj: ['🏟️', 'Rumo ao Topo'], co: ['📋', 'Treinador'], rl: ['⚡', 'Relâmpago'], cr: ['⏱️', 'Carreira Rápida'] };
   const NAV_SVG = { home: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7M5.5 9.5V20h13V9.5" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     back: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' };
   function modeHead(o) {
