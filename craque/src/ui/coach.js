@@ -541,7 +541,7 @@
   // O motor anda um minuto por vez (S.coMatchStep com `until`), no ritmo escolhido: 1× leva uns 2 minutos, 3× uns 40
   // segundos e ⏩ vai direto ao fim. Para sozinho no gol, vermelho, lesão e intervalo; "Parar e mexer" para quando
   // a pessoa quiser. Na parada sobe um cartão com o lance, a leitura do auxiliar, Trocar (arrastando no campinho) e Tática.
-  const SPEED = { 1: ['1×', 1333], 3: ['3×', 444], fim: ['', 0] };
+  const SPEED = { 1: ['1×', 1050], 3: ['3×', 444], fim: ['', 0] }; // o 1× anda o campinho a 1,25 (o jogo de 90 min em ~1,6 min)
   const OLD_SPEED = { normal: '1', rapido: '3', resumo: 'fim' };
   const STY_SHORT = { equilibrado: 'Sem ponto fraco grande', posse: 'Toca até achar o espaço', pressao: 'Rouba lá na frente, cansa', contra: 'Espera e sai rápido', retranca: 'Fecha tudo, pouco ataque', lados: 'Cruza e abre a defesa' };
   const nm = id => { const c = club(id); return c.short || c.name; };
@@ -730,7 +730,7 @@
         hidden.add(e);
         if (out === 'gol') return gl.push([side, e]);
         const cancel = sim.shot(side, out, () => { if (hidden.delete(e)) paint(); });
-        setTimeout(() => { if (hidden.delete(e)) { cancel(); paint(); } }, 9000);
+        setTimeout(() => { if (hidden.delete(e)) { cancel(); paint(); } }, co.speed === '3' ? 4000 : 7500);
       });
       if (!gl.length) return null;
       return go => {
@@ -740,7 +740,7 @@
           const fin = () => { if (done) return; done = true; clearTimeout(tm); clearTimeout(tf); hidden.delete(e); if (--n > 0 || wait !== go) return; wait = null; paint(); sfx('tap'); go(); };
           const cancel = sim.shot(side, 'gol', fin);
           // em segundos do campinho (a 3× passam três vezes mais rápido)
-          const f3 = co.speed === '3' ? 1 / 3 : 1;
+          const f3 = co.speed === '3' ? 1 / 3 : 0.8;
           tm = setTimeout(() => { cancel(); fin(); }, 30000 * f3); // último recurso: o campinho já lança direto na área aos 9 s de bola rolando
         });
       };
@@ -976,7 +976,7 @@
         if (z.textContent !== txt) z.textContent = txt;
         if (z.className !== zc) z.className = zc;
       };
-      sim = LP.sim({ me: -1, t0: m.tk || m.min, half2: m.min > 45, boardUp: U.LD && U.LD.on && U.LD.on() ? 52 : 0, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1), onFrame: zone,
+      sim = LP.sim({ me: -1, t0: m.tk || m.min, half2: m.min > 45, boardUp: U.LD && U.LD.on && U.LD.on() ? 52 : 0, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1.25), onFrame: zone,
         onPick: (side, inf) => { if (ctx && side === 0 && inf && inf.id) U.LD.livePlayer(ctx, inf.id); },
         seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]] });
       lineKey = [m.us, m.them].map(s => s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style);

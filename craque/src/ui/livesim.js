@@ -358,7 +358,7 @@
     function signal(s, x, y, k) {
       const sd = (s === 0 ? 1 : -1) * (mir() ? -1 : 1);
       REF.sig = 'braco'; REF.dir = sd; REF.sigT = 2.2;
-      const a = x > L / 2 ? AR[1] : AR[0];
+      const a = arFor(x);
       if ((k === 'lat' && ((a.top && y <= 0.5) || (!a.top && y >= WD - 0.5))) || k === 'esc' || k === 'tiro') { a.sig = 'point'; a.dir = sd; a.sigT = 2.2; }
     }
     let rs = null, outCd = 0, lastSide = 0;
@@ -574,9 +574,9 @@
       if (!v) { if (P.p) P.p.cd = 0; P.p = null; P.c = 0; if (P.t > 4.5) foulEnd(false); return; }
       if (!P.p || T[so].indexOf(P.p) < 0 || dist(P.p, v) > 16) { if (P.p) P.p.cd = 0; P.p = fouler(P.o, v); P.c = 0; if (!P.p) return foulEnd(false); }
       const p = P.p; P.c += dt;
-      p.tx = v.x; p.ty = v.y; p.sprint = 1; p.cd = 1; // vai no bote (sem desarme limpo: o lance é falta)
+      p.tx = v.x; p.ty = v.y; p.sprint = 1; p.cd = 1; p.lg = Math.max(p.lg || 0, 0.3); // vai no bote (sem desarme limpo: o lance é falta; encosta nele)
       ball.hold = Math.max(ball.hold || 0, 0.25); // quem tem a bola segura um instante, o bote chega
-      if (dist(p, v) < 1.6 || (P.c > 2.2 && dist(p, v) < 5)) { foulPend = null; p.cd = 0; foulNow(P.o, p, v); P.cb && setTimeout(P.cb, (P.o.kind === 'falta' ? 500 : 900) / Math.max(1, o.speed ? o.speed() : 1)); return; }
+      if (dist(p, v) < 1.6 || (P.c > 1.2 && dist(p, v) < 5)) { foulPend = null; p.cd = 0; foulNow(P.o, p, v); P.cb && setTimeout(P.cb, (P.o.kind === 'falta' ? 500 : 900) / Math.max(1, o.speed ? o.speed() : 1)); return; }
       if (P.t > 5.5) foulEnd(false);
     }
     let foulTo = null, foulSpot = null, offPend = null, foulPend = null;
@@ -602,7 +602,7 @@
       if (ball.owner === q || (ball.loose && ball.loose.f === P.f)) {
         const d = T[1 - s].filter(x => x.r !== 'GK').sort((a, b) => dist(a, q) - dist(b, q))[0] || at(1 - s, 0);
         whistle('Impedimento', d, ball); modeT = 1.8;
-        offLine = { s, x: P.line, t: 1.8 }; AR[toW(s, P.line, 0)[0] > L / 2 ? 1 : 0].flag = 1.8; refFx = { p: q, kind: 'impedimento', t: 1.8 };
+        offLine = { s, x: P.line, t: 1.8 }; arFor(toW(s, P.line, 0)[0]).flag = 1.8; refFx = { p: q, kind: 'impedimento', t: 1.8 };
         return offEnd(true);
       }
       offEnd(false); // a bola não chegou nele (cortaram no caminho)
@@ -760,7 +760,10 @@
         ball.x += lo.vx * dt; ball.y += lo.vy * dt;
         if (ball.x < -0.3 || ball.x > L + 0.3 || ball.y < -0.3 || ball.y > WD + 0.3) { if (!due && !lc) return ballOut(lastSide, ball.x, ball.y); ball.x = cl(ball.x, 0.5, L - 0.5); ball.y = cl(ball.y, 0.5, WD - 0.5); lo.vx = lo.vy = 0; }
         p.tx = ball.x + lo.vx * 0.35; p.ty = ball.y + lo.vy * 0.35; p.sprint = 1;
-        if (d < 1.3 || lo.t > 3.5) receive(lo.f);
+        // Bola parada no chão não fica esperando: quem chega primeiro nela fica com ela (o adversário em cima rouba, salvo
+        // no lance do motor), e depois de 2 s quem ia receber domina (ninguém fica parado colado do lado da bola)
+        if (d < 1.3 || lo.t > 2) receive(lo.f);
+        else if (lo.t > 0.35 && !lc && !(due && due.side === p.side)) { const q = ball.y > 1 && ball.y < WD - 1 && T[1 - p.side].find(x => x.r !== 'GK' && x.stun <= 0 && dist(x, ball) < 1.1); if (q) { ball.loose = null; why = 'solta'; setOwner(q); } }
       } else { why = 'semdono'; setOwner(at(poss, 6)); }
     }
     let back = 0; // voltando para o meio depois do gol (correm de volta)
@@ -841,10 +844,10 @@
         // Espaço pessoal do tamanho do desenho: ninguém entra no boneco do outro (só quem dá o bote e quem tem a bola, no duelo).
         // Olha meio segundo à frente: se o caminho vai cruzar alguém, desvia antes de encostar
         if (mode === 'play') {
-          const own = ball.owner, ahead = 0.5, fx = p.x + p.vx * ahead, fy = p.y + p.vy * ahead;
+          const own = ball.owner, lo = ball.loose, ahead = 0.5, fx = p.x + p.vx * ahead, fy = p.y + p.vy * ahead;
           for (const q of ALL) {
             if (q === p) continue;
-            const duel = (p.lg > 0 || q.lg > 0) && (p === own || q === own);
+            const duel = ((p.lg > 0 || q.lg > 0) && (p === own || q === own)) || (lo && lo.to === p && dist(p, ball) < 6); // quem vai na bola solta não desvia
             const mn = duel ? 0 : q.side === p.side ? 5.2 : (p === own || q === own) ? 3.6 : 4.6;
             if (!mn) continue;
             const d = dist(p, q);
@@ -984,16 +987,22 @@
     // Uniforme: amarelo ou preto, o que mais se diferencia das camisas dos dois times e dos goleiros
     const REFC = (() => { const sh = [KT.mine[0], KT.opp[0], KT.gk[0], KT.gk[1]], sc = c => Math.min(...sh.map(x => cdist(c, x))); return sc('#F5D90A') >= sc('#161616') ? ['#F5D90A', '#161616'] : ['#161616', '#F5D90A']; })();
     const REF = { x: 52.5, y: 40, vx: 0, vy: 0, sig: null, sigT: 0 }, AR = [{ x: 52.5, y: -1.3, top: true, flag: 0 }, { x: 52.5, y: WD + 1.3, top: false, flag: 0 }];
+    // Cada bandeirinha cuida da metade à direita dele olhando o campo: na tela, o de cima fica na esquerda e o de baixo na
+    // direita. O campo vira de lado (mir) a cada tempo, então a metade do mundo de cada um troca junto (wl = metade esquerda do mundo)
+    const wl = a => a.top !== mir(), arFor = x => AR.find(a => wl(a) === (x <= L / 2));
     function offStepRef(dt) {
-      const bx = ball.x, by = ball.y, right = bx > L / 2;
-      // o juiz fica uns 12 m da bola, do lado oposto ao bandeirinha que está trabalhando, sem entrar na linha do passe
-      const tx = cl(bx + (right ? -8 : 8), 10, L - 10), ty = cl(by + (right ? -10 : 10), 5, WD - 5), d = Math.hypot(tx - REF.x, ty - REF.y), v = Math.min(d, (d > 12 ? 7.5 : 5) * dt);
+      const bx = ball.x, by = ball.y, arTop = arFor(bx).top;
+      // o juiz corre na diagonal: uns 8 m à frente da bola (para onde o time com ela ataca) e uns 7 m para o lado oposto ao
+      // bandeirinha que está trabalhando, com o lance entre os dois; acompanha a bola até perto da linha de fundo e da lateral
+      const fw = (poss === 0 ? 1 : -1) * (mode === 'play' ? 8 : 4);
+      const tx = cl(bx + fw, 4, L - 4), ty = cl(by + (arTop ? 7 : -7), 2.5, WD - 2.5), d = Math.hypot(tx - REF.x, ty - REF.y), v = Math.min(d, (d > 10 ? 8.6 : d > 4 ? 7 : 4.5) * dt);
       if (d > 0.3) { REF.x += (tx - REF.x) / d * v; REF.y += (ty - REF.y) / d * v; }
       for (const p of ALL) { const dd = dist(p, REF); if (dd < 2.2 && dd > 0.01) { REF.x += (REF.x - p.x) / dd * (2.2 - dd) * 0.5; REF.y += (REF.y - p.y) / dd * (2.2 - dd) * 0.5; } }
       // bandeirinhas: penúltimo defensor de quem defende aquele gol (lado 1 defende o gol da direita, lado 0 o da esquerda)
       const pen = (s, sign) => { const xs = T[s].map(p => p.x).sort((a, b) => sign * (b - a)); return xs.length > 1 ? xs[1] : L / 2; };
       AR.forEach(a => {
-        const tx2 = a.top ? cl(Math.min(pen(0, -1), bx), 0, L / 2) : cl(Math.max(pen(1, 1), bx), L / 2, L), d2 = tx2 - a.x;
+        a.wl = wl(a);
+        const tx2 = a.wl ? cl(Math.min(pen(0, -1), bx), 0, L / 2) : cl(Math.max(pen(1, 1), bx), L / 2, L), d2 = tx2 - a.x;
         a.x += Math.sign(d2) * Math.min(Math.abs(d2), 7 * dt);
         if (a.flag > 0) a.flag = Math.max(0, a.flag - dt);
       });
