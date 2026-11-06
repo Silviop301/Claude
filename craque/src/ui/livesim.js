@@ -1038,7 +1038,7 @@
         g.stroke(); g.lineCap = 'butt'; }
     }
     function draw() {
-      if (!g) return;
+      if (!g || W < 60 || H < 40) return; // tela ainda sem tamanho (palco recém-aberto): o laço mede de novo
       g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
       lines();
       const k = cl(W / 380, 0.85, 1.45);
@@ -1078,11 +1078,13 @@
       g.fillStyle = '#fff'; g.strokeStyle = '#13201A'; g.lineWidth = 1.5 * k; g.beginPath(); g.arc(bx, by - air, (4.5 + air / 12) * k, 0, Math.PI * 2); g.fill(); g.stroke();
       if (tip) tipCard(k);
     }
+    loop.n = 0;
     function loop(ts) {
       raf = 0;
       if (!alive) return;
       if (!cv || !cv.isConnected) return; // a tela trocou (intervalo, fim): para até o próximo attach
       const dt = Math.min(0.05, (ts - (last || ts)) / 1000) * (o.speed ? o.speed() : 1); last = ts;
+      if (W < 60 || H < 40 || ++loop.n % 30 === 0) { const r = cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1; if (Math.abs(r.width / z - W) > 1 || Math.abs(r.height / z - H) > 1) size(); }
       raf = requestAnimationFrame(loop); // antes de tudo: um erro da tela num aviso do campinho não pode parar o campinho
       try {
         if (!frozen && !document.hidden) { const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
