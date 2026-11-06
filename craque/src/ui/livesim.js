@@ -488,10 +488,11 @@
       if (!P.f) {
         q.run = Math.max(q.run || 0, 0.5); q.runX = rx; q.runY = qy;
         const own = ball.owner && ball.owner.side === s && ball.owner !== q ? ball.owner : null;
-        if (own && (qx > line + 0.4 || P.t > 1.2)) {
+        // o passe só sai com ele já além da linha (impedimento de verdade: na hora do passe ele está à frente do último zagueiro)
+        if (own && qx > line + 0.8) {
           const [wx, wy] = toW(s, Math.max(rx, qx + 1.5), qy);
           fly(own, wx, wy, q, Math.hypot(wx - own.x, wy - own.y) > 26, 'costas', false); ball.fly.dur = Math.min(ball.fly.dur, 1.2); P.f = ball.fly; P.line = line;
-        } else if (P.t > 3.5) offEnd(false);
+        } else if (P.t > 5) offEnd(false);
         return;
       }
       if (ball.fly === P.f) return;
@@ -693,6 +694,13 @@
         if (modeT <= 0 || (due && due.side === s)) { mode = 'play'; setOwner(gk); } // a bola rola até o goleiro (sem pular para a marca)
       }
       if (lc && mode !== 'play') lcDone();
+      // Impedimento a caminho: a zaga sobe junta para deixar o atacante impedido e ele segue em frente (depois do play, que
+      // não desfaz os alvos); o passe sai em offStep quando ele já está além da linha
+      if (offPend && !offPend.f && mode === 'play') {
+        const P = offPend, s = P.s, q = P.q, [, qy] = tf(s, q), l0 = P.l0 = P.l0 || lineOf(s);
+        T[1 - s].forEach(d => { if (d.r === 'GK') return; const [dx, dy] = tf(s, d); if (dx > l0 - 2) { [d.tx, d.ty] = toW(s, Math.max(L / 2, l0 - 2), dy); d.sprint = 1; } });
+        [q.tx, q.ty] = toW(s, Math.min(L - 6, l0 + 2.5), qy); q.sprint = 1;
+      }
       if (mode === 'ko' || mode === 'half') { const dd = Math.hypot(52.5 - ball.x, 34 - ball.y), k = dd > 0.01 ? Math.min(1, 16 * dt / dd) : 1; ball.x += (52.5 - ball.x) * k; ball.y += (34 - ball.y) * k; } // volta ao meio rolando, não voando
       // Andar: cada um reage no seu tempo, acelera e freia; ninguém vira na hora nem atravessa o companheiro
       ALL.forEach(p => {
