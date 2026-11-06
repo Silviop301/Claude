@@ -146,7 +146,9 @@
     const c = C(), co = c.co;
     const nx = S.coNext(co);
     if (!nx) { off(); return c.finishSeason(); }
+    if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao() : patrocinio();
     c.save('hub');
+    finNews(co);
     const cl = club(co.club), t = S.coTable(co), me = t.find(x => x.me), pos = S.coPos(co), B = co.board;
     const form = (co.ss.log || []).slice(-5).map(x => '<i class="' + x.res + '" title="' + x.gf + 'x' + x.ga + '"></i>').join('');
     const conf = Math.round(B.conf);
@@ -705,7 +707,7 @@
         tile('', 'Estádio e ingresso', 'preço por jogo, obras', 1) + tile('', 'Base', 'garotos que sobem em janeiro', 1) + tile('', 'Equipe técnica', 'olheiro, preparador, médico', 1) +
         tile('', 'Imprensa', 'coletiva antes e depois', 1) + tile('tro', 'Sala de troféus', co.titles.length ? U.D.plural(co.titles.length, 'título', 'títulos') : 'nenhum título ainda') + tile('hall', 'Hall do técnico', U.D.plural(co.hist.length, 'temporada', 'temporadas') + ' de carreira') + '</div>' +
       '<div class="ldk-side"><div class="ldk-dir">' + lbl('DIRETORIA') + '<b>' + (conf >= 70 ? 'Confiança alta' : conf >= 45 ? 'Confiança boa' : conf >= 30 ? 'Confiança baixa' : 'No limite') + '</b><em class="ld-bar"><u class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '" style="width:' + conf + '%"></u></em>' +
-          '<small>Meta: ' + esc(S.CO_GOAL_TXT[B.goal.k]) + (B.goal.k === 'titulo' ? '' : ' (até o ' + B.goal.pos + 'º)') + '. Hoje: ' + pos + 'º.</small><i>' + pr[0] + ' · presidente</i></div>' +
+          '<small>Meta: ' + esc(S.CO_GOAL_TXT[B.goal.k]) + (B.goal.k === 'titulo' ? '' : ' (até o ' + B.goal.pos + 'º)') + '. Hoje: ' + pos + 'º.</small><i>' + pr[0] + ' · ' + (S.coPres ? esc(S.coPres(co).n) + ', presidente ' + S.coPres(co).nome : 'presidente') + '</i></div>' +
         '<div class="ldk-cx">' + lbl('CAIXA') + '<b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><small>folha ' + c.brl(folha) + ' por semana</small></div><span class="ld-gr"></span>' +
         gold('ldk-go', 'Ver as finanças') + '</div></div></div>', st => {
       st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') financas(); else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); });
@@ -714,6 +716,7 @@
   }
   // Finanças deitada: abas num array (a thread de mercado e finanças vai acrescentar "Decidir")
   const FIN_TABS = [
+    { k: 'dec', t: 'Decidir', html: (c, co, f) => finDecidir(c, co, f) },
     { k: 'tmp', t: 'Temporada', html: (c, co, f) => { const x = f.ss, ss = co.ss, homes = ss ? ss.log.filter(l => l.home).length : 0, big = Math.max(x.bil, x.tv, x.pat, x.sal, x.comp, x.prem, x.vend, 1);
       const row = (t, v, neg) => '<div class="ldf-li"><span>' + t + '</span><i><u class="' + (neg ? 'dn' : 'up') + '" style="width:' + Math.round(100 * Math.min(1, v / big)) + '%"></u></i><b class="' + (neg ? 'dn' : 'up') + '">' + (v ? (neg ? '− ' : '+ ') + c.mi(v) : '0') + '</b></div>';
       const saldo = x.bil + x.tv + x.pat + x.prem + x.vend - x.sal - x.comp;
@@ -732,9 +735,93 @@
         '<div class="ldk-cx">' + lbl('FOLHA POR SEMANA') + '<b>' + c.brl(folha) + ' <small>de ' + c.brl(f.teto) + '</small></b><em class="ld-bar"><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></em></div>' +
         '<span class="ld-gr"></span><button class="ld-b line" id="ldf-back">Voltar ao clube</button></div></div></div>', st => {
       st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); financas(b.dataset.ft); });
+      st.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.fd; if (k === 'banco') banco(); else if (k === 'pres') presInfo(); });
       st.querySelector('#ldf-back').onclick = () => { sfx('tap'); clube(); };
     });
   }
+  // ---------- Finanças 2.0: reunião com a diretoria, patrocínio, banco e a aba Decidir ----------
+  const AC_NM = { seguro: 'Seguro', normal: 'Normal', ousado: 'Ousado' };
+  const RED_TXT = r => r >= 1.4 ? 'muito' : r >= 1 ? 'médio' : 'pouco';
+  const goalLine = (k, pos) => k === 'titulo' ? 'ser campeão' : 'terminar até o ' + ord(pos);
+  function finDecidir(c, co, f) {
+    const P = S.coPres(co), B = co.board, pt = f.pat, step = S.coFinStep(co), max = S.coLoanMax(co);
+    const STEP = ['Tranquilo: o caixa aguenta', 'Aviso: menos de 4 semanas de folha no caixa', 'No vermelho: proibido contratar com taxa', 'O presidente vai vender o mais caro', 'Ultimato: a diretoria perde a paciência rápido'];
+    const r = (k, t, sub, right, cls) => '<button class="ldn-r' + (cls ? ' ' + cls : '') + '"' + (k ? ' data-fd="' + k + '"' : ' disabled') + '><span><b>' + t + '</b><small>' + sub + '</small></span>' + (right || '') + (k ? CHEV : '') + '</button>';
+    const news = (f.news || []).filter(x => x.s === co.season).slice(0, 2);
+    return news.map(x => '<div class="ldn-news">' + esc(x.t) + '<small>rodada ' + x.r + '</small></div>').join('') +
+      r('pres', 'Acordo ' + (AC_NM[f.ac] || 'Normal').toLowerCase() + ' com ' + esc(P.n), 'meta: ' + goalLine(B.goal.k, B.goal.pos) + ' · presidente ' + P.nome, '') +
+      r('', pt ? 'Patrocínio ' + esc(pt.name) : 'Patrocínio', pt ? c.brl(pt.fix) + ' no ano' + (pt.bonus ? ' + ' + c.brl(pt.bonus) + ' se cumprir a meta' : '') + (pt.until > co.season ? ' · até ' + (U.YEAR0 + pt.until) : '') : 'a escolher antes do primeiro jogo', '') +
+      r('banco', 'Banco', f.loan ? 'faltam ' + U.D.plural(f.loan.n, 'parcela', 'parcelas') + ' de ' + c.brl(f.loan.parc) + ' · deve ' + c.brl(f.loan.rem) : 'sem empréstimo · pode pegar até ' + c.brl(max), '') +
+      r('banco', 'Situação do caixa', STEP[step], '<span class="ldn-steps">' + [1, 2, 3, 4].map(i => '<i class="' + (i < step ? 'd' : i === step ? 'c' : '') + '"></i>').join('') + '</span>', step >= 2 ? 'bad' : '');
+  }
+  function presInfo() {
+    const co = C().co, P = S.coPres(co);
+    pop(popHead(esc(P.n), 'Presidente · ' + P.nome) + '<div class="ld-pb col"><p class="ldn-p">' + esc(P.txt) + '</p><p class="ldn-p">O caixa no vermelho pesa <b>' + RED_TXT(P.red) + '</b> na confiança dele. A cada 3 temporadas tem eleição e ele pode sair.</p></div>', 'Presidente', null, 'w560');
+  }
+  // Reunião de pré-temporada: 3 acordos de verba × meta. welcome: primeira conversa no clube novo
+  function reuniao(sel, welcome) {
+    const c = C(), co = c.co, f = S.coFin(co), P = S.coPres(co), ops = S.coFinAcordos(co);
+    sel = sel || 'normal'; const o = ops.find(x => x.k === sel) || ops[0];
+    const hi = { amb: 'Quero esse time brigando lá em cima. Se você topar, eu abro o cofre.', pao: 'Dinheiro não cai do céu, professor. Me diga o que você entrega e eu digo quanto libero.', pac: 'Sem pressa e sem loucura. Me diga o que dá para fazer e a gente acerta.' }[P.k];
+    const card = x => '<button class="ldn-op' + (x.k === sel ? ' on' : '') + '" data-ac="' + x.k + '"><b>' + AC_NM[x.k] + '</b><em>' + c.brl(x.verba) + '</em><small>verba para contratar</small>' +
+      '<span>Meta: ' + goalLine(x.gk, x.pos) + '</span><span>Teto da folha ' + c.brl(x.teto) + '</span>' +
+      (x.k === 'ousado' ? '<i class="ldn-tag or">ARRISCADA</i><small>cumprir vale mais fama; falhar tira fama</small>' : x.k === 'seguro' ? '<small>menos verba; a diretoria começa desconfiada e cumprir vale menos fama</small>' : '<small>o que a diretoria esperava</small>') + '</button>';
+    show(rail('clube') + '<div class="ld-col">' + head('Reunião com a diretoria', (welcome ? 'Primeiro dia no ' + esc(club(co.club).short || club(co.club).name) : 'Pré-temporada ' + (U.YEAR0 + co.season)) + ' · antes do primeiro jogo') +
+      '<div class="ld-row"><div class="ldn-l"><div class="ldn-say"><span class="ldn-av">' + esc(P.n.split(' ').map(w => w[0]).slice(0, 2).join('')) + '</span><p><b>' + esc(P.n) + ', presidente · ' + P.nome + '</b>' + (welcome ? 'Bem-vindo, professor. ' : '') + hi + '</p></div>' +
+        '<div class="ldn-ops">' + ops.map(card).join('') + '</div></div>' +
+      '<div class="ldn-side"><div class="ldk-cx">' + lbl('O PRESIDENTE') + '<b>' + P.nome[0].toUpperCase() + P.nome.slice(1) + '</b><small>' + esc(P.txt) + '</small><small>Caixa no vermelho pesa <b>' + RED_TXT(P.red) + '</b> para ele.</small></div>' +
+        '<small class="ldn-note">Bater a meta no azul aumenta a verba e o teto do ano seguinte. O mercado para gastar a verba chega numa próxima parte.</small><span class="ld-gr"></span>' +
+        gold('ldn-go', 'Fechar o acordo', AC_NM[o.k] + ' · ' + goalLine(o.gk, o.pos)) + '</div></div></div>', st => {
+      st.querySelectorAll('[data-ac]').forEach(b => b.onclick = () => { sfx('tap'); reuniao(b.dataset.ac, welcome); });
+      st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinAcordo(co, o.k); c.save('hub'); if (f.pend && f.pend.pat) patrocinio(null, welcome); else { f.pend = null; c.save('hub'); welcome ? time(false) : semana(); } };
+    });
+  }
+  function patrocinio(sel, welcome) {
+    const c = C(), co = c.co, f = S.coFin(co), ops = S.coFinPatOps(co), n = co.ss ? co.ss.rounds.length : 38;
+    sel = sel || 'fix'; const o = ops.find(x => x.k === sel) || ops[0];
+    const card = x => '<button class="ldn-op' + (x.k === sel ? ' on' : '') + '" data-pt="' + x.k + '"><b>' + esc(x.name) + '</b><em>' + c.brl(x.fix) + '</em><small>' + (x.yrs > 1 ? 'por ano, ' + x.yrs + ' temporadas' : 'no ano, 1 temporada') + '</small>' +
+      (x.k === 'fix' ? '<span>Fixo, sem bônus</span><small>certo: entra toda rodada, aconteça o que acontecer</small>' :
+        x.k === 'mix' ? '<span>+ ' + c.brl(x.bonus) + ' se cumprir a meta</span><i class="ldn-tag or">ARRISCADA</i><small>pode render ' + c.brl(x.fix + x.bonus) + ' ou só ' + c.brl(x.fix) + '</small>' :
+          '<span>Valor travado por ' + x.yrs + ' anos</span><i class="ldn-tag bl">TRAVADO</i><small>não sobe se o clube subir, não cai se cair</small>') + '</button>';
+    show(rail('clube') + '<div class="ld-col">' + head('Patrocínio da camisa', '3 propostas · escolha uma para ' + (U.YEAR0 + co.season)) +
+      '<div class="ld-row"><div class="ldn-l"><div class="ldn-ops">' + ops.map(card).join('') + '</div></div>' +
+      '<div class="ldn-side"><div class="ldk-cx">' + lbl('COMO ENTRA NO CAIXA') + '<div class="ldn-kv"><span>Toda rodada</span><b>' + c.brl(Math.round(o.fix / n)) + '</b></div>' + (o.bonus ? '<div class="ldn-kv"><span>Fim do ano, se cumprir a meta</span><b>' + c.brl(o.bonus) + '</b></div>' : '') + '</div>' +
+        '<small class="ldn-note">Sua fama traz propostas melhores. Hoje: fama ' + co.fame + '.</small><span class="ld-gr"></span>' +
+        gold('ldn-go', 'Assinar com ' + esc(o.name.split(' ')[0]), c.brl(o.fix) + (o.bonus ? ' + bônus pela meta' : o.yrs > 1 ? ' por ano · ' + o.yrs + ' anos' : ' no ano')) + '</div></div></div>', st => {
+      st.querySelectorAll('[data-pt]').forEach(b => b.onclick = () => { sfx('tap'); patrocinio(b.dataset.pt, welcome); });
+      st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinPatrocinio(co, o.k); f.pend = null; c.save('hub'); welcome ? time(false) : semana(); };
+    });
+  }
+  // Banco: a escada do vermelho e o empréstimo
+  function banco(amt) {
+    const c = C(), co = c.co, f = S.coFin(co), step = S.coFinStep(co), max = S.coLoanMax(co);
+    const ST = [['Aviso da diretoria', 'caixa abaixo de 4 semanas de folha'], ['Proibido contratar com taxa', 'caixa no vermelho: só jogador sem contrato'], ['O presidente vende o mais caro', 'com 6 rodadas seguidas no vermelho'], ['Ultimato', 'com 8 rodadas no vermelho, a confiança cai o dobro']];
+    const lad = ST.map(([t, s], i) => '<div class="ldn-st' + (i + 1 < step ? ' d' : i + 1 === step ? ' c' : '') + '"><i>' + (i + 1) + '</i><b>' + t + '</b><small>' + (i + 1 === step ? 'agora · ' : '') + s + '</small></div>').join('');
+    const steps = max ? [0.25, 0.5, 0.75, 1].map(k => Math.round(max * k / 10000) * 10000).filter((v, i, a) => v > 0 && a.indexOf(v) === i) : [];
+    amt = amt || steps[1] || steps[0];
+    const parc = amt ? S.coLoanParc(amt) : 0, L = f.loan;
+    const right = L ? '<div class="ldk-cx paper">' + lbl('EMPRÉSTIMO EM ANDAMENTO') + '<b>' + c.brl(L.rem) + '</b><small>falta pagar do principal</small><div class="ldn-kv"><span>Parcela por mês</span><b>' + c.brl(L.parc) + '</b></div><div class="ldn-kv"><span>Parcelas que faltam</span><b>' + L.n + '</b></div><small>Quitar antes não tem multa.</small></div>' +
+        '<span class="ld-gr"></span>' + (f.caixa >= L.rem ? gold('ldn-pay', 'Quitar agora', c.brl(L.rem) + ' do caixa') : '<button class="ld-b line" id="ldn-back">Voltar às finanças</button>') :
+      '<div class="ldk-cx paper">' + lbl('EMPRÉSTIMO NO BANCO') + '<div class="ldn-chips">' + steps.map(v => '<button data-am="' + v + '"' + (v === amt ? ' class="on"' : '') + '>' + c.brl(v) + '</button>').join('') + '</div>' +
+        '<div class="ldn-kv"><span>Juros</span><b>2% ao mês</b></div><div class="ldn-kv"><span>12 parcelas de</span><b>' + c.brl(parc) + '</b></div><div class="ldn-kv"><span>Total a pagar</span><b>' + c.brl(parc * 12) + '</b></div><small>Parcela a cada 4 rodadas. Quitar antes não tem multa.</small></div>' +
+        '<span class="ld-gr"></span>' + gold('ldn-take', 'Pegar ' + c.brl(amt), f.caixa < 0 && f.caixa + amt >= 0 ? 'sai do vermelho hoje' : c.brl(parc) + ' por mês');
+    show(rail('clube') + '<div class="ld-col">' + head('Banco', 'Caixa ' + c.brl(f.caixa) + (f.neg ? ' · ' + U.D.plural(f.neg, 'rodada', 'rodadas') + ' no vermelho' : ''), '<button class="ld-b line ldk-bk" id="ldn-bk">Voltar</button>') +
+      '<div class="ld-row"><div class="ldn-l">' + lbl('O QUE ACONTECE NO VERMELHO') + '<div class="ldn-lad">' + lad + '</div><small class="ldn-note">Também dá para vender alguém quando o mercado chegar.</small></div>' +
+      '<div class="ldn-side">' + right + '</div></div></div>', st => {
+      st.querySelectorAll('[data-am]').forEach(b => b.onclick = () => { sfx('tap'); banco(+b.dataset.am); });
+      const tk = st.querySelector('#ldn-take'); if (tk) tk.onclick = () => { if (S.coLoanTake(co, amt)) { sfx('tap'); c.save('hub'); banco(); } };
+      const py = st.querySelector('#ldn-pay'); if (py) py.onclick = () => { if (S.coLoanPay(co)) { sfx('tap'); c.save('hub'); banco(); } };
+      st.querySelectorAll('#ldn-bk, #ldn-back').forEach(b => b.onclick = () => { sfx('tap'); financas('dec'); });
+    });
+  }
+  // Aviso do que aconteceu no caixa (venda forçada, eleição) na volta para a semana
+  function finNews(co) {
+    const f = co.fin; if (!f || !f.news || !f.news.length) return;
+    const x = f.news[0]; if (x.seen) return;
+    x.seen = true;
+    setTimeout(() => pop(popHead('Aviso da diretoria', 'Rodada ' + x.r) + '<div class="ld-pb col"><p class="ldn-p">' + esc(x.t) + '</p><button class="ld-gold sm" id="ldn-ok"><b>Entendi</b></button></div>', 'Aviso da diretoria', w => { w.querySelector('#ldn-ok').onclick = () => { sfx('tap'); closePop(); }; }, 'w560'), 60);
+  }
+
   // Elenco e contratos: o elenco inteiro numa tabela (os seus números aparecem: é o seu time)
   function elenco(sort) {
     const c = C(), co = c.co; sort = sort || 'pos';
@@ -844,6 +931,7 @@
   // Chegada ao clube: o presidente diz a meta (um popup em cima da semana)
   function welcome() {
     const c = C(), co = c.co, cl = club(co.club), g = co.board.goal;
+    if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao(null, true) : patrocinio(null, true);
     semana();
     pop('<div class="ldw">' + crest(cl.id, 'ldw-cr') + '<div>' + lbl(esc(cl.name).toUpperCase() + ' · ' + (U.YEAR0 + co.season)) + '<b>Bem-vindo, professor.</b><p>O presidente aperta sua mão: "Aqui a meta é uma só: <b>' + esc(S.CO_GOAL_TXT[g.k].toLowerCase()) + '</b>. ' +
       (g.k === 'titulo' ? 'Segundo lugar aqui é derrota."' : g.k === 'naocair' || g.k === 'digna' ? 'Ninguém espera milagre, mas vexame não."' : 'Confio no seu trabalho."') + '</p><button class="ld-gold sm" id="ldw-go"><b>Conhecer o elenco</b></button></div></div>', 'Bem-vindo', w => {
@@ -1003,6 +1091,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao };
+  U.LD = { on, show, off, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();

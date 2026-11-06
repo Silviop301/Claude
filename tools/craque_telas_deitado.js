@@ -22,7 +22,7 @@ async function page(b) {
   const b = await chromium.launch();
   if (PARTS.includes('1')) {
     const { p, shot, click } = await page(b);
-    await click('#b-new-co'); await click('#co-start button[data-v="livre"]'); await click('#b-co-go'); await click('#ldo-go'); await click('#ldw-go');
+    await click('#b-new-co'); await click('#co-start button[data-v="livre"]'); await click('#b-co-go'); await click('#ldo-go'); await click('#ldn-go'); await click('#ldn-go');
     await shot('a01-time'); await click('[data-xi="5"]'); await shot('a02-troca'); await click('[data-pop-x]');
     await click('#ld-form'); await shot('a03-tatica'); await click('[data-ft="3"]'); await shot('a04-tatica-3'); await click('[data-pop-x]');
     await click('[data-bp]'); await shot('a05-banco'); await click('[data-pop-x]');
@@ -36,7 +36,7 @@ async function page(b) {
   }
   if (PARTS.includes('2')) {
     const { p, shot, click } = await page(b);
-    await click('#b-new-co'); await click('#co-start button[data-v="livre"]'); await click('#b-co-go'); await click('#ldo-go'); await click('#ldw-go');
+    await click('#b-new-co'); await click('#co-start button[data-v="livre"]'); await click('#b-co-go'); await click('#ldo-go'); await click('#ldn-go'); await click('#ldn-go');
     await click('#ld-ok'); await click('#ld-tr'); await click('[data-tt="Bola parada"]'); await click('[data-tk="esc"]'); await click('#ldtr-go'); await click('#ld-play'); await click('#ld-go'); await shot('b00-prelecao'); await click('[data-pk="cima"]'); await click('#ldp-go');
     await p.waitForTimeout(6000); await shot('bl1-ao-vivo');
     await click('[data-gr="pressionar"]'); await p.waitForTimeout(2500); await shot('bl2-grito');
@@ -57,12 +57,15 @@ async function page(b) {
   }
   if (PARTS.includes('3')) {
     const { p, shot, click } = await page(b);
-    await click('#b-new-co'); await click('#co-start button[data-v="livre"]'); await click('#b-co-go'); await shot('c0-propostas'); await click('#ldo-go'); await shot('c1-chegada'); await click('#ldw-go'); await click('#ld-ok');
+    await click('#b-new-co'); await click('#co-start button[data-v="livre"]'); await click('#b-co-go'); await shot('c0-propostas'); await click('#ldo-go'); await shot('c1-reuniao'); await click('[data-ac="ousado"]'); await shot('c1b-reuniao-ousado'); await click('#ldn-go'); await shot('c1c-patrocinio'); await click('[data-pt="mix"]'); await click('#ldn-go'); await click('#ld-ok');
     // joga até faltar 1 rodada, pelo motor
     await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co; let g = 0;
       while (co.ss.i < co.ss.rounds.length - 1 && g++ < 60) { const nx = S.coNext(co); if (!nx) break; if (nx.bye) { S.coSkipRound(co); continue; } const m = S.coMatchStart(co); S.coMatchRest(co, m); S.coMatchEnd(co, m); }
       U._co.save('hub'); U.LD.semana(); });
-    await shot('c2-semana-fim'); await click('[data-rail="tabela"]'); await shot('c3-tabela'); await click('[data-tb="art"]'); await shot('c3b-art'); await click('[data-rail="caderno"]'); await shot('c4-caderno');
+    await shot('c2-semana-fim');
+    await click('[data-rail="clube"]'); await shot('c2b-clube'); await click('#ldk-go'); await shot('c2c-financas-decidir'); await click('[data-fd="banco"]'); await shot('c2d-banco');
+    await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co; co.fin.caixa = -300000; co.fin.neg = 5; }); await click('#ldn-bk'); await click('[data-fd="banco"]'); await shot('c2e-banco-vermelho');
+    await click('#ldn-take'); await shot('c2f-banco-emprestimo'); await click('#ldn-bk'); await shot('c2g-financas-com-emprestimo'); await click('[data-rail="tabela"]'); await shot('c3-tabela'); await click('[data-tb="art"]'); await shot('c3b-art'); await click('[data-rail="caderno"]'); await shot('c4-caderno');
     const cell = await p.$('.ldc-c.pen, .ldc-c.lap'); if (cell) { await cell.click(); await p.waitForTimeout(300); await shot('c4b-caderno-casa'); }
     await click('[data-rail="semana"]');
     const nx = await p.$('#ld-play'); if (nx) { await click('#ld-play'); if (await p.$('#ld-go')) { await click('#ld-go'); await click('#ldp-go'); await p.waitForTimeout(2500); await click('[data-sp="fim"]'); for (let i = 0; i < 30 && !(await p.$('#b-lv-end')); i++) { await p.waitForTimeout(800); if (await p.$('#ldl-go')) await click('#ldl-go'); } await click('#b-lv-end'); await shot('c5-res'); await click('#ldr-go'); } }
