@@ -113,18 +113,46 @@
     const acc = { x: 0, n: 0 }, pt = [0, 0]; // quem mandou no minuto (média) e tempo de posse de cada time
 
     function lineOf(s) { let m = 0; T[1 - s].forEach(q => { if (q.r !== 'GK') m = Math.max(m, tf(s, q)[0]); }); return Math.max(m, L / 2); }
+    // Onde cada um quer estar (no referencial de quem ataca para a direita). Com a bola o time se arma em linhas: atrás
+    // seguram os zagueiros e o volante, o lateral do lado da bola passa e o outro fecha por dentro (na posse) ou fica aberto,
+    // os meias jogam nos corredores entre lateral e zagueiro deles, os pontas abertos e o centroavante na linha do último
+    // zagueiro. Sem a bola cada estilo tem o seu bloco: altura da linha, distância entre as linhas e quanto fecha o meio
+    const lineOfRole = p => (p.d < 0.3 ? 0 : p.d < 0.75 ? 1 : 2);
+    const isWide = p => p.r === 'LM' || p.r === 'RM' || p.r === 'LW' || p.r === 'RW' || (p.r === 'ST' && Math.abs(p.w - 34) > 17);
+    const isFB = p => p.r === 'LB' || p.r === 'RB';
     function shapeOf(p, has, bx, by, line) {
       if (p.r === 'GK') return has ? [cl(4 + bx * 0.12, 5, 16), 34 + (by - 34) * 0.2] : [cl(2 + bx * 0.05, 2, 7), 34 + (by - 34) * 0.3];
-      // Bloco sobe e desce junto com a bola; a altura da linha (line) vale com e sem a bola: pressão alta = linha alta e time curto
-      const st = ST[p.side], ln = Math.min(1, st.line), pr = Math.min(1, st.press);
-      const back = has ? cl(bx - 26 + 10 * ln, Math.min(12 + 20 * ln, bx + 12), 40 + 22 * ln) : cl(bx - 26 + 14 * ln, 6, 30 + 26 * ln), span = has ? 50 : 33 - 7 * pr, dd = (p.d - 0.16) / 0.74;
-      // Com a bola, o meio sobe para jogar entre as linhas deles (mais nos estilos de linha alta; na retranca quase nada)
-      let x = back + dd * span + (has ? (5 + 17 * ln) * Math.sin(Math.PI * cl(dd, 0, 1)) : 0), y = 34 + (p.w - 34) * (has ? 0.8 + 0.55 * st.wide : 0.6) + (by - 34) * (has ? 0.15 : 0.42);
-      // Lateral apoia por fora quando a bola vai do lado dele (mais cedo no time que joga pelos lados)
-      const ov = 22 + 12 * st.wide;
-      if (has && bx > 60 - 16 * st.wide && ((p.r === 'LB' && by < ov) || (p.r === 'RB' && by > WD - ov))) { x = Math.max(x, bx + 3); y = p.r === 'LB' ? 4 : 64; }
-      if (has && p.d > 0.6) x = Math.min(x, Math.max(line - 1, bx - 2));
-      return [cl(x, 2, 102), cl(y, 3, 65)];
+      const st = ST[p.side], ln = Math.min(1, st.line), pr = Math.min(1, st.press), wd = Math.min(1, st.wide), posse = st.ctrl > 1.1;
+      const role = lineOfRole(p), sgn = p.w < 34 ? -1 : 1, ballSide = (by - 34) * sgn > 4;
+      let x, y;
+      if (has) {
+        const L2 = Math.max(line, 52), back = cl(bx - 30 + 12 * ln, 14 + 22 * ln, 34 + 18 * ln);
+        if (isFB(p) && role <= 1) {
+          {
+            if (ballSide && bx > 42 - 10 * wd) { x = Math.min(bx + 4, L2 - 1); y = 34 + sgn * (30 + 2 * wd); } // passa por fora
+            else if (posse) { x = back + 12; y = 34 + sgn * 13; } // lateral por dentro, vira volante
+            else { x = back + 7 + (role ? 8 : 0); y = 34 + sgn * (24 + 4 * wd); } // ala (3 zagueiros) fica mais adiantado
+          }
+        } else if (role === 0) {
+          { x = back + (Math.abs(p.w - 34) > 8 ? 2 : 0); y = 34 + (p.w - 34) * 0.9 + (by - 34) * 0.12; }
+        } else if (role === 1) {
+          if (isWide(p)) { x = Math.min(L2 - 4, bx + 8); y = 34 + sgn * (28 + 4 * wd); }
+          else if (p.d < 0.45 || (p.d < 0.5 && Math.abs(p.w - 34) < 3)) { x = back + 11; y = 34 + Math.sign(p.w - 34) * Math.min(8, Math.abs(p.w - 34)) + (by - 34) * 0.3; } // volante(s): na frente dos zagueiros
+          else { x = cl(bx + 1 + 6 * ln, back + 14, L2 - 3); y = 34 + sgn * Math.max(10, Math.abs(p.w - 34) * 0.75) + (by - 34) * 0.15; } // corredor
+        } else {
+          if (isWide(p)) { x = L2 - 1.5; y = 34 + sgn * (27 + 5 * wd); }
+          else { x = L2 - 0.6; y = 34 + (p.w - 34) * 0.6 + (by - 34) * 0.2; }
+        }
+        if (role === 2 || (role === 1 && x > L2 - 1)) x = Math.min(x, Math.max(L2 - 0.8, bx - 2)); // sem ficar impedido
+      } else {
+        // Bloco: a linha de defesa fica a uma distância da bola que depende do estilo, entre um mínimo e um máximo
+        const H = cl(bx - (30 - 10 * ln), 9 + 30 * ln, 22 + 30 * ln), gap = 9 + 5 * pr, nar = 0.5 + 0.18 * wd + 0.12 * pr;
+        if (role === 0 || isFB(p)) x = H + (isFB(p) ? 1 : 0); // ala volta para a linha (vira linha de 5)
+        else if (role === 1) x = H + gap + (p.d < 0.45 ? -2 : 0);
+        else x = H + gap * 2 + (pr < 0.2 ? 8 : 0); // na retranca os da frente ficam esperando o contra-ataque
+        y = 34 + (p.w - 34) * nar + (by - 34) * (0.45 - 0.1 * pr);
+      }
+      return [cl(x, 2, 102), cl(y, 2.5, 65.5)];
     }
     function findSpace(p, s, line) {
       if (p.run > 0) return toW(s, p.runX, p.runY);
@@ -162,6 +190,16 @@
         pairs.sort((a, b) => a[0] - b[0]); const used = new Set();
         pairs.forEach(([, d, a]) => { if (!d.mark && !used.has(a)) { d.mark = a; used.add(a); } });
       }
+      // Pressão alta com a bola na saída deles: os da frente encaixam (cada um fecha o passe para um zagueiro ou lateral),
+      // não só um correndo atrás da bola
+      const jam = new Map();
+      if (ST[s].press > 0.8 && owner && tf(s, ball)[0] > 62) {
+        const taken = new Set();
+        own.filter(p => p !== pr && p.r !== 'GK' && lineOfRole(p) === 2).forEach(p => {
+          const c = att.filter(a => a !== owner && !taken.has(a) && tf(s, a)[0] > 60 && dist(a, p) < 22).sort((a, b) => dist(a, p) - dist(b, p))[0];
+          if (c) { taken.add(c); jam.set(p, c); }
+        });
+      }
       own.forEach(p => {
         if (p.r === 'GK') { const d = Math.hypot(ball.x - gx, ball.y - gy) || 1, k = Math.min(6, 1.2 + d * 0.07); p.tx = gx + (ball.x - gx) / d * k; p.ty = gy + (ball.y - gy) / d * k * 0.9; return; }
         const [zx, zy] = shapeOf(p, false, bx, by, 0); let [wx, wy] = toW(s, zx, zy);
@@ -179,6 +217,7 @@
           const n = att.filter(a => a !== owner && a.r !== 'GK').sort((a, b) => dist(a, owner) - dist(b, owner))[0];
           if (n) { p.tx = owner.x + (n.x - owner.x) * 0.55; p.ty = owner.y + (n.y - owner.y) * 0.55; return; }
         }
+        if (jam.has(p) && owner) { const a = jam.get(p); p.tx = a.x + (owner.x - a.x) * 0.3; p.ty = a.y + (owner.y - a.y) * 0.3; p.sprint = dist(p, a) > 8 ? 1 : 0; return; }
         if (p.mark) { const a = p.mark, d = Math.hypot(gx - a.x, gy - a.y) || 1; wx = wx * 0.35 + (a.x + (gx - a.x) / d * 4.6) * 0.65; wy = wy * 0.35 + (a.y + (gy - a.y) / d * 4.6) * 0.65;
           // Zagueiro não afunda atrás do atacante além do que a linha permite: linha alta segura e deixa em impedimento
           if (p.d < 0.3) { const lo = zx - 4 - (1 - Math.min(1, ST[s].line)) * 10, fx = tf(s, { x: wx, y: wy })[0]; if (fx < lo) wx = toW(s, lo, 0)[0]; } }
