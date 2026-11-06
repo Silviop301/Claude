@@ -48,4 +48,20 @@
     'Al-Sadd': [W, W, K, K], 'Al Ahly': [R, W, W, W], 'Zamalek': [W, W, R, R], 'Wydad': [R, W, W, W], 'Raja Casablanca': [G, W, W, W],
     'Ulsan HD': [B, B, W, W], 'Jeonbuk Hyundai': [G, G, W, W], 'Vissel Kobe': [V, V, W, W], 'Kashima Antlers': [V, W, W, W], 'Urawa Reds': [R, W, W, W],
   };
+  // Desenho da camisa titular (o campinho ao vivo desenha nos bonecos): [desenho, segunda cor]. listras = verticais,
+  // aros = horizontais, faixa = diagonal, faixah = uma faixa no peito, meio = metade e metade, xadrez. Sem entrada = lisa
+  root.CRAQUE_KITS_PAT = {
+    'Argentina': ['listras', W], 'Croácia': ['xadrez', W], 'Peru': ['faixa', R], 'Paraguai': ['listras', W],
+    'Flamengo': ['aros', K], 'Atlético-MG': ['listras', W], 'São Paulo': ['faixah', R], 'Fluminense': ['listras', G], 'Botafogo': ['listras', W],
+    'Grêmio': ['listras', K], 'Vasco': ['faixa', W], 'Fortaleza': ['aros', R], 'Vitória': ['listras', K], 'Sport': ['aros', K], 'Ceará': ['listras', W],
+    'River Plate': ['faixa', R], 'Boca Juniors': ['faixah', Y], 'Racing': ['listras', W], 'San Lorenzo': ['listras', R], 'Estudiantes': ['listras', W],
+    'Talleres': ['listras', W], 'Rosario Central': ['listras', B], "Newell's Old Boys": ['meio', K],
+    'Barcelona': ['listras', B], 'Atlético de Madrid': ['listras', W], 'Athletic Bilbao': ['listras', W], 'Real Betis': ['listras', W],
+    'Newcastle': ['listras', W], 'Inter de Milão': ['listras', B], 'Juventus': ['listras', K], 'Milan': ['listras', K], 'Atalanta': ['listras', B],
+    'Sporting': ['aros', W], 'Porto': ['listras', W], 'PSV': ['listras', W], 'Feyenoord': ['meio', W], 'Galatasaray': ['meio', Y],
+    'Fenerbahçe': ['listras', N], 'Beşiktaş': ['listras', W], 'Trabzonspor': ['listras', B], 'Celtic': ['aros', W], 'Club Brugge': ['listras', K],
+    'Olympiacos': ['listras', W], 'PAOK': ['listras', W], 'Estrela Vermelha': ['listras', W], 'Partizan': ['listras', W], 'Slavia Praga': ['meio', W],
+    'Basel': ['meio', B], 'Peñarol': ['listras', K], 'Atlético Nacional': ['listras', W], 'Olimpia': ['faixah', K], 'Cerro Porteño': ['listras', B],
+    'Alianza Lima': ['listras', W], 'Chivas': ['listras', W], 'Al-Ittihad': ['listras', K], 'Zamalek': ['faixah', R],
+  };
 })(window);
