@@ -1,7 +1,7 @@
 // Fotos e passeio do Modo Treinador pela interface: início, criação, propostas, chegada, central, time (com troca e
 // mudança de formação e estilo), resultado, tabela e fim da temporada; joga a temporada inteira pelos botões.
 // Uso (na raiz, com python3 -m http.server 8765): NODE_PATH=$(npm root -g) node tools/craque_telas_treinador.js /tmp/co [largura] [altura]
-// DESKTOP=1 usa mouse (computador). Erros de página e textos com "undefined"/"NaN" contam como problema.
+// DESKTOP=1 usa mouse (computador); no computador o Treinador abre deitado e o passeio clica em "Jogar em pé" se aparecer. Erros de página e textos com "undefined"/"NaN" contam como problema.
 const { chromium } = require('playwright');
 const OUT = process.argv[2] || '/tmp/co', W = +process.argv[3] || 390, H = +process.argv[4] || 844;
 require('fs').mkdirSync(OUT, { recursive: true });
@@ -22,7 +22,11 @@ require('fs').mkdirSync(OUT, { recursive: true });
   await p.evaluate(() => window.scrollTo(0, 9999)); await shot('inicio');
   await click('#b-new-co'); await shot('criacao');
   await click('#co-start button[data-v="livre"]');
-  await click('#b-co-go'); await shot('propostas');
+  await click('#b-co-go');
+  // O Treinador é deitado (ui/coachland.js); em pé aparece "Gire o celular". Este passeio testa as telas em pé ("Jogar em pé").
+  // As telas deitadas têm o passeio delas: tools/craque_telas_deitado.js (844x390).
+  if (await p.$('#ld-stand')) { await shot('gire-o-celular'); await click('#ld-stand'); }
+  await shot('propostas');
   await click('[data-sign]'); await shot('chegada');
   await click('#b-co-in'); await shot('time');
   // troca: um titular com um reserva; muda formação e estilo

@@ -951,6 +951,7 @@
       const rc = cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1, px = (ev.clientX - rc.left) / z, py = (ev.clientY - rc.top) / z;
       let best = null, bd = 22; ALL.forEach(p => { const d = Math.hypot(X(p.x) - px, Y(p.y) - py); if (d < bd) { bd = d; best = p; } });
       tip = best ? { p: best, at: Date.now() } : null;
+      if (best && o.onPick) o.onPick(best.side, best.inf, best.k); // a tela abre o jogador tocado (Treinador deitado)
       if (frozen) draw();
     }
     // Marcador de energia embaixo de você: raio, barra e número; muda de cor quando cansa
