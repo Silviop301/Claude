@@ -126,9 +126,9 @@
     const dots = f => { const a = (f || '').split(''); while (a.length < 5) a.unshift('-'); return '<span class="tb-f">' + a.map(c => '<i class="' + (c === '-' ? 'n' : c) + '"></i>').join('') + '</span>'; };
     const row = (x, k, cells) => '<div class="tb-r' + zone(k + 1) + cut(k + 1) + (x.me ? ' me' : '') + '"><i>' + (k + 1) + '</i>' + crest(x.id, 'xs') + '<span>' + esc(club(x.id).name) + '</span>' + cells + '</div>';
     let body;
-    if (tab === 'cls') body = '<div class="tb tb-cls" style="--n:' + n + '"><div class="tb-h"><i>#</i><span>Clube</span><b>P</b><em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em></div>' +
+    if (tab === 'cls') body = '<div class="tbx tb-cls" style="--n:' + n + '"><div class="tb-h"><i>#</i><span>Clube</span><b>P</b><em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em></div>' +
       t.map((x, k) => row(x, k, '<b>' + x.p + '</b><em>' + x.j + '</em><em>' + x.v + '</em><em>' + x.e + '</em><em>' + x.d + '</em>' + sg(x))).join('') + '</div>';
-    else if (tab === 'gol') body = '<div class="tb tb-gol" style="--n:' + n + '"><div class="tb-h"><i>#</i><span>Clube</span><em>GP</em><em>GC</em><em>SG</em><small>Últimos 5</small></div>' +
+    else if (tab === 'gol') body = '<div class="tbx tb-gol" style="--n:' + n + '"><div class="tb-h"><i>#</i><span>Clube</span><em>GP</em><em>GC</em><em>SG</em><small>Últimos 5</small></div>' +
       t.map((x, k) => row(x, k, '<em>' + x.gp + '</em><em>' + x.gc + '</em>' + sg(x) + dots(x.f))).join('') + '</div>';
     else {
       const res = (ss.res || [])[rd], played = rd < ss.i, me = ss.ids.indexOf(co.club);

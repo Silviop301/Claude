@@ -7294,7 +7294,7 @@ button.cad-c { cursor: pointer; }
 .tb-tabs { margin: 0 0 8px; }
 .tb-tabs button { font-size: 13px; letter-spacing: .02em; height: 40px; }
 .tb-box { padding: 6px 6px 8px; }
-.tb { display: grid; gap: 1px; --rh: clamp(24px, calc((100svh - 300px) / var(--n, 20)), 32px); }
+.tbx { display: grid; gap: 1px; --rh: clamp(24px, calc((100svh - 300px) / var(--n, 20)), 32px); }
 .tb-r, .tb-h { display: grid; align-items: center; gap: 4px; padding: 0 6px 0 8px; position: relative; border-radius: 6px; }
 .tb-cls .tb-r, .tb-cls .tb-h { grid-template-columns: 20px 18px minmax(0, 1fr) 24px 22px 20px 20px 20px 28px; }
 .tb-gol .tb-r, .tb-gol .tb-h { grid-template-columns: 20px 18px minmax(0, 1fr) 24px 24px 28px 70px; }
