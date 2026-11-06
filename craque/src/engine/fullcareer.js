@@ -540,23 +540,24 @@
   // rival, off impedimentos, show das faltas sem cartão que o campinho apita (as perigosas). me: o seu jogador por posição,
   // [amarelo, vermelho direto, segundo amarelo depois do primeiro] (metade do real: suspensão demais derrubava a nota da carreira). ycMax amarelos suspendem um jogo (a conta zera).
   // Com um a menos, o time faz kRed menos gols e o outro kAdv mais, no tempo que falta
-  const FC_CARD = S.FC_CARD = { foul: 12, yel: 0.16, red: 0.12, off: 2, show: 0.14, ycMax: 3, kRed: 0.25, kAdv: 0.22,
+  const FC_CARD = S.FC_CARD = { foul: 12, yel: 0.075, red: 0.06, kCl: 1.8, off: 2, show: 0.14, ycMax: 3, kRed: 0.25, kAdv: 0.22,
     me: { GOL: [0.015, 0.0015, 0.02], ZAG: [0.11, 0.005, 0.05], MEI: [0.08, 0.004, 0.04], ATA: [0.04, 0.002, 0.03] }, rYc: -0.25, rRc: -1.2,
     meK: +((typeof process !== 'undefined' && process.env && process.env.FC_CARDME) || 1) }; // FC_CARDME=0: sem os seus cartões (para medir)
   const CARD_W = { GOL: 0.08, ZAG: 1.4, LAT: 1.15, VOL: 1.3, MEI: 1, PON: 0.8, ATA: 0.65 }, OFF_W = { ATA: 3, PON: 1.6, MEI: 0.6 };
   const wPick = (r, W) => { const k = Object.keys(W); let x = r() * k.reduce((a, b) => a + W[b], 0); for (const q of k) { x -= W[q]; if (x <= 0) return q; } return k[0]; };
   // Os lances de um jogo: ev [{ m, t: falta|amarelo|vermelho|impedimento, s: h|a, pos, me?, how? }] e as contas por time.
   // me: o seu jogador está em campo (pos: a posição dele); noRed: jogo de lance decisivo (o placar já está escrito)
-  function cardsOf(r, home, me, pos, noRed) {
+  // classic: clássico, jogo mais pegado (kCl vezes os amarelos e o vermelho)
+  function cardsOf(r, home, me, pos, noRed, classic) {
     const ev = [], K = { fo: { h: 0, a: 0 }, yc: { h: 0, a: 0 }, rc: { h: 0, a: 0 }, of: { h: 0, a: 0 }, red: { h: 0, a: 0 }, me: null };
     const mine = home ? 'h' : 'a', mn = () => 1 + Math.floor(r() * 90);
     ['h', 'a'].forEach(s => {
-      const nf = r.poisson(FC_CARD.foul), ny = r.poisson(FC_CARD.yel * FC_CARD.foul), no = r.poisson(FC_CARD.off);
+      const nf = r.poisson(FC_CARD.foul), ny = r.poisson(FC_CARD.yel * FC_CARD.foul * (classic ? FC_CARD.kCl : 1)), no = r.poisson(FC_CARD.off);
       K.fo[s] = nf + ny; K.of[s] = no;
       for (let i = 0; i < nf; i++) if (r() < FC_CARD.show) ev.push({ m: mn(), t: 'falta', s, pos: wPick(r, CARD_W) });
       for (let i = 0; i < ny; i++) { ev.push({ m: mn(), t: 'amarelo', s, pos: wPick(r, CARD_W) }); K.yc[s]++; }
       for (let i = 0; i < no; i++) ev.push({ m: mn(), t: 'impedimento', s, pos: wPick(r, OFF_W) });
-      if (!noRed && r() < FC_CARD.red) { const two = r() < 0.55, m = 20 + Math.floor(r() * 71); ev.push({ m, t: 'vermelho', s, pos: wPick(r, CARD_W), how: two ? '2am' : 'direto' }); K.rc[s]++; if (two) K.yc[s]++; K.red[s] = m; }
+      if (!noRed && r() < FC_CARD.red * (classic ? FC_CARD.kCl : 1)) { const two = r() < 0.55, m = 20 + Math.floor(r() * 71); ev.push({ m, t: 'vermelho', s, pos: wPick(r, CARD_W), how: two ? '2am' : 'direto' }); K.rc[s]++; if (two) K.yc[s]++; K.red[s] = m; }
     });
     // O seu jogador: amarelo, segundo amarelo ou vermelho direto pela posição (o rumo do jogo não muda isso)
     if (me) {
@@ -600,7 +601,7 @@
     let [lu, lt] = home ? lam(us, them, L) : lam(them, us, L).reverse();
     if (on && X.isDef) lt *= Math.exp(-X.def / 22);
     // Faltas, cartões e impedimentos (antes dos gols: quem fica com um a menos sente no placar)
-    const ms = home ? 'h' : 'a', os = home ? 'a' : 'h', K = cardsOf(r, home, on, c.pos), kU = redK(K.red, ms), kT = redK(K.red, os);
+    const ms = home ? 'h' : 'a', os = home ? 'a' : 'h', K = cardsOf(r, home, on, c.pos, false, (D.RIVALS[club.id] || []).includes(vs)), kU = redK(K.red, ms), kT = redK(K.red, os);
     const meOut = K.me && K.me.rc ? K.me.rc / 90 : 1; // expulso, você marca só até sair
     // Seus gols saem do total do time (o craque marca parte dos gols que o time faria)
     let mg = on ? r.poisson(Math.max(0, X.g90 * FC_K.g * kU * meOut - (c.pos !== 'MEI' ? Lq : 0))) : 0;

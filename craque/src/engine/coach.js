@@ -21,7 +21,7 @@
     enGame: 12, enRest: 8, enOff: 20, enOpp: 80, inj: 0.011, subs: 5,
     // Faltas e cartões por time e por jogo: foul faltas (o estilo muda), yel amarelos por falta, redD vermelho direto por falta,
     // ycMax amarelos que suspendem; off impedimentos; foulShow das faltas sem cartão que o campinho apita (as perigosas)
-    foul: 12, yel: 0.17, redD: 0.004, ycMax: 3, off: 2.2, foulShow: 0.14,
+    foul: 12, yel: 0.08, redD: 0.002, kCl: 1.8, ycMax: 3, off: 2.2, foulShow: 0.14,
     conf0: 60, confK: env('CO_CK', 3), ppg: 1.34, ultAt: env('CO_ULT', 25), ultN: 3, ultNeed: 2, ultMin: 6,
     fame0: { baixo: 5, livre: 25 }, skillMax: 10,
   };
@@ -293,7 +293,7 @@
     const us = { club: co.club, squad: co.squad, form: co.form, style: co.style, bonus: co.xp.leitura * 0.2, xi: co.xi.slice(), bench: (co.bench || []).filter(id => co.squad.some(p => p.id === id && ok(p))), subs: CO.subs, red: 0, mine: true };
     const them = oppSide(co, nx.vs, !nx.home);
     if (!us.bench.length) us.bench = autoXI(co.squad, co.form).bench;
-    return { min: 0, gh: 0, ga: 0, home: nx.home, us, them, ev: [], stop: null, done: false, half: false, vs: nx.vs, round: nx.round, played: {} };
+    return { min: 0, gh: 0, ga: 0, home: nx.home, us, them, ev: [], stop: null, done: false, half: false, classic: (D.RIVALS[co.club] || []).includes(nx.vs), vs: nx.vs, round: nx.round, played: {} };
   };
   const sideName = (m, s) => (s === m.us ? 'us' : 'them');
   // Avança até a próxima parada (gol, vermelho, lesão, intervalo) ou o fim; com `until`, para também naquele minuto
@@ -334,7 +334,7 @@
           cnt('fo');
           const k = foulPick(r, s), id = s.xi[k], p = id && s.squad.find(x => x.id === id); if (!p) return;
           s.bk = s.bk || {};
-          const bk = !!s.bk[id], card = r() < CO.redD ? 'direto' : r() < CO.yel * (bk ? 0.7 : 1) ? (bk ? '2am' : 'am') : '';
+          const kc = m.classic ? CO.kCl : 1, bk = !!s.bk[id], card = r() < CO.redD * kc ? 'direto' : r() < CO.yel * kc * (bk ? 0.7 : 1) ? (bk ? '2am' : 'am') : '';
           if (card === 'am') {
             s.bk[id] = 1; cnt('yc');
             if (s.mine) (m.ycAdd = m.ycAdd || []).push(id);
