@@ -433,7 +433,7 @@
     while (!stop && !(m.min >= 90 && m.st >= (m.a2 || 0)) && !(until && n > 0 && (m.min >= until || m.st > 0))) {
       // Acréscimos: no 45' (antes do intervalo) e no 90' o relógio fica parado e conta 45+1, 45+2...
       if ((m.min === 45 && !m.half) || m.min >= 90) m.st = (m.st || 0) + 1; else { m.st = 0; m.min++; }
-      n++; m.tk = (m.tk == null ? m.min - (m.st ? 0 : 1) : m.tk) + 1; // jogo salvo antes dos acréscimos: conta o que já foi jogado const ev0 = m.ev.length;
+      n++; m.tk = (m.tk == null ? m.min - (m.st ? 0 : 1) : m.tk) + 1; const ev0 = m.ev.length; // m.tk sem valor: jogo salvo antes dos acréscimos, conta o que já foi jogado
       if (m.us.talk && m.min > m.us.talk.until) delete m.us.talk;
       if (m.us.pre && m.min > m.us.pre.until) delete m.us.pre;
       if (m.us.shout && m.min > m.us.shout.until) { delete m.us.shout; m.ev.push({ m: m.min, t: 'grito-fim', s: 'us' }); }
