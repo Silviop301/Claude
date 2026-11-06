@@ -558,7 +558,8 @@
       if (!s.xi[i] || !sp[i]) return;
       const lat = sp[i][0], w = Math.max(8, Math.min(92, 50 + (lat - 50) * 1.25));
       const r = x.pos === 'GOL' ? 'GK' : x.pos === 'LAT' ? (lat < 50 ? 'LB' : 'RB') : x.pos === 'ZAG' ? 'CB' : x.pos === 'ATA' ? 'ST' : x.w ? (lat < 50 ? 'LM' : 'RM') : 'CM';
-      out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w]);
+      const pl = (s.squad || []).find(q => q.id === s.xi[i]), ov = pl ? pl.ovr - (100 - (pl.en === undefined ? 100 : pl.en)) * 0.1 : undefined; // cansado rende menos
+      out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w, ov]);
     });
     const gk = out.filter(p => p[0] === 'GK'), rest = out.filter(p => p[0] !== 'GK').sort((a, b) => a[1] - b[1]);
     if (!gk.length && rest.length) { const g0 = rest.shift(); g0[0] = 'GK'; g0[1] = 0; g0[2] = 50; gk.push(g0); }
@@ -621,7 +622,7 @@
         const b = lvBall(m, mo); $('lv-ball').style.left = b[0] + '%'; $('lv-ball').style.top = b[1] + '%';
       } else if (sim) {
         // Mudou a formação (sua ou deles) ou alguém foi expulso: o campinho reposiciona
-        [m.us, m.them].forEach((s, k) => { const key = s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style; if (key !== lineKey[k]) { lineKey[k] = key; sim.lineup(k, simForm(s)); sim.style(k, S.CO_STY[s.style]); } });
+        [m.us, m.them].forEach((s, k) => { const key = s.form + ':' + s.xi.join(',') + ':' + s.style; if (key !== lineKey[k]) { lineKey[k] = key; sim.lineup(k, simForm(s)); sim.style(k, S.CO_STY[s.style]); } });
       }
       $('lv-fu').textContent = m.us.form; $('lv-ft').textContent = m.them.form;
       if (!read || m.min % 10 === 0 || m.stop) read = S.coRead(co, m);

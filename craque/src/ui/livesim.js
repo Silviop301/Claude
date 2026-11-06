@@ -55,8 +55,10 @@
     const gauss = () => (rnd() + rnd() + rnd() - 1.5) / 1.5;
     let ME = o.me;
     const KT = o.kits || LP.kits(null, null, true);
-    const mk = (form, side) => form.map(([r, d, w], k) => ({ r, d, w: w * 0.68, k, side, x: 0, y: 0, tx: 0, ty: 0, gx: 0, gy: 0, vx: 0, vy: 0,
-      rt: 0, th: 0, spd: 0.9 + rnd() * 0.22, risk: 0.7 + rnd() * 0.6, ph: k * 1.9 + side * 4.1, fx: side ? -1 : 1, fy: 0,
+    // q: o overall do jogador (4º número da formação, 60 se não vier) em -0,3..+0,3; pesa no drible, no bote, no passe e no pique
+    const qOf = v => (v === undefined || v === null ? 0 : Math.max(-0.3, Math.min(0.3, (v - 60) / 100)));
+    const mk = (form, side) => form.map(([r, d, w, ov], k) => ({ r, d, w: w * 0.68, k, side, q: qOf(ov), x: 0, y: 0, tx: 0, ty: 0, gx: 0, gy: 0, vx: 0, vy: 0,
+      rt: 0, th: 0, spd: 0.9 + rnd() * 0.22 + qOf(form[k][3]) * 0.5, risk: 0.7 + rnd() * 0.6, ph: k * 1.9 + side * 4.1, fx: side ? -1 : 1, fy: 0,
       run: 0, runX: 0, runY: 0, go: 0, goX: 0, goY: 0, stun: 0, cd: 0, lg: 0, sprint: 0, drib: 0, mark: null }));
     // o.forms: [seu time, adversário] como [[papel, profundidade 0-1, largura 0-100], ...] (o Treinador manda a formação de verdade)
     const T = [mk((o.forms && o.forms[0]) || F433, 0), mk((o.forms && o.forms[1]) || F442, 1)];
@@ -83,7 +85,7 @@
     let curT = o.t0 || 0, mClk = 0, bxT = 50, lastPasser = null, lastPassClk = -9, frozen = false, en = null, cv = null, g = null, W = 0, H = 0, dpr = 1, raf = 0, last = 0, alive = true;
     stRefresh();
     const goals = (o.goals || []).map(e => ({ m: e.m, side: e.side, me: !!e.me, as: !!e.as, done: e.m <= (o.t0 || 0) && (o.t0 || 0) > 0 }));
-    const reform = (p, [r, d, w]) => { p.r = r; p.d = d; p.w = w * 0.68; };
+    const reform = (p, [r, d, w, ov]) => { p.r = r; p.d = d; p.w = w * 0.68; if (ov !== undefined) { p.spd += (qOf(ov) - p.q) * 0.5; p.q = qOf(ov); } };
     let due = null; // o gol do motor que está para sair
     // Seu lance (o texto que a narração vai escrever): a jogada acontece no campinho e só então a linha sai (cb)
     // k: chute, fora, drible, conduz, perde, passe, erra, impedido (com a bola) · desarme, corte, driblado, falta, defesa,
@@ -172,7 +174,7 @@
       for (const op of T[1 - s]) {
         for (let f = lofted ? 0.8 : 0.12; f <= 1.001; f += 0.11) {
           const px = ball.x + (wx - ball.x) * f, py = ball.y + (wy - ball.y) * f;
-          const tb = d * f / spd + 0.08, to = Math.max(0, Math.hypot(op.x - px, op.y - py) - 1.1) / 7.5 + (op.r === 'GK' ? 0.15 : 0.44 + (turn ? 0.45 : 0)) + (op.stun > 0 ? 0.6 : 0);
+          const tb = d * f / spd + 0.08, to = Math.max(0, Math.hypot(op.x - px, op.y - py) - 1.1) / 7.5 + (op.r === 'GK' ? 0.15 : 0.44 + (turn ? 0.45 : 0) - (op.q || 0) * 0.6) + (op.stun > 0 ? 0.6 : 0);
           const r = sig((tb - to) * 4) * (f > 0.95 ? 0.7 : 1);
           if (r > pI) { pI = r; cut = { o: op, x: px, y: py }; }
         }
@@ -237,7 +239,7 @@
       if (p.r !== 'GK') for (const a of [0, 0.6, -0.6]) {
         const tx = cl(bx + Math.cos(a) * 9, 2, 101), ty = cl(by + Math.sin(a) * 9, 3, 65), [wx, wy] = toW(s, tx, ty);
         let near = 99; for (const op of opp) near = Math.min(near, segD(op.x, op.y, p.x, p.y, wx, wy));
-        const drib = press < 2.2, pk = drib ? cl(0.42 + (near - 1.5) * 0.08 + (bias[s] - 1) * 0.6, 0.12, 0.6) : cl(sig((near - 2.2) * 1.8) + (bias[s] - 1) * 0.4, 0.05, 0.97);
+        const drib = press < 2.2, dq = (p.q - (presser ? presser.q : 0)) * 1.3, pk = drib ? cl(0.42 + (near - 1.5) * 0.08 + (bias[s] - 1) * 0.6 + dq, 0.1, 0.78) : cl(sig((near - 2.2) * 1.8) + (bias[s] - 1) * 0.4, 0.05, 0.97);
         opts.push({ type: 'carry', kind: drib ? 'drible' : 'conduz', wx, wy, p: pk, presser, u: pk * (V(tx, ty) + PROG * progK(s) * Math.cos(a) * 9 / 30) - (1 - pk) * lossAt(bx, by) * lossK(s) + (!drib && near > 5 ? 0.008 : 0) });
       }
       if (p.r !== 'GK' && bx > 70) { const xg = shotXg(s, bx, by, false); opts.push({ type: 'shot', kind: Math.hypot(L - bx, 34 - by) > 20 ? 'fora' : 'chute', u: xg * SHOT * (Math.abs(by - 34) > 11 ? 1 - 0.7 * ST[s].wide : 1) }); } // do lado, quem joga pelos lados prefere cruzar
@@ -251,7 +253,7 @@
         return;
       }
       lastPasser = p; lastPassClk = clk;
-      if (rnd() < best.p) {
+      if (rnd() < best.p + (1 - best.p) * p.q * 1.2) { // quem passa melhor erra menos (só na hora, não muda a escolha)
         fly(p, best.wx, best.wy, best.q, best.lofted, best.kind, false);
         if (best.kind !== 'curto') emit(best.kind, s, p, best.q);
         // Tocou curto e tem espaço? Corre para pedir de volta (é assim que nasce a tabela)
@@ -566,7 +568,7 @@
         if (ball.rcv <= 0 && p.r !== 'GK' && !(due && due.side === p.side) && !lc) for (const d of T[1 - p.side]) {
           if (d.cd > 0 || d.stun > 0 || d.r === 'GK' || d.lg <= 0 || dist(d, p) > 1.7) continue;
           d.cd = 1.6 + rnd() * 1.2; d.lg = 0;
-          if ((due && due.side === d.side) || rnd() < cl(TK - (bias[p.side] - 1) * 0.8, 0.08, 0.5)) { why = 'bote'; setOwner(d); emit('desarme', d.side, d, p); break; }
+          if ((due && due.side === d.side) || rnd() < cl(TK - (bias[p.side] - 1) * 0.8 + (d.q - p.q) * 1.2, 0.05, 0.6)) { why = 'bote'; setOwner(d); emit('desarme', d.side, d, p); break; }
           d.stun = 0.45;
         }
         if (lc && lc.have && DEF[lc.k] && p === lc.q) defAct(dt);
