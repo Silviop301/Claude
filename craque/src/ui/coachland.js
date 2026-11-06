@@ -340,7 +340,7 @@
         w.querySelectorAll('[data-fav]').forEach(b => b.onclick = () => { sfx('tap'); const f = b.dataset.fav; if (fav[f]) delete fav[f]; else fav[f] = 1; try { localStorage.setItem('climbix-co-fav', JSON.stringify(fav)); } catch (e) {} tacPicker(o, tab, pf, ps); });
         w.querySelector('#ld-tac-ok').onclick = () => { sfx('tap'); o.onOk(pf, ps, xiNow); };
         if (o.back) w.querySelector('[data-pop-back]').onclick = () => { sfx('tap'); o.back(); };
-      }, 'w770', !!o.back);
+      }, 'w770 ld-tacp', !!o.back);
   }
 
   // ---------- Partida ao vivo deitada (MainB): campinho grande com placar, grito e narração por cima; à direita o grito do
