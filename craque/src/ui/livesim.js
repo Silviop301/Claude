@@ -774,10 +774,14 @@
       if (offLine && (offLine.t -= dt) <= 0) offLine = null;
       if (offPend) offStep(dt);
       if (foulPend) foulStep(dt);
-      for (let i = leaving.length - 1; i >= 0; i--) { const q = leaving[i]; q.wait -= dt; if (q.wait > 0) continue; q.t += dt; q.p.y += cl(q.ty - q.p.y, -3.6 * dt, 3.6 * dt); if (q.t > 6 || q.p.y < -0.5 || q.p.y > WD + 0.5) leaving.splice(i, 1); }
+      for (let i = leaving.length - 1; i >= 0; i--) { const q = leaving[i]; q.wait -= dt; if (q.wait > 0) continue; q.t += dt;
+        if (q.sub) { const dx = q.tx - q.p.x, dy = q.ty - q.p.y, d = Math.hypot(dx, dy), v = Math.min(d, 3.2 * dt); if (d > 0.01) { q.p.x += dx / d * v; q.p.y += dy / d * v; } if (d < 0.5 || q.t > 16) leaving.splice(i, 1); continue; } // a troca sai andando até o meio
+        q.p.y += cl(q.ty - q.p.y, -3.6 * dt, 3.6 * dt); if (q.t > 6 || q.p.y < -0.5 || q.p.y > WD + 0.5) leaving.splice(i, 1); }
+      if (Q4.t > 0) Q4.t -= dt;
       ALL.forEach(p => { if (p.down) p.down = Math.max(0, p.down - dt); });
       offStepRef(dt); if (outCd > 0) outCd -= dt;
       if (mode === 'wait') { ALL.forEach(p => { [p.tx, p.ty] = koShape(p, p.side); }); ball.x = 52.5; ball.y = 34; }
+      else if (mode === 'fim') { ALL.forEach(p => { p.tx = p.x + (p.tx - p.x) * 0.9; p.ty = p.y + (p.ty - p.y) * 0.9; p.sprint = 0; }); }
       else if (mode === 'play') play(dt);
       else if (mode === 'ko' || mode === 'half') {
         ALL.forEach(p => { [p.tx, p.ty] = koShape(p, p.side); });
@@ -867,7 +871,7 @@
     const PAD = 14; // folga fora das linhas: os bandeirinhas correm ali
     // Fora de casa o seu time fica à direita (como no placar) e ataca para a esquerda: só o desenho espelha
     // No 2º tempo os times trocam de lado: o desenho espelha de novo
-    let half2 = (o.t0 || 0) >= 45;
+    let half2 = o.half2 !== undefined ? !!o.half2 : (o.t0 || 0) >= 45; // o Treinador diz (o t0 dele conta os acréscimos)
     const mir = () => !!o.flip !== half2;
     const X = x => PAD + (mir() ? L - x : x) / L * (W - 2 * PAD), Y = y => PAD + y / WD * (H - 2 * PAD);
     function size() {
@@ -1009,6 +1013,22 @@
       const w = 10 * k, h = 7 * k, ox = flag === 'up' ? fx : fx - (flagDir < 0 ? w : 0), oy = fy - (flag === 'up' ? (vy > 0 ? h : 0) : h / 2);
       g.fillStyle = '#F2C230'; g.fillRect(ox, oy, w / 2, h / 2); g.fillRect(ox + w / 2, oy + h / 2, w / 2, h / 2); g.fillStyle = '#D8404A'; g.fillRect(ox + w / 2, oy, w / 2, h / 2); g.fillRect(ox, oy + h / 2, w / 2, h / 2);
     }
+    // Quarto árbitro: no meio da lateral de baixo; com a placa luminosa levantada (acréscimos +N, ou troca: sai em
+    // vermelho, entra em verde) por alguns segundos
+    const Q4 = { b: null, t: 0 };
+    function drawQ4(k) {
+      const x = X(52.5), y = Y(WD) + 6 * k;
+      official(x, y, k * 0.9);
+      if (!(Q4.t > 0) || !Q4.b) return;
+      const b = Q4.b, parts = b.add ? [['+' + b.add, '#FFE14D']] : [[(b.out || []).join(' '), '#FF5C5C'], ['⇄', '#8A8A8A'], [(b.in || []).join(' '), '#5CFF8A']];
+      g.font = '800 ' + Math.round(15 * k) + 'px "Barlow Condensed", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'left';
+      const ws = parts.map(q => g.measureText(q[0]).width), gap = 5 * k, w = ws.reduce((a, c) => a + c, 0) + gap * (parts.length - 1) + 12 * k, h = 20 * k;
+      const bx = cl(x - w / 2, 2, W - w - 2), by = y - 13 * k - h - (o.boardUp || 0); // boardUp: a tela tem algo por cima da lateral de baixo (deitado: a narração)
+      g.strokeStyle = '#9A9A9A'; g.lineWidth = 1.6 * k; g.beginPath(); g.moveTo(x + 3 * k, y - 4 * k); g.lineTo(x + 3 * k, by + h); g.stroke();
+      g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(bx + 1.5, by + 2.5, w, h);
+      g.fillStyle = '#111'; g.strokeStyle = '#3A3A3A'; g.lineWidth = 1.5 * k; g.beginPath(); g.roundRect(bx, by, w, h, 4 * k); g.fill(); g.stroke();
+      let cx = bx + 6 * k; parts.forEach((q, i) => { g.shadowColor = q[1]; g.shadowBlur = 6 * k; g.fillStyle = q[1]; g.fillText(q[0], cx, by + h / 2 + 0.5); cx += ws[i] + gap; }); g.shadowBlur = 0;
+    }
     function drawRefs(k) {
       AR.forEach(a => { const up = !a.sig && a.flag > 0; if (up) { g.strokeStyle = 'rgba(216,64,74,.85)'; g.lineWidth = 2.5 * k; g.beginPath(); g.arc(X(a.x), Y(a.y), 10 * k, 0, Math.PI * 2); g.stroke(); } official(X(a.x), Y(a.y), k, a.sig || (up ? 'up' : 'down'), (a.dir || 1) * (mir() ? -1 : 1), a.top ? 1 : -1); });
       official(X(REF.x), Y(REF.y), k);
@@ -1018,7 +1038,7 @@
         g.stroke(); g.lineCap = 'butt'; }
     }
     function draw() {
-      if (!g) return;
+      if (!g || W < 60 || H < 40) return; // tela ainda sem tamanho (palco recém-aberto): o laço mede de novo
       g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
       lines();
       const k = cl(W / 380, 0.85, 1.45);
@@ -1029,12 +1049,12 @@
           g.strokeStyle = 'rgba(242,194,48,.85)'; g.lineWidth = 1.6 * k; g.setLineDash([3 * k, 3 * k]); g.beginPath(); g.arc(mx, my, rr, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); } }
       ALL.forEach(p => { if (!isMe(p)) dot(p, k); });
       if (ME >= 0) dot(T[0][ME], k);
-      drawRefs(k);
+      drawRefs(k); drawQ4(k);
       // Quem foi expulso sai andando (um pouco apagado); o cartão em cima de quem fez; a linha do impedimento
       leaving.forEach(q => { const p = q.p, x = X(p.x), y = Y(p.y), r = (q.wasMe ? 9.5 : 6.2) * k, kt = p.side ? KT.opp : KT.mine;
         g.globalAlpha = 0.7; g.fillStyle = q.wasMe ? '#F2C230' : kt[0]; g.strokeStyle = '#F4F1E8'; g.lineWidth = 2 * k; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke(); g.globalAlpha = 1;
-        if (q.wasMe) { g.fillStyle = '#13201A'; g.font = '800 ' + Math.round(12 * k) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(o.num || 9), x, y + 0.5); }
-        if (!refFx || refFx.p !== p) card(x + 5 * k, y - r - 2 * k, '#D8404A', k * 0.7, -0.14); });
+        if (q.wasMe || q.num) { g.fillStyle = q.wasMe ? '#13201A' : lum(kt[0]) > 0.5 ? '#0B120E' : '#FFFFFF'; g.font = '800 ' + Math.round(12 * k) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(q.wasMe ? o.num || 9 : q.num), x, y + 0.5); }
+        if (!q.sub && (!refFx || refFx.p !== p)) card(x + 5 * k, y - r - 2 * k, '#D8404A', k * 0.7, -0.14); });
       if (offLine) {
         const [wx] = toW(offLine.s, offLine.x, 0), lx = X(wx);
         g.fillStyle = 'rgba(242,194,48,.10)'; const x2 = X(toW(offLine.s, L, 0)[0]); g.fillRect(Math.min(lx, x2), Y(0), Math.abs(x2 - lx), Y(WD) - Y(0));
@@ -1058,15 +1078,19 @@
       g.fillStyle = '#fff'; g.strokeStyle = '#13201A'; g.lineWidth = 1.5 * k; g.beginPath(); g.arc(bx, by - air, (4.5 + air / 12) * k, 0, Math.PI * 2); g.fill(); g.stroke();
       if (tip) tipCard(k);
     }
+    loop.n = 0;
     function loop(ts) {
       raf = 0;
       if (!alive) return;
       if (!cv || !cv.isConnected) return; // a tela trocou (intervalo, fim): para até o próximo attach
       const dt = Math.min(0.05, (ts - (last || ts)) / 1000) * (o.speed ? o.speed() : 1); last = ts;
-      if (!frozen && !document.hidden) { const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
-      draw();
-      if (o.onFrame) o.onFrame(api.info());
-      raf = requestAnimationFrame(loop);
+      if (W < 60 || H < 40 || ++loop.n % 30 === 0) { const r = cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1; if (Math.abs(r.width / z - W) > 1 || Math.abs(r.height / z - H) > 1) size(); }
+      raf = requestAnimationFrame(loop); // antes de tudo: um erro da tela num aviso do campinho não pode parar o campinho
+      try {
+        if (!frozen && !document.hidden) { const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
+        draw();
+        if (o.onFrame) o.onFrame(api.info());
+      } catch (err) { if (!loop.rep && window.CLIMBIX_REPORT) { loop.rep = 1; window.CLIMBIX_REPORT('campinho: ' + err.message, err.stack); } }
     }
     // Começo: no apito todos no seu campo; voltando do seu lance, a bola com o seu time no meio
     ALL.forEach(p => { const [x, y] = koShape(p, p.side); p.x = p.gx = p.tx = x; p.y = p.gy = p.ty = y; });
@@ -1141,7 +1165,14 @@
       lineup(s, form) {
         if (!form || !form.length) return;
         while (T[s].length > form.length) { const out = T[s].pop(); if (ball.owner === out) setOwner(at(s, 6)); if (ball.fly && ball.fly.to === out) ball.fly.to = at(s, 6); if (ball.loose && ball.loose.to === out) ball.loose.to = at(s, 6); }
+        const was = T[s].map(p => (p.inf && p.inf.num) || 0), outN = [], inN = [];
         T[s].forEach((p, k) => reform(p, form[k]));
+        T[s].forEach((p, k) => { const n = (p.inf && p.inf.num) || 0; if (!was[k] || !n || n === was[k] || was.includes(n) || isMe(p)) return;
+          // quem sai anda até o meio da lateral de baixo; quem entra aparece ali e corre para o lugar
+          leaving.push({ p: { x: p.x, y: p.y, side: p.side, r: p.r }, num: was[k], sub: true, wait: 0, t: 0, tx: 52.5, ty: WD + 1 });
+          outN.push(was[k]); inN.push(n); p.x = 52.5 + (s ? 1.2 : -1.2) * inN.length; p.y = WD - 0.3; p.vx = p.vy = 0;
+          if (ball.owner === p) setOwner(at(s, 6)); });
+        if (outN.length) { Q4.b = { out: outN, in: inN }; Q4.t = 4; }
         ALL = T[0].concat(T[1]); ALL.forEach(p => { p.mark = null; p.th = 0; }); defT = 0;
       },
       // Treinador: mudou o estilo no meio do jogo
@@ -1152,6 +1183,10 @@
       // true enquanto os times ainda se arrumam para a saída do 1º ou do 2º tempo: a tela não anda o minuto
       koWait() { return koHold && (mode === 'ko' || mode === 'wait'); },
       unhold() { koHold = false; }, // a tela destrava o relógio (vigia do Treinador)
+      // Placa do quarto árbitro: { add: n } (acréscimos) ou { out: [nums], in: [nums] } (troca)
+      board(b) { Q4.b = b; Q4.t = b && b.add ? 4.5 : 4; },
+      // Fim de jogo: três apitos, os jogadores param onde estão
+      fin() { if (lc) lcDone(); mode = 'fim'; stopWhy = 'Fim de jogo'; ball.owner = ball.fly = ball.loose = ball.carry = null; },
       half() { if (lc) lcDone(); mode = 'half'; koSide = 1; ball.owner = ball.fly = ball.loose = ball.carry = null; },
       second() { half2 = true; mode = 'ko'; modeT = 0.4; koSide = 1; koHold = true; },
       freeze(v) { frozen = !!v; },
@@ -1160,7 +1195,7 @@
       ballAt() { return [ball.x / L * 100, ball.y / WD * 100]; },
       stop() { alive = false; if (raf) cancelAnimationFrame(raf); raf = 0; window.removeEventListener('resize', onResize); },
       _refs: () => ({ REF, AR, REFC }), _place: (fn) => { fn({ T, ball, REF, AR, ALL }); },
-      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, ALLX: ALL, WHY, DBG, REF, AR, rs, mode, poss, ball, due, goals, lc, offPend, foulPend, refFx, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
+      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, ALLX: ALL, WHY, DBG, REF, AR, Q4, leaving, rs, mode, poss, ball, due, goals, lc, offPend, foulPend, refFx, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
     };
     LP._sim = api;
     return api;

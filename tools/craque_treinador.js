@@ -41,7 +41,7 @@ for (let n = 0; n < N; n++) {
       st.subs += 5 - m.us.subs;
       if (co.fin && co.fin.caixa < 0) seasonRed = true;
       S.coMatchEnd(co, m);
-      st.games++; st.goals += m.gh + m.ga;
+      st.games++; st.goals += m.gh + m.ga; st.a1 = (st.a1 || 0) + (m.a1 || 0); st.a2 = (st.a2 || 0) + (m.a2 || 0); st.gst = (st.gst || 0) + m.ev.filter(e => e.t === 'gol' && e.st).length;
       // Faltas, cartões e impedimentos (por time e por jogo; o seu time e o rival juntos)
       const cc = st.cards = st.cards || { fo: 0, yc: 0, rc: 0, of: 0, ycSus: 0, styRc: {} };
       ['fo', 'yc', 'rc', 'of'].forEach(k => { if (m[k]) cc[k] += m[k].us + m[k].them; });
@@ -73,7 +73,7 @@ for (let n = 0; n < N; n++) {
 const avg = a => (a.reduce((x, y) => x + y, 0) / a.length).toFixed(1);
 const dist = a => { const h = {}; a.forEach(x => { const k = x >= 4 ? '4+' : x; h[k] = (h[k] || 0) + 1; }); return Object.keys(h).sort().map(k => k + ':' + pct(h[k], a.length)).join(' '); };
 console.log(`Treinador: ${N} carreiras x ${T} temporadas (${st.seasons} temporadas, ${st.games} jogos)`);
-console.log(`Jogo: ${(st.goals / st.games).toFixed(2)} gols, mandante ${pct(st.hw, st.games)} · empate ${pct(st.dr, st.games)} · visitante ${pct(st.aw, st.games)}; paradas por jogo ${(st.stops / st.games).toFixed(1)}, trocas ${(st.subs / st.games).toFixed(1)}`);
+console.log(`Jogo: ${(st.goals / st.games).toFixed(2)} gols, mandante ${pct(st.hw, st.games)} · empate ${pct(st.dr, st.games)} · visitante ${pct(st.aw, st.games)}; acréscimos ${(st.a1 / st.games).toFixed(1)} + ${(st.a2 / st.games).toFixed(1)} min, gols nos acréscimos ${(100 * st.gst / Math.max(1, st.goals)).toFixed(0)}%; paradas por jogo ${(st.stops / st.games).toFixed(1)}, trocas ${(st.subs / st.games).toFixed(1)}`);
 console.log(`Temporada: meta cumprida ${pct(st.met, st.seasons)}, demitido ${pct(st.sacked, st.seasons)}, campeão ${pct(st.won, st.seasons)}, subiu ${pct(st.up, st.seasons)}, caiu ${pct(st.down, st.seasons)}`);
 console.log(`Ultimato: ${st.ult} (${pct(st.ult, st.seasons)} das temporadas), salvo ${pct(st.ultOk, st.ult)}; trocas de clube por proposta ${(st.moves / N).toFixed(1)} por carreira`);
 console.log('Por meta: ' + Object.keys(st.byGoal).map(k => { const g = st.byGoal[k]; return `${k} ${g.n} (cumpriu ${pct(g.met, g.n)}, demitido ${pct(g.sacked, g.n)}, campeão ${pct(g.won, g.n)})`; }).join(' · '));

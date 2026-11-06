@@ -378,7 +378,7 @@
     const s = x.stats(), m = x.m, c = C(), us = esc(c.nm(c.co.club)), th = esc(c.nm(m.vs));
     const row = (k, a, b, inv) => { const t = a + b || 1; return '<div class="ldl-nr"><b>' + a + '</b><span><small>' + k + '</small><i><u class="' + (inv ? (a <= b ? 'up' : 'dn') : (a >= b ? 'up' : 'dn')) + '" style="width:' + Math.round(a / t * 100) + '%"></u></i></span><b>' + b + '</b></div>'; };
     const ps = Math.round(s.poss * 100);
-    pop(popHead('Números do jogo', us + ' (esquerda) x ' + th + ' · ' + m.min + '\'') + '<div class="ld-pb col ldl-nums">' +
+    pop(popHead('Números do jogo', us + ' (esquerda) x ' + th + ' · ' + S.coClock(m)) + '<div class="ld-pb col ldl-nums">' +
       row('Chutes', s.sh.us, s.sh.them) + row('No gol', s.ot.us, s.ot.them) + row('Posse (%)', ps, 100 - ps) + row('Faltas', s.fo.us, s.fo.them, 1) + row('Impedimentos', s.of.us, s.of.them, 1) +
       row('Amarelos', s.yc.us, s.yc.them, 1) + (s.rc.us + s.rc.them ? row('Vermelhos', s.rc.us, s.rc.them, 1) : '') + '</div>', 'Números do jogo', null, 'w560');
   }
@@ -388,7 +388,7 @@
   function didOf(m, p) {
     const mine = m.ev.filter(e => e.s === 'us' && e.p === p.n);
     const am = mine.find(e => e.t === 'amarelo');
-    return { sh: mine.filter(e => e.t === 'chance' || e.t === 'gol').length, gl: mine.filter(e => e.t === 'gol').length, fo: mine.filter(e => e.t === 'falta' || e.t === 'amarelo').length, am: am ? am.m + '\'' : '' };
+    return { sh: mine.filter(e => e.t === 'chance' || e.t === 'gol').length, gl: mine.filter(e => e.t === 'gol').length, fo: mine.filter(e => e.t === 'falta' || e.t === 'amarelo').length, am: am ? S.coEvMin(am) : '' };
   }
   // Tocar num jogador seu no campinho: o jogo pausa, mostra como ele está e quem pode entrar (TrJogadorB)
   function livePlayer(x, id, back) {
@@ -407,7 +407,7 @@
       const row = q => { const [fc, ft] = fitTag(q), ok = s.subs && c.avail(q);
         return '<button class="ldl-cand' + (q === pick ? ' on' : '') + (ok ? '' : ' dis') + '" data-c="' + q.id + '"' + (ok ? '' : ' disabled') + '><i>' + (q.num || '') + '</i><span><b>' + esc(q.n) + ' <small>' + q.pos + ' · ' + q.ovr + ' · energia ' + Math.round(q.en) + '%</small></b>' +
           '<em class="' + fc + '">' + (q === list.find(c.avail) && s.subs ? 'Sugestão do auxiliar · ' : '') + ft + '</em></span></button>'; };
-      pop('<div class="ldl-ptop"><b>' + (back ? 'Mexer no time' : 'Jogo pausado') + ' · ' + m.min + '\'</b></div>' +
+      pop('<div class="ldl-ptop"><b>' + (back ? 'Mexer no time' : 'Jogo pausado') + ' · ' + S.coClock(m) + '</b></div>' +
         '<div class="ld-pb"><div class="ldl-pl">' +
           '<div class="ldl-ph"><i class="' + enC(p.en) + '">' + (p.num || '') + '</i><span><b>' + esc(p.n) + '</b><small>' + c.posTxt[p.pos] + (p.pos !== slot ? ' de ' + slot : '') + ' · geral ' + p.ovr + ' · ' + p.age + ' anos</small></span></div>' +
           '<div class="ldl-en"><span><small>Energia <b class="' + enC(p.en) + '">' + Math.round(p.en) + '%</b></small><small>' + (tired ? 'cansado' : p.en < 70 ? 'começa a cansar' : 'inteiro') + '</small></span><i><u class="' + enC(p.en) + '" style="width:' + Math.round(p.en) + '%"></u></i></div>' +
@@ -461,7 +461,7 @@
       const ps = Math.round(S.coPoss(m) * 100), en = Math.round(s.xi.reduce((a, id) => a + (by[id] ? by[id].en : 0), 0) / Math.max(1, s.xi.filter(Boolean).length));
       const left = (half ? lbl('O 1º TEMPO') + '<div class="ldl-mom">' + U.lvMom(m) + '</div>' +
           '<div class="ldl-3"><span><b>' + sh.us + ' x ' + sh.them + '</b><small>chutes</small></span><span><b>' + ps + '%</b><small>posse</small></span><span class="' + (en < 60 ? 'warn' : '') + '"><b>' + en + '%</b><small>energia</small></span></div>'
-        : '<div class="ldl-ev ' + (st.t === 'gol' && !us || st.t === 'vermelho' || st.t === 'lesao' ? 'bad' : st.t === 'gol' ? 'good' : '') + '"><small>' + m.min + '\' · ' + esc(T.toUpperCase()) + '</small><b>' + (st.t === 'vermelho' ? '<span class="co-red"></span> ' : '') + esc(st.t === 'vermelho' ? (st.p || '') + ' foi expulso' : T) + '</b><span>' + txt + '</span></div>') +
+        : '<div class="ldl-ev ' + (st.t === 'gol' && !us || st.t === 'vermelho' || st.t === 'lesao' ? 'bad' : st.t === 'gol' ? 'good' : '') + '"><small>' + S.coClock(m) + ' · ' + esc(T.toUpperCase()) + '</small><b>' + (st.t === 'vermelho' ? '<span class="co-red"></span> ' : '') + esc(st.t === 'vermelho' ? (st.p || '') + ' foi expulso' : T) + '</b><span>' + txt + '</span></div>') +
         (st.t === 'vermelho' ? '<div class="ldl-red">' + x.redOpts(st) + '</div>' : '<div class="ldl-aq">' + lbl('O AUXILIAR LEU ASSIM') + '"' + esc(r.txt) + '"' + (r.tags.length ? '<span class="ldl-tags">' + r.tags.map(t => '<em>' + esc(t) + '</em>').join('') + '</span>' : '') + '</div>');
       const selB = (id, l, v) => '<button class="ldl-sel" id="' + id + '"><small>' + l + '</small><b>' + v + '</b>' + CHEV + '</button>';
       const cad = cadHtml(c.cadLines(s.form, s.style, m.them, 1));
