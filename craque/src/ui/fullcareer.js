@@ -1762,7 +1762,7 @@
     const lcPend = new Set(); // seus lances que o campinho ainda está jogando (a linha sai quando a jogada acontece)
     // A rede balançou no campinho: o placar vira já (não espera o fim do minuto)
     const onGoal = m => { if (nextTick && !finished && t === m - 1) { clearTimeout(timer); timer = setTimeout(tick, 120); } };
-    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), meName: sobre(c), t0, speed: () => (fast ? 3 : 1), onEv: (k, d) => narrSim(k, d), onFrame: i => zoneSim(i), onGoal, flip: !nx.home, home: nx.home ? 0 : 1, kits: U.LP.kits(U.LP.kitFor(meName, c.club), U.LP.kitFor(opName, x.vs), !!nx.home),
+    const sim = fl && U.LP.sim ? U.LP.sim({ me: meIdx, num: numOf(c), meName: sobre(c), meOv: S.ovr(c), str: [(D.CLUB_BY_ID[c.club] || {}).strength, (D.CLUB_BY_ID[x.vs] || {}).strength], t0, speed: () => (fast ? 3 : 1), onEv: (k, d) => narrSim(k, d), onFrame: i => zoneSim(i), onGoal, flip: !nx.home, home: nx.home ? 0 : 1, kits: U.LP.kits(U.LP.kitFor(meName, c.club), U.LP.kitFor(opName, x.vs), !!nx.home),
       seed: (Number(c.tseed) || 1) * 7 + c.fc.season * 101 + c.fc.i * 13 + t0,
       goals: out.my.ev.filter(e => (!o.stop || e.m < stopAt) && !(o.from && e.m === o.from)).map(e => ({ m: e.m, side: e.s === (nx.home ? 'h' : 'a') ? 0 : 1, me: !!e.me, as: !!e.as })) }) : null;
     const pitch = () => { if (!fl) return; $('fc-flow').innerHTML = flowBox(c, x, fl, meIdx); U.LP.resetTrail(); if (sim) sim.attach($('lp-cv')); };

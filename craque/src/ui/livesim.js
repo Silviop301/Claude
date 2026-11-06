@@ -57,8 +57,10 @@
     const KT = o.kits || LP.kits(null, null, true);
     // q: o overall do jogador (4º número da formação, 60 se não vier) em -0,3..+0,3; pesa no drible, no bote, no passe e no pique
     const qOf = v => (v === undefined || v === null ? 0 : Math.max(-0.3, Math.min(0.3, (v - 60) / 100)));
-    const mk = (form, side) => form.map(([r, d, w, ov], k) => ({ r, d, w: w * 0.68, k, side, q: qOf(ov), x: 0, y: 0, tx: 0, ty: 0, gx: 0, gy: 0, vx: 0, vy: 0,
-      rt: 0, th: 0, spd: 0.9 + rnd() * 0.22 + qOf(form[k][3]) * 0.5, risk: 0.7 + rnd() * 0.6, ph: k * 1.9 + side * 4.1, fx: side ? -1 : 1, fy: 0,
+    // o.str: [força do seu clube, do rival] quando a formação não traz o overall de cada um (Jogo a Jogo); o.meOv = o seu overall
+    const ovOf = (form, side, k) => (form[k][3] !== undefined ? form[k][3] : side === 0 && k === o.me && o.meOv ? o.meOv : o.str && o.str[side] ? o.str[side] + ((k * 37 + side * 11) % 9) - 4 : undefined);
+    const mk = (form, side) => form.map(([r, d, w], k, f, ov = ovOf(form, side, k)) => ({ r, d, w: w * 0.68, k, side, q: qOf(ov), x: 0, y: 0, tx: 0, ty: 0, gx: 0, gy: 0, vx: 0, vy: 0,
+      rt: 0, th: 0, spd: 0.9 + rnd() * 0.22 + qOf(ovOf(form, side, k)) * 0.5, risk: 0.7 + rnd() * 0.6, ph: k * 1.9 + side * 4.1, fx: side ? -1 : 1, fy: 0,
       run: 0, runX: 0, runY: 0, go: 0, goX: 0, goY: 0, stun: 0, cd: 0, lg: 0, sprint: 0, drib: 0, mark: null,
       inf: form[k][4] || null, e0: form[k][4] && form[k][4].en !== undefined ? form[k][4].en : 96 + rnd() * 4, eT: o.t0 || 0, eK: 0.24 + rnd() * 0.12 }));
     // o.forms: [seu time, adversário] como [[papel, profundidade 0-1, largura 0-100], ...] (o Treinador manda a formação de verdade)
