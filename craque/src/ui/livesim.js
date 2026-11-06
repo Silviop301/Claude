@@ -1063,10 +1063,12 @@
       if (!alive) return;
       if (!cv || !cv.isConnected) return; // a tela trocou (intervalo, fim): para até o próximo attach
       const dt = Math.min(0.05, (ts - (last || ts)) / 1000) * (o.speed ? o.speed() : 1); last = ts;
-      if (!frozen && !document.hidden) { const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
-      draw();
-      if (o.onFrame) o.onFrame(api.info());
-      raf = requestAnimationFrame(loop);
+      raf = requestAnimationFrame(loop); // antes de tudo: um erro da tela num aviso do campinho não pode parar o campinho
+      try {
+        if (!frozen && !document.hidden) { const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
+        draw();
+        if (o.onFrame) o.onFrame(api.info());
+      } catch (err) { if (!loop.rep && window.CLIMBIX_REPORT) { loop.rep = 1; window.CLIMBIX_REPORT('campinho: ' + err.message, err.stack); } }
     }
     // Começo: no apito todos no seu campo; voltando do seu lance, a bola com o seu time no meio
     ALL.forEach(p => { const [x, y] = koShape(p, p.side); p.x = p.gx = p.tx = x; p.y = p.gy = p.ty = y; });

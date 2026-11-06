@@ -1110,6 +1110,6 @@
 
   // Para as telas deitadas (ui/coachland.js)
   U._co = { get co() { return co; }, get pre() { return pre; }, save, sacked: () => sacked(), moodLine: () => moodLine(), susBox, exit: () => { save(); co = null; U.ldOff(); U.home(); }, hub, team, caderno, tabela, fin, finishSeason, play: k => play(k), live, result,
-    avail, pend, susTxt, posTxt, FORM_TIP, STY_SHORT, cadLines, cadName, CAD_W, CAD_S, cadQuote, feedLine: (m, e) => feedLine(m, e), offers: (l, st) => offers(l, st), welcome: () => welcome(), SK_TXT, ordTxt, mi, sgn, finPres: f => finPres(f), FAME_TXT, keepBench: () => keepBench(), brl, nm, last };
+    LANE, avail, pend, susTxt, posTxt, FORM_TIP, STY_SHORT, cadLines, cadName, CAD_W, CAD_S, cadQuote, feedLine: (m, e) => feedLine(m, e), offers: (l, st) => offers(l, st), welcome: () => welcome(), SK_TXT, ordTxt, mi, sgn, finPres: f => finPres(f), FAME_TXT, keepBench: () => keepBench(), brl, nm, last };
   Object.assign(U, { coCreate: create, coHub: () => co && hub(), coCaderno: (c, pv) => (pv && pv.them ? cadBlock(c.form, c.style, pv.them) + hintCard() : '') });
 })();
