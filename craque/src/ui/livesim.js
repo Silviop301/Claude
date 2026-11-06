@@ -283,6 +283,9 @@
         const inBox = (due.now && bx > 70 && Math.abs(by - 34) < 24) || (bx > (near ? 70 : 79) && Math.abs(by - 34) < (near ? 22 : 17));
         if (p === sc && !inBox) { const [wx, wy] = toW(s, Math.min(bx + 12, 90), 34 + (by - 34) * 0.4); ball.carry = { x: wx, y: wy, t: 0.8 }; return; }
         // Demorou (now): lançamento direto na área para quem vai marcar, que já está correndo para lá
+        // Quem vai marcar está além do último zagueiro: o passe espera ele voltar para a linha (nunca gol na banheira)
+        const scOff = p !== sc && tf(s, sc)[0] > Math.max(line, bx) + 0.3;
+        if (scOff && !(inBox && !due.me && !mid)) { sc.run = Math.max(sc.run, 0.6); sc.runX = Math.max(line, bx) - 1; sc.runY = due.ry; const [wx, wy] = toW(s, bx < line - 1 ? Math.min(bx + 2, line - 1) : bx + 0.5, by); ball.carry = { x: wx, y: wy, t: 0.4 }; return; }
         if (due.now && p !== sc && !inBox) { const [wx, wy] = toW(s, due.rx, due.ry); sc.run = Math.max(sc.run, 1.5); sc.runX = due.rx; sc.runY = due.ry; return fly(p, wx, wy, sc, true, 'costas', false); }
         // Chegou cedo? Prepara (ajeita para o lado) até o minuto do gol, para a rede balançar junto com o placar
         if (inBox && (p === sc || (!due.me && !mid)) && curT < due.m - 1) { const [wx, wy] = toW(s, Math.min(bx + 1.5, 92), cl(by + (by < 34 ? 3 : -3), 22, 46)); ball.carry = { x: wx, y: wy, t: 0.35 }; return; }
@@ -721,7 +724,7 @@
         const th = T[due.side].filter(q => q.r !== 'GK').sort((a, b2) => dist(a, ball.owner) - dist(b2, ball.owner))[0]; th.lg = Math.max(th.lg, 0.8); th.cd = 0; th.tx = ball.owner.x; th.ty = ball.owner.y; th.sprint = 1; // vai dar o bote (e ganha)
       }
       // Quem vai marcar o gol do motor corre para a área enquanto a jogada sai
-      if (due && poss === due.side) { const sc = scorerOf(due); if (ball.owner !== sc && !(ball.fly && ball.fly.to === sc)) { sc.run = Math.max(sc.run, 0.4); sc.runX = due.rx; sc.runY = due.ry; } }
+      if (due && poss === due.side) { const sc = scorerOf(due); if (ball.owner !== sc && !(ball.fly && ball.fly.to === sc)) { sc.run = Math.max(sc.run, 0.4); sc.runX = Math.min(due.rx, Math.max(lineOf(due.side), tf(due.side, ball)[0]) - 0.6); sc.runY = due.ry; } } // espera na linha (sem ficar impedido) até o passe sair
       const s = poss, line = lineOf(s), owner = ball.owner;
       runT -= dt;
       if (runT <= 0 && owner && owner.side === s && owner.r !== 'GK') {
