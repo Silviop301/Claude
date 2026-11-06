@@ -8024,3 +8024,26 @@ body.ld-on #ld { display: block; }
 .ld-side:has(.ld-2b) .ld-link { display: none; }
 .ld-side { min-height: 0; gap: 6px; } .ld-side .ld-2b .ld-b { min-height: 32px; padding-top: 4px; padding-bottom: 4px; }
 .ld-side .ld-card.paper > span:not(.ld-2b):not(.ld-lbl) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+/* Treinador deitado, Formação e estilo (Silvio 2026-11-06: "a tela tá pequena demais"): o popup ocupa o palco inteiro,
+   letras maiores e os 6 estilos cabem sem rolar (grade de 6 linhas iguais) */
+.ld-pop-c.ld-tacp { width: 836px; height: 382px; max-height: 382px; padding: 10px 14px 12px; gap: 8px; }
+.ld-tacp .ld-ph b { font-size: 22px; } .ld-tacp .ld-ph small { font-size: 13px; color: var(--tx-2); }
+.ld-tacp .ld-pb { gap: 12px; }
+.ld-tacp .ld-fl { width: 236px; }
+.ld-tacp .ld-seg button { font-size: 14px !important; padding: 7px 0 !important; }
+.ld-tacp .ld-flist { max-height: none; flex: 1; min-height: 0; gap: 5px; }
+.ld-tacp .ld-fr > button:first-child { padding: 6px 10px !important; }
+.ld-tacp .ld-fr b { font-size: 19px; } .ld-tacp .ld-fr small { font-size: 12.5px; }
+.ld-tacp .ld-fm { gap: 7px; min-height: 0; }
+.ld-tacp .ld-mini { height: auto; flex: 1; min-height: 120px; }
+.ld-tacp .ld-pd { font-size: 12px; padding: 2px 6px; }
+.ld-tacp .ld-favb { font-size: 12.5px !important; padding: 4px 9px !important; }
+.ld-tacp .ld-fx { font-size: 13px; gap: 4px; } .ld-tacp .ld-fx b { font-size: 11px; }
+.ld-tacp .ld-cl { font-size: 13px; } .ld-tacp .ld-cl b { font-size: 13px; }
+.ld-tacp .ld-posw { font-size: 13px; } .ld-tacp .ld-posw b { font-size: 11px; }
+.ld-tacp .ld-sl { width: 232px; min-height: 0; }
+.ld-tacp .ld-slist { display: grid; grid-auto-rows: 1fr; gap: 4px; overflow: hidden; }
+.ld-tacp .ld-slist button { justify-content: center; padding: 2px 10px !important; min-height: 0; }
+.ld-tacp .ld-slist b { font-size: 16px; line-height: 1.05; } .ld-tacp .ld-slist small { font-size: 12px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ld-tacp .ld-sl { gap: 5px; } .ld-tacp .ld-slist { gap: 3px; }
+.ld-tacp .ld-gold { min-height: 46px; } .ld-tacp .ld-gold b { font-size: 20px; }
