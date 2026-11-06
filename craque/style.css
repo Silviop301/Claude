@@ -7394,8 +7394,8 @@ button.cad-c { cursor: pointer; }
 .fs-rr.rv, .fs-tr.rv { opacity: 1; transform: none; pointer-events: auto; }
 /* No computador o caderno troca as abas pela versão larga (.cad-tabs some); as abas de Finanças e do fim de jogo continuam */
 @media (min-width: 1000px) { .cad-tabs.cf-tabs, .cad-tabs.lv-tabs, .cad-tabs.lp-etabs { display: grid; max-width: none; } }
-/* Painéis grafite sobre o gramado (2026-11-06, Silvio: "está muito verde"): o fundo continua verde; tabela, painéis,
-   placar e barra do topo ganham cinza escuro neutro, para o verde ficar no fundo e nos campinhos. */
-:root { --panel: #26282C; --panel-2: #303338; --panel-line: rgba(255, 255, 255, .10); --board: #0E0F11; --board-2: #26282C; }
-.bar { background: rgba(30, 32, 36, .96) !important; }
+/* Painéis carvão sobre o gramado (2026-11-06, Silvio: "está muito verde"): o fundo continua verde; tabela, painéis,
+   placar e barra do topo ganham carvão (quase preto), para o verde ficar no fundo e nos campinhos. */
+:root { --panel: #141517; --panel-2: #1E2023; --panel-line: rgba(255, 255, 255, .10); --board: #08090A; --board-2: #141517; }
+.bar { background: rgba(16, 17, 19, .96) !important; }
 .tbx, .lv-feed li, .ph-w { background-color: var(--panel); }
