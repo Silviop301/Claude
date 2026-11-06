@@ -18,7 +18,7 @@
   const toW = (s, x, y) => (s ? [L - x, WD - y] : [x, y]);
   // Avançar vale por si (time que só roda a bola atrás não é futebol), quem chega perto chuta, e o bote dá certo 3 vezes em 10
   const DOTK = 0.65; // tamanho dos bonecos no desenho
-  const PROG = 0.05, SHOT = 3.2, TK = 0.3, DUE_AHEAD = 6; // a jogada do gol do motor começa uns 6 minutos (8 s) antes, para dar tempo de construir
+  const PROG = 0.05, SHOT = 3.2, TK = 0.3, DUE_AHEAD = 6, AHEAD_S = 9; // a jogada do gol do motor começa uns 9 s do campinho antes (6 minutos sem o ritmo da tela), para dar tempo de construir
   const tf = (s, o) => (s ? [L - o.x, WD - o.y] : [o.x, o.y]);
 
   // o: { me: índice do seu jogador (-1 fora), num, seed, goals: [{ m, side: 0 seu time | 1, me, as }], t0, speed(): 1|3 }
@@ -264,7 +264,7 @@
       return cl(ang * 0.42 - block * 0.03 - (press < 1.8 ? 0.03 : 0), 0.01, 0.5) * (head ? 0.6 : 1);
     }
     // Quem faz o gol que o motor mandou: você, ou um atacante do time
-    const scorerOf = d => (d.me && ME >= 0 && d.side === 0 ? T[0][ME] : at(d.side, d.side ? 9 + (d.m % 2) : [9, 8, 10][d.m % 3]));
+    const scorerOf = d => d.who || (d.me && ME >= 0 && d.side === 0 ? T[0][ME] : at(d.side, d.side ? 9 + (d.m % 2) : [9, 8, 10][d.m % 3]));
     function decide(p) {
       const s = p.side, own = T[s], opp = T[1 - s], [bx, by] = tf(s, ball), line = lineOf(s);
       if (lc && lc.have && isMe(p)) return myAct(p, bx, by, line);
@@ -272,6 +272,8 @@
       const pat = patOf(s), dir = dirOf(s), wd = ST[s].wide;
       // O gol do motor: a jogada procura quem vai marcar (passando antes por você, se a assistência é sua) e ele bate
       if (due && due.side === s) {
+        // Chance que não entra: quem chegar com a bola na entrada da área bate (o chute de fora que o goleiro pega ou vai longe), sem esperar o atacante da jogada
+        if (due.out && due.out !== 'gol' && !due.who && p.r !== 'GK' && (due.age || 0) > 1.5 && bx > 72 && Math.abs(by - 34) < 20) due.who = p;
         const sc = scorerOf(due), mid = due.as && ME >= 0 && s === 0 && !due.asDone ? T[0][ME] : null;
         if (mid && p !== mid && p !== sc) return fly(p, mid.x + (mid.side ? -1 : 1), mid.y, mid, false, 'curto', false);
         if (mid && p === mid) due.asDone = true;
@@ -706,7 +708,11 @@
       // O minuto do gol chegou: a jogada sai (se o time não tem a bola, rouba a próxima)
       // (começa um pouco antes do minuto dele, para a bola entrar junto com o placar)
       if (!due) {
-        const e = goals.find(q => !q.done && (q.m <= curT + DUE_AHEAD));
+        const ah = o.spm ? Math.max(2, Math.min(DUE_AHEAD, AHEAD_S / Math.max(0.1, o.spm() * (o.speed ? o.speed() : 1)))) : DUE_AHEAD;
+        let e = goals.find(q => !q.done && (q.m <= curT + ah));
+        // Lance do Treinador (shot): a jogada só começa quando o time já tem a bola do meio para a frente (até 4 s esperando);
+        // antes disso o jogo segue normal, sem todo mundo correndo para a chance
+        if (e && e.out && !e.now) { e.w = (e.w || 0) + dt; const ow = ball.owner; if (e.w < 4 && !(ow && ow.side === e.side && ow.r !== 'GK' && tf(e.side, ow)[0] > 45)) e = null; }
         if (e) { due = e; due.t0 = clk; due.asDone = false; due.rx = 86 + rnd() * 5; due.ry = 34 + gauss() * 7; if (ball.owner && ball.owner.side === e.side) { ball.carry = null; ball.hold = Math.min(ball.hold, 0.1); } }
       }
       // O relógio da jogada só anda com a bola rolando (saída depois de outro gol não conta): gol do motor demorando 9 s vira lançamento
