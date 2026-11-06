@@ -565,9 +565,10 @@
     const pts = raw.map((x, i) => { const w = raw.slice(Math.max(0, i - 2), i + 3); const a = w.reduce((s, y) => s + y, 0) / w.length; return [i + 0.5, 20 - Math.max(-18, Math.min(18, a * 1.4))]; });
     const area = pts.length ? 'M0 20 ' + pts.map(p => 'L' + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ') + ' L' + pts[pts.length - 1][0].toFixed(1) + ' 20 Z' : '';
     const id = 'mc' + (++momSvg.n);
-    return '<svg class="lv-mom" viewBox="0 0 90 40" preserveAspectRatio="none" role="img" aria-label="Quem manda no jogo minuto a minuto">' +
-      '<defs><clipPath id="' + id + 'u"><rect x="0" y="0" width="90" height="20"/></clipPath><clipPath id="' + id + 'd"><rect x="0" y="20" width="90" height="20"/></clipPath></defs>' +
-      '<line x1="0" y1="20" x2="90" y2="20" class="ln"/><line x1="45" y1="1" x2="45" y2="39" class="ln dash"/>' +
+    const VW = Math.max(90, (m.mom || []).length);
+    return '<svg class="lv-mom" viewBox="0 0 ' + VW + ' 40" preserveAspectRatio="none" role="img" aria-label="Quem manda no jogo minuto a minuto">' +
+      '<defs><clipPath id="' + id + 'u"><rect x="0" y="0" width="' + VW + '" height="20"/></clipPath><clipPath id="' + id + 'd"><rect x="0" y="20" width="' + VW + '" height="20"/></clipPath></defs>' +
+      '<line x1="0" y1="20" x2="' + VW + '" y2="20" class="ln"/><line x1="45" y1="1" x2="45" y2="39" class="ln dash"/>' +
       (area ? '<path d="' + area + '" class="up" clip-path="url(#' + id + 'u)"/><path d="' + area + '" class="dn" clip-path="url(#' + id + 'd)"/>' : '') +
       (mark ? '<line x1="' + mark + '" y1="0" x2="' + mark + '" y2="40" class="mk"/>' : '') + '</svg>';
   }
@@ -587,8 +588,9 @@
       e.t === 'grito' ? 'Você grita da beira do campo: <b>' + esc(e.p) + '</b>' :
       e.t === 'grito-fim' ? 'O time volta ao plano de jogo' :
       e.t === 'conversa' ? 'Conversa no vestiário: <b>' + esc(e.p).toLowerCase() + '</b>' :
+      e.t === 'acrescimo' ? 'O quarto árbitro levanta a placa: <b>mais ' + e.p + ' ' + (e.p > 1 ? 'minutos' : 'minuto') + '</b>' :
       e.t === 'intervalo' ? 'Fim do primeiro tempo' : '';
-    return '<li class="' + e.s + ' ' + e.t + '"><i>' + e.m + '\'</i><span>' + t + '</span></li>';
+    return '<li class="' + e.s + ' ' + e.t + '"><i>' + S.coEvMin(e) + '</i><span>' + t + '</span></li>';
   }
   // Posição no campinho (deitado: você ataca para a direita). As linhas sobem quando o time manda no jogo
   function lvDots(s, mine, mom, min) {
@@ -634,7 +636,7 @@
     const KT = useSim ? LP.kits(LP.kitFor(cl.name, cl.id), LP.kitFor(vs.name, vs.id), !!m.home) : null;
     const hidden = new Set(), sent = new Set(); // lances que o campinho ainda está jogando / já mandados para ele
     m.ev.forEach(e => sent.add(e)); // jogo retomado no meio: o que já aconteceu não volta a ser jogado no campinho
-    let sim = null, wait = null, wantStop = false, h1 = m.min >= 45, h2 = m.min > 45, frz = 0, lineKey = ['', ''];
+    let sim = null, wait = null, wantStop = false, h1 = !!m.half, h2 = m.min > 45, frz = 0, lineKey = ['', ''];
     const pitchHtml = useSim ?
       '<div class="lp-pitch lp-cvm lv-cvp" id="lp-pitch" aria-hidden="true"><b class="lp-band" id="lp-band"></b><canvas class="lp-cv" id="lp-cv"></canvas>' +
         '<span class="lp-tag lv-read" id="lv-zone" hidden></span><span class="lp-tag lp-zone" id="lp-zone"></span>' +
@@ -665,7 +667,7 @@
     const paint = () => {
       let hh = 0, ha = 0; hidden.forEach(e => { if (e.t === 'gol') { if (homeGoal(e)) hh++; else ha++; } });
       $('lv-score').innerHTML = (m.gh - hh) + ' <i>x</i> ' + (m.ga - ha);
-      $('lv-clock').innerHTML = '<i></i>' + m.min + '\'';
+      $('lv-clock').innerHTML = '<i></i>' + S.coClock(m);
       const ps = S.coPoss(m), pu = m.home ? ps : 1 - ps, sh = m.sh || { us: 0, them: 0 }, ot = m.ot || { us: 0, them: 0 };
       const hs = m.home ? [sh.us, sh.them] : [sh.them, sh.us], ho = m.home ? [ot.us, ot.them] : [ot.them, ot.us];
       $('lv-sh').textContent = hs[0] + ' · ' + hs[1]; $('lv-ot').textContent = ho[0] + ' · ' + ho[1];
@@ -693,14 +695,16 @@
       if (!useSim) $('lv-zone').innerHTML = read.side ? '<i class="' + (read.side === 'direita' ? 'bot' : 'top') + '"></i><b class="' + (read.side === 'direita' ? 'bot' : 'top') + '">Atacam pela sua ' + read.side + '</b>' : '';
       else { const z = $('lv-zone'); z.hidden = !read.side; if (read.side) z.textContent = 'Atacam pela sua ' + read.side; }
       const fresh = m.ev.filter(e => !seen.has(e) && !hidden.has(e));
+      if (fresh.length && sim && sim.board) fresh.filter(e => e.t === 'acrescimo').forEach(e => sim.board({ add: e.p }));
       if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => feedLine(m, e)).join('')); { const gl = fresh.filter(e => e.t === 'gol').pop(); if (gl) sfx(U.goalSnd(gl.s === 'us', !!m.home)); } }
       if (ctx) U.LD.livePaint(ctx);
     };
     const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); save('hub'); result(m, log, false, firstMove); };
     const end = () => {
       clearTimeout(timer); hidden.clear(); paint(); open = true;
+      if (sim && sim.fin) { sim.fin(); sfx('whistle'); } // três apitos: os jogadores param onde estão
       if (sim) { clearTimeout(frz); frz = setTimeout(() => sim.freeze(true), 1500); }
-      $('lv-sheet').innerHTML = '<div class="lv-sh"><i class="lv-grab"></i><div class="lv-st-h"><small>90\' · Fim de jogo</small><b>' + m.gh + ' x ' + m.ga + '</b></div>' +
+      $('lv-sheet').innerHTML = '<div class="lv-sh"><i class="lv-grab"></i><div class="lv-st-h"><small>' + S.coClock(m) + ' · Fim de jogo</small><b>' + m.gh + ' x ' + m.ga + '</b></div>' +
         '<h2>' + (ourGoals() > theirGoals() ? 'Vitória' : ourGoals() < theirGoals() ? 'Derrota' : 'Empate') + '</h2><button class="btn" id="b-lv-end">Ver o resultado</button></div>';
       $('lv-sheet').classList.add('on');
       $('b-lv-end').onclick = () => { sfx('tap'); finish(); };
@@ -748,11 +752,11 @@
       if (sim && h1 && !h2) { h2 = true; sim.second(); }
       if (sim && sim.koWait && sim.koWait()) { timer = setTimeout(tick, 150); return; } // o relógio só anda depois do apito da saída
       const st = S.coMatchStep(co, m, m.min + 1);
-      if (sim) { const v = m.mom && m.mom[m.min - 1]; sim.minute(m.min, v === undefined ? 50 : v); }
+      if (sim) { const tk = m.tk || m.min, v = m.mom && m.mom[tk - 1]; sim.minute(tk, v === undefined ? 50 : v); } // o campinho conta os minutos jogados (com os acréscimos)
       const gw = toSim();
       paint();
       const go = () => {
-        if (sim && m.min >= 45 && !h1) { h1 = true; sim.half(); }
+        if (sim && m.half && !h1) { h1 = true; sim.half(); }
         if (wantStop) { wantStop = false; $('b-lv-stop').classList.remove('on'); if (!m.done) return sheet(st && st.t !== 'fim' ? st : { t: 'pausa' }); }
         if (st && st.t !== 'fim' && !(co.speed === '3' && st.t === 'gol')) return sheet(st);
         if (m.done) return end();
@@ -833,7 +837,7 @@
           return '<button class="lv-tk' + (low || hurt ? ' low' : '') + (sel && sel.xi === i ? ' sel' : '') + '" data-dxi="' + i + '" style="left:' + sl[0] + '%;top:' + sl[1] + '%">' +
             (hurt ? '<em>machucado</em>' : low ? '<em>cansado</em>' : '') + '<i class="en-' + ec + (i ? '' : ' gk') + '" style="--en:' + en + '%">' + (p.num || '') + (cd.ic ? '<u class="lv-cd ' + cd.ic + '"></u>' : '') + '</i><b>' + esc(last(p.n)) + '</b><small>' + slots[i] + ' ' + p.ovr + ' · <span class="en-' + ec + '">' + en + '%</span></small></button>'; };
         const bench = s.bench.map(id => by[id]).filter(Boolean);
-        d.innerHTML = '<div class="lv-fh"><div><small>' + m.min + '\' · ' + m.gh + ' x ' + m.ga + ' · Parada</small><h2>Mexer no time</h2></div>' +
+        d.innerHTML = '<div class="lv-fh"><div><small>' + S.coClock(m) + ' · ' + m.gh + ' x ' + m.ga + ' · Parada</small><h2>Mexer no time</h2></div>' +
           '<span class="lv-pips" aria-label="' + D.plural(s.subs, 'troca restante', 'trocas restantes') + '">' + [0, 1, 2, 3, 4].map(i => '<i class="' + (i < s.subs ? 'on' : '') + '"></i>').join('') + '</span></div>' +
           '<p class="lv-hint">' + (sel ? 'Agora toque no jogador que vai trocar com ' + esc(last((sel.xi !== undefined ? by[s.xi[sel.xi]] : by[sel.b] || {}).n)) + '.' : 'Toque num titular para ver quem do banco pode entrar no lugar dele. Também dá para arrastar.') + '</p>' +
           (s.squad.some(p => (s.xi.includes(p.id) || s.bench.includes(p.id)) && cardOf(p).ic) ? '<p class="lv-lg"><u class="lv-cd y"></u>amarelo neste jogo<u class="lv-cd p"></u>pendurado</p>' : '') +
@@ -918,7 +922,7 @@
       const mini = f => '<span class="lv-mp">' + spots(f).map(p => '<i style="left:' + p[0] + '%;top:' + p[1] + '%"></i>').join('') + '</span>';
       const draw = () => {
         const th = m.them, tc = club(th.club || m.vs);
-        d.innerHTML = '<div class="lv-fh"><div><small>' + m.min + '\' · ' + m.gh + ' x ' + m.ga + ' · Parada</small><h2>Mudar a tática</h2></div></div>' +
+        d.innerHTML = '<div class="lv-fh"><div><small>' + S.coClock(m) + ' · ' + m.gh + ' x ' + m.ga + ' · Parada</small><h2>Mudar a tática</h2></div></div>' +
           '<div class="lv-opp">' + crestB(tc.id, 'co-vc') + '<div><small>Eles agora</small><b>' + th.form + ' · ' + esc(S.CO_STY[th.style].name) + '</b></div></div>' +
           '<div class="lv-bh"><small>Formação</small></div><div class="lv-fms">' + Object.keys(S.CO_FORMS).map(f => '<button data-lf="' + f + '"' + (f === s.form ? ' class="on"' : '') + '>' + mini(f) + '<b>' + f + '</b></button>').join('') + '</div>' +
           '<div class="lv-bh"><small>Estilo</small></div><div class="lv-sts">' + S.CO_STYLES.map(k => '<button data-ls="' + k + '"' + (k === s.style ? ' class="on"' : '') + '><b>' + esc(S.CO_STY[k].name) + '</b><span>' + STY_SHORT[k] + '</span></button>').join('') + '</div>' +
@@ -972,7 +976,7 @@
         if (z.textContent !== txt) z.textContent = txt;
         if (z.className !== zc) z.className = zc;
       };
-      sim = LP.sim({ me: -1, t0: m.min, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1), onFrame: zone,
+      sim = LP.sim({ me: -1, t0: m.tk || m.min, half2: m.min > 45, boardUp: U.LD && U.LD.on && U.LD.on() ? 52 : 0, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1), onFrame: zone,
         onPick: (side, inf) => { if (ctx && side === 0 && inf && inf.id) U.LD.livePlayer(ctx, inf.id); },
         seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]] });
       lineKey = [m.us, m.them].map(s => s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style);
