@@ -17,6 +17,7 @@
   // ---------- ingresso da tela inicial ----------
   U.coSaved = slot => { const sv = load(U.slotKey(SAVE_CO, slot)); return sv && sv.co && sv.co.mode === 'treinador' ? sv : null; };
   U.coResume = sv => { sfx('tap'); resume(sv); };
+  U.coStand = () => { if (co) resume({ co }); };
   U.coCreate = slot => create(slot);
   function resume(sv) {
     co = sv.co;
@@ -510,10 +511,11 @@
   // ---------- jogo (nesta parte, direto o resultado) ----------
   let pre = null; // posição, confiança e caixa antes do jogo (o "O que mudou" do fim de jogo deitado)
   const markPre = () => { pre = { pos: S.coPos(co), conf: co.board.conf, caixa: co.fin ? co.fin.caixa : null }; };
-  function play() {
+  function play(preK) {
     markPre();
     const m = S.coMatchStart(co);
     if (!m) return hub();
+    if (preK) S.coPre(co, m, preK); // preleção (Treinador deitado)
     // Marca o jogo começado: se a pessoa sai no meio, o auxiliar termina (recarregar não desfaz o resultado)
     co.live = co.ss.i; save('live');
     live(m);
@@ -568,7 +570,7 @@
   U.lvMom = momSvg;
   function feedLine(m, e) {
     const who = e.s === 'us' ? nm(co.club) : nm(m.vs);
-    const t = e.t === 'gol' ? '<b>GOL do ' + esc(who) + '!</b> ' + esc(e.p || '') + (e.l ? ' ' + LANE[e.l] : '') :
+    const t = e.t === 'gol' ? '<b>GOL do ' + esc(who) + '!</b> ' + esc(e.p || '') + (e.sp === 'pen' ? ' de pênalti' : e.sp === 'falta' ? ' de falta' : e.sp === 'esc' ? ' de cabeça' + (e.by ? ', escanteio do ' + esc(last(e.by)) : ', no escanteio') : e.l ? ' ' + LANE[e.l] : '') :
       e.t === 'chance' ? (e.k === 'defesa' ? esc(e.p) + ' chuta ' + (e.l ? LANE[e.l] + ' ' : '') + 'e o goleiro defende' : e.k === 'fora' ? esc(e.p) + ' finaliza para fora' : e.k === 'trave' ? esc(e.p) + ' acerta a trave!' : 'Chute de ' + esc(e.p) + ' travado pela zaga') :
       e.t === 'vermelho' ? (e.how === '2am' ? '<span class="co-yc"></span> ' : '') + '<span class="co-red"></span> <b>' + esc(e.p) + ' é expulso</b> (' + esc(who) + ')' + (e.how === '2am' ? ', segundo amarelo' : e.how === 'direto' ? ', vermelho direto' : '') :
       e.t === 'amarelo' ? '<span class="co-yc"></span> Amarelo para ' + esc(e.p) + ' (' + esc(who) + ')' :
@@ -1068,7 +1070,7 @@
   const FAME_TXT = f => (f >= 80 ? 'técnico de seleção' : f >= 60 ? 'disputado pelos grandes' : f >= 40 ? 'nome conhecido' : f >= 20 ? 'começando a aparecer' : 'ninguém conhece ainda');
 
   // Para as telas deitadas (ui/coachland.js)
-  U._co = { get co() { return co; }, get pre() { return pre; }, save, sacked: () => sacked(), moodLine: () => moodLine(), susBox, exit: () => { save(); co = null; U.ldOff(); U.home(); }, hub, team, caderno, tabela, fin, finishSeason, play, live, result,
+  U._co = { get co() { return co; }, get pre() { return pre; }, save, sacked: () => sacked(), moodLine: () => moodLine(), susBox, exit: () => { save(); co = null; U.ldOff(); U.home(); }, hub, team, caderno, tabela, fin, finishSeason, play: k => play(k), live, result,
     avail, pend, susTxt, posTxt, FORM_TIP, STY_SHORT, cadLines, cadName, CAD_W, CAD_S, cadQuote, feedLine: (m, e) => feedLine(m, e), offers: (l, st) => offers(l, st), welcome: () => welcome(), SK_TXT, ordTxt, mi, sgn, finPres: f => finPres(f), FAME_TXT, keepBench: () => keepBench(), brl, nm, last };
   Object.assign(U, { coCreate: create, coHub: () => co && hub(), coCaderno: (c, pv) => (pv && pv.them ? cadBlock(c.form, c.style, pv.them) + hintCard() : '') });
 })();

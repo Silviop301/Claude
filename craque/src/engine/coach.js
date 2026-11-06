@@ -65,6 +65,78 @@
       tip: 'Cruza e abre a defesa; precisa de gente aberta e sofre nos lados' },
   };
   S.CO_STYLES = Object.keys(STY);
+  // Nome da vaga com o lado (LE, VOL, PD...): o primeiro da linha é o lado esquerdo do time. Só a tela usa; o motor
+  // conta as cinco posições (GOL, ZAG, LAT, MEI, ATA) e quem joga fora da dele rende menos (S.coFit)
+  S.coSlotLbl = function (form, i) {
+    const sl = FORMS[form].slots, x = sl[i]; if (!x) return '';
+    const line = sl.map((y, j) => j).filter(j => sl[j].ln === x.ln), k = line.indexOf(i), left = k < line.length / 2;
+    if (x.pos === 'GOL' || x.pos === 'ZAG') return x.pos;
+    if (x.pos === 'LAT') return left ? 'LE' : 'LD';
+    if (x.pos === 'ATA') return x.w ? (left ? 'PE' : 'PD') : 'ATA';
+    if (x.w) return x.ln === 'am' ? (left ? 'PE' : 'PD') : (left ? 'ME' : 'MD');
+    if (x.ln === 'am') return 'MEI';
+    const cen = line.filter(j => !sl[j].w), ck = cen.indexOf(i), hasAm = sl.some(y => y.ln === 'am');
+    if (cen.length === 1) return 'VOL';
+    if (cen.length === 2) return hasAm ? 'VOL' : 'MC';
+    return ck === Math.floor(cen.length / 2) ? 'VOL' : 'MC';
+  };
+  // Função de cada vaga (o jeito de jogar: -1 mais atrás, 0 normal, +1 mais à frente). Fica na vaga: quem entra joga igual.
+  // Mais à frente ajuda o ataque e tira da defesa (e cansa mais); mais atrás, o contrário
+  const ROLES = S.CO_ROLES = {
+    GOL: [['Fica no gol', 'não sai da área'], ['Goleiro', 'sai quando precisa'], ['Sai jogando', 'joga com os pés, adianta a linha']],
+    ZAG: [['Cobre', 'fica atrás da linha'], ['Zagueiro', 'marca e sai curto'], ['Sai jogando', 'conduz a bola até o meio']],
+    LAT: [['Segura', 'não passa do meio'], ['Lateral', 'apoia quando dá'], ['Apoia', 'vive no ataque, deixa as costas']],
+    VOL: [['Volante fixo', 'protege a zaga'], ['Volante', 'marca e distribui'], ['Chega', 'aparece na área']],
+    MC: [['Marca', 'fecha o meio'], ['Meia', 'liga defesa e ataque'], ['Chega na área', 'entra para finalizar']],
+    ME: [['Recua', 'ajuda o lateral'], ['Meia aberto', 'cruza da linha'], ['Ponta', 'joga lá na frente']],
+    MEI: [['Armador', 'recua para buscar'], ['Meia', 'dá o passe final'], ['Segundo atacante', 'pisa na área']],
+    PE: [['Que recua', 'ajuda o lateral'], ['Aberto', 'cruza da linha'], ['Invertido', 'corta para dentro e chuta']],
+    ATA: [['Pivô', 'segura de costas, faz a parede'], ['Atacante', 'finaliza'], ['Na frente', 'vive na linha do impedimento']],
+  };
+  S.coRoleKey = (form, i) => { const l = S.coSlotLbl(form, i); return l === 'LD' ? 'LAT' : l === 'LE' ? 'LAT' : l === 'MD' ? 'ME' : l === 'PD' ? 'PE' : l; };
+  S.coRoles = (co, form) => { co.roles = co.roles || {}; return co.roles[form] || (co.roles[form] = new Array(11).fill(0)); };
+  // Treino da semana: um foco, vale para o próximo jogo; cansa quem treina (en tira energia de todo o elenco)
+  const TRAIN = S.CO_TRAIN = {
+    final: { tab: 'Ataque', name: 'Finalização', sub: 'chutar mais certo', fx: { mul: { att: 1.04 } }, en: 4, who: ['ATA', 'MEI'] },
+    lados: { tab: 'Ataque', name: 'Jogadas pelos lados', sub: 'cruzamento e ultrapassagem', fx: { add: { wide: 0.12 }, mul: { att: 1.015 } }, en: 4, who: ['LAT', 'MEI'] },
+    contra: { tab: 'Ataque', name: 'Contra-ataque', sub: 'sair rápido depois de roubar', fx: { add: { counter: 0.15 } }, en: 5, who: ['ATA', 'MEI'] },
+    toque: { tab: 'Ataque', name: 'Troca de passes', sub: 'ficar com a bola', fx: { add: { ctrl: 0.08 } }, en: 3, who: ['MEI'] },
+    pressao: { tab: 'Defesa', name: 'Marcação alta', sub: 'roubar lá na frente', fx: { add: { press: 0.15 } }, en: 6, who: ['ATA', 'MEI'] },
+    linha: { tab: 'Defesa', name: 'Linha de zaga', sub: 'subir junto, pegar impedimento', fx: { mul: { def: 0.965 } }, en: 3, who: ['ZAG', 'LAT'] },
+    bloco: { tab: 'Defesa', name: 'Bloco baixo', sub: 'fechar os espaços atrás', fx: { mul: { def: 0.95, att: 0.98 } }, en: 3, who: ['ZAG', 'MEI'] },
+    duelos: { tab: 'Defesa', name: 'Duelos', sub: 'ganhar a dividida', fx: { mul: { def: 0.975, att: 1.01 } }, en: 5, who: ['ZAG', 'MEI'] },
+    esc: { tab: 'Bola parada', name: 'Escanteio a favor', sub: 'mais perigo no 1º e 2º pau', fx: { mul: { att: 1.025 } }, sp: 'esc', en: 5, who: ['ZAG', 'ATA'] },
+    falta: { tab: 'Bola parada', name: 'Falta a favor', sub: 'batedor e barreira', fx: { mul: { att: 1.02 } }, sp: 'falta', en: 3, who: ['MEI', 'ATA'] },
+    defesc: { tab: 'Bola parada', name: 'Defender escanteio', sub: 'zona ou homem a homem', fx: { mul: { def: 0.97 } }, en: 4, who: ['ZAG', 'GOL'] },
+    pen: { tab: 'Bola parada', name: 'Pênaltis', sub: 'batedores e goleiro', fx: { mul: { att: 1.01, def: 0.99 } }, sp: 'pen', en: 2, who: ['ATA', 'GOL'] },
+    recup: { tab: 'Físico', name: 'Recuperação', sub: 'quem jogou descansa', fx: {}, en: -8, who: [] },
+    resist: { tab: 'Físico', name: 'Resistência', sub: 'cansar menos no jogo', fx: { mul: { en: 0.85 } }, en: 5, who: ['MEI', 'LAT'] },
+    veloc: { tab: 'Físico', name: 'Velocidade', sub: 'arrancada e recomposição', fx: { add: { counter: 0.06, press: 0.06 } }, en: 5, who: ['ATA', 'LAT'] },
+    folga: { tab: 'Físico', name: 'Folga', sub: 'dia livre: moral e energia', fx: {}, en: -12, mo: 3, who: [] },
+  };
+  S.coTrain = function (co, k) {
+    const t = TRAIN[k]; if (!t || !co.ss || (co.train && co.train.i === co.ss.i)) return false;
+    co.train = { k, i: co.ss.i };
+    co.squad.forEach(p => { p.en = Math.max(0, Math.min(100, p.en - t.en * (t.en > 0 && !t.who.includes(p.pos) ? 0.5 : 1))); if (t.mo) p.mo = Math.min(100, (p.mo === undefined ? 60 : p.mo) + t.mo); });
+    return true;
+  };
+  // Preleção: a última conversa antes de entrar, vale os primeiros 15 minutos
+  const PRE = S.CO_PRE = {
+    cima: { name: 'Pra cima deles', q: '"Primeiro quarto de hora é nosso. Pressão desde o apito."', fx: { add: { press: 0.2 }, mul: { att: 1.06, def: 1.03, en: 1.3 } }, mo: 0, tip: 'Começa pressionando · cansa mais' },
+    calma: { name: 'Paciência', q: '"Ninguém se afoba. A bola vai aparecer."', fx: { mul: { att: 0.95, def: 0.92 } }, mo: 1, tip: 'Menos erro · menos chance' },
+    voces: { name: 'É por vocês', q: '"Semana inteira de treino. Mostra isso."', fx: { mul: { att: 1.02 } }, mo: 3, tip: 'Moral sobe, ajuda os nervosos · a tática fica igual' },
+  };
+  S.coPre = function (co, m, k) {
+    if (!PRE[k] || m.min > 0 || m.us.pre) return false;
+    m.us.pre = { k, until: 15 };
+    m.us.xi.forEach(id => { const p = id && m.us.squad.find(x => x.id === id); if (p) p.mo = Math.max(0, Math.min(100, (p.mo === undefined ? 60 : p.mo) + PRE[k].mo)); });
+    return true;
+  };
+  // Batedores (pênalti, falta, escanteio de cada lado, capitão): a lista do técnico; sem lista, o melhor em campo
+  S.CO_TAKE = { pen: 'Pênalti', fl: 'Falta de longe', fc: 'Falta para cruzar', ckE: 'Escanteio esquerda', ckD: 'Escanteio direita', cap: 'Capitão' };
+  const takerOf = (s, k) => { const m = byId(s.squad), on = s.xi.filter(Boolean), l = ((s.takers || {})[k] || []).filter(id => on.includes(id));
+    return l.length ? m[l[0]] : on.map(id => m[id]).filter(p => p && p.pos !== 'GOL').sort((a, b) => b.ovr - a.ovr)[0]; };
+  S.coTaker = takerOf;
   const sty = k => STY[k] || STY.equilibrado;
   // Grito do técnico (partida ao vivo, um por vez, vale alguns minutos): mexe no estilo de agora por um tempo.
   // Nada é de graça: pressionar cansa e abre as costas, segurar e recuar tiram o ataque. O robô não grita (equilíbrio igual)
@@ -86,10 +158,12 @@
   const talkState = (m, side) => { const d = (m.home === (side === m.us)) ? m.gh - m.ga : m.ga - m.gh; return d > 0 ? 'win' : d < 0 ? 'lose' : 'draw'; };
   S.coTalkState = m => talkState(m, m.us);
   const styOf = side => {
-    const b = sty(side.style), sh = side.shout && SHOUT[side.shout.k], tk = side.talk; if (!sh && !tk) return b;
+    const b = sty(side.style), sh = side.shout && SHOUT[side.shout.k], tk = side.talk; if (!sh && !tk && !side.train && !side.pre) return b;
     const o = Object.assign({}, b);
     if (sh) { Object.keys(sh.add).forEach(k => { o[k] = Math.max(0, o[k] + sh.add[k]); }); Object.keys(sh.mul).forEach(k => { o[k] *= sh.mul[k]; }); }
     if (tk) { const fx = TALK[tk.k].fx[tk.st]; Object.keys(fx).forEach(k => { if (k === 'press') o[k] += fx[k]; else o[k] *= fx[k]; }); }
+    [side.train && TRAIN[side.train] && TRAIN[side.train].fx, side.pre && PRE[side.pre.k].fx].forEach(fx => { if (!fx) return;
+      Object.keys(fx.add || {}).forEach(k => { o[k] = Math.max(0, o[k] + fx.add[k]); }); Object.keys(fx.mul || {}).forEach(k => { o[k] *= fx.mul[k]; }); });
     return o;
   };
   const slotsOf = form => FORMS[form].slots.map(x => x.pos);
@@ -162,15 +236,17 @@
     const m = byId(s.squad), F = FORMS[s.form], o = { q: 0, n: 0, ncb: 0, ncf: 0, wb: 0, cb: 0, fb: 0, cm: 0, wm: 0, cf: 0, wf: 0, en: 0, at: 0, nat: 0, df: 0, ndf: 0 };
     s.xi.forEach((id, i) => {
       const p = id && m[id], sl = F.slots[i]; if (!p || !sl) return;
-      const e = eff(p, sl.pos) / 70;
+      const e0 = eff(p, sl.pos) / 70, tl = s.roles ? (s.roles[i] || 0) : 0;
+      // A função da vaga puxa o jogador para o ataque (ea) ou para a defesa (ed)
+      const e = e0, ea = e0 * (1 + 0.08 * tl), ed = e0 * (1 - 0.08 * tl);
       o.q += e; o.n++; o.en += (p.en === undefined ? 100 : p.en);
       // Quem finaliza (ataque e meia de ligação) e quem defende a área (zaga, laterais pela metade e goleiro)
-      if (sl.ln === 'a' || sl.ln === 'am') { const k = sl.ln === 'a' ? 1 : 0.5; o.at += e * k; o.nat += k; }
-      if (sl.ln === 'd' || sl.ln === 'g') { const k = sl.ln === 'g' ? 0.5 : sl.w ? 0.5 : 1; o.df += e * k; o.ndf += k; }
-      if (sl.ln === 'd') { if (sl.w) o.fb += e; else { o.cb += e; o.ncb++; } }
-      else if (sl.ln === 'm') { if (sl.w && sl.pos === 'LAT') o.wb += e; else if (sl.w) o.wm += e; else o.cm += e; }
-      else if (sl.ln === 'am') { if (sl.w) o.wm += e; else { o.cm += 0.5 * e; o.cf += 0.5 * e; o.ncf += 0.5; } }
-      else if (sl.ln === 'a') { if (sl.w) o.wf += e; else { o.cf += e; o.ncf++; } }
+      if (sl.ln === 'a' || sl.ln === 'am') { const k = sl.ln === 'a' ? 1 : 0.5; o.at += ea * k; o.nat += k; }
+      if (sl.ln === 'd' || sl.ln === 'g') { const k = sl.ln === 'g' ? 0.5 : sl.w ? 0.5 : 1; o.df += ed * k; o.ndf += k; }
+      if (sl.ln === 'd') { if (sl.w) { o.fb += ed; o.push = (o.push || 0) + 0.25 * tl * e0; } else { o.cb += ed; o.ncb++; } }
+      else if (sl.ln === 'm') { if (sl.w && sl.pos === 'LAT') o.wb += ea; else if (sl.w) o.wm += ea; else o.cm += e; }
+      else if (sl.ln === 'am') { if (sl.w) o.wm += ea; else { o.cm += 0.5 * e; o.cf += 0.5 * ea; o.ncf += 0.5; } }
+      else if (sl.ln === 'a') { if (sl.w) o.wf += ea; else { o.cf += ea; o.ncf++; } }
     });
     o.at = o.nat ? o.at / o.nat * 70 : o.q / 11 * 70; o.df = o.ndf ? o.df / o.ndf * 70 : o.q / 11 * 70;
     o.q = o.q / 11 * 70; o.en = o.n ? o.en / o.n / 100 : 1; o.bonus = s.bonus || 0;
@@ -180,7 +256,7 @@
   function edge(X, Y, sx, sy, pX) {
     // Lados: quem ataca aberto (o lateral só sobe se não tiver ponta do outro lado prendendo) contra quem marca o lado
     const push = X.fb * sx.wide * 0.6 * (1 - 0.7 * Math.min(1, Y.wf / 2));
-    const fa = X.wm + X.wf + 0.6 * X.wb + push, fd = Y.fb + 0.9 * Y.wb + 0.5 * Y.wm + 0.25 * Y.wf + 0.35 * Math.max(0, Y.ncb - 2), fdl = fd * (0.75 + 0.25 * sy.line);
+    const fa = X.wm + X.wf + 0.6 * X.wb + push + (X.push || 0), fd = Y.fb + 0.9 * Y.wb + 0.5 * Y.wm + 0.25 * Y.wf + 0.35 * Math.max(0, Y.ncb - 2), fdl = fd * (0.75 + 0.25 * sy.line);
     // Área: atacantes do meio contra zagueiros; zagueiro a mais que os atacantes + 1 não marca ninguém (sobra)
     const cbUse = Y.ncb ? Y.cb * Math.min(1, (X.ncf + 1) / Y.ncb) : 0;
     const ca = X.cf + 0.35 * X.cm, cd = 0.85 * (cbUse + 0.35 * Y.cm);
@@ -337,7 +413,8 @@
     const nx = S.coNext(co);
     if (!nx || nx.bye) return null;
     co.xi = co.xi.filter(id => co.squad.some(p => p.id === id && ok(p))).length === 11 ? co.xi : autoXI(co.squad, co.form).xi;
-    const us = { club: co.club, squad: co.squad, form: co.form, style: co.style, bonus: co.xp.leitura * 0.2, xi: co.xi.slice(), bench: (co.bench || []).filter(id => co.squad.some(p => p.id === id && ok(p))), subs: CO.subs, red: 0, mine: true };
+    const us = { club: co.club, squad: co.squad, form: co.form, style: co.style, bonus: co.xp.leitura * 0.2, xi: co.xi.slice(), bench: (co.bench || []).filter(id => co.squad.some(p => p.id === id && ok(p))), subs: CO.subs, red: 0, mine: true,
+      roles: co.roles && co.roles[co.form] ? co.roles[co.form].slice() : null, takers: co.takers || null, train: co.train && co.ss && co.train.i === co.ss.i ? co.train.k : null };
     const them = oppSide(co, nx.vs, !nx.home);
     if (!us.bench.length) us.bench = autoXI(co.squad, co.form).bench;
     return { min: 0, gh: 0, ga: 0, home: nx.home, us, them, ev: [], stop: null, done: false, half: false, classic: (D.RIVALS[co.club] || []).includes(nx.vs), vs: nx.vs, round: nx.round, played: {}, startXI: us.xi.slice() };
@@ -352,6 +429,7 @@
     while (!stop && m.min < 90 && !(until && m.min >= until)) {
       m.min++;
       if (m.us.talk && m.min > m.us.talk.until) delete m.us.talk;
+      if (m.us.pre && m.min > m.us.pre.until) delete m.us.pre;
       if (m.us.shout && m.min > m.us.shout.until) { delete m.us.shout; m.ev.push({ m: m.min, t: 'grito-fim', s: 'us' }); }
       const H = m.home ? m.us : m.them, A = m.home ? m.them : m.us;
       const mu = matchup(H, A), lh = mu.lh, la = mu.la;
@@ -362,7 +440,7 @@
       const pm = m.pm = m.pm || {}, tm = m.tm = m.tm || {}, ks = 'sty:' + m.us.style + '|' + m.them.style, kf = 'frm:' + m.us.form + '|' + m.them.form, kt = m.them.form + '|' + m.them.style;
       pm[ks] = (pm[ks] || 0) + 1; pm[kf] = (pm[kf] || 0) + 1; tm[kt] = (tm[kt] || 0) + 1;
       // Cansaço: quem está em campo perde energia aos poucos (o estilo de ataque cansa mais)
-      [m.us, m.them].forEach(s => s.xi.forEach(id => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / 90 * styOf(s).en); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }));
+      [m.us, m.them].forEach(s => { const sen = styOf(s).en; s.xi.forEach((id, i) => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / 90 * sen * (1 + 0.12 * Math.max(0, s.roles ? s.roles[i] || 0 : 0))); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }); });
       // Chances: cada gol esperado vira CO.ch chances; uma em CO.ch entra (as outras são defesa, para fora ou na trave)
       const chance = (S0, lam) => {
         if (r() >= lam * CO.ch / 90) return false;
@@ -370,7 +448,18 @@
         // Por onde veio: pelos lados na proporção em que o time ataca por ali (e: esquerda, d: direita de quem ataca)
         const wsh = (S0 === H ? mu.h : mu.a).wsh, l = r() < wsh ? (r() < 0.5 ? 'e' : 'd') : 'c';
         m.ot = m.ot || { us: 0, them: 0 };
-        if (r() < 1 / CO.ch) { if (S0 === H) m.gh++; else m.ga++; m.ot[sd]++; m.ev.push({ m: m.min, t: 'gol', s: sd, p: sc, l }); stop = { t: 'gol', s: sd, p: sc, l }; }
+        if (r() < 1 / CO.ch) {
+          if (S0 === H) m.gh++; else m.ga++; m.ot[sd]++;
+          // Bola parada: parte dos gols sai de pênalti, falta ou escanteio, com o batedor da lista (o treino puxa a jogada dele)
+          let who = sc, sp = null, by2 = null; const tr = S0.train && TRAIN[S0.train] && TRAIN[S0.train].sp, rr = r();
+          if (rr < 0.24 + (tr ? 0.08 : 0)) {
+            sp = tr && r() < 0.5 ? tr : rr < 0.08 ? 'pen' : rr < 0.15 ? 'falta' : 'esc';
+            const tk = takerOf(S0, sp === 'pen' ? 'pen' : sp === 'falta' ? 'fl' : (l === 'e' ? 'ckE' : 'ckD'));
+            if (sp === 'esc') { by2 = tk ? tk.n : ''; const mm = byId(S0.squad), hd = S0.xi.map(id => mm[id]).filter(p => p && (p.pos === 'ZAG' || p.pos === 'ATA') && (!tk || p.id !== tk.id)); if (hd.length) who = hd[Math.floor(r() * hd.length)].n; }
+            else if (tk) who = tk.n;
+          }
+          m.ev.push({ m: m.min, t: 'gol', s: sd, p: who, l, sp, by: by2 }); stop = { t: 'gol', s: sd, p: who, l, sp, by: by2 };
+        }
         else { const k = r.pick(['defesa', 'defesa', 'fora', 'fora', 'trave', 'bloqueio']); if (k === 'defesa') m.ot[sd]++; m.ev.push({ m: m.min, t: 'chance', s: sd, p: sc, k, l }); }
         return true;
       };
@@ -487,6 +576,7 @@
     if (form && FORMS[form] && form !== s.form) {
       const on = s.squad.filter(p => s.xi.includes(p.id)), a = autoXI(on, form);
       s.form = form; s.xi = Array.from({ length: 11 }, (_, i) => a.xi[i] || null);
+      s.roles = co.roles && co.roles[form] ? co.roles[form].slice() : null;
     }
     return true;
   };
@@ -652,6 +742,7 @@
     const ycOut = [];
     (m.ycAdd || []).forEach(id => { const p = co.squad.find(x => x.id === id); if (!p) return; p.yc = (p.yc || 0) + 1; if (p.yc >= CO.ycMax) { p.yc = 0; if (!p.sus) { p.sus = 1; p.ycSus = 1; ycOut.push(p.n); } } });
     const log = { r: m.round, vs: m.vs, home: m.home, gf, ga, res, ycOut, ev: m.ev.filter(e => e.t === 'gol' && e.s === 'us').map(e => e.p) };
+    if (co.train && co.train.i <= ss.i) { log.train = co.train.k; delete co.train; }
     log.rt = rateMatch(co, m, gf, ga);
     log.rt.forEach(x => { const p = co.squad.find(q => q.id === x.id); if (!p) return; p.notes = (p.notes || []).concat([x.r]).slice(-5);
       if (x.r >= 7.5) p.mo = clamp(p.mo + 2, 0, 100); else if (x.r < 5.5) p.mo = clamp(p.mo - 2, 0, 100); });
