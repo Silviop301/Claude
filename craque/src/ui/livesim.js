@@ -225,7 +225,7 @@
       });
     }
     function passOdds(s, tx, ty, lofted, q, turn) {
-      const [wx, wy] = toW(s, tx, ty), d = Math.hypot(wx - ball.x, wy - ball.y), spd = lofted ? 21 : 18;
+      const [wx, wy] = toW(s, tx, ty), d = Math.hypot(wx - ball.x, wy - ball.y), spd = lofted ? 23 : 21;
       let pI = 0, cut = null;
       for (const op of T[1 - s]) {
         for (let f = lofted ? 0.8 : 0.12; f <= 1.001; f += 0.11) {
@@ -288,15 +288,17 @@
         const od = passOdds(s, tx, ty, lofted, q, kind === 'costas');
         let val = V(tx, ty) + (kind === 'costas' ? 0.06 : 0) + (kind === 'cruz' ? 0.05 + 0.3 * ST[s].wide : 0) + (q === lastPasser && q.go > 0 && clk - lastPassClk < 2.5 ? 0.02 : 0) + (isMe(q) && tx > 70 ? 0.03 : 0);
         if (tx < bx - 2) val *= 0.9;
+        if (kind === 'curto' && d0 < 22) val += 0.008 + 0.012 * ST[s].ctrl; // tocar curto e de primeira é o jogo de time profissional
+        else if (lofted && kind !== 'cruz') val *= 0.92;
         if (q.r === 'GK') val *= 0.6; // recuar para o goleiro é a última saída, não o caminho de sempre
         val += PROG * progK(s) * (tx - bx) / 30 * (bx < 52 ? 1.6 : 1); // no campo de defesa, subir vale mais: o time sai jogando
-        opts.push({ type: 'pass', kind, q, wx: od.wx, wy: od.wy, lofted, od, p: od.p, u: od.p * val - (1 - od.p) * lossAt((bx + tx) / 2, (by + ty) / 2) * lossK(s) });
+        opts.push({ type: 'pass', kind, q, wx: od.wx, wy: od.wy, lofted, od, p: od.p, u: Math.pow(od.p, kind === 'cruz' ? 1.2 : kind === 'costas' ? 1.5 + 0.6 * ST[s].ctrl : 1.5 + 1.2 * ST[s].ctrl) * val - (1 - od.p) * lossAt((bx + tx) / 2, (by + ty) / 2) * lossK(s) });
       }
       if (p.r !== 'GK') for (const a of [0, 0.6, -0.6]) {
         const tx = cl(bx + Math.cos(a) * 9, 2, 101), ty = cl(by + Math.sin(a) * 9, 3, 65), [wx, wy] = toW(s, tx, ty);
         let near = 99; for (const op of opp) near = Math.min(near, segD(op.x, op.y, p.x, p.y, wx, wy));
         const drib = press < 2.2, dq = (p.q - (presser ? presser.q : 0)) * 1.3, pk = drib ? cl(0.42 + (near - 1.5) * 0.08 + (bias[s] - 1) * 0.6 + dq, 0.1, 0.78) : cl(sig((near - 2.2) * 1.8) + (bias[s] - 1) * 0.4, 0.05, 0.97);
-        opts.push({ type: 'carry', kind: drib ? 'drible' : 'conduz', wx, wy, p: pk, presser, u: pk * (V(tx, ty) + PROG * progK(s) * Math.cos(a) * 9 / 30) - (1 - pk) * lossAt(bx, by) * lossK(s) + (!drib && near > 5 ? 0.008 : 0) });
+        opts.push({ type: 'carry', kind: drib ? 'drible' : 'conduz', wx, wy, p: pk, presser, u: Math.pow(pk, 1.5 + 1.2 * ST[s].ctrl) * (V(tx, ty) + PROG * progK(s) * Math.cos(a) * 9 / 30) - (1 - pk) * lossAt(bx, by) * lossK(s) + (!drib && near > 8 ? 0.004 : 0) });
       }
       if (p.r !== 'GK' && bx > 70) { const xg = shotXg(s, bx, by, false); opts.push({ type: 'shot', kind: Math.hypot(L - bx, 34 - by) > 20 ? 'fora' : 'chute', u: xg * SHOT * (Math.abs(by - 34) > 11 ? 1 - 0.7 * ST[s].wide : 1) }); } // do lado, quem joga pelos lados prefere cruzar
       if (!opts.length) { ball.hold = 0.3; return; }
@@ -305,7 +307,7 @@
       if (best.type === 'shot') return shoot(p, best.kind, 0);
       if (best.type === 'carry') {
         if (best.kind === 'drible') { if (rnd() < best.p) { best.presser.stun = 1.3; ball.carry = { x: best.wx, y: best.wy, t: 1.1 }; emit('drible', s, p); } else { why = 'drible'; setOwner(best.presser); emit('desarme', 1 - s, best.presser, p); } }
-        else ball.carry = { x: best.wx, y: best.wy, t: 1 + rnd() * 0.9 };
+        else ball.carry = { x: best.wx, y: best.wy, t: 0.7 + rnd() * 0.6 };
         return;
       }
       lastPasser = p; lastPassClk = clk;
@@ -320,7 +322,7 @@
       }
     }
     function fly(from, wx, wy, to, lofted, kind, cut) {
-      const d = Math.hypot(wx - ball.x, wy - ball.y), spd = (lofted ? 21 : 18) * (due && from.side === due.side && !cut ? 1.35 : 1);
+      const d = Math.hypot(wx - ball.x, wy - ball.y), spd = (lofted ? 23 : kind === 'curto' ? 22 : 20) * (due && from.side === due.side && !cut ? 1.35 : 1);
       ball.fly = { x0: ball.x, y0: ball.y, x1: cl(wx, 0.5, L - 0.5), y1: cl(wy, 0.5, WD - 0.5), t: 0, dur: Math.max(0.25, d / spd), to, kind, cut, from, loft: lofted ? d * 0.35 : 0, shot: false };
       ball.owner = null; ball.carry = null; ball.loose = null;
     }
@@ -343,7 +345,7 @@
       ball.owner = p; ball.fly = null; ball.loose = null; ball.carry = null; ball.rcv = 0.3; p.run = 0; p.go = 0;
       let press = 99; for (const q of T[1 - p.side]) press = Math.min(press, dist(q, p));
       const won = p.side !== poss, fast = won && rnd() < ST[p.side].counter * 0.6; // roubou e o time é de contra-ataque: sai rápido
-      ball.hold = p.r === 'GK' ? 0.8 + rnd() * 0.6 : quick || fast ? 0.25 + rnd() * 0.2 : press < 3 ? 0.35 + rnd() * 0.25 : (0.5 + rnd() * 0.9) * (0.5 + 0.5 * ST[p.side].ctrl);
+      ball.hold = p.r === 'GK' ? 0.8 + rnd() * 0.6 : quick || fast ? 0.25 + rnd() * 0.2 : press < 3 ? 0.35 + rnd() * 0.25 : (0.25 + rnd() * 0.5) * (0.6 + 0.5 * ST[p.side].ctrl);
       if (due && due.side === p.side) ball.hold = Math.min(ball.hold, 0.35);
       if (lc && !lc.have && !DEF[lc.k] && isMe(p)) { lc.have = true; ball.hold = 0.35; }
       if (lc && !lc.have && DEF[lc.k] && p === lc.q) { lc.have = true; ball.hold = 1; }
@@ -563,8 +565,10 @@
       const s = poss, line = lineOf(s), owner = ball.owner;
       runT -= dt;
       if (runT <= 0 && owner && owner.side === s && owner.r !== 'GK') {
-        runT = 0.6 + rnd() * 0.8;
-        const bx = tf(s, ball)[0];
+        const bx = tf(s, ball)[0]; let ofr = 99; for (const q of T[1 - s]) ofr = Math.min(ofr, dist(q, owner));
+        // Gatilho: quem tem a bola de frente e livre no meio é o sinal para a corrida nas costas (sai mais cedo e mais vezes)
+        const trig = ofr > 6 && bx > 34 && bx < 82;
+        runT = trig ? 0.35 + rnd() * 0.4 : 0.8 + rnd() * 0.9;
         const c = T[s].filter(q => q !== owner && q.d > 0.45 && q.run <= 0 && line - tf(s, q)[0] < 14 && bx > 28);
         if (c.length) {
           const r = s === 0 && ME >= 0 && c.includes(T[0][ME]) && rnd() < 0.5 ? T[0][ME] : c[Math.floor(rnd() * c.length)], qy = tf(s, r)[1];
