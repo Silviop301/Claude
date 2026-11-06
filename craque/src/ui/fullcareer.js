@@ -1746,6 +1746,7 @@
         drible: tm + ': ' + nmP(d.a) + ' passa pelo marcador',
         desarme: tm + ': ' + nmP(d.a) + ' desarma ' + (d.b === 'me' ? nmP(d.b) : nmP(d.b) + ' ' + esc(D.do(d.side ? meName : opName))),
         corte: tm + ': ' + nmP(d.a) + ' corta o passe',
+        escanteio: tm + ': escanteio, ' + nmP(d.a) + ' cobra na área',
         defesa: 'Defesa do goleiro ' + esc(D.do(d.side ? meName : opName)) + ' no chute ' + deP(d.a) + how,
         fora: tm + ': ' + nmP(d.a) + ' chuta' + how + ' e a bola sai'
       }[k];
