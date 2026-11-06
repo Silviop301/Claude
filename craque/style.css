@@ -6560,6 +6560,7 @@ html.desk .rx-scr { min-height: calc(100svh / var(--z, 1) - 28px); }
 .lv-bench { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 6px; }
 .lv-bc { flex: none; width: 100px; padding: 8px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--panel-line); color: var(--tx-1); display: flex; flex-direction: column; gap: 4px; text-align: left; touch-action: pan-x; cursor: grab; }
 .lv-bc small { font: 700 12px var(--display); letter-spacing: .1em; color: var(--tx-3); }
+.lv-bc small u { display: inline-block; min-width: 20px; margin-right: 6px; padding: 0 4px; border-radius: 6px; background: var(--paper); color: var(--lv-ink); text-decoration: none; text-align: center; letter-spacing: 0; }
 .lv-bc b { font: 700 15px var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lv-bc > i { height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .15); overflow: hidden; }
 .lv-bc > i em { display: block; height: 100%; background: var(--up); } .lv-bc > i em.mid { background: var(--gold); } .lv-bc > i em.low { background: var(--down); }
