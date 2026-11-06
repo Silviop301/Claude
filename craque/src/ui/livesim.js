@@ -495,8 +495,9 @@
     let refFx = null, offLine = null;
     const leaving = [];
     const ROLE_OF = { GOL: /GK/, ZAG: /CB/, LAT: /LB|RB/, VOL: /DM|CM/, MEI: /CM|DM|LM|RM/, PON: /LW|RW|LM|RM/, ATA: /ST|LW|RW/ };
-    function whoDid(side, pos, me) {
+    function whoDid(side, pos, me, num) {
       if (me && side === 0 && ME >= 0) return T[0][ME];
+      const bn = num && T[side].find(p => p.num === num); if (bn) return bn;
       const re = ROLE_OF[pos], L0 = T[side].filter(p => !isMe(p) && (pos === 'GOL' ? p.r === 'GK' : p.r !== 'GK')), Lr = re ? L0.filter(p => re.test(p.r)) : [];
       return (Lr.length ? Lr : L0).sort((a, b) => dist(a, ball) - dist(b, ball))[0] || null;
     }
@@ -514,7 +515,7 @@
       leaving.push({ p, wasMe, wait: wait || 0, t: 0, ty: p.y < WD / 2 ? -1 : WD + 1 });
     }
     function refDo(o) {
-      const kind = o.kind, p = whoDid(o.side, o.pos, o.me);
+      const kind = o.kind, p = whoDid(o.side, o.pos, o.me, o.num);
       if (!p) return false;
       if (kind === 'impedimento') {
         // Nada de teleporte: o mais adiantado do ataque passa da linha correndo, recebe o passe lá e o apito sai onde ele
@@ -543,12 +544,13 @@
     // mais perto dele
     function fouler(o, v) {
       if (o.me && o.side === 0 && ME >= 0) return T[0][ME];
+      const bn = o.num && T[o.side].find(p => p.num === o.num && !p.down); if (bn) return bn; // o Treinador diz quem foi pelo número
       const re = ROLE_OF[o.pos], L0 = T[o.side].filter(p => !isMe(p) && p.r !== 'GK').sort((a, b) => dist(a, v) - dist(b, v));
       return (re && L0.find(p => re.test(p.r) && dist(p, v) < 14)) || L0[0] || null;
     }
     function foulEnd(ok) {
       const P = foulPend; foulPend = null; if (!P) return;
-      if (!ok && P.o.kind === 'vermelho') { const p = whoDid(P.o.side, P.o.pos, P.o.me); if (p) goOff(p, 0); }
+      if (!ok && P.o.kind === 'vermelho') { const p = whoDid(P.o.side, P.o.pos, P.o.me, P.o.num); if (p) goOff(p, 0); }
       if (P.cb) setTimeout(P.cb, ok ? (P.o.kind === 'falta' ? 500 : 900) / Math.max(1, o.speed ? o.speed() : 1) : 0);
     }
     function foulStep(dt) {
@@ -920,6 +922,8 @@
       g.lineJoin = 'round'; g.lineWidth = 2.6 * k; g.strokeStyle = dark ? 'rgba(255,255,255,.75)' : 'rgba(0,0,0,.8)'; g.strokeText(num, x, y + 0.8 * k);
       g.fillStyle = txt; g.fillText(num, x, y + 0.8 * k);
       g.globalAlpha = 1;
+      // Amarelado (Treinador: inf.yc diz quem tem amarelo neste jogo): cartãozinho no ombro, depois que o juiz mostrou
+      if (p.inf && p.inf.yc && p.inf.yc() && !(refFx && refFx.p === p) && !(foulPend && foulPend.o.num === p.num && foulPend.o.side === p.side)) card(x + r * 0.95, y - r * 0.15, '#F2C230', k * 0.62, 0.2);
       if (!me) return;
       const tw = 36 * k, ty = cl(y - r - 19 * k, 2, H - 14 * k);
       g.fillStyle = '#F2C230'; g.beginPath(); g.roundRect(x - tw / 2, ty, tw, 13 * k, 4 * k); g.fill();
@@ -1129,7 +1133,7 @@
         const r = free && !offPend && !foulPend ? refDo(r0) : false;
         if (r === 'pend') { (offPend || foulPend).cb = cb; return; }
         if (r) { if (cb) setTimeout(cb, r0.kind === 'falta' ? 500 : 900 / Math.max(1, o.speed ? o.speed() : 1)); return; }
-        if (r0.kind === 'vermelho') { const p = whoDid(r0.side, r0.pos, r0.me); if (p) goOff(p, 0); }
+        if (r0.kind === 'vermelho') { const p = whoDid(r0.side, r0.pos, r0.me, r0.num); if (p) goOff(p, 0); }
         if (cb) cb();
       },
       // Treinador: mudou a formação (ou alguém foi expulso: a lista vem menor); cada um corre para o lugar novo

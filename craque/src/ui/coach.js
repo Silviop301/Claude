@@ -597,13 +597,14 @@
       const lat = sp[i][0], w = Math.max(8, Math.min(92, 50 + (lat - 50) * 1.25));
       const r = x.pos === 'GOL' ? 'GK' : x.pos === 'LAT' ? (lat < 50 ? 'LB' : 'RB') : x.pos === 'ZAG' ? 'CB' : x.pos === 'ATA' ? 'ST' : x.w ? (lat < 50 ? 'LM' : 'RM') : 'CM';
       const pl = (s.squad || []).find(q => q.id === s.xi[i]), ov = pl ? pl.ovr - (100 - (pl.en === undefined ? 100 : pl.en)) * 0.1 : undefined; // cansado rende menos
-      out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w, ov, pl ? { num: pl.num, nm: last(pl.n) || pl.n, enf: () => (pl.en === undefined ? 100 : pl.en) } : null]); // energia ao vivo (o motor gasta minuto a minuto)
+      out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w, ov, pl ? { num: pl.num, nm: last(pl.n) || pl.n, yc: () => !!(s.bk && s.bk[pl.id]), enf: () => (pl.en === undefined ? 100 : pl.en) } : null]); // energia ao vivo (o motor gasta minuto a minuto)
     });
     const gk = out.filter(p => p[0] === 'GK'), rest = out.filter(p => p[0] !== 'GK').sort((a, b) => a[1] - b[1]);
     if (!gk.length && rest.length) { const g0 = rest.shift(); g0[0] = 'GK'; g0[1] = 0; g0[2] = 50; gk.push(g0); }
     return gk.concat(rest);
   }
   function live(m) {
+    U._coLiveM = m; // para as ferramentas de foto (cartões no Mexer no time)
     G.c = null; bar();
     co.speed = OLD_SPEED[co.speed] || co.speed || '1';
     if (!SPEED[co.speed] || co.speed === 'fim') co.speed = '1';
@@ -691,7 +692,8 @@
         if (e.t === 'falta' || e.t === 'amarelo' || e.t === 'vermelho' || e.t === 'impedimento') {
           hidden.add(e);
           const done = () => { if (hidden.delete(e)) paint(); };
-          sim.ref({ side: e.s === 'us' ? 0 : 1, pos: e.pos, kind: e.t, how: e.how }, done);
+          const sq = (e.s === 'us' ? m.us : m.them).squad || [], who = sq.find(q => q.n === e.p && (e.s === 'us' ? m.us : m.them).xi.concat((e.s === 'us' ? m.us : m.them).gone || []).includes(q.id)) || sq.find(q => q.n === e.p);
+          sim.ref({ side: e.s === 'us' ? 0 : 1, pos: e.pos, kind: e.t, how: e.how, num: who && who.num }, done);
           setTimeout(done, 6000);
           return;
         }
@@ -786,6 +788,11 @@
     // Tocar num e depois no outro faz o mesmo.
     const subs = st => {
       const s = m.us, by = {}; S.coNums(s.squad); s.squad.forEach(p => { by[p.id] = p; });
+      // Cartões: amarelo neste jogo (mais um e o time fica com 10), pendurado (um amarelo hoje tira do próximo jogo)
+      const cardOf = p => { const y = !!(s.bk && s.bk[p.id]);
+        return y ? { ic: 'y' } : pend(p) ? { ic: 'p' } : {}; };
+      const cardHint = p => { if (!p) return ''; const c = cardOf(p), n = esc(last(p.n));
+        return c.ic === 'y' ? n + ' tem amarelo: mais um e o time fica com 10' + (pend(p) ? '. Era o terceiro: já está fora do próximo jogo' : '') + '.' : c.ic === 'p' ? n + ' está pendurado: um amarelo e fica fora do próximo jogo.' : ''; };
       let sel = null;
       // Cada troca feita nesta parada pode ser desfeita até tocar em Pronto (nada aconteceu no jogo ainda)
       const undo = [];
@@ -794,19 +801,20 @@
       const draw = () => {
         const sp = spots(s.form), slots = S.coSlots(s.form);
         const tok = (id, i) => { const sl = sp[i]; if (!sl) return '';
-          if (!id) return '<span class="lv-tk gone" style="left:' + sl[0] + '%;top:' + sl[1] + '%"><i></i><b>expulso</b></span>';
-          const p = by[id], low = p.en < 55, hurt = !!p.out;
+          if (!id) return '<span class="lv-tk gone" style="left:' + sl[0] + '%;top:' + sl[1] + '%"><i><u class="lv-cd r"></u></i><b>expulso</b></span>';
+          const p = by[id], low = p.en < 55, hurt = !!p.out, cd = cardOf(p);
           // A energia de cada titular: o anel em volta do número enche e muda de cor (verde, amarelo, vermelho) e o % ao lado da posição
           const en = Math.round(p.en), ec = enCls(p.en);
           return '<button class="lv-tk' + (low || hurt ? ' low' : '') + (sel && sel.xi === i ? ' sel' : '') + '" data-dxi="' + i + '" style="left:' + sl[0] + '%;top:' + sl[1] + '%">' +
-            (hurt ? '<em>machucado</em>' : low ? '<em>cansado</em>' : '') + '<i class="en-' + ec + (i ? '' : ' gk') + '" style="--en:' + en + '%">' + (p.num || '') + '</i><b>' + esc(last(p.n)) + '</b><small>' + slots[i] + ' ' + p.ovr + ' · <span class="en-' + ec + '">' + en + '%</span></small></button>'; };
+            (hurt ? '<em>machucado</em>' : low ? '<em>cansado</em>' : '') + '<i class="en-' + ec + (i ? '' : ' gk') + '" style="--en:' + en + '%">' + (p.num || '') + (cd.ic ? '<u class="lv-cd ' + cd.ic + '"></u>' : '') + '</i><b>' + esc(last(p.n)) + '</b><small>' + slots[i] + ' ' + p.ovr + ' · <span class="en-' + ec + '">' + en + '%</span></small></button>'; };
         const bench = s.bench.map(id => by[id]).filter(Boolean);
         d.innerHTML = '<div class="lv-fh"><div><small>' + m.min + '\' · ' + m.gh + ' x ' + m.ga + ' · Parada</small><h2>Mexer no time</h2></div>' +
           '<span class="lv-pips" aria-label="' + D.plural(s.subs, 'troca restante', 'trocas restantes') + '">' + [0, 1, 2, 3, 4].map(i => '<i class="' + (i < s.subs ? 'on' : '') + '"></i>').join('') + '</span></div>' +
           '<p class="lv-hint">' + (sel ? 'Agora toque no jogador que vai trocar com ' + esc(last((sel.xi !== undefined ? by[s.xi[sel.xi]] : by[sel.b] || {}).n)) + '.' : 'Toque num titular para ver quem do banco pode entrar no lugar dele. Também dá para arrastar.') + '</p>' +
+          (s.squad.some(p => (s.xi.includes(p.id) || s.bench.includes(p.id)) && cardOf(p).ic) ? '<p class="lv-lg"><u class="lv-cd y"></u>amarelo neste jogo<u class="lv-cd p"></u>pendurado</p>' : '') +
           '<div class="lv-vp" id="lv-vp"><div class="lv-vf"><i class="c"></i><i class="b t"></i><i class="b u"></i></div>' + s.xi.map(tok).join('') + '</div>' +
           '<div class="lv-bh"><small>Banco</small><small>' + (s.subs ? 'arraste para o campo' : 'sem trocas') + '</small></div>' +
-          '<div class="lv-bench">' + (bench.length ? bench.map(p => '<button class="lv-bc' + (sel && sel.b === p.id ? ' sel' : '') + '" data-dbn="' + p.id + '"' + (s.subs ? '' : ' disabled') + '><small>' + (p.num ? '<u>' + p.num + '</u>' : '') + p.pos + ' · ' + p.ovr + '</small><b>' + esc(p.n) + '</b><i><em class="' + enCls(p.en) + '" style="width:' + Math.round(p.en) + '%"></em></i></button>').join('') : '<p class="co-tip">Ninguém no banco.</p>') + '</div>' +
+          '<div class="lv-bench">' + (bench.length ? bench.map(p => '<button class="lv-bc' + (sel && sel.b === p.id ? ' sel' : '') + '" data-dbn="' + p.id + '"' + (s.subs ? '' : ' disabled') + '><small>' + (p.num ? '<u>' + p.num + '</u>' : '') + p.pos + ' · ' + p.ovr + (cardOf(p).ic === 'p' ? '<span class="lv-cd p" title="pendurado"></span>' : '') + '</small><b>' + esc(p.n) + '</b><i><em class="' + enCls(p.en) + '" style="width:' + Math.round(p.en) + '%"></em></i></button>').join('') : '<p class="co-tip">Ninguém no banco.</p>') + '</div>' +
           '<div class="lv-fb">' + (undo.length ? '<div class="lv-fb2"><button class="btn ghost" id="b-lv-undo">Desfazer</button><button class="btn" id="b-lv-back">Pronto</button></div>' : '<button class="btn" id="b-lv-back">Pronto</button>') + '</div>';
         $('b-lv-back').onclick = () => { sfx('tap'); back(st); };
         if (undo.length) $('b-lv-undo').onclick = () => { sfx('tap'); const u = undo.pop(); s.xi = u.xi; s.bench = u.bench; s.subs = u.subs; s.gone = u.gone; m.ev.length = u.ev; firstMove = u.fm; sel = null; draw(); };
@@ -820,12 +828,13 @@
         const sort = l => l.sort((a, b) => avail(b) - avail(a) || score(b) - score(a));
         const same = sort(bench.filter(p => p.pos === slot)), other = sort(bench.filter(p => p.pos !== slot && (p.pos === 'GOL') === (slot === 'GOL')));
         const best = s.subs ? same.find(avail) || other.find(avail) : null;
-        const note = p => p.out ? 'lesionado' : p.sus ? susTxt(p) : [p === best ? 'sugestão' : '', m.us.bk && m.us.bk[p.id] ? 'com amarelo' : '', p.age ? p.age + ' anos' : '', p.en < 55 ? 'cansado' : ''].filter(Boolean).join(' · ');
+        const note = p => p.out ? 'lesionado' : p.sus ? susTxt(p) : [p === best ? 'sugestão' : '', m.us.bk && m.us.bk[p.id] ? 'com amarelo' : pend(p) ? 'pendurado' : '', p.age ? p.age + ' anos' : '', p.en < 55 ? 'cansado' : ''].filter(Boolean).join(' · ');
         const row = p => { const ok = s.subs && avail(p); return '<button class="co-pl' + (p === best ? ' best' : '') + (ok ? '' : ' dis') + '" data-lsub="' + p.id + '"' + (ok ? '' : ' disabled') + '>' +
           '<span class="co-pos">' + p.pos + '</span><span class="co-pn"><b>' + esc(p.n) + '</b><small>' + note(p) + '</small></span>' +
           '<span class="co-en ' + enCls(p.en) + '"><em style="width:' + Math.round(p.en) + '%"></em></span><b class="co-ov">' + p.ovr + '</b></button>'; };
         const tired = cur.out ? ' · machucado' : cur.en < 55 ? ' · cansado' : '';
         pop('<div class="co-pop-h"><b class="co-pop-ov">' + cur.ovr + '</b><span><b>' + esc(cur.n) + '</b><small>' + slot + ' · energia ' + Math.round(cur.en) + '%' + tired + '</small></span><button class="co-pop-x" data-pop-x aria-label="Fechar">' + XICO + '</button></div>' +
+          (cardOf(cur).ic ? '<p class="lv-cdh"><u class="lv-cd ' + cardOf(cur).ic + '"></u>' + cardHint(cur) + '</p>' : '') +
           '<div class="co-pop-b">' + (s.subs ? '' : '<div class="co-pop-l">Sem trocas: as cinco já foram usadas</div>') +
             (same.length ? '<div class="co-pop-l">Quem pode entrar no lugar dele</div>' + same.map(row).join('') : '<div class="co-pop-l">Ninguém da posição no banco</div>') +
             (other.length ? '<div class="co-pop-l">Fora de posição</div>' + other.map(row).join('') : '') + '</div>' +
