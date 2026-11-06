@@ -88,8 +88,11 @@
     function lineOf(s) { let m = 0; T[1 - s].forEach(q => { if (q.r !== 'GK') m = Math.max(m, tf(s, q)[0]); }); return Math.max(m, L / 2); }
     function shapeOf(p, has, bx, by, line) {
       if (p.r === 'GK') return has ? [cl(4 + bx * 0.12, 5, 16), 34 + (by - 34) * 0.2] : [cl(2 + bx * 0.05, 2, 7), 34 + (by - 34) * 0.3];
-      const st = ST[p.side], back = has ? cl(bx - 28, 16, 64) : cl(bx - 24 + (st.line - 0.5) * 16, 6, 50), span = has ? 50 : 31, dd = (p.d - 0.16) / 0.74;
-      let x = back + dd * span, y = 34 + (p.w - 34) * (has ? 0.8 + 0.55 * st.wide : 0.6) + (by - 34) * (has ? 0.15 : 0.42);
+      // Bloco sobe e desce junto com a bola; a altura da linha (line) vale com e sem a bola: pressão alta = linha alta e time curto
+      const st = ST[p.side], ln = Math.min(1, st.line), pr = Math.min(1, st.press);
+      const back = has ? cl(bx - 26 + 10 * ln, Math.min(12 + 20 * ln, bx + 12), 40 + 22 * ln) : cl(bx - 26 + 14 * ln, 6, 30 + 26 * ln), span = has ? 50 : 33 - 7 * pr, dd = (p.d - 0.16) / 0.74;
+      // Com a bola, o meio sobe para jogar entre as linhas deles (mais nos estilos de linha alta; na retranca quase nada)
+      let x = back + dd * span + (has ? (5 + 17 * ln) * Math.sin(Math.PI * cl(dd, 0, 1)) : 0), y = 34 + (p.w - 34) * (has ? 0.8 + 0.55 * st.wide : 0.6) + (by - 34) * (has ? 0.15 : 0.42);
       // Lateral apoia por fora quando a bola vai do lado dele (mais cedo no time que joga pelos lados)
       const ov = 22 + 12 * st.wide;
       if (has && bx > 60 - 16 * st.wide && ((p.r === 'LB' && by < ov) || (p.r === 'RB' && by > WD - ov))) { x = Math.max(x, bx + 3); y = p.r === 'LB' ? 4 : 64; }
@@ -107,6 +110,7 @@
         const a = i * 0.52 + rnd() * 0.5, r = i === 0 ? 0 : 3 + rnd() * 11;
         let cx = cl(sx + Math.cos(a) * r, 2, 103), cy = cl(sy + Math.sin(a) * r, 3, 65);
         if (p.d > 0.6) cx = Math.min(cx, Math.max(line - 0.8, bx - 2));
+        if (p.d < 0.3) cx = Math.max(cx, sx - 3); // zaga não recua para fugir da marcação: segura a altura do bloco
         const [wx, wy] = toW(s, cx, cy);
         let open = 16, lane = 12, crowd = 0;
         for (const q of T[1 - s]) { open = Math.min(open, Math.hypot(q.x + q.vx * 0.45 - wx, q.y + q.vy * 0.45 - wy)); lane = Math.min(lane, segD(q.x, q.y, ball.x, ball.y, wx, wy)); }
@@ -148,7 +152,9 @@
           const n = att.filter(a => a !== owner && a.r !== 'GK').sort((a, b) => dist(a, owner) - dist(b, owner))[0];
           if (n) { p.tx = owner.x + (n.x - owner.x) * 0.55; p.ty = owner.y + (n.y - owner.y) * 0.55; return; }
         }
-        if (p.mark) { const a = p.mark, d = Math.hypot(gx - a.x, gy - a.y) || 1; wx = wx * 0.35 + (a.x + (gx - a.x) / d * 3.4) * 0.65; wy = wy * 0.35 + (a.y + (gy - a.y) / d * 3.4) * 0.65; }
+        if (p.mark) { const a = p.mark, d = Math.hypot(gx - a.x, gy - a.y) || 1; wx = wx * 0.35 + (a.x + (gx - a.x) / d * 3.4) * 0.65; wy = wy * 0.35 + (a.y + (gy - a.y) / d * 3.4) * 0.65;
+          // Zagueiro não afunda atrás do atacante além do que a linha permite: linha alta segura e deixa em impedimento
+          if (p.d < 0.3) { const lo = zx - 4 - (1 - Math.min(1, ST[s].line)) * 10, fx = tf(s, { x: wx, y: wy })[0]; if (fx < lo) wx = toW(s, lo, 0)[0]; } }
         p.tx = wx; p.ty = wy;
       });
     }
@@ -216,7 +222,8 @@
         const od = passOdds(s, tx, ty, lofted, q, kind === 'costas');
         let val = V(tx, ty) + (kind === 'costas' ? 0.06 : 0) + (kind === 'cruz' ? 0.05 + 0.3 * ST[s].wide : 0) + (q === lastPasser && q.go > 0 && clk - lastPassClk < 2.5 ? 0.02 : 0) + (isMe(q) && tx > 70 ? 0.03 : 0);
         if (tx < bx - 2) val *= 0.9;
-        val += PROG * progK(s) * (tx - bx) / 30;
+        if (q.r === 'GK') val *= 0.6; // recuar para o goleiro é a última saída, não o caminho de sempre
+        val += PROG * progK(s) * (tx - bx) / 30 * (bx < 52 ? 1.6 : 1); // no campo de defesa, subir vale mais: o time sai jogando
         opts.push({ type: 'pass', kind, q, wx: od.wx, wy: od.wy, lofted, od, p: od.p, u: od.p * val - (1 - od.p) * lossAt((bx + tx) / 2, (by + ty) / 2) * lossK(s) });
       }
       if (p.r !== 'GK') for (const a of [0, 0.6, -0.6]) {
@@ -270,7 +277,7 @@
       ball.owner = p; ball.fly = null; ball.loose = null; ball.carry = null; ball.rcv = 0.3; p.run = 0; p.go = 0;
       let press = 99; for (const q of T[1 - p.side]) press = Math.min(press, dist(q, p));
       const won = p.side !== poss, fast = won && rnd() < ST[p.side].counter * 0.6; // roubou e o time é de contra-ataque: sai rápido
-      ball.hold = p.r === 'GK' ? 1.3 + rnd() * 0.8 : quick || fast ? 0.25 + rnd() * 0.2 : press < 3 ? 0.35 + rnd() * 0.25 : (0.5 + rnd() * 0.9) * (0.5 + 0.5 * ST[p.side].ctrl);
+      ball.hold = p.r === 'GK' ? 0.8 + rnd() * 0.6 : quick || fast ? 0.25 + rnd() * 0.2 : press < 3 ? 0.35 + rnd() * 0.25 : (0.5 + rnd() * 0.9) * (0.5 + 0.5 * ST[p.side].ctrl);
       if (due && due.side === p.side) ball.hold = Math.min(ball.hold, 0.35);
       if (lc && !lc.have && !DEF[lc.k] && isMe(p)) { lc.have = true; ball.hold = 0.35; }
       if (lc && !lc.have && DEF[lc.k] && p === lc.q) { lc.have = true; ball.hold = 1; }
@@ -471,7 +478,10 @@
           if (md > 3.8 || db > 42 || rnd() > dt * 1.4) return;
           const [px, py] = tf(s, p), [mx, my] = tf(s, mk), [ox, oy] = tf(s, ball);
           if (p.d > 0.6 && px > line - 4 && rnd() < 0.5) { p.run = 1.3; p.runX = Math.min(95, line + 6 + rnd() * 5); p.runY = cl(py + (py - my) * 1.5, 6, 62); return; }
-          let ux = (px - mx) + (ox - px) * 0.15, uy = (py - my) + (oy - py) * 0.15; const ul = Math.hypot(ux, uy) || 1;
+          let ux = (px - mx) + (ox - px) * 0.15, uy = (py - my) + (oy - py) * 0.15;
+          // O marcador fica do lado do gol: fugir dele em linha reta é voltar. Meia e atacante saem de lado (ou na diagonal), não para trás
+          if (p.d > 0.3) { if (Math.abs(uy) < 0.8) uy = (py < 34 ? 1 : -1) * 1.5; ux = Math.max(ux, -Math.abs(uy) * 0.35); }
+          const ul = Math.hypot(ux, uy) || 1;
           p.go = 0.9; p.goX = cl(px + ux / ul * 7.5, 3, p.d > 0.6 ? Math.max(line - 0.8, ox - 2) : 100); p.goY = cl(py + uy / ul * 7.5, 4, 64);
         });
         if (sup && opr < 3.2 && owner.r !== 'GK' && rnd() < dt * 2.5) {
