@@ -129,8 +129,11 @@
       ult +
       '<div class="co-next">' + (nx.bye ? '<div class="eyebrow">Rodada ' + nx.round + ' de ' + nx.of + '</div><h2>Sem jogo nesta rodada</h2><p class="lead">O time descansa. Os outros jogam.</p>' :
         '<div class="eyebrow">Rodada ' + nx.round + ' de ' + nx.of + ' · ' + (nx.home ? 'em casa' : 'fora') + '</div>' +
-        '<div class="co-vs"><span>' + crest(cl.id, 'co-vc') + '<b>' + esc(cl.short || cl.name) + '</b><small>' + ordTxt(pos) + '</small></span><em>x</em>' +
-          '<span>' + crest(vs.id, 'co-vc') + '<b>' + esc(vs.short || vs.name) + '</b><small>' + ordTxt(S.coTable(co).findIndex(x => x.id === vs.id) + 1) + '</small></span></div>') +
+        // Mandante sempre à esquerda; o seu time ganha o destaque (me) e a linha do mando diz o que a casa faz no jogo
+        (() => { const us = '<span class="me">' + crest(cl.id, 'co-vc') + '<b>' + esc(cl.short || cl.name) + '</b><small>' + ordTxt(pos) + '</small></span>',
+          them = '<span>' + crest(vs.id, 'co-vc') + '<b>' + esc(vs.short || vs.name) + '</b><small>' + ordTxt(S.coTable(co).findIndex(x => x.id === vs.id) + 1) + '</small></span>';
+          return '<div class="co-vs">' + (nx.home ? us : them) + '<em>x</em>' + (nx.home ? them : us) + '</div>' +
+            '<p class="co-mando ' + (nx.home ? 'up' : 'down') + '">' + (nx.home ? '▲ Em casa · a torcida empurra no começo' : '▼ Fora · eles vão apertar no começo') + '</p>'; })()) +
         '<div class="co-meta"><small>Meta</small><b>' + S.CO_GOAL_TXT[B.goal.k] + '</b><span>' + (B.goal.k === 'titulo' ? 'você está em ' + ordTxt(pos) : 'até o ' + ordTxt(B.goal.pos) + ' · hoje ' + ordTxt(pos)) + '</span></div>' +
         (nx.bye ? '' : scout(S.coPreview(co).them)) + moodLine() +
         '<button class="btn" id="b-co-play">' + (nx.bye ? 'Ver a rodada' : 'Escalar e jogar') + '</button></div>' +
@@ -628,7 +631,7 @@
       if (!useSim) $('lv-zone').innerHTML = read.side ? '<i class="' + (read.side === 'direita' ? 'bot' : 'top') + '"></i><b class="' + (read.side === 'direita' ? 'bot' : 'top') + '">Atacam pela sua ' + read.side + '</b>' : '';
       else { const z = $('lv-zone'); z.hidden = !read.side; if (read.side) z.textContent = 'Atacam pela sua ' + read.side; }
       const fresh = m.ev.filter(e => !seen.has(e) && !hidden.has(e));
-      if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => feedLine(m, e)).join('')); if (fresh.some(e => e.t === 'gol')) sfx('tap'); }
+      if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => feedLine(m, e)).join('')); { const gl = fresh.filter(e => e.t === 'gol').pop(); if (gl) sfx(U.goalSnd(gl.s === 'us', !!m.home)); } }
     };
     const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; save('hub'); result(m, log, false, firstMove); };
     const end = () => {
@@ -878,7 +881,7 @@
         if (z.textContent !== txt) z.textContent = txt;
         if (z.className !== zc) z.className = zc;
       };
-      sim = LP.sim({ me: -1, t0: m.min, flip: !m.home, kits: KT, speed: () => (co.speed === '3' ? 3 : 1), onFrame: zone,
+      sim = LP.sim({ me: -1, t0: m.min, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1), onFrame: zone,
         seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]] });
       lineKey = [m.us, m.them].map(s => s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style);
       sim.attach($('lp-cv'));

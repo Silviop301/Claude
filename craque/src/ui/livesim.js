@@ -68,7 +68,14 @@
     // O estilo de cada time (S.CO_STY do Treinador; no Jogo a Jogo, equilibrado): ctrl segura a bola e evita passe arriscado,
     // press sobe a marcação e dá mais bote, line é a altura da defesa, counter acelera depois de roubar, wide abre o time e cruza
     const stOf = x => ({ ctrl: x && x.ctrl !== undefined ? x.ctrl : 1, press: x && x.press !== undefined ? x.press : 0.35, line: x && x.line !== undefined ? x.line : 0.5, counter: x && x.counter !== undefined ? x.counter : 0.35, wide: x && x.wide !== undefined ? x.wide : 0.5 });
-    const ST = [stOf(o.styles && o.styles[0]), stOf(o.styles && o.styles[1])];
+    // Mando de campo (o.home: 0 seu time, 1 o adversário, sem: campo neutro): nos primeiros 15 minutos quem joga em casa
+    // sobe a linha e dá mais bote, empurrado pela torcida; o visitante se fecha um pouco. Só o jeito de jogar muda
+    const STb = [stOf(o.styles && o.styles[0]), stOf(o.styles && o.styles[1])], ST = STb.slice();
+    const HOME = o.home === 0 || o.home === 1 ? o.home : -1, HOME_MIN = 15;
+    function stRefresh() {
+      const on = HOME >= 0 && curT < HOME_MIN;
+      [0, 1].forEach(s => { const b = STb[s]; ST[s] = !on ? b : s === HOME ? Object.assign({}, b, { press: b.press + 0.3, line: Math.min(1, b.line + 0.15) }) : Object.assign({}, b, { press: Math.max(0, b.press - 0.1), line: Math.max(0, b.line - 0.1) }); });
+    }
     const lossK = s => 1.4 + 1.6 * ST[s].ctrl, progK = s => 0.6 + 1.2 * ST[s].counter;
     // O que acontece no campinho vai para a narração (o: onEv(tipo, { side, a, b }); a e b: 'me' ou a posição)
     const tag = p => (p ? (isMe(p) ? 'me' : p.r) : '');
@@ -76,6 +83,7 @@
     const ball = { x: 52.5, y: 34, owner: null, fly: null, loose: null, carry: null, hold: 0, rcv: 0 };
     let poss = 0, mode = o.t0 > 0 ? 'ko' : 'wait', modeT = 1.2, koSide = 0, hero = null, bias = [1, 1], mom = 0, momT = 0, runT = 2, defT = 0, clk = 0;
     let curT = o.t0 || 0, mClk = 0, bxT = 50, lastPasser = null, lastPassClk = -9, frozen = false, en = null, cv = null, g = null, W = 0, H = 0, dpr = 1, raf = 0, last = 0, alive = true;
+    stRefresh();
     const goals = (o.goals || []).map(e => ({ m: e.m, side: e.side, me: !!e.me, as: !!e.as, done: e.m <= (o.t0 || 0) && (o.t0 || 0) > 0 }));
     const reform = (p, [r, d, w, ov]) => { p.r = r; p.d = d; p.w = w * 0.68; if (ov !== undefined) { p.spd += (qOf(ov) - p.q) * 0.5; p.q = qOf(ov); } };
     let due = null; // o gol do motor que está para sair
@@ -480,6 +488,7 @@
       const nxt = goals.find(e => !e.done && e.m >= curT - 1 && e.m <= curT + 3);
       let b = (bxT - 50) / 50 * 0.2 + mom;
       if (nxt) b += nxt.side ? -0.22 : 0.22;
+      if (HOME >= 0 && curT < HOME_MIN) b += HOME ? -0.12 : 0.12; // a casa empurra no começo
       bias = [1 + cl(b, -0.35, 0.35), 1 - cl(b, -0.35, 0.35)];
       // O minuto do gol chegou: a jogada sai (se o time não tem a bola, rouba a próxima)
       // (começa um pouco antes do minuto dele, para a bola entrar junto com o placar)
@@ -781,7 +790,7 @@
       minute(t, bx) {
         const avg = acc.n > 0 && t === curT + 1 ? acc.x / acc.n : null; acc.x = 0; acc.n = 0;
         if (t - curT > 1) goals.forEach(e => { if (e.m < t) e.done = true; });
-        curT = t; bxT = bx; mClk = clk; return avg;
+        curT = t; bxT = bx; mClk = clk; stRefresh(); return avg;
       },
       // O que a tela escreve sai daqui: quem tem a bola, onde ela está (no sentido de quem ataca) e a posse até agora
       info() {
@@ -843,7 +852,7 @@
         ALL = T[0].concat(T[1]); ALL.forEach(p => { p.mark = null; p.th = 0; }); defT = 0;
       },
       // Treinador: mudou o estilo no meio do jogo
-      style(s, x) { ST[s] = stOf(x); },
+      style(s, x) { STb[s] = stOf(x); stRefresh(); },
       mirror() { return mir(); },
       pending(m) { return mode !== 'wait' && goals.some(e => !e.done && e.m === m); },
       go() { if (mode === 'wait') { mode = 'ko'; modeT = 0.3; } },
