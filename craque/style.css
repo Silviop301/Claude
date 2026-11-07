@@ -7620,39 +7620,31 @@ body.ld-on #ld { display: block; }
 .ldl-p .lp-pitch { position: absolute; inset: 0; aspect-ratio: auto; max-height: none; border-radius: 14px; border: 0; margin: 0; }
 .ldl-p .lp-cv { width: 100%; height: 100%; }
 .ldl-p .lv-forms { display: none; }
-.ldl-p .lp-zone { right: 8px; left: auto; bottom: auto; top: 8px; font-size: 10px; padding: 2px 7px; max-width: 40%; }
-.ldl-p .lv-read { left: auto; right: 8px; top: 40px; font-size: 10px; }
-.ldl-sb { position: absolute; left: 8px; top: 8px; z-index: 3; display: flex; align-items: center; gap: 7px; background: rgba(12, 14, 16, .88); border-radius: 12px; padding: 5px 9px; }
+.ldl-p .lp-zone, .ldl-p .lv-read { display: none !important; } /* campo limpo: sem etiqueta da zona */
+.ldl-sb { position: absolute; left: 8px; top: 8px; z-index: 3; display: flex; align-items: center; gap: 8px; background: rgba(12, 14, 16, .88); border-radius: 12px; padding: 6px 12px; }
 .ldl-cr { width: 22px; height: 22px; object-fit: contain; }
-.ldl-sb > em { font: 800 22px/1 var(--display); font-style: normal; } .ldl-sb > em i { font-size: 13px; font-style: normal; color: var(--tx-3); }
+.ldl-sb > em { font: 800 26px/1 var(--display); font-style: normal; } .ldl-sb > em i { font-size: 13px; font-style: normal; color: var(--tx-3); }
 .ldl-clk { background: #D8404A; color: #FFF; border-radius: 6px; padding: 2px 6px; font: 800 13px var(--display); } .ldl-clk i { display: none; }
-.ldl-mw { display: flex; flex-direction: column; gap: 1px; width: 130px; }
-.ldl-mw small { font: 800 9px var(--display); letter-spacing: .06em; color: #7BE3A0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ldl-mw small b { color: inherit; font: inherit; }
-.ldl-mw .lv-mom { height: 16px; }
 .ldl-sb .lv-crd { display: none; }
-.ldl-chip { position: absolute; left: 8px; top: 50px; z-index: 3; display: flex; align-items: center; gap: 6px; background: var(--paper); color: var(--ink); border-radius: 999px; padding: 3px 10px; font: 800 11px var(--display); letter-spacing: .04em; }
-.ldl-chip[hidden] { display: none; }
-.ldl-chip i { width: 40px; height: 5px; border-radius: 3px; background: rgba(19, 32, 26, .2); overflow: hidden; } .ldl-chip u { display: block; height: 100%; background: var(--ink); }
-.ldl-chip small { font: 700 11px var(--display); }
-.ldl-feed { position: absolute; left: 8px; right: 150px; bottom: 8px; z-index: 3; display: flex; flex-direction: column-reverse; gap: 3px; pointer-events: none; }
-.ldl-feed li { display: none; background: rgba(12, 14, 16, .9); padding: 5px 9px; border-radius: 9px; font: 600 12px/1.25 var(--body); grid-template-columns: 26px 1fr; gap: 4px; }
-.ldl-feed li:nth-child(1) { display: grid; } .ldl-feed li:nth-child(2) { display: grid; opacity: .75; font-size: 11px; padding: 3px 8px; justify-self: start; }
-.ldl-feed li > i { font-size: 12px; color: var(--gold); } .ldl-feed li:nth-child(2) > i { color: var(--tx-4); }
-.ldl-feed { align-items: stretch; } .ldl-feed li:nth-child(2) { order: -1; }
-.ldl-num { position: absolute; right: 8px; bottom: 8px; z-index: 3; background: rgba(12, 14, 16, .9) !important; border-radius: 9px; padding: 6px 10px !important; font: 800 11px var(--display) !important; letter-spacing: .05em; }
+.ldl-side { width: 168px; flex: none; display: flex; flex-direction: column; gap: 8px; }
+/* Último lance (campo limpo, 2026-11-07): só a linha mais nova do relato, em cartão no topo do painel */
+.ldl-ev.lv-feed { margin: 0; padding: 0; list-style: none; background: none; border: 0; display: block; flex: none; }
+.ldl-ev.lv-feed li { display: none; padding: 9px 11px; border-radius: 12px; background: #141517; box-shadow: inset 0 0 0 1px #2a2d31; font: 600 15px/1.3 var(--body); color: var(--tx-1); }
+.ldl-ev.lv-feed li:first-child { display: block; max-height: 77px; overflow: hidden; }
+.ldl-ev.lv-feed li > i { font: 800 16px var(--display); font-style: normal; color: var(--gold); margin-right: 5px; }
+.ldl-ev.lv-feed li > span, .ldl-ev.lv-feed li b { font: inherit; color: inherit; }
+.ldl-ev.lv-feed li.gol.us { background: var(--paper); color: var(--lv-ink); box-shadow: none; } .ldl-ev.lv-feed li.gol.us > i { color: var(--ink-2); }
+.ldl-qm { display: flex; flex-direction: column; gap: 5px; }
+.ldl-qm small { font: 700 13px var(--body); letter-spacing: .08em; color: var(--tx-3); }
+.ldl-qm i { display: block; height: 6px; border-radius: 3px; background: #2a2d31; overflow: hidden; }
+.ldl-qm u { display: block; height: 100%; width: 50%; background: #4fd18b; transition: width .6s; }
+.ldl-num { flex: none; width: 100%; height: 44px; background: #1b1d20 !important; border: 1px solid #3a3d42 !important; color: var(--tx-1) !important; border-radius: 10px; padding: 0 10px !important; font: 700 14px var(--body) !important; letter-spacing: 0; white-space: nowrap; }
 .ldl-num b { color: var(--gold); font: inherit; }
-.ldl-side { width: 168px; flex: none; display: flex; flex-direction: column; gap: 6px; }
-.ldl-gh { display: flex; align-items: baseline; justify-content: space-between; } .ldl-gh small:last-child { font: 600 10px var(--body); color: var(--tx-4); }
 .ldl-g4 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
 .ldl-g4 button { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 44px; background: #141517 !important; border-radius: 10px; border: 1.5px solid rgba(255, 255, 255, .1) !important; }
 .ldl-g4 b { font: 800 13px/1.1 var(--display); } .ldl-g4 small { font: 600 10px var(--body); color: var(--tx-3); }
 .ldl-g4 button.on { background: var(--paper) !important; color: var(--ink) !important; border-color: var(--paper) !important; } .ldl-g4 button.on small { color: var(--ink-2); }
 .ldl-g4 button:disabled { opacity: .45; }
-.ldl-gt { margin: 0; font: 600 10.5px/1.3 var(--body); color: var(--tx-2); }
-.ldl-aux { padding: 7px 8px !important; gap: 6px !important; border-radius: 11px !important; }
-.ldl-aux .lv-ai { width: 22px; height: 22px; } .ldl-aux > div > span { font: 600 11px/1.3 var(--body) !important; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-.ldl-aux small { font: 800 9px var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--gold-ink) !important; }
-.ldl-aux .lv-tags { display: none; }
 .ldl-side .lv-speed { background: #141517; } .ldl-side .lv-speed button { flex: 1; height: 32px; min-width: 0; font-size: 14px; }
 .ldl-stop { flex-direction: row !important; gap: 6px; min-height: 42px !important; } .ldl-stop b { font-size: 16px !important; }
 .ldl-stop.on { background: var(--paper) !important; box-shadow: 0 0 0 2px var(--gold); }

@@ -680,7 +680,8 @@
       if ($('lv-cst')) $('lv-cst').innerHTML = '<span>Faltas<b>' + hv2(fo).join(' · ') + '</b></span><span>Impedim.<b>' + hv2(of).join(' · ') + '</b></span><span>Cartões<b><span class="co-yc"></span> ' + yH + ' · ' + yA + (cnt('vermelho', hsd) + cnt('vermelho', asd) ? ' <span class="co-red"></span> ' + cnt('vermelho', hsd) + ' · ' + cnt('vermelho', asd) : '') + '</b></span>';
       $('lv-ps').innerHTML = Math.round((m.home ? pu : 1 - pu) * 100) + '<small>%</small>';
       $('lv-mom').innerHTML = momSvg(m);
-      const mo = mom(); $('lv-momw').textContent = m.min < 5 ? 'começo de jogo' : mo > 56 ? nm(co.club) + ' por cima' : mo < 44 ? nm(m.vs) + ' por cima' : 'jogo parelho';
+      const mo = mom(); if ($('ldl-momb')) $('ldl-momb').style.width = Math.max(4, Math.min(96, mo)) + '%';
+      $('lv-momw').textContent = m.min < 5 ? 'começo de jogo' : mo > 56 ? nm(co.club) + ' por cima' : mo < 44 ? nm(m.vs) + ' por cima' : 'jogo parelho';
       if (!useSim) {
         $('lv-dots').innerHTML = lvDots(m.us, true, mo, m.min) + lvDots(m.them, false, 100 - mo, m.min);
         const b = lvBall(m, mo); $('lv-ball').style.left = b[0] + '%'; $('lv-ball').style.top = b[1] + '%';
@@ -976,7 +977,7 @@
         if (z.textContent !== txt) z.textContent = txt;
         if (z.className !== zc) z.className = zc;
       };
-      sim = LP.sim({ me: -1, t0: m.tk || m.min, half2: m.min > 45, boardUp: U.LD && U.LD.on && U.LD.on() ? 52 : 0, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1.25), spm: () => SPEED[co.speed === '3' ? '3' : '1'][1] / 1000, onFrame: zone,
+      sim = LP.sim({ me: -1, t0: m.tk || m.min, half2: m.min > 45, clean: LDon, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1.25), spm: () => SPEED[co.speed === '3' ? '3' : '1'][1] / 1000, onFrame: zone,
         onPick: (side, inf) => { if (ctx && side === 0 && inf && inf.id) U.LD.livePlayer(ctx, inf.id); },
         seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]] });
       lineKey = [m.us, m.them].map(s => s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style);

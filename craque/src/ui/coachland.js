@@ -353,32 +353,28 @@
 
   // ---------- Partida ao vivo deitada (MainB): campinho grande com placar, grito e narração por cima; à direita o grito do
   // técnico, o auxiliar, a velocidade e "Parar e mexer". O motor e o relógio são os de ui/coach.js (live), que passa ctx.
-  const GR_ON = { pressionar: 'PRESSIONANDO', segurar: 'SEGURANDO', lados: 'PELOS LADOS', recuar: 'RECUADO' };
   function liveHtml(o) {
+    // Campo limpo (Silvio, 2026-11-07): em cima do campinho só o placar; o último lance, quem manda, o grito e os números ficam
+    // no painel da direita; o recado do auxiliar só aparece no "Parar e mexer"
     const { H, A, crestB } = o;
     return '<div class="lv ldl"><div class="ldl-p">' + o.pitchHtml +
       '<div class="ldl-sb">' + crestB(H.id, 'ldl-cr') + '<em id="lv-score">0 <i>x</i> 0</em>' + crestB(A.id, 'ldl-cr') + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' +
-        '<span class="ldl-mw"><small>QUEM MANDA · <b id="lv-momw"></b></small><span id="lv-mom"></span></span><i class="lv-crd" id="lv-cd-h"></i><i class="lv-crd" id="lv-cd-a"></i></div>' +
-      '<div class="ldl-chip" id="ldl-chip" hidden></div>' +
-      '<ul class="lv-feed ldl-feed" id="lv-feed">' + o.feed0 + '</ul>' +
-      '<button class="ldl-num" id="ldl-num">NÚMEROS</button></div>' +
-      '<div class="ldl-side"><div class="ldl-gh">' + lbl('GRITO DO TÉCNICO') + '<small>1 por vez</small></div>' +
+        '<i class="lv-crd" id="lv-cd-h"></i><i class="lv-crd" id="lv-cd-a"></i></div></div>' +
+      '<div class="ldl-side"><ul class="lv-feed ldl-ev" id="lv-feed">' + o.feed0 + '</ul>' +
+        '<div class="ldl-qm"><small>QUEM MANDA</small><i><u id="ldl-momb"></u></i></div>' +
         '<div class="ldl-g4" id="ldl-g4">' + Object.keys(S.CO_SHOUT).map(k => '<button data-gr="' + k + '"><b>' + S.CO_SHOUT[k].name + '</b><small>' + S.CO_SHOUT[k].sub + '</small></button>').join('') + '</div>' +
-        '<p class="ldl-gt" id="ldl-gt"></p><div class="lv-aux ldl-aux" id="lv-aux"></div><span class="ld-gr"></span>' + o.speedHtml +
+        '<button class="ldl-num" id="ldl-num">Números</button><span class="ld-gr"></span>' + o.speedHtml +
         '<button class="ld-gold ldl-stop" id="b-lv-stop">' + o.pause + '<b>Parar e mexer</b></button></div>' +
-      '<div hidden><b id="lv-sh"></b><b id="lv-ot"></b><b id="lv-ps"></b><div id="lv-cst"></div></div>' +
+      '<div hidden><b id="lv-sh"></b><b id="lv-ot"></b><b id="lv-ps"></b><div id="lv-cst"></div><b id="lv-momw"></b><span id="lv-mom"></span><div id="lv-aux"></div></div>' +
       '<div class="lv-sheet ldl-sheet" id="lv-sheet"></div></div>';
   }
   function livePaint(x) {
     const m = x.m, sh = m.us.shout, $ = id => document.getElementById(id);
     const g = $('ldl-g4'); if (!g) return;
-    g.querySelectorAll('[data-gr]').forEach(b => { b.classList.toggle('on', !!sh && sh.k === b.dataset.gr); b.disabled = !!sh && sh.k !== b.dataset.gr; });
-    const T = sh && S.CO_SHOUT[sh.k];
-    $('ldl-gt').textContent = T ? T.name + ': ' + T.tip + '. Vale até os ' + sh.until + '\'.' : 'Um grito muda o time por 10 minutos. Depois ele volta ao plano.';
-    const ch = $('ldl-chip'); ch.hidden = !sh;
-    if (sh) ch.innerHTML = '<b>' + GR_ON[sh.k] + '</b><i><u style="width:' + Math.max(0, Math.min(100, (sh.until - m.min) / (sh.until - sh.from) * 100)) + '%"></u></i><small>até ' + sh.until + '\'</small>';
+    g.querySelectorAll('[data-gr]').forEach(b => { const on = !!sh && sh.k === b.dataset.gr; b.classList.toggle('on', on); b.disabled = !!sh && !on;
+      b.querySelector('small').textContent = on ? 'até os ' + sh.until + '\'' : S.CO_SHOUT[b.dataset.gr].sub; });
     const st = x.stats();
-    $('ldl-num').innerHTML = 'NÚMEROS · <b>' + st.sh.us + ' x ' + st.sh.them + '</b> chutes';
+    $('ldl-num').innerHTML = 'Números · <b>' + st.sh.us + ' x ' + st.sh.them + '</b> chutes';
     if (!g._b) {
       g._b = 1;
       g.querySelectorAll('[data-gr]').forEach(b => b.onclick = () => { if (m.done || m.us.shout) return; sfx('tap'); x.shout(b.dataset.gr); });
