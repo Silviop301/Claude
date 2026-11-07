@@ -727,7 +727,7 @@
           return;
         }
         if (e.t !== 'gol' && e.t !== 'chance') return;
-        const side = e.s === 'us' ? 0 : 1, out = e.t === 'gol' ? 'gol' : e.k === 'defesa' || e.k === 'travado' ? 'def' : 'fora';
+        const side = e.s === 'us' ? 0 : 1, out = e.t === 'gol' ? 'gol' : e.k === 'defesa' ? 'def' : e.k === 'trave' ? 'trave' : e.k === 'bloqueio' || e.k === 'travado' ? 'bloq' : 'fora'; // o campinho mostra o que o narrador conta (fase 5)
         hidden.add(e);
         if (out === 'gol') return gl.push([side, e]);
         const cancel = sim.shot(side, out, () => { if (hidden.delete(e)) paint(); });
