@@ -60,7 +60,7 @@ function match(o, goals) {
     if (b.fly && b.fly.shot && !b.fly._q) { b.fly._q = 1; m.shots[b.fly.side]++; if (b.fly.out === 'gol') goalsSeen++; }
     if (b.owner) { const s = b.owner.side, x = s ? 105 - b.x : b.x; if (x > 70) m.f3[s]++; }
     if (i % 5) continue; m.n++;
-    const A = S.ALLX; for (let a = 0; a < A.length; a++) for (let c = a + 1; c < A.length; c++) if (Math.hypot(A[a].x - A[c].x, A[a].y - A[c].y) < 3) m.pr3++;
+    const A = S.ALLX; for (let a = 0; a < A.length; a++) for (let c = a + 1; c < A.length; c++) if (Math.hypot(A[a].x - A[c].x, A[a].y - A[c].y) < 2.2) m.pr3++;
     // altura da última linha de quem defende (média dos 4 mais recuados, sem o goleiro), na sua própria frente
     if (b.owner) { const d = 1 - b.owner.side, xs = A.filter(p => p.side === d && p.r !== 'GK').map(p => (d ? 105 - p.x : p.x)).sort((u, v) => u - v).slice(0, 4); m.backX[d].push(xs.reduce((u, v) => u + v, 0) / 4); }
   }
@@ -78,7 +78,7 @@ COMBOS.forEach(([fa, sa, fb, sb], ci) => {
 });
 const P = k => tot[k] / tot.games / KN;
 console.log('passes por posse: ' + Object.keys(pps).map(k => `${k} ${avg(pps[k]).toFixed(1)}`).join(' · '));
-console.log(`a cada 2 min de campinho: passes ${P('passes').toFixed(0)} · trocas de posse ${P('flips').toFixed(0)} · chutes ${P('shots').toFixed(1)} · pulos da bola ${tot.jump} · pares a menos de 3 m ${(tot.pr3 / tot.n).toFixed(2)} por quadro`);
+console.log(`a cada 2 min de campinho: passes ${P('passes').toFixed(0)} · trocas de posse ${P('flips').toFixed(0)} · chutes ${P('shots').toFixed(1)} · pulos da bola ${tot.jump} · pares a menos de 2,2 m ${(tot.pr3 / tot.n).toFixed(2)} por quadro`);
 console.log(`reinícios por jogo: laterais ${P('lat').toFixed(1)} · escanteios ${P('esc').toFixed(1)} · tiros de meta ${P('tiro').toFixed(1)} · travados ${tot.stuck} · bola fora com o jogo rolando ${tot.outPlay} quadros · bandeirinha fora da sua metade ${tot.arOut} quadros`);
 console.log('linha de defesa por estilo (m da própria meta): ' + Object.keys(line).map(k => `${k} ${avg(line[k]).toFixed(0)}`).join(' · '));
 warn(tot.jump === 0, `a bola pulou ${tot.jump} vezes (teletransporte)`);
@@ -86,7 +86,7 @@ warn(P('lat') >= 0.8 && P('esc') >= 0.6 && P('tiro') >= 1, `a bola quase não sa
 warn(tot.stuck === 0, `reinício travado ${tot.stuck} vez(es) (mais de 9 s parado)`);
 warn(tot.outPlay < tot.games, `bola fora do campo com o jogo rolando: ${tot.outPlay} quadros`);
 warn(tot.arOut === 0, `bandeirinha saiu da sua metade: ${tot.arOut} quadros`);
-warn(tot.pr3 / tot.n < 0.8, `bonecos encostados demais: ${(tot.pr3 / tot.n).toFixed(2)} pares a menos de 3 m por quadro (limite 0,8)`);
+warn(tot.pr3 / tot.n < 0.8, `bonecos encostados demais: ${(tot.pr3 / tot.n).toFixed(2)} pares a menos de 2,2 m (bonecos um em cima do outro) por quadro (limite 0,8)`);
 warn(P('passes') >= 18, `poucos passes por jogo (${P('passes').toFixed(0)}, mínimo 18)`);
 warn(P('shots') >= 4 && P('shots') <= 14, `chutes por jogo fora da faixa 4-14 (${P('shots').toFixed(1)})`);
 warn(P('flips') >= 8 && P('flips') <= 24, `trocas de posse fora da faixa 8-24 (${P('flips').toFixed(0)})`);
