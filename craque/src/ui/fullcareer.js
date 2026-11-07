@@ -1739,7 +1739,7 @@
     }
     function narrSim(k, d) {
       if (half || finished || (o.stop && t >= stopAt - 1) || lcPend.size) return;
-      const big = k === 'defesa' || k === 'fora';
+      const big = k === 'defesa' || k === 'fora' || k === 'trave' || k === 'bloqueio';
       if (t - lastNarr < (big ? 1 : 2) || (fl && fl.lances.some(l => Math.abs(l.m - t) <= 1)) || out.my.ev.some(e => Math.abs(e.m - t) <= 1)) return;
       const tm = esc(d.side ? opName : meName), how = d.how === 'cabeca' ? ' de cabeça' : d.how === 'fora' ? ' de fora da área' : '';
       const L = {
@@ -1752,7 +1752,9 @@
         corte: tm + ': ' + nmP(d.a) + ' corta o passe',
         escanteio: tm + ': escanteio, ' + nmP(d.a) + ' cobra na área',
         defesa: 'Defesa do goleiro ' + esc(D.do(d.side ? meName : opName)) + ' no chute ' + deP(d.a) + how,
-        fora: tm + ': ' + nmP(d.a) + ' chuta' + how + ' e a bola sai'
+        fora: tm + ': ' + nmP(d.a) + ' chuta' + how + ' e a bola sai',
+        trave: tm + ': ' + nmP(d.a) + ' chuta' + how + ' e acerta a trave!',
+        bloqueio: tm + ': chute ' + deP(d.a) + ' travado pela zaga'
       }[k];
       if (!L) return;
       lastNarr = t;
