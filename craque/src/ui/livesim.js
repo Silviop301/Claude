@@ -771,6 +771,37 @@
     }
     // Saída de bola: cada time no seu campo
     const kicker = s => at(s, 9), kick2 = s => at(s, s ? 10 : 7);
+    // Troca (fase de trocas, 2026-11-07): subQ { s, items: [{ p, f, oldNum, newNum }], ph: wait → sai → entra }
+    let subQ = null;
+    function subApply(quiet) { // quem entra assume a vaga; quiet: no intervalo (vem do túnel), sem placa
+      subQ.items.forEach(it => { reform(it.p, it.f); });
+      for (let i = leaving.length - 1; i >= 0; i--) if (leaving[i].bench) leaving.splice(i, 1);
+      if (quiet) subQ = null;
+    }
+    function subStart() {
+      subQ.ph = 'sai'; subQ.t = 0; subQ.save = { mode, modeT }; mode = 'troca';
+      const s = subQ.s, out = [], inn = [];
+      subQ.items.forEach((it, i) => { const p = it.p;
+        // sai pela linha mais perto (lateral ou de fundo), correndo
+        const c = [[p.x, -1.4], [p.x, WD + 1.4], [-1.4, p.y], [L + 1.4, p.y]].sort((a, b) => Math.hypot(a[0] - p.x, a[1] - p.y) - Math.hypot(b[0] - p.x, b[1] - p.y))[0];
+        leaving.push({ p: { x: p.x, y: p.y, side: p.side, r: p.r }, num: it.oldNum, sub: true, run: true, wait: 0, t: 0, tx: c[0], ty: c[1] });
+        it.hx = p.x; it.hy = p.y; out.push(it.oldNum); inn.push(it.newNum);
+        reform(p, it.f); p.x = 52.5 + (s ? 1 : -1) * (3 + i * 1.8); p.y = WD + 1.1; p.vx = p.vy = 0; p.tx = p.x; p.ty = p.y; p.outT = 99; p.outE = 3; p.subW = 1; });
+      for (let i = leaving.length - 1; i >= 0; i--) if (leaving[i].bench) leaving.splice(i, 1);
+      Q4.b = { out, in: inn }; Q4.t = 99;
+    }
+    function subStep(dt) {
+      subQ.t += dt; const items = subQ.items;
+      ALL.forEach(p => { if (!p.subW) { p.tx = p.x; p.ty = p.y; p.sprint = 0; } });
+      if (subQ.ph === 'sai') { items.forEach(it => { it.p.tx = it.p.x; it.p.ty = it.p.y; });
+        if (!leaving.some(q => q.sub && q.run) || subQ.t > 7) { subQ.ph = 'entra'; subQ.t = 0; items.forEach(it => { it.p.outT = 4; it.p.outE = 3; }); } }
+      else { items.forEach(it => { it.p.tx = it.hx; it.p.ty = it.hy; it.p.sprint = 1; });
+        // pela regra o jogo recomeça assim que quem entra pisa no campo (pelo meio); ele termina de chegar com a bola rolando
+        if (items.every(it => it.p.y < WD - 3) || subQ.t > 3) {
+          items.forEach(it => { it.p.subW = 0; }); mode = subQ.save.mode; modeT = subQ.save.modeT; Q4.t = 1.2; subQ = null; } }
+    }
+    // Túnel (Silvio, 2026-11-07): no meio da lateral de baixo; no intervalo os times saem por ele e no 2º tempo voltam por ele, em fila
+    function tunnel(p) { const i = T[p.side].indexOf(p); return [52.5 + (p.side ? 1.6 : -1.6), WD + 2 + Math.max(0, i) * 1.7]; }
     function koShape(p, s) {
       if (p.r === 'GK') return toW(s, 4, 34);
       let x = Math.min(5 + p.d * 44, 49), y = p.w;
@@ -945,15 +976,20 @@
       if (offPend) offStep(dt);
       if (foulPend) foulStep(dt);
       for (let i = leaving.length - 1; i >= 0; i--) { const q = leaving[i]; q.wait -= dt; if (q.wait > 0) continue; q.t += dt;
-        if (q.sub) { const dx = q.tx - q.p.x, dy = q.ty - q.p.y, d = Math.hypot(dx, dy), v = Math.min(d, 3.2 * dt); if (d > 0.01) { q.p.x += dx / d * v; q.p.y += dy / d * v; } if (d < 0.5 || q.t > 16) leaving.splice(i, 1); continue; } // a troca sai andando até o meio
+        if (q.bench) continue;
+        if (q.sub) { const dx = q.tx - q.p.x, dy = q.ty - q.p.y, d = Math.hypot(dx, dy), v = Math.min(d, (q.run ? 5.5 : 3.2) * dt); if (d > 0.01) { q.p.x += dx / d * v; q.p.y += dy / d * v; } if (d < 0.5 || q.t > 16) leaving.splice(i, 1); continue; } // a troca sai andando até o meio
         q.p.y += cl(q.ty - q.p.y, -3.6 * dt, 3.6 * dt); if (q.t > 6 || q.p.y < -0.5 || q.p.y > WD + 0.5) leaving.splice(i, 1); }
       if (Q4.t > 0) Q4.t -= dt;
+      if (subQ && subQ.ph === 'wait') { subQ.t += dt; const busy = subQ.items.some(it => ball.owner === it.p || (rs && rs.taker === it.p) || foulTo === it.p || (ball.fly && ball.fly.to === it.p) || (ball.loose && ball.loose.to === it.p));
+        if ((mode === 'rein' || mode === 'tiro' || mode === 'falta' || mode === 'ko') && !busy || (subQ.t > 15 && mode === 'play' && !busy && !due && !lc)) subStart(); }
       ALL.forEach(p => { if (p.down) p.down = Math.max(0, p.down - dt); });
       offStepRef(dt); if (outCd > 0) outCd -= dt;
       if (mode === 'wait') { ALL.forEach(p => { [p.tx, p.ty] = koShape(p, p.side); }); ball.x = 52.5; ball.y = 34; }
       else if (mode === 'fim') { ALL.forEach(p => { p.tx = p.x + (p.tx - p.x) * 0.9; p.ty = p.y + (p.ty - p.y) * 0.9; p.sprint = 0; }); }
       else if (mode === 'play') play(dt);
-      else if (mode === 'ko' || mode === 'half') {
+      else if (mode === 'troca') subStep(dt);
+      else if (mode === 'half') { ALL.forEach(p => { [p.tx, p.ty] = tunnel(p); p.outT = 30; p.outE = 40; }); }
+      else if (mode === 'ko') {
         ALL.forEach(p => { [p.tx, p.ty] = koShape(p, p.side); });
         modeT -= dt;
         // Só sai quando todos voltaram para o seu campo e para perto do lugar (depois do gol, a volta é longa)
@@ -1029,7 +1065,7 @@
         let ax = wx - p.vx, ay = wy - p.vy; const am = Math.hypot(ax, ay);
         if (am > acc) { ax *= acc / am; ay *= acc / am; }
         p.vx += ax; p.vy += ay;
-        { if (p.outT > 0) p.outT -= dt; const e = (mode === 'rein' && rs && p === rs.taker) || p.outT > 0 ? -1.2 : 0.5; p.x = cl(p.x + p.vx * dt, e, L - e); p.y = cl(p.y + p.vy * dt, e, WD - e); }
+        { if (p.outT > 0 && (p.outT -= dt) <= 0) p.outE = 0; const e = p.outT > 0 && p.outE ? -p.outE : (mode === 'rein' && rs && p === rs.taker) || p.outT > 0 ? -1.2 : 0.5; p.x = cl(p.x + p.vx * dt, e, L - e); p.y = cl(p.y + p.vy * dt, e, WD - e); }
         const sp = Math.hypot(p.vx, p.vy);
         let fx = sp > 1.5 ? p.vx / sp : ball.x - p.x, fy = sp > 1.5 ? p.vy / sp : ball.y - p.y; const fm = Math.hypot(fx, fy) || 1;
         p.fx += (fx / fm - p.fx) * Math.min(1, dt * 8); p.fy += (fy / fm - p.fy) * Math.min(1, dt * 8);
@@ -1272,8 +1308,8 @@
         g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0 + 1.5, y0 + 2, w, h); g.fillStyle = '#F2C230'; g.beginPath(); g.roundRect(x0, y0, w, h, 5 * k0); g.fill();
         g.fillStyle = '#13201A'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(playTag.txt, x0 + w / 2, y0 + h / 2 + 0.5); g.globalAlpha = 1; }
       // Quem foi expulso sai andando (um pouco apagado); o cartão em cima de quem fez; a linha do impedimento
-      leaving.forEach(q => { const p = q.p, x = X(p.x), y = Y(p.y), r = (q.wasMe ? 9.5 : 6.2) * k, kt = p.side ? KT.opp : KT.mine;
-        g.globalAlpha = 0.7; g.fillStyle = q.wasMe ? '#F2C230' : kt[0]; g.strokeStyle = '#F4F1E8'; g.lineWidth = 2 * k; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke(); g.globalAlpha = 1;
+      leaving.forEach(q => { const p = q.p, x = X(p.x), y = Y(p.y), r = (q.wasMe ? 9.5 : q.sub ? 9.6 : 6.2) * k, kt = p.side ? KT.opp : KT.mine;
+        g.globalAlpha = q.bench ? 1 : 0.7; g.fillStyle = q.wasMe ? '#F2C230' : kt[0]; g.strokeStyle = '#F4F1E8'; g.lineWidth = 2 * k; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke(); g.globalAlpha = 1;
         if (q.wasMe || q.num) { g.fillStyle = q.wasMe ? '#13201A' : lum(kt[0]) > 0.5 ? '#0B120E' : '#FFFFFF'; g.font = '800 ' + Math.round(12 * k) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(q.wasMe ? o.num || 9 : q.num), x, y + 0.5); }
         if (!q.sub && (!refFx || refFx.p !== p)) card(x + 5 * k, y - r - 2 * k, '#D8404A', k * 0.7, -0.14); });
       if (offLine) {
@@ -1386,14 +1422,17 @@
       lineup(s, form) {
         if (!form || !form.length) return;
         while (T[s].length > form.length) { const out = T[s].pop(); if (ball.owner === out) setOwner(at(s, 6)); if (ball.fly && ball.fly.to === out) ball.fly.to = at(s, 6); if (ball.loose && ball.loose.to === out) ball.loose.to = at(s, 6); }
-        const was = T[s].map(p => (p.inf && p.inf.num) || 0), outN = [], inN = [];
-        T[s].forEach((p, k) => reform(p, form[k]));
-        T[s].forEach((p, k) => { const n = (p.inf && p.inf.num) || 0; if (!was[k] || !n || n === was[k] || was.includes(n) || isMe(p)) return;
-          // quem sai anda até o meio da lateral de baixo; quem entra aparece ali e corre para o lugar
-          leaving.push({ p: { x: p.x, y: p.y, side: p.side, r: p.r }, num: was[k], sub: true, wait: 0, t: 0, tx: 52.5, ty: WD + 1 });
-          outN.push(was[k]); inN.push(n); p.x = 52.5 + (s ? 1.2 : -1.2) * inN.length; p.y = WD - 0.3; p.vx = p.vy = 0;
-          if (ball.owner === p) setOwner(at(s, 6)); });
-        if (outN.length) { Q4.b = { out: outN, in: inN }; Q4.t = 4; }
+        const was = T[s].map(p => (p.inf && p.inf.num) || 0), now = mode === 'wait' || mode === 'half' || (mode === 'ko' && koHold);
+        T[s].forEach((p, k) => { const f = form[k], n = (f[4] && f[4].num) || 0;
+          // Troca pela regra (Silvio, 2026-11-07): quem sai joga até a bola parar; aí a placa sobe, ele sai pela linha mais perto
+          // e só então quem entra pisa no campo, pelo meio. Antes do apito ou no intervalo, a troca é na hora
+          if (!now && was[k] && n && n !== was[k] && !was.includes(n) && !isMe(p)) {
+            if (!subQ) subQ = { s, items: [], ph: 'wait', t: 0 };
+            const it = subQ.items.find(q => q.p === p); if (it) { it.f = f; it.newNum = n; } else subQ.items.push({ p, f, oldNum: was[k], newNum: n });
+          } else if (!(subQ && subQ.items.some(q => q.p === p))) reform(p, f);
+        });
+        if (subQ && subQ.ph === 'wait') { leaving.splice(0, leaving.length, ...leaving.filter(q => !q.bench));
+          subQ.items.forEach((it, i) => leaving.push({ p: { x: 52.5 + (s ? 1 : -1) * (3 + i * 1.8), y: WD + 1.1, side: s, r: it.f[0] }, num: it.newNum, sub: true, bench: true, wait: 0, t: 0 })); }
         ALL = T[0].concat(T[1]); ALL.forEach(p => { p.mark = null; p.th = 0; }); defT = 0;
       },
       // Treinador: mudou o estilo no meio do jogo
@@ -1409,7 +1448,7 @@
       // Fim de jogo: três apitos, os jogadores param onde estão
       fin() { if (lc) lcDone(); mode = 'fim'; stopWhy = 'Fim de jogo'; ball.owner = ball.fly = ball.loose = ball.carry = null; },
       half() { if (lc) lcDone(); mode = 'half'; koSide = 1; ball.owner = ball.fly = ball.loose = ball.carry = null; },
-      second() { half2 = true; mode = 'ko'; modeT = 0.4; koSide = 1; koHold = true; },
+      second() { half2 = true; mode = 'ko'; modeT = 0.4; koSide = 1; koHold = true; if (subQ) subApply(true); ALL.forEach(p => { [p.x, p.y] = tunnel(p); p.vx = p.vy = 0; p.outT = 9; p.outE = 40; }); REF.x = 52.5; REF.y = WD + 1; }, // voltam do túnel
       freeze(v) { frozen = !!v; },
       energy(v) { en = v === null || v === undefined ? null : cl(v, 0, 100); },
       meAt() { if (ME < 0) return null; const p = T[0][ME]; return [p.x / L * 100, p.y / WD * 100]; },
