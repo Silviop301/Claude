@@ -1214,7 +1214,8 @@
       const k0 = cl(W / 380, 0.85, 1.45), k = Math.max(k0 * DOTK, 0.75); // campinho pequeno (em pé) não encolhe tanto
       if (ball.fly) { g.strokeStyle = ball.fly.shot ? 'rgba(242,194,48,.8)' : 'rgba(255,255,255,.35)'; g.lineWidth = 1.5 * k; g.setLineDash([4 * k, 4 * k]); g.beginPath(); g.moveTo(X(ball.fly.x0), Y(ball.fly.y0)); g.lineTo(X(ball.x), Y(ball.y)); g.stroke(); g.setLineDash([]); }
       // Duelo: quem tem a bola e quem vem no bote ganham um anel pontilhado em volta dos dois (um duelo por vez)
-      if (mode === 'play' && ball.owner) { const o2 = ball.owner, d2 = T[1 - o2.side].find(q => q.lg > 0 && dist(q, o2) < 5);
+      // o.clean (Treinador deitado, Silvio 2026-11-07): campo limpo, sem anel do duelo nem nome da jogada; fica o rastro do passe
+      if (!o.clean && mode === 'play' && ball.owner) { const o2 = ball.owner, d2 = T[1 - o2.side].find(q => q.lg > 0 && dist(q, o2) < 5);
         if (d2) { const mx = X((o2.x + d2.x) / 2), my = Y((o2.y + d2.y) / 2), rr = Math.hypot(X(o2.x) - X(d2.x), Y(o2.y) - Y(d2.y)) / 2 + 13 * k;
           g.strokeStyle = 'rgba(242,194,48,.85)'; g.lineWidth = 1.6 * k; g.setLineDash([3 * k, 3 * k]); g.beginPath(); g.arc(mx, my, rr, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); } }
       // Rastro: os últimos passes da posse no gramado (o mais antigo some primeiro)
@@ -1225,7 +1226,7 @@
       ALL.forEach(p => { if (!isMe(p)) dot(p, k); });
       if (ME >= 0) dot(T[0][ME], k);
       drawRefs(k); drawQ4(k0);
-      if (playTag && mode === 'play') { const p = playTag.p, x = X(p.x), y = Y(p.y) - 14 * k0, al = Math.min(1, playTag.t * 3, (1.8 - playTag.t) * 6);
+      if (playTag && !o.clean && mode === 'play') { const p = playTag.p, x = X(p.x), y = Y(p.y) - 14 * k0, al = Math.min(1, playTag.t * 3, (1.8 - playTag.t) * 6);
         g.globalAlpha = Math.max(0, al); g.font = '800 ' + Math.round(12.5 * k0) + 'px "Barlow Condensed", sans-serif'; const w = g.measureText(playTag.txt).width + 12 * k0, h = 17 * k0, x0 = cl(x - w / 2, 2, W - w - 2), y0 = Math.max(2, y - h / 2);
         g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0 + 1.5, y0 + 2, w, h); g.fillStyle = '#F2C230'; g.beginPath(); g.roundRect(x0, y0, w, h, 5 * k0); g.fill();
         g.fillStyle = '#13201A'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(playTag.txt, x0 + w / 2, y0 + h / 2 + 0.5); g.globalAlpha = 1; }
