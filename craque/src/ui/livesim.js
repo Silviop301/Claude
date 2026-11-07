@@ -18,7 +18,7 @@
   const toW = (s, x, y) => (s ? [L - x, WD - y] : [x, y]);
   // Avançar vale por si (time que só roda a bola atrás não é futebol), quem chega perto chuta, e o bote dá certo 3 vezes em 10
   const DOTK = 0.65; // tamanho dos bonecos no desenho
-  const PASS_OK = 0.25, PASS_PAT = 0.4; // passe executado: quanto do risco o jogador salva (todos um pouco, o time de posse mais)
+  const PASS_OK = 0.25, PASS_PAT = 0.55; // passe executado: quanto do risco o jogador salva (todos um pouco, o time de posse mais)
   const NEED = 10, CRZ0 = 0.02, CRZ1 = 0.14; // NEED: passes antes de forçar no estilo mais paciente; cruzamento vale menos que antes (era 0,05 + 0,3 × lados)
   const PROG = 0.05, SHOT = 3.2, TK = 0.3, DUE_AHEAD = 6, AHEAD_S = 9; // a jogada do gol do motor começa uns 9 s do campinho antes (6 minutos sem o ritmo da tela), para dar tempo de construir
   const tf = (s, o) => (s ? [L - o.x, WD - o.y] : [o.x, o.y]);
@@ -170,6 +170,7 @@
         else if (role === 1) x = H + gap + (p.d < 0.45 ? -2 : 0);
         else x = H + gap * 2 + (pr < 0.2 ? 8 : 0); // na retranca os da frente ficam esperando o contra-ataque
         y = 34 + (p.w - 34) * nar + (by - 34) * (0.45 - 0.1 * pr);
+        x += LN[p.side];
       }
       return [cl(x, 2, 102), cl(y, 2.5, 65.5)];
     }
@@ -201,7 +202,20 @@
       const own = T[s], att = T[1 - s], gx = s ? L : 0, gy = 34;
       const tgt = ball.fly && !ball.fly.shot ? { x: ball.fly.x1, y: ball.fly.y1 } : ball;
       const outs = own.filter(p => p.r !== 'GK').sort((a, b) => dist(a, tgt) - dist(b, tgt));
-      const pr = outs[0], cv2 = outs[1], [bx, by] = tf(s, ball), owner = ball.owner;
+      const pr = outs[0], cv2 = outs[1], th3 = outs[2], [bx, by] = tf(s, ball), owner = ball.owner;
+      const stl = ST[s], ln1 = Math.min(1, stl.line), pr1 = Math.min(1, stl.press);
+      // A linha sobe junta no passe para trás e recua quando quem tem a bola está de frente e livre no meio
+      let ofr = 99; if (owner && owner.side !== s) for (const q of own) if (q.r !== 'GK') ofr = Math.min(ofr, dist(q, owner));
+      const oax = owner && owner.side !== s ? tf(1 - s, owner)[0] : 0, afx = owner ? (owner.side ? -owner.fx : owner.fx) : 0;
+      const freeFwd = owner && owner.side !== s && owner.r !== 'GK' && ofr > 7 && oax > 35 && oax < 78 && afx > 0.2;
+      const lnT = stepT[s] > 0 ? 3 + 4 * ln1 : freeFwd ? -(3 + 4 * (1 - ln1)) : 0;
+      LN[s] += cl(lnT - LN[s], -4 * dt, 4 * dt); stepT[s] = Math.max(0, stepT[s] - dt); cpT[s] = Math.max(0, cpT[s] - dt);
+      // Gatilhos de pressão: bola no lateral perto da linha, passe para trás, quem está de costas para o gol dele.
+      // Cada estilo só sai na pressão até uma altura (pressão até a saída deles; posse e equilibrado do meio para trás;
+      // contra e retranca só perto da própria área). Sem gatilho, o bloco espera
+      const zoneOk = bx < (stl.press > 0.8 ? 101 : stl.press >= 0.2 ? 56 : 34);
+      const trig = !!owner && owner.side !== s && owner.r !== 'GK' && zoneOk && (Math.abs(owner.y - 34) > 24 || stepT[s] > 0 || afx < -0.3);
+      const cp = cpT[s] > 0 && !!owner && owner.side !== s, trap = trig && Math.abs(owner.y - 34) > 24;
       defT -= dt;
       if (defT <= 0) {
         defT = 0.5; own.forEach(p => { p.mark = null; });
@@ -225,10 +239,10 @@
         if (p.r === 'GK') { const d = Math.hypot(ball.x - gx, ball.y - gy) || 1, k = Math.min(6, 1.2 + d * 0.07); p.tx = gx + (ball.x - gx) / d * k; p.ty = gy + (ball.y - gy) / d * k * 0.9; return; }
         const [zx, zy] = shapeOf(p, false, bx, by, 0); let [wx, wy] = toW(s, zx, zy);
         const hunt = due && due.side === s; // o gol do motor é deles: vão buscar a bola de qualquer jeito
-        if (p === pr && (hunt || dist(pr, tgt) < 12 + 26 * ST[s].press) && !(owner && owner.r === 'GK')) {
+        if (p === pr && (hunt || cp || dist(pr, tgt) < 12 + 26 * ST[s].press + (trig ? 14 : 0)) && !(owner && owner.r === 'GK')) {
           // Quem pressiona fica a uns 2,6 m, do lado do gol (fecha o caminho sem grudar); de vez em quando dá o bote (lg)
           if (owner) {
-            if (p.lg <= 0 && (p.cd <= 0 || hunt) && dist(p, owner) < 4.5 && (hunt || rnd() < dt * (0.3 + 0.9 * ST[s].press))) { p.lg = 0.7; p.cd = 0; }
+            if (p.lg <= 0 && (p.cd <= 0 || hunt) && dist(p, owner) < 4.5 && (hunt || rnd() < dt * (0.3 + 0.9 * ST[s].press) * (cp ? 3 : trig ? 2.2 : 1) * cl(enOf(p) / 70, 0.5, 1))) { p.lg = 0.7; p.cd = 0; }
             const d = Math.hypot(gx - owner.x, gy - owner.y) || 1, k = p.lg > 0 ? 0.8 : 3.4 + (1 - Math.min(1, ST[s].press)) * 1.4; // a um corpo de distância (o desenho não encosta), até dar o bote
             wx = owner.x + (gx - owner.x) / d * k; wy = owner.y + (gy - owner.y) / d * k;
           } else { wx = tgt.x; wy = tgt.y; }
@@ -236,7 +250,12 @@
         }
         if (p === cv2 && owner && owner.r !== 'GK') {
           const n = att.filter(a => a !== owner && a.r !== 'GK').sort((a, b) => dist(a, owner) - dist(b, owner))[0];
-          if (n) { p.tx = owner.x + (n.x - owner.x) * 0.55; p.ty = owner.y + (n.y - owner.y) * 0.55; return; }
+          if (n) { p.tx = owner.x + (n.x - owner.x) * 0.55; p.ty = owner.y + (n.y - owner.y) * 0.55; if (trig || cp) p.sprint = 1; return; }
+        }
+        if (p === th3 && owner && owner.side !== s && owner.r !== 'GK' && (trap || cp || (trig && stl.press > 0.8 && bx > 62))) {
+          if (cp && dist(p, owner) < 16) { const a = Math.atan2(owner.y - pr.y, owner.x - pr.x) + 1.9; p.tx = owner.x + Math.cos(a) * 3.2; p.ty = owner.y + Math.sin(a) * 3.2; p.sprint = 1; return; }
+          const n2 = att.filter(a => a !== owner && a.r !== 'GK').sort((a, b) => dist(a, owner) - dist(b, owner))[1];
+          if (n2) { p.tx = owner.x + (n2.x - owner.x) * 0.55; p.ty = owner.y + (n2.y - owner.y) * 0.55; p.sprint = dist(p, n2) > 6 ? 1 : 0; return; }
         }
         if (jam.has(p) && owner) { const a = jam.get(p); p.tx = a.x + (owner.x - a.x) * 0.3; p.ty = a.y + (owner.y - a.y) * 0.3; p.sprint = dist(p, a) > 8 ? 1 : 0; return; }
         if (p.mark) { const a = p.mark, d = Math.hypot(gx - a.x, gy - a.y) || 1; wx = wx * 0.35 + (a.x + (gx - a.x) / d * 4.6) * 0.65; wy = wy * 0.35 + (a.y + (gy - a.y) / d * 4.6) * 0.65;
@@ -313,7 +332,11 @@
       // Ritmo: cada estilo troca um número de passes antes de forçar (posse ~6, equilibrado ~3, contra e ligação direta 0).
       // Antes disso o time circula; lado fechado (3 deles perto) faz a bola voltar e trocar de lado. Gatilho para acelerar:
       // alguém livre nas costas com o passe quase certo, ou a posse já ter rodado o bastante
-      const need = Math.round(NEED * pat), early = posN < need && !dm && !due && !lc && bx < 82;
+      // Transição: acabou de ganhar (até 2,5 s) e eles têm pouca gente atrás da bola: o primeiro passe vai para a frente
+      // (contra sempre; equilibrado e lados com campo; posse quase nunca: segura e recomeça)
+      const beh = opp.filter(q => q.r !== 'GK' && tf(s, q)[0] > bx).length, trans = clk - regClk[s] < 2.5 && posN <= 1 && beh <= 5 && !dm && !due && !lc;
+      const tk = trans ? (0.02 + 0.06 * dir) * (1 - 0.8 * pat) : 0;
+      const need = Math.round(NEED * pat), early = posN < need && !dm && !due && !lc && bx < 82 && !(tk > 0.02);
       let crowd = 0; for (const op of opp) if (dist(op, p) < 10) crowd++;
       const opts = [];
       for (const q of own) {
@@ -342,6 +365,7 @@
         if (kind === 'curto' && d0 < 22) val += 0.008 + 0.012 * ST[s].ctrl + 0.03 * pat; // tocar curto e de primeira é o jogo de time profissional
         else if (lofted && kind !== 'cruz') val *= 0.92 - 0.3 * pat + (q.r === 'ST' ? 0.25 : 0.05) * dir; // ligação direta: o contra e a retranca procuram o centroavante
         if (p.r === 'GK' && d0 > 30) val *= 1 - 0.55 * pat; // posse: o goleiro sai jogando curto com o zagueiro aberto
+        if (tk && tx > bx + 8) val += tk * Math.min(1, (tx - bx) / 25);
         if (bx > 92 && Math.abs(by - 34) > 9 && kind === 'curto' && tx > 80 && tx < bx - 3 && Math.abs(ty - 34) < 12) val += 0.04; // passe para trás da linha de fundo
         if (early) {
           if (kind === 'cruz' || kind === 'longo' || (kind === 'costas' && od.p < 0.9)) val *= 0.55;
@@ -422,6 +446,9 @@
       const a = arFor(x);
       if ((k === 'lat' && ((a.top && y <= 0.5) || (!a.top && y >= WD - 0.5))) || k === 'esc' || k === 'tiro') { a.sig = 'point'; a.dir = sd; a.sigT = 2.2; }
     }
+    // Sem a bola (fase 4): LN ajuste da altura da linha (m, sobe no passe para trás, recua com o meia deles livre), stepT tempo
+    // do gatilho do passe para trás, cpT contrapressão depois de perder, regClk quando cada time ganhou a bola
+    const LN = [0, 0], stepT = [0, 0], cpT = [0, 0], regClk = [-9, -9];
     let rs = null, outCd = 0, lastSide = 0, posN = 0; // posN: passes certos da posse (o ritmo: circular antes de acelerar)
     function restart(k, s, x, y) {
       mode = 'rein'; modeT = 0; poss = s;
@@ -503,16 +530,26 @@
       if (due && due.side === p.side) ball.hold = Math.min(ball.hold, 0.35);
       if (lc && !lc.have && !DEF[lc.k] && isMe(p)) { lc.have = true; ball.hold = 0.35; }
       if (lc && !lc.have && DEF[lc.k] && p === lc.q) { lc.have = true; ball.hold = 1; }
-      if (p.side !== poss) { poss = p.side; posN = 0; trail.length = 0; passH = null; ALL.forEach(q => { q.th = rnd() * 0.35; q.run = 0; q.go = 0; q.ovl = 0; }); }
+      if (p.side !== poss) { lostBall(poss, p.side); poss = p.side; posN = 0; trail.length = 0; passH = null; ALL.forEach(q => { q.th = rnd() * 0.35; q.run = 0; q.go = 0; q.ovl = 0; }); }
     }
     // Passe para trás: da linha de fundo, pelo lado, de volta para quem chega na marca do pênalti
     function cutback(s, f) { const [x0, y0] = tf(s, { x: f.x0, y: f.y0 }), [x1, y1] = tf(s, ball); return x0 > 92 && Math.abs(y0 - 34) > 9 && x1 > 80 && x1 < x0 - 3 && Math.abs(y1 - 34) < 12; }
+    // Trocou a posse: quem perdeu decide entre contrapressão (5 s, menos se cansado) e recompor; quem ganhou marca a hora
+    function lostBall(a, b) {
+      const st = ST[a], [ax] = tf(a, ball), en = T[a].reduce((u, q) => u + enOf(q), 0) / T[a].length, ef = cl(en / 70, 0.45, 1);
+      const cp = st.press > 0.8 || patOf(a) > 0.5 ? 1 : st.press >= 0.2 && ax > 52 ? 0.8 : 0;
+      cpT[a] = cp ? 5 * cp * ef : 0; cpT[b] = 0; regClk[b] = clk; stepT[a] = 0;
+      // Ganhou com campo livre e o estilo é de contra: os pontas já saem correndo (sem passar da linha)
+      const [bx] = tf(b, ball), beh = T[a].filter(q => q.r !== 'GK' && tf(b, q)[0] > bx).length;
+      if (beh <= 5 && dirOf(b) > 0.25) { const line = lineOf(b); T[b].forEach(q => { if (q.r === 'GK' || !(isWide(q) || q.r === 'ST')) return; const [qx, qy] = tf(b, q); q.run = 2.2; q.runX = Math.min(line - 0.8, qx + 22); q.runY = cl(qy + (qy < 34 ? -3 : 3), 5, 63); }); }
+    }
     function receive(f) {
       const p = f.to, lo = ball.loose, lv = lo ? Math.hypot(lo.vx || 0, lo.vy || 0) : 0;
       why = f.cut ? 'corte' : 'passe'; setOwner(p, f.quick);
       // Rastro dos passes da posse e o nome da jogada que acabou de sair (uma etiqueta a cada 5 s, no máximo)
       if (!f.cut && f.from && f.from.side === p.side && f.from !== p && mode === 'play') {
         posN++;
+        if (tf(p.side, ball)[0] < tf(p.side, { x: f.x0, y: f.y0 })[0] - 8) stepT[1 - p.side] = 2.5; // passe para trás: gatilho para a linha subir e apertar
         trail.push({ x0: f.x0, y0: f.y0, x1: ball.x, y1: ball.y, t: 2.2 }); if (trail.length > 5) trail.shift();
         const a = f.from, pv = passH;
         const tg = pv && pv.to === a && pv.from === p && clk - pv.clk < 3.5 && f.kind === 'curto' ? 'TABELA' : a.third === p && clk - a.thirdT < 3 ? 'TERCEIRO HOMEM' : a.lay === p && clk - a.layT < 3 ? 'PAREDE' :
@@ -821,7 +858,7 @@
         if (ball.rcv <= 0 && p.r !== 'GK' && !(due && due.side === p.side) && !lc) for (const d of T[1 - p.side]) {
           if (d.cd > 0 || d.stun > 0 || d.r === 'GK' || d.lg <= 0 || dist(d, p) > 1.7) continue;
           d.cd = 1.6 + rnd() * 1.2; d.lg = 0;
-          if ((due && due.side === d.side) || rnd() < cl(TK - (bias[p.side] - 1) * 0.8 + (d.q - p.q) * 1.2, 0.05, 0.6)) { why = 'bote'; setOwner(d); emit('desarme', d.side, d, p);
+          if ((due && due.side === d.side) || rnd() < cl(TK - (bias[p.side] - 1) * 0.8 + (d.q - p.q) * 1.2 + (cpT[d.side] > 0 ? 0.1 : 0) + (Math.abs(p.y - 34) > 24 && ST[d.side].press >= 0.2 ? 0.08 : 0), 0.05, 0.65)) { why = 'bote'; setOwner(d); emit('desarme', d.side, d, p);
             // bote perto da lateral: a bola espirra para fora (lateral para quem perdeu)
             if (!due && !lc && outCd <= 0 && (d.y < 17 || d.y > WD - 17) && rnd() < 0.65) flyOut(d, d.x + gauss() * 4, d.y < 34 ? -2 : WD + 2, false, 'espirra');
             break; }
