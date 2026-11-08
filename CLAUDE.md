@@ -155,7 +155,7 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
 | Arquivo | Tela |
 |---|---|
 | `core.js` | Estado `G`, ajudantes, salvar/carregar, barra do topo |
-| `start.js` | Tela inicial e criação do jogador. **Home deitada** (`homeLand`, desde 2026-11-06 a home é sempre deitada no palco `U.LD`: trilho, 4 ingressos em pé, o aberto mostra as carreiras, vagas cheias em `landPick`); em pé pede para girar. Modos ainda em pé (carreira do jogador, Relâmpago) ligam `U.portMode` e, com o celular deitado, `render()` mostra "Gire o celular" (`.port-turn`, nunca no computador). Robôs de teste (`navigator.webdriver`) ficam na home em pé; `localStorage['climbix-deitado']='1'` liga a deitada (`U.landOk`) |
+| `start.js` | Tela inicial e criação do jogador. **Home deitada** (`homeLand`, desde 2026-11-06 a home é sempre deitada no palco `U.LD`: trilho; desde 2026-11-08 os modos são **capas** num carrossel: a do meio grande com as carreiras e o botão, as vizinhas apagadas dos lados, ◀ ▶, arrastar e pontos passam de modo, `.hl-cv`/`.hl-cap`; vagas cheias em `landPick`); em pé pede para girar. Modos ainda em pé (carreira do jogador, Relâmpago) ligam `U.portMode` e, com o celular deitado, `render()` mostra "Gire o celular" (`.port-turn`, nunca no computador). Robôs de teste (`navigator.webdriver`) ficam na home em pé; `localStorage['climbix-deitado']='1'` liga a deitada (`U.landOk`) |
 | `offers.js`, `preseason.js` | Base, janela/propostas; pré-temporada |
 | `match.js` | Eventos e jogo decisivo (`optHint`) |
 | `season.js` | Temporada: contadores, corrida/mini tabela (`raceOf`, `miniTable`), resenha, resumo |
