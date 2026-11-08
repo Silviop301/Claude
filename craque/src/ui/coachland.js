@@ -912,19 +912,16 @@
       const folha = sq.reduce((a, p) => a + p.wage, 0);
       return { lg, g, el: (rel > 4 ? 'forte' : rel < -4 ? 'fraco' : 'médio') + (young ? ', jovem' : ''), folha, n: sq.length, exp: g.exp };
     };
+    // Enxuta (2026-11-08, Silvio aprovou "Propostas" no canvas): escudo grande, nome, liga e a meta numa etiqueta (laranja
+    // quando é alta); o resto (elenco, aposta, folha, frase, faixa de baixo) saiu: a meta e a demissão vêm no Bem-vindo
     const draw = () => {
-      const card = id => { const x = info(id), mine = id === co.club, cl = club(id);
-        return '<button class="ldo-c' + (id === pick ? ' on' : '') + '" data-o="' + id + '"><em class="' + (mine ? 'mine' : '') + '">' + (mine ? 'O SEU CLUBE' : 'PROPOSTA') + '</em>' +
-          '<span class="ldo-h">' + crest(id, 'ldo-cr') + '<span><b>' + esc(cl.name) + '</b><small>' + esc(x.lg.name) + (mine && co.hist.length ? ' · ' + ord(co.hist[co.hist.length - 1].pos) : '') + '</small></span></span>' +
-          '<span class="ldo-r"><small>Meta</small><b>' + esc(S.CO_GOAL_TXT[x.g.k]) + '</b></span><span class="ldo-r"><small>Elenco</small><b>' + x.el + '</b></span>' +
-          '<span class="ldo-r"><small>Na aposta</small><b>' + ord(x.exp) + ' lugar</b></span><span class="ldo-r"><small>Folha</small><b>' + c.brl(x.folha) + '/sem</b></span>' +
-          '<span class="ldo-r"><small>Jogadores</small><b>' + x.n + '</b></span>' +
-          '<small class="ldo-f">' + (mine ? 'Você conhece o elenco e o caderno já tem os rivais.' : ['titulo', 'subir', 'g4'].includes(x.g.k) ? 'Meta alta: a diretoria cobra desde o começo.' : x.g.k === 'naocair' ? 'Ninguém espera milagre, mas vexame não.' : 'Meta no tamanho do clube.') + '</small></button>'; };
-      const p = info(pick), pc = club(pick);
-      show('<div class="ld-col">' + head(co.club ? 'Propostas' : 'Primeiro emprego', esc(co.name) + ' · fama ' + co.fame + (co.club && stay ? ' · ou fica onde está' : ''), pill(co.club ? 'Responda antes da temporada' : 'A meta vem junto com o clube')) +
-        '<div class="ldo-g" style="grid-template-columns:repeat(' + ids.length + ',1fr)">' + ids.map(card).join('') + '</div>' +
-        '<div class="ldo-ft"><p><b>' + esc((pc.short || pc.name).toUpperCase()) + '</b> ' + (pick === co.club ? 'Continuar o trabalho: o elenco é o mesmo, a meta sobe se você foi bem.' : 'Meta: ' + esc(S.CO_GOAL_TXT[p.g.k].toLowerCase()) + '. Se a confiança cair, demitem antes do fim do ano.') + '</p>' +
-          gold('ldo-go', pick === co.club ? 'Ficar no ' + esc(pc.short || pc.name) : 'Assinar com o ' + esc(pc.short || pc.name)) + '</div></div>', st => {
+      const card = id => { const x = info(id), mine = id === co.club, cl = club(id), hi = ['titulo', 'subir', 'g4'].includes(x.g.k);
+        return '<button class="pzo-c' + (id === pick ? ' on' : '') + '" data-o="' + id + '"' + (id === pick ? ' aria-pressed="true"' : ' aria-pressed="false"') + '>' + (mine ? '<em>Seu clube</em>' : '') + crest(id, 'pzo-cr') +
+          '<b>' + esc(cl.short || cl.name) + '</b><small>' + esc(x.lg.name) + '</small><span class="pzo-m' + (hi ? ' hi' : '') + '">' + esc(S.CO_GOAL_TXT[x.g.k]) + '</span></button>';
+      };
+      const pc = club(pick);
+      show('<div class="pzo"><h2>' + (co.club ? 'Propostas' : 'Escolha seu clube') + '</h2><div class="pzo-g" style="grid-template-columns:repeat(' + ids.length + ',minmax(0,1fr))">' + ids.map(card).join('') + '</div>' +
+        '<button class="pzo-go" id="ldo-go">' + (pick === co.club ? 'Ficar no ' : 'Assinar com o ') + esc(pc.short || pc.name) + '</button></div>', st => {
         st.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { sfx('tap'); pick = b.dataset.o; draw(); });
         st.querySelector('#ldo-go').onclick = () => {
           sfx('tap');
