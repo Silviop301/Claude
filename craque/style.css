@@ -8263,3 +8263,14 @@ body.ld-on #ld { display: block; }
 /* Link só do Treinador (?so=treinador): um botão de carreiras centrado embaixo do dourado */
 .hl-so .hl-mds { grid-template-columns: 360px; justify-content: center; }
 .hl-so { justify-content: center; } .hl-so .hl-mrs { margin-top: 26px; }
+/* Escalação e Semana no celular (Silvio 2026-11-08): bolinha menor com a vaga encostada nela, para o nome não ficar
+   embaixo da bolinha de baixo; banco inteiro rolando de lado; escudos menores (as imagens são pequenas) */
+.tm .ld-dot { width: 34px; height: 34px; margin: -17px 0 0 -17px; }
+.tm .ld-dc { width: 34px; height: 34px; font-size: 17px; }
+.tm .ld-dn { left: 17px; top: 23px; }
+.tm .ld-dn b { font-size: 13px; }
+.tm-bench { overflow-x: auto; overflow-y: hidden; touch-action: pan-x; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+.tm-bench::-webkit-scrollbar { display: none; }
+.tm-bench > small { position: sticky; left: 0; z-index: 1; align-self: stretch; display: flex; align-items: center; padding-right: 6px; background: #0b2419; box-shadow: 10px 0 10px #0b2419; }
+.sm-cr { width: 64px; height: 64px; }
+.sm-x { padding-top: 18px; }
