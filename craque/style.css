@@ -8157,7 +8157,7 @@ body.ld-on #ld { display: block; }
 .pzo-c > b { margin-top: 8px; font: 800 28px/1 var(--display); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pzo-c > small { margin-top: 4px; font: 600 15px/1 var(--body); color: var(--ink-2); }
 .pzo-c > em { position: absolute; top: 10px; left: 10px; font: 800 13px/1 var(--display); font-style: normal; letter-spacing: .04em; background: var(--ink); color: var(--paper); border-radius: 6px; padding: 4px 7px; }
-.pzo-m { margin-top: 12px; padding: 7px 14px; border-radius: 999px; font: 800 19px/1 var(--display); background: #141517; color: #F3F1EA; white-space: nowrap; }
+.pzo-m { margin-top: 12px; max-width: 100%; box-sizing: border-box; padding: 6px 12px; border-radius: 14px; font: 800 18px/1.1 var(--display); background: #141517; color: #F3F1EA; text-align: center; white-space: normal; overflow-wrap: anywhere; }
 .pzo-m.hi { background: #F08A5D; color: #1B1606; }
 .pzo-go { margin-top: auto; min-width: 380px; max-width: 520px; height: 62px; padding: 0 20px !important; border-radius: 16px; background: var(--gold) !important; color: #1B1606 !important; box-shadow: 0 4px 0 #b48a12; font: 800 26px/1 var(--display) !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
