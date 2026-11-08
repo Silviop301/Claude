@@ -767,38 +767,43 @@
     pop(popHead(esc(P.n), 'Presidente · ' + P.nome) + '<div class="ld-pb col"><p class="ldn-p">' + esc(P.txt) + '</p><p class="ldn-p">O caixa no vermelho pesa <b>' + RED_TXT(P.red) + '</b> na confiança dele. A cada 3 temporadas tem eleição e ele pode sair.</p></div>', 'Presidente', null, 'w560');
   }
   // Reunião de pré-temporada: 3 acordos de verba × meta. welcome: primeira conversa no clube novo
+  // Reunião e patrocínio enxutos (2026-11-08, Silvio: sem trilho nem coluna, mas "um pouquinho mais de informação pra
+  // análise"): o presidente numa frase, 3 cartões com nome, valor grande e 3 linhas de números; as regras no botão ?
+  const acdRow = (k, v) => '<span class="acd-r"><small>' + k + '</small><b>' + v + '</b></span>';
+  const acdHelp = (t, lines) => pop('<div class="acd-help"><b>' + t + '</b>' + lines.map(l => '<p>' + l + '</p>').join('') + '<button class="hl-btn line" data-pop-x>Entendi</button></div>', t, null, 'hl-pop');
+  const acdShow = (top, cards, cta, bind) => show('<div class="acd"><div class="acd-top">' + top + '<button class="acd-q" id="acd-q" aria-label="Como funciona">?</button></div>' +
+    '<div class="acd-g">' + cards + '</div><button class="acd-go" id="ldn-go">' + cta + '</button></div>', bind);
   function reuniao(sel, welcome) {
     const c = C(), co = c.co, f = S.coFin(co), P = S.coPres(co), ops = S.coFinAcordos(co);
     sel = sel || 'normal'; const o = ops.find(x => x.k === sel) || ops[0];
-    const hi = { amb: 'Quero esse time brigando lá em cima. Se você topar, eu abro o cofre.', pao: 'Dinheiro não cai do céu, professor. Me diga o que você entrega e eu digo quanto libero.', pac: 'Sem pressa e sem loucura. Me diga o que dá para fazer e a gente acerta.' }[P.k];
-    const card = x => '<button class="ldn-op' + (x.k === sel ? ' on' : '') + '" data-ac="' + x.k + '"><b>' + AC_NM[x.k] + '</b><em>' + c.brl(x.verba) + '</em><small>verba para contratar</small>' +
-      '<span>Meta: ' + goalLine(x.gk, x.pos) + '</span><span>Teto da folha ' + c.brl(x.teto) + '</span>' +
-      (x.k === 'ousado' ? '<i class="ldn-tag or">ARRISCADA</i><small>cumprir vale mais fama; falhar tira fama</small>' : x.k === 'seguro' ? '<small>menos verba; a diretoria começa desconfiada e cumprir vale menos fama</small>' : '<small>o que a diretoria esperava</small>') + '</button>';
-    show(rail('clube') + '<div class="ld-col">' + head('Reunião com a diretoria', (welcome ? 'Primeiro dia no ' + esc(club(co.club).short || club(co.club).name) : 'Pré-temporada ' + (U.YEAR0 + co.season)) + ' · antes do primeiro jogo') +
-      '<div class="ld-row"><div class="ldn-l"><div class="ldn-say"><span class="ldn-av">' + esc(P.n.split(' ').map(w => w[0]).slice(0, 2).join('')) + '</span><p><b>' + esc(P.n) + ', presidente · ' + P.nome + '</b>' + (welcome ? 'Bem-vindo, professor. ' : '') + hi + '</p></div>' +
-        '<div class="ldn-ops">' + ops.map(card).join('') + '</div></div>' +
-      '<div class="ldn-side"><div class="ldk-cx">' + lbl('O PRESIDENTE') + '<b>' + P.nome[0].toUpperCase() + P.nome.slice(1) + '</b><small>' + esc(P.txt) + '</small><small>Caixa no vermelho pesa <b>' + RED_TXT(P.red) + '</b> para ele.</small></div>' +
-        '<small class="ldn-note">Bater a meta no azul aumenta a verba e o teto do ano seguinte. O mercado para gastar a verba chega numa próxima parte.</small><span class="ld-gr"></span>' +
-        gold('ldn-go', 'Fechar o acordo', AC_NM[o.k] + ' · ' + goalLine(o.gk, o.pos)) + '</div></div></div>', st => {
-      st.querySelectorAll('[data-ac]').forEach(b => b.onclick = () => { sfx('tap'); reuniao(b.dataset.ac, welcome); });
-      st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinAcordo(co, o.k); c.save('hub'); if (f.pend && f.pend.pat) patrocinio(null, welcome); else { f.pend = null; c.save('hub'); welcome ? time(false) : semana(); } };
-    });
+    const hi = { amb: 'Quero esse time brigando lá em cima. Se você topar, eu abro o cofre.', pao: 'Dinheiro não cai do céu. Me diga o que você entrega e eu digo quanto libero.', pac: 'Sem pressa e sem loucura. Me diga o que dá para fazer e a gente acerta.' }[P.k];
+    const FAMA = { seguro: 'vale menos', normal: 'normal', ousado: 'vale mais' };
+    const card = x => '<button class="acd-c' + (x.k === sel ? ' on' : '') + '" data-ac="' + x.k + '" aria-pressed="' + (x.k === sel) + '">' + (x.k === 'ousado' ? '<i class="acd-tag or">ARRISCADA</i>' : '') +
+      '<b>' + AC_NM[x.k] + '</b><em>' + c.brl(x.verba) + '</em><small class="acd-u">para contratar</small>' +
+      acdRow('Meta', x.gk === 'titulo' ? 'campeão' : 'até ' + ord(x.pos)) + acdRow('Teto da folha', c.brl(x.teto)) + acdRow('Fama na meta', FAMA[x.k]) + '</button>';
+    const ini = esc(P.n.split(' ').map(w => w[0]).slice(0, 2).join(''));
+    acdShow('<span class="acd-av">' + ini + '</span><div class="acd-say"><small>' + esc(P.n) + ' · presidente ' + P.nome + '</small><p>' + (welcome ? 'Bem-vindo, professor. ' : '') + hi + '</p></div>',
+      ops.map(card).join(''), 'Fechar o acordo', st => {
+        st.querySelectorAll('[data-ac]').forEach(b => b.onclick = () => { sfx('tap'); reuniao(b.dataset.ac, welcome); });
+        st.querySelector('#acd-q').onclick = () => { sfx('tap'); acdHelp('Como funciona', ['Quanto mais verba para contratar, mais alta a meta e o teto da folha.', 'Bater a meta no azul aumenta a verba e o teto do ano seguinte.',
+          'Seguro: a diretoria começa desconfiada. Ousado: cumprir dá mais fama, falhar tira fama.', 'Este presidente é ' + P.nome + ': ' + esc(P.txt.charAt(0).toLowerCase() + P.txt.slice(1)) + ' Caixa no vermelho pesa ' + RED_TXT(P.red) + ' para ele.']); };
+        st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinAcordo(co, o.k); c.save('hub'); if (f.pend && f.pend.pat) patrocinio(null, welcome); else { f.pend = null; c.save('hub'); welcome ? time(false) : semana(); } };
+      });
   }
   function patrocinio(sel, welcome) {
     const c = C(), co = c.co, f = S.coFin(co), ops = S.coFinPatOps(co), n = co.ss ? co.ss.rounds.length : 38;
     sel = sel || 'fix'; const o = ops.find(x => x.k === sel) || ops[0];
-    const card = x => '<button class="ldn-op' + (x.k === sel ? ' on' : '') + '" data-pt="' + x.k + '"><b>' + esc(x.name) + '</b><em>' + c.brl(x.fix) + '</em><small>' + (x.yrs > 1 ? 'por ano, ' + x.yrs + ' temporadas' : 'no ano, 1 temporada') + '</small>' +
-      (x.k === 'fix' ? '<span>Fixo, sem bônus</span><small>certo: entra toda rodada, aconteça o que acontecer</small>' :
-        x.k === 'mix' ? '<span>+ ' + c.brl(x.bonus) + ' se cumprir a meta</span><i class="ldn-tag or">ARRISCADA</i><small>pode render ' + c.brl(x.fix + x.bonus) + ' ou só ' + c.brl(x.fix) + '</small>' :
-          '<span>Valor travado por ' + x.yrs + ' anos</span><i class="ldn-tag bl">TRAVADO</i><small>não sobe se o clube subir, não cai se cair</small>') + '</button>';
-    show(rail('clube') + '<div class="ld-col">' + head('Patrocínio da camisa', '3 propostas · escolha uma para ' + (U.YEAR0 + co.season)) +
-      '<div class="ld-row"><div class="ldn-l"><div class="ldn-ops">' + ops.map(card).join('') + '</div></div>' +
-      '<div class="ldn-side"><div class="ldk-cx">' + lbl('COMO ENTRA NO CAIXA') + '<div class="ldn-kv"><span>Toda rodada</span><b>' + c.brl(Math.round(o.fix / n)) + '</b></div>' + (o.bonus ? '<div class="ldn-kv"><span>Fim do ano, se cumprir a meta</span><b>' + c.brl(o.bonus) + '</b></div>' : '') + '</div>' +
-        '<small class="ldn-note">Sua fama traz propostas melhores. Hoje: fama ' + co.fame + '.</small><span class="ld-gr"></span>' +
-        gold('ldn-go', 'Assinar com ' + esc(o.name.split(' ')[0]), c.brl(o.fix) + (o.bonus ? ' + bônus pela meta' : o.yrs > 1 ? ' por ano · ' + o.yrs + ' anos' : ' no ano')) + '</div></div></div>', st => {
-      st.querySelectorAll('[data-pt]').forEach(b => b.onclick = () => { sfx('tap'); patrocinio(b.dataset.pt, welcome); });
-      st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinPatrocinio(co, o.k); f.pend = null; c.save('hub'); welcome ? time(false) : semana(); };
-    });
+    const card = x => '<button class="acd-c' + (x.k === sel ? ' on' : '') + '" data-pt="' + x.k + '" aria-pressed="' + (x.k === sel) + '">' +
+      (x.k === 'mix' ? '<i class="acd-tag or">ARRISCADA</i>' : x.k !== 'fix' ? '<i class="acd-tag bl">TRAVADO</i>' : '') +
+      '<b>' + esc(x.name) + '</b><em>' + c.brl(x.fix) + '</em><small class="acd-u">' + (x.yrs > 1 ? 'por ano' : 'no ano') + '</small>' +
+      acdRow('Por rodada', c.brl(Math.round(x.fix / n))) + acdRow('Bônus na meta', x.bonus ? '+ ' + c.brl(x.bonus) : 'não tem') + acdRow('Duração', x.yrs > 1 ? x.yrs + ' temporadas' : '1 temporada') + '</button>';
+    acdShow('<div class="acd-say solo"><small>Patrocínio da camisa · ' + (U.YEAR0 + co.season) + '</small><p>Três marcas querem a sua camisa. Escolha uma.</p></div>',
+      ops.map(card).join(''), 'Assinar com ' + esc(o.name.split(' ')[0]), st => {
+        st.querySelectorAll('[data-pt]').forEach(b => b.onclick = () => { sfx('tap'); patrocinio(b.dataset.pt, welcome); });
+        st.querySelector('#acd-q').onclick = () => { sfx('tap'); acdHelp('Como funciona', ['O dinheiro entra no caixa toda rodada.', 'Com bônus: o fixo é menor, mas no fim do ano entra o bônus se você cumprir a meta da diretoria.',
+          'Travado: o valor não muda pelos anos do contrato, suba ou caia o clube.', 'Sua fama traz propostas melhores. Hoje: fama ' + co.fame + '.']); };
+        st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinPatrocinio(co, o.k); f.pend = null; c.save('hub'); welcome ? time(false) : semana(); };
+      });
   }
   // Banco: a escada do vermelho e o empréstimo
   function banco(amt) {
