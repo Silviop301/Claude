@@ -8124,3 +8124,25 @@ body.ld-on #ld { display: block; }
   .port-turn > div { display: flex; flex-direction: column; align-items: center; gap: 8px; } .port-turn i { font-size: 46px; font-style: normal; transform: rotate(0deg); }
   .port-turn b { font: 800 30px var(--display); } .port-turn small { font: 600 17px var(--body); color: var(--tx-2); }
 }
+
+/* Criar técnico deitado e enxuto (2026-11-08) */
+.tcr { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; padding: 22px 0 16px; box-sizing: border-box; }
+.tcr-back { position: absolute; left: 6px; top: 6px; width: 48px; height: 48px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(243,241,234,.25); display: flex; align-items: center; justify-content: center; }
+.tcr-back svg { width: 22px; height: 22px; fill: none; stroke: #F3F1EA; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.tcr-t { margin: 0; font: 800 34px/1 var(--display); color: var(--tx-1); }
+.tcr-plate { margin-top: 30px; width: 600px; height: 80px; border-radius: 18px; background: #F8F4EA; display: flex; align-items: center; gap: 14px; padding: 0 12px; box-sizing: border-box; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+.tcr-flag { height: 56px; padding: 0 8px !important; border-radius: 12px; background: #ECE6D6 !important; display: flex; align-items: center; gap: 6px; flex: none; }
+.tcr-flag #co-flag img, .tcr-flag #co-flag .flag { width: 44px; height: auto; display: block; }
+.tcr-flag svg { width: 14px; height: 14px; fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+.tcr-name { flex: 1; min-width: 0; border: 0; background: transparent; font: 800 36px/1 var(--display); color: var(--ink); text-transform: uppercase; letter-spacing: .01em; outline: none; padding: 0; }
+.tcr-dice { width: 56px; height: 56px; border-radius: 50%; background: #ECE6D6 !important; display: flex; align-items: center; justify-content: center; flex: none; }
+.tcr-seg { margin-top: 22px; width: 600px; height: 64px; border-radius: 16px; background: #141517; padding: 5px; box-sizing: border-box; display: flex; gap: 5px; }
+.tcr-seg button { flex: 1; border-radius: 12px; font: 800 22px/1 var(--display) !important; color: #D3E4D9 !important; }
+.tcr-seg button.on { background: #F8F4EA !important; color: var(--ink) !important; }
+.tcr-go { margin-top: auto; width: 360px; height: 62px; border-radius: 16px; background: var(--gold) !important; color: #1B1606 !important; box-shadow: 0 4px 0 #b48a12; font: 800 26px/1 var(--display) !important; flex: none; }
+.ld-pop-c.tcr-pop { width: 660px; }
+.tcr-pkh { display: flex; align-items: center; margin-bottom: 8px; } .tcr-pkh b { flex: 1; font: 800 26px/1 var(--display); }
+.tcr-flags { display: grid; grid-template-columns: repeat(13, 1fr); gap: 6px; }
+.tcr-flags button { height: 44px; border-radius: 10px; background: #ECE6D6 !important; display: flex; align-items: center; justify-content: center; }
+.tcr-flags button.on { background: var(--gold) !important; }
+.tcr-flags img { width: 30px; height: auto; }
