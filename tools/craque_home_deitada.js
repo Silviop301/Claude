@@ -14,17 +14,17 @@ const { chromium } = require('playwright');
   await p.click('#co-start button[data-v="livre"]'); await p.waitForTimeout(300); await p.click('#b-co-go'); await p.waitForTimeout(500); await p.click('#ldo-go'); await p.waitForTimeout(400); await p.click('#ldn-go'); await p.waitForTimeout(400); await p.click('#ldn-go'); await p.waitForTimeout(400);
   await p.evaluate(() => window.CRAQUE_UI.home()); await p.waitForTimeout(600);
   await p.screenshot({ path: out + '/hl3-treinador.png' });
-  // segundo técnico e vagas cheias
-  await p.click('#b-new-co'); await p.waitForTimeout(600); await p.click('#co-start button[data-v="livre"]'); await p.waitForTimeout(300); await p.click('#b-co-go'); await p.waitForTimeout(500); await p.click('#ldo-go'); await p.waitForTimeout(400); await p.click('#ldn-go'); await p.waitForTimeout(400); await p.click('#ldn-go'); await p.waitForTimeout(400);
+  // a janelinha do Treinador com 1 carreira; segundo técnico pela Nova carreira e vagas cheias
+  await p.click('#b-new-co'); await p.waitForTimeout(500); await p.screenshot({ path: out + '/hl3b-janela.png' });
+  await p.click('.hl-mp [data-mode]'); await p.waitForTimeout(600); await p.click('#co-start button[data-v="livre"]'); await p.waitForTimeout(300); await p.click('#b-co-go'); await p.waitForTimeout(500); await p.click('#ldo-go'); await p.waitForTimeout(400); await p.click('#ldn-go'); await p.waitForTimeout(400); await p.click('#ldn-go'); await p.waitForTimeout(400);
   await p.evaluate(() => window.CRAQUE_UI.home()); await p.waitForTimeout(600);
   await p.screenshot({ path: out + '/hl4-duas.png' });
-  await p.click('#b-new-co'); await p.waitForTimeout(700); await p.screenshot({ path: out + '/hl5-cheias.png' });
+  await p.click('#b-new-co'); await p.waitForTimeout(500); await p.screenshot({ path: out + '/hl4b-janela-duas.png' });
+  await p.click('.hl-mp [data-mode]'); await p.waitForTimeout(700); await p.screenshot({ path: out + '/hl5-cheias.png' });
   await p.click('[data-pop-x]'); await p.waitForTimeout(500);
-  await p.click('[data-open="relampago"]'); await p.waitForTimeout(500); await p.screenshot({ path: out + '/hl6-relampago.png' });
-  await p.click('#hl-rl'); await p.waitForTimeout(700); await p.screenshot({ path: out + '/hl7-relampago-gire.png' });
+  await p.click('#b-relampago'); await p.waitForTimeout(700); await p.screenshot({ path: out + '/hl7-relampago-gire.png' });
   console.log('need-port', await p.evaluate(() => document.body.className));
   await p.evaluate(() => window.CRAQUE_UI.home()); await p.waitForTimeout(500);
-  await p.click('[data-open="completa"]'); await p.waitForTimeout(500); await p.screenshot({ path: out + '/hl8-rumo.png' });
   await p.click('[data-hl="ranking"]'); await p.waitForTimeout(700); await p.screenshot({ path: out + '/hl9-ranking.png' });
   await p.setViewportSize({ width: 390, height: 844 }); await p.evaluate(() => window.CRAQUE_UI.home()); await p.waitForTimeout(700); await p.screenshot({ path: out + '/hl10-em-pe.png' });
   console.log(errs.join('\n') || 'sem erros'); await b.close(); })();

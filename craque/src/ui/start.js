@@ -220,102 +220,87 @@
   // Robôs de teste (navigator.webdriver) ficam na home em pé, salvo localStorage climbix-deitado = 1
   U.landOk = () => { try { const v = localStorage.getItem('climbix-deitado'); if (v === '1') return true; if (v === '0') return false; } catch (e) {} return !navigator.webdriver; };
   const LAND_ORDER = ['rapida', 'completa', 'relampago', 'treinador'];
-  const LAND_CODE = { rapida: 'A-01', completa: 'B-02', relampago: 'C-03', treinador: 'D-04' };
-  const LAND_DESC = { rapida: 'Uma temporada por tela, do garoto de 16 anos até a carta final.', completa: 'Cada rodada, treino, contrato e a vida entre os jogos.',
-    relampago: '5 casas, 5 bolas em cada. Sozinho ou X1 com um amigo.', treinador: 'Você é o técnico: escale, mexa na tática, aguente a diretoria.' };
-  const LAND_PTS = { rapida: [['⏱️', 'Uma temporada por tela, carreira em 9 minutos'], ['🎯', 'Decisões e lances decisivos'], ['🃏', 'No fim, a sua carta para mostrar']],
-    completa: [['📅', 'Cada rodada: treino, jogo e semana'], ['📱', 'O celular do jogador: empresário, amigos, dinheiro'], ['🏆', 'Pontos de legado ao longo dos anos']],
-    relampago: [['👆', 'Escolha a bola e chute'], ['⚽', 'Fez o gol, a bola abre e mostra o prêmio'], ['🤝', 'Desafie um amigo no X1 pelo link']],
-    treinador: [['📋', 'Escalação, formação e estilo'], ['📒', 'O caderno: descubra o que vence o quê'], ['💼', 'Diretoria, finanças e propostas']] };
-  const landPts = m => '<ul class="hl-pts">' + LAND_PTS[m].map(([e, t]) => '<li>' + U.emo(e, 'sm') + '<span>' + t + '</span></li>').join('') + '</ul>';
-  const LAND_RAIL = [['home', 'Jogar', '⚽'], ['mine', 'Carreiras', '🏆'], ['ranking', 'Ranking', '🥇'], ['profile', 'Perfil', '👨'], ['settings', 'Ajustes', '⚙️']];
   const agoTxt = t => { if (!t) return ''; const m = Math.max(1, Math.round((Date.now() - t) / 60000)); return m < 60 ? 'há ' + m + ' min' : m < 1440 ? 'há ' + Math.round(m / 60) + ' h' : 'há ' + Math.round(m / 1440) + (m < 2880 ? ' dia' : ' dias'); };
-  let landOpen = null, landDir = 0;
-  function landLast() { // o modo da carreira jogada por último (ou o Treinador para quem nunca jogou)
-    let best = null, at = -1;
-    ['rapida', 'completa', 'treinador'].forEach(m => slotsOf(m).forEach(sv => { if (sv && (sv.at || 0) > at) { at = sv.at || 0; best = m; } }));
-    return best || 'treinador';
+  // Home enxuta (2026-11-08, Silvio: "olha a simplicidade da home do WSC"; menos texto, sem trilho nem barra de outra cor,
+  // botões sem desenho à esquerda): logo, um botão dourado (continuar a última carreira), os 4 modos só com o nome e uma
+  // linha leve com Carreiras, Ranking, Perfil e Ajustes. Modo sem carreira começa no toque; com carreira abre a janelinha
+  function lastSave() {
+    let best = null;
+    ['rapida', 'completa', 'treinador'].forEach(m => slotsOf(m).forEach((sv, i) => { if (sv && (!best || (sv.at || 0) > (best.sv.at || 0))) best = { m, i, sv }; }));
+    return best;
   }
+  const LAND_MORE = [['mine', 'Carreiras', 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4'], ['ranking', 'Ranking', 'M12 14a5 5 0 1 0 0-10a5 5 0 1 0 0 10M9 13l-2 8 5-3 5 3-2-8'],
+    ['profile', 'Perfil', 'M12 12a4 4 0 1 0 0-8a4 4 0 1 0 0 8M4 21a8 8 0 0 1 16 0'], ['settings', 'Ajustes', 'M12 15a3 3 0 1 0 0-6a3 3 0 1 0 0 6M19 12l2-1-2-4-2 1-2-2V4h-4v2L9 8 7 7 5 11l2 1v2l-2 1 2 4 2-1 2 2v2h4v-2l2-2 2 1 2-4-2-1z']];
+  const lineSvg = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + d + '"/></svg>';
   function homeLand() {
-    if (!landOpen) { try { landOpen = localStorage.getItem('climbix-home-modo'); } catch (e) {} }
-    if (!LAND_ORDER.includes(landOpen)) landOpen = landLast();
-    const packs = U.ITEMS.get().packs.length, streak = U.ITEMS && U.ITEMS.streak ? U.ITEMS.streak().days || 0 : 0;
-    const rail = '<nav class="hl-rail" aria-label="Seções">' + LAND_RAIL.map(([k, l, ic]) => '<button data-hl="' + k + '"' + (k === 'home' ? ' class="on" aria-current="page"' : '') + '>' +
-      '<img src="' + U.emoSrc(ic) + '" alt="" draggable="false"><b>' + l + '</b></button>').join('') + '</nav>';
-    // Capas (2026-11-08, Silvio escolheu a ideia 3 do canvas "Home deitada: 3 ideias"): como o menu de um jogo de console,
-    // uma capa grande por vez com o nome na horizontal (o texto em pé fazia girar o celular para ler e cair no "Gire o
-    // celular"); as vizinhas aparecem apagadas dos lados, ◀ ▶, arrastar ou os pontos passam de modo
-    const durOf = m => m === 'relampago' ? '1 minuto' : m === 'rapida' ? '9 min' : 'Save de dias';
-    const band = (m, sub, extra) => '<div class="hl-band"><img src="' + U.emoSrc(MODES[m].ic) + '" alt="" draggable="false"><span><b>' + esc(MODES[m].name) + '</b>' + (sub ? '<em>' + sub + '</em>' : '') + '</span>' + (extra || '') + '</div>';
-    const side = (m, cls) => {
-      const sl = m === 'relampago' ? [] : slotsOf(m), n = sl.filter(Boolean).length;
-      return '<button class="hl-cap side ' + cls + ' hl-' + m + '" data-open="' + m + '" aria-label="Abrir ' + esc(MODES[m].name) + '">' + band(m, durOf(m) + (m === 'relampago' ? '' : ' · ' + n + ' de 2')) + '</button>';
-    };
-    const open = m => {
-      const M = MODES[m];
-      if (m === 'relampago') return '<div class="hl-cap mid hl-' + m + '">' + band(m, '1 minuto') + '<div class="hl-cb">' + landPts(m) +
-        '<button class="hl-gold" id="hl-rl">' + PLAY_SVG + '<b>Jogar</b></button></div></div>';
-      const sl = slotsOf(m), n = sl.filter(Boolean).length;
-      const order = sl.map((sv, i) => [sv, i]).filter(([sv]) => sv).sort((x, y) => (y[0].at || 0) - (x[0].at || 0));
-      const row = ([sv, i], first) => {
-        const co = m === 'treinador', c = co ? sv.co : sv.c, cl = c.club && club(c.club);
-        let at;
-        if (co) { const ss = c.ss; at = (ss && !ss.done ? 'rodada ' + Math.min(ss.i + 1, ss.rounds.length) + ' de ' + ss.rounds.length : 'temporada ' + (YEAR0 + c.season)); }
-        else at = (c.pos ? c.pos + ' · ' + c.age + ' anos · ' : '') + 'temporada ' + (YEAR0 + c.season);
-        return '<div class="hl-row"><button class="hl-rb" data-vg="' + m + ':' + i + '">' + (cl ? crest(cl.id) : U.emo(M.ic, 'md')) + '<span><b>' + esc(c.name) + '</b><small>' +
-          (cl ? esc(cl.short || cl.name) + ' · ' : '') + at + (sv.at ? ' · ' + agoTxt(sv.at) : '') + '</small></span></button>' +
-          (first ? '<button class="hl-cont" data-vg="' + m + ':' + i + '"' + (M.cont ? ' id="' + M.cont + '"' : '') + '>' + PLAY_SVG + 'Continuar</button>' : '<button class="hl-play" data-vg="' + m + ':' + i + '" aria-label="Continuar ' + esc(c.name) + '">' + PLAY_SVG + '</button>') + '</div>';
-      };
-      const ext = (n ? '<button class="hl-ed" data-ed="' + m + '">' + (editing.has(m) ? 'Pronto' : 'Excluir') + '</button>' : '');
-      return '<div class="hl-cap mid hl-' + m + '">' + band(m, durOf(m) + ' · ' + n + ' de 2 vagas', ext) + '<div class="hl-cb">' +
-        (n ? '' : landPts(m)) +
-        order.map((x, k) => editing.has(m) ? '<div class="hl-row"><button class="hl-rb del" data-del="' + m + ':' + x[1] + '">' + U.emo('🗑️', 'md') + '<span><b>Excluir ' + esc((x[0].co || x[0].c).name) + '</b><small>Some deste aparelho e da nuvem</small></span></button></div>' : row(x, k === 0)).join('') +
-        (editing.has(m) ? '' : n ? '<button class="hl-new" data-mode="' + m + '" id="' + M.neu + '">' + PLUS_SVG + '<span><b>Nova carreira</b><small>' + (n < 2 ? 'Vaga livre: comece outra sem perder a de agora' : 'Vagas cheias: você escolhe qual sai') + '</small></span></button>'
-          : '<button class="hl-gold" data-mode="' + m + '" id="' + M.neu + '">' + PLAY_SVG + '<b>Começar</b></button>') + '</div></div>';
-    };
-    const k = LAND_ORDER.indexOf(landOpen), at = d => LAND_ORDER[(k + d + LAND_ORDER.length) % LAND_ORDER.length];
-    const caps = '<div class="hl-cv' + (landDir ? ' in' + (landDir > 0 ? 'r' : 'l') : '') + '">' + side(at(-1), 'l') + side(at(1), 'r') + open(landOpen) +
-      '<button class="hl-arw l" data-go="-1" aria-label="Modo anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>' +
-      '<button class="hl-arw r" data-go="1" aria-label="Próximo modo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>' +
-      '<div class="hl-dots">' + LAND_ORDER.map(m => '<button data-open="' + m + '" aria-label="' + esc(MODES[m].name) + '"' + (m === landOpen ? ' class="on" aria-current="true"' : '') + '><i></i></button>').join('') + '</div></div>';
-    landDir = 0;
-    const html = rail + '<div class="hl-main"><div class="hl-top"><b class="hl-logo">CLIMBIX</b><span class="hl-gr"></span>' +
-      (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + ' para abrir</button>' : '') +
-      (streak ? '<span class="hl-chip">' + streak + (streak === 1 ? ' dia seguido' : ' dias seguidos') + '</span>' : '') + '</div>' + caps + '</div>';
-    U.LD.show('<div class="hl">' + html + '</div>', st => {
-      st.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.hl; if (k === 'home') return; U.ldOff(); if (k === 'settings') return U.settings ? U.settings() : null; (U[k] || home)(); });
-      const goTo = (m, dir) => { if (m === landOpen) return; sfx('tap'); landDir = dir || (LAND_ORDER.indexOf(m) > LAND_ORDER.indexOf(landOpen) ? 1 : -1); landOpen = m; editing.clear(); try { localStorage.setItem('climbix-home-modo', landOpen); } catch (e) {} homeLand(); };
-      st.querySelectorAll('[data-open]').forEach(b => b.onclick = () => goTo(b.dataset.open, b.classList.contains('l') ? -1 : b.classList.contains('r') ? 1 : 0));
-      st.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const d = +b.dataset.go; goTo(at(d), d); });
-      const cv = st.querySelector('.hl-cv'); let x0 = null; // arrastar para o lado passa de capa
-      cv.addEventListener('pointerdown', e => { x0 = e.clientX; });
-      cv.addEventListener('pointerup', e => { if (x0 === null) return; const dx = (e.clientX - x0) / (U.zk ? U.zk() : 1); x0 = null; if (Math.abs(dx) > 50) { const d = dx < 0 ? 1 : -1; goTo(at(d), d); } });
-      st.querySelectorAll('[data-vg]').forEach(b => b.onclick = () => {
-        const [mode, slot] = b.dataset.vg.split(':'), sv = svAt(mode, +slot);
-        sfx('tap'); if (!sv) return home();
-        U.ldOff();
-        if (mode === 'treinador') return U.coResume(sv);
-        contCareer(sv);
+    const packs = U.ITEMS.get().packs.length, last = lastSave();
+    const cont = last ? '<button class="hl-go" id="' + (MODES[last.m].cont || 'hl-go') + '" data-vg="' + last.m + ':' + last.i + '">' + PLAY_SVG + '<b>CONTINUAR</b><small>' + esc(svName(last.sv)) + '</small></button>'
+      : '<button class="hl-go solo" id="hl-go" data-mode="rapida">' + PLAY_SVG + '<b>JOGAR</b></button>';
+    const modes = LAND_ORDER.map(m => '<button class="hl-md hl-' + m + '" data-md="' + m + '"' + (m === 'rapida' ? ' id="b-new"' : m === 'completa' ? ' id="b-new-fc"' : m === 'relampago' ? ' id="b-relampago"' : ' id="b-new-co"') + '><b>' + esc(MODES[m].name) + '</b></button>').join('');
+    const more = LAND_MORE.map(([k, l, d]) => '<button class="hl-mr" data-hl="' + k + '">' + lineSvg(d) + '<b>' + l + '</b></button>').join('');
+    const html = '<div class="hl hl-x"><b class="hl-logo">CLIMBIX</b>' +
+      (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') +
+      cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div></div>';
+    U.LD.show(html, st => {
+      st.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.hl; U.ldOff(); if (k === 'settings') return U.settings ? U.settings() : null; (U[k] || home)(); });
+      bindSaves(st);
+      st.querySelectorAll('[data-md]').forEach(b => b.onclick = () => {
+        const m = b.dataset.md; sfx('tap');
+        if (m === 'relampago') { U.ldOff(); return U.relampago(); }
+        const sl = slotsOf(m);
+        if (!sl.some(Boolean)) { U.ldOff(); return begin(m, 0); }
+        landMode(m);
       });
-      st.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => { const m = b.dataset.ed; sfx('tap'); editing.has(m) ? editing.delete(m) : editing.add(m); homeLand(); });
-      st.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
-        const [mode, slot] = b.dataset.del.split(':'), sv = svAt(mode, +slot); if (!sv) return homeLand();
-        const co = mode === 'treinador', c = sv.co || sv.c;
-        landAsk('Excluir a carreira de ' + esc(c.name) + '?', (co ? 'O técnico' : 'O jogador') + ' some deste aparelho e da sua conta na nuvem. Não dá para desfazer.', 'Excluir carreira', () => {
-          const base = co ? U.SAVE_CO : SLOT_BASE[mode]();
-          store(U.slotKey(base, +slot), co ? { co: null, at: Date.now() } : { c: null, at: Date.now() });
-          editing.delete(mode); homeLand();
-        }, true);
-      });
-      st.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
-        const mode = b.dataset.mode, sl = slotsOf(mode), free = sl.findIndex(x => !x);
-        sfx('tap');
-        if (free >= 0) { U.ldOff(); return begin(mode, free); }
-        landPick(mode, sl);
-      });
-      if (st.querySelector('#hl-rl')) st.querySelector('#hl-rl').onclick = () => { sfx('tap'); U.ldOff(); U.relampago(); };
       if (st.querySelector('#hl-packs')) st.querySelector('#hl-packs').onclick = () => { sfx('tap'); U.ldOff(); U.openPacks ? U.openPacks(U.home) : (U.packsScreen && U.packsScreen()); };
     }, 'O Climbix é jogado com o celular deitado.');
+  }
+  function bindSaves(w) {
+    w.querySelectorAll('[data-vg]').forEach(b => b.onclick = () => {
+      const [mode, slot] = b.dataset.vg.split(':'), sv = svAt(mode, +slot);
+      sfx('tap'); if (!sv) return home();
+      U.ldOff();
+      if (mode === 'treinador') return U.coResume(sv);
+      contCareer(sv);
+    });
+    w.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
+      const mode = b.dataset.mode, sl = slotsOf(mode), free = sl.findIndex(x => !x);
+      sfx('tap');
+      if (free >= 0) { U.ldOff(); return begin(mode, free); }
+      landPick(mode, sl);
+    });
+  }
+  // Janelinha do modo com carreira: as carreiras (Continuar na última, ▶ na outra), Nova carreira e Excluir
+  function landMode(m) {
+    const M = MODES[m], ed = editing.has(m), sl = slotsOf(m);
+    const order = sl.map((sv, i) => [sv, i]).filter(([sv]) => sv).sort((x, y) => (y[0].at || 0) - (x[0].at || 0));
+    if (!order.length) { editing.delete(m); U.LD.closePop(); return homeLand(); }
+    const row = ([sv, i], first) => {
+      const co = m === 'treinador', c = co ? sv.co : sv.c, cl = c.club && club(c.club);
+      let at;
+      if (co) { const ss = c.ss; at = (ss && !ss.done ? 'rodada ' + Math.min(ss.i + 1, ss.rounds.length) : 'temporada ' + (YEAR0 + c.season)); }
+      else at = 'temporada ' + (YEAR0 + c.season);
+      if (ed) return '<div class="hl-row"><button class="hl-rb del" data-del="' + m + ':' + i + '"><span><b>Excluir ' + esc(c.name) + '</b><small>Some deste aparelho e da nuvem</small></span></button></div>';
+      return '<div class="hl-row"><button class="hl-rb" data-vg="' + m + ':' + i + '">' + (cl ? crest(cl.id) : '') + '<span><b>' + esc(c.name) + '</b><small>' +
+        (cl ? esc(cl.short || cl.name) + ' · ' : '') + at + '</small></span></button>' +
+        (first ? '<button class="hl-cont" data-vg="' + m + ':' + i + '">' + PLAY_SVG + 'Continuar</button>' : '<button class="hl-play" data-vg="' + m + ':' + i + '" aria-label="Continuar ' + esc(c.name) + '">' + PLAY_SVG + '</button>') + '</div>';
+    };
+    U.LD.pop('<div class="hl-mp"><div class="hl-mph"><b>' + esc(M.name) + '</b><button class="hl-ed" data-ed>' + (ed ? 'Pronto' : 'Excluir') + '</button>' +
+      '<button class="hl-x-btn" data-pop-x aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
+      order.map((x, k) => row(x, k === 0)).join('') +
+      (ed ? '' : '<button class="hl-new" data-mode="' + m + '">' + PLUS_SVG + '<b>Nova carreira</b></button>') + '</div>',
+      M.name, w => {
+        bindSaves(w);
+        w.querySelector('[data-ed]').onclick = () => { sfx('tap'); ed ? editing.delete(m) : editing.add(m); landMode(m); };
+        w.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+          const [mode, slot] = b.dataset.del.split(':'), sv = svAt(mode, +slot); if (!sv) return landMode(m);
+          const co = mode === 'treinador', c = sv.co || sv.c;
+          landAsk('Excluir a carreira de ' + esc(c.name) + '?', (co ? 'O técnico' : 'O jogador') + ' some deste aparelho e da sua conta na nuvem. Não dá para desfazer.', 'Excluir carreira', () => {
+            const base = co ? U.SAVE_CO : SLOT_BASE[mode]();
+            store(U.slotKey(base, +slot), co ? { co: null, at: Date.now() } : { c: null, at: Date.now() });
+            homeLand(); landMode(m);
+          }, true);
+        });
+      }, 'hl-pop');
   }
   // Pergunta no palco deitado (excluir carreira)
   function landAsk(t, s, ok, go, danger) {
