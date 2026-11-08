@@ -219,6 +219,10 @@
   // Vagas cheias: o popup escolhe qual carreira sai. Letra grande (régua de 2026-11-06: 15 a 28 px).
   // Robôs de teste (navigator.webdriver) ficam na home em pé, salvo localStorage climbix-deitado = 1
   U.landOk = () => { try { const v = localStorage.getItem('climbix-deitado'); if (v === '1') return true; if (v === '0') return false; } catch (e) {} return !navigator.webdriver; };
+  // Link só do Treinador (Silvio 2026-11-08, para os amigos avaliarem a simulação): climbix.app/?so=treinador deixa a
+  // home só com o Treinador neste aparelho (fica guardado); ?so=tudo volta ao jogo inteiro
+  try { const q = new URLSearchParams(location.search).get('so'); if (q === 'treinador') localStorage.setItem('climbix-so', 'treinador'); else if (q === 'tudo') localStorage.removeItem('climbix-so'); } catch (e) {}
+  U.soCo = () => { try { return localStorage.getItem('climbix-so') === 'treinador'; } catch (e) { return false; } };
   const LAND_ORDER = ['rapida', 'completa', 'relampago', 'treinador'];
   const agoTxt = t => { if (!t) return ''; const m = Math.max(1, Math.round((Date.now() - t) / 60000)); return m < 60 ? 'há ' + m + ' min' : m < 1440 ? 'há ' + Math.round(m / 60) + ' h' : 'há ' + Math.round(m / 1440) + (m < 2880 ? ' dia' : ' dias'); };
   // Home enxuta (2026-11-08, Silvio: "olha a simplicidade da home do WSC"; menos texto, sem trilho nem barra de outra cor,
@@ -226,19 +230,19 @@
   // linha leve com Carreiras, Ranking, Perfil e Ajustes. Modo sem carreira começa no toque; com carreira abre a janelinha
   function lastSave() {
     let best = null;
-    ['rapida', 'completa', 'treinador'].forEach(m => slotsOf(m).forEach((sv, i) => { if (sv && (!best || (sv.at || 0) > (best.sv.at || 0))) best = { m, i, sv }; }));
+    (U.soCo() ? ['treinador'] : ['rapida', 'completa', 'treinador']).forEach(m => slotsOf(m).forEach((sv, i) => { if (sv && (!best || (sv.at || 0) > (best.sv.at || 0))) best = { m, i, sv }; }));
     return best;
   }
   const LAND_MORE = [['mine', 'Carreiras', 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4'], ['ranking', 'Ranking', 'M12 14a5 5 0 1 0 0-10a5 5 0 1 0 0 10M9 13l-2 8 5-3 5 3-2-8'],
     ['profile', 'Perfil', 'M12 12a4 4 0 1 0 0-8a4 4 0 1 0 0 8M4 21a8 8 0 0 1 16 0'], ['settings', 'Ajustes', 'M12 15a3 3 0 1 0 0-6a3 3 0 1 0 0 6M19 12l2-1-2-4-2 1-2-2V4h-4v2L9 8 7 7 5 11l2 1v2l-2 1 2 4 2-1 2 2v2h4v-2l2-2 2 1 2-4-2-1z']];
   const lineSvg = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + d + '"/></svg>';
   function homeLand() {
-    const packs = U.ITEMS.get().packs.length, last = lastSave();
+    const so = U.soCo(), packs = so ? 0 : U.ITEMS.get().packs.length, last = lastSave();
     const cont = last ? '<button class="hl-go" id="' + (MODES[last.m].cont || 'hl-go') + '" data-vg="' + last.m + ':' + last.i + '">' + PLAY_SVG + '<b>CONTINUAR</b><small>' + esc(svName(last.sv)) + '</small></button>'
-      : '<button class="hl-go solo" id="hl-go" data-mode="rapida">' + PLAY_SVG + '<b>JOGAR</b></button>';
-    const modes = LAND_ORDER.map(m => '<button class="hl-md hl-' + m + '" data-md="' + m + '"' + (m === 'rapida' ? ' id="b-new"' : m === 'completa' ? ' id="b-new-fc"' : m === 'relampago' ? ' id="b-relampago"' : ' id="b-new-co"') + '><b>' + esc(MODES[m].name) + '</b></button>').join('');
-    const more = LAND_MORE.map(([k, l, d]) => '<button class="hl-mr" data-hl="' + k + '">' + lineSvg(d) + '<b>' + l + '</b></button>').join('');
-    const html = '<div class="hl hl-x"><b class="hl-logo">CLIMBIX</b>' +
+      : '<button class="hl-go solo" id="hl-go" data-mode="' + (so ? 'treinador' : 'rapida') + '">' + PLAY_SVG + '<b>JOGAR</b></button>';
+    const modes = (so ? (last ? ['treinador'] : []) : LAND_ORDER).map(m => '<button class="hl-md hl-' + m + '" data-md="' + m + '"' + (m === 'rapida' ? ' id="b-new"' : m === 'completa' ? ' id="b-new-fc"' : m === 'relampago' ? ' id="b-relampago"' : ' id="b-new-co"') + '><b>' + esc(MODES[m].name) + '</b></button>').join('');
+    const more = (so ? LAND_MORE.filter(x => x[0] === 'settings') : LAND_MORE).map(([k, l, d]) => '<button class="hl-mr" data-hl="' + k + '">' + lineSvg(d) + '<b>' + l + '</b></button>').join('');
+    const html = '<div class="hl hl-x' + (so ? ' hl-so' : '') + '"><b class="hl-logo">CLIMBIX</b>' +
       (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') +
       cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div></div>';
     U.LD.show(html, st => {

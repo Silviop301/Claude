@@ -8260,3 +8260,6 @@ body.ld-on #ld { display: block; }
 .sm-side { grid-column: 2; grid-row: 2 / -1; display: flex; flex-direction: column; gap: 10px; }
 .sm-nv { height: 50px; flex: none; border-radius: 14px; background: #141517 !important; color: #F3F1EA !important; font: 800 22px/1 var(--display) !important; text-align: left; padding: 0 18px !important; }
 .sm-side .tm-go { min-height: 56px; }
+/* Link só do Treinador (?so=treinador): um botão de carreiras centrado embaixo do dourado */
+.hl-so .hl-mds { grid-template-columns: 360px; justify-content: center; }
+.hl-so { justify-content: center; } .hl-so .hl-mrs { margin-top: 26px; }
