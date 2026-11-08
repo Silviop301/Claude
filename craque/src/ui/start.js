@@ -230,7 +230,7 @@
   const landPts = m => '<ul class="hl-pts">' + LAND_PTS[m].map(([e, t]) => '<li>' + U.emo(e, 'sm') + '<span>' + t + '</span></li>').join('') + '</ul>';
   const LAND_RAIL = [['home', 'Jogar', '⚽'], ['mine', 'Carreiras', '🏆'], ['ranking', 'Ranking', '🥇'], ['profile', 'Perfil', '👨'], ['settings', 'Ajustes', '⚙️']];
   const agoTxt = t => { if (!t) return ''; const m = Math.max(1, Math.round((Date.now() - t) / 60000)); return m < 60 ? 'há ' + m + ' min' : m < 1440 ? 'há ' + Math.round(m / 60) + ' h' : 'há ' + Math.round(m / 1440) + (m < 2880 ? ' dia' : ' dias'); };
-  let landOpen = null;
+  let landOpen = null, landDir = 0;
   function landLast() { // o modo da carreira jogada por último (ou o Treinador para quem nunca jogou)
     let best = null, at = -1;
     ['rapida', 'completa', 'treinador'].forEach(m => slotsOf(m).forEach(sv => { if (sv && (sv.at || 0) > at) { at = sv.at || 0; best = m; } }));
@@ -242,14 +242,19 @@
     const packs = U.ITEMS.get().packs.length, streak = U.ITEMS && U.ITEMS.streak ? U.ITEMS.streak().days || 0 : 0;
     const rail = '<nav class="hl-rail" aria-label="Seções">' + LAND_RAIL.map(([k, l, ic]) => '<button data-hl="' + k + '"' + (k === 'home' ? ' class="on" aria-current="page"' : '') + '>' +
       '<img src="' + U.emoSrc(ic) + '" alt="" draggable="false"><b>' + l + '</b></button>').join('') + '</nav>';
-    const closed = m => {
-      const M = MODES[m], n = m === 'relampago' ? 0 : slotsOf(m).filter(Boolean).length;
-      return '<button class="hl-tk hl-' + m + '" data-open="' + m + '" aria-label="Abrir ' + esc(M.name) + '"><small>' + LAND_CODE[m] + '</small><b>' + esc(M.name) + '</b><em>' + (m === 'relampago' ? '1 min' : n + ' de 2') + '</em></button>';
+    // Capas (2026-11-08, Silvio escolheu a ideia 3 do canvas "Home deitada: 3 ideias"): como o menu de um jogo de console,
+    // uma capa grande por vez com o nome na horizontal (o texto em pé fazia girar o celular para ler e cair no "Gire o
+    // celular"); as vizinhas aparecem apagadas dos lados, ◀ ▶, arrastar ou os pontos passam de modo
+    const durOf = m => m === 'relampago' ? '1 minuto' : m === 'rapida' ? '9 min' : 'Save de dias';
+    const band = (m, sub, extra) => '<div class="hl-band"><img src="' + U.emoSrc(MODES[m].ic) + '" alt="" draggable="false"><span><b>' + esc(MODES[m].name) + '</b>' + (sub ? '<em>' + sub + '</em>' : '') + '</span>' + (extra || '') + '</div>';
+    const side = (m, cls) => {
+      const sl = m === 'relampago' ? [] : slotsOf(m), n = sl.filter(Boolean).length;
+      return '<button class="hl-cap side ' + cls + ' hl-' + m + '" data-open="' + m + '" aria-label="Abrir ' + esc(MODES[m].name) + '">' + band(m, durOf(m) + (m === 'relampago' ? '' : ' · ' + n + ' de 2')) + '</button>';
     };
     const open = m => {
       const M = MODES[m];
-      if (m === 'relampago') return '<div class="hl-open hl-' + m + '"><div class="hl-oh"><b>' + M.name + '</b><small>1 minuto</small></div><p class="hl-desc">' + LAND_DESC[m] + '</p>' + landPts(m) +
-        '<span class="hl-gr"></span><button class="hl-gold" id="hl-rl">' + PLAY_SVG + '<b>Jogar</b></button></div>';
+      if (m === 'relampago') return '<div class="hl-cap mid hl-' + m + '">' + band(m, '1 minuto') + '<div class="hl-cb">' + landPts(m) +
+        '<button class="hl-gold" id="hl-rl">' + PLAY_SVG + '<b>Jogar</b></button></div></div>';
       const sl = slotsOf(m), n = sl.filter(Boolean).length;
       const order = sl.map((sv, i) => [sv, i]).filter(([sv]) => sv).sort((x, y) => (y[0].at || 0) - (x[0].at || 0));
       const row = ([sv, i], first) => {
@@ -261,19 +266,30 @@
           (cl ? esc(cl.short || cl.name) + ' · ' : '') + at + (sv.at ? ' · ' + agoTxt(sv.at) : '') + '</small></span></button>' +
           (first ? '<button class="hl-cont" data-vg="' + m + ':' + i + '"' + (M.cont ? ' id="' + M.cont + '"' : '') + '>' + PLAY_SVG + 'Continuar</button>' : '<button class="hl-play" data-vg="' + m + ':' + i + '" aria-label="Continuar ' + esc(c.name) + '">' + PLAY_SVG + '</button>') + '</div>';
       };
-      return '<div class="hl-open hl-' + m + '"><div class="hl-oh"><b>' + esc(M.name) + '</b><small>' + (m === 'rapida' ? '9 min' : 'save de dias') + ' · ' + n + ' de 2 vagas</small>' +
-        (n ? '<button class="hl-ed" data-ed="' + m + '">' + (editing.has(m) ? 'Pronto' : 'Excluir') + '</button>' : '') + '</div>' +
-        (n ? '' : '<p class="hl-desc">' + LAND_DESC[m] + '</p>' + landPts(m)) +
+      const ext = (n ? '<button class="hl-ed" data-ed="' + m + '">' + (editing.has(m) ? 'Pronto' : 'Excluir') + '</button>' : '');
+      return '<div class="hl-cap mid hl-' + m + '">' + band(m, durOf(m) + ' · ' + n + ' de 2 vagas', ext) + '<div class="hl-cb">' +
+        (n ? '' : landPts(m)) +
         order.map((x, k) => editing.has(m) ? '<div class="hl-row"><button class="hl-rb del" data-del="' + m + ':' + x[1] + '">' + U.emo('🗑️', 'md') + '<span><b>Excluir ' + esc((x[0].co || x[0].c).name) + '</b><small>Some deste aparelho e da nuvem</small></span></button></div>' : row(x, k === 0)).join('') +
-        (editing.has(m) ? '' : '<button class="hl-new" data-mode="' + m + '" id="' + M.neu + '">' + PLUS_SVG + '<span><b>' + (n ? 'Nova carreira' : 'Começar') + '</b><small>' + (n < 2 ? (n ? 'Vaga livre: comece outra sem perder a de agora' : 'Duas vagas: até duas carreiras salvas') : 'Vagas cheias: você escolhe qual sai') + '</small></span></button>') + '</div>';
+        (editing.has(m) ? '' : n ? '<button class="hl-new" data-mode="' + m + '" id="' + M.neu + '">' + PLUS_SVG + '<span><b>Nova carreira</b><small>' + (n < 2 ? 'Vaga livre: comece outra sem perder a de agora' : 'Vagas cheias: você escolhe qual sai') + '</small></span></button>'
+          : '<button class="hl-gold" data-mode="' + m + '" id="' + M.neu + '">' + PLAY_SVG + '<b>Começar</b></button>') + '</div></div>';
     };
-    const html = rail + '<div class="hl-main"><div class="hl-top"><b class="hl-logo">CLIMBIX</b><small>Toque num modo para abrir</small><span class="hl-gr"></span>' +
+    const k = LAND_ORDER.indexOf(landOpen), at = d => LAND_ORDER[(k + d + LAND_ORDER.length) % LAND_ORDER.length];
+    const caps = '<div class="hl-cv' + (landDir ? ' in' + (landDir > 0 ? 'r' : 'l') : '') + '">' + side(at(-1), 'l') + side(at(1), 'r') + open(landOpen) +
+      '<button class="hl-arw l" data-go="-1" aria-label="Modo anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>' +
+      '<button class="hl-arw r" data-go="1" aria-label="Próximo modo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>' +
+      '<div class="hl-dots">' + LAND_ORDER.map(m => '<button data-open="' + m + '" aria-label="' + esc(MODES[m].name) + '"' + (m === landOpen ? ' class="on" aria-current="true"' : '') + '><i></i></button>').join('') + '</div></div>';
+    landDir = 0;
+    const html = rail + '<div class="hl-main"><div class="hl-top"><b class="hl-logo">CLIMBIX</b><span class="hl-gr"></span>' +
       (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + ' para abrir</button>' : '') +
-      (streak ? '<span class="hl-chip">' + streak + (streak === 1 ? ' dia seguido' : ' dias seguidos') + '</span>' : '') + '</div>' +
-      '<div class="hl-tks">' + LAND_ORDER.map(m => m === landOpen ? open(m) : closed(m)).join('') + '</div></div>';
+      (streak ? '<span class="hl-chip">' + streak + (streak === 1 ? ' dia seguido' : ' dias seguidos') + '</span>' : '') + '</div>' + caps + '</div>';
     U.LD.show('<div class="hl">' + html + '</div>', st => {
       st.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.hl; if (k === 'home') return; U.ldOff(); if (k === 'settings') return U.settings ? U.settings() : null; (U[k] || home)(); });
-      st.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { sfx('tap'); landOpen = b.dataset.open; editing.clear(); try { localStorage.setItem('climbix-home-modo', landOpen); } catch (e) {} homeLand(); });
+      const goTo = (m, dir) => { if (m === landOpen) return; sfx('tap'); landDir = dir || (LAND_ORDER.indexOf(m) > LAND_ORDER.indexOf(landOpen) ? 1 : -1); landOpen = m; editing.clear(); try { localStorage.setItem('climbix-home-modo', landOpen); } catch (e) {} homeLand(); };
+      st.querySelectorAll('[data-open]').forEach(b => b.onclick = () => goTo(b.dataset.open, b.classList.contains('l') ? -1 : b.classList.contains('r') ? 1 : 0));
+      st.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const d = +b.dataset.go; goTo(at(d), d); });
+      const cv = st.querySelector('.hl-cv'); let x0 = null; // arrastar para o lado passa de capa
+      cv.addEventListener('pointerdown', e => { x0 = e.clientX; });
+      cv.addEventListener('pointerup', e => { if (x0 === null) return; const dx = (e.clientX - x0) / (U.zk ? U.zk() : 1); x0 = null; if (Math.abs(dx) > 50) { const d = dx < 0 ? 1 : -1; goTo(at(d), d); } });
       st.querySelectorAll('[data-vg]').forEach(b => b.onclick = () => {
         const [mode, slot] = b.dataset.vg.split(':'), sv = svAt(mode, +slot);
         sfx('tap'); if (!sv) return home();
