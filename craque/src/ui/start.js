@@ -242,9 +242,12 @@
     const packs = U.ITEMS.get().packs.length, streak = U.ITEMS && U.ITEMS.streak ? U.ITEMS.streak().days || 0 : 0;
     const rail = '<nav class="hl-rail" aria-label="Seções">' + LAND_RAIL.map(([k, l, ic]) => '<button data-hl="' + k + '"' + (k === 'home' ? ' class="on" aria-current="page"' : '') + '>' +
       '<img src="' + U.emoSrc(ic) + '" alt="" draggable="false"><b>' + l + '</b></button>').join('') + '</nav>';
+    // Ingressos deitados (2026-11-08): nome na horizontal (o texto em pé fazia girar o celular para ler e cair no "Gire o
+    // celular"); os 4 sempre na coluna da esquerda, o aberto marcado, e o que ele tem do lado
     const closed = m => {
-      const M = MODES[m], n = m === 'relampago' ? 0 : slotsOf(m).filter(Boolean).length;
-      return '<button class="hl-tk hl-' + m + '" data-open="' + m + '" aria-label="Abrir ' + esc(M.name) + '"><small>' + LAND_CODE[m] + '</small><b>' + esc(M.name) + '</b><em>' + (m === 'relampago' ? '1 min' : n + ' de 2') + '</em></button>';
+      const M = MODES[m], n = m === 'relampago' ? 0 : slotsOf(m).filter(Boolean).length, on = m === landOpen;
+      return '<button class="hl-tk hl-' + m + (on ? ' on' : '') + '" data-open="' + m + '"' + (on ? ' aria-current="true"' : '') + ' aria-label="Abrir ' + esc(M.name) + '">' + U.emo(M.ic, 'md') +
+        '<span><b>' + esc(M.name) + '</b><em>' + (m === 'relampago' ? '1 minuto' : (m === 'rapida' ? '9 min' : 'Save de dias') + ' · ' + n + ' de 2') + '</em></span></button>';
     };
     const open = m => {
       const M = MODES[m];
@@ -270,7 +273,7 @@
     const html = rail + '<div class="hl-main"><div class="hl-top"><b class="hl-logo">CLIMBIX</b><small>Toque num modo para abrir</small><span class="hl-gr"></span>' +
       (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + ' para abrir</button>' : '') +
       (streak ? '<span class="hl-chip">' + streak + (streak === 1 ? ' dia seguido' : ' dias seguidos') + '</span>' : '') + '</div>' +
-      '<div class="hl-tks">' + LAND_ORDER.map(m => m === landOpen ? open(m) : closed(m)).join('') + '</div></div>';
+      '<div class="hl-tks">' + LAND_ORDER.map(closed).join('') + open(landOpen) + '</div></div>';
     U.LD.show('<div class="hl">' + html + '</div>', st => {
       st.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.hl; if (k === 'home') return; U.ldOff(); if (k === 'settings') return U.settings ? U.settings() : null; (U[k] || home)(); });
       st.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { sfx('tap'); landOpen = b.dataset.open; editing.clear(); try { localStorage.setItem('climbix-home-modo', landOpen); } catch (e) {} homeLand(); });
