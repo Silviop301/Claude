@@ -145,7 +145,9 @@
     if (k === 'clube') return clube();
   }
 
-  // ---------- Semana: as duas escalações encaixadas no mesmo campo ----------
+  // ---------- Semana enxuta (Silvio 2026-11-08, opção A): sem trilho nem faixa do topo; uma linha com posição,
+  // forma, meta e diretoria; o próximo jogo com os dois escudos grandes; treino e olheiro embaixo; à direita os botões
+  // que eram do trilho e o dourado Jogar (abre a escalação). O caixa fica no Clube e os próximos jogos na Tabela.
   function semana() {
     const c = C(), co = c.co;
     const nx = S.coNext(co);
@@ -153,50 +155,34 @@
     if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao() : patrocinio();
     c.save('hub');
     finNews(co);
-    const cl = club(co.club), t = S.coTable(co), me = t.find(x => x.me), pos = S.coPos(co), B = co.board;
-    const form = (co.ss.log || []).slice(-5).map(x => '<i class="' + x.res + '" title="' + x.gf + 'x' + x.ga + '"></i>').join('');
-    const conf = Math.round(B.conf);
-    const top = '<div class="ld-top">' + crest(cl.id, 'ld-cr') + '<b>' + ord(pos) + ' · ' + me.p + ' pts</b><span class="ld-f5">' + form + '</span><i class="ld-sep"></i>' +
-      '<span class="ld-meta" title="' + esc(S.CO_GOAL_TXT[B.goal.k]) + '">Meta <b>' + (B.goal.k === 'titulo' ? 'ser campeão' : 'até o ' + ord(B.goal.pos)) + '</b></span>' +
-      '<span>Diretoria <em class="ld-bar"><u style="width:' + conf + '%" class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '"></u></em></span>' +
-      (co.fin ? '<i class="ld-sep"></i><span><b>' + c.brl(co.fin.caixa) + '</b></span>' : '') +
-      '<span class="ld-gr"></span><b class="ld-rd">' + (nx.bye ? 'SEM JOGO' : (nx.home ? 'EM CASA' : 'FORA')) + ' · RODADA ' + nx.round + '</b></div>';
-    let pitch = '', chips = '';
+    const t = S.coTable(co), me = t.find(x => x.me), pos = S.coPos(co), B = co.board, conf = Math.round(B.conf);
+    const f5 = f => { const a = (f || '').split('').slice(-5); while (a.length < 5) a.unshift('n'); return '<span class="ld-f5 sm-f5">' + a.map(x => '<i class="' + x + '"></i>').join('') + '</span>'; };
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const meta = B.goal.k === 'titulo' ? 'SER CAMPEÃO' : 'ATÉ O ' + ord(B.goal.pos);
+    const top = '<div class="sm-h"><button class="tcr-back" id="sm-back" aria-label="Início">' + BK + '</button>' +
+      '<b>' + ord(pos) + '</b><small>' + me.p + ' pts</small>' + f5(me.f) +
+      '<em class="sm-tag' + (pos > (B.goal.k === 'titulo' ? 1 : B.goal.pos) ? ' hi' : '') + '" title="' + esc(S.CO_GOAL_TXT[B.goal.k]) + '">META · ' + meta + '</em><span class="ld-gr"></span>' +
+      (B.ult ? '<em class="sm-tag ult">ULTIMATO · VENÇA ' + B.ult.need + ' DE ' + B.ult.of + '</em>' : '') +
+      '<span class="sm-dir">Diretoria <em class="ld-bar"><u style="width:' + conf + '%" class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '"></u></em></span></div>';
+    const side = (id, nm, sub) => '<div class="sm-tm">' + crest(id, 'sm-cr') + '<b>' + esc(nm) + '</b><small>' + sub + '</small></div>';
+    let card, wk = '';
     if (!nx.bye) {
-      const pv = S.coPreview(co), them = pv.them, by = {}; co.squad.forEach(p => { by[p.id] = p; });
-      const xi = pv.us && co.xi.length === 11 ? co.xi : S.coAutoXI(co.squad, co.form).xi;
-      const sl = S.coSlots(co.form), sp = spotsL(co.form, false, 'sem'); // cada time no seu campo
-      const tsl = S.coSlots(them.form), tsp = spotsL(them.form, true, 'sem'), tby = {}; them.squad.forEach(p => { tby[p.id] = p; });
-      pitch = xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { attr: ' data-go-time', tag: S.coSlotLbl(co.form, i) }) : '').join('') +
-        them.xi.map((id, i) => tby[id] ? rivalDot(tsp[i][0], tsp[i][1], last(tby[id].n)) : '').join('');
-      // Contagem por setor: a sua zaga contra o ataque deles, meio contra meio, o seu ataque contra a zaga deles
-      const F = S.CO_FORMS[co.form], TF = S.CO_FORMS[them.form];
-      const cnt = [[F.d.length, TF.a.length, 'sua zaga', 'sobra', 'fica no mano'], [F.m.length, TF.m.length, 'meio', 'com mais gente', 'em menor número'], [F.a.length, TF.d.length, 'ataque', 'com espaço', 'sem espaço']];
-      chips = '<div class="ld-sec">' + cnt.map(([a, b, k, up, dn]) => '<span class="' + (a > b ? 'up' : a < b ? 'dn' : 'eq') + '"><b>' + a + ' x ' + b + '</b> ' + k + ' ' + (a > b ? up : a < b ? dn : 'empata') + '</span>').join('') + '</div>' +
-        '<span class="ld-tag l">VOCÊ ' + co.form + ' · ' + esc(S.CO_STY[co.style].name.toUpperCase()) + '</span>' +
-        '<span class="ld-tag r">' + esc((club(them.club).short || club(them.club).name).toUpperCase()) + ' ' + them.form + ' · ' + esc(S.CO_STY[them.style].name.toUpperCase()) + '</span>';
-    } else pitch = '<div class="ld-empty"><b>Sem jogo nesta rodada</b><small>O time descansa. Os outros jogam.</small></div>';
-    // Faixa de baixo: últimos jogos e os próximos (a semana com treino vem numa próxima parte)
-    const ss = co.ss, me2 = ss.ids.indexOf(co.club);
-    const past = (ss.log || []).slice(nx.bye ? -3 : -1).map(l => '<span class="ld-day done"><small>R' + l.r + ' · ' + (l.home ? 'casa' : 'fora') + '</small><b>' + l.gf + ' x ' + l.ga + ' ' + esc(club(l.vs).short || club(l.vs).name) + '</b><i class="' + l.res + '"></i></span>').join('');
-    const fut = [];
-    for (let i = ss.i; i < Math.min(ss.rounds.length, ss.i + 3); i++) {
-      const g = ss.rounds[i].find(([h, a]) => h === me2 || a === me2);
-      if (!g) { fut.push('<span class="ld-day"><small>R' + (i + 1) + '</small><b>folga</b></span>'); continue; }
-      const hm = g[0] === me2, vs = ss.ids[hm ? g[1] : g[0]];
-      fut.push('<span class="ld-day' + (i === ss.i ? ' now' : '') + '"><small>R' + (i + 1) + ' · ' + (hm ? 'casa' : 'fora') + (i === ss.i ? ' · AGORA' : '') + '</small><b>' + esc(club(vs).short || club(vs).name) + '</b></span>');
-    }
-    // Semana: treino e olheiro antes do jogo
-    const tr = co.train && co.train.i === ss.i ? S.CO_TRAIN[co.train.k] : null, sc = co.scout && co.scout.i === ss.i;
-    const wk = nx.bye ? '' : '<button class="ld-day act' + (tr ? ' ok' : ' due') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b></button>' +
-      '<button class="ld-day act' + (sc ? ' ok' : '') + '" id="ld-ol"><small>OLHEIRO</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o rival') + '</b></button>';
-    const ult = B.ult ? '<span class="ld-ult"><b>Ultimato</b> vença ' + B.ult.need + ' dos próximos ' + B.ult.of + ' (' + B.ult.got + ' até agora)</span>' : '';
-    show(rail('semana') + '<div class="ld-col">' + top + '<div class="ld-pitch ld-pitch-sem">' + PITCH + pitch + chips + '</div>' +
-      '<div class="ld-week">' + ult + past + wk + fut.slice(0, nx.bye ? 3 : 2).join('') + gold('ld-play', nx.bye ? 'Ver a rodada' : 'Escalar e jogar', nx.bye ? 'o time descansa' : 'abre a escalação') + '</div></div>', st => {
+      const pv = S.coPreview(co), them = pv.them, cl = club(co.club), vc = club(them.club), rv = t.find(x => x.id === them.club), rpos = t.indexOf(rv) + 1;
+      card = '<small class="sm-rd">RODADA ' + nx.round + ' · ' + (nx.home ? 'EM CASA' : 'FORA') + '</small><div class="sm-vs">' +
+        side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name)) + '<i class="sm-x">x</i>' +
+        side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name)) + '</div>' +
+        (rv ? '<small class="sm-rv">' + ord(rpos) + ' · ' + rv.p + ' pts' + f5(rv.f) + '</small>' : '');
+      const tr = co.train && co.train.i === co.ss.i ? S.CO_TRAIN[co.train.k] : null, sc = co.scout && co.scout.i === co.ss.i;
+      wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
+        '<button class="sm-w' + (sc ? ' ok' : '') + '" id="ld-ol"><small>OLHEIRO</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o ' + esc(vc.short || vc.name)) + '</b></button></div>';
+    } else card = '<div class="sm-bye"><b>Sem jogo nesta rodada</b><small>O time descansa. Os outros jogam.</small></div>';
+    const nav = [['time', 'Time'], ['tabela', 'Tabela'], ['caderno', 'Caderno'], ['clube', 'Clube']].map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + '</button>').join('');
+    show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + wk +
+      '<nav class="sm-side" aria-label="Menu do técnico">' + nav + '<button class="tm-go" id="ld-play">' + (nx.bye ? 'Ver a rodada' : 'Jogar') + '</button></nav></div>', st => {
       st.querySelector('#ld-play').onclick = () => { sfx('tap'); if (nx.bye) { S.coSkipRound(co); c.save(); return semana(); } time(true); };
+      st.querySelector('#sm-back').onclick = () => { sfx('tap'); go('inicio'); };
       if (st.querySelector('#ld-tr')) st.querySelector('#ld-tr').onclick = () => { sfx('tap'); treino(); };
       if (st.querySelector('#ld-ol')) st.querySelector('#ld-ol').onclick = () => { sfx('tap'); olheiro(); };
-      st.querySelectorAll('[data-go-time]').forEach(b => b.onclick = () => { sfx('tap'); time(false); });
     });
   }
 
