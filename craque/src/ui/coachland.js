@@ -770,7 +770,7 @@
   // Reunião e patrocínio enxutos (2026-11-08, Silvio: sem trilho nem coluna, mas "um pouquinho mais de informação pra
   // análise"): o presidente numa frase, 3 cartões com nome, valor grande e 3 linhas de números; as regras no botão ?
   const acdRow = (k, v) => '<span class="acd-r"><small>' + k + '</small><b>' + v + '</b></span>';
-  const acdHelp = (t, lines) => pop('<div class="acd-help"><b>' + t + '</b>' + lines.map(l => '<p>' + l + '</p>').join('') + '<button class="hl-btn line" data-pop-x>Entendi</button></div>', t, null, 'hl-pop');
+  const acdHelp = (t, lines) => pop('<div class="acd-help"><b>' + t + '</b>' + lines.map(l => '<p>' + l + '</p>').join('') + '<button class="hl-btn line" data-pop-x>Entendi</button></div>', t, null, 'hl-pop acd-pop');
   const acdShow = (top, cards, cta, bind) => show('<div class="acd"><div class="acd-top">' + top + '<button class="acd-q" id="acd-q" aria-label="Como funciona">?</button></div>' +
     '<div class="acd-g">' + cards + '</div><button class="acd-go" id="ldn-go">' + cta + '</button></div>', bind);
   function reuniao(sel, welcome) {
