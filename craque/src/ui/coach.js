@@ -41,25 +41,31 @@
     slot = slot ? 1 : 0;
     const st = { name: D.randomName('Brasil'), country: 'Brasil', start: 'baixo', auto: true };
     const cty = () => D.COUNTRIES.find(k => k.id === st.country) || D.COUNTRIES[0];
-    const START = [['baixo', 'Subir de baixo', 'Um clube pequeno de divisão de baixo. A fama vem com o tempo.'],
-      ['livre', 'Qualquer clube', 'Você já tem algum nome: chegam propostas de clubes médios.']];
-    render('<button class="back-link" id="b-back-home">‹ Início</button>' +
-      '<div class="eyebrow">Modo Treinador</div><h2 class="cr-title">Quem é o técnico?</h2>' +
-      '<div class="co-plate"><span class="co-plate-f" id="co-flag"></span><input class="co-name" id="co-name" maxlength="22" value="' + esc(st.name) + '" aria-label="Nome do técnico">' +
-        '<button type="button" class="co-dice" id="co-dice" aria-label="Sortear nome">' + U.emo('🎲', 'sm') + '</button></div>' +
-      '<div class="cr-lbl">País · <b id="co-cty"></b></div><div class="cr-flags" id="co-country">' + D.COUNTRIES.map(k => '<button data-v="' + k.id + '"' + (k.id === st.country ? ' class="on"' : '') + ' aria-label="' + k.id + '">' + U.flag(k.flag, 'sm') + '</button>').join('') + '</div>' +
-      '<div class="cr-lbl">Como começa</div><div class="co-starts" id="co-start">' + START.map(([k, t, s]) => '<button data-v="' + k + '"' + (k === st.start ? ' class="on"' : '') + '><b>' + t + '</b><small>' + s + '</small></button>').join('') + '</div>' +
-      '<div class="inv-bar fade"><button class="btn" id="b-co-go">Ver propostas</button></div>');
-    const paint = () => { $('co-flag').innerHTML = U.flag(cty().flag); $('co-cty').textContent = cty().id; };
-    $('co-country').querySelectorAll('button').forEach(b => b.onclick = () => {
-      $('co-country').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-      st.country = b.dataset.v; if (st.auto) { st.name = D.randomName(st.country, null, st.name); $('co-name').value = st.name; }
-      paint(); sfx('tap');
-    });
-    $('co-start').querySelectorAll('button').forEach(b => b.onclick = () => { $('co-start').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); st.start = b.dataset.v; sfx('tap'); });
+    const START = [['baixo', 'Subir de baixo'], ['livre', 'Qualquer clube']];
+    // Deitado e enxuto (2026-11-08, Silvio aprovou "Criar técnico" no canvas): nome grande com a bandeira (o toque abre a
+    // grade dos países) e o dado, o começo num seletor e o botão dourado; sem descrições
+    const startSeg = () => START.map(([k, t]) => '<button data-v="' + k + '"' + (k === st.start ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('');
+    U.LD.show('<div class="tcr"><button class="tcr-back" id="b-back-home" aria-label="Voltar ao início"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>' +
+      '<h2 class="tcr-t">Quem é o técnico?</h2>' +
+      '<div class="tcr-plate"><button class="tcr-flag" id="co-flag-b" aria-label="Trocar país"><span id="co-flag"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>' +
+        '<input class="tcr-name" id="co-name" maxlength="22" value="' + esc(st.name) + '" aria-label="Nome do técnico" autocomplete="off">' +
+        '<button type="button" class="tcr-dice" id="co-dice" aria-label="Sortear nome">' + U.emo('🎲', 'md') + '</button></div>' +
+      '<div class="tcr-seg" id="co-start">' + startSeg() + '</div>' +
+      '<button class="tcr-go" id="b-co-go">Ver propostas</button></div>', null, 'O Treinador é jogado com o celular deitado.');
+    const paint = () => { $('co-flag').innerHTML = U.flag(cty().flag); $('co-flag-b').setAttribute('aria-label', 'País: ' + cty().id + '. Trocar'); };
+    $('co-flag-b').onclick = () => {
+      sfx('tap');
+      U.LD.pop('<div class="tcr-pk"><div class="tcr-pkh"><b>País</b><button class="hl-x-btn" data-pop-x aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
+        '<div class="tcr-flags">' + D.COUNTRIES.map(k => '<button data-v="' + k.id + '"' + (k.id === st.country ? ' class="on"' : '') + ' aria-label="' + k.id + '">' + U.flag(k.flag, 'sm') + '</button>').join('') + '</div></div>',
+        'País', w => w.querySelectorAll('.tcr-flags button').forEach(b => b.onclick = () => {
+          st.country = b.dataset.v; if (st.auto) { st.name = D.randomName(st.country, null, st.name); $('co-name').value = st.name; }
+          paint(); sfx('tap'); U.LD.closePop();
+        }), 'hl-pop tcr-pop');
+    };
+    $('co-start').querySelectorAll('button').forEach(b => b.onclick = () => { $('co-start').querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); }); st.start = b.dataset.v; sfx('tap'); });
     $('co-name').oninput = () => { st.name = $('co-name').value; st.auto = false; };
     $('co-dice').onclick = e => { e.preventDefault(); st.auto = true; st.name = D.randomName(st.country, null, $('co-name').value.trim()); $('co-name').value = st.name; sfx('tap'); };
-    $('b-back-home').onclick = U.home;
+    $('b-back-home').onclick = () => { sfx('tap'); U.home(); };
     $('b-co-go').onclick = () => {
       sfx('tap');
       co = S.coNew({ name: ($('co-name').value.trim() || st.name).slice(0, 22), country: st.country, start: st.start });
