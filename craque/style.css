@@ -8879,3 +8879,6 @@ button.coin-pill { cursor: pointer; border: 0; }
 .lde2-hint { font: 700 13px/1.2 var(--body); color: #4b5a52; text-align: center; min-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lde2-ct > span { flex-direction: row; justify-content: space-between; align-items: center; width: 100%; }
 .mkx-b > :only-child { grid-column: 1 / -1; }
+/* Agradecimento da compra de moedas (Silvio: a compra ajuda o jogo; agradecer o apoio) */
+.pay-ty { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); z-index: 9999; display: flex; align-items: center; gap: 12px; padding: 12px 14px 12px 18px; border-radius: 16px; background: #F8F4EA; color: #13201A; box-shadow: 0 10px 30px rgba(0,0,0,.45); font: 600 15px/1.25 var(--body); max-width: calc(100vw - 32px); }
+.pay-ty b { font: 800 19px/1 var(--display); white-space: nowrap; } .pay-ty button { flex: none; min-height: 40px; padding: 0 14px; border-radius: 12px; border: 0; background: #13201A; color: #F8F4EA; font: 800 16px/1 var(--display); cursor: pointer; }

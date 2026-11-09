@@ -355,6 +355,38 @@
     sync().then(changed => { if (changed && !G.c && document.getElementById('b-new')) U.home(); });
   }
 
+  // ---------- compra de moedas (api/pay.php, Mercado Pago) ----------
+  // A loja pergunta se a compra está ligada; Comprar cria o pagamento e leva ao Mercado Pago; na volta (?pago=ref) e a
+  // cada abertura com conta, o jogo pergunta o que já foi pago, soma na carteira (uma vez por ref) e avisa o servidor.
+  const PAPI = API.replace(/account\.php$/, 'pay.php');
+  let payOn = null;
+  const payStatus = () => payOn ? Promise.resolve(payOn) : post('status', {}, PAPI).then(r => (payOn = r), () => ({ on: false }));
+  const payCreate = pack => { const a = acc(); if (!a) return Promise.reject({ error: 'auth' }); return post('create', { token: a.token, pack }, PAPI); };
+  function payCheck() {
+    const a = acc(); if (!a || !U.COINS) return Promise.resolve(0);
+    return post('check', { token: a.token }, PAPI).then(r => {
+      const list = (r && r.list) || []; if (!list.length) return 0;
+      const n = U.COINS.add(list.map(x => ({ n: x.coins, t: 'Compra na loja', once: 'pay-' + x.ref })));
+      touch(KEYS.itens);
+      return post('claim', { token: a.token, refs: list.map(x => x.ref) }, PAPI).then(() => n, () => n);
+    }, () => 0);
+  }
+  function payThanks(n) {
+    if (!n) return;
+    const box = document.createElement('div'); box.className = 'pay-ty'; box.setAttribute('role', 'status');
+    box.innerHTML = '<b>Obrigado pelo apoio!</b><span>Suas ' + n.toLocaleString('pt-BR') + ' moedas já estão na conta.</span><button aria-label="Fechar">OK</button>';
+    document.body.appendChild(box); box.querySelector('button').onclick = () => box.remove(); setTimeout(() => box.remove(), 9000);
+    if (!G.c && U.home) U.home();
+  }
+  function payBoot() {
+    const m = /[?&]pago=([a-f0-9]{24})/.exec(location.search), fail = /[?&]falhou=1/.test(location.search);
+    if (m) try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
+    if (!acc()) return;
+    if (fail) return;
+    // O aviso do Mercado Pago pode chegar uns segundos depois da volta: tenta de novo algumas vezes
+    let n = 0; const go = () => payCheck().then(c => { if (c) return payThanks(c); if (m && ++n < 5) setTimeout(go, 4000); });
+    go();
+  }
   window.CLIMBIX_CLOUD = { touch, sync };
-  Object.assign(U, { cloudStatus: () => (acc() ? stTxt() : null), cloudName: () => { const a = acc(); return a ? a.user : 'Conta'; }, cloudLine: homeLine, cloud: screen, cloudBoot: boot, cloudMerge: merge });
+  Object.assign(U, { cloudStatus: () => (acc() ? stTxt() : null), cloudName: () => { const a = acc(); return a ? a.user : 'Conta'; }, cloudLine: homeLine, cloud: screen, cloudBoot: boot, cloudMerge: merge, payStatus, payCreate, payCheck, payBoot });
 })();

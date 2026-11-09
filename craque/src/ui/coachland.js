@@ -1346,7 +1346,9 @@
     return '<svg viewBox="0 0 74 74" aria-hidden="true">' + g + '</svg>'; };
   function loja(tab, back) {
     const c = C(), co = c && c.co && c.co.club ? c.co : null;
-    let pk = 1, wk = 1;
+    let pk = 1, wk = 1, payOn = false, busy = false;
+    const logged = !!(U.cloudStatus && U.cloudStatus());
+    if (U.payStatus) U.payStatus().then(r => { if (r && r.on && !payOn) { payOn = true; if (tab === 0 && document.querySelector('.lj')) draw(); } });
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', FW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
     const draw = () => {
       const saldo = U.COINS.get();
@@ -1356,7 +1358,9 @@
         main = '<div class="lj-pk">' + PACKS.map((p, i) => '<button class="lj-p' + (i === pk ? ' on' : '') + '" data-pk="' + i + '">' + (p.tag ? '<em>' + p.tag + '</em>' : '') + COIN_PILE(p.h) +
           '<span><b>' + p.n.toLocaleString('pt-BR') + '</b><small>' + p.nm + '</small></span><i>' + p.pr + '</i></button>').join('') + '</div>';
         side = '<div class="lj-box"><small class="ld-lbl">GANHE JOGANDO</small>' + [['Título da Série A', 60], ['Acesso', 15], ['Meta cumprida', 5], ['Metas da semana', 10]].map(([t, n]) => '<div class="lj-li"><span>' + t + '</span><b>+' + n + '</b></div>').join('') + '</div>' +
-          '<small class="lj-ty">Sua compra ajuda a manter e melhorar o Climbix.</small><button class="tm-go off" id="lj-buy" disabled>Compra em breve</button>';
+          '<small class="lj-ty">Sua compra ajuda a manter e melhorar o Climbix.</small>' +
+          (!payOn ? '<button class="tm-go off" id="lj-buy" disabled>Compra em breve</button>' : !logged ? '<button class="tm-go ec-in" id="lj-buy">Entrar para comprar</button>' :
+            '<button class="tm-go" id="lj-buy">' + (busy ? 'Abrindo…' : 'Comprar · ' + PACKS[pk].pr) + '</button>');
       } else if (!co) {
         main = '<div class="lj-ap lj-none"><b>Abra uma carreira do Treinador</b><small>O aporte entra na verba do clube que você treina.</small></div>';
         side = '<span class="rs-gap"></span>';
@@ -1375,6 +1379,15 @@
         st.querySelector('#lj-back').onclick = () => { sfx('tap'); back ? back() : U.home(); };
         st.querySelectorAll('[data-lj]').forEach(b => b.onclick = () => { sfx('tap'); tab = +b.dataset.lj; draw(); });
         st.querySelectorAll('[data-pk]').forEach(b => b.onclick = () => { sfx('tap'); pk = +b.dataset.pk; draw(); });
+        const buy = st.querySelector('#lj-buy');
+        if (buy && payOn) buy.onclick = () => {
+          sfx('tap');
+          if (!logged) { if (c && c.co) c.save(); off(); return U.cloud ? U.cloud() : U.home(); }
+          if (busy) return; busy = true; draw();
+          if (c && c.co) c.save();
+          U.payCreate(PACKS[pk].k).then(r => { location.href = r.url; }, e => { busy = false; draw();
+            pop('<div class="acd-help"><b>Não deu para abrir o pagamento</b><p>' + (e && e.error === 'auth' ? 'Entre de novo na sua conta e tente outra vez.' : 'Tente de novo daqui a pouco.') + '</p><button class="hl-btn dark" data-pop-x>Fechar</button></div>', 'Erro', null, 'hl-pop acd-pop tm-pop'); });
+        };
         if (st.querySelector('#lj-m')) st.querySelector('#lj-m').onclick = () => { sfx('tap'); wk--; draw(); };
         if (st.querySelector('#lj-p')) st.querySelector('#lj-p').onclick = () => { sfx('tap'); wk++; draw(); };
         if (st.querySelector('#lj-ap')) st.querySelector('#lj-ap').onclick = () => {

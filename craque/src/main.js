@@ -5,6 +5,7 @@ window.CRAQUE_UI.relampagoFromLink(); // desafio da Carreira Relâmpago (?r=...)
 if (!window.CRAQUE_UI.cardFromLink()) window.CRAQUE_UI.home();
 // Com conta: traz o que mudou em outro aparelho
 window.CRAQUE_UI.cloudBoot();
+if (window.CRAQUE_UI.payBoot) window.CRAQUE_UI.payBoot();
 
 // Instalável e offline: registra o service worker (gerado por tools/craque_sw.py)
 // (fora na versão de portal: o jogo roda dentro da página do portal)
