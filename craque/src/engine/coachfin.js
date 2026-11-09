@@ -212,6 +212,7 @@
     let g = 0;
     if (home && vs) { g = gate(co, vs); add('bil', g); }
     if (fin.loan && (ri + 1) % F.mes === 0) parcela(co);
+    if (S.coMktWeek) S.coMktWeek(co, ri, sub);
     // No vermelho a diretoria perde a paciência aos poucos (mais com o presidente pão-duro, o dobro no ultimato);
     // com 6 rodadas seguidas o presidente vende o jogador mais caro
     if (fin.caixa < 0) {
@@ -234,6 +235,7 @@
     if (ss.promo) out.push({ k: 'acesso', txt: 'Prêmio se subir de divisão', v: r10(fin.rec * F.acesso) });
     else out.push({ k: 'titulo', txt: 'Prêmio se for campeão', v: r10(fin.rec * F.titulo) });
     if (fin.loan) out.push({ k: 'loan', txt: 'Parcela do banco · faltam ' + fin.loan.n, v: -fin.loan.parc });
+    (fin.inst || []).forEach(x => out.push({ k: 'inst', txt: 'Parcela do ' + x.n + ' · faltam ' + x.k, v: -x.v }));
     return out;
   };
   S.coFinSemanas = co => { const fin = S.coFin(co), f = S.coFolha(co); return fin && f ? Math.max(0, Math.floor(fin.caixa / f)) : 0; };
