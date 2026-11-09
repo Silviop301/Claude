@@ -8651,3 +8651,5 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .lde2-ren { height: 44px; padding: 0 12px !important; border-radius: 12px; background: #13201A !important; color: #F8F4EA !important; font: 800 18px/1 var(--display) !important; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
 .lde2-ren small { font: 700 12px/1 var(--body); color: #B9C9BF; letter-spacing: 0; }
 .lde2-ren:disabled { opacity: .55; cursor: default; }
+.ld-st .lde2-r { padding: 0 14px !important; margin: 2px 0; }
+.ld-st .lde2-r.on { border-bottom-color: transparent !important; }
