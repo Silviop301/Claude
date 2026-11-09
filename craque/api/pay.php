@@ -1,7 +1,8 @@
 <?php
 // Compra de moedas com dinheiro real (Mercado Pago, Checkout Pro: Pix e cartão). Fase 5 das moedas (2026-11-09).
 // O token fica em climbix-data/mp-token FORA do public_html (o deploy grava a partir do segredo CLIMBIX_MP_TOKEN);
-// token que começa com TEST- é o de teste (não cobra). Sem o arquivo, a loja mostra "Compra em breve".
+// Token de teste: o antigo começa com TEST-; no painel novo começa com APP_USR- como o real, e o que diz que é teste é
+// a conta dona do token (tag test_user em /users/me, guardado em climbix-data/mp-mode). Sem o arquivo, "Compra em breve".
 //   POST ?a=status                       {on, test}
 //   POST ?a=create {token, pack}         cria a compra e devolve {ref, url} (o jogador vai para o Mercado Pago)
 //   GET/POST ?a=hook                     aviso do Mercado Pago (notification_url): confere o pagamento na API deles
@@ -29,7 +30,7 @@ const SITE = 'https://climbix.app';
 $dir = getenv('CLIMBIX_DATA') ?: dirname(__DIR__, 2) . '/climbix-data';
 $mp = is_file($dir . '/mp-token') ? trim((string)file_get_contents($dir . '/mp-token')) : '';
 $a = $_GET['a'] ?? '';
-if ($a === 'status') out(['on' => $mp !== '', 'test' => strpos($mp, 'TEST-') === 0]);
+if ($a === 'status') out(['on' => $mp !== '', 'test' => $mp !== '' && mpTest($mp, $dir)]);
 if ($mp === '') out(['error' => 'off'], 503);
 
 try {
@@ -50,6 +51,18 @@ function mpCall($mp, $method, $path, $body = null) {
   $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
   $j = is_string($r) ? json_decode($r, true) : null;
   return [$code, is_array($j) ? $j : []];
+}
+// O token é de teste? TEST- (antigo) ou conta de teste (tag test_user); guardado por token para não perguntar sempre
+function mpTest($mp, $dir) {
+  if (strpos($mp, 'TEST-') === 0) return true;
+  $h = substr(hash('sha256', $mp), 0, 16); $f = $dir . '/mp-mode';
+  $c = is_file($f) ? explode(':', trim((string)file_get_contents($f))) : [];
+  if (count($c) === 2 && $c[0] === $h) return $c[1] === '1';
+  [$code, $me] = mpCall($mp, 'GET', '/users/me');
+  if ($code !== 200) return false;
+  $t = in_array('test_user', (array)($me['tags'] ?? []), true);
+  @file_put_contents($f, $h . ':' . ($t ? '1' : '0'));
+  return $t;
 }
 // Marca como paga a compra de um pagamento aprovado (confere valor e referência)
 function settle($db, $pay) {
@@ -102,8 +115,8 @@ if ($a === 'create') {
   ]);
   if ($code < 200 || $code >= 300 || empty($pref['init_point'])) out(['error' => 'mp'], 502);
   $db->prepare("INSERT INTO purchases (ref, user_key, pack, coins, price, status, created) VALUES (?, ?, ?, ?, ?, 'created', ?)")->execute([$ref, $user, $k, $P['coins'], $P['price'], time()]);
-  $test = strpos($mp, 'TEST-') === 0;
-  out(['ref' => $ref, 'url' => $test && !empty($pref['sandbox_init_point']) ? $pref['sandbox_init_point'] : $pref['init_point']]);
+  // sandbox_init_point só no token antigo TEST-; com o APP_USR- de teste o init_point já é o ambiente de teste
+  out(['ref' => $ref, 'url' => strpos($mp, 'TEST-') === 0 && !empty($pref['sandbox_init_point']) ? $pref['sandbox_init_point'] : $pref['init_point']]);
 }
 
 if ($a === 'check') {
