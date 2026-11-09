@@ -968,8 +968,11 @@
   }
   // Escolher clube com moedas (fase 2, quadro 41): preço pela força atual do clube; vale onde há propostas
   // (começo da carreira, fim de temporada, depois da demissão). A meta continua a do clube e a moeda não volta.
-  S.CO_CLUB_PRICE = [[60, 30], [67, 80], [74, 180], [80, 350], [999, 600]];
-  S.coClubPrice = id => { const st = D.CLUB_BY_ID[id].strength; return S.CO_CLUB_PRICE.find(([m]) => st <= m)[1]; };
+  // Preço contínuo (Silvio 2026-11-09 estranhou a escada: Palmeiras 180 e Flamengo 350): 30 até força 60 e +22 por
+  // ponto de força acima disso, de 10 em 10 (Santos 250, Palmeiras 320, Flamengo 380, Real Madrid 510, City 620)
+  S.CO_CLUB_PRICE = { base: 30, at: 60, per: 22, min: 20 };
+  S.coClubPrice = id => { const P = S.CO_CLUB_PRICE, st = D.CLUB_BY_ID[id].strength;
+    return st <= P.at ? Math.max(P.min, Math.round((P.base - (P.at - st)) / 10) * 10) : Math.round((P.base + (st - P.at) * P.per) / 10) * 10; };
   // Clubes de uma liga para a grade (do mais forte ao mais fraco), já com as divisões desta carreira
   S.coBuyList = (co, lg) => { S.applyLeagues(co); return D.CLUBS.filter(x => x.league === lg && x.id !== co.club).sort((a, b) => b.strength - a.strength).map(x => x.id); };
   // Marca a compra na carreira (o ranking poderá mostrar depois) e assina

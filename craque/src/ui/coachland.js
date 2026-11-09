@@ -1304,26 +1304,29 @@
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', FW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
     const draw = () => {
       const lg = lgs[li], ids = S.coBuyList(co, lg.id); if (!ids.includes(pick)) pick = ids[0];
-      const saldo = U.COINS.get(), price = S.coClubPrice(pick), g = S.coGoalFor(co, pick), cl = club(pick);
+      const saldo = U.COINS.get(), mine = U.COINS.owns(pick), price = mine ? 0 : S.coClubPrice(pick), g = S.coGoalFor(co, pick), cl = club(pick);
+      const logged = !!(U.cloudStatus && U.cloudStatus());
       const avg = ids.concat(co.club && club(co.club).league === lg.id ? [co.club] : []).reduce((a, id) => a + club(id).strength, 0) / Math.max(1, ids.length);
       const rel = cl.strength - avg, el = rel > 6 ? 'muito forte' : rel > 2 ? 'forte' : rel < -4 ? 'fraco' : 'médio';
       const verba = S.coFinBase({ club: pick, season: co.season }) * S.CO_FIN.verba0, hi = ['titulo', 'subir', 'g4'].includes(g.k), ok = saldo >= price;
-      const cell = id => '<button class="ec-c' + (id === pick ? ' on' : '') + '" data-ec="' + id + '" aria-pressed="' + (id === pick) + '">' + crest(id, 'ec-cr') + '<b>' + esc(club(id).short || club(id).name) + '</b><span>' + U.COINS.svg + S.coClubPrice(id) + '</span></button>';
+      const cell = id => '<button class="ec-c' + (id === pick ? ' on' : '') + '" data-ec="' + id + '" aria-pressed="' + (id === pick) + '">' + crest(id, 'ec-cr') + '<b>' + esc(club(id).short || club(id).name) + '</b>' + (U.COINS.owns(id) ? '<span class="ec-own">Seu time</span>' : '<span>' + U.COINS.svg + S.coClubPrice(id) + '</span>') + '</button>';
       show('<div class="ec"><div class="tm-h"><button class="tcr-back" id="ec-back" aria-label="Voltar">' + BK + '</button><b>Escolher clube</b></div>' +
         '<div class="ec-lg"><button id="ec-lp" aria-label="Liga anterior">' + BK + '</button><b>' + esc(lg.country) + ' · ' + esc(lg.name) + '</b><button id="ec-ln" aria-label="Próxima liga">' + FW + '</button></div>' + U.COINS.pill('ec-pill') +
         '<div class="ec-g">' + ids.map(cell).join('') + '</div>' +
         '<div class="ec-side"><div class="ec-sel"><div class="ec-sh">' + crest(pick, 'ec-scr') + '<b>' + esc(cl.short || cl.name) + '</b></div>' +
           '<em class="ec-m' + (hi ? ' hi' : '') + '">META · ' + esc(S.CO_GOAL_TXT[g.k]) + '</em>' +
           '<div class="ec-li"><span>Elenco</span><b>' + el + '</b></div><div class="ec-li"><span>Verba</span><b>' + c.brl(verba) + '</b></div>' +
-          '<div class="ec-li"><span>Moedas depois</span><b>' + (ok ? saldo - price : '—') + '</b></div></div>' +
-          '<button class="tm-go' + (ok ? '' : ' off') + '" id="ec-go">' + (ok ? 'Assinar · ' + price + ' moedas' : 'Faltam ' + (price - saldo) + ' moedas') + '</button></div></div>', st => {
+          '<div class="ec-li"><span>' + (mine ? 'Comprado' : 'Moedas depois') + '</span><b>' + (mine ? 'no seu perfil' : ok ? saldo - price : '—') + '</b></div></div>' +
+          '<button class="tm-go' + (!ok ? ' off' : !mine && !logged ? ' ec-in' : '') + '" id="ec-go">' + (mine ? 'Assinar · seu time' : !ok ? 'Faltam ' + (price - saldo) + ' moedas' : !logged ? 'Entrar para comprar' : 'Comprar · ' + price + ' moedas') + '</button></div></div>', st => {
         st.querySelector('#ec-back').onclick = () => { sfx('tap'); back(); };
         st.querySelector('#ec-lp').onclick = () => { sfx('tap'); li = (li - 1 + lgs.length) % lgs.length; pick = null; draw(); };
         st.querySelector('#ec-ln').onclick = () => { sfx('tap'); li = (li + 1) % lgs.length; pick = null; draw(); };
         st.querySelectorAll('[data-ec]').forEach(b => b.onclick = () => { sfx('tap'); const sc = st.querySelector('.ec-g').scrollLeft; pick = b.dataset.ec; draw(); const g2 = document.querySelector('.ec-g'); if (g2) g2.scrollLeft = sc; });
         st.querySelector('#ec-go').onclick = () => {
           if (!ok) { sfx('tap'); return loja(0, draw); }
-          if (!U.COINS.spend(price, 'Clube: ' + (cl.short || cl.name))) return;
+          // Comprar exige conta (Silvio 2026-11-09): o time fica no perfil e vai junto para outro aparelho
+          if (!mine && !logged) { sfx('tap'); c.save(); off(); return U.cloud ? U.cloud() : U.home(); }
+          if (!mine) { if (!U.COINS.spend(price, 'Clube: ' + (cl.short || cl.name))) return; U.COINS.own(pick); }
           sfx('tap'); S.coBuyClub(co, pick, price); co.autoXI = true; co.offers = null; S.coStart(co); c.save('hub'); welcome();
         };
       });

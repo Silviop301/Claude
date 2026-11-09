@@ -160,6 +160,8 @@
         '<small>nível</small><b>' + L.lv + '</b><span class="tk-bars"></span>') +
       '<section class="pf-sec tab-sec"><div class="tab-sh"><h2>Metas da semana</h2><span>' + (left === 1 ? 'renovam amanhã' : 'renovam em ' + left + ' dias') + '</span></div><div class="hm-tks">' + wk.goals.map(goal).join('') + '</div></section>' +
       '<section class="pf-sec tab-sec pf-sk">' + U.streakHome() + '</section>' +
+      (U.COINS && U.COINS.clubs().length ? '<section class="pf-sec tab-sec"><div class="tab-sh"><h2>Seus times</h2><span>comprados com moedas</span></div><div class="pf-clubs">' +
+        U.COINS.clubs().map(id => '<span>' + U.crest(id) + esc(U.club(id).short || U.club(id).name) + '</span>').join('') + '</div></section>' : '') +
       (window.CRAQUE_WORLD && U.worldTk ? '<section class="pf-sec tab-sec">' + U.worldTk() + '</section>' : '') +
       '<section class="pf-sec tab-sec"><div class="tab-sh"><h2>Todas as carreiras</h2></div><div class="sumula"><div class="sumula-in"><div class="pf-nums">' +
         num(T.n, T.n === 1 ? 'carreira' : 'carreiras') + num(T.goals, 'gols') + num(T.assists, 'assistências') + num(T.titles, 'títulos') +
