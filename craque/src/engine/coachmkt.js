@@ -1,8 +1,7 @@
 // Modo Treinador, mercado. Lote 1 (2026-11-09): procurar com filtros, resultado e ficha. Lote 2 (09/11): janela com dias,
 // proposta ao clube (presidente com humor e paciência, contraproposta), contrato com o empresário (humor a cada toque) e a chegada.
 // Plano: doc "Treinador: plano da tela enxuta do mercado"; quadros 23, 23b e 24 do canvas das telas enxutas.
-// Os jogadores dos outros vêm dos elencos sorteados da temporada (S.coGenSquad); quando a API de jogadores reais chegar,
-// ela troca esta fonte (S.coMktPool) e o resto continua igual. Força dos outros nunca em número: uma faixa contra o seu
+// Os jogadores dos outros vêm de S.coGenSquad: elenco real (src/real-squads.js, API-Football) quando o clube tem, senão sorteado. Força dos outros nunca em número: uma faixa contra o seu
 // titular da posição, que estreita a cada relatório do olheiro (co.mkt.rep[id] = 1..3). A sua liga o olheiro já conhece.
 // co.mkt = { s (temporada), rep: { id: n }, f: [6 índices dos filtros], nm (nome digitado), obs: { id: 1 }, wk/used (janela e dias gastos),
 //           neg: { id: { pat, st: open|ok|no|signed, ans, cv, deal: {v, pay, tr}, apat } }, got: { id: 1 } }; parcelas em co.fin.inst
@@ -33,16 +32,16 @@
   // ---------- a fonte: todos os jogadores dos outros clubes na temporada (e os sem clube) ----------
   let cache = null;
   S.coMktPool = function (co) {
-    const key = co.season + '|' + co.club;
+    const key = co.season + '|' + co.club + '|' + co.squad.map(p => p.api || '').join(',');
     if (cache && cache.k === key) return cache.list;
     const list = [];
     D.CLUBS.forEach(cl => {
       if (cl.id === co.club) return;
-      S.coGenSquad(cl.id, co.season).forEach(p => { list.push(Object.assign({}, p, { club: cl.id, lg: cl.league })); });
+      S.coGenSquad(cl.id, co.season, co).forEach(p => { list.push(Object.assign({}, p, { club: cl.id, lg: cl.league })); });
     });
     // Sem clube: veteranos e quem sobrou, sorteados pela temporada
     for (let i = 0; i < M.free; i++) {
-      const h = hash('free|' + co.season + '|' + i), cl = D.CLUBS[h % D.CLUBS.length], sq = S.coGenSquad(cl.id, co.season - 1), p = sq[(h >>> 8) % sq.length];
+      const h = hash('free|' + co.season + '|' + i), cl = D.CLUBS[h % D.CLUBS.length], sq = S.coGenSquad(cl.id, co.season - 1, co), p = sq[(h >>> 8) % sq.length];
       list.push(Object.assign({}, p, { id: 'f:' + co.season + ':' + i, club: null, lg: cl.league, ct: 0, age: p.age + 1, ovr: Math.max(30, p.ovr - 3) }));
     }
     cache = { k: key, list };

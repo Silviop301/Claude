@@ -199,8 +199,36 @@
     return { id, n: D.randomName(cty, r), pos, age, ovr: clamp(Math.round(ovr), 30, 95), pot: Math.max(Math.round(ovr), pot), wage: wageOf(ovr), ct: r.int(1, 4), mo: 60, en: 100, out: 0, sus: 0 };
   }
   // Elenco de um clube na temporada: os mais fortes perto da força do clube, o banco abaixo, os garotos mais abaixo
-  function genSquad(clubId, season) {
-    const club = D.CLUB_BY_ID[clubId], r = S.rng(hash(clubId + '|' + season)), cty = D.countryOf(club), s = club.strength;
+  // Elencos reais (tools/craque_api_elencos.py gera src/real-squads.js): nome, idade, posição e número de verdade;
+  // a força segue a conta do sorteado (força do clube, ordem na posição, idade). Quem passa de 37 anos ou falta numa
+  // posição vira garoto sorteado (e quem já está no seu elenco, co, sai do clube de origem). id 'r:' + id da API: o mesmo jogador tem o mesmo id em todo save e temporada.
+  const REAL = () => root.CRAQUE_REAL || (typeof require !== 'undefined' ? (() => { try { return require('../real-squads.js'); } catch (e) { return null; } })() : null);
+  S.coRealOf = clubId => { const R = REAL(); return (R && R.clubs && R.clubs[clubId]) || null; };
+  function realSquad(club, season, rows, co) {
+    const mine = new Set(((co && co.squad) || []).map(p => p.api).filter(Boolean));
+    const r = S.rng(hash(club.id + '|' + season + '|real')), cty = D.countryOf(club), s = club.strength, out = [];
+    Object.keys(CO.squad).forEach(pos => {
+      const n = CO.squad[pos];
+      // Quem joga: número de titular (1 a 23) na frente, depois idade boa (23 a 31); garotos de número alto por último
+      const L = rows.filter(x => x[3] === pos).map(x => ({ x, age: x[2] + season }))
+        .filter(o => o.age <= 37 && !mine.has(o.x[0]))
+        .map(o => ({ ...o, sc: (o.x[4] >= 1 && o.x[4] <= 11 ? 12 : o.x[4] >= 1 && o.x[4] <= 23 ? 8 : o.x[4] >= 1 && o.x[4] <= 40 ? 4 : 0) + (o.age >= 23 && o.age <= 31 ? 4 : o.age >= 20 && o.age <= 33 ? 2 : 0) + (hash(o.x[0] + '|' + season) % 100) / 100 }))
+        .sort((a, b) => b.sc - a.sc).slice(0, n);
+      for (let k = 0; k < n; k++) {
+        const o = L[k], j = S.rng(hash((o ? o.x[0] : club.id + pos + k) + '|' + season + '|f'));
+        const age = o ? o.age : r.int(17, 20), young = !o || age <= 20;
+        const ovr = s + 2.5 - 8 * (k / Math.max(1, n - 1)) + j.gauss() * 2.5 - (young ? 6 : 0) - (age >= 33 ? 2 : 0);
+        const p = mkPlayer(j, club, pos, ovr, age, o ? 'r:' + o.x[0] : club.id + ':' + season + ':' + out.length, cty);
+        if (o) { p.n = o.x[1]; p.api = o.x[0]; if (o.x[4] >= 1 && o.x[4] <= 99) p.num = o.x[4]; }
+        out.push(p);
+      }
+    });
+    return out;
+  }
+  function genSquad(clubId, season, co) {
+    const club = D.CLUB_BY_ID[clubId], real = S.coRealOf(clubId);
+    if (real) return realSquad(club, season, real, co);
+    const r = S.rng(hash(clubId + '|' + season)), cty = D.countryOf(club), s = club.strength;
     const out = [];
     Object.keys(CO.squad).forEach(pos => {
       const n = CO.squad[pos];
@@ -395,7 +423,7 @@
     return { form, style };
   }
   function oppSide(co, vs, home) {
-    const sq = genSquad(vs, co.season); sq.forEach(p => { p.en = CO.enOpp; });
+    const sq = genSquad(vs, co.season, co); sq.forEach(p => { p.en = CO.enOpp; });
     const d = D.CLUB_BY_ID[vs].strength - D.CLUB_BY_ID[co.club].strength;
     const pl = plan(vs, d, home), a = autoXI(sq, pl.form);
     return { club: vs, squad: sq, form: pl.form, style: pl.style, plan: pl, xi: a.xi, bench: a.bench, subs: CO.subs, red: 0 };
