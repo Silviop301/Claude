@@ -8574,5 +8574,37 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .mkf-g .mk-k > b { font-size: 24px; }
 .mkf-tr { flex-wrap: nowrap; gap: 6px; } .mkf-tr span { padding: 6px 9px; font-size: 17px; white-space: nowrap; }
 .mkf-nr { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Treinador deitado: Mercado lote 2 (2026-11-09, quadros 25 e 26): janela no topo, proposta, contrato */
+.mk-win { position: absolute; right: 56px; top: 7px; height: 30px; padding: 0 12px; border-radius: 15px; background: rgba(242, 194, 48, .16); color: var(--gold); display: flex; align-items: center; font: 800 17px/1 var(--display); letter-spacing: .04em; white-space: nowrap; }
+.mk-win.off { background: rgba(243, 241, 234, .08); color: #9fb0a6; }
+.mk .tm-h small { max-width: 300px; }
+.mkp-tabs { grid-template-columns: 1fr 1fr; }
+.mkp-l, .mkc-l { grid-column: 1; grid-row: 3; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.mkp-v { flex: 1; gap: 10px; justify-content: space-between; }
+.mkp-row { display: flex; align-items: center; gap: 12px; }
+.mkp-row > b { flex: 1; text-align: center; font: 800 40px/1 var(--display); color: #F3F1EA; white-space: nowrap; }
+.mkp-cuts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mkp-cuts button { height: 44px; border-radius: 12px; background: rgba(243, 241, 234, .1); color: #F3F1EA; font: 800 18px/1 var(--display); white-space: nowrap; }
+.mkp-cuts button.on, .mkp-seg button.on { background: #F8F4EA; color: #13201A; }
+.mkp-g { flex: none; height: 96px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mkp-g .mk-k { justify-content: space-between; padding: 12px 14px; }
+.mkp-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; border-radius: 12px; background: rgba(243, 241, 234, .08); padding: 4px; }
+.mkp-seg button { height: 40px; border-radius: 9px; color: #B9C9BF; font: 800 18px/1 var(--display); }
+.mkp-seg.big button { height: 52px; font-size: 21px; }
+.mkp-tr { display: flex; align-items: center; gap: 8px; } .mkp-tr .mk-ar { width: 40px; height: 40px; }
+.mkp-tr b { flex: 1; min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 800 19px/1 var(--display); color: #F3F1EA; } .mkp-tr b.off { color: #9fb0a6; }
+.mk button:disabled { opacity: .45; cursor: default; }
+.mkp-pr > b { font: 800 26px/1.05 var(--display); color: #F3F1EA; } .mkp-pr > b.up { color: #7ED39A; } .mkp-pr > b.mid { color: var(--gold); } .mkp-pr > b.dn { color: #F5A57F; }
+.mkp-pat { display: flex; align-items: center; justify-content: space-between; font: 700 15px/1 var(--body); color: #B9C9BF; }
+.mkp-dots { display: flex; gap: 6px; } .mkp-dots i { width: 14px; height: 14px; border-radius: 50%; background: rgba(243, 241, 234, .16); } .mkp-dots i.on { background: var(--gold); }
+.mkf-li b.up { color: #7ED39A; } .mkf-li b.dn { color: #F5A57F; }
+.mkc-g { flex: none; height: 150px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mkc-b { justify-content: space-between; } .mkc-b .mkp-row { gap: 8px; } .mkc-b .mkp-row > b { font-size: 32px; }
+.mkc-h { font: 700 15px/1 var(--body); color: #B9C9BF; text-align: center; }
+.mkc-r { flex: 1; justify-content: space-between; } .mkc-d { font: 700 16px/1.25 var(--body); color: #D9E2DC; }
+.mkc-dd i.dn { background: #F5A57F; } .mkc-dd i.mid { background: var(--gold); } .mkc-dd i.up { background: #7ED39A; }
+.mkc-f > b { font: 800 26px/1 var(--display); color: #F3F1EA; } .mkc-f > b.dn { color: #F5A57F; }
+.mkc-l { grid-row: 2 / -1; }
+.mk-k .mk-ar.big { background: rgba(243, 241, 234, .1) !important; }
 .ldl-tm { grid-template-rows: 38px minmax(0, 1fr) 48px; gap: 8px 16px; }
 .ldl-tm .tm-h .ldl-sc { padding: 6px 12px; }
