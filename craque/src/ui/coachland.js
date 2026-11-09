@@ -52,7 +52,10 @@
   const PHONE = '<svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M20 9a8 8 0 0 1 0 6M4 9a8 8 0 0 0 0 6"/></svg>';
 
   // ---------- peças comuns ----------
-  const RAIL = [['inicio', 'Início'], ['semana', 'Semana'], ['time', 'Time'], ['caderno', 'Caderno'], ['tabela', 'Tabela'], ['mercado', 'Mercado', 1], ['clube', 'Clube'], ['celular', 'Celular', 1]];
+  // Caderno escondido (Silvio, 2026-11-09: a matriz não escala com mais formações; volta com outro formato). O motor
+  // continua anotando em co.cad; CAD = true traz de volta a tela, o botão da semana e os blocos do resultado e da tática
+  const CAD = false;
+  const RAIL = [['inicio', 'Início'], ['semana', 'Semana'], ['time', 'Time']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([ ['tabela', 'Tabela'], ['mercado', 'Mercado', 1], ['clube', 'Clube'], ['celular', 'Celular', 1]]);
   const rail = act => '<nav class="ld-rail" aria-label="Menu do técnico">' + RAIL.map(([k, t, soon]) => soon
     ? '<span class="ld-ri soon">' + t + '<small>em breve</small></span>'
     : '<button class="ld-ri' + (k === act ? ' on' : '') + '" data-rail="' + k + '"' + (k === act ? ' aria-current="page"' : '') + '>' + t + '</button>').join('') + '</nav>';
@@ -140,7 +143,7 @@
     if (k === 'inicio') { c.save(); c.exit(); return; }
     if (k === 'semana') return semana();
     if (k === 'time') return time(false);
-    if (k === 'caderno') return caderno();
+    if (k === 'caderno') return CAD ? caderno() : semana();
     if (k === 'tabela') return tabela();
     if (k === 'clube') return clube();
   }
@@ -176,7 +179,7 @@
       wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
         '<button class="sm-w' + (sc ? ' ok' : '') + '" id="ld-ol"><small>OLHEIRO</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o ' + esc(vc.short || vc.name)) + '</b></button></div>';
     } else card = '<div class="sm-bye"><b>Sem jogo nesta rodada</b><small>O time descansa. Os outros jogam.</small></div>';
-    const nav = [['time', 'Time'], ['tabela', 'Tabela'], ['caderno', 'Caderno'], ['clube', 'Clube']].map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + '</button>').join('');
+    const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + '</button>').join('');
     show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + wk +
       '<nav class="sm-side" aria-label="Menu do técnico">' + nav + '<button class="tm-go" id="ld-play">' + (nx.bye ? 'Ver a rodada' : 'Jogar') + '</button></nav></div>', st => {
       st.querySelector('#ld-play').onclick = () => { sfx('tap'); if (nx.bye) { S.coSkipRound(co); c.save(); return semana(); } time(true); };
@@ -337,7 +340,7 @@
     const nOff = xiNow.filter((id, i) => by[id] && by[id].pos !== sl[i]).length;
     const prev = xiNow.map((id, i) => { const p = by[id]; if (!p) return ''; const f = p.pos === sl[i] ? 'ok' : S.coFit(p.pos, sl[i]) >= 0.88 ? 'sabe' : 'fora';
       return '<span class="ld-pd ' + f + '" style="left:' + sp[i][0] + '%;top:' + sp[i][1] + '%">' + sl[i] + '</span>'; }).join('');
-    const cad = o.them ? cadHtml(c.cadLines(pf, ps, o.them, 2)) : '';
+    const cad = CAD && o.them ? cadHtml(c.cadLines(pf, ps, o.them, 2)) : '';
     const them = o.them ? 'O ' + esc(club(o.them.club).short || club(o.them.club).name) + ' deve vir no ' + o.them.form + ', ' + esc(S.CO_STY[o.them.style].name.toLowerCase()) + '.' : '';
     const sub = o.live || them;
     const stip = S.CO_STY[ps].tip.split(';');
@@ -347,14 +350,14 @@
       '<div class="ldx-dh"><b>' + pf + ' com ' + esc(S.CO_STY[ps].name) + '</b><button class="ldx-chip" data-det="0">Voltar</button></div>' +
       '<div class="ldx-dg"><div class="ldx-dc"><small class="ldx-l up">ESTILO FORTE</small><p>' + esc(stip[0]) + '</p>' + (stip[1] ? '<small class="ldx-l dn">ESTILO FRACO</small><p>' + esc(stip[1].trim()) + '</p>' : '') +
       '<small class="ldx-l ' + (nOff ? 'or' : 'up') + '">POSIÇÕES</small><p>' + posTxt + '</p></div>' +
-      '<div class="ldx-dc ldx-pp"><small class="ldx-l gd">DO SEU CADERNO</small>' + (them ? '<p>' + them + '</p>' : '') + (cad ? '<div class="ld-cadl">' + cad + '</div>' : '<p>Sem adversário para comparar.</p>') + '</div></div></div>';
+      (CAD ? '<div class="ldx-dc ldx-pp"><small class="ldx-l gd">DO SEU CADERNO</small>' + (them ? '<p>' + them + '</p>' : '') + (cad ? '<div class="ld-cadl">' + cad + '</div>' : '<p>Sem adversário para comparar.</p>') + '</div>' : '') + '</div></div>';
     pop(popHead('Formação e estilo', sub, !!o.back) +
       '<div class="ldx-b"><div class="ldx-l1">' +
         '<div class="ldx-chips">' + shown.map(f => chip(f, f === pf, 'data-f="' + f + '"', f)).join('') + chip('', false, 'data-ft="' + (tab === 'main' ? 'mais' : 'main') + '"', tab === 'main' ? '+' + more.length : '‹ 4 atrás') + '</div>' +
         '<div class="ld-mini ldx-pitch">' + PITCH + prev + '<button class="ld-favb' + (fav[pf] ? ' on' : '') + '" data-fav="' + pf + '">' + (fav[pf] ? '★ Favorita' : '☆ Favoritar') + '</button></div>' +
         '<p class="ldx-ft"><b>' + pf + '</b> ' + esc(c.FORM_TIP[pf] || '') + (nOff ? ' · <b class="or">' + posTxt + '</b>' : '') + '</p></div>' +
       '<div class="ldx-r"><small class="ldx-l">ESTILO</small><div class="ldx-sg">' + S.CO_STYLES.map(k => chip(k, k === ps, 'data-s="' + k + '"', STY_CHIP[k] || esc(S.CO_STY[k].name))).join('') + '</div>' +
-        '<p class="ldx-st"><b class="up">FORTE</b> ' + esc(stip[0].trim()) + (stip[1] ? '<br><b class="dn">FRACO</b> ' + esc(stip[1].trim()) : '') + '</p><button class="ldx-a" data-det="1">Ver no caderno e posições ›</button>' +
+        '<p class="ldx-st"><b class="up">FORTE</b> ' + esc(stip[0].trim()) + (stip[1] ? '<br><b class="dn">FRACO</b> ' + esc(stip[1].trim()) : '') + '</p><button class="ldx-a" data-det="1">' + (CAD ? 'Ver no caderno e posições' : 'Ver posições') + ' ›</button>' +
         '<span class="ld-gr"></span><button class="ld-gold" id="ld-tac-ok"><b>Usar ' + pf + '</b><small>com ' + esc(S.CO_STY[ps].name) + '</small></button></div>' + details + '</div>',
       'Formação e estilo', w => {
         w.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); tacPicker(o, b.dataset.ft, pf, ps); });
@@ -488,7 +491,7 @@
         : '<div class="ldl-ev ' + (st.t === 'gol' && !us || st.t === 'vermelho' || st.t === 'lesao' ? 'bad' : st.t === 'gol' ? 'good' : '') + '"><small>' + S.coClock(m) + ' · ' + esc(T.toUpperCase()) + '</small><b>' + (st.t === 'vermelho' ? '<span class="co-red"></span> ' : '') + esc(st.t === 'vermelho' ? (st.p || '') + ' foi expulso' : T) + '</b><span>' + txt + '</span></div>') +
         (st.t === 'vermelho' ? '<div class="ldl-red">' + x.redOpts(st) + '</div>' : '<div class="ldl-aq">' + lbl('O AUXILIAR LEU ASSIM') + '"' + esc(r.txt) + '"' + (r.tags.length ? '<span class="ldl-tags">' + r.tags.map(t => '<em>' + esc(t) + '</em>').join('') + '</span>' : '') + '</div>');
       const selB = (id, l, v) => '<button class="ldl-sel" id="' + id + '"><small>' + l + '</small><b>' + v + '</b>' + CHEV + '</button>';
-      const cad = cadHtml(c.cadLines(s.form, s.style, m.them, 1));
+      const cad = CAD ? cadHtml(c.cadLines(s.form, s.style, m.them, 1)) : '';
       const mid = lbl('MEXER NO TIME') + selB('ldl-f', 'Formação', s.form) + selB('ldl-s', 'Estilo', esc(S.CO_STY[s.style].name)) +
         '<div class="ldl-trh">' + lbl('TROCAS') + '<small>' + (s.subs ? s.subs + ' sobrando' : 'sem trocas') + '</small></div>' +
         (sg.length ? sg.map((g, k) => '<button class="ldl-sg' + (sel.has(k) ? ' on' : '') + '" data-sg="' + k + '"><span><b>' + (g.o.num || '') + ' ' + esc(c.last(g.o.n)) + ' → ' + (g.i.num || '') + ' ' + esc(c.last(g.i.n)) + '</b><small>' + g.why + '</small></span><i aria-hidden="true">' + (sel.has(k) ? '✓' : '') + '</i></button>').join('') : '<p class="ld-none">Ninguém cansado ou com amarelo. Toque abaixo para trocar mesmo assim.</p>') +
@@ -555,35 +558,42 @@
     const by = {}; co.squad.forEach(p => { by[p.id] = p; });
     const rt = (log.rt || []);
     const nota = x => '<div class="ldr-n"><b class="' + (x.r >= 7 ? 'up' : x.r < 5.8 ? 'dn' : '') + '">' + x.r.toFixed(1).replace('.', ',') + '</b><span><em>' + esc(by[x.id] ? by[x.id].n : '') + '</em><small>' + esc(x.w) + '</small></span></div>';
-    // As notas mostradas: as duas melhores, a pior e mais uma
-    const top = rt.length > 4 ? rt.slice(0, 3).concat([rt[rt.length - 1]]) : rt;
     const pos = S.coPos(co), B = co.board, dc = pre.conf !== undefined ? B.conf - pre.conf : 0;
     const chg = [['Tabela', pre.pos ? ord(pre.pos) + (pre.pos !== pos ? ' → ' + ord(pos) : ' (igual)') + ' · ' + (S.coTable(co).find(x => x.me) || {}).p + ' pts' : ord(pos)],
       ['Diretoria', co.sacked ? 'demitido' : dc > 1 ? 'confiança subiu' : dc < -1 ? 'confiança caiu' : 'confiança igual', dc > 1 ? 'up' : dc < -1 ? 'dn' : ''],
       co.fin && pre.caixa !== null && pre.caixa !== undefined ? ['Caixa', (co.fin.caixa - pre.caixa >= 0 ? '+ ' : '− ') + c.brl(Math.abs(co.fin.caixa - pre.caixa)), co.fin.caixa - pre.caixa >= 0 ? 'up' : 'dn'] : null,
       B.ult ? ['Ultimato', B.ult.got + ' de ' + B.ult.need + ' vitórias · ' + (B.ult.of - B.ult.n) + ' jogos', 'dn'] : (log.ycOut || []).length ? ['Suspenso', log.ycOut.map(last).join(', '), 'dn'] : null].filter(Boolean);
-    const cadN = log.cad && log.cad.notes ? log.cad.notes : [];
+    const cadN = CAD && log.cad && log.cad.notes ? log.cad.notes : [];
     const cadTxt = n => { const [a, b] = n.ab.split('|'), nmK = x => (n.k === 'sty' ? S.CO_STY[x].name : x);
       return '<p><b>' + (n.pen ? 'Certeza (viu 2 vezes):' : 'Pode errar (viu 1 vez):') + '</b> ' + esc(nmK(a)) + ' contra ' + esc(nmK(b)) + ' ' + (n.v === 'up' ? 'deu certo.' : n.v === 'down' ? 'sofreu.' : 'ficou parelho.') + '</p>'; };
+    const best = rt[0], bp = best && by[best.id];
+    const KEEP = ['Posse', 'Chutes', 'No gol', 'Grandes chances', 'Escanteios', 'Cartões'];
     const draw = () => {
-      const nums = matchNums(m);
+      const nums = matchNums(m).filter(r => KEEP.indexOf(r[0]) >= 0);
+      const cd = n => '<i class="y"></i>'.repeat(Math.min(3, n[0] || 0)) + '<i class="r"></i>'.repeat(n[1] || 0);
       const bar = ([k, a, b, suf, inv, cards]) => { const t = (a + b) || 1, good = inv ? a <= b : a >= b;
-        return '<div class="ldr-r"><b>' + a + (suf || '') + (cards ? ' ' + '<i class="y"></i>'.repeat(Math.min(3, cards[0] || 0)) + '<i class="r"></i>'.repeat(cards[1] || 0) : '') + '</b><span><small>' + k + '</small><i><u class="' + (good ? 'up' : 'dn') + '" style="width:' + Math.round(a / t * 100) + '%"></u><u class="th" style="width:' + Math.round(b / t * 100) + '%"></u></i></span><b>' + b + (suf || '') + (cards ? ' ' + '<i class="y"></i>'.repeat(Math.min(3, cards[2] || 0)) + '<i class="r"></i>'.repeat(cards[3] || 0) : '') + '</b></div>'; };
-      const pane = tab === 'num' ? '<div class="ldr-nums">' + nums.map(bar).join('') + '</div>' :
-        tab === 'mom' ? '<div class="ldr-mom">' + U.lvMom(m, move !== null && move !== undefined ? move : null) + '</div><div class="ldr-momf"><small>0\'</small><small>' + (move !== null && move !== undefined ? 'sua mudança aos ' + move + '\'' : 'quem mandou: acima é você') + '</small><small>90\'</small></div>' +
-          '<ul class="ldl-last ldr-key">' + m.ev.filter(e => e.t === 'gol' || e.t === 'vermelho' || (e.s === 'us' && (e.t === 'tatica' || e.t === 'troca' || e.t === 'grito' || e.t === 'conversa'))).slice(0, 9).map(e => c.feedLine(m, e)).join('') + '</ul>' :
+        return '<div class="rs-r"><b>' + (cards ? cd(cards.slice(0, 2)) + ' ' : '') + a + (suf || '') + '</b><span><small>' + k + '</small><i><u class="' + (good ? 'up' : 'dn') + '" style="width:' + Math.round(a / t * 100) + '%"></u><u class="th"></u></i></span><b>' + b + (suf || '') + (cards ? ' ' + cd(cards.slice(2)) : '') + '</b></div>'; };
+      const pane = tab === 'num' ? '<div class="rs-nums">' + nums.map(bar).join('') + '</div>' :
+        tab === 'mom' ? '<div class="ldr-mom">' + U.lvMom(m, move !== null && move !== undefined ? move : null) + '</div><div class="rs-momf"><small>0\'</small><small>' + (move !== null && move !== undefined ? 'sua mudança aos ' + move + '\'' : 'acima é você') + '</small><small>90\'</small></div>' +
+          '<ul class="ldl-last ldr-key">' + m.ev.filter(e => e.t === 'gol' || e.t === 'vermelho' || (e.s === 'us' && (e.t === 'tatica' || e.t === 'troca'))).slice(0, 6).map(e => c.feedLine(m, e)).join('') + '</ul>' :
         '<ul class="ldl-last ldr-all">' + m.ev.filter(e => e.t !== 'grito-fim').map(e => c.feedLine(m, e)).join('') + '</ul>';
-      show('<div class="ldr">' +
-        '<div class="ldr-l"><div class="ldr-sc">' + crest((m.home ? cl : vs).id, 'ldr-cr') + '<em>' + m.gh + ' <i>x</i> ' + m.ga + '</em>' + crest((m.home ? vs : cl).id, 'ldr-cr') +
-          '<span class="ldr-w"><b class="' + log.res + '">' + word + (aux ? ' · COM O AUXILIAR' : '') + '</b><small>' + (goals.length ? goals.join(' · ') : 'sem gols') + '</small></span></div>' +
-          '<div class="ld-seg ldr-tabs">' + [['num', 'Números'], ['mom', 'Quem mandou'], ['lan', 'Lances']].map(([k, t]) => '<button data-rt="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
-          '<div class="ldr-pane">' + pane + '</div></div>' +
-        '<div class="ldr-m">' + lbl('NOTAS DO SEU TIME') + top.map(nota).join('') + (rt.length > top.length ? '<button class="ld-link" id="ldr-all">Ver as ' + rt.length + ' notas</button>' : '') + '<span class="ld-gr"></span>' +
-          (cadN.length ? '<div class="ldr-cad">' + lbl('ANOTADO NO CADERNO') + cadN.map(cadTxt).join('') + '</div>' : '') + '</div>' +
-        '<div class="ldr-r3">' + lbl('O QUE MUDOU') + chg.map(([k, v, cc]) => '<div class="ldr-ch"><small>' + k + '</small><b class="' + (cc || '') + '">' + esc(v) + '</b></div>').join('') + '<span class="ld-gr"></span>' +
-          gold('ldr-go', co.sacked ? 'Falar com o presidente' : co.ss.done ? 'Fim da temporada' : 'Continuar', co.sacked ? '' : co.ss.done ? 'ver como terminou' : 'vai para a segunda-feira') + '</div></div>', st => {
+      const rows = chg.filter(r => r[0] !== 'Caixa').map(([k, v, cc]) => [k, k === 'Tabela' ? (pre.pos && pre.pos !== pos ? ord(pre.pos) + ' → ' + ord(pos) : ord(pos)) : k === 'Diretoria' ? (co.sacked ? 'demitido' : cc === 'up' ? 'subiu' : cc === 'dn' ? 'caiu' : 'igual') : v, cc]);
+      if (cadN.length) rows.push(['Caderno', '+' + cadN.length + (cadN.length > 1 ? ' notas' : ' nota'), 'up', 1]);
+      show('<div class="rs">' +
+        '<div class="rs-sc">' + crest((m.home ? cl : vs).id, 'rs-cr') + '<em>' + m.gh + ' <i>x</i> ' + m.ga + '</em>' + crest((m.home ? vs : cl).id, 'rs-cr') +
+          '<span class="rs-w"><b class="' + log.res + '">' + word + (aux ? ' · COM O AUXILIAR' : '') + '</b><small>' + (goals.length ? goals.join(' · ') : 'sem gols') + '</small></span></div>' +
+        '<div class="rs-tabs">' + [['num', 'Números'], ['mom', 'Quem mandou'], ['lan', 'Lances']].map(([k, t]) => '<button data-rt="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
+        '<div class="rs-pane ' + tab + '">' + pane + '</div>' +
+        '<div class="rs-side">' +
+          (best ? '<div class="rs-best"><small>MELHOR DO SEU TIME</small><span><b class="' + (best.r >= 7 ? 'up' : best.r < 5.8 ? 'dn' : '') + '">' + best.r.toFixed(1).replace('.', ',') + '</b><span><em>' + esc(bp ? bp.n : '') + '</em><small>' + esc(best.w) + '</small></span></span></div>' : '') +
+          '<div class="rs-ch">' + rows.map(([k, v, cc, cad]) => (cad ? '<button id="rs-cad">' : '<span>') + k + '<b class="' + (cc || '') + '">' + esc(v) + '</b>' + (cad ? '</button>' : '</span>')).join('') + '</div>' +
+          '<span class="rs-gap"></span>' +
+          (rt.length ? '<button class="tm-b" id="ldr-all">Notas do time</button>' : '') +
+          '<button class="tm-go" id="ldr-go">' + (co.sacked ? 'Falar com o presidente' : co.ss.done ? 'Fim da temporada' : 'Continuar') + '</button>' +
+        '</div></div>', st => {
         st.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { sfx('tap'); tab = b.dataset.rt; draw(); });
         if (st.querySelector('#ldr-all')) st.querySelector('#ldr-all').onclick = () => { sfx('tap'); pop(popHead('Notas do jogo', 'Rodada ' + log.r + ' · ' + m.gh + ' x ' + m.ga) + '<div class="ld-pb col"><div class="ld-scroll ldr-alln">' + rt.map(nota).join('') + '</div></div>', 'Notas do jogo', null, 'w560'); };
+        if (st.querySelector('#rs-cad')) st.querySelector('#rs-cad').onclick = () => { sfx('tap'); pop(popHead('Anotado no caderno', vs ? c.nm(m.vs) : '') + '<div class="ld-pb col rs-cadp">' + cadN.map(cadTxt).join('') + '</div>', 'Anotado no caderno', null, 'w560'); };
         st.querySelector('#ldr-go').onclick = () => { sfx('tap'); if (co.sacked) { off(); return c.sacked(); } if (co.ss.done) { off(); return c.finishSeason(); } segunda(log); };
       });
     };
@@ -591,47 +601,22 @@
   }
 
   // ---------- Segunda-feira (38): quem fica fora, a moral, o próximo jogo e quem quer conversar ----------
+  // Sem a tela da segunda-feira (Silvio, 2026-11-09): o Continuar do resultado vai direto para a semana. Quem quer
+  // conversar (o mais chateado, uma vez a cada 4 rodadas) abre por cima da semana; fora, cansados e pendurados já
+  // aparecem na escalação
   function segunda(log) {
     const c = C(), co = c.co, nx = S.coNext(co);
     if (!nx) { off(); return c.finishSeason(); }
     c.save('hub');
-    const by = {}; co.squad.forEach(p => { by[p.id] = p; });
-    const cl = club(co.club), avg = S.coTeamAvg(co), t = S.coTable(co).find(x => x.me);
-    const out = co.squad.filter(p => p.out || p.sus).slice(0, 3);
-    const rt = (log && log.rt) || [];
-    const mood = [];
-    const up = rt.find(x => x.r >= 7.5), dn = rt.slice().reverse().find(x => x.r < 5.6);
-    if (up && by[up.id]) mood.push([by[up.id], 'up', '↑ SUBIU', up.w]);
-    if (dn && by[dn.id]) mood.push([by[dn.id], 'dn', '↓ CAIU', 'nota ' + dn.r.toFixed(1).replace('.', ',') + ', ' + dn.w]);
-    const want = co.squad.filter(p => c.avail(p) && (p.bn || 0) >= 3 && p.ovr >= avg - 3 && p.pos !== 'GOL').sort((a, b) => b.bn - a.bn)[0];
-    if (want) mood.push([want, 'wa', 'QUER JOGAR', U.D.plural(want.bn, 'jogo', 'jogos') + ' no banco']);
-    const broke = co.squad.find(p => p.broke); if (broke) { mood.push([broke, 'dn', 'PROMESSA', 'você prometeu chance e não deu']); delete broke.broke; }
-    // Quem quer conversar: o mais chateado (moral baixa), uma vez a cada 4 rodadas
     const talker = co.squad.filter(p => (p.mo === undefined ? 60 : p.mo) < 42 && !(p.talked !== undefined && co.ss.i - p.talked < 4)).sort((a, b) => a.mo - b.mo)[0];
-    const pend = co.squad.filter(p => c.pend(p) && c.avail(p)).slice(0, 3), tired = co.squad.filter(p => c.avail(p) && p.en < 70).sort((a, b) => a.en - b.en).slice(0, 3);
-    const row = (p, cls, tag, sub) => '<div class="ldg-p"><i>' + (p.num || p.ovr) + '</i><span><b>' + esc(p.n) + '</b><small>' + esc(sub) + '</small></span><em class="' + cls + '">' + tag + '</em></div>';
-    const vs = !nx.bye && club(nx.vs);
-    const tip = tired.length >= 3 ? 'Tem gente cansada. O auxiliar sugere poupar o ' + esc(last(tired[0].n)) + '.' : out.length ? 'Sem o ' + esc(last(out[0].n)) + ', vale olhar o banco.' : 'Time inteiro para a próxima.';
-    show(rail('semana') + '<div class="ld-col">' + head('Segunda-feira', log ? 'Depois do ' + log.gf + ' x ' + log.ga + (log.home ? ' em casa' : ' fora') + ' contra o ' + esc(c.nm(log.vs)) : esc(cl.name), pill(ord(S.coPos(co)) + ' · ' + t.p + ' PTS')) +
-      '<div class="ld-row ldg">' +
-      '<div class="ldg-c">' + '<div class="ldg-b">' + lbl('FORA DO PRÓXIMO JOGO') + (out.length ? out.map(p => row(p, p.sus ? 'sus' : 'les', p.sus ? 'SUSPENSO' : 'LESIONADO', p.sus ? c.susTxt(p) : 'lesionado · ' + U.D.plural(p.out, 'jogo', 'jogos'))).join('') : '<p class="ld-none">Ninguém. Time inteiro à disposição.</p>') + '</div>' +
-        '<div class="ldg-b">' + lbl('MORAL') + (mood.length ? mood.slice(0, 3).map(([p, cc, tg, sb]) => row(p, cc, tg, sb)).join('') : '<p class="ld-none">Grupo tranquilo, ninguém subiu nem caiu muito.</p>') + '</div></div>' +
-      '<div class="ldg-c ldg-b">' + lbl('PARA A SEMANA') +
-        (pend.length ? '<small class="ldg-s">Pendurados: um amarelo e ficam fora</small>' + pend.map(p => row(p, 'sus', 'PENDURADO', c.posTxt[p.pos].toLowerCase())).join('') : '') +
-        (tired.length ? '<small class="ldg-s">Cansados</small>' + tired.map(p => row(p, 'wa', Math.round(p.en) + '%', c.posTxt[p.pos].toLowerCase())).join('') : '') +
-        (!pend.length && !tired.length ? '<p class="ld-none">Ninguém pendurado nem cansado.</p>' : '') + '</div>' +
-      '<div class="ldg-c ldg-r">' + '<div class="ldg-nx">' + lbl('PRÓXIMO JOGO') + (vs ? '<div class="ldg-nh">' + crest(vs.id, 'ld-cr') + '<b>' + esc(vs.short || vs.name) + ', ' + (nx.home ? 'em casa' : 'fora') + '</b></div><small>Rodada ' + nx.round + ' de ' + nx.of + '</small>' : '<b>Sem jogo nesta rodada</b>') + '<p>' + tip + '</p></div>' +
-        (talker ? '<button class="ldg-talk" id="ldg-talk"><i>' + (talker.num || talker.ovr) + '</i><span><b>' + esc(last(talker.n)) + ' quer conversar</b><small>' + (talker.bn >= 2 ? 'cansou de ficar no banco' : 'anda chateado') + '</small></span>' + CHEV + '</button>' : '') +
-        '<span class="ld-gr"></span>' + gold('ldg-go', 'Começar a semana') + '</div></div></div>', st => {
-      st.querySelector('#ldg-go').onclick = () => { sfx('tap'); semana(); };
-      if (talker) st.querySelector('#ldg-talk').onclick = () => { sfx('tap'); talkPop(talker, log); };
-    });
+    semana();
+    if (talker) talkPop(talker, log);
   }
   function talkPop(p, log) {
     const c = C(), co = c.co;
     pop(popHead(esc(p.n) + ' quer conversar', '"' + (p.bn >= 2 ? 'Professor, estou treinando bem e não entro. O que eu preciso fazer?' : 'Professor, não estou feliz aqui. Queria entender o meu papel.') + '"') +
       '<div class="ld-pb col">' + Object.keys(S.CO_TALK1).map(k => '<button class="ld-cand" data-t1="' + k + '"><span><b>' + S.CO_TALK1[k].name + '</b><small>' + S.CO_TALK1[k].tip + '</small></span></button>').join('') + '</div>',
-      'Conversa', w => { w.querySelectorAll('[data-t1]').forEach(b => b.onclick = () => { sfx('tap'); S.coTalk1(co, p.id, b.dataset.t1); c.save(); closePop(); segunda(log); }); }, 'w560');
+      'Conversa', w => { w.querySelectorAll('[data-t1]').forEach(b => b.onclick = () => { sfx('tap'); S.coTalk1(co, p.id, b.dataset.t1); c.save(); closePop(); }); }, 'w560');
   }
 
   // ---------- Caderno do técnico deitado (40): a grade inteira, a casa tocada aberta ao lado, o próximo rival ----------
@@ -684,58 +669,63 @@
     const zone = p => (ss.promo && p <= ss.promo) || (!ss.promo && p === 1) ? 'up' : ss.releg && p > n - ss.releg ? 'dn' : '';
     const dots = f => { const a = (f || '').split(''); while (a.length < 5) a.unshift('n'); return '<span class="ld-f5">' + a.map(x => '<i class="' + x + '"></i>').join('') + '</span>'; };
     let body;
+    // Tabela enxuta (2026-11-09, quadro 16): menos colunas, letra maior, sem trilho
     if (tab === 'cls' || tab === 'gol') {
-      body = '<div class="ldt-t ' + tab + '"><div class="ldt-h"><i></i><span>CLUBE</span>' + (tab === 'cls' ? '<em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em><b>PTS</b><em class="f">FORMA</em>' : '<em>GP</em><em>GC</em><em>SG</em><em class="f">FORMA</em>') + '</div><div class="ldt-b">' +
-        t.map((x, k) => { const sg = x.gp - x.gc, cl = club(x.id);
-          return '<div class="ldt-r ' + zone(k + 1) + (x.me ? ' me' : '') + '"><i>' + (k + 1) + '</i><span>' + crest(x.id, 'ldt-cr') + esc(cl.short || cl.name) + '</span>' +
-            (tab === 'cls' ? '<em>' + x.j + '</em><em>' + x.v + '</em><em>' + x.e + '</em><em>' + x.d + '</em><em>' + (sg > 0 ? '+' : '') + sg + '</em><b>' + x.p + '</b>' : '<em>' + x.gp + '</em><em>' + x.gc + '</em><em>' + (sg > 0 ? '+' : '') + sg + '</em>') + '<em class="f">' + dots(x.f) + '</em></div>'; }).join('') + '</div></div>';
+      body = '<div class="tb2-h"><i></i><i></i><span>CLUBE</span>' + (tab === 'cls' ? '<em>J</em><em>SG</em><b>PTS</b>' : '<em>GP</em><em>GC</em><b>SG</b>') + '<span>FORMA</span></div><div class="tb2-b">' +
+        t.map((x, k) => { const sg = x.gp - x.gc, cl = club(x.id), sgT = (sg > 0 ? '+' : '') + sg;
+          return '<div class="tb2-r ' + zone(k + 1) + (x.me ? ' me' : '') + '"><i>' + (k + 1) + '</i>' + crest(x.id, 'tb2-cr') + '<span>' + esc(cl.short || cl.name) + '</span>' +
+            (tab === 'cls' ? '<em>' + x.j + '</em><em>' + sgT + '</em><b>' + x.p + '</b>' : '<em>' + x.gp + '</em><em>' + x.gc + '</em><b>' + sgT + '</b>') + dots(x.f) + '</div>'; }).join('') + '</div>';
     } else if (tab === 'art') {
       const g = {}; (ss.log || []).forEach(l => (l.ev || []).forEach(nm => { g[nm] = (g[nm] || 0) + 1; }));
       const list = Object.keys(g).sort((a, b) => g[b] - g[a]);
-      body = '<div class="ldt-t"><div class="ldt-h"><i></i><span>ARTILHARIA DO SEU TIME</span><b>GOLS</b></div><div class="ldt-b">' + (list.length ? list.map((nm, k) => { const p = co.squad.find(q => q.n === nm);
-        return '<div class="ldt-r"><i>' + (k + 1) + '</i><span>' + esc(nm) + (p ? ' <small>' + p.pos + '</small>' : ' <small>saiu</small>') + '</span><b>' + g[nm] + '</b></div>'; }).join('') : '<p class="ld-none">Ninguém marcou ainda.</p>') + '</div></div>';
+      body = '<div class="tb2-h art"><i></i><span>ARTILHARIA DO SEU TIME</span><b>GOLS</b></div><div class="tb2-b">' + (list.length ? list.map((nm, k) => { const p = co.squad.find(q => q.n === nm);
+        return '<div class="tb2-r art"><i>' + (k + 1) + '</i><span>' + esc(nm) + ' <small>' + (p ? p.pos : 'saiu') + '</small></span><b>' + g[nm] + '</b></div>'; }).join('') : '<p class="tb2-none">Ninguém marcou ainda.</p>') + '</div>';
     } else {
       const res = (ss.res || [])[rd], played = rd < ss.i, mi = ss.ids.indexOf(co.club);
       const list = (played && res ? res.slice() : ss.rounds[rd].map(([h, a]) => [h, a])).sort((a, b) => (b[0] === mi || b[1] === mi) - (a[0] === mi || a[1] === mi));
       const nmI = i => esc(club(ss.ids[i]).short || club(ss.ids[i]).name);
-      body = '<div class="ldt-t"><div class="ldt-nav"><button id="ldt-prev"' + (rd ? '' : ' disabled') + ' aria-label="Rodada anterior">‹</button><b>Rodada ' + (rd + 1) + ' de ' + R + (played ? '' : ' · a jogar') + '</b><button id="ldt-next"' + (rd < R - 1 ? '' : ' disabled') + ' aria-label="Próxima rodada">›</button></div><div class="ldt-b ldt-games">' +
-        list.map(([h, a, gh, ga]) => '<div class="ldt-gm' + (h === mi || a === mi ? ' me' : '') + '"><span class="h">' + nmI(h) + crest(ss.ids[h], 'ldt-cr') + '</span><b>' + (gh != null ? gh + ' × ' + ga : '×') + '</b><span>' + crest(ss.ids[a], 'ldt-cr') + nmI(a) + '</span></div>').join('') + '</div></div>';
+      body = '<div class="tb2-nav"><button id="ldt-prev"' + (rd ? '' : ' disabled') + ' aria-label="Rodada anterior">◀</button><b>Rodada ' + (rd + 1) + ' de ' + R + (played ? '' : ' · a jogar') + '</b><button id="ldt-next"' + (rd < R - 1 ? '' : ' disabled') + ' aria-label="Próxima rodada">▶</button></div><div class="tb2-b">' +
+        list.map(([h, a, gh, ga]) => '<div class="tb2-gm' + (h === mi || a === mi ? ' me' : '') + '"><span class="h">' + nmI(h) + crest(ss.ids[h], 'tb2-cr') + '</span><b>' + (gh != null ? gh + ' × ' + ga : '×') + '</b><span>' + crest(ss.ids[a], 'tb2-cr') + nmI(a) + '</span></div>').join('') + '</div>';
     }
     // A sua corrida: a meta da diretoria em pontos
     const gp = B.goal.pos, tgt = t[gp - 1], nxt = t[gp];
-    const race = me.j === 0 ? 'a temporada começa agora' : B.goal.k === 'titulo' ? (pos === 1 ? (t[1] ? (me.p - t[1].p) + ' pontos à frente do 2º' : 'na frente') : (t[0].p - me.p) + ' pontos do líder')
+    const race = me.j === 0 ? 'começa agora' : B.goal.k === 'titulo' ? (pos === 1 ? (t[1] ? (me.p - t[1].p) + ' pontos à frente' : 'na frente') : (t[0].p - me.p) + ' pontos do líder')
       : pos <= gp ? (nxt ? (me.p - nxt.p === 0 ? 'empatado com o ' + (gp + 1) + 'º' : (me.p - nxt.p) + ' pontos à frente do ' + (gp + 1) + 'º') : 'dentro da meta') : (tgt.p - me.p) + ' pontos do ' + gp + 'º';
     const fut = []; const mi2 = ss.ids.indexOf(co.club);
-    for (let i = ss.i; i < Math.min(R, ss.i + 3); i++) { const g = ss.rounds[i].find(([h, a]) => h === mi2 || a === mi2); if (!g) { fut.push('<div class="ldt-nx"><b>folga</b></div>'); continue; } const hm = g[0] === mi2, id = ss.ids[hm ? g[1] : g[0]]; fut.push('<div class="ldt-nx">' + crest(id, 'ldt-cr') + '<b>' + esc(club(id).short || club(id).name) + '</b><small>' + (hm ? 'casa' : 'fora') + '</small></div>'); }
-    show(rail('tabela') + '<div class="ld-col">' + head(esc(ss.name), (ss.done ? 'Encerrada' : 'Rodada ' + Math.min(ss.i + 1, R) + ' de ' + R) + (ss.promo ? ' · sobem ' + ss.promo : '') + (ss.releg ? ', caem ' + ss.releg : ''),
-        '<div class="ld-seg ldc-tabs">' + [['cls', 'Classificação'], ['gol', 'Gols e forma'], ['art', 'Artilharia'], ['rod', 'Rodadas']].map(([k, tt]) => '<button data-tb="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + tt + '</button>').join('') + '</div>') +
-      '<div class="ld-row"><div class="ldt-l">' + body + '</div><div class="ldt-side"><div class="ldt-race">' + lbl('SUA CORRIDA') + '<b>' + race + '</b><small>Meta da diretoria: ' + esc(S.CO_GOAL_TXT[B.goal.k]) + (B.goal.k === 'titulo' ? '' : ' (até o ' + gp + 'º)') + '. Você está em ' + pos + 'º.</small></div>' +
-        (fut.length ? '<div class="ldt-fut">' + lbl('PRÓXIMOS ' + fut.length) + fut.join('') + '</div>' : '') + '<span class="ld-gr"></span>' + gold('ldt-go', 'Voltar para a semana') + '</div></div></div>', st => {
+    for (let i = ss.i; i < Math.min(R, ss.i + 3); i++) { const g = ss.rounds[i].find(([h, a]) => h === mi2 || a === mi2); if (!g) { fut.push('<span class="tb2-nx"><i class="bye">–</i><b>folga</b></span>'); continue; } const hm = g[0] === mi2, id = ss.ids[hm ? g[1] : g[0]]; fut.push('<span class="tb2-nx">' + crest(id, 'tb2-nxc') + '<b>' + esc(club(id).short || club(id).name) + '</b><small>' + (hm ? 'casa' : 'fora') + '</small></span>'); }
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const meta = B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + gp + 'º';
+    show('<div class="tb2"><div class="tm-h"><button class="tcr-back" id="tb2-back" aria-label="Voltar">' + BK + '</button><b>' + esc(ss.name) + '</b><small>' + (ss.done ? 'encerrada' : 'rodada ' + Math.min(ss.i + 1, R) + ' de ' + R) + '</small></div>' +
+      '<div class="tb2-tabs">' + [['cls', 'Classificação'], ['gol', 'Gols'], ['art', 'Artilharia'], ['rod', 'Rodadas']].map(([k, tt]) => '<button data-tb="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + tt + '</button>').join('') + '</div>' +
+      '<div class="tb2-t ' + tab + '">' + body + '</div>' +
+      '<div class="tb2-side"><div class="tb2-race"><small>SUA CORRIDA</small><b>' + pos + 'º · ' + race + '</b><em class="' + (pos <= gp ? '' : 'hi') + '">' + meta + '</em></div>' +
+        (fut.length ? '<div class="tb2-fut"><small>PRÓXIMOS</small><div>' + fut.join('') + '</div></div>' : '') + '</div></div>', st => {
       st.querySelectorAll('[data-tb]').forEach(b => b.onclick = () => { sfx('tap'); tabela(b.dataset.tb, rd); });
       if (st.querySelector('#ldt-prev')) { st.querySelector('#ldt-prev').onclick = () => { sfx('tap'); tabela('rod', rd - 1); }; st.querySelector('#ldt-next').onclick = () => { sfx('tap'); tabela('rod', rd + 1); }; }
-      st.querySelector('#ldt-go').onclick = () => { sfx('tap'); semana(); };
-      const me2 = st.querySelector('.ldt-r.me'); if (me2) me2.scrollIntoView({ block: 'center' });
+      st.querySelector('#tb2-back').onclick = () => { sfx('tap'); semana(); };
+      const me2 = st.querySelector('.tb2-r.me, .tb2-gm.me'), bx = st.querySelector('.tb2-b');
+      if (me2 && bx) bx.scrollTop = Math.max(0, me2.offsetTop - bx.offsetTop - bx.clientHeight / 2 + me2.offsetHeight / 2);
     });
   }
 
-  // ---------- Clube deitado (20): a central do clube em blocos; o que ainda não existe fica "em breve" ----------
+  // ---------- Clube deitado (enxuto desde 2026-11-09, quadro 17): 4 blocos com um número e a diretoria ----------
   function clube() {
     const c = C(), co = c.co, cl = club(co.club), f = S.coFin(co), B = co.board, pos = S.coPos(co), conf = Math.round(B.conf);
-    const exp = co.squad.filter(p => p.ct <= 1).length, folha = S.coFolha(co);
-    const tile = (id, t, sub, soon) => soon ? '<div class="ldk-t soon"><b>' + t + '</b><small>EM BREVE · ' + sub + '</small></div>' : '<button class="ldk-t" data-k="' + id + '"><b>' + t + '</b><small>' + sub + '</small></button>';
-    const pr = c.finPres(f);
-    show(rail('clube') + '<div class="ld-col">' +
-      '<div class="ldk-h">' + crest(cl.id, 'ldk-cr') + '<span><b>' + esc(cl.name) + '</b><small>' + esc(co.ss ? co.ss.name : '') + ' · ' + esc(co.name) + ' · fama ' + co.fame + ' · ' + (co.season + 1) + 'ª temporada</small></span></div>' +
-      '<div class="ld-row"><div class="ldk-g">' +
-        tile('fin', 'Finanças', 'Caixa ' + c.brl(f.caixa) + ' · verba ' + c.brl(f.verba)) + tile('ele', 'Elenco e contratos', exp ? U.D.plural(exp, 'contrato acaba', 'contratos acabam') + ' no fim do ano' : co.squad.length + ' jogadores') + tile('', 'Mercado', 'comprar, vender, emprestar', 1) +
-        tile('', 'Estádio e ingresso', 'preço por jogo, obras', 1) + tile('', 'Base', 'garotos que sobem em janeiro', 1) + tile('', 'Equipe técnica', 'olheiro, preparador, médico', 1) +
-        tile('', 'Imprensa', 'coletiva antes e depois', 1) + tile('tro', 'Sala de troféus', co.titles.length ? U.D.plural(co.titles.length, 'título', 'títulos') : 'nenhum título ainda') + tile('hall', 'Hall do técnico', U.D.plural(co.hist.length, 'temporada', 'temporadas') + ' de carreira') + '</div>' +
-      '<div class="ldk-side"><div class="ldk-dir">' + lbl('DIRETORIA') + '<b>' + (conf >= 70 ? 'Confiança alta' : conf >= 45 ? 'Confiança boa' : conf >= 30 ? 'Confiança baixa' : 'No limite') + '</b><em class="ld-bar"><u class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '" style="width:' + conf + '%"></u></em>' +
-          '<small>Meta: ' + esc(S.CO_GOAL_TXT[B.goal.k]) + (B.goal.k === 'titulo' ? '' : ' (até o ' + B.goal.pos + 'º)') + '. Hoje: ' + pos + 'º.</small><i>' + pr[0] + ' · ' + (S.coPres ? esc(S.coPres(co).n) + ', presidente ' + S.coPres(co).nome : 'presidente') + '</i></div>' +
-        '<div class="ldk-cx">' + lbl('CAIXA') + '<b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><small>folha ' + c.brl(folha) + ' por semana</small></div><span class="ld-gr"></span>' +
-        gold('ldk-go', 'Ver as finanças') + '</div></div></div>', st => {
+    const exp = co.squad.filter(p => p.ct <= 1).length, pres = S.coPres ? S.coPres(co) : null;
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const tile = (id, k, t, v, sub, cc) => '<button class="kb2-t"' + (id ? ' id="' + id + '"' : '') + ' data-k="' + k + '"><b>' + t + '</b><span><em class="' + (cc || '') + '">' + v + '</em><small>' + sub + '</small></span></button>';
+    const meta = (B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + B.goal.pos + 'º') + ' · hoje ' + pos + 'º';
+    show('<div class="kb2"><div class="tm-h"><button class="tcr-back" id="kb2-back" aria-label="Voltar">' + BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>' + esc(cl.name) + '</b><small>' + esc(co.ss ? co.ss.name : '') + ' · fama ' + co.fame + '</small></div>' +
+      '<div class="kb2-g">' + tile('ldk-go', 'fin', 'Finanças', c.brl(f.caixa), 'no caixa', f.caixa < 0 ? 'dn' : '') +
+        tile('', 'ele', 'Elenco', exp ? exp : co.squad.length, exp ? (exp > 1 ? 'contratos acabam' : 'contrato acaba') + ' no fim do ano' : 'jogadores', exp ? 'dn' : '') +
+        tile('', 'tro', 'Troféus', co.titles.length, co.titles.length === 1 ? 'título' : 'títulos') +
+        tile('', 'hall', 'Hall do técnico', (co.season + 1) + 'ª', 'temporada de carreira') + '</div>' +
+      '<div class="kb2-side"><div class="kb2-dir"><small>DIRETORIA</small><b>' + (conf >= 70 ? 'confiança alta' : conf >= 45 ? 'confiança boa' : conf >= 30 ? 'confiança baixa' : 'no limite') + '</b>' +
+          '<i><u class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '" style="width:' + conf + '%"></u></i><em class="' + (pos <= B.goal.pos ? '' : 'hi') + '">' + meta + '</em></div>' +
+        (pres ? '<div class="kb2-pr"><small>PRESIDENTE</small><b>' + esc(pres.n) + '</b><span>' + esc(pres.nome || '') + '</span></div>' : '') +
+        '<span class="rs-gap"></span><p class="kb2-soon">Mercado, estádio e base chegam depois</p></div></div>', st => {
       st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') financas(); else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); });
-      st.querySelector('#ldk-go').onclick = () => { sfx('tap'); financas(); };
+      st.querySelector('#kb2-back').onclick = () => { sfx('tap'); semana(); };
     });
   }
   // Finanças deitada: abas num array (a thread de mercado e finanças vai acrescentar "Decidir")
@@ -1096,7 +1086,7 @@
       lit(0);
       st.querySelectorAll('[data-of]').forEach(b => b.onclick = () => { sfx('tap'); lit(+b.dataset.of); });
       st.querySelector('#ol2-back').onclick = () => { sfx('tap'); semana(); };
-      st.querySelector('#ol2-q').onclick = () => { sfx('tap'); pop('<div class="acd-help"><b>Como funciona</b><p>O olheiro viu um jogo só: uma das três pode não se repetir. O que se confirmar em campo vai para o caderno.</p><button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop'); };
+      st.querySelector('#ol2-q').onclick = () => { sfx('tap'); pop('<div class="acd-help"><b>Como funciona</b><p>O olheiro viu um jogo só: uma das três pode não se repetir. O que se confirmar em campo vale para o jogo.</p><button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop'); };
       st.querySelector('#ldo-ok').onclick = () => { sfx('tap'); co.scout = { i: co.ss.i }; c.save(); semana(); };
     });
   }
@@ -1120,18 +1110,27 @@
     const mo = Math.round(xi.reduce((a, p) => a + (p.mo === undefined ? 60 : p.mo), 0) / Math.max(1, xi.length));
     const nerv = xi.filter(p => (p.mo === undefined ? 60 : p.mo) < 45).sort((a, b) => a.mo - b.mo)[0];
     const capId = (co.takers && co.takers.cap && co.takers.cap.find(id => co.xi.includes(id))) || xi.slice().sort((a, b) => b.age - a.age)[0].id, cap = by[capId];
-    const tags = xi.slice().sort((a, b) => (a.mo || 60) - (b.mo || 60)).filter((p, i, a) => i < 2 || i >= a.length - 2).map(p => [p, (p.mo || 60) < 45 ? ['dn', 'nervoso'] : (p.bn || 0) >= 2 ? ['wa', 'quer jogar'] : p.id === capId ? ['up', 'líder'] : (p.mo || 60) >= 70 ? ['up', 'confiante'] : ['', 'tranquilo']]);
-    let pick = null;
-    const P = S.CO_PRE;
+    // Preleção enxuta (2026-11-09, quadro 15): o tom numa régua de calmo a forte, ◀ ▶ como a formação
+    const P = S.CO_PRE, K = ['calma', 'voces', 'cima'], WHO = { calma: 'TOM CALMO', voces: 'TOM DO GRUPO', cima: 'TOM FORTE' };
+    let pick = 'voces';
     const draw = () => {
-      show('<div class="ld-col">' + head('Última conversa no vestiário', 'Oito minutos para entrar. O que você fala vale para os primeiros 15 minutos.') +
-        '<div class="ld-row"><div class="ldp-g">' + Object.keys(P).map(k => '<button class="ldp-c' + (k === pick ? ' on' : '') + '" data-pk="' + k + '"><b>' + P[k].name + '</b><i>' + P[k].q + '</i><span class="ld-gr"></span>' +
-          (k === 'voces' && nerv ? '<small>Ajuda: ' + esc(last(nerv.n)) + ', que está nervoso</small>' : k === 'cima' && nerv ? '<small>Não ajuda: ' + esc(last(nerv.n)) + ', que está nervoso</small>' : '') + '<span class="ldp-fx">' + lbl('NOS PRIMEIROS 15 MINUTOS') + P[k].tip.split(' · ').map((t, j) => '<em class="' + (j ? 'dn' : 'up') + '">' + (j ? '− ' : '+ ') + t + '</em>').join('') + '</span></button>').join('') + '</div>' +
-        '<div class="ldm-side"><div class="ldp-cl">' + lbl('CLIMA DO GRUPO') + '<b class="' + (mo >= 70 ? 'up' : mo >= 50 ? '' : 'dn') + '">' + (mo >= 70 ? 'confiante' : mo >= 50 ? 'tranquilo' : 'abalado') + '</b>' +
-          tags.map(([p, [cc, t]]) => '<div><i>' + (p.num || p.ovr) + '</i><span>' + esc(last(p.n)) + '</span><em class="' + cc + '">' + t + '</em></div>').join('') + '</div>' +
-          (cap ? '<div class="ldm-note paper"><b>Capitão ' + esc(last(cap.n)) + ':</b> "' + (mo >= 60 ? 'Bora, professor. A gente sabe o que fazer.' : 'O grupo está tenso. Uma palavra sua ajuda.') + '"</div>' : '') +
-          '<span class="ld-gr"></span><button class="ld-link" id="ldp-skip">Não falar nada</button>' + gold('ldp-go', 'Entrar em campo', 'e o jogo começa') + '</div></div></div>', st => {
-        st.querySelectorAll('[data-pk]').forEach(b => b.onclick = () => { sfx('tap'); pick = pick === b.dataset.pk ? null : b.dataset.pk; draw(); });
+      const i = K.indexOf(pick), pr = P[pick], [up, dn] = pr.tip.split(' · ');
+      const fx = [['up', up.replace(', ajuda os nervosos', '')]];
+      if (nerv && pick === 'voces') fx.push(['up', 'o ' + last(nerv.n) + ' se acalma']);
+      fx.push(['dn', dn]);
+      if (nerv && pick === 'cima') fx.push(['dn', 'não ajuda o ' + last(nerv.n)]);
+      const cap1 = t => t.charAt(0).toLowerCase() + t.slice(1);
+      show('<div class="pl2"><div class="tm-h"><b>Vestiário</b><small>escolha o tom dos primeiros 15 minutos</small></div>' +
+        '<div class="pl2-box"><div class="pl2-top"><button class="pl2-ar" data-pa="-1" aria-label="Mais calmo"' + (i ? '' : ' disabled') + '>◀</button>' +
+          '<span><small>' + WHO[pick] + '</small><b>' + pr.name + '</b></span><button class="pl2-ar" data-pa="1" aria-label="Mais forte"' + (i < 2 ? '' : ' disabled') + '>▶</button></div>' +
+          '<div class="pl2-rg"><i></i>' + K.map((k, j) => '<button data-pk="' + k + '" aria-label="' + P[k].name + '" class="' + (k === pick ? 'on' : '') + '" style="left:' + j * 50 + '%"></button>').join('') + '</div>' +
+          '<div class="pl2-lb"><span>calmo</span><span>pelo grupo</span><span>forte</span></div>' +
+          '<div class="pl2-fx">' + fx.map(([cc, t]) => '<em class="' + cc + '">' + (cc === 'up' ? '+ ' : '− ') + esc(cap1(t)) + '</em>').join('') + '</div></div>' +
+        '<div class="pl2-side"><div class="pl2-cl"><small>CLIMA DO GRUPO</small><b class="' + (mo >= 70 ? 'up' : mo >= 50 ? '' : 'dn') + '">' + (mo >= 70 ? 'confiante' : mo >= 50 ? 'tranquilo' : 'abalado') + '</b>' +
+          (nerv ? '<span><i></i>' + esc(last(nerv.n)) + ' está nervoso</span>' : cap ? '<span class="ok"><i></i>' + esc(last(cap.n)) + ' puxa o grupo</span>' : '') + '</div>' +
+          '<span class="rs-gap"></span><button class="tm-b" id="ldp-skip">Não falar nada</button><button class="tm-go" id="ldp-go">Entrar em campo</button></div></div>', st => {
+        st.querySelectorAll('[data-pk]').forEach(b => b.onclick = () => { sfx('tap'); pick = b.dataset.pk; draw(); });
+        st.querySelectorAll('[data-pa]').forEach(b => b.onclick = () => { sfx('tap'); pick = K[Math.max(0, Math.min(2, i + +b.dataset.pa))]; draw(); });
         st.querySelector('#ldp-go').onclick = () => { sfx('tap'); c.play(pick); };
         st.querySelector('#ldp-skip').onclick = () => { sfx('tap'); c.play(null); };
       });

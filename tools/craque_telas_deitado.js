@@ -52,7 +52,7 @@ async function page(b) {
     await click('[data-sp="fim"]'); await p.waitForTimeout(1500);
     for (let i = 0; i < 30 && !(await p.$('#b-lv-end')); i++) { await p.waitForTimeout(1000); if (await p.$('#ldl-go')) await click('#ldl-go'); }
     await shot('bl9-fim');
-    if (await p.$('#b-lv-end')) { await click('#b-lv-end'); await shot('bl10-resultado'); await click('[data-rt="mom"]'); await shot('bl11-mandou'); await click('[data-rt="lan"]'); await shot('bl12-lances'); await click('#ldr-go'); await shot('bl13-segunda'); await click('#ldg-go'); await shot('bl14-semana'); }
+    if (await p.$('#b-lv-end')) { await click('#b-lv-end'); await shot('bl10-resultado'); await click('[data-rt="mom"]'); await shot('bl11-mandou'); await click('[data-rt="lan"]'); await shot('bl12-lances'); await click('#ldr-go'); await shot('bl13-semana-depois'); if (await p.$('[data-t1]')) await click('[data-t1]'); await shot('bl14-semana'); }
     await p.close();
   }
   if (PARTS.includes('3')) {
@@ -65,9 +65,7 @@ async function page(b) {
     await shot('c2-semana-fim');
     await click('[data-rail="clube"]'); await shot('c2b-clube'); await click('#ldk-go'); await shot('c2c-financas-decidir'); await click('[data-fd="banco"]'); await shot('c2d-banco');
     await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co; co.fin.caixa = -300000; co.fin.neg = 5; }); await click('#ldn-bk'); await click('[data-fd="banco"]'); await shot('c2e-banco-vermelho');
-    await click('#ldn-take'); await shot('c2f-banco-emprestimo'); await click('#ldn-bk'); await shot('c2g-financas-com-emprestimo'); await click('[data-rail="tabela"]'); await shot('c3-tabela'); await click('[data-tb="art"]'); await shot('c3b-art'); await click('[data-rail="caderno"]'); await shot('c4-caderno');
-    const cell = await p.$('.ldc-c.pen, .ldc-c.lap'); if (cell) { await cell.click(); await p.waitForTimeout(300); await shot('c4b-caderno-casa'); }
-    await click('[data-rail="semana"]');
+    await click('#ldn-take'); await shot('c2f-banco-emprestimo'); await click('#ldn-bk'); await shot('c2g-financas-com-emprestimo'); await click('[data-rail="tabela"]'); await shot('c3-tabela'); await click('[data-tb="art"]'); await shot('c3b-art'); await click('[data-tb="rod"]'); await shot('c3c-rodadas'); await click('#tb2-back');
     const nx = await p.$('#ld-play'); if (nx) { await click('#ld-play'); if (await p.$('#ld-go')) { await click('#ld-go'); await click('#ldp-go'); await p.waitForTimeout(2500); await click('[data-sp="fim"]'); for (let i = 0; i < 30 && !(await p.$('#b-lv-end')); i++) { await p.waitForTimeout(800); if (await p.$('#ldl-go')) await click('#ldl-go'); } await click('#b-lv-end'); await shot('c5-res'); await click('#ldr-go'); } }
     await p.waitForTimeout(800); await shot('c6-temporada');
     if (await p.$('#ldy-mk')) { await click('#ldy-mk'); await shot('c7-propostas'); }
