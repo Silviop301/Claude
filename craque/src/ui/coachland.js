@@ -555,8 +555,6 @@
     const by = {}; co.squad.forEach(p => { by[p.id] = p; });
     const rt = (log.rt || []);
     const nota = x => '<div class="ldr-n"><b class="' + (x.r >= 7 ? 'up' : x.r < 5.8 ? 'dn' : '') + '">' + x.r.toFixed(1).replace('.', ',') + '</b><span><em>' + esc(by[x.id] ? by[x.id].n : '') + '</em><small>' + esc(x.w) + '</small></span></div>';
-    // As notas mostradas: as duas melhores, a pior e mais uma
-    const top = rt.length > 4 ? rt.slice(0, 3).concat([rt[rt.length - 1]]) : rt;
     const pos = S.coPos(co), B = co.board, dc = pre.conf !== undefined ? B.conf - pre.conf : 0;
     const chg = [['Tabela', pre.pos ? ord(pre.pos) + (pre.pos !== pos ? ' → ' + ord(pos) : ' (igual)') + ' · ' + (S.coTable(co).find(x => x.me) || {}).p + ' pts' : ord(pos)],
       ['Diretoria', co.sacked ? 'demitido' : dc > 1 ? 'confiança subiu' : dc < -1 ? 'confiança caiu' : 'confiança igual', dc > 1 ? 'up' : dc < -1 ? 'dn' : ''],
@@ -565,25 +563,34 @@
     const cadN = log.cad && log.cad.notes ? log.cad.notes : [];
     const cadTxt = n => { const [a, b] = n.ab.split('|'), nmK = x => (n.k === 'sty' ? S.CO_STY[x].name : x);
       return '<p><b>' + (n.pen ? 'Certeza (viu 2 vezes):' : 'Pode errar (viu 1 vez):') + '</b> ' + esc(nmK(a)) + ' contra ' + esc(nmK(b)) + ' ' + (n.v === 'up' ? 'deu certo.' : n.v === 'down' ? 'sofreu.' : 'ficou parelho.') + '</p>'; };
+    const best = rt[0], bp = best && by[best.id];
+    const KEEP = ['Posse', 'Chutes', 'No gol', 'Grandes chances', 'Escanteios', 'Cartões'];
     const draw = () => {
-      const nums = matchNums(m);
+      const nums = matchNums(m).filter(r => KEEP.indexOf(r[0]) >= 0);
+      const cd = n => '<i class="y"></i>'.repeat(Math.min(3, n[0] || 0)) + '<i class="r"></i>'.repeat(n[1] || 0);
       const bar = ([k, a, b, suf, inv, cards]) => { const t = (a + b) || 1, good = inv ? a <= b : a >= b;
-        return '<div class="ldr-r"><b>' + a + (suf || '') + (cards ? ' ' + '<i class="y"></i>'.repeat(Math.min(3, cards[0] || 0)) + '<i class="r"></i>'.repeat(cards[1] || 0) : '') + '</b><span><small>' + k + '</small><i><u class="' + (good ? 'up' : 'dn') + '" style="width:' + Math.round(a / t * 100) + '%"></u><u class="th" style="width:' + Math.round(b / t * 100) + '%"></u></i></span><b>' + b + (suf || '') + (cards ? ' ' + '<i class="y"></i>'.repeat(Math.min(3, cards[2] || 0)) + '<i class="r"></i>'.repeat(cards[3] || 0) : '') + '</b></div>'; };
-      const pane = tab === 'num' ? '<div class="ldr-nums">' + nums.map(bar).join('') + '</div>' :
-        tab === 'mom' ? '<div class="ldr-mom">' + U.lvMom(m, move !== null && move !== undefined ? move : null) + '</div><div class="ldr-momf"><small>0\'</small><small>' + (move !== null && move !== undefined ? 'sua mudança aos ' + move + '\'' : 'quem mandou: acima é você') + '</small><small>90\'</small></div>' +
-          '<ul class="ldl-last ldr-key">' + m.ev.filter(e => e.t === 'gol' || e.t === 'vermelho' || (e.s === 'us' && (e.t === 'tatica' || e.t === 'troca' || e.t === 'grito' || e.t === 'conversa'))).slice(0, 9).map(e => c.feedLine(m, e)).join('') + '</ul>' :
+        return '<div class="rs-r"><b>' + (cards ? cd(cards.slice(0, 2)) + ' ' : '') + a + (suf || '') + '</b><span><small>' + k + '</small><i><u class="' + (good ? 'up' : 'dn') + '" style="width:' + Math.round(a / t * 100) + '%"></u><u class="th"></u></i></span><b>' + b + (suf || '') + (cards ? ' ' + cd(cards.slice(2)) : '') + '</b></div>'; };
+      const pane = tab === 'num' ? '<div class="rs-nums">' + nums.map(bar).join('') + '</div>' :
+        tab === 'mom' ? '<div class="ldr-mom">' + U.lvMom(m, move !== null && move !== undefined ? move : null) + '</div><div class="rs-momf"><small>0\'</small><small>' + (move !== null && move !== undefined ? 'sua mudança aos ' + move + '\'' : 'acima é você') + '</small><small>90\'</small></div>' +
+          '<ul class="ldl-last ldr-key">' + m.ev.filter(e => e.t === 'gol' || e.t === 'vermelho' || (e.s === 'us' && (e.t === 'tatica' || e.t === 'troca'))).slice(0, 6).map(e => c.feedLine(m, e)).join('') + '</ul>' :
         '<ul class="ldl-last ldr-all">' + m.ev.filter(e => e.t !== 'grito-fim').map(e => c.feedLine(m, e)).join('') + '</ul>';
-      show('<div class="ldr">' +
-        '<div class="ldr-l"><div class="ldr-sc">' + crest((m.home ? cl : vs).id, 'ldr-cr') + '<em>' + m.gh + ' <i>x</i> ' + m.ga + '</em>' + crest((m.home ? vs : cl).id, 'ldr-cr') +
-          '<span class="ldr-w"><b class="' + log.res + '">' + word + (aux ? ' · COM O AUXILIAR' : '') + '</b><small>' + (goals.length ? goals.join(' · ') : 'sem gols') + '</small></span></div>' +
-          '<div class="ld-seg ldr-tabs">' + [['num', 'Números'], ['mom', 'Quem mandou'], ['lan', 'Lances']].map(([k, t]) => '<button data-rt="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
-          '<div class="ldr-pane">' + pane + '</div></div>' +
-        '<div class="ldr-m">' + lbl('NOTAS DO SEU TIME') + top.map(nota).join('') + (rt.length > top.length ? '<button class="ld-link" id="ldr-all">Ver as ' + rt.length + ' notas</button>' : '') + '<span class="ld-gr"></span>' +
-          (cadN.length ? '<div class="ldr-cad">' + lbl('ANOTADO NO CADERNO') + cadN.map(cadTxt).join('') + '</div>' : '') + '</div>' +
-        '<div class="ldr-r3">' + lbl('O QUE MUDOU') + chg.map(([k, v, cc]) => '<div class="ldr-ch"><small>' + k + '</small><b class="' + (cc || '') + '">' + esc(v) + '</b></div>').join('') + '<span class="ld-gr"></span>' +
-          gold('ldr-go', co.sacked ? 'Falar com o presidente' : co.ss.done ? 'Fim da temporada' : 'Continuar', co.sacked ? '' : co.ss.done ? 'ver como terminou' : 'vai para a segunda-feira') + '</div></div>', st => {
+      const rows = chg.filter(r => r[0] !== 'Caixa').map(([k, v, cc]) => [k, k === 'Tabela' ? (pre.pos && pre.pos !== pos ? ord(pre.pos) + ' → ' + ord(pos) : ord(pos)) : k === 'Diretoria' ? (co.sacked ? 'demitido' : cc === 'up' ? 'subiu' : cc === 'dn' ? 'caiu' : 'igual') : v, cc]);
+      if (cadN.length) rows.push(['Caderno', '+' + cadN.length + (cadN.length > 1 ? ' notas' : ' nota'), 'up', 1]);
+      show('<div class="rs">' +
+        '<div class="rs-sc">' + crest((m.home ? cl : vs).id, 'rs-cr') + '<em>' + m.gh + ' <i>x</i> ' + m.ga + '</em>' + crest((m.home ? vs : cl).id, 'rs-cr') +
+          '<span class="rs-w"><b class="' + log.res + '">' + word + (aux ? ' · COM O AUXILIAR' : '') + '</b><small>' + (goals.length ? goals.join(' · ') : 'sem gols') + '</small></span></div>' +
+        '<div class="rs-tabs">' + [['num', 'Números'], ['mom', 'Quem mandou'], ['lan', 'Lances']].map(([k, t]) => '<button data-rt="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
+        '<div class="rs-pane ' + tab + '">' + pane + '</div>' +
+        '<div class="rs-side">' +
+          (best ? '<div class="rs-best"><small>MELHOR DO SEU TIME</small><span><b class="' + (best.r >= 7 ? 'up' : best.r < 5.8 ? 'dn' : '') + '">' + best.r.toFixed(1).replace('.', ',') + '</b><span><em>' + esc(bp ? bp.n : '') + '</em><small>' + esc(best.w) + '</small></span></span></div>' : '') +
+          '<div class="rs-ch">' + rows.map(([k, v, cc, cad]) => (cad ? '<button id="rs-cad">' : '<span>') + k + '<b class="' + (cc || '') + '">' + esc(v) + '</b>' + (cad ? '</button>' : '</span>')).join('') + '</div>' +
+          '<span class="rs-gap"></span>' +
+          (rt.length ? '<button class="tm-b" id="ldr-all">Notas do time</button>' : '') +
+          '<button class="tm-go" id="ldr-go">' + (co.sacked ? 'Falar com o presidente' : co.ss.done ? 'Fim da temporada' : 'Continuar') + '</button>' +
+        '</div></div>', st => {
         st.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { sfx('tap'); tab = b.dataset.rt; draw(); });
         if (st.querySelector('#ldr-all')) st.querySelector('#ldr-all').onclick = () => { sfx('tap'); pop(popHead('Notas do jogo', 'Rodada ' + log.r + ' · ' + m.gh + ' x ' + m.ga) + '<div class="ld-pb col"><div class="ld-scroll ldr-alln">' + rt.map(nota).join('') + '</div></div>', 'Notas do jogo', null, 'w560'); };
+        if (st.querySelector('#rs-cad')) st.querySelector('#rs-cad').onclick = () => { sfx('tap'); pop(popHead('Anotado no caderno', vs ? c.nm(m.vs) : '') + '<div class="ld-pb col rs-cadp">' + cadN.map(cadTxt).join('') + '</div>', 'Anotado no caderno', null, 'w560'); };
         st.querySelector('#ldr-go').onclick = () => { sfx('tap'); if (co.sacked) { off(); return c.sacked(); } if (co.ss.done) { off(); return c.finishSeason(); } segunda(log); };
       });
     };
