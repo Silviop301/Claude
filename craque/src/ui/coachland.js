@@ -760,13 +760,8 @@
         tile('', 'hall', 'Hall do técnico', (co.season + 1) + 'ª', 'temporada de carreira') + '</div>' +
       '<div class="kb2-side"><div class="kb2-dir"><small>DIRETORIA</small><b>' + (conf >= 70 ? 'confiança alta' : conf >= 45 ? 'confiança boa' : conf >= 30 ? 'confiança baixa' : 'no limite') + '</b>' +
           '<i><u class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '" style="width:' + conf + '%"></u></i><em class="' + (pos <= B.goal.pos ? '' : 'hi') + '">' + meta + '</em></div>' +
-<<<<<<< HEAD
-        (pres ? '<div class="kb2-pr"><small>PRESIDENTE</small><b>' + esc(pres.n) + '</b><span>' + esc(pres.nome || '') + '</span></div>' : '') +
-        '<span class="rs-gap"></span><p class="kb2-soon">Estádio e base chegam depois</p></div></div>', st => {
-=======
         (pres ? '<div class="kb2-pr fc">' + presFace(pres, 'kb2-fc') + '<div><small>PRESIDENTE</small><b>' + esc(pres.n) + '</b><span>' + esc(pres.nome || '') + '</span></div></div>' : '') +
-        '<span class="rs-gap"></span><p class="kb2-soon">Mercado, estádio e base chegam depois</p></div></div>', st => {
->>>>>>> origin/claude/gracious-darwin-9gdlfp
+        '<span class="rs-gap"></span><p class="kb2-soon">Estádio e base chegam depois</p></div></div>', st => {
       st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') financas(); else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); });
       st.querySelector('#kb2-back').onclick = () => { sfx('tap'); semana(); };
     });
