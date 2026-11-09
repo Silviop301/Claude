@@ -35,7 +35,7 @@ async function page(b) {
     await click('#ld-ok'); await shot('a06-semana');
     await click('#ld-tr'); await click('[data-tk="lados"]'); await shot('a07-treino'); await click('[data-tt="Bola parada"]'); await shot('a08-treino-bola-parada'); await click('[data-tk="esc"]'); await click('#ldtr-go');
     await click('#ld-ol'); await shot('a09-olheiro'); await click('#ldo-ok'); await shot('a10-semana-pronta');
-    await click('#ld-play'); await click('#ld-fun'); await click('[data-fi="2"]'); await shot('a11-funcoes'); await click('[data-r="1"]');
+    await click('#ld-play'); await click('#ld-fun'); await click('[data-fi="2"]'); await shot('a11-funcoes'); await click('[data-r="1"]'); await click('[data-gl="d:-1"]'); await shot('a11b-funcoes-mudou');
     await click('[data-sub="bat"]'); await click('[data-bk="fl"]'); await shot('a12-batedores'); await click('#ldm-ok');
     await click('#ld-go'); await click('[data-pk="calma"]'); await shot('a13-prelecao');
     await p.close();

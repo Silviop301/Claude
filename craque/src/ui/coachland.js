@@ -1209,40 +1209,35 @@
   }
 
   // ---------- Funções (33c): como cada vaga joga. A função fica na vaga; quem entrar ali joga igual ----------
-  function subTabs(act, back) {
-    return '<div class="ld-seg ldc-tabs">' + [['fun', 'Funções'], ['bat', 'Batedores']].map(([k, t]) => '<button data-sub="' + k + '"' + (k === act ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>';
-  }
   function bindSub(st, back) { st.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => { sfx('tap'); if (b.dataset.sub === 'fun') funcoes(null, back); else batedores(null, back); }); }
-  const backBtn = '<button class="ld-x ldm-back" id="ldm-back" aria-label="Voltar">' + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>';
+  // Funções enxuta (Silvio 2026-11-09, quadro 28): sem frase no título, sem faixa no campo e sem "Como pesa". Cada boneco
+  // com o nome e a função (verde = mais à frente, azul = mais atrás, setinha no círculo); o cartão creme mostra as 3
+  // funções da vaga escolhida e a frase só da escolhida; embaixo Defesa/Meio/Ataque com ▼ — ▲
+  const BKS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+  const segFB = act => '<div class="fb2-seg">' + [['fun', 'Funções'], ['bat', 'Batedores']].map(([k, t]) => '<button data-sub="' + k + '"' + (k === act ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>';
   function funcoes(sel, back) {
-    const c = C(), co = c.co, by = {}; co.squad.forEach(p => { by[p.id] = p; });
-    const R = S.coRoles(co, co.form), sl = S.coSlots(co.form), sp = spotsL(co.form, false, true);
-    sel = sel == null ? Math.max(0, R.findIndex(Boolean)) : sel;
+    const c = C(), co = c.co, by = {}; co.squad.forEach(p => { by[p.id] = p; }); S.coNums(co.squad);
+    const R = S.coRoles(co, co.form), sl = S.coSlots(co.form), sp = spotsT(co.form);
+    sel = sel == null ? 0 : sel;
     const rk = i => S.coRoleKey(co.form, i), rn = i => S.CO_ROLES[rk(i)][R[i] + 1][0];
-    const dots = co.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: i === sel, attr: ' data-fi="' + i + '"', tag: rn(i), num: true }) : '').join('');
+    const AR = { '-1': '▼', 1: '▲' };
+    const dots = co.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: i === sel, yc: false, num: true, tag: rn(i), attr: ' data-fi="' + i + '" data-rv="' + R[i] + '"' }).replace('</i><span class="ld-dn">', (R[i] ? '<u class="fu2-ar">' + AR[R[i]] + '</u>' : '') + '</i><span class="ld-dn">') : '').join('');
     const p = by[co.xi[sel]], lb = S.coSlotLbl(co.form, sel), opts = S.CO_ROLES[rk(sel)];
-    // O que combina e o que deixa buraco: lateral e ponta do mesmo lado, volante e zaga
-    const same = (a, b) => S.coSlotLbl(co.form, a).slice(-1) === S.coSlotLbl(co.form, b).slice(-1);
-    const iLat = sl.map((x, i) => i).filter(i => /^L[ED]$/.test(S.coSlotLbl(co.form, i)) && same(i, sel) && i !== sel)[0];
-    const iVol = sl.map((x, i) => i).filter(i => S.coSlotLbl(co.form, i) === 'VOL');
-    let note = '';
-    if (R[sel] > 0 && /^(PE|PD|ME|MD)$/.test(lb) && iLat !== undefined && R[iLat] > 0) note = 'O ' + esc(last(by[co.xi[iLat]] ? by[co.xi[iLat]].n : '')) + ' também apoia por esse lado: sobra gente lá na frente e as costas ficam livres.';
-    else if (R[sel] > 0 && /^L[ED]$/.test(lb) && iVol.every(i => R[i] >= 0)) note = 'Com o lateral subindo, um volante fixo ajuda a cobrir as costas dele.';
-    else if (R[sel] < 0 && /^(ATA)$/.test(lb)) note = 'Pivô segura a bola para os meias chegarem: combina com meia que chega na área.';
-    else if (R.filter(x => x > 0).length >= 5) note = 'Muita gente à frente: o time cria mais e cansa mais. Atrás fica aberto.';
-    else if (R.filter(x => x < 0).length >= 5) note = 'Muita gente atrás: difícil de furar, mas chega pouco.';
-    show('<div class="ld-col">' + '<div class="ld-h">' + backBtn + '<span><b>Funções</b><small>Como cada vaga joga no ' + co.form + '. Toque numa posição no campo.</small></span>' + subTabs('fun') + '</div>' +
-      '<div class="ld-row"><div class="ld-pitch">' + PITCH + '<span class="ld-leg"><span>A função fica na vaga: quem entrar ali joga igual</span></span>' + dots +
-        '<div class="ldm-grp">' + [['d', 'Defesa'], ['m', 'Meio'], ['a', 'Ataque']].map(([k, t]) => '<span>' + t + '<button data-gl="' + k + ':-1">atrás</button><button data-gl="' + k + ':0">normal</button><button data-gl="' + k + ':1">à frente</button></span>').join('') + '</div></div>' +
-        '<div class="ldm-side">' + '<div class="ldm-who"><i>' + (p ? p.num || p.ovr : '') + '</i><span><b>' + lb + (p ? ' · ' + esc(last(p.n)) : '') + '</b><small>' + (p ? c.posTxt[p.pos] + ' · geral ' + p.ovr : '') + '</small></span></div>' +
-          lbl('FUNÇÃO') + '<div class="ldm-op">' + opts.map((o, j) => '<button data-r="' + (j - 1) + '"' + (R[sel] === j - 1 ? ' class="on"' : '') + '><b>' + o[0] + '</b><small>' + o[1] + '</small><em>' + (j === 0 ? 'mais atrás' : j === 2 ? 'mais à frente · cansa mais' : 'normal') + '</em></button>').join('') + '</div>' +
-          (note ? '<p class="ldm-note"><b>COM O RESTO</b> ' + note + '</p>' : '<p class="ldm-note"><b>COMO PESA</b> Mais à frente ajuda o ataque e tira da defesa. Mais atrás, o contrário.</p>') +
-          '<span class="ld-gr"></span>' + gold('ldm-ok', 'Pronto') + '</div></div></div>', st => {
+    const lnOf = i => { const l = S.CO_FORMS[co.form].slots[i].ln; return l === 'am' ? 'm' : l; };
+    const grp = [['d', 'DEFESA'], ['m', 'MEIO'], ['a', 'ATAQUE']].map(([k, t]) => { const ix = sl.map((x, i) => i).filter(i => lnOf(i) === k), all = ix.length && ix.every(i => R[i] === R[ix[0]]) ? R[ix[0]] : null;
+      return '<span><small>' + t + '</small>' + [[-1, '▼', 'mais atrás'], [0, '—', 'normal'], [1, '▲', 'mais à frente']].map(([v, ic, al]) => '<button data-gl="' + k + ':' + v + '"' + (all === v ? ' class="on"' : '') + ' aria-label="' + t.toLowerCase() + ' ' + al + '">' + ic + '</button>').join('') + '</span>'; }).join('');
+    show('<div class="fb2"><div class="tm-h"><button class="tcr-back" id="ldm-back" aria-label="Voltar">' + BKS + '</button><b>Funções</b><small>' + co.form + '</small>' + segFB('fun') + '</div>' +
+      '<div class="ld-pitch fu2-pitch">' + PITCH + dots + '</div>' +
+      '<div class="fu2-grp">' + grp + '</div>' +
+      '<div class="fb2-c"><div class="fb2-who"><i>' + (p ? p.num || p.ovr : '') + '</i><span><b>' + (p ? esc(last(p.n)) : '') + '</b><small>' + lb + ' · ' + rn(sel).toLowerCase() + '</small></span></div>' +
+        opts.map((o, j) => '<button class="fu2-op' + (R[sel] === j - 1 ? ' on' : '') + '" data-r="' + (j - 1) + '"><b>' + o[0] + '</b>' + (j === 1 ? '' : '<em>' + (j ? '▲ frente' : '▼ atrás') + '</em>') + '</button>').join('') +
+        '<p class="fb2-sub">' + opts[R[sel] + 1][1] + '</p></div>' +
+      '<button class="tm-go fb2-go" id="ldm-ok">Pronto</button></div>', st => {
       bindSub(st, back);
       st.querySelector('#ldm-back').onclick = st.querySelector('#ldm-ok').onclick = () => { sfx('tap'); c.save(); (back || time)(); };
       st.querySelectorAll('[data-fi]').forEach(b => b.onclick = () => { sfx('tap'); funcoes(+b.dataset.fi, back); });
       st.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { sfx('tap'); R[sel] = +b.dataset.r; c.save(); funcoes(sel, back); });
-      st.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { sfx('tap'); const [ln, v] = b.dataset.gl.split(':'); S.CO_FORMS[co.form].slots.forEach((x, i) => { if ((x.ln === 'am' ? 'm' : x.ln) === ln) R[i] = +v; }); c.save(); funcoes(sel, back); });
+      st.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { sfx('tap'); const [ln, v] = b.dataset.gl.split(':'); sl.forEach((x, i) => { if (lnOf(i) === ln) R[i] = +v; }); c.save(); funcoes(sel, back); });
     });
   }
   // ---------- Batedores (39): pênalti, faltas, escanteios e capitão; o 1º que estiver em campo bate ----------
@@ -1256,20 +1251,24 @@
     return co.takers;
   }
   const c0avail = p => p && !p.out && !p.sus;
+  // Batedores enxuta (quadro 29): seis quadros com o 1º grande e "2º · 3º" numa linha; o cartão creme mostra os 5
+  // melhores para a bola escolhida com 1º/2º/3º. Sem frase no título e sem o rodapé
   function batedores(k, back) {
-    const c = C(), co = c.co, T = takersOf(co), by = {}; co.squad.forEach(p => { by[p.id] = p; });
+    const c = C(), co = c.co, T = takersOf(co), by = {}; co.squad.forEach(p => { by[p.id] = p; }); S.coNums(co.squad);
     k = k || 'pen';
+    const SH = { ckE: 'Escanteio esq.', ckD: 'Escanteio dir.' };
     const card = kk => { const L = T[kk].map(id => by[id]).filter(Boolean), f = L[0];
-      return '<button class="ldb-c' + (kk === k ? ' on' : '') + '" data-bk="' + kk + '">' + lbl(S.CO_TAKE[kk].toUpperCase()) + (f ? '<span class="ldb-f"><i>' + (f.num || f.ovr) + '</i><span><b>' + esc(last(f.n)) + '</b><small>' + f.pos + ' · geral ' + f.ovr + (co.xi.includes(f.id) ? '' : ' · banco') + '</small></span></span>' : '') +
-        L.slice(1).map((p, j) => '<small class="ldb-o">' + (j + 2) + 'º ' + esc(last(p.n)) + '</small>').join('') + '</button>'; };
+      return '<button class="bt2-t' + (kk === k ? ' on' : '') + '" data-bk="' + kk + '"><small>' + (SH[kk] || S.CO_TAKE[kk]).toUpperCase() + '</small>' +
+        (f ? '<span><i>' + (f.num || f.ovr) + '</i><b>' + esc(last(f.n)) + '</b></span>' : '<span></span>') +
+        '<em>' + L.slice(1).map((p, j) => (j + 2) + 'º ' + esc(last(p.n))).join(' · ') + '</em></button>'; };
     const cand = co.squad.filter(p => p.pos !== 'GOL' || k === 'cap').sort((a, b) => TK_SCORE[k](b) - TK_SCORE[k](a)).slice(0, 5);
     const best = cand[0];
-    show('<div class="ld-col">' + '<div class="ld-h">' + backBtn + '<span><b>Batedores</b><small>Quem bate cada bola parada. Se o 1º não estiver em campo, bate o 2º.</small></span>' + subTabs('bat') + '</div>' +
-      '<div class="ld-row"><div class="ldb-g">' + Object.keys(S.CO_TAKE).map(card).join('') + '</div>' +
-      '<div class="ldm-side">' + lbl(S.CO_TAKE[k].toUpperCase() + ' · ESCOLHA A ORDEM') + '<div class="ldb-l">' + cand.map(p => { const pos = T[k].indexOf(p.id);
-        return '<div class="ldb-r"><i>' + (p.num || p.ovr) + '</i><span><b>' + esc(last(p.n)) + (p === best ? ' <u>MELHOR</u>' : '') + '</b><small>' + p.pos + ' · geral ' + p.ovr + (co.xi.includes(p.id) ? '' : ' · banco') + '</small></span>' +
+    show('<div class="fb2"><div class="tm-h"><button class="tcr-back" id="ldm-back" aria-label="Voltar">' + BKS + '</button><b>Batedores</b>' + segFB('bat') + '</div>' +
+      '<div class="bt2-g">' + Object.keys(S.CO_TAKE).map(card).join('') + '</div>' +
+      '<div class="fb2-c bt2-c"><b class="bt2-h">' + S.CO_TAKE[k] + '</b>' + cand.map(p => { const pos = T[k].indexOf(p.id);
+        return '<div class="bt2-r"><i>' + (p.num || p.ovr) + '</i><span><b>' + esc(last(p.n)) + '</b><small' + (p === best ? ' class="best">MELHOR' : '>' + p.pos + ' · ' + p.ovr + (co.xi.includes(p.id) ? '' : ' · banco')) + '</small></span>' +
           [0, 1, 2].map(j => '<button data-to="' + p.id + ':' + j + '"' + (pos === j ? ' class="on"' : '') + '>' + (j + 1) + 'º</button>').join('') + '</div>'; }).join('') + '</div>' +
-        '<p class="ldm-note">' + (k === 'cap' ? 'Fala pelo grupo e segura a moral quando o jogo aperta.' : '1 em cada 4 gols sai de bola parada. O treino da semana ajuda.') + '</p><span class="ld-gr"></span>' + gold('ldm-ok', 'Pronto') + '</div></div></div>', st => {
+      '<button class="tm-go fb2-go" id="ldm-ok">Pronto</button></div>', st => {
       bindSub(st, back);
       st.querySelector('#ldm-back').onclick = st.querySelector('#ldm-ok').onclick = () => { sfx('tap'); c.save(); (back || time)(); };
       st.querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { sfx('tap'); batedores(b.dataset.bk, back); });
