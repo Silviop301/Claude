@@ -1,5 +1,5 @@
-// Home deitada pela interface (ui/start.js homeLand): vazia, Treinador com 1 e 2 carreiras, vagas cheias, Relâmpago (pede para girar),
-// Rumo ao Topo, Ranking e em pé (Gire o celular). Uso: NODE_PATH=$(npm root -g) node tools/craque_home_deitada.js /tmp/hl  (servidor em 8765)
+// Home deitada pela interface (ui/start.js homeLand): vazia, Treinador com 1 e 2 carreiras, vagas cheias, Jogador desabilitado (Em breve),
+// Ranking e em pé (Gire o celular). Uso: NODE_PATH=$(npm root -g) node tools/craque_home_deitada.js /tmp/hl  (servidor em 8765)
 // Os robôs (navigator.webdriver) ficam na home em pé; aqui o localStorage climbix-deitado = 1 liga a deitada.
 const { chromium } = require('playwright');
 (async () => { const b = await chromium.launch(); const errs = [];
@@ -22,8 +22,7 @@ const { chromium } = require('playwright');
   await p.click('#b-new-co'); await p.waitForTimeout(500); await p.screenshot({ path: out + '/hl4b-janela-duas.png' });
   await p.click('.hl-mp [data-mode]'); await p.waitForTimeout(700); await p.screenshot({ path: out + '/hl5-cheias.png' });
   await p.click('[data-pop-x]'); await p.waitForTimeout(500);
-  await p.click('#b-relampago'); await p.waitForTimeout(700); await p.screenshot({ path: out + '/hl7-relampago-gire.png' });
-  console.log('need-port', await p.evaluate(() => document.body.className));
+  console.log('jogador desabilitado', await p.evaluate(() => !!document.querySelector('.hl-md.hl-jogador[disabled]')), 'modos', await p.evaluate(() => document.querySelectorAll('.hl-md').length));
   await p.evaluate(() => window.CRAQUE_UI.home()); await p.waitForTimeout(500);
   await p.click('[data-hl="ranking"]'); await p.waitForTimeout(700); await p.screenshot({ path: out + '/hl9-ranking.png' });
   await p.setViewportSize({ width: 390, height: 844 }); await p.evaluate(() => window.CRAQUE_UI.home()); await p.waitForTimeout(700); await p.screenshot({ path: out + '/hl10-em-pe.png' });
