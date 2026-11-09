@@ -884,7 +884,7 @@
         '<span class="mkp-cuts">' + ['Baixa', 'Justa', 'Alta'].map((t, i) => seg(o.v === cuts[i], t + ' · ' + c.brl(cuts[i]), 'data-pc="' + i + '"' + (done ? ' disabled' : ''))).join('') + '</span></div>' +
         '<div class="mkp-g"><div class="mk-k"><small>PAGAMENTO</small><span class="mkp-seg">' + ['À vista', '2x', '3x'].map((t, i) => seg(o.pay === i, t, 'data-pp="' + i + '"' + (done ? ' disabled' : ''))).join('') + '</span></div>' +
           '<div class="mk-k"><small>JOGADOR NA TROCA</small><span class="mkp-tr"><button class="mk-ar" data-pt="-1" aria-label="Anterior"' + (done || !TL.length ? ' disabled' : '') + '>' + MK_L + '</button><b class="' + (tq ? '' : 'off') + '">' + (tq ? esc(last(tq.n)) + ' · ' + tq.pos : TL.length ? 'Ninguém' : 'Sem reservas') + '</b><button class="mk-ar" data-pt="1" aria-label="Próximo"' + (done || !TL.length ? ' disabled' : '') + '>' + MK_R + '</button></span></div></div></div>' +
-      '<div class="mk-side"><div class="mk-k mkp-pr"><small>PRESIDENTE DO ' + cn.toUpperCase() + '</small><b class="' + ans[1] + '">' + ans[0] + '</b><span class="mkp-pat">Paciência' + mkDots(neg.pat, M.pat) + '</span></div>' +
+      '<div class="mk-side"><div class="mk-k mkp-pr"><small>PRESIDENTE</small><b class="' + ans[1] + '">' + ans[0] + '</b><span class="mkp-pat">Paciência' + mkDots(neg.pat, M.pat) + '</span></div>' +
         '<div class="mk-k mkf-li"><div><span>' + (o.pay ? 'Agora · ' + (o.pay + 1) + 'x' : 'Paga agora') + '</span><b>' + c.brl(now) + '</b></div><div><span>Verba depois</span><b class="' + (after < 0 ? 'dn' : 'up') + '">' + (after < 0 ? '− ' + c.brl(-after) : c.brl(after)) + '</b></div></div>' +
         '<span class="rs-gap"></span>' + gold + '</div></div>', st => {
       const re = x => proposta(id, back, Object.assign({}, o, x));
@@ -898,8 +898,43 @@
       if (go) go.onclick = () => { sfx('tap');
         if (neg.st === 'ok') return contrato(id, () => proposta(id, back));
         const r = S.coMktOffer(co, p, o); c.save(); sfx(r.k === 'ok' ? 'win' : 'tap');
-        proposta(id, back, r.k === 'counter' ? Object.assign({}, o, { v: r.v }) : o); };
+        const o2 = r.k === 'counter' ? Object.assign({}, o, { v: r.v }) : o;
+        proposta(id, back, o2); resposta(id, back, o, r); };
     });
+  }
+  // Resposta do clube (30): janelinha depois de Enviar. Rosto, a resposta numa palavra, paciência, uma frase,
+  // 2 linhas de número e 2 botões; na contraproposta, aceitar fecha direto (gasta 1 dia)
+  function resposta(id, back, o, r) {
+    const c = C(), co = c.co, p = S.coMktFind(co, id); if (!p) return;
+    const f = S.coFin(co), neg = S.coMktNeg(co, p), cl = club(p.club), cn = esc(cl.short || cl.name), nm = esc(last(p.n));
+    const day = S.coMktWin(co), dtx = day.k ? ' · DIA ' + Math.min(S.coMkt(co).used, day.max) : '';
+    let w, cls, line, r1, v1, r2, v2, b1, b2, a1, a2;
+    if (r.k === 'ok') { const now = S.coMktNow(co, neg.deal);
+      w = 'Aceitou'; cls = 'up'; line = 'Fechado com o ' + cn + ' por ' + c.brl(neg.deal.v) + (neg.deal.pay ? ' em ' + (neg.deal.pay + 1) + 'x' : ' à vista') + '. Agora é acertar o contrato com o empresário.';
+      r1 = 'Paga agora'; v1 = c.brl(now); r2 = 'Verba depois'; v2 = f.verba - now; b1 = 'Ir ao contrato'; b2 = 'Depois';
+      a1 = () => contrato(id, () => proposta(id, back)); a2 = null;
+    } else if (r.k === 'counter') { const o2 = Object.assign({}, o, { v: r.v }), now = S.coMktNow(co, o2);
+      w = 'Pede ' + c.brl(r.v); cls = 'mid'; line = 'Ele achou ' + c.brl(o.v) + ' pouco, mas topa conversar. Aceitar fecha agora e gasta mais 1 dia.';
+      r1 = 'Se aceitar, paga'; v1 = c.brl(now); r2 = 'Verba depois'; v2 = f.verba - now; b1 = 'Aceitar ' + c.brl(r.v); b2 = 'Nova proposta';
+      a1 = () => { const r2x = S.coMktOffer(co, p, o2); c.save(); sfx(r2x.k === 'ok' ? 'win' : 'tap'); proposta(id, back, o2); resposta(id, back, o2, r2x); }; a2 = null;
+      if (v2 < 0) { line = 'Ele pede ' + c.brl(r.v) + ', mas isso passa da sua verba. Parcele ou ponha alguém na troca.'; b1 = 'Nova proposta'; b2 = 'Desistir'; a1 = null; a2 = () => back(); }
+    } else if (r.k === 'recusa') {
+      w = 'Recusou'; cls = 'dn'; line = c.brl(o.v) + ' ficou longe do que ele quer.' + (neg.pat === 1 ? ' Mais uma recusa e ele encerra a conversa.' : ' Tente chegar mais perto.');
+      r1 = 'Você ofereceu'; v1 = c.brl(o.v); r2 = 'Verba agora'; v2 = f.verba; b1 = 'Nova proposta'; b2 = 'Desistir'; a1 = null; a2 = () => back();
+    } else if (r.k === 'no') {
+      w = 'Encerrou a conversa'; cls = 'dn'; line = 'Sem paciência, o ' + cn + ' não negocia o ' + nm + ' com você até a próxima temporada.';
+      r1 = 'Última proposta'; v1 = c.brl(o.v); r2 = 'Verba agora'; v2 = f.verba; b1 = 'Voltar ao mercado'; b2 = 'Fechar'; a1 = () => mercado(); a2 = null;
+    } else {
+      w = r.k === 'verba' ? 'Sem verba' : 'Janela fechada'; cls = 'dn'; line = r.k === 'verba' ? 'O que sai agora passa da sua verba. Parcele ou ponha alguém na troca.' : 'Acabaram os dias da janela. A próxima abre antes da rodada do meio.';
+      r1 = 'Proposta'; v1 = c.brl(o.v); r2 = 'Verba agora'; v2 = f.verba; b1 = 'Entendi'; b2 = 'Mercado'; a1 = null; a2 = () => mercado();
+    }
+    const ini = esc((cl.short || cl.name).replace(/[^A-Za-zÀ-ú ]/g, '').split(' ').filter(Boolean).map((x, i, A) => A.length > 1 ? x[0] : x.slice(0, 2)).join('').slice(0, 2).toUpperCase() || 'P');
+    pop('<div class="mkx"><div class="mkx-h"><i class="mkx-fc">' + ini + '</i><span><small>PRESIDENTE' + dtx + '</small><b class="' + cls + '">' + w + '</b></span>' + mkDots(neg.pat, S.CO_MKT.pat) + '</div>' +
+      '<p>' + line + '</p><div class="mkx-li"><div><span>' + r1 + '</span><b>' + v1 + '</b></div><div><span>' + r2 + '</span><b class="' + (v2 < 0 ? 'dn' : 'up') + '">' + (v2 < 0 ? '− ' + c.brl(-v2) : c.brl(v2)) + '</b></div></div>' +
+      '<span class="rs-gap"></span><span class="mkx-b"><button class="hl-btn gold" id="mkx-1">' + b1 + '</button><button class="hl-btn dark" id="mkx-2">' + b2 + '</button></span></div>', 'Resposta do clube', x => {
+      x.querySelector('#mkx-1').onclick = () => { sfx('tap'); closePop(); a1 && a1(); };
+      x.querySelector('#mkx-2').onclick = () => { sfx('tap'); closePop(); a2 && a2(); };
+    }, 'hl-pop mkx-pop', true);
   }
   // Contrato (26): salário e anos com ◀ ▶, papel prometido; à direita o empresário (humor a cada toque, 4 tracinhos,
   // paciência) e a folha contra o teto. Serve para depois do clube aceitar e para quem está sem clube (renovação: fase 3).
@@ -930,19 +965,23 @@
       st.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => { sfx('tap'); re({ role: +b.dataset.cr }); });
       const go = st.querySelector('#mkc-go:not(.off)');
       if (go) go.onclick = () => { sfx('tap'); const r = S.coMktContract(co, p, t); c.save();
-        if (r.k === 'signed') { sfx('win'); return fechado(r.p, R[t.role].t); }
+        if (r.k === 'signed') { sfx('win'); return fechado(r.p, R[t.role].t, neg.deal, p.club); }
         re({}); };
     });
   }
-  // Chegou (provisório até o lote 3 desenhar a janelinha Fechado): nome, papel e contrato; Ver no time ou Mercado
-  function fechado(np, papel) {
-    const c = C(), co = c.co;
+  // Fechado (31): CONTRATADO com o escudo do seu clube e de onde ele veio; nome grande, posição, papel e idade;
+  // transferência, salário e contrato; Ver no time ou Mercado
+  function fechado(np, papel, d, from) {
+    const c = C(), co = c.co, me = club(co.club), fc = from && club(from);
     mercado();
-    pop('<div class="acd-help"><b>' + esc(np.n) + ' é do ' + esc(club(co.club).short || club(co.club).name) + '</b><p>' + S.CO_POS_NM[np.pos] + ' · ' + papel + ' · contrato até ' + (U.YEAR0 + co.season + np.ct) + '. Ele chega no banco.</p>' +
-      '<button class="hl-btn gold" id="mkd-time">Ver no time</button><button class="hl-btn dark" id="mkd-mk">Voltar ao mercado</button></div>', 'Contratado', w => {
+    const fee = from && d ? c.brl(d.v) + (d.pay ? ' · ' + (d.pay + 1) + 'x' : '') : 'sem custo';
+    pop('<div class="mkd"><div class="mkd-l"><small>CONTRATADO</small>' + crest(me.id, 'mkd-cr') + '<b>' + esc(me.short || me.name) + '</b><span>' + (fc ? 'chega do ' + esc(fc.short || fc.name) : 'estava sem clube') + '</span></div>' +
+      '<div class="mkd-r"><b>' + esc(np.n) + '</b><span class="mkd-ch"><i>' + S.CO_POS_NM[np.pos] + '</i><i class="g">' + (papel === 'Titular' ? 'Titular prometido' : papel) + '</i><i class="l">' + np.age + ' anos</i></span>' +
+        '<div class="mkx-li"><div><span>Transferência</span><b>' + fee + '</b></div><div><span>Salário</span><b>' + c.brl(np.wage) + '/sem</b></div><div><span>Contrato</span><b>até ' + (U.YEAR0 + co.season + np.ct) + '</b></div></div>' +
+        '<span class="rs-gap"></span><span class="mkx-b"><button class="hl-btn gold" id="mkd-time">Ver no time</button><button class="hl-btn dark" id="mkd-mk">Mercado</button></span></div></div>', 'Contratado', w => {
       w.querySelector('#mkd-time').onclick = () => { sfx('tap'); closePop(); time(); };
       w.querySelector('#mkd-mk').onclick = () => { sfx('tap'); closePop(); mercado(); };
-    }, 'hl-pop acd-pop tm-pop', true);
+    }, 'hl-pop mkd-pop', true);
   }
   // Finanças deitada: abas num array (a thread de mercado e finanças vai acrescentar "Decidir")
   const FIN_TABS = [

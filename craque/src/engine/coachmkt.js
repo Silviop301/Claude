@@ -22,7 +22,7 @@
     pat: 3,           // paciência do presidente e do empresário (cada recusa gasta 1)
     cut: [0.8, 1, 1.2], // atalhos da proposta: baixa, justa (o preço da ficha) e alta
     payPen: [0, 0.04, 0.08], // à vista, 2x, 3x: o presidente aceita um pouco menos parcelado
-    counter: 0.85,    // a partir de 85% do que ele quer, contrapõe; abaixo, recusa
+    counter: 0.8,     // a partir de 80% do que ele quer, contrapõe; abaixo, recusa
     trade: 0.8,       // jogador na troca vale 80% do valor dele
     maxSquad: 32
   };
