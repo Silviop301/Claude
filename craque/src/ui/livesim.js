@@ -1013,13 +1013,19 @@
     }
     function foulStep(dt) {
       const P = foulPend, so = P.o.side;
-      if (mode !== 'play' || lc || due) return foulEnd(false);
+      P.T = (P.T || 0) + dt; // bola fora ou parada: a falta espera o jogo voltar (até 14 s no total)
+      if (lc || due || P.T > 14) return foulEnd(false);
+      if (mode !== 'play') return;
       P.t += dt;
+      // o Treinador diz quem fez (pelo número): é ele que vai no bote e leva o cartão, mesmo vindo de mais longe
+      const NP = P.o.num && !(P.o.me && so === 0 && ME >= 0) ? T[so].find(x => x.num === P.o.num && !x.down && x.r !== 'GK') : null;
       let v = ball.owner && ball.owner.side !== so && ball.owner.r !== 'GK' ? ball.owner : null;
+      if (NP) { if (v && dist(v, NP) > 25) v = null; // longe da bola: segura ou derruba quem está perto dele
+        if (!v && P.t > 1.5) { const n = T[1 - so].filter(x => x.r !== 'GK').sort((a, b) => dist(a, NP) - dist(b, NP))[0]; if (n && dist(n, NP) < (P.t > 4 ? 26 : 14)) v = n; } }
       // o time que sofre demora a ter a bola: a disputa é com quem dele está mais perto da bola (e perto dela de verdade)
       // com a bola no time de quem faz (passou do tempo): a falta é de quem tem a bola (ou de quem da posição está do lado
       // dele) em quem chega para tirar; os dois se encontram
-      if (!v && P.t > 1.5 && ball.owner && ball.owner.side === so && ball.owner.r !== 'GK') {
+      if (!v && !NP && P.t > 1.5 && ball.owner && ball.owner.side === so && ball.owner.r !== 'GK') {
         const own = ball.owner, re = ROLE_OF[P.o.pos];
         const n = T[1 - so].filter(x => x.r !== 'GK').sort((a, b) => dist(a, own) - dist(b, own))[0];
         if (n && dist(n, own) < 12) {
@@ -1030,12 +1036,13 @@
         }
       }
       if (!v) { if (P.p) P.p.cd = 0; P.p = null; P.c = 0; if (P.t > 4.5) foulEnd(false); return; }
-      if (!P.p || T[so].indexOf(P.p) < 0 || dist(P.p, v) > 16) { if (P.p) P.p.cd = 0; P.p = fouler(P.o, v); P.c = 0; if (!P.p) return foulEnd(false); }
+      if (NP && P.p !== NP) { if (P.p) P.p.cd = 0; P.p = NP; P.c = 0; }
+      if (!P.p || T[so].indexOf(P.p) < 0 || dist(P.p, v) > (NP ? 40 : 16)) { if (P.p) P.p.cd = 0; P.p = fouler(P.o, v); P.c = 0; if (!P.p) return foulEnd(false); }
       const p = P.p; P.c += dt;
       p.tx = v.x; p.ty = v.y; p.sprint = 1; p.cd = 1; p.lg = Math.max(p.lg || 0, 0.3); // vai no bote (sem desarme limpo: o lance é falta; encosta nele)
       ball.hold = Math.max(ball.hold || 0, 0.25); // quem tem a bola segura um instante, o bote chega
       if (dist(p, v) < 1.6 || (P.c > 1.2 && dist(p, v) < 5)) { foulPend = null; p.cd = 0; foulNow(P.o, p, v); P.cb && setTimeout(P.cb, (P.o.kind === 'falta' ? 500 : 900) / Math.max(1, o.speed ? o.speed() : 1)); return; }
-      if (P.t > 5.5) foulEnd(false);
+      if (P.t > (NP ? 8 : 5.5)) foulEnd(false);
     }
     let foulTo = null, foulSpot = null, offPend = null, foulPend = null;
     // Impedimento a caminho: 1) quem vai ficar impedido corre para além da linha; 2) com a bola no ataque, sai o passe para
