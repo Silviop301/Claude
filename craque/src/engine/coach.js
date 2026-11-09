@@ -17,7 +17,7 @@
   // ---------- números do modo (calibrados com tools/craque_treinador.js) ----------
   const CO = S.CO = {
     squad: { GOL: 3, ZAG: 5, LAT: 4, MEI: 8, ATA: 5 },
-    lamH: 1.32, lamA: 1.06, ch: 3.2, k: env('CO_K', 36), home: 2, kT: env('CO_KT', 0.3), kD: env('CO_KD', 40),
+    lamH: 1.32, lamA: 1.06, ch: 3.2, spMiss: { pen: 0.012, falta: 0.17, esc: 0.15 }, ck: 4, k: env('CO_K', 36), home: 2, kT: env('CO_KT', 0.3), kD: env('CO_KD', 40),
     enGame: 12, enRest: 8, enOff: 20, enOpp: 80, inj: 0.011, subs: 5,
     // Acréscimos: a1 1 a 3 no 1º tempo, a2 3 a 7 no 2º; mins = minutos jogados num jogo médio (90 + acréscimos): as taxas
     // por minuto dividem por ele, para os acréscimos não aumentarem gols, faltas e cansaço
@@ -464,12 +464,31 @@
             if (sp === 'esc') { by2 = tk ? tk.n : ''; const mm = byId(S0.squad), hd = S0.xi.map(id => mm[id]).filter(p => p && (p.pos === 'ZAG' || p.pos === 'ATA') && (!tk || p.id !== tk.id)); if (hd.length) who = hd[Math.floor(r() * hd.length)].n; }
             else if (tk) who = tk.n;
           }
+          if (sp === 'esc') { m.ck = m.ck || { us: 0, them: 0 }; m.ck[sd]++; }
           m.ev.push({ m: m.min, t: 'gol', s: sd, p: who, l, sp, by: by2 }); stop = { t: 'gol', s: sd, p: who, l, sp, by: by2 };
         }
-        else { const k = r.pick(['defesa', 'defesa', 'fora', 'fora', 'trave', 'bloqueio']); if (k === 'defesa') m.ot[sd]++; m.ev.push({ m: m.min, t: 'chance', s: sd, p: sc, k, l }); }
+        else {
+          // Bola parada que não entra (pênalti defendido ou para fora, falta na barreira, cabeçada no escanteio): só muda o rótulo
+          // da chance, o placar segue o mesmo. Uma em ~4 chances perdidas é de bola parada; o treino puxa a jogada dele
+          let k = r.pick(['defesa', 'defesa', 'fora', 'fora', 'trave', 'bloqueio']), who = sc, sp = null, by2 = null;
+          const tr = S0.train && TRAIN[S0.train] && TRAIN[S0.train].sp, SM = CO.spMiss, w = q => SM[q] * (tr === q ? 1.3 : 1), rr = r();
+          sp = rr < w('pen') ? 'pen' : rr < w('pen') + w('falta') ? 'falta' : rr < w('pen') + w('falta') + w('esc') ? 'esc' : null;
+          if (sp) {
+            const tk = takerOf(S0, sp === 'pen' ? 'pen' : sp === 'falta' ? 'fl' : (l === 'e' ? 'ckE' : 'ckD')), u = r();
+            if (sp === 'pen') { k = u < 0.55 ? 'defesa' : u < 0.85 ? 'fora' : 'trave'; if (tk) who = tk.n; }
+            else if (sp === 'falta') { k = u < 0.35 ? 'defesa' : u < 0.75 ? 'fora' : u < 0.95 ? 'bloqueio' : 'trave'; if (tk) who = tk.n; }
+            else { k = u < 0.4 ? 'defesa' : u < 0.8 ? 'fora' : 'bloqueio'; by2 = tk ? tk.n : ''; const mm = byId(S0.squad), hd = S0.xi.map(id => mm[id]).filter(p => p && (p.pos === 'ZAG' || p.pos === 'ATA') && (!tk || p.id !== tk.id)); if (hd.length) who = hd[Math.floor(r() * hd.length)].n; }
+          }
+          if (k === 'defesa') m.ot[sd]++;
+          // Escanteio: o da jogada e parte das defesas e dos chutes travados
+          if (sp === 'esc' || (!sp && (k === 'defesa' || k === 'bloqueio') && r() < 0.5)) { m.ck = m.ck || { us: 0, them: 0 }; m.ck[sd]++; }
+          m.ev.push({ m: m.min, t: 'chance', s: sd, p: who, k, l, sp, by: by2 });
+        }
         return true;
       };
       if (!chance(H, lh)) chance(A, la);
+      // Escanteios que não viram chance (cruzamento afastado, cobrança curta): no ritmo de quem manda
+      [[H, lh], [A, la]].forEach(([S0, lam]) => { if (r() < CO.ck / CO.mins * 2 * lam / (lh + la || 1)) { const sd = sideName(m, S0); m.ck = m.ck || { us: 0, them: 0 }; m.ck[sd]++; } });
       // Faltas, cartões, impedimento e lesão (o seu vermelho e a sua lesão param o jogo; os do rival entram no relato)
       [m.us, m.them].forEach(s => {
         if (stop && stop.t !== 'gol') return;

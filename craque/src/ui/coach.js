@@ -579,9 +579,18 @@
   }
   momSvg.n = 0;
   U.lvMom = momSvg;
+  // Bola parada que não entrou (pênalti, falta direta, cabeçada de escanteio)
+  function spMiss(e) {
+    const p = esc(e.p);
+    if (e.sp === 'pen') return e.k === 'defesa' ? '<b>Pênalti defendido!</b> ' + p + ' bate e o goleiro pega' : e.k === 'trave' ? '<b>Pênalti na trave!</b> ' + p + ' desperdiça' : '<b>Pênalti para fora!</b> ' + p + ' isola';
+    if (e.sp === 'falta') return e.k === 'defesa' ? p + ' cobra a falta e o goleiro defende' : e.k === 'bloqueio' ? 'Falta do ' + p + ' na barreira' : e.k === 'trave' ? 'Falta do ' + p + ' na trave!' : 'Falta do ' + p + ' por cima';
+    const by = e.by ? ' no escanteio do ' + esc(last(e.by)) : ' no escanteio';
+    return e.k === 'defesa' ? p + ' cabeceia' + by + ' e o goleiro defende' : e.k === 'bloqueio' ? 'Cabeçada do ' + p + by + ', a zaga trava' : p + ' cabeceia para fora' + by;
+  }
   function feedLine(m, e) {
     const who = e.s === 'us' ? nm(co.club) : nm(m.vs);
     const t = e.t === 'gol' ? '<b>GOL do ' + esc(who) + '!</b> ' + esc(e.p || '') + (e.sp === 'pen' ? ' de pênalti' : e.sp === 'falta' ? ' de falta' : e.sp === 'esc' ? ' de cabeça' + (e.by ? ', escanteio do ' + esc(last(e.by)) : ', no escanteio') : e.l ? ' ' + LANE[e.l] : '') :
+      e.t === 'chance' && e.sp ? spMiss(e) :
       e.t === 'chance' ? (e.k === 'defesa' ? esc(e.p) + ' chuta ' + (e.l ? LANE[e.l] + ' ' : '') + 'e o goleiro defende' : e.k === 'fora' ? esc(e.p) + ' finaliza para fora' : e.k === 'trave' ? esc(e.p) + ' acerta a trave!' : 'Chute de ' + esc(e.p) + ' travado pela zaga') :
       e.t === 'vermelho' ? (e.how === '2am' ? '<span class="co-yc"></span> ' : '') + '<span class="co-red"></span> <b>' + esc(e.p) + ' é expulso</b> (' + esc(who) + ')' + (e.how === '2am' ? ', segundo amarelo' : e.how === 'direto' ? ', vermelho direto' : '') :
       e.t === 'amarelo' ? '<span class="co-yc"></span> Amarelo para ' + esc(e.p) + ' (' + esc(who) + ')' :
@@ -716,6 +725,8 @@
     };
     // Os lances novos do motor vão para o campinho. Chance: a linha da narração sai quando a bola chega (ou em 9 s).
     // Gol: o relógio espera a rede balançar (o campinho força a jogada aos 9 s de bola rolando; a tela desiste só aos 30 s) e só então o placar vira. Volta a espera do gol, ou null
+    // Bola parada para o campinho: o tipo e o número de quem bate (o campinho ainda joga como chance comum até a fase 2)
+    const spOf = e => { if (!e.sp) return null; const T = e.s === 'us' ? m.us : m.them, q = (T.squad || []).find(x => x.n === (e.sp === 'esc' ? e.by : e.p)); return { sp: e.sp, num: q && q.num, l: e.l }; };
     const toSim = () => {
       if (!sim) return null;
       const gl = [];
@@ -734,7 +745,7 @@
         const side = e.s === 'us' ? 0 : 1, out = e.t === 'gol' ? 'gol' : e.k === 'defesa' ? 'def' : e.k === 'trave' ? 'trave' : e.k === 'bloqueio' || e.k === 'travado' ? 'bloq' : 'fora'; // o campinho mostra o que o narrador conta (fase 5)
         hidden.add(e);
         if (out === 'gol') return gl.push([side, e]);
-        const cancel = sim.shot(side, out, () => { if (hidden.delete(e)) paint(); });
+        const cancel = sim.shot(side, out, () => { if (hidden.delete(e)) paint(); }, spOf(e));
         setTimeout(() => { if (hidden.delete(e)) { cancel(); paint(); } }, co.speed === '3' ? 4000 : 12000);
       });
       if (!gl.length) return null;
@@ -743,7 +754,7 @@
         gl.forEach(([side, e]) => {
           let done = false, tm = 0, tf = 0;
           const fin = () => { if (done) return; done = true; clearTimeout(tm); clearTimeout(tf); hidden.delete(e); if (--n > 0 || wait !== go) return; wait = null; paint(); sfx('tap'); go(); };
-          const cancel = sim.shot(side, 'gol', fin);
+          const cancel = sim.shot(side, 'gol', fin, spOf(e));
           // em segundos do campinho (a 3× passam três vezes mais rápido)
           const f3 = co.speed === '3' ? 1 / 3 : 0.8;
           tm = setTimeout(() => { cancel(); fin(); }, 30000 * f3); // último recurso: o campinho já lança direto na área aos 9 s de bola rolando
