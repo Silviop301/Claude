@@ -30,7 +30,13 @@
     if (document.body.classList.contains('ld-on') && (window.scrollY || window.scrollX || document.documentElement.scrollTop)) { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; }
     const vw = el.clientWidth || window.innerWidth, vh = el.clientHeight || window.innerHeight, port = vh > vw * 1.05; // medidas do #ld (já sem o topo borrado do iPhone e com o zoom do monitor)
     el.classList.toggle('port', port);
-    const k = Math.min(vw / W, vh / H);
+    // Área segura (entalhe e ilha do iPhone deitado): vem do padding do #ld. As telas não apertam (816×366 de conteúdo, como nos
+    // desenhos): a escala diminui até o conteúdo caber entre os dois lados, e o palco cresce com a sobra para cobrir a tela inteira
+    const cs = getComputedStyle(el), sx = Math.max(parseFloat(cs.paddingLeft) || 0, parseFloat(cs.paddingRight) || 0), sy = parseFloat(cs.paddingTop) || 0;
+    const k = Math.max(.05, Math.min(vw / W, vh / H, (vw - 2 * sx) / (W - 28), (vh - 2 * sy) / (H - 24)));
+    const ex = Math.ceil(Math.max(0, vw / k - W) / 2) + 1, ey = Math.ceil(Math.max(0, vh / k - H) / 2) + 1; // sobra de cada lado em px do palco, com 1 a mais para a borda não deixar fio
+    el.style.setProperty('--ldw', (W + 2 * ex) + 'px'); el.style.setProperty('--ldh', (H + 2 * ey) + 'px');
+    el.style.setProperty('--ldpx', (14 + ex) + 'px'); el.style.setProperty('--ldpy', (12 + ey) + 'px');
     el.style.setProperty('--ldk', k.toFixed(4));
   }
   // Mostra uma tela no palco. html = conteúdo do palco; bind(st) liga os botões
@@ -285,9 +291,10 @@
     st.appendChild(el);
     // O balão fica ao lado do alvo: à esquerda dos botões da coluna da direita, em cima dos de baixo
     const b = el.querySelector('.tu-bub'), bw = b.offsetWidth, bh = b.offsetHeight, cl = (v, a, z) => Math.max(a, Math.min(z, v));
-    const side = x > W * 0.6;
-    b.style.left = cl(side ? x - bw - 24 : x, 8, W - bw - 8) + 'px';
-    b.style.top = cl(side ? y + h / 2 - bh / 2 : y - bh - 22, 8, H - bh - 8) + 'px';
+    // (o palco cresce com a sobra da tela: o balão fica dentro do conteúdo, longe do entalhe)
+    const ox = (st.offsetWidth - W) / 2, oy = (st.offsetHeight - H) / 2, side = x - ox > W * 0.6;
+    b.style.left = cl(side ? x - bw - 24 : x, ox + 8, ox + W - bw - 8) + 'px';
+    b.style.top = cl(side ? y + h / 2 - bh / 2 : y - bh - 22, oy + 8, oy + H - bh - 8) + 'px';
     el.querySelector('.tu-hole').onclick = () => { co.tut.n++; if (co.tut.n >= TUT.length) co.tut = null; c.save(); el.remove(); tg.click(); };
     el.querySelector('#tu-skip').onclick = () => { sfx('tap'); co.tut = null; c.save(); semana(); };
   }
@@ -693,7 +700,10 @@
         st.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { sfx('tap'); tab = b.dataset.rt; draw(); });
         if (st.querySelector('#ldr-all')) st.querySelector('#ldr-all').onclick = () => { sfx('tap'); pop(popHead('Notas do jogo', 'Rodada ' + log.r + ' · ' + m.gh + ' x ' + m.ga) + '<div class="ld-pb col"><div class="ld-scroll ldr-alln">' + rt.map(nota).join('') + '</div></div>', 'Notas do jogo', null, 'w560'); };
         if (st.querySelector('#rs-cad')) st.querySelector('#rs-cad').onclick = () => { sfx('tap'); pop(popHead('Anotado no caderno', vs ? c.nm(m.vs) : '') + '<div class="ld-pb col rs-cadp">' + cadN.map(cadTxt).join('') + '</div>', 'Anotado no caderno', null, 'w560'); };
-        st.querySelector('#ldr-go').onclick = () => { sfx('tap'); if (co.sacked) { off(); return c.sacked(); } if (co.ss.done) { off(); return c.finishSeason(); } segunda(log); };
+        st.querySelector('#ldr-go').onclick = () => { sfx('tap'); if (co.sacked) { // demitido: janelinha por cima do resultado (a tela antiga era em pé, com a coluna estreita e o fundo de outra cor)
+          const cl = club(co.club);
+          return pop('<div class="acd-help"><span class="aux-h">' + crest(cl.id, 'sack-cr') + '<b>Você foi demitido.</b></span><p>“Não deu, professor. Obrigado pelo trabalho.” A temporada segue sem você; no fim dela, o telefone toca de novo.</p>' +
+            '<button class="hl-btn dark" id="ld-sack">Ver como terminou a liga</button></div>', 'Demitido', w => { w.querySelector('#ld-sack').onclick = () => { sfx('tap'); closePop(); off(); c.finishSeason(); }; }, 'hl-pop acd-pop', true); } if (co.ss.done) { off(); return c.finishSeason(); } segunda(log); };
       });
     };
     draw();
