@@ -221,7 +221,7 @@
       '<b>' + ord(pos) + '</b><small>' + me.p + ' pts</small>' + f5(me.f) +
       '<em class="sm-tag' + (pos > (B.goal.k === 'titulo' ? 1 : B.goal.pos) ? ' hi' : '') + '" title="' + esc(S.CO_GOAL_TXT[B.goal.k]) + '">META · ' + meta + '</em><span class="ld-gr"></span>' +
       (B.ult ? '<em class="sm-tag ult">ULTIMATO · VENÇA ' + B.ult.need + ' DE ' + B.ult.of + '</em>' : '') +
-      '<span class="sm-dir">Diretoria <em class="ld-bar"><u style="width:' + conf + '%" class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '"></u></em></span></div>';
+      (U.COINS ? U.COINS.pill('cp-sm') : '') + '<span class="sm-dir">Diretoria <em class="ld-bar"><u style="width:' + conf + '%" class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '"></u></em></span></div>';
     const side = (id, nm, sub) => '<div class="sm-tm">' + crest(id, 'sm-cr') + '<b>' + esc(nm) + '</b><small>' + sub + '</small></div>';
     let card, wk = '';
     if (!nx.bye) {
@@ -1177,7 +1177,8 @@
       rev && rev[0] !== (avgs[0] || [])[0] ? ['REVELAÇÃO', rev[0], rev[0].age + ' anos · nota ' + rev[1].toFixed(1).replace('.', ',')] : null].filter(Boolean);
     const nums = [['Pontos em ' + n + ' jogos', v * 3 + e], ['Campanha', v + 'V ' + e + 'E ' + d + 'D'], ['Gols', gp + ' a ' + gc], ['Em casa', rec(log.filter(l => l.home))], ['Fora', rec(log.filter(l => !l.home))], ['Maior vitória', big && big.gf > big.ga ? big.gf + ' x ' + big.ga + ' ' + esc((club(big.vs).short || club(big.vs).name).slice(0, 3).toUpperCase()) : '—']];
     const exp = co.squad.filter(p => p.ct <= 0).length;
-    const next = [out.offers ? [out.sacked ? 'Clubes ligaram' : U.D.plural(out.offers.length, 'clube quer você', 'clubes querem você'), out.offers.slice(0, 2).map(id => esc(club(id).short || club(id).name)).join(' e ') + ' mandaram proposta'] : null,
+    const coinTxt = (out.coins || []).map(x => x.t.toLowerCase()).join(' · ');
+    const next = [out.coinsTot ? ['+' + out.coinsTot + ' moedas', coinTxt, 'coin'] : null, out.offers ? [out.sacked ? 'Clubes ligaram' : U.D.plural(out.offers.length, 'clube quer você', 'clubes querem você'), out.offers.slice(0, 2).map(id => esc(club(id).short || club(id).name)).join(' e ') + ' mandaram proposta'] : null,
       !out.sacked ? [out.met ? 'Diretoria satisfeita' : 'Diretoria cobra', out.met ? 'o trabalho continua' : 'a próxima temporada começa sob pressão'] : null,
       out.kids && out.kids.length ? ['Base', 'subiram ' + out.kids.map(esc).join(', ')] : null,
       out.left && out.left.length ? ['Saíram', out.left.slice(0, 3).map(x => esc(x.n) + ' (' + x.why + ')').join(', ')] : null].filter(Boolean);
@@ -1192,7 +1193,7 @@
           '<div class="ldy-me"><small>' + c.FAME_TXT(out.fame[1]) + ' · experiência ' + (out.xp ? '+' + out.xp : '0') + (co.xp.pts ? ' · ' + U.D.plural(co.xp.pts, 'ponto', 'pontos') + ' para usar' : '') + '</small></div>' + sk + '</div>' +
         '<div class="ldy-m">' + lbl('A TEMPORADA EM NÚMEROS') + '<div class="ldy-n">' + nums.map(([k, x]) => '<span><small>' + k + '</small><b>' + x + '</b></span>').join('') + '</div>' +
           (dest.length ? lbl('DESTAQUES') + dest.map(([k, p, t]) => '<div class="ldy-d"><i>' + (p.num || p.ovr || '') + '</i><span><small>' + k + '</small><b>' + esc(p.n) + '</b></span><em>' + t + '</em></div>').join('') : '') + '</div>' +
-        '<div class="ldy-r">' + lbl('O QUE VEM AGORA') + next.map(([k, t]) => '<div class="ldr-ch"><b>' + k + '</b><small>' + t + '</small></div>').join('') + '<span class="ld-gr"></span>' +
+        '<div class="ldy-r">' + lbl('O QUE VEM AGORA') + next.map(([k, t, cl]) => '<div class="ldr-ch' + (cl ? ' ' + cl : '') + '"><b>' + k + '</b><small>' + t + '</small></div>').join('') + '<span class="ld-gr"></span>' +
           (out.offers ? gold('ldy-of', 'Ver as propostas', out.sacked ? '' : 'ou ficar no ' + esc(club(co.club).short || club(co.club).name)) :
             '<button class="ld-b line ldy-mk" id="ldy-mk">Ouvir outros clubes</button>' + gold('ldy-ns', 'Temporada ' + (U.YEAR0 + co.season), 'continuar no ' + esc(club(co.club).short || club(co.club).name))) + '</div></div>', st => {
         st.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { if (S.coSkill(co, b.dataset.sk)) { sfx('tap'); c.save(); draw(); } });
