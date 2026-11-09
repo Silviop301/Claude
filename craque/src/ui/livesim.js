@@ -737,6 +737,62 @@
     }
     // Apito (falta, impedimento): todos param um instante e a bola fica com quem vai cobrar
     // A cobrança sai de onde foi a infração (spot; sem spot, onde a bola está): a bola rola até lá e o cobrador vai até ela
+    // Pênalti (bola parada, fase 2): apito, quem está na área sai para a entrada dela e para fora da meia-lua (9,15 m da
+    // marca), o goleiro fica na linha, o batedor da lista vai para a marca, corre e bate. O motor já decidiu: gol, defesa
+    // (segura ou espalma no rebote), fora ou trave (rebote). A câmera chega perto na cobrança e volta depois do lance
+    let pen = null, camT = 0, camS = 0;
+    const PEN_EDGE = [[87.8, 26.2], [87.8, 41.8], [83.2, 34], [87.8, 22.8], [87.8, 45.2], [84.2, 24.5], [84.2, 43.5], [81.6, 29.5], [81.6, 38.5], [87.8, 19.4], [87.8, 48.6], [84.2, 21], [84.2, 47], [79, 34], [87.8, 16], [87.8, 52], [84.2, 17.7], [84.2, 50.3]];
+    function penStart(e) {
+      const s = e.side, num = e.pen && e.pen.num, gk = T[1 - s][0];
+      const tk = (num && T[s].find(q => q.num === num && q.r !== 'GK')) || T[s].filter(q => q.r !== 'GK').sort((a, b) => (b.r === 'ST') - (a.r === 'ST') || b.d - a.d)[0];
+      const spot = toW(s, L - 11, 34), vic = T[s].filter(q => q.r !== 'GK' && q !== tk).sort((a, b) => tf(s, b)[0] - tf(s, a)[0])[0];
+      if (vic) { vic.stun = 1.6; vic.down = 1.6; }
+      // vagas na entrada da área: cada um vai para a mais perto dele (os de longe ficam onde estão)
+      const free = PEN_EDGE.slice(), tg = new Map();
+      // (quem bate deixa os dois zagueiros atrás; quem defende deixa o centroavante no meio-campo esperando o contra-ataque)
+      ALL.filter(q => q !== tk && q.r !== 'GK' && !(q.side === s && q.r === 'CB') && !(q.side !== s && q.r === 'ST') && tf(s, q)[0] > 40).sort((a, b) => tf(s, b)[0] - tf(s, a)[0]).forEach(q => {
+        const [qx, qy] = tf(s, q); let bi = -1, bd = 1e9; free.forEach((f, i) => { const d = Math.hypot(f[0] - qx, f[1] - qy); if (d < bd) { bd = d; bi = i; } });
+        if (bi >= 0) { tg.set(q, toW(s, free[bi][0], free[bi][1] + gauss() * 0.3)); free.splice(bi, 1); } });
+      pen = { e, s, tk, gk, spot: { x: spot[0], y: spot[1] }, tg, ph: 0, t: 0 };
+      due = null; mode = 'pen'; stopWhy = 'Pênalti'; camT = 1e9; camS = s; ALL.forEach(q => { q.run = 0; q.go = 0; q.th = 0; });
+      ball.owner = ball.fly = ball.carry = null; if (ball.loose) ball.loose = null;
+    }
+    function penStep(dt) {
+      const P = pen; P.t += dt; const { s, tk, gk, spot } = P, gl = toW(s, L - 0.4, 34);
+      // 1) apito: todos param um instante; 2) arrumação: a bola vai para a marca, cada um para a sua vaga
+      ALL.forEach(q => { if (q === tk || q === gk) return; const t = P.tg.get(q); if (P.t < 0.8 || !t) { q.tx = q.x; q.ty = q.y; } else { q.tx = t[0]; q.ty = t[1]; q.sprint = dist(q, { x: t[0], y: t[1] }) > 8 ? 1 : 0; } });
+      gk.tx = gl[0]; gk.ty = 34; gk.sprint = 0;
+      if (P.t > 0.8) { const bd = Math.hypot(spot.x - ball.x, spot.y - ball.y), kb = bd > 0.01 ? Math.min(bd * dt * 3, 14 * dt) / bd : 0; ball.x += (spot.x - ball.x) * kb; ball.y += (spot.y - ball.y) * kb; }
+      const back = toW(s, L - 11 - 2.6, 34 + 1.1), dir = s ? 1 : -1;
+      if (P.ph === 0) { tk.tx = back[0]; tk.ty = back[1]; tk.sprint = P.t > 0.8 && dist(tk, { x: back[0], y: back[1] }) > 6 ? 1 : 0;
+        const ready = dist(tk, { x: back[0], y: back[1] }) < 1 && Math.hypot(spot.x - ball.x, spot.y - ball.y) < 0.2 && Math.hypot(gk.x - gl[0], gk.y - 34) < 1 &&
+          [...P.tg.entries()].every(([q, t]) => Math.hypot(q.x - t[0], q.y - t[1]) < 2);
+        if (P.t > 2.6 && (ready || P.t > 6)) { P.ph = 1; P.t2 = 0; } }
+      else if (P.ph === 1) { P.t2 += dt; // a corrida: um instante parado, depois os passos até a bola
+        if (P.t2 > 0.7) { tk.tx = spot.x + dir * 0.6; tk.ty = spot.y + 0.2; tk.sprint = 0; }
+        else { tk.tx = tk.x; tk.ty = tk.y; }
+        if (P.t2 > 0.7 && Math.hypot(tk.x - spot.x, tk.y - spot.y) < 1.1 || P.t2 > 3.5) penKick(); }
+    }
+    function penKick() {
+      const P = pen, { e, s, tk, gk } = P, out = e.out, gx = s ? 0 : L, dg = s ? 1 : -1, side = rnd() < 0.5 ? -1 : 1;
+      ball.x = P.spot.x; ball.y = P.spot.y;
+      let ty, tx = gx - dg * 0.8, dive = 34 + (rnd() < 0.5 ? -1 : 1) * 2.6, sv = null, loft = 0.6 + rnd() * 0.8;
+      if (out === 'gol') { ty = 34 + side * (2.2 + rnd() * 1.2); dive = rnd() < 0.2 ? null : 34 - side * (1.6 + rnd() * 1.2); } // o goleiro vai no canto errado (ou fica parado e a bola entra no canto)
+      else if (out === 'def') { ty = 34 + side * (1.4 + rnd() * 1.6); dive = ty; tx = gk.x + dg * 0.3; sv = rnd() < 0.5 ? 'espalma' : 'segura'; }
+      else if (out === 'trave') { ty = side > 0 ? GR : GL; tx = gx; dive = 34 - side * 2; }
+      else { ty = 34 + side * (4.2 + rnd() * 1.8); loft = rnd() < 0.5 ? 5 + rnd() * 2 : 1; } // para fora: do lado ou por cima
+      const d = Math.hypot(tx - ball.x, ty - ball.y);
+      if (dive != null && Math.abs(dive - 34) < 0.3) dive = null;
+      ball.fly = { x0: ball.x, y0: ball.y, x1: tx, y1: ty, t: 0, dur: Math.max(0.3, d / 24), shot: true, out, side: s, from: tk, kind: 'penalti', sv, blk: null,
+        loft, curve: 0, gk0: { x: gk.x, y: gk.y }, dive: dive == null ? null : cl(dive, GL - 0.6, GR + 0.6), gkx: out === 'def' ? tx : gk.x };
+      if (dive == null) ball.fly.dive = null;
+      e.kick = true; if (out === 'gol') due = e; else ball.fly.due = e;
+      ball.owner = ball.carry = ball.loose = null; poss = s; lastSide = s;
+      pen = null; mode = 'play'; stopWhy = ''; camT = clk + (out === 'gol' ? 3.2 : 2.6);
+      // depois da batida, quem estava na entrada da área entra para o rebote
+      T[s].forEach(q => { if (q !== tk && q.r !== 'GK' && tf(s, q)[0] > 80) { q.run = 1.2; q.runX = 96 + rnd() * 2; q.runY = 34 + gauss() * 6; } });
+    }
+    function penAbort() { if (!pen) return; const gk = pen.gk; pen = null; camT = 0; mode = 'play'; stopWhy = ''; setOwner(gk); }
     function whistle(why, taker, spot) { mode = 'falta'; modeT = 1.5; stopWhy = why; foulSpot = spot ? { x: spot.x, y: spot.y } : { x: ball.x, y: ball.y }; ball.owner = ball.fly = ball.loose = ball.carry = null; foulTo = taker; }
     // O juiz (o motor já decidiu): falta, cartão ou impedimento de quem joga na posição pos do lado side. O campinho para,
     // o cartão sobe em cima de quem fez, e só então a narração escreve (cb). O expulso sai da lógica na hora (o time joga com
@@ -934,7 +990,10 @@
       // (começa um pouco antes do minuto dele, para a bola entrar junto com o placar)
       if (!due) {
         const ah = o.spm ? Math.max(2, Math.min(DUE_AHEAD, AHEAD_S / Math.max(0.1, o.spm() * (o.speed ? o.speed() : 1)))) : DUE_AHEAD;
-        let e = goals.find(q => !q.done && (q.m <= curT + ah));
+        // Pênalti do motor (Treinador, bola parada fase 2): a jogada para, todo mundo sai da área e o batedor dele cobra
+        const pe = !pen && !lc && !offPend && !foulPend ? goals.find(q => !q.done && q.pen && !q.kick && q.m <= curT + ah) : null;
+        if (pe) { penStart(pe); return; }
+        let e = goals.find(q => !q.done && !q.pen && (q.m <= curT + ah));
         // Lance do Treinador (shot): a jogada só começa quando o time já tem a bola do meio para a frente (até 4 s esperando);
         // antes disso o jogo segue normal, sem todo mundo correndo para a chance
         if (e && e.out && !e.now) { e.w = (e.w || 0) + dt; const ow = ball.owner; if (e.w < 4 && !(ow && ow.side === e.side && ow.r !== 'GK' && tf(e.side, ow)[0] > 45)) e = null; }
@@ -1110,6 +1169,7 @@
       else if (mode === 'fim') { ALL.forEach(p => { p.tx = p.x + (p.tx - p.x) * 0.9; p.ty = p.y + (p.ty - p.y) * 0.9; p.sprint = 0; }); }
       else if (mode === 'play') play(dt);
       else if (mode === 'troca') subStep(dt);
+      else if (mode === 'pen') { if (pen) penStep(dt); else mode = 'play'; }
       else if (mode === 'half') { ALL.forEach(p => { [p.tx, p.ty] = tunnel(p); p.outT = 30; p.outE = 40; }); }
       else if (mode === 'ko') {
         ALL.forEach(p => { [p.tx, p.ty] = koShape(p, p.side); });
@@ -1399,13 +1459,27 @@
         else if (REF.sig === 'alto') { g.moveTo(x, y); g.lineTo(x, y - 13 * k); }
         g.stroke(); g.lineCap = 'butt'; }
     }
-    let vig = null;
+    let vig = null, cam = { z: 1, x: 0, y: 0, cl: 0 };
+    // Câmera da bola parada: chega perto da área do pênalti e volta depois do lance (o resto do tempo, o campo todo)
+    function camStep() {
+      const now = performance.now(), dt = Math.min(0.1, (now - (cam.cl || now)) / 1000); cam.cl = now;
+      const on = (pen || clk < camT) && W > 200, gs = camS, [fx, fy] = toW(gs, L - 13, 34), tz = on ? 1.65 : 1;
+      const k = Math.min(1, dt * (on ? 2.2 : 1.6)); cam.z += (tz - cam.z) * k;
+      const tx = on ? X(fx) : W / 2, ty = on ? Y(fy) : H / 2; cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k;
+      if (!cam.x) { cam.x = W / 2; cam.y = H / 2; }
+    }
     function draw() {
       if (!g || W < 60 || H < 40) return; // tela ainda sem tamanho (palco recém-aberto): o laço mede de novo
       g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+      camStep();
+      if (cam.z > 1.003) { // com zoom: o gramado listrado (o do CSS não aproxima) desenhado junto, no mesmo lugar das listras
+        const z = cam.z, hw = W / 2 / z, hh = H / 2 / z, cx = cl(cam.x, hw, W - hw), cy = cl(cam.y, hh, H - hh);
+        g.setTransform(dpr * z, 0, 0, dpr * z, dpr * (W / 2 - cx * z), dpr * (H / 2 - cy * z));
+        for (let i = 0; i < 10; i++) { g.fillStyle = i % 2 ? '#196340' : '#1B6B44'; g.fillRect(i * W / 10, 0, W / 10 + 0.5, H); }
+      }
       // Luz de estádio: o meio do gramado mais claro e os cantos mais escuros (o gramado listrado vem do CSS)
       if (!vig || vig.w !== W || vig.h !== H) { vig = g.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, Math.hypot(W, H) * 0.56); vig.addColorStop(0, 'rgba(255,255,240,.05)'); vig.addColorStop(1, 'rgba(0,0,0,.26)'); vig.w = W; vig.h = H; }
-      g.fillStyle = vig; g.fillRect(0, 0, W, H);
+      if (cam.z > 1.003) { g.save(); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.fillStyle = vig; g.fillRect(0, 0, W, H); g.restore(); } else { g.fillStyle = vig; g.fillRect(0, 0, W, H); }
       lines();
       // Bonecos, bola e árbitros em 65% (Silvio, 2026-11-06: o campo respirando vale mais que o número grande); placa, etiqueta,
       // o VOCÊ e o cartão do toque ficam no tamanho cheio (k0)
@@ -1520,15 +1594,18 @@
       sub() { if (lc) lcDone(); ME = -1; en = null; },
       // Ainda falta sair no campinho o gol do motor do minuto m? (a tela segura o relógio até a rede balançar)
       // A tela esperou e o gol não saiu: quem vai marcar bate de onde estiver (golaço de longe, mas a rede balança antes do placar)
-      force(m) { const e = goals.find(q => !q.done && q.m === m); if (!e || mode !== 'play') return; if (due !== e) { due = e; e.t0 = clk; e.asDone = false; e.rx = 88; e.ry = 34; } e.now = true; },
+      force(m) { const e = goals.find(q => !q.done && q.m === m); if (!e || mode !== 'play') return; if (e.pen) { if (!pen && !e.kick && !lc) penStart(e); return; } if (due !== e) { due = e; e.t0 = clk; e.asDone = false; e.rx = 88; e.ry = 34; } e.now = true; },
       // Treinador: o motor já decidiu o lance (chute do lado side que vira out: gol, def ou fora); o campinho joga e avisa em cb
-      shot(side, out, cb) {
+      shot(side, out, cb, sp) {
         const e = { m: curT + 1, side, me: false, as: false, out, cb, done: false };
+        if (sp && sp.sp === 'pen') e.pen = { num: sp.num };
         // Gol na fila: as chances que ainda não saíram ficam para trás (a linha delas aparece já) e o gol vem primeiro
         if (out === 'gol') goals.forEach(q => { if (!q.done && q.out && q.out !== 'gol') { q.done = true; if (due === q) due = null; if (q.cb) q.cb(); } });
         goals.push(e);
         // now: a tela esperou demais, quem vai bater bate de onde estiver; sem now: desiste do lance
-        return now => { if (e.done) return; if (now) { if (due !== e && mode === 'play') { due = e; e.t0 = clk; e.asDone = false; e.rx = 88; e.ry = 34; } e.now = true; return; } e.done = true; if (due === e) due = null; };
+        return now => { if (e.done) return;
+          if (e.pen) { if (now) { if (!pen && !e.kick && mode === 'play' && !lc) penStart(e); return; } e.done = true; if (pen && pen.e === e) penAbort(); if (due === e) due = null; return; }
+          if (now) { if (due !== e && mode === 'play') { due = e; e.t0 = clk; e.asDone = false; e.rx = 88; e.ry = 34; } e.now = true; return; } e.done = true; if (due === e) due = null; };
       },
       // O juiz: { side: 0 seu time | 1, pos, kind: falta|amarelo|vermelho|impedimento, me, how }. cb quando o lance aparece
       // (com a bola parada, num gol saindo ou no seu lance, a linha sai na hora; o vermelho tira o jogador do mesmo jeito)

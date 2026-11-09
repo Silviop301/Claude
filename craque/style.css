@@ -8606,3 +8606,5 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .mkc-f > b { font: 800 26px/1 var(--display); color: #F3F1EA; } .mkc-f > b.dn { color: #F5A57F; }
 .mkc-l { grid-row: 2 / -1; }
 .mk-k .mk-ar.big { background: rgba(243, 241, 234, .1) !important; }
+.ldl-tm { grid-template-rows: 38px minmax(0, 1fr) 48px; gap: 8px 16px; }
+.ldl-tm .tm-h .ldl-sc { padding: 6px 12px; }
