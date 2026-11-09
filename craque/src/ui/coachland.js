@@ -94,7 +94,7 @@
     o = o || {};
     const fitC = !slot || p.pos === slot ? 'ok' : (S.coFit(p.pos, slot) >= 0.88 ? 'sabe' : 'fora');
     const yc = C().pend(p) ? '<i class="ld-yc" title="Pendurado"></i>' : '';
-    return '<button class="ld-dot ' + enRing(p.en) + (o.sel ? ' sel' : '') + (fitC === 'fora' ? ' fora' : '') + '"' + (o.attr || '') + ' style="left:' + x + '%;top:' + y + '%"' +
+    return '<button class="ld-dot ' + enRing(p.en) + (o.sel ? ' sel' : '') + (fitC === 'fora' ? ' fora' : '') + '"' + (o.attr || '') + ' style="left:' + x + '%;top:' + y + '%;--en:' + Math.round(p.en) + '"' +
       ' aria-label="' + esc(p.n) + ', ' + (slot || p.pos) + ', ' + p.ovr + ', energia ' + Math.round(p.en) + '%">' +
       '<i class="ld-dc">' + (o.num ? (p.num || p.ovr) : p.ovr) + yc + '</i><span class="ld-dn"><b>' + esc(last(p.n)) + '</b><em class="' + fitC + '">' + (o.tag || slot || p.pos) + '</em></span></button>';
   }
@@ -230,7 +230,7 @@
         if (sub) auxFix = () => { co.xi[i] = sub.id; co.autoXI = false; };
       } else aux = 'Time inteiro e cada um na sua posição. Pode ir.';
       const dots = co.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: swap === i, attr: ' data-xi="' + i + '" data-pid="' + id + '"', tag: S.coSlotLbl(co.form, i) }) : '').join('');
-      const bstrip = bench.map(p => '<button class="tm-bp' + (c.avail(p) ? '' : ' dis') + '" data-bp="' + p.id + '"' + (c.avail(p) ? '' : ' disabled') + '><b>' + p.ovr + '</b><span><i>' + esc(last(p.n)) + '</i><small>' + p.pos + '</small></span></button>').join('');
+      const bstrip = bench.map(p => '<button class="tm-bp' + (c.avail(p) ? '' : ' dis') + '" data-bp="' + p.id + '"' + (c.avail(p) ? '' : ' disabled') + '><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + p.ovr + '</b><span><i>' + esc(last(p.n)) + '</i><small>' + p.pos + '</small></span></button>').join('');
       const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b id="tm-' + k + '">' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
       const title = swap !== null ? '<span class="tm-hint">Toque no titular que troca de lugar com o ' + esc(last(by[co.xi[swap]].n)) + '</span>'
         : vs ? '<b>x ' + esc(vs.short || vs.name) + '</b><small>' + (nx.home ? 'em casa' : 'fora') + ' · rodada ' + nx.round + '</small>' : '<b>' + esc(cl.short || cl.name) + '</b><small>escalação</small>';
@@ -1034,6 +1034,8 @@
     });
   }
   // ---------- Treino da semana (35): um foco em 16, em 4 abas; vale para o próximo jogo ----------
+  // Treino enxuto (Silvio 2026-11-09): sem trilho; 4 abas e 4 treinos grandes (nome e energia); à direita o escolhido
+  // com uma frase do que muda; o comentário do auxiliar sobre o rival vira um botão com aviso; dourado Treinar
   function treino(tab) {
     const c = C(), co = c.co, T = S.CO_TRAIN, tabs = ['Ataque', 'Defesa', 'Bola parada', 'Físico'];
     const done = co.train && co.train.i === co.ss.i ? co.train.k : null;
@@ -1041,20 +1043,28 @@
     tab = tab || (done ? T[done].tab : 'Ataque');
     const nx = S.coNext(co), vs = nx && !nx.bye ? club(nx.vs) : null;
     const pv = vs ? S.coPreview(co) : null;
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const vn = vs ? esc(vs.short || vs.name) : '';
+    // O auxiliar comenta o rival e sugere um treino
+    const AUX = { posse: ['O ' + vn + ' fica com a bola. Sair no contra vale ouro.', 'contra'], pressao: ['O ' + vn + ' aperta lá na frente. Troca de passes ajuda.', 'toque'], contra: ['O ' + vn + ' espera e sai rápido. Linha de zaga ajuda.', 'linha'],
+      retranca: ['O ' + vn + ' vai fechar a área. Escanteio pode decidir.', 'esc'], lados: ['O ' + vn + ' cruza muito. Defender escanteio ajuda.', 'defesc'], equilibrado: ['O ' + vn + ' não tem ponto fraco grande. Treine o que é seu.', null] };
+    const aux = pv ? AUX[pv.them.style] || AUX.equilibrado : ['Sem jogo nesta rodada: bom para recuperar.', 'recup'];
+    const enTxt = t => (t.en > 0 ? 'energia −' + t.en : 'energia +' + (-t.en));
     const draw = () => {
       const ks = Object.keys(T).filter(k => T[k].tab === tab), sel = pick && T[pick];
-      const who = k => { const t = T[k]; if (!t.who.length) return 'o elenco todo'; return co.squad.filter(p => co.xi.includes(p.id) && t.who.includes(p.pos)).sort((a, b) => b.ovr - a.ovr).slice(0, 2).map(p => esc(last(p.n))).join(', ') || 'o elenco'; };
-      const enTxt = t => (t.en > 0 ? 'energia −' + t.en : 'energia +' + (-t.en)) + (t.mo ? ' · moral +' + t.mo : '');
-      // O auxiliar comenta o rival: o que o estilo deles deixa
-      const aux = pv ? { posse: 'Eles ficam com a bola. Defender bem e sair no contra vale ouro.', pressao: 'Eles apertam lá na frente. Troca de passes ou bola longa nas costas.', contra: 'Eles esperam e saem rápido. Cuidado com a linha alta.', retranca: 'Vão fechar a área. Bola parada e jogada pelos lados decidem.', lados: 'Eles cruzam muito. Defender escanteio e jogar pelo meio.', equilibrado: 'Time sem ponto fraco grande. Treine o que é seu.' }[pv.them.style] : 'Sem jogo nesta rodada: bom para recuperar.';
-      show(rail('semana') + '<div class="ld-col">' + head('Treino da semana', 'Um foco. Vale para o próximo jogo' + (vs ? ', contra o ' + esc(vs.short || vs.name) : '') + '.', pill(done ? 'Já treinou: ' + esc(T[done].name) : '16 treinos')) +
-        '<div class="ld-row"><div class="ldtr-l"><div class="ld-seg">' + tabs.map(t => '<button data-tt="' + t + '"' + (t === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
-          '<div class="ldtr-g">' + ks.map(k => '<button class="ldtr-c' + (k === pick ? ' on' : '') + (done && k !== done ? ' dis' : '') + '" data-tk="' + k + '"' + (done && k !== done ? ' disabled' : '') + '><b>' + T[k].name + '</b><small>' + T[k].sub + '</small><span class="ld-gr"></span><small>Quem mais ganha: ' + who(k) + '</small><em class="' + (T[k].en > 0 ? 'dn' : 'up') + '">' + enTxt(T[k]) + '</em></button>').join('') + '</div></div>' +
-        '<div class="ldtr-r"><div class="ldtr-d">' + (sel ? lbl(sel.tab.toUpperCase()) + '<b>' + sel.name + '</b><p>' + sel.sub[0].toUpperCase() + sel.sub.slice(1) + '. ' + trTip(pick) + '</p><small>' + enTxt(sel) + (sel.en > 0 ? ' (metade para quem não é da posição)' : '') + '</small>' : lbl('ESCOLHA UM') + '<p>Toque num treino para ver o que muda no jogo.</p>') + '</div>' +
-          '<div class="ldm-note">' + lbl('AUXILIAR') + '"' + aux + '"</div><span class="ld-gr"></span>' +
-          (done ? '<button class="ld-b line ldk-bk" id="ldtr-back">Voltar para a semana</button>' : gold('ldtr-go', sel ? 'Treinar ' + sel.name.toLowerCase() : 'Escolha um treino', '')) + '</div></div></div>', st => {
+      const go = done ? '<button class="tm-go" id="ldtr-back">Voltar</button>' : '<button class="tm-go' + (sel ? '' : ' off') + '" id="ldtr-go">' + (sel ? 'Treinar' : 'Escolha um') + '</button>';
+      show('<div class="tr2"><div class="tm-h"><button class="tcr-back" id="tr2-back" aria-label="Voltar">' + BK + '</button><b>Treino</b><small>' + (vs ? 'para o jogo contra o ' + vn : 'sem jogo nesta rodada') + '</small></div>' +
+        '<div class="tr2-tabs">' + tabs.map(t => '<button data-tt="' + t + '"' + (t === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
+        '<div class="tr2-g">' + ks.map(k => '<button class="tr2-c' + (k === pick ? ' on' : '') + (done && k !== done ? ' dis' : '') + '" data-tk="' + k + '"' + (done && k !== done ? ' disabled' : '') + '><b>' + (done === k ? '✓ ' : '') + T[k].name + '</b><em class="' + (T[k].en > 0 ? 'dn' : 'up') + '">' + enTxt(T[k]) + '</em></button>').join('') + '</div>' +
+        '<div class="tr2-side"><div class="tr2-d">' + (sel ? '<b>' + sel.name + '</b><p>' + trTip(pick) + '</p>' : '<p class="tr2-none">Toque num treino</p>') + '</div>' +
+          '<button class="tm-b" id="tr2-aux">Auxiliar' + (aux[1] && !done ? '<i class="tm-dot">1</i>' : '') + '</button>' + go + '</div></div>', st => {
         st.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { sfx('tap'); tab = b.dataset.tt; draw(); });
         st.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { sfx('tap'); pick = b.dataset.tk; draw(); });
+        st.querySelector('#tr2-back').onclick = () => { sfx('tap'); semana(); };
+        st.querySelector('#tr2-aux').onclick = () => { sfx('tap');
+          pop('<div class="acd-help"><b>Auxiliar</b><p>“' + aux[0] + '”</p><span class="hl-ab">' + (aux[1] && !done ? '<button class="hl-btn dark" id="tr2-see">Ver esse treino</button>' : '') + '<button class="hl-btn line" data-pop-x>Fechar</button></span></div>', 'Auxiliar', w => {
+            if (w.querySelector('#tr2-see')) w.querySelector('#tr2-see').onclick = () => { sfx('tap'); closePop(); pick = aux[1]; tab = T[pick].tab; draw(); };
+          }, 'hl-pop acd-pop tm-pop'); };
         if (st.querySelector('#ldtr-go')) st.querySelector('#ldtr-go').onclick = () => { if (!pick) return; sfx('tap'); S.coTrain(co, pick); c.save(); semana(); };
         if (st.querySelector('#ldtr-back')) st.querySelector('#ldtr-back').onclick = () => { sfx('tap'); semana(); };
       });
@@ -1064,17 +1074,29 @@
   const trTip = k => ({ final: 'O time chuta mais certo no próximo jogo.', lados: 'A bola vai mais para as pontas e os cruzamentos.', contra: 'Roubou, saiu rápido: mais perigo no contra-ataque.', toque: 'O time segura mais a bola.', pressao: 'Rouba mais lá na frente, mas cansa.', linha: 'A zaga sobe junto: o rival chega menos.', bloco: 'Atrás fica fechado; na frente, um pouco menos.', duelos: 'Ganha mais divididas: o rival chega menos.',
     esc: 'Mais gols de escanteio, com os batedores da sua lista.', falta: 'Mais gols de falta, com o seu batedor.', defesc: 'Sofre menos na bola parada deles.', pen: 'Bate e defende pênalti um pouco melhor.', recup: 'Quem jogou recupera energia. Nada muda no jogo.', resist: 'O time cansa menos durante o jogo.', veloc: 'Arranca e recompõe mais rápido.', folga: 'Dia livre: energia e moral sobem.' })[k] || '';
   // ---------- Relatório do olheiro (36): o que o rival faz, com o risco de errar ----------
+  // Olheiro enxuto (Silvio 2026-11-09): o campo deles com os números em cima de quem importa; à direita as 3 descobertas
+  // numa frase (tocar acende o jogador); o "viu um jogo só" vai para o ?; dourado Guardar
   function olheiro() {
     const c = C(), co = c.co, nx = S.coNext(co); if (!nx || nx.bye) return semana();
     const pv = S.coPreview(co), them = pv.them, tby = {}; them.squad.forEach(p => { tby[p.id] = p; });
-    const tsl = S.coSlots(them.form), tsp = spotsL(them.form, true, true), tc = club(them.club);
+    // Vagas deles no campo todo: x da formação, y espalhado (linha de 5 em zigue-zague para os nomes não encostarem)
+    const tsl0 = S.CO_FORMS[them.form].slots, tsp = spotsL(them.form, true, true).map(([x], i) => { const ln = tsl0[i].ln, ix = tsl0.map((q, j) => j).filter(j => tsl0[j].ln === ln), n = ix.length, k = ix.indexOf(i);
+      if (n === 1) return [x, 45]; return [n === 5 ? x + (k % 2 ? -5 : 0) : x, Math.round(47 + (k - (n - 1) / 2) * Math.min(21, 68 / (n - 1)))]; });
+    const tc = club(them.club);
     const F = scoutOf(co, them);
-    const mark = (i, n) => '<b class="ldo-mk" style="left:' + (tsp[i][0] + 2.4) + '%;top:' + (tsp[i][1] - 5) + '%">' + n + '</b>';
-    show(rail('semana') + '<div class="ld-col">' + head('Relatório do olheiro', esc(tc.short || tc.name) + ' · ' + them.form + ', ' + esc(S.CO_STY[them.style].name.toLowerCase()), pill('Visto no último jogo deles')) +
-      '<div class="ld-row"><div class="ld-pitch">' + PITCH + them.xi.map((id, i) => tby[id] ? rivalDot(tsp[i][0], tsp[i][1], last(tby[id].n), S.coSlotLbl(them.form, i)) : '').join('') +
-        F.map((f, n) => f.i !== undefined ? mark(f.i, n + 1) : '').join('') + '<span class="ld-tag l ldo-tg">' + esc((tc.short || tc.name).toUpperCase()) + ' ATACA PARA A ESQUERDA, O SEU GOL</span></div>' +
-      '<div class="ldm-side ldo-side">' + F.map((f, n) => '<div class="ldo-f"><i>' + (n + 1) + '</i><span><b>' + f.t + '</b><small>' + f.d + '</small></span></div>').join('') +
-        '<p class="ldm-note">O olheiro viu um jogo só: nem tudo se repete. O que se confirmar em campo entra no caderno.</p><span class="ld-gr"></span>' + gold('ldo-ok', 'Guardar para o jogo') + '</div></div></div>', st => {
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const mark = (i, n) => '<b class="ol2-mk" style="left:' + tsp[i][0] + '%;top:' + tsp[i][1] + '%">' + n + '</b>';
+    show('<div class="ol2"><div class="tm-h"><button class="tcr-back" id="ol2-back" aria-label="Voltar">' + BK + '</button><b>Olheiro</b><small>' + esc(tc.short || tc.name) + ' · ' + them.form + ' · ' + esc(S.CO_STY[them.style].name) + '</small>' +
+      '<button class="ol2-q" id="ol2-q" aria-label="Como funciona">?</button></div>' +
+      '<div class="ld-pitch ol2-pitch">' + PITCH + them.xi.map((id, i) => tby[id] ? rivalDot(tsp[i][0], tsp[i][1], last(tby[id].n)).replace('class="ld-dot riv"', 'class="ld-dot riv" data-ri="' + i + '"') : '').join('') +
+        F.map((f, n) => f.i !== undefined ? mark(f.i, n + 1) : '').join('') + '</div>' +
+      '<div class="ol2-side">' + F.map((f, n) => '<button class="ol2-f' + (n ? '' : ' on') + '" data-of="' + n + '"><i>' + (n + 1) + '</i><b>' + f.t + '</b></button>').join('') +
+        '<button class="tm-go" id="ldo-ok">Guardar</button></div></div>', st => {
+      const lit = n => { st.querySelectorAll('[data-of]').forEach(b => b.classList.toggle('on', +b.dataset.of === n)); st.querySelectorAll('[data-ri]').forEach(d => d.classList.toggle('hi', F[n].i !== undefined && +d.dataset.ri === F[n].i)); };
+      lit(0);
+      st.querySelectorAll('[data-of]').forEach(b => b.onclick = () => { sfx('tap'); lit(+b.dataset.of); });
+      st.querySelector('#ol2-back').onclick = () => { sfx('tap'); semana(); };
+      st.querySelector('#ol2-q').onclick = () => { sfx('tap'); pop('<div class="acd-help"><b>Como funciona</b><p>O olheiro viu um jogo só: uma das três pode não se repetir. O que se confirmar em campo vai para o caderno.</p><button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop'); };
       st.querySelector('#ldo-ok').onclick = () => { sfx('tap'); co.scout = { i: co.ss.i }; c.save(); semana(); };
     });
   }
@@ -1086,7 +1108,7 @@
     const zag = xi.map((id, i) => [tby[id], i]).filter(([p, i]) => p && sl[i].pos === 'ZAG').sort((a, b) => a[0].ovr - b[0].ovr)[0];
     const st9 = xi.map((id, i) => [tby[id], i]).filter(([p, i]) => p && sl[i].pos === 'ATA' && !sl[i].w && (!wide || wide[1] !== i)).sort((a, b) => b[0].ovr - a[0].ovr)[0];
     const out = [];
-    if (wide) out.push({ i: wide[1], t: 'Atacam por este lado', d: 'Quase tudo passa pelo ' + esc(last(wide[0].n)) + ', o melhor deles aberto. Feche esse lado.' });
+    if (wide) out.push({ i: wide[1], t: 'Atacam pelo lado do ' + esc(last(wide[0].n)), d: 'Quase tudo passa pelo ' + esc(last(wide[0].n)) + ', o melhor deles aberto. Feche esse lado.' });
     if (zag) out.push({ i: zag[1], t: 'O zagueiro ' + esc(last(zag[0].n)) + ' é o ponto fraco', d: 'Bola nas costas dele vira chance. Atacante rápido em cima dele.' });
     out.push(h(3) < 0.5 ? { t: 'Marcam mal no escanteio', d: 'Deixam o primeiro pau livre. Combina com o treino de bola parada.' } : st9 ? { i: st9[1], t: 'Tudo passa pelo ' + esc(last(st9[0].n)), d: 'O centroavante deles decide. Volante fixo em cima dele.' } : { t: 'Cansam no fim', d: 'Do minuto 70 em diante, eles caem. Guarde as trocas.' });
     return out.slice(0, 3);
