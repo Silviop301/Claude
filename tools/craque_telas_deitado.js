@@ -52,7 +52,7 @@ async function page(b) {
     await click('[data-sp="fim"]'); await p.waitForTimeout(1500);
     for (let i = 0; i < 30 && !(await p.$('#b-lv-end')); i++) { await p.waitForTimeout(1000); if (await p.$('#ldl-go')) await click('#ldl-go'); }
     await shot('bl9-fim');
-    if (await p.$('#b-lv-end')) { await click('#b-lv-end'); await shot('bl10-resultado'); await click('[data-rt="mom"]'); await shot('bl11-mandou'); await click('[data-rt="lan"]'); await shot('bl12-lances'); await click('#ldr-go'); await shot('bl13-segunda'); await click('#ldg-go'); await shot('bl14-semana'); }
+    if (await p.$('#b-lv-end')) { await click('#b-lv-end'); await shot('bl10-resultado'); await click('[data-rt="mom"]'); await shot('bl11-mandou'); await click('[data-rt="lan"]'); await shot('bl12-lances'); await click('#ldr-go'); await shot('bl13-semana-depois'); if (await p.$('[data-t1]')) await click('[data-t1]'); await shot('bl14-semana'); }
     await p.close();
   }
   if (PARTS.includes('3')) {
