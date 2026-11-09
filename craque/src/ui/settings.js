@@ -95,5 +95,29 @@
     setTimeout(() => w.classList.add('shown'), 300); // a animação de entrada só na abertura
   }
 
-  Object.assign(U, { settings, whatsNew, VERSION });
+  // Ajustes deitados (2026-11-09, quadro 52 do canvas): tela inteira no palco U.LD no lugar da janelinha em pé, aberta pela
+  // home deitada. Só o que vale no Treinador: Som, Sua opinião e a conta. Vibração, Efeitos 3D, as escolhas "Na partida",
+  // Treinar lances e as Novidades (texto ainda do Jogador) ficam na janelinha em pé, que os modos em pé continuam abrindo
+  function settingsLand(back) {
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const out = () => (back || U.home)();
+    const draw = () => {
+      const on = !!value('sound'), st = !window.CLIMBIX_SOLO && U.cloudStatus ? U.cloudStatus() : null, solo = !!window.CLIMBIX_SOLO;
+      U.LD.show('<div class="aj' + (solo ? ' aj-solo' : '') + '"><div class="tm-h"><button class="tcr-back" id="aj-back" aria-label="Voltar">' + BK + '</button><b>Ajustes</b><small class="aj-v">Climbix ' + VERSION + '</small></div>' +
+        '<div class="aj-l"><button class="aj-sw' + (on ? ' on' : '') + '" id="aj-som" role="switch" aria-checked="' + on + '"><b>Som</b><span class="aj-tg"><i></i></span></button>' +
+          '<button class="aj-lk" id="aj-fb">Sua opinião</button></div>' +
+        (solo ? '' : '<div class="aj-acc"><small>' + (st ? 'SUA CONTA' : 'CONTA') + '</small><b>' + esc(st ? U.cloudName() : 'Salve na nuvem') + '</b>' +
+          '<span>' + esc(st || 'Suas carreiras e moedas em qualquer aparelho.') + '</span><i></i>' +
+          '<button class="aj-go' + (st ? ' dark' : '') + '" id="aj-acc">' + (st ? 'Abrir a conta' : 'Entrar ou criar conta') + '</button></div>') + '</div>',
+        w => {
+          w.querySelector('#aj-back').onclick = () => { U.sfx('tap'); out(); };
+          w.querySelector('#aj-som').onclick = () => { if (window.CRAQUE_SFX) window.CRAQUE_SFX.toggle(); U.sfx('tap'); draw(); };
+          w.querySelector('#aj-fb').onclick = () => { U.sfx('tap'); U.feedback('config'); };
+          if (w.querySelector('#aj-acc')) w.querySelector('#aj-acc').onclick = () => { U.sfx('tap'); U.ldOff(); U.cloud('login'); };
+        }, 'O Climbix é jogado com o celular deitado.');
+    };
+    draw();
+  }
+
+  Object.assign(U, { settings, settingsLand, whatsNew, VERSION });
 })();

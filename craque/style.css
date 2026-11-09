@@ -8899,3 +8899,22 @@ button.coin-pill { cursor: pointer; border: 0; }
 /* Agradecimento da compra de moedas (Silvio: a compra ajuda o jogo; agradecer o apoio) */
 .pay-ty { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); z-index: 9999; display: flex; align-items: center; gap: 12px; padding: 12px 14px 12px 18px; border-radius: 16px; background: #F8F4EA; color: #13201A; box-shadow: 0 10px 30px rgba(0,0,0,.45); font: 600 15px/1.25 var(--body); max-width: calc(100vw - 32px); }
 .pay-ty b { font: 800 19px/1 var(--display); white-space: nowrap; } .pay-ty button { flex: none; min-height: 40px; padding: 0 14px; border-radius: 12px; border: 0; background: #13201A; color: #F8F4EA; font: 800 16px/1 var(--display); cursor: pointer; }
+
+/* Ajustes deitados (2026-11-09, quadro 52): Som e Sua opinião à esquerda, a conta no cartão creme (ui/settings.js settingsLand) */
+.aj { width: 100%; flex: 1; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 44px minmax(0, 1fr); gap: 10px 16px; color: #F3F1EA; }
+.aj.aj-solo { grid-template-columns: minmax(0, 1fr); }
+.aj-v { margin-left: auto; font-size: 15px !important; color: #9fb0a6 !important; }
+.aj-l { display: grid; grid-auto-rows: minmax(0, 1fr); gap: 10px; min-height: 0; }
+.aj-sw, .aj-lk { border-radius: 18px; background: #141517 !important; color: #F3F1EA !important; padding: 0 24px !important; display: flex; align-items: center; justify-content: space-between; text-align: left; min-height: 64px; }
+.aj-sw b, .ld-st button.aj-lk { font: 800 28px/1 var(--display); }
+.aj-tg { width: 64px; height: 36px; border-radius: 18px; background: rgba(243, 241, 234, .18); padding: 4px; box-sizing: border-box; display: flex; flex: none; transition: background .15s; }
+.aj-tg i { width: 28px; height: 28px; border-radius: 50%; background: #D9E2DC; transition: transform .15s, background .15s; }
+.aj-sw.on .aj-tg { background: var(--gold); } .aj-sw.on .aj-tg i { background: #1B1606; transform: translateX(28px); }
+.aj-acc { border-radius: 18px; background: #F8F4EA; color: #13201A; padding: 22px; box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.aj-acc small { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #4b5a52; }
+.aj-acc > b { margin-top: 12px; font: 800 34px/1 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aj-acc > span { margin-top: 10px; font: 600 17px/1.3 var(--body); color: #33423a; }
+.aj-acc > i { flex: 1; }
+.ld-st button.aj-go { height: 56px; border-radius: 16px; background: var(--gold) !important; color: #1B1606 !important; box-shadow: 0 4px 0 #b48a12; font: 800 24px/1 var(--display); flex: none; }
+.ld-st button.aj-go.dark { background: #13201A !important; color: #F8F4EA !important; box-shadow: 0 4px 0 rgba(0, 0, 0, .35); }
+.aj-go:active { transform: translateY(2px); }
