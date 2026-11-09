@@ -40,8 +40,12 @@
     pao: { nome: 'pão-duro', vm: 0.8, red: 1.6, txt: 'Segura a verba e não tolera o caixa no vermelho.' },
     pac: { nome: 'paciente', vm: 1, red: 0.6, txt: 'Verba normal e aguenta uma fase ruim no caixa.' },
   };
-  const SPONS = ['Banco Sertão', 'AutoPeças Rota', 'Bet Ouro', 'Supermercados Vila', 'Construtora Arco', 'Seguros Farol', 'TeleNorte', 'Frigorífico Pampa', 'Laticínios Serra', 'Cooperativa Vale',
-    'Ótica Visão', 'Rede Posto Bom', 'Moto Brava', 'Farmácia Cruz', 'Cervejaria Leão', 'Atacadão Prime'];
+  // Patrocinadores por país da liga (chave = D.countryOf do clube; '_' vale para os que não têm lista própria).
+  // Cada nome tem logo em assets/co/pat-<nome sem acento>.webp (ui/coachland.js patImg). Silvio 2026-11-09: estes são
+  // brasileiros; as outras ligas ganham listas próprias depois.
+  const SP = S.CO_SPONS = { _: ['Banco Sertão', 'AutoPeças Rota', 'Bet Ouro', 'Supermercados Vila', 'Construtora Arco', 'Seguros Farol', 'Conecta Norte', 'Frigorífico Pampa', 'Laticínios Serra', 'Cooperativa Vale',
+    'Ótica Visão', 'Rede Posto Bom', 'Moto Brava', 'Farmácia Cruz', 'Cervejaria Leão', 'Armazém Prime'] };
+  const sponsOf = co => { let k = '_'; try { k = D.countryOf(D.CLUB_BY_ID[co.club]) || '_'; } catch (e) {} return SP[k] || SP._; };
   const r10 = v => Math.round(v / 10000) * 10000;
   const r5 = v => Math.round(v / 5000) * 5000;
   const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
@@ -111,7 +115,7 @@
   // ---------- patrocínio ----------
   function offers(co) {
     const f = co.fin, r = rngOf(co, 'pat'), fm = clamp(1 + ((co.fame || 0) - 20) / 400, 0.95, 1.15), rec = f.rec;
-    const names = SPONS.slice().sort(() => r() - 0.5);
+    const names = sponsOf(co).slice().sort(() => r() - 0.5);
     return [
       { k: 'fix', name: names[0], fix: r10(rec * F.patFix * fm), bonus: 0, yrs: 1 },
       { k: 'mix', name: names[1], fix: r10(rec * F.patMix * fm), bonus: r10(rec * F.patBonus * fm), yrs: 1 },
