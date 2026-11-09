@@ -63,9 +63,9 @@ async function page(b) {
       while (co.ss.i < co.ss.rounds.length - 1 && g++ < 60) { const nx = S.coNext(co); if (!nx) break; if (nx.bye) { S.coSkipRound(co); continue; } const m = S.coMatchStart(co); S.coMatchRest(co, m); S.coMatchEnd(co, m); }
       U._co.save('hub'); U.LD.semana(); });
     await shot('c2-semana-fim');
-    await click('[data-rail="clube"]'); await shot('c2b-clube'); await click('#ldk-go'); await shot('c2c-financas-decidir'); await click('[data-fd="banco"]'); await shot('c2d-banco');
+    await click('[data-rail="clube"]'); await shot('c2b-clube'); await click('#ldk-go'); await shot('c2c-financas-decidir'); await click('[data-fd="banco"]'); await shot('c2d-banco'); await click('#bk2-q'); await shot('c2d2-banco-ajuda'); await click('[data-pop-x]');
     await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co; co.fin.caixa = -300000; co.fin.neg = 5; }); await click('#ldn-bk'); await click('[data-fd="banco"]'); await shot('c2e-banco-vermelho');
-    await click('#ldn-take'); await shot('c2f-banco-emprestimo'); await click('#ldn-bk'); await shot('c2g-financas-com-emprestimo'); await click('[data-rail="tabela"]'); await shot('c3-tabela'); await click('[data-tb="art"]'); await shot('c3b-art'); await click('[data-tb="rod"]'); await shot('c3c-rodadas'); await click('#tb2-back');
+    await click('#ldn-take'); await shot('c2f-banco-emprestimo'); await click('#ldn-bk'); await shot('c2g-financas-com-emprestimo'); await click('[data-ft="sal"]'); await shot('c2h-salarios'); await click('#ldf-back'); await click('#kb2-back'); await click('[data-rail="tabela"]'); await shot('c3-tabela'); await click('[data-tb="art"]'); await shot('c3b-art'); await click('[data-tb="rod"]'); await shot('c3c-rodadas'); await click('#tb2-back');
     const nx = await p.$('#ld-play'); if (nx) { await click('#ld-play'); if (await p.$('#ld-go')) { await click('#ld-go'); await click('#ldp-go'); await p.waitForTimeout(2500); await click('[data-sp="fim"]'); for (let i = 0; i < 30 && !(await p.$('#b-lv-end')); i++) { await p.waitForTimeout(800); if (await p.$('#ldl-go')) await click('#ldl-go'); } await click('#b-lv-end'); await shot('c5-res'); await click('#ldr-go'); } }
     await p.waitForTimeout(800); await shot('c6-temporada');
     if (await p.$('#ldy-mk')) { await click('#ldy-mk'); await shot('c7-propostas'); }
