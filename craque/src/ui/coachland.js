@@ -212,7 +212,7 @@
     if (!nx) { off(); return c.finishSeason(); }
     if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao() : patrocinio();
     c.save('hub');
-    if (!inboxPop(co, semana)) finNews(co);
+    if (!inboxPop(co, semana) && !ctWarn(co)) finNews(co);
     const t = S.coTable(co), me = t.find(x => x.me), pos = S.coPos(co), B = co.board, conf = Math.round(B.conf);
     const f5 = f => { const a = (f || '').split('').slice(-5); while (a.length < 5) a.unshift('n'); return '<span class="ld-f5 sm-f5">' + a.map(x => '<i class="' + x + '"></i>').join('') + '</span>'; };
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
@@ -1200,6 +1200,26 @@
     const x = f.news[0]; if (x.seen) return;
     x.seen = true;
     setTimeout(() => pop(popHead('Aviso da diretoria', 'Rodada ' + x.r) + '<div class="ld-pb col"><p class="ldn-p">' + esc(x.t) + '</p><button class="ld-gold sm" id="ldn-ok"><b>Entendi</b></button></div>', 'Aviso da diretoria', w => { w.querySelector('#ldn-ok').onclick = () => { sfx('tap'); closePop(); }; }, 'w560'), 60);
+  }
+
+  // Contratos no fim (Silvio 2026-11-09, opção B): faltando 5 rodadas, uma janelinha por temporada com os titulares no
+  // último ano (sem renovar, saem). Até 3 linhas, do mais forte ao mais fraco; quem vai aposentar de qualquer jeito
+  // (36 anos ou mais) e quem já renovou não entram. Ver elenco abre o Elenco no primeiro da lista.
+  const CT_TAB = { GOL: 0, ZAG: 1, LAT: 1, MEI: 2, ATA: 3 };
+  function ctWarn(co) {
+    if (!co.ss || co.ss.rounds.length - co.ss.i > 5 || co.ctw === co.season) return false;
+    const L = co.squad.filter(p => (co.xi || []).includes(p.id) && p.ct <= 1 && p.age < 36).sort((a, b) => b.ovr - a.ovr);
+    if (!L.length) return false;
+    setTimeout(() => { if (document.getElementById('ld-pop')) return; co.ctw = co.season; C().save(); if (S.coNums) S.coNums(co.squad);
+      const left = co.ss.rounds.length - co.ss.i, more = L.length > 3 ? L.length - 2 : 0, R = more ? L.slice(0, 2) : L;
+      pop('<div class="mkx"><div class="mkx-h"><i class="mkx-fc">' + L.length + '</i><span><small>' + (left === 1 ? 'ÚLTIMA RODADA' : 'FALTAM ' + left + ' RODADAS') + '</small><b class="dn">' + (L.length > 1 ? 'Contratos no fim' : 'Contrato no fim') + '</b></span></div>' +
+        '<p>' + (L.length > 1 ? 'Sem renovar, eles saem no fim do ano.' : 'Sem renovar, ele sai no fim do ano.') + '</p>' +
+        '<div class="mkx-li">' + R.map(p => '<div><span>' + (p.num ? p.num + ' ' : '') + esc(p.n) + ' · ' + p.pos + '</span><b>' + p.ovr + '</b></div>').join('') + (more ? '<div><span>e mais ' + more + ' titulares</span></div>' : '') + '</div>' +
+        '<span class="rs-gap"></span><span class="mkx-b"><button class="hl-btn gold" id="ctw-go">Ver elenco</button><button class="hl-btn line" id="ctw-no">Depois</button></span></div>', 'Contratos no fim', w => {
+        w.querySelector('#ctw-go').onclick = () => { sfx('tap'); closePop(); elenco(CT_TAB[L[0].pos] || 0, L[0].id); };
+        w.querySelector('#ctw-no').onclick = () => { sfx('tap'); closePop(); };
+      }, 'hl-pop mkx-pop', true); }, 80);
+    return true;
   }
 
   // Elenco e contratos: o elenco inteiro numa tabela (os seus números aparecem: é o seu time)
