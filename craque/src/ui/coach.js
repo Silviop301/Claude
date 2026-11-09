@@ -1101,7 +1101,18 @@
   }
 
   // ---------- fim da temporada: posição, meta, fama, experiência ----------
-  function finishSeason() { const out = S.coSeasonEnd(co); save('end'); seasonEnd(out); }
+  // Moedas da temporada (S.coSeasonEnd devolve out.coins) entram na carteira da conta aqui, uma vez por fim de temporada;
+  // a primeira temporada terminada na conta ganha um bônus de boas-vindas (uma vez só, em qualquer carreira)
+  const COIN_FIRST = 30;
+  function payCoins(out) {
+    if (!U.COINS || out.coinsPaid) return;
+    const list = (out.coins || []).slice();
+    if (!U.COINS.has('co-1a')) list.push({ k: 'first', t: 'Primeira temporada', n: COIN_FIRST, once: 'co-1a' });
+    out.coins = list.map(x => ({ k: x.k, t: x.t, n: x.n }));
+    out.coinsTot = U.COINS.add(list);
+    out.coinsPaid = true;
+  }
+  function finishSeason() { const out = S.coSeasonEnd(co); payCoins(out); save('end'); seasonEnd(out); }
   function seasonEnd(out) {
     G.c = null; bar();
     if (U.LD && U.LD.on()) return U.LD.temporada(out);

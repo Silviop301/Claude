@@ -56,7 +56,7 @@
     { id: 'lib', tier: 3, fam: 'cont', t: 'Ganhe a Libertadores', add: x => car(x) && tro(x, 'lib') > 0 },
   ];
   const GOAL_BY = Object.fromEntries(GOALS.map(g => [g.id, g]));
-  const PRIZE = { 1: { xp: 100, p: 1 }, 2: { xp: 200, p: 1 }, 3: { xp: 300, p: 2 } };
+  const PRIZE = { 1: { xp: 100, p: 1, m: 2 }, 2: { xp: 200, p: 1, m: 3 }, 3: { xp: 300, p: 2, m: 5 } }; // m: moedas (as 3 metas = 10)
 
   // A semana começa na segunda (data local); as três metas saem de um sorteio pela data, iguais para todo mundo
   const pad = n => String(n).padStart(2, '0');
@@ -88,7 +88,7 @@
       const def = GOAL_BY[g.id];
       if (!def || g.done || !def.add(x)) return;
       g.p = Math.min(def.n || 1, (g.p || 0) + 1);
-      if (g.p >= (def.n || 1)) { g.done = true; const pr = PRIZE[def.tier]; xp += pr.xp; done.push({ t: def.t, xp: pr.xp, p: pr.p }); }
+      if (g.p >= (def.n || 1)) { g.done = true; const pr = PRIZE[def.tier]; xp += pr.xp; done.push({ t: def.t, xp: pr.xp, p: pr.p, m: pr.m }); if (U.COINS) U.COINS.add({ n: pr.m, t: 'Meta da semana' }); }
     });
     p.xp = (p.xp || 0) + xp;
     const after = level(p.xp).lv;

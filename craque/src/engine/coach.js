@@ -915,7 +915,8 @@
     const gx = (co.sacked ? 0 : 1) + (won ? 2 : 0) + (met ? 1 : 0);
     co.xp.pts += gx;
     if (won) co.titles.push({ s: co.season, name: ss.name, club: co.club });
-    const out = { season: co.season, club: co.club, league: ss.name, pos, n, goal: B.goal, met, won, up: !!up, down: !!down, sacked: !!co.sacked, fame: [f0, co.fame], xp: gx, log: ss.log.slice() };
+    const coins = coinsOf(co, { won, met, up: !!up, sacked: !!co.sacked });
+    const out = { season: co.season, club: co.club, league: ss.name, pos, n, goal: B.goal, met, won, up: !!up, down: !!down, sacked: !!co.sacked, fame: [f0, co.fame], xp: gx, coins, log: ss.log.slice() };
     co.hist.push({ s: co.season, club: co.club, league: ss.name, pos, n, goal: B.goal.k, met, won, up: !!up, down: !!down, sacked: !!co.sacked });
     // Divisões da carreira: os de cima e de baixo trocam com a sua liga
     moveLeagues(co, ss, ord);
@@ -952,6 +953,19 @@
     co.last = out;
     return out;
   };
+  // Moedas da conta pela temporada (2026-11-09): título pela divisão (elite 60, segunda 35, terceira para baixo 20),
+  // acesso 15 e meta da diretoria 5; demitido não ganha nada. A tela soma na carteira (U.COINS) uma vez só.
+  const CO_COINS = S.CO_COINS = { tit: [60, 35, 20], acesso: 15, meta: 5 };
+  const lgDepth = lg => { let d = 0, x = lg; while (D.LADDER[x] && D.LADDER[x].up && d < 5) { x = D.LADDER[x].up; d++; } return d; };
+  S.coLgDepth = lgDepth;
+  function coinsOf(co, o) {
+    if (o.sacked) return [];
+    const lg = (co.leagueOf || {})[co.club] || D.CLUB_BY_ID[co.club].league, out = [];
+    if (o.won) out.push({ k: 'tit', t: 'Título', n: CO_COINS.tit[Math.min(2, lgDepth(lg))] });
+    if (o.up) out.push({ k: 'acesso', t: 'Acesso', n: CO_COINS.acesso });
+    if (o.met) out.push({ k: 'meta', t: 'Meta cumprida', n: CO_COINS.meta });
+    return out;
+  }
   // Experiência: um ponto numa habilidade (leitura de jogo, motivação, negociação), até 10 em cada
   S.CO_SKILLS = { leitura: 'Leitura de jogo', motiv: 'Motivação', negoc: 'Negociação' };
   S.coSkill = function (co, k) {

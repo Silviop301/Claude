@@ -55,6 +55,7 @@ for (let n = 0; n < N; n++) {
     const out = S.coSeasonEnd(co);
     st.ms += Date.now() - t0;
     st.seasons++;
+    st.coins = (st.coins || 0) + (out.coins || []).reduce((a, x) => a + x.n, 0);
     const g = out.goal.k; st.byGoal[g] = st.byGoal[g] || { n: 0, met: 0, sacked: 0, won: 0 }; st.byGoal[g].n++;
     if (out.met) { st.met++; st.byGoal[g].met++; }
     if (out.sacked) { st.sacked++; sacks++; st.byGoal[g].sacked++; }
@@ -79,6 +80,7 @@ console.log(`Jogo: ${(st.goals / st.games).toFixed(2)} gols, mandante ${pct(st.h
 console.log(`Temporada: meta cumprida ${pct(st.met, st.seasons)}, demitido ${pct(st.sacked, st.seasons)}, campeão ${pct(st.won, st.seasons)}, subiu ${pct(st.up, st.seasons)}, caiu ${pct(st.down, st.seasons)}`);
 console.log(`Ultimato: ${st.ult} (${pct(st.ult, st.seasons)} das temporadas), salvo ${pct(st.ultOk, st.ult)}; trocas de clube por proposta ${(st.moves / N).toFixed(1)} por carreira`);
 console.log('Por meta: ' + Object.keys(st.byGoal).map(k => { const g = st.byGoal[k]; return `${k} ${g.n} (cumpriu ${pct(g.met, g.n)}, demitido ${pct(g.sacked, g.n)}, campeão ${pct(g.won, g.n)})`; }).join(' · '));
+console.log(`Moedas ganhas no Treinador (sem bônus de 1ª temporada e metas da semana): ${(st.coins / st.seasons).toFixed(1)} por temporada`);
 console.log(`Títulos por carreira: média ${avg(st.titlesPer)} [${dist(st.titlesPer)}]; demissões: média ${avg(st.sacksPer)} [${dist(st.sacksPer)}]`);
 Object.keys(st.byStart).forEach(k => { const b = st.byStart[k]; console.log(`Começo ${k}: títulos ${(b.t / b.n).toFixed(1)}, demissões ${(b.s / b.n).toFixed(1)}, fama no fim ${(b.f / b.n).toFixed(0)}, força do clube no fim ${(b.str / b.n).toFixed(0)}`); });
 const med = a => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.floor(b.length / 2)] : 0; };

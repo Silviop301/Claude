@@ -8761,3 +8761,12 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .mkd-ch { display: flex; gap: 6px; flex-wrap: wrap; }
 .mkd-ch i { font-style: normal; padding: 7px 10px; border-radius: 9px; background: #13201A; color: #F8F4EA; font: 800 17px/1 var(--display); }
 .mkd-ch i.g { background: var(--gold); color: #1B1606; } .mkd-ch i.l { background: #EFE8D6; color: #13201A; }
+
+/* Moedas da conta (2026-11-09): pílula de saldo na home e na Semana do Treinador */
+.coin-pill { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px 0 10px; box-sizing: border-box; border-radius: 22px; background: rgba(0,0,0,.35); color: #F3F1EA; font: 800 22px/1 var(--display); white-space: nowrap; }
+.coin-pill svg { width: 26px; height: 26px; flex: none; }
+.coin-pill.cp-sm { height: 36px; padding: 0 12px 0 8px; gap: 6px; font-size: 19px; }
+.coin-pill.cp-sm svg { width: 22px; height: 22px; }
+.hl-tops { position: absolute; right: 16px; top: 16px; display: flex; align-items: center; gap: 8px; }
+.hl-tops .hl-chip { min-height: 44px; display: flex; align-items: center; }
+.ldr-ch.coin b { color: var(--gold); }
