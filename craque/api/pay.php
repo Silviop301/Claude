@@ -30,6 +30,8 @@ const SITE = 'https://climbix.app';
 $dir = getenv('CLIMBIX_DATA') ?: dirname(__DIR__, 2) . '/climbix-data';
 $mp = is_file($dir . '/mp-token') ? trim((string)file_get_contents($dir . '/mp-token')) : '';
 $a = $_GET['a'] ?? '';
+// Diagnóstico da conta do token (sem nada secreto): código do /users/me, país, se é conta de teste e o prefixo do token
+if ($a === 'diag' && $mp !== '') { [$c, $me] = mpCall($mp, 'GET', '/users/me'); out(['me' => $c, 'site' => $me['site_id'] ?? '', 'test_user' => in_array('test_user', (array)($me['tags'] ?? []), true), 'prefix' => substr($mp, 0, 8), 'msg' => substr((string)($me['message'] ?? ''), 0, 120)]); }
 if ($a === 'status') out(['on' => $mp !== '', 'test' => $mp !== '' && mpTest($mp, $dir)]);
 if ($mp === '') out(['error' => 'off'], 503);
 
