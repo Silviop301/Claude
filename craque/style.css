@@ -8735,3 +8735,29 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .fu2-pitch .ld-dn b { font: 700 13px/1 var(--body); }
 .fu2-pitch .ld-dn { gap: 1px; }
 .fu2-pitch .ld-dn em, .fu2-pitch .ld-dn em.sabe, .fu2-pitch .ld-dn em.fora { font: 800 12px/1 var(--display); padding: 1px 5px; border-radius: 5px; background: rgba(0, 0, 0, .5); color: #F3F1EA; }
+/* Treinador deitado: Mercado lote 3 (2026-11-09, quadros 30 e 31): Resposta do clube e Fechado */
+.ld-pop-c.hl-pop.mkx-pop { width: 460px; min-height: 322px; padding: 18px 20px; }
+.ld-pop-c.hl-pop.mkd-pop { width: 560px; min-height: 330px; padding: 18px 20px; }
+.mkx { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+.mkx-h { display: flex; align-items: center; gap: 12px; }
+.mkx-fc { flex: none; width: 52px; height: 52px; border-radius: 50%; background: #13201A; color: #F8F4EA; display: flex; align-items: center; justify-content: center; font: 800 22px/1 var(--display); font-style: normal; }
+.mkx-h > span:not(.mkp-dots) { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.mkx-h small { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #5d6b62; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mkx-h b { font: 800 30px/1 var(--display); color: #13201A; } .mkx-h b.up { color: #1f7a43; } .mkx-h b.mid { color: #9a6a00; } .mkx-h b.dn { color: #b4462c; }
+.mkx-h .mkp-dots i { background: rgba(19, 32, 26, .16); } .mkx-h .mkp-dots i.on { background: var(--gold); }
+.mkx > p { margin: 0; font: 700 18px/1.3 var(--body); color: #2c3a32; }
+.mkx-li { border-radius: 14px; background: #EFE8D6; padding: 0 14px; }
+.mkx-li > div { height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font: 700 16px/1 var(--body); color: #4a5a50; }
+.mkx-li > div + div { border-top: 1px solid rgba(19, 32, 26, .12); }
+.mkx-li b { font: 800 22px/1 var(--display); color: #13201A; white-space: nowrap; } .mkx-li b.up { color: #1f7a43; } .mkx-li b.dn { color: #b4462c; }
+.mkx-b { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; } .mkx-b .hl-btn { min-height: 54px; margin: 0; }
+.mkd { display: grid; grid-template-columns: 200px 1fr; gap: 18px; flex: 1; min-height: 294px; }
+.mkd-l { border-radius: 16px; background: #13201A; color: #F8F4EA; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 14px; text-align: center; }
+.mkd-l small { font: 800 15px/1 var(--display); letter-spacing: .12em; color: var(--gold); }
+.mkd-cr { width: 84px; height: 84px; object-fit: contain; }
+.mkd-l b { font: 800 22px/1 var(--display); } .mkd-l span { font: 700 14px/1 var(--body); color: #B9C9BF; }
+.mkd-r { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.mkd-r > b { font: 800 34px/1 var(--display); color: #13201A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mkd-ch { display: flex; gap: 6px; flex-wrap: wrap; }
+.mkd-ch i { font-style: normal; padding: 7px 10px; border-radius: 9px; background: #13201A; color: #F8F4EA; font: 800 17px/1 var(--display); }
+.mkd-ch i.g { background: var(--gold); color: #1B1606; } .mkd-ch i.l { background: #EFE8D6; color: #13201A; }
