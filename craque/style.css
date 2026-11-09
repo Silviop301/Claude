@@ -8798,3 +8798,7 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .ec-li { min-height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 700 15px/1 var(--body); color: #B9C9BF; }
 .ec-li b { font: 800 20px/1 var(--display); color: #F3F1EA; white-space: nowrap; } .ec-li + .ec-li { border-top: 1px solid rgba(243,241,234,.1); }
 .ec-side .tm-go { flex: none; height: 56px; margin-top: 0; font-size: 22px !important; }
+/* relatório pago do olheiro (24c, 09/11): preço embaixo do nome */
+.mkf-rep { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; line-height: 1 !important; }
+.mkf-rep small { font: 700 14px/1 var(--body, Barlow), sans-serif; color: #5d6b62; }
+.mkf-rep.done small { color: #F5A57F; }
