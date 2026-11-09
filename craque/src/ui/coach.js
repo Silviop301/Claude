@@ -70,6 +70,10 @@
       sfx('tap');
       co = S.coNew({ name: ($('co-name').value.trim() || st.name).slice(0, 22), country: st.country, start: st.start });
       co.autoXI = true;
+      // Primeira carreira de técnico neste aparelho (Silvio 2026-11-09): o auxiliar fecha diretoria e patrocínio no padrão
+      // (co.first) e mostra o tutorial da Semana (co.tut, ui/coachland.js), a não ser com as dicas desligadas
+      if (!load('climbix-co-ja') && !U.coSaved() && !U.coSaved(1)) { co.first = 1; if (!(load('climbix-dicas-v1') || {}).off) co.tut = { n: 0 }; }
+      store('climbix-co-ja', 1);
       if (slot) co.slot = 1;
       offers(S.coOffers(co));
     };

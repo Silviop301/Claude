@@ -218,7 +218,11 @@
     if (!nx) { off(); return c.finishSeason(); }
     if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao() : patrocinio();
     c.save('hub');
-    if (!inboxPop(co, semana) && !ctWarn(co)) finNews(co);
+    const tut = tutStep(co);
+    const popped = !tut && inboxPop(co, semana);
+    if (!tut && !popped && !ctWarn(co)) finNews(co);
+    // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
+    const inN = tut ? 0 : S.coMktInbox(co).filter(o => !o.seen).length - (popped ? 1 : 0);
     const t = S.coTable(co), me = t.find(x => x.me), pos = S.coPos(co), B = co.board, conf = Math.round(B.conf);
     const f5 = f => { const a = (f || '').split('').slice(-5); while (a.length < 5) a.unshift('n'); return '<span class="ld-f5 sm-f5">' + a.map(x => '<i class="' + x + '"></i>').join('') + '</span>'; };
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
@@ -240,7 +244,7 @@
       wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
         '<button class="sm-w' + (sc ? ' ok' : '') + '" id="ld-ol"><small>OLHEIRO</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o ' + esc(vc.short || vc.name)) + '</b></button></div>';
     } else card = '<div class="sm-bye"><b>Sem jogo nesta rodada</b><small>O time descansa. Os outros jogam.</small></div>';
-    const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['mercado', 'Mercado'], ['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + '</button>').join('');
+    const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['mercado', 'Mercado'], ['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + (k === 'mercado' && inN ? '<i class="tm-dot">' + inN + '</i>' : '') + '</button>').join('');
     show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + wk +
       '<nav class="sm-side" aria-label="Menu do técnico">' + nav + '<button class="tm-go" id="ld-play">' + (nx.bye ? 'Ver a rodada' : 'Jogar') + '</button></nav></div>', st => {
       if (st.querySelector('#sm-coins')) st.querySelector('#sm-coins').onclick = () => { sfx('tap'); loja(0, semana); };
@@ -248,7 +252,51 @@
       st.querySelector('#sm-back').onclick = () => { sfx('tap'); go('inicio'); };
       if (st.querySelector('#ld-tr')) st.querySelector('#ld-tr').onclick = () => { sfx('tap'); treino(); };
       if (st.querySelector('#ld-ol')) st.querySelector('#ld-ol').onclick = () => { sfx('tap'); olheiro(); };
+      if (inN) st.querySelector('[data-rail="mercado"]').onclick = () => { sfx('tap'); const o = S.coMktInbox(co).find(x => !x.seen); if (!o) return go('mercado'); o.seen = 1; c.save(); recebida(o, semana); };
+      if (tut) tutShow(co, st);
     });
+  }
+
+  // ---------- Tutorial da primeira carreira (Silvio 2026-11-09, opção B): a Semana escurece, o auxiliar fala uma frase e
+  // só o botão certo fica aceso, piscando. Semana 1: Time, Treino, Olheiro, Jogar; semana 2: Tabela, Clube; semana 3:
+  // Mercado. co.tut = { n } é o passo (criado em ui/coach.js só na primeira carreira); some no Pular, no último passo
+  // ou com as dicas desligadas. Passo = [semana (co.ss.i), alvo, fala]
+  const TUT = [
+    [0, '[data-rail="time"]', 'Professor, antes de tudo conheça o elenco. Toque em Time.'],
+    [0, '#ld-tr', 'Agora escolha o treino da semana.'],
+    [0, '#ld-ol', 'Vale espiar o adversário antes do jogo.'],
+    [0, '#ld-play', 'Tudo pronto. Agora é jogar.'],
+    [1, '[data-rail="tabela"]', 'A Tabela mostra a corrida pela meta.'],
+    [1, '[data-rail="clube"]', 'No Clube ficam o caixa, o elenco e os troféus.'],
+    [2, '[data-rail="mercado"]', 'A janela fecha nesta semana. No Mercado você contrata e vende.'],
+  ];
+  // O passo desta semana (ou null). Semana que já passou é pulada
+  function tutStep(co) {
+    const t = co.tut; if (!t || !co.ss) return null;
+    if ((U.load('climbix-dicas-v1') || {}).off) return null;
+    while (t.n < TUT.length && TUT[t.n][0] < co.ss.i) t.n++;
+    if (t.n >= TUT.length) { co.tut = null; return null; }
+    return TUT[t.n][0] === co.ss.i ? TUT[t.n] : null;
+  }
+  function tutShow(co, st) {
+    const c = C(), s = tutStep(co); if (!s) return;
+    const tg = st.querySelector(s[1]);
+    // Sem o alvo (rodada sem jogo) ou já feito (treino escolhido, relatório lido): próximo passo
+    if (!tg || tg.classList.contains('ok')) { co.tut.n++; return tutShow(co, st); }
+    const wk = TUT.filter(x => x[0] === s[0]), R = st.getBoundingClientRect(), k = R.width / st.offsetWidth || 1, r = tg.getBoundingClientRect();
+    const x = (r.left - R.left) / k, y = (r.top - R.top) / k, w = r.width / k, h = r.height / k;
+    const el = document.createElement('div'); el.className = 'tu'; el.id = 'ld-tu';
+    el.innerHTML = '<button class="tu-hole" style="left:' + x.toFixed(1) + 'px;top:' + y.toFixed(1) + 'px;width:' + w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px;border-radius:' + getComputedStyle(tg).borderRadius + '" aria-label="' + esc(tg.textContent.trim()) + '"></button>' +
+      '<div class="tu-bub" role="dialog" aria-label="Auxiliar">' + auxFace(co, 'tu-fc') + '<div><p>“' + s[2] + '”</p><span>' + (wk.length > 1 ? '<small>' + (wk.indexOf(s) + 1) + ' de ' + wk.length + '</small>' : '') + '<button class="tu-skip" id="tu-skip">Pular</button></span></div></div>';
+    st.appendChild(el);
+    // O balão fica ao lado do alvo: à esquerda dos botões da coluna da direita, em cima dos de baixo
+    const b = el.querySelector('.tu-bub'), bw = b.offsetWidth, bh = b.offsetHeight, cl = (v, a, z) => Math.max(a, Math.min(z, v));
+    // (o palco cresce com a sobra da tela: o balão fica dentro do conteúdo, longe do entalhe)
+    const ox = (st.offsetWidth - W) / 2, oy = (st.offsetHeight - H) / 2, side = x - ox > W * 0.6;
+    b.style.left = cl(side ? x - bw - 24 : x, ox + 8, ox + W - bw - 8) + 'px';
+    b.style.top = cl(side ? y + h / 2 - bh / 2 : y - bh - 22, oy + 8, oy + H - bh - 8) + 'px';
+    el.querySelector('.tu-hole').onclick = () => { co.tut.n++; if (co.tut.n >= TUT.length) co.tut = null; c.save(); el.remove(); tg.click(); };
+    el.querySelector('#tu-skip').onclick = () => { sfx('tap'); co.tut = null; c.save(); semana(); };
   }
 
   // ---------- Time: escalação, popups de troca e de formação/estilo ----------
@@ -294,12 +342,17 @@
       const title = swap !== null ? '<span class="tm-hint">Arraste do banco, ou toque em quem entra ou em outro titular</span>' : selB ? '<span class="tm-hint">Toque em quem sai</span>'
         : vs ? '<b>x ' + esc(vs.short || vs.name) + '</b><small>' + (nx.home ? 'em casa' : 'fora') + ' · rodada ' + nx.round + '</small>' : '<b>' + esc(cl.short || cl.name) + '</b><small>escalação</small>';
       const play = toPlay && vs;
-      show('<div class="tm"><div class="tm-h"><button class="tcr-back" id="tm-back" aria-label="Voltar">' + BK + '</button>' + title + '</div>' +
+      // Dica do auxiliar no topo (Silvio 2026-11-09, opção A): uma por jogo, de estilo ou de formação, com o rosto dele; o
+      // toque explica e aplica. O aviso de quem está cansado ou fora de posição entra na mesma janelinha (ponto laranja)
+      const tip = vs ? S.coTip(co) : null, used = S.coTipUsed(co, tip), tipNm = tip && (tip.kind === 'sty' ? S.CO_STY[tip.v].name : tip.v);
+      const pill = swap !== null || selB ? '' : '<button class="tm-tip' + (used || (!tip && !auxFix) ? ' ok' : '') + '" id="tm-aux">' + auxFace(co, 'tm-tip-f') +
+        '<span><small>' + (tip ? 'DICA DO AUXILIAR' : 'AUXILIAR') + '</small><b>' + (tip ? (used ? '✓ ' + esc(tipNm) : esc(S.coTipLbl(tip))) : auxFix ? 'Uma troca' : 'Tudo certo') + '</b></span>' +
+        ((tip && !used && !tip.seen) || auxFix ? '<i class="tm-tip-d"></i>' : '') + '</button>';
+      show('<div class="tm"><div class="tm-h"><button class="tcr-back" id="tm-back" aria-label="Voltar">' + BK + '</button>' + title + pill + '</div>' +
         '<div class="ld-pitch tm-pitch">' + PITCH + dots + '</div>' +
         '<div class="tm-bench"><small>BANCO</small>' + bstrip + '</div>' +
         '<div class="tm-side">' + pick('form', 'Formação', co.form) + pick('sty', 'Estilo', esc(S.CO_STY[co.style].name)) +
-        '<span class="tm-2"><button class="tm-b" id="ld-fun">Funções</button><button class="tm-b" id="ld-bat">Batedores</button></span>' +
-        '<button class="tm-b" id="tm-aux">Auxiliar' + (auxFix ? '<i class="tm-dot">1</i>' : '') + '</button>' +
+        '<button class="tm-b" id="ld-fun">Funções</button><button class="tm-b" id="ld-bat">Batedores</button>' +
         '<button class="tm-go" id="' + (play ? 'ld-go' : 'ld-ok') + '">' + (play ? 'Jogar' : 'Pronto') + '</button></div></div>', st => {
         st.querySelectorAll('[data-xi]').forEach(b => b.onclick = () => {
           const i = +b.dataset.xi; sfx('tap');
@@ -314,7 +367,7 @@
         benchDrag(st.querySelector('.tm'), put);
         st.querySelectorAll('[data-tmk]').forEach(b => b.onclick = () => {
           sfx('tap'); const d = +b.dataset.d;
-          if (b.dataset.tmk === 'sty') { const L = S.CO_STYLES; co.style = L[(L.indexOf(co.style) + d + L.length) % L.length]; st.querySelector('#tm-sty').textContent = S.CO_STY[co.style].name; return; }
+          if (b.dataset.tmk === 'sty') { const L = S.CO_STYLES; co.style = L[(L.indexOf(co.style) + d + L.length) % L.length]; st.querySelector('#tm-sty').textContent = S.CO_STY[co.style].name; if (tip && tip.kind === 'sty' && used !== S.coTipUsed(co, tip)) draw(); return; }
           // Formação: os mesmos bonecos correm para as vagas novas e a tela se refaz depois
           const nf = FORMS[(FORMS.indexOf(co.form) + d + FORMS.length) % FORMS.length], xi = xiFor(nf), sl2 = S.coSlots(nf), sp2 = spotsT(nf);
           co.form = nf; co.xi = xi; swap = null; selB = null; st.querySelector('#tm-form').textContent = nf;
@@ -327,9 +380,17 @@
         });
         st.querySelector('#ld-fun').onclick = () => { sfx('tap'); closePop(); c.keepBench(); c.save(); funcoes(null, () => time(toPlay)); };
         st.querySelector('#ld-bat').onclick = () => { sfx('tap'); closePop(); c.keepBench(); c.save(); batedores(null, () => time(toPlay)); };
-        st.querySelector('#tm-aux').onclick = () => { sfx('tap');
-          pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b></span><p>“' + aux + '”</p>' + (auxFix ? '<span class="hl-ab"><button class="hl-btn dark" id="ld-aux-y">Trocar</button><button class="hl-btn line" data-pop-x>Manter</button></span>' : '') +
-            '<button class="tm-all" id="ld-auto">Usar a escalação dele inteira</button>' + (auxFix ? '' : '<button class="hl-btn line" data-pop-x>Fechar</button>') + '</div>', 'Auxiliar', w => {
+        if (st.querySelector('#tm-aux')) st.querySelector('#tm-aux').onclick = () => { sfx('tap');
+          if (tip && !tip.seen) { tip.seen = 1; const d = st.querySelector('.tm-tip-d'); if (d && !auxFix) d.remove(); }
+          const say = tip ? (used ? 'Do jeito que está eu não mexeria, professor.' : S.coTipTxt(tip)) : aux;
+          pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b></span><p>“' + say.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>') + '”</p>' +
+            (tip && !used ? '<span class="hl-ab"><button class="hl-btn dark" id="ld-tip-y">Usar ' + esc(tipNm) + '</button><button class="hl-btn line" data-pop-x>Manter</button></span>' : '') +
+            (auxFix ? (tip ? '<span class="tm-fix"><small>' + aux + '</small><button class="hl-btn ' + (used ? 'dark' : 'line') + '" id="ld-aux-y">Trocar</button></span>'
+              : '<span class="hl-ab"><button class="hl-btn dark" id="ld-aux-y">Trocar</button><button class="hl-btn line" data-pop-x>Manter</button></span>') : '') +
+            '<button class="tm-all" id="ld-auto">Usar a escalação dele inteira</button>' + ((tip && !used) || auxFix ? '' : '<button class="hl-btn line" data-pop-x>Fechar</button>') + '</div>', 'Auxiliar', w => {
+            if (w.querySelector('#ld-tip-y')) w.querySelector('#ld-tip-y').onclick = () => { sfx('tap'); closePop();
+              if (tip.kind === 'sty') co.style = tip.v; else { co.xi = xiFor(tip.v); co.form = tip.v; swap = null; selB = null; }
+              draw(); };
             if (w.querySelector('#ld-aux-y')) w.querySelector('#ld-aux-y').onclick = () => { sfx('tap'); auxFix(); closePop(); draw(); };
             w.querySelector('#ld-auto').onclick = () => { sfx('tap'); const a = S.coAutoXI(co.squad, co.form); co.xi = a.xi; co.autoXI = true; swap = null; selB = null; closePop(); draw(); };
           }, 'hl-pop acd-pop tm-pop'); };
@@ -800,7 +861,7 @@
         '<div class="mk-k"><b id="mk-n" class="' + (ok ? 'ok' : '') + '">' + U.D.plural(n, 'jogador', 'jogadores') + '</b><span>o olheiro conhece a sua liga</span></div>' +
         '<span class="rs-gap"></span><button class="tm-go' + (ok ? '' : ' off') + '" id="mk-go">' + goTxt(n) + '</button></div></div>', st => {
       st.querySelector('#mk-back').onclick = () => { sfx('tap'); semana(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição e só vale para quem o olheiro já viu. A janela abre antes da 1ª rodada (10 dias) e antes da rodada do meio (6 dias): proposta e contrato gastam 1 dia. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição e só vale para quem o olheiro já viu. A janela do começo vale até a 3ª rodada (10 dias) e a do meio abre antes da rodada do meio (6 dias): proposta e contrato gastam 1 dia. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.'); };
       st.querySelectorAll('[data-mf]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.mf, L = F[i].o.length; m.f[i] = ((m.f[i] || 0) + (+b.dataset.d) + L) % L; c.save(); mercado(); });
       const inp = st.querySelector('#mk-nm');
       inp.oninput = () => { m.nm = inp.value; const k = S.coMktSearch(co).length, good = k > 0 && k <= S.CO_MKT.max, nb = st.querySelector('#mk-n'), gb = st.querySelector('#mk-go');
@@ -1074,10 +1135,11 @@
         back(); recebida(o, back, r); };
     });
   }
-  // Propostas novas na volta para a semana: uma janelinha por vez
+  // Propostas novas na volta para a semana: uma janelinha sozinha por semana (Silvio 2026-11-09: nunca duas seguidas);
+  // as outras ficam no aviso do botão Mercado
   function inboxPop(co, back) {
-    const o = S.coMktInbox(co).find(x => !x.seen); if (!o) return false;
-    setTimeout(() => { if (document.getElementById('ld-pop')) return; o.seen = 1; C().save(); recebida(o, back); }, 80); return true;
+    const m = S.coMkt(co), wk = co.season + '|' + co.ss.i, o = S.coMktInbox(co).find(x => !x.seen); if (!o || m.popK === wk) return false;
+    setTimeout(() => { if (document.getElementById('ld-pop')) return; o.seen = 1; m.popK = wk; C().save(); recebida(o, back); }, 80); return true;
   }
   // Finanças deitada: abas num array (a thread de mercado e finanças vai acrescentar "Decidir")
   const FIN_TABS = [
@@ -1139,7 +1201,8 @@
     const co = C().co, P = S.coPres(co);
     pop(popHead(esc(P.n), 'Presidente · ' + P.nome) + '<div class="ld-pb col">' + presFace(P, 'pi-fc') + '<p class="ldn-p">' + esc(P.txt) + '</p><p class="ldn-p">O caixa no vermelho pesa <b>' + RED_TXT(P.red) + '</b> na confiança dele. A cada 3 temporadas tem eleição e ele pode sair.</p></div>', 'Presidente', null, 'w560');
   }
-  // Reunião de pré-temporada: 3 acordos de verba × meta. welcome: primeira conversa no clube novo
+  // Reunião de pré-temporada: 3 acordos de verba × meta. welcome: primeira conversa no clube novo (depois dela a carreira
+  // cai na Semana, não mais na escalação: Silvio 2026-11-09)
   // Reunião e patrocínio enxutos (2026-11-08, Silvio: sem trilho nem coluna, mas "um pouquinho mais de informação pra
   // análise"): o presidente numa frase, 3 cartões com nome, valor grande e 3 linhas de números; as regras no botão ?
   const acdRow = (k, v) => '<span class="acd-r"><small>' + k + '</small><b>' + v + '</b></span>';
@@ -1159,7 +1222,7 @@
         st.querySelectorAll('[data-ac]').forEach(b => b.onclick = () => { sfx('tap'); reuniao(b.dataset.ac, welcome); });
         st.querySelector('#acd-q').onclick = () => { sfx('tap'); acdHelp('Como funciona', ['Quanto mais verba para contratar, mais alta a meta e o teto da folha.', 'Bater a meta no azul aumenta a verba e o teto do ano seguinte.',
           'Seguro: a diretoria começa desconfiada. Ousado: cumprir dá mais fama, falhar tira fama.', 'Este presidente é ' + P.nome + ': ' + esc(P.txt.charAt(0).toLowerCase() + P.txt.slice(1)) + ' Caixa no vermelho pesa ' + RED_TXT(P.red) + ' para ele.']); };
-        st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinAcordo(co, o.k); c.save('hub'); if (f.pend && f.pend.pat) patrocinio(null, welcome); else { f.pend = null; c.save('hub'); welcome ? time(false) : semana(); } };
+        st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinAcordo(co, o.k); c.save('hub'); if (f.pend && f.pend.pat) patrocinio(null, welcome); else { f.pend = null; c.save('hub'); semana(); } };
       });
   }
   function patrocinio(sel, welcome) {
@@ -1174,7 +1237,7 @@
         st.querySelectorAll('[data-pt]').forEach(b => b.onclick = () => { sfx('tap'); patrocinio(b.dataset.pt, welcome); });
         st.querySelector('#acd-q').onclick = () => { sfx('tap'); acdHelp('Como funciona', ['O dinheiro entra no caixa toda rodada.', 'Com bônus: o fixo é menor, mas no fim do ano entra o bônus se você cumprir a meta da diretoria.',
           'Travado: o valor não muda pelos anos do contrato, suba ou caia o clube.', 'Sua fama traz propostas melhores. Hoje: fama ' + co.fame + '.']); };
-        st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinPatrocinio(co, o.k); f.pend = null; c.save('hub'); welcome ? time(false) : semana(); };
+        st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinPatrocinio(co, o.k); f.pend = null; c.save('hub'); semana(); };
       });
   }
   // Banco enxuto (2026-11-09, quadro 21): o valor grande com ◀ ▶, juros, parcela e total; os degraus do vermelho no ?
@@ -1476,8 +1539,11 @@
   // Chegada ao clube: o presidente diz a meta (um popup em cima da semana)
   function welcome() {
     const c = C(), co = c.co, cl = club(co.club), g = co.board.goal;
-    if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao(null, true) : patrocinio(null, true);
+    // Primeira carreira, primeira temporada: o auxiliar fecha o acordo normal e o patrocínio fixo (Silvio 2026-11-09:
+    // nada de proposta antes de conhecer o elenco); a reunião aparece a partir da 2ª temporada
+    if (S.coFinPend && S.coFinPend(co)) { if (co.first && co.season === 0) { S.coFinAuto(co); c.save('hub'); } else return co.fin.pend.ac ? reuniao(null, true) : patrocinio(null, true); }
     semana();
+    if (document.getElementById('ld-tu')) return; // com o tutorial, quem recebe é o auxiliar
     pop('<div class="ldw">' + crest(cl.id, 'ldw-cr') + '<div>' + lbl(esc(cl.name).toUpperCase() + ' · ' + (U.YEAR0 + co.season)) + '<b>Bem-vindo, professor.</b><p>O presidente aperta sua mão: "Aqui a meta é uma só: <b>' + esc(S.CO_GOAL_TXT[g.k].toLowerCase()) + '</b>. ' +
       (g.k === 'titulo' ? 'Segundo lugar aqui é derrota."' : g.k === 'naocair' || g.k === 'digna' ? 'Ninguém espera milagre, mas vexame não."' : 'Confio no seu trabalho."') + '</p><button class="ld-gold sm" id="ldw-go"><b>Conhecer o elenco</b></button></div></div>', 'Bem-vindo', w => {
       w.querySelector('#ldw-go').onclick = () => { sfx('tap'); closePop(); time(false); };

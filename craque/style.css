@@ -8224,6 +8224,29 @@ body.ld-on #ld { display: block; }
 .tm-ar svg, .tm-h .tcr-back svg { width: 20px; height: 20px; fill: none; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
 .tm-ar svg { stroke: var(--gold); } .tm-h .tcr-back svg { stroke: #F3F1EA; }
 .tm-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* Dica do auxiliar no topo da escalação (Silvio 2026-11-09): rosto, rótulo e a dica numa pílula creme; apagada depois de usada */
+.tm-tip { margin-left: auto; position: relative; height: 44px; border-radius: 22px; background: #F8F4EA !important; color: #13201A !important; display: flex; align-items: center; gap: 9px; padding: 0 16px 0 4px !important; flex: none; }
+.tm-tip-f { width: 36px; height: 36px; border-radius: 50%; background: #E9E2D2; flex: none; }
+.tm-tip span { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.tm-h .tm-tip small { font: 800 12px/1 var(--display); color: #5C6A62; letter-spacing: .06em; }
+.tm-h .tm-tip b { font: 800 18px/1 var(--display); color: #13201A; white-space: nowrap; }
+.tm-tip-d { position: absolute; right: 10px; top: -5px; width: 18px; height: 18px; border-radius: 50%; background: #F08A5D; box-shadow: 0 0 0 3px #0E2C20; }
+.tm-tip.ok { background: rgba(248, 244, 234, .14) !important; } .tm-h .tm-tip.ok b, .tm-h .tm-tip.ok small { color: #F3F1EA; }
+.tm-nw { white-space: nowrap; }
+.tm-fix { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 2px dashed rgba(19, 32, 26, .18); }
+.tm-fix small { flex: 1; font: 600 15px/1.25 var(--body); color: var(--ink-2); } .tm-pop .acd-help .tm-fix .hl-btn { width: auto; flex: none; margin-top: 0; padding: 0 18px; min-height: 44px; }
+/* Tutorial da primeira carreira (opção B): tudo escuro, o alvo aceso com o anel piscando e o auxiliar num balão */
+.tu { position: absolute; inset: 0; z-index: 15; overflow: hidden; animation: fade-in .2s ease; }
+.ld-st .tu .tu-hole { position: absolute; box-shadow: 0 0 0 3px var(--gold), 0 0 0 2000px rgba(3, 10, 7, .74); }
+.tu-hole::after { content: ''; position: absolute; inset: -9px; border-radius: inherit; border: 5px solid rgba(242, 194, 48, .45); animation: tu-pulse 1.3s ease-in-out infinite; }
+@keyframes tu-pulse { 0%, 100% { opacity: .15; transform: scale(.985); } 50% { opacity: 1; transform: scale(1.02); } }
+.tu-bub { position: absolute; width: 400px; box-sizing: border-box; background: #F8F4EA; color: #13201A; border-radius: 18px; padding: 14px 18px 8px 14px; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 10px 28px rgba(0, 0, 0, .5); }
+.tu-fc { width: 60px; height: 60px; border-radius: 50%; background: #E9E2D2; flex: none; }
+.tu-bub p { margin: 0; font: 700 18px/1.3 var(--body); }
+.tu-bub span { display: flex; align-items: center; gap: 6px; }
+.tu-bub small { font: 700 14px/1 var(--body); color: #5C6A62; }
+.ld-st .tu .tu-skip { height: 44px; padding: 0 10px 0 4px; font: 700 15px/1 var(--body); color: #5C6A62; text-decoration: underline; }
+.sm-nv { position: relative; } .sm-nv .tm-dot { right: 14px; top: 14px; text-align: center; }
 .tm-b { position: relative; height: 44px; border-radius: 12px; box-shadow: inset 0 0 0 2px rgba(243,241,234,.22); font: 800 18px/1 var(--display) !important; color: #F3F1EA !important; }
 .tm-dot { position: absolute; right: 10px; top: 11px; width: 22px; height: 22px; border-radius: 50%; background: #F08A5D; color: #1B1606; font: 800 15px/22px var(--display); font-style: normal; }
 .tm-go { margin-top: auto; height: 56px; border-radius: 16px; background: var(--gold) !important; color: #1B1606 !important; box-shadow: 0 4px 0 #b48a12; font: 800 26px/1 var(--display) !important; }

@@ -5,7 +5,7 @@ const { chromium } = require('playwright');
 (async () => { const b = await chromium.launch(); const errs = [];
   const p = await b.newPage({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }); p.on('pageerror', e => errs.push(e.message));
   if (+process.env.SAFE) await (await p.context().newCDPSession(p)).send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, left: +process.env.SAFE, right: +process.env.SAFE, bottom: 21 } }); // SAFE=47: entalhe do iPhone deitado
-  await p.addInitScript(() => { localStorage.setItem('climbix-dicas-v1', '{"off":true}'); localStorage.setItem('climbix-deitado', '1'); });
+  await p.addInitScript(() => { localStorage.setItem('climbix-dicas-v1', '{"off":true}'); localStorage.setItem('climbix-deitado', '1'); localStorage.setItem('climbix-co-ja', '1'); }); // co-ja: como quem já teve carreira (a primeira pula reunião e patrocínio)
   await p.goto('http://127.0.0.1:8765/craque/'); await p.waitForTimeout(1200);
   const out = process.argv[2];
   await p.screenshot({ path: out + '/hl1-vazia.png' });
