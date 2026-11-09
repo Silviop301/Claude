@@ -55,7 +55,7 @@
   // Caderno escondido (Silvio, 2026-11-09: a matriz não escala com mais formações; volta com outro formato). O motor
   // continua anotando em co.cad; CAD = true traz de volta a tela, o botão da semana e os blocos do resultado e da tática
   const CAD = false;
-  const RAIL = [['inicio', 'Início'], ['semana', 'Semana'], ['time', 'Time']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([ ['tabela', 'Tabela'], ['mercado', 'Mercado', 1], ['clube', 'Clube'], ['celular', 'Celular', 1]]);
+  const RAIL = [['inicio', 'Início'], ['semana', 'Semana'], ['time', 'Time']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([ ['tabela', 'Tabela'], ['mercado', 'Mercado'], ['clube', 'Clube'], ['celular', 'Celular', 1]]);
   const rail = act => '<nav class="ld-rail" aria-label="Menu do técnico">' + RAIL.map(([k, t, soon]) => soon
     ? '<span class="ld-ri soon">' + t + '<small>em breve</small></span>'
     : '<button class="ld-ri' + (k === act ? ' on' : '') + '" data-rail="' + k + '"' + (k === act ? ' aria-current="page"' : '') + '>' + t + '</button>').join('') + '</nav>';
@@ -146,6 +146,7 @@
     if (k === 'caderno') return CAD ? caderno() : semana();
     if (k === 'tabela') return tabela();
     if (k === 'clube') return clube();
+    if (k === 'mercado') return mercado();
   }
 
   // ---------- Semana enxuta (Silvio 2026-11-08, opção A): sem trilho nem faixa do topo; uma linha com posição,
@@ -179,7 +180,7 @@
       wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
         '<button class="sm-w' + (sc ? ' ok' : '') + '" id="ld-ol"><small>OLHEIRO</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o ' + esc(vc.short || vc.name)) + '</b></button></div>';
     } else card = '<div class="sm-bye"><b>Sem jogo nesta rodada</b><small>O time descansa. Os outros jogam.</small></div>';
-    const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + '</button>').join('');
+    const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['mercado', 'Mercado'], ['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + '</button>').join('');
     show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + wk +
       '<nav class="sm-side" aria-label="Menu do técnico">' + nav + '<button class="tm-go" id="ld-play">' + (nx.bye ? 'Ver a rodada' : 'Jogar') + '</button></nav></div>', st => {
       st.querySelector('#ld-play').onclick = () => { sfx('tap'); if (nx.bye) { S.coSkipRound(co); c.save(); return semana(); } time(true); };
@@ -723,9 +724,90 @@
       '<div class="kb2-side"><div class="kb2-dir"><small>DIRETORIA</small><b>' + (conf >= 70 ? 'confiança alta' : conf >= 45 ? 'confiança boa' : conf >= 30 ? 'confiança baixa' : 'no limite') + '</b>' +
           '<i><u class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '" style="width:' + conf + '%"></u></i><em class="' + (pos <= B.goal.pos ? '' : 'hi') + '">' + meta + '</em></div>' +
         (pres ? '<div class="kb2-pr"><small>PRESIDENTE</small><b>' + esc(pres.n) + '</b><span>' + esc(pres.nome || '') + '</span></div>' : '') +
-        '<span class="rs-gap"></span><p class="kb2-soon">Mercado, estádio e base chegam depois</p></div></div>', st => {
+        '<span class="rs-gap"></span><p class="kb2-soon">Estádio e base chegam depois</p></div></div>', st => {
       st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') financas(); else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); });
       st.querySelector('#kb2-back').onclick = () => { sfx('tap'); semana(); };
+    });
+  }
+  // ---------- Mercado, lote 1 (2026-11-09, quadros 23, 23b e 24): só olhar; propostas no lote 2 ----------
+  // Procurar só com filtros (Silvio: "pra não ficar uma lista extensa à toa", como no WSC): 6 escolhas com ◀ ▶ e o nome;
+  // o total muda a cada toque e Buscar só libera com até S.CO_MKT.max jogadores. O resultado mostra 4 por página.
+  const MK_BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+  const MK_L = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 4L6 12l11 8z"/></svg>', MK_R = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l11 8-11 8z"/></svg>';
+  const mkHead = (id, t, s) => '<div class="tm-h"><button class="tcr-back" id="' + id + '" aria-label="Voltar">' + MK_BK + '</button><b>' + t + '</b><small>' + s + '</small><button class="ol2-q" id="mk-q" aria-label="Como funciona">?</button></div>';
+  const mkHelp = (t, p) => pop('<div class="acd-help"><b>Como funciona</b><p>' + p + '</p><button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop');
+  const mkClub = p => (p.club ? esc(club(p.club).short || club(p.club).name) : 'sem clube');
+  function mercado() {
+    const c = C(), co = c.co, m = S.coMkt(co), F = S.coMktFilters(co);
+    m.f = F.map((x, i) => Math.min(m.f[i] || 0, x.o.length - 1));
+    const n = S.coMktSearch(co).length, ok = n > 0 && n <= S.CO_MKT.max;
+    const tabs = [['Procurar', 1], ['Indicados'], ['Elenco'], ['Notícias']].map(([t, on]) => '<button' + (on ? ' class="on"' : ' disabled title="em breve"') + '>' + t + '</button>').join('');
+    const cell = (x, i) => { const v = m.f[i] || 0, t = x.o[v].t;
+      return '<div class="mk-f' + (v ? ' on' : '') + '"><small>' + x.t + '</small><span><button class="mk-ar" data-mf="' + i + '" data-d="-1" aria-label="' + x.t.toLowerCase() + ' anterior">' + MK_L + '</button><b class="' + (t.length > 16 ? 'mk-sm' : '') + '">' + esc(t) + '</b><button class="mk-ar" data-mf="' + i + '" data-d="1" aria-label="' + x.t.toLowerCase() + ' seguinte">' + MK_R + '</button></span></div>'; };
+    const goTxt = n => (n > 0 && n <= S.CO_MKT.max ? 'Buscar' : n ? 'Filtre mais' : 'Ninguém: solte um filtro');
+    show('<div class="mk">' + mkHead('mk-back', 'Mercado', esc(club(co.club).short || club(co.club).name) + ' · propostas em breve') +
+      '<div class="mk-tabs">' + tabs + '</div><div class="mk-fs">' + F.map(cell).join('') + '</div>' +
+      '<div class="mk-side"><label class="mk-k mk-nm"><small>NOME</small><input id="mk-nm" type="text" autocomplete="off" placeholder="Toque para digitar" value="' + esc(m.nm || '') + '"></label>' +
+        '<div class="mk-k"><b id="mk-n" class="' + (ok ? 'ok' : '') + '">' + U.D.plural(n, 'jogador', 'jogadores') + '</b><span>o olheiro conhece a sua liga</span></div>' +
+        '<span class="rs-gap"></span><button class="tm-go' + (ok ? '' : ' off') + '" id="mk-go">' + goTxt(n) + '</button></div></div>', st => {
+      st.querySelector('#mk-back').onclick = () => { sfx('tap'); semana(); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição e só vale para quem o olheiro já viu. As propostas chegam na próxima parte do mercado.'); };
+      st.querySelectorAll('[data-mf]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.mf, L = F[i].o.length; m.f[i] = ((m.f[i] || 0) + (+b.dataset.d) + L) % L; c.save(); mercado(); });
+      const inp = st.querySelector('#mk-nm');
+      inp.oninput = () => { m.nm = inp.value; const k = S.coMktSearch(co).length, good = k > 0 && k <= S.CO_MKT.max, nb = st.querySelector('#mk-n'), gb = st.querySelector('#mk-go');
+        nb.textContent = U.D.plural(k, 'jogador', 'jogadores'); nb.className = good ? 'ok' : ''; gb.textContent = goTxt(k); gb.classList.toggle('off', !good); };
+      inp.onkeydown = e => { if (e.key === 'Enter') { inp.blur(); st.querySelector('#mk-go').click(); } };
+      st.querySelector('#mk-go').onclick = () => { const k = S.coMktSearch(co).length; if (!(k > 0 && k <= S.CO_MKT.max)) return; sfx('tap'); c.save(); mercadoRes(0, 0); };
+    });
+  }
+  // Resultado (23b): os filtros usados em cima e Mudar; 4 jogadores por página; à direita verba, folha e as páginas
+  function mercadoRes(pg, sel) {
+    const c = C(), co = c.co, m = S.coMkt(co), F = S.coMktFilters(co), f = S.coFin(co), folha = S.coFolha(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
+    const list = S.coMktSort(co, S.coMktSearch(co)), pages = Math.max(1, Math.ceil(list.length / 4));
+    pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * 4, pg * 4 + 4); sel = Math.min(sel || 0, R.length - 1);
+    const chips = F.map((x, i) => (m.f[i] ? '<span class="mk-chip">' + esc(x.o[m.f[i]].t.replace(' · verba', '')) + '</span>' : '')).join('') + (m.nm && m.nm.trim().length >= 3 ? '<span class="mk-chip">"' + esc(m.nm.trim()) + '"</span>' : '');
+    const row = (p, i) => { const b = S.coMktBand(co, p), w = S.coMktWord(b), pr = S.coMktPrice(p);
+      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><i>' + p.pos + '</i><span><b>' + esc(p.n) + '</b><small' + (b ? '' : ' class="nr"') + '>' + p.age + ' anos · ' + mkClub(p) + (b ? '' : ' · sem relatório') + '</small></span>' +
+        '<em class="' + (w || 'nr') + '">' + (w || '?') + '</em><strong>' + (p.club ? c.brl(pr) : 'grátis') + '</strong></button>'; };
+    show('<div class="mk mkr">' + mkHead('mkr-back', 'Resultado', U.D.plural(list.length, 'jogador', 'jogadores')) +
+      '<div class="mk-chips">' + chips + '<span class="rs-gap"></span><button class="mk-mud" id="mkr-mud">Mudar</button></div>' +
+      '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">Ninguém com esses filtros.</p>') + '</div>' +
+      '<div class="mk-side"><div class="mk-k"><small>VERBA</small><b class="up">' + c.brl(f.verba) + '</b><span class="mk-fl"><span>Folha</span><span>' + pct + '% do teto</span></span><i class="mk-bar"><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i></div>' +
+        '<div class="mk-pg"><button class="mk-ar big" id="mkr-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar big" id="mkr-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></div>' +
+        '<span class="rs-gap"></span><button class="tm-go' + (R.length ? '' : ' off') + '" id="mkr-go">Ver ficha</button></div></div>', st => {
+      st.querySelector('#mkr-back').onclick = () => { sfx('tap'); mercado(); };
+      st.querySelector('#mkr-mud').onclick = () => { sfx('tap'); mercado(); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Melhor, igual ou pior é contra o seu titular da posição. Quem o olheiro ainda não viu aparece sem relatório; peça um na ficha. Os com relatório vêm primeiro.'); };
+      st.querySelectorAll('[data-mr]').forEach(b => b.onclick = () => { const i = +b.dataset.mr; sfx('tap'); if (i === sel) return ficha(R[i].id, () => mercadoRes(pg, i)); mercadoRes(pg, i); });
+      st.querySelector('#mkr-prev').onclick = () => { sfx('tap'); mercadoRes(pg - 1, 0); };
+      st.querySelector('#mkr-next').onclick = () => { sfx('tap'); mercadoRes(pg + 1, 0); };
+      st.querySelector('#mkr-go').onclick = () => { if (!R.length) return; sfx('tap'); ficha(R[sel].id, () => mercadoRes(pg, sel)); };
+    });
+  }
+  // Ficha (24): a força numa faixa borrada contra o seu titular (sem número), que estreita a cada relatório;
+  // potencial em palavras e o jeito de jogar; à direita preço, salário e contrato, relatório, observar e a proposta
+  function ficha(id, back) {
+    const c = C(), co = c.co, p = S.coMktFind(co, id); if (!p) return mercado();
+    const b = S.coMktBand(co, p), n = b ? b.n : 0, st0 = b ? b.st : S.coMktStarter(co, p.pos), sp = S.CO_MKT.span, obs = !!S.coMkt(co).obs[p.id];
+    const X = v => Math.max(0, Math.min(100, 50 + 50 * v / sp));
+    const CERT = ['', 'pouca certeza', 'certeza média', 'certeza alta'];
+    const word = b ? S.coMktWord(b) : '';
+    const band = b ? '<span class="mk-band" style="left:' + X(b.lo) + '%;width:' + Math.max(4, X(b.hi) - X(b.lo)) + '%"></span>' : '';
+    const pot = b ? S.coMktPot(p) : null, tr = b ? S.coMktTraits(p) : null;
+    const yr = p.club ? 'até ' + (U.YEAR0 + co.season + p.ct) : 'livre';
+    show('<div class="mk mkf">' + mkHead('mkf-back', esc(p.n), S.CO_POS_NM[p.pos] + ' · ' + p.age + ' anos · ' + mkClub(p)) +
+      '<div class="mk-k mkf-cmp"><span class="mkf-t"><small>CONTRA O SEU ' + (S.CO_POS_NM[p.pos] || '').toUpperCase() + ' TITULAR</small>' + (b ? '<b class="' + word + '">' + word + '<small>' + CERT[n] + '</small></b>' : '<b class="nr">sem relatório</b>') + '</span>' +
+        '<span class="mkf-sc"><i></i>' + band + '<em></em><strong>' + esc(st0 ? last(st0.n) : 'titular') + '</strong></span><span class="mkf-w"><span>pior</span><span>igual</span><span>melhor</span></span></div>' +
+      '<div class="mkf-g"><div class="mk-k"><small>POTENCIAL</small><b>' + (pot ? pot[0] : 'Peça um relatório') + '</b>' + (pot ? '<span class="mkf-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= pot[1] ? 'on' : '') + '"></i>').join('') + '</span>' : '<span class="mkf-nr">o olheiro ainda não viu</span>') + '</div>' +
+        '<div class="mk-k"><small>JEITO DE JOGAR</small>' + (tr ? '<span class="mkf-tr">' + tr.good.map(t => '<span>' + t + '</span>').join('') + '</span><span class="mkf-nr">' + (n >= 3 ? 'Ponto fraco: ' + tr.bad : 'o relatório completo mostra o ponto fraco') + '</span>' : '<b>?</b><span class="mkf-nr">o olheiro ainda não viu</span>') + '</div></div>' +
+      '<div class="mk-side"><div class="mk-k mkf-li"><div><span>Preço</span><b>' + (p.club ? c.brl(S.coMktPrice(p)) : 'grátis') + '</b></div><div><span>Salário</span><b>' + c.brl(p.wage) + '/sem</b></div><div><span>Contrato</span><b>' + yr + '</b></div></div>' +
+        '<div class="mkf-act"><button class="mkf-rep' + (n >= S.CO_MKT.reps ? ' done' : '') + '" id="mkf-rep"' + (n >= S.CO_MKT.reps ? ' disabled' : '') + '>' + (n >= S.CO_MKT.reps ? 'Relatório completo' : n ? 'Mais um relatório' : 'Pedir relatório') + '</button>' +
+          '<button class="mkf-star' + (obs ? ' on' : '') + '" id="mkf-star" aria-label="Observar" aria-pressed="' + obs + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button></div>' +
+        '<span class="rs-gap"></span><button class="tm-go off" id="mkf-go" disabled>Propostas em breve</button></div></div>', st => {
+      st.querySelector('#mkf-back').onclick = () => { sfx('tap'); (back || mercado)(); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'A faixa é onde o olheiro acha que ele está, comparado ao seu titular. Cada relatório deixa a faixa mais estreita. Na janela de transferências, cada relatório vai gastar 1 dia.'); };
+      if (n < S.CO_MKT.reps) st.querySelector('#mkf-rep').onclick = () => { sfx('tap'); S.coMktReport(co, p); c.save(); ficha(id, back); };
+      st.querySelector('#mkf-star').onclick = () => { sfx('tap'); S.coMktObs(co, p); c.save(); ficha(id, back); };
     });
   }
   // Finanças deitada: abas num array (a thread de mercado e finanças vai acrescentar "Decidir")
@@ -1158,6 +1240,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao };
+  U.LD = { on, show, off, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, ficha };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();
