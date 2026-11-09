@@ -170,6 +170,21 @@
     return f.caixa < S.coFolha(co) * F.avisoWk ? 1 : 0;
   };
   S.coFinBan = co => { const f = S.coFin(co); return !!(f && f.caixa < 0); };
+  // Aporte do investidor (moedas → dinheiro, fase 3 das moedas): 20 moedas = 1 semana da folha normal do clube, entra no
+  // caixa e na verba (comprar tira dos dois); até 10 semanas por temporada; no vermelho não pode (não é saída da crise).
+  // Fica fora do saldo da temporada (f.ss.apo), então não conta como lucro para a diretoria. Quem cobra as moedas é a tela.
+  S.CO_APORTE = { coin: 20, max: 10 };
+  S.coAporteUsed = co => { const f = S.coFin(co); return f && f.ap && f.ap.s === co.season ? f.ap.wk : 0; };
+  S.coAporteLeft = co => { const f = S.coFin(co); return !f || f.caixa < 0 ? 0 : Math.max(0, S.CO_APORTE.max - S.coAporteUsed(co)); };
+  S.coAporteValue = (co, wk) => r10(baseOf(co) * wk);
+  S.coAporte = function (co, wk) {
+    wk = Math.round(wk); if (!(wk > 0) || wk > S.coAporteLeft(co)) return 0;
+    const f = S.coFin(co), v = S.coAporteValue(co, wk);
+    f.caixa += v; f.verba += v; f.ss.apo = (f.ss.apo || 0) + v;
+    f.ap = { s: co.season, wk: S.coAporteUsed(co) + wk };
+    if (f.caixa >= 0) f.neg = 0;
+    return v;
+  };
   const MIN = { GOL: 2, ZAG: 3, LAT: 2, MEI: 3, ATA: 2 };
   function forcedSale(co) {
     const f = co.fin;

@@ -221,7 +221,7 @@
       '<b>' + ord(pos) + '</b><small>' + me.p + ' pts</small>' + f5(me.f) +
       '<em class="sm-tag' + (pos > (B.goal.k === 'titulo' ? 1 : B.goal.pos) ? ' hi' : '') + '" title="' + esc(S.CO_GOAL_TXT[B.goal.k]) + '">META · ' + meta + '</em><span class="ld-gr"></span>' +
       (B.ult ? '<em class="sm-tag ult">ULTIMATO · VENÇA ' + B.ult.need + ' DE ' + B.ult.of + '</em>' : '') +
-      (U.COINS ? U.COINS.pill('cp-sm') : '') + '<span class="sm-dir">Diretoria <em class="ld-bar"><u style="width:' + conf + '%" class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '"></u></em></span></div>';
+      (U.COINS ? U.COINS.pill('cp-sm', 'sm-coins') : '') + '<span class="sm-dir">Diretoria <em class="ld-bar"><u style="width:' + conf + '%" class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '"></u></em></span></div>';
     const side = (id, nm, sub) => '<div class="sm-tm">' + crest(id, 'sm-cr') + '<b>' + esc(nm) + '</b><small>' + sub + '</small></div>';
     let card, wk = '';
     if (!nx.bye) {
@@ -237,6 +237,7 @@
     const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['mercado', 'Mercado'], ['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + '</button>').join('');
     show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + wk +
       '<nav class="sm-side" aria-label="Menu do técnico">' + nav + '<button class="tm-go" id="ld-play">' + (nx.bye ? 'Ver a rodada' : 'Jogar') + '</button></nav></div>', st => {
+      if (st.querySelector('#sm-coins')) st.querySelector('#sm-coins').onclick = () => { sfx('tap'); loja(0, semana); };
       st.querySelector('#ld-play').onclick = () => { sfx('tap'); if (nx.bye) { S.coSkipRound(co); c.save(); return semana(); } time(true); };
       st.querySelector('#sm-back').onclick = () => { sfx('tap'); go('inicio'); };
       if (st.querySelector('#ld-tr')) st.querySelector('#ld-tr').onclick = () => { sfx('tap'); treino(); };
@@ -1019,9 +1020,9 @@
       '<div class="fn2-p">' + rows + '</div>' +
       '<div class="fn2-side"><div class="fn2-st"><small>SITUAÇÃO DO CAIXA</small><b class="s' + step + '">' + FIN_STEP[step][0] + '</b><span class="fn2-dd">' + [1, 2, 3, 4].map(i => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '</span><em>' + FIN_STEP[step][1] + '</em></div>' +
         '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><div><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></div></div>' +
-        '<span class="rs-gap"></span><button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div></div>', st => {
+        '<span class="rs-gap"></span><div class="fn2-bt">' + (U.COINS ? '<button class="tm-b fn2-apo" data-fd="apo" id="fn2-apo">' + U.COINS.svg + 'Aporte</button>' : '') + '<button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div></div></div>', st => {
       st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); financas(b.dataset.ft); });
-      st.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.fd; if (k === 'banco') banco(); else if (k === 'pres') presInfo(); });
+      st.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.fd; if (k === 'banco') banco(); else if (k === 'pres') presInfo(); else if (k === 'apo') loja(1, () => financas(tab)); });
       st.querySelector('#ldf-back').onclick = () => { sfx('tap'); clube(); };
     });
   }
@@ -1240,6 +1241,59 @@
     draw();
   }
   const D_CLUBS = lg => (window.CRAQUE_DATA.CLUBS || []).filter(x => x.league === lg.id);
+  // ---------- Loja (quadro 40, Silvio aprovou 2026-11-09): abas Moedas e Dinheiro do clube ----------
+  // Moedas: 4 pacotes fixos, sem sorteio (a cobrança pelo Mercado Pago chega na fase 5; até lá o botão fica "em breve").
+  // Dinheiro do clube: aporte do investidor em semanas da folha (S.coAporte), 20 moedas cada, só com uma carreira aberta.
+  const PACKS = [{ k: 'p1', n: 120, nm: 'Punhado', pr: 'R$ 4,90', h: 1 }, { k: 'p2', n: 350, nm: 'Saco', pr: 'R$ 12,90', h: 2 },
+    { k: 'p3', n: 800, nm: 'Baú', pr: 'R$ 24,90', h: 3, tag: '+20%' }, { k: 'p4', n: 2000, nm: 'Cofre', pr: 'R$ 49,90', h: 4, tag: '+50%' }];
+  const COIN_PILE = h => { const cols = h >= 4 ? [22, 37, 52] : h >= 3 ? [26, 48] : [37]; let g = '';
+    cols.forEach((x, ci) => { const n = Math.min(6, h + 1 + (ci === 1 ? 1 : 0)); for (let i = 0; i < n; i++) { const y = 60 - i * 7;
+      g += '<ellipse cx="' + x + '" cy="' + (y + 3) + '" rx="15" ry="6" fill="#b48a12"/><ellipse cx="' + x + '" cy="' + y + '" rx="15" ry="6" fill="#F2C230"/><ellipse cx="' + x + '" cy="' + y + '" rx="10" ry="3.5" fill="none" stroke="#b48a12" stroke-width="1.5"/>'; } });
+    return '<svg viewBox="0 0 74 74" aria-hidden="true">' + g + '</svg>'; };
+  function loja(tab, back) {
+    const c = C(), co = c && c.co && c.co.club ? c.co : null;
+    let pk = 1, wk = 1;
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', FW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+    const draw = () => {
+      const saldo = U.COINS.get();
+      const tabs = '<span class="lj-tabs">' + ['Moedas', 'Dinheiro do clube'].map((t, i) => '<button data-lj="' + i + '"' + (i === tab ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('') + '</span>';
+      let main, side;
+      if (tab === 0) {
+        main = '<div class="lj-pk">' + PACKS.map((p, i) => '<button class="lj-p' + (i === pk ? ' on' : '') + '" data-pk="' + i + '">' + (p.tag ? '<em>' + p.tag + '</em>' : '') + COIN_PILE(p.h) +
+          '<span><b>' + p.n.toLocaleString('pt-BR') + '</b><small>' + p.nm + '</small></span><i>' + p.pr + '</i></button>').join('') + '</div>';
+        side = '<div class="lj-box"><small class="ld-lbl">GANHE JOGANDO</small>' + [['Título da Série A', 60], ['Acesso', 15], ['Meta cumprida', 5], ['Metas da semana', 10]].map(([t, n]) => '<div class="lj-li"><span>' + t + '</span><b>+' + n + '</b></div>').join('') + '</div>' +
+          '<small class="lj-ty">Sua compra ajuda a manter e melhorar o Climbix.</small><button class="tm-go off" id="lj-buy" disabled>Compra em breve</button>';
+      } else if (!co) {
+        main = '<div class="lj-ap lj-none"><b>Abra uma carreira do Treinador</b><small>O aporte entra na verba do clube que você treina.</small></div>';
+        side = '<span class="rs-gap"></span>';
+      } else {
+        const left = S.coAporteLeft(co), used = S.coAporteUsed(co), f = S.coFin(co), red = f.caixa < 0;
+        wk = Math.max(1, Math.min(wk, Math.max(1, left)));
+        const cost = wk * S.CO_APORTE.coin, v = S.coAporteValue(co, wk), ok = left > 0 && saldo >= cost;
+        main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · vai para a verba</small></span></div>' +
+          '<div class="lj-v"><button id="lj-m" aria-label="Menos"' + (wk <= 1 ? ' disabled' : '') + '>' + BK + '</button><span><b>+ ' + c.brl(v) + '</b><small>' + U.D.plural(wk, 'semana', 'semanas') + ' da folha</small></span><button id="lj-p" aria-label="Mais"' + (wk >= left ? ' disabled' : '') + '>' + FW + '</button></div>' +
+          '<div class="lj-two"><span><small>Verba</small><b>' + c.brl(f.verba) + ' → ' + c.brl(f.verba + (left ? v : 0)) + '</b></span><span><small>Nesta temporada</small><b>' + (used + (left ? wk : 0)) + ' de ' + S.CO_APORTE.max + ' semanas</b></span></div></div>';
+        side = '<div class="lj-box lj-cost"><small class="ld-lbl">CUSTA</small><span>' + U.COINS.svg + '<b>' + cost + '</b></span><small>' + (saldo >= cost ? 'sobram ' + (saldo - cost) + ' moedas' : 'faltam ' + (cost - saldo) + ' moedas') + '</small></div>' +
+          '<button class="tm-go' + (ok ? '' : ' off') + '" id="lj-ap"' + (ok ? '' : ' disabled') + '>' + (red ? 'Caixa no vermelho' : !left ? 'Limite da temporada' : 'Fazer aporte') + '</button>';
+      }
+      show('<div class="lj"><div class="tm-h"><button class="tcr-back" id="lj-back" aria-label="Voltar">' + BK + '</button><b>Loja</b></div>' + tabs + U.COINS.pill('lj-pill') +
+        '<div class="lj-main">' + main + '</div><div class="lj-side">' + side + '</div></div>', st => {
+        st.querySelector('#lj-back').onclick = () => { sfx('tap'); back ? back() : U.home(); };
+        st.querySelectorAll('[data-lj]').forEach(b => b.onclick = () => { sfx('tap'); tab = +b.dataset.lj; draw(); });
+        st.querySelectorAll('[data-pk]').forEach(b => b.onclick = () => { sfx('tap'); pk = +b.dataset.pk; draw(); });
+        if (st.querySelector('#lj-m')) st.querySelector('#lj-m').onclick = () => { sfx('tap'); wk--; draw(); };
+        if (st.querySelector('#lj-p')) st.querySelector('#lj-p').onclick = () => { sfx('tap'); wk++; draw(); };
+        if (st.querySelector('#lj-ap')) st.querySelector('#lj-ap').onclick = () => {
+          const cost = wk * S.CO_APORTE.coin;
+          if (!U.COINS.spend(cost, 'Aporte: ' + (club(co.club).short || club(co.club).name))) return;
+          const v = S.coAporte(co, wk); if (!v) { U.COINS.add({ n: cost, t: 'Aporte devolvido' }); return; }
+          sfx('coin'); c.save(); wk = 1; draw();
+          pop('<div class="acd-help"><b>Aporte feito</b><p>+ ' + c.brl(v) + ' na verba do ' + esc(club(co.club).short || club(co.club).name) + '.</p><button class="hl-btn dark" data-pop-x>Fechar</button></div>', 'Aporte feito', null, 'hl-pop acd-pop tm-pop');
+        };
+      });
+    };
+    draw();
+  }
   // ---------- Escolher clube com moedas (quadro 41, Silvio aprovou 2026-11-09) ----------
   // Liga com ◀ ▶ (começa na liga do seu país), escudos com o preço em 2 linhas que deslizam para o lado,
   // do lado o escolhido: meta, elenco em palavras, verba de chegada e quanto sobra. Assinar gasta as moedas.
@@ -1251,25 +1305,29 @@
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', FW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
     const draw = () => {
       const lg = lgs[li], ids = S.coBuyList(co, lg.id); if (!ids.includes(pick)) pick = ids[0];
-      const saldo = U.COINS.get(), price = S.coClubPrice(pick), g = S.coGoalFor(co, pick), cl = club(pick);
+      const saldo = U.COINS.get(), mine = U.COINS.owns(pick), price = mine ? 0 : S.coClubPrice(pick), g = S.coGoalFor(co, pick), cl = club(pick);
+      const logged = !!(U.cloudStatus && U.cloudStatus());
       const avg = ids.concat(co.club && club(co.club).league === lg.id ? [co.club] : []).reduce((a, id) => a + club(id).strength, 0) / Math.max(1, ids.length);
       const rel = cl.strength - avg, el = rel > 6 ? 'muito forte' : rel > 2 ? 'forte' : rel < -4 ? 'fraco' : 'médio';
       const verba = S.coFinBase({ club: pick, season: co.season }) * S.CO_FIN.verba0, hi = ['titulo', 'subir', 'g4'].includes(g.k), ok = saldo >= price;
-      const cell = id => '<button class="ec-c' + (id === pick ? ' on' : '') + '" data-ec="' + id + '" aria-pressed="' + (id === pick) + '">' + crest(id, 'ec-cr') + '<b>' + esc(club(id).short || club(id).name) + '</b><span>' + U.COINS.svg + S.coClubPrice(id) + '</span></button>';
+      const cell = id => '<button class="ec-c' + (id === pick ? ' on' : '') + '" data-ec="' + id + '" aria-pressed="' + (id === pick) + '">' + crest(id, 'ec-cr') + '<b>' + esc(club(id).short || club(id).name) + '</b>' + (U.COINS.owns(id) ? '<span class="ec-own">Seu time</span>' : '<span>' + U.COINS.svg + S.coClubPrice(id) + '</span>') + '</button>';
       show('<div class="ec"><div class="tm-h"><button class="tcr-back" id="ec-back" aria-label="Voltar">' + BK + '</button><b>Escolher clube</b></div>' +
         '<div class="ec-lg"><button id="ec-lp" aria-label="Liga anterior">' + BK + '</button><b>' + esc(lg.country) + ' · ' + esc(lg.name) + '</b><button id="ec-ln" aria-label="Próxima liga">' + FW + '</button></div>' + U.COINS.pill('ec-pill') +
         '<div class="ec-g">' + ids.map(cell).join('') + '</div>' +
         '<div class="ec-side"><div class="ec-sel"><div class="ec-sh">' + crest(pick, 'ec-scr') + '<b>' + esc(cl.short || cl.name) + '</b></div>' +
           '<em class="ec-m' + (hi ? ' hi' : '') + '">META · ' + esc(S.CO_GOAL_TXT[g.k]) + '</em>' +
           '<div class="ec-li"><span>Elenco</span><b>' + el + '</b></div><div class="ec-li"><span>Verba</span><b>' + c.brl(verba) + '</b></div>' +
-          '<div class="ec-li"><span>Moedas depois</span><b>' + (ok ? saldo - price : '—') + '</b></div></div>' +
-          '<button class="tm-go' + (ok ? '' : ' off') + '" id="ec-go"' + (ok ? '' : ' disabled') + '>' + (ok ? 'Assinar · ' + price + ' moedas' : 'Faltam ' + (price - saldo) + ' moedas') + '</button></div></div>', st => {
+          '<div class="ec-li"><span>' + (mine ? 'Comprado' : 'Moedas depois') + '</span><b>' + (mine ? 'no seu perfil' : ok ? saldo - price : '—') + '</b></div></div>' +
+          '<button class="tm-go' + (!ok ? ' off' : !mine && !logged ? ' ec-in' : '') + '" id="ec-go">' + (mine ? 'Assinar · seu time' : !ok ? 'Faltam ' + (price - saldo) + ' moedas' : !logged ? 'Entrar para comprar' : 'Comprar · ' + price + ' moedas') + '</button></div></div>', st => {
         st.querySelector('#ec-back').onclick = () => { sfx('tap'); back(); };
         st.querySelector('#ec-lp').onclick = () => { sfx('tap'); li = (li - 1 + lgs.length) % lgs.length; pick = null; draw(); };
         st.querySelector('#ec-ln').onclick = () => { sfx('tap'); li = (li + 1) % lgs.length; pick = null; draw(); };
         st.querySelectorAll('[data-ec]').forEach(b => b.onclick = () => { sfx('tap'); const sc = st.querySelector('.ec-g').scrollLeft; pick = b.dataset.ec; draw(); const g2 = document.querySelector('.ec-g'); if (g2) g2.scrollLeft = sc; });
         st.querySelector('#ec-go').onclick = () => {
-          if (!U.COINS.spend(price, 'Clube: ' + (cl.short || cl.name))) return;
+          if (!ok) { sfx('tap'); return loja(0, draw); }
+          // Comprar exige conta (Silvio 2026-11-09): o time fica no perfil e vai junto para outro aparelho
+          if (!mine && !logged) { sfx('tap'); c.save(); off(); return U.cloud ? U.cloud() : U.home(); }
+          if (!mine) { if (!U.COINS.spend(price, 'Clube: ' + (cl.short || cl.name))) return; U.COINS.own(pick); }
           sfx('tap'); S.coBuyClub(co, pick, price); co.autoXI = true; co.offers = null; S.coStart(co); c.save('hub'); welcome();
         };
       });
@@ -1469,6 +1527,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, ficha, proposta, contrato };
+  U.LD = { on, show, off, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, ficha, proposta, contrato };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();

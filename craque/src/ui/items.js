@@ -290,13 +290,16 @@
     Object.keys(days).forEach(k => { days[k] = Math.max((a.days || {})[k] || 0, (b.days || {})[k] || 0); });
     // Perfil (ui/profile.js): metas do salvo mais recente; o XP fica com o maior
     const prof = newer.prof || a.prof || b.prof ? Object.assign({}, newer.prof || a.prof || b.prof, { xp: Math.max((a.prof || {}).xp || 0, (b.prof || {}).xp || 0) }) : undefined;
-    return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news), days }, prof ? { prof } : {});
+    // Moedas: saldo e log do salvo mais recente; times comprados e prêmios de uma vez de qualquer aparelho
+    const ca = a.coins || {}, cb = b.coins || {}, cn = newer.coins || a.coins || b.coins;
+    const coins = cn ? Object.assign({}, cn, { clubs: Object.assign({}, ca.clubs, cb.clubs), once: Object.assign({}, ca.once, cb.once) }) : undefined;
+    return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news), days }, prof ? { prof } : {}, coins ? { coins } : {});
   }
 
   // ---------- moedas da conta (2026-11-09, Silvio: moedas e dinheiro do clube) ----------
   // { n: saldo, got: total ganho, log: [{ n, t, at }] (os 20 últimos), once: { chave: 1 } (prêmio de uma vez só) }
   // Valem em todas as carreiras; as pagas (fase 5) vão ficar no servidor, estas são as ganhas jogando
-  const wallet = () => { const o = get(); if (!o.coins || typeof o.coins.n !== 'number') o.coins = { n: 0, got: 0, log: [], once: {} }; o.coins.once = o.coins.once || {}; return o.coins; };
+  const wallet = () => { const o = get(); if (!o.coins || typeof o.coins.n !== 'number') o.coins = { n: 0, got: 0, log: [], once: {} }; o.coins.once = o.coins.once || {}; o.coins.clubs = o.coins.clubs || {}; return o.coins; };
   function coinAdd(list) {
     const w = wallet(); let tot = 0;
     [].concat(list || []).forEach(x => {
@@ -315,8 +318,14 @@
     return true;
   }
   const COIN_SVG = '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="#F2C230"/><circle cx="13" cy="13" r="8.5" fill="none" stroke="#b48a12" stroke-width="2"/><path d="M13 8v10M10 11h6" stroke="#b48a12" stroke-width="2.4" stroke-linecap="round"/></svg>';
-  const pill = cls => { const n = wallet().n; return '<span class="coin-pill' + (cls ? ' ' + cls : '') + '" role="img" aria-label="' + n + (n === 1 ? ' moeda' : ' moedas') + '">' + COIN_SVG + '<b>' + n.toLocaleString('pt-BR') + '</b></span>'; };
-  U.COINS = { pill, svg: COIN_SVG, spend: coinSpend, get: () => wallet().n, got: () => wallet().got, log: () => wallet().log.slice(), add: coinAdd, has: k => !!wallet().once[k] };
+  // Pílula de saldo; com id vira botão (abre a loja)
+  const pill = (cls, id) => { const n = wallet().n, lab = n + (n === 1 ? ' moeda' : ' moedas'), tag = id ? 'button' : 'span';
+    return '<' + tag + ' class="coin-pill' + (cls ? ' ' + cls : '') + '"' + (id ? ' id="' + id + '" aria-label="' + lab + ', abrir a loja"' : ' role="img" aria-label="' + lab + '"') + '>' + COIN_SVG + '<b>' + n.toLocaleString('pt-BR') + '</b></' + tag + '>'; };
+  // Times comprados ficam no perfil (Silvio 2026-11-09): depois de comprado, o time sai de graça nas próximas carreiras
+  const owns = id => !!wallet().clubs[id];
+  const own = id => { wallet().clubs[id] = Date.now(); put(); };
+  const clubs = () => Object.keys(wallet().clubs).sort((a, b) => wallet().clubs[a] - wallet().clubs[b]);
+  U.COINS = { pill, svg: COIN_SVG, spend: coinSpend, owns, own, clubs, get: () => wallet().n, got: () => wallet().got, log: () => wallet().log.slice(), add: coinAdd, has: k => !!wallet().once[k] };
 
   U.ITEMS = { FREE, KEY, CAT, BY_ID, RAR, RAR_NAME, CHANCE, PITY, DUP, COST, itemOf, need, has, get, put, clean, counts,
     earn, careerWhy, open, trade, seen, merge, STREAK, streak, streakRecord, streakClaim, streakFlush, streakTxt, reset: () => { inv = null; } };
