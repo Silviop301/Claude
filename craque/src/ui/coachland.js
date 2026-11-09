@@ -1127,18 +1127,27 @@
     const mo = Math.round(xi.reduce((a, p) => a + (p.mo === undefined ? 60 : p.mo), 0) / Math.max(1, xi.length));
     const nerv = xi.filter(p => (p.mo === undefined ? 60 : p.mo) < 45).sort((a, b) => a.mo - b.mo)[0];
     const capId = (co.takers && co.takers.cap && co.takers.cap.find(id => co.xi.includes(id))) || xi.slice().sort((a, b) => b.age - a.age)[0].id, cap = by[capId];
-    const tags = xi.slice().sort((a, b) => (a.mo || 60) - (b.mo || 60)).filter((p, i, a) => i < 2 || i >= a.length - 2).map(p => [p, (p.mo || 60) < 45 ? ['dn', 'nervoso'] : (p.bn || 0) >= 2 ? ['wa', 'quer jogar'] : p.id === capId ? ['up', 'líder'] : (p.mo || 60) >= 70 ? ['up', 'confiante'] : ['', 'tranquilo']]);
-    let pick = null;
-    const P = S.CO_PRE;
+    // Preleção enxuta (2026-11-09, quadro 15): o tom numa régua de calmo a forte, ◀ ▶ como a formação
+    const P = S.CO_PRE, K = ['calma', 'voces', 'cima'], WHO = { calma: 'TOM CALMO', voces: 'TOM DO GRUPO', cima: 'TOM FORTE' };
+    let pick = 'voces';
     const draw = () => {
-      show('<div class="ld-col">' + head('Última conversa no vestiário', 'Oito minutos para entrar. O que você fala vale para os primeiros 15 minutos.') +
-        '<div class="ld-row"><div class="ldp-g">' + Object.keys(P).map(k => '<button class="ldp-c' + (k === pick ? ' on' : '') + '" data-pk="' + k + '"><b>' + P[k].name + '</b><i>' + P[k].q + '</i><span class="ld-gr"></span>' +
-          (k === 'voces' && nerv ? '<small>Ajuda: ' + esc(last(nerv.n)) + ', que está nervoso</small>' : k === 'cima' && nerv ? '<small>Não ajuda: ' + esc(last(nerv.n)) + ', que está nervoso</small>' : '') + '<span class="ldp-fx">' + lbl('NOS PRIMEIROS 15 MINUTOS') + P[k].tip.split(' · ').map((t, j) => '<em class="' + (j ? 'dn' : 'up') + '">' + (j ? '− ' : '+ ') + t + '</em>').join('') + '</span></button>').join('') + '</div>' +
-        '<div class="ldm-side"><div class="ldp-cl">' + lbl('CLIMA DO GRUPO') + '<b class="' + (mo >= 70 ? 'up' : mo >= 50 ? '' : 'dn') + '">' + (mo >= 70 ? 'confiante' : mo >= 50 ? 'tranquilo' : 'abalado') + '</b>' +
-          tags.map(([p, [cc, t]]) => '<div><i>' + (p.num || p.ovr) + '</i><span>' + esc(last(p.n)) + '</span><em class="' + cc + '">' + t + '</em></div>').join('') + '</div>' +
-          (cap ? '<div class="ldm-note paper"><b>Capitão ' + esc(last(cap.n)) + ':</b> "' + (mo >= 60 ? 'Bora, professor. A gente sabe o que fazer.' : 'O grupo está tenso. Uma palavra sua ajuda.') + '"</div>' : '') +
-          '<span class="ld-gr"></span><button class="ld-link" id="ldp-skip">Não falar nada</button>' + gold('ldp-go', 'Entrar em campo', 'e o jogo começa') + '</div></div></div>', st => {
-        st.querySelectorAll('[data-pk]').forEach(b => b.onclick = () => { sfx('tap'); pick = pick === b.dataset.pk ? null : b.dataset.pk; draw(); });
+      const i = K.indexOf(pick), pr = P[pick], [up, dn] = pr.tip.split(' · ');
+      const fx = [['up', up.replace(', ajuda os nervosos', '')]];
+      if (nerv && pick === 'voces') fx.push(['up', 'o ' + last(nerv.n) + ' se acalma']);
+      fx.push(['dn', dn]);
+      if (nerv && pick === 'cima') fx.push(['dn', 'não ajuda o ' + last(nerv.n)]);
+      const cap1 = t => t.charAt(0).toLowerCase() + t.slice(1);
+      show('<div class="pl2"><div class="tm-h"><b>Vestiário</b><small>escolha o tom dos primeiros 15 minutos</small></div>' +
+        '<div class="pl2-box"><div class="pl2-top"><button class="pl2-ar" data-pa="-1" aria-label="Mais calmo"' + (i ? '' : ' disabled') + '>◀</button>' +
+          '<span><small>' + WHO[pick] + '</small><b>' + pr.name + '</b></span><button class="pl2-ar" data-pa="1" aria-label="Mais forte"' + (i < 2 ? '' : ' disabled') + '>▶</button></div>' +
+          '<div class="pl2-rg"><i></i>' + K.map((k, j) => '<button data-pk="' + k + '" aria-label="' + P[k].name + '" class="' + (k === pick ? 'on' : '') + '" style="left:' + j * 50 + '%"></button>').join('') + '</div>' +
+          '<div class="pl2-lb"><span>calmo</span><span>pelo grupo</span><span>forte</span></div>' +
+          '<div class="pl2-fx">' + fx.map(([cc, t]) => '<em class="' + cc + '">' + (cc === 'up' ? '+ ' : '− ') + esc(cap1(t)) + '</em>').join('') + '</div></div>' +
+        '<div class="pl2-side"><div class="pl2-cl"><small>CLIMA DO GRUPO</small><b class="' + (mo >= 70 ? 'up' : mo >= 50 ? '' : 'dn') + '">' + (mo >= 70 ? 'confiante' : mo >= 50 ? 'tranquilo' : 'abalado') + '</b>' +
+          (nerv ? '<span><i></i>' + esc(last(nerv.n)) + ' está nervoso</span>' : cap ? '<span class="ok"><i></i>' + esc(last(cap.n)) + ' puxa o grupo</span>' : '') + '</div>' +
+          '<span class="rs-gap"></span><button class="tm-b" id="ldp-skip">Não falar nada</button><button class="tm-go" id="ldp-go">Entrar em campo</button></div></div>', st => {
+        st.querySelectorAll('[data-pk]').forEach(b => b.onclick = () => { sfx('tap'); pick = b.dataset.pk; draw(); });
+        st.querySelectorAll('[data-pa]').forEach(b => b.onclick = () => { sfx('tap'); pick = K[Math.max(0, Math.min(2, i + +b.dataset.pa))]; draw(); });
         st.querySelector('#ldp-go').onclick = () => { sfx('tap'); c.play(pick); };
         st.querySelector('#ldp-skip').onclick = () => { sfx('tap'); c.play(null); };
       });
