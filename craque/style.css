@@ -8608,3 +8608,42 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .mk-k .mk-ar.big { background: rgba(243, 241, 234, .1) !important; }
 .ldl-tm { grid-template-rows: 38px minmax(0, 1fr) 48px; gap: 8px 16px; }
 .ldl-tm .tm-h .ldl-sc { padding: 6px 12px; }
+/* Elenco enxuto (Silvio 2026-11-09, quadro 27): abas por setor, tabela que rola por dentro, cartão do jogador à direita */
+.lde2 { width: 100%; height: 100%; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 238px; grid-template-rows: 44px 46px minmax(0, 1fr); gap: 8px 16px; color: #F3F1EA; }
+.lde2-tabs { grid-column: 1; grid-row: 2; border-radius: 12px; background: #141517; display: grid; grid-template-columns: repeat(4, 1fr); padding: 4px; gap: 4px; }
+.lde2-tabs button { border-radius: 9px; font: 800 19px/1 var(--display) !important; color: #B9C9BF !important; }
+.lde2-tabs button small { font: 700 14px/1 var(--body); opacity: .7; }
+.lde2-tabs button.on { background: #F8F4EA !important; color: #13201A !important; }
+.lde2-l { grid-column: 1; grid-row: 3; border-radius: 14px; background: #141517; padding: 4px 8px 8px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.lde2-h, .lde2-r { display: grid; grid-template-columns: 36px minmax(0, 1fr) 54px 54px 104px; align-items: center; padding: 0 14px; }
+.lde2-h { height: 24px; font: 700 12px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
+.lde2-r { width: 100%; height: 44px; box-sizing: border-box; border-bottom: 1px solid rgba(243, 241, 234, .07) !important; border-radius: 10px; text-align: left; }
+.lde2-r.on { background: #2b2612 !important; box-shadow: inset 0 0 0 2px var(--gold); }
+.lde2-r.out { opacity: .55; }
+.lde2-r i { font: 800 18px/1 var(--display); font-style: normal; color: #9fb0a6; }
+.lde2-r > span:nth-child(2) { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.lde2-r > span b { font: 700 17px/1 var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lde2-r > span small { font: 700 13px/1 var(--body); color: #9fb0a6; }
+.lde2-r em { font: 800 13px/1 var(--display); font-style: normal; padding: 3px 7px; border-radius: 6px; background: #F8D2BF; color: #8a3312; white-space: nowrap; }
+.lde2-r em.y { background: #F5E6A8; color: #6b5300; }
+.lde2 .a, .lde2 .o { text-align: center; } .lde2 .ct { text-align: right; }
+.lde2-r .a { font: 700 17px/1 var(--body); color: #B9C9BF; }
+.lde2-r .o { font: 800 22px/1 var(--display); color: var(--gold); }
+.lde2-r .ct { font: 700 15px/1 var(--body); color: #B9C9BF; } .lde2-r .ct.dn { color: #F08A5D; }
+.lde2-c { grid-column: 2; grid-row: 2 / 4; border-radius: 16px; background: var(--paper); color: var(--ink); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.lde2-ch { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.lde2-ch > b.tm-ring { --enc: #7ED39A; width: 58px; height: 58px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font: 800 26px/1 var(--display);
+  background: radial-gradient(var(--paper) 62%, transparent 64%), conic-gradient(var(--enc) calc(var(--en, 100) * 1%), rgba(19, 32, 26, .14) 0); }
+.lde2-ch > b.tm-ring.mid { --enc: #F2C230; } .lde2-ch > b.tm-ring.low { --enc: #F08A5D; }
+.lde2-ch span { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.lde2-ch span b { font: 800 24px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lde2-ch span small { font: 700 14px/1 var(--body); color: #4b5a52; }
+.lde2-st { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.lde2-st span, .lde2-ct { border-radius: 10px; background: #FFF; padding: 9px 10px; display: flex; flex-direction: column; gap: 5px; }
+.lde2-st small, .lde2-ct small { font: 700 12px/1 var(--body); letter-spacing: .06em; color: #5d6b63; }
+.lde2-st b, .lde2-ct b { font: 800 20px/1 var(--display); white-space: nowrap; } .lde2-c b.dn { color: #b4501f; }
+.lde2-ct { flex-direction: row; justify-content: space-between; align-items: center; margin-top: auto; padding: 8px 8px 8px 10px; }
+.lde2-ct > span { display: flex; flex-direction: column; gap: 5px; }
+.lde2-ren { height: 44px; padding: 0 12px !important; border-radius: 12px; background: #13201A !important; color: #F8F4EA !important; font: 800 18px/1 var(--display) !important; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.lde2-ren small { font: 700 12px/1 var(--body); color: #B9C9BF; letter-spacing: 0; }
+.lde2-ren:disabled { opacity: .55; cursor: default; }
