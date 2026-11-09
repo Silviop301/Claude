@@ -8844,6 +8844,41 @@ button.coin-pill { cursor: pointer; border: 0; }
 .mkf-rep { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; line-height: 1 !important; }
 .mkf-rep small { font: 700 14px/1 var(--body, Barlow), sans-serif; color: #5d6b62; }
 .mkf-rep.done small { color: #F5A57F; }
+/* Treinador deitado: Mercado lote 4 (2026-11-09, quadros 32, 32b e 33): proposta recebida, negociar a venda, elenco com Renovar e Pôr à venda */
+.ld-pop-c.hl-pop.mkr2-pop { width: 560px; min-height: 338px; padding: 16px 20px 18px; }
+.mkr2 { display: grid; grid-template-columns: 176px 1fr; gap: 16px; flex: 1; min-height: 304px; }
+.mkr2-p { border-radius: 16px; background: #13201A; color: #F8F4EA; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px; text-align: center; min-width: 0; }
+.mkr2-p > b { font: 800 24px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.mkr2-p > b.mkr2-o { width: 64px; height: 64px; border-radius: 50%; box-shadow: inset 0 0 0 3px var(--gold); display: flex; align-items: center; justify-content: center; font-size: 30px; color: var(--gold); }
+.mkr2-p > span { font: 700 14px/1 var(--body); color: #B9C9BF; }
+.mkr2-p em { margin-top: 4px; padding: 6px 10px; border-radius: 9px; font: 800 16px/1 var(--display); font-style: normal; background: rgba(243, 241, 234, .1); color: #B9C9BF; }
+.mkr2-p em.g { color: var(--gold); } .mkr2-p em.b { color: #8fc3f0; }
+.mkr2-r { display: flex; flex-direction: column; gap: 10px; min-width: 0; color: #13201A; }
+.mkr2-h { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.mkr2-h .mkr2-cr { flex: none; width: 46px; height: 46px; object-fit: contain; }
+.mkr2-h > span { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.mkr2-h small { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #5d6b62; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mkr2-h b { font: 800 28px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mkr2-r > p { margin: 0; font: 700 16px/1.3 var(--body); color: #2c3a32; }
+.mkr2 .mkx-li b { font-size: 20px; }
+.mkr2-b { display: grid; gap: 8px; } .mkr2-b.n3 { grid-template-columns: 1.2fr 1fr 1fr; } .mkr2-b.n2 { grid-template-columns: 1.5fr 1fr; }
+.mkr2-b .hl-btn { height: 52px; min-height: 0; padding: 0 8px; font-size: 19px; white-space: nowrap; }
+.mkr2-b .hl-btn.line { background: none; box-shadow: inset 0 0 0 2px rgba(19, 32, 26, .25); color: #13201A; }
+.mkn-h { grid-column: 1; grid-row: 2; flex-direction: row !important; align-items: center; gap: 8px !important; padding: 0 12px !important; white-space: nowrap; overflow: hidden; }
+.mkn-h i { padding: 6px 8px; border-radius: 8px; font: 800 16px/1 var(--display); font-style: normal; background: rgba(243, 241, 234, .08); color: #D9E2DC; }
+.mkn-h i.me { background: rgba(242, 194, 48, .16); color: var(--gold); } .mkn-h em { color: #6f7f76; font-style: normal; }
+.lde2-r em.g { background: var(--gold); color: #1B1606; }
+.lde2-c { gap: 8px; }
+.lde2-st span { padding: 7px 10px; }
+.lde2-ct { margin-top: 0; padding: 7px 10px; }
+.lde2-act { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.lde2-act button { height: 46px; padding: 0 6px !important; }
+.lde2-sell { border-radius: 12px; box-shadow: inset 0 0 0 2px rgba(19, 32, 26, .25); color: #13201A !important; font: 800 18px/1 var(--display) !important; }
+.lde2-sell.on, .lde2-sell.of { background: var(--gold) !important; color: #1B1606 !important; box-shadow: none; }
+.lde2-sell:disabled { opacity: .45; cursor: default; }
+.lde2-hint { font: 700 13px/1.2 var(--body); color: #4b5a52; text-align: center; min-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lde2-ct > span { flex-direction: row; justify-content: space-between; align-items: center; width: 100%; }
+.mkx-b > :only-child { grid-column: 1 / -1; }
 /* Agradecimento da compra de moedas (Silvio: a compra ajuda o jogo; agradecer o apoio) */
 .pay-ty { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); z-index: 9999; display: flex; align-items: center; gap: 12px; padding: 12px 14px 12px 18px; border-radius: 16px; background: #F8F4EA; color: #13201A; box-shadow: 0 10px 30px rgba(0,0,0,.45); font: 600 15px/1.25 var(--body); max-width: calc(100vw - 32px); }
 .pay-ty b { font: 800 19px/1 var(--display); white-space: nowrap; } .pay-ty button { flex: none; min-height: 40px; padding: 0 14px; border-radius: 12px; border: 0; background: #13201A; color: #F8F4EA; font: 800 16px/1 var(--display); cursor: pointer; }
