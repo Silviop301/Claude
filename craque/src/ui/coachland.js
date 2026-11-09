@@ -74,7 +74,8 @@
   const PAT_OLD = { 'Atacadão Prime': 'Armazém Prime', 'TeleNorte': 'Conecta Norte' }; // nomes de saves antigos
   const patName = n => PAT_OLD[n] || n;
   const PAT_OK = new Set([].concat.apply([], Object.values(S.CO_SPONS || {})).map(slug));
-  const patImg = (n, cls) => { n = patName(n); return PAT_OK.has(slug(n)) ? '<img class="' + cls + '" src="' + CO_ART + 'pat-' + slug(n) + '.webp" alt="' + esc(n) + '">' : ''; };
+  // dark: versão com as cores escuras clareadas, para o fundo carvão (sem placa creme: Silvio 2026-11-09)
+  const patImg = (n, cls, dark) => { n = patName(n); return PAT_OK.has(slug(n)) ? '<img class="' + cls + '" src="' + CO_ART + 'pat-' + slug(n) + (dark ? '-esc' : '') + '.webp" alt="' + esc(n) + '">' : ''; };
   const hashS = t => { let h = 7; t = String(t || ''); for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0; return h; };
   // Rostos: 1-2 ambicioso, 3-4 pão-duro, 5-6 paciente (os nomes sorteados são de homem: 2 e 4 ficam para depois),
   // 7-8 auxiliar, 9 olheiro, 10 preparador, 11 médica, 12 empresário
@@ -776,7 +777,7 @@
       '<div class="fn2-tabs">' + [['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
       '<div class="fn2-p">' + rows + '</div>' +
       '<div class="fn2-side"><div class="fn2-st"><small>SITUAÇÃO DO CAIXA</small><b class="s' + step + '">' + FIN_STEP[step][0] + '</b><span class="fn2-dd">' + [1, 2, 3, 4].map(i => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '</span><em>' + FIN_STEP[step][1] + '</em></div>' +
-        '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><div><span>' + (pt && patImg(pt.name, 'fn2-lg') || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></div></div>' +
+        '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><div><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></div></div>' +
         '<span class="rs-gap"></span><button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div></div>', st => {
       st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); financas(b.dataset.ft); });
       st.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.fd; if (k === 'banco') banco(); else if (k === 'pres') presInfo(); });
@@ -857,7 +858,7 @@
         (f.caixa >= L.rem ? '<button class="tm-b" id="ldn-back">Agora não</button><button class="tm-go" id="ldn-pay">Quitar ' + c.brl(L.rem) + '</button>' : '<button class="tm-go" id="ldn-back">Voltar</button>')
       : '<div class="fn2-st"><small>VOCÊ DEVE</small><b>nada</b><em>' + (max ? 'pode pegar até ' + c.brl(max) : 'sem crédito agora') + '</em></div><span class="rs-gap"></span><button class="tm-b" id="ldn-back">Agora não</button>' +
         (amt ? '<button class="tm-go" id="ldn-take">Pegar ' + c.brl(amt) + '</button>' : '');
-    show('<div class="bk2"><div class="tm-h"><button class="tcr-back" id="ldn-bk" aria-label="Voltar">' + BK + '</button><img class="bk2-lg" src="' + CO_ART + 'banco.webp" alt="Banco Alicerce"><small>caixa ' + c.brl(f.caixa) + (f.neg ? ' · ' + U.D.plural(f.neg, 'rodada', 'rodadas') + ' no vermelho' : '') + '</small><button class="ol2-q" id="bk2-q" aria-label="Como funciona">?</button></div>' +
+    show('<div class="bk2"><div class="tm-h"><button class="tcr-back" id="ldn-bk" aria-label="Voltar">' + BK + '</button><img class="bk2-lg" src="' + CO_ART + 'banco-esc.webp" alt="Banco Alicerce"><small>caixa ' + c.brl(f.caixa) + (f.neg ? ' · ' + U.D.plural(f.neg, 'rodada', 'rodadas') + ' no vermelho' : '') + '</small><button class="ol2-q" id="bk2-q" aria-label="Como funciona">?</button></div>' +
       '<div class="bk2-box">' + left + '</div><div class="fn2-side">' + side + '</div></div>', st => {
       st.querySelectorAll('[data-ai]').forEach(b => b.onclick = () => { sfx('tap'); banco(steps[Math.max(0, Math.min(steps.length - 1, i + +b.dataset.ai))]); });
       const tk = st.querySelector('#ldn-take'); if (tk) tk.onclick = () => { if (S.coLoanTake(co, amt)) { sfx('tap'); c.save('hub'); banco(); } };

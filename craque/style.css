@@ -8464,7 +8464,7 @@ body.ld-on #ld { display: block; }
 .bk2-ol { margin: 10px 0 0; padding-left: 22px; font: 700 17px/1.45 var(--body); color: var(--ink); } .bk2-ol li.on { color: #9a3a12; }
 
 /* Artes do Treinador (2026-11-09): logos dos patrocinadores, rostos e banco (assets/co) */
-.acd-c > .acd-lg { display: block; height: 60px; width: auto; max-width: calc(100% - 64px); object-fit: contain; object-position: left center; margin: -4px 0 -2px -4px; }
+.acd-c > .acd-lg { display: block; height: 44px; width: auto; max-width: calc(100% - 64px); object-fit: contain; object-position: left center; margin: -4px 0 -2px -4px; }
 .acd-c > .acd-lg + em { margin-top: 2px; }
 img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-radius: 50%; background: #F8F4EA; }
 .kb2-pr.fc { flex-direction: row; align-items: center; gap: 12px; }
@@ -8473,5 +8473,5 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .pi-fc { width: 84px; height: 84px; border-radius: 50%; background: #F8F4EA; float: left; margin: 0 14px 6px 0; }
 .aux-h { display: flex; align-items: center; gap: 12px; } .aux-h b { font: 800 26px/1 var(--display); }
 .aux-fc { width: 56px; height: 56px; border-radius: 50%; background: #E9E2D2; flex: none; }
-.fn2-ac .fn2-lg { height: 34px; width: auto; max-width: 140px; padding: 2px 6px; border-radius: 6px; background: #F8F4EA; object-fit: contain; }
-.bk2-lg { height: 34px; width: auto; padding: 3px 8px; border-radius: 8px; background: #F8F4EA; }
+.fn2-ac .fn2-lg { height: 34px; width: auto; max-width: 140px; object-fit: contain; object-position: left center; }
+.bk2-lg { height: 38px; width: auto; }
