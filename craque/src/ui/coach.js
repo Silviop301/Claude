@@ -584,12 +584,12 @@
     const p = esc(e.p);
     if (e.sp === 'pen') return e.k === 'defesa' ? '<b>Pênalti defendido!</b> ' + p + ' bate e o goleiro pega' : e.k === 'trave' ? '<b>Pênalti na trave!</b> ' + p + ' desperdiça' : '<b>Pênalti para fora!</b> ' + p + ' isola';
     if (e.sp === 'falta') return e.k === 'defesa' ? p + ' cobra a falta e o goleiro defende' : e.k === 'bloqueio' ? 'Falta do ' + p + ' na barreira' : e.k === 'trave' ? 'Falta do ' + p + ' na trave!' : 'Falta do ' + p + ' por cima';
-    const by = e.by ? ' no escanteio do ' + esc(last(e.by)) : ' no escanteio';
+    const by = e.sp === 'fc' ? (e.by ? ' na falta cruzada do ' + esc(last(e.by)) : ' na falta cruzada') : e.by ? ' no escanteio do ' + esc(last(e.by)) : ' no escanteio';
     return e.k === 'defesa' ? p + ' cabeceia' + by + ' e o goleiro defende' : e.k === 'bloqueio' ? 'Cabeçada do ' + p + by + ', a zaga trava' : p + ' cabeceia para fora' + by;
   }
   function feedLine(m, e) {
     const who = e.s === 'us' ? nm(co.club) : nm(m.vs);
-    const t = e.t === 'gol' ? '<b>GOL do ' + esc(who) + '!</b> ' + esc(e.p || '') + (e.sp === 'pen' ? ' de pênalti' : e.sp === 'falta' ? ' de falta' : e.sp === 'esc' ? ' de cabeça' + (e.by ? ', escanteio do ' + esc(last(e.by)) : ', no escanteio') : e.l ? ' ' + LANE[e.l] : '') :
+    const t = e.t === 'gol' ? '<b>GOL do ' + esc(who) + '!</b> ' + esc(e.p || '') + (e.sp === 'pen' ? ' de pênalti' : e.sp === 'falta' ? ' de falta' : e.sp === 'esc' ? ' de cabeça' + (e.by ? ', escanteio do ' + esc(last(e.by)) : ', no escanteio') : e.sp === 'fc' ? ' de cabeça' + (e.by ? ', na falta cruzada do ' + esc(last(e.by)) : ', na falta cruzada') : e.l ? ' ' + LANE[e.l] : '') :
       e.t === 'chance' && e.sp ? spMiss(e) :
       e.t === 'chance' ? (e.k === 'defesa' ? esc(e.p) + ' chuta ' + (e.l ? LANE[e.l] + ' ' : '') + 'e o goleiro defende' : e.k === 'fora' ? esc(e.p) + ' finaliza para fora' : e.k === 'trave' ? esc(e.p) + ' acerta a trave!' : 'Chute de ' + esc(e.p) + ' travado pela zaga') :
       e.t === 'vermelho' ? (e.how === '2am' ? '<span class="co-yc"></span> ' : '') + '<span class="co-red"></span> <b>' + esc(e.p) + ' é expulso</b> (' + esc(who) + ')' + (e.how === '2am' ? ', segundo amarelo' : e.how === 'direto' ? ', vermelho direto' : '') :
@@ -726,7 +726,7 @@
     // Os lances novos do motor vão para o campinho. Chance: a linha da narração sai quando a bola chega (ou em 9 s).
     // Gol: o relógio espera a rede balançar (o campinho força a jogada aos 9 s de bola rolando; a tela desiste só aos 30 s) e só então o placar vira. Volta a espera do gol, ou null
     // Bola parada para o campinho: o tipo e o número de quem bate (o campinho ainda joga como chance comum até a fase 2)
-    const spOf = e => { if (!e.sp) return null; const T = e.s === 'us' ? m.us : m.them, q = (T.squad || []).find(x => x.n === (e.sp === 'esc' ? e.by : e.p)); return { sp: e.sp, num: q && q.num, l: e.l }; };
+    const spOf = e => { if (!e.sp) return null; const T = e.s === 'us' ? m.us : m.them, cr = e.sp === 'esc' || e.sp === 'fc', q = (T.squad || []).find(x => x.n === (cr ? e.by : e.p)), h = cr && (T.squad || []).find(x => x.n === e.p); return { sp: e.sp, num: q && q.num, hnum: h && h.num, l: e.l }; };
     const toSim = () => {
       if (!sim) return null;
       const gl = [];
@@ -746,7 +746,7 @@
         hidden.add(e);
         if (out === 'gol') return gl.push([side, e]);
         const cancel = sim.shot(side, out, () => { if (hidden.delete(e)) paint(); }, spOf(e));
-        setTimeout(() => { if (hidden.delete(e)) { cancel(); paint(); } }, (co.speed === '3' ? 4000 : 12000) * (e.sp === 'pen' ? 1.8 : 1)); // o pênalti espera todo mundo sair da área
+        setTimeout(() => { if (hidden.delete(e)) { cancel(); paint(); } }, (co.speed === '3' ? 4000 : 12000) * (e.sp ? 2.4 : 1)); // a bola parada espera todo mundo se arrumar
       });
       if (!gl.length) return null;
       return go => {

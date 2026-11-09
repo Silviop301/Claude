@@ -460,8 +460,9 @@
           let who = sc, sp = null, by2 = null; const tr = S0.train && TRAIN[S0.train] && TRAIN[S0.train].sp, rr = r();
           if (rr < 0.24 + (tr ? 0.08 : 0)) {
             sp = tr && r() < 0.5 ? tr : rr < 0.08 ? 'pen' : rr < 0.15 ? 'falta' : 'esc';
-            const tk = takerOf(S0, sp === 'pen' ? 'pen' : sp === 'falta' ? 'fl' : (l === 'e' ? 'ckE' : 'ckD'));
-            if (sp === 'esc') { by2 = tk ? tk.n : ''; const mm = byId(S0.squad), hd = S0.xi.map(id => mm[id]).filter(p => p && (p.pos === 'ZAG' || p.pos === 'ATA') && (!tk || p.id !== tk.id)); if (hd.length) who = hd[Math.floor(r() * hd.length)].n; }
+            if (sp === 'esc' && l !== 'c' && r() < 0.3) sp = 'fc'; // falta cruzada da lateral da área (o batedor de cruzar e o cabeceio)
+            const tk = takerOf(S0, sp === 'pen' ? 'pen' : sp === 'falta' ? 'fl' : sp === 'fc' ? 'fc' : (l === 'e' ? 'ckE' : 'ckD'));
+            if (sp === 'esc' || sp === 'fc') { by2 = tk ? tk.n : ''; const mm = byId(S0.squad), hd = S0.xi.map(id => mm[id]).filter(p => p && (p.pos === 'ZAG' || p.pos === 'ATA') && (!tk || p.id !== tk.id)); if (hd.length) who = hd[Math.floor(r() * hd.length)].n; }
             else if (tk) who = tk.n;
           }
           if (sp === 'esc') { m.ck = m.ck || { us: 0, them: 0 }; m.ck[sd]++; }
@@ -473,8 +474,9 @@
           let k = r.pick(['defesa', 'defesa', 'fora', 'fora', 'trave', 'bloqueio']), who = sc, sp = null, by2 = null;
           const tr = S0.train && TRAIN[S0.train] && TRAIN[S0.train].sp, SM = CO.spMiss, w = q => SM[q] * (tr === q ? 1.3 : 1), rr = r();
           sp = rr < w('pen') ? 'pen' : rr < w('pen') + w('falta') ? 'falta' : rr < w('pen') + w('falta') + w('esc') ? 'esc' : null;
+          if (sp === 'esc' && l !== 'c' && r() < 0.3) sp = 'fc';
           if (sp) {
-            const tk = takerOf(S0, sp === 'pen' ? 'pen' : sp === 'falta' ? 'fl' : (l === 'e' ? 'ckE' : 'ckD')), u = r();
+            const tk = takerOf(S0, sp === 'pen' ? 'pen' : sp === 'falta' ? 'fl' : sp === 'fc' ? 'fc' : (l === 'e' ? 'ckE' : 'ckD')), u = r();
             if (sp === 'pen') { k = u < 0.55 ? 'defesa' : u < 0.85 ? 'fora' : 'trave'; if (tk) who = tk.n; }
             else if (sp === 'falta') { k = u < 0.35 ? 'defesa' : u < 0.75 ? 'fora' : u < 0.95 ? 'bloqueio' : 'trave'; if (tk) who = tk.n; }
             else { k = u < 0.4 ? 'defesa' : u < 0.8 ? 'fora' : 'bloqueio'; by2 = tk ? tk.n : ''; const mm = byId(S0.squad), hd = S0.xi.map(id => mm[id]).filter(p => p && (p.pos === 'ZAG' || p.pos === 'ATA') && (!tk || p.id !== tk.id)); if (hd.length) who = hd[Math.floor(r() * hd.length)].n; }
