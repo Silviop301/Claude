@@ -185,6 +185,7 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
 | `craque/badges/*.png` | `python3 tools/craque_badges.py` (só os que faltam; conferir visualmente) |
 | `craque/trophies/` + `trophy-imgs.js` | `tools/craque_trophies.py` → `tools/craque_trophies_resize.js` |
 | `craque/assets/tw/` (emojis) | `node tools/craque_twemoji.js` (rodar ao usar emoji novo, depois `craque_sw.py`) |
+| `craque/assets/co/` (Treinador: logos `pat-<nome>.webp`, `rosto-NN.webp`, `banco`, `tv`) | arte do ChatGPT (doc https://claude.ai/artifact/AinuvFC9Mc3BA3jCXztPvV), recortes em `/mnt/project-files/climbix/treinador-assets/recortes/`; nomes dos patrocinadores em `S.CO_SPONS` (`coachfin.js`), por país da liga |
 | `craque/fonts/`, `craque/icons/`, `assets/cartas/ac-*` | `craque_fonts.py`, `craque_icons.js`, `craque_acabamentos.js` |
 
 ## Regras do projeto
