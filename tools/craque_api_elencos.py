@@ -10,10 +10,13 @@ Passos (da raiz do repositório; a chave fica na variável de ambiente APIFOOTBA
   python3 tools/craque_api_elencos.py baixar [--max 80] [--ligas bra-a,bra-b] [--dias 30]
                                                              # baixa elencos aos poucos: primeiro quem nunca veio, depois os
                                                              # mais antigos que --dias; para em --max ou quando a cota do dia acaba
+  python3 tools/craque_api_elencos.py espn [--ligas bra.1,bra.2]   # elencos da ESPN (sem chave, sem cota): Série A e B,
+                                                             # com jogos como titular na temporada (ordena quem joga)
   python3 tools/craque_api_elencos.py gerar                  # escreve craque/src/real-squads.js com o que já foi baixado
 
 Tudo que vem da API fica em tools/api-football/ (teams_<país>.json, ids.json, squads/<id>.json), para nunca
-gastar duas vezes a mesma chamada. Clube sem id ou sem elenco baixado continua com o elenco sorteado.
+gastar duas vezes a mesma chamada; os da ESPN em tools/espn/. No gerar, a ESPN vale antes da API-Football.
+Clube sem elenco baixado continua com o elenco sorteado.
 """
 import json, os, sys, time, unicodedata, re, subprocess, urllib.request, urllib.parse
 
@@ -154,34 +157,85 @@ def short(n):
     return re.sub(r'\s+', ' ', n).strip()
 
 
-def cmd_gerar():
+# ---------- ESPN (site.api.espn.com, aberta): times da liga e elenco com números da temporada ----------
+EDIR = os.path.join(ROOT, 'tools', 'espn')
+ESPN = 'https://site.api.espn.com/apis/site/v2/sports/soccer/'
+# Nome na ESPN que não bate sozinho com o do jogo
+ESPN_NAME = {'Vasco da Gama': 'Vasco', 'Athletic': 'Athletic-MG', 'Atlético Goianiense': 'Atlético-GO', 'Operário PR': 'Operário-PR',
+             'América Mineiro': 'América-MG'}
+
+
+def espn_get(path):
+    req = urllib.request.Request(ESPN + path, headers={'User-Agent': 'climbix-elencos'})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.load(r)
+
+
+def cmd_espn(ligas):
+    byname = {norm(c[1]): c[0] for c in clubs()}
+    for lg in ligas:
+        teams = espn_get(lg + '/teams')['sports'][0]['leagues'][0]['teams']
+        for t in teams:
+            t = t['team']
+            nm = ESPN_NAME.get(t['displayName'], t['displayName'])
+            cid = byname.get(norm(nm))
+            if not cid:
+                if 'TBD' not in nm:
+                    print('sem clube no jogo: %s (%s)' % (t['displayName'], t['id']))
+                continue
+            r = espn_get('%s/teams/%s/roster' % (lg, t['id']))
+            pl = []
+            for a in r.get('athletes', []):
+                st = {}
+                for cat in ((a.get('statistics') or {}).get('splits') or {}).get('categories', []):
+                    for x in cat.get('stats', []):
+                        if x['name'] in ('appearances', 'subIns', 'totalGoals', 'goalAssists'):
+                            st[x['name']] = int(x.get('value') or 0)
+                pl.append({'id': a['id'], 'name': a.get('displayName'), 'short': a.get('shortName'), 'age': a.get('age'),
+                           'num': int(a['jersey']) if str(a.get('jersey') or '').isdigit() else 0,
+                           'pos': (a.get('position') or {}).get('abbreviation'), 'cty': a.get('citizenship'),
+                           'app': st.get('appearances', 0), 'sub': st.get('subIns', 0), 'g': st.get('totalGoals', 0), 'a': st.get('goalAssists', 0)})
+            save(os.path.join(EDIR, '%s.json' % cid), {'t': int(time.time()), 'lg': lg, 'team': t['id'], 'players': pl})
+            print('  %-22s %2d jogadores' % (nm, len(pl)))
+            time.sleep(0.5)
+
+
+# ---------- gerar o arquivo do jogo ----------
+POS = {'Goalkeeper': 'GOL', 'Defender': 'DEF', 'Midfielder': 'MEI', 'Attacker': 'ATA', 'G': 'GOL', 'D': 'DEF', 'M': 'MEI', 'F': 'ATA'}
+LAT_NUM = {2, 6, 12, 13, 16, 22, 26, 36, 46, 66}  # as fontes não separam zagueiro de lateral: no Brasil o número costuma dizer
+
+
+def short(n):
+    return re.sub(r'\s+', ' ', n or '').strip()
+
+
+def squads():
+    """Por clube: lista de [id com fonte, nome, idade, posição, número, titular, entrou] (titular/entrou -1 sem números)."""
     ids = load(os.path.join(DIR, 'ids.json'), {})
-    out, tot = {}, 0
     data = {}
     for cid, name, lg, st, c in clubs():
+        e = load(os.path.join(EDIR, '%s.json' % cid))
+        if e and len(e['players']) >= 16:
+            data[cid] = (e['t'], [['e%s' % p['id'], short(p['name'] if len(p['name'] or '') <= 18 else p['short']), p['age'] or 25,
+                                   POS.get(p['pos']), p['num'], p['app'] - p['sub'], p['sub']] for p in e['players']])
+            continue
         d = cid in ids and load(os.path.join(SQ, '%d.json' % ids[cid]))
         if d and len(d['players']) >= 16:
-            data[cid] = d
-    # Jogador que trocou de clube entre um download e outro aparece nos dois: fica no elenco baixado por último
+            data[cid] = (d['t'], [['a%s' % p['id'], short(p.get('name')), p.get('age') or 25, POS.get(p.get('position')),
+                                   p.get('number') or 0, -1, -1] for p in d['players'] if p.get('id')])
+    # Mesmo jogador em dois clubes (trocou entre um download e outro): fica no baixado por último
     last = {}
-    for cid, d in data.items():
-        for p in d['players']:
-            if p.get('id') and d['t'] >= last.get(p['id'], (0, ''))[0]:
-                last[p['id']] = (d['t'], cid)
-    for cid, name, lg, st, c in clubs():
-        d = data.get(cid)
-        if not d:
-            continue
-        rows = []
-        defs = []
-        for p in d['players']:
-            pos = POS.get(p.get('position'))
-            if not pos or not p.get('id') or not p.get('name') or last[p['id']][1] != cid:
-                continue
-            row = [p['id'], short(p['name']), p.get('age') or 25, pos, p.get('number') or 0]
-            rows.append(row)
-            if pos == 'DEF':
-                defs.append(row)
+    for cid, (t, rows) in data.items():
+        for r in rows:
+            if t >= last.get(r[0], (0, ''))[0]:
+                last[r[0]] = (t, cid)
+    return {cid: [r for r in rows if r[3] and r[1] and last[r[0]][1] == cid] for cid, (t, rows) in data.items()}
+
+
+def cmd_gerar():
+    out, tot = {}, 0
+    for cid, rows in squads().items():
+        defs = [r for r in rows if r[3] == 'DEF']
         # Defensores: os de número de lateral viram LAT; completa até ~40% laterais pelos mais novos sem número de zagueiro
         for r in defs:
             r[3] = 'LAT' if r[4] in LAT_NUM else 'ZAG'
@@ -191,10 +245,11 @@ def cmd_gerar():
             if len(lat) >= want:
                 break
             r[3] = 'LAT'; lat.append(r)
-        out[cid] = rows
+        out[cid] = [r[:5] + ([r[5], r[6]] if r[5] >= 0 else []) for r in rows]
         tot += len(rows)
-    js = ('// Gerado por tools/craque_api_elencos.py (API-Football, elenco atual de cada clube). Não edite à mão.\n'
-          '// Por clube do jogo: [id na API, nome, idade, posição, número]. A força é calculada pelo jogo (coach.js).\n'
+    js = ('// Gerado por tools/craque_api_elencos.py (ESPN e API-Football, elenco atual de cada clube). Não edite à mão.\n'
+          '// Por clube do jogo: [id com a fonte (e ESPN, a API-Football), nome, idade, posição, número, jogos como titular, entradas].\n'
+          '// A força é calculada pelo jogo (coach.js): quem mais começa jogando fica com a maior.\n'
           '(function (root) {\n  root.CRAQUE_REAL = { t: %d, clubs: %s };\n'
           "  if (typeof module !== 'undefined') module.exports = root.CRAQUE_REAL;\n"
           "})(typeof window !== 'undefined' ? window : globalThis);\n") % (int(time.time()), json.dumps(out, ensure_ascii=False, separators=(',', ':')))
@@ -213,6 +268,8 @@ def main():
     elif a[0] == 'baixar':
         l = opt('--ligas', '')
         cmd_baixar(int(opt('--max', 80)), set(l.split(',')) if l else None, float(opt('--dias', 30)))
+    elif a[0] == 'espn':
+        cmd_espn(opt('--ligas', 'bra.1,bra.2').split(','))
     elif a[0] == 'gerar':
         cmd_gerar()
     else:

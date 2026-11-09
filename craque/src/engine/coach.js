@@ -201,7 +201,7 @@
   // Elenco de um clube na temporada: os mais fortes perto da força do clube, o banco abaixo, os garotos mais abaixo
   // Elencos reais (tools/craque_api_elencos.py gera src/real-squads.js): nome, idade, posição e número de verdade;
   // a força segue a conta do sorteado (força do clube, ordem na posição, idade). Quem passa de 37 anos ou falta numa
-  // posição vira garoto sorteado (e quem já está no seu elenco, co, sai do clube de origem). id 'r:' + id da API: o mesmo jogador tem o mesmo id em todo save e temporada.
+  // posição vira garoto sorteado (e quem já está no seu elenco, co, sai do clube de origem). id 'r:' + id da fonte: o mesmo jogador tem o mesmo id em todo save e temporada.
   const REAL = () => root.CRAQUE_REAL || (typeof require !== 'undefined' ? (() => { try { return require('../real-squads.js'); } catch (e) { return null; } })() : null);
   S.coRealOf = clubId => { const R = REAL(); return (R && R.clubs && R.clubs[clubId]) || null; };
   function realSquad(club, season, rows, co) {
@@ -209,10 +209,11 @@
     const r = S.rng(hash(club.id + '|' + season + '|real')), cty = D.countryOf(club), s = club.strength, out = [];
     Object.keys(CO.squad).forEach(pos => {
       const n = CO.squad[pos];
-      // Quem joga: número de titular (1 a 23) na frente, depois idade boa (23 a 31); garotos de número alto por último
+      // Quem joga: quem mais começou jogando na temporada real (ESPN; o peso some em 4 temporadas do jogo), número de
+      // titular (1 a 23), idade boa (23 a 31); garotos de número alto por último
       const L = rows.filter(x => x[3] === pos).map(x => ({ x, age: x[2] + season }))
         .filter(o => o.age <= 37 && !mine.has(o.x[0]))
-        .map(o => ({ ...o, sc: (o.x[4] >= 1 && o.x[4] <= 11 ? 12 : o.x[4] >= 1 && o.x[4] <= 23 ? 8 : o.x[4] >= 1 && o.x[4] <= 40 ? 4 : 0) + (o.age >= 23 && o.age <= 31 ? 4 : o.age >= 20 && o.age <= 33 ? 2 : 0) + (hash(o.x[0] + '|' + season) % 100) / 100 }))
+        .map(o => ({ ...o, sc: (o.x.length > 5 ? Math.min(40, o.x[5] + 0.4 * o.x[6]) * Math.max(0, 1 - season * 0.25) : 0) + (o.x[4] >= 1 && o.x[4] <= 11 ? 12 : o.x[4] >= 1 && o.x[4] <= 23 ? 8 : o.x[4] >= 1 && o.x[4] <= 40 ? 4 : 0) + (o.age >= 23 && o.age <= 31 ? 4 : o.age >= 20 && o.age <= 33 ? 2 : 0) + (hash(o.x[0] + '|' + season) % 100) / 100 }))
         .sort((a, b) => b.sc - a.sc).slice(0, n);
       for (let k = 0; k < n; k++) {
         const o = L[k], j = S.rng(hash((o ? o.x[0] : club.id + pos + k) + '|' + season + '|f'));
