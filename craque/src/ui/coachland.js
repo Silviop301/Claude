@@ -575,7 +575,7 @@
       const ch = m.ev.filter(e => e.s === sd && (e.t === 'chance' || e.t === 'gol'));
       const big = ch.filter(e => e.t === 'gol' || e.k === 'trave' || (e.k === 'defesa' && e.m % 2 === 0)).length;
       const ck = ch.filter(e => (e.k === 'defesa' || e.k === 'bloqueio' || e.k === 'fora') && e.l !== 'c' && e.m % 3 !== 1).length + Math.round(ch.length * 0.2);
-      return { big, ck };
+      return { big, ck: m.ck ? m.ck[sd] || 0 : ck }; // m.ck: escanteios contados pelo motor (jogo salvo antes deles: a conta antiga)
     };
     const U2 = side('us'), T2 = side('them'), st = s => S.CO_STY[s.style] || S.CO_STY.equilibrado;
     const pass = (pp, s) => Math.round(Math.max(55, Math.min(92, 70 + (pp - 0.5) * 45 + (st(s).ctrl - 1) * 12)));
