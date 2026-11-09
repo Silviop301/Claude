@@ -1073,7 +1073,11 @@
         p.tx = ball.x + lo.vx * 0.35; p.ty = ball.y + lo.vy * 0.35; p.sprint = 1;
         // Bola parada no chão não fica esperando: quem chega primeiro nela fica com ela (o adversário em cima rouba, salvo
         // no lance do motor), e depois de 2 s quem ia receber domina (ninguém fica parado colado do lado da bola)
-        if (d < 1.3 || lo.t > 2) receive(lo.f);
+        // (a bola não é puxada: só vira dele quando ele chega nela; se demorar, quem estiver em cima dela fica com ela)
+        if (d < 1.3 || lo.t > 6) receive(lo.f);
+        else if (lo.t > 2) { let q = null, qd = 1.3; for (const x of ALL) { if (x === p || x.stun > 0 || (x.r === 'GK' && Math.abs(x.x - (x.side ? L : 0)) > 16)) continue; const dx = dist(x, ball); if (dx < qd && (x.side === p.side || (!lc && !(due && due.side === p.side)))) { qd = dx; q = x; } }
+          if (q) { ball.loose = null; why = 'solta'; setOwner(q); }
+          else { const c = T[1 - p.side].filter(x => x.r !== 'GK').sort((u, w) => dist(u, ball) - dist(w, ball))[0]; if (c && dist(c, ball) < d && !lc && !(due && due.side === p.side)) { c.tx = ball.x; c.ty = ball.y; c.sprint = 1; } } }
         else if (lo.t > 0.35 && !lc && !(due && due.side === p.side)) { const q = ball.y > 1 && ball.y < WD - 1 && T[1 - p.side].find(x => x.r !== 'GK' && x.stun <= 0 && dist(x, ball) < 1.1); if (q) { ball.loose = null; why = 'solta'; setOwner(q); } }
       } else { why = 'semdono'; setOwner(at(poss, 6)); }
     }
