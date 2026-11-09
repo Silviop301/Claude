@@ -743,6 +743,7 @@
     let pen = null, camT = 0, camS = 0;
     const PEN_EDGE = [[87.8, 26.2], [87.8, 41.8], [83.2, 34], [87.8, 22.8], [87.8, 45.2], [84.2, 24.5], [84.2, 43.5], [81.6, 29.5], [81.6, 38.5], [87.8, 19.4], [87.8, 48.6], [84.2, 21], [84.2, 47], [79, 34], [87.8, 16], [87.8, 52], [84.2, 17.7], [84.2, 50.3]];
     function penStart(e) {
+      if (e.pen && e.pen.fk) return fkStart(e);
       const s = e.side, num = e.pen && e.pen.num, gk = T[1 - s][0];
       const tk = (num && T[s].find(q => q.num === num && q.r !== 'GK')) || T[s].filter(q => q.r !== 'GK').sort((a, b) => (b.r === 'ST') - (a.r === 'ST') || b.d - a.d)[0];
       const spot = toW(s, L - 11, 34), vic = T[s].filter(q => q.r !== 'GK' && q !== tk).sort((a, b) => tf(s, b)[0] - tf(s, a)[0])[0];
@@ -758,6 +759,7 @@
       ball.owner = ball.fly = ball.carry = null; if (ball.loose) ball.loose = null;
     }
     function penStep(dt) {
+      if (pen.fk) return fkStep(dt);
       const P = pen; P.t += dt; const { s, tk, gk, spot } = P, gl = toW(s, L - 0.4, 34);
       // 1) apito: todos param um instante; 2) arrumação: a bola vai para a marca, cada um para a sua vaga
       ALL.forEach(q => { if (q === tk || q === gk) return; const t = P.tg.get(q); if (P.t < 0.8 || !t) { q.tx = q.x; q.ty = q.y; } else { q.tx = t[0]; q.ty = t[1]; q.sprint = dist(q, { x: t[0], y: t[1] }) > 8 ? 1 : 0; } });
@@ -790,9 +792,77 @@
       ball.owner = ball.carry = ball.loose = null; poss = s; lastSide = s;
       pen = null; mode = 'play'; stopWhy = ''; camT = clk + (out === 'gol' ? 3.2 : 2.6);
       // depois da batida, quem estava na entrada da área entra para o rebote
-      T[s].forEach(q => { if (q !== tk && q.r !== 'GK' && tf(s, q)[0] > 80) { q.run = 1.2; q.runX = 96 + rnd() * 2; q.runY = 34 + gauss() * 6; } });
+      T[s].filter(q => q !== tk && q.r !== 'GK' && tf(s, q)[0] > 80).sort((a, b) => Math.abs(tf(s, a)[1] - 34) - Math.abs(tf(s, b)[1] - 34)).slice(0, 2).forEach(q => { q.run = 1.2; q.runX = 94 + rnd() * 2; q.runY = 34 + gauss() * 5; }); // dois entram para o rebote
     }
-    function penAbort() { if (!pen) return; const gk = pen.gk; pen = null; camT = 0; mode = 'play'; stopWhy = ''; setOwner(gk); }
+    // Falta direta (bola parada, fase 3): o motor decidiu a chance de falta; ela sai de 21 a 29 m, pelo lado de onde veio
+    // (l: e, d ou centro). Barreira de 4 no meio, 3 meio de lado, 2 de lado, a 9,15 m e cobrindo a trave mais perto; o juiz
+    // marca o spray; o goleiro fica do outro lado; um atacante cola na ponta da barreira, outro passa por cima da bola
+    // antes do batedor da lista. Gol por cima da barreira, defesa, fora (por cima), na barreira (rebote) ou na trave
+    let spray = null;
+    function fkStart(e) {
+      const s = e.side, num = e.pen.num, gk = T[1 - s][0], l = e.pen.l;
+      const tk = (num && T[s].find(q => q.num === num && q.r !== 'GK')) || T[s].filter(q => q.r !== 'GK' && q.r !== 'CB').sort((a, b) => b.d - a.d)[0];
+      const fx = 76 + rnd() * 8, fy = cl(l === 'e' ? 34 - 9 - rnd() * 5 : l === 'd' ? 34 + 9 + rnd() * 5 : 34 + gauss() * 4.5, 16, 52), sg = fy < 34 ? -1 : 1;
+      const n = Math.abs(fy - 34) < 8 ? 4 : Math.abs(fy - 34) < 13 ? 3 : 2;
+      // barreira: na linha da bola até um ponto do lado da trave mais perto, a 9,15 m; os da barreira em fila a 0,75 m
+      const ax = L - fx, ay = 34 + sg * 2 - fy, ad = Math.hypot(ax, ay), ux = ax / ad, uy = ay / ad, cx = fx + ux * 9.15, cy = fy + uy * 9.15, px = -uy, py = ux;
+      const wall = []; for (let i = 0; i < n; i++) { const o = (i - (n - 1) / 2) * 1.6 + sg * 0.5; /* ombro a ombro (no desenho, 1,6 m para os bonecos não se cobrirem) */ wall.push([cx + px * o, cy + py * o]); }
+      const tg = new Map(), used = new Set([tk, gk]);
+      const near = (list, x, y) => list.filter(q => !used.has(q)).sort((a, b) => Math.hypot(tf(s, a)[0] - x, tf(s, a)[1] - y) - Math.hypot(tf(s, b)[0] - x, tf(s, b)[1] - y))[0];
+      const put = (q, x, y) => { if (!q) return; used.add(q); tg.set(q, toW(s, x, y)); };
+      const D = T[1 - s].filter(q => q.r !== 'GK' && q.r !== 'ST'), A = T[s].filter(q => q.r !== 'GK' && q.r !== 'CB');
+      wall.forEach(([x, y]) => put(near(D, x, y), x, y));
+      const wEnd = wall[sg < 0 ? 0 : wall.length - 1]; // ponta da barreira do lado da trave mais perto: um atacante cola ali
+      put(near(A, wEnd[0], wEnd[1]), wEnd[0] + px * sg * 0.8, wEnd[1] + py * sg * 0.8);
+      const dec = near(A, fx, fy); put(dec, fx - ux * 1.2 + px * 1.3, fy - uy * 1.2 + py * 1.3); // quem pode passar por cima
+      // na área: até 4 atacantes na linha da marca do pênalti, cada um com o seu marcador do lado do gol; o resto da zaga na pequena área
+      const bx0 = Math.max(94, cx + 4.5);
+      [[bx0, 30], [bx0 + 0.5, 38.5], [bx0 - 1.5, 34.2], [bx0 + 1.5, 25], [bx0 + 1.5, 43.5]].forEach(([x, y]) => { const a = near(A, x, y); if (!a || tf(s, a)[0] < 40) return; put(a, x, y); const d = near(D, x + 1.3, y); if (d) put(d, x + 1.3, y + (y < 34 ? 1 : -1)); });
+      [[99, 34], [bx0 - 1, 20], [bx0 - 1, 48]].forEach(([x, y]) => put(near(D, x, y), x, y));
+      ALL.forEach(q => { if (!used.has(q)) tg.set(q, [q.x, q.y]); });
+      const spot = toW(s, fx, fy), gkP = toW(s, L - 0.7, 34 - sg * 1.3), wW = wall.map(([x, y]) => toW(s, x - ux * 1.5, y - uy * 1.5)); /* o spray fica na frente da barreira (no desenho, fora dos bonecos) */
+      pen = { fk: true, e, s, tk, gk, dec, spot: { x: spot[0], y: spot[1] }, tg, ph: 0, t: 0, sg, wall: wall.map(w => toW(s, w[0], w[1])), wallN: n, gkP, ux, uy, fx, fy };
+      spray = { a: wW[0], b: wW[wW.length - 1], t: 0, s: 0 };
+      due = null; mode = 'pen'; stopWhy = 'Falta'; camT = 1e9; camS = s; ALL.forEach(q => { q.run = 0; q.go = 0; q.th = 0; });
+      ball.owner = ball.fly = ball.carry = null; if (ball.loose) ball.loose = null;
+      const vic = T[s].filter(q => q !== tk && q !== dec && q.r !== 'GK').sort((a, b) => dist(a, { x: spot[0], y: spot[1] }) - dist(b, { x: spot[0], y: spot[1] }))[0]; if (vic) { vic.stun = 1.4; vic.down = 1.4; }
+    }
+    function fkStep(dt) {
+      const P = pen; P.t += dt; const { s, tk, gk, spot, dec } = P;
+      ALL.forEach(q => { if (q === tk || q === gk || (q === dec && P.ph === 1)) return; const t = P.tg.get(q); if (P.t < 0.7 || !t) { q.tx = q.x; q.ty = q.y; } else { q.tx = t[0]; q.ty = t[1]; q.sprint = dist(q, { x: t[0], y: t[1] }) > 8 ? 1 : 0; } });
+      gk.tx = P.gkP[0]; gk.ty = P.gkP[1]; gk.sprint = 0;
+      if (P.t > 0.7) { const bd = Math.hypot(spot.x - ball.x, spot.y - ball.y), kb = bd > 0.01 ? Math.min(bd * dt * 3, 14 * dt) / bd : 0; ball.x += (spot.x - ball.x) * kb; ball.y += (spot.y - ball.y) * kb; }
+      if (P.t > 1.8 && spray && !spray.s) spray.s = clk; // o juiz marca o spray com a barreira já no lugar
+      const back = toW(s, P.fx - P.ux * 2.8 - P.uy * P.sg * 1.6, P.fy - P.uy * 2.8 + P.ux * P.sg * 1.6);
+      if (P.ph === 0) { tk.tx = back[0]; tk.ty = back[1]; tk.sprint = P.t > 0.7 && dist(tk, { x: back[0], y: back[1] }) > 6 ? 1 : 0;
+        const ready = dist(tk, { x: back[0], y: back[1] }) < 1 && Math.hypot(spot.x - ball.x, spot.y - ball.y) < 0.2 && [...P.tg.entries()].every(([q, t]) => Math.hypot(q.x - t[0], q.y - t[1]) < 2);
+        if (P.t > 3 && (ready || P.t > 6.5)) { P.ph = 1; P.t2 = 0; } }
+      else { P.t2 += dt;
+        // quem passa por cima corre na bola primeiro e segue reto; o batedor vem logo atrás
+        if (dec && P.t2 > 0.3) { const [ox, oy] = toW(s, P.fx + P.ux * 3 + P.uy * P.sg * 0.8, P.fy + P.uy * 3 - P.ux * P.sg * 0.8); dec.tx = ox; dec.ty = oy; dec.sprint = 1; }
+        if (P.t2 > 0.9) { tk.tx = spot.x; tk.ty = spot.y; tk.sprint = 0; } else { tk.tx = tk.x; tk.ty = tk.y; }
+        if (P.t2 > 0.9 && Math.hypot(tk.x - spot.x, tk.y - spot.y) < 1.1 || P.t2 > 4) fkKick(); }
+    }
+    function fkKick() {
+      const P = pen, { e, s, tk, gk, sg } = P, out = e.out, gx = s ? 0 : L, dg = s ? 1 : -1, wsg = s ? -sg : sg; // wsg: o lado da trave mais perto no desenho do mundo
+      ball.x = P.spot.x; ball.y = P.spot.y;
+      const nearY = 34 + wsg * 2.9, farY = 34 - wsg * 2.6;
+      let ty, tx = gx - dg * 0.6, dive = null, sv = null, loft = 3.4 + rnd() * 0.8, blk = null, curve = -wsg * (1 + rnd() * 0.8);
+      if (out === 'gol') { const nr = rnd() < 0.65; ty = nr ? nearY + gauss() * 0.3 : farY; dive = gk.y + (ty - gk.y) * (0.55 + rnd() * 0.15); } // por cima da barreira no canto dele, ou no outro: o goleiro chega atrasado
+      else if (out === 'def') { ty = 34 + (rnd() < 0.6 ? wsg : -wsg) * (1.2 + rnd() * 1.8); dive = ty; tx = gk.x + dg * 0.3; sv = (() => { const r = rnd(); return r < 0.35 ? 'segura' : r < 0.7 ? 'espalma' : 'escanteio'; })(); }
+      else if (out === 'trave') { ty = wsg > 0 ? GR : GL; tx = gx; dive = gk.y + (ty - gk.y) * 0.6; }
+      else if (out === 'bloq') { const k = Math.floor(rnd() * P.wall.length), w = P.wall[k]; blk = T[1 - s].filter(q => q.r !== 'GK').sort((a, b) => Math.hypot(a.x - w[0], a.y - w[1]) - Math.hypot(b.x - w[0], b.y - w[1]))[0] || null; tx = w[0]; ty = w[1]; loft = 1.6; curve = 0; }
+      else { ty = 34 + (rnd() < 0.5 ? wsg : -wsg) * (2 + rnd() * 3); loft = 6.5 + rnd() * 1.5; } // por cima do gol
+      const d = Math.hypot(tx - ball.x, ty - ball.y);
+      ball.fly = { x0: ball.x, y0: ball.y, x1: tx, y1: ty, t: 0, dur: Math.max(0.3, d / (out === 'bloq' ? 22 : 25)), shot: true, out, side: s, from: tk, kind: 'falta', sv, blk,
+        loft, curve, gk0: { x: gk.x, y: gk.y }, dive: dive == null ? null : cl(dive, GL - 0.6, GR + 0.6), gkx: out === 'def' ? tx : gk.x };
+      if (blk) { blk.tx = blk.x; blk.ty = blk.y; }
+      e.kick = true; if (out === 'gol') due = e; else ball.fly.due = e;
+      ball.owner = ball.carry = ball.loose = null; poss = s; lastSide = s;
+      pen = null; mode = 'play'; stopWhy = ''; camT = clk + (out === 'gol' ? 3.2 : 2.6); if (spray) spray.end = clk + 1.5;
+      T[s].filter(q => q !== tk && q.r !== 'GK' && tf(s, q)[0] > 88).slice(0, 2).forEach(q => { q.run = 1.2; q.runX = 95 + rnd() * 2; q.runY = 34 + gauss() * 5; });
+    }
+    function penAbort() { if (!pen) return; const gk = pen.gk; pen = null; camT = 0; spray = null; mode = 'play'; stopWhy = ''; setOwner(gk); }
     function whistle(why, taker, spot) { mode = 'falta'; modeT = 1.5; stopWhy = why; foulSpot = spot ? { x: spot.x, y: spot.y } : { x: ball.x, y: ball.y }; ball.owner = ball.fly = ball.loose = ball.carry = null; foulTo = taker; }
     // O juiz (o motor já decidiu): falta, cartão ou impedimento de quem joga na posição pos do lado side. O campinho para,
     // o cartão sobe em cima de quem fez, e só então a narração escreve (cb). O expulso sai da lógica na hora (o time joga com
@@ -1481,6 +1551,9 @@
       if (!vig || vig.w !== W || vig.h !== H) { vig = g.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, Math.hypot(W, H) * 0.56); vig.addColorStop(0, 'rgba(255,255,240,.05)'); vig.addColorStop(1, 'rgba(0,0,0,.26)'); vig.w = W; vig.h = H; }
       if (cam.z > 1.003) { g.save(); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.fillStyle = vig; g.fillRect(0, 0, W, H); g.restore(); } else { g.fillStyle = vig; g.fillRect(0, 0, W, H); }
       lines();
+      // Spray do juiz: a linha da barreira (some pouco depois da cobrança)
+      if (spray && spray.s) { if (spray.end && clk > spray.end) spray = null; else { const u = Math.min(1, (clk - spray.s) / 0.5), a = spray.a, b = spray.b, ex = a[0] + (b[0] - a[0]), ey = a[1] + (b[1] - a[1]), dx = (b[0] - a[0]), dy = (b[1] - a[1]), dl = Math.hypot(dx, dy) || 1, kx = dx / dl * 0.9, ky = dy / dl * 0.9;
+        g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 2; g.setLineDash([2.5, 2.5]); g.beginPath(); g.moveTo(X(a[0] - kx), Y(a[1] - ky)); g.lineTo(X(a[0] - kx + (ex - a[0] + 2 * kx) * u), Y(a[1] - ky + (ey - a[1] + 2 * ky) * u)); g.stroke(); g.setLineDash([]); } }
       // Bonecos, bola e árbitros em 65% (Silvio, 2026-11-06: o campo respirando vale mais que o número grande); placa, etiqueta,
       // o VOCÊ e o cartão do toque ficam no tamanho cheio (k0)
       const k0 = cl(W / 380, 0.85, 1.45), k = Math.max(k0 * DOTK, 0.75); // campinho pequeno (em pé) não encolhe tanto
@@ -1599,6 +1672,7 @@
       shot(side, out, cb, sp) {
         const e = { m: curT + 1, side, me: false, as: false, out, cb, done: false };
         if (sp && sp.sp === 'pen') e.pen = { num: sp.num };
+        else if (sp && sp.sp === 'falta') e.pen = { num: sp.num, fk: true, l: sp.l };
         // Gol na fila: as chances que ainda não saíram ficam para trás (a linha delas aparece já) e o gol vem primeiro
         if (out === 'gol') goals.forEach(q => { if (!q.done && q.out && q.out !== 'gol') { q.done = true; if (due === q) due = null; if (q.cb) q.cb(); } });
         goals.push(e);

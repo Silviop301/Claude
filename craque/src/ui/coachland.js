@@ -1079,16 +1079,34 @@
   }
 
   // Elenco e contratos: o elenco inteiro numa tabela (os seus números aparecem: é o seu time)
-  function elenco(sort) {
-    const c = C(), co = c.co; sort = sort || 'pos';
-    const PO = { GOL: 0, ZAG: 1, LAT: 2, MEI: 3, ATA: 4 };
-    const L = co.squad.slice().sort(sort === 'pos' ? (a, b) => PO[a.pos] - PO[b.pos] || b.ovr - a.ovr : sort === 'ct' ? (a, b) => a.ct - b.ct || b.ovr - a.ovr : (a, b) => b[sort] - a[sort]);
-    const H = [['pos', 'POS'], ['n', 'JOGADOR'], ['age', 'IDADE'], ['ovr', 'GERAL'], ['pot', 'POT.'], ['en', 'ENERGIA'], ['mo', 'MORAL'], ['wage', 'SALÁRIO'], ['ct', 'CONTRATO']];
-    show(rail('clube') + '<div class="ld-col">' + head('Elenco e contratos', U.D.plural(co.squad.length, 'jogador', 'jogadores') + ' · toque no título da coluna para ordenar', '<button class="ld-b line ldk-bk" id="lde-back">Voltar ao clube</button>') +
-      '<div class="lde"><div class="lde-h">' + H.map(([k, t]) => '<button data-s="' + k + '"' + (k === sort ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div><div class="lde-b">' +
-      L.map(p => '<div class="lde-r' + (c.avail(p) ? '' : ' out') + '"><em>' + p.pos + '</em><b>' + esc(p.n) + (p.out ? ' <small>lesionado</small>' : p.sus ? ' <small>suspenso</small>' : c.pend(p) ? ' <small>pendurado</small>' : '') + '</b><span>' + p.age + '</span><span class="o">' + p.ovr + '</span><span>' + p.pot + '</span>' +
-        '<span class="' + (p.en < 55 ? 'dn' : p.en < 75 ? 'md' : '') + '">' + Math.round(p.en) + '%</span><span>' + ((p.mo === undefined ? 60 : p.mo) >= 70 ? 'alta' : (p.mo === undefined ? 60 : p.mo) >= 45 ? 'boa' : 'baixa') + '</span><span>' + c.mi(p.wage) + '</span><span class="' + (p.ct <= 1 ? 'dn' : '') + '">' + (p.ct <= 1 ? 'acaba no fim do ano' : U.D.plural(p.ct, 'ano', 'anos')) + '</span></div>').join('') + '</div></div></div>', st => {
-      st.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { sfx('tap'); elenco(b.dataset.s); });
+  // Elenco enxuto (Silvio 2026-11-09, quadro 27): sem trilho; abas por setor; linha com número, nome, posição, idade,
+  // geral e contrato (laranja no último ano), a tabela rola por dentro; o cartão à direita com energia, potencial, moral,
+  // salário e o contrato com Renovar (a renovação chega com o mercado: `#lde-ren` com data-id fica apagado até lá)
+  function elenco(tab, sel) {
+    const c = C(), co = c.co, T = [['Goleiros', ['GOL']], ['Defesa', ['ZAG', 'LAT']], ['Meio', ['MEI']], ['Ataque', ['ATA']]];
+    tab = tab || 0; if (S.coNums) S.coNums(co.squad); // os mesmos números do campinho
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const L = co.squad.filter(p => T[tab][1].includes(p.pos)).sort((a, b) => b.ovr - a.ovr);
+    const q = L.find(p => p.id === sel) || L[0];
+    const folha = co.squad.reduce((a, p) => a + (p.wage || 0), 0);
+    const ctT = n => n <= 0 ? 'acaba agora' : n === 1 ? 'fim do ano' : U.D.plural(n, 'ano', 'anos');
+    const tag = p => p.out ? ['dn', 'lesionado'] : p.sus ? ['dn', 'suspenso'] : c.pend(p) ? ['y', 'pendurado'] : null;
+    const rows = L.map(p => { const t = tag(p);
+      return '<button class="lde2-r' + (q && p.id === q.id ? ' on' : '') + (c.avail(p) ? '' : ' out') + '" data-id="' + p.id + '"><i>' + (p.num || '') + '</i><span><b>' + esc(p.n) + '</b><small>' + p.pos + '</small>' + (t ? '<em class="' + t[0] + '">' + t[1] + '</em>' : '') + '</span>' +
+        '<span class="a">' + p.age + '</span><span class="o">' + p.ovr + '</span><span class="ct' + (p.ct <= 1 ? ' dn' : '') + '">' + ctT(p.ct) + '</span></button>'; }).join('');
+    let card = '';
+    if (q) {
+      const mo = q.mo === undefined ? 60 : q.mo, moT = mo >= 70 ? 'alta' : mo >= 45 ? 'boa' : 'baixa';
+      const st = (k, v, bad) => '<span><small>' + k + '</small><b' + (bad ? ' class="dn"' : '') + '>' + v + '</b></span>';
+      card = '<div class="lde2-c"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? q.num + ' ' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + ' · ' + q.age + ' anos</small></span></div>' +
+        '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/sem') + '</div>' +
+        '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span><button class="lde2-ren" id="lde-ren" data-id="' + q.id + '" disabled>Renovar<small>em breve</small></button></div></div>';
+    }
+    show('<div class="lde2"><div class="tm-h"><button class="tcr-back" id="lde-back" aria-label="Voltar">' + BK + '</button><b>Elenco</b><small>' + U.D.plural(co.squad.length, 'jogador', 'jogadores') + ' · folha ' + c.mi(folha) + '/sem</small></div>' +
+      '<div class="lde2-tabs">' + T.map(([l, ps], i) => '<button data-et="' + i + '"' + (i === tab ? ' class="on"' : '') + '>' + l + ' <small>' + co.squad.filter(p => ps.includes(p.pos)).length + '</small></button>').join('') + '</div>' +
+      '<div class="lde2-l"><div class="lde2-h"><i></i><span>JOGADOR</span><span class="a">IDADE</span><span class="o">GERAL</span><span class="ct">CONTRATO</span></div>' + rows + '</div>' + card + '</div>', st => {
+      st.querySelectorAll('[data-et]').forEach(b => b.onclick = () => { sfx('tap'); elenco(+b.dataset.et); });
+      st.querySelectorAll('.lde2-r').forEach(b => b.onclick = () => { sfx('tap'); const y = st.querySelector('.lde2-l').scrollTop; elenco(tab, b.dataset.id); const l = document.querySelector('.lde2-l'); if (l) l.scrollTop = y; });
       st.querySelector('#lde-back').onclick = () => { sfx('tap'); clube(); };
     });
   }
