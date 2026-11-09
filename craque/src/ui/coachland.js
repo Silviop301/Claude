@@ -739,15 +739,31 @@
     { k: 'seg', t: 'A seguir', html: (c, co) => S.coFinNext(co).map(n => '<div class="ldf-li"><span>' + esc(n.txt) + '</span><b>' + (n.aprox ? '~ ' : '') + c.mi(n.v) + '</b></div>').join('') || '<p class="ld-none">A temporada acabou.</p>' },
     { k: 'sal', t: 'Salários', html: (c, co) => co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 7).map(p => '<div class="ldf-li"><span><b>' + esc(p.n) + '</b> · ' + p.pos + ' · ' + p.age + ' anos</span><b>' + c.mi(p.wage) + '<small> até ' + (U.YEAR0 + co.season + p.ct) + '</small></b></div>').join('') },
   ];
+  // Finanças enxuta (2026-11-09, quadro 20): 3 números grandes, abas Temporada/A seguir/Salários, à direita a situação
+  // do caixa, o acordo, o patrocínio e o dourado Banco. A aba Decidir saiu (acordo e patrocínio ficam à direita)
+  const FIN_STEP = [['tranquilo', 'o caixa aguenta'], ['aviso', 'menos de 4 semanas de folha'], ['no vermelho', 'proibido contratar com taxa'], ['venda forçada', 'o presidente vende o mais caro'], ['ultimato', 'a confiança cai o dobro']];
   function financas(tab) {
     const c = C(), co = c.co, f = S.coFin(co), folha = S.coFolha(co), wk = S.coFinSemanas(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
-    tab = tab || FIN_TABS[0].k; const T = FIN_TABS.find(x => x.k === tab) || FIN_TABS[0];
-    show(rail('clube') + '<div class="ld-col">' + head('Finanças', esc(club(co.club).short || club(co.club).name) + ' · ' + (U.YEAR0 + co.season), '<div class="ld-seg ldc-tabs">' + FIN_TABS.map(x => '<button data-ft="' + x.k + '"' + (x.k === tab ? ' class="on"' : '') + '>' + x.t + '</button>').join('') + '</div>') +
-      '<div class="ld-row"><div class="ldf-l">' + T.html(c, co, f) + '</div><div class="ldf-side">' +
-        '<div class="ldk-cx paper">' + lbl('CAIXA DO CLUBE') + '<b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><small>' + (f.caixa < 0 ? 'No vermelho: a cada rodada assim, a diretoria perde a paciência.' : 'Paga ' + U.D.plural(wk, 'semana', 'semanas') + ' de salário mesmo sem entrar nada.') + '</small></div>' +
-        '<div class="ldk-cx">' + lbl('VERBA PARA CONTRATAR') + '<b class="up">' + c.brl(f.verba) + '</b><small>o mercado chega numa próxima parte</small></div>' +
-        '<div class="ldk-cx">' + lbl('FOLHA POR SEMANA') + '<b>' + c.brl(folha) + ' <small>de ' + c.brl(f.teto) + '</small></b><em class="ld-bar"><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></em></div>' +
-        '<span class="ld-gr"></span><button class="ld-b line" id="ldf-back">Voltar ao clube</button></div></div></div>', st => {
+    const step = S.coFinStep(co), P = S.coPres(co), pt = f.pat;
+    tab = ['tmp', 'seg', 'sal'].indexOf(tab) >= 0 ? tab : 'tmp';
+    const li = (t, v, cls) => '<div class="fn2-li"><span>' + t + '</span><b class="' + (cls || '') + '">' + v + '</b></div>';
+    let rows = '';
+    if (tab === 'tmp') { const x = f.ss, homes = co.ss ? co.ss.log.filter(l => l.home).length : 0, sg = v => (v ? '+ ' + c.mi(v) : '0'), sn = v => (v ? '− ' + c.mi(v) : '0');
+      const saldo = x.bil + x.tv + x.pat + x.prem + x.vend - x.sal - x.comp;
+      rows = li('Bilheteria · ' + U.D.plural(homes, 'jogo', 'jogos') + ' em casa', sg(x.bil), 'up') + li('TV e patrocínio', sg(x.tv + x.pat), 'up') + (x.prem ? li('Prêmios', sg(x.prem), 'up') : '') + (x.vend ? li('Vendas', sg(x.vend), 'up') : '') +
+        li('Salários', sn(x.sal), 'dn') + (x.comp ? li('Contratações', sn(x.comp), 'dn') : '') + li('<b>Saldo</b>', c.sgn(saldo), saldo >= 0 ? 'up' : 'dn'); }
+    else if (tab === 'seg') rows = S.coFinNext(co).map(n => li(esc(n.txt), (n.aprox ? '~ ' : '') + c.mi(n.v))).join('') || '<p class="fn2-none">A temporada acabou.</p>';
+    else rows = co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 8).map(p => li(esc(p.n) + ' <small>' + p.pos + '</small>', c.mi(p.wage) + ' <small>até ' + (U.YEAR0 + co.season + p.ct) + '</small>')).join('');
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    show('<div class="fn2"><div class="tm-h"><button class="tcr-back" id="ldf-back" aria-label="Voltar">' + BK + '</button><b>Finanças</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (U.YEAR0 + co.season) + '</small></div>' +
+      '<div class="fn2-k"><div><small>CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span>' + (f.caixa < 0 ? 'no vermelho' : U.D.plural(wk, 'semana', 'semanas') + ' de folha') + '</span></div>' +
+        '<div><small>VERBA</small><b class="up">' + c.brl(f.verba) + '</b><span>para contratar</span></div>' +
+        '<div><small>FOLHA</small><b>' + c.brl(folha) + '</b><i><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i><span>teto ' + c.brl(f.teto) + '</span></div></div>' +
+      '<div class="fn2-tabs">' + [['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
+      '<div class="fn2-p">' + rows + '</div>' +
+      '<div class="fn2-side"><div class="fn2-st"><small>SITUAÇÃO DO CAIXA</small><b class="s' + step + '">' + FIN_STEP[step][0] + '</b><span class="fn2-dd">' + [1, 2, 3, 4].map(i => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '</span><em>' + FIN_STEP[step][1] + '</em></div>' +
+        '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><div><span>Patrocínio</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></div></div>' +
+        '<span class="rs-gap"></span><button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div></div>', st => {
       st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); financas(b.dataset.ft); });
       st.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.fd; if (k === 'banco') banco(); else if (k === 'pres') presInfo(); });
       st.querySelector('#ldf-back').onclick = () => { sfx('tap'); clube(); };
@@ -811,26 +827,30 @@
         st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinPatrocinio(co, o.k); f.pend = null; c.save('hub'); welcome ? time(false) : semana(); };
       });
   }
-  // Banco: a escada do vermelho e o empréstimo
+  // Banco enxuto (2026-11-09, quadro 21): o valor grande com ◀ ▶, juros, parcela e total; os degraus do vermelho no ?
   function banco(amt) {
-    const c = C(), co = c.co, f = S.coFin(co), step = S.coFinStep(co), max = S.coLoanMax(co);
-    const ST = [['Aviso da diretoria', 'caixa abaixo de 4 semanas de folha'], ['Proibido contratar com taxa', 'caixa no vermelho: só jogador sem contrato'], ['O presidente vende o mais caro', 'com 6 rodadas seguidas no vermelho'], ['Ultimato', 'com 8 rodadas no vermelho, a confiança cai o dobro']];
-    const lad = ST.map(([t, s], i) => '<div class="ldn-st' + (i + 1 < step ? ' d' : i + 1 === step ? ' c' : '') + '"><i>' + (i + 1) + '</i><b>' + t + '</b><small>' + (i + 1 === step ? 'agora · ' : '') + s + '</small></div>').join('');
+    const c = C(), co = c.co, f = S.coFin(co), step = S.coFinStep(co), max = S.coLoanMax(co), L = f.loan;
+    const ST = ['A diretoria avisa (caixa abaixo de 4 semanas de folha)', 'No vermelho: proibido contratar com taxa', 'Com 6 rodadas no vermelho, o presidente vende o mais caro', 'Com 8, ultimato: a confiança cai o dobro'];
     const steps = max ? [0.25, 0.5, 0.75, 1].map(k => Math.round(max * k / 10000) * 10000).filter((v, i, a) => v > 0 && a.indexOf(v) === i) : [];
-    amt = amt || steps[1] || steps[0];
-    const parc = amt ? S.coLoanParc(amt) : 0, L = f.loan;
-    const right = L ? '<div class="ldk-cx paper">' + lbl('EMPRÉSTIMO EM ANDAMENTO') + '<b>' + c.brl(L.rem) + '</b><small>falta pagar do principal</small><div class="ldn-kv"><span>Parcela por mês</span><b>' + c.brl(L.parc) + '</b></div><div class="ldn-kv"><span>Parcelas que faltam</span><b>' + L.n + '</b></div><small>Quitar antes não tem multa.</small></div>' +
-        '<span class="ld-gr"></span>' + (f.caixa >= L.rem ? gold('ldn-pay', 'Quitar agora', c.brl(L.rem) + ' do caixa') : '<button class="ld-b line" id="ldn-back">Voltar às finanças</button>') :
-      '<div class="ldk-cx paper">' + lbl('EMPRÉSTIMO NO BANCO') + '<div class="ldn-chips">' + steps.map(v => '<button data-am="' + v + '"' + (v === amt ? ' class="on"' : '') + '>' + c.brl(v) + '</button>').join('') + '</div>' +
-        '<div class="ldn-kv"><span>Juros</span><b>2% ao mês</b></div><div class="ldn-kv"><span>12 parcelas de</span><b>' + c.brl(parc) + '</b></div><div class="ldn-kv"><span>Total a pagar</span><b>' + c.brl(parc * 12) + '</b></div><small>Parcela a cada 4 rodadas. Quitar antes não tem multa.</small></div>' +
-        '<span class="ld-gr"></span>' + gold('ldn-take', 'Pegar ' + c.brl(amt), f.caixa < 0 && f.caixa + amt >= 0 ? 'sai do vermelho hoje' : c.brl(parc) + ' por mês');
-    show(rail('clube') + '<div class="ld-col">' + head('Banco', 'Caixa ' + c.brl(f.caixa) + (f.neg ? ' · ' + U.D.plural(f.neg, 'rodada', 'rodadas') + ' no vermelho' : ''), '<button class="ld-b line ldk-bk" id="ldn-bk">Voltar</button>') +
-      '<div class="ld-row"><div class="ldn-l">' + lbl('O QUE ACONTECE NO VERMELHO') + '<div class="ldn-lad">' + lad + '</div><small class="ldn-note">Também dá para vender alguém quando o mercado chegar.</small></div>' +
-      '<div class="ldn-side">' + right + '</div></div></div>', st => {
-      st.querySelectorAll('[data-am]').forEach(b => b.onclick = () => { sfx('tap'); banco(+b.dataset.am); });
+    amt = steps.indexOf(amt) >= 0 ? amt : (steps[1] || steps[0] || 0);
+    const i = steps.indexOf(amt), parc = amt ? S.coLoanParc(amt) : 0;
+    const li = (t, v, cls) => '<div class="fn2-li"><span>' + t + '</span><b class="' + (cls || '') + '">' + v + '</b></div>';
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const left = L ? '<div class="bk2-top"><span><small>VOCÊ DEVE</small><b>' + c.brl(L.rem) + '</b></span></div><div class="bk2-li">' + li('Parcela', c.brl(L.parc)) + li('Parcelas que faltam', L.n) + li('Quitar antes', 'sem multa') + '</div>'
+      : steps.length ? '<div class="bk2-top"><button class="pl2-ar" data-ai="-1" aria-label="Menos"' + (i > 0 ? '' : ' disabled') + '>◀</button><span><small>EMPRÉSTIMO</small><b>' + c.brl(amt) + '</b></span><button class="pl2-ar" data-ai="1" aria-label="Mais"' + (i < steps.length - 1 ? '' : ' disabled') + '>▶</button></div>' +
+        '<div class="bk2-li">' + li('Juros', '2% ao mês') + li('12 parcelas de', c.brl(parc)) + li('Total a pagar', c.brl(parc * 12), 'dn') + '</div>'
+      : '<p class="fn2-none">O banco não empresta agora.</p>';
+    const side = L ? '<div class="fn2-st"><small>CAIXA</small><b class="' + (f.caixa < 0 ? 's3' : '') + '">' + c.brl(f.caixa) + '</b><em>' + (f.caixa >= L.rem ? 'dá para quitar hoje' : 'parcela a cada 4 rodadas') + '</em></div><span class="rs-gap"></span>' +
+        (f.caixa >= L.rem ? '<button class="tm-b" id="ldn-back">Agora não</button><button class="tm-go" id="ldn-pay">Quitar ' + c.brl(L.rem) + '</button>' : '<button class="tm-go" id="ldn-back">Voltar</button>')
+      : '<div class="fn2-st"><small>VOCÊ DEVE</small><b>nada</b><em>' + (max ? 'pode pegar até ' + c.brl(max) : 'sem crédito agora') + '</em></div><span class="rs-gap"></span><button class="tm-b" id="ldn-back">Agora não</button>' +
+        (amt ? '<button class="tm-go" id="ldn-take">Pegar ' + c.brl(amt) + '</button>' : '');
+    show('<div class="bk2"><div class="tm-h"><button class="tcr-back" id="ldn-bk" aria-label="Voltar">' + BK + '</button><b>Banco</b><small>caixa ' + c.brl(f.caixa) + (f.neg ? ' · ' + U.D.plural(f.neg, 'rodada', 'rodadas') + ' no vermelho' : '') + '</small><button class="ol2-q" id="bk2-q" aria-label="Como funciona">?</button></div>' +
+      '<div class="bk2-box">' + left + '</div><div class="fn2-side">' + side + '</div></div>', st => {
+      st.querySelectorAll('[data-ai]').forEach(b => b.onclick = () => { sfx('tap'); banco(steps[Math.max(0, Math.min(steps.length - 1, i + +b.dataset.ai))]); });
       const tk = st.querySelector('#ldn-take'); if (tk) tk.onclick = () => { if (S.coLoanTake(co, amt)) { sfx('tap'); c.save('hub'); banco(); } };
       const py = st.querySelector('#ldn-pay'); if (py) py.onclick = () => { if (S.coLoanPay(co)) { sfx('tap'); c.save('hub'); banco(); } };
-      st.querySelectorAll('#ldn-bk, #ldn-back').forEach(b => b.onclick = () => { sfx('tap'); financas('dec'); });
+      st.querySelectorAll('#ldn-bk, #ldn-back').forEach(b => b.onclick = () => { sfx('tap'); financas(); });
+      st.querySelector('#bk2-q').onclick = () => { sfx('tap'); pop('<div class="acd-help"><b>Se o caixa ficar no vermelho</b><ol class="bk2-ol">' + ST.map((t, k) => '<li' + (k + 1 === step ? ' class="on"' : '') + '>' + t + (k + 1 === step ? ' · <b>agora</b>' : '') + '</li>').join('') + '</ol><p>Parcela a cada 4 rodadas. Quitar antes não tem multa. Também dá para vender alguém quando o mercado chegar.</p><button class="hl-btn line" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop'); };
     });
   }
   // Aviso do que aconteceu no caixa (venda forçada, eleição) na volta para a semana
