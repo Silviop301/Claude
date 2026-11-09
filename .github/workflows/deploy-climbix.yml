@@ -154,7 +154,7 @@ jobs:
           echo "Leitura das opiniões ligada em https://climbix.app/respostas.html"
 
       # Compra de moedas (Mercado Pago, api/pay.php): segredo CLIMBIX_MP_TOKEN = Access Token da aplicação no
-      # Mercado Pago Developers (o de teste começa com TEST- e não cobra). Grava climbix-data/mp-token FORA do public_html.
+      # Mercado Pago Developers (o de teste não cobra; no painel novo ele também começa com APP_USR-). Grava climbix-data/mp-token FORA do public_html.
       # Sem o segredo, não mexe no arquivo (e sem arquivo a loja mostra "Compra em breve").
       - name: Token do Mercado Pago
         if: steps.key.outputs.ok == 'true'
