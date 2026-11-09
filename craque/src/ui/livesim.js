@@ -338,7 +338,7 @@
     // ao fundo e toca para trás na marca do pênalti; cabeca = cruza na 1ª trave; enfiada = bola nas costas e cara a cara;
     // drible = conduz para dentro da área; fora = de fora da área, com espaço. Só o gol (a chance que não entra fica como era)
     function duePick(e) {
-      if (e.out && e.out !== 'gol') return;
+      if (e.out && e.out !== 'gol' && e.spk !== 'esc' && e.spk !== 'fc') return; // escanteio e falta cruzada que não entram também saem do cruzamento
       const s = e.side, pt = patOf(s), wd = Math.min(1, ST[s].wide), dr = dirOf(s);
       const W = { corte: 0.24 + 0.14 * pt + 0.1 * wd, cabeca: 0.1 + 0.26 * wd, enfiada: 0.1 + 0.3 * dr, drible: 0.15, fora: 0.12 };
       let r = rnd() * Object.values(W).reduce((a, b) => a + b, 0), pl = 'drible'; for (const k in W) { r -= W[k]; if (r <= 0) { pl = k; break; } }
@@ -350,6 +350,7 @@
         if (!wg) pl = 'drible';
       }
       const ws = wg ? Math.sign(tf(s, wg)[1] - 34) || 1 : 1;
+      if (e.spk === 'falta') pl = 'fora'; else if ((e.spk === 'esc' || e.spk === 'fc') && wg) pl = 'cabeca';
       e.play = pl; e.wing = wg; e.ws = ws;
       if (pl === 'corte') { e.rx = 94; e.ry = 34 - ws * (1 + rnd() * 3); }
       else if (pl === 'cabeca') { e.rx = 98.5; e.ry = 34 + ws * (1.5 + rnd() * 2.5); }
@@ -406,7 +407,7 @@
         if (due.now && p !== sc && !inBox) { const [wx, wy] = toW(s, due.rx, due.ry); sc.run = Math.max(sc.run, 1.5); sc.runX = due.rx; sc.runY = due.ry; return fly(p, wx, wy, sc, true, 'costas', false); }
         // Chegou cedo? Prepara (ajeita para o lado) até o minuto do gol, para a rede balançar junto com o placar
         if (inBox && (p === sc || (!due.me && !mid)) && curT < due.m - 1) { const [wx, wy] = toW(s, due.play === 'fora' ? bx : Math.min(bx + 1.5, 92), cl(by + (by < 34 ? 3 : -3), 22, 46)); ball.carry = { x: wx, y: wy, t: 0.35 }; return; }
-        if (inBox && (p === sc || (!due.me && !mid))) { const kd = Math.hypot(L - bx, 34 - by) > 22 ? 'fora' : !due.play && bx > 84 && Math.abs(by - 34) < 15 && rnd() < 0.3 ? 'cabeca' : 'chute';
+        if (inBox && (p === sc || (!due.me && !mid))) { const kd = due.spk === 'falta' ? 'fora' : (due.spk === 'esc' || due.spk === 'fc') && bx > 82 ? 'cabeca' : Math.hypot(L - bx, 34 - by) > 22 ? 'fora' : !due.play && bx > 84 && Math.abs(by - 34) < 15 && rnd() < 0.3 ? 'cabeca' : 'chute';
           if (due.out && due.out !== 'gol') { shoot(p, kd, 0, due.out); ball.fly.due = due; return; } // chance do motor que não entra
           return shoot(p, kd, 1); }
         // A jogada do estilo leva a bola até lá (posse troca passes, contra lança, lados vai à ponta); só quando o tempo do
@@ -705,8 +706,8 @@
       if (lv > 0.5) { p.bfx = lo.vx / lv; p.bfy = lo.vy / lv; }
       if (lc && DEF[lc.k] && !lc.have && isMe(p) && lc.q) lcDone(); // cortou / segurou o cruzamento
       if (f.cut && f.from && f.from.side !== p.side) emit('corte', p.side, p, f.from);
-      if (!f.cut && f.kind === 'cruz' && due && due.dl && due.side === p.side && p === scorerOf(due)) shoot(p, 'cabeca', 1);
-      else if (!f.cut && f.kind === 'cruz') { const [bx, by] = tf(p.side, ball); if (bx > 84 && Math.abs(by - 34) < 15) shoot(p, 'cabeca', 0); }
+      if (!f.cut && f.kind === 'cruz' && due && due.dl && due.side === p.side && p === scorerOf(due)) { if (due.out && due.out !== 'gol') { shoot(p, 'cabeca', 0, due.out); ball.fly.due = due; } else shoot(p, 'cabeca', 1); }
+      else if (!f.cut && f.kind === 'cruz' && !(due && due.spk === 'falta' && due.side === p.side)) { const [bx, by] = tf(p.side, ball); if (bx > 84 && Math.abs(by - 34) < 15) shoot(p, 'cabeca', 0); }
       // zagueiro corta o cruzamento de cabeça: às vezes manda para escanteio
       else if (f.cut && f.kind === 'cruz' && p.r !== 'GK' && !due && !lc && outCd <= 0 && rnd() < 0.6) { const [bx] = tf(p.side, ball); if (bx < 20) flyOut(p, p.side ? L + 2.5 : -2.5, ball.y + (ball.y < 34 ? -4 : 4), true, 'corte'); }
     }
@@ -1171,7 +1172,7 @@
         if (e) { due = e; due.t0 = clk; due.asDone = false; due.rx = 86 + rnd() * 5; due.ry = 34 + gauss() * 7; duePick(e); if (ball.owner && ball.owner.side === e.side) { ball.carry = null; ball.hold = Math.min(ball.hold, 0.1); } }
       }
       // O relógio da jogada só anda com a bola rolando (saída depois de outro gol não conta): gol do motor demorando 9 s vira lançamento
-      if (due) { due.age = (due.age || 0) + dt; if (due.out === 'gol' || due.out === undefined) { if (due.age > 9 && due.cb) due.now = true; } }
+      if (due) { due.age = (due.age || 0) + dt; if (due.out === 'gol' || due.out === undefined) { if (due.age > (due.spk === 'esc' || due.spk === 'fc' ? 15 : 9) && due.cb) due.now = true; } }
       if (due && ball.owner && ball.owner.side !== due.side && ball.owner.r !== 'GK') {
         const th = T[due.side].filter(q => q.r !== 'GK').sort((a, b2) => dist(a, ball.owner) - dist(b2, ball.owner))[0]; th.lg = Math.max(th.lg, 0.8); th.cd = 0; th.tx = ball.owner.x; th.ty = ball.owner.y; th.sprint = 1; // vai dar o bote (e ganha)
       }
@@ -1777,9 +1778,8 @@
       // Treinador: o motor já decidiu o lance (chute do lado side que vira out: gol, def ou fora); o campinho joga e avisa em cb
       shot(side, out, cb, sp) {
         const e = { m: curT + 1, side, me: false, as: false, out, cb, done: false };
-        if (sp && sp.sp === 'pen') e.pen = { num: sp.num };
-        else if (sp && sp.sp === 'falta') e.pen = { num: sp.num, fk: true, l: sp.l };
-        else if (sp && sp.sp === 'fc') /* escanteio sem animação própria (Silvio: muita coisa): a chance joga normal */ e.pen = { num: sp.num, hnum: sp.hnum, ck: sp.sp, l: sp.l };
+        if (sp && sp.sp !== 'pen') e.spk = sp.sp; // a jogada combina com a narração: escanteio e falta cruzada de cabeça, falta direta de longe
+        if (sp && sp.sp === 'pen') e.pen = { num: sp.num }; // só o pênalti tem animação própria (Silvio, 09/11): falta e escanteio jogam como chance normal
         // Gol na fila: as chances que ainda não saíram ficam para trás (a linha delas aparece já) e o gol vem primeiro
         if (out === 'gol') goals.forEach(q => { if (!q.done && q.out && q.out !== 'gol') { q.done = true; if (due === q) due = null; if (q.cb) q.cb(); } });
         goals.push(e);
