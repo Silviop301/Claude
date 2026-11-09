@@ -746,7 +746,7 @@
         hidden.add(e);
         if (out === 'gol') return gl.push([side, e]);
         const cancel = sim.shot(side, out, () => { if (hidden.delete(e)) paint(); }, spOf(e));
-        setTimeout(() => { if (hidden.delete(e)) { cancel(); paint(); } }, co.speed === '3' ? 4000 : 12000);
+        setTimeout(() => { if (hidden.delete(e)) { cancel(); paint(); } }, (co.speed === '3' ? 4000 : 12000) * (e.sp === 'pen' ? 1.8 : 1)); // o pênalti espera todo mundo sair da área
       });
       if (!gl.length) return null;
       return go => {
