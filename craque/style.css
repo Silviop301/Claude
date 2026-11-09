@@ -8653,3 +8653,21 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .lde2-ren:disabled { opacity: .55; cursor: default; }
 .ld-st .lde2-r { padding: 0 14px !important; margin: 2px 0; }
 .ld-st .lde2-r.on { border-bottom-color: transparent !important; }
+/* Troca na escalação (Silvio 2026-11-09): sem frase, 4 nomes, Todos e o dourado do mesmo tamanho embaixo */
+.ld-pop-c.ld-subp { width: 800px; max-height: 370px; }
+.ld-subp .ld-ph small { display: none; }
+.ld-subp .ld-pf { gap: 10px; margin-top: 6px; }
+.ld-subp .ld-pf .tm-b { width: 130px; flex: none; height: 48px; }
+.ld-subp .ld-pf .tm-go { flex: 1; margin-top: 0; height: 48px; min-height: 0; font-size: 22px !important; }
+.ld-subp .ld-scroll { max-height: 220px; overflow-y: auto; }
+.ld-subp .ld-ph b { font-size: 24px; }
+.ld-subp .ld-cand { min-height: 52px; padding: 6px 12px !important; }
+.ld-subp .ld-cand > i { width: 38px; height: 38px; font-size: 17px; }
+.ld-subp .ld-cand > span b { font-size: 18px; } .ld-subp .ld-cand > span b u { font-size: 12px; padding: 1px 5px; }
+.ld-subp .ld-cand > span small { font-size: 14px; }
+.ld-subp .ld-cand em { font-size: 12px; padding: 2px 6px; }
+.ld-subp .ld-pl-l { width: 270px; }
+.ld-subp .ld-who-h b { font-size: 19px; } .ld-subp .ld-who-h small { font-size: 14px; }
+.ld-subp .ld-st1 small { font-size: 12px; } .ld-subp .ld-st1 b { font-size: 18px; }
+.ld-subp #ld-swap { min-height: 48px; font-size: 17px !important; }
+.ld-subp .ld-lbl { font-size: 13px; }

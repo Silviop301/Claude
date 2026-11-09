@@ -302,7 +302,7 @@
       const rest = co.squad.filter(p => !co.xi.includes(p.id) && (p.pos === 'GOL') === (slot === 'GOL'));
       const rend = p => Math.round(p.ovr * S.coFit(p.pos, slot));
       const score = p => rend(p) * (0.6 + 0.4 * p.en / 100);
-      const list = rest.sort((a, b) => c.avail(b) - c.avail(a) || score(b) - score(a)).slice(0, 5);
+      const list = rest.sort((a, b) => c.avail(b) - c.avail(a) || score(b) - score(a)).slice(0, 4);
       const best = list.find(p => c.avail(p) && p.pos === slot) || list.find(c.avail);
       const fitTag = p => p.pos === slot ? ['ok', 'POSIÇÃO DELE'] : S.coFit(p.pos, slot) >= 0.88 ? ['sabe', 'CONHECE'] : ['fora', 'FORA DE POSIÇÃO'];
       const note = p => p.out ? 'lesionado, ' + U.D.plural(p.out, 'jogo', 'jogos') : p.sus ? c.susTxt(p) : [p.pos, p.age + ' anos', c.pend(p) ? 'pendurado' : '', p.mo < 45 ? 'chateado' : p.mo > 75 ? 'motivado' : ''].filter(Boolean).join(' · ');
@@ -311,22 +311,21 @@
           '<span><b>' + esc(p.n) + (p === best ? ' <u>SUGESTÃO</u>' : '') + '</b><small>' + note(p) + '</small></span><span class="r"><em class="' + fc + '">' + ft + '</em><small>rende ' + rend(p) + ' · ' + Math.round(p.en) + '%</small></span></button>'; };
       const curFit = cur.pos === slot ? '' : '<em class="' + (S.coFit(cur.pos, slot) >= 0.88 ? 'sabe' : 'fora') + '">' + (S.coFit(cur.pos, slot) >= 0.88 ? 'CONHECE A ' : 'FORA DE POSIÇÃO NA ') + slot + '</em>';
       const lastN = (cur.notes || []).slice(-5);
-      pop(popHead(slot + ': ' + esc(cur.n), 'Toque num nome para ele entrar. O jogo ainda não começou: troque à vontade.') +
+      pop(popHead(S.coSlotLbl(co.form, i) + ': ' + esc(cur.n), '') +
         '<div class="ld-pb"><div class="ld-pl-l"><div class="ld-who"><div class="ld-who-h"><i>' + cur.ovr + '</i><span><b>' + esc(cur.n) + '</b><small>' + cur.age + ' anos · ' + c.posTxt[cur.pos].toLowerCase() + '</small></span>' +
           '<span class="ld-rend"><small>aqui rende</small><b class="' + (cur.pos === slot ? '' : 'warn') + '">' + rend(cur) + '</b></span></div>' + curFit +
           '<div class="ld-st4">' + stat('energia', Math.round(cur.en) + '%') + stat('moral', cur.mo >= 70 ? 'alta' : cur.mo >= 45 ? 'boa' : 'baixa') + stat('potencial', cur.pot) + stat('cartões', cur.yc || 0) + '</div>' +
-          (lastN.length ? '<div class="ld-l5"><small>Últimos jogos</small>' + lastN.map(n => '<b>' + String(n).replace('.', ',') + '</b>').join('') + '</div>' : '') +
-          '<small class="ld-wage">Contrato: ' + U.D.plural(cur.ct, 'ano', 'anos') + ' · salário ' + c.brl(cur.wage) + '/sem</small></div>' +
+          (lastN.length ? '<div class="ld-l5"><small>Últimos jogos</small>' + lastN.map(n => '<b>' + String(n).replace('.', ',') + '</b>').join('') + '</div>' : '') + '</div>' +
           '<button class="ld-b line" id="ld-swap">Trocar de lugar com outro titular</button></div>' +
         '<div class="ld-pl-r">' + lbl('QUEM PODE ENTRAR') + (list.length ? list.map(row).join('') : '<p class="ld-none">Ninguém no banco para essa vaga.</p>') +
-          '<div class="ld-pf"><button class="ld-link" id="ld-all">Ver o elenco todo (' + rest.length + ')</button><span class="ld-gr"></span>' + (best ? '<button class="ld-gold sm" id="ld-put">Colocar o ' + esc(last(best.n)) + '</button>' : '') + '</div></div></div>',
+          '<div class="ld-pf"><button class="tm-b" id="ld-all">Todos (' + rest.length + ')</button>' + (best ? '<button class="tm-go" id="ld-put">Colocar o ' + esc(last(best.n)) + '</button>' : '') + '</div></div></div>',
         'Trocar ' + cur.n, w => {
           w.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => { sfx('tap'); co.xi[i] = b.dataset.sub; co.autoXI = false; closePop(); draw(); });
           w.querySelector('#ld-swap').onclick = () => { sfx('tap'); swap = i; closePop(); draw(); };
           if (w.querySelector('#ld-put')) w.querySelector('#ld-put').onclick = () => { sfx('tap'); co.xi[i] = best.id; co.autoXI = false; closePop(); draw(); };
           w.querySelector('#ld-all').onclick = () => { sfx('tap'); const all = rest.sort((a, b) => score(b) - score(a)); w.querySelector('.ld-pl-r').innerHTML = lbl('ELENCO TODO') + '<div class="ld-scroll">' + all.map(row).join('') + '</div>';
             w.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => { sfx('tap'); co.xi[i] = b.dataset.sub; co.autoXI = false; closePop(); draw(); }); };
-        }, 'w750');
+        }, 'w750 ld-subp');
     };
     // Tocar num reserva: para qual vaga ele entra (a dele primeiro)
     const benchPop = id => {
