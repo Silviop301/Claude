@@ -8529,3 +8529,43 @@ body.ld-on #ld { display: block; }
 .mkf-star { height: 56px; border-radius: 14px; background: #141517 !important; display: flex; align-items: center; justify-content: center; padding: 0 !important; }
 .mkf-star svg { width: 26px; height: 26px; fill: none; stroke: var(--gold); stroke-width: 2; stroke-linejoin: round; } .mkf-star.on svg { fill: var(--gold); }
 .mk .tm-h .ol2-q { right: 0; } .mk .tm-h small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 440px; }
+/* Artes do Treinador (2026-11-09): logos dos patrocinadores, rostos e banco (assets/co) */
+.acd-c > .acd-lg { display: block; height: 44px; width: auto; max-width: calc(100% - 64px); object-fit: contain; object-position: left center; margin: -4px 0 -2px -4px; }
+.acd-c > .acd-lg + em { margin-top: 2px; }
+img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-radius: 50%; background: #F8F4EA; }
+.kb2-pr.fc { flex-direction: row; align-items: center; gap: 12px; }
+.kb2-pr.fc > div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.kb2-fc { width: 58px; height: 58px; border-radius: 50%; background: #F8F4EA; flex: none; }
+.pi-fc { width: 84px; height: 84px; border-radius: 50%; background: #F8F4EA; float: left; margin: 0 14px 6px 0; }
+.aux-h { display: flex; align-items: center; gap: 12px; } .aux-h b { font: 800 26px/1 var(--display); }
+.aux-fc { width: 56px; height: 56px; border-radius: 50%; background: #E9E2D2; flex: none; }
+.fn2-ac .fn2-lg { height: 34px; width: auto; max-width: 140px; object-fit: contain; object-position: left center; }
+.bk2-lg { height: 38px; width: auto; }
+/* Parada do jogo com o campo da escalação (Silvio 2026-11-09): tela cheia, anel de energia, amarelo, auxiliar num botão */
+.ld-pop-c.ldl-full { width: 844px; height: 390px; max-height: none; border-radius: 0; padding: 12px 14px; background: #0B2E20; box-shadow: none; box-sizing: border-box; }
+.ldl-tm .tm-h { padding-left: 0; gap: 12px; }
+.ldl-tm .tm-h small { font: 800 20px/1 var(--display); color: #B9C9BF; }
+.ldl-sc { padding: 7px 12px; border-radius: 10px; background: #141517; font: 800 22px/1 var(--display); color: #F3F1EA; }
+.ldl-sc u { text-decoration: none; color: var(--gold); }
+.ldl-tm .tm-hint { margin-left: auto; }
+.ldl-tm .ld-dot[data-sug]::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; box-shadow: 0 0 0 2.5px #F08A5D; pointer-events: none; }
+.ldl-tm .tm-bench > small { flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; }
+.ldl-tm .tm-bench > small em { font: 800 15px/1 var(--display); font-style: normal; letter-spacing: 0; color: #B9C9BF; white-space: nowrap; }
+.ldl-tm .tm-bp.sug { box-shadow: inset 0 0 0 2px #F08A5D; }
+.ldl-tm .tm-bp.can { box-shadow: inset 0 0 0 2px rgba(242, 194, 48, .7); }
+.ldl-tm .tm-bp.on { box-shadow: inset 0 0 0 2px var(--gold); background: #2b2612 !important; }
+.ldl-talk2 { height: 46px; flex: none; border-radius: 12px; background: #141517; display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; gap: 4px; box-sizing: border-box; }
+.ldl-talk2 button { border-radius: 9px; font: 800 18px/1 var(--display) !important; color: #B9C9BF !important; }
+.ldl-talk2 button.on { background: #F8F4EA !important; color: #13201A !important; }
+.ldl-tm .tm-side { gap: 8px; }
+.ldl-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 8px; }
+.ldl-chips em { font: 800 19px/1 var(--display); font-style: normal; padding: 8px 12px; border-radius: 10px; background: #F5E6A8; color: #6b5300; }
+.ldl-chips em.dn { background: #F8D2BF; color: #8a3312; } .ldl-chips em.up { background: #CFEBD9; color: #1e6b3c; }
+.ldl-aux .ldl-red { margin-bottom: 8px; }
+.ldl-tm .ld-dot[data-in] .ld-dn em { background: #7ED39A; color: #13201A; }
+.ldl-ov { position: absolute; inset: 0; z-index: 5; background: rgba(4, 12, 8, .72); display: flex; align-items: center; justify-content: center; }
+.ldl-ov .ldl-aux { width: 440px; }
+.ldl-full { position: relative; }
+.ldl-ov .ldl-aux { background: var(--paper); color: var(--ink); border-radius: 18px; padding: 16px 18px 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, .5); }
+.ldl-ov .ldl-aux p { font: 700 19px/1.3 var(--body); color: var(--ink); }
+.ldl-ov .hl-ab { margin-top: 12px; } .ldl-ov .hl-ab .hl-btn { margin-top: 0; min-height: 50px; }

@@ -68,6 +68,21 @@
   const last = n => String(n || '').split(' ').filter(Boolean).pop() || '';
   const ord = n => n + 'º';
   const enRing = e => (e >= 75 ? 'ok' : e >= 55 ? 'mid' : 'low');
+  // Artes do Treinador (assets/co, 2026-11-09, geradas no ChatGPT): logos dos patrocinadores, rostos, banco
+  const CO_ART = 'assets/co/';
+  const slug = n => String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const PAT_OLD = { 'Atacadão Prime': 'Armazém Prime', 'TeleNorte': 'Conecta Norte' }; // nomes de saves antigos
+  const patName = n => PAT_OLD[n] || n;
+  const PAT_OK = new Set([].concat.apply([], Object.values(S.CO_SPONS || {})).map(slug));
+  // dark: versão com as cores escuras clareadas, para o fundo carvão (sem placa creme: Silvio 2026-11-09)
+  const patImg = (n, cls, dark) => { n = patName(n); return PAT_OK.has(slug(n)) ? '<img class="' + cls + '" src="' + CO_ART + 'pat-' + slug(n) + (dark ? '-esc' : '') + '.webp" alt="' + esc(n) + '">' : ''; };
+  const hashS = t => { let h = 7; t = String(t || ''); for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0; return h; };
+  // Rostos: 1-2 ambicioso, 3-4 pão-duro, 5-6 paciente (os nomes sorteados são de homem: 2 e 4 ficam para depois),
+  // 7-8 auxiliar, 9 olheiro, 10 preparador, 11 médica, 12 empresário
+  const FACE_PRES = { amb: [1], pao: [3], pac: [5, 6] };
+  const face = (n, cls, alt) => '<img class="' + cls + '" src="' + CO_ART + 'rosto-' + String(n).padStart(2, '0') + '.webp" alt="' + esc(alt || '') + '">';
+  const presFace = (P, cls) => { const l = FACE_PRES[P.k] || [5]; return face(l[hashS(P.n) % l.length], cls, P.n); };
+  const auxFace = (co, cls) => face(7 + hashS((co.name || '') + '|' + co.club) % 2, cls, 'Auxiliar');
 
   // Campinho deitado: o seu gol à esquerda. Posições (x, y em %) a partir das linhas da formação.
   // full: o time ocupa o campo inteiro (Time); senão meio campo cada, encaixado com o rival espelhado (Semana).
@@ -92,11 +107,19 @@
     });
     return out;
   }
+  // Vagas da escalação: x da formação, y usando o campo todo (o banco fica fora), linhas de 5 em zigue-zague
+  const spotsT = f => { const sp = spotsL(f, false, true), sl = S.CO_FORMS[f].slots;
+    return sp.map(([x], i) => { const ln = sl[i].ln, ix = sl.map((q, j) => j).filter(j => sl[j].ln === ln), n = ix.length, k = ix.indexOf(i);
+      if (n === 1) return [x, 45];
+      const step = Math.min(24, 72 / (n - 1));
+      let nx5 = x;
+      if (n === 5) { const base = k === 0 || k === 4 ? x - 10 : k === 2 && ln === 'm' ? x + 5 : x; nx5 = ln === 'd' ? base + (k === 0 || k === 4 ? 18 : k === 2 ? -3 : 9) : base + (k === 0 || k === 4 ? 12 : k === 2 ? 2 : -8); }
+      return [nx5, Math.round(45 + (k - (n - 1) / 2) * step)]; }); };
   // Círculo só com o número (tamanho fixo); nome e posição embaixo, fora do círculo
   function dot(p, slot, x, y, o) {
     o = o || {};
     const fitC = !slot || p.pos === slot ? 'ok' : (S.coFit(p.pos, slot) >= 0.88 ? 'sabe' : 'fora');
-    const yc = C().pend(p) ? '<i class="ld-yc" title="Pendurado"></i>' : '';
+    const yc = (o.yc !== undefined ? o.yc : C().pend(p)) ? '<i class="ld-yc" title="' + (o.yc !== undefined ? 'Amarelado' : 'Pendurado') + '"></i>' : '';
     return '<button class="ld-dot ' + enRing(p.en) + (o.sel ? ' sel' : '') + (fitC === 'fora' ? ' fora' : '') + '"' + (o.attr || '') + ' style="left:' + x + '%;top:' + y + '%;--en:' + Math.round(p.en) + '"' +
       ' aria-label="' + esc(p.n) + ', ' + (slot || p.pos) + ', ' + p.ovr + ', energia ' + Math.round(p.en) + '%">' +
       '<i class="ld-dc">' + (o.num ? (p.num || p.ovr) : p.ovr) + yc + '</i><span class="ld-dn"><b>' + esc(last(p.n)) + '</b><em class="' + fitC + '">' + (o.tag || slot || p.pos) + '</em></span></button>';
@@ -206,14 +229,6 @@
       const onp = co.squad.filter(p => co.xi.includes(p.id)), a = S.coAutoXI(onp, f).xi;
       return a.filter(Boolean).length === 11 ? a : S.coAutoXI(co.squad.filter(c.avail), f).xi;
     };
-    // Vagas da escalação: x da formação, y usando o campo todo (o banco fica fora), linhas de 5 em zigue-zague
-    const spotsT = f => { const sp = spotsL(f, false, true), sl = S.CO_FORMS[f].slots;
-      return sp.map(([x], i) => { const ln = sl[i].ln, ix = sl.map((q, j) => j).filter(j => sl[j].ln === ln), n = ix.length, k = ix.indexOf(i);
-        if (n === 1) return [x, 45];
-        const step = Math.min(24, 72 / (n - 1));
-        let nx5 = x;
-        if (n === 5) { const base = k === 0 || k === 4 ? x - 10 : k === 2 && ln === 'm' ? x + 5 : x; nx5 = ln === 'd' ? base + (k === 0 || k === 4 ? 18 : k === 2 ? -3 : 9) : base + (k === 0 || k === 4 ? 12 : k === 2 ? 2 : -8); }
-        return [nx5, Math.round(45 + (k - (n - 1) / 2) * step)]; }); };
     const fitOf = (p, s) => (p.pos === s ? 'ok' : S.coFit(p.pos, s) >= 0.88 ? 'sabe' : 'fora');
     let anim = 0;
     const draw = () => {
@@ -269,7 +284,7 @@
         st.querySelector('#ld-fun').onclick = () => { sfx('tap'); closePop(); c.keepBench(); c.save(); funcoes(null, () => time(toPlay)); };
         st.querySelector('#ld-bat').onclick = () => { sfx('tap'); closePop(); c.keepBench(); c.save(); batedores(null, () => time(toPlay)); };
         st.querySelector('#tm-aux').onclick = () => { sfx('tap');
-          pop('<div class="acd-help"><b>Auxiliar</b><p>“' + aux + '”</p>' + (auxFix ? '<span class="hl-ab"><button class="hl-btn dark" id="ld-aux-y">Trocar</button><button class="hl-btn line" data-pop-x>Manter</button></span>' : '') +
+          pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b></span><p>“' + aux + '”</p>' + (auxFix ? '<span class="hl-ab"><button class="hl-btn dark" id="ld-aux-y">Trocar</button><button class="hl-btn line" data-pop-x>Manter</button></span>' : '') +
             '<button class="tm-all" id="ld-auto">Usar a escalação dele inteira</button>' + (auxFix ? '' : '<button class="hl-btn line" data-pop-x>Fechar</button>') + '</div>', 'Auxiliar', w => {
             if (w.querySelector('#ld-aux-y')) w.querySelector('#ld-aux-y').onclick = () => { sfx('tap'); auxFix(); closePop(); draw(); };
             w.querySelector('#ld-auto').onclick = () => { sfx('tap'); const a = S.coAutoXI(co.squad, co.form); co.xi = a.xi; co.autoXI = true; swap = null; closePop(); draw(); };
@@ -463,70 +478,92 @@
         w.querySelector('[data-pop-back]').onclick = () => { sfx('tap'); back(); };
       }, 'w750', true);
   }
-  // A parada (gol, intervalo, vermelho, lesão, "Parar e mexer"): TrParadaB, em três colunas
+  // A parada (intervalo, vermelho, lesão, "Parar e mexer"; o gol não para desde 2026-11-09): o campo da escalação
+  // (Silvio 2026-11-09), com o anel de energia e o amarelo de cada um. Troca: toque num titular e num do banco (ou o
+  // contrário); dois titulares trocam de lugar. Formação e estilo com ◀ ▶; o auxiliar num botão (etiquetas e a troca que
+  // ele sugere); no intervalo, a conversa em cima. Nada de cartão do lance, frase longa ou "o que aconteceu".
   function liveStop(x, st) {
-    const m = x.m, s = m.us, c = C(), co = c.co, by = byOf(s.squad), half = st.t === 'intervalo', us = st.s === 'us';
-    const sel = new Set(); let talk = null, tacDone = false;
-    // Sugestões de troca: cansado, amarelado ou machucado, com o melhor do banco na mesma vaga
+    const m = x.m, s = m.us, c = C(), co = c.co, half = st.t === 'intervalo', us = st.s === 'us';
+    const f0 = s.form, y0 = s.style, FORMS = Object.keys(S.CO_FORMS), inn = new Set();
+    let talk = null, sel = -1, selB = null;
+    const T = { gol: 'Gol do ' + (us ? c.nm(co.club) : c.nm(m.vs)), intervalo: 'Intervalo', vermelho: 'Expulso', lesao: 'Lesão', pausa: 'Jogo parado' }[st.t] || 'Parada';
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', FW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+    // A troca que o auxiliar sugere: machucado, cansado ou amarelado, com o melhor do banco para a vaga
     const sugg = () => {
-      const out = [], used = new Set();
-      s.xi.map((id, i) => [by[id], i]).filter(([p]) => p && (p.out || p.en < 58 || (s.bk && s.bk[p.id]))).sort((a, b) => (b[0].out ? 1 : 0) - (a[0].out ? 1 : 0) || a[0].en - b[0].en).forEach(([p, i]) => {
-        if (out.length >= 2 || !s.subs) return;
-        const slot = S.coSlots(s.form)[i];
-        const inn = s.bench.map(b => by[b]).filter(q => q && c.avail(q) && !used.has(q.id) && (q.pos === 'GOL') === (slot === 'GOL')).sort((a, b) => b.ovr * S.coFit(b.pos, slot) - a.ovr * S.coFit(a.pos, slot))[0];
-        if (!inn) return; used.add(inn.id);
-        out.push({ o: p, i: inn, why: p.out ? 'machucado' : s.bk && s.bk[p.id] && p.en < 58 ? Math.round(p.en) + '% de energia e amarelado' : s.bk && s.bk[p.id] ? 'tem amarelo' : Math.round(p.en) + '% de energia' });
-      });
-      return out;
+      if (!s.subs) return null;
+      const by = byOf(s.squad), sl = S.coSlots(s.form);
+      const cand = s.xi.map((id, i) => [by[id], i]).filter(([p]) => p && (p.out || p.en < 58 || (s.bk && s.bk[p.id]))).sort((a, b) => (b[0].out ? 1 : 0) - (a[0].out ? 1 : 0) || a[0].en - b[0].en);
+      for (const [p, i] of cand) {
+        const slot = sl[i], q = s.bench.map(b => by[b]).filter(q => q && c.avail(q) && (q.pos === 'GOL') === (slot === 'GOL')).sort((a, b) => b.ovr * S.coFit(b.pos, slot) - a.ovr * S.coFit(a.pos, slot))[0];
+        if (q) return { o: p, i: q };
+      }
+      return null;
+    };
+    const doSub = (outId, inId) => { if (x.sub(outId, inId)) { inn.add(inId); sfx('tap'); } sel = -1; selB = null; draw(); };
+    const auxPop = () => {
+      const r = x.read, g = sugg(), tc = t => /↓/.test(t) ? 'dn' : /↑/.test(t) ? 'up' : 'y';
+      const host = document.querySelector('#ld-pop .ldl-full'); if (!host) return;
+      const ov = document.createElement('div'); ov.className = 'ldl-ov';
+      ov.innerHTML = '<div class="acd-help ldl-aux" role="dialog" aria-label="Auxiliar"><b>Auxiliar</b>' +
+        (r.tags.length ? '<span class="ldl-chips">' + r.tags.map(t => '<em class="' + tc(t) + '">' + esc(t) + '</em>').join('') + '</span>' : '<p>“' + esc(r.txt) + '”</p>') +
+        (st.t === 'vermelho' ? '<div class="ldl-red">' + x.redOpts(st) + '</div>' : '') +
+        '<span class="hl-ab">' + (g ? '<button class="hl-btn dark" id="ldl-aux-y">' + (g.o.num || '') + ' ' + esc(c.last(g.o.n)) + ' → ' + (g.i.num || '') + ' ' + esc(c.last(g.i.n)) + '</button>' : '') +
+        '<button class="hl-btn line" id="ldl-aux-n">' + (g ? 'Manter' : 'Voltar') + '</button></span></div>';
+      host.appendChild(ov);
+      { const w = ov;
+        w.querySelectorAll('[data-ro]').forEach(b => b.onclick = () => { sfx('tap'); x.redPick(b.dataset.ro); draw(); });
+        if (w.querySelector('#ldl-aux-y')) w.querySelector('#ldl-aux-y').onclick = () => doSub(g.o.id, g.i.id);
+        w.querySelector('#ldl-aux-n').onclick = () => { sfx('tap'); draw(); };
+        w.onclick = e => { if (e.target === w) { sfx('tap'); draw(); } };
+      }
     };
     const draw = () => {
-      const r = x.read, sg = sugg(), sh = m.sh || { us: 0, them: 0 };
-      const T = { gol: 'Gol do ' + (us ? c.nm(co.club) : c.nm(m.vs)), intervalo: 'Intervalo', vermelho: 'Expulso', lesao: 'Lesão', pausa: 'Jogo parado' }[st.t] || 'Parada';
-      const txt = st.t === 'gol' ? esc(st.p || '') + ' marca' + (st.l ? ' ' + c.LANE[st.l] : '') + '.' :
-        half ? (m.gh + m.ga ? '' : 'Ninguém marcou. ') + (S.coPoss(m) > 0.53 ? 'Você manda no jogo.' : S.coPoss(m) < 0.47 ? 'Eles mandam no jogo.' : 'Jogo parelho.') :
-        st.t === 'vermelho' ? esc(st.p || '') + (st.how === '2am' ? ' leva o segundo amarelo.' : ' leva vermelho direto.') + ' Você joga com 10 até o fim.' :
-        st.t === 'lesao' ? esc(st.p || '') + ' não aguenta. Troque ou ele joga mancando.' : 'O jogo espera você.';
-      const ps = Math.round(S.coPoss(m) * 100), en = Math.round(s.xi.reduce((a, id) => a + (by[id] ? by[id].en : 0), 0) / Math.max(1, s.xi.filter(Boolean).length));
-      const left = (half ? lbl('O 1º TEMPO') + '<div class="ldl-mom">' + U.lvMom(m) + '</div>' +
-          '<div class="ldl-3"><span><b>' + sh.us + ' x ' + sh.them + '</b><small>chutes</small></span><span><b>' + ps + '%</b><small>posse</small></span><span class="' + (en < 60 ? 'warn' : '') + '"><b>' + en + '%</b><small>energia</small></span></div>'
-        : '<div class="ldl-ev ' + (st.t === 'gol' && !us || st.t === 'vermelho' || st.t === 'lesao' ? 'bad' : st.t === 'gol' ? 'good' : '') + '"><small>' + S.coClock(m) + ' · ' + esc(T.toUpperCase()) + '</small><b>' + (st.t === 'vermelho' ? '<span class="co-red"></span> ' : '') + esc(st.t === 'vermelho' ? (st.p || '') + ' foi expulso' : T) + '</b><span>' + txt + '</span></div>') +
-        (st.t === 'vermelho' ? '<div class="ldl-red">' + x.redOpts(st) + '</div>' : '<div class="ldl-aq">' + lbl('O AUXILIAR LEU ASSIM') + '"' + esc(r.txt) + '"' + (r.tags.length ? '<span class="ldl-tags">' + r.tags.map(t => '<em>' + esc(t) + '</em>').join('') + '</span>' : '') + '</div>');
-      const selB = (id, l, v) => '<button class="ldl-sel" id="' + id + '"><small>' + l + '</small><b>' + v + '</b>' + CHEV + '</button>';
-      const cad = CAD ? cadHtml(c.cadLines(s.form, s.style, m.them, 1)) : '';
-      const mid = lbl('MEXER NO TIME') + selB('ldl-f', 'Formação', s.form) + selB('ldl-s', 'Estilo', esc(S.CO_STY[s.style].name)) +
-        '<div class="ldl-trh">' + lbl('TROCAS') + '<small>' + (s.subs ? s.subs + ' sobrando' : 'sem trocas') + '</small></div>' +
-        (sg.length ? sg.map((g, k) => '<button class="ldl-sg' + (sel.has(k) ? ' on' : '') + '" data-sg="' + k + '"><span><b>' + (g.o.num || '') + ' ' + esc(c.last(g.o.n)) + ' → ' + (g.i.num || '') + ' ' + esc(c.last(g.i.n)) + '</b><small>' + g.why + '</small></span><i aria-hidden="true">' + (sel.has(k) ? '✓' : '') + '</i></button>').join('') : '<p class="ld-none">Ninguém cansado ou com amarelo. Toque abaixo para trocar mesmo assim.</p>') +
-        (s.subs ? '<button class="ld-link" id="ldl-other">Outra troca (banco com ' + s.bench.length + ')</button>' : '') +
-        '<span class="ld-gr"></span>' + (cad ? '<div class="ld-cadl ldl-cad">' + lbl('DO SEU CADERNO') + cad + '</div>' : '');
-      const mo = Math.round(s.xi.reduce((a, id) => a + (by[id] ? (by[id].mo === undefined ? 60 : by[id].mo) : 0), 0) / Math.max(1, s.xi.filter(Boolean).length));
-      const tst = S.coTalkState(m);
-      const CAP = { win: '"Eles cansam no fim, professor. Dá pra matar o jogo."', draw: '"Falta pouco pra virar esse jogo. A gente sente."', lose: '"A gente está devendo. Dá pra buscar."' };
-      const capP = by[co.cap] || s.xi.map(id => by[id]).filter(Boolean).sort((a, b) => b.age - a.age)[0];
-      const right = half ? lbl('VESTIÁRIO · VALE ATÉ 60\'') + '<div class="ld-seg ldl-talk">' + Object.keys(S.CO_TALK).map(k => '<button data-tk="' + k + '"' + (talk === k ? ' class="on"' : '') + '>' + S.CO_TALK[k].name + '</button>').join('') + '</div>' +
-          '<p class="ldl-tt">' + (talk ? esc(S.CO_TALK[talk].name) + ': ' + esc(S.CO_TALK[talk].tip[tst]) : 'Escolha o tom da conversa. Ou não fale nada.') + '</p>' +
-          '<div class="ldl-clima"><span><small>Clima do grupo</small><b>' + (mo >= 70 ? 'confiante' : mo >= 50 ? 'tranquilo' : 'abalado') + '</b></span>' + (capP ? '<p><b>' + esc(c.last(capP.n)) + ', o capitão:</b> ' + CAP[tst] + '</p>' : '') + '</div>'
-        : lbl('O QUE ACONTECEU') + '<ul class="ldl-last">' + m.ev.filter(e => e.t !== 'grito-fim').slice(-5).reverse().map(e => x.feedLine(e)).join('') + '</ul>';
-      pop('<div class="ldl-sth"><b>' + esc(T) + '</b><span class="ldl-sc">' + esc(c.nm(m.home ? co.club : m.vs)).slice(0, 3).toUpperCase() + ' ' + m.gh + ' x ' + m.ga + ' ' + esc(c.nm(m.home ? m.vs : co.club)).slice(0, 3).toUpperCase() + '</span><small>' + m.min + '\'</small></div>' +
-        '<div class="ldl-3c"><div>' + left + '</div><div>' + mid + '</div><div>' + right + '<span class="ld-gr"></span><button class="ld-gold" id="ldl-go"><b>' + (half ? '▸ Começar o 2º tempo' : '▸ Seguir o jogo') + '</b></button></div></div>',
+      const by = byOf(s.squad), sl = S.coSlots(s.form), sp = spotsT(s.form), g = sugg(), nT = x.read.tags.length;
+      const dots = s.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: sel === i, yc: !!(s.bk && s.bk[id]),
+        attr: ' data-xi="' + i + '"' + (inn.has(id) ? ' data-in="1"' : '') + (g && g.o.id === id && sel < 0 && !selB ? ' data-sug="1"' : ''), tag: inn.has(id) ? 'ENTRA' : S.coSlotLbl(s.form, i) }) : '').join('');
+      const bench = s.bench.map(b => by[b]).filter(Boolean).sort((a, b) => c.avail(b) - c.avail(a) || b.ovr - a.ovr);
+      const bstrip = bench.map(p => { const ok = s.subs && c.avail(p);
+        return '<button class="tm-bp' + (ok ? '' : ' dis') + (selB === p.id ? ' on' : '') + (g && g.i.id === p.id && sel < 0 && !selB ? ' sug' : '') + (sel >= 0 && ok ? ' can' : '') + '" data-bp="' + p.id + '"' + (ok ? '' : ' disabled') + '><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + p.ovr + '</b><span><i>' + (p.num ? p.num + ' ' : '') + esc(c.last(p.n)) + '</i><small>' + p.pos + '</small></span></button>'; }).join('');
+      const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b>' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
+      const hint = sel >= 0 ? 'Toque em quem entra ou em outro titular' : selB ? 'Toque em quem sai' : '';
+      const sc = esc(c.nm(m.home ? co.club : m.vs)).slice(0, 3).toUpperCase() + ' <u>' + m.gh + ' x ' + m.ga + '</u> ' + esc(c.nm(m.home ? m.vs : co.club)).slice(0, 3).toUpperCase();
+      pop('<div class="tm ldl-tm"><div class="tm-h"><b>' + esc(T) + '</b><span class="ldl-sc">' + sc + '</span><small>' + S.coClock(m) + '</small>' + (hint ? '<span class="tm-hint">' + hint + '</span>' : '') + '</div>' +
+        '<div class="ld-pitch tm-pitch">' + PITCH + dots + '</div>' +
+        '<div class="tm-bench"><small>BANCO<em>' + (s.subs ? U.D.plural(s.subs, 'troca', 'trocas') : 'sem trocas') + '</em></small>' + bstrip + '</div>' +
+        '<div class="tm-side">' + (half ? '<div class="ldl-talk2">' + Object.keys(S.CO_TALK).map(k => '<button data-tk="' + k + '"' + (talk === k ? ' class="on"' : '') + '>' + esc(S.CO_TALK[k].name) + '</button>').join('') + '</div>' : '') +
+          pick('form', 'Formação', s.form) + pick('sty', 'Estilo', esc(S.CO_STY[s.style].name)) +
+          '<button class="tm-b" id="ldl-aux">Auxiliar' + (nT || st.t === 'vermelho' ? '<i class="tm-dot">' + (st.t === 'vermelho' ? '!' : nT) + '</i>' : '') + '</button>' +
+          '<button class="tm-go" id="ldl-go">' + (half ? 'Começar o 2º tempo' : 'Seguir o jogo') + '</button></div></div>',
         T, w => {
-          w.querySelectorAll('[data-sg]').forEach(b => b.onclick = () => { sfx('tap'); const k = +b.dataset.sg; if (sel.has(k)) sel.delete(k); else sel.add(k); draw(); });
+          w.querySelectorAll('[data-xi]').forEach(b => b.onclick = () => {
+            const i = +b.dataset.xi, id = s.xi[i]; sfx('tap');
+            if (selB) return doSub(id, selB);
+            if (sel < 0 || sel === i) { sel = sel === i ? -1 : i; return draw(); }
+            x.swap(sel, i); sel = -1; draw();
+          });
+          w.querySelectorAll('[data-bp]').forEach(b => b.onclick = () => {
+            const id = b.dataset.bp; sfx('tap');
+            if (sel >= 0) return doSub(s.xi[sel], id);
+            selB = selB === id ? null : id; draw();
+          });
           w.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { sfx('tap'); talk = talk === b.dataset.tk ? null : b.dataset.tk; draw(); });
-          w.querySelectorAll('[data-ro]').forEach(b => b.onclick = () => { sfx('tap'); x.redPick(b.dataset.ro); draw(); });
-          const tac = () => tacPicker({ form: s.form, style: s.style, squad: s.squad.filter(p => s.xi.includes(p.id)), xi: s.xi.filter(Boolean), auto: false, them: m.them,
-            live: 'Eles agora: ' + m.them.form + ', ' + esc(S.CO_STY[m.them.style].name.toLowerCase()) + '. Os mesmos jogadores mudam de vaga.', back: draw,
-            onOk: (f, y) => { x.tac(f, y); tacDone = true; draw(); } });
-          w.querySelector('#ldl-f').onclick = () => { sfx('tap'); tac(); };
-          w.querySelector('#ldl-s').onclick = () => { sfx('tap'); tac(); };
-          if (w.querySelector('#ldl-other')) w.querySelector('#ldl-other').onclick = () => { sfx('tap'); liveWho(x, draw); };
+          w.querySelectorAll('[data-tmk]').forEach(b => b.onclick = () => {
+            sfx('tap'); const d = +b.dataset.d;
+            if (b.dataset.tmk === 'sty') { const L = S.CO_STYLES; S.coMatchTactic(co, m, null, L[(L.indexOf(s.style) + d + L.length) % L.length]); }
+            else S.coMatchTactic(co, m, FORMS[(FORMS.indexOf(s.form) + d + FORMS.length) % FORMS.length]);
+            sel = -1; selB = null; x.paint(); draw();
+          });
+          w.querySelector('#ldl-aux').onclick = () => { sfx('tap'); auxPop(); };
           w.querySelector('#ldl-go').onclick = () => {
             sfx('tap');
-            sugg().forEach((g, k) => { if (sel.has(k)) x.sub(g.o.id, g.i.id); });
+            x.tacLog(f0, y0);
             if (half && talk) x.talk(talk);
             closePop(); x.resume();
           };
-        }, 'w820 ldl-stp', true);
+        }, 'ldl-full', true);
     };
     draw();
+    if (st.t === 'vermelho') auxPop();
   }
 
   // ---------- Fim de jogo deitado (TrFim): placar e números em abas, notas do seu time, o que mudou ----------
@@ -539,7 +576,7 @@
       const ch = m.ev.filter(e => e.s === sd && (e.t === 'chance' || e.t === 'gol'));
       const big = ch.filter(e => e.t === 'gol' || e.k === 'trave' || (e.k === 'defesa' && e.m % 2 === 0)).length;
       const ck = ch.filter(e => (e.k === 'defesa' || e.k === 'bloqueio' || e.k === 'fora') && e.l !== 'c' && e.m % 3 !== 1).length + Math.round(ch.length * 0.2);
-      return { big, ck };
+      return { big, ck: m.ck ? m.ck[sd] || 0 : ck }; // m.ck: escanteios contados pelo motor (jogo salvo antes deles: a conta antiga)
     };
     const U2 = side('us'), T2 = side('them'), st = s => S.CO_STY[s.style] || S.CO_STY.equilibrado;
     const pass = (pp, s) => Math.round(Math.max(55, Math.min(92, 70 + (pp - 0.5) * 45 + (st(s).ctrl - 1) * 12)));
@@ -723,8 +760,13 @@
         tile('', 'hall', 'Hall do técnico', (co.season + 1) + 'ª', 'temporada de carreira') + '</div>' +
       '<div class="kb2-side"><div class="kb2-dir"><small>DIRETORIA</small><b>' + (conf >= 70 ? 'confiança alta' : conf >= 45 ? 'confiança boa' : conf >= 30 ? 'confiança baixa' : 'no limite') + '</b>' +
           '<i><u class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '" style="width:' + conf + '%"></u></i><em class="' + (pos <= B.goal.pos ? '' : 'hi') + '">' + meta + '</em></div>' +
+<<<<<<< HEAD
         (pres ? '<div class="kb2-pr"><small>PRESIDENTE</small><b>' + esc(pres.n) + '</b><span>' + esc(pres.nome || '') + '</span></div>' : '') +
         '<span class="rs-gap"></span><p class="kb2-soon">Estádio e base chegam depois</p></div></div>', st => {
+=======
+        (pres ? '<div class="kb2-pr fc">' + presFace(pres, 'kb2-fc') + '<div><small>PRESIDENTE</small><b>' + esc(pres.n) + '</b><span>' + esc(pres.nome || '') + '</span></div></div>' : '') +
+        '<span class="rs-gap"></span><p class="kb2-soon">Mercado, estádio e base chegam depois</p></div></div>', st => {
+>>>>>>> origin/claude/gracious-darwin-9gdlfp
       st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') financas(); else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); });
       st.querySelector('#kb2-back').onclick = () => { sfx('tap'); semana(); };
     });
@@ -844,7 +886,7 @@
       '<div class="fn2-tabs">' + [['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
       '<div class="fn2-p">' + rows + '</div>' +
       '<div class="fn2-side"><div class="fn2-st"><small>SITUAÇÃO DO CAIXA</small><b class="s' + step + '">' + FIN_STEP[step][0] + '</b><span class="fn2-dd">' + [1, 2, 3, 4].map(i => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '</span><em>' + FIN_STEP[step][1] + '</em></div>' +
-        '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><div><span>Patrocínio</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></div></div>' +
+        '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><div><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></div></div>' +
         '<span class="rs-gap"></span><button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div></div>', st => {
       st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); financas(b.dataset.ft); });
       st.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.fd; if (k === 'banco') banco(); else if (k === 'pres') presInfo(); });
@@ -862,13 +904,13 @@
     const news = (f.news || []).filter(x => x.s === co.season).slice(0, 2);
     return news.map(x => '<div class="ldn-news">' + esc(x.t) + '<small>rodada ' + x.r + '</small></div>').join('') +
       r('pres', 'Acordo ' + (AC_NM[f.ac] || 'Normal').toLowerCase() + ' com ' + esc(P.n), 'meta: ' + goalLine(B.goal.k, B.goal.pos) + ' · presidente ' + P.nome, '') +
-      r('', pt ? 'Patrocínio ' + esc(pt.name) : 'Patrocínio', pt ? c.brl(pt.fix) + ' no ano' + (pt.bonus ? ' + ' + c.brl(pt.bonus) + ' se cumprir a meta' : '') + (pt.until > co.season ? ' · até ' + (U.YEAR0 + pt.until) : '') : 'a escolher antes do primeiro jogo', '') +
+      r('', pt ? 'Patrocínio ' + esc(patName(pt.name)) : 'Patrocínio', pt ? c.brl(pt.fix) + ' no ano' + (pt.bonus ? ' + ' + c.brl(pt.bonus) + ' se cumprir a meta' : '') + (pt.until > co.season ? ' · até ' + (U.YEAR0 + pt.until) : '') : 'a escolher antes do primeiro jogo', '') +
       r('banco', 'Banco', f.loan ? 'faltam ' + U.D.plural(f.loan.n, 'parcela', 'parcelas') + ' de ' + c.brl(f.loan.parc) + ' · deve ' + c.brl(f.loan.rem) : 'sem empréstimo · pode pegar até ' + c.brl(max), '') +
       r('banco', 'Situação do caixa', STEP[step], '<span class="ldn-steps">' + [1, 2, 3, 4].map(i => '<i class="' + (i < step ? 'd' : i === step ? 'c' : '') + '"></i>').join('') + '</span>', step >= 2 ? 'bad' : '');
   }
   function presInfo() {
     const co = C().co, P = S.coPres(co);
-    pop(popHead(esc(P.n), 'Presidente · ' + P.nome) + '<div class="ld-pb col"><p class="ldn-p">' + esc(P.txt) + '</p><p class="ldn-p">O caixa no vermelho pesa <b>' + RED_TXT(P.red) + '</b> na confiança dele. A cada 3 temporadas tem eleição e ele pode sair.</p></div>', 'Presidente', null, 'w560');
+    pop(popHead(esc(P.n), 'Presidente · ' + P.nome) + '<div class="ld-pb col">' + presFace(P, 'pi-fc') + '<p class="ldn-p">' + esc(P.txt) + '</p><p class="ldn-p">O caixa no vermelho pesa <b>' + RED_TXT(P.red) + '</b> na confiança dele. A cada 3 temporadas tem eleição e ele pode sair.</p></div>', 'Presidente', null, 'w560');
   }
   // Reunião de pré-temporada: 3 acordos de verba × meta. welcome: primeira conversa no clube novo
   // Reunião e patrocínio enxutos (2026-11-08, Silvio: sem trilho nem coluna, mas "um pouquinho mais de informação pra
@@ -885,8 +927,7 @@
     const card = x => '<button class="acd-c' + (x.k === sel ? ' on' : '') + '" data-ac="' + x.k + '" aria-pressed="' + (x.k === sel) + '">' + (x.k === 'ousado' ? '<i class="acd-tag or">ARRISCADA</i>' : '') +
       '<b>' + AC_NM[x.k] + '</b><em>' + c.brl(x.verba) + '</em><small class="acd-u">para contratar</small>' +
       acdRow('Meta', x.gk === 'titulo' ? 'campeão' : 'até ' + ord(x.pos)) + acdRow('Teto da folha', c.brl(x.teto)) + acdRow('Fama na meta', FAMA[x.k]) + '</button>';
-    const ini = esc(P.n.split(' ').map(w => w[0]).slice(0, 2).join(''));
-    acdShow('<span class="acd-av">' + ini + '</span><div class="acd-say"><small>' + esc(P.n) + ' · presidente ' + P.nome + '</small><p>' + (welcome ? 'Bem-vindo, professor. ' : '') + hi + '</p></div>',
+    acdShow(presFace(P, 'acd-av') + '<div class="acd-say"><small>' + esc(P.n) + ' · presidente ' + P.nome + '</small><p>' + (welcome ? 'Bem-vindo, professor. ' : '') + hi + '</p></div>',
       ops.map(card).join(''), 'Fechar o acordo', st => {
         st.querySelectorAll('[data-ac]').forEach(b => b.onclick = () => { sfx('tap'); reuniao(b.dataset.ac, welcome); });
         st.querySelector('#acd-q').onclick = () => { sfx('tap'); acdHelp('Como funciona', ['Quanto mais verba para contratar, mais alta a meta e o teto da folha.', 'Bater a meta no azul aumenta a verba e o teto do ano seguinte.',
@@ -899,7 +940,7 @@
     sel = sel || 'fix'; const o = ops.find(x => x.k === sel) || ops[0];
     const card = x => '<button class="acd-c' + (x.k === sel ? ' on' : '') + '" data-pt="' + x.k + '" aria-pressed="' + (x.k === sel) + '">' +
       (x.k === 'mix' ? '<i class="acd-tag or">ARRISCADA</i>' : x.k !== 'fix' ? '<i class="acd-tag bl">TRAVADO</i>' : '') +
-      '<b>' + esc(x.name) + '</b><em>' + c.brl(x.fix) + '</em><small class="acd-u">' + (x.yrs > 1 ? 'por ano' : 'no ano') + '</small>' +
+      (patImg(x.name, 'acd-lg') || '<b>' + esc(x.name) + '</b>') + '<em>' + c.brl(x.fix) + '</em><small class="acd-u">' + (x.yrs > 1 ? 'por ano' : 'no ano') + '</small>' +
       acdRow('Por rodada', c.brl(Math.round(x.fix / n))) + acdRow('Bônus na meta', x.bonus ? '+ ' + c.brl(x.bonus) : 'não tem') + acdRow('Duração', x.yrs > 1 ? x.yrs + ' temporadas' : '1 temporada') + '</button>';
     acdShow('<div class="acd-say solo"><small>Patrocínio da camisa · ' + (U.YEAR0 + co.season) + '</small><p>Três marcas querem a sua camisa. Escolha uma.</p></div>',
       ops.map(card).join(''), 'Assinar com ' + esc(o.name.split(' ')[0]), st => {
@@ -926,7 +967,7 @@
         (f.caixa >= L.rem ? '<button class="tm-b" id="ldn-back">Agora não</button><button class="tm-go" id="ldn-pay">Quitar ' + c.brl(L.rem) + '</button>' : '<button class="tm-go" id="ldn-back">Voltar</button>')
       : '<div class="fn2-st"><small>VOCÊ DEVE</small><b>nada</b><em>' + (max ? 'pode pegar até ' + c.brl(max) : 'sem crédito agora') + '</em></div><span class="rs-gap"></span><button class="tm-b" id="ldn-back">Agora não</button>' +
         (amt ? '<button class="tm-go" id="ldn-take">Pegar ' + c.brl(amt) + '</button>' : '');
-    show('<div class="bk2"><div class="tm-h"><button class="tcr-back" id="ldn-bk" aria-label="Voltar">' + BK + '</button><b>Banco</b><small>caixa ' + c.brl(f.caixa) + (f.neg ? ' · ' + U.D.plural(f.neg, 'rodada', 'rodadas') + ' no vermelho' : '') + '</small><button class="ol2-q" id="bk2-q" aria-label="Como funciona">?</button></div>' +
+    show('<div class="bk2"><div class="tm-h"><button class="tcr-back" id="ldn-bk" aria-label="Voltar">' + BK + '</button><img class="bk2-lg" src="' + CO_ART + 'banco-esc.webp" alt="Banco Alicerce"><small>caixa ' + c.brl(f.caixa) + (f.neg ? ' · ' + U.D.plural(f.neg, 'rodada', 'rodadas') + ' no vermelho' : '') + '</small><button class="ol2-q" id="bk2-q" aria-label="Como funciona">?</button></div>' +
       '<div class="bk2-box">' + left + '</div><div class="fn2-side">' + side + '</div></div>', st => {
       st.querySelectorAll('[data-ai]').forEach(b => b.onclick = () => { sfx('tap'); banco(steps[Math.max(0, Math.min(steps.length - 1, i + +b.dataset.ai))]); });
       const tk = st.querySelector('#ldn-take'); if (tk) tk.onclick = () => { if (S.coLoanTake(co, amt)) { sfx('tap'); c.save('hub'); banco(); } };
@@ -1154,7 +1195,7 @@
         st.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { sfx('tap'); pick = b.dataset.tk; draw(); });
         st.querySelector('#tr2-back').onclick = () => { sfx('tap'); semana(); };
         st.querySelector('#tr2-aux').onclick = () => { sfx('tap');
-          pop('<div class="acd-help"><b>Auxiliar</b><p>“' + aux[0] + '”</p><span class="hl-ab">' + (aux[1] && !done ? '<button class="hl-btn dark" id="tr2-see">Ver esse treino</button>' : '') + '<button class="hl-btn line" data-pop-x>Fechar</button></span></div>', 'Auxiliar', w => {
+          pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b></span><p>“' + aux[0] + '”</p><span class="hl-ab">' + (aux[1] && !done ? '<button class="hl-btn dark" id="tr2-see">Ver esse treino</button>' : '') + '<button class="hl-btn line" data-pop-x>Fechar</button></span></div>', 'Auxiliar', w => {
             if (w.querySelector('#tr2-see')) w.querySelector('#tr2-see').onclick = () => { sfx('tap'); closePop(); pick = aux[1]; tab = T[pick].tab; draw(); };
           }, 'hl-pop acd-pop tm-pop'); };
         if (st.querySelector('#ldtr-go')) st.querySelector('#ldtr-go').onclick = () => { if (!pick) return; sfx('tap'); S.coTrain(co, pick); c.save(); semana(); };
