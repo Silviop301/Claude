@@ -691,58 +691,63 @@
     const zone = p => (ss.promo && p <= ss.promo) || (!ss.promo && p === 1) ? 'up' : ss.releg && p > n - ss.releg ? 'dn' : '';
     const dots = f => { const a = (f || '').split(''); while (a.length < 5) a.unshift('n'); return '<span class="ld-f5">' + a.map(x => '<i class="' + x + '"></i>').join('') + '</span>'; };
     let body;
+    // Tabela enxuta (2026-11-09, quadro 16): menos colunas, letra maior, sem trilho
     if (tab === 'cls' || tab === 'gol') {
-      body = '<div class="ldt-t ' + tab + '"><div class="ldt-h"><i></i><span>CLUBE</span>' + (tab === 'cls' ? '<em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em><b>PTS</b><em class="f">FORMA</em>' : '<em>GP</em><em>GC</em><em>SG</em><em class="f">FORMA</em>') + '</div><div class="ldt-b">' +
-        t.map((x, k) => { const sg = x.gp - x.gc, cl = club(x.id);
-          return '<div class="ldt-r ' + zone(k + 1) + (x.me ? ' me' : '') + '"><i>' + (k + 1) + '</i><span>' + crest(x.id, 'ldt-cr') + esc(cl.short || cl.name) + '</span>' +
-            (tab === 'cls' ? '<em>' + x.j + '</em><em>' + x.v + '</em><em>' + x.e + '</em><em>' + x.d + '</em><em>' + (sg > 0 ? '+' : '') + sg + '</em><b>' + x.p + '</b>' : '<em>' + x.gp + '</em><em>' + x.gc + '</em><em>' + (sg > 0 ? '+' : '') + sg + '</em>') + '<em class="f">' + dots(x.f) + '</em></div>'; }).join('') + '</div></div>';
+      body = '<div class="tb2-h"><i></i><i></i><span>CLUBE</span>' + (tab === 'cls' ? '<em>J</em><em>SG</em><b>PTS</b>' : '<em>GP</em><em>GC</em><b>SG</b>') + '<span>FORMA</span></div><div class="tb2-b">' +
+        t.map((x, k) => { const sg = x.gp - x.gc, cl = club(x.id), sgT = (sg > 0 ? '+' : '') + sg;
+          return '<div class="tb2-r ' + zone(k + 1) + (x.me ? ' me' : '') + '"><i>' + (k + 1) + '</i>' + crest(x.id, 'tb2-cr') + '<span>' + esc(cl.short || cl.name) + '</span>' +
+            (tab === 'cls' ? '<em>' + x.j + '</em><em>' + sgT + '</em><b>' + x.p + '</b>' : '<em>' + x.gp + '</em><em>' + x.gc + '</em><b>' + sgT + '</b>') + dots(x.f) + '</div>'; }).join('') + '</div>';
     } else if (tab === 'art') {
       const g = {}; (ss.log || []).forEach(l => (l.ev || []).forEach(nm => { g[nm] = (g[nm] || 0) + 1; }));
       const list = Object.keys(g).sort((a, b) => g[b] - g[a]);
-      body = '<div class="ldt-t"><div class="ldt-h"><i></i><span>ARTILHARIA DO SEU TIME</span><b>GOLS</b></div><div class="ldt-b">' + (list.length ? list.map((nm, k) => { const p = co.squad.find(q => q.n === nm);
-        return '<div class="ldt-r"><i>' + (k + 1) + '</i><span>' + esc(nm) + (p ? ' <small>' + p.pos + '</small>' : ' <small>saiu</small>') + '</span><b>' + g[nm] + '</b></div>'; }).join('') : '<p class="ld-none">Ninguém marcou ainda.</p>') + '</div></div>';
+      body = '<div class="tb2-h art"><i></i><span>ARTILHARIA DO SEU TIME</span><b>GOLS</b></div><div class="tb2-b">' + (list.length ? list.map((nm, k) => { const p = co.squad.find(q => q.n === nm);
+        return '<div class="tb2-r art"><i>' + (k + 1) + '</i><span>' + esc(nm) + ' <small>' + (p ? p.pos : 'saiu') + '</small></span><b>' + g[nm] + '</b></div>'; }).join('') : '<p class="tb2-none">Ninguém marcou ainda.</p>') + '</div>';
     } else {
       const res = (ss.res || [])[rd], played = rd < ss.i, mi = ss.ids.indexOf(co.club);
       const list = (played && res ? res.slice() : ss.rounds[rd].map(([h, a]) => [h, a])).sort((a, b) => (b[0] === mi || b[1] === mi) - (a[0] === mi || a[1] === mi));
       const nmI = i => esc(club(ss.ids[i]).short || club(ss.ids[i]).name);
-      body = '<div class="ldt-t"><div class="ldt-nav"><button id="ldt-prev"' + (rd ? '' : ' disabled') + ' aria-label="Rodada anterior">‹</button><b>Rodada ' + (rd + 1) + ' de ' + R + (played ? '' : ' · a jogar') + '</b><button id="ldt-next"' + (rd < R - 1 ? '' : ' disabled') + ' aria-label="Próxima rodada">›</button></div><div class="ldt-b ldt-games">' +
-        list.map(([h, a, gh, ga]) => '<div class="ldt-gm' + (h === mi || a === mi ? ' me' : '') + '"><span class="h">' + nmI(h) + crest(ss.ids[h], 'ldt-cr') + '</span><b>' + (gh != null ? gh + ' × ' + ga : '×') + '</b><span>' + crest(ss.ids[a], 'ldt-cr') + nmI(a) + '</span></div>').join('') + '</div></div>';
+      body = '<div class="tb2-nav"><button id="ldt-prev"' + (rd ? '' : ' disabled') + ' aria-label="Rodada anterior">◀</button><b>Rodada ' + (rd + 1) + ' de ' + R + (played ? '' : ' · a jogar') + '</b><button id="ldt-next"' + (rd < R - 1 ? '' : ' disabled') + ' aria-label="Próxima rodada">▶</button></div><div class="tb2-b">' +
+        list.map(([h, a, gh, ga]) => '<div class="tb2-gm' + (h === mi || a === mi ? ' me' : '') + '"><span class="h">' + nmI(h) + crest(ss.ids[h], 'tb2-cr') + '</span><b>' + (gh != null ? gh + ' × ' + ga : '×') + '</b><span>' + crest(ss.ids[a], 'tb2-cr') + nmI(a) + '</span></div>').join('') + '</div>';
     }
     // A sua corrida: a meta da diretoria em pontos
     const gp = B.goal.pos, tgt = t[gp - 1], nxt = t[gp];
-    const race = me.j === 0 ? 'a temporada começa agora' : B.goal.k === 'titulo' ? (pos === 1 ? (t[1] ? (me.p - t[1].p) + ' pontos à frente do 2º' : 'na frente') : (t[0].p - me.p) + ' pontos do líder')
+    const race = me.j === 0 ? 'começa agora' : B.goal.k === 'titulo' ? (pos === 1 ? (t[1] ? (me.p - t[1].p) + ' pontos à frente' : 'na frente') : (t[0].p - me.p) + ' pontos do líder')
       : pos <= gp ? (nxt ? (me.p - nxt.p === 0 ? 'empatado com o ' + (gp + 1) + 'º' : (me.p - nxt.p) + ' pontos à frente do ' + (gp + 1) + 'º') : 'dentro da meta') : (tgt.p - me.p) + ' pontos do ' + gp + 'º';
     const fut = []; const mi2 = ss.ids.indexOf(co.club);
-    for (let i = ss.i; i < Math.min(R, ss.i + 3); i++) { const g = ss.rounds[i].find(([h, a]) => h === mi2 || a === mi2); if (!g) { fut.push('<div class="ldt-nx"><b>folga</b></div>'); continue; } const hm = g[0] === mi2, id = ss.ids[hm ? g[1] : g[0]]; fut.push('<div class="ldt-nx">' + crest(id, 'ldt-cr') + '<b>' + esc(club(id).short || club(id).name) + '</b><small>' + (hm ? 'casa' : 'fora') + '</small></div>'); }
-    show(rail('tabela') + '<div class="ld-col">' + head(esc(ss.name), (ss.done ? 'Encerrada' : 'Rodada ' + Math.min(ss.i + 1, R) + ' de ' + R) + (ss.promo ? ' · sobem ' + ss.promo : '') + (ss.releg ? ', caem ' + ss.releg : ''),
-        '<div class="ld-seg ldc-tabs">' + [['cls', 'Classificação'], ['gol', 'Gols e forma'], ['art', 'Artilharia'], ['rod', 'Rodadas']].map(([k, tt]) => '<button data-tb="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + tt + '</button>').join('') + '</div>') +
-      '<div class="ld-row"><div class="ldt-l">' + body + '</div><div class="ldt-side"><div class="ldt-race">' + lbl('SUA CORRIDA') + '<b>' + race + '</b><small>Meta da diretoria: ' + esc(S.CO_GOAL_TXT[B.goal.k]) + (B.goal.k === 'titulo' ? '' : ' (até o ' + gp + 'º)') + '. Você está em ' + pos + 'º.</small></div>' +
-        (fut.length ? '<div class="ldt-fut">' + lbl('PRÓXIMOS ' + fut.length) + fut.join('') + '</div>' : '') + '<span class="ld-gr"></span>' + gold('ldt-go', 'Voltar para a semana') + '</div></div></div>', st => {
+    for (let i = ss.i; i < Math.min(R, ss.i + 3); i++) { const g = ss.rounds[i].find(([h, a]) => h === mi2 || a === mi2); if (!g) { fut.push('<span class="tb2-nx"><i class="bye">–</i><b>folga</b></span>'); continue; } const hm = g[0] === mi2, id = ss.ids[hm ? g[1] : g[0]]; fut.push('<span class="tb2-nx">' + crest(id, 'tb2-nxc') + '<b>' + esc(club(id).short || club(id).name) + '</b><small>' + (hm ? 'casa' : 'fora') + '</small></span>'); }
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const meta = B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + gp + 'º';
+    show('<div class="tb2"><div class="tm-h"><button class="tcr-back" id="tb2-back" aria-label="Voltar">' + BK + '</button><b>' + esc(ss.name) + '</b><small>' + (ss.done ? 'encerrada' : 'rodada ' + Math.min(ss.i + 1, R) + ' de ' + R) + '</small></div>' +
+      '<div class="tb2-tabs">' + [['cls', 'Classificação'], ['gol', 'Gols'], ['art', 'Artilharia'], ['rod', 'Rodadas']].map(([k, tt]) => '<button data-tb="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + tt + '</button>').join('') + '</div>' +
+      '<div class="tb2-t ' + tab + '">' + body + '</div>' +
+      '<div class="tb2-side"><div class="tb2-race"><small>SUA CORRIDA</small><b>' + pos + 'º · ' + race + '</b><em class="' + (pos <= gp ? '' : 'hi') + '">' + meta + '</em></div>' +
+        (fut.length ? '<div class="tb2-fut"><small>PRÓXIMOS</small><div>' + fut.join('') + '</div></div>' : '') + '</div></div>', st => {
       st.querySelectorAll('[data-tb]').forEach(b => b.onclick = () => { sfx('tap'); tabela(b.dataset.tb, rd); });
       if (st.querySelector('#ldt-prev')) { st.querySelector('#ldt-prev').onclick = () => { sfx('tap'); tabela('rod', rd - 1); }; st.querySelector('#ldt-next').onclick = () => { sfx('tap'); tabela('rod', rd + 1); }; }
-      st.querySelector('#ldt-go').onclick = () => { sfx('tap'); semana(); };
-      const me2 = st.querySelector('.ldt-r.me'); if (me2) me2.scrollIntoView({ block: 'center' });
+      st.querySelector('#tb2-back').onclick = () => { sfx('tap'); semana(); };
+      const me2 = st.querySelector('.tb2-r.me, .tb2-gm.me'), bx = st.querySelector('.tb2-b');
+      if (me2 && bx) bx.scrollTop = Math.max(0, me2.offsetTop - bx.offsetTop - bx.clientHeight / 2 + me2.offsetHeight / 2);
     });
   }
 
-  // ---------- Clube deitado (20): a central do clube em blocos; o que ainda não existe fica "em breve" ----------
+  // ---------- Clube deitado (enxuto desde 2026-11-09, quadro 17): 4 blocos com um número e a diretoria ----------
   function clube() {
     const c = C(), co = c.co, cl = club(co.club), f = S.coFin(co), B = co.board, pos = S.coPos(co), conf = Math.round(B.conf);
-    const exp = co.squad.filter(p => p.ct <= 1).length, folha = S.coFolha(co);
-    const tile = (id, t, sub, soon) => soon ? '<div class="ldk-t soon"><b>' + t + '</b><small>EM BREVE · ' + sub + '</small></div>' : '<button class="ldk-t" data-k="' + id + '"><b>' + t + '</b><small>' + sub + '</small></button>';
-    const pr = c.finPres(f);
-    show(rail('clube') + '<div class="ld-col">' +
-      '<div class="ldk-h">' + crest(cl.id, 'ldk-cr') + '<span><b>' + esc(cl.name) + '</b><small>' + esc(co.ss ? co.ss.name : '') + ' · ' + esc(co.name) + ' · fama ' + co.fame + ' · ' + (co.season + 1) + 'ª temporada</small></span></div>' +
-      '<div class="ld-row"><div class="ldk-g">' +
-        tile('fin', 'Finanças', 'Caixa ' + c.brl(f.caixa) + ' · verba ' + c.brl(f.verba)) + tile('ele', 'Elenco e contratos', exp ? U.D.plural(exp, 'contrato acaba', 'contratos acabam') + ' no fim do ano' : co.squad.length + ' jogadores') + tile('', 'Mercado', 'comprar, vender, emprestar', 1) +
-        tile('', 'Estádio e ingresso', 'preço por jogo, obras', 1) + tile('', 'Base', 'garotos que sobem em janeiro', 1) + tile('', 'Equipe técnica', 'olheiro, preparador, médico', 1) +
-        tile('', 'Imprensa', 'coletiva antes e depois', 1) + tile('tro', 'Sala de troféus', co.titles.length ? U.D.plural(co.titles.length, 'título', 'títulos') : 'nenhum título ainda') + tile('hall', 'Hall do técnico', U.D.plural(co.hist.length, 'temporada', 'temporadas') + ' de carreira') + '</div>' +
-      '<div class="ldk-side"><div class="ldk-dir">' + lbl('DIRETORIA') + '<b>' + (conf >= 70 ? 'Confiança alta' : conf >= 45 ? 'Confiança boa' : conf >= 30 ? 'Confiança baixa' : 'No limite') + '</b><em class="ld-bar"><u class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '" style="width:' + conf + '%"></u></em>' +
-          '<small>Meta: ' + esc(S.CO_GOAL_TXT[B.goal.k]) + (B.goal.k === 'titulo' ? '' : ' (até o ' + B.goal.pos + 'º)') + '. Hoje: ' + pos + 'º.</small><i>' + pr[0] + ' · ' + (S.coPres ? esc(S.coPres(co).n) + ', presidente ' + S.coPres(co).nome : 'presidente') + '</i></div>' +
-        '<div class="ldk-cx">' + lbl('CAIXA') + '<b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><small>folha ' + c.brl(folha) + ' por semana</small></div><span class="ld-gr"></span>' +
-        gold('ldk-go', 'Ver as finanças') + '</div></div></div>', st => {
+    const exp = co.squad.filter(p => p.ct <= 1).length, pres = S.coPres ? S.coPres(co) : null;
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const tile = (id, k, t, v, sub, cc) => '<button class="kb2-t"' + (id ? ' id="' + id + '"' : '') + ' data-k="' + k + '"><b>' + t + '</b><span><em class="' + (cc || '') + '">' + v + '</em><small>' + sub + '</small></span></button>';
+    const meta = (B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + B.goal.pos + 'º') + ' · hoje ' + pos + 'º';
+    show('<div class="kb2"><div class="tm-h"><button class="tcr-back" id="kb2-back" aria-label="Voltar">' + BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>' + esc(cl.name) + '</b><small>' + esc(co.ss ? co.ss.name : '') + ' · fama ' + co.fame + '</small></div>' +
+      '<div class="kb2-g">' + tile('ldk-go', 'fin', 'Finanças', c.brl(f.caixa), 'no caixa', f.caixa < 0 ? 'dn' : '') +
+        tile('', 'ele', 'Elenco', exp ? exp : co.squad.length, exp ? (exp > 1 ? 'contratos acabam' : 'contrato acaba') + ' no fim do ano' : 'jogadores', exp ? 'dn' : '') +
+        tile('', 'tro', 'Troféus', co.titles.length, co.titles.length === 1 ? 'título' : 'títulos') +
+        tile('', 'hall', 'Hall do técnico', (co.season + 1) + 'ª', 'temporada de carreira') + '</div>' +
+      '<div class="kb2-side"><div class="kb2-dir"><small>DIRETORIA</small><b>' + (conf >= 70 ? 'confiança alta' : conf >= 45 ? 'confiança boa' : conf >= 30 ? 'confiança baixa' : 'no limite') + '</b>' +
+          '<i><u class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '" style="width:' + conf + '%"></u></i><em class="' + (pos <= B.goal.pos ? '' : 'hi') + '">' + meta + '</em></div>' +
+        (pres ? '<div class="kb2-pr"><small>PRESIDENTE</small><b>' + esc(pres.n) + '</b><span>' + esc(pres.nome || '') + '</span></div>' : '') +
+        '<span class="rs-gap"></span><p class="kb2-soon">Mercado, estádio e base chegam depois</p></div></div>', st => {
       st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') financas(); else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); });
-      st.querySelector('#ldk-go').onclick = () => { sfx('tap'); financas(); };
+      st.querySelector('#kb2-back').onclick = () => { sfx('tap'); semana(); };
     });
   }
   // Finanças deitada: abas num array (a thread de mercado e finanças vai acrescentar "Decidir")
