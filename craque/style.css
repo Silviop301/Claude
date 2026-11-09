@@ -8574,5 +8574,76 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .mkf-g .mk-k > b { font-size: 24px; }
 .mkf-tr { flex-wrap: nowrap; gap: 6px; } .mkf-tr span { padding: 6px 9px; font-size: 17px; white-space: nowrap; }
 .mkf-nr { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Treinador deitado: Mercado lote 2 (2026-11-09, quadros 25 e 26): janela no topo, proposta, contrato */
+.mk-win { position: absolute; right: 56px; top: 7px; height: 30px; padding: 0 12px; border-radius: 15px; background: rgba(242, 194, 48, .16); color: var(--gold); display: flex; align-items: center; font: 800 17px/1 var(--display); letter-spacing: .04em; white-space: nowrap; }
+.mk-win.off { background: rgba(243, 241, 234, .08); color: #9fb0a6; }
+.mk .tm-h small { max-width: 300px; }
+.mkp-tabs { grid-template-columns: 1fr 1fr; }
+.mkp-l, .mkc-l { grid-column: 1; grid-row: 3; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.mkp-v { flex: 1; gap: 10px; justify-content: space-between; }
+.mkp-row { display: flex; align-items: center; gap: 12px; }
+.mkp-row > b { flex: 1; text-align: center; font: 800 40px/1 var(--display); color: #F3F1EA; white-space: nowrap; }
+.mkp-cuts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mkp-cuts button { height: 44px; border-radius: 12px; background: rgba(243, 241, 234, .1); color: #F3F1EA; font: 800 18px/1 var(--display); white-space: nowrap; }
+.mkp-cuts button.on, .mkp-seg button.on { background: #F8F4EA; color: #13201A; }
+.mkp-g { flex: none; height: 96px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mkp-g .mk-k { justify-content: space-between; padding: 12px 14px; }
+.mkp-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; border-radius: 12px; background: rgba(243, 241, 234, .08); padding: 4px; }
+.mkp-seg button { height: 40px; border-radius: 9px; color: #B9C9BF; font: 800 18px/1 var(--display); }
+.mkp-seg.big button { height: 52px; font-size: 21px; }
+.mkp-tr { display: flex; align-items: center; gap: 8px; } .mkp-tr .mk-ar { width: 40px; height: 40px; }
+.mkp-tr b { flex: 1; min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 800 19px/1 var(--display); color: #F3F1EA; } .mkp-tr b.off { color: #9fb0a6; }
+.mk button:disabled { opacity: .45; cursor: default; }
+.mkp-pr > b { font: 800 26px/1.05 var(--display); color: #F3F1EA; } .mkp-pr > b.up { color: #7ED39A; } .mkp-pr > b.mid { color: var(--gold); } .mkp-pr > b.dn { color: #F5A57F; }
+.mkp-pat { display: flex; align-items: center; justify-content: space-between; font: 700 15px/1 var(--body); color: #B9C9BF; }
+.mkp-dots { display: flex; gap: 6px; } .mkp-dots i { width: 14px; height: 14px; border-radius: 50%; background: rgba(243, 241, 234, .16); } .mkp-dots i.on { background: var(--gold); }
+.mkf-li b.up { color: #7ED39A; } .mkf-li b.dn { color: #F5A57F; }
+.mkc-g { flex: none; height: 150px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mkc-b { justify-content: space-between; } .mkc-b .mkp-row { gap: 8px; } .mkc-b .mkp-row > b { font-size: 32px; }
+.mkc-h { font: 700 15px/1 var(--body); color: #B9C9BF; text-align: center; }
+.mkc-r { flex: 1; justify-content: space-between; } .mkc-d { font: 700 16px/1.25 var(--body); color: #D9E2DC; }
+.mkc-dd i.dn { background: #F5A57F; } .mkc-dd i.mid { background: var(--gold); } .mkc-dd i.up { background: #7ED39A; }
+.mkc-f > b { font: 800 26px/1 var(--display); color: #F3F1EA; } .mkc-f > b.dn { color: #F5A57F; }
+.mkc-l { grid-row: 2 / -1; }
+.mk-k .mk-ar.big { background: rgba(243, 241, 234, .1) !important; }
 .ldl-tm { grid-template-rows: 38px minmax(0, 1fr) 48px; gap: 8px 16px; }
 .ldl-tm .tm-h .ldl-sc { padding: 6px 12px; }
+/* Elenco enxuto (Silvio 2026-11-09, quadro 27): abas por setor, tabela que rola por dentro, cartão do jogador à direita */
+.lde2 { width: 100%; height: 100%; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 238px; grid-template-rows: 44px 46px minmax(0, 1fr); gap: 8px 16px; color: #F3F1EA; }
+.lde2-tabs { grid-column: 1; grid-row: 2; border-radius: 12px; background: #141517; display: grid; grid-template-columns: repeat(4, 1fr); padding: 4px; gap: 4px; }
+.lde2-tabs button { border-radius: 9px; font: 800 19px/1 var(--display) !important; color: #B9C9BF !important; }
+.lde2-tabs button small { font: 700 14px/1 var(--body); opacity: .7; }
+.lde2-tabs button.on { background: #F8F4EA !important; color: #13201A !important; }
+.lde2-l { grid-column: 1; grid-row: 3; border-radius: 14px; background: #141517; padding: 4px 8px 8px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.lde2-h, .lde2-r { display: grid; grid-template-columns: 36px minmax(0, 1fr) 54px 54px 104px; align-items: center; padding: 0 14px; }
+.lde2-h { height: 24px; font: 700 12px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
+.lde2-r { width: 100%; height: 44px; box-sizing: border-box; border-bottom: 1px solid rgba(243, 241, 234, .07) !important; border-radius: 10px; text-align: left; }
+.lde2-r.on { background: #2b2612 !important; box-shadow: inset 0 0 0 2px var(--gold); }
+.lde2-r.out { opacity: .55; }
+.lde2-r i { font: 800 18px/1 var(--display); font-style: normal; color: #9fb0a6; }
+.lde2-r > span:nth-child(2) { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.lde2-r > span b { font: 700 17px/1 var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lde2-r > span small { font: 700 13px/1 var(--body); color: #9fb0a6; }
+.lde2-r em { font: 800 13px/1 var(--display); font-style: normal; padding: 3px 7px; border-radius: 6px; background: #F8D2BF; color: #8a3312; white-space: nowrap; }
+.lde2-r em.y { background: #F5E6A8; color: #6b5300; }
+.lde2 .a, .lde2 .o { text-align: center; } .lde2 .ct { text-align: right; }
+.lde2-r .a { font: 700 17px/1 var(--body); color: #B9C9BF; }
+.lde2-r .o { font: 800 22px/1 var(--display); color: var(--gold); }
+.lde2-r .ct { font: 700 15px/1 var(--body); color: #B9C9BF; } .lde2-r .ct.dn { color: #F08A5D; }
+.lde2-c { grid-column: 2; grid-row: 2 / 4; border-radius: 16px; background: var(--paper); color: var(--ink); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.lde2-ch { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.lde2-ch > b.tm-ring { --enc: #7ED39A; width: 58px; height: 58px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font: 800 26px/1 var(--display);
+  background: radial-gradient(var(--paper) 62%, transparent 64%), conic-gradient(var(--enc) calc(var(--en, 100) * 1%), rgba(19, 32, 26, .14) 0); }
+.lde2-ch > b.tm-ring.mid { --enc: #F2C230; } .lde2-ch > b.tm-ring.low { --enc: #F08A5D; }
+.lde2-ch span { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.lde2-ch span b { font: 800 24px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lde2-ch span small { font: 700 14px/1 var(--body); color: #4b5a52; }
+.lde2-st { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.lde2-st span, .lde2-ct { border-radius: 10px; background: #FFF; padding: 9px 10px; display: flex; flex-direction: column; gap: 5px; }
+.lde2-st small, .lde2-ct small { font: 700 12px/1 var(--body); letter-spacing: .06em; color: #5d6b63; }
+.lde2-st b, .lde2-ct b { font: 800 20px/1 var(--display); white-space: nowrap; } .lde2-c b.dn { color: #b4501f; }
+.lde2-ct { flex-direction: row; justify-content: space-between; align-items: center; margin-top: auto; padding: 8px 8px 8px 10px; }
+.lde2-ct > span { display: flex; flex-direction: column; gap: 5px; }
+.lde2-ren { height: 44px; padding: 0 12px !important; border-radius: 12px; background: #13201A !important; color: #F8F4EA !important; font: 800 18px/1 var(--display) !important; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.lde2-ren small { font: 700 12px/1 var(--body); color: #B9C9BF; letter-spacing: 0; }
+.lde2-ren:disabled { opacity: .55; cursor: default; }
