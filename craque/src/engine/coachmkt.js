@@ -19,6 +19,7 @@
     err: [3, 2, 1],   // quanto o centro da faixa pode errar
     span: 15,         // a régua vai de 15 pontos pior a 15 melhor que o titular
     eq: 2,            // até 2 pontos de diferença = igual
+    preR: 3, incFrom: 2, // a janela do começo vale nas 3 primeiras rodadas; em clube novo as propostas pelos seus só chegam na 3ª semana
     days: { pre: 10, mid: 6 }, // dias da janela: pré-temporada e meio do ano (antes da rodada da metade)
     pat: 3,           // paciência do presidente e do empresário (cada recusa gasta 1)
     cut: [0.8, 1, 1.2], // atalhos da proposta: baixa, justa (o preço da ficha) e alta
@@ -134,10 +135,11 @@
   S.coMktObs = (co, p) => { const m = S.coMkt(co); if (m.obs[p.id]) delete m.obs[p.id]; else m.obs[p.id] = 1; return !!m.obs[p.id]; };
   S.coMktFind = (co, id) => (S.coMkt(co).got[id] ? null : S.coMktPool(co).find(p => p.id === id) || null);
 
-  // ---------- janela: 10 dias antes da 1ª rodada, 6 antes da rodada da metade; proposta, contrato e relatório gastam 1 ----------
+  // ---------- janela: 10 dias no começo, aberta até a rodada 3 (M.preR; Silvio 2026-11-09), e 6 antes da rodada da metade;
+  // proposta e contrato gastam 1 ----------
   S.coMktWin = function (co) {
     const ss = co.ss; if (!ss || ss.done) return { open: false, next: null };
-    const half = Math.floor(ss.rounds.length / 2), k = ss.i === 0 ? 'pre' : ss.i === half ? 'mid' : null, m = S.coMkt(co);
+    const half = Math.floor(ss.rounds.length / 2), k = ss.i < Math.min(M.preR, half) ? 'pre' : ss.i === half ? 'mid' : null, m = S.coMkt(co);
     if (!k) return { open: false, next: ss.i < half ? half + 1 : null };
     if (m.wk !== k) { m.wk = k; m.used = 0; }
     const max = M.days[k];
@@ -271,18 +273,21 @@
     const v = r10k(val * lo);
     return { id: p.id, club: b.id, v, v0: v, max: Math.max(v, r10k(val * hi * (S.coMktListed(co, p) ? 0.95 : 1))), pay: r() < 0.5 ? 0 : 1, fut: 0, pat: M.sellPat, st: 'open', hist: [['eles', v]], wish, seen: 0 };
   }
-  // Propostas da janela aberta: sorteadas uma vez quando ela abre (mais para quem está à venda)
+  // Propostas da janela aberta: sorteadas uma vez quando ela abre (mais para quem está à venda). Na 1ª temporada num
+  // clube (co.since), as da janela do começo só aparecem a partir da 3ª semana (M.incFrom): primeiro a pessoa conhece o
+  // elenco (Silvio 2026-11-09); quem ela mesma pôs à venda (o.ask) recebe na hora
   S.coMktInbox = function (co) {
     const w = S.coMktWin(co), m = S.coMkt(co); m.inc = m.inc || [];
     if (!w.open) return [];
+    const early = w.k === 'pre' && co.since === co.season && co.ss.i < M.incFrom;
     if (m.incK !== w.k) {
       m.incK = w.k; m.inc = []; const r = rngS(co, 'inc' + w.k);
       const cand = co.squad.filter(p => S.coMktCanSell(co, p) && !p.from).map(p => ({ p, x: r() / (M.inc * (1 + Math.max(0, p.ovr - 60) / 20) + (S.coMktListed(co, p) ? M.incList : 0)) }))
         .filter(o => o.x < 1).sort((a, b) => a.x - b.x);
       const nList = cand.filter(o => S.coMktListed(co, o.p)).length;
-      cand.slice(0, M.incMax + nList).forEach(o => { const of = mkOffer(co, o.p, r); if (of) m.inc.push(of); });
+      cand.slice(0, M.incMax + nList).forEach(o => { const of = mkOffer(co, o.p, r); if (of) { if (S.coMktListed(co, o.p)) of.ask = 1; m.inc.push(of); } });
     }
-    return m.inc.filter(o => o.st === 'open' && co.squad.some(p => p.id === o.id));
+    return m.inc.filter(o => o.st === 'open' && (!early || o.ask) && co.squad.some(p => p.id === o.id));
   };
   S.coMktOfferFor = (co, p) => S.coMktInbox(co).find(o => o.id === p.id) || null;
   // Pôr à venda / tirar; com a janela aberta, quem entra à venda pode receber proposta na hora
@@ -291,7 +296,7 @@
     if (!on) return null;
     const box = S.coMktInbox(co), m = S.coMkt(co); if (!S.coMktWin(co).open || box.some(o => o.id === p.id) || (m.inc || []).some(o => o.id === p.id) || !S.coMktCanSell(co, p)) return null;
     const r = rngS(co, 'list' + p.id + '|' + (m.used || 0)); if (r() > M.incList) return null;
-    const of = mkOffer(co, p, r); if (of) m.inc.push(of); return of;
+    const of = mkOffer(co, p, r); if (of) { of.ask = 1; m.inc.push(of); } return of;
   };
   // Quanto vale o pedido para eles: à vista e % alta pesam
   const sellEff = (v, pay, fut) => v * (1 + M.sellPay[pay || 0] + M.sellFut[fut || 0]);
