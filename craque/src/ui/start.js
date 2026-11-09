@@ -252,7 +252,7 @@
       '<div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') + '</div>' +
       cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div></div>';
     U.LD.show(html, st => {
-      st.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.hl; U.ldOff(); if (k === 'settings') return U.settings ? U.settings() : null; (U[k] || home)(); });
+      st.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.hl; if (k === 'settings' && U.settingsLand) return U.settingsLand(home); U.ldOff(); if (k === 'settings') return U.settings ? U.settings() : null; (U[k] || home)(); });
       bindSaves(st);
       st.querySelectorAll('[data-md]').forEach(b => b.onclick = () => {
         const m = b.dataset.md; sfx('tap');
