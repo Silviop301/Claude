@@ -25,6 +25,6 @@ const { chromium } = require('playwright');
   await p.click('[data-pop-x]'); await p.waitForTimeout(500);
   console.log('jogador desabilitado', await p.evaluate(() => !!document.querySelector('.hl-md.hl-jogador[disabled]')), 'modos', await p.evaluate(() => document.querySelectorAll('.hl-md').length));
   await p.evaluate(() => window.CRAQUE_UI.home()); await p.waitForTimeout(500);
-  await p.click('[data-hl="ranking"]'); await p.waitForTimeout(700); await p.screenshot({ path: out + '/hl9-ranking.png' });
+  console.log('ranking fora da home (1.0)', await p.evaluate(() => !document.querySelector('[data-hl="ranking"]')));
   await p.setViewportSize({ width: 390, height: 844 }); await p.evaluate(() => window.CRAQUE_UI.home()); await p.waitForTimeout(700); await p.screenshot({ path: out + '/hl10-em-pe.png' });
   console.log(errs.join('\n') || 'sem erros'); await b.close(); })();
