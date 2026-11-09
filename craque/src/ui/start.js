@@ -247,7 +247,7 @@
       : '<button class="hl-md hl-' + m + '" data-md="' + m + '" id="b-new-co"><b>Treinador</b></button>').join('');
     const more = (so ? LAND_MORE.filter(x => x[0] === 'settings') : LAND_MORE).map(([k, l, d]) => '<button class="hl-mr" data-hl="' + k + '">' + lineSvg(d) + '<b>' + l + '</b></button>').join('');
     const html = '<div class="hl hl-x' + (so ? ' hl-so' : '') + '"><b class="hl-logo">CLIMBIX</b>' +
-      '<div class="hl-tops">' + (U.COINS ? U.COINS.pill() : '') + (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') + '</div>' +
+      '<div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') + '</div>' +
       cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div></div>';
     U.LD.show(html, st => {
       st.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.hl; U.ldOff(); if (k === 'settings') return U.settings ? U.settings() : null; (U[k] || home)(); });
@@ -259,6 +259,7 @@
         if (!sl.some(Boolean)) { U.ldOff(); return begin(m, 0); }
         landMode(m);
       });
+      if (st.querySelector('#hl-coins') && U.LD.loja) st.querySelector('#hl-coins').onclick = () => { sfx('tap'); U.LD.loja(0, home); };
       if (st.querySelector('#hl-packs')) st.querySelector('#hl-packs').onclick = () => { sfx('tap'); U.ldOff(); U.openPacks ? U.openPacks(U.home) : (U.packsScreen && U.packsScreen()); };
     }, 'O Climbix é jogado com o celular deitado.');
   }

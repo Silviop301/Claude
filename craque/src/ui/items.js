@@ -315,7 +315,9 @@
     return true;
   }
   const COIN_SVG = '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="#F2C230"/><circle cx="13" cy="13" r="8.5" fill="none" stroke="#b48a12" stroke-width="2"/><path d="M13 8v10M10 11h6" stroke="#b48a12" stroke-width="2.4" stroke-linecap="round"/></svg>';
-  const pill = cls => { const n = wallet().n; return '<span class="coin-pill' + (cls ? ' ' + cls : '') + '" role="img" aria-label="' + n + (n === 1 ? ' moeda' : ' moedas') + '">' + COIN_SVG + '<b>' + n.toLocaleString('pt-BR') + '</b></span>'; };
+  // Pílula de saldo; com id vira botão (abre a loja)
+  const pill = (cls, id) => { const n = wallet().n, lab = n + (n === 1 ? ' moeda' : ' moedas'), tag = id ? 'button' : 'span';
+    return '<' + tag + ' class="coin-pill' + (cls ? ' ' + cls : '') + '"' + (id ? ' id="' + id + '" aria-label="' + lab + ', abrir a loja"' : ' role="img" aria-label="' + lab + '"') + '>' + COIN_SVG + '<b>' + n.toLocaleString('pt-BR') + '</b></' + tag + '>'; };
   U.COINS = { pill, svg: COIN_SVG, spend: coinSpend, get: () => wallet().n, got: () => wallet().got, log: () => wallet().log.slice(), add: coinAdd, has: k => !!wallet().once[k] };
 
   U.ITEMS = { FREE, KEY, CAT, BY_ID, RAR, RAR_NAME, CHANCE, PITY, DUP, COST, itemOf, need, has, get, put, clean, counts,
