@@ -64,7 +64,7 @@ async function page(b) {
   }
   if (PARTS.includes('3')) {
     const { p, shot, click } = await page(b);
-    await click('#b-new-co'); await click('#co-start button[data-v="livre"]'); await click('#b-co-go'); await shot('c0-propostas'); await click('#ldo-go'); await shot('c1-reuniao'); await click('[data-ac="ousado"]'); await shot('c1b-reuniao-ousado'); await click('#ldn-go'); await shot('c1c-patrocinio'); await click('[data-pt="mix"]'); await click('#ldn-go'); await click('#ld-ok');
+    await click('#b-new-co'); await click('#co-start button[data-v="livre"]'); await click('#b-co-go'); await shot('c0-propostas'); await click('#ldo-mo'); await shot('c0b-escolher-sem-moedas'); await click('#ec-back'); await click('#ldo-go'); await shot('c1-reuniao'); await click('[data-ac="ousado"]'); await shot('c1b-reuniao-ousado'); await click('#ldn-go'); await shot('c1c-patrocinio'); await click('[data-pt="mix"]'); await click('#ldn-go'); await click('#ld-ok');
     // joga até faltar 1 rodada, pelo motor
     await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co; let g = 0;
       while (co.ss.i < co.ss.rounds.length - 1 && g++ < 60) { const nx = S.coNext(co); if (!nx) break; if (nx.bye) { S.coSkipRound(co); continue; } const m = S.coMatchStart(co); S.coMatchRest(co, m); S.coMatchEnd(co, m); }
@@ -77,6 +77,9 @@ async function page(b) {
     await p.waitForTimeout(800); await shot('c6-temporada');
     if (await p.$('#ldy-mk')) { await click('#ldy-mk'); await shot('c7-propostas'); }
     else if (await p.$('#ldy-of')) { await click('#ldy-of'); await shot('c7-propostas'); }
+    // Escolher clube com moedas (fase 2): com saldo, troca de liga, assina
+    if (await p.$('#ldo-mo')) { await p.evaluate(() => window.CRAQUE_UI.COINS.add({ n: 410, t: 'teste' })); await click('#ldo-mo'); await shot('c8-escolher'); await click('.ec-c:nth-of-type(3)'); await shot('c8b-escolher-outro'); await click('#ec-ln'); await shot('c8c-outra-liga'); await click('#ec-go'); await p.waitForTimeout(600); await shot('c8d-assinou');
+      const r = await p.evaluate(() => ({ n: window.CRAQUE_UI.COINS.get(), b: window.CRAQUE_UI._co.co.bought })); if (!r.b || !r.b.length) errs.push('escolher clube: não assinou ' + JSON.stringify(r)); else console.log('comprou', JSON.stringify(r)); }
     await p.close();
   }
   console.log(errs.length ? 'Problemas: ' + errs.length + '\n' + errs.join('\n') : 'Treinador deitado: fotos em ' + OUT + '; Problemas: 0');

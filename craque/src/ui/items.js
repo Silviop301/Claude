@@ -307,9 +307,16 @@
     if (tot) put();
     return tot;
   }
+  // Gasta moedas se houver saldo (devolve false sem mexer em nada quando não dá)
+  function coinSpend(n, t) {
+    const w = wallet(); n = Math.round(n);
+    if (!(n > 0) || w.n < n) return false;
+    w.n -= n; w.log = [{ n: -n, t, at: Date.now() }].concat(w.log).slice(0, 20); put();
+    return true;
+  }
   const COIN_SVG = '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="#F2C230"/><circle cx="13" cy="13" r="8.5" fill="none" stroke="#b48a12" stroke-width="2"/><path d="M13 8v10M10 11h6" stroke="#b48a12" stroke-width="2.4" stroke-linecap="round"/></svg>';
   const pill = cls => { const n = wallet().n; return '<span class="coin-pill' + (cls ? ' ' + cls : '') + '" role="img" aria-label="' + n + (n === 1 ? ' moeda' : ' moedas') + '">' + COIN_SVG + '<b>' + n.toLocaleString('pt-BR') + '</b></span>'; };
-  U.COINS = { pill, svg: COIN_SVG, get: () => wallet().n, got: () => wallet().got, log: () => wallet().log.slice(), add: coinAdd, has: k => !!wallet().once[k] };
+  U.COINS = { pill, svg: COIN_SVG, spend: coinSpend, get: () => wallet().n, got: () => wallet().got, log: () => wallet().log.slice(), add: coinAdd, has: k => !!wallet().once[k] };
 
   U.ITEMS = { FREE, KEY, CAT, BY_ID, RAR, RAR_NAME, CHANCE, PITY, DUP, COST, itemOf, need, has, get, put, clean, counts,
     earn, careerWhy, open, trade, seen, merge, STREAK, streak, streakRecord, streakClaim, streakFlush, streakTxt, reset: () => { inv = null; } };
