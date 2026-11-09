@@ -601,47 +601,22 @@
   }
 
   // ---------- Segunda-feira (38): quem fica fora, a moral, o próximo jogo e quem quer conversar ----------
+  // Sem a tela da segunda-feira (Silvio, 2026-11-09): o Continuar do resultado vai direto para a semana. Quem quer
+  // conversar (o mais chateado, uma vez a cada 4 rodadas) abre por cima da semana; fora, cansados e pendurados já
+  // aparecem na escalação
   function segunda(log) {
     const c = C(), co = c.co, nx = S.coNext(co);
     if (!nx) { off(); return c.finishSeason(); }
     c.save('hub');
-    const by = {}; co.squad.forEach(p => { by[p.id] = p; });
-    const cl = club(co.club), avg = S.coTeamAvg(co), t = S.coTable(co).find(x => x.me);
-    const out = co.squad.filter(p => p.out || p.sus).slice(0, 3);
-    const rt = (log && log.rt) || [];
-    const mood = [];
-    const up = rt.find(x => x.r >= 7.5), dn = rt.slice().reverse().find(x => x.r < 5.6);
-    if (up && by[up.id]) mood.push([by[up.id], 'up', '↑ SUBIU', up.w]);
-    if (dn && by[dn.id]) mood.push([by[dn.id], 'dn', '↓ CAIU', 'nota ' + dn.r.toFixed(1).replace('.', ',') + ', ' + dn.w]);
-    const want = co.squad.filter(p => c.avail(p) && (p.bn || 0) >= 3 && p.ovr >= avg - 3 && p.pos !== 'GOL').sort((a, b) => b.bn - a.bn)[0];
-    if (want) mood.push([want, 'wa', 'QUER JOGAR', U.D.plural(want.bn, 'jogo', 'jogos') + ' no banco']);
-    const broke = co.squad.find(p => p.broke); if (broke) { mood.push([broke, 'dn', 'PROMESSA', 'você prometeu chance e não deu']); delete broke.broke; }
-    // Quem quer conversar: o mais chateado (moral baixa), uma vez a cada 4 rodadas
     const talker = co.squad.filter(p => (p.mo === undefined ? 60 : p.mo) < 42 && !(p.talked !== undefined && co.ss.i - p.talked < 4)).sort((a, b) => a.mo - b.mo)[0];
-    const pend = co.squad.filter(p => c.pend(p) && c.avail(p)).slice(0, 3), tired = co.squad.filter(p => c.avail(p) && p.en < 70).sort((a, b) => a.en - b.en).slice(0, 3);
-    const row = (p, cls, tag, sub) => '<div class="ldg-p"><i>' + (p.num || p.ovr) + '</i><span><b>' + esc(p.n) + '</b><small>' + esc(sub) + '</small></span><em class="' + cls + '">' + tag + '</em></div>';
-    const vs = !nx.bye && club(nx.vs);
-    const tip = tired.length >= 3 ? 'Tem gente cansada. O auxiliar sugere poupar o ' + esc(last(tired[0].n)) + '.' : out.length ? 'Sem o ' + esc(last(out[0].n)) + ', vale olhar o banco.' : 'Time inteiro para a próxima.';
-    show(rail('semana') + '<div class="ld-col">' + head('Segunda-feira', log ? 'Depois do ' + log.gf + ' x ' + log.ga + (log.home ? ' em casa' : ' fora') + ' contra o ' + esc(c.nm(log.vs)) : esc(cl.name), pill(ord(S.coPos(co)) + ' · ' + t.p + ' PTS')) +
-      '<div class="ld-row ldg">' +
-      '<div class="ldg-c">' + '<div class="ldg-b">' + lbl('FORA DO PRÓXIMO JOGO') + (out.length ? out.map(p => row(p, p.sus ? 'sus' : 'les', p.sus ? 'SUSPENSO' : 'LESIONADO', p.sus ? c.susTxt(p) : 'lesionado · ' + U.D.plural(p.out, 'jogo', 'jogos'))).join('') : '<p class="ld-none">Ninguém. Time inteiro à disposição.</p>') + '</div>' +
-        '<div class="ldg-b">' + lbl('MORAL') + (mood.length ? mood.slice(0, 3).map(([p, cc, tg, sb]) => row(p, cc, tg, sb)).join('') : '<p class="ld-none">Grupo tranquilo, ninguém subiu nem caiu muito.</p>') + '</div></div>' +
-      '<div class="ldg-c ldg-b">' + lbl('PARA A SEMANA') +
-        (pend.length ? '<small class="ldg-s">Pendurados: um amarelo e ficam fora</small>' + pend.map(p => row(p, 'sus', 'PENDURADO', c.posTxt[p.pos].toLowerCase())).join('') : '') +
-        (tired.length ? '<small class="ldg-s">Cansados</small>' + tired.map(p => row(p, 'wa', Math.round(p.en) + '%', c.posTxt[p.pos].toLowerCase())).join('') : '') +
-        (!pend.length && !tired.length ? '<p class="ld-none">Ninguém pendurado nem cansado.</p>' : '') + '</div>' +
-      '<div class="ldg-c ldg-r">' + '<div class="ldg-nx">' + lbl('PRÓXIMO JOGO') + (vs ? '<div class="ldg-nh">' + crest(vs.id, 'ld-cr') + '<b>' + esc(vs.short || vs.name) + ', ' + (nx.home ? 'em casa' : 'fora') + '</b></div><small>Rodada ' + nx.round + ' de ' + nx.of + '</small>' : '<b>Sem jogo nesta rodada</b>') + '<p>' + tip + '</p></div>' +
-        (talker ? '<button class="ldg-talk" id="ldg-talk"><i>' + (talker.num || talker.ovr) + '</i><span><b>' + esc(last(talker.n)) + ' quer conversar</b><small>' + (talker.bn >= 2 ? 'cansou de ficar no banco' : 'anda chateado') + '</small></span>' + CHEV + '</button>' : '') +
-        '<span class="ld-gr"></span>' + gold('ldg-go', 'Começar a semana') + '</div></div></div>', st => {
-      st.querySelector('#ldg-go').onclick = () => { sfx('tap'); semana(); };
-      if (talker) st.querySelector('#ldg-talk').onclick = () => { sfx('tap'); talkPop(talker, log); };
-    });
+    semana();
+    if (talker) talkPop(talker, log);
   }
   function talkPop(p, log) {
     const c = C(), co = c.co;
     pop(popHead(esc(p.n) + ' quer conversar', '"' + (p.bn >= 2 ? 'Professor, estou treinando bem e não entro. O que eu preciso fazer?' : 'Professor, não estou feliz aqui. Queria entender o meu papel.') + '"') +
       '<div class="ld-pb col">' + Object.keys(S.CO_TALK1).map(k => '<button class="ld-cand" data-t1="' + k + '"><span><b>' + S.CO_TALK1[k].name + '</b><small>' + S.CO_TALK1[k].tip + '</small></span></button>').join('') + '</div>',
-      'Conversa', w => { w.querySelectorAll('[data-t1]').forEach(b => b.onclick = () => { sfx('tap'); S.coTalk1(co, p.id, b.dataset.t1); c.save(); closePop(); segunda(log); }); }, 'w560');
+      'Conversa', w => { w.querySelectorAll('[data-t1]').forEach(b => b.onclick = () => { sfx('tap'); S.coTalk1(co, p.id, b.dataset.t1); c.save(); closePop(); }); }, 'w560');
   }
 
   // ---------- Caderno do técnico deitado (40): a grade inteira, a casa tocada aberta ao lado, o próximo rival ----------
