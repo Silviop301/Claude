@@ -86,6 +86,7 @@
   const presOf = co => PRES[(S.coFin(co).pres || {}).k] || PRES.pac;
   S.coPres = co => { const f = S.coFin(co); return f ? Object.assign({ n: f.pres.n, k: f.pres.k }, PRES[f.pres.k]) : null; };
   const news = (co, t) => { const f = co.fin; f.news = [{ s: co.season, r: co.ss ? co.ss.i + 1 : 0, t }].concat(f.news || []).slice(0, 5); };
+  S.coFinNews = news;
 
   // ---------- acordo de verba × meta (pré-temporada) ----------
   // As opções em volta da meta da diretoria: segura (mais fácil, menos verba), normal, ousada (mais difícil, mais verba)
@@ -227,7 +228,7 @@
     let g = 0;
     if (home && vs) { g = gate(co, vs); add('bil', g); }
     if (fin.loan && (ri + 1) % F.mes === 0) parcela(co);
-    if (S.coMktWeek) S.coMktWeek(co, ri, sub);
+    if (S.coMktWeek) S.coMktWeek(co, ri, sub, add);
     // No vermelho a diretoria perde a paciência aos poucos (mais com o presidente pão-duro, o dobro no ultimato);
     // com 6 rodadas seguidas o presidente vende o jogador mais caro
     if (fin.caixa < 0) {

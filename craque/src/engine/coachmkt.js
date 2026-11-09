@@ -188,7 +188,9 @@
     { k: 'apo', t: 'Aposta', w: 1.2, d: 'Começa no banco e cresce aos poucos. Pede mais para aceitar esperar.' }];
   S.CO_MKT_ROLE = ROLE;
   S.coMktTerms = (co, p) => {
-    const base = p.wage * (p.club ? 1.1 : 1.25), want = p.age <= 23 ? 4 : p.age <= 28 ? 3 : p.age <= 31 ? 2 : 1;
+    const own = co.squad.some(x => x.id === p.id), mo = p.mo === undefined ? 60 : p.mo;
+    // renovação: o salário de hoje, mais quanto ele cresceu e menos quanto está feliz
+    const base = own ? p.wage * (mo >= 70 ? 1.05 : mo >= 45 ? 1.15 : 1.3) * (p.age <= 27 ? 1.1 : 1) : p.wage * (p.club ? 1.1 : 1.25), want = p.age <= 23 ? 4 : p.age <= 28 ? 3 : p.age <= 31 ? 2 : 1;
     return { base, want, ask: role => r1k(base * ROLE[role].w), step: base < 10000 ? 500 : r1k(base * 0.05) };
   };
   // Humor do empresário a cada toque: 1 não vai topar, 2 longe, 3 quase lá, 4 deve aceitar (só o 4 assina)
@@ -199,7 +201,7 @@
   };
   // Folha depois da chegada (sai o da troca) contra o teto
   S.coMktFolha = (co, p, t) => { const n = S.coMkt(co).neg[p.id], tr = n && n.deal && n.deal.tr, q = tr && co.squad.find(x => x.id === tr);
-    const f = S.coFin(co), fol = S.coFolha(co) + t.w - (q ? q.wage : 0); return { fol, pct: Math.round(100 * fol / Math.max(1, f.teto)) }; };
+    const own = co.squad.find(x => x.id === p.id), f = S.coFin(co), fol = S.coFolha(co) + t.w - (q ? q.wage : 0) - (own ? own.wage : 0); return { fol, pct: Math.round(100 * fol / Math.max(1, f.teto)) }; };
   // Oferece: { k: 'signed' (jogador), | 'recusa' | 'no' | 'teto' | 'cheio' | 'fechada' | 'verba' }
   S.coMktContract = function (co, p, t) {
     const n = S.coMktNeg(co, p), f = S.coFin(co), m = S.coMkt(co);
@@ -224,11 +226,120 @@
     return { k: 'signed', p: np };
   };
   // Parcelas das compras a cada 4 rodadas (chamado pela semana das finanças)
-  S.coMktWeek = (co, ri, sub) => {
-    const f = co.fin; if (!f || !f.inst || !f.inst.length || (ri + 1) % 4) return;
-    f.inst.forEach(x => { sub('comp', x.v); f.verba = Math.max(0, f.verba - x.v); x.k--; });
-    f.inst = f.inst.filter(x => x.k > 0);
+  S.coMktWeek = (co, ri, sub, add) => {
+    const f = co.fin; if (!f) return;
+    if (ri === 0 && add) futPay(co, add);
+    if ((ri + 1) % 4) return;
+    if (f.inst && f.inst.length) { f.inst.forEach(x => { sub('comp', x.v); f.verba = Math.max(0, f.verba - x.v); x.k--; }); f.inst = f.inst.filter(x => x.k > 0); }
+    if (f.recv && f.recv.length && add) { f.recv.forEach(x => { add('vend', x.v); f.verba += Math.round(x.v * M.sellVerba); x.k--; }); f.recv = f.recv.filter(x => x.k > 0); }
   };
+
+  // ---------- renovar (lote 4, 09/11): o seu jogador, a qualquer hora, na mesma tela do contrato ----------
+  S.coMktRenNeg = (co, p) => { const m = S.coMkt(co); m.ren = m.ren || {}; return m.ren[p.id] || (m.ren[p.id] = { apat: M.pat, st: 'open' }); };
+  S.coMktRenOk = (co, p) => p.ct <= M.renMax;
+  // { k: 'signed' (p) | 'recusa' | 'no' | 'teto' | 'cedo' }
+  S.coMktRenew = function (co, p, t) {
+    const n = S.coMktRenNeg(co, p);
+    if (n.st === 'no' || n.st === 'signed') return { k: n.st };
+    if (!S.coMktRenOk(co, p)) return { k: 'cedo' };
+    if (S.coMktFolha(co, p, t).pct > 100 && t.w > p.wage) return { k: 'teto' };
+    if (S.coMktMood(co, p, t).lvl < 4) { n.apat--; if (n.apat <= 0) { n.st = 'no'; return { k: 'no' }; } return { k: 'recusa' }; }
+    p.wage = t.w; p.ct = t.y; p.role = ROLE[t.role].k; p.mo = Math.min(100, (p.mo === undefined ? 60 : p.mo) + 8); n.st = 'signed';
+    return { k: 'signed', p };
+  };
+
+  // ---------- vender (lote 4, 09/11): propostas só com a janela aberta, negociação em rodadas (como no FIFA), % de venda futura ----------
+  // co.sell = { id: 1 } à venda (vale entre temporadas); co.mkt.inc = [{ id, club, v, max, pay, fut, pat, st, hist, wish, seen }];
+  // co.fin.recv = parcelas a receber; co.fin.fut = [{ n, pct, base, s, club }] (% de uma venda futura)
+  Object.assign(M, { renMax: 2, inc: 0.06, incList: 0.65, incMax: 2, sellPat: 3, sellLo: [0.78, 0.92], sellHi: [1.05, 1.3],
+    sellPay: [0.05, 0, -0.04], sellFut: [0, 0.05, 0.11], futPct: [0, 10, 20], futP: 0.25, futS: 3, sellVerba: 0.5 });
+  const MINP = { GOL: 2, ZAG: 3, LAT: 2, MEI: 3, ATA: 2 };
+  const rngS = (co, k) => S.rng(hash((co.seed || 0) + '|' + co.season + '|' + k));
+  S.coMktCanSell = (co, p) => co.squad.length > 18 && co.squad.filter(x => x.pos === p.pos).length > (MINP[p.pos] || 2);
+  S.coMktListed = (co, p) => !!(co.sell && co.sell[p.id]);
+  function buyerOf(co, p, r) {
+    const me = D.CLUB_BY_ID[co.club], cty = D.countryOf(me), lo = Math.max(me.strength - 4, p.ovr - 6);
+    const fora = r() < 0.15, all = Object.values(D.CLUB_BY_ID).filter(c => c.id !== co.club && c.strength && (D.countryOf(c) === cty) !== fora);
+    const ok = all.filter(c => c.strength >= lo && c.strength <= p.ovr + 14), L = ok.length ? ok : all;
+    return L.length ? L[Math.floor(r() * L.length)] : null;
+  }
+  function mkOffer(co, p, r) {
+    const b = buyerOf(co, p, r); if (!b) return null;
+    const val = S.coValue(p), me = D.CLUB_BY_ID[co.club], xi = (co.xi || []).includes(p.id), mo = p.mo === undefined ? 60 : p.mo;
+    const wish = b.strength > me.strength + 4 && (mo < 60 || !xi || r() < 0.5) ? 1 : xi && mo >= 70 && b.strength <= me.strength ? 2 : 0;
+    const lo = M.sellLo[0] + r() * (M.sellLo[1] - M.sellLo[0]), hi = M.sellHi[0] + r() * (M.sellHi[1] - M.sellHi[0]);
+    const v = r10k(val * lo);
+    return { id: p.id, club: b.id, v, v0: v, max: Math.max(v, r10k(val * hi * (S.coMktListed(co, p) ? 0.95 : 1))), pay: r() < 0.5 ? 0 : 1, fut: 0, pat: M.sellPat, st: 'open', hist: [['eles', v]], wish, seen: 0 };
+  }
+  // Propostas da janela aberta: sorteadas uma vez quando ela abre (mais para quem está à venda)
+  S.coMktInbox = function (co) {
+    const w = S.coMktWin(co), m = S.coMkt(co); m.inc = m.inc || [];
+    if (!w.open) return [];
+    if (m.incK !== w.k) {
+      m.incK = w.k; m.inc = []; const r = rngS(co, 'inc' + w.k);
+      const cand = co.squad.filter(p => S.coMktCanSell(co, p) && !p.from).map(p => ({ p, x: r() / (M.inc * (1 + Math.max(0, p.ovr - 60) / 20) + (S.coMktListed(co, p) ? M.incList : 0)) }))
+        .filter(o => o.x < 1).sort((a, b) => a.x - b.x);
+      const nList = cand.filter(o => S.coMktListed(co, o.p)).length;
+      cand.slice(0, M.incMax + nList).forEach(o => { const of = mkOffer(co, o.p, r); if (of) m.inc.push(of); });
+    }
+    return m.inc.filter(o => o.st === 'open' && co.squad.some(p => p.id === o.id));
+  };
+  S.coMktOfferFor = (co, p) => S.coMktInbox(co).find(o => o.id === p.id) || null;
+  // Pôr à venda / tirar; com a janela aberta, quem entra à venda pode receber proposta na hora
+  S.coMktList = function (co, p, on) {
+    co.sell = co.sell || {}; if (on) co.sell[p.id] = 1; else delete co.sell[p.id];
+    if (!on) return null;
+    const box = S.coMktInbox(co), m = S.coMkt(co); if (!S.coMktWin(co).open || box.some(o => o.id === p.id) || (m.inc || []).some(o => o.id === p.id) || !S.coMktCanSell(co, p)) return null;
+    const r = rngS(co, 'list' + p.id + '|' + (m.used || 0)); if (r() > M.incList) return null;
+    const of = mkOffer(co, p, r); if (of) m.inc.push(of); return of;
+  };
+  // Quanto vale o pedido para eles: à vista e % alta pesam
+  const sellEff = (v, pay, fut) => v * (1 + M.sellPay[pay || 0] + M.sellFut[fut || 0]);
+  // Contraproposta: { k: 'ok' (vendido, sale) | 'counter' (v) | 'no' }
+  S.coMktSellTry = function (co, o, ask, pay, fut) {
+    if (o.st !== 'open') return { k: o.st };
+    o.hist.push(['voce', ask]);
+    if (sellEff(ask, pay, fut) <= o.max) return { k: 'ok', sale: sellDo(co, o, ask, pay, fut) };
+    o.pat--;
+    if (o.pat <= 0) { o.st = 'no'; return { k: 'no' }; }
+    const cap = o.max / (1 + M.sellPay[pay || 0] + M.sellFut[fut || 0]);
+    const nv = Math.max(o.v + 10000, Math.min(r10k(cap) - 10000, r10k(o.v + (Math.min(ask, cap) - o.v) * 0.6)));
+    o.v = Math.min(nv, ask - 10000); o.pay = pay; o.fut = fut; o.hist.push(['eles', o.v]);
+    return { k: 'counter', v: o.v };
+  };
+  // Humor do diretor a cada toque (4 tracinhos, como o empresário): o quanto o pedido passa do teto escondido
+  S.coMktSellMood = (co, o, t) => { const g = sellEff(t.v, t.pay, t.fut) / o.max - 1, lvl = g <= -0.06 ? 4 : g <= 0.06 ? 3 : g <= 0.2 ? 2 : 1; // "Perto" esconde o teto: pode aceitar ou não
+    return { lvl, t: ['', 'Vai desistir', 'Longe', 'Perto', 'Deve aceitar'][lvl] }; };
+  S.coMktSellAccept = (co, o) => (o.st === 'open' ? { k: 'ok', sale: sellDo(co, o, o.v, o.pay, o.fut) } : { k: o.st });
+  S.coMktSellReject = function (co, o) {
+    if (o.st !== 'open') return false; o.st = 'rej';
+    const p = co.squad.find(x => x.id === o.id); if (p && o.wish === 1) p.mo = Math.max(0, (p.mo === undefined ? 60 : p.mo) - 15);
+    return true;
+  };
+  function sellDo(co, o, v, pay, fut) {
+    const f = S.coFin(co), p = co.squad.find(x => x.id === o.id); if (!p) return null;
+    co.squad = co.squad.filter(x => x !== p);
+    if ((co.xi || []).includes(p.id) || (co.bench || []).includes(p.id)) { const a = S.coAutoXI(co.squad, co.form); co.xi = a.xi; co.bench = a.bench; }
+    if (co.sell) delete co.sell[p.id];
+    const now = Math.ceil(v / ((pay || 0) + 1) / 1000) * 1000, left = v - now;
+    f.caixa += now; f.ss.vend += now; f.verba += Math.round(now * M.sellVerba);
+    if (pay && left > 0) { f.recv = f.recv || []; f.recv.push({ n: p.n, v: Math.ceil(left / pay / 1000) * 1000, k: pay }); }
+    if (fut) { f.fut = f.fut || []; f.fut.push({ n: p.n, pct: M.futPct[fut], base: v, s: co.season, club: o.club }); }
+    o.st = 'sold'; o.v = v; o.pay = pay || 0; o.fut = fut || 0;
+    return { p, v, now, pay: pay || 0, fut: fut || 0 };
+  }
+  // % de venda futura: a cada temporada nova, chance de o clube revender o jogador e pagar a sua parte
+  function futPay(co, add) {
+    const f = co.fin; if (!f.fut || !f.fut.length) return;
+    const r = rngS(co, 'fut');
+    f.fut = f.fut.filter(x => {
+      if (x.s >= co.season) return true;
+      if (r() < M.futP) { const v = r10k(x.base * (1.1 + r() * 0.6) * x.pct / 100); add('vend', v); f.verba += Math.round(v * M.sellVerba);
+        if (S.coFinNews) S.coFinNews(co, x.n + ' foi vendido de novo: os ' + x.pct + '% da venda futura renderam R$ ' + (v >= 1e6 ? (v / 1e6).toFixed(1).replace('.', ',') + ' mi' : Math.round(v / 1000) + ' mil') + ' ao caixa.');
+        return false; }
+      return co.season - x.s < M.futS;
+    });
+  }
 
   if (typeof module !== 'undefined') module.exports = S;
 })(typeof window !== 'undefined' ? window : globalThis);

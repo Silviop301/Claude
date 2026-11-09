@@ -212,7 +212,7 @@
     if (!nx) { off(); return c.finishSeason(); }
     if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao() : patrocinio();
     c.save('hub');
-    finNews(co);
+    if (!inboxPop(co, semana)) finNews(co);
     const t = S.coTable(co), me = t.find(x => x.me), pos = S.coPos(co), B = co.board, conf = Math.round(B.conf);
     const f5 = f => { const a = (f || '').split('').slice(-5); while (a.length < 5) a.unshift('n'); return '<span class="ld-f5 sm-f5">' + a.map(x => '<i class="' + x + '"></i>').join('') + '</span>'; };
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
@@ -774,7 +774,7 @@
   const MK_L = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 4L6 12l11 8z"/></svg>', MK_R = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l11 8-11 8z"/></svg>';
   const mkWin = () => { const w = S.coMktWin(C().co);
     return w.k ? '<span class="mk-win' + (w.open ? '' : ' off') + '">' + (w.open ? 'JANELA · DIA ' + w.day + ' DE ' + w.max : 'JANELA · SEM DIAS') + '</span>' : '<span class="mk-win off">' + (w.next ? 'JANELA · RODADA ' + w.next : 'JANELA FECHADA') + '</span>'; };
-  const mkHead = (id, t, s) => '<div class="tm-h"><button class="tcr-back" id="' + id + '" aria-label="Voltar">' + MK_BK + '</button><b>' + t + '</b><small>' + s + '</small>' + mkWin() + '<button class="ol2-q" id="mk-q" aria-label="Como funciona">?</button></div>';
+  const mkHead = (id, t, s, noWin) => '<div class="tm-h"><button class="tcr-back" id="' + id + '" aria-label="Voltar">' + MK_BK + '</button><b>' + t + '</b><small>' + s + '</small>' + (noWin ? '' : mkWin()) + '<button class="ol2-q" id="mk-q" aria-label="Como funciona">?</button></div>';
   const mkHelp = (t, p) => pop('<div class="acd-help"><b>Como funciona</b><p>' + p + '</p><button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop');
   const mkClub = p => (p.club ? esc(club(p.club).short || club(p.club).name) : 'sem clube');
   function mercado() {
@@ -941,18 +941,19 @@
   // Contrato (26): salário e anos com ◀ ▶, papel prometido; à direita o empresário (humor a cada toque, 4 tracinhos,
   // paciência) e a folha contra o teto. Serve para depois do clube aceitar e para quem está sem clube (renovação: fase 3).
   function contrato(id, back, t) {
-    const c = C(), co = c.co, p = S.coMktFind(co, id); if (!p) return mercado();
-    const neg = S.coMktNeg(co, p), T = S.coMktTerms(co, p), w = S.coMktWin(co), M = S.CO_MKT, R = S.CO_MKT_ROLE;
+    const c = C(), co = c.co, own = co.squad.find(x => x.id === id), p = own || S.coMktFind(co, id); if (!p) return mercado();
+    const neg = own ? S.coMktRenNeg(co, p) : S.coMktNeg(co, p), T = S.coMktTerms(co, p), w = own ? { open: false } : S.coMktWin(co), M = S.CO_MKT, R = S.CO_MKT_ROLE;
     t = t || { w: T.ask(1) - T.step, y: T.want, role: 1 };
     const md = S.coMktMood(co, p, t), fo = S.coMktFolha(co, p, t), over = fo.pct > 100;
     const cls = ['', 'dn', 'dn', 'mid', 'up'][md.lvl];
     const yr = U.YEAR0 + co.season + t.y, need = p.club || w.open;
-    const gold = neg.st === 'no' ? '<button class="tm-go off" id="mkc-go" disabled>Não negocia mais</button>' : (p.club && !w.open) ? '<button class="tm-go off" id="mkc-go" disabled>Janela fechada</button>' :
+    const gold = own ? (neg.st === 'no' ? '<button class="tm-go off" id="mkc-go" disabled>Não renova mais</button>' : neg.st === 'signed' ? '<button class="tm-go off" id="mkc-go" disabled>Renovado</button>' :
+      over && t.w > p.wage ? '<button class="tm-go off" id="mkc-go" disabled>Acima do teto</button>' : '<button class="tm-go" id="mkc-go">Oferecer</button>') : neg.st === 'no' ? '<button class="tm-go off" id="mkc-go" disabled>Não negocia mais</button>' : (p.club && !w.open) ? '<button class="tm-go off" id="mkc-go" disabled>Janela fechada</button>' :
       over ? '<button class="tm-go off" id="mkc-go" disabled>Acima do teto</button>' : co.squad.length >= M.maxSquad ? '<button class="tm-go off" id="mkc-go" disabled>Elenco cheio</button>' :
       '<button class="tm-go" id="mkc-go">' + (w.open ? 'Oferecer · 1 dia' : 'Oferecer') + '</button>';
-    const sub = esc(p.n) + (p.club ? ' · o ' + esc(club(p.club).short || club(p.club).name) + ' aceitou' : ' · sem clube');
+    const sub = own ? esc(p.n) + ' · hoje ' + c.mi(p.wage) + '/sem' : esc(p.n) + (p.club ? ' · o ' + esc(club(p.club).short || club(p.club).name) + ' aceitou' : ' · sem clube');
     const box = (lbl, v, k, hint) => '<div class="mk-k mkc-b"><small>' + lbl + '</small><span class="mkp-row"><button class="mk-ar big" data-' + k + '="-1" aria-label="Menos">' + MK_L + '</button><b>' + v + '</b><button class="mk-ar big" data-' + k + '="1" aria-label="Mais">' + MK_R + '</button></span><span class="mkc-h">' + hint + '</span></div>';
-    show('<div class="mk mkc">' + mkHead('mkc-back', 'Contrato', sub) +
+    show('<div class="mk mkc">' + mkHead('mkc-back', own ? 'Renovação' : 'Contrato', sub, own) +
       '<div class="mkc-l"><div class="mkc-g">' + box('SALÁRIO POR SEMANA', (t.w < 10000 && t.w % 1000 ? 'R$ ' + (t.w / 1000).toFixed(1).replace('.', ',') + ' mil' : c.brl(t.w)), 'cw', t.w >= md.ask ? 'o que ele pede' : 'abaixo do que ele pede') +
         box('DURAÇÃO', t.y + (t.y > 1 ? ' anos' : ' ano'), 'cy', 'até ' + yr + (t.y === T.want ? ' · ele prefere' : '')) + '</div>' +
         '<div class="mk-k mkc-r"><small>PAPEL PROMETIDO</small><span class="mkp-seg big">' + R.map((r, i) => '<button class="' + (t.role === i ? 'on' : '') + '" data-cr="' + i + '">' + r.t + '</button>').join('') + '</span><span class="mkc-d">' + R[t.role].d + '</span></div></div>' +
@@ -966,7 +967,12 @@
       st.querySelectorAll('[data-cy]').forEach(b => b.onclick = () => { sfx('tap'); re({ y: Math.max(1, Math.min(5, t.y + (+b.dataset.cy))) }); });
       st.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => { sfx('tap'); re({ role: +b.dataset.cr }); });
       const go = st.querySelector('#mkc-go:not(.off)');
-      if (go) go.onclick = () => { sfx('tap'); const r = S.coMktContract(co, p, t); c.save();
+      if (go && own) go.onclick = () => { sfx('tap'); const r = S.coMktRenew(co, p, t); c.save();
+        if (r.k === 'signed') { sfx('win'); back(); return pop('<div class="mkx"><div class="mkx-h"><i class="mkx-fc">' + p.ovr + '</i><span><small>' + esc(p.n).toUpperCase() + '</small><b class="up">Renovado</b></span></div>' +
+          '<p>' + esc(last(p.n)) + ' assinou como ' + R[t.role].t.toLowerCase() + '.</p><div class="mkx-li"><div><span>Salário</span><b>' + c.brl(p.wage) + '/sem</b></div><div><span>Contrato</span><b>até ' + (U.YEAR0 + co.season + p.ct) + '</b></div></div>' +
+          '<span class="rs-gap"></span><span class="mkx-b"><button class="hl-btn gold" id="mkx-1">Fechar</button></span></div>', 'Renovado', x => { x.querySelector('#mkx-1').onclick = () => { sfx('tap'); closePop(); }; }, 'hl-pop mkx-pop', true); }
+        re({}); };
+      else if (go) go.onclick = () => { sfx('tap'); const r = S.coMktContract(co, p, t); c.save();
         if (r.k === 'signed') { sfx('win'); return fechado(r.p, R[t.role].t, neg.deal, p.club); }
         re({}); };
     });
@@ -984,6 +990,85 @@
       w.querySelector('#mkd-time').onclick = () => { sfx('tap'); closePop(); time(); };
       w.querySelector('#mkd-mk').onclick = () => { sfx('tap'); closePop(); mercado(); };
     }, 'hl-pop mkd-pop', true);
+  }
+  // ---------- vender (lote 4, quadros 32, 32b e 33) ----------
+  const WISH = [['Tanto faz', ''], ['Ele quer ir', 'g'], ['Quer ficar', 'b']];
+  const brlS = (c, v) => c.brl(v);
+  // Proposta recebida (32): janelinha por cima da Semana ou do Elenco. r = resposta de uma rodada (counter, no, ok)
+  function recebida(o, back, r) {
+    const c = C(), co = c.co, f = S.coFin(co), bc = club(o.club), bn = esc(bc.short || bc.name);
+    const p = (r && r.sale && r.sale.p) || co.squad.find(x => x.id === o.id); if (!p) return;
+    const wi = WISH[o.wish || 0], w = S.coMktWin(co), dtx = w.k ? ' · DIA ' + w.day : '';
+    const now = v => Math.ceil(v / ((o.pay || 0) + 1) / 1000) * 1000;
+    let eb, ti, line, rows, btns;
+    const payT = (pay, fut) => (pay ? (pay + 1) + 'x' : 'à vista') + (fut ? ' · ' + S.CO_MKT.futPct[fut] + '% futura' : '');
+    if (r && r.k === 'ok') { const sl = r.sale;
+      eb = 'VENDIDO · ' + bn.toUpperCase(); ti = 'Vendido por ' + brlS(c, sl.v); line = esc(last(p.n)) + ' vai para o ' + bn + '. ' + (sl.pay ? 'O resto entra a cada 4 rodadas.' : 'O dinheiro já está no caixa.') + ' Metade virou verba para contratar.';
+      rows = [['Recebe agora', brlS(c, sl.now)], ['Caixa agora', brlS(c, f.caixa), 'up'], ['Verba agora', brlS(c, f.verba), 'up']];
+      btns = [['Ver o elenco', 'gold', () => elenco()], ['Fechar', 'line', () => back()]];
+    } else if (r && r.k === 'no') {
+      eb = bn.toUpperCase() + dtx; ti = 'Desistiram'; line = 'A paciência acabou: o ' + bn + ' foi atrás de outro. ' + esc(last(p.n)) + ' fica.';
+      rows = [['Você pediu', brlS(c, o.hist.filter(h => h[0] === 'voce').slice(-1)[0][1])], ['Última deles', brlS(c, o.v)], ['Caixa agora', brlS(c, f.caixa)]];
+      btns = [['Voltar', 'dark', () => back()]];
+    } else {
+      const cnt = r && r.k === 'counter';
+      eb = (cnt ? bn.toUpperCase() + ' · RESPOSTA' : 'PROPOSTA DO ' + bn.toUpperCase()) + dtx;
+      ti = cnt ? 'Subiram para ' + brlS(c, o.v) : 'Querem o ' + esc(last(p.n));
+      line = cnt ? 'Ainda dá para negociar: ' + U.D.plural(o.pat, 'contraproposta', 'contrapropostas') + ' antes de eles desistirem.' :
+        o.wish === 1 ? 'Ele quer ir. Recusar baixa a moral dele por umas semanas.' : o.wish === 2 ? 'Ele quer ficar, e o elenco gosta dele.' : 'Dá para negociar: cada contraproposta gasta paciência deles.';
+      rows = [['Oferta', brlS(c, o.v) + ' · ' + payT(o.pay, o.fut)], ['Caixa depois', brlS(c, f.caixa + now(o.v)), 'up'], ['Folha depois', '− ' + c.mi(p.wage) + '/sem', 'up']];
+      btns = [['Aceitar', 'gold', () => { const x = S.coMktSellAccept(co, o); c.save(); sfx('win'); back(); recebida(o, back, x); }],
+        ['Negociar', 'dark', () => negociar(o.id, back)],
+        ['Recusar', 'line', () => { S.coMktSellReject(co, o); c.save(); back(); }]];
+    }
+    pop('<div class="mkr2"><div class="mkr2-p"><b class="mkr2-o">' + p.ovr + '</b><b>' + (p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</b><span>' + S.CO_POS_NM[p.pos] + ' · ' + p.age + ' anos</span>' +
+        ((co.xi || []).includes(p.id) ? '<span>titular</span>' : '<span>reserva</span>') + '<em class="' + wi[1] + '">' + wi[0] + '</em></div>' +
+      '<div class="mkr2-r"><div class="mkr2-h">' + crest(o.club, 'mkr2-cr') + '<span><small>' + eb + '</small><b>' + ti + '</b></span></div><p>' + line + '</p>' +
+        '<div class="mkx-li">' + rows.map(x => '<div><span>' + x[0] + '</span><b' + (x[2] ? ' class="' + x[2] + '"' : '') + '>' + x[1] + '</b></div>').join('') + '</div>' +
+        '<span class="rs-gap"></span><span class="mkr2-b n' + btns.length + '">' + btns.map((b, i) => '<button class="hl-btn ' + b[1] + '" data-rb="' + i + '">' + b[0] + '</button>').join('') + '</span></div></div>', 'Proposta recebida', x => {
+      x.querySelectorAll('[data-rb]').forEach(b => b.onclick = () => { sfx('tap'); closePop(); btns[+b.dataset.rb][2](); });
+    }, 'hl-pop mkr2-pop', true);
+  }
+  // Negociar a venda (32b): a conversa em rodadas, o pedido com ◀ ▶ e 3 atalhos, pagamento e % de venda futura;
+  // o diretor deles reage a cada toque e tem 3 de paciência
+  function negociar(id, back, t) {
+    const c = C(), co = c.co, f = S.coFin(co), M = S.CO_MKT, o = (S.coMkt(co).inc || []).find(x => x.id === id && x.st === 'open'), p = co.squad.find(x => x.id === id);
+    if (!o || !p) return back();
+    const bc = club(o.club), bn = esc(bc.short || bc.name), mid = Math.round(o.v0 * 1.25 / 10000) * 10000, hi = Math.round(o.v0 * 1.6 / 10000) * 10000;
+    const cuts = [o.v, Math.max(o.v + 10000, mid), Math.max(o.v + 20000, hi)];
+    t = t || { v: cuts[1], pay: o.pay || 0, fut: 0 };
+    const step = t.v >= 2e6 ? 100000 : t.v >= 500000 ? 50000 : 10000;
+    const md = S.coMktSellMood(co, o, t), cls = ['', 'dn', 'dn', 'mid', 'up'][md.lvl], acc = t.v <= o.v;
+    const now = Math.ceil(t.v / (t.pay + 1) / 1000) * 1000;
+    const hist = o.hist.slice(-4).map(h => '<i class="' + (h[0] === 'voce' ? 'me' : '') + '">' + (h[0] === 'voce' ? 'Você ' : 'Eles ') + c.mi(h[1]) + '</i>').join('<em>›</em>');
+    const seg = (on, tx, attr) => '<button class="' + (on ? 'on' : '') + '" ' + attr + '>' + tx + '</button>';
+    show('<div class="mk mkp mkn">' + mkHead('mkn-back', 'Negociar', esc(p.n) + ' · ' + S.CO_POS_NM[p.pos] + ' · para o ' + bn) +
+      '<div class="mk-k mkn-h"><small>CONVERSA</small>' + hist + '</div>' +
+      '<div class="mkp-l"><div class="mk-k mkp-v"><small>VOCÊ PEDE</small><span class="mkp-row"><button class="mk-ar big" data-nv="-1" aria-label="Menos">' + MK_L + '</button><b>' + c.brl(t.v) + '</b><button class="mk-ar big" data-nv="1" aria-label="Mais">' + MK_R + '</button></span>' +
+        '<span class="mkp-cuts">' + ['O deles', 'Meio', 'Alto'].map((x, i) => seg(t.v === cuts[i], x + ' · ' + c.mi(cuts[i]), 'data-nc="' + i + '"')).join('') + '</span></div>' +
+        '<div class="mkp-g"><div class="mk-k"><small>PAGAMENTO</small><span class="mkp-seg">' + ['À vista', '2x', '3x'].map((x, i) => seg(t.pay === i, x, 'data-np="' + i + '"')).join('') + '</span></div>' +
+          '<div class="mk-k"><small>% DE UMA VENDA FUTURA</small><span class="mkp-seg">' + M.futPct.map((x, i) => seg(t.fut === i, x + '%', 'data-nf="' + i + '"')).join('') + '</span></div></div></div>' +
+      '<div class="mk-side"><div class="mk-k mkp-pr"><small>DIRETOR DO ' + bn.toUpperCase() + '</small><b class="' + cls + '">' + md.t + '</b><span class="mkf-dd mkc-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= md.lvl ? cls || 'up' : '') + '"></i>').join('') + '</span><span class="mkp-pat">Paciência' + mkDots(o.pat, M.sellPat) + '</span></div>' +
+        '<div class="mk-k mkf-li"><div><span>' + (t.pay ? 'Agora · ' + (t.pay + 1) + 'x' : 'Recebe agora') + '</span><b class="up">' + c.brl(now) + '</b></div><div><span>Verba ganha</span><b class="up">' + c.brl(Math.round(now * M.sellVerba)) + '</b></div></div>' +
+        '<span class="rs-gap"></span><button class="tm-go" id="mkn-go">' + (acc ? 'Aceitar o deles' : 'Contrapropor') + '</button></div></div>', st => {
+      const re = x => negociar(id, back, Object.assign({}, t, x));
+      st.querySelector('#mkn-back').onclick = () => { sfx('tap'); back(); recebida(o, back); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Peça um valor e mande a contraproposta. O diretor deles tem um teto escondido: abaixo dele, aceita; acima, sobe um pouco ou, sem paciência, desiste. Pedir à vista ou uma % alta de uma venda futura deixa mais difícil. A venda entra no caixa e metade vira verba para contratar.'); };
+      st.querySelectorAll('[data-nv]').forEach(b => b.onclick = () => { sfx('tap'); re({ v: Math.max(o.v, t.v + step * (+b.dataset.nv)) }); });
+      st.querySelectorAll('[data-nc]').forEach(b => b.onclick = () => { sfx('tap'); re({ v: cuts[+b.dataset.nc] }); });
+      st.querySelectorAll('[data-np]').forEach(b => b.onclick = () => { sfx('tap'); re({ pay: +b.dataset.np }); });
+      st.querySelectorAll('[data-nf]').forEach(b => b.onclick = () => { sfx('tap'); re({ fut: +b.dataset.nf }); });
+      st.querySelector('#mkn-go').onclick = () => { sfx('tap');
+        const r = acc ? S.coMktSellAccept(co, o) : S.coMktSellTry(co, o, t.v, t.pay, t.fut); c.save();
+        if (r.k === 'ok') sfx('win');
+        if (r.k === 'counter') { negociar(id, back, Object.assign({}, t)); return recebida(o, () => negociar(id, back, t), r); }
+        back(); recebida(o, back, r); };
+    });
+  }
+  // Propostas novas na volta para a semana: uma janelinha por vez
+  function inboxPop(co, back) {
+    const o = S.coMktInbox(co).find(x => !x.seen); if (!o) return false;
+    setTimeout(() => { if (document.getElementById('ld-pop')) return; o.seen = 1; C().save(); recebida(o, back); }, 80); return true;
   }
   // Finanças deitada: abas num array (a thread de mercado e finanças vai acrescentar "Decidir")
   const FIN_TABS = [
@@ -1129,7 +1214,7 @@
     const q = L.find(p => p.id === sel) || L[0];
     const folha = co.squad.reduce((a, p) => a + (p.wage || 0), 0);
     const ctT = n => n <= 0 ? 'acaba agora' : n === 1 ? 'fim do ano' : U.D.plural(n, 'ano', 'anos');
-    const tag = p => p.out ? ['dn', 'lesionado'] : p.sus ? ['dn', 'suspenso'] : c.pend(p) ? ['y', 'pendurado'] : null;
+    const tag = p => p.out ? ['dn', 'lesionado'] : p.sus ? ['dn', 'suspenso'] : c.pend(p) ? ['y', 'pendurado'] : S.coMktListed(co, p) ? ['g', 'à venda'] : null;
     const rows = L.map(p => { const t = tag(p);
       return '<button class="lde2-r' + (q && p.id === q.id ? ' on' : '') + (c.avail(p) ? '' : ' out') + '" data-id="' + p.id + '"><i>' + (p.num || '') + '</i><span><b>' + esc(p.n) + '</b><small>' + p.pos + '</small>' + (t ? '<em class="' + t[0] + '">' + t[1] + '</em>' : '') + '</span>' +
         '<span class="a">' + p.age + '</span><span class="o">' + p.ovr + '</span><span class="ct' + (p.ct <= 1 ? ' dn' : '') + '">' + ctT(p.ct) + '</span></button>'; }).join('');
@@ -1137,9 +1222,14 @@
     if (q) {
       const mo = q.mo === undefined ? 60 : q.mo, moT = mo >= 70 ? 'alta' : mo >= 45 ? 'boa' : 'baixa';
       const st = (k, v, bad) => '<span><small>' + k + '</small><b' + (bad ? ' class="dn"' : '') + '>' + v + '</b></span>';
+      const renOk = S.coMktRenOk(co, q), listed = S.coMktListed(co, q), canS = S.coMktCanSell(co, q), ofq = S.coMktOfferFor(co, q), win = S.coMktWin(co);
+      const hint = ofq ? 'O ' + esc(club(ofq.club).short || club(ofq.club).name) + ' fez proposta' : listed ? (win.open ? 'À venda: as propostas chegam na janela' : 'À venda: propostas na próxima janela') : !canS ? 'Elenco curto nessa posição para vender' : q.ct <= 1 ? 'Último ano: renove ou ele pode sair' : '';
       card = '<div class="lde2-c"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? q.num + ' ' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + ' · ' + q.age + ' anos</small></span></div>' +
         '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/sem') + '</div>' +
-        '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span><button class="lde2-ren" id="lde-ren" data-id="' + q.id + '" disabled>Renovar<small>em breve</small></button></div></div>';
+        '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span></div>' +
+        '<div class="lde2-act"><button class="lde2-ren" id="lde-ren" data-id="' + q.id + '"' + (renOk ? '' : ' disabled') + '>Renovar' + (renOk ? '' : '<small>no fim do contrato</small>') + '</button>' +
+          (ofq ? '<button class="lde2-sell of" id="lde-of">Ver proposta</button>' : '<button class="lde2-sell' + (listed ? ' on' : '') + '" id="lde-sell"' + (canS || listed ? '' : ' disabled') + '>' + (listed ? 'Tirar da venda' : 'Pôr à venda') + '</button>') + '</div>' +
+        '<small class="lde2-hint">' + hint + '</small></div>';
     }
     show('<div class="lde2"><div class="tm-h"><button class="tcr-back" id="lde-back" aria-label="Voltar">' + BK + '</button><b>Elenco</b><small>' + U.D.plural(co.squad.length, 'jogador', 'jogadores') + ' · folha ' + c.mi(folha) + '/sem</small></div>' +
       '<div class="lde2-tabs">' + T.map(([l, ps], i) => '<button data-et="' + i + '"' + (i === tab ? ' class="on"' : '') + '>' + l + ' <small>' + co.squad.filter(p => ps.includes(p.pos)).length + '</small></button>').join('') + '</div>' +
@@ -1147,6 +1237,10 @@
       st.querySelectorAll('[data-et]').forEach(b => b.onclick = () => { sfx('tap'); elenco(+b.dataset.et); });
       st.querySelectorAll('.lde2-r').forEach(b => b.onclick = () => { sfx('tap'); const y = st.querySelector('.lde2-l').scrollTop; elenco(tab, b.dataset.id); const l = document.querySelector('.lde2-l'); if (l) l.scrollTop = y; });
       st.querySelector('#lde-back').onclick = () => { sfx('tap'); clube(); };
+      const me = () => elenco(tab, q && q.id);
+      const rn = st.querySelector('#lde-ren:not([disabled])'); if (rn) rn.onclick = () => { sfx('tap'); contrato(q.id, me); };
+      const sl = st.querySelector('#lde-sell:not([disabled])'); if (sl) sl.onclick = () => { sfx('tap'); const of = S.coMktList(co, q, !S.coMktListed(co, q)); c.save(); me(); if (of) { of.seen = 1; c.save(); recebida(of, me); } };
+      const ov = st.querySelector('#lde-of'); if (ov) ov.onclick = () => { sfx('tap'); recebida(S.coMktOfferFor(co, q), me); };
     });
   }
   function trofeus() {
