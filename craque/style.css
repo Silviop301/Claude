@@ -8079,7 +8079,7 @@ body.ld-on #ld { display: block; }
 .hl-md { height: 72px; border-radius: 14px; color: #1B1606 !important; display: flex; align-items: center; justify-content: center; padding: 0 10px !important; box-shadow: 0 4px 0 rgba(0,0,0,.35); transition: transform .1s; }
 .hl-md:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.35); }
 .hl-md b { font: 800 23px/1.05 var(--display); text-align: center; color: #1B1606; }
-.hl-md.hl-rapida { background: #F2C230 !important; } .hl-md.hl-completa { background: #F4EBD3 !important; } .hl-md.hl-relampago { background: #F08A5D !important; } .hl-md.hl-treinador { background: #B9E2C8 !important; }
+.hl-md.hl-rapida { background: #F2C230 !important; } .hl-md.hl-completa { background: #F4EBD3 !important; } .hl-md.hl-relampago { background: #F08A5D !important; } .hl-md.hl-treinador { background: linear-gradient(#F4F1E8, #E4DECC) !important; }
 .hl-mrs { display: flex; justify-content: center; gap: 10px; margin-top: auto; }
 .hl-mr { height: 48px; padding: 0 16px !important; border-radius: 12px; display: flex; align-items: center; gap: 8px; color: #E3ECE6 !important; box-shadow: inset 0 0 0 2px rgba(243,241,234,.22); }
 .hl-mr svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -8266,9 +8266,18 @@ body.ld-on #ld { display: block; }
 .sm-side .tm-go { min-height: 56px; }
 /* Link só do Treinador (?so=treinador): um botão de carreiras centrado embaixo do dourado */
 .hl-x:not(.hl-so) .hl-mds { grid-template-columns: repeat(2, minmax(0, 300px)); justify-content: center; }
-.hl-md.hl-jogador { background: #F4EBD3 !important; flex-direction: column; gap: 2px; }
-.hl-md.off { opacity: .45; cursor: default; box-shadow: none; } .hl-md.off:active { transform: none; }
-.hl-md small { font: 700 15px/1 var(--display); color: #1B1606; }
+/* Botões dos modos (Silvio 2026-11-09, "mais bonitos"): mais altos, letra maior e relevo como o do dourado. Treinador creme
+   (era verde claro); Jogador apagado em carvão com a etiqueta vermelha torta "Em breve" saindo pelo canto de cima */
+.hl-x .hl-mds { margin-top: 24px; gap: 16px; }
+.hl-x .hl-md { height: 84px; border-radius: 16px; position: relative; }
+.hl-x .hl-md b { font: 800 30px/1 var(--display); letter-spacing: .01em; }
+.hl-md.hl-treinador { box-shadow: 0 5px 0 #A9A088, inset 0 2px 0 rgba(255, 255, 255, .7); }
+.hl-md.hl-treinador b { color: #13201A; }
+.hl-md.hl-treinador:active { transform: translateY(4px); box-shadow: 0 1px 0 #A9A088, inset 0 2px 0 rgba(255, 255, 255, .7); }
+.hl-md.hl-jogador { background: #1E2023 !important; box-shadow: inset 0 0 0 2px rgba(243, 241, 234, .14); }
+.hl-md.hl-jogador b { color: rgba(243, 241, 234, .45); }
+.hl-md.off { cursor: default; } .hl-md.off:active { transform: none; }
+.hl-md small { position: absolute; right: -12px; top: -15px; transform: rotate(8deg); font: 800 19px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; color: #fff; background: #E0443C; border-radius: 8px; padding: 8px 13px 7px; box-shadow: 0 3px 0 #9C2620, 0 6px 12px rgba(0, 0, 0, .4); pointer-events: none; }
 .hl-so .hl-mds { grid-template-columns: 360px; justify-content: center; }
 .hl-so { justify-content: center; } .hl-so .hl-mrs { margin-top: 26px; }
 /* Escalação e Semana no celular (Silvio 2026-11-08): bolinha menor com a vaga encostada nela, para o nome não ficar
