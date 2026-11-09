@@ -153,6 +153,23 @@ jobs:
           printf '%s' "$FB_SENHA" | $SSH "$SSH_USER@$SSH_HOST" "mkdir -p $DATA && umask 077 && cat > $DATA/feedback-senha"
           echo "Leitura das opiniões ligada em https://climbix.app/respostas.html"
 
+      # Compra de moedas (Mercado Pago, api/pay.php): segredo CLIMBIX_MP_TOKEN = Access Token da aplicação no
+      # Mercado Pago Developers (o de teste começa com TEST- e não cobra). Grava climbix-data/mp-token FORA do public_html.
+      # Sem o segredo, não mexe no arquivo (e sem arquivo a loja mostra "Compra em breve").
+      - name: Token do Mercado Pago
+        if: steps.key.outputs.ok == 'true'
+        env:
+          SSHPASS: ${{ secrets.CLIMBIX_SSH_PASSWORD }}
+          SSH: ${{ steps.key.outputs.ssh }}
+          MP_TOKEN: ${{ secrets.CLIMBIX_MP_TOKEN }}
+        run: |
+          if [ "${#MP_TOKEN}" -lt 20 ]; then
+            echo "Sem CLIMBIX_MP_TOKEN: compra de moedas fica como está."; exit 0
+          fi
+          DATA="$(dirname "$TARGET")/climbix-data"
+          printf '%s' "$MP_TOKEN" | $SSH "$SSH_USER@$SSH_HOST" "mkdir -p $DATA && umask 077 && cat > $DATA/mp-token"
+          case "$MP_TOKEN" in TEST-*) echo "Compra de moedas ligada no modo de TESTE (não cobra).";; *) echo "Compra de moedas ligada (produção).";; esac
+
       # Opiniões por e-mail: cada opinião nova já vai sozinha (api/feedback.php). Aqui manda o que ficou para trás
       # (na primeira vez, tudo o que já existia, numa leva só). Falha aqui não derruba o deploy.
       - name: Opiniões por e-mail
