@@ -1771,7 +1771,7 @@
         const e = { m: curT + 1, side, me: false, as: false, out, cb, done: false };
         if (sp && sp.sp === 'pen') e.pen = { num: sp.num };
         else if (sp && sp.sp === 'falta') e.pen = { num: sp.num, fk: true, l: sp.l };
-        else if (sp && (sp.sp === 'esc' || sp.sp === 'fc')) e.pen = { num: sp.num, hnum: sp.hnum, ck: sp.sp, l: sp.l };
+        else if (sp && sp.sp === 'fc') /* escanteio sem animação própria (Silvio: muita coisa): a chance joga normal */ e.pen = { num: sp.num, hnum: sp.hnum, ck: sp.sp, l: sp.l };
         // Gol na fila: as chances que ainda não saíram ficam para trás (a linha delas aparece já) e o gol vem primeiro
         if (out === 'gol') goals.forEach(q => { if (!q.done && q.out && q.out !== 'gol') { q.done = true; if (due === q) due = null; if (q.cb) q.cb(); } });
         goals.push(e);
