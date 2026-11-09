@@ -8776,11 +8776,13 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .pzo-mo { position: absolute; right: 16px; top: 10px; height: 44px; padding: 0 16px 0 10px !important; border-radius: 22px; background: rgba(0,0,0,.35) !important; color: #F3F1EA !important; display: flex; align-items: center; gap: 8px; }
 .pzo-mo svg { width: 24px; height: 24px; } .pzo-mo b { font: 800 19px/1 var(--display); }
 .ec { width: 100%; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 238px; grid-template-rows: 44px minmax(0, 1fr); gap: 10px 16px; color: #F3F1EA; position: relative; }
-.ec .tm-h { grid-column: 1; }
-.ec-lg { position: absolute; left: 246px; top: 0; width: 316px; height: 44px; border-radius: 22px; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: space-between; padding: 0 4px; box-sizing: border-box; }
-.ec-lg button { width: 36px; height: 36px; border-radius: 50%; background: rgba(243,241,234,.12) !important; display: flex; align-items: center; justify-content: center; padding: 0 !important; }
+.ec .tm-h { grid-column: 1; min-width: 0; } .ec .tm-h > b { flex: none; white-space: nowrap; }
+.ec-lg { flex: 0 1 316px; min-width: 0; margin-left: auto; height: 44px; border-radius: 22px; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: space-between; padding: 0 4px; box-sizing: border-box; }
+.ec-lg > span { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0 4px; }
+.ec-lg small { font: 700 12px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: #9fb0a6; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ec-lg button { flex: none; width: 36px; height: 36px; border-radius: 50%; background: rgba(243,241,234,.12) !important; display: flex; align-items: center; justify-content: center; padding: 0 !important; }
 .ec-lg svg { width: 16px; height: 16px; fill: none; stroke: #F3F1EA; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.ec-lg b { font: 800 19px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+.ec-lg b { font: 800 19px/1 var(--display); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ec > .coin-pill.ec-pill { grid-column: 2; grid-row: 1; justify-self: stretch; }
 .ec-g { grid-column: 1; grid-row: 2; display: grid; grid-auto-flow: column; grid-template-rows: 1fr 1fr; grid-auto-columns: 132px; gap: 10px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .ec-g::-webkit-scrollbar { display: none; }
