@@ -15,7 +15,10 @@ async function page(b) {
   await p.goto('http://127.0.0.1:8765/craque/', { waitUntil: 'load' });
   await p.waitForTimeout(1200);
   const shot = async name => { await p.waitForTimeout(300); await p.screenshot({ path: `${OUT}/${name}.png` }); const t = await p.evaluate(() => (document.getElementById('ld') || {}).innerText || ''); if (/undefined|NaN|\[object/.test(t)) errs.push('texto quebrado em ' + name + ': ' + (t.match(/.{0,40}(undefined|NaN|\[object).{0,20}/) || [''])[0]); };
-  const click = async sel => { await p.waitForSelector(sel, { timeout: 8000 }); await p.click(sel); await p.waitForTimeout(500); };
+  // A "Proposta recebida" (mercado, lote 4) abre sozinha na volta para a semana e cobre os botões: recusa (último botão) antes de seguir
+  const click = async sel => { await p.waitForSelector(sel, { timeout: 8000 });
+    for (let k = 0; k < 4 && !/data-rb|mkr2/.test(sel) && await p.$('#ld-pop .mkr2-pop [data-rb]'); k++) { await p.waitForTimeout(500); await p.click('#ld-pop .mkr2-pop [data-rb]:last-child'); await p.waitForTimeout(400); }
+    await p.click(sel); await p.waitForTimeout(500); };
   return { p, shot, click };
 }
 (async () => {
