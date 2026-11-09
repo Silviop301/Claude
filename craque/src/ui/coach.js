@@ -548,7 +548,6 @@
   // segundos e ⏩ vai direto ao fim. Para sozinho no gol, vermelho, lesão e intervalo; "Parar e mexer" para quando
   // a pessoa quiser. Na parada sobe um cartão com o lance, a leitura do auxiliar, Trocar (arrastando no campinho) e Tática.
   const SPEED = { 1: ['1×', 2200], 3: ['3×', 444], fim: ['', 0] }; // o 1× anda o campinho a 1,25 (o jogo de 90 min em ~3,5 min, contínuo: dá tempo de a jogada se construir)
-  const OLD_SPEED = { normal: '1', rapido: '3', resumo: 'fim' };
   const STY_SHORT = { equilibrado: 'Sem ponto fraco grande', posse: 'Toca até achar o espaço', pressao: 'Rouba lá na frente, cansa', contra: 'Espera e sai rápido', retranca: 'Fecha tudo, pouco ataque', lados: 'Cruza e abre a defesa' };
   const nm = id => { const c = club(id); return c.short || c.name; };
   const LANE = { e: 'pela esquerda', d: 'pela direita', c: 'pelo meio' };
@@ -632,8 +631,7 @@
   function live(m) {
     U._coLiveM = m; // para as ferramentas de foto (cartões no Mexer no time)
     G.c = null; bar();
-    co.speed = OLD_SPEED[co.speed] || co.speed || '1';
-    if (!SPEED[co.speed] || co.speed === 'fim') co.speed = '1';
+    co.speed = '1'; // todo jogo começa no 1× (Silvio, 2026-11-09)
     const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
     let timer = null, seen = new Set(), read = null, open = false, firstMove = null;
     // O campinho com jogadores que decidem (o mesmo do Jogo a Jogo): o motor do Treinador manda em quem está melhor e nos
@@ -765,7 +763,7 @@
       const go = () => {
         if (sim && m.half && !h1) { h1 = true; sim.half(); }
         if (wantStop) { wantStop = false; $('b-lv-stop').classList.remove('on'); if (!m.done) return sheet(st && st.t !== 'fim' ? st : { t: 'pausa' }); }
-        if (st && st.t !== 'fim' && !(co.speed === '3' && st.t === 'gol')) return sheet(st);
+        if (st && st.t !== 'fim' && st.t !== 'gol') return sheet(st); // gol não para o jogo (Silvio, 2026-11-09): o placar e o painel contam
         if (m.done) return end();
         timer = setTimeout(tick, SPEED[co.speed][1]);
       };
