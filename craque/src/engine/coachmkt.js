@@ -244,8 +244,22 @@
     if (!S.coMktRenOk(co, p)) return { k: 'cedo' };
     if (S.coMktFolha(co, p, t).pct > 100 && t.w > p.wage) return { k: 'teto' };
     if (S.coMktMood(co, p, t).lvl < 4) { n.apat--; if (n.apat <= 0) { n.st = 'no'; return { k: 'no' }; } return { k: 'recusa' }; }
-    p.wage = t.w; p.ct = t.y; p.role = ROLE[t.role].k; p.mo = Math.min(100, (p.mo === undefined ? 60 : p.mo) + 8); n.st = 'signed';
+    // os anos contam depois desta temporada (antes, renovar por 1 ano quem estava no último ano não mudava nada e ele saía)
+    p.wage = t.w; p.ct = t.y + 1; p.role = ROLE[t.role].k; p.mo = Math.min(100, (p.mo === undefined ? 60 : p.mo) + 8); n.st = 'signed';
     return { k: 'signed', p };
+  };
+
+  // Renovação do robô (ferramentas): o que um técnico atento faz antes do fim da temporada. Renova os titulares no
+  // último ano pelo que o empresário pede (papel titular, anos que ele prefere); o teto da folha pode barrar.
+  // O jogo NÃO chama isto: desde 2026-11-09 quem não é renovado sai no fim do contrato, titular ou não.
+  S.coAutoRenew = function (co) {
+    const xi = new Set(S.coAutoXI(co.squad, co.form).xi), done = [];
+    co.squad.forEach(p => {
+      if (!xi.has(p.id) || p.ct > 1 || p.age >= 33) return;
+      const T = S.coMktTerms(co, p);
+      if (S.coMktRenew(co, p, { w: T.ask(0), y: T.want, role: 0 }).k === 'signed') done.push(p.id);
+    });
+    return done;
   };
 
   // ---------- vender (lote 4, 09/11): propostas só com a janela aberta, negociação em rodadas (como no FIFA), % de venda futura ----------

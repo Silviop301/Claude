@@ -52,7 +52,10 @@ for (let n = 0; n < N; n++) {
       if (!hadUlt && co.board.ult) st.ult++;
       if (hadUlt && !co.board.ult && !co.sacked) st.ultOk++;
     }
+    // Titular no último ano: o robô renova (o jogo não renova mais sozinho); conta quantos ficaram e quantos o teto barrou
+    if (!co.sacked && process.env.RENOVA !== '0') { const xi = S.coAutoXI(co.squad, co.form).xi, due = co.squad.filter(p => xi.includes(p.id) && p.ct <= 1 && p.age < 33).length, ok = S.coAutoRenew(co).length; st.ren = st.ren || [0, 0]; st.ren[0] += due; st.ren[1] += ok; }
     const out = S.coSeasonEnd(co);
+    st.left = (st.left || 0) + (out.left || []).filter(x => x.tit && x.why === 'fim de contrato').length;
     st.ms += Date.now() - t0;
     st.seasons++;
     st.coins = (st.coins || 0) + (out.coins || []).reduce((a, x) => a + x.n, 0);
@@ -86,6 +89,8 @@ Object.keys(st.byStart).forEach(k => { const b = st.byStart[k]; console.log(`Com
 const med = a => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.floor(b.length / 2)] : 0; };
 console.log(`Finanças: saldo positivo ${pct(st.fin.saldoPos, st.fin.n)} das temporadas, passou pelo vermelho ${pct(st.fin.red, st.fin.n)}, fechou no vermelho ${pct(st.fin.endRed, st.fin.n)}; saldo mediano ${(100 * med(st.fin.saldoPct)).toFixed(0)}% da receita; caixa no fim ${med(st.fin.caixaWk).toFixed(0)} semanas de folha (mediana)`);
 if (st.cards) { const c = st.cards, g = st.games * 2; console.log('Faltas por time e jogo: ' + (c.fo / g).toFixed(1) + ', amarelos ' + (c.yc / g).toFixed(2) + ', vermelhos ' + (c.rc / g).toFixed(3) + ' (1 a cada ' + Math.round(g / Math.max(1, c.rc)) + ' jogos), impedimentos ' + (c.of / g).toFixed(1) + '; suspensos por 3 amarelos ' + (c.ycSus / st.games).toFixed(2) + ' por jogo; seus vermelhos por estilo: ' + Object.keys(c.styRc).map(k => k + ' ' + (c.styRc[k][1] / c.styRc[k][0]).toFixed(3)).join(', ')); }
+if (st.ren) console.log(`Contratos: titulares no último ano ${(st.ren[0] / st.seasons).toFixed(1)} por temporada, o robô renovou ${pct(st.ren[1], st.ren[0])}; titulares que saíram no fim do contrato ${(st.left / st.seasons).toFixed(2)} por temporada`);
+else console.log(`Contratos (robô sem renovar): titulares que saíram no fim do contrato ${((st.left || 0) / st.seasons).toFixed(2)} por temporada`);
 console.log(`Tempo do motor: ${(st.ms / st.seasons).toFixed(0)} ms por temporada` + (st.nan ? `; ALERTA: ${st.nan} números quebrados` : ''));
 // Save: a mesma carreira, uma passando por JSON no meio de cada temporada, tem de terminar igual
 {

@@ -929,12 +929,13 @@
         p.ovr = clamp(p.ovr + (g > 0 ? Math.min(g, Math.max(0, p.pot - p.ovr)) : g), 30, 95);
         p.ct--; p.mo = 60; p.en = 100;
       });
-      out.left = co.squad.filter(p => p.age >= 37 || (p.age >= 34 && r() < 0.35) || p.ct <= 0).map(p => ({ n: p.n, why: p.ct <= 0 && p.age < 34 ? 'fim de contrato' : 'aposentou' }));
-      // v1 (sem mercado ainda): quem é titular e acaba o contrato renova por 2 anos; os outros saem
-      const core = new Set(autoXI(co.squad, co.form).xi);
-      co.squad.forEach(p => { if (p.ct <= 0 && core.has(p.id) && p.age < 34) { p.ct = 2; p.wage = wageOf(p.ovr); } });
-      out.left = out.left.filter(x => !co.squad.some(p => p.n === x.n && p.ct > 0 && p.age < 34));
-      co.squad = co.squad.filter(p => p.ct > 0 && !(p.age >= 37) && !out.left.some(x => x.n === p.n));
+      // Contrato acabou = sai do clube, titular ou não (Silvio 2026-11-09: antes o titular renovava sozinho por 2 anos).
+      // Quem quer ficar com o jogador renova durante a temporada (S.coMktRenew, botão Renovar do Elenco).
+      // A lista sai do mais forte ao mais fraco e marca quem era titular (`tit`), para a tela mostrar primeiro quem faz falta.
+      const core = new Set(co.xi && co.xi.length ? co.xi : autoXI(co.squad, co.form).xi);
+      const gone = co.squad.filter(p => p.age >= 37 || (p.age >= 34 && r() < 0.35) || p.ct <= 0);
+      out.left = gone.slice().sort((a, b) => b.ovr - a.ovr).map(p => { const x = { n: p.n, ovr: p.ovr, why: p.ct <= 0 && p.age < 34 ? 'fim de contrato' : 'aposentou' }; if (core.has(p.id)) x.tit = 1; return x; });
+      co.squad = co.squad.filter(p => !gone.includes(p));
       // Base: 1 ou 2 garotos; e reposição do clube para o elenco não ficar curto
       const club = D.CLUB_BY_ID[co.club], cty = D.countryOf(club);
       const kids = [];
