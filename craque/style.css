@@ -8680,3 +8680,7 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .tm-bp.tm-ghost { position: absolute; z-index: 60; pointer-events: none; transform: translate(-50%, -115%) scale(1.08); box-shadow: 0 0 0 2px var(--gold), 0 10px 22px rgba(0, 0, 0, .55); }
 .tm .ld-dot.drop .ld-dc { box-shadow: 0 0 0 3px var(--gold), 0 0 0 9px rgba(242, 194, 48, .4); transform: scale(1.15); }
 .tm-drag .tm-bench { touch-action: none; }
+
+/* Ao vivo deitado: o último lance cabe inteiro (até 4 linhas, altura fixa para o painel não pular) */
+.ldl-ev.lv-feed li:first-child { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; height: 80px; max-height: none; padding: 7px 10px; font: 600 13px/1.25 var(--body); }
+.ldl-ev.lv-feed li:first-child > i { font-size: 14px; }

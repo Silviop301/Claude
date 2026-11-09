@@ -810,9 +810,9 @@
     // antes do batedor da lista. Gol por cima da barreira, defesa, fora (por cima), na barreira (rebote) ou na trave
     let spray = null;
     function fkStart(e) {
-      const s = e.side, num = e.pen.num, gk = T[1 - s][0], l = e.pen.l;
+      const own0 = ball.owner, s = e.side, num = e.pen.num, gk = T[1 - s][0], l = e.pen.l;
       const tk = (num && T[s].find(q => q.num === num && q.r !== 'GK')) || T[s].filter(q => q.r !== 'GK' && q.r !== 'CB').sort((a, b) => b.d - a.d)[0];
-      const fx = 76 + rnd() * 8, fy = cl(l === 'e' ? 34 - 9 - rnd() * 5 : l === 'd' ? 34 + 9 + rnd() * 5 : 34 + gauss() * 4.5, 16, 52), sg = fy < 34 ? -1 : 1;
+      const [bx, by] = tf(s, ball), fx = cl(bx, 76, 84), fy = l === 'e' ? cl(by, 16, 29) : l === 'd' ? cl(by, 39, 52) : cl(by, 27, 41), sg = fy < 34 ? -1 : 1;
       const n = Math.abs(fy - 34) < 8 ? 4 : Math.abs(fy - 34) < 13 ? 3 : 2;
       // barreira: na linha da bola até um ponto do lado da trave mais perto, a 9,15 m; os da barreira em fila a 0,75 m
       const ax = L - fx, ay = 34 + sg * 2 - fy, ad = Math.hypot(ax, ay), ux = ax / ad, uy = ay / ad, cx = fx + ux * 9.15, cy = fy + uy * 9.15, px = -uy, py = ux;
@@ -835,7 +835,7 @@
       spray = { a: wW[0], b: wW[wW.length - 1], t: 0, s: 0 };
       due = null; mode = 'pen'; stopWhy = 'Falta'; camT = 1e9; camS = s; ALL.forEach(q => { q.run = 0; q.go = 0; q.th = 0; });
       ball.owner = ball.fly = ball.carry = null; if (ball.loose) ball.loose = null;
-      const vic = T[s].filter(q => q !== tk && q !== dec && q.r !== 'GK').sort((a, b) => dist(a, { x: spot[0], y: spot[1] }) - dist(b, { x: spot[0], y: spot[1] }))[0]; if (vic) { vic.stun = 1.4; vic.down = 1.4; }
+      const vic = own0 && own0.side === s && own0 !== tk && own0 !== dec && own0.r !== 'GK' ? own0 : T[s].filter(q => q !== tk && q !== dec && q.r !== 'GK').sort((a, b) => dist(a, { x: spot[0], y: spot[1] }) - dist(b, { x: spot[0], y: spot[1] }))[0]; if (vic) { vic.stun = 1.4; vic.down = 1.4; }
     }
     function fkStep(dt) {
       const P = pen; P.t += dt; const { s, tk, gk, spot, dec } = P;
@@ -944,7 +944,9 @@
       e.kick = true;
     }
     function penAbort() { if (!pen) return; const gk = pen.gk; pen = null; camT = 0; spray = null; mode = 'play'; stopWhy = ''; setOwner(gk); }
-    function whistle(why, taker, spot) { mode = 'falta'; modeT = 1.5; stopWhy = why; foulSpot = spot ? { x: spot.x, y: spot.y } : { x: ball.x, y: ball.y }; ball.owner = ball.fly = ball.loose = ball.carry = null; foulTo = taker; }
+    function whistle(why, taker, spot) { mode = 'falta'; modeT = 1.5; stopWhy = why; foulSpot = spot ? { x: spot.x, y: spot.y } : { x: ball.x, y: ball.y }; ball.owner = ball.fly = ball.loose = ball.carry = null; foulTo = taker;
+      // quem sofreu está no chão: cobra o companheiro mais perto do lugar da falta
+      if (taker && taker.down) { const sp = foulSpot, m = T[taker.side].filter(q => q !== taker && q.r !== 'GK' && !q.down && !isMe(q)).sort((a, b) => dist(a, sp) - dist(b, sp))[0]; if (m) foulTo = m; } }
     // O juiz (o motor já decidiu): falta, cartão ou impedimento de quem joga na posição pos do lado side. O campinho para,
     // o cartão sobe em cima de quem fez, e só então a narração escreve (cb). O expulso sai da lógica na hora (o time joga com
     // um a menos) e fica parado no lugar até o apito acabar; depois sai andando pela lateral mais perto
@@ -1352,7 +1354,11 @@
         });
         const bd = Math.hypot(sp.x - ball.x, sp.y - ball.y), kb = bd > 0.01 ? Math.min(bd * dt * 4, 16 * dt) / bd : 0; ball.x += (sp.x - ball.x) * kb; ball.y += (sp.y - ball.y) * kb;
         q.tx = cl(sp.x - dir * 0.9, 0.5, L - 0.5); q.ty = sp.y; q.sprint = dist(q, sp) > 3 ? 1 : 0;
-        if (modeT <= 0 && (dist(q, sp) < 1.6 || modeT < -3)) { mode = 'play'; stopWhy = ''; foulTo = foulSpot = null; if (q.side !== poss) ALL.forEach(x => { x.th = 0; }); setOwner(q); }
+        if (modeT <= 0 && (dist(q, sp) < 1.6 || modeT < -3)) { mode = 'play'; stopWhy = ''; const fsp = foulSpot; foulTo = foulSpot = null; if (q.side !== poss) ALL.forEach(x => { x.th = 0; }); ball.x = fsp ? fsp.x : ball.x; ball.y = fsp ? fsp.y : ball.y; setOwner(q);
+          // cobrança: passe rasteiro para o companheiro livre a 6–22 m, de preferência para a frente
+          if (!isMe(q)) { const s = q.side; let best = null, bu = -1e9;
+            T[s].forEach(p => { if (p === q || p.r === 'GK' || p.down) return; const d = dist(p, q); if (d < 6 || d > 22) return; let fr = 99; for (const o2 of T[1 - s]) fr = Math.min(fr, dist(o2, p)); const u = Math.min(fr, 7) - d * 0.06 + (tf(s, p)[0] - tf(s, q)[0]) * 0.04 + rnd() * 0.8; if (u > bu) { bu = u; best = p; } });
+            if (best) fly(q, best.x, best.y, best, false, 'curto', false); } }
       } else if (mode === 'rein') { reinStep(dt);
       } else if (mode === 'tiro') {
         modeT -= dt; const s = poss, gk = T[s][0], [sx, sy] = toW(s, 5.5, 34);
