@@ -128,9 +128,10 @@
     // As linhas deles (no referencial de quem ataca): zaga = a mediana dos defensores (um zagueiro que afunda marcando não
     // arrasta a linha) e meio = a média dos meias. Entre as duas fica o bolso (entrelinhas), onde nasce o passe que quebra linha
     function linesOf(s) {
-      const d = [], m = []; T[1 - s].forEach(q => { if (q.r === 'GK') return; const x = tf(s, q)[0], r = lineOfRole(q); if (r === 0) d.push(x); else if (r === 1) m.push(x); });
-      d.sort((a, b) => a - b); const dl = d.length ? d[Math.floor(d.length / 2)] : lineOf(s);
-      return [m.length ? m.reduce((a, b) => a + b, 0) / m.length : dl - 12, dl];
+      const d = [], m = [], f = []; T[1 - s].forEach(q => { if (q.r === 'GK') return; const x = tf(s, q)[0], r = lineOfRole(q); (r === 0 ? d : r === 1 ? m : f).push(x); });
+      d.sort((a, b) => a - b); const dl = d.length ? d[Math.floor(d.length / 2)] : lineOf(s), avg = a => a.reduce((u, v) => u + v, 0) / a.length;
+      const ml = m.length ? avg(m) : dl - 12;
+      return [ml, dl, f.length ? avg(f) : ml - 12]; // [meio, zaga, ataque deles]
     }
     // Quem joga no bolso (entrelinhas) de cada time: o meia de dentro mais adiantado (o 10, ou o 8 do lado da bola)
     const POCK = [null, null]; let pockT = 0;
@@ -159,23 +160,25 @@
         if (role === 1 && p.d < 0.45) return [17, 34 + (p.w - 34) * 0.4];
       }
       if (has) {
-        const [ml, dl] = linesOf(p.side), L2 = Math.max(Math.min(line, dl + 1.5, Math.max(bx + 30, 60)), 52), back = cl(bx - 30 + 12 * ln, 14 + 22 * ln, 34 + 18 * ln);
+        const [ml, dl, fl] = linesOf(p.side), L2 = Math.max(Math.min(line, dl + 1.5, Math.max(bx + 30, 60)), 52), back = cl(bx - 30 + 12 * ln, 14 + 22 * ln, 34 + 18 * ln);
         if (isFB(p) && role <= 1) {
           {
             if (ballSide && bx > 42 - 10 * wd) { x = Math.min(bx + 4, L2 - 1); y = 34 + sgn * (30 + 2 * wd); } // passa por fora
             else if (posse) { x = back + 12; y = 34 + sgn * 13; } // lateral por dentro, vira volante
-            else { x = back + 7 + (role ? 8 : 0); y = 34 + sgn * (24 + 4 * wd); } // ala (3 zagueiros) fica mais adiantado
+            else { x = back + 7 + (role ? 8 : 0); x += Math.max(0, Math.min(fl - 1, L2 - 6) - x) * (1 - 0.6 * patOf(p.side)); y = 34 + sgn * (24 + 4 * wd); } // ala (3 zagueiros) fica mais adiantado; na saída o lateral sobe até a altura dos atacantes deles
           }
         } else if (role === 0) {
           { x = back + (Math.abs(p.w - 34) > 8 ? 2 : 0); y = 34 + (p.w - 34) * 0.9 + (by - 34) * 0.12; }
         } else if (role === 1) {
-          if (isWide(p)) { x = Math.min(L2 - 4, bx + 8); y = 34 + sgn * (28 + 4 * wd); }
-          else if (p.d < 0.45 || (p.d < 0.5 && Math.abs(p.w - 34) < 3)) { x = back + 11; y = 34 + Math.sign(p.w - 34) * Math.min(8, Math.abs(p.w - 34)) + (by - 34) * 0.3; } // volante(s): na frente dos zagueiros
+          if (isWide(p)) { x = Math.min(L2 - 4, bx + 8 + Math.max(0, fl + 5 - bx - 8) * (1 - 0.5 * patOf(p.side))); y = 34 + sgn * (28 + 4 * wd); } // aberto e já passado da linha dos atacantes deles
+          else if (p.d < 0.45 || (p.d < 0.5 && Math.abs(p.w - 34) < 3)) { x = back + 11;
+            // dupla de volantes: na saída um fica entre os atacantes deles e o outro passa da linha deles (não ficam os dois na zaga)
+            if (bx < 55 && Math.abs(p.w - 34) >= 3 && T[p.side].filter(q => q.r !== 'GK' && lineOfRole(q) === 1 && !isWide(q) && !isFB(q) && q.d < 0.45).length >= 2 && (by - 34) * Math.sign(p.w - 34) < 0) x += Math.max(0, Math.min(fl + 4, ml - 2, L2 - 3) - x) * (1 - 0.6 * patOf(p.side)); /* na posse os dois ficam mais perto para circular */ y = 34 + Math.sign(p.w - 34) * Math.min(8, Math.abs(p.w - 34)) + (by - 34) * 0.3; } // volante(s): na frente dos zagueiros
           else if (POCK[p.side] === p && bx > 20 && bx < 80 && dl > bx + 6) { // no bolso: entre o meio e a zaga deles, no meio-espaço do lado da bola
             const bs2 = Math.abs(by - 34) > 6 ? Math.sign(by - 34) : sgn;
             x = cl(dl - ml > 8 ? (ml + dl) / 2 + 1 : ml + 3, bx - 2, L2 - 2); y = 34 + bs2 * 9 + (by - 34) * 0.15;
           }
-          else { x = cl(bx + 1 + 6 * ln, back + 14, L2 - 3); y = 34 + sgn * Math.max(10, Math.abs(p.w - 34) * 0.75) + (by - 34) * 0.15; } // corredor
+          else { const x0 = bx + 1 + 6 * ln; x = cl(x0 + Math.max(0, Math.min(fl + 6, ml - 1) - x0) * (1 - 0.6 * patOf(p.side)), back + 14, L2 - 3); y = 34 + sgn * Math.max(10, Math.abs(p.w - 34) * 0.75) + (by - 34) * 0.15; } // corredor: o 8 passa da linha dos atacantes deles
         } else {
           if (isWide(p)) { x = L2 - 1.5; y = 34 + sgn * (27 + 5 * wd); }
           else { x = L2 - 0.6; y = 34 + (p.w - 34) * 0.6 + (by - 34) * 0.2; }
@@ -196,7 +199,7 @@
         const deep = cl((34 - bx) / 14, 0, 1);
         const H = Math.min(cl(bx - (30 - 10 * ln), 9 + 30 * ln, 22 + 30 * ln), Math.max(5.5, 3 + bx * 0.5)), gap = (9 + 5 * pr) * (1 - 0.25 * deep), nar = (0.5 + 0.18 * wd + 0.12 * pr) * (1 - 0.2 * deep);
         if (role === 0 || isFB(p)) x = H + (isFB(p) ? 1 : 0); // ala volta para a linha (vira linha de 5)
-        else if (role === 1) x = H + gap + (p.d < 0.45 ? -2 : 0);
+        else if (role === 1) x = H + Math.max(gap, 9.5) + (p.d < 0.45 ? -2 : 0); // o meio fica ~10 m na frente da zaga, mesmo no bloco baixo (não vira uma linha de 6)
         else x = Math.max(H + gap * 2 + (pr < 0.2 ? 8 : 0), 28 * deep); // na retranca os da frente ficam esperando o contra-ataque; com a área fechada eles não descem junto
         y = 34 + (p.w - 34) * nar + (by - 34) * (0.45 - 0.1 * pr) * (role === 0 && !isFB(p) ? 1 - 0.45 * deep : 1);
         x += LN[p.side] * (1 - deep);
@@ -223,7 +226,7 @@
         let open = 16, lane = 12, crowd = 0;
         for (const q of T[1 - s]) { open = Math.min(open, Math.hypot(q.x + q.vx * 0.45 - wx, q.y + q.vy * 0.45 - wy)); lane = Math.min(lane, segD(q.x, q.y, ball.x, ball.y, wx, wy)); }
         for (const q of T[s]) if (q !== p) { const d = Math.hypot(q.x - wx, q.y - wy); if (d < 9) crowd += 9 - d; }
-        const db = Math.hypot(wx - ball.x, wy - ball.y), near = db < 7 ? (7 - db) * 0.8 : db > 34 ? (db - 34) * 0.12 : 0;
+        const db = Math.hypot(wx - ball.x, wy - ball.y), near = db < 7 ? (7 - db) * 0.8 : db > (cx > bx + 8 ? 44 : 34) ? (db - (cx > bx + 8 ? 44 : 34)) * 0.12 : 0; // à frente da bola pode ficar mais longe (passou da linha deles)
         // Triângulo (mais na posse): perto da bola, oferecer-se a 8–16 m e fora da linha reta de quem tem a bola (em ângulo)
         const tri = pt > 0 && db < 26 && ball.owner && ball.owner.side === s ? pt * (Math.min(Math.abs(wy - ball.y), 9) * 0.25 - Math.max(0, Math.abs(db - 12) - 4) * 0.3) : 0;
         const sc = open * 0.6 + lane * 0.8 + (cx - sx) * 0.15 - Math.hypot(cx - sx, cy - sy) * 0.22 - crowd * 0.6 - near + tri + (pock && cx > pml + 1.5 && cx < pdl - 1 && Math.abs(cy - 34) < 22 ? 2.5 + lane * 0.6 : 0) + rnd() * 0.8;
@@ -471,7 +474,7 @@
         if (ent) val += 0.03 + 0.03 * pat + 0.015 * Math.min(1.3, ST[s].ctrl);
         if (q.r === 'GK') val *= 0.6; // recuar para o goleiro é a última saída, não o caminho de sempre
         val += PROG * progK(s) * (tx - bx) / 30 * (bx < 52 ? 1.6 : 1); // no campo de defesa, subir vale mais: o time sai jogando
-        opts.push({ type: 'pass', kind, q, ent, wx: od.wx, wy: od.wy, lofted, od, p: od.p, u: Math.pow(od.p, kind === 'cruz' ? 1.2 : kind === 'costas' ? 1.5 + 0.6 * ST[s].ctrl : ent ? 1.3 + 0.5 * ST[s].ctrl : 1.5 + 1.2 * ST[s].ctrl + 1.4 * pat) * val - (1 - od.p) * lossAt((bx + tx) / 2, (by + ty) / 2) * lossK(s) });
+        opts.push({ type: 'pass', kind, q, ent, wx: od.wx, wy: od.wy, lofted, od, p: od.p, u: Math.pow(od.p, kind === 'cruz' ? 1.2 : kind === 'costas' ? 1.5 + 0.6 * ST[s].ctrl : ent ? 1.3 + 0.5 * ST[s].ctrl + 1.2 * pat : 1.5 + 1.2 * ST[s].ctrl + 1.4 * pat) * val - (1 - od.p) * lossAt((bx + tx) / 2, (by + ty) / 2) * lossK(s) });
       }
       if (p.r !== 'GK') for (const a of [0, 0.6, -0.6]) {
         const tx = cl(bx + Math.cos(a) * 9, 2, 101), ty = cl(by + Math.sin(a) * 9, 3, 65), [wx, wy] = toW(s, tx, ty);
@@ -970,7 +973,7 @@
         let sup = null, sd = 99;
         T[s].forEach(p => {
           if (p === owner || p.r === 'GK' || p.run > 0 || p.go > 0 || p.stun > 0) return;
-          const db = dist(p, ball); if (db < sd && db > 5) { sd = db; sup = p; }
+          const db = dist(p, ball); if (db < sd && db > 5 && tf(s, p)[0] < tf(s, ball)[0] + 10) { sd = db; sup = p; }
           let mk = null, md = 99; for (const q of T[1 - s]) { const d = dist(q, p); if (d < md) { md = d; mk = q; } }
           if (md > 3.8 || db > 42 || rnd() > dt * 1.4) return;
           const [px, py] = tf(s, p), [mx, my] = tf(s, mk), [ox, oy] = tf(s, ball);
@@ -1009,6 +1012,9 @@
         if (p.r === 'GK') { const [bx, by] = tf(s, ball), [x, y] = shapeOf(p, true, bx, by, line); [p.tx, p.ty] = toW(s, x, y); return; }
         p.th -= dt; if (p.th <= 0) { p.th = 0.35 + rnd() * 0.5; [p.tx, p.ty] = findSpace(p, s, line); }
         if (p.run > 0 || p.go > 0) { [p.tx, p.ty] = findSpace(p, s, line); p.sprint = 1; }
+        // Recuperou a bola lá atrás: o time sobe junto, de pique, para a sua posição (o 8, as pontas e os laterais passam
+        // logo da linha dos atacantes deles; ninguém fica parado ao lado do zagueiro)
+        else if (p.r !== 'GK' && tf(s, { x: p.tx, y: p.ty })[0] - tf(s, p)[0] > (clk - regClk[s] < 7 ? 5 + 6 * patOf(s) : 12)) p.sprint = 1;
       });
       defend(1 - s, dt);
       if (ball.owner) {
