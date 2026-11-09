@@ -214,7 +214,7 @@
     c.save('hub');
     const tut = tutStep(co);
     const popped = !tut && inboxPop(co, semana);
-    if (!tut && !popped) finNews(co);
+    if (!tut && !popped && !ctWarn(co)) finNews(co);
     // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
     const inN = tut ? 0 : S.coMktInbox(co).filter(o => !o.seen).length - (popped ? 1 : 0);
     const t = S.coTable(co), me = t.find(x => x.me), pos = S.coPos(co), B = co.board, conf = Math.round(B.conf);
@@ -1006,7 +1006,7 @@
     t = t || { w: T.ask(1) - T.step, y: T.want, role: 1 };
     const md = S.coMktMood(co, p, t), fo = S.coMktFolha(co, p, t), over = fo.pct > 100;
     const cls = ['', 'dn', 'dn', 'mid', 'up'][md.lvl];
-    const yr = U.YEAR0 + co.season + t.y, need = p.club || w.open;
+    const yr = U.YEAR0 + co.season + t.y + (own ? 1 : 0), need = p.club || w.open; // renovação: os anos contam depois desta temporada
     const gold = own ? (neg.st === 'no' ? '<button class="tm-go off" id="mkc-go" disabled>Não renova mais</button>' : neg.st === 'signed' ? '<button class="tm-go off" id="mkc-go" disabled>Renovado</button>' :
       over && t.w > p.wage ? '<button class="tm-go off" id="mkc-go" disabled>Acima do teto</button>' : '<button class="tm-go" id="mkc-go">Oferecer</button>') : neg.st === 'no' ? '<button class="tm-go off" id="mkc-go" disabled>Não negocia mais</button>' : (p.club && !w.open) ? '<button class="tm-go off" id="mkc-go" disabled>Janela fechada</button>' :
       over ? '<button class="tm-go off" id="mkc-go" disabled>Acima do teto</button>' : co.squad.length >= M.maxSquad ? '<button class="tm-go off" id="mkc-go" disabled>Elenco cheio</button>' :
@@ -1015,14 +1015,14 @@
     const box = (lbl, v, k, hint) => '<div class="mk-k mkc-b"><small>' + lbl + '</small><span class="mkp-row"><button class="mk-ar big" data-' + k + '="-1" aria-label="Menos">' + MK_L + '</button><b>' + v + '</b><button class="mk-ar big" data-' + k + '="1" aria-label="Mais">' + MK_R + '</button></span><span class="mkc-h">' + hint + '</span></div>';
     show('<div class="mk mkc">' + mkHead('mkc-back', own ? 'Renovação' : 'Contrato', sub, own) +
       '<div class="mkc-l"><div class="mkc-g">' + box('SALÁRIO POR SEMANA', (t.w < 10000 && t.w % 1000 ? 'R$ ' + (t.w / 1000).toFixed(1).replace('.', ',') + ' mil' : c.brl(t.w)), 'cw', t.w >= md.ask ? 'o que ele pede' : 'abaixo do que ele pede') +
-        box('DURAÇÃO', t.y + (t.y > 1 ? ' anos' : ' ano'), 'cy', 'até ' + yr + (t.y === T.want ? ' · ele prefere' : '')) + '</div>' +
+        box('DURAÇÃO', (own ? '+' : '') + t.y + (t.y > 1 ? ' anos' : ' ano'), 'cy', 'até ' + yr + (t.y === T.want ? ' · ele prefere' : '')) + '</div>' +
         '<div class="mk-k mkc-r"><small>PAPEL PROMETIDO</small><span class="mkp-seg big">' + R.map((r, i) => '<button class="' + (t.role === i ? 'on' : '') + '" data-cr="' + i + '">' + r.t + '</button>').join('') + '</span><span class="mkc-d">' + R[t.role].d + '</span></div></div>' +
       '<div class="mk-side"><div class="mk-k mkp-pr"><small>EMPRESÁRIO</small><b class="' + cls + '">' + (neg.st === 'no' ? 'Desistiu' : md.t) + '</b><span class="mkf-dd mkc-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= md.lvl ? cls || 'up' : '') + '"></i>').join('') + '</span><span class="mkp-pat">Paciência' + mkDots(neg.apat, M.pat) + '</span></div>' +
         '<div class="mk-k mkc-f"><small>FOLHA DEPOIS</small><b class="' + (over ? 'dn' : '') + '">' + fo.pct + '% do teto</b><i class="mk-bar"><u class="' + (over ? 'low' : fo.pct >= 95 ? 'mid' : 'ok') + '" style="width:' + Math.min(100, fo.pct) + '%"></u></i></div>' +
         '<span class="rs-gap"></span>' + gold + '</div></div>', st => {
       const re = x => contrato(id, back, Object.assign({}, t, x));
       st.querySelector('#mkc-back').onclick = () => { sfx('tap'); back(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'O empresário pesa salário, anos e papel, e o humor dele muda a cada toque: só com "Deve aceitar" ele assina. Cada recusa gasta uma bolinha de paciência. Prometer titular baixa o salário que ele pede, mas a promessa vai ser cobrada. A folha não passa do teto.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'O empresário pesa salário, anos e papel, e o humor dele muda a cada toque: só com "Deve aceitar" ele assina. Cada recusa gasta uma bolinha de paciência. Prometer titular baixa o salário que ele pede, mas a promessa vai ser cobrada. A folha não passa do teto.' + (own ? ' Sem renovar, ele sai do clube no fim do contrato, mesmo sendo titular.' : '')); };
       st.querySelectorAll('[data-cw]').forEach(b => b.onclick = () => { sfx('tap'); re({ w: Math.max(1000, t.w + T.step * (+b.dataset.cw)) }); });
       st.querySelectorAll('[data-cy]').forEach(b => b.onclick = () => { sfx('tap'); re({ y: Math.max(1, Math.min(5, t.y + (+b.dataset.cy))) }); });
       st.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => { sfx('tap'); re({ role: +b.dataset.cr }); });
@@ -1264,6 +1264,26 @@
     setTimeout(() => pop(popHead('Aviso da diretoria', 'Rodada ' + x.r) + '<div class="ld-pb col"><p class="ldn-p">' + esc(x.t) + '</p><button class="ld-gold sm" id="ldn-ok"><b>Entendi</b></button></div>', 'Aviso da diretoria', w => { w.querySelector('#ldn-ok').onclick = () => { sfx('tap'); closePop(); }; }, 'w560'), 60);
   }
 
+  // Contratos no fim (Silvio 2026-11-09, opção B): faltando 5 rodadas, uma janelinha por temporada com os titulares no
+  // último ano (sem renovar, saem). Até 3 linhas, do mais forte ao mais fraco; quem vai aposentar de qualquer jeito
+  // (36 anos ou mais) e quem já renovou não entram. Ver elenco abre o Elenco no primeiro da lista.
+  const CT_TAB = { GOL: 0, ZAG: 1, LAT: 1, MEI: 2, ATA: 3 };
+  function ctWarn(co) {
+    if (!co.ss || co.ss.rounds.length - co.ss.i > 5 || co.ctw === co.season) return false;
+    const L = co.squad.filter(p => (co.xi || []).includes(p.id) && p.ct <= 1 && p.age < 36).sort((a, b) => b.ovr - a.ovr);
+    if (!L.length) return false;
+    setTimeout(() => { if (document.getElementById('ld-pop')) return; co.ctw = co.season; C().save(); if (S.coNums) S.coNums(co.squad);
+      const left = co.ss.rounds.length - co.ss.i, more = L.length > 3 ? L.length - 2 : 0, R = more ? L.slice(0, 2) : L;
+      pop('<div class="mkx"><div class="mkx-h"><i class="mkx-fc">' + L.length + '</i><span><small>' + (left === 1 ? 'ÚLTIMA RODADA' : 'FALTAM ' + left + ' RODADAS') + '</small><b class="dn">' + (L.length > 1 ? 'Contratos no fim' : 'Contrato no fim') + '</b></span></div>' +
+        '<p>' + (L.length > 1 ? 'Sem renovar, eles saem no fim do ano.' : 'Sem renovar, ele sai no fim do ano.') + '</p>' +
+        '<div class="mkx-li">' + R.map(p => '<div><span>' + (p.num ? p.num + ' ' : '') + esc(p.n) + ' · ' + p.pos + '</span><b>' + p.ovr + '</b></div>').join('') + (more ? '<div><span>e mais ' + more + ' titulares</span></div>' : '') + '</div>' +
+        '<span class="rs-gap"></span><span class="mkx-b"><button class="hl-btn gold" id="ctw-go">Ver elenco</button><button class="hl-btn line" id="ctw-no">Depois</button></span></div>', 'Contratos no fim', w => {
+        w.querySelector('#ctw-go').onclick = () => { sfx('tap'); closePop(); elenco(CT_TAB[L[0].pos] || 0, L[0].id); };
+        w.querySelector('#ctw-no').onclick = () => { sfx('tap'); closePop(); };
+      }, 'hl-pop mkx-pop', true); }, 80);
+    return true;
+  }
+
   // Elenco e contratos: o elenco inteiro numa tabela (os seus números aparecem: é o seu time)
   // Elenco enxuto (Silvio 2026-11-09, quadro 27): sem trilho; abas por setor; linha com número, nome, posição, idade,
   // geral e contrato (laranja no último ano), a tabela rola por dentro; o cartão à direita com energia, potencial, moral,
@@ -1285,7 +1305,7 @@
       const mo = q.mo === undefined ? 60 : q.mo, moT = mo >= 70 ? 'alta' : mo >= 45 ? 'boa' : 'baixa';
       const st = (k, v, bad) => '<span><small>' + k + '</small><b' + (bad ? ' class="dn"' : '') + '>' + v + '</b></span>';
       const renOk = S.coMktRenOk(co, q), listed = S.coMktListed(co, q), canS = S.coMktCanSell(co, q), ofq = S.coMktOfferFor(co, q), win = S.coMktWin(co);
-      const hint = ofq ? 'O ' + esc(club(ofq.club).short || club(ofq.club).name) + ' fez proposta' : listed ? (win.open ? 'À venda: as propostas chegam na janela' : 'À venda: propostas na próxima janela') : !canS ? 'Elenco curto nessa posição para vender' : q.ct <= 1 ? 'Último ano: renove ou ele pode sair' : '';
+      const hint = ofq ? 'O ' + esc(club(ofq.club).short || club(ofq.club).name) + ' fez proposta' : listed ? (win.open ? 'À venda: as propostas chegam na janela' : 'À venda: propostas na próxima janela') : q.ct <= 1 ? 'Último ano: se não renovar, ele sai' : !canS ? 'Elenco curto nessa posição para vender' : '';
       card = '<div class="lde2-c"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? q.num + ' ' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + ' · ' + q.age + ' anos</small></span></div>' +
         '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/sem') + '</div>' +
         '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span></div>' +
@@ -1331,7 +1351,7 @@
     const art = Object.keys(g).sort((a, b) => g[b] - g[a])[0];
     const avgs = Object.keys(rs).filter(id => rs[id].length >= 5 && by[id]).map(id => [by[id], rs[id].reduce((a, b) => a + b, 0) / rs[id].length]).sort((a, b) => b[1] - a[1]);
     const rev = avgs.find(([p]) => p.age <= 21);
-    const dest = [art ? ['ARTILHEIRO', co.squad.find(p => p.n === art) || { n: art }, U.D.plural(g[art], 'gol', 'gols')] : null, avgs[0] ? ['MELHOR DO ANO', avgs[0][0], 'nota média ' + avgs[0][1].toFixed(1).replace('.', ',')] : null,
+    const dest = [art ? ['ARTILHEIRO', co.squad.find(p => p.n === art) || (out.left || []).find(x => x.n === art) || { n: art }, U.D.plural(g[art], 'gol', 'gols')] : null, avgs[0] ? ['MELHOR DO ANO', avgs[0][0], 'nota média ' + avgs[0][1].toFixed(1).replace('.', ',')] : null,
       rev && rev[0] !== (avgs[0] || [])[0] ? ['REVELAÇÃO', rev[0], rev[0].age + ' anos · nota ' + rev[1].toFixed(1).replace('.', ',')] : null].filter(Boolean);
     const nums = [['Pontos em ' + n + ' jogos', v * 3 + e], ['Campanha', v + 'V ' + e + 'E ' + d + 'D'], ['Gols', gp + ' a ' + gc], ['Em casa', rec(log.filter(l => l.home))], ['Fora', rec(log.filter(l => !l.home))], ['Maior vitória', big && big.gf > big.ga ? big.gf + ' x ' + big.ga + ' ' + esc((club(big.vs).short || club(big.vs).name).slice(0, 3).toUpperCase()) : '—']];
     const exp = co.squad.filter(p => p.ct <= 0).length;
@@ -1464,7 +1484,8 @@
     draw();
   }
   // ---------- Escolher clube com moedas (quadro 41, Silvio aprovou 2026-11-09) ----------
-  // Liga com ◀ ▶ (começa na liga do seu país), escudos com o preço em 2 linhas que deslizam para o lado,
+  // Liga com ◀ ▶ (começa na liga do seu país; o seletor fica DENTRO do título, país em cima e liga embaixo, e ocupa só o que sobra
+  // até a coluna do saldo: solto por cima, com largura fixa, ele cobria as moedas no iPhone, que perde 47 px de cada lado), escudos com o preço em 2 linhas que deslizam para o lado,
   // do lado o escolhido: meta, elenco em palavras, verba de chegada e quanto sobra. Assinar gasta as moedas.
   function escolher(back) {
     const c = C(), co = c.co, D = window.CRAQUE_DATA;
@@ -1480,8 +1501,8 @@
       const rel = cl.strength - avg, el = rel > 6 ? 'muito forte' : rel > 2 ? 'forte' : rel < -4 ? 'fraco' : 'médio';
       const verba = S.coFinBase({ club: pick, season: co.season }) * S.CO_FIN.verba0, hi = ['titulo', 'subir', 'g4'].includes(g.k), ok = saldo >= price;
       const cell = id => '<button class="ec-c' + (id === pick ? ' on' : '') + '" data-ec="' + id + '" aria-pressed="' + (id === pick) + '">' + crest(id, 'ec-cr') + '<b>' + esc(club(id).short || club(id).name) + '</b>' + (U.COINS.owns(id) ? '<span class="ec-own">Seu time</span>' : '<span>' + U.COINS.svg + S.coClubPrice(id) + '</span>') + '</button>';
-      show('<div class="ec"><div class="tm-h"><button class="tcr-back" id="ec-back" aria-label="Voltar">' + BK + '</button><b>Escolher clube</b></div>' +
-        '<div class="ec-lg"><button id="ec-lp" aria-label="Liga anterior">' + BK + '</button><b>' + esc(lg.country) + ' · ' + esc(lg.name) + '</b><button id="ec-ln" aria-label="Próxima liga">' + FW + '</button></div>' + U.COINS.pill('ec-pill') +
+      show('<div class="ec"><div class="tm-h"><button class="tcr-back" id="ec-back" aria-label="Voltar">' + BK + '</button><b>Escolher clube</b>' +
+        '<div class="ec-lg"><button id="ec-lp" aria-label="Liga anterior">' + BK + '</button><span><small>' + esc(lg.country) + '</small><b>' + esc(lg.name) + '</b></span><button id="ec-ln" aria-label="Próxima liga">' + FW + '</button></div></div>' + U.COINS.pill('ec-pill') +
         '<div class="ec-g">' + ids.map(cell).join('') + '</div>' +
         '<div class="ec-side"><div class="ec-sel"><div class="ec-sh">' + crest(pick, 'ec-scr') + '<b>' + esc(cl.short || cl.name) + '</b></div>' +
           '<em class="ec-m' + (hi ? ' hi' : '') + '">META · ' + esc(S.CO_GOAL_TXT[g.k]) + '</em>' +
@@ -1489,6 +1510,8 @@
           '<div class="ec-li"><span>' + (mine ? 'Comprado' : 'Moedas depois') + '</span><b>' + (mine ? 'no seu perfil' : ok ? saldo - price : '—') + '</b></div></div>' +
           '<button class="tm-go' + (!ok ? ' off' : !mine && !logged ? ' ec-in' : '') + '" id="ec-go">' + (mine ? 'Assinar · seu time' : !ok ? 'Faltam ' + (price - saldo) + ' moedas' : !logged ? 'Entrar para comprar' : 'Comprar · ' + price + ' moedas') + '</button></div></div>', st => {
         st.querySelector('#ec-back').onclick = () => { sfx('tap'); back(); };
+        // nome de liga comprido em celular com área segura larga: a letra encolhe até caber (o corte com … é só o último recurso)
+        { const nb = st.querySelector('.ec-lg b'); for (let fs = 18; fs >= 15 && nb.scrollWidth > nb.clientWidth; fs--) nb.style.fontSize = fs + 'px'; }
         st.querySelector('#ec-lp').onclick = () => { sfx('tap'); li = (li - 1 + lgs.length) % lgs.length; pick = null; draw(); };
         st.querySelector('#ec-ln').onclick = () => { sfx('tap'); li = (li + 1) % lgs.length; pick = null; draw(); };
         st.querySelectorAll('[data-ec]').forEach(b => b.onclick = () => { sfx('tap'); const sc = st.querySelector('.ec-g').scrollLeft; pick = b.dataset.ec; draw(); const g2 = document.querySelector('.ec-g'); if (g2) g2.scrollLeft = sc; });
