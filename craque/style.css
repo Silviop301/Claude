@@ -8547,6 +8547,7 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .pi-fc { width: 84px; height: 84px; border-radius: 50%; background: #F8F4EA; float: left; margin: 0 14px 6px 0; }
 .aux-h { display: flex; align-items: center; gap: 12px; } .aux-h b { font: 800 26px/1 var(--display); }
 .aux-fc { width: 56px; height: 56px; border-radius: 50%; background: #E9E2D2; flex: none; }
+.sack-cr { width: 56px; height: 56px; object-fit: contain; flex: none; }
 .fn2-ac .fn2-lg { height: 34px; width: auto; max-width: 140px; object-fit: contain; object-position: left center; }
 .bk2-lg { height: 38px; width: auto; }
 /* Parada do jogo com o campo da escalação (Silvio 2026-11-09): tela cheia, anel de energia, amarelo, auxiliar num botão */

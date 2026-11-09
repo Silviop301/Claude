@@ -639,7 +639,10 @@
         st.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { sfx('tap'); tab = b.dataset.rt; draw(); });
         if (st.querySelector('#ldr-all')) st.querySelector('#ldr-all').onclick = () => { sfx('tap'); pop(popHead('Notas do jogo', 'Rodada ' + log.r + ' · ' + m.gh + ' x ' + m.ga) + '<div class="ld-pb col"><div class="ld-scroll ldr-alln">' + rt.map(nota).join('') + '</div></div>', 'Notas do jogo', null, 'w560'); };
         if (st.querySelector('#rs-cad')) st.querySelector('#rs-cad').onclick = () => { sfx('tap'); pop(popHead('Anotado no caderno', vs ? c.nm(m.vs) : '') + '<div class="ld-pb col rs-cadp">' + cadN.map(cadTxt).join('') + '</div>', 'Anotado no caderno', null, 'w560'); };
-        st.querySelector('#ldr-go').onclick = () => { sfx('tap'); if (co.sacked) { off(); return c.sacked(); } if (co.ss.done) { off(); return c.finishSeason(); } segunda(log); };
+        st.querySelector('#ldr-go').onclick = () => { sfx('tap'); if (co.sacked) { // demitido: janelinha por cima do resultado (a tela antiga era em pé, com a coluna estreita e o fundo de outra cor)
+          const cl = club(co.club);
+          return pop('<div class="acd-help"><span class="aux-h">' + crest(cl.id, 'sack-cr') + '<b>Você foi demitido.</b></span><p>“Não deu, professor. Obrigado pelo trabalho.” A temporada segue sem você; no fim dela, o telefone toca de novo.</p>' +
+            '<button class="hl-btn dark" id="ld-sack">Ver como terminou a liga</button></div>', 'Demitido', w => { w.querySelector('#ld-sack').onclick = () => { sfx('tap'); closePop(); off(); c.finishSeason(); }; }, 'hl-pop acd-pop', true); } if (co.ss.done) { off(); return c.finishSeason(); } segunda(log); };
       });
     };
     draw();
