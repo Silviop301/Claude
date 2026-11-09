@@ -8261,6 +8261,10 @@ body.ld-on #ld { display: block; }
 .sm-nv { height: 50px; flex: none; border-radius: 14px; background: #141517 !important; color: #F3F1EA !important; font: 800 22px/1 var(--display) !important; text-align: left; padding: 0 18px !important; }
 .sm-side .tm-go { min-height: 56px; }
 /* Link só do Treinador (?so=treinador): um botão de carreiras centrado embaixo do dourado */
+.hl-x:not(.hl-so) .hl-mds { grid-template-columns: repeat(2, minmax(0, 300px)); justify-content: center; }
+.hl-md.hl-jogador { background: #F4EBD3 !important; flex-direction: column; gap: 2px; }
+.hl-md.off { opacity: .45; cursor: default; box-shadow: none; } .hl-md.off:active { transform: none; }
+.hl-md small { font: 700 15px/1 var(--display); color: #1B1606; }
 .hl-so .hl-mds { grid-template-columns: 360px; justify-content: center; }
 .hl-so { justify-content: center; } .hl-so .hl-mrs { margin-top: 26px; }
 /* Escalação e Semana no celular (Silvio 2026-11-08): bolinha menor com a vaga encostada nela, para o nome não ficar
