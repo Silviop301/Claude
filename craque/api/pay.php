@@ -113,7 +113,8 @@ if ($a === 'create') {
     'auto_return' => 'approved',
     'statement_descriptor' => 'CLIMBIX',
   ]);
-  if ($code < 200 || $code >= 300 || empty($pref['init_point'])) out(['error' => 'mp'], 502);
+  // Erro do Mercado Pago: devolve o código e a mensagem deles (sem nada do token) para dar para entender
+  if ($code < 200 || $code >= 300 || empty($pref['init_point'])) out(['error' => 'mp', 'mp' => $code, 'msg' => substr((string)($pref['message'] ?? $pref['error'] ?? ''), 0, 200)], 502);
   $db->prepare("INSERT INTO purchases (ref, user_key, pack, coins, price, status, created) VALUES (?, ?, ?, ?, ?, 'created', ?)")->execute([$ref, $user, $k, $P['coins'], $P['price'], time()]);
   // sandbox_init_point só no token antigo TEST-; com o APP_USR- de teste o init_point já é o ambiente de teste
   out(['ref' => $ref, 'url' => strpos($mp, 'TEST-') === 0 && !empty($pref['sandbox_init_point']) ? $pref['sandbox_init_point'] : $pref['init_point']]);
