@@ -42,8 +42,9 @@ async function page(b) {
     await click('[data-gr="pressionar"]'); await p.waitForTimeout(2500); await shot('bl2-grito');
     await click('#ldl-num'); await shot('bl3-numeros'); await p.mouse.click(10, 10); await p.waitForTimeout(300);
     await click('#b-lv-stop'); await p.waitForTimeout(3500); await shot('bl4-parada');
-    if (await p.$('#ldl-other')) { await click('#ldl-other'); await shot('bl5-quem-sai'); await click('[data-w]'); await shot('bl6-jogador'); await click('#ldl-keep'); }
-    await click('#ldl-f'); await shot('bl7-tatica'); await click('[data-pop-back]');
+    await click('[data-xi="4"]'); await shot('bl5-escolheu'); await click('.tm-bp:not(.dis)'); await shot('bl6-trocou');
+    await click('#ldl-aux'); await shot('bl7-auxiliar'); await click('#ldl-aux-n');
+    await click('[data-tmk="form"][data-d="1"]'); await shot('bl7b-formacao');
     await click('#ldl-go');
     await click('[data-sp="3"]');
     // espera o intervalo

@@ -107,11 +107,19 @@
     });
     return out;
   }
+  // Vagas da escalação: x da formação, y usando o campo todo (o banco fica fora), linhas de 5 em zigue-zague
+  const spotsT = f => { const sp = spotsL(f, false, true), sl = S.CO_FORMS[f].slots;
+    return sp.map(([x], i) => { const ln = sl[i].ln, ix = sl.map((q, j) => j).filter(j => sl[j].ln === ln), n = ix.length, k = ix.indexOf(i);
+      if (n === 1) return [x, 45];
+      const step = Math.min(24, 72 / (n - 1));
+      let nx5 = x;
+      if (n === 5) { const base = k === 0 || k === 4 ? x - 10 : k === 2 && ln === 'm' ? x + 5 : x; nx5 = ln === 'd' ? base + (k === 0 || k === 4 ? 18 : k === 2 ? -3 : 9) : base + (k === 0 || k === 4 ? 12 : k === 2 ? 2 : -8); }
+      return [nx5, Math.round(45 + (k - (n - 1) / 2) * step)]; }); };
   // Círculo só com o número (tamanho fixo); nome e posição embaixo, fora do círculo
   function dot(p, slot, x, y, o) {
     o = o || {};
     const fitC = !slot || p.pos === slot ? 'ok' : (S.coFit(p.pos, slot) >= 0.88 ? 'sabe' : 'fora');
-    const yc = C().pend(p) ? '<i class="ld-yc" title="Pendurado"></i>' : '';
+    const yc = (o.yc !== undefined ? o.yc : C().pend(p)) ? '<i class="ld-yc" title="' + (o.yc !== undefined ? 'Amarelado' : 'Pendurado') + '"></i>' : '';
     return '<button class="ld-dot ' + enRing(p.en) + (o.sel ? ' sel' : '') + (fitC === 'fora' ? ' fora' : '') + '"' + (o.attr || '') + ' style="left:' + x + '%;top:' + y + '%;--en:' + Math.round(p.en) + '"' +
       ' aria-label="' + esc(p.n) + ', ' + (slot || p.pos) + ', ' + p.ovr + ', energia ' + Math.round(p.en) + '%">' +
       '<i class="ld-dc">' + (o.num ? (p.num || p.ovr) : p.ovr) + yc + '</i><span class="ld-dn"><b>' + esc(last(p.n)) + '</b><em class="' + fitC + '">' + (o.tag || slot || p.pos) + '</em></span></button>';
@@ -220,14 +228,6 @@
       const onp = co.squad.filter(p => co.xi.includes(p.id)), a = S.coAutoXI(onp, f).xi;
       return a.filter(Boolean).length === 11 ? a : S.coAutoXI(co.squad.filter(c.avail), f).xi;
     };
-    // Vagas da escalação: x da formação, y usando o campo todo (o banco fica fora), linhas de 5 em zigue-zague
-    const spotsT = f => { const sp = spotsL(f, false, true), sl = S.CO_FORMS[f].slots;
-      return sp.map(([x], i) => { const ln = sl[i].ln, ix = sl.map((q, j) => j).filter(j => sl[j].ln === ln), n = ix.length, k = ix.indexOf(i);
-        if (n === 1) return [x, 45];
-        const step = Math.min(24, 72 / (n - 1));
-        let nx5 = x;
-        if (n === 5) { const base = k === 0 || k === 4 ? x - 10 : k === 2 && ln === 'm' ? x + 5 : x; nx5 = ln === 'd' ? base + (k === 0 || k === 4 ? 18 : k === 2 ? -3 : 9) : base + (k === 0 || k === 4 ? 12 : k === 2 ? 2 : -8); }
-        return [nx5, Math.round(45 + (k - (n - 1) / 2) * step)]; }); };
     const fitOf = (p, s) => (p.pos === s ? 'ok' : S.coFit(p.pos, s) >= 0.88 ? 'sabe' : 'fora');
     let anim = 0;
     const draw = () => {
@@ -477,70 +477,92 @@
         w.querySelector('[data-pop-back]').onclick = () => { sfx('tap'); back(); };
       }, 'w750', true);
   }
-  // A parada (gol, intervalo, vermelho, lesão, "Parar e mexer"): TrParadaB, em três colunas
+  // A parada (intervalo, vermelho, lesão, "Parar e mexer"; o gol não para desde 2026-11-09): o campo da escalação
+  // (Silvio 2026-11-09), com o anel de energia e o amarelo de cada um. Troca: toque num titular e num do banco (ou o
+  // contrário); dois titulares trocam de lugar. Formação e estilo com ◀ ▶; o auxiliar num botão (etiquetas e a troca que
+  // ele sugere); no intervalo, a conversa em cima. Nada de cartão do lance, frase longa ou "o que aconteceu".
   function liveStop(x, st) {
-    const m = x.m, s = m.us, c = C(), co = c.co, by = byOf(s.squad), half = st.t === 'intervalo', us = st.s === 'us';
-    const sel = new Set(); let talk = null, tacDone = false;
-    // Sugestões de troca: cansado, amarelado ou machucado, com o melhor do banco na mesma vaga
+    const m = x.m, s = m.us, c = C(), co = c.co, half = st.t === 'intervalo', us = st.s === 'us';
+    const f0 = s.form, y0 = s.style, FORMS = Object.keys(S.CO_FORMS), inn = new Set();
+    let talk = null, sel = -1, selB = null;
+    const T = { gol: 'Gol do ' + (us ? c.nm(co.club) : c.nm(m.vs)), intervalo: 'Intervalo', vermelho: 'Expulso', lesao: 'Lesão', pausa: 'Jogo parado' }[st.t] || 'Parada';
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', FW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+    // A troca que o auxiliar sugere: machucado, cansado ou amarelado, com o melhor do banco para a vaga
     const sugg = () => {
-      const out = [], used = new Set();
-      s.xi.map((id, i) => [by[id], i]).filter(([p]) => p && (p.out || p.en < 58 || (s.bk && s.bk[p.id]))).sort((a, b) => (b[0].out ? 1 : 0) - (a[0].out ? 1 : 0) || a[0].en - b[0].en).forEach(([p, i]) => {
-        if (out.length >= 2 || !s.subs) return;
-        const slot = S.coSlots(s.form)[i];
-        const inn = s.bench.map(b => by[b]).filter(q => q && c.avail(q) && !used.has(q.id) && (q.pos === 'GOL') === (slot === 'GOL')).sort((a, b) => b.ovr * S.coFit(b.pos, slot) - a.ovr * S.coFit(a.pos, slot))[0];
-        if (!inn) return; used.add(inn.id);
-        out.push({ o: p, i: inn, why: p.out ? 'machucado' : s.bk && s.bk[p.id] && p.en < 58 ? Math.round(p.en) + '% de energia e amarelado' : s.bk && s.bk[p.id] ? 'tem amarelo' : Math.round(p.en) + '% de energia' });
-      });
-      return out;
+      if (!s.subs) return null;
+      const by = byOf(s.squad), sl = S.coSlots(s.form);
+      const cand = s.xi.map((id, i) => [by[id], i]).filter(([p]) => p && (p.out || p.en < 58 || (s.bk && s.bk[p.id]))).sort((a, b) => (b[0].out ? 1 : 0) - (a[0].out ? 1 : 0) || a[0].en - b[0].en);
+      for (const [p, i] of cand) {
+        const slot = sl[i], q = s.bench.map(b => by[b]).filter(q => q && c.avail(q) && (q.pos === 'GOL') === (slot === 'GOL')).sort((a, b) => b.ovr * S.coFit(b.pos, slot) - a.ovr * S.coFit(a.pos, slot))[0];
+        if (q) return { o: p, i: q };
+      }
+      return null;
+    };
+    const doSub = (outId, inId) => { if (x.sub(outId, inId)) { inn.add(inId); sfx('tap'); } sel = -1; selB = null; draw(); };
+    const auxPop = () => {
+      const r = x.read, g = sugg(), tc = t => /↓/.test(t) ? 'dn' : /↑/.test(t) ? 'up' : 'y';
+      const host = document.querySelector('#ld-pop .ldl-full'); if (!host) return;
+      const ov = document.createElement('div'); ov.className = 'ldl-ov';
+      ov.innerHTML = '<div class="acd-help ldl-aux" role="dialog" aria-label="Auxiliar"><b>Auxiliar</b>' +
+        (r.tags.length ? '<span class="ldl-chips">' + r.tags.map(t => '<em class="' + tc(t) + '">' + esc(t) + '</em>').join('') + '</span>' : '<p>“' + esc(r.txt) + '”</p>') +
+        (st.t === 'vermelho' ? '<div class="ldl-red">' + x.redOpts(st) + '</div>' : '') +
+        '<span class="hl-ab">' + (g ? '<button class="hl-btn dark" id="ldl-aux-y">' + (g.o.num || '') + ' ' + esc(c.last(g.o.n)) + ' → ' + (g.i.num || '') + ' ' + esc(c.last(g.i.n)) + '</button>' : '') +
+        '<button class="hl-btn line" id="ldl-aux-n">' + (g ? 'Manter' : 'Voltar') + '</button></span></div>';
+      host.appendChild(ov);
+      { const w = ov;
+        w.querySelectorAll('[data-ro]').forEach(b => b.onclick = () => { sfx('tap'); x.redPick(b.dataset.ro); draw(); });
+        if (w.querySelector('#ldl-aux-y')) w.querySelector('#ldl-aux-y').onclick = () => doSub(g.o.id, g.i.id);
+        w.querySelector('#ldl-aux-n').onclick = () => { sfx('tap'); draw(); };
+        w.onclick = e => { if (e.target === w) { sfx('tap'); draw(); } };
+      }
     };
     const draw = () => {
-      const r = x.read, sg = sugg(), sh = m.sh || { us: 0, them: 0 };
-      const T = { gol: 'Gol do ' + (us ? c.nm(co.club) : c.nm(m.vs)), intervalo: 'Intervalo', vermelho: 'Expulso', lesao: 'Lesão', pausa: 'Jogo parado' }[st.t] || 'Parada';
-      const txt = st.t === 'gol' ? esc(st.p || '') + ' marca' + (st.l ? ' ' + c.LANE[st.l] : '') + '.' :
-        half ? (m.gh + m.ga ? '' : 'Ninguém marcou. ') + (S.coPoss(m) > 0.53 ? 'Você manda no jogo.' : S.coPoss(m) < 0.47 ? 'Eles mandam no jogo.' : 'Jogo parelho.') :
-        st.t === 'vermelho' ? esc(st.p || '') + (st.how === '2am' ? ' leva o segundo amarelo.' : ' leva vermelho direto.') + ' Você joga com 10 até o fim.' :
-        st.t === 'lesao' ? esc(st.p || '') + ' não aguenta. Troque ou ele joga mancando.' : 'O jogo espera você.';
-      const ps = Math.round(S.coPoss(m) * 100), en = Math.round(s.xi.reduce((a, id) => a + (by[id] ? by[id].en : 0), 0) / Math.max(1, s.xi.filter(Boolean).length));
-      const left = (half ? lbl('O 1º TEMPO') + '<div class="ldl-mom">' + U.lvMom(m) + '</div>' +
-          '<div class="ldl-3"><span><b>' + sh.us + ' x ' + sh.them + '</b><small>chutes</small></span><span><b>' + ps + '%</b><small>posse</small></span><span class="' + (en < 60 ? 'warn' : '') + '"><b>' + en + '%</b><small>energia</small></span></div>'
-        : '<div class="ldl-ev ' + (st.t === 'gol' && !us || st.t === 'vermelho' || st.t === 'lesao' ? 'bad' : st.t === 'gol' ? 'good' : '') + '"><small>' + S.coClock(m) + ' · ' + esc(T.toUpperCase()) + '</small><b>' + (st.t === 'vermelho' ? '<span class="co-red"></span> ' : '') + esc(st.t === 'vermelho' ? (st.p || '') + ' foi expulso' : T) + '</b><span>' + txt + '</span></div>') +
-        (st.t === 'vermelho' ? '<div class="ldl-red">' + x.redOpts(st) + '</div>' : '<div class="ldl-aq">' + lbl('O AUXILIAR LEU ASSIM') + '"' + esc(r.txt) + '"' + (r.tags.length ? '<span class="ldl-tags">' + r.tags.map(t => '<em>' + esc(t) + '</em>').join('') + '</span>' : '') + '</div>');
-      const selB = (id, l, v) => '<button class="ldl-sel" id="' + id + '"><small>' + l + '</small><b>' + v + '</b>' + CHEV + '</button>';
-      const cad = CAD ? cadHtml(c.cadLines(s.form, s.style, m.them, 1)) : '';
-      const mid = lbl('MEXER NO TIME') + selB('ldl-f', 'Formação', s.form) + selB('ldl-s', 'Estilo', esc(S.CO_STY[s.style].name)) +
-        '<div class="ldl-trh">' + lbl('TROCAS') + '<small>' + (s.subs ? s.subs + ' sobrando' : 'sem trocas') + '</small></div>' +
-        (sg.length ? sg.map((g, k) => '<button class="ldl-sg' + (sel.has(k) ? ' on' : '') + '" data-sg="' + k + '"><span><b>' + (g.o.num || '') + ' ' + esc(c.last(g.o.n)) + ' → ' + (g.i.num || '') + ' ' + esc(c.last(g.i.n)) + '</b><small>' + g.why + '</small></span><i aria-hidden="true">' + (sel.has(k) ? '✓' : '') + '</i></button>').join('') : '<p class="ld-none">Ninguém cansado ou com amarelo. Toque abaixo para trocar mesmo assim.</p>') +
-        (s.subs ? '<button class="ld-link" id="ldl-other">Outra troca (banco com ' + s.bench.length + ')</button>' : '') +
-        '<span class="ld-gr"></span>' + (cad ? '<div class="ld-cadl ldl-cad">' + lbl('DO SEU CADERNO') + cad + '</div>' : '');
-      const mo = Math.round(s.xi.reduce((a, id) => a + (by[id] ? (by[id].mo === undefined ? 60 : by[id].mo) : 0), 0) / Math.max(1, s.xi.filter(Boolean).length));
-      const tst = S.coTalkState(m);
-      const CAP = { win: '"Eles cansam no fim, professor. Dá pra matar o jogo."', draw: '"Falta pouco pra virar esse jogo. A gente sente."', lose: '"A gente está devendo. Dá pra buscar."' };
-      const capP = by[co.cap] || s.xi.map(id => by[id]).filter(Boolean).sort((a, b) => b.age - a.age)[0];
-      const right = half ? lbl('VESTIÁRIO · VALE ATÉ 60\'') + '<div class="ld-seg ldl-talk">' + Object.keys(S.CO_TALK).map(k => '<button data-tk="' + k + '"' + (talk === k ? ' class="on"' : '') + '>' + S.CO_TALK[k].name + '</button>').join('') + '</div>' +
-          '<p class="ldl-tt">' + (talk ? esc(S.CO_TALK[talk].name) + ': ' + esc(S.CO_TALK[talk].tip[tst]) : 'Escolha o tom da conversa. Ou não fale nada.') + '</p>' +
-          '<div class="ldl-clima"><span><small>Clima do grupo</small><b>' + (mo >= 70 ? 'confiante' : mo >= 50 ? 'tranquilo' : 'abalado') + '</b></span>' + (capP ? '<p><b>' + esc(c.last(capP.n)) + ', o capitão:</b> ' + CAP[tst] + '</p>' : '') + '</div>'
-        : lbl('O QUE ACONTECEU') + '<ul class="ldl-last">' + m.ev.filter(e => e.t !== 'grito-fim').slice(-5).reverse().map(e => x.feedLine(e)).join('') + '</ul>';
-      pop('<div class="ldl-sth"><b>' + esc(T) + '</b><span class="ldl-sc">' + esc(c.nm(m.home ? co.club : m.vs)).slice(0, 3).toUpperCase() + ' ' + m.gh + ' x ' + m.ga + ' ' + esc(c.nm(m.home ? m.vs : co.club)).slice(0, 3).toUpperCase() + '</span><small>' + m.min + '\'</small></div>' +
-        '<div class="ldl-3c"><div>' + left + '</div><div>' + mid + '</div><div>' + right + '<span class="ld-gr"></span><button class="ld-gold" id="ldl-go"><b>' + (half ? '▸ Começar o 2º tempo' : '▸ Seguir o jogo') + '</b></button></div></div>',
+      const by = byOf(s.squad), sl = S.coSlots(s.form), sp = spotsT(s.form), g = sugg(), nT = x.read.tags.length;
+      const dots = s.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: sel === i, yc: !!(s.bk && s.bk[id]),
+        attr: ' data-xi="' + i + '"' + (inn.has(id) ? ' data-in="1"' : '') + (g && g.o.id === id && sel < 0 && !selB ? ' data-sug="1"' : ''), tag: inn.has(id) ? 'ENTRA' : S.coSlotLbl(s.form, i) }) : '').join('');
+      const bench = s.bench.map(b => by[b]).filter(Boolean).sort((a, b) => c.avail(b) - c.avail(a) || b.ovr - a.ovr);
+      const bstrip = bench.map(p => { const ok = s.subs && c.avail(p);
+        return '<button class="tm-bp' + (ok ? '' : ' dis') + (selB === p.id ? ' on' : '') + (g && g.i.id === p.id && sel < 0 && !selB ? ' sug' : '') + (sel >= 0 && ok ? ' can' : '') + '" data-bp="' + p.id + '"' + (ok ? '' : ' disabled') + '><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + p.ovr + '</b><span><i>' + (p.num ? p.num + ' ' : '') + esc(c.last(p.n)) + '</i><small>' + p.pos + '</small></span></button>'; }).join('');
+      const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b>' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
+      const hint = sel >= 0 ? 'Toque em quem entra ou em outro titular' : selB ? 'Toque em quem sai' : '';
+      const sc = esc(c.nm(m.home ? co.club : m.vs)).slice(0, 3).toUpperCase() + ' <u>' + m.gh + ' x ' + m.ga + '</u> ' + esc(c.nm(m.home ? m.vs : co.club)).slice(0, 3).toUpperCase();
+      pop('<div class="tm ldl-tm"><div class="tm-h"><b>' + esc(T) + '</b><span class="ldl-sc">' + sc + '</span><small>' + S.coClock(m) + '</small>' + (hint ? '<span class="tm-hint">' + hint + '</span>' : '') + '</div>' +
+        '<div class="ld-pitch tm-pitch">' + PITCH + dots + '</div>' +
+        '<div class="tm-bench"><small>BANCO<em>' + (s.subs ? U.D.plural(s.subs, 'troca', 'trocas') : 'sem trocas') + '</em></small>' + bstrip + '</div>' +
+        '<div class="tm-side">' + (half ? '<div class="ldl-talk2">' + Object.keys(S.CO_TALK).map(k => '<button data-tk="' + k + '"' + (talk === k ? ' class="on"' : '') + '>' + esc(S.CO_TALK[k].name) + '</button>').join('') + '</div>' : '') +
+          pick('form', 'Formação', s.form) + pick('sty', 'Estilo', esc(S.CO_STY[s.style].name)) +
+          '<button class="tm-b" id="ldl-aux">Auxiliar' + (nT || st.t === 'vermelho' ? '<i class="tm-dot">' + (st.t === 'vermelho' ? '!' : nT) + '</i>' : '') + '</button>' +
+          '<button class="tm-go" id="ldl-go">' + (half ? 'Começar o 2º tempo' : 'Seguir o jogo') + '</button></div></div>',
         T, w => {
-          w.querySelectorAll('[data-sg]').forEach(b => b.onclick = () => { sfx('tap'); const k = +b.dataset.sg; if (sel.has(k)) sel.delete(k); else sel.add(k); draw(); });
+          w.querySelectorAll('[data-xi]').forEach(b => b.onclick = () => {
+            const i = +b.dataset.xi, id = s.xi[i]; sfx('tap');
+            if (selB) return doSub(id, selB);
+            if (sel < 0 || sel === i) { sel = sel === i ? -1 : i; return draw(); }
+            x.swap(sel, i); sel = -1; draw();
+          });
+          w.querySelectorAll('[data-bp]').forEach(b => b.onclick = () => {
+            const id = b.dataset.bp; sfx('tap');
+            if (sel >= 0) return doSub(s.xi[sel], id);
+            selB = selB === id ? null : id; draw();
+          });
           w.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { sfx('tap'); talk = talk === b.dataset.tk ? null : b.dataset.tk; draw(); });
-          w.querySelectorAll('[data-ro]').forEach(b => b.onclick = () => { sfx('tap'); x.redPick(b.dataset.ro); draw(); });
-          const tac = () => tacPicker({ form: s.form, style: s.style, squad: s.squad.filter(p => s.xi.includes(p.id)), xi: s.xi.filter(Boolean), auto: false, them: m.them,
-            live: 'Eles agora: ' + m.them.form + ', ' + esc(S.CO_STY[m.them.style].name.toLowerCase()) + '. Os mesmos jogadores mudam de vaga.', back: draw,
-            onOk: (f, y) => { x.tac(f, y); tacDone = true; draw(); } });
-          w.querySelector('#ldl-f').onclick = () => { sfx('tap'); tac(); };
-          w.querySelector('#ldl-s').onclick = () => { sfx('tap'); tac(); };
-          if (w.querySelector('#ldl-other')) w.querySelector('#ldl-other').onclick = () => { sfx('tap'); liveWho(x, draw); };
+          w.querySelectorAll('[data-tmk]').forEach(b => b.onclick = () => {
+            sfx('tap'); const d = +b.dataset.d;
+            if (b.dataset.tmk === 'sty') { const L = S.CO_STYLES; S.coMatchTactic(co, m, null, L[(L.indexOf(s.style) + d + L.length) % L.length]); }
+            else S.coMatchTactic(co, m, FORMS[(FORMS.indexOf(s.form) + d + FORMS.length) % FORMS.length]);
+            sel = -1; selB = null; x.paint(); draw();
+          });
+          w.querySelector('#ldl-aux').onclick = () => { sfx('tap'); auxPop(); };
           w.querySelector('#ldl-go').onclick = () => {
             sfx('tap');
-            sugg().forEach((g, k) => { if (sel.has(k)) x.sub(g.o.id, g.i.id); });
+            x.tacLog(f0, y0);
             if (half && talk) x.talk(talk);
             closePop(); x.resume();
           };
-        }, 'w820 ldl-stp', true);
+        }, 'ldl-full', true);
     };
     draw();
+    if (st.t === 'vermelho') auxPop();
   }
 
   // ---------- Fim de jogo deitado (TrFim): placar e números em abas, notas do seu time, o que mudou ----------
