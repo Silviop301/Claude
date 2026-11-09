@@ -5,17 +5,22 @@
 // Erros de página e textos com "undefined"/"NaN" contam como problema.
 const { chromium } = require('playwright');
 const OUT = process.argv[2] || '/tmp/ld', PARTS = (process.argv[3] || '1,2,3').split(',');
+// VP=852x393 muda o tamanho da tela; SAFE=47 simula a área segura dos lados do iPhone deitado (entalhe; 59 nos de ilha)
+const VP = (process.env.VP || '844x390').split('x').map(Number), SAFE = +process.env.SAFE || 0;
 require('fs').mkdirSync(OUT, { recursive: true });
 const errs = [];
 async function page(b) {
-  const p = await b.newPage({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  const p = await b.newPage({ viewport: { width: VP[0], height: VP[1] }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  if (SAFE) await (await p.context().newCDPSession(p)).send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, left: SAFE, right: SAFE, bottom: 21 } }); // entalhe do iPhone deitado
   p.on('pageerror', e => errs.push('pageerror: ' + e.message));
   p.on('console', m => { if (m.type() === 'error' && !/three|cdn|favicon|net::/i.test(m.text())) errs.push('console: ' + m.text()); });
   await p.addInitScript(() => { try { if (!sessionStorage.getItem('t')) { localStorage.clear(); sessionStorage.setItem('t', 1); } localStorage.setItem('climbix-dicas-v1', '{"off":true}'); } catch (e) {} });
   await p.goto('http://127.0.0.1:8765/craque/', { waitUntil: 'load' });
   await p.waitForTimeout(1200);
   const shot = async name => { await p.waitForTimeout(300); await p.screenshot({ path: `${OUT}/${name}.png` }); const t = await p.evaluate(() => (document.getElementById('ld') || {}).innerText || ''); if (/undefined|NaN|\[object/.test(t)) errs.push('texto quebrado em ' + name + ': ' + (t.match(/.{0,40}(undefined|NaN|\[object).{0,20}/) || [''])[0]); };
-  const click = async sel => { await p.waitForSelector(sel, { timeout: 8000 }); await p.click(sel); await p.waitForTimeout(500); };
+  // proposta por um jogador seu abre por cima de qualquer tela: recusa (último botão) antes de seguir o passeio
+  const offer = async () => { for (let i = 0; i < 4 && await p.$('.mkr2-pop'); i++) { await p.evaluate(() => { const b = document.querySelectorAll('.mkr2-pop [data-rb]'); b.length && b[b.length - 1].click(); }); await p.waitForTimeout(400); } };
+  const click = async sel => { await p.waitForTimeout(120); await offer(); await p.waitForSelector(sel, { timeout: 8000 }); await p.click(sel); await p.waitForTimeout(500); };
   return { p, shot, click };
 }
 (async () => {

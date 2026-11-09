@@ -5493,6 +5493,8 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
   :root { --sat: calc(env(safe-area-inset-top, 0px) + 22px); }
   body::after { content: ''; position: fixed; z-index: 60; top: 0; left: 0; right: 0; height: var(--sat); pointer-events: none;
     background: linear-gradient(var(--pitch) calc(100% - 8px), rgba(15, 61, 42, 0)); }
+  /* celular deitado: o iPhone esconde a barra de status, então não há borrado nem faixa (Silvio, 2026-11-09: sem barra de outra cor) */
+  @media (orientation: landscape) and (max-height: 500px) { :root { --sat: env(safe-area-inset-top, 0px); } body::after { display: none; } }
 } }
 
 .hm { display: flex; flex-direction: column; gap: 12px; }
@@ -7416,10 +7418,14 @@ button.cad-c { cursor: pointer; }
 body.ld-on { overflow: hidden; height: 100%; } html:has(body.ld-on) { overflow: hidden; height: 100%; }
 body.ld-on #screen { max-height: 100vh; overflow: hidden; } /* a página por baixo do palco não rola (o toque não sai do lugar no iPhone) */
 body.ld-on #screen, body.ld-on .bar { visibility: hidden; }
-#ld { display: none; position: fixed; inset: 0; z-index: 60; background: #061A12; font: 500 13px/1.25 var(--body); color: var(--tx-1); -webkit-user-select: none; user-select: none; }
+#ld { display: none; position: fixed; inset: 0; z-index: 60; background: #0B2E20; box-sizing: border-box; overflow: hidden;
+  /* o padding não empurra nada (o palco é absoluto): só entrega a área segura (entalhe do iPhone deitado) para o fit() de coachland.js */
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); font: 500 13px/1.25 var(--body); color: var(--tx-1); -webkit-user-select: none; user-select: none; }
 body.ld-on #ld { display: block; }
-.ld-st { position: absolute; left: 50%; top: 50%; width: 844px; height: 390px; transform: translate(-50%, -50%) scale(var(--ldk, 1)); transform-origin: 50% 50%;
-  box-sizing: border-box; display: flex; gap: 10px; padding: 12px max(14px, env(safe-area-inset-right)) 12px max(14px, env(safe-area-inset-left)); background: #0B2E20; overflow: hidden; }
+/* O conteúdo das telas tem sempre 816×366 (os desenhos de 844×390 com 14 e 12 de margem). O palco em si cobre a tela inteira: o fit() aumenta
+   --ldw/--ldh e a margem --ldpx/--ldpy com a sobra (entalhe, tela de outra proporção), então fundo, popup e escurecido vão de ponta a ponta, sem faixa de outra cor */
+.ld-st { position: absolute; left: 50%; top: 50%; width: var(--ldw, 844px); height: var(--ldh, 390px); transform: translate(-50%, -50%) scale(var(--ldk, 1)); transform-origin: 50% 50%;
+  box-sizing: border-box; display: flex; gap: 10px; padding: var(--ldpy, 12px) var(--ldpx, 14px); background: #0B2E20; overflow: hidden; }
 .ld-turn { display: none; }
 #ld.port .ld-st { display: none; }
 #ld.port .ld-turn { display: flex; position: absolute; inset: 0; align-items: center; justify-content: center; padding: 24px; }
@@ -7976,8 +7982,6 @@ body.ld-on #ld { display: block; }
 .ldb-r { padding: 2px 6px; } .ldb-r button { height: 23px; }
 .ld-top { overflow: hidden; } .ld-top > .ld-meta { min-width: 0; flex-shrink: 1; overflow: hidden; } .ld-meta b { overflow: hidden; text-overflow: ellipsis; } .ld-top .ld-rd { flex: none; }
 .ld-st .ldl { padding-bottom: 0; } /* .lv do jogo em pé reserva 96px embaixo; deitado não */
-/* Deitado no iPhone instalado: o palco começa abaixo da faixa borrada do topo (--sat), ver display-mode: standalone */
-#ld { top: var(--sat); } #ld.port { top: 0; }
 
 /* Treinador deitado: Finanças 2.0 (reunião com a diretoria, patrocínio, banco, aba Decidir) */
 .ldn-l { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
@@ -8275,7 +8279,7 @@ body.ld-on #ld { display: block; }
 .tm .ld-dn b { font-size: 13px; }
 .tm-bench { overflow-x: auto; overflow-y: hidden; touch-action: pan-x; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
 .tm-bench::-webkit-scrollbar { display: none; }
-.tm-bench > small { position: sticky; left: 0; z-index: 1; align-self: stretch; display: flex; align-items: center; padding-right: 6px; background: #0b2419; box-shadow: 10px 0 10px #0b2419; }
+.tm-bench > small { position: sticky; left: 0; z-index: 1; align-self: stretch; display: flex; align-items: center; padding-right: 6px; background: #0B2E20; box-shadow: 10px 0 10px #0B2E20; }
 .sm-cr { width: 64px; height: 64px; }
 .sm-x { padding-top: 18px; }
 /* Treino e Olheiro enxutos (Silvio 2026-11-09): sem trilho, cabeçalho da escalação, coluna da direita com o dourado */
@@ -8547,6 +8551,7 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .bk2-lg { height: 38px; width: auto; }
 /* Parada do jogo com o campo da escalação (Silvio 2026-11-09): tela cheia, anel de energia, amarelo, auxiliar num botão */
 .ld-pop-c.ldl-full { width: 844px; height: 390px; max-height: none; border-radius: 0; padding: 12px 14px; background: #0B2E20; box-shadow: none; box-sizing: border-box; }
+.ld-pop:has(> .ldl-full) { background: #0B2E20; } /* tela cheia da parada: a sobra em volta fica da cor do palco, não escurecida */
 .ldl-tm .tm-h { padding-left: 0; gap: 12px; }
 .ldl-tm .tm-h small { font: 800 20px/1 var(--display); color: #B9C9BF; }
 .ldl-sc { padding: 7px 12px; border-radius: 10px; background: #141517; font: 800 22px/1 var(--display); color: #F3F1EA; }
@@ -8567,7 +8572,7 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .ldl-chips em.dn { background: #F8D2BF; color: #8a3312; } .ldl-chips em.up { background: #CFEBD9; color: #1e6b3c; }
 .ldl-aux .ldl-red { margin-bottom: 8px; }
 .ldl-tm .ld-dot[data-in] .ld-dn em { background: #7ED39A; color: #13201A; }
-.ldl-ov { position: absolute; inset: 0; z-index: 5; background: rgba(4, 12, 8, .72); display: flex; align-items: center; justify-content: center; }
+.ldl-ov { position: absolute; inset: 0; z-index: 5; background: rgba(4, 12, 8, .72); box-shadow: 0 0 0 100vmax rgba(4, 12, 8, .72); display: flex; align-items: center; justify-content: center; }
 .ldl-ov .ldl-aux { width: 440px; }
 .ldl-full { position: relative; }
 .ldl-ov .ldl-aux { background: var(--paper); color: var(--ink); border-radius: 18px; padding: 16px 18px 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, .5); }

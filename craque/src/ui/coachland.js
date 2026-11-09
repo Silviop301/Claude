@@ -30,7 +30,13 @@
     if (document.body.classList.contains('ld-on') && (window.scrollY || window.scrollX || document.documentElement.scrollTop)) { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; }
     const vw = el.clientWidth || window.innerWidth, vh = el.clientHeight || window.innerHeight, port = vh > vw * 1.05; // medidas do #ld (já sem o topo borrado do iPhone e com o zoom do monitor)
     el.classList.toggle('port', port);
-    const k = Math.min(vw / W, vh / H);
+    // Área segura (entalhe e ilha do iPhone deitado): vem do padding do #ld. As telas não apertam (816×366 de conteúdo, como nos
+    // desenhos): a escala diminui até o conteúdo caber entre os dois lados, e o palco cresce com a sobra para cobrir a tela inteira
+    const cs = getComputedStyle(el), sx = Math.max(parseFloat(cs.paddingLeft) || 0, parseFloat(cs.paddingRight) || 0), sy = parseFloat(cs.paddingTop) || 0;
+    const k = Math.max(.05, Math.min(vw / W, vh / H, (vw - 2 * sx) / (W - 28), (vh - 2 * sy) / (H - 24)));
+    const ex = Math.ceil(Math.max(0, vw / k - W) / 2) + 1, ey = Math.ceil(Math.max(0, vh / k - H) / 2) + 1; // sobra de cada lado em px do palco, com 1 a mais para a borda não deixar fio
+    el.style.setProperty('--ldw', (W + 2 * ex) + 'px'); el.style.setProperty('--ldh', (H + 2 * ey) + 'px');
+    el.style.setProperty('--ldpx', (14 + ex) + 'px'); el.style.setProperty('--ldpy', (12 + ey) + 'px');
     el.style.setProperty('--ldk', k.toFixed(4));
   }
   // Mostra uma tela no palco. html = conteúdo do palco; bind(st) liga os botões
