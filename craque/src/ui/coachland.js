@@ -791,7 +791,7 @@
         '<div class="mk-k"><b id="mk-n" class="' + (ok ? 'ok' : '') + '">' + U.D.plural(n, 'jogador', 'jogadores') + '</b><span>o olheiro conhece a sua liga</span></div>' +
         '<span class="rs-gap"></span><button class="tm-go' + (ok ? '' : ' off') + '" id="mk-go">' + goTxt(n) + '</button></div></div>', st => {
       st.querySelector('#mk-back').onclick = () => { sfx('tap'); semana(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição e só vale para quem o olheiro já viu. A janela abre antes da 1ª rodada (10 dias) e antes da rodada do meio (6 dias): proposta, contrato e relatório gastam 1 dia. Jogador sem clube você contrata a qualquer hora.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição e só vale para quem o olheiro já viu. A janela abre antes da 1ª rodada (10 dias) e antes da rodada do meio (6 dias): proposta e contrato gastam 1 dia. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.'); };
       st.querySelectorAll('[data-mf]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.mf, L = F[i].o.length; m.f[i] = ((m.f[i] || 0) + (+b.dataset.d) + L) % L; c.save(); mercado(); });
       const inp = st.querySelector('#mk-nm');
       inp.oninput = () => { m.nm = inp.value; const k = S.coMktSearch(co).length, good = k > 0 && k <= S.CO_MKT.max, nb = st.querySelector('#mk-n'), gb = st.querySelector('#mk-go');
@@ -835,18 +835,19 @@
     const band = b ? '<span class="mk-band" style="left:' + X(b.lo) + '%;width:' + Math.max(4, X(b.hi) - X(b.lo)) + '%"></span>' : '';
     const pot = b ? S.coMktPot(p) : null, tr = b ? S.coMktTraits(p) : null;
     const yr = p.club ? 'até ' + (U.YEAR0 + co.season + p.ct) : 'livre';
+    const repC = S.coMktRepCost(co, p), repNo = n < S.CO_MKT.reps && (S.coFin(co).caixa || 0) < repC, repOff = n >= S.CO_MKT.reps || repNo;
     show('<div class="mk mkf">' + mkHead('mkf-back', esc(p.n), S.CO_POS_NM[p.pos] + ' · ' + p.age + ' anos · ' + mkClub(p)) +
       '<div class="mk-k mkf-cmp"><span class="mkf-t"><small>CONTRA O SEU ' + (S.CO_POS_NM[p.pos] || '').toUpperCase() + ' TITULAR</small>' + (b ? '<b class="' + word + '">' + word + '<small>' + CERT[n] + '</small></b>' : '<b class="nr">sem relatório</b>') + '</span>' +
         '<span class="mkf-sc"><i></i>' + band + '<em></em><strong>' + esc(st0 ? last(st0.n) : 'titular') + '</strong></span><span class="mkf-w"><span>pior</span><span>igual</span><span>melhor</span></span></div>' +
       '<div class="mkf-g"><div class="mk-k"><small>POTENCIAL</small><b>' + (pot ? pot[0] : 'Peça um relatório') + '</b>' + (pot ? '<span class="mkf-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= pot[1] ? 'on' : '') + '"></i>').join('') + '</span>' : '<span class="mkf-nr">o olheiro ainda não viu</span>') + '</div>' +
         '<div class="mk-k"><small>JEITO DE JOGAR</small>' + (tr ? '<span class="mkf-tr">' + tr.good.map(t => '<span>' + t + '</span>').join('') + '</span><span class="mkf-nr">' + (n >= 3 ? 'Ponto fraco: ' + tr.bad : 'mais relatório mostra o ponto fraco') + '</span>' : '<b>?</b><span class="mkf-nr">o olheiro ainda não viu</span>') + '</div></div>' +
       '<div class="mk-side"><div class="mk-k mkf-li"><div><span>Preço</span><b>' + (p.club ? c.brl(S.coMktPrice(p)) : 'grátis') + '</b></div><div><span>Salário</span><b>' + c.brl(p.wage) + '/sem</b></div><div><span>Contrato</span><b>' + yr + '</b></div></div>' +
-        '<div class="mkf-act"><button class="mkf-rep' + (n >= S.CO_MKT.reps ? ' done' : '') + '" id="mkf-rep"' + (n >= S.CO_MKT.reps ? ' disabled' : '') + '>' + (n >= S.CO_MKT.reps ? 'Relatório completo' : n ? 'Mais um relatório' : 'Pedir relatório') + '</button>' +
+        '<div class="mkf-act"><button class="mkf-rep' + (repOff ? ' done' : '') + '" id="mkf-rep"' + (repOff ? ' disabled' : '') + '>' + (n >= S.CO_MKT.reps ? 'Relatório completo' : (n ? 'Mais um relatório' : 'Pedir relatório') + '<small>' + (repNo ? 'sem caixa · ' : '') + c.brl(repC) + '</small>') + '</button>' +
           '<button class="mkf-star' + (obs ? ' on' : '') + '" id="mkf-star" aria-label="Observar" aria-pressed="' + obs + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button></div>' +
         '<span class="rs-gap"></span>' + fichaGo(co, p) + '</div></div>', st => {
       st.querySelector('#mkf-back').onclick = () => { sfx('tap'); (back || mercado)(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'A faixa é onde o olheiro acha que ele está, comparado ao seu titular. Cada relatório deixa a faixa mais estreita. Com a janela aberta, cada relatório gasta 1 dia.'); };
-      if (n < S.CO_MKT.reps) st.querySelector('#mkf-rep').onclick = () => { sfx('tap'); S.coMktReport(co, p); c.save(); ficha(id, back); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'A faixa é onde o olheiro acha que ele está, comparado ao seu titular. Cada relatório deixa a faixa mais estreita e custa mais que o anterior, pago do caixa. Jogador do exterior custa o dobro.'); };
+      if (!repOff) st.querySelector('#mkf-rep').onclick = () => { if (!S.coMktReport(co, p)) return; sfx('tap'); c.save(); ficha(id, back); };
       st.querySelector('#mkf-star').onclick = () => { sfx('tap'); S.coMktObs(co, p); c.save(); ficha(id, back); };
       const go = st.querySelector('#mkf-go.go');
       if (go) go.onclick = () => { sfx('tap'); const me = () => ficha(id, back); if (!p.club || S.coMktNeg(co, p).st === 'ok') contrato(id, me); else proposta(id, me); };

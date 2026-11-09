@@ -14,6 +14,7 @@
     max: 40,          // a busca só libera com até 40 jogadores
     free: 40,         // jogadores sem clube por temporada
     reps: 3,          // relatórios por jogador (cada um estreita a faixa)
+    rep0: 5000, repK: 0.25, repUp: [1, 1.5, 2.25],   // preço do relatório: 1/4 da receita semanal do clube (mín. R$ 5 mil), sobe a cada um; exterior x2
     half: [7, 4, 2],  // meia largura da faixa (pontos de força) com 1, 2 e 3 relatórios
     err: [3, 2, 1],   // quanto o centro da faixa pode errar
     span: 15,         // a régua vai de 15 pontos pior a 15 melhor que o titular
@@ -117,7 +118,19 @@
   // Ordem do resultado: com relatório primeiro, do melhor para o pior; depois o mais barato
   S.coMktSort = (co, list) => list.map(p => ({ p, b: S.coMktBand(co, p) })).sort((x, y) => (y.b ? 1 : 0) - (x.b ? 1 : 0) || (y.b && x.b ? y.b.mid - x.b.mid : 0) || S.coMktPrice(x.p) - S.coMktPrice(y.p)).map(x => x.p);
   // Mais um relatório: gasta 1 dia com a janela aberta (fora dela o olheiro trabalha sem pressa)
-  S.coMktReport = (co, p) => { const m = S.coMkt(co), n = S.coMktReps(co, p); if (n >= M.reps) return false; spend(co); m.rep[p.id] = n + 1; return true; };
+  // relatório pago (24c, 09/11): sai do caixa, não gasta dia; cada um custa mais que o anterior e do exterior o dobro
+  S.coMktRepCost = (co, p) => {
+    const n = S.coMktReps(co, p); if (n >= M.reps) return 0;
+    const base = Math.max(M.rep0, (S.coFinBase ? S.coFinBase(co) : 0) * M.repK);
+    const fora = D.LEAGUE_BY_ID[p.lg].country !== D.LEAGUE_BY_ID[S.coLeague(co)].country ? 2 : 1;
+    return Math.round(base * M.repUp[n] * fora / 1000) * 1000;
+  };
+  S.coMktReport = (co, p) => {
+    const m = S.coMkt(co), n = S.coMktReps(co, p); if (n >= M.reps) return false;
+    const cost = S.coMktRepCost(co, p), f = S.coFin ? S.coFin(co) : null;
+    if (f && cost) { if ((f.caixa || 0) < cost) return false; f.caixa -= cost; if (f.ss) f.ss.comp = (f.ss.comp || 0) + cost; }
+    m.rep[p.id] = n + 1; return true;
+  };
   S.coMktObs = (co, p) => { const m = S.coMkt(co); if (m.obs[p.id]) delete m.obs[p.id]; else m.obs[p.id] = 1; return !!m.obs[p.id]; };
   S.coMktFind = (co, id) => (S.coMkt(co).got[id] ? null : S.coMktPool(co).find(p => p.id === id) || null);
 
