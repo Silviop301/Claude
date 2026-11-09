@@ -8375,3 +8375,55 @@ body.ld-on #ld { display: block; }
 .pl2-cl span { display: flex; align-items: center; gap: 8px; font: 700 16px/1.1 var(--body); color: #D9E2DC; }
 .pl2-cl span i { width: 10px; height: 10px; flex: none; border-radius: 50%; background: #F08A5D; } .pl2-cl span.ok i { background: #7ED39A; }
 .pl2-side .tm-b { flex: none; height: 46px; } .pl2-side .tm-go { flex: none; height: 60px; margin-top: 0; }
+
+/* Treinador deitado: Tabela enxuta (2026-11-09, quadro 16) */
+.tb2 { width: 100%; flex: 1; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 238px; grid-template-rows: 44px 46px minmax(0, 1fr); gap: 10px 16px; color: #F3F1EA; }
+.tb2-tabs { grid-column: 1; grid-row: 2; border-radius: 14px; background: #141517; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; }
+.tb2-tabs button { border-radius: 10px; font: 800 18px/1 var(--display) !important; color: #B9C9BF !important; background: none !important; }
+.tb2-tabs button.on { background: #F8F4EA !important; color: #13201A !important; }
+.tb2-t { grid-column: 1; grid-row: 3; min-height: 0; border-radius: 16px; background: #141517; padding: 6px 4px 6px 0; display: flex; flex-direction: column; }
+.tb2-b { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.tb2-h, .tb2-r { display: grid; grid-template-columns: 26px 22px minmax(0, 1fr) 36px 42px 42px 72px; align-items: center; gap: 8px; padding: 0 12px; }
+.tb2-h { height: 24px; font: 700 12px/1 var(--body); letter-spacing: .06em; color: #9fb0a6; }
+.tb2-h em, .tb2-h b { font-style: normal; text-align: center; font-weight: 700; }
+.tb2-r { height: 34px; border-radius: 10px; font: 800 18px/1 var(--display); margin: 0 6px; padding: 0 6px; }
+.tb2-r > i { font-style: normal; text-align: center; color: #B9C9BF; } .tb2-r.up > i { color: #7ED39A; } .tb2-r.dn > i { color: #F5A57F; }
+.tb2-r > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tb2-r > em { font-style: normal; text-align: center; color: #B9C9BF; } .tb2-r > b { text-align: center; }
+.tb2-cr { width: 22px; height: 22px; object-fit: contain; }
+.tb2-r .ld-f5 { display: flex; gap: 4px; } .tb2-r .ld-f5 i { width: 10px; height: 10px; }
+.tb2-r.me { background: #F8F4EA; color: #13201A; } .tb2-r.me > em, .tb2-r.me > i { color: #13201A; }
+.tb2-h.art, .tb2-r.art { grid-template-columns: 26px minmax(0, 1fr) 60px; }
+.tb2-r.art small { font: 700 13px var(--body); color: #9fb0a6; }
+.tb2-none { margin: 40px 0; text-align: center; font: 700 16px var(--body); color: #9fb0a6; }
+.tb2-nav { display: flex; align-items: center; justify-content: space-between; padding: 0 10px 6px; }
+.tb2-nav b { font: 800 20px/1 var(--display); }
+.tb2-nav button { width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(243, 241, 234, .25); font: 800 18px/1 var(--display) !important; color: #F3F1EA !important; background: none !important; }
+.tb2-nav button:disabled { opacity: .3; }
+.tb2-gm { display: grid; grid-template-columns: 1fr 64px 1fr; align-items: center; gap: 8px; height: 34px; margin: 0 6px; padding: 0 8px; border-radius: 10px; font: 800 17px/1 var(--display); }
+.tb2-gm span { display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; } .tb2-gm span.h { justify-content: flex-end; }
+.tb2-gm b { text-align: center; } .tb2-gm.me { background: #F8F4EA; color: #13201A; }
+.tb2-side, .kb2-side { grid-column: 2; grid-row: 2 / -1; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.tb2-race, .tb2-fut, .kb2-dir, .kb2-pr { border-radius: 16px; background: #141517; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.tb2-side small, .kb2-side small { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
+.tb2-race b, .kb2-dir b { font: 800 28px/1.05 var(--display); }
+.tb2-race em, .kb2-dir em { align-self: flex-start; font-style: normal; padding: 5px 9px; border-radius: 8px; background: rgba(242, 194, 48, .16); color: var(--gold); font: 800 16px/1 var(--display); }
+.tb2-race em.hi, .kb2-dir em.hi { background: rgba(240, 138, 93, .18); color: #F5A57F; }
+.tb2-fut > div { display: flex; gap: 6px; }
+.tb2-nx { width: 64px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.tb2-nxc { width: 40px; height: 40px; object-fit: contain; } .tb2-nx i.bye { width: 40px; height: 40px; display: grid; place-items: center; font-style: normal; color: #9fb0a6; }
+.tb2-nx b { font: 800 15px/1 var(--display); max-width: 64px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .tb2-nx small { font-size: 12px !important; letter-spacing: 0 !important; }
+
+/* Treinador deitado: Clube enxuto (2026-11-09, quadro 17) */
+.kb2 { width: 100%; flex: 1; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 238px; grid-template-rows: 44px minmax(0, 1fr); gap: 10px 16px; color: #F3F1EA; }
+.kb2-cr { width: 34px; height: 34px; object-fit: contain; flex: none; }
+.kb2-g { grid-column: 1; grid-row: 2; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; min-height: 0; }
+.kb2-t { border-radius: 18px; background: #141517 !important; color: #F3F1EA !important; padding: 18px !important; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; text-align: left; }
+.kb2-t > b { font: 800 28px/1 var(--display); }
+.kb2-t > span { display: flex; flex-direction: column; gap: 6px; }
+.kb2-t em { font-style: normal; font: 800 30px/1 var(--display); color: var(--gold); } .kb2-t em.dn { color: #F5A57F; }
+.kb2-t small { font: 700 15px/1.2 var(--body); color: #B9C9BF; }
+.kb2-dir > i { display: block; height: 8px; border-radius: 4px; background: rgba(243, 241, 234, .14); }
+.kb2-dir > i u { display: block; height: 100%; border-radius: 4px; background: #4FCB7E; } .kb2-dir > i u.mid { background: var(--gold); } .kb2-dir > i u.low { background: #F08A5D; }
+.kb2-pr { gap: 8px; padding: 14px 16px; } .kb2-pr b { font: 800 22px/1 var(--display); } .kb2-pr span { font: 700 15px/1 var(--body); color: #B9C9BF; }
+.kb2-soon { margin: 0; text-align: center; font: 700 13px/1.3 var(--body); color: #7f9187; }
