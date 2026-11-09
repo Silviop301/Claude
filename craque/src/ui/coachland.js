@@ -1225,8 +1225,10 @@
       };
       const pc = club(pick);
       show('<div class="pzo"><h2>' + (co.club ? 'Propostas' : 'Escolha seu clube') + '</h2><div class="pzo-g" style="grid-template-columns:repeat(' + ids.length + ',minmax(0,1fr))">' + ids.map(card).join('') + '</div>' +
-        '<button class="pzo-go" id="ldo-go">' + (pick === co.club ? 'Ficar no ' : 'Assinar com o ') + esc(pc.short || pc.name) + '</button></div>', st => {
+        '<button class="pzo-go" id="ldo-go">' + (pick === co.club ? 'Ficar no ' : 'Assinar com o ') + esc(pc.short || pc.name) + '</button>' +
+        (U.COINS ? '<button class="pzo-mo" id="ldo-mo">' + U.COINS.svg + '<b>Escolher com moedas</b></button>' : '') + '</div>', st => {
         st.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { sfx('tap'); pick = b.dataset.o; draw(); });
+        if (st.querySelector('#ldo-mo')) st.querySelector('#ldo-mo').onclick = () => { sfx('tap'); escolher(() => propostas(list, stay)); };
         st.querySelector('#ldo-go').onclick = () => {
           sfx('tap');
           if (pick === co.club && stay) { co.offers = null; S.coStart(co); c.save('hub'); return semana(); }
@@ -1237,6 +1239,42 @@
     draw();
   }
   const D_CLUBS = lg => (window.CRAQUE_DATA.CLUBS || []).filter(x => x.league === lg.id);
+  // ---------- Escolher clube com moedas (quadro 41, Silvio aprovou 2026-11-09) ----------
+  // Liga com ◀ ▶ (começa na liga do seu país), escudos com o preço em 2 linhas que deslizam para o lado,
+  // do lado o escolhido: meta, elenco em palavras, verba de chegada e quanto sobra. Assinar gasta as moedas.
+  function escolher(back) {
+    const c = C(), co = c.co, D = window.CRAQUE_DATA;
+    const lgs = D.LEAGUES.filter(l => S.coBuyList(co, l.id).length);
+    const home = co.club ? club(co.club).league : (lgs.find(l => l.country === co.country && !(D.LADDER[l.id] || {}).up) || lgs[0]).id;
+    let li = Math.max(0, lgs.findIndex(l => l.id === home)), pick = null;
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', FW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+    const draw = () => {
+      const lg = lgs[li], ids = S.coBuyList(co, lg.id); if (!ids.includes(pick)) pick = ids[0];
+      const saldo = U.COINS.get(), price = S.coClubPrice(pick), g = S.coGoalFor(co, pick), cl = club(pick);
+      const avg = ids.concat(co.club && club(co.club).league === lg.id ? [co.club] : []).reduce((a, id) => a + club(id).strength, 0) / Math.max(1, ids.length);
+      const rel = cl.strength - avg, el = rel > 6 ? 'muito forte' : rel > 2 ? 'forte' : rel < -4 ? 'fraco' : 'médio';
+      const verba = S.coFinBase({ club: pick, season: co.season }) * S.CO_FIN.verba0, hi = ['titulo', 'subir', 'g4'].includes(g.k), ok = saldo >= price;
+      const cell = id => '<button class="ec-c' + (id === pick ? ' on' : '') + '" data-ec="' + id + '" aria-pressed="' + (id === pick) + '">' + crest(id, 'ec-cr') + '<b>' + esc(club(id).short || club(id).name) + '</b><span>' + U.COINS.svg + S.coClubPrice(id) + '</span></button>';
+      show('<div class="ec"><div class="tm-h"><button class="tcr-back" id="ec-back" aria-label="Voltar">' + BK + '</button><b>Escolher clube</b></div>' +
+        '<div class="ec-lg"><button id="ec-lp" aria-label="Liga anterior">' + BK + '</button><b>' + esc(lg.country) + ' · ' + esc(lg.name) + '</b><button id="ec-ln" aria-label="Próxima liga">' + FW + '</button></div>' + U.COINS.pill('ec-pill') +
+        '<div class="ec-g">' + ids.map(cell).join('') + '</div>' +
+        '<div class="ec-side"><div class="ec-sel"><div class="ec-sh">' + crest(pick, 'ec-scr') + '<b>' + esc(cl.short || cl.name) + '</b></div>' +
+          '<em class="ec-m' + (hi ? ' hi' : '') + '">META · ' + esc(S.CO_GOAL_TXT[g.k]) + '</em>' +
+          '<div class="ec-li"><span>Elenco</span><b>' + el + '</b></div><div class="ec-li"><span>Verba</span><b>' + c.brl(verba) + '</b></div>' +
+          '<div class="ec-li"><span>Moedas depois</span><b>' + (ok ? saldo - price : '—') + '</b></div></div>' +
+          '<button class="tm-go' + (ok ? '' : ' off') + '" id="ec-go"' + (ok ? '' : ' disabled') + '>' + (ok ? 'Assinar · ' + price + ' moedas' : 'Faltam ' + (price - saldo) + ' moedas') + '</button></div></div>', st => {
+        st.querySelector('#ec-back').onclick = () => { sfx('tap'); back(); };
+        st.querySelector('#ec-lp').onclick = () => { sfx('tap'); li = (li - 1 + lgs.length) % lgs.length; pick = null; draw(); };
+        st.querySelector('#ec-ln').onclick = () => { sfx('tap'); li = (li + 1) % lgs.length; pick = null; draw(); };
+        st.querySelectorAll('[data-ec]').forEach(b => b.onclick = () => { sfx('tap'); const sc = st.querySelector('.ec-g').scrollLeft; pick = b.dataset.ec; draw(); const g2 = document.querySelector('.ec-g'); if (g2) g2.scrollLeft = sc; });
+        st.querySelector('#ec-go').onclick = () => {
+          if (!U.COINS.spend(price, 'Clube: ' + (cl.short || cl.name))) return;
+          sfx('tap'); S.coBuyClub(co, pick, price); co.autoXI = true; co.offers = null; S.coStart(co); c.save('hub'); welcome();
+        };
+      });
+    };
+    draw();
+  }
   // Chegada ao clube: o presidente diz a meta (um popup em cima da semana)
   function welcome() {
     const c = C(), co = c.co, cl = club(co.club), g = co.board.goal;

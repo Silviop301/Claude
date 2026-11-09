@@ -966,6 +966,17 @@
     if (o.met) out.push({ k: 'meta', t: 'Meta cumprida', n: CO_COINS.meta });
     return out;
   }
+  // Escolher clube com moedas (fase 2, quadro 41): preço pela força atual do clube; vale onde há propostas
+  // (começo da carreira, fim de temporada, depois da demissão). A meta continua a do clube e a moeda não volta.
+  S.CO_CLUB_PRICE = [[60, 30], [67, 80], [74, 180], [80, 350], [999, 600]];
+  S.coClubPrice = id => { const st = D.CLUB_BY_ID[id].strength; return S.CO_CLUB_PRICE.find(([m]) => st <= m)[1]; };
+  // Clubes de uma liga para a grade (do mais forte ao mais fraco), já com as divisões desta carreira
+  S.coBuyList = (co, lg) => { S.applyLeagues(co); return D.CLUBS.filter(x => x.league === lg && x.id !== co.club).sort((a, b) => b.strength - a.strength).map(x => x.id); };
+  // Marca a compra na carreira (o ranking poderá mostrar depois) e assina
+  S.coBuyClub = function (co, id, paid) {
+    co.bought = (co.bought || []).concat([{ s: co.season, club: id, n: paid }]);
+    S.coSign(co, id);
+  };
   // Experiência: um ponto numa habilidade (leitura de jogo, motivação, negociação), até 10 em cada
   S.CO_SKILLS = { leitura: 'Leitura de jogo', motiv: 'Motivação', negoc: 'Negociação' };
   S.coSkill = function (co, k) {
