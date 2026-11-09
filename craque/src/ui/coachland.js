@@ -52,7 +52,10 @@
   const PHONE = '<svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M20 9a8 8 0 0 1 0 6M4 9a8 8 0 0 0 0 6"/></svg>';
 
   // ---------- peças comuns ----------
-  const RAIL = [['inicio', 'Início'], ['semana', 'Semana'], ['time', 'Time'], ['caderno', 'Caderno'], ['tabela', 'Tabela'], ['mercado', 'Mercado', 1], ['clube', 'Clube'], ['celular', 'Celular', 1]];
+  // Caderno escondido (Silvio, 2026-11-09: a matriz não escala com mais formações; volta com outro formato). O motor
+  // continua anotando em co.cad; CAD = true traz de volta a tela, o botão da semana e os blocos do resultado e da tática
+  const CAD = false;
+  const RAIL = [['inicio', 'Início'], ['semana', 'Semana'], ['time', 'Time']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([ ['tabela', 'Tabela'], ['mercado', 'Mercado', 1], ['clube', 'Clube'], ['celular', 'Celular', 1]]);
   const rail = act => '<nav class="ld-rail" aria-label="Menu do técnico">' + RAIL.map(([k, t, soon]) => soon
     ? '<span class="ld-ri soon">' + t + '<small>em breve</small></span>'
     : '<button class="ld-ri' + (k === act ? ' on' : '') + '" data-rail="' + k + '"' + (k === act ? ' aria-current="page"' : '') + '>' + t + '</button>').join('') + '</nav>';
@@ -140,7 +143,7 @@
     if (k === 'inicio') { c.save(); c.exit(); return; }
     if (k === 'semana') return semana();
     if (k === 'time') return time(false);
-    if (k === 'caderno') return caderno();
+    if (k === 'caderno') return CAD ? caderno() : semana();
     if (k === 'tabela') return tabela();
     if (k === 'clube') return clube();
   }
@@ -176,7 +179,7 @@
       wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
         '<button class="sm-w' + (sc ? ' ok' : '') + '" id="ld-ol"><small>OLHEIRO</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o ' + esc(vc.short || vc.name)) + '</b></button></div>';
     } else card = '<div class="sm-bye"><b>Sem jogo nesta rodada</b><small>O time descansa. Os outros jogam.</small></div>';
-    const nav = [['time', 'Time'], ['tabela', 'Tabela'], ['caderno', 'Caderno'], ['clube', 'Clube']].map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + '</button>').join('');
+    const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + '</button>').join('');
     show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + wk +
       '<nav class="sm-side" aria-label="Menu do técnico">' + nav + '<button class="tm-go" id="ld-play">' + (nx.bye ? 'Ver a rodada' : 'Jogar') + '</button></nav></div>', st => {
       st.querySelector('#ld-play').onclick = () => { sfx('tap'); if (nx.bye) { S.coSkipRound(co); c.save(); return semana(); } time(true); };
@@ -337,7 +340,7 @@
     const nOff = xiNow.filter((id, i) => by[id] && by[id].pos !== sl[i]).length;
     const prev = xiNow.map((id, i) => { const p = by[id]; if (!p) return ''; const f = p.pos === sl[i] ? 'ok' : S.coFit(p.pos, sl[i]) >= 0.88 ? 'sabe' : 'fora';
       return '<span class="ld-pd ' + f + '" style="left:' + sp[i][0] + '%;top:' + sp[i][1] + '%">' + sl[i] + '</span>'; }).join('');
-    const cad = o.them ? cadHtml(c.cadLines(pf, ps, o.them, 2)) : '';
+    const cad = CAD && o.them ? cadHtml(c.cadLines(pf, ps, o.them, 2)) : '';
     const them = o.them ? 'O ' + esc(club(o.them.club).short || club(o.them.club).name) + ' deve vir no ' + o.them.form + ', ' + esc(S.CO_STY[o.them.style].name.toLowerCase()) + '.' : '';
     const sub = o.live || them;
     const stip = S.CO_STY[ps].tip.split(';');
@@ -347,14 +350,14 @@
       '<div class="ldx-dh"><b>' + pf + ' com ' + esc(S.CO_STY[ps].name) + '</b><button class="ldx-chip" data-det="0">Voltar</button></div>' +
       '<div class="ldx-dg"><div class="ldx-dc"><small class="ldx-l up">ESTILO FORTE</small><p>' + esc(stip[0]) + '</p>' + (stip[1] ? '<small class="ldx-l dn">ESTILO FRACO</small><p>' + esc(stip[1].trim()) + '</p>' : '') +
       '<small class="ldx-l ' + (nOff ? 'or' : 'up') + '">POSIÇÕES</small><p>' + posTxt + '</p></div>' +
-      '<div class="ldx-dc ldx-pp"><small class="ldx-l gd">DO SEU CADERNO</small>' + (them ? '<p>' + them + '</p>' : '') + (cad ? '<div class="ld-cadl">' + cad + '</div>' : '<p>Sem adversário para comparar.</p>') + '</div></div></div>';
+      (CAD ? '<div class="ldx-dc ldx-pp"><small class="ldx-l gd">DO SEU CADERNO</small>' + (them ? '<p>' + them + '</p>' : '') + (cad ? '<div class="ld-cadl">' + cad + '</div>' : '<p>Sem adversário para comparar.</p>') + '</div>' : '') + '</div></div>';
     pop(popHead('Formação e estilo', sub, !!o.back) +
       '<div class="ldx-b"><div class="ldx-l1">' +
         '<div class="ldx-chips">' + shown.map(f => chip(f, f === pf, 'data-f="' + f + '"', f)).join('') + chip('', false, 'data-ft="' + (tab === 'main' ? 'mais' : 'main') + '"', tab === 'main' ? '+' + more.length : '‹ 4 atrás') + '</div>' +
         '<div class="ld-mini ldx-pitch">' + PITCH + prev + '<button class="ld-favb' + (fav[pf] ? ' on' : '') + '" data-fav="' + pf + '">' + (fav[pf] ? '★ Favorita' : '☆ Favoritar') + '</button></div>' +
         '<p class="ldx-ft"><b>' + pf + '</b> ' + esc(c.FORM_TIP[pf] || '') + (nOff ? ' · <b class="or">' + posTxt + '</b>' : '') + '</p></div>' +
       '<div class="ldx-r"><small class="ldx-l">ESTILO</small><div class="ldx-sg">' + S.CO_STYLES.map(k => chip(k, k === ps, 'data-s="' + k + '"', STY_CHIP[k] || esc(S.CO_STY[k].name))).join('') + '</div>' +
-        '<p class="ldx-st"><b class="up">FORTE</b> ' + esc(stip[0].trim()) + (stip[1] ? '<br><b class="dn">FRACO</b> ' + esc(stip[1].trim()) : '') + '</p><button class="ldx-a" data-det="1">Ver no caderno e posições ›</button>' +
+        '<p class="ldx-st"><b class="up">FORTE</b> ' + esc(stip[0].trim()) + (stip[1] ? '<br><b class="dn">FRACO</b> ' + esc(stip[1].trim()) : '') + '</p><button class="ldx-a" data-det="1">' + (CAD ? 'Ver no caderno e posições' : 'Ver posições') + ' ›</button>' +
         '<span class="ld-gr"></span><button class="ld-gold" id="ld-tac-ok"><b>Usar ' + pf + '</b><small>com ' + esc(S.CO_STY[ps].name) + '</small></button></div>' + details + '</div>',
       'Formação e estilo', w => {
         w.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); tacPicker(o, b.dataset.ft, pf, ps); });
@@ -488,7 +491,7 @@
         : '<div class="ldl-ev ' + (st.t === 'gol' && !us || st.t === 'vermelho' || st.t === 'lesao' ? 'bad' : st.t === 'gol' ? 'good' : '') + '"><small>' + S.coClock(m) + ' · ' + esc(T.toUpperCase()) + '</small><b>' + (st.t === 'vermelho' ? '<span class="co-red"></span> ' : '') + esc(st.t === 'vermelho' ? (st.p || '') + ' foi expulso' : T) + '</b><span>' + txt + '</span></div>') +
         (st.t === 'vermelho' ? '<div class="ldl-red">' + x.redOpts(st) + '</div>' : '<div class="ldl-aq">' + lbl('O AUXILIAR LEU ASSIM') + '"' + esc(r.txt) + '"' + (r.tags.length ? '<span class="ldl-tags">' + r.tags.map(t => '<em>' + esc(t) + '</em>').join('') + '</span>' : '') + '</div>');
       const selB = (id, l, v) => '<button class="ldl-sel" id="' + id + '"><small>' + l + '</small><b>' + v + '</b>' + CHEV + '</button>';
-      const cad = cadHtml(c.cadLines(s.form, s.style, m.them, 1));
+      const cad = CAD ? cadHtml(c.cadLines(s.form, s.style, m.them, 1)) : '';
       const mid = lbl('MEXER NO TIME') + selB('ldl-f', 'Formação', s.form) + selB('ldl-s', 'Estilo', esc(S.CO_STY[s.style].name)) +
         '<div class="ldl-trh">' + lbl('TROCAS') + '<small>' + (s.subs ? s.subs + ' sobrando' : 'sem trocas') + '</small></div>' +
         (sg.length ? sg.map((g, k) => '<button class="ldl-sg' + (sel.has(k) ? ' on' : '') + '" data-sg="' + k + '"><span><b>' + (g.o.num || '') + ' ' + esc(c.last(g.o.n)) + ' → ' + (g.i.num || '') + ' ' + esc(c.last(g.i.n)) + '</b><small>' + g.why + '</small></span><i aria-hidden="true">' + (sel.has(k) ? '✓' : '') + '</i></button>').join('') : '<p class="ld-none">Ninguém cansado ou com amarelo. Toque abaixo para trocar mesmo assim.</p>') +
@@ -560,7 +563,7 @@
       ['Diretoria', co.sacked ? 'demitido' : dc > 1 ? 'confiança subiu' : dc < -1 ? 'confiança caiu' : 'confiança igual', dc > 1 ? 'up' : dc < -1 ? 'dn' : ''],
       co.fin && pre.caixa !== null && pre.caixa !== undefined ? ['Caixa', (co.fin.caixa - pre.caixa >= 0 ? '+ ' : '− ') + c.brl(Math.abs(co.fin.caixa - pre.caixa)), co.fin.caixa - pre.caixa >= 0 ? 'up' : 'dn'] : null,
       B.ult ? ['Ultimato', B.ult.got + ' de ' + B.ult.need + ' vitórias · ' + (B.ult.of - B.ult.n) + ' jogos', 'dn'] : (log.ycOut || []).length ? ['Suspenso', log.ycOut.map(last).join(', '), 'dn'] : null].filter(Boolean);
-    const cadN = log.cad && log.cad.notes ? log.cad.notes : [];
+    const cadN = CAD && log.cad && log.cad.notes ? log.cad.notes : [];
     const cadTxt = n => { const [a, b] = n.ab.split('|'), nmK = x => (n.k === 'sty' ? S.CO_STY[x].name : x);
       return '<p><b>' + (n.pen ? 'Certeza (viu 2 vezes):' : 'Pode errar (viu 1 vez):') + '</b> ' + esc(nmK(a)) + ' contra ' + esc(nmK(b)) + ' ' + (n.v === 'up' ? 'deu certo.' : n.v === 'down' ? 'sofreu.' : 'ficou parelho.') + '</p>'; };
     const best = rt[0], bp = best && by[best.id];
@@ -1108,7 +1111,7 @@
       lit(0);
       st.querySelectorAll('[data-of]').forEach(b => b.onclick = () => { sfx('tap'); lit(+b.dataset.of); });
       st.querySelector('#ol2-back').onclick = () => { sfx('tap'); semana(); };
-      st.querySelector('#ol2-q').onclick = () => { sfx('tap'); pop('<div class="acd-help"><b>Como funciona</b><p>O olheiro viu um jogo só: uma das três pode não se repetir. O que se confirmar em campo vai para o caderno.</p><button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop'); };
+      st.querySelector('#ol2-q').onclick = () => { sfx('tap'); pop('<div class="acd-help"><b>Como funciona</b><p>O olheiro viu um jogo só: uma das três pode não se repetir. O que se confirmar em campo vale para o jogo.</p><button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop'); };
       st.querySelector('#ldo-ok').onclick = () => { sfx('tap'); co.scout = { i: co.ss.i }; c.save(); semana(); };
     });
   }
