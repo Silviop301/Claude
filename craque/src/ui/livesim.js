@@ -980,7 +980,7 @@
           if (p.d > 0.6 && px > line - 4 && rnd() < 0.5) { p.run = 1.3; p.runX = Math.min(95, line + 6 + rnd() * 5); p.runY = cl(py + (py - my) * 1.5, 6, 62); return; }
           let ux = (px - mx) + (ox - px) * 0.15, uy = (py - my) + (oy - py) * 0.15;
           // O marcador fica do lado do gol: fugir dele em linha reta é voltar. Meia e atacante saem de lado (ou na diagonal), não para trás
-          if (p.d > 0.3) { if (Math.abs(uy) < 0.8) uy = (py < 34 ? 1 : -1) * 1.5; ux = Math.max(ux, -Math.abs(uy) * 0.35); }
+          if (p.d > 0.3) { if (Math.abs(uy) < 0.8) uy = (py < 34 ? 1 : -1) * 1.5; ux = Math.max(ux, p.d > 0.75 ? 0 : -Math.abs(uy) * 0.35); } // o atacante sai de lado, nunca para trás
           const ul = Math.hypot(ux, uy) || 1;
           p.go = 0.9; p.goX = cl(px + ux / ul * 7.5, 3, p.d > 0.6 ? Math.max(line - 0.8, ox - 2) : 100); p.goY = cl(py + uy / ul * 7.5, 4, 64);
         });
@@ -1012,6 +1012,11 @@
         if (p.r === 'GK') { const [bx, by] = tf(s, ball), [x, y] = shapeOf(p, true, bx, by, line); [p.tx, p.ty] = toW(s, x, y); return; }
         p.th -= dt; if (p.th <= 0) { p.th = 0.35 + rnd() * 0.5; [p.tx, p.ty] = findSpace(p, s, line); }
         if (p.run > 0 || p.go > 0) { [p.tx, p.ty] = findSpace(p, s, line); p.sprint = 1; }
+        // Companheiro atacando a área (o 10 que passa): o centroavante não volta; segura a linha ou ataca junto o outro espaço
+        if (p.d > 0.75 && !isWide(p) && p.run <= 0.45 && owner && owner.side === s && tf(s, ball)[0] > 40) {
+          const [px] = tf(s, p), mate = T[s].find(q => q !== p && q.run > 0.45 && tf(s, q)[0] > px - 6 && q.d < 0.75);
+          if (mate && tf(s, { x: p.tx, y: p.ty })[0] < px) { const [, ty] = tf(s, { x: p.tx, y: p.ty }), [wx] = toW(s, Math.min(px + 2, line - 0.8), 0); if (tf(s, { x: wx, y: 0 })[0] >= px - 1) { p.tx = wx; p.go = 0; } }
+        }
         // Recuperou a bola lá atrás: o time sobe junto, de pique, para a sua posição (o 8, as pontas e os laterais passam
         // logo da linha dos atacantes deles; ninguém fica parado ao lado do zagueiro)
         else if (p.r !== 'GK' && tf(s, { x: p.tx, y: p.ty })[0] - tf(s, p)[0] > (clk - regClk[s] < 7 ? 5 + 6 * patOf(s) : 12)) p.sprint = 1;
