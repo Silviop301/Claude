@@ -8574,3 +8574,5 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .mkf-g .mk-k > b { font-size: 24px; }
 .mkf-tr { flex-wrap: nowrap; gap: 6px; } .mkf-tr span { padding: 6px 9px; font-size: 17px; white-space: nowrap; }
 .mkf-nr { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ldl-tm { grid-template-rows: 38px minmax(0, 1fr) 48px; gap: 8px 16px; }
+.ldl-tm .tm-h .ldl-sc { padding: 6px 12px; }

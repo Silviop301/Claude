@@ -773,7 +773,7 @@
       paint();
       const go = () => {
         if (sim && m.half && !h1) { h1 = true; sim.half(); }
-        if (wantStop) { wantStop = false; $('b-lv-stop').classList.remove('on'); if (!m.done) return sheet(st && st.t !== 'fim' ? st : { t: 'pausa' }); }
+        if (wantStop) { wantStop = false; $('b-lv-stop').classList.remove('on'); if (!m.done) return sheet(st && st.t !== 'fim' && st.t !== 'gol' ? st : { t: 'pausa' }); }
         if (st && st.t !== 'fim' && st.t !== 'gol') return sheet(st); // gol não para o jogo (Silvio, 2026-11-09): o placar e o painel contam
         if (m.done) return end();
         timer = setTimeout(tick, SPEED[co.speed][1]);

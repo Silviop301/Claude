@@ -520,7 +520,7 @@
     const draw = () => {
       const by = byOf(s.squad), sl = S.coSlots(s.form), g = sugg(), nT = x.read.tags.length;
       // longe da borda: o anel, o amarelo e o contorno da sugestão não podem ser cortados pelo campo
-      const sp = spotsT(s.form).map(([px, py]) => [px, Math.round(14 + (py - 9) * 0.944)]);
+      const sp = spotsT(s.form).map(([px, py]) => [px, Math.round(10 + (py - 9) * 1.042)]);
       const dots = s.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: sel === i, yc: !!(s.bk && s.bk[id]),
         attr: ' data-xi="' + i + '"' + (inn.has(id) ? ' data-in="1"' : '') + (g && g.o.id === id && sel < 0 && !selB ? ' data-sug="1"' : ''), tag: inn.has(id) ? 'ENTRA' : S.coSlotLbl(s.form, i) }) : '').join('');
       const bench = s.bench.map(b => by[b]).filter(Boolean).sort((a, b) => c.avail(b) - c.avail(a) || b.ovr - a.ovr);
