@@ -18,6 +18,7 @@ async function page(b) {
   // A "Proposta recebida" (mercado, lote 4) abre sozinha na volta para a semana e cobre os botões: recusa (último botão) antes de seguir
   const click = async sel => { await p.waitForSelector(sel, { timeout: 8000 });
     for (let k = 0; k < 4 && !/data-rb|mkr2/.test(sel) && await p.$('#ld-pop .mkr2-pop [data-rb]'); k++) { await p.waitForTimeout(500); await p.click('#ld-pop .mkr2-pop [data-rb]:last-child'); await p.waitForTimeout(400); }
+    if (!/ctw-/.test(sel) && await p.$('#ctw-no')) { await p.waitForTimeout(500); await p.click('#ctw-no'); await p.waitForTimeout(300); } // "Contratos no fim" (faltando 5 rodadas)
     await p.click(sel); await p.waitForTimeout(500); };
   return { p, shot, click };
 }
@@ -72,7 +73,7 @@ async function page(b) {
     await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co; let g = 0;
       while (co.ss.i < co.ss.rounds.length - 1 && g++ < 60) { const nx = S.coNext(co); if (!nx) break; if (nx.bye) { S.coSkipRound(co); continue; } const m = S.coMatchStart(co); S.coMatchRest(co, m); S.coMatchEnd(co, m); }
       U._co.save('hub'); U.LD.semana(); });
-    await shot('c2-semana-fim');
+    await p.waitForTimeout(500); if (await p.$('#ctw-no')) { await shot('c2-contratos-no-fim'); await p.waitForTimeout(300); await p.click('#ctw-no'); await p.waitForTimeout(300); } await shot('c2-semana-fim');
     await click('[data-rail="clube"]'); await shot('c2b-clube'); await click('#ldk-go'); await shot('c2c-financas-decidir');
     // Loja: aporte (fase 3) e pacotes
     await p.evaluate(() => window.CRAQUE_UI.COINS.add({ n: 100, t: 'teste' })); await click('#fn2-apo'); await shot('c2l-loja-aporte'); await click('#lj-p'); await click('#lj-p'); await shot('c2l2-aporte-3'); await click('#lj-ap'); await shot('c2l3-aporte-feito');
