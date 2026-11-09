@@ -23,9 +23,15 @@ async function page(b) {
   if (PARTS.includes('1')) {
     const { p, shot, click } = await page(b);
     await click('#b-new-co'); await click('#co-start button[data-v="livre"]'); await click('#b-co-go'); await click('#ldo-go'); await click('#ldn-go'); await click('#ldn-go');
-    await shot('a01-time'); await click('[data-xi="5"]'); await shot('a02-troca'); await click('[data-pop-x]');
+    await shot('a01-time'); await click('[data-xi="5"]'); await shot('a02-troca'); await click('.tm-bp:not(.dis)'); await shot('a02b-trocou');
+    { // arrastar o 1º reserva até o titular 7: no meio do caminho e depois de soltar
+      const bp = await (await p.$('.tm-bp:not(.dis)')).boundingBox(), xd = await (await p.$('[data-xi="7"]')).boundingBox();
+      const sx = bp.x + bp.width / 2, sy = bp.y + bp.height / 2, tx = xd.x + xd.width / 2, ty = xd.y + xd.height / 2;
+      await p.mouse.move(sx, sy); await p.mouse.down(); await p.mouse.move(sx, sy - 25); for (let k = 1; k <= 12; k++) await p.mouse.move(sx + (tx - sx) * k / 12, sy + (ty - sy) * k / 12);
+      await shot('a02c-arrastando'); await p.mouse.up(); await p.waitForTimeout(200); await shot('a02d-soltou');
+    }
     await click('[data-tmk="form"][data-d="1"]'); await p.waitForTimeout(150); await shot('a03-formacao-correndo'); await p.waitForTimeout(500); await shot('a03b-formacao'); await click('[data-tmk="sty"][data-d="1"]'); await click('#tm-aux'); await shot('a04-auxiliar'); await click('[data-pop-x]');
-    await click('[data-bp]'); await shot('a05-banco'); await click('[data-pop-x]');
+    await click('.tm-bp:not(.dis)'); await shot('a05-banco'); await click('[data-xi="9"]');
     await click('#ld-ok'); await shot('a06-semana');
     await click('#ld-tr'); await click('[data-tk="lados"]'); await shot('a07-treino'); await click('[data-tt="Bola parada"]'); await shot('a08-treino-bola-parada'); await click('[data-tk="esc"]'); await click('#ldtr-go');
     await click('#ld-ol'); await shot('a09-olheiro'); await click('#ldo-ok'); await shot('a10-semana-pronta');
