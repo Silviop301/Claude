@@ -8549,6 +8549,11 @@ body.ld-on #ld { display: block; }
 .mk-r.on > i { background: #13201A; color: #F8F4EA; } .mk-r.on > span small { color: #4a5a50; } .mk-r.on > span small.nr { color: #8a6a10; }
 .mk-r.on > em.melhor { color: #1f7a43; } .mk-r.on > em.pior { color: #b4532a; } .mk-r.on > em.nr { color: #8a6a10; }
 .mk-pg { display: flex; align-items: center; gap: 8px; } .mk-pg b { flex: 1; text-align: center; font: 800 22px/1 var(--display); }
+/* Ordem do resultado (2026-11-10): ◀ ORDEM / nome ▶ numa linha só, entre a verba e as páginas */
+.mk-k.mk-ord { flex: none; flex-direction: row; align-items: center; gap: 6px; padding: 6px; }
+.mk-ord > span, .lde2-ord > span { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.mk-ord > span b, .lde2-ord > span b { font: 800 20px/1 var(--display); color: #F3F1EA; white-space: nowrap; }
+.mkr .mk-side { gap: 8px; } .mkr .mk-side > .mk-k:first-child { padding: 12px 16px; gap: 7px; }
 .mkf-cmp { grid-column: 1; grid-row: 2; gap: 12px; }
 .mkf-t { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .mkf-t b { font: 800 24px/1 var(--display); color: #F3F1EA; text-align: right; } .mkf-t b small { display: block; margin-top: 4px; letter-spacing: 0; font-size: 13px; }
@@ -8728,6 +8733,12 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .lde2-r .o { font: 800 22px/1 var(--display); color: var(--gold); }
 .lde2-r .ct { font: 700 15px/1 var(--body); color: #B9C9BF; } .lde2-r .ct.dn { color: #F08A5D; }
 /* Limite do elenco (2026-11-10): contador no topo do Elenco (laranja quando cheio) e a janelinha "Elenco cheio" da ficha, sem a altura mínima das outras */
+/* Ordem do elenco (2026-11-10): no topo, em cima da ficha; a coluna da ordem acende em dourado com a seta */
+.lde2-ord { margin-left: auto; flex: none; width: 238px; height: 44px; box-sizing: border-box; display: flex; align-items: center; gap: 6px; }
+.lde2-ord .mk-ar { width: 44px; height: 44px; background: #141517 !important; }
+.lde2-ord > span small { font: 700 12px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
+.lde2-h .on { color: var(--gold); } .lde2-h .on::after { content: ' ▾'; }
+.lde2-r .ct.x { font: 800 17px/1 var(--display); color: #F3F1EA; }
 .lde2 .tm-h small .lde2-n { color: #F8F4EA; font-weight: 800; } .lde2 .tm-h small .lde2-n.full { color: #F0A04B; }
 .ld-pop-c.hl-pop.mkx-pop.ech-pop { min-height: 0; } .ech-pop .mkx { gap: 18px; }
 .lde2-c { grid-column: 2; grid-row: 2 / 4; border-radius: 16px; background: var(--paper); color: var(--ink); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }

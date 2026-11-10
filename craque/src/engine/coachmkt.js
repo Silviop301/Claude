@@ -68,7 +68,7 @@
   };
 
   S.coMkt = co => {
-    if (!co.mkt || co.mkt.s !== co.season) co.mkt = { s: co.season, rep: {}, f: (co.mkt && co.mkt.f) || [0, 0, 0, 0, 0, 0], nm: '', obs: {}, neg: {}, got: {} };
+    if (!co.mkt || co.mkt.s !== co.season) co.mkt = { s: co.season, rep: {}, f: (co.mkt && co.mkt.f) || [0, 0, 0, 0, 0, 0], ord: (co.mkt && co.mkt.ord) || 0, nm: '', obs: {}, neg: {}, got: {} };
     if (!co.mkt.neg) { co.mkt.neg = {}; co.mkt.got = {}; }
     return co.mkt;
   };
@@ -77,7 +77,8 @@
   // Relatórios que o olheiro tem: a sua liga ele já conhece (1); depois, os que você pediu
   S.coMktReps = (co, p) => { const m = S.coMkt(co), r = m.rep[p.id] || 0; return Math.max(r, p.lg === S.coLeague(co) ? 1 : 0); };
   S.coLeague = co => D.CLUB_BY_ID[co.club].league;
-  S.coMktPrice = p => (p.club ? S.coValue(p) : 0);
+  // piso de R$ 10 mil (o mesmo da pedida, r10k): garoto fraco de salário 0 saía na lista como "R$ 0" com clube
+  S.coMktPrice = p => (p.club ? Math.max(10000, S.coValue(p)) : 0);
 
   // A faixa contra o titular: { lo, hi } em pontos de força (negativo = pior), com o erro do olheiro sorteado por jogador
   S.coMktBand = (co, p) => {
@@ -155,8 +156,16 @@
     const on = F.map((x, i) => x.o[m.f[i] || 0]).filter(o => o && o.ok);
     return S.coMktPool(co).filter(p => !m.got[p.id] && on.every(o => o.ok(p)) && (nm.length < 3 || p.n.toLowerCase().indexOf(nm) >= 0));
   };
-  // Ordem do resultado: com relatório primeiro, do melhor para o pior; depois o mais barato
-  S.coMktSort = (co, list) => list.map(p => ({ p, b: S.coMktBand(co, p) })).sort((x, y) => (y.b ? 1 : 0) - (x.b ? 1 : 0) || (y.b && x.b ? y.b.mid - x.b.mid : 0) || S.coMktPrice(x.p) - S.coMktPrice(y.p)).map(x => x.p);
+  // Ordem do resultado (Silvio 2026-11-10: "ordenar por over, valor, etc"): `m.ord` escolhe entre S.CO_MKT.ords. No mercado
+  // o geral não aparece, então "Nível" é a ordem do olheiro (com relatório primeiro, do melhor para o pior; depois o mais
+  // barato), que segue sendo o desempate das outras; quem está sem clube tem preço 0 e abre o "Menor preço"
+  M.ords = ['Nível', 'Menor preço', 'Maior preço', 'Mais novo', 'Mais velho'];
+  S.coMktSort = (co, list) => {
+    const o = S.coMkt(co).ord || 0;
+    const niv = (x, y) => (y.b ? 1 : 0) - (x.b ? 1 : 0) || (y.b && x.b ? y.b.mid - x.b.mid : 0) || x.v - y.v;
+    const by = [niv, (x, y) => x.v - y.v, (x, y) => y.v - x.v, (x, y) => x.p.age - y.p.age, (x, y) => y.p.age - x.p.age][o] || niv;
+    return list.map(p => ({ p, b: S.coMktBand(co, p), v: S.coMktPrice(p) })).sort((x, y) => by(x, y) || niv(x, y)).map(x => x.p);
+  };
   // Mais um relatório: gasta 1 dia com a janela aberta (fora dela o olheiro trabalha sem pressa)
   // relatório pago (24c, 09/11): sai do caixa, não gasta dia; cada um custa mais que o anterior e do exterior o dobro
   S.coMktRepCost = (co, p) => {
