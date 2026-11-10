@@ -8798,6 +8798,37 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .tm .tm-bp.lift { opacity: .35; }
 .tm-bp.tm-ghost { position: absolute; z-index: 60; pointer-events: none; transform: translate(-50%, -115%) scale(1.08); box-shadow: 0 0 0 2px var(--gold), 0 10px 22px rgba(0, 0, 0, .55); }
 .tm .ld-dot.drop .ld-dc { box-shadow: 0 0 0 3px var(--gold), 0 0 0 9px rgba(242, 194, 48, .4); transform: scale(1.15); }
+/* Setores no campo e no banco, e a lista de trocas do auxiliar (Silvio 2026-11-10): a etiqueta da vaga e a do reserva
+   levam a cor do setor (goleiro areia, defesa azul, meio verde, ataque rosa; laranja segue sendo "fora de posição"),
+   com a legenda no topo; titular escolhido acende no banco quem joga na vaga, reserva escolhido acende as vagas dele */
+.ld-st { --ln-g: #E6DCC0; --ln-d: #9FCBFF; --ln-m: #BDE8C9; --ln-a: #FFB1C8; }
+[data-ln="g"] { --ln: var(--ln-g); } [data-ln="d"] { --ln: var(--ln-d); } [data-ln="m"] { --ln: var(--ln-m); } [data-ln="a"] { --ln: var(--ln-a); }
+.tm .ld-dot[data-ln]:not(.fora):not([data-in]) .ld-dn em { background: var(--ln); color: #13201A; }
+.tm-bp small[data-ln] { font: 800 12px/1 var(--display); letter-spacing: .02em; padding: 2px 6px; border-radius: 6px; background: var(--ln); color: #13201A; }
+.tm-bp.g0 { margin-left: 10px; }
+.tm-leg { display: flex; align-items: center; gap: 12px; margin-left: 10px; flex: none; }
+.tm-leg i { display: flex; align-items: center; gap: 5px; font: 700 14px/1 var(--body); font-style: normal; color: #B9C9BF; }
+.tm-leg i::before { content: ''; width: 11px; height: 11px; border-radius: 3px; background: var(--ln); }
+.ldl-tm .tm-leg { margin-left: auto; }
+.tm .tm-bp.far, .tm .ld-dot[data-far] { opacity: .4; }
+.tm .ld-dot[data-fit]::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 2.5px dashed var(--gold); pointer-events: none; }
+.tm-tip-d.n { right: 6px; top: -8px; width: 22px; height: 22px; font: 800 14px/22px var(--display); font-style: normal; text-align: center; color: #1B1606; }
+.ld-st .aux-h button.tm-all { width: auto; margin: 0 0 0 auto; font-size: 15px !important; text-align: right; }
+.ax-l { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.ld-st button.ax-r { display: grid; grid-template-columns: 44px minmax(0, 1.3fr) 14px minmax(0, 1fr) 24px; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 10px; border-radius: 12px; background: rgba(19, 32, 26, .07); color: var(--ink); text-align: left; }
+.ax-r em { font: 800 12px/1 var(--display); font-style: normal; letter-spacing: .02em; padding: 4px 0; border-radius: 6px; text-align: center; background: var(--ln); color: #13201A; }
+.ax-r span { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.ax-r b { font: 800 19px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ax-r small { font: 700 13px/1 var(--body); color: #A8481C; white-space: nowrap; flex: none; }
+.ax-r span + u + span small { color: var(--ink-2); }
+.ax-r u { text-decoration: none; font: 800 22px/1 var(--display); color: var(--ink-2); text-align: center; }
+.ax-ck { position: relative; width: 24px; height: 24px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(19, 32, 26, .3); }
+.ax-r.on .ax-ck { background: #13201A; box-shadow: none; }
+.ax-r.on .ax-ck::after { content: ''; position: absolute; left: 8px; top: 4px; width: 6px; height: 11px; border: solid #F8F4EA; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+.ax-r:not(.on) > :not(.ax-ck) { opacity: .4; }
+.tm-pop .hl-ab .hl-btn:disabled, .ldl-ov .hl-ab .hl-btn:disabled { opacity: .35; }
+.tm-fix.top { margin-top: 8px; padding: 0 0 10px; border-top: 0; border-bottom: 2px dashed rgba(19, 32, 26, .18); }
+.tm-pop .acd-help .ax-l + .hl-ab, .ldl-ov .ax-l + .hl-ab { margin-top: 10px; }
 .tm-drag .tm-bench { touch-action: none; }
 
 /* Ao vivo deitado: o último lance cabe inteiro (até 4 linhas, altura fixa para o painel não pular) */

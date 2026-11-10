@@ -33,7 +33,19 @@ async function page(b, first) {
   if (PARTS.includes('1')) {
     const { p, shot, click } = await page(b);
     await click('#b-new-co'); await click('#co-start button[data-v="livre"]'); await click('#b-co-go'); await click('#ldo-go'); await click('#ldn-go'); await click('#ldn-go');
-    await shot('a00-chegada'); await click('[data-rail="time"]'); await shot('a01-time'); await click('[data-xi="5"]'); await shot('a02-troca'); await click('.tm-bp:not(.dis)'); await shot('a02b-trocou');
+    await shot('a00-chegada'); await click('[data-rail="time"]'); await shot('a01-time');
+    { // três titulares cansados: o auxiliar lista as trocas, uma linha desmarcada, e um botão faz as marcadas
+      const en = v => p.evaluate(v => { const co = window.CRAQUE_UI._co.co, by = {}; co.squad.forEach(q => { by[q.id] = q; q.en = 100; }); if (v) [3, 6, 9].forEach((i, k) => { by[co.xi[i]].en = v[k]; }); }, v);
+      await en([48, 61, 55]); await click('#tm-back'); await click('[data-rail="time"]'); await shot('a01b-setores-cansados');
+      await click('#tm-aux'); await shot('a01c-auxiliar-trocas'); await click('.ax-r:nth-child(2)'); await shot('a01d-uma-desmarcada');
+      const xi0 = await p.evaluate(() => window.CRAQUE_UI._co.co.xi.join());
+      await click('#ld-aux-y'); await shot('a01e-trocou');
+      const dif = await p.evaluate(a => window.CRAQUE_UI._co.co.xi.filter((id, i) => id !== a.split(',')[i]).length, xi0);
+      if (dif !== 2) errs.push('auxiliar: eram 2 trocas marcadas e mudaram ' + dif + ' titulares');
+      await en(null); await click('#tm-back'); await click('[data-rail="time"]');
+      await click('.tm-bp:not(.dis):nth-of-type(5)'); await shot('a01f-reserva-acende-vagas'); await click('.tm-bp.on');
+    }
+    await click('[data-xi="5"]'); await shot('a02-troca'); await click('.tm-bp:not(.dis)'); await shot('a02b-trocou');
     { // arrastar o 1º reserva até o titular 7: no meio do caminho e depois de soltar
       const bp = await (await p.$('.tm-bp:not(.dis)')).boundingBox(), xd = await (await p.$('[data-xi="7"]')).boundingBox();
       const sx = bp.x + bp.width / 2, sy = bp.y + bp.height / 2, tx = xd.x + xd.width / 2, ty = xd.y + xd.height / 2;
@@ -60,6 +72,17 @@ async function page(b, first) {
     await click('#b-lv-stop'); await p.waitForTimeout(3500); await shot('bl4-parada');
     await click('[data-xi="4"]'); await shot('bl5-escolheu'); await click('.tm-bp:not(.dis)'); await shot('bl6-trocou');
     await click('#ldl-aux'); await shot('bl7-auxiliar'); await click('#ldl-aux-n');
+    { // dois titulares cansados na parada: o auxiliar sugere as duas trocas e um toque faz as duas
+      const left = () => p.evaluate(() => parseInt((document.querySelector('#ld-pop .tm-bench small em') || {}).textContent, 10) || 0);
+      const tired = await p.evaluate(() => { const nm = [...document.querySelectorAll('#ld-pop .ldl-tm [data-xi]:not([data-in])')].slice(2, 4).map(b => b.getAttribute('aria-label').split(',')[0]);
+        window.CRAQUE_UI._co.co.squad.forEach(q => { if (nm.includes(q.n)) q.en = 40; }); return nm.length; });
+      await click('[data-xi="1"]'); await click('[data-xi="1"]'); // redesenha
+      const n0 = await left(); await click('#ldl-aux'); await shot('bl7c-auxiliar-trocas');
+      const rows = await p.$$eval('.ax-r', r => r.length);
+      if (rows < Math.min(tired, n0)) errs.push('parada: ' + tired + ' cansados e o auxiliar listou ' + rows + ' trocas');
+      await click('#ldl-aux-y'); await shot('bl7d-trocou'); const n1 = await left();
+      if (n0 - n1 !== rows) errs.push('parada: o auxiliar listou ' + rows + ' trocas e gastou ' + (n0 - n1));
+    }
     await click('[data-tmk="form"][data-d="1"]'); await shot('bl7b-formacao');
     await click('#ldl-go');
     await click('[data-sp="3"]');
