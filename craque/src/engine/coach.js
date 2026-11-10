@@ -726,20 +726,45 @@
   // A casa como o técnico vê: null (nunca viu) ou { v, pen, ok, from }
   S.coCadGet = (co, k, a, b) => (cadOf(co)[k][a + '|' + b] || null);
   // Palpite do auxiliar antes do jogo (um por rodada): o estilo que ele usaria contra o estilo esperado do rival;
-  // acerta o melhor em uns 60%, no resto chuta outro
-  S.CO_AUX_ACC = 0.6;
+  // acerta o melhor 4 em cada 5 vezes e no resto chuta outro; nos 3 primeiros jogos da carreira acerta sempre
+  // (Silvio 2026-11-09: quem está começando não pode ser enganado)
+  S.CO_AUX_ACC = 0.8; S.CO_AUX_SURE = 3;
+  const auxAcc = (co, nx) => (co.season === 0 && nx.round <= S.CO_AUX_SURE ? 1 : S.CO_AUX_ACC);
   S.coHint = function (co) {
     const nx = S.coNext(co); if (!nx || nx.bye) return null;
     const key = co.season + '|' + nx.round, cad = cadOf(co);
     if (cad.hint && cad.hint.k === key) return cad.hint;
     const them = oppSide(co, nx.vs, !nx.home), T = cadTruth(), r = S.rng(hash(String(co.name) + '|' + co.club + '|' + key + '|aux'));
     const rank = S.CO_STYLES.slice().sort((a, b) => T.sty[b + '|' + them.style].x - T.sty[a + '|' + them.style].x);
-    const style = r() < S.CO_AUX_ACC ? rank[0] : r.pick(rank.slice(1));
+    const style = r() < auxAcc(co, nx) ? rank[0] : r.pick(rank.slice(1));
     return (cad.hint = { k: key, vs: nx.vs, them: them.style, style });
   };
   S.CO_AUX_VS = { equilibrado: 'um time equilibrado', posse: 'um time que gosta da bola', pressao: 'pressão alta', contra: 'time de contra-ataque', retranca: 'retranca', lados: 'time que joga pelos lados' };
   S.CO_AUX_DO = { equilibrado: 'eu iria no equilibrado', posse: 'eu ficaria com a bola', pressao: 'eu apertaria a saída deles', contra: 'eu esperaria e sairia no contra-ataque', retranca: 'eu fecharia a casinha', lados: 'eu abriria o jogo pelos lados' };
   S.coHintTxt = h => 'Contra ' + S.CO_AUX_VS[h.them] + ', ' + S.CO_AUX_DO[h.style] + ', professor.';
+  // Dica do auxiliar por jogo (Silvio 2026-11-09): uma por rodada, de estilo (o palpite acima) ou de formação (a que mais
+  // rende com o seu elenco contra o plano do rival; quando erra, é uma das três seguintes). Fica em co.tip até a rodada
+  // virar: { k, kind: 'sty' | 'frm', v: o que ele usaria, them: o que o rival traz }. Está usada quando co.style/co.form === v
+  S.coTip = function (co) {
+    const nx = S.coNext(co); if (!nx || nx.bye) return null;
+    const key = co.season + '|' + nx.round;
+    if (co.tip && co.tip.k === key) return co.tip;
+    const h = S.coHint(co), them = oppSide(co, nx.vs, !nx.home), r = S.rng(hash(String(co.name) + '|' + co.club + '|' + key + '|dica'));
+    const sq = co.squad.filter(ok), sc = {}, F = Object.keys(FORMS);
+    F.forEach(f => { const us = { squad: co.squad, form: f, style: co.style, xi: autoXI(sq, f).xi, bonus: 0 }, m = nx.home ? matchup(us, them) : matchup(them, us); sc[f] = nx.home ? m.lh / m.la : m.la / m.lh; });
+    const rank = F.slice().sort((a, b) => sc[b] - sc[a]);
+    const form = r() < auxAcc(co, nx) ? rank[0] : r.pick(rank.slice(1, 4));
+    let kind = r() < 0.5 ? 'sty' : 'frm';
+    if (kind === 'sty' && h.style === co.style && form !== co.form) kind = 'frm';
+    else if (kind === 'frm' && form === co.form && h.style !== co.style) kind = 'sty';
+    return (co.tip = { k: key, kind, v: kind === 'sty' ? h.style : form, them: kind === 'sty' ? them.style : them.form });
+  };
+  S.CO_AUX_SEE = { equilibrado: 'Eles não se expõem.', posse: 'Eles gostam de ficar com a bola.', pressao: 'Eles apertam a saída de bola.', contra: 'Eles esperam para sair no contra-ataque.', retranca: 'Eles vêm fechados lá atrás.', lados: 'Eles jogam pelos lados.' };
+  S.CO_AUX_GO = { equilibrado: 'Vá no equilibrado', posse: 'Fique com a bola', pressao: 'Aperte a saída deles', contra: 'Saia no contra-ataque', retranca: 'Feche a casinha', lados: 'Abra pelos lados' };
+  S.CO_AUX_ME = { equilibrado: 'Eu iria no equilibrado', posse: 'Eu ficaria com a bola', pressao: 'Eu apertaria a saída deles', contra: 'Eu esperaria e sairia no contra-ataque', retranca: 'Eu fecharia a casinha', lados: 'Eu abriria o jogo pelos lados' };
+  S.coTipUsed = (co, t) => !!t && (t.kind === 'sty' ? co.style : co.form) === t.v;
+  S.coTipLbl = t => (t.kind === 'sty' ? S.CO_AUX_GO[t.v] : 'Vá de ' + t.v);
+  S.coTipTxt = t => (t.kind === 'sty' ? S.CO_AUX_SEE[t.them] + ' ' + S.CO_AUX_ME[t.v] + ', professor.' : 'Eles vêm no ' + t.them + '. Eu responderia com o ' + t.v + ', professor.');
   // Anota depois do jogo: os confrontos que ficaram em campo por mais tempo (estilo e formação separados)
   function cadNote(co, m, log) {
     const cad = cadOf(co), T = cadTruth(), { r, save } = rngCo(co), acc = S.coCadAcc(co), per = S.coCadPer(co);
@@ -929,12 +954,13 @@
         p.ovr = clamp(p.ovr + (g > 0 ? Math.min(g, Math.max(0, p.pot - p.ovr)) : g), 30, 95);
         p.ct--; p.mo = 60; p.en = 100;
       });
-      out.left = co.squad.filter(p => p.age >= 37 || (p.age >= 34 && r() < 0.35) || p.ct <= 0).map(p => ({ n: p.n, why: p.ct <= 0 && p.age < 34 ? 'fim de contrato' : 'aposentou' }));
-      // v1 (sem mercado ainda): quem é titular e acaba o contrato renova por 2 anos; os outros saem
-      const core = new Set(autoXI(co.squad, co.form).xi);
-      co.squad.forEach(p => { if (p.ct <= 0 && core.has(p.id) && p.age < 34) { p.ct = 2; p.wage = wageOf(p.ovr); } });
-      out.left = out.left.filter(x => !co.squad.some(p => p.n === x.n && p.ct > 0 && p.age < 34));
-      co.squad = co.squad.filter(p => p.ct > 0 && !(p.age >= 37) && !out.left.some(x => x.n === p.n));
+      // Contrato acabou = sai do clube, titular ou não (Silvio 2026-11-09: antes o titular renovava sozinho por 2 anos).
+      // Quem quer ficar com o jogador renova durante a temporada (S.coMktRenew, botão Renovar do Elenco).
+      // A lista sai do mais forte ao mais fraco e marca quem era titular (`tit`), para a tela mostrar primeiro quem faz falta.
+      const core = new Set(co.xi && co.xi.length ? co.xi : autoXI(co.squad, co.form).xi);
+      const gone = co.squad.filter(p => p.age >= 37 || (p.age >= 34 && r() < 0.35) || p.ct <= 0);
+      out.left = gone.slice().sort((a, b) => b.ovr - a.ovr).map(p => { const x = { n: p.n, ovr: p.ovr, why: p.ct <= 0 && p.age < 34 ? 'fim de contrato' : 'aposentou' }; if (core.has(p.id)) x.tit = 1; return x; });
+      co.squad = co.squad.filter(p => !gone.includes(p));
       // Base: 1 ou 2 garotos; e reposição do clube para o elenco não ficar curto
       const club = D.CLUB_BY_ID[co.club], cty = D.countryOf(club);
       const kids = [];

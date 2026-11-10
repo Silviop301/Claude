@@ -5493,6 +5493,8 @@ button.tk:active { transform: translateY(2px); filter: drop-shadow(0 0 0 rgba(0,
   :root { --sat: calc(env(safe-area-inset-top, 0px) + 22px); }
   body::after { content: ''; position: fixed; z-index: 60; top: 0; left: 0; right: 0; height: var(--sat); pointer-events: none;
     background: linear-gradient(var(--pitch) calc(100% - 8px), rgba(15, 61, 42, 0)); }
+  /* celular deitado: o iPhone esconde a barra de status, então não há borrado nem faixa (Silvio, 2026-11-09: sem barra de outra cor) */
+  @media (orientation: landscape) and (max-height: 500px) { :root { --sat: env(safe-area-inset-top, 0px); } body::after { display: none; } }
 } }
 
 .hm { display: flex; flex-direction: column; gap: 12px; }
@@ -7416,10 +7418,14 @@ button.cad-c { cursor: pointer; }
 body.ld-on { overflow: hidden; height: 100%; } html:has(body.ld-on) { overflow: hidden; height: 100%; }
 body.ld-on #screen { max-height: 100vh; overflow: hidden; } /* a página por baixo do palco não rola (o toque não sai do lugar no iPhone) */
 body.ld-on #screen, body.ld-on .bar { visibility: hidden; }
-#ld { display: none; position: fixed; inset: 0; z-index: 60; background: #061A12; font: 500 13px/1.25 var(--body); color: var(--tx-1); -webkit-user-select: none; user-select: none; }
+#ld { display: none; position: fixed; inset: 0; z-index: 60; background: #0B2E20; box-sizing: border-box; overflow: hidden;
+  /* o padding não empurra nada (o palco é absoluto): só entrega a área segura (entalhe do iPhone deitado) para o fit() de coachland.js */
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); font: 500 13px/1.25 var(--body); color: var(--tx-1); -webkit-user-select: none; user-select: none; }
 body.ld-on #ld { display: block; }
-.ld-st { position: absolute; left: 50%; top: 50%; width: 844px; height: 390px; transform: translate(-50%, -50%) scale(var(--ldk, 1)); transform-origin: 50% 50%;
-  box-sizing: border-box; display: flex; gap: 10px; padding: 12px max(14px, env(safe-area-inset-right)) 12px max(14px, env(safe-area-inset-left)); background: #0B2E20; overflow: hidden; }
+/* O conteúdo das telas tem sempre 816×366 (os desenhos de 844×390 com 14 e 12 de margem). O palco em si cobre a tela inteira: o fit() aumenta
+   --ldw/--ldh e a margem --ldpx/--ldpy com a sobra (entalhe, tela de outra proporção), então fundo, popup e escurecido vão de ponta a ponta, sem faixa de outra cor */
+.ld-st { position: absolute; left: 50%; top: 50%; width: var(--ldw, 844px); height: var(--ldh, 390px); transform: translate(-50%, -50%) scale(var(--ldk, 1)); transform-origin: 50% 50%;
+  box-sizing: border-box; display: flex; gap: 10px; padding: var(--ldpy, 12px) var(--ldpx, 14px); background: #0B2E20; overflow: hidden; }
 .ld-turn { display: none; }
 #ld.port .ld-st { display: none; }
 #ld.port .ld-turn { display: flex; position: absolute; inset: 0; align-items: center; justify-content: center; padding: 24px; }
@@ -7976,8 +7982,6 @@ body.ld-on #ld { display: block; }
 .ldb-r { padding: 2px 6px; } .ldb-r button { height: 23px; }
 .ld-top { overflow: hidden; } .ld-top > .ld-meta { min-width: 0; flex-shrink: 1; overflow: hidden; } .ld-meta b { overflow: hidden; text-overflow: ellipsis; } .ld-top .ld-rd { flex: none; }
 .ld-st .ldl { padding-bottom: 0; } /* .lv do jogo em pé reserva 96px embaixo; deitado não */
-/* Deitado no iPhone instalado: o palco começa abaixo da faixa borrada do topo (--sat), ver display-mode: standalone */
-#ld { top: var(--sat); } #ld.port { top: 0; }
 
 /* Treinador deitado: Finanças 2.0 (reunião com a diretoria, patrocínio, banco, aba Decidir) */
 .ldn-l { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
@@ -8075,7 +8079,7 @@ body.ld-on #ld { display: block; }
 .hl-md { height: 72px; border-radius: 14px; color: #1B1606 !important; display: flex; align-items: center; justify-content: center; padding: 0 10px !important; box-shadow: 0 4px 0 rgba(0,0,0,.35); transition: transform .1s; }
 .hl-md:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.35); }
 .hl-md b { font: 800 23px/1.05 var(--display); text-align: center; color: #1B1606; }
-.hl-md.hl-rapida { background: #F2C230 !important; } .hl-md.hl-completa { background: #F4EBD3 !important; } .hl-md.hl-relampago { background: #F08A5D !important; } .hl-md.hl-treinador { background: #B9E2C8 !important; }
+.hl-md.hl-rapida { background: #F2C230 !important; } .hl-md.hl-completa { background: #F4EBD3 !important; } .hl-md.hl-relampago { background: #F08A5D !important; } .hl-md.hl-treinador { background: linear-gradient(#F4F1E8, #E4DECC) !important; }
 .hl-mrs { display: flex; justify-content: center; gap: 10px; margin-top: auto; }
 .hl-mr { height: 48px; padding: 0 16px !important; border-radius: 12px; display: flex; align-items: center; gap: 8px; color: #E3ECE6 !important; box-shadow: inset 0 0 0 2px rgba(243,241,234,.22); }
 .hl-mr svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -8220,6 +8224,29 @@ body.ld-on #ld { display: block; }
 .tm-ar svg, .tm-h .tcr-back svg { width: 20px; height: 20px; fill: none; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
 .tm-ar svg { stroke: var(--gold); } .tm-h .tcr-back svg { stroke: #F3F1EA; }
 .tm-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* Dica do auxiliar no topo da escalação (Silvio 2026-11-09): rosto, rótulo e a dica numa pílula creme; apagada depois de usada */
+.tm-tip { margin-left: auto; position: relative; height: 44px; border-radius: 22px; background: #F8F4EA !important; color: #13201A !important; display: flex; align-items: center; gap: 9px; padding: 0 16px 0 4px !important; flex: none; }
+.tm-tip-f { width: 36px; height: 36px; border-radius: 50%; background: #E9E2D2; flex: none; }
+.tm-tip span { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.tm-h .tm-tip small { font: 800 12px/1 var(--display); color: #5C6A62; letter-spacing: .06em; }
+.tm-h .tm-tip b { font: 800 18px/1 var(--display); color: #13201A; white-space: nowrap; }
+.tm-tip-d { position: absolute; right: 10px; top: -5px; width: 18px; height: 18px; border-radius: 50%; background: #F08A5D; box-shadow: 0 0 0 3px #0E2C20; }
+.tm-tip.ok { background: rgba(248, 244, 234, .14) !important; } .tm-h .tm-tip.ok b, .tm-h .tm-tip.ok small { color: #F3F1EA; }
+.tm-nw { white-space: nowrap; }
+.tm-fix { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 2px dashed rgba(19, 32, 26, .18); }
+.tm-fix small { flex: 1; font: 600 15px/1.25 var(--body); color: var(--ink-2); } .tm-pop .acd-help .tm-fix .hl-btn { width: auto; flex: none; margin-top: 0; padding: 0 18px; min-height: 44px; }
+/* Tutorial da primeira carreira (opção B): tudo escuro, o alvo aceso com o anel piscando e o auxiliar num balão */
+.tu { position: absolute; inset: 0; z-index: 15; overflow: hidden; animation: fade-in .2s ease; }
+.ld-st .tu .tu-hole { position: absolute; box-shadow: 0 0 0 3px var(--gold), 0 0 0 2000px rgba(3, 10, 7, .74); }
+.tu-hole::after { content: ''; position: absolute; inset: -9px; border-radius: inherit; border: 5px solid rgba(242, 194, 48, .45); animation: tu-pulse 1.3s ease-in-out infinite; }
+@keyframes tu-pulse { 0%, 100% { opacity: .15; transform: scale(.985); } 50% { opacity: 1; transform: scale(1.02); } }
+.tu-bub { position: absolute; width: 400px; box-sizing: border-box; background: #F8F4EA; color: #13201A; border-radius: 18px; padding: 14px 18px 8px 14px; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 10px 28px rgba(0, 0, 0, .5); }
+.tu-fc { width: 60px; height: 60px; border-radius: 50%; background: #E9E2D2; flex: none; }
+.tu-bub p { margin: 0; font: 700 18px/1.3 var(--body); }
+.tu-bub span { display: flex; align-items: center; gap: 6px; }
+.tu-bub small { font: 700 14px/1 var(--body); color: #5C6A62; }
+.ld-st .tu .tu-skip { height: 44px; padding: 0 10px 0 4px; font: 700 15px/1 var(--body); color: #5C6A62; text-decoration: underline; }
+.sm-nv { position: relative; } .sm-nv .tm-dot { right: 14px; top: 14px; text-align: center; }
 .tm-b { position: relative; height: 44px; border-radius: 12px; box-shadow: inset 0 0 0 2px rgba(243,241,234,.22); font: 800 18px/1 var(--display) !important; color: #F3F1EA !important; }
 .tm-dot { position: absolute; right: 10px; top: 11px; width: 22px; height: 22px; border-radius: 50%; background: #F08A5D; color: #1B1606; font: 800 15px/22px var(--display); font-style: normal; }
 .tm-go { margin-top: auto; height: 56px; border-radius: 16px; background: var(--gold) !important; color: #1B1606 !important; box-shadow: 0 4px 0 #b48a12; font: 800 26px/1 var(--display) !important; }
@@ -8262,9 +8289,18 @@ body.ld-on #ld { display: block; }
 .sm-side .tm-go { min-height: 56px; }
 /* Link só do Treinador (?so=treinador): um botão de carreiras centrado embaixo do dourado */
 .hl-x:not(.hl-so) .hl-mds { grid-template-columns: repeat(2, minmax(0, 300px)); justify-content: center; }
-.hl-md.hl-jogador { background: #F4EBD3 !important; flex-direction: column; gap: 2px; }
-.hl-md.off { opacity: .45; cursor: default; box-shadow: none; } .hl-md.off:active { transform: none; }
-.hl-md small { font: 700 15px/1 var(--display); color: #1B1606; }
+/* Botões dos modos (Silvio 2026-11-09, "mais bonitos"): mais altos, letra maior e relevo como o do dourado. Treinador creme
+   (era verde claro); Jogador apagado em carvão com a etiqueta vermelha torta "Em breve" saindo pelo canto de cima */
+.hl-x .hl-mds { margin-top: 24px; gap: 16px; }
+.hl-x .hl-md { height: 84px; border-radius: 16px; position: relative; }
+.hl-x .hl-md b { font: 800 30px/1 var(--display); letter-spacing: .01em; }
+.hl-md.hl-treinador { box-shadow: 0 5px 0 #A9A088, inset 0 2px 0 rgba(255, 255, 255, .7); }
+.hl-md.hl-treinador b { color: #13201A; }
+.hl-md.hl-treinador:active { transform: translateY(4px); box-shadow: 0 1px 0 #A9A088, inset 0 2px 0 rgba(255, 255, 255, .7); }
+.hl-md.hl-jogador { background: #1E2023 !important; box-shadow: inset 0 0 0 2px rgba(243, 241, 234, .14); }
+.hl-md.hl-jogador b { color: rgba(243, 241, 234, .45); }
+.hl-md.off { cursor: default; } .hl-md.off:active { transform: none; }
+.hl-md small { position: absolute; right: -12px; top: -15px; transform: rotate(8deg); font: 800 19px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; color: #fff; background: #E0443C; border-radius: 8px; padding: 8px 13px 7px; box-shadow: 0 3px 0 #9C2620, 0 6px 12px rgba(0, 0, 0, .4); pointer-events: none; }
 .hl-so .hl-mds { grid-template-columns: 360px; justify-content: center; }
 .hl-so { justify-content: center; } .hl-so .hl-mrs { margin-top: 26px; }
 /* Escalação e Semana no celular (Silvio 2026-11-08): bolinha menor com a vaga encostada nela, para o nome não ficar
@@ -8275,7 +8311,7 @@ body.ld-on #ld { display: block; }
 .tm .ld-dn b { font-size: 13px; }
 .tm-bench { overflow-x: auto; overflow-y: hidden; touch-action: pan-x; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
 .tm-bench::-webkit-scrollbar { display: none; }
-.tm-bench > small { position: sticky; left: 0; z-index: 1; align-self: stretch; display: flex; align-items: center; padding-right: 6px; background: #0b2419; box-shadow: 10px 0 10px #0b2419; }
+.tm-bench > small { position: sticky; left: 0; z-index: 1; align-self: stretch; display: flex; align-items: center; padding-right: 6px; background: #0B2E20; box-shadow: 10px 0 10px #0B2E20; }
 .sm-cr { width: 64px; height: 64px; }
 .sm-x { padding-top: 18px; }
 /* Treino e Olheiro enxutos (Silvio 2026-11-09): sem trilho, cabeçalho da escalação, coluna da direita com o dourado */
@@ -8543,10 +8579,12 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .pi-fc { width: 84px; height: 84px; border-radius: 50%; background: #F8F4EA; float: left; margin: 0 14px 6px 0; }
 .aux-h { display: flex; align-items: center; gap: 12px; } .aux-h b { font: 800 26px/1 var(--display); }
 .aux-fc { width: 56px; height: 56px; border-radius: 50%; background: #E9E2D2; flex: none; }
+.sack-cr { width: 56px; height: 56px; object-fit: contain; flex: none; }
 .fn2-ac .fn2-lg { height: 34px; width: auto; max-width: 140px; object-fit: contain; object-position: left center; }
 .bk2-lg { height: 38px; width: auto; }
 /* Parada do jogo com o campo da escalação (Silvio 2026-11-09): tela cheia, anel de energia, amarelo, auxiliar num botão */
 .ld-pop-c.ldl-full { width: 844px; height: 390px; max-height: none; border-radius: 0; padding: 12px 14px; background: #0B2E20; box-shadow: none; box-sizing: border-box; }
+.ld-pop:has(> .ldl-full) { background: #0B2E20; } /* tela cheia da parada: a sobra em volta fica da cor do palco, não escurecida */
 .ldl-tm .tm-h { padding-left: 0; gap: 12px; }
 .ldl-tm .tm-h small { font: 800 20px/1 var(--display); color: #B9C9BF; }
 .ldl-sc { padding: 7px 12px; border-radius: 10px; background: #141517; font: 800 22px/1 var(--display); color: #F3F1EA; }
@@ -8567,7 +8605,7 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .ldl-chips em.dn { background: #F8D2BF; color: #8a3312; } .ldl-chips em.up { background: #CFEBD9; color: #1e6b3c; }
 .ldl-aux .ldl-red { margin-bottom: 8px; }
 .ldl-tm .ld-dot[data-in] .ld-dn em { background: #7ED39A; color: #13201A; }
-.ldl-ov { position: absolute; inset: 0; z-index: 5; background: rgba(4, 12, 8, .72); display: flex; align-items: center; justify-content: center; }
+.ldl-ov { position: absolute; inset: 0; z-index: 5; background: rgba(4, 12, 8, .72); box-shadow: 0 0 0 100vmax rgba(4, 12, 8, .72); display: flex; align-items: center; justify-content: center; }
 .ldl-ov .ldl-aux { width: 440px; }
 .ldl-full { position: relative; }
 .ldl-ov .ldl-aux { background: var(--paper); color: var(--ink); border-radius: 18px; padding: 16px 18px 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, .5); }
@@ -8776,11 +8814,13 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .pzo-mo { position: absolute; right: 16px; top: 10px; height: 44px; padding: 0 16px 0 10px !important; border-radius: 22px; background: rgba(0,0,0,.35) !important; color: #F3F1EA !important; display: flex; align-items: center; gap: 8px; }
 .pzo-mo svg { width: 24px; height: 24px; } .pzo-mo b { font: 800 19px/1 var(--display); }
 .ec { width: 100%; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 238px; grid-template-rows: 44px minmax(0, 1fr); gap: 10px 16px; color: #F3F1EA; position: relative; }
-.ec .tm-h { grid-column: 1; }
-.ec-lg { position: absolute; left: 246px; top: 0; width: 316px; height: 44px; border-radius: 22px; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: space-between; padding: 0 4px; box-sizing: border-box; }
-.ec-lg button { width: 36px; height: 36px; border-radius: 50%; background: rgba(243,241,234,.12) !important; display: flex; align-items: center; justify-content: center; padding: 0 !important; }
+.ec .tm-h { grid-column: 1; min-width: 0; } .ec .tm-h > b { flex: none; white-space: nowrap; }
+.ec-lg { flex: 0 1 316px; min-width: 0; margin-left: auto; height: 44px; border-radius: 22px; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: space-between; padding: 0 4px; box-sizing: border-box; }
+.ec-lg > span { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0 4px; }
+.ec-lg small { font: 700 12px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: #9fb0a6; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ec-lg button { flex: none; width: 36px; height: 36px; border-radius: 50%; background: rgba(243,241,234,.12) !important; display: flex; align-items: center; justify-content: center; padding: 0 !important; }
 .ec-lg svg { width: 16px; height: 16px; fill: none; stroke: #F3F1EA; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.ec-lg b { font: 800 19px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+.ec-lg b { font: 800 19px/1 var(--display); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ec > .coin-pill.ec-pill { grid-column: 2; grid-row: 1; justify-self: stretch; }
 .ec-g { grid-column: 1; grid-row: 2; display: grid; grid-auto-flow: column; grid-template-rows: 1fr 1fr; grid-auto-columns: 132px; gap: 10px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .ec-g::-webkit-scrollbar { display: none; }
@@ -8882,3 +8922,22 @@ button.coin-pill { cursor: pointer; border: 0; }
 /* Agradecimento da compra de moedas (Silvio: a compra ajuda o jogo; agradecer o apoio) */
 .pay-ty { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); z-index: 9999; display: flex; align-items: center; gap: 12px; padding: 12px 14px 12px 18px; border-radius: 16px; background: #F8F4EA; color: #13201A; box-shadow: 0 10px 30px rgba(0,0,0,.45); font: 600 15px/1.25 var(--body); max-width: calc(100vw - 32px); }
 .pay-ty b { font: 800 19px/1 var(--display); white-space: nowrap; } .pay-ty button { flex: none; min-height: 40px; padding: 0 14px; border-radius: 12px; border: 0; background: #13201A; color: #F8F4EA; font: 800 16px/1 var(--display); cursor: pointer; }
+
+/* Ajustes deitados (2026-11-09, quadro 52): Som e Sua opinião à esquerda, a conta no cartão creme (ui/settings.js settingsLand) */
+.aj { width: 100%; flex: 1; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 44px minmax(0, 1fr); gap: 10px 16px; color: #F3F1EA; }
+.aj.aj-solo { grid-template-columns: minmax(0, 1fr); }
+.aj-v { margin-left: auto; font-size: 15px !important; color: #9fb0a6 !important; }
+.aj-l { display: grid; grid-auto-rows: minmax(0, 1fr); gap: 10px; min-height: 0; }
+.aj-sw, .aj-lk { border-radius: 18px; background: #141517 !important; color: #F3F1EA !important; padding: 0 24px !important; display: flex; align-items: center; justify-content: space-between; text-align: left; min-height: 64px; }
+.aj-sw b, .ld-st button.aj-lk { font: 800 28px/1 var(--display); }
+.aj-tg { width: 64px; height: 36px; border-radius: 18px; background: rgba(243, 241, 234, .18); padding: 4px; box-sizing: border-box; display: flex; flex: none; transition: background .15s; }
+.aj-tg i { width: 28px; height: 28px; border-radius: 50%; background: #D9E2DC; transition: transform .15s, background .15s; }
+.aj-sw.on .aj-tg { background: var(--gold); } .aj-sw.on .aj-tg i { background: #1B1606; transform: translateX(28px); }
+.aj-acc { border-radius: 18px; background: #F8F4EA; color: #13201A; padding: 22px; box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.aj-acc small { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #4b5a52; }
+.aj-acc > b { margin-top: 12px; font: 800 34px/1 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aj-acc > span { margin-top: 10px; font: 600 17px/1.3 var(--body); color: #33423a; }
+.aj-acc > i { flex: 1; }
+.ld-st button.aj-go { height: 56px; border-radius: 16px; background: var(--gold) !important; color: #1B1606 !important; box-shadow: 0 4px 0 #b48a12; font: 800 24px/1 var(--display); flex: none; }
+.ld-st button.aj-go.dark { background: #13201A !important; color: #F8F4EA !important; box-shadow: 0 4px 0 rgba(0, 0, 0, .35); }
+.aj-go:active { transform: translateY(2px); }

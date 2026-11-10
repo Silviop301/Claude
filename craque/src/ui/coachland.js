@@ -30,7 +30,13 @@
     if (document.body.classList.contains('ld-on') && (window.scrollY || window.scrollX || document.documentElement.scrollTop)) { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; }
     const vw = el.clientWidth || window.innerWidth, vh = el.clientHeight || window.innerHeight, port = vh > vw * 1.05; // medidas do #ld (já sem o topo borrado do iPhone e com o zoom do monitor)
     el.classList.toggle('port', port);
-    const k = Math.min(vw / W, vh / H);
+    // Área segura (entalhe e ilha do iPhone deitado): vem do padding do #ld. As telas não apertam (816×366 de conteúdo, como nos
+    // desenhos): a escala diminui até o conteúdo caber entre os dois lados, e o palco cresce com a sobra para cobrir a tela inteira
+    const cs = getComputedStyle(el), sx = Math.max(parseFloat(cs.paddingLeft) || 0, parseFloat(cs.paddingRight) || 0), sy = parseFloat(cs.paddingTop) || 0;
+    const k = Math.max(.05, Math.min(vw / W, vh / H, (vw - 2 * sx) / (W - 28), (vh - 2 * sy) / (H - 24)));
+    const ex = Math.ceil(Math.max(0, vw / k - W) / 2) + 1, ey = Math.ceil(Math.max(0, vh / k - H) / 2) + 1; // sobra de cada lado em px do palco, com 1 a mais para a borda não deixar fio
+    el.style.setProperty('--ldw', (W + 2 * ex) + 'px'); el.style.setProperty('--ldh', (H + 2 * ey) + 'px');
+    el.style.setProperty('--ldpx', (14 + ex) + 'px'); el.style.setProperty('--ldpy', (12 + ey) + 'px');
     el.style.setProperty('--ldk', k.toFixed(4));
   }
   // Mostra uma tela no palco. html = conteúdo do palco; bind(st) liga os botões
@@ -212,7 +218,11 @@
     if (!nx) { off(); return c.finishSeason(); }
     if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao() : patrocinio();
     c.save('hub');
-    if (!inboxPop(co, semana)) finNews(co);
+    const tut = tutStep(co);
+    const popped = !tut && inboxPop(co, semana);
+    if (!tut && !popped && !ctWarn(co)) finNews(co);
+    // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
+    const inN = tut ? 0 : S.coMktInbox(co).filter(o => !o.seen).length - (popped ? 1 : 0);
     const t = S.coTable(co), me = t.find(x => x.me), pos = S.coPos(co), B = co.board, conf = Math.round(B.conf);
     const f5 = f => { const a = (f || '').split('').slice(-5); while (a.length < 5) a.unshift('n'); return '<span class="ld-f5 sm-f5">' + a.map(x => '<i class="' + x + '"></i>').join('') + '</span>'; };
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
@@ -234,7 +244,7 @@
       wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
         '<button class="sm-w' + (sc ? ' ok' : '') + '" id="ld-ol"><small>OLHEIRO</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o ' + esc(vc.short || vc.name)) + '</b></button></div>';
     } else card = '<div class="sm-bye"><b>Sem jogo nesta rodada</b><small>O time descansa. Os outros jogam.</small></div>';
-    const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['mercado', 'Mercado'], ['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + '</button>').join('');
+    const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['mercado', 'Mercado'], ['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + (k === 'mercado' && inN ? '<i class="tm-dot">' + inN + '</i>' : '') + '</button>').join('');
     show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + wk +
       '<nav class="sm-side" aria-label="Menu do técnico">' + nav + '<button class="tm-go" id="ld-play">' + (nx.bye ? 'Ver a rodada' : 'Jogar') + '</button></nav></div>', st => {
       if (st.querySelector('#sm-coins')) st.querySelector('#sm-coins').onclick = () => { sfx('tap'); loja(0, semana); };
@@ -242,7 +252,51 @@
       st.querySelector('#sm-back').onclick = () => { sfx('tap'); go('inicio'); };
       if (st.querySelector('#ld-tr')) st.querySelector('#ld-tr').onclick = () => { sfx('tap'); treino(); };
       if (st.querySelector('#ld-ol')) st.querySelector('#ld-ol').onclick = () => { sfx('tap'); olheiro(); };
+      if (inN) st.querySelector('[data-rail="mercado"]').onclick = () => { sfx('tap'); const o = S.coMktInbox(co).find(x => !x.seen); if (!o) return go('mercado'); o.seen = 1; c.save(); recebida(o, semana); };
+      if (tut) tutShow(co, st);
     });
+  }
+
+  // ---------- Tutorial da primeira carreira (Silvio 2026-11-09, opção B): a Semana escurece, o auxiliar fala uma frase e
+  // só o botão certo fica aceso, piscando. Semana 1: Time, Treino, Olheiro, Jogar; semana 2: Tabela, Clube; semana 3:
+  // Mercado. co.tut = { n } é o passo (criado em ui/coach.js só na primeira carreira); some no Pular, no último passo
+  // ou com as dicas desligadas. Passo = [semana (co.ss.i), alvo, fala]
+  const TUT = [
+    [0, '[data-rail="time"]', 'Professor, antes de tudo conheça o elenco. Toque em Time.'],
+    [0, '#ld-tr', 'Agora escolha o treino da semana.'],
+    [0, '#ld-ol', 'Vale espiar o adversário antes do jogo.'],
+    [0, '#ld-play', 'Tudo pronto. Agora é jogar.'],
+    [1, '[data-rail="tabela"]', 'A Tabela mostra a corrida pela meta.'],
+    [1, '[data-rail="clube"]', 'No Clube ficam o caixa, o elenco e os troféus.'],
+    [2, '[data-rail="mercado"]', 'A janela fecha nesta semana. No Mercado você contrata e vende.'],
+  ];
+  // O passo desta semana (ou null). Semana que já passou é pulada
+  function tutStep(co) {
+    const t = co.tut; if (!t || !co.ss) return null;
+    if ((U.load('climbix-dicas-v1') || {}).off) return null;
+    while (t.n < TUT.length && TUT[t.n][0] < co.ss.i) t.n++;
+    if (t.n >= TUT.length) { co.tut = null; return null; }
+    return TUT[t.n][0] === co.ss.i ? TUT[t.n] : null;
+  }
+  function tutShow(co, st) {
+    const c = C(), s = tutStep(co); if (!s) return;
+    const tg = st.querySelector(s[1]);
+    // Sem o alvo (rodada sem jogo) ou já feito (treino escolhido, relatório lido): próximo passo
+    if (!tg || tg.classList.contains('ok')) { co.tut.n++; return tutShow(co, st); }
+    const wk = TUT.filter(x => x[0] === s[0]), R = st.getBoundingClientRect(), k = R.width / st.offsetWidth || 1, r = tg.getBoundingClientRect();
+    const x = (r.left - R.left) / k, y = (r.top - R.top) / k, w = r.width / k, h = r.height / k;
+    const el = document.createElement('div'); el.className = 'tu'; el.id = 'ld-tu';
+    el.innerHTML = '<button class="tu-hole" style="left:' + x.toFixed(1) + 'px;top:' + y.toFixed(1) + 'px;width:' + w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px;border-radius:' + getComputedStyle(tg).borderRadius + '" aria-label="' + esc(tg.textContent.trim()) + '"></button>' +
+      '<div class="tu-bub" role="dialog" aria-label="Auxiliar">' + auxFace(co, 'tu-fc') + '<div><p>“' + s[2] + '”</p><span>' + (wk.length > 1 ? '<small>' + (wk.indexOf(s) + 1) + ' de ' + wk.length + '</small>' : '') + '<button class="tu-skip" id="tu-skip">Pular</button></span></div></div>';
+    st.appendChild(el);
+    // O balão fica ao lado do alvo: à esquerda dos botões da coluna da direita, em cima dos de baixo
+    const b = el.querySelector('.tu-bub'), bw = b.offsetWidth, bh = b.offsetHeight, cl = (v, a, z) => Math.max(a, Math.min(z, v));
+    // (o palco cresce com a sobra da tela: o balão fica dentro do conteúdo, longe do entalhe)
+    const ox = (st.offsetWidth - W) / 2, oy = (st.offsetHeight - H) / 2, side = x - ox > W * 0.6;
+    b.style.left = cl(side ? x - bw - 24 : x, ox + 8, ox + W - bw - 8) + 'px';
+    b.style.top = cl(side ? y + h / 2 - bh / 2 : y - bh - 22, oy + 8, oy + H - bh - 8) + 'px';
+    el.querySelector('.tu-hole').onclick = () => { co.tut.n++; if (co.tut.n >= TUT.length) co.tut = null; c.save(); el.remove(); tg.click(); };
+    el.querySelector('#tu-skip').onclick = () => { sfx('tap'); co.tut = null; c.save(); semana(); };
   }
 
   // ---------- Time: escalação, popups de troca e de formação/estilo ----------
@@ -288,12 +342,17 @@
       const title = swap !== null ? '<span class="tm-hint">Arraste do banco, ou toque em quem entra ou em outro titular</span>' : selB ? '<span class="tm-hint">Toque em quem sai</span>'
         : vs ? '<b>x ' + esc(vs.short || vs.name) + '</b><small>' + (nx.home ? 'em casa' : 'fora') + ' · rodada ' + nx.round + '</small>' : '<b>' + esc(cl.short || cl.name) + '</b><small>escalação</small>';
       const play = toPlay && vs;
-      show('<div class="tm"><div class="tm-h"><button class="tcr-back" id="tm-back" aria-label="Voltar">' + BK + '</button>' + title + '</div>' +
+      // Dica do auxiliar no topo (Silvio 2026-11-09, opção A): uma por jogo, de estilo ou de formação, com o rosto dele; o
+      // toque explica e aplica. O aviso de quem está cansado ou fora de posição entra na mesma janelinha (ponto laranja)
+      const tip = vs ? S.coTip(co) : null, used = S.coTipUsed(co, tip), tipNm = tip && (tip.kind === 'sty' ? S.CO_STY[tip.v].name : tip.v);
+      const pill = swap !== null || selB ? '' : '<button class="tm-tip' + (used || (!tip && !auxFix) ? ' ok' : '') + '" id="tm-aux">' + auxFace(co, 'tm-tip-f') +
+        '<span><small>' + (tip ? 'DICA DO AUXILIAR' : 'AUXILIAR') + '</small><b>' + (tip ? (used ? '✓ ' + esc(tipNm) : esc(S.coTipLbl(tip))) : auxFix ? 'Uma troca' : 'Tudo certo') + '</b></span>' +
+        ((tip && !used && !tip.seen) || auxFix ? '<i class="tm-tip-d"></i>' : '') + '</button>';
+      show('<div class="tm"><div class="tm-h"><button class="tcr-back" id="tm-back" aria-label="Voltar">' + BK + '</button>' + title + pill + '</div>' +
         '<div class="ld-pitch tm-pitch">' + PITCH + dots + '</div>' +
         '<div class="tm-bench"><small>BANCO</small>' + bstrip + '</div>' +
         '<div class="tm-side">' + pick('form', 'Formação', co.form) + pick('sty', 'Estilo', esc(S.CO_STY[co.style].name)) +
-        '<span class="tm-2"><button class="tm-b" id="ld-fun">Funções</button><button class="tm-b" id="ld-bat">Batedores</button></span>' +
-        '<button class="tm-b" id="tm-aux">Auxiliar' + (auxFix ? '<i class="tm-dot">1</i>' : '') + '</button>' +
+        '<button class="tm-b" id="ld-fun">Funções</button><button class="tm-b" id="ld-bat">Batedores</button>' +
         '<button class="tm-go" id="' + (play ? 'ld-go' : 'ld-ok') + '">' + (play ? 'Jogar' : 'Pronto') + '</button></div></div>', st => {
         st.querySelectorAll('[data-xi]').forEach(b => b.onclick = () => {
           const i = +b.dataset.xi; sfx('tap');
@@ -308,7 +367,7 @@
         benchDrag(st.querySelector('.tm'), put);
         st.querySelectorAll('[data-tmk]').forEach(b => b.onclick = () => {
           sfx('tap'); const d = +b.dataset.d;
-          if (b.dataset.tmk === 'sty') { const L = S.CO_STYLES; co.style = L[(L.indexOf(co.style) + d + L.length) % L.length]; st.querySelector('#tm-sty').textContent = S.CO_STY[co.style].name; return; }
+          if (b.dataset.tmk === 'sty') { const L = S.CO_STYLES; co.style = L[(L.indexOf(co.style) + d + L.length) % L.length]; st.querySelector('#tm-sty').textContent = S.CO_STY[co.style].name; if (tip && tip.kind === 'sty' && used !== S.coTipUsed(co, tip)) draw(); return; }
           // Formação: os mesmos bonecos correm para as vagas novas e a tela se refaz depois
           const nf = FORMS[(FORMS.indexOf(co.form) + d + FORMS.length) % FORMS.length], xi = xiFor(nf), sl2 = S.coSlots(nf), sp2 = spotsT(nf);
           co.form = nf; co.xi = xi; swap = null; selB = null; st.querySelector('#tm-form').textContent = nf;
@@ -321,9 +380,17 @@
         });
         st.querySelector('#ld-fun').onclick = () => { sfx('tap'); closePop(); c.keepBench(); c.save(); funcoes(null, () => time(toPlay)); };
         st.querySelector('#ld-bat').onclick = () => { sfx('tap'); closePop(); c.keepBench(); c.save(); batedores(null, () => time(toPlay)); };
-        st.querySelector('#tm-aux').onclick = () => { sfx('tap');
-          pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b></span><p>“' + aux + '”</p>' + (auxFix ? '<span class="hl-ab"><button class="hl-btn dark" id="ld-aux-y">Trocar</button><button class="hl-btn line" data-pop-x>Manter</button></span>' : '') +
-            '<button class="tm-all" id="ld-auto">Usar a escalação dele inteira</button>' + (auxFix ? '' : '<button class="hl-btn line" data-pop-x>Fechar</button>') + '</div>', 'Auxiliar', w => {
+        if (st.querySelector('#tm-aux')) st.querySelector('#tm-aux').onclick = () => { sfx('tap');
+          if (tip && !tip.seen) { tip.seen = 1; const d = st.querySelector('.tm-tip-d'); if (d && !auxFix) d.remove(); }
+          const say = tip ? (used ? 'Do jeito que está eu não mexeria, professor.' : S.coTipTxt(tip)) : aux;
+          pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b></span><p>“' + say.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>') + '”</p>' +
+            (tip && !used ? '<span class="hl-ab"><button class="hl-btn dark" id="ld-tip-y">Usar ' + esc(tipNm) + '</button><button class="hl-btn line" data-pop-x>Manter</button></span>' : '') +
+            (auxFix ? (tip ? '<span class="tm-fix"><small>' + aux + '</small><button class="hl-btn ' + (used ? 'dark' : 'line') + '" id="ld-aux-y">Trocar</button></span>'
+              : '<span class="hl-ab"><button class="hl-btn dark" id="ld-aux-y">Trocar</button><button class="hl-btn line" data-pop-x>Manter</button></span>') : '') +
+            '<button class="tm-all" id="ld-auto">Usar a escalação dele inteira</button>' + ((tip && !used) || auxFix ? '' : '<button class="hl-btn line" data-pop-x>Fechar</button>') + '</div>', 'Auxiliar', w => {
+            if (w.querySelector('#ld-tip-y')) w.querySelector('#ld-tip-y').onclick = () => { sfx('tap'); closePop();
+              if (tip.kind === 'sty') co.style = tip.v; else { co.xi = xiFor(tip.v); co.form = tip.v; swap = null; selB = null; }
+              draw(); };
             if (w.querySelector('#ld-aux-y')) w.querySelector('#ld-aux-y').onclick = () => { sfx('tap'); auxFix(); closePop(); draw(); };
             w.querySelector('#ld-auto').onclick = () => { sfx('tap'); const a = S.coAutoXI(co.squad, co.form); co.xi = a.xi; co.autoXI = true; swap = null; selB = null; closePop(); draw(); };
           }, 'hl-pop acd-pop tm-pop'); };
@@ -633,7 +700,10 @@
         st.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { sfx('tap'); tab = b.dataset.rt; draw(); });
         if (st.querySelector('#ldr-all')) st.querySelector('#ldr-all').onclick = () => { sfx('tap'); pop(popHead('Notas do jogo', 'Rodada ' + log.r + ' · ' + m.gh + ' x ' + m.ga) + '<div class="ld-pb col"><div class="ld-scroll ldr-alln">' + rt.map(nota).join('') + '</div></div>', 'Notas do jogo', null, 'w560'); };
         if (st.querySelector('#rs-cad')) st.querySelector('#rs-cad').onclick = () => { sfx('tap'); pop(popHead('Anotado no caderno', vs ? c.nm(m.vs) : '') + '<div class="ld-pb col rs-cadp">' + cadN.map(cadTxt).join('') + '</div>', 'Anotado no caderno', null, 'w560'); };
-        st.querySelector('#ldr-go').onclick = () => { sfx('tap'); if (co.sacked) { off(); return c.sacked(); } if (co.ss.done) { off(); return c.finishSeason(); } segunda(log); };
+        st.querySelector('#ldr-go').onclick = () => { sfx('tap'); if (co.sacked) { // demitido: janelinha por cima do resultado (a tela antiga era em pé, com a coluna estreita e o fundo de outra cor)
+          const cl = club(co.club);
+          return pop('<div class="acd-help"><span class="aux-h">' + crest(cl.id, 'sack-cr') + '<b>Você foi demitido.</b></span><p>“Não deu, professor. Obrigado pelo trabalho.” A temporada segue sem você; no fim dela, o telefone toca de novo.</p>' +
+            '<button class="hl-btn dark" id="ld-sack">Ver como terminou a liga</button></div>', 'Demitido', w => { w.querySelector('#ld-sack').onclick = () => { sfx('tap'); closePop(); off(); c.finishSeason(); }; }, 'hl-pop acd-pop', true); } if (co.ss.done) { off(); return c.finishSeason(); } segunda(log); };
       });
     };
     draw();
@@ -791,7 +861,7 @@
         '<div class="mk-k"><b id="mk-n" class="' + (ok ? 'ok' : '') + '">' + U.D.plural(n, 'jogador', 'jogadores') + '</b><span>o olheiro conhece a sua liga</span></div>' +
         '<span class="rs-gap"></span><button class="tm-go' + (ok ? '' : ' off') + '" id="mk-go">' + goTxt(n) + '</button></div></div>', st => {
       st.querySelector('#mk-back').onclick = () => { sfx('tap'); semana(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição e só vale para quem o olheiro já viu. A janela abre antes da 1ª rodada (10 dias) e antes da rodada do meio (6 dias): proposta e contrato gastam 1 dia. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição e só vale para quem o olheiro já viu. A janela do começo vale até a 3ª rodada (10 dias) e a do meio abre antes da rodada do meio (6 dias): proposta e contrato gastam 1 dia. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.'); };
       st.querySelectorAll('[data-mf]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.mf, L = F[i].o.length; m.f[i] = ((m.f[i] || 0) + (+b.dataset.d) + L) % L; c.save(); mercado(); });
       const inp = st.querySelector('#mk-nm');
       inp.oninput = () => { m.nm = inp.value; const k = S.coMktSearch(co).length, good = k > 0 && k <= S.CO_MKT.max, nb = st.querySelector('#mk-n'), gb = st.querySelector('#mk-go');
@@ -946,7 +1016,7 @@
     t = t || { w: T.ask(1) - T.step, y: T.want, role: 1 };
     const md = S.coMktMood(co, p, t), fo = S.coMktFolha(co, p, t), over = fo.pct > 100;
     const cls = ['', 'dn', 'dn', 'mid', 'up'][md.lvl];
-    const yr = U.YEAR0 + co.season + t.y, need = p.club || w.open;
+    const yr = U.YEAR0 + co.season + t.y + (own ? 1 : 0), need = p.club || w.open; // renovação: os anos contam depois desta temporada
     const gold = own ? (neg.st === 'no' ? '<button class="tm-go off" id="mkc-go" disabled>Não renova mais</button>' : neg.st === 'signed' ? '<button class="tm-go off" id="mkc-go" disabled>Renovado</button>' :
       over && t.w > p.wage ? '<button class="tm-go off" id="mkc-go" disabled>Acima do teto</button>' : '<button class="tm-go" id="mkc-go">Oferecer</button>') : neg.st === 'no' ? '<button class="tm-go off" id="mkc-go" disabled>Não negocia mais</button>' : (p.club && !w.open) ? '<button class="tm-go off" id="mkc-go" disabled>Janela fechada</button>' :
       over ? '<button class="tm-go off" id="mkc-go" disabled>Acima do teto</button>' : co.squad.length >= M.maxSquad ? '<button class="tm-go off" id="mkc-go" disabled>Elenco cheio</button>' :
@@ -955,14 +1025,14 @@
     const box = (lbl, v, k, hint) => '<div class="mk-k mkc-b"><small>' + lbl + '</small><span class="mkp-row"><button class="mk-ar big" data-' + k + '="-1" aria-label="Menos">' + MK_L + '</button><b>' + v + '</b><button class="mk-ar big" data-' + k + '="1" aria-label="Mais">' + MK_R + '</button></span><span class="mkc-h">' + hint + '</span></div>';
     show('<div class="mk mkc">' + mkHead('mkc-back', own ? 'Renovação' : 'Contrato', sub, own) +
       '<div class="mkc-l"><div class="mkc-g">' + box('SALÁRIO POR SEMANA', (t.w < 10000 && t.w % 1000 ? 'R$ ' + (t.w / 1000).toFixed(1).replace('.', ',') + ' mil' : c.brl(t.w)), 'cw', t.w >= md.ask ? 'o que ele pede' : 'abaixo do que ele pede') +
-        box('DURAÇÃO', t.y + (t.y > 1 ? ' anos' : ' ano'), 'cy', 'até ' + yr + (t.y === T.want ? ' · ele prefere' : '')) + '</div>' +
+        box('DURAÇÃO', (own ? '+' : '') + t.y + (t.y > 1 ? ' anos' : ' ano'), 'cy', 'até ' + yr + (t.y === T.want ? ' · ele prefere' : '')) + '</div>' +
         '<div class="mk-k mkc-r"><small>PAPEL PROMETIDO</small><span class="mkp-seg big">' + R.map((r, i) => '<button class="' + (t.role === i ? 'on' : '') + '" data-cr="' + i + '">' + r.t + '</button>').join('') + '</span><span class="mkc-d">' + R[t.role].d + '</span></div></div>' +
       '<div class="mk-side"><div class="mk-k mkp-pr"><small>EMPRESÁRIO</small><b class="' + cls + '">' + (neg.st === 'no' ? 'Desistiu' : md.t) + '</b><span class="mkf-dd mkc-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= md.lvl ? cls || 'up' : '') + '"></i>').join('') + '</span><span class="mkp-pat">Paciência' + mkDots(neg.apat, M.pat) + '</span></div>' +
         '<div class="mk-k mkc-f"><small>FOLHA DEPOIS</small><b class="' + (over ? 'dn' : '') + '">' + fo.pct + '% do teto</b><i class="mk-bar"><u class="' + (over ? 'low' : fo.pct >= 95 ? 'mid' : 'ok') + '" style="width:' + Math.min(100, fo.pct) + '%"></u></i></div>' +
         '<span class="rs-gap"></span>' + gold + '</div></div>', st => {
       const re = x => contrato(id, back, Object.assign({}, t, x));
       st.querySelector('#mkc-back').onclick = () => { sfx('tap'); back(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'O empresário pesa salário, anos e papel, e o humor dele muda a cada toque: só com "Deve aceitar" ele assina. Cada recusa gasta uma bolinha de paciência. Prometer titular baixa o salário que ele pede, mas a promessa vai ser cobrada. A folha não passa do teto.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'O empresário pesa salário, anos e papel, e o humor dele muda a cada toque: só com "Deve aceitar" ele assina. Cada recusa gasta uma bolinha de paciência. Prometer titular baixa o salário que ele pede, mas a promessa vai ser cobrada. A folha não passa do teto.' + (own ? ' Sem renovar, ele sai do clube no fim do contrato, mesmo sendo titular.' : '')); };
       st.querySelectorAll('[data-cw]').forEach(b => b.onclick = () => { sfx('tap'); re({ w: Math.max(1000, t.w + T.step * (+b.dataset.cw)) }); });
       st.querySelectorAll('[data-cy]').forEach(b => b.onclick = () => { sfx('tap'); re({ y: Math.max(1, Math.min(5, t.y + (+b.dataset.cy))) }); });
       st.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => { sfx('tap'); re({ role: +b.dataset.cr }); });
@@ -1065,10 +1135,11 @@
         back(); recebida(o, back, r); };
     });
   }
-  // Propostas novas na volta para a semana: uma janelinha por vez
+  // Propostas novas na volta para a semana: uma janelinha sozinha por semana (Silvio 2026-11-09: nunca duas seguidas);
+  // as outras ficam no aviso do botão Mercado
   function inboxPop(co, back) {
-    const o = S.coMktInbox(co).find(x => !x.seen); if (!o) return false;
-    setTimeout(() => { if (document.getElementById('ld-pop')) return; o.seen = 1; C().save(); recebida(o, back); }, 80); return true;
+    const m = S.coMkt(co), wk = co.season + '|' + co.ss.i, o = S.coMktInbox(co).find(x => !x.seen); if (!o || m.popK === wk) return false;
+    setTimeout(() => { if (document.getElementById('ld-pop')) return; o.seen = 1; m.popK = wk; C().save(); recebida(o, back); }, 80); return true;
   }
   // Finanças deitada: abas num array (a thread de mercado e finanças vai acrescentar "Decidir")
   const FIN_TABS = [
@@ -1130,7 +1201,8 @@
     const co = C().co, P = S.coPres(co);
     pop(popHead(esc(P.n), 'Presidente · ' + P.nome) + '<div class="ld-pb col">' + presFace(P, 'pi-fc') + '<p class="ldn-p">' + esc(P.txt) + '</p><p class="ldn-p">O caixa no vermelho pesa <b>' + RED_TXT(P.red) + '</b> na confiança dele. A cada 3 temporadas tem eleição e ele pode sair.</p></div>', 'Presidente', null, 'w560');
   }
-  // Reunião de pré-temporada: 3 acordos de verba × meta. welcome: primeira conversa no clube novo
+  // Reunião de pré-temporada: 3 acordos de verba × meta. welcome: primeira conversa no clube novo (depois dela a carreira
+  // cai na Semana, não mais na escalação: Silvio 2026-11-09)
   // Reunião e patrocínio enxutos (2026-11-08, Silvio: sem trilho nem coluna, mas "um pouquinho mais de informação pra
   // análise"): o presidente numa frase, 3 cartões com nome, valor grande e 3 linhas de números; as regras no botão ?
   const acdRow = (k, v) => '<span class="acd-r"><small>' + k + '</small><b>' + v + '</b></span>';
@@ -1150,7 +1222,7 @@
         st.querySelectorAll('[data-ac]').forEach(b => b.onclick = () => { sfx('tap'); reuniao(b.dataset.ac, welcome); });
         st.querySelector('#acd-q').onclick = () => { sfx('tap'); acdHelp('Como funciona', ['Quanto mais verba para contratar, mais alta a meta e o teto da folha.', 'Bater a meta no azul aumenta a verba e o teto do ano seguinte.',
           'Seguro: a diretoria começa desconfiada. Ousado: cumprir dá mais fama, falhar tira fama.', 'Este presidente é ' + P.nome + ': ' + esc(P.txt.charAt(0).toLowerCase() + P.txt.slice(1)) + ' Caixa no vermelho pesa ' + RED_TXT(P.red) + ' para ele.']); };
-        st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinAcordo(co, o.k); c.save('hub'); if (f.pend && f.pend.pat) patrocinio(null, welcome); else { f.pend = null; c.save('hub'); welcome ? time(false) : semana(); } };
+        st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinAcordo(co, o.k); c.save('hub'); if (f.pend && f.pend.pat) patrocinio(null, welcome); else { f.pend = null; c.save('hub'); semana(); } };
       });
   }
   function patrocinio(sel, welcome) {
@@ -1165,7 +1237,7 @@
         st.querySelectorAll('[data-pt]').forEach(b => b.onclick = () => { sfx('tap'); patrocinio(b.dataset.pt, welcome); });
         st.querySelector('#acd-q').onclick = () => { sfx('tap'); acdHelp('Como funciona', ['O dinheiro entra no caixa toda rodada.', 'Com bônus: o fixo é menor, mas no fim do ano entra o bônus se você cumprir a meta da diretoria.',
           'Travado: o valor não muda pelos anos do contrato, suba ou caia o clube.', 'Sua fama traz propostas melhores. Hoje: fama ' + co.fame + '.']); };
-        st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinPatrocinio(co, o.k); f.pend = null; c.save('hub'); welcome ? time(false) : semana(); };
+        st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinPatrocinio(co, o.k); f.pend = null; c.save('hub'); semana(); };
       });
   }
   // Banco enxuto (2026-11-09, quadro 21): o valor grande com ◀ ▶, juros, parcela e total; os degraus do vermelho no ?
@@ -1202,6 +1274,26 @@
     setTimeout(() => pop(popHead('Aviso da diretoria', 'Rodada ' + x.r) + '<div class="ld-pb col"><p class="ldn-p">' + esc(x.t) + '</p><button class="ld-gold sm" id="ldn-ok"><b>Entendi</b></button></div>', 'Aviso da diretoria', w => { w.querySelector('#ldn-ok').onclick = () => { sfx('tap'); closePop(); }; }, 'w560'), 60);
   }
 
+  // Contratos no fim (Silvio 2026-11-09, opção B): faltando 5 rodadas, uma janelinha por temporada com os titulares no
+  // último ano (sem renovar, saem). Até 3 linhas, do mais forte ao mais fraco; quem vai aposentar de qualquer jeito
+  // (36 anos ou mais) e quem já renovou não entram. Ver elenco abre o Elenco no primeiro da lista.
+  const CT_TAB = { GOL: 0, ZAG: 1, LAT: 1, MEI: 2, ATA: 3 };
+  function ctWarn(co) {
+    if (!co.ss || co.ss.rounds.length - co.ss.i > 5 || co.ctw === co.season) return false;
+    const L = co.squad.filter(p => (co.xi || []).includes(p.id) && p.ct <= 1 && p.age < 36).sort((a, b) => b.ovr - a.ovr);
+    if (!L.length) return false;
+    setTimeout(() => { if (document.getElementById('ld-pop')) return; co.ctw = co.season; C().save(); if (S.coNums) S.coNums(co.squad);
+      const left = co.ss.rounds.length - co.ss.i, more = L.length > 3 ? L.length - 2 : 0, R = more ? L.slice(0, 2) : L;
+      pop('<div class="mkx"><div class="mkx-h"><i class="mkx-fc">' + L.length + '</i><span><small>' + (left === 1 ? 'ÚLTIMA RODADA' : 'FALTAM ' + left + ' RODADAS') + '</small><b class="dn">' + (L.length > 1 ? 'Contratos no fim' : 'Contrato no fim') + '</b></span></div>' +
+        '<p>' + (L.length > 1 ? 'Sem renovar, eles saem no fim do ano.' : 'Sem renovar, ele sai no fim do ano.') + '</p>' +
+        '<div class="mkx-li">' + R.map(p => '<div><span>' + (p.num ? p.num + ' ' : '') + esc(p.n) + ' · ' + p.pos + '</span><b>' + p.ovr + '</b></div>').join('') + (more ? '<div><span>e mais ' + more + ' titulares</span></div>' : '') + '</div>' +
+        '<span class="rs-gap"></span><span class="mkx-b"><button class="hl-btn gold" id="ctw-go">Ver elenco</button><button class="hl-btn line" id="ctw-no">Depois</button></span></div>', 'Contratos no fim', w => {
+        w.querySelector('#ctw-go').onclick = () => { sfx('tap'); closePop(); elenco(CT_TAB[L[0].pos] || 0, L[0].id); };
+        w.querySelector('#ctw-no').onclick = () => { sfx('tap'); closePop(); };
+      }, 'hl-pop mkx-pop', true); }, 80);
+    return true;
+  }
+
   // Elenco e contratos: o elenco inteiro numa tabela (os seus números aparecem: é o seu time)
   // Elenco enxuto (Silvio 2026-11-09, quadro 27): sem trilho; abas por setor; linha com número, nome, posição, idade,
   // geral e contrato (laranja no último ano), a tabela rola por dentro; o cartão à direita com energia, potencial, moral,
@@ -1223,7 +1315,7 @@
       const mo = q.mo === undefined ? 60 : q.mo, moT = mo >= 70 ? 'alta' : mo >= 45 ? 'boa' : 'baixa';
       const st = (k, v, bad) => '<span><small>' + k + '</small><b' + (bad ? ' class="dn"' : '') + '>' + v + '</b></span>';
       const renOk = S.coMktRenOk(co, q), listed = S.coMktListed(co, q), canS = S.coMktCanSell(co, q), ofq = S.coMktOfferFor(co, q), win = S.coMktWin(co);
-      const hint = ofq ? 'O ' + esc(club(ofq.club).short || club(ofq.club).name) + ' fez proposta' : listed ? (win.open ? 'À venda: as propostas chegam na janela' : 'À venda: propostas na próxima janela') : !canS ? 'Elenco curto nessa posição para vender' : q.ct <= 1 ? 'Último ano: renove ou ele pode sair' : '';
+      const hint = ofq ? 'O ' + esc(club(ofq.club).short || club(ofq.club).name) + ' fez proposta' : listed ? (win.open ? 'À venda: as propostas chegam na janela' : 'À venda: propostas na próxima janela') : q.ct <= 1 ? 'Último ano: se não renovar, ele sai' : !canS ? 'Elenco curto nessa posição para vender' : '';
       card = '<div class="lde2-c"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? q.num + ' ' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + ' · ' + q.age + ' anos</small></span></div>' +
         '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/sem') + '</div>' +
         '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span></div>' +
@@ -1269,7 +1361,7 @@
     const art = Object.keys(g).sort((a, b) => g[b] - g[a])[0];
     const avgs = Object.keys(rs).filter(id => rs[id].length >= 5 && by[id]).map(id => [by[id], rs[id].reduce((a, b) => a + b, 0) / rs[id].length]).sort((a, b) => b[1] - a[1]);
     const rev = avgs.find(([p]) => p.age <= 21);
-    const dest = [art ? ['ARTILHEIRO', co.squad.find(p => p.n === art) || { n: art }, U.D.plural(g[art], 'gol', 'gols')] : null, avgs[0] ? ['MELHOR DO ANO', avgs[0][0], 'nota média ' + avgs[0][1].toFixed(1).replace('.', ',')] : null,
+    const dest = [art ? ['ARTILHEIRO', co.squad.find(p => p.n === art) || (out.left || []).find(x => x.n === art) || { n: art }, U.D.plural(g[art], 'gol', 'gols')] : null, avgs[0] ? ['MELHOR DO ANO', avgs[0][0], 'nota média ' + avgs[0][1].toFixed(1).replace('.', ',')] : null,
       rev && rev[0] !== (avgs[0] || [])[0] ? ['REVELAÇÃO', rev[0], rev[0].age + ' anos · nota ' + rev[1].toFixed(1).replace('.', ',')] : null].filter(Boolean);
     const nums = [['Pontos em ' + n + ' jogos', v * 3 + e], ['Campanha', v + 'V ' + e + 'E ' + d + 'D'], ['Gols', gp + ' a ' + gc], ['Em casa', rec(log.filter(l => l.home))], ['Fora', rec(log.filter(l => !l.home))], ['Maior vitória', big && big.gf > big.ga ? big.gf + ' x ' + big.ga + ' ' + esc((club(big.vs).short || club(big.vs).name).slice(0, 3).toUpperCase()) : '—']];
     const exp = co.squad.filter(p => p.ct <= 0).length;
@@ -1402,7 +1494,8 @@
     draw();
   }
   // ---------- Escolher clube com moedas (quadro 41, Silvio aprovou 2026-11-09) ----------
-  // Liga com ◀ ▶ (começa na liga do seu país), escudos com o preço em 2 linhas que deslizam para o lado,
+  // Liga com ◀ ▶ (começa na liga do seu país; o seletor fica DENTRO do título, país em cima e liga embaixo, e ocupa só o que sobra
+  // até a coluna do saldo: solto por cima, com largura fixa, ele cobria as moedas no iPhone, que perde 47 px de cada lado), escudos com o preço em 2 linhas que deslizam para o lado,
   // do lado o escolhido: meta, elenco em palavras, verba de chegada e quanto sobra. Assinar gasta as moedas.
   function escolher(back) {
     const c = C(), co = c.co, D = window.CRAQUE_DATA;
@@ -1418,8 +1511,8 @@
       const rel = cl.strength - avg, el = rel > 6 ? 'muito forte' : rel > 2 ? 'forte' : rel < -4 ? 'fraco' : 'médio';
       const verba = S.coFinBase({ club: pick, season: co.season }) * S.CO_FIN.verba0, hi = ['titulo', 'subir', 'g4'].includes(g.k), ok = saldo >= price;
       const cell = id => '<button class="ec-c' + (id === pick ? ' on' : '') + '" data-ec="' + id + '" aria-pressed="' + (id === pick) + '">' + crest(id, 'ec-cr') + '<b>' + esc(club(id).short || club(id).name) + '</b>' + (U.COINS.owns(id) ? '<span class="ec-own">Seu time</span>' : '<span>' + U.COINS.svg + S.coClubPrice(id) + '</span>') + '</button>';
-      show('<div class="ec"><div class="tm-h"><button class="tcr-back" id="ec-back" aria-label="Voltar">' + BK + '</button><b>Escolher clube</b></div>' +
-        '<div class="ec-lg"><button id="ec-lp" aria-label="Liga anterior">' + BK + '</button><b>' + esc(lg.country) + ' · ' + esc(lg.name) + '</b><button id="ec-ln" aria-label="Próxima liga">' + FW + '</button></div>' + U.COINS.pill('ec-pill') +
+      show('<div class="ec"><div class="tm-h"><button class="tcr-back" id="ec-back" aria-label="Voltar">' + BK + '</button><b>Escolher clube</b>' +
+        '<div class="ec-lg"><button id="ec-lp" aria-label="Liga anterior">' + BK + '</button><span><small>' + esc(lg.country) + '</small><b>' + esc(lg.name) + '</b></span><button id="ec-ln" aria-label="Próxima liga">' + FW + '</button></div></div>' + U.COINS.pill('ec-pill') +
         '<div class="ec-g">' + ids.map(cell).join('') + '</div>' +
         '<div class="ec-side"><div class="ec-sel"><div class="ec-sh">' + crest(pick, 'ec-scr') + '<b>' + esc(cl.short || cl.name) + '</b></div>' +
           '<em class="ec-m' + (hi ? ' hi' : '') + '">META · ' + esc(S.CO_GOAL_TXT[g.k]) + '</em>' +
@@ -1427,6 +1520,8 @@
           '<div class="ec-li"><span>' + (mine ? 'Comprado' : 'Moedas depois') + '</span><b>' + (mine ? 'no seu perfil' : ok ? saldo - price : '—') + '</b></div></div>' +
           '<button class="tm-go' + (!ok ? ' off' : !mine && !logged ? ' ec-in' : '') + '" id="ec-go">' + (mine ? 'Assinar · seu time' : !ok ? 'Faltam ' + (price - saldo) + ' moedas' : !logged ? 'Entrar para comprar' : 'Comprar · ' + price + ' moedas') + '</button></div></div>', st => {
         st.querySelector('#ec-back').onclick = () => { sfx('tap'); back(); };
+        // nome de liga comprido em celular com área segura larga: a letra encolhe até caber (o corte com … é só o último recurso)
+        { const nb = st.querySelector('.ec-lg b'); for (let fs = 18; fs >= 15 && nb.scrollWidth > nb.clientWidth; fs--) nb.style.fontSize = fs + 'px'; }
         st.querySelector('#ec-lp').onclick = () => { sfx('tap'); li = (li - 1 + lgs.length) % lgs.length; pick = null; draw(); };
         st.querySelector('#ec-ln').onclick = () => { sfx('tap'); li = (li + 1) % lgs.length; pick = null; draw(); };
         st.querySelectorAll('[data-ec]').forEach(b => b.onclick = () => { sfx('tap'); const sc = st.querySelector('.ec-g').scrollLeft; pick = b.dataset.ec; draw(); const g2 = document.querySelector('.ec-g'); if (g2) g2.scrollLeft = sc; });
@@ -1444,8 +1539,11 @@
   // Chegada ao clube: o presidente diz a meta (um popup em cima da semana)
   function welcome() {
     const c = C(), co = c.co, cl = club(co.club), g = co.board.goal;
-    if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao(null, true) : patrocinio(null, true);
+    // Primeira carreira, primeira temporada: o auxiliar fecha o acordo normal e o patrocínio fixo (Silvio 2026-11-09:
+    // nada de proposta antes de conhecer o elenco); a reunião aparece a partir da 2ª temporada
+    if (S.coFinPend && S.coFinPend(co)) { if (co.first && co.season === 0) { S.coFinAuto(co); c.save('hub'); } else return co.fin.pend.ac ? reuniao(null, true) : patrocinio(null, true); }
     semana();
+    if (document.getElementById('ld-tu')) return; // com o tutorial, quem recebe é o auxiliar
     pop('<div class="ldw">' + crest(cl.id, 'ldw-cr') + '<div>' + lbl(esc(cl.name).toUpperCase() + ' · ' + (U.YEAR0 + co.season)) + '<b>Bem-vindo, professor.</b><p>O presidente aperta sua mão: "Aqui a meta é uma só: <b>' + esc(S.CO_GOAL_TXT[g.k].toLowerCase()) + '</b>. ' +
       (g.k === 'titulo' ? 'Segundo lugar aqui é derrota."' : g.k === 'naocair' || g.k === 'digna' ? 'Ninguém espera milagre, mas vexame não."' : 'Confio no seu trabalho."') + '</p><button class="ld-gold sm" id="ldw-go"><b>Conhecer o elenco</b></button></div></div>', 'Bem-vindo', w => {
       w.querySelector('#ldw-go').onclick = () => { sfx('tap'); closePop(); time(false); };

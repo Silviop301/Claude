@@ -4,7 +4,8 @@
 const { chromium } = require('playwright');
 (async () => { const b = await chromium.launch(); const errs = [];
   const p = await b.newPage({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }); p.on('pageerror', e => errs.push(e.message));
-  await p.addInitScript(() => { localStorage.setItem('climbix-dicas-v1', '{"off":true}'); localStorage.setItem('climbix-deitado', '1'); });
+  if (+process.env.SAFE) await (await p.context().newCDPSession(p)).send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, left: +process.env.SAFE, right: +process.env.SAFE, bottom: 21 } }); // SAFE=47: entalhe do iPhone deitado
+  await p.addInitScript(() => { localStorage.setItem('climbix-dicas-v1', '{"off":true}'); localStorage.setItem('climbix-deitado', '1'); localStorage.setItem('climbix-co-ja', '1'); }); // co-ja: como quem já teve carreira (a primeira pula reunião e patrocínio)
   await p.goto('http://127.0.0.1:8765/craque/'); await p.waitForTimeout(1200);
   const out = process.argv[2];
   await p.screenshot({ path: out + '/hl1-vazia.png' });
@@ -24,6 +25,6 @@ const { chromium } = require('playwright');
   await p.click('[data-pop-x]'); await p.waitForTimeout(500);
   console.log('jogador desabilitado', await p.evaluate(() => !!document.querySelector('.hl-md.hl-jogador[disabled]')), 'modos', await p.evaluate(() => document.querySelectorAll('.hl-md').length));
   await p.evaluate(() => window.CRAQUE_UI.home()); await p.waitForTimeout(500);
-  await p.click('[data-hl="ranking"]'); await p.waitForTimeout(700); await p.screenshot({ path: out + '/hl9-ranking.png' });
+  console.log('ranking fora da home (1.0)', await p.evaluate(() => !document.querySelector('[data-hl="ranking"]')));
   await p.setViewportSize({ width: 390, height: 844 }); await p.evaluate(() => window.CRAQUE_UI.home()); await p.waitForTimeout(700); await p.screenshot({ path: out + '/hl10-em-pe.png' });
   console.log(errs.join('\n') || 'sem erros'); await b.close(); })();
