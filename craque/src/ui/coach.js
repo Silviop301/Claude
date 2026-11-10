@@ -531,6 +531,8 @@
     const m = S.coMatchStart(co);
     if (!m) return hub();
     if (preK) S.coPre(co, m, preK); // preleção (Treinador deitado)
+    // Perfil (metas da semana): a sua posição e a do adversário antes do jogo; vai junto no jogo salvo no meio
+    m.pfp = [pre.pos, S.coTable(co).findIndex(t => t.id === m.vs) + 1, co.ss.i];
     // Marca o jogo começado: se a pessoa sai no meio, o auxiliar termina (recarregar não desfaz o resultado)
     co.live = co.ss.i; save('live');
     live(m);
@@ -543,6 +545,7 @@
     if (!m) { save('hub'); return hub(); }
     S.coMatchRest(co, m);
     const log = S.coMatchEnd(co, m);
+    if (U.profileCoGame) U.profileCoGame(co, m, log, true); // jogo do auxiliar: conta a vitória, não anda meta
     save('hub');
     result(m, log, true);
   }
@@ -717,7 +720,7 @@
       if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => feedLine(m, e)).join('')); { const gl = fresh.filter(e => e.t === 'gol').pop(); if (gl) sfx(U.goalSnd(gl.s === 'us', !!m.home)); } }
       if (ctx) U.LD.livePaint(ctx);
     };
-    const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); save('hub'); result(m, log, false, firstMove); };
+    const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); if (U.profileCoGame) U.profileCoGame(co, m, log); save('hub'); result(m, log, false, firstMove); };
     const end = () => {
       clearTimeout(timer); hidden.clear(); paint(); open = true;
       if (sim && sim.fin) { sim.fin(); sfx('whistle'); } // três apitos: os jogadores param onde estão
@@ -1116,7 +1119,7 @@
     out.coinsTot = U.COINS.add(list);
     out.coinsPaid = true;
   }
-  function finishSeason() { const out = S.coSeasonEnd(co); payCoins(out); save('end'); seasonEnd(out); }
+  function finishSeason() { const out = S.coSeasonEnd(co); payCoins(out); if (U.profileCoSeason) U.profileCoSeason(co, out); save('end'); seasonEnd(out); }
   function seasonEnd(out) {
     G.c = null; bar();
     if (U.LD && U.LD.on()) return U.LD.temporada(out);

@@ -237,8 +237,11 @@
     ['treinador'].forEach(m => slotsOf(m).forEach((sv, i) => { if (sv && (!best || (sv.at || 0) > (best.sv.at || 0))) best = { m, i, sv }; }));
     return best;
   }
+  // Carreiras (troféus, coleção e conquistas do Jogador) sai da home até o Jogador voltar (Silvio 2026-11-09): os números do
+  // técnico estão no Perfil. MINE_ON = true devolve o botão
+  const MINE_ON = false;
   const LAND_MORE = [['mine', 'Carreiras', 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4'], ['ranking', 'Ranking', 'M12 14a5 5 0 1 0 0-10a5 5 0 1 0 0 10M9 13l-2 8 5-3 5 3-2-8'],
-    ['profile', 'Perfil', 'M12 12a4 4 0 1 0 0-8a4 4 0 1 0 0 8M4 21a8 8 0 0 1 16 0'], ['settings', 'Ajustes', 'M12 15a3 3 0 1 0 0-6a3 3 0 1 0 0 6M19 12l2-1-2-4-2 1-2-2V4h-4v2L9 8 7 7 5 11l2 1v2l-2 1 2 4 2-1 2 2v2h4v-2l2-2 2 1 2-4-2-1z']].filter(x => RANK_ON || x[0] !== 'ranking');
+    ['profile', 'Perfil', 'M12 12a4 4 0 1 0 0-8a4 4 0 1 0 0 8M4 21a8 8 0 0 1 16 0'], ['settings', 'Ajustes', 'M12 15a3 3 0 1 0 0-6a3 3 0 1 0 0 6M19 12l2-1-2-4-2 1-2-2V4h-4v2L9 8 7 7 5 11l2 1v2l-2 1 2 4 2-1 2 2v2h4v-2l2-2 2 1 2-4-2-1z']].filter(x => (RANK_ON || x[0] !== 'ranking') && (MINE_ON || x[0] !== 'mine'));
   const lineSvg = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + d + '"/></svg>';
   function homeLand() {
     const so = U.soCo(), packs = so ? 0 : U.ITEMS.get().packs.length, last = lastSave();
@@ -252,7 +255,7 @@
       '<div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') + '</div>' +
       cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div></div>';
     U.LD.show(html, st => {
-      st.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.hl; if (k === 'settings' && U.settingsLand) return U.settingsLand(home); U.ldOff(); if (k === 'settings') return U.settings ? U.settings() : null; (U[k] || home)(); });
+      st.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.hl; if (k === 'settings' && U.settingsLand) return U.settingsLand(home); if (k === 'profile' && U.profileLand) return U.profileLand(home); U.ldOff(); if (k === 'settings') return U.settings ? U.settings() : null; (U[k] || home)(); });
       bindSaves(st);
       st.querySelectorAll('[data-md]').forEach(b => b.onclick = () => {
         const m = b.dataset.md; sfx('tap');
