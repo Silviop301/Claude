@@ -7634,17 +7634,19 @@ body.ld-on #ld { display: block; }
 .ldl-sb .lv-crd { display: none; }
 .ldl-side { width: 168px; flex: none; display: flex; flex-direction: column; gap: 8px; }
 /* Último lance (campo limpo, 2026-11-07): só a linha mais nova do relato, em cartão no topo do painel */
-/* Lances do ao vivo: lista rolável de linhas curtas, o último em cima (Silvio, 2026-11-10); a 4ª linha aparece apagando embaixo */
+/* Lances do ao vivo: lista rolável, o último em cima (Silvio, 2026-11-10); cada lance é a frase com o nome completo em até duas
+   linhas, com o minuto e o escudo no começo da primeira; o que não coube apaga embaixo e rola por dentro */
 .ldl-ev.lv-feed { margin: 0; padding: 4px 4px 0; list-style: none; display: block; flex: none; height: 80px; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none;
   background: #141517; border: 0; border-radius: 12px; box-shadow: inset 0 0 0 1px #2a2d31; -webkit-mask-image: linear-gradient(#000 calc(100% - 12px), transparent); mask-image: linear-gradient(#000 calc(100% - 12px), transparent); }
 .ldl-ev.lv-feed::-webkit-scrollbar { display: none; }
-.ldl-ev.lv-feed li { display: flex; align-items: center; gap: 4px; height: 22px; padding: 0 5px; border-radius: 7px; background: none; box-shadow: none; font: 600 13px/1 var(--body); color: var(--tx-3); white-space: nowrap; }
-.ldl-ev.lv-feed li:last-child { margin-bottom: 4px; } .ldl-ev.lv-feed li:first-child { color: var(--tx-1); font-weight: 700; }
-.ldl-ev.lv-feed li > i { flex: none; min-width: 20px; margin: 0; font: 800 13px/1 var(--display); font-style: normal; color: var(--gold); }
-.ldl-ev.lv-feed li > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: inherit; color: inherit; } .ldl-ev.lv-feed li b { font: inherit; font-weight: 800; color: inherit; }
+.ldl-ev.lv-feed li { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; max-height: 38px; box-sizing: border-box; padding: 3px 6px; margin-bottom: 2px; border-radius: 7px; background: none; box-shadow: none; font: 600 13px/16px var(--body); color: var(--tx-3); }
+.ldl-ev.lv-feed li:last-child { margin-bottom: 4px; } .ldl-ev.lv-feed li:first-child { color: var(--tx-1); }
+.ldl-ev.lv-feed li > i { margin: 0 5px 0 0; font: 800 13px/16px var(--display); font-style: normal; color: var(--gold); }
+.ldl-ev.lv-feed li > img { width: 14px; height: 14px; margin: 0 5px 0 0; vertical-align: -2px; }
+.ldl-ev.lv-feed li > span { font: inherit; color: inherit; } .ldl-ev.lv-feed li b { font: inherit; font-weight: 800; color: inherit; }
 .ldl-ev.lv-feed li > span > span { display: inline-block; width: 9px; height: 12px; vertical-align: -1px; }
 .ldl-ev.lv-feed li.gol { color: var(--tx-1); } .ldl-ev.lv-feed li.gol.us { background: var(--paper); color: var(--lv-ink); } .ldl-ev.lv-feed li.gol.us > i { color: var(--ink-2); }
-.ldl-ev.lv-feed li.vc { color: #F2C230; } .ldl-ev.lv-feed li.vc > u { flex: none; text-decoration: none; font: 800 12px/1 var(--display); letter-spacing: .04em; border: 1px solid currentColor; border-radius: 4px; padding: 1px 3px; }
+.ldl-ev.lv-feed li.vc { color: #F2C230; } .ldl-ev.lv-feed li.vc > u { text-decoration: none; font: 800 11px/1 var(--display); letter-spacing: .04em; border: 1px solid currentColor; border-radius: 4px; padding: 1px 3px; margin-right: 5px; }
 .ldl-qm { display: flex; flex-direction: column; gap: 5px; }
 .ldl-qm small { font: 700 13px var(--body); letter-spacing: .08em; color: var(--tx-3); }
 .ldl-qm span { display: flex; align-items: center; gap: 6px; } .ldl-c16 { flex: none; width: 16px; height: 16px; margin: 0; object-fit: contain; vertical-align: -3px; }

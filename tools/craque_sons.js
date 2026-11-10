@@ -34,7 +34,8 @@ function wav(chans) {
     const chans = await page.evaluate(async ([src, name, SR, LEN]) => {
       // O jogo cria o contexto com new AudioContext(): aqui ele vira um contexto offline
       let off = null;
-      window.AudioContext = function () { off = new OfflineAudioContext(2, SR * LEN, SR); return off; };
+      // (o jogo só agenda som com o contexto rodando; o offline fica 'suspended' até gravar, então aqui ele se diz 'running')
+      window.AudioContext = function () { off = new OfflineAudioContext(2, SR * LEN, SR); Object.defineProperty(off, 'state', { get: () => 'running' }); return off; };
       try { localStorage.removeItem('craque-sound'); } catch (e) { /* ok */ }
       (0, eval)(src);
       window.CRAQUE_SFX.play('-');                 // cria o contexto e começa a baixar as gravações
