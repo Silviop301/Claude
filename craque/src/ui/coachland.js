@@ -478,9 +478,9 @@
       '<div class="ldl-sb">' + crestB(H.id, 'ldl-cr') + '<em id="lv-score">0 <i>x</i> 0</em>' + crestB(A.id, 'ldl-cr') + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' +
         '<i class="lv-crd" id="lv-cd-h"></i><i class="lv-crd" id="lv-cd-a"></i></div></div>' +
       '<div class="ldl-side"><ul class="lv-feed ldl-ev" id="lv-feed">' + o.feed0 + '</ul>' +
-        '<div class="ldl-qm"><small>QUEM MANDA</small><i><u id="ldl-momb"></u></i></div>' +
+        '<div class="ldl-qm"><small>QUEM MANDA</small><span>' + crestB(H.id, 'ldl-c16') + '<i' + (o.m.home ? '' : ' class="r"') + '><u id="ldl-momb"></u></i>' + crestB(A.id, 'ldl-c16') + '</span></div>' +
         '<div class="ldl-g4" id="ldl-g4">' + Object.keys(S.CO_SHOUT).map(k => '<button data-gr="' + k + '"><b>' + S.CO_SHOUT[k].name + '</b><small>' + S.CO_SHOUT[k].sub + '</small></button>').join('') + '</div>' +
-        '<button class="ldl-num" id="ldl-num">Números</button><span class="ld-gr"></span>' + o.speedHtml +
+        '<button class="ldl-num" id="ldl-num" aria-label="Números do jogo">Números</button><span class="ld-gr"></span>' + o.speedHtml +
         '<button class="ld-gold ldl-stop" id="b-lv-stop">' + o.pause + '<b>Parar e mexer</b></button></div>' +
       '<div hidden><b id="lv-sh"></b><b id="lv-ot"></b><b id="lv-ps"></b><div id="lv-cst"></div><b id="lv-momw"></b><span id="lv-mom"></span><div id="lv-aux"></div></div>' +
       '<div class="lv-sheet ldl-sheet" id="lv-sheet"></div></div>';
@@ -491,21 +491,34 @@
     g.querySelectorAll('[data-gr]').forEach(b => { const on = !!sh && sh.k === b.dataset.gr; b.classList.toggle('on', on); b.disabled = !!sh && !on;
       b.querySelector('small').textContent = on ? 'até os ' + sh.until + '\'' : S.CO_SHOUT[b.dataset.gr].sub; });
     const st = x.stats();
-    $('ldl-num').innerHTML = 'Números · <b>' + st.sh.us + ' x ' + st.sh.them + '</b> chutes';
+    // Na ordem do placar (mandante à esquerda), com o escudo de cada lado: fora de casa o seu número é o da direita
+    const sh2 = hv(m, st.sh.us, st.sh.them), ids = hv(m, C().co.club, m.vs);
+    $('ldl-num').innerHTML = '<span>Chutes</span>' + crest(ids[0], 'ldl-c16') + '<b>' + sh2[0] + ' x ' + sh2[1] + '</b>' + crest(ids[1], 'ldl-c16') + '<i>›</i>';
+    // Números aberto: acompanha o jogo (antes ficava parado no minuto em que abriu)
+    const nb = $('ldl-nums'); if (nb) { nb.innerHTML = numBody(x); const sm = nb.parentNode.querySelector('.ld-ph small'); if (sm) sm.textContent = S.coClock(m); }
     if (!g._b) {
       g._b = 1;
       g.querySelectorAll('[data-gr]').forEach(b => b.onclick = () => { if (m.done || m.us.shout) return; sfx('tap'); x.shout(b.dataset.gr); });
       $('ldl-num').onclick = () => { sfx('tap'); numPop(x); };
     }
   }
-  // Números do jogo (não para o jogo)
-  function numPop(x) {
-    const s = x.stats(), m = x.m, c = C(), us = esc(c.nm(c.co.club)), th = esc(c.nm(m.vs));
-    const row = (k, a, b, inv) => { const t = a + b || 1; return '<div class="ldl-nr"><b>' + a + '</b><span><small>' + k + '</small><i><u class="' + (inv ? (a <= b ? 'up' : 'dn') : (a >= b ? 'up' : 'dn')) + '" style="width:' + Math.round(a / t * 100) + '%"></u></i></span><b>' + b + '</b></div>'; };
+  // Números na ordem do placar: mandante à esquerda, visitante à direita (o motor guarda us/them)
+  const hv = (m, a, b) => (m.home ? [a, b] : [b, a]);
+  // Escudo e nome em cima de cada coluna (o seu em destaque)
+  const numHead = m => { const c = C(), me = '<span class="me">' + crest(c.co.club, 'ldl-c16') + '<b>' + esc(c.nm(c.co.club)) + '</b></span>', th = '<span>' + crest(m.vs, 'ldl-c16') + '<b>' + esc(c.nm(m.vs)) + '</b></span>';
+    return '<div class="ldl-nh">' + hv(m, me, th).join('') + '</div>'; };
+  // Números do jogo (não para o jogo; livePaint redesenha enquanto estiver aberto)
+  function numBody(x) {
+    const s = x.stats(), m = x.m;
+    // a parte colorida da barra é sempre a sua (verde = melhor para você), do lado em que o seu escudo está
+    const row = (k, a, b, inv) => { const t = a + b || 1, v = hv(m, a, b), me = '<u class="' + ((inv ? a <= b : a >= b) ? 'up' : 'dn') + '" style="width:' + Math.round(a / t * 100) + '%"></u>';
+      return '<div class="ldl-nr"><b>' + v[0] + '</b><span><small>' + k + '</small><i>' + hv(m, me, '<u class="th"></u>').join('') + '</i></span><b>' + v[1] + '</b></div>'; };
     const ps = Math.round(s.poss * 100);
-    pop(popHead('Números do jogo', us + ' (esquerda) x ' + th + ' · ' + S.coClock(m)) + '<div class="ld-pb col ldl-nums">' +
-      row('Chutes', s.sh.us, s.sh.them) + row('No gol', s.ot.us, s.ot.them) + row('Posse (%)', ps, 100 - ps) + row('Faltas', s.fo.us, s.fo.them, 1) + row('Impedimentos', s.of.us, s.of.them, 1) +
-      row('Amarelos', s.yc.us, s.yc.them, 1) + (s.rc.us + s.rc.them ? row('Vermelhos', s.rc.us, s.rc.them, 1) : '') + '</div>', 'Números do jogo', null, 'w560');
+    return numHead(m) + row('Chutes', s.sh.us, s.sh.them) + row('No gol', s.ot.us, s.ot.them) + row('Posse (%)', ps, 100 - ps) + row('Faltas', s.fo.us, s.fo.them, 1) + row('Impedimentos', s.of.us, s.of.them, 1) +
+      row('Amarelos', s.yc.us, s.yc.them, 1) + (s.rc.us + s.rc.them ? row('Vermelhos', s.rc.us, s.rc.them, 1) : '');
+  }
+  function numPop(x) {
+    pop(popHead('Números do jogo', S.coClock(x.m)) + '<div class="ld-pb col ldl-nums" id="ldl-nums">' + numBody(x) + '</div>', 'Números do jogo', null, 'w560');
   }
   const byOf = sq => { const o = {}; sq.forEach(p => { o[p.id] = p; }); return o; };
   const enC = e => (e >= 70 ? 'ok' : e >= 50 ? 'mid' : 'low');
@@ -694,9 +707,10 @@
     const draw = () => {
       const nums = matchNums(m).filter(r => KEEP.indexOf(r[0]) >= 0);
       const cd = n => '<i class="y"></i>'.repeat(Math.min(3, n[0] || 0)) + '<i class="r"></i>'.repeat(n[1] || 0);
-      const bar = ([k, a, b, suf, inv, cards]) => { const t = (a + b) || 1, good = inv ? a <= b : a >= b;
-        return '<div class="rs-r"><b>' + (cards ? cd(cards.slice(0, 2)) + ' ' : '') + a + (suf || '') + '</b><span><small>' + k + '</small><i><u class="' + (good ? 'up' : 'dn') + '" style="width:' + Math.round(a / t * 100) + '%"></u><u class="th"></u></i></span><b>' + b + (suf || '') + (cards ? ' ' + cd(cards.slice(2)) : '') + '</b></div>'; };
-      const pane = tab === 'num' ? '<div class="rs-nums">' + nums.map(bar).join('') + '</div>' :
+      // Na ordem do placar de cima (mandante à esquerda); a parte colorida da barra é a sua
+      const bar = ([k, a, b, suf, inv, cards]) => { const t = (a + b) || 1, good = inv ? a <= b : a >= b, v = hv(m, a, b), cs = cards ? hv(m, cd(cards.slice(0, 2)), cd(cards.slice(2))) : ['', ''];
+        return '<div class="rs-r"><b>' + (cards ? cs[0] + ' ' : '') + v[0] + (suf || '') + '</b><span><small>' + k + '</small><i>' + hv(m, '<u class="' + (good ? 'up' : 'dn') + '" style="width:' + Math.round(a / t * 100) + '%"></u>', '<u class="th"></u>').join('') + '</i></span><b>' + v[1] + (suf || '') + (cards ? ' ' + cs[1] : '') + '</b></div>'; };
+      const pane = tab === 'num' ? '<div class="rs-nums">' + numHead(m) + nums.map(bar).join('') + '</div>' :
         tab === 'mom' ? '<div class="ldr-mom">' + U.lvMom(m, move !== null && move !== undefined ? move : null) + '</div><div class="rs-momf"><small>0\'</small><small>' + (move !== null && move !== undefined ? 'sua mudança aos ' + move + '\'' : 'acima é você') + '</small><small>90\'</small></div>' +
           '<ul class="ldl-last ldr-key">' + m.ev.filter(e => e.t === 'gol' || e.t === 'vermelho' || (e.s === 'us' && (e.t === 'tatica' || e.t === 'troca'))).slice(0, 6).map(e => c.feedLine(m, e)).join('') + '</ul>' :
         '<ul class="ldl-last ldr-all">' + m.ev.filter(e => e.t !== 'grito-fim').map(e => c.feedLine(m, e)).join('') + '</ul>';
