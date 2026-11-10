@@ -233,7 +233,7 @@
     if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao() : patrocinio();
     c.save('hub');
     const tut = tutStep(co);
-    const popped = !tut && inboxPop(co, semana);
+    const popped = !tut && (inboxPop(co, semana) || lostPop(co));
     if (!tut && !popped && !ctWarn(co)) finNews(co);
     // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
     const inN = tut ? 0 : S.coMktInbox(co).filter(o => !o.seen).length - (popped ? 1 : 0);
@@ -1020,7 +1020,7 @@
   // Notícias (aba do Mercado, desenho A aprovado em 2026-11-10): os negócios do mercado vivo (engine/coachworld.js), uma
   // linha por notícia (posição, nome, escudo › escudo, etiqueta e valor), 4 por página; à direita o filtro Mostrar, as
   // páginas e Ver ficha. A nota dourada marca o que é do seu clube e o ▲ verde quem chegou para ser titular
-  const NW_FLT = ['Tudo', 'Sua liga', 'Seu clube'], NW_TAG = { f: 'FECHADO', l: 'LIVRE' };
+  const NW_FLT = ['Tudo', 'Sua liga', 'Seu clube', 'Observados'], NW_TAG = { f: 'FECHADO', l: 'LIVRE', b: 'BOATO' };
   let nwFlt = 1, nwSeen = 0;
   function noticias(pg, sel, flt) {
     const c = C(), co = c.co;
@@ -1033,11 +1033,11 @@
     const nm = id => '<span class="nw-c">' + esc((club(id).short || club(id).name).replace(/^Red Bull /, '')) + '</span>';
     const row = (x, i) => {
       const way = x.k === 'l' ? '<span class="nw-c">sem clube · ' + x.age + ' anos</span>' : (x.from ? crest(x.from, 'nw-cr') + nm(x.from) : '<span class="nw-c">sem clube</span>') + '<s>›</s>' + crest(x.to, 'nw-cr') + nm(x.to) + (x.up ? '<em title="chegou para ser titular">▲</em>' : '');
-      const note = x.me === 1 ? 'seu clube' : x.me === 2 ? 'ex seu clube' : '';
+      const note = x.me === 1 ? 'seu clube' : x.me === 2 ? 'ex seu clube' : S.coWorldObs(co, x) ? 'observado' : '';
       return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-nr="' + i + '"><i>' + x.pos + '</i><span><b><span class="nw-n">' + esc(x.n) + '</span>' + (note ? '<u>' + note + '</u>' : '') + '</b><small>' + way + '</small></span>' +
-        '<div class="nw-tc"><strong>' + (x.tr ? 'troca' : x.v ? c.brl(x.v) : 'grátis') + '</strong><em class="nw-tag ' + x.k + '">' + NW_TAG[x.k] + '</em></div></button>'; };
-    const none = all.length ? (nwFlt === 2 ? 'Seu clube ainda não fez negócio.' : 'Nada aqui. Veja em Tudo.') : win.k ? 'Nenhum negócio fechado ainda.' : win.next ? 'Sem notícias. A janela abre na rodada ' + win.next + '.' : 'Sem notícias nesta temporada.';
-    const cur = R[sel], p = cur && cur.id ? S.coMktFind(co, cur.id) : null, goT = !cur ? 'Ver ficha' : p ? 'Ver ficha' : cur.to === co.club ? 'No seu elenco' : 'Sem ficha';
+        '<div class="nw-tc"><strong>' + (x.k === 'b' ? '?' : x.tr ? 'troca' : x.v ? c.brl(x.v) : 'grátis') + '</strong><em class="nw-tag ' + x.k + '">' + NW_TAG[x.k] + '</em></div></button>'; };
+    const none = all.length ? (nwFlt === 2 ? 'Seu clube ainda não fez negócio.' : nwFlt === 3 ? 'Nada sobre quem você observa.' : 'Nada aqui. Veja em Tudo.') : win.k ? 'Nenhum negócio fechado ainda.' : win.next ? 'Sem notícias. A janela abre na rodada ' + win.next + '.' : 'Sem notícias nesta temporada.';
+    const cur = R[sel], p = cur && cur.id ? S.coMktFind(co, cur.id) : null, goT = !cur ? 'Ver ficha' : p ? 'Ver ficha' : cur.to === co.club || (cur.k === 'b' && cur.from === co.club) ? 'No seu elenco' : 'Sem ficha';
     show('<div class="mk nw">' + mkHead('nw-back', 'Mercado', esc(club(co.club).short || club(co.club).name), false, true) +
       '<div class="mk-tabs">' + mkTabs(co, 3) + '</div>' +
       '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">' + none + '</p>') + '</div>' +
@@ -1049,7 +1049,7 @@
       st.querySelector('#nw-back').onclick = () => { sfx('tap'); semana(); };
       mkCoins(st, () => noticias(pg, sel));
       st.querySelector('#mk-tpr').onclick = () => { sfx('tap'); mercado(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Os negócios que os clubes fecham com a janela aberta: cada semana de janela traz novos. LIVRE é quem ficou sem clube e sai de graça. O ▲ verde marca quem chegou para ser titular. Toque na linha e em Ver ficha para olhar o jogador no clube novo.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Os negócios dos clubes com a janela aberta. BOATO: 2 em cada 3 fecham na semana seguinte. LIVRE: ficou sem clube e sai de graça. ▲ verde: chegou para ser titular. Ver ficha mostra o jogador no clube novo.'); };
       st.querySelectorAll('[data-nr]').forEach(b => b.onclick = () => { const i = +b.dataset.nr; sfx('tap'); if (i === sel) return open(i); noticias(pg, i); });
       st.querySelectorAll('[data-nf]').forEach(b => b.onclick = () => { sfx('tap'); noticias(0, 0, (nwFlt + (+b.dataset.nf) + NW_FLT.length) % NW_FLT.length); });
       st.querySelector('#nw-prev').onclick = () => { sfx('tap'); noticias(pg - 1, 0); };
@@ -1080,13 +1080,16 @@
     const band = b ? '<span class="mk-band" style="left:' + X(b.lo) + '%;width:' + Math.max(4, X(b.hi) - X(b.lo)) + '%"></span>' : '';
     const pot = b ? S.coMktPot(p) : null, tr = b ? S.coMktTraits(p) : null;
     const yr = p.club ? 'até ' + (U.YEAR0 + co.season + p.ct) : 'livre';
+    const rums = p.club && S.coWorldRumors ? S.coWorldRumors(co, p.id).slice(0, 3) : []; // boato: outros clubes atrás dele
+    const rumNm = id => esc((club(id).short || club(id).name).replace(/^Red Bull /, ''));
+    const rumRow = rums.length ? '<div class="mkf-rm"><span>' + (rums.length > 1 ? 'Também querem' : 'Também quer') + '</span><b>' + rums.map(x => crest(x.to, 'nw-cr')).join('') + (rums.length === 1 ? '<i>' + rumNm(rums[0].to) + '</i>' : '') + '</b></div>' : '';
     const repC = S.coMktRepCost(co, p), repNo = n < S.CO_MKT.reps && (S.coFin(co).caixa || 0) < repC, repOff = n >= S.CO_MKT.reps || repNo;
-    show('<div class="mk mkf">' + mkHead('mkf-back', esc(p.n), S.CO_POS_NM[p.pos] + ' · ' + p.age + ' anos · ' + mkClub(p), false, true) +
+    show('<div class="mk mkf' + (rumRow ? ' rm' : '') + '">' + mkHead('mkf-back', esc(p.n), S.CO_POS_NM[p.pos] + ' · ' + p.age + ' anos · ' + mkClub(p), false, true) +
       (fichaAt ? fichaAttrs(co, p, n) : '<div class="mk-k mkf-cmp"><span class="mkf-t"><small>CONTRA O SEU ' + (S.CO_POS_NM[p.pos] || '').toUpperCase() + ' TITULAR</small>' + (b ? '<b class="' + word + '">' + word + '<small>' + CERT[n] + '</small></b>' : '<b class="nr">sem relatório</b>') + '</span>' +
         '<span class="mkf-sc"><i></i>' + band + '<em></em><strong>' + esc(st0 ? last(st0.n) : 'titular') + '</strong></span><span class="mkf-w"><span>pior</span><span>igual</span><span>melhor</span></span></div>' +
       '<div class="mkf-g"><div class="mk-k"><small>POTENCIAL</small><b>' + (pot ? pot[0] : 'Peça um relatório') + '</b>' + (pot ? '<span class="mkf-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= pot[1] ? 'on' : '') + '"></i>').join('') + '</span>' : '<span class="mkf-nr">o olheiro ainda não viu</span>') + '</div>' +
         '<div class="mk-k"><small>JEITO DE JOGAR</small>' + (tr ? '<span class="mkf-tr">' + tr.good.map(t => '<span>' + t + '</span>').join('') + '</span><span class="mkf-nr">' + (n >= 3 ? 'Ponto fraco: ' + tr.bad : 'mais relatório mostra o ponto fraco') + '</span>' : '<b>?</b><span class="mkf-nr">o olheiro ainda não viu</span>') + '</div></div>') +
-      '<div class="mk-side"><div class="mk-k mkf-li"><div><span>Preço</span><b>' + (p.club ? c.brl(S.coMktPrice(p)) : 'grátis') + '</b></div><div><span>Salário</span><b>' + c.brl(p.wage) + '/sem</b></div><div><span>Contrato</span><b>' + yr + '</b></div></div>' +
+      '<div class="mk-side"><div class="mk-k mkf-li"><div><span>Preço</span><b>' + (p.club ? c.brl(S.coMktPrice(p)) : 'grátis') + '</b></div><div><span>Salário</span><b>' + c.brl(p.wage) + '/sem</b></div><div><span>Contrato</span><b>' + yr + '</b></div>' + rumRow + '</div>' +
         '<div class="mkf-act"><button class="mkf-rep' + (repOff ? ' done' : '') + '" id="mkf-rep"' + (repOff ? ' disabled' : '') + '>' + (n >= S.CO_MKT.reps ? 'Relatório completo' : (n ? 'Mais um relatório' : 'Pedir relatório') + '<small>' + (repNo ? 'sem caixa · ' : '') + c.brl(repC) + '</small>') + '</button>' +
           '<button class="mkf-star' + (obs ? ' on' : '') + '" id="mkf-star" aria-label="Observar" aria-pressed="' + obs + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button></div>' +
         '<button class="mkf-tg" id="mkf-tg" aria-pressed="' + !!fichaAt + '">' + (fichaAt ? 'Ver resumo' : 'Ver atributos') + '</button>' +
@@ -1333,6 +1336,20 @@
   function inboxPop(co, back) {
     const m = S.coMkt(co), wk = co.season + '|' + co.ss.i, o = S.coMktInbox(co).find(x => !x.seen); if (!o || m.popK === wk) return false;
     setTimeout(() => { if (document.getElementById('ld-pop')) return; o.seen = 1; m.popK = wk; C().save(); recebida(o, back); }, 80); return true;
+  }
+  // Quem você observava fechou com outro clube (mercado vivo, fase 3): uma janelinha na volta para a semana, nunca junto
+  // com a de proposta recebida (fica para a semana seguinte). Procurar outro abre o Mercado já na posição dele
+  function lostPop(co) {
+    if (!S.coWorldLost || !co.wm || !co.wm.lost || document.getElementById('ld-pop')) return false;
+    const x = S.coWorldLost(co), c = C(); c.save();
+    setTimeout(() => { if (document.getElementById('ld-pop')) return;
+      pop('<div class="mkx"><div class="mkx-h">' + crest(x.to, 'mkx-cr') + '<span><small>VOCÊ OBSERVAVA</small><b class="dn">Fechou com outro</b></span></div>' +
+        '<p><b>' + esc(x.n) + '</b> assinou com o ' + esc(club(x.to).short || club(x.to).name) + ' por ' + c.brl(x.v) + '.</p>' +
+        '<span class="mkx-b"><button class="hl-btn gold" id="lst-go">Procurar outro</button><button class="hl-btn line" data-pop-x>Fechar</button></span></div>', 'Fechou com outro', w => {
+        w.querySelector('#lst-go').onclick = () => { sfx('tap'); closePop(); const m = S.coMkt(co), F = S.coMktFilters(co), i = F.findIndex(f => f.k === 'pos'), j = ['GOL', 'ZAG', 'LAT', 'MEI', 'ATA'].indexOf(x.pos) + 1;
+          m.f = F.map(() => 0); if (i >= 0 && j > 0) m.f[i] = j; m.nm = ''; c.save(); mercado(); };
+      }, 'hl-pop mkx-pop ech-pop'); }, 80);
+    return true;
   }
   // Finanças deitada: abas num array (a thread de mercado e finanças vai acrescentar "Decidir")
   const FIN_TABS = [
