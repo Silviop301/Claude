@@ -9348,3 +9348,22 @@ button.coin-pill { cursor: pointer; border: 0; }
 .cvj-fc { width: 60px; height: 60px; flex: none; border-radius: 50%; object-fit: cover; background: #F8F4EA; }
 .ld-pop-c.cvj-pop.cvj-av { width: 640px; } .cvj-av .cvj-say p { font-weight: 600; }
 .ld-st button.cvj-ok { align-self: flex-end; min-width: 200px; min-height: 52px; } .cvj-ok b { font-size: 22px; }
+/* Taça do campeão + aviso "o título pode sair hoje" (Treinador, 2026-11-10) */
+.tc-ov{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#f2efe6}
+.tc-av{background:rgba(0,0,0,.6)}
+.tc-fe{background:#15171a}
+.tc-box{display:flex;gap:16px;align-items:center;background:#1f2226;border-radius:18px;padding:18px 20px;max-width:440px;box-shadow:0 10px 40px #000a;animation:tcPop .4s both}
+.tc-box b{display:block;font-size:24px}.tc-box small{font-size:15px;color:#9aa0a6}
+.tc-ov .tc-go{position:absolute;right:max(18px,env(safe-area-inset-right));bottom:18px;width:auto;min-width:150px;margin:0}
+.tc-ray{position:absolute;inset:-60%;background:repeating-conic-gradient(rgba(232,184,74,.10) 0 8deg,transparent 8deg 20deg);animation:tcSpin 30s linear infinite}
+.tc-cf i{position:absolute;top:-20px;width:8px;height:14px;border-radius:2px;animation:tcFall linear infinite both}
+.tc-mid{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center}
+.tc-tag{font-size:13px;letter-spacing:2px;color:#e8b84a;font-weight:700;animation:tcFd .5s 1.4s both}
+.tc-cup{margin:8px 0 2px;filter:drop-shadow(0 8px 24px rgba(232,184,74,.5));animation:tcUp 1.2s cubic-bezier(.2,1.4,.4,1) both}
+.tc-big{font-size:40px;font-weight:900;animation:tcPop .5s 1s both}
+.tc-sub{font-size:15px;color:#9aa0a6;animation:tcFd .5s 1.4s both}
+@keyframes tcFall{to{transform:translateY(110vh) rotate(540deg)}}
+@keyframes tcSpin{to{transform:rotate(360deg)}}
+@keyframes tcUp{from{transform:translateY(160px) scale(.5);opacity:0}}
+@keyframes tcPop{from{transform:scale(2.5);opacity:0}}
+@keyframes tcFd{from{opacity:0}}

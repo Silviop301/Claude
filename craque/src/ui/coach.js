@@ -526,7 +526,8 @@
   // ---------- jogo (nesta parte, direto o resultado) ----------
   let pre = null; // posição, confiança e caixa antes do jogo (o "O que mudou" do fim de jogo deitado)
   const markPre = () => { pre = { pos: S.coPos(co), conf: co.board.conf, caixa: co.fin ? co.fin.caixa : null }; };
-  function play(preK) {
+  function play(preK) { tacaChance(() => play0(preK)); }
+  function play0(preK) {
     markPre();
     const m = S.coMatchStart(co);
     if (!m) return hub();
@@ -1088,7 +1089,28 @@
       yc.map(n => '<p><span class="co-yc"></span><b>' + esc(last(n)) + '</b> · 3º amarelo<em class="out">Fora 1 jogo</em></p>').join('') +
       pd.map(p => '<p><span class="co-yc"></span><b>' + esc(last(p.n)) + '</b> · 2º amarelo no ano<em>Pendurado</em></p>').join('') + '</div>';
   }
+  // ---------- Taça (Silvio 2026-11-10): aviso "o título pode sair hoje" antes da rodada e festa quando o título é seu ----------
+  const tacaImg = h => window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY('league', h, co.ss.name) : '';
+  function tacaPop(html, cls, go) {
+    const d = document.createElement('div'); d.className = 'tc-ov ' + cls; d.innerHTML = html; document.body.appendChild(d);
+    const b = d.querySelector('.tc-go'); b.onclick = () => { sfx('tap'); d.remove(); go(); };
+  }
+  function tacaChance(go) {
+    const ch = S.coTitleChance(co); if (!ch || co.ss.tcI === co.ss.i) return go();
+    co.ss.tcI = co.ss.i; save('hub');
+    const rv = ch.rivals.map(nm).join(', ');
+    tacaPop('<div class="tc-box">' + tacaImg(84) + '<div><b>O título pode sair hoje!</b><small>' + (ch.rivals.length ? 'Vença e torça contra ' + esc(rv) + '.' : 'Vença e a taça é sua.') + '</small></div></div><button class="btn tc-go">Seguir</button>', 'tc-av', go);
+  }
+  function tacaFesta(go) {
+    if (co.ss.tw || !S.coTitleWon(co)) return go();
+    co.ss.tw = 1; save('hub');
+    const t = S.coTable(co), me = t[0], left = co.ss.rounds.length - co.ss.i;
+    let cf = ''; for (let i = 0; i < 46; i++) cf += '<i style="left:' + (Math.random() * 100).toFixed(1) + '%;background:' + ['#e8b84a', '#fff', '#ffe08a', '#c9a24a'][i % 4] + ';animation-duration:' + (2.5 + Math.random() * 3).toFixed(2) + 's;animation-delay:' + (1 + Math.random() * 3).toFixed(2) + 's"></i>';
+    tacaPop('<div class="tc-ray"></div><div class="tc-cf">' + cf + '</div><div class="tc-mid"><div class="tc-tag">TÍTULO · ' + esc(co.ss.name).toUpperCase() + ' · ' + (U.YEAR0 + co.season) + '</div><div class="tc-cup">' + tacaImg(140) + '</div><div class="tc-big">Campeão!</div><div class="tc-sub">' + esc(nm(co.club)) + ' · ' + me.p + ' pontos' + (left > 0 ? ' · ' + left + (left === 1 ? ' rodada' : ' rodadas') + ' de folga' : '') + '</div></div><button class="btn tc-go">Seguir</button>', 'tc-fe', go);
+    sfx('win');
+  }
   function result(m, log, aux, move) {
+    if (!result.tc) { result.tc = 1; return tacaFesta(() => { try { result(m, log, aux, move); } finally { result.tc = 0; } }); } result.tc = 0;
     if (U.LD && U.LD.on()) return U.LD.result(m, log, aux, move);
     const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
     const tl = m.ev.filter(e => ['gol', 'vermelho', 'amarelo', 'tatica', 'troca'].includes(e.t) || (e.t === 'lesao' && e.s === 'us')).map(e => {
