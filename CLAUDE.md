@@ -266,6 +266,9 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
   (minúsculas, kkkk); sem ofensa pesada. Personalidades reais ficam (jogo entre amigos).
 - Itens e coleções são **só visuais**: nunca mudam nota ou sorte.
 - Ao criar intro de câmera em minigame, a ação cronometrada só começa depois que a câmera abre.
+- **Som (`sound.js`, 2026-11-10):** só agenda som com o contexto de áudio rodando (parado, o relógio dele não anda e tudo
+  tocaria junto no toque seguinte); sair do app corta o que tocava (`hush`). Tela que reabre no meio (jogo retomado em
+  `live`, `retomado`) repõe a narração sem tocar de novo o som do que já aconteceu.
 - **Estilos do lance decisivo:** o primeiro de `S.STYLES[tipo]` é o lance de sempre; o segundo muda a mecânica. Mudou
   um número? Rode `craque_estilos.js` (chance pela carta igual ±4 pontos e nenhum estilo melhor em todos os níveis).
 - Melhoria de personagem por ajuste de SVG em código já foi recusada: precisa de arte nova.
