@@ -46,6 +46,19 @@
   // brasileiros; as outras ligas ganham listas próprias depois.
   const SP = S.CO_SPONS = { _: ['Banco Sertão', 'AutoPeças Rota', 'Bet Ouro', 'Supermercados Vila', 'Construtora Arco', 'Seguros Farol', 'Conecta Norte', 'Frigorífico Pampa', 'Laticínios Serra', 'Cooperativa Vale',
     'Ótica Visão', 'Rede Posto Bom', 'Moto Brava', 'Farmácia Cruz', 'Cervejaria Leão', 'Armazém Prime'] };
+  // Fora do Brasil (2026-11-10, folhas E e F do ChatGPT; tools/craque_patrocinadores.py): marcas internacionais para todos,
+  // mais as de língua espanhola e as de língua inglesa. Portugal segue com a lista brasileira.
+  (() => {
+    const INT = ['Zefira Air', 'Voltara Energy', 'Orbita Mobile', 'Hexa Cargo', 'Najma Bank', 'Sahra Energy', 'Hoshi Motors', 'Hanul Electronics'];
+    const ES = ['Banco Cordillera', 'Seguros Ancla', 'Cerveza El Puerto', 'Mercados El Molino'].concat(INT.slice(0, 4));
+    const EN = ['Kestrel Bank', 'Redfox Motors', 'Oakfield Insurance', 'Goldstag Bet'].concat(INT);
+    const EU = INT.concat(['Redfox Motors', 'Goldstag Bet']);
+    const put = (list, cs) => cs.forEach(c => { SP[c] = list; });
+    put(ES, ['Argentina', 'Uruguai', 'Colômbia', 'México', 'Chile', 'Paraguai', 'Equador', 'Peru', 'Bolívia', 'Venezuela', 'Espanha']);
+    put(EN, ['Inglaterra', 'Escócia', 'EUA', 'Austrália']);
+    put(EU, ['Itália', 'Alemanha', 'França', 'Holanda', 'Turquia', 'Bélgica', 'Grécia', 'Suíça', 'Áustria', 'Dinamarca', 'Croácia', 'Sérvia', 'Noruega', 'Suécia', 'Polônia', 'República Tcheca']);
+    put(INT, ['Arábia Saudita', 'Catar', 'Marrocos', 'Egito', 'Japão', 'Coreia do Sul']);
+  })();
   const sponsOf = co => { let k = '_'; try { k = D.countryOf(D.CLUB_BY_ID[co.club]) || '_'; } catch (e) {} return SP[k] || SP._; };
   const r10 = v => Math.round(v / 10000) * 10000;
   const r5 = v => Math.round(v / 5000) * 5000;

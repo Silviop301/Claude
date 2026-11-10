@@ -344,17 +344,22 @@
   // Propostas da janela aberta: sorteadas uma vez quando ela abre (mais para quem está à venda). Na 1ª temporada num
   // clube (co.since), as da janela do começo só aparecem a partir da 3ª semana (M.incFrom): primeiro a pessoa conhece o
   // elenco (Silvio 2026-11-09); quem ela mesma pôs à venda (o.ask) recebe na hora
+  function incDraw(co, k) {
+    const L = [], r = rngS(co, 'inc' + k);
+    const cand = co.squad.filter(p => S.coMktCanSell(co, p) && !p.from).map(p => ({ p, x: r() / (M.inc * (1 + Math.max(0, p.ovr - 60) / 20) + (S.coMktListed(co, p) ? M.incList : 0)) }))
+      .filter(o => o.x < 1).sort((a, b) => a.x - b.x);
+    const nList = cand.filter(o => S.coMktListed(co, o.p)).length;
+    cand.slice(0, M.incMax + nList).forEach(o => { const of = mkOffer(co, o.p, r); if (of) { if (S.coMktListed(co, o.p)) of.ask = 1; L.push(of); } });
+    return L;
+  }
+  // As propostas que a janela `k` vai trazer se o elenco não mudar até lá (o mesmo sorteio, sem guardar): o mercado vivo
+  // usa para soltar o boato uma semana antes (engine/coachworld.js)
+  S.coMktIncPeek = (co, k) => incDraw(co, k).map(o => ({ id: o.id, club: o.club, ask: o.ask || 0 }));
   S.coMktInbox = function (co) {
     const w = S.coMktWin(co), m = S.coMkt(co); m.inc = m.inc || [];
     if (!w.open) return [];
     const early = w.k === 'pre' && co.since === co.season && co.ss.i < M.incFrom;
-    if (m.incK !== w.k) {
-      m.incK = w.k; m.inc = []; const r = rngS(co, 'inc' + w.k);
-      const cand = co.squad.filter(p => S.coMktCanSell(co, p) && !p.from).map(p => ({ p, x: r() / (M.inc * (1 + Math.max(0, p.ovr - 60) / 20) + (S.coMktListed(co, p) ? M.incList : 0)) }))
-        .filter(o => o.x < 1).sort((a, b) => a.x - b.x);
-      const nList = cand.filter(o => S.coMktListed(co, o.p)).length;
-      cand.slice(0, M.incMax + nList).forEach(o => { const of = mkOffer(co, o.p, r); if (of) { if (S.coMktListed(co, o.p)) of.ask = 1; m.inc.push(of); } });
-    }
+    if (m.incK !== w.k) { m.incK = w.k; m.inc = incDraw(co, w.k); }
     return m.inc.filter(o => o.st === 'open' && (!early || o.ask) && co.squad.some(p => p.id === o.id));
   };
   S.coMktOfferFor = (co, p) => S.coMktInbox(co).find(o => o.id === p.id) || null;
