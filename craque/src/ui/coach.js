@@ -613,25 +613,28 @@
       e.t === 'intervalo' ? 'Fim do primeiro tempo' : '';
     return '<li class="' + e.s + ' ' + e.t + '"><i>' + S.coEvMin(e) + '</i><span>' + t + '</span></li>';
   }
-  // Lance curto da lista do ao vivo deitado (Silvio, 2026-11-10: lista rolável, o último em cima): uma linha com o minuto, o
-  // escudo de quem fez e poucas palavras, o nome primeiro; o que foi ordem sua leva a etiqueta VOCÊ no lugar do escudo
+  // Lance da lista do ao vivo deitado (Silvio, 2026-11-10: lista rolável, o último em cima; "quero o nome do jogador que fez a
+  // ação também, tá muito curto"): minuto, escudo de quem fez e a frase com o nome completo, em até duas linhas (o escudo já diz
+  // o time, então a frase não repete o clube); o que foi ordem sua leva a etiqueta VOCÊ no lugar do escudo
   function feedShort(m, e) {
-    const n = esc(last(e.p || '')), us = e.s === 'us', you = us && (e.t === 'tatica' || e.t === 'troca') || e.t === 'grito' || e.t === 'conversa';
-    const t = e.t === 'gol' ? '<b>GOL!</b> ' + n + (e.sp === 'pen' ? ', pênalti' : e.sp === 'falta' ? ', de falta' : e.sp ? ', de cabeça' : '') :
-      e.t === 'chance' && e.sp === 'pen' ? n + ' perde o pênalti' :
-      e.t === 'chance' ? n + (e.k === 'defesa' ? ': defendido' : e.k === 'fora' ? ': fora' : e.k === 'trave' ? ': na trave' : ': travado') :
-      e.t === 'vermelho' ? '<span class="co-red"></span> ' + n + ' expulso' :
-      e.t === 'amarelo' ? '<span class="co-yc"></span> ' + n :
+    const n = esc(e.p || ''), us = e.s === 'us', you = us && (e.t === 'tatica' || e.t === 'troca') || e.t === 'grito' || e.t === 'conversa';
+    const t = e.t === 'gol' ? '<b>GOL!</b> ' + n + (e.sp === 'pen' ? ' de pênalti' : e.sp === 'falta' ? ' de falta' : e.sp ? ' de cabeça' : e.l ? ' ' + LANE[e.l] : '') :
+      e.t === 'chance' && e.sp === 'pen' ? (e.k === 'defesa' ? '<b>Pênalti defendido!</b> ' + n : e.k === 'trave' ? '<b>Pênalti na trave!</b> ' + n : '<b>Pênalti para fora!</b> ' + n) :
+      e.t === 'chance' && e.sp === 'falta' ? (e.k === 'defesa' ? n + ' cobra a falta, o goleiro defende' : e.k === 'bloqueio' ? 'Falta de ' + n + ' na barreira' : e.k === 'trave' ? 'Falta de ' + n + ' na trave!' : 'Falta de ' + n + ' por cima') :
+      e.t === 'chance' && e.sp ? (e.k === 'defesa' ? n + ' cabeceia, o goleiro defende' : e.k === 'bloqueio' ? 'Cabeçada de ' + n + ' travada' : n + ' cabeceia para fora') :
+      e.t === 'chance' ? (e.k === 'defesa' ? n + ' chuta, o goleiro defende' : e.k === 'fora' ? n + ' chuta para fora' : e.k === 'trave' ? n + ' acerta a trave!' : 'Chute de ' + n + ' travado') :
+      e.t === 'vermelho' ? '<span class="co-red"></span> ' + n + ' é expulso' :
+      e.t === 'amarelo' ? '<span class="co-yc"></span> Amarelo para ' + n :
       e.t === 'falta' ? 'Falta de ' + n :
-      e.t === 'impedimento' ? n + ' impedido' :
-      e.t === 'lesao' ? n + ' sente lesão' :
-      e.t === 'tatica' ? esc(e.p) :
-      e.t === 'troca' ? 'Entra ' + esc(last(e.q || '')) + ', sai ' + n :
-      e.t === 'grito' ? esc(e.p) :
-      e.t === 'grito-fim' ? 'Volta ao plano' :
-      e.t === 'conversa' ? 'Papo: ' + esc(e.p).toLowerCase() :
-      e.t === 'acrescimo' ? 'Mais ' + e.p + (e.p > 1 ? ' minutos' : ' minuto') :
-      e.t === 'intervalo' ? 'Intervalo' : '';
+      e.t === 'impedimento' ? 'Impedimento de ' + n :
+      e.t === 'lesao' ? n + ' sente e pede para sair' :
+      e.t === 'tatica' ? 'Muda para ' + (us ? n : n.toLowerCase()) :
+      e.t === 'troca' ? 'Sai ' + n + ', entra <b>' + esc(e.q || '') + '</b>' :
+      e.t === 'grito' ? 'Grito: <b>' + n + '</b>' :
+      e.t === 'grito-fim' ? 'O time volta ao plano de jogo' :
+      e.t === 'conversa' ? 'Vestiário: <b>' + n.toLowerCase() + '</b>' :
+      e.t === 'acrescimo' ? 'Mais ' + e.p + (e.p > 1 ? ' minutos' : ' minuto') + ' de acréscimo' :
+      e.t === 'intervalo' ? 'Fim do primeiro tempo' : '';
     if (!t) return feedLine(m, e);
     const who = you ? '<u>VOCÊ</u>' : e.s === 'us' || e.s === 'them' ? crestB(us ? co.club : m.vs, 'ldl-c16') : '';
     return '<li class="' + (e.s || '') + ' ' + e.t + (you ? ' vc' : '') + '"><i>' + S.coEvMin(e) + '</i>' + who + '<span>' + t + '</span></li>';
@@ -673,6 +676,7 @@
     co.speed = '1'; // todo jogo começa no 1× (Silvio, 2026-11-09)
     const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
     let timer = null, seen = new Set(), read = null, open = false, firstMove = null;
+    let retomado = m.ev.length > 0; // jogo retomado no meio: a primeira pintura repõe a narração do que já aconteceu, sem o som do gol antigo nem a placa de acréscimo
     // O campinho com jogadores que decidem (o mesmo do Jogo a Jogo): o motor do Treinador manda em quem está melhor e nos
     // lances (gols e chances); a bola joga cada lance e só então o placar e a narração mostram
     const LP = U.LP, useSim = !!(LP && LP.sim);
@@ -743,8 +747,9 @@
       if (!useSim) $('lv-zone').innerHTML = read.side ? '<i class="' + (read.side === 'direita' ? 'bot' : 'top') + '"></i><b class="' + (read.side === 'direita' ? 'bot' : 'top') + '">Atacam pela sua ' + read.side + '</b>' : '';
       else { const z = $('lv-zone'); z.hidden = !read.side; if (read.side) z.textContent = 'Atacam pela sua ' + read.side; }
       const fresh = m.ev.filter(e => !seen.has(e) && !hidden.has(e));
-      if (fresh.length && sim && sim.board) fresh.filter(e => e.t === 'acrescimo').forEach(e => sim.board({ add: e.p }));
-      if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => (LDon ? feedShort(m, e) : feedLine(m, e))).join('')); if (LDon) $('lv-feed').scrollTop = 0; { const gl = fresh.filter(e => e.t === 'gol').pop(); if (gl) sfx(U.goalSnd(gl.s === 'us', !!m.home)); } }
+      if (fresh.length && sim && sim.board && !retomado) fresh.filter(e => e.t === 'acrescimo').forEach(e => sim.board({ add: e.p }));
+      if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => (LDon ? feedShort(m, e) : feedLine(m, e))).join('')); if (LDon) $('lv-feed').scrollTop = 0; { const gl = fresh.filter(e => e.t === 'gol').pop(); if (gl && !retomado) sfx(U.goalSnd(gl.s === 'us', !!m.home)); } }
+      retomado = false;
       if (ctx) U.LD.livePaint(ctx);
     };
     const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); if (U.profileCoGame) U.profileCoGame(co, m, log); save('hub'); result(m, log, false, firstMove); };
