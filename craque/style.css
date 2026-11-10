@@ -8921,6 +8921,32 @@ button.coin-pill { cursor: pointer; border: 0; }
 .lde2-sell:disabled { opacity: .45; cursor: default; }
 .lde2-hint { font: 700 13px/1.2 var(--body); color: #4b5a52; text-align: center; min-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lde2-ct > span { flex-direction: row; justify-content: space-between; align-items: center; width: 100%; }
+/* Ficha do Elenco em duas abas (2026-11-10, atributos por jogador, opção A): Atributos = 6 barras; Situação = o que a ficha já tinha */
+.lde2-seg { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: #E7E0CE; }
+.lde2-seg button { height: 32px; border-radius: 9px; font: 800 18px/1 var(--display) !important; color: #4b5a52 !important; }
+.lde2-seg button.on { background: #13201A !important; color: #F8F4EA !important; }
+.lde2-at { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; padding-top: 2px; }
+.lde2-ar { display: grid; grid-template-columns: 88px minmax(0, 1fr) 30px; align-items: center; gap: 8px; }
+.lde2-ar span { font: 700 15px/1 var(--body); color: #13201A; white-space: nowrap; }
+.lde2-ar i { display: block; height: 9px; border-radius: 5px; background: #E3DCCB; overflow: hidden; }
+.lde2-ar u { display: block; height: 100%; border-radius: 5px; background: #13201A; text-decoration: none; }
+.lde2-ar b { font: 800 22px/1 var(--display); text-align: right; color: #13201A; }
+.lde2-ar.top u { background: #C99A1B; }
+.lde2-ar.low u { background: #b4501f; } .lde2-ar.low b { color: #b4501f; }
+.lde2-c.sit { gap: 6px; padding-top: 12px; padding-bottom: 10px; }
+.lde2-c.sit .lde2-st span { padding: 5px 10px; gap: 3px; }
+.lde2-c.sit .lde2-st b, .lde2-c.sit .lde2-ct b { font-size: 19px; }
+.lde2-c.sit .lde2-ct { padding: 5px 10px; }
+.lde2-c.sit .lde2-act button { height: 44px; }
+.lde2-c.sit .lde2-ren small { font-size: 11px; line-height: 1; }
+.lde2-c.sit .lde2-hint { min-height: 0; }
+/* com aviso embaixo (último ano, à venda, proposta): tudo um pouco mais junto para a linha caber sem cortar */
+.lde2-c.sit.hn { gap: 4px; padding-top: 10px; padding-bottom: 8px; }
+.lde2-c.sit.hn .lde2-ch > b.tm-ring { width: 52px; height: 52px; font-size: 24px; }
+.lde2-c.sit.hn .lde2-st { gap: 4px; }
+.lde2-c.sit.hn .lde2-st span { padding: 3px 10px; }
+.lde2-c.sit.hn .lde2-ct { padding: 3px 10px; }
+.lde2-c.sit.hn .lde2-seg button { height: 30px; }
 .mkx-b > :only-child { grid-column: 1 / -1; }
 /* Agradecimento da compra de moedas (Silvio: a compra ajuda o jogo; agradecer o apoio) */
 .pay-ty { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); z-index: 9999; display: flex; align-items: center; gap: 12px; padding: 12px 14px 12px 18px; border-radius: 16px; background: #F8F4EA; color: #13201A; box-shadow: 0 10px 30px rgba(0,0,0,.45); font: 600 15px/1.25 var(--body); max-width: calc(100vw - 32px); }

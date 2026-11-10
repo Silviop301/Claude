@@ -1327,6 +1327,7 @@
   // Elenco enxuto (Silvio 2026-11-09, quadro 27): sem trilho; abas por setor; linha com número, nome, posição, idade,
   // geral e contrato (laranja no último ano), a tabela rola por dentro; o cartão à direita com energia, potencial, moral,
   // salário e o contrato com Renovar (a renovação chega com o mercado: `#lde-ren` com data-id fica apagado até lá)
+  elenco.ct = 0; // aba da ficha: 0 Atributos, 1 Situação (fica na que o técnico deixou enquanto olha o elenco)
   function elenco(tab, sel) {
     const c = C(), co = c.co, T = [['Goleiros', ['GOL']], ['Defesa', ['ZAG', 'LAT']], ['Meio', ['MEI']], ['Ataque', ['ATA']]];
     tab = tab || 0; if (S.coNums) S.coNums(co.squad); // os mesmos números do campinho
@@ -1345,12 +1346,17 @@
       const st = (k, v, bad) => '<span><small>' + k + '</small><b' + (bad ? ' class="dn"' : '') + '>' + v + '</b></span>';
       const renOk = S.coMktRenOk(co, q), listed = S.coMktListed(co, q), canS = S.coMktCanSell(co, q), ofq = S.coMktOfferFor(co, q), win = S.coMktWin(co);
       const hint = ofq ? 'O ' + esc(club(ofq.club).short || club(ofq.club).name) + ' fez proposta' : listed ? (win.open ? 'À venda: as propostas chegam na janela' : 'À venda: propostas na próxima janela') : q.ct <= 1 ? 'Último ano: se não renovar, ele sai' : !canS ? 'Elenco curto nessa posição para vender' : '';
-      card = '<div class="lde2-c"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? q.num + ' ' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + ' · ' + q.age + ' anos</small></span></div>' +
-        '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/sem') + '</div>' +
+      // A ficha tem duas abas (Silvio 2026-11-10, opção A): Atributos (as 6 barras de S.coAttrs: o mais alto em dourado, o
+      // mais baixo em laranja) e Situação (energia, potencial, moral, salário, contrato, renovar e vender, como era a ficha)
+      const at = S.coAttrs(q), ks = S.coAtKeys(q), hi = at.indexOf(Math.max.apply(null, at)), mn = Math.min.apply(null, at), lo = mn <= q.ovr - 8 ? at.indexOf(mn) : -1; // laranja só para ponto fraco de verdade (8 abaixo do geral)
+      const seg = '<div class="lde2-seg">' + ['Atributos', 'Situação'].map((t, i) => '<button data-ec="' + i + '"' + (i === elenco.ct ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('') + '</div>';
+      const bars = '<div class="lde2-at">' + at.map((v, i) => '<div class="lde2-ar' + (i === hi ? ' top' : i === lo ? ' low' : '') + '"><span>' + S.CO_AT.names[ks[i]] + '</span><i><u style="width:' + v + '%"></u></i><b>' + v + '</b></div>').join('') + '</div>';
+      card = '<div class="lde2-c' + (elenco.ct ? ' sit' + (hint ? ' hn' : '') : '') + '"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? q.num + ' ' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + ' · ' + q.age + ' anos</small></span></div>' + seg +
+        (elenco.ct ? '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/sem') + '</div>' +
         '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span></div>' +
         '<div class="lde2-act"><button class="lde2-ren" id="lde-ren" data-id="' + q.id + '"' + (renOk ? '' : ' disabled') + '>Renovar' + (renOk ? '' : '<small>no fim do contrato</small>') + '</button>' +
           (ofq ? '<button class="lde2-sell of" id="lde-of">Ver proposta</button>' : '<button class="lde2-sell' + (listed ? ' on' : '') + '" id="lde-sell"' + (canS || listed ? '' : ' disabled') + '>' + (listed ? 'Tirar da venda' : 'Pôr à venda') + '</button>') + '</div>' +
-        '<small class="lde2-hint">' + hint + '</small></div>';
+        (hint ? '<small class="lde2-hint">' + hint + '</small>' : '') : bars) + '</div>';
     }
     show('<div class="lde2"><div class="tm-h"><button class="tcr-back" id="lde-back" aria-label="Voltar">' + BK + '</button><b>Elenco</b><small><span class="lde2-n' + (co.squad.length >= S.CO_MKT.maxSquad ? ' full' : '') + '">' + co.squad.length + '/' + S.CO_MKT.maxSquad + '</span> jogadores · folha ' + c.mi(folha) + '/sem</small></div>' +
       '<div class="lde2-tabs">' + T.map(([l, ps], i) => '<button data-et="' + i + '"' + (i === tab ? ' class="on"' : '') + '>' + l + ' <small>' + co.squad.filter(p => ps.includes(p.pos)).length + '</small></button>').join('') + '</div>' +
@@ -1359,6 +1365,7 @@
       st.querySelectorAll('.lde2-r').forEach(b => b.onclick = () => { sfx('tap'); const y = st.querySelector('.lde2-l').scrollTop; elenco(tab, b.dataset.id); const l = document.querySelector('.lde2-l'); if (l) l.scrollTop = y; });
       st.querySelector('#lde-back').onclick = () => { sfx('tap'); clube(); };
       const me = () => elenco(tab, q && q.id);
+      st.querySelectorAll('[data-ec]').forEach(b => b.onclick = () => { sfx('tap'); elenco.ct = +b.dataset.ec; const y = st.querySelector('.lde2-l').scrollTop; me(); const l = document.querySelector('.lde2-l'); if (l) l.scrollTop = y; });
       const rn = st.querySelector('#lde-ren:not([disabled])'); if (rn) rn.onclick = () => { sfx('tap'); contrato(q.id, me); };
       const sl = st.querySelector('#lde-sell:not([disabled])'); if (sl) sl.onclick = () => { sfx('tap'); const of = S.coMktList(co, q, !S.coMktListed(co, q)); c.save(); me(); if (of) { of.seen = 1; c.save(); recebida(of, me); } };
       const ov = st.querySelector('#lde-of'); if (ov) ov.onclick = () => { sfx('tap'); recebida(S.coMktOfferFor(co, q), me); };
