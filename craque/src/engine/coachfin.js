@@ -20,6 +20,7 @@
     tv: 0.4, bil: 0.35,             // partes da receita (o patrocínio vem da proposta escolhida)
     titulo: 0.12, acesso: 0.08,     // prêmios
     teto: 1.05,     // teto da folha = folha normal do clube x 1,05 (folha no teto fecha perto do zero a zero)
+    folga: 2, folgaN: 6,            // ao chegar no clube o teto comporta 2 reforços com o salário do 6º melhor do elenco (Silvio 2026-11-10: contratar uns 2 sem vender)
     caixa0: 6, verba0: 5,           // semanas da folha normal no caixa e na verba ao assinar
     lucro: 0.3,     // parte do lucro da temporada que vira verba extra
     negConf: 1.5,   // confiança da diretoria que cai por rodada no vermelho
@@ -258,7 +259,12 @@
 
   // ---------- ganchos no motor do treinador ----------
   const sign0 = S.coSign;
-  S.coSign = function (co, clubId) { const r = sign0(co, clubId); co.fin = null; init(co); return r; };
+  // Folga da chegada: o elenco sorteado pode vir com a folha colada no teto (ou acima); o teto sobe até caberem `F.folga` reforços
+  // de nível titular. `fin.tmin` guarda esse piso enquanto o técnico fica no clube (o teto do ano seguinte não volta para baixo dele).
+  const folgaOf = co => { const sq = (co.squad || []).slice().sort((a, b) => b.ovr - a.ovr), q = sq[Math.min(sq.length, F.folgaN) - 1];
+    return q ? Math.ceil((S.coFolha(co) + F.folga * q.wage) / 1000) * 1000 : 0; };
+  S.coFinFolga = folgaOf;
+  S.coSign = function (co, clubId) { const r = sign0(co, clubId); co.fin = null; const f = init(co), m = folgaOf(co); if (m > f.teto) { f.teto = m; f.tmin = m; } return r; };
   const start0 = S.coStart;
   S.coStart = function (co) {
     const r = start0(co);
@@ -313,7 +319,7 @@
     // verba nova pelo tamanho do clube mais uma parte do lucro; no vermelho não tem verba (o acordo da pré-temporada ainda mexe nela)
     const base = baseOf(co);
     const good = out.met && saldo > 0;
-    fin.teto = Math.max(r5(base * F.teto), good ? r5((fin.teto0 || fin.teto) * 1.05) : 0);
+    fin.teto = Math.max(r5(base * F.teto), fin.tmin || 0, good ? r5((fin.teto0 || fin.teto) * 1.05) : 0);
     fin.verba = fin.caixa <= 0 ? 0 : Math.min(r10(fin.caixa * 0.6), r10(base * F.verba0 + Math.max(0, saldo) * F.lucro));
     bal.verba = fin.verba; bal.teto = fin.teto; bal.good = good;
     fin.last = bal; fin.ss = zero(); fin.rec = 0; fin.s = co.season; fin.pend = null;
