@@ -116,6 +116,42 @@ async function page(b, first) {
     await click('#es-ing'); await shot('c2b3-ingresso'); await click('[data-pr="3"]'); await shot('c2b4-ingresso-caro'); await click('#es-go');
     { const r = await p.evaluate(() => ({ pr: window.CRAQUE_SIM.coEst(window.CRAQUE_UI._co.co).pr, off: !!document.querySelector('#es-go.off') })); if (r.pr !== 3 || !r.off) errs.push('ingresso: ' + JSON.stringify(r)); }
     await click('[data-pr="2"]'); await click('#es-go'); await click('#es-back');
+    // Ampliar (fase 3): com o caixa curto a diretoria recusa; com o caixa cheio aprova, o setor fecha e o dourado vira Acelerar.
+    // No fim a obra é desfeita para o resto do passeio seguir igual
+    await click('#es-amp'); await shot('c2b5-ampliar');
+    { const r = await p.evaluate(() => { const st = document.querySelector('.es2'); return { rg: st ? st.querySelectorAll('.es-rg > div').length : 0, op: st ? st.querySelectorAll('.es-op').length : 0, svg: !!document.querySelector('#es-pn svg'), co: !!document.querySelector('.es-co') }; }); if (r.rg !== 5 || r.op !== 3 || !r.svg || !r.co) errs.push('ampliar: ' + JSON.stringify(r)); }
+    const cx0 = await p.evaluate(() => { const f = window.CRAQUE_UI._co.co.fin, v = [f.caixa, f.ss.obra || 0]; f.caixa = 1000; return v; });
+    await click('#es-go'); await shot('c2b6-obra-recusada');
+    { const r = await p.evaluate(() => ({ no: !!document.querySelector('.mkx b.dn'), obra: !!window.CRAQUE_SIM.coEst(window.CRAQUE_UI._co.co).obra })); if (!r.no || r.obra) errs.push('obra recusada: ' + JSON.stringify(r)); }
+    await click('#ob-a'); await p.evaluate(() => { window.CRAQUE_UI._co.co.fin.caixa = 9e8; }); await click('#es-go'); await shot('c2b7-obra-aprovada');
+    { const r = await p.evaluate(() => ({ ok: !!document.querySelector('.mkx b.up'), obra: !!window.CRAQUE_SIM.coEst(window.CRAQUE_UI._co.co).obra })); if (!r.ok || !r.obra) errs.push('obra aprovada: ' + JSON.stringify(r)); }
+    await click('#ob-a'); await shot('c2b8-estadio-em-obra');
+    { const r = await p.evaluate(() => ({ lb: !!document.querySelector('.es-lb small.ob'), rush: !!document.querySelector('#es-rush'), amp: !!document.querySelector('#es-amp') })); if (!r.lb || !r.rush || r.amp) errs.push('estádio em obra: ' + JSON.stringify(r)); }
+    await click('#es-rush'); await shot('c2b9-acelerar'); await click('[data-pop-x]');
+    await p.evaluate(v => { const U = window.CRAQUE_UI, co = U._co.co, e = window.CRAQUE_SIM.coEst(co); e.obra = null; e.pay = null; co.fin.caixa = v[0]; co.fin.ss.obra = v[1]; U._co.save('hub'); U.LD.estadio(); }, cx0);
+    await p.waitForTimeout(300);
+    // Melhorias (fase 4): 4 blocos, o cartão do próximo nível, e o pedido aprovado deixa a melhoria em reforma (desfeita no fim)
+    await click('#es-mel'); await shot('c2b10-melhorias');
+    { const r = await p.evaluate(() => ({ m: document.querySelectorAll('.es-m').length, rows: document.querySelectorAll('.es-ml > div').length, go: !!document.querySelector('#es-go') })); if (r.m !== 4 || !r.go) errs.push('melhorias: ' + JSON.stringify(r)); }
+    const mk = await p.evaluate(() => { const S = window.CRAQUE_SIM, co = window.CRAQUE_UI._co.co, k = S.CO_EST.mel.keys.find(q => { const P = S.coEstMelPlan(co, q); return !P.max && !P.lock; }), f = co.fin, v = [f.caixa, f.ss.obra || 0, k]; f.caixa = 9e8; return v; });
+    if (mk[2]) {
+      await click('[data-mk="' + mk[2] + '"]'); await click('#es-go'); await shot('c2b11-melhoria-aprovada');
+      { const r = await p.evaluate(() => ({ ok: !!document.querySelector('.mkx b.up'), mel: !!window.CRAQUE_SIM.coEst(window.CRAQUE_UI._co.co).mel })); if (!r.ok || !r.mel) errs.push('melhoria aprovada: ' + JSON.stringify(r)); }
+      await click('#ob-a'); await shot('c2b12-melhoria-em-reforma');
+    }
+    await p.evaluate(v => { const U = window.CRAQUE_UI, co = U._co.co, e = window.CRAQUE_SIM.coEst(co); e.mel = null; e.pay2 = null; co.fin.caixa = v[0]; co.fin.ss.obra = v[1]; U._co.save('hub'); U.LD.estadio(); }, mk);
+    await p.waitForTimeout(300);
+    // Acontecimentos (fase 5): a exigência da liga e a proposta do show na volta para a semana (estado forçado e desfeito)
+    { const sv = await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co, e = S.coEst(co), v = [e.up.l, e.up0.l]; e.up.l = 0; e.up0.l = 0; e.lg = { s: co.season }; U.LD.semana(); return v; });
+      await p.waitForTimeout(500); await shot('c2b13-liga-exige');
+      { const r = await p.evaluate(() => ({ pop: !!document.querySelector('#ld-pop .mkx'), dn: !!document.querySelector('#ld-pop .mkx-li b.dn'), seen: !!(window.CRAQUE_SIM.coEst(window.CRAQUE_UI._co.co).lg || {}).seen })); if (!r.pop || !r.dn || !r.seen) errs.push('exigência da liga: ' + JSON.stringify(r)); }
+      await click('#ob-a'); await shot('c2b14-refletores-com-multa');
+      { const r = await p.evaluate(() => ({ mel: !!document.querySelector('.es.es3'), multa: /Multa da liga/.test((document.querySelector('.es-ml') || {}).textContent || '') })); if (!r.mel || !r.multa) errs.push('refletores com a multa da liga: ' + JSON.stringify(r)); }
+      await p.evaluate(v => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co, e = S.coEst(co); e.up.l = v[0]; e.up0.l = v[1]; delete e.lg; S.__show = S.coEstShow; S.coEstShow = () => ({ v: 90000, games: 2 }); U.LD.semana(); }, sv);
+      await p.waitForTimeout(500); await shot('c2b15-show');
+      { const r = await p.evaluate(() => ({ pop: !!document.querySelector('#ld-pop .mkx'), a: !!document.querySelector('#ob-a'), b: !!document.querySelector('#ob-b') })); if (!r.pop || !r.a || !r.b) errs.push('proposta do show: ' + JSON.stringify(r)); }
+      await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM; S.coEstShow = S.__show; delete S.__show; U.LD.closePop(); U._co.save('hub'); U.LD.estadio(); });
+      await p.waitForTimeout(300); }
     await click('#es-back'); await click('#ldk-go'); await shot('c2c-financas-decidir');
     // Loja: aporte (fase 3) e pacotes
     await p.evaluate(() => window.CRAQUE_UI.COINS.add({ n: 100, t: 'teste' })); await click('#fn2-apo'); await shot('c2l-loja-aporte'); await click('#lj-p'); await click('#lj-p'); await shot('c2l2-aporte-3'); await click('#lj-ap'); await shot('c2l3-aporte-feito');

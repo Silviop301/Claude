@@ -252,7 +252,7 @@
     if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao() : patrocinio();
     c.save('hub');
     const tut = tutStep(co);
-    const popped = !tut && (inboxPop(co, semana) || lostPop(co));
+    const popped = !tut && (inboxPop(co, semana) || lostPop(co) || obraPop(co) || nomePop(co) || ligaPop(co) || showPop(co));
     if (!tut && !popped && !ctWarn(co)) finNews(co);
     if (!tut && !popped) setTimeout(() => upToast(co), 0);
     // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
@@ -747,6 +747,8 @@
         '<ul class="ldl-last ldr-all">' + m.ev.filter(e => e.t !== 'grito-fim').map(e => c.feedLine(m, e)).join('') + '</ul>';
       const rows = chg.filter(r => r[0] !== 'Caixa').map(([k, v, cc]) => [k, k === 'Tabela' ? (pre.pos && pre.pos !== pos ? ord(pre.pos) + ' → ' + ord(pos) : ord(pos)) : k === 'Diretoria' ? (co.sacked ? 'demitido' : cc === 'up' ? 'subiu' : cc === 'dn' ? 'caiu' : 'igual') : v, cc]);
       if (cadN.length) rows.push(['Caderno', '+' + cadN.length + (cadN.length > 1 ? ' notas' : ' nota'), 'up', 1]);
+      if (log.closed) rows.push(['Público', 'portões fechados', '']);
+    else if (log.pub) rows.push(['Público', milK(log.pub) + (log.pub >= log.cap * S.CO_EST.full ? ' · lotou' : ''), log.pub >= log.cap * S.CO_EST.full ? 'gd' : '']);   // estádio: só nos jogos em casa
       show('<div class="rs">' +
         '<div class="rs-sc">' + crest((m.home ? cl : vs).id, 'rs-cr') + '<em>' + m.gh + ' <i>x</i> ' + m.ga + '</em>' + crest((m.home ? vs : cl).id, 'rs-cr') +
           '<span class="rs-w"><b class="' + log.res + '">' + word + (aux ? ' · COM O AUXILIAR' : '') + '</b><small>' + (goals.length ? goals.join(' · ') : 'sem gols') + '</small></span></div>' +
@@ -938,7 +940,7 @@
   function estFit(lv, w, h, max) { const d = U.EST.depth; return Math.max(0.2, Math.min(max, w / (288 + d[lv.n] + d[lv.s]), h / (165 + d[lv.a] + d[lv.so]))); }
   function estThumb(co, e) {
     const d = U.EST.depth, k = estFit(e.lv, 150, 116, 0.44);
-    return U.EST.svg({ w: 158, h: 124, k, dx: (d[e.lv.n] - d[e.lv.s]) * k / 2, dy: (d[e.lv.a] - d[e.lv.so]) * k / 2, lv: e.lv, occ: e.occ || EST_OCC0, cols: estCols(club(co.club)), seed: estSeed(co.club) }).svg;
+    return U.EST.svg({ w: 158, h: 124, k, dx: (d[e.lv.n] - d[e.lv.s]) * k / 2, dy: (d[e.lv.a] - d[e.lv.so]) * k / 2, lv: e.lv, occ: e.occ || EST_OCC0, cols: estCols(club(co.club)), seed: estSeed(co.club), gram: e.up ? e.up.g : 1, luz: !!(e.up && e.up.l), cam: !!(e.up && e.up.c), obra: e.obra ? e.obra.k : null }).svg;
   }
   // Ingresso (fase 2): 5 preços em palavras para o próximo jogo em casa, com a renda, o público e o que a torcida acha
   function ingresso(pick) {
@@ -946,7 +948,7 @@
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const L = P.list, sel = pick == null ? P.now : pick, cur = L[P.now], x = L[sel], mx = Math.max.apply(null, L.map(o => o.gate)), d = x.gate - cur.gate;
     const vs = P.vs ? club(P.vs) : null;
-    show('<div class="es"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button><b>Ingresso</b><small>' + (vs ? 'próximo jogo em casa: ' + esc(vs.short || vs.name) : 'renda de um jogo em casa') + '</small>' +
+    show('<div class="es"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button><b>Ingresso</b><small>' + (P.closed ? 'próximo jogo de portões fechados: vale para o seguinte' : vs ? 'próximo jogo em casa: ' + esc(vs.short || vs.name) : 'renda de um jogo em casa') + '</small>' +
         '<span class="es-top"><button class="es-q" id="es-q" aria-label="Como funciona">?</button></span></div>' +
       '<div class="es-ig">' + L.map(o => '<button class="es-ic' + (o.i === sel ? ' on' : '') + '" data-pr="' + o.i + '">' + (o.i === P.now ? '<u>HOJE</u>' : '') + '<em>' + c.brl(o.gate) + '</em><i style="height:' + Math.max(10, Math.round(o.gate / mx * 118)) + 'px"></i><b>' + o.name + '</b><small' + (o.full ? ' class="f"' : '') + '>' + (o.full ? 'lota' : milK(o.pub)) + '</small></button>').join('') + '</div>' +
       '<div class="es-side">' +
@@ -961,35 +963,213 @@
       st.querySelector('#es-go').onclick = () => { if (sel === P.now) return; sfx('win'); S.coEstPrice(co, sel); c.save(); ingresso(); };
     });
   }
+  // Estádio (fases 1 a 3): o desenho com os 4 setores, a torcida, a casa cheia (ou a obra andando), o Ingresso e o
+  // dourado Ampliar (com obra: Acelerar com moedas)
+  function estDraw(pn, e, cl, o) {   // o = { obra, prev, wPad, hPad, dxExtra }
+    const W = pn.clientWidth, H = pn.clientHeight, d = U.EST.depth; if (!W || !H) return null;
+    const up = o.obra || o.prev, lv = e.lv, lf = up ? Object.assign({}, lv, { [up]: Math.min(5, lv[up] + 1) }) : lv;   // o setor em obra ou na prévia já ocupa o tamanho novo
+    const k = estFit(lf, W - o.wPad, H - o.hPad, 1), roof = x => (lf[x] >= 4 ? 3.5 * k : 0);
+    const R = U.EST.svg({ w: W, h: H, k, dx: (d[lf.n] - d[lf.s]) * k / 2 + (o.dx || 0), dy: (d[lf.a] - d[lf.so]) * k / 2, lv, occ: e.occ || EST_OCC0, cols: estCols(cl), gram: e.up ? Math.max(0, e.up.g - (e.gt > 0 ? 1 : 0)) : 1, luz: !!(e.up && e.up.l), telao: !!(e.up && e.up.l >= 2), cam: !!(e.up && e.up.c), seed: estSeed(cl.id), obra: o.obra, prev: o.prev });
+    R.dep = x => d[lf[x]] * k + roof(x); R.W = W; R.H = H;
+    return R;
+  }
   function estadio() {
-    const c = C(), co = c.co, cl = club(co.club), e = S.coEst(co), E = S.CO_EST, cap = S.coEstCap(e), hi = S.coEstHumIdx(e.hum), cls = estCls(e);
+    const c = C(), co = c.co, cl = club(co.club), e = S.coEst(co), E = S.CO_EST, ob = e.obra, cap = ob ? S.coEstOpen(e) : S.coEstCap(e), hi = S.coEstHumIdx(e.hum), cls = estCls(e);
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
-    const h = e.h || [], full = h.filter(g => g.pub >= g.cap * E.full).length, last = h[h.length - 1], why = S.coEstWhy(co);
-    const vsO = id => { const t = window.CRAQUE_DATA.O(club(id).name); return t.charAt(0).toLowerCase() + t.slice(1); };
+    const h = e.h || [], full = h.filter(g => g.pub >= g.cap * E.full).length, why = S.coEstWhy(co);
+    const allMax = E.keys.every(k => e.lv[k] >= 5), rush = ob ? S.coEstRushLeft(co) : 0, RC = E.obra.rushCoins;
     const pips = n => '<span class="es-pp">' + [1, 2, 3, 4, 5].map(i => '<i' + (i <= n ? ' class="on"' : '') + '></i>').join('') + '</span>';
-    const lb = (k, cc, pos) => '<div class="es-lb ' + cc + '" style="' + pos + '"><small>' + E.names[k].toUpperCase() + '</small>' + pips(e.lv[k]) + '<b>' + milK(S.coEstSeats(k, e.lv[k])) + '</b></div>';
-    show('<div class="es"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>' + esc(S.coEstName(cl.id) || 'Estádio') + '</b><small>' + esc(cl.name) + ' · ' + milK(cap) + ' lugares</small>' +
+    const lb = (k, cc, pos) => '<div class="es-lb ' + cc + '" style="' + pos + '">' + (ob && ob.k === k ? '<small class="ob">EM OBRA</small>' + pips(e.lv[k]) + '<b>fechado</b>' : '<small>' + E.names[k].toUpperCase() + '</small>' + pips(e.lv[k]) + '<b>' + milK(S.coEstSeats(k, e.lv[k])) + '</b>') + '</div>';
+    show('<div class="es"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>' + esc(S.coEstNameNow(co) || 'Estádio') + '</b><small>' + esc(cl.name) + ' · ' + milK(cap) + (ob ? ' lugares abertos' : ' lugares') + '</small>' +
         '<span class="es-top"><button class="es-q" id="es-q" aria-label="Como funciona">?</button></span></div>' +
       '<div class="es-pn" id="es-pn"></div>' +
       '<div class="es-side">' +
         '<div class="es-k t"><small>TORCIDA</small><b class="' + cls + '">' + S.coEstHum(e) + '</b><span class="es-dd ' + cls + '">' + [0, 1, 2, 3, 4].map(i => '<i' + (i <= hi ? ' class="on"' : '') + '></i>').join('') + '</span>' + (why ? '<em>' + esc(why) + '</em>' : '') + '</div>' +
-        '<div class="es-k"><small>CASA CHEIA</small>' + (h.length ? '<div class="es-ch"><b>' + full + '<u>de ' + h.length + (h.length > 1 ? ' jogos' : ' jogo') + '</u></b><span class="es-bars">' + h.map(g => '<i class="' + (g.pub >= g.cap * E.full ? 'f' : '') + '" style="height:' + Math.max(8, Math.round(g.pub / g.cap * 100)) + '%"></i>').join('') + '</span></div>' : '<em>nenhum jogo em casa ainda</em>') + '</div>' +
-        '<div class="es-k"><small>ÚLTIMO PÚBLICO</small>' + (last ? '<b>' + milK(last.pub) + '</b><em>contra ' + esc(vsO(last.vs)) + '</em>' : '<em>a estreia em casa ainda não chegou</em>') + '</div>' +
-        '<button class="tm-b" id="es-ing">Ingresso<small>' + E.price.names[e.pr].toLowerCase() + '</small></button>' +
+        (ob ? '<div class="es-k"><small>OBRA · ' + E.names[ob.k].toUpperCase() + '</small><div class="es-ch"><b>' + ob.left + '<u>' + (ob.left > 1 ? 'rodadas' : 'rodada') + '</u></b><span class="es-dd ob">' + Array.from({ length: ob.tot }, (_, i) => '<i' + (i < ob.tot - ob.left ? ' class="on"' : '') + '></i>').join('') + '</span></div></div>'
+          : '<div class="es-k"><small>CASA CHEIA</small>' + (h.length ? '<div class="es-ch"><b>' + full + '<u>de ' + h.length + (h.length > 1 ? ' jogos' : ' jogo') + '</u></b><span class="es-bars">' + h.map(g => '<i class="' + (g.pub >= g.cap * E.full ? 'f' : '') + '" style="height:' + Math.max(8, Math.round(g.pub / g.cap * 100)) + '%"></i>').join('') + '</span></div>' : '<em>nenhum jogo em casa ainda</em>') + '</div>') +
+        '<div class="es-two"><button class="tm-b" id="es-ing">Ingresso</button><button class="tm-b" id="es-mel">Melhorias' + (e.mel || (S.coEstLiga && S.coEstLiga(co)) ? '<i class="es-dot"></i>' : '') + '</button></div>' +
+        (ob ? '<button class="tm-b es-rush' + (rush ? '' : ' off') + '" id="es-rush">' + (rush ? (U.COINS ? U.COINS.svg : '') + 'Acelerar · ' + RC : 'Obra no ritmo máximo') + '</button>'
+          : '<button class="tm-go' + (allMax ? ' off' : '') + '" id="es-amp">' + (allMax ? 'Estádio completo' : 'Ampliar') + '</button>') +
       '</div></div>', st => {
       st.querySelector('#es-ing').onclick = () => { sfx('tap'); ingresso(); };
+      st.querySelector('#es-mel').onclick = () => { sfx('tap'); melhorias(); };
       st.querySelector('#es-back').onclick = () => { sfx('tap'); clube(); };
-      st.querySelector('#es-q').onclick = () => { sfx('tap'); mkHelp('', 'Os pontinhos são o público do último jogo em casa. A torcida se empolga com vitória, ainda mais em casa e em clássico. Torcida empolgada enche o estádio e empurra o time em casa; revoltada, pesa contra. Obras e melhorias chegam nas próximas atualizações.'); };
-      const pn = st.querySelector('#es-pn'), W = pn.clientWidth, H = pn.clientHeight, d = U.EST.depth, lv = e.lv;
-      if (!W || !H) return;
-      const k = estFit(lv, W - 216, H - 84, 1), roof = x => (lv[x] >= 4 ? 3.5 * k : 0);
-      const R = U.EST.svg({ w: W, h: H, k, dx: (d[lv.n] - d[lv.s]) * k / 2, dy: (d[lv.a] - d[lv.so]) * k / 2, lv, occ: e.occ || EST_OCC0, cols: estCols(cl), gram: 1, seed: estSeed(cl.id) });
-      const { px, py, pw, ph, gap } = R, dep = x => d[lv[x]] * k + roof(x);
+      st.querySelector('#es-q').onclick = () => { sfx('tap'); mkHelp('', 'Os pontinhos são o público do último jogo em casa. Torcida empolgada enche o estádio e empurra o time em casa; revoltada, pesa contra. Ampliar fecha o setor durante a obra e ele reabre maior: vale a pena quando a casa vive cheia. Melhorias não fecham nada e rendem todo ano. Quem aprova é a diretoria.'); };
+      const amp = st.querySelector('#es-amp'); if (amp) amp.onclick = () => { if (allMax) return; sfx('tap'); ampliar(); };
+      const rb = st.querySelector('#es-rush'); if (rb) rb.onclick = () => { if (!rush) return; sfx('tap'); obraRush(); };
+      const pn = st.querySelector('#es-pn'), R = estDraw(pn, e, cl, { obra: ob ? ob.k : null, wPad: 216, hPad: 84 });
+      if (!R) return;
+      const { px, py, pw, ph, gap, dep, W } = R;
       pn.innerHTML = R.svg +
         lb('a', '', 'left:' + (px + pw / 2) + 'px;top:' + (py - gap - dep('a') - 30) + 'px;transform:translateX(-50%)') +
         lb('so', '', 'left:' + (px + pw / 2) + 'px;top:' + (py + ph + gap + dep('so') + 10) + 'px;transform:translateX(-50%)') +
         lb('n', 'v l', 'right:' + (W - (px - gap - dep('n')) + 12) + 'px;top:' + (py + ph / 2) + 'px;transform:translateY(-50%)') +
-        lb('s', 'v r', 'left:' + (px + pw + gap + dep('s') + 12) + 'px;top:' + (py + ph / 2) + 'px;transform:translateY(-50%)');
+        lb('s', 'v r', 'left:' + (px + pw + gap + dep('s') + 12 + (e.up && e.up.l >= 2 ? 9 * R.k : 0)) + 'px;top:' + (py + ph / 2) + 'px;transform:translateY(-50%)');
+    });
+  }
+  // Janelinhas da obra (a mesma da resposta do clube no mercado): a diretoria aprova ou recusa, e a obra fica pronta
+  function obraBox(o) {
+    pop('<div class="mkx"><div class="mkx-h"><i class="mkx-fc im' + (o.cr ? ' cr' : '') + '">' + o.img + '</i><span><small>' + o.sm + '</small><b class="' + o.cls + '">' + o.w + '</b></span></div>' +
+      '<p>' + o.line + '</p><div class="mkx-li">' + o.rows.map(r => '<div><span>' + r[0] + '</span><b class="' + (r[2] || '') + '">' + r[1] + '</b></div>').join('') + '</div>' +
+      '<span class="rs-gap"></span><span class="mkx-b"><button class="hl-btn gold" id="ob-a">' + o.b1 + '</button>' + (o.b2 ? '<button class="hl-btn dark" id="ob-b">' + o.b2 + '</button>' : '') + '</span></div>', o.w, w => {
+      w.querySelector('#ob-a').onclick = () => { sfx('tap'); closePop(); if (o.on1) o.on1(); };
+      if (o.b2) w.querySelector('#ob-b').onclick = () => { sfx('tap'); closePop(); if (o.on2) o.on2(); };
+    }, 'hl-pop mkx-pop', true);
+  }
+  function obraPronta(co, d, seeBtn) {
+    const c = C(), E = S.CO_EST, e = S.coEst(co), cap = S.coEstCap(e), add = S.coEstSeats(d.k, d.to) - S.coEstSeats(d.k, d.from), nm = E.names[d.k];
+    const pz = U.COINS && S.coEstPrizes ? S.coEstPrizes(co).filter(x => U.COINS.add([x]) > 0) : [], won = pz.reduce((a, x) => a + x.n, 0);
+    obraBox({ img: crest(co.club, 'es-cr'), cr: 1, sm: 'ESTÁDIO · ' + nm.toUpperCase(), cls: 'up', w: 'Obra pronta', line: 'O ' + nm + ' reabre no próximo jogo em casa.',
+      rows: [[nm, milK(S.coEstSeats(d.k, d.from)) + ' → ' + milK(S.coEstSeats(d.k, d.to)), 'up'], ['Estádio', milK(cap - add) + ' → ' + milK(cap), 'up']].concat(won ? [[esc(pz[pz.length - 1].t), '+' + U.D.plural(won, 'moeda', 'moedas'), 'up']] : []),
+      b1: seeBtn ? 'Ver o estádio' : 'Fechar', on1: seeBtn ? estadio : null, b2: seeBtn ? 'Fechar' : '' });
+  }
+  // Na volta para a semana: a obra que acabou aparece uma vez
+  function obraPop(co) {
+    if (!S.coEstDone || !S.coEstDone(co) || document.getElementById('ld-pop')) return false;
+    setTimeout(() => { if (document.getElementById('ld-pop')) return; const d = S.coEstDone(co, true); if (!d) return; C().save(); sfx('win'); obraPronta(co, d, true); }, 80);
+    return true;
+  }
+  // Acelerar com moedas: 2 rodadas a menos, até 2 vezes por obra
+  function obraRush() {
+    const c = C(), co = c.co, E = S.CO_EST, e = S.coEst(co), ob = e.obra; if (!ob || !U.COINS) return;
+    const RC = E.obra.rushCoins, saldo = U.COINS.get(), ok = saldo >= RC, n = Math.min(E.obra.rush, ob.left);
+    pop('<div class="acd-help"><b>Acelerar a obra</b><p>' + (n >= ob.left ? 'A obra do ' + E.names[ob.k] + ' fica pronta agora.' : U.D.plural(n, 'rodada', 'rodadas') + ' a menos na obra do ' + E.names[ob.k] + '.') + ' Você tem ' + U.D.plural(saldo, 'moeda', 'moedas') + '.</p>' +
+      '<button class="hl-btn gold" id="ob-y">' + (ok ? 'Acelerar · ' + RC + ' moedas' : 'Faltam ' + (RC - saldo) + ' moedas') + '</button><button class="hl-btn line" data-pop-x>Agora não</button></div>', 'Acelerar a obra', w => {
+      w.querySelector('#ob-y').onclick = () => {
+        if (!ok) { sfx('tap'); closePop(); return loja(0, estadio); }
+        if (!U.COINS.spend(RC, 'Obra: ' + E.names[ob.k])) return;
+        if (!S.coEstRush(co)) { U.COINS.add({ n: RC, t: 'Obra devolvida' }); return; }
+        sfx('win'); const d = S.coEstDone(co, true); c.save(); closePop(); estadio(); if (d) obraPronta(co, d, false);
+      };
+    }, 'hl-pop acd-pop tm-pop');
+  }
+  // Melhorias (fase 4): 4 blocos (gramado, refletores, bares e loja, camarotes) com 3 níveis; à direita o que o próximo
+  // nível dá, o prazo, o custo, as parcelas e o pedido à diretoria. Uma por vez, e pode andar junto com uma obra de setor
+  function melhorias(k, x) {
+    const c = C(), co = c.co, e = S.coEst(co), E = S.CO_EST, M = E.mel, cl = club(co.club);
+    const plans = {}; M.keys.forEach(q => (plans[q] = S.coEstMelPlan(co, q)));
+    if (!k || !plans[k]) k = (e.mel && e.mel.k) || M.keys.find(q => !plans[q].max && !plans[q].lock) || 'g';
+    const P = plans[k]; x = Math.min(x || 1, P.payMax || 3);
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const pc = v => '+' + Math.round(v * 100) + '%', base = (S.coFin(co).rec || 0) * S.CO_FIN.bil / Math.max(1, co.ss.rounds.length / 2);
+    const camV = n => c.brl(Math.max(1000, Math.round(n * M.cam * base / 1000) * 1000));
+    // a palavra grande e a linha de cada bloco, pelo nível de hoje
+    const now = q => { const n = e.up[q];
+      if (q === 'g') return [M.word.g[n], n ? 'o time cansa menos em casa' : 'campo pesado para o seu time'];
+      if (q === 'l') return [M.word.l[n], n ? 'cota de TV ' + pc(M.tv * n) : 'jogo à noite não passa na TV'];
+      if (q === 'b') return [n ? pc(M.bar * n) : 'sem', n ? 'de renda por torcedor' : 'torcedor não tem onde gastar'];
+      return plans.c.lock ? ['fechado', 'pede a Social coberta'] : [n ? camV(n) : 'sem', n ? 'por jogo, com qualquer público' : 'renda fixa por jogo em casa']; };
+    const block = q => { const w = now(q), lock = q === 'c' && plans.c.lock;
+      return '<button class="es-m' + (q === k ? ' on' : '') + (lock ? ' lock' : '') + '" data-mk="' + q + '"><span><b>' + M.names[q] + '</b>' + (lock ? '' : '<span class="es-pp">' + [1, 2, 3].map(i => '<i' + (i <= e.up[q] ? ' class="on"' : '') + '></i>').join('') + '</span>') + '</span><em>' + w[0] + '</em><small>' + (e.mel && e.mel.k === q ? 'em reforma · ' + U.D.plural(e.mel.left, 'rodada', 'rodadas') : w[1]) + '</small></button>'; };
+    const row = (a, b, cls) => '<div><span>' + a + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' + b + '</b></div>';
+    const doing = e.mel && e.mel.k === k, can = !P.max && !P.lock && !e.mel;
+    const liga = S.coEstLiga ? S.coEstLiga(co) : null;
+    const fx = k === 'g' ? row('Cansaço em casa', '−' + Math.round(M.gram * 100) + '%', 'up') : k === 'l' ? (liga ? row('Multa da liga', 'acaba', 'up') : row('Cota de TV', pc(M.tv), 'up')) : k === 'b' ? row('Renda por torcedor', pc(M.bar), 'up') : row('Por jogo em casa', '+' + camV(1), 'up');
+    const card = doing ? '<small>EM REFORMA · ' + P.name.toUpperCase() + '</small><div class="es-mn"><b>' + e.mel.left + '</b><em>' + (e.mel.left > 1 ? 'rodadas para ficar pronto' : 'rodada para ficar pronto') + '</em></div>'
+      : P.max ? '<small>' + P.name.toUpperCase() + ' · NÍVEL 3 DE 3</small><div class="es-mn"><em>No nível máximo.</em></div>'
+      : P.lock ? '<small>' + P.name.toUpperCase() + '</small><div class="es-mn"><em>Camarotes pedem a Social coberta (nível 4). Amplie a Social primeiro.</em></div>'
+      : '<small>' + P.name.toUpperCase() + ' · NÍVEL ' + P.to + ' DE 3</small><div class="es-ml">' + fx + (P.perSeason ? row('Por temporada', '+' + c.brl(P.perSeason), 'up') : '') + row('Prazo', U.D.plural(P.rounds, 'rodada', 'rodadas')) + row('Custo', c.brl(P.cost)) + '</div>';
+    show('<div class="es es3"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button><b>Melhorias</b><small>' + esc(S.coEstNameNow(co) || cl.name) + '</small><span class="es-top">' + cxPill() + '</span></div>' +
+      '<div class="es-mg">' + M.keys.map(block).join('') + '</div>' +
+      '<div class="es-side"><div class="es-k es-mc">' + card + '</div>' +
+        '<div class="es-seg">' + [1, 2, 3].map(i => '<button data-x="' + i + '" class="' + (i === x ? 'on' : '') + (i > (P.payMax || 3) || !can ? ' no' : '') + '">' + (i === 1 ? 'À vista' : i + 'x') + '</button>').join('') + '</div>' +
+        '<button class="tm-go' + (can ? '' : ' off') + '" id="es-go">' + (doing ? 'Em reforma' : e.mel ? 'Uma por vez' : P.max ? 'Nível máximo' : P.lock ? 'Fechado' : 'Pedir à diretoria') + '</button>' +
+      '</div></div>', st => {
+      st.querySelector('#es-back').onclick = () => { sfx('tap'); estadio(); };
+      st.querySelectorAll('[data-mk]').forEach(b => b.onclick = () => { sfx('tap'); melhorias(b.dataset.mk, x); });
+      st.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { if (!can) return; sfx('tap'); const i = +b.dataset.x;
+        if (i > P.payMax) return mkHelp('', 'Este presidente só paga à vista.');
+        melhorias(k, i); });
+      st.querySelector('#es-go').onclick = () => {
+        if (!can) return;
+        const pres = S.coPres(co), img = presFace(pres, 'es-pf'), sm = 'PRESIDENTE · ' + esc(pres.n).toUpperCase(), r = S.coEstMelAsk(co, k, x);
+        if (r.ok) {
+          c.save(); sfx('win'); melhorias(k);
+          return obraBox({ img, sm, cls: 'up', w: 'Aprovou a melhoria', line: P.name + ' no nível ' + P.to + ' em ' + U.D.plural(r.rounds, 'rodada', 'rodadas') + '. Nada fecha durante a reforma.' + (P.amb ? ' Ele bancou uma parte.' : ''),
+            rows: [['Sai do caixa agora', c.brl(r.first)]].concat(!r.parts ? [['Fica no caixa', c.brl(S.coFin(co).caixa)]] : [[r.parts > 1 ? 'Mais ' + r.parts + ' parcelas, a 1ª na rodada ' + r.nextR : 'Mais 1 parcela na rodada ' + r.nextR, c.brl(r.part)]]), b1: 'Fechar' });
+        }
+        sfx('tap');
+        const line = r.why === 'vermelho' ? 'Com o caixa no vermelho ele não começa reforma nenhuma.' : r.why === 'ultimato' ? 'Com o seu cargo em risco, a diretoria não começa reforma.'
+          : r.why === 'folga' ? (x > 1 ? 'Com a entrada e as parcelas pela frente sobraria pouca folga no caixa.' : 'Depois da reforma sobraria menos de ' + E.obra.folga + ' semanas de salário no caixa.') + ' Ele libera com ' + c.brl(Math.ceil(r.need / 10000) * 10000) + '.' : 'A diretoria não liberou a reforma agora.';
+        obraBox({ img, sm, cls: 'dn', w: 'Recusou a melhoria', line, rows: [['Custo', c.brl(P.cost)], ['Caixa agora', c.brl(S.coFin(co).caixa), r.why === 'ultimato' ? '' : 'dn']], b1: 'Entendi', b2: 'Finanças', on2: () => financas() });
+      };
+    });
+  }
+  // Nome do estádio (fase 4): a proposta do patrocinador aparece na volta para a semana e pede resposta
+  function nomePop(co) {
+    if (!S.coEstNome || document.getElementById('ld-pop')) return false;
+    const o = S.coEstNome(co); if (!o) return false;
+    setTimeout(() => { if (document.getElementById('ld-pop')) return; const c = C(), E = S.CO_EST, was = S.coEstName(co.club);
+      const ans = yes => { S.coEstNomeAnswer(co, yes); c.save(); if (yes) sfx('win'); semana(); };
+      obraBox({ img: crest(co.club, 'es-cr'), cr: 1, sm: 'PATROCINADOR · ' + esc(o.sp).toUpperCase(), cls: 'mid', w: 'Quer o nome do estádio',
+        line: 'Por ' + o.anos + ' temporadas ' + (was ? 'o ' + esc(was) : 'o estádio') + ' passa a se chamar ' + esc(o.n) + '. A torcida não gosta.',
+        rows: [['Por temporada', '+' + c.brl(o.v), 'up'], ['Torcida', 'cai um nível', 'dn']], b1: 'Aceitar', on1: () => ans(true), b2: 'Recusar', on2: () => ans(false) }); }, 80);
+    return true;
+  }
+  // Acontecimentos (fase 5), na volta para a semana. A liga exige refletores de quem subiu: avisa uma vez
+  function ligaPop(co) {
+    if (!S.coEstLiga || document.getElementById('ld-pop')) return false;
+    const o = S.coEstLiga(co); if (!o || o.seen || o.mel) return false;
+    setTimeout(() => { if (document.getElementById('ld-pop')) return; const c = C(), P = S.coEstMelPlan(co, 'l');
+      S.coEstLigaSeen(co); c.save();
+      obraBox({ img: crest(co.club, 'es-cr'), cr: 1, sm: 'LIGA · ESTÁDIO', cls: 'dn', w: 'A liga exige refletores',
+        line: 'Nesta divisão tem jogo à noite. Sem refletores, o clube paga multa a cada jogo em casa' + (o.on ? '.' : ' da rodada ' + o.from + ' em diante.'),
+        rows: [['Multa por jogo em casa', '−' + c.brl(o.fine), 'dn'], ['Refletores', c.brl(P.cost)]], b1: 'Ver melhorias', on1: () => melhorias('l'), b2: 'Depois' }); }, 80);
+    return true;
+  }
+  // Show no estádio: o dinheiro entra na hora e o gramado sofre nos próximos jogos em casa
+  function showPop(co) {
+    if (!S.coEstShow || document.getElementById('ld-pop')) return false;
+    const o = S.coEstShow(co); if (!o) return false;
+    setTimeout(() => { if (document.getElementById('ld-pop')) return; const c = C();
+      const ans = yes => { S.coEstShowAnswer(co, yes); c.save(); if (yes) sfx('win'); semana(); };
+      obraBox({ img: crest(co.club, 'es-cr'), cr: 1, sm: 'ESTÁDIO · PROPOSTA', cls: 'mid', w: 'Querem fazer um show',
+        line: 'Uma produtora quer o estádio nesta semana, com o time jogando fora. O gramado sofre e o time sente em casa.',
+        rows: [['Aluguel', '+' + c.brl(o.v), 'up'], ['Gramado', 'ruim por ' + o.games + ' jogos', 'dn']], b1: 'Aceitar', on1: () => ans(true), b2: 'Recusar', on2: () => ans(false) }); }, 80);
+    return true;
+  }
+  // Ampliar (fase 3): um setor por vez. O desenho mostra a prévia, a régua os 5 níveis; à direita o jeito de fazer, as
+  // parcelas e o pedido à diretoria, que aprova ou recusa na hora
+  function ampliar(k, mode, x) {
+    const c = C(), co = c.co, cl = club(co.club), e = S.coEst(co), E = S.CO_EST;
+    if (e.obra) return estadio();
+    const open = E.keys.filter(q => e.lv[q] < 5); if (!open.length) return estadio();
+    if (!k || open.indexOf(k) < 0) k = open.map(q => S.coEstPlan(co, q)).sort((a, b) => a.modes[1].cost - b.modes[1].cost)[0].k;   // começa pelo setor mais barato
+    const P = S.coEstPlan(co, k); mode = mode || 'nor'; x = Math.min(x || 1, P.payMax);
+    const M = P.modes.find(o => o.id === mode), cols = estCols(cl);
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', FW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+    const cell = i => '<div class="' + (i === P.from ? 'now' : i === P.to ? 'nx' : '') + '">' + U.EST.slice(i, 86, 30, 0.9, cols, estSeed(cl.id) + i) + '<small>' + E.lvl[i] + '</small><b>' + milK(S.coEstSeats(k, i)) + '</b></div>';
+    const op = o => '<button class="es-op' + (o.id === mode ? ' on' : '') + '" data-md="' + o.id + '"><b>' + o.name + '</b><em>' + c.brl(o.cost) + '</em><small' + (o.risk ? ' class="rk"' : '') + '>' + U.D.plural(o.rounds, 'rodada', 'rodadas') + (o.risk ? ' · pode atrasar' : '') + '</small></button>';
+    show('<div class="es es2"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button><b>Ampliar</b>' +
+        '<span class="es-sel">' + (open.length > 1 ? '<button class="tm-ar" data-sk="-1" aria-label="Setor anterior">' + BK + '</button>' : '') + '<small>' + E.names[k] + ' · nível ' + P.from + ' de 5</small>' + (open.length > 1 ? '<button class="tm-ar" data-sk="1" aria-label="Próximo setor">' + FW + '</button>' : '') + '</span>' +
+        '<span class="es-top">' + cxPill() + '</span></div>' +
+      '<div class="es-pn" id="es-pn"></div>' +
+      '<div class="es-rg">' + [1, 2, 3, 4, 5].map(cell).join('') + '</div>' +
+      '<div class="es-side">' + P.modes.map(op).join('') +
+        '<div class="es-seg">' + [1, 2, 3].map(i => '<button data-x="' + i + '" class="' + (i === x ? 'on' : '') + (i > P.payMax ? ' no' : '') + '">' + (i === 1 ? 'À vista' : i + 'x') + '</button>').join('') + '</div>' +
+        '<button class="tm-go" id="es-go">Pedir à diretoria</button>' +
+      '</div></div>', st => {
+      st.querySelector('#es-back').onclick = () => { sfx('tap'); estadio(); };
+      st.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { sfx('tap'); ampliar(open[(open.indexOf(k) + +b.dataset.sk + open.length) % open.length], mode, x); });
+      st.querySelectorAll('[data-md]').forEach(b => b.onclick = () => { sfx('tap'); ampliar(k, b.dataset.md, x); });
+      st.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.x;
+        if (i > P.payMax) return mkHelp('', 'Este presidente só faz obra à vista.');
+        ampliar(k, mode, i); });
+      st.querySelector('#es-go').onclick = () => {
+        const pres = S.coPres(co), img = presFace(pres, 'es-pf'), sm = 'PRESIDENTE · ' + esc(pres.n).toUpperCase(), nm = E.names[k], r = S.coEstAsk(co, k, mode, x);
+        if (r.ok) {
+          c.save(); sfx('win'); estadio();
+          return obraBox({ img, sm, cls: 'up', w: 'Aprovou a obra', line: 'O ' + nm + ' fecha por ' + U.D.plural(r.rounds, 'rodada', 'rodadas') + ' e reabre com ' + milK(S.coEstSeats(k, P.to)) + ' lugares.' + (P.amb ? ' Ele bancou uma parte.' : ''),
+            rows: [['Sai do caixa agora', c.brl(r.first)]].concat(!r.parts ? [['Fica no caixa', c.brl(S.coFin(co).caixa)]] : [[r.parts > 1 ? 'Mais ' + r.parts + ' parcelas, a 1ª na rodada ' + r.nextR : 'Mais 1 parcela na rodada ' + r.nextR, c.brl(r.part)]]), b1: 'Ver o estádio' });
+        }
+        sfx('tap');
+        const line = r.why === 'vermelho' ? 'Com o caixa no vermelho ele não começa obra nenhuma.' : r.why === 'ultimato' ? 'Com o seu cargo em risco, a diretoria não começa obra.'
+          : r.why === 'folga' ? (x > 1 ? 'Com a entrada e as parcelas pela frente sobraria pouca folga no caixa.' : 'Depois da obra sobraria menos de ' + E.obra.folga + ' semanas de salário no caixa.') + ' Ele libera com ' + c.brl(Math.ceil(r.need / 10000) * 10000) + '.' : 'A diretoria não liberou a obra agora.';
+        obraBox({ img, sm, cls: 'dn', w: 'Recusou a obra', line, rows: [['Custo da obra', c.brl(M.cost)], ['Caixa agora', c.brl(S.coFin(co).caixa), r.why === 'ultimato' ? '' : 'dn']], b1: 'Entendi', b2: 'Finanças', on2: () => financas() });
+      };
+      const pn = st.querySelector('#es-pn'), R = estDraw(pn, e, cl, { prev: k, wPad: 190, hPad: 34, dx: 62 });
+      if (!R) return;
+      pn.innerHTML = R.svg + '<div class="es-co" style="width:' + Math.max(96, Math.round(R.px - R.gap - R.dep('n') - 14)) + 'px"><b>+' + milK(P.add) + '</b><small>lugares</small><b class="s">+' + c.brl(P.perGame) + '</b><small>por jogo cheio</small></div>';
     });
   }
   // ---------- Mercado, lote 1 (2026-11-09, quadros 23, 23b e 24): só olhar; propostas no lote 2 ----------
@@ -1645,6 +1825,7 @@
   function hall() {
     const c = C(), co = c.co;
     pop(popHead('Hall do técnico', esc(co.name) + ' · fama ' + co.fame + ' (' + c.FAME_TXT(co.fame) + ')') + '<div class="ld-pb col"><div class="ld-scroll">' +
+      (S.coEstLegado ? S.coEstLegado(co) : []).map(g => '<div class="ld-cand">' + crest(g.club, 'ld-cr') + '<span><b>Estádio · ' + esc(club(g.club).short || club(g.club).name) + ' · ' + milK(g.cap0) + ' → ' + milK(g.cap) + '</b><small>' + U.D.plural(g.nob, 'obra sua', 'obras suas') + (g.best ? ' · recorde de ' + milK(g.best) : '') + '</small></span></div>').join('') +
       (co.hist.length ? co.hist.slice().reverse().map(h => '<div class="ld-cand">' + crest(h.club, 'ld-cr') + '<span><b>' + (U.YEAR0 + h.s) + ' · ' + esc(club(h.club).short || club(h.club).name) + ' · ' + h.pos + 'º</b><small>' + esc(h.league) + (h.won ? ' · campeão' : h.up ? ' · subiu' : h.down ? ' · caiu' : '') + (h.sacked ? ' · demitido' : h.met ? ' · meta cumprida' : ' · meta não cumprida') + '</small></span></div>').join('') : '<p class="ld-none">A primeira temporada ainda está em andamento.</p>') + '</div></div>', 'Hall do técnico', null, 'w560');
   }
 
@@ -2044,6 +2225,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, lift, estadio, ingresso, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato };
+  U.LD = { on, show, off, lift, estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();

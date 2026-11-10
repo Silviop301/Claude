@@ -59,6 +59,7 @@
     put(EU, ['Itália', 'Alemanha', 'França', 'Holanda', 'Turquia', 'Bélgica', 'Grécia', 'Suíça', 'Áustria', 'Dinamarca', 'Croácia', 'Sérvia', 'Noruega', 'Suécia', 'Polônia', 'República Tcheca']);
     put(INT, ['Arábia Saudita', 'Catar', 'Marrocos', 'Egito', 'Japão', 'Coreia do Sul']);
   })();
+  S.coFinSpons = co => sponsOf(co);
   const sponsOf = co => { let k = '_'; try { k = D.countryOf(D.CLUB_BY_ID[co.club]) || '_'; } catch (e) {} return SP[k] || SP._; };
   const r10 = v => Math.round(v / 10000) * 10000;
   const r5 = v => Math.round(v / 5000) * 5000;
@@ -242,7 +243,7 @@
     const sub = (k, v) => { v = Math.round(v); fin.ss[k] += v; fin.caixa -= v; };
     sub('sal', S.coFolha(co));
     add('pat', patOf(co).fix / n);
-    if (ri === 0 || ri === Math.floor(n / 2)) add('tv', fin.rec * F.tv / 2);
+    if (ri === 0 || ri === Math.floor(n / 2)) add('tv', fin.rec * F.tv / 2 * (S.coEstTv ? S.coEstTv(co) : 1));
     let g = 0;
     if (home && vs) { g = gate(co, vs); add('bil', g); }
     if (fin.loan && (ri + 1) % F.mes === 0) parcela(co);
@@ -263,7 +264,7 @@
     if (!fin.rec) fin.rec = recOf(co, n);
     const nx = S.coNext(co);
     if (nx && !nx.bye && nx.home) out.push({ k: 'bil', txt: 'Bilheteria contra o ' + (D.CLUB_BY_ID[nx.vs].short || D.CLUB_BY_ID[nx.vs].name), v: gate(co, nx.vs), aprox: true });
-    if (ss.i <= half) out.push({ k: 'tv', txt: 'Cota de TV, 2ª parcela · rodada ' + (half + 1), v: r10(fin.rec * F.tv / 2) });
+    if (ss.i <= half) out.push({ k: 'tv', txt: 'Cota de TV, 2ª parcela · rodada ' + (half + 1), v: r10(fin.rec * F.tv / 2 * (S.coEstTv ? S.coEstTv(co) : 1)) });
     const pt = patOf(co);
     if (pt.bonus) out.push({ k: 'bonus', txt: 'Bônus do patrocínio se cumprir a meta', v: pt.bonus });
     if (ss.promo) out.push({ k: 'acesso', txt: 'Prêmio se subir de divisão', v: r10(fin.rec * F.acesso) });
