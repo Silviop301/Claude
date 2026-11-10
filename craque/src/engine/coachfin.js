@@ -198,18 +198,22 @@
     co.squad = co.squad.filter(x => x !== p);
     if ((co.xi || []).includes(p.id) || (co.bench || []).includes(p.id)) { const a = S.coAutoXI(co.squad, co.form); co.xi = a.xi; co.bench = a.bench; }
     f.caixa += v; f.ss.vend += v; f.sold = true;
+    if (S.coWorldSold && S.coMktBuyer) { const b = S.coMktBuyer(co, p, S.rng(hash('forcada|' + p.id + '|' + co.season))); if (b) S.coWorldSold(co, p, b.id, v); }
     news(co, 'O presidente vendeu ' + p.n + ' (' + p.pos + ', ' + p.age + ' anos) por R$ ' + (v >= 1e6 ? (v / 1e6).toFixed(1).replace('.', ',') + ' mi' : Math.round(v / 1000) + ' mil') + ' para tapar o caixa.');
     return { p, v };
   }
 
   // Bilheteria de um jogo em casa: parte da receita, mais cheia quando o time está bem na tabela e o rival é grande
-  function gate(co, vs) {
+  function gate0(co, vs) {
     const fin = co.fin, ss = co.ss, n = ss.ids.length, homes = Math.max(1, ss.rounds.length / 2);
     const pos = S.coPos(co), posF = 1.15 - 0.3 * (pos - 1) / Math.max(1, n - 1);
     const me = D.CLUB_BY_ID[co.club].strength, opp = D.CLUB_BY_ID[vs].strength;
     const oppF = clamp(1 + (opp - me) / 30, 0.8, 1.3);
     return r10(fin.rec * F.bil / homes * posF * oppF) || 10000;
   }
+  // Com o estádio (coachest.js) a bilheteria de sempre vira a régua: público e preço do ingresso mexem nela
+  const gate = (co, vs) => (S.coEstGate ? S.coEstGate(co, vs, gate0(co, vs)) : gate0(co, vs));
+  S.coGateBase = (co, vs) => (S.coFin(co) && co.ss ? gate0(co, vs) : 0);
   S.coGate = (co, vs) => (S.coFin(co) && co.ss ? gate(co, vs) : 0);
   // Patrocínio de saves da parte 1 (sem proposta assinada): o fixo de sempre
   const patOf = co => co.fin.pat || { k: 'fix', name: 'Patrocinador', fix: r10(co.fin.rec * F.patFix), bonus: 0, until: co.season };

@@ -1,12 +1,12 @@
 {
   "name": "Climbix",
   "short_name": "Climbix",
-  "description": "Crie um garoto de 16 anos e descubra se ele vira lenda.",
+  "description": "Assuma um clube, monte o time e chegue ao topo.",
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "landscape",
   "background_color": "#0F3D2A",
   "theme_color": "#0F3D2A",
   "icons": [
