@@ -224,6 +224,9 @@
   // Link só do Treinador (Silvio 2026-11-08, para os amigos avaliarem a simulação): climbix.app/?so=treinador deixa a
   // home só com o Treinador neste aparelho (fica guardado); ?so=tudo volta ao jogo inteiro
   try { const q = new URLSearchParams(location.search).get('so'); if (q === 'treinador') localStorage.setItem('climbix-so', 'treinador'); else if (q === 'tudo') localStorage.removeItem('climbix-so'); } catch (e) {}
+  // Simulação livre do Treinador (teste do Silvio, 2026-11-10): ?livre=1 grava e liga neste aparelho, ?livre=0 volta ao normal
+  try { const q = new URLSearchParams(location.search).get('livre'); if (q === '1') localStorage.setItem('climbix-sim-livre', '1'); else if (q === '0') localStorage.removeItem('climbix-sim-livre'); } catch (e) { /* sem armazenamento */ }
+  U.simLivre = () => { try { return localStorage.getItem('climbix-sim-livre') === '1'; } catch (e) { return false; } };
   U.soCo = () => { try { return localStorage.getItem('climbix-so') === 'treinador'; } catch (e) { return false; } };
   // Home com dois modos (Silvio 2026-11-09): Treinador e Jogador; Jogador desabilitado com "Em breve". Carreira Rápida,
   // Rumo ao Topo e Relâmpago saem da home por enquanto (o código continua aí)

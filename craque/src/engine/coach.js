@@ -454,8 +454,13 @@
   const sideName = (m, s) => (s === m.us ? 'us' : 'them');
   // Avança até a próxima parada (gol, vermelho, lesão, intervalo) ou o fim; com `until`, para também naquele minuto
   // (a tela ao vivo anda minuto a minuto, para a pessoa poder parar quando quiser). Volta a parada
-  S.coMatchStep = function (co, m, until) {
+  // Simulação livre (teste, opt.free: só a tela ao vivo com o campinho liga): o motor não sorteia gol nem chance neste
+  // minuto, só diz a força do ataque de cada lado (`m.lam`, gols esperados em 90 min pelo confronto, energia, gritos e
+  // expulsões); o campinho joga, sorteia cada chute na hora e conta de volta em `S.coMatchShot`. O pênalti continua
+  // saindo daqui (o campinho não marca falta sozinho), na mesma proporção de antes. Sem opt, tudo como sempre
+  S.coMatchStep = function (co, m, until, opt) {
     if (m.done) return null;
+    const free = !!(opt && opt.free);
     const { r, save } = rngCo(co);
     let stop = null;
     let n = 0;
@@ -517,7 +522,17 @@
         }
         return true;
       };
-      if (!chance(H, lh)) chance(A, la);
+      if (free) {
+        m.lam = { us: m.home ? lh : la, them: m.home ? la : lh };
+        const PF = 0.08 + (CO.ch - 1) * CO.spMiss.pen; // pênaltis por gol esperado: os que entram (8% dos gols) e os perdidos
+        [[H, lh], [A, la]].forEach(([S0, lam]) => {
+          if (stop || r() >= lam / CO.mins * PF) return;
+          const sd = sideName(m, S0), tk = takerOf(S0, 'pen'), who = tk ? tk.n : scorer(r, S0), u = r();
+          m.sh = m.sh || { us: 0, them: 0 }; m.sh[sd]++; m.ot = m.ot || { us: 0, them: 0 };
+          if (r() < 0.08 / PF) { if (S0 === H) m.gh++; else m.ga++; m.ot[sd]++; m.ev.push({ m: m.min, t: 'gol', s: sd, p: who, l: 'c', sp: 'pen', by: null }); stop = { t: 'gol', s: sd, p: who, l: 'c', sp: 'pen', by: null }; }
+          else { const k = u < 0.55 ? 'defesa' : u < 0.85 ? 'fora' : 'trave'; if (k === 'defesa') m.ot[sd]++; m.ev.push({ m: m.min, t: 'chance', s: sd, p: who, k, l: 'c', sp: 'pen', by: null }); }
+        });
+      } else if (!chance(H, lh)) chance(A, la);
       // Escanteios que não viram chance (cruzamento afastado, cobrança curta): no ritmo de quem manda
       [[H, lh], [A, la]].forEach(([S0, lam]) => { if (r() < CO.ck / CO.mins * 2 * lam / (lh + la || 1)) { const sd = sideName(m, S0); m.ck = m.ck || { us: 0, them: 0 }; m.ck[sd]++; } });
       // Faltas, cartões, impedimento e lesão (o seu vermelho e a sua lesão param o jogo; os do rival entram no relato)
@@ -567,6 +582,23 @@
     m.stop = stop;
     save();
     return stop;
+  };
+  // Simulação livre: um chute que o campinho acabou de jogar entra na súmula (placar, chutes, no gol, escanteio, lance
+  // com o nome de quem bateu). sd: 'us' | 'them'; out: gol, def, fora, trave, bloq; info: { id, num, sv, lane }
+  S.coMatchShot = function (co, m, sd, out, info) {
+    if (!m || m.done || !m.min) return null;
+    info = info || {};
+    const S0 = sd === 'us' ? m.us : m.them, H = m.home ? m.us : m.them, mm = byId(S0.squad), on = S0.xi.map(id => mm[id]).filter(Boolean);
+    const p = on.find(q => info.id != null && q.id === info.id) || on.find(q => info.num != null && q.num === info.num) || on.find(q => q.pos === 'ATA') || on[on.length - 1];
+    if (!p) return null;
+    m.sh = m.sh || { us: 0, them: 0 }; m.ot = m.ot || { us: 0, them: 0 }; m.sh[sd]++;
+    const l = info.lane < 0 ? 'e' : info.lane > 0 ? 'd' : 'c', k = out === 'def' ? 'defesa' : out === 'trave' ? 'trave' : out === 'bloq' ? 'bloqueio' : 'fora';
+    let e;
+    if (out === 'gol') { if (S0 === H) m.gh++; else m.ga++; m.ot[sd]++; e = { m: m.min, t: 'gol', s: sd, p: p.n, l, sp: null, by: null }; }
+    else { if (k === 'defesa') m.ot[sd]++; if (info.sv === 'escanteio') { m.ck = m.ck || { us: 0, them: 0 }; m.ck[sd]++; } e = { m: m.min, t: 'chance', s: sd, p: p.n, k, l, sp: null, by: null }; }
+    if (m.st) e.st = m.st;
+    e.livre = 1; m.ev.push(e);
+    return e;
   };
   // Quem faz a falta: zagueiro, volante e lateral mais; goleiro quase nunca; quem já tem amarelo se cuida
   const FOUL_W = { GOL: 0.08, ZAG: 1.4, LAT: 1.15, MEI: 1.2, ATA: 0.65 };
