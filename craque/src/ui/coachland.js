@@ -233,7 +233,7 @@
     if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao() : patrocinio();
     c.save('hub');
     const tut = tutStep(co);
-    const popped = !tut && (inboxPop(co, semana) || lostPop(co) || obraPop(co) || nomePop(co));
+    const popped = !tut && (inboxPop(co, semana) || lostPop(co) || obraPop(co) || nomePop(co) || ligaPop(co) || showPop(co));
     if (!tut && !popped && !ctWarn(co)) finNews(co);
     // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
     const inN = tut ? 0 : S.coMktInbox(co).filter(o => !o.seen).length - (popped ? 1 : 0);
@@ -716,6 +716,8 @@
         '<ul class="ldl-last ldr-all">' + m.ev.filter(e => e.t !== 'grito-fim').map(e => c.feedLine(m, e)).join('') + '</ul>';
       const rows = chg.filter(r => r[0] !== 'Caixa').map(([k, v, cc]) => [k, k === 'Tabela' ? (pre.pos && pre.pos !== pos ? ord(pre.pos) + ' → ' + ord(pos) : ord(pos)) : k === 'Diretoria' ? (co.sacked ? 'demitido' : cc === 'up' ? 'subiu' : cc === 'dn' ? 'caiu' : 'igual') : v, cc]);
       if (cadN.length) rows.push(['Caderno', '+' + cadN.length + (cadN.length > 1 ? ' notas' : ' nota'), 'up', 1]);
+      if (log.closed) rows.push(['Público', 'portões fechados', '']);
+    else if (log.pub) rows.push(['Público', milK(log.pub) + (log.pub >= log.cap * S.CO_EST.full ? ' · lotou' : ''), log.pub >= log.cap * S.CO_EST.full ? 'gd' : '']);   // estádio: só nos jogos em casa
       show('<div class="rs">' +
         '<div class="rs-sc">' + crest((m.home ? cl : vs).id, 'rs-cr') + '<em>' + m.gh + ' <i>x</i> ' + m.ga + '</em>' + crest((m.home ? vs : cl).id, 'rs-cr') +
           '<span class="rs-w"><b class="' + log.res + '">' + word + (aux ? ' · COM O AUXILIAR' : '') + '</b><small>' + (goals.length ? goals.join(' · ') : 'sem gols') + '</small></span></div>' +
@@ -895,7 +897,7 @@
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const L = P.list, sel = pick == null ? P.now : pick, cur = L[P.now], x = L[sel], mx = Math.max.apply(null, L.map(o => o.gate)), d = x.gate - cur.gate;
     const vs = P.vs ? club(P.vs) : null;
-    show('<div class="es"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button><b>Ingresso</b><small>' + (vs ? 'próximo jogo em casa: ' + esc(vs.short || vs.name) : 'renda de um jogo em casa') + '</small>' +
+    show('<div class="es"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button><b>Ingresso</b><small>' + (P.closed ? 'próximo jogo de portões fechados: vale para o seguinte' : vs ? 'próximo jogo em casa: ' + esc(vs.short || vs.name) : 'renda de um jogo em casa') + '</small>' +
         '<span class="es-top"><button class="es-q" id="es-q" aria-label="Como funciona">?</button></span></div>' +
       '<div class="es-ig">' + L.map(o => '<button class="es-ic' + (o.i === sel ? ' on' : '') + '" data-pr="' + o.i + '">' + (o.i === P.now ? '<u>HOJE</u>' : '') + '<em>' + c.brl(o.gate) + '</em><i style="height:' + Math.max(10, Math.round(o.gate / mx * 118)) + 'px"></i><b>' + o.name + '</b><small' + (o.full ? ' class="f"' : '') + '>' + (o.full ? 'lota' : milK(o.pub)) + '</small></button>').join('') + '</div>' +
       '<div class="es-side">' +
@@ -916,7 +918,7 @@
     const W = pn.clientWidth, H = pn.clientHeight, d = U.EST.depth; if (!W || !H) return null;
     const up = o.obra || o.prev, lv = e.lv, lf = up ? Object.assign({}, lv, { [up]: Math.min(5, lv[up] + 1) }) : lv;   // o setor em obra ou na prévia já ocupa o tamanho novo
     const k = estFit(lf, W - o.wPad, H - o.hPad, 1), roof = x => (lf[x] >= 4 ? 3.5 * k : 0);
-    const R = U.EST.svg({ w: W, h: H, k, dx: (d[lf.n] - d[lf.s]) * k / 2 + (o.dx || 0), dy: (d[lf.a] - d[lf.so]) * k / 2, lv, occ: e.occ || EST_OCC0, cols: estCols(cl), gram: e.up ? e.up.g : 1, luz: !!(e.up && e.up.l), telao: !!(e.up && e.up.l >= 2), cam: !!(e.up && e.up.c), seed: estSeed(cl.id), obra: o.obra, prev: o.prev });
+    const R = U.EST.svg({ w: W, h: H, k, dx: (d[lf.n] - d[lf.s]) * k / 2 + (o.dx || 0), dy: (d[lf.a] - d[lf.so]) * k / 2, lv, occ: e.occ || EST_OCC0, cols: estCols(cl), gram: e.up ? Math.max(0, e.up.g - (e.gt > 0 ? 1 : 0)) : 1, luz: !!(e.up && e.up.l), telao: !!(e.up && e.up.l >= 2), cam: !!(e.up && e.up.c), seed: estSeed(cl.id), obra: o.obra, prev: o.prev });
     R.dep = x => d[lf[x]] * k + roof(x); R.W = W; R.H = H;
     return R;
   }
@@ -934,7 +936,7 @@
         '<div class="es-k t"><small>TORCIDA</small><b class="' + cls + '">' + S.coEstHum(e) + '</b><span class="es-dd ' + cls + '">' + [0, 1, 2, 3, 4].map(i => '<i' + (i <= hi ? ' class="on"' : '') + '></i>').join('') + '</span>' + (why ? '<em>' + esc(why) + '</em>' : '') + '</div>' +
         (ob ? '<div class="es-k"><small>OBRA · ' + E.names[ob.k].toUpperCase() + '</small><div class="es-ch"><b>' + ob.left + '<u>' + (ob.left > 1 ? 'rodadas' : 'rodada') + '</u></b><span class="es-dd ob">' + Array.from({ length: ob.tot }, (_, i) => '<i' + (i < ob.tot - ob.left ? ' class="on"' : '') + '></i>').join('') + '</span></div></div>'
           : '<div class="es-k"><small>CASA CHEIA</small>' + (h.length ? '<div class="es-ch"><b>' + full + '<u>de ' + h.length + (h.length > 1 ? ' jogos' : ' jogo') + '</u></b><span class="es-bars">' + h.map(g => '<i class="' + (g.pub >= g.cap * E.full ? 'f' : '') + '" style="height:' + Math.max(8, Math.round(g.pub / g.cap * 100)) + '%"></i>').join('') + '</span></div>' : '<em>nenhum jogo em casa ainda</em>') + '</div>') +
-        '<div class="es-two"><button class="tm-b" id="es-ing">Ingresso</button><button class="tm-b" id="es-mel">Melhorias' + (e.mel ? '<i class="es-dot"></i>' : '') + '</button></div>' +
+        '<div class="es-two"><button class="tm-b" id="es-ing">Ingresso</button><button class="tm-b" id="es-mel">Melhorias' + (e.mel || (S.coEstLiga && S.coEstLiga(co)) ? '<i class="es-dot"></i>' : '') + '</button></div>' +
         (ob ? '<button class="tm-b es-rush' + (rush ? '' : ' off') + '" id="es-rush">' + (rush ? (U.COINS ? U.COINS.svg : '') + 'Acelerar · ' + RC : 'Obra no ritmo máximo') + '</button>'
           : '<button class="tm-go' + (allMax ? ' off' : '') + '" id="es-amp">' + (allMax ? 'Estádio completo' : 'Ampliar') + '</button>') +
       '</div></div>', st => {
@@ -965,8 +967,9 @@
   }
   function obraPronta(co, d, seeBtn) {
     const c = C(), E = S.CO_EST, e = S.coEst(co), cap = S.coEstCap(e), add = S.coEstSeats(d.k, d.to) - S.coEstSeats(d.k, d.from), nm = E.names[d.k];
+    const pz = U.COINS && S.coEstPrizes ? S.coEstPrizes(co).filter(x => U.COINS.add([x]) > 0) : [], won = pz.reduce((a, x) => a + x.n, 0);
     obraBox({ img: crest(co.club, 'es-cr'), cr: 1, sm: 'ESTÁDIO · ' + nm.toUpperCase(), cls: 'up', w: 'Obra pronta', line: 'O ' + nm + ' reabre no próximo jogo em casa.',
-      rows: [[nm, milK(S.coEstSeats(d.k, d.from)) + ' → ' + milK(S.coEstSeats(d.k, d.to)), 'up'], ['Estádio', milK(cap - add) + ' → ' + milK(cap), 'up']],
+      rows: [[nm, milK(S.coEstSeats(d.k, d.from)) + ' → ' + milK(S.coEstSeats(d.k, d.to)), 'up'], ['Estádio', milK(cap - add) + ' → ' + milK(cap), 'up']].concat(won ? [[esc(pz[pz.length - 1].t), '+' + U.D.plural(won, 'moeda', 'moedas'), 'up']] : []),
       b1: seeBtn ? 'Ver o estádio' : 'Fechar', on1: seeBtn ? estadio : null, b2: seeBtn ? 'Fechar' : '' });
   }
   // Na volta para a semana: a obra que acabou aparece uma vez
@@ -1009,7 +1012,8 @@
       return '<button class="es-m' + (q === k ? ' on' : '') + (lock ? ' lock' : '') + '" data-mk="' + q + '"><span><b>' + M.names[q] + '</b>' + (lock ? '' : '<span class="es-pp">' + [1, 2, 3].map(i => '<i' + (i <= e.up[q] ? ' class="on"' : '') + '></i>').join('') + '</span>') + '</span><em>' + w[0] + '</em><small>' + (e.mel && e.mel.k === q ? 'em reforma · ' + U.D.plural(e.mel.left, 'rodada', 'rodadas') : w[1]) + '</small></button>'; };
     const row = (a, b, cls) => '<div><span>' + a + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' + b + '</b></div>';
     const doing = e.mel && e.mel.k === k, can = !P.max && !P.lock && !e.mel;
-    const fx = k === 'g' ? row('Cansaço em casa', '−' + Math.round(M.gram * 100) + '%', 'up') : k === 'l' ? row('Cota de TV', pc(M.tv), 'up') : k === 'b' ? row('Renda por torcedor', pc(M.bar), 'up') : row('Por jogo em casa', '+' + camV(1), 'up');
+    const liga = S.coEstLiga ? S.coEstLiga(co) : null;
+    const fx = k === 'g' ? row('Cansaço em casa', '−' + Math.round(M.gram * 100) + '%', 'up') : k === 'l' ? (liga ? row('Multa da liga', 'acaba', 'up') : row('Cota de TV', pc(M.tv), 'up')) : k === 'b' ? row('Renda por torcedor', pc(M.bar), 'up') : row('Por jogo em casa', '+' + camV(1), 'up');
     const card = doing ? '<small>EM REFORMA · ' + P.name.toUpperCase() + '</small><div class="es-mn"><b>' + e.mel.left + '</b><em>' + (e.mel.left > 1 ? 'rodadas para ficar pronto' : 'rodada para ficar pronto') + '</em></div>'
       : P.max ? '<small>' + P.name.toUpperCase() + ' · NÍVEL 3 DE 3</small><div class="es-mn"><em>No nível máximo.</em></div>'
       : P.lock ? '<small>' + P.name.toUpperCase() + '</small><div class="es-mn"><em>Camarotes pedem a Social coberta (nível 4). Amplie a Social primeiro.</em></div>'
@@ -1049,6 +1053,28 @@
       obraBox({ img: crest(co.club, 'es-cr'), cr: 1, sm: 'PATROCINADOR · ' + esc(o.sp).toUpperCase(), cls: 'mid', w: 'Quer o nome do estádio',
         line: 'Por ' + o.anos + ' temporadas ' + (was ? 'o ' + esc(was) : 'o estádio') + ' passa a se chamar ' + esc(o.n) + '. A torcida não gosta.',
         rows: [['Por temporada', '+' + c.brl(o.v), 'up'], ['Torcida', 'cai um nível', 'dn']], b1: 'Aceitar', on1: () => ans(true), b2: 'Recusar', on2: () => ans(false) }); }, 80);
+    return true;
+  }
+  // Acontecimentos (fase 5), na volta para a semana. A liga exige refletores de quem subiu: avisa uma vez
+  function ligaPop(co) {
+    if (!S.coEstLiga || document.getElementById('ld-pop')) return false;
+    const o = S.coEstLiga(co); if (!o || o.seen || o.mel) return false;
+    setTimeout(() => { if (document.getElementById('ld-pop')) return; const c = C(), P = S.coEstMelPlan(co, 'l');
+      S.coEstLigaSeen(co); c.save();
+      obraBox({ img: crest(co.club, 'es-cr'), cr: 1, sm: 'LIGA · ESTÁDIO', cls: 'dn', w: 'A liga exige refletores',
+        line: 'Nesta divisão tem jogo à noite. Sem refletores, o clube paga multa a cada jogo em casa' + (o.on ? '.' : ' da rodada ' + o.from + ' em diante.'),
+        rows: [['Multa por jogo em casa', '−' + c.brl(o.fine), 'dn'], ['Refletores', c.brl(P.cost)]], b1: 'Ver melhorias', on1: () => melhorias('l'), b2: 'Depois' }); }, 80);
+    return true;
+  }
+  // Show no estádio: o dinheiro entra na hora e o gramado sofre nos próximos jogos em casa
+  function showPop(co) {
+    if (!S.coEstShow || document.getElementById('ld-pop')) return false;
+    const o = S.coEstShow(co); if (!o) return false;
+    setTimeout(() => { if (document.getElementById('ld-pop')) return; const c = C();
+      const ans = yes => { S.coEstShowAnswer(co, yes); c.save(); if (yes) sfx('win'); semana(); };
+      obraBox({ img: crest(co.club, 'es-cr'), cr: 1, sm: 'ESTÁDIO · PROPOSTA', cls: 'mid', w: 'Querem fazer um show',
+        line: 'Uma produtora quer o estádio nesta semana, com o time jogando fora. O gramado sofre e o time sente em casa.',
+        rows: [['Aluguel', '+' + c.brl(o.v), 'up'], ['Gramado', 'ruim por ' + o.games + ' jogos', 'dn']], b1: 'Aceitar', on1: () => ans(true), b2: 'Recusar', on2: () => ans(false) }); }, 80);
     return true;
   }
   // Ampliar (fase 3): um setor por vez. O desenho mostra a prévia, a régua os 5 níveis; à direita o jeito de fazer, as
@@ -1728,6 +1754,7 @@
   function hall() {
     const c = C(), co = c.co;
     pop(popHead('Hall do técnico', esc(co.name) + ' · fama ' + co.fame + ' (' + c.FAME_TXT(co.fame) + ')') + '<div class="ld-pb col"><div class="ld-scroll">' +
+      (S.coEstLegado ? S.coEstLegado(co) : []).map(g => '<div class="ld-cand">' + crest(g.club, 'ld-cr') + '<span><b>Estádio · ' + esc(club(g.club).short || club(g.club).name) + ' · ' + milK(g.cap0) + ' → ' + milK(g.cap) + '</b><small>' + U.D.plural(g.nob, 'obra sua', 'obras suas') + (g.best ? ' · recorde de ' + milK(g.best) : '') + '</small></span></div>').join('') +
       (co.hist.length ? co.hist.slice().reverse().map(h => '<div class="ld-cand">' + crest(h.club, 'ld-cr') + '<span><b>' + (U.YEAR0 + h.s) + ' · ' + esc(club(h.club).short || club(h.club).name) + ' · ' + h.pos + 'º</b><small>' + esc(h.league) + (h.won ? ' · campeão' : h.up ? ' · subiu' : h.down ? ' · caiu' : '') + (h.sacked ? ' · demitido' : h.met ? ' · meta cumprida' : ' · meta não cumprida') + '</small></span></div>').join('') : '<p class="ld-none">A primeira temporada ainda está em andamento.</p>') + '</div></div>', 'Hall do técnico', null, 'w560');
   }
 

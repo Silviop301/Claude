@@ -76,11 +76,13 @@
     { id: 'coj8', tier: 1, n: 8, t: 'Jogue 8 jogos', add: cog },
     { id: 'cofora', tier: 1, t: 'Vença um jogo fora de casa', add: x => won(x) && !x.log.home },
     { id: 'cog6', tier: 1, n: 6, t: 'Faça 6 gols', add: x => (cog(x) ? x.log.gf : 0) },
+    { id: 'colota', tier: 1, fam: 'lota', t: 'Lote o estádio em um jogo', add: x => cog(x) && !!x.log.home && x.log.pub >= x.log.cap * 0.98 },
     // médias
     { id: 'cosg2', tier: 2, n: 2, t: 'Ganhe 2 jogos sem levar gol', add: x => won(x) && x.log.ga === 0 },
     { id: 'cov3s', tier: 2, fam: 'vit', n: 3, t: 'Vença 3 seguidas', add: won, cut: x => x.kind === 'cog' && x.log.res !== 'v' },
     { id: 'covira', tier: 2, t: 'Vença de virada', add: x => won(x) && behind(x.m) },
     { id: 'coacima', tier: 2, t: 'Vença um time acima de você na tabela', add: x => won(x) && !!x.up },
+    { id: 'colota3', tier: 2, fam: 'lota', n: 3, t: 'Lote o estádio 3 vezes', add: x => cog(x) && !!x.log.home && x.log.pub >= x.log.cap * 0.98 },
     // difíceis
     { id: 'cometa', tier: 3, t: 'Cumpra a meta da diretoria', add: x => cos(x) && !!x.out.met },
     { id: 'cocamp', tier: 3, t: 'Seja campeão', add: x => cos(x) && !!x.out.won },

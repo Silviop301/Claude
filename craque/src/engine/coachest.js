@@ -57,6 +57,12 @@
       word: { g: ['castigado', 'bom', 'ótimo', 'tapete'], l: ['sem', 'simples', 'de TV', 'de arena'] } },
     // Nome do estádio: com tantos lugares e camarotes um patrocinador oferece essa parte da receita por ano, por `anos` temporadas; aceitar tira `hum` do humor
     nome: { cap: 20000, v: 0.03, anos: 3, hum: 20, wait: 2 },
+    // Acontecimentos (fase 5)
+    ev: { showCap: 12000, showP: 0.6, showV: 1.2, showGames: 2, showBonus: 2, showEn: 1.1,   // show: com tantos lugares, nessa parte das temporadas; paga tantos jogos comuns e o gramado sofre por `showGames` jogos em casa
+      fechaHum: 20, fechaP: 0.35,   // portões fechados: derrota em casa com a torcida revoltada (clássico, goleada ou nessa chance)
+      ligaR: 4, ligaK: 0.25,        // exigência da liga: subiu sem refletores, multa por jogo em casa da rodada 5 em diante (parte da bilheteria de um jogo comum)
+      tit: 3, titR: 2 },            // jogo do título: líder nas 2 últimas rodadas, a procura triplica
+    prize: { obra: 10, dobro: 25, arena: 40 },   // moedas do legado, uma vez por conta: 1ª obra, estádio dobrado, 1º setor no nível Arena
     push: 3,                                    // torcida em festa empurra o time em casa (pontos no ataque, como o bônus de leitura); revoltada pesa o mesmo tanto
     hum: ['revoltada', 'impaciente', 'tranquila', 'empolgada', 'em festa'],
     dh: { v: 4, e: 0.5, d: -3.2, home: 1.25, classic: 1.5, gol: 2, in: 0.6, out: -0.4, pull: 0.06 },
@@ -142,29 +148,37 @@
 
   // Público de um jogo em casa: a torcida (base) pelo humor, pelo momento na tabela, pelo tamanho do rival e pelo preço,
   // até caber. ref = o público de referência do mesmo jogo (estádio da chegada, torcida tranquila, preço normal).
-  S.coEstCrowd = function (co, vs, round, pr) {
+  S.coEstCrowd = function (co, vs, round, pr, open) {
     const e = S.coEst(co); if (!e || !co.ss) return null;
     const cap = capOf(openLv(e)), n = co.ss.ids.length, pos = S.coPos(co) || 1;
     const posF = 1.15 - 0.3 * (pos - 1) / Math.max(1, n - 1);
     const me = D.CLUB_BY_ID[co.club].strength, opp = (D.CLUB_BY_ID[vs] || {}).strength || me;
     const oppF = clamp(1 + (opp - me) / 30, 0.8, 1.3), cls = (D.RIVALS[co.club] || []).includes(vs) ? 1.15 : 1;
     const r = round == null ? co.ss.i : round, nz = 0.95 + 0.1 * hash('est-pub-' + co.club + '-' + co.season + '-' + r);
-    const p = pr == null ? e.pr : pr, f = posF * oppF * cls * nz, game = e.base0 * f, want = e.base * f * humF(e.hum) * E.price.dem[p];
+    const tit = r >= co.ss.rounds.length - E.ev.titR && pos === 1;   // jogo do título em casa: todo mundo quer ir
+    const p = pr == null ? e.pr : pr, f = posF * oppF * cls * nz * (tit ? E.ev.tit : 1), game = e.base0 * f, want = e.base * f * humF(e.hum) * E.price.dem[p];
     const r100 = v => Math.max(100, Math.round(v / 100) * 100);
-    const pub = Math.min(cap, r100(want)), ref = Math.min(e.cap0, r100(game)), ratio = pub / cap, occ = {};
+    const closed = !!e.cl && !open;   // portões fechados: ninguém entra
+    const pub = closed ? 0 : Math.min(cap, r100(want)), ref = Math.min(e.cap0, r100(game)), ratio = pub / cap, occ = {};
     E.keys.forEach(k => { occ[k] = e.obra && e.obra.k === k ? 0 : pub >= cap ? 1 : clamp(ratio * E.occW[k], 0, 1); });
     // q: quanto vale em média um lugar aberto hoje contra um lugar do estádio da chegada
     const ol = openLv(e), q = (valOf(ol) / Math.max(1, capOf(ol))) / (valOf(e.lv0) / e.cap0);
-    return { pub, cap, ref, q, pr: p, vs, want: Math.round(want), full: pub >= cap * E.full, occ };
+    return { pub, cap, ref, q, pr: p, vs, r, want: Math.round(want), full: pub >= cap * E.full, occ, closed, tit };
   };
   // Bilheteria com o estádio: g0 é a de sempre (coachfin.js). No fim do jogo usa o público que foi ao jogo (e.now)
   S.coEstGate = function (co, vs, g0, pr) {
     const e = S.coEst(co); if (!e || !co.ss || !vs) return g0;
     const cr = pr == null && e.now && e.now.vs === vs ? e.now : S.coEstCrowd(co, vs, null, pr);
     if (!cr || !cr.ref) return g0;
-    const x = S.coEstExtra(co);
-    return Math.max(1000, Math.round((g0 * (cr.pub / cr.ref) * cr.q * E.price.rev[cr.pr] * x.bar + x.cam) / 1000) * 1000);
+    return gateOf(co, e, cr, g0);
   };
+  // A multa da liga por jogo em casa (0 sem exigência, com refletores ou antes da rodada `ligaR`)
+  const ligaFine = (co, e, r) => (e.lg && e.up.l < 1 && co.ss && (r == null ? co.ss.i : r) >= E.ev.ligaR ? Math.max(1000, Math.round(gameBase(co) * E.ev.ligaK / 1000) * 1000) : 0);
+  function gateOf(co, e, cr, g0) {
+    if (cr.closed) return 0;
+    const x = S.coEstExtra(co);
+    return Math.max(1000, Math.round((g0 * (cr.pub / cr.ref) * cr.q * E.price.rev[cr.pr] * x.bar + x.cam) / 1000) * 1000 - ligaFine(co, e, cr.r));
+  }
   // O que as melhorias mudam no dinheiro, sempre contra a chegada: bar multiplica a renda por torcedor, cam soma um valor
   // fixo por jogo em casa, tv multiplica a cota de TV (coachfin.js)
   const gameBase = co => { const fin = S.coFin ? S.coFin(co) : null; return fin && co.ss ? (fin.rec || 0) * S.CO_FIN.bil / Math.max(1, co.ss.rounds.length / 2) : 0; };
@@ -184,8 +198,8 @@
   // Os 5 preços lado a lado para o próximo jogo em casa (sem jogo marcado: um rival do tamanho do clube)
   S.coEstPrices = function (co) {
     const e = S.coEst(co); if (!e || !co.ss || !S.coGateBase) return null;
-    const nx = S.coEstNextHome(co), vs = nx ? nx.vs : co.club, r = nx ? nx.r : co.ss.rounds.length, g0 = S.coGateBase(co, vs), xt = S.coEstExtra(co);
-    return { vs: nx ? nx.vs : null, now: e.pr, list: E.price.names.map((name, i) => { const cr = S.coEstCrowd(co, vs, r, i); return { i, name, pub: cr.pub, cap: cr.cap, full: cr.full, gate: Math.max(1000, Math.round((g0 * (cr.pub / cr.ref) * cr.q * E.price.rev[i] * xt.bar + xt.cam) / 1000) * 1000), hum: E.price.hum[i], txt: E.price.txt[i] }; }) };
+    const nx = S.coEstNextHome(co), vs = nx ? nx.vs : co.club, r = nx ? nx.r : co.ss.rounds.length, g0 = S.coGateBase(co, vs);
+    return { vs: nx ? nx.vs : null, now: e.pr, closed: !!(e.cl && nx), list: E.price.names.map((name, i) => { const cr = S.coEstCrowd(co, vs, r, i, true); return { i, name, pub: cr.pub, cap: cr.cap, full: cr.full, gate: gateOf(co, e, cr, g0), hum: E.price.hum[i], txt: E.price.txt[i] }; }) };
   };
 
   // Por que a torcida está assim, numa frase curta
@@ -274,6 +288,7 @@
   function melDone(co, e, quiet) {
     const m = e.mel; if (!m) return;
     e.up[m.k] = m.to; e.mel = null;
+    if (e.lg && e.up.l >= 1) { delete e.lg; if (!quiet && S.coFinNews && co.fin) S.coFinNews(co, 'Refletores prontos: a liga liberou o estádio e a multa acabou.'); return; }
     if (!quiet && S.coFinNews && co.fin) S.coFinNews(co, E.mel.names[m.k] + (m.k === 'g' ? ' novo no estádio.' : m.k === 'b' ? ': a reforma ficou pronta.' : ' prontos no estádio.'));
   }
   // ---------- nome do estádio (fase 4) ----------
@@ -301,6 +316,44 @@
   }
   // O nome que vale hoje: o do patrocinador, o de batismo (real) ou nenhum
   S.coEstNameNow = co => { const e = co && co.club && co.est ? co.est[co.club] : null; return (e && e.nm && e.nm.n) || S.coEstName(co.club); };
+  // ---------- acontecimentos (fase 5) ----------
+  // Show no estádio: uma vez por temporada, na semana de um jogo fora, em parte das temporadas. Devolve a proposta ou null
+  S.coEstShow = function (co) {
+    const e = S.coEst(co), V = E.ev, ss = co.ss; if (!e || !ss || ss.done || !co.fin || e.shS === co.season || e.cl || e.gt > 0) return null;
+    const cap = capOf(openLv(e)), n = ss.rounds.length, me = ss.ids.indexOf(co.club);
+    if (cap < V.showCap || hash('est-show-' + co.club + '-' + co.season) >= V.showP) return null;
+    const away = i => ss.rounds[i] && ss.rounds[i].some(g => g[1] === me);
+    let r = 3 + Math.floor(hash('est-show-r-' + co.club + '-' + co.season) * Math.max(1, n - 9));
+    while (r < n - 3 && !away(r)) r++;
+    if (ss.i !== r || !away(r)) return null;
+    return { v: r10k(gameBase(co) * V.showV * cap / e.cap0), games: V.showGames };
+  };
+  // Aceitar: o dinheiro entra na hora (bilheteria) e o gramado sofre nos próximos jogos em casa. Recusar: só no ano que vem
+  S.coEstShowAnswer = function (co, yes) {
+    const e = S.coEst(co), o = S.coEstShow(co), fin = co.fin; if (!e || !o || !fin) return false;
+    e.shS = co.season; if (!yes) return true;
+    fin.caixa += o.v; fin.ss.bil = (fin.ss.bil || 0) + o.v; e.gt = o.games;
+    return true;
+  };
+  // Exigência da liga: subiu de divisão sem refletores. { from (rodada em que a multa começa), fine, on (já vale), seen }
+  S.coEstLiga = function (co) {
+    const e = co && co.club ? S.coEst(co) : null; if (!e || !e.lg || e.up.l >= 1 || !co.ss) return null;
+    if (co.fin && !co.fin.rec && S.coFinNext) S.coFinNext(co);
+    return { from: E.ev.ligaR + 1, fine: ligaFine(co, e, E.ev.ligaR), on: co.ss.i >= E.ev.ligaR, seen: !!e.lg.seen, mel: !!(e.mel && e.mel.k === 'l') };
+  };
+  S.coEstLigaSeen = function (co) { const e = S.coEst(co); if (e && e.lg) e.lg.seen = 1; };
+  // O gramado castigado pelo show: quantos jogos em casa ainda (0 = normal)
+  S.coEstGramRuim = co => { const e = co && co.club && co.est ? co.est[co.club] : null; return e && e.gt > 0 ? e.gt : 0; };
+  // Legado: os estádios que cresceram com este técnico (para o Hall) e os prêmios em moedas (a tela soma uma vez por conta)
+  S.coEstLegado = co => Object.keys((co && co.est) || {}).map(id => { const e = co.est[id]; return e && e.lv && e.cap0 && (e.nob > 0 || capOf(e.lv) > e.cap0) ? { club: id, cap0: e.cap0, cap: capOf(e.lv), nob: e.nob || 0, best: e.best || 0 } : null; }).filter(Boolean).sort((a, b) => (b.cap - b.cap0) - (a.cap - a.cap0));
+  S.coEstPrizes = function (co) {
+    const e = co && co.club ? S.coEst(co) : null, P = E.prize, out = []; if (!e) return out;
+    if (e.nob > 0) out.push({ n: P.obra, t: 'Primeira obra no estádio', once: 'est-obra' });
+    if (capOf(e.lv) >= 2 * e.cap0) out.push({ n: P.dobro, t: 'Estádio dobrado', once: 'est-dobro' });
+    if (e.nob > 0 && E.keys.some(k => e.lv[k] >= 5 && e.lv0[k] < 5)) out.push({ n: P.arena, t: 'Primeiro setor Arena', once: 'est-arena' });
+    return out;
+  };
+
   // A obra acabou: o setor reabre maior, parte dos lugares novos vira torcida e a torcida gosta
   function obraDone(co, e, quiet) {
     const o = e.obra; if (!o) return;
@@ -308,7 +361,7 @@
     e.lv[o.k] = o.to; e.obra = null;
     if (quiet) return;   // o técnico foi embora: o clube termina a obra sem ele
     e.base += Math.round(add * E.obra.novo); e.hum = clamp(e.hum + E.obra.hum, 0, 100);
-    e.done = { k: o.k, from: o.from, to: o.to };
+    e.done = { k: o.k, from: o.from, to: o.to }; e.nob = (e.nob || 0) + 1;
   }
   // Uma rodada de obra e de parcela (n rodadas nas férias, sem parcela)
   function obraTick(co, e, n, ferias) {
@@ -346,8 +399,10 @@
   S.coMatchStart = function (co) {
     const m = start0.apply(this, arguments);
     if (m && m.home && m.us) {
-      m.push = S.coEstPush(co); m.us.bonus = (m.us.bonus || 0) + m.push;
-      const e = S.coEst(co), dg = e ? e.up.g - e.up0.g : 0; if (dg) m.us.enK = 1 - E.mel.gram * dg;   // gramado melhor que o da chegada: o seu time cansa menos em casa
+      const e = S.coEst(co), dg = e ? e.up.g - e.up0.g : 0;
+      m.push = e && e.cl ? 0 : S.coEstPush(co); m.us.bonus = (m.us.bonus || 0) + m.push;   // portões fechados: ninguém empurra nem atrapalha
+      if (dg) m.us.enK = 1 - E.mel.gram * dg;   // gramado melhor que o da chegada: o seu time cansa menos em casa
+      if (e && e.gt > 0) { m.gt = 1; m.us.bonus -= E.ev.showBonus; m.us.enK = (m.us.enK || 1) * E.ev.showEn; }   // gramado castigado pelo show
     }
     return m;
   };
@@ -366,8 +421,15 @@
       e.h.push({ r: log.r, vs: log.vs, pub: cr.pub, cap: cr.cap, res: log.res });
       e.occ = cr.occ; e.best = Math.max(e.best || 0, cr.pub);
       log.pub = cr.pub; log.cap = cr.cap;
+      if (cr.closed) { delete e.cl; log.closed = 1; }
+      if (cr.tit) log.tit = 1;
+      if (m.gt && e.gt > 0) e.gt--;
     }
     humAfter(co, e, log, m);
+    // Perdeu em casa com a torcida revoltada (clássico, goleada ou no azar): o próximo jogo em casa é de portões fechados
+    if (cr && !cr.closed && log.res === 'd' && e.hum < E.ev.fechaHum && (m.classic || log.ga - log.gf >= 3 || hash('est-fecha-' + club + '-' + co.season + '-' + log.r) < E.ev.fechaP)) {
+      e.cl = 1; if (S.coFinNews && co.fin) S.coFinNews(co, 'Confusão na arquibancada: o próximo jogo em casa é de portões fechados.');
+    }
     obraTick(co, e, 1);
     return log;
   };
@@ -386,7 +448,7 @@
   S.coSign = function (co, id) {
     const before = co.club, r = sign0.apply(this, arguments);
     // (demitido chega aqui já sem clube: por isso olha todos os estádios que não são o de agora)
-    if (co.club !== before && co.est) Object.keys(co.est).forEach(id => { const e = co.est[id]; if (id === co.club || !e) return; if (e.obra) obraDone(co, e, true); if (e.mel) melDone(co, e, true); e.pay = null; e.pay2 = null; delete e.done; });
+    if (co.club !== before && co.est) Object.keys(co.est).forEach(id => { const e = co.est[id]; if (id === co.club || !e) return; if (e.obra) obraDone(co, e, true); if (e.mel) melDone(co, e, true); e.pay = null; e.pay2 = null; delete e.done; delete e.lg; delete e.cl; e.gt = 0; });
     return r;
   };
 
@@ -399,6 +461,9 @@
       const N = E.end, d = (out.won ? N.won : 0) + (out.up ? N.up : 0) + (out.down ? N.down : 0) + (out.sacked ? 0 : out.met ? N.met : N.miss);
       e.hum = clamp(50 + (clamp(e.hum + d, 0, 100) - 50) * N.keep, 0, 100);
       if ((e.obra || e.mel) && !out.sacked) obraTick(co, e, E.obra.ferias, true);   // a obra anda nas férias
+      e.gt = 0;   // gramado novo nas férias
+      if (out.down || out.sacked) delete e.lg;
+      else if (out.up && e.up.l < 1) e.lg = { s: co.season };   // subiu sem refletores: a liga exige
     }
     return out;
   };
