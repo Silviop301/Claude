@@ -915,9 +915,11 @@
       st.querySelector('#mk-go').onclick = () => { const k = S.coMktSearch(co).length; if (!(k > 0 && k <= S.CO_MKT.max)) return; sfx('tap'); c.save(); mercadoRes(0, 0); };
     });
   }
-  // Resultado (23b): os filtros usados em cima e Mudar; 4 jogadores por página; à direita verba, folha e as páginas
+  // Resultado (23b): os filtros usados em cima e Mudar; 4 jogadores por página; à direita verba, folha, a ordem
+  // (◀ ▶ como o Mostrar das notícias; S.CO_MKT.ords, fica em `m.ord`) e as páginas
   function mercadoRes(pg, sel) {
     const c = C(), co = c.co, m = S.coMkt(co), F = S.coMktFilters(co), f = S.coFin(co), folha = S.coFolha(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
+    const ords = S.CO_MKT.ords, ord = Math.min(m.ord || 0, ords.length - 1);
     const list = S.coMktSort(co, S.coMktSearch(co)), pages = Math.max(1, Math.ceil(list.length / 4));
     pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * 4, pg * 4 + 4); sel = Math.min(sel || 0, R.length - 1);
     const chips = F.map((x, i) => (m.f[i] ? '<span class="mk-chip">' + esc(x.o[m.f[i]].t.replace(' · verba', '')) + '</span>' : '')).join('') + (m.nm && m.nm.trim().length >= 3 ? '<span class="mk-chip">"' + esc(m.nm.trim()) + '"</span>' : '');
@@ -928,13 +930,15 @@
       '<div class="mk-chips">' + chips + '<span class="rs-gap"></span><button class="mk-mud" id="mkr-mud">Mudar</button></div>' +
       '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">Ninguém com esses filtros.</p>') + '</div>' +
       '<div class="mk-side"><div class="mk-k"><small>VERBA</small><b class="up">' + c.brl(f.verba) + '</b><span class="mk-fl"><span>Folha</span><span>' + pct + '% do teto</span></span><i class="mk-bar"><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i></div>' +
+        '<div class="mk-k mk-ord"><button class="mk-ar" data-mo="-1" aria-label="ordem anterior">' + MK_L + '</button><span><small>ORDEM</small><b>' + ords[ord] + '</b></span><button class="mk-ar" data-mo="1" aria-label="ordem seguinte">' + MK_R + '</button></div>' +
         '<div class="mk-pg"><button class="mk-ar big" id="mkr-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar big" id="mkr-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></div>' +
         '<span class="rs-gap"></span><button class="tm-go' + (R.length ? '' : ' off') + '" id="mkr-go">Ver ficha</button></div></div>', st => {
       st.querySelector('#mkr-back').onclick = () => { sfx('tap'); mercado(); };
       mkCoins(st, () => mercadoRes(pg, sel));
       st.querySelector('#mkr-mud').onclick = () => { sfx('tap'); mercado(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Melhor, igual ou pior é contra o seu titular da posição. Quem o olheiro ainda não viu aparece sem relatório; peça um na ficha. Os com relatório vêm primeiro.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Melhor, igual ou pior é contra o seu titular da posição. Quem o olheiro ainda não viu aparece sem relatório; peça um na ficha. Em Ordem você escolhe quem vem primeiro: em Nível, os com relatório, do melhor para o pior.'); };
       st.querySelectorAll('[data-mr]').forEach(b => b.onclick = () => { const i = +b.dataset.mr; sfx('tap'); if (i === sel) return ficha(R[i].id, () => mercadoRes(pg, i)); mercadoRes(pg, i); });
+      st.querySelectorAll('[data-mo]').forEach(b => b.onclick = () => { sfx('tap'); m.ord = (ord + (+b.dataset.mo) + ords.length) % ords.length; c.save(); mercadoRes(0, 0); });
       st.querySelector('#mkr-prev').onclick = () => { sfx('tap'); mercadoRes(pg - 1, 0); };
       st.querySelector('#mkr-next').onclick = () => { sfx('tap'); mercadoRes(pg + 1, 0); };
       st.querySelector('#mkr-go').onclick = () => { if (!R.length) return; sfx('tap'); ficha(R[sel].id, () => mercadoRes(pg, sel)); };
@@ -1415,18 +1419,30 @@
   // geral e contrato (laranja no último ano), a tabela rola por dentro; o cartão à direita com energia, potencial, moral,
   // salário e o contrato com Renovar (a renovação chega com o mercado: `#lde-ren` com data-id fica apagado até lá)
   elenco.ct = 0; // aba da ficha: 0 Atributos, 1 Situação (fica na que o técnico deixou enquanto olha o elenco)
+  // Ordem do elenco (Silvio 2026-11-10: "ordenar por over, valor, etc"): ◀ ▶ no topo, à direita; fica em `co.eo`. Cada ordem
+  // tem [nome, chave (menor primeiro), coluna que acende, e, se o dado não tem coluna, o título e o texto que entram no
+  // lugar do contrato]; o desempate é sempre o geral
+  const EL_ORD = [
+    ['Geral', p => -p.ovr, 'o'],
+    ['Potencial', p => -(p.pot || p.ovr), 'ct', 'POTENCIAL', p => p.pot || p.ovr],
+    ['Valor', p => -S.coValue(p), 'ct', 'VALOR', (p, c) => c.brl(S.coValue(p))],
+    ['Salário', p => -(p.wage || 0), 'ct', 'SALÁRIO', (p, c) => c.mi(p.wage || 0)],
+    ['Idade', p => p.age, 'a'],
+    ['Contrato', p => p.ct, 'ct']
+  ];
   function elenco(tab, sel) {
     const c = C(), co = c.co, T = [['Goleiros', ['GOL']], ['Defesa', ['ZAG', 'LAT']], ['Meio', ['MEI']], ['Ataque', ['ATA']]];
     tab = tab || 0; if (S.coNums) S.coNums(co.squad); // os mesmos números do campinho
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
-    const L = co.squad.filter(p => T[tab][1].includes(p.pos)).sort((a, b) => b.ovr - a.ovr);
+    const eo = Math.min(co.eo || 0, EL_ORD.length - 1), O = EL_ORD[eo], MKL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 4L6 12l11 8z"/></svg>', MKR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l11 8-11 8z"/></svg>';
+    const L = co.squad.filter(p => T[tab][1].includes(p.pos)).sort((a, b) => O[1](a) - O[1](b) || b.ovr - a.ovr);
     const q = L.find(p => p.id === sel) || L[0];
     const folha = co.squad.reduce((a, p) => a + (p.wage || 0), 0);
     const ctT = n => n <= 0 ? 'acaba agora' : n === 1 ? 'fim do ano' : U.D.plural(n, 'ano', 'anos');
     const tag = p => p.out ? ['dn', 'lesionado'] : p.sus ? ['dn', 'suspenso'] : c.pend(p) ? ['y', 'pendurado'] : S.coMktListed(co, p) ? ['g', 'à venda'] : null;
     const rows = L.map(p => { const t = tag(p);
       return '<button class="lde2-r' + (q && p.id === q.id ? ' on' : '') + (c.avail(p) ? '' : ' out') + '" data-id="' + p.id + '"><i>' + (p.num || '') + '</i><span><b>' + esc(p.n) + '</b><small>' + p.pos + '</small>' + (t ? '<em class="' + t[0] + '">' + t[1] + '</em>' : '') + '</span>' +
-        '<span class="a">' + p.age + '</span><span class="o">' + p.ovr + '</span><span class="ct' + (p.ct <= 1 ? ' dn' : '') + '">' + ctT(p.ct) + '</span></button>'; }).join('');
+        '<span class="a">' + p.age + '</span><span class="o">' + p.ovr + '</span>' + (O[4] ? '<span class="ct x">' + O[4](p, c) + '</span>' : '<span class="ct' + (p.ct <= 1 ? ' dn' : '') + '">' + ctT(p.ct) + '</span>') + '</button>'; }).join('');
     let card = '';
     if (q) {
       const mo = q.mo === undefined ? 60 : q.mo, moT = mo >= 70 ? 'alta' : mo >= 45 ? 'boa' : 'baixa';
@@ -1445,12 +1461,14 @@
           (ofq ? '<button class="lde2-sell of" id="lde-of">Ver proposta</button>' : '<button class="lde2-sell' + (listed ? ' on' : '') + '" id="lde-sell"' + (canS || listed ? '' : ' disabled') + '>' + (listed ? 'Tirar da venda' : 'Pôr à venda') + '</button>') + '</div>' +
         (hint ? '<small class="lde2-hint">' + hint + '</small>' : '') : bars) + '</div>';
     }
-    show('<div class="lde2"><div class="tm-h"><button class="tcr-back" id="lde-back" aria-label="Voltar">' + BK + '</button><b>Elenco</b><small><span class="lde2-n' + (co.squad.length >= S.CO_MKT.maxSquad ? ' full' : '') + '">' + co.squad.length + '/' + S.CO_MKT.maxSquad + '</span> jogadores · folha ' + c.mi(folha) + '/sem</small></div>' +
+    show('<div class="lde2"><div class="tm-h"><button class="tcr-back" id="lde-back" aria-label="Voltar">' + BK + '</button><b>Elenco</b><small><span class="lde2-n' + (co.squad.length >= S.CO_MKT.maxSquad ? ' full' : '') + '">' + co.squad.length + '/' + S.CO_MKT.maxSquad + '</span> jogadores · folha ' + c.mi(folha) + '/sem</small>' +
+      '<span class="lde2-ord"><button class="mk-ar" data-eo="-1" aria-label="ordem anterior">' + MKL + '</button><span><small>ORDEM</small><b>' + O[0] + '</b></span><button class="mk-ar" data-eo="1" aria-label="ordem seguinte">' + MKR + '</button></span></div>' +
       '<div class="lde2-tabs">' + T.map(([l, ps], i) => '<button data-et="' + i + '"' + (i === tab ? ' class="on"' : '') + '>' + l + ' <small>' + co.squad.filter(p => ps.includes(p.pos)).length + '</small></button>').join('') + '</div>' +
-      '<div class="lde2-l"><div class="lde2-h"><i></i><span>JOGADOR</span><span class="a">IDADE</span><span class="o">GERAL</span><span class="ct">CONTRATO</span></div>' + rows + '</div>' + card + '</div>', st => {
+      '<div class="lde2-l"><div class="lde2-h"><i></i><span>JOGADOR</span><span class="a' + (O[2] === 'a' ? ' on' : '') + '">IDADE</span><span class="o' + (O[2] === 'o' ? ' on' : '') + '">GERAL</span><span class="ct' + (O[2] === 'ct' ? ' on' : '') + '">' + (O[3] || 'CONTRATO') + '</span></div>' + rows + '</div>' + card + '</div>', st => {
       st.querySelectorAll('[data-et]').forEach(b => b.onclick = () => { sfx('tap'); elenco(+b.dataset.et); });
       st.querySelectorAll('.lde2-r').forEach(b => b.onclick = () => { sfx('tap'); const y = st.querySelector('.lde2-l').scrollTop; elenco(tab, b.dataset.id); const l = document.querySelector('.lde2-l'); if (l) l.scrollTop = y; });
       st.querySelector('#lde-back').onclick = () => { sfx('tap'); clube(); };
+      st.querySelectorAll('[data-eo]').forEach(b => b.onclick = () => { sfx('tap'); co.eo = (eo + (+b.dataset.eo) + EL_ORD.length) % EL_ORD.length; c.save(); elenco(tab); }); // volta ao primeiro da ordem nova (o escolhido podia sumir da vista)
       const me = () => elenco(tab, q && q.id);
       st.querySelectorAll('[data-ec]').forEach(b => b.onclick = () => { sfx('tap'); elenco.ct = +b.dataset.ec; const y = st.querySelector('.lde2-l').scrollTop; me(); const l = document.querySelector('.lde2-l'); if (l) l.scrollTop = y; });
       const rn = st.querySelector('#lde-ren:not([disabled])'); if (rn) rn.onclick = () => { sfx('tap'); contrato(q.id, me); };
