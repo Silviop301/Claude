@@ -201,11 +201,12 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
   (`numBody`, com escudo e nome em cima de cada coluna `numHead`/`.ldl-nh`; `livePaint` redesenha enquanto está aberta), contador
   de chutes `#ldl-num`, barra Quem manda (escudo nas pontas; fora de casa enche pela direita, `i.r`) e os números do resultado.
   A parte colorida da barra é sempre a sua (verde = melhor para você). O motor continua guardando `us`/`them`.
-- **Lances em lista rolável** (Silvio, 10/11: "mostrando sempre o último e descendo o resto"): no ao vivo deitado o painel
-  `#lv-feed` (`.ldl-ev.lv-feed`, 80 px, 3 linhas de 22 px e a 4ª apagando) guarda todos os lances e rola por dentro; cada
-  linha sai de `feedShort(m, e)` em `ui/coach.js`: minuto, escudo de quem fez e poucas palavras com o nome primeiro
-  ("Hato: defendido", "Malen: fora", "GOL! Malen"); ordem sua (grito, conversa, troca, tática) leva a etiqueta VOCÊ (`li.vc`) no lugar do
-  escudo; lance novo volta a lista para o topo. O texto por extenso (`feedLine`) segue nas abas do resultado.
+- **Lances em lista rolável** (Silvio, 10/11: "mostrando sempre o último e descendo o resto"; depois "quero o nome do jogador
+  que fez a ação, tá muito curto"): no ao vivo deitado o painel `#lv-feed` (`.ldl-ev.lv-feed`, 80 px, cada lance em até duas
+  linhas de 16 px, o de baixo apagando) guarda todos os lances e rola por dentro; cada linha sai de `feedShort(m, e)` em
+  `ui/coach.js`: minuto, escudo de quem fez e a frase com o nome completo ("Caio Henrique chuta, o goleiro defende", "GOL!
+  Raimundo Bueno pelo meio", "Amarelo para Erick Filho"); ordem sua (grito, conversa, troca, tática) leva a etiqueta VOCÊ
+  (`li.vc`) no lugar do escudo; lance novo volta a lista para o topo. O texto por extenso (`feedLine`) segue nas abas do resultado.
 - **Nota do goleiro** (`rateMatch`, `engine/coach.js`): não levar gol só vale inteiro com 3 chutes no gol deles (`gkW`); sem
   chute no gol o texto é "não foi exigido".
 - **Atributos** (`qa(p, 'fin'|'pas'|'dri'|'def'|'gol')`): cada lance lê `p.inf.at[k]` (0 a 99) se a escalação mandar; sem isso
@@ -267,6 +268,9 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
   (minúsculas, kkkk); sem ofensa pesada. Personalidades reais ficam (jogo entre amigos).
 - Itens e coleções são **só visuais**: nunca mudam nota ou sorte.
 - Ao criar intro de câmera em minigame, a ação cronometrada só começa depois que a câmera abre.
+- **Som (`sound.js`, 2026-11-10):** só agenda som com o contexto de áudio rodando (parado, o relógio dele não anda e tudo
+  tocaria junto no toque seguinte); sair do app corta o que tocava (`hush`). Tela que reabre no meio (jogo retomado em
+  `live`, `retomado`) repõe a narração sem tocar de novo o som do que já aconteceu.
 - **Estilos do lance decisivo:** o primeiro de `S.STYLES[tipo]` é o lance de sempre; o segundo muda a mecânica. Mudou
   um número? Rode `craque_estilos.js` (chance pela carta igual ±4 pontos e nenhum estilo melhor em todos os níveis).
 - Melhoria de personagem por ajuste de SVG em código já foi recusada: precisa de arte nova.
