@@ -1033,7 +1033,7 @@
     const yr = U.YEAR0 + co.season + t.y + (own ? 1 : 0), need = p.club || w.open; // renovação: os anos contam depois desta temporada
     const gold = own ? (neg.st === 'no' ? '<button class="tm-go off" id="mkc-go" disabled>Não renova mais</button>' : neg.st === 'signed' ? '<button class="tm-go off" id="mkc-go" disabled>Renovado</button>' :
       over && t.w > p.wage ? '<button class="tm-go off" id="mkc-go" disabled>Acima do teto</button>' : '<button class="tm-go" id="mkc-go">Oferecer</button>') : neg.st === 'no' ? '<button class="tm-go off" id="mkc-go" disabled>Não negocia mais</button>' : (p.club && !w.open) ? '<button class="tm-go off" id="mkc-go" disabled>Janela fechada</button>' :
-      over ? '<button class="tm-go off" id="mkc-go" disabled>Acima do teto</button>' : co.squad.length >= M.maxSquad ? '<button class="tm-go off" id="mkc-go" disabled>Elenco cheio</button>' :
+      over ? '<button class="tm-go off" id="mkc-go" disabled>Acima do teto</button>' : S.coMktFull(co, p) ? '<button class="tm-go off" id="mkc-go" disabled>Elenco cheio</button>' :
       '<button class="tm-go" id="mkc-go">' + (w.open ? 'Oferecer · 1 dia' : 'Oferecer') + '</button>';
     const sub = own ? esc(p.n) + ' · hoje ' + c.mi(p.wage) + '/sem' : esc(p.n) + (p.club ? ' · o ' + esc(club(p.club).short || club(p.club).name) + ' aceitou' : ' · sem clube');
     const box = (lbl, v, k, hint) => '<div class="mk-k mkc-b"><small>' + lbl + '</small><span class="mkp-row"><button class="mk-ar big" data-' + k + '="-1" aria-label="Menos">' + MK_L + '</button><b>' + v + '</b><button class="mk-ar big" data-' + k + '="1" aria-label="Mais">' + MK_R + '</button></span><span class="mkc-h">' + hint + '</span></div>';

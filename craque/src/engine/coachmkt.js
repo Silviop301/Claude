@@ -26,7 +26,7 @@
     payPen: [0, 0.04, 0.08], // à vista, 2x, 3x: o presidente aceita um pouco menos parcelado
     counter: 0.8,     // a partir de 80% do que ele quer, contrapõe; abaixo, recusa
     trade: 0.8,       // jogador na troca vale 80% do valor dele
-    maxSquad: 32
+    maxSquad: 28      // limite do elenco (Silvio 2026-11-10): todo clube começa com 25, cabem 2 contratações e 1 garoto da base. Só barra quem chega
   };
   const POS_NM = { GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', MEI: 'Meia', ATA: 'Atacante' };
   S.CO_POS_NM = POS_NM;
@@ -204,6 +204,9 @@
   // Folha depois da chegada (sai o da troca) contra o teto
   S.coMktFolha = (co, p, t) => { const n = S.coMkt(co).neg[p.id], tr = n && n.deal && n.deal.tr, q = tr && co.squad.find(x => x.id === tr);
     const own = co.squad.find(x => x.id === p.id), f = S.coFin(co), fol = S.coFolha(co) + t.w - (q ? q.wage : 0) - (own ? own.wage : 0); return { fol, pct: Math.round(100 * fol / Math.max(1, f.teto)) }; };
+  // Elenco cheio para trazer este jogador? Com um dos seus na troca sai um e entra um: a troca vale mesmo com o elenco no limite.
+  // O limite só barra quem chega (compra, sem clube): garoto da base sobe sempre e ninguém sai sozinho (save antigo acima do limite só não contrata).
+  S.coMktFull = (co, p) => { const n = p && S.coMkt(co).neg[p.id], tr = n && n.deal && n.deal.tr; return co.squad.length - (tr && co.squad.some(x => x.id === tr) ? 1 : 0) >= M.maxSquad; };
   // Oferece: { k: 'signed' (jogador), | 'recusa' | 'no' | 'teto' | 'cheio' | 'fechada' | 'verba' }
   S.coMktContract = function (co, p, t) {
     const n = S.coMktNeg(co, p), f = S.coFin(co), m = S.coMkt(co);
@@ -211,7 +214,7 @@
     if (p.club && n.st !== 'ok') return { k: 'no' };
     if (p.club && !S.coMktWin(co).open) return { k: 'fechada' };
     if (S.coMktFolha(co, p, t).pct > 100) return { k: 'teto' };
-    if (co.squad.length >= M.maxSquad) return { k: 'cheio' };
+    if (S.coMktFull(co, p)) return { k: 'cheio' };
     const d = n.deal || { v: 0, pay: 0, tr: null }, now = p.club ? S.coMktNow(co, d) : 0;
     if (now > Math.max(0, f.verba)) return { k: 'verba' };
     spend(co);
