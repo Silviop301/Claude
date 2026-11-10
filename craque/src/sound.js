@@ -2,24 +2,21 @@
 // O iPhone só libera áudio depois de um toque: o contexto nasce no primeiro toque na tela.
 // Para ouvir cada som fora do jogo: node tools/craque_sons.js (grava um WAV por som).
 (function (root) {
-  let ctx = null, master = null, room = null, noiseBuf = null, pinkBuf = null, rec = {}, cheer = null;
+  let ctx = null, comp = null, master = null, room = null, wet = null, ir = null, noiseBuf = null, pinkBuf = null, rec = {}, cheer = null;
   let on = true;
   const last = {};
   try { on = localStorage.getItem('craque-sound') !== 'off'; } catch (e) { /* sem armazenamento: fica ligado */ }
 
   function init() {
-    if (ctx) { if (ctx.state !== 'running' && ctx.resume) ctx.resume(); return; }
+    if (ctx) { wake(); return; }
     const AC = root.AudioContext || root.webkitAudioContext;
     if (!AC) return;
     ctx = new AC();
     // Compressor no fim: sons que se somam (gol + fanfarra, pênaltis seguidos) não estouram
-    const comp = ctx.createDynamicsCompressor();
+    comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 4;
     comp.attack.value = 0.004; comp.release.value = 0.25;
     comp.connect(ctx.destination);
-    master = ctx.createGain();
-    master.gain.value = 0.6;
-    master.connect(comp);
     const sr = ctx.sampleRate;
     // Ruído branco (estalos, papel) e rosa (torcida: o branco puro soa como chiado de TV)
     noiseBuf = ctx.createBuffer(1, sr * 2, sr);
@@ -34,22 +31,46 @@
     }
     for (let i = 0; i < p.length; i++) p[i] /= mx;
     // Eco de estádio: resposta ao impulso feita de ruído que decai, um pouco abafado
-    const ir = ctx.createBuffer(2, sr * 2.2, sr);
+    ir = ctx.createBuffer(2, sr * 2.2, sr);
     for (let c = 0; c < 2; c++) {
       const d = ir.getChannelData(c);
       let lp = 0;
       for (let i = 0; i < d.length; i++) { lp += 0.35 * ((Math.random() * 2 - 1) - lp); d[i] = lp * Math.exp(-i / (sr * 0.45)); }
     }
-    room = ctx.createConvolver();
-    room.buffer = ir;
-    const wet = ctx.createGain();
-    wet.gain.value = 0.5;
-    room.connect(wet); wet.connect(master);
+    bus();
     // Gravações de verdade (rede 40 KB, torcida 60 KB). Enquanto não chegam, o gol usa os sons sintetizados
     if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=9c4a53aa']].forEach(([k, url]) => {
       fetch(url).then(r => r.arrayBuffer())
         .then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { rec[k] = b; }).catch(() => { /* fica a sintetizada */ });
     });
+  }
+  // A saída: tudo o que toca passa pelo master (e pelo eco). É refeita quando o app sai da frente (hush)
+  function bus() {
+    master = ctx.createGain();
+    master.gain.value = 0.6;
+    master.connect(comp);
+    room = ctx.createConvolver();
+    room.buffer = ir;
+    wet = ctx.createGain();
+    wet.gain.value = 0.5;
+    room.connect(wet); wet.connect(master);
+  }
+  // Acorda o contexto parado (página recém-aberta, iPhone voltando do segundo plano). Só funciona de verdade dentro de um toque
+  function wake() {
+    if (!ctx || ctx.state === 'running' || !ctx.resume) return null;
+    try { const p = ctx.resume(); if (p && p.catch) p.catch(() => { /* fica para o próximo toque */ }); return p; } catch (e) { return null; }
+  }
+  // Saiu do app ou trocou de aba: o que estava tocando ou agendado fica preso na saída antiga, que é desligada.
+  // Sem isso o resto da torcida (e o que ficou na fila) tocava do nada na volta para o jogo
+  function hush() {
+    if (!ctx || !master) return;
+    try { master.disconnect(); wet.disconnect(); room.disconnect(); } catch (e) { /* já estava solto */ }
+    cheer = null;
+    try { bus(); } catch (e) { /* contexto fechado: o próximo toque não toca nada */ }
+  }
+  if (root.document && root.document.addEventListener) {
+    root.document.addEventListener('visibilitychange', () => { if (root.document.hidden) hush(); });
+    if (root.addEventListener) root.addEventListener('pagehide', hush);
   }
   // Som desligado: nada é montado nem baixado (ligar nas Configurações chama play('coin'), já dentro do toque)
   if (root.addEventListener) root.addEventListener('pointerdown', () => { if (on) init(); }, { passive: true });
@@ -245,16 +266,27 @@
   // Intervalo mínimo entre dois iguais: vários "tic" no mesmo instante viravam um estalo alto
   const GAP = { tick: 0.03, tap: 0.04 };
 
+  // Som pedido com o contexto parado só vale se o contexto acordar em até 0,3 s (o primeiro toque da página)
+  const LATE = 300;
+  function fire(name) {
+    const now = ctx.currentTime;
+    if (last[name] != null && now - last[name] < (GAP[name] || 0.08)) return;
+    last[name] = now;
+    SOUNDS[name](now + 0.02);
+  }
+
   root.CRAQUE_SFX = {
     play(name) {
       if (!on) return;
       try {
+        if (root.document && root.document.hidden) return; // app fora da frente: nada toca nem fica guardado
         init();
         if (!ctx || !SOUNDS[name]) return;
-        const now = ctx.currentTime;
-        if (last[name] != null && now - last[name] < (GAP[name] || 0.08)) return;
-        last[name] = now;
-        SOUNDS[name](now + 0.02);
+        if (ctx.state === 'running') return fire(name);
+        // Contexto parado: o relógio dele não anda, então o som agendado agora ficaria na fila e tocaria junto com os
+        // outros no próximo toque (o "som bizarro" da volta para o jogo). Só toca se acordar na hora; senão é esquecido
+        const t0 = Date.now(), p = wake();
+        if (p && p.then) p.then(() => { if (ctx.state === 'running' && Date.now() - t0 < LATE) try { fire(name); } catch (e) { /* enfeite */ } }, () => { /* segue calado */ });
       } catch (e) { /* som é enfeite: nunca quebra o jogo */ }
     },
     get on() { return on; },
