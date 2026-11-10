@@ -929,7 +929,7 @@
   // Notícias (aba do Mercado, desenho A aprovado em 2026-11-10): os negócios do mercado vivo (engine/coachworld.js), uma
   // linha por notícia (posição, nome, escudo › escudo, etiqueta e valor), 4 por página; à direita o filtro Mostrar, as
   // páginas e Ver ficha. A nota dourada marca o que é do seu clube e o ▲ verde quem chegou para ser titular
-  const NW_FLT = ['Tudo', 'Sua liga', 'Seu clube'], NW_TAG = { f: 'FECHADO', l: 'LIVRE' };
+  const NW_FLT = ['Tudo', 'Sua liga', 'Seu clube', 'Observados'], NW_TAG = { f: 'FECHADO', l: 'LIVRE', b: 'BOATO' };
   let nwFlt = 1, nwSeen = 0;
   function noticias(pg, sel, flt) {
     const c = C(), co = c.co;
@@ -942,11 +942,11 @@
     const nm = id => '<span class="nw-c">' + esc((club(id).short || club(id).name).replace(/^Red Bull /, '')) + '</span>';
     const row = (x, i) => {
       const way = x.k === 'l' ? '<span class="nw-c">sem clube · ' + x.age + ' anos</span>' : (x.from ? crest(x.from, 'nw-cr') + nm(x.from) : '<span class="nw-c">sem clube</span>') + '<s>›</s>' + crest(x.to, 'nw-cr') + nm(x.to) + (x.up ? '<em title="chegou para ser titular">▲</em>' : '');
-      const note = x.me === 1 ? 'seu clube' : x.me === 2 ? 'ex seu clube' : '';
+      const note = x.me === 1 ? 'seu clube' : x.me === 2 ? 'ex seu clube' : S.coWorldObs(co, x) ? 'observado' : '';
       return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-nr="' + i + '"><i>' + x.pos + '</i><span><b><span class="nw-n">' + esc(x.n) + '</span>' + (note ? '<u>' + note + '</u>' : '') + '</b><small>' + way + '</small></span>' +
-        '<div class="nw-tc"><strong>' + (x.tr ? 'troca' : x.v ? c.brl(x.v) : 'grátis') + '</strong><em class="nw-tag ' + x.k + '">' + NW_TAG[x.k] + '</em></div></button>'; };
-    const none = all.length ? (nwFlt === 2 ? 'Seu clube ainda não fez negócio.' : 'Nada aqui. Veja em Tudo.') : win.k ? 'Nenhum negócio fechado ainda.' : win.next ? 'Sem notícias. A janela abre na rodada ' + win.next + '.' : 'Sem notícias nesta temporada.';
-    const cur = R[sel], p = cur && cur.id ? S.coMktFind(co, cur.id) : null, goT = !cur ? 'Ver ficha' : p ? 'Ver ficha' : cur.to === co.club ? 'No seu elenco' : 'Sem ficha';
+        '<div class="nw-tc"><strong>' + (x.k === 'b' ? '?' : x.tr ? 'troca' : x.v ? c.brl(x.v) : 'grátis') + '</strong><em class="nw-tag ' + x.k + '">' + NW_TAG[x.k] + '</em></div></button>'; };
+    const none = all.length ? (nwFlt === 2 ? 'Seu clube ainda não fez negócio.' : nwFlt === 3 ? 'Nada sobre quem você observa.' : 'Nada aqui. Veja em Tudo.') : win.k ? 'Nenhum negócio fechado ainda.' : win.next ? 'Sem notícias. A janela abre na rodada ' + win.next + '.' : 'Sem notícias nesta temporada.';
+    const cur = R[sel], p = cur && cur.id ? S.coMktFind(co, cur.id) : null, goT = !cur ? 'Ver ficha' : p ? 'Ver ficha' : cur.to === co.club || (cur.k === 'b' && cur.from === co.club) ? 'No seu elenco' : 'Sem ficha';
     show('<div class="mk nw">' + mkHead('nw-back', 'Mercado', esc(club(co.club).short || club(co.club).name), false, true) +
       '<div class="mk-tabs">' + mkTabs(co, 3) + '</div>' +
       '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">' + none + '</p>') + '</div>' +
@@ -958,7 +958,7 @@
       st.querySelector('#nw-back').onclick = () => { sfx('tap'); semana(); };
       mkCoins(st, () => noticias(pg, sel));
       st.querySelector('#mk-tpr').onclick = () => { sfx('tap'); mercado(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Os negócios que os clubes fecham com a janela aberta: cada semana de janela traz novos. LIVRE é quem ficou sem clube e sai de graça. O ▲ verde marca quem chegou para ser titular. Toque na linha e em Ver ficha para olhar o jogador no clube novo.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Os negócios dos clubes com a janela aberta. BOATO: 2 em cada 3 fecham na semana seguinte. LIVRE: ficou sem clube e sai de graça. ▲ verde: chegou para ser titular. Ver ficha mostra o jogador no clube novo.'); };
       st.querySelectorAll('[data-nr]').forEach(b => b.onclick = () => { const i = +b.dataset.nr; sfx('tap'); if (i === sel) return open(i); noticias(pg, i); });
       st.querySelectorAll('[data-nf]').forEach(b => b.onclick = () => { sfx('tap'); noticias(0, 0, (nwFlt + (+b.dataset.nf) + NW_FLT.length) % NW_FLT.length); });
       st.querySelector('#nw-prev').onclick = () => { sfx('tap'); noticias(pg - 1, 0); };

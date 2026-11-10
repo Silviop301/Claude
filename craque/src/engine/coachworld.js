@@ -5,7 +5,12 @@
 //           mv: [{ id, p (retrato do jogador), from, to, s, wk, v }] negócios que valem (o último de cada id manda),
 //           nw: [{ i, k: 'f' fechado | 'l' livre, id, n, pos, age, from, to, v, s, r, up, me (1 seu clube, 2 ex seu clube), tr }] notícias,
 //           ni/seen (contador e até onde você leu), fa: { id: 1 } livres da temporada que já fecharam,
-//           free: [{ s, lg, p }] quem saiu do seu clube no fim do contrato, gone: [ids da fonte] reais que saíram do mundo }
+//           free: [{ s, lg, p }] quem saiu do seu clube no fim do contrato, gone: [ids da fonte] reais que saíram do mundo,
+//           rm: [{ id, from, to, ok, ni, up, me }] boatos esperando o próximo lote (a notícia é a k: 'b' de índice ni),
+//           lost: { id, n, pos, to, v } o observado que fechou com outro (a tela mostra uma vez e apaga) }
+// Boatos (fase 3): cada lote solta os boatos do lote seguinte (e a véspera da janela do meio, os da janela): 2 de 3 viram
+// negócio. Quem você observa só sai do clube assim, com o boato uma semana antes. A proposta que vai chegar por um dos
+// seus também vira boato na semana anterior.
 // Um lote por semana de janela (rodadas 1 a 3 e a da metade), sorteado uma vez pela semente da carreira: recarregar não muda nada.
 // O sorteio é próprio (não mexe em co.seed). Conferência: node tools/craque_mercado.js (esperado 0 alertas).
 (function (root) {
@@ -14,7 +19,10 @@
 
   const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
   const WM = S.CO_WORLD = {
-    buy: { pre: 0.2, mid: 0.28 }, // chance de cada clube da sua liga contratar em cada lote da janela
+    buy: { pre: 0.18, mid: 0.25 }, // chance de cada clube da sua liga contratar em cada lote da janela
+    rum: 0.06,       // chance de cada clube da sua liga aparecer num boato para o lote seguinte
+    rumObs: 0.25,    // chance de cada jogador que você observa aparecer num boato para o lote seguinte
+    rumOk: 0.67,     // parte dos boatos que vira negócio
     maxIn: 2,        // contratações por clube em cada janela
     top: 2,          // negócios dos grandes do país por lote (quando a sua liga não é a deles)
     free: 1,         // sem clube que fecham por lote
@@ -102,8 +110,15 @@
   const lgIds = co => (co.ss ? co.ss.ids : []);
   S.coWorldInLg = (co, x) => { const L = lgIds(co); return (!!x.from && L.includes(x.from)) || (!!x.to && L.includes(x.to)); };
   // flt: 0 tudo, 1 sua liga (e o seu clube), 2 seu clube
-  S.coWorldNews = (co, flt) => { const L = (co.wm && co.wm.nw) || []; return flt === 2 ? L.filter(x => x.me) : flt === 1 ? L.filter(x => x.me || S.coWorldInLg(co, x)) : L; };
-  S.coWorldNew = co => { const w = co.wm; return w ? w.nw.filter(x => x.i > (w.seen || 0) && (x.me || S.coWorldInLg(co, x))).length : 0; };
+  // flt 3: quem você observa (a nota fica na notícia; vale também para quem está observado agora)
+  const obsNow = (co, x) => !!(x.obs || (x.id && co.mkt && co.mkt.s === co.season && co.mkt.obs && co.mkt.obs[x.id]));
+  S.coWorldObs = obsNow;
+  S.coWorldNews = (co, flt) => { const L = (co.wm && co.wm.nw) || []; return flt === 3 ? L.filter(x => obsNow(co, x)) : flt === 2 ? L.filter(x => x.me) : flt === 1 ? L.filter(x => x.me || x.obs || S.coWorldInLg(co, x)) : L; };
+  S.coWorldNew = co => { const w = co.wm; return w ? w.nw.filter(x => x.i > (w.seen || 0) && (x.me || x.obs || S.coWorldInLg(co, x))).length : 0; };
+  // O boato que corre agora sobre um jogador de outro clube (a ficha mostra quem também quer)
+  S.coWorldRumor = (co, id) => (co.wm && (co.wm.rm || []).find(x => x.id === id && !x.me)) || null;
+  // O observado que fechou com outro: devolve uma vez e apaga
+  S.coWorldLost = co => { const w = co.wm, x = w && w.lost; if (x) { delete w.lost; w.v++; } return x || null; };
   S.coWorldSeen = co => { if (co.wm) co.wm.seen = co.wm.ni || 0; };
 
   // ---------- o que você faz entra no mundo ----------
@@ -151,10 +166,12 @@
   };
 
   // ---------- os negócios dos outros: um lote por semana de janela ----------
+  // Semana de lote: as da janela ('pre', 'mid') e a véspera da janela do meio ('eve', só boatos)
+  const tickK = co => { const k = winK(co); if (k) return k; const ss = co.ss; return ss && !ss.done && ss.i === Math.floor(ss.rounds.length / 2) - 1 ? 'eve' : null; };
   S.coWorldSync = function (co) {
     if (!co || !co.club) return;
     if (co.wm && co.wm.s !== co.season) W(co);
-    const k = winK(co); if (!k) return;
+    const k = tickK(co); if (!k) return;
     const w = W(co), key = co.season + '|' + k + '|' + co.ss.i;
     if (w.st === key) return;
     w.st = key;
@@ -164,8 +181,9 @@
   function batch(co, w, k) {
     const r = S.rng(hash('wm|' + (co.seed || 0) + '|' + w.st)), me = co.club, season = co.season, ids = co.ss.ids;
     const cty = D.countryOf(D.CLUB_BY_ID[me]), m = co.mkt && co.mkt.s === season ? co.mkt : null;
+    const win = k !== 'eve', wk = win ? k : 'mid', half = Math.floor(co.ss.rounds.length / 2);
     const used = {}, inN = {};
-    w.mv.forEach(x => { if (x.s === season) { used[x.id] = 1; if (x.wk === k && x.to) inN[x.to] = (inN[x.to] || 0) + 1; } });
+    w.mv.forEach(x => { if (x.s === season) { used[x.id] = 1; if (x.wk === wk && x.to) inN[x.to] = (inN[x.to] || 0) + 1; } });
     const prot = id => used[id] || (m && ((m.obs && m.obs[id]) || (m.neg && m.neg[id]) || (m.got && m.got[id])));
     const nat = D.CLUBS.filter(c => c.id !== me && c.strength && D.countryOf(c) === cty);
     const fora = D.CLUBS.filter(c => c.strength && D.countryOf(c) !== cty);
@@ -173,7 +191,7 @@
     const deal = (p, from, to, extra) => { used[p.id] = 1; if (to) inN[to] = (inN[to] || 0) + 1;
       put(co, w, p.id, p, from, to, from ? r10k(S.coValue(p) * (0.9 + r() * 0.35)) : 0, extra); };
     // um clube contrata: um jogador de clube do país um pouco menor, que entra pelo menos para o rodízio
-    const buy = b => {
+    const pick = b => {
       const B = sq(b.id), pos = POS[Math.floor(r() * POS.length)], mine = B.filter(p => p.pos === pos).sort((x, y) => y.ovr - x.ovr);
       const last = mine[Math.min(mine.length, START[pos]) - 1], thr = last ? last.ovr - 1 : 0;
       const cand = nat.filter(c => c.id !== b.id && c.strength <= b.strength + WM.hi && c.strength >= b.strength - WM.lo);
@@ -182,15 +200,32 @@
         const Q = sq(s.id).filter(p => p.pos === pos && p.age <= 33 && !prot(p.id)).sort((x, y) => y.ovr - x.ovr).slice(0, 3).filter(p => p.ovr >= thr);
         if (!Q.length) continue;
         const p = Q[Math.floor(r() * Q.length)];
-        return deal(p, s.id, b.id, last && p.ovr >= last.ovr + WM.up ? { up: 1 } : null);
+        return { p, from: s.id, up: last && p.ovr >= last.ovr + WM.up ? 1 : 0 };
       }
+      return null;
     };
+    const buy = b => { const x = pick(b); if (x) deal(x.p, x.from, b.id, x.up ? { up: 1 } : null); };
     // um clube vende para o exterior: um dos 3 melhores, para um clube de fora mais forte
     const abroad = b => {
       const F = fora.filter(c => c.strength >= b.strength + 2 && c.strength <= b.strength + 14); if (!F.length) return buy(b);
       const Q = sq(b.id).filter(p => p.age <= 30 && !prot(p.id)).sort((x, y) => y.ovr - x.ovr).slice(0, 3); if (!Q.length) return;
       deal(Q[Math.floor(r() * Q.length)], b.id, F[Math.floor(r() * F.length)].id, null);
     };
+    // 0. os boatos do lote passado: a notícia do boato sai; 2 de 3 fecham (se o jogador segue lá e você não chegou antes)
+    const pend = w.rm || []; w.rm = [];
+    pend.forEach(x => {
+      w.nw = w.nw.filter(n => !(n.k === 'b' && n.i === x.ni));
+      if (!win || x.me || !x.ok || used[x.id] || (inN[x.to] || 0) >= WM.maxIn) return;
+      if (m && ((m.neg && m.neg[x.id]) || (m.got && m.got[x.id]))) return;
+      const p = sq(x.from).find(q => q.id === x.id); if (!p) return;
+      const obs = !!(m && m.obs && m.obs[x.id]);
+      deal(p, x.from, x.to, Object.assign({ rm: 1 }, x.up ? { up: 1 } : null, obs ? { obs: 1 } : null));
+      if (obs) w.lost = { id: x.id, n: p.n, pos: p.pos, to: x.to, v: w.mv[w.mv.length - 1].v };
+    });
+    if (win) deals();
+    if (k === 'eve' || (k === 'pre' && co.ss.i + 1 < Math.min(S.CO_MKT.preR, half))) rumors();
+
+    function deals() {
     // 1. a sua liga
     ids.filter(id => id !== me).forEach(id => {
       if (r() >= WM.buy[k] || (inN[id] || 0) >= WM.maxIn) return;
@@ -216,6 +251,32 @@
     const pool = FA.filter(p => !/^x:/.test(p.id)).sort((a, b) => b.ovr - a.ovr).slice(0, 15);
     for (let i = 0; i < WM.free && pool.length; i++) { const j = Math.floor(r() * pool.length), p = pool.splice(j, 1)[0]; sign(p, null); }
     FA.filter(p => /^x:/.test(p.id)).forEach(p => { if (r() < 0.4) sign(p, { me: 2 }); });
+    }
+
+    // 4. os boatos do próximo lote
+    function rumors() {
+      const seen = {};
+      const add = (p, from, to, nw, rm) => { if (seen[p.id] || used[p.id]) return; seen[p.id] = 1;
+        const x = Object.assign({ k: 'b', id: p.id, n: p.n, pos: p.pos, age: p.age, from, to, v: 0 }, nw);
+        news(co, w, x); w.rm.push(Object.assign({ id: p.id, from, to, ok: r() < WM.rumOk ? 1 : 0, ni: x.i }, rm)); };
+      // os clubes da sua liga
+      ids.filter(id => id !== me).forEach(id => { if (r() >= WM.rum) return; const x = pick(D.CLUB_BY_ID[id]); if (x) add(x.p, x.from, id, null, x.up ? { up: 1 } : null); });
+      // quem você observa (na primeira temporada da primeira carreira, só a partir da 2ª semana)
+      const obs = m && m.obs ? Object.keys(m.obs) : [];
+      if (obs.length && S.coMktFind && !(co.first && !(co.hist && co.hist.length) && co.ss.i < 1)) obs.forEach(id => {
+        if (r() >= WM.rumObs) return;
+        const p = S.coMktFind(co, id); if (!p || !p.club || p.club === me || (m.neg && m.neg[id]) || (m.got && m.got[id])) return;
+        const f = D.CLUB_BY_ID[p.club], fc = D.countryOf(f), ok = c => c.id !== me && c.id !== f.id && c.strength >= f.strength - 2 && c.strength <= f.strength + 12;
+        let C = D.CLUBS.filter(c => c.strength && D.countryOf(c) === fc && ok(c)); if (!C.length) C = D.CLUBS.filter(c => c.strength && ok(c)); if (!C.length) return;
+        add(p, f.id, C[Math.floor(r() * C.length)].id, { obs: 1 }, null);
+      });
+      // a proposta que vai chegar por um dos seus (a janela do meio; em clube novo, as que esperam a 3ª semana)
+      if (!S.coMktIncPeek) return;
+      let L = [];
+      if (k === 'eve') L = S.coMktIncPeek(co, 'mid');
+      else if (co.since === co.season && co.ss.i + 1 === S.CO_MKT.incFrom) L = m && m.incK === 'pre' ? (m.inc || []).filter(o => o.st === 'open') : S.coMktIncPeek(co, 'pre');
+      L.filter(o => !o.ask).forEach(o => { const p = co.squad.find(q => q.id === o.id); if (p) add(p, me, o.club, { me: 1 }, { me: 1 }); });
+    }
   }
 
   if (typeof module !== 'undefined') module.exports = S;
