@@ -8697,6 +8697,10 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .nw-tag.f { background: rgba(243, 241, 234, .1); color: #F3F1EA; } .mk-r.on .nw-tag.f { background: rgba(19, 32, 26, .1); color: #13201A; }
 .nw-tag.b { background: rgba(245, 165, 127, .16); color: #F5A57F; } .mk-r.on .nw-tag.b { background: rgba(180, 83, 42, .14); color: #b4532a; }
 .nw-tag.l { background: rgba(142, 194, 245, .16); color: #8EC2F5; } .mk-r.on .nw-tag.l { background: rgba(36, 99, 160, .14); color: #2463a0; }
+/* Boato na ficha (quem também quer, em cima do dourado) e o escudo da janelinha "Fechou com outro" */
+.mkf-rm { display: flex; align-items: center; justify-content: center; gap: 6px; height: 18px; margin: -6px 0 -2px; font: 800 14px/1 var(--body); color: #F5A57F; white-space: nowrap; }
+.mkf-rm .crest.nw-cr { width: 18px; height: 18px; margin: 0; }
+.mkx-h .crest.mkx-cr { flex: none; width: 52px; height: 52px; object-fit: contain; }
 .nw-flt > span { display: flex; align-items: center; gap: 8px; } .nw-flt > span b { flex: 1; text-align: center; font: 800 21px/1 var(--display); color: #F3F1EA; }
 .nw-flt > em { font: 700 15px/1.2 var(--body); color: #B9C9BF; font-style: normal; } .nw-flt > em i { font-style: normal; color: var(--gold); font-weight: 800; }
 .ldl-tm { grid-template-rows: 38px minmax(0, 1fr) 48px; gap: 8px 16px; }

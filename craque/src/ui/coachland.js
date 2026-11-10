@@ -233,7 +233,7 @@
     if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao() : patrocinio();
     c.save('hub');
     const tut = tutStep(co);
-    const popped = !tut && inboxPop(co, semana);
+    const popped = !tut && (inboxPop(co, semana) || lostPop(co));
     if (!tut && !popped && !ctWarn(co)) finNews(co);
     // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
     const inN = tut ? 0 : S.coMktInbox(co).filter(o => !o.seen).length - (popped ? 1 : 0);
@@ -989,6 +989,7 @@
     const band = b ? '<span class="mk-band" style="left:' + X(b.lo) + '%;width:' + Math.max(4, X(b.hi) - X(b.lo)) + '%"></span>' : '';
     const pot = b ? S.coMktPot(p) : null, tr = b ? S.coMktTraits(p) : null;
     const yr = p.club ? 'até ' + (U.YEAR0 + co.season + p.ct) : 'livre';
+    const rum = p.club && S.coWorldRumor ? S.coWorldRumor(co, p.id) : null; // boato: outro clube atrás dele
     const repC = S.coMktRepCost(co, p), repNo = n < S.CO_MKT.reps && (S.coFin(co).caixa || 0) < repC, repOff = n >= S.CO_MKT.reps || repNo;
     show('<div class="mk mkf">' + mkHead('mkf-back', esc(p.n), S.CO_POS_NM[p.pos] + ' · ' + p.age + ' anos · ' + mkClub(p), false, true) +
       (fichaAt ? fichaAttrs(co, p, n) : '<div class="mk-k mkf-cmp"><span class="mkf-t"><small>CONTRA O SEU ' + (S.CO_POS_NM[p.pos] || '').toUpperCase() + ' TITULAR</small>' + (b ? '<b class="' + word + '">' + word + '<small>' + CERT[n] + '</small></b>' : '<b class="nr">sem relatório</b>') + '</span>' +
@@ -999,7 +1000,7 @@
         '<div class="mkf-act"><button class="mkf-rep' + (repOff ? ' done' : '') + '" id="mkf-rep"' + (repOff ? ' disabled' : '') + '>' + (n >= S.CO_MKT.reps ? 'Relatório completo' : (n ? 'Mais um relatório' : 'Pedir relatório') + '<small>' + (repNo ? 'sem caixa · ' : '') + c.brl(repC) + '</small>') + '</button>' +
           '<button class="mkf-star' + (obs ? ' on' : '') + '" id="mkf-star" aria-label="Observar" aria-pressed="' + obs + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button></div>' +
         '<button class="mkf-tg" id="mkf-tg" aria-pressed="' + !!fichaAt + '">' + (fichaAt ? 'Ver resumo' : 'Ver atributos') + '</button>' +
-        '<span class="rs-gap"></span>' + fichaGo(co, p) + '</div></div>', st => {
+        '<span class="rs-gap"></span>' + (rum ? '<span class="mkf-rm">' + crest(rum.to, 'nw-cr') + esc(club(rum.to).short || club(rum.to).name) + ' também quer</span>' : '') + fichaGo(co, p) + '</div></div>', st => {
       st.querySelector('#mkf-back').onclick = () => { sfx('tap'); (back || mercado)(); };
       mkCoins(st, () => ficha(id, back));
       st.querySelector('#mkf-tg').onclick = () => { sfx('tap'); fichaAt = fichaAt ? 0 : 1; ficha(id, back); };
@@ -1242,6 +1243,20 @@
   function inboxPop(co, back) {
     const m = S.coMkt(co), wk = co.season + '|' + co.ss.i, o = S.coMktInbox(co).find(x => !x.seen); if (!o || m.popK === wk) return false;
     setTimeout(() => { if (document.getElementById('ld-pop')) return; o.seen = 1; m.popK = wk; C().save(); recebida(o, back); }, 80); return true;
+  }
+  // Quem você observava fechou com outro clube (mercado vivo, fase 3): uma janelinha na volta para a semana, nunca junto
+  // com a de proposta recebida (fica para a semana seguinte). Procurar outro abre o Mercado já na posição dele
+  function lostPop(co) {
+    if (!S.coWorldLost || !co.wm || !co.wm.lost || document.getElementById('ld-pop')) return false;
+    const x = S.coWorldLost(co), c = C(); c.save();
+    setTimeout(() => { if (document.getElementById('ld-pop')) return;
+      pop('<div class="mkx"><div class="mkx-h">' + crest(x.to, 'mkx-cr') + '<span><small>VOCÊ OBSERVAVA</small><b class="dn">Fechou com outro</b></span></div>' +
+        '<p><b>' + esc(x.n) + '</b> assinou com o ' + esc(club(x.to).short || club(x.to).name) + ' por ' + c.brl(x.v) + '.</p>' +
+        '<span class="mkx-b"><button class="hl-btn gold" id="lst-go">Procurar outro</button><button class="hl-btn line" data-pop-x>Fechar</button></span></div>', 'Fechou com outro', w => {
+        w.querySelector('#lst-go').onclick = () => { sfx('tap'); closePop(); const m = S.coMkt(co), F = S.coMktFilters(co), i = F.findIndex(f => f.k === 'pos'), j = ['GOL', 'ZAG', 'LAT', 'MEI', 'ATA'].indexOf(x.pos) + 1;
+          m.f = F.map(() => 0); if (i >= 0 && j > 0) m.f[i] = j; m.nm = ''; c.save(); mercado(); };
+      }, 'hl-pop mkx-pop ech-pop'); }, 80);
+    return true;
   }
   // Finanças deitada: abas num array (a thread de mercado e finanças vai acrescentar "Decidir")
   const FIN_TABS = [

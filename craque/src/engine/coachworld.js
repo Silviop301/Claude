@@ -266,7 +266,7 @@
       if (obs.length && S.coMktFind && !(co.first && !(co.hist && co.hist.length) && co.ss.i < 1)) obs.forEach(id => {
         if (r() >= WM.rumObs) return;
         const p = S.coMktFind(co, id); if (!p || !p.club || p.club === me || (m.neg && m.neg[id]) || (m.got && m.got[id])) return;
-        const f = D.CLUB_BY_ID[p.club], fc = D.countryOf(f), ok = c => c.id !== me && c.id !== f.id && c.strength >= f.strength - 2 && c.strength <= f.strength + 12;
+        const f = D.CLUB_BY_ID[p.club], fc = D.countryOf(f), old = p.age >= 32, ok = c => c.id !== me && c.id !== f.id && c.strength >= f.strength - (old ? 10 : 2) && c.strength <= f.strength + (old ? 0 : 12); // veterano não sobe de patamar
         let C = D.CLUBS.filter(c => c.strength && D.countryOf(c) === fc && ok(c)); if (!C.length) C = D.CLUBS.filter(c => c.strength && ok(c)); if (!C.length) return;
         add(p, f.id, C[Math.floor(r() * C.length)].id, { obs: 1 }, null);
       });
