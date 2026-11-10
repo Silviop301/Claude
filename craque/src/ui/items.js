@@ -290,6 +290,10 @@
     Object.keys(days).forEach(k => { days[k] = Math.max((a.days || {})[k] || 0, (b.days || {})[k] || 0); });
     // Perfil (ui/profile.js): metas do salvo mais recente; o XP fica com o maior
     const prof = newer.prof || a.prof || b.prof ? Object.assign({}, newer.prof || a.prof || b.prof, { xp: Math.max((a.prof || {}).xp || 0, (b.prof || {}).xp || 0) }) : undefined;
+    // Números do técnico (prof.co): o maior de cada aparelho; o último título, do salvo mais recente que tiver
+    const ra = (a.prof || {}).co, rb = (b.prof || {}).co;
+    if (prof && (ra || rb)) { const mx = k => Math.max((ra || {})[k] || 0, (rb || {})[k] || 0);
+      prof.co = { t: mx('t'), v: mx('v'), s: mx('s'), last: ((newer.prof || {}).co || {}).last || (ra || {}).last || (rb || {}).last || null }; }
     // Moedas: saldo e log do salvo mais recente; times comprados e prêmios de uma vez de qualquer aparelho
     const ca = a.coins || {}, cb = b.coins || {}, cn = newer.coins || a.coins || b.coins;
     const coins = cn ? Object.assign({}, cn, { clubs: Object.assign({}, ca.clubs, cb.clubs), once: Object.assign({}, ca.once, cb.once) }) : undefined;

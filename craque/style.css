@@ -8941,3 +8941,45 @@ button.coin-pill { cursor: pointer; border: 0; }
 .ld-st button.aj-go { height: 56px; border-radius: 16px; background: var(--gold) !important; color: #1B1606 !important; box-shadow: 0 4px 0 #b48a12; font: 800 24px/1 var(--display); flex: none; }
 .ld-st button.aj-go.dark { background: #13201A !important; color: #F8F4EA !important; box-shadow: 0 4px 0 rgba(0, 0, 0, .35); }
 .aj-go:active { transform: translateY(2px); }
+
+/* Perfil do técnico deitado (2026-11-09, quadro 53): nível no cartão creme, 3 metas da semana com moedas, à direita os
+   números de todas as carreiras de técnico, o último título e os times comprados (ui/profile.js openLand) */
+.pft { width: 100%; flex: 1; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 238px; grid-template-rows: 44px minmax(0, 1fr); gap: 10px 16px; color: #F3F1EA; }
+.pft-l, .pft-r { display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; }
+.pft-lb { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
+.pft-card { height: 98px; flex: none; border-radius: 18px; background: #F8F4EA; color: #13201A; display: flex; overflow: hidden; }
+.pft-card > div:first-child { flex: 1; min-width: 0; padding: 16px 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; }
+.pft-card span { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.pft-card span + span { align-items: center; gap: 12px; }
+.pft-card span > b { font: 800 32px/1 var(--display); white-space: nowrap; }
+.pft-card small { font: 700 15px/1 var(--body); color: #4b5a52; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pft-card i { flex: 1; height: 10px; border-radius: 5px; background: rgba(19, 32, 26, .14); overflow: hidden; }
+.pft-card u { display: block; height: 100%; border-radius: 5px; background: #1E7A4C; }
+.pft-card span + span > b { font: 800 18px/1 var(--display); color: #33423a; }
+.pft-lv { width: 104px; flex: none; background: var(--gold); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.pft-lv small { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #5a4100; }
+.pft-lv b { font: 800 46px/1 var(--display); color: #1B1606; }
+.pft-sh { display: flex; align-items: center; justify-content: space-between; height: 18px; flex: none; }
+.pft-sh span + span { font: 700 14px/1 var(--body); color: #B9C9BF; }
+.pft-gs { display: flex; flex-direction: column; gap: 8px; }
+.pft-g { height: 52px; border-radius: 14px; background: #141517; display: flex; align-items: center; gap: 12px; padding: 0 14px 0 8px; box-sizing: border-box; }
+.pft-g > span { width: 46px; height: 36px; border-radius: 10px; flex: none; display: flex; align-items: center; justify-content: center; font: 800 18px/1 var(--display); background: rgba(243, 241, 234, .12); }
+.pft-g > b { flex: 1; min-width: 0; font: 800 21px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pft-g > em { font-style: normal; display: flex; align-items: center; gap: 5px; font: 800 21px/1 var(--display); color: var(--gold); flex: none; }
+.pft-g > em svg { width: 18px; height: 18px; }
+.pft-g.done { background: #10291d; box-shadow: inset 0 0 0 2px #4FCB7E; }
+.pft-g.done > span { background: #4FCB7E; color: #0b2419; }
+.pft-p { border-radius: 16px; background: #141517; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pft-p.grow { flex: 1; min-height: 0; }
+.pft-n { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 2px -8px 2px; }
+.pft-n span { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.pft-n b { font: 800 28px/1 var(--display); } .pft-n .au b { color: var(--gold); }
+.pft-n small { font: 700 13px/1 var(--body); color: #B9C9BF; }
+.pft-t { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pft-t .crest { width: 40px; height: 40px; object-fit: contain; flex: none; }
+.pft-t > span { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.pft-t b { font: 800 22px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pft-t small, .pft-no { font: 700 15px/1 var(--body); color: #B9C9BF; }
+.pft-cl { display: flex; align-items: center; gap: 12px; }
+.pft-cl .crest { width: 44px; height: 44px; object-fit: contain; flex: none; }
+.pft-cl b { font: 800 22px/1 var(--display); color: #B9C9BF; }

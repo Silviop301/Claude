@@ -17,6 +17,9 @@
   }
   const RANKS = [[1, 'Peneira'], [5, 'Base'], [10, 'Profissional'], [20, 'Titular'], [30, 'Craque'], [40, 'Ídolo'], [50, 'Lenda']];
   const rankOf = lv => RANKS.filter(r => lv >= r[0]).pop()[1];
+  // Treinador (1.0, 2026-11-09): os mesmos degraus com nome de técnico
+  const RANKS_CO = [[1, 'Estagiário'], [5, 'Auxiliar'], [10, 'Interino'], [20, 'Treinador'], [30, 'Professor'], [40, 'Comandante'], [50, 'Lenda']];
+  const rankCo = lv => RANKS_CO.filter(r => lv >= r[0]).pop()[1];
 
   // XP do fim de uma carreira: base, nota e títulos. Relâmpago, menos; o Jogo a Jogo ganha por temporada (jajXp).
   const GXP = { S: 150, A: 100, B: 60, C: 30, D: 10 };
@@ -55,7 +58,39 @@
     { id: 'jajmeta', tier: 3, fam: 'jaj', t: 'Bata a meta do ano no Rumo ao Topo', add: x => x.kind === 'jajs' && x.meta },
     { id: 'lib', tier: 3, fam: 'cont', t: 'Ganhe a Libertadores', add: x => car(x) && tro(x, 'lib') > 0 },
   ];
-  const GOAL_BY = Object.fromEntries(GOALS.map(g => [g.id, g]));
+  // Metas do Treinador (2026-11-09, quadro 53). x: { kind: 'cog', co, m, log, up, aux } (um jogo do Treinador; `aux` =
+  // o auxiliar terminou um jogo largado, que não anda meta nenhuma) ou { kind: 'cos', co, out } (fim da temporada).
+  // add pode devolver número (gols); cut zera a contagem das metas "seguidas"
+  const cog = x => x.kind === 'cog' && !x.aux, won = x => cog(x) && x.log.res === 'v';
+  const cos = x => x.kind === 'cos' && !x.out.sacked;
+  // Esteve atrás no placar em algum momento do jogo
+  const behind = m => { let u = 0, t = 0; return (m.ev || []).some(e => { if (e.t !== 'gol') return false; if (e.s === 'us') u++; else t++; return t > u; }); };
+  // Dá para subir de divisão? (na elite a meta não é sorteada)
+  function canGoUp() {
+    const S = U.S, cs = [0, 1].map(i => (U.coSaved ? U.coSaved(i) : null)).filter(Boolean).map(sv => sv.co).filter(co => co.club);
+    return !cs.length || cs.some(co => S.coLgDepth((co.leagueOf || {})[co.club] || D.CLUB_BY_ID[co.club].league) > 0);
+  }
+  const GOALS_CO = [
+    // fáceis
+    { id: 'cov3', tier: 1, fam: 'vit', n: 3, t: 'Vença 3 jogos', add: won },
+    { id: 'coj8', tier: 1, n: 8, t: 'Jogue 8 jogos', add: cog },
+    { id: 'cofora', tier: 1, t: 'Vença um jogo fora de casa', add: x => won(x) && !x.log.home },
+    { id: 'cog6', tier: 1, n: 6, t: 'Faça 6 gols', add: x => (cog(x) ? x.log.gf : 0) },
+    // médias
+    { id: 'cosg2', tier: 2, n: 2, t: 'Ganhe 2 jogos sem levar gol', add: x => won(x) && x.log.ga === 0 },
+    { id: 'cov3s', tier: 2, fam: 'vit', n: 3, t: 'Vença 3 seguidas', add: won, cut: x => x.kind === 'cog' && x.log.res !== 'v' },
+    { id: 'covira', tier: 2, t: 'Vença de virada', add: x => won(x) && behind(x.m) },
+    { id: 'coacima', tier: 2, t: 'Vença um time acima de você na tabela', add: x => won(x) && !!x.up },
+    // difíceis
+    { id: 'cometa', tier: 3, t: 'Cumpra a meta da diretoria', add: x => cos(x) && !!x.out.met },
+    { id: 'cocamp', tier: 3, t: 'Seja campeão', add: x => cos(x) && !!x.out.won },
+    { id: 'cosobe', tier: 3, t: 'Suba de divisão', add: x => cos(x) && !!x.out.up, ok: canGoUp },
+    { id: 'coinv8', tier: 3, n: 8, t: 'Fique 8 jogos sem perder', add: x => cog(x) && x.log.res !== 'd', cut: x => x.kind === 'cog' && x.log.res === 'd' },
+    { id: 'coazul', tier: 3, t: 'Termine a temporada com o caixa no azul', add: x => cos(x) && !!(x.out.fin && x.out.fin.caixa > 0) },
+  ];
+  // Na 1.0 só o Treinador está na home: a semana sorteia as metas dele. As do Jogador voltam com o modo (JOG_ON)
+  const JOG_ON = false, POOL = JOG_ON ? GOALS : GOALS_CO;
+  const GOAL_BY = Object.fromEntries(GOALS.concat(GOALS_CO).map(g => [g.id, g]));
   const PRIZE = { 1: { xp: 100, p: 1, m: 2 }, 2: { xp: 200, p: 1, m: 3 }, 3: { xp: 300, p: 2, m: 5 } }; // m: moedas (as 3 metas = 10)
 
   // A semana começa na segunda (data local); as três metas saem de um sorteio pela data, iguais para todo mundo
@@ -64,18 +99,21 @@
   const wkKey = d => { const m = monday(d || new Date()); return m.getFullYear() + '-' + pad(m.getMonth() + 1) + '-' + pad(m.getDate()); };
   function hash(s) { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
   function week() {
-    const p = prof(), k = wkKey();
+    const p = prof(), k = wkKey(), h = hash('climbix-metas-' + k);
+    // Uma de cada dificuldade, sem duas da mesma família (ex.: nota A e nota S na mesma semana)
+    const pick = (tier, fams) => { const l = POOL.filter(g => g.tier === tier && !(g.fam && fams.includes(g.fam)) && (!g.ok || g.ok())); return l[(h >>> (tier * 5)) % l.length].id; };
+    const famOf = id => (GOAL_BY[id] || {}).fam;
     if (!p.wk || p.wk.k !== k) {
-      const h = hash('climbix-metas-' + k);
-      // Uma de cada dificuldade, sem duas da mesma família (ex.: nota A e nota S na mesma semana)
       const fams = [];
-      const pick = tier => { const l = GOALS.filter(g => g.tier === tier && !(g.fam && fams.includes(g.fam))); const g = l[(h >>> (tier * 5)) % l.length]; if (g.fam) fams.push(g.fam); return g.id; };
-      p.wk = { k, goals: [1, 2, 3].map(t => ({ id: pick(t), p: 0 })) };
+      p.wk = { k, goals: [1, 2, 3].map(t => { const id = pick(t, fams); if (famOf(id)) fams.push(famOf(id)); return { id, p: 0 }; }) };
       U.ITEMS.put();
     }
-    // Metas da Carreira Completa que saíram (save longo, fase 1 do plano): a semana em curso troca pelas do Jogo a Jogo
-    const OLD = { comp: 'jaj15', compA: 'jajmeta' };
-    p.wk.goals.forEach(g => { if (!GOAL_BY[g.id] && OLD[g.id]) { g.id = OLD[g.id]; g.p = 0; g.done = false; } });
+    // Meta que não é do modo em jogo (as do Jogador, sorteadas antes da 1.0) e ainda está aberta: troca por uma do Treinador
+    let ch = false;
+    p.wk.goals.forEach((g, i) => { const d = GOAL_BY[g.id]; if (g.done || (d && POOL.includes(d))) return;
+      const fams = p.wk.goals.filter(o => o !== g).map(o => famOf(o.id)).filter(Boolean);
+      g.id = pick(d ? d.tier : i + 1, fams); g.p = 0; ch = true; });
+    if (ch) U.ITEMS.put();
     return p.wk;
   }
   const daysLeft = () => { const m = monday(new Date()); m.setDate(m.getDate() + 7); return Math.max(1, Math.ceil((m - new Date()) / 864e5)); };
@@ -83,16 +121,20 @@
   // Fim de carreira ou de Relâmpago: XP, metas que andaram e pacotinhos (um por meta cumprida e um por nível novo).
   // Volta o que mudou para a tela mostrar; o chamador guarda o resultado (a tela pode ser redesenhada)
   function credit(x, xp) {
-    const p = prof(), wk = week(), before = level(p.xp).lv, done = [];
+    const p = prof(), wk = week(), before = level(p.xp).lv, done = [], isCo = x.kind === 'cog' || x.kind === 'cos';
     wk.goals.forEach(g => {
       const def = GOAL_BY[g.id];
-      if (!def || g.done || !def.add(x)) return;
-      g.p = Math.min(def.n || 1, (g.p || 0) + 1);
+      if (!def || g.done) return;
+      if (def.cut && def.cut(x)) { g.p = 0; return; }
+      const a = +def.add(x) || 0;
+      if (!a) return;
+      g.p = Math.min(def.n || 1, (g.p || 0) + a);
       if (g.p >= (def.n || 1)) { g.done = true; const pr = PRIZE[def.tier]; xp += pr.xp; done.push({ t: def.t, xp: pr.xp, p: pr.p, m: pr.m }); if (U.COINS) U.COINS.add({ n: pr.m, t: 'Meta da semana' }); }
     });
     p.xp = (p.xp || 0) + xp;
     const after = level(p.xp).lv;
-    const why = done.map(d => ({ t: 'Meta da semana', n: d.p })).concat(after > before ? [{ t: after - before > 1 ? 'Níveis novos' : 'Nível novo', n: after - before }] : []);
+    // Pacotinho (meta e nível novo) é do Jogador: no Treinador a meta paga moedas e XP
+    const why = isCo ? [] : done.map(d => ({ t: 'Meta da semana', n: d.p })).concat(after > before ? [{ t: after - before > 1 ? 'Níveis novos' : 'Nível novo', n: after - before }] : []);
     U.ITEMS.put();
     if (why.length) U.ITEMS.earn(why);
     return { xp, before, after, done, packs: why.reduce((a, w) => a + w.n, 0) };
@@ -174,6 +216,70 @@
     U.streakBind(open); // pegou o prêmio do dia: redesenha (o pacotinho vai para a fila da tela inicial)
   }
 
-  Object.assign(U, { profile: open, profileHome: homeHtml, profileHomeBind: homeBind, profileCareer: career, profileRel: relampago, profileFinale: finaleHtml, profileJajGame: jajGame, profileJajSeason: jajSeason,
-    PROFILE: { level, rankOf, week, GOALS, PRIZE, careerXp, relXp, jajXp, wkKey } });
+  // ---------- Treinador: números do técnico, ganchos e a tela deitada (quadro 53) ----------
+  // { t: títulos, v: vitórias, s: temporadas, last: { name, club, s } } de todas as carreiras de técnico da conta. Fica
+  // no inventário (vai para a nuvem). Na primeira vez sai das carreiras salvas neste aparelho
+  function coRec() {
+    const p = prof();
+    if (!p.co) {
+      const r = { t: 0, v: 0, s: 0, last: null };
+      [0, 1].forEach(i => { const sv = U.coSaved ? U.coSaved(i) : null, co = sv && sv.co; if (!co) return;
+        r.t += (co.titles || []).length; r.s += (co.hist || []).length; r.v += ((co.ss && co.ss.log) || []).filter(l => l.res === 'v').length;
+        const lt = (co.titles || []).slice(-1)[0]; if (lt && (!r.last || lt.s >= r.last.s)) r.last = { name: lt.name, club: lt.club, s: lt.s }; });
+      p.co = r; U.ITEMS.put();
+    }
+    return p.co;
+  }
+  // Aviso curto por cima da tela: meta cumprida (e nível novo)
+  function coToast(r) {
+    if (!r || (!r.done.length && r.after <= r.before) || typeof document === 'undefined') return;
+    const m = r.done.reduce((a, d) => a + d.m, 0), box = document.createElement('div');
+    box.className = 'pay-ty'; box.setAttribute('role', 'status');
+    box.innerHTML = r.done.length ? '<b>Meta cumprida</b><span>' + r.done.map(d => esc(d.t)).join(' · ') + ' · +' + m + (m === 1 ? ' moeda' : ' moedas') + '</span><button aria-label="Fechar">OK</button>'
+      : '<b>Nível ' + r.after + '</b><span>' + rankCo(r.after) + '</span><button aria-label="Fechar">OK</button>';
+    document.body.appendChild(box); box.querySelector('button').onclick = () => box.remove(); setTimeout(() => box.remove(), 7000);
+  }
+  // Fim de um jogo do Treinador (ui/coach.js). pre = [sua posição, a deles, jogos já feitos] antes do jogo
+  function coGame(co, m, log, aux) {
+    const R = coRec(); if (log.res === 'v') R.v++;
+    const pp = m.pfp, cb = id => D.CLUB_BY_ID[id] || {};
+    const up = pp ? (pp[2] > 0 ? pp[1] < pp[0] : (cb(m.vs).strength || 0) > (cb(co.club).strength || 0)) : false;
+    const r = credit({ kind: 'cog', co, m, log, up, aux: !!aux }, 0);
+    coToast(r);
+    return r;
+  }
+  // Fim da temporada: XP (mais com meta, acesso e título), metas da temporada e os números do técnico. Uma vez por temporada
+  const coXp = out => (out.sacked ? 0 : 150 + (out.met ? 50 : 0) + (out.up ? 75 : 0) + (out.won ? 150 : 0));
+  function coSeason(co, out) {
+    if (out.profPaid) return null;
+    out.profPaid = true;
+    const R = coRec(); R.s++;
+    if (out.won) { R.t++; R.last = { name: out.league, club: out.club, s: out.season }; }
+    const r = credit({ kind: 'cos', co, out }, coXp(out));
+    coToast(r);
+    return r;
+  }
+  const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+  function openLand(back) {
+    const p = prof(), L = level(p.xp), wk = week(), R = coRec(), left = daysLeft(), nx = RANKS_CO.find(r => r[0] > L.lv);
+    const nick = U.cloudStatus && U.cloudStatus() ? U.cloudName() : '', mine = U.COINS ? U.COINS.clubs() : [];
+    const goal = g => { const d = GOAL_BY[g.id], n = d.n || 1;
+      return '<div class="pft-g' + (g.done ? ' done' : '') + '"><span>' + (g.done ? 'OK' : (g.p || 0) + '/' + n) + '</span><b>' + esc(d.t) + '</b><em>' + (U.COINS ? U.COINS.svg : '') + '+' + PRIZE[d.tier].m + '</em></div>'; };
+    const num = (v, l, gold) => '<span' + (gold ? ' class="au"' : '') + '><b>' + v + '</b><small>' + l + '</small></span>';
+    const lt = R.last, cl = lt ? U.club(lt.club) || {} : null;
+    U.LD.show('<div class="pft"><div class="tm-h"><button class="tcr-back" id="pft-back" aria-label="Voltar">' + BK + '</button><b>Perfil</b>' + (nick ? '<small>' + esc(nick) + '</small>' : '') + '</div>' +
+      '<div class="pft-l"><div class="pft-card"><div><span><b>' + rankCo(L.lv) + '</b>' + (nx ? '<small>próximo: ' + nx[1] + ' no nível ' + nx[0] + '</small>' : '') + '</span>' +
+        '<span><i><u style="width:' + Math.round(L.cur / L.next * 100) + '%"></u></i><b>' + L.cur + ' de ' + L.next + ' XP</b></span></div>' +
+        '<div class="pft-lv"><small>NÍVEL</small><b>' + L.lv + '</b></div></div>' +
+        '<div class="pft-sh"><span class="pft-lb">METAS DA SEMANA</span><span>' + (left === 1 ? 'renovam amanhã' : 'renovam em ' + left + ' dias') + '</span></div>' +
+        '<div class="pft-gs">' + wk.goals.map(goal).join('') + '</div></div>' +
+      '<div class="pft-r"><div class="pft-p"><span class="pft-lb">COMO TÉCNICO</span><div class="pft-n">' + num(R.t, R.t === 1 ? 'título' : 'títulos', 1) + num(R.v, R.v === 1 ? 'vitória' : 'vitórias') + num(R.s, R.s === 1 ? 'temporada' : 'temporadas') + '</div></div>' +
+        '<div class="pft-p"><span class="pft-lb">ÚLTIMO TÍTULO</span>' + (lt ? '<span class="pft-t">' + U.crest(lt.club) + '<span><b>' + esc(lt.name) + ' ' + (U.YEAR0 + lt.s) + '</b><small>' + esc(cl.short || cl.name || '') + '</small></span></span>' : '<span class="pft-no">Nenhum por enquanto</span>') + '</div>' +
+        (mine.length ? '<div class="pft-p grow"><span class="pft-lb">SEUS TIMES</span><span class="pft-cl">' + mine.slice(0, mine.length > 4 ? 3 : 4).map(id => U.crest(id)).join('') + (mine.length > 4 ? '<b>+' + (mine.length - 3) + '</b>' : '') + '</span></div>' : '') +
+      '</div></div>',
+      w => { w.querySelector('#pft-back').onclick = () => { sfx('tap'); (back || U.home)(); }; }, 'O Climbix é jogado com o celular deitado.');
+  }
+
+  Object.assign(U, { profileLand: openLand, profileCoGame: coGame, profileCoSeason: coSeason, profile: open, profileHome: homeHtml, profileHomeBind: homeBind, profileCareer: career, profileRel: relampago, profileFinale: finaleHtml, profileJajGame: jajGame, profileJajSeason: jajSeason,
+    PROFILE: { level, rankOf, rankCo, week, GOALS, GOALS_CO, PRIZE, coXp, coRec, careerXp, relXp, jajXp, wkKey } });
 })();
