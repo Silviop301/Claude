@@ -35,20 +35,36 @@
   // ---------- a fonte: todos os jogadores dos outros clubes na temporada (e os sem clube) ----------
   let cache = null;
   S.coMktPool = function (co) {
-    const key = co.season + '|' + co.club + '|' + co.squad.map(p => p.api || '').join(',');
+    // com o mercado vivo (co.wm) a lista muda a cada negócio dos outros e a cada compra sua
+    const key = co.season + '|' + co.club + '|' + co.squad.map(p => p.api || '').join(',') + '|' + (co.wm ? co.wm.v : 0) + '|' + (co.mkt && co.mkt.s === co.season && co.mkt.got ? Object.keys(co.mkt.got).length : 0);
     if (cache && cache.k === key) return cache.list;
     const list = [];
     D.CLUBS.forEach(cl => {
       if (cl.id === co.club) return;
       S.coGenSquad(cl.id, co.season, co).forEach(p => { list.push(Object.assign({}, p, { club: cl.id, lg: cl.league })); });
     });
-    // Sem clube: veteranos e quem sobrou, sorteados pela temporada
-    for (let i = 0; i < M.free; i++) {
-      const h = hash('free|' + co.season + '|' + i), cl = D.CLUBS[h % D.CLUBS.length], sq = S.coGenSquad(cl.id, co.season - 1, co), p = sq[(h >>> 8) % sq.length];
-      list.push(Object.assign({}, p, { id: 'f:' + co.season + ':' + i, club: null, lg: cl.league, ct: 0, age: p.age + 1, ovr: Math.max(30, p.ovr - 3) }));
-    }
+    S.coMktFree(co).forEach(p => list.push(p));
     cache = { k: key, list };
     return list;
+  };
+
+  // Sem clube: veteranos e quem sobrou, sorteados pela temporada (os 40 de sempre, menos os que já fecharam com um clube
+  // no mercado vivo, co.wm.fa) e quem saiu do seu clube no fim do contrato (co.wm.free, id 'x:...')
+  let fcache = null;
+  S.coMktFree = function (co) {
+    const w = co.wm && co.wm.s === co.season ? co.wm : null;
+    const key = co.season + '|' + co.squad.map(p => p.api || '').join(',');
+    if (!fcache || fcache.k !== key || fcache.w !== (co.wm || null) || fcache.v !== (co.wm ? co.wm.v : 0)) {
+      const base = [];
+      for (let i = 0; i < M.free; i++) {
+        const h = hash('free|' + co.season + '|' + i), cl = D.CLUBS[h % D.CLUBS.length], sq = S.coGenSquad(cl.id, co.season - 1, co), p = sq[(h >>> 8) % sq.length];
+        base.push(Object.assign({}, p, { id: 'f:' + co.season + ':' + i, club: null, lg: cl.league, ct: 0, age: p.age + 1, ovr: Math.max(30, p.ovr - 3) }));
+      }
+      fcache = { k: key, w: co.wm || null, v: co.wm ? co.wm.v : 0, base };
+    }
+    const out = fcache.base.filter(p => !(w && w.fa && w.fa[p.id]));
+    if (w && w.free) w.free.forEach(x => { if (x.s === co.season) out.push(Object.assign({ mo: 60, en: 100, out: 0, sus: 0 }, x.p, { club: null, lg: x.lg, ct: 0 })); });
+    return out;
   };
 
   S.coMkt = co => {
@@ -246,11 +262,13 @@
     if (now) { f.verba -= now; f.caixa -= now; f.ss.comp += now; }
     const left = Math.max(0, d.v - tradeVal(co, d.tr)) - now;
     if (d.pay && left > 0) { f.inst = f.inst || []; f.inst.push({ n: p.n, v: Math.ceil(left / d.pay / 1000) * 1000, k: d.pay }); }
-    if (d.tr) { co.squad = co.squad.filter(x => x.id !== d.tr); co.xi = (co.xi || []).filter(x => x !== d.tr); co.bench = (co.bench || []).filter(x => x !== d.tr); }
+    if (d.tr) { const q = co.squad.find(x => x.id === d.tr); if (q && p.club && S.coWorldSold) S.coWorldSold(co, q, p.club, 0, { tr: 1 });
+      co.squad = co.squad.filter(x => x.id !== d.tr); co.xi = (co.xi || []).filter(x => x !== d.tr); co.bench = (co.bench || []).filter(x => x !== d.tr); }
     const np = Object.assign({}, p, { id: 'p' + (co.pid++), wage: t.w, ct: t.y, role: ROLE[t.role].k, mo: 70, en: 100, out: 0, sus: 0, from: p.club || null });
     delete np.club; delete np.lg; delete np.num;
     co.squad.push(np);
     m.got[p.id] = 1; n.st = 'signed';
+    if (S.coWorldBought) S.coWorldBought(co, p, p.club ? d.v : 0);
     return { k: 'signed', p: np };
   };
   // Parcelas das compras a cada 4 rodadas (chamado pela semana das finanças)
@@ -299,6 +317,7 @@
   const rngS = (co, k) => S.rng(hash((co.seed || 0) + '|' + co.season + '|' + k));
   S.coMktCanSell = (co, p) => co.squad.length > 18 && co.squad.filter(x => x.pos === p.pos).length > (MINP[p.pos] || 2);
   S.coMktListed = (co, p) => !!(co.sell && co.sell[p.id]);
+  S.coMktBuyer = (co, p, r) => buyerOf(co, p, r);
   function buyerOf(co, p, r) {
     const me = D.CLUB_BY_ID[co.club], cty = D.countryOf(me), lo = Math.max(me.strength - 4, p.ovr - 6);
     const fora = r() < 0.15, all = Object.values(D.CLUB_BY_ID).filter(c => c.id !== co.club && c.strength && (D.countryOf(c) === cty) !== fora);
@@ -369,7 +388,9 @@
     const now = Math.ceil(v / ((pay || 0) + 1) / 1000) * 1000, left = v - now;
     f.caixa += now; f.ss.vend += now; f.verba += Math.round(now * M.sellVerba);
     if (pay && left > 0) { f.recv = f.recv || []; f.recv.push({ n: p.n, v: Math.ceil(left / pay / 1000) * 1000, k: pay }); }
-    if (fut) { f.fut = f.fut || []; f.fut.push({ n: p.n, pct: M.futPct[fut], base: v, s: co.season, club: o.club }); }
+    // mercado vivo: ele passa a jogar pelo clube comprador (e a % futura sabe quem ele é: wid)
+    const wid = S.coWorldSold ? S.coWorldSold(co, p, o.club, v) : null;
+    if (fut) { f.fut = f.fut || []; const x = { n: p.n, pct: M.futPct[fut], base: v, s: co.season, club: o.club }; if (wid) x.wid = wid; f.fut.push(x); }
     o.st = 'sold'; o.v = v; o.pay = pay || 0; o.fut = fut || 0;
     return { p, v, now, pay: pay || 0, fut: fut || 0 };
   }
@@ -380,6 +401,7 @@
     f.fut = f.fut.filter(x => {
       if (x.s >= co.season) return true;
       if (r() < M.futP) { const v = r10k(x.base * (1.1 + r() * 0.6) * x.pct / 100); add('vend', v); f.verba += Math.round(v * M.sellVerba);
+        if (x.wid && S.coWorldResell) S.coWorldResell(co, x.wid);
         if (S.coFinNews) S.coFinNews(co, x.n + ' foi vendido de novo: os ' + x.pct + '% da venda futura renderam R$ ' + (v >= 1e6 ? (v / 1e6).toFixed(1).replace('.', ',') + ' mi' : Math.round(v / 1000) + ' mil') + ' ao caixa.');
         return false; }
       return co.season - x.s < M.futS;
