@@ -194,10 +194,84 @@
   // ---------- elencos ----------
   const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
   const wageOf = ovr => Math.round(Math.exp((ovr - 50) / 8.5) * 2) * 1000; // por semana
-  function mkPlayer(r, club, pos, ovr, age, id, cty) {
+  function mkPlayer(r, club, pos, ovr, age, id, cty, real) {
     const pot = Math.min(95, Math.round(ovr + Math.max(0, 25 - age) * r.range(0.6, 1.7)));
-    return { id, n: D.randomName(cty, r), pos, age, ovr: clamp(Math.round(ovr), 30, 95), pot: Math.max(Math.round(ovr), pot), wage: wageOf(ovr), ct: r.int(1, 4), mo: 60, en: 100, out: 0, sus: 0 };
+    const p = { id, n: D.randomName(cty, r), pos, age, ovr: clamp(Math.round(ovr), 30, 95), pot: Math.max(Math.round(ovr), pot), wage: wageOf(ovr), ct: r.int(1, 4), mo: 60, en: 100, out: 0, sus: 0 };
+    p.at = mkAttrs(p, id, real);
+    return p;
   }
+  // ---------- atributos por jogador (2026-11-10; mapa e plano: https://claude.ai/artifact/F3ZUSQycAH595tWxzjQSVm) ----------
+  // Cada jogador tem 6 atributos de 20 a 99 em `p.at` (na ordem de AT.keys: linha L, goleiro G). O geral (`p.ovr`) segue
+  // mandando: os atributos são o geral aberto pelo perfil da posição (`prof`), pelo jeito do jogador (um sorteio preso ao
+  // id de origem, que não gasta o sorteio do elenco) e, no jogador real, pelos números da ESPN; no fim a média com o peso
+  // da posição (`w`) dá o geral. `S.coAttrs(p)` devolve os 6: cria para quem não tem (save antigo) e reacerta quando o
+  // geral mudou (evolução de fim de temporada, sem clube do mercado). Fase 1: nada do jogo lê os atributos ainda.
+  const AT = S.CO_AT = {
+    keys: { L: ['fin', 'pas', 'dri', 'def', 'vel', 'fis'], G: ['ref', 'col', 'sai', 'mao', 'pes', 'pen'] },
+    names: { fin: 'Finalização', pas: 'Passe', dri: 'Drible', def: 'Defesa', vel: 'Velocidade', fis: 'Físico', ref: 'Reflexo', col: 'Colocação', sai: 'Saída do gol', mao: 'Mãos', pes: 'Pés', pen: 'Pênalti' },
+    short: { fin: 'FIN', pas: 'PAS', dri: 'DRI', def: 'DEF', vel: 'VEL', fis: 'FIS', ref: 'REF', col: 'COL', sai: 'SAI', mao: 'MÃO', pes: 'PÉS', pen: 'PEN' },
+    // Quanto cada atributo fica acima ou abaixo do geral, pela posição
+    prof: { ZAG: [-24, -6, -12, 6, -3, 5], LAT: [-16, -1, -3, 1, 6, 1], MEI: [-6, 6, 3, -8, -1, -3], ATA: [6, -6, 3, -30, 4, 0], GOL: [2, 1, -2, 0, -8, -3] },
+    // Peso de cada atributo no geral (soma 100)
+    w: { ZAG: [0, 15, 0, 45, 15, 25], LAT: [5, 20, 10, 25, 25, 15], MEI: [10, 35, 20, 15, 10, 10], ATA: [35, 15, 20, 0, 20, 10], GOL: [30, 25, 15, 15, 10, 5] },
+    dev: 3.2, jeito: 5, min: 20, max: 99,
+    // Jogador real (ESPN): o esperado por jogo na posição (g gols, a assistências, fs faltas sofridas: a mediana real de quem
+    // tem 8+ jogos, medida em 2026-11-10 nos 40 clubes) e quantos pontos vale cada
+    // unidade por jogo acima disso (kG, kA, kF); conv gols por chute (kC pontos); altura em polegadas (kH por polegada); goleiro: sv
+    // defesas por chute no gol (kS pontos)
+    real: { minJ: 8, g: { ATA: 0.17, MEI: 0.05, LAT: 0.03, ZAG: 0.03 }, a: { ATA: 0.08, MEI: 0.04, LAT: 0.04, ZAG: 0.01 }, kG: 40, kA: 55, conv: 0.11, kC: 2, fs: { ATA: 1.3, MEI: 1, LAT: 0.7, ZAG: 0.55 }, kF: 3, h: 71, kH: 0.8, hG: 75, sv: 0.7, kS: 5 },
+  };
+  const atMean = (pos, v) => { const w = AT.w[pos] || AT.w.MEI; let t = 0; for (let i = 0; i < 6; i++) t += v[i] * w[i]; return t / 100; };
+  // Leva a média com peso até o geral (todos sobem ou descem juntos) e arredonda; o acerto fino vai no atributo de maior peso
+  function atFit(pos, v, ovr) {
+    const w = AT.w[pos] || AT.w.MEI;
+    for (let k = 0; k < 4; k++) { const d = ovr - atMean(pos, v); if (Math.abs(d) < 0.05) break; v = v.map(x => clamp(x + d, AT.min, AT.max)); }
+    v = v.map(x => clamp(Math.round(x), AT.min, AT.max));
+    const ord = w.map((x, i) => i).sort((a, b) => w[b] - w[a]);
+    for (let k = 0; k < 40 && Math.round(atMean(pos, v)) !== ovr; k++) {
+      const up = atMean(pos, v) < ovr, i = ord.find(j => w[j] > 0 && (up ? v[j] < AT.max : v[j] > AT.min));
+      if (i === undefined) break; v[i] += up ? 1 : -1;
+    }
+    return v;
+  }
+  // real = { x: linha do elenco real (… jogos de titular, entradas, gols, assistências, chutes, faltas sofridas, altura em
+  // polegadas, peso, defesas, gols sofridos), k: peso de 0 a 1 (some com as temporadas do jogo) }
+  function mkAttrs(p, seed, real) {
+    const pos = AT.prof[p.pos] ? p.pos : 'MEI', r = S.rng(hash(seed + '|at')), pr = AT.prof[pos];
+    const v = pr.map(d => p.ovr + d + r.gauss() * AT.dev);
+    // O jeito do jogador: um atributo puxado para cima e outro para baixo
+    const up = r.int(0, 5), dn = (up + r.int(1, 5)) % 6; v[up] += AT.jeito; v[dn] -= AT.jeito;
+    if (pos === 'GOL') { if (p.age >= 34) v[2] -= (p.age - 33) * 1.5; if (p.age <= 22) v[1] -= 2; }
+    else { if (p.age >= 31) v[4] -= (p.age - 30) * 2; if (p.age >= 33) v[5] -= (p.age - 32); if (p.age <= 20) { v[5] -= 3; v[4] += 2; } }
+    const x = real && real.x, R = AT.real, k = (real && real.k) || 0;
+    if (x && x.length > 7 && k > 0) {
+      const j = x[5] + 0.5 * x[6], pull = (val, exp, per, lo, hi) => clamp((val - exp) * per, lo, hi) * k; // pontos por gol (ou passe) a mais por jogo que o esperado na posição
+      if (pos === 'GOL') {
+        if (x[13] + x[14] >= 20) v[0] += clamp((x[13] / (x[13] + x[14]) - R.sv) * 40, -1, 1) * R.kS * k;
+        if (x[11] > 0) v[2] += clamp((x[11] - R.hG) * R.kH, -3, 3) * k;
+      } else {
+        if (j >= R.minJ) {
+          // Finalização e Passe de quem tem jogos de verdade saem do número real, não do sorteio
+          v[0] = p.ovr + pr[0] + (v[0] - p.ovr - pr[0]) * (1 - k);
+          v[1] = p.ovr + pr[1] + (v[1] - p.ovr - pr[1]) * (1 - k);
+          v[0] += pull(x[7] / j, R.g[pos], R.kG, -6, 13);
+          v[1] += pull(x[8] / j, R.a[pos], R.kA, -5, 11);
+          v[2] += pull(x[10] / j, R.fs[pos], R.kF, -3, 4);
+          if (x[9] >= 15) v[0] += clamp((x[7] / x[9] - R.conv) / R.conv, -1, 1) * R.kC * k;
+        }
+        if (x[11] > 0) v[5] += clamp((x[11] - R.h) * R.kH, -4, 5) * k;
+      }
+    }
+    return atFit(pos, v, p.ovr);
+  }
+  S.coAtKeys = p => AT.keys[p.pos === 'GOL' ? 'G' : 'L'];
+  S.coAtMean = p => atMean(AT.w[p.pos] ? p.pos : 'MEI', S.coAttrs(p));
+  S.coAttrs = function (p) {
+    const pos = AT.w[p.pos] ? p.pos : 'MEI';
+    if (!Array.isArray(p.at) || p.at.length !== 6 || p.at.some(v => typeof v !== 'number' || v !== v)) p.at = mkAttrs(p, p.id + '|' + p.n + '|' + p.pos, null);
+    else if (Math.round(atMean(pos, p.at)) !== p.ovr) { const d = p.ovr - atMean(pos, p.at); p.at = atFit(pos, p.at.map(v => v + d), p.ovr); }
+    return p.at;
+  };
   // Elenco de um clube na temporada: os mais fortes perto da força do clube, o banco abaixo, os garotos mais abaixo
   // Elencos reais (tools/craque_api_elencos.py gera src/real-squads.js): nome, idade, posição e número de verdade;
   // a força segue a conta do sorteado (força do clube, ordem na posição, idade). Quem passa de 37 anos ou falta numa
@@ -219,7 +293,7 @@
         const o = L[k], j = S.rng(hash((o ? o.x[0] : club.id + pos + k) + '|' + season + '|f'));
         const age = o ? o.age : r.int(17, 20), young = !o || age <= 20;
         const ovr = s + 2.5 - 8 * (k / Math.max(1, n - 1)) + j.gauss() * 2.5 - (young ? 6 : 0) - (age >= 33 ? 2 : 0);
-        const p = mkPlayer(j, club, pos, ovr, age, o ? 'r:' + o.x[0] : club.id + ':' + season + ':' + out.length, cty);
+        const p = mkPlayer(j, club, pos, ovr, age, o ? 'r:' + o.x[0] : club.id + ':' + season + ':' + out.length, cty, o ? { x: o.x, k: Math.max(0, 1 - season * 0.25) } : null);
         if (o) { p.n = o.x[1]; p.api = o.x[0]; if (o.x[4] >= 1 && o.x[4] <= 99) p.num = o.x[4]; }
         out.push(p);
       }

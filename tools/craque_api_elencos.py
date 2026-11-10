@@ -189,12 +189,15 @@ def cmd_espn(ligas):
                 st = {}
                 for cat in ((a.get('statistics') or {}).get('splits') or {}).get('categories', []):
                     for x in cat.get('stats', []):
-                        if x['name'] in ('appearances', 'subIns', 'totalGoals', 'goalAssists'):
+                        if x['name'] in ('appearances', 'subIns', 'totalGoals', 'goalAssists', 'totalShots', 'foulsSuffered', 'saves', 'goalsConceded'):
                             st[x['name']] = int(x.get('value') or 0)
                 pl.append({'id': a['id'], 'name': a.get('displayName'), 'short': a.get('shortName'), 'age': a.get('age'),
                            'num': int(a['jersey']) if str(a.get('jersey') or '').isdigit() else 0,
                            'pos': (a.get('position') or {}).get('abbreviation'), 'cty': a.get('citizenship'),
-                           'app': st.get('appearances', 0), 'sub': st.get('subIns', 0), 'g': st.get('totalGoals', 0), 'a': st.get('goalAssists', 0)})
+                           'app': st.get('appearances', 0), 'sub': st.get('subIns', 0), 'g': st.get('totalGoals', 0), 'a': st.get('goalAssists', 0),
+                           # para os atributos (coach.js, mkAttrs): chutes, faltas sofridas, altura (polegadas), peso (libras), defesas e gols sofridos
+                           'sh': st.get('totalShots', 0), 'fs': st.get('foulsSuffered', 0), 'h': int(a.get('height') or 0), 'w': int(a.get('weight') or 0),
+                           'sv': st.get('saves', 0), 'gc': st.get('goalsConceded', 0)})
             save(os.path.join(EDIR, '%s.json' % cid), {'t': int(time.time()), 'lg': lg, 'team': t['id'], 'players': pl})
             print('  %-22s %2d jogadores' % (nm, len(pl)))
             time.sleep(0.5)
@@ -210,14 +213,17 @@ def short(n):
 
 
 def squads():
-    """Por clube: lista de [id com fonte, nome, idade, posição, número, titular, entrou] (titular/entrou -1 sem números)."""
+    """Por clube: lista de [id com fonte, nome, idade, posição, número, titular, entrou, e da ESPN gols, assistências, chutes,
+    faltas sofridas, altura, peso, defesas, gols sofridos] (titular/entrou -1 sem números)."""
     ids = load(os.path.join(DIR, 'ids.json'), {})
     data = {}
     for cid, name, lg, st, c in clubs():
         e = load(os.path.join(EDIR, '%s.json' % cid))
         if e and len(e['players']) >= 16:
             data[cid] = (e['t'], [['e%s' % p['id'], short(p['name'] if len(p['name'] or '') <= 18 else p['short']), p['age'] or 25,
-                                   POS.get(p['pos']), p['num'], p['app'] - p['sub'], p['sub']] for p in e['players']])
+                                   POS.get(p['pos']), p['num'], p['app'] - p['sub'], p['sub']] +
+                                  ([p['g'], p['a'], p['sh'], p['fs'], p['h'], p['w'], p['sv'], p['gc']] if 'sh' in p else [])
+                                  for p in e['players']])
             continue
         d = cid in ids and load(os.path.join(SQ, '%d.json' % ids[cid]))
         if d and len(d['players']) >= 16:
@@ -245,10 +251,11 @@ def cmd_gerar():
             if len(lat) >= want:
                 break
             r[3] = 'LAT'; lat.append(r)
-        out[cid] = [r[:5] + ([r[5], r[6]] if r[5] >= 0 else []) for r in rows]
+        out[cid] = [r[:5] + (r[5:] if r[5] >= 0 else []) for r in rows]
         tot += len(rows)
     js = ('// Gerado por tools/craque_api_elencos.py (ESPN e API-Football, elenco atual de cada clube). Não edite à mão.\n'
-          '// Por clube do jogo: [id com a fonte (e ESPN, a API-Football), nome, idade, posição, número, jogos como titular, entradas].\n'
+          '// Por clube do jogo: [id com a fonte (e ESPN, a API-Football), nome, idade, posição, número, jogos como titular, entradas,\n'
+          '// e da ESPN, para os atributos: gols, assistências, chutes, faltas sofridas, altura (pol), peso (lb), defesas, gols sofridos].\n'
           '// A força é calculada pelo jogo (coach.js): quem mais começa jogando fica com a maior.\n'
           '(function (root) {\n  root.CRAQUE_REAL = { t: %d, clubs: %s };\n'
           "  if (typeof module !== 'undefined') module.exports = root.CRAQUE_REAL;\n"
