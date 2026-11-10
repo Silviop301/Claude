@@ -233,7 +233,7 @@
     if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao() : patrocinio();
     c.save('hub');
     const tut = tutStep(co);
-    const popped = !tut && (inboxPop(co, semana) || lostPop(co));
+    const popped = !tut && (inboxPop(co, semana) || lostPop(co) || obraPop(co));
     if (!tut && !popped && !ctWarn(co)) finNews(co);
     // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
     const inN = tut ? 0 : S.coMktInbox(co).filter(o => !o.seen).length - (popped ? 1 : 0);
@@ -910,35 +910,126 @@
       st.querySelector('#es-go').onclick = () => { if (sel === P.now) return; sfx('win'); S.coEstPrice(co, sel); c.save(); ingresso(); };
     });
   }
+  // Estádio (fases 1 a 3): o desenho com os 4 setores, a torcida, a casa cheia (ou a obra andando), o Ingresso e o
+  // dourado Ampliar (com obra: Acelerar com moedas)
+  function estDraw(pn, e, cl, o) {   // o = { obra, prev, wPad, hPad, dxExtra }
+    const W = pn.clientWidth, H = pn.clientHeight, d = U.EST.depth; if (!W || !H) return null;
+    const up = o.obra || o.prev, lv = e.lv, lf = up ? Object.assign({}, lv, { [up]: Math.min(5, lv[up] + 1) }) : lv;   // o setor em obra ou na prévia já ocupa o tamanho novo
+    const k = estFit(lf, W - o.wPad, H - o.hPad, 1), roof = x => (lf[x] >= 4 ? 3.5 * k : 0);
+    const R = U.EST.svg({ w: W, h: H, k, dx: (d[lf.n] - d[lf.s]) * k / 2 + (o.dx || 0), dy: (d[lf.a] - d[lf.so]) * k / 2, lv, occ: e.occ || EST_OCC0, cols: estCols(cl), gram: 1, seed: estSeed(cl.id), obra: o.obra, prev: o.prev });
+    R.dep = x => d[lf[x]] * k + roof(x); R.W = W; R.H = H;
+    return R;
+  }
   function estadio() {
-    const c = C(), co = c.co, cl = club(co.club), e = S.coEst(co), E = S.CO_EST, cap = S.coEstCap(e), hi = S.coEstHumIdx(e.hum), cls = estCls(e);
+    const c = C(), co = c.co, cl = club(co.club), e = S.coEst(co), E = S.CO_EST, ob = e.obra, cap = ob ? S.coEstOpen(e) : S.coEstCap(e), hi = S.coEstHumIdx(e.hum), cls = estCls(e);
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
-    const h = e.h || [], full = h.filter(g => g.pub >= g.cap * E.full).length, last = h[h.length - 1], why = S.coEstWhy(co);
-    const vsO = id => { const t = window.CRAQUE_DATA.O(club(id).name); return t.charAt(0).toLowerCase() + t.slice(1); };
+    const h = e.h || [], full = h.filter(g => g.pub >= g.cap * E.full).length, why = S.coEstWhy(co);
+    const allMax = E.keys.every(k => e.lv[k] >= 5), rush = ob ? S.coEstRushLeft(co) : 0, RC = E.obra.rushCoins;
     const pips = n => '<span class="es-pp">' + [1, 2, 3, 4, 5].map(i => '<i' + (i <= n ? ' class="on"' : '') + '></i>').join('') + '</span>';
-    const lb = (k, cc, pos) => '<div class="es-lb ' + cc + '" style="' + pos + '"><small>' + E.names[k].toUpperCase() + '</small>' + pips(e.lv[k]) + '<b>' + milK(S.coEstSeats(k, e.lv[k])) + '</b></div>';
-    show('<div class="es"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>' + esc(S.coEstName(cl.id) || 'Estádio') + '</b><small>' + esc(cl.name) + ' · ' + milK(cap) + ' lugares</small>' +
+    const lb = (k, cc, pos) => '<div class="es-lb ' + cc + '" style="' + pos + '">' + (ob && ob.k === k ? '<small class="ob">EM OBRA</small>' + pips(e.lv[k]) + '<b>fechado</b>' : '<small>' + E.names[k].toUpperCase() + '</small>' + pips(e.lv[k]) + '<b>' + milK(S.coEstSeats(k, e.lv[k])) + '</b>') + '</div>';
+    show('<div class="es"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>' + esc(S.coEstName(cl.id) || 'Estádio') + '</b><small>' + esc(cl.name) + ' · ' + milK(cap) + (ob ? ' lugares abertos' : ' lugares') + '</small>' +
         '<span class="es-top"><button class="es-q" id="es-q" aria-label="Como funciona">?</button></span></div>' +
       '<div class="es-pn" id="es-pn"></div>' +
       '<div class="es-side">' +
         '<div class="es-k t"><small>TORCIDA</small><b class="' + cls + '">' + S.coEstHum(e) + '</b><span class="es-dd ' + cls + '">' + [0, 1, 2, 3, 4].map(i => '<i' + (i <= hi ? ' class="on"' : '') + '></i>').join('') + '</span>' + (why ? '<em>' + esc(why) + '</em>' : '') + '</div>' +
-        '<div class="es-k"><small>CASA CHEIA</small>' + (h.length ? '<div class="es-ch"><b>' + full + '<u>de ' + h.length + (h.length > 1 ? ' jogos' : ' jogo') + '</u></b><span class="es-bars">' + h.map(g => '<i class="' + (g.pub >= g.cap * E.full ? 'f' : '') + '" style="height:' + Math.max(8, Math.round(g.pub / g.cap * 100)) + '%"></i>').join('') + '</span></div>' : '<em>nenhum jogo em casa ainda</em>') + '</div>' +
-        '<div class="es-k"><small>ÚLTIMO PÚBLICO</small>' + (last ? '<b>' + milK(last.pub) + '</b><em>contra ' + esc(vsO(last.vs)) + '</em>' : '<em>a estreia em casa ainda não chegou</em>') + '</div>' +
+        (ob ? '<div class="es-k"><small>OBRA · ' + E.names[ob.k].toUpperCase() + '</small><div class="es-ch"><b>' + ob.left + '<u>' + (ob.left > 1 ? 'rodadas' : 'rodada') + '</u></b><span class="es-dd ob">' + Array.from({ length: ob.tot }, (_, i) => '<i' + (i < ob.tot - ob.left ? ' class="on"' : '') + '></i>').join('') + '</span></div></div>'
+          : '<div class="es-k"><small>CASA CHEIA</small>' + (h.length ? '<div class="es-ch"><b>' + full + '<u>de ' + h.length + (h.length > 1 ? ' jogos' : ' jogo') + '</u></b><span class="es-bars">' + h.map(g => '<i class="' + (g.pub >= g.cap * E.full ? 'f' : '') + '" style="height:' + Math.max(8, Math.round(g.pub / g.cap * 100)) + '%"></i>').join('') + '</span></div>' : '<em>nenhum jogo em casa ainda</em>') + '</div>') +
         '<button class="tm-b" id="es-ing">Ingresso<small>' + E.price.names[e.pr].toLowerCase() + '</small></button>' +
+        (ob ? '<button class="tm-b es-rush' + (rush ? '' : ' off') + '" id="es-rush">' + (rush ? (U.COINS ? U.COINS.svg : '') + 'Acelerar · ' + RC : 'Obra no ritmo máximo') + '</button>'
+          : '<button class="tm-go' + (allMax ? ' off' : '') + '" id="es-amp">' + (allMax ? 'Estádio completo' : 'Ampliar') + '</button>') +
       '</div></div>', st => {
       st.querySelector('#es-ing').onclick = () => { sfx('tap'); ingresso(); };
       st.querySelector('#es-back').onclick = () => { sfx('tap'); clube(); };
-      st.querySelector('#es-q').onclick = () => { sfx('tap'); mkHelp('', 'Os pontinhos são o público do último jogo em casa. A torcida se empolga com vitória, ainda mais em casa e em clássico. Torcida empolgada enche o estádio e empurra o time em casa; revoltada, pesa contra. Obras e melhorias chegam nas próximas atualizações.'); };
-      const pn = st.querySelector('#es-pn'), W = pn.clientWidth, H = pn.clientHeight, d = U.EST.depth, lv = e.lv;
-      if (!W || !H) return;
-      const k = estFit(lv, W - 216, H - 84, 1), roof = x => (lv[x] >= 4 ? 3.5 * k : 0);
-      const R = U.EST.svg({ w: W, h: H, k, dx: (d[lv.n] - d[lv.s]) * k / 2, dy: (d[lv.a] - d[lv.so]) * k / 2, lv, occ: e.occ || EST_OCC0, cols: estCols(cl), gram: 1, seed: estSeed(cl.id) });
-      const { px, py, pw, ph, gap } = R, dep = x => d[lv[x]] * k + roof(x);
+      st.querySelector('#es-q').onclick = () => { sfx('tap'); mkHelp('', 'Os pontinhos são o público do último jogo em casa. Torcida empolgada enche o estádio e empurra o time em casa; revoltada, pesa contra. Ampliar fecha o setor durante a obra e ele reabre maior: vale a pena quando a casa vive cheia. Quem aprova a obra é a diretoria.'); };
+      const amp = st.querySelector('#es-amp'); if (amp) amp.onclick = () => { if (allMax) return; sfx('tap'); ampliar(); };
+      const rb = st.querySelector('#es-rush'); if (rb) rb.onclick = () => { if (!rush) return; sfx('tap'); obraRush(); };
+      const pn = st.querySelector('#es-pn'), R = estDraw(pn, e, cl, { obra: ob ? ob.k : null, wPad: 216, hPad: 84 });
+      if (!R) return;
+      const { px, py, pw, ph, gap, dep, W } = R;
       pn.innerHTML = R.svg +
         lb('a', '', 'left:' + (px + pw / 2) + 'px;top:' + (py - gap - dep('a') - 30) + 'px;transform:translateX(-50%)') +
         lb('so', '', 'left:' + (px + pw / 2) + 'px;top:' + (py + ph + gap + dep('so') + 10) + 'px;transform:translateX(-50%)') +
         lb('n', 'v l', 'right:' + (W - (px - gap - dep('n')) + 12) + 'px;top:' + (py + ph / 2) + 'px;transform:translateY(-50%)') +
         lb('s', 'v r', 'left:' + (px + pw + gap + dep('s') + 12) + 'px;top:' + (py + ph / 2) + 'px;transform:translateY(-50%)');
+    });
+  }
+  // Janelinhas da obra (a mesma da resposta do clube no mercado): a diretoria aprova ou recusa, e a obra fica pronta
+  function obraBox(o) {
+    pop('<div class="mkx"><div class="mkx-h"><i class="mkx-fc im' + (o.cr ? ' cr' : '') + '">' + o.img + '</i><span><small>' + o.sm + '</small><b class="' + o.cls + '">' + o.w + '</b></span></div>' +
+      '<p>' + o.line + '</p><div class="mkx-li">' + o.rows.map(r => '<div><span>' + r[0] + '</span><b class="' + (r[2] || '') + '">' + r[1] + '</b></div>').join('') + '</div>' +
+      '<span class="rs-gap"></span><span class="mkx-b"><button class="hl-btn gold" id="ob-a">' + o.b1 + '</button>' + (o.b2 ? '<button class="hl-btn dark" id="ob-b">' + o.b2 + '</button>' : '') + '</span></div>', o.w, w => {
+      w.querySelector('#ob-a').onclick = () => { sfx('tap'); closePop(); if (o.on1) o.on1(); };
+      if (o.b2) w.querySelector('#ob-b').onclick = () => { sfx('tap'); closePop(); if (o.on2) o.on2(); };
+    }, 'hl-pop mkx-pop', true);
+  }
+  function obraPronta(co, d, seeBtn) {
+    const c = C(), E = S.CO_EST, e = S.coEst(co), cap = S.coEstCap(e), add = S.coEstSeats(d.k, d.to) - S.coEstSeats(d.k, d.from), nm = E.names[d.k];
+    obraBox({ img: crest(co.club, 'es-cr'), cr: 1, sm: 'ESTÁDIO · ' + nm.toUpperCase(), cls: 'up', w: 'Obra pronta', line: 'O ' + nm + ' reabre no próximo jogo em casa.',
+      rows: [[nm, milK(S.coEstSeats(d.k, d.from)) + ' → ' + milK(S.coEstSeats(d.k, d.to)), 'up'], ['Estádio', milK(cap - add) + ' → ' + milK(cap), 'up']],
+      b1: seeBtn ? 'Ver o estádio' : 'Fechar', on1: seeBtn ? estadio : null, b2: seeBtn ? 'Fechar' : '' });
+  }
+  // Na volta para a semana: a obra que acabou aparece uma vez
+  function obraPop(co) {
+    if (!S.coEstDone || !S.coEstDone(co) || document.getElementById('ld-pop')) return false;
+    setTimeout(() => { if (document.getElementById('ld-pop')) return; const d = S.coEstDone(co, true); if (!d) return; C().save(); sfx('win'); obraPronta(co, d, true); }, 80);
+    return true;
+  }
+  // Acelerar com moedas: 2 rodadas a menos, até 2 vezes por obra
+  function obraRush() {
+    const c = C(), co = c.co, E = S.CO_EST, e = S.coEst(co), ob = e.obra; if (!ob || !U.COINS) return;
+    const RC = E.obra.rushCoins, saldo = U.COINS.get(), ok = saldo >= RC, n = Math.min(E.obra.rush, ob.left);
+    pop('<div class="acd-help"><b>Acelerar a obra</b><p>' + (n >= ob.left ? 'A obra do ' + E.names[ob.k] + ' fica pronta agora.' : U.D.plural(n, 'rodada', 'rodadas') + ' a menos na obra do ' + E.names[ob.k] + '.') + ' Você tem ' + U.D.plural(saldo, 'moeda', 'moedas') + '.</p>' +
+      '<button class="hl-btn gold" id="ob-y">' + (ok ? 'Acelerar · ' + RC + ' moedas' : 'Faltam ' + (RC - saldo) + ' moedas') + '</button><button class="hl-btn line" data-pop-x>Agora não</button></div>', 'Acelerar a obra', w => {
+      w.querySelector('#ob-y').onclick = () => {
+        if (!ok) { sfx('tap'); closePop(); return loja(0, estadio); }
+        if (!U.COINS.spend(RC, 'Obra: ' + E.names[ob.k])) return;
+        if (!S.coEstRush(co)) { U.COINS.add({ n: RC, t: 'Obra devolvida' }); return; }
+        sfx('win'); const d = S.coEstDone(co, true); c.save(); closePop(); estadio(); if (d) obraPronta(co, d, false);
+      };
+    }, 'hl-pop acd-pop tm-pop');
+  }
+  // Ampliar (fase 3): um setor por vez. O desenho mostra a prévia, a régua os 5 níveis; à direita o jeito de fazer, as
+  // parcelas e o pedido à diretoria, que aprova ou recusa na hora
+  function ampliar(k, mode, x) {
+    const c = C(), co = c.co, cl = club(co.club), e = S.coEst(co), E = S.CO_EST;
+    if (e.obra) return estadio();
+    const open = E.keys.filter(q => e.lv[q] < 5); if (!open.length) return estadio();
+    if (!k || open.indexOf(k) < 0) k = open.map(q => S.coEstPlan(co, q)).sort((a, b) => a.modes[1].cost - b.modes[1].cost)[0].k;   // começa pelo setor mais barato
+    const P = S.coEstPlan(co, k); mode = mode || 'nor'; x = Math.min(x || 1, P.payMax);
+    const M = P.modes.find(o => o.id === mode), cols = estCols(cl);
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', FW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+    const cell = i => '<div class="' + (i === P.from ? 'now' : i === P.to ? 'nx' : '') + '">' + U.EST.slice(i, 86, 30, 0.9, cols, estSeed(cl.id) + i) + '<small>' + E.lvl[i] + '</small><b>' + milK(S.coEstSeats(k, i)) + '</b></div>';
+    const op = o => '<button class="es-op' + (o.id === mode ? ' on' : '') + '" data-md="' + o.id + '"><b>' + o.name + '</b><em>' + c.brl(o.cost) + '</em><small' + (o.risk ? ' class="rk"' : '') + '>' + U.D.plural(o.rounds, 'rodada', 'rodadas') + (o.risk ? ' · pode atrasar' : '') + '</small></button>';
+    show('<div class="es es2"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button><b>Ampliar</b>' +
+        '<span class="es-sel">' + (open.length > 1 ? '<button class="tm-ar" data-sk="-1" aria-label="Setor anterior">' + BK + '</button>' : '') + '<small>' + E.names[k] + ' · nível ' + P.from + ' de 5</small>' + (open.length > 1 ? '<button class="tm-ar" data-sk="1" aria-label="Próximo setor">' + FW + '</button>' : '') + '</span>' +
+        '<span class="es-top">' + cxPill() + '</span></div>' +
+      '<div class="es-pn" id="es-pn"></div>' +
+      '<div class="es-rg">' + [1, 2, 3, 4, 5].map(cell).join('') + '</div>' +
+      '<div class="es-side">' + P.modes.map(op).join('') +
+        '<div class="es-seg">' + [1, 2, 3].map(i => '<button data-x="' + i + '" class="' + (i === x ? 'on' : '') + (i > P.payMax ? ' no' : '') + '">' + (i === 1 ? 'À vista' : i + 'x') + '</button>').join('') + '</div>' +
+        '<button class="tm-go" id="es-go">Pedir à diretoria</button>' +
+      '</div></div>', st => {
+      st.querySelector('#es-back').onclick = () => { sfx('tap'); estadio(); };
+      st.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { sfx('tap'); ampliar(open[(open.indexOf(k) + +b.dataset.sk + open.length) % open.length], mode, x); });
+      st.querySelectorAll('[data-md]').forEach(b => b.onclick = () => { sfx('tap'); ampliar(k, b.dataset.md, x); });
+      st.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.x;
+        if (i > P.payMax) return mkHelp('', 'Este presidente só faz obra à vista.');
+        ampliar(k, mode, i); });
+      st.querySelector('#es-go').onclick = () => {
+        const pres = S.coPres(co), img = presFace(pres, 'es-pf'), sm = 'PRESIDENTE · ' + esc(pres.n).toUpperCase(), nm = E.names[k], r = S.coEstAsk(co, k, mode, x);
+        if (r.ok) {
+          c.save(); sfx('win'); estadio();
+          return obraBox({ img, sm, cls: 'up', w: 'Aprovou a obra', line: 'O ' + nm + ' fecha por ' + U.D.plural(r.rounds, 'rodada', 'rodadas') + ' e reabre com ' + milK(S.coEstSeats(k, P.to)) + ' lugares.' + (P.amb ? ' Ele bancou uma parte.' : ''),
+            rows: [['Sai do caixa agora', c.brl(r.first)]].concat(!r.parts ? [['Fica no caixa', c.brl(S.coFin(co).caixa)]] : [[r.parts > 1 ? 'Mais ' + r.parts + ' parcelas, a 1ª na rodada ' + r.nextR : 'Mais 1 parcela na rodada ' + r.nextR, c.brl(r.part)]]), b1: 'Ver o estádio' });
+        }
+        sfx('tap');
+        const line = r.why === 'vermelho' ? 'Com o caixa no vermelho ele não começa obra nenhuma.' : r.why === 'ultimato' ? 'Com o seu cargo em risco, a diretoria não começa obra.'
+          : r.why === 'folga' ? (x > 1 ? 'Com a entrada e as parcelas pela frente sobraria pouca folga no caixa.' : 'Depois da obra sobraria menos de ' + E.obra.folga + ' semanas de salário no caixa.') + ' Ele libera com ' + c.brl(Math.ceil(r.need / 10000) * 10000) + '.' : 'A diretoria não liberou a obra agora.';
+        obraBox({ img, sm, cls: 'dn', w: 'Recusou a obra', line, rows: [['Custo da obra', c.brl(M.cost)], ['Caixa agora', c.brl(S.coFin(co).caixa), r.why === 'ultimato' ? '' : 'dn']], b1: 'Entendi', b2: 'Finanças', on2: () => financas() });
+      };
+      const pn = st.querySelector('#es-pn'), R = estDraw(pn, e, cl, { prev: k, wPad: 190, hPad: 34, dx: 62 });
+      if (!R) return;
+      pn.innerHTML = R.svg + '<div class="es-co" style="width:' + Math.max(96, Math.round(R.px - R.gap - R.dep('n') - 14)) + 'px"><b>+' + milK(P.add) + '</b><small>lugares</small><b class="s">+' + c.brl(P.perGame) + '</b><small>por jogo cheio</small></div>';
     });
   }
   // ---------- Mercado, lote 1 (2026-11-09, quadros 23, 23b e 24): só olhar; propostas no lote 2 ----------
@@ -1967,6 +2058,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, lift, estadio, ingresso, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato };
+  U.LD = { on, show, off, lift, estadio, ingresso, ampliar, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();

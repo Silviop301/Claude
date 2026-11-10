@@ -88,6 +88,20 @@ async function page(b, first) {
     await click('#es-ing'); await shot('c2b3-ingresso'); await click('[data-pr="3"]'); await shot('c2b4-ingresso-caro'); await click('#es-go');
     { const r = await p.evaluate(() => ({ pr: window.CRAQUE_SIM.coEst(window.CRAQUE_UI._co.co).pr, off: !!document.querySelector('#es-go.off') })); if (r.pr !== 3 || !r.off) errs.push('ingresso: ' + JSON.stringify(r)); }
     await click('[data-pr="2"]'); await click('#es-go'); await click('#es-back');
+    // Ampliar (fase 3): com o caixa curto a diretoria recusa; com o caixa cheio aprova, o setor fecha e o dourado vira Acelerar.
+    // No fim a obra é desfeita para o resto do passeio seguir igual
+    await click('#es-amp'); await shot('c2b5-ampliar');
+    { const r = await p.evaluate(() => { const st = document.querySelector('.es2'); return { rg: st ? st.querySelectorAll('.es-rg > div').length : 0, op: st ? st.querySelectorAll('.es-op').length : 0, svg: !!document.querySelector('#es-pn svg'), co: !!document.querySelector('.es-co') }; }); if (r.rg !== 5 || r.op !== 3 || !r.svg || !r.co) errs.push('ampliar: ' + JSON.stringify(r)); }
+    const cx0 = await p.evaluate(() => { const f = window.CRAQUE_UI._co.co.fin, v = [f.caixa, f.ss.obra || 0]; f.caixa = 1000; return v; });
+    await click('#es-go'); await shot('c2b6-obra-recusada');
+    { const r = await p.evaluate(() => ({ no: !!document.querySelector('.mkx b.dn'), obra: !!window.CRAQUE_SIM.coEst(window.CRAQUE_UI._co.co).obra })); if (!r.no || r.obra) errs.push('obra recusada: ' + JSON.stringify(r)); }
+    await click('#ob-a'); await p.evaluate(() => { window.CRAQUE_UI._co.co.fin.caixa = 9e8; }); await click('#es-go'); await shot('c2b7-obra-aprovada');
+    { const r = await p.evaluate(() => ({ ok: !!document.querySelector('.mkx b.up'), obra: !!window.CRAQUE_SIM.coEst(window.CRAQUE_UI._co.co).obra })); if (!r.ok || !r.obra) errs.push('obra aprovada: ' + JSON.stringify(r)); }
+    await click('#ob-a'); await shot('c2b8-estadio-em-obra');
+    { const r = await p.evaluate(() => ({ lb: !!document.querySelector('.es-lb small.ob'), rush: !!document.querySelector('#es-rush'), amp: !!document.querySelector('#es-amp') })); if (!r.lb || !r.rush || r.amp) errs.push('estádio em obra: ' + JSON.stringify(r)); }
+    await click('#es-rush'); await shot('c2b9-acelerar'); await click('[data-pop-x]');
+    await p.evaluate(v => { const U = window.CRAQUE_UI, co = U._co.co, e = window.CRAQUE_SIM.coEst(co); e.obra = null; e.pay = null; co.fin.caixa = v[0]; co.fin.ss.obra = v[1]; U._co.save('hub'); U.LD.estadio(); }, cx0);
+    await p.waitForTimeout(300);
     await click('#es-back'); await click('#ldk-go'); await shot('c2c-financas-decidir');
     // Loja: aporte (fase 3) e pacotes
     await p.evaluate(() => window.CRAQUE_UI.COINS.add({ n: 100, t: 'teste' })); await click('#fn2-apo'); await shot('c2l-loja-aporte'); await click('#lj-p'); await click('#lj-p'); await shot('c2l2-aporte-3'); await click('#lj-ap'); await shot('c2l3-aporte-feito');

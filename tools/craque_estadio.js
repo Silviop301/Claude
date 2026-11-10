@@ -1,4 +1,4 @@
-// Estádio do Treinador (engine/coachest.js, fases 1 e 2: público, humor da torcida e ingresso): confere as regras que não podem quebrar.
+// Estádio do Treinador (engine/coachest.js, fases 1 a 3: público, humor da torcida, ingresso e obras): confere as regras que não podem quebrar.
 // Uso (na raiz): node tools/craque_estadio.js [carreiras] [temporadas]      (padrão 30 e 5). Esperado: "0 alertas".
 //
 // O que confere:

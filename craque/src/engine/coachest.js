@@ -284,6 +284,9 @@
     skip0(co);
     if (e) obraTick(co, e, 1);
   };
+  // A parcela da obra aparece em Finanças, aba A seguir
+  const next0 = S.coFinNext;
+  if (next0) S.coFinNext = function (co) { const out = next0(co), e = co.club && co.est ? co.est[co.club] : null; if (e && e.pay && out) out.push({ k: 'obra', txt: 'Parcela da obra · ' + (e.pay.k > 1 ? 'faltam ' + e.pay.k : 'última'), v: -e.pay.v }); return out; };
   // Trocou de clube com obra andando: o clube antigo termina a obra e fica com as parcelas
   const sign0 = S.coSign;
   S.coSign = function (co, id) {
