@@ -8986,7 +8986,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 
 /* Conta deitada (2026-11-10, quadro 54): cartão creme à esquerda (Entrar/Criar conta, senha, primeiro acesso ou a conta
    aberta) e a coluna de apoio à direita (Google, esqueci a senha, formas de entrar, sair, reiniciar). ui/cloud.js land() */
-.ct { width: 100%; flex: 1; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 44px minmax(0, 1fr); gap: 10px 16px; color: #F3F1EA; }
+.cnta { width: 100%; flex: 1; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 44px minmax(0, 1fr); gap: 10px 16px; color: #F3F1EA; }
 .ct-lg { margin-left: auto; display: flex; gap: 18px; }
 .ct-lg a { font: 700 15px/44px var(--body); color: #9fb0a6; text-decoration: underline; text-underline-offset: 3px; }
 .ct-card { border-radius: 18px; background: #F8F4EA; color: #13201A; padding: 18px; box-sizing: border-box; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
@@ -9030,7 +9030,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 .ct-way small { font: 700 14px/1 var(--body); color: #B9C9BF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ct-ways.many .ct-way > span:not(.prov-ico) { flex-direction: row; align-items: baseline; gap: 8px; }
 .ld-st button.ct-lk { height: 44px; flex: none; padding: 0 4px 0 12px !important; font: 700 16px/1 var(--body); color: var(--gold) !important; }
-.ct.ct-wait { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.cnta.ct-wait { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
 .ct-wait b { font: 800 34px/1 var(--display); } .ct-wait small { font: 600 17px/1 var(--body); color: #B9C9BF; }
 
 /* Sua opinião deitada (2026-11-10, quadro 55): à esquerda as carinhas, os 6 assuntos do Treinador e Sim/Talvez/Não; à

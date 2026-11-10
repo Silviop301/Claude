@@ -146,7 +146,7 @@
       done(); screen('login', 'Esse login começou em outro navegador ou expirou. Toque de novo em "Continuar com…" aqui.'); return true;
     }
     G.c = null; G.step = null; bar();
-    if (LAND()) U.LD.show('<div class="ct ct-wait"><b>Entrando…</b><small>Conferindo com o ' + esc(pname(p)) + '.</small></div>', null, 'O Climbix é jogado com o celular deitado.');
+    if (LAND()) U.LD.show('<div class="cnta ct-wait"><b>Entrando…</b><small>Conferindo com o ' + esc(pname(p)) + '.</small></div>', null, 'O Climbix é jogado com o celular deitado.');
     else render('<div class="eyebrow">Conta</div><h2>Entrando…</h2><p class="muted">Conferindo com o ' + esc(pname(p)) + '.</p>');
     const code = m[2], a = acc();
     if (o.link && a) {
@@ -196,9 +196,9 @@
   const goBack = () => (backFn || U.home)();
   const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
   function land(backId, sub, card, side) {
-    U.LD.show('<div class="ct"><div class="tm-h"><button class="tcr-back" id="' + backId + '" aria-label="Voltar">' + BK + '</button><b>Conta</b>' + (sub ? '<small>' + sub + '</small>' : '') +
+    U.LD.show('<div class="cnta"><div class="tm-h"><button class="tcr-back" id="' + backId + '" aria-label="Voltar">' + BK + '</button><b>Conta</b>' + (sub ? '<small>' + sub + '</small>' : '') +
       '<span class="ct-lg"><a href="privacidade.html" target="_blank" rel="noopener">Privacidade</a><a href="termos.html" target="_blank" rel="noopener">Termos</a></span></div>' +
-      '<div class="ct-card">' + card + '</div><div class="ct-side">' + side + '</div></div>', st => { if (U.LD.lift) U.LD.lift(st.querySelector('.ct')); }, 'O Climbix é jogado com o celular deitado.');
+      '<div class="ct-card">' + card + '</div><div class="ct-side">' + side + '</div></div>', st => { if (U.LD.lift) U.LD.lift(st.querySelector('.cnta')); }, 'O Climbix é jogado com o celular deitado.');
   }
   const lmsg = (msg, ok) => '<p class="ct-msg' + (ok ? ' ok' : '') + '" role="status">' + (msg ? esc(msg) : '') + '</p>';
   const lfield = (id, label, attrs) => '<input class="ct-in" id="' + id + '" placeholder="' + label + '" aria-label="' + label + '" ' + attrs + ' required>';
