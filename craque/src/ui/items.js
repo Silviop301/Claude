@@ -294,32 +294,69 @@
     const ra = (a.prof || {}).co, rb = (b.prof || {}).co;
     if (prof && (ra || rb)) { const mx = k => Math.max((ra || {})[k] || 0, (rb || {})[k] || 0);
       prof.co = { t: mx('t'), v: mx('v'), s: mx('s'), last: ((newer.prof || {}).co || {}).last || (ra || {}).last || (rb || {}).last || null }; }
-    // Moedas: saldo e log do salvo mais recente; times comprados e prêmios de uma vez de qualquer aparelho
-    const ca = a.coins || {}, cb = b.coins || {}, cn = newer.coins || a.coins || b.coins;
-    const coins = cn ? Object.assign({}, cn, { clubs: Object.assign({}, ca.clubs, cb.clubs), once: Object.assign({}, ca.once, cb.once) }) : undefined;
+    // Moedas (2026-11-10, as 120 do Silvio sumiram): o saldo NÃO vem mais do salvo mais recente. Cada aparelho soma o que
+    // ganhou e gastou na sua conta (`dv`), os prêmios de uma vez guardam o valor (`once`), e juntar é pegar o maior de cada:
+    // nada ganho num aparelho se perde por ter jogado depois em outro. Só o log vem do mais recente.
+    const ca = coinNorm(a.coins), cb = coinNorm(b.coins), cn = coinNorm(newer.coins) || ca || cb;
+    let coins;
+    if (cn) {
+      const dv = {}, once = {};
+      [ca, cb].forEach(c => { if (!c) return;
+        Object.keys(c.dv).forEach(k => { const x = c.dv[k], y = dv[k] || [0, 0]; dv[k] = [Math.max(y[0], x[0] || 0), Math.max(y[1], x[1] || 0)]; });
+        Object.keys(c.once).forEach(k => { once[k] = Math.max(once[k] || 0, c.once[k] || 0); }); });
+      coins = coinSum(Object.assign({}, cn, { dv, once, clubs: Object.assign({}, (ca || {}).clubs, (cb || {}).clubs) }));
+    }
     return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news), days }, prof ? { prof } : {}, coins ? { coins } : {});
   }
 
   // ---------- moedas da conta (2026-11-09, Silvio: moedas e dinheiro do clube) ----------
-  // { n: saldo, got: total ganho, log: [{ n, t, at }] (os 20 últimos), once: { chave: 1 } (prêmio de uma vez só) }
-  // Valem em todas as carreiras; as pagas (fase 5) vão ficar no servidor, estas são as ganhas jogando
-  const wallet = () => { const o = get(); if (!o.coins || typeof o.coins.n !== 'number') o.coins = { n: 0, got: 0, log: [], once: {} }; o.coins.once = o.coins.once || {}; o.coins.clubs = o.coins.clubs || {}; return o.coins; };
+  // { v: 2, n: saldo, got: total ganho, log: [{ n, t, at }] (os 20 últimos), clubs, e as duas contas que valem na hora de juntar aparelhos:
+  //   dv: { aparelho: [ganhou, gastou] }   o que cada aparelho somou (a chave `old` é o saldo de antes de 2026-11-10)
+  //   once: { chave: valor }               prêmio de uma vez só (compra `pay-<ref>`, 1ª temporada); 0 = já estava dentro do saldo antigo
+  // n e got são sempre recalculados dessas contas (coinSum); `merge` pega o maior de cada uma.
+  const DEV = (() => { try { let d = localStorage.getItem('climbix-dev'); if (!d) { d = Math.random().toString(36).slice(2, 10); localStorage.setItem('climbix-dev', d); } return d; } catch (e) { return 'x'; } })();
+  function coinNorm(c) {
+    if (!c || typeof c.n !== 'number') return null;
+    if (c.v === 2 && c.dv) { c.once = c.once || {}; c.clubs = c.clubs || {}; return c; }
+    const got = Math.max(c.got || 0, c.n || 0), once = {};
+    Object.keys(c.once || {}).forEach(k => { once[k] = 0; });
+    return Object.assign(c, { v: 2, dv: { old: [got, Math.max(0, got - c.n)] }, once, clubs: c.clubs || {}, log: c.log || [] });
+  }
+  function coinSum(c) {
+    let g = 0, sp = 0;
+    Object.keys(c.dv).forEach(k => { g += c.dv[k][0] || 0; sp += c.dv[k][1] || 0; });
+    Object.keys(c.once).forEach(k => { g += c.once[k] || 0; });
+    c.got = g; c.n = Math.max(0, g - sp);
+    return c;
+  }
+  const wallet = () => { const o = get(); o.coins = coinNorm(o.coins) || coinSum({ v: 2, n: 0, got: 0, log: [], once: {}, clubs: {}, dv: {} }); return o.coins; };
+  const mine = w => w.dv[DEV] || (w.dv[DEV] = [0, 0]);
   function coinAdd(list) {
     const w = wallet(); let tot = 0;
     [].concat(list || []).forEach(x => {
       const n = Math.round(x && x.n); if (!(n > 0)) return;
-      if (x.once) { if (w.once[x.once]) return; w.once[x.once] = 1; }
-      w.n += n; w.got += n; tot += n; w.log = [{ n, t: x.t, at: Date.now() }].concat(w.log).slice(0, 20);
+      if (x.once) { if (w.once[x.once] != null) return; w.once[x.once] = n; } else mine(w)[0] += n;
+      tot += n; w.log = [{ n, t: x.t, at: Date.now() }].concat(w.log).slice(0, 20);
     });
-    if (tot) put();
+    if (tot) { coinSum(w); put(); }
     return tot;
   }
   // Gasta moedas se houver saldo (devolve false sem mexer em nada quando não dá)
   function coinSpend(n, t) {
     const w = wallet(); n = Math.round(n);
     if (!(n > 0) || w.n < n) return false;
-    w.n -= n; w.log = [{ n: -n, t, at: Date.now() }].concat(w.log).slice(0, 20); put();
+    mine(w)[1] += n; coinSum(w); w.log = [{ n: -n, t, at: Date.now() }].concat(w.log).slice(0, 20); put();
     return true;
+  }
+  // Compras pagas que o servidor já entregou ([{ref, coins}]) mas que não estão no saldo (perdidas na junção antiga de
+  // aparelhos): se o total ganho é menor que o total comprado, devolve as que estavam só marcadas, até fechar a conta
+  function coinFix(paid) {
+    const w = wallet(), tot = (paid || []).reduce((a, x) => a + (x.coins || 0), 0); let back = 0;
+    (paid || []).forEach(x => { const k = 'pay-' + x.ref, n = Math.round(x.coins);
+      if (!(n > 0) || w.got >= tot || w.once[k]) return;
+      w.once[k] = n; back += n; coinSum(w); w.log = [{ n, t: 'Compra na loja (devolvida)', at: Date.now() }].concat(w.log).slice(0, 20); });
+    if (back) put();
+    return back;
   }
   const COIN_SVG = '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="#F2C230"/><circle cx="13" cy="13" r="8.5" fill="none" stroke="#b48a12" stroke-width="2"/><path d="M13 8v10M10 11h6" stroke="#b48a12" stroke-width="2.4" stroke-linecap="round"/></svg>';
   // Pílula de saldo; com id vira botão (abre a loja)
@@ -329,7 +366,7 @@
   const owns = id => !!wallet().clubs[id];
   const own = id => { wallet().clubs[id] = Date.now(); put(); };
   const clubs = () => Object.keys(wallet().clubs).sort((a, b) => wallet().clubs[a] - wallet().clubs[b]);
-  U.COINS = { pill, svg: COIN_SVG, spend: coinSpend, owns, own, clubs, get: () => wallet().n, got: () => wallet().got, log: () => wallet().log.slice(), add: coinAdd, has: k => !!wallet().once[k] };
+  U.COINS = { pill, svg: COIN_SVG, spend: coinSpend, owns, own, clubs, get: () => wallet().n, got: () => wallet().got, log: () => wallet().log.slice(), add: coinAdd, fix: coinFix, has: k => wallet().once[k] != null };
 
   U.ITEMS = { FREE, KEY, CAT, BY_ID, RAR, RAR_NAME, CHANCE, PITY, DUP, COST, itemOf, need, has, get, put, clean, counts,
     earn, careerWhy, open, trade, seen, merge, STREAK, streak, streakRecord, streakClaim, streakFlush, streakTxt, reset: () => { inv = null; } };
