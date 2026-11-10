@@ -668,7 +668,7 @@
       '<div class="lv-pitch" id="lv-pitch"><div class="lv-f"><i class="c"></i><i class="b l"></i><i class="b r"></i></div><div id="lv-zone"></div><div id="lv-dots"></div><span class="lv-ball" id="lv-ball"></span>' +
         '<div class="lv-forms"><span><i class="us"></i><b id="lv-fu"></b></span><span><i class="th"></i><b id="lv-ft"></b></span></div></div>';
     const LDon = !!(U.LD && U.LD.on()); let ctx = null; // Treinador deitado: o mesmo jogo no palco de 844×390 (ui/coachland.js)
-    const feed0 = '<li><i>0\'</i><span>Bola rolando. ' + esc(nm(co.club)) + ' no ' + m.us.form + ', ' + esc(S.CO_STY[m.us.style].name.toLowerCase()) + '; ' + esc(nm(m.vs)) + ' no ' + m.them.form + '.' + (FREE ? ' <b>Simulação livre (teste).</b>' : '') + '</span></li>';
+    const feed0 = '<li><i>0\'</i><span>Bola rolando. ' + esc(nm(co.club)) + ' no ' + m.us.form + ', ' + esc(S.CO_STY[m.us.style].name.toLowerCase()) + '; ' + esc(nm(m.vs)) + ' no ' + m.them.form + '.' + '</span></li>';
     const speedHtml = '<div class="lv-speed" id="lv-speed">' + ['1', '3'].map(k => '<button data-sp="' + k + '"' + (k === co.speed ? ' class="on"' : '') + '>' + SPEED[k][0] + '</button>').join('') + '<button data-sp="fim" aria-label="Pular para o fim">' + ICO.ff + '</button></div>';
     if (LDon) U.LD.show(U.LD.liveHtml({ H, A, m, pitchHtml, feed0, speedHtml, crestB, pause: ICO.pause }));
     else render('<div class="lv">' +
@@ -757,7 +757,7 @@
         hidden.add(e);
         if (out === 'gol') return gl.push([side, e]);
         const cancel = sim.shot(side, out, () => { if (hidden.delete(e)) paint(); }, spOf(e));
-        setTimeout(() => { if (hidden.delete(e)) { cancel(); paint(); } }, (co.speed === '3' ? 4000 : 12000) * (e.sp ? 2.4 : 1)); // a bola parada espera todo mundo se arrumar
+        setTimeout(() => { if (hidden.delete(e)) { cancel(); paint(); } }, (co.speed === '3' ? 4000 : 12000) * (e.sp === 'pen' ? 3.6 : e.sp ? 2.4 : 1)); // a bola parada espera todo mundo se arrumar
       });
       if (!gl.length) return null;
       return go => {
@@ -768,7 +768,7 @@
           const cancel = sim.shot(side, 'gol', fin, spOf(e));
           // em segundos do campinho (a 3× passam três vezes mais rápido)
           const f3 = co.speed === '3' ? 1 / 3 : 0.8;
-          tm = setTimeout(() => { cancel(); fin(); }, 30000 * f3); // último recurso: o campinho já lança direto na área aos 9 s de bola rolando
+          tm = setTimeout(() => { cancel(); fin(); }, 30000 * f3 * (e.sp === 'pen' ? 1.5 : 1)); // pênalti: o ataque leva a bola até a área antes do apito // último recurso: o campinho já lança direto na área aos 9 s de bola rolando
         });
       };
     };
