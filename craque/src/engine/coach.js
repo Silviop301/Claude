@@ -151,7 +151,7 @@
     pressionar: { name: 'Pressionar', sub: 'cansa mais', dur: 10, add: { press: 0.4, line: 0.2, build: 0.05 }, mul: { en: 1.5, att: 1.08, def: 1.06 }, tip: 'o time rouba lá na frente e cansa mais rápido' },
     segurar: { name: 'Segurar', sub: 'gastar tempo', dur: 10, add: { ctrl: 0.2, press: -0.15, wide: -0.1 }, mul: { att: 0.84, def: 0.88, en: 0.85 }, tip: 'toca de lado, chega menos e sofre menos' },
     lados: { name: 'Pelos lados', sub: 'abrir o jogo', dur: 10, add: { wide: 0.35, patience: 0.15 }, mul: { att: 1.03, def: 1.05 }, tip: 'a bola vai para as pontas, sobra espaço no meio para eles' },
-    recuar: { name: 'Recuar', sub: 'fechar a área', dur: 10, add: { line: -0.35, press: -0.25, counter: 0.2 }, mul: { att: 0.8, def: 0.8, en: 0.9 }, tip: 'todo mundo atrás da linha da bola, só sai no contra-ataque' },
+    recuar: { name: 'Recuar', sub: 'fechar a área', dur: 10, add: { line: -0.35, press: -0.25, counter: 0.2 }, sim: { line: -0.35, counter: 0.2 }, mul: { att: 0.8, def: 0.8, en: 0.9 }, tip: 'todo mundo atrás da linha da bola, só sai no contra-ataque' },
   };
   // Conversa do intervalo (vale do 46' ao 60'): o efeito depende do placar; a moral do elenco sente na hora
   const TALK = S.CO_TALK = {
@@ -173,6 +173,10 @@
       Object.keys(fx.add || {}).forEach(k => { o[k] = Math.max(0, o[k] + fx.add[k]); }); Object.keys(fx.mul || {}).forEach(k => { o[k] *= fx.mul[k]; }); });
     return o;
   };
+  // O estilo que o campinho ao vivo joga: o do time mais o que o grito soma enquanto vale (a linha sobe, o time abre, recua...)
+  // (`sim` no grito = o que vale no campinho quando é diferente da conta: recuar sem baixar a pressão, senão levava mais gol)
+  S.coSimSty = side => { const b = sty(side.style), sh = side.shout && SHOUT[side.shout.k]; if (!sh) return b;
+    const o = Object.assign({}, b), ad = sh.sim || sh.add; Object.keys(ad).forEach(k => { o[k] = Math.max(0, (o[k] || 0) + ad[k]); }); return o; };
   const slotsOf = form => FORMS[form].slots.map(x => x.pos);
   const sectorOf = (form, i) => { const l = FORMS[form].slots[i].ln; return l === 'am' ? 'm' : l; };
   S.coSlots = slotsOf;

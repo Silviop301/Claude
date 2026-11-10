@@ -683,7 +683,7 @@
     const KT = useSim ? LP.kits(LP.kitFor(cl.name, cl.id), LP.kitFor(vs.name, vs.id), !!m.home) : null;
     const hidden = new Set(), sent = new Set(); // lances que o campinho ainda está jogando / já mandados para ele
     m.ev.forEach(e => sent.add(e)); // jogo retomado no meio: o que já aconteceu não volta a ser jogado no campinho
-    let sim = null, wait = null, wantStop = false, h1 = !!m.half, h2 = m.min > 45, frz = 0, lineKey = ['', ''];
+    let sim = null, wait = null, wantStop = false, h1 = !!m.half, h2 = m.min > 45, frz = 0, lineKey = ['', ''], styKey = ['', ''];
     // Simulação livre (teste: ?livre=1 liga, ?livre=0 desliga): o gol nasce no campinho e o motor só anota (S.coMatchShot)
     const FREE = useSim && !!(U.simLivre && U.simLivre());
     // No livre o 3× dá ao campinho os mesmos segundos por minuto do 1× (o gol depende do que o campo joga): o jogo leva ~1,5 min
@@ -738,7 +738,8 @@
         const b = lvBall(m, mo); $('lv-ball').style.left = b[0] + '%'; $('lv-ball').style.top = b[1] + '%';
       } else if (sim) {
         // Mudou a formação (sua ou deles) ou alguém foi expulso: o campinho reposiciona
-        [m.us, m.them].forEach((s, k) => { const key = s.form + ':' + s.xi.join(',') + ':' + s.style; if (key !== lineKey[k]) { lineKey[k] = key; sim.lineup(k, simForm(s)); sim.style(k, S.CO_STY[s.style]); } });
+        [m.us, m.them].forEach((s, k) => { const key = s.form + ':' + s.xi.join(','), sk = s.style + ':' + (s.shout ? s.shout.k : ''); if (key !== lineKey[k]) { lineKey[k] = key; styKey[k] = ''; sim.lineup(k, simForm(s)); }
+          if (sk !== styKey[k]) { styKey[k] = sk; sim.style(k, S.coSimSty(s)); } });
       }
       $('lv-fu').textContent = m.us.form; $('lv-ft').textContent = m.them.form;
       if (!read || m.min % 10 === 0 || m.stop) read = S.coRead(co, m);
@@ -1007,7 +1008,7 @@
         // A parada mexe na formação e no estilo direto (◀ ▶) e anota no fim, uma vez só
         tacLog(f0, y0) { const s0 = m.us; if (s0.form !== f0 || s0.style !== y0) { m.ev.push({ m: m.min, t: 'tatica', s: 'us', p: s0.form + ', ' + S.CO_STY[s0.style].name.toLowerCase() }); move(); } paint(); },
         tac(f, st) { const s0 = m.us, f0 = s0.form, y0 = s0.style; S.coMatchTactic(co, m, f, st); if (s0.form !== f0 || s0.style !== y0) { m.ev.push({ m: m.min, t: 'tatica', s: 'us', p: s0.form + ', ' + S.CO_STY[s0.style].name.toLowerCase() }); move(); } paint(); },
-        shout(k) { if (!S.coShout(co, m, k)) return false; paint(); return true; },
+        shout(k) { if (!S.coShout(co, m, k)) return false; if (sim && sim.cue) sim.cue(0, k); paint(); return true; },
         talk(k) { return S.coTalk(co, m, k); },
         redOpts: st => redOpts(st), redPick: k => redPick(k), paint: () => paint(),
         stats() { const o = k => m[k] || { us: 0, them: 0 }; return { sh: o('sh'), ot: o('ot'), fo: o('fo'), of: o('of'), yc: o('yc'), rc: o('rc'), poss: S.coPoss(m) }; },
@@ -1036,7 +1037,7 @@
       sim = LP.sim({ me: -1, t0: m.tk || m.min, half2: m.min > 45, clean: LDon, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1.25), spm: () => spMs(co.speed === '3' ? '3' : '1') / 1000, onFrame: zone,
         free: FREE, onShot: sh => { if (m.done) return; const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, sh); if (e) { sent.add(e); paint(); } },
         onPick: (side, inf) => { if (ctx && side === 0 && inf && inf.id) U.LD.livePlayer(ctx, inf.id); },
-        seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]] });
+        seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)], styles: [S.coSimSty(m.us), S.coSimSty(m.them)] });
       lineKey = [m.us, m.them].map(s => s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style);
       sim.attach($('lp-cv'));
     }
