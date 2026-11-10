@@ -934,8 +934,22 @@
       if (!repOff) st.querySelector('#mkf-rep').onclick = () => { if (!S.coMktReport(co, p)) return; sfx('tap'); c.save(); ficha(id, back); };
       st.querySelector('#mkf-star').onclick = () => { sfx('tap'); S.coMktObs(co, p); c.save(); ficha(id, back); };
       const go = st.querySelector('#mkf-go.go');
-      if (go) go.onclick = () => { sfx('tap'); const me = () => ficha(id, back); if (!p.club || S.coMktNeg(co, p).st === 'ok') contrato(id, me); else proposta(id, me); };
+      if (go) go.onclick = () => { sfx('tap'); const me = () => ficha(id, back); if (S.coMktFull(co, p)) return cheio(id, me); if (!p.club || S.coMktNeg(co, p).st === 'ok') contrato(id, me); else proposta(id, me); };
     });
+  }
+  // Elenco cheio (Silvio 2026-11-10, limite de 28): a janelinha abre no dourado da ficha, antes de gastar dia da janela.
+  // Com clube e sem acordo ainda, "Propor troca" abre a proposta já com um reserva na troca (sai um, entra um);
+  // sem clube, ou com o acordo fechado sem troca, só resta abrir vaga no Elenco.
+  function cheio(id, back) {
+    const c = C(), co = c.co, p = S.coMktFind(co, id); if (!p) return;
+    const TL = S.coMktTradeList(co), tr = p.club && S.coMktNeg(co, p).st !== 'ok' && TL.length, n = co.squad.length, max = S.CO_MKT.maxSquad;
+    pop('<div class="mkx"><div class="mkx-h"><i class="mkx-fc">' + n + '</i><span><small>' + n + ' DE ' + max + ' JOGADORES</small><b class="dn">Elenco cheio</b></span></div>' +
+      '<p>Para trazer o ' + esc(last(p.n)) + ', alguém tem que sair.</p>' +
+      '<span class="mkx-b">' + (tr ? '<button class="hl-btn gold" id="ech-tr">Propor troca</button><button class="hl-btn line" id="ech-el">Ver elenco</button>' : '<button class="hl-btn gold" id="ech-el">Ver elenco</button>') + '</span></div>', 'Elenco cheio', w => {
+      const t = w.querySelector('#ech-tr');
+      if (t) t.onclick = () => { sfx('tap'); closePop(); const neg = S.coMktNeg(co, p); proposta(id, back, { v: neg.cv || S.coMktCuts(p)[1], pay: 0, tr: TL[0].id }); };
+      w.querySelector('#ech-el').onclick = () => { sfx('tap'); closePop(); elenco(); };
+    }, 'hl-pop mkx-pop ech-pop');
   }
   // O dourado da ficha: proposta (com a janela), contrato (sem clube ou depois do clube aceitar), ou apagado dizendo por quê
   function fichaGo(co, p) {
@@ -962,7 +976,8 @@
     const cl = club(p.club), cn = esc(cl.short || cl.name);
     const done = neg.st === 'ok' || neg.st === 'no';
     const gold = neg.st === 'ok' ? '<button class="tm-go" id="mkp-go">Ir ao contrato</button>' : neg.st === 'no' ? '<button class="tm-go off" id="mkp-go" disabled>Não negocia mais</button>' :
-      !w.open ? '<button class="tm-go off" id="mkp-go" disabled>Janela fechada</button>' : after < 0 ? '<button class="tm-go off" id="mkp-go" disabled>Sem verba</button>' : '<button class="tm-go" id="mkp-go">Enviar · 1 dia</button>';
+      !w.open ? '<button class="tm-go off" id="mkp-go" disabled>Janela fechada</button>' : after < 0 ? '<button class="tm-go off" id="mkp-go" disabled>Sem verba</button>' :
+      !tq && co.squad.length >= M.maxSquad ? '<button class="tm-go off" id="mkp-go" disabled>Elenco cheio</button>' : '<button class="tm-go" id="mkp-go">Enviar · 1 dia</button>';
     const seg = (on, t, attr) => '<button class="' + (on ? 'on' : '') + '" ' + attr + '>' + t + '</button>';
     show('<div class="mk mkp">' + mkHead('mkp-back', 'Proposta', esc(p.n) + ' · ' + S.CO_POS_NM[p.pos] + ' · ' + cn) +
       '<div class="mk-tabs mkp-tabs"><button class="on">Compra</button><button disabled title="em breve">Empréstimo · em breve</button></div>' +
@@ -1337,7 +1352,7 @@
           (ofq ? '<button class="lde2-sell of" id="lde-of">Ver proposta</button>' : '<button class="lde2-sell' + (listed ? ' on' : '') + '" id="lde-sell"' + (canS || listed ? '' : ' disabled') + '>' + (listed ? 'Tirar da venda' : 'Pôr à venda') + '</button>') + '</div>' +
         '<small class="lde2-hint">' + hint + '</small></div>';
     }
-    show('<div class="lde2"><div class="tm-h"><button class="tcr-back" id="lde-back" aria-label="Voltar">' + BK + '</button><b>Elenco</b><small>' + U.D.plural(co.squad.length, 'jogador', 'jogadores') + ' · folha ' + c.mi(folha) + '/sem</small></div>' +
+    show('<div class="lde2"><div class="tm-h"><button class="tcr-back" id="lde-back" aria-label="Voltar">' + BK + '</button><b>Elenco</b><small><span class="lde2-n' + (co.squad.length >= S.CO_MKT.maxSquad ? ' full' : '') + '">' + co.squad.length + '/' + S.CO_MKT.maxSquad + '</span> jogadores · folha ' + c.mi(folha) + '/sem</small></div>' +
       '<div class="lde2-tabs">' + T.map(([l, ps], i) => '<button data-et="' + i + '"' + (i === tab ? ' class="on"' : '') + '>' + l + ' <small>' + co.squad.filter(p => ps.includes(p.pos)).length + '</small></button>').join('') + '</div>' +
       '<div class="lde2-l"><div class="lde2-h"><i></i><span>JOGADOR</span><span class="a">IDADE</span><span class="o">GERAL</span><span class="ct">CONTRATO</span></div>' + rows + '</div>' + card + '</div>', st => {
       st.querySelectorAll('[data-et]').forEach(b => b.onclick = () => { sfx('tap'); elenco(+b.dataset.et); });

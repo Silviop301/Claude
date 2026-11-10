@@ -8672,6 +8672,9 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .lde2-r .a { font: 700 17px/1 var(--body); color: #B9C9BF; }
 .lde2-r .o { font: 800 22px/1 var(--display); color: var(--gold); }
 .lde2-r .ct { font: 700 15px/1 var(--body); color: #B9C9BF; } .lde2-r .ct.dn { color: #F08A5D; }
+/* Limite do elenco (2026-11-10): contador no topo do Elenco (laranja quando cheio) e a janelinha "Elenco cheio" da ficha, sem a altura mínima das outras */
+.lde2 .tm-h small .lde2-n { color: #F8F4EA; font-weight: 800; } .lde2 .tm-h small .lde2-n.full { color: #F0A04B; }
+.ld-pop-c.hl-pop.mkx-pop.ech-pop { min-height: 0; } .ech-pop .mkx { gap: 18px; }
 .lde2-c { grid-column: 2; grid-row: 2 / 4; border-radius: 16px; background: var(--paper); color: var(--ink); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 .lde2-ch { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .lde2-ch > b.tm-ring { --enc: #7ED39A; width: 58px; height: 58px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font: 800 26px/1 var(--display);
