@@ -857,8 +857,15 @@
   const MK_BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
   const MK_L = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 4L6 12l11 8z"/></svg>', MK_R = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l11 8-11 8z"/></svg>';
   const mkWin = () => { const w = S.coMktWin(C().co);
-    return w.k ? '<span class="mk-win' + (w.open ? '' : ' off') + '">' + (w.open ? 'JANELA · DIA ' + w.day + ' DE ' + w.max : 'JANELA · SEM DIAS') + '</span>' : '<span class="mk-win off">' + (w.next ? 'JANELA · RODADA ' + w.next : 'JANELA FECHADA') + '</span>'; };
-  const mkHead = (id, t, s, noWin) => '<div class="tm-h"><button class="tcr-back" id="' + id + '" aria-label="Voltar">' + MK_BK + '</button><b>' + t + '</b><small>' + s + '</small>' + (noWin ? '' : mkWin()) + '<button class="ol2-q" id="mk-q" aria-label="Como funciona">?</button></div>';
+    return w.k ? '<span class="mk-win' + (w.open ? '' : ' off') + '">' + (w.open ? 'JANELA · ' + w.day + '/' + w.max : 'JANELA · SEM DIAS') + '</span>' : '<span class="mk-win off">' + (w.next ? 'JANELA · RODADA ' + w.next : 'JANELA FECHADA') + '</span>'; };
+  // Topo do mercado (Silvio 2026-11-10: "o caixa na parte superior e ver em outras telas também", para saber se dá para pagar
+  // o olheiro): nome em cima e apoio embaixo; à direita, no fluxo, o caixa do clube, as moedas, a janela e a ajuda.
+  // `coins` = id do botão das moedas (abre a loja; quem chama liga com mkCoins); sem ele a pílula é só informação.
+  const mkCx = coins => { const c = C(), cx = S.coFin(c.co).caixa || 0;
+    return '<span class="mk-cx' + (cx < 0 ? ' neg' : '') + '"><small>CAIXA</small><b>' + c.brl(cx) + '</b></span>' + (U.COINS ? U.COINS.pill('cp-sm', coins ? 'mk-coins' : '') : ''); };
+  const mkHead = (id, t, s, noWin, coins) => '<div class="tm-h"><button class="tcr-back" id="' + id + '" aria-label="Voltar">' + MK_BK + '</button><span class="mk-tt"><b>' + t + '</b><small>' + s + '</small></span>' +
+    '<span class="mk-top">' + mkCx(coins) + (noWin ? '' : mkWin()) + '<button class="ol2-q" id="mk-q" aria-label="Como funciona">?</button></span></div>';
+  const mkCoins = (st, me) => { const b = st.querySelector('#mk-coins'); if (b) b.onclick = () => { sfx('tap'); loja(0, me); }; };
   const mkHelp = (t, p) => pop('<div class="acd-help"><b>Como funciona</b><p>' + p + '</p><button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop');
   const mkClub = p => (p.club ? esc(club(p.club).short || club(p.club).name) : 'sem clube');
   function mercado() {
@@ -869,12 +876,13 @@
     const cell = (x, i) => { const v = m.f[i] || 0, t = x.o[v].t;
       return '<div class="mk-f' + (v ? ' on' : '') + '"><small>' + x.t + '</small><span><button class="mk-ar" data-mf="' + i + '" data-d="-1" aria-label="' + x.t.toLowerCase() + ' anterior">' + MK_L + '</button><b class="' + (t.length > 16 ? 'mk-sm' : '') + '">' + esc(t) + '</b><button class="mk-ar" data-mf="' + i + '" data-d="1" aria-label="' + x.t.toLowerCase() + ' seguinte">' + MK_R + '</button></span></div>'; };
     const goTxt = n => (n > 0 && n <= S.CO_MKT.max ? 'Buscar' : n ? 'Filtre mais' : 'Ninguém: solte um filtro');
-    show('<div class="mk">' + mkHead('mk-back', 'Mercado', esc(club(co.club).short || club(co.club).name)) +
+    show('<div class="mk">' + mkHead('mk-back', 'Mercado', esc(club(co.club).short || club(co.club).name), false, true) +
       '<div class="mk-tabs">' + tabs + '</div><div class="mk-fs">' + F.map(cell).join('') + '</div>' +
       '<div class="mk-side"><label class="mk-k mk-nm"><small>NOME</small><input id="mk-nm" type="text" autocomplete="off" placeholder="Toque para digitar" value="' + esc(m.nm || '') + '"></label>' +
         '<div class="mk-k"><b id="mk-n" class="' + (ok ? 'ok' : '') + '">' + U.D.plural(n, 'jogador', 'jogadores') + '</b><span>o olheiro conhece a sua liga</span></div>' +
         '<span class="rs-gap"></span><button class="tm-go' + (ok ? '' : ' off') + '" id="mk-go">' + goTxt(n) + '</button></div></div>', st => {
       st.querySelector('#mk-back').onclick = () => { sfx('tap'); semana(); };
+      mkCoins(st, mercado);
       st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição e só vale para quem o olheiro já viu. A janela do começo vale até a 3ª rodada (10 dias) e a do meio abre antes da rodada do meio (6 dias): proposta e contrato gastam 1 dia. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.'); };
       st.querySelectorAll('[data-mf]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.mf, L = F[i].o.length; m.f[i] = ((m.f[i] || 0) + (+b.dataset.d) + L) % L; c.save(); mercado(); });
       const inp = st.querySelector('#mk-nm');
@@ -893,13 +901,14 @@
     const row = (p, i) => { const b = S.coMktBand(co, p), w = S.coMktWord(b), pr = S.coMktPrice(p);
       return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><i>' + p.pos + '</i><span><b>' + esc(p.n) + '</b><small' + (b ? '' : ' class="nr"') + '>' + p.age + ' anos · ' + mkClub(p) + (b ? '' : ' · sem relatório') + '</small></span>' +
         '<em class="' + (w || 'nr') + '">' + (w || '?') + '</em><strong>' + (p.club ? c.brl(pr) : 'grátis') + '</strong></button>'; };
-    show('<div class="mk mkr">' + mkHead('mkr-back', 'Resultado', U.D.plural(list.length, 'jogador', 'jogadores')) +
+    show('<div class="mk mkr">' + mkHead('mkr-back', 'Resultado', U.D.plural(list.length, 'jogador', 'jogadores'), false, true) +
       '<div class="mk-chips">' + chips + '<span class="rs-gap"></span><button class="mk-mud" id="mkr-mud">Mudar</button></div>' +
       '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">Ninguém com esses filtros.</p>') + '</div>' +
       '<div class="mk-side"><div class="mk-k"><small>VERBA</small><b class="up">' + c.brl(f.verba) + '</b><span class="mk-fl"><span>Folha</span><span>' + pct + '% do teto</span></span><i class="mk-bar"><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i></div>' +
         '<div class="mk-pg"><button class="mk-ar big" id="mkr-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar big" id="mkr-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></div>' +
         '<span class="rs-gap"></span><button class="tm-go' + (R.length ? '' : ' off') + '" id="mkr-go">Ver ficha</button></div></div>', st => {
       st.querySelector('#mkr-back').onclick = () => { sfx('tap'); mercado(); };
+      mkCoins(st, () => mercadoRes(pg, sel));
       st.querySelector('#mkr-mud').onclick = () => { sfx('tap'); mercado(); };
       st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Melhor, igual ou pior é contra o seu titular da posição. Quem o olheiro ainda não viu aparece sem relatório; peça um na ficha. Os com relatório vêm primeiro.'); };
       st.querySelectorAll('[data-mr]').forEach(b => b.onclick = () => { const i = +b.dataset.mr; sfx('tap'); if (i === sel) return ficha(R[i].id, () => mercadoRes(pg, i)); mercadoRes(pg, i); });
@@ -910,6 +919,18 @@
   }
   // Ficha (24): a força numa faixa borrada contra o seu titular (sem número), que estreita a cada relatório;
   // potencial em palavras e o jeito de jogar; à direita preço, salário e contrato, relatório, observar e a proposta
+  // Ficha: o botão "Ver atributos" troca o lado esquerdo (resumo ⇄ os 6 atributos). Atributo pelo olheiro (S.coMktAttrs):
+  // sem relatório "?", com 1 e 2 uma faixa que estreita, com 3 o número certo e o mais alto em dourado.
+  let fichaAt = 0;
+  function fichaAttrs(co, p, n) {
+    const A = S.coMktAttrs(co, p), ks = S.coAtKeys(p), X = v => Math.max(0, Math.min(100, (v - 25) / 74 * 100));
+    const top = A && n >= 3 ? A.map(x => x.v).indexOf(Math.max.apply(null, A.map(x => x.v))) : -1;
+    const row = (k, i) => { const x = A && A[i], nm = '<span>' + S.CO_AT.names[k] + '</span>';
+      if (!x) return '<div class="mka-r">' + nm + '<span class="mka-sc q"><i></i></span><em class="q">?</em></div>';
+      if (x.v !== null) return '<div class="mka-r' + (i === top ? ' top' : '') + '">' + nm + '<span class="mka-sc"><i></i><u class="x" style="width:' + X(x.v) + '%"></u></span><em>' + x.v + '</em></div>';
+      return '<div class="mka-r">' + nm + '<span class="mka-sc"><i></i><u style="left:' + X(x.lo) + '%;width:' + (X(x.hi) - X(x.lo)) + '%"></u></span><em class="rg">' + x.lo + ' a ' + x.hi + '</em></div>'; };
+    return '<div class="mk-k mka"><span class="mkf-t"><small>ATRIBUTOS</small><em>' + ['sem relatório', '1 de 3 relatórios · pouca certeza', '2 de 3 relatórios · certeza média', 'relatório completo'][Math.min(3, n)] + '</em></span><div class="mka-l">' + ks.map(row).join('') + '</div></div>';
+  }
   function ficha(id, back) {
     const c = C(), co = c.co, p = S.coMktFind(co, id); if (!p) return mercado();
     const b = S.coMktBand(co, p), n = b ? b.n : 0, st0 = b ? b.st : S.coMktStarter(co, p.pos), sp = S.CO_MKT.span, obs = !!S.coMkt(co).obs[p.id];
@@ -920,17 +941,20 @@
     const pot = b ? S.coMktPot(p) : null, tr = b ? S.coMktTraits(p) : null;
     const yr = p.club ? 'até ' + (U.YEAR0 + co.season + p.ct) : 'livre';
     const repC = S.coMktRepCost(co, p), repNo = n < S.CO_MKT.reps && (S.coFin(co).caixa || 0) < repC, repOff = n >= S.CO_MKT.reps || repNo;
-    show('<div class="mk mkf">' + mkHead('mkf-back', esc(p.n), S.CO_POS_NM[p.pos] + ' · ' + p.age + ' anos · ' + mkClub(p)) +
-      '<div class="mk-k mkf-cmp"><span class="mkf-t"><small>CONTRA O SEU ' + (S.CO_POS_NM[p.pos] || '').toUpperCase() + ' TITULAR</small>' + (b ? '<b class="' + word + '">' + word + '<small>' + CERT[n] + '</small></b>' : '<b class="nr">sem relatório</b>') + '</span>' +
+    show('<div class="mk mkf">' + mkHead('mkf-back', esc(p.n), S.CO_POS_NM[p.pos] + ' · ' + p.age + ' anos · ' + mkClub(p), false, true) +
+      (fichaAt ? fichaAttrs(co, p, n) : '<div class="mk-k mkf-cmp"><span class="mkf-t"><small>CONTRA O SEU ' + (S.CO_POS_NM[p.pos] || '').toUpperCase() + ' TITULAR</small>' + (b ? '<b class="' + word + '">' + word + '<small>' + CERT[n] + '</small></b>' : '<b class="nr">sem relatório</b>') + '</span>' +
         '<span class="mkf-sc"><i></i>' + band + '<em></em><strong>' + esc(st0 ? last(st0.n) : 'titular') + '</strong></span><span class="mkf-w"><span>pior</span><span>igual</span><span>melhor</span></span></div>' +
       '<div class="mkf-g"><div class="mk-k"><small>POTENCIAL</small><b>' + (pot ? pot[0] : 'Peça um relatório') + '</b>' + (pot ? '<span class="mkf-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= pot[1] ? 'on' : '') + '"></i>').join('') + '</span>' : '<span class="mkf-nr">o olheiro ainda não viu</span>') + '</div>' +
-        '<div class="mk-k"><small>JEITO DE JOGAR</small>' + (tr ? '<span class="mkf-tr">' + tr.good.map(t => '<span>' + t + '</span>').join('') + '</span><span class="mkf-nr">' + (n >= 3 ? 'Ponto fraco: ' + tr.bad : 'mais relatório mostra o ponto fraco') + '</span>' : '<b>?</b><span class="mkf-nr">o olheiro ainda não viu</span>') + '</div></div>' +
+        '<div class="mk-k"><small>JEITO DE JOGAR</small>' + (tr ? '<span class="mkf-tr">' + tr.good.map(t => '<span>' + t + '</span>').join('') + '</span><span class="mkf-nr">' + (n >= 3 ? 'Ponto fraco: ' + tr.bad : 'mais relatório mostra o ponto fraco') + '</span>' : '<b>?</b><span class="mkf-nr">o olheiro ainda não viu</span>') + '</div></div>') +
       '<div class="mk-side"><div class="mk-k mkf-li"><div><span>Preço</span><b>' + (p.club ? c.brl(S.coMktPrice(p)) : 'grátis') + '</b></div><div><span>Salário</span><b>' + c.brl(p.wage) + '/sem</b></div><div><span>Contrato</span><b>' + yr + '</b></div></div>' +
         '<div class="mkf-act"><button class="mkf-rep' + (repOff ? ' done' : '') + '" id="mkf-rep"' + (repOff ? ' disabled' : '') + '>' + (n >= S.CO_MKT.reps ? 'Relatório completo' : (n ? 'Mais um relatório' : 'Pedir relatório') + '<small>' + (repNo ? 'sem caixa · ' : '') + c.brl(repC) + '</small>') + '</button>' +
           '<button class="mkf-star' + (obs ? ' on' : '') + '" id="mkf-star" aria-label="Observar" aria-pressed="' + obs + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button></div>' +
+        '<button class="mkf-tg" id="mkf-tg" aria-pressed="' + !!fichaAt + '">' + (fichaAt ? 'Ver resumo' : 'Ver atributos') + '</button>' +
         '<span class="rs-gap"></span>' + fichaGo(co, p) + '</div></div>', st => {
       st.querySelector('#mkf-back').onclick = () => { sfx('tap'); (back || mercado)(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'A faixa é onde o olheiro acha que ele está, comparado ao seu titular. Cada relatório deixa a faixa mais estreita e custa mais que o anterior, pago do caixa. Jogador do exterior custa o dobro.'); };
+      mkCoins(st, () => ficha(id, back));
+      st.querySelector('#mkf-tg').onclick = () => { sfx('tap'); fichaAt = fichaAt ? 0 : 1; ficha(id, back); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'A faixa é onde o olheiro acha que ele está, comparado ao seu titular. Cada relatório deixa a faixa mais estreita e custa mais que o anterior, pago do caixa. Jogador do exterior custa o dobro. Em Ver atributos é igual: faixa no 1º e no 2º relatório, o número certo no 3º.'); };
       if (!repOff) st.querySelector('#mkf-rep').onclick = () => { if (!S.coMktReport(co, p)) return; sfx('tap'); c.save(); ficha(id, back); };
       st.querySelector('#mkf-star').onclick = () => { sfx('tap'); S.coMktObs(co, p); c.save(); ficha(id, back); };
       const go = st.querySelector('#mkf-go.go');
