@@ -17,6 +17,13 @@
 //     o ponto fraco de um atributo abaixo deles, o mesmo jogador tem sempre o mesmo jeito e nenhum texto domina a posição.
 //  9. Faixa do olheiro (S.coMktAttrs): sem relatório não mostra nada; com 1 e 2 o valor de verdade está dentro da faixa,
 //     a 2ª faixa cabe dentro da 1ª e é mais estreita; com 3 sai o número certo.
+// 10. Atributo por setor (fase 3, a conta do jogo pulado e da tática: S.coSecDev, S.coShape, S.coMatchup):
+//     - na média dos jogadores o setor não soma nem tira força (o geral manda), mas separa jogadores de mesmo geral;
+//     - com os elencos de verdade, os gols esperados de cada clube contra um time normal ficam, em média, onde estavam;
+//     - cada atributo puxa a parte certa: finalização faz mais gol, defesa e goleiro levam menos, passe dá mais posse,
+//       velocidade rende mais no contra-ataque do que na posse, físico rende mais na pressão do que na retranca;
+//     - o auxiliar escala pelo atributo da vaga sem abrir mão do geral (o time dele não cai mais de 1 ponto);
+//     - sem lista, o pênalti é do melhor finalizador em campo e o escanteio do melhor passador.
 const D = require('../craque/src/data.js');
 const S = require('../craque/src/sim.js');
 const R = (() => { try { return require('../craque/src/real-squads.js'); } catch (e) { return null; } })();
@@ -127,6 +134,54 @@ let nb = 0; const wid = [0, 0];
 }
 
 const f = a => a.map(x => String(Math.round(x)).padStart(3)).join(' ');
+// 10. atributo por setor (fase 3)
+const f3 = {};
+{
+  const kS = AT.kS, SEC = ['fin', 'cri', 'ala', 'mar'], dv = { fin: [], cri: [], ala: [], mar: [], gol: [] };
+  const neutral = ov => { const sq = []; Object.entries({ GOL: 3, ZAG: 5, LAT: 4, MEI: 8, ATA: 5 }).forEach(([pos, k]) => { for (let j = 0; j < k; j++) sq.push({ id: 'n' + pos + j, n: '', pos, age: 26, ovr: ov, en: 100, mo: 60, at: S.coAtNeutral(pos, ov) }); }); return sq; };
+  const side = (sq, form, style) => ({ squad: sq, form, style, xi: S.coAutoXI(sq, form).xi, bonus: 0 });
+  const lam = (H, A) => { const r = S.coMatchup(H, A, true); return [r.lh, r.la, r.h.poss]; };
+  // a) média e espalhamento do setor, e b) clubes de verdade contra um time normal do mesmo nível
+  let ratF = [], ratA = [], difXI = 0, nXI = 0, drop = [], penOk = 0, ckOk = 0, nTk = 0;
+  D.CLUBS.forEach(cl => {
+    const sq = S.coGenSquad(cl.id, 0);
+    sq.forEach(p => { if (p.pos === 'GOL') dv.gol.push(S.coSecDev(p, 'gol')); else SEC.forEach(k => dv[k].push(S.coSecDev(p, k))); });
+    AT.kS = 0; const xi0 = S.coAutoXI(sq, '4-4-2').xi, me0 = side(sq, '4-4-2', 'equilibrado'), q = S.coShape(me0).q, nt = side(neutral(Math.round(q)), '4-4-2', 'equilibrado'), l0 = lam(me0, nt);
+    AT.kS = kS; const me1 = side(sq, '4-4-2', 'equilibrado'), l1 = lam(me1, nt);
+    ratF.push(l1[0] / l0[0]); ratA.push(l1[1] / l0[1]);
+    nXI++; if (me1.xi.join() !== xi0.join()) difXI++;
+    const by = {}; sq.forEach(p => { by[p.id] = p; }); const ov = xi => avg(xi.map(id => by[id].ovr)); drop.push(ov(xi0) - ov(me1.xi));
+    const on = me1.xi.map(id => by[id]).filter(p => p.pos !== 'GOL'), pen = S.coTaker(me1, 'pen'), ck = S.coTaker(me1, 'ckE');
+    nTk++; if (pen && S.coAttrs(pen)[0] === Math.max.apply(null, on.map(p => S.coAttrs(p)[0]))) penOk++;
+    if (ck && S.coAttrs(ck)[1] === Math.max.apply(null, on.map(p => S.coAttrs(p)[1]))) ckOk++;
+  });
+  f3.dv = dv; f3.ratF = ratF; f3.ratA = ratA; f3.difXI = difXI / nXI; f3.drop = avg(drop); f3.dropMax = Math.max.apply(null, drop);
+  SEC.concat('gol').forEach(k => { if (Math.abs(avg(dv[k])) > 1) alert('setor: a média de "' + k + '" não é zero (' + avg(dv[k]).toFixed(2) + ')'); if (kS && sd(dv[k]) < 1.5) alert('setor: "' + k + '" não separa ninguém (desvio ' + sd(dv[k]).toFixed(2) + ')'); });
+  if (Math.abs(avg(ratF) - 1) > 0.03 || Math.abs(avg(ratA) - 1) > 0.03) alert('setor: os gols esperados dos clubes mudaram na média (a favor ' + avg(ratF).toFixed(3) + ', contra ' + avg(ratA).toFixed(3) + ')');
+  if (kS && sd(ratF) < 0.01) alert('setor: nenhum clube muda com os atributos');
+  if (f3.drop > 1 || f3.dropMax > 3) alert('auxiliar: escala time mais fraco pelo atributo (média ' + f3.drop.toFixed(2) + ', pior ' + f3.dropMax.toFixed(1) + ')');
+  if (kS && penOk / nTk < 1) alert('batedor: pênalti sem o melhor finalizador em ' + (nTk - penOk) + ' clubes');
+  if (kS && ckOk / nTk < 1) alert('batedor: escanteio sem o melhor passador em ' + (nTk - ckOk) + ' clubes');
+  // c) cada atributo puxa a parte certa: um time normal de 70 com +6 num atributo de um grupo de posições, com o mesmo geral
+  const boost = (poss, i, d) => neutral(70).map(p => (poss.includes(p.pos) ? Object.assign({}, p, { at: p.at.map((v, j) => (j === i ? v + d : v)) }) : p));
+  // O geral fica igual (os outros atributos descem o que o reforçado subiu no peso), senão S.coAttrs reacertaria tudo
+  const up = (poss, i, d) => boost(poss, i, d).map(p => { if (!poss.includes(p.pos)) return p; const w = AT.w[p.pos][i] / 100; return Object.assign({}, p, { at: p.at.map((v, j) => (j === i ? v : v - d * w / (1 - w))) }); });
+  const N0 = neutral(70), T = (sq, st, ost) => lam(side(sq, '4-4-2', st), side(N0, '4-4-2', ost || 'equilibrado'));
+  const base = st => T(N0, st);
+  const fin = T(up(['ATA'], 0, 6), 'equilibrado'), def = T(up(['ZAG', 'LAT'], 3, 6), 'equilibrado'), gol = T(up(['GOL'], 0, 6), 'equilibrado'), pas = T(up(['MEI'], 1, 6), 'posse');
+  const velC = T(up(['ATA', 'MEI'], 4, 6), 'contra'), velP = T(up(['ATA', 'MEI'], 4, 6), 'posse'), fisP = T(up(['ZAG', 'LAT', 'MEI', 'ATA'], 5, 6), 'pressao'), fisR = T(up(['ZAG', 'LAT', 'MEI', 'ATA'], 5, 6), 'retranca');
+  const b = { eq: base('equilibrado'), po: base('posse'), co: base('contra'), pr: base('pressao'), re: base('retranca') };
+  f3.pull = { fin: fin[0] / b.eq[0], def: def[1] / b.eq[1], gol: gol[1] / b.eq[1], pas: pas[2] - b.po[2], velC: velC[0] / b.co[0], velP: velP[0] / b.po[0], fisP: fisP[0] / b.pr[0], fisR: fisR[0] / b.re[0] };
+  if (kS) {
+    if (!(f3.pull.fin > 1.02)) alert('setor: finalização dos atacantes não faz mais gol (' + f3.pull.fin.toFixed(3) + ')');
+    if (!(f3.pull.def < 0.99)) alert('setor: defesa da zaga não leva menos gol (' + f3.pull.def.toFixed(3) + ')');
+    if (!(f3.pull.gol < 0.995)) alert('setor: goleiro melhor não leva menos gol (' + f3.pull.gol.toFixed(3) + ')');
+    if (!(f3.pull.pas > 0.005)) alert('setor: passe dos meias não dá mais posse (' + f3.pull.pas.toFixed(3) + ')');
+    if (!(f3.pull.velC > f3.pull.velP + 0.005)) alert('estilo: velocidade não rende mais no contra-ataque que na posse (' + f3.pull.velC.toFixed(3) + ' x ' + f3.pull.velP.toFixed(3) + ')');
+    if (!(f3.pull.fisP > f3.pull.fisR + 0.003)) alert('estilo: físico não rende mais na pressão que na retranca (' + f3.pull.fisP.toFixed(3) + ' x ' + f3.pull.fisR.toFixed(3) + ')');
+  }
+}
+
 console.log('Atributos: ' + n + ' jogadores, ' + D.CLUBS.length + ' clubes, ' + SEASONS + ' temporadas');
 console.log('Média por posição (temporada 0)      ' + AT.keys.L.map(k => AT.short[k]).join(' '));
 ['ZAG', 'LAT', 'MEI', 'ATA'].forEach(pos => console.log('  ' + pos + ' (geral ' + Math.round(avg(by[pos].map(o => o.ovr))) + ')                    ' + f(m[pos])));
@@ -136,6 +191,13 @@ console.log('Jeito de jogar (% dos jogadores da posição com cada ponto forte |
 ['GOL', 'ZAG', 'LAT', 'MEI', 'ATA'].forEach(pos => { const pc = o => Object.keys(o).filter(k => k !== 'n').sort((x, y) => o[y] - o[x]).map(k => k + ' ' + Math.round(100 * o[k] / o.n)).join(' · '); console.log('  ' + pos + '  ' + pc(trN[pos]) + '  |  ' + pc(trB[pos])); });
 console.log('Faixa do olheiro: ' + nb + ' jogadores · largura média ' + (wid[0] / nb / 6).toFixed(1) + ' com 1 relatório e ' + (wid[1] / nb / 6).toFixed(1) + ' com 2 · número certo com 3');
 console.log('Geral mudou: ponto forte mantido em ' + Math.round(100 * keep / tot) + '% (' + tot + ' casos)');
+{
+  const pc = x => (x >= 1 ? '+' : '') + (100 * (x - 1)).toFixed(1) + '%', P = f3.pull;
+  console.log('Setor (fase 3' + (AT.kS ? '' : ', DESLIGADA') + '): desvio por jogador em pontos de geral · finalizar ' + sd(f3.dv.fin).toFixed(1) + ' · criar ' + sd(f3.dv.cri).toFixed(1) + ' · lado ' + sd(f3.dv.ala).toFixed(1) + ' · marcar ' + sd(f3.dv.mar).toFixed(1) + ' · goleiro ' + sd(f3.dv.gol).toFixed(1));
+  console.log('  Clubes contra um time normal do mesmo nível: gols a favor ' + pc(avg(f3.ratF)) + ' na média, desvio ' + (100 * sd(f3.ratF)).toFixed(1) + ' (de ' + pc(Math.min.apply(null, f3.ratF)) + ' a ' + pc(Math.max.apply(null, f3.ratF)) + '), contra ' + pc(avg(f3.ratA)) + ' (de ' + pc(Math.min.apply(null, f3.ratA)) + ' a ' + pc(Math.max.apply(null, f3.ratA)) + ')');
+  console.log('  +6 no atributo: finalização dos atacantes ' + pc(P.fin) + ' gols · defesa da zaga ' + pc(P.def) + ' gols sofridos · goleiro ' + pc(P.gol) + ' · passe dos meias ' + (100 * P.pas).toFixed(1) + ' pontos de posse · velocidade ' + pc(P.velC) + ' no contra-ataque e ' + pc(P.velP) + ' na posse · físico ' + pc(P.fisP) + ' na pressão e ' + pc(P.fisR) + ' na retranca');
+  console.log('  Auxiliar: escalação diferente da feita só pelo geral em ' + Math.round(100 * f3.difXI) + '% dos clubes; geral médio do time ' + f3.drop.toFixed(2) + ' ponto abaixo (pior caso ' + f3.dropMax.toFixed(1) + ')');
+}
 alerts.forEach(a => console.log('ALERTA ' + a));
 console.log(alerts.length + ' alertas');
 process.exit(alerts.length ? 1 : 0);
