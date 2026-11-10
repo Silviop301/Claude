@@ -391,7 +391,7 @@
   S.coMktSellAccept = (co, o) => (o.st === 'open' ? { k: 'ok', sale: sellDo(co, o, o.v, o.pay, o.fut) } : { k: o.st });
   S.coMktSellReject = function (co, o) {
     if (o.st !== 'open') return false; o.st = 'rej';
-    const p = co.squad.find(x => x.id === o.id); if (p && o.wish === 1) p.mo = Math.max(0, (p.mo === undefined ? 60 : p.mo) - 15);
+    const p = co.squad.find(x => x.id === o.id); if (p && o.wish === 1) { p.mo = Math.max(0, (p.mo === undefined ? 60 : p.mo) - 15); p.deny = 1; } // `deny`: o motivo na conversa da semana (S.coTalkWhy)
     return true;
   };
   function sellDo(co, o, v, pay, fut) {

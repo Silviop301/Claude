@@ -833,16 +833,38 @@
     m.ev.push({ m: m.min, t: 'conversa', s: 'us', p: TALK[k].name });
     return true;
   };
-  // Conversa com quem está chateado (segunda-feira): prometer chance, pedir paciência ou ser duro
+  // Conversa com quem está chateado (segunda-feira): prometer chance, pedir paciência ou ser duro. Cada resposta tem
+  // um preço de verdade (2026-11-10; antes "Ser duro" era sempre pior que "Pedir paciência"): a promessa sobe mais a
+  // moral e cobra (entrar em até 3 jogos ou cai 15), a paciência acalma e ele volta a pedir em 4 rodadas se seguir
+  // chateado, e o duro derruba um pouco mas ele não pede mais na temporada (`p.mute`). `fx` = o que a tela mostra em
+  // etiquetas ([tom, seta, texto]); `re` = o que o jogador responde
   S.CO_TALK1 = {
-    prometer: { name: 'Prometer chance', tip: 'Ele joga nos próximos 3 jogos ou fica pior do que antes', mo: 14 },
-    paciencia: { name: 'Pedir paciência', tip: 'Acalma um pouco, sem promessa', mo: 5 },
-    duro: { name: 'Ser duro', tip: '"Treine mais." Ele não gosta, mas para de pedir', mo: -4 },
+    prometer: { name: 'Prometer chance', mo: 14, fx: [['up', '▲▲', 'moral'], ['dn', '', 'entra em até 3 jogos']], re: 'Valeu, professor. Não vou decepcionar.' },
+    paciencia: { name: 'Pedir paciência', mo: 5, fx: [['up', '▲', 'moral'], ['', '', 'ele volta a pedir']], re: 'Tá certo, professor. Vou esperar a minha vez.' },
+    duro: { name: 'Ser duro', mo: -4, fx: [['dn', '▼', 'moral'], ['', '', 'não pede mais']], re: 'Entendi, professor.' },
   };
+  S.CO_TALK1_GAP = 4; // rodadas sem pedir de novo depois de uma conversa
+  const moOf = p => (p.mo === undefined ? 60 : p.mo);
+  // Quem pede a conversa nesta semana: o mais chateado (moral abaixo de 42) que não conversou há pouco nem ouviu o "duro"
+  S.coTalkWho = function (co) {
+    if (!co.ss) return null;
+    return co.squad.filter(p => moOf(p) < 42 && p.mute !== co.season && !(p.talked !== undefined && p.talkS === co.season && co.ss.i - p.talked < S.CO_TALK1_GAP)).sort((a, b) => moOf(a) - moOf(b))[0] || null;
+  };
+  // Por que ele está chateado, para a fala e a etiqueta da tela: promessa quebrada, venda recusada, banco ou a fase
+  S.coTalkWhy = function (co, p) {
+    if (p.broke) return { k: 'promessa', tag: 'promessa não cumprida', say: 'Professor, o senhor prometeu e eu não entrei.' };
+    if (p.deny) return { k: 'sair', tag: 'queria sair', say: 'Professor, eu queria ter ido. Fiquei chateado.' };
+    if (p.bn >= 2) return { k: 'banco', tag: p.bn + ' jogos no banco', say: 'Professor, estou treinando bem e não entro. O que eu preciso fazer?' };
+    return { k: 'fase', tag: '', say: 'Professor, não estou feliz aqui. Queria entender o meu papel.' };
+  };
+  // Moral em 5 tracinhos e uma palavra (as mesmas faixas da ficha do Elenco)
+  S.coMoTxt = p => { const mo = moOf(p); return { n: Math.max(1, Math.min(5, Math.ceil(mo / 20))), t: mo >= 70 ? 'alta' : mo >= 45 ? 'boa' : 'baixa', low: mo < 45 }; };
   S.coTalk1 = function (co, id, k) {
     const p = co.squad.find(x => x.id === id), t = S.CO_TALK1[k]; if (!p || !t) return false;
-    p.mo = clamp((p.mo === undefined ? 60 : p.mo) + t.mo, 0, 100); p.talked = co.ss ? co.ss.i : 0;
+    p.mo = clamp(moOf(p) + t.mo, 0, 100); p.talked = co.ss ? co.ss.i : 0; p.talkS = co.season;
+    delete p.broke; delete p.deny;
     if (k === 'prometer') { const nx = S.coNext(co); p.prom = (nx ? nx.round : 0) + 2; }
+    if (k === 'duro') p.mute = co.season;
     return true;
   };
   // Troca (na parada): sai um titular, entra um do banco na mesma vaga
@@ -1046,7 +1068,7 @@
       p.mo += (60 - p.mo) * 0.12;
       // Jogos seguidos sem entrar (bn) e a promessa de chance feita na conversa (some: moral cai se não cumprir)
       p.bn = pl ? 0 : (p.bn || 0) + 1;
-      if (p.prom) { if (pl) delete p.prom; else if (m.round >= p.prom) { p.mo = clamp(p.mo - 15, 0, 100); delete p.prom; p.broke = 1; } }
+      if (p.prom) { if (pl) delete p.prom; else if (m.round >= p.prom) { if (p.out || p.sus) p.prom = m.round + 1; else { p.mo = clamp(p.mo - 15, 0, 100); delete p.prom; p.broke = 1; } } } // machucado ou suspenso não quebra a promessa: ela espera
       if (pl) p.mo = clamp(p.mo + (res === 'v' ? 5 : res === 'd' ? -5 * (1 - motiv) : 0.5), 0, 100);
       else if (p.ovr >= teamAvg(co) - 2) p.mo = clamp(p.mo - 2 * (1 - motiv), 0, 100);
     });
@@ -1175,7 +1197,7 @@
         const g = p.age <= 21 ? r.int(1, 4) : p.age <= 26 ? r.int(0, 2) : p.age <= 30 ? r.int(-1, 1) : p.age <= 33 ? r.int(-3, 0) : r.int(-5, -1);
         const o1 = clamp(p.ovr + (g > 0 ? Math.min(g, Math.max(0, p.pot - p.ovr)) : g), 30, 95);
         if (o1 !== p.ovr) { p.sd = o1 - p.ovr; seasonAttrs(p, p.sd); } else delete p.sd;
-        p.ct--; p.mo = 60; p.en = 100;
+        p.ct--; p.mo = 60; p.en = 100; delete p.prom; delete p.broke; delete p.deny; // ano novo: a conversa da semana começa do zero
       });
       // Contrato acabou = sai do clube, titular ou não (Silvio 2026-11-09: antes o titular renovava sozinho por 2 anos).
       // Quem quer ficar com o jogador renova durante a temporada (S.coMktRenew, botão Renovar do Elenco).
