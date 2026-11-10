@@ -343,11 +343,11 @@
       // O auxiliar fala de uma coisa: quem está fora de posição, senão quem está cansado
       let aux = '', auxFix = null;
       if (off11.length) {
-        const [p, s] = off11[0], sub = bench.filter(q => c.avail(q) && q.pos === s).sort((a, b) => b.ovr - a.ovr)[0];
+        const [p, s] = off11[0], pi = co.xi.indexOf(p.id), sub = bench.filter(q => c.avail(q) && q.pos === s).sort((a, b) => S.coSlotVal(b, co.form, pi) - S.coSlotVal(a, co.form, pi))[0];
         aux = 'O ' + esc(last(p.n)) + ' é ' + c.posTxt[p.pos].toLowerCase() + '. ' + (sub ? 'Ponho o ' + esc(last(sub.n)) + ' de ' + s + '?' : 'Ninguém da posição no banco.');
         if (sub) auxFix = () => { co.xi[co.xi.indexOf(p.id)] = sub.id; co.autoXI = false; };
       } else if (tired) {
-        const i = co.xi.indexOf(tired.id), s = sl[i], sub = bench.filter(q => c.avail(q) && q.pos === s && q.en > tired.en + 15).sort((a, b) => b.ovr - a.ovr)[0];
+        const i = co.xi.indexOf(tired.id), s = sl[i], sub = bench.filter(q => c.avail(q) && q.pos === s && q.en > tired.en + 15).sort((a, b) => S.coSlotVal(b, co.form, i) - S.coSlotVal(a, co.form, i))[0];
         aux = 'O ' + esc(last(tired.n)) + ' está com ' + Math.round(tired.en) + '% de energia.' + (sub ? ' Começa com o ' + esc(last(sub.n)) + '?' : ' Não tem ninguém melhor para a vaga.');
         if (sub) auxFix = () => { co.xi[i] = sub.id; co.autoXI = false; };
       } else aux = 'Time inteiro e cada um na sua posição. Pode ir.';
@@ -520,7 +520,7 @@
     if (!p || i < 0) { if (back) back(); else x.resume(); return; }
     const slot = S.coSlots(s.form)[i], c = C();
     const bench = s.bench.map(b => by[b]).filter(Boolean).filter(q => (q.pos === 'GOL') === (slot === 'GOL'));
-    const score = q => q.ovr * S.coFit(q.pos, slot) * (0.6 + 0.4 * q.en / 100);
+    const score = q => S.coSlotVal(q, s.form, i) * (0.6 + 0.4 * q.en / 100); // o atributo da vaga conta (fase 3 dos atributos)
     const list = bench.slice().sort((a, b) => c.avail(b) - c.avail(a) || score(b) - score(a));
     let pick = s.subs ? list.find(c.avail) : null;
     const d = didOf(m, p), yc = s.bk && s.bk[id], tired = p.en < 55;
@@ -574,7 +574,7 @@
       const by = byOf(s.squad), sl = S.coSlots(s.form);
       const cand = s.xi.map((id, i) => [by[id], i]).filter(([p]) => p && (p.out || p.en < 58 || (s.bk && s.bk[p.id]))).sort((a, b) => (b[0].out ? 1 : 0) - (a[0].out ? 1 : 0) || a[0].en - b[0].en);
       for (const [p, i] of cand) {
-        const slot = sl[i], q = s.bench.map(b => by[b]).filter(q => q && c.avail(q) && (q.pos === 'GOL') === (slot === 'GOL')).sort((a, b) => b.ovr * S.coFit(b.pos, slot) - a.ovr * S.coFit(a.pos, slot))[0];
+        const slot = sl[i], q = s.bench.map(b => by[b]).filter(q => q && c.avail(q) && (q.pos === 'GOL') === (slot === 'GOL')).sort((a, b) => S.coSlotVal(b, s.form, i) - S.coSlotVal(a, s.form, i))[0];
         if (q) return { o: p, i: q };
       }
       return null;
@@ -1644,8 +1644,12 @@
     });
   }
   // ---------- Batedores (39): pênalti, faltas, escanteios e capitão; o 1º que estiver em campo bate ----------
-  const TK_SCORE = { pen: p => p.ovr + (p.pos === 'ATA' ? 6 : p.pos === 'MEI' ? 4 : 0), fl: p => p.ovr + (p.pos === 'MEI' ? 6 : p.pos === 'ATA' ? 3 : 0), fc: p => p.ovr + (p.pos === 'MEI' ? 5 : p.pos === 'LAT' ? 4 : 0),
-    ckE: p => p.ovr + (p.pos === 'MEI' ? 5 : p.pos === 'LAT' ? 4 : 0), ckD: p => p.ovr + (p.pos === 'MEI' ? 5 : p.pos === 'LAT' ? 4 : 0), cap: p => p.ovr * 0.5 + p.age * 1.2 + (p.mo || 60) * 0.1 };
+  // O auxiliar sugere pelo atributo da cobrança (S.coTakeVal: pênalti e falta de longe = finalização, falta para cruzar
+  // e escanteio = passe); capitão pela idade, geral e moral. Na linha do jogador sai o atributo ("FIN 62"); quem está no
+  // banco fica com a bolinha do número apagada (`.bn`), porque "· banco" não cabia na linha; o melhor tem o atributo em dourado
+  const tkAt = k => p => S.coTakeVal(p, k);
+  const TK_SCORE = { pen: tkAt('pen'), fl: tkAt('fl'), fc: tkAt('fc'), ckE: tkAt('ckE'), ckD: tkAt('ckD'), cap: p => p.ovr * 0.5 + p.age * 1.2 + (p.mo || 60) * 0.1 };
+  const tkTxt = (p, k) => { if (k === 'cap' || p.pos === 'GOL') return p.ovr; const a = S.coAttrs(p); return k === 'pen' || k === 'fl' ? 'FIN ' + a[0] : 'PAS ' + a[1]; };
   function takersOf(co) {
     co.takers = co.takers || {};
     Object.keys(S.CO_TAKE).forEach(k => { const L = (co.takers[k] || []).filter(id => co.squad.some(p => p.id === id));
@@ -1669,7 +1673,7 @@
     show('<div class="fb2"><div class="tm-h"><button class="tcr-back" id="ldm-back" aria-label="Voltar">' + BKS + '</button><b>Batedores</b>' + segFB('bat') + '</div>' +
       '<div class="bt2-g">' + Object.keys(S.CO_TAKE).map(card).join('') + '</div>' +
       '<div class="fb2-c bt2-c"><b class="bt2-h">' + S.CO_TAKE[k] + '</b>' + cand.map(p => { const pos = T[k].indexOf(p.id);
-        return '<div class="bt2-r"><i>' + (p.num || p.ovr) + '</i><span><b>' + esc(last(p.n)) + '</b><small' + (p === best ? ' class="best">MELHOR' : '>' + p.pos + ' · ' + p.ovr + (co.xi.includes(p.id) ? '' : ' · banco')) + '</small></span>' +
+        return '<div class="bt2-r"><i' + (co.xi.includes(p.id) ? '' : ' class="bn" title="No banco"') + '>' + (p.num || p.ovr) + '</i><span><b>' + esc(last(p.n)) + '</b><small' + (p === best ? ' class="best">' + (k === 'cap' ? 'MELHOR' : tkTxt(p, k)) : '>' + (k === 'cap' ? p.pos + ' · ' : '') + tkTxt(p, k)) + '</small></span>' +
           [0, 1, 2].map(j => '<button data-to="' + p.id + ':' + j + '"' + (pos === j ? ' class="on"' : '') + '>' + (j + 1) + 'º</button>').join('') + '</div>'; }).join('') + '</div>' +
       '<button class="tm-go fb2-go" id="ldm-ok">Pronto</button></div>', st => {
       bindSub(st, back);
