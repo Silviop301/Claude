@@ -478,9 +478,9 @@
       '<div class="ldl-sb">' + crestB(H.id, 'ldl-cr') + '<em id="lv-score">0 <i>x</i> 0</em>' + crestB(A.id, 'ldl-cr') + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' +
         '<i class="lv-crd" id="lv-cd-h"></i><i class="lv-crd" id="lv-cd-a"></i></div></div>' +
       '<div class="ldl-side"><ul class="lv-feed ldl-ev" id="lv-feed">' + o.feed0 + '</ul>' +
-        '<div class="ldl-qm"><small>QUEM MANDA</small><i><u id="ldl-momb"></u></i></div>' +
+        '<div class="ldl-qm"><small>QUEM MANDA</small><span>' + crestB(H.id, 'ldl-c16') + '<i' + (o.m.home ? '' : ' class="r"') + '><u id="ldl-momb"></u></i>' + crestB(A.id, 'ldl-c16') + '</span></div>' +
         '<div class="ldl-g4" id="ldl-g4">' + Object.keys(S.CO_SHOUT).map(k => '<button data-gr="' + k + '"><b>' + S.CO_SHOUT[k].name + '</b><small>' + S.CO_SHOUT[k].sub + '</small></button>').join('') + '</div>' +
-        '<button class="ldl-num" id="ldl-num">Números</button><span class="ld-gr"></span>' + o.speedHtml +
+        '<button class="ldl-num" id="ldl-num" aria-label="Números do jogo">Números</button><span class="ld-gr"></span>' + o.speedHtml +
         '<button class="ld-gold ldl-stop" id="b-lv-stop">' + o.pause + '<b>Parar e mexer</b></button></div>' +
       '<div hidden><b id="lv-sh"></b><b id="lv-ot"></b><b id="lv-ps"></b><div id="lv-cst"></div><b id="lv-momw"></b><span id="lv-mom"></span><div id="lv-aux"></div></div>' +
       '<div class="lv-sheet ldl-sheet" id="lv-sheet"></div></div>';
@@ -491,21 +491,34 @@
     g.querySelectorAll('[data-gr]').forEach(b => { const on = !!sh && sh.k === b.dataset.gr; b.classList.toggle('on', on); b.disabled = !!sh && !on;
       b.querySelector('small').textContent = on ? 'até os ' + sh.until + '\'' : S.CO_SHOUT[b.dataset.gr].sub; });
     const st = x.stats();
-    $('ldl-num').innerHTML = 'Números · <b>' + st.sh.us + ' x ' + st.sh.them + '</b> chutes';
+    // Na ordem do placar (mandante à esquerda), com o escudo de cada lado: fora de casa o seu número é o da direita
+    const sh2 = hv(m, st.sh.us, st.sh.them), ids = hv(m, C().co.club, m.vs);
+    $('ldl-num').innerHTML = '<span>Chutes</span>' + crest(ids[0], 'ldl-c16') + '<b>' + sh2[0] + ' x ' + sh2[1] + '</b>' + crest(ids[1], 'ldl-c16') + '<i>›</i>';
+    // Números aberto: acompanha o jogo (antes ficava parado no minuto em que abriu)
+    const nb = $('ldl-nums'); if (nb) { nb.innerHTML = numBody(x); const sm = nb.parentNode.querySelector('.ld-ph small'); if (sm) sm.textContent = S.coClock(m); }
     if (!g._b) {
       g._b = 1;
       g.querySelectorAll('[data-gr]').forEach(b => b.onclick = () => { if (m.done || m.us.shout) return; sfx('tap'); x.shout(b.dataset.gr); });
       $('ldl-num').onclick = () => { sfx('tap'); numPop(x); };
     }
   }
-  // Números do jogo (não para o jogo)
-  function numPop(x) {
-    const s = x.stats(), m = x.m, c = C(), us = esc(c.nm(c.co.club)), th = esc(c.nm(m.vs));
-    const row = (k, a, b, inv) => { const t = a + b || 1; return '<div class="ldl-nr"><b>' + a + '</b><span><small>' + k + '</small><i><u class="' + (inv ? (a <= b ? 'up' : 'dn') : (a >= b ? 'up' : 'dn')) + '" style="width:' + Math.round(a / t * 100) + '%"></u></i></span><b>' + b + '</b></div>'; };
+  // Números na ordem do placar: mandante à esquerda, visitante à direita (o motor guarda us/them)
+  const hv = (m, a, b) => (m.home ? [a, b] : [b, a]);
+  // Escudo e nome em cima de cada coluna (o seu em destaque)
+  const numHead = m => { const c = C(), me = '<span class="me">' + crest(c.co.club, 'ldl-c16') + '<b>' + esc(c.nm(c.co.club)) + '</b></span>', th = '<span>' + crest(m.vs, 'ldl-c16') + '<b>' + esc(c.nm(m.vs)) + '</b></span>';
+    return '<div class="ldl-nh">' + hv(m, me, th).join('') + '</div>'; };
+  // Números do jogo (não para o jogo; livePaint redesenha enquanto estiver aberto)
+  function numBody(x) {
+    const s = x.stats(), m = x.m;
+    // a parte colorida da barra é sempre a sua (verde = melhor para você), do lado em que o seu escudo está
+    const row = (k, a, b, inv) => { const t = a + b || 1, v = hv(m, a, b), me = '<u class="' + ((inv ? a <= b : a >= b) ? 'up' : 'dn') + '" style="width:' + Math.round(a / t * 100) + '%"></u>';
+      return '<div class="ldl-nr"><b>' + v[0] + '</b><span><small>' + k + '</small><i>' + hv(m, me, '<u class="th"></u>').join('') + '</i></span><b>' + v[1] + '</b></div>'; };
     const ps = Math.round(s.poss * 100);
-    pop(popHead('Números do jogo', us + ' (esquerda) x ' + th + ' · ' + S.coClock(m)) + '<div class="ld-pb col ldl-nums">' +
-      row('Chutes', s.sh.us, s.sh.them) + row('No gol', s.ot.us, s.ot.them) + row('Posse (%)', ps, 100 - ps) + row('Faltas', s.fo.us, s.fo.them, 1) + row('Impedimentos', s.of.us, s.of.them, 1) +
-      row('Amarelos', s.yc.us, s.yc.them, 1) + (s.rc.us + s.rc.them ? row('Vermelhos', s.rc.us, s.rc.them, 1) : '') + '</div>', 'Números do jogo', null, 'w560');
+    return numHead(m) + row('Chutes', s.sh.us, s.sh.them) + row('No gol', s.ot.us, s.ot.them) + row('Posse (%)', ps, 100 - ps) + row('Faltas', s.fo.us, s.fo.them, 1) + row('Impedimentos', s.of.us, s.of.them, 1) +
+      row('Amarelos', s.yc.us, s.yc.them, 1) + (s.rc.us + s.rc.them ? row('Vermelhos', s.rc.us, s.rc.them, 1) : '');
+  }
+  function numPop(x) {
+    pop(popHead('Números do jogo', S.coClock(x.m)) + '<div class="ld-pb col ldl-nums" id="ldl-nums">' + numBody(x) + '</div>', 'Números do jogo', null, 'w560');
   }
   const byOf = sq => { const o = {}; sq.forEach(p => { o[p.id] = p; }); return o; };
   const enC = e => (e >= 70 ? 'ok' : e >= 50 ? 'mid' : 'low');
@@ -694,9 +707,10 @@
     const draw = () => {
       const nums = matchNums(m).filter(r => KEEP.indexOf(r[0]) >= 0);
       const cd = n => '<i class="y"></i>'.repeat(Math.min(3, n[0] || 0)) + '<i class="r"></i>'.repeat(n[1] || 0);
-      const bar = ([k, a, b, suf, inv, cards]) => { const t = (a + b) || 1, good = inv ? a <= b : a >= b;
-        return '<div class="rs-r"><b>' + (cards ? cd(cards.slice(0, 2)) + ' ' : '') + a + (suf || '') + '</b><span><small>' + k + '</small><i><u class="' + (good ? 'up' : 'dn') + '" style="width:' + Math.round(a / t * 100) + '%"></u><u class="th"></u></i></span><b>' + b + (suf || '') + (cards ? ' ' + cd(cards.slice(2)) : '') + '</b></div>'; };
-      const pane = tab === 'num' ? '<div class="rs-nums">' + nums.map(bar).join('') + '</div>' :
+      // Na ordem do placar de cima (mandante à esquerda); a parte colorida da barra é a sua
+      const bar = ([k, a, b, suf, inv, cards]) => { const t = (a + b) || 1, good = inv ? a <= b : a >= b, v = hv(m, a, b), cs = cards ? hv(m, cd(cards.slice(0, 2)), cd(cards.slice(2))) : ['', ''];
+        return '<div class="rs-r"><b>' + (cards ? cs[0] + ' ' : '') + v[0] + (suf || '') + '</b><span><small>' + k + '</small><i>' + hv(m, '<u class="' + (good ? 'up' : 'dn') + '" style="width:' + Math.round(a / t * 100) + '%"></u>', '<u class="th"></u>').join('') + '</i></span><b>' + v[1] + (suf || '') + (cards ? ' ' + cs[1] : '') + '</b></div>'; };
+      const pane = tab === 'num' ? '<div class="rs-nums">' + numHead(m) + nums.map(bar).join('') + '</div>' :
         tab === 'mom' ? '<div class="ldr-mom">' + U.lvMom(m, move !== null && move !== undefined ? move : null) + '</div><div class="rs-momf"><small>0\'</small><small>' + (move !== null && move !== undefined ? 'sua mudança aos ' + move + '\'' : 'acima é você') + '</small><small>90\'</small></div>' +
           '<ul class="ldl-last ldr-key">' + m.ev.filter(e => e.t === 'gol' || e.t === 'vermelho' || (e.s === 'us' && (e.t === 'tatica' || e.t === 'troca'))).slice(0, 6).map(e => c.feedLine(m, e)).join('') + '</ul>' :
         '<ul class="ldl-last ldr-all">' + m.ev.filter(e => e.t !== 'grito-fim').map(e => c.feedLine(m, e)).join('') + '</ul>';
@@ -838,20 +852,93 @@
   function clube() {
     const c = C(), co = c.co, cl = club(co.club), f = S.coFin(co), B = co.board, pos = S.coPos(co), conf = Math.round(B.conf);
     const exp = co.squad.filter(p => p.ct <= 1).length, pres = S.coPres ? S.coPres(co) : null;
+    const est = S.coEst && U.EST ? S.coEst(co) : null;
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const tile = (id, k, t, v, sub, cc) => '<button class="kb2-t"' + (id ? ' id="' + id + '"' : '') + ' data-k="' + k + '"><b>' + t + '</b><span><em class="' + (cc || '') + '">' + v + '</em><small>' + sub + '</small></span></button>';
     const meta = (B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + B.goal.pos + 'º') + ' · hoje ' + pos + 'º';
     show('<div class="kb2"><div class="tm-h"><button class="tcr-back" id="kb2-back" aria-label="Voltar">' + BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>' + esc(cl.name) + '</b><small>' + esc(co.ss ? co.ss.name : '') + ' · fama ' + co.fame + '</small></div>' +
-      '<div class="kb2-g">' + tile('ldk-go', 'fin', 'Finanças', c.brl(f.caixa), 'no caixa', f.caixa < 0 ? 'dn' : '') +
+      '<div class="kb2-g' + (est ? ' g3' : '') + '">' + tile('ldk-go', 'fin', 'Finanças', c.brl(f.caixa), 'no caixa', f.caixa < 0 ? 'dn' : '') +
         tile('', 'ele', 'Elenco', exp ? exp : co.squad.length, exp ? (exp > 1 ? 'contratos acabam' : 'contrato acaba') + ' no fim do ano' : 'jogadores', exp ? 'dn' : '') +
         tile('', 'tro', 'Troféus', co.titles.length, co.titles.length === 1 ? 'título' : 'títulos') +
-        tile('', 'hall', 'Hall do técnico', (co.season + 1) + 'ª', 'temporada de carreira') + '</div>' +
+        tile('', 'hall', est ? 'Hall' : 'Hall do técnico', (co.season + 1) + 'ª', 'temporada de carreira') +
+        (est ? '<button class="kb2-t kb2-es" id="kb2-est" data-k="est"><b>Estádio</b>' + estThumb(co, est) + '<span><em>' + milK(S.coEstCap(est)) + '</em><small>lugares</small>' +
+          '<em class="hm ' + estCls(est) + '">torcida ' + S.coEstHum(est) + '</em></span></button>' : '') + '</div>' +
       '<div class="kb2-side"><div class="kb2-dir"><small>DIRETORIA</small><b>' + (conf >= 70 ? 'confiança alta' : conf >= 45 ? 'confiança boa' : conf >= 30 ? 'confiança baixa' : 'no limite') + '</b>' +
           '<i><u class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '" style="width:' + conf + '%"></u></i><em class="' + (pos <= B.goal.pos ? '' : 'hi') + '">' + meta + '</em></div>' +
         (pres ? '<div class="kb2-pr fc">' + presFace(pres, 'kb2-fc') + '<div><small>PRESIDENTE</small><b>' + esc(pres.n) + '</b><span>' + esc(pres.nome || '') + '</span></div></div>' : '') +
-        '<span class="rs-gap"></span><p class="kb2-soon">Estádio e base chegam depois</p></div></div>', st => {
-      st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') financas(); else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); });
+        (est ? '' : '<span class="rs-gap"></span><p class="kb2-soon">Estádio e base chegam depois</p>') + '</div></div>', st => {
+      st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') financas(); else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); else if (k === 'est') estadio(); });
       st.querySelector('#kb2-back').onclick = () => { sfx('tap'); semana(); };
+    });
+  }
+
+  // ---------- Estádio (fase 1: só ver; ingresso, obras e melhorias entram nas próximas fases) ----------
+  const milK = v => (v / 1000).toFixed(v % 1000 ? 1 : 0).replace('.', ',') + ' mil';
+  const estCls = e => { const i = S.coEstHumIdx(e.hum); return i >= 3 ? 'up' : i <= 1 ? 'dn' : ''; };
+  const estSeed = id => { let h = 7; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 99991; return h + 1; };
+  // Cores da torcida: as da camisa; cor escura demais some na arquibancada e vira cinza
+  function estCols(cl) {
+    const k = U.LP && U.LP.kitFor ? U.LP.kitFor(cl.name, cl.id) : null; if (!k) return null;
+    const lum = h => { const v = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); return (0.299 * v[0] + 0.587 * v[1] + 0.114 * v[2]) / 255; };
+    const ok = h => (lum(h) < 0.2 ? '#8E949C' : h), a = ok(k[0]), b = ok(k[1] === k[0] ? k[2] : k[1]);
+    return [a, b, a === b ? '#F3F1EA' : ok(k[2])];
+  }
+  const EST_OCC0 = { n: 0, s: 0, a: 0, so: 0 };
+  function estFit(lv, w, h, max) { const d = U.EST.depth; return Math.max(0.2, Math.min(max, w / (288 + d[lv.n] + d[lv.s]), h / (165 + d[lv.a] + d[lv.so]))); }
+  function estThumb(co, e) {
+    const d = U.EST.depth, k = estFit(e.lv, 150, 116, 0.44);
+    return U.EST.svg({ w: 158, h: 124, k, dx: (d[e.lv.n] - d[e.lv.s]) * k / 2, dy: (d[e.lv.a] - d[e.lv.so]) * k / 2, lv: e.lv, occ: e.occ || EST_OCC0, cols: estCols(club(co.club)), seed: estSeed(co.club) }).svg;
+  }
+  // Ingresso (fase 2): 5 preços em palavras para o próximo jogo em casa, com a renda, o público e o que a torcida acha
+  function ingresso(pick) {
+    const c = C(), co = c.co, E = S.CO_EST, P = S.coEstPrices(co); if (!P) return estadio();
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const L = P.list, sel = pick == null ? P.now : pick, cur = L[P.now], x = L[sel], mx = Math.max.apply(null, L.map(o => o.gate)), d = x.gate - cur.gate;
+    const vs = P.vs ? club(P.vs) : null;
+    show('<div class="es"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button><b>Ingresso</b><small>' + (vs ? 'próximo jogo em casa: ' + esc(vs.short || vs.name) : 'renda de um jogo em casa') + '</small>' +
+        '<span class="es-top"><button class="es-q" id="es-q" aria-label="Como funciona">?</button></span></div>' +
+      '<div class="es-ig">' + L.map(o => '<button class="es-ic' + (o.i === sel ? ' on' : '') + '" data-pr="' + o.i + '">' + (o.i === P.now ? '<u>HOJE</u>' : '') + '<em>' + c.brl(o.gate) + '</em><i style="height:' + Math.max(10, Math.round(o.gate / mx * 118)) + 'px"></i><b>' + o.name + '</b><small' + (o.full ? ' class="f"' : '') + '>' + (o.full ? 'lota' : milK(o.pub)) + '</small></button>').join('') + '</div>' +
+      '<div class="es-side">' +
+        '<div class="es-k"><small>PÚBLICO</small><div class="es-ch"><b>' + milK(x.pub) + '<u>de ' + milK(x.cap) + '</u></b></div><span class="es-fill"><u style="width:' + Math.round(x.pub / x.cap * 100) + '%"></u></span></div>' +
+        '<div class="es-k"><small>RENDA DO JOGO</small><b>' + c.brl(x.gate) + '</b><em class="' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + (sel === P.now ? 'é o preço de hoje' : d ? c.brl(Math.abs(d)) + (d > 0 ? ' a mais que hoje' : ' a menos que hoje') : 'igual a hoje') + '</em></div>' +
+        '<div class="es-k"><small>TORCIDA</small><b class="' + (x.hum > 0 ? 'up' : x.hum < 0 ? 'dn' : '') + '">' + x.txt + '</b><em>a cada jogo em casa</em></div>' +
+        '<button class="tm-go' + (sel === P.now ? ' off' : '') + '" id="es-go">' + (sel === P.now ? 'Preço de hoje' : 'Cobrar ' + x.name.toLowerCase()) + '</button>' +
+      '</div></div>', st => {
+      st.querySelector('#es-back').onclick = () => { sfx('tap'); estadio(); };
+      st.querySelector('#es-q').onclick = () => { sfx('tap'); mkHelp('', 'O preço vale para todos os jogos em casa até você mudar. Mais caro rende mais por pessoa e afasta gente: compensa quando o jogo lota. Mais barato enche a casa e agrada a torcida, que empurra o time.'); };
+      st.querySelectorAll('[data-pr]').forEach(b => b.onclick = () => { sfx('tap'); ingresso(+b.dataset.pr); });
+      st.querySelector('#es-go').onclick = () => { if (sel === P.now) return; sfx('win'); S.coEstPrice(co, sel); c.save(); ingresso(); };
+    });
+  }
+  function estadio() {
+    const c = C(), co = c.co, cl = club(co.club), e = S.coEst(co), E = S.CO_EST, cap = S.coEstCap(e), hi = S.coEstHumIdx(e.hum), cls = estCls(e);
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const h = e.h || [], full = h.filter(g => g.pub >= g.cap * E.full).length, last = h[h.length - 1], why = S.coEstWhy(co);
+    const vsO = id => { const t = window.CRAQUE_DATA.O(club(id).name); return t.charAt(0).toLowerCase() + t.slice(1); };
+    const pips = n => '<span class="es-pp">' + [1, 2, 3, 4, 5].map(i => '<i' + (i <= n ? ' class="on"' : '') + '></i>').join('') + '</span>';
+    const lb = (k, cc, pos) => '<div class="es-lb ' + cc + '" style="' + pos + '"><small>' + E.names[k].toUpperCase() + '</small>' + pips(e.lv[k]) + '<b>' + milK(S.coEstSeats(k, e.lv[k])) + '</b></div>';
+    show('<div class="es"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>' + esc(S.coEstName(cl.id) || 'Estádio') + '</b><small>' + esc(cl.name) + ' · ' + milK(cap) + ' lugares</small>' +
+        '<span class="es-top"><button class="es-q" id="es-q" aria-label="Como funciona">?</button></span></div>' +
+      '<div class="es-pn" id="es-pn"></div>' +
+      '<div class="es-side">' +
+        '<div class="es-k t"><small>TORCIDA</small><b class="' + cls + '">' + S.coEstHum(e) + '</b><span class="es-dd ' + cls + '">' + [0, 1, 2, 3, 4].map(i => '<i' + (i <= hi ? ' class="on"' : '') + '></i>').join('') + '</span>' + (why ? '<em>' + esc(why) + '</em>' : '') + '</div>' +
+        '<div class="es-k"><small>CASA CHEIA</small>' + (h.length ? '<div class="es-ch"><b>' + full + '<u>de ' + h.length + (h.length > 1 ? ' jogos' : ' jogo') + '</u></b><span class="es-bars">' + h.map(g => '<i class="' + (g.pub >= g.cap * E.full ? 'f' : '') + '" style="height:' + Math.max(8, Math.round(g.pub / g.cap * 100)) + '%"></i>').join('') + '</span></div>' : '<em>nenhum jogo em casa ainda</em>') + '</div>' +
+        '<div class="es-k"><small>ÚLTIMO PÚBLICO</small>' + (last ? '<b>' + milK(last.pub) + '</b><em>contra ' + esc(vsO(last.vs)) + '</em>' : '<em>a estreia em casa ainda não chegou</em>') + '</div>' +
+        '<button class="tm-b" id="es-ing">Ingresso<small>' + E.price.names[e.pr].toLowerCase() + '</small></button>' +
+      '</div></div>', st => {
+      st.querySelector('#es-ing').onclick = () => { sfx('tap'); ingresso(); };
+      st.querySelector('#es-back').onclick = () => { sfx('tap'); clube(); };
+      st.querySelector('#es-q').onclick = () => { sfx('tap'); mkHelp('', 'Os pontinhos são o público do último jogo em casa. A torcida se empolga com vitória, ainda mais em casa e em clássico. Torcida empolgada enche o estádio e empurra o time em casa; revoltada, pesa contra. Obras e melhorias chegam nas próximas atualizações.'); };
+      const pn = st.querySelector('#es-pn'), W = pn.clientWidth, H = pn.clientHeight, d = U.EST.depth, lv = e.lv;
+      if (!W || !H) return;
+      const k = estFit(lv, W - 216, H - 84, 1), roof = x => (lv[x] >= 4 ? 3.5 * k : 0);
+      const R = U.EST.svg({ w: W, h: H, k, dx: (d[lv.n] - d[lv.s]) * k / 2, dy: (d[lv.a] - d[lv.so]) * k / 2, lv, occ: e.occ || EST_OCC0, cols: estCols(cl), gram: 1, seed: estSeed(cl.id) });
+      const { px, py, pw, ph, gap } = R, dep = x => d[lv[x]] * k + roof(x);
+      pn.innerHTML = R.svg +
+        lb('a', '', 'left:' + (px + pw / 2) + 'px;top:' + (py - gap - dep('a') - 30) + 'px;transform:translateX(-50%)') +
+        lb('so', '', 'left:' + (px + pw / 2) + 'px;top:' + (py + ph + gap + dep('so') + 10) + 'px;transform:translateX(-50%)') +
+        lb('n', 'v l', 'right:' + (W - (px - gap - dep('n')) + 12) + 'px;top:' + (py + ph / 2) + 'px;transform:translateY(-50%)') +
+        lb('s', 'v r', 'left:' + (px + pw + gap + dep('s') + 12) + 'px;top:' + (py + ph / 2) + 'px;transform:translateY(-50%)');
     });
   }
   // ---------- Mercado, lote 1 (2026-11-09, quadros 23, 23b e 24): só olhar; propostas no lote 2 ----------
@@ -901,9 +988,11 @@
       st.querySelector('#mk-go').onclick = () => { const k = S.coMktSearch(co).length; if (!(k > 0 && k <= S.CO_MKT.max)) return; sfx('tap'); c.save(); mercadoRes(0, 0); };
     });
   }
-  // Resultado (23b): os filtros usados em cima e Mudar; 4 jogadores por página; à direita verba, folha e as páginas
+  // Resultado (23b): os filtros usados em cima e Mudar; 4 jogadores por página; à direita verba, folha, a ordem
+  // (◀ ▶ como o Mostrar das notícias; S.CO_MKT.ords, fica em `m.ord`) e as páginas
   function mercadoRes(pg, sel) {
     const c = C(), co = c.co, m = S.coMkt(co), F = S.coMktFilters(co), f = S.coFin(co), folha = S.coFolha(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
+    const ords = S.CO_MKT.ords, ord = Math.min(m.ord || 0, ords.length - 1);
     const list = S.coMktSort(co, S.coMktSearch(co)), pages = Math.max(1, Math.ceil(list.length / 4));
     pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * 4, pg * 4 + 4); sel = Math.min(sel || 0, R.length - 1);
     const chips = F.map((x, i) => (m.f[i] ? '<span class="mk-chip">' + esc(x.o[m.f[i]].t.replace(' · verba', '')) + '</span>' : '')).join('') + (m.nm && m.nm.trim().length >= 3 ? '<span class="mk-chip">"' + esc(m.nm.trim()) + '"</span>' : '');
@@ -914,13 +1003,15 @@
       '<div class="mk-chips">' + chips + '<span class="rs-gap"></span><button class="mk-mud" id="mkr-mud">Mudar</button></div>' +
       '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">Ninguém com esses filtros.</p>') + '</div>' +
       '<div class="mk-side"><div class="mk-k"><small>VERBA</small><b class="up">' + c.brl(f.verba) + '</b><span class="mk-fl"><span>Folha</span><span>' + pct + '% do teto</span></span><i class="mk-bar"><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i></div>' +
+        '<div class="mk-k mk-ord"><button class="mk-ar" data-mo="-1" aria-label="ordem anterior">' + MK_L + '</button><span><small>ORDEM</small><b>' + ords[ord] + '</b></span><button class="mk-ar" data-mo="1" aria-label="ordem seguinte">' + MK_R + '</button></div>' +
         '<div class="mk-pg"><button class="mk-ar big" id="mkr-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar big" id="mkr-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></div>' +
         '<span class="rs-gap"></span><button class="tm-go' + (R.length ? '' : ' off') + '" id="mkr-go">Ver ficha</button></div></div>', st => {
       st.querySelector('#mkr-back').onclick = () => { sfx('tap'); mercado(); };
       mkCoins(st, () => mercadoRes(pg, sel));
       st.querySelector('#mkr-mud').onclick = () => { sfx('tap'); mercado(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Melhor, igual ou pior é contra o seu titular da posição. Quem o olheiro ainda não viu aparece sem relatório; peça um na ficha. Os com relatório vêm primeiro.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Melhor, igual ou pior é contra o seu titular da posição. Quem o olheiro ainda não viu aparece sem relatório; peça um na ficha. Em Ordem você escolhe quem vem primeiro: em Nível, os com relatório, do melhor para o pior.'); };
       st.querySelectorAll('[data-mr]').forEach(b => b.onclick = () => { const i = +b.dataset.mr; sfx('tap'); if (i === sel) return ficha(R[i].id, () => mercadoRes(pg, i)); mercadoRes(pg, i); });
+      st.querySelectorAll('[data-mo]').forEach(b => b.onclick = () => { sfx('tap'); m.ord = (ord + (+b.dataset.mo) + ords.length) % ords.length; c.save(); mercadoRes(0, 0); });
       st.querySelector('#mkr-prev').onclick = () => { sfx('tap'); mercadoRes(pg - 1, 0); };
       st.querySelector('#mkr-next').onclick = () => { sfx('tap'); mercadoRes(pg + 1, 0); };
       st.querySelector('#mkr-go').onclick = () => { if (!R.length) return; sfx('tap'); ficha(R[sel].id, () => mercadoRes(pg, sel)); };
@@ -1418,18 +1509,30 @@
   // geral e contrato (laranja no último ano), a tabela rola por dentro; o cartão à direita com energia, potencial, moral,
   // salário e o contrato com Renovar (a renovação chega com o mercado: `#lde-ren` com data-id fica apagado até lá)
   elenco.ct = 0; // aba da ficha: 0 Atributos, 1 Situação (fica na que o técnico deixou enquanto olha o elenco)
+  // Ordem do elenco (Silvio 2026-11-10: "ordenar por over, valor, etc"): ◀ ▶ no topo, à direita; fica em `co.eo`. Cada ordem
+  // tem [nome, chave (menor primeiro), coluna que acende, e, se o dado não tem coluna, o título e o texto que entram no
+  // lugar do contrato]; o desempate é sempre o geral
+  const EL_ORD = [
+    ['Geral', p => -p.ovr, 'o'],
+    ['Potencial', p => -(p.pot || p.ovr), 'ct', 'POTENCIAL', p => p.pot || p.ovr],
+    ['Valor', p => -S.coValue(p), 'ct', 'VALOR', (p, c) => c.brl(S.coValue(p))],
+    ['Salário', p => -(p.wage || 0), 'ct', 'SALÁRIO', (p, c) => c.mi(p.wage || 0)],
+    ['Idade', p => p.age, 'a'],
+    ['Contrato', p => p.ct, 'ct']
+  ];
   function elenco(tab, sel) {
     const c = C(), co = c.co, T = [['Goleiros', ['GOL']], ['Defesa', ['ZAG', 'LAT']], ['Meio', ['MEI']], ['Ataque', ['ATA']]];
     tab = tab || 0; if (S.coNums) S.coNums(co.squad); // os mesmos números do campinho
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
-    const L = co.squad.filter(p => T[tab][1].includes(p.pos)).sort((a, b) => b.ovr - a.ovr);
+    const eo = Math.min(co.eo || 0, EL_ORD.length - 1), O = EL_ORD[eo], MKL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 4L6 12l11 8z"/></svg>', MKR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l11 8-11 8z"/></svg>';
+    const L = co.squad.filter(p => T[tab][1].includes(p.pos)).sort((a, b) => O[1](a) - O[1](b) || b.ovr - a.ovr);
     const q = L.find(p => p.id === sel) || L[0];
     const folha = co.squad.reduce((a, p) => a + (p.wage || 0), 0);
     const ctT = n => n <= 0 ? 'acaba agora' : n === 1 ? 'fim do ano' : U.D.plural(n, 'ano', 'anos');
     const tag = p => p.out ? ['dn', 'lesionado'] : p.sus ? ['dn', 'suspenso'] : c.pend(p) ? ['y', 'pendurado'] : S.coMktListed(co, p) ? ['g', 'à venda'] : null;
     const rows = L.map(p => { const t = tag(p);
       return '<button class="lde2-r' + (q && p.id === q.id ? ' on' : '') + (c.avail(p) ? '' : ' out') + '" data-id="' + p.id + '"><i>' + (p.num || '') + '</i><span><b>' + esc(p.n) + '</b><small>' + p.pos + '</small>' + (t ? '<em class="' + t[0] + '">' + t[1] + '</em>' : '') + '</span>' +
-        '<span class="a">' + p.age + '</span><span class="o">' + p.ovr + '</span><span class="ct' + (p.ct <= 1 ? ' dn' : '') + '">' + ctT(p.ct) + '</span></button>'; }).join('');
+        '<span class="a">' + p.age + '</span><span class="o">' + p.ovr + '</span>' + (O[4] ? '<span class="ct x">' + O[4](p, c) + '</span>' : '<span class="ct' + (p.ct <= 1 ? ' dn' : '') + '">' + ctT(p.ct) + '</span>') + '</button>'; }).join('');
     let card = '';
     if (q) {
       const mo = q.mo === undefined ? 60 : q.mo, moT = mo >= 70 ? 'alta' : mo >= 45 ? 'boa' : 'baixa';
@@ -1448,12 +1551,14 @@
           (ofq ? '<button class="lde2-sell of" id="lde-of">Ver proposta</button>' : '<button class="lde2-sell' + (listed ? ' on' : '') + '" id="lde-sell"' + (canS || listed ? '' : ' disabled') + '>' + (listed ? 'Tirar da venda' : 'Pôr à venda') + '</button>') + '</div>' +
         (hint ? '<small class="lde2-hint">' + hint + '</small>' : '') : bars) + '</div>';
     }
-    show('<div class="lde2"><div class="tm-h"><button class="tcr-back" id="lde-back" aria-label="Voltar">' + BK + '</button><b>Elenco</b><small><span class="lde2-n' + (co.squad.length >= S.CO_MKT.maxSquad ? ' full' : '') + '">' + co.squad.length + '/' + S.CO_MKT.maxSquad + '</span> jogadores · folha ' + c.mi(folha) + '/sem</small></div>' +
+    show('<div class="lde2"><div class="tm-h"><button class="tcr-back" id="lde-back" aria-label="Voltar">' + BK + '</button><b>Elenco</b><small><span class="lde2-n' + (co.squad.length >= S.CO_MKT.maxSquad ? ' full' : '') + '">' + co.squad.length + '/' + S.CO_MKT.maxSquad + '</span> jogadores · folha ' + c.mi(folha) + '/sem</small>' +
+      '<span class="lde2-ord"><button class="mk-ar" data-eo="-1" aria-label="ordem anterior">' + MKL + '</button><span><small>ORDEM</small><b>' + O[0] + '</b></span><button class="mk-ar" data-eo="1" aria-label="ordem seguinte">' + MKR + '</button></span></div>' +
       '<div class="lde2-tabs">' + T.map(([l, ps], i) => '<button data-et="' + i + '"' + (i === tab ? ' class="on"' : '') + '>' + l + ' <small>' + co.squad.filter(p => ps.includes(p.pos)).length + '</small></button>').join('') + '</div>' +
-      '<div class="lde2-l"><div class="lde2-h"><i></i><span>JOGADOR</span><span class="a">IDADE</span><span class="o">GERAL</span><span class="ct">CONTRATO</span></div>' + rows + '</div>' + card + '</div>', st => {
+      '<div class="lde2-l"><div class="lde2-h"><i></i><span>JOGADOR</span><span class="a' + (O[2] === 'a' ? ' on' : '') + '">IDADE</span><span class="o' + (O[2] === 'o' ? ' on' : '') + '">GERAL</span><span class="ct' + (O[2] === 'ct' ? ' on' : '') + '">' + (O[3] || 'CONTRATO') + '</span></div>' + rows + '</div>' + card + '</div>', st => {
       st.querySelectorAll('[data-et]').forEach(b => b.onclick = () => { sfx('tap'); elenco(+b.dataset.et); });
       st.querySelectorAll('.lde2-r').forEach(b => b.onclick = () => { sfx('tap'); const y = st.querySelector('.lde2-l').scrollTop; elenco(tab, b.dataset.id); const l = document.querySelector('.lde2-l'); if (l) l.scrollTop = y; });
       st.querySelector('#lde-back').onclick = () => { sfx('tap'); clube(); };
+      st.querySelectorAll('[data-eo]').forEach(b => b.onclick = () => { sfx('tap'); co.eo = (eo + (+b.dataset.eo) + EL_ORD.length) % EL_ORD.length; c.save(); elenco(tab); }); // volta ao primeiro da ordem nova (o escolhido podia sumir da vista)
       const me = () => elenco(tab, q && q.id);
       st.querySelectorAll('[data-ec]').forEach(b => b.onclick = () => { sfx('tap'); elenco.ct = +b.dataset.ec; const y = st.querySelector('.lde2-l').scrollTop; me(); const l = document.querySelector('.lde2-l'); if (l) l.scrollTop = y; });
       const rn = st.querySelector('#lde-ren:not([disabled])'); if (rn) rn.onclick = () => { sfx('tap'); contrato(q.id, me); };
@@ -1858,6 +1963,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, lift, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato };
+  U.LD = { on, show, off, lift, estadio, ingresso, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();
