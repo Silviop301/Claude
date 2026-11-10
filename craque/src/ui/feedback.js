@@ -85,6 +85,50 @@
     document.body.appendChild(w);
   }
 
+  // ---------- Sua opinião deitada (2026-11-10, quadro 55) ----------
+  // Aberta pelos Ajustes deitados, no palco U.LD: carinhas, do que mais gostou (assuntos do Treinador), se indicaria e um
+  // campo só de texto (vai em `more`). O rascunho é o mesmo da tela em pé; enviado, mostra o agradecimento e volta
+  const LIKES_CO = [['aovivo', 'Jogo ao vivo'], ['tatica', 'Tática'], ['mercado', 'Mercado'], ['treino', 'Treino'], ['financas', 'Finanças'], ['olheiro', 'Olheiro']];
+  const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+  function feedbackLand(back) {
+    const out = () => (back || U.home)(), s = st();
+    const d = Object.assign({ rate: 0, likes: [], lost: '', rec: '', more: '' }, s.draft || {});
+    d.likes = d.likes.filter(v => LIKES_CO.some(l => l[0] === v));
+    const keep = () => { const o = st(); o.draft = d; store(KEY, o); };
+    const head = '<div class="tm-h"><button class="tcr-back" id="op-back" aria-label="Voltar">' + BK + '</button><b>Sua opinião</b><small>não vai seu nome</small></div>';
+    const thanks = () => U.LD.show('<div class="op op-ty">' + head + '<div class="op-done"><b>Valeu demais!</b><span>Cada resposta é lida e ajuda a decidir o que muda no Climbix.</span><i></i><button class="op-go" id="op-ok">Voltar</button></div></div>',
+      w => { w.querySelector('#op-back').onclick = w.querySelector('#op-ok').onclick = () => { U.sfx('tap'); out(); }; }, 'O Climbix é jogado com o celular deitado.');
+    U.LD.show('<div class="op">' + head +
+      '<div class="op-l"><span class="op-lb">O QUE ESTÁ ACHANDO?</span><div class="op-fc">' + RATES.map(([v, e]) => '<button class="op-f' + (d.rate === v ? ' on' : '') + '" data-rate="' + v + '" aria-label="Nota ' + v + ' de 5" aria-pressed="' + (d.rate === v) + '">' + U.emo(e, 'md') + '</button>').join('') + '</div>' +
+        '<span class="op-lb">DO QUE MAIS GOSTOU?</span><div class="op-ch">' + LIKES_CO.map(([v, l]) => '<button class="op-c' + (d.likes.includes(v) ? ' on' : '') + '" data-like="' + v + '" aria-pressed="' + d.likes.includes(v) + '">' + l + '</button>').join('') + '</div>' +
+        '<span class="op-lb">INDICARIA PARA UM AMIGO?</span><div class="op-seg">' + RECS.map(([v, l]) => '<button class="op-s' + (d.rec === v ? ' on' : '') + '" data-rec="' + v + '" aria-pressed="' + (d.rec === v) + '">' + l + '</button>').join('') + '</div></div>' +
+      '<div class="op-card"><label class="op-lb2" for="op-more">QUER CONTAR MAIS?</label><textarea id="op-more" maxlength="1500" placeholder="Algo confuso, chato ou que faltou? Uma ideia?">' + esc(d.more) + '</textarea>' +
+        '<p class="op-msg" id="op-msg" role="status"></p><button class="op-go" id="op-send">Enviar</button></div></div>',
+      w => {
+        const q = x => w.querySelector(x), all = x => w.querySelectorAll(x);
+        const mark = (sel, on) => all(sel).forEach(b => { const y = on(b); b.classList.toggle('on', y); b.setAttribute('aria-pressed', y); });
+        const msg = (t, ok) => { const m = q('#op-msg'); m.textContent = t; m.className = 'op-msg' + (ok ? ' ok' : ''); };
+        q('#op-back').onclick = () => { U.sfx('tap'); keep(); out(); };
+        all('[data-rate]').forEach(b => b.onclick = () => { U.sfx('tap'); d.rate = d.rate === +b.dataset.rate ? 0 : +b.dataset.rate; mark('[data-rate]', x => +x.dataset.rate === d.rate); keep(); });
+        all('[data-like]').forEach(b => b.onclick = () => { U.sfx('tap'); const v = b.dataset.like, i = d.likes.indexOf(v); if (i >= 0) d.likes.splice(i, 1); else d.likes.push(v); mark('[data-like]', x => d.likes.includes(x.dataset.like)); keep(); });
+        all('[data-rec]').forEach(b => b.onclick = () => { U.sfx('tap'); d.rec = d.rec === b.dataset.rec ? '' : b.dataset.rec; mark('[data-rec]', x => x.dataset.rec === d.rec); keep(); });
+        q('#op-more').oninput = e => { d.more = e.target.value; };
+        q('#op-more').onblur = keep;
+        q('#op-send').onclick = () => {
+          if (!d.rate && !d.likes.length && !d.lost.trim() && !d.rec && !d.more.trim()) return msg('Responda pelo menos uma pergunta.');
+          const btn = q('#op-send'); btn.disabled = true; msg('Enviando…', true);
+          const body = JSON.stringify({ pid: U.rankPlayer ? U.rankPlayer().pid : '', rate: d.rate || 0, likes: d.likes, lost: d.lost.trim(), rec: d.rec, more: d.more.trim(),
+            where: 'config', pos: '', seasons: 0, grade: '', ver: window.CLIMBIX_VER || '', ua: ua() });
+          fetch(API + '?a=send', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body })
+            .then(r => r.json().then(j => ({ ok: r.ok, j })))
+            .then(({ ok, j }) => { if (!ok) throw new Error(j && j.error === 'slow' ? 'slow' : 'net');
+              const o = st(); delete o.draft; o.sent = (o.sent || 0) + 1; o.at = Date.now(); store(KEY, o); thanks(); })
+            .catch(e => { btn.disabled = false; keep(); msg(e.message === 'slow' ? 'Calma! Espere um pouquinho e envie de novo.' : 'Não deu para enviar agora. Suas respostas ficam guardadas.'); });
+        };
+        if (U.LD.lift) U.LD.lift(w.querySelector('.op'));
+      }, 'O Climbix é jogado com o celular deitado.');
+  }
+
   // Cartão do fim de carreira: chama mais na primeira vez; depois de responder, vira só um link discreto
   function feedbackCard() {
     const sent = st().sent;
@@ -100,5 +144,5 @@
       (sent ? 'Valeu! Mande outra quando quiser' : '1 minuto · me ajuda a melhorar o jogo') + '</small></button>';
   }
 
-  Object.assign(U, { feedback, feedbackCard, feedbackHome });
+  Object.assign(U, { feedback, feedbackLand, feedbackCard, feedbackHome });
 })();

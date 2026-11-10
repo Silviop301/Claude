@@ -240,11 +240,13 @@
   // Carreiras (troféus, coleção e conquistas do Jogador) sai da home até o Jogador voltar (Silvio 2026-11-09): os números do
   // técnico estão no Perfil. MINE_ON = true devolve o botão
   const MINE_ON = false;
+  // Pacotinhos são do Jogador (itens do personagem e cartas): o botão da home deitada volta com ele (Silvio 2026-11-10)
+  const PACKS_ON = false;
   const LAND_MORE = [['mine', 'Carreiras', 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4'], ['ranking', 'Ranking', 'M12 14a5 5 0 1 0 0-10a5 5 0 1 0 0 10M9 13l-2 8 5-3 5 3-2-8'],
     ['profile', 'Perfil', 'M12 12a4 4 0 1 0 0-8a4 4 0 1 0 0 8M4 21a8 8 0 0 1 16 0'], ['settings', 'Ajustes', 'M12 15a3 3 0 1 0 0-6a3 3 0 1 0 0 6M19 12l2-1-2-4-2 1-2-2V4h-4v2L9 8 7 7 5 11l2 1v2l-2 1 2 4 2-1 2 2v2h4v-2l2-2 2 1 2-4-2-1z']].filter(x => (RANK_ON || x[0] !== 'ranking') && (MINE_ON || x[0] !== 'mine'));
   const lineSvg = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + d + '"/></svg>';
   function homeLand() {
-    const so = U.soCo(), packs = so ? 0 : U.ITEMS.get().packs.length, last = lastSave();
+    const so = U.soCo(), packs = so || !PACKS_ON ? 0 : U.ITEMS.get().packs.length, last = lastSave();
     const cont = last ? '<button class="hl-go" id="' + (MODES[last.m].cont || 'hl-go') + '" data-vg="' + last.m + ':' + last.i + '">' + PLAY_SVG + '<b>CONTINUAR</b><small>' + esc(svName(last.sv)) + '</small></button>'
       : '<button class="hl-go solo" id="hl-go" data-mode="treinador">' + PLAY_SVG + '<b>JOGAR</b></button>';
     const modes = (so ? (last ? ['treinador'] : []) : LAND_ORDER).map(m => m === 'jogador'

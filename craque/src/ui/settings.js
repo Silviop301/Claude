@@ -112,8 +112,8 @@
         w => {
           w.querySelector('#aj-back').onclick = () => { U.sfx('tap'); out(); };
           w.querySelector('#aj-som').onclick = () => { if (window.CRAQUE_SFX) window.CRAQUE_SFX.toggle(); U.sfx('tap'); draw(); };
-          w.querySelector('#aj-fb').onclick = () => { U.sfx('tap'); U.feedback('config'); };
-          if (w.querySelector('#aj-acc')) w.querySelector('#aj-acc').onclick = () => { U.sfx('tap'); U.ldOff(); U.cloud('login'); };
+          w.querySelector('#aj-fb').onclick = () => { U.sfx('tap'); U.feedbackLand ? U.feedbackLand(draw) : U.feedback('config'); };
+          if (w.querySelector('#aj-acc')) w.querySelector('#aj-acc').onclick = () => { U.sfx('tap'); U.cloud('login', null, null, draw); };
         }, 'O Climbix é jogado com o celular deitado.');
     };
     draw();
