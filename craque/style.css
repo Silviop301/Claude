@@ -8681,6 +8681,24 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .mkc-f > b { font: 800 26px/1 var(--display); color: #F3F1EA; } .mkc-f > b.dn { color: #F5A57F; }
 .mkc-l { grid-row: 2 / -1; }
 .mk-k .mk-ar.big { background: rgba(243, 241, 234, .1) !important; }
+/* Notícias do mercado (aba do Mercado, 2026-11-10): a lista do Resultado com escudo › escudo, etiqueta e nota do que é seu */
+.mk-tabs button { position: relative; } .mk-tabs .tm-dot { right: 8px; top: 8px; text-align: center; }
+.mk.nw .mk-r > span { gap: 3px; }
+.mk.nw .mk-r > span small { display: flex; align-items: center; height: 20px; line-height: 20px; overflow: hidden; }
+.mk.nw .mk-r small .crest.nw-cr { width: 19px; height: 19px; margin: 0 5px 0 0; flex: none; }
+.mk.nw .mk-r small .nw-c { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mk.nw .mk-r small s { flex: none; text-decoration: none; opacity: .6; margin: 0 7px; }
+.mk.nw .mk-r small em { flex: none; font-style: normal; font-size: 12px; margin-left: 6px; color: #7ED39A; } .mk.nw .mk-r.on small em { color: #1f7a43; }
+.mk.nw .mk-r > span b { display: flex; align-items: baseline; gap: 8px; } .mk.nw .mk-r b .nw-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.mk.nw .mk-r b u { flex: none; text-decoration: none; font: 800 13px/1 var(--body); color: var(--gold); } .mk.nw .mk-r.on b u { color: #8a6a10; }
+.nw-tc { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.nw-tc strong { font: 800 22px/1 var(--display); white-space: nowrap; }
+.nw-tag { height: 20px; padding: 0 8px; border-radius: 6px; text-align: center; font: 800 12px/20px var(--display); letter-spacing: .08em; font-style: normal; }
+.nw-tag.f { background: rgba(243, 241, 234, .1); color: #F3F1EA; } .mk-r.on .nw-tag.f { background: rgba(19, 32, 26, .1); color: #13201A; }
+.nw-tag.b { background: rgba(245, 165, 127, .16); color: #F5A57F; } .mk-r.on .nw-tag.b { background: rgba(180, 83, 42, .14); color: #b4532a; }
+.nw-tag.l { background: rgba(142, 194, 245, .16); color: #8EC2F5; } .mk-r.on .nw-tag.l { background: rgba(36, 99, 160, .14); color: #2463a0; }
+.nw-flt > span { display: flex; align-items: center; gap: 8px; } .nw-flt > span b { flex: 1; text-align: center; font: 800 21px/1 var(--display); color: #F3F1EA; }
+.nw-flt > em { font: 700 15px/1.2 var(--body); color: #B9C9BF; font-style: normal; } .nw-flt > em i { font-style: normal; color: var(--gold); font-weight: 800; }
 .ldl-tm { grid-template-rows: 38px minmax(0, 1fr) 48px; gap: 8px 16px; }
 .ldl-tm .tm-h .ldl-sc { padding: 6px 12px; }
 /* Elenco enxuto (Silvio 2026-11-09, quadro 27): abas por setor, tabela que rola por dentro, cartão do jogador à direita */
