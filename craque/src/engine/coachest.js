@@ -47,6 +47,16 @@
       mes: 4,         // parcela a cada tantas rodadas
       rush: 2, rushMax: 2, rushCoins: 10,   // acelerar com moedas: rodadas a menos, vezes por obra, preço
       hum: 6 },       // a torcida gosta de setor novo
+    // Melhorias (fase 4): 4 melhorias com 3 níveis; uma por vez, e pode andar junto com uma obra de setor
+    mel: { keys: ['g', 'l', 'b', 'c'], names: { g: 'Gramado', l: 'Refletores', b: 'Bares e loja', c: 'Camarotes' },
+      rounds: { g: 2, l: 4, b: 3, c: 6 },   // prazo em rodadas
+      pay: 3,                               // o preço = tantas temporadas do que a melhoria rende
+      tv: 0.03, bar: 0.08, cam: 0.05,       // por nível: cota de TV, renda por torcedor, camarote (parte da bilheteria de um jogo comum, fixa: não depende do público nem do humor)
+      gram: 0.05, gramCost: 0.012,          // gramado: o time cansa menos em casa por nível; não rende dinheiro, custa essa parte da receita do ano vezes o nível
+      camSo: 4,                             // camarotes pedem a Social coberta
+      word: { g: ['castigado', 'bom', 'ótimo', 'tapete'], l: ['sem', 'simples', 'de TV', 'de arena'] } },
+    // Nome do estádio: com tantos lugares e camarotes um patrocinador oferece essa parte da receita por ano, por `anos` temporadas; aceitar tira `hum` do humor
+    nome: { cap: 20000, v: 0.03, anos: 3, hum: 20, wait: 2 },
     push: 3,                                    // torcida em festa empurra o time em casa (pontos no ataque, como o bônus de leitura); revoltada pesa o mesmo tanto
     hum: ['revoltada', 'impaciente', 'tranquila', 'empolgada', 'em festa'],
     dh: { v: 4, e: 0.5, d: -3.2, home: 1.25, classic: 1.5, gol: 2, in: 0.6, out: -0.4, pull: 0.06 },
@@ -104,6 +114,12 @@
     return lv;
   }
   S.coEstStart = startLv;
+  // Melhorias da chegada, pela força do clube (camarote só com a Social coberta)
+  function startUp(clubId, lv) {
+    const cl = D.CLUB_BY_ID[clubId], str = cl ? (cl.strength0 || cl.strength) : 50, st = (a, b, c) => (str < a ? 0 : str < b ? 1 : str < c ? 2 : 3);
+    return { g: st(50, 68, 82), l: st(54, 70, 82), b: st(58, 73, 85), c: lv.so >= E.mel.camSo ? st(0, 78, 87) : 0 };
+  }
+  S.coEstStartUp = id => startUp(id, startLv(id));
 
   // O estádio do clube atual (cria na primeira vez; save antigo ganha o dele aqui)
   S.coEst = function (co, clubId) {
@@ -114,6 +130,7 @@
     if (!e || !e.lv) { const lv = startLv(id); e = co.est[id] = { lv, base: Math.round(capOf(lv) * E.dem), hum: 50, sn: co.season, h: [], occ: null, best: 0, cap0: capOf(lv), pr: 2 }; }
     if (!e.cap0) e.cap0 = capOf(e.lv);   // estádio criado na fase 1 (sem obra ainda): a chegada é o que ele tem
     if (!e.lv0) { e.lv0 = Object.assign({}, e.lv); e.base0 = e.base; }   // idem para quem veio da fase 2
+    if (!e.up) { e.up = startUp(id, e.lv0); e.up0 = Object.assign({}, e.up); }   // melhorias (fase 4): o que conta é o que subiu desde a chegada
     if (!(e.pr >= 0 && e.pr <= 4)) e.pr = 2;
     if (e.sn !== co.season && (!clubId || clubId === co.club)) { e.sn = co.season; e.h = []; }
     return e;
@@ -145,8 +162,17 @@
     const e = S.coEst(co); if (!e || !co.ss || !vs) return g0;
     const cr = pr == null && e.now && e.now.vs === vs ? e.now : S.coEstCrowd(co, vs, null, pr);
     if (!cr || !cr.ref) return g0;
-    return Math.max(1000, Math.round(g0 * (cr.pub / cr.ref) * cr.q * E.price.rev[cr.pr] / 1000) * 1000);
+    const x = S.coEstExtra(co);
+    return Math.max(1000, Math.round((g0 * (cr.pub / cr.ref) * cr.q * E.price.rev[cr.pr] * x.bar + x.cam) / 1000) * 1000);
   };
+  // O que as melhorias mudam no dinheiro, sempre contra a chegada: bar multiplica a renda por torcedor, cam soma um valor
+  // fixo por jogo em casa, tv multiplica a cota de TV (coachfin.js)
+  const gameBase = co => { const fin = S.coFin ? S.coFin(co) : null; return fin && co.ss ? (fin.rec || 0) * S.CO_FIN.bil / Math.max(1, co.ss.rounds.length / 2) : 0; };
+  S.coEstExtra = function (co) {
+    const e = S.coEst(co), M = E.mel; if (!e) return { bar: 1, cam: 0, tv: 1 };
+    return { bar: (1 + M.bar * e.up.b) / (1 + M.bar * e.up0.b), cam: Math.round((e.up.c - e.up0.c) * M.cam * gameBase(co)), tv: (1 + M.tv * e.up.l) / (1 + M.tv * e.up0.l) };
+  };
+  S.coEstTv = co => (co && co.club && co.est && co.est[co.club] && co.est[co.club].up ? S.coEstExtra(co).tv : 1);
   S.coEstPrice = function (co, i) { const e = S.coEst(co); if (!e || !(i >= 0 && i <= 4)) return false; e.pr = i | 0; return true; };
   // O próximo jogo em casa da temporada (id do rival e rodada), ou null
   S.coEstNextHome = function (co) {
@@ -158,8 +184,8 @@
   // Os 5 preços lado a lado para o próximo jogo em casa (sem jogo marcado: um rival do tamanho do clube)
   S.coEstPrices = function (co) {
     const e = S.coEst(co); if (!e || !co.ss || !S.coGateBase) return null;
-    const nx = S.coEstNextHome(co), vs = nx ? nx.vs : co.club, r = nx ? nx.r : co.ss.rounds.length, g0 = S.coGateBase(co, vs);
-    return { vs: nx ? nx.vs : null, now: e.pr, list: E.price.names.map((name, i) => { const cr = S.coEstCrowd(co, vs, r, i); return { i, name, pub: cr.pub, cap: cr.cap, full: cr.full, gate: Math.max(1000, Math.round(g0 * (cr.pub / cr.ref) * cr.q * E.price.rev[i] / 1000) * 1000), hum: E.price.hum[i], txt: E.price.txt[i] }; }) };
+    const nx = S.coEstNextHome(co), vs = nx ? nx.vs : co.club, r = nx ? nx.r : co.ss.rounds.length, g0 = S.coGateBase(co, vs), xt = S.coEstExtra(co);
+    return { vs: nx ? nx.vs : null, now: e.pr, list: E.price.names.map((name, i) => { const cr = S.coEstCrowd(co, vs, r, i); return { i, name, pub: cr.pub, cap: cr.cap, full: cr.full, gate: Math.max(1000, Math.round((g0 * (cr.pub / cr.ref) * cr.q * E.price.rev[i] * xt.bar + xt.cam) / 1000) * 1000), hum: E.price.hum[i], txt: E.price.txt[i] }; }) };
   };
 
   // Por que a torcida está assim, numa frase curta
@@ -196,24 +222,85 @@
     const modes = Object.keys(O.modes).map(id => { const M = O.modes[id]; return { id, name: M.name, cost: r10k(dv * u * O.games[to] * M.c * part), rounds: Math.max(1, Math.ceil(O.rounds[to] * M.t)), risk: !!M.late }; });
     return { k, from, to, add, perGame: Math.round(dv * u / 1000) * 1000, modes, payMax: pres && pres.k === 'pao' ? 1 : 3, amb: part < 1, caixa: fin ? fin.caixa : 0, busy: !!e.obra };
   };
-  // Pedir a obra à diretoria. x = 1, 2 ou 3 parcelas (a primeira sai na hora). Devolve { ok } ou { ok: false, why }
+  // A regra da diretoria para obra e melhoria: x = 1, 2 ou 3 parcelas (a primeira sai na hora). Aprovou: já tira a 1ª do caixa
+  function boardPay(co, cost, x, payMax) {
+    const fin = S.coFin(co), O = E.obra; x = clamp(x | 0, 1, 3);
+    if (x > payMax) return { ok: false, why: 'pao', cost };
+    const first = x > 1 ? Math.ceil(cost / x / 1000) * 1000 : cost, need = O.folga * S.coFolha(co) + (cost - first) * O.rest;
+    if (fin.caixa < 0) return { ok: false, why: 'vermelho', cost, caixa: fin.caixa };
+    if (co.board && co.board.ult) return { ok: false, why: 'ultimato', cost, caixa: fin.caixa };
+    if (fin.caixa - first < need) return { ok: false, why: 'folga', cost, first, caixa: fin.caixa, need: first + need };
+    fin.caixa -= first; fin.ss.obra = (fin.ss.obra || 0) + first;
+    const pay = x > 1 ? { v: Math.ceil((cost - first) / (x - 1) / 1000) * 1000, k: x - 1, n: 0 } : null;
+    return { ok: true, first, part: pay ? pay.v : 0, parts: x - 1, nextR: co.ss.i + O.mes + 1, cost, pay };
+  }
+  // Pedir a obra à diretoria. Devolve { ok } ou { ok: false, why }
   S.coEstAsk = function (co, k, mode, x) {
     const e = S.coEst(co), P = S.coEstPlan(co, k), fin = S.coFin ? S.coFin(co) : null, O = E.obra;
     if (!e || !P || !fin || !co.ss) return { ok: false, why: 'nada' };
     if (e.obra) return { ok: false, why: 'obra' };
     if (P.max) return { ok: false, why: 'max' };
-    const M = P.modes.find(o => o.id === mode) || P.modes[1]; x = clamp(x | 0, 1, 3);
-    if (x > P.payMax) return { ok: false, why: 'pao', cost: M.cost };
-    const first = x > 1 ? Math.ceil(M.cost / x / 1000) * 1000 : M.cost, folha = S.coFolha(co), need = O.folga * folha + (M.cost - first) * O.rest;
-    if (fin.caixa < 0) return { ok: false, why: 'vermelho', cost: M.cost, caixa: fin.caixa };
-    if (co.board && co.board.ult) return { ok: false, why: 'ultimato', cost: M.cost, caixa: fin.caixa };
-    if (fin.caixa - first < need) return { ok: false, why: 'folga', cost: M.cost, first, caixa: fin.caixa, need: first + need };
-    fin.caixa -= first; fin.ss.obra = (fin.ss.obra || 0) + first;
+    const M = P.modes.find(o => o.id === mode) || P.modes[1], r = boardPay(co, M.cost, x, P.payMax);
+    if (!r.ok) return r;
     const late = O.modes[M.id].late && hash('est-atraso-' + co.club + '-' + co.season + '-' + co.ss.i + '-' + k) < O.modes[M.id].p ? O.modes[M.id].late : 0;
     e.obra = { k, from: P.from, to: P.to, left: M.rounds, tot: M.rounds, mode: M.id, cost: M.cost, acc: 0, late };
-    e.pay = x > 1 ? { v: Math.ceil((M.cost - first) / (x - 1) / 1000) * 1000, k: x - 1, n: 0 } : null;
-    return { ok: true, first, part: e.pay ? e.pay.v : 0, parts: x - 1, rounds: M.rounds, nextR: co.ss.i + O.mes + 1, cost: M.cost };
+    e.pay = r.pay; delete r.pay; r.rounds = M.rounds;
+    return r;
   };
+  // ---------- melhorias (fase 4) ----------
+  // O plano de uma melhoria: o que o próximo nível dá, quanto rende por temporada, prazo e preço
+  S.coEstMelPlan = function (co, k) {
+    const e = S.coEst(co), M = E.mel, fin = S.coFin ? S.coFin(co) : null, pres = S.coPres ? S.coPres(co) : null; if (!e || M.keys.indexOf(k) < 0) return null;
+    const from = e.up[k], to = from + 1, name = M.names[k], lock = k === 'c' && e.lv.so < M.camSo;
+    if (to > 3) return { k, name, from, max: true };
+    if (fin && !fin.rec && S.coFinNext) S.coFinNext(co);
+    const rec = fin ? fin.rec || 0 : 0, part = pres && pres.k === 'amb' ? 1 - E.obra.amb : 1;
+    const perSeason = k === 'l' ? rec * S.CO_FIN.tv * M.tv / (1 + M.tv * e.up0.l) : k === 'b' ? rec * S.CO_FIN.bil * M.bar / (1 + M.bar * e.up0.b) : k === 'c' ? rec * S.CO_FIN.bil * M.cam : 0;
+    const cost = r10k((k === 'g' ? rec * M.gramCost * to : perSeason * M.pay) * part);
+    return { k, name, from, to, lock, perSeason: Math.round(perSeason / 1000) * 1000, rounds: M.rounds[k], cost, payMax: pres && pres.k === 'pao' ? 1 : 3, amb: part < 1, busy: !!e.mel };
+  };
+  S.coEstMelAsk = function (co, k, x) {
+    const e = S.coEst(co), P = S.coEstMelPlan(co, k), fin = S.coFin ? S.coFin(co) : null;
+    if (!e || !P || !fin || !co.ss) return { ok: false, why: 'nada' };
+    if (e.mel) return { ok: false, why: 'obra' };
+    if (P.max) return { ok: false, why: 'max' };
+    if (P.lock) return { ok: false, why: 'social' };
+    const r = boardPay(co, P.cost, x, P.payMax);
+    if (!r.ok) return r;
+    e.mel = { k, to: P.to, left: P.rounds, tot: P.rounds };
+    e.pay2 = r.pay; delete r.pay; r.rounds = P.rounds;
+    return r;
+  };
+  function melDone(co, e, quiet) {
+    const m = e.mel; if (!m) return;
+    e.up[m.k] = m.to; e.mel = null;
+    if (!quiet && S.coFinNews && co.fin) S.coFinNews(co, E.mel.names[m.k] + (m.k === 'g' ? ' novo no estádio.' : m.k === 'b' ? ': a reforma ficou pronta.' : ' prontos no estádio.'));
+  }
+  // ---------- nome do estádio (fase 4) ----------
+  // A proposta que está na mesa (ou null). Aparece com `nome.cap` lugares e camarotes, sem contrato valendo
+  S.coEstNome = function (co) {
+    const e = S.coEst(co), N = E.nome, fin = S.coFin ? S.coFin(co) : null; if (!e || !fin || !co.ss || co.ss.done) return null;
+    if (e.nm || capOf(e.lv) < N.cap || e.up.c < 1 || (e.nmS != null && co.season < e.nmS)) return null;
+    if (!fin.rec && S.coFinNext) S.coFinNext(co);
+    const list = (S.coFinSpons ? S.coFinSpons(co) : null) || S.CO_SPONS._, sp = list[Math.floor(hash('est-nome-' + co.club + '-' + co.season) * list.length)];
+    return { sp, n: 'Arena ' + sp, v: r10k((fin.rec || 0) * N.v), anos: N.anos };
+  };
+  // Aceitar: o dinheiro do 1º ano entra na hora (como patrocínio) e a torcida não gosta. Recusar: só volta daqui a `wait` temporadas
+  S.coEstNomeAnswer = function (co, yes) {
+    const e = S.coEst(co), o = S.coEstNome(co), N = E.nome, fin = co.fin; if (!e || !o || !fin) return false;
+    if (!yes) { e.nmS = co.season + N.wait; return true; }
+    e.nm = { n: o.n, v: o.v, until: co.season + N.anos - 1, paid: co.season };
+    fin.caixa += o.v; fin.ss.pat = (fin.ss.pat || 0) + o.v; e.hum = clamp(e.hum - N.hum, 0, 100);
+    return true;
+  };
+  // Começo de temporada: paga o ano do nome, ou o contrato acabou e o nome de batismo volta
+  function nomeYear(co) {
+    const e = co.club ? S.coEst(co) : null, fin = co.fin; if (!e || !e.nm || !fin) return;
+    if (co.season > e.nm.until) { e.nm = null; e.nmS = co.season + E.nome.wait; return; }
+    if (e.nm.paid !== co.season) { e.nm.paid = co.season; fin.caixa += e.nm.v; fin.ss.pat = (fin.ss.pat || 0) + e.nm.v; }
+  }
+  // O nome que vale hoje: o do patrocinador, o de batismo (real) ou nenhum
+  S.coEstNameNow = co => { const e = co && co.club && co.est ? co.est[co.club] : null; return (e && e.nm && e.nm.n) || S.coEstName(co.club); };
   // A obra acabou: o setor reabre maior, parte dos lugares novos vira torcida e a torcida gosta
   function obraDone(co, e, quiet) {
     const o = e.obra; if (!o) return;
@@ -226,7 +313,8 @@
   // Uma rodada de obra e de parcela (n rodadas nas férias, sem parcela)
   function obraTick(co, e, n, ferias) {
     const fin = co.fin, O = E.obra;
-    if (e.pay && !ferias && fin) { e.pay.n++; if (e.pay.n % O.mes === 0) { fin.caixa -= e.pay.v; fin.ss.obra = (fin.ss.obra || 0) + e.pay.v; if (--e.pay.k <= 0) e.pay = null; } }
+    if (!ferias && fin) ['pay', 'pay2'].forEach(q => { const y = e[q]; if (!y) return; y.n++; if (y.n % O.mes === 0) { fin.caixa -= y.v; fin.ss.obra = (fin.ss.obra || 0) + y.v; if (--y.k <= 0) e[q] = null; } });
+    if (e.mel) { e.mel.left -= n; if (e.mel.left <= 0) melDone(co, e); }
     const o = e.obra; if (!o) return;
     o.left -= n;
     if (o.left <= 0 && o.late && !o.lated) { o.lated = 1; o.left += o.late; o.tot += o.late; if (S.coFinNews && fin) S.coFinNews(co, 'A obra do ' + E.names[o.k] + ' atrasou ' + o.late + ' rodadas.'); }
@@ -257,9 +345,15 @@
   const start0 = S.coMatchStart;
   S.coMatchStart = function (co) {
     const m = start0.apply(this, arguments);
-    if (m && m.home && m.us) { m.push = S.coEstPush(co); m.us.bonus = (m.us.bonus || 0) + m.push; }
+    if (m && m.home && m.us) {
+      m.push = S.coEstPush(co); m.us.bonus = (m.us.bonus || 0) + m.push;
+      const e = S.coEst(co), dg = e ? e.up.g - e.up0.g : 0; if (dg) m.us.enK = 1 - E.mel.gram * dg;   // gramado melhor que o da chegada: o seu time cansa menos em casa
+    }
     return m;
   };
+
+  const begin0 = S.coStart;
+  S.coStart = function (co) { const r = begin0.apply(this, arguments); nomeYear(co); return r; };
 
   const end0 = S.coMatchEnd;
   S.coMatchEnd = function (co, m) {
@@ -286,13 +380,13 @@
   };
   // A parcela da obra aparece em Finanças, aba A seguir
   const next0 = S.coFinNext;
-  if (next0) S.coFinNext = function (co) { const out = next0(co), e = co.club && co.est ? co.est[co.club] : null; if (e && e.pay && out) out.push({ k: 'obra', txt: 'Parcela da obra · ' + (e.pay.k > 1 ? 'faltam ' + e.pay.k : 'última'), v: -e.pay.v }); return out; };
+  if (next0) S.coFinNext = function (co) { const out = next0(co), e = co.club && co.est ? co.est[co.club] : null; if (e && out) [['pay', 'Parcela da obra'], ['pay2', 'Parcela da melhoria']].forEach(q => { const y = e[q[0]]; if (y) out.push({ k: 'obra', txt: q[1] + ' · ' + (y.k > 1 ? 'faltam ' + y.k : 'última'), v: -y.v }); }); return out; };
   // Trocou de clube com obra andando: o clube antigo termina a obra e fica com as parcelas
   const sign0 = S.coSign;
   S.coSign = function (co, id) {
     const before = co.club, r = sign0.apply(this, arguments);
     // (demitido chega aqui já sem clube: por isso olha todos os estádios que não são o de agora)
-    if (co.club !== before && co.est) Object.keys(co.est).forEach(id => { const e = co.est[id]; if (id === co.club || !e) return; if (e.obra) obraDone(co, e, true); e.pay = null; delete e.done; });
+    if (co.club !== before && co.est) Object.keys(co.est).forEach(id => { const e = co.est[id]; if (id === co.club || !e) return; if (e.obra) obraDone(co, e, true); if (e.mel) melDone(co, e, true); e.pay = null; e.pay2 = null; delete e.done; });
     return r;
   };
 
@@ -304,7 +398,7 @@
     if (e && out && out.club === club) {
       const N = E.end, d = (out.won ? N.won : 0) + (out.up ? N.up : 0) + (out.down ? N.down : 0) + (out.sacked ? 0 : out.met ? N.met : N.miss);
       e.hum = clamp(50 + (clamp(e.hum + d, 0, 100) - 50) * N.keep, 0, 100);
-      if (e.obra && !out.sacked) obraTick(co, e, E.obra.ferias, true);   // a obra anda nas férias
+      if ((e.obra || e.mel) && !out.sacked) obraTick(co, e, E.obra.ferias, true);   // a obra anda nas férias
     }
     return out;
   };

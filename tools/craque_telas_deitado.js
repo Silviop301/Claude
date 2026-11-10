@@ -102,6 +102,17 @@ async function page(b, first) {
     await click('#es-rush'); await shot('c2b9-acelerar'); await click('[data-pop-x]');
     await p.evaluate(v => { const U = window.CRAQUE_UI, co = U._co.co, e = window.CRAQUE_SIM.coEst(co); e.obra = null; e.pay = null; co.fin.caixa = v[0]; co.fin.ss.obra = v[1]; U._co.save('hub'); U.LD.estadio(); }, cx0);
     await p.waitForTimeout(300);
+    // Melhorias (fase 4): 4 blocos, o cartão do próximo nível, e o pedido aprovado deixa a melhoria em reforma (desfeita no fim)
+    await click('#es-mel'); await shot('c2b10-melhorias');
+    { const r = await p.evaluate(() => ({ m: document.querySelectorAll('.es-m').length, rows: document.querySelectorAll('.es-ml > div').length, go: !!document.querySelector('#es-go') })); if (r.m !== 4 || !r.go) errs.push('melhorias: ' + JSON.stringify(r)); }
+    const mk = await p.evaluate(() => { const S = window.CRAQUE_SIM, co = window.CRAQUE_UI._co.co, k = S.CO_EST.mel.keys.find(q => { const P = S.coEstMelPlan(co, q); return !P.max && !P.lock; }), f = co.fin, v = [f.caixa, f.ss.obra || 0, k]; f.caixa = 9e8; return v; });
+    if (mk[2]) {
+      await click('[data-mk="' + mk[2] + '"]'); await click('#es-go'); await shot('c2b11-melhoria-aprovada');
+      { const r = await p.evaluate(() => ({ ok: !!document.querySelector('.mkx b.up'), mel: !!window.CRAQUE_SIM.coEst(window.CRAQUE_UI._co.co).mel })); if (!r.ok || !r.mel) errs.push('melhoria aprovada: ' + JSON.stringify(r)); }
+      await click('#ob-a'); await shot('c2b12-melhoria-em-reforma');
+    }
+    await p.evaluate(v => { const U = window.CRAQUE_UI, co = U._co.co, e = window.CRAQUE_SIM.coEst(co); e.mel = null; e.pay2 = null; co.fin.caixa = v[0]; co.fin.ss.obra = v[1]; U._co.save('hub'); U.LD.estadio(); }, mk);
+    await p.waitForTimeout(300);
     await click('#es-back'); await click('#ldk-go'); await shot('c2c-financas-decidir');
     // Loja: aporte (fase 3) e pacotes
     await p.evaluate(() => window.CRAQUE_UI.COINS.add({ n: 100, t: 'teste' })); await click('#fn2-apo'); await shot('c2l-loja-aporte'); await click('#lj-p'); await click('#lj-p'); await shot('c2l2-aporte-3'); await click('#lj-ap'); await shot('c2l3-aporte-feito');

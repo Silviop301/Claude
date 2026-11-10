@@ -1,4 +1,4 @@
-// Estádio do Treinador (engine/coachest.js, fases 1 a 3: público, humor da torcida, ingresso e obras): confere as regras que não podem quebrar.
+// Estádio do Treinador (engine/coachest.js, fases 1 a 4: público, humor da torcida, ingresso, obras, melhorias e nome): confere as regras que não podem quebrar.
 // Uso (na raiz): node tools/craque_estadio.js [carreiras] [temporadas]      (padrão 30 e 5). Esperado: "0 alertas".
 //
 // O que confere:
@@ -21,6 +21,10 @@
 //     em 15% a 55% das vezes; acelerar tira 2 rodadas no máximo 2 vezes; trocar de clube termina a obra sem cobrar mais;
 //     save no meio da obra termina igual. Mede obras por temporada, lugares no fim, recusas, meta e caixa contra o robô
 //     que não constrói (a obra não pode quebrar o clube: demissões e rodadas no vermelho no máximo 6 pontos acima).
+//  7. Melhorias e nome (fase 4): o mesmo robô pede a melhoria mais barata (conta, prazo, nível que sobe, camarote só com a
+//     Social coberta) e responde à proposta do nome do estádio (aceita em metade das carreiras: dinheiro na hora e todo
+//     ano, humor cai, o nome muda e volta quando o contrato acaba). `GRAMADO=n` põe n níveis de gramado no robô sem obra
+//     para medir os pontos em casa; `SEM_MEL=1` desliga as melhorias do robô.
 const D = require('../craque/src/data.js');
 const S = require('../craque/src/sim.js');
 const N = +process.argv[2] || 30, SEASONS = +process.argv[3] || 5, E = S.CO_EST;
@@ -42,10 +46,29 @@ caps.sort((a, b) => a.s - b.s);
 for (let i = 1, mx = 0; i < caps.length; i++) { if (caps[i].s > caps[i - 1].s) mx = Math.max(mx, ...caps.filter(c => c.s === caps[i - 1].s).map(c => c.cap)); if (caps[i].cap < mx) alert('clube mais forte com estádio menor: ' + caps[i].id); }
 
 // O robô que constrói: sem obra andando, pede o setor mais barato; alterna o jeito e as parcelas pela carreira e pela rodada
-function OB() { return { n: 0, cost: 0, no: {}, ask: 0, eco: 0, late: 0, rush: 0, left: 0, done: 0, rounds: 0 }; }
+function OB() { return { n: 0, cost: 0, no: {}, ask: 0, eco: 0, late: 0, rush: 0, left: 0, done: 0, rounds: 0, mel: 0, melCost: 0, melK: { g: 0, l: 0, b: 0, c: 0 }, nome: 0, nomeNo: 0 }; }
 const MODES = ['nor', 'rap', 'eco'];
 function build(co, st, n) {
   const e = S.coEst(co), fin = co.fin, ob = st.ob; if (!e || !fin || !co.ss || co.ss.done) return;
+  // Melhorias (fase 4): sem melhoria andando, pede a mais barata que não está travada. E o nome do estádio: aceita em metade das carreiras
+  if (st.melLast && !e.mel) { if (st.melClub === co.club && e.up[st.melLast.k] !== st.melLast.to) alert('melhoria terminou sem subir o nível (carreira ' + n + ')'); st.melLast = null; }
+  if (!e.mel && !process.env.SEM_MEL) {
+    const ps = E.mel.keys.map(k => S.coEstMelPlan(co, k)).filter(p => p && !p.max && !p.lock).sort((a, b) => a.cost - b.cost);
+    if (E.mel.keys.some(k => { const p = S.coEstMelPlan(co, k); return p && p.lock && (k !== 'c' || e.lv.so >= E.mel.camSo); })) alert('melhoria travada sem motivo (carreira ' + n + ')');
+    if (ps.length) {
+      const c0 = fin.caixa, u0 = JSON.stringify(e.up), r = S.coEstMelAsk(co, ps[0].k, 1 + (n + co.ss.i) % 3);
+      if (!r.ok) { if (fin.caixa !== c0 || e.mel || JSON.stringify(e.up) !== u0) alert('melhoria recusada mexeu no clube (carreira ' + n + ')'); }
+      else { ob.mel++; ob.melCost += r.cost; ob.melK[ps[0].k]++; st.melLast = { k: ps[0].k, to: ps[0].to }; st.melClub = co.club;
+        if (fin.caixa !== c0 - r.first || !e.mel || e.mel.left !== ps[0].rounds || JSON.stringify(e.up) !== u0) alert('a conta da melhoria não fecha (carreira ' + n + ')'); }
+    }
+  }
+  const nm = S.coEstNome(co);
+  if (nm) {
+    const c0 = fin.caixa, h0 = e.hum, yes = n % 2 === 0; S.coEstNomeAnswer(co, yes);
+    if (S.coEstCap(e) < E.nome.cap || e.up.c < 1) alert('proposta do nome sem os lugares ou sem camarotes (carreira ' + n + ')');
+    if (yes) { ob.nome++; if (!e.nm || fin.caixa !== c0 + nm.v || e.hum > h0 || S.coEstNameNow(co) !== nm.n || S.coEstNome(co)) alert('nome do estádio aceito e a conta não fecha (carreira ' + n + ')'); }
+    else { ob.nomeNo++; if (e.nm || fin.caixa !== c0 || e.hum !== h0 || S.coEstNome(co)) alert('nome do estádio recusado mexeu no clube (carreira ' + n + ')'); }
+  }
   if (e.done) { const d = S.coEstDone(co, true); ob.done++; if (e.lv[d.k] !== d.to || e.obra) alert('obra pronta sem o nível novo (carreira ' + n + ')'); }
   if (e.obra) {
     ob.rounds++;
@@ -82,6 +105,8 @@ function career(n, opt) {
   st.s0 = co.season;
   for (let s = 0; s < SEASONS; s++) {
     S.coStart(co);
+    { const e1 = S.coEst(co); if (e1 && e1.nm && (co.season > e1.nm.until || e1.nm.paid !== co.season)) alert('nome do estádio: contrato vencido ou ano sem pagar (carreira ' + n + ')');
+      if (e1 && process.env.GRAMADO && e1.up.g === e1.up0.g) e1.up.g += +process.env.GRAMADO; }
     while (!co.ss.done) {
       const nx = S.coNext(co); if (!nx) break;
       if (opt.obra) build(co, st, n);
@@ -101,7 +126,7 @@ function career(n, opt) {
       }
       if (opt.obra && nx.home) {   // quanto a bilheteria deste jogo ganhou (ou perdeu) com as obras: contra o mesmo jogo no estádio da chegada
         const e0 = S.coEst(co), g0 = S.coGateBase(co, nx.vs), sv = [e0.lv, e0.base, e0.obra], act = S.coEstGate(co, nx.vs, g0);
-        e0.lv = e0.lv0; e0.base = e0.base0; e0.obra = null; const cf = S.coEstGate(co, nx.vs, g0); e0.lv = sv[0]; e0.base = sv[1]; e0.obra = sv[2];
+        e0.lv = e0.lv0; e0.base = e0.base0; e0.obra = null; const up1 = e0.up; e0.up = e0.up0; const cf = S.coEstGate(co, nx.vs, g0); e0.lv = sv[0]; e0.base = sv[1]; e0.obra = sv[2]; e0.up = up1;
         st.extra += act - cf;
       }
       const m = S.coMatchStart(co);
@@ -109,6 +134,7 @@ function career(n, opt) {
       S.coMatchRest(co, m);
       const log = S.coMatchEnd(co, m), e = S.coEst(co);
       st.clubs.add(co.club); if (log && log.home && log.gate) st.bil += log.gate;
+      if (log && log.home) { st.hg = (st.hg || 0) + 1; st.hp = (st.hp || 0) + (log.res === 'v' ? 3 : log.res === 'e' ? 1 : 0); }
       if (cr && co.club === before0(co, st)) {
         const g0 = S.coGateBase(co, nx.vs), want = Math.max(1000, Math.round(g0 * (cr.pub / cr.ref) * cr.q * E.price.rev[cr.pr] / 1000) * 1000);
         if (log.pub !== cr.pub || log.gate !== want) alert('bilheteria não bate com o público: ' + log.gate + ' x ' + want + ' (carreira ' + n + ')');
@@ -124,6 +150,7 @@ function career(n, opt) {
         } else if (log.pub != null) alert('público em jogo fora de casa (carreira ' + n + ')');
       }
     }
+    if (opt.obra && co.fin && co.club) st.extra += (S.coEstExtra(co).tv - 1) * (co.fin.rec || 0) * S.CO_FIN.tv;   // o que os refletores trouxeram de TV no ano
     const before = co.club, eB = S.coEst(co), obB = eB && eB.obra ? Object.assign({}, eB.obra) : null, out = S.coSeasonEnd(co);
     st.sn++; if (out.met) st.met++; if (out.sacked) st.sack++;
     fp.push([out.pos, out.fame[1], co.fin ? co.fin.caixa : 0, co.fin ? co.fin.verba : 0, out.met ? 1 : 0].join(':'));
@@ -156,8 +183,8 @@ const A = { met: 0, sack: 0, sn: 0, red: 0, rd: 0, caixa: 0, bil: 0 }, B = { met
 for (let n = 0; n < N; n++) {
   const a = career(n, { stay: true }), b = career(n, { stay: true, obra: true });
   ['met', 'sack', 'sn', 'red', 'rd', 'caixa', 'bil'].forEach(k => { A[k] += a.st[k]; B[k] += b.st[k]; });
-  B.extra += b.st.extra; if (b.st.clubs.size === 1) { O.cost1 = (O.cost1 || 0) + b.st.ob.cost; O.extra1 = (O.extra1 || 0) + b.st.extra; O.n1 = (O.n1 || 0) + 1; } B.cap += b.st.cap || 0; B.cap0 += b.st.cap0 || 0; B.home += b.st.home; B.full += b.st.full;
-  ['n', 'cost', 'ask', 'eco', 'late', 'rush', 'left', 'done', 'rounds'].forEach(k => (O[k] += b.st.ob[k])); Object.keys(b.st.ob.no).forEach(k => (O.no[k] = (O.no[k] || 0) + b.st.ob.no[k]));
+  B.extra += b.st.extra; if (b.st.clubs.size === 1) { O.cost1 = (O.cost1 || 0) + b.st.ob.cost + b.st.ob.melCost; O.extra1 = (O.extra1 || 0) + b.st.extra; O.n1 = (O.n1 || 0) + 1; } B.cap += b.st.cap || 0; B.cap0 += b.st.cap0 || 0; B.home += b.st.home; B.full += b.st.full;
+  ['n', 'cost', 'ask', 'eco', 'late', 'rush', 'left', 'done', 'rounds', 'mel', 'melCost', 'nome', 'nomeNo'].forEach(k => (O[k] += b.st.ob[k])); E.mel.keys.forEach(k => (O.melK[k] += b.st.ob.melK[k])); A.hp = (A.hp || 0) + (a.st.hp || 0); A.hg = (A.hg || 0) + (a.st.hg || 0); Object.keys(b.st.ob.no).forEach(k => (O.no[k] = (O.no[k] || 0) + b.st.ob.no[k]));
   if (n < 6) { const c = career(n, { stay: true, obra: true, cut: true }); if (b.fp !== c.fp || b.est !== c.est) alert('save no meio da obra muda o fim (carreira ' + n + ')'); }
 }
 // Sair do clube com obra andando (por proposta ou demitido, que chega à assinatura já sem clube): a obra termina sem cobrar mais
@@ -202,6 +229,10 @@ console.log('  bilheteria do robô (preço normal): ' + gp + '% da de sempre · 
 console.log('  casa cheia em ' + full + '% dos jogos em casa · lotação média ' + occ + '% · ' + moved + ' carreiras trocaram de clube');
 console.log('  obras (robô que amplia sempre que pode): ' + (O.n / Math.max(1, B.sn)).toFixed(2) + ' por temporada · estádio no fim com ' + pct(B.cap, B.cap0) + '% dos lugares da chegada · casa cheia ' + pct(B.full, B.home) + '% · econômica atrasou ' + pct(O.late, O.eco) + '% · ' + O.rush + ' aceleradas · ' + O.left + ' obras deixadas para trás');
 console.log('    pedidos: ' + O.ask + ' · aprovados ' + pct(O.n, O.ask) + '% · recusas: ' + (Object.keys(O.no).map(k => k + ' ' + pct(O.no[k], O.ask) + '%').join(' · ') || 'nenhuma'));
-console.log('    meta ' + pct(B.met, B.sn) + '% (sem obra ' + pct(A.met, A.sn) + '%) · demitido ' + pct(B.sack, B.sn) + '% (' + pct(A.sack, A.sn) + '%) · rodadas no vermelho ' + pct(B.red, B.rd) + '% (' + pct(A.red, A.rd) + '%) · caixa médio no fim ' + Math.round(B.caixa / N / 1000) + ' mil (' + Math.round(A.caixa / N / 1000) + ' mil) · bilheteria ' + pct(B.bil, A.bil) + '% da do robô sem obra · as obras custaram ' + Math.round(O.cost / N / 1000) + ' mil por carreira e voltaram ' + pct(B.extra, O.cost) + '% em ' + SEASONS + ' temporadas (' + pct(O.extra1 || 0, O.cost1 || 0) + '% nas ' + (O.n1 || 0) + ' carreiras de um clube só)');
+console.log('    meta ' + pct(B.met, B.sn) + '% (sem obra ' + pct(A.met, A.sn) + '%) · demitido ' + pct(B.sack, B.sn) + '% (' + pct(A.sack, A.sn) + '%) · rodadas no vermelho ' + pct(B.red, B.rd) + '% (' + pct(A.red, A.rd) + '%) · caixa médio no fim ' + Math.round(B.caixa / N / 1000) + ' mil (' + Math.round(A.caixa / N / 1000) + ' mil) · bilheteria ' + pct(B.bil, A.bil) + '% da do robô sem obra · as obras custaram ' + Math.round((O.cost + O.melCost) / N / 1000) + ' mil por carreira e voltaram ' + pct(B.extra, O.cost + O.melCost) + '% em ' + SEASONS + ' temporadas (' + pct(O.extra1 || 0, O.cost1 || 0) + '% nas ' + (O.n1 || 0) + ' carreiras de um clube só)');
+console.log('    melhorias: ' + (O.mel / Math.max(1, B.sn)).toFixed(2) + ' por temporada (' + E.mel.keys.map(k => E.mel.names[k] + ' ' + O.melK[k]).join(' · ') + ') · nome do estádio: ' + O.nome + ' aceitos, ' + O.nomeNo + ' recusados · pontos por jogo em casa do robô sem obra: ' + (A.hp / Math.max(1, A.hg)).toFixed(3));
+if (!O.mel) alert('o robô não conseguiu fazer nenhuma melhoria');
+// melhorias da chegada: níveis de 0 a 3 e camarote só com a Social coberta
+D.CLUBS.forEach(cl => { const u = S.coEstStartUp(cl.id), lv = S.coEstStart(cl.id); if (E.mel.keys.some(k => !(u[k] >= 0 && u[k] <= 3)) || (u.c && lv.so < E.mel.camSo)) alert('melhorias da chegada fora da regra: ' + cl.id); });
 console.log(alerts.length ? alerts.length + ' alertas:\n  ' + alerts.join('\n  ') : '0 alertas');
 process.exit(alerts.length ? 1 : 0);
