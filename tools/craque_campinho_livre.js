@@ -10,6 +10,7 @@ eval(fs.readFileSync(path.join(__dirname, '../craque/src/ui/livesim.js'), 'utf8'
 const LP = window.CRAQUE_UI.LP;
 const prng = s => { let a = s >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
 const N = +process.argv[2] || 300, SEED = +process.argv[3] || 1;
+const GRITO = process.env.GRITO || '';   // GRITO=pressionar|segurar|lados|recuar: o seu time grita isso o jogo todo (mede se o grito no campinho bate com o motor)
 Math.random = prng(SEED * 31 + 5);
 // As vagas da formação viram bonecos do campinho, como em ui/coach.js (simForm): papel, altura, lado, overall e quem é
 function spots(f) { const sl = S.CO_FORMS[f].slots, am = sl.some(x => x.ln === 'am'), Y = { g: 90, d: 70, m: am ? 55 : 46, am: 34, a: 17 }, out = [];
@@ -37,10 +38,11 @@ while (games < N) {
       onShot: sh => { const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, sh); if (!e) return; g.sh[sh.side]++; if (sh.out === 'gol') { g.gn++; if (sh.dist > 18) g.far++; } if (sh.id == null) bad++; } });
     sim.go(); let key = '';
     while (!m.done) {
+      if (GRITO && !m.us.shout) S.coShout(co, m, GRITO);
       S.coMatchStep(co, m, m.min + 1, { free: true });
       if (m.lam) { g.xu += m.lam.us / S.CO.mins; g.xt += m.lam.them / S.CO.mins; }
-      const k2 = [m.us, m.them].map(s => s.form + ':' + s.xi.join(',') + ':' + s.style).join('|');
-      if (key && k2 !== key) [m.us, m.them].forEach((s, k) => { sim.lineup(k, simForm(s)); sim.style(k, S.CO_STY[s.style]); }); key = k2;
+      const k2 = [m.us, m.them].map(s => s.form + ':' + s.xi.join(',') + ':' + s.style + ':' + (s.shout ? s.shout.k : '')).join('|');
+      if (key && k2 !== key) [m.us, m.them].forEach((s, k) => { sim.lineup(k, simForm(s)); sim.style(k, process.env.GRITO_CAMPO === '0' ? S.CO_STY[s.style] : S.coSimSty(s)); }); key = k2;
       sim.minute(m.tk || m.min, m.mom[m.mom.length - 1], m.lam ? [m.lam.us, m.lam.them] : undefined);
       if (!m.done) for (let i = 0; i < STEPS; i++) sim._step(0.02);
       S.coAutoStop(co, m);
@@ -61,6 +63,7 @@ const band = k => { const a = sides.slice(k * third, k === 2 ? sides.length : (k
 const B = [0, 1, 2].map(band), alerts = [], warn = (ok, msg) => { if (!ok) alerts.push(msg); };
 console.log(`Simulação livre: ${games} jogos · gols por jogo ${(gols / games).toFixed(2)} (o motor espera ${(esp / games).toFixed(2)}) · chutes por jogo ${(sum(g => g.sh[0] + g.sh[1]) / games).toFixed(1)} · de fora da área ${pct(sum(g => g.far), sum(g => g.gn))} dos gols · pênaltis ${(sum(g => g.pen) / games).toFixed(2)} por jogo`);
 console.log(`  resultado do seu time V/E/D: ${res.map(x => pct(x, games)).join(' / ')} (esperado pelo motor ${ex.map(x => pct(x, games)).join(' / ')}) · 0 a 0: ${pct(sum(g => +(g.gu + g.gt === 0)), games)} · 5 gols ou mais: ${pct(sum(g => +(g.gu + g.gt >= 5)), games)}`);
+if (GRITO) console.log(`  com o grito ${GRITO} o jogo todo: seu time faz ${(sum(g => g.gu) / games).toFixed(2)} (o motor espera ${(sum(g => g.xu) / games).toFixed(2)}) e leva ${(sum(g => g.gt) / games).toFixed(2)} (espera ${(sum(g => g.xt) / games).toFixed(2)})`);
 console.log('  por força do ataque (esperado → saiu): ' + B.map((b, i) => ['fraco', 'médio', 'forte'][i] + ' ' + b[0].toFixed(2) + ' → ' + b[1].toFixed(2)).join(' · '));
 warn(Math.abs(gols / esp - 1) < 0.15, 'gols no total: ' + (gols / games).toFixed(2) + ' por jogo contra ' + (esp / games).toFixed(2) + ' esperados (tem de ficar a ±15%)');
 if (games >= 300) { warn(B[2][1] > B[0][1] * 1.3, 'ataque forte não faz bem mais gol que o fraco: ' + B[2][1].toFixed(2) + ' x ' + B[0][1].toFixed(2));

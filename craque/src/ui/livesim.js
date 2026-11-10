@@ -79,6 +79,7 @@
     const isMe = p => ME >= 0 && p.side === 0 && p.k === ME;
     // O estilo de cada time (S.CO_STY do Treinador; no Jogo a Jogo, equilibrado): ctrl segura a bola e evita passe arriscado,
     // press sobe a marcação e dá mais bote, line é a altura da defesa, counter acelera depois de roubar, wide abre o time e cruza
+    const CUE_T = 2.2, CUE_N = { pressionar: 'PRESSIONAR', segurar: 'SEGURAR', lados: 'PELOS LADOS', recuar: 'RECUAR' };
     const stOf = x => ({ ctrl: x && x.ctrl !== undefined ? x.ctrl : 1, press: x && x.press !== undefined ? x.press : 0.35, line: x && x.line !== undefined ? x.line : 0.5, counter: x && x.counter !== undefined ? x.counter : 0.35, wide: x && x.wide !== undefined ? x.wide : 0.5 });
     // Mando de campo (o.home: 0 seu time, 1 o adversário, sem: campo neutro): nos primeiros 15 minutos quem joga em casa
     // sobe a linha e dá mais bote, empurrado pela torcida; o visitante se fecha um pouco. Só o jeito de jogar muda
@@ -1080,6 +1081,7 @@
     // O juiz (o motor já decidiu): falta, cartão ou impedimento de quem joga na posição pos do lado side. O campinho para,
     // o cartão sobe em cima de quem fez, e só então a narração escreve (cb). O expulso sai da lógica na hora (o time joga com
     // um a menos) e fica parado no lugar até o apito acabar; depois sai andando pela lateral mais perto
+    let cue = null; // o grito do técnico desenhado no campo por 2 s (cue(lado, grito)); relógio de verdade, não o do jogo
     let refFx = null, offLine = null, post = null; // post: a trave que acabou de tremer (fase 5)
     let net = null, CATCH = 0; const bt = [], bd = [], DRIB = {}; // net: a rede que acabou de balançar (gol); bt: os últimos pontos da bola na tela (rastro do chute)
     const leaving = [];
@@ -1894,6 +1896,18 @@
         const fy = Y(0) - 1; g.strokeStyle = '#FBF8EF'; g.lineWidth = 1.8 * k; g.beginPath(); g.moveTo(lx, fy + 12 * k); g.lineTo(lx, fy - 8 * k); g.stroke();
         g.fillStyle = '#F2C230'; g.fillRect(lx, fy - 8 * k, 6 * k, 4 * k); g.fillStyle = '#D8404A'; g.fillRect(lx + 6 * k, fy - 8 * k, 6 * k, 4 * k); g.fillRect(lx, fy - 4 * k, 6 * k, 4 * k); g.fillStyle = '#F2C230'; g.fillRect(lx + 6 * k, fy - 4 * k, 6 * k, 4 * k);
       }
+      // Grito do técnico (Silvio, 2026-11-10): setas douradas e a palavra em cima do time por 2 s; depois o campo volta a ficar limpo
+      if (cue) { const age = (Date.now() - cue.t0) / 1000;
+        if (age > CUE_T) cue = null; else { const me = T[cue.s].filter(q => q.r !== 'GK'), cx = me.reduce((u, q) => u + q.x, 0) / (me.length || 1), d = (X(cx + 1) > X(cx) ? 1 : -1) * (cue.s ? -1 : 1) * (cue.k === 'recuar' ? -1 : 1);
+          const u = 15 * k0, hh = 18 * k0, x0 = cl(X(cx), 60 * k0, W - 60 * k0), y0 = H / 2 - 8 * k0, al = Math.max(0, Math.min(1, age * 6, (CUE_T - age) * 3)), mv = Math.min(1, age * 2.5) * 5 * k0;
+          g.save(); g.lineCap = 'round'; g.lineJoin = 'round'; g.lineWidth = 6.2 * k0; g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 5 * k0; g.shadowOffsetY = 2 * k0;
+          const ln = (a, pts) => { g.globalAlpha = al * a; g.strokeStyle = '#F2C230'; g.beginPath(); pts.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.stroke(); };
+          if (cue.k === 'segurar') [-1, 1].forEach(i => ln(1, [[x0 + i * 8 * k0, y0 - hh * 0.85], [x0 + i * 8 * k0, y0 + hh * 0.85]]));
+          else if (cue.k === 'lados') [-1, 1].forEach(i => ln(1, [[x0 - u * 0.9, y0 + i * (3 * k0 + mv * 0.6)], [x0, y0 + i * (3 * k0 + mv * 0.6 + u * 0.8)], [x0 + u * 0.9, y0 + i * (3 * k0 + mv * 0.6)]]));
+          else [0, 1, 2].forEach(i => { const xx = x0 + d * ((i - 1) * 18 * k0 - u / 2 + mv); ln(0.4 + i * 0.3, [[xx, y0 - hh], [xx + d * u, y0], [xx, y0 + hh]]); });
+          const txt = CUE_N[cue.k] || ''; g.globalAlpha = al; g.font = '800 ' + Math.round(12.5 * k0) + 'px "Barlow Condensed", sans-serif'; const w = g.measureText(txt).width + 16 * k0, h = 18 * k0, ty = y0 + hh + 9 * k0;
+          g.fillStyle = '#F2C230'; g.beginPath(); g.roundRect(x0 - w / 2, ty, w, h, 5 * k0); g.fill(); g.shadowColor = 'transparent';
+          g.fillStyle = '#141517'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, x0, ty + h / 2 + 0.5); g.restore(); } }
       if (refFx) {
         const p = refFx.p, x = X(p.x), y = Y(p.y), up = Math.min(1, (2.3 - refFx.t) * 4);
         if (refFx.kind === 'impedimento') { g.strokeStyle = 'rgba(216,64,74,.9)'; g.lineWidth = 3 * k; g.beginPath(); g.arc(x, y, 10 * k, 0, Math.PI * 2); g.stroke(); }
@@ -2028,6 +2042,8 @@
       },
       // Treinador: mudou o estilo no meio do jogo
       style(s, x) { STb[s] = stOf(x); stRefresh(); },
+      // Treinador: o grito aparece no campo (setas e a palavra por 2 s em cima do time)
+      cue(s, k) { cue = CUE_N[k] ? { s, k, t0: Date.now() } : null; },
       mirror() { return mir(); },
       pending(m) { return mode !== 'wait' && goals.some(e => !e.done && e.m === m); },
       go() { if (mode === 'wait') { mode = 'ko'; modeT = 0.3; koHold = true; } },

@@ -8876,6 +8876,20 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .bt2-r { flex: none; height: 38px; display: flex; align-items: center; gap: 6px; border-radius: 10px; background: #fff; padding: 0 4px 0 5px; }
 .bt2-r i { width: 28px; height: 28px; flex: none; border-radius: 50%; background: #13201A; color: #F8F4EA; display: flex; align-items: center; justify-content: center; font: 800 15px/1 var(--display); font-style: normal; }
 .bt2-r i.bn { background: #C9C3B3; color: #4b5a52; } /* no banco */
+/* Atributos, fase 4 (2026-11-10): o treino mostra o atributo que desenvolve; aviso de quem subiu de geral na Semana; no Elenco o atributo que subiu no treino da semana fica verde */
+.tr2-tg { display: flex; gap: 6px; }
+.tr2-c em.at { background: rgba(126, 211, 154, .18); color: #7ED39A; } .tr2-c.on em.at { background: rgba(30, 107, 60, .14); color: #1e6b3c; }
+.tr2-dv { margin-top: auto; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; border-top: 1px solid rgba(255, 255, 255, .1); padding-top: 10px; }
+.tr2-dv small { width: 100%; font: 700 12px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
+.tr2-d .tr2-dv b { font: 800 20px/1.1 var(--display); color: #7ED39A; }
+.tr2-dv span { font: 700 15px/1.25 var(--body); color: #D9E2DC; } .tr2-dv span.g { width: 100%; color: #7ED39A; }
+.up-ty { position: absolute; left: 50%; top: calc(var(--ldpy, 12px) - 2px); transform: translateX(-50%); z-index: 50; display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; border-radius: 16px; background: #F8F4EA; color: #13201A; box-shadow: 0 10px 30px rgba(0, 0, 0, .5); white-space: nowrap; cursor: pointer; animation: up-ty-in .28s ease-out; }
+@keyframes up-ty-in { from { opacity: 0; transform: translate(-50%, -14px); } }
+.up-ty i { font: 800 20px/1 var(--display); font-style: normal; color: #1e6b3c; }
+.up-ty .o { width: 38px; height: 38px; border-radius: 50%; background: #13201A; color: #F2C230; display: flex; align-items: center; justify-content: center; font: 800 19px/1 var(--display); }
+.up-ty span { display: flex; flex-direction: column; gap: 3px; } .up-ty span b { font: 800 19px/1 var(--display); } .up-ty span small { font: 700 13px/1 var(--body); color: #4b5a52; }
+.ld-st .up-ty button.up-b { min-height: 40px; padding: 0 16px; border-radius: 12px; background: #13201A; color: #F8F4EA; font: 800 16px/1 var(--display); }
+.lde2-ar.gr u { background: #1e6b3c; } .lde2-ar.gr b { color: #1e6b3c; }
 .bt2-r span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .bt2-r b { font: 800 16px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bt2-r small { font: 700 12px/1 var(--body); color: #5d6b63; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .bt2-r small.best { color: #9a6f00; letter-spacing: .04em; }

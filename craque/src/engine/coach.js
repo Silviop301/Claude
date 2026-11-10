@@ -100,26 +100,27 @@
   S.coRoles = (co, form) => { co.roles = co.roles || {}; return co.roles[form] || (co.roles[form] = new Array(11).fill(0)); };
   // Treino da semana: um foco, vale para o próximo jogo; cansa quem treina (en tira energia de todo o elenco)
   const TRAIN = S.CO_TRAIN = {
-    final: { tab: 'Ataque', name: 'Finalização', sub: 'chutar mais certo', fx: { mul: { att: 1.04 } }, en: 4, who: ['ATA', 'MEI'] },
-    lados: { tab: 'Ataque', name: 'Jogadas pelos lados', sub: 'cruzamento e ultrapassagem', fx: { add: { wide: 0.12 }, mul: { att: 1.015 } }, en: 4, who: ['LAT', 'MEI'] },
-    contra: { tab: 'Ataque', name: 'Contra-ataque', sub: 'sair rápido depois de roubar', fx: { add: { counter: 0.15 } }, en: 5, who: ['ATA', 'MEI'] },
-    toque: { tab: 'Ataque', name: 'Troca de passes', sub: 'ficar com a bola', fx: { add: { ctrl: 0.08 } }, en: 3, who: ['MEI'] },
-    pressao: { tab: 'Defesa', name: 'Marcação alta', sub: 'roubar lá na frente', fx: { add: { press: 0.15 } }, en: 6, who: ['ATA', 'MEI'] },
-    linha: { tab: 'Defesa', name: 'Linha de zaga', sub: 'subir junto, pegar impedimento', fx: { mul: { def: 0.965 } }, en: 3, who: ['ZAG', 'LAT'] },
-    bloco: { tab: 'Defesa', name: 'Bloco baixo', sub: 'fechar os espaços atrás', fx: { mul: { def: 0.95, att: 0.98 } }, en: 3, who: ['ZAG', 'MEI'] },
-    duelos: { tab: 'Defesa', name: 'Duelos', sub: 'ganhar a dividida', fx: { mul: { def: 0.975, att: 1.01 } }, en: 5, who: ['ZAG', 'MEI'] },
-    esc: { tab: 'Bola parada', name: 'Escanteio a favor', sub: 'mais perigo no 1º e 2º pau', fx: { mul: { att: 1.025 } }, sp: 'esc', en: 5, who: ['ZAG', 'ATA'] },
-    falta: { tab: 'Bola parada', name: 'Falta a favor', sub: 'batedor e barreira', fx: { mul: { att: 1.02 } }, sp: 'falta', en: 3, who: ['MEI', 'ATA'] },
-    defesc: { tab: 'Bola parada', name: 'Defender escanteio', sub: 'zona ou homem a homem', fx: { mul: { def: 0.97 } }, en: 4, who: ['ZAG', 'GOL'] },
-    pen: { tab: 'Bola parada', name: 'Pênaltis', sub: 'batedores e goleiro', fx: { mul: { att: 1.01, def: 0.99 } }, sp: 'pen', en: 2, who: ['ATA', 'GOL'] },
+    final: { tab: 'Ataque', name: 'Finalização', sub: 'chutar mais certo', fx: { mul: { att: 1.04 } }, en: 4, who: ['ATA', 'MEI'], dv: 0 },
+    lados: { tab: 'Ataque', name: 'Jogadas pelos lados', sub: 'cruzamento e ultrapassagem', fx: { add: { wide: 0.12 }, mul: { att: 1.015 } }, en: 4, who: ['LAT', 'MEI'], dv: 2 },
+    contra: { tab: 'Ataque', name: 'Contra-ataque', sub: 'sair rápido depois de roubar', fx: { add: { counter: 0.15 } }, en: 5, who: ['ATA', 'MEI'], dv: 4 },
+    toque: { tab: 'Ataque', name: 'Troca de passes', sub: 'ficar com a bola', fx: { add: { ctrl: 0.08 } }, en: 3, who: ['MEI'], dv: 1 },
+    pressao: { tab: 'Defesa', name: 'Marcação alta', sub: 'roubar lá na frente', fx: { add: { press: 0.15 } }, en: 6, who: ['ATA', 'MEI'], dv: 5 },
+    linha: { tab: 'Defesa', name: 'Linha de zaga', sub: 'subir junto, pegar impedimento', fx: { mul: { def: 0.965 } }, en: 3, who: ['ZAG', 'LAT'], dv: 3 },
+    bloco: { tab: 'Defesa', name: 'Bloco baixo', sub: 'fechar os espaços atrás', fx: { mul: { def: 0.95, att: 0.98 } }, en: 3, who: ['ZAG', 'MEI'], dv: 3 },
+    duelos: { tab: 'Defesa', name: 'Duelos', sub: 'ganhar a dividida', fx: { mul: { def: 0.975, att: 1.01 } }, en: 5, who: ['ZAG', 'MEI'], dv: 5 },
+    esc: { tab: 'Bola parada', name: 'Escanteio a favor', sub: 'mais perigo no 1º e 2º pau', fx: { mul: { att: 1.025 } }, sp: 'esc', en: 5, who: ['ZAG', 'ATA'], dv: 5 },
+    falta: { tab: 'Bola parada', name: 'Falta a favor', sub: 'batedor e barreira', fx: { mul: { att: 1.02 } }, sp: 'falta', en: 3, who: ['MEI', 'ATA'], dv: 1 },
+    defesc: { tab: 'Bola parada', name: 'Defender escanteio', sub: 'zona ou homem a homem', fx: { mul: { def: 0.97 } }, en: 4, who: ['ZAG', 'GOL'], dv: 3, dvG: 2 },
+    pen: { tab: 'Bola parada', name: 'Pênaltis', sub: 'batedores e goleiro', fx: { mul: { att: 1.01, def: 0.99 } }, sp: 'pen', en: 2, who: ['ATA', 'GOL'], dv: 0, dvG: 5 },
     recup: { tab: 'Físico', name: 'Recuperação', sub: 'quem jogou descansa', fx: {}, en: -8, who: [] },
-    resist: { tab: 'Físico', name: 'Resistência', sub: 'cansar menos no jogo', fx: { mul: { en: 0.85 } }, en: 5, who: ['MEI', 'LAT'] },
-    veloc: { tab: 'Físico', name: 'Velocidade', sub: 'arrancada e recomposição', fx: { add: { counter: 0.06, press: 0.06 } }, en: 5, who: ['ATA', 'LAT'] },
+    resist: { tab: 'Físico', name: 'Resistência', sub: 'cansar menos no jogo', fx: { mul: { en: 0.85 } }, en: 5, who: ['MEI', 'LAT'], dv: 5 },
+    veloc: { tab: 'Físico', name: 'Velocidade', sub: 'arrancada e recomposição', fx: { add: { counter: 0.06, press: 0.06 } }, en: 5, who: ['ATA', 'LAT'], dv: 4 },
     folga: { tab: 'Físico', name: 'Folga', sub: 'dia livre: moral e energia', fx: {}, en: -12, mo: 3, who: [] },
   };
   S.coTrain = function (co, k) {
     const t = TRAIN[k]; if (!t || !co.ss || (co.train && co.train.i === co.ss.i)) return false;
     co.train = { k, i: co.ss.i };
+    trainGrow(co, t);
     co.squad.forEach(p => { p.en = Math.max(0, Math.min(100, p.en - t.en * (t.en > 0 && !t.who.includes(p.pos) ? 0.5 : 1))); if (t.mo) p.mo = Math.min(100, (p.mo === undefined ? 60 : p.mo) + t.mo); });
     return true;
   };
@@ -150,7 +151,7 @@
     pressionar: { name: 'Pressionar', sub: 'cansa mais', dur: 10, add: { press: 0.4, line: 0.2, build: 0.05 }, mul: { en: 1.5, att: 1.08, def: 1.06 }, tip: 'o time rouba lá na frente e cansa mais rápido' },
     segurar: { name: 'Segurar', sub: 'gastar tempo', dur: 10, add: { ctrl: 0.2, press: -0.15, wide: -0.1 }, mul: { att: 0.84, def: 0.88, en: 0.85 }, tip: 'toca de lado, chega menos e sofre menos' },
     lados: { name: 'Pelos lados', sub: 'abrir o jogo', dur: 10, add: { wide: 0.35, patience: 0.15 }, mul: { att: 1.03, def: 1.05 }, tip: 'a bola vai para as pontas, sobra espaço no meio para eles' },
-    recuar: { name: 'Recuar', sub: 'fechar a área', dur: 10, add: { line: -0.35, press: -0.25, counter: 0.2 }, mul: { att: 0.8, def: 0.8, en: 0.9 }, tip: 'todo mundo atrás da linha da bola, só sai no contra-ataque' },
+    recuar: { name: 'Recuar', sub: 'fechar a área', dur: 10, add: { line: -0.35, press: -0.25, counter: 0.2 }, sim: { line: -0.35, counter: 0.2 }, mul: { att: 0.8, def: 0.8, en: 0.9 }, tip: 'todo mundo atrás da linha da bola, só sai no contra-ataque' },
   };
   // Conversa do intervalo (vale do 46' ao 60'): o efeito depende do placar; a moral do elenco sente na hora
   const TALK = S.CO_TALK = {
@@ -172,6 +173,10 @@
       Object.keys(fx.add || {}).forEach(k => { o[k] = Math.max(0, o[k] + fx.add[k]); }); Object.keys(fx.mul || {}).forEach(k => { o[k] *= fx.mul[k]; }); });
     return o;
   };
+  // O estilo que o campinho ao vivo joga: o do time mais o que o grito soma enquanto vale (a linha sobe, o time abre, recua...)
+  // (`sim` no grito = o que vale no campinho quando é diferente da conta: recuar sem baixar a pressão, senão levava mais gol)
+  S.coSimSty = side => { const b = sty(side.style), sh = side.shout && SHOUT[side.shout.k]; if (!sh) return b;
+    const o = Object.assign({}, b), ad = sh.sim || sh.add; Object.keys(ad).forEach(k => { o[k] = Math.max(0, (o[k] || 0) + ad[k]); }); return o; };
   const slotsOf = form => FORMS[form].slots.map(x => x.pos);
   const sectorOf = (form, i) => { const l = FORMS[form].slots[i].ln; return l === 'am' ? 'm' : l; };
   S.coSlots = slotsOf;
@@ -290,6 +295,39 @@
     else if (Math.round(atMean(pos, p.at)) !== p.ovr) { const d = p.ovr - atMean(pos, p.at); p.at = atFit(pos, p.at.map(v => v + d), p.ovr); }
     return p.at;
   };
+  // Fase 4: o treino da semana desenvolve um atributo (`dv` do treino; goleiro `dvG`) de quem é da posição do treino
+  // (`who`). Cada jogador guarda um progresso escondido `p.tp`: o treino soma `rate` × idade × espaço até o potencial, e
+  // quando passa de 1 o atributo treinado ganha 1 ponto. O geral segue sendo a média pelo peso da posição: quando ela
+  // arredonda para cima o geral sobe 1 (nunca passa do potencial) e o jogador entra em `co.train.up` (o aviso da Semana).
+  // `co.train.dv` = [id, atributo] de todo ponto ganho no treino da semana (some no fim do jogo, com o `co.train`).
+  // Sem sorteio: não gasta a semente da carreira. Machucado não treina. `CO_TRK=0` desliga.
+  const GROW = S.CO_GROW = { rate: env('CO_TRK', 0.4), ages: [[21, 1], [24, 0.75], [27, 0.5], [30, 0.25]], room: 5,
+    up: 3, dnL: [0.6, 0.4, 0.8, 0.8, 2, 1.4], dnG: [1.6, 0.5, 1.6, 0.8, 0.6, 0.9] };
+  const growK = S.coGrowK = p => { const a = GROW.ages.find(x => p.age <= x[0]); return a ? a[1] * clamp((p.pot - p.ovr) / GROW.room, 0, 1) : 0; };
+  S.coTrainAt = (k, pos) => { const t = TRAIN[k]; if (!t || t.dv === undefined || !t.who.includes(pos)) return -1; const i = pos === 'GOL' ? t.dvG : t.dv; return i === undefined ? -1 : i; };
+  function trainGrow(co, t) {
+    if (!GROW.rate || t.dv === undefined) return;
+    const dv = [], up = [];
+    co.squad.forEach(p => {
+      if (!t.who.includes(p.pos) || p.out > 0) return;
+      const i = p.pos === 'GOL' ? t.dvG : t.dv; if (i === undefined) return;
+      const g = growK(p) * GROW.rate; if (!(g > 0)) return;
+      p.tp = Math.round(((p.tp || 0) + g) * 1000) / 1000; if (p.tp < 1) return;
+      p.tp = Math.round((p.tp - 1) * 1000) / 1000;
+      const a = S.coAttrs(p); if (a[i] >= AT.max) return;
+      a[i] += 1; dv.push([p.id, i]);
+      const o = Math.round(atMean(AT.w[p.pos] ? p.pos : 'MEI', a));
+      if (o > p.ovr) { p.ovr = Math.min(o, 95); up.push(p.id); }
+    });
+    if (dv.length) co.train.dv = dv; if (up.length) co.train.up = up;
+  }
+  // Virada de temporada: o geral muda `d` pontos e os atributos não andam todos juntos. Quem cresce sobe mais nos
+  // atributos de mais peso da posição; quem cai perde velocidade e físico antes (goleiro: reflexo e saída do gol).
+  function seasonAttrs(p, d) {
+    if (!d) return; const pos = AT.w[p.pos] ? p.pos : 'MEI', w = AT.w[pos], a = S.coAttrs(p);
+    const f = d > 0 ? w.map(x => 0.5 + GROW.up * x / 100) : (p.pos === 'GOL' ? GROW.dnG : GROW.dnL);
+    p.ovr += d; p.at = atFit(pos, a.map((v, i) => v + d * f[i]), p.ovr);
+  }
   // Fase 3: o atributo por setor. `atDev` = quanto o jogador está acima ou abaixo do normal da posição dele em cada
   // atributo (o normal é o perfil da posição com a média pelo peso zerada, então um jogador sem jeito nenhum dá zero em
   // tudo). `secDev(p, setor)` soma isso pelos pesos do setor (AT.sec; 'gol' = goleiro) e devolve em pontos de geral: o
@@ -1161,7 +1199,8 @@
       co.squad.forEach(p => {
         p.age++;
         const g = p.age <= 21 ? r.int(1, 4) : p.age <= 26 ? r.int(0, 2) : p.age <= 30 ? r.int(-1, 1) : p.age <= 33 ? r.int(-3, 0) : r.int(-5, -1);
-        p.ovr = clamp(p.ovr + (g > 0 ? Math.min(g, Math.max(0, p.pot - p.ovr)) : g), 30, 95);
+        const o1 = clamp(p.ovr + (g > 0 ? Math.min(g, Math.max(0, p.pot - p.ovr)) : g), 30, 95);
+        if (o1 !== p.ovr) { p.sd = o1 - p.ovr; seasonAttrs(p, p.sd); } else delete p.sd;
         p.ct--; p.mo = 60; p.en = 100; delete p.prom; delete p.broke; delete p.deny; // ano novo: a conversa da semana começa do zero
       });
       // Contrato acabou = sai do clube, titular ou não (Silvio 2026-11-09: antes o titular renovava sozinho por 2 anos).

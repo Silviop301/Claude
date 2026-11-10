@@ -254,6 +254,7 @@
     const tut = tutStep(co);
     const popped = !tut && (inboxPop(co, semana) || lostPop(co) || obraPop(co) || nomePop(co) || ligaPop(co) || showPop(co));
     if (!tut && !popped && !ctWarn(co)) finNews(co);
+    if (!tut && !popped) setTimeout(() => upToast(co), 0);
     // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
     const inN = tut ? 0 : S.coMktInbox(co).filter(o => !o.seen).length - (popped ? 1 : 0);
     const nwN = tut || !S.coWorldNew ? 0 : (S.coWorldSync(co), S.coWorldNew(co));
@@ -1569,6 +1570,23 @@
   }
   // Quem você observava fechou com outro clube (mercado vivo, fase 3): uma janelinha na volta para a semana, nunca junto
   // com a de proposta recebida (fica para a semana seguinte). Procurar outro abre o Mercado já na posição dele
+  // Aviso de quem subiu de geral no treino da semana (fase 4 dos atributos; Silvio 2026-11-10: "se um jogador evoluir de
+  // overall eu quero uma notificaçãozinha"). O cartão creme do "Meta cumprida", dentro do palco: sai uma vez (`co.train.seen`),
+  // some sozinho e o Ver abre o Elenco no jogador. Com janelinha aberta espera a próxima vez que a Semana abrir.
+  function upToast(co) {
+    const tr = co.train, st = document.querySelector('#ld .ld-st');
+    if (!tr || !co.ss || tr.i !== co.ss.i || !tr.up || !tr.up.length || tr.seen || !st || !st.querySelector('.sm') || document.querySelector('#ld-pop')) return;
+    const c = C(), L = tr.up.map(id => co.squad.find(p => p.id === id)).filter(Boolean); if (!L.length) return;
+    tr.seen = 1; c.save('hub');
+    const q = L[0], dv = (tr.dv || []).find(x => x[0] === q.id), ks = S.coAtKeys(q), at = S.coAttrs(q);
+    const box = document.createElement('div'); box.className = 'up-ty'; box.setAttribute('role', 'status');
+    box.innerHTML = '<i>▲</i>' + (L.length === 1 ? '<b class="o">' + q.ovr + '</b><span><b>' + esc(c.last(q.n)) + ' subiu de geral</b>' + (dv ? '<small>' + S.CO_AT.names[ks[dv[1]]] + ' ' + (at[dv[1]] - 1) + ' → ' + at[dv[1]] + '</small>' : '') + '</span>'
+      : '<span><b>' + L.length + ' jogadores subiram de geral</b><small>' + L.slice(0, 2).map(p => esc(c.last(p.n)) + ' ' + p.ovr).join(' · ') + (L.length > 2 ? ' e mais ' + (L.length - 2) : '') + '</small></span>') + '<button class="up-b">Ver</button>';
+    st.appendChild(box); sfx('levelup');
+    const t = setTimeout(() => box.remove(), 7000);
+    box.onclick = () => { clearTimeout(t); box.remove(); };
+    box.querySelector('.up-b').onclick = e => { e.stopPropagation(); clearTimeout(t); box.remove(); sfx('tap'); elenco.ct = 0; elenco(q.pos === 'GOL' ? 0 : q.pos === 'MEI' ? 2 : q.pos === 'ATA' ? 3 : 1, q.id); };
+  }
   function lostPop(co) {
     if (!S.coWorldLost || !co.wm || !co.wm.lost || document.getElementById('ld-pop')) return false;
     const x = S.coWorldLost(co), c = C(); c.save();
@@ -1775,7 +1793,8 @@
       // mais baixo em laranja) e Situação (energia, potencial, moral, salário, contrato, renovar e vender, como era a ficha)
       const at = S.coAttrs(q), ks = S.coAtKeys(q), hi = at.indexOf(Math.max.apply(null, at)), mn = Math.min.apply(null, at), lo = mn <= q.ovr - 8 ? at.indexOf(mn) : -1; // laranja só para ponto fraco de verdade (8 abaixo do geral)
       const seg = '<div class="lde2-seg">' + ['Atributos', 'Situação'].map((t, i) => '<button data-ec="' + i + '"' + (i === elenco.ct ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('') + '</div>';
-      const bars = '<div class="lde2-at">' + at.map((v, i) => '<div class="lde2-ar' + (i === hi ? ' top' : i === lo ? ' low' : '') + '"><span>' + S.CO_AT.names[ks[i]] + '</span><i><u style="width:' + v + '%"></u></i><b>' + v + '</b></div>').join('') + '</div>';
+      const grw = co.train && co.ss && co.train.i === co.ss.i && co.train.dv ? co.train.dv.filter(x => x[0] === q.id).map(x => x[1]) : []; // subiu no treino desta semana: verde
+      const bars = '<div class="lde2-at">' + at.map((v, i) => '<div class="lde2-ar' + (grw.includes(i) ? ' gr' : i === hi ? ' top' : i === lo ? ' low' : '') + '"><span>' + S.CO_AT.names[ks[i]] + '</span><i><u style="width:' + v + '%"></u></i><b>' + v + '</b></div>').join('') + '</div>';
       card = '<div class="lde2-c' + (elenco.ct ? ' sit' + (hint ? ' hn' : '') : '') + '"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? q.num + ' ' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + ' · ' + q.age + ' anos</small></span></div>' + seg +
         (elenco.ct ? '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/sem') + '</div>' +
         '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span></div>' +
@@ -2102,13 +2121,19 @@
       retranca: ['O ' + vn + ' vai fechar a área. Escanteio pode decidir.', 'esc'], lados: ['O ' + vn + ' cruza muito. Defender escanteio ajuda.', 'defesc'], equilibrado: ['O ' + vn + ' não tem ponto fraco grande. Treine o que é seu.', null] };
     const aux = pv ? AUX[pv.them.style] || AUX.equilibrado : ['Sem jogo nesta rodada: bom para recuperar.', 'recup'];
     const enTxt = t => (t.en > 0 ? 'energia −' + t.en : 'energia +' + (-t.en));
+    // Fase 4: o atributo que o treino desenvolve (S.CO_TRAIN[k].dv; goleiro dvG) e de quem (as posições do treino)
+    const AK = S.CO_AT.keys, POSN = { ATA: 'atacantes', MEI: 'meias', LAT: 'laterais', ZAG: 'zagueiros' }, grow = S.CO_GROW && S.CO_GROW.rate > 0;
+    const dvTag = t => (grow && t.dv !== undefined ? '<em class="at">▲ ' + S.CO_AT.short[AK.L[t.dv]] + '</em>' : '');
+    const dvBox = t => { if (!grow || t.dv === undefined) return '';
+      const ps = t.who.filter(x => POSN[x]).map(x => POSN[x]).join(' e '), g = t.who.includes('GOL') && t.dvG !== undefined ? S.CO_AT.names[AK.G[t.dvG]] : '';
+      return '<div class="tr2-dv"><small>DESENVOLVE</small><b>▲ ' + S.CO_AT.names[AK.L[t.dv]] + '</b><span>de ' + ps + '</span>' + (g ? '<span class="g">Goleiros: ▲ ' + g + '</span>' : '') + '</div>'; };
     const draw = () => {
       const ks = Object.keys(T).filter(k => T[k].tab === tab), sel = pick && T[pick];
       const go = done ? '<button class="tm-go" id="ldtr-back">Voltar</button>' : '<button class="tm-go' + (sel ? '' : ' off') + '" id="ldtr-go">' + (sel ? 'Treinar' : 'Escolha um') + '</button>';
       show('<div class="tr2"><div class="tm-h"><button class="tcr-back" id="tr2-back" aria-label="Voltar">' + BK + '</button><b>Treino</b><small>' + (vs ? 'para o jogo contra o ' + vn : 'sem jogo nesta rodada') + '</small></div>' +
         '<div class="tr2-tabs">' + tabs.map(t => '<button data-tt="' + t + '"' + (t === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
-        '<div class="tr2-g">' + ks.map(k => '<button class="tr2-c' + (k === pick ? ' on' : '') + (done && k !== done ? ' dis' : '') + '" data-tk="' + k + '"' + (done && k !== done ? ' disabled' : '') + '><b>' + (done === k ? '✓ ' : '') + T[k].name + '</b><em class="' + (T[k].en > 0 ? 'dn' : 'up') + '">' + enTxt(T[k]) + '</em></button>').join('') + '</div>' +
-        '<div class="tr2-side"><div class="tr2-d">' + (sel ? '<b>' + sel.name + '</b><p>' + trTip(pick) + '</p>' : '<p class="tr2-none">Toque num treino</p>') + '</div>' +
+        '<div class="tr2-g">' + ks.map(k => '<button class="tr2-c' + (k === pick ? ' on' : '') + (done && k !== done ? ' dis' : '') + '" data-tk="' + k + '"' + (done && k !== done ? ' disabled' : '') + '><b>' + (done === k ? '✓ ' : '') + T[k].name + '</b><span class="tr2-tg"><em class="' + (T[k].en > 0 ? 'dn' : 'up') + '">' + enTxt(T[k]) + '</em>' + dvTag(T[k]) + '</span></button>').join('') + '</div>' +
+        '<div class="tr2-side"><div class="tr2-d">' + (sel ? '<b>' + sel.name + '</b><p>' + trTip(pick) + '</p>' + dvBox(sel) : '<p class="tr2-none">Toque num treino</p>') + '</div>' +
           '<button class="tm-b" id="tr2-aux">Auxiliar' + (aux[1] && !done ? '<i class="tm-dot">1</i>' : '') + '</button>' + go + '</div></div>', st => {
         st.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { sfx('tap'); tab = b.dataset.tt; draw(); });
         st.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { sfx('tap'); pick = b.dataset.tk; draw(); });

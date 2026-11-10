@@ -24,6 +24,10 @@
 //       velocidade rende mais no contra-ataque do que na posse, físico rende mais na pressão do que na retranca;
 //     - o auxiliar escala pelo atributo da vaga sem abrir mão do geral (o time dele não cai mais de 1 ponto);
 //     - sem lista, o pênalti é do melhor finalizador em campo e o escanteio do melhor passador.
+// 11. Fase 4 (S.CO_GROW): o treino só mexe 1 ponto por jogador, no atributo do treino e na posição do treino; machucado,
+//     veterano e quem está no potencial não crescem; o geral sobe 1 por vez, nunca passa do potencial e entra no aviso
+//     (`co.train.up`); o save no meio treina igual; na virada quem cai perde velocidade e físico antes e quem cresce
+//     sobe mais no atributo de mais peso; a média pelo peso segue igual ao geral.
 const D = require('../craque/src/data.js');
 const S = require('../craque/src/sim.js');
 const R = (() => { try { return require('../craque/src/real-squads.js'); } catch (e) { return null; } })();
@@ -197,6 +201,57 @@ console.log('Geral mudou: ponto forte mantido em ' + Math.round(100 * keep / tot
   console.log('  Clubes contra um time normal do mesmo nível: gols a favor ' + pc(avg(f3.ratF)) + ' na média, desvio ' + (100 * sd(f3.ratF)).toFixed(1) + ' (de ' + pc(Math.min.apply(null, f3.ratF)) + ' a ' + pc(Math.max.apply(null, f3.ratF)) + '), contra ' + pc(avg(f3.ratA)) + ' (de ' + pc(Math.min.apply(null, f3.ratA)) + ' a ' + pc(Math.max.apply(null, f3.ratA)) + ')');
   console.log('  +6 no atributo: finalização dos atacantes ' + pc(P.fin) + ' gols · defesa da zaga ' + pc(P.def) + ' gols sofridos · goleiro ' + pc(P.gol) + ' · passe dos meias ' + (100 * P.pas).toFixed(1) + ' pontos de posse · velocidade ' + pc(P.velC) + ' no contra-ataque e ' + pc(P.velP) + ' na posse · físico ' + pc(P.fisP) + ' na pressão e ' + pc(P.fisR) + ' na retranca');
   console.log('  Auxiliar: escalação diferente da feita só pelo geral em ' + Math.round(100 * f3.difXI) + '% dos clubes; geral médio do time ' + f3.drop.toFixed(2) + ' ponto abaixo (pior caso ' + f3.dropMax.toFixed(1) + ')');
+}
+// 11. Fase 4: o treino desenvolve e a virada de temporada mexe atributo por atributo
+{
+  const G = S.CO_GROW, T = S.CO_TRAIN, ks = Object.keys(T), f4 = { n: 0, dv: 0, up: 0, dn: 0, vf: 0, ot: 0, g: 0, hi: 0, lo: 0 };
+  const sameMean = (p, tag) => { const a = S.coAttrs(p); if (Math.round(wmean(p.pos, a)) !== p.ovr || a.some(x => !Number.isInteger(x) || x < AT.min || x > AT.max)) alert(tag + ': atributos fora do geral ou da faixa em ' + p.n + ' ' + JSON.stringify(a) + ' geral ' + p.ovr); };
+  for (let n = 0; n < 10; n++) {
+    const co = S.coNew({ name: 'Treino', country: 'Brasil', start: n % 2 ? 'livre' : 'baixo', seed: 9000 + n * 131 }); S.coSign(co, S.coOffers(co)[0]); co.autoXI = true;
+    for (let s = 0; s < 3 && !co.sacked; s++) {
+      S.coStart(co);
+      while (!co.ss.done && !co.sacked) {
+        const nx = S.coNext(co); if (!nx) break; if (nx.bye) { S.coSkipRound(co); continue; }
+        const k = ks[(co.ss.i * 7 + n + s) % ks.length];
+        const bf = co.squad.map(p => ({ at: S.coAttrs(p).slice(), ovr: p.ovr, out: p.out }));
+        const cp = JSON.parse(JSON.stringify(co));
+        if (n === 0 && s === 0 && co.ss.i === 2) { const r0 = G.rate; G.rate = 0; const z = JSON.parse(JSON.stringify(co)); S.coTrain(z, k); G.rate = r0; if (z.squad.some((p, i) => p.at.join() !== bf[i].at.join() || (p.tp || 0) !== (co.squad[i].tp || 0))) alert('treino: desligado (CO_TRK=0) e mesmo assim desenvolveu'); }
+        S.coTrain(co, k); S.coTrain(cp, k); f4.n++;
+        if (JSON.stringify(cp.squad) !== JSON.stringify(co.squad) || JSON.stringify(cp.train) !== JSON.stringify(co.train)) alert('treino: o save no meio treina diferente (' + k + ')');
+        let ups = 0;
+        co.squad.forEach((p, i) => {
+          const b = bf[i], a = S.coAttrs(p), ch = a.map((v, j) => v - b.at[j]), sum = ch.reduce((x, y) => x + Math.abs(y), 0), exp = S.coTrainAt(k, p.pos);
+          if (sum > 1 || ch.some(x => x < 0)) alert('treino: mais de 1 ponto ou atributo caiu em ' + p.n + ' (' + k + ')');
+          if (sum === 1) {
+            f4.dv++;
+            if (exp < 0 || ch[exp] !== 1) alert('treino: ' + k + ' mexeu no atributo errado de ' + p.pos + ' ' + p.n);
+            if (b.out > 0) alert('treino: machucado treinou (' + p.n + ')');
+            if (p.age > 30) alert('treino: ' + p.n + ' cresceu com ' + p.age + ' anos');
+            if (b.ovr >= p.pot) alert('treino: ' + p.n + ' cresceu já no potencial');
+          }
+          if (p.ovr !== b.ovr) { ups++; f4.up++; if (p.ovr !== b.ovr + 1 || p.ovr > p.pot) alert('treino: geral de ' + p.n + ' foi de ' + b.ovr + ' para ' + p.ovr + ' (potencial ' + p.pot + ')'); if (!(co.train.up || []).includes(p.id)) alert('treino: ' + p.n + ' subiu de geral sem entrar no aviso'); }
+          sameMean(p, 'treino');
+        });
+        if (((co.train && co.train.up) || []).length !== ups) alert('treino: lista do aviso com ' + ((co.train.up || []).length) + ' para ' + ups + ' subidas');
+        const m = S.coMatchStart(co); S.coMatchRest(co, m); S.coMatchEnd(co, m);
+      }
+      const pre = {}; co.squad.forEach(p => { pre[p.id] = { at: S.coAttrs(p).slice(), ovr: p.ovr }; });
+      const out = S.coSeasonEnd(co);
+      co.squad.forEach(p => {
+        const b = pre[p.id]; if (!b) return; sameMean(p, 'virada');
+        const a = S.coAttrs(p), d = p.ovr - b.ovr, ch = a.map((v, j) => (v - b.at[j]) / (d || 1)); if (!d || p.pos === 'GOL') return;
+        if ((p.sd || 0) !== d) alert('virada: p.sd de ' + p.n + ' é ' + p.sd + ' e o geral mudou ' + d);
+        const w = AT.w[p.pos], ord = [0, 1, 2, 3, 4, 5].sort((x, y) => w[y] - w[x]);
+        if (d < 0) { f4.dn++; f4.vf += (ch[4] + ch[5]) / 2; f4.ot += (ch[0] + ch[1] + ch[2] + ch[3]) / 4; } else { f4.g++; f4.hi += ch[ord[0]]; f4.lo += ch[ord[5]]; }
+      });
+      if (out.offers) S.coSign(co, out.offers[0]);
+    }
+  }
+  if (!f4.dv || !f4.up) alert('treino: ninguém desenvolveu em ' + f4.n + ' treinos');
+  if (f4.dn > 20 && !(f4.vf / f4.dn > f4.ot / f4.dn + 0.3)) alert('virada: quem cai não perde velocidade e físico antes (' + (f4.vf / f4.dn).toFixed(2) + ' contra ' + (f4.ot / f4.dn).toFixed(2) + ' por ponto de geral)');
+  if (f4.g > 20 && !(f4.hi / f4.g > f4.lo / f4.g + 0.3)) alert('virada: quem cresce não sobe mais no atributo de mais peso (' + (f4.hi / f4.g).toFixed(2) + ' contra ' + (f4.lo / f4.g).toFixed(2) + ')');
+  console.log('Treino (fase 4' + (G.rate ? '' : ', DESLIGADA') + '): ' + f4.n + ' treinos · ' + (f4.dv / f4.n).toFixed(2) + ' ponto de atributo e ' + (f4.up / f4.n).toFixed(2) + ' subida de geral por treino');
+  console.log('  Virada: quem cai perde ' + (f4.vf / Math.max(1, f4.dn)).toFixed(2) + ' de velocidade e físico por ponto de geral e ' + (f4.ot / Math.max(1, f4.dn)).toFixed(2) + ' no resto · quem cresce ganha ' + (f4.hi / Math.max(1, f4.g)).toFixed(2) + ' no atributo de mais peso e ' + (f4.lo / Math.max(1, f4.g)).toFixed(2) + ' no de menos');
 }
 alerts.forEach(a => console.log('ALERTA ' + a));
 console.log(alerts.length + ' alertas');
