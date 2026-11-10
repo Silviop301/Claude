@@ -23,6 +23,7 @@
     rum: 0.06,       // chance de cada clube da sua liga aparecer num boato para o lote seguinte
     rumObs: 0.25,    // chance de cada jogador que você observa aparecer num boato para o lote seguinte
     rumOk: 0.67,     // parte dos boatos que vira negócio
+    rumTwo: 0.3,     // chance de um segundo clube entrar no boato de quem você observa
     maxIn: 2,        // contratações por clube em cada janela
     top: 2,          // negócios dos grandes do país por lote (quando a sua liga não é a deles)
     free: 1,         // sem clube que fecham por lote
@@ -115,8 +116,8 @@
   S.coWorldObs = obsNow;
   S.coWorldNews = (co, flt) => { const L = (co.wm && co.wm.nw) || []; return flt === 3 ? L.filter(x => obsNow(co, x)) : flt === 2 ? L.filter(x => x.me) : flt === 1 ? L.filter(x => x.me || x.obs || S.coWorldInLg(co, x)) : L; };
   S.coWorldNew = co => { const w = co.wm; return w ? w.nw.filter(x => x.i > (w.seen || 0) && (x.me || x.obs || S.coWorldInLg(co, x))).length : 0; };
-  // O boato que corre agora sobre um jogador de outro clube (a ficha mostra quem também quer)
-  S.coWorldRumor = (co, id) => (co.wm && (co.wm.rm || []).find(x => x.id === id && !x.me)) || null;
+  // Os boatos que correm agora sobre um jogador de outro clube (a ficha mostra quem também quer; podem ser dois clubes)
+  S.coWorldRumors = (co, id) => (co.wm && (co.wm.rm || []).filter(x => x.id === id && !x.me)) || [];
   // O observado que fechou com outro: devolve uma vez e apaga
   S.coWorldLost = co => { const w = co.wm, x = w && w.lost; if (x) { delete w.lost; w.v++; } return x || null; };
   S.coWorldSeen = co => { if (co.wm) co.wm.seen = co.wm.ni || 0; };
@@ -256,7 +257,7 @@
     // 4. os boatos do próximo lote
     function rumors() {
       const seen = {};
-      const add = (p, from, to, nw, rm) => { if (seen[p.id] || used[p.id]) return; seen[p.id] = 1;
+      const add = (p, from, to, nw, rm, two) => { if ((seen[p.id] && !two) || used[p.id]) return; seen[p.id] = 1;
         const x = Object.assign({ k: 'b', id: p.id, n: p.n, pos: p.pos, age: p.age, from, to, v: 0 }, nw);
         news(co, w, x); w.rm.push(Object.assign({ id: p.id, from, to, ok: r() < WM.rumOk ? 1 : 0, ni: x.i }, rm)); };
       // os clubes da sua liga
@@ -268,7 +269,8 @@
         const p = S.coMktFind(co, id); if (!p || !p.club || p.club === me || (m.neg && m.neg[id]) || (m.got && m.got[id])) return;
         const f = D.CLUB_BY_ID[p.club], fc = D.countryOf(f), old = p.age >= 32, ok = c => c.id !== me && c.id !== f.id && c.strength >= f.strength - (old ? 10 : 2) && c.strength <= f.strength + (old ? 0 : 12); // veterano não sobe de patamar
         let C = D.CLUBS.filter(c => c.strength && D.countryOf(c) === fc && ok(c)); if (!C.length) C = D.CLUBS.filter(c => c.strength && ok(c)); if (!C.length) return;
-        add(p, f.id, C[Math.floor(r() * C.length)].id, { obs: 1 }, null);
+        const c1 = C[Math.floor(r() * C.length)].id; add(p, f.id, c1, { obs: 1 }, null);
+        const C2 = C.filter(c => c.id !== c1); if (C2.length && r() < WM.rumTwo) add(p, f.id, C2[Math.floor(r() * C2.length)].id, { obs: 1 }, null, 1); // dois clubes atrás do mesmo jogador: fecha com o primeiro que der certo
       });
       // a proposta que vai chegar por um dos seus (a janela do meio; em clube novo, as que esperam a 3ª semana)
       if (!S.coMktIncPeek) return;
