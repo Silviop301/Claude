@@ -1,4 +1,5 @@
-// Modo Treinador: confronto de formações e estilos com elencos iguais (todos 70, cada um na sua posição, campo neutro).
+// Modo Treinador: confronto de formações e estilos com elencos iguais (todos 70, cada um na sua posição e com os atributos
+// normais da posição, sem jeito próprio: S.coAtNeutral; campo neutro).
 // Mostra a diferença de gols esperados de cada combinação contra cada outra. Esperado: 0 alertas
 //  - nenhuma combinação ganha de todas (sempre existe resposta);
 //  - todo estilo é a melhor resposta contra alguma combinação, e toda formação aparece em alguma melhor resposta;
@@ -9,7 +10,7 @@ const S = require('../craque/src/sim.js');
 const OV = +process.env.OVR || 70;
 let id = 0;
 const sq = [];
-Object.entries({ GOL: 3, ZAG: 6, LAT: 5, MEI: 9, ATA: 6 }).forEach(([pos, n]) => { for (let k = 0; k < n; k++) sq.push({ id: 'x' + (id++), n: pos + k, pos, age: 26, ovr: OV, pot: OV, en: 100, mo: 60, out: 0, sus: 0 }); });
+Object.entries({ GOL: 3, ZAG: 6, LAT: 5, MEI: 9, ATA: 6 }).forEach(([pos, n]) => { for (let k = 0; k < n; k++) sq.push({ id: 'x' + (id++), n: pos + k, pos, age: 26, ovr: OV, pot: OV, en: 100, mo: 60, out: 0, sus: 0, at: S.coAtNeutral(pos, OV) }); });
 const F = Object.keys(S.CO_FORMS), ST = S.CO_STYLES, C = [];
 F.forEach(f => ST.forEach(s => C.push({ f, s, k: f + ' ' + S.CO_STY[s].name })));
 const side = c => ({ squad: sq, form: c.f, style: c.s, xi: S.coAutoXI(sq, c.f).xi });
@@ -17,7 +18,7 @@ const side = c => ({ squad: sq, form: c.f, style: c.s, xi: S.coAutoXI(sq, c.f).x
 const pois = (l, k) => { let f = 1; for (let i = 2; i <= k; i++) f *= i; return Math.exp(-l) * Math.pow(l, k) / f; };
 const pts = (lh, la) => { let w = 0, d = 0; for (let a = 0; a <= 9; a++) for (let b = 0; b <= 9; b++) { const p = pois(lh, a) * pois(la, b); if (a > b) w += p; else if (a === b) d += p; } return 3 * w + d; };
 const GAP = +process.env.GAP || 0; // GAP=6: o seu time 6 pontos mais fraco (a linha é o mais fraco)
-const sqW = sq.map(p => Object.assign({}, p, { ovr: OV - GAP }));
+const sqW = sq.map(p => Object.assign({}, p, { ovr: OV - GAP, at: S.coAtNeutral(p.pos, OV - GAP) }));
 const sideW = c => ({ squad: sqW, form: c.f, style: c.s, xi: S.coAutoXI(sqW, c.f).xi });
 const M = C.map(a => C.map(b => { const r = S.coMatchup(sideW(a), side(b), true); return pts(r.lh, r.la) - (GAP ? 0 : 1.35); }));
 const alerts = [];

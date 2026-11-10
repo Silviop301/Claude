@@ -138,8 +138,11 @@
   // Batedores (pênalti, falta, escanteio de cada lado, capitão): a lista do técnico; sem lista, o melhor em campo
   S.CO_TAKE = { pen: 'Pênalti', fl: 'Falta de longe', fc: 'Falta para cruzar', ckE: 'Escanteio esquerda', ckD: 'Escanteio direita', cap: 'Capitão' };
   const takerOf = (s, k) => { const m = byId(s.squad), on = s.xi.filter(Boolean), l = ((s.takers || {})[k] || []).filter(id => on.includes(id));
-    return l.length ? m[l[0]] : on.map(id => m[id]).filter(p => p && p.pos !== 'GOL').sort((a, b) => b.ovr - a.ovr)[0]; };
+    return l.length ? m[l[0]] : on.map(id => m[id]).filter(p => p && p.pos !== 'GOL').sort((a, b) => takeVal(b, k) - takeVal(a, k))[0]; };
   S.coTaker = takerOf;
+  // Quanto o jogador vale em cada cobrança: pênalti e falta de longe pela finalização, falta para cruzar e escanteio
+  // pelo passe; capitão segue pelo geral
+  const takeVal = S.coTakeVal = (p, k) => { if (!AT.kS || k === 'cap' || p.pos === 'GOL') return p.ovr; const a = S.coAttrs(p); return k === 'pen' || k === 'fl' ? a[0] : a[1]; };
   const sty = k => STY[k] || STY.equilibrado;
   // Grito do técnico (partida ao vivo, um por vez, vale alguns minutos): mexe no estilo de agora por um tempo.
   // Nada é de graça: pressionar cansa e abre as costas, segurar e recuar tiram o ataque. O robô não grita (equilíbrio igual)
@@ -216,6 +219,12 @@
     w: { ZAG: [0, 15, 0, 45, 15, 25], LAT: [5, 20, 10, 25, 25, 15], MEI: [10, 35, 20, 15, 10, 10], ATA: [35, 15, 20, 0, 20, 10], GOL: [30, 25, 15, 15, 10, 5] },
     dev: 3.2, jeito: 5, min: 20, max: 99,
     gol: [0.5, 0.3, 0.2],   // goleiro no campinho: peso de reflexo, colocação e mãos na defesa do chute (S.coAtSim)
+    // Fase 3 (conta resumida, escalação do auxiliar, batedores): o que pesa em cada parte do jogo (fin pas dri def vel fis)
+    sec: { fin: [0.55, 0.05, 0.2, 0, 0.1, 0.1], cri: [0.05, 0.6, 0.25, 0, 0.05, 0.05], ala: [0.1, 0.25, 0.3, 0, 0.35, 0], mar: [0, 0.05, 0, 0.6, 0.15, 0.2] },
+    // kS: quanto do desvio do setor vira ponto de geral ali (0 desliga a fase 3); kG: o goleiro vale em dobro (ele é um só
+    // e entra pela metade na defesa da área); kV: velocidade no contra-ataque (dos seus
+    // atacantes contra a zaga deles); kF: físico na pressão; penK/penOff: pênalti, finalização do batedor contra o pênalti do goleiro
+    kS: env('CO_ATK', 1), kG: 2, kV: env('CO_ATV', 4), kF: env('CO_ATF', 4), penK: 40, penOff: 4, penMax: 0.2,
     // Jogador real (ESPN): o esperado por jogo na posição (g gols, a assistências, fs faltas sofridas: a mediana real de quem
     // tem 8+ jogos, medida em 2026-11-10 nos 40 clubes) e quantos pontos vale cada
     // unidade por jogo acima disso (kG, kA, kF); conv gols por chute (kC pontos); altura em polegadas (kH por polegada); goleiro: sv
@@ -281,6 +290,28 @@
     else if (Math.round(atMean(pos, p.at)) !== p.ovr) { const d = p.ovr - atMean(pos, p.at); p.at = atFit(pos, p.at.map(v => v + d), p.ovr); }
     return p.at;
   };
+  // Fase 3: o atributo por setor. `atDev` = quanto o jogador está acima ou abaixo do normal da posição dele em cada
+  // atributo (o normal é o perfil da posição com a média pelo peso zerada, então um jogador sem jeito nenhum dá zero em
+  // tudo). `secDev(p, setor)` soma isso pelos pesos do setor (AT.sec; 'gol' = goleiro) e devolve em pontos de geral: o
+  // finalizador vale mais na área, o passador na posse, o veloz pelos lados, quem marca bem na defesa. Na média dos
+  // jogadores dá zero: o geral segue mandando e os atributos só separam jogadores e times de mesmo geral.
+  const profN = {}; Object.keys(AT.prof).forEach(pos => { const m = atMean(pos, AT.prof[pos]); profN[pos] = AT.prof[pos].map(v => v - m); });
+  const atDev = p => { const a = S.coAttrs(p), n = profN[AT.w[p.pos] ? p.pos : 'MEI'], o = p.ovr; return [a[0] - o - n[0], a[1] - o - n[1], a[2] - o - n[2], a[3] - o - n[3], a[4] - o - n[4], a[5] - o - n[5]]; };
+  const secDev = (p, k) => {
+    if (!AT.kS || !p) return 0;
+    const g = p.pos === 'GOL'; if (g !== (k === 'gol')) return 0;
+    const d = atDev(p); if (g) return AT.kS * AT.kG * (d[0] * AT.gol[0] + d[1] * AT.gol[1] + d[3] * AT.gol[2]);
+    const w = AT.sec[k]; return AT.kS * (d[0] * w[0] + d[1] * w[1] + d[2] * w[2] + d[3] * w[3] + d[4] * w[4] + d[5] * w[5]);
+  };
+  // O setor principal de uma vaga (para escalar e trocar): zaga e lateral marcam, meia pelo meio cria, quem joga aberto
+  // do meio para a frente vai pelo lado, atacante pelo meio finaliza
+  const slotSec = sl => (sl.pos === 'GOL' ? 'gol' : sl.ln === 'd' ? 'mar' : sl.w ? 'ala' : sl.ln === 'a' ? 'fin' : 'cri');
+  const secK = (p, k) => 1 + secDev(p, k) / Math.max(30, p.ovr);
+  // Atributos de um jogador "sem jeito" (o normal da posição): para as contas de tática pura (caderno, craque_taticas.js)
+  S.coAtNeutral = (pos, ovr) => profN[AT.w[pos] ? pos : 'MEI'].map(v => ovr + v);
+  S.coAtDev = atDev; S.coSecDev = secDev; S.coSlotSec = (form, i) => slotSec(FORMS[form].slots[i]);
+  // Quanto o jogador rende numa vaga da formação (geral, encaixe na posição e o atributo do setor): a conta do auxiliar
+  S.coSlotVal = (p, form, i) => { const sl = FORMS[form].slots[i]; return p.ovr * fit(p.pos, sl.pos) * secK(p, slotSec(sl)); };
   // Elenco de um clube na temporada: os mais fortes perto da força do clube, o banco abaixo, os garotos mais abaixo
   // Elencos reais (tools/craque_api_elencos.py gera src/real-squads.js): nome, idade, posição e número de verdade;
   // a força segue a conta do sorteado (força do clube, ordem na posição, idade). Quem passa de 37 anos ou falta numa
@@ -337,12 +368,12 @@
   const ok = p => p && !p.out && !p.sus;
   // O auxiliar monta o time: para cada vaga, o melhor que sobra pela força na vaga (energia conta)
   function autoXI(squad, form) {
-    const used = new Set(), slots = slotsOf(form), xi = [];
-    const val = (p, sl) => p.ovr * fit(p.pos, sl) * (0.75 + 0.25 * (p.en === undefined ? 100 : p.en) / 100);
+    const used = new Set(), slots = slotsOf(form), SL = FORMS[form].slots, xi = [];
+    const val = (p, sl, i) => p.ovr * fit(p.pos, sl) * secK(p, slotSec(SL[i])) * (0.75 + 0.25 * (p.en === undefined ? 100 : p.en) / 100);
     // Primeiro as vagas da própria posição (mais escassas antes: goleiro, laterais, zagueiros)
     const order = slots.map((sl, i) => i).sort((a, b) => ['GOL', 'LAT', 'ZAG', 'ATA', 'MEI'].indexOf(slots[a]) - ['GOL', 'LAT', 'ZAG', 'ATA', 'MEI'].indexOf(slots[b]));
     order.forEach(i => {
-      const best = squad.filter(p => ok(p) && !used.has(p.id)).sort((a, b) => val(b, slots[i]) - val(a, slots[i]))[0];
+      const best = squad.filter(p => ok(p) && !used.has(p.id)).sort((a, b) => val(b, slots[i], i) - val(a, slots[i], i))[0];
       if (best) { used.add(best.id); xi[i] = best.id; }
     });
     const bench = squad.filter(p => ok(p) && !used.has(p.id)).sort((a, b) => b.ovr - a.ovr).slice(0, 9).map(p => p.id);
@@ -354,44 +385,62 @@
   const last = n => String(n || "").split(" ").filter(Boolean).pop() || "";
   const eff = (p, sl) => p.ovr * fit(p.pos, sl) * (0.8 + 0.2 * (p.en === undefined ? 100 : p.en) / 100) * (p.out ? 0.5 : 1) * (1 + ((p.mo === undefined ? 60 : p.mo) - 60) / 1200);
   // Forma de um lado em campo: quanto tem em cada parte (cada jogador vale ~1 = 70 de força na vaga)
-  function shape(s) {
-    const m = byId(s.squad), F = FORMS[s.form], o = { q: 0, n: 0, ncb: 0, ncf: 0, wb: 0, cb: 0, fb: 0, cm: 0, wm: 0, cf: 0, wf: 0, en: 0, at: 0, nat: 0, df: 0, ndf: 0 };
+  // `noAt`: sem o atributo por setor (só o geral). O ao vivo da simulação livre pede assim: lá o campinho já lê os
+  // atributos em cada lance (fase 2), e contar de novo na força do ataque seria contar duas vezes
+  function shape(s, noAt) {
+    const m = byId(s.squad), F = FORMS[s.form], o = { q: 0, n: 0, ncb: 0, ncf: 0, wb: 0, cb: 0, fb: 0, cm: 0, wm: 0, cf: 0, wf: 0, en: 0, at: 0, nat: 0, df: 0, ndf: 0,
+      cmd: 0, wmd: 0, wbd: 0, vel: 0, nvel: 0, dvel: 0, ndvel: 0, fis: 0, nfis: 0 };
     s.xi.forEach((id, i) => {
       const p = id && m[id], sl = F.slots[i]; if (!p || !sl) return;
       const e0 = eff(p, sl.pos) / 70, tl = s.roles ? (s.roles[i] || 0) : 0;
       // A função da vaga puxa o jogador para o ataque (ea) ou para a defesa (ed)
       const e = e0, ea = e0 * (1 + 0.08 * tl), ed = e0 * (1 - 0.08 * tl);
+      // Fase 3: em cada parte do jogo o jogador vale o geral mais o atributo daquele setor (finalizar, criar, ir pelo
+      // lado, marcar; o goleiro pela defesa do chute). `o.q` (a força geral) segue só pelo geral
+      const d = AT.kS && !noAt ? atDev(p) : null, gk = p.pos === 'GOL', ov = Math.max(30, p.ovr), SC = AT.sec;
+      const sk = w => (d && !gk ? 1 + AT.kS * (d[0] * w[0] + d[1] * w[1] + d[2] * w[2] + d[3] * w[3] + d[4] * w[4] + d[5] * w[5]) / ov : 1);
+      const kf = sk(SC.fin), kc = sk(SC.cri), ka = sk(SC.ala), km = sl.ln === 'g' ? (d && gk ? 1 + AT.kS * AT.kG * (d[0] * AT.gol[0] + d[1] * AT.gol[1] + d[3] * AT.gol[2]) / ov : 1) : sk(SC.mar);
       o.q += e; o.n++; o.en += (p.en === undefined ? 100 : p.en);
       // Quem finaliza (ataque e meia de ligação) e quem defende a área (zaga, laterais pela metade e goleiro)
-      if (sl.ln === 'a' || sl.ln === 'am') { const k = sl.ln === 'a' ? 1 : 0.5; o.at += ea * k; o.nat += k; }
-      if (sl.ln === 'd' || sl.ln === 'g') { const k = sl.ln === 'g' ? 0.5 : sl.w ? 0.5 : 1; o.df += ed * k; o.ndf += k; }
-      if (sl.ln === 'd') { if (sl.w) { o.fb += ed; o.push = (o.push || 0) + 0.25 * tl * e0; } else { o.cb += ed; o.ncb++; } }
-      else if (sl.ln === 'm') { if (sl.w && sl.pos === 'LAT') o.wb += ea; else if (sl.w) o.wm += ea; else o.cm += e; }
-      else if (sl.ln === 'am') { if (sl.w) o.wm += ea; else { o.cm += 0.5 * e; o.cf += 0.5 * ea; o.ncf += 0.5; } }
-      else if (sl.ln === 'a') { if (sl.w) o.wf += ea; else { o.cf += ea; o.ncf++; } }
+      if (sl.ln === 'a' || sl.ln === 'am') { const k = sl.ln === 'a' ? 1 : 0.5; o.at += ea * kf * k; o.nat += k; }
+      if (sl.ln === 'd' || sl.ln === 'g') { const k = sl.ln === 'g' ? 0.5 : sl.w ? 0.5 : 1; o.df += ed * km * k; o.ndf += k; }
+      if (sl.ln === 'd') { if (sl.w) { o.fb += ed * km; o.push = (o.push || 0) + 0.25 * tl * e0 * ka; } else { o.cb += ed * km; o.ncb++; } }
+      else if (sl.ln === 'm') { if (sl.w && sl.pos === 'LAT') { o.wb += ea * ka; o.wbd += ea * km; } else if (sl.w) { o.wm += ea * ka; o.wmd += ea * km; } else { o.cm += e * kc; o.cmd += e * km; } }
+      else if (sl.ln === 'am') { if (sl.w) { o.wm += ea * ka; o.wmd += ea * km; } else { o.cm += 0.5 * e * kc; o.cmd += 0.5 * e * km; o.cf += 0.5 * ea * kf; o.ncf += 0.5; } }
+      else if (sl.ln === 'a') { if (sl.w) o.wf += ea * ka; else { o.cf += ea * kf; o.ncf++; } }
+      // Para os estilos: velocidade de quem ataca e de quem defende (contra-ataque) e físico do time (pressão), em pontos
+      // acima ou abaixo do normal
+      if (d && !gk) {
+        o.fis += d[5]; o.nfis++;
+        if (sl.ln === 'a' || sl.ln === 'am' || (sl.ln === 'm' && sl.w)) { o.vel += d[4]; o.nvel++; }
+        if (sl.ln === 'd') { o.dvel += d[4]; o.ndvel++; }
+      }
     });
     o.at = o.nat ? o.at / o.nat * 70 : o.q / 11 * 70; o.df = o.ndf ? o.df / o.ndf * 70 : o.q / 11 * 70;
     o.q = o.q / 11 * 70; o.en = o.n ? o.en / o.n / 100 : 1; o.bonus = s.bonus || 0;
+    o.vel = o.nvel ? o.vel / o.nvel : 0; o.dvel = o.ndvel ? o.dvel / o.ndvel : 0; o.fis = o.nfis ? o.fis / o.nfis : 0;
     return o;
   }
   // O que X cria contra Y (sem contar a força geral): posse, lados, área, pressão e contra-ataque
   function edge(X, Y, sx, sy, pX) {
     // Lados: quem ataca aberto (o lateral só sobe se não tiver ponta do outro lado prendendo) contra quem marca o lado
     const push = X.fb * sx.wide * 0.6 * (1 - 0.7 * Math.min(1, Y.wf / 2));
-    const fa = X.wm + X.wf + 0.6 * X.wb + push + (X.push || 0), fd = Y.fb + 0.9 * Y.wb + 0.5 * Y.wm + 0.25 * Y.wf + 0.35 * Math.max(0, Y.ncb - 2), fdl = fd * (0.75 + 0.25 * sy.line);
+    const fa = X.wm + X.wf + 0.6 * X.wb + push + (X.push || 0), fd = Y.fb + 0.9 * Y.wbd + 0.5 * Y.wmd + 0.25 * Y.wf + 0.35 * Math.max(0, Y.ncb - 2), fdl = fd * (0.75 + 0.25 * sy.line);
     // Área: atacantes do meio contra zagueiros; zagueiro a mais que os atacantes + 1 não marca ninguém (sobra)
     const cbUse = Y.ncb ? Y.cb * Math.min(1, (X.ncf + 1) / Y.ncb) : 0;
-    const ca = X.cf + 0.35 * X.cm, cd = 0.85 * (cbUse + 0.35 * Y.cm);
+    const ca = X.cf + 0.35 * X.cm, cd = 0.85 * (cbUse + 0.35 * Y.cmd);
     const flank = Math.log((fa + 0.4) / (fdl + 0.4)), central = Math.log((ca + 0.4) / (cd + 0.4));
     // O time ataca por onde tem gente (e o estilo puxa): a fraqueza do outro lado só conta se você ataca por ali
     const wsh = clamp(fa / (fa + ca || 1) + (sx.wide - 0.5) * 0.5, 0.1, 0.9);
-    const press = sx.press * (1 - pX) * X.en * sy.build;
-    const counter = sx.counter * sy.line * (1 - pX) * (X.wf + X.cf) / 2;
+    // Os estilos pedem atributos (fase 3): a pressão rende mais com um time físico; o contra-ataque, com atacantes mais
+    // velozes que a zaga deles
+    const press = sx.press * (1 - pX) * X.en * sy.build * clamp(1 + AT.kF * X.fis / 70, 0.7, 1.3);
+    const counter = sx.counter * sy.line * (1 - pX) * (X.wf + X.cf) / 2 * clamp(1 + AT.kV * (X.vel - Y.dvel) / 70, 0.6, 1.4);
     return { flank, central, wsh, press, counter, poss: pX, T: 1.3 * (wsh * flank * (1 + (sx.wide - 0.5) * 0.8) + (1 - wsh) * central) + 1.0 * press + 1.6 * counter + 2 * (pX - 0.5) };
   }
   // Gols esperados de cada lado no jogo inteiro (H em casa). Volta também o porquê, para a tela do confronto
-  function matchup(H, A, neutral) {
-    const h = shape(H), a = shape(A), sh = styOf(H), sa = styOf(A);
+  function matchup(H, A, neutral, noAt) {
+    const h = shape(H, noAt), a = shape(A, noAt), sh = styOf(H), sa = styOf(A);
     const ch = Math.pow((h.cm + 0.3 * h.wm) * sh.ctrl, 1.6), ca = Math.pow((a.cm + 0.3 * a.wm) * sa.ctrl, 1.6);
     const pH = clamp(ch / (ch + ca || 1), 0.28, 0.72);
     const eh = edge(h, a, sh, sa, pH), ea = edge(a, h, sa, sh, 1 - pH);
@@ -563,7 +612,7 @@
       if (m.us.pre && m.min > m.us.pre.until) delete m.us.pre;
       if (m.us.shout && m.min > m.us.shout.until) { delete m.us.shout; m.ev.push({ m: m.min, t: 'grito-fim', s: 'us' }); }
       const H = m.home ? m.us : m.them, A = m.home ? m.them : m.us;
-      const mu = matchup(H, A), lh = mu.lh, la = mu.la;
+      const mu = matchup(H, A, false, free), lh = mu.lh, la = mu.la; // livre: sem o atributo por setor (o campinho já lê os atributos)
       m.poss = (m.poss || 0) + (m.home ? mu.h.poss : 1 - mu.h.poss);
       // Quem manda no jogo, minuto a minuto (0 a 100, do seu lado): a faixa da tela e do resultado
       (m.mom = m.mom || []).push(Math.round(100 * (m.home ? lh : la) / (lh + la || 1)));
@@ -587,7 +636,7 @@
             sp = tr && r() < 0.5 ? tr : rr < 0.08 ? 'pen' : rr < 0.15 ? 'falta' : 'esc';
             if (sp === 'esc' && l !== 'c' && r() < 0.3) sp = 'fc'; // falta cruzada da lateral da área (o batedor de cruzar e o cabeceio)
             const tk = takerOf(S0, sp === 'pen' ? 'pen' : sp === 'falta' ? 'fl' : sp === 'fc' ? 'fc' : (l === 'e' ? 'ckE' : 'ckD'));
-            if (sp === 'esc' || sp === 'fc') { by2 = tk ? tk.n : ''; const mm = byId(S0.squad), hd = S0.xi.map(id => mm[id]).filter(p => p && (p.pos === 'ZAG' || p.pos === 'ATA') && (!tk || p.id !== tk.id)); if (hd.length) who = hd[Math.floor(r() * hd.length)].n; }
+            if (sp === 'esc' || sp === 'fc') { by2 = tk ? tk.n : ''; const mm = byId(S0.squad), hd = S0.xi.map(id => mm[id]).filter(p => p && (p.pos === 'ZAG' || p.pos === 'ATA') && (!tk || p.id !== tk.id)); if (hd.length) who = headPick(r(), hd).n; }
             else if (tk) who = tk.n;
           }
           if (sp === 'esc') { m.ck = m.ck || { us: 0, them: 0 }; m.ck[sd]++; }
@@ -604,7 +653,7 @@
             const tk = takerOf(S0, sp === 'pen' ? 'pen' : sp === 'falta' ? 'fl' : sp === 'fc' ? 'fc' : (l === 'e' ? 'ckE' : 'ckD')), u = r();
             if (sp === 'pen') { k = u < 0.55 ? 'defesa' : u < 0.85 ? 'fora' : 'trave'; if (tk) who = tk.n; }
             else if (sp === 'falta') { k = u < 0.35 ? 'defesa' : u < 0.75 ? 'fora' : u < 0.95 ? 'bloqueio' : 'trave'; if (tk) who = tk.n; }
-            else { k = u < 0.4 ? 'defesa' : u < 0.8 ? 'fora' : 'bloqueio'; by2 = tk ? tk.n : ''; const mm = byId(S0.squad), hd = S0.xi.map(id => mm[id]).filter(p => p && (p.pos === 'ZAG' || p.pos === 'ATA') && (!tk || p.id !== tk.id)); if (hd.length) who = hd[Math.floor(r() * hd.length)].n; }
+            else { k = u < 0.4 ? 'defesa' : u < 0.8 ? 'fora' : 'bloqueio'; by2 = tk ? tk.n : ''; const mm = byId(S0.squad), hd = S0.xi.map(id => mm[id]).filter(p => p && (p.pos === 'ZAG' || p.pos === 'ATA') && (!tk || p.id !== tk.id)); if (hd.length) who = headPick(r(), hd).n; }
           }
           if (k === 'defesa') m.ot[sd]++;
           // Escanteio: o da jogada e parte das defesas e dos chutes travados
@@ -620,7 +669,7 @@
           if (stop || r() >= lam / CO.mins * PF) return;
           const sd = sideName(m, S0), tk = takerOf(S0, 'pen'), who = tk ? tk.n : scorer(r, S0), u = r();
           m.sh = m.sh || { us: 0, them: 0 }; m.sh[sd]++; m.ot = m.ot || { us: 0, them: 0 };
-          if (r() < 0.08 / PF) { if (S0 === H) m.gh++; else m.ga++; m.ot[sd]++; m.ev.push({ m: m.min, t: 'gol', s: sd, p: who, l: 'c', sp: 'pen', by: null }); stop = { t: 'gol', s: sd, p: who, l: 'c', sp: 'pen', by: null }; }
+          if (r() < 0.08 / PF * penK(tk, S0 === H ? A : H)) { if (S0 === H) m.gh++; else m.ga++; m.ot[sd]++; m.ev.push({ m: m.min, t: 'gol', s: sd, p: who, l: 'c', sp: 'pen', by: null }); stop = { t: 'gol', s: sd, p: who, l: 'c', sp: 'pen', by: null }; }
           else { const k = u < 0.55 ? 'defesa' : u < 0.85 ? 'fora' : 'trave'; if (k === 'defesa') m.ot[sd]++; m.ev.push({ m: m.min, t: 'chance', s: sd, p: who, k, l: 'c', sp: 'pen', by: null }); }
         });
       } else if (!chance(H, lh)) chance(A, la);
@@ -699,17 +748,29 @@
     for (let i = 0; i < w.length; i++) { x -= w[i]; if (x <= 0 && w[i]) return i; }
     return w.findIndex(v => v > 0);
   }
+  // Quem sobe no escanteio e na falta cruzada: o físico (cabeceio) puxa a escolha (um sorteio só, como antes)
+  function headPick(u, hd) {
+    const w = hd.map(p => (AT.kS && p.pos !== 'GOL' ? Math.max(0.3, 1 + atDev(p)[5] / 15) : 1)); let x = u * w.reduce((a, b) => a + b, 0);
+    for (let i = 0; i < hd.length; i++) { x -= w[i]; if (x <= 0) return hd[i]; }
+    return hd[hd.length - 1];
+  }
+  // Pênalti: a finalização do batedor contra o atributo Pênalti do goleiro mexe na chance de entrar (até AT.penMax para cada lado)
+  function penK(tk, S1) {
+    if (!AT.kS || !tk || tk.pos === 'GOL') return 1;
+    const gk = S1 && S1.xi[0] && S1.squad.find(p => p.id === S1.xi[0]), dg = gk && gk.pos === 'GOL' ? atDev(gk)[5] : 0;
+    return 1 + clamp((atDev(tk)[0] - AT.penOff - dg) / AT.penK, -AT.penMax, AT.penMax);
+  }
   function scorer(r, s) {
     const m = byId(s.squad), slots = slotsOf(s.form);
-    const w = s.xi.map((id, i) => { const p = m[id]; if (!p) return 0; const sl = slots[i]; return (sl === 'ATA' ? 5 : sl === 'MEI' ? 2 : sl === 'GOL' ? 0 : 0.6) * (p.ovr / 70); });
+    const w = s.xi.map((id, i) => { const p = m[id]; if (!p) return 0; const sl = slots[i]; return (sl === 'ATA' ? 5 : sl === 'MEI' ? 2 : sl === 'GOL' ? 0 : 0.6) * Math.max(0.3, (p.ovr + 2 * secDev(p, 'fin')) / 70); });
     let x = r() * w.reduce((a, b) => a + b, 0);
     for (let i = 0; i < w.length; i++) { x -= w[i]; if (x <= 0) return m[s.xi[i]] ? m[s.xi[i]].n : ''; }
     return '';
   }
   function autoSub(s, k) {
     if (s.subs <= 0 || !s.bench.length) { s.xi[k] = null; return; }
-    const sl = slotsOf(s.form)[k], m = byId(s.squad);
-    const inn = s.bench.slice().sort((a, b) => m[b].ovr * fit(m[b].pos, sl) - m[a].ovr * fit(m[a].pos, sl))[0];
+    const m = byId(s.squad);
+    const inn = s.bench.slice().sort((a, b) => S.coSlotVal(m[b], s.form, k) - S.coSlotVal(m[a], s.form, k))[0];
     s.bench = s.bench.filter(x => x !== inn); s.xi[k] = inn; s.subs--;
   }
   // Troca o cansado só se quem está no banco rende mais naquela vaga agora
@@ -717,8 +778,9 @@
     const m = byId(s.squad), slots = slotsOf(s.form);
     s.xi.forEach((id, k) => {
       const p = m[id]; if (!p || k === 0 || s.subs <= 0 || !s.bench.length) return;
-      const best = Math.max.apply(null, s.bench.map(b => eff(m[b], slots[k])));
-      if (best > eff(p, slots[k]) * 1.01) autoSub(s, k);
+      const sk = slotSec(FORMS[s.form].slots[k]), ef = q => eff(q, slots[k]) * secK(q, sk);
+      const best = Math.max.apply(null, s.bench.map(b => ef(m[b])));
+      if (best > ef(p) * 1.01) autoSub(s, k);
     });
   }
   // Grito do técnico: um por vez, a partir do minuto de agora
@@ -817,7 +879,7 @@
   const CAD_K = 0.04;
   function cadTruth() {
     if (CAD_T) return CAD_T;
-    const sq = []; Object.keys(CO.squad).forEach(pos => { for (let k = 0; k < CO.squad[pos]; k++) sq.push({ id: pos + k, n: '', pos, ovr: 70, en: 100, mo: 60 }); });
+    const sq = []; Object.keys(CO.squad).forEach(pos => { for (let k = 0; k < CO.squad[pos]; k++) sq.push({ id: pos + k, n: '', pos, ovr: 70, en: 100, mo: 60, at: S.coAtNeutral(pos, 70) }); });
     const side = (form, style) => ({ squad: sq, form, style, xi: autoXI(sq, form).xi, bonus: 0 });
     const cell = (H, A) => {
       const mu = matchup(H, A, true), x = mu.lh / mu.la, u = mu.h, o = mu.a;
