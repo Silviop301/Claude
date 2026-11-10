@@ -141,6 +141,17 @@ async function page(b, first) {
     }
     await p.evaluate(v => { const U = window.CRAQUE_UI, co = U._co.co, e = window.CRAQUE_SIM.coEst(co); e.mel = null; e.pay2 = null; co.fin.caixa = v[0]; co.fin.ss.obra = v[1]; U._co.save('hub'); U.LD.estadio(); }, mk);
     await p.waitForTimeout(300);
+    // Acontecimentos (fase 5): a exigência da liga e a proposta do show na volta para a semana (estado forçado e desfeito)
+    { const sv = await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co, e = S.coEst(co), v = [e.up.l, e.up0.l]; e.up.l = 0; e.up0.l = 0; e.lg = { s: co.season }; U.LD.semana(); return v; });
+      await p.waitForTimeout(500); await shot('c2b13-liga-exige');
+      { const r = await p.evaluate(() => ({ pop: !!document.querySelector('#ld-pop .mkx'), dn: !!document.querySelector('#ld-pop .mkx-li b.dn'), seen: !!(window.CRAQUE_SIM.coEst(window.CRAQUE_UI._co.co).lg || {}).seen })); if (!r.pop || !r.dn || !r.seen) errs.push('exigência da liga: ' + JSON.stringify(r)); }
+      await click('#ob-a'); await shot('c2b14-refletores-com-multa');
+      { const r = await p.evaluate(() => ({ mel: !!document.querySelector('.es.es3'), multa: /Multa da liga/.test((document.querySelector('.es-ml') || {}).textContent || '') })); if (!r.mel || !r.multa) errs.push('refletores com a multa da liga: ' + JSON.stringify(r)); }
+      await p.evaluate(v => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co, e = S.coEst(co); e.up.l = v[0]; e.up0.l = v[1]; delete e.lg; S.__show = S.coEstShow; S.coEstShow = () => ({ v: 90000, games: 2 }); U.LD.semana(); }, sv);
+      await p.waitForTimeout(500); await shot('c2b15-show');
+      { const r = await p.evaluate(() => ({ pop: !!document.querySelector('#ld-pop .mkx'), a: !!document.querySelector('#ob-a'), b: !!document.querySelector('#ob-b') })); if (!r.pop || !r.a || !r.b) errs.push('proposta do show: ' + JSON.stringify(r)); }
+      await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM; S.coEstShow = S.__show; delete S.__show; U.LD.closePop(); U._co.save('hub'); U.LD.estadio(); });
+      await p.waitForTimeout(300); }
     await click('#es-back'); await click('#ldk-go'); await shot('c2c-financas-decidir');
     // Loja: aporte (fase 3) e pacotes
     await p.evaluate(() => window.CRAQUE_UI.COINS.add({ n: 100, t: 'teste' })); await click('#fn2-apo'); await shot('c2l-loja-aporte'); await click('#lj-p'); await click('#lj-p'); await shot('c2l2-aporte-3'); await click('#lj-ap'); await shot('c2l3-aporte-feito');
