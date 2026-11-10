@@ -215,6 +215,7 @@
     // Peso de cada atributo no geral (soma 100)
     w: { ZAG: [0, 15, 0, 45, 15, 25], LAT: [5, 20, 10, 25, 25, 15], MEI: [10, 35, 20, 15, 10, 10], ATA: [35, 15, 20, 0, 20, 10], GOL: [30, 25, 15, 15, 10, 5] },
     dev: 3.2, jeito: 5, min: 20, max: 99,
+    gol: [0.5, 0.3, 0.2],   // goleiro no campinho: peso de reflexo, colocação e mãos na defesa do chute (S.coAtSim)
     // Jogador real (ESPN): o esperado por jogo na posição (g gols, a assistências, fs faltas sofridas: a mediana real de quem
     // tem 8+ jogos, medida em 2026-11-10 nos 40 clubes) e quantos pontos vale cada
     // unidade por jogo acima disso (kG, kA, kF); conv gols por chute (kC pontos); altura em polegadas (kH por polegada); goleiro: sv
@@ -264,6 +265,14 @@
     }
     return atFit(pos, v, p.ovr);
   }
+  // Atributos do jogador para o campinho ao vivo (ui/livesim.js lê por qa(p, k), 0 a 99; chave que faltar cai no geral).
+  // `d` = o desconto do cansaço que o geral também leva na escalação. Goleiro: `gol` (defender o chute) junta reflexo,
+  // colocação e mãos; `pas` são os pés. Linha: as 6 chaves de S.CO_AT.keys.L.
+  S.coAtSim = function (p, d) {
+    const a = S.coAttrs(p), f = v => Math.max(0, Math.min(99, Math.round((v + (d || 0)) * 10) / 10));
+    if (p.pos === 'GOL') return { gol: f(a[0] * AT.gol[0] + a[1] * AT.gol[1] + a[3] * AT.gol[2]), pas: f(a[4]) };
+    const o = {}; AT.keys.L.forEach((k, i) => { o[k] = f(a[i]); }); return o;
+  };
   S.coAtKeys = p => AT.keys[p.pos === 'GOL' ? 'G' : 'L'];
   S.coAtMean = p => atMean(AT.w[p.pos] ? p.pos : 'MEI', S.coAttrs(p));
   S.coAttrs = function (p) {
