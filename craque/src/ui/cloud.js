@@ -409,7 +409,10 @@
   function payCheck() {
     const a = acc(); if (!a || !U.COINS) return Promise.resolve(0);
     return post('check', { token: a.token }, PAPI).then(r => {
-      const list = (r && r.list) || []; if (!list.length) return 0;
+      const list = (r && r.list) || [];
+      // Compra já entregue que sumiu do saldo (junção antiga de aparelhos): volta sem aviso de compra nova
+      if (r && r.paid && U.COINS.fix && U.COINS.fix(r.paid)) { touch(KEYS.itens); if (!list.length && !G.c && U.home) U.home(); }
+      if (!list.length) return 0;
       const n = U.COINS.add(list.map(x => ({ n: x.coins, t: 'Compra na loja', once: 'pay-' + x.ref })));
       touch(KEYS.itens);
       return post('claim', { token: a.token, refs: list.map(x => x.ref) }, PAPI).then(() => n, () => n);

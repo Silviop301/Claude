@@ -6,7 +6,7 @@
 //   POST ?a=status                       {on, test}
 //   POST ?a=create {token, pack}         cria a compra e devolve {ref, url} (o jogador vai para o Mercado Pago)
 //   GET/POST ?a=hook                     aviso do Mercado Pago (notification_url): confere o pagamento na API deles
-//   POST ?a=check  {token}               compras pagas e ainda não entregues desta conta: {list: [{ref, coins}]}
+//   POST ?a=check  {token}               compras pagas e ainda não entregues desta conta: {list: [{ref, coins}]}; e as já entregues em {paid}
 //   POST ?a=claim  {token, refs}         o aparelho já somou essas moedas (cada ref só entrega uma vez)
 // Nada aqui confia no que o aparelho diz sobre o pagamento: o status vem sempre da API do Mercado Pago.
 header('Content-Type: application/json; charset=utf-8');
@@ -130,7 +130,10 @@ if ($a === 'check') {
     if ($code === 200) foreach (($r['results'] ?? []) as $pay) settle($db, $pay);
   }
   $q = $db->prepare("SELECT ref, coins FROM purchases WHERE user_key = ? AND status = 'approved'"); $q->execute([$user]);
-  out(['list' => array_map(fn($r) => ['ref' => $r['ref'], 'coins' => (int)$r['coins']], $q->fetchAll(PDO::FETCH_ASSOC))]);
+  $list = array_map(fn($r) => ['ref' => $r['ref'], 'coins' => (int)$r['coins']], $q->fetchAll(PDO::FETCH_ASSOC));
+  // paid: as já entregues (o aparelho confere se alguma sumiu do saldo e devolve; cada ref continua valendo uma vez só)
+  $q = $db->prepare("SELECT ref, coins FROM purchases WHERE user_key = ? AND status = 'claimed' ORDER BY claimed DESC LIMIT 100"); $q->execute([$user]);
+  out(['list' => $list, 'paid' => array_map(fn($r) => ['ref' => $r['ref'], 'coins' => (int)$r['coins']], $q->fetchAll(PDO::FETCH_ASSOC))]);
 }
 
 if ($a === 'claim') {
