@@ -96,7 +96,9 @@ async function page(b, first) {
       const rep = n => p.evaluate(([id, n]) => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, m = S.coMkt(U._co.co); if (n) m.rep[id] = n; else delete m.rep[id]; U.LD.ficha(id); }, [mid, n]);
       await p.waitForTimeout(400); await shot('c2n-mercado'); await rep(0); await p.waitForTimeout(400); await shot('c2o-ficha'); await click('#mkf-tg'); await shot('c2p-ficha-atributos-sem');
       await rep(1); await p.waitForTimeout(400); await shot('c2q-ficha-atributos-faixa'); await rep(3); await p.waitForTimeout(400); await shot('c2r-ficha-atributos-numero');
-      await click('#mkf-tg'); await rep(0); await p.waitForTimeout(300); await click('#mkf-back'); await click('#mk-back'); }
+      await click('#mkf-tg'); await rep(0); await p.waitForTimeout(300); await click('#mkf-back');
+      // Notícias do mercado vivo (engine/coachworld.js): a aba, o filtro Tudo e a volta
+      await click('#mk-tnw'); await shot('c2s-noticias'); await click('[data-nf="-1"]'); await shot('c2t-noticias-tudo'); await click('#mk-tpr'); await click('#mk-back'); }
     await click('[data-rail="tabela"]'); await shot('c3-tabela'); await click('[data-tb="art"]'); await shot('c3b-art'); await click('[data-tb="rod"]'); await shot('c3c-rodadas'); await click('#tb2-back');
     const nx = await p.$('#ld-play'); if (nx) { await click('#ld-play'); if (await p.$('#ld-go')) { await click('#ld-go'); await click('#ldp-go'); await p.waitForTimeout(2500); await click('[data-sp="fim"]'); for (let i = 0; i < 30 && !(await p.$('#b-lv-end')); i++) { await p.waitForTimeout(800); if (await p.$('#ldl-go')) await click('#ldl-go'); } await click('#b-lv-end'); await shot('c5-res'); if (process.env.DEMITIDO) await p.evaluate(() => { window.CRAQUE_UI._co.co.sacked = 1; }); await click('#ldr-go'); if (await p.$('#ld-sack')) { await shot('c5b-demitido'); await click('#ld-sack'); } } } // DEMITIDO=1 força a janelinha da demissão
     await p.waitForTimeout(800); await shot('c6-temporada');

@@ -198,6 +198,7 @@
     co.squad = co.squad.filter(x => x !== p);
     if ((co.xi || []).includes(p.id) || (co.bench || []).includes(p.id)) { const a = S.coAutoXI(co.squad, co.form); co.xi = a.xi; co.bench = a.bench; }
     f.caixa += v; f.ss.vend += v; f.sold = true;
+    if (S.coWorldSold && S.coMktBuyer) { const b = S.coMktBuyer(co, p, S.rng(hash('forcada|' + p.id + '|' + co.season))); if (b) S.coWorldSold(co, p, b.id, v); }
     news(co, 'O presidente vendeu ' + p.n + ' (' + p.pos + ', ' + p.age + ' anos) por R$ ' + (v >= 1e6 ? (v / 1e6).toFixed(1).replace('.', ',') + ' mi' : Math.round(v / 1000) + ' mil') + ' para tapar o caixa.');
     return { p, v };
   }
