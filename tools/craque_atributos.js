@@ -15,6 +15,8 @@
 //  7. Save antigo: jogador sem atributos ganha os dele, sempre os mesmos, e passa pelo JSON sem mudar.
 //  8. Jeito de jogar do mercado (S.coMktTraits): os 2 pontos fortes saem dos atributos mais acima do normal da posição,
 //     o ponto fraco de um atributo abaixo deles, o mesmo jogador tem sempre o mesmo jeito e nenhum texto domina a posição.
+//  9. Faixa do olheiro (S.coMktAttrs): sem relatório não mostra nada; com 1 e 2 o valor de verdade está dentro da faixa,
+//     a 2ª faixa cabe dentro da 1ª e é mais estreita; com 3 sai o número certo.
 const D = require('../craque/src/data.js');
 const S = require('../craque/src/sim.js');
 const R = (() => { try { return require('../craque/src/real-squads.js'); } catch (e) { return null; } })();
@@ -103,6 +105,27 @@ Object.keys(trN).forEach(pos => {
   Object.keys(trB[pos]).forEach(k => { if (k !== 'n' && trB[pos][k] / trB[pos].n > 0.6) alert('ponto fraco: "' + k + '" em ' + Math.round(100 * trB[pos][k] / trB[pos].n) + '% dos ' + pos); });
 });
 
+// 9. faixa do olheiro no mercado: um técnico de teste e 400 jogadores do mercado, com 0, 1, 2 e 3 relatórios
+let nb = 0; const wid = [0, 0];
+{
+  const co = S.coNew({ name: 'Teste', country: 'Brasil', start: 'livre', seed: 4242 }); S.coSign(co, S.coOffers(co)[0]);
+  const lg = S.coLeague(co), mk = S.coMkt(co);
+  S.coMktPool(co).filter(p => p.lg !== lg).slice(0, 400).forEach(p => {
+    const at = S.coAttrs(p), band = n => { mk.rep[p.id] = n; return S.coMktAttrs(co, p); };
+    if (band(0) !== null) alert('faixa: ' + p.n + ' mostra atributo sem relatório');
+    const b1 = band(1), b2 = band(2), b3 = band(3); nb++;
+    at.forEach((v, i) => {
+      if (b1[i].v !== null || b2[i].v !== null) alert('faixa: ' + p.n + ' mostra o número antes do 3º relatório');
+      if (v < b1[i].lo || v > b1[i].hi || v < b2[i].lo || v > b2[i].hi) alert('faixa: valor de verdade fora da faixa em ' + p.n + ' (' + v + ' · ' + b1[i].lo + '-' + b1[i].hi + ' · ' + b2[i].lo + '-' + b2[i].hi + ')');
+      if (b2[i].lo < b1[i].lo || b2[i].hi > b1[i].hi || b2[i].hi - b2[i].lo > b1[i].hi - b1[i].lo) alert('faixa: a 2ª não cabe na 1ª em ' + p.n);
+      if (b3[i].v !== v || b3[i].lo !== v || b3[i].hi !== v) alert('faixa: 3º relatório sem o número certo em ' + p.n);
+      wid[0] += b1[i].hi - b1[i].lo; wid[1] += b2[i].hi - b2[i].lo;
+    });
+    delete mk.rep[p.id];
+  });
+  if (!nb) alert('faixa: nenhum jogador de fora da liga no mercado de teste');
+}
+
 const f = a => a.map(x => String(Math.round(x)).padStart(3)).join(' ');
 console.log('Atributos: ' + n + ' jogadores, ' + D.CLUBS.length + ' clubes, ' + SEASONS + ' temporadas');
 console.log('Média por posição (temporada 0)      ' + AT.keys.L.map(k => AT.short[k]).join(' '));
@@ -111,6 +134,7 @@ console.log('  GOL (geral ' + Math.round(avg(by.GOL.map(o => o.ovr))) + ')      
 if (rc) console.log('Elencos reais: ' + rc + ' clubes · artilheiro acima do normal da posição em ' + upG + ' de ' + nG + ' (entre os 3 do elenco em ' + topG + ') · garçom em ' + upA + ' de ' + nA + ' (entre os 3 em ' + topA + ')');
 console.log('Jeito de jogar (% dos jogadores da posição com cada ponto forte | ponto fraco)');
 ['GOL', 'ZAG', 'LAT', 'MEI', 'ATA'].forEach(pos => { const pc = o => Object.keys(o).filter(k => k !== 'n').sort((x, y) => o[y] - o[x]).map(k => k + ' ' + Math.round(100 * o[k] / o.n)).join(' · '); console.log('  ' + pos + '  ' + pc(trN[pos]) + '  |  ' + pc(trB[pos])); });
+console.log('Faixa do olheiro: ' + nb + ' jogadores · largura média ' + (wid[0] / nb / 6).toFixed(1) + ' com 1 relatório e ' + (wid[1] / nb / 6).toFixed(1) + ' com 2 · número certo com 3');
 console.log('Geral mudou: ponto forte mantido em ' + Math.round(100 * keep / tot) + '% (' + tot + ' casos)');
 alerts.forEach(a => console.log('ALERTA ' + a));
 console.log(alerts.length + ' alertas');

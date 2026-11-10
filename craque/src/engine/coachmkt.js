@@ -17,6 +17,7 @@
     rep0: 5000, repK: 0.25, repUp: [1, 1.5, 2.25],   // preço do relatório: 1/4 da receita semanal do clube (mín. R$ 5 mil), sobe a cada um; exterior x2
     half: [7, 4, 2],  // meia largura da faixa (pontos de força) com 1, 2 e 3 relatórios
     err: [3, 2, 1],   // quanto o centro da faixa pode errar
+    atHalf: [8, 4, 0], atErr: 4,   // atributos na ficha: meia largura da faixa com 1, 2 e 3 relatórios (0 = o número certo) e o erro do centro no 1º (cai pela metade no 2º)
     span: 15,         // a régua vai de 15 pontos pior a 15 melhor que o titular
     eq: 2,            // até 2 pontos de diferença = igual
     preR: 3, incFrom: 2, // a janela do começo vale nas 3 primeiras rodadas; em clube novo as propostas pelos seus só chegam na 3ª semana
@@ -101,6 +102,19 @@
     // ponto fraco: o atributo mais abaixo do normal entre os que têm texto, sem repetir um ponto forte
     const bad = L[1].filter(t => ord.indexOf(t[1]) < 0 || ord.indexOf(t[1]) > 1).sort((a, b) => dv[a[1]] - dv[b[1]] || a[1] - b[1])[0];
     return { good, bad: bad[0], gi: ord.slice(0, 2), bi: bad[1] };
+  };
+
+  // Atributos na ficha do mercado (Silvio 2026-11-10: "quero que o olheiro pegue o valor por faixa também"): sem relatório nada;
+  // com 1 e 2, cada atributo é uma faixa { lo, hi } com o centro um pouco fora (erro do olheiro, sorteado por jogador e atributo);
+  // com 3, o número certo { lo = hi = v, v }. O valor de verdade está sempre dentro da faixa e a 2ª faixa cabe dentro da 1ª.
+  S.coMktAttrs = (co, p) => {
+    const n = S.coMktReps(co, p); if (!n) return null;
+    const at = S.coAttrs(p), w = M.atHalf[Math.min(n, M.atHalf.length) - 1], A = S.CO_AT;
+    return at.map((v, i) => {
+      if (!w) return { lo: v, hi: v, v };
+      const e1 = (hash(p.id + '|at' + i) % (2 * M.atErr + 1)) - M.atErr, c = v + (n === 1 ? e1 : Math.trunc(e1 / 2));
+      return { lo: Math.max(A.min, c - w), hi: Math.min(A.max, c + w), v: null };
+    });
   };
 
   // ---------- filtros ----------
