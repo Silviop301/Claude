@@ -90,7 +90,9 @@ warn(tot.pr3 / tot.n < 0.8, `bonecos encostados demais: ${(tot.pr3 / tot.n).toFi
 warn(P('passes') >= 18, `poucos passes por jogo (${P('passes').toFixed(0)}, mínimo 18)`);
 warn(P('shots') >= 4 && P('shots') <= 14, `chutes por jogo fora da faixa 4-14 (${P('shots').toFixed(1)})`);
 warn(P('flips') >= 8 && P('flips') <= 24, `trocas de posse fora da faixa 8-24 (${P('flips').toFixed(0)})`);
-warn(avg(pps.posse) > avg(pps.contra) + 2 && avg(pps.posse) >= 4, `o estilo não aparece na posse: posse ${avg(pps.posse).toFixed(1)} passes por posse, contra ${avg(pps.contra).toFixed(1)} (posse precisa de 4+ e 2 a mais que o contra)`);
+// (2026-11-09: com o movimento com peso o jogo ficou ~10% mais calmo, cada um segura a bola 1,9 s em vez de 1,4 s; em 40
+// partidas a posse foi de 4,3 para 4,0 passes por posse, por isso o piso desceu de 4 para 3,5 e a folga de 2 para 1,6)
+warn(avg(pps.posse) > avg(pps.contra) + 1.6 && avg(pps.posse) >= 3.5, `o estilo não aparece na posse: posse ${avg(pps.posse).toFixed(1)} passes por posse, contra ${avg(pps.contra).toFixed(1)} (posse precisa de 3,5+ e 1,6 a mais que o contra)`);
 warn(avg(line.retranca) + 8 < avg(line.pressao), `retranca (${avg(line.retranca).toFixed(0)} m) não defende bem mais baixo que pressão (${avg(line.pressao).toFixed(0)} m)`);
 // Overall: o time forte (85) contra o fraco (55) chuta mais e fica mais no último terço
 let sh = [0, 0], f3 = [0, 0];
