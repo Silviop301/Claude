@@ -1,7 +1,8 @@
 // Instalar o app (tutorial): quem abre o site no celular, pelo navegador, vê uma vez uma folha ensinando a pôr o Climbix
 // na Tela de Início. iPhone/iPad: passos do Compartilhar do Safari (o iOS não deixa a página instalar sozinha) e uma seta
 // mostrando onde fica o botão. Android: o botão "Instalar o app" abre a janela do próprio Chrome (beforeinstallprompt).
-// Quem toca em "Agora não" ganha um lembrete pequeno no fim da home, que some no X. Nunca aparece no app instalado,
+// Quem toca em "Agora não" ganha um lembrete pequeno no fim da home em pé, que some no X (a home deitada ainda não tem
+// lembrete). Na home deitada a folha abre com o celular em pé, por cima do "Gire o celular". Nunca aparece no app instalado,
 // no computador, nos portais (iframe) nem dentro de outra janela aberta. Teste: ?instalar=ios | ios18 | ipad | android.
 (function () {
   const U = window.CRAQUE_UI;
@@ -122,16 +123,35 @@
     const p = platform(), s = get();
     return p && s.later && !s.chipOff && !s.done ? CHIP() : '';
   };
+  // Home deitada (a de todo mundo desde 2026-11-06): a folha é em pé e não cabe no celular deitado. Ela abre quando o
+  // celular está em pé (o "Gire o celular", que é como quase todo mundo chega pelo link) ou em tela alta (iPad). Aberta com
+  // o celular deitado, espera ele ficar em pé; girou com a folha aberta, ela fecha sem contar como "Agora não"
+  const landHome = () => document.body.classList.contains('ld-on') && !!document.querySelector('#ld-st .hl');
+  const fits = () => window.innerHeight >= 500;
+  let turned = false; // fechou porque o celular deitou: não insiste de novo nesta visita
+  function auto() {
+    const p = platform(), s = get();
+    if (!p || s.later || s.done || wrap || turned) return;
+    const land = landHome();
+    if (!land && !document.querySelector('.hm')) return;
+    if (land && !fits()) return;
+    if (document.querySelector('.cfg-wrap, .ask-wrap, .sh-wrap, .mo-wrap, #ld-pop, .pay-ty') || /[?&]pago=/.test(location.search)) return; // não cobre outra janela (Novidades, confirmação, volta da compra...)
+    sheet(p);
+  }
+  let rsT = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(rsT);
+    rsT = setTimeout(() => {
+      if (wrap && landHome() && !fits()) { if (wrap.classList.contains('ins-wrap')) turned = true; close(); }
+      else if (!wrap) auto();
+    }, 350);
+  });
   U.installHomeBind = () => {
     const p = platform(); if (!p) return;
     const el = document.querySelector('.hm .ins-chip'); if (el) chipBind(el, p);
     const s = get();
     if (s.later || s.done) return;
-    // primeira vez: espera a home assentar e não cobre outra janela (Novidades, confirmação...)
-    setTimeout(() => {
-      if (!document.querySelector('.hm') || wrap || document.querySelector('.cfg-wrap, .ask-wrap, .sh-wrap, .mo-wrap')) return;
-      sheet(p);
-    }, 900);
+    setTimeout(auto, 900); // primeira vez: espera a home assentar
   };
   U.installSheet = () => { const p = platform() || 'ios'; sheet(p); };
 })();
