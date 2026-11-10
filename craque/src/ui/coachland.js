@@ -242,11 +242,12 @@
     const f5 = f => { const a = (f || '').split('').slice(-5); while (a.length < 5) a.unshift('n'); return '<span class="ld-f5 sm-f5">' + a.map(x => '<i class="' + x + '"></i>').join('') + '</span>'; };
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const meta = B.goal.k === 'titulo' ? 'SER CAMPEÃO' : 'ATÉ O ' + ord(B.goal.pos);
-    const top = '<div class="sm-h"><button class="tcr-back" id="sm-back" aria-label="Início">' + BK + '</button>' +
+    const top = '<div class="sm-h' + (B.ult ? ' ult' : '') + '"><button class="tcr-back" id="sm-back" aria-label="Início">' + BK + '</button>' +
       '<b>' + ord(pos) + '</b><small>' + me.p + ' pts</small>' + f5(me.f) +
       '<em class="sm-tag' + (pos > (B.goal.k === 'titulo' ? 1 : B.goal.pos) ? ' hi' : '') + '" title="' + esc(S.CO_GOAL_TXT[B.goal.k]) + '">META · ' + meta + '</em><span class="ld-gr"></span>' +
       (B.ult ? '<em class="sm-tag ult">ULTIMATO · VENÇA ' + B.ult.need + ' DE ' + B.ult.of + '</em>' : '') +
-      (U.COINS ? U.COINS.pill('cp-sm', 'sm-coins') : '') + '<span class="sm-dir">Diretoria <em class="ld-bar"><u style="width:' + conf + '%" class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '"></u></em></span></div>';
+      // caixa no topo (Silvio 2026-11-10, como no mercado); com ultimato a etiqueta já diz como a diretoria está e a barra sai para caber
+      cxPill() + (U.COINS ? U.COINS.pill('cp-sm', 'sm-coins') : '') + (B.ult ? '' : '<span class="sm-dir">Diretoria <em class="ld-bar"><u style="width:' + conf + '%" class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '"></u></em></span>') + '</div>';
     const side = (id, nm, sub) => '<div class="sm-tm">' + crest(id, 'sm-cr') + '<b>' + esc(nm) + '</b><small>' + sub + '</small></div>';
     let card, wk = '';
     if (!nx.bye) {
@@ -863,8 +864,8 @@
   // Topo do mercado (Silvio 2026-11-10: "o caixa na parte superior e ver em outras telas também", para saber se dá para pagar
   // o olheiro): nome em cima e apoio embaixo; à direita, no fluxo, o caixa do clube, as moedas, a janela e a ajuda.
   // `coins` = id do botão das moedas (abre a loja; quem chama liga com mkCoins); sem ele a pílula é só informação.
-  const mkCx = coins => { const c = C(), cx = S.coFin(c.co).caixa || 0;
-    return '<span class="mk-cx' + (cx < 0 ? ' neg' : '') + '"><small>CAIXA</small><b>' + c.brl(cx) + '</b></span>' + (U.COINS ? U.COINS.pill('cp-sm', coins ? 'mk-coins' : '') : ''); };
+  const cxPill = () => { const c = C(), cx = S.coFin(c.co).caixa || 0; return '<span class="mk-cx' + (cx < 0 ? ' neg' : '') + '"><small>CAIXA</small><b>' + c.brl(cx) + '</b></span>'; };
+  const mkCx = coins => cxPill() + (U.COINS ? U.COINS.pill('cp-sm', coins ? 'mk-coins' : '') : '');
   const mkHead = (id, t, s, noWin, coins) => '<div class="tm-h"><button class="tcr-back" id="' + id + '" aria-label="Voltar">' + MK_BK + '</button><span class="mk-tt"><b>' + t + '</b><small>' + s + '</small></span>' +
     '<span class="mk-top">' + mkCx(coins) + (noWin ? '' : mkWin()) + '<button class="ol2-q" id="mk-q" aria-label="Como funciona">?</button></span></div>';
   const mkCoins = (st, me) => { const b = st.querySelector('#mk-coins'); if (b) b.onclick = () => { sfx('tap'); loja(0, me); }; };

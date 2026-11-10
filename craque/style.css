@@ -8628,7 +8628,11 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .mk .tm-h .mk-top .mk-win, .mk .tm-h .mk-top .ol2-q { position: static; flex: none; }
 .mk-top .mk-win { height: 36px; border-radius: 18px; }
 .mk-cx { flex: none; display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 12px; box-sizing: border-box; border-radius: 18px; background: rgba(0, 0, 0, .35); white-space: nowrap; }
-.mk .tm-h .mk-cx small { font: 700 12px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
+.mk .tm-h .mk-cx small, .sm-h .mk-cx small { font: 700 12px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; margin: 0; }
+/* Semana: caixa no topo, moedas com o número do tamanho do caixa; a barra da Diretoria encolhe no iPhone (palco mais estreito) */
+.ld-st .sm-h button.coin-pill { font: 800 19px/1 var(--display); color: #F3F1EA; }
+.sm-h > small { white-space: nowrap; } .sm-h.ult { gap: 8px; } .sm-h.ult .mk-cx { padding: 0 8px; gap: 5px; }
+.sm-h .sm-dir { flex: 0 1 auto; min-width: 0; } .sm-h .sm-dir .ld-bar { flex: 1 1 96px; min-width: 36px; }
 .mk-cx b { font: 800 19px/1 var(--display); color: #F3F1EA; } .mk-cx.neg b { color: #F5A57F; }
 .ld-st .mk-top button.coin-pill { font: 800 19px/1 var(--display); color: #F3F1EA; }
 /* Mercado, ficha: botão que troca resumo ⇄ atributos e o painel dos 6 atributos em faixa (olheiro) ou em número (relatório completo) */
