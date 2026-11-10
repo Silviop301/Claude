@@ -77,7 +77,7 @@ NODE_PATH=$(npm root -g) node tools/craque_home_deitada.js /tmp/hl   # home deit
 node tools/craque_atributos.js [temporadas]           # atributos por jogador do Treinador (`S.CO_AT`, `S.coAttrs`): faixa 20–99, média com peso = geral, mesmo jogador = mesmos atributos, cara de posição, número real da ESPN puxando Finalização e Passe, save antigo; esperado 0 alertas
 node tools/craque_invariantes.js [n] [semente]       # regras do motor (sem NaN, faixas 0–100/0–99, dinheiro >= 0) e save no meio que termina igual; esperado 0 falhas
 node tools/craque_campinho.js [jogos]               # campinho ao vivo (livesim.js) sem tela, partida do 1× (13000 passos): pulos da bola, bonecos encostados, passes/chutes/posse (por 2 min), passes por posse de cada estilo, linha por estilo, overall, gols do motor na rede; esperado 0 alertas
-node tools/craque_campinho_livre.js [jogos] [semente]  # simulação livre (teste ?livre=1): temporadas do robô com o campinho decidindo cada jogo; gols por jogo e por força do ataque contra o que o motor espera (padrão 300 jogos, ~5 min); esperado 0 alertas
+node tools/craque_campinho_livre.js [jogos] [semente]  # simulação livre (padrão desde 2026-11-10; ?livre=0 desliga no aparelho): temporadas do robô com o campinho decidindo cada jogo; gols por jogo e por força do ataque contra o que o motor espera (padrão 300 jogos, ~5 min); esperado 0 alertas
 NODE_PATH=$(npm root -g) node tools/craque_e2e.js 2 390 4   # carreiras pela interface (Playwright); MODO=completa na Carreira Completa
 NODE_PATH=$(npm root -g) node tools/craque_telas.js /tmp/antes   # foto de cada tela (carreira com sorteio fixo + telas de fora + minigames); DESKTOP=1 ... 1440 900 no computador, SO=evento,lance só algumas
 DESKTOP=1 TR=/tmp/tr node tools/craque_e2e.js 3 1280 3      # idem no computador, gravando o texto de cada tela em /tmp/tr
@@ -159,8 +159,8 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
 de mesmo nome no Node) dão o peso do movimento (`CALM0/CALMK/V_CALM`, `ACC_*`, `SUPP`, `HOLD0/KEEP_*`, `MKEEP`, `PRK`, bola de
 referência suavizada `SB`) e a força do chute (`SHOT_PRE`, `SHOT_DRAG`, `GK_DIVE`, rede `net`, rastro `bt`).
 
-**Simulação livre (teste do Silvio, 2026-11-10; o jogo normal não muda):** `?livre=1` liga neste aparelho (`climbix-sim-livre`,
-`U.simLivre` em `start.js`; `?livre=0` desliga). No ao vivo do Treinador o motor deixa de sortear gol e chance
+**Simulação livre (padrão para todos desde 2026-11-10, o Silvio aprovou: "o jogo ser jogado e o resultado não ser predefinido"):**
+`U.simLivre` em `start.js` vale sempre; `?livre=0` volta ao jogo encenado neste aparelho (`climbix-sim-livre` = '0'), `?livre=1` religa. No ao vivo do Treinador o motor deixa de sortear gol e chance
 (`S.coMatchStep(co, m, até, { free: true })`): só manda a força do ataque de cada lado no minuto (`m.lam`, que a tela passa em
 `sim.minute(t, mom, [seu, deles])`) e o pênalti. O campinho (`LP.sim({ free, onShot })`) parte para o ataque sozinho (`att`,
 `attStart`/`attEnd`: a mesma jogada pelo estilo de `duePick`, sem proteção contra desarme, corte e trava; frequência `ATT_R`,
@@ -168,6 +168,23 @@ referência suavizada `SB`) e a força do chute (`SHOT_PRE`, `SHOT_DRAG`, `GK_DI
 contra o goleiro, `lamF`; `FXG_K`, `FXG_G`); cada chute volta por `onShot` e entra na súmula com `S.coMatchShot` (placar,
 chutes, escanteio, lance com o nome). Pular para o fim e o jogo largado seguem pelo motor. No livre o 3× anda 917 ms por
 minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa dessas constantes: `craque_campinho_livre.js`.
+
+**Campinho, rodada de 2026-11-10 (vale nos dois modos; constantes no topo do `sim`, leem a variável de ambiente no Node):**
+- **Zaga fecha** (`defend`, `closer`, `CLOSE` 55 m, `CLOSE_V`, `CLOSE_LD` 0,7 s): com a bola no próprio campo e quem pressiona
+  batido, o defensor do lado do gol mais bem colocado larga a marcação e corta o caminho de quem conduz (mira onde ele vai
+  estar), também com o passe deles no ar; só dá o bote perto da área.
+- **Pênalti nasce da jogada:** o pênalti do motor vira um ataque (`due` com `pen`, jogada `drible`); o apito só sai com a bola
+  do time dentro da área (ou, se demorar, aos 26 s e 31 s), então o zoom vai para o gol certo. `ui/coach.js` espera 1,5× mais.
+- **Drible** (`drStart`, `drOff`, `DRIB` em `_state()`): animação só de desenho (corte, pedalada, caneta; `DRB_A` é o tamanho da
+  finta, o disco tem ~4 m no campo): quem dribla ameaça para um lado e sai pelo outro, o marcador vai na finta. Sai no drible
+  comum, na jogada `drible` do ataque e no "partir para cima" novo (`DRB_R`, `DRB_D`: meia, ponta e atacante com marcador pela
+  frente no campo de ataque; não passou = desarme ou segura a bola).
+- **Passe para quem está livre** (`LIVRE`, `LIVRE_P`, `LIVRE_E`, `LIVRE_X`, `LIVRE_L/LK/LP`): companheiro adiantado, sem ninguém a
+  4 m e com o passe aberto vale mais, mesmo circulando a bola (o time de posse resiste um pouco: `LIVRE_E`); com campo à
+  frente dele o passe vai no espaço e ele parte para a bola (`lead`). Passe de 15 m+ para a frente: o acerto depende bem mais
+  de quem passa. Por isso o piso de passes por posse do `craque_campinho.js` desceu (posse 2,3+ e 0,8 a mais que o contra).
+- **Atributos** (`qa(p, 'fin'|'pas'|'dri'|'def'|'gol')`): cada lance lê `p.inf.at[k]` (0 a 99) se a escalação mandar; sem isso
+  vale o geral. Quem preenche é a thread dos atributos por jogador (5º elemento do `simForm`).
 
 ### Telas — `craque/src/ui/` (uma tela ou grupo por arquivo)
 
