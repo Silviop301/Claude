@@ -1798,12 +1798,13 @@
       });
       if (REF.sigT > 0 && (REF.sigT -= dt) <= 0) REF.sig = null;
     }
-    // Boneco da arbitragem: menor que os jogadores, sem número, com a cor do uniforme; o bandeirinha segura a bandeira
+    // Arbitragem (Silvio, 2026-11-10): losango do tamanho dos jogadores e meio transparente, para não confundir com jogador
+    // nem sumir ("não quero juiz anão"); sem número, com a cor do uniforme; o bandeirinha segura a bandeira
     function official(x, y, k, flag, flagDir, vy, small) {
       vy = vy || -1; // para onde a bandeira levantada aponta: para dentro do campo (o bandeirinha de cima levanta para baixo na tela)
       const r = 9.6 * k * (flag === undefined && !small ? 1 : 0.8); // o juiz do tamanho dos jogadores; bandeirinhas e quarto árbitro um pouco menores
-      g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x + 1, y + 2, r + 1, (r + 1) * 0.6, 0, 0, Math.PI * 2); g.fill();
-      g.fillStyle = REFC[0]; g.strokeStyle = REFC[1]; g.lineWidth = 1.6 * k; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke();
+      { const q = r * 0.81; g.fillStyle = 'rgba(0,0,0,.16)'; g.beginPath(); g.ellipse(x + 1, y + 2, r + 1, (r + 1) * 0.6, 0, 0, Math.PI * 2); g.fill();
+        g.save(); g.globalAlpha = 0.58; g.translate(x, y); g.rotate(Math.PI / 4); g.fillStyle = REFC[0]; g.strokeStyle = REFC[1]; g.lineWidth = 1.6 * k; g.beginPath(); g.roundRect(-q, -q, q * 2, q * 2, 2.2 * k); g.fill(); g.stroke(); g.restore(); }
       if (flag === undefined) return;
       // bandeira: abaixada (junto ao corpo), levantada (impedimento) ou apontando (lateral, escanteio, tiro de meta)
       const fx = flag === 'up' ? x : x + flagDir * 12 * k, fy = flag === 'up' ? y + vy * 17 * k : flag === 'point' ? y - 5 * k : y + 3 * k, bx2 = flag === 'down' ? x + 4 * k : x;
@@ -1927,7 +1928,10 @@
       if (bdo && ball.owner.dr.t < 0.95) { bd.push([bx, by]); if (bd.length > 9) bd.shift(); } else if (bd.length) bd.splice(0, 2);
       if (bd.length > 1) { g.lineCap = 'round'; for (let i = 1; i < bd.length; i++) { const a = i / bd.length; g.strokeStyle = 'rgba(255,255,255,' + (0.5 * a).toFixed(2) + ')'; g.lineWidth = (0.8 + 2.6 * a) * k; g.beginPath(); g.moveTo(bd[i - 1][0], bd[i - 1][1]); g.lineTo(bd[i][0], bd[i][1]); g.stroke(); } g.lineCap = 'butt'; }
       { const hs = Math.min(1, air / (12 * k)); g.fillStyle = 'rgba(0,0,0,' + (0.32 - 0.16 * hs).toFixed(2) + ')'; g.beginPath(); g.ellipse(bx + 1 + air * 0.25, by + 2.5 + air * 0.1, (4 - 1.2 * hs) * k, (2.5 - 0.8 * hs) * k, 0, 0, Math.PI * 2); g.fill(); }
-      g.fillStyle = '#fff'; g.strokeStyle = '#13201A'; g.lineWidth = 1.5 * k; g.beginPath(); g.arc(bx, by - air, (4.5 + air / 12) * k, 0, Math.PI * 2); g.fill(); g.stroke();
+      { const ow = mode === 'play' && !ball.fly && ball.owner;
+        if (ow) { g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.6 * k; g.beginPath(); g.arc(X(ow.x + (bdo ? bdo[0] : 0)), Y(ow.y + (bdo ? bdo[1] : 0)), 13.2 * k, 0, Math.PI * 2); g.stroke(); }
+        g.fillStyle = 'rgba(255,255,255,.2)'; g.beginPath(); g.arc(bx, by - air, (9.5 + air / 12) * k, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#fff'; g.strokeStyle = '#13201A'; g.lineWidth = 1.7 * k; g.beginPath(); g.arc(bx, by - air, (5.7 + air / 12) * k, 0, Math.PI * 2); g.fill(); g.stroke(); }
       if (tip) tipCard(k0);
     }
     loop.n = 0;

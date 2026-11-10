@@ -216,6 +216,10 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
   inteiro gritando (`GRITO=recuar node tools/craque_campinho_livre.js 150`; `GRITO_CAMPO=0` = só a conta, como era):
   pressionar e lados batem com o motor; recuar no campinho não baixa a pressão (`sim`), senão levava 25% mais gol que o
   esperado (600 jogos; assim leva 5% a mais, 1,11 contra 1,05); segurar faz ~17% mais gol que o motor quer, com ou sem o campo.
+- **Bola e arbitragem fáceis de ler** (avaliação do 2D; Silvio, 10/11: "pode ser um losango mas do mesmo tamanho e mais
+  transparente, não quero juiz anão"): `official()` desenha juiz, bandeirinhas e quarto árbitro como losango do tamanho de
+  sempre (meia diagonal ~1,15 do raio do boneco) a 58% de opacidade; a bola tem raio 5,7 (era 4,5) com um brilho claro em
+  volta, e quem está com ela leva um anel branco fino (`ow` no `draw`). Só desenho, vale nos dois modos.
 - **Nota do goleiro** (`rateMatch`, `engine/coach.js`): não levar gol só vale inteiro com 3 chutes no gol deles (`gkW`); sem
   chute no gol o texto é "não foi exigido".
 - **Atributos** (`qa(p, 'fin'|'pas'|'dri'|'def'|'gol')`): cada lance lê `p.inf.at[k]` (0 a 99) se a escalação mandar; sem isso
