@@ -237,6 +237,7 @@
     if (!tut && !popped && !ctWarn(co)) finNews(co);
     // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
     const inN = tut ? 0 : S.coMktInbox(co).filter(o => !o.seen).length - (popped ? 1 : 0);
+    const nwN = tut || !S.coWorldNew ? 0 : (S.coWorldSync(co), S.coWorldNew(co));
     const t = S.coTable(co), me = t.find(x => x.me), pos = S.coPos(co), B = co.board, conf = Math.round(B.conf);
     const f5 = f => { const a = (f || '').split('').slice(-5); while (a.length < 5) a.unshift('n'); return '<span class="ld-f5 sm-f5">' + a.map(x => '<i class="' + x + '"></i>').join('') + '</span>'; };
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
@@ -258,7 +259,7 @@
       wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
         '<button class="sm-w' + (sc ? ' ok' : '') + '" id="ld-ol"><small>OLHEIRO</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o ' + esc(vc.short || vc.name)) + '</b></button></div>';
     } else card = '<div class="sm-bye"><b>Sem jogo nesta rodada</b><small>O time descansa. Os outros jogam.</small></div>';
-    const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['mercado', 'Mercado'], ['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + (k === 'mercado' && inN ? '<i class="tm-dot">' + inN + '</i>' : '') + '</button>').join('');
+    const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['mercado', 'Mercado'], ['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + (k === 'mercado' && inN + nwN ? '<i class="tm-dot">' + (inN + nwN) + '</i>' : '') + '</button>').join('');
     show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + wk +
       '<nav class="sm-side" aria-label="Menu do técnico">' + nav + '<button class="tm-go" id="ld-play">' + (nx.bye ? 'Ver a rodada' : 'Jogar') + '</button></nav></div>', st => {
       if (st.querySelector('#sm-coins')) st.querySelector('#sm-coins').onclick = () => { sfx('tap'); loja(0, semana); };
@@ -267,6 +268,7 @@
       if (st.querySelector('#ld-tr')) st.querySelector('#ld-tr').onclick = () => { sfx('tap'); treino(); };
       if (st.querySelector('#ld-ol')) st.querySelector('#ld-ol').onclick = () => { sfx('tap'); olheiro(); };
       if (inN) st.querySelector('[data-rail="mercado"]').onclick = () => { sfx('tap'); const o = S.coMktInbox(co).find(x => !x.seen); if (!o) return go('mercado'); o.seen = 1; c.save(); recebida(o, semana); };
+      else if (nwN) st.querySelector('[data-rail="mercado"]').onclick = () => { sfx('tap'); noticias(); };
       if (tut) tutShow(co, st);
     });
   }
@@ -868,11 +870,16 @@
   const mkCoins = (st, me) => { const b = st.querySelector('#mk-coins'); if (b) b.onclick = () => { sfx('tap'); loja(0, me); }; };
   const mkHelp = (t, p) => pop('<div class="acd-help"><b>Como funciona</b><p>' + p + '</p><button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop');
   const mkClub = p => (p.club ? esc(club(p.club).short || club(p.club).name) : 'sem clube');
+  // As 4 abas do Mercado: Procurar e Notícias valem; Indicados e Elenco chegam depois. O aviso laranja conta as notícias
+  // novas da sua liga e do seu clube
+  const mkTabs = (co, on) => { const n = on === 3 || !S.coWorldNew ? 0 : S.coWorldNew(co);
+    return [['Procurar', 'mk-tpr'], ['Indicados'], ['Elenco'], ['Notícias', 'mk-tnw']].map(([t, id], i) => '<button' + (id ? ' id="' + id + '"' : ' disabled title="em breve"') + (i === on ? ' class="on"' : '') + '>' + t + (i === 3 && n ? '<i class="tm-dot">' + n + '</i>' : '') + '</button>').join(''); };
   function mercado() {
     const c = C(), co = c.co, m = S.coMkt(co), F = S.coMktFilters(co);
+    if (S.coWorldSync) S.coWorldSync(co);
     m.f = F.map((x, i) => Math.min(m.f[i] || 0, x.o.length - 1));
     const n = S.coMktSearch(co).length, ok = n > 0 && n <= S.CO_MKT.max;
-    const tabs = [['Procurar', 1], ['Indicados'], ['Elenco'], ['Notícias']].map(([t, on]) => '<button' + (on ? ' class="on"' : ' disabled title="em breve"') + '>' + t + '</button>').join('');
+    const tabs = mkTabs(co, 0);
     const cell = (x, i) => { const v = m.f[i] || 0, t = x.o[v].t;
       return '<div class="mk-f' + (v ? ' on' : '') + '"><small>' + x.t + '</small><span><button class="mk-ar" data-mf="' + i + '" data-d="-1" aria-label="' + x.t.toLowerCase() + ' anterior">' + MK_L + '</button><b class="' + (t.length > 16 ? 'mk-sm' : '') + '">' + esc(t) + '</b><button class="mk-ar" data-mf="' + i + '" data-d="1" aria-label="' + x.t.toLowerCase() + ' seguinte">' + MK_R + '</button></span></div>'; };
     const goTxt = n => (n > 0 && n <= S.CO_MKT.max ? 'Buscar' : n ? 'Filtre mais' : 'Ninguém: solte um filtro');
@@ -883,6 +890,7 @@
         '<span class="rs-gap"></span><button class="tm-go' + (ok ? '' : ' off') + '" id="mk-go">' + goTxt(n) + '</button></div></div>', st => {
       st.querySelector('#mk-back').onclick = () => { sfx('tap'); semana(); };
       mkCoins(st, mercado);
+      st.querySelector('#mk-tnw').onclick = () => { sfx('tap'); noticias(); };
       st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição e só vale para quem o olheiro já viu. A janela do começo vale até a 3ª rodada (10 dias) e a do meio abre antes da rodada do meio (6 dias): proposta e contrato gastam 1 dia. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.'); };
       st.querySelectorAll('[data-mf]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.mf, L = F[i].o.length; m.f[i] = ((m.f[i] || 0) + (+b.dataset.d) + L) % L; c.save(); mercado(); });
       const inp = st.querySelector('#mk-nm');
@@ -915,6 +923,46 @@
       st.querySelector('#mkr-prev').onclick = () => { sfx('tap'); mercadoRes(pg - 1, 0); };
       st.querySelector('#mkr-next').onclick = () => { sfx('tap'); mercadoRes(pg + 1, 0); };
       st.querySelector('#mkr-go').onclick = () => { if (!R.length) return; sfx('tap'); ficha(R[sel].id, () => mercadoRes(pg, sel)); };
+    });
+  }
+  // Notícias (aba do Mercado, desenho A aprovado em 2026-11-10): os negócios do mercado vivo (engine/coachworld.js), uma
+  // linha por notícia (posição, nome, escudo › escudo, etiqueta e valor), 4 por página; à direita o filtro Mostrar, as
+  // páginas e Ver ficha. A nota dourada marca o que é do seu clube e o ▲ verde quem chegou para ser titular
+  const NW_FLT = ['Tudo', 'Sua liga', 'Seu clube'], NW_TAG = { f: 'FECHADO', l: 'LIVRE' };
+  let nwFlt = 1, nwSeen = 0;
+  function noticias(pg, sel, flt) {
+    const c = C(), co = c.co;
+    if (S.coWorldSync) S.coWorldSync(co);
+    if (pg === undefined) { nwSeen = (co.wm && co.wm.seen) || 0; S.coWorldSeen(co); c.save(); } // entrou agora: o que era novo segue marcado até sair
+    if (flt !== undefined) nwFlt = flt;
+    const all = S.coWorldNews(co, 0), list = S.coWorldNews(co, nwFlt), pages = Math.max(1, Math.ceil(list.length / 4));
+    pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * 4, pg * 4 + 4); sel = Math.max(0, Math.min(sel || 0, R.length - 1));
+    const nNew = list.filter(x => x.i > nwSeen).length, win = S.coMktWin(co);
+    const nm = id => '<span class="nw-c">' + esc((club(id).short || club(id).name).replace(/^Red Bull /, '')) + '</span>';
+    const row = (x, i) => {
+      const way = x.k === 'l' ? '<span class="nw-c">sem clube · ' + x.age + ' anos</span>' : (x.from ? crest(x.from, 'nw-cr') + nm(x.from) : '<span class="nw-c">sem clube</span>') + '<s>›</s>' + crest(x.to, 'nw-cr') + nm(x.to) + (x.up ? '<em title="chegou para ser titular">▲</em>' : '');
+      const note = x.me === 1 ? 'seu clube' : x.me === 2 ? 'ex seu clube' : '';
+      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-nr="' + i + '"><i>' + x.pos + '</i><span><b><span class="nw-n">' + esc(x.n) + '</span>' + (note ? '<u>' + note + '</u>' : '') + '</b><small>' + way + '</small></span>' +
+        '<div class="nw-tc"><strong>' + (x.tr ? 'troca' : x.v ? c.brl(x.v) : 'grátis') + '</strong><em class="nw-tag ' + x.k + '">' + NW_TAG[x.k] + '</em></div></button>'; };
+    const none = all.length ? (nwFlt === 2 ? 'Seu clube ainda não fez negócio.' : 'Nada aqui. Veja em Tudo.') : win.k ? 'Nenhum negócio fechado ainda.' : win.next ? 'Sem notícias. A janela abre na rodada ' + win.next + '.' : 'Sem notícias nesta temporada.';
+    const cur = R[sel], p = cur && cur.id ? S.coMktFind(co, cur.id) : null, goT = !cur ? 'Ver ficha' : p ? 'Ver ficha' : cur.to === co.club ? 'No seu elenco' : 'Sem ficha';
+    show('<div class="mk nw">' + mkHead('nw-back', 'Mercado', esc(club(co.club).short || club(co.club).name), false, true) +
+      '<div class="mk-tabs">' + mkTabs(co, 3) + '</div>' +
+      '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">' + none + '</p>') + '</div>' +
+      '<div class="mk-side"><div class="mk-k nw-flt"><small>MOSTRAR</small><span><button class="mk-ar" data-nf="-1" aria-label="filtro anterior">' + MK_L + '</button><b>' + NW_FLT[nwFlt] + '</b><button class="mk-ar" data-nf="1" aria-label="filtro seguinte">' + MK_R + '</button></span>' +
+        '<em>' + U.D.plural(list.length, 'notícia', 'notícias') + (nNew ? ' · <i>' + U.D.plural(nNew, 'nova', 'novas') + '</i>' : '') + '</em></div>' +
+        '<div class="mk-pg"><button class="mk-ar big" id="nw-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar big" id="nw-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></div>' +
+        '<span class="rs-gap"></span><button class="tm-go' + (p ? '' : ' off') + '" id="nw-go">' + goT + '</button></div></div>', st => {
+      const open = i => { const x = R[i]; if (!x || !x.id || !S.coMktFind(co, x.id)) return; ficha(x.id, () => noticias(pg, i)); };
+      st.querySelector('#nw-back').onclick = () => { sfx('tap'); semana(); };
+      mkCoins(st, () => noticias(pg, sel));
+      st.querySelector('#mk-tpr').onclick = () => { sfx('tap'); mercado(); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Os negócios que os clubes fecham com a janela aberta: cada semana de janela traz novos. LIVRE é quem ficou sem clube e sai de graça. O ▲ verde marca quem chegou para ser titular. Toque na linha e em Ver ficha para olhar o jogador no clube novo.'); };
+      st.querySelectorAll('[data-nr]').forEach(b => b.onclick = () => { const i = +b.dataset.nr; sfx('tap'); if (i === sel) return open(i); noticias(pg, i); });
+      st.querySelectorAll('[data-nf]').forEach(b => b.onclick = () => { sfx('tap'); noticias(0, 0, (nwFlt + (+b.dataset.nf) + NW_FLT.length) % NW_FLT.length); });
+      st.querySelector('#nw-prev').onclick = () => { sfx('tap'); noticias(pg - 1, 0); };
+      st.querySelector('#nw-next').onclick = () => { sfx('tap'); noticias(pg + 1, 0); };
+      st.querySelector('#nw-go').onclick = () => { if (!p) return; sfx('tap'); open(sel); };
     });
   }
   // Ficha (24): a força numa faixa borrada contra o seu titular (sem número), que estreita a cada relatório;
@@ -1792,6 +1840,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, lift, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, ficha, proposta, contrato };
+  U.LD = { on, show, off, lift, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();

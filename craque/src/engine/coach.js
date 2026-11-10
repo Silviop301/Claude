@@ -300,7 +300,13 @@
     });
     return out;
   }
+  // Mercado vivo (2026-11-10, engine/coachworld.js): por cima do elenco sorteado entram os negócios guardados no save
+  // (co.wm): quem saiu do clube some dele, quem chegou entra, e o clube segue com 25
   function genSquad(clubId, season, co) {
+    const sq = genBase(clubId, season, co);
+    return co && co.wm && S.coWorldSquad ? S.coWorldSquad(co, clubId, season, sq) : sq;
+  }
+  function genBase(clubId, season, co) {
     const club = D.CLUB_BY_ID[clubId], real = S.coRealOf(clubId);
     if (real) return realSquad(club, season, real, co);
     const r = S.rng(hash(clubId + '|' + season)), cty = D.countryOf(club), s = club.strength;
@@ -316,6 +322,7 @@
     return out;
   }
   S.coGenSquad = genSquad;
+  S._coMkPlayer = mkPlayer;
 
   // ---------- escalação ----------
   const ok = p => p && !p.out && !p.sus;
@@ -428,7 +435,7 @@
   S.coSign = function (co, clubId) {
     S.applyLeagues(co);
     co.club = clubId;
-    co.squad = genSquad(clubId, co.season).map(p => Object.assign(p, { id: 'p' + (co.pid++) }));
+    co.squad = genSquad(clubId, co.season, co.wm ? { wm: co.wm, season: co.season, squad: [] } : undefined).map(p => Object.assign(p, { id: 'p' + (co.pid++) }));
     co.sacked = false;
     co.since = co.season;
     const a = autoXI(co.squad, co.form);
@@ -470,6 +477,7 @@
     co.squad.forEach(p => { p.en = 100; p.out = 0; p.sus = 0; p.yc = 0; p.ycSus = 0; });
     co.subsLeft = CO.subs;
     save();
+    if (S.coWorldSync) S.coWorldSync(co);
     return ss;
   };
   const order = tab => tab.map((t, i) => i).sort((a, b) => tab[b].p - tab[a].p || (tab[b].gp - tab[b].gc) - (tab[a].gp - tab[a].gc) || tab[b].gp - tab[a].gp);
@@ -953,6 +961,7 @@
     ss.i++;
     if (!co.sacked) { co.xi = co.xi.filter(id => co.squad.some(p => p.id === id && ok(p))); if (co.xi.length < 11 || co.autoXI) { const a = autoXI(co.squad, co.form); co.xi = a.xi; co.bench = a.bench; } else co.bench = co.squad.filter(p => ok(p) && !co.xi.includes(p.id)).sort((a, b) => b.ovr - a.ovr).slice(0, 9).map(p => p.id); }
     if (ss.i >= ss.rounds.length) ss.done = true;
+    if (S.coWorldSync) S.coWorldSync(co);
     return log;
   };
   // Notas do jogo (3 a 10) para quem jogou 10 minutos ou mais, com o porquê em poucas palavras. Sem sorteio do jogo:
@@ -1003,7 +1012,7 @@
     save();
   }
   // Rodada sem você (folga ou depois da demissão)
-  S.coSkipRound = function (co) { const ss = co.ss; roundRest(co, []); ss.i++; if (ss.i >= ss.rounds.length) ss.done = true; };
+  S.coSkipRound = function (co) { const ss = co.ss; roundRest(co, []); ss.i++; if (ss.i >= ss.rounds.length) ss.done = true; if (S.coWorldSync) S.coWorldSync(co); };
 
   // ---------- diretoria ----------
   // Confiança escondida (aparece no tom do presidente): sobe e desce com o resultado contra o esperado e com a tabela
@@ -1067,6 +1076,7 @@
       const gone = co.squad.filter(p => p.age >= 37 || (p.age >= 34 && r() < 0.35) || p.ct <= 0);
       out.left = gone.slice().sort((a, b) => b.ovr - a.ovr).map(p => { const x = { n: p.n, ovr: p.ovr, why: p.ct <= 0 && p.age < 34 ? 'fim de contrato' : 'aposentou' }; if (core.has(p.id)) x.tit = 1; return x; });
       co.squad = co.squad.filter(p => !gone.includes(p));
+      if (S.coWorldLeft) S.coWorldLeft(co, gone);
       // Base: 1 ou 2 garotos; e reposição do clube para o elenco não ficar curto
       const club = D.CLUB_BY_ID[co.club], cty = D.countryOf(club);
       const kids = [];
