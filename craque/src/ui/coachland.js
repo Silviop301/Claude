@@ -852,20 +852,93 @@
   function clube() {
     const c = C(), co = c.co, cl = club(co.club), f = S.coFin(co), B = co.board, pos = S.coPos(co), conf = Math.round(B.conf);
     const exp = co.squad.filter(p => p.ct <= 1).length, pres = S.coPres ? S.coPres(co) : null;
+    const est = S.coEst && U.EST ? S.coEst(co) : null;
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const tile = (id, k, t, v, sub, cc) => '<button class="kb2-t"' + (id ? ' id="' + id + '"' : '') + ' data-k="' + k + '"><b>' + t + '</b><span><em class="' + (cc || '') + '">' + v + '</em><small>' + sub + '</small></span></button>';
     const meta = (B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + B.goal.pos + 'º') + ' · hoje ' + pos + 'º';
     show('<div class="kb2"><div class="tm-h"><button class="tcr-back" id="kb2-back" aria-label="Voltar">' + BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>' + esc(cl.name) + '</b><small>' + esc(co.ss ? co.ss.name : '') + ' · fama ' + co.fame + '</small></div>' +
-      '<div class="kb2-g">' + tile('ldk-go', 'fin', 'Finanças', c.brl(f.caixa), 'no caixa', f.caixa < 0 ? 'dn' : '') +
+      '<div class="kb2-g' + (est ? ' g3' : '') + '">' + tile('ldk-go', 'fin', 'Finanças', c.brl(f.caixa), 'no caixa', f.caixa < 0 ? 'dn' : '') +
         tile('', 'ele', 'Elenco', exp ? exp : co.squad.length, exp ? (exp > 1 ? 'contratos acabam' : 'contrato acaba') + ' no fim do ano' : 'jogadores', exp ? 'dn' : '') +
         tile('', 'tro', 'Troféus', co.titles.length, co.titles.length === 1 ? 'título' : 'títulos') +
-        tile('', 'hall', 'Hall do técnico', (co.season + 1) + 'ª', 'temporada de carreira') + '</div>' +
+        tile('', 'hall', est ? 'Hall' : 'Hall do técnico', (co.season + 1) + 'ª', 'temporada de carreira') +
+        (est ? '<button class="kb2-t kb2-es" id="kb2-est" data-k="est"><b>Estádio</b>' + estThumb(co, est) + '<span><em>' + milK(S.coEstCap(est)) + '</em><small>lugares</small>' +
+          '<em class="hm ' + estCls(est) + '">torcida ' + S.coEstHum(est) + '</em></span></button>' : '') + '</div>' +
       '<div class="kb2-side"><div class="kb2-dir"><small>DIRETORIA</small><b>' + (conf >= 70 ? 'confiança alta' : conf >= 45 ? 'confiança boa' : conf >= 30 ? 'confiança baixa' : 'no limite') + '</b>' +
           '<i><u class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '" style="width:' + conf + '%"></u></i><em class="' + (pos <= B.goal.pos ? '' : 'hi') + '">' + meta + '</em></div>' +
         (pres ? '<div class="kb2-pr fc">' + presFace(pres, 'kb2-fc') + '<div><small>PRESIDENTE</small><b>' + esc(pres.n) + '</b><span>' + esc(pres.nome || '') + '</span></div></div>' : '') +
-        '<span class="rs-gap"></span><p class="kb2-soon">Estádio e base chegam depois</p></div></div>', st => {
-      st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') financas(); else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); });
+        (est ? '' : '<span class="rs-gap"></span><p class="kb2-soon">Estádio e base chegam depois</p>') + '</div></div>', st => {
+      st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') financas(); else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); else if (k === 'est') estadio(); });
       st.querySelector('#kb2-back').onclick = () => { sfx('tap'); semana(); };
+    });
+  }
+
+  // ---------- Estádio (fase 1: só ver; ingresso, obras e melhorias entram nas próximas fases) ----------
+  const milK = v => (v / 1000).toFixed(v % 1000 ? 1 : 0).replace('.', ',') + ' mil';
+  const estCls = e => { const i = S.coEstHumIdx(e.hum); return i >= 3 ? 'up' : i <= 1 ? 'dn' : ''; };
+  const estSeed = id => { let h = 7; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 99991; return h + 1; };
+  // Cores da torcida: as da camisa; cor escura demais some na arquibancada e vira cinza
+  function estCols(cl) {
+    const k = U.LP && U.LP.kitFor ? U.LP.kitFor(cl.name, cl.id) : null; if (!k) return null;
+    const lum = h => { const v = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); return (0.299 * v[0] + 0.587 * v[1] + 0.114 * v[2]) / 255; };
+    const ok = h => (lum(h) < 0.2 ? '#8E949C' : h), a = ok(k[0]), b = ok(k[1] === k[0] ? k[2] : k[1]);
+    return [a, b, a === b ? '#F3F1EA' : ok(k[2])];
+  }
+  const EST_OCC0 = { n: 0, s: 0, a: 0, so: 0 };
+  function estFit(lv, w, h, max) { const d = U.EST.depth; return Math.max(0.2, Math.min(max, w / (288 + d[lv.n] + d[lv.s]), h / (165 + d[lv.a] + d[lv.so]))); }
+  function estThumb(co, e) {
+    const d = U.EST.depth, k = estFit(e.lv, 150, 116, 0.44);
+    return U.EST.svg({ w: 158, h: 124, k, dx: (d[e.lv.n] - d[e.lv.s]) * k / 2, dy: (d[e.lv.a] - d[e.lv.so]) * k / 2, lv: e.lv, occ: e.occ || EST_OCC0, cols: estCols(club(co.club)), seed: estSeed(co.club) }).svg;
+  }
+  // Ingresso (fase 2): 5 preços em palavras para o próximo jogo em casa, com a renda, o público e o que a torcida acha
+  function ingresso(pick) {
+    const c = C(), co = c.co, E = S.CO_EST, P = S.coEstPrices(co); if (!P) return estadio();
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const L = P.list, sel = pick == null ? P.now : pick, cur = L[P.now], x = L[sel], mx = Math.max.apply(null, L.map(o => o.gate)), d = x.gate - cur.gate;
+    const vs = P.vs ? club(P.vs) : null;
+    show('<div class="es"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button><b>Ingresso</b><small>' + (vs ? 'próximo jogo em casa: ' + esc(vs.short || vs.name) : 'renda de um jogo em casa') + '</small>' +
+        '<span class="es-top"><button class="es-q" id="es-q" aria-label="Como funciona">?</button></span></div>' +
+      '<div class="es-ig">' + L.map(o => '<button class="es-ic' + (o.i === sel ? ' on' : '') + '" data-pr="' + o.i + '">' + (o.i === P.now ? '<u>HOJE</u>' : '') + '<em>' + c.brl(o.gate) + '</em><i style="height:' + Math.max(10, Math.round(o.gate / mx * 118)) + 'px"></i><b>' + o.name + '</b><small' + (o.full ? ' class="f"' : '') + '>' + (o.full ? 'lota' : milK(o.pub)) + '</small></button>').join('') + '</div>' +
+      '<div class="es-side">' +
+        '<div class="es-k"><small>PÚBLICO</small><div class="es-ch"><b>' + milK(x.pub) + '<u>de ' + milK(x.cap) + '</u></b></div><span class="es-fill"><u style="width:' + Math.round(x.pub / x.cap * 100) + '%"></u></span></div>' +
+        '<div class="es-k"><small>RENDA DO JOGO</small><b>' + c.brl(x.gate) + '</b><em class="' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + (sel === P.now ? 'é o preço de hoje' : d ? c.brl(Math.abs(d)) + (d > 0 ? ' a mais que hoje' : ' a menos que hoje') : 'igual a hoje') + '</em></div>' +
+        '<div class="es-k"><small>TORCIDA</small><b class="' + (x.hum > 0 ? 'up' : x.hum < 0 ? 'dn' : '') + '">' + x.txt + '</b><em>a cada jogo em casa</em></div>' +
+        '<button class="tm-go' + (sel === P.now ? ' off' : '') + '" id="es-go">' + (sel === P.now ? 'Preço de hoje' : 'Cobrar ' + x.name.toLowerCase()) + '</button>' +
+      '</div></div>', st => {
+      st.querySelector('#es-back').onclick = () => { sfx('tap'); estadio(); };
+      st.querySelector('#es-q').onclick = () => { sfx('tap'); mkHelp('', 'O preço vale para todos os jogos em casa até você mudar. Mais caro rende mais por pessoa e afasta gente: compensa quando o jogo lota. Mais barato enche a casa e agrada a torcida, que empurra o time.'); };
+      st.querySelectorAll('[data-pr]').forEach(b => b.onclick = () => { sfx('tap'); ingresso(+b.dataset.pr); });
+      st.querySelector('#es-go').onclick = () => { if (sel === P.now) return; sfx('win'); S.coEstPrice(co, sel); c.save(); ingresso(); };
+    });
+  }
+  function estadio() {
+    const c = C(), co = c.co, cl = club(co.club), e = S.coEst(co), E = S.CO_EST, cap = S.coEstCap(e), hi = S.coEstHumIdx(e.hum), cls = estCls(e);
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const h = e.h || [], full = h.filter(g => g.pub >= g.cap * E.full).length, last = h[h.length - 1], why = S.coEstWhy(co);
+    const vsO = id => { const t = window.CRAQUE_DATA.O(club(id).name); return t.charAt(0).toLowerCase() + t.slice(1); };
+    const pips = n => '<span class="es-pp">' + [1, 2, 3, 4, 5].map(i => '<i' + (i <= n ? ' class="on"' : '') + '></i>').join('') + '</span>';
+    const lb = (k, cc, pos) => '<div class="es-lb ' + cc + '" style="' + pos + '"><small>' + E.names[k].toUpperCase() + '</small>' + pips(e.lv[k]) + '<b>' + milK(S.coEstSeats(k, e.lv[k])) + '</b></div>';
+    show('<div class="es"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>' + esc(S.coEstName(cl.id) || 'Estádio') + '</b><small>' + esc(cl.name) + ' · ' + milK(cap) + ' lugares</small>' +
+        '<span class="es-top"><button class="es-q" id="es-q" aria-label="Como funciona">?</button></span></div>' +
+      '<div class="es-pn" id="es-pn"></div>' +
+      '<div class="es-side">' +
+        '<div class="es-k t"><small>TORCIDA</small><b class="' + cls + '">' + S.coEstHum(e) + '</b><span class="es-dd ' + cls + '">' + [0, 1, 2, 3, 4].map(i => '<i' + (i <= hi ? ' class="on"' : '') + '></i>').join('') + '</span>' + (why ? '<em>' + esc(why) + '</em>' : '') + '</div>' +
+        '<div class="es-k"><small>CASA CHEIA</small>' + (h.length ? '<div class="es-ch"><b>' + full + '<u>de ' + h.length + (h.length > 1 ? ' jogos' : ' jogo') + '</u></b><span class="es-bars">' + h.map(g => '<i class="' + (g.pub >= g.cap * E.full ? 'f' : '') + '" style="height:' + Math.max(8, Math.round(g.pub / g.cap * 100)) + '%"></i>').join('') + '</span></div>' : '<em>nenhum jogo em casa ainda</em>') + '</div>' +
+        '<div class="es-k"><small>ÚLTIMO PÚBLICO</small>' + (last ? '<b>' + milK(last.pub) + '</b><em>contra ' + esc(vsO(last.vs)) + '</em>' : '<em>a estreia em casa ainda não chegou</em>') + '</div>' +
+        '<button class="tm-b" id="es-ing">Ingresso<small>' + E.price.names[e.pr].toLowerCase() + '</small></button>' +
+      '</div></div>', st => {
+      st.querySelector('#es-ing').onclick = () => { sfx('tap'); ingresso(); };
+      st.querySelector('#es-back').onclick = () => { sfx('tap'); clube(); };
+      st.querySelector('#es-q').onclick = () => { sfx('tap'); mkHelp('', 'Os pontinhos são o público do último jogo em casa. A torcida se empolga com vitória, ainda mais em casa e em clássico. Torcida empolgada enche o estádio e empurra o time em casa; revoltada, pesa contra. Obras e melhorias chegam nas próximas atualizações.'); };
+      const pn = st.querySelector('#es-pn'), W = pn.clientWidth, H = pn.clientHeight, d = U.EST.depth, lv = e.lv;
+      if (!W || !H) return;
+      const k = estFit(lv, W - 216, H - 84, 1), roof = x => (lv[x] >= 4 ? 3.5 * k : 0);
+      const R = U.EST.svg({ w: W, h: H, k, dx: (d[lv.n] - d[lv.s]) * k / 2, dy: (d[lv.a] - d[lv.so]) * k / 2, lv, occ: e.occ || EST_OCC0, cols: estCols(cl), gram: 1, seed: estSeed(cl.id) });
+      const { px, py, pw, ph, gap } = R, dep = x => d[lv[x]] * k + roof(x);
+      pn.innerHTML = R.svg +
+        lb('a', '', 'left:' + (px + pw / 2) + 'px;top:' + (py - gap - dep('a') - 30) + 'px;transform:translateX(-50%)') +
+        lb('so', '', 'left:' + (px + pw / 2) + 'px;top:' + (py + ph + gap + dep('so') + 10) + 'px;transform:translateX(-50%)') +
+        lb('n', 'v l', 'right:' + (W - (px - gap - dep('n')) + 12) + 'px;top:' + (py + ph / 2) + 'px;transform:translateY(-50%)') +
+        lb('s', 'v r', 'left:' + (px + pw + gap + dep('s') + 12) + 'px;top:' + (py + ph / 2) + 'px;transform:translateY(-50%)');
     });
   }
   // ---------- Mercado, lote 1 (2026-11-09, quadros 23, 23b e 24): só olhar; propostas no lote 2 ----------
@@ -1873,6 +1946,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, lift, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato };
+  U.LD = { on, show, off, lift, estadio, ingresso, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();
