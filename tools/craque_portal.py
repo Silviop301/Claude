@@ -39,10 +39,10 @@ FLAGS = (
 # Textos fixos do index.html na versão em inglês
 EN_HTML = [
     ('<html lang="pt-BR">', '<html lang="en">'),
-    ('Jogo de carreira de futebol grátis no navegador', 'Free football career game in your browser'),
-    ('Jogo de carreira de futebol">', 'Football career game">'),
-    ('Jogo grátis de carreira de futebol no navegador: crie um garoto de 16 anos, escolha clubes, jogue os lances decisivos e descubra se ele vira lenda.', 'Free football career game in your browser: create a 16-year-old, pick clubs, play the decisive moments and find out if he becomes a legend.'),
-    ('Crie um garoto de 16 anos e descubra se ele vira lenda do futebol.', 'Create a 16-year-old and find out if he becomes a football legend.'),
+    ('Jogo de técnico de futebol grátis no navegador', 'Free football manager game in your browser'),
+    ('Jogo de técnico de futebol">', 'Football manager game">'),
+    ('Jogo grátis de técnico de futebol no navegador: assuma um clube, monte o time, acerte a tática e veja a partida ao vivo até chegar ao topo.', 'Free football manager game in your browser: take over a club, build the team, set the tactics and watch the match live on your way to the top.'),
+    ('Assuma um clube, monte o time e chegue ao topo.', 'Take over a club, build the team and reach the top.'),
     ('aria-label="Nota geral"', 'aria-label="Overall rating"'),
     ('<div class="eyebrow">Carreira de futebol</div>', '<div class="eyebrow">Football career</div>'),
 ]
