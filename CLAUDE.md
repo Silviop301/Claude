@@ -186,6 +186,18 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
   4 m e com o passe aberto vale mais, mesmo circulando a bola (o time de posse resiste um pouco: `LIVRE_E`); com campo à
   frente dele o passe vai no espaço e ele parte para a bola (`lead`). Passe de 15 m+ para a frente: o acerto depende bem mais
   de quem passa. Por isso o piso de passes por posse do `craque_campinho.js` desceu (posse 2,3+ e 0,8 a mais que o contra).
+- **Tela lenta não perde jogo** (simulação livre): o relógio do motor anda por `setTimeout` e o campinho por quadro; abaixo de
+  20 quadros por segundo (Chrome remoto, aparelho fraco) o campinho jogava menos segundos por minuto e quase não chutava.
+  `minute()` em `livesim.js` completa os passos que faltaram do minuto (`mT`, até 220 passos de 0,02; `CATCH` em `_state()`) e o
+  laço aceita quadro de até 0,2 s. Todo minuto do motor vale ~2,75 s de campinho (`spm × speed`) em qualquer aparelho.
+  Com os atributos valendo no campinho (PR #309) os gols ficaram ~6% abaixo do esperado: `FXG_K` 1,71 → 1,85 (300 jogos:
+  2,55 por jogo contra 2,51 do motor; fraco 0,97 → 0,89, médio 1,23 → 1,26, forte 1,58 → 1,68).
+- **Números na ordem do placar** (`coachland.js`): mandante à esquerda em tudo (`hv(m, seu, deles)`): janelinha Números
+  (`numBody`, com escudo e nome em cima de cada coluna `numHead`/`.ldl-nh`; `livePaint` redesenha enquanto está aberta), contador
+  de chutes `#ldl-num`, barra Quem manda (escudo nas pontas; fora de casa enche pela direita, `i.r`) e os números do resultado.
+  A parte colorida da barra é sempre a sua (verde = melhor para você). O motor continua guardando `us`/`them`.
+- **Nota do goleiro** (`rateMatch`, `engine/coach.js`): não levar gol só vale inteiro com 3 chutes no gol deles (`gkW`); sem
+  chute no gol o texto é "não foi exigido".
 - **Atributos** (`qa(p, 'fin'|'pas'|'dri'|'def'|'gol')`): cada lance lê `p.inf.at[k]` (0 a 99) se a escalação mandar; sem isso
   vale o geral. Quem preenche é a thread dos atributos por jogador (5º elemento do `simForm`).
 
