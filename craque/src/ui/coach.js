@@ -650,6 +650,7 @@
     co.speed = '1'; // todo jogo começa no 1× (Silvio, 2026-11-09)
     const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
     let timer = null, seen = new Set(), read = null, open = false, firstMove = null;
+    let retomado = m.ev.length > 0; // jogo retomado no meio: a primeira pintura repõe a narração do que já aconteceu, sem o som do gol antigo nem a placa de acréscimo
     // O campinho com jogadores que decidem (o mesmo do Jogo a Jogo): o motor do Treinador manda em quem está melhor e nos
     // lances (gols e chances); a bola joga cada lance e só então o placar e a narração mostram
     const LP = U.LP, useSim = !!(LP && LP.sim);
@@ -720,8 +721,9 @@
       if (!useSim) $('lv-zone').innerHTML = read.side ? '<i class="' + (read.side === 'direita' ? 'bot' : 'top') + '"></i><b class="' + (read.side === 'direita' ? 'bot' : 'top') + '">Atacam pela sua ' + read.side + '</b>' : '';
       else { const z = $('lv-zone'); z.hidden = !read.side; if (read.side) z.textContent = 'Atacam pela sua ' + read.side; }
       const fresh = m.ev.filter(e => !seen.has(e) && !hidden.has(e));
-      if (fresh.length && sim && sim.board) fresh.filter(e => e.t === 'acrescimo').forEach(e => sim.board({ add: e.p }));
-      if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => feedLine(m, e)).join('')); { const gl = fresh.filter(e => e.t === 'gol').pop(); if (gl) sfx(U.goalSnd(gl.s === 'us', !!m.home)); } }
+      if (fresh.length && sim && sim.board && !retomado) fresh.filter(e => e.t === 'acrescimo').forEach(e => sim.board({ add: e.p }));
+      if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => feedLine(m, e)).join('')); { const gl = fresh.filter(e => e.t === 'gol').pop(); if (gl && !retomado) sfx(U.goalSnd(gl.s === 'us', !!m.home)); } }
+      retomado = false;
       if (ctx) U.LD.livePaint(ctx);
     };
     const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); if (U.profileCoGame) U.profileCoGame(co, m, log); save('hub'); result(m, log, false, firstMove); };
