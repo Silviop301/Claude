@@ -613,6 +613,29 @@
       e.t === 'intervalo' ? 'Fim do primeiro tempo' : '';
     return '<li class="' + e.s + ' ' + e.t + '"><i>' + S.coEvMin(e) + '</i><span>' + t + '</span></li>';
   }
+  // Lance curto da lista do ao vivo deitado (Silvio, 2026-11-10: lista rolável, o último em cima): uma linha com o minuto, o
+  // escudo de quem fez e poucas palavras, o nome primeiro; o que foi ordem sua leva a etiqueta VOCÊ no lugar do escudo
+  function feedShort(m, e) {
+    const n = esc(last(e.p || '')), us = e.s === 'us', you = us && (e.t === 'tatica' || e.t === 'troca') || e.t === 'grito' || e.t === 'conversa';
+    const t = e.t === 'gol' ? '<b>GOL!</b> ' + n + (e.sp === 'pen' ? ', pênalti' : e.sp === 'falta' ? ', de falta' : e.sp ? ', de cabeça' : '') :
+      e.t === 'chance' && e.sp === 'pen' ? n + ' perde o pênalti' :
+      e.t === 'chance' ? n + (e.k === 'defesa' ? ': defendido' : e.k === 'fora' ? ': fora' : e.k === 'trave' ? ': na trave' : ': travado') :
+      e.t === 'vermelho' ? '<span class="co-red"></span> ' + n + ' expulso' :
+      e.t === 'amarelo' ? '<span class="co-yc"></span> ' + n :
+      e.t === 'falta' ? 'Falta de ' + n :
+      e.t === 'impedimento' ? n + ' impedido' :
+      e.t === 'lesao' ? n + ' sente lesão' :
+      e.t === 'tatica' ? esc(e.p) :
+      e.t === 'troca' ? 'Entra ' + esc(last(e.q || '')) + ', sai ' + n :
+      e.t === 'grito' ? esc(e.p) :
+      e.t === 'grito-fim' ? 'Volta ao plano' :
+      e.t === 'conversa' ? 'Papo: ' + esc(e.p).toLowerCase() :
+      e.t === 'acrescimo' ? 'Mais ' + e.p + (e.p > 1 ? ' minutos' : ' minuto') :
+      e.t === 'intervalo' ? 'Intervalo' : '';
+    if (!t) return feedLine(m, e);
+    const who = you ? '<u>VOCÊ</u>' : e.s === 'us' || e.s === 'them' ? crestB(us ? co.club : m.vs, 'ldl-c16') : '';
+    return '<li class="' + (e.s || '') + ' ' + e.t + (you ? ' vc' : '') + '"><i>' + S.coEvMin(e) + '</i>' + who + '<span>' + t + '</span></li>';
+  }
   // Posição no campinho (deitado: você ataca para a direita). As linhas sobem quando o time manda no jogo
   function lvDots(s, mine, mom, min) {
     const sp = spots(s.form), shift = (mom - 50) * 0.18 * (mine ? 1 : -1);
@@ -668,7 +691,7 @@
       '<div class="lv-pitch" id="lv-pitch"><div class="lv-f"><i class="c"></i><i class="b l"></i><i class="b r"></i></div><div id="lv-zone"></div><div id="lv-dots"></div><span class="lv-ball" id="lv-ball"></span>' +
         '<div class="lv-forms"><span><i class="us"></i><b id="lv-fu"></b></span><span><i class="th"></i><b id="lv-ft"></b></span></div></div>';
     const LDon = !!(U.LD && U.LD.on()); let ctx = null; // Treinador deitado: o mesmo jogo no palco de 844×390 (ui/coachland.js)
-    const feed0 = '<li><i>0\'</i><span>Bola rolando. ' + esc(nm(co.club)) + ' no ' + m.us.form + ', ' + esc(S.CO_STY[m.us.style].name.toLowerCase()) + '; ' + esc(nm(m.vs)) + ' no ' + m.them.form + '.' + '</span></li>';
+    const feed0 = LDon ? '<li><i>0\'</i><span>Bola rolando</span></li>' : '<li><i>0\'</i><span>Bola rolando. ' + esc(nm(co.club)) + ' no ' + m.us.form + ', ' + esc(S.CO_STY[m.us.style].name.toLowerCase()) + '; ' + esc(nm(m.vs)) + ' no ' + m.them.form + '.' + '</span></li>';
     const speedHtml = '<div class="lv-speed" id="lv-speed">' + ['1', '3'].map(k => '<button data-sp="' + k + '"' + (k === co.speed ? ' class="on"' : '') + '>' + SPEED[k][0] + '</button>').join('') + '<button data-sp="fim" aria-label="Pular para o fim">' + ICO.ff + '</button></div>';
     if (LDon) U.LD.show(U.LD.liveHtml({ H, A, m, pitchHtml, feed0, speedHtml, crestB, pause: ICO.pause }));
     else render('<div class="lv">' +
@@ -721,7 +744,7 @@
       else { const z = $('lv-zone'); z.hidden = !read.side; if (read.side) z.textContent = 'Atacam pela sua ' + read.side; }
       const fresh = m.ev.filter(e => !seen.has(e) && !hidden.has(e));
       if (fresh.length && sim && sim.board) fresh.filter(e => e.t === 'acrescimo').forEach(e => sim.board({ add: e.p }));
-      if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => feedLine(m, e)).join('')); { const gl = fresh.filter(e => e.t === 'gol').pop(); if (gl) sfx(U.goalSnd(gl.s === 'us', !!m.home)); } }
+      if (fresh.length) { fresh.forEach(e => seen.add(e)); $('lv-feed').insertAdjacentHTML('afterbegin', fresh.reverse().map(e => (LDon ? feedShort(m, e) : feedLine(m, e))).join('')); if (LDon) $('lv-feed').scrollTop = 0; { const gl = fresh.filter(e => e.t === 'gol').pop(); if (gl) sfx(U.goalSnd(gl.s === 'us', !!m.home)); } }
       if (ctx) U.LD.livePaint(ctx);
     };
     const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); if (U.profileCoGame) U.profileCoGame(co, m, log); save('hub'); result(m, log, false, firstMove); };
