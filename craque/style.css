@@ -9119,3 +9119,36 @@ button.coin-pill { cursor: pointer; border: 0; }
 .op-done { width: 500px; max-width: 100%; height: 232px; place-self: center; border-radius: 18px; background: #F8F4EA; color: #13201A; padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
 .op-done b { font: 800 34px/1 var(--display); } .op-done span { font: 600 18px/1.35 var(--body); color: #33423a; } .op-done i { flex: 1; }
 .op-done .op-go { width: 280px; }
+
+/* ---------- Treinador, estádio (fase 1, 2026-11-10): bloco no Clube e a tela Estádio ---------- */
+.kb2-g.g3 { grid-template-columns: 1fr 1fr 1.08fr; }
+.kb2-g.g3 .kb2-t { padding: 16px !important; min-width: 0; }
+.kb2-g.g3 .kb2-t > b { font-size: 26px; }
+.kb2-t.kb2-es { grid-column: 3; grid-row: 1 / 3; }
+.kb2-es svg { align-self: center; flex: none; max-width: 100%; height: auto; }
+.kb2-t em.hm { font: 700 15px/1.2 var(--body); color: #B9C9BF; } .kb2-t em.hm.up { color: #7ED39A; } .kb2-t em.hm.dn { color: #F5A57F; }
+.es { width: 100%; flex: 1; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 238px; grid-template-rows: 44px minmax(0, 1fr); gap: 10px 16px; color: #F3F1EA; }
+.es .tm-h { grid-column: 1 / -1; }
+.es .tm-h b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; } .es .tm-h small { white-space: nowrap; }
+.es-top { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.ld-st button.es-q { flex: none; width: 44px; height: 44px; border-radius: 50%; background: none; color: #F3F1EA; box-shadow: inset 0 0 0 2px rgba(243, 241, 234, .25); font: 800 22px/1 var(--display); display: flex; align-items: center; justify-content: center; }
+.es-pn { grid-column: 1; grid-row: 2; position: relative; border-radius: 18px; background: #141517; overflow: hidden; min-height: 0; }
+.es-pn .est-svg { position: absolute; left: 0; top: 0; }
+.es-lb { position: absolute; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.es-lb.v { flex-direction: column; gap: 6px; }
+.es-lb.v.l { align-items: flex-end; } .es-lb.v.r { align-items: flex-start; }
+.es-lb small { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
+.es-lb b { font: 800 20px/1 var(--display); color: #F3F1EA; }
+.es-pp { display: flex; gap: 4px; } .es-pp i { width: 7px; height: 7px; border-radius: 50%; background: rgba(243, 241, 234, .2); } .es-pp i.on { background: #F3F1EA; }
+.es-side { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.es-k { flex: 1; min-height: 0; border-radius: 18px; background: #141517; padding: 0 16px; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.es-k.t { flex: 1.38; }
+.es-k > small { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
+.es-k > b { font: 800 26px/1 var(--display); } .es-k > b.up { color: #7ED39A; } .es-k > b.dn { color: #F5A57F; }
+.es-k > em { font-style: normal; font: 700 15px/1.2 var(--body); color: #B9C9BF; }
+.es-dd { display: flex; gap: 5px; } .es-dd i { flex: 1; height: 8px; border-radius: 4px; background: rgba(243, 241, 234, .14); }
+.es-dd i.on { background: var(--gold); } .es-dd.up i.on { background: #4FCB7E; } .es-dd.dn i.on { background: #F08A5D; }
+.es-ch { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.es-ch > b { font: 800 26px/1 var(--display); white-space: nowrap; } .es-ch > b u { text-decoration: none; font: 700 15px/1 var(--body); color: #B9C9BF; margin-left: 5px; }
+.es-bars { position: relative; height: 34px; width: 86px; display: flex; align-items: flex-end; gap: 2px; border-top: 1.5px dashed rgba(243, 241, 234, .4); }
+.es-bars i { flex: 1; border-radius: 2px 2px 0 0; background: rgba(243, 241, 234, .38); } .es-bars i.f { background: var(--gold); }
