@@ -657,6 +657,10 @@
     const hidden = new Set(), sent = new Set(); // lances que o campinho ainda está jogando / já mandados para ele
     m.ev.forEach(e => sent.add(e)); // jogo retomado no meio: o que já aconteceu não volta a ser jogado no campinho
     let sim = null, wait = null, wantStop = false, h1 = !!m.half, h2 = m.min > 45, frz = 0, lineKey = ['', ''];
+    // Simulação livre (teste: ?livre=1 liga, ?livre=0 desliga): o gol nasce no campinho e o motor só anota (S.coMatchShot)
+    const FREE = useSim && !!(U.simLivre && U.simLivre());
+    // No livre o 3× dá ao campinho os mesmos segundos por minuto do 1× (o gol depende do que o campo joga): o jogo leva ~1,5 min
+    const spMs = k => (FREE && k === '3' ? 917 : SPEED[k][1]);
     const pitchHtml = useSim ?
       '<div class="lp-pitch lp-cvm lv-cvp" id="lp-pitch" aria-hidden="true"><b class="lp-band" id="lp-band"></b><canvas class="lp-cv" id="lp-cv"></canvas>' +
         '<span class="lp-tag lv-read" id="lv-zone" hidden></span><span class="lp-tag lp-zone" id="lp-zone"></span>' +
@@ -664,7 +668,7 @@
       '<div class="lv-pitch" id="lv-pitch"><div class="lv-f"><i class="c"></i><i class="b l"></i><i class="b r"></i></div><div id="lv-zone"></div><div id="lv-dots"></div><span class="lv-ball" id="lv-ball"></span>' +
         '<div class="lv-forms"><span><i class="us"></i><b id="lv-fu"></b></span><span><i class="th"></i><b id="lv-ft"></b></span></div></div>';
     const LDon = !!(U.LD && U.LD.on()); let ctx = null; // Treinador deitado: o mesmo jogo no palco de 844×390 (ui/coachland.js)
-    const feed0 = '<li><i>0\'</i><span>Bola rolando. ' + esc(nm(co.club)) + ' no ' + m.us.form + ', ' + esc(S.CO_STY[m.us.style].name.toLowerCase()) + '; ' + esc(nm(m.vs)) + ' no ' + m.them.form + '.</span></li>';
+    const feed0 = '<li><i>0\'</i><span>Bola rolando. ' + esc(nm(co.club)) + ' no ' + m.us.form + ', ' + esc(S.CO_STY[m.us.style].name.toLowerCase()) + '; ' + esc(nm(m.vs)) + ' no ' + m.them.form + '.' + (FREE ? ' <b>Simulação livre (teste).</b>' : '') + '</span></li>';
     const speedHtml = '<div class="lv-speed" id="lv-speed">' + ['1', '3'].map(k => '<button data-sp="' + k + '"' + (k === co.speed ? ' class="on"' : '') + '>' + SPEED[k][0] + '</button>').join('') + '<button data-sp="fim" aria-label="Pular para o fim">' + ICO.ff + '</button></div>';
     if (LDon) U.LD.show(U.LD.liveHtml({ H, A, m, pitchHtml, feed0, speedHtml, crestB, pause: ICO.pause }));
     else render('<div class="lv">' +
@@ -774,8 +778,8 @@
       if (sim) sim.go(); // o apito (se a velocidade mudou antes dele, o timer do começo foi trocado)
       if (sim && h1 && !h2) { h2 = true; sim.second(); }
       if (sim && sim.koWait && sim.koWait()) { timer = setTimeout(tick, 150); return; } // o relógio só anda depois do apito da saída
-      const st = S.coMatchStep(co, m, m.min + 1);
-      if (sim) { const tk = m.tk || m.min, v = m.mom && m.mom[tk - 1]; sim.minute(tk, v === undefined ? 50 : v); } // o campinho conta os minutos jogados (com os acréscimos)
+      const st = S.coMatchStep(co, m, m.min + 1, FREE && sim ? { free: true } : undefined);
+      if (sim) { const tk = m.tk || m.min, v = m.mom && m.mom[tk - 1]; sim.minute(tk, v === undefined ? 50 : v, FREE && m.lam ? [m.lam.us, m.lam.them] : undefined); } // o campinho conta os minutos jogados (com os acréscimos)
       const gw = toSim();
       paint();
       const go = () => {
@@ -783,7 +787,7 @@
         if (wantStop) { wantStop = false; $('b-lv-stop').classList.remove('on'); if (!m.done) return sheet(st && st.t !== 'fim' && st.t !== 'gol' ? st : { t: 'pausa' }); }
         if (st && st.t !== 'fim' && st.t !== 'gol') return sheet(st); // gol não para o jogo (Silvio, 2026-11-09): o placar e o painel contam
         if (m.done) return end();
-        timer = setTimeout(tick, SPEED[co.speed][1]);
+        timer = setTimeout(tick, spMs(co.speed));
       };
       if (gw) { wait = go; return gw(go); }
       go();
@@ -985,7 +989,7 @@
       sfx('tap'); const k = b.dataset.sp;
       if (k === 'fim') { co.speed = 'fim'; if (!open) toEnd(); return; }
       co.speed = k; $('lv-speed').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-      if (!open && !wait) { clearTimeout(timer); timer = setTimeout(tick, SPEED[k][1]); }
+      if (!open && !wait) { clearTimeout(timer); timer = setTimeout(tick, spMs(k)); }
     });
     // Durante a jogada de um gol que o motor já decidiu, o pedido fica guardado e o jogo para logo depois da rede balançar
     $('b-lv-stop').onclick = () => { if (open || m.done) return; sfx('tap'); if (wait) { wantStop = true; $('b-lv-stop').classList.add('on'); return; } sheet({ t: 'pausa' }); };
@@ -1001,7 +1005,8 @@
         if (z.textContent !== txt) z.textContent = txt;
         if (z.className !== zc) z.className = zc;
       };
-      sim = LP.sim({ me: -1, t0: m.tk || m.min, half2: m.min > 45, clean: LDon, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1.25), spm: () => SPEED[co.speed === '3' ? '3' : '1'][1] / 1000, onFrame: zone,
+      sim = LP.sim({ me: -1, t0: m.tk || m.min, half2: m.min > 45, clean: LDon, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1.25), spm: () => spMs(co.speed === '3' ? '3' : '1') / 1000, onFrame: zone,
+        free: FREE, onShot: sh => { if (m.done) return; const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, sh); if (e) { sent.add(e); paint(); } },
         onPick: (side, inf) => { if (ctx && side === 0 && inf && inf.id) U.LD.livePlayer(ctx, inf.id); },
         seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]] });
       lineKey = [m.us, m.them].map(s => s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style);

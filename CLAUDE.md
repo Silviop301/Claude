@@ -76,6 +76,7 @@ NODE_PATH=$(npm root -g) node tools/craque_telas_deitado.js /tmp/ld [1,2,3,4]   
 NODE_PATH=$(npm root -g) node tools/craque_home_deitada.js /tmp/hl   # home deitada (fotos: vazia, carreiras, vagas cheias, Relâmpago pedindo para girar, em pé)
 node tools/craque_invariantes.js [n] [semente]       # regras do motor (sem NaN, faixas 0–100/0–99, dinheiro >= 0) e save no meio que termina igual; esperado 0 falhas
 node tools/craque_campinho.js [jogos]               # campinho ao vivo (livesim.js) sem tela, partida do 1× (13000 passos): pulos da bola, bonecos encostados, passes/chutes/posse (por 2 min), passes por posse de cada estilo, linha por estilo, overall, gols do motor na rede; esperado 0 alertas
+node tools/craque_campinho_livre.js [jogos] [semente]  # simulação livre (teste ?livre=1): temporadas do robô com o campinho decidindo cada jogo; gols por jogo e por força do ataque contra o que o motor espera (padrão 300 jogos, ~5 min); esperado 0 alertas
 NODE_PATH=$(npm root -g) node tools/craque_e2e.js 2 390 4   # carreiras pela interface (Playwright); MODO=completa na Carreira Completa
 NODE_PATH=$(npm root -g) node tools/craque_telas.js /tmp/antes   # foto de cada tela (carreira com sorteio fixo + telas de fora + minigames); DESKTOP=1 ... 1440 900 no computador, SO=evento,lance só algumas
 DESKTOP=1 TR=/tmp/tr node tools/craque_e2e.js 3 1280 3      # idem no computador, gravando o texto de cada tela em /tmp/tr
@@ -151,6 +152,20 @@ dividem ajudantes por `CRAQUE_SIM._`. O motor não usa DOM: roda no navegador e 
 desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da criação, `c.look`),
 `card.js` (carta em canvas), `trophies.js`, `ball3d.js` (bola 3D da tela inicial), `kits-real.js`
 (uniformes reais), `sound.js` (Web Audio), `errors.js` (envia erros ao servidor).
+
+**Campinho, movimento e chute (2026-11-09):** as constantes no topo do `sim` em `livesim.js` (cada uma lê a variável de ambiente
+de mesmo nome no Node) dão o peso do movimento (`CALM0/CALMK/V_CALM`, `ACC_*`, `SUPP`, `HOLD0/KEEP_*`, `MKEEP`, `PRK`, bola de
+referência suavizada `SB`) e a força do chute (`SHOT_PRE`, `SHOT_DRAG`, `GK_DIVE`, rede `net`, rastro `bt`).
+
+**Simulação livre (teste do Silvio, 2026-11-10; o jogo normal não muda):** `?livre=1` liga neste aparelho (`climbix-sim-livre`,
+`U.simLivre` em `start.js`; `?livre=0` desliga). No ao vivo do Treinador o motor deixa de sortear gol e chance
+(`S.coMatchStep(co, m, até, { free: true })`): só manda a força do ataque de cada lado no minuto (`m.lam`, que a tela passa em
+`sim.minute(t, mom, [seu, deles])`) e o pênalti. O campinho (`LP.sim({ free, onShot })`) parte para o ataque sozinho (`att`,
+`attStart`/`attEnd`: a mesma jogada pelo estilo de `duePick`, sem proteção contra desarme, corte e trava; frequência `ATT_R`,
+`ATT_G`, `ATT_CD`) e sorteia cada chute na hora em `freeRoll` (ângulo do gol, gente na frente, marcação, cabeça, quem bate
+contra o goleiro, `lamF`; `FXG_K`, `FXG_G`); cada chute volta por `onShot` e entra na súmula com `S.coMatchShot` (placar,
+chutes, escanteio, lance com o nome). Pular para o fim e o jogo largado seguem pelo motor. No livre o 3× anda 917 ms por
+minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa dessas constantes: `craque_campinho_livre.js`.
 
 ### Telas — `craque/src/ui/` (uma tela ou grupo por arquivo)
 
