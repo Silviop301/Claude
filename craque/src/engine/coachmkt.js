@@ -81,17 +81,26 @@
   };
   // Potencial em palavras (com relatório): o quanto ainda cresce
   S.coMktPot = p => { const g = p.pot - p.ovr; return g >= 12 ? ['Ainda cresce bastante', 4] : g >= 6 ? ['Ainda cresce', 3] : g >= 2 ? ['Cresce pouco', 2] : ['Já está no auge', 1]; };
-  // Jeito de jogar: 2 características (e uma fraqueza no relatório completo). Sorteadas pelo jogador até a API trazer as reais.
+  // Jeito de jogar: 2 características (e uma fraqueza no relatório completo), tiradas dos atributos do jogador (S.coAttrs):
+  // vale o quanto cada atributo está acima ou abaixo do normal da posição (S.CO_AT.prof), não o número puro, senão todo
+  // atacante seria "Finalização". Cada entrada: [texto, índice do atributo]; dois textos no mesmo atributo, o jogador escolhe um.
   const TR = {
-    GOL: [['Bom no alto', 'Reflexo rápido', 'Sai bem do gol', 'Joga com os pés'], ['Fraco no alto', 'Demora a sair', 'Erra com os pés']],
-    ZAG: [['Forte no alto', 'Rápido', 'Bom no desarme', 'Sai jogando bem', 'Líder'], ['Sai jogando mal', 'Lento', 'Erra no alto']],
-    LAT: [['Rápido', 'Bom cruzamento', 'Fôlego', 'Marca bem'], ['Marca mal', 'Cruza mal', 'Cansa cedo']],
-    MEI: [['Bom passe', 'Chute de fora', 'Drible', 'Rouba bola', 'Visão de jogo'], ['Perde a bola', 'Lento', 'Marca mal']],
-    ATA: [['Finalização', 'Rápido', 'Forte no alto', 'Drible', 'Faro de gol'], ['Desperdiça', 'Fraco no alto', 'Isolado']]
+    GOL: [[['Reflexo rápido', 0], ['Bem colocado', 1], ['Sai bem do gol', 2], ['Bom no alto', 3], ['Joga com os pés', 4], ['Pega pênalti', 5]], [['Reflexo lento', 0], ['Mal colocado', 1], ['Demora a sair', 2], ['Fraco no alto', 3], ['Erra com os pés', 4]]],
+    ZAG: [[['Sai jogando bem', 1], ['Bom no desarme', 3], ['Líder', 3], ['Rápido', 4], ['Forte no alto', 5]], [['Sai jogando mal', 1], ['Perde a bola', 2], ['Desarma pouco', 3], ['Lento', 4], ['Erra no alto', 5]]],
+    LAT: [[['Bom cruzamento', 1], ['Drible', 2], ['Marca bem', 3], ['Rápido', 4], ['Fôlego', 5]], [['Cruza mal', 1], ['Perde a bola', 2], ['Marca mal', 3], ['Lento', 4], ['Cansa cedo', 5]]],
+    MEI: [[['Chute de fora', 0], ['Bom passe', 1], ['Visão de jogo', 1], ['Drible', 2], ['Rouba bola', 3], ['Rápido', 4], ['Fôlego', 5]], [['Chuta mal', 0], ['Erra passe', 1], ['Perde a bola', 2], ['Marca mal', 3], ['Lento', 4], ['Cansa cedo', 5]]],
+    ATA: [[['Finalização', 0], ['Faro de gol', 0], ['Garçom', 1], ['Drible', 2], ['Rápido', 4], ['Forte no alto', 5]], [['Desperdiça', 0], ['Isolado', 1], ['Perde a bola', 2], ['Lento', 4], ['Fraco no alto', 5]]]
   };
   S.coMktTraits = p => {
-    const L = TR[p.pos] || TR.MEI, h = hash(p.id + '|jeito'), a = h % L[0].length, b = (a + 1 + (h >>> 4) % (L[0].length - 1)) % L[0].length;
-    return { good: [L[0][a], L[0][b]], bad: L[1][(h >>> 9) % L[1].length] };
+    const pos = TR[p.pos] ? p.pos : 'MEI', L = TR[pos], at = S.coAttrs(p), pr = S.CO_AT.prof[pos], h = hash(p.id + '|jeito');
+    const dv = at.map((v, i) => v - p.ovr - pr[i]);
+    // um texto por atributo (o jogador escolhe entre os que dividem o mesmo), do mais acima do normal para o menos
+    const by = {}; L[0].forEach(t => (by[t[1]] = by[t[1]] || []).push(t[0]));
+    const ord = Object.keys(by).map(Number).sort((a, b) => dv[b] - dv[a] || a - b);
+    const good = ord.slice(0, 2).map(i => by[i][(h >>> (i * 2)) % by[i].length]);
+    // ponto fraco: o atributo mais abaixo do normal entre os que têm texto, sem repetir um ponto forte
+    const bad = L[1].filter(t => ord.indexOf(t[1]) < 0 || ord.indexOf(t[1]) > 1).sort((a, b) => dv[a[1]] - dv[b[1]] || a[1] - b[1])[0];
+    return { good, bad: bad[0], gi: ord.slice(0, 2), bi: bad[1] };
   };
 
   // ---------- filtros ----------

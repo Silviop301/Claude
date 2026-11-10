@@ -13,6 +13,8 @@
 //     titular, então um artilheiro reserva tem geral baixo e não chega nos primeiros.
 //  6. Geral mudou (evolução, sem clube do mercado): os atributos acompanham e o jeito do jogador continua.
 //  7. Save antigo: jogador sem atributos ganha os dele, sempre os mesmos, e passa pelo JSON sem mudar.
+//  8. Jeito de jogar do mercado (S.coMktTraits): os 2 pontos fortes saem dos atributos mais acima do normal da posição,
+//     o ponto fraco de um atributo abaixo deles, o mesmo jogador tem sempre o mesmo jeito e nenhum texto domina a posição.
 const D = require('../craque/src/data.js');
 const S = require('../craque/src/sim.js');
 const R = (() => { try { return require('../craque/src/real-squads.js'); } catch (e) { return null; } })();
@@ -24,6 +26,18 @@ const avg = a => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
 const sd = a => { const m = avg(a); return Math.sqrt(avg(a.map(x => (x - m) * (x - m)))); };
 
 let n = 0; const by = {};
+// 8. jeito de jogar: confere contra os atributos e conta os textos por posição
+const trN = {}, trB = {};
+function jeito(cl, p, v) {
+  const t = S.coMktTraits(p), t2 = S.coMktTraits(JSON.parse(JSON.stringify(p))), dv = v.map((x, i) => x - p.ovr - AT.prof[p.pos][i]);
+  if (!t || t.good.length !== 2 || t.good[0] === t.good[1] || !t.bad) return alert('jeito: ' + cl.id + ' ' + p.n + ' ' + JSON.stringify(t));
+  if (t.good.join() !== t2.good.join() || t.bad !== t2.bad) alert('jeito muda: ' + cl.id + ' ' + p.n);
+  if (t.gi.indexOf(t.bi) >= 0 || dv[t.bi] > Math.min(dv[t.gi[0]], dv[t.gi[1]])) alert('jeito: ponto fraco acima do forte em ' + cl.id + ' ' + p.n);
+  const rk = i => dv.filter(x => x > dv[i]).length;   // 0 = o atributo mais acima do normal da posição
+  if (rk(t.gi[0]) > 2 || dv.filter(x => x < dv[t.bi]).length > 2) alert('jeito: forte na metade de baixo ou fraco na de cima em ' + cl.id + ' ' + p.n + ' (' + t.good[0] + ', ' + t.bad + ')');
+  const a = trN[p.pos] = trN[p.pos] || { n: 0 }, b = trB[p.pos] = trB[p.pos] || { n: 0 };
+  a.n++; t.good.forEach(x => (a[x] = (a[x] || 0) + 1)); b.n++; b[t.bad] = (b[t.bad] || 0) + 1;
+}
 for (let s = 0; s < SEASONS; s++) {
   D.CLUBS.forEach(cl => {
     const sq = S.coGenSquad(cl.id, s), again = S.coGenSquad(cl.id, s);
@@ -34,6 +48,7 @@ for (let s = 0; s < SEASONS; s++) {
       if (Math.round(wmean(p.pos, v)) !== p.ovr) alert('geral: ' + cl.id + ' ' + p.n + ' geral ' + p.ovr + ' média ' + wmean(p.pos, v).toFixed(2));
       if (again[i].at.join() !== v.join()) alert('repetição: ' + cl.id + ' ' + p.n);
       if (s === 0) (by[p.pos] = by[p.pos] || []).push({ v, ovr: p.ovr });
+      if (s === 0) jeito(cl, p, v);
     });
   });
 }
@@ -83,12 +98,19 @@ S.coGenSquad(D.CLUBS[10].id, 1).forEach(p => {
   if (a !== b || a !== S.coAttrs(o2).join()) alert('save antigo: ' + p.n + ' mudou de atributos');
 });
 
+Object.keys(trN).forEach(pos => {
+  Object.keys(trN[pos]).forEach(k => { if (k !== 'n' && trN[pos][k] / trN[pos].n > 0.6) alert('jeito: "' + k + '" em ' + Math.round(100 * trN[pos][k] / trN[pos].n) + '% dos ' + pos); });
+  Object.keys(trB[pos]).forEach(k => { if (k !== 'n' && trB[pos][k] / trB[pos].n > 0.6) alert('ponto fraco: "' + k + '" em ' + Math.round(100 * trB[pos][k] / trB[pos].n) + '% dos ' + pos); });
+});
+
 const f = a => a.map(x => String(Math.round(x)).padStart(3)).join(' ');
 console.log('Atributos: ' + n + ' jogadores, ' + D.CLUBS.length + ' clubes, ' + SEASONS + ' temporadas');
 console.log('Média por posição (temporada 0)      ' + AT.keys.L.map(k => AT.short[k]).join(' '));
 ['ZAG', 'LAT', 'MEI', 'ATA'].forEach(pos => console.log('  ' + pos + ' (geral ' + Math.round(avg(by[pos].map(o => o.ovr))) + ')                    ' + f(m[pos])));
 console.log('  GOL (geral ' + Math.round(avg(by.GOL.map(o => o.ovr))) + ')                    ' + f(m.GOL) + '   (' + AT.keys.G.map(k => AT.short[k]).join(' ') + ')');
 if (rc) console.log('Elencos reais: ' + rc + ' clubes · artilheiro acima do normal da posição em ' + upG + ' de ' + nG + ' (entre os 3 do elenco em ' + topG + ') · garçom em ' + upA + ' de ' + nA + ' (entre os 3 em ' + topA + ')');
+console.log('Jeito de jogar (% dos jogadores da posição com cada ponto forte | ponto fraco)');
+['GOL', 'ZAG', 'LAT', 'MEI', 'ATA'].forEach(pos => { const pc = o => Object.keys(o).filter(k => k !== 'n').sort((x, y) => o[y] - o[x]).map(k => k + ' ' + Math.round(100 * o[k] / o.n)).join(' · '); console.log('  ' + pos + '  ' + pc(trN[pos]) + '  |  ' + pc(trB[pos])); });
 console.log('Geral mudou: ponto forte mantido em ' + Math.round(100 * keep / tot) + '% (' + tot + ' casos)');
 alerts.forEach(a => console.log('ALERTA ' + a));
 console.log(alerts.length + ' alertas');
