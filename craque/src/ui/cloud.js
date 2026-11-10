@@ -146,7 +146,8 @@
       done(); screen('login', 'Esse login começou em outro navegador ou expirou. Toque de novo em "Continuar com…" aqui.'); return true;
     }
     G.c = null; G.step = null; bar();
-    render('<div class="eyebrow">Conta</div><h2>Entrando…</h2><p class="muted">Conferindo com o ' + esc(pname(p)) + '.</p>');
+    if (LAND()) U.LD.show('<div class="cnta ct-wait"><b>Entrando…</b><small>Conferindo com o ' + esc(pname(p)) + '.</small></div>', null, 'O Climbix é jogado com o celular deitado.');
+    else render('<div class="eyebrow">Conta</div><h2>Entrando…</h2><p class="muted">Conferindo com o ' + esc(pname(p)) + '.</p>');
     const code = m[2], a = acc();
     if (o.link && a) {
       post('oauth', { code, verifier: o.v, token: a.token }).then(r => { done(); keep(r); screen('account', pname(p) + ' conectado. Agora dá para entrar com ele em qualquer aparelho.', true); },
@@ -186,6 +187,22 @@
   const top = (back, eyebrow, title) => '<button class="back-link" id="' + (back === 'Início' ? 'b-back-home' : 'b-back-acc') + '">‹ ' + back + '</button><div class="eyebrow">' + eyebrow + '</div><h2>' + esc(title) + '</h2>';
   const note = (msg, ok) => (msg ? '<p class="' + (ok ? 'acc-ok' : 'acc-err') + '">' + esc(msg) + '</p>' : '');
   const field = (id, label, attrs) => '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" ' + attrs + ' required></div>';
+  // ---------- Conta deitada (2026-11-10, quadro 54) ----------
+  // Com a home deitada, as telas da conta saem no palco U.LD: cabeçalho de uma linha, o cartão creme à esquerda (formulário
+  // ou a conta aberta) e a coluna de apoio à direita. Os ids dos botões e campos são os mesmos da tela em pé, então quem
+  // liga os toques é o mesmo código. backFn = para onde o Voltar leva (os Ajustes); sem ele, a home
+  const LAND = () => !!(U.landOk && U.landOk() && U.LD);
+  let backFn = null;
+  const goBack = () => (backFn || U.home)();
+  const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+  function land(backId, sub, card, side) {
+    U.LD.show('<div class="cnta"><div class="tm-h"><button class="tcr-back" id="' + backId + '" aria-label="Voltar">' + BK + '</button><b>Conta</b>' + (sub ? '<small>' + sub + '</small>' : '') +
+      '<span class="ct-lg"><a href="privacidade.html" target="_blank" rel="noopener">Privacidade</a><a href="termos.html" target="_blank" rel="noopener">Termos</a></span></div>' +
+      '<div class="ct-card">' + card + '</div><div class="ct-side">' + side + '</div></div>', st => { if (U.LD.lift) U.LD.lift(st.querySelector('.cnta')); }, 'O Climbix é jogado com o celular deitado.');
+  }
+  const lmsg = (msg, ok) => '<p class="ct-msg' + (ok ? ' ok' : '') + '" role="status">' + (msg ? esc(msg) : '') + '</p>';
+  const lfield = (id, label, attrs) => '<input class="ct-in" id="' + id + '" placeholder="' + label + '" aria-label="' + label + '" ' + attrs + ' required>';
+  const RESET_L = '<button class="ct-gh red" id="b-reset">Reiniciar progresso</button>';
   // ---------- reiniciar progresso ----------
   // Apaga carreiras, coleção, Hall da Fama, conquistas, Sala de Troféus, carreira do dia e itens.
   // Ficam: a conta, o nome no ranking, as configurações e o som. Com conta, a nuvem também recomeça
@@ -204,7 +221,7 @@
     raw(KEYS.reset, Date.now());
     if (U.ITEMS) U.ITEMS.reset(); // o inventário recomeça (10 números novos) na próxima leitura
     G.c = null; G.step = null;
-    const done = () => { U.home(); U.ask('Progresso reiniciado', 'Tudo pronto para começar do zero.', 'Nova carreira', () => U.create(), 'Fechar'); };
+    const done = () => { U.home(); if (LAND()) U.ask('Progresso reiniciado', 'Tudo pronto para começar do zero.', 'OK', () => {}, 'Fechar'); else U.ask('Progresso reiniciado', 'Tudo pronto para começar do zero.', 'Nova carreira', () => U.create(), 'Fechar'); };
     if (acc()) sync().then(done, done); else done();
   }
   const LEGAL = '<p class="muted small acc-legal"><a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos de uso</a></p>';
@@ -229,8 +246,10 @@
 
   // Conta aberta: status da nuvem e formas de entrar
   function accountScreen(msg, ok) {
-    const a = acc();
-    render(top('Início', 'Conta', a.user) +
+    const a = acc(), L = LAND();
+    if (L) land('b-back-home', '', '<small class="ct-lb2">SUA CONTA</small><b class="ct-name">' + esc(a.user) + '</b><span class="ct-st" id="cloud-msg">' + stTxt() + '</span>' + lmsg(msg, ok) + '<i></i><button class="ct-go" id="b-sync">Sincronizar agora</button>',
+      '<div class="ct-pn"><span class="ct-lb">FORMAS DE ENTRAR</span><div class="ct-ways" id="acc-ways"><p class="ct-note">carregando…</p></div></div><i></i><div class="ct-row"><button class="ct-gh" id="b-logout">Sair da conta</button>' + RESET_L + '</div>');
+    else render(top('Início', 'Conta', a.user) +
       '<p class="lead">Seu jogo fica salvo na nuvem: carreira em andamento, coleção, Hall da Fama e conquistas. Entre com a mesma conta em outro aparelho para continuar.</p>' +
       note(msg, ok) +
       '<p class="muted acc-st" id="cloud-msg">' + stTxt() + '</p>' +
@@ -238,7 +257,7 @@
       '<div class="eyebrow small acc-ways-t">Formas de entrar</div><div class="acc-ways" id="acc-ways"><p class="muted small">carregando…</p></div>' +
       '<button class="btn ghost" id="b-logout">Sair desta conta</button>' + RESET + LEGAL);
     bindReset();
-    $('b-back-home').onclick = U.home;
+    $('b-back-home').onclick = L ? goBack : U.home;
     $('b-sync').onclick = () => { $('cloud-msg').textContent = 'salvando…'; sync().then(() => { $('cloud-msg').textContent = stTxt(); showWays(); }); };
     $('b-logout').onclick = () => U.ask('Sair da conta?', 'O jogo continua neste aparelho; só para de salvar na nuvem.', 'Sair', () => {
       post('logout', { token: a.token }).catch(() => {});
@@ -251,11 +270,18 @@
     if (!list) return providers().then(showWays);
     const el = $('acc-ways'), a = acc();
     if (!el || !a) return;
-    if (!a.links) { el.innerHTML = '<p class="muted small">Sem conexão: as formas de entrar aparecem quando a conta sincronizar.</p>'; return; }
+    const L = el.classList.contains('ct-ways');
+    if (!a.links) { el.innerHTML = '<p class="' + (L ? 'ct-note' : 'muted small') + '">Sem conexão: as formas de entrar aparecem quando a conta sincronizar.</p>'; return; }
     const links = a.links || [], on = p => links.find(l => l.p === p);
     const ps = Object.keys(PROV).filter(p => list.includes(p) || on(p));
     const last = !a.pass && links.length <= 1; // sem senha, o único serviço não pode sair
-    el.innerHTML = ps.map(p => {
+    if (L) {
+      el.classList.toggle('many', ps.length > 1);
+      el.innerHTML = ps.map(p => { const l = on(p);
+        return '<div class="ct-way">' + pico(p) + '<span><b>' + PROV[p].name + '</b><small>' + (l ? esc(l.label || 'conectado') : 'não conectado') + '</small></span>' +
+          (l ? (last ? '' : '<button class="ct-lk" data-un="' + p + '">desconectar</button>') : '<button class="ct-lk" data-ln="' + p + '">conectar</button>') + '</div>'; }).join('') +
+        '<div class="ct-way"><span class="prov-ico">' + U.ICON.lock + '</span><span><b>Senha</b><small>' + (a.pass ? 'criada' : 'sem senha') + '</small></span><button class="ct-lk" id="b-pass">' + (a.pass ? 'trocar' : 'criar') + '</button></div>';
+    } else el.innerHTML = ps.map(p => {
       const l = on(p);
       return '<div class="acc-way">' + pico(p) + '<span><b>' + PROV[p].name + '</b><small>' + (l ? esc(l.label || 'conectado') : 'não conectado') + '</small></span>' +
         (l ? (last ? '' : '<button class="link-btn" data-un="' + p + '">desconectar</button>') : '<button class="btn ghost small-btn" data-ln="' + p + '">Conectar</button>') + '</div>';
@@ -274,10 +300,15 @@
 
   // Criar ou trocar a senha. Quem entrou por um serviço ligado não precisa da atual: é a recuperação de senha
   function passScreen(msg) {
-    const a = acc();
-    render(top('Conta', 'Conta', a.pass ? 'Trocar senha' : 'Criar senha') +
-      '<p class="lead">' + (!a.pass ? 'Com senha, dá para entrar só com usuário e senha, sem depender de outro serviço.'
-        : a.needold ? 'Digite a senha atual e a nova.' : 'Você entrou por um serviço ligado à conta: pode criar uma senha nova sem a antiga.') + '</p>' +
+    const a = acc(), L = LAND();
+    const lead = !a.pass ? 'Com senha, dá para entrar só com usuário e senha, sem depender de outro serviço.'
+      : a.needold ? 'Digite a senha atual e a nova.' : 'Você entrou por um serviço ligado à conta: pode criar uma senha nova sem a antiga.';
+    if (L) land('b-back-acc', '', '<b class="ct-tt">' + (a.pass ? 'Trocar senha' : 'Criar senha') + '</b><form class="ct-form" id="acc-form" autocomplete="on"><input type="text" name="username" autocomplete="username" value="' + esc(a.user) + '" hidden>' +
+        (a.pass && a.needold ? lfield('acc-old', 'Senha atual', 'type="password" autocomplete="current-password"') : '') + lfield('acc-pass', 'Nova senha', 'type="password" autocomplete="new-password" minlength="6"') +
+        lmsg(msg) + '<i></i><button class="ct-go" id="acc-go" type="submit">Salvar senha</button></form>',
+      '<div class="ct-pn"><p class="ct-tx">' + lead + '</p>' + (a.pass ? '<p class="ct-note">Os outros aparelhos vão precisar entrar de novo.</p>' : '') + '</div>');
+    else render(top('Conta', 'Conta', a.pass ? 'Trocar senha' : 'Criar senha') +
+      '<p class="lead">' + lead + '</p>' +
       '<form class="acc-form" id="acc-form" autocomplete="on"><input type="text" name="username" autocomplete="username" value="' + esc(a.user) + '" hidden>' +
       (a.pass && a.needold ? field('acc-old', 'Senha atual', 'type="password" autocomplete="current-password"') : '') +
       field('acc-pass', 'Nova senha', 'type="password" autocomplete="new-password" minlength="6"') +
@@ -291,8 +322,14 @@
 
   // Sem conta: entrar ou criar, com usuário e senha ou com um serviço
   function loginScreen(mode, msg) {
-    const reg = mode === 'register';
-    render(top('Início', 'Salvar na nuvem', reg ? 'Criar conta' : 'Entrar') +
+    const reg = mode === 'register', L = LAND();
+    if (L) land('b-back-home', 'suas carreiras e moedas em qualquer aparelho',
+      '<div class="ct-seg"><button type="button"' + (reg ? ' id="acc-switch"' : ' class="on" aria-pressed="true"') + '>Entrar</button><button type="button"' + (reg ? ' class="on" aria-pressed="true"' : ' id="acc-switch"') + '>Criar conta</button></div>' +
+        '<form class="ct-form" id="acc-form" autocomplete="on">' + lfield('acc-user', 'Usuário', USER) +
+        lfield('acc-pass', 'Senha', 'name="password" type="password" autocomplete="' + (reg ? 'new-password' : 'current-password') + '" minlength="6"') +
+        lmsg(msg) + '<i></i><button class="ct-go" id="acc-go" type="submit">' + (reg ? 'Criar conta' : 'Entrar') + '</button></form>',
+      '<div id="acc-prov"></div>' + (reg ? '<p class="ct-tx pad" id="acc-hint">Guarde bem a senha: não dá para recuperar por e-mail.</p>' : '<button class="ct-gh" id="acc-forgot">Esqueci a senha</button>') + '<i></i>' + RESET_L);
+    else render(top('Início', 'Salvar na nuvem', reg ? 'Criar conta' : 'Entrar') +
       '<p class="lead">' + (reg ? 'Seu usuário também vira seu nome no ranking.' : 'Continue suas carreiras em qualquer aparelho.') + '</p>' +
       '<div class="acc-prov" id="acc-prov"></div>' +
       '<form class="acc-form" id="acc-form" autocomplete="on">' +
@@ -303,7 +340,7 @@
       (reg ? '<p class="muted small" id="acc-hint">Guarde bem a senha: não dá para recuperar por e-mail.</p>'
         : '<button class="link-btn" id="acc-forgot">Esqueci a senha</button>') + '</div>' + RESET + LEGAL);
     bindReset();
-    $('b-back-home').onclick = U.home;
+    $('b-back-home').onclick = L ? goBack : U.home;
     $('acc-switch').onclick = () => screen(reg ? 'login' : 'register');
     // Recuperar a senha só existe com serviço ligado à conta: as mensagens dependem de haver serviço configurado
     let names = '';
@@ -314,7 +351,8 @@
       if (!el || !list.length) return;
       names = list.map(pname).join(', ').replace(/, ([^,]*)$/, ' ou $1');
       if ($('acc-hint')) $('acc-hint').textContent = 'Guarde bem a senha. Para poder recuperar a conta, conecte ' + names + ' depois.';
-      el.innerHTML = list.map(p => '<button class="btn ghost prov-btn" data-p="' + p + '">' + pico(p) + 'Continuar com ' + PROV[p].name + '</button>').join('') +
+      if (L) el.innerHTML = '<div class="ct-pn' + (list.length > 1 ? ' many' : '') + '"><span class="ct-lb">MAIS RÁPIDO</span>' + list.map(p => '<button class="ct-gg" data-p="' + p + '">' + pico(p) + 'Continuar com ' + PROV[p].name + '</button>').join('') + '</div>';
+      else el.innerHTML = list.map(p => '<button class="btn ghost prov-btn" data-p="' + p + '">' + pico(p) + 'Continuar com ' + PROV[p].name + '</button>').join('') +
         '<div class="acc-or">ou com usuário e senha</div>';
       el.querySelectorAll('[data-p]').forEach(b => { b.onclick = () => oauthGo(b.dataset.p, b); });
     });
@@ -329,8 +367,14 @@
   // Primeira vez com esse serviço: criar conta nova ou ligar o serviço a uma conta que já existe
   function pendingScreen(mode, msg) {
     const o = pending(), n = pname(o.p), join = mode === 'join';
-    const who = o.label ? '<b>' + esc(o.label) + '</b>' : 'Essa conta ' + esc(n);
-    render(top('Início', 'Continuar com ' + n, join ? 'Ligar à sua conta' : 'Primeiro acesso') +
+    const who = o.label ? '<b>' + esc(o.label) + '</b>' : 'Essa conta ' + esc(n), L = LAND();
+    const swTxt = join ? 'Não tenho conta: criar uma nova' : 'Já tenho conta no Climbix: ligar o ' + esc(n) + ' a ela';
+    if (L) land('b-back-home', 'continuar com ' + esc(n),
+      '<b class="ct-tt">' + (join ? 'Ligar à sua conta' : 'Primeiro acesso') + '</b><form class="ct-form" id="acc-form" autocomplete="on">' + lfield('acc-user', 'Usuário', USER + (join ? '' : ' value="' + esc(o.suggest || '') + '"')) +
+        (join ? lfield('acc-pass', 'Senha', 'name="password" type="password" autocomplete="current-password"') : '') + lmsg(msg) + '<i></i><button class="ct-go" id="acc-go" type="submit">' + (join ? 'Entrar e ligar' : 'Criar conta') + '</button></form>',
+      '<div class="ct-pn"><p class="ct-tx">' + (join ? 'Entre com o usuário e a senha da sua conta do Climbix. Depois disso, o ' + esc(n) + ' também entra nela.' : who + ' ainda não está ligada a nenhuma conta do Climbix. Escolha seu usuário.') + '</p></div>' +
+      '<button class="ct-gh" id="acc-switch">' + (join ? swTxt : 'Já tenho conta: ligar o ' + esc(n)) + '</button>');
+    else render(top('Início', 'Continuar com ' + n, join ? 'Ligar à sua conta' : 'Primeiro acesso') +
       '<p class="lead">' + (join ? 'Entre com o usuário e a senha da sua conta do Climbix. Depois disso, o ' + esc(n) + ' também entra nela.'
         : who + ' ainda não está ligada a nenhuma conta do Climbix. Escolha seu usuário: ele também vira seu nome no ranking.') + '</p>' +
       '<form class="acc-form" id="acc-form" autocomplete="on">' +
@@ -338,7 +382,7 @@
       (join ? field('acc-pass', 'Senha', 'name="password" type="password" autocomplete="current-password"') : '') +
       note(msg) + '<button class="btn" id="acc-go" type="submit">' + (join ? 'Entrar e ligar' : 'Criar conta') + '</button></form>' +
       '<div class="acc-links"><button class="link-btn" id="acc-switch">' + (join ? 'Não tenho conta: criar uma nova' : 'Já tenho conta no Climbix: ligar o ' + esc(n) + ' a ela') + '</button></div>');
-    $('b-back-home').onclick = () => { localStorage.removeItem(OKEY); U.home(); };
+    $('b-back-home').onclick = () => { localStorage.removeItem(OKEY); (L ? goBack : U.home)(); };
     $('acc-switch').onclick = () => screen(join ? 'new' : 'join');
     submit(join ? 'Entrando…' : 'Criando…', () => {
       const user = $('acc-user').value.trim(), link = { link: o.code, verifier: o.v };
@@ -388,5 +432,5 @@
     go();
   }
   window.CLIMBIX_CLOUD = { touch, sync };
-  Object.assign(U, { cloudStatus: () => (acc() ? stTxt() : null), cloudName: () => { const a = acc(); return a ? a.user : 'Conta'; }, cloudLine: homeLine, cloud: screen, cloudBoot: boot, cloudMerge: merge, payStatus, payCreate, payCheck, payBoot });
+  Object.assign(U, { cloudStatus: () => (acc() ? stTxt() : null), cloudName: () => { const a = acc(); return a ? a.user : 'Conta'; }, cloudLine: homeLine, cloud: (mode, msg, ok, back) => { backFn = back || null; screen(mode, msg, ok); }, cloudBoot: boot, cloudMerge: merge, payStatus, payCreate, payCheck, payBoot });
 })();

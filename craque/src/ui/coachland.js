@@ -52,6 +52,20 @@
     st.querySelectorAll('[data-rail]').forEach(b => b.onclick = () => { sfx('tap'); go(b.dataset.rail); });
     bind && bind(st);
   }
+  // Teclado do celular deitado cobre a metade de baixo da tela: com um campo em foco, a tela (root) sobe até o campo ficar
+  // no alto do palco e desce quando o foco sai. Só em tela de toque (Conta e Sua opinião)
+  function lift(root) {
+    if (!root || !window.matchMedia || !matchMedia('(pointer: coarse)').matches) return;
+    const isField = t => !!(t && t.matches && t.matches('input:not([hidden]), textarea'));
+    root.addEventListener('focusin', e => {
+      if (!isField(e.target)) return;
+      const st = document.getElementById('ld-st'), k = st.getBoundingClientRect().width / st.offsetWidth || 1;
+      root.style.transition = 'none'; root.style.transform = '';
+      const dy = Math.round((e.target.getBoundingClientRect().top - root.getBoundingClientRect().top) / k) - 4;
+      root.style.transition = 'transform .15s'; root.style.transform = dy > 0 ? 'translateY(' + -dy + 'px)' : '';
+    });
+    root.addEventListener('focusout', () => setTimeout(() => { if (!root.contains(document.activeElement) || !isField(document.activeElement)) root.style.transform = ''; }, 60));
+  }
   function off() { document.body.classList.remove('ld-on'); closePop(); try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {} }
   // Android (app instalado ou tela cheia) deixa travar a tela deitada; o iPhone não deixa (fica o aviso para girar)
   function lockLand() { try { const so = screen.orientation; if (so && so.lock) so.lock('landscape').catch(() => {}); } catch (e) {} }
@@ -1732,6 +1746,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, ficha, proposta, contrato };
+  U.LD = { on, show, off, lift, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, ficha, proposta, contrato };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();

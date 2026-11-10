@@ -35,7 +35,9 @@ const FB_FROM = 'Climbix <feedback@climbix.app>';
 
 $a = $_GET['a'] ?? '';
 $LIKE_TXT = ['decisoes' => 'Decisões', 'lances' => 'Lances', 'rede' => 'Rede social', 'jornal' => 'Jornal',
-  'tacas' => 'Taças', 'ranking' => 'Ranking', 'cartas' => 'Cartas', 'copa' => 'Copa do Mundo'];
+  'tacas' => 'Taças', 'ranking' => 'Ranking', 'cartas' => 'Cartas', 'copa' => 'Copa do Mundo',
+  // Treinador (Sua opinião deitada, 2026-11-10)
+  'aovivo' => 'Jogo ao vivo', 'tatica' => 'Tática', 'mercado' => 'Mercado', 'treino' => 'Treino', 'financas' => 'Finanças', 'olheiro' => 'Olheiro'];
 
 // Uma opinião como cartão HTML (estilos inline: o Gmail ignora <style>)
 function fb_card($r, $LIKE_TXT) {
@@ -109,7 +111,7 @@ function fb_mail_pending($db, $dir, $LIKE_TXT) {
 }
 $str = fn($v, $n) => mb_substr(trim(preg_replace('/[ \t]+/u', ' ', str_replace("\r", '', (string)$v))), 0, $n, 'UTF-8');
 // O que dá para marcar em "do que mais gostou" (o mesmo que o jogo mostra)
-$LIKES = ['decisoes', 'lances', 'rede', 'jornal', 'tacas', 'ranking', 'cartas', 'copa'];
+$LIKES = ['decisoes', 'lances', 'rede', 'jornal', 'tacas', 'ranking', 'cartas', 'copa', 'aovivo', 'tatica', 'mercado', 'treino', 'financas', 'olheiro'];
 
 if ($a === 'send') {
   $raw = file_get_contents('php://input');
