@@ -35,6 +35,12 @@ for (let n = 0; n < N; n++) {
         Object.keys(S.CO_FORMS).forEach(f => S.CO_STYLES.forEach(st => { const pv = S.coPreview(co, f, st), v = ptsOf(pv.xg[0], pv.xg[1]); if (v > bv) { bv = v; best = [f, st]; } }));
         co.form = best[0]; co.style = best[1]; co.xi = S.coAutoXI(co.squad, co.form).xi;
       }
+      // TREINA=1: o robô treina toda semana (roda os treinos que desenvolvem; descansa com o time cansado). Sem isso ele não treina.
+      if (process.env.TREINA === '1') {
+        const xi = S.coAutoXI(co.squad, co.form).xi, en = co.squad.filter(p => xi.includes(p.id)).reduce((a, p) => a + p.en, 0) / Math.max(1, xi.length);
+        const ks = Object.keys(S.CO_TRAIN).filter(k => S.CO_TRAIN[k].dv !== undefined), tr = st.tr = st.tr || { n: 0, up: 0, dv: 0, xi: [] };
+        if (S.coTrain(co, en < 70 ? 'recup' : ks[(co.ss.i + s * 5) % ks.length])) { tr.n++; tr.up += (co.train.up || []).length; tr.dv += (co.train.dv || []).length; }
+      }
       const hadUlt = !!co.board.ult;
       const m = S.coMatchStart(co);
       while (!m.done) { const sp = S.coMatchStep(co, m); if (sp && sp.t !== 'fim') st.stops++; S.coAutoStop(co, m); }
@@ -54,6 +60,7 @@ for (let n = 0; n < N; n++) {
     }
     // Titular no último ano: o robô renova (o jogo não renova mais sozinho); conta quantos ficaram e quantos o teto barrou
     if (!co.sacked && process.env.RENOVA !== '0') { const xi = S.coAutoXI(co.squad, co.form).xi, due = co.squad.filter(p => xi.includes(p.id) && p.ct <= 1 && p.age < 33).length, ok = S.coAutoRenew(co).length; st.ren = st.ren || [0, 0]; st.ren[0] += due; st.ren[1] += ok; }
+    { const xi = S.coAutoXI(co.squad, co.form).xi, v = co.squad.filter(p => xi.includes(p.id)).reduce((a, p) => a + p.ovr, 0) / Math.max(1, xi.length), X = st.xiS = st.xiS || []; X[s] = X[s] || [0, 0]; X[s][0] += v - str(co.club); X[s][1]++; }
     const out = S.coSeasonEnd(co);
     st.left = (st.left || 0) + (out.left || []).filter(x => x.tit && x.why === 'fim de contrato').length;
     st.ms += Date.now() - t0;
@@ -91,6 +98,8 @@ console.log(`Finanças: saldo positivo ${pct(st.fin.saldoPos, st.fin.n)} das tem
 if (st.cards) { const c = st.cards, g = st.games * 2; console.log('Faltas por time e jogo: ' + (c.fo / g).toFixed(1) + ', amarelos ' + (c.yc / g).toFixed(2) + ', vermelhos ' + (c.rc / g).toFixed(3) + ' (1 a cada ' + Math.round(g / Math.max(1, c.rc)) + ' jogos), impedimentos ' + (c.of / g).toFixed(1) + '; suspensos por 3 amarelos ' + (c.ycSus / st.games).toFixed(2) + ' por jogo; seus vermelhos por estilo: ' + Object.keys(c.styRc).map(k => k + ' ' + (c.styRc[k][1] / c.styRc[k][0]).toFixed(3)).join(', ')); }
 if (st.ren) console.log(`Contratos: titulares no último ano ${(st.ren[0] / st.seasons).toFixed(1)} por temporada, o robô renovou ${pct(st.ren[1], st.ren[0])}; titulares que saíram no fim do contrato ${(st.left / st.seasons).toFixed(2)} por temporada`);
 else console.log(`Contratos (robô sem renovar): titulares que saíram no fim do contrato ${((st.left || 0) / st.seasons).toFixed(2)} por temporada`);
+if (st.xiS) console.log('Geral médio dos 11 menos a força do clube, por temporada: ' + st.xiS.map((x, i) => (i + 1) + 'ª ' + (x[0] / x[1]).toFixed(2)).join(' · '));
+if (st.tr) console.log(`Treino (TREINA=1): ${(st.tr.n / st.seasons).toFixed(1)} treinos por temporada, ${(st.tr.dv / st.seasons).toFixed(1)} pontos de atributo e ${(st.tr.up / st.seasons).toFixed(1)} subidas de geral (avisos) por temporada`);
 console.log(`Tempo do motor: ${(st.ms / st.seasons).toFixed(0)} ms por temporada` + (st.nan ? `; ALERTA: ${st.nan} números quebrados` : ''));
 // Save: a mesma carreira, uma passando por JSON no meio de cada temporada, tem de terminar igual
 {
