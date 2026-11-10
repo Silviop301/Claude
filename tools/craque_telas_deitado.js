@@ -18,7 +18,7 @@ async function page(b, first) {
   p.on('console', m => { if (m.type() === 'error' && !/three|cdn|favicon|net::/i.test(m.text())) errs.push('console: ' + m.text()); });
   p.on('response', r => { if (r.status() === 404) console.log('404', r.url()); }); // diz qual arquivo faltou (o console só dá "404")
   await p.addInitScript(first => { try { if (!sessionStorage.getItem('t')) { localStorage.clear(); sessionStorage.setItem('t', 1); } if (!first) { localStorage.setItem('climbix-dicas-v1', '{"off":true}'); localStorage.setItem('climbix-co-ja', '1'); } } catch (e) {} }, !!first);
-  await p.goto('http://127.0.0.1:8765/craque/', { waitUntil: 'load' });
+  await p.goto('http://127.0.0.1:' + (process.env.PORT || 8765) + '/craque/', { waitUntil: 'load' });
   await p.waitForTimeout(1200);
   const shot = async name => { await p.waitForTimeout(300); await p.screenshot({ path: `${OUT}/${name}.png` }); const t = await p.evaluate(() => (document.getElementById('ld') || {}).innerText || ''); if (/undefined|NaN|\[object/.test(t)) errs.push('texto quebrado em ' + name + ': ' + (t.match(/.{0,40}(undefined|NaN|\[object).{0,20}/) || [''])[0]); };
   // A "Proposta recebida" (mercado, lote 4) abre sozinha na volta para a semana e cobre os botões: recusa (último botão) antes de seguir
@@ -84,6 +84,10 @@ async function page(b, first) {
     // Estádio (fase 1): o bloco do Clube abre a tela, com o público do último jogo em casa, e o Voltar devolve ao Clube
     await click('#kb2-est'); await shot('c2b2-estadio');
     { const r = await p.evaluate(() => { const e = window.CRAQUE_SIM.coEst(window.CRAQUE_UI._co.co), pn = document.querySelector('#es-pn'); return { h: e.h.length, svg: !!(pn && pn.querySelector('svg')), lb: pn ? pn.querySelectorAll('.es-lb').length : 0 }; }); if (!r.svg || r.lb !== 4 || !r.h) errs.push('estádio: ' + JSON.stringify(r)); }
+    // Ingresso (fase 2): escolher "Caro" muda o preço do clube e o botão volta a dizer "Preço de hoje"
+    await click('#es-ing'); await shot('c2b3-ingresso'); await click('[data-pr="3"]'); await shot('c2b4-ingresso-caro'); await click('#es-go');
+    { const r = await p.evaluate(() => ({ pr: window.CRAQUE_SIM.coEst(window.CRAQUE_UI._co.co).pr, off: !!document.querySelector('#es-go.off') })); if (r.pr !== 3 || !r.off) errs.push('ingresso: ' + JSON.stringify(r)); }
+    await click('[data-pr="2"]'); await click('#es-go'); await click('#es-back');
     await click('#es-back'); await click('#ldk-go'); await shot('c2c-financas-decidir');
     // Loja: aporte (fase 3) e pacotes
     await p.evaluate(() => window.CRAQUE_UI.COINS.add({ n: 100, t: 'teste' })); await click('#fn2-apo'); await shot('c2l-loja-aporte'); await click('#lj-p'); await click('#lj-p'); await shot('c2l2-aporte-3'); await click('#lj-ap'); await shot('c2l3-aporte-feito');
