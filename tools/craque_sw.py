@@ -12,7 +12,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent / "craque"
 # Imagens e modelos citados no código levam a versão do próprio conteúdo (?v=...): quando o arquivo
 # muda, o celular não reaproveita a cópia antiga do cache (o CDN guarda imagens por 7 dias).
 fhash = lambda p: hashlib.sha1(p.read_bytes()).hexdigest()[:8]
-asset_re = re.compile(r"(['\"])(assets/[^'\"?]+\.(?:png|jpg|glb|mp3))(?:\?v=[0-9a-f]+)?(['\"])")
+asset_re = re.compile(r"(['\"])((?:assets|icons)/[^'\"?]+\.(?:png|jpg|glb|mp3))(?:\?v=[0-9a-f]+)?(['\"])")
 versioned = {}
 for p in sorted((ROOT / "src").rglob("*.js")):
     src = p.read_text()

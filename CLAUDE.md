@@ -192,6 +192,7 @@ desliga), `chars.js` (personagens SVG dos minigames), `avatar.js` (jogador da cr
 | `craque/assets/tw/` (emojis) | `node tools/craque_twemoji.js` (rodar ao usar emoji novo, depois `craque_sw.py`) |
 | `craque/assets/co/` (Treinador: logos `pat-<nome>.webp`, `rosto-NN.webp`, `banco`, `tv`) | arte do ChatGPT (doc https://claude.ai/artifact/AinuvFC9Mc3BA3jCXztPvV), recortes em `/mnt/project-files/climbix/treinador-assets/recortes/`; nomes dos patrocinadores em `S.CO_SPONS` (`coachfin.js`), por país da liga |
 | `craque/fonts/`, `craque/icons/`, `assets/cartas/ac-*` | `craque_fonts.py`, `craque_icons.js`, `craque_acabamentos.js` |
+| ícone do app (2026-11-10) | "O topo": a bola no pico da montanha em cartaz dourado. Arte em `arte/icone/topo.png` (desenho do ChatGPT, fundo transparente); `craque_icons.js` põe os raios, o círculo verde e o grão e grava os 4 arquivos de `craque/icons/` (o maskable com a arte a 0,78). Depois rodar `craque_sw.py`, que versiona `icons/` também dentro do código (`install.js`, `walkout.js`). No iPhone o ícone da Tela de Início só muda apagando e instalando de novo |
 
 ## Regras do projeto
 
