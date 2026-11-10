@@ -1,85 +1,63 @@
-// Gera os ícones do Climbix (craque/icons): escudo dourado com o metal escovado das cartas 3D e bola com volume.
-// Uso: NODE_PATH=$(npm root -g) node tools/craque_icons.js
+// Gera os ícones do Climbix (craque/icons): "O topo", a bola no pico da montanha em cartaz dourado.
+// O desenho (arte/icone/topo.png, fundo transparente) foi gerado pelo Silvio no ChatGPT em 2026-11-10, no traço dos
+// desenhos do jogo, e ampliado 2x; aqui entram o fundo de raios, o círculo verde, a sombra deslocada e o grão de papel.
+// Uso: NODE_PATH=$(npm root -g) node tools/craque_icons.js [foto-1024.png]
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
 const ROOT = path.resolve(__dirname, '..', 'craque');
-const metal = 'data:image/jpeg;base64,' + fs.readFileSync(path.join(ROOT, 'assets/cartas/dourada.jpg')).toString('base64');
+const ART = path.resolve(__dirname, '..', 'arte', 'icone', 'topo.png');
+const art = 'data:image/png;base64,' + fs.readFileSync(ART).toString('base64');
+const hdr = fs.readFileSync(ART), RATIO = hdr.readUInt32BE(20) / hdr.readUInt32BE(16); // altura / largura do PNG
+const S = 1024, INK = '#15140F';
+const f = n => (+n).toFixed(1);
 
-// Desenho em 1024 px; k = escala do conteúdo (ícone "maskable" do Android fica menor, dentro da área segura)
+// Desenho em 1024 px; k = escala do conteúdo (o ícone "maskable" do Android fica menor, dentro da área segura; o fundo vai até a borda)
 function svg(k) {
-  const S = 1024, c = S / 2, T = (x, y) => [c + (x - c) * k, c + (y - c) * k];
-  const P = (x, y) => T(x, y).map(v => v.toFixed(1)).join(' ');
-  // Escudo: topo com um leve entalhe no meio, laterais retas e ponta arredondada embaixo
-  const shield = `M${P(244, 184)} Q${P(216, 184)} ${P(216, 212)} L${P(216, 640)} Q${P(216, 690)} ${P(262, 716)} L${P(482, 842)} Q${P(512, 858)} ${P(542, 842)} L${P(762, 716)} Q${P(808, 690)} ${P(808, 640)} L${P(808, 212)} Q${P(808, 184)} ${P(780, 184)} L${P(612, 184)} Q${P(582, 184)} ${P(566, 200)} Q${P(512, 222)} ${P(458, 200)} Q${P(442, 184)} ${P(412, 184)} Z`;
-  const [bx, by] = T(512, 496), R = 196 * k;
-  // Bola clássica: pentágono central; cinco pentágonos na borda (na direção dos vértices do central, ponta para dentro);
-  // costuras ligando os vértices e separando os hexágonos brancos
-  const pent = (x, y, r, rot) => Array.from({ length: 5 }, (_, i) => { const a = rot + i * Math.PI * 2 / 5; return [x + Math.cos(a) * r, y + Math.sin(a) * r]; });
-  const d = pts => 'M' + pts.map(q => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' L') + 'Z';
-  const pc = pent(bx, by, R * 0.33, -Math.PI / 2);
-  let pents = d(pc), seams = '';
-  const L = (a1, a2) => { seams += 'M' + a1[0].toFixed(1) + ' ' + a1[1].toFixed(1) + ' L' + a2[0].toFixed(1) + ' ' + a2[1].toFixed(1) + ' '; };
-  const outer = [];
-  for (let i = 0; i < 5; i++) {
-    const a = -Math.PI / 2 + i * Math.PI * 2 / 5, ro = R * 0.27, dist = R * 0.64 + ro;
-    const po = pent(bx + Math.cos(a) * dist, by + Math.sin(a) * dist, ro, a + Math.PI); // po[0] aponta para o centro
-    outer.push(po); pents += d(po);
-    L(pc[i], po[0]); // vértice do central até a ponta do de fora
+  const c = S / 2, cy = 430; // centro dos raios e do círculo
+  // raios do cartaz: 20 fatias, uma sim e uma não
+  let rays = '';
+  const R = 1600, st = Math.PI * 2 / 20;
+  for (let i = 0; i < 20; i += 2) {
+    const a1 = 0.08 + i * st, a2 = a1 + st;
+    rays += `<path d="M${c} ${cy} L${f(c + Math.cos(a1) * R)} ${f(cy + Math.sin(a1) * R)} L${f(c + Math.cos(a2) * R)} ${f(cy + Math.sin(a2) * R)} Z" fill="#E2AC1C"/>`;
   }
-  // Entre dois pentágonos da borda: costura até a borda da bola
-  for (let i = 0; i < 5; i++) {
-    const p1 = outer[i][1], p2 = outer[(i + 1) % 5][4];
-    const mid = -Math.PI / 2 + (i + 0.5) * Math.PI * 2 / 5;
-    const rim = [bx + Math.cos(mid) * R * 1.05, by + Math.sin(mid) * R * 1.05];
-    const j = [bx + Math.cos(mid) * R * 0.86, by + Math.sin(mid) * R * 0.86];
-    L(p1, j); L(p2, j); L(j, rim);
-  }
+  const w = 960, h = w * RATIO, x = 38, y = 84, sr = 372;
+  const g = k === 1 ? '' : ` transform="translate(${c} ${c}) scale(${k}) translate(${-c} ${-c})"`;
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${S} ${S}" width="${S}" height="${S}">
   <defs>
-    <radialGradient id="bg" cx=".5" cy=".42" r=".75"><stop offset="0" stop-color="#1B6A43"/><stop offset=".7" stop-color="#0F4A2F"/><stop offset="1" stop-color="#0A3322"/></radialGradient>
-    <clipPath id="sh"><path d="${shield}"/></clipPath>
-    <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity=".0"/><stop offset=".38" stop-color="#fff" stop-opacity=".0"/>
-      <stop offset=".47" stop-color="#FFF6D0" stop-opacity=".55"/><stop offset=".56" stop-color="#fff" stop-opacity=".0"/>
-      <stop offset=".8" stop-color="#5A3F06" stop-opacity=".0"/><stop offset="1" stop-color="#5A3F06" stop-opacity=".35"/>
-    </linearGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">${['#7C5A10', '#EFD27A', '#B8841A', '#F8E4A0', '#A87A16', '#E6C35E', '#5E4308'].map((col, i) => `<stop offset="${(i / 6).toFixed(2)}" stop-color="${col}"/>`).join('')}</linearGradient>
-    <filter id="gray"><feColorMatrix type="saturate" values="0"/></filter>
-    <radialGradient id="ball" cx=".36" cy=".3" r=".85"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".55" stop-color="#F3F1EA"/><stop offset="1" stop-color="#B9B5A8"/></radialGradient>
-    <radialGradient id="ballShade" cx=".38" cy=".32" r=".8"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></radialGradient>
-    <clipPath id="bc"><circle cx="${bx}" cy="${by}" r="${R}"/></clipPath>
-    <filter id="drop" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="${14 * k}" stdDeviation="${16 * k}" flood-color="#000" flood-opacity=".45"/></filter>
-    <filter id="bdrop" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="${10 * k}" stdDeviation="${10 * k}" flood-color="#3A2A04" flood-opacity=".45"/></filter>
+    <radialGradient id="vig" cx=".5" cy=".46" r=".76"><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#020A06" stop-opacity=".28"/></radialGradient>
+    <filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.1 .62"/></filter>
   </defs>
-  <rect width="${S}" height="${S}" fill="url(#bg)"/>
-  <g filter="url(#drop)"><path d="${shield}" fill="#B8891F"/></g>
-  <g clip-path="url(#sh)">
-    <rect width="${S}" height="${S}" fill="url(#gold)"/>
-    <image xlink:href="${metal}" x="${c - 520 * k}" y="${c - 560 * k}" width="${1040 * k}" height="${1120 * k}" preserveAspectRatio="xMidYMid slice" filter="url(#gray)" style="mix-blend-mode:overlay" opacity=".55"/>
-    <rect width="${S}" height="${S}" fill="url(#gloss)"/>
+  <rect width="${S}" height="${S}" fill="#F2C230"/>${rays}
+  <rect width="${S}" height="${S}" fill="url(#vig)"/>
+  <g${g}>
+    <circle cx="${c + 14}" cy="${cy + 18}" r="${sr}" fill="${INK}" opacity=".3"/>
+    <circle cx="${c}" cy="${cy}" r="${sr}" fill="#17603E" stroke="${INK}" stroke-width="20"/>
+    <circle cx="${c}" cy="${cy}" r="${sr - 44}" fill="none" stroke="#1F7A4E" stroke-width="16"/>
+    <image xlink:href="${art}" x="${x + 14}" y="${y + 18}" width="${w}" height="${f(h)}" style="filter:brightness(0);opacity:.32"/>
+    <image xlink:href="${art}" x="${x}" y="${y}" width="${w}" height="${f(h)}"/>
   </g>
-  <path d="${shield}" fill="none" stroke="#4A3508" stroke-width="${12 * k}" stroke-linejoin="round"/>
-  <path d="${shield}" fill="none" stroke="#FFF1B8" stroke-opacity=".55" stroke-width="${4 * k}" stroke-linejoin="round" transform="translate(${c * (1 - 0.955)} ${c * (1 - 0.955)}) scale(.955)"/>
-  <g filter="url(#bdrop)"><circle cx="${bx}" cy="${by}" r="${R}" fill="url(#ball)"/></g>
-  <g clip-path="url(#bc)"><path d="${pents}" fill="#1E1A12"/><path d="${seams}" stroke="#1E1A12" stroke-width="${6 * k}" stroke-linecap="round" fill="none"/>
-    <circle cx="${bx}" cy="${by}" r="${R}" fill="url(#ballShade)"/>
-    <ellipse cx="${bx - R * 0.38}" cy="${by - R * 0.45}" rx="${R * 0.3}" ry="${R * 0.16}" fill="#fff" opacity=".45" transform="rotate(-30 ${bx - R * 0.38} ${by - R * 0.45})"/></g>
-  <circle cx="${bx}" cy="${by}" r="${R}" fill="none" stroke="#1E1A12" stroke-width="${12 * k}"/>
+  <rect width="${S}" height="${S}" filter="url(#grain)" opacity=".16"/>
 </svg>`;
 }
 
 (async () => {
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 1024, height: 1024 } });
-  const shot = async k => { await p.setContent('<body style="margin:0">' + svg(k) + '</body>'); return p.screenshot({ clip: { x: 0, y: 0, width: 1024, height: 1024 } }); };
+  const shot = async k => { await p.setContent('<body style="margin:0">' + svg(k) + '</body>'); await p.waitForTimeout(200); return p.screenshot({ clip: { x: 0, y: 0, width: 1024, height: 1024 } }); };
   const big = await shot(1), mask = await shot(0.78);
-  // Reduz com boa qualidade no próprio navegador
+  // Reduz com boa qualidade no próprio navegador (em passos de metade, para não serrilhar o traço)
   const resize = async (png, s) => {
     await p.setContent('<canvas id="c"></canvas>');
     return Buffer.from(await p.evaluate(async ([src, s]) => {
       const img = new Image(); img.src = src; await img.decode();
+      let cur = img, w = img.width;
+      while (w / 2 >= s) {
+        w /= 2; const t = document.createElement('canvas'); t.width = t.height = w;
+        const tx = t.getContext('2d'); tx.imageSmoothingQuality = 'high'; tx.drawImage(cur, 0, 0, w, w); cur = t;
+      }
       const c = document.getElementById('c'); c.width = c.height = s;
-      const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, s, s);
+      const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(cur, 0, 0, s, s);
       return c.toDataURL('image/png').split(',')[1];
     }, ['data:image/png;base64,' + png.toString('base64'), s]), 'base64');
   };
@@ -90,5 +68,14 @@ function svg(k) {
   fs.writeFileSync(path.join(out, 'icon-maskable-512.png'), await resize(mask, 512));
   if (process.argv[2]) fs.writeFileSync(process.argv[2], big);
   await b.close();
+  // Os dois de 512 px passam para 256 cores (o grão de papel triplica o PNG; na tela não se nota). Os pequenos ficam inteiros.
+  try {
+    require('child_process').execFileSync('python3', ['-c', `
+import sys
+from PIL import Image
+for f in sys.argv[1:]:
+    Image.open(f).convert('RGB').quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG).save(f, optimize=True)
+`, path.join(out, 'icon-512.png'), path.join(out, 'icon-maskable-512.png')]);
+  } catch (e) { console.log('sem Pillow: os ícones de 512 px ficaram sem reduzir as cores'); }
   console.log('ok');
 })();

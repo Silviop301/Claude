@@ -63,7 +63,7 @@
   function sheet(p) {
     close();
     const and = p === 'android', canPrompt = and && !!deferred;
-    const head = '<div class="ins-head"><img src="icons/icon-192.png" alt="" width="60" height="60"><div><b>Leve o Climbix pro celular</b><p>' +
+    const head = '<div class="ins-head"><img src="icons/icon-192.png?v=bc5d742f" alt="" width="60" height="60"><div><b>Leve o Climbix pro celular</b><p>' +
       (and ? 'Um toque e ele vira app: tela cheia e ícone na tela inicial.' : 'Abre em tela cheia, sem a barra do navegador, direto da Tela de Início.') + '</p></div></div>';
     const body = canPrompt
       ? '<div class="ins-perks">' + PERKS.map(([ic, t]) => '<div>' + ic + '<b>' + t + '</b></div>').join('') + '</div>' +
@@ -104,7 +104,7 @@
   }
 
   // Lembrete no fim da home (depois do "Agora não")
-  const CHIP = () => '<div class="ins-chip"><img src="icons/icon-192.png" alt="" width="44" height="44"><div><b>Jogue como app</b><small>Tela cheia, direto da Tela de Início</small></div>' +
+  const CHIP = () => '<div class="ins-chip"><img src="icons/icon-192.png?v=bc5d742f" alt="" width="44" height="44"><div><b>Jogue como app</b><small>Tela cheia, direto da Tela de Início</small></div>' +
     '<button class="ins-how" data-a="how">Como instalar</button><button class="ins-x" data-a="x" aria-label="Fechar lembrete">' + U.ICON.x + '</button></div>';
   function chipBind(el, p) {
     el.querySelector('[data-a="how"]').onclick = () => sheet(p);
