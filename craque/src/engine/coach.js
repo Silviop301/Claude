@@ -579,6 +579,23 @@
   const order = tab => tab.map((t, i) => i).sort((a, b) => tab[b].p - tab[a].p || (tab[b].gp - tab[b].gc) - (tab[a].gp - tab[a].gc) || tab[b].gp - tab[a].gp);
   S.coTable = co => order(co.ss.tab).map(i => Object.assign({ id: co.ss.ids[i], me: co.ss.ids[i] === co.club }, co.ss.tab[i]));
   S.coPos = co => order(co.ss.tab).findIndex(i => co.ss.ids[i] === co.club) + 1;
+  // Taça (Silvio 2026-11-10): o título já é seu? (ninguém alcança mais; ou a liga acabou com você em 1º)
+  S.coTitleWon = co => {
+    const ss = co.ss; if (!ss || co.sacked) return false;
+    const t = S.coTable(co), me = t.find(x => x.me), left = 3 * (ss.rounds.length - ss.i);
+    if (ss.done) return t[0].me;
+    return t.every(x => x.me || me.p > x.p + left);
+  };
+  // O título pode sair NESTA rodada? (antes do jogo) Devolve null ou { need: 'vença' | 'vença e torça', rivals }
+  S.coTitleChance = co => {
+    const ss = co.ss; if (!ss || ss.done || co.sacked || S.coTitleWon(co)) return null;
+    const last = ss.i === ss.rounds.length - 1, after = 3 * (ss.rounds.length - ss.i - 1);
+    const t = S.coTable(co), me = t.find(x => x.me), mx = me.p + 3;
+    // quem ainda alcança se você vencer: precisa tropeçar (no fim, empate em pontos ainda pode ser seu no saldo)
+    const alive = t.filter(x => !x.me && !(last ? mx >= x.p + 3 : mx > x.p + 3 + after));
+    if (alive.some(x => last ? mx < x.p : mx <= x.p + after)) return null;
+    return { need: alive.length ? 'vença e torça' : 'vença', rivals: alive.map(x => x.id), last };
+  };
   // Próximo jogo: o adversário, o mando e a rodada
   S.coNext = function (co) {
     const ss = co.ss;
