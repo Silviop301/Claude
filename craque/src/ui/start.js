@@ -264,6 +264,7 @@
       if (st.querySelector('#hl-coins') && U.LD.loja) st.querySelector('#hl-coins').onclick = () => { sfx('tap'); U.LD.loja(0, home); };
       if (st.querySelector('#hl-packs')) st.querySelector('#hl-packs').onclick = () => { sfx('tap'); U.ldOff(); U.openPacks ? U.openPacks(U.home) : (U.packsScreen && U.packsScreen()); };
     }, 'O Climbix é jogado com o celular deitado.');
+    U.installHomeBind(); // tutorial de instalar: na home deitada abre com o celular em pé (install.js)
   }
   function bindSaves(w) {
     w.querySelectorAll('[data-vg]').forEach(b => b.onclick = () => {
