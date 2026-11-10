@@ -976,12 +976,14 @@
       const yc = ev.some(e => e.t === 'amarelo'), rc = ev.some(e => e.t === 'vermelho'), fo = ev.filter(e => e.t === 'falta').length;
       const def = { GOL: 1, ZAG: 0.8, LAT: 0.6, MEI: 0.3, ATA: 0.1 }[p.pos] || 0.3, k = Math.min(1, min / 70);
       let r = 6.2 + (p.ovr - avg) / 25 + (hsh(id + ':' + co.season + ':' + m.round) - 0.5) * 1.1;
-      r += k * ((gf > ga ? 0.35 : gf < ga ? -0.35 : 0) - def * ga * 0.32 + (ga === 0 ? def * 0.6 : 0) + (p.pos === 'GOL' ? Math.min(1.2, saves * 0.22) : 0));
+      // Goleiro: não levar gol só vale inteiro com trabalho (3 chutes no gol deles); sem chute no gol, nada por isso
+      const gkW = p.pos === 'GOL' ? Math.min(1, (ot.them || 0) / 3) : 1;
+      r += k * ((gf > ga ? 0.35 : gf < ga ? -0.35 : 0) - def * ga * 0.32 + (ga === 0 ? def * 0.6 * gkW : 0) + (p.pos === 'GOL' ? Math.min(1.2, saves * 0.22) : 0));
       r += g.length * 1.1 + on * 0.25 + sh * 0.08 - (yc ? 0.3 : 0) - (rc ? 1.6 : 0) - fo * 0.1;
       r = clamp(Math.round(r * 10) / 10, 3, 10);
       const sub = !start.includes(id);
       const w = g.length ? (g.length > 1 ? g.length + ' gols' : 'gol') + (sub ? ' saindo do banco, aos ' + S.coEvMin(g[0]) : '') :
-        rc ? 'expulso' : p.pos === 'GOL' ? (ga === 0 ? 'não levou gol' + (saves ? ', ' + saves + (saves > 1 ? ' defesas' : ' defesa') : '') : saves ? saves + (saves > 1 ? ' defesas' : ' defesa') + ', ' + ga + (ga > 1 ? ' gols sofridos' : ' gol sofrido') : ga + (ga > 1 ? ' gols sofridos' : ' gol sofrido')) :
+        rc ? 'expulso' : p.pos === 'GOL' ? (ga === 0 ? (saves ? 'não levou gol, ' + saves + (saves > 1 ? ' defesas' : ' defesa') : 'não foi exigido') : saves ? saves + (saves > 1 ? ' defesas' : ' defesa') + ', ' + ga + (ga > 1 ? ' gols sofridos' : ' gol sofrido') : ga + (ga > 1 ? ' gols sofridos' : ' gol sofrido')) :
         def >= 0.6 && ga === 0 ? 'atrás sem levar gol' : on ? (sh > 1 ? sh + ' chutes, ' : '') + on + ' no gol' : sh ? sh + (sh > 1 ? ' chutes' : ' chute') + ' para fora' :
         yc ? 'amarelo' + (fo ? ' e ' + (fo + 1) + ' faltas' : '') : r < 5.6 ? (def >= 0.6 ? 'sofreu com o ataque deles' : 'sumiu do jogo') : r >= 7 ? (def >= 0.6 ? 'seguro atrás' : 'bom jogo') : sub ? 'entrou aos ' + (90 - min) + "'" : 'jogo discreto';
       return { id, r, w, sub, min };
