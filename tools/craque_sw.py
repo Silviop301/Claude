@@ -39,7 +39,8 @@ core_re = re.compile(r"^\./(?:$|index\.html|style\.css|manifest\.webmanifest|sw\
 later_re = re.compile(r"^\./assets/(?:tw|ic|sons|sprites)/")
 used = (ROOT / "style.css").read_text() + (ROOT / "index.html").read_text()
 core = [f for f in files if core_re.match(f) and (not f.startswith("./fonts/") or f[2:] in used)]
-rest = [f for f in files if not core_re.match(f) and (later_re.match(f) or f[2:] in used)]
+# A imagem do link (og:image) é citada no index.html mas só os robôs de prévia a baixam: fica fora do aparelho.
+rest = [f for f in files if not core_re.match(f) and not f.startswith("./assets/link-") and (later_re.match(f) or f[2:] in used)]
 later = ",\n  ".join('"%s"' % f for f in rest)
 SW = """// Gerado por tools/craque_sw.py — não editar à mão.
 // Guarda o jogo no aparelho: funciona sem internet depois da primeira visita.

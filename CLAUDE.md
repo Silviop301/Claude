@@ -230,6 +230,7 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
 | `craque/assets/co/` (Treinador: logos `pat-<nome>.webp`, `rosto-NN.webp`, `banco`, `tv`) | arte do ChatGPT (doc https://claude.ai/artifact/AinuvFC9Mc3BA3jCXztPvV), recortes em `/mnt/project-files/climbix/treinador-assets/recortes/`; nomes dos patrocinadores em `S.CO_SPONS` (`coachfin.js`), por país da liga |
 | `craque/fonts/`, `craque/icons/`, `assets/cartas/ac-*` | `craque_fonts.py`, `craque_icons.js`, `craque_acabamentos.js` |
 | ícone do app (2026-11-10) | "O topo": a bola no pico da montanha em cartaz dourado. Arte em `arte/icone/topo.png` (desenho do ChatGPT, fundo transparente); `craque_icons.js` põe os raios, o círculo verde e o grão e grava os 4 arquivos de `craque/icons/` (o maskable com a arte a 0,78). Depois rodar `craque_sw.py`, que versiona `icons/` também dentro do código (`install.js`, `walkout.js`). No iPhone o ícone da Tela de Início só muda apagando e instalando de novo |
+| imagem do link (2026-11-10) | `craque/assets/link-climbix-v1.jpg` (1200x630, `og:image` e `twitter:image` dentro do bloco `<!-- SEO -->` do `index.html`): arte de lançamento do ChatGPT em `arte/lancamento/arte-gpt.png` com o nome e a frase postos por `tools/craque_link_img.js`. Mudou a imagem: salve como `-v2` e troque o endereço, porque WhatsApp e redes guardam por endereço. Os textos do link (título, descrição, og, JSON-LD, manifest) descrevem o Treinador; a tabela `EN_HTML` de `craque_portal.py` depende deles. |
 
 ## Regras do projeto
 
