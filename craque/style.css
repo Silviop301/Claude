@@ -9248,3 +9248,44 @@ button.coin-pill { cursor: pointer; border: 0; }
 .ld-st button.es-ic.on { background: #F8F4EA; color: #13201A; box-shadow: 0 0 0 3px var(--gold); }
 .es-ic.on > em { color: #13201A; font-size: 22px; } .es-ic.on > i { background: var(--gold); box-shadow: inset 0 0 0 1.5px #b48a12; } .es-ic.on > small { color: #4A5A52; } .es-ic.on > small.f { color: #9a6a00; } .es-ic.on > u { color: #5d6b62; }
 .es-fill { display: block; height: 8px; border-radius: 4px; background: rgba(243, 241, 234, .14); } .es-fill u { display: block; height: 100%; border-radius: 4px; background: #F3F1EA; }
+
+/* ===== Conversa com o jogador e aviso da diretoria (2026-11-10, opção A do Silvio): quem fala (o disco da escalação ou
+   o rosto do presidente), a fala num balão creme e, na conversa, a moral em 5 tracinhos e as 3 respostas lado a lado
+   com o que cada uma custa (etiquetas no tom do Vestiário). `.done` = ele já respondeu ===== */
+.ld-pop-c.cvj-pop { width: 760px; max-height: 366px; padding: 16px 18px 18px; gap: 12px; border-radius: 20px; }
+.cvj-h { display: flex; align-items: center; gap: 14px; }
+.cvj-d { --enc: #7ED39A; position: relative; width: 60px; height: 60px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(#F8F4EA 62%, transparent 64%), conic-gradient(var(--enc) calc(var(--en, 100) * 1%), rgba(243, 241, 234, .16) 0); }
+.cvj-d.mid { --enc: #F2C230; } .cvj-d.low { --enc: #F08A5D; }
+.cvj-d b { font: 800 27px/1 var(--display); color: #13201A; margin-top: -6px; }
+.cvj-d em { position: absolute; left: 50%; bottom: -3px; transform: translateX(-50%); font: 800 12px/1 var(--display); font-style: normal; letter-spacing: .03em; padding: 3px 7px; border-radius: 6px; background: #CFEBD9; color: #13201A; }
+.cvj-n { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.cvj-n b { font: 800 28px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cvj-n small { display: flex; align-items: center; gap: 10px; font: 700 15px/1 var(--body); color: #B9C9BF; white-space: nowrap; }
+.cvj-n small em { font: 800 14px/1 var(--display); font-style: normal; letter-spacing: .02em; padding: 4px 8px; border-radius: 7px; background: rgba(240, 138, 93, .18); color: #F5A57F; }
+.cvj-mo { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; margin-right: 6px; }
+.cvj-mo small { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
+.cvj-mo small u { text-decoration: none; margin-left: 6px; font-size: 12px; letter-spacing: 0; } .cvj-mo small u.up { color: #7ED39A; } .cvj-mo small u.dn { color: #F5A57F; }
+.cvj-mo > span { display: flex; align-items: center; gap: 9px; }
+.cvj-mo b { font: 800 22px/1 var(--display); color: #F5A57F; } .cvj-mo.ok b { color: #7ED39A; }
+.cvj-pip { display: flex; gap: 4px; } .cvj-pip i { width: 18px; height: 10px; border-radius: 5px; background: rgba(243, 241, 234, .14); }
+.cvj-pip i.on { background: #F08A5D; } .cvj-mo.ok .cvj-pip i.on { background: #7ED39A; } .cvj-pip i.new { background: #7ED39A !important; box-shadow: 0 0 0 3px rgba(126, 211, 154, .25); }
+.cvj-pop .ld-x { width: 44px; height: 44px; }
+.cvj-say { position: relative; background: #F8F4EA; color: #13201A; border-radius: 16px; padding: 13px 18px; display: flex; align-items: center; gap: 14px; }
+.cvj-say::before { content: ''; position: absolute; left: 22px; top: -8px; width: 18px; height: 18px; background: #F8F4EA; transform: rotate(45deg); border-radius: 3px; }
+.cvj-say p { flex: 1; margin: 0; font: 700 19px/1.25 var(--body); }
+.cvj-ops { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.cvj-op { display: flex !important; flex-direction: column; align-items: flex-start; gap: 10px; min-height: 108px; padding: 14px 14px 12px !important; border-radius: 16px; background: #1E2023 !important; color: #F3F1EA !important; text-align: left; box-shadow: inset 0 0 0 2px rgba(243, 241, 234, .08); }
+.cvj-op > b { font: 800 25px/1 var(--display); white-space: nowrap; }
+.cvj-op > span { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; margin-top: auto; }
+.cvj-op em { font: 800 16px/1.1 var(--display); font-style: normal; padding: 5px 9px; border-radius: 8px; white-space: nowrap; background: rgba(243, 241, 234, .09); color: #D9E2DC; }
+.cvj-op em i { font-style: normal; font-size: 13px; letter-spacing: -3px; margin-right: 5px; vertical-align: 1px; }
+.cvj-op em.up { background: rgba(126, 211, 154, .16); color: #7ED39A; } .cvj-op em.dn { background: rgba(240, 138, 93, .16); color: #F5A57F; }
+.cvj-op.on { box-shadow: inset 0 0 0 3px var(--gold); } .cvj-op.off { opacity: .35; }
+.cvj-pop.done .cvj-say p { animation: cvj-in .32s ease-out; } .cvj-pop.done .cvj-pip i.new { animation: cvj-pip .5s ease-out .15s backwards; }
+@keyframes cvj-in { from { opacity: 0; transform: translateY(5px); } } @keyframes cvj-pip { from { transform: scale(.3); opacity: 0; } 60% { transform: scale(1.35); } }
+@media (prefers-reduced-motion: reduce) { .cvj-pop.done .cvj-say p, .cvj-pop.done .cvj-pip i.new { animation: none; } }
+.cvj-op:active { transform: translateY(2px); } .cvj-op:disabled { cursor: default; }
+.cvj-fc { width: 60px; height: 60px; flex: none; border-radius: 50%; object-fit: cover; background: #F8F4EA; }
+.ld-pop-c.cvj-pop.cvj-av { width: 640px; } .cvj-av .cvj-say p { font-weight: 600; }
+.ld-st button.cvj-ok { align-self: flex-end; min-width: 200px; min-height: 52px; } .cvj-ok b { font-size: 22px; }

@@ -778,15 +778,35 @@
     const c = C(), co = c.co, nx = S.coNext(co);
     if (!nx) { off(); return c.finishSeason(); }
     c.save('hub');
-    const talker = co.squad.filter(p => (p.mo === undefined ? 60 : p.mo) < 42 && !(p.talked !== undefined && co.ss.i - p.talked < 4)).sort((a, b) => a.mo - b.mo)[0];
+    const talker = S.coTalkWho(co);
     semana();
-    if (talker) talkPop(talker, log);
+    if (talker && !tutStep(co)) talkPop(talker, log); // com o tutorial da Semana na tela, a conversa fica para depois
   }
+  // A conversa (Silvio 2026-11-10, opção A; desenho em /mnt/project-files/climbix/conversa-jogador/): a ficha do jogador
+  // (o disco da escalação com geral, posição e energia), o motivo numa etiqueta, a moral em 5 tracinhos, a fala num balão
+  // creme e as 3 respostas lado a lado com o que cada uma custa. Tocou: ele responde no mesmo balão, a moral anda e a
+  // janelinha fecha sozinha (ou no toque). Fechar no X não responde: ele volta a pedir na semana seguinte
+  const cvjMo = (p, was, d) => { const mt = S.coMoTxt(p);
+    return '<span class="cvj-mo' + (mt.low ? '' : ' ok') + '"><small>MORAL' + (d ? '<u class="' + (d > 0 ? 'up">▲' : 'dn">▼') + '</u>' : '') + '</small><span><span class="cvj-pip">' + [1, 2, 3, 4, 5].map(i => '<i class="' + (i <= mt.n ? 'on' : '') + (was && i > was && i <= mt.n ? ' new' : '') + '"></i>').join('') + '</span><b>' + mt.t + '</b></span></span>'; };
   function talkPop(p, log) {
-    const c = C(), co = c.co;
-    pop(popHead(esc(p.n) + ' quer conversar', '"' + (p.bn >= 2 ? 'Professor, estou treinando bem e não entro. O que eu preciso fazer?' : 'Professor, não estou feliz aqui. Queria entender o meu papel.') + '"') +
-      '<div class="ld-pb col">' + Object.keys(S.CO_TALK1).map(k => '<button class="ld-cand" data-t1="' + k + '"><span><b>' + S.CO_TALK1[k].name + '</b><small>' + S.CO_TALK1[k].tip + '</small></span></button>').join('') + '</div>',
-      'Conversa', w => { w.querySelectorAll('[data-t1]').forEach(b => b.onclick = () => { sfx('tap'); S.coTalk1(co, p.id, b.dataset.t1); c.save(); closePop(); }); }, 'w560');
+    const c = C(), co = c.co, why = S.coTalkWhy(co, p);
+    const fx = t => t.fx.map(f => '<em' + (f[0] ? ' class="' + f[0] + '"' : '') + '>' + (f[1] ? '<i>' + f[1] + '</i>' : '') + f[2] + '</em>').join('');
+    const body = (say, pick, was, d) => '<div class="cvj-h"><span class="cvj-d ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '"><b>' + p.ovr + '</b><em>' + p.pos + '</em></span>' +
+      '<span class="cvj-n"><b>' + esc(p.n) + '</b><small>' + c.posTxt[p.pos] + ' · ' + p.age + ' anos' + (why.tag ? '<em>' + why.tag + '</em>' : '') + '</small></span>' + cvjMo(p, was, d) +
+      (pick ? '' : '<button class="ld-x" data-pop-x aria-label="Fechar">' + XI_ICO + '</button>') + '</div>' +
+      '<div class="cvj-say"><p>“' + esc(say) + '”</p></div>' +
+      '<div class="cvj-ops">' + Object.keys(S.CO_TALK1).map(k => { const t = S.CO_TALK1[k];
+        return '<button class="cvj-op' + (pick ? (k === pick ? ' on' : ' off') : '') + '" data-t1="' + k + '"' + (pick ? ' disabled' : '') + '><b>' + t.name + '</b><span>' + fx(t) + '</span></button>'; }).join('') + '</div>';
+    pop(body(why.say), 'Conversa com ' + p.n, w => {
+      w.querySelectorAll('[data-t1]').forEach(b => b.onclick = () => {
+        const k = b.dataset.t1, was = S.coMoTxt(p).n, cc = w.querySelector('.ld-pop-c');
+        sfx('tap'); S.coTalk1(co, p.id, k); c.save();
+        cc.classList.add('done'); cc.innerHTML = body(S.CO_TALK1[k].re, k, was, S.CO_TALK1[k].mo);
+        const end = () => { if (w.isConnected) closePop(); };
+        setTimeout(() => { if (w.isConnected) w.onclick = () => { sfx('tap'); end(); }; }, 350); // o toque da resposta não fecha
+        setTimeout(end, 2400);
+      });
+    }, 'cvj-pop');
   }
 
   // ---------- Caderno do técnico deitado (40): a grade inteira, a casa tocada aberta ao lado, o próximo rival ----------
@@ -1510,8 +1530,10 @@
   function finNews(co) {
     const f = co.fin; if (!f || !f.news || !f.news.length) return;
     const x = f.news[0]; if (x.seen) return;
-    x.seen = true;
-    setTimeout(() => pop(popHead('Aviso da diretoria', 'Rodada ' + x.r) + '<div class="ld-pb col"><p class="ldn-p">' + esc(x.t) + '</p><button class="ld-gold sm" id="ldn-ok"><b>Entendi</b></button></div>', 'Aviso da diretoria', w => { w.querySelector('#ldn-ok').onclick = () => { sfx('tap'); closePop(); }; }, 'w560'), 60);
+    // Mesmo desenho da conversa (2026-11-10): o rosto do presidente, o aviso no balão creme e o Entendi
+    const P = S.coPres(co);
+    setTimeout(() => { if (document.getElementById('ld-pop')) return; x.seen = true; C().save(); pop('<div class="cvj-h">' + presFace(P, 'cvj-fc') + '<span class="cvj-n"><b>Aviso da diretoria</b><small>' + esc(P.n) + ' · presidente ' + P.nome + '</small></span></div>' +
+      '<div class="cvj-say"><p>' + esc(x.t) + '</p></div><button class="ld-gold cvj-ok" id="ldn-ok"><b>Entendi</b></button>', 'Aviso da diretoria', w => { w.querySelector('#ldn-ok').onclick = () => { sfx('tap'); closePop(); }; }, 'cvj-pop cvj-av'); }, 60);
   }
 
   // Contratos no fim (Silvio 2026-11-09, opção B): faltando 5 rodadas, uma janelinha por temporada com os titulares no
@@ -1559,7 +1581,7 @@
     const q = L.find(p => p.id === sel) || L[0];
     const folha = co.squad.reduce((a, p) => a + (p.wage || 0), 0);
     const ctT = n => n <= 0 ? 'acaba agora' : n === 1 ? 'fim do ano' : U.D.plural(n, 'ano', 'anos');
-    const tag = p => p.out ? ['dn', 'lesionado'] : p.sus ? ['dn', 'suspenso'] : c.pend(p) ? ['y', 'pendurado'] : S.coMktListed(co, p) ? ['g', 'à venda'] : null;
+    const tag = p => p.out ? ['dn', 'lesionado'] : p.sus ? ['dn', 'suspenso'] : c.pend(p) ? ['y', 'pendurado'] : S.coMktListed(co, p) ? ['g', 'à venda'] : p.prom ? ['y', 'promessa'] : null; // promessa = a chance prometida na conversa ainda vale
     const rows = L.map(p => { const t = tag(p);
       return '<button class="lde2-r' + (q && p.id === q.id ? ' on' : '') + (c.avail(p) ? '' : ' out') + '" data-id="' + p.id + '"><i>' + (p.num || '') + '</i><span><b>' + esc(p.n) + '</b><small>' + p.pos + '</small>' + (t ? '<em class="' + t[0] + '">' + t[1] + '</em>' : '') + '</span>' +
         '<span class="a">' + p.age + '</span><span class="o">' + p.ovr + '</span>' + (O[4] ? '<span class="ct x">' + O[4](p, c) + '</span>' : '<span class="ct' + (p.ct <= 1 ? ' dn' : '') + '">' + ctT(p.ct) + '</span>') + '</button>'; }).join('');
