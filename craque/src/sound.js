@@ -3,7 +3,7 @@
 // Para ouvir cada som fora do jogo: node tools/craque_sons.js (grava um WAV por som).
 (function (root) {
   let ctx = null, comp = null, master = null, room = null, wet = null, ir = null, noiseBuf = null, pinkBuf = null, rec = {}, cheer = null;
-  let on = true;
+  let on = true, ticking = false, stuck = false;
   const last = {};
   try { on = localStorage.getItem('craque-sound') !== 'off'; } catch (e) { /* sem armazenamento: fica ligado */ }
 
@@ -39,11 +39,11 @@
     }
     bus();
     // Gravações de verdade (rede 40 KB, torcida 60 KB). Enquanto não chegam, o gol usa os sons sintetizados
-    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=9c4a53aa'], ['apito', 'assets/sons/apito.mp3?v=b8f1c7c6'], ['apitoInt', 'assets/sons/apito-int.mp3?v=1242a373'], ['apitoFim', 'assets/sons/apito-fim.mp3?v=08534777']].forEach(([k, url]) => {
+    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=9c4a53aa'], ['apito', 'assets/sons/apito.mp3?v=b8f1c7c6'], ['apitoInt', 'assets/sons/apito-int.mp3?v=1242a373'], ['apitoFim', 'assets/sons/apito-fim.mp3?v=08534777']].filter(([k]) => !rec[k]).forEach(([k, url]) => { // contexto refeito (revive): o que já veio fica
       fetch(url).then(r => r.arrayBuffer())
         .then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { rec[k] = b; }).catch(() => { /* fica a sintetizada */ });
     });
-    setInterval(() => { musicTick(); ambTick(); }, 600); // música e torcida de fundo seguem a tela (jogo ao vivo ou menu)
+    if (!ticking) { ticking = true; setInterval(() => { musicTick(); ambTick(); }, 600); } // música e torcida de fundo seguem a tela (jogo ao vivo ou menu)
   }
   // A saída: tudo o que toca passa pelo master (e pelo eco). É refeita quando o app sai da frente (hush)
   function bus() {
@@ -69,12 +69,39 @@
     cheer = null;
     try { bus(); } catch (e) { /* contexto fechado: o próximo toque não toca nada */ }
   }
+  // Voltou para o jogo e ficou mudo (Silvio, 11/11): no iPhone o contexto volta 'suspended' ou 'interrupted' do segundo plano
+  // e o resume() fora de um toque não pega. Na volta tenta acordar; no toque seguinte (touchend/click: o iPhone não conta o
+  // pointerdown como gesto) acorda dentro do gesto e, se o contexto seguir preso, faz um novo (música no mesmo ponto da faixa)
+  function rebuild() {
+    const tr = mEl && mI >= 0 ? { i: mI, ord: mOrd, at: mEl.currentTime || 0 } : null;
+    try { if (mEl) { mEl.pause(); mEl.removeAttribute('src'); mEl.load(); } } catch (e) { /* solta */ }
+    try { ctx.close(); } catch (e) { /* já fechado */ }
+    ctx = null; master = null; cheer = null; mEl = null; mGain = null; mWant = -1; clearTimeout(mStop);
+    aSrc = null; aGain = null; aWant = -1; stuck = false;
+    init();
+    if (!ctx) return;
+    if (tr) { mOrd = tr.ord; mI = tr.i - 1; }
+    musicStart();
+    if (tr && mEl) { const at = tr.at; mEl.addEventListener('loadedmetadata', () => { try { mEl.currentTime = at; } catch (e) { /* começa do zero */ } }, { once: true }); }
+  }
+  function revive(gesture) {
+    if (!(on || mOn)) return;
+    if (!ctx) { if (gesture) { init(); musicStart(); } return; }
+    if (gesture && (ctx.state === 'interrupted' || (stuck && ctx.state !== 'running'))) { rebuild(); return; }
+    if (ctx.state !== 'running') {
+      wake();
+      if (gesture) setTimeout(() => { if (ctx && ctx.state !== 'running') stuck = true; }, 400);
+    }
+    if (gesture) { musicStart(); if (mEl && mWant > 0 && mEl.paused) mEl.play().catch(() => { mWant = -1; }); }
+    musicTick(); ambTick();
+  }
   if (root.document && root.document.addEventListener) {
-    root.document.addEventListener('visibilitychange', () => { if (root.document.hidden) hush(); musicTick(); });
+    root.document.addEventListener('visibilitychange', () => { if (root.document.hidden) hush(); else revive(false); musicTick(); });
     if (root.addEventListener) root.addEventListener('pagehide', hush);
+    if (root.addEventListener) root.addEventListener('pageshow', () => revive(false));
   }
   // Som desligado: nada é montado nem baixado (ligar nas Configurações chama play('coin'), já dentro do toque)
-  if (root.addEventListener) root.addEventListener('pointerdown', () => { if (on || mOn) { init(); musicStart(); } }, { passive: true });
+  if (root.addEventListener) ['pointerdown', 'touchend', 'click', 'keydown'].forEach(ev => root.addEventListener(ev, () => revive(true), { passive: true, capture: true }));
 
   // Música de fundo dos menus (2026-11-11, Silvio: "uma musiquinha de fundo que nem FIFA", com faixas reais que ele manda).
   // Playlist em assets/musica/ (lista M_LIST; vazia = nada toca e a chave some dos Ajustes). Cada faixa toca inteira, numa
