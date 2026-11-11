@@ -9555,6 +9555,8 @@ button.coin-pill { cursor: pointer; border: 0; }
 .tb2-h.cls, .tb2-r.cls { grid-template-columns: 26px 22px minmax(0, 1fr) 28px 24px 24px 24px 40px 40px 72px; gap: 6px; }
 /* Mercado na 1.0: 3 abas (Procurar, Elenco, Notícias; "Indicados" saiu) e a Proposta sem a aba apagada do empréstimo (2026-11-11) */
 .mk-tabs.t3 { grid-template-columns: repeat(3, 1fr); }
+/* 4 abas de novo (11/11: Propostas pelos seus): letra um pouco menor e o número não encosta na palavra */
+.mk-tabs.t4 button { font-size: 18px !important; padding: 0 4px; } .mk-tabs.t4 .tm-dot { right: 5px; } .mk-tabs.t4 button:has(.tm-dot) { padding-right: 26px; }
 .mk.mkp.nt { grid-template-rows: 44px 0 minmax(0, 1fr); } .mk.mkp.nt .mkp-l { margin-top: -10px; }
 
 /* Polimento 1.0, lote 2 (2026-11-11): Loja com o atalho dos Termos e do reembolso; jeito de jogar nunca passa do cartão */

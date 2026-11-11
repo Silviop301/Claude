@@ -1,7 +1,7 @@
 // Mercado do Treinador pela interface, do começo ao fim (polimento da 1.0, item p-mer-1): comprar de um clube, contratar
 // quem está sem clube, comprar com um dos seus na troca, estourar a paciência do presidente, vender negociando, recusar
 // uma proposta, renovar e bater no elenco cheio. Tudo com toque de verdade nas telas deitadas; a cada passo confere o
-// estado da carreira (elenco, caixa, dias da janela), janelinha que ficou presa, erro de página e botão fora do palco.
+// estado da carreira (elenco, caixa, janela aberta), janelinha que ficou presa, erro de página e botão fora do palco.
 //   NODE_PATH=$(npm root -g) node tools/craque_mercado_telas.js [pasta das fotos]     (SAFE=47 simula o entalhe)
 // Precisa do jogo em http://127.0.0.1:8765/craque/. O caixa e a verba são engordados de propósito: o que se testa é o
 // caminho das telas, não a economia (essa é do craque_mercado.js e do craque_temporadas.js). Esperado: Problemas: 0
@@ -69,8 +69,8 @@ const OUT = process.argv[2] || '', SAFE = +process.env.SAFE || 0, URL = process.
   let pc = await fechaContrato(3); want(/mkd/.test(pc), 'depois do contrato devia abrir "Contratado" (abriu: ' + pc + ')');
   await shot('contratado'); await tap('#mkd-time'); await shot('time-com-o-reforco');
   let s1 = await st(); want(s1.n === s0.n + 1, 'elenco devia ter ' + (s0.n + 1) + ', tem ' + s1.n); want(!idA || await ev(id => !!window.CRAQUE_SIM.coMkt(window.CRAQUE_UI._co.co).got[id], idA), 'o contratado não ficou marcado como seu');
-  want(s1.verba < s0.verba, 'a verba não baixou com a compra'); want(s1.used > s0.used, 'a compra não gastou dia da janela'); want(!s1.pop, 'janelinha presa: ' + s1.pop);
-  log.push('A comprou: elenco ' + s0.n + ' → ' + s1.n + ', dias ' + s1.used);
+  want(s1.verba < s0.verba, 'a verba não baixou com a compra'); want(s1.open, 'a janela fechou depois da compra (não tem mais dias: quem manda é a rodada)'); want(!s1.pop, 'janelinha presa: ' + s1.pop);
+  log.push('A comprou: elenco ' + s0.n + ' → ' + s1.n);
 
   // ---------- B. sem clube: ficha > contrato baixo > recusa > fechar pelo pedido ----------
   step = 'B sem clube';
@@ -103,6 +103,7 @@ const OUT = process.argv[2] || '', SAFE = +process.env.SAFE || 0, URL = process.
   want(!s4.pop, 'janelinha presa: ' + s4.pop); if (/Encerrou/.test(fim)) want(/Não negocia/.test(s4.gold), 'depois de encerrar o botão devia dizer "Não negocia mais" (diz: ' + s4.gold + ')');
   await tap('#mkp-back'); await tap('#mk-tel'); await shot('aba-elenco'); want((await st()).tela.includes('lde2'), 'a aba Elenco do Mercado não abriu o Elenco'); await tap('#lde-back'); want(/\bmk\b/.test((await st()).tela), 'o Voltar do Elenco não devolveu ao Mercado');
   await tap('#mk-tnw'); await shot('noticias'); await tap('#mk-tpr');
+  await tap('#mk-tof'); await shot('propostas'); want(/\bof\b/.test((await st()).tela), 'a aba Propostas do Mercado não abriu'); await tap('#mk-tpr'); // propostas pelos seus esperam na aba (11/11)
   log.push('D paciência: ' + fim);
 
   // ---------- E. vender: pôr à venda no Elenco até chegar proposta, negociar e aceitar ----------
