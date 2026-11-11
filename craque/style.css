@@ -9644,3 +9644,14 @@ button.coin-pill { cursor: pointer; border: 0; }
 @media (max-width: 560px) { .pay-ty { flex-wrap: wrap; width: calc(100vw - 32px); } .pay-ty b { white-space: normal; flex: 1 1 100%; } .pay-ty span { flex: 1; } }
 /* Proposta com troca desigual: 3ª linha "Perde na troca" no cartão do pagamento (as 3 cabem na altura das 2) */
 .mkp .mkf-li.o3 > div { height: 28px; } .mkp .mkf-li.o3 b { font-size: 19px; } .mkp .mkf-li.o3 span { white-space: nowrap; }
+/* Finanças: aba Rodada e o ritmo do caixa (11/11) */
+.fn2-tabs { grid-template-columns: repeat(4, 1fr); }
+.fn2-k span.fn2-rt { font-weight: 800; white-space: normal; line-height: 1.1; } .fn2-k span.fn2-rt.up, .fn2-k span.fn2-rt.ok { color: #7ED39A; }
+.fn2-k span.fn2-rt.warn { color: #F5B544; } .fn2-k span.fn2-rt.red { color: #F5A57F; }
+.fn2-k span.fn2-rt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fn2-rd { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 8px 0 4px; }
+.fn2-rc { display: flex; flex-direction: column; min-width: 0; } .fn2-rc small { font: 700 12px/1 var(--body); letter-spacing: .1em; color: #9fb0a6; margin-bottom: 4px; }
+.fn2-rc span { height: 24px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 700 14px/1 var(--body); color: #D9E2DC; white-space: nowrap; }
+.fn2-rc span b { font: 800 17px/1 var(--display); } .fn2-rc b.up { color: #7ED39A; } .fn2-rc b.dn { color: #F5A57F; } .fn2-rc span.nd { color: #7f9187; }
+.fn2-li.fn2-rs { height: 34px; border-top: 1px solid rgba(243, 241, 234, .12); }
+.fn2-rd { padding: 6px 0 2px; } .fn2-rc span { height: 21px; } .fn2-li.fn2-rs { height: 30px; }

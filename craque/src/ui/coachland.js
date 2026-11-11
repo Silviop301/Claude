@@ -844,6 +844,9 @@
       if (cadN.length) rows.push(['Caderno', '+' + cadN.length + (cadN.length > 1 ? ' notas' : ' nota'), 'up', 1]);
       if (log.closed) rows.push(['Público', 'portões fechados', '']);
     else if (log.pub) rows.push(['Público', milK(log.pub) + (log.pub >= log.cap * S.CO_EST.full ? ' · lotou' : ''), log.pub >= log.cap * S.CO_EST.full ? 'gd' : '']);   // estádio: só nos jogos em casa
+      { const rd = S.coFin(co) && S.coFin(co).rd; // dinheiro da rodada (Silvio 11/11): toque abre Finanças na aba Rodada
+        if (rd && rd.s === co.season && rd.r === log.r) { const a = rd.inn.reduce((t, x) => t + x[1], 0), b = rd.out.reduce((t, x) => t + x[1], 0);
+          rows.push(['Rodada', '+' + c.mi(a) + ' / −' + c.mi(b), a >= b ? 'up' : 'dn', 'rs-fin']); } }
       show('<div class="rs">' +
         '<div class="rs-sc">' + crest((m.home ? cl : vs).id, 'rs-cr') + '<em>' + m.gh + ' <i>x</i> ' + m.ga + '</em>' + crest((m.home ? vs : cl).id, 'rs-cr') +
           '<span class="rs-w"><b class="' + log.res + '">' + word + (aux ? ' · COM O AUXILIAR' : '') + '</b><small>' + (goals.length ? goals.join(' · ') : 'sem gols') + '</small></span></div>' +
@@ -851,13 +854,14 @@
         '<div class="rs-pane ' + tab + '">' + pane + '</div>' +
         '<div class="rs-side' + (rows.length > 3 ? ' n4' : '') + '">' +
           (best ? '<div class="rs-best"><small>MELHOR DO SEU TIME</small><span><b class="' + (best.r >= 7 ? 'up' : best.r < 5.8 ? 'dn' : '') + '">' + best.r.toFixed(1).replace('.', ',') + '</b><span><em>' + esc(bp ? bp.n : '') + '</em><small>' + esc(best.w) + '</small></span></span></div>' : '') +
-          '<div class="rs-ch">' + rows.map(([k, v, cc, cad]) => (cad ? '<button id="rs-cad">' : '<span>') + k + '<b class="' + (cc || '') + '">' + esc(v) + '</b>' + (cad ? '</button>' : '</span>')).join('') + '</div>' +
+          '<div class="rs-ch">' + rows.map(([k, v, cc, cad]) => (cad ? '<button id="' + (cad === 1 ? 'rs-cad' : cad) + '">' : '<span>') + k + '<b class="' + (cc || '') + '">' + esc(v) + '</b>' + (cad ? '</button>' : '</span>')).join('') + '</div>' +
           '<span class="rs-gap"></span>' +
           (rt.length ? '<button class="tm-b" id="ldr-all">Notas do time</button>' : '') +
           '<button class="tm-go" id="ldr-go">' + (co.sacked ? 'Falar com o presidente' : co.ss.done ? 'Fim da temporada' : 'Continuar') + '</button>' +
         '</div></div>', st => {
         st.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { sfx('tap'); tab = b.dataset.rt; draw(); });
         if (st.querySelector('#ldr-all')) st.querySelector('#ldr-all').onclick = () => { sfx('tap'); pop(popHead('Notas do jogo', 'Rodada ' + log.r + ' · ' + m.gh + ' x ' + m.ga) + '<div class="ld-pb col"><div class="ld-scroll ldr-alln">' + rt.map(nota).join('') + '</div></div>', 'Notas do jogo', null, 'w560'); };
+        if (st.querySelector('#rs-fin')) st.querySelector('#rs-fin').onclick = () => { sfx('tap'); FIN_BACK = () => result(m, log, aux, move); financas('rod'); };
         if (st.querySelector('#rs-cad')) st.querySelector('#rs-cad').onclick = () => { sfx('tap'); pop(popHead('Anotado no caderno', vs ? c.nm(m.vs) : '') + '<div class="ld-pb col rs-cadp">' + cadN.map(cadTxt).join('') + '</div>', 'Anotado no caderno', null, 'w560'); };
         st.querySelector('#ldr-go').onclick = () => { sfx('tap'); if (co.sacked) { // demitido: janelinha por cima do resultado (a tela antiga era em pé, com a coluna estreita e o fundo de outra cor)
           const cl = club(co.club);
@@ -1794,13 +1798,26 @@
   // Finanças enxuta (2026-11-09, quadro 20): 3 números grandes, abas Temporada/A seguir/Salários, à direita a situação
   // do caixa, o acordo, o patrocínio e o dourado Banco. A aba Decidir saiu (acordo e patrocínio ficam à direita)
   const FIN_STEP = [['tranquilo', 'o caixa aguenta'], ['aviso', 'menos de 4 semanas de folha'], ['no vermelho', 'proibido contratar com taxa'], ['venda forçada', 'o presidente vende o mais caro'], ['ultimato', 'a confiança cai o dobro']];
+  // Aba Rodada e o ritmo do caixa (Silvio 2026-11-11: "a cada jogo quanto entrou e quanto saiu; não está claro se vou continuar
+  // no positivo ou se o saldo vai zerar em semanas"): `fin.rd` e `S.coFinRitmo` em coachfin.js. O cartão Caixa diz quantas
+  // rodadas o caixa aguenta no ritmo atual (verde sobra ou chega ao fim da temporada, laranja mais de 4, vermelho 4 ou menos)
+  let FIN_BACK = null;
+  const RD_NM = { bil: 'Bilheteria', tv: 'Cota de TV', pat: 'Patrocínio', prem: 'Prêmios', vend: 'Vendas', apo: 'Aporte do investidor', out: 'Outros', sal: 'Salários', comp: 'Contratações e parcelas', jur: 'Juros do banco', obra: 'Obras do estádio' };
+  const ritmoTxt = (c, R) => !R ? '' : R.st === 'up' ? '+ ' + c.mi(R.net) + ' por rodada' : R.st === 'red' && !R.left ? 'no vermelho' : R.st === 'ok' ? 'dá até o fim do ano' : 'dura ' + U.D.plural(R.left, 'rodada', 'rodadas');
   function financas(tab) {
-    const c = C(), co = c.co, f = S.coFin(co), folha = S.coFolha(co), wk = S.coFinSemanas(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
-    const step = S.coFinStep(co), P = S.coPres(co), pt = f.pat;
-    tab = ['tmp', 'seg', 'sal'].indexOf(tab) >= 0 ? tab : 'tmp';
+    const c = C(), co = c.co, f = S.coFin(co), folha = S.coFolha(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
+    const step = S.coFinStep(co), P = S.coPres(co), pt = f.pat, rd = f.rd && f.rd.s === co.season ? f.rd : null, R = S.coFinRitmo(co);
+    tab = ['rod', 'tmp', 'seg', 'sal'].indexOf(tab) >= 0 ? tab : rd ? 'rod' : 'tmp';
     const li = (t, v, cls) => '<div class="fn2-li"><span>' + t + '</span><b class="' + (cls || '') + '">' + v + '</b></div>';
     let rows = '';
-    if (tab === 'tmp') { const x = f.ss, homes = co.ss ? co.ss.log.filter(l => l.home).length : 0, sg = v => (v ? '+ ' + c.mi(v) : '0'), sn = v => (v ? '− ' + c.mi(v) : '0');
+    if (tab === 'rod') { if (!rd) rows = '<p class="fn2-none">Nenhuma rodada jogada nesta temporada.</p>';
+      else { const a = rd.inn.reduce((t, x) => t + x[1], 0), b = rd.out.reduce((t, x) => t + x[1], 0);
+        const top4 = L => { const o = L.filter(x => x[0] === 'out').reduce((t, x) => t + x[1], 0), R = L.filter(x => x[0] !== 'out').sort((x, y) => y[1] - x[1]);
+          const k = R.length + (o ? 1 : 0) > 4 ? 3 : R.length, v = o + R.slice(k).reduce((t, x) => t + x[1], 0); return R.slice(0, k).concat(v ? [['out', v]] : []); }; // cabe sem rolar: até 4 linhas por coluna
+        const col = (t, L, sg, cls) => '<div class="fn2-rc"><small>' + t + '</small>' + (L.length ? L.map(([k, v]) => '<span>' + (RD_NM[k] || k) + '<b class="' + cls + '">' + sg + c.mi(v) + '</b></span>').join('') : '<span class="nd">nada</span>') + '</div>';
+        rows = '<div class="fn2-rd">' + col('ENTROU', top4(rd.inn), '+ ', 'up') + col('SAIU', top4(rd.out), '− ', 'dn') + '</div>' +
+          '<div class="fn2-li fn2-rs"><span><b>Saldo da rodada ' + rd.r + '</b>' + (R ? '<small> · rodada comum ' + c.sgn(R.net) + '</small>' : '') + '</span><b class="' + (a >= b ? 'up' : 'dn') + '">' + c.sgn(a - b) + '</b></div>'; } }
+    else if (tab === 'tmp') { const x = f.ss, homes = co.ss ? co.ss.log.filter(l => l.home).length : 0, sg = v => (v ? '+ ' + c.mi(v) : '0'), sn = v => (v ? '− ' + c.mi(v) : '0');
       const saldo = x.bil + x.tv + x.pat + x.prem + x.vend - x.sal - x.comp;
       rows = li('Bilheteria · ' + U.D.plural(homes, 'jogo', 'jogos') + ' em casa', sg(x.bil), 'up') + li('TV e patrocínio', sg(x.tv + x.pat), 'up') + (x.prem ? li('Prêmios', sg(x.prem), 'up') : '') + (x.vend ? li('Vendas', sg(x.vend), 'up') : '') +
         (f.futLog || []).filter(y => y.s === co.season).map(y => '<div class="fn2-li fn2-cl"><span>Cláusula · ' + esc(y.n) + ' · ' + esc(club(y.club).short || club(y.club).name) + '<small> ' + y.pct + '% da revenda</small></span><b class="up">+ ' + c.mi(y.v) + '</b></div>').join('') +
@@ -1812,17 +1829,17 @@
     else rows = co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 8).map(p => li(esc(p.n) + ' <small>' + p.pos + '</small>', c.mi(p.wage) + ' <small>até ' + (U.YEAR0 + co.season + p.ct) + '</small>')).join('');
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     show('<div class="fn2"><div class="tm-h"><button class="tcr-back" id="ldf-back" aria-label="Voltar">' + BK + '</button><b>Finanças</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (U.YEAR0 + co.season) + '</small></div>' +
-      '<div class="fn2-k"><div><small>CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span>' + (f.caixa < 0 ? 'no vermelho' : U.D.plural(wk, 'semana', 'semanas') + ' de folha') + '</span></div>' +
+      '<div class="fn2-k"><div><small>CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span class="fn2-rt ' + (R ? R.st : '') + '" title="no ritmo atual">' + (f.caixa < 0 ? 'no vermelho' : ritmoTxt(c, R)) + '</span></div>' +
         '<div><small>VERBA</small><b class="up">' + c.brl(f.verba) + '</b><span>para contratar</span></div>' +
         '<div><small>FOLHA</small><b>' + c.brl(folha) + '</b><i><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i><span>teto ' + c.brl(f.teto) + '</span></div></div>' +
-      '<div class="fn2-tabs">' + [['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
+      '<div class="fn2-tabs">' + [['rod', 'Rodada'], ['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
       '<div class="fn2-p">' + rows + '</div>' +
       '<div class="fn2-side"><div class="fn2-st"><small>SITUAÇÃO DO CAIXA</small><b class="s' + step + '">' + FIN_STEP[step][0] + '</b><span class="fn2-dd">' + [1, 2, 3, 4].map(i => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '</span><em>' + FIN_STEP[step][1] + '</em></div>' +
         '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><div><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></div></div>' +
         '<span class="rs-gap"></span><div class="fn2-bt">' + (U.COINS ? '<button class="tm-b fn2-apo" data-fd="apo" id="fn2-apo">' + U.COINS.svg + 'Aporte</button>' : '') + '<button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div></div></div>', st => {
       st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); financas(b.dataset.ft); });
       st.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.fd; if (k === 'banco') banco(); else if (k === 'pres') presInfo(); else if (k === 'apo') loja(1, () => financas(tab)); });
-      st.querySelector('#ldf-back').onclick = () => { sfx('tap'); clube(); };
+      st.querySelector('#ldf-back').onclick = () => { sfx('tap'); const bk = FIN_BACK; FIN_BACK = null; (bk || clube)(); };
     });
   }
   // ---------- Finanças 2.0: reunião com a diretoria, patrocínio, banco e a aba Decidir ----------
