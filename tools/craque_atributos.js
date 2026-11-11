@@ -123,8 +123,9 @@ let nb = 0; const wid = [0, 0];
   const lg = S.coLeague(co), mk = S.coMkt(co);
   S.coMktPool(co).filter(p => p.lg !== lg).slice(0, 400).forEach(p => {
     const at = S.coAttrs(p), band = n => { mk.rep[p.id] = n; return S.coMktAttrs(co, p); };
-    if (band(0) !== null) alert('faixa: ' + p.n + ' mostra atributo sem relatório');
-    const b1 = band(1), b2 = band(2), b3 = band(3); nb++;
+    // desde 11/11 todo jogador já vem com o 1º relatório de graça (S.coMktReps): sem relatório pago a faixa é a do 1º
+    const b0 = band(0), b1 = band(1), b2 = band(2), b3 = band(3); nb++;
+    if (JSON.stringify(b0) !== JSON.stringify(b1)) alert('faixa: ' + p.n + ' sem relatório pago não mostra a faixa do 1º relatório');
     at.forEach((v, i) => {
       if (b1[i].v !== null || b2[i].v !== null) alert('faixa: ' + p.n + ' mostra o número antes do 3º relatório');
       if (v < b1[i].lo || v > b1[i].hi || v < b2[i].lo || v > b2[i].hi) alert('faixa: valor de verdade fora da faixa em ' + p.n + ' (' + v + ' · ' + b1[i].lo + '-' + b1[i].hi + ' · ' + b2[i].lo + '-' + b2[i].hi + ')');
