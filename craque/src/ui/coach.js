@@ -218,7 +218,7 @@
   }
 
   // ---------- finanças: caixa, verba, folha; abas com a temporada, o que vem e os salários ----------
-  const mi = v => { const a = Math.abs(v), t = a >= 1e6 ? (a / 1e6).toFixed(a < 1e7 ? 2 : 1).replace(/\.?0+$/, '').replace('.', ',') + ' mi' : a >= 1e3 ? Math.round(a / 1e3) + ' mil' : String(Math.round(a)); return t; };
+  const mi = v => { const a = Math.abs(v), t = a >= 1e6 ? (a / 1e6).toFixed(a < 1e7 ? 2 : 1).replace(/\.?0+$/, '').replace('.', ',') + ' mi' : a >= 1e3 ? (a < 1e4 ? (Math.round(a / 100) / 10).toFixed(1).replace(/\.0$/, '').replace('.', ',') : Math.round(a / 1e3)) + ' mil' : String(Math.round(a)); return t; };
   const brl = v => (v < 0 ? '− ' : '') + 'R$ ' + mi(v);
   const sgn = v => (v > 0 ? '+ ' : v < 0 ? '− ' : '') + mi(v);
   function finPres(f) {
