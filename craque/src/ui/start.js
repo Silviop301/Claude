@@ -288,17 +288,23 @@
   // canto de baixo à direita, gira enquanto toca; tocar liga/desliga a música (a mesma chave dos Ajustes) e mostra o nome
   // da faixa ao lado por 4 s, que também aparece sozinho quando a faixa troca. A música já começa no primeiro toque (sound.js)
   const DISC_SVG = '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="23" fill="#151617"/><circle cx="24" cy="24" r="19" fill="none" stroke="#2C2E31" stroke-width="1.2"/><circle cx="24" cy="24" r="15" fill="none" stroke="#2C2E31" stroke-width="1.2"/><path d="M24 3a21 21 0 0 1 18 10" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="2.4" stroke-linecap="round"/><circle cx="24" cy="24" r="9" fill="#F2C230"/><circle cx="24" cy="24" r="2.4" fill="#151617"/></svg>';
-  function discHtml() {
+  // Também na Semana do Treinador (Silvio: "centralizado mas no topo, onde ainda há espaço"): U.discHtml('sm', true) põe a
+  // setinha que passa a faixa; o mesmo discBind liga tudo
+  const SKIP_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l9 7-9 7zM16 5h3v14h-3z"/></svg>';
+  function discHtml(cls, skip) {
     const M = window.CRAQUE_MUSIC;
     if (!M || !M.has) return '';
-    return '<div class="hl-dk' + (M.on ? '' : ' off') + '" id="hl-dk"><span class="hl-dk-t" aria-live="polite"></span><button class="hl-dk-b" id="hl-dk-b" aria-label="Música">' + DISC_SVG + '<i></i></button></div>';
+    return '<div class="hl-dk' + (cls ? ' dk-' + cls : '') + (M.on ? '' : ' off') + '" id="hl-dk"><span class="hl-dk-t" aria-live="polite"></span><button class="hl-dk-b" id="hl-dk-b" aria-label="Pausar ou tocar a música">' + DISC_SVG + '<i></i></button>' +
+      (skip ? '<button class="hl-dk-n" id="hl-dk-n" aria-label="Próxima música">' + SKIP_SVG + '</button>' : '') + '</div>';
   }
+  U.discHtml = discHtml;
+  U.discBind = st => discBind(st);
   let discOff = null, discT = null;
   function discBind(st) {
     const box = st.querySelector('#hl-dk'), M = window.CRAQUE_MUSIC;
     if (!box || !M) return;
     const lbl = box.querySelector('.hl-dk-t');
-    let shown = '';
+    let shown = box.classList.contains('dk-sm') ? M.track : ''; // na Semana o nome só aparece quando a faixa troca ou no toque
     const name = () => { const t = M.title; return M.on ? (t ? '<b>' + esc(t[0]) + '</b>' + (t[1] ? '<small>' + esc(t[1]) + '</small>' : '') : '<b>Música</b><small>toque para começar</small>') : '<b>Música desligada</b><small>toque para ligar</small>'; };
     const say = () => { lbl.innerHTML = name(); box.classList.add('say'); clearTimeout(discT); discT = setTimeout(() => box.classList.remove('say'), 4000); };
     const paint = () => {
@@ -312,6 +318,8 @@
     discOff = paint;
     window.addEventListener('climbix-musica', paint);
     box.querySelector('#hl-dk-b').onclick = () => { M.toggle(); shown = M.track; paint(); say(); };
+    const nx = box.querySelector('#hl-dk-n');
+    if (nx) nx.onclick = () => { if (!M.on) M.toggle(); M.next(); }; // a faixa nova chega pelo evento e o nome aparece
     paint();
     setTimeout(paint, 900); // a música começa no toque que abriu a home: o estado chega logo depois
   }

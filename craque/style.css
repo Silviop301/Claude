@@ -9689,3 +9689,13 @@ body:has(> .tc-ov) > .pay-ty { visibility: hidden; }
 .ld-st .tm-pitch button.tm-best svg{width:14px;height:14px;fill:#f2c230}
 .ld-st .tm-pitch button.tm-best.on{opacity:.45}
 .ld-st .tm-pitch button.tm-best:active{transform:scale(.95)}
+/* Disco na Semana do Treinador: no meio do topo, no espaço entre a META e o caixa; ⏭ passa a faixa, nome embaixo */
+.sm-h .sm-mu { display: flex; justify-content: center; align-items: center; min-width: 0; }
+.hl-dk.dk-sm { position: relative; right: auto; bottom: auto; gap: 4px; }
+.ld-st button.hl-dk.dk-sm .hl-dk-b, .ld-st .dk-sm button.hl-dk-b { width: 40px; height: 40px; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+.dk-sm .hl-dk-b svg { width: 40px; height: 40px; }
+.dk-sm.off .hl-dk-b i { width: 44px; margin-left: -22px; }
+.ld-st .dk-sm button.hl-dk-n { width: 30px; height: 44px; padding: 0; background: none; border: 0; display: flex; align-items: center; justify-content: center; color: #D9E2DC; }
+.dk-sm .hl-dk-n svg { width: 16px; height: 16px; fill: currentColor; }
+.dk-sm .hl-dk-t { position: absolute; top: 46px; left: 50%; transform: translate(-50%, -4px); align-items: center; z-index: 5; box-shadow: 0 6px 16px rgba(0,0,0,.4); }
+.dk-sm.say .hl-dk-t { transform: translate(-50%, 0); }
