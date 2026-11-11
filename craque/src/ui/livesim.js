@@ -2051,7 +2051,17 @@
         if (!frozen && !document.hidden) { const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
         draw();
         if (o.onFrame) o.onFrame(api.info());
+        if (loop.n % 4 === 0) sbFade();
       } catch (err) { if (!loop.rep && window.CLIMBIX_REPORT) { loop.rep = 1; window.CLIMBIX_REPORT('campinho: ' + err.message, err.stack); } }
+    }
+    // Placar por cima do campinho (Silvio, 11/11: "transparente quando a bola estiver perto ou debaixo dele"): apaga com a bola a 28 px
+    let sbEl = null;
+    function sbFade() {
+      if (!sbEl || !sbEl.isConnected) { const p = cv.closest('.ldl-p') || cv.parentNode; sbEl = p && p.querySelector('.ldl-sb'); } if (!sbEl) return;
+      const rc = cv.getBoundingClientRect(), rs = sbEl.getBoundingClientRect(), k = rc.width / (W || 1), m = 28 * k; // tudo em px da tela (o palco é escalado)
+      const bx = rc.left + X(ball.x) * k, by = rc.top + Y(ball.y) * k;
+      const on = bx > rs.left - m && bx < rs.right + m && by > rs.top - m && by < rs.bottom + m;
+      if (on !== sbEl.classList.contains('fade')) sbEl.classList.toggle('fade', on);
     }
     // Começo: no apito todos no seu campo; voltando do seu lance, a bola com o seu time no meio
     ALL.forEach(p => { const [x, y] = koShape(p, p.side); p.x = p.gx = p.tx = x; p.y = p.gy = p.ty = y; });
