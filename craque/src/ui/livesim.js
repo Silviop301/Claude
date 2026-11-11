@@ -1216,14 +1216,18 @@
       const P = offPend, s = P.s, q = P.q;
       if (mode !== 'play' || lc || due || T[s].indexOf(q) < 0) return offEnd(false);
       P.t += dt;
-      const line = lineOf(s), [qx, qy] = tf(s, q), rx = Math.min(L - 4, Math.max(qx, line + 2));
+      const line = lineOf(s), [qx, qy] = tf(s, q), rx = Math.min(L - 4, Math.max(qx, line + 3.5));
       if (!P.f) {
         q.run = Math.max(q.run || 0, 0.5); q.runX = rx; q.runY = qy;
         const own = ball.owner && ball.owner.side === s && ball.owner !== q ? ball.owner : null;
         // o passe só sai com ele já além da linha (impedimento de verdade: na hora do passe ele está à frente do último zagueiro)
-        if (own && qx > line + 0.8) {
+        // impedimento que se vê: na hora do passe ele passou do penúltimo adversário (goleiro conta) por um corpo inteiro,
+        // está à frente da bola e no campo deles; senão o passe espera (e o lance some aos 5 s)
+        const op = T[1 - s].map(x => tf(s, x)[0]).sort((a, b) => b - a), l2 = Math.max(op[1] != null ? op[1] : op[0] || 0, L / 2);
+        if (own && qx > l2 + 2.2 && qx > tf(s, own)[0] + 1 && qx > tf(s, ball)[0] + 1) {
+          P.line = l2;
           const [wx, wy] = toW(s, Math.max(rx, qx + 1.5), qy);
-          fly(own, wx, wy, q, Math.hypot(wx - own.x, wy - own.y) > 26, 'costas', false); ball.fly.dur = Math.min(ball.fly.dur, 1.2); P.f = ball.fly; P.line = line;
+          fly(own, wx, wy, q, Math.hypot(wx - own.x, wy - own.y) > 26, 'costas', false); ball.fly.dur = Math.min(ball.fly.dur, 1.2); P.f = ball.fly;
         } else if (P.t > 5) offEnd(false);
         return;
       }
@@ -1270,8 +1274,8 @@
       subQ.ph = 'sai'; subQ.t = 0; subQ.save = { mode, modeT }; mode = 'troca';
       const s = subQ.s, out = [], inn = [];
       subQ.items.forEach((it, i) => { const p = it.p;
-        // sai pela linha mais perto (lateral ou de fundo), correndo
-        const c = [[p.x, -1.4], [p.x, WD + 1.4], [-1.4, p.y], [L + 1.4, p.y]].sort((a, b) => Math.hypot(a[0] - p.x, a[1] - p.y) - Math.hypot(b[0] - p.x, b[1] - p.y))[0];
+        // sai pela lateral mais perto, correndo (nunca pela linha de fundo: Silvio, 11/11, "saindo pelo gol")
+        const c = [[p.x, -1.4], [p.x, WD + 1.4]].sort((a, b) => Math.hypot(a[0] - p.x, a[1] - p.y) - Math.hypot(b[0] - p.x, b[1] - p.y))[0];
         leaving.push({ p: { x: p.x, y: p.y, side: p.side, r: p.r }, num: it.oldNum, sub: true, run: true, wait: 0, t: 0, tx: c[0], ty: c[1] });
         it.hx = p.x; it.hy = p.y; out.push(it.oldNum); inn.push(it.newNum);
         reform(p, it.f); p.x = 52.5 + (s ? 1 : -1) * (3 + i * 1.8); p.y = WD + 1.1; p.vx = p.vy = 0; p.tx = p.x; p.ty = p.y; p.outT = 99; p.outE = 3; p.subW = 1; });
@@ -1341,7 +1345,7 @@
       // Pênalti a caminho: a bola entrou na área com o time dele, o juiz apita ali (quem conduzia é quem sofreu). Demorou 14 s:
       // apita com a bola do meio para a frente; 22 s: de qualquer jeito (a tela não fica esperando)
       if (due && due.pen && !due.kick) { const e = due, ow = ball.owner, [px, py] = tf(e.side, ball), mine = !!ow && ow.side === e.side && ow.r !== 'GK', ag = e.age || 0;
-        if ((mine && px > 88.5 && Math.abs(py - 34) < 19) || (ag > 26 && mine && px > 60) || ag > 31) { due = null; penStart(e); return; } }
+        if ((mine && px > 88.5 && Math.abs(py - 34) < 19) || (ag > 30 && mine && px > 84 && Math.abs(py - 34) < 22) || ag > 48) { due = null; penStart(e); return; } } // Silvio, 11/11: pênalti só com o ataque chegando na área (antes aos 26 s valia do meio para a frente)
       // O relógio da jogada só anda com a bola rolando (saída depois de outro gol não conta): gol do motor demorando 9 s vira lançamento
       if (due) { due.age = (due.age || 0) + dt; if (due.pen && !due.kick && due.age > 7) due.now = true; /* pênalti: demorou, lança na área */ if (due.out === 'gol' || due.out === undefined) { if (due.age > (due.spk === 'esc' || due.spk === 'fc' ? 15 : 9) && due.cb) due.now = true; } }
       if (due && ball.owner && ball.owner.side !== due.side && ball.owner.r !== 'GK') {
@@ -1598,7 +1602,7 @@
       if (offPend && !offPend.f && mode === 'play') {
         const P = offPend, s = P.s, q = P.q, [, qy] = tf(s, q), l0 = P.l0 = P.l0 || lineOf(s);
         T[1 - s].forEach(d => { if (d.r === 'GK') return; const [dx, dy] = tf(s, d); if (dx > l0 - 2) { [d.tx, d.ty] = toW(s, Math.max(L / 2, l0 - 2), dy); d.sprint = 1; } });
-        [q.tx, q.ty] = toW(s, Math.min(L - 6, l0 + 2.5), qy); q.sprint = 1;
+        [q.tx, q.ty] = toW(s, Math.min(L - 6, l0 + 3.5), qy); q.sprint = 1;
       }
       if (mode === 'ko' || mode === 'half') { const dd = Math.hypot(52.5 - ball.x, 34 - ball.y), k = dd > 0.01 ? Math.min(1, 16 * dt / dd) : 1; ball.x += (52.5 - ball.x) * k; ball.y += (34 - ball.y) * k; } // volta ao meio rolando, não voando
       // Andar: cada um reage no seu tempo, acelera e freia; ninguém vira na hora nem atravessa o companheiro
