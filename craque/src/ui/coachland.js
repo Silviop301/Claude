@@ -552,7 +552,7 @@
     const { H, A, crestB } = o;
     // A cor de cada time no campinho, do lado do escudo (Silvio, 10/11: "preto e branco contra preto e branco, não sei qual é qual")
     const kit = k => { if (!k) return ''; const pc = k.pat && k.pat[1], d = k.pat && k.pat[0], bg = pc && d === 'listras' ? 'repeating-linear-gradient(90deg,' + k[0] + ' 0 3px,' + pc + ' 3px 6px)' : pc && d === 'aros' ? 'repeating-linear-gradient(0deg,' + k[0] + ' 0 3px,' + pc + ' 3px 6px)' : pc ? 'linear-gradient(135deg,' + k[0] + ' 55%,' + pc + ' 55%)' : k[0];
-      return '<i class="ldl-kit" style="background:' + bg + '"></i>'; };
+      return '<b class="ldl-kit"><i style="background:' + bg + '"></i></b>'; }; // camisinha, não bolinha (Silvio, 11/11: a bolinha confundia com a bola)
     const kH = o.kits ? (o.m.home ? o.kits.mine : o.kits.opp) : null, kA = o.kits ? (o.m.home ? o.kits.opp : o.kits.mine) : null;
     return '<div class="lv ldl"><div class="ldl-p">' + o.pitchHtml +
       '<div class="ldl-sb">' + crestB(H.id, 'ldl-cr') + kit(kH) + '<em id="lv-score">0 <i>x</i> 0</em>' + kit(kA) + crestB(A.id, 'ldl-cr') + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' +
