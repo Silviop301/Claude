@@ -816,7 +816,7 @@
       paint();
       const go = () => {
         // o juiz espera a bola sair de perigo para apitar o intervalo e o fim (escanteio, chute ou cruzamento no ar), até 9 s
-        const busy = () => { if (!sim || !sim.canStop || sim.canStop()) { stopW = 0; return false; } if (!stopW) stopW = Date.now(); if (Date.now() - stopW > 9000) { stopW = 0; return false; } timer = setTimeout(go, 150); return true; };
+        const busy = () => { if (!sim || !sim.canStop || sim.canStop()) { stopW = 0; return false; } if (!stopW) stopW = Date.now(); if (Date.now() - stopW > (co.speed === '3' ? 7000 : 16000)) { stopW = 0; return false; } timer = setTimeout(go, 150); return true; };
         if (sim && m.half && !h1) { if (busy()) return; h1 = true; sim.half(); }
         if (wantStop) { wantStop = false; $('b-lv-stop').classList.remove('on'); if (!m.done) return sheet(st && st.t !== 'fim' && st.t !== 'gol' ? st : { t: 'pausa' }); }
         if (st && st.t !== 'fim' && st.t !== 'gol') return sheet(st); // gol não para o jogo (Silvio, 2026-11-09): o placar e o painel contam
@@ -1040,7 +1040,7 @@
         if (z.className !== zc) z.className = zc;
       };
       sim = LP.sim({ me: -1, t0: m.tk || m.min, half2: m.min > 45, clean: LDon, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1.25), spm: () => spMs(co.speed === '3' ? '3' : '1') / 1000, onFrame: zone,
-        free: FREE, onShot: sh => { if (m.done) return; const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, sh); if (e) { sent.add(e); paint(); } },
+        free: FREE, onShot: sh => { if (m.done && !stopW) return; const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, Object.assign({ late: !!stopW }, sh)); if (e) { sent.add(e); paint(); } },
         onPick: (side, inf) => { if (ctx && side === 0 && inf && inf.id) U.LD.livePlayer(ctx, inf.id); },
         seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)], styles: [S.coSimSty(m.us), S.coSimSty(m.them)] });
       lineKey = [m.us, m.them].map(s => s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style);
