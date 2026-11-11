@@ -39,7 +39,7 @@
     }
     bus();
     // Gravações de verdade (rede 40 KB, torcida 60 KB). Enquanto não chegam, o gol usa os sons sintetizados
-    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=9c4a53aa']].forEach(([k, url]) => {
+    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=9c4a53aa'], ['apito', 'assets/sons/apito.mp3?v=b8f1c7c6'], ['apitoInt', 'assets/sons/apito-int.mp3?v=04a63f3e'], ['apitoFim', 'assets/sons/apito-fim.mp3?v=ca38f7cc']].forEach(([k, url]) => {
       fetch(url).then(r => r.arrayBuffer())
         .then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { rec[k] = b; }).catch(() => { /* fica a sintetizada */ });
     });
@@ -286,6 +286,18 @@
     }
   }
 
+  // Apito sintetizado (antes da gravação): dois toques curtos e um longo; a bolinha de dentro faz o tom tremer e "rolar"
+  function synthWhistle(t) {
+      [[0, 0.11], [0.17, 0.11], [0.34, 0.45]].forEach(([dt, dur]) => {
+        const { osc, g } = tone('sine', 3000, 2900, t + dt, dur, 0.13, { a: 0.012, echo: 0.1 });
+        const lfo = ctx.createOscillator(), lg = ctx.createGain(), am = ctx.createGain();
+        lfo.frequency.value = 38; lg.gain.value = 140;
+        lfo.connect(lg); lg.connect(osc.frequency);
+        am.gain.value = 0.04; lfo.connect(am); am.connect(g.gain);
+        lfo.start(t + dt); lfo.stop(t + dt + dur + 0.05);
+        noise(t + dt, dur, 0.035, 0.01, 'bandpass', 3000, 0, 2);
+      });
+    }
   const SOUNDS = {
     // Toque em botão. Até 2026-11-11 era um seno de 1100 Hz a 0,1 que no alto-falante do celular quase não se ouvia; depois
     // um triângulo de 1500 Hz que o Silvio achou agudo demais ("a maioria vai ser mais grave"). Agora três sons de botão:
@@ -308,17 +320,14 @@
       tone('triangle', 990, 990, t + 0.055, 0.12, 0.2, { a: 0.004, echo: 0.1 });
     },
     // Apito do juiz: dois toques curtos e um longo; a bolinha de dentro faz o tom tremer e "rolar"
+    // Gravação do Silvio (2026-11-11): um apito (saída e pênalti), dois no intervalo (curto e longo) e três no fim (curto, curto, longo),
+    // montados do mesmo apito. Enquanto a gravação não chega, a sintetizada
     whistle(t) {
-      [[0, 0.11], [0.17, 0.11], [0.34, 0.45]].forEach(([dt, dur]) => {
-        const { osc, g } = tone('sine', 3000, 2900, t + dt, dur, 0.13, { a: 0.012, echo: 0.1 });
-        const lfo = ctx.createOscillator(), lg = ctx.createGain(), am = ctx.createGain();
-        lfo.frequency.value = 38; lg.gain.value = 140;
-        lfo.connect(lg); lg.connect(osc.frequency);
-        am.gain.value = 0.04; lfo.connect(am); am.connect(g.gain);
-        lfo.start(t + dt); lfo.stop(t + dt + dur + 0.05);
-        noise(t + dt, dur, 0.035, 0.01, 'bandpass', 3000, 0, 2);
-      });
+      if (rec.apito) return play('apito', t, 0.45, 0.05);
+      synthWhistle(t);
     },
+    whistleHalf(t) { if (rec.apitoInt) play('apitoInt', t, 0.45, 0.05); else synthWhistle(t); },
+    whistleEnd(t) { if (rec.apitoFim) play('apitoFim', t, 0.45, 0.05); else synthWhistle(t); },
     // Chute: pancada grave + o "toc" do couro
     kick(t) {
       tone('sine', 150, 50, t, 0.14, 0.85);

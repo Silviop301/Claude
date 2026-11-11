@@ -1513,7 +1513,7 @@
     }
     let back = 0; // voltando para o meio depois do gol (correm de volta)
     let koHold = false; // saída do começo de cada tempo: o relógio da tela espera o apito (todos no lugar)
-    function startPlay() { koHold = false; back = 0; mode = 'play'; const k = kicker(koSide); ball.x = 52.5; ball.y = 34; setOwner(k); lastPasser = k; lastPassClk = clk; fly(k, at(koSide, 6).x, at(koSide, 6).y, at(koSide, 6), false, 'curto', false); }
+    function startPlay() { if (koHold && typeof window !== 'undefined' && window.CRAQUE_SFX) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {} /* apito da saída de cada tempo */ koHold = false; back = 0; mode = 'play'; const k = kicker(koSide); ball.x = 52.5; ball.y = 34; setOwner(k); lastPasser = k; lastPassClk = clk; fly(k, at(koSide, 6).x, at(koSide, 6).y, at(koSide, 6), false, 'curto', false); }
     // A volta para o meio depois do gol passa em velocidade 3× (é o tempo de recomeçar, não um lance)
     let mT = 0; // segundos de campinho jogados desde o último minuto do motor (ver minute)
     function step(dt) { mT += dt; step1(dt); if (back && mode === 'ko') { step1(dt); step1(dt); } }
