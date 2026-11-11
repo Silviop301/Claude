@@ -32,7 +32,7 @@ async function page(b, first) {
   const click = async sel => { await p.waitForSelector(sel, { timeout: 8000 });
     for (let k = 0; k < 4 && !/data-rb|mkr2/.test(sel) && await p.$('#ld-pop .mkr2-pop [data-rb]'); k++) { await p.waitForTimeout(500); await p.click('#ld-pop .mkr2-pop [data-rb]:last-child'); await p.waitForTimeout(400); }
     if (!/ctw-/.test(sel) && await p.$('#ctw-no')) { await p.waitForTimeout(500); await p.click('#ctw-no'); await p.waitForTimeout(300); } // "Contratos no fim" (faltando 5 rodadas)
-    await p.click(sel); await p.waitForTimeout(500); };
+    await p.click(sel); await p.waitForTimeout(750); }; // 750 ms: a trava de duplo toque do jogo (~700 ms) engolia o toque seguinte de vez em quando e o passeio parava (ex.: Acelerar a obra)
   return { p, shot, click };
 }
 (async () => {

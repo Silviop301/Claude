@@ -26,7 +26,19 @@
   const CREST_V = { 'bra-c-9': 2 };
   const crestUrl = id => BADGES + id + '.png' + (CREST_V[id] ? '?v=' + CREST_V[id] : '');
   const badgeSrc = s => { s = String(s); const m = /^badges\/([a-z0-9-]+)\.png$/.exec(s); return m ? crestUrl(m[1]) : s.replace(/^badges\//, BADGES); };
-  const crest = (id, cls) => '<img class="crest' + (cls ? ' ' + cls : '') + '" src="' + crestUrl(id) + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">';
+  const crest = (id, cls) => '<img class="crest' + (cls ? ' ' + cls : '') + '" src="' + crestUrl(id) + '" alt="" loading="lazy" onerror="CLIMBIX_NOCREST(this)">';
+  // Clube sem escudo no arquivo (7 de 998 em 11/11: Al-Arabi, Queen's Park, Kalamata, Bregenz, Leones, Al-Arabi KSA, San Antonio):
+  // em vez de um buraco, um escudo simples com as iniciais, sempre da mesma cor para o mesmo clube
+  window.CLIMBIX_NOCREST = img => {
+    if (img.dataset.nc) { img.style.visibility = 'hidden'; return; } img.dataset.nc = '1';
+    const id = (/([a-z0-9-]+)\.png/.exec(img.getAttribute('src') || '') || [])[1], cl = id && D.CLUB_BY_ID && D.CLUB_BY_ID[id];
+    if (!cl) { img.style.visibility = 'hidden'; return; }
+    const w = String(cl.short || cl.name || '').replace(/\(.*?\)/g, '').split(/[\s-]+/).filter(x => x && !/^(fc|sc|ec|cf|ac|de|do|da|al)$/i.test(x));
+    const ini = (w.length > 1 ? w.slice(0, 3).map(x => x[0]).join('') : (w[0] || String(cl.name || '?')).slice(0, 3)).toUpperCase().replace(/[<>&"']/g, '');
+    let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+    const col = ['#1E5AA8', '#B3262E', '#1F7A4D', '#6B3FA0', '#C4731B', '#2B2D31'][h % 6];
+    img.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M32 3l24 7v20c0 15-10 26-24 31C18 56 8 45 8 30V10z" fill="' + col + '" stroke="#F3F1EA" stroke-width="3" stroke-linejoin="round"/><text x="32" y="' + (ini.length > 2 ? 37 : 39) + '" text-anchor="middle" font-family="Arial Narrow,Arial,sans-serif" font-weight="800" font-size="' + (ini.length > 2 ? 18 : 23) + '" fill="#F3F1EA">' + ini + '</text></svg>');
+  };
   const trophy = (type, size, name) => window.CRAQUE_TROPHY(type, size, name);
   const titleType = t => (t.id === 'cont' ? (t.name === 'Libertadores' ? 'lib' : 'ucl') : t.id);
   const meter = (label, v) => '<span class="m"><span class="ml">' + label + ' · ' + S.relLabel(v) + '</span><span class="mb"><i style="width:' + Math.round(v) + '%" class="' + (v >= 62 ? 'hi' : v < 32 ? 'lo' : '') + '"></i></span></span>';
