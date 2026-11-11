@@ -304,7 +304,10 @@
       [ca, cb].forEach(c => { if (!c) return;
         Object.keys(c.dv).forEach(k => { const x = c.dv[k], y = dv[k] || [0, 0]; dv[k] = [Math.max(y[0], x[0] || 0), Math.max(y[1], x[1] || 0)]; });
         Object.keys(c.once).forEach(k => { once[k] = Math.max(once[k] || 0, c.once[k] || 0); }); });
-      coins = coinSum(Object.assign({}, cn, { dv, once, clubs: Object.assign({}, (ca || {}).clubs, (cb || {}).clubs) }));
+      // Histórico: as linhas dos dois aparelhos, sem repetir, da mais nova para a mais velha
+      const seen = {}, log = [].concat((ca || {}).log || [], (cb || {}).log || []).filter(x => { const k = x && x.at + '|' + x.n + '|' + x.t; if (!x || seen[k]) return false; seen[k] = 1; return true; })
+        .sort((x, y) => (y.at || 0) - (x.at || 0)).slice(0, 60);
+      coins = coinSum(Object.assign({}, cn, { dv, once, log, clubs: Object.assign({}, (ca || {}).clubs, (cb || {}).clubs) }));
     }
     return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news), days }, prof ? { prof } : {}, coins ? { coins } : {});
   }
@@ -330,13 +333,14 @@
     return c;
   }
   const wallet = () => { const o = get(); o.coins = coinNorm(o.coins) || coinSum({ v: 2, n: 0, got: 0, log: [], once: {}, clubs: {}, dv: {} }); return o.coins; };
+  const LOGN = 60; // histórico na loja (2026-11-11, Silvio: de onde vieram as moedas)
   const mine = w => w.dv[DEV] || (w.dv[DEV] = [0, 0]);
   function coinAdd(list) {
     const w = wallet(); let tot = 0;
     [].concat(list || []).forEach(x => {
       const n = Math.round(x && x.n); if (!(n > 0)) return;
       if (x.once) { if (w.once[x.once] != null) return; w.once[x.once] = n; } else mine(w)[0] += n;
-      tot += n; w.log = [{ n, t: x.t, at: Date.now() }].concat(w.log).slice(0, 20);
+      tot += n; w.log = [{ n, t: x.t, at: Date.now() }].concat(w.log).slice(0, LOGN);
     });
     if (tot) { coinSum(w); put(); }
     return tot;
@@ -345,7 +349,7 @@
   function coinSpend(n, t) {
     const w = wallet(); n = Math.round(n);
     if (!(n > 0) || w.n < n) return false;
-    mine(w)[1] += n; coinSum(w); w.log = [{ n: -n, t, at: Date.now() }].concat(w.log).slice(0, 20); put();
+    mine(w)[1] += n; coinSum(w); w.log = [{ n: -n, t, at: Date.now() }].concat(w.log).slice(0, LOGN); put();
     return true;
   }
   // Compras pagas que o servidor já entregou ([{ref, coins}]) mas que não estão no saldo (perdidas na junção antiga de
@@ -354,7 +358,7 @@
     const w = wallet(), tot = (paid || []).reduce((a, x) => a + (x.coins || 0), 0); let back = 0;
     (paid || []).forEach(x => { const k = 'pay-' + x.ref, n = Math.round(x.coins);
       if (!(n > 0) || w.got >= tot || w.once[k]) return;
-      w.once[k] = n; back += n; coinSum(w); w.log = [{ n, t: 'Compra na loja (devolvida)', at: Date.now() }].concat(w.log).slice(0, 20); });
+      w.once[k] = n; back += n; coinSum(w); w.log = [{ n, t: 'Compra na loja (devolvida)', at: Date.now() }].concat(w.log).slice(0, LOGN); });
     if (back) put();
     return back;
   }

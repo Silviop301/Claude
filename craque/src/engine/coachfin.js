@@ -189,7 +189,7 @@
   // Aporte do investidor (moedas → dinheiro, fase 3 das moedas): 20 moedas = 1 semana da folha normal do clube, entra no
   // caixa e na verba (comprar tira dos dois); até 10 semanas por temporada; no vermelho não pode (não é saída da crise).
   // Fica fora do saldo da temporada (f.ss.apo), então não conta como lucro para a diretoria. Quem cobra as moedas é a tela.
-  S.CO_APORTE = { coin: 20, max: 10 };
+  S.CO_APORTE = { coin: 12, max: 10 }; // 12 moedas = 1 semana da folha (Silvio 2026-11-10: 20 estava caro)
   S.coAporteUsed = co => { const f = S.coFin(co); return f && f.ap && f.ap.s === co.season ? f.ap.wk : 0; };
   S.coAporteLeft = co => { const f = S.coFin(co); return !f || f.caixa < 0 ? 0 : Math.max(0, S.CO_APORTE.max - S.coAporteUsed(co)); };
   S.coAporteValue = (co, wk) => r10(baseOf(co) * wk);
