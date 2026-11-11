@@ -9054,6 +9054,9 @@ button.coin-pill { cursor: pointer; border: 0; }
 .lj-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .lj-two span { border-radius: 12px; background: rgba(243,241,234,.06); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .lj-two small { font: 700 14px/1 var(--body); color: #9fb0a6; } .lj-two b { font: 800 20px/1.1 var(--display); }
+/* Aporte com o caixa no vermelho (11/11): 3 quadros, o caixa de antes e depois primeiro */
+.lj-two.t3 { grid-template-columns: repeat(3, 1fr); gap: 8px; } .lj-two.t3 span { padding: 10px; } .lj-two.t3 b { font-size: 17px; white-space: nowrap; }
+.lj-two b i { font-style: normal; } .lj-two b i.up { color: #7ED39A; } .lj-two b i.dn { color: #F5A57F; }
 .lj-cost { align-items: center; justify-content: center; gap: 10px; }
 .lj-cost > span { display: flex; align-items: center; gap: 10px; } .lj-cost svg { width: 34px; height: 34px; } .lj-cost > span b { font: 800 48px/1 var(--display); color: var(--gold); }
 .lj-cost > small:last-child { font: 700 15px/1 var(--body); color: #B9C9BF; }
@@ -9703,6 +9706,10 @@ body:has(> .tc-ov) > .pay-ty { visibility: hidden; }
 .ld-st .tm-pitch button.tm-best svg{width:14px;height:14px;fill:#f2c230}
 .ld-st .tm-pitch button.tm-best.on{opacity:.45}
 .ld-st .tm-pitch button.tm-best:active{transform:scale(.95)}
+/* Descansados (11/11): no canto de cima do campo, à esquerda (medido nas 7 formações, com e sem entalhe: ao lado ou em cima
+   do Melhores ele tampava o lateral ou o nome do zagueiro) */
+.ld-st .tm-pitch button.tm-best.tm-rest{bottom:auto;top:8px;padding:0 8px 0 6px;letter-spacing:.01em;gap:3px}
+.ld-st .tm-pitch button.tm-best.tm-rest svg{fill:#7ED39A}
 /* Disco na Semana do Treinador: no meio do topo, no espaço entre a META e o caixa; nome embaixo quando a faixa troca */
 .sm-h .sm-mu { display: flex; justify-content: center; align-items: center; min-width: 0; }
 .hl-dk.dk-sm { position: relative; right: auto; bottom: auto; gap: 4px; }
