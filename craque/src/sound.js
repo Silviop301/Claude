@@ -109,11 +109,14 @@
   // porque o iPhone ignora o volume do <audio>: o volume baixo e o fade saem do ganho. Começa no primeiro toque (regra do
   // iPhone), some no jogo ao vivo (`.lv` na tela) e com o app fora da frente, e volta de onde parou. Chave própria
   // (climbix-musica), separada do Som. Faixa nova: põe o .mp3 em assets/musica/, o nome em M_LIST e roda craque_sw.py
-  const M_LIST = ['uk-garage.mp3', 'lounge.mp3', 'sports-rocker.mp3', 'shut-the-funk-up.mp3', 'cheetah-print.mp3', 'atomic-bass.mp3', 'electric-desire.mp3', 'liberty-city.mp3', 'mood-swings.mp3', 'idiot.mp3']; // 2 da Pixabay (monume) + 8 da Epidemic Sound que o Silvio mandou em 11/11 (licença da conta dele)
+  const M_LIST = ['uk-garage.mp3', 'lounge.mp3', 'sports-rocker.mp3', 'shut-the-funk-up.mp3', 'cheetah-print.mp3', 'atomic-bass.mp3', 'electric-desire.mp3', 'liberty-city.mp3', 'mood-swings.mp3', 'idiot.mp3', 'unite.mp3', 'drive.mp3', 'legends.mp3', 'dobronx.mp3', 'vultures.mp3', 'space-worm.mp3', 'whiskey-gasoline.mp3', 'underwxrld.mp3', 'wabi-sabi.mp3']; // 2 da Pixabay (monume) + 17 da Epidemic Sound que o Silvio mandou em 11/11 (licença da conta dele)
   // Nome que o disco da home mostra (faixa · artista); faixa nova sem nome aqui mostra o nome do arquivo
   const M_NAMES = { 'uk-garage.mp3': ['UK Garage', 'monume'], 'lounge.mp3': ['Lounge', 'monume'], 'sports-rocker.mp3': ['Sports Rocker', 'Taelimb'],
     'shut-the-funk-up.mp3': ['Shut the Funk Up!', 'Daniel Fridell'], 'cheetah-print.mp3': ['Cheetah Print', 'Cushy'], 'atomic-bass.mp3': ['Atomic Bass', 'Daniel Fridell'],
-    'electric-desire.mp3': ['Electric Desire', 'Daniel Fridell'], 'liberty-city.mp3': ['Liberty City', 'DonVayei'], 'mood-swings.mp3': ['Mood Swings', 'Siine'], 'idiot.mp3': ['IDIOT', "I'MIN"] };
+    'electric-desire.mp3': ['Electric Desire', 'Daniel Fridell'], 'liberty-city.mp3': ['Liberty City', 'DonVayei'], 'mood-swings.mp3': ['Mood Swings', 'Siine'], 'idiot.mp3': ['IDIOT', "I'MIN"],
+    'unite.mp3': ['Unite!', 'Donell Mase'], 'drive.mp3': ['DRIVE', 'MXRPHEUS'], 'legends.mp3': ['LEGENDS', 'MXRPHEUS'], 'dobronx.mp3': ['DOBRONX', 'MXRPHEUS'],
+    'vultures.mp3': ['VULTURES', 'MXRPHEUS'], 'space-worm.mp3': ['Space Worm', 'AGST'], 'whiskey-gasoline.mp3': ['Whiskey & Gasoline', 'Def Lev'],
+    'underwxrld.mp3': ['UNDERWXRLD', 'MXRPHEUS'], 'wabi-sabi.mp3': ['Wabi Sabi', 'Lukas Got Lucky'] };
   // Avisa a tela (disco da home) quando a faixa troca ou a música toca/para
   const mSay = () => { try { root.dispatchEvent(new Event('climbix-musica')); } catch (e) { /* sem tela */ } };
   const M_VOL = 0.35;
