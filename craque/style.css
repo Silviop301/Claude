@@ -8640,6 +8640,7 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .bk2-lg { height: 38px; width: auto; }
 /* Parada do jogo com o campo da escalação (Silvio 2026-11-09): tela cheia, anel de energia, amarelo, auxiliar num botão */
 .ld-pop-c.ldl-full { width: 844px; height: 390px; max-height: none; border-radius: 0; padding: 12px 14px; background: #0B2E20; box-shadow: none; box-sizing: border-box; }
+#ld.wide .ld-pop-c.ldl-full { width: 100%; height: 100%; padding: var(--ldpy) var(--ldpx); } /* computador, tela larga (fit em ui/coachland.js) */
 .ld-pop:has(> .ldl-full) { background: #0B2E20; } /* tela cheia da parada: a sobra em volta fica da cor do palco, não escurecida */
 .ldl-tm .tm-h { padding-left: 0; gap: 12px; }
 .ldl-tm .tm-h small { font: 800 20px/1 var(--display); color: #B9C9BF; }
@@ -9848,3 +9849,41 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .rsc-pop .rsc-g b.dn, .rsc-pop .acd-help p b.dn { color: #b4501f; } .rsc-pop .rsc-g b.up { color: #1f7a45; }
 .rsc-pop .acd-help p b { font: inherit; display: inline; }
 .pi-pb .pi-lg { width: 132px; height: 84px; flex: none; object-fit: contain; }
+
+/* Computador, tela larga (#ld.wide, fit em ui/coachland.js; desenho aprovado 2026-11-11, quadro "Climbix no computador") */
+.sm-ex { display: none; }
+#ld.wide .sm { container-type: size; grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: 48px minmax(0, 1.3fr) minmax(0, 1fr) clamp(64px, 13cqh, 84px); gap: clamp(10px, 2.2cqh, 14px) 20px; }
+#ld.wide .sm-card { border-radius: 22px; gap: clamp(4px, 1.5cqh, 10px); }
+#ld.wide .sm-vs { max-width: 780px; grid-template-columns: 1fr 110px 1fr; }
+#ld.wide .sm-cr { width: clamp(56px, 15cqh, 118px); height: clamp(56px, 15cqh, 118px); } #ld.wide .sm-tm { gap: clamp(4px, 1.2cqh, 9px); }
+#ld.wide .sm-tm > b { font-size: clamp(28px, 6cqh, 40px); } #ld.wide .sm-tm > small { font-size: clamp(15px, 2.8cqh, 18px); } #ld.wide .sm-x { padding-top: clamp(18px, 6cqh, 40px); font-size: clamp(38px, 7cqh, 48px); }
+#ld.wide .sm-rd { font-size: 15px; } #ld.wide .sm-rv { font-size: 15px; }
+#ld.wide .sm-ex { grid-column: 1; grid-row: 3; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; min-height: 0; }
+.sm-xb { border-radius: 18px; background: #141517; padding: clamp(10px, 2cqh, 14px) 18px; display: flex; flex-direction: column; justify-content: space-around; gap: 4px; min-height: 0; overflow: hidden; }
+.sm-xt { font: 700 14px/1 var(--body); letter-spacing: .1em; color: #9fb0a6; margin-bottom: 2px; }
+.sm-xr { display: flex; align-items: center; gap: 10px; min-height: 0; }
+.sm-xr i { width: 34px; flex: none; font: 700 17px/1 var(--body); font-style: normal; color: #9fb0a6; }
+.sm-xc { width: 24px; height: 24px; object-fit: contain; flex: none; }
+.sm-xr b { flex: 1; min-width: 0; font: 700 clamp(18px, 3.4cqh, 21px)/1.1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sm-xr small { font: 700 17px/1 var(--body); color: #D9E2DC; } .sm-xr small.hm { color: #7ED39A; }
+.sm-xr.me b, .sm-xr.me i { color: var(--gold); }
+#ld.wide .sm-wk { grid-row: 4; gap: 14px; } #ld.wide .sm-w { height: 100%; border-radius: 18px; padding: 0 20px !important; }
+#ld.wide .sm-w b { font-size: 26px; } #ld.wide .sm-w small { font-size: 14px; } #ld.wide .sm-w .tm-dot { top: 27px; }
+#ld.wide .sm-side { gap: 12px; } #ld.wide .sm-nv { height: clamp(52px, 11cqh, 70px); border-radius: 18px; font-size: 28px !important; padding: 0 22px !important; }
+#ld.wide .sm-nv .tm-dot { top: 20px; } #ld.wide .sm-side .tm-go { margin-top: auto; height: clamp(64px, 13cqh, 84px); min-height: 0; border-radius: 18px; font-size: 34px !important; }
+
+.kb2-x { display: none; }
+#ld.wide .kb2 { container-type: size; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: 48px minmax(0, 1fr); gap: 14px 20px; }
+#ld.wide .kb2 .tm-h b { font-size: 32px; } #ld.wide .kb2-cr { width: 44px; height: 44px; }
+#ld.wide .kb2-g { gap: 16px; } #ld.wide .kb2-g.g3 { grid-template-columns: 1fr 1fr 1.25fr; }
+#ld.wide .kb2-t, #ld.wide .kb2-g.g3 .kb2-t { border-radius: 20px; padding: clamp(14px, 3cqh, 20px) clamp(14px, 1.7cqw, 22px) !important; }
+#ld.wide .kb2-t > b, #ld.wide .kb2-g.g3 .kb2-t > b { font-size: clamp(26px, 5cqh, 30px); } #ld.wide .kb2-t em { font-size: clamp(30px, 6.4cqh, 42px); white-space: nowrap; } #ld.wide .kb2-t small { font-size: clamp(15px, 2.6cqh, 17px); }
+#ld.wide .kb2-t em.hm { font-size: 18px; }
+#ld.wide .kb2-x { display: block; margin-top: 4px; padding-top: 9px; border-top: 1px solid rgba(255, 255, 255, .1); font: 600 clamp(13px, 2.3cqh, 15px)/1.3 var(--body); font-style: normal; color: #9fb0a6; }
+#ld.wide .kb2-x b { color: #F3F1EA; font-weight: 700; }
+#ld.wide .kb2-es svg { width: 100%; max-height: 240px; }
+#ld.wide .kb2-side { gap: 14px; } #ld.wide .kb2-side.k3 .kb2-dir { padding: 16px 20px; border-radius: 20px; } #ld.wide .kb2-side.k3 .kb2-dir b { font-size: 28px; }
+#ld.wide .kb2-pf { width: 64px; height: 64px; top: 14px; right: 16px; } #ld.wide .kb2-side.k3 .kb2-dir > small { font-size: 14px; padding-right: 72px; }
+#ld.wide .kb2-side.k3 .kb2-pr { padding: 14px 20px; border-radius: 20px; } #ld.wide .kb2-side.k3 .kb2-fc { width: 74px; height: 74px; }
+#ld.wide .kb2-side.k3 .kb2-pr b { font-size: 26px; } #ld.wide .kb2-side.k3 .kb2-pr span { font-size: 16px; } #ld.wide .kb2-side.k3 .kb2-pr small { font-size: 14px; }
+@container (max-height: 560px) { .sm-xr.far { display: none; } } /* pouca altura (monitor 1080p): a tabela mostra só você, quem está acima e abaixo */
