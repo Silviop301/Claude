@@ -7,6 +7,7 @@
   const U = window.CRAQUE_UI;
   const { S, sfx, esc, club, crest } = U;
   const W = 844, H = 390, DESK_K = 1.7; // DESK_K: maior escala do palco no computador (1435×663 px na tela)
+  const WIDE = /^(lv|tm|lde2|tb2|rs|sm|kb2)(\s|$)/, WIDE_MAX = [1320, 660]; // telas que crescem no computador (fit) e o maior tamanho do conteúdo delas
   const on = () => true; // o Treinador é sempre deitado
   // Som de cada botão do palco (Silvio, 11/11: "muito agudo, a maioria vai ser mais grave"): voltar, fechar e cancelar = back
   // (mais grave), a ação principal (dourado, confirmar) = ok (o único mais agudo), o resto = tap
@@ -50,10 +51,19 @@
     let k = Math.max(.05, Math.min(vw / W, vh / H, (vw - 2 * sx) / (W - 28), (vh - 2 * sy) / (H - 24)));
     // Monitor grande com mouse (Silvio, 2026-11-11, 32" 2K: "tá muito grande"): o palco crescia até 3× e cada botão ficava enorme.
     // No computador o palco para em DESK_K× o desenho de 844×390 (contando o zoom do html.desk), centrado; a sobra vira fundo
-    if (document.documentElement.classList.contains('desk')) k = Math.min(k, DESK_K / ((U.zk && U.zk()) || 1));
+    const desk = document.documentElement.classList.contains('desk');
+    if (desk) k = Math.min(k, DESK_K / ((U.zk && U.zk()) || 1));
+    const st0 = document.getElementById('ld-st'), wide0 = desk && !!(st0 && st0.firstElementChild && WIDE.test(st0.firstElementChild.className));
     const ex = Math.ceil(Math.max(0, vw / k - W) / 2) + 1, ey = Math.ceil(Math.max(0, vh / k - H) / 2) + 1; // sobra de cada lado em px do palco, com 1 a mais para a borda não deixar fio
     el.style.setProperty('--ldw', (W + 2 * ex) + 'px'); el.style.setProperty('--ldh', (H + 2 * ey) + 'px');
-    el.style.setProperty('--ldpx', (14 + ex) + 'px'); el.style.setProperty('--ldpy', (12 + ey) + 'px');
+    // Telas largas no computador (Silvio, 2026-11-11: "com tanto espaço a gente poderia aproveitar mais"): as telas de campo e de
+    // lista (ao vivo, Time, Elenco, Tabela; o Mercado esticado fica vazio, ganha desenho próprio) usam a sobra do monitor, até WIDE_MAX px do palco, com a letra do mesmo tamanho.
+    // As de cartões (home, Semana, Clube, Finanças) ficam no 816×366 do desenho, que esticado fica vazio
+    let px = 14 + ex, py = 12 + ey, wide = wide0;
+    if (wide) { px = Math.max(px - ex, (W + 2 * ex - WIDE_MAX[0]) / 2, 40); py = Math.max(py - ey, (H + 2 * ey - WIDE_MAX[1]) / 2, 36); px = Math.min(px, 14 + ex); py = Math.min(py, 12 + ey); }
+    if (wide && (W + 2 * ex - 2 * px < 1000 || H + 2 * ey - 2 * py < 470)) { wide = false; px = 14 + ex; py = 12 + ey; } // notebook: quase não sobra, fica o desenho do celular
+    el.classList.toggle('wide', wide); // #ld.wide: as janelas de tela cheia (parada do ao vivo, .ldl-full) seguem a tela larga
+    el.style.setProperty('--ldpx', px + 'px'); el.style.setProperty('--ldpy', py + 'px');
     el.style.setProperty('--ldk', k.toFixed(4));
   }
   // Tela girada (Silvio, 2026-11-11): com a rotação travada em pé (iPhone não deixa o site travar deitado), o botão do aviso
@@ -339,9 +349,15 @@
       wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
         '<button class="sm-w' + (sc ? ' ok' : '') + '" id="ld-ol"><small>OLHEIRO</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o ' + esc(vc.short || vc.name)) + '</b></button></div>';
     } else card = '<div class="sm-bye"><b>Sem jogo nesta rodada</b><small>Temporada ' + (U.YEAR0 + co.season) + ' · o time descansa, os outros jogam.</small></div>';
+    // Computador (tela larga, #ld.wide): os 3 jogos depois deste e a tabela perto de você (desenho aprovado 2026-11-11, quadro
+    // "Climbix no computador"); no celular .sm-ex fica escondido
+    const sx = co.ss, sR = sx.rounds.length, smi = sx.ids.indexOf(co.club), nxL = [];
+    for (let i = sx.i + 1; i < Math.min(sR, sx.i + 4); i++) { const g = sx.rounds[i].find(([h, a]) => h === smi || a === smi); if (!g) { nxL.push('<span class="sm-xr"><i>R' + (i + 1) + '</i><b>folga</b></span>'); continue; } const hm = g[0] === smi, id = sx.ids[hm ? g[1] : g[0]]; nxL.push('<span class="sm-xr"><i>R' + (i + 1) + '</i>' + crest(id, 'sm-xc') + '<b>' + esc(club(id).short || club(id).name) + '</b><small' + (hm ? ' class="hm"' : '') + '>' + (hm ? 'casa' : 'fora') + '</small></span>'); }
+    const p0 = Math.max(0, Math.min(t.length - 5, pos - 3)), near = t.slice(p0, p0 + 5).map((x, k) => '<span class="sm-xr' + (x.me ? ' me' : Math.abs(p0 + k + 1 - Math.max(2, Math.min(t.length - 1, pos))) > 1 ? ' far' : '') + '"><i>' + (p0 + k + 1) + 'º</i>' + crest(x.id, 'sm-xc') + '<b>' + esc(club(x.id).short || club(x.id).name) + '</b><small>' + x.p + '</small></span>').join('');
+    const ex = '<div class="sm-ex"><div class="sm-xb"><small class="sm-xt">PRÓXIMOS JOGOS</small>' + (nxL.join('') || '<span class="sm-xr"><b>Última rodada</b></span>') + '</div><div class="sm-xb"><small class="sm-xt">TABELA · PERTO DE VOCÊ</small>' + near + '</div></div>';
     const tip0 = !nx.bye && co.scout && co.scout.i === co.ss.i ? S.coTip(co, true) : null, tipNew = tip0 && !tip0.seen && !S.coTipUsed(co, tip0);
     const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['mercado', 'Mercado'], ['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + (k === 'mercado' && inN + nwN ? '<i class="tm-dot">' + (inN + nwN) + '</i>' : k === 'time' && tipNew ? '<i class="tm-dot">1</i>' : '') + '</button>').join('');
-    show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + wk +
+    show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + ex + wk +
       '<nav class="sm-side" aria-label="Menu do técnico">' + nav + '<button class="tm-go" id="ld-play">' + (nx.bye ? 'Ver a rodada' : 'Jogar') + '</button></nav></div>', st => {
       if (U.discBind) U.discBind(st);
       cxBind(st, semana);
@@ -1003,12 +1019,14 @@
     const exp = co.squad.filter(p => p.ct <= 1).length, pres = S.coPres ? S.coPres(co) : null;
     const est = S.coEst && U.EST ? S.coEst(co) : null, aux = S.coAux(co), auxLv = S.coAuxLv(co), dm = S.coDm(co);
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
-    const tile = (id, k, t, v, sub, cc) => '<button class="kb2-t"' + (id ? ' id="' + id + '"' : '') + ' data-k="' + k + '"><b>' + t + '</b><span><em class="' + (cc || '') + '">' + v + '</em><small>' + sub + '</small></span></button>';
+    // x: um detalhe a mais que só aparece no computador (#ld.wide, desenho aprovado 2026-11-11)
+    const tile = (id, k, t, v, sub, cc, x) => '<button class="kb2-t"' + (id ? ' id="' + id + '"' : '') + ' data-k="' + k + '"><b>' + t + '</b><span><em class="' + (cc || '') + '">' + v + '</em><small>' + sub + '</small>' + (x ? '<i class="kb2-x">' + x + '</i>' : '') + '</span></button>';
+    const expN = co.squad.filter(p => p.ct <= 1).map(p => esc(String(p.n || '').split(' ').slice(-1)[0])), expX = expN.length ? expN.slice(0, 3).join(', ') + (expN.length > 3 ? ' e mais ' + (expN.length - 3) : '') : '';
     const meta = (B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + B.goal.pos + 'º') + ' · hoje ' + pos + 'º';
     show('<div class="kb2"><div class="tm-h"><button class="tcr-back" id="kb2-back" aria-label="Voltar">' + BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>' + esc(cl.name) + '</b><small>' + esc(co.ss ? co.ss.name : '') + ' · fama ' + co.fame + '</small></div>' +
-      '<div class="kb2-g' + (est ? ' g3' : '') + '">' + tile('ldk-go', 'fin', 'Finanças', c.brl(f.caixa), 'no caixa', f.caixa < 0 ? 'dn' : '') +
-        tile('', 'ele', 'Elenco', exp ? exp : co.squad.length, exp ? (exp > 1 ? 'contratos acabam' : 'contrato acaba') + ' no fim do ano' : 'jogadores', exp ? 'dn' : '') +
-        tile('', 'tro', 'Troféus', co.titles.length, co.titles.length === 1 ? 'título' : 'títulos') +
+      '<div class="kb2-g' + (est ? ' g3' : '') + '">' + tile('ldk-go', 'fin', 'Finanças', c.brl(f.caixa), 'no caixa', f.caixa < 0 ? 'dn' : '', 'folha por semana <b>' + c.brl(S.coFolha(co)) + '</b>') +
+        tile('', 'ele', 'Elenco', exp ? exp : co.squad.length, exp ? (exp > 1 ? 'contratos acabam' : 'contrato acaba') + ' no fim do ano' : 'jogadores', exp ? 'dn' : '', expX) +
+        tile('', 'tro', 'Troféus', co.titles.length, co.titles.length === 1 ? 'título' : 'títulos', '', co.titles.length ? '' : 'a taça aparece aqui quando ganhar') +
         tile('', 'hall', est ? 'Hall' : 'Hall do técnico', (co.season + 1) + 'ª', 'temporada de carreira') +
         (est ? '<button class="kb2-t kb2-es" id="kb2-est" data-k="est"><b>Estádio</b>' + estThumb(co, est) + '<span><em>' + milK(S.coEstCap(est)) + '</em><small>lugares</small>' +
           '<em class="hm ' + estCls(est) + '">torcida ' + S.coEstHum(est) + '</em></span></button>' : '') + '</div>' +
