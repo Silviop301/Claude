@@ -110,6 +110,10 @@
   // iPhone), some no jogo ao vivo (`.lv` na tela) e com o app fora da frente, e volta de onde parou. Chave própria
   // (climbix-musica), separada do Som. Faixa nova: põe o .mp3 em assets/musica/, o nome em M_LIST e roda craque_sw.py
   const M_LIST = ['uk-garage.mp3', 'lounge.mp3']; // Pixabay, artista monume (licença Pixabay: uso comercial liberado)
+  // Nome que o disco da home mostra (faixa · artista); faixa nova sem nome aqui mostra o nome do arquivo
+  const M_NAMES = { 'uk-garage.mp3': ['UK Garage', 'monume'], 'lounge.mp3': ['Lounge', 'monume'] };
+  // Avisa a tela (disco da home) quando a faixa troca ou a música toca/para
+  const mSay = () => { try { root.dispatchEvent(new Event('climbix-musica')); } catch (e) { /* sem tela */ } };
   const M_VOL = 0.35;
   let mOn = true, mWant = -1, mGain = null, mEl = null, mOrd = [], mI = -1, mStop = null;
   try { mOn = localStorage.getItem('climbix-musica') !== 'off'; } catch (e) { /* fica ligada */ }
@@ -123,6 +127,7 @@
       mI = 0;
     }
     mEl.src = 'assets/musica/' + M_LIST[mOrd[mI]];
+    mSay();
     if (mWant > 0) mEl.play().catch(() => { /* espera o próximo toque */ });
   }
   function musicTick() {
@@ -143,6 +148,7 @@
       mGain = ctx.createGain(); mGain.gain.value = 0; mGain.connect(ctx.destination);
       ctx.createMediaElementSource(mEl).connect(mGain);
       mEl.addEventListener('ended', musicNext);
+      mEl.addEventListener('playing', mSay); mEl.addEventListener('pause', mSay);
       mEl.addEventListener('error', () => setTimeout(musicNext, 1000)); // faixa que não abre: pula
       musicNext();
       musicTick();
@@ -184,12 +190,13 @@
     get state() { return !mEl ? 'parada' : mWant > 0 && !mEl.paused ? 'tocando' : 'calada'; }, // para as ferramentas
     get amb() { return aSrc && aWant > 0 ? 'tocando' : 'calada'; }, // torcida de fundo, para as ferramentas
     get track() { return mEl && mI >= 0 ? M_LIST[mOrd[mI]] : ''; },
+    get title() { const f = this.track; return f ? (M_NAMES[f] || [f.replace(/\.mp3$/, '').replace(/-/g, ' '), '']) : null; },
     next() { musicNext(); },
     toggle() {
       mOn = !mOn;
       try { localStorage.setItem('climbix-musica', mOn ? 'on' : 'off'); } catch (e) { /* ok */ }
       if (mOn) { init(); musicStart(); }
-      musicTick();
+      musicTick(); mSay();
       return mOn;
     },
   };
