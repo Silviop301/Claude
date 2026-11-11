@@ -62,10 +62,12 @@
 
   // Sincroniza: puxa, junta, grava no aparelho e manda de volta
   let busy = null, again = false;
+  let syncAt = 0;
   function sync() {
     const a = acc();
     if (!a) return Promise.resolve(false);
     if (busy) { again = true; return busy; }
+    syncAt = Date.now();
     state = 'syncing'; paint();
     busy = post('pull', { token: a.token }).then(r => {
       const before = JSON.stringify(local());
@@ -93,6 +95,17 @@
     clearTimeout(timer); timer = setTimeout(sync, 4000);
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden && timer) { clearTimeout(timer); timer = 0; sync(); } });
+  // Veio coisa nova da nuvem: a carreira do Treinador aberta ficou velha (U.coStale recarrega com a nova) ou, na home, redesenha
+  function fresh(changed) {
+    if (!changed) return;
+    if (U.coStale && U.coStale()) return;
+    if (!G.c && !(U._co && U._co.co) && (document.getElementById('b-new') || document.querySelector('.hl-go'))) U.home();
+  }
+  // Voltou para o app que ficou aberto (no celular ele fica dias na memória): busca o que mudou em outro aparelho
+  const wake = () => { if (document.hidden || !acc() || window.CLIMBIX_SOLO || Date.now() - syncAt < 20000) return; clearTimeout(timer); timer = 0; sync().then(fresh); };
+  document.addEventListener('visibilitychange', wake); window.addEventListener('pageshow', e => { if (e.persisted) wake(); });
+  // Continuar logo depois de abrir: espera (até ms) a busca da nuvem que está no ar, para não abrir a carreira velha
+  const wait = ms => (busy ? Promise.race([busy, new Promise(ok => setTimeout(ok, ms || 2500))]) : Promise.resolve());
 
   // ---------- Google, GitHub e Discord ----------
   const PROV = {
@@ -400,7 +413,8 @@
   // Abriu o jogo: volta de um login com serviço ou, com conta, busca o que mudou em outro aparelho
   function boot() {
     if (window.CLIMBIX_SOLO || oauthReturn() || !acc()) return;
-    sync().then(changed => { if (changed && !G.c && document.getElementById('b-new')) U.home(); });
+    sync().then(fresh);
+    try { if (sessionStorage.getItem('climbix-outro-aparelho')) { sessionStorage.removeItem('climbix-outro-aparelho'); payToast('Carreira atualizada', 'Você jogou em outro aparelho. Ela continua de onde parou lá.'); } } catch (e) {}
   }
 
   // ---------- compra de moedas (api/pay.php, Mercado Pago) ----------
@@ -462,6 +476,6 @@
     });
     go();
   }
-  window.CLIMBIX_CLOUD = { touch, sync };
+  window.CLIMBIX_CLOUD = { touch, sync, wait };
   Object.assign(U, { cloudStatus: () => (acc() ? stTxt() : null), cloudName: () => { const a = acc(); return a ? a.user : 'Conta'; }, cloudLine: homeLine, cloud: (mode, msg, ok, back) => { backFn = back || null; screen(mode, msg, ok); }, cloudBoot: boot, cloudMerge: merge, payStatus, payCreate, payCheck, payBoot });
 })();

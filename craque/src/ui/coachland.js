@@ -16,6 +16,7 @@
   const C = () => U._co; // ajudantes e estado do Treinador (ui/coach.js)
 
   // ---------- palco ----------
+  let swapAt = -1e9, swapKey = ''; const DUP = 400;
   function host() {
     let el = document.getElementById('ld');
     if (!el) {
@@ -24,6 +25,10 @@
       document.body.appendChild(el);
       // Todo botão do palco faz o clique (Silvio, 2026-11-11: "tá indo sem som nos botões"). Quem já chama sfx('tap') não
       // dobra: o sound.js ignora o mesmo som repetido em 40 ms. Respeita o Som dos Ajustes (CRAQUE_SFX.play)
+      // Toque duplo (2026-11-11): a tela trocava no 1º toque e o 2º caía no botão que aparecesse no mesmo lugar da tela nova
+      // (criar a carreira assinava com o 1º clube, Jogar pulava a escalação e a preleção). Toque de gente até DUP ms depois
+      // de a tela mudar não conta; redesenho da mesma tela (setas, abas) não trava. Vem antes do som para não tocar à toa
+      el.addEventListener('click', e => { if (e.isTrusted && performance.now() - swapAt < DUP) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
       el.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b && !b.disabled) sfx(uiSnd(b)); }, true);
       window.addEventListener('resize', fit);
       window.addEventListener('orientationchange', () => setTimeout(fit, 200));
@@ -69,6 +74,7 @@
     document.body.classList.add('ld-on');
     const st = document.getElementById('ld-st');
     st.innerHTML = html;
+    const sk = st.firstElementChild ? st.firstElementChild.className : ''; if (sk !== swapKey) { swapKey = sk; swapAt = performance.now(); }
     // O Treinador é só deitado (Silvio 2026-11-06 tirou o "Jogar em pé"): em pé, só o aviso para girar
     document.getElementById('ld-turn').innerHTML = '<div class="ld-turn-c"><i aria-hidden="true">' + PHONE + '</i><b>Gire o celular</b><small>' + (turn || 'O Treinador é jogado com o celular deitado.') + '</small>' +
       '<button class="btn" id="ld-rotb">Girar a tela</button><small class="ld-rot-s">Para celular com a rotação travada</small></div>';
@@ -1903,7 +1909,7 @@
   // análise"): o presidente numa frase, 3 cartões com nome, valor grande e 3 linhas de números; as regras no botão ?
   const acdRow = (k, v) => '<span class="acd-r"><small>' + k + '</small><b>' + v + '</b></span>';
   const acdHelp = (t, lines) => pop('<div class="acd-help"><b>' + t + '</b>' + lines.map(l => '<p>' + l + '</p>').join('') + '<button class="hl-btn line" data-pop-x>Entendi</button></div>', t, null, 'hl-pop acd-pop');
-  const acdShow = (top, cards, cta, bind) => show('<div class="acd"><div class="acd-top">' + top + '<button class="acd-q" id="acd-q" aria-label="Como funciona">?</button></div>' +
+  const acdShow = (top, cards, cta, bind, pt) => show('<div class="acd' + (pt ? ' acd-pt' : '') + '"><div class="acd-top">' + top + '<button class="acd-q" id="acd-q" aria-label="Como funciona">?</button></div>' +
     '<div class="acd-g">' + cards + '</div><button class="acd-go" id="ldn-go">' + cta + '</button></div>', bind);
   function reuniao(sel, welcome) {
     const c = C(), co = c.co, f = S.coFin(co), P = S.coPres(co), ops = S.coFinAcordos(co);
@@ -1934,7 +1940,7 @@
         st.querySelector('#acd-q').onclick = () => { sfx('tap'); acdHelp('Como funciona', ['O dinheiro entra no caixa toda rodada.', 'Com bônus: o fixo é menor, mas no fim do ano entra o bônus se você cumprir a meta da diretoria.',
           'Travado: o valor não muda pelos anos do contrato, suba ou caia o clube.', 'Sua fama traz propostas melhores. Hoje: fama ' + co.fame + '.']); };
         st.querySelector('#ldn-go').onclick = () => { sfx('tap'); S.coFinPatrocinio(co, o.k); f.pend = null; c.save('hub'); semana(); };
-      });
+      }, true);
   }
   // Banco enxuto (2026-11-09, quadro 21): o valor grande com ◀ ▶, juros, parcela e total; os degraus do vermelho no ?
   function banco(amt) {
@@ -2171,7 +2177,7 @@
     const ids = (stay && co.club ? [co.club] : []).concat(list.filter(id => id !== co.club)).slice(0, 3);
     let pick = ids.find(id => id !== co.club) || ids[0];
     const info = id => {
-      const lg = U.league(id), g = S.coGoalFor(co, id), sq = S.coGenSquad(id, co.season, { rf: co.rf, season: co.season }), top = sq.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 11), avg = top.reduce((a, p) => a + p.ovr, 0) / 11;
+      const lg = U.league(id), g = S.coGoalFor(co, id), sq = S.coGenSquad(id, co.season, { rf: co.rf, lv: co.lv, season: co.season }), top = sq.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 11), avg = top.reduce((a, p) => a + p.ovr, 0) / 11;
       const lgIds = D_CLUBS(lg), lgAvg = lgIds.length ? lgIds.reduce((a, x) => a + x.strength, 0) / lgIds.length : 60, rel = club(id).strength - lgAvg;
       const young = sq.filter(p => p.age <= 23).length >= 9;
       const folha = sq.reduce((a, p) => a + p.wage, 0);
@@ -2557,6 +2563,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, fit, lift, estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato, recebida };
+  U.LD = { on, show, off, fit, lift, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato, recebida };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();

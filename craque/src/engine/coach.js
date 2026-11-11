@@ -374,6 +374,7 @@
   function realSquad(club, season, rows, co) {
     const mine = new Set(((co && co.squad) || []).map(p => p.api).filter(Boolean));
     const r = S.rng(hash(club.id + '|' + season + '|real')), cty = D.countryOf(club), s = club.strength, out = [];
+    const lv = co && co.lv !== undefined ? co.lv : 0;
     Object.keys(CO.squad).forEach(pos => {
       const n = CO.squad[pos];
       // Quem joga: quem mais começou jogando na temporada real (ESPN; o peso some em 4 temporadas do jogo), número de
@@ -383,7 +384,10 @@
         .map(o => ({ ...o, sc: (o.x.length > 5 ? Math.min(40, o.x[5] + 0.4 * o.x[6]) * Math.max(0, 1 - season * 0.25) : 0) + (o.x[4] >= 1 && o.x[4] <= 11 ? 12 : o.x[4] >= 1 && o.x[4] <= 23 ? 8 : o.x[4] >= 1 && o.x[4] <= 40 ? 4 : 0) + (o.age >= 23 && o.age <= 31 ? 4 : o.age >= 20 && o.age <= 33 ? 2 : 0) + (hash(o.x[0] + '|' + season) % 100) / 100 }))
         .sort((a, b) => b.sc - a.sc).slice(0, n);
       for (let k = 0; k < n; k++) {
-        const o = L[k], j = S.rng(hash((o ? o.x[0] : club.id + pos + k) + '|' + season + '|f'));
+        // Nível firme (2026-11-11): o sorteio do jogador real é sempre o mesmo (o da temporada 0), então o geral não pula
+        // de um ano para o outro; só muda pela ordem no elenco, pela idade e pela força do clube. Save antigo: vale a
+        // partir de co.lv (posto ao abrir o save, como o co.rf), para o rival não mudar no meio da temporada
+        const o = L[k], j = S.rng(hash((o ? o.x[0] + '|' + (season >= lv ? 0 : season) : club.id + pos + k + '|' + season) + '|f'));
         const age = o ? o.age : r.int(17, 20), young = !o || age <= 20;
         const ovr = s + 2.5 - 8 * (k / Math.max(1, n - 1)) + j.gauss() * 2.5 - (young ? 6 : 0) - (age >= 33 ? 2 : 0);
         const p = mkPlayer(j, club, pos, ovr, age, o ? 'r:' + o.x[0] : club.id + ':' + season + ':' + out.length, cty, o ? { x: o.x, k: Math.max(0, 1 - season * 0.25) } : null);
@@ -517,7 +521,7 @@
   S.coNew = function (o) {
     const co = { mode: 'treinador', name: o.name || 'Técnico', country: o.country || 'Brasil', look: o.look || null, start: o.start === 'livre' ? 'livre' : 'baixo',
       season: 0, club: null, fame: CO.fame0[o.start === 'livre' ? 'livre' : 'baixo'], xp: { pts: 0, leitura: 0, motiv: 0, negoc: 0 },
-      seed: (o.seed || (Math.random() * 4294967295)) >>> 0, rf: 0, leagueOf: {}, clubBoost: {}, hist: [], titles: [], pid: 0, form: '4-4-2', style: 'equilibrado' };
+      seed: (o.seed || (Math.random() * 4294967295)) >>> 0, rf: 0, lv: 0, leagueOf: {}, clubBoost: {}, hist: [], titles: [], pid: 0, form: '4-4-2', style: 'equilibrado' };
     return co;
   };
   const rngCo = co => { const r = S.rng(co.seed); return { r, save: () => { co.seed = r.state(); } }; };
@@ -547,7 +551,7 @@
   S.coSign = function (co, clubId) {
     S.applyLeagues(co);
     co.club = clubId;
-    co.squad = genSquad(clubId, co.season, { wm: co.wm, season: co.season, rf: co.rf, squad: [] }).map(p => Object.assign(p, { id: 'p' + (co.pid++) }));
+    co.squad = genSquad(clubId, co.season, { wm: co.wm, season: co.season, rf: co.rf, lv: co.lv, squad: [] }).map(p => Object.assign(p, { id: 'p' + (co.pid++) }));
     co.sacked = false;
     co.since = co.season;
     const a = autoXI(co.squad, co.form);
@@ -815,6 +819,8 @@
     if (out === 'gol') { if (S0 === H) m.gh++; else m.ga++; m.ot[sd]++; e = { m: m.min, t: 'gol', s: sd, p: p.n, l, sp: null, by: null }; }
     else { if (k === 'defesa') m.ot[sd]++; if (info.sv === 'escanteio') { m.ck = m.ck || { us: 0, them: 0 }; m.ck[sd]++; } e = { m: m.min, t: 'chance', s: sd, p: p.n, k, l, sp: null, by: null }; }
     if (m.st) e.st = m.st;
+    // como foi o chute no campinho, para o texto do lance bater com o que se viu: de cabeça ou de fora da área
+    if (info.kind === 'cabeca') e.hd = 1; else if (info.box === false) e.far = 1;
     e.livre = 1; m.ev.push(e);
     return e;
   };
