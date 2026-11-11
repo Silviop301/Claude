@@ -9699,3 +9699,5 @@ body:has(> .tc-ov) > .pay-ty { visibility: hidden; }
 .dk-sm .hl-dk-n svg { width: 16px; height: 16px; fill: currentColor; }
 .dk-sm .hl-dk-t { position: absolute; top: 46px; left: 50%; transform: translate(-50%, -4px); align-items: center; z-index: 5; box-shadow: 0 6px 16px rgba(0,0,0,.4); }
 .dk-sm.say .hl-dk-t { transform: translate(-50%, 0); }
+/* Ajustes com 6 linhas (Música no jogo ao vivo): linhas mais baixas para caber sem rolar */
+.aj-l.n6 { gap: 6px; } .aj-l.n6 .aj-sw, .aj-l.n6 .aj-lk { min-height: 44px; border-radius: 14px; } .aj-l.n6 .aj-sw b, .ld-st .aj-l.n6 button.aj-lk { font-size: 24px; }

@@ -106,8 +106,9 @@
       const rot = !!(U.rotPref && U.rotPref()), rotSw = rot || !!(window.matchMedia && matchMedia('(pointer: coarse)').matches); // tela girada (rotação travada em pé, ui/coachland.js)
       const on = !!value('sound'), mus = !!value('music'), vel = U.coVel ? U.coVel() : '1', st = !window.CLIMBIX_SOLO && U.cloudStatus ? U.cloudStatus() : null, solo = !!window.CLIMBIX_SOLO;
       U.LD.show('<div class="aj' + (solo ? ' aj-solo' : '') + '"><div class="tm-h"><button class="tcr-back" id="aj-back" aria-label="Voltar">' + BK + '</button><b>Ajustes</b><small class="aj-v">Climbix ' + VERSION + '</small></div>' +
-        '<div class="aj-l"><button class="aj-sw' + (on ? ' on' : '') + '" id="aj-som" role="switch" aria-checked="' + on + '"><b>Som</b><span class="aj-tg"><i></i></span></button>' +
-          (window.CRAQUE_MUSIC && window.CRAQUE_MUSIC.has ? '<button class="aj-sw' + (mus ? ' on' : '') + '" id="aj-mus" role="switch" aria-checked="' + mus + '"><b>Música</b><span class="aj-tg"><i></i></span></button>' : '') +
+        '<div class="aj-l' + (mus && rotSw ? ' n6' : '') + '"><button class="aj-sw' + (on ? ' on' : '') + '" id="aj-som" role="switch" aria-checked="' + on + '"><b>Som</b><span class="aj-tg"><i></i></span></button>' +
+          (window.CRAQUE_MUSIC && window.CRAQUE_MUSIC.has ? '<button class="aj-sw' + (mus ? ' on' : '') + '" id="aj-mus" role="switch" aria-checked="' + mus + '"><b>Música</b><span class="aj-tg"><i></i></span></button>' +
+            (mus ? '<button class="aj-sw' + (window.CRAQUE_MUSIC.live ? ' on' : '') + '" id="aj-mlv" role="switch" aria-checked="' + window.CRAQUE_MUSIC.live + '"><b>Música no jogo ao vivo</b><span class="aj-tg"><i></i></span></button>' : '') : '') +
           '<button class="aj-sw aj-vel" id="aj-vel" aria-label="Velocidade dos jogos: ' + vel + 'x"><b>Velocidade dos jogos</b><span class="aj-seg"><i' + (vel === '1' ? ' class="on"' : '') + '>1×</i><i' + (vel === '3' ? ' class="on"' : '') + '>3×</i></span></button>' +
           (rotSw ? '<button class="aj-sw' + (rot ? ' on' : '') + '" id="aj-rot" role="switch" aria-checked="' + rot + '"><b>Tela girada</b><span class="aj-tg"><i></i></span></button>' : '') +
           '<button class="aj-lk" id="aj-fb">Sua opinião</button></div>' +
@@ -118,6 +119,7 @@
           w.querySelector('#aj-back').onclick = () => { U.sfx('tap'); out(); };
           w.querySelector('#aj-som').onclick = () => { if (window.CRAQUE_SFX) window.CRAQUE_SFX.toggle(); U.sfx('tap'); draw(); };
           if (w.querySelector('#aj-mus')) w.querySelector('#aj-mus').onclick = () => { if (window.CRAQUE_MUSIC) window.CRAQUE_MUSIC.toggle(); U.sfx('tap'); draw(); };
+          if (w.querySelector('#aj-mlv')) w.querySelector('#aj-mlv').onclick = () => { window.CRAQUE_MUSIC.liveToggle(); U.sfx('tap'); draw(); };
           w.querySelector('#aj-vel').onclick = () => { if (U.coVel) U.coVel(vel === '3' ? '1' : '3'); U.sfx('tap'); draw(); };
           if (w.querySelector('#aj-rot')) w.querySelector('#aj-rot').onclick = () => { U.rotPref(!rot); U.sfx('tap'); draw(); U.LD.fit(); };
           w.querySelector('#aj-fb').onclick = () => { U.sfx('tap'); U.feedbackLand ? U.feedbackLand(draw) : U.feedback('config'); };

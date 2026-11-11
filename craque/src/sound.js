@@ -122,7 +122,10 @@
   const M_VOL = 0.35;
   let mOn = true, mWant = -1, mGain = null, mEl = null, mOrd = [], mI = -1, mStop = null;
   try { mOn = localStorage.getItem('climbix-musica') !== 'off'; } catch (e) { /* fica ligada */ }
-  const quiet = () => !!(root.document && (root.document.hidden || root.document.querySelector('.lv')));
+  // Música no jogo ao vivo (Silvio, 11/11: "a opção de rodar ou não a música durante a simulação"): desligada = só a torcida
+  let mLive = false;
+  try { mLive = localStorage.getItem('climbix-musica-jogo') === 'on'; } catch (e) { /* fica só a torcida */ }
+  const quiet = () => !!(root.document && (root.document.hidden || (!mLive && root.document.querySelector('.lv'))));
   function musicNext() {
     if (!mEl) return;
     if (++mI >= mOrd.length) { // nova volta embaralhada, sem repetir a última logo de cara
@@ -201,6 +204,8 @@
     get track() { return mEl && mI >= 0 ? M_LIST[mOrd[mI]] : ''; },
     get title() { const f = this.track; return f ? (M_NAMES[f] || [f.replace(/\.mp3$/, '').replace(/-/g, ' '), '']) : null; },
     next() { musicNext(); },
+    get live() { return mLive; },
+    liveToggle() { mLive = !mLive; try { localStorage.setItem('climbix-musica-jogo', mLive ? 'on' : 'off'); } catch (e) { /* ok */ } musicTick(); return mLive; },
     toggle() {
       mOn = !mOn;
       try { localStorage.setItem('climbix-musica', mOn ? 'on' : 'off'); } catch (e) { /* ok */ }
