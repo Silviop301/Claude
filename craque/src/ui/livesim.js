@@ -1988,12 +1988,12 @@
         if (age > big.d) big = null; else {
           // entra grande e assenta (0,2 s), treme de leve, e some no fim; a faixa embaixo tem a cor da camisa de quem fez
           const pop = age < 0.2 ? 1.7 - 0.7 * (age / 0.2) : 1 + Math.sin(age * 9) * 0.025 * Math.max(0, 1 - age), al = Math.min(1, age * 8, (big.d - age) * 3.5);
-          const kt = big.s ? KT.opp : KT.mine, sz = Math.round(Math.min(H * 0.24, 58 * k0));
+          const kt = big.s ? KT.opp : KT.mine, sz = Math.round(Math.min(H * (big.wave ? 0.13 : 0.24), (big.wave ? 32 : 58) * k0));
           g.save(); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.translate(W / 2, H * 0.42); g.scale(pop, pop); g.globalAlpha = al;
           g.font = '900 italic ' + sz + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
           const tw = g.measureText(big.txt).width, bw = tw + sz * 0.9, bh = sz * 0.22, by = sz * 0.5;
-          g.fillStyle = 'rgba(10,14,12,.55)'; g.beginPath(); g.roundRect(-bw / 2, -sz * 0.62, bw, sz * 1.36, sz * 0.18); g.fill();
-          g.fillStyle = kt[0]; g.fillRect(-bw / 2 + sz * 0.18, by, bw / 2 - sz * 0.18, bh); g.fillStyle = kt[1] || kt[0]; g.fillRect(0, by, bw / 2 - sz * 0.18, bh);
+          if (!big.wave) { g.fillStyle = 'rgba(10,14,12,.55)'; g.beginPath(); g.roundRect(-bw / 2, -sz * 0.62, bw, sz * 1.36, sz * 0.18); g.fill();
+          g.fillStyle = kt[0]; g.fillRect(-bw / 2 + sz * 0.18, by, bw / 2 - sz * 0.18, bh); g.fillStyle = kt[1] || kt[0]; g.fillRect(0, by, bw / 2 - sz * 0.18, bh); } // GOOOL! (Silvio, 11/11): só o texto, menor, sem caixa nem faixa
           g.lineJoin = 'round'; g.lineWidth = sz * 0.1; g.strokeStyle = '#141517';
           if (!big.wave) { g.strokeText(big.txt, 0, -sz * 0.04); g.fillStyle = '#F2C230'; g.shadowColor = 'rgba(242,194,48,.7)'; g.shadowBlur = sz * 0.3; g.fillText(big.txt, 0, -sz * 0.04); }
           else { // GOOOL! (Silvio, 11/11): cada letra entra na sua vez e sobe e desce como a ola da torcida
@@ -2002,7 +2002,7 @@
               const up = li < 0.18 ? (1 - li / 0.18) * sz * 0.5 : 0, wv = Math.max(0, Math.sin(age * 7 - i * 0.75)) * sz * 0.2 * Math.min(1, age * 2);
               const sc = li < 0.18 ? 0.4 + 0.6 * li / 0.18 : 1 + wv / sz * 0.35, cx = x + ws[i] / 2, cy = -sz * 0.04 + up - wv;
               g.save(); g.translate(cx, cy); g.scale(sc, sc); g.rotate(Math.sin(age * 7 - i * 0.75) * 0.06); g.shadowBlur = 0;
-              g.strokeText(c, 0, 0); g.fillStyle = '#F2C230'; g.shadowColor = 'rgba(242,194,48,.7)'; g.shadowBlur = sz * 0.3; g.fillText(c, 0, 0); g.restore(); }
+              g.lineWidth = sz * 0.08; g.strokeStyle = 'rgba(10,14,12,.6)'; g.strokeText(c, 0, 0); g.fillStyle = '#fff'; g.fillText(c, 0, 0); g.restore(); }
               x += ws[i]; }); }
           g.restore(); } }
       if (cue) { const age = (Date.now() - cue.t0) / 1000;
