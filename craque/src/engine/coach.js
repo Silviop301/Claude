@@ -1007,9 +1007,10 @@
   // Dica do auxiliar por jogo (Silvio 2026-11-09): uma por rodada, de estilo (o palpite acima) ou de formação (a que mais
   // rende com o seu elenco contra o plano do rival; quando erra, é uma das três seguintes). Fica em co.tip até a rodada
   // virar: { k, kind: 'sty' | 'frm', v: o que ele usaria, them: o que o rival traz }. Está usada quando co.style/co.form === v
-  S.coTip = function (co) {
+  // frm (Silvio 2026-11-10: a sugestão de formação sai depois do relatório do olheiro): a dica é sempre de formação
+  S.coTip = function (co, frm) {
     const nx = S.coNext(co); if (!nx || nx.bye) return null;
-    const key = co.season + '|' + nx.round;
+    const key = co.season + '|' + nx.round + (frm ? '|f' : '');
     if (co.tip && co.tip.k === key) return co.tip;
     const h = S.coHint(co), them = oppSide(co, nx.vs, !nx.home), r = S.rng(hash(String(co.name) + '|' + co.club + '|' + key + '|dica'));
     const sq = co.squad.filter(ok), sc = {}, F = Object.keys(FORMS);
@@ -1017,7 +1018,8 @@
     const rank = F.slice().sort((a, b) => sc[b] - sc[a]);
     const form = r() < auxAcc(co, nx) ? rank[0] : r.pick(rank.slice(1, 4));
     let kind = r() < 0.5 ? 'sty' : 'frm';
-    if (kind === 'sty' && h.style === co.style && form !== co.form) kind = 'frm';
+    if (frm) kind = 'frm';
+    else if (kind === 'sty' && h.style === co.style && form !== co.form) kind = 'frm';
     else if (kind === 'frm' && form === co.form && h.style !== co.style) kind = 'sty';
     return (co.tip = { k: key, kind, v: kind === 'sty' ? h.style : form, them: kind === 'sty' ? them.style : them.form });
   };
@@ -1161,6 +1163,27 @@
     });
     save();
   }
+  // Artilharia do campeonato (Silvio 2026-11-10: "quero ver a artilharia do campeonato e o escudo do time do jogador").
+  // Os outros jogos só têm placar: cada gol ganha um autor sorteado do elenco do clube (sorteio preso à temporada, à
+  // rodada, ao jogo e ao gol, então a lista é sempre a mesma e não vai para o save), com peso pela posição, pela
+  // finalização e por quem é titular. Os seus gols são os de verdade (ss.log). Devolve [{ n, pos, club, g, me }].
+  const SC_W = { ATA: 6, MEI: 2.4, LAT: 0.7, ZAG: 0.6, GOL: 0 };
+  S.coLeagueScorers = function (co) {
+    const ss = co.ss; if (!ss || !ss.ids) return [];
+    const g = {}, add = (key, n, pos, club, me) => { (g[key] = g[key] || { n, pos, club, g: 0, me }).g++; };
+    const mine = co.club, sq = {}, pool = id => sq[id] || (sq[id] = (() => {
+      const all = genSquad(id, co.season, co).filter(p => p.pos !== 'GOL'), rk = {};
+      return all.map(p => { const k = rk[p.pos] = (rk[p.pos] || 0) + 1, fin = p.at && p.at[0] ? p.at[0] : p.ovr;
+        return { p, w: SC_W[p.pos] * Math.pow(Math.max(5, fin - 35), 1.6) * (k <= (p.pos === 'MEI' ? 3 : 2) ? 1 : 0.18) }; }); })());
+    (ss.res || []).forEach((rd, ri) => (rd || []).forEach(([h, a, gh, ga], gi) => [[h, gh], [a, ga]].forEach(([ix, n], side) => {
+      const id = ss.ids[ix]; if (id === mine || !n) return;
+      const P = pool(id), tot = P.reduce((t, x) => t + x.w, 0); if (!tot) return;
+      const r = S.rng(hash('art|' + co.season + '|' + ri + '|' + gi + '|' + side));
+      for (let k = 0; k < n; k++) { let v = r() * tot, x = P[0]; for (const q of P) { v -= q.w; if (v <= 0) { x = q; break; } } add(x.p.id, x.p.n, x.p.pos, id, false); }
+    })));
+    (ss.log || []).forEach(l => (l.ev || []).forEach(nm => { const p = co.squad.find(q => q.n === nm); add('me|' + nm, nm, p ? p.pos : '', mine, true); }));
+    return Object.keys(g).map(k => g[k]).sort((a, b) => b.g - a.g || (b.me ? 1 : 0) - (a.me ? 1 : 0) || (a.n < b.n ? -1 : 1));
+  };
   // Rodada sem você (folga ou depois da demissão)
   S.coSkipRound = function (co) { const ss = co.ss; roundRest(co, []); ss.i++; if (ss.i >= ss.rounds.length) ss.done = true; if (S.coWorldSync) S.coWorldSync(co); };
 
