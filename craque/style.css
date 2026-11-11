@@ -9530,3 +9530,5 @@ button.coin-pill { cursor: pointer; border: 0; }
 .ldl-side { gap: 6px; } .ldl-side .ld-gr { margin-top: -6px; } .ldl-side .ldl-num { height: 40px; }
 /* Intervalo com as bolinhas de trocas e paradas: sem entalhe a coluna passava 12 px e cortava o "Começar o 2º tempo" (passeio, 2026-11-11) */
 .ldl-tm.ht .tm-b { height: 38px; } .ldl-tm.ht .tm-go { height: 52px; } .ldl-tm.ht .ldl-tro { padding: 5px 10px; gap: 2px; }
+/* Classificação com vitórias, empates e derrotas (Silvio, 2026-11-11): V, E e D entre os jogos e o saldo, colunas mais justas */
+.tb2-h.cls, .tb2-r.cls { grid-template-columns: 26px 22px minmax(0, 1fr) 28px 24px 24px 24px 40px 40px 72px; gap: 6px; }

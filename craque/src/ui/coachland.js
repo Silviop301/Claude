@@ -948,10 +948,10 @@
     let body;
     // Tabela enxuta (2026-11-09, quadro 16): menos colunas, letra maior, sem trilho
     if (tab === 'cls' || tab === 'gol') {
-      body = '<div class="tb2-h"><i></i><i></i><span>CLUBE</span>' + (tab === 'cls' ? '<em>J</em><em>SG</em><b>PTS</b>' : '<em>GP</em><em>GC</em><b>SG</b>') + '<span>FORMA</span></div><div class="tb2-b">' +
+      body = '<div class="tb2-h' + (tab === 'cls' ? ' cls' : '') + '"><i></i><i></i><span>CLUBE</span>' + (tab === 'cls' ? '<em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em><b>PTS</b>' : '<em>GP</em><em>GC</em><b>SG</b>') + '<span>FORMA</span></div><div class="tb2-b">' +
         t.map((x, k) => { const sg = x.gp - x.gc, cl = club(x.id), sgT = (sg > 0 ? '+' : '') + sg;
-          return '<div class="tb2-r ' + zone(k + 1) + (x.me ? ' me' : '') + '"><i>' + (k + 1) + '</i>' + crest(x.id, 'tb2-cr') + '<span>' + esc(cl.short || cl.name) + '</span>' +
-            (tab === 'cls' ? '<em>' + x.j + '</em><em>' + sgT + '</em><b>' + x.p + '</b>' : '<em>' + x.gp + '</em><em>' + x.gc + '</em><b>' + sgT + '</b>') + dots(x.f) + '</div>'; }).join('') + '</div>';
+          return '<div class="tb2-r ' + zone(k + 1) + (x.me ? ' me' : '') + (tab === 'cls' ? ' cls' : '') + '"><i>' + (k + 1) + '</i>' + crest(x.id, 'tb2-cr') + '<span>' + esc(cl.short || cl.name) + '</span>' +
+            (tab === 'cls' ? '<em>' + x.j + '</em><em>' + (x.v || 0) + '</em><em>' + (x.e || 0) + '</em><em>' + (x.d || 0) + '</em><em>' + sgT + '</em><b>' + x.p + '</b>' : '<em>' + x.gp + '</em><em>' + x.gc + '</em><b>' + sgT + '</b>') + dots(x.f) + '</div>'; }).join('') + '</div>';
     } else if (tab === 'art') {
       // Artilharia do campeonato com o escudo de cada um; os seus em destaque e, se nenhum está entre os 6, o seu melhor no fim
       const all = S.coLeagueScorers(co), TOP = 6, list = all.slice(0, TOP).map((x, k) => [x, k]), mineAt = all.findIndex(x => x.me);
