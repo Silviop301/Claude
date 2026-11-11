@@ -300,14 +300,16 @@
     const ca = coinNorm(a.coins), cb = coinNorm(b.coins), cn = coinNorm(newer.coins) || ca || cb;
     let coins;
     if (cn) {
-      const dv = {}, once = {};
+      const dv = {}, once = {}, rp = {};
       [ca, cb].forEach(c => { if (!c) return;
         Object.keys(c.dv).forEach(k => { const x = c.dv[k], y = dv[k] || [0, 0]; dv[k] = [Math.max(y[0], x[0] || 0), Math.max(y[1], x[1] || 0)]; });
-        Object.keys(c.once).forEach(k => { once[k] = Math.max(once[k] || 0, c.once[k] || 0); }); });
+        Object.keys(c.once).forEach(k => { once[k] = Math.max(once[k] || 0, c.once[k] || 0); });
+        Object.keys(c.rp || {}).forEach(k => { rp[k] = c.rp[k]; }); });
+      Object.keys(rp).forEach(k => { once[k] = 0; }); // compra que já está no saldo antigo (coinRepair)
       // Histórico: as linhas dos dois aparelhos, sem repetir, da mais nova para a mais velha
       const seen = {}, log = [].concat((ca || {}).log || [], (cb || {}).log || []).filter(x => { const k = x && x.at + '|' + x.n + '|' + x.t; if (!x || seen[k]) return false; seen[k] = 1; return true; })
         .sort((x, y) => (y.at || 0) - (x.at || 0)).slice(0, 60);
-      coins = coinSum(Object.assign({}, cn, { dv, once, log, clubs: Object.assign({}, (ca || {}).clubs, (cb || {}).clubs) }));
+      coins = coinSum(Object.assign({}, cn, { dv, once, rp, log, clubs: Object.assign({}, (ca || {}).clubs, (cb || {}).clubs) }));
     }
     return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news), days }, prof ? { prof } : {}, coins ? { coins } : {});
   }
@@ -320,10 +322,22 @@
   const DEV = (() => { try { let d = localStorage.getItem('climbix-dev'); if (!d) { d = Math.random().toString(36).slice(2, 10); localStorage.setItem('climbix-dev', d); } return d; } catch (e) { return 'x'; } })();
   function coinNorm(c) {
     if (!c || typeof c.n !== 'number') return null;
-    if (c.v === 2 && c.dv) { c.once = c.once || {}; c.clubs = c.clubs || {}; return c; }
+    if (c.v === 2 && c.dv) { c.once = c.once || {}; c.clubs = c.clubs || {}; c.rp = c.rp || {}; coinRepair(c); return c; }
     const got = Math.max(c.got || 0, c.n || 0), once = {};
     Object.keys(c.once || {}).forEach(k => { once[k] = 0; });
     return Object.assign(c, { v: 2, dv: { old: [got, Math.max(0, got - c.n)] }, once, clubs: c.clubs || {}, log: c.log || [] });
+  }
+  // Compra contada duas vezes (2026-11-11): a compra feita antes da carteira v2 já estava no saldo antigo (`dv.old`), mas a
+  // junção antiga a perdeu num aparelho, o `coinFix` a devolveu em `once` e a junção seguinte trouxe de volta o saldo antigo
+  // de outro aparelho, com ela dentro. Quando a compra devolvida cabe no saldo antigo, ela fica marcada em `rp` (vale em
+  // toda junção) e sai do `once`: a compra conta uma vez só, dentro do saldo antigo.
+  function coinRepair(c) {
+    const old = (c.dv.old || [0])[0] || 0, log = c.log || []; let hit = false;
+    Object.keys(c.once).forEach(k => { const n = c.once[k];
+      if (c.rp[k] || !/^pay-/.test(k) || !(n > 0) || old < n) return;
+      if (!log.some(x => x && x.n === n && /^Compra na loja \((devolvida|recuperada)\)/.test(x.t || ''))) return;
+      c.rp[k] = n; c.once[k] = 0; hit = true; });
+    if (hit) coinSum(c);
   }
   function coinSum(c) {
     let g = 0, sp = 0;
@@ -332,7 +346,7 @@
     c.got = g; c.n = Math.max(0, g - sp);
     return c;
   }
-  const wallet = () => { const o = get(); o.coins = coinNorm(o.coins) || coinSum({ v: 2, n: 0, got: 0, log: [], once: {}, clubs: {}, dv: {} }); return o.coins; };
+  const wallet = () => { const o = get(), n0 = o.coins && o.coins.n; o.coins = coinNorm(o.coins) || coinSum({ v: 2, n: 0, got: 0, log: [], once: {}, clubs: {}, dv: {}, rp: {} }); if (n0 != null && n0 !== o.coins.n) put(); return o.coins; };
   const LOGN = 60; // histórico na loja (2026-11-11, Silvio: de onde vieram as moedas)
   const mine = w => w.dv[DEV] || (w.dv[DEV] = [0, 0]);
   function coinAdd(list) {
@@ -357,12 +371,13 @@
   function coinFix(paid) {
     const w = wallet(), tot = (paid || []).reduce((a, x) => a + (x.coins || 0), 0); let back = 0;
     (paid || []).forEach(x => { const k = 'pay-' + x.ref, n = Math.round(x.coins);
-      if (!(n > 0) || w.got >= tot || w.once[k]) return;
-      w.once[k] = n; back += n; coinSum(w); w.log = [{ n, t: 'Compra na loja (devolvida)', at: Date.now() }].concat(w.log).slice(0, LOGN); });
+      if (!(n > 0) || w.got >= tot || w.once[k] || w.rp[k]) return;
+      w.once[k] = n; back += n; coinSum(w); w.log = [{ n, t: 'Compra na loja (recuperada)', at: Date.now() }].concat(w.log).slice(0, LOGN); });
     if (back) put();
     return back;
   }
-  const COIN_SVG = '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="#F2C230"/><circle cx="13" cy="13" r="8.5" fill="none" stroke="#b48a12" stroke-width="2"/><path d="M13 8v10M10 11h6" stroke="#b48a12" stroke-width="2.4" stroke-linecap="round"/></svg>';
+  // Moeda desenhada (arte do ChatGPT, 2026-11-11) dentro de um svg: as regras de tamanho (`... svg`) seguem valendo
+  const COIN_SVG = '<svg viewBox="0 0 26 26" aria-hidden="true"><image href="assets/co/mo-moeda.webp" width="26" height="26"/></svg>';
   // Pílula de saldo; com id vira botão (abre a loja)
   const pill = (cls, id) => { const n = wallet().n, lab = n + (n === 1 ? ' moeda' : ' moedas'), tag = id ? 'button' : 'span';
     return '<' + tag + ' class="coin-pill' + (cls ? ' ' + cls : '') + '"' + (id ? ' id="' + id + '" aria-label="' + lab + ', abrir a loja"' : ' role="img" aria-label="' + lab + '"') + '>' + COIN_SVG + '<b>' + n.toLocaleString('pt-BR') + '</b></' + tag + '>'; };
@@ -370,7 +385,7 @@
   const owns = id => !!wallet().clubs[id];
   const own = id => { wallet().clubs[id] = Date.now(); put(); };
   const clubs = () => Object.keys(wallet().clubs).sort((a, b) => wallet().clubs[a] - wallet().clubs[b]);
-  U.COINS = { pill, svg: COIN_SVG, spend: coinSpend, owns, own, clubs, get: () => wallet().n, got: () => wallet().got, log: () => wallet().log.slice(), add: coinAdd, fix: coinFix, has: k => wallet().once[k] != null };
+  U.COINS = { pill, svg: COIN_SVG, spend: coinSpend, owns, own, clubs, get: () => wallet().n, got: () => wallet().got, log: () => wallet().log.slice(), rp: () => Object.assign({}, wallet().rp), add: coinAdd, fix: coinFix, has: k => wallet().once[k] != null };
 
   U.ITEMS = { FREE, KEY, CAT, BY_ID, RAR, RAR_NAME, CHANCE, PITY, DUP, COST, itemOf, need, has, get, put, clean, counts,
     earn, careerWhy, open, trade, seen, merge, STREAK, streak, streakRecord, streakClaim, streakFlush, streakTxt, reset: () => { inv = null; } };

@@ -146,18 +146,22 @@
   // Quem joga bem numa vaga: da posição, ou que sabe jogar ali (goleiro só no gol)
   const fitsSlot = (p, slot) => p.pos === slot || ((p.pos === 'GOL') === (slot === 'GOL') && S.coFit(p.pos, slot) >= 0.88);
   // Reserva no banco: anel de energia com o geral, nome e a posição na cor do setor; o primeiro de cada setor abre espaço
-  const benchChip = (p, prev, cls, ok, num) => '<button class="tm-bp' + cls + (prev && lnOf(prev.pos) !== lnOf(p.pos) ? ' g0' : '') + '" data-bp="' + p.id + '"' + (ok ? '' : ' disabled') + '><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + p.ovr + '</b><span><i>' + (num && p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + p.pos + '</small></span></button>';
+  const benchChip = (p, prev, cls, ok, num, ov) => '<button class="tm-bp' + cls + (prev && lnOf(prev.pos) !== lnOf(p.pos) ? ' g0' : '') + '" data-bp="' + p.id + '"' + (ok ? '' : ' disabled') + '><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + (ov != null ? ov : p.ovr) + '</b><span><i>' + (num && p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + p.pos + '</small></span></button>';
   // Com um titular escolhido o banco rola até o primeiro reserva que joga na vaga (o banco não cabe inteiro na tela)
-  const benchShow = root => { const bn = root.querySelector('.tm-bench'), f = bn && bn.querySelector('.tm-bp.can'), lb = bn && bn.querySelector('small');
+  const benchShow = root => { const bn = root.querySelector('.tm-bench'), f = bn && bn.querySelector('.tm-bp.can, .tm-bp.lo'), lb = bn && bn.querySelector('small');
     if (f) bn.scrollLeft = Math.max(0, f.offsetLeft - (lb ? lb.offsetWidth : 0) - 8); };
   // Lista das trocas do auxiliar (Silvio 2026-11-10: "tocar uma vez só e trocar todos"): uma linha por troca, todas
   // marcadas; tocar numa linha tira ou põe de volta, e um botão só faz as marcadas. L = [{ o, i, why, slot }]
-  // Titular escolhido: à direita, quem do banco joga na vaga, do maior geral para o menor (Silvio 2026-11-10); os da
-  // posição primeiro, depois quem sabe jogar ali. Até 5 linhas (cabe sem rolar); o banco segue embaixo para os outros
-  const candList = (out, slot, bench, ok) => { const L = bench.filter(p => ok(p) && fitsSlot(p, slot)).sort((a, b) => (b.pos === slot) - (a.pos === slot) || b.ovr - a.ovr || b.en - a.en).slice(0, 5);
-    return '<div class="tm-cl"><div class="tm-clh"><em>SAI</em><b>' + esc(last(out.n)) + '</b><button class="tm-clx" id="tm-clx" aria-label="Cancelar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
-      (L.length ? L.map(p => '<button class="tm-bp tm-cd" data-bp="' + p.id + '"><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + p.ovr + '</b><span><i>' + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + p.pos + '</small></span><u>' + Math.round(p.en) + '%</u></button>').join('')
-        : '<p class="tm-cl0">Ninguém da posição no banco.</p>') + '</div>'; };
+  // Titular escolhido (Silvio 2026-11-10): ao lado dele, os reservas da mesma posição, do maior geral para o menor; o
+  // banco segue embaixo para quem é de fora da posição, com o geral que ele teria na vaga (ovrAt, perde um pouco)
+  const ovrAt = (p, slot) => p.pos === slot || (p.pos === 'GOL') !== (slot === 'GOL') ? p.ovr : Math.round(p.ovr * S.coFit(p.pos, slot));
+  const nearList = (slot, bench, ok, x, y) => { const L = bench.filter(p => ok(p) && p.pos === slot).sort((a, b) => b.ovr - a.ovr || b.en - a.en).slice(0, 4);
+    return '<div class="tm-near ' + (x < 55 ? 'r' : 'l') + '" style="' + (x < 55 ? 'left:' + x : 'right:' + (100 - x)) + '%;top:' + y + '%">' +
+      (L.length ? L.map(p => '<button class="tm-bp tm-cd" data-bp="' + p.id + '"><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + p.ovr + '</b><span><i>' + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + p.pos + '</small></span></button>').join('')
+        : '<p class="tm-cl0">Ninguém da posição. Use o banco.</p>') + '</div>'; };
+  // Dentro do campo: a lista não pode sair por cima nem por baixo
+  const nearFix = root => { const n = root.querySelector('.tm-near'), f = n && n.parentNode; if (!n) return;
+    const H = f.clientHeight, h = n.offsetHeight, c = n.offsetTop; n.style.top = Math.max(4, Math.min(H - h - 4, c - h / 2)) + 'px'; n.style.visibility = 'visible'; };
   const auxRows = L => '<div class="ax-l">' + L.map((g, k) => '<button class="ax-r on" data-ax="' + k + '" aria-pressed="true"><em data-ln="' + lnOf(g.slot) + '">' + g.tag + '</em><span><b>' + esc(last(g.o.n)) + '</b><small>' + g.why + '</small></span><u>›</u><span><b>' + esc(last(g.i.n)) + '</b><small>' + g.i.ovr + '</small></span><i class="ax-ck"></i></button>').join('') + '</div>';
   const auxLbl = n => (n === 0 ? 'Nenhuma troca' : n === 1 ? 'Fazer a troca' : 'Fazer as ' + n + ' trocas');
   // Liga as linhas ao botão: devolve quais estão marcadas
@@ -391,7 +395,7 @@
       // Com um titular escolhido acende no banco quem joga na vaga; com um reserva escolhido, as vagas em que ele joga
       const selP = selB ? by[selB] : null;
       const dots = co.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: swap === i, attr: ' data-xi="' + i + '" data-pid="' + id + '"' + (selP ? (fitsSlot(selP, sl[i]) ? ' data-fit="1"' : ' data-far="1"') : ''), tag: S.coSlotLbl(co.form, i) }) : '').join('');
-      const bstrip = bench.map((p, k) => benchChip(p, bench[k - 1], (c.avail(p) ? '' : ' dis') + (selB === p.id ? ' on' : '') + (swap !== null && c.avail(p) ? (fitsSlot(p, sl[swap]) ? ' can' : ' far') : ''), c.avail(p))).join('');
+      const bstrip = bench.map((p, k) => benchChip(p, bench[k - 1], (c.avail(p) ? '' : ' dis') + (selB === p.id ? ' on' : '') + (swap !== null && c.avail(p) ? (p.pos === sl[swap] ? ' can' : (p.pos === 'GOL') === (sl[swap] === 'GOL') ? ' lo' : ' far') : ''), c.avail(p), false, swap !== null ? ovrAt(p, sl[swap]) : null)).join('');
       const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b id="tm-' + k + '">' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
       const title = swap !== null ? '<span class="tm-hint">Toque ou arraste quem entra, ou toque em outro titular</span>' : selB ? '<span class="tm-hint">Toque em quem sai</span>'
         : (vs ? '<b>x ' + esc(vs.short || vs.name) + '</b><small>' + (nx.home ? 'em casa' : 'fora') + ' · rodada ' + nx.round + '</small>' : '<b>' + esc(cl.short || cl.name) + '</b><small>escalação</small>') + LN_LEG;
@@ -404,9 +408,9 @@
         '<span><small>' + (tip && !(used && nFix) ? 'DICA DO AUXILIAR' : 'AUXILIAR') + '</small><b>' + (tip && !(used && nFix) ? (used ? '✓ ' + esc(tipNm) : esc(S.coTipLbl(tip))) : nFix ? fixLbl : vs && !scR ? 'Leia o olheiro' : 'Tudo certo') + '</b></span>' +
         (nFix ? '<i class="tm-tip-d n">' + nFix + '</i>' : tip && !used && !tip.seen ? '<i class="tm-tip-d"></i>' : '') + '</button>';
       show('<div class="tm"><div class="tm-h"><button class="tcr-back" id="tm-back" aria-label="Voltar">' + BK + '</button>' + title + pill + '</div>' +
-        '<div class="ld-pitch tm-pitch">' + PITCH + dots + '</div>' +
+        '<div class="ld-pitch tm-pitch">' + PITCH + dots + (swap !== null ? nearList(sl[swap], bench, c.avail, sp[swap][0], sp[swap][1]) : '') + '</div>' +
         '<div class="tm-bench"><small>BANCO</small>' + bstrip + '</div>' +
-        '<div class="tm-side' + (swap !== null ? ' cl' : '') + '">' + (swap !== null ? candList(by[co.xi[swap]], sl[swap], bench, c.avail) : '') + pick('form', 'Formação', co.form) + pick('sty', 'Estilo', esc(S.CO_STY[co.style].name)) +
+        '<div class="tm-side">' + pick('form', 'Formação', co.form) + pick('sty', 'Estilo', esc(S.CO_STY[co.style].name)) +
         '<span class="tm-two"><button class="tm-b" id="ld-fun">Funções</button><button class="tm-b" id="ld-bat">Batedores</button></span><button class="tm-b" id="ld-ele">Elenco</button>' +
         '<button class="tm-go" id="' + (play ? 'ld-go' : 'ld-ok') + '">' + (play ? 'Jogar' : 'Pronto') + '</button></div></div>', st => {
         st.querySelectorAll('[data-xi]').forEach(b => b.onclick = () => {
@@ -419,8 +423,7 @@
         st.querySelectorAll('[data-bp]').forEach(b => b.onclick = () => { const id = b.dataset.bp; sfx('tap');
           if (swap !== null) return put(id, swap);
           selB = selB === id ? null : id; draw(); });
-        benchDrag(st.querySelector('.tm'), put, (id, i) => !!by[id] && fitsSlot(by[id], sl[i])); benchShow(st);
-        if (st.querySelector('#tm-clx')) st.querySelector('#tm-clx').onclick = () => { sfx('tap'); swap = null; draw(); };
+        benchDrag(st.querySelector('.tm'), put, (id, i) => !!by[id] && fitsSlot(by[id], sl[i])); benchShow(st); nearFix(st);
         st.querySelectorAll('[data-tmk]').forEach(b => b.onclick = () => {
           sfx('tap'); const d = +b.dataset.d;
           if (b.dataset.tmk === 'sty') { const L = S.CO_STYLES; co.style = L[(L.indexOf(co.style) + d + L.length) % L.length]; st.querySelector('#tm-sty').textContent = S.CO_STY[co.style].name; if (tip && tip.kind === 'sty' && used !== S.coTipUsed(co, tip)) draw(); return; }
@@ -672,14 +675,14 @@
         attr: ' data-xi="' + i + '"' + (inn.has(id) ? ' data-in="1"' : '') + (idle && gOut.has(id) ? ' data-sug="1"' : '') + (selP ? (fitsSlot(selP, sl[i]) ? ' data-fit="1"' : ' data-far="1"') : ''), tag: inn.has(id) ? 'ENTRA' : S.coSlotLbl(s.form, i) }) : '').join('');
       const bench = s.bench.map(b => by[b]).filter(Boolean).sort(benchSort(c));
       const bstrip = bench.map((p, k) => { const ok = !!(s.subs && c.avail(p));
-        return benchChip(p, bench[k - 1], (ok ? '' : ' dis') + (selB === p.id ? ' on' : '') + (idle && gIn.has(p.id) ? ' sug' : '') + (sel >= 0 && ok ? (fitsSlot(p, sl[sel]) ? ' can' : ' far') : ''), ok, true); }).join('');
+        return benchChip(p, bench[k - 1], (ok ? '' : ' dis') + (selB === p.id ? ' on' : '') + (idle && gIn.has(p.id) ? ' sug' : '') + (sel >= 0 && ok ? (p.pos === sl[sel] ? ' can' : (p.pos === 'GOL') === (sl[sel] === 'GOL') ? ' lo' : ' far') : ''), ok, true, sel >= 0 && ok ? ovrAt(p, sl[sel]) : null); }).join('');
       const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b>' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
       const hint = sel >= 0 ? (s.subs ? 'Toque ou arraste quem entra, ou toque em outro titular' : 'Toque em outro titular')  : selB ? 'Toque em quem sai' : '';
       const sc = esc(c.nm(m.home ? co.club : m.vs)).slice(0, 3).toUpperCase() + ' <u>' + m.gh + ' x ' + m.ga + '</u> ' + esc(c.nm(m.home ? m.vs : co.club)).slice(0, 3).toUpperCase();
       pop('<div class="tm ldl-tm"><div class="tm-h"><b>' + esc(T) + '</b><span class="ldl-sc">' + sc + '</span><small>' + S.coClock(m) + '</small>' + (hint ? '<span class="tm-hint">' + hint + '</span>' : LN_LEG) + '</div>' +
-        '<div class="ld-pitch tm-pitch">' + PITCH + dots + '</div>' +
+        '<div class="ld-pitch tm-pitch">' + PITCH + dots + (sel >= 0 && s.subs ? nearList(sl[sel], bench, c.avail, sp[sel][0], sp[sel][1]) : '') + '</div>' +
         '<div class="tm-bench"><small>BANCO<em>' + (s.subs ? U.D.plural(s.subs, 'troca', 'trocas') : 'sem trocas') + '</em></small>' + bstrip + '</div>' +
-        '<div class="tm-side' + (sel >= 0 && s.subs ? ' cl' : '') + '">' + (sel >= 0 && s.subs ? candList(by[s.xi[sel]], sl[sel], bench, c.avail) : '') + (half ? '<div class="ldl-talk2">' + Object.keys(S.CO_TALK).map(k => '<button data-tk="' + k + '"' + (talk === k ? ' class="on"' : '') + '>' + esc(S.CO_TALK[k].name) + '</button>').join('') + '</div>' : '') +
+        '<div class="tm-side">' + (half ? '<div class="ldl-talk2">' + Object.keys(S.CO_TALK).map(k => '<button data-tk="' + k + '"' + (talk === k ? ' class="on"' : '') + '>' + esc(S.CO_TALK[k].name) + '</button>').join('') + '</div>' : '') +
           pick('form', 'Formação', s.form) + pick('sty', 'Estilo', esc(S.CO_STY[s.style].name)) +
           '<button class="tm-b" id="ldl-aux">Auxiliar' + (nT || G.length || st.t === 'vermelho' ? '<i class="tm-dot">' + (st.t === 'vermelho' ? '!' : G.length || '') + '</i>' : '') + '</button>' +
           '<button class="tm-go" id="ldl-go">' + (half ? 'Começar o 2º tempo' : 'Seguir o jogo') + '</button></div></div>',
@@ -696,8 +699,7 @@
             selB = selB === id ? null : id; draw();
           });
           if (s.subs) benchDrag(w.querySelector('.ldl-tm'), (id, i) => doSub(s.xi[i], id), (id, i) => !!by[id] && fitsSlot(by[id], sl[i]));
-          if (w.querySelector('#tm-clx')) w.querySelector('#tm-clx').onclick = () => { sfx('tap'); sel = -1; draw(); };
-          benchShow(w);
+          benchShow(w); nearFix(w);
           w.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { sfx('tap'); talk = talk === b.dataset.tk ? null : b.dataset.tk; draw(); });
           w.querySelectorAll('[data-tmk]').forEach(b => b.onclick = () => {
             sfx('tap'); const d = +b.dataset.d;
@@ -1992,13 +1994,11 @@
   const D_CLUBS = lg => (window.CRAQUE_DATA.CLUBS || []).filter(x => x.league === lg.id);
   // ---------- Loja (quadro 40, Silvio aprovou 2026-11-09): abas Moedas e Dinheiro do clube ----------
   // Moedas: 4 pacotes fixos, sem sorteio (a cobrança pelo Mercado Pago chega na fase 5; até lá o botão fica "em breve").
-  // Dinheiro do clube: aporte do investidor em semanas da folha (S.coAporte), 20 moedas cada, só com uma carreira aberta.
+  // Dinheiro do clube: aporte do investidor em semanas da folha (S.coAporte), 12 moedas cada, só com uma carreira aberta.
   const PACKS = [{ k: 'p1', n: 120, nm: 'Punhado', pr: 'R$ 4,90', h: 1 }, { k: 'p2', n: 350, nm: 'Saco', pr: 'R$ 12,90', h: 2 },
     { k: 'p3', n: 800, nm: 'Baú', pr: 'R$ 24,90', h: 3, tag: '+20%' }, { k: 'p4', n: 2000, nm: 'Cofre', pr: 'R$ 49,90', h: 4, tag: '+50%' }];
-  const COIN_PILE = h => { const cols = h >= 4 ? [22, 37, 52] : h >= 3 ? [26, 48] : [37]; let g = '';
-    cols.forEach((x, ci) => { const n = Math.min(6, h + 1 + (ci === 1 ? 1 : 0)); for (let i = 0; i < n; i++) { const y = 60 - i * 7;
-      g += '<ellipse cx="' + x + '" cy="' + (y + 3) + '" rx="15" ry="6" fill="#b48a12"/><ellipse cx="' + x + '" cy="' + y + '" rx="15" ry="6" fill="#F2C230"/><ellipse cx="' + x + '" cy="' + y + '" rx="10" ry="3.5" fill="none" stroke="#b48a12" stroke-width="1.5"/>'; } });
-    return '<svg viewBox="0 0 74 74" aria-hidden="true">' + g + '</svg>'; };
+  // Arte dos pacotes (ChatGPT, 2026-11-11): Punhado, Saco, Baú, Cofre
+  const COIN_PILE = h => '<img class="lj-pi" src="' + CO_ART + 'mo-' + ['punhado', 'saco', 'bau', 'cofre'][h - 1] + '.webp" alt="">';
   function loja(tab, back) {
     const c = C(), co = c && c.co && c.co.club ? c.co : null;
     let pk = 1, wk = 1, payOn = false, busy = false, hp = 0;
@@ -2018,8 +2018,16 @@
             '<button class="tm-go" id="lj-buy">' + (busy ? 'Abrindo…' : 'Comprar · ' + PACKS[pk].pr) + '</button>');
       } else if (tab === 2) {
         // Histórico (2026-11-11): cada entrada e saída de moedas, 5 por página, mais nova primeiro
-        const log = U.COINS.log(), N = 5, pages = Math.max(1, Math.ceil(log.length / N)); hp = Math.min(hp, pages - 1);
-        const dt = at => { const d = new Date(at || 0); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); };
+        const rp = Object.values(U.COINS.rp ? U.COINS.rp() : {}), rpLeft = rp.slice(), rpSum = rp.reduce((a, n) => a + n, 0);
+        // compra devolvida que já estava no saldo antigo (coinRepair em items.js): a linha da devolução some e a compra entra no fim
+        const log = U.COINS.log().filter(x => { const i = /^Compra na loja \((devolvida|recuperada)\)/.test(x.t || '') ? rpLeft.indexOf(x.n) : -1; if (i < 0) return true; rpLeft.splice(i, 1); return false; })
+          .map(x => /\(devolvida\)/.test(x.t || '') ? Object.assign({}, x, { t: 'Compra na loja (recuperada)' }) : x);
+        if (rpSum) log.push({ n: rpSum, t: 'Compra na loja', at: 0 });
+        // o que não está nas linhas (antes do histórico existir, ou linhas antigas cortadas) vira uma linha no fim: a soma sempre dá o saldo
+        const gap = saldo - log.reduce((a, x) => a + x.n, 0);
+        if (gap) log.push({ n: gap, t: gap > 0 ? 'Saldo de antes do histórico' : 'Gastos de antes do histórico', at: 0 });
+        const N = 5, pages = Math.max(1, Math.ceil(log.length / N)); hp = Math.min(hp, pages - 1);
+        const dt = at => { if (!at) return 'antes'; const d = new Date(at || 0); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); };
         const rows = log.slice(hp * N, hp * N + N).map(x => '<div class="lj-h"><i>' + dt(x.at) + '</i><span>' + esc(x.t || 'Moedas') + '</span><b class="' + (x.n < 0 ? 'dn' : 'up') + '">' + (x.n > 0 ? '+' : '−') + Math.abs(x.n) + '</b></div>').join('');
         main = '<div class="lj-ap lj-hist">' + (rows || '<div class="lj-none"><b>Nada ainda</b><small>Moedas ganhas, compradas e gastas aparecem aqui.</small></div>') +
           (pages > 1 ? '<div class="lj-hp"><button id="lj-hm" aria-label="Mais novas"' + (hp ? '' : ' disabled') + '>' + BK + '</button><small>' + (hp + 1) + ' de ' + pages + '</small><button id="lj-hn" aria-label="Mais antigas"' + (hp < pages - 1 ? '' : ' disabled') + '>' + FW + '</button></div>' : '') + '</div>';
@@ -2032,7 +2040,7 @@
         const left = S.coAporteLeft(co), used = S.coAporteUsed(co), f = S.coFin(co), red = f.caixa < 0;
         wk = Math.max(1, Math.min(wk, Math.max(1, left)));
         const cost = wk * S.CO_APORTE.coin, v = S.coAporteValue(co, wk), ok = left > 0 && saldo >= cost;
-        main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · vai para a verba</small></span></div>' +
+        main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · vai para a verba</small></span><img class="lj-ai" src="' + CO_ART + 'mo-aporte.webp" alt=""></div>' +
           '<div class="lj-v"><button id="lj-m" aria-label="Menos"' + (wk <= 1 ? ' disabled' : '') + '>' + BK + '</button><span><b>+ ' + c.brl(v) + '</b><small>' + U.D.plural(wk, 'semana', 'semanas') + ' da folha</small></span><button id="lj-p" aria-label="Mais"' + (wk >= left ? ' disabled' : '') + '>' + FW + '</button></div>' +
           '<div class="lj-two"><span><small>Verba</small><b>' + c.brl(f.verba) + ' → ' + c.brl(f.verba + (left ? v : 0)) + '</b></span><span><small>Nesta temporada</small><b>' + (used + (left ? wk : 0)) + ' de ' + S.CO_APORTE.max + ' semanas</b></span></div></div>';
         side = '<div class="lj-box lj-cost"><small class="ld-lbl">CUSTA</small><span>' + U.COINS.svg + '<b>' + cost + '</b></span><small>' + (saldo >= cost ? 'sobram ' + (saldo - cost) + ' moedas' : 'faltam ' + (cost - saldo) + ' moedas') + '</small></div>' +
