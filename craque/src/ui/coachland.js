@@ -629,58 +629,7 @@
   }
   const byOf = sq => { const o = {}; sq.forEach(p => { o[p.id] = p; }); return o; };
   const enC = e => (e >= 70 ? 'ok' : e >= 50 ? 'mid' : 'low');
-  // O que ele fez neste jogo (pelo relato do motor)
-  function didOf(m, p) {
-    const mine = m.ev.filter(e => e.s === 'us' && e.p === p.n);
-    const am = mine.find(e => e.t === 'amarelo');
-    return { sh: mine.filter(e => e.t === 'chance' || e.t === 'gol').length, gl: mine.filter(e => e.t === 'gol').length, fo: mine.filter(e => e.t === 'falta' || e.t === 'amarelo').length, am: am ? S.coEvMin(am) : '' };
-  }
-  // Tocar num jogador seu no campinho: o jogo pausa, mostra como ele está e quem pode entrar (TrJogadorB)
-  function livePlayer(x, id, back) {
-    if (!back && !x.pause()) return;
-    const m = x.m, s = m.us, by = byOf(s.squad), p = by[id], i = s.xi.indexOf(id);
-    if (!p || i < 0) { if (back) back(); else x.resume(); return; }
-    const slot = S.coSlots(s.form)[i], c = C();
-    const bench = s.bench.map(b => by[b]).filter(Boolean).filter(q => (q.pos === 'GOL') === (slot === 'GOL'));
-    const score = q => S.coSlotVal(q, s.form, i) * (0.6 + 0.4 * q.en / 100); // o atributo da vaga conta (fase 3 dos atributos)
-    const list = bench.slice().sort((a, b) => c.avail(b) - c.avail(a) || score(b) - score(a));
-    const L = S.coSubLeft(m), can = L > 0 || p.out > 0; // tirar quem se machucou não gasta troca nem parada
-    let pick = can ? list.find(c.avail) : null;
-    const d = didOf(m, p), yc = s.bk && s.bk[id], tired = p.en < 55;
-    const aux = yc && tired ? 'Amarelado e cansado. Mais uma falta dessas e ele sai.' : yc ? 'Já tem amarelo. Chegando forte, pode deixar o time com 10.' : tired ? 'Está no limite. Daqui a pouco não acompanha mais.' : p.out ? 'Sentiu. Joga mancando se ficar.' : d.gl ? 'Está decidindo. Eu deixava.' : 'Está bem no jogo. Ninguém do banco rende mais na vaga agora.';
-    const fitTag = q => (q.pos === slot ? ['ok', 'mesma posição'] : S.coFit(q.pos, slot) >= 0.88 ? ['sabe', 'conhece a vaga'] : ['fora', 'fora de posição: rende menos']);
-    const draw = () => {
-      const row = q => { const [fc, ft] = fitTag(q), ok = can && c.avail(q);
-        return '<button class="ldl-cand' + (q === pick ? ' on' : '') + (ok ? '' : ' dis') + '" data-c="' + q.id + '"' + (ok ? '' : ' disabled') + '><i>' + (q.num || '') + '</i><span><b>' + esc(q.n) + ' <small>' + q.pos + ' · ' + q.ovr + ' · energia ' + Math.round(q.en) + '%</small></b>' +
-          '<em class="' + fc + '">' + (q === list.find(c.avail) && can ? 'Sugestão do auxiliar · ' : '') + ft + '</em></span></button>'; };
-      pop('<div class="ldl-ptop"><b>' + (back ? 'Mexer no time' : 'Jogo pausado') + ' · ' + S.coClock(m) + '</b></div>' +
-        '<div class="ld-pb"><div class="ldl-pl">' +
-          '<div class="ldl-ph"><i class="' + enC(p.en) + '">' + (p.num || '') + '</i><span><b>' + esc(p.n) + '</b><small>' + c.posTxt[p.pos] + (p.pos !== slot ? ' de ' + slot : '') + ' · geral ' + p.ovr + ' · ' + p.age + ' anos</small></span></div>' +
-          '<div class="ldl-en"><span><small>Energia <b class="' + enC(p.en) + '">' + Math.round(p.en) + '%</b></small><small>' + (tired ? 'cansado' : p.en < 70 ? 'começa a cansar' : 'inteiro') + '</small></span><i><u class="' + enC(p.en) + '" style="width:' + Math.round(p.en) + '%"></u></i></div>' +
-          '<div class="ld-st4">' + [['chutes', d.sh], ['gols', d.gl], ['faltas', d.fo], [yc ? 'amarelo' : 'cartão', d.am || '—']].map(([k, v], j) => '<span class="ld-st1' + (j === 3 && yc ? ' y' : '') + '"><small>' + k + '</small><b>' + v + '</b></span>').join('') + '</div>' +
-          '<div class="ldl-aq">' + lbl('AUXILIAR') + '"' + aux + '"</div><span class="ld-gr"></span>' +
-          '<button class="ld-b line" id="ldl-keep">' + (back ? 'Voltar sem trocar' : 'Deixar em campo e voltar ao jogo') + '</button></div>' +
-        '<div class="ldl-pr"><div class="ldl-prh">' + lbl('QUEM ENTRA NO LUGAR DELE') + '<small>' + (L ? U.D.plural(L, 'troca sobrando', 'trocas sobrando') : can ? 'lesão não conta' : s.subs ? 'sem paradas' : 'sem trocas') + '</small></div>' +
-          '<div class="ldl-cl">' + (list.length ? list.map(row).join('') : '<p class="ld-none">Ninguém no banco para essa vaga.</p>') + '</div><span class="ld-gr"></span>' +
-          (pick ? '<button class="ld-gold" id="ldl-sub"><b>Levantar a placa: sai ' + (p.num || '') + ', entra ' + (pick.num || '') + '</b><small>' + esc(c.last(p.n)) + ' sai, ' + esc(c.last(pick.n)) + ' entra agora</small></button>' : '') + '</div></div>',
-        'Jogador ' + p.n, w => {
-          w.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { sfx('tap'); pick = by[b.dataset.c]; draw(); });
-          w.querySelector('#ldl-keep').onclick = () => { sfx('tap'); closePop(); if (back) back(); else x.resume(); };
-          if (w.querySelector('#ldl-sub')) w.querySelector('#ldl-sub').onclick = () => { sfx('tap'); x.sub(id, pick.id); closePop(); if (back) back(); else x.resume(); };
-        }, 'w750 ldl-pp', true);
-    };
-    draw();
-  }
-  // Quem sai: o time num campinho para tocar (do popup da parada)
-  function liveWho(x, back) {
-    const m = x.m, s = m.us, by = byOf(s.squad), sl = S.coSlots(s.form), sp = spotsL(s.form, false, true);
-    pop(popHead('Quem sai?', 'Toque no jogador. O número em volta mostra a energia.', true) +
-      '<div class="ld-pitch ldl-who">' + PITCH + s.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { attr: ' data-w="' + id + '"', num: true }) : '').join('') + '</div>',
-      'Quem sai', w => {
-        w.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { sfx('tap'); livePlayer(x, b.dataset.w, back); });
-        w.querySelector('[data-pop-back]').onclick = () => { sfx('tap'); back(); };
-      }, 'w750', true);
-  }
+  // Tocar num jogador seu no campinho abre esta mesma parada com ele já escolhido (st.pick): quem entra aparece ao lado dele
   // A parada (intervalo, vermelho, lesão, "Parar e mexer"; o gol não para desde 2026-11-09): o campo da escalação
   // (Silvio 2026-11-09), com o anel de energia e o amarelo de cada um. Troca: toque num titular e num do banco (ou o
   // contrário); dois titulares trocam de lugar. Formação e estilo com ◀ ▶; o auxiliar num botão (etiquetas e a troca que
@@ -688,7 +637,7 @@
   function liveStop(x, st) {
     const m = x.m, s = m.us, c = C(), co = c.co, half = st.t === 'intervalo', us = st.s === 'us';
     const f0 = s.form, y0 = s.style, FORMS = Object.keys(S.CO_FORMS), inn = new Set();
-    let talk = null, sel = -1, selB = null;
+    let talk = null, sel = st.pick ? s.xi.indexOf(st.pick) : -1, selB = null;
     const T = { gol: 'Gol do ' + (us ? c.nm(co.club) : c.nm(m.vs)), intervalo: 'Intervalo', vermelho: 'Expulso', lesao: 'Lesão', pausa: 'Jogo parado' }[st.t] || 'Parada';
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', FW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
     // As trocas que o auxiliar sugere (até 3 e até onde há troca): machucado, cansado ou amarelado, cada um com o melhor
@@ -2534,6 +2483,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, fit, lift, estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato, recebida };
+  U.LD = { on, show, off, fit, lift, estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato, recebida };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();
