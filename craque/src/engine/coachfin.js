@@ -244,8 +244,9 @@
     const n = rounds(co);
     if (!fin.rec) fin.rec = recOf(co, n);
     if (fin.pend) S.coFinAuto(co);
-    const add = (k, v) => { v = Math.round(v); fin.ss[k] += v; fin.caixa += v; };
+    const add = (k, v) => { v = Math.round(v); fin.ss[k] = (fin.ss[k] || 0) + v; fin.caixa += v; };
     const sub = (k, v) => { v = Math.round(v); fin.ss[k] += v; fin.caixa -= v; };
+    const ss0 = Object.assign({}, fin.ss), cx0 = fin.caixa;
     sub('sal', S.coFolha(co));
     add('pat', patOf(co).fix / n);
     if (ri === 0 || ri === Math.floor(n / 2)) add('tv', fin.rec * F.tv / 2 * (S.coEstTv ? S.coEstTv(co) : 1));
@@ -260,8 +261,40 @@
       if (co.board) co.board.conf = clamp(co.board.conf - F.negConf * presOf(co).red * (fin.neg >= F.ult ? 2 : 1), 0, 100);
       if (fin.neg >= F.venda && !fin.sold) forcedSale(co);
     } else { fin.neg = 0; fin.sold = false; }
+    roundLog(co, ri, fin.snap && fin.snap.s === co.season ? fin.snap : { ss: ss0, cx: cx0 });
     return { gate: g };
   }
+  // Quanto entrou e saiu na rodada (Silvio 2026-11-11: "a cada jogo quanto entrou e quanto saiu; não está claro se vou
+  // continuar no positivo"): a diferença do saldo da temporada desde o fim da rodada anterior, então entra também o que
+  // aconteceu entre os jogos (compra, venda, aporte, obra). O que mexeu no caixa sem estar no saldo (empréstimo, parte do
+  // principal da parcela) vira "Banco e outros". `fin.rd` = { s, r, inn: [[k, v]], out: [[k, v]], cx, dc }
+  const RD_IN = ['bil', 'tv', 'pat', 'prem', 'vend', 'apo'], RD_OUT = ['sal', 'comp', 'jur', 'obra'];
+  function roundLog(co, ri, snap) {
+    const fin = co.fin, d = k => Math.round((fin.ss[k] || 0) - ((snap.ss && snap.ss[k]) || 0));
+    const inn = RD_IN.map(k => [k, d(k)]).filter(x => x[1] > 0), out = RD_OUT.map(k => [k, d(k)]).filter(x => x[1] > 0);
+    const dc = Math.round(fin.caixa - snap.cx), rest = dc - inn.reduce((a, x) => a + x[1], 0) + out.reduce((a, x) => a + x[1], 0);
+    if (rest > 0) inn.push(['out', rest]); else if (rest < 0) out.push(['out', -rest]);
+    fin.rd = { s: co.season, r: ri + 1, inn, out, cx: fin.caixa, dc };
+    fin.snap = { s: co.season, ss: Object.assign({}, fin.ss), cx: fin.caixa };
+  }
+  // No ritmo atual: o que entra e sai numa rodada comum daqui até o fim da temporada (patrocínio, bilheteria média, TV que
+  // falta dividida pelas rodadas que faltam, contra folha, parcelas do banco e das compras, vendas a receber). Sem compra,
+  // venda nem prêmio. { net, left: rodadas que o caixa aguenta (null = não acaba), rest: rodadas que faltam, st: 'up' sobra | 'ok' chega
+  // ao fim da temporada | 'warn' mais de 4 rodadas | 'red' 4 ou menos, ou já no vermelho }
+  S.coFinRitmo = function (co) {
+    const fin = S.coFin(co), ss = co.ss; if (!fin || !ss) return null;
+    const n = rounds(co), i = ss.i || 0, half = Math.floor(n / 2), rest = Math.max(1, n - i);
+    if (!fin.rec) fin.rec = recOf(co, n);
+    const x = fin.s === co.season && fin.ss ? fin.ss : zero(), nx = S.coNext(co);
+    const bil = i ? x.bil / i : (nx && !nx.bye && nx.home ? gate(co, nx.vs) / 2 : 0);
+    const tv = (i <= half ? fin.rec * F.tv / 2 * (S.coEstTv ? S.coEstTv(co) : 1) : 0) / rest;
+    const inn = patOf(co).fix / n + bil + tv + (fin.recv || []).reduce((a, y) => a + y.v, 0) / F.mes;
+    const out = S.coFolha(co) + (fin.loan ? fin.loan.parc / F.mes : 0) + (fin.inst || []).reduce((a, y) => a + y.v, 0) / F.mes;
+    const net = Math.round(inn - out);
+    if (fin.caixa < 0) return { net, left: 0, rest: n - i, st: 'red', inn: Math.round(inn), out: Math.round(out) };
+    const left = net >= 0 ? null : Math.floor(fin.caixa / -net);
+    return { net, left, rest: n - i, st: net >= 0 ? 'up' : left >= n - i ? 'ok' : left > 4 ? 'warn' : 'red', inn: Math.round(inn), out: Math.round(out) };
+  };
   // O que ainda vem na temporada (para a tela)
   S.coFinNext = function (co) {
     const fin = S.coFin(co), ss = co.ss; if (!fin || !ss || ss.done) return [];
@@ -293,7 +326,7 @@
     const r = start0(co);
     const fin = S.coFin(co);
     if (fin) {
-      fin.s = co.season; fin.ss = zero(); fin.rec = recOf(co, rounds(co)); fin.neg = 0; fin.sold = false;
+      fin.s = co.season; fin.ss = zero(); fin.rec = recOf(co, rounds(co)); fin.neg = 0; fin.sold = false; fin.snap = { s: co.season, ss: zero(), cx: fin.caixa }; fin.rd = null;
       // Eleição a cada 3 temporadas: metade das vezes entra outro presidente
       if (co.season - fin.pres.s >= F.eleicao) { const p = newPres(co); if (rngOf(co, 'eleicao')() < 0.5 && p.k !== fin.pres.k) { fin.pres = p; news(co, 'Eleição no clube: ' + p.n + ' é o novo presidente (' + PRES[p.k].nome + ').'); } else fin.pres.s = co.season; }
       // A reunião de pré-temporada parte da meta da diretoria e da verba/teto que o fim do ano deixou
