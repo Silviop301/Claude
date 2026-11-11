@@ -321,7 +321,7 @@
     let card, wk = '';
     if (!nx.bye) {
       const pv = S.coPreview(co), them = pv.them, cl = club(co.club), vc = club(them.club), rv = t.find(x => x.id === them.club), rpos = t.indexOf(rv) + 1;
-      card = '<small class="sm-rd">RODADA ' + nx.round + ' · ' + (nx.home ? 'EM CASA' : 'FORA') + '</small><div class="sm-vs">' +
+      card = '<small class="sm-rd">TEMPORADA ' + (U.YEAR0 + co.season) + ' · RODADA ' + nx.round + ' · ' + (nx.home ? 'EM CASA' : 'FORA') + '</small><div class="sm-vs">' +
         // mandante à esquerda (Silvio, 10/11: "em jogo fora de casa eu quero meu escudo na direita"), como no placar do jogo
         (nx.home ? side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name)) + '<i class="sm-x">x</i>' + side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name))
           : side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name)) + '<i class="sm-x">x</i>' + side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name))) + '</div>' +
@@ -329,7 +329,7 @@
       const tr = co.train && co.train.i === co.ss.i ? S.CO_TRAIN[co.train.k] : null, sc = co.scout && co.scout.i === co.ss.i;
       wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
         '<button class="sm-w' + (sc ? ' ok' : '') + '" id="ld-ol"><small>OLHEIRO</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o ' + esc(vc.short || vc.name)) + '</b></button></div>';
-    } else card = '<div class="sm-bye"><b>Sem jogo nesta rodada</b><small>O time descansa. Os outros jogam.</small></div>';
+    } else card = '<div class="sm-bye"><b>Sem jogo nesta rodada</b><small>Temporada ' + (U.YEAR0 + co.season) + ' · o time descansa, os outros jogam.</small></div>';
     const tip0 = !nx.bye && co.scout && co.scout.i === co.ss.i ? S.coTip(co, true) : null, tipNew = tip0 && !tip0.seen && !S.coTipUsed(co, tip0);
     const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['mercado', 'Mercado'], ['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + (k === 'mercado' && inN + nwN ? '<i class="tm-dot">' + (inN + nwN) + '</i>' : k === 'time' && tipNew ? '<i class="tm-dot">1</i>' : '') + '</button>').join('');
     show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + wk +
@@ -1162,7 +1162,7 @@
   function melhorias(k, x) {
     const c = C(), co = c.co, e = S.coEst(co), E = S.CO_EST, M = E.mel, cl = club(co.club);
     const plans = {}; M.keys.forEach(q => (plans[q] = S.coEstMelPlan(co, q)));
-    if (!k || !plans[k]) k = (e.mel && e.mel.k) || M.keys.find(q => !plans[q].max && !plans[q].lock) || 'g';
+    if (!k || !plans[k]) k = (e.mel && e.mel.k) || M.keys.find(q => !plans[q].max && !plans[q].lock && !plans[q].need) || 'g';
     const P = plans[k]; x = Math.min(x || 1, P.payMax || 3);
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const pc = v => '+' + Math.round(v * 100) + '%', base = (S.coFin(co).rec || 0) * S.CO_FIN.bil / Math.max(1, co.ss.rounds.length / 2);
@@ -1174,20 +1174,21 @@
       if (q === 'b') return [n ? pc(M.bar * n) : 'sem', n ? 'de renda por torcedor' : 'torcedor não tem onde gastar'];
       return plans.c.lock ? ['fechado', 'pede a Social coberta'] : [n ? camV(n) : 'sem', n ? 'por jogo, com qualquer público' : 'renda fixa por jogo em casa']; };
     const block = q => { const w = now(q), lock = q === 'c' && plans.c.lock;
-      return '<button class="es-m' + (q === k ? ' on' : '') + (lock ? ' lock' : '') + '" data-mk="' + q + '"><span><b>' + M.names[q] + '</b>' + (lock ? '' : '<span class="es-pp">' + [1, 2, 3].map(i => '<i' + (i <= e.up[q] ? ' class="on"' : '') + '></i>').join('') + '</span>') + '</span><em>' + w[0] + '</em><small>' + (e.mel && e.mel.k === q ? 'em reforma · ' + U.D.plural(e.mel.left, 'rodada', 'rodadas') : w[1]) + '</small></button>'; };
+      return '<button class="es-m' + (q === k ? ' on' : '') + (lock ? ' lock' : '') + '" data-mk="' + q + '"><span><b>' + M.names[q] + '</b>' + (lock ? '' : '<span class="es-pp">' + Array.from({ length: M.max }, (_, i) => '<i' + (i < e.up[q] ? ' class="on"' : '') + '></i>').join('') + '</span>') + '</span><em>' + w[0] + '</em><small>' + (e.mel && e.mel.k === q ? 'em reforma · ' + U.D.plural(e.mel.left, 'rodada', 'rodadas') : w[1]) + '</small></button>'; };
     const row = (a, b, cls) => '<div><span>' + a + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' + b + '</b></div>';
-    const doing = e.mel && e.mel.k === k, can = !P.max && !P.lock && !e.mel;
+    const doing = e.mel && e.mel.k === k, can = !P.max && !P.lock && !P.need && !e.mel;
     const liga = S.coEstLiga ? S.coEstLiga(co) : null;
     const fx = k === 'g' ? row('Cansaço em casa', '−' + Math.round(M.gram * 100) + '%', 'up') : k === 'l' ? (liga ? row('Multa da liga', 'acaba', 'up') : row('Cota de TV', pc(M.tv), 'up')) : k === 'b' ? row('Renda por torcedor', pc(M.bar), 'up') : row('Por jogo em casa', '+' + camV(1), 'up');
     const card = doing ? '<small>EM REFORMA · ' + P.name.toUpperCase() + '</small><div class="es-mn"><b>' + e.mel.left + '</b><em>' + (e.mel.left > 1 ? 'rodadas para ficar pronto' : 'rodada para ficar pronto') + '</em></div>'
-      : P.max ? '<small>' + P.name.toUpperCase() + ' · NÍVEL 3 DE 3</small><div class="es-mn"><em>No nível máximo.</em></div>'
+      : P.max ? '<small>' + P.name.toUpperCase() + ' · NÍVEL ' + M.max + ' DE ' + M.max + '</small><div class="es-mn"><em>No nível máximo.</em></div>'
       : P.lock ? '<small>' + P.name.toUpperCase() + '</small><div class="es-mn"><em>Camarotes pedem a Social coberta (nível 4). Amplie a Social primeiro.</em></div>'
-      : '<small>' + P.name.toUpperCase() + ' · NÍVEL ' + P.to + ' DE 3</small><div class="es-ml">' + fx + (P.perSeason ? row('Por temporada', '+' + c.brl(P.perSeason), 'up') : '') + row('Prazo', U.D.plural(P.rounds, 'rodada', 'rodadas')) + row('Custo', c.brl(P.cost)) + '</div>';
+      : P.need ? '<small>' + P.name.toUpperCase() + ' · NÍVEL ' + P.to + ' DE ' + M.max + '</small><div class="es-mn"><em>O nível ' + P.to + ' pede um estádio de ' + milK(P.need) + ' lugares. O seu tem ' + milK(S.coEstCap(e)) + ': amplie primeiro.</em></div>'
+      : '<small>' + P.name.toUpperCase() + ' · NÍVEL ' + P.to + ' DE ' + M.max + '</small><div class="es-ml">' + fx + (P.perSeason ? row('Por temporada', '+' + c.brl(P.perSeason), 'up') : '') + row('Prazo', U.D.plural(P.rounds, 'rodada', 'rodadas')) + row('Custo', c.brl(P.cost)) + '</div>';
     show('<div class="es es3"><div class="tm-h"><button class="tcr-back" id="es-back" aria-label="Voltar">' + BK + '</button><b>Melhorias</b><small>' + esc(S.coEstNameNow(co) || cl.name) + '</small><span class="es-top">' + cxPill() + '</span></div>' +
       '<div class="es-mg">' + M.keys.map(block).join('') + '</div>' +
       '<div class="es-side"><div class="es-k es-mc">' + card + '</div>' +
         '<div class="es-seg">' + [1, 2, 3].map(i => '<button data-x="' + i + '" class="' + (i === x ? 'on' : '') + (i > (P.payMax || 3) || !can ? ' no' : '') + '">' + (i === 1 ? 'À vista' : i + 'x') + '</button>').join('') + '</div>' +
-        '<button class="tm-go' + (can ? '' : ' off') + '" id="es-go">' + (doing ? 'Em reforma' : e.mel ? 'Uma por vez' : P.max ? 'Nível máximo' : P.lock ? 'Fechado' : 'Pedir à diretoria') + '</button>' +
+        '<button class="tm-go' + (can ? '' : ' off') + '" id="es-go">' + (doing ? 'Em reforma' : e.mel ? 'Uma por vez' : P.max ? 'Nível máximo' : P.lock ? 'Fechado' : P.need ? 'Estádio pequeno' : 'Pedir à diretoria') + '</button>' +
       '</div></div>', st => {
       st.querySelector('#es-back').onclick = () => { sfx('tap'); estadio(); };
       st.querySelectorAll('[data-mk]').forEach(b => b.onclick = () => { sfx('tap'); melhorias(b.dataset.mk, x); });

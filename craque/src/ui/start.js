@@ -52,6 +52,8 @@
       (cl ? esc(cl.short || cl.name) + ' · ' : '') + sc.age + ' anos · ' + sc.pos + '</small><small>' + at + '</small></span><i class="tk-go" aria-hidden="true">' + PLAY_SVG + '</i></button>';
   }
   const svName = sv => (sv.co || sv.c).name;
+  // O ano em que a carreira está (Silvio, 2026-11-11: "quero saber em que ano aquela carreira está"): no Continuar e em cada carreira salva
+  const svYear = sv => YEAR0 + ((sv.co || sv.c).season || 0);
   // Excluir carreiras: "Editar" no ingresso troca o ▶ de cada linha por uma lixeira e o canhoto vira "Pronto"
   const TRASH_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5M14 11v5"/></svg>';
   const editing = new Set();
@@ -255,7 +257,7 @@
   const lineSvg = d => d.charAt(0) === '<' ? d : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + d + '"/></svg>';
   function homeLand() {
     const so = U.soCo(), packs = so || !PACKS_ON ? 0 : U.ITEMS.get().packs.length, last = lastSave();
-    const cont = last ? '<button class="hl-go" id="' + (MODES[last.m].cont || 'hl-go') + '" data-vg="' + last.m + ':' + last.i + '">' + PLAY_SVG + '<b>CONTINUAR</b><small>' + esc(svName(last.sv)) + '</small></button>'
+    const cont = last ? '<button class="hl-go" id="' + (MODES[last.m].cont || 'hl-go') + '" data-vg="' + last.m + ':' + last.i + '">' + PLAY_SVG + '<b>CONTINUAR</b><small><span>' + esc(svName(last.sv)) + '</span><i> · ' + svYear(last.sv) + '</i></small></button>'
       : '<button class="hl-go solo" id="hl-go" data-mode="treinador">' + PLAY_SVG + '<b>JOGAR</b></button>';
     const modes = (so ? (last ? ['treinador'] : []) : LAND_ORDER).map(m => m === 'jogador'
       ? '<button class="hl-md hl-jogador off" disabled aria-disabled="true"><b>Jogador</b><small>Em breve</small></button>'
@@ -304,7 +306,7 @@
     const row = ([sv, i], first) => {
       const co = m === 'treinador', c = co ? sv.co : sv.c, cl = c.club && club(c.club);
       let at;
-      if (co) { const ss = c.ss; at = (ss && !ss.done ? 'rodada ' + Math.min(ss.i + 1, ss.rounds.length) : 'temporada ' + (YEAR0 + c.season)); }
+      if (co) { const ss = c.ss; at = svYear(sv) + (ss && !ss.done ? ' · rodada ' + Math.min(ss.i + 1, ss.rounds.length) : !c.club ? ' · sem clube' : ' · pré-temporada'); }
       else at = 'temporada ' + (YEAR0 + c.season);
       if (ed) return '<div class="hl-row"><button class="hl-rb del" data-del="' + m + ':' + i + '"><span><b>Excluir ' + esc(c.name) + '</b><small>Some deste aparelho e da nuvem</small></span></button></div>';
       return '<div class="hl-row"><button class="hl-rb" data-vg="' + m + ':' + i + '">' + (cl ? crest(cl.id) : '') + '<span><b>' + esc(c.name) + '</b><small>' +
@@ -342,7 +344,7 @@
       const nm = esc(svName(sl[pick]));
       U.LD.pop('<div class="hl-pk"><div class="hl-pkl"><small>' + esc(M.name).toUpperCase() + ' · 2 DE 2 VAGAS</small><b>Qual ' + (co ? 'técnico' : 'jogador') + ' sai para o novo entrar?</b>' +
         sl.map((sv, i) => { const c = sv.co || sv.c, cl = c.club && club(c.club); return '<button class="hl-pko' + (i === pick ? ' on' : '') + '" data-s="' + i + '">' + (cl ? crest(cl.id) : U.emo(M.ic, 'md')) +
-          '<span><b>' + esc(c.name) + '</b><small>' + (cl ? esc(cl.short || cl.name) + ' · ' : '') + (sv.at ? agoTxt(sv.at) : '') + '</small></span>' + (i === pick ? '<em>SAI</em>' : '') + '</button>'; }).join('') +
+          '<span><b>' + esc(c.name) + '</b><small>' + (cl ? esc(cl.short || cl.name) + ' · ' : '') + svYear(sv) + (sv.at ? ' · ' + agoTxt(sv.at) : '') + '</small></span>' + (i === pick ? '<em>SAI</em>' : '') + '</button>'; }).join('') +
         '</div><div class="hl-pkr"><p>' + nm + ' só é apagado quando ' + (co ? 'o novo técnico for ver as propostas' : 'o novo jogador assinar com um clube') + '. Desistiu antes? Ele continua salvo.</p>' +
         '<span class="hl-gr"></span><button class="hl-btn gold" id="hl-pk-ok">Trocar ' + esc(firstName(svName(sl[pick]))) + ' por um novo</button><button class="hl-btn line" data-pop-x>Cancelar</button></div></div>',
         'Vagas cheias', w => {
