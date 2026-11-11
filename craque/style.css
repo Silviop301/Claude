@@ -9054,6 +9054,9 @@ button.coin-pill { cursor: pointer; border: 0; }
 .lj-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .lj-two span { border-radius: 12px; background: rgba(243,241,234,.06); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .lj-two small { font: 700 14px/1 var(--body); color: #9fb0a6; } .lj-two b { font: 800 20px/1.1 var(--display); }
+/* Aporte com o caixa no vermelho (11/11): 3 quadros, o caixa de antes e depois primeiro */
+.lj-two.t3 { grid-template-columns: repeat(3, 1fr); gap: 8px; } .lj-two.t3 span { padding: 10px; } .lj-two.t3 b { font-size: 17px; white-space: nowrap; }
+.lj-two b i { font-style: normal; } .lj-two b i.up { color: #7ED39A; } .lj-two b i.dn { color: #F5A57F; }
 .lj-cost { align-items: center; justify-content: center; gap: 10px; }
 .lj-cost > span { display: flex; align-items: center; gap: 10px; } .lj-cost svg { width: 34px; height: 34px; } .lj-cost > span b { font: 800 48px/1 var(--display); color: var(--gold); }
 .lj-cost > small:last-child { font: 700 15px/1 var(--body); color: #B9C9BF; }
@@ -9555,6 +9558,8 @@ button.coin-pill { cursor: pointer; border: 0; }
 .tb2-h.cls, .tb2-r.cls { grid-template-columns: 26px 22px minmax(0, 1fr) 28px 24px 24px 24px 40px 40px 72px; gap: 6px; }
 /* Mercado na 1.0: 3 abas (Procurar, Elenco, Notícias; "Indicados" saiu) e a Proposta sem a aba apagada do empréstimo (2026-11-11) */
 .mk-tabs.t3 { grid-template-columns: repeat(3, 1fr); }
+/* 4 abas de novo (11/11: Propostas pelos seus): letra um pouco menor e o número não encosta na palavra */
+.mk-tabs.t4 button { font-size: 18px !important; padding: 0 4px; } .mk-tabs.t4 .tm-dot { right: 5px; } .mk-tabs.t4 button:has(.tm-dot) { padding-right: 26px; }
 .mk.mkp.nt { grid-template-rows: 44px 0 minmax(0, 1fr); } .mk.mkp.nt .mkp-l { margin-top: -10px; }
 
 /* Polimento 1.0, lote 2 (2026-11-11): Loja com o atalho dos Termos e do reembolso; jeito de jogar nunca passa do cartão */
@@ -9663,6 +9668,13 @@ button.coin-pill { cursor: pointer; border: 0; }
 .fn2-k span.fn2-rt { font-weight: 800; white-space: normal; line-height: 1.1; } .fn2-k span.fn2-rt.up, .fn2-k span.fn2-rt.ok { color: #7ED39A; }
 .fn2-k span.fn2-rt.warn { color: #F5B544; } .fn2-k span.fn2-rt.red { color: #F5A57F; }
 .fn2-k span.fn2-rt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Trajetória do caixa (11/11): quanto mudou na temporada, a linha rodada a rodada e onde chega no fim do ano */
+.fn2-st.fn2-tr { gap: 6px; padding: 10px 16px; flex: none; } .fn2-tr > small { display: flex; justify-content: space-between; align-items: center; gap: 8px; white-space: nowrap; }
+.fn2-tr > small u { text-decoration: none; font: 800 13px/1 var(--display); letter-spacing: .04em; text-transform: uppercase; color: var(--gold); } .fn2-tr > small u.s2, .fn2-tr > small u.s3, .fn2-tr > small u.s4 { color: #F5A57F; }
+.fn2-tr > b { font: 800 23px/1 var(--display); white-space: nowrap; } .fn2-tr b.up { color: #7ED39A; } .fn2-tr b.dn, .fn2-tr em.dn { color: #F5A57F; }
+.fn2-spw { position: relative; display: block; height: 30px; } .fn2-sp { display: block; width: 100%; height: 30px; overflow: visible; }
+.fn2-spw i { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; box-shadow: 0 0 0 2px #141517; }
+.fn2-tr em b { font: 800 16px/1 var(--display); color: #F3F1EA; }
 .fn2-rd { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 8px 0 4px; }
 .fn2-rc { display: flex; flex-direction: column; min-width: 0; } .fn2-rc small { font: 700 12px/1 var(--body); letter-spacing: .1em; color: #9fb0a6; margin-bottom: 4px; }
 .fn2-rc span { height: 24px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 700 14px/1 var(--body); color: #D9E2DC; white-space: nowrap; }
@@ -9703,6 +9715,10 @@ body:has(> .tc-ov) > .pay-ty { visibility: hidden; }
 .ld-st .tm-pitch button.tm-best svg{width:14px;height:14px;fill:#f2c230}
 .ld-st .tm-pitch button.tm-best.on{opacity:.45}
 .ld-st .tm-pitch button.tm-best:active{transform:scale(.95)}
+/* Descansados (11/11): no canto de cima do campo, à esquerda (medido nas 7 formações, com e sem entalhe: ao lado ou em cima
+   do Melhores ele tampava o lateral ou o nome do zagueiro) */
+.ld-st .tm-pitch button.tm-best.tm-rest{bottom:auto;top:8px;padding:0 8px 0 6px;letter-spacing:.01em;gap:3px}
+.ld-st .tm-pitch button.tm-best.tm-rest svg{fill:#7ED39A}
 /* Disco na Semana do Treinador: no meio do topo, no espaço entre a META e o caixa; nome embaixo quando a faixa troca */
 .sm-h .sm-mu { display: flex; justify-content: center; align-items: center; min-width: 0; }
 .hl-dk.dk-sm { position: relative; right: auto; bottom: auto; gap: 4px; }

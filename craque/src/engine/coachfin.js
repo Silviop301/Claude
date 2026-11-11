@@ -201,13 +201,17 @@
   // por milhão = o dinheiro paga esse salário por uma temporada); o teto do aporte (`f.tap`) vale enquanto ficar no clube.
   S.CO_APORTE = { coin: 12, max: 10, piso: 500000, tk: 0.025 };
   S.coAporteUsed = co => { const f = S.coFin(co); return f && f.ap && f.ap.s === co.season ? f.ap.wk : 0; };
-  S.coAporteLeft = co => { const f = S.coFin(co); return !f || f.caixa < 0 ? 0 : Math.max(0, S.CO_APORTE.max - S.coAporteUsed(co)); };
+  // Com o caixa no vermelho o aporte também vale (Silvio 2026-11-11: "não entendi o bloqueio de aporte"; era bloqueado e a tela
+  // não dizia por quê): o dinheiro cobre o buraco primeiro e só o que sobra vira verba para contratar. S.coAportePrev = antes e depois
+  S.coAporteLeft = co => { const f = S.coFin(co); return !f ? 0 : Math.max(0, S.CO_APORTE.max - S.coAporteUsed(co)); };
+  S.coAportePrev = (co, wk) => { const f = S.coFin(co), v = S.coAporteValue(co, wk), vb = Math.max(0, v - Math.max(0, -f.caixa)), t = S.coAporteTeto(v);
+    return { v, red: f.caixa < 0, caixa: [f.caixa, f.caixa + v], verba: [f.verba, f.verba + vb], teto: [f.teto, f.teto + t] }; };
   S.coAporteValue = (co, wk) => r10(Math.max(baseOf(co), S.CO_APORTE.piso) * wk);
   S.coAporteTeto = v => r5(v * S.CO_APORTE.tk);
   S.coAporte = function (co, wk) {
     wk = Math.round(wk); if (!(wk > 0) || wk > S.coAporteLeft(co)) return 0;
     const f = S.coFin(co), v = S.coAporteValue(co, wk);
-    f.caixa += v; f.verba += v; f.ss.apo = (f.ss.apo || 0) + v;
+    f.verba += Math.max(0, v - Math.max(0, -f.caixa)); f.caixa += v; f.ss.apo = (f.ss.apo || 0) + v;
     const t = S.coAporteTeto(v); f.teto += t; f.tap = (f.tap || 0) + t;
     f.ap = { s: co.season, wk: S.coAporteUsed(co) + wk };
     if (f.caixa >= 0) f.neg = 0;
@@ -282,8 +286,21 @@
     const dc = Math.round(fin.caixa - snap.cx), rest = dc - inn.reduce((a, x) => a + x[1], 0) + out.reduce((a, x) => a + x[1], 0);
     if (rest > 0) inn.push(['out', rest]); else if (rest < 0) out.push(['out', -rest]);
     fin.rd = { s: co.season, r: ri + 1, inn, out, cx: fin.caixa, dc, h };
+    // caixa no fim de cada rodada da temporada (a trajetória da tela; save antigo começa na rodada em que está: r0)
+    if (!fin.cx || fin.cx.s !== co.season) fin.cx = { s: co.season, r0: ri, v: [snap.cx] };
+    fin.cx.v.push(fin.caixa);
     fin.snap = { s: co.season, ss: Object.assign({}, fin.ss), cx: fin.caixa };
   }
+  // Trajetória do caixa (Silvio 2026-11-11: "ainda não acho que está clara a trajetória das finanças, se está diminuindo ou
+  // crescendo"): `pts` = o caixa no começo e no fim de cada rodada jogada (o último é o de agora), `r0` = rodada em que a conta
+  // começa (0 = desde o começo da temporada), `d` = quanto mudou desde lá, `end` = onde o caixa chega no fim da temporada no
+  // ritmo de hoje (S.coFinRitmo: rodada comum × rodadas que faltam), `n` = rodadas da temporada
+  S.coFinTrend = function (co) {
+    const fin = S.coFin(co), ss = co.ss; if (!fin || !ss) return null;
+    const R = S.coFinRitmo(co), h = fin.cx && fin.cx.s === co.season ? fin.cx : { r0: ss.i || 0, v: [] };
+    const pts = h.v.slice(); if (!pts.length || pts[pts.length - 1] !== fin.caixa) pts.push(fin.caixa);
+    return { pts, r0: h.r0, n: rounds(co), i: ss.i || 0, d: pts.length > 1 ? Math.round(fin.caixa - pts[0]) : null, end: R && !ss.done ? Math.round(fin.caixa + R.net * R.rest) : null, R };
+  };
   // No ritmo atual: o que entra e sai numa rodada comum daqui até o fim da temporada (patrocínio, bilheteria média, TV que
   // falta dividida pelas rodadas que faltam, contra folha, parcelas do banco e das compras, vendas a receber). Sem compra,
   // venda nem prêmio. { net, left: rodadas que o caixa aguenta (null = não acaba), rest: rodadas que faltam, st: 'up' sobra | 'ok' chega
@@ -333,7 +350,7 @@
     const r = start0(co);
     const fin = S.coFin(co);
     if (fin) {
-      fin.s = co.season; fin.ss = zero(); fin.rec = recOf(co, rounds(co)); fin.neg = 0; fin.sold = false; fin.snap = { s: co.season, ss: zero(), cx: fin.caixa }; fin.rd = null;
+      fin.s = co.season; fin.ss = zero(); fin.rec = recOf(co, rounds(co)); fin.neg = 0; fin.sold = false; fin.snap = { s: co.season, ss: zero(), cx: fin.caixa }; fin.rd = null; fin.cx = { s: co.season, r0: 0, v: [fin.caixa] };
       // Eleição a cada 3 temporadas: metade das vezes entra outro presidente
       if (co.season - fin.pres.s >= F.eleicao) { const p = newPres(co); if (rngOf(co, 'eleicao')() < 0.5 && p.k !== fin.pres.k) { fin.pres = p; news(co, 'Eleição no clube: ' + p.n + ' é o novo presidente (' + PRES[p.k].nome + ').'); } else fin.pres.s = co.season; }
       // A reunião de pré-temporada parte da meta da diretoria e da verba/teto que o fim do ano deixou

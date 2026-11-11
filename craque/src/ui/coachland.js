@@ -347,8 +347,9 @@
       st.querySelector('#sm-back').onclick = () => { sfx('tap'); go('inicio'); };
       if (st.querySelector('#ld-tr')) st.querySelector('#ld-tr').onclick = () => { sfx('tap'); treino(); };
       if (st.querySelector('#ld-ol')) st.querySelector('#ld-ol').onclick = () => { sfx('tap'); olheiro(); };
-      if (inN) st.querySelector('[data-rail="mercado"]').onclick = () => { sfx('tap'); const o = S.coMktInbox(co).find(x => !x.seen); if (!o) return go('mercado'); o.seen = 1; c.save(); recebida(o, semana); };
-      else if (nwN) st.querySelector('[data-rail="mercado"]').onclick = () => { sfx('tap'); noticias(); };
+      // Silvio 11/11: "não tá legal tentar abrir o mercado e ter que ver todas as propostas antes": o Mercado abre direto e as
+      // propostas esperam na aba Propostas (o número fica na aba); só com notícia nova segue abrindo nelas
+      if (!inN && nwN) st.querySelector('[data-rail="mercado"]').onclick = () => { sfx('tap'); noticias(); };
       if (tut) tutShow(co, st);
     });
   }
@@ -400,6 +401,7 @@
     const c = C(), co = c.co, by = {}; co.squad.forEach(p => { by[p.id] = p; });
     if (co.xi.some(id => !c.avail(by[id])) || co.xi.length < 11) co.xi = S.coAutoXI(co.squad, co.form).xi;
     const bestXI = () => S.coAutoXI(co.squad.filter(c.avail), co.form, true).xi;
+    const restXI = () => S.coAutoXI(co.squad.filter(c.avail), co.form, 'rest').xi; // os mais descansados de cada posição (poupar em jogo menor)
     let swap = null, selB = null; // titular escolhido (troca de lugar ou sai) e reserva escolhido (entra)
     // Reserva entra na vaga i (arrastando do banco ou tocando nos dois)
     const put = (id, i) => { co.xi[i] = id; co.autoXI = false; swap = null; selB = null; sfx('tap'); draw(); };
@@ -451,7 +453,8 @@
         (nFix ? '<i class="tm-tip-d n">' + nFix + '</i>' : tip && !used && !tip.seen ? '<i class="tm-tip-d"></i>' : '') + '</button>';
       show('<div class="tm"><div class="tm-h"><button class="tcr-back" id="tm-back" aria-label="Voltar">' + BK + '</button>' + title + pill + '</div>' +
         '<div class="ld-pitch tm-pitch">' + PITCH + dots + (swap !== null ? nearList(sl[swap], bench, c.avail, sp[swap][0], sp[swap][1]) : '') +
-        '<button class="tm-best' + (bestXI().join() === co.xi.join() ? ' on' : '') + '" id="tm-best" aria-label="Escalar os melhores pelo geral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></svg>Melhores</button></div>' +
+        '<button class="tm-best' + (bestXI().join() === co.xi.join() ? ' on' : '') + '" id="tm-best" aria-label="Escalar os melhores pelo geral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></svg>Melhores</button>' +
+        '<button class="tm-best tm-rest' + (restXI().join() === co.xi.join() ? ' on' : '') + '" id="tm-rest" aria-label="Escalar os mais descansados de cada posição"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h15v8H3zM18 10.5h3v3h-3z"/></svg>Descansados</button></div>' +
         '<div class="tm-bench"><small>BANCO</small>' + bstrip + '</div>' +
         '<div class="tm-side">' + pick('form', 'Formação', co.form) + pick('sty', 'Estilo', esc(S.CO_STY[co.style].name)) +
         '<span class="tm-two"><button class="tm-b" id="ld-fun">Funções</button><button class="tm-b" id="ld-bat">Batedores</button></span><button class="tm-b" id="ld-ele">Elenco</button>' +
@@ -468,6 +471,8 @@
           selB = selB === id ? null : id; draw(); });
         // Melhores (Silvio 11/11): o maior geral de cada posição na formação de hoje; machucado e suspenso ficam fora
         st.querySelector('#tm-best').onclick = () => { const xi = bestXI(); if (xi.join() === co.xi.join()) { sfx('tap'); return; }
+          sfx('ok'); co.xi = xi; co.autoXI = false; swap = null; selB = null; draw(); };
+        st.querySelector('#tm-rest').onclick = () => { const xi = restXI(); if (xi.join() === co.xi.join()) { sfx('tap'); return; }
           sfx('ok'); co.xi = xi; co.autoXI = false; swap = null; selB = null; draw(); };
         benchDrag(st.querySelector('.tm'), put, (id, i) => !!by[id] && fitsSlot(by[id], sl[i])); benchShow(st); nearFix(st);
         // tocar fora (campo vazio, cabeçalho, coluna) fecha a escolha
@@ -1379,9 +1384,9 @@
     e.t === 'acrescimo' ? '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="#141517" stroke="#4ADE80" stroke-width="1.8"/><path d="M12 8.5v7M8.5 12h7" stroke="#4ADE80" stroke-width="2.2" stroke-linecap="round"/></svg>' :
     e.t === 'intervalo' ? '<svg viewBox="0 0 24 24" fill="none" stroke="#9fb0a6" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>' : '';
   const MK_L = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 4L6 12l11 8z"/></svg>', MK_R = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l11 8-11 8z"/></svg>';
-  // Chip da janela: dias usados e quantas rodadas ela ainda fica aberta (laranja na última)
+  // Chip da janela: quantas rodadas ela ainda fica aberta (laranja na última). Sem dias desde 11/11: quem manda é a rodada
   const mkWin = () => { const co = C().co, w = S.coMktWin(co), wi = S.coMktWinInfo(co), rd = wi ? wi.rd : 0;
-    return w.k ? '<span class="mk-win' + (w.open ? (rd === 1 ? ' ult' : '') : ' off') + '">' + (w.open ? 'JANELA ' + w.day + '/' + w.max + ' · ' + (rd === 1 ? 'ÚLTIMA RODADA' : rd + ' RODADAS') : 'JANELA · SEM DIAS') + '</span>' : '<span class="mk-win off">' + (w.next ? 'JANELA · RODADA ' + w.next : 'JANELA FECHADA') + '</span>'; };
+    return w.k ? '<span class="mk-win' + (w.open ? (rd === 1 ? ' ult' : '') : ' off') + '">' + 'JANELA · ' + (rd === 1 ? 'ÚLTIMA RODADA' : rd + ' RODADAS') + '</span>' : '<span class="mk-win off">' + (w.next ? 'JANELA · RODADA ' + w.next : 'JANELA FECHADA') + '</span>'; };
   // Topo do mercado (Silvio 2026-11-10: "o caixa na parte superior e ver em outras telas também", para saber se dá para pagar
   // o olheiro): nome em cima e apoio embaixo; à direita, no fluxo, o caixa do clube, as moedas, a janela e a ajuda.
   // `coins` = id do botão das moedas (abre a loja; quem chama liga com mkCoins); sem ele a pílula é só informação.
@@ -1399,9 +1404,11 @@
   const mkClub = p => (p.club ? esc(club(p.club).short || club(p.club).name) : 'sem clube');
   // As 3 abas do Mercado: Procurar, Elenco (abre o seu elenco e o Voltar devolve ao Mercado) e Notícias. "Indicados" saiu na 1.0
   // (aba apagada com "em breve"). O aviso laranja conta as notícias novas da sua liga e do seu clube
-  const mkTabs = (co, on) => { const n = on === 2 || !S.coWorldNew ? 0 : S.coWorldNew(co);
-    return [['Procurar', 'mk-tpr'], ['Elenco', 'mk-tel'], ['Notícias', 'mk-tnw']].map(([t, id], i) => '<button id="' + id + '"' + (i === on ? ' class="on"' : '') + '>' + t + (i === 2 && n ? '<i class="tm-dot">' + n + '</i>' : '') + '</button>').join(''); };
-  const mkTabEl = st => { const b = st.querySelector('#mk-tel'); if (b) b.onclick = () => { sfx('tap'); elenco(undefined, undefined, () => mercado()); }; };
+  // Propostas (11/11): as propostas pelos seus esperam na 4ª aba, com o número das que estão abertas
+  const mkTabs = (co, on) => { const n = on === 2 || !S.coWorldNew ? 0 : S.coWorldNew(co), k = on === 3 ? 0 : S.coMktInbox(co).length;
+    return [['Procurar', 'mk-tpr'], ['Elenco', 'mk-tel'], ['Notícias', 'mk-tnw'], ['Propostas', 'mk-tof']].map(([t, id], i) => '<button id="' + id + '"' + (i === on ? ' class="on"' : '') + '>' + t + (i === 2 && n ? '<i class="tm-dot">' + n + '</i>' : i === 3 && k ? '<i class="tm-dot">' + k + '</i>' : '') + '</button>').join(''); };
+  const mkTabEl = st => { const b = st.querySelector('#mk-tel'); if (b) b.onclick = () => { sfx('tap'); elenco(undefined, undefined, () => mercado()); };
+    const o = st.querySelector('#mk-tof:not(.on)'); if (o) o.onclick = () => { sfx('tap'); recebidas(); }; };
   function mercado() {
     const c = C(), co = c.co, m = S.coMkt(co), F = S.coMktFilters(co);
     if (S.coWorldSync) S.coWorldSync(co);
@@ -1412,14 +1419,14 @@
       return '<div class="mk-f' + (v ? ' on' : '') + '">' + (v ? '<button class="mk-fx" data-mx="' + i + '" aria-label="limpar ' + x.t.toLowerCase() + '">' + x.t + '<i>×</i></button>' : '<small>' + x.t + '</small>') + '<span><button class="mk-ar" data-mf="' + i + '" data-d="-1" aria-label="' + x.t.toLowerCase() + ' anterior">' + MK_L + '</button><b class="' + (t.length > 12 ? 'mk-sm' : '') + '">' + esc(t) + '</b><button class="mk-ar" data-mf="' + i + '" data-d="1" aria-label="' + x.t.toLowerCase() + ' seguinte">' + MK_R + '</button></span></div>'; };
     const goTxt = n => (n > 0 && n <= S.CO_MKT.max ? 'Buscar' : n ? 'Filtre mais' : 'Ninguém: solte um filtro');
     show('<div class="mk">' + mkHead('mk-back', 'Mercado', esc(club(co.club).short || club(co.club).name), false, true) +
-      '<div class="mk-tabs t3">' + tabs + '</div><div class="mk-fs">' + F.map(cell).join('') + '</div>' +
+      '<div class="mk-tabs t4">' + tabs + '</div><div class="mk-fs">' + F.map(cell).join('') + '</div>' +
       '<div class="mk-side"><label class="mk-k mk-nm"><small>NOME</small><input id="mk-nm" type="text" autocomplete="off" placeholder="Toque para digitar" value="' + esc(m.nm || '') + '"></label>' +
         '<div class="mk-k"><b id="mk-n" class="' + (ok ? 'ok' : '') + '">' + plMil(n, 'jogador', 'jogadores') + '</b>' + (dirty ? '<button class="mk-clr" id="mk-clr">Limpar filtros</button>' : '<span>o olheiro já viu todos uma vez</span>') + '</div>' +
         '<span class="rs-gap"></span><button class="tm-go' + (ok ? '' : ' off') + '" id="mk-go">' + goTxt(n) + '</button></div></div>', st => {
       st.querySelector('#mk-back').onclick = () => { sfx('tap'); semana(); };
       mkCoins(st, mercado);
       st.querySelector('#mk-tnw').onclick = () => { sfx('tap'); noticias(); }; mkTabEl(st);
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição, pelo que o olheiro viu: com mais relatórios ele erra menos. A janela do começo vale até a 3ª rodada (10 dias) e a do meio abre antes da rodada do meio (6 dias): proposta e contrato gastam 1 dia. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição, pelo que o olheiro viu: com mais relatórios ele erra menos. A janela abre nas 3 primeiras rodadas e em 2 rodadas no meio do campeonato; com ela aberta você negocia à vontade. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.'); };
       st.querySelectorAll('[data-mf]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.mf, L = F[i].o.length; m.f[i] = ((m.f[i] || 0) + (+b.dataset.d) + L) % L; c.save(); mercado(); });
       st.querySelectorAll('[data-mx]').forEach(b => b.onclick = () => { sfx('tap'); m.f[+b.dataset.mx] = 0; c.save(); mercado(); });
       const clr = st.querySelector('#mk-clr'); if (clr) clr.onclick = () => { sfx('tap'); m.f = F.map(() => 0); m.nm = ''; c.save(); mercado(); };
@@ -1481,7 +1488,7 @@
     const none = all.length ? (nwFlt === 2 ? 'Seu clube ainda não fez negócio.' : nwFlt === 3 ? 'Nada sobre quem você observa.' : 'Nada aqui. Veja em Tudo.') : win.k ? 'Nenhum negócio fechado ainda.' : win.next ? 'Sem notícias. A janela abre na rodada ' + win.next + '.' : 'Sem notícias nesta temporada.';
     const cur = R[sel], p = cur && cur.id ? S.coMktFind(co, cur.id) : null, goT = !cur ? 'Ver ficha' : p ? 'Ver ficha' : cur.to === co.club || (cur.k === 'b' && cur.from === co.club) ? 'No seu elenco' : 'Sem ficha';
     show('<div class="mk nw">' + mkHead('nw-back', 'Mercado', esc(club(co.club).short || club(co.club).name), false, true) +
-      '<div class="mk-tabs t3">' + mkTabs(co, 2) + '</div>' +
+      '<div class="mk-tabs t4">' + mkTabs(co, 2) + '</div>' +
       '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">' + none + '</p>') + '</div>' +
       '<div class="mk-side"><div class="mk-k nw-flt"><small>MOSTRAR</small><span><button class="mk-ar" data-nf="-1" aria-label="filtro anterior">' + MK_L + '</button><b>' + NW_FLT[nwFlt] + '</b><button class="mk-ar" data-nf="1" aria-label="filtro seguinte">' + MK_R + '</button></span>' +
         '<em>' + U.D.plural(list.length, 'notícia', 'notícias') + (nNew ? ' · <i>' + U.D.plural(nNew, 'nova', 'novas') + '</i>' : '') + '</em></div>' +
@@ -1497,6 +1504,39 @@
       st.querySelector('#nw-prev').onclick = () => { sfx('tap'); noticias(pg - 1, 0); };
       st.querySelector('#nw-next').onclick = () => { sfx('tap'); noticias(pg + 1, 0); };
       st.querySelector('#nw-go').onclick = () => { if (!p) return; sfx('tap'); open(sel); };
+    });
+  }
+  // Propostas recebidas (11/11, Silvio: "não tá legal tentar abrir o mercado e ter que ver todas as propostas antes"): a 4ª aba
+  // do Mercado, no desenho das Notícias. 4 por página, a maior oferta primeiro; tocar na escolhida (ou no dourado) abre a
+  // janelinha da proposta e o Voltar dela devolve a lista. Entrar na aba marca todas como vistas (o aviso da Semana some)
+  function recebidas(pg, sel) {
+    const c = C(), co = c.co, win = S.coMktWin(co);
+    const list = S.coMktInbox(co).slice().sort((a, b) => b.v - a.v), pages = Math.max(1, Math.ceil(list.length / 4));
+    if (list.some(o => !o.seen)) { list.forEach(o => { o.seen = 1; }); c.save(); }
+    pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * 4, pg * 4 + 4); sel = Math.max(0, Math.min(sel || 0, R.length - 1));
+    const row = (o, i) => { const p = co.squad.find(x => x.id === o.id), bc = club(o.club);
+      const note = o.ask ? 'à venda' : o.wish === 1 ? 'quer ir' : o.wish === 2 ? 'quer ficar' : '';
+      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-or="' + i + '"><i>' + p.pos + '</i><span><b><span class="nw-n">' + esc(p.n) + '</span>' + (note ? '<u>' + note + '</u>' : '') + '</b>' +
+        '<small>' + crest(o.club, 'nw-cr') + '<span class="nw-c">' + esc((bc.short || bc.name).replace(/^Red Bull /, '')) + '</span><s>·</s><span class="nw-c">' + ((co.xi || []).includes(p.id) ? 'titular' : 'reserva') + ' · geral ' + p.ovr + '</span></small></span>' +
+        '<div class="nw-tc"><strong>' + brlS(c, o.v) + '</strong><em class="nw-tag f">' + (o.pay ? (o.pay + 1) + 'X' : 'À VISTA') + '</em></div></button>'; };
+    const none = win.open ? 'Nenhuma proposta agora. Quem você põe à venda no Elenco recebe mais.' : win.next ? 'Nenhuma proposta. Elas chegam com a janela, na rodada ' + win.next + '.' : 'Nenhuma proposta. A janela já fechou.';
+    const me = () => recebidas(pg, sel);
+    show('<div class="mk nw of">' + mkHead('of-back', 'Mercado', esc(club(co.club).short || club(co.club).name), false, true) +
+      '<div class="mk-tabs t4">' + mkTabs(co, 3) + '</div>' +
+      '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">' + none + '</p>') + '</div>' +
+      '<div class="mk-side"><div class="mk-k nw-flt"><small>PELOS SEUS</small><span><b>' + U.D.plural(list.length, 'proposta', 'propostas') + '</b></span>' +
+        '<em>' + (list.length ? 'Valem enquanto a janela estiver aberta.' : 'Nada para decidir.') + '</em></div>' +
+        '<div class="mk-pg"><button class="mk-ar big" id="of-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar big" id="of-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></div>' +
+        '<span class="rs-gap"></span><button class="tm-go' + (R.length ? '' : ' off') + '" id="of-go">Ver proposta</button></div></div>', st => {
+      const open = i => { const o = R[i]; if (!o) return; recebida(o, () => recebidas(pg, i)); };
+      st.querySelector('#of-back').onclick = () => { sfx('tap'); semana(); };
+      mkCoins(st, me);
+      st.querySelector('#mk-tpr').onclick = () => { sfx('tap'); mercado(); }; st.querySelector('#mk-tnw').onclick = () => { sfx('tap'); noticias(); }; mkTabEl(st);
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Clubes que querem comprar um dos seus. Só chegam com a janela aberta e somem quando ela fecha. Quem está à venda no Elenco recebe mais propostas. Dá para aceitar, negociar ou recusar.'); };
+      st.querySelectorAll('[data-or]').forEach(b => b.onclick = () => { const i = +b.dataset.or; sfx('tap'); if (i === sel) return open(i); recebidas(pg, i); });
+      st.querySelector('#of-prev').onclick = () => { sfx('tap'); recebidas(pg - 1, 0); };
+      st.querySelector('#of-next').onclick = () => { sfx('tap'); recebidas(pg + 1, 0); };
+      st.querySelector('#of-go').onclick = () => { if (!R.length) return; sfx('tap'); open(sel); };
     });
   }
   // Ficha (24): a força numa faixa borrada contra o seu titular (sem número), que estreita a cada relatório;
@@ -1554,7 +1594,7 @@
       if (go) go.onclick = () => { sfx('tap'); const me = () => ficha(id, back); if (S.coMktFull(co, p)) return cheio(id, me); if (!p.club || S.coMktNeg(co, p).st === 'ok') contrato(id, me); else proposta(id, me); };
     });
   }
-  // Elenco cheio (Silvio 2026-11-10, limite de 28): a janelinha abre no dourado da ficha, antes de gastar dia da janela.
+  // Elenco cheio (Silvio 2026-11-10, limite de 28): a janelinha abre no dourado da ficha, antes da proposta.
   // Com clube e sem acordo ainda, "Propor troca" abre a proposta já com um reserva na troca (sai um, entra um);
   // sem clube, ou com o acordo fechado sem troca, só resta abrir vaga no Elenco.
   function cheio(id, back) {
@@ -1573,7 +1613,7 @@
     const n = S.coMkt(co).neg[p.id], w = S.coMktWin(co), off = t => '<button class="tm-go off" id="mkf-go" disabled>' + t + '</button>';
     if (n && n.st === 'no') return off('Não negocia mais');
     if (!p.club || (n && n.st === 'ok')) return (p.club && !w.open) ? off('Janela fechada') : '<button class="tm-go go" id="mkf-go">' + (p.club ? 'Ir ao contrato' : 'Fazer contrato') + '</button>';
-    if (!w.open) return off(w.k ? 'Sem dias na janela' : w.next ? 'Janela na rodada ' + w.next : 'Janela fechada');
+    if (!w.open) return off(w.next ? 'Janela na rodada ' + w.next : 'Janela fechada');
     return '<button class="tm-go go" id="mkf-go">Fazer proposta</button>';
   }
   // ---------- Mercado, lote 2 (2026-11-09, quadros 25 e 26): proposta ao clube e contrato com o empresário ----------
@@ -1594,7 +1634,7 @@
     const done = neg.st === 'ok' || neg.st === 'no';
     const gold = neg.st === 'ok' ? '<button class="tm-go" id="mkp-go">Ir ao contrato</button>' : neg.st === 'no' ? '<button class="tm-go off" id="mkp-go" disabled>Não negocia mais</button>' :
       !w.open ? '<button class="tm-go off" id="mkp-go" disabled>Janela fechada</button>' : after < 0 ? '<button class="tm-go off" id="mkp-go" disabled>Sem verba</button>' :
-      !tq && co.squad.length >= M.maxSquad ? '<button class="tm-go off" id="mkp-go" disabled>Elenco cheio</button>' : '<button class="tm-go" id="mkp-go">Enviar · 1 dia</button>';
+      !tq && co.squad.length >= M.maxSquad ? '<button class="tm-go off" id="mkp-go" disabled>Elenco cheio</button>' : '<button class="tm-go" id="mkp-go">Enviar proposta</button>';
     const seg = (on, t, attr) => '<button class="' + (on ? 'on' : '') + '" ' + attr + '>' + t + '</button>';
     show('<div class="mk mkp nt">' + mkHead('mkp-back', 'Proposta', esc(p.n) + ' · ' + S.CO_POS_NM[p.pos] + ' · ' + cn) + // sem abas: só existe compra na 1.0 (empréstimo "em breve" saiu)
       '<div class="mkp-l"><div class="mk-k mkp-v"><small>VALOR DA PROPOSTA</small><span class="mkp-row"><button class="mk-ar big" data-pv="-1" aria-label="Menos"' + (done ? ' disabled' : '') + '>' + MK_L + '</button><b>' + c.brl(o.v) + '</b><button class="mk-ar big" data-pv="1" aria-label="Mais"' + (done ? ' disabled' : '') + '>' + MK_R + '</button></span>' +
@@ -1608,7 +1648,7 @@
       const re = x => proposta(id, back, Object.assign({}, o, x));
       st.querySelector('#mkp-back').onclick = () => { sfx('tap'); back(); };
       cxBind(st, () => proposta(id, back, o));
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Cada proposta gasta 1 dia. Abaixo do que ele quer, o presidente contrapõe (perto) ou recusa (longe), e cada resposta que não é sim gasta uma bolinha de paciência. Sem paciência, ele não negocia mais nesta temporada. Parcelado pesa menos na verba agora, mas ele aceita um pouco menos. O jogador na troca abate do valor; se ele vale mais que a proposta, não tem troco.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Com a janela aberta você propõe quantas vezes quiser. Abaixo do que ele quer, o presidente contrapõe (perto) ou recusa (longe), e cada resposta que não é sim gasta uma bolinha de paciência. Sem paciência, ele não negocia mais nesta temporada. Parcelado pesa menos na verba agora, mas ele aceita um pouco menos. O jogador na troca abate do valor; se ele vale mais que a proposta, não tem troco.'); };
       st.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { sfx('tap'); re({ v: Math.max(10000, o.v + step * (+b.dataset.pv)) }); });
       st.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => { sfx('tap'); re({ v: cuts[+b.dataset.pc] }); });
       st.querySelectorAll('[data-pp]').forEach(b => b.onclick = () => { sfx('tap'); re({ pay: +b.dataset.pp }); });
@@ -1622,18 +1662,18 @@
     });
   }
   // Resposta do clube (30): janelinha depois de Enviar. Rosto, a resposta numa palavra, paciência, uma frase,
-  // 2 linhas de número e 2 botões; na contraproposta, aceitar fecha direto (gasta 1 dia)
+  // 2 linhas de número e 2 botões; na contraproposta, aceitar fecha direto
   function resposta(id, back, o, r) {
     const c = C(), co = c.co, p = S.coMktFind(co, id); if (!p) return;
     const f = S.coFin(co), neg = S.coMktNeg(co, p), cl = club(p.club), cn = esc(cl.short || cl.name), nm = esc(last(p.n));
-    const day = S.coMktWin(co), dtx = day.k ? ' · DIA ' + Math.min(S.coMkt(co).used, day.max) : '';
+    const dtx = '';
     let w, cls, line, r1, v1, r2, v2, b1, b2, a1, a2;
     if (r.k === 'ok') { const now = S.coMktNow(co, neg.deal);
       w = 'Aceitou'; cls = 'up'; line = 'Fechado com o ' + cn + ' por ' + c.brl(neg.deal.v) + (neg.deal.pay ? ' em ' + (neg.deal.pay + 1) + 'x' : ' à vista') + '. Agora é acertar o contrato com o empresário.';
       r1 = 'Paga agora'; v1 = c.brl(now); r2 = 'Verba depois'; v2 = f.verba - now; b1 = 'Ir ao contrato'; b2 = 'Depois';
       a1 = () => contrato(id, () => proposta(id, back)); a2 = null;
     } else if (r.k === 'counter') { const o2 = Object.assign({}, o, { v: r.v }), now = S.coMktNow(co, o2);
-      w = 'Pede ' + c.brl(r.v); cls = 'mid'; line = 'Ele achou ' + c.brl(o.v) + ' pouco, mas topa conversar. Aceitar fecha agora e gasta mais 1 dia.';
+      w = 'Pede ' + c.brl(r.v); cls = 'mid'; line = 'Ele achou ' + c.brl(o.v) + ' pouco, mas topa conversar. Aceitar fecha agora.';
       r1 = 'Se aceitar, paga'; v1 = c.brl(now); r2 = 'Verba depois'; v2 = f.verba - now; b1 = 'Aceitar ' + c.brl(r.v); b2 = 'Nova proposta';
       a1 = () => { const r2x = S.coMktOffer(co, p, o2); c.save(); sfx(r2x.k === 'ok' ? 'win' : 'tap'); proposta(id, back, o2); resposta(id, back, o2, r2x); }; a2 = null;
       if (v2 < 0) { line = 'Ele pede ' + c.brl(r.v) + ', mas isso passa da sua verba. Parcele ou ponha alguém na troca.'; b1 = 'Nova proposta'; b2 = 'Desistir'; a1 = null; a2 = () => back(); }
@@ -1644,7 +1684,7 @@
       w = 'Encerrou a conversa'; cls = 'dn'; line = 'Sem paciência, o ' + cn + ' não negocia o ' + nm + ' com você até a próxima temporada.';
       r1 = 'Última proposta'; v1 = c.brl(o.v); r2 = 'Verba agora'; v2 = f.verba; b1 = 'Voltar ao mercado'; b2 = 'Fechar'; a1 = () => mercado(); a2 = null;
     } else {
-      w = r.k === 'verba' ? 'Sem verba' : 'Janela fechada'; cls = 'dn'; line = r.k === 'verba' ? 'O que sai agora passa da sua verba. Parcele ou ponha alguém na troca.' : 'Acabaram os dias da janela. A próxima abre antes da rodada do meio.';
+      w = r.k === 'verba' ? 'Sem verba' : 'Janela fechada'; cls = 'dn'; line = r.k === 'verba' ? 'O que sai agora passa da sua verba. Parcele ou ponha alguém na troca.' : 'A janela fechou. Sem clube dá para contratar a qualquer hora.';
       r1 = 'Proposta'; v1 = c.brl(o.v); r2 = 'Verba agora'; v2 = f.verba; b1 = 'Entendi'; b2 = 'Mercado'; a1 = null; a2 = () => mercado();
     }
     const ini = esc((cl.short || cl.name).replace(/[^A-Za-zÀ-ú ]/g, '').split(' ').filter(Boolean).map((x, i, A) => A.length > 1 ? x[0] : x.slice(0, 2)).join('').slice(0, 2).toUpperCase() || 'P');
@@ -1667,7 +1707,7 @@
     const gold = own ? (neg.st === 'no' ? '<button class="tm-go off" id="mkc-go" disabled>Não renova mais</button>' : neg.st === 'signed' ? '<button class="tm-go off" id="mkc-go" disabled>Renovado</button>' :
       over && t.w > p.wage ? '<button class="tm-go off" id="mkc-go" disabled>Acima do teto</button>' : '<button class="tm-go" id="mkc-go">Oferecer</button>') : neg.st === 'no' ? '<button class="tm-go off" id="mkc-go" disabled>Não negocia mais</button>' : (p.club && !w.open) ? '<button class="tm-go off" id="mkc-go" disabled>Janela fechada</button>' :
       over ? '<button class="tm-go off" id="mkc-go" disabled>Acima do teto</button>' : S.coMktFull(co, p) ? '<button class="tm-go off" id="mkc-go" disabled>Elenco cheio</button>' :
-      '<button class="tm-go" id="mkc-go">' + (w.open ? 'Oferecer · 1 dia' : 'Oferecer') + '</button>';
+      '<button class="tm-go" id="mkc-go">' + 'Oferecer' + '</button>';
     const sub = own ? esc(p.n) + ' · hoje ' + c.mi(p.wage) + '/sem' : esc(p.n) + (p.club ? ' · o ' + esc(club(p.club).short || club(p.club).name) + ' aceitou' : ' · sem clube');
     const box = (lbl, v, k, hint) => '<div class="mk-k mkc-b"><small>' + lbl + '</small><span class="mkp-row"><button class="mk-ar big" data-' + k + '="-1" aria-label="Menos">' + MK_L + '</button><b>' + v + '</b><button class="mk-ar big" data-' + k + '="1" aria-label="Mais">' + MK_R + '</button></span><span class="mkc-h">' + hint + '</span></div>';
     show('<div class="mk mkc">' + mkHead('mkc-back', own ? 'Renovação' : 'Contrato', sub, own) +
@@ -1680,7 +1720,7 @@
       const re = x => contrato(id, back, Object.assign({}, t, x));
       st.querySelector('#mkc-back').onclick = () => { sfx('tap'); back(); };
       cxBind(st, () => contrato(id, back, t));
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'O empresário pesa salário, anos e papel, e o humor dele muda a cada toque: com "Deve aceitar" ele assina, e com "Quase lá" pode assinar (1 chance em 3). Cada recusa gasta uma das 3 tentativas (não gasta dia) e ele diz na hora o que aceita. Prometer titular baixa o salário que ele pede, mas a promessa vai ser cobrada. A folha não passa do teto.' + (own ? ' Sem renovar, ele sai do clube no fim do contrato, mesmo sendo titular.' : '')); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'O empresário pesa salário, anos e papel, e o humor dele muda a cada toque: com "Deve aceitar" ele assina, e com "Quase lá" pode assinar (1 chance em 3). Cada recusa gasta uma das 3 tentativas e ele diz na hora o que aceita. Prometer titular baixa o salário que ele pede, mas a promessa vai ser cobrada. A folha não passa do teto.' + (own ? ' Sem renovar, ele sai do clube no fim do contrato, mesmo sendo titular.' : '')); };
       st.querySelectorAll('[data-cw]').forEach(b => b.onclick = () => { sfx('tap'); re({ w: Math.max(1000, t.w + T.step * (+b.dataset.cw)) }); });
       st.querySelectorAll('[data-cy]').forEach(b => b.onclick = () => { sfx('tap'); re({ y: Math.max(1, Math.min(5, t.y + (+b.dataset.cy))) }); });
       st.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => { sfx('tap'); re({ role: +b.dataset.cr }); });
@@ -1746,7 +1786,7 @@
   function recebida(o, back, r) {
     const c = C(), co = c.co, f = S.coFin(co), bc = club(o.club), bn = esc(bc.short || bc.name);
     const p = (r && r.sale && r.sale.p) || co.squad.find(x => x.id === o.id); if (!p) return;
-    const wi = WISH[o.wish || 0], w = S.coMktWin(co), dtx = w.k ? ' · DIA ' + w.day : '';
+    const wi = WISH[o.wish || 0], w = S.coMktWin(co), dtx = '';
     const now = v => Math.ceil(v / ((o.pay || 0) + 1) / 1000) * 1000;
     let eb, ti, line, rows, btns;
     const payT = (pay, fut) => (pay ? (pay + 1) + 'x' : 'à vista') + (fut ? ' · ' + S.CO_MKT.futPct[fut] + '% futura' : '');
@@ -1839,7 +1879,7 @@
     // com outra janelinha aberta (proposta recebida, aviso da diretoria) espera ela fechar, enquanto estiver na Semana
     if (document.querySelector('#ld-pop') || st.querySelector('.up-ty')) { clearTimeout(winToast.t); winToast.t = setTimeout(() => winToast(co), 700); return; }
     const c = C(); S.coMktWinSeen(co, wi.key); c.save('hub');
-    const T = { open: ['Janela de transferências aberta', 'Fica aberta por ' + wi.rd + ' rodadas'], last: [wi.k === 'mid' ? 'Janela aberta só nesta rodada' : 'Última rodada da janela', 'Depois do próximo jogo ela fecha'],
+    const T = { open: ['Janela de transferências aberta', 'Fica aberta por ' + wi.rd + ' rodadas'], last: ['Última rodada da janela', 'Depois do próximo jogo ela fecha'],
       closed: ['A janela fechou', wi.k === 'pre' ? 'Reabre antes da rodada do meio' : 'Reabre na próxima temporada · sem clube a qualquer hora'] }[wi.st];
     const box = document.createElement('div'); box.className = 'up-ty wn-ty' + (wi.st === 'last' ? ' ult' : ''); box.setAttribute('role', 'status');
     box.innerHTML = '<i><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="13" r="8"/>' + (wi.st === 'closed' ? '<path d="M8.5 9.5l7 7M15.5 9.5l-7 7"/>' : '<path d="M12 9v4l3 2M9.5 3h5"/>') + '</svg></i><span><b>' + T[0] + '</b><small>' + T[1] + '</small></span>' + (wi.st === 'closed' ? '' : '<button class="up-b">Mercado</button>');
@@ -1894,7 +1934,25 @@
   // rodadas o caixa aguenta no ritmo atual (verde sobra ou chega ao fim da temporada, laranja mais de 4, vermelho 4 ou menos)
   let FIN_BACK = null;
   const RD_NM = { bil: 'Ingressos', bar: 'Bares e lojas', tv: 'Cota de TV', pat: 'Patrocínio', prem: 'Prêmios', vend: 'Vendas', apo: 'Aporte do investidor', out: 'Outros', sal: 'Salários', comp: 'Contratações e parcelas', jur: 'Juros do banco', obra: 'Obras do estádio' };
-  const ritmoTxt = (c, R) => !R ? '' : R.st === 'up' ? '+ ' + c.mi(R.net) + ' por rodada' : R.st === 'red' && !R.left ? 'no vermelho' : R.st === 'ok' ? 'dá até o fim do ano' : 'dura ' + U.D.plural(R.left, 'rodada', 'rodadas');
+  // Ritmo com seta (11/11, Silvio: "não está clara a trajetória, se está diminuindo ou crescendo"): a rodada comum daqui para a frente
+  const ritmoTxt = (c, R) => !R ? '' : R.net >= 0 ? '▲ + ' + c.mi(R.net) + ' por rodada' : '▼ − ' + c.mi(-R.net) + ' por rodada';
+  // Cartão da trajetória: quanto o caixa mudou na temporada, a linha rodada a rodada (tracejado = até o fim do ano no ritmo
+  // de hoje) e onde ele chega. A palavra do degrau (aviso, no vermelho...) fica no canto quando não está tranquilo
+  function finTrend(c, co, step) {
+    const T = S.coFinTrend(co), f = S.coFin(co); if (!T) return '';
+    const P = T.pts, all = P.concat(T.end === null ? [] : [T.end]), mn = Math.min(...all), mx = Math.max(...all), lo = mn < 0 ? mn : mn - (mx - mn) * 0.15, hi = mx > lo ? mx : lo + 1, W = 200, H = 40;
+    const X = r => Math.round(Math.min(1, r / Math.max(1, T.n)) * (W - 6) * 10) / 10 + 3, Y = v => Math.round((H - 5 - (v - lo) / (hi - lo || 1) * (H - 10)) * 10) / 10;
+    const xy = P.map((v, k) => X(T.r0 + k) + ',' + Y(v)), lastX = X(T.r0 + P.length - 1), lastY = Y(P[P.length - 1]);
+    const up = T.d === null ? (T.R ? T.R.net >= 0 : true) : T.d >= 0, col = f.caixa < 0 ? '#F08A5D' : up ? '#7ED39A' : '#F5B544';
+    const svg = '<svg class="fn2-sp" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true">' +
+      (mn < 0 ? '<line x1="0" x2="' + W + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="rgba(243,241,234,.28)" stroke-width="1" vector-effect="non-scaling-stroke"/>' : '') +
+      (T.end !== null ? '<line x1="' + lastX + '" y1="' + lastY + '" x2="' + X(T.n) + '" y2="' + Y(T.end) + '" stroke="rgba(243,241,234,.45)" stroke-width="2" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>' : '') +
+      (P.length > 1 ? '<polyline points="' + xy.join(' ') + '" fill="none" stroke="' + col + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>' : '') + '</svg>';
+    const big = T.d === null ? '<b>começa agora</b>' : '<b class="' + (T.d >= 0 ? 'up' : 'dn') + '">' + (T.d >= 0 ? '▲ + ' : '▼ − ') + c.brl(Math.abs(T.d)) + '</b>';
+    const R = T.R, em = step >= 2 ? '<em class="dn">' + FIN_STEP[step][1] + '</em>' : R && R.net < 0 && R.left !== null && R.left < R.rest ? '<em class="dn">nesse ritmo zera ' + (R.left < 1 ? 'na próxima rodada' : 'em ' + U.D.plural(R.left, 'rodada', 'rodadas')) + '</em>' :
+      T.end === null ? '<em>temporada encerrada</em>' : '<em>fim do ano ~ <b class="' + (T.end < 0 ? 'dn' : T.end >= f.caixa ? 'up' : '') + '">' + c.brl(T.end) + '</b></em>';
+    return '<div class="fn2-st fn2-tr"><small>' + (T.r0 ? 'DESDE A RODADA ' + (T.r0 + 1) : 'CAIXA NO ANO') + (step ? '<u class="s' + step + '">' + FIN_STEP[step][0] + '</u>' : '') + '</small>' + big + '<span class="fn2-spw">' + svg + '<i style="left:' + (lastX / W * 100) + '%;top:' + (lastY / H * 100) + '%;background:' + col + '"></i></span>' + em + '</div>';
+  }
   function financas(tab) {
     const c = C(), co = c.co, f = S.coFin(co), folha = S.coFolha(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
     const step = S.coFinStep(co), P = S.coPres(co), pt = f.pat, rd = f.rd && f.rd.s === co.season ? f.rd : null, R = S.coFinRitmo(co);
@@ -1921,12 +1979,12 @@
     else rows = co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 8).map(p => li(esc(p.n) + ' <small>' + p.pos + '</small>', c.mi(p.wage) + ' <small>até ' + (U.YEAR0 + co.season + p.ct) + '</small>')).join('');
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     show('<div class="fn2"><div class="tm-h"><button class="tcr-back" id="ldf-back" aria-label="Voltar">' + BK + '</button><b>Finanças</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (U.YEAR0 + co.season) + '</small></div>' +
-      '<div class="fn2-k"><div><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span class="fn2-rt ' + (R ? R.st : '') + '" title="no ritmo atual">' + (f.caixa < 0 ? 'no vermelho' : ritmoTxt(c, R)) + '</span></div>' +
+      '<div class="fn2-k"><div><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span class="fn2-rt ' + (f.caixa < 0 ? 'red' : !R ? '' : R.net >= 0 ? 'up' : R.st === 'red' ? 'red' : 'warn') + '" title="rodada comum daqui para a frente">' + (f.caixa < 0 ? 'no vermelho' : ritmoTxt(c, R)) + '</span></div>' +
         '<div><small>VERBA</small><b class="up">' + c.brl(f.verba) + '</b><span>para contratar</span></div>' +
         '<div><small>FOLHA</small><b>' + c.brl(folha) + '</b><i><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i><span>teto ' + c.brl(f.teto) + '</span></div></div>' +
       '<div class="fn2-tabs">' + [['rod', 'Rodada'], ['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
       '<div class="fn2-p">' + rows + '</div>' +
-      '<div class="fn2-side"><div class="fn2-st"><small>SITUAÇÃO DO CAIXA</small><b class="s' + step + '">' + FIN_STEP[step][0] + '</b><span class="fn2-dd">' + [1, 2, 3, 4].map(i => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '</span><em>' + FIN_STEP[step][1] + '</em></div>' +
+      '<div class="fn2-side">' + finTrend(c, co, step) +
         '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><div><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></div></div>' +
         '<span class="rs-gap"></span><div class="fn2-bt">' + (U.COINS ? '<button class="tm-b fn2-apo" data-fd="apo" id="fn2-apo">' + U.COINS.svg + 'Aporte</button>' : '') + '<button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div></div></div>', st => {
       st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); financas(b.dataset.ft); });
@@ -2324,14 +2382,16 @@
         main = '<div class="lj-ap lj-none"><b>Abra uma carreira do Treinador</b><small>O aporte entra na verba do clube que você treina.</small></div>';
         side = '<span class="rs-gap"></span>';
       } else {
-        const left = S.coAporteLeft(co), used = S.coAporteUsed(co), f = S.coFin(co), red = f.caixa < 0;
+        const left = S.coAporteLeft(co), used = S.coAporteUsed(co);
         wk = Math.max(1, Math.min(wk, Math.max(1, left)));
-        const cost = wk * S.CO_APORTE.coin, v = S.coAporteValue(co, wk), ok = left > 0 && saldo >= cost;
-        main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · vai para a verba</small></span><img class="lj-ai" src="' + CO_ART + 'mo-aporte.webp" alt=""></div>' +
+        // P = antes e depois (sem aporte sobrando, nada muda). No vermelho o aporte cobre o caixa primeiro: a tela mostra o caixa também
+        const P = S.coAportePrev(co, left ? wk : 0), red = P.red, cost = wk * S.CO_APORTE.coin, v = S.coAporteValue(co, wk), ok = left > 0 && saldo >= cost;
+        const cell = (t, a, cls) => '<span><small>' + t + '</small><b>' + c.brl(a[0]) + ' → ' + (cls && a[1] !== a[0] ? '<i class="' + cls + '">' + c.brl(a[1]) + '</i>' : c.brl(a[1])) + '</b></span>';
+        main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (red ? 'cobre o caixa primeiro' : 'vai para a verba') + '</small></span><img class="lj-ai" src="' + CO_ART + 'mo-aporte.webp" alt=""></div>' +
           '<div class="lj-v"><button id="lj-m" aria-label="Menos"' + (wk <= 1 ? ' disabled' : '') + '>' + BK + '</button><span><b>+ ' + c.brl(v) + '</b><small>' + U.D.plural(wk, 'aporte', 'aportes') + ' · ' + (used + (left ? wk : 0)) + ' de ' + S.CO_APORTE.max + ' na temporada</small></span><button id="lj-p" aria-label="Mais"' + (wk >= left ? ' disabled' : '') + '>' + FW + '</button></div>' +
-          '<div class="lj-two"><span><small>Verba</small><b>' + c.brl(f.verba) + ' → ' + c.brl(f.verba + (left ? v : 0)) + '</b></span><span><small>Teto de salários por semana</small><b>' + c.brl(f.teto) + ' → ' + c.brl(f.teto + (left ? S.coAporteTeto(v) : 0)) + '</b></span></div></div>';
+          '<div class="lj-two' + (red ? ' t3' : '') + '">' + (red ? cell('Caixa', P.caixa, P.caixa[1] >= 0 ? 'up' : 'dn') : '') + cell('Verba', P.verba) + cell(red ? 'Teto por semana' : 'Teto de salários por semana', P.teto) + '</div></div>';
         side = '<div class="lj-box lj-cost"><small class="ld-lbl">CUSTA</small><span>' + U.COINS.svg + '<b>' + cost + '</b></span><small>' + (saldo >= cost ? 'sobram ' + (saldo - cost) + ' moedas' : 'faltam ' + (cost - saldo) + ' moedas') + '</small></div>' +
-          '<button class="tm-go' + (ok ? '' : ' off') + '" id="lj-ap"' + (ok ? '' : ' disabled') + '>' + (red ? 'Caixa no vermelho' : !left ? 'Limite da temporada' : 'Fazer aporte') + '</button>';
+          '<button class="tm-go' + (ok ? '' : ' off') + '" id="lj-ap"' + (ok ? '' : ' disabled') + '>' + (!left ? 'Limite da temporada' : 'Fazer aporte') + '</button>';
       }
       show('<div class="lj"><div class="tm-h"><button class="tcr-back" id="lj-back" aria-label="Voltar">' + BK + '</button><b>Loja</b></div>' + tabs + U.COINS.pill('lj-pill') +
         '<div class="lj-main">' + main + '</div><div class="lj-side">' + side + '</div></div>', st => {
@@ -2357,11 +2417,12 @@
         if (st.querySelector('#lj-p')) st.querySelector('#lj-p').onclick = () => { sfx('tap'); wk++; draw(); };
         if (st.querySelector('#lj-ap')) st.querySelector('#lj-ap').onclick = () => {
           const cost = wk * S.CO_APORTE.coin; sfx('tap');
-          coinAsk(cost, 'Fazer aporte', '+ ' + c.brl(S.coAporteValue(co, wk)) + ' na verba e + ' + c.brl(S.coAporteTeto(S.coAporteValue(co, wk))) + ' no teto', () => {
+          const P = S.coAportePrev(co, wk), vb = P.verba[1] - P.verba[0], tt = '+ ' + c.brl(P.teto[1] - P.teto[0]) + ' no teto';
+          coinAsk(cost, 'Fazer aporte', P.red ? '+ ' + c.brl(P.v) + ' no caixa' + (vb ? ', + ' + c.brl(vb) + ' na verba' : '') + ' e ' + tt : '+ ' + c.brl(P.v) + ' na verba e ' + tt, () => {
           if (!U.COINS.spend(cost, 'Aporte: ' + (club(co.club).short || club(co.club).name))) return;
           const v = S.coAporte(co, wk); if (!v) { U.COINS.add({ n: cost, t: 'Aporte devolvido' }); return; }
           sfx('coin'); c.save(); wk = 1; draw();
-          pop('<div class="acd-help"><b>Aporte feito</b><p>+ ' + c.brl(v) + ' na verba do ' + esc(club(co.club).short || club(co.club).name) + '.</p><button class="hl-btn dark" data-pop-x>Fechar</button></div>', 'Aporte feito', null, 'hl-pop acd-pop tm-pop');
+          pop('<div class="acd-help"><b>Aporte feito</b><p>+ ' + c.brl(v) + (P.red ? ' no caixa do ' : ' na verba do ') + esc(club(co.club).short || club(co.club).name) + (P.red ? (P.caixa[1] >= 0 ? '. O caixa saiu do vermelho.' : '. O caixa ainda está no vermelho.') : '.') + '</p><button class="hl-btn dark" data-pop-x>Fechar</button></div>', 'Aporte feito', null, 'hl-pop acd-pop tm-pop');
           });
         };
       });
@@ -2629,6 +2690,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, fit, lift, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, result, segunda, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato, recebida };
+  U.LD = { on, show, off, fit, lift, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, result, segunda, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, recebidas, ficha, proposta, contrato, recebida };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();
