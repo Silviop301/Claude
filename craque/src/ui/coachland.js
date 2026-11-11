@@ -1934,7 +1934,25 @@
   // rodadas o caixa aguenta no ritmo atual (verde sobra ou chega ao fim da temporada, laranja mais de 4, vermelho 4 ou menos)
   let FIN_BACK = null;
   const RD_NM = { bil: 'Ingressos', bar: 'Bares e lojas', tv: 'Cota de TV', pat: 'Patrocínio', prem: 'Prêmios', vend: 'Vendas', apo: 'Aporte do investidor', out: 'Outros', sal: 'Salários', comp: 'Contratações e parcelas', jur: 'Juros do banco', obra: 'Obras do estádio' };
-  const ritmoTxt = (c, R) => !R ? '' : R.st === 'up' ? '+ ' + c.mi(R.net) + ' por rodada' : R.st === 'red' && !R.left ? 'no vermelho' : R.st === 'ok' ? 'dá até o fim do ano' : 'dura ' + U.D.plural(R.left, 'rodada', 'rodadas');
+  // Ritmo com seta (11/11, Silvio: "não está clara a trajetória, se está diminuindo ou crescendo"): a rodada comum daqui para a frente
+  const ritmoTxt = (c, R) => !R ? '' : R.net >= 0 ? '▲ + ' + c.mi(R.net) + ' por rodada' : '▼ − ' + c.mi(-R.net) + ' por rodada';
+  // Cartão da trajetória: quanto o caixa mudou na temporada, a linha rodada a rodada (tracejado = até o fim do ano no ritmo
+  // de hoje) e onde ele chega. A palavra do degrau (aviso, no vermelho...) fica no canto quando não está tranquilo
+  function finTrend(c, co, step) {
+    const T = S.coFinTrend(co), f = S.coFin(co); if (!T) return '';
+    const P = T.pts, all = P.concat(T.end === null ? [] : [T.end]), mn = Math.min(...all), mx = Math.max(...all), lo = mn < 0 ? mn : mn - (mx - mn) * 0.15, hi = mx > lo ? mx : lo + 1, W = 200, H = 40;
+    const X = r => Math.round(Math.min(1, r / Math.max(1, T.n)) * (W - 6) * 10) / 10 + 3, Y = v => Math.round((H - 5 - (v - lo) / (hi - lo || 1) * (H - 10)) * 10) / 10;
+    const xy = P.map((v, k) => X(T.r0 + k) + ',' + Y(v)), lastX = X(T.r0 + P.length - 1), lastY = Y(P[P.length - 1]);
+    const up = T.d === null ? (T.R ? T.R.net >= 0 : true) : T.d >= 0, col = f.caixa < 0 ? '#F08A5D' : up ? '#7ED39A' : '#F5B544';
+    const svg = '<svg class="fn2-sp" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true">' +
+      (mn < 0 ? '<line x1="0" x2="' + W + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="rgba(243,241,234,.28)" stroke-width="1" vector-effect="non-scaling-stroke"/>' : '') +
+      (T.end !== null ? '<line x1="' + lastX + '" y1="' + lastY + '" x2="' + X(T.n) + '" y2="' + Y(T.end) + '" stroke="rgba(243,241,234,.45)" stroke-width="2" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>' : '') +
+      (P.length > 1 ? '<polyline points="' + xy.join(' ') + '" fill="none" stroke="' + col + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>' : '') + '</svg>';
+    const big = T.d === null ? '<b>começa agora</b>' : '<b class="' + (T.d >= 0 ? 'up' : 'dn') + '">' + (T.d >= 0 ? '▲ + ' : '▼ − ') + c.brl(Math.abs(T.d)) + '</b>';
+    const R = T.R, em = step >= 2 ? '<em class="dn">' + FIN_STEP[step][1] + '</em>' : R && R.net < 0 && R.left !== null && R.left < R.rest ? '<em class="dn">nesse ritmo zera ' + (R.left < 1 ? 'na próxima rodada' : 'em ' + U.D.plural(R.left, 'rodada', 'rodadas')) + '</em>' :
+      T.end === null ? '<em>temporada encerrada</em>' : '<em>fim do ano ~ <b class="' + (T.end < 0 ? 'dn' : T.end >= f.caixa ? 'up' : '') + '">' + c.brl(T.end) + '</b></em>';
+    return '<div class="fn2-st fn2-tr"><small>' + (T.r0 ? 'DESDE A RODADA ' + (T.r0 + 1) : 'CAIXA NO ANO') + (step ? '<u class="s' + step + '">' + FIN_STEP[step][0] + '</u>' : '') + '</small>' + big + '<span class="fn2-spw">' + svg + '<i style="left:' + (lastX / W * 100) + '%;top:' + (lastY / H * 100) + '%;background:' + col + '"></i></span>' + em + '</div>';
+  }
   function financas(tab) {
     const c = C(), co = c.co, f = S.coFin(co), folha = S.coFolha(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
     const step = S.coFinStep(co), P = S.coPres(co), pt = f.pat, rd = f.rd && f.rd.s === co.season ? f.rd : null, R = S.coFinRitmo(co);
@@ -1961,12 +1979,12 @@
     else rows = co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 8).map(p => li(esc(p.n) + ' <small>' + p.pos + '</small>', c.mi(p.wage) + ' <small>até ' + (U.YEAR0 + co.season + p.ct) + '</small>')).join('');
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     show('<div class="fn2"><div class="tm-h"><button class="tcr-back" id="ldf-back" aria-label="Voltar">' + BK + '</button><b>Finanças</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (U.YEAR0 + co.season) + '</small></div>' +
-      '<div class="fn2-k"><div><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span class="fn2-rt ' + (R ? R.st : '') + '" title="no ritmo atual">' + (f.caixa < 0 ? 'no vermelho' : ritmoTxt(c, R)) + '</span></div>' +
+      '<div class="fn2-k"><div><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span class="fn2-rt ' + (f.caixa < 0 ? 'red' : !R ? '' : R.net >= 0 ? 'up' : R.st === 'red' ? 'red' : 'warn') + '" title="rodada comum daqui para a frente">' + (f.caixa < 0 ? 'no vermelho' : ritmoTxt(c, R)) + '</span></div>' +
         '<div><small>VERBA</small><b class="up">' + c.brl(f.verba) + '</b><span>para contratar</span></div>' +
         '<div><small>FOLHA</small><b>' + c.brl(folha) + '</b><i><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i><span>teto ' + c.brl(f.teto) + '</span></div></div>' +
       '<div class="fn2-tabs">' + [['rod', 'Rodada'], ['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
       '<div class="fn2-p">' + rows + '</div>' +
-      '<div class="fn2-side"><div class="fn2-st"><small>SITUAÇÃO DO CAIXA</small><b class="s' + step + '">' + FIN_STEP[step][0] + '</b><span class="fn2-dd">' + [1, 2, 3, 4].map(i => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '</span><em>' + FIN_STEP[step][1] + '</em></div>' +
+      '<div class="fn2-side">' + finTrend(c, co, step) +
         '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><div><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></div></div>' +
         '<span class="rs-gap"></span><div class="fn2-bt">' + (U.COINS ? '<button class="tm-b fn2-apo" data-fd="apo" id="fn2-apo">' + U.COINS.svg + 'Aporte</button>' : '') + '<button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div></div></div>', st => {
       st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); financas(b.dataset.ft); });
