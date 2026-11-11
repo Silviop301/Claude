@@ -103,6 +103,7 @@ const OUT = process.argv[2] || '', SAFE = +process.env.SAFE || 0, URL = process.
   want(!s4.pop, 'janelinha presa: ' + s4.pop); if (/Encerrou/.test(fim)) want(/Não negocia/.test(s4.gold), 'depois de encerrar o botão devia dizer "Não negocia mais" (diz: ' + s4.gold + ')');
   await tap('#mkp-back'); await tap('#mk-tel'); await shot('aba-elenco'); want((await st()).tela.includes('lde2'), 'a aba Elenco do Mercado não abriu o Elenco'); await tap('#lde-back'); want(/\bmk\b/.test((await st()).tela), 'o Voltar do Elenco não devolveu ao Mercado');
   await tap('#mk-tnw'); await shot('noticias'); await tap('#mk-tpr');
+  await tap('#mk-tof'); await shot('propostas'); want(/\bof\b/.test((await st()).tela), 'a aba Propostas do Mercado não abriu'); await tap('#mk-tpr'); // propostas pelos seus esperam na aba (11/11)
   log.push('D paciência: ' + fim);
 
   // ---------- E. vender: pôr à venda no Elenco até chegar proposta, negociar e aceitar ----------

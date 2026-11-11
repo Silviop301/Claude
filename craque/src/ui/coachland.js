@@ -347,8 +347,9 @@
       st.querySelector('#sm-back').onclick = () => { sfx('tap'); go('inicio'); };
       if (st.querySelector('#ld-tr')) st.querySelector('#ld-tr').onclick = () => { sfx('tap'); treino(); };
       if (st.querySelector('#ld-ol')) st.querySelector('#ld-ol').onclick = () => { sfx('tap'); olheiro(); };
-      if (inN) st.querySelector('[data-rail="mercado"]').onclick = () => { sfx('tap'); const o = S.coMktInbox(co).find(x => !x.seen); if (!o) return go('mercado'); o.seen = 1; c.save(); recebida(o, semana); };
-      else if (nwN) st.querySelector('[data-rail="mercado"]').onclick = () => { sfx('tap'); noticias(); };
+      // Silvio 11/11: "não tá legal tentar abrir o mercado e ter que ver todas as propostas antes": o Mercado abre direto e as
+      // propostas esperam na aba Propostas (o número fica na aba); só com notícia nova segue abrindo nelas
+      if (!inN && nwN) st.querySelector('[data-rail="mercado"]').onclick = () => { sfx('tap'); noticias(); };
       if (tut) tutShow(co, st);
     });
   }
@@ -1399,9 +1400,11 @@
   const mkClub = p => (p.club ? esc(club(p.club).short || club(p.club).name) : 'sem clube');
   // As 3 abas do Mercado: Procurar, Elenco (abre o seu elenco e o Voltar devolve ao Mercado) e Notícias. "Indicados" saiu na 1.0
   // (aba apagada com "em breve"). O aviso laranja conta as notícias novas da sua liga e do seu clube
-  const mkTabs = (co, on) => { const n = on === 2 || !S.coWorldNew ? 0 : S.coWorldNew(co);
-    return [['Procurar', 'mk-tpr'], ['Elenco', 'mk-tel'], ['Notícias', 'mk-tnw']].map(([t, id], i) => '<button id="' + id + '"' + (i === on ? ' class="on"' : '') + '>' + t + (i === 2 && n ? '<i class="tm-dot">' + n + '</i>' : '') + '</button>').join(''); };
-  const mkTabEl = st => { const b = st.querySelector('#mk-tel'); if (b) b.onclick = () => { sfx('tap'); elenco(undefined, undefined, () => mercado()); }; };
+  // Propostas (11/11): as propostas pelos seus esperam na 4ª aba, com o número das que estão abertas
+  const mkTabs = (co, on) => { const n = on === 2 || !S.coWorldNew ? 0 : S.coWorldNew(co), k = on === 3 ? 0 : S.coMktInbox(co).length;
+    return [['Procurar', 'mk-tpr'], ['Elenco', 'mk-tel'], ['Notícias', 'mk-tnw'], ['Propostas', 'mk-tof']].map(([t, id], i) => '<button id="' + id + '"' + (i === on ? ' class="on"' : '') + '>' + t + (i === 2 && n ? '<i class="tm-dot">' + n + '</i>' : i === 3 && k ? '<i class="tm-dot">' + k + '</i>' : '') + '</button>').join(''); };
+  const mkTabEl = st => { const b = st.querySelector('#mk-tel'); if (b) b.onclick = () => { sfx('tap'); elenco(undefined, undefined, () => mercado()); };
+    const o = st.querySelector('#mk-tof:not(.on)'); if (o) o.onclick = () => { sfx('tap'); recebidas(); }; };
   function mercado() {
     const c = C(), co = c.co, m = S.coMkt(co), F = S.coMktFilters(co);
     if (S.coWorldSync) S.coWorldSync(co);
@@ -1412,7 +1415,7 @@
       return '<div class="mk-f' + (v ? ' on' : '') + '">' + (v ? '<button class="mk-fx" data-mx="' + i + '" aria-label="limpar ' + x.t.toLowerCase() + '">' + x.t + '<i>×</i></button>' : '<small>' + x.t + '</small>') + '<span><button class="mk-ar" data-mf="' + i + '" data-d="-1" aria-label="' + x.t.toLowerCase() + ' anterior">' + MK_L + '</button><b class="' + (t.length > 12 ? 'mk-sm' : '') + '">' + esc(t) + '</b><button class="mk-ar" data-mf="' + i + '" data-d="1" aria-label="' + x.t.toLowerCase() + ' seguinte">' + MK_R + '</button></span></div>'; };
     const goTxt = n => (n > 0 && n <= S.CO_MKT.max ? 'Buscar' : n ? 'Filtre mais' : 'Ninguém: solte um filtro');
     show('<div class="mk">' + mkHead('mk-back', 'Mercado', esc(club(co.club).short || club(co.club).name), false, true) +
-      '<div class="mk-tabs t3">' + tabs + '</div><div class="mk-fs">' + F.map(cell).join('') + '</div>' +
+      '<div class="mk-tabs t4">' + tabs + '</div><div class="mk-fs">' + F.map(cell).join('') + '</div>' +
       '<div class="mk-side"><label class="mk-k mk-nm"><small>NOME</small><input id="mk-nm" type="text" autocomplete="off" placeholder="Toque para digitar" value="' + esc(m.nm || '') + '"></label>' +
         '<div class="mk-k"><b id="mk-n" class="' + (ok ? 'ok' : '') + '">' + plMil(n, 'jogador', 'jogadores') + '</b>' + (dirty ? '<button class="mk-clr" id="mk-clr">Limpar filtros</button>' : '<span>o olheiro já viu todos uma vez</span>') + '</div>' +
         '<span class="rs-gap"></span><button class="tm-go' + (ok ? '' : ' off') + '" id="mk-go">' + goTxt(n) + '</button></div></div>', st => {
@@ -1481,7 +1484,7 @@
     const none = all.length ? (nwFlt === 2 ? 'Seu clube ainda não fez negócio.' : nwFlt === 3 ? 'Nada sobre quem você observa.' : 'Nada aqui. Veja em Tudo.') : win.k ? 'Nenhum negócio fechado ainda.' : win.next ? 'Sem notícias. A janela abre na rodada ' + win.next + '.' : 'Sem notícias nesta temporada.';
     const cur = R[sel], p = cur && cur.id ? S.coMktFind(co, cur.id) : null, goT = !cur ? 'Ver ficha' : p ? 'Ver ficha' : cur.to === co.club || (cur.k === 'b' && cur.from === co.club) ? 'No seu elenco' : 'Sem ficha';
     show('<div class="mk nw">' + mkHead('nw-back', 'Mercado', esc(club(co.club).short || club(co.club).name), false, true) +
-      '<div class="mk-tabs t3">' + mkTabs(co, 2) + '</div>' +
+      '<div class="mk-tabs t4">' + mkTabs(co, 2) + '</div>' +
       '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">' + none + '</p>') + '</div>' +
       '<div class="mk-side"><div class="mk-k nw-flt"><small>MOSTRAR</small><span><button class="mk-ar" data-nf="-1" aria-label="filtro anterior">' + MK_L + '</button><b>' + NW_FLT[nwFlt] + '</b><button class="mk-ar" data-nf="1" aria-label="filtro seguinte">' + MK_R + '</button></span>' +
         '<em>' + U.D.plural(list.length, 'notícia', 'notícias') + (nNew ? ' · <i>' + U.D.plural(nNew, 'nova', 'novas') + '</i>' : '') + '</em></div>' +
@@ -1497,6 +1500,39 @@
       st.querySelector('#nw-prev').onclick = () => { sfx('tap'); noticias(pg - 1, 0); };
       st.querySelector('#nw-next').onclick = () => { sfx('tap'); noticias(pg + 1, 0); };
       st.querySelector('#nw-go').onclick = () => { if (!p) return; sfx('tap'); open(sel); };
+    });
+  }
+  // Propostas recebidas (11/11, Silvio: "não tá legal tentar abrir o mercado e ter que ver todas as propostas antes"): a 4ª aba
+  // do Mercado, no desenho das Notícias. 4 por página, a maior oferta primeiro; tocar na escolhida (ou no dourado) abre a
+  // janelinha da proposta e o Voltar dela devolve a lista. Entrar na aba marca todas como vistas (o aviso da Semana some)
+  function recebidas(pg, sel) {
+    const c = C(), co = c.co, win = S.coMktWin(co);
+    const list = S.coMktInbox(co).slice().sort((a, b) => b.v - a.v), pages = Math.max(1, Math.ceil(list.length / 4));
+    if (list.some(o => !o.seen)) { list.forEach(o => { o.seen = 1; }); c.save(); }
+    pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * 4, pg * 4 + 4); sel = Math.max(0, Math.min(sel || 0, R.length - 1));
+    const row = (o, i) => { const p = co.squad.find(x => x.id === o.id), bc = club(o.club);
+      const note = o.ask ? 'à venda' : o.wish === 1 ? 'quer ir' : o.wish === 2 ? 'quer ficar' : '';
+      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-or="' + i + '"><i>' + p.pos + '</i><span><b><span class="nw-n">' + esc(p.n) + '</span>' + (note ? '<u>' + note + '</u>' : '') + '</b>' +
+        '<small>' + crest(o.club, 'nw-cr') + '<span class="nw-c">' + esc((bc.short || bc.name).replace(/^Red Bull /, '')) + '</span><s>·</s><span class="nw-c">' + ((co.xi || []).includes(p.id) ? 'titular' : 'reserva') + ' · geral ' + p.ovr + '</span></small></span>' +
+        '<div class="nw-tc"><strong>' + brlS(c, o.v) + '</strong><em class="nw-tag f">' + (o.pay ? (o.pay + 1) + 'X' : 'À VISTA') + '</em></div></button>'; };
+    const none = win.open ? 'Nenhuma proposta agora. Quem você põe à venda no Elenco recebe mais.' : win.next ? 'Nenhuma proposta. Elas chegam com a janela, na rodada ' + win.next + '.' : 'Nenhuma proposta. A janela já fechou.';
+    const me = () => recebidas(pg, sel);
+    show('<div class="mk nw of">' + mkHead('of-back', 'Mercado', esc(club(co.club).short || club(co.club).name), false, true) +
+      '<div class="mk-tabs t4">' + mkTabs(co, 3) + '</div>' +
+      '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">' + none + '</p>') + '</div>' +
+      '<div class="mk-side"><div class="mk-k nw-flt"><small>PELOS SEUS</small><span><b>' + U.D.plural(list.length, 'proposta', 'propostas') + '</b></span>' +
+        '<em>' + (list.length ? 'Valem enquanto a janela estiver aberta.' : 'Nada para decidir.') + '</em></div>' +
+        '<div class="mk-pg"><button class="mk-ar big" id="of-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar big" id="of-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></div>' +
+        '<span class="rs-gap"></span><button class="tm-go' + (R.length ? '' : ' off') + '" id="of-go">Ver proposta</button></div></div>', st => {
+      const open = i => { const o = R[i]; if (!o) return; recebida(o, () => recebidas(pg, i)); };
+      st.querySelector('#of-back').onclick = () => { sfx('tap'); semana(); };
+      mkCoins(st, me);
+      st.querySelector('#mk-tpr').onclick = () => { sfx('tap'); mercado(); }; st.querySelector('#mk-tnw').onclick = () => { sfx('tap'); noticias(); }; mkTabEl(st);
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Clubes que querem comprar um dos seus. Só chegam com a janela aberta e somem quando ela fecha. Quem está à venda no Elenco recebe mais propostas. Dá para aceitar, negociar ou recusar.'); };
+      st.querySelectorAll('[data-or]').forEach(b => b.onclick = () => { const i = +b.dataset.or; sfx('tap'); if (i === sel) return open(i); recebidas(pg, i); });
+      st.querySelector('#of-prev').onclick = () => { sfx('tap'); recebidas(pg - 1, 0); };
+      st.querySelector('#of-next').onclick = () => { sfx('tap'); recebidas(pg + 1, 0); };
+      st.querySelector('#of-go').onclick = () => { if (!R.length) return; sfx('tap'); open(sel); };
     });
   }
   // Ficha (24): a força numa faixa borrada contra o seu titular (sem número), que estreita a cada relatório;
@@ -2629,6 +2665,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, fit, lift, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, result, segunda, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato, recebida };
+  U.LD = { on, show, off, fit, lift, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, result, segunda, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, recebidas, ficha, proposta, contrato, recebida };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();
