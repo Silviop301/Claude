@@ -294,7 +294,7 @@
     const tut = tutStep(co);
     const popped = !tut && (inboxPop(co, semana) || lostPop(co) || obraPop(co) || nomePop(co) || ligaPop(co) || showPop(co));
     if (!tut && !popped && !ctWarn(co)) finNews(co);
-    if (!tut && !popped) setTimeout(() => upToast(co), 0);
+    if (!tut) setTimeout(() => { winToast(co); if (!popped) upToast(co); }, 0);
     // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
     const inN = tut ? 0 : S.coMktInbox(co).filter(o => !o.seen).length - (popped ? 1 : 0);
     const nwN = tut || !S.coWorldNew ? 0 : (S.coWorldSync(co), S.coWorldNew(co));
@@ -1288,8 +1288,9 @@
     e.t === 'acrescimo' ? '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="#141517" stroke="#4ADE80" stroke-width="1.8"/><path d="M12 8.5v7M8.5 12h7" stroke="#4ADE80" stroke-width="2.2" stroke-linecap="round"/></svg>' :
     e.t === 'intervalo' ? '<svg viewBox="0 0 24 24" fill="none" stroke="#9fb0a6" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>' : '';
   const MK_L = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 4L6 12l11 8z"/></svg>', MK_R = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l11 8-11 8z"/></svg>';
-  const mkWin = () => { const w = S.coMktWin(C().co);
-    return w.k ? '<span class="mk-win' + (w.open ? '' : ' off') + '">' + (w.open ? 'JANELA · ' + w.day + '/' + w.max : 'JANELA · SEM DIAS') + '</span>' : '<span class="mk-win off">' + (w.next ? 'JANELA · RODADA ' + w.next : 'JANELA FECHADA') + '</span>'; };
+  // Chip da janela: dias usados e quantas rodadas ela ainda fica aberta (laranja na última)
+  const mkWin = () => { const co = C().co, w = S.coMktWin(co), wi = S.coMktWinInfo(co), rd = wi ? wi.rd : 0;
+    return w.k ? '<span class="mk-win' + (w.open ? (rd === 1 ? ' ult' : '') : ' off') + '">' + (w.open ? 'JANELA ' + w.day + '/' + w.max + ' · ' + (rd === 1 ? 'ÚLTIMA RODADA' : rd + ' RODADAS') : 'JANELA · SEM DIAS') + '</span>' : '<span class="mk-win off">' + (w.next ? 'JANELA · RODADA ' + w.next : 'JANELA FECHADA') + '</span>'; };
   // Topo do mercado (Silvio 2026-11-10: "o caixa na parte superior e ver em outras telas também", para saber se dá para pagar
   // o olheiro): nome em cima e apoio embaixo; à direita, no fluxo, o caixa do clube, as moedas, a janela e a ajuda.
   // `coins` = id do botão das moedas (abre a loja; quem chama liga com mkCoins); sem ele a pílula é só informação.
@@ -1718,8 +1719,25 @@
   // Aviso de quem subiu de geral no treino da semana (fase 4 dos atributos; Silvio 2026-11-10: "se um jogador evoluir de
   // overall eu quero uma notificaçãozinha"). O cartão creme do "Meta cumprida", dentro do palco: sai uma vez (`co.train.seen`),
   // some sozinho e o Ver abre o Elenco no jogador. Com janelinha aberta espera a próxima vez que a Semana abrir.
+  // Aviso da janela de transferências na Semana (abriu, última rodada, fechou): o cartão do upToast, uma vez cada
+  function winToast(co) {
+    const wi = S.coMktWinInfo(co), st = document.querySelector('#ld .ld-st');
+    if (!wi || wi.seen || !st || !st.querySelector('.sm')) return;
+    // com outra janelinha aberta (proposta recebida, aviso da diretoria) espera ela fechar, enquanto estiver na Semana
+    if (document.querySelector('#ld-pop') || st.querySelector('.up-ty')) { clearTimeout(winToast.t); winToast.t = setTimeout(() => winToast(co), 700); return; }
+    const c = C(); S.coMktWinSeen(co, wi.key); c.save('hub');
+    const T = { open: ['Janela de transferências aberta', 'Fica aberta por ' + wi.rd + ' rodadas'], last: [wi.k === 'mid' ? 'Janela aberta só nesta rodada' : 'Última rodada da janela', 'Depois do próximo jogo ela fecha'],
+      closed: ['A janela fechou', wi.k === 'pre' ? 'Reabre antes da rodada do meio' : 'Reabre na próxima temporada · sem clube a qualquer hora'] }[wi.st];
+    const box = document.createElement('div'); box.className = 'up-ty wn-ty' + (wi.st === 'last' ? ' ult' : ''); box.setAttribute('role', 'status');
+    box.innerHTML = '<i><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="13" r="8"/>' + (wi.st === 'closed' ? '<path d="M8.5 9.5l7 7M15.5 9.5l-7 7"/>' : '<path d="M12 9v4l3 2M9.5 3h5"/>') + '</svg></i><span><b>' + T[0] + '</b><small>' + T[1] + '</small></span>' + (wi.st === 'closed' ? '' : '<button class="up-b">Mercado</button>');
+    st.appendChild(box); sfx(wi.st === 'last' ? 'whistle' : 'tap');
+    const t = setTimeout(() => box.remove(), 8000);
+    box.onclick = () => { clearTimeout(t); box.remove(); };
+    const b = box.querySelector('.up-b'); if (b) b.onclick = e => { e.stopPropagation(); clearTimeout(t); box.remove(); sfx('tap'); mercado(); };
+  }
   function upToast(co) {
     const tr = co.train, st = document.querySelector('#ld .ld-st');
+    if (st && st.querySelector('.up-ty')) return;
     if (!tr || !co.ss || tr.i !== co.ss.i || !tr.up || !tr.up.length || tr.seen || !st || !st.querySelector('.sm') || document.querySelector('#ld-pop')) return;
     const c = C(), L = tr.up.map(id => co.squad.find(p => p.id === id)).filter(Boolean); if (!L.length) return;
     tr.seen = 1; c.save('hub');
