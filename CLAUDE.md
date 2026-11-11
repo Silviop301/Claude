@@ -187,6 +187,10 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
   finta, o disco tem ~4 m no campo): quem dribla ameaça para um lado e sai pelo outro, o marcador vai na finta. Sai no drible
   comum, na jogada `drible` do ataque e no "partir para cima" novo (`DRB_R`, `DRB_D`: meia, ponta e atacante com marcador pela
   frente no campo de ataque; não passou = desarme ou segura a bola).
+  Encurtado em 10/11 (Silvio: "movimento muito longo"): finta `DRB_A` 2,6 → 1,8 e a arrancada depois `DRB_T` 0,75 s (era 1,1 a 1,3).
+- **Aviso do pênalti** (Silvio, 10/11: "pararam e deu zoom sem indicar nada"): `penStart` toca o apito (`CRAQUE_SFX`) e mostra a
+  faixa PÊNALTI com o apito animado (`penBanner`, `penBan`) por `PEN_BAN` 1,7 s com todos parados e a câmera aberta; só
+  depois a arrumação e o zoom (`camStep` espera `pen.ban`).
 - **Passe para quem está livre** (`LIVRE`, `LIVRE_P`, `LIVRE_E`, `LIVRE_X`, `LIVRE_L/LK/LP`): companheiro adiantado, sem ninguém a
   4 m e com o passe aberto vale mais, mesmo circulando a bola (o time de posse resiste um pouco: `LIVRE_E`); com campo à
   frente dele o passe vai no espaço e ele parte para a bola (`lead`). Passe de 15 m+ para a frente: o acerto depende bem mais
