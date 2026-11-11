@@ -124,9 +124,13 @@
   S.coWorldSeen = co => { if (co.wm) co.wm.seen = co.wm.ni || 0; };
 
   // ---------- o que você faz entra no mundo ----------
-  const winK = co => { const ss = co.ss; if (!ss || ss.done) return null; const half = Math.floor(ss.rounds.length / 2); return ss.i < Math.min(S.CO_MKT.preR, half) ? 'pre' : ss.i === half ? 'mid' : null; };
+  const winK = co => S.coMktWinK(co); // a mesma conta da janela do mercado (por rodada; a do meio vale S.CO_MKT.midR rodadas)
   function put(co, w, id, p, from, to, v, extra) {
     w.mv = w.mv.filter(m => m.id !== id);
+    // O destino já tem a posição inteira de gente que chegou (só acontece com quem você vende ou manda na troca: os negócios
+    // do computador param antes, `fullAt`): o mais fraco deles sai do mundo, como o corte do mais fraco em S.coWorldSquad
+    if (to) { const L = w.mv.filter(m => m.to === to && m.p.pos === p.pos), mk = co.mkt, held = m => !!(mk && ((mk.obs && mk.obs[m.id]) || (mk.neg && mk.neg[m.id]) || (mk.rep && mk.rep[m.id])));
+      if (L.length >= S.CO.squad[p.pos]) { const x = L.slice().sort((a, b) => (held(a) - held(b)) || a.p.ovr - b.p.ovr)[0]; x.to = null; } }
     w.mv.push({ id, p: snapOf(p, id), from: from || null, to, s: co.season, wk: winK(co) || '', v: v || 0 });
     news(co, w, Object.assign({ k: 'f', id, n: p.n, pos: p.pos, age: p.age, from: from || null, to, v: v || 0 }, extra || {}));
     w.v++;
@@ -190,8 +194,11 @@
     const nat = D.CLUBS.filter(c => c.id !== me && c.strength && D.countryOf(c) === cty);
     const fora = D.CLUBS.filter(c => c.strength && D.countryOf(c) !== cty);
     const sq = id => S.coGenSquad(id, season, co);
-    const deal = (p, from, to, extra) => { used[p.id] = 1; if (to) inN[to] = (inN[to] || 0) + 1;
-      put(co, w, p.id, p, from, to, from ? r10k(S.coValue(p) * (0.9 + r() * 0.35)) : 0, extra); };
+    // Clube que já tem a posição inteira de gente que chegou (os negócios valem por anos) não contrata mais ali: quem chegou
+    // nunca é cortado, e o elenco passaria de 25 (apareceu com a janela do meio em 2 rodadas, 11/11: mais um lote por ano)
+    const fullAt = (to, pos) => !!to && w.mv.filter(x => x.to === to && x.p.pos === pos).length >= S.CO.squad[pos];
+    const deal = (p, from, to, extra) => { if (fullAt(to, p.pos)) return false; used[p.id] = 1; if (to) inN[to] = (inN[to] || 0) + 1;
+      put(co, w, p.id, p, from, to, from ? r10k(S.coValue(p) * (0.9 + r() * 0.35)) : 0, extra); return true; };
     // um clube contrata: um jogador de clube do país um pouco menor, que entra pelo menos para o rodízio
     const pick = b => {
       const B = sq(b.id), pos = POS[Math.floor(r() * POS.length)], mine = B.filter(p => p.pos === pos).sort((x, y) => y.ovr - x.ovr);
@@ -221,11 +228,11 @@
       if (m && ((m.neg && m.neg[x.id]) || (m.got && m.got[x.id]))) return;
       const p = sq(x.from).find(q => q.id === x.id); if (!p) return;
       const obs = !!(m && m.obs && m.obs[x.id]);
-      deal(p, x.from, x.to, Object.assign({ rm: 1 }, x.up ? { up: 1 } : null, obs ? { obs: 1 } : null));
+      if (!deal(p, x.from, x.to, Object.assign({ rm: 1 }, x.up ? { up: 1 } : null, obs ? { obs: 1 } : null))) return;
       if (obs) w.lost = { id: x.id, n: p.n, pos: p.pos, to: x.to, v: w.mv[w.mv.length - 1].v };
     });
     if (win) deals();
-    if (k === 'eve' || (k === 'pre' && co.ss.i + 1 < Math.min(S.CO_MKT.preR, half))) rumors();
+    if (k === 'eve' || (k === 'pre' && co.ss.i + 1 < Math.min(S.CO_MKT.preR, half)) || (k === 'mid' && co.ss.i + 1 < half + S.CO_MKT.midR)) rumors();
 
     function deals() {
     // 1. a sua liga
@@ -245,7 +252,7 @@
       oth.concat(ex).forEach(p => news(co, w, Object.assign({ k: 'l', id: p.id, n: p.n, pos: p.pos, age: p.age, from: null, to: null, v: 0 }, /^x:/.test(p.id) ? { me: 2 } : null)));
     }
     const sign = (p, extra) => {
-      const C = nat.filter(c => c.strength >= p.ovr - 4 && c.strength <= p.ovr + 3 && (inN[c.id] || 0) < WM.maxIn); if (!C.length) return;
+      const C = nat.filter(c => c.strength >= p.ovr - 4 && c.strength <= p.ovr + 3 && (inN[c.id] || 0) < WM.maxIn && !fullAt(c.id, p.pos)); if (!C.length) return;
       const L = C.filter(c => ids.includes(c.id)), T = L.length && r() < 0.5 ? L : C, to = T[Math.floor(r() * T.length)];
       if (/^f:/.test(p.id)) w.fa[p.id] = 1; else w.free = w.free.filter(x => x.p.id !== p.id);
       deal(p, null, to.id, extra);

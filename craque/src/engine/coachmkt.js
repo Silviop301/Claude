@@ -21,7 +21,7 @@
     span: 15,         // a régua vai de 15 pontos pior a 15 melhor que o titular
     eq: 2,            // até 2 pontos de diferença = igual
     preR: 3, incFrom: 2, // a janela do começo vale nas 3 primeiras rodadas; em clube novo as propostas pelos seus só chegam na 3ª semana
-    days: { pre: 10, mid: 6 }, // dias da janela: pré-temporada e meio do ano (antes da rodada da metade)
+    midR: 2, // a janela do meio vale 2 rodadas (38 rodadas: aberta nas semanas das rodadas 20 e 21, fechada na 22). Sem dias desde 11/11
     pat: 3,           // paciência do presidente e do empresário (cada recusa gasta 1)
     quase: 1 / 3,     // "Quase lá" no contrato e na renovação: chance de ele assinar mesmo assim (Silvio 2026-11-11)
     cut: [0.8, 1, 1.2], // atalhos da proposta: baixa, justa (o preço da ficha) e alta
@@ -209,27 +209,32 @@
   S.coMktObs = (co, p) => { const m = S.coMkt(co); if (m.obs[p.id]) delete m.obs[p.id]; else m.obs[p.id] = 1; return !!m.obs[p.id]; };
   S.coMktFind = (co, id) => (S.coMkt(co).got[id] ? null : S.coMktPool(co).find(p => p.id === id) || null);
 
-  // ---------- janela: 10 dias no começo, aberta até a rodada 3 (M.preR; Silvio 2026-11-09), e 6 antes da rodada da metade;
-  // proposta e contrato gastam 1 ----------
+  // ---------- janela: quem manda é a rodada (Silvio 2026-11-11: "não gostei dessa janela com 6 dias, coloquei dinheiro à toa
+  // porque não consegui negociar. Quero algo mais livre, o que manda é a rodada"). Aberta nas semanas das 3 primeiras rodadas
+  // (M.preR) e nas 2 do meio (M.midR); com ela aberta, propostas e contratos à vontade (o freio é a paciência do presidente e
+  // do empresário, por jogador). `rd` = rodadas que ela ainda fica aberta, contando esta. `m.used` segue contando as
+  // negociações da janela só para variar os sorteios; não limita mais nada ----------
+  const winOf = ss => { const half = Math.floor(ss.rounds.length / 2), pe = Math.min(M.preR, half);
+    return ss.i < pe ? { k: 'pre', rd: pe - ss.i, half } : ss.i >= half && ss.i < half + M.midR ? { k: 'mid', rd: half + M.midR - ss.i, half } : { k: null, rd: 0, half }; };
+  S.coMktWinK = co => (co.ss && !co.ss.done && co.ss.rounds ? winOf(co.ss).k : null);
   S.coMktWin = function (co) {
     const ss = co.ss; if (!ss || ss.done) return { open: false, next: null };
-    const half = Math.floor(ss.rounds.length / 2), k = ss.i < Math.min(M.preR, half) ? 'pre' : ss.i === half ? 'mid' : null, m = S.coMkt(co);
-    if (!k) return { open: false, next: ss.i < half ? half + 1 : null };
+    const x = winOf(ss), k = x.k, m = S.coMkt(co);
+    if (!k) return { open: false, next: ss.i < x.half ? x.half + 1 : null };
     if (m.wk !== k) { m.wk = k; m.used = 0; }
-    const max = M.days[k];
-    return { open: m.used < max, k, day: Math.min(m.used + 1, max), max, left: max - m.used, next: k === 'pre' ? half + 1 : null };
+    return { open: true, k, rd: x.rd, next: k === 'pre' ? x.half + 1 : null };
   };
   // Aviso da janela (Silvio 11/11: "perdi a chance de comprar porque não vi que ia acabar na próxima rodada"):
-  // rodadas que sobram com ela aberta (`rd`: a do começo vale até a rodada M.preR, a do meio só na semana da rodada do meio)
+  // rodadas que sobram com ela aberta (`rd`: a do começo vale até a rodada M.preR, a do meio por M.midR rodadas)
   // e o aviso desta semana (`st`: 'open' quando abre, 'last' na última rodada dela, 'closed' na semana depois que fechou),
   // dado uma vez por temporada e janela em `co.mkt.wn`.
   S.coMktWinInfo = function (co) {
     const ss = co.ss; if (!ss || ss.done || !ss.rounds) return null;
     const half = Math.floor(ss.rounds.length / 2), pe = Math.min(M.preR, half), w = S.coMktWin(co);
     let k = w.k, rd = 0, st = null;
-    if (k) { rd = k === 'pre' ? pe - ss.i : 1; st = rd === 1 ? 'last' : (k === 'pre' && ss.i === 0) ? 'open' : null; }
+    if (k) { rd = w.rd; st = rd === 1 ? 'last' : (k === 'pre' ? ss.i === 0 : ss.i === half) ? 'open' : null; }
     else if (ss.i === pe && pe < half) { k = 'pre'; st = 'closed'; }
-    else if (ss.i === half + 1) { k = 'mid'; st = 'closed'; }
+    else if (ss.i === half + M.midR) { k = 'mid'; st = 'closed'; }
     const m = S.coMkt(co), key = k && st ? k + ':' + st : null;
     return { k, rd, st, key, seen: !key || !!(m.wn && m.wn[key]) };
   };
