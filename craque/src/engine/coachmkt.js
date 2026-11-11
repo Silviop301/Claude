@@ -425,6 +425,8 @@
     f.fut = f.fut.filter(x => {
       if (x.s >= co.season) return true;
       if (r() < M.futP) { const v = r10k(x.base * (1.1 + r() * 0.6) * x.pct / 100); add('vend', v); f.verba += Math.round(v * M.sellVerba);
+        // o que a cláusula pagou fica no histórico de Finanças (Silvio 2026-11-11: "há uma tela que mostre quanto recebeu?")
+        f.futLog = (f.futLog || []).concat([{ n: x.n, club: x.club, pct: x.pct, v, s: co.season }]).slice(-12);
         if (x.wid && S.coWorldResell) S.coWorldResell(co, x.wid);
         if (S.coFinNews) S.coFinNews(co, x.n + ' foi vendido de novo: os ' + x.pct + '% da venda futura renderam R$ ' + (v >= 1e6 ? (v / 1e6).toFixed(1).replace('.', ',') + ' mi' : Math.round(v / 1000) + ' mil') + ' ao caixa.');
         return false; }

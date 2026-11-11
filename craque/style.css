@@ -9508,6 +9508,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 /* Relatório completo mostra o geral (Silvio 2026-11-11: "depois de pagar pra ver o relatório completo eu deveria ao menos ver o overall") */
 .mkf-ovw { display: flex; align-items: center; gap: 12px; } .mkf-ov { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 50%; box-shadow: inset 0 0 0 2.5px var(--gold); font: 800 22px/1 var(--display); font-style: normal; color: var(--gold); } .mkf-ov small { font: 800 8px/1 var(--body); letter-spacing: .08em; color: #B9C9BF; margin-bottom: 1px; }
 .mka .mkf-t em b { color: var(--gold); font-weight: 800; }
+.fn2-li.fn2-cl > b.up { color: #7ED39A; }
 /* Resultado do jogo: com 4 linhas (Tabela, Diretoria, Suspenso ou Ultimato, Público) a coluna da direita passava da tela e
    cortava o Continuar (Silvio, 2026-11-11): as linhas encolhem e, com 4, os blocos apertam */
 .rs-ch { flex: 0 1 auto; min-height: 0; }
