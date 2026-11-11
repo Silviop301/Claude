@@ -2012,8 +2012,8 @@
           (!payOn ? '<button class="tm-go off" id="lj-buy" disabled>Compra em breve</button>' : !logged ? '<button class="tm-go ec-in" id="lj-buy">Entrar para comprar</button>' :
             '<button class="tm-go" id="lj-buy">' + (busy ? 'Abrindo…' : 'Comprar · ' + PACKS[pk].pr) + '</button>');
       } else if (tab === 2) {
-        // Histórico (2026-11-11): cada entrada e saída de moedas, 6 por página, mais nova primeiro
-        const log = U.COINS.log(), N = 6, pages = Math.max(1, Math.ceil(log.length / N)); hp = Math.min(hp, pages - 1);
+        // Histórico (2026-11-11): cada entrada e saída de moedas, 5 por página, mais nova primeiro
+        const log = U.COINS.log(), N = 5, pages = Math.max(1, Math.ceil(log.length / N)); hp = Math.min(hp, pages - 1);
         const dt = at => { const d = new Date(at || 0); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); };
         const rows = log.slice(hp * N, hp * N + N).map(x => '<div class="lj-h"><i>' + dt(x.at) + '</i><span>' + esc(x.t || 'Moedas') + '</span><b class="' + (x.n < 0 ? 'dn' : 'up') + '">' + (x.n > 0 ? '+' : '−') + Math.abs(x.n) + '</b></div>').join('');
         main = '<div class="lj-ap lj-hist">' + (rows || '<div class="lj-none"><b>Nada ainda</b><small>Moedas ganhas, compradas e gastas aparecem aqui.</small></div>') +
