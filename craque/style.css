@@ -7671,6 +7671,8 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .ldl-side .lv-speed { background: #141517; } .ldl-side .lv-speed button { flex: 1; height: 32px; min-width: 0; font-size: 14px; }
 .ldl-stop { flex-direction: row !important; gap: 6px; min-height: 42px !important; } .ldl-stop b { font-size: 16px !important; }
 .ldl-stop.on { background: var(--paper) !important; box-shadow: 0 0 0 2px var(--gold); }
+.ldl-stop { position: relative; } .ldl-stop .tm-dot { right: -6px; top: -8px; text-align: center; box-shadow: 0 0 0 2px var(--bg, #15171a); animation: ldlPulse 1.4s ease-in-out infinite; }
+@keyframes ldlPulse { 50% { transform: scale(1.15); } }
 /* fim de jogo (folha do coach.js) dentro do palco */
 .ldl-sheet { position: absolute; inset: 0; align-items: center; z-index: 30; }
 .ldl-sheet .lv-sh { max-width: 380px; border-radius: 18px; padding: 14px 18px 16px; }

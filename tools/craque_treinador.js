@@ -35,15 +35,23 @@ for (let n = 0; n < N; n++) {
         Object.keys(S.CO_FORMS).forEach(f => S.CO_STYLES.forEach(st => { const pv = S.coPreview(co, f, st), v = ptsOf(pv.xg[0], pv.xg[1]); if (v > bv) { bv = v; best = [f, st]; } }));
         co.form = best[0]; co.style = best[1]; co.xi = S.coAutoXI(co.squad, co.form).xi;
       }
+      if (process.env.ESTILO) co.style = process.env.ESTILO; // ESTILO=pressao: joga sempre nesse estilo
       // TREINA=1: o robô treina toda semana (roda os treinos que desenvolvem; descansa com o time cansado). Sem isso ele não treina.
-      if (process.env.TREINA === '1') {
+      if (process.env.TREINA === '1' || process.env.TREINA === '2') { // 2: nunca descansa (ignora o auxiliar)
         const xi = S.coAutoXI(co.squad, co.form).xi, en = co.squad.filter(p => xi.includes(p.id)).reduce((a, p) => a + p.en, 0) / Math.max(1, xi.length);
         const ks = Object.keys(S.CO_TRAIN).filter(k => S.CO_TRAIN[k].dv !== undefined), tr = st.tr = st.tr || { n: 0, up: 0, dv: 0, xi: [] };
-        if (S.coTrain(co, en < 70 ? 'recup' : ks[(co.ss.i + s * 5) % ks.length])) { tr.n++; tr.up += (co.train.up || []).length; tr.dv += (co.train.dv || []).length; }
+        if (S.coTrain(co, process.env.TREINA !== '2' && (S.coTrainTip ? S.coTrainTip(co) : en < 70) ? 'recup' : ks[(co.ss.i + s * 5) % ks.length])) { tr.n++; tr.up += (co.train.up || []).length; tr.dv += (co.train.dv || []).length; }
       }
       const hadUlt = !!co.board.ult;
       const m = S.coMatchStart(co);
+      // Energia: dos 11 que começam (antes do jogo), dos que começaram no apito final, e os mais cansados de cada lado
+      const E = st.en = st.en || { pre: 0, end: 0, them: 0, low: 0, inj: 0, n: 0, h: {} }, byE = {}; co.squad.forEach(p => { byE[p.id] = p; });
+      const avgE = (sq, ids) => { const v = ids.map(id => sq.find(p => p.id === id)).filter(Boolean); return v.reduce((a, p) => a + p.en, 0) / Math.max(1, v.length); };
+      E.pre += avgE(co.squad, m.us.xi); E.n++;
+      { const b = Math.floor(avgE(co.squad, m.us.xi) / 10) * 10; E.h[b] = (E.h[b] || 0) + 1; }
       while (!m.done) { const sp = S.coMatchStep(co, m); if (sp && sp.t !== 'fim') st.stops++; S.coAutoStop(co, m); }
+      E.end += avgE(co.squad, m.startXI.filter(id => m.us.xi.includes(id))); E.them += avgE(m.them.squad, m.them.xi);
+      E.low += m.startXI.filter(id => byE[id] && byE[id].en < 55).length; E.inj += m.ev.filter(e => e.t === 'lesao' && e.s === 'us').length;
       st.subs += 5 - m.us.subs;
       if (co.fin && co.fin.caixa < 0) seasonRed = true;
       S.coMatchEnd(co, m);
@@ -99,6 +107,7 @@ if (st.cards) { const c = st.cards, g = st.games * 2; console.log('Faltas por ti
 if (st.ren) console.log(`Contratos: titulares no último ano ${(st.ren[0] / st.seasons).toFixed(1)} por temporada, o robô renovou ${pct(st.ren[1], st.ren[0])}; titulares que saíram no fim do contrato ${(st.left / st.seasons).toFixed(2)} por temporada`);
 else console.log(`Contratos (robô sem renovar): titulares que saíram no fim do contrato ${((st.left || 0) / st.seasons).toFixed(2)} por temporada`);
 if (st.xiS) console.log('Geral médio dos 11 menos a força do clube, por temporada: ' + st.xiS.map((x, i) => (i + 1) + 'ª ' + (x[0] / x[1]).toFixed(2)).join(' · '));
+if (st.en) { const E = st.en; console.log(`Energia: 11 iniciais antes do jogo ${(E.pre / E.n).toFixed(0)}% [${Object.keys(E.h).sort().map(k => k + ':' + pct(E.h[k], E.n)).join(' ')}], quem ficou os 90 no fim ${(E.end / E.n).toFixed(0)}%, rival no fim ${(E.them / E.n).toFixed(0)}%; titulares abaixo de 55% por jogo ${(E.low / E.n).toFixed(1)}; trocas por jogo ${(st.subs / E.n).toFixed(1)}; lesões suas por jogo ${(E.inj / E.n).toFixed(3)}`); }
 if (st.tr) console.log(`Treino (TREINA=1): ${(st.tr.n / st.seasons).toFixed(1)} treinos por temporada, ${(st.tr.dv / st.seasons).toFixed(1)} pontos de atributo e ${(st.tr.up / st.seasons).toFixed(1)} subidas de geral (avisos) por temporada`);
 console.log(`Tempo do motor: ${(st.ms / st.seasons).toFixed(0)} ms por temporada` + (st.nan ? `; ALERTA: ${st.nan} números quebrados` : ''));
 // Save: a mesma carreira, uma passando por JSON no meio de cada temporada, tem de terminar igual
