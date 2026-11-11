@@ -205,6 +205,9 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
   laço aceita quadro de até 0,2 s. Todo minuto do motor vale ~2,75 s de campinho (`spm × speed`) em qualquer aparelho.
   Com os atributos valendo no campinho (PR #309) os gols ficaram ~6% abaixo do esperado: `FXG_K` 1,71 → 1,85 (300 jogos:
   2,55 por jogo contra 2,51 do motor; fraco 0,97 → 0,89, médio 1,23 → 1,26, forte 1,58 → 1,68).
+  **Time fraco fazia 17% menos gol que o motor queria** (11/11, 1.200 jogos em 4 sementes: fraco 0,96 → 0,80, médio −3%, forte −1%):
+  a força do ataque pesava demais (frequência `ATT_G` 1,5 × conversão `FXG_G` 0,5). Agora `ATT_G` 1,3, `FXG_G` 0,4 e `FXG_K` 1,95;
+  medir sempre em 3 sementes ou mais (uma só varia ±10% por faixa).
 - **Números na ordem do placar** (`coachland.js`): mandante à esquerda em tudo (`hv(m, seu, deles)`): janelinha Números
   (`numBody`, com escudo e nome em cima de cada coluna `numHead`/`.ldl-nh`; `livePaint` redesenha enquanto está aberta), contador
   de chutes `#ldl-num`, barra Quem manda (escudo nas pontas; fora de casa enche pela direita, `i.r`) e os números do resultado.

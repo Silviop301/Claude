@@ -9499,7 +9499,6 @@ button.coin-pill { cursor: pointer; border: 0; }
 .ca-pop .ca-n { display: flex; align-items: center; gap: 8px; font: 700 17px/1.2 var(--body); }
 .ca-pop .ca-n svg { width: 30px; height: 30px; flex: none; } .ca-pop .ca-n b { font: 800 30px/1 var(--display); color: var(--gold); }
 
-<<<<<<< HEAD
 /* Placar do ao vivo (Silvio, 11/11, opção 1): barra carvão compacta, faixa de cor de cada time, sigla, placar dourado e o
    tempo numa aba dourada inclinada */
 .ldl .ldl-sb { left: 10px; top: 10px; gap: 7px; height: 34px; padding: 0 0 0 0; border-radius: 4px; background: rgba(14, 15, 17, .92); box-shadow: 0 2px 8px rgba(0,0,0,.35), inset 0 0 0 1px rgba(242,194,48,.28); overflow: visible; }
@@ -9509,7 +9508,6 @@ button.coin-pill { cursor: pointer; border: 0; }
 .ldl-tla { font: 800 18px/1 var(--display); letter-spacing: .02em; color: #F4EFE3; }
 .ldl .ldl-sb > em { font: 800 24px/1 var(--display); color: #F2C230; letter-spacing: .02em; padding: 0 2px; } .ldl .ldl-sb > em i { font-size: 13px; color: #F4EFE3; opacity: .8; }
 .ldl .ldl-sb .ldl-clk { align-self: stretch; display: flex; align-items: center; margin-left: -2px; padding: 0 12px 0 16px; border-radius: 0 4px 4px 0; background: linear-gradient(180deg, #F6CE45, #E0AE1E); color: #15171A; font: 800 17px/1 var(--display); clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%); }
-=======
 /* Cláusula de venda futura em Finanças > A seguir (2026-11-11) */
 .ldf-li.ldf-cl > span small { margin-left: 6px; font: 700 12px var(--body); color: #9fb0a6; } .ldf-li.ldf-cl > b { color: var(--gold); }
 
@@ -9546,4 +9544,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 /* Mercado na 1.0: 3 abas (Procurar, Elenco, Notícias; "Indicados" saiu) e a Proposta sem a aba apagada do empréstimo (2026-11-11) */
 .mk-tabs.t3 { grid-template-columns: repeat(3, 1fr); }
 .mk.mkp.nt { grid-template-rows: 44px 0 minmax(0, 1fr); } .mk.mkp.nt .mkp-l { margin-top: -10px; }
->>>>>>> origin/claude/gracious-darwin-9gdlfp
+
+/* Polimento 1.0, lote 2 (2026-11-11): Loja com o atalho dos Termos e do reembolso; jeito de jogar nunca passa do cartão */
+.lj-ty a { color: #F3F1EA; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; display: inline-block; padding: 6px 0; }
+.mkf-tr span { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
