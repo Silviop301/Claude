@@ -335,6 +335,7 @@
     show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + wk +
       '<nav class="sm-side" aria-label="Menu do técnico">' + nav + '<button class="tm-go" id="ld-play">' + (nx.bye ? 'Ver a rodada' : 'Jogar') + '</button></nav></div>', st => {
       if (U.discBind) U.discBind(st);
+      cxBind(st, semana);
       if (st.querySelector('#sm-coins')) st.querySelector('#sm-coins').onclick = () => { sfx('tap'); loja(0, semana); };
       st.querySelector('#ld-play').onclick = () => { sfx('tap'); if (nx.bye) { S.coSkipRound(co); c.save(); return semana(); } time(true); };
       st.querySelector('#sm-back').onclick = () => { sfx('tap'); go('inicio'); };
@@ -979,7 +980,7 @@
           '<i><u class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '" style="width:' + conf + '%"></u></i><em class="' + (pos <= B.goal.pos ? '' : 'hi') + '">' + meta + '</em></div>' +
         (pres ? '<div class="kb2-pr fc">' + presFace(pres, 'kb2-fc') + '<div><small>PRESIDENTE</small><b>' + esc(pres.n) + '</b><span>' + esc(pres.nome || '') + '</span></div></div>' : '') +
         (est ? '' : '<span class="rs-gap"></span><p class="kb2-soon">Estádio e base chegam depois</p>') + '</div></div>', st => {
-      st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') financas(); else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); else if (k === 'est') estadio(); });
+      st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') { FIN_BACK = null; financas(); } else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); else if (k === 'est') estadio(); });
       st.querySelector('#kb2-back').onclick = () => { sfx('tap'); semana(); };
     });
   }
@@ -1146,6 +1147,7 @@
         '<button class="tm-go' + (can ? '' : ' off') + '" id="es-go">' + (doing ? 'Em reforma' : e.mel ? 'Uma por vez' : P.max ? 'Nível máximo' : P.lock ? 'Fechado' : P.need ? 'Estádio pequeno' : 'Pedir à diretoria') + '</button>' +
       '</div></div>', st => {
       st.querySelector('#es-back').onclick = () => { sfx('tap'); estadio(); };
+      cxBind(st, () => melhorias(k, x));
       st.querySelectorAll('[data-mk]').forEach(b => b.onclick = () => { sfx('tap'); melhorias(b.dataset.mk, x); });
       st.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { if (!can) return; sfx('tap'); const i = +b.dataset.x;
         if (i > P.payMax) return mkHelp('', 'Este presidente só paga à vista.');
@@ -1161,7 +1163,7 @@
         sfx('tap');
         const line = r.why === 'vermelho' ? 'Com o caixa no vermelho ele não começa reforma nenhuma.' : r.why === 'ultimato' ? 'Com o seu cargo em risco, a diretoria não começa reforma.'
           : r.why === 'folga' ? (x > 1 ? 'Com a entrada e as parcelas pela frente sobraria pouca folga no caixa.' : 'Depois da reforma sobraria menos de ' + E.obra.folga + ' semanas de salário no caixa.') + ' Ele libera com ' + c.brl(Math.ceil(r.need / 10000) * 10000) + '.' : 'A diretoria não liberou a reforma agora.';
-        obraBox({ img, sm, cls: 'dn', w: 'Recusou a melhoria', line, rows: [['Custo', c.brl(P.cost)], ['Caixa agora', c.brl(S.coFin(co).caixa), r.why === 'ultimato' ? '' : 'dn']], b1: 'Entendi', b2: 'Finanças', on2: () => financas() });
+        obraBox({ img, sm, cls: 'dn', w: 'Recusou a melhoria', line, rows: [['Custo', c.brl(P.cost)], ['Caixa agora', c.brl(S.coFin(co).caixa), r.why === 'ultimato' ? '' : 'dn']], b1: 'Entendi', b2: 'Finanças', on2: () => { FIN_BACK = () => melhorias(k, x); financas(); } });
       };
     });
   }
@@ -1220,6 +1222,7 @@
         '<button class="tm-go" id="es-go">Pedir à diretoria</button>' +
       '</div></div>', st => {
       st.querySelector('#es-back').onclick = () => { sfx('tap'); estadio(); };
+      cxBind(st, () => ampliar(k, mode, x));
       st.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { sfx('tap'); ampliar(open[(open.indexOf(k) + +b.dataset.sk + open.length) % open.length], mode, x); });
       st.querySelectorAll('[data-md]').forEach(b => b.onclick = () => { sfx('tap'); ampliar(k, b.dataset.md, x); });
       st.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.x;
@@ -1235,7 +1238,7 @@
         sfx('tap');
         const line = r.why === 'vermelho' ? 'Com o caixa no vermelho ele não começa obra nenhuma.' : r.why === 'ultimato' ? 'Com o seu cargo em risco, a diretoria não começa obra.'
           : r.why === 'folga' ? (x > 1 ? 'Com a entrada e as parcelas pela frente sobraria pouca folga no caixa.' : 'Depois da obra sobraria menos de ' + E.obra.folga + ' semanas de salário no caixa.') + ' Ele libera com ' + c.brl(Math.ceil(r.need / 10000) * 10000) + '.' : 'A diretoria não liberou a obra agora.';
-        obraBox({ img, sm, cls: 'dn', w: 'Recusou a obra', line, rows: [['Custo da obra', c.brl(M.cost)], ['Caixa agora', c.brl(S.coFin(co).caixa), r.why === 'ultimato' ? '' : 'dn']], b1: 'Entendi', b2: 'Finanças', on2: () => financas() });
+        obraBox({ img, sm, cls: 'dn', w: 'Recusou a obra', line, rows: [['Custo da obra', c.brl(M.cost)], ['Caixa agora', c.brl(S.coFin(co).caixa), r.why === 'ultimato' ? '' : 'dn']], b1: 'Entendi', b2: 'Finanças', on2: () => { FIN_BACK = () => ampliar(k, mode, x); financas(); } });
       };
       const pn = st.querySelector('#es-pn'), R = estDraw(pn, e, cl, { prev: k, wPad: 190, hPad: 34, dx: 62 });
       if (!R) return;
@@ -1267,10 +1270,12 @@
   // Em Finanças o mesmo desenho fica ao lado da palavra, para o jogador ligar um ao outro
   const CX_IC = '<img class="mk-cxi" src="assets/ic/1f4b5.webp" alt="Caixa" draggable="false">';
   const cxPill = () => { const c = C(), cx = S.coFin(c.co).caixa || 0; return '<span class="mk-cx' + (cx < 0 ? ' neg' : '') + '" title="Caixa do clube">' + CX_IC + '<b>' + c.brl(cx) + '</b></span>'; };
+  // Tocar no caixa abre Finanças e o Voltar devolve à tela de antes (Silvio, 11/11: "clicar no caixa deve abrir finanças")
+  const cxBind = (st, me) => { const b = st.querySelector('.mk-cx'); if (!b || !me) return; b.classList.add('go'); b.setAttribute('role', 'button'); b.setAttribute('aria-label', 'Caixa do clube: abrir Finanças'); b.onclick = () => { sfx('tap'); FIN_BACK = me; financas(); }; };
   const mkCx = coins => cxPill() + (U.COINS ? U.COINS.pill('cp-sm', coins ? 'mk-coins' : '') : '');
   const mkHead = (id, t, s, noWin, coins) => '<div class="tm-h"><button class="tcr-back" id="' + id + '" aria-label="Voltar">' + MK_BK + '</button><span class="mk-tt"><b>' + t + '</b><small>' + s + '</small></span>' +
     '<span class="mk-top">' + mkCx(coins) + (noWin ? '' : mkWin()) + '<button class="ol2-q" id="mk-q" aria-label="Como funciona">?</button></span></div>';
-  const mkCoins = (st, me) => { const b = st.querySelector('#mk-coins'); if (b) b.onclick = () => { sfx('tap'); loja(0, me); }; };
+  const mkCoins = (st, me) => { cxBind(st, me); const b = st.querySelector('#mk-coins'); if (b) b.onclick = () => { sfx('tap'); loja(0, me); }; };
   const mkHelp = (t, p) => pop('<div class="acd-help"><b>Como funciona</b><p>' + p + '</p><button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop');
   const mkClub = p => (p.club ? esc(club(p.club).short || club(p.club).name) : 'sem clube');
   // As 3 abas do Mercado: Procurar, Elenco (abre o seu elenco e o Voltar devolve ao Mercado) e Notícias. "Indicados" saiu na 1.0
@@ -1483,6 +1488,7 @@
         '<span class="rs-gap"></span>' + gold + '</div></div>', st => {
       const re = x => proposta(id, back, Object.assign({}, o, x));
       st.querySelector('#mkp-back').onclick = () => { sfx('tap'); back(); };
+      cxBind(st, () => proposta(id, back, o));
       st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Cada proposta gasta 1 dia. Abaixo do que ele quer, o presidente contrapõe (perto) ou recusa (longe), e cada resposta que não é sim gasta uma bolinha de paciência. Sem paciência, ele não negocia mais nesta temporada. Parcelado pesa menos na verba agora, mas ele aceita um pouco menos. O jogador na troca abate do valor; se ele vale mais que a proposta, não tem troco.'); };
       st.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { sfx('tap'); re({ v: Math.max(10000, o.v + step * (+b.dataset.pv)) }); });
       st.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => { sfx('tap'); re({ v: cuts[+b.dataset.pc] }); });
@@ -1554,6 +1560,7 @@
         '<span class="rs-gap"></span>' + gold + '</div></div>', st => {
       const re = x => contrato(id, back, Object.assign({}, t, x));
       st.querySelector('#mkc-back').onclick = () => { sfx('tap'); back(); };
+      cxBind(st, () => contrato(id, back, t));
       st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'O empresário pesa salário, anos e papel, e o humor dele muda a cada toque: com "Deve aceitar" ele assina, e com "Quase lá" pode assinar (1 chance em 3). Cada recusa gasta uma das 3 tentativas (não gasta dia) e ele diz na hora o que aceita. Prometer titular baixa o salário que ele pede, mas a promessa vai ser cobrada. A folha não passa do teto.' + (own ? ' Sem renovar, ele sai do clube no fim do contrato, mesmo sendo titular.' : '')); };
       st.querySelectorAll('[data-cw]').forEach(b => b.onclick = () => { sfx('tap'); re({ w: Math.max(1000, t.w + T.step * (+b.dataset.cw)) }); });
       st.querySelectorAll('[data-cy]').forEach(b => b.onclick = () => { sfx('tap'); re({ y: Math.max(1, Math.min(5, t.y + (+b.dataset.cy))) }); });
@@ -1679,6 +1686,7 @@
         '<span class="rs-gap"></span><button class="tm-go" id="mkn-go">' + (acc ? 'Aceitar o deles' : 'Contrapropor') + '</button></div></div>', st => {
       const re = x => negociar(id, back, Object.assign({}, t, x));
       st.querySelector('#mkn-back').onclick = () => { sfx('tap'); back(); recebida(o, back); };
+      cxBind(st, () => negociar(id, back, t));
       st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Peça um valor e mande a contraproposta. O diretor deles tem um teto escondido: abaixo dele, aceita; acima, sobe um pouco ou, sem paciência, desiste. Pedir à vista ou uma % alta de uma venda futura deixa mais difícil. A venda entra no caixa e metade vira verba para contratar.'); };
       st.querySelectorAll('[data-nv]').forEach(b => b.onclick = () => { sfx('tap'); re({ v: Math.max(o.v, t.v + step * (+b.dataset.nv)) }); });
       st.querySelectorAll('[data-nc]').forEach(b => b.onclick = () => { sfx('tap'); re({ v: cuts[+b.dataset.nc] }); });

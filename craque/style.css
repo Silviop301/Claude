@@ -9750,3 +9750,5 @@ body:has(> .tc-ov) > .pay-ty { visibility: hidden; }
 .mk-cx { padding: 0 12px 0 7px; gap: 6px; } .sm-h.ult .mk-cx { padding: 0 8px 0 5px; gap: 4px; }
 .mk-cxi { flex: none; width: 30px; height: 30px; display: block; filter: brightness(1.55) saturate(1.1); }
 small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi { width: 22px; height: 22px; margin: -5px 0; }
+/* Caixa do topo que abre Finanças (2026-11-11): área de toque de 44 px sem mudar o desenho */
+.mk-cx.go { position: relative; cursor: pointer; -webkit-tap-highlight-color: transparent; } .mk-cx.go::after { content: ''; position: absolute; inset: -4px 0; } .mk-cx.go:active { background: rgba(0, 0, 0, .55); }
