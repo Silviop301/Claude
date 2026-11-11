@@ -69,11 +69,72 @@
     try { bus(); } catch (e) { /* contexto fechado: o próximo toque não toca nada */ }
   }
   if (root.document && root.document.addEventListener) {
-    root.document.addEventListener('visibilitychange', () => { if (root.document.hidden) hush(); });
+    root.document.addEventListener('visibilitychange', () => { if (root.document.hidden) hush(); musicTick(); });
     if (root.addEventListener) root.addEventListener('pagehide', hush);
   }
   // Som desligado: nada é montado nem baixado (ligar nas Configurações chama play('coin'), já dentro do toque)
-  if (root.addEventListener) root.addEventListener('pointerdown', () => { if (on) init(); }, { passive: true });
+  if (root.addEventListener) root.addEventListener('pointerdown', () => { if (on || mOn) { init(); musicStart(); } }, { passive: true });
+
+  // Música de fundo dos menus (2026-11-11, Silvio: "uma musiquinha de fundo que nem FIFA", com faixas reais que ele manda).
+  // Playlist em assets/musica/ (lista M_LIST; vazia = nada toca e a chave some dos Ajustes). Cada faixa toca inteira, numa
+  // ordem embaralhada, e a próxima entra quando ela acaba. <audio> em streaming (não baixa tudo antes) ligado ao Web Audio,
+  // porque o iPhone ignora o volume do <audio>: o volume baixo e o fade saem do ganho. Começa no primeiro toque (regra do
+  // iPhone), some no jogo ao vivo (`.lv` na tela) e com o app fora da frente, e volta de onde parou. Chave própria
+  // (climbix-musica), separada do Som. Faixa nova: põe o .mp3 em assets/musica/, o nome em M_LIST e roda craque_sw.py
+  const M_LIST = [];
+  const M_VOL = 0.35;
+  let mOn = true, mWant = -1, mGain = null, mEl = null, mOrd = [], mI = -1, mStop = null;
+  try { mOn = localStorage.getItem('climbix-musica') !== 'off'; } catch (e) { /* fica ligada */ }
+  const quiet = () => !!(root.document && (root.document.hidden || root.document.querySelector('.lv')));
+  function musicNext() {
+    if (!mEl) return;
+    if (++mI >= mOrd.length) { // nova volta embaralhada, sem repetir a última logo de cara
+      const last = mOrd[mOrd.length - 1];
+      mOrd = M_LIST.map((x, i) => i).sort(() => Math.random() - 0.5);
+      if (mOrd.length > 1 && mOrd[0] === last) mOrd.push(mOrd.shift());
+      mI = 0;
+    }
+    mEl.src = 'assets/musica/' + M_LIST[mOrd[mI]];
+    if (mWant > 0) mEl.play().catch(() => { /* espera o próximo toque */ });
+  }
+  function musicTick() {
+    if (!mEl || !ctx) return;
+    const want = mOn && !quiet() ? M_VOL : 0, g = mGain.gain;
+    if (want === mWant) { if (want && mEl.paused && ctx.state === 'running') mEl.play().catch(() => {}); return; }
+    mWant = want;
+    clearTimeout(mStop);
+    try { g.cancelScheduledValues(ctx.currentTime); g.setValueAtTime(g.value, ctx.currentTime); g.linearRampToValueAtTime(want, ctx.currentTime + (want ? 1.5 : 0.6)); } catch (e) { g.value = want; }
+    if (want) mEl.play().catch(() => { mWant = -1; }); // parou de tocar fora de um toque: tenta de novo no próximo
+    else mStop = setTimeout(() => { if (!mWant) mEl.pause(); }, 700); // pausa de verdade (não gasta bateria nem dados)
+  }
+  function musicStart() {
+    if (!mOn || !ctx || mEl || !M_LIST.length || typeof Audio === 'undefined') return;
+    try {
+      mEl = new Audio(); mEl.preload = 'auto'; mEl.crossOrigin = 'anonymous';
+      mEl.setAttribute('playsinline', '');
+      mGain = ctx.createGain(); mGain.gain.value = 0; mGain.connect(ctx.destination);
+      ctx.createMediaElementSource(mEl).connect(mGain);
+      mEl.addEventListener('ended', musicNext);
+      mEl.addEventListener('error', () => setTimeout(musicNext, 1000)); // faixa que não abre: pula
+      musicNext();
+      musicTick();
+      setInterval(musicTick, 600);
+    } catch (e) { mEl = null; }
+  }
+  root.CRAQUE_MUSIC = {
+    get has() { return M_LIST.length > 0; },
+    get on() { return mOn; },
+    get state() { return !mEl ? 'parada' : mWant > 0 && !mEl.paused ? 'tocando' : 'calada'; }, // para as ferramentas
+    get track() { return mEl && mI >= 0 ? M_LIST[mOrd[mI]] : ''; },
+    next() { musicNext(); },
+    toggle() {
+      mOn = !mOn;
+      try { localStorage.setItem('climbix-musica', mOn ? 'on' : 'off'); } catch (e) { /* ok */ }
+      if (mOn) { init(); musicStart(); }
+      musicTick();
+      return mOn;
+    },
+  };
 
   const rnd = (a, b) => a + Math.random() * (b - a);
   // Envelope simples: sobe em a segundos, segura, desce até t+dur

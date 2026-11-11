@@ -8,7 +8,7 @@
   const GROUPS = () => [
     { t: 'Som e tela', rows: [
       { k: 'sound', t: 'Som' },
-    ].concat(canVibe ? [{ k: 'vibe', t: 'Vibração' }] : []).concat([
+    ].concat(window.CRAQUE_MUSIC && window.CRAQUE_MUSIC.has ? [{ k: 'music', t: 'Música' }] : []).concat(canVibe ? [{ k: 'vibe', t: 'Vibração' }] : []).concat([
       { k: 'fx3d', t: 'Efeitos 3D', d: 'desligue se o celular esquentar' },
     ]) },
     { t: 'Na partida', rows: [
@@ -19,7 +19,7 @@
       { k: 'tips', t: 'Dicas', d: 'Religar mostra todas outra vez' },
     ] },
   ];
-  const value = k => (k === 'tips' ? U.tipsOn() : k === 'sound' ? !!(window.CRAQUE_SFX && window.CRAQUE_SFX.on) : window.CLIMBIX_CFG[k]);
+  const value = k => (k === 'tips' ? U.tipsOn() : k === 'sound' ? !!(window.CRAQUE_SFX && window.CRAQUE_SFX.on) : k === 'music' ? !!(window.CRAQUE_MUSIC && window.CRAQUE_MUSIC.on) : window.CLIMBIX_CFG[k]);
 
   // Versão do jogo (aparece nas Configurações e decide quando mostrar as novidades)
   const VERSION = '1.0';
@@ -77,6 +77,7 @@
         const k = b.dataset.k, raw = b.dataset.v, v = raw === 'true' ? true : raw === 'false' ? false : raw;
         if (k === 'tips') U.tipsSet(v);
         else if (k === 'sound') { if (window.CRAQUE_SFX && window.CRAQUE_SFX.on !== v) window.CRAQUE_SFX.toggle(); }
+        else if (k === 'music') { if (window.CRAQUE_MUSIC && window.CRAQUE_MUSIC.on !== v) window.CRAQUE_MUSIC.toggle(); }
         else U.setCfg(k, v);
         if (k === 'vibe' && v) U.vibe(20);
         paint();
@@ -103,9 +104,10 @@
     const out = () => (back || U.home)();
     const draw = () => {
       const rot = !!(U.rotPref && U.rotPref()), rotSw = rot || !!(window.matchMedia && matchMedia('(pointer: coarse)').matches); // tela girada (rotação travada em pé, ui/coachland.js)
-      const on = !!value('sound'), vel = U.coVel ? U.coVel() : '1', st = !window.CLIMBIX_SOLO && U.cloudStatus ? U.cloudStatus() : null, solo = !!window.CLIMBIX_SOLO;
+      const on = !!value('sound'), mus = !!value('music'), vel = U.coVel ? U.coVel() : '1', st = !window.CLIMBIX_SOLO && U.cloudStatus ? U.cloudStatus() : null, solo = !!window.CLIMBIX_SOLO;
       U.LD.show('<div class="aj' + (solo ? ' aj-solo' : '') + '"><div class="tm-h"><button class="tcr-back" id="aj-back" aria-label="Voltar">' + BK + '</button><b>Ajustes</b><small class="aj-v">Climbix ' + VERSION + '</small></div>' +
         '<div class="aj-l"><button class="aj-sw' + (on ? ' on' : '') + '" id="aj-som" role="switch" aria-checked="' + on + '"><b>Som</b><span class="aj-tg"><i></i></span></button>' +
+          (window.CRAQUE_MUSIC && window.CRAQUE_MUSIC.has ? '<button class="aj-sw' + (mus ? ' on' : '') + '" id="aj-mus" role="switch" aria-checked="' + mus + '"><b>Música</b><span class="aj-tg"><i></i></span></button>' : '') +
           '<button class="aj-sw aj-vel" id="aj-vel" aria-label="Velocidade dos jogos: ' + vel + 'x"><b>Velocidade dos jogos</b><span class="aj-seg"><i' + (vel === '1' ? ' class="on"' : '') + '>1×</i><i' + (vel === '3' ? ' class="on"' : '') + '>3×</i></span></button>' +
           (rotSw ? '<button class="aj-sw' + (rot ? ' on' : '') + '" id="aj-rot" role="switch" aria-checked="' + rot + '"><b>Tela girada</b><span class="aj-tg"><i></i></span></button>' : '') +
           '<button class="aj-lk" id="aj-fb">Sua opinião</button></div>' +
@@ -115,6 +117,7 @@
         w => {
           w.querySelector('#aj-back').onclick = () => { U.sfx('tap'); out(); };
           w.querySelector('#aj-som').onclick = () => { if (window.CRAQUE_SFX) window.CRAQUE_SFX.toggle(); U.sfx('tap'); draw(); };
+          if (w.querySelector('#aj-mus')) w.querySelector('#aj-mus').onclick = () => { if (window.CRAQUE_MUSIC) window.CRAQUE_MUSIC.toggle(); U.sfx('tap'); draw(); };
           w.querySelector('#aj-vel').onclick = () => { if (U.coVel) U.coVel(vel === '3' ? '1' : '3'); U.sfx('tap'); draw(); };
           if (w.querySelector('#aj-rot')) w.querySelector('#aj-rot').onclick = () => { U.rotPref(!rot); U.sfx('tap'); draw(); U.LD.fit(); };
           w.querySelector('#aj-fb').onclick = () => { U.sfx('tap'); U.feedbackLand ? U.feedbackLand(draw) : U.feedback('config'); };
