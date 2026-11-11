@@ -1757,7 +1757,10 @@
       const saldo = x.bil + x.tv + x.pat + x.prem + x.vend - x.sal - x.comp;
       rows = li('Bilheteria · ' + U.D.plural(homes, 'jogo', 'jogos') + ' em casa', sg(x.bil), 'up') + li('TV e patrocínio', sg(x.tv + x.pat), 'up') + (x.prem ? li('Prêmios', sg(x.prem), 'up') : '') + (x.vend ? li('Vendas', sg(x.vend), 'up') : '') +
         li('Salários', sn(x.sal), 'dn') + (x.comp ? li('Contratações', sn(x.comp), 'dn') : '') + li('<b>Saldo</b>', c.sgn(saldo), saldo >= 0 ? 'up' : 'dn'); }
-    else if (tab === 'seg') rows = S.coFinNext(co).map(n => li(esc(n.txt), (n.aprox ? '~ ' : '') + c.mi(n.v))).join('') || '<p class="fn2-none">A temporada acabou.</p>';
+    // Cláusulas de venda futura que ainda valem, em cima (Silvio 2026-11-11: "já existe algum retorno da cláusula de venda?"):
+    // quem, o clube, o último ano em que a revenda paga e o % (`co.fin.fut`, `futPay` em coachmkt.js)
+    else if (tab === 'seg') rows = ((f.fut || []).map(x => '<div class="fn2-li fn2-cl"><span>Cláusula · ' + esc(x.n) + ' · ' + esc(club(x.club).short || club(x.club).name) + '<small> até ' + (U.YEAR0 + x.s + S.CO_MKT.futS) + '</small></span><b>' + x.pct + '% da revenda</b></div>').join('') +
+      S.coFinNext(co).map(n => li(esc(n.txt), (n.aprox ? '~ ' : '') + c.mi(n.v))).join('')) || '<p class="fn2-none">A temporada acabou.</p>';
     else rows = co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 8).map(p => li(esc(p.n) + ' <small>' + p.pos + '</small>', c.mi(p.wage) + ' <small>até ' + (U.YEAR0 + co.season + p.ct) + '</small>')).join('');
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     show('<div class="fn2"><div class="tm-h"><button class="tcr-back" id="ldf-back" aria-label="Voltar">' + BK + '</button><b>Finanças</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (U.YEAR0 + co.season) + '</small></div>' +
