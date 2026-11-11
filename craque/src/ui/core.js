@@ -8,7 +8,8 @@
   // Um save por jogo: a carreira rápida e a carreira jogo a jogo (c.mode 'completa') andam em paralelo
   const SAVE = 'craque-v5', SAVE_FC = 'climbix-jogo-v1', HALL = 'craque-hall-v1', HALL_JAJ = 'climbix-hall-jaj-v1'; // HALL_JAJ: Seu Hall do Rumo ao Topo (legado)
   // Duas vagas por modo: a 2ª vaga (c.slot 1) grava na mesma chave com '-2' no fim
-  const slotKey = (base, slot) => (slot ? base + '-2' : base);
+  // Vaga 0 = a chave, vaga 1 = '-2', vaga 2 = '-3'... (o Treinador tem 5 vagas desde 2026-11-11: U.CO_SLOTS)
+  const slotKey = (base, slot) => (slot ? base + '-' + (+slot + 1) : base);
   const saveKey = c => slotKey(c && c.mode === 'completa' ? SAVE_FC : SAVE, c && c.slot);
   const YEAR0 = 2026;
 
@@ -417,5 +418,5 @@
   // Som do gol com mando: o seu gol em casa é a festa inteira, fora é o canto da sua torcida lá no fundo; o gol deles em
   // casa é o lamento, fora é a casa deles explodindo
   const goalSnd = (ours, home) => (ours ? (home ? 'goal' : 'goalAway') : home ? 'miss' : 'cheer'); // gol seu: rede + torcida (gravações, o mesmo do lance decisivo; Silvio 11/11)
-  window.CRAQUE_UI = { goalSnd, zk, rotPref, rotOn, pt, box, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, slotKey, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg, totOf, titlesOf, toHome, modeHead, modeHeadBind };
+  window.CRAQUE_UI = { goalSnd, zk, rotPref, rotOn, pt, box, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, slotKey, CO_SLOTS: 5, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg, totOf, titlesOf, toHome, modeHead, modeHeadBind };
 })();
