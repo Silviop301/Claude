@@ -9499,6 +9499,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 .ca-pop .ca-n { display: flex; align-items: center; gap: 8px; font: 700 17px/1.2 var(--body); }
 .ca-pop .ca-n svg { width: 30px; height: 30px; flex: none; } .ca-pop .ca-n b { font: 800 30px/1 var(--display); color: var(--gold); }
 
+<<<<<<< HEAD
 /* Placar do ao vivo (Silvio, 11/11, opção 1): barra carvão compacta, faixa de cor de cada time, sigla, placar dourado e o
    tempo numa aba dourada inclinada */
 .ldl .ldl-sb { left: 10px; top: 10px; gap: 7px; height: 34px; padding: 0 0 0 0; border-radius: 4px; background: rgba(14, 15, 17, .92); box-shadow: 0 2px 8px rgba(0,0,0,.35), inset 0 0 0 1px rgba(242,194,48,.28); overflow: visible; }
@@ -9508,3 +9509,41 @@ button.coin-pill { cursor: pointer; border: 0; }
 .ldl-tla { font: 800 18px/1 var(--display); letter-spacing: .02em; color: #F4EFE3; }
 .ldl .ldl-sb > em { font: 800 24px/1 var(--display); color: #F2C230; letter-spacing: .02em; padding: 0 2px; } .ldl .ldl-sb > em i { font-size: 13px; color: #F4EFE3; opacity: .8; }
 .ldl .ldl-sb .ldl-clk { align-self: stretch; display: flex; align-items: center; margin-left: -2px; padding: 0 12px 0 16px; border-radius: 0 4px 4px 0; background: linear-gradient(180deg, #F6CE45, #E0AE1E); color: #15171A; font: 800 17px/1 var(--display); clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%); }
+=======
+/* Cláusula de venda futura em Finanças > A seguir (2026-11-11) */
+.ldf-li.ldf-cl > span small { margin-left: 6px; font: 700 12px var(--body); color: #9fb0a6; } .ldf-li.ldf-cl > b { color: var(--gold); }
+
+/* Cláusula de venda futura em Finanças > A seguir (2026-11-11) */
+.fn2-li.fn2-cl > span small { margin-left: 6px; font: 700 12px var(--body); color: #9fb0a6; } .fn2-li.fn2-cl > b { color: var(--gold); }
+
+/* Relatório completo mostra o geral (Silvio 2026-11-11: "depois de pagar pra ver o relatório completo eu deveria ao menos ver o overall") */
+.mkf-ovw { display: flex; align-items: center; gap: 12px; } .mkf-ov { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 50%; box-shadow: inset 0 0 0 2.5px var(--gold); font: 800 22px/1 var(--display); font-style: normal; color: var(--gold); } .mkf-ov small { font: 800 8px/1 var(--body); letter-spacing: .08em; color: #B9C9BF; margin-bottom: 1px; }
+.mka .mkf-t em b { color: var(--gold); font-weight: 800; }
+.fn2-li.fn2-cl > b.up { color: #7ED39A; }
+/* Resultado do jogo: com 4 linhas (Tabela, Diretoria, Suspenso ou Ultimato, Público) a coluna da direita passava da tela e
+   cortava o Continuar (Silvio, 2026-11-11): as linhas encolhem e, com 4, os blocos apertam */
+.rs-ch { flex: 0 1 auto; min-height: 0; }
+.rs-ch > span, .rs-ch > button { height: auto; flex: 1 1 40px; min-height: 30px; max-height: 40px; }
+.rs-side.n4 { gap: 8px; }
+.rs-side.n4 .rs-best { padding: 10px 16px; gap: 6px; }
+.rs-side.n4 .tm-b { height: 42px; } .rs-side.n4 .tm-go { height: 56px; }
+/* Bola do gol nos lances e no gráfico: o desenho do jogo (assets/ic/26bd.webp) no lugar do rabisco em código (Silvio, 2026-11-11) */
+.rsi img.rsi-b { width: 19px; height: 19px; display: block; border-radius: 50%; box-shadow: 0 0 0 1px rgba(243, 241, 234, .5); }
+.rs-mk img.rsi-b { width: 17px; height: 17px; display: block; border-radius: 50%; box-shadow: 0 0 0 1px rgba(243, 241, 234, .6), 0 1px 3px rgba(0, 0, 0, .6); }
+/* Treino: a descrição passava do cartão e caía em cima do Auxiliar (Silvio, 2026-11-11): cartão mais justo, "Desenvolve" numa linha
+   com o atributo, e nada sai dele */
+.tr2-d { padding: 12px 16px; gap: 8px; overflow: hidden; }
+.tr2-d > b { font-size: 23px; } .tr2-d > p { font-size: 15px; line-height: 1.25; }
+.tr2-dv { align-items: center; gap: 3px 8px; padding-top: 8px; }
+.tr2-dv small { width: auto; } .tr2-dv span { width: 100%; font-size: 14px; line-height: 1.2; }
+/* Ao vivo deitado: a coluna da direita tinha 382 px num palco de 366 e o "Parar e mexer" passava da tela em aparelho sem entalhe
+   (com entalhe o palco é mais alto e cabia; achado pelo passeio, 2026-11-11) */
+.ldl-side { gap: 6px; } .ldl-side .ld-gr { margin-top: -6px; } .ldl-side .ldl-num { height: 40px; }
+/* Intervalo com as bolinhas de trocas e paradas: sem entalhe a coluna passava 12 px e cortava o "Começar o 2º tempo" (passeio, 2026-11-11) */
+.ldl-tm.ht .tm-b { height: 38px; } .ldl-tm.ht .tm-go { height: 52px; } .ldl-tm.ht .ldl-tro { padding: 5px 10px; gap: 2px; }
+/* Classificação com vitórias, empates e derrotas (Silvio, 2026-11-11): V, E e D entre os jogos e o saldo, colunas mais justas */
+.tb2-h.cls, .tb2-r.cls { grid-template-columns: 26px 22px minmax(0, 1fr) 28px 24px 24px 24px 40px 40px 72px; gap: 6px; }
+/* Mercado na 1.0: 3 abas (Procurar, Elenco, Notícias; "Indicados" saiu) e a Proposta sem a aba apagada do empréstimo (2026-11-11) */
+.mk-tabs.t3 { grid-template-columns: repeat(3, 1fr); }
+.mk.mkp.nt { grid-template-rows: 44px 0 minmax(0, 1fr); } .mk.mkp.nt .mkp-l { margin-top: -10px; }
+>>>>>>> origin/claude/gracious-darwin-9gdlfp
