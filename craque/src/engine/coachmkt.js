@@ -88,6 +88,10 @@
     const e = M.err[n - 1], c = d + ((h % (2 * e + 1)) - e), w = M.half[n - 1];
     return { lo: c - w, hi: c + w, mid: c, n, st };
   };
+  // Sem relatório (outra liga), o filtro Nível vai pela fama: a diferença contra o titular com erro maior que o do 1º relatório
+  // (M.err0). Só filtra: a lista e a ficha seguem sem faixa até o olheiro ver (Silvio 11/11: "a pesquisa não retornou")
+  M.err0 = 5;
+  S.coMktFame = (co, p) => { const st = S.coMktStarter(co, p.pos), h = hash(p.id + '|fama'); return p.ovr - (st ? st.ovr : p.ovr) + (h % (2 * M.err0 + 1)) - M.err0; };
   // Uma palavra pela faixa (a lista usa o meio; a ficha, a faixa inteira)
   const word1 = v => (v > M.eq ? 'melhor' : v < -M.eq ? 'pior' : 'igual');
   S.coMktWord = (b, whole) => {
@@ -146,7 +150,7 @@
     const porForca = L => L.map(l => ({ l, f: forca(l) })).sort((a, b) => b.f - a.f).map(x => x.l);
     const ligas = porForca(D.LEAGUES.filter(l => l.country === cty)).sort((a, b) => (a.id === lg ? -1 : b.id === lg ? 1 : 0));
     const fora = porForca(D.LEAGUES.filter(l => l.country !== cty));
-    const lvl = (p, w) => { const b = S.coMktBand(co, p); return b && word1(b.mid) === w; };
+    const lvl = (p, w) => { const b = S.coMktBand(co, p); return word1(b ? b.mid : S.coMktFame(co, p)) === w; };
     return [
       { k: 'pos', t: 'POSIÇÃO', o: [{ t: 'Qualquer' }].concat(['GOL', 'ZAG', 'LAT', 'MEI', 'ATA'].map(x => ({ t: POS_NM[x], ok: p => p.pos === x }))) },
       { k: 'niv', t: 'NÍVEL', o: [{ t: 'Qualquer' }, { t: 'Reserva', ok: p => lvl(p, 'pior') }, { t: 'Igual ao titular', ok: p => lvl(p, 'igual') }, { t: 'Melhor que o titular', ok: p => lvl(p, 'melhor') }] },
