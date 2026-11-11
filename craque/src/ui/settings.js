@@ -154,7 +154,7 @@
   }
 
   // Termos e reembolso deitados (2026-11-11; Silvio: a página termos.html abria com letra enorme e rolando no celular
-  // deitado): o mesmo texto de craque/termos.html em 7 abas curtas no palco U.LD, sem rolar, com o contato à direita.
+  // deitado): o mesmo texto de craque/termos.html em 7 abas curtas, sem rolar, com o contato à direita (legalLand, mais abaixo).
   // Mudou um termo: mude aqui, em termos.html e em i18n/termos.en.html, e a data TERMOS_DT. tab = índice ou nome da aba
   const CONTATO = 'contato@climbix.app', TERMOS_DT = '10 de novembro de 2026';
   const TERMOS = [
@@ -183,21 +183,62 @@
     ['Garantias', ['O jogo é oferecido como está. Ele pode mudar, ficar fora do ar ou ter o ranking reiniciado.',
       'Fazemos o possível para guardar bem o seu jogo, mas não garantimos que ele nunca será perdido.',
       'Sem conta, o jogo fica só no navegador e some se os dados do navegador forem apagados.']]];
-  function termosLand(tab, back) {
+  // Privacidade deitada (2026-11-11; Silvio: "Altere tbm"): o texto de craque/privacidade.html revisto para o Treinador da
+  // 1.0, nas mesmas 7 abas curtas. Mudou algo: mude aqui, em privacidade.html e em i18n/privacidade.en.html, e a data PRIV_DT
+  const PRIV_DT = '11 de novembro de 2026';
+  const PRIV = [
+    ['Sem conta', ['Sem conta, o seu jogo fica salvo só no seu aparelho, no armazenamento do navegador: carreiras, perfil, moedas e ajustes. Limpar os dados do navegador apaga tudo isso.',
+      '<b>Não vendemos nem compartilhamos</b> seus dados, não mostramos anúncios e não usamos cookies nem ferramentas de rastreamento.',
+      'Os dados servem só para o jogo funcionar: salvar, entrar na conta e entregar as moedas compradas.']],
+    ['Com conta', ['<b>Usuário</b>, o nome da sua conta.',
+      '<b>Senha</b>, se você criar uma. Ela fica guardada de forma irreversível (hash): nem nós conseguimos ver a senha.',
+      '<b>Seu jogo</b>: carreiras, perfil, times comprados e o saldo de moedas, para você continuar em outro aparelho.',
+      '<b>Sessões</b> de cada aparelho conectado: um código de acesso (guardado como hash), quando você entrou, o último uso e se entrou por senha ou por um serviço.']],
+    ['Entrar', ['Se você entrar com Google, GitHub ou Discord, recebemos só o <b>identificador</b> da sua conta no serviço e um <b>nome para mostrar</b> em Formas de entrar (o e-mail no Google, o @usuário no GitHub ou o nome no Discord).',
+      'No primeiro acesso usamos o seu nome no serviço só para sugerir um usuário, e apagamos logo depois.',
+      'Não recebemos a sua senha, não acessamos contatos, arquivos ou mensagens e não publicamos nada em seu nome. O acesso que o serviço dá é usado uma vez, no login, e descartado.',
+      'Você pode desconectar um serviço em Conta, Formas de entrar.']],
+    ['Compras', ['O pagamento acontece na página do <b>Mercado Pago</b>. Cartão, CPF, e-mail e conta ficam com ele e seguem a política de privacidade dele: nós não recebemos nem guardamos nada disso.',
+      'Enviamos ao Mercado Pago só o pacote, o preço e um código aleatório da compra, sem o seu usuário.',
+      'Guardamos, ligado à sua conta, o registro de cada compra: pacote, moedas, valor, datas, situação e número do pagamento. Ele serve para entregar as moedas, evitar entrega em dobro e atender reembolso, e pode ser mantido pelo tempo que a lei exigir.']],
+    ['Envios', ['<b>Opinião</b>: guardamos as respostas, um código aleatório do aparelho (só para evitar envio repetido), a versão do jogo e o tipo de navegador. Sem nome, e-mail ou conta. Não escreva dados pessoais no texto livre.',
+      '<b>Contagem anônima</b>: primeira visita, volta no dia ou na semana seguinte, sessão e carreira que começou, passou de temporada ou terminou. O servidor só soma por dia, sem código do aparelho, conta ou IP.',
+      '<b>Erros</b>: se o jogo falhar, ele manda a mensagem do erro, a versão, a tela e o tipo de navegador, para a gente corrigir.']],
+    ['Servidor', ['Para bloquear tentativas em massa de adivinhar senhas, o servidor conta as tentativas erradas por usuário e por endereço IP.',
+      'A hospedagem do site (Hostinger) mantém registros técnicos de acesso, como qualquer site.',
+      'O <b>ranking</b> está desligado nesta versão. Carreiras enviadas antes continuam guardadas com o apelido escolhido e podem ser apagadas a pedido.']],
+    ['Direitos', ['Pela <b>LGPD</b>, você pode pedir para ver, corrigir ou apagar seus dados.',
+      'Para apagar a conta, o jogo salvo na nuvem, as moedas, os serviços conectados e carreiras antigas do ranking, escreva para o e-mail ao lado com o seu usuário.',
+      'Sair da conta no jogo para de salvar na nuvem, mas não apaga a conta.',
+      'Se esta política mudar, a data no alto é atualizada.']]];
+  // As duas telas saem por cima da tela aberta (.lg-ov dentro do palco): o Voltar só tira a folha, então a Loja e a Conta
+  // ficam como estavam (campo digitado, pacote escolhido). Uma leva à outra pelo link de baixo e o Voltar devolve
+  const LEGAL = {
+    termos: { h: 'Termos e reembolso', dt: 'Atualizados em ' + TERMOS_DT, tabs: TERMOS, p: 'Dúvida ou pedido? Escreva com o seu usuário.', to: 'privacidade', lk: 'Política de privacidade' },
+    privacidade: { h: 'Privacidade', dt: 'Atualizada em ' + PRIV_DT, tabs: PRIV, p: 'Quer ver ou apagar seus dados? Escreva com o seu usuário.', to: 'termos', lk: 'Termos e reembolso' } };
+  function legalLand(doc, tab, back, prev) {
+    const st = document.getElementById('ld-st'), L = LEGAL[doc]; if (!st || !L) return;
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
-    const out = () => (back || U.home)();
-    let t = typeof tab === 'string' ? TERMOS.findIndex(x => x[0] === tab) : tab | 0; if (!TERMOS[t]) t = 0;
-    const draw = () => U.LD.show('<div class="trm"><div class="tm-h"><button class="tcr-back" id="trm-back" aria-label="Voltar">' + BK + '</button><span class="mk-tt"><b>Termos e reembolso</b><small>Atualizados em ' + TERMOS_DT + '</small></span></div>' +
-      '<div class="trm-tabs" role="tablist">' + TERMOS.map((x, i) => '<button role="tab" data-trm="' + i + '"' + (i === t ? ' class="on" aria-selected="true"' : ' aria-selected="false"') + '>' + x[0] + '</button>').join('') + '</div>' +
-      '<ul class="trm-c">' + TERMOS[t][1].map(x => '<li>' + x + '</li>').join('') + '</ul>' +
-      '<div class="trm-s"><small>CONTATO</small><p>Dúvida ou pedido? Escreva com o seu usuário.</p><b>' + CONTATO + '</b>' +
-        '<a class="trm-bt" id="trm-mail" href="mailto:' + CONTATO + '">Escrever e-mail</a>' +
-        '<a class="trm-lk" href="privacidade.html" target="_blank" rel="noopener">Política de privacidade</a></div></div>', st => {
-      st.querySelector('#trm-back').onclick = () => { U.sfx('tap'); out(); };
-      st.querySelectorAll('[data-trm]').forEach(b => b.onclick = () => { U.sfx('tap'); t = +b.dataset.trm; draw(); });
-    }, 'O Climbix é jogado com o celular deitado.');
+    let t = typeof tab === 'string' ? L.tabs.findIndex(x => x[0] === tab) : tab | 0; if (!L.tabs[t]) t = 0;
+    let ov = st.querySelector('.lg-ov'); if (!ov) { ov = document.createElement('div'); ov.className = 'lg-ov'; st.appendChild(ov); }
+    const esc = e => { if (e.key === 'Escape') out(); };
+    const close = () => { document.removeEventListener('keydown', esc); };
+    const out = () => { close(); if (prev) return legalLand(prev.doc, prev.t, back); ov.remove(); if (back) back(); };
+    document.addEventListener('keydown', esc);
+    const draw = () => {
+      ov.innerHTML = '<div class="trm" role="dialog" aria-label="' + L.h + '"><div class="tm-h"><button class="tcr-back" id="trm-back" aria-label="Voltar">' + BK + '</button><span class="mk-tt"><b>' + L.h + '</b><small>' + L.dt + '</small></span></div>' +
+        '<div class="trm-tabs" role="tablist">' + L.tabs.map((x, i) => '<button role="tab" data-trm="' + i + '"' + (i === t ? ' class="on" aria-selected="true"' : ' aria-selected="false"') + '>' + x[0] + '</button>').join('') + '</div>' +
+        '<ul class="trm-c">' + L.tabs[t][1].map(x => '<li>' + x + '</li>').join('') + '</ul>' +
+        '<div class="trm-s"><small>CONTATO</small><p>' + L.p + '</p><b>' + CONTATO + '</b>' +
+          '<a class="trm-bt" id="trm-mail" href="mailto:' + CONTATO + '">Escrever e-mail</a>' +
+          '<button class="trm-lk" id="trm-lk">' + L.lk + '</button></div></div>';
+      ov.querySelector('#trm-back').onclick = () => { U.sfx('tap'); out(); };
+      ov.querySelectorAll('[data-trm]').forEach(b => b.onclick = () => { U.sfx('tap'); t = +b.dataset.trm; draw(); });
+      ov.querySelector('#trm-lk').onclick = () => { U.sfx('tap'); close(); prev ? legalLand(prev.doc, prev.t, back) : legalLand(L.to, 0, back, { doc, t }); };
+    };
     draw();
   }
+  const termosLand = (tab, back) => legalLand('termos', tab, back), privacidadeLand = (tab, back) => legalLand('privacidade', tab, back);
 
-  Object.assign(U, { settings, settingsLand, whatsNew, VERSION, novidadesLand, newsNew, termosLand });
+  Object.assign(U, { settings, settingsLand, whatsNew, VERSION, novidadesLand, newsNew, termosLand, privacidadeLand });
 })();
