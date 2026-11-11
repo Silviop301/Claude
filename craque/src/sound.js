@@ -304,25 +304,29 @@
     // tap = toque comum, grave e macio; back = voltar, fechar e cancelar, mais grave ainda; ok = ação principal (o dourado,
     // confirmar), duas notas subindo, o único mais agudo. Tap e back mudam um pouco de tom a cada toque (uiK, ±4%) para não
     // enjoar. Quem escolhe o som de cada botão do palco é o ouvinte do #ld em coachland.js (uiSnd)
+    // Mais baixos e mais graves desde a música de fundo (Silvio, 11/11 à tarde: "tá muito presente na música"): cerca de
+    // metade do volume e o tom uns 30% abaixo. Uma parcial baixinha uma oitava acima segura o som no alto-falante do
+    // celular, que quase não toca abaixo de 400 Hz
     tap(t) {
       const k = uiK();
-      tone('triangle', 720 * k, 470 * k, t, 0.06, 0.34, { a: 0.004 });
-      noise(t, 0.018, 0.05, 0.002, 'bandpass', 1500, 0, 1.2);
+      tone('triangle', 500 * k, 330 * k, t, 0.06, 0.18, { a: 0.005 });
+      tone('sine', 1000 * k, 660 * k, t, 0.04, 0.03, { a: 0.005 });
+      noise(t, 0.016, 0.02, 0.002, 'bandpass', 1100, 0, 1.2);
     },
     back(t) {
       const k = uiK();
-      tone('triangle', 560 * k, 370 * k, t, 0.08, 0.34, { a: 0.004 });
-      tone('sine', 1120 * k, 740 * k, t, 0.05, 0.06, { a: 0.004 }); // uma oitava acima, baixinho: o alto-falante do celular quase não toca abaixo de 400 Hz
-      noise(t, 0.02, 0.04, 0.002, 'bandpass', 1000, 0, 1.2);
+      tone('triangle', 390 * k, 260 * k, t, 0.08, 0.19, { a: 0.005 });
+      tone('sine', 780 * k, 520 * k, t, 0.05, 0.035, { a: 0.005 });
+      noise(t, 0.018, 0.015, 0.002, 'bandpass', 800, 0, 1.2);
     },
     ok(t) {
-      tone('triangle', 660, 660, t, 0.06, 0.2, { a: 0.004 });
-      tone('triangle', 990, 990, t + 0.055, 0.12, 0.2, { a: 0.004, echo: 0.1 });
+      tone('triangle', 494, 494, t, 0.06, 0.11, { a: 0.005 });
+      tone('triangle', 740, 740, t + 0.055, 0.12, 0.11, { a: 0.005, echo: 0.08 });
     },
     // Deu certo (negócio fechado, diretoria aprovou, preço novo valendo): três notas curtas subindo. As telas do Treinador
     // pediam 'win' desde o mercado, mas o som não existia e nada tocava (achado em 2026-11-11)
     win(t) {
-      [659, 880, 1175].forEach((f, i) => tone('triangle', f, f, t + i * 0.075, i === 2 ? 0.26 : 0.1, 0.17, { a: 0.006, echo: i === 2 ? 0.2 : 0 }));
+      [523, 659, 880].forEach((f, i) => tone('triangle', f, f, t + i * 0.075, i === 2 ? 0.26 : 0.1, 0.12, { a: 0.006, echo: i === 2 ? 0.2 : 0 }));
     },
     // Apito do juiz: dois toques curtos e um longo; a bolinha de dentro faz o tom tremer e "rolar"
     // Gravação do Silvio (2026-11-11): um apito (saída e pênalti), dois no intervalo (curto e longo) e três no fim (curto, curto, longo),
