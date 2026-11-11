@@ -633,8 +633,8 @@
       e.t === 'chance' && e.sp ? spMiss(e) :
       e.t === 'chance' ? (e.k === 'defesa' ? esc(e.p) + (e.hd ? ' cabeceia ' : ' chuta ' + (HOW(e) ? HOW(e) + ' ' : '')) + 'e o goleiro defende' : e.k === 'fora' ? esc(e.p) + ' finaliza para fora' : e.k === 'trave' ? esc(e.p) + ' acerta a trave!' : 'Chute de ' + esc(e.p) + ' travado pela zaga') :
       e.t === 'vermelho' ? (e.how === '2am' ? '<span class="co-yc"></span> ' : '') + '<span class="co-red"></span> <b>' + esc(e.p) + ' é expulso</b> (' + esc(who) + ')' + (e.how === '2am' ? ', segundo amarelo' : e.how === 'direto' ? ', vermelho direto' : '') :
-      e.t === 'amarelo' ? '<span class="co-yc"></span> Amarelo para ' + esc(e.p) + ' (' + esc(who) + ')' :
-      e.t === 'falta' ? 'Falta de ' + esc(e.p) + ' (' + esc(who) + ')' + (e.m % 3 ? '' : ' perto da área') :
+      e.t === 'amarelo' ? (e.pk ? '<b>Pênalti!</b> ' : '') + '<span class="co-yc"></span> Amarelo para ' + esc(e.p) + ' (' + esc(who) + ')' :
+      e.t === 'falta' ? (e.pk ? '<b>Pênalti!</b> ' : '') + 'Falta de ' + esc(e.p) + ' (' + esc(who) + ')' + (e.pk ? ' na área' : e.m % 3 ? '' : ' perto da área') :
       e.t === 'impedimento' ? 'Impedimento: ' + esc(e.p) + ' saiu antes da hora (' + esc(who) + ')' :
       e.t === 'lesao' ? esc(e.p) + ' sente e pede para sair (' + esc(who) + ')' :
       e.t === 'tatica' ? (e.s === 'us' ? 'Você muda para ' + esc(e.p) : 'O ' + esc(who) + ' muda para <b>' + esc(e.p).toLowerCase() + '</b>') :
@@ -656,9 +656,9 @@
       e.t === 'chance' && e.sp === 'falta' ? (e.k === 'defesa' ? n + ' cobra a falta, o goleiro defende' : e.k === 'bloqueio' ? 'Falta de ' + n + ' na barreira' : e.k === 'trave' ? 'Falta de ' + n + ' na trave!' : 'Falta de ' + n + ' por cima') :
       e.t === 'chance' && e.sp ? (e.k === 'defesa' ? n + ' cabeceia, o goleiro defende' : e.k === 'bloqueio' ? 'Cabeçada de ' + n + ' travada' : n + ' cabeceia para fora') :
       e.t === 'chance' ? (e.k === 'defesa' ? n + ' chuta, o goleiro defende' : e.k === 'fora' ? n + ' chuta para fora' : e.k === 'trave' ? n + ' acerta a trave!' : 'Chute de ' + n + ' travado') :
-      e.t === 'vermelho' ? '<span class="co-red"></span> ' + n + ' é expulso' :
-      e.t === 'amarelo' ? '<span class="co-yc"></span> Amarelo para ' + n :
-      e.t === 'falta' ? 'Falta de ' + n :
+      e.t === 'vermelho' ? (e.pk ? '<b>Pênalti!</b> ' : '') + '<span class="co-red"></span> ' + n + ' é expulso' :
+      e.t === 'amarelo' ? (e.pk ? '<b>Pênalti!</b> ' : '') + '<span class="co-yc"></span> Amarelo para ' + n :
+      e.t === 'falta' ? (e.pk ? '<b>Pênalti!</b> Falta de ' + n + ' na área' : 'Falta de ' + n) :
       e.t === 'impedimento' ? 'Impedimento de ' + n :
       e.t === 'lesao' ? n + ' sente e pede para sair' :
       e.t === 'tatica' ? 'Muda para ' + (us ? n : n.toLowerCase()) :
@@ -803,9 +803,12 @@
     const spOf = e => { if (!e.sp) return null; const T = e.s === 'us' ? m.us : m.them, cr = e.sp === 'esc' || e.sp === 'fc', q = (T.squad || []).find(x => x.n === (cr ? e.by : e.p)), h = cr && (T.squad || []).find(x => x.n === e.p); return { sp: e.sp, num: q && q.num, hnum: h && h.num, l: e.l }; };
     const toSim = () => {
       if (!sim) return null;
-      const gl = [];
+      const gl = []; let pkW = null; // a falta do pênalti (`pk`) não vira outra parada no campinho: a linha dela sai com a cobrança
+      const pkShow = pk => { if (pk && hidden.delete(pk)) paint(); };
       m.ev.forEach(e => {
         if (sent.has(e)) return; sent.add(e);
+        if (e.pk) { hidden.add(e); pkW = e; setTimeout(() => pkShow(e), 60000); return; }
+        const pk = e.sp === 'pen' ? pkW : null; if (pk) pkW = null;
         // Juiz: o campinho apita e mostra o cartão; a linha sai depois (ou em 6 s, se o lance não couber)
         if (e.t === 'falta' || e.t === 'amarelo' || e.t === 'vermelho' || e.t === 'impedimento') {
           hidden.add(e);
@@ -818,16 +821,16 @@
         if (e.t !== 'gol' && e.t !== 'chance') return;
         const side = e.s === 'us' ? 0 : 1, out = e.t === 'gol' ? 'gol' : e.k === 'defesa' ? 'def' : e.k === 'trave' ? 'trave' : e.k === 'bloqueio' || e.k === 'travado' ? 'bloq' : 'fora'; // o campinho mostra o que o narrador conta (fase 5)
         hidden.add(e);
-        if (out === 'gol') return gl.push([side, e]);
-        const cancel = sim.shot(side, out, () => { if (hidden.delete(e)) paint(); }, spOf(e));
-        setTimeout(() => { if (hidden.delete(e)) { cancel(); paint(); } }, (co.speed === '3' ? 4000 : 12000) * (e.sp === 'pen' ? 3.6 : e.sp ? 2.4 : 1)); // a bola parada espera todo mundo se arrumar
+        if (out === 'gol') return gl.push([side, e, pk]);
+        const cancel = sim.shot(side, out, () => { pkShow(pk); if (hidden.delete(e)) paint(); }, spOf(e));
+        setTimeout(() => { pkShow(pk); if (hidden.delete(e)) { cancel(); paint(); } }, (co.speed === '3' ? 4000 : 12000) * (e.sp === 'pen' ? 3.6 : e.sp ? 2.4 : 1)); // a bola parada espera todo mundo se arrumar
       });
       if (!gl.length) return null;
       return go => {
         let n = gl.length;
-        gl.forEach(([side, e]) => {
+        gl.forEach(([side, e, pk]) => {
           let done = false, tm = 0, tf = 0;
-          const fin = () => { if (done) return; done = true; clearTimeout(tm); clearTimeout(tf); hidden.delete(e); if (--n > 0 || wait !== go) return; wait = null; paint(); sfx('tap'); go(); };
+          const fin = () => { if (done) return; done = true; clearTimeout(tm); clearTimeout(tf); hidden.delete(e); if (pk) hidden.delete(pk); if (--n > 0 || wait !== go) return; wait = null; paint(); sfx('tap'); go(); };
           const cancel = sim.shot(side, 'gol', fin, spOf(e));
           // em segundos do campinho (a 3× passam três vezes mais rápido)
           const f3 = co.speed === '3' ? 1 / 3 : 0.8;
