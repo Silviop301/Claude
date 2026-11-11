@@ -552,11 +552,18 @@
     const { H, A, crestB } = o;
     // A cor de cada time no campinho, do lado do escudo (Silvio, 10/11: "preto e branco contra preto e branco, não sei qual é qual")
     // faixa vertical com as duas cores, como no placar da TV (Silvio, 11/11: a camisinha era muita coisa)
+    // sigla de 3 letras como no placar da TV: a parte em maiúsculas do nome (CRB, ABC) ou a primeira palavra que conta
+    const tla = (c, alt) => { const n = String(c.short || c.name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''), w = n.split(/[\s\-.]+/).filter(Boolean),
+      sf = /-([A-Z]{2})$/.exec(n), up = w.find(x => /^[A-Z]{3,4}$/.test(x) && !/^(FC|EC|SC|CR|SE|AC|CF|CD|SV|FK|AFC)$/.test(x)), st = /^(fc|ec|sc|cr|se|ac|cf|cd|sv|fk|afc|clube|club|esporte|sport|sociedade|de|do|da|del|la|le|the|real)$/i;
+      if (sf && w.length > 1) return esc((w[0][0] + sf[1]).toUpperCase());
+      if (alt && w.length > 1) { const l = w[w.length - 1].replace(/[^A-Za-z]/g, ''); return esc((w[0][0] + l.slice(0, 2)).toUpperCase()); }
+      if (alt && w[0]) { const l = w[0].replace(/[^A-Za-z]/g, ''); return esc((l.slice(0, 2) + l.slice(-1)).toUpperCase()); }
+      return esc(((up || w.find(x => !st.test(x) && x.length > 2) || w[0] || '').replace(/[^A-Za-z]/g, '').slice(0, 3)).toUpperCase()); };
     const kit = k => { if (!k) return ''; const c2 = (k.pat && k.pat[1]) || k[1] || k[0], bg = 'linear-gradient(180deg,' + k[0] + ' 50%,' + c2 + ' 50%)';
       return '<b class="ldl-kit"><i style="background:' + bg + '"></i></b>'; };
     const kH = o.kits ? (o.m.home ? o.kits.mine : o.kits.opp) : null, kA = o.kits ? (o.m.home ? o.kits.opp : o.kits.mine) : null;
     return '<div class="lv ldl"><div class="ldl-p">' + o.pitchHtml +
-      '<div class="ldl-sb">' + crestB(H.id, 'ldl-cr') + kit(kH) + '<em id="lv-score">0 <i>x</i> 0</em>' + kit(kA) + crestB(A.id, 'ldl-cr') + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' +
+      '<div class="ldl-sb">' + kit(kH) + crestB(H.id, 'ldl-cr') + '<b class="ldl-tla">' + tla(H, tla(H) === tla(A)) + '</b><em id="lv-score">0 <i>x</i> 0</em><b class="ldl-tla">' + tla(A, tla(H) === tla(A)) + '</b>' + crestB(A.id, 'ldl-cr') + kit(kA) + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' +
         '<i class="lv-crd" id="lv-cd-h"></i><i class="lv-crd" id="lv-cd-a"></i></div></div>' +
       '<div class="ldl-side"><ul class="lv-feed ldl-ev" id="lv-feed">' + o.feed0 + '</ul>' +
         '<div class="ldl-qm"><small>QUEM MANDA</small><span>' + crestB(H.id, 'ldl-c16') + '<i' + (o.m.home ? '' : ' class="r"') + '><u id="ldl-momb"></u></i>' + crestB(A.id, 'ldl-c16') + '</span></div>' +
