@@ -771,7 +771,7 @@
     const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); if (U.profileCoGame) U.profileCoGame(co, m, log); save('hub'); result(m, log, false, firstMove); };
     const end = () => {
       clearTimeout(timer); hidden.clear(); paint(); open = true;
-      if (sim && sim.fin) { sim.fin(); sfx('whistle'); } // três apitos: os jogadores param onde estão
+      if (sim && sim.fin) { sim.fin(); sfx('whistleEnd'); } // três apitos (curto, curto, longo): os jogadores param onde estão
       if (sim) { clearTimeout(frz); frz = setTimeout(() => sim.freeze(true), 1500); }
       $('lv-sheet').innerHTML = '<div class="lv-sh"><i class="lv-grab"></i><div class="lv-st-h"><small>' + S.coClock(m) + ' · Fim de jogo</small><b>' + m.gh + ' x ' + m.ga + '</b></div>' +
         '<h2>' + (ourGoals() > theirGoals() ? 'Vitória' : ourGoals() < theirGoals() ? 'Derrota' : 'Empate') + '</h2><button class="btn" id="b-lv-end">Ver o resultado</button></div>';
@@ -830,7 +830,7 @@
       const go = () => {
         // o juiz espera a bola sair de perigo para apitar o intervalo e o fim (escanteio, chute ou cruzamento no ar), até 9 s
         const busy = () => { if (!sim || !sim.canStop || sim.canStop()) { stopW = 0; return false; } if (!stopW) stopW = Date.now(); if (Date.now() - stopW > (co.speed === '3' ? 7000 : 16000)) { stopW = 0; return false; } timer = setTimeout(go, 150); return true; };
-        if (sim && m.half && !h1) { if (busy()) return; h1 = true; sim.half(); }
+        if (sim && m.half && !h1) { if (busy()) return; h1 = true; sim.half(); sfx('whistleHalf'); } // intervalo: dois apitos (curto e longo)
         if (wantStop) { wantStop = false; $('b-lv-stop').classList.remove('on'); if (!m.done) return sheet(st && st.t !== 'fim' && st.t !== 'gol' ? st : { t: 'pausa' }); }
         if (st && st.t !== 'fim' && st.t !== 'gol') return sheet(st); // gol não para o jogo (Silvio, 2026-11-09): o placar e o painel contam
         if (m.done) { if (busy()) return; return end(); }
