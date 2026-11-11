@@ -405,33 +405,57 @@
   const PAPI = API.replace(/account\.php$/, 'pay.php');
   let payOn = null;
   const payStatus = () => payOn ? Promise.resolve(payOn) : post('status', {}, PAPI).then(r => (payOn = r), () => ({ on: false }));
-  const payCreate = pack => { const a = acc(); if (!a) return Promise.reject({ error: 'auth' }); return post('create', { token: a.token, pack }, PAPI); };
+  // Compra aberta neste aparelho (até 48 h): ao voltar para o jogo confere de novo se o pagamento entrou
+  const POPEN = 'climbix-pay-open';
+  const payOpen = () => { try { return Date.now() - (+localStorage.getItem(POPEN) || 0) < 172800000; } catch (e) { return false; } };
+  const payCreate = pack => { const a = acc(); if (!a) return Promise.reject({ error: 'auth' }); return post('create', { token: a.token, pack }, PAPI).then(r => { try { localStorage.setItem(POPEN, String(Date.now())); } catch (e) {} return r; }); };
+  let payLast = null;
   function payCheck() {
     const a = acc(); if (!a || !U.COINS) return Promise.resolve(0);
     return post('check', { token: a.token }, PAPI).then(r => {
       const list = (r && r.list) || [];
+      payLast = r;
       // Compra já entregue que sumiu do saldo (junção antiga de aparelhos): volta sem aviso de compra nova
       if (r && r.paid && U.COINS.fix && U.COINS.fix(r.paid)) { touch(KEYS.itens); if (!list.length && !G.c && U.home) U.home(); }
       if (!list.length) return 0;
       const n = U.COINS.add(list.map(x => ({ n: x.coins, t: 'Compra na loja', once: 'pay-' + x.ref })));
       touch(KEYS.itens);
+      if (!(r && r.wait)) try { localStorage.removeItem(POPEN); } catch (e) {}
       return post('claim', { token: a.token, refs: list.map(x => x.ref) }, PAPI).then(() => n, () => n);
     }, () => 0);
   }
-  function payThanks(n) {
+  function payToast(t, x, ms) {
+    document.querySelectorAll('.pay-ty.pg').forEach(e => e.remove());
+    const box = document.createElement('div'); box.className = 'pay-ty pg'; box.setAttribute('role', 'status');
+    box.innerHTML = '<b>' + t + '</b><span>' + x + '</span><button aria-label="Fechar">OK</button>';
+    document.body.appendChild(box); box.querySelector('button').onclick = () => box.remove(); setTimeout(() => box.remove(), ms || 9000);
+  }
+  // stay: a pessoa já está no jogo (voltou do pagamento sem recarregar): não leva para a home, só avisa a tela aberta
+  function payThanks(n, stay) {
     if (!n) return;
-    const box = document.createElement('div'); box.className = 'pay-ty'; box.setAttribute('role', 'status');
-    box.innerHTML = '<b>Obrigado pelo apoio!</b><span>Suas ' + n.toLocaleString('pt-BR') + ' moedas já estão na conta.</span><button aria-label="Fechar">OK</button>';
-    document.body.appendChild(box); box.querySelector('button').onclick = () => box.remove(); setTimeout(() => box.remove(), 9000);
+    payToast('Obrigado pelo apoio!', 'Suas ' + n.toLocaleString('pt-BR') + ' moedas já estão na conta.');
+    if (stay) { try { window.dispatchEvent(new Event('climbix-pay')); } catch (e) {} return; }
     if (!G.c && U.home) U.home();
   }
   function payBoot() {
     const m = /[?&]pago=([a-f0-9]{24})/.exec(location.search), fail = /[?&]falhou=1/.test(location.search);
     if (m) try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
-    if (!acc()) return;
-    if (fail) return;
+    // Voltou para o jogo com uma compra aberta (pagou no app do banco, fechou o pagamento, botão Voltar): confere de novo
+    let last = Date.now();
+    const back = () => { if (document.visibilityState !== 'visible' || !acc() || !payOpen() || Date.now() - last < 15000) return; last = Date.now(); payCheck().then(c => payThanks(c, true)); };
+    document.addEventListener('visibilitychange', back);
+    window.addEventListener('pageshow', e => { if (e.persisted) { last = 0; back(); } });
+    if (m && fail) payToast('A compra não foi concluída', 'Nada entrou na conta. Para tentar de novo, abra a Loja.');
+    // Voltou do pagamento num navegador sem a conta (no iPhone o app instalado e o Safari não dividem a conta)
+    if (!acc()) { if (m && !fail) payToast('Compra registrada', 'Abra o Climbix com a sua conta: as moedas entram sozinhas.'); return; }
     // O aviso do Mercado Pago pode chegar uns segundos depois da volta: tenta de novo algumas vezes
-    let n = 0; const go = () => payCheck().then(c => { if (c) return payThanks(c); if (m && ++n < 5) setTimeout(go, 4000); });
+    const poll = m && !fail;
+    let n = 0; const go = () => payCheck().then(c => {
+      if (c) return payThanks(c);
+      if (poll && ++n < 5) return setTimeout(go, 4000);
+      // Pix gerado e ainda não pago, cartão em análise: a compra fica esperando e entra sozinha
+      if (poll && !((payLast && payLast.paid) || []).some(x => x.ref === m[1])) payToast('Pagamento ainda não confirmado', 'As moedas entram sozinhas assim que ele for aprovado.', 12000);
+    });
     go();
   }
   window.CLIMBIX_CLOUD = { touch, sync };

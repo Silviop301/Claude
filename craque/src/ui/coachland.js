@@ -2153,9 +2153,14 @@
     { k: 'p3', n: 800, nm: 'Baú', pr: 'R$ 24,90', h: 3, tag: '+30%' }, { k: 'p4', n: 2000, nm: 'Cofre', pr: 'R$ 49,90', h: 4, tag: '+60%' }]; // etiqueta = moedas por real a mais que o Punhado, arredondado para baixo (10,8%, 30,8%, 63,7%)
   // Arte dos pacotes (ChatGPT, 2026-11-11): Punhado, Saco, Baú, Cofre
   const COIN_PILE = h => '<img class="lj-pi" src="' + CO_ART + 'mo-' + ['punhado', 'saco', 'bau', 'cofre'][h - 1] + '.webp" alt="">';
+  let ljN = 0;
   function loja(tab, back) {
     const c = C(), co = c && c.co && c.co.club ? c.co : null;
     let pk = 1, wk = 1, payOn = false, busy = false, hp = 0;
+    // Voltou do pagamento sem recarregar (app instalado, botão Voltar): o botão destrava e o saldo novo aparece
+    const me = ++ljN, wake = () => { if (me !== ljN || !document.querySelector('.lj')) return; busy = false; draw(); };
+    const fresh = () => { if (me !== ljN) return window.removeEventListener('climbix-pay', fresh); wake(); };
+    window.addEventListener('climbix-pay', fresh);
     const logged = !!(U.cloudStatus && U.cloudStatus());
     if (U.payStatus) U.payStatus().then(r => { if (r && r.on && !payOn) { payOn = true; if (tab === 0 && document.querySelector('.lj')) draw(); } });
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', FW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
@@ -2211,6 +2216,8 @@
           if (!logged) { if (c && c.co) c.save(); off(); return U.cloud ? U.cloud() : U.home(); }
           if (busy) return; busy = true; draw();
           if (c && c.co) c.save();
+          const un = () => { if (document.visibilityState !== 'visible') return; document.removeEventListener('visibilitychange', un); window.removeEventListener('pageshow', un); wake(); };
+          document.addEventListener('visibilitychange', un); window.addEventListener('pageshow', un);
           U.payCreate(PACKS[pk].k).then(r => { location.href = r.url; }, e => { busy = false; draw();
             pop('<div class="acd-help"><b>Não deu para abrir o pagamento</b><p>' + (e && e.error === 'auth' ? 'Entre de novo na sua conta e tente outra vez.' : 'Tente de novo daqui a pouco.') + '</p><button class="hl-btn dark" data-pop-x>Fechar</button></div>', 'Erro', null, 'hl-pop acd-pop tm-pop'); });
         };

@@ -9638,3 +9638,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 .ld-st:has(> #ld-pop) .up-ty { visibility: hidden; }
 /* Escudo branco (ex.: Haugesund) no cartão creme do fim da temporada: um contorno leve para não sumir */
 .fdt-cr { filter: drop-shadow(0 0 1px rgba(19, 32, 26, .65)); }
+/* Aviso do topo (compra, meta cumprida): a largura é a do texto, até a tela (com left 50% ele espremia o texto em meia tela) */
+.pay-ty { width: max-content; }
+/* Aviso da compra em tela estreita (voltou do pagamento com o celular em pé): quebra em duas linhas */
+@media (max-width: 560px) { .pay-ty { flex-wrap: wrap; width: calc(100vw - 32px); } .pay-ty b { white-space: normal; flex: 1 1 100%; } .pay-ty span { flex: 1; } }
