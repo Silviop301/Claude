@@ -11,8 +11,10 @@
   @font-face { font-family: 'Barlow'; font-weight: 700; font-display: swap; src: url('fonts/barlow-700-latin.woff2') format('woff2'); }
   @font-face { font-family: 'Barlow Condensed'; font-weight: 800; font-display: swap; src: url('fonts/barlow-condensed-800-latin.woff2') format('woff2'); }
   :root { --pitch: #0F3D2A; --paper: #FBF8EF; --text-2: #D3E4D9; --label: #8FD6AE; --gold: #F2C230; }
+  /* iPhone deitado aumentava a letra sozinho (2026-11-11) */
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   body { margin: 0; background: var(--pitch); color: var(--paper); font: 500 17px/1.55 'Barlow', system-ui, sans-serif; }
-  main { max-width: 680px; margin: 0 auto; padding: 24px 16px 48px; }
+  main { max-width: 680px; margin: 0 auto; padding: 24px max(16px, env(safe-area-inset-right)) 48px max(16px, env(safe-area-inset-left)); }
   h1 { font: 800 40px/1 'Barlow Condensed', 'Arial Narrow', sans-serif; margin: 8px 0 4px; }
   h2 { font: 800 24px/1.1 'Barlow Condensed', 'Arial Narrow', sans-serif; margin: 28px 0 6px; }
   p, li { color: var(--text-2); }
@@ -23,6 +25,7 @@
   .eyebrow { color: var(--label); font: 700 12px 'Barlow', sans-serif; letter-spacing: .16em; text-transform: uppercase; }
   .back { display: inline-block; text-decoration: none; color: #fff; background: rgba(255, 255, 255, .1); border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: 14px; }
   .upd { font-size: 14px; }
+  @media (max-height: 500px) and (orientation: landscape) { body { font-size: 15px; } main { padding-top: 14px; } h1 { font-size: 30px; } h2 { font-size: 21px; margin-top: 18px; } }
 </style>
 </head>
 <body>
@@ -57,7 +60,7 @@
       Devolvemos o valor inteiro pelo mesmo meio do pagamento e as moedas saem da conta.</li>
     <li>Se você pagou e as moedas não chegaram, ou foi cobrado duas vezes, nós entregamos as moedas ou devolvemos o valor,
       como você preferir.</li>
-    <li>Para pedir, escreva para <a href="mailto:silviop301@gmail.com">silviop301@gmail.com</a> com o seu usuário
+    <li>Para pedir, escreva para <a href="mailto:contato@climbix.app">contato@climbix.app</a> com o seu usuário
       e a data da compra.</li>
     <li>Moedas já usadas e compras com mais de 7 dias não são reembolsadas, a não ser nos casos em que a lei garante.</li>
   </ul>
@@ -87,7 +90,7 @@
   <p>Os dados que o jogo guarda e como pedir para apagá-los estão na <a href="privacidade.html">Política de privacidade</a>.</p>
 
   <h2>Contato</h2>
-  <p>Dúvidas ou pedidos: <a href="mailto:silviop301@gmail.com">silviop301@gmail.com</a>.
+  <p>Dúvidas ou pedidos: <a href="mailto:contato@climbix.app">contato@climbix.app</a>.
     Estes termos seguem as leis do Brasil e podem mudar; a data no alto da página mostra a última versão.</p>
 </main>
 </body>

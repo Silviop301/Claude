@@ -9701,3 +9701,20 @@ body:has(> .tc-ov) > .pay-ty { visibility: hidden; }
 .dk-sm.say .hl-dk-t { transform: translate(-50%, 0); }
 /* Ajustes com 6 linhas (Música no jogo ao vivo): linhas mais baixas para caber sem rolar */
 .aj-l.n6 { gap: 6px; } .aj-l.n6 .aj-sw, .aj-l.n6 .aj-lk { min-height: 44px; border-radius: 14px; } .aj-l.n6 .aj-sw b, .ld-st .aj-l.n6 button.aj-lk { font-size: 24px; }
+
+/* Termos e reembolso deitados (2026-11-11, U.termosLand em ui/settings.js): 7 abas curtas no cartão creme, sem rolar,
+   e o contato no painel carvão à direita. Abre pelo link da Loja no lugar da página termos.html */
+.trm { width: 100%; flex: 1; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 232px; grid-template-rows: 44px 44px minmax(0, 1fr); gap: 10px 12px; color: #F3F1EA; }
+.trm .tm-h { grid-column: 1 / -1; }
+.trm .tm-h .mk-tt b { font: 800 26px/1 var(--display); } .trm .tm-h .mk-tt small { font: 600 15px/1 var(--body); color: #B9C9BF; }
+.trm-tabs { grid-column: 1 / -1; height: 44px; padding: 4px; box-sizing: border-box; border-radius: 22px; background: rgba(0,0,0,.35); display: flex; gap: 4px; }
+.ld-st .trm-tabs button { flex: 1; height: 36px; border-radius: 18px; color: #D9E2DC; font: 800 18px/1 var(--display); }
+.ld-st .trm-tabs button.on { background: #F3F1EA; color: #13201A; }
+.trm-c { margin: 0; min-height: 0; box-sizing: border-box; border-radius: 18px; background: linear-gradient(180deg, #F6F3EA, #EAE3D1); color: #34443B; padding: 16px 22px 14px 40px; display: flex; flex-direction: column; justify-content: center; gap: 9px; overflow: hidden; }
+.trm-c li { font: 500 16px/1.3 var(--body); } .trm-c li::marker { color: #1F6B45; } .trm-c b { color: #13201A; font-weight: 700; }
+.trm-s { min-height: 0; box-sizing: border-box; border-radius: 18px; background: #141517; padding: 16px 16px 12px; display: flex; flex-direction: column; gap: 8px; }
+.trm-s > small { font: 700 13px/1 var(--display); letter-spacing: .16em; color: #8FD6AE; }
+.trm-s > p { margin: 0; font: 500 15px/1.3 var(--body); color: #B9C9BF; }
+.trm-s > b { font: 700 16px/1.2 var(--body); overflow-wrap: anywhere; user-select: all; -webkit-user-select: all; }
+.trm-bt { margin-top: auto; height: 46px; border-radius: 14px; background: #F3F1EA; color: #13201A; font: 800 20px/46px var(--display); text-align: center; text-decoration: none; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+.trm-lk { font: 700 14px/1 var(--body); color: #B9C9BF; text-align: center; text-decoration: underline; text-underline-offset: 3px; padding: 10px 0 6px; }

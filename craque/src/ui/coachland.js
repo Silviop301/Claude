@@ -2205,7 +2205,7 @@
         main = '<div class="lj-pk">' + PACKS.map((p, i) => '<button class="lj-p' + (i === pk ? ' on' : '') + '" data-pk="' + i + '">' + (p.tag ? '<em>' + p.tag + '</em>' : '') + COIN_PILE(p.h) +
           '<span><b>' + p.n.toLocaleString('pt-BR') + '</b><small>' + p.nm + '</small></span><i>' + p.pr + '</i></button>').join('') + '</div>';
         side = '<div class="lj-box"><small class="ld-lbl">GANHE JOGANDO</small>' + [['Título da Série A', 60], ['Acesso', 15], ['Meta cumprida', 5], ['Metas da semana', 10]].map(([t, n]) => '<div class="lj-li"><span>' + t + '</span><b>+' + n + '</b></div>').join('') + '</div>' +
-          '<small class="lj-ty">Sua compra ajuda a manter o Climbix. <a href="termos.html#reembolso" target="_blank" rel="noopener">Termos e reembolso</a></small>' +
+          '<small class="lj-ty">Sua compra ajuda a manter o Climbix. <a href="termos.html#reembolso" id="lj-trm">Termos e reembolso</a></small>' +
           (!payOn ? '<button class="tm-go off" id="lj-buy" disabled>Compra em breve</button>' : !logged ? '<button class="tm-go ec-in" id="lj-buy">Entrar para comprar</button>' :
             '<button class="tm-go" id="lj-buy">' + (busy ? 'Abrindo…' : 'Comprar · ' + PACKS[pk].pr) + '</button>');
       } else if (tab === 2) {
@@ -2243,6 +2243,8 @@
         st.querySelector('#lj-back').onclick = () => { sfx('tap'); back ? back() : U.home(); };
         st.querySelectorAll('[data-lj]').forEach(b => b.onclick = () => { sfx('tap'); tab = +b.dataset.lj; draw(); });
         st.querySelectorAll('[data-pk]').forEach(b => b.onclick = () => { sfx('tap'); pk = +b.dataset.pk; draw(); });
+        const trm = st.querySelector('#lj-trm');
+        if (trm && U.termosLand) trm.onclick = e => { e.preventDefault(); sfx('tap'); U.termosLand('Reembolso', draw); };
         const buy = st.querySelector('#lj-buy');
         if (buy && payOn) buy.onclick = () => {
           sfx('tap');
