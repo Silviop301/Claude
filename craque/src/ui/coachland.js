@@ -93,6 +93,7 @@
   // Caderno escondido (Silvio, 2026-11-09: a matriz não escala com mais formações; volta com outro formato). O motor
   // continua anotando em co.cad; CAD = true traz de volta a tela, o botão da semana e os blocos do resultado e da tática
   const CAD = false;
+  const plMil = (n, um, muitos) => U.D.plural(n, um, muitos).replace(/^(\d+)(\d{3}) /, '$1.$2 '); // "24.961 jogadores"
   const RAIL = [['inicio', 'Início'], ['semana', 'Semana'], ['time', 'Time']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([ ['tabela', 'Tabela'], ['mercado', 'Mercado'], ['clube', 'Clube'], ['celular', 'Celular', 1]]);
   const rail = act => '<nav class="ld-rail" aria-label="Menu do técnico">' + RAIL.map(([k, t, soon]) => soon
     ? '<span class="ld-ri soon">' + t + '<small>em breve</small></span>'
@@ -1318,7 +1319,7 @@
     show('<div class="mk">' + mkHead('mk-back', 'Mercado', esc(club(co.club).short || club(co.club).name), false, true) +
       '<div class="mk-tabs t3">' + tabs + '</div><div class="mk-fs">' + F.map(cell).join('') + '</div>' +
       '<div class="mk-side"><label class="mk-k mk-nm"><small>NOME</small><input id="mk-nm" type="text" autocomplete="off" placeholder="Toque para digitar" value="' + esc(m.nm || '') + '"></label>' +
-        '<div class="mk-k"><b id="mk-n" class="' + (ok ? 'ok' : '') + '">' + U.D.plural(n, 'jogador', 'jogadores') + '</b><span>o olheiro já viu todos uma vez</span></div>' +
+        '<div class="mk-k"><b id="mk-n" class="' + (ok ? 'ok' : '') + '">' + plMil(n, 'jogador', 'jogadores') + '</b><span>o olheiro já viu todos uma vez</span></div>' +
         '<span class="rs-gap"></span><button class="tm-go' + (ok ? '' : ' off') + '" id="mk-go">' + goTxt(n) + '</button></div></div>', st => {
       st.querySelector('#mk-back').onclick = () => { sfx('tap'); semana(); };
       mkCoins(st, mercado);
@@ -1327,7 +1328,7 @@
       st.querySelectorAll('[data-mf]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.mf, L = F[i].o.length; m.f[i] = ((m.f[i] || 0) + (+b.dataset.d) + L) % L; c.save(); mercado(); });
       const inp = st.querySelector('#mk-nm');
       inp.oninput = () => { m.nm = inp.value; const k = S.coMktSearch(co).length, good = k > 0 && k <= S.CO_MKT.max, nb = st.querySelector('#mk-n'), gb = st.querySelector('#mk-go');
-        nb.textContent = U.D.plural(k, 'jogador', 'jogadores'); nb.className = good ? 'ok' : ''; gb.textContent = goTxt(k); gb.classList.toggle('off', !good); };
+        nb.textContent = plMil(k, 'jogador', 'jogadores'); nb.className = good ? 'ok' : ''; gb.textContent = goTxt(k); gb.classList.toggle('off', !good); };
       inp.onkeydown = e => { if (e.key === 'Enter') { inp.blur(); st.querySelector('#mk-go').click(); } };
       st.querySelector('#mk-go').onclick = () => { const k = S.coMktSearch(co).length; if (!(k > 0 && k <= S.CO_MKT.max)) return; sfx('tap'); c.save(); mercadoRes(0, 0); };
     });
@@ -1432,7 +1433,7 @@
       (fichaAt ? fichaAttrs(co, p, n) : '<div class="mk-k mkf-cmp"><span class="mkf-t"><small>CONTRA O SEU ' + (S.CO_POS_NM[p.pos] || '').toUpperCase() + ' TITULAR</small>' + (b ? (n >= S.CO_MKT.reps ? '<span class="mkf-ovw"><i class="mkf-ov"><small>GERAL</small>' + p.ovr + '</i>' : '') + '<b class="' + word + '">' + word + '<small>' + CERT[n] + '</small></b>' + (n >= S.CO_MKT.reps ? '</span>' : '') : '<b class="nr">sem relatório</b>') + '</span>' +
         '<span class="mkf-sc"><i></i>' + band + '<em></em><strong>' + esc(st0 ? last(st0.n) : 'titular') + '</strong></span><span class="mkf-w"><span>pior</span><span>igual</span><span>melhor</span></span></div>' +
       '<div class="mkf-g"><div class="mk-k"><small>POTENCIAL</small><b>' + (pot ? pot[0] : 'Peça um relatório') + '</b>' + (pot ? '<span class="mkf-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= pot[1] ? 'on' : '') + '"></i>').join('') + '</span>' : '<span class="mkf-nr">o olheiro ainda não viu</span>') + '</div>' +
-        '<div class="mk-k"><small>JEITO DE JOGAR</small>' + (tr ? '<span class="mkf-tr">' + tr.good.map(t => '<span>' + t + '</span>').join('') + '</span><span class="mkf-nr">' + (n >= 3 ? 'Ponto fraco: ' + tr.bad : 'mais relatório mostra o ponto fraco') + '</span>' : '<b>?</b><span class="mkf-nr">o olheiro ainda não viu</span>') + '</div></div>') +
+        '<div class="mk-k"><small>JEITO DE JOGAR</small>' + (tr ? '<span class="mkf-tr">' + tr.good.map(t => '<span>' + t + '</span>').join('') + '</span><span class="mkf-nr">' + (n >= 3 ? 'Ponto fraco: ' + tr.bad : n === 2 ? 'Ponto fraco: falta 1 relatório' : 'Ponto fraco: faltam 2 relatórios') + '</span>' : '<b>?</b><span class="mkf-nr">o olheiro ainda não viu</span>') + '</div></div>') +
       '<div class="mk-side"><div class="mk-k mkf-li"><div><span>Preço</span><b>' + (p.club ? c.brl(S.coMktPrice(p)) : 'grátis') + '</b></div><div><span>Salário</span><b>' + c.brl(p.wage) + '/sem</b></div><div><span>Contrato</span><b>' + yr + '</b></div>' + rumRow + '</div>' +
         '<div class="mkf-act"><button class="mkf-rep' + (repOff ? ' done' : '') + '" id="mkf-rep"' + (repOff ? ' disabled' : '') + '>' + (n >= S.CO_MKT.reps ? 'Relatório completo' : (n ? 'Mais um relatório' : 'Pedir relatório') + '<small>' + (repNo ? 'sem caixa · ' : '') + c.brl(repC) + '</small>') + '</button>' +
           '<button class="mkf-star' + (obs ? ' on' : '') + '" id="mkf-star" aria-label="Observar" aria-pressed="' + obs + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button></div>' +
@@ -1578,7 +1579,7 @@
       const go = st.querySelector('#mkc-go:not(.off)');
       if (go && own) go.onclick = () => { sfx('tap'); const r = S.coMktRenew(co, p, t); c.save();
         if (r.k === 'signed') { sfx('win'); back(); return pop('<div class="mkx"><div class="mkx-h"><i class="mkx-fc">' + p.ovr + '</i><span><small>' + esc(p.n).toUpperCase() + '</small><b class="up">Renovado</b></span></div>' +
-          '<p>' + esc(last(p.n)) + ' assinou como ' + R[t.role].t.toLowerCase() + '.</p><div class="mkx-li"><div><span>Salário</span><b>' + c.brl(p.wage) + '/sem</b></div><div><span>Contrato</span><b>até ' + (U.YEAR0 + co.season + p.ct) + '</b></div></div>' +
+          '<p>' + esc(last(p.n)) + ' assinou ' + ['como titular', 'para o rodízio', 'como aposta'][t.role] + '.</p><div class="mkx-li"><div><span>Salário</span><b>' + c.brl(p.wage) + '/sem</b></div><div><span>Contrato</span><b>até ' + (U.YEAR0 + co.season + p.ct) + '</b></div></div>' +
           '<span class="rs-gap"></span><span class="mkx-b"><button class="hl-btn gold" id="mkx-1">Fechar</button></span></div>', 'Renovado', x => { x.querySelector('#mkx-1').onclick = () => { sfx('tap'); closePop(); }; }, 'hl-pop mkx-pop', true); }
         re({}); if (r.k === 'recusa' || r.k === 'no') recusou(id, back, t, r, true); };
       else if (go) go.onclick = () => { sfx('tap'); const r = S.coMktContract(co, p, t); c.save();
@@ -1888,7 +1889,7 @@
       const tk = st.querySelector('#ldn-take'); if (tk) tk.onclick = () => { if (S.coLoanTake(co, amt)) { sfx('tap'); c.save('hub'); banco(); } };
       const py = st.querySelector('#ldn-pay'); if (py) py.onclick = () => { if (S.coLoanPay(co)) { sfx('tap'); c.save('hub'); banco(); } };
       st.querySelectorAll('#ldn-bk, #ldn-back').forEach(b => b.onclick = () => { sfx('tap'); financas(); });
-      st.querySelector('#bk2-q').onclick = () => { sfx('tap'); pop('<div class="acd-help"><b>Se o caixa ficar no vermelho</b><ol class="bk2-ol">' + ST.map((t, k) => '<li' + (k + 1 === step ? ' class="on"' : '') + '>' + t + (k + 1 === step ? ' · <b>agora</b>' : '') + '</li>').join('') + '</ol><p>Parcela a cada 4 rodadas. Quitar antes não tem multa. Também dá para vender alguém quando o mercado chegar.</p><button class="hl-btn line" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop'); };
+      st.querySelector('#bk2-q').onclick = () => { sfx('tap'); pop('<div class="acd-help"><b>Se o caixa ficar no vermelho</b><ol class="bk2-ol">' + ST.map((t, k) => '<li' + (k + 1 === step ? ' class="on"' : '') + '>' + t + (k + 1 === step ? ' · <b>agora</b>' : '') + '</li>').join('') + '</ol><p>Parcela a cada 4 rodadas. Quitar antes não tem multa. Também dá para vender alguém no Mercado.</p><button class="hl-btn line" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop'); };
     });
   }
   // Aviso do que aconteceu no caixa (venda forçada, eleição) na volta para a semana
@@ -2052,7 +2053,7 @@
     const nums = [['Pontos em ' + n + ' jogos', v * 3 + e], ['Campanha', v + 'V ' + e + 'E ' + d + 'D'], ['Gols', gp + ' a ' + gc], ['Em casa', rec(log.filter(l => l.home))], ['Fora', rec(log.filter(l => !l.home))], ['Maior vitória', big && big.gf > big.ga ? big.gf + ' x ' + big.ga + ' ' + esc((club(big.vs).short || club(big.vs).name).slice(0, 3).toUpperCase()) : '—']];
     const exp = co.squad.filter(p => p.ct <= 0).length;
     const coinTxt = (out.coins || []).map(x => x.t.toLowerCase()).join(' · ');
-    const next = [out.coinsTot ? ['+' + out.coinsTot + ' moedas', coinTxt, 'coin'] : null, out.offers ? [out.sacked ? 'Clubes ligaram' : U.D.plural(out.offers.length, 'clube quer você', 'clubes querem você'), out.offers.slice(0, 2).map(id => esc(club(id).short || club(id).name)).join(' e ') + ' mandaram proposta'] : null,
+    const next = [out.coinsTot ? ['+' + out.coinsTot + ' moedas', coinTxt, 'coin'] : null, out.offers ? [out.sacked ? (out.offers.length > 1 ? 'Clubes ligaram' : 'Um clube ligou') : U.D.plural(out.offers.length, 'clube quer você', 'clubes querem você'), out.offers.slice(0, 2).map(id => esc(club(id).short || club(id).name)).join(' e ') + (out.offers.length > 1 ? ' mandaram proposta' : ' mandou proposta')] : null,
       !out.sacked ? [out.met ? 'Diretoria satisfeita' : 'Diretoria cobra', out.met ? 'o trabalho continua' : 'a próxima temporada começa sob pressão'] : null,
       out.kids && out.kids.length ? ['Base', 'subiram ' + out.kids.map(esc).join(', ')] : null,
       out.left && out.left.length ? ['Saíram', out.left.slice(0, 3).map(x => esc(x.n) + ' (' + x.why + ')').join(', ')] : null].filter(Boolean);
@@ -2116,8 +2117,8 @@
   // ---------- Loja (quadro 40, Silvio aprovou 2026-11-09): abas Moedas e Dinheiro do clube ----------
   // Moedas: 4 pacotes fixos, sem sorteio (a cobrança pelo Mercado Pago chega na fase 5; até lá o botão fica "em breve").
   // Dinheiro do clube: aporte do investidor em semanas da folha (S.coAporte), 12 moedas cada (piso R$ 500 mil, o teto sobe junto), só com uma carreira aberta.
-  const PACKS = [{ k: 'p1', n: 120, nm: 'Punhado', pr: 'R$ 4,90', h: 1 }, { k: 'p2', n: 350, nm: 'Saco', pr: 'R$ 12,90', h: 2 },
-    { k: 'p3', n: 800, nm: 'Baú', pr: 'R$ 24,90', h: 3, tag: '+20%' }, { k: 'p4', n: 2000, nm: 'Cofre', pr: 'R$ 49,90', h: 4, tag: '+50%' }];
+  const PACKS = [{ k: 'p1', n: 120, nm: 'Punhado', pr: 'R$ 4,90', h: 1 }, { k: 'p2', n: 350, nm: 'Saco', pr: 'R$ 12,90', h: 2, tag: '+10%' },
+    { k: 'p3', n: 800, nm: 'Baú', pr: 'R$ 24,90', h: 3, tag: '+30%' }, { k: 'p4', n: 2000, nm: 'Cofre', pr: 'R$ 49,90', h: 4, tag: '+60%' }]; // etiqueta = moedas por real a mais que o Punhado, arredondado para baixo (10,8%, 30,8%, 63,7%)
   // Arte dos pacotes (ChatGPT, 2026-11-11): Punhado, Saco, Baú, Cofre
   const COIN_PILE = h => '<img class="lj-pi" src="' + CO_ART + 'mo-' + ['punhado', 'saco', 'bau', 'cofre'][h - 1] + '.webp" alt="">';
   function loja(tab, back) {
