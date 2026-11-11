@@ -1268,7 +1268,7 @@
   // `coins` = id do botão das moedas (abre a loja; quem chama liga com mkCoins); sem ele a pílula é só informação.
   // Desenho do dinheiro no lugar da palavra CAIXA (Silvio, 2026-11-11): as notas do conjunto de ícones do jogo (assets/ic).
   // Em Finanças o mesmo desenho fica ao lado da palavra, para o jogador ligar um ao outro
-  const CX_IC = '<img class="mk-cxi" src="assets/ic/1f4b5.webp" alt="Caixa" draggable="false">';
+  const CX_IC = '<img class="mk-cxi" src="assets/co/mo-dinheiro.webp" alt="Caixa" draggable="false">';
   const cxPill = () => { const c = C(), cx = S.coFin(c.co).caixa || 0; return '<span class="mk-cx' + (cx < 0 ? ' neg' : '') + '" title="Caixa do clube">' + CX_IC + '<b>' + c.brl(cx) + '</b></span>'; };
   // Tocar no caixa abre Finanças e o Voltar devolve à tela de antes (Silvio, 11/11: "clicar no caixa deve abrir finanças")
   const cxBind = (st, me) => { const b = st.querySelector('.mk-cx'); if (!b || !me) return; b.classList.add('go'); b.setAttribute('role', 'button'); b.setAttribute('aria-label', 'Caixa do clube: abrir Finanças'); b.onclick = () => { sfx('tap'); FIN_BACK = me; financas(); }; };
