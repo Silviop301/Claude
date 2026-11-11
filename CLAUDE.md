@@ -27,7 +27,7 @@ Este arquivo é a fonte única de orientação. Leia-o antes de abrir código; e
 - Trabalho novo: branch de feature + PR **rascunho** com base `claude/gracious-darwin-9gdlfp`.
 - **Merge = produção.** `.github/workflows/deploy-climbix.yml` publica no Hostinger a cada push que
   mexe em `craque/**` no branch de deploy (ou `main`). Quem decide quando publicar é o Silvio.
-- Antes de publicar, ou ao adicionar/remover arquivo do jogo: `python3 tools/craque_sw.py`.
+- Antes de publicar, ou ao adicionar/remover arquivo do jogo: `python3 tools/craque_sw.py`. Ele também **para com erro se sobrou marca de conflito** (`<<<<<<<`, `=======`, `>>>>>>>`) no `index.html`, `style.css`, `src/**/*.js` ou `api/*.php`: em 11/11 três marcas foram para o ar no `style.css` e o navegador pulou a regra do placar novo. Depois de todo rebase ou merge, rode-o por último.
 
 ## Evolução contínua (ciclo autônomo)
 
