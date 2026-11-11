@@ -23,6 +23,8 @@
   U.coCreate = slot => create(slot);
   function resume(sv) {
     co = sv.co;
+    // Save de antes dos elencos reais de fora do Brasil: eles entram na próxima temporada (S.coRealOf)
+    if (co.rf === undefined) co.rf = co.club ? co.season + 1 : co.season;
     G.c = null; bar();
     S.applyLeagues(co);
     if (!co.club) return offers(co.offers || S.coOffers(co));
@@ -90,7 +92,7 @@
     if (U.LD && U.LD.on()) return U.LD.propostas(list, stay);
     const first = !co.hist.length && !co.club;
     const card = id => {
-      const cl = club(id), lg = league(id), g = S.coGoalFor(co, id), sq = S.coGenSquad(id, co.season), avg = Math.round(sq.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 11).reduce((a, p) => a + p.ovr, 0) / 11);
+      const cl = club(id), lg = league(id), g = S.coGoalFor(co, id), sq = S.coGenSquad(id, co.season, { rf: co.rf, season: co.season }), avg = Math.round(sq.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 11).reduce((a, p) => a + p.ovr, 0) / 11);
       const hard = g.k === 'naocair' || g.k === 'digna', top = ['titulo', 'subir', 'g4'].includes(g.k);
       return '<div class="of-card co-of" style="--of-c:' + (U.bandColor ? U.bandColor(id) : '#1F6B3E') + '">' +
         '<div class="of-band">' + crest(id, 'of-crest') + '<div class="of-id"><b class="of-name">' + esc(cl.name) + '</b><span class="of-lg">' + U.flag(lg.flag) + ' ' + esc(lg.name) + '</span></div></div>' +

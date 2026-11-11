@@ -67,14 +67,14 @@
   const rngOf = (co, tag) => S.rng(hash(co.club + '|' + co.season + '|' + tag + '|' + (co.seed || co.name || '')));
   // A folha que um elenco normal do clube teria (o elenco sorteado dele na temporada)
   // e o peso da divisão em que ele está (subir traz mais TV e público; cair, menos)
-  const normal = (clubId, season) => S.coGenSquad(clubId, season).reduce((a, p) => a + p.wage, 0);
+  const normal = (clubId, season, co) => S.coGenSquad(clubId, season, co && { rf: co.rf, season: co.season }).reduce((a, p) => a + p.wage, 0);
   // Peso da divisão: a liga em que o clube está hoje contra a liga de origem dele (subiu: mais TV e público)
   const lgAvg = ids => ids.reduce((a, id) => a + D.CLUB_BY_ID[id].strength, 0) / Math.max(1, ids.length);
   function lgMult(clubId) {
     const c = D.CLUB_BY_ID[clubId], cur = lgAvg(S._.fcLib.leagueTeams(c)), nat = lgAvg(D.CLUBS.filter(x => x.league === c.league).map(x => x.id));
     return clamp(Math.exp(0.5 * (cur - nat) / 8.5), 0.75, 1.5);
   }
-  const baseOf = co => normal(co.club, co.season) * lgMult(co.club);
+  const baseOf = co => normal(co.club, co.season, co) * lgMult(co.club);
   S.coFinBase = baseOf;
   S.coFolha = co => (co.squad || []).reduce((a, p) => a + (p.wage || 0), 0);
   const rounds = co => (co.ss ? co.ss.rounds.length : 38);

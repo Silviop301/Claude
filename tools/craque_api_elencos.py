@@ -62,12 +62,12 @@ def status():
     return r['subscription']['plan'], q['current'], q['limit_day']
 
 
-def clubs():
-    """Clubes do jogo nos países ligados: [id, nome, liga, força, país]."""
+def clubs(todos=False):
+    """Clubes do jogo nos países ligados (todos=True: de todos os países): [id, nome, liga, força, país]."""
     js = ("const D=require('./craque/src/data.js');console.log(JSON.stringify(D.CLUBS.map(c=>"
           "[c.id,c.name,c.league,c.strength,D.LEAGUE_BY_ID[c.league].country])))")
     out = subprocess.check_output(['node', '-e', js], cwd=ROOT)
-    return [c for c in json.loads(out) if c[4] in COUNTRY]
+    return [c for c in json.loads(out) if todos or c[4] in COUNTRY]
 
 
 def norm(s):
@@ -162,7 +162,9 @@ EDIR = os.path.join(ROOT, 'tools', 'espn')
 ESPN = 'https://site.api.espn.com/apis/site/v2/sports/soccer/'
 # Nome na ESPN que não bate sozinho com o do jogo
 ESPN_NAME = {'Vasco da Gama': 'Vasco', 'Athletic': 'Athletic-MG', 'Atlético Goianiense': 'Atlético-GO', 'Operário PR': 'Operário-PR',
-             'América Mineiro': 'América-MG'}
+             'América Mineiro': 'América-MG', 'Internazionale': 'Inter de Milão', 'FC Cologne': 'Köln', 'Hamburg SV': 'Hamburgo',
+             'Paris Saint-Germain': 'PSG', 'Stade Rennais': 'Rennes',
+             'Kasimpasa': 'Kasımpaşa', 'Erzurum BB': 'Erzurumspor', 'Amed SFK': 'Amedspor', 'Guadalajara': 'Chivas'}
 
 
 def espn_get(path):
@@ -171,18 +173,65 @@ def espn_get(path):
         return json.load(r)
 
 
+# Liga da ESPN -> liga do jogo (as de fora do Brasil entraram em 2026-11-11: antes só Série A e B tinham nomes reais)
+ESPN_LG = {'bra.1': 'bra-a', 'bra.2': 'bra-b', 'esp.1': 'esp', 'eng.1': 'ing', 'ita.1': 'ita', 'ger.1': 'ale', 'fra.1': 'fra',
+           'por.1': 'por', 'ned.1': 'ned', 'arg.1': 'arg', 'usa.1': 'usa', 'ksa.1': 'ara', 'tur.1': 'tur', 'mex.1': 'mex'}
+FORA = [k for k in ESPN_LG if not k.startswith('bra.')]
+STOP = {'fc', 'cf', 'ac', 'as', 'sc', 'afc', 'club', 'de', 'da', 'do', 'la', 'cd', 'sv', 'tsg', 'vfb', 'rc', '1', 'aj', 'sl', 'cp', 'and', 'hove', 'albion'}
+
+
+def toks(s):
+    return {w for w in norm(s).split() if w not in STOP}
+
+
+def match(nm, cands):
+    """Clube do jogo com o nome da ESPN: primeiro o nome igual, depois o que mais divide palavras (Atlético de Madrid,
+    Atlético Madrid; Bayern de Munique, Bayern Munich). Só nomes de clubes do jogo ainda sem par (cands: [id, nome])."""
+    n = norm(nm)
+    for cid, name in cands:
+        if norm(name) == n:
+            return cid
+    best, bs = None, 0
+    for cid, name in cands:
+        a, b = toks(nm), toks(name)
+        sc = len(a & b) + 0.5 * sum(1 for x in a for y in b if x != y and len(x) >= 4 and (x.startswith(y[:5]) or y.startswith(x[:5])))
+        if sc > bs:
+            best, bs = cid, sc
+    return best if bs >= 1 else None
+
+
 def cmd_espn(ligas):
-    byname = {norm(c[1]): c[0] for c in clubs()}
+    allc = clubs(True)
+    byname = {norm(c[1]): c[0] for c in allc}
     for lg in ligas:
         teams = espn_get(lg + '/teams')['sports'][0]['leagues'][0]['teams']
+        livres = [[c[0], c[1]] for c in allc if c[2] == ESPN_LG.get(lg)]
+        teams = [t['team'] for t in teams]
+        par = {}
+        # Primeiro os nomes iguais (Gimnasia La Plata não pode ir para o Gimnasia de Mendoza), depois os parecidos
+        for fuzzy in (False, True):
+            for t in teams:
+                nm = ESPN_NAME.get(t['displayName'], t['displayName'])
+                if t['id'] in par:
+                    continue
+                if lg.startswith('bra.'):
+                    cid = byname.get(norm(nm))
+                else:
+                    cid = match(nm, livres) if fuzzy else next((c[0] for c in livres if norm(c[1]) == norm(nm)), None)
+                if cid:
+                    par[t['id']] = cid
+                    livres = [c for c in livres if c[0] != cid]
+        for c in livres:
+            print('clube do jogo sem par na ESPN: %s' % c[1])
         for t in teams:
-            t = t['team']
             nm = ESPN_NAME.get(t['displayName'], t['displayName'])
-            cid = byname.get(norm(nm))
+            cid = par.get(t['id'])
             if not cid:
                 if 'TBD' not in nm:
                     print('sem clube no jogo: %s (%s)' % (t['displayName'], t['id']))
                 continue
+            if not lg.startswith('bra.') and norm(nm) != norm(dict((c[0], c[1]) for c in allc)[cid]):
+                print('  %s = %s' % (nm, dict((c[0], c[1]) for c in allc)[cid]))
             r = espn_get('%s/teams/%s/roster' % (lg, t['id']))
             pl = []
             for a in r.get('athletes', []):
@@ -217,7 +266,7 @@ def squads():
     faltas sofridas, altura, peso, defesas, gols sofridos] (titular/entrou -1 sem números)."""
     ids = load(os.path.join(DIR, 'ids.json'), {})
     data = {}
-    for cid, name, lg, st, c in clubs():
+    for cid, name, lg, st, c in clubs(True):
         e = load(os.path.join(EDIR, '%s.json' % cid))
         if e and len(e['players']) >= 16:
             data[cid] = (e['t'], [['e%s' % p['id'], short(p['name'] if len(p['name'] or '') <= 18 else p['short']), p['age'] or 25,
@@ -251,8 +300,16 @@ def cmd_gerar():
             if len(lat) >= want:
                 break
             r[3] = 'LAT'; lat.append(r)
+        # Arquivo leve (com 280 clubes passava de 500 KB): por posição, só quem pode entrar no elenco do jogo (coach.js
+        # CO.squad) e mais 3, pelos mais usados na temporada real e pelo número de titular
+        cap = {'GOL': 3, 'ZAG': 5, 'LAT': 4, 'MEI': 8, 'ATA': 5}
+        use = lambda r: (r[5] + 0.4 * r[6] if r[5] >= 0 else 0) + (3 if 1 <= r[4] <= 23 else 0)
+        keep = set()
+        for pos, n in cap.items():
+            keep |= {r[0] for r in sorted([r for r in rows if r[3] == pos], key=use, reverse=True)[:n + 3]}
+        rows = [r for r in rows if r[0] in keep]
         out[cid] = [r[:5] + (r[5:] if r[5] >= 0 else []) for r in rows]
-        tot += len(rows)
+        tot += len(out[cid])
     js = ('// Gerado por tools/craque_api_elencos.py (ESPN e API-Football, elenco atual de cada clube). Não edite à mão.\n'
           '// Por clube do jogo: [id com a fonte (e ESPN, a API-Football), nome, idade, posição, número, jogos como titular, entradas,\n'
           '// e da ESPN, para os atributos: gols, assistências, chutes, faltas sofridas, altura (pol), peso (lb), defesas, gols sofridos].\n'
@@ -276,7 +333,8 @@ def main():
         l = opt('--ligas', '')
         cmd_baixar(int(opt('--max', 80)), set(l.split(',')) if l else None, float(opt('--dias', 30)))
     elif a[0] == 'espn':
-        cmd_espn(opt('--ligas', 'bra.1,bra.2').split(','))
+        l = opt('--ligas', 'bra.1,bra.2')
+        cmd_espn(FORA if l == 'fora' else ESPN_LG.keys() if l == 'todas' else l.split(','))
     elif a[0] == 'gerar':
         cmd_gerar()
     else:
