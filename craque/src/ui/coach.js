@@ -3,6 +3,8 @@
 // Save próprio (SAVE_CO), separado das carreiras de jogador; G.c fica vazio (a barra do jogador não aparece).
 (function () {
   const U = window.CRAQUE_UI;
+  // Velocidade padrão dos jogos do Treinador, escolhida nos Ajustes ('1' ou '3'; neste aparelho)
+  U.coVel = v => { try { if (v) localStorage.setItem('climbix-co-vel', v); const x = localStorage.getItem('climbix-co-vel'); return x === '3' ? '3' : '1'; } catch (e) { return v === '3' ? '3' : '1'; } };
   const { D, S, sfx, $, esc, money, club, league, crest, load, store, render, bar, G, YEAR0 } = U;
   const SAVE_CO = U.SAVE_CO = 'climbix-treinador-v1';
   let co = null;
@@ -674,7 +676,7 @@
   function live(m) {
     U._coLiveM = m; // para as ferramentas de foto (cartões no Mexer no time)
     G.c = null; bar();
-    co.speed = '1'; // todo jogo começa no 1× (Silvio, 2026-11-09)
+    co.speed = U.coVel(); // todo jogo começa na velocidade dos Ajustes (Silvio, 10/11: o jogador escolhe 1× ou 3×; antes sempre 1×)
     const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
     let timer = null, seen = new Set(), read = null, open = false, firstMove = null;
     let retomado = m.ev.length > 0; // jogo retomado no meio: a primeira pintura repõe a narração do que já aconteceu, sem o som do gol antigo nem a placa de acréscimo
@@ -684,7 +686,7 @@
     const KT = useSim ? LP.kits(LP.kitFor(cl.name, cl.id), LP.kitFor(vs.name, vs.id), !!m.home) : null;
     const hidden = new Set(), sent = new Set(); // lances que o campinho ainda está jogando / já mandados para ele
     m.ev.forEach(e => sent.add(e)); // jogo retomado no meio: o que já aconteceu não volta a ser jogado no campinho
-    let sim = null, wait = null, wantStop = false, h1 = !!m.half, h2 = m.min > 45, frz = 0, lineKey = ['', ''], styKey = ['', ''];
+    let stopW = 0, sim = null, wait = null, wantStop = false, h1 = !!m.half, h2 = m.min > 45, frz = 0, lineKey = ['', ''], styKey = ['', ''];
     // Simulação livre (teste: ?livre=1 liga, ?livre=0 desliga): o gol nasce no campinho e o motor só anota (S.coMatchShot)
     const FREE = useSim && !!(U.simLivre && U.simLivre());
     // No livre o 3× dá ao campinho os mesmos segundos por minuto do 1× (o gol depende do que o campo joga): o jogo leva ~1,5 min
@@ -698,7 +700,7 @@
     const LDon = !!(U.LD && U.LD.on()); let ctx = null; // Treinador deitado: o mesmo jogo no palco de 844×390 (ui/coachland.js)
     const feed0 = LDon ? '<li><i>0\'</i><span>Bola rolando</span></li>' : '<li><i>0\'</i><span>Bola rolando. ' + esc(nm(co.club)) + ' no ' + m.us.form + ', ' + esc(S.CO_STY[m.us.style].name.toLowerCase()) + '; ' + esc(nm(m.vs)) + ' no ' + m.them.form + '.' + '</span></li>';
     const speedHtml = '<div class="lv-speed" id="lv-speed">' + ['1', '3'].map(k => '<button data-sp="' + k + '"' + (k === co.speed ? ' class="on"' : '') + '>' + SPEED[k][0] + '</button>').join('') + '<button data-sp="fim" aria-label="Pular para o fim">' + ICO.ff + '</button></div>';
-    if (LDon) U.LD.show(U.LD.liveHtml({ H, A, m, pitchHtml, feed0, speedHtml, crestB, pause: ICO.pause }));
+    if (LDon) U.LD.show(U.LD.liveHtml({ H, A, m, pitchHtml, feed0, speedHtml, crestB, pause: ICO.pause, kits: KT }));
     else render('<div class="lv">' +
       '<div class="lv-board"><div class="lv-sc"><span>' + crestB(H.id) + '<b>' + esc(H.short || H.name) + '</b><i class="lv-crd" id="lv-cd-h"></i></span>' +
         '<div class="lv-mid"><em id="lv-score">0 <i>x</i> 0</em><small id="lv-clock"><i></i>0\'</small></div><span>' + crestB(A.id) + '<b>' + esc(A.short || A.name) + '</b><i class="lv-crd" id="lv-cd-a"></i></span></div>' +
@@ -813,10 +815,12 @@
       const gw = toSim();
       paint();
       const go = () => {
-        if (sim && m.half && !h1) { h1 = true; sim.half(); }
+        // o juiz espera a bola sair de perigo para apitar o intervalo e o fim (escanteio, chute ou cruzamento no ar), até 9 s
+        const busy = () => { if (!sim || !sim.canStop || sim.canStop()) { stopW = 0; return false; } if (!stopW) stopW = Date.now(); if (Date.now() - stopW > 9000) { stopW = 0; return false; } timer = setTimeout(go, 150); return true; };
+        if (sim && m.half && !h1) { if (busy()) return; h1 = true; sim.half(); }
         if (wantStop) { wantStop = false; $('b-lv-stop').classList.remove('on'); if (!m.done) return sheet(st && st.t !== 'fim' && st.t !== 'gol' ? st : { t: 'pausa' }); }
         if (st && st.t !== 'fim' && st.t !== 'gol') return sheet(st); // gol não para o jogo (Silvio, 2026-11-09): o placar e o painel contam
-        if (m.done) return end();
+        if (m.done) { if (busy()) return; return end(); }
         timer = setTimeout(tick, spMs(co.speed));
       };
       if (gw) { wait = go; return gw(go); }

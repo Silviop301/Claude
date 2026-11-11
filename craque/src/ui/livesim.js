@@ -45,10 +45,12 @@
   LP.kits = function (mine, opp, home) {
     const H = (home ? mine : opp) || ['#F4F1E8', '#1D1D1F'], A = (home ? opp : mine) || ['#1F4FA8', '#FFFFFF'];
     const hk = [H[0], H[1]]; hk.pat = H.pat; // o mandante sempre de titular, com o desenho dela
-    const far = c => cdist(c, hk[0]) > NEAR;
-    let ak = far(A[0]) ? [A[0], A[1]] : A[2] && far(A[2]) ? [A[2], A[3] || A[0]] : null;
+    // Cores que aparecem na camisa do mandante: a base e a do desenho (listras, aros...). Preto e branco contra preto e branco
+    // confundia (Silvio, 10/11): o visitante só vai de titular se a base e o desenho dele ficam longe de todas elas
+    const hc = [hk[0]].concat(hk.pat && hk.pat[1] ? [hk.pat[1]] : []), far = (c, pc) => [c].concat(pc ? [pc] : []).every(x => hc.every(h => cdist(x, h) > NEAR));
+    let ak = far(A[0], A.pat && A.pat[1]) ? [A[0], A[1]] : A[2] && far(A[2]) ? [A[2], A[3] || A[0]] : null;
     if (ak && ak[0] === A[0]) ak.pat = A.pat; // o reserva é liso
-    if (!ak) { const c = PAL.slice().sort((a, b) => cdist(b, hk[0]) - cdist(a, hk[0]))[0]; ak = [c, lum(c) > 0.5 ? '#1D1D1F' : '#F4F1E8']; }
+    if (!ak) { const md = c => Math.min(...hc.map(h => cdist(c, h))), c = PAL.slice().sort((a, b) => md(b) - md(a))[0]; ak = [c, lum(c) > 0.5 ? '#1D1D1F' : '#F4F1E8']; }
     const gk = GKS.filter(c => cdist(c, hk[0]) > NEAR && cdist(c, ak[0]) > NEAR && cdist(c, PITCH) > 120);
     const out = home ? [hk, ak] : [ak, hk];
     return { mine: out[0], opp: out[1], gk: [gk[0] || '#FF8A1F', gk[1] || gk[0] || '#9B5DE5'] };
@@ -139,6 +141,8 @@
     // k: chute, fora, drible, conduz, perde, passe, erra, impedido (com a bola) · desarme, corte, driblado, falta, defesa,
     // oppfora, pega, saimal, rebate (eles atacam perto de você) · none
     let lc = null, stopWhy = '';
+    // Texto grande animado no campo (Silvio, 10/11: "no gol um indicativo de texto animado, assim como na marcação de pênalti"): { txt, s, t0, d } em relógio de verdade
+    let big = null; const bigSay = (txt, s, d) => { if (!o.noBig) big = { txt, s, t0: Date.now(), d: d || 2 }; };
     const DEF = { desarme: 1, corte: 1, driblado: 1, falta: 1, defesa: 1, oppfora: 1, pega: 1, saimal: 1, rebate: 1 };
     function lcDone() { const f = lc && lc.cb; lc = null; if (f) f(); }
     const acc = { x: 0, n: 0 }, pt = [0, 0]; // quem mandou no minuto (média) e tempo de posse de cada time
@@ -152,7 +156,7 @@
       return [ml, dl, f.length ? avg(f) : ml - 12]; // [meio, zaga, ataque deles]
     }
     // Quem joga no bolso (entrelinhas) de cada time: o meia de dentro mais adiantado (o 10, ou o 8 do lado da bola)
-    const POCK = [null, null]; let pockT = 0;
+    const POCK = [null, null]; let cmT = 1.5; const CHEG = {}; let pockT = 0;
     function pickPocket(s) {
       const by = tf(s, ball)[1];
       POCK[s] = T[s].filter(q => q.r !== 'GK' && !isFB(q) && !isWide(q) && lineOfRole(q) === 1 && q.d >= 0.45 && !(q.d < 0.5 && Math.abs(q.w - 34) < 3))
@@ -368,6 +372,17 @@
         p.tx = wx; p.ty = wy;
       });
     }
+    // Bola no espaço (Silvio, 10/11: "a bola cai perto do zagueiro, meu jogador chega antes e o zagueiro fica parado"): o passe em
+    // profundidade procura, perto de onde quem recebe vai chegar, o ponto mais longe dos defensores (quadro de quem ataca)
+    function spaceAt(s, q, x, y) {
+      const [qx, qy] = tf(s, q); let best = [x, y], bu = -1e9;
+      for (const dx of [0, -3, 3]) for (const dy of [0, -4, 4, -7, 7]) {
+        const cx = cl(x + dx, 2, 97), cy = cl(y + dy, 3, 65); let od = 99;
+        for (const op of T[1 - s]) { if (op.r === 'GK') continue; const [ox, oy] = tf(s, op); od = Math.min(od, Math.hypot(ox - cx, oy - cy)); }
+        const rd = Math.hypot(qx - cx, qy - cy), u = Math.min(od, 9) - Math.max(0, rd - od + 1) * 1.5 - (Math.abs(dx) + Math.abs(dy)) * 0.12;
+        if (u > bu) { bu = u; best = [cx, cy]; } }
+      return best;
+    }
     function passOdds(s, tx, ty, lofted, q, turn, firm) {
       const [wx, wy] = toW(s, tx, ty), d = Math.hypot(wx - ball.x, wy - ball.y), spd = lofted ? 23 : firm ? 26 : 21;
       let pI = 0, cut = null;
@@ -544,7 +559,7 @@
         // Cruzamento: a bola no lado, perto da área, e alguém chegando na área (correndo ou já lá)
         const inB = (x, y) => x > 76 && Math.abs(y - 34) < 16, cx = q.run > 0 ? q.runX : qx, cy = q.run > 0 ? q.runY : qy;
         if (bx > 66 && Math.abs(by - 34) > 11 && q.r !== 'GK' && inB(cx, cy)) { kind = 'cruz'; lofted = true; tx = cl(cx + 3, 86, 99); ty = cl(cy + (34 - cy) * 0.3, 26, 42); }
-        else if (q.run > 0.7) { kind = 'costas'; tx = q.runX; ty = q.runY; lofted = d0 > 24; }
+        else if (q.run > 0.7) { kind = 'costas'; [tx, ty] = spaceAt(s, q, q.runX, q.runY); lofted = d0 > 24; }
         else if (Math.abs(ty - by) > 26 && d0 > 28) { kind = 'inv'; lofted = true; }
         else if (d0 > 32) { kind = 'longo'; lofted = true; }
         tx = cl(tx, 2, 103); ty = cl(ty, 2, 66);
@@ -557,7 +572,7 @@
         let lead = 0, od = null;
         if (LIVRE > 0 && nd > 4 && qx > bx + 4 && qx < 90 && (kind === 'curto' || kind === 'longo') && !lc) {
           let sp = 16; for (const op of opp) { if (op.r === 'GK') continue; const [ox, oy] = tf(s, op); if (ox > qx + 1 && Math.abs(oy - qy) < 6) sp = Math.min(sp, ox - qx); }
-          if (sp > LIVRE_L) { const ld = cl(sp * LIVRE_LK, 3, 8), lx = Math.min(qx + ld, 97), ly = cl(qy + (34 - qy) * 0.1, 3, 65), lk = ld > 5 ? 'costas' : kind, lf = lk === 'costas' ? d0 > 26 : lofted, o2 = passOdds(s, lx, ly, lf, q, false, false);
+          if (sp > LIVRE_L) { const ld = cl(sp * LIVRE_LK, 3, 8), [lx, ly] = spaceAt(s, q, Math.min(qx + ld, 97), cl(qy + (34 - qy) * 0.1, 3, 65)), lk = ld > 5 ? 'costas' : kind, lf = lk === 'costas' ? d0 > 26 : lofted, o2 = passOdds(s, lx, ly, lf, q, false, false);
             if (o2.p > LIVRE_LP) { lead = ld; tx = lx; ty = ly; kind = lk; lofted = lf; od = o2; } } // só com o passe bem claro; senão vai no pé
         }
         if (!od) od = passOdds(s, tx, ty, lofted, q, kind === 'costas', ent);
@@ -675,8 +690,18 @@
       outCd = 3.5;
     }
     // Saiu: lateral (linha lateral) ou linha de fundo (escanteio se quem defende tocou por último, senão tiro de meta)
+    // Bola fora (Silvio, 10/11: "a bola que sai não deve bater na parede invisível; sai da visão e outra vem da lateral"): a que
+    // saiu segue rolando para fora do campo (ghost, só desenho) e a cobrança usa a bola reserva mais perto, das que ficam em
+    // volta do campo (RACK: nas laterais e duas atrás de cada gol, uma de cada lado da trave); a usada volta uns segundos depois
+    const RACK = [[17, -1.5], [35, -1.5], [52.5, -1.5], [70, -1.5], [88, -1.5], [17, WD + 1.5], [35, WD + 1.5], [70, WD + 1.5], [88, WD + 1.5], [-1.5, 27], [-1.5, 41], [L + 1.5, 27], [L + 1.5, 41]].map(([x, y]) => ({ x, y, h: 0 }));
+    const BV = { px: 52.5, py: 34, vx: 0, vy: 0 }; let ghost = null, escClk = -9;
+    function outBall(x, y) {
+      ghost = { x: ball.x, y: ball.y, vx: BV.vx, vy: BV.vy, t: 0 };
+      const r = RACK.filter(q => q.h <= clk).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0];
+      if (r) { ball.x = r.x; ball.y = r.y; r.h = clk + 12; }
+    }
     function ballOut(last, x, y) {
-      ball.owner = ball.fly = ball.loose = ball.carry = null;
+      ball.owner = ball.fly = ball.loose = ball.carry = null; outBall(x, y);
       if (y < 0 || y > WD) return restart('lat', 1 - last, cl(x, 1, L - 1), y < 0 ? 0 : WD);
       const dS = x > L / 2 ? 1 : 0; // lado 1 defende o gol da direita
       if (last === dS) return restart('esc', 1 - dS, x > L / 2 ? L : 0, y < WD / 2 ? 0 : WD);
@@ -747,7 +772,7 @@
         if (r < 0.3 && atkIn.length) { const h = atkIn[Math.floor(rnd() * atkIn.length)]; fly(q, h.x, h.y, h, true, 'cruz', false); }
         else if (r < 0.75 && dfIn.length) { const h = dfIn[Math.floor(rnd() * dfIn.length)]; fly(q, h.x, h.y, h, true, 'cruz', true); }
         else { const [wx, wy] = toW(s, 100, 34 + rnd() * 6 - 3); fly(q, wx, wy, gk, true, 'cruz', true); }
-        emit('escanteio', s, q);
+        emit('escanteio', s, q); escClk = clk;
       }
     }
     // Chute (fase 5): só é gol o que o motor mandou; o resto bate com o que o narrador conta. out: gol | def (o goleiro defende:
@@ -839,7 +864,7 @@
       // Sobra: a bola vai para (rx, ry) e fica com quem chegar primeiro (um atacante perto bate de novo: o 2º chute do rebote)
       const spill = (from, rx, ry, k) => { rx = cl(rx, 1, L - 1); ry = cl(ry, 2, WD - 2); let q = null, qd = 1e9; for (const z of ALL) { if (z.r === 'GK' || z.down || z === f.blk) continue; const dd = Math.hypot(z.x - rx, z.y - ry) * (z.side === s ? 1.15 : 1); if (dd < qd) { qd = dd; q = z; } }
         if (!q) return setOwner(gk); if (q.side === s && rnd() < 0.7 && !lc) q.reb = 1.6; fly(from, rx, ry, q, k === 'soco', k, true); ball.fly.from = from; };
-      if (f.out === 'gol') { net = { gx, y: f.y1, t: 0, v: Math.hypot(f.x1 - f.x0, f.y1 - f.y0) / f.dur }; mode = 'goal'; modeT = 2; koSide = 1 - s; hero = f.from; back = 0; if (due) { const e = due; due.done = true; due = null; if (o.onGoal) o.onGoal(e.m); if (e.cb) e.cb(); } }
+      if (f.out === 'gol') { net = { gx, y: f.y1, t: 0, v: Math.hypot(f.x1 - f.x0, f.y1 - f.y0) / f.dur }; mode = 'goal'; modeT = 2; koSide = 1 - s; hero = f.from; back = 0; bigSay('GOL!', f.from.side, 2.1); if (due) { const e = due; due.done = true; due = null; if (o.onGoal) o.onGoal(e.m); if (e.cb) e.cb(); } }
       else if (f.out === 'def' && f.lc && lc && lc.k === 'rebate') { const q = T[s].filter(x => x.r !== 'GK').sort((a, b) => dist(a, gk) - dist(b, gk))[0]; setOwner(q); }
       else if (f.out === 'def' && f.sv === 'escanteio' && !lc) { flyOut(gk, s ? -2.5 : L + 2.5, 34 + (ball.y < 34 ? -1 : 1) * (5 + rnd() * 6), true, 'espalma'); }
       else if (f.out === 'def' && f.sv === 'espalma' && !lc) { why = 'rebote'; spill(gk, gx + dg * (6 + rnd() * 5), ball.y + (ball.y < 34 ? -1 : 1) * (3 + rnd() * 7), 'rebote'); }
@@ -849,7 +874,7 @@
         if (rnd() < 0.5 && outCd <= 0) { outCd = 2; flyOut(b, s ? -2.5 : L + 2.5, (ball.y < 34 ? GL - 4 - rnd() * 10 : GR + 4 + rnd() * 10), false, 'travado'); }
         else spill(b, ball.x - dg * (5 + rnd() * 8), ball.y + gauss() * 9, 'travado'); }
       else if (f.out === 'trave' || f.out === 'bloq') { why = 'defesa'; setOwner(gk); }
-      else { mode = 'tiro'; modeT = 1.6; poss = 1 - s; }
+      else { mode = 'tiro'; modeT = 1.6; poss = 1 - s; outBall(gx, f.y1); }
       if (f.lc && lc) lcDone();
     }
     // Seu lance com a bola: faz o que a narração vai contar
@@ -894,7 +919,7 @@
         const [qx, qy] = tf(s, q); let bi = -1, bd = 1e9; free.forEach((f, i) => { const d = Math.hypot(f[0] - qx, f[1] - qy); if (d < bd) { bd = d; bi = i; } });
         if (bi >= 0) { tg.set(q, toW(s, free[bi][0], free[bi][1] + gauss() * 0.3)); free.splice(bi, 1); } });
       pen = { e, s, tk, gk, spot: { x: spot[0], y: spot[1] }, tg, ph: 0, t: 0 };
-      due = null; mode = 'pen'; stopWhy = 'Pênalti'; camT = 1e9; camS = s; ALL.forEach(q => { q.run = 0; q.go = 0; q.th = 0; });
+      due = null; mode = 'pen'; stopWhy = 'Pênalti'; bigSay('PÊNALTI!', s, 1.7); camT = 1e9; camS = s; ALL.forEach(q => { q.run = 0; q.go = 0; q.th = 0; });
       ball.owner = ball.fly = ball.carry = null; if (ball.loose) ball.loose = null;
     }
     function penStep(dt) {
@@ -1339,6 +1364,26 @@
           if (dist(r, owner) < 45 && rnd() < 0.65) ball.hold = Math.min(ball.hold, 0.3 + rnd() * 0.25);
         }
       }
+      // Chegada do meia (Silvio, 10/11: "os meias não correm entre os espaços e voltam só para receber passe"): com a bola do
+      // meio para a frente, de tempos em tempos um meia que está atrás da bola parte em diagonal para o buraco entre os
+      // marcadores deles, mais adiante e sem passar da linha (fica em condição); quem tem a bola pode achar ele na corrida
+      cmT -= dt;
+      if (cmT <= 0 && owner && owner.side === s && owner.r !== 'GK' && !lc) {
+        cmT = 0.9 + rnd() * 1.1;
+        const [obx] = tf(s, ball);
+        if (obx > 38 && obx < 88 && !(DA && DA.side === s && (DA.play === 'drible' || DA.play === 'longe'))) {
+          const c = T[s].filter(q => q !== owner && q.r !== 'GK' && !isFB(q) && q.d >= 0.3 && q.d <= 0.72 && q.run <= 0 && q.go <= 0 && q.stun <= 0 && tf(s, q)[0] < obx + 3 && tf(s, q)[0] > obx - 24);
+          if (c.length && rnd() < (0.5 + 0.3 * (1 - patOf(s))) * (1 - 0.6 * patOf(s))) {
+            const r = c.sort((a, b) => (a.r === 'DM') - (b.r === 'DM') || dist(a, ball) - dist(b, ball))[rnd() < 0.7 ? 0 : c.length - 1], [rx, ry] = tf(s, r);
+            const tx = Math.min(line - 1.2, 92, Math.max(rx + 10, obx + 6 + rnd() * 8));
+            if (tx > rx + 5) {
+              const ys = [2].concat(T[1 - s].filter(q => q.r !== 'GK' && Math.abs(tf(s, q)[0] - tx) < 10).map(q => tf(s, q)[1]).sort((a, b) => a - b), [66]);
+              let gy = ry, gd = 1e9; for (let k = 1; k < ys.length; k++) if (ys[k] - ys[k - 1] > 8) { const m = (ys[k] + ys[k - 1]) / 2, d = Math.abs(m - ry) + Math.abs(m - 34) * 0.3; if (d < gd) { gd = d; gy = m; } }
+              r.run = 1.3 + rnd() * 0.5; r.runX = tx; r.runY = cl(gy + gauss() * 2, 6, 62); CHEG.n = (CHEG.n || 0) + 1;
+            }
+          }
+        }
+      }
       // Desmarque: marcado de perto, dá um pique curto para longe do marcador (para o lado da bola, ou nas costas se é
       // atacante e tem buraco); quem está com a bola pressionado ganha um companheiro que vem dar o apoio no ângulo livre
       if (owner && owner.side === s) {
@@ -1465,6 +1510,8 @@
     function step(dt) { mT += dt; step1(dt); if (back && mode === 'ko') { step1(dt); step1(dt); } }
     function step1(dt) {
       clk += dt;
+      BV.vx = (ball.x - BV.px) / dt; BV.vy = (ball.y - BV.py) / dt; BV.px = ball.x; BV.py = ball.y;
+      if (ghost) { const sp = Math.hypot(ghost.vx, ghost.vy), k = sp > 0.01 ? Math.max(0, sp - 5 * dt) / sp : 0; ghost.vx *= k; ghost.vy *= k; ghost.x += ghost.vx * dt; ghost.y += ghost.vy * dt; if ((ghost.t += dt) > 2.2) ghost = null; }
       { const f = ball.fly, tg = mode === 'play' && f && !f.shot && !f.out ? { x: f.x1, y: f.y1 } : ball, k = mode === 'play' ? 1 - Math.exp(-dt / SBT) : 1; SB.x += (tg.x - SB.x) * k; SB.y += (tg.y - SB.y) * k; }
       if (ckW && (ckW.e.done ? (ckW = null, 0) : clk - ckW.t > 6)) { const e = ckW.e; ckW = null; e.done = true; if (e.cb) e.cb(); }
       if (refFx && (refFx.t -= dt) <= 0) refFx = null;
@@ -1486,7 +1533,12 @@
         q.p.y += cl(q.ty - q.p.y, -3.6 * dt, 3.6 * dt); if (q.t > 6 || q.p.y < -0.5 || q.p.y > WD + 0.5) leaving.splice(i, 1); }
       if (Q4.t > 0) Q4.t -= dt;
       if (subQ && subQ.ph === 'wait') { subQ.t += dt; const busy = subQ.items.some(it => ball.owner === it.p || (rs && rs.taker === it.p) || foulTo === it.p || (ball.fly && ball.fly.to === it.p) || (ball.loose && ball.loose.to === it.p));
-        if ((mode === 'rein' || mode === 'tiro' || mode === 'falta' || mode === 'ko') && !busy || (subQ.t > 15 && mode === 'play' && !busy && !due && !lc)) subStart(); }
+        if ((mode === 'rein' || mode === 'tiro' || mode === 'falta' || mode === 'ko') && !busy) subStart();
+        // Troca só com a bola parada (Silvio, 10/11: "parou para uma substituição sem nenhuma parada aparente"): passados 12 s sem
+        // parada, o time que vai trocar, com a bola no seu campo ou no meio, chuta para a lateral; aos 35 s o juiz para o jogo
+        else if (mode === 'play' && !due && !lc && !pen) { const ow = ball.owner;
+          if (subQ.t > 12 && ow && ow.side === subQ.s && ow.r !== 'GK' && !busy && tf(ow.side, ow)[0] < 65 && outCd <= 0) { outCd = 3; flyOut(ow, ow.x + (ow.side ? -6 : 6), ow.y < WD / 2 ? -3 : WD + 3, false, 'fora'); }
+          else if (subQ.t > 35 && ow && !busy) whistle('Substituição', ow, { x: ball.x, y: ball.y }); } }
       ALL.forEach(p => { if (p.down) p.down = Math.max(0, p.down - dt); });
       offStepRef(dt); if (outCd > 0) outCd -= dt;
       if (mode === 'wait') { ALL.forEach(p => { [p.tx, p.ty] = koShape(p, p.side); }); ball.x = 52.5; ball.y = 34; }
@@ -1859,6 +1911,10 @@
       if (!vig || vig.w !== W || vig.h !== H) { vig = g.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, Math.hypot(W, H) * 0.56); vig.addColorStop(0, 'rgba(255,255,240,.05)'); vig.addColorStop(1, 'rgba(0,0,0,.26)'); vig.w = W; vig.h = H; }
       if (cam.z > 1.003) { g.save(); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.fillStyle = vig; g.fillRect(0, 0, W, H); g.restore(); } else { g.fillStyle = vig; g.fillRect(0, 0, W, H); }
       lines();
+      { const k1 = Math.max(cl(W / 380, 0.85, 1.45) * DOTK, 0.75), rr = 3.6 * k1; // bolas reservas em volta do campo (e a que saiu, indo embora)
+        g.fillStyle = 'rgba(255,255,255,.75)'; g.strokeStyle = 'rgba(19,32,26,.8)'; g.lineWidth = 1.1 * k1;
+        RACK.forEach(q => { if (q.h > clk) return; g.beginPath(); g.arc(X(q.x), Y(q.y), rr, 0, Math.PI * 2); g.fill(); g.stroke(); });
+        if (ghost) { g.globalAlpha = Math.max(0, Math.min(1, (2.2 - ghost.t) * 1.5)); g.fillStyle = '#fff'; g.beginPath(); g.arc(X(ghost.x), Y(ghost.y), 5.7 * k1, 0, Math.PI * 2); g.fill(); g.stroke(); g.globalAlpha = 1; } }
       // Spray do juiz: a linha da barreira (some pouco depois da cobrança)
       if (spray && spray.s) { if (spray.end && clk > spray.end) spray = null; else { const u = Math.min(1, (clk - spray.s) / 0.5), a = spray.a, b = spray.b, ex = a[0] + (b[0] - a[0]), ey = a[1] + (b[1] - a[1]), dx = (b[0] - a[0]), dy = (b[1] - a[1]), dl = Math.hypot(dx, dy) || 1, kx = dx / dl * 0.9, ky = dy / dl * 0.9;
         g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 2; g.setLineDash([2.5, 2.5]); g.beginPath(); g.moveTo(X(a[0] - kx), Y(a[1] - ky)); g.lineTo(X(a[0] - kx + (ex - a[0] + 2 * kx) * u), Y(a[1] - ky + (ey - a[1] + 2 * ky) * u)); g.stroke(); g.setLineDash([]); } }
@@ -1898,6 +1954,19 @@
         g.fillStyle = '#F2C230'; g.fillRect(lx, fy - 8 * k, 6 * k, 4 * k); g.fillStyle = '#D8404A'; g.fillRect(lx + 6 * k, fy - 8 * k, 6 * k, 4 * k); g.fillRect(lx, fy - 4 * k, 6 * k, 4 * k); g.fillStyle = '#F2C230'; g.fillRect(lx + 6 * k, fy - 4 * k, 6 * k, 4 * k);
       }
       // Grito do técnico (Silvio, 2026-11-10): setas douradas e a palavra em cima do time por 2 s; depois o campo volta a ficar limpo
+      if (big) { const age = (Date.now() - big.t0) / 1000;
+        if (age > big.d) big = null; else {
+          // entra grande e assenta (0,2 s), treme de leve, e some no fim; a faixa embaixo tem a cor da camisa de quem fez
+          const pop = age < 0.2 ? 1.7 - 0.7 * (age / 0.2) : 1 + Math.sin(age * 9) * 0.025 * Math.max(0, 1 - age), al = Math.min(1, age * 8, (big.d - age) * 3.5);
+          const kt = big.s ? KT.opp : KT.mine, sz = Math.round(Math.min(H * 0.24, 58 * k0));
+          g.save(); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.translate(W / 2, H * 0.42); g.scale(pop, pop); g.globalAlpha = al;
+          g.font = '900 italic ' + sz + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+          const tw = g.measureText(big.txt).width, bw = tw + sz * 0.9, bh = sz * 0.22, by = sz * 0.5;
+          g.fillStyle = 'rgba(10,14,12,.55)'; g.beginPath(); g.roundRect(-bw / 2, -sz * 0.62, bw, sz * 1.36, sz * 0.18); g.fill();
+          g.fillStyle = kt[0]; g.fillRect(-bw / 2 + sz * 0.18, by, bw / 2 - sz * 0.18, bh); g.fillStyle = kt[1] || kt[0]; g.fillRect(0, by, bw / 2 - sz * 0.18, bh);
+          g.lineJoin = 'round'; g.lineWidth = sz * 0.1; g.strokeStyle = '#141517'; g.strokeText(big.txt, 0, -sz * 0.04);
+          g.fillStyle = '#F2C230'; g.shadowColor = 'rgba(242,194,48,.7)'; g.shadowBlur = sz * 0.3; g.fillText(big.txt, 0, -sz * 0.04);
+          g.restore(); } }
       if (cue) { const age = (Date.now() - cue.t0) / 1000;
         if (age > CUE_T) cue = null; else { const me = T[cue.s].filter(q => q.r !== 'GK'), cx = me.reduce((u, q) => u + q.x, 0) / (me.length || 1), d = (X(cx + 1) > X(cx) ? 1 : -1) * (cue.s ? -1 : 1) * (cue.k === 'recuar' ? -1 : 1);
           const u = 15 * k0, hh = 18 * k0, x0 = cl(X(cx), 60 * k0, W - 60 * k0), y0 = H / 2 - 8 * k0, al = Math.max(0, Math.min(1, age * 6, (CUE_T - age) * 3)), mv = Math.min(1, age * 2.5) * 5 * k0;
@@ -1951,12 +2020,14 @@
     // Começo: no apito todos no seu campo; voltando do seu lance, a bola com o seu time no meio
     ALL.forEach(p => { const [x, y] = koShape(p, p.side); p.x = p.gx = p.tx = x; p.y = p.gy = p.ty = y; });
     if (o.t0 > 0) { ALL.forEach(p => { const [x, y] = toW(p.side, ...shapeOf(p, p.side === 0, p.side === 0 ? 50 : 55, 34, 60)); p.x = p.gx = p.tx = x; p.y = p.gy = p.ty = y; }); mode = 'play'; setOwner(T[0][6]); }
-    const onResize = () => size();
+    let ro = null; const onResize = () => size();
     window.addEventListener('resize', onResize);
     const api = {
       attach(el) {
         if (cv && cv !== el) cv.removeEventListener('pointerdown', onTap);
         cv = el; g = el.getContext('2d'); size(); draw(); el.addEventListener('pointerdown', onTap);
+        // o palco deitado ainda se ajusta ao entalhe logo depois de abrir: o desenho segue o tamanho na hora (antes, até meio segundo esticado e depois um pulo)
+        if (window.ResizeObserver) { if (ro) ro.disconnect(); ro = new ResizeObserver(() => { size(); draw(); }); ro.observe(el); }
         if (!raf && alive) { last = 0; raf = requestAnimationFrame(loop); }
       },
       // Novo minuto: volta quem mandou no minuto que acabou (0 eles, 50 igual, 100 você: posse e campo juntos), ou null
@@ -2049,6 +2120,11 @@
       // Treinador: o grito aparece no campo (setas e a palavra por 2 s em cima do time)
       cue(s, k) { cue = CUE_N[k] ? { s, k, t0: Date.now() } : null; },
       mirror() { return mir(); },
+      // O juiz pode apitar o fim (do tempo ou do jogo)? Não no meio de um escanteio, de uma bola parada, de um chute ou cruzamento
+      // no ar, nem com o ataque já chegando na área (Silvio, 10/11: "o jogo acabou no meio de um escanteio")
+      canStop() { if (mode !== 'play') return mode !== 'rein' && mode !== 'pen' && mode !== 'falta' && mode !== 'troca' && mode !== 'tiro';
+        if (clk - escClk < 3.5 || pen) return false; const f = ball.fly; if (f && (f.shot || f.kind === 'cruz' || f.kind === 'costas')) return false;
+        const a = due || att, ow = ball.owner; if (a && ow && ow.side === a.side && tf(a.side, ball)[0] > 78) return false; return true; },
       pending(m) { return mode !== 'wait' && goals.some(e => !e.done && e.m === m); },
       go() { if (mode === 'wait') { mode = 'ko'; modeT = 0.3; koHold = true; } },
       // true enquanto os times ainda se arrumam para a saída do 1º ou do 2º tempo: a tela não anda o minuto
@@ -2065,9 +2141,9 @@
       energy(v) { en = v === null || v === undefined ? null : cl(v, 0, 100); },
       meAt() { if (ME < 0) return null; const p = T[0][ME]; return [p.x / L * 100, p.y / WD * 100]; },
       ballAt() { return [ball.x / L * 100, ball.y / WD * 100]; },
-      stop() { alive = false; if (raf) cancelAnimationFrame(raf); raf = 0; window.removeEventListener('resize', onResize); },
+      stop() { alive = false; if (raf) cancelAnimationFrame(raf); raf = 0; window.removeEventListener('resize', onResize); if (ro) ro.disconnect(); },
       _refs: () => ({ REF, AR, REFC }), _place: (fn) => { fn({ T, ball, REF, AR, ALL }); },
-      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, POCK, ALLX: ALL, WHY, DBG, PLAYS, DRIB, CATCH, scr: g ? [X(ball.x), Y(ball.y)] : null, trail, REF, AR, Q4, leaving, rs, mode, poss, ball, due, att, goals, lc, offPend, foulPend, refFx, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
+      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, CHEG, POCK, ALLX: ALL, WHY, DBG, PLAYS, DRIB, CATCH, scr: g ? [X(ball.x), Y(ball.y)] : null, trail, REF, AR, Q4, leaving, rs, mode, poss, ball, due, att, goals, lc, offPend, foulPend, refFx, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
     };
     LP._sim = api;
     return api;
