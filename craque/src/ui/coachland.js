@@ -152,32 +152,45 @@
     if (f) bn.scrollLeft = Math.max(0, f.offsetLeft - (lb ? lb.offsetWidth : 0) - 8); };
   // Lista das trocas do auxiliar (Silvio 2026-11-10: "tocar uma vez só e trocar todos"): uma linha por troca, todas
   // marcadas; tocar numa linha tira ou põe de volta, e um botão só faz as marcadas. L = [{ o, i, why, slot }]
+  // Titular escolhido: à direita, quem do banco joga na vaga, do maior geral para o menor (Silvio 2026-11-10); os da
+  // posição primeiro, depois quem sabe jogar ali. Até 5 linhas (cabe sem rolar); o banco segue embaixo para os outros
+  const candList = (out, slot, bench, ok) => { const L = bench.filter(p => ok(p) && fitsSlot(p, slot)).sort((a, b) => (b.pos === slot) - (a.pos === slot) || b.ovr - a.ovr || b.en - a.en).slice(0, 5);
+    return '<div class="tm-cl"><div class="tm-clh"><em>SAI</em><b>' + esc(last(out.n)) + '</b><button class="tm-clx" id="tm-clx" aria-label="Cancelar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
+      (L.length ? L.map(p => '<button class="tm-bp tm-cd" data-bp="' + p.id + '"><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + p.ovr + '</b><span><i>' + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + p.pos + '</small></span><u>' + Math.round(p.en) + '%</u></button>').join('')
+        : '<p class="tm-cl0">Ninguém da posição no banco.</p>') + '</div>'; };
   const auxRows = L => '<div class="ax-l">' + L.map((g, k) => '<button class="ax-r on" data-ax="' + k + '" aria-pressed="true"><em data-ln="' + lnOf(g.slot) + '">' + g.tag + '</em><span><b>' + esc(last(g.o.n)) + '</b><small>' + g.why + '</small></span><u>›</u><span><b>' + esc(last(g.i.n)) + '</b><small>' + g.i.ovr + '</small></span><i class="ax-ck"></i></button>').join('') + '</div>';
   const auxLbl = n => (n === 0 ? 'Nenhuma troca' : n === 1 ? 'Fazer a troca' : 'Fazer as ' + n + ' trocas');
   // Liga as linhas ao botão: devolve quais estão marcadas
   const auxBind = (w, btn) => { const on = () => [...w.querySelectorAll('.ax-r')].filter(b => b.classList.contains('on')).map(b => +b.dataset.ax);
     w.querySelectorAll('.ax-r').forEach(b => b.onclick = () => { sfx('tap'); b.classList.toggle('on'); b.setAttribute('aria-pressed', b.classList.contains('on')); const n = on().length; btn.textContent = auxLbl(n); btn.disabled = !n; });
     return on; };
-  // Arrastar do banco para o campo: o reserva sobe, uma cópia segue o dedo e o titular embaixo acende; soltar em cima
+  // Arrastar do banco (ou da lista da direita) para o campo: o reserva sobe, uma cópia segue o dedo e o titular embaixo
+  // fica vermelho com a etiqueta SAI; soltar em cima
   // dele faz a troca. Puxar de lado continua rolando o banco. onDrop(idDoReserva, vaga)
-  function benchDrag(root, onDrop) {
+  function benchDrag(root, onDrop, fits) {
     if (!root) return;
     root.querySelectorAll('.tm-bp:not(.dis)').forEach(b => {
       let x0 = 0, y0 = 0, pid = null, gh = null, over = null, dragged = false;
       const at = (cx, cy) => { const r = root.getBoundingClientRect(), k = r.width / root.offsetWidth || 1; return [(cx - r.left) / k, (cy - r.top) / k]; };
       const hit = (cx, cy) => { const el = document.elementFromPoint(cx, cy), d = el && el.closest('[data-xi]'); return d && root.contains(d) ? d : null; };
-      const end = () => { if (gh) gh.remove(); gh = null; if (over) over.classList.remove('drop'); over = null; pid = null; root.classList.remove('tm-drag'); b.classList.remove('lift'); };
+      const free = b.classList.contains('tm-cd');
+      const end = () => { if (gh) gh.remove(); gh = null; if (over) over.classList.remove('drop'); over = null; pid = null; root.classList.remove('tm-drag'); b.classList.remove('lift');
+        root.querySelectorAll('[data-dfit],[data-dfar]').forEach(d => { d.removeAttribute('data-dfit'); d.removeAttribute('data-dfar'); }); };
       b.addEventListener('pointerdown', e => { if (e.button > 0) return; x0 = e.clientX; y0 = e.clientY; pid = e.pointerId; dragged = false; try { b.setPointerCapture(pid); } catch (er) {} });
       b.addEventListener('pointermove', e => {
         if (e.pointerId !== pid) return;
         const dx = e.clientX - x0, dy = e.clientY - y0;
         if (!gh) {
-          if (dy > -12 || Math.abs(dy) < Math.abs(dx) * 0.6) { if (Math.abs(dx) > 20 && dy > -12) pid = null; return; }
+          if (free ? Math.hypot(dx, dy) < 12 : dy > -12 || Math.abs(dy) < Math.abs(dx) * 0.6) { if (!free && Math.abs(dx) > 20 && dy > -12) pid = null; return; }
           gh = document.createElement('div'); gh.className = 'tm-bp tm-ghost'; gh.innerHTML = b.innerHTML; root.appendChild(gh);
           root.classList.add('tm-drag'); b.classList.add('lift'); dragged = true;
+          // as vagas em que ele joga acendem; quem estiver embaixo do dedo vira "SAI"
+          if (fits) root.querySelectorAll('[data-xi]').forEach(d => d.setAttribute(fits(b.dataset.bp, +d.dataset.xi) ? 'data-dfit' : 'data-dfar', '1'));
         }
         const [px, py] = at(e.clientX, e.clientY); gh.style.left = px + 'px'; gh.style.top = py + 'px';
-        const d = hit(e.clientX, e.clientY); if (d !== over) { if (over) over.classList.remove('drop'); over = d; if (d) d.classList.add('drop'); }
+        const d = hit(e.clientX, e.clientY); if (d !== over) { if (over) over.classList.remove('drop'); over = d; if (d) d.classList.add('drop');
+          // o dedo tampa o titular: o nome de quem sai vai junto com a cópia, em cima dela
+          const nm = d && d.querySelector('.ld-dn b'); if (nm) gh.dataset.out = nm.textContent; else delete gh.dataset.out; }
         e.preventDefault();
       });
       b.addEventListener('pointerup', e => { if (e.pointerId !== pid) return; const d = gh && over, id = b.dataset.bp; end(); if (d) onDrop(id, +d.dataset.xi); });
@@ -379,7 +392,7 @@
       const dots = co.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: swap === i, attr: ' data-xi="' + i + '" data-pid="' + id + '"' + (selP ? (fitsSlot(selP, sl[i]) ? ' data-fit="1"' : ' data-far="1"') : ''), tag: S.coSlotLbl(co.form, i) }) : '').join('');
       const bstrip = bench.map((p, k) => benchChip(p, bench[k - 1], (c.avail(p) ? '' : ' dis') + (selB === p.id ? ' on' : '') + (swap !== null && c.avail(p) ? (fitsSlot(p, sl[swap]) ? ' can' : ' far') : ''), c.avail(p))).join('');
       const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b id="tm-' + k + '">' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
-      const title = swap !== null ? '<span class="tm-hint">Arraste do banco, ou toque em quem entra ou em outro titular</span>' : selB ? '<span class="tm-hint">Toque em quem sai</span>'
+      const title = swap !== null ? '<span class="tm-hint">Toque ou arraste quem entra, ou toque em outro titular</span>' : selB ? '<span class="tm-hint">Toque em quem sai</span>'
         : (vs ? '<b>x ' + esc(vs.short || vs.name) + '</b><small>' + (nx.home ? 'em casa' : 'fora') + ' · rodada ' + nx.round + '</small>' : '<b>' + esc(cl.short || cl.name) + '</b><small>escalação</small>') + LN_LEG;
       const play = toPlay && vs;
       // Dica do auxiliar no topo (Silvio 2026-11-09, opção A): uma por jogo, de estilo ou de formação, com o rosto dele; o
@@ -392,7 +405,7 @@
       show('<div class="tm"><div class="tm-h"><button class="tcr-back" id="tm-back" aria-label="Voltar">' + BK + '</button>' + title + pill + '</div>' +
         '<div class="ld-pitch tm-pitch">' + PITCH + dots + '</div>' +
         '<div class="tm-bench"><small>BANCO</small>' + bstrip + '</div>' +
-        '<div class="tm-side">' + pick('form', 'Formação', co.form) + pick('sty', 'Estilo', esc(S.CO_STY[co.style].name)) +
+        '<div class="tm-side' + (swap !== null ? ' cl' : '') + '">' + (swap !== null ? candList(by[co.xi[swap]], sl[swap], bench, c.avail) : '') + pick('form', 'Formação', co.form) + pick('sty', 'Estilo', esc(S.CO_STY[co.style].name)) +
         '<span class="tm-two"><button class="tm-b" id="ld-fun">Funções</button><button class="tm-b" id="ld-bat">Batedores</button></span><button class="tm-b" id="ld-ele">Elenco</button>' +
         '<button class="tm-go" id="' + (play ? 'ld-go' : 'ld-ok') + '">' + (play ? 'Jogar' : 'Pronto') + '</button></div></div>', st => {
         st.querySelectorAll('[data-xi]').forEach(b => b.onclick = () => {
@@ -405,7 +418,8 @@
         st.querySelectorAll('[data-bp]').forEach(b => b.onclick = () => { const id = b.dataset.bp; sfx('tap');
           if (swap !== null) return put(id, swap);
           selB = selB === id ? null : id; draw(); });
-        benchDrag(st.querySelector('.tm'), put); benchShow(st);
+        benchDrag(st.querySelector('.tm'), put, (id, i) => !!by[id] && fitsSlot(by[id], sl[i])); benchShow(st);
+        if (st.querySelector('#tm-clx')) st.querySelector('#tm-clx').onclick = () => { sfx('tap'); swap = null; draw(); };
         st.querySelectorAll('[data-tmk]').forEach(b => b.onclick = () => {
           sfx('tap'); const d = +b.dataset.d;
           if (b.dataset.tmk === 'sty') { const L = S.CO_STYLES; co.style = L[(L.indexOf(co.style) + d + L.length) % L.length]; st.querySelector('#tm-sty').textContent = S.CO_STY[co.style].name; if (tip && tip.kind === 'sty' && used !== S.coTipUsed(co, tip)) draw(); return; }
@@ -655,12 +669,12 @@
       const bstrip = bench.map((p, k) => { const ok = !!(s.subs && c.avail(p));
         return benchChip(p, bench[k - 1], (ok ? '' : ' dis') + (selB === p.id ? ' on' : '') + (idle && gIn.has(p.id) ? ' sug' : '') + (sel >= 0 && ok ? (fitsSlot(p, sl[sel]) ? ' can' : ' far') : ''), ok, true); }).join('');
       const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b>' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
-      const hint = sel >= 0 ? 'Toque em quem entra ou em outro titular' : selB ? 'Toque em quem sai' : '';
+      const hint = sel >= 0 ? (s.subs ? 'Toque ou arraste quem entra, ou toque em outro titular' : 'Toque em outro titular')  : selB ? 'Toque em quem sai' : '';
       const sc = esc(c.nm(m.home ? co.club : m.vs)).slice(0, 3).toUpperCase() + ' <u>' + m.gh + ' x ' + m.ga + '</u> ' + esc(c.nm(m.home ? m.vs : co.club)).slice(0, 3).toUpperCase();
       pop('<div class="tm ldl-tm"><div class="tm-h"><b>' + esc(T) + '</b><span class="ldl-sc">' + sc + '</span><small>' + S.coClock(m) + '</small>' + (hint ? '<span class="tm-hint">' + hint + '</span>' : LN_LEG) + '</div>' +
         '<div class="ld-pitch tm-pitch">' + PITCH + dots + '</div>' +
         '<div class="tm-bench"><small>BANCO<em>' + (s.subs ? U.D.plural(s.subs, 'troca', 'trocas') : 'sem trocas') + '</em></small>' + bstrip + '</div>' +
-        '<div class="tm-side">' + (half ? '<div class="ldl-talk2">' + Object.keys(S.CO_TALK).map(k => '<button data-tk="' + k + '"' + (talk === k ? ' class="on"' : '') + '>' + esc(S.CO_TALK[k].name) + '</button>').join('') + '</div>' : '') +
+        '<div class="tm-side' + (sel >= 0 && s.subs ? ' cl' : '') + '">' + (sel >= 0 && s.subs ? candList(by[s.xi[sel]], sl[sel], bench, c.avail) : '') + (half ? '<div class="ldl-talk2">' + Object.keys(S.CO_TALK).map(k => '<button data-tk="' + k + '"' + (talk === k ? ' class="on"' : '') + '>' + esc(S.CO_TALK[k].name) + '</button>').join('') + '</div>' : '') +
           pick('form', 'Formação', s.form) + pick('sty', 'Estilo', esc(S.CO_STY[s.style].name)) +
           '<button class="tm-b" id="ldl-aux">Auxiliar' + (nT || G.length || st.t === 'vermelho' ? '<i class="tm-dot">' + (st.t === 'vermelho' ? '!' : G.length || '') + '</i>' : '') + '</button>' +
           '<button class="tm-go" id="ldl-go">' + (half ? 'Começar o 2º tempo' : 'Seguir o jogo') + '</button></div></div>',
@@ -676,7 +690,8 @@
             if (sel >= 0) return doSub(s.xi[sel], id);
             selB = selB === id ? null : id; draw();
           });
-          if (s.subs) benchDrag(w.querySelector('.ldl-tm'), (id, i) => doSub(s.xi[i], id));
+          if (s.subs) benchDrag(w.querySelector('.ldl-tm'), (id, i) => doSub(s.xi[i], id), (id, i) => !!by[id] && fitsSlot(by[id], sl[i]));
+          if (w.querySelector('#tm-clx')) w.querySelector('#tm-clx').onclick = () => { sfx('tap'); sel = -1; draw(); };
           benchShow(w);
           w.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { sfx('tap'); talk = talk === b.dataset.tk ? null : b.dataset.tk; draw(); });
           w.querySelectorAll('[data-tmk]').forEach(b => b.onclick = () => {
@@ -1844,16 +1859,49 @@
       const ov = st.querySelector('#lde-of'); if (ov) ov.onclick = () => { sfx('tap'); recebida(S.coMktOfferFor(co, q), me); };
     });
   }
-  function trofeus() {
-    const c = C(), co = c.co;
-    pop(popHead('Sala de troféus', co.titles.length ? 'O que você ganhou como técnico.' : 'Ainda vazia. O primeiro título entra aqui.') + '<div class="ld-pb col"><div class="ld-scroll">' +
-      (co.titles.length ? co.titles.map(t => '<div class="ld-cand">' + crest(t.club, 'ld-cr') + '<span><b>' + esc(t.name) + '</b><small>' + (U.YEAR0 + t.s) + ' · ' + esc(club(t.club).name) + '</small></span></div>').join('') : '<p class="ld-none">Nenhum título por enquanto.</p>') + '</div></div>', 'Sala de troféus', null, 'w560');
+  // Troféus e Hall (2026-11-11): telas cheias no padrão do Estádio (painel à esquerda, números à direita), no lugar das janelinhas
+  const TF_BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+  const taca = (name, h) => window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY('league', h, name) : '';
+  function trofeus(pg) {
+    const c = C(), co = c.co, cl = club(co.club), ss = co.ss, T = co.titles.slice().reverse(), n = T.length, PER = 4;
+    const pages = Math.max(1, Math.ceil(n / PER)); pg = Math.max(0, Math.min(pages - 1, pg || 0));
+    const ups = co.hist.filter(h => h.up).length, pos = ss ? S.coPos(co) : 0, left = ss ? ss.rounds.length - ss.i : 0;
+    const clubs = T.reduce((a, t) => (a.indexOf(t.club) < 0 ? a.concat(t.club) : a), []).length;
+    const shelf = n ? '<div class="tf2-sh">' + T.slice(pg * PER, pg * PER + PER).map(t => '<div class="tf2-c">' + taca(t.name, 104) + '<b>' + esc(t.name) + '</b><small>' + crest(t.club, 'tf2-cr') + '<span>' + (U.YEAR0 + t.s) + ' · ' + esc(club(t.club).short || club(t.club).name) + '</span></small></div>').join('') + '</div>' +
+        (pages > 1 ? '<div class="mk-pg tf2-pg"><button class="mk-ar" data-pg="-1"' + (pg ? '' : ' disabled') + ' aria-label="Mais novos">' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar" data-pg="1"' + (pg < pages - 1 ? '' : ' disabled') + ' aria-label="Mais antigos">' + MK_R + '</button></div>' : '')
+      : '<div class="tf2-no">' + (ss ? taca(ss.name, 118) : '') + '<b>A primeira taça entra aqui</b>' + (ss ? '<small>' + esc(ss.name) + '</small>' : '') + '</div>';
+    show('<div class="es tf2"><div class="tm-h"><button class="tcr-back" id="tf2-back" aria-label="Voltar">' + TF_BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>Troféus</b><small>' + esc(co.name) + '</small></div>' +
+      '<div class="es-pn tf2-pn">' + shelf + '</div>' +
+      '<div class="es-side">' +
+        '<div class="es-k"><small>TÍTULOS</small><b' + (n ? ' class="gd"' : '') + '>' + n + '</b><em>' + (n ? 'o último em ' + (U.YEAR0 + T[0].s) + (clubs > 1 ? ' · ' + clubs + ' clubes' : '') : 'nenhum por enquanto') + '</em></div>' +
+        '<div class="es-k"><small>ACESSOS</small><b>' + ups + '</b><em>' + (ups ? (ups > 1 ? 'subidas de divisão' : 'subida de divisão') : 'nenhum por enquanto') + '</em></div>' +
+        (ss ? '<div class="es-k"><small>NA DISPUTA</small><b class="tf2-lg">' + esc(ss.name) + '</b><em' + (pos === 1 ? ' class="up"' : '') + '>hoje ' + pos + 'º' + (left > 0 ? (left > 1 ? ' · faltam ' + left + ' rodadas' : ' · falta 1 rodada') : '') + '</em></div>' : '') +
+      '</div></div>', st => {
+      st.querySelector('#tf2-back').onclick = () => { sfx('tap'); clube(); };
+      st.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => { sfx('tap'); trofeus(pg + (+b.dataset.pg)); });
+    });
   }
   function hall() {
-    const c = C(), co = c.co;
-    pop(popHead('Hall do técnico', esc(co.name) + ' · fama ' + co.fame + ' (' + c.FAME_TXT(co.fame) + ')') + '<div class="ld-pb col"><div class="ld-scroll">' +
-      (S.coEstLegado ? S.coEstLegado(co) : []).map(g => '<div class="ld-cand">' + crest(g.club, 'ld-cr') + '<span><b>Estádio · ' + esc(club(g.club).short || club(g.club).name) + ' · ' + milK(g.cap0) + ' → ' + milK(g.cap) + '</b><small>' + U.D.plural(g.nob, 'obra sua', 'obras suas') + (g.best ? ' · recorde de ' + milK(g.best) : '') + '</small></span></div>').join('') +
-      (co.hist.length ? co.hist.slice().reverse().map(h => '<div class="ld-cand">' + crest(h.club, 'ld-cr') + '<span><b>' + (U.YEAR0 + h.s) + ' · ' + esc(club(h.club).short || club(h.club).name) + ' · ' + h.pos + 'º</b><small>' + esc(h.league) + (h.won ? ' · campeão' : h.up ? ' · subiu' : h.down ? ' · caiu' : '') + (h.sacked ? ' · demitido' : h.met ? ' · meta cumprida' : ' · meta não cumprida') + '</small></span></div>').join('') : '<p class="ld-none">A primeira temporada ainda está em andamento.</p>') + '</div></div>', 'Hall do técnico', null, 'w560');
+    const c = C(), co = c.co, cl = club(co.club), ss = co.ss, H = co.hist.slice().reverse(), f = Math.max(0, Math.min(100, Math.round(co.fame)));
+    const nx = [20, 40, 60, 80].find(v => v > f), now = ss && !co.hist.some(h => h.s === co.season);
+    const tag = h => h.sacked ? '<em class="dn">demitido</em>' : h.won ? '<em class="gd">campeão</em>' : h.up ? '<em class="up">subiu</em>' : h.down ? '<em class="dn">caiu</em>' : h.met ? '<em class="up">meta cumprida</em>' : '<em>meta não cumprida</em>';
+    const row = (s, id, lg, pos, t, cc) => '<div class="hl2-r' + (cc || '') + '"><i>' + (U.YEAR0 + s) + '</i><span>' + crest(id, 'hl2-cr') + '<b>' + esc(club(id).short || club(id).name) + '</b><small>' + esc(lg) + '</small></span><u>' + pos + 'º</u>' + t + '</div>';
+    const met = H.filter(h => h.met).length, cls = H.reduce((a, h) => (a.indexOf(h.club) < 0 ? a.concat(h.club) : a), now ? [co.club] : []).length;
+    const best = H.filter(h => h.won)[0] || H.slice().sort((a, b) => a.pos - b.pos || b.s - a.s)[0];
+    const leg = (S.coEstLegado ? S.coEstLegado(co) : [])[0];
+    show('<div class="es hl2"><div class="tm-h"><button class="tcr-back" id="hl2-back" aria-label="Voltar">' + TF_BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>Hall do técnico</b><small>' + esc(co.name) + '</small></div>' +
+      '<div class="hl2-m"><div class="hl2-fm"><span><small>FAMA</small><b>' + c.FAME_TXT(f) + '</b></span><span class="hl2-fb"><i><u style="width:' + f + '%"></u></i><small>' + (nx ? esc(c.FAME_TXT(nx)) + ' aos ' + nx : 'no topo da carreira') + '</small></span><em>' + f + '</em></div>' +
+        '<div class="hl2-l"><div class="hl2-h"><span>ANO</span><span>CLUBE</span><span>POS</span><span>COMO FOI</span></div>' +
+          (now ? row(co.season, co.club, ss.name, S.coPos(co), '<em class="nw">em andamento</em>', ' nw') : '') +
+          H.map(h => row(h.s, h.club, h.league, h.pos, tag(h))).join('') + '</div></div>' +
+      '<div class="es-side">' +
+        '<div class="es-k"><small>TEMPORADAS</small><b>' + (co.season + 1) + '</b><em>' + U.D.plural(cls, 'clube', 'clubes') + '</em></div>' +
+        '<div class="es-k"><small>METAS CUMPRIDAS</small>' + (H.length ? '<b>' + met + '<u> de ' + H.length + '</u></b>' : '<b>0</b>') + '<em>' + (H.length ? (H.filter(h => h.sacked).length ? U.D.plural(H.filter(h => h.sacked).length, 'demissão', 'demissões') : 'nenhuma demissão') : 'a primeira sai no fim do ano') + '</em></div>' +
+        (leg ? '<div class="es-k"><small>ESTÁDIO · ' + esc((club(leg.club).short || club(leg.club).name).toUpperCase()) + '</small><b class="hl2-st">' + milK(leg.cap0).replace(' mil', '') + ' › ' + milK(leg.cap) + '</b><em>' + U.D.plural(leg.nob, 'obra sua', 'obras suas') + (leg.best ? ' · recorde ' + milK(leg.best) : '') + '</em></div>'
+          : '<div class="es-k"><small>MELHOR CAMPANHA</small>' + (best ? '<b' + (best.won ? ' class="gd"' : '') + '>' + (best.won ? 'campeão' : best.pos + 'º lugar') + '</b><em>' + (U.YEAR0 + best.s) + ' · ' + esc(best.league) + '</em>' : '<b>' + S.coPos(co) + 'º lugar</b><em>hoje · ' + esc(ss ? ss.name : '') + '</em>') + '</div>') +
+      '</div></div>', st => {
+      st.querySelector('#hl2-back').onclick = () => { sfx('tap'); clube(); };
+    });
   }
 
   // ---------- Fim da temporada deitado (41): o lugar, a meta, os números do ano, os destaques e o que vem ----------
@@ -1948,13 +1996,13 @@
     return '<svg viewBox="0 0 74 74" aria-hidden="true">' + g + '</svg>'; };
   function loja(tab, back) {
     const c = C(), co = c && c.co && c.co.club ? c.co : null;
-    let pk = 1, wk = 1, payOn = false, busy = false;
+    let pk = 1, wk = 1, payOn = false, busy = false, hp = 0;
     const logged = !!(U.cloudStatus && U.cloudStatus());
     if (U.payStatus) U.payStatus().then(r => { if (r && r.on && !payOn) { payOn = true; if (tab === 0 && document.querySelector('.lj')) draw(); } });
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', FW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
     const draw = () => {
       const saldo = U.COINS.get();
-      const tabs = '<span class="lj-tabs">' + ['Moedas', 'Dinheiro do clube'].map((t, i) => '<button data-lj="' + i + '"' + (i === tab ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('') + '</span>';
+      const tabs = '<span class="lj-tabs">' + ['Moedas', 'Dinheiro do clube', 'Histórico'].map((t, i) => '<button data-lj="' + i + '"' + (i === tab ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('') + '</span>';
       let main, side;
       if (tab === 0) {
         main = '<div class="lj-pk">' + PACKS.map((p, i) => '<button class="lj-p' + (i === pk ? ' on' : '') + '" data-pk="' + i + '">' + (p.tag ? '<em>' + p.tag + '</em>' : '') + COIN_PILE(p.h) +
@@ -1963,6 +2011,15 @@
           '<small class="lj-ty">Sua compra ajuda a manter e melhorar o Climbix.</small>' +
           (!payOn ? '<button class="tm-go off" id="lj-buy" disabled>Compra em breve</button>' : !logged ? '<button class="tm-go ec-in" id="lj-buy">Entrar para comprar</button>' :
             '<button class="tm-go" id="lj-buy">' + (busy ? 'Abrindo…' : 'Comprar · ' + PACKS[pk].pr) + '</button>');
+      } else if (tab === 2) {
+        // Histórico (2026-11-11): cada entrada e saída de moedas, 6 por página, mais nova primeiro
+        const log = U.COINS.log(), N = 6, pages = Math.max(1, Math.ceil(log.length / N)); hp = Math.min(hp, pages - 1);
+        const dt = at => { const d = new Date(at || 0); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); };
+        const rows = log.slice(hp * N, hp * N + N).map(x => '<div class="lj-h"><i>' + dt(x.at) + '</i><span>' + esc(x.t || 'Moedas') + '</span><b class="' + (x.n < 0 ? 'dn' : 'up') + '">' + (x.n > 0 ? '+' : '−') + Math.abs(x.n) + '</b></div>').join('');
+        main = '<div class="lj-ap lj-hist">' + (rows || '<div class="lj-none"><b>Nada ainda</b><small>Moedas ganhas, compradas e gastas aparecem aqui.</small></div>') +
+          (pages > 1 ? '<div class="lj-hp"><button id="lj-hm" aria-label="Mais novas"' + (hp ? '' : ' disabled') + '>' + BK + '</button><small>' + (hp + 1) + ' de ' + pages + '</small><button id="lj-hn" aria-label="Mais antigas"' + (hp < pages - 1 ? '' : ' disabled') + '>' + FW + '</button></div>' : '') + '</div>';
+        const sum = f => log.filter(f).reduce((a, x) => a + x.n, 0), buy = sum(x => x.n > 0 && /^Compra na loja/.test(x.t || ''));
+        side = '<div class="lj-box"><small class="ld-lbl">NO TOTAL</small>' + [['Ganhou jogando', U.COINS.got() - buy], ['Comprou', buy], ['Gastou', U.COINS.got() - saldo], ['Saldo', saldo]].map(([t, n]) => '<div class="lj-li"><span>' + t + '</span><b>' + Math.max(0, n) + '</b></div>').join('') + '</div>';
       } else if (!co) {
         main = '<div class="lj-ap lj-none"><b>Abra uma carreira do Treinador</b><small>O aporte entra na verba do clube que você treina.</small></div>';
         side = '<span class="rs-gap"></span>';
@@ -1990,6 +2047,8 @@
           U.payCreate(PACKS[pk].k).then(r => { location.href = r.url; }, e => { busy = false; draw();
             pop('<div class="acd-help"><b>Não deu para abrir o pagamento</b><p>' + (e && e.error === 'auth' ? 'Entre de novo na sua conta e tente outra vez.' : 'Tente de novo daqui a pouco.') + '</p><button class="hl-btn dark" data-pop-x>Fechar</button></div>', 'Erro', null, 'hl-pop acd-pop tm-pop'); });
         };
+        if (st.querySelector('#lj-hm')) st.querySelector('#lj-hm').onclick = () => { sfx('tap'); hp--; draw(); };
+        if (st.querySelector('#lj-hn')) st.querySelector('#lj-hn').onclick = () => { sfx('tap'); hp++; draw(); };
         if (st.querySelector('#lj-m')) st.querySelector('#lj-m').onclick = () => { sfx('tap'); wk--; draw(); };
         if (st.querySelector('#lj-p')) st.querySelector('#lj-p').onclick = () => { sfx('tap'); wk++; draw(); };
         if (st.querySelector('#lj-ap')) st.querySelector('#lj-ap').onclick = () => {

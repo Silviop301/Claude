@@ -8816,7 +8816,27 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .tm .tm-bp.on { box-shadow: inset 0 0 0 2px var(--gold); background: #2b2612 !important; }
 .tm .tm-bp.lift { opacity: .35; }
 .tm-bp.tm-ghost { position: absolute; z-index: 60; pointer-events: none; transform: translate(-50%, -115%) scale(1.08); box-shadow: 0 0 0 2px var(--gold), 0 10px 22px rgba(0, 0, 0, .55); }
-.tm .ld-dot.drop .ld-dc { box-shadow: 0 0 0 3px var(--gold), 0 0 0 9px rgba(242, 194, 48, .4); transform: scale(1.15); }
+.tm .ld-dot.drop .ld-dc { box-shadow: 0 0 0 4px #FF6B5E, 0 0 0 10px rgba(255, 107, 94, .4); transform: scale(1.15); }
+/* Arrastando um reserva: quem está embaixo do dedo vai sair (etiqueta SAI vermelha no lugar da posição) */
+.tm .ld-dot.drop { opacity: 1 !important; z-index: 5; }
+.tm .ld-dot.drop .ld-dn em { font-size: 0 !important; background: #FF6B5E !important; color: #2A0B08 !important; }
+.tm .ld-dot.drop .ld-dn em::after { content: 'SAI'; font: 800 13px/1 var(--display); letter-spacing: .04em; }
+.tm .ld-dot[data-dfar] { opacity: .5; }
+.tm-bp.tm-ghost[data-out]::before { content: 'SAI  ' attr(data-out); position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); margin-bottom: 6px; padding: 5px 9px; border-radius: 8px; background: #FF6B5E; color: #2A0B08; font: 800 14px/1 var(--display); letter-spacing: .03em; white-space: nowrap; box-shadow: 0 6px 14px rgba(0, 0, 0, .45); }
+.tm .ld-dot[data-dfit]:not(.drop)::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 2.5px dashed var(--gold); pointer-events: none; }
+/* Titular escolhido: a lista de quem entra na vaga fica à direita, no lugar da formação e do estilo */
+.tm-side.cl > :not(.tm-cl) { display: none !important; }
+.tm-cl { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.tm-clh { height: 40px; flex: none; display: flex; align-items: center; gap: 8px; padding-left: 4px; }
+.tm-clh em { font: 800 13px/1 var(--display); font-style: normal; letter-spacing: .04em; padding: 4px 7px; border-radius: 6px; background: #FF6B5E; color: #2A0B08; }
+.tm-clh b { flex: 1; min-width: 0; font: 800 20px/1 var(--display); color: #F3F1EA; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ld-st button.tm-clx { width: 44px; height: 40px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #141517; }
+.tm-clx svg { width: 18px; height: 18px; fill: none; stroke: #B9C9BF; stroke-width: 2.6; stroke-linecap: round; }
+.ld-st button.tm-bp.tm-cd { width: 100%; height: 46px; flex: none; touch-action: none; box-shadow: inset 0 0 0 2px rgba(242, 194, 48, .7); }
+.tm-cd > span { flex: 1; min-width: 0; }
+.tm-cd i { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tm-cd > u { font: 700 14px/1 var(--body); text-decoration: none; color: #B9C9BF; } .tm-ghost > u { display: none; }
+.tm-cl0 { margin: 6px 4px 0; font: 600 15px/1.35 var(--body); color: #B9C9BF; }
 /* Setores no campo e no banco, e a lista de trocas do auxiliar (Silvio 2026-11-10): a etiqueta da vaga e a do reserva
    levam a cor do setor (goleiro areia, defesa azul, meio verde, ataque rosa; laranja segue sendo "fora de posição"),
    com a legenda no topo; titular escolhido acende no banco quem joga na vaga, reserva escolhido acende as vagas dele */
@@ -9386,3 +9406,56 @@ button.coin-pill { cursor: pointer; border: 0; }
 @keyframes tcUp{from{transform:translateY(160px) scale(.5);opacity:0}}
 @keyframes tcPop{from{transform:scale(2.5);opacity:0}}
 @keyframes tcFd{from{opacity:0}}
+
+/* Loja: histórico de moedas (2026-11-11) */
+.lj-hist { gap: 0; padding: 8px 18px; }
+.lj-h { min-height: 44px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(243,241,234,.1); }
+.lj-h i { font: 700 14px/1 var(--body); font-style: normal; color: #8FA197; width: 44px; flex: none; }
+.lj-h span { flex: 1; min-width: 0; font: 700 16px/1.15 var(--body); color: #E6ECE8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lj-h b { font: 800 22px/1 var(--display); } .lj-h b.up { color: var(--gold); } .lj-h b.dn { color: #FF8A7A; }
+.lj-hp { margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 14px; padding-top: 6px; }
+.lj-hp small { font: 700 15px/1 var(--body); color: #B9C9BF; }
+.ld-st .lj-hp button { padding: 0 !important; width: 44px; height: 40px; border-radius: 12px; background: rgba(0,0,0,.35); display: grid; place-items: center; }
+.lj-hp button svg { width: 22px; height: 22px; fill: none; stroke: #F3F1EA; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.lj-hp button:disabled { opacity: .35; }
+
+/* ===== Troféus e Hall do técnico (2026-11-11): telas cheias no padrão do Estádio ===== */
+.es-k > b.gd { color: var(--gold); }
+.tf2-pn { display: flex; flex-direction: column; padding: 14px 16px 12px; }
+.tf2-sh { flex: 1; min-height: 0; display: flex; justify-content: center; gap: 6px; padding-bottom: 14px; background: linear-gradient(rgba(243, 241, 234, .16), rgba(243, 241, 234, .16)) left 0 bottom 88px / 100% 2px no-repeat; }
+.tf2-c { flex: 0 1 152px; min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; text-align: center; }
+.tf2-c .trophy { flex: none; margin-bottom: 26px; filter: drop-shadow(0 8px 10px rgba(0, 0, 0, .5)); }
+.tf2-c > b { max-width: 100%; height: 36px; display: flex; align-items: center; font: 800 16px/1.1 var(--display); color: #F3F1EA; overflow: hidden; }
+.tf2-c > small { margin-top: 8px; max-width: 100%; display: flex; align-items: center; gap: 5px; font: 700 13px/18px var(--body); color: #B9C9BF; white-space: nowrap; }
+.tf2-c > small span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tf2-cr { width: 18px; height: 18px; object-fit: contain; flex: none; margin: 0; }
+.tf2-pg { flex: none; justify-content: center; } .tf2-pg b { flex: none; min-width: 96px; font-size: 17px; color: #B9C9BF; }
+.tf2-no { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; }
+.tf2-no .trophy { filter: grayscale(1); opacity: .42; margin-bottom: 8px; }
+.tf2-no > b { font: 800 22px/1 var(--display); color: #F3F1EA; } .tf2-no > small { font: 700 15px/1 var(--body); color: #9fb0a6; }
+.es-k > b.tf2-lg { font-size: 20px; line-height: 1.05; }
+.hl2-m { grid-column: 1; grid-row: 2; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.hl2-fm { flex: none; height: 76px; box-sizing: border-box; border-radius: 18px; background: #F8F4EA; color: #13201A; padding: 0 18px; display: flex; align-items: center; gap: 18px; }
+.hl2-fm > span { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.hl2-fm small { font: 800 12px/1 var(--display); letter-spacing: .08em; color: #5C6A62; white-space: nowrap; }
+.hl2-fm > span > b { font: 800 23px/1 var(--display); white-space: nowrap; }
+.hl2-fm .hl2-fb { flex: 1; } .hl2-fb > i { display: block; height: 10px; border-radius: 5px; background: rgba(19, 32, 26, .14); }
+.hl2-fb > i u { display: block; height: 100%; border-radius: 5px; background: #C8961E; }
+.hl2-fb > small { font: 700 13px/1 var(--body); letter-spacing: 0; }
+.hl2-fm > em { font: 800 38px/1 var(--display); font-style: normal; }
+.hl2-l { flex: 1; min-height: 0; border-radius: 18px; background: #141517; padding: 4px 8px 8px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.hl2-h, .hl2-r { display: grid; grid-template-columns: 58px minmax(0, 1fr) 50px 156px; align-items: center; padding: 0 12px; }
+.hl2-h { height: 26px; font: 700 12px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; position: sticky; top: -4px; background: #141517; z-index: 1; }
+.hl2-h span:nth-child(4) { text-align: right; }
+.hl2-r { height: 44px; border-bottom: 1px solid rgba(243, 241, 234, .07); }
+.hl2-r > i { font: 800 17px/1 var(--display); font-style: normal; color: #9fb0a6; }
+.hl2-r > span { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hl2-cr { width: 26px; height: 26px; object-fit: contain; flex: none; margin: 0; }
+.hl2-r > span b { font: 700 17px/1 var(--body); color: #F3F1EA; white-space: nowrap; }
+.hl2-r > span small { font: 700 13px/1 var(--body); color: #9fb0a6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.hl2-r > u { text-decoration: none; font: 800 20px/1 var(--display); color: #F3F1EA; }
+.hl2-r > em { justify-self: end; font: 800 13px/1 var(--display); font-style: normal; padding: 4px 8px; border-radius: 6px; background: rgba(243, 241, 234, .12); color: #B9C9BF; white-space: nowrap; }
+.hl2-r > em.gd { background: var(--gold); color: #1B1606; } .hl2-r > em.up { background: #CFEFDA; color: #14532d; } .hl2-r > em.dn { background: #F8D2BF; color: #8a3312; }
+.hl2-r > em.nw { background: none; box-shadow: inset 0 0 0 1.5px rgba(243, 241, 234, .3); }
+.es-k > b u { text-decoration: none; font: 700 15px/1 var(--body); color: #B9C9BF; }
+.es-k > b.hl2-st { font-size: 22px; white-space: nowrap; }
