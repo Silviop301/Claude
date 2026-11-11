@@ -46,15 +46,16 @@ async function page(b, first) {
       await click('.tm-bp:not(.dis):nth-of-type(5)'); await shot('a01f-reserva-acende-vagas'); await click('.tm-bp.on');
     }
     await click('[data-xi="5"]'); await shot('a02-troca');
-    { // titular escolhido: a lista de quem entra fica à direita, os da posição primeiro e do maior geral para o menor
-      const L = await p.evaluate(() => { const sd = document.querySelector('.tm-side'), co = window.CRAQUE_UI._co.co, by = {}; co.squad.forEach(q => { by[q.id] = q; });
-        const slot = window.CRAQUE_SIM.coSlots(co.form)[5];
-        return { fit: sd.scrollHeight <= sd.clientHeight + 1, r: [...sd.querySelectorAll('.tm-cd')].map(e => { const q = by[e.dataset.bp]; return (q.pos === slot ? 1000 : 0) + q.ovr; }) }; });
-      if (!L.r.length) errs.push('escalação: titular escolhido e a lista de quem entra não apareceu');
-      if (!L.fit) errs.push('escalação: a lista de quem entra não cabe na coluna');
-      if (L.r.some((v, k) => k && v > L.r[k - 1])) errs.push('escalação: a lista de quem entra não está do maior geral para o menor');
+    { // titular escolhido: os reservas da mesma posição ao lado dele, dentro do campo, do maior geral para o menor
+      const L = await p.evaluate(() => { const n = document.querySelector('.tm-near'), f = document.querySelector('.tm-pitch'), co = window.CRAQUE_UI._co.co, by = {}; co.squad.forEach(q => { by[q.id] = q; });
+        const slot = window.CRAQUE_SIM.coSlots(co.form)[5], a = n && n.getBoundingClientRect(), b = f.getBoundingClientRect();
+        return { on: !!n, in: !!a && a.top >= b.top - 1 && a.bottom <= b.bottom + 1 && a.left >= b.left - 1 && a.right <= b.right + 1,
+          pos: n ? [...n.querySelectorAll('.tm-cd')].every(e => by[e.dataset.bp].pos === slot) : false, r: n ? [...n.querySelectorAll('.tm-cd')].map(e => by[e.dataset.bp].ovr) : [] }; });
+      if (!L.on) errs.push('escalação: titular escolhido e a lista ao lado dele não apareceu');
+      else { if (!L.in) errs.push('escalação: a lista ao lado do titular sai do campo'); if (!L.pos) errs.push('escalação: a lista ao lado do titular tem gente de outra posição');
+        if (L.r.some((v, k) => k && v > L.r[k - 1])) errs.push('escalação: a lista ao lado do titular não está do maior geral para o menor'); }
     }
-    await click('.tm-cd'); await shot('a02b-trocou');
+    await click((await p.$('.tm-cd')) ? '.tm-cd' : '.tm-bp:not(.dis)'); await shot('a02b-trocou');
     { // arrastar o 1º reserva até o titular 7: no meio do caminho e depois de soltar
       const bp = await (await p.$('.tm-bp:not(.dis)')).boundingBox(), xd = await (await p.$('[data-xi="7"]')).boundingBox();
       const sx = bp.x + bp.width / 2, sy = bp.y + bp.height / 2, tx = xd.x + xd.width / 2, ty = xd.y + xd.height / 2;

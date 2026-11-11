@@ -8807,19 +8807,14 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .tm .ld-dot[data-dfar] { opacity: .5; }
 .tm-bp.tm-ghost[data-out]::before { content: 'SAI  ' attr(data-out); position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); margin-bottom: 6px; padding: 5px 9px; border-radius: 8px; background: #FF6B5E; color: #2A0B08; font: 800 14px/1 var(--display); letter-spacing: .03em; white-space: nowrap; box-shadow: 0 6px 14px rgba(0, 0, 0, .45); }
 .tm .ld-dot[data-dfit]:not(.drop)::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 2.5px dashed var(--gold); pointer-events: none; }
-/* Titular escolhido: a lista de quem entra na vaga fica à direita, no lugar da formação e do estilo */
-.tm-side.cl > :not(.tm-cl) { display: none !important; }
-.tm-cl { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
-.tm-clh { height: 40px; flex: none; display: flex; align-items: center; gap: 8px; padding-left: 4px; }
-.tm-clh em { font: 800 13px/1 var(--display); font-style: normal; letter-spacing: .04em; padding: 4px 7px; border-radius: 6px; background: #FF6B5E; color: #2A0B08; }
-.tm-clh b { flex: 1; min-width: 0; font: 800 20px/1 var(--display); color: #F3F1EA; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ld-st button.tm-clx { width: 44px; height: 40px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #141517; }
-.tm-clx svg { width: 18px; height: 18px; fill: none; stroke: #B9C9BF; stroke-width: 2.6; stroke-linecap: round; }
-.ld-st button.tm-bp.tm-cd { width: 100%; height: 46px; flex: none; touch-action: none; box-shadow: inset 0 0 0 2px rgba(242, 194, 48, .7); }
+/* Titular escolhido: os reservas da mesma posição ao lado dele, no campo; no banco, o geral de quem é de fora cai */
+.tm-near { position: absolute; z-index: 6; visibility: hidden; width: 168px; display: flex; flex-direction: column; gap: 5px; padding: 6px; border-radius: 14px; background: rgba(11, 18, 15, .92); box-shadow: 0 0 0 2px var(--gold), 0 10px 22px rgba(0, 0, 0, .5); }
+.tm-near.r { margin-left: 34px; } .tm-near.l { margin-right: 34px; }
+.ld-st button.tm-bp.tm-cd { width: 100%; height: 44px; flex: none; touch-action: none; }
 .tm-cd > span { flex: 1; min-width: 0; }
 .tm-cd i { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tm-cd > u { font: 700 14px/1 var(--body); text-decoration: none; color: #B9C9BF; } .tm-ghost > u { display: none; }
-.tm-cl0 { margin: 6px 4px 0; font: 600 15px/1.35 var(--body); color: #B9C9BF; }
+.tm-cl0 { margin: 4px; font: 600 14px/1.3 var(--body); color: #B9C9BF; }
+.tm .tm-bp.lo > b.tm-ring { color: #F08A5D; }
 /* Setores no campo e no banco, e a lista de trocas do auxiliar (Silvio 2026-11-10): a etiqueta da vaga e a do reserva
    levam a cor do setor (goleiro areia, defesa azul, meio verde, ataque rosa; laranja segue sendo "fora de posição"),
    com a legenda no topo; titular escolhido acende no banco quem joga na vaga, reserva escolhido acende as vagas dele */
