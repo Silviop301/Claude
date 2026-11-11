@@ -385,6 +385,29 @@
   const rngS = (co, k) => S.rng(hash((co.seed || 0) + '|' + co.season + '|' + k));
   S.coMktCanSell = (co, p) => co.squad.length > 18 && co.squad.filter(x => x.pos === p.pos).length > (MINP[p.pos] || 2);
   S.coMktListed = (co, p) => !!(co.sell && co.sell[p.id]);
+  // Rescisão (Silvio 2026-11-11: "não dá pra fazer uns cortes de custo antes da janela?"): vale em qualquer rodada, sem janela.
+  // Multa = M.resc.k dos salários que faltam do contrato (rodadas desta temporada + as das seguintes), entre `min` e `max`
+  // semanas; sai do caixa na hora (Contratações, mesmo no vermelho), o salário sai da folha e ele fica sem clube na temporada
+  // seguinte (não dá para recontratar mais barato no mesmo ano). Mesma trava de elenco curto da venda (S.coMktCanSell).
+  // Plano: { ok, wk semanas de multa, fee, wage, left rodadas que faltam no ano, pays rodadas até a multa se pagar,
+  // payK 'now' neste ano / 'next' só nos anos seguintes / 'never' o contrato acabaria antes, caixa depois }
+  M.resc = { k: 0.25, min: 4, max: 20 };
+  S.coMktRescPlan = function (co, p) {
+    const ss = co.ss, n = ss && ss.rounds ? ss.rounds.length : 38, left = ss && !ss.done ? Math.max(0, n - ss.i) : 0;
+    const all = left + Math.max(0, (p.ct || 1) - 1) * n, wk = Math.max(M.resc.min, Math.min(M.resc.max, Math.round(all * M.resc.k)));
+    const wage = p.wage || 0, fee = Math.max(1000, Math.ceil(wage * wk / 1000) * 1000), pays = wage ? Math.ceil(fee / wage) : 0, f = co.fin;
+    return { ok: S.coMktCanSell(co, p), wk, fee, wage, left, all, pays, payK: pays < left ? 'now' : pays < all ? 'next' : 'never', caixa: f ? f.caixa - fee : 0 };
+  };
+  S.coMktResc = function (co, p) {
+    const f = S.coFin(co), P = S.coMktRescPlan(co, p); if (!f || !P.ok || !co.squad.includes(p)) return null;
+    co.squad = co.squad.filter(x => x !== p);
+    if ((co.xi || []).includes(p.id)) { const a = S.coAutoXI(co.squad, co.form); co.xi = a.xi; co.bench = a.bench; }
+    else if (co.bench) co.bench = co.bench.filter(id => id !== p.id);
+    if (co.sell) delete co.sell[p.id];
+    f.caixa -= P.fee; f.ss.comp = (f.ss.comp || 0) + P.fee;
+    if (S.coWorldResc) S.coWorldResc(co, p);
+    return P;
+  };
   S.coMktBuyer = (co, p, r) => buyerOf(co, p, r);
   function buyerOf(co, p, r) {
     const me = D.CLUB_BY_ID[co.club], cty = D.countryOf(me), lo = Math.max(me.strength - 4, p.ovr - 6);

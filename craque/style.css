@@ -9832,3 +9832,19 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .fim-c .fim-n span { background: #fff; border-radius: 12px; padding: 10px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .fim-c .fim-n b { font: 800 30px/1 var(--display); color: var(--ink); } .fim-c .fim-n small { font: 600 14px/1 var(--body); color: var(--ink-2); }
 .fim-c .fim-b { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 14px; } .fim-c .fim-b .hl-btn { margin-top: 0; width: auto; }
+
+/* Elenco: três ações na ficha (Renovar, Pôr à venda, Rescindir) e a janelinha da rescisão (2026-11-11) */
+.ld-st .lde2-act { display: flex; gap: 5px; margin-left: -8px; margin-right: -8px; }
+.ld-st .lde2-act button { flex: 1 1 0; min-width: 0; padding: 0 4px !important; font-size: 14px !important; line-height: 1.05 !important; white-space: normal; }
+.ld-st .lde2-act button.lde2-sell { flex-grow: 1.25; } .ld-st .lde2-act button.lde2-resc { flex-grow: 1.05; }
+.ld-st .lde2-act .lde2-ren small { font-size: 11px; line-height: 1; }
+.ld-st .lde2-act button.lde2-resc { border-radius: 12px; box-shadow: inset 0 0 0 2px rgba(180, 80, 31, .4); color: #b4501f !important; font-family: var(--display) !important; font-weight: 800 !important; }
+.ld-st .lde2-act button.lde2-resc:disabled { opacity: .45; cursor: default; }
+.rsc-pop .rsc-g { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+.rsc-pop .rsc-g span { border-radius: 10px; background: #FFF; padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.rsc-pop .rsc-g small { font: 700 12px/1 var(--body); letter-spacing: .06em; color: #5d6b63; }
+.rsc-pop .rsc-g b { font: 800 22px/1 var(--display); color: var(--ink); white-space: nowrap; }
+.rsc-pop .rsc-g b i { font: 700 13px/1 var(--body); font-style: normal; color: #5d6b63; }
+.rsc-pop .rsc-g b.dn, .rsc-pop .acd-help p b.dn { color: #b4501f; } .rsc-pop .rsc-g b.up { color: #1f7a45; }
+.rsc-pop .acd-help p b { font: inherit; display: inline; }
+.pi-pb .pi-lg { width: 132px; height: 84px; flex: none; object-fit: contain; }
