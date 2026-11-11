@@ -9552,3 +9552,73 @@ button.coin-pill { cursor: pointer; border: 0; }
 /* Aviso da janela de transferências (2026-11-11): cartão do upToast; na última rodada o relógio e a borda ficam laranja */
 .wn-ty i { color: #b45309; } .wn-ty.ult { box-shadow: 0 0 0 3px #f59e0b, 0 10px 30px rgba(0, 0, 0, .5); }
 .mk-win.ult { background: rgba(245, 158, 11, .2); color: #fbbf24; }
+
+/* Novidades na home deitada (2026-11-11, entrada A): pílula no canto de cima à esquerda, do lado oposto das moedas, com o
+   pontinho dourado de versão nova; a tela .nvd tem o anúncio no cartão creme e até 4 destaques no painel carvão */
+.ld-st button.hl-nv { position: absolute; left: 16px; top: 16px; height: 44px; padding: 0 16px 0 10px; border-radius: 22px; box-shadow: inset 0 0 0 2px rgba(243,241,234,.22); color: #E3ECE6; display: flex; align-items: center; gap: 8px; }
+.hl-nv img.tw { width: 26px; height: 26px; vertical-align: 0; }
+.ld-st button.hl-nv b { font: 700 18px/1 var(--display); letter-spacing: .02em; }
+.hl-nv i { position: absolute; right: -2px; top: -2px; width: 14px; height: 14px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 3px #0D2E21; }
+.nvd { width: 100%; flex: 1; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 320px; grid-template-rows: 44px minmax(0, 1fr); gap: 12px; color: #F3F1EA; }
+.nvd .tm-h .mk-tt b { font: 800 26px/1 var(--display); } .nvd .tm-h .mk-tt small { font: 600 15px/1 var(--body); color: #B9C9BF; }
+.nvd-pg { display: flex; gap: 8px; }
+.ld-st button.nvd-pg-b, .nvd-pg button { width: 44px; height: 44px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(243,241,234,.25); display: flex; align-items: center; justify-content: center; }
+.nvd-pg button svg { width: 20px; height: 20px; fill: none; stroke: #F3F1EA; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; } .nvd-pg button[disabled] { opacity: .3; }
+.nvd-c { position: relative; min-height: 0; box-sizing: border-box; border-radius: 18px; background: linear-gradient(180deg, #F6F3EA, #EAE3D1); color: #13201A; padding: 22px 24px 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 5px 0 rgba(0,0,0,.3); }
+.nvd-c > img.tw { position: absolute; right: 22px; top: 18px; width: 72px; height: 72px; transform: rotate(6deg); }
+.nvd-c > small { font: 700 13px/1 var(--display); letter-spacing: .16em; color: #1F6B45; }
+.nvd-c > b { font: 800 46px/1 var(--display); letter-spacing: .005em; }
+.nvd-c > p { margin: 2px 0 0; max-width: 400px; font: 600 18px/1.35 var(--body); color: #34443B; }
+.nvd-c > strong { font: 700 18px/1.35 var(--body); }
+.nvd-c > em { margin-top: auto; font: 600 15px/1.2 var(--body); font-style: normal; color: #55655C; }
+.nvd-r { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.nvd-l { flex: 1; min-height: 0; box-sizing: border-box; border-radius: 18px; background: #141517; padding: 14px 16px 10px; display: flex; flex-direction: column; gap: 6px; }
+.nvd-l > small { font: 700 12px/1 var(--display); letter-spacing: .16em; color: #8FD6AE; }
+.nvd-l > div { flex: 1; display: flex; align-items: center; gap: 12px; } .nvd-l > div + div { border-top: 1px solid rgba(243,241,234,.1); }
+.nvd-l > div img.tw { width: 30px; height: 30px; vertical-align: 0; }
+.nvd-l > div span { display: flex; flex-direction: column; gap: 3px; min-width: 0; } .nvd-l > div b { font: 700 19px/1 var(--display); } .nvd-l > div small { font: 500 15px/1.1 var(--body); color: #B9C9BF; }
+.nvd .tm-go { margin-top: 0; flex: none; margin-bottom: 4px; font-size: 24px !important; letter-spacing: .02em; }
+
+/* Fim da temporada novo (2026-11-11, desenho aprovado): cartão creme do resultado, 4 abas no painel carvão, o que vem agora
+   e um dourado só. Nada abaixo de 13 px */
+.fdt { flex: 1; min-width: 0; height: 100%; display: flex; gap: 12px; color: #F3F1EA; }
+.fdt-l { width: 264px; flex: none; box-sizing: border-box; border-radius: 18px; background: linear-gradient(180deg, #F6F3EA, #EAE3D1); color: #13201A; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 5px 0 rgba(0,0,0,.3); min-height: 0; }
+.fdt-eb { font: 700 13px/1 var(--display); letter-spacing: .14em; color: #6A5510; }
+.fdt-h { display: flex; align-items: center; gap: 10px; } .fdt-cr { width: 58px; height: 58px; flex: none; object-fit: contain; }
+.fdt-h span { display: flex; flex-direction: column; gap: 5px; min-width: 0; } .fdt-h b { font: 800 40px/.95 var(--display); white-space: nowrap; }
+.fdt-h small { font: 700 13px/1.1 var(--display); letter-spacing: .1em; } .fdt-h small.up, .fdt-row em.up { color: #1F6B45; } .fdt-h small.dn, .fdt-row em.dn { color: #A32A25; }
+.fdt-l hr { width: 100%; height: 1px; margin: 0; border: 0; background: rgba(19,32,26,.14); flex: none; }
+.fdt-row { display: flex; align-items: center; gap: 10px; } .fdt-row span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; } .fdt-row svg { flex: none; }
+.fdt-row small, .fdt-fm small { font: 700 13px/1 var(--display); letter-spacing: .12em; color: #55655C; } .fdt-row b { font: 600 17px/1.15 var(--body); } .fdt-row em { font: 800 20px/1 var(--display); font-style: normal; white-space: nowrap; }
+.fdt-fm { display: flex; flex-direction: column; gap: 7px; } .fdt-fm > div { display: flex; align-items: baseline; gap: 8px; } .fdt-fm small { flex: 1; }
+.fdt-fm i { font: 800 24px/1 var(--display); font-style: normal; color: #55655C; } .fdt-fm b { font: 800 30px/1 var(--display); } .fdt-fm em { font: 600 15px/1.2 var(--body); font-style: normal; color: #34443B; }
+.fdt-bar { position: relative; height: 10px; border-radius: 5px; background: rgba(19,32,26,.14); overflow: hidden; } .fdt-bar i { position: absolute; left: 0; top: 0; bottom: 0; background: #1F6B45; } .fdt-bar i.up { background: #57B383; } .fdt-bar i.dn { background: #D98B86; }
+.fdt-m { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.fdt-tabs { height: 44px; flex: none; box-sizing: border-box; border-radius: 13px; background: #141517; padding: 4px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.fdt button.fdt-tb { position: relative; border-radius: 9px; color: #C9D6CE; font: 700 17px/1 var(--display); } .fdt button.fdt-tb.on { background: #F3F1EA; color: #13201A; font-weight: 800; }
+.fdt-tb i { position: absolute; right: 7px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--gold); }
+.fdt-p { flex: 1; min-height: 0; box-sizing: border-box; border-radius: 18px; background: #141517; padding: 12px; display: flex; flex-direction: column; }
+.fdt-n { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 8px; }
+.fdt-n span { border-radius: 12px; background: #1E2023; padding: 0 14px; display: flex; flex-direction: column; justify-content: center; gap: 6px; min-width: 0; }
+.fdt-n small { font: 600 14px/1 var(--body); color: #B9C9BF; } .fdt-n b { font: 800 26px/1 var(--display); white-space: nowrap; }
+.fdt-d { flex: 1; display: flex; flex-direction: column; } .fdt-d > div { flex: 1; display: flex; align-items: center; gap: 12px; padding: 0 4px; } .fdt-d > div + div { border-top: 1px solid rgba(243,241,234,.1); }
+.fdt-d i { width: 44px; height: 44px; flex: none; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--gold); display: flex; align-items: center; justify-content: center; font: 800 19px/1 var(--display); font-style: normal; }
+.fdt-d span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; } .fdt-d small { font: 700 13px/1 var(--display); letter-spacing: .12em; color: var(--gold); }
+.fdt-d b { font: 800 21px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .fdt-d em { font: 600 15px/1.15 var(--body); font-style: normal; color: #B9C9BF; text-align: right; max-width: 96px; }
+.fdt-d p, .fdt-e p { margin: 0; font: 500 16px/1.3 var(--body); color: #B9C9BF; }
+.fdt-e { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 2px 4px; min-height: 0; } .fdt-e small { font: 700 13px/1 var(--display); letter-spacing: .12em; color: #8FD6AE; } .fdt-e p + small { margin-top: 8px; }
+.fdt-e > div { display: flex; align-items: baseline; gap: 10px; } .fdt-e b { flex: 1; min-width: 0; font: 700 19px/1.1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .fdt-e em { font: 500 15px/1 var(--body); font-style: normal; color: #B9C9BF; white-space: nowrap; }
+.fdt-t { flex: 1; display: flex; flex-direction: column; padding: 0 2px; }
+.fdt-th { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 8px; } .fdt-th b { font: 800 15px/1 var(--display); letter-spacing: .08em; color: #1B1606; background: var(--gold); border-radius: 7px; padding: 6px 9px; }
+.fdt-th span, .fdt-th em { font: 500 15px/1 var(--body); font-style: normal; color: #B9C9BF; }
+.fdt-sk { flex: 1; display: flex; align-items: center; gap: 12px; border-top: 1px solid rgba(243,241,234,.1); } .fdt-sk span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.fdt-sk b { font: 800 20px/1 var(--display); } .fdt-sk b i { font: 600 15px/1 var(--body); font-style: normal; color: #8FD6AE; margin-left: 4px; } .fdt-sk small { font: 500 15px/1.2 var(--body); color: #B9C9BF; }
+.fdt button.fdt-p1 { width: 56px; height: 44px; flex: none; border-radius: 12px; box-shadow: inset 0 0 0 2px var(--gold); color: var(--gold); font: 800 20px/1 var(--display); } .fdt button.fdt-p1[disabled] { box-shadow: inset 0 0 0 2px rgba(243,241,234,.16); color: rgba(243,241,234,.3); }
+.fdt-r { width: 196px; flex: none; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.fdt-lb { font: 700 13px/1 var(--display); letter-spacing: .14em; color: #8FD6AE; padding: 4px 2px 2px; }
+.fdt-ch { border-radius: 14px; background: #141517; padding: 11px 12px; display: flex; align-items: center; gap: 10px; } .fdt-ch svg { width: 30px; height: 30px; flex: none; }
+.fdt-ch span { min-width: 0; display: flex; flex-direction: column; gap: 3px; } .fdt-ch b { font: 800 20px/1 var(--display); } .fdt-ch small { font: 500 15px/1.15 var(--body); color: #B9C9BF; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.fdt-ch.coin b { color: var(--gold); font-size: 21px; } .fdt-ch.warn b { color: #FFB37A; }
+.fdt button.fdt-mk { height: 46px; flex: none; border-radius: 14px; box-shadow: inset 0 0 0 2px rgba(243,241,234,.28); color: #F3F1EA; font: 700 18px/1 var(--display); }
+.fdt button.fdt-go { height: 62px; flex: none; border-radius: 16px; background: var(--gold); color: #1B1606; box-shadow: 0 4px 0 #B48A12; margin-bottom: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.fdt button.fdt-go b { font: 800 23px/1 var(--display); letter-spacing: .01em; } .fdt button.fdt-go small { font: 600 14px/1 var(--body); color: #4A3B08; }

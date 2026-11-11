@@ -24,7 +24,8 @@ const OUT = process.argv[2] || '', SAFE = +process.env.SAFE || 0, URL = process.
     return [...st.querySelectorAll('button')].filter(e => e.getClientRects().length && !rola(e)).map(e => { const r = e.getBoundingClientRect(); return (r.right > R.right + 2 || r.bottom > R.bottom + 2 || r.left < R.left - 2 || r.top < R.top - 2) ? (e.id || e.innerText.replace(/\s+/g, ' ').slice(0, 20)) : ''; }).filter(Boolean); });
     if (c.length) errs.push(step + ': botão fora do palco: ' + c.join(', ')); };
   let nShot = 0;
-  const shot = async n => { await cut(); if (OUT) await p.screenshot({ path: OUT + '/' + String(++nShot).padStart(2, '0') + '-' + n + '.png' }); };
+  const shot = async n => { await cut(); if (OUT) await p.screenshot({ path: OUT + '/' + String(++nShot).padStart(2, '0') + '-' + n + '.png' });
+    if (process.env.TR) { const t = await p.evaluate(() => (document.getElementById('ld') || {}).innerText || ''); require('fs').mkdirSync(process.env.TR, { recursive: true }); require('fs').writeFileSync(process.env.TR + '/mk-' + String(nShot).padStart(2, '0') + '-' + n + '.txt', t); } }; // TR=pasta grava o texto de cada tela
   const tap = async (s, opt) => { try { await p.waitForSelector(s, { timeout: 6000, state: 'visible' });
       { const age = await p.evaluate(s => { const e = document.querySelector(s), w = e && e.closest('#ld-pop'); if (!w) return 9999; if (!w.__t) w.__t = Date.now(); return Date.now() - w.__t; }, s); if (age < 550) await p.waitForTimeout(550 - age); } // janelinha nova engole toque por 450 ms
       await p.click(s); await p.waitForTimeout(750); return true; }
