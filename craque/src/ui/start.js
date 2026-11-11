@@ -25,7 +25,7 @@
   const PLUS_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
   const SLOT_BASE = { rapida: () => SAVE, completa: () => U.SAVE_FC };
   function slotsOf(mode) {
-    return [0, 1].map(slot => {
+    return [...Array(mode === 'treinador' ? U.CO_SLOTS : 2).keys()].map(slot => {
       if (mode === 'treinador') return U.coSaved(slot);
       const sv = load(U.slotKey(SLOT_BASE[mode](), slot));
       return sv && sv.c && !(mode === 'completa' && sv.c.fcv !== FCV) ? sv : null;
@@ -83,7 +83,7 @@
   // Nada é apagado aqui: a carreira só some quando a nova grava por cima (jogador assinou, técnico viu as propostas)
   function slotPick(mode, sl, go) {
     const M = MODES[mode], co = mode === 'treinador';
-    let pick = (sl[0].at || 0) <= (sl[1].at || 0) ? 0 : 1;
+    let pick = sl.reduce((b, sv, i) => ((sv.at || 0) < (sl[b].at || 0) ? i : b), 0);
     const w = document.createElement('div');
     w.className = 'ask-wrap vg-wrap';
     const draw = () => {
@@ -382,10 +382,10 @@
         (cl ? esc(cl.short || cl.name) + ' · ' : '') + at + '</small></span></button>' +
         (first ? '<button class="hl-cont" data-vg="' + m + ':' + i + '">' + PLAY_SVG + 'Continuar</button>' : '<button class="hl-play" data-vg="' + m + ':' + i + '" aria-label="Continuar ' + esc(c.name) + '">' + PLAY_SVG + '</button>') + '</div>';
     };
-    U.LD.pop('<div class="hl-mp"><div class="hl-mph"><b>' + esc(M.name) + '</b><button class="hl-ed" data-ed>' + (ed ? 'Pronto' : 'Excluir') + '</button>' +
+    U.LD.pop('<div class="hl-mp' + (order.length > 2 ? ' many' : '') + '"><div class="hl-mph"><b>' + esc(M.name) + '</b><button class="hl-ed" data-ed>' + (ed ? 'Pronto' : 'Excluir') + '</button>' +
       '<button class="hl-x-btn" data-pop-x aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
-      order.map((x, k) => row(x, k === 0)).join('') +
-      (ed ? '' : '<button class="hl-new" data-mode="' + m + '">' + PLUS_SVG + '<b>Nova carreira</b></button>') + '</div>',
+      '<div class="hl-mpg">' + order.map((x, k) => row(x, k === 0)).join('') +
+      (ed ? '' : '<button class="hl-new" data-mode="' + m + '">' + PLUS_SVG + '<b>Nova carreira</b></button>') + '</div></div>',
       M.name, w => {
         bindSaves(w);
         w.querySelector('[data-ed]').onclick = () => { sfx('tap'); ed ? editing.delete(m) : editing.add(m); landMode(m); };
@@ -408,13 +408,13 @@
   // Vagas cheias (HCheio): qual carreira sai para a nova entrar; a mais antiga vem marcada. Nada é apagado aqui
   function landPick(mode, sl) {
     const M = MODES[mode], co = mode === 'treinador';
-    let pick = (sl[0].at || 0) <= (sl[1].at || 0) ? 0 : 1;
+    let pick = sl.reduce((b, sv, i) => ((sv.at || 0) < (sl[b].at || 0) ? i : b), 0);
     const draw = () => {
       const nm = esc(svName(sl[pick]));
-      U.LD.pop('<div class="hl-pk"><div class="hl-pkl"><small>' + esc(M.name).toUpperCase() + ' · 2 DE 2 VAGAS</small><b>Qual ' + (co ? 'técnico' : 'jogador') + ' sai para o novo entrar?</b>' +
+      U.LD.pop('<div class="hl-pk"><div class="hl-pkl"><small>' + esc(M.name).toUpperCase() + ' · ' + sl.length + ' DE ' + sl.length + ' VAGAS</small><b>Qual ' + (co ? 'técnico' : 'jogador') + ' sai para o novo entrar?</b><div class="hl-pkg' + (sl.length > 2 ? ' many' : '') + '">' +
         sl.map((sv, i) => { const c = sv.co || sv.c, cl = c.club && club(c.club); return '<button class="hl-pko' + (i === pick ? ' on' : '') + '" data-s="' + i + '">' + (cl ? crest(cl.id) : U.emo(M.ic, 'md')) +
           '<span><b>' + esc(c.name) + '</b><small>' + (cl ? esc(cl.short || cl.name) + ' · ' : '') + svYear(sv) + (sv.at ? ' · ' + agoTxt(sv.at) : '') + '</small></span>' + (i === pick ? '<em>SAI</em>' : '') + '</button>'; }).join('') +
-        '</div><div class="hl-pkr"><p>' + nm + ' só é apagado quando ' + (co ? 'o novo técnico for ver as propostas' : 'o novo jogador assinar com um clube') + '. Desistiu antes? Ele continua salvo.</p>' +
+        '</div></div><div class="hl-pkr"><p>' + nm + ' só é apagado quando ' + (co ? 'o novo técnico for ver as propostas' : 'o novo jogador assinar com um clube') + '. Desistiu antes? Ele continua salvo.</p>' +
         '<span class="hl-gr"></span><button class="hl-btn gold" id="hl-pk-ok">Trocar ' + esc(firstName(svName(sl[pick]))) + ' por um novo</button><button class="hl-btn line" data-pop-x>Cancelar</button></div></div>',
         'Vagas cheias', w => {
           w.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { pick = +b.dataset.s; sfx('tap'); draw(); });
