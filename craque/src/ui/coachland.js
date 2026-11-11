@@ -1985,10 +1985,10 @@
       '<div class="fn2-tabs">' + [['rod', 'Rodada'], ['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
       '<div class="fn2-p">' + rows + '</div>' +
       '<div class="fn2-side">' + finTrend(c, co, step) +
-        '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><div><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></div></div>' +
+        '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><' + (pt ? 'button data-fd="pat"' : 'div') + '><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></' + (pt ? 'button' : 'div') + '></div>' +
         '<span class="rs-gap"></span><div class="fn2-bt">' + (U.COINS ? '<button class="tm-b fn2-apo" data-fd="apo" id="fn2-apo">' + U.COINS.svg + 'Aporte</button>' : '') + '<button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div></div></div>', st => {
       st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); financas(b.dataset.ft); });
-      st.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.fd; if (k === 'banco') banco(); else if (k === 'pres') presInfo(); else if (k === 'apo') loja(1, () => financas(tab)); });
+      st.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.fd; if (k === 'banco') banco(); else if (k === 'pres') presInfo(true); else if (k === 'pat') patInfo(); else if (k === 'apo') loja(1, () => financas(tab)); });
       st.querySelector('#ldf-back').onclick = () => { sfx('tap'); const bk = FIN_BACK; FIN_BACK = null; (bk || clube)(); };
     });
   }
@@ -2007,9 +2007,21 @@
       r('banco', 'Banco', f.loan ? 'faltam ' + U.D.plural(f.loan.n, 'parcela', 'parcelas') + ' de ' + c.brl(f.loan.parc) + ' · deve ' + c.brl(f.loan.rem) : 'sem empréstimo · pode pegar até ' + c.brl(max), '') +
       r('banco', 'Situação do caixa', STEP[step], '<span class="ldn-steps">' + [1, 2, 3, 4].map(i => '<i class="' + (i < step ? 'd' : i === step ? 'c' : '') + '"></i>').join('') + '</span>', step >= 2 ? 'bad' : '');
   }
-  function presInfo() {
-    const co = C().co, P = S.coPres(co);
-    pop(popHead(esc(P.n), 'Presidente · ' + P.nome) + '<div class="ld-pb pi-pb">' + presFace(P, 'pi-fc') + '<div><p class="ldn-p">' + esc(P.txt) + '</p><p class="ldn-p">O caixa no vermelho pesa <b>' + RED_TXT(P.red) + '</b> na confiança dele. A cada 3 temporadas tem eleição e ele pode sair.</p></div></div>', 'Presidente', null, 'w560');
+  // ac = aberto pela linha Acordo de Finanças: o título é o acordo do ano e a primeira linha é a meta combinada
+  function presInfo(ac) {
+    const co = C().co, P = S.coPres(co), f = S.coFin(co), g = co.board && co.board.goal;
+    pop(popHead(ac ? 'Acordo ' + (AC_NM[f.ac] || 'Normal').toLowerCase() : esc(P.n), ac ? 'com ' + esc(P.n) + ' · presidente ' + P.nome : 'Presidente · ' + P.nome) + '<div class="ld-pb pi-pb">' + presFace(P, 'pi-fc') + '<div>' +
+      (ac && g ? '<p class="ldn-p">Meta do ano: <b>' + esc(S.CO_GOAL_TXT[g.k]).toLowerCase() + '</b>.</p>' : '') + '<p class="ldn-p">' + esc(P.txt) + '</p><p class="ldn-p">O caixa no vermelho pesa <b>' + RED_TXT(P.red) + '</b> na confiança dele. A cada 3 temporadas tem eleição e ele pode sair.</p></div></div>', ac ? 'Acordo' : 'Presidente', null, 'w560');
+  }
+  // Patrocínio da camisa (Silvio 2026-11-11: "cliquei no patrocinador e apareceu sobre o presidente"): a linha do
+  // patrocínio em Finanças abre o contrato que vale (valor do ano, por rodada, bônus na meta e até quando)
+  function patInfo() {
+    const c = C(), co = c.co, f = S.coFin(co), pt = f && f.pat; if (!pt) return;
+    const n = co.ss ? co.ss.rounds.length : 38, yrs = pt.until - co.season;
+    pop(popHead(esc(pt.name), 'Patrocínio da camisa') + '<div class="ld-pb pi-pb">' + (patImg(pt.name, 'pi-lg', 1) || '') + '<div>' +
+      '<p class="ldn-p"><b>' + c.brl(pt.fix) + '</b> ' + (pt.k === 'long' ? 'por ano' : 'no ano') + ', pagos a cada rodada (' + c.brl(Math.round(pt.fix / n)) + ').</p>' +
+      '<p class="ldn-p">' + (pt.bonus ? 'Bônus se cumprir a meta: <b>+ ' + c.brl(pt.bonus) + '</b>.' : 'Sem bônus pela meta.') + '</p>' +
+      '<p class="ldn-p">' + (yrs > 0 ? 'Contrato travado até o fim de <b>' + (U.YEAR0 + pt.until) + '</b>.' : 'Vale até o fim de <b>' + (U.YEAR0 + co.season) + '</b>. No ano que vem você escolhe outro.') + '</p></div></div>', 'Patrocínio', null, 'w560');
   }
   // Reunião de pré-temporada: 3 acordos de verba × meta. welcome: primeira conversa no clube novo (depois dela a carreira
   // cai na Semana, não mais na escalação: Silvio 2026-11-09)
