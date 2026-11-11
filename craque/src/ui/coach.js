@@ -9,7 +9,18 @@
   const SAVE_CO = U.SAVE_CO = 'climbix-treinador-v1';
   let co = null;
   // Duas vagas: co.slot 1 grava em SAVE_CO + '-2'
-  const save = step => { if (co) co.step = step || co.step; store(U.slotKey(SAVE_CO, co && co.slot), co ? { co, at: Date.now() } : { co: null, at: Date.now() }); };
+  // savedAt = hora do save desta carreira que este aparelho conhece; frozen = a carreira aberta ficou velha (ver U.coStale)
+  let savedAt = 0, frozen = false;
+  const save = step => { if (frozen) return; if (co) co.step = step || co.step; savedAt = Date.now(); store(U.slotKey(SAVE_CO, co && co.slot), co ? { co, at: savedAt } : { co: null, at: savedAt }); };
+  // Mesma conta em dois aparelhos (2026-11-11): o app que ficou aberto num aparelho seguia com a carreira da memória e, ao
+  // salvar, apagava o que foi jogado no outro. Depois de puxar da nuvem (cloud.js), se o save guardado desta vaga é mais
+  // novo que o que este aparelho conhece, a carreira aberta não salva mais e o jogo recarrega já com a nova
+  U.coStale = () => {
+    if (!co || frozen) return false;
+    const sv = load(U.slotKey(SAVE_CO, co.slot)); if (!sv || !(sv.at > savedAt)) return false;
+    frozen = true; try { sessionStorage.setItem('climbix-outro-aparelho', '1'); } catch (e) {}
+    location.reload(); return true;
+  };
   const yr = () => YEAR0 + co.season;
   const last = n => String(n || '').split(' ').filter(Boolean).pop() || '';
   const posTxt = { GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', MEI: 'Meia', ATA: 'Atacante' };
@@ -18,13 +29,19 @@
 
   // ---------- ingresso da tela inicial ----------
   U.coSaved = slot => { const sv = load(U.slotKey(SAVE_CO, slot)); return sv && sv.co && sv.co.mode === 'treinador' ? sv : null; };
-  U.coResume = sv => { sfx('tap'); resume(sv); };
+  // Com conta, espera a busca da nuvem que estiver no ar (até 2,5 s) e abre o save mais novo da vaga, não o que a home leu
+  let resuming = false;
+  U.coResume = sv => { sfx('tap'); if (resuming) return; resuming = true;
+    const go = () => { resuming = false; const s2 = sv && sv.co ? U.coSaved(sv.co.slot) : null; resume(s2 && s2.at > (sv.at || 0) ? s2 : sv); };
+    const C = window.CLIMBIX_CLOUD; if (C && C.wait) C.wait(2500).then(go, go); else go(); };
   U.coStand = () => { if (co) resume({ co }); };
   U.coCreate = slot => create(slot);
   function resume(sv) {
-    co = sv.co;
+    co = sv.co; if (sv.at) savedAt = sv.at;
     // Save de antes dos elencos reais de fora do Brasil: eles entram na próxima temporada (S.coRealOf)
     if (co.rf === undefined) co.rf = co.club ? co.season + 1 : co.season;
+    // Save de antes do nível firme dos jogadores reais (S.coGenSquad, co.lv): vale na próxima temporada
+    if (co.lv === undefined) co.lv = co.club ? co.season + 1 : co.season;
     G.c = null; bar();
     S.applyLeagues(co);
     if (!co.club) return offers(co.offers || S.coOffers(co));
@@ -101,7 +118,7 @@
     if (U.LD && U.LD.on()) return U.LD.propostas(list, stay);
     const first = !co.hist.length && !co.club;
     const card = id => {
-      const cl = club(id), lg = league(id), g = S.coGoalFor(co, id), sq = S.coGenSquad(id, co.season, { rf: co.rf, season: co.season }), avg = Math.round(sq.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 11).reduce((a, p) => a + p.ovr, 0) / 11);
+      const cl = club(id), lg = league(id), g = S.coGoalFor(co, id), sq = S.coGenSquad(id, co.season, { rf: co.rf, lv: co.lv, season: co.season }), avg = Math.round(sq.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 11).reduce((a, p) => a + p.ovr, 0) / 11);
       const hard = g.k === 'naocair' || g.k === 'digna', top = ['titulo', 'subir', 'g4'].includes(g.k);
       return '<div class="of-card co-of" style="--of-c:' + (U.bandColor ? U.bandColor(id) : '#1F6B3E') + '">' +
         '<div class="of-band">' + crest(id, 'of-crest') + '<div class="of-id"><b class="of-name">' + esc(cl.name) + '</b><span class="of-lg">' + U.flag(lg.flag) + ' ' + esc(lg.name) + '</span></div></div>' +
@@ -572,6 +589,8 @@
   const STY_SHORT = { equilibrado: 'Sem ponto fraco grande', posse: 'Toca até achar o espaço', pressao: 'Rouba lá na frente, cansa', contra: 'Espera e sai rápido', retranca: 'Fecha tudo, pouco ataque', lados: 'Cruza e abre a defesa' };
   const nm = id => { const c = club(id); return c.short || c.name; };
   const LANE = { e: 'pela esquerda', d: 'pela direita', c: 'pelo meio' };
+  // Na simulação livre o lance diz como o chute saiu no campinho (e.hd de cabeça, e.far de fora da área); senão, o lado
+  const HOW = e => (e.hd ? 'de cabeça' : e.far ? 'de fora da área' : e.l ? LANE[e.l] : '');
   const ICO = {
     pause: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
     ff: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5l7 7-7 7M13 5l7 7-7 7"/></svg>',
@@ -610,9 +629,9 @@
   }
   function feedLine(m, e) {
     const who = e.s === 'us' ? nm(co.club) : nm(m.vs);
-    const t = e.t === 'gol' ? '<b>GOL do ' + esc(who) + '!</b> ' + esc(e.p || '') + (e.sp === 'pen' ? ' de pênalti' : e.sp === 'falta' ? ' de falta' : e.sp === 'esc' ? ' de cabeça' + (e.by ? ', escanteio do ' + esc(last(e.by)) : ', no escanteio') : e.sp === 'fc' ? ' de cabeça' + (e.by ? ', na falta cruzada do ' + esc(last(e.by)) : ', na falta cruzada') : e.l ? ' ' + LANE[e.l] : '') :
+    const t = e.t === 'gol' ? '<b>GOL do ' + esc(who) + '!</b> ' + esc(e.p || '') + (e.sp === 'pen' ? ' de pênalti' : e.sp === 'falta' ? ' de falta' : e.sp === 'esc' ? ' de cabeça' + (e.by ? ', escanteio do ' + esc(last(e.by)) : ', no escanteio') : e.sp === 'fc' ? ' de cabeça' + (e.by ? ', na falta cruzada do ' + esc(last(e.by)) : ', na falta cruzada') : HOW(e) ? ' ' + HOW(e) : '') :
       e.t === 'chance' && e.sp ? spMiss(e) :
-      e.t === 'chance' ? (e.k === 'defesa' ? esc(e.p) + ' chuta ' + (e.l ? LANE[e.l] + ' ' : '') + 'e o goleiro defende' : e.k === 'fora' ? esc(e.p) + ' finaliza para fora' : e.k === 'trave' ? esc(e.p) + ' acerta a trave!' : 'Chute de ' + esc(e.p) + ' travado pela zaga') :
+      e.t === 'chance' ? (e.k === 'defesa' ? esc(e.p) + (e.hd ? ' cabeceia ' : ' chuta ' + (HOW(e) ? HOW(e) + ' ' : '')) + 'e o goleiro defende' : e.k === 'fora' ? esc(e.p) + ' finaliza para fora' : e.k === 'trave' ? esc(e.p) + ' acerta a trave!' : 'Chute de ' + esc(e.p) + ' travado pela zaga') :
       e.t === 'vermelho' ? (e.how === '2am' ? '<span class="co-yc"></span> ' : '') + '<span class="co-red"></span> <b>' + esc(e.p) + ' é expulso</b> (' + esc(who) + ')' + (e.how === '2am' ? ', segundo amarelo' : e.how === 'direto' ? ', vermelho direto' : '') :
       e.t === 'amarelo' ? '<span class="co-yc"></span> Amarelo para ' + esc(e.p) + ' (' + esc(who) + ')' :
       e.t === 'falta' ? 'Falta de ' + esc(e.p) + ' (' + esc(who) + ')' + (e.m % 3 ? '' : ' perto da área') :
@@ -632,7 +651,7 @@
   // o time, então a frase não repete o clube); o que foi ordem sua leva a etiqueta VOCÊ no lugar do escudo
   function feedShort(m, e) {
     const n = esc(e.p || ''), us = e.s === 'us', you = us && (e.t === 'tatica' || e.t === 'troca') || e.t === 'grito' || e.t === 'conversa';
-    const t = e.t === 'gol' ? '<b>GOL!</b> ' + n + (e.sp === 'pen' ? ' de pênalti' : e.sp === 'falta' ? ' de falta' : e.sp ? ' de cabeça' : e.l ? ' ' + LANE[e.l] : '') :
+    const t = e.t === 'gol' ? '<b>GOL!</b> ' + n + (e.sp === 'pen' ? ' de pênalti' : e.sp === 'falta' ? ' de falta' : e.sp ? ' de cabeça' : HOW(e) ? ' ' + HOW(e) : '') :
       e.t === 'chance' && e.sp === 'pen' ? (e.k === 'defesa' ? '<b>Pênalti defendido!</b> ' + n : e.k === 'trave' ? '<b>Pênalti na trave!</b> ' + n : '<b>Pênalti para fora!</b> ' + n) :
       e.t === 'chance' && e.sp === 'falta' ? (e.k === 'defesa' ? n + ' cobra a falta, o goleiro defende' : e.k === 'bloqueio' ? 'Falta de ' + n + ' na barreira' : e.k === 'trave' ? 'Falta de ' + n + ' na trave!' : 'Falta de ' + n + ' por cima') :
       e.t === 'chance' && e.sp ? (e.k === 'defesa' ? n + ' cabeceia, o goleiro defende' : e.k === 'bloqueio' ? 'Cabeçada de ' + n + ' travada' : n + ' cabeceia para fora') :
@@ -870,7 +889,7 @@
       const T = { gol: 'Gol do ' + (us ? nm(co.club) : nm(m.vs)), intervalo: 'Intervalo', vermelho: 'Expulso', lesao: 'Lesão', pausa: 'Jogo parado' }[st.t] || 'Parada';
       const tag = { gol: us ? 'Gol' : 'Gol sofrido', intervalo: 'Intervalo', vermelho: 'Cartão vermelho', lesao: 'Lesão', pausa: 'Você parou' }[st.t] || 'Parada';
       const sh = m.sh || { us: 0, them: 0 };
-      const txt = st.t === 'gol' ? esc(st.p || '') + ' marca' + (st.l ? ' ' + LANE[st.l] : '') + '.' :
+      const txt = st.t === 'gol' ? esc(st.p || '') + ' marca' + (HOW(st) ? ' ' + HOW(st) : '') + '.' :
         st.t === 'intervalo' ? 'Primeiro tempo: ' + D.plural(sh.us, 'chute', 'chutes') + ' seus contra ' + sh.them + ' deles.' :
         st.t === 'vermelho' ? (st.how === '2am' ? 'Segundo amarelo.' : 'Vermelho direto.') + ' O time fica com 10 até o fim e ele perde o próximo jogo.' :
         st.t === 'lesao' ? esc(st.p || '') + ' não aguenta. Troque agora ou o time joga com ele mancando.' : 'O jogo espera você.';

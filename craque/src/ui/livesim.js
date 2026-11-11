@@ -861,7 +861,7 @@
       if (f.out !== 'gol') emit(f.out === 'def' ? 'defesa' : f.out === 'trave' ? 'trave' : f.out === 'bloq' ? 'bloqueio' : 'fora', s, f.from, f.out === 'bloq' ? f.blk : gk, f.kind);
       if (f.due) { f.due.done = true; if (due === f.due) due = null; if (f.due.cb) f.due.cb(); }
       // Simulação livre: o campo conta para a tela (e a tela para o motor) cada chute que acabou: placar, artilheiro, narração
-      if (f.free && o.onShot) { const [fx, fy] = tf(s, { x: f.x0, y: f.y0 }), nm = q => (q && q.inf ? q.inf.num : undefined); o.onShot({ side: s, out: f.out, sv: f.sv, kind: f.kind, id: f.from && f.from.inf ? f.from.inf.id : undefined, num: nm(f.from), ast: nm(f.ast), dist: Math.hypot(L - fx, 34 - fy), lane: fy < 24 ? -1 : fy > 44 ? 1 : 0 }); }
+      if (f.free && o.onShot) { const [fx, fy] = tf(s, { x: f.x0, y: f.y0 }), nm = q => (q && q.inf ? q.inf.num : undefined); o.onShot({ side: s, out: f.out, sv: f.sv, kind: f.kind, id: f.from && f.from.inf ? f.from.inf.id : undefined, num: nm(f.from), ast: nm(f.ast), dist: Math.hypot(L - fx, 34 - fy), box: L - fx <= 16.5 && Math.abs(34 - fy) <= 20.15, lane: fy < 24 ? -1 : fy > 44 ? 1 : 0 }); }
       // Sobra: a bola vai para (rx, ry) e fica com quem chegar primeiro (um atacante perto bate de novo: o 2º chute do rebote)
       const spill = (from, rx, ry, k) => { rx = cl(rx, 1, L - 1); ry = cl(ry, 2, WD - 2); let q = null, qd = 1e9; for (const z of ALL) { if (z.r === 'GK' || z.down || z === f.blk) continue; const dd = Math.hypot(z.x - rx, z.y - ry) * (z.side === s ? 1.15 : 1); if (dd < qd) { qd = dd; q = z; } }
         if (!q) return setOwner(gk); if (q.side === s && rnd() < 0.7 && !lc) q.reb = 1.6; fly(from, rx, ry, q, k === 'soco', k, true); ball.fly.from = from; };

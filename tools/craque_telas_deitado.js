@@ -35,6 +35,9 @@ async function page(b, first) {
     // janelinha recém-aberta engole toque por 450 ms (`pop` em coachland.js); com a máquina ocupada ela abre atrasada e o
     // toque seguinte caía nessa trava (era o "Acelerar a obra" que falhava de vez em quando): espera a janelinha ter 550 ms
     { const age = await p.evaluate(sel => { const e = document.querySelector(sel), w = e && e.closest('#ld-pop'); if (!w) return 9999; if (!w.__t) w.__t = Date.now(); return Date.now() - w.__t; }, sel); if (age < 550) await p.waitForTimeout(550 - age); }
+    // jogo parado sozinho (vermelho, lesão) abre com o auxiliar por cima (`.ldl-ov`): fecha antes de tocar no que está embaixo
+    if (!/ldl-aux|data-ro/.test(sel) && await p.$('.ldl-ov #ldl-aux-n')) { await p.waitForTimeout(500); await p.click('.ldl-ov #ldl-aux-n').catch(() => {}); await p.waitForTimeout(400); }
+    await p.waitForFunction(() => { const L = window.CRAQUE_UI && window.CRAQUE_UI.LD; return !L || !L.busy || !L.busy(); }, null, { timeout: 3000 }).catch(() => {}); // tela recém-trocada não aceita toque por 400 ms (toque duplo, `show` em coachland.js)
     await p.click(sel); await p.waitForTimeout(750); }; // 750 ms: a trava de duplo toque do jogo (~700 ms) engolia o toque seguinte de vez em quando e o passeio parava (ex.: Acelerar a obra)
   return { p, shot, click };
 }
