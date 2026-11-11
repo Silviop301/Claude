@@ -9784,3 +9784,5 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .axv-card > div { display: flex; justify-content: space-between; gap: 8px; font: 700 16px/1 var(--body); color: #C9D2CC; }
 .axv-card > div b { font: 800 17px/1 var(--display); color: #F3F1EA; } .axv-card > div b.up { color: #4ADE80; } .axv-card > div b.dn { color: #F5A57F; }
 .axv-card p { margin: 0; font: 700 14px/1.3 var(--body); color: #9BA8A0; }
+/* bolinha do Auxiliar sempre no meio da altura do botão (no intervalo o botão é mais baixo e ela vazava) */
+.tm-b .tm-dot { top: 50%; right: 10px; transform: translateY(-50%); text-align: center; }
