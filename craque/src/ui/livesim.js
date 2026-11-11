@@ -1216,14 +1216,18 @@
       const P = offPend, s = P.s, q = P.q;
       if (mode !== 'play' || lc || due || T[s].indexOf(q) < 0) return offEnd(false);
       P.t += dt;
-      const line = lineOf(s), [qx, qy] = tf(s, q), rx = Math.min(L - 4, Math.max(qx, line + 2));
+      const line = lineOf(s), [qx, qy] = tf(s, q), rx = Math.min(L - 4, Math.max(qx, line + 3.5));
       if (!P.f) {
         q.run = Math.max(q.run || 0, 0.5); q.runX = rx; q.runY = qy;
         const own = ball.owner && ball.owner.side === s && ball.owner !== q ? ball.owner : null;
         // o passe só sai com ele já além da linha (impedimento de verdade: na hora do passe ele está à frente do último zagueiro)
-        if (own && qx > line + 0.8) {
+        // impedimento que se vê: na hora do passe ele passou do penúltimo adversário (goleiro conta) por um corpo inteiro,
+        // está à frente da bola e no campo deles; senão o passe espera (e o lance some aos 5 s)
+        const op = T[1 - s].map(x => tf(s, x)[0]).sort((a, b) => b - a), l2 = Math.max(op[1] != null ? op[1] : op[0] || 0, L / 2);
+        if (own && qx > l2 + 2.2 && qx > tf(s, own)[0] + 1 && qx > tf(s, ball)[0] + 1) {
+          P.line = l2;
           const [wx, wy] = toW(s, Math.max(rx, qx + 1.5), qy);
-          fly(own, wx, wy, q, Math.hypot(wx - own.x, wy - own.y) > 26, 'costas', false); ball.fly.dur = Math.min(ball.fly.dur, 1.2); P.f = ball.fly; P.line = line;
+          fly(own, wx, wy, q, Math.hypot(wx - own.x, wy - own.y) > 26, 'costas', false); ball.fly.dur = Math.min(ball.fly.dur, 1.2); P.f = ball.fly;
         } else if (P.t > 5) offEnd(false);
         return;
       }
@@ -1598,7 +1602,7 @@
       if (offPend && !offPend.f && mode === 'play') {
         const P = offPend, s = P.s, q = P.q, [, qy] = tf(s, q), l0 = P.l0 = P.l0 || lineOf(s);
         T[1 - s].forEach(d => { if (d.r === 'GK') return; const [dx, dy] = tf(s, d); if (dx > l0 - 2) { [d.tx, d.ty] = toW(s, Math.max(L / 2, l0 - 2), dy); d.sprint = 1; } });
-        [q.tx, q.ty] = toW(s, Math.min(L - 6, l0 + 2.5), qy); q.sprint = 1;
+        [q.tx, q.ty] = toW(s, Math.min(L - 6, l0 + 3.5), qy); q.sprint = 1;
       }
       if (mode === 'ko' || mode === 'half') { const dd = Math.hypot(52.5 - ball.x, 34 - ball.y), k = dd > 0.01 ? Math.min(1, 16 * dt / dd) : 1; ball.x += (52.5 - ball.x) * k; ball.y += (34 - ball.y) * k; } // volta ao meio rolando, não voando
       // Andar: cada um reage no seu tempo, acelera e freia; ninguém vira na hora nem atravessa o companheiro
