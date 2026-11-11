@@ -1272,6 +1272,8 @@
     co.hist.push({ s: co.season, club: co.club, league: ss.name, pos, n, goal: B.goal.k, met, won, up: !!up, down: !!down, sacked: !!co.sacked });
     // Divisões da carreira: os de cima e de baixo trocam com a sua liga
     moveLeagues(co, ss, ord);
+    // Subiu: a liga em que o clube joga no ano que vem (a festa do acesso mostra)
+    if (up && co.leagueOf && co.leagueOf[co.club]) out.upTo = (D.LEAGUE_BY_ID[co.leagueOf[co.club]] || {}).name || '';
     // Elenco: idade, evolução, aposentadoria, contratos, base
     const { r, save } = rngCo(co);
     if (!co.sacked) {

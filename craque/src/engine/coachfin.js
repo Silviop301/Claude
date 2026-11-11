@@ -19,6 +19,7 @@
     marg: 1.03,     // a folha de um elenco normal do clube é 103% da receita prevista
     tv: 0.4, bil: 0.35,             // partes da receita (o patrocínio vem da proposta escolhida)
     titulo: 0.12, acesso: 0.08,     // prêmios
+    lg: { k: 0.3, lo: 0.88, hi: 1.4 },   // peso da divisão na receita: fora da liga de origem, exp(k × diferença de força média / 8,5), entre lo e hi
     teto: 1.05,     // teto da folha = folha normal do clube x 1,05 (folha no teto fecha perto do zero a zero)
     folga: 2, folgaN: 6,            // ao chegar no clube o teto comporta 2 reforços com o salário do 6º melhor do elenco (Silvio 2026-11-10: contratar uns 2 sem vender)
     caixa0: 6, verba0: 5,           // semanas da folha normal no caixa e na verba ao assinar
@@ -68,12 +69,18 @@
   // A folha que um elenco normal do clube teria (o elenco sorteado dele na temporada)
   // e o peso da divisão em que ele está (subir traz mais TV e público; cair, menos)
   const normal = (clubId, season, co) => S.coGenSquad(clubId, season, co && { rf: co.rf, season: co.season }).reduce((a, p) => a + p.wage, 0);
-  // Peso da divisão: a liga em que o clube está hoje contra a liga de origem dele (subiu: mais TV e público)
+  // Peso da divisão: a liga em que o clube está hoje contra a liga de origem dele (subiu: mais TV e público; caiu: menos).
+  // Na liga de origem vale 1 (a régua de sempre). Até 11/11 a conta comparava a liga de hoje com ela mesma (`applyLeagues`
+  // troca o `league` do clube) e dava sempre 1: subir não mexia na receita. Números em `F.lg` (peso, piso, teto).
   const lgAvg = ids => ids.reduce((a, id) => a + D.CLUB_BY_ID[id].strength, 0) / Math.max(1, ids.length);
   function lgMult(clubId) {
-    const c = D.CLUB_BY_ID[clubId], cur = lgAvg(S._.fcLib.leagueTeams(c)), nat = lgAvg(D.CLUBS.filter(x => x.league === c.league).map(x => x.id));
-    return clamp(Math.exp(0.5 * (cur - nat) / 8.5), 0.75, 1.5);
+    const c = D.CLUB_BY_ID[clubId], l0 = c.league0 || c.league, G = F.lg;
+    const k = +((typeof process !== 'undefined' && process.env && process.env.CO_LGK) || G.k);
+    if (c.league === l0 || !k) return 1;
+    const cur = lgAvg(S._.fcLib.leagueTeams(c)), nat = lgAvg(D.CLUBS.filter(x => (x.league0 || x.league) === l0).map(x => x.id));
+    return clamp(Math.exp(k * (cur - nat) / 8.5), G.lo, G.hi);
   }
+  S.coFinLg = lgMult;
   const baseOf = co => normal(co.club, co.season, co) * lgMult(co.club);
   S.coFinBase = baseOf;
   S.coFolha = co => (co.squad || []).reduce((a, p) => a + (p.wage || 0), 0);
@@ -366,7 +373,7 @@
       const add = (k, v) => { v = r10(v); ss[k] += v; fin.caixa += v; };
       if (out.met && pt && pt.bonus) add('pat', pt.bonus);
       if (out.won) add('prem', rec * F.titulo);
-      if (out.up) add('prem', rec * F.acesso);
+      if (out.up) { add('prem', rec * F.acesso); out.upPrem = r10(rec * F.acesso); }
     }
     const ent = ss.bil + ss.tv + ss.pat + ss.prem + ss.vend, sai = ss.sal + ss.comp + (ss.jur || 0), saldo = ent - sai;
     const bal = { season: out.season, club: clubId, ss: Object.assign({}, ss), ent, sai, saldo, caixa: fin.caixa, verba0: fin.verba, teto0: fin.teto, ac: fin.ac, pat: pt ? pt.name : null };
@@ -374,6 +381,8 @@
     // A diretoria do ano seguinte: teto pela folha normal (cresce com a divisão), mais 5% se cumpriu a meta no azul;
     // verba nova pelo tamanho do clube mais uma parte do lucro; no vermelho não tem verba (o acordo da pré-temporada ainda mexe nela)
     const base = baseOf(co);
+    // Subiu: quanto a receita cresce só pela liga de cima (peso da liga nova contra o que valeu neste ano; sem o sobe e desce do elenco sorteado)
+    if (out.up && rec) { const n0 = normal(co.club, out.season, co), lg0 = n0 ? rec * F.marg / rounds(co) / n0 : 1; out.upRec = Math.round((lgMult(co.club) / (lg0 || 1) - 1) * 100); }
     const good = out.met && saldo > 0;
     fin.teto = Math.max(r5(base * F.teto), fin.tmin || 0, good ? r5((fin.teto0 || (fin.teto - (fin.tap || 0))) * 1.05) : 0) + (fin.tap || 0);
     fin.verba = fin.caixa <= 0 ? 0 : Math.min(r10(fin.caixa * 0.6), r10(base * F.verba0 + Math.max(0, saldo) * F.lucro));
