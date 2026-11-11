@@ -428,7 +428,10 @@
   // `pure`: da posição primeiro, depois o geral na vaga (botão "Melhores" da escalação), sem energia nem atributo por setor
   function autoXI(squad, form, pure) {
     const used = new Set(), slots = slotsOf(form), SL = FORMS[form].slots, xi = [];
-    const val = pure ? (p, sl) => (p.pos === sl ? 100 : 0) + p.ovr * fit(p.pos, sl) : (p, sl, i) => p.ovr * fit(p.pos, sl) * secK(p, slotSec(SL[i])) * (0.75 + 0.25 * (p.en === undefined ? 100 : p.en) / 100);
+    // pure = 'rest' (Silvio 2026-11-11: "seria bom ter os mais descansados, pra poupar em jogo menor eu tenho que tirar um a um"):
+    // cada vaga pega primeiro quem é da posição e, entre eles, o de mais energia (de 5 em 5 pontos); no empate, o maior geral
+    const val = pure === 'rest' ? (p, sl) => (p.pos === sl ? 1000 : 0) + Math.round((p.en === undefined ? 100 : p.en) / 5) * 5 + p.ovr * fit(p.pos, sl) / 100 :
+      pure ? (p, sl) => (p.pos === sl ? 100 : 0) + p.ovr * fit(p.pos, sl) : (p, sl, i) => p.ovr * fit(p.pos, sl) * secK(p, slotSec(SL[i])) * (0.75 + 0.25 * (p.en === undefined ? 100 : p.en) / 100);
     // Primeiro as vagas da própria posição (mais escassas antes: goleiro, laterais, zagueiros)
     const order = slots.map((sl, i) => i).sort((a, b) => ['GOL', 'LAT', 'ZAG', 'ATA', 'MEI'].indexOf(slots[a]) - ['GOL', 'LAT', 'ZAG', 'ATA', 'MEI'].indexOf(slots[b]));
     order.forEach(i => {

@@ -401,6 +401,7 @@
     const c = C(), co = c.co, by = {}; co.squad.forEach(p => { by[p.id] = p; });
     if (co.xi.some(id => !c.avail(by[id])) || co.xi.length < 11) co.xi = S.coAutoXI(co.squad, co.form).xi;
     const bestXI = () => S.coAutoXI(co.squad.filter(c.avail), co.form, true).xi;
+    const restXI = () => S.coAutoXI(co.squad.filter(c.avail), co.form, 'rest').xi; // os mais descansados de cada posição (poupar em jogo menor)
     let swap = null, selB = null; // titular escolhido (troca de lugar ou sai) e reserva escolhido (entra)
     // Reserva entra na vaga i (arrastando do banco ou tocando nos dois)
     const put = (id, i) => { co.xi[i] = id; co.autoXI = false; swap = null; selB = null; sfx('tap'); draw(); };
@@ -452,7 +453,8 @@
         (nFix ? '<i class="tm-tip-d n">' + nFix + '</i>' : tip && !used && !tip.seen ? '<i class="tm-tip-d"></i>' : '') + '</button>';
       show('<div class="tm"><div class="tm-h"><button class="tcr-back" id="tm-back" aria-label="Voltar">' + BK + '</button>' + title + pill + '</div>' +
         '<div class="ld-pitch tm-pitch">' + PITCH + dots + (swap !== null ? nearList(sl[swap], bench, c.avail, sp[swap][0], sp[swap][1]) : '') +
-        '<button class="tm-best' + (bestXI().join() === co.xi.join() ? ' on' : '') + '" id="tm-best" aria-label="Escalar os melhores pelo geral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></svg>Melhores</button></div>' +
+        '<button class="tm-best' + (bestXI().join() === co.xi.join() ? ' on' : '') + '" id="tm-best" aria-label="Escalar os melhores pelo geral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></svg>Melhores</button>' +
+        '<button class="tm-best tm-rest' + (restXI().join() === co.xi.join() ? ' on' : '') + '" id="tm-rest" aria-label="Escalar os mais descansados de cada posição"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h15v8H3zM18 10.5h3v3h-3z"/></svg>Descansados</button></div>' +
         '<div class="tm-bench"><small>BANCO</small>' + bstrip + '</div>' +
         '<div class="tm-side">' + pick('form', 'Formação', co.form) + pick('sty', 'Estilo', esc(S.CO_STY[co.style].name)) +
         '<span class="tm-two"><button class="tm-b" id="ld-fun">Funções</button><button class="tm-b" id="ld-bat">Batedores</button></span><button class="tm-b" id="ld-ele">Elenco</button>' +
@@ -469,6 +471,8 @@
           selB = selB === id ? null : id; draw(); });
         // Melhores (Silvio 11/11): o maior geral de cada posição na formação de hoje; machucado e suspenso ficam fora
         st.querySelector('#tm-best').onclick = () => { const xi = bestXI(); if (xi.join() === co.xi.join()) { sfx('tap'); return; }
+          sfx('ok'); co.xi = xi; co.autoXI = false; swap = null; selB = null; draw(); };
+        st.querySelector('#tm-rest').onclick = () => { const xi = restXI(); if (xi.join() === co.xi.join()) { sfx('tap'); return; }
           sfx('ok'); co.xi = xi; co.autoXI = false; swap = null; selB = null; draw(); };
         benchDrag(st.querySelector('.tm'), put, (id, i) => !!by[id] && fitsSlot(by[id], sl[i])); benchShow(st); nearFix(st);
         // tocar fora (campo vazio, cabeçalho, coluna) fecha a escolha
@@ -2360,14 +2364,16 @@
         main = '<div class="lj-ap lj-none"><b>Abra uma carreira do Treinador</b><small>O aporte entra na verba do clube que você treina.</small></div>';
         side = '<span class="rs-gap"></span>';
       } else {
-        const left = S.coAporteLeft(co), used = S.coAporteUsed(co), f = S.coFin(co), red = f.caixa < 0;
+        const left = S.coAporteLeft(co), used = S.coAporteUsed(co);
         wk = Math.max(1, Math.min(wk, Math.max(1, left)));
-        const cost = wk * S.CO_APORTE.coin, v = S.coAporteValue(co, wk), ok = left > 0 && saldo >= cost;
-        main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · vai para a verba</small></span><img class="lj-ai" src="' + CO_ART + 'mo-aporte.webp" alt=""></div>' +
+        // P = antes e depois (sem aporte sobrando, nada muda). No vermelho o aporte cobre o caixa primeiro: a tela mostra o caixa também
+        const P = S.coAportePrev(co, left ? wk : 0), red = P.red, cost = wk * S.CO_APORTE.coin, v = S.coAporteValue(co, wk), ok = left > 0 && saldo >= cost;
+        const cell = (t, a, cls) => '<span><small>' + t + '</small><b>' + c.brl(a[0]) + ' → ' + (cls && a[1] !== a[0] ? '<i class="' + cls + '">' + c.brl(a[1]) + '</i>' : c.brl(a[1])) + '</b></span>';
+        main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (red ? 'cobre o caixa primeiro' : 'vai para a verba') + '</small></span><img class="lj-ai" src="' + CO_ART + 'mo-aporte.webp" alt=""></div>' +
           '<div class="lj-v"><button id="lj-m" aria-label="Menos"' + (wk <= 1 ? ' disabled' : '') + '>' + BK + '</button><span><b>+ ' + c.brl(v) + '</b><small>' + U.D.plural(wk, 'aporte', 'aportes') + ' · ' + (used + (left ? wk : 0)) + ' de ' + S.CO_APORTE.max + ' na temporada</small></span><button id="lj-p" aria-label="Mais"' + (wk >= left ? ' disabled' : '') + '>' + FW + '</button></div>' +
-          '<div class="lj-two"><span><small>Verba</small><b>' + c.brl(f.verba) + ' → ' + c.brl(f.verba + (left ? v : 0)) + '</b></span><span><small>Teto de salários por semana</small><b>' + c.brl(f.teto) + ' → ' + c.brl(f.teto + (left ? S.coAporteTeto(v) : 0)) + '</b></span></div></div>';
+          '<div class="lj-two' + (red ? ' t3' : '') + '">' + (red ? cell('Caixa', P.caixa, P.caixa[1] >= 0 ? 'up' : 'dn') : '') + cell('Verba', P.verba) + cell(red ? 'Teto por semana' : 'Teto de salários por semana', P.teto) + '</div></div>';
         side = '<div class="lj-box lj-cost"><small class="ld-lbl">CUSTA</small><span>' + U.COINS.svg + '<b>' + cost + '</b></span><small>' + (saldo >= cost ? 'sobram ' + (saldo - cost) + ' moedas' : 'faltam ' + (cost - saldo) + ' moedas') + '</small></div>' +
-          '<button class="tm-go' + (ok ? '' : ' off') + '" id="lj-ap"' + (ok ? '' : ' disabled') + '>' + (red ? 'Caixa no vermelho' : !left ? 'Limite da temporada' : 'Fazer aporte') + '</button>';
+          '<button class="tm-go' + (ok ? '' : ' off') + '" id="lj-ap"' + (ok ? '' : ' disabled') + '>' + (!left ? 'Limite da temporada' : 'Fazer aporte') + '</button>';
       }
       show('<div class="lj"><div class="tm-h"><button class="tcr-back" id="lj-back" aria-label="Voltar">' + BK + '</button><b>Loja</b></div>' + tabs + U.COINS.pill('lj-pill') +
         '<div class="lj-main">' + main + '</div><div class="lj-side">' + side + '</div></div>', st => {
@@ -2393,11 +2399,12 @@
         if (st.querySelector('#lj-p')) st.querySelector('#lj-p').onclick = () => { sfx('tap'); wk++; draw(); };
         if (st.querySelector('#lj-ap')) st.querySelector('#lj-ap').onclick = () => {
           const cost = wk * S.CO_APORTE.coin; sfx('tap');
-          coinAsk(cost, 'Fazer aporte', '+ ' + c.brl(S.coAporteValue(co, wk)) + ' na verba e + ' + c.brl(S.coAporteTeto(S.coAporteValue(co, wk))) + ' no teto', () => {
+          const P = S.coAportePrev(co, wk), vb = P.verba[1] - P.verba[0], tt = '+ ' + c.brl(P.teto[1] - P.teto[0]) + ' no teto';
+          coinAsk(cost, 'Fazer aporte', P.red ? '+ ' + c.brl(P.v) + ' no caixa' + (vb ? ', + ' + c.brl(vb) + ' na verba' : '') + ' e ' + tt : '+ ' + c.brl(P.v) + ' na verba e ' + tt, () => {
           if (!U.COINS.spend(cost, 'Aporte: ' + (club(co.club).short || club(co.club).name))) return;
           const v = S.coAporte(co, wk); if (!v) { U.COINS.add({ n: cost, t: 'Aporte devolvido' }); return; }
           sfx('coin'); c.save(); wk = 1; draw();
-          pop('<div class="acd-help"><b>Aporte feito</b><p>+ ' + c.brl(v) + ' na verba do ' + esc(club(co.club).short || club(co.club).name) + '.</p><button class="hl-btn dark" data-pop-x>Fechar</button></div>', 'Aporte feito', null, 'hl-pop acd-pop tm-pop');
+          pop('<div class="acd-help"><b>Aporte feito</b><p>+ ' + c.brl(v) + (P.red ? ' no caixa do ' : ' na verba do ') + esc(club(co.club).short || club(co.club).name) + (P.red ? (P.caixa[1] >= 0 ? '. O caixa saiu do vermelho.' : '. O caixa ainda está no vermelho.') : '.') + '</p><button class="hl-btn dark" data-pop-x>Fechar</button></div>', 'Aporte feito', null, 'hl-pop acd-pop tm-pop');
           });
         };
       });
