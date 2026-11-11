@@ -121,6 +121,8 @@
   const face = (n, cls, alt) => '<img class="' + cls + '" src="' + CO_ART + 'rosto-' + String(n).padStart(2, '0') + '.webp" alt="' + esc(alt || '') + '">';
   const presFace = (P, cls) => { const l = FACE_PRES[P.k] || [5]; return face(l[hashS(P.n) % l.length], cls, P.n); };
   const auxFace = (co, cls) => face(7 + hashS((co.name || '') + '|' + co.club) % 2, cls, 'Auxiliar');
+  // rosto 08 é a auxiliar (mulher): o texto concorda com o rosto (Silvio 2026-11-11)
+  const auxEla = co => hashS((co.name || '') + '|' + co.club) % 2 === 1;
 
   // Campinho deitado: o seu gol à esquerda. Posições (x, y em %) a partir das linhas da formação.
   // full: o time ocupa o campo inteiro (Time); senão meio campo cada, encaixado com o rival espelhado (Semana).
@@ -466,15 +468,18 @@
         if (st.querySelector('#tm-aux')) st.querySelector('#tm-aux').onclick = () => { sfx('tap');
           if (tip && !tip.seen) { tip.seen = 1; const d = st.querySelector('.tm-tip-d'); if (d && !nFix) d.remove(); }
           // A dica do jogo em cima (curta quando há trocas), a lista das trocas com um botão só, e a escalação inteira
-          const say = tip ? (used ? 'Do jeito que está eu não mexeria, professor.' : S.coTipTxt(tip)) : aux, nw = t => t.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>');
-          const ALL = '<button class="tm-all" id="ld-auto">Usar a escalação dele inteira</button>';
+          // Sem o relatório do olheiro, a pílula diz "Leia o olheiro" e a fala explica e leva até ele
+          const toOl = vs && !scR && !nFix;
+          const say = tip ? (used ? 'Do jeito que está eu não mexeria, professor.' : S.coTipTxt(tip)) : toOl ? 'Leia o relatório do olheiro que eu te digo a melhor formação para esse jogo, professor.' : aux, nw = t => t.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>');
+          const ALL = '<button class="tm-all" id="ld-auto">Usar a escalação ' + (auxEla(co) ? 'dela' : 'dele') + ' inteira</button>';
           const tipHtml = !tip || (used && nFix) ? '' : nFix
             ? '<span class="tm-fix top"><small>' + nw(say) + '</small><button class="hl-btn line" id="ld-tip-y">Usar ' + esc(tipNm) + '</button></span>'
             : '<p>“' + nw(say) + '”</p>' + (used ? '' : '<span class="hl-ab"><button class="hl-btn dark" id="ld-tip-y">Usar ' + esc(tipNm) + '</button><button class="hl-btn line" data-pop-x>Manter</button></span>');
           pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b>' + (nFix ? ALL : '') + '</span>' +
             (tipHtml || (nFix ? '' : '<p>“' + say + '”</p>')) +
             (nFix ? auxRows(fixes) + '<span class="hl-ab"><button class="hl-btn dark" id="ld-aux-y">' + auxLbl(nFix) + '</button><button class="hl-btn line" data-pop-x>Manter</button></span>' : '') +
-            (nFix ? '' : ALL) + ((tip && !used) || nFix ? '' : '<button class="hl-btn line" data-pop-x>Fechar</button>') + '</div>', 'Auxiliar', w => {
+            (nFix ? '' : ALL) + ((tip && !used) || nFix ? '' : toOl ? '<span class="hl-ab"><button class="hl-btn dark" id="ld-see-ol">Ver o olheiro</button><button class="hl-btn line" data-pop-x>Fechar</button></span>' : '<button class="hl-btn line" data-pop-x>Fechar</button>') + '</div>', 'Auxiliar', w => {
+            if (w.querySelector('#ld-see-ol')) w.querySelector('#ld-see-ol').onclick = () => { sfx('tap'); closePop(); c.keepBench(); c.save(); olheiro(); };
             if (w.querySelector('#ld-tip-y')) w.querySelector('#ld-tip-y').onclick = () => { sfx('tap'); closePop();
               if (tip.kind === 'sty') co.style = tip.v; else { co.xi = xiFor(tip.v); co.form = tip.v; swap = null; selB = null; }
               draw(); };
@@ -547,7 +552,7 @@
     const { H, A, crestB } = o;
     // A cor de cada time no campinho, do lado do escudo (Silvio, 10/11: "preto e branco contra preto e branco, não sei qual é qual")
     const kit = k => { if (!k) return ''; const pc = k.pat && k.pat[1], d = k.pat && k.pat[0], bg = pc && d === 'listras' ? 'repeating-linear-gradient(90deg,' + k[0] + ' 0 3px,' + pc + ' 3px 6px)' : pc && d === 'aros' ? 'repeating-linear-gradient(0deg,' + k[0] + ' 0 3px,' + pc + ' 3px 6px)' : pc ? 'linear-gradient(135deg,' + k[0] + ' 55%,' + pc + ' 55%)' : k[0];
-      return '<i class="ldl-kit" style="background:' + bg + '"></i>'; };
+      return '<b class="ldl-kit"><i style="background:' + bg + '"></i></b>'; }; // camisinha, não bolinha (Silvio, 11/11: a bolinha confundia com a bola)
     const kH = o.kits ? (o.m.home ? o.kits.mine : o.kits.opp) : null, kA = o.kits ? (o.m.home ? o.kits.opp : o.kits.mine) : null;
     return '<div class="lv ldl"><div class="ldl-p">' + o.pitchHtml +
       '<div class="ldl-sb">' + crestB(H.id, 'ldl-cr') + kit(kH) + '<em id="lv-score">0 <i>x</i> 0</em>' + kit(kA) + crestB(A.id, 'ldl-cr') + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' +
@@ -2335,7 +2340,7 @@
       st.querySelector('#ol2-q').onclick = () => { sfx('tap'); pop('<div class="acd-help"><b>Como funciona</b><p>O olheiro viu um jogo só: uma das três pode não se repetir. O que se confirmar em campo vale para o jogo.</p><button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop'); };
       // Guardar: o auxiliar lê o relatório e sugere a formação; a sugestão fica no Time, com o aviso no botão
       st.querySelector('#ldo-ok').onclick = () => { sfx('tap'); co.scout = { i: co.ss.i }; const tp = S.coTip(co, true); c.save(); semana();
-        if (!tp) return;
+        if (!tp || co.tut) return; // no tutorial a janelinha tampava o passo "Agora é jogar" (a dica fica no Time, com o aviso no botão)
         const u = S.coTipUsed(co, tp), say = u ? 'Li o relatório. Contra o ' + tp.them + ' deles, eu manteria o ' + tp.v + ', professor.' : 'Li o relatório. ' + S.coTipTxt(tp);
         pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b></span><p>“' + say.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>') + '”</p>' +
           '<span class="hl-ab"><button class="hl-btn dark" id="ol2-tm">Ver no Time</button><button class="hl-btn line" data-pop-x>Depois</button></span></div>', 'Auxiliar', w => {

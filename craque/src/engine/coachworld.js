@@ -65,6 +65,7 @@
       return false;
     });
     w.free = (w.free || []).filter(x => x.s === co.season);
+    delete w.lost; // aviso "Fechou com outro" da temporada passada (ex.: ficou sem ler porque foi demitido) não vale mais
     w.fa = {}; w.s = co.season; w.st = ''; w.v = (w.v || 0) + 1;
   }
 

@@ -1897,28 +1897,32 @@
     let vig = null, cam = { z: 1, x: 0, y: 0, cl: 0 };
     // Câmera da bola parada: chega perto da área do pênalti e volta depois do lance (o resto do tempo, o campo todo)
     // Aviso do pênalti: a faixa PÊNALTI entra no meio da tela com um apito que treme e solta ondas; some sozinha (tempo de tela)
+    // Texto em ola (GOOOL! e PÊNALTI!, Silvio 11/11): cada letra entra na sua vez e sobe e desce como a ola da torcida;
+    // branco com contorno fino, sem caixa. Desenha centrado na origem; a fonte já vem posta.
+    function waveText(txt, age, sz, tw) {
+      const ch = [...txt], ws = ch.map(c => g.measureText(c).width); let x = -tw / 2;
+      ch.forEach((c, i) => { const li = age - i * 0.06; if (li > 0) {
+        const up = li < 0.18 ? (1 - li / 0.18) * sz * 0.5 : 0, wv = Math.max(0, Math.sin(age * 7 - i * 0.75)) * sz * 0.2 * Math.min(1, age * 2);
+        const sc = li < 0.18 ? 0.4 + 0.6 * li / 0.18 : 1 + wv / sz * 0.35, cx = x + ws[i] / 2, cy = -sz * 0.04 + up - wv;
+        g.save(); g.translate(cx, cy); g.scale(sc, sc); g.rotate(Math.sin(age * 7 - i * 0.75) * 0.06); g.shadowBlur = 0; g.lineJoin = 'round';
+        g.lineWidth = sz * 0.08; g.strokeStyle = 'rgba(10,14,12,.6)'; g.strokeText(c, 0, 0); g.fillStyle = '#fff'; g.fillText(c, 0, 0); g.restore(); }
+        x += ws[i]; });
+    }
+    // Apito desenhado pelo ChatGPT (6 quadros de 160 px lado a lado; original em arte/apito/)
+    const APITO = typeof Image !== 'undefined' ? Object.assign(new Image(), { src: 'assets/co/apito-anim.webp' }) : null;
     function penBanner(k) {
       const now = performance.now(); if (!penBan.w) penBan.w = now; const a = (now - penBan.w) / 1000;
-      if (!penBan.e && !(pen && pen.ban > 0)) penBan.e = now; // a arrumação começou (no 3× mais cedo): a faixa some em 0,3 s
+      if (!penBan.e && !(pen && pen.ban > 0)) penBan.e = now; // a arrumação começou (no 3× mais cedo): some em 0,3 s
       const out = penBan.e ? (now - penBan.e) / 300 : 0; if (out >= 1 || a > 6) { penBan = null; return; }
-      const al = Math.max(0, Math.min(1, a * 6, 1 - out)), pop = a < 0.22 ? 0.6 + 0.4 * Math.sin(a / 0.22 * Math.PI / 2) : 1;
+      const al = Math.max(0, Math.min(1, a * 6, 1 - out)), sz = Math.round(Math.min(H * 0.13, 32 * k)), ic = sz * 1.7;
       g.save(); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalAlpha = al;
-      g.font = '800 ' + Math.round(30 * k) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
-      const txt = 'PÊNALTI', tw = g.measureText(txt).width, iw = 34 * k, w = tw + iw + 34 * k, h = 50 * k, cx = W / 2, cy = H * 0.3;
-      g.translate(cx, cy); g.scale(pop, pop);
-      g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 10 * k; g.shadowOffsetY = 3 * k;
-      g.fillStyle = '#141517'; g.beginPath(); g.roundRect(-w / 2, -h / 2, w, h, 10 * k); g.fill();
-      g.shadowColor = 'transparent'; g.strokeStyle = '#F2C230'; g.lineWidth = 2 * k; g.stroke();
-      // o apito: corpo redondo + bocal, tremendo enquanto toca, com ondas saindo
-      const wx = -w / 2 + 14 * k + iw / 2, wob = a < 1.1 ? Math.sin(a * 46) * 0.16 : 0;
-      g.save(); g.translate(wx, 2 * k); g.rotate(-0.35 + wob);
-      g.fillStyle = '#F2C230'; g.beginPath(); g.arc(0, 0, 9 * k, 0, Math.PI * 2); g.fill();
-      g.fillRect(-1 * k, -9 * k, 17 * k, 7.5 * k);
-      g.fillStyle = '#141517'; g.beginPath(); g.arc(0, 0, 3.4 * k, 0, Math.PI * 2); g.fill(); g.fillRect(6 * k, -9 * k, 3 * k, 3 * k);
-      g.restore();
-      g.strokeStyle = '#F2C230'; g.lineCap = 'round'; g.lineWidth = 2 * k;
-      if (a < 1.2) for (let i = 0; i < 3; i++) { const ph = (a * 2.4 + i / 3) % 1; g.globalAlpha = al * (1 - ph); g.beginPath(); g.arc(wx + 9 * k, -6 * k, (6 + ph * 12) * k, -1.25, -0.25); g.stroke(); }
-      g.globalAlpha = al; g.fillStyle = '#F2C230'; g.fillText(txt, wx + iw / 2 + 8 * k, 1.5 * k);
+      g.font = '900 italic ' + sz + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      const txt = 'PÊNALTI!', tw = g.measureText(txt).width, tot = ic + sz * 0.2 + tw;
+      g.translate(W / 2, H * 0.34);
+      // o apito toca (quadros 1 a 5 em laço) por 1,2 s e assenta no último
+      if (APITO && APITO.complete && APITO.naturalWidth) { const fr = a < 1.2 ? 1 + Math.floor(a * 12) % 4 + (a > 0.9 ? 1 : 0) : 5, pop = a < 0.2 ? 0.5 + 2.5 * a : 1;
+        g.save(); g.translate(-tot / 2 + ic / 2, 0); g.scale(pop, pop); g.drawImage(APITO, fr * 160, 0, 160, 160, -ic / 2, -ic / 2, ic, ic); g.restore(); }
+      g.translate(-tot / 2 + ic + sz * 0.2 + tw / 2, 0); waveText(txt, a, sz, tw);
       g.restore();
     }
     function camStep() {
@@ -1988,22 +1992,15 @@
         if (age > big.d) big = null; else {
           // entra grande e assenta (0,2 s), treme de leve, e some no fim; a faixa embaixo tem a cor da camisa de quem fez
           const pop = age < 0.2 ? 1.7 - 0.7 * (age / 0.2) : 1 + Math.sin(age * 9) * 0.025 * Math.max(0, 1 - age), al = Math.min(1, age * 8, (big.d - age) * 3.5);
-          const kt = big.s ? KT.opp : KT.mine, sz = Math.round(Math.min(H * 0.24, 58 * k0));
+          const kt = big.s ? KT.opp : KT.mine, sz = Math.round(Math.min(H * (big.wave ? 0.13 : 0.24), (big.wave ? 32 : 58) * k0));
           g.save(); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.translate(W / 2, H * 0.42); g.scale(pop, pop); g.globalAlpha = al;
           g.font = '900 italic ' + sz + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
           const tw = g.measureText(big.txt).width, bw = tw + sz * 0.9, bh = sz * 0.22, by = sz * 0.5;
-          g.fillStyle = 'rgba(10,14,12,.55)'; g.beginPath(); g.roundRect(-bw / 2, -sz * 0.62, bw, sz * 1.36, sz * 0.18); g.fill();
-          g.fillStyle = kt[0]; g.fillRect(-bw / 2 + sz * 0.18, by, bw / 2 - sz * 0.18, bh); g.fillStyle = kt[1] || kt[0]; g.fillRect(0, by, bw / 2 - sz * 0.18, bh);
+          if (!big.wave) { g.fillStyle = 'rgba(10,14,12,.55)'; g.beginPath(); g.roundRect(-bw / 2, -sz * 0.62, bw, sz * 1.36, sz * 0.18); g.fill();
+          g.fillStyle = kt[0]; g.fillRect(-bw / 2 + sz * 0.18, by, bw / 2 - sz * 0.18, bh); g.fillStyle = kt[1] || kt[0]; g.fillRect(0, by, bw / 2 - sz * 0.18, bh); } // GOOOL! (Silvio, 11/11): só o texto, menor, sem caixa nem faixa
           g.lineJoin = 'round'; g.lineWidth = sz * 0.1; g.strokeStyle = '#141517';
           if (!big.wave) { g.strokeText(big.txt, 0, -sz * 0.04); g.fillStyle = '#F2C230'; g.shadowColor = 'rgba(242,194,48,.7)'; g.shadowBlur = sz * 0.3; g.fillText(big.txt, 0, -sz * 0.04); }
-          else { // GOOOL! (Silvio, 11/11): cada letra entra na sua vez e sobe e desce como a ola da torcida
-            const ch = [...big.txt], ws = ch.map(c => g.measureText(c).width); let x = -tw / 2;
-            ch.forEach((c, i) => { const li = age - i * 0.06; if (li > 0) {
-              const up = li < 0.18 ? (1 - li / 0.18) * sz * 0.5 : 0, wv = Math.max(0, Math.sin(age * 7 - i * 0.75)) * sz * 0.2 * Math.min(1, age * 2);
-              const sc = li < 0.18 ? 0.4 + 0.6 * li / 0.18 : 1 + wv / sz * 0.35, cx = x + ws[i] / 2, cy = -sz * 0.04 + up - wv;
-              g.save(); g.translate(cx, cy); g.scale(sc, sc); g.rotate(Math.sin(age * 7 - i * 0.75) * 0.06); g.shadowBlur = 0;
-              g.strokeText(c, 0, 0); g.fillStyle = '#F2C230'; g.shadowColor = 'rgba(242,194,48,.7)'; g.shadowBlur = sz * 0.3; g.fillText(c, 0, 0); g.restore(); }
-              x += ws[i]; }); }
+          else waveText(big.txt, age, sz, tw);
           g.restore(); } }
       if (cue) { const age = (Date.now() - cue.t0) / 1000;
         if (age > CUE_T) cue = null; else { const me = T[cue.s].filter(q => q.r !== 'GK'), cx = me.reduce((u, q) => u + q.x, 0) / (me.length || 1), d = (X(cx + 1) > X(cx) ? 1 : -1) * (cue.s ? -1 : 1) * (cue.k === 'recuar' ? -1 : 1);
