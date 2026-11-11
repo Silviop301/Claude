@@ -15,9 +15,11 @@
   const env = (k, d) => +((typeof process !== 'undefined' && process.env && process.env[k]) || d);
 
   // ---------- números do modo (calibrados com tools/craque_treinador.js) ----------
+  // kT (peso da tática no confronto) 0,3 → 0,45 em 2026-11-11: seguir o plano do auxiliar contra time parecido leva a
+  // vitória de ~37% a ~48% (antes ~44%); craque_taticas.js segue com 0 alertas
   const CO = S.CO = {
     squad: { GOL: 3, ZAG: 5, LAT: 4, MEI: 8, ATA: 5 },
-    lamH: 1.32, lamA: 1.06, ch: 3.2, spMiss: { pen: 0.012, falta: 0.17, esc: 0.15 }, ck: 4, k: env('CO_K', 36), home: 2, kT: env('CO_KT', 0.3), kD: env('CO_KD', 40),
+    lamH: 1.32, lamA: 1.06, ch: 3.2, spMiss: { pen: 0.012, falta: 0.17, esc: 0.15 }, ck: 4, k: env('CO_K', 36), home: 2, kT: env('CO_KT', 0.45), kD: env('CO_KD', 40),
     // Energia (Silvio 2026-11-11: "sinto falta da energia descer durante o jogo" e "a recuperação depende do treino físico"):
     // enGame = quanto um titular gasta em 90 min no Equilibrado (o estilo, a preleção, o grito, a função e o Físico mudam;
     // goleiro enGK do resto); entre um jogo e outro quem jogou recupera enRec do que falta para 100, quem não jogou volta
@@ -658,8 +660,14 @@
       roles: co.roles && co.roles[co.form] ? co.roles[co.form].slice() : null, takers: co.takers || null, train: co.train && co.ss && co.train.i === co.ss.i ? co.train.k : null };
     const them = oppSide(co, nx.vs, !nx.home);
     if (!us.bench.length) us.bench = autoXI(co.squad, co.form).bench;
-    return { min: 0, gh: 0, ga: 0, home: nx.home, us, them, ev: [], stop: null, done: false, half: false, classic: (D.RIVALS[co.club] || []).includes(nx.vs), vs: nx.vs, round: nx.round, played: {}, startXI: us.xi.slice() };
+    // O plano do auxiliar (S.coTip com o olheiro lido): se o time entra nele, o ao vivo e o resultado contam se funcionou
+    const tp = co.tip && co.tip.kind === 'plan' && co.tip.k === co.season + '|' + nx.round + '|p' ? co.tip : null;
+    const plan = tp ? { f: tp.f, s: tp.s, good: tp.good, why: tp.why, used: S.coTipUsed(co, tp) ? 1 : 0 } : null;
+    return { min: 0, gh: 0, ga: 0, home: nx.home, us, them, ev: [], stop: null, done: false, half: false, classic: (D.RIVALS[co.club] || []).includes(nx.vs), vs: nx.vs, round: nx.round, played: {}, startXI: us.xi.slice(), plan };
   };
+  // Como está o plano agora: 'ok' (seguiu e encaixa), 'no' (seguiu e não encaixa), 'off' (não seguiu ou mudou), null (sem plano)
+  S.coPlanNow = m => { const p = m && m.plan; if (!p) return null; if (!p.used || m.us.form !== p.f || m.us.style !== p.s) return 'off'; return p.good ? 'ok' : 'no'; };
+  S.CO_PLAN_WHY = { meio: 'Eles não acham espaço no meio', lados: 'Estamos sobrando pelos lados', area: 'Nossos atacantes ganham na área', pressao: 'A pressão está roubando bolas lá na frente', contra: 'O contra-ataque está encaixando' };
   const sideName = (m, s) => (s === m.us ? 'us' : 'them');
   // Avança até a próxima parada (gol, vermelho, lesão, intervalo) ou o fim; com `until`, para também naquele minuto
   // (a tela ao vivo anda minuto a minuto, para a pessoa poder parar quando quiser). Volta a parada
@@ -688,6 +696,7 @@
       // Para o caderno: quanto tempo cada confronto de estilo e de formação ficou em campo, e como o rival jogou
       const pm = m.pm = m.pm || {}, tm = m.tm = m.tm || {}, ks = 'sty:' + m.us.style + '|' + m.them.style, kf = 'frm:' + m.us.form + '|' + m.them.form, kt = m.them.form + '|' + m.them.style;
       pm[ks] = (pm[ks] || 0) + 1; pm[kf] = (pm[kf] || 0) + 1; tm[kt] = (tm[kt] || 0) + 1;
+      if (m.plan && S.coPlanNow(m) !== 'off') m.plan.min = (m.plan.min || 0) + 1; // minutos no plano do auxiliar
       // Cansaço: quem está em campo perde energia aos poucos (o estilo de ataque cansa mais; Físico alto cansa menos)
       [m.us, m.them].forEach(s => { const sen = styOf(s).en; s.xi.forEach((id, i) => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / CO.mins * sen * (s.enK || 1) * (1 + 0.12 * Math.max(0, s.roles ? s.roles[i] || 0 : 0)) * enFis(p)); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }); });
       // Chances: cada gol esperado vira CO.ch chances; uma em CO.ch entra (as outras são defesa, para fora ou na trave)
@@ -1031,7 +1040,7 @@
   // acerta o melhor 4 em cada 5 vezes e no resto chuta outro; nos 3 primeiros jogos da carreira acerta sempre
   // (Silvio 2026-11-09: quem está começando não pode ser enganado)
   S.CO_AUX_ACC = 0.8; S.CO_AUX_SURE = 3;
-  const auxAcc = (co, nx) => (co.season === 0 && nx.round <= S.CO_AUX_SURE ? 1 : S.CO_AUX_ACC);
+  const auxAcc = (co, nx) => (co.season === 0 && nx.round <= S.CO_AUX_SURE ? 1 : S.coAuxAcc ? S.coAuxAcc(co) : S.CO_AUX_ACC); // acerto pela licença (coachfin.js)
   S.coHint = function (co) {
     const nx = S.coNext(co); if (!nx || nx.bye) return null;
     const key = co.season + '|' + nx.round, cad = cadOf(co);
@@ -1048,27 +1057,43 @@
   // rende com o seu elenco contra o plano do rival; quando erra, é uma das três seguintes). Fica em co.tip até a rodada
   // virar: { k, kind: 'sty' | 'frm', v: o que ele usaria, them: o que o rival traz }. Está usada quando co.style/co.form === v
   // frm (Silvio 2026-11-10: a sugestão de formação sai depois do relatório do olheiro): a dica é sempre de formação
+  // Plano do auxiliar (Silvio 2026-11-11: "to seguindo e não vendo impacto nenhum"): com o relatório do olheiro a dica é o
+  // plano inteiro, formação + estilo, o par que mais rende com o seu elenco contra o plano do rival (quando erra, é um dos
+  // 5 seguintes). `best` = acertou; `why` = a parte do jogo em que o plano mais ganha (o aviso do ao vivo e o resultado)
+  const secOf = (u, o) => ({ meio: u.poss - 0.5, lados: u.flank * u.wsh - o.flank * o.wsh, area: u.central * (1 - u.wsh) - o.central * (1 - o.wsh), pressao: u.press - o.press, contra: 1.6 * (u.counter - o.counter) });
+  S.coPlanRank = function (co, nx, them) {
+    const sq = co.squad.filter(ok), F = Object.keys(FORMS), L = [];
+    F.forEach(f => { const xi = autoXI(sq, f).xi; S.CO_STYLES.forEach(st => { const us = { squad: co.squad, form: f, style: st, xi, bonus: 0 }, m = nx.home ? matchup(us, them) : matchup(them, us);
+      L.push({ f, s: st, x: nx.home ? m.lh / m.la : m.la / m.lh, sec: nx.home ? secOf(m.h, m.a) : secOf(m.a, m.h) }); }); });
+    return L.sort((a, b) => b.x - a.x);
+  };
   S.coTip = function (co, frm) {
     const nx = S.coNext(co); if (!nx || nx.bye) return null;
-    const key = co.season + '|' + nx.round + (frm ? '|f' : '');
+    const key = co.season + '|' + nx.round + (frm ? '|p' : '');
     if (co.tip && co.tip.k === key) return co.tip;
     const h = S.coHint(co), them = oppSide(co, nx.vs, !nx.home), r = S.rng(hash(String(co.name) + '|' + co.club + '|' + key + '|dica'));
+    if (frm) {
+      const rank = S.coPlanRank(co, nx, them), best = r() < auxAcc(co, nx), P = best ? rank[0] : r.pick(rank.slice(1, 6));
+      const why = Object.keys(P.sec).sort((a, b) => P.sec[b] - P.sec[a])[0];
+      // good: o plano rende mais que a metade das combinações (o que o aviso do ao vivo e o resultado contam)
+      return (co.tip = { k: key, kind: 'plan', f: P.f, s: P.s, v: P.f, them: them.form, ts: them.style, best: best ? 1 : 0, good: P.x > rank[rank.length >> 1].x ? 1 : 0, why });
+    }
     const sq = co.squad.filter(ok), sc = {}, F = Object.keys(FORMS);
     F.forEach(f => { const us = { squad: co.squad, form: f, style: co.style, xi: autoXI(sq, f).xi, bonus: 0 }, m = nx.home ? matchup(us, them) : matchup(them, us); sc[f] = nx.home ? m.lh / m.la : m.la / m.lh; });
     const rank = F.slice().sort((a, b) => sc[b] - sc[a]);
     const form = r() < auxAcc(co, nx) ? rank[0] : r.pick(rank.slice(1, 4));
     let kind = r() < 0.5 ? 'sty' : 'frm';
-    if (frm) kind = 'frm';
-    else if (kind === 'sty' && h.style === co.style && form !== co.form) kind = 'frm';
+    if (kind === 'sty' && h.style === co.style && form !== co.form) kind = 'frm';
     else if (kind === 'frm' && form === co.form && h.style !== co.style) kind = 'sty';
     return (co.tip = { k: key, kind, v: kind === 'sty' ? h.style : form, them: kind === 'sty' ? them.style : them.form });
   };
   S.CO_AUX_SEE = { equilibrado: 'Eles não se expõem.', posse: 'Eles gostam de ficar com a bola.', pressao: 'Eles apertam a saída de bola.', contra: 'Eles esperam para sair no contra-ataque.', retranca: 'Eles vêm fechados lá atrás.', lados: 'Eles jogam pelos lados.' };
   S.CO_AUX_GO = { equilibrado: 'Vá no equilibrado', posse: 'Fique com a bola', pressao: 'Aperte a saída deles', contra: 'Saia no contra-ataque', retranca: 'Feche a casinha', lados: 'Abra pelos lados' };
   S.CO_AUX_ME = { equilibrado: 'Eu iria no equilibrado', posse: 'Eu ficaria com a bola', pressao: 'Eu apertaria a saída deles', contra: 'Eu esperaria e sairia no contra-ataque', retranca: 'Eu fecharia a casinha', lados: 'Eu abriria o jogo pelos lados' };
-  S.coTipUsed = (co, t) => !!t && (t.kind === 'sty' ? co.style : co.form) === t.v;
-  S.coTipLbl = t => (t.kind === 'sty' ? S.CO_AUX_GO[t.v] : 'Vá de ' + t.v);
-  S.coTipTxt = t => (t.kind === 'sty' ? S.CO_AUX_SEE[t.them] + ' ' + S.CO_AUX_ME[t.v] + ', professor.' : 'Eles vêm no ' + t.them + '. Eu responderia com o ' + t.v + ', professor.');
+  S.coTipUsed = (co, t) => !!t && (t.kind === 'plan' ? co.form === t.f && co.style === t.s : (t.kind === 'sty' ? co.style : co.form) === t.v);
+  S.coTipName = t => (t.kind === 'plan' ? t.f + ' · ' + S.CO_STY[t.s].name : t.kind === 'sty' ? S.CO_STY[t.v].name : t.v);
+  S.coTipLbl = t => (t.kind === 'plan' ? S.coTipName(t) : t.kind === 'sty' ? S.CO_AUX_GO[t.v] : 'Vá de ' + t.v);
+  S.coTipTxt = t => (t.kind === 'plan' ? 'Eles vêm no ' + t.them + '. ' + S.CO_AUX_SEE[t.ts] + ' Vá de ' + t.f + (t.s === 'equilibrado' ? ', no equilibrado' : ' e ' + S.CO_AUX_GO[t.s].replace(/^./, c => c.toLowerCase())) + ', professor.' : t.kind === 'sty' ? S.CO_AUX_SEE[t.them] + ' ' + S.CO_AUX_ME[t.v] + ', professor.' : 'Eles vêm no ' + t.them + '. Eu responderia com o ' + t.v + ', professor.');
   // Anota depois do jogo: os confrontos que ficaram em campo por mais tempo (estilo e formação separados)
   function cadNote(co, m, log) {
     const cad = cadOf(co), T = cadTruth(), { r, save } = rngCo(co), acc = S.coCadAcc(co), per = S.coCadPer(co);
@@ -1141,6 +1166,8 @@
     const ycOut = [];
     (m.ycAdd || []).forEach(id => { const p = co.squad.find(x => x.id === id); if (!p) return; p.yc = (p.yc || 0) + 1; if (p.yc >= CO.ycMax) { p.yc = 0; if (!p.sus) { p.sus = 1; p.ycSus = 1; ycOut.push(p.n); } } });
     const log = { r: m.round, vs: m.vs, home: m.home, gf, ga, res, ycOut, ev: m.ev.filter(e => e.t === 'gol' && e.s === 'us').map(e => e.p) };
+    // Plano do auxiliar no resultado: ficou nele em boa parte do jogo (2/3 dos minutos)?
+    if (m.plan) log.plan = m.plan.used && (m.plan.min || 0) >= 0.66 * Math.max(1, m.tk || m.min) ? (m.plan.good ? 'ok' : 'no') : 'off';
     if (co.train && co.train.i <= ss.i) { log.train = co.train.k; delete co.train; }
     log.rt = rateMatch(co, m, gf, ga);
     log.rt.forEach(x => { const p = co.squad.find(q => q.id === x.id); if (!p) return; p.notes = (p.notes || []).concat([x.r]).slice(-5);
