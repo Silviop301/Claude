@@ -261,7 +261,7 @@
       if (co.board) co.board.conf = clamp(co.board.conf - F.negConf * presOf(co).red * (fin.neg >= F.ult ? 2 : 1), 0, 100);
       if (fin.neg >= F.venda && !fin.sold) forcedSale(co);
     } else { fin.neg = 0; fin.sold = false; }
-    roundLog(co, ri, fin.snap && fin.snap.s === co.season ? fin.snap : { ss: ss0, cx: cx0 });
+    roundLog(co, ri, fin.snap && fin.snap.s === co.season ? fin.snap : { ss: ss0, cx: cx0 }, vs ? (home ? 1 : 0) : -1);
     return { gate: g };
   }
   // Quanto entrou e saiu na rodada (Silvio 2026-11-11: "a cada jogo quanto entrou e quanto saiu; não está claro se vou
@@ -269,12 +269,12 @@
   // aconteceu entre os jogos (compra, venda, aporte, obra). O que mexeu no caixa sem estar no saldo (empréstimo, parte do
   // principal da parcela) vira "Banco e outros". `fin.rd` = { s, r, inn: [[k, v]], out: [[k, v]], cx, dc }
   const RD_IN = ['bil', 'tv', 'pat', 'prem', 'vend', 'apo'], RD_OUT = ['sal', 'comp', 'jur', 'obra'];
-  function roundLog(co, ri, snap) {
+  function roundLog(co, ri, snap, h) { // h: 1 em casa, 0 fora, -1 sem jogo
     const fin = co.fin, d = k => Math.round((fin.ss[k] || 0) - ((snap.ss && snap.ss[k]) || 0));
     const inn = RD_IN.map(k => [k, d(k)]).filter(x => x[1] > 0), out = RD_OUT.map(k => [k, d(k)]).filter(x => x[1] > 0);
     const dc = Math.round(fin.caixa - snap.cx), rest = dc - inn.reduce((a, x) => a + x[1], 0) + out.reduce((a, x) => a + x[1], 0);
     if (rest > 0) inn.push(['out', rest]); else if (rest < 0) out.push(['out', -rest]);
-    fin.rd = { s: co.season, r: ri + 1, inn, out, cx: fin.caixa, dc };
+    fin.rd = { s: co.season, r: ri + 1, inn, out, cx: fin.caixa, dc, h };
     fin.snap = { s: co.season, ss: Object.assign({}, fin.ss), cx: fin.caixa };
   }
   // No ritmo atual: o que entra e sai numa rodada comum daqui até o fim da temporada (patrocínio, bilheteria média, TV que

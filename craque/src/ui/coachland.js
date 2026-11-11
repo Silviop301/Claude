@@ -1802,7 +1802,7 @@
   // no positivo ou se o saldo vai zerar em semanas"): `fin.rd` e `S.coFinRitmo` em coachfin.js. O cartão Caixa diz quantas
   // rodadas o caixa aguenta no ritmo atual (verde sobra ou chega ao fim da temporada, laranja mais de 4, vermelho 4 ou menos)
   let FIN_BACK = null;
-  const RD_NM = { bil: 'Bilheteria', tv: 'Cota de TV', pat: 'Patrocínio', prem: 'Prêmios', vend: 'Vendas', apo: 'Aporte do investidor', out: 'Outros', sal: 'Salários', comp: 'Contratações e parcelas', jur: 'Juros do banco', obra: 'Obras do estádio' };
+  const RD_NM = { bil: 'Bilheteria e bares', tv: 'Cota de TV', pat: 'Patrocínio', prem: 'Prêmios', vend: 'Vendas', apo: 'Aporte do investidor', out: 'Outros', sal: 'Salários', comp: 'Contratações e parcelas', jur: 'Juros do banco', obra: 'Obras do estádio' };
   const ritmoTxt = (c, R) => !R ? '' : R.st === 'up' ? '+ ' + c.mi(R.net) + ' por rodada' : R.st === 'red' && !R.left ? 'no vermelho' : R.st === 'ok' ? 'dá até o fim do ano' : 'dura ' + U.D.plural(R.left, 'rodada', 'rodadas');
   function financas(tab) {
     const c = C(), co = c.co, f = S.coFin(co), folha = S.coFolha(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
@@ -1816,6 +1816,7 @@
           const k = R.length + (o ? 1 : 0) > 4 ? 3 : R.length, v = o + R.slice(k).reduce((t, x) => t + x[1], 0); return R.slice(0, k).concat(v ? [['out', v]] : []); }; // cabe sem rolar: até 4 linhas por coluna
         const col = (t, L, sg, cls) => '<div class="fn2-rc"><small>' + t + '</small>' + (L.length ? L.map(([k, v]) => '<span>' + (RD_NM[k] || k) + '<b class="' + cls + '">' + sg + c.mi(v) + '</b></span>').join('') : '<span class="nd">nada</span>') + '</div>';
         rows = '<div class="fn2-rd">' + col('ENTROU', top4(rd.inn), '+ ', 'up') + col('SAIU', top4(rd.out), '− ', 'dn') + '</div>' +
+          (rd.h === 0 || rd.h === -1 ? '<p class="fn2-fora">' + (rd.h ? 'Sem jogo nesta rodada' : 'Jogo fora de casa') + ': sem bilheteria, bares e camarotes</p>' : '') +
           '<div class="fn2-li fn2-rs"><span><b>Saldo da rodada ' + rd.r + '</b>' + (R ? '<small> · rodada comum ' + c.sgn(R.net) + '</small>' : '') + '</span><b class="' + (a >= b ? 'up' : 'dn') + '">' + c.sgn(a - b) + '</b></div>'; } }
     else if (tab === 'tmp') { const x = f.ss, homes = co.ss ? co.ss.log.filter(l => l.home).length : 0, sg = v => (v ? '+ ' + c.mi(v) : '0'), sn = v => (v ? '− ' + c.mi(v) : '0');
       const saldo = x.bil + x.tv + x.pat + x.prem + x.vend - x.sal - x.comp;

@@ -9655,3 +9655,4 @@ button.coin-pill { cursor: pointer; border: 0; }
 .fn2-rc span b { font: 800 17px/1 var(--display); } .fn2-rc b.up { color: #7ED39A; } .fn2-rc b.dn { color: #F5A57F; } .fn2-rc span.nd { color: #7f9187; }
 .fn2-li.fn2-rs { height: 34px; border-top: 1px solid rgba(243, 241, 234, .12); }
 .fn2-rd { padding: 6px 0 2px; } .fn2-rc span { height: 21px; } .fn2-li.fn2-rs { height: 30px; }
+.fn2-fora { margin: 0; padding: 4px 0 6px; font: 700 13px/1.2 var(--body); color: #9fb0a6; }
