@@ -218,6 +218,12 @@
     get track() { return mEl && mI >= 0 ? M_LIST[mOrd[mI]] : ''; },
     get title() { const f = this.track; return f ? (M_NAMES[f] || [f.replace(/\.mp3$/, '').replace(/-/g, ' '), '']) : null; },
     next() { musicNext(); },
+    // anterior (disco que cresce, 11/11): com mais de 3 s de faixa volta ao começo dela, senão a que tocou antes nesta volta
+    prev() {
+      if (!mEl) return;
+      if (mEl.currentTime > 3 || mI <= 0) { try { mEl.currentTime = 0; } catch (e) { /* ok */ } mSay(); return; }
+      mI -= 2; musicNext();
+    },
     get live() { return mLive; },
     liveToggle() { mLive = !mLive; try { localStorage.setItem('climbix-musica-jogo', mLive ? 'on' : 'off'); } catch (e) { /* ok */ } musicTick(); return mLive; },
     toggle() {

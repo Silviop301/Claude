@@ -313,7 +313,7 @@
     const meta = B.goal.k === 'titulo' ? 'SER CAMPEÃO' : 'ATÉ O ' + ord(B.goal.pos);
     const top = '<div class="sm-h' + (B.ult ? ' ult' : '') + '"><button class="tcr-back" id="sm-back" aria-label="Início">' + BK + '</button>' +
       '<b>' + ord(pos) + '</b><small>' + me.p + ' pts</small>' + f5(me.f) +
-      '<em class="sm-tag' + (pos > (B.goal.k === 'titulo' ? 1 : B.goal.pos) ? ' hi' : '') + '" title="' + esc(S.CO_GOAL_TXT[B.goal.k]) + '">META · ' + meta + '</em><span class="ld-gr sm-mu">' + (U.discHtml ? U.discHtml('sm', true) : '') + '</span>' + // disco da música no meio do topo (2026-11-11)
+      '<em class="sm-tag' + (pos > (B.goal.k === 'titulo' ? 1 : B.goal.pos) ? ' hi' : '') + '" title="' + esc(S.CO_GOAL_TXT[B.goal.k]) + '">META · ' + meta + '</em><span class="ld-gr sm-mu">' + (U.discHtml ? U.discHtml('sm') : '') + '</span>' + // disco da música no meio do topo (2026-11-11)
       (B.ult ? '<em class="sm-tag ult">ULTIMATO · VENÇA ' + B.ult.need + ' DE ' + B.ult.of + '</em>' : '') +
       // caixa no topo (Silvio 2026-11-10, como no mercado); com ultimato a etiqueta já diz como a diretoria está e a barra sai para caber
       cxPill() + (U.COINS ? U.COINS.pill('cp-sm', 'sm-coins') : '') + (B.ult ? '' : '<span class="sm-dir">Diretoria <em class="ld-bar"><u style="width:' + conf + '%" class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '"></u></em></span>') + '</div>';
