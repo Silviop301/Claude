@@ -8553,7 +8553,7 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .mk-f small, .mk-k small { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
 .mk-f > span { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .mk-f b { flex: 1; min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 800 21px/1 var(--display); color: #9fb0a6; }
-.mk-f.on b { color: #F3F1EA; } .mk-f b.mk-sm { font-size: 18px; }
+.mk-f.on b { color: #F3F1EA; } .mk-f b.mk-sm { font-size: 16px; line-height: 1.05; white-space: normal; text-wrap: balance; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .mk-ar { flex: none; width: 44px; height: 44px; border-radius: 12px; background: rgba(243, 241, 234, .1) !important; display: flex; align-items: center; justify-content: center; padding: 0 !important; }
 .mk-ar svg { width: 14px; height: 14px; fill: #F3F1EA; } .mk-ar.big { width: 52px; height: 52px; border-radius: 14px; background: #141517 !important; } .mk-ar.big svg { width: 16px; height: 16px; }
 .mk-ar:disabled { opacity: .35; cursor: default; }
