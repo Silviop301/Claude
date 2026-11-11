@@ -1495,7 +1495,7 @@
     o = o || { v: neg.cv || cuts[1], pay: 0, tr: null };
     const TL = S.coMktTradeList(co), ti = o.tr ? TL.findIndex(q => q.id === o.tr) : -1, tq = ti >= 0 ? TL[ti] : null;
     const step = o.v >= 2e6 ? 100000 : o.v >= 500000 ? 50000 : 10000;
-    const now = S.coMktNow(co, o), after = f.verba - now;
+    const now = S.coMktNow(co, o), after = f.verba - now, over = S.coMktTradeOver(co, o);
     const pres = S.CO_MKT_PRES[S.coMktPres(co, p)], a = neg.ans;
     const ans = a ? (a.k === 'ok' ? ['Aceitou', 'up'] : a.k === 'counter' ? ['Pede ' + c.brl(a.v), 'mid'] : a.k === 'no' ? ['Encerrou a conversa', 'dn'] : ['Recusou', 'dn']) : [pres.t, pres.c];
     const cl = club(p.club), cn = esc(cl.short || cl.name);
@@ -1510,11 +1510,12 @@
         '<div class="mkp-g"><div class="mk-k"><small>PAGAMENTO</small><span class="mkp-seg">' + ['À vista', '2x', '3x'].map((t, i) => seg(o.pay === i, t, 'data-pp="' + i + '"' + (done ? ' disabled' : ''))).join('') + '</span></div>' +
           '<div class="mk-k"><small>JOGADOR NA TROCA</small><span class="mkp-tr"><button class="mk-ar" data-pt="-1" aria-label="Anterior"' + (done || !TL.length ? ' disabled' : '') + '>' + MK_L + '</button><b class="' + (tq ? '' : 'off') + '">' + (tq ? esc(last(tq.n)) + ' · ' + tq.pos + '<small><u>' + tq.ovr + '</u> · ' + tq.age + ' anos · ' + c.brl(S.coValue(tq)) + '</small>' : TL.length ? 'Ninguém' : 'Sem reservas') + '</b><button class="mk-ar" data-pt="1" aria-label="Próximo"' + (done || !TL.length ? ' disabled' : '') + '>' + MK_R + '</button></span></div></div></div>' +
       '<div class="mk-side"><div class="mk-k mkp-pr"><small>PRESIDENTE</small><b class="' + ans[1] + '">' + ans[0] + '</b><span class="mkp-pat">Paciência' + mkDots(neg.pat, M.pat) + '</span></div>' +
-        '<div class="mk-k mkf-li"><div><span>' + (o.pay ? 'Agora · ' + (o.pay + 1) + 'x' : 'Paga agora') + '</span><b>' + c.brl(now) + '</b></div><div><span>Verba depois</span><b class="' + (after < 0 ? 'dn' : 'up') + '">' + (after < 0 ? '− ' + c.brl(-after) : c.brl(after)) + '</b></div></div>' +
+        '<div class="mk-k mkf-li' + (over && !done ? ' o3' : '') + '"><div><span>' + (o.pay ? 'Agora · ' + (o.pay + 1) + 'x' : 'Paga agora') + '</span><b>' + c.brl(now) + '</b></div><div><span>Verba depois</span><b class="' + (after < 0 ? 'dn' : 'up') + '">' + (after < 0 ? '− ' + c.brl(-after) : c.brl(after)) + '</b></div>' +
+          (over && !done ? '<div class="mkp-ov"><span>Perde na troca</span><b class="dn">' + c.brl(over) + '</b></div>' : '') + '</div>' +
         '<span class="rs-gap"></span>' + gold + '</div></div>', st => {
       const re = x => proposta(id, back, Object.assign({}, o, x));
       st.querySelector('#mkp-back').onclick = () => { sfx('tap'); back(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Cada proposta gasta 1 dia. Abaixo do que ele quer, o presidente contrapõe (perto) ou recusa (longe), e cada resposta que não é sim gasta uma bolinha de paciência. Sem paciência, ele não negocia mais nesta temporada. Parcelado pesa menos na verba agora, mas ele aceita um pouco menos. O jogador na troca abate do valor.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Cada proposta gasta 1 dia. Abaixo do que ele quer, o presidente contrapõe (perto) ou recusa (longe), e cada resposta que não é sim gasta uma bolinha de paciência. Sem paciência, ele não negocia mais nesta temporada. Parcelado pesa menos na verba agora, mas ele aceita um pouco menos. O jogador na troca abate do valor; se ele vale mais que a proposta, não tem troco.'); };
       st.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { sfx('tap'); re({ v: Math.max(10000, o.v + step * (+b.dataset.pv)) }); });
       st.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => { sfx('tap'); re({ v: cuts[+b.dataset.pc] }); });
       st.querySelectorAll('[data-pp]').forEach(b => b.onclick = () => { sfx('tap'); re({ pay: +b.dataset.pp }); });
