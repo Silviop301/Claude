@@ -313,7 +313,7 @@
     const meta = B.goal.k === 'titulo' ? 'SER CAMPEÃO' : 'ATÉ O ' + ord(B.goal.pos);
     const top = '<div class="sm-h' + (B.ult ? ' ult' : '') + '"><button class="tcr-back" id="sm-back" aria-label="Início">' + BK + '</button>' +
       '<b>' + ord(pos) + '</b><small>' + me.p + ' pts</small>' + f5(me.f) +
-      '<em class="sm-tag' + (pos > (B.goal.k === 'titulo' ? 1 : B.goal.pos) ? ' hi' : '') + '" title="' + esc(S.CO_GOAL_TXT[B.goal.k]) + '">META · ' + meta + '</em><span class="ld-gr"></span>' +
+      '<em class="sm-tag' + (pos > (B.goal.k === 'titulo' ? 1 : B.goal.pos) ? ' hi' : '') + '" title="' + esc(S.CO_GOAL_TXT[B.goal.k]) + '">META · ' + meta + '</em><span class="ld-gr sm-mu">' + (U.discHtml ? U.discHtml('sm', true) : '') + '</span>' + // disco da música no meio do topo (2026-11-11)
       (B.ult ? '<em class="sm-tag ult">ULTIMATO · VENÇA ' + B.ult.need + ' DE ' + B.ult.of + '</em>' : '') +
       // caixa no topo (Silvio 2026-11-10, como no mercado); com ultimato a etiqueta já diz como a diretoria está e a barra sai para caber
       cxPill() + (U.COINS ? U.COINS.pill('cp-sm', 'sm-coins') : '') + (B.ult ? '' : '<span class="sm-dir">Diretoria <em class="ld-bar"><u style="width:' + conf + '%" class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '"></u></em></span>') + '</div>';
@@ -334,6 +334,7 @@
     const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['mercado', 'Mercado'], ['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + (k === 'mercado' && inN + nwN ? '<i class="tm-dot">' + (inN + nwN) + '</i>' : k === 'time' && tipNew ? '<i class="tm-dot">1</i>' : '') + '</button>').join('');
     show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + wk +
       '<nav class="sm-side" aria-label="Menu do técnico">' + nav + '<button class="tm-go" id="ld-play">' + (nx.bye ? 'Ver a rodada' : 'Jogar') + '</button></nav></div>', st => {
+      if (U.discBind) U.discBind(st);
       if (st.querySelector('#sm-coins')) st.querySelector('#sm-coins').onclick = () => { sfx('tap'); loja(0, semana); };
       st.querySelector('#ld-play').onclick = () => { sfx('tap'); if (nx.bye) { S.coSkipRound(co); c.save(); return semana(); } time(true); };
       st.querySelector('#sm-back').onclick = () => { sfx('tap'); go('inicio'); };
