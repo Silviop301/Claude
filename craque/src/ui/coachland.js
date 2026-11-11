@@ -1802,7 +1802,7 @@
   // no positivo ou se o saldo vai zerar em semanas"): `fin.rd` e `S.coFinRitmo` em coachfin.js. O cartão Caixa diz quantas
   // rodadas o caixa aguenta no ritmo atual (verde sobra ou chega ao fim da temporada, laranja mais de 4, vermelho 4 ou menos)
   let FIN_BACK = null;
-  const RD_NM = { bil: 'Bilheteria e bares', tv: 'Cota de TV', pat: 'Patrocínio', prem: 'Prêmios', vend: 'Vendas', apo: 'Aporte do investidor', out: 'Outros', sal: 'Salários', comp: 'Contratações e parcelas', jur: 'Juros do banco', obra: 'Obras do estádio' };
+  const RD_NM = { bil: 'Ingressos', bar: 'Bares e lojas', tv: 'Cota de TV', pat: 'Patrocínio', prem: 'Prêmios', vend: 'Vendas', apo: 'Aporte do investidor', out: 'Outros', sal: 'Salários', comp: 'Contratações e parcelas', jur: 'Juros do banco', obra: 'Obras do estádio' };
   const ritmoTxt = (c, R) => !R ? '' : R.st === 'up' ? '+ ' + c.mi(R.net) + ' por rodada' : R.st === 'red' && !R.left ? 'no vermelho' : R.st === 'ok' ? 'dá até o fim do ano' : 'dura ' + U.D.plural(R.left, 'rodada', 'rodadas');
   function financas(tab) {
     const c = C(), co = c.co, f = S.coFin(co), folha = S.coFolha(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));

@@ -51,7 +51,7 @@
     mel: { keys: ['g', 'l', 'b', 'c'], names: { g: 'Gramado', l: 'Refletores', b: 'Bares e loja', c: 'Camarotes' },
       rounds: { g: 2, l: 4, b: 3, c: 6 },   // prazo em rodadas
       pay: 3,                               // o preço = tantas temporadas do que a melhoria rende
-      tv: 0.03, bar: 0.08, cam: 0.05,       // por nível: cota de TV, renda por torcedor, camarote (parte da bilheteria de um jogo comum, fixa: não depende do público nem do humor)
+      tv: 0.03, bar: 0.08, cam: 0.05, bar0: 0.15,       // por nível: cota de TV, renda por torcedor, camarote (parte da bilheteria de um jogo comum, fixa: não depende do público nem do humor)
       gram: 0.05, gramCost: 0.012,          // gramado: o time cansa menos em casa por nível; não rende dinheiro, custa essa parte da receita do ano vezes o nível
       camSo: 4,                             // camarotes pedem a Social coberta
       word: { g: ['castigado', 'bom', 'ótimo', 'tapete'], l: ['sem', 'simples', 'de TV', 'de arena'] } },
@@ -171,6 +171,15 @@
     const cr = pr == null && e.now && e.now.vs === vs ? e.now : S.coEstCrowd(co, vs, null, pr);
     if (!cr || !cr.ref) return g0;
     return gateOf(co, e, cr, g0);
+  };
+  // Quanto da bilheteria é bares, lojas e camarotes (Silvio 11/11: "não era pra entrar dos bares e lojas por rodada?"): só a
+  // divisão para a tela, o total não muda. A renda por torcedor na chegada é 1 = ingresso (1 − bar0) + bares (bar0); cada nível
+  // de Bares e loja soma M.bar e os camarotes entram inteiros. Fica em fin.ss.bar (dentro de fin.ss.bil) e a aba Rodada separa
+  S.coEstBar = function (co, vs, g0, tot) {
+    const e = S.coEst(co); if (!e || !co.ss || !vs || !tot) return 0;
+    const cr = e.now && e.now.vs === vs ? e.now : S.coEstCrowd(co, vs); if (!cr || !cr.ref || cr.closed) return 0;
+    const M = E.mel, x = S.coEstExtra(co), K = g0 * (cr.pub / cr.ref) * cr.q * E.price.rev[cr.pr] / (1 + M.bar * e.up0.b);
+    return Math.min(tot, Math.round((K * (M.bar0 + M.bar * e.up.b) + x.cam) / 1000) * 1000);
   };
   // A multa da liga por jogo em casa (0 sem exigência, com refletores ou antes da rodada `ligaR`)
   const ligaFine = (co, e, r) => (e.lg && e.up.l < 1 && co.ss && (r == null ? co.ss.i : r) >= E.ev.ligaR ? Math.max(1000, Math.round(gameBase(co) * E.ev.ligaK / 1000) * 1000) : 0);
