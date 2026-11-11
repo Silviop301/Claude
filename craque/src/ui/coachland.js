@@ -391,6 +391,7 @@
   function time(toPlay) {
     const c = C(), co = c.co, by = {}; co.squad.forEach(p => { by[p.id] = p; });
     if (co.xi.some(id => !c.avail(by[id])) || co.xi.length < 11) co.xi = S.coAutoXI(co.squad, co.form).xi;
+    const bestXI = () => S.coAutoXI(co.squad.filter(c.avail), co.form, true).xi;
     let swap = null, selB = null; // titular escolhido (troca de lugar ou sai) e reserva escolhido (entra)
     // Reserva entra na vaga i (arrastando do banco ou tocando nos dois)
     const put = (id, i) => { co.xi[i] = id; co.autoXI = false; swap = null; selB = null; sfx('tap'); draw(); };
@@ -441,7 +442,8 @@
         '<span><small>' + (tip && !(used && nFix) ? 'DICA DO AUXILIAR' : 'AUXILIAR') + '</small><b>' + (tip && !(used && nFix) ? (used ? '✓ ' + esc(tipNm) : esc(S.coTipLbl(tip))) : nFix ? fixLbl : vs && !scR ? 'Leia o olheiro' : 'Tudo certo') + '</b></span>' +
         (nFix ? '<i class="tm-tip-d n">' + nFix + '</i>' : tip && !used && !tip.seen ? '<i class="tm-tip-d"></i>' : '') + '</button>';
       show('<div class="tm"><div class="tm-h"><button class="tcr-back" id="tm-back" aria-label="Voltar">' + BK + '</button>' + title + pill + '</div>' +
-        '<div class="ld-pitch tm-pitch">' + PITCH + dots + (swap !== null ? nearList(sl[swap], bench, c.avail, sp[swap][0], sp[swap][1]) : '') + '</div>' +
+        '<div class="ld-pitch tm-pitch">' + PITCH + dots + (swap !== null ? nearList(sl[swap], bench, c.avail, sp[swap][0], sp[swap][1]) : '') +
+        '<button class="tm-best' + (bestXI().join() === co.xi.join() ? ' on' : '') + '" id="tm-best" aria-label="Escalar os melhores pelo geral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></svg>Melhores</button></div>' +
         '<div class="tm-bench"><small>BANCO</small>' + bstrip + '</div>' +
         '<div class="tm-side">' + pick('form', 'Formação', co.form) + pick('sty', 'Estilo', esc(S.CO_STY[co.style].name)) +
         '<span class="tm-two"><button class="tm-b" id="ld-fun">Funções</button><button class="tm-b" id="ld-bat">Batedores</button></span><button class="tm-b" id="ld-ele">Elenco</button>' +
@@ -456,6 +458,9 @@
         st.querySelectorAll('[data-bp]').forEach(b => b.onclick = () => { const id = b.dataset.bp; sfx('tap');
           if (swap !== null) return put(id, swap);
           selB = selB === id ? null : id; draw(); });
+        // Melhores (Silvio 11/11): o maior geral de cada posição na formação de hoje; machucado e suspenso ficam fora
+        st.querySelector('#tm-best').onclick = () => { const xi = bestXI(); if (xi.join() === co.xi.join()) { sfx('tap'); return; }
+          sfx('ok'); co.xi = xi; co.autoXI = false; swap = null; selB = null; draw(); };
         benchDrag(st.querySelector('.tm'), put, (id, i) => !!by[id] && fitsSlot(by[id], sl[i])); benchShow(st); nearFix(st);
         // tocar fora (campo vazio, cabeçalho, coluna) fecha a escolha
         st.querySelector('.tm').addEventListener('click', e => { if ((swap !== null || selB) && !e.target.closest('[data-xi],[data-bp],.tm-near,button')) { swap = null; selB = null; draw(); } });

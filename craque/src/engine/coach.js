@@ -418,9 +418,10 @@
   // ---------- escalação ----------
   const ok = p => p && !p.out && !p.sus;
   // O auxiliar monta o time: para cada vaga, o melhor que sobra pela força na vaga (energia conta)
-  function autoXI(squad, form) {
+  // `pure`: da posição primeiro, depois o geral na vaga (botão "Melhores" da escalação), sem energia nem atributo por setor
+  function autoXI(squad, form, pure) {
     const used = new Set(), slots = slotsOf(form), SL = FORMS[form].slots, xi = [];
-    const val = (p, sl, i) => p.ovr * fit(p.pos, sl) * secK(p, slotSec(SL[i])) * (0.75 + 0.25 * (p.en === undefined ? 100 : p.en) / 100);
+    const val = pure ? (p, sl) => (p.pos === sl ? 100 : 0) + p.ovr * fit(p.pos, sl) : (p, sl, i) => p.ovr * fit(p.pos, sl) * secK(p, slotSec(SL[i])) * (0.75 + 0.25 * (p.en === undefined ? 100 : p.en) / 100);
     // Primeiro as vagas da própria posição (mais escassas antes: goleiro, laterais, zagueiros)
     const order = slots.map((sl, i) => i).sort((a, b) => ['GOL', 'LAT', 'ZAG', 'ATA', 'MEI'].indexOf(slots[a]) - ['GOL', 'LAT', 'ZAG', 'ATA', 'MEI'].indexOf(slots[b]));
     order.forEach(i => {
