@@ -22,7 +22,7 @@
     // enGame = quanto um titular gasta em 90 min no Equilibrado (o estilo, a preleção, o grito, a função e o Físico mudam;
     // goleiro enGK do resto); entre um jogo e outro quem jogou recupera enRec do que falta para 100, quem não jogou volta
     // inteiro; o treino da semana tira ou devolve por cima disso. Lesão: cansado abaixo de enInj machuca mais
-    enGame: 34, enGK: 0.35, enRec: 0.75, enOpp: 90, enInj: 65, inj: 0.011, subs: 5,
+    enGame: 34, enGK: 0.35, enRec: 0.75, enOpp: 90, enInj: 65, inj: 0.011, subs: 5, win: 3,
     // Acréscimos: a1 1 a 3 no 1º tempo, a2 3 a 7 no 2º; mins = minutos jogados num jogo médio (90 + acréscimos): as taxas
     // por minuto dividem por ele, para os acréscimos não aumentarem gols, faltas e cansaço
     mins: 96,
@@ -626,7 +626,7 @@
     const sq = genSquad(vs, co.season, co); sq.forEach(p => { p.en = CO.enOpp; });
     const d = D.CLUB_BY_ID[vs].strength - D.CLUB_BY_ID[co.club].strength;
     const pl = plan(vs, d, home), a = autoXI(sq, pl.form);
-    return { club: vs, squad: sq, form: pl.form, style: pl.style, plan: pl, xi: a.xi, bench: a.bench, subs: CO.subs, red: 0 };
+    return { club: vs, squad: sq, form: pl.form, style: pl.style, plan: pl, xi: a.xi, bench: a.bench, subs: CO.subs, win: CO.win, red: 0 };
   }
   // Prévia do próximo jogo: o rival como deve vir e o confronto contra o seu time de agora
   S.coPreview = function (co, form, style) {
@@ -644,7 +644,7 @@
     const nx = S.coNext(co);
     if (!nx || nx.bye) return null;
     co.xi = co.xi.filter(id => co.squad.some(p => p.id === id && ok(p))).length === 11 ? co.xi : autoXI(co.squad, co.form).xi;
-    const us = { club: co.club, squad: co.squad, form: co.form, style: co.style, bonus: co.xp.leitura * 0.2, xi: co.xi.slice(), bench: (co.bench || []).filter(id => co.squad.some(p => p.id === id && ok(p))), subs: CO.subs, red: 0, mine: true,
+    const us = { club: co.club, squad: co.squad, form: co.form, style: co.style, bonus: co.xp.leitura * 0.2, xi: co.xi.slice(), bench: (co.bench || []).filter(id => co.squad.some(p => p.id === id && ok(p))), subs: CO.subs, win: CO.win, red: 0, mine: true,
       roles: co.roles && co.roles[co.form] ? co.roles[co.form].slice() : null, takers: co.takers || null, train: co.train && co.ss && co.train.i === co.ss.i ? co.train.k : null };
     const them = oppSide(co, nx.vs, !nx.home);
     if (!us.bench.length) us.bench = autoXI(co.squad, co.form).bench;
@@ -771,7 +771,7 @@
       }
       if (!stop && m.min === 45 && !m.half && m.st >= (m.a1 || 0)) { m.half = true; m.st = 0; stop = { t: 'intervalo' }; }
       // O auxiliar do rival troca os cansados no segundo tempo
-      if (m.min >= 55 && m.min % 5 === 0) tiredSubs(m.them);
+      if (m.min >= 55 && m.min % 5 === 0) tiredSubs(m.them, 'm' + m.min);
       // O técnico rival muda o plano: perdendo no fim, se joga; ganhando, fecha
       if (m.min === 65 || m.min === 78) { const T = m.them, diff = (T === H ? m.gh - m.ga : m.ga - m.gh);
         const want = diff < 0 ? (m.min === 78 ? 'pressao' : 'lados') : diff > 0 && m.min === 78 ? 'retranca' : null;
@@ -841,21 +841,28 @@
     const avg = ps.reduce((a, p) => a + p.en, 0) / ps.length, low = ps.filter(p => p.en < 70).sort((a, b) => a.en - b.en);
     return avg < 80 || low.length >= 3 ? { n: low.length, who: low.slice(0, 2).map(p => last(p.n)).join(', ') + (low.length > 2 ? '…' : ''), avg } : null;
   };
-  // free: troca por lesão, que não gasta uma das 5 (Silvio 2026-11-11)
-  function autoSub(s, k, free) {
-    if ((s.subs <= 0 && !free) || !s.bench.length) { s.xi[k] = null; return; }
+  // Paradas para troca (regra do futebol; Silvio 2026-11-11): até 5 trocas em até 3 paradas (`CO.win`); o intervalo não gasta
+  // parada e várias trocas na mesma parada (`key`) gastam uma só; troca por lesão não gasta troca nem parada.
+  // `s.win` ausente = jogo de save antigo, sem limite de paradas
+  function winOk(s, key) { return s.win == null || key === 'ht' || s.wk === key || s.win > 0; }
+  function winUse(s, key) { if (s.win != null && key !== 'ht' && s.wk !== key) { s.win--; s.wk = key; } }
+  // Trocas pagas que dá para fazer agora nesta parada (0 sem troca ou sem parada)
+  S.coSubLeft = (m, key, s) => { s = s || m.us; return s.subs > 0 && winOk(s, key || 'm' + m.min) ? s.subs : 0; };
+  // free: troca por lesão, que não gasta uma das 5 nem uma parada (Silvio 2026-11-11)
+  function autoSub(s, k, free, key) {
+    if ((!free && (s.subs <= 0 || !winOk(s, key))) || !s.bench.length) { s.xi[k] = null; return; }
     const m = byId(s.squad);
     const inn = s.bench.slice().sort((a, b) => S.coSlotVal(m[b], s.form, k) - S.coSlotVal(m[a], s.form, k))[0];
-    s.bench = s.bench.filter(x => x !== inn); s.xi[k] = inn; if (!free) s.subs--;
+    s.bench = s.bench.filter(x => x !== inn); s.xi[k] = inn; if (!free) { s.subs--; winUse(s, key); }
   }
   // Troca o cansado só se quem está no banco rende mais naquela vaga agora
-  function tiredSubs(s) {
+  function tiredSubs(s, key) {
     const m = byId(s.squad), slots = slotsOf(s.form);
     s.xi.forEach((id, k) => {
-      const p = m[id]; if (!p || k === 0 || s.subs <= 0 || !s.bench.length) return;
+      const p = m[id]; if (!p || k === 0 || s.subs <= 0 || !winOk(s, key) || !s.bench.length) return;
       const sk = slotSec(FORMS[s.form].slots[k]), ef = q => eff(q, slots[k]) * secK(q, sk);
       const best = Math.max.apply(null, s.bench.map(b => ef(m[b])));
-      if (best > ef(p) * 1.01) autoSub(s, k);
+      if (best > ef(p) * 1.01) autoSub(s, k, false, key);
     });
   }
   // Grito do técnico: um por vez, a partir do minuto de agora
@@ -908,13 +915,14 @@
     if (k === 'duro') p.mute = co.season;
     return true;
   };
-  // Troca (na parada): sai um titular, entra um do banco na mesma vaga. Até 5 por jogo; quem sai não volta (sai do
-  // banco também, fica em s.gone); tirar quem se machucou neste jogo não gasta uma das 5 (Silvio 2026-11-11)
+  // Troca (na parada): sai um titular, entra um do banco na mesma vaga. Até 5 por jogo em até 3 paradas (`key` = a parada;
+  // 'ht' = intervalo, que não conta); quem sai não volta (sai do banco também, fica em s.gone); tirar quem se machucou
+  // neste jogo não gasta troca nem parada (Silvio 2026-11-11)
   S.coSubFree = (m, id) => { const p = m.us.squad.find(x => x.id === id); return !!(p && p.out > 0); };
-  S.coSub = function (co, m, outId, inId) {
-    const s = m.us, k = s.xi.indexOf(outId), free = S.coSubFree(m, outId);
-    if ((s.subs <= 0 && !free) || k < 0 || !s.bench.includes(inId)) return false;
-    s.xi[k] = inId; s.bench = s.bench.filter(x => x !== inId); if (!free) s.subs--;
+  S.coSub = function (co, m, outId, inId, key) {
+    const s = m.us, k = s.xi.indexOf(outId), free = S.coSubFree(m, outId); key = key || 'm' + m.min;
+    if ((!free && (s.subs <= 0 || !winOk(s, key))) || k < 0 || !s.bench.includes(inId)) return false;
+    s.xi[k] = inId; s.bench = s.bench.filter(x => x !== inId); if (!free) { s.subs--; winUse(s, key); }
     s.gone = (s.gone || []).concat([outId]);
     return true;
   };
@@ -1093,7 +1101,7 @@
   S.coAutoStop = function (co, m) {
     const s = m.us, st = m.stop;
     if (st && st.t === 'lesao') { const k = s.xi.indexOf(st.id); if (k >= 0) autoSub(s, k, true); }
-    if (m.min >= 60) tiredSubs(s);
+    if (m.min >= 60) tiredSubs(s, st && st.t === 'intervalo' ? 'ht' : 'm' + m.min);
   };
   // Joga o resto do jogo sem parar (o auxiliar decide nas paradas)
   S.coMatchRest = function (co, m) { while (!m.done) { S.coMatchStep(co, m); S.coAutoStop(co, m); } return m; };
