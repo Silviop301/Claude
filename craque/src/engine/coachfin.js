@@ -254,7 +254,7 @@
     const add = (k, v) => { v = Math.round(v); fin.ss[k] = (fin.ss[k] || 0) + v; fin.caixa += v; };
     const sub = (k, v) => { v = Math.round(v); fin.ss[k] += v; fin.caixa -= v; };
     const ss0 = Object.assign({}, fin.ss), cx0 = fin.caixa;
-    sub('sal', S.coFolha(co) + S.coAuxWage(co)); // a folha e o salário da auxiliar (a Licença C não cobra)
+    sub('sal', S.coFolha(co) + S.coAuxWage(co) + (S.coDmWage ? S.coDmWage(co) : 0)); // a folha e o salário da auxiliar (a Licença C não cobra)
     add('pat', patOf(co).fix / n);
     if (ri === 0 || ri === Math.floor(n / 2)) add('tv', fin.rec * F.tv / 2 * (S.coEstTv ? S.coEstTv(co) : 1));
     let g = 0;
@@ -296,7 +296,7 @@
     const bil = i ? x.bil / i : (nx && !nx.bye && nx.home ? gate(co, nx.vs) / 2 : 0);
     const tv = (i <= half ? fin.rec * F.tv / 2 * (S.coEstTv ? S.coEstTv(co) : 1) : 0) / rest;
     const inn = patOf(co).fix / n + bil + tv + (fin.recv || []).reduce((a, y) => a + y.v, 0) / F.mes;
-    const out = S.coFolha(co) + S.coAuxWage(co) + (fin.loan ? fin.loan.parc / F.mes : 0) + (fin.inst || []).reduce((a, y) => a + y.v, 0) / F.mes;
+    const out = S.coFolha(co) + S.coAuxWage(co) + (S.coDmWage ? S.coDmWage(co) : 0) + (fin.loan ? fin.loan.parc / F.mes : 0) + (fin.inst || []).reduce((a, y) => a + y.v, 0) / F.mes;
     const net = Math.round(inn - out);
     if (fin.caixa < 0) return { net, left: 0, rest: n - i, st: 'red', inn: Math.round(inn), out: Math.round(out) };
     const left = net >= 0 ? null : Math.floor(fin.caixa / -net);
@@ -442,6 +442,66 @@
   S.coMatchEnd = function (co, m) { const log = auxEnd0.apply(this, arguments); if (log) { auxSeg(co, log); auxTick(co); } return log; };
   const auxSkip0 = S.coSkipRound;
   S.coSkipRound = function (co) { auxSkip0.apply(this, arguments); auxTick(co); };
+
+  // ---------- Departamento médico (Silvio 2026-11-11: "gostei de ter o DM"; desenho em /mnt/project-files/climbix/dep-medico/) ----------
+  // co.dm = { club, lv: 0 a 4, base (o nível que o clube já tinha: não cobra salário), obra: { to, left }, tt: { k, n } tratamentos da rodada }.
+  // É do clube: trocou de clube, o DM é o do clube novo (os grandes já chegam com Fisioterapia ou Recuperação).
+  // Medido (wdl.js): recuperar mais entre jogos quase não muda nada (o 11 já entra com ~90%); o que pesa são as lesões.
+  // inj = chance de lesão dos seus; cut = rodadas a menos fora; tr = quanto o treino cansa; treat = tratamentos por rodada
+  // (você escolhe: o machucado volta 1 rodada antes ou o cansado vai a 100%).
+  const DM = S.CO_DM = {
+    lv: [{ n: 'Básico', t: 'Massagista e um médico' },
+      { n: 'Fisioterapia', t: 'Menos lesões, treino cansa menos' },
+      { n: 'Recuperação', t: 'Volta antes e 1 tratamento por rodada' },
+      { n: 'Crioterapia', t: 'Ainda menos lesões e cansaço' },
+      { n: 'Clínica de elite', t: 'Lesão rara e 2 tratamentos' }],
+    inj: [1, 0.85, 0.7, 0.55, 0.4], tr: [1, 0.8, 0.65, 0.5, 0.4], cut: [0, 0, 1, 1, 2], treat: [0, 0, 1, 1, 2],
+    fee: [0, 3, 5, 8, 12],             // preço da obra em semanas da folha de hoje
+    wage: [0, 0.03, 0.06, 0.09, 0.12], // equipe por rodada, em fração da folha (só o que passa do nível que o clube já tinha)
+    rounds: [0, 3, 3, 4, 4], folga: 2,
+    docs: [['Dra. Luíza Campos', 11], ['Dra. Helena Viana', 11], ['Dra. Bruna Matos', 11], ['Dra. Carla Ferraz', 11], ['Dra. Renata Lobo', 11]],
+  };
+  const dmBase = id => { const st = (D.CLUB_BY_ID[id] || {}).strength || 0; return st >= 80 ? 2 : st >= 74 ? 1 : 0; };
+  S.coDm = function (co) {
+    if (co.dm && co.dm.club === co.club) return co.dm;
+    const b = dmBase(co.club);
+    return (co.dm = { club: co.club, lv: b, base: b, obra: null, tt: null, doc: hash(String(co.club) + '|dm') % DM.docs.length });
+  };
+  S.coDmK = (co, k) => (co && co.club ? DM[k][S.coDm(co).lv] : k === 'cut' || k === 'treat' ? 0 : 1);
+  S.coDmDoc = co => { const d = DM.docs[S.coDm(co).doc]; return { n: d[0], fc: d[1] }; };
+  S.coDmWage = co => { const d = co.dm && co.dm.club === co.club ? co.dm : null; if (!d || d.lv <= d.base) return 0; return Math.round(S.coFolha(co) * (DM.wage[d.lv] - DM.wage[d.base]) / 100) * 100; };
+  S.coDmPlan = function (co) {
+    const d = S.coDm(co), to = d.lv + 1, f = S.coFolha(co), fin = S.coFin(co);
+    if (to >= DM.lv.length) return { max: 1 };
+    const fee = Math.max(30000, Math.round(f * DM.fee[to] / 1000) * 1000);
+    const wage = Math.round(f * Math.max(0, DM.wage[to] - DM.wage[d.base]) / 100) * 100;
+    const why = d.obra ? 'obra' : !fin || fin.caixa - fee < f * DM.folga ? 'caixa' : '';
+    return { to, fee, wage, dw: wage - S.coDmWage(co), rounds: DM.rounds[to], doing: d.obra, why,
+      inj: Math.round((1 - DM.inj[to]) * 100), tr: Math.round((1 - DM.tr[to]) * 100), cut: DM.cut[to], treat: DM.treat[to] };
+  };
+  S.coDmBuy = function (co) {
+    const P = S.coDmPlan(co); if (P.max || P.why) return { ok: false, why: P.why || 'max' };
+    const fin = S.coFin(co); fin.caixa -= P.fee; fin.ss.comp = (fin.ss.comp || 0) + P.fee;
+    co.dm.obra = { to: P.to, left: P.rounds };
+    return { ok: true, P };
+  };
+  // Tratamentos da rodada: quantos sobram e em quem vale a pena (machucados e os mais cansados)
+  const dmKey = co => co.season + '|' + (co.ss ? co.ss.i : 0);
+  S.coDmLeft = co => { const d = S.coDm(co), n = DM.treat[d.lv]; return Math.max(0, n - (d.tt && d.tt.k === dmKey(co) ? d.tt.n : 0)); };
+  S.coDmWho = co => co.squad.filter(p => p.out > 0 || p.en < 85).sort((a, b) => (b.out > 0) - (a.out > 0) || (a.en - b.en)).slice(0, 3);
+  S.coDmTreat = function (co, id) {
+    const p = co.squad.find(x => String(x.id) === String(id)); if (!p || !S.coDmLeft(co)) return null;
+    let what;
+    if (p.out > 0) { p.out--; what = p.out ? 'volta' : 'livre'; } else if (p.en < 100) { p.en = 100; what = 'en'; } else return null;
+    const d = co.dm, k = dmKey(co); d.tt = d.tt && d.tt.k === k ? { k, n: d.tt.n + 1 } : { k, n: 1 };
+    return what;
+  };
+  const dmTick = co => { const d = co.dm; if (!d || d.club !== co.club || !d.obra) return; if (--d.obra.left <= 0) { d.lv = d.obra.to; d.obra = null; d.up = d.lv; } };
+  S.coDmDone = co => { const d = co.dm; if (!d || !d.up) return null; const lv = d.up; delete d.up; return DM.lv[lv]; };
+  const dmEnd0 = S.coMatchEnd;
+  S.coMatchEnd = function (co, m) { const log = dmEnd0.apply(this, arguments); if (log) dmTick(co); return log; };
+  const dmSkip0 = S.coSkipRound;
+  S.coSkipRound = function (co) { dmSkip0.apply(this, arguments); dmTick(co); };
 
   if (typeof module !== 'undefined') module.exports = S;
 })(typeof window !== 'undefined' ? window : globalThis);

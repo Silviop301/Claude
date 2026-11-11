@@ -307,7 +307,7 @@
     if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao() : patrocinio();
     c.save('hub');
     const tut = tutStep(co);
-    const popped = !tut && (inboxPop(co, semana) || lostPop(co) || auxPop(co) || obraPop(co) || nomePop(co) || ligaPop(co) || showPop(co));
+    const popped = !tut && (inboxPop(co, semana) || lostPop(co) || auxPop(co) || dmPop(co) || obraPop(co) || nomePop(co) || ligaPop(co) || showPop(co));
     if (!tut && !popped && !ctWarn(co)) finNews(co);
     if (!tut) setTimeout(() => { winToast(co); if (!popped) upToast(co); }, 0);
     // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
@@ -993,7 +993,7 @@
   function clube() {
     const c = C(), co = c.co, cl = club(co.club), f = S.coFin(co), B = co.board, pos = S.coPos(co), conf = Math.round(B.conf);
     const exp = co.squad.filter(p => p.ct <= 1).length, pres = S.coPres ? S.coPres(co) : null;
-    const est = S.coEst && U.EST ? S.coEst(co) : null, aux = S.coAux(co), auxLv = S.coAuxLv(co);
+    const est = S.coEst && U.EST ? S.coEst(co) : null, aux = S.coAux(co), auxLv = S.coAuxLv(co), dm = S.coDm(co);
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const tile = (id, k, t, v, sub, cc) => '<button class="kb2-t"' + (id ? ' id="' + id + '"' : '') + ' data-k="' + k + '"><b>' + t + '</b><span><em class="' + (cc || '') + '">' + v + '</em><small>' + sub + '</small></span></button>';
     const meta = (B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + B.goal.pos + 'º') + ' · hoje ' + pos + 'º';
@@ -1004,15 +1004,19 @@
         tile('', 'hall', est ? 'Hall' : 'Hall do técnico', (co.season + 1) + 'ª', 'temporada de carreira') +
         (est ? '<button class="kb2-t kb2-es" id="kb2-est" data-k="est"><b>Estádio</b>' + estThumb(co, est) + '<span><em>' + milK(S.coEstCap(est)) + '</em><small>lugares</small>' +
           '<em class="hm ' + estCls(est) + '">torcida ' + S.coEstHum(est) + '</em></span></button>' : '') + '</div>' +
-      '<div class="kb2-side k3"><div class="kb2-dir"><small>DIRETORIA</small><b>' + (conf >= 70 ? 'confiança alta' : conf >= 45 ? 'confiança boa' : conf >= 30 ? 'confiança baixa' : 'no limite') + '</b>' +
+      '<div class="kb2-side k3"><div class="kb2-dir">' + (pres ? presFace(pres, 'kb2-pf') : '') + '<small>DIRETORIA</small><b>' + (conf >= 70 ? 'confiança alta' : conf >= 45 ? 'confiança boa' : conf >= 30 ? 'confiança baixa' : 'no limite') + '</b>' +
           '<i><u class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '" style="width:' + conf + '%"></u></i><em class="' + (pos <= B.goal.pos ? '' : 'hi') + '">' + meta + '</em></div>' +
-        (pres ? '<div class="kb2-pr fc">' + presFace(pres, 'kb2-fc') + '<div><small>PRESIDENTE</small><b>' + esc(pres.n) + '</b><span>' + esc(pres.nome || '') + '</span></div></div>' : '') +
+
         // A auxiliar logo abaixo do presidente, no mesmo cartão (Silvio 2026-11-11: "melhor encaixada embaixo do presidente")
         '<button class="kb2-pr fc kb2-ax" id="kb2-aux">' + auxFace(co, 'kb2-fc') + '<div><small>AUXILIAR · ' + esc(auxLv.n.toUpperCase()) + '</small><b>' + esc(aux.n) + '</b>' +
           '<span class="go">' + (aux.crs ? 'em curso · ' + U.D.plural(aux.crs.left, 'rodada', 'rodadas') : aux.lv >= S.CO_AUX.lv.length - 1 ? 'licença máxima' : 'subir de licença ›') + '</span></div></button>' +
+        // Departamento médico embaixo da auxiliar (2026-11-11); o presidente foi para o canto da diretoria
+        '<button class="kb2-pr fc kb2-ax" id="kb2-dm">' + face(S.coDmDoc(co).fc, 'kb2-fc', 'Departamento médico') + '<div><small>DEP. MÉDICO · ' + esc(S.CO_DM.lv[dm.lv].n.toUpperCase()) + '</small><b>' + esc(S.coDmDoc(co).n) + '</b>' +
+          '<span class="go">' + (dm.obra ? 'em obra · ' + U.D.plural(dm.obra.left, 'rodada', 'rodadas') : S.coDmLeft(co) && S.coDmWho(co).length ? 'tratar ' + (S.coDmLeft(co) > 1 ? S.coDmLeft(co) + ' jogadores' : '1 jogador') + ' ›' : dm.lv >= S.CO_DM.lv.length - 1 ? 'nível máximo' : 'melhorar ›') + '</span></div></button>' +
         (est ? '' : '<span class="rs-gap"></span><p class="kb2-soon">Estádio e base chegam depois</p>') + '</div></div>', st => {
       st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') { FIN_BACK = null; financas(); } else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); else if (k === 'est') estadio(); });
       st.querySelector('#kb2-aux').onclick = () => { sfx('tap'); auxiliar(); };
+      st.querySelector('#kb2-dm').onclick = () => { sfx('tap'); depMedico(); };
       st.querySelector('#kb2-back').onclick = () => { sfx('tap'); semana(); };
     });
   }
@@ -1050,6 +1054,52 @@
         if (!can) { if (P.why === 'caixa') mkHelp('', 'Depois de pagar, o caixa precisa seguir com 2 semanas de salários.'); return; }
         const r = S.coAuxBuy(co); if (!r.ok) return;
         c.save(); sfx('win'); auxiliar();
+      };
+    });
+  }
+
+  // Obra do DM pronta: a janelinha na volta para a semana, uma vez (S.coDmDone)
+  function dmPop(co) {
+    const L = S.coDmDone ? S.coDmDone(co) : null; if (!L) return false; const d = S.coDmDoc(co);
+    pop('<div class="acd-help"><span class="aux-h">' + face(d.fc, 'aux-fc', d.n) + '<b>' + esc(d.n) + '</b></span><p>A obra terminou: o departamento agora é <b>' + L.n + '</b>. ' + L.t + '.</p>' +
+      '<span class="hl-ab"><button class="hl-btn dark" id="dmp-go">Ver</button><button class="hl-btn line" data-pop-x>Fechar</button></span></div>', 'Departamento médico', w => {
+      w.querySelector('#dmp-go').onclick = () => { sfx('tap'); closePop(); depMedico(); }; }, 'hl-pop acd-pop tm-pop');
+    C().save(); return true;
+  }
+  // ---------- Departamento médico (2026-11-11, desenho aprovado): a médica, os 5 níveis, a obra do próximo e os tratamentos ----------
+  function depMedico() {
+    const c = C(), co = c.co, d = S.coDm(co), L = S.CO_DM.lv, P = S.coDmPlan(co), doc = S.coDmDoc(co), BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const nT = S.CO_DM.treat[d.lv], left = S.coDmLeft(co), who = nT ? S.coDmWho(co) : [];
+    const lv = (l, i) => { const st = i <= d.lv ? 'done' : (d.obra ? d.obra.to === i : i === d.lv + 1) ? 'next' : 'lock';
+      return '<div class="axv-lv ' + st + '"><i>' + (st === 'done' ? '✓' : i + 1) + '</i><b>' + l.n + '</b><span>' + l.t + '</span></div>'; };
+    const row = (k, v, cls) => '<div><span>' + k + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</b></div>';
+    const hurt = co.squad.filter(p => p.out > 0).sort((a, b) => a.out - b.out);
+    const tSt = p => (p.out > 0 ? 'fora ' + p.out : Math.round(p.en) + '%');
+    const me = nT
+      ? '<small>TRATAR · ' + (left ? (left > 1 ? left + ' hoje' : '1 hoje') : 'feito') + '</small>' + (who.length ? who.map(p => '<button class="dmt' + (left ? '' : ' off') + '" data-dmt="' + p.id + '"><b>' + esc(p.n) + '</b><span class="' + (p.out > 0 ? 'dn' : '') + '">' + tSt(p) + '</span></button>').join('') : '<p>Todos inteiros</p>')
+      : '<p>' + (hurt.length ? U.D.plural(hurt.length, 'machucado', 'machucados') + ' · ' + (hurt.length === 1 ? 'volta em ' : 'voltam em ') + hurt.slice(0, 2).map(p => p.out).join(' e ') + (hurt[0].out === 1 && hurt.length === 1 ? ' rodada' : ' rod.') : 'Ninguém machucado') + '</p>';
+    const card = P.max ? '<small>' + L[d.lv].n.toUpperCase() + '</small><p>O departamento já está no nível máximo.</p>'
+      : d.obra ? '<small>EM OBRA · ' + L[d.obra.to].n.toUpperCase() + '</small>' + row('Falta', U.D.plural(d.obra.left, 'rodada', 'rodadas')) + '<p>O departamento segue atendendo durante a obra.</p>'
+      : '<small>OBRA · ' + L[P.to].n.toUpperCase() + '</small>' + row('Lesões', '−' + P.inj + '%', 'up') + row('Treino cansa', '−' + P.tr + '%', 'up') +
+        (P.cut > S.CO_DM.cut[d.lv] ? row('Volta antes', U.D.plural(P.cut, 'rodada', 'rodadas'), 'up') : '') + (P.treat > nT ? row('Tratamentos', P.treat + ' por rodada', 'up') : '') +
+        row('Custo', c.brl(P.fee), P.why === 'caixa' ? 'dn' : '') + row('Equipe', '+' + c.brl(P.dw) + '/sem') + row('Pronto em', U.D.plural(P.rounds, 'rodada', 'rodadas')) +
+        (P.why === 'caixa' ? '<p>O caixa não aguenta a obra agora.</p>' : '');
+    const can = !P.max && !P.why;
+    show('<div class="axv dmv"><div class="tm-h"><button class="tcr-back" id="dmv-back" aria-label="Voltar">' + BK + '</button><b>Departamento médico</b><small>cuida de quem cansa e machuca</small><span class="es-top">' + cxPill() + '</span></div>' +
+      '<div class="axv-l"><div class="axv-me' + (nT ? ' tr' : '') + '">' + face(doc.fc, 'axv-fc', doc.n) + '<b>' + esc(doc.n) + '</b><em>' + L[d.lv].n + '</em>' + me + '</div>' +
+        '<div class="axv-lad">' + L.map(lv).join('') + '</div></div>' +
+      '<div class="axv-r"><div class="axv-card">' + card + '</div>' +
+        '<button class="tm-go' + (can ? '' : ' off') + '" id="dmv-go">' + (P.max ? 'Nível máximo' : d.obra ? 'Em obra' : P.why === 'caixa' ? 'Caixa curto' : 'Fazer a obra') + '</button></div></div>', st => {
+      st.querySelector('#dmv-back').onclick = () => { sfx('tap'); clube(); };
+      cxBind(st, depMedico);
+      st.querySelectorAll('[data-dmt]').forEach(b => b.onclick = () => {
+        const w = S.coDmTreat(co, b.dataset.dmt); if (!w) return;
+        c.save(); sfx('win'); depMedico();
+      });
+      st.querySelector('#dmv-go').onclick = () => {
+        if (!can) { if (P.why === 'caixa') mkHelp('', 'Depois de pagar, o caixa precisa seguir com 2 semanas de salários.'); return; }
+        const r = S.coDmBuy(co); if (!r.ok) return;
+        c.save(); sfx('win'); depMedico();
       };
     });
   }
@@ -2563,6 +2613,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, fit, lift, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato, recebida };
+  U.LD = { on, show, off, fit, lift, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, result, segunda, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato, recebida };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();

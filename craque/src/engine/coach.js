@@ -127,7 +127,8 @@
     const t = TRAIN[k]; if (!t || !co.ss || (co.train && co.train.i === co.ss.i)) return false;
     co.train = { k, i: co.ss.i };
     trainGrow(co, t);
-    co.squad.forEach(p => { p.en = Math.max(0, Math.min(100, p.en - t.en * (t.en > 0 && !t.who.includes(p.pos) ? 0.5 : 1))); if (t.mo) p.mo = Math.min(100, (p.mo === undefined ? 60 : p.mo) + t.mo); });
+    const dk = t.en > 0 && S.coDmK ? S.coDmK(co, 'tr') : 1;
+    co.squad.forEach(p => { p.en = Math.max(0, Math.min(100, p.en - t.en * dk * (t.en > 0 && !t.who.includes(p.pos) ? 0.5 : 1))); if (t.mo) p.mo = Math.min(100, (p.mo === undefined ? 60 : p.mo) + t.mo); });
     return true;
   };
   // Preleção: a última conversa antes de entrar, vale os primeiros 15 minutos
@@ -660,7 +661,7 @@
     const nx = S.coNext(co);
     if (!nx || nx.bye) return null;
     co.xi = co.xi.filter(id => co.squad.some(p => p.id === id && ok(p))).length === 11 ? co.xi : autoXI(co.squad, co.form).xi;
-    const us = { club: co.club, squad: co.squad, form: co.form, style: co.style, bonus: co.xp.leitura * 0.2, xi: co.xi.slice(), bench: (co.bench || []).filter(id => co.squad.some(p => p.id === id && ok(p))), subs: CO.subs, win: CO.win, red: 0, mine: true,
+    const us = { club: co.club, squad: co.squad, form: co.form, style: co.style, bonus: co.xp.leitura * 0.2, xi: co.xi.slice(), bench: (co.bench || []).filter(id => co.squad.some(p => p.id === id && ok(p))), subs: CO.subs, win: CO.win, red: 0, mine: true, injK: S.coDmK ? S.coDmK(co, 'inj') : 1, outCut: S.coDmK ? S.coDmK(co, 'cut') : 0,
       roles: co.roles && co.roles[co.form] ? co.roles[co.form].slice() : null, takers: co.takers || null, train: co.train && co.ss && co.train.i === co.ss.i ? co.train.k : null };
     const them = oppSide(co, nx.vs, !nx.home);
     if (!us.bench.length) us.bench = autoXI(co.squad, co.form).bench;
@@ -781,7 +782,7 @@
           if (!q) return;
           cnt('of'); const p = s.squad.find(x => x.id === q[0]);
           m.ev.push({ m: m.min, t: 'impedimento', s: sd, p: p ? p.n : '', pos: slotsOf(s.form)[q[1]] });
-        } else if (r() < CO.inj / CO.mins * injW(s).t) { const k = injW(s).pick(r()), id = s.xi[k], p = s.squad.find(x => x.id === id); if (!p) return; p.out = r.int(1, 6) + 1; m.ev.push({ m: m.min, t: 'lesao', s: sd, p: p.n }); if (s.mine) stop = { t: 'lesao', p: p.n, id, k }; else autoSub(s, k, true); }
+        } else if (r() < CO.inj / CO.mins * injW(s).t * (s.injK || 1)) { const k = injW(s).pick(r()), id = s.xi[k], p = s.squad.find(x => x.id === id); if (!p) return; p.out = Math.max(1, r.int(1, 6) + 1 - (s.outCut || 0)); m.ev.push({ m: m.min, t: 'lesao', s: sd, p: p.n }); if (s.mine) stop = { t: 'lesao', p: p.n, id, k }; else autoSub(s, k, true); }
       });
       // Os minutos jogados nos acréscimos ficam marcados nos lances (st: 45+st ou 90+st)
       if (m.st) for (let i = ev0; i < m.ev.length; i++) m.ev[i].st = m.st;
