@@ -2013,12 +2013,16 @@
             '<button class="tm-go" id="lj-buy">' + (busy ? 'Abrindo…' : 'Comprar · ' + PACKS[pk].pr) + '</button>');
       } else if (tab === 2) {
         // Histórico (2026-11-11): cada entrada e saída de moedas, 5 por página, mais nova primeiro
-        const log = U.COINS.log(), N = 5, pages = Math.max(1, Math.ceil(log.length / N)); hp = Math.min(hp, pages - 1);
-        const dt = at => { const d = new Date(at || 0); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); };
+        const log = U.COINS.log().map(x => /\(devolvida\)/.test(x.t || '') ? Object.assign({}, x, { t: 'Compra na loja (recuperada)' }) : x);
+        // o que não está nas linhas (antes do histórico existir, ou linhas antigas cortadas) vira uma linha no fim: a soma sempre dá o saldo
+        const gap = saldo - log.reduce((a, x) => a + x.n, 0);
+        if (gap) log.push({ n: gap, t: gap > 0 ? 'Saldo de antes do histórico' : 'Gastos de antes do histórico', at: 0 });
+        const N = 5, pages = Math.max(1, Math.ceil(log.length / N)); hp = Math.min(hp, pages - 1);
+        const dt = at => { if (!at) return 'antes'; const d = new Date(at || 0); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); };
         const rows = log.slice(hp * N, hp * N + N).map(x => '<div class="lj-h"><i>' + dt(x.at) + '</i><span>' + esc(x.t || 'Moedas') + '</span><b class="' + (x.n < 0 ? 'dn' : 'up') + '">' + (x.n > 0 ? '+' : '−') + Math.abs(x.n) + '</b></div>').join('');
         main = '<div class="lj-ap lj-hist">' + (rows || '<div class="lj-none"><b>Nada ainda</b><small>Moedas ganhas, compradas e gastas aparecem aqui.</small></div>') +
           (pages > 1 ? '<div class="lj-hp"><button id="lj-hm" aria-label="Mais novas"' + (hp ? '' : ' disabled') + '>' + BK + '</button><small>' + (hp + 1) + ' de ' + pages + '</small><button id="lj-hn" aria-label="Mais antigas"' + (hp < pages - 1 ? '' : ' disabled') + '>' + FW + '</button></div>' : '') + '</div>';
-        const sum = f => log.filter(f).reduce((a, x) => a + x.n, 0), buy = sum(x => x.n > 0 && /^Compra na loja/.test(x.t || ''));
+        const sum = f => log.filter(f).reduce((a, x) => a + x.n, 0), buy = sum(x => x.n > 0 && x.at && /^Compra na loja/.test(x.t || ''));
         side = '<div class="lj-box"><small class="ld-lbl">NO TOTAL</small>' + [['Ganhou jogando', U.COINS.got() - buy], ['Comprou', buy], ['Gastou', U.COINS.got() - saldo], ['Saldo', saldo]].map(([t, n]) => '<div class="lj-li"><span>' + t + '</span><b>' + Math.max(0, n) + '</b></div>').join('') + '</div>';
       } else if (!co) {
         main = '<div class="lj-ap lj-none"><b>Abra uma carreira do Treinador</b><small>O aporte entra na verba do clube que você treina.</small></div>';

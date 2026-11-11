@@ -358,7 +358,7 @@
     const w = wallet(), tot = (paid || []).reduce((a, x) => a + (x.coins || 0), 0); let back = 0;
     (paid || []).forEach(x => { const k = 'pay-' + x.ref, n = Math.round(x.coins);
       if (!(n > 0) || w.got >= tot || w.once[k]) return;
-      w.once[k] = n; back += n; coinSum(w); w.log = [{ n, t: 'Compra na loja (devolvida)', at: Date.now() }].concat(w.log).slice(0, LOGN); });
+      w.once[k] = n; back += n; coinSum(w); w.log = [{ n, t: 'Compra na loja (recuperada)', at: Date.now() }].concat(w.log).slice(0, LOGN); });
     if (back) put();
     return back;
   }
