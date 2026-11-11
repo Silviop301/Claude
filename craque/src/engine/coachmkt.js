@@ -265,8 +265,9 @@
     if (S.coMktFull(co, p)) return { k: 'cheio' };
     const d = n.deal || { v: 0, pay: 0, tr: null }, now = p.club ? S.coMktNow(co, d) : 0;
     if (now > Math.max(0, f.verba)) return { k: 'verba' };
-    spend(co);
+    // recusa do empresário não gasta dia (Silvio 2026-11-11: "não quero perder um dia"); só a bolinha de paciência
     if (S.coMktMood(co, p, t).lvl < 4) { n.apat--; if (n.apat <= 0) { n.st = 'no'; return { k: 'no' }; } return { k: 'recusa' }; }
+    spend(co);
     // Fechado: paga a 1ª parcela, o resto vem a cada 4 rodadas; o da troca sai; o novo chega no banco
     if (now) { f.verba -= now; f.caixa -= now; f.ss.comp += now; }
     const left = Math.max(0, d.v - tradeVal(co, d.tr)) - now;
@@ -290,6 +291,10 @@
   };
 
   // ---------- renovar (lote 4, 09/11): o seu jogador, a qualquer hora, na mesma tela do contrato ----------
+  // O que ele responde quando recusa (Silvio 2026-11-11: resposta na hora, com o que ele aceita): salário pelo papel
+  // escolhido e os anos que ele prefere; com isso o humor dá 4 (assina)
+  S.coMktWants = (co, p, t) => { const T = S.coMktTerms(co, p), md = S.coMktMood(co, p, t);
+    return { w: T.ask(t.role), y: T.want, role: t.role, lvl: md.lvl, wOk: t.w >= T.ask(t.role), yOk: t.y === T.want }; };
   S.coMktRenNeg = (co, p) => { const m = S.coMkt(co); m.ren = m.ren || {}; return m.ren[p.id] || (m.ren[p.id] = { apat: M.pat, st: 'open' }); };
   S.coMktRenOk = (co, p) => p.ct <= M.renMax;
   // { k: 'signed' (p) | 'recusa' | 'no' | 'teto' | 'cedo' }

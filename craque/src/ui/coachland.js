@@ -1500,12 +1500,12 @@
       '<div class="mkc-l"><div class="mkc-g">' + box('SALÁRIO POR SEMANA', (t.w < 10000 && t.w % 1000 ? 'R$ ' + (t.w / 1000).toFixed(1).replace('.', ',') + ' mil' : c.brl(t.w)), 'cw', t.w >= md.ask ? 'o que ele pede' : 'abaixo do que ele pede') +
         box('DURAÇÃO', (own ? '+' : '') + t.y + (t.y > 1 ? ' anos' : ' ano'), 'cy', 'até ' + yr + (t.y === T.want ? ' · ele prefere' : '')) + '</div>' +
         '<div class="mk-k mkc-r"><small>PAPEL PROMETIDO</small><span class="mkp-seg big">' + R.map((r, i) => '<button class="' + (t.role === i ? 'on' : '') + '" data-cr="' + i + '">' + r.t + '</button>').join('') + '</span><span class="mkc-d">' + R[t.role].d + '</span></div></div>' +
-      '<div class="mk-side"><div class="mk-k mkp-pr"><small>EMPRESÁRIO</small><b class="' + cls + '">' + (neg.st === 'no' ? 'Desistiu' : md.t) + '</b><span class="mkf-dd mkc-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= md.lvl ? cls || 'up' : '') + '"></i>').join('') + '</span><span class="mkp-pat">Paciência' + mkDots(neg.apat, M.pat) + '</span></div>' +
+      '<div class="mk-side"><div class="mk-k mkp-pr"><small>EMPRESÁRIO</small><b class="' + cls + '">' + (neg.st === 'no' ? 'Desistiu' : md.t) + '</b><span class="mkf-dd mkc-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= md.lvl ? cls || 'up' : '') + '"></i>').join('') + '</span><span class="mkp-pat">Tentativas <em class="mkc-tn' + (neg.apat === 1 && neg.st === 'open' ? ' dn' : '') + '">' + (neg.st === 'no' ? 0 : neg.apat) + ' de ' + M.pat + '</em>' + mkDots(neg.st === 'no' ? 0 : neg.apat, M.pat) + '</span></div>' +
         '<div class="mk-k mkc-f"><small>FOLHA DEPOIS</small><b class="' + (over ? 'dn' : '') + '">' + fo.pct + '% do teto</b><i class="mk-bar"><u class="' + (over ? 'low' : fo.pct >= 95 ? 'mid' : 'ok') + '" style="width:' + Math.min(100, fo.pct) + '%"></u></i></div>' +
         '<span class="rs-gap"></span>' + gold + '</div></div>', st => {
       const re = x => contrato(id, back, Object.assign({}, t, x));
       st.querySelector('#mkc-back').onclick = () => { sfx('tap'); back(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'O empresário pesa salário, anos e papel, e o humor dele muda a cada toque: só com "Deve aceitar" ele assina. Cada recusa gasta uma bolinha de paciência. Prometer titular baixa o salário que ele pede, mas a promessa vai ser cobrada. A folha não passa do teto.' + (own ? ' Sem renovar, ele sai do clube no fim do contrato, mesmo sendo titular.' : '')); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'O empresário pesa salário, anos e papel, e o humor dele muda a cada toque: só com "Deve aceitar" ele assina. Cada recusa gasta uma das 3 tentativas (não gasta dia) e ele diz na hora o que aceita. Prometer titular baixa o salário que ele pede, mas a promessa vai ser cobrada. A folha não passa do teto.' + (own ? ' Sem renovar, ele sai do clube no fim do contrato, mesmo sendo titular.' : '')); };
       st.querySelectorAll('[data-cw]').forEach(b => b.onclick = () => { sfx('tap'); re({ w: Math.max(1000, t.w + T.step * (+b.dataset.cw)) }); });
       st.querySelectorAll('[data-cy]').forEach(b => b.onclick = () => { sfx('tap'); re({ y: Math.max(1, Math.min(5, t.y + (+b.dataset.cy))) }); });
       st.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => { sfx('tap'); re({ role: +b.dataset.cr }); });
@@ -1514,11 +1514,41 @@
         if (r.k === 'signed') { sfx('win'); back(); return pop('<div class="mkx"><div class="mkx-h"><i class="mkx-fc">' + p.ovr + '</i><span><small>' + esc(p.n).toUpperCase() + '</small><b class="up">Renovado</b></span></div>' +
           '<p>' + esc(last(p.n)) + ' assinou como ' + R[t.role].t.toLowerCase() + '.</p><div class="mkx-li"><div><span>Salário</span><b>' + c.brl(p.wage) + '/sem</b></div><div><span>Contrato</span><b>até ' + (U.YEAR0 + co.season + p.ct) + '</b></div></div>' +
           '<span class="rs-gap"></span><span class="mkx-b"><button class="hl-btn gold" id="mkx-1">Fechar</button></span></div>', 'Renovado', x => { x.querySelector('#mkx-1').onclick = () => { sfx('tap'); closePop(); }; }, 'hl-pop mkx-pop', true); }
-        re({}); };
+        re({}); if (r.k === 'recusa' || r.k === 'no') recusou(id, back, t, r, true); };
       else if (go) go.onclick = () => { sfx('tap'); const r = S.coMktContract(co, p, t); c.save();
         if (r.k === 'signed') { sfx('win'); return fechado(r.p, R[t.role].t, neg.deal, p.club); }
-        re({}); };
+        re({}); if (r.k === 'recusa' || r.k === 'no') recusou(id, back, t, r, false); };
     });
+  }
+  // Recusou (Silvio 2026-11-11: "não quero ... ter as 3 tentativas sem um retorno dele e somente ver uma bolinha saindo"):
+  // ele responde na hora no balão da conversa (.cvj), diz o que aceita e mostra as tentativas que sobram. O dourado fecha
+  // pelo que ele pede (assina na hora; renovação nunca gasta dia, contrato gasta 1 só quando assina); Ajustar volta à tela.
+  function recusou(id, back, t, r, own) {
+    const c = C(), co = c.co, p = own ? co.squad.find(x => x.id === id) : S.coMktFind(co, id); if (!p) return;
+    const neg = own ? S.coMktRenNeg(co, p) : S.coMktNeg(co, p), M = S.CO_MKT, R = S.CO_MKT_ROLE, wa = S.coMktWants(co, p, t);
+    const yt = n => n + (n > 1 ? ' anos' : ' ano'), wt = v => (v < 10000 && v % 1000 ? 'R$ ' + (v / 1000).toFixed(1).replace('.', ',') + ' mil' : c.brl(v));
+    const nt = Object.assign({}, t, { w: wa.w, y: wa.y }), fo = S.coMktFolha(co, p, nt), over = fo.pct > 100 && (!own || nt.w > p.wage);
+    const end = r.k === 'no', left = end ? 0 : neg.apat, en = Math.round(p.en == null ? 100 : p.en);
+    let say;
+    if (end) say = own ? 'Não deu, professor. Vou cumprir o contrato e, no fim dele, eu saio.' : 'Não dá mais. Vamos ouvir outros clubes.';
+    else { const pre = wa.lvl >= 3 ? 'Tá perto.' : wa.lvl === 2 ? 'Assim não dá.' : 'Nem perto, professor.';
+      say = wa.wOk ? pre + ' O salário tá bom, mas quero ' + yt(wa.y) + '.' : pre + ' Por ' + wt(wa.w) + ' por semana' + (wa.yOk ? '' : ' e ' + yt(wa.y)) + ' eu assino.';
+      if (left === 1) say += ' Última chance.'; }
+    const pips = '<span class="cvj-mo' + (left >= 2 ? ' ok' : '') + '"><small>TENTATIVAS</small><span><span class="cvj-pip">' + Array.from({ length: M.pat }, (_, i) => '<i class="' + (i < left ? 'on' : '') + '"></i>').join('') + '</span><b>' + left + ' de ' + M.pat + '</b></span></span>';
+    const li = end ? '<div class="rcs-li"><span>' + (own ? 'Contrato até' : 'Situação') + '</span><b>' + (own ? (U.YEAR0 + co.season + p.ct) + ' · depois sai' : 'Não negocia mais') + '</b></div>'
+      : '<div class="rcs-li"><span>Ele aceita</span><b>' + wt(wa.w) + '/sem · ' + (own ? '+' : '') + yt(wa.y) + ' · ' + R[wa.role].t + '</b></div>';
+    const b1 = end ? '<button class="hl-btn gold" id="rcs-1">' + (own ? 'Ver elenco' : 'Mercado') + '</button>'
+      : over ? '<button class="hl-btn gold off" id="rcs-1" disabled>Passa do teto</button>' : '<button class="hl-btn gold" id="rcs-1">Fechar por ' + wt(wa.w) + '</button>';
+    pop('<div class="cvj-h"><span class="cvj-d ' + enRing(en) + '" style="--en:' + en + '"><b>' + p.ovr + '</b><em>' + p.pos + '</em></span>' +
+      '<span class="cvj-n"><b>' + esc(p.n) + '</b><small>' + (own ? 'Renovação' : 'Empresário') + '<em>' + (end ? 'Desistiu' : 'Recusou') + '</em></small></span>' + pips + '</div>' +
+      '<div class="cvj-say"><p>“' + esc(say) + '”</p></div>' + li +
+      '<span class="mkx-b rcs-b">' + b1 + '<button class="hl-btn dark" id="rcs-2">' + (end ? 'Fechar' : 'Ajustar') + '</button></span>', 'Resposta de ' + p.n, x => {
+      const b = x.querySelector('#rcs-1:not(.off)');
+      if (b) b.onclick = () => { sfx('tap'); closePop();
+        if (end) return own ? elenco() : mercado();
+        contrato(id, back, nt); const go = document.querySelector('#mkc-go:not(.off)'); if (go) go.click(); };
+      x.querySelector('#rcs-2').onclick = () => { sfx('tap'); closePop(); };
+    }, 'cvj-pop cvj-av rcs-pop', true);
   }
   // Fechado (31): CONTRATADO com o escudo do seu clube e de onde ele veio; nome grande, posição, papel e idade;
   // transferência, salário e contrato; Ver no time ou Mercado
