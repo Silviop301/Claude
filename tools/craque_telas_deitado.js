@@ -164,7 +164,7 @@ async function page(b, first) {
       await p.waitForTimeout(300); }
     await click('#es-back'); await click('#ldk-go'); await shot('c2c-financas-decidir');
     // Loja: aporte (fase 3) e pacotes
-    await p.evaluate(() => window.CRAQUE_UI.COINS.add({ n: 100, t: 'teste' })); await click('#fn2-apo'); await shot('c2l-loja-aporte'); await click('#lj-p'); await click('#lj-p'); await shot('c2l2-aporte-3'); await click('#lj-ap'); await shot('c2l3-aporte-feito');
+    await p.evaluate(() => window.CRAQUE_UI.COINS.add({ n: 100, t: 'teste' })); await click('#fn2-apo'); await shot('c2l-loja-aporte'); await click('#lj-p'); await click('#lj-p'); await shot('c2l2-aporte-3'); await click('#lj-ap'); await shot('c2l2b-aporte-confirmar'); await click('#ca-y'); await shot('c2l3-aporte-feito');
     { const r = await p.evaluate(() => ({ ap: window.CRAQUE_UI._co.co.fin.ap, n: window.CRAQUE_UI.COINS.get() })); if (!r.ap || r.ap.wk !== 3) errs.push('aporte: ' + JSON.stringify(r)); else console.log('aporte', JSON.stringify(r)); }
     await click('[data-pop-x]'); await click('[data-lj="0"]'); await shot('c2l4-loja-moedas'); await click('[data-pk="3"]'); await shot('c2l5-loja-cofre'); await click('#lj-back'); await click('[data-fd="banco"]'); await shot('c2d-banco'); await click('#bk2-q'); await shot('c2d2-banco-ajuda'); await click('[data-pop-x]');
     await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co; co.fin.caixa = -300000; co.fin.neg = 5; }); await click('#ldn-bk'); await click('[data-fd="banco"]'); await shot('c2e-banco-vermelho');
@@ -183,7 +183,7 @@ async function page(b, first) {
     if (await p.$('#ldy-mk')) { await click('#ldy-mk'); await shot('c7-propostas'); }
     else if (await p.$('#ldy-of')) { await click('#ldy-of'); await shot('c7-propostas'); }
     // Escolher clube com moedas (fase 2): com saldo, troca de liga, assina
-    if (await p.$('#ldo-mo')) { await p.evaluate(() => window.CRAQUE_UI.COINS.add({ n: 410, t: 'teste' })); await click('#ldo-mo'); await shot('c8-escolher-sem-conta'); await p.evaluate(() => localStorage.setItem('climbix-account', JSON.stringify({ user: 'teste', token: 'x' }))); await click('.ec-c:nth-of-type(2)'); await shot('c8-escolher'); await click('.ec-c:nth-of-type(3)'); await shot('c8b-escolher-outro'); await click('#ec-ln'); await shot('c8c-outra-liga'); await click('#ec-go'); await p.waitForTimeout(600); await shot('c8d-assinou');
+    if (await p.$('#ldo-mo')) { await p.evaluate(() => window.CRAQUE_UI.COINS.add({ n: 410, t: 'teste' })); await click('#ldo-mo'); await shot('c8-escolher-sem-conta'); await p.evaluate(() => localStorage.setItem('climbix-account', JSON.stringify({ user: 'teste', token: 'x' }))); await click('.ec-c:nth-of-type(2)'); await shot('c8-escolher'); await click('.ec-c:nth-of-type(3)'); await shot('c8b-escolher-outro'); await click('#ec-ln'); await shot('c8c-outra-liga'); await click('#ec-go'); await shot('c8c2-confirmar-clube'); if (await p.$('#ca-y')) await click('#ca-y'); await p.waitForTimeout(600); await shot('c8d-assinou');
       const r = await p.evaluate(() => ({ n: window.CRAQUE_UI.COINS.get(), b: window.CRAQUE_UI._co.co.bought, own: window.CRAQUE_UI.COINS.clubs() })); if (!r.b || !r.b.length) errs.push('escolher clube: não assinou ' + JSON.stringify(r)); else console.log('comprou', JSON.stringify(r)); }
     await p.close();
   }
