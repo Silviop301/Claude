@@ -1315,20 +1315,22 @@
     if (S.coWorldSync) S.coWorldSync(co);
     m.f = F.map((x, i) => Math.min(m.f[i] || 0, x.o.length - 1));
     const n = S.coMktSearch(co).length, ok = n > 0 && n <= S.CO_MKT.max;
-    const tabs = mkTabs(co, 0);
+    const tabs = mkTabs(co, 0), dirty = m.f.some(v => v) || !!(m.nm || '').trim(); // Limpar (Silvio 11/11: "limpar os filtros mais rápido")
     const cell = (x, i) => { const v = m.f[i] || 0, t = x.o[v].t;
-      return '<div class="mk-f' + (v ? ' on' : '') + '"><small>' + x.t + '</small><span><button class="mk-ar" data-mf="' + i + '" data-d="-1" aria-label="' + x.t.toLowerCase() + ' anterior">' + MK_L + '</button><b class="' + (t.length > 12 ? 'mk-sm' : '') + '">' + esc(t) + '</b><button class="mk-ar" data-mf="' + i + '" data-d="1" aria-label="' + x.t.toLowerCase() + ' seguinte">' + MK_R + '</button></span></div>'; };
+      return '<div class="mk-f' + (v ? ' on' : '') + '">' + (v ? '<button class="mk-fx" data-mx="' + i + '" aria-label="limpar ' + x.t.toLowerCase() + '">' + x.t + '<i>×</i></button>' : '<small>' + x.t + '</small>') + '<span><button class="mk-ar" data-mf="' + i + '" data-d="-1" aria-label="' + x.t.toLowerCase() + ' anterior">' + MK_L + '</button><b class="' + (t.length > 12 ? 'mk-sm' : '') + '">' + esc(t) + '</b><button class="mk-ar" data-mf="' + i + '" data-d="1" aria-label="' + x.t.toLowerCase() + ' seguinte">' + MK_R + '</button></span></div>'; };
     const goTxt = n => (n > 0 && n <= S.CO_MKT.max ? 'Buscar' : n ? 'Filtre mais' : 'Ninguém: solte um filtro');
     show('<div class="mk">' + mkHead('mk-back', 'Mercado', esc(club(co.club).short || club(co.club).name), false, true) +
       '<div class="mk-tabs t3">' + tabs + '</div><div class="mk-fs">' + F.map(cell).join('') + '</div>' +
       '<div class="mk-side"><label class="mk-k mk-nm"><small>NOME</small><input id="mk-nm" type="text" autocomplete="off" placeholder="Toque para digitar" value="' + esc(m.nm || '') + '"></label>' +
-        '<div class="mk-k"><b id="mk-n" class="' + (ok ? 'ok' : '') + '">' + plMil(n, 'jogador', 'jogadores') + '</b><span>o olheiro já viu todos uma vez</span></div>' +
+        '<div class="mk-k"><b id="mk-n" class="' + (ok ? 'ok' : '') + '">' + plMil(n, 'jogador', 'jogadores') + '</b>' + (dirty ? '<button class="mk-clr" id="mk-clr">Limpar filtros</button>' : '<span>o olheiro já viu todos uma vez</span>') + '</div>' +
         '<span class="rs-gap"></span><button class="tm-go' + (ok ? '' : ' off') + '" id="mk-go">' + goTxt(n) + '</button></div></div>', st => {
       st.querySelector('#mk-back').onclick = () => { sfx('tap'); semana(); };
       mkCoins(st, mercado);
       st.querySelector('#mk-tnw').onclick = () => { sfx('tap'); noticias(); }; mkTabEl(st);
       st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição, pelo que o olheiro viu: com mais relatórios ele erra menos. A janela do começo vale até a 3ª rodada (10 dias) e a do meio abre antes da rodada do meio (6 dias): proposta e contrato gastam 1 dia. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.'); };
       st.querySelectorAll('[data-mf]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.mf, L = F[i].o.length; m.f[i] = ((m.f[i] || 0) + (+b.dataset.d) + L) % L; c.save(); mercado(); });
+      st.querySelectorAll('[data-mx]').forEach(b => b.onclick = () => { sfx('tap'); m.f[+b.dataset.mx] = 0; c.save(); mercado(); });
+      const clr = st.querySelector('#mk-clr'); if (clr) clr.onclick = () => { sfx('tap'); m.f = F.map(() => 0); m.nm = ''; c.save(); mercado(); };
       const inp = st.querySelector('#mk-nm');
       inp.oninput = () => { m.nm = inp.value; const k = S.coMktSearch(co).length, good = k > 0 && k <= S.CO_MKT.max, nb = st.querySelector('#mk-n'), gb = st.querySelector('#mk-go');
         nb.textContent = plMil(k, 'jogador', 'jogadores'); nb.className = good ? 'ok' : ''; gb.textContent = goTxt(k); gb.classList.toggle('off', !good); };
