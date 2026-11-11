@@ -1270,8 +1270,8 @@
       subQ.ph = 'sai'; subQ.t = 0; subQ.save = { mode, modeT }; mode = 'troca';
       const s = subQ.s, out = [], inn = [];
       subQ.items.forEach((it, i) => { const p = it.p;
-        // sai pela linha mais perto (lateral ou de fundo), correndo
-        const c = [[p.x, -1.4], [p.x, WD + 1.4], [-1.4, p.y], [L + 1.4, p.y]].sort((a, b) => Math.hypot(a[0] - p.x, a[1] - p.y) - Math.hypot(b[0] - p.x, b[1] - p.y))[0];
+        // sai pela lateral mais perto, correndo (nunca pela linha de fundo: Silvio, 11/11, "saindo pelo gol")
+        const c = [[p.x, -1.4], [p.x, WD + 1.4]].sort((a, b) => Math.hypot(a[0] - p.x, a[1] - p.y) - Math.hypot(b[0] - p.x, b[1] - p.y))[0];
         leaving.push({ p: { x: p.x, y: p.y, side: p.side, r: p.r }, num: it.oldNum, sub: true, run: true, wait: 0, t: 0, tx: c[0], ty: c[1] });
         it.hx = p.x; it.hy = p.y; out.push(it.oldNum); inn.push(it.newNum);
         reform(p, it.f); p.x = 52.5 + (s ? 1 : -1) * (3 + i * 1.8); p.y = WD + 1.1; p.vx = p.vy = 0; p.tx = p.x; p.ty = p.y; p.outT = 99; p.outE = 3; p.subW = 1; });
