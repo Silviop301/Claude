@@ -7641,13 +7641,13 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .ldl-sb > em { font: 800 26px/1 var(--display); font-style: normal; } .ldl-sb > em i { font-size: 13px; font-style: normal; color: var(--tx-3); }
 .ldl-clk { background: #D8404A; color: #FFF; border-radius: 6px; padding: 2px 6px; font: 800 13px var(--display); } .ldl-clk i { display: none; }
 .ldl-sb .lv-crd { display: none; }
-.ldl-sb .ldl-kit { display: block; flex: none; width: 17px; height: 15px; margin: 0 -1px; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 .5px #fff); }
-.ldl-sb .ldl-kit i { display: block; width: 100%; height: 100%; clip-path: polygon(30% 0, 40% 9%, 60% 9%, 70% 0, 100% 18%, 88% 42%, 78% 36%, 78% 100%, 22% 100%, 22% 36%, 12% 42%, 0 18%); }
-.ldl-side { width: 168px; flex: none; display: flex; flex-direction: column; gap: 8px; }
+.ldl-sb .ldl-kit { display: block; flex: none; width: 5px; height: 26px; border-radius: 2px; overflow: hidden; box-shadow: 0 0 0 1px rgba(255,255,255,.35); margin: 0 -2px; }
+.ldl-sb .ldl-kit i { display: block; width: 100%; height: 100%; }
+.ldl-side { width: 184px; flex: none; display: flex; flex-direction: column; gap: 6px; }
 /* Último lance (campo limpo, 2026-11-07): só a linha mais nova do relato, em cartão no topo do painel */
 /* Lances do ao vivo: lista rolável, o último em cima (Silvio, 2026-11-10); cada lance é a frase com o nome completo em até duas
    linhas, com o minuto e o escudo no começo da primeira; o que não coube apaga embaixo e rola por dentro */
-.ldl-ev.lv-feed { margin: 0; padding: 4px 4px 0; list-style: none; display: block; flex: none; height: 80px; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+.ldl-ev.lv-feed { margin: 0; padding: 4px 4px 0; list-style: none; display: block; flex: none; height: 70px; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none;
   background: #141517; border: 0; border-radius: 12px; box-shadow: inset 0 0 0 1px #2a2d31; -webkit-mask-image: linear-gradient(#000 calc(100% - 12px), transparent); mask-image: linear-gradient(#000 calc(100% - 12px), transparent); }
 .ldl-ev.lv-feed::-webkit-scrollbar { display: none; }
 .ldl-ev.lv-feed li { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; max-height: 38px; box-sizing: border-box; padding: 3px 6px; margin-bottom: 2px; border-radius: 7px; background: none; box-shadow: none; font: 600 13px/16px var(--body); color: var(--tx-3); }
@@ -7658,19 +7658,19 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .ldl-ev.lv-feed li > span > span { display: inline-block; width: 9px; height: 12px; vertical-align: -1px; }
 .ldl-ev.lv-feed li.gol { color: var(--tx-1); } .ldl-ev.lv-feed li.gol.us { background: var(--paper); color: var(--lv-ink); } .ldl-ev.lv-feed li.gol.us > i { color: var(--ink-2); }
 .ldl-ev.lv-feed li.vc { color: #F2C230; } .ldl-ev.lv-feed li.vc > u { text-decoration: none; font: 800 11px/1 var(--display); letter-spacing: .04em; border: 1px solid currentColor; border-radius: 4px; padding: 1px 3px; margin-right: 5px; }
-.ldl-qm { display: flex; flex-direction: column; gap: 5px; }
+.ldl-qm { display: flex; flex-direction: column; gap: 3px; }
 .ldl-qm small { font: 700 13px var(--body); letter-spacing: .08em; color: var(--tx-3); }
 .ldl-qm span { display: flex; align-items: center; gap: 6px; } .ldl-c16 { flex: none; width: 16px; height: 16px; margin: 0; object-fit: contain; vertical-align: -3px; }
 .ldl-qm i { flex: 1; display: block; height: 6px; border-radius: 3px; background: #e0524f; overflow: hidden; } .ldl-qm i.r u { margin-left: auto; }
 .ldl-qm u { display: block; height: 100%; width: 50%; background: #4fd18b; transition: width .6s; }
-.ldl-num { flex: none; width: 100%; height: 44px; background: #1b1d20 !important; border: 1px solid #3a3d42 !important; color: var(--tx-1) !important; border-radius: 10px; padding: 0 10px !important; font: 700 14px var(--body) !important; letter-spacing: 0; white-space: nowrap; }
+.ldl-num { flex: none; width: 100%; height: 40px; background: #1b1d20 !important; border: 1px solid #3a3d42 !important; color: var(--tx-1) !important; border-radius: 10px; padding: 0 10px !important; font: 700 14px var(--body) !important; letter-spacing: 0; white-space: nowrap; }
 .ldl-num { display: flex; align-items: center; justify-content: center; } .ldl-num b { color: var(--gold); font: inherit; margin: 0 5px; } .ldl-num > span { margin-right: 7px; } .ldl-num > i { font: 700 18px/1 var(--body); font-style: normal; color: var(--tx-3); margin-left: 8px; }
-.ldl-g4 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-.ldl-g4 button { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 44px; background: #141517 !important; border-radius: 10px; border: 1.5px solid rgba(255, 255, 255, .1) !important; }
-.ldl-g4 b { font: 800 13px/1.1 var(--display); } .ldl-g4 small { font: 600 10px var(--body); color: var(--tx-3); }
+.ldl-g4 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.ldl-g4 button { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 47px; background: #141517 !important; border-radius: 10px; border: 1.5px solid rgba(255, 255, 255, .1) !important; }
+.ldl-g4 b { font: 800 16px/1.05 var(--display); } .ldl-g4 small { font: 600 12px/1.15 var(--body); color: var(--tx-3); }
 .ldl-g4 button.on { background: var(--paper) !important; color: var(--ink) !important; border-color: var(--paper) !important; } .ldl-g4 button.on small { color: var(--ink-2); }
 .ldl-g4 button:disabled { opacity: .45; }
-.ldl-side .lv-speed { background: #141517; } .ldl-side .lv-speed button { flex: 1; height: 32px; min-width: 0; font-size: 14px; }
+.ldl-side .lv-speed { background: #141517; } .ldl-side .lv-speed button { flex: 1; height: 38px; min-width: 0; font-size: 17px; }
 .ldl-stop { flex-direction: row !important; gap: 6px; min-height: 42px !important; } .ldl-stop b { font-size: 16px !important; }
 .ldl-stop.on { background: var(--paper) !important; box-shadow: 0 0 0 2px var(--gold); }
 .ldl-stop { position: relative; } .ldl-stop .tm-dot { right: -6px; top: -8px; text-align: center; box-shadow: 0 0 0 2px var(--bg, #15171a); animation: ldlPulse 1.4s ease-in-out infinite; }

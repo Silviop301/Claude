@@ -1341,7 +1341,7 @@
       // Pênalti a caminho: a bola entrou na área com o time dele, o juiz apita ali (quem conduzia é quem sofreu). Demorou 14 s:
       // apita com a bola do meio para a frente; 22 s: de qualquer jeito (a tela não fica esperando)
       if (due && due.pen && !due.kick) { const e = due, ow = ball.owner, [px, py] = tf(e.side, ball), mine = !!ow && ow.side === e.side && ow.r !== 'GK', ag = e.age || 0;
-        if ((mine && px > 88.5 && Math.abs(py - 34) < 19) || (ag > 26 && mine && px > 60) || ag > 31) { due = null; penStart(e); return; } }
+        if ((mine && px > 88.5 && Math.abs(py - 34) < 19) || (ag > 30 && mine && px > 84 && Math.abs(py - 34) < 22) || ag > 48) { due = null; penStart(e); return; } } // Silvio, 11/11: pênalti só com o ataque chegando na área (antes aos 26 s valia do meio para a frente)
       // O relógio da jogada só anda com a bola rolando (saída depois de outro gol não conta): gol do motor demorando 9 s vira lançamento
       if (due) { due.age = (due.age || 0) + dt; if (due.pen && !due.kick && due.age > 7) due.now = true; /* pênalti: demorou, lança na área */ if (due.out === 'gol' || due.out === undefined) { if (due.age > (due.spk === 'esc' || due.spk === 'fc' ? 15 : 9) && due.cb) due.now = true; } }
       if (due && ball.owner && ball.owner.side !== due.side && ball.owner.r !== 'GK') {
