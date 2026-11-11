@@ -7,12 +7,12 @@
 // Erros de página e textos com "undefined"/"NaN" contam como problema.
 const { chromium } = require('playwright');
 const OUT = process.argv[2] || '/tmp/ld', PARTS = (process.argv[3] || '1,2,3,4').split(',');
-// VP=852x393 muda o tamanho da tela; SAFE=47 simula a área segura dos lados do iPhone deitado (entalhe; 59 nos de ilha)
+// VP=852x393 muda o tamanho da tela (DESK=1 VP=2560x1300: monitor grande com mouse); SAFE=47 simula a área segura dos lados do iPhone deitado (entalhe; 59 nos de ilha)
 const VP = (process.env.VP || '844x390').split('x').map(Number), SAFE = +process.env.SAFE || 0;
 require('fs').mkdirSync(OUT, { recursive: true });
 const errs = [];
 async function page(b, first) {
-  const p = await b.newPage({ viewport: { width: VP[0], height: VP[1] }, deviceScaleFactor: +process.env.DSF || 1, isMobile: true, hasTouch: true });
+  const p = await b.newPage({ viewport: { width: VP[0], height: VP[1] }, deviceScaleFactor: +process.env.DSF || 1, isMobile: !process.env.DESK, hasTouch: !process.env.DESK }); // DESK=1: computador com mouse (html.desk, palco limitado)
   if (SAFE) await (await p.context().newCDPSession(p)).send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, left: SAFE, right: SAFE, bottom: 21 } }); // entalhe do iPhone deitado
   p.on('pageerror', e => errs.push('pageerror: ' + e.message));
   p.on('console', m => { if (m.type() === 'error' && !/three|cdn|favicon|net::/i.test(m.text())) errs.push('console: ' + m.text()); });

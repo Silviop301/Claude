@@ -334,6 +334,8 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
 - **Monitor grande tem zoom** (`html.desk`, `--z` 1,15 ou 1,3 no fim do `style.css`): altura em `vh/svh/dvh` nova
   precisa da versão `/ var(--z)` naquele bloco, e posição tirada de `getBoundingClientRect` e aplicada como CSS
   divide por `U.zk()`. Tela larga (≥1000 px, computador ou tablet deitado) usa as telas em 2 colunas.
+- **Palco deitado no computador tem teto** (2026-11-11, monitor 2K de 32"): com mouse (`html.desk`) o `.ld-st` para em
+  `DESK_K` (1,7) × 844×390, contando o zoom (`fit` em `ui/coachland.js`); a sobra vira fundo. Fotos: `DESK=1 VP=2560x1300 node tools/craque_telas_deitado.js`.
 - **Palco deitado no iPhone é mais estreito:** `.ld-st` perde a área segura dos dois lados (47 px no iPhone comum, 59 no
   Pro Max), então sobram ~750 px, não 844. Nada de `position: absolute` com `left`/`width` fixos nas telas: põe no fluxo
   (flex/grid). Testar com `.ld-st{padding-left:47px!important;padding-right:47px!important}` (as ferramentas rodam sem área segura).
