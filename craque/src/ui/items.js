@@ -362,7 +362,8 @@
     if (back) put();
     return back;
   }
-  const COIN_SVG = '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="#F2C230"/><circle cx="13" cy="13" r="8.5" fill="none" stroke="#b48a12" stroke-width="2"/><path d="M13 8v10M10 11h6" stroke="#b48a12" stroke-width="2.4" stroke-linecap="round"/></svg>';
+  // Moeda desenhada (arte do ChatGPT, 2026-11-11) dentro de um svg: as regras de tamanho (`... svg`) seguem valendo
+  const COIN_SVG = '<svg viewBox="0 0 26 26" aria-hidden="true"><image href="assets/co/mo-moeda.webp" width="26" height="26"/></svg>';
   // Pílula de saldo; com id vira botão (abre a loja)
   const pill = (cls, id) => { const n = wallet().n, lab = n + (n === 1 ? ' moeda' : ' moedas'), tag = id ? 'button' : 'span';
     return '<' + tag + ' class="coin-pill' + (cls ? ' ' + cls : '') + '"' + (id ? ' id="' + id + '" aria-label="' + lab + ', abrir a loja"' : ' role="img" aria-label="' + lab + '"') + '>' + COIN_SVG + '<b>' + n.toLocaleString('pt-BR') + '</b></' + tag + '>'; };
