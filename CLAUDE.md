@@ -185,7 +185,7 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
   batido, o defensor do lado do gol mais bem colocado larga a marcação e corta o caminho de quem conduz (mira onde ele vai
   estar), também com o passe deles no ar; só dá o bote perto da área.
 - **Pênalti nasce da jogada:** o pênalti do motor vira um ataque (`due` com `pen`, jogada `drible`); o apito só sai com a bola
-  do time dentro da área (ou, se demorar, aos 26 s e 31 s), então o zoom vai para o gol certo. `ui/coach.js` espera 1,5× mais.
+  do time dentro da área (aos 30 s vale na beira da área; só aos 48 s de qualquer jeito; Silvio 11/11: "marcou pênalti sem o ataque chegar na área"), então o zoom vai para o gol certo. `ui/coach.js` espera 2,2× mais.
 - **Drible** (`drStart`, `drOff`, `DRIB` em `_state()`): animação só de desenho (corte, pedalada, caneta; `DRB_A` é o tamanho da
   finta, o disco tem ~4 m no campo): quem dribla ameaça para um lado e sai pelo outro, o marcador vai na finta. Sai no drible
   comum, na jogada `drible` do ataque e no "partir para cima" novo (`DRB_R`, `DRB_D`: meia, ponta e atacante com marcador pela
@@ -236,7 +236,7 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
   em `_state()`); bola fora segue rolando para fora (`ghost`, só desenho) e a cobrança usa a bola reserva mais perto (`RACK`,
   `outBall`); troca espera bola parada (12 s: o time da troca chuta para a lateral; 35 s: o juiz para, `whistle('Substituição')`);
   `sim.canStop()` segura o apito do intervalo e do fim no escanteio, chute ou cruzamento no ar (até 9 s, `stopW` em `ui/coach.js`);
-  velocidade padrão dos jogos nos Ajustes (`U.coVel`, `climbix-co-vel`); Semana com o mandante à esquerda. Depois: GOOOL! e PÊNALTI! só com texto branco em ola (`waveText`), apito animado do ChatGPT (`assets/co/apito-anim.webp`, 6 quadros de 160 px; original `arte/apito/`); o juiz espera o ataque acabar para apitar o fim (`canStop`, até 16 s); camisinha da cor do time no placar (`.ldl-kit`); escudo trocado leva versão em `CREST_V` (`ui/core.js`), porque o servidor guarda escudo por 7 dias.
+  velocidade padrão dos jogos nos Ajustes (`U.coVel`, `climbix-co-vel`); Semana com o mandante à esquerda. Depois: GOOOL! e PÊNALTI! só com texto branco em ola (`waveText`), apito animado do ChatGPT (`assets/co/apito-anim.webp`, 6 quadros de 160 px; original `arte/apito/`); o juiz espera o ataque acabar para apitar o fim (`canStop`, até 16 s); faixa vertical com as duas cores do time no placar (`.ldl-kit`, como na TV); botões do painel do ao vivo maiores (gritos 16/12 px, coluna 184 px); escudo trocado leva versão em `CREST_V` (`ui/core.js`), porque o servidor guarda escudo por 7 dias.
 - **Atributos** (`qa(p, 'fin'|'pas'|'dri'|'def'|'gol')`): cada lance lê `p.inf.at[k]` (0 a 99) se a escalação mandar; sem isso
   vale o geral. Quem preenche é a thread dos atributos por jogador (5º elemento do `simForm`).
 

@@ -800,7 +800,7 @@
           const cancel = sim.shot(side, 'gol', fin, spOf(e));
           // em segundos do campinho (a 3× passam três vezes mais rápido)
           const f3 = co.speed === '3' ? 1 / 3 : 0.8;
-          tm = setTimeout(() => { cancel(); fin(); }, 30000 * f3 * (e.sp === 'pen' ? 1.5 : 1)); // pênalti: o ataque leva a bola até a área antes do apito // último recurso: o campinho já lança direto na área aos 9 s de bola rolando
+          tm = setTimeout(() => { cancel(); fin(); }, 30000 * f3 * (e.sp === 'pen' ? 2.2 : 1)); // pênalti: o ataque leva a bola até a área antes do apito // último recurso: o campinho já lança direto na área aos 9 s de bola rolando
         });
       };
     };
