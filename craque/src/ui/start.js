@@ -288,38 +288,67 @@
   // canto de baixo à direita, gira enquanto toca; tocar liga/desliga a música (a mesma chave dos Ajustes) e mostra o nome
   // da faixa ao lado por 4 s, que também aparece sozinho quando a faixa troca. A música já começa no primeiro toque (sound.js)
   const DISC_SVG = '<img class="dk-i" src="assets/co/disco.webp" alt="" draggable="false">'; // arte do ChatGPT (arte/disco/disco.png, 2026-11-11)
-  // Também na Semana do Treinador (Silvio: "centralizado mas no topo, onde ainda há espaço"): U.discHtml('sm', true) põe a
-  // setinha que passa a faixa; o mesmo discBind liga tudo
-  const SKIP_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l9 7-9 7zM16 5h3v14h-3z"/></svg>';
-  function discHtml(cls, skip) {
+  // Também na Semana do Treinador (Silvio: "centralizado mas no topo, onde ainda há espaço"): U.discHtml('sm'); o mesmo discBind liga tudo.
+  // Tocar no disco (Silvio, 11/11: "clicar no disco, ter uma animação de crescimento, mostra o nome e os controles e depois volta"):
+  // o disco cresce num cartão por cima da tela (.hl-dk-p, sem mexer no resto) com o nome, anterior, pausar e próxima;
+  // fecha sozinho 5 s depois do último toque, ao tocar fora ou no disco grande
+  const IC = {
+    pv: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 5l-9 7 9 7zM5 5h3v14H5z"/></svg>',
+    nx: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l9 7-9 7zM16 5h3v14h-3z"/></svg>',
+    pa: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
+    pl: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>',
+  };
+  function discHtml(cls) {
     const M = window.CRAQUE_MUSIC;
     if (!M || !M.has) return '';
-    return '<div class="hl-dk' + (cls ? ' dk-' + cls : '') + (M.on ? '' : ' off') + '" id="hl-dk"><span class="hl-dk-t" aria-live="polite"></span><button class="hl-dk-b" id="hl-dk-b" aria-label="Pausar ou tocar a música">' + DISC_SVG + '<i></i></button>' +
-      (skip ? '<button class="hl-dk-n" id="hl-dk-n" aria-label="Próxima música">' + SKIP_SVG + '</button>' : '') + '</div>';
+    return '<div class="hl-dk' + (cls ? ' dk-' + cls : '') + (M.on ? '' : ' off') + '" id="hl-dk"><span class="hl-dk-t" aria-live="polite"></span>' +
+      '<button class="hl-dk-b" id="hl-dk-b" aria-label="Música: nome e controles">' + DISC_SVG + '<i></i></button>' +
+      '<div class="hl-dk-p" id="hl-dk-p" aria-hidden="true"><button class="dk-big" id="hl-dk-x" aria-label="Fechar">' + DISC_SVG + '</button>' +
+      '<div class="dk-r"><span class="dk-nm" aria-live="polite"></span><span class="dk-ct">' +
+      '<button class="dk-c" id="hl-dk-pv" aria-label="Música anterior">' + IC.pv + '</button>' +
+      '<button class="dk-c pp" id="hl-dk-pp" aria-label="Pausar ou tocar">' + IC.pa + '</button>' +
+      '<button class="dk-c" id="hl-dk-nx" aria-label="Próxima música">' + IC.nx + '</button></span></div></div></div>';
   }
   U.discHtml = discHtml;
   U.discBind = st => discBind(st);
-  let discOff = null, discT = null;
+  let discOff = null, discT = null, discC = null, discOut = null;
   function discBind(st) {
     const box = st.querySelector('#hl-dk'), M = window.CRAQUE_MUSIC;
     if (!box || !M) return;
-    const lbl = box.querySelector('.hl-dk-t');
-    let shown = box.classList.contains('dk-sm') ? M.track : ''; // na Semana o nome só aparece quando a faixa troca ou no toque
-    const name = () => { const t = M.title; return M.on ? (t ? '<b>' + esc(t[0]) + '</b>' + (t[1] ? '<small>' + esc(t[1]) + '</small>' : '') : '<b>Música</b><small>toque para começar</small>') : '<b>Música desligada</b><small>toque para ligar</small>'; };
-    const say = () => { lbl.innerHTML = name(); box.classList.add('say'); clearTimeout(discT); discT = setTimeout(() => box.classList.remove('say'), 4000); };
+    const lbl = box.querySelector('.hl-dk-t'), nm = box.querySelector('.dk-nm'), pp = box.querySelector('#hl-dk-pp');
+    let shown = box.classList.contains('dk-sm') ? M.track : ''; // na Semana o nome só aparece quando a faixa troca
+    const name = () => { const t = M.title; return M.on ? (t ? '<b>' + esc(t[0]) + '</b>' + (t[1] ? '<small>' + esc(t[1]) + '</small>' : '') : '<b>Música</b><small>toque para começar</small>') : '<b>Música pausada</b><small>toque no play</small>'; };
+    const say = () => { if (box.classList.contains('open')) return; lbl.innerHTML = name(); box.classList.add('say'); clearTimeout(discT); discT = setTimeout(() => box.classList.remove('say'), 4000); };
+    const close = () => {
+      clearTimeout(discC); box.classList.remove('open'); box.querySelector('#hl-dk-p').setAttribute('aria-hidden', 'true');
+      if (discOut) { document.removeEventListener('pointerdown', discOut, true); discOut = null; }
+    };
+    const keep = () => { clearTimeout(discC); discC = setTimeout(close, 5000); };
+    const open = () => {
+      box.classList.remove('say'); box.classList.add('open'); box.querySelector('#hl-dk-p').setAttribute('aria-hidden', 'false'); paint(); keep();
+      if (discOut) document.removeEventListener('pointerdown', discOut, true);
+      discOut = e => { if (!box.querySelector('#hl-dk-p').contains(e.target)) { close(); if (box.querySelector('#hl-dk-b').contains(e.target)) e.stopPropagation(); } };
+      setTimeout(() => { if (discOut) document.addEventListener('pointerdown', discOut, true); }, 0);
+    };
     const paint = () => {
-      if (!document.body.contains(box)) { window.removeEventListener('climbix-musica', paint); return; }
+      if (!document.body.contains(box)) { window.removeEventListener('climbix-musica', paint); close(); return; }
       box.classList.toggle('off', !M.on);
       box.classList.toggle('spin', M.state === 'tocando');
+      nm.innerHTML = name();
+      pp.innerHTML = M.on ? IC.pa : IC.pl;
       const tr = M.track;
       if (tr && tr !== shown && M.on) { shown = tr; say(); }
     };
     if (discOff) window.removeEventListener('climbix-musica', discOff);
     discOff = paint;
     window.addEventListener('climbix-musica', paint);
-    box.querySelector('#hl-dk-b').onclick = () => { M.toggle(); shown = M.track; paint(); say(); };
-    const nx = box.querySelector('#hl-dk-n');
-    if (nx) nx.onclick = () => { if (!M.on) M.toggle(); M.next(); }; // a faixa nova chega pelo evento e o nome aparece
+    let skipOpen = false; // o toque que fechou o cartão não reabre
+    box.querySelector('#hl-dk-b').addEventListener('pointerdown', () => { skipOpen = box.classList.contains('open'); });
+    box.querySelector('#hl-dk-b').onclick = () => { if (skipOpen) { skipOpen = false; return; } open(); };
+    box.querySelector('#hl-dk-x').onclick = close;
+    pp.onclick = () => { M.toggle(); shown = M.track; paint(); keep(); };
+    box.querySelector('#hl-dk-nx').onclick = () => { if (!M.on) M.toggle(); shown = ''; M.next(); shown = M.track; paint(); keep(); };
+    box.querySelector('#hl-dk-pv').onclick = () => { if (!M.on) M.toggle(); M.prev(); shown = M.track; paint(); keep(); };
     paint();
     setTimeout(paint, 900); // a música começa no toque que abriu a home: o estado chega logo depois
   }

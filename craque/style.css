@@ -9689,16 +9689,38 @@ body:has(> .tc-ov) > .pay-ty { visibility: hidden; }
 .ld-st .tm-pitch button.tm-best svg{width:14px;height:14px;fill:#f2c230}
 .ld-st .tm-pitch button.tm-best.on{opacity:.45}
 .ld-st .tm-pitch button.tm-best:active{transform:scale(.95)}
-/* Disco na Semana do Treinador: no meio do topo, no espaço entre a META e o caixa; ⏭ passa a faixa, nome embaixo */
+/* Disco na Semana do Treinador: no meio do topo, no espaço entre a META e o caixa; nome embaixo quando a faixa troca */
 .sm-h .sm-mu { display: flex; justify-content: center; align-items: center; min-width: 0; }
 .hl-dk.dk-sm { position: relative; right: auto; bottom: auto; gap: 4px; }
 .ld-st button.hl-dk.dk-sm .hl-dk-b, .ld-st .dk-sm button.hl-dk-b { width: 40px; height: 40px; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
 .dk-sm .hl-dk-b .dk-i { width: 40px; height: 40px; }
 .dk-sm.off .hl-dk-b i { width: 44px; margin-left: -22px; }
-.ld-st .dk-sm button.hl-dk-n { width: 30px; height: 44px; padding: 0; background: none; border: 0; display: flex; align-items: center; justify-content: center; color: #D9E2DC; }
-.dk-sm .hl-dk-n svg { width: 16px; height: 16px; fill: currentColor; }
 .dk-sm .hl-dk-t { position: absolute; top: 46px; left: 50%; transform: translate(-50%, -4px); align-items: center; z-index: 5; box-shadow: 0 6px 16px rgba(0,0,0,.4); }
 .dk-sm.say .hl-dk-t { transform: translate(-50%, 0); }
+/* Disco que cresce (11/11, Silvio: "clicar no disco, ter uma animação de crescimento, mostra o nome e os controles e depois volta"):
+   cartão por cima da tela, nascendo do disco pequeno; home = de baixo à direita, Semana = do meio do topo */
+.hl-dk-p { position: absolute; z-index: 30; display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 22px; background: var(--panel, #141517); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 14px 34px rgba(0,0,0,.55); opacity: 0; pointer-events: none; transform: scale(.35); transition: transform .32s cubic-bezier(.2,1.25,.4,1), opacity .2s; }
+.hl-dk.open .hl-dk-p { opacity: 1; pointer-events: auto; transform: none; }
+.hl-dk.open > .hl-dk-b { opacity: 0; }
+.hl-dk.open .hl-dk-t { opacity: 0; }
+.ld-st .hl-dk-p button.dk-big { flex: none; width: 96px; height: 96px; padding: 0; border: 0; border-radius: 50%; background: none; box-shadow: 0 6px 16px rgba(0,0,0,.45); }
+.hl-dk-p .dk-big .dk-i { width: 96px; height: 96px; display: block; animation: hlDk 3.2s linear infinite; animation-play-state: paused; }
+.hl-dk.spin .hl-dk-p .dk-big .dk-i { animation-play-state: running; }
+.hl-dk.off .hl-dk-p .dk-big .dk-i { opacity: .55; }
+.hl-dk-p .dk-r { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.hl-dk-p .dk-nm { display: flex; flex-direction: column; color: #F3F1EA; max-width: 210px; }
+.hl-dk-p .dk-nm b { font-size: 16px; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hl-dk-p .dk-nm small { font-size: 13px; color: #A9B7AF; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hl-dk-p .dk-ct { display: flex; gap: 8px; }
+.ld-st .hl-dk-p button.dk-c { width: 48px; height: 44px; padding: 0; border: 1px solid rgba(255,255,255,.14); border-radius: 14px; background: rgba(255,255,255,.06); color: #E3ECE6; display: flex; align-items: center; justify-content: center; }
+.ld-st .hl-dk-p button.dk-c.pp { width: 56px; background: #F2C230; border-color: #F2C230; color: #1B1A16; }
+.hl-dk-p .dk-c svg { width: 20px; height: 20px; fill: currentColor; }
+.ld-st .hl-dk-p button.dk-c:active { transform: scale(.94); }
+.hl-dk:not(.dk-sm) .hl-dk-p { right: -10px; bottom: -10px; flex-direction: row-reverse; transform-origin: calc(100% - 36px) calc(100% - 36px); }
+.hl-dk:not(.dk-sm) .hl-dk-p .dk-r { align-items: flex-end; } .hl-dk:not(.dk-sm) .hl-dk-p .dk-nm { align-items: flex-end; text-align: right; }
+.dk-sm .hl-dk-p { top: -6px; left: 50%; margin-left: -150px; width: 300px; flex-direction: column; gap: 10px; padding: 14px; transform-origin: 50% 26px; }
+.dk-sm .hl-dk-p .dk-r, .dk-sm .hl-dk-p .dk-nm { align-items: center; text-align: center; }
+@media (prefers-reduced-motion: reduce) { .hl-dk-p { transition: opacity .2s; } .hl-dk-p .dk-big .dk-i { animation: none; } }
 /* Ajustes com 6 linhas (Música no jogo ao vivo): linhas mais baixas para caber sem rolar */
 .aj-l.n6 { gap: 6px; } .aj-l.n6 .aj-sw, .aj-l.n6 .aj-lk { min-height: 44px; border-radius: 14px; } .aj-l.n6 .aj-sw b, .ld-st .aj-l.n6 button.aj-lk { font-size: 24px; }
 
