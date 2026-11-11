@@ -39,7 +39,7 @@
     }
     bus();
     // Gravações de verdade (rede 40 KB, torcida 60 KB). Enquanto não chegam, o gol usa os sons sintetizados
-    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=9c4a53aa'], ['apito', 'assets/sons/apito.mp3?v=b8f1c7c6'], ['apitoInt', 'assets/sons/apito-int.mp3?v=04a63f3e'], ['apitoFim', 'assets/sons/apito-fim.mp3?v=ca38f7cc']].forEach(([k, url]) => {
+    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=9c4a53aa'], ['apito', 'assets/sons/apito.mp3?v=b8f1c7c6'], ['apitoInt', 'assets/sons/apito-int.mp3?v=1242a373'], ['apitoFim', 'assets/sons/apito-fim.mp3?v=08534777']].forEach(([k, url]) => {
       fetch(url).then(r => r.arrayBuffer())
         .then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { rec[k] = b; }).catch(() => { /* fica a sintetizada */ });
     });
