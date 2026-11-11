@@ -54,7 +54,10 @@
       tv: 0.03, bar: 0.08, cam: 0.05, bar0: 0.15,       // por nível: cota de TV, renda por torcedor, camarote (parte da bilheteria de um jogo comum, fixa: não depende do público nem do humor)
       gram: 0.05, gramCost: 0.012,          // gramado: o time cansa menos em casa por nível; não rende dinheiro, custa essa parte da receita do ano vezes o nível
       camSo: 4,                             // camarotes pedem a Social coberta
-      word: { g: ['castigado', 'bom', 'ótimo', 'tapete'], l: ['sem', 'simples', 'de TV', 'de arena'] } },
+      // 5 níveis desde 2026-11-11 (Silvio: "bem pouco ter só 3 melhorias por categoria"): os níveis 4 e 5 dão o mesmo ganho
+      // de um nível, custam e demoram 1,5x e 2x e pedem estádio de 25 mil e 40 mil lugares (a chegada segue indo até o 3)
+      max: 5, costK: [1, 1, 1, 1.5, 2], timeK: [1, 1, 1, 1.5, 2], need: { 4: 25000, 5: 40000 },
+      word: { g: ['castigado', 'bom', 'ótimo', 'tapete', 'de seleção', 'de Copa'], l: ['sem', 'simples', 'de TV', 'de arena', 'de final', 'de Copa'] } },
     // Nome do estádio: com tantos lugares e camarotes um patrocinador oferece essa parte da receita por ano, por `anos` temporadas; aceitar tira `hum` do humor
     nome: { cap: 20000, v: 0.03, anos: 3, hum: 20, wait: 2 },
     // Acontecimentos (fase 5)
@@ -275,12 +278,13 @@
   S.coEstMelPlan = function (co, k) {
     const e = S.coEst(co), M = E.mel, fin = S.coFin ? S.coFin(co) : null, pres = S.coPres ? S.coPres(co) : null; if (!e || M.keys.indexOf(k) < 0) return null;
     const from = e.up[k], to = from + 1, name = M.names[k], lock = k === 'c' && e.lv.so < M.camSo;
-    if (to > 3) return { k, name, from, max: true };
+    if (to > M.max) return { k, name, from, max: true };
+    const need = M.need[to] && S.coEstCap(e) < M.need[to] ? M.need[to] : 0;   // nível 4 e 5: só com o estádio desse tamanho (setor em obra conta)
     if (fin && !fin.rec && S.coFinNext) S.coFinNext(co);
     const rec = fin ? fin.rec || 0 : 0, part = pres && pres.k === 'amb' ? 1 - E.obra.amb : 1;
     const perSeason = k === 'l' ? rec * S.CO_FIN.tv * M.tv / (1 + M.tv * e.up0.l) : k === 'b' ? rec * S.CO_FIN.bil * M.bar / (1 + M.bar * e.up0.b) : k === 'c' ? rec * S.CO_FIN.bil * M.cam : 0;
-    const cost = r10k((k === 'g' ? rec * M.gramCost * to : perSeason * M.pay) * part);
-    return { k, name, from, to, lock, perSeason: Math.round(perSeason / 1000) * 1000, rounds: M.rounds[k], cost, payMax: pres && pres.k === 'pao' ? 1 : 3, amb: part < 1, busy: !!e.mel };
+    const cost = r10k((k === 'g' ? rec * M.gramCost * to : perSeason * M.pay) * part * (M.costK[to - 1] || 1));
+    return { k, name, from, to, lock, need, perSeason: Math.round(perSeason / 1000) * 1000, rounds: Math.ceil(M.rounds[k] * (M.timeK[to - 1] || 1)), cost, payMax: pres && pres.k === 'pao' ? 1 : 3, amb: part < 1, busy: !!e.mel };
   };
   S.coEstMelAsk = function (co, k, x) {
     const e = S.coEst(co), P = S.coEstMelPlan(co, k), fin = S.coFin ? S.coFin(co) : null;
@@ -288,6 +292,7 @@
     if (e.mel) return { ok: false, why: 'obra' };
     if (P.max) return { ok: false, why: 'max' };
     if (P.lock) return { ok: false, why: 'social' };
+    if (P.need) return { ok: false, why: 'lugares', need: P.need };
     const r = boardPay(co, P.cost, x, P.payMax);
     if (!r.ok) return r;
     e.mel = { k, to: P.to, left: P.rounds, tot: P.rounds };
