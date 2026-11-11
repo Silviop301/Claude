@@ -1263,7 +1263,10 @@
   // Topo do mercado (Silvio 2026-11-10: "o caixa na parte superior e ver em outras telas também", para saber se dá para pagar
   // o olheiro): nome em cima e apoio embaixo; à direita, no fluxo, o caixa do clube, as moedas, a janela e a ajuda.
   // `coins` = id do botão das moedas (abre a loja; quem chama liga com mkCoins); sem ele a pílula é só informação.
-  const cxPill = () => { const c = C(), cx = S.coFin(c.co).caixa || 0; return '<span class="mk-cx' + (cx < 0 ? ' neg' : '') + '"><small>CAIXA</small><b>' + c.brl(cx) + '</b></span>'; };
+  // Desenho do dinheiro no lugar da palavra CAIXA (Silvio, 2026-11-11): as notas do conjunto de ícones do jogo (assets/ic).
+  // Em Finanças o mesmo desenho fica ao lado da palavra, para o jogador ligar um ao outro
+  const CX_IC = '<img class="mk-cxi" src="assets/ic/1f4b5.webp" alt="Caixa" draggable="false">';
+  const cxPill = () => { const c = C(), cx = S.coFin(c.co).caixa || 0; return '<span class="mk-cx' + (cx < 0 ? ' neg' : '') + '" title="Caixa do clube">' + CX_IC + '<b>' + c.brl(cx) + '</b></span>'; };
   const mkCx = coins => cxPill() + (U.COINS ? U.COINS.pill('cp-sm', coins ? 'mk-coins' : '') : '');
   const mkHead = (id, t, s, noWin, coins) => '<div class="tm-h"><button class="tcr-back" id="' + id + '" aria-label="Voltar">' + MK_BK + '</button><span class="mk-tt"><b>' + t + '</b><small>' + s + '</small></span>' +
     '<span class="mk-top">' + mkCx(coins) + (noWin ? '' : mkWin()) + '<button class="ol2-q" id="mk-q" aria-label="Como funciona">?</button></span></div>';
@@ -1791,7 +1794,7 @@
     else rows = co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 8).map(p => li(esc(p.n) + ' <small>' + p.pos + '</small>', c.mi(p.wage) + ' <small>até ' + (U.YEAR0 + co.season + p.ct) + '</small>')).join('');
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     show('<div class="fn2"><div class="tm-h"><button class="tcr-back" id="ldf-back" aria-label="Voltar">' + BK + '</button><b>Finanças</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (U.YEAR0 + co.season) + '</small></div>' +
-      '<div class="fn2-k"><div><small>CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span class="fn2-rt ' + (R ? R.st : '') + '" title="no ritmo atual">' + (f.caixa < 0 ? 'no vermelho' : ritmoTxt(c, R)) + '</span></div>' +
+      '<div class="fn2-k"><div><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span class="fn2-rt ' + (R ? R.st : '') + '" title="no ritmo atual">' + (f.caixa < 0 ? 'no vermelho' : ritmoTxt(c, R)) + '</span></div>' +
         '<div><small>VERBA</small><b class="up">' + c.brl(f.verba) + '</b><span>para contratar</span></div>' +
         '<div><small>FOLHA</small><b>' + c.brl(folha) + '</b><i><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i><span>teto ' + c.brl(f.teto) + '</span></div></div>' +
       '<div class="fn2-tabs">' + [['rod', 'Rodada'], ['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
@@ -1875,7 +1878,7 @@
       : steps.length ? '<div class="bk2-top"><button class="pl2-ar" data-ai="-1" aria-label="Menos"' + (i > 0 ? '' : ' disabled') + '>' + MK_L + '</button><span><small>EMPRÉSTIMO</small><b>' + c.brl(amt) + '</b></span><button class="pl2-ar" data-ai="1" aria-label="Mais"' + (i < steps.length - 1 ? '' : ' disabled') + '>' + MK_R + '</button></div>' +
         '<div class="bk2-li">' + li('Juros', '2% ao mês') + li('12 parcelas de', c.brl(parc)) + li('Total a pagar', c.brl(parc * 12), 'dn') + '</div>'
       : '<p class="fn2-none">O banco não empresta agora.</p>';
-    const side = L ? '<div class="fn2-st"><small>CAIXA</small><b class="' + (f.caixa < 0 ? 's3' : '') + '">' + c.brl(f.caixa) + '</b><em>' + (f.caixa >= L.rem ? 'dá para quitar hoje' : 'parcela a cada 4 rodadas') + '</em></div><span class="rs-gap"></span>' +
+    const side = L ? '<div class="fn2-st"><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 's3' : '') + '">' + c.brl(f.caixa) + '</b><em>' + (f.caixa >= L.rem ? 'dá para quitar hoje' : 'parcela a cada 4 rodadas') + '</em></div><span class="rs-gap"></span>' +
         (f.caixa >= L.rem ? '<button class="tm-b" id="ldn-back">Agora não</button><button class="tm-go" id="ldn-pay">Quitar ' + c.brl(L.rem) + '</button>' : '<button class="tm-go" id="ldn-back">Voltar</button>')
       : '<div class="fn2-st"><small>VOCÊ DEVE</small><b>nada</b><em>' + (max ? 'pode pegar até ' + c.brl(max) : 'sem crédito agora') + '</em></div><span class="rs-gap"></span><button class="tm-b" id="ldn-back">Agora não</button>' +
         (amt ? '<button class="tm-go" id="ldn-take">Pegar ' + c.brl(amt) + '</button>' : '');
@@ -2193,7 +2196,7 @@
         st.querySelectorAll('[data-lj]').forEach(b => b.onclick = () => { sfx('tap'); tab = +b.dataset.lj; draw(); });
         st.querySelectorAll('[data-pk]').forEach(b => b.onclick = () => { sfx('tap'); pk = +b.dataset.pk; draw(); });
         const trm = st.querySelector('#lj-trm');
-        if (trm && U.termosLand) trm.onclick = e => { e.preventDefault(); sfx('tap'); U.termosLand('Reembolso', draw); };
+        if (trm && U.termosLand) trm.onclick = e => { e.preventDefault(); sfx('tap'); U.termosLand('Reembolso'); };
         const buy = st.querySelector('#lj-buy');
         if (buy && payOn) buy.onclick = () => {
           sfx('tap');

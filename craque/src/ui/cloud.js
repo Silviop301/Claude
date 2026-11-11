@@ -197,8 +197,12 @@
   const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
   function land(backId, sub, card, side) {
     U.LD.show('<div class="cnta"><div class="tm-h"><button class="tcr-back" id="' + backId + '" aria-label="Voltar">' + BK + '</button><b>Conta</b>' + (sub ? '<small>' + sub + '</small>' : '') +
-      '<span class="ct-lg"><a href="privacidade.html" target="_blank" rel="noopener">Privacidade</a><a href="termos.html" target="_blank" rel="noopener">Termos</a></span></div>' +
-      '<div class="ct-card">' + card + '</div><div class="ct-side">' + side + '</div></div>', st => { if (U.LD.lift) U.LD.lift(st.querySelector('.cnta')); }, 'O Climbix é jogado com o celular deitado.');
+      '<span class="ct-lg"><a href="privacidade.html" target="_blank" rel="noopener" data-lg="privacidadeLand">Privacidade</a><a href="termos.html" target="_blank" rel="noopener" data-lg="termosLand">Termos</a></span></div>' +
+      '<div class="ct-card">' + card + '</div><div class="ct-side">' + side + '</div></div>', st => {
+        if (U.LD.lift) U.LD.lift(st.querySelector('.cnta'));
+        // Privacidade e Termos abrem por cima, no padrão do jogo (ui/settings.js), sem perder o que foi digitado
+        st.querySelectorAll('.ct-lg a[data-lg]').forEach(a => a.onclick = e => { if (!U[a.dataset.lg]) return; e.preventDefault(); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); U.sfx('tap'); U[a.dataset.lg](0); });
+      }, 'O Climbix é jogado com o celular deitado.');
   }
   const lmsg = (msg, ok) => '<p class="ct-msg' + (ok ? ' ok' : '') + '" role="status">' + (msg ? esc(msg) : '') + '</p>';
   const lfield = (id, label, attrs) => '<input class="ct-in" id="' + id + '" placeholder="' + label + '" aria-label="' + label + '" ' + attrs + ' required>';
