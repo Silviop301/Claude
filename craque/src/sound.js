@@ -126,19 +126,33 @@
   let mLive = false;
   try { mLive = localStorage.getItem('climbix-musica-jogo') === 'on'; } catch (e) { /* fica só a torcida */ }
   const quiet = () => !!(root.document && (root.document.hidden || (!mLive && root.document.querySelector('.lv'))));
+  // últimas que tocaram, guardadas entre aberturas do jogo (no máximo 8, e sempre sobra metade da lista para sortear)
+  const M_REC = Math.min(8, Math.floor(M_LIST.length / 2));
+  function mRec() {
+    let r = [];
+    try { r = JSON.parse(localStorage.getItem('climbix-musica-rec') || '[]'); } catch (e) { /* sem armazenamento */ }
+    if (!Array.isArray(r)) r = [];
+    if (!r.length) try { const u = localStorage.getItem('climbix-musica-ult'); if (u) r = [u]; } catch (e) { /* ok */ } // aparelho que só tinha a última
+    return r.filter((x) => M_LIST.indexOf(x) >= 0).slice(-M_REC);
+  }
+  function mRecAdd(f) {
+    const r = mRec().filter((x) => x !== f); r.push(f);
+    try { localStorage.setItem('climbix-musica-rec', JSON.stringify(r.slice(-M_REC))); localStorage.setItem('climbix-musica-ult', f); } catch (e) { /* ok */ }
+  }
   function musicNext() {
     if (!mEl) return;
     if (++mI >= mOrd.length) { // nova volta embaralhada, sem repetir a última logo de cara
       const last = mOrd[mOrd.length - 1];
       mOrd = M_LIST.map((x, i) => i); for (let i = mOrd.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [mOrd[i], mOrd[j]] = [mOrd[j], mOrd[i]]; } // embaralha de verdade (Fisher-Yates)
-      // nunca começa com a última que tocou, nem na volta nem ao abrir o jogo de novo (Silvio: "pra pessoa não enjoar")
-      let prev = last;
-      if (prev === undefined) try { prev = M_LIST.indexOf(localStorage.getItem('climbix-musica-ult')); } catch (e) { /* sem armazenamento */ }
-      if (mOrd.length > 1 && mOrd[0] === prev) mOrd.push(mOrd.shift());
+      // como o Spotify: as que tocaram por último (também em aberturas anteriores) vão para o fim da volta, da mais antiga para a mais recente
+      const rec = mRec();
+      if (last !== undefined && rec.indexOf(M_LIST[last]) < 0) rec.push(M_LIST[last]);
+      const pos = (i) => rec.indexOf(M_LIST[i]);
+      mOrd = mOrd.filter((i) => pos(i) < 0).concat(mOrd.filter((i) => pos(i) >= 0).sort((a, b) => pos(a) - pos(b)));
       mI = 0;
     }
     mEl.src = 'assets/musica/' + M_LIST[mOrd[mI]];
-    try { localStorage.setItem('climbix-musica-ult', M_LIST[mOrd[mI]]); } catch (e) { /* ok */ }
+    mRecAdd(M_LIST[mOrd[mI]]);
     mSay();
     if (mWant > 0) mEl.play().catch(() => { /* espera o próximo toque */ });
   }
