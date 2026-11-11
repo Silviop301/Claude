@@ -9674,16 +9674,16 @@ body:has(> .tc-ov) > .pay-ty { visibility: hidden; }
 /* Disco da música na home deitada (2026-11-11): canto de baixo à direita, gira enquanto toca, nome da faixa ao lado */
 .hl-dk { position: absolute; right: 16px; bottom: 14px; display: flex; align-items: center; gap: 10px; z-index: 3; }
 .ld-st button.hl-dk-b { position: relative; width: 52px; height: 52px; padding: 0; border-radius: 50%; background: none; border: 0; box-shadow: 0 4px 12px rgba(0,0,0,.35); }
-.hl-dk-b svg { width: 52px; height: 52px; display: block; animation: hlDk 3.2s linear infinite; animation-play-state: paused; }
-.hl-dk.spin .hl-dk-b svg { animation-play-state: running; }
-.hl-dk.off .hl-dk-b svg { opacity: .45; }
+.hl-dk-b .dk-i { width: 52px; height: 52px; display: block; animation: hlDk 3.2s linear infinite; animation-play-state: paused; }
+.hl-dk.spin .hl-dk-b .dk-i { animation-play-state: running; }
+.hl-dk.off .hl-dk-b .dk-i { opacity: .45; }
 .hl-dk.off .hl-dk-b i { position: absolute; left: 50%; top: 50%; width: 58px; height: 3px; margin: -1.5px 0 0 -29px; background: #E3ECE6; border-radius: 2px; transform: rotate(-45deg); box-shadow: 0 0 0 2px #0D2E21; }
 .hl-dk-t { display: flex; flex-direction: column; align-items: flex-end; padding: 6px 12px; border-radius: 12px; background: var(--panel, #141517); color: #F3F1EA; opacity: 0; transform: translateX(8px); transition: opacity .3s, transform .3s; pointer-events: none; white-space: nowrap; }
 .hl-dk.say .hl-dk-t { opacity: 1; transform: none; }
 .hl-dk-t b { font-size: 14px; font-weight: 800; line-height: 1.2; }
 .hl-dk-t small { font-size: 12px; color: #A9B7AF; line-height: 1.2; }
 @keyframes hlDk { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .hl-dk-b svg { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .hl-dk-b .dk-i { animation: none; } }
 /* Escalação: botão Melhores no canto do campo (11/11) */
 .ld-st .tm-pitch button.tm-best{position:absolute;left:8px;bottom:8px;z-index:3;display:flex;align-items:center;gap:4px;height:26px;padding:0 9px 0 7px;border-radius:13px;border:1px solid rgba(255,255,255,.28);background:rgba(20,21,23,.78);color:var(--tx-1,#fff);font:800 12px/1 var(--display,inherit);letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
 .ld-st .tm-pitch button.tm-best svg{width:14px;height:14px;fill:#f2c230}
@@ -9693,7 +9693,7 @@ body:has(> .tc-ov) > .pay-ty { visibility: hidden; }
 .sm-h .sm-mu { display: flex; justify-content: center; align-items: center; min-width: 0; }
 .hl-dk.dk-sm { position: relative; right: auto; bottom: auto; gap: 4px; }
 .ld-st button.hl-dk.dk-sm .hl-dk-b, .ld-st .dk-sm button.hl-dk-b { width: 40px; height: 40px; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
-.dk-sm .hl-dk-b svg { width: 40px; height: 40px; }
+.dk-sm .hl-dk-b .dk-i { width: 40px; height: 40px; }
 .dk-sm.off .hl-dk-b i { width: 44px; margin-left: -22px; }
 .ld-st .dk-sm button.hl-dk-n { width: 30px; height: 44px; padding: 0; background: none; border: 0; display: flex; align-items: center; justify-content: center; color: #D9E2DC; }
 .dk-sm .hl-dk-n svg { width: 16px; height: 16px; fill: currentColor; }

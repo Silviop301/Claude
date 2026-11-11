@@ -287,7 +287,7 @@
   // Disco da música (2026-11-11, Silvio: "a música rolando desde a home, um disco girando no canto que indique a música"):
   // canto de baixo à direita, gira enquanto toca; tocar liga/desliga a música (a mesma chave dos Ajustes) e mostra o nome
   // da faixa ao lado por 4 s, que também aparece sozinho quando a faixa troca. A música já começa no primeiro toque (sound.js)
-  const DISC_SVG = '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="23" fill="#151617"/><circle cx="24" cy="24" r="19" fill="none" stroke="#2C2E31" stroke-width="1.2"/><circle cx="24" cy="24" r="15" fill="none" stroke="#2C2E31" stroke-width="1.2"/><path d="M24 3a21 21 0 0 1 18 10" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="2.4" stroke-linecap="round"/><circle cx="24" cy="24" r="9" fill="#F2C230"/><circle cx="24" cy="24" r="2.4" fill="#151617"/></svg>';
+  const DISC_SVG = '<img class="dk-i" src="assets/co/disco.webp" alt="" draggable="false">'; // arte do ChatGPT (arte/disco/disco.png, 2026-11-11)
   // Também na Semana do Treinador (Silvio: "centralizado mas no topo, onde ainda há espaço"): U.discHtml('sm', true) põe a
   // setinha que passa a faixa; o mesmo discBind liga tudo
   const SKIP_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l9 7-9 7zM16 5h3v14h-3z"/></svg>';
