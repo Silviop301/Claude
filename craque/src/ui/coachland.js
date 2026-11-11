@@ -617,14 +617,15 @@
     const bench = s.bench.map(b => by[b]).filter(Boolean).filter(q => (q.pos === 'GOL') === (slot === 'GOL'));
     const score = q => S.coSlotVal(q, s.form, i) * (0.6 + 0.4 * q.en / 100); // o atributo da vaga conta (fase 3 dos atributos)
     const list = bench.slice().sort((a, b) => c.avail(b) - c.avail(a) || score(b) - score(a));
-    let pick = s.subs ? list.find(c.avail) : null;
+    const can = s.subs > 0 || p.out > 0; // tirar quem se machucou não gasta uma das 5
+    let pick = can ? list.find(c.avail) : null;
     const d = didOf(m, p), yc = s.bk && s.bk[id], tired = p.en < 55;
     const aux = yc && tired ? 'Amarelado e cansado. Mais uma falta dessas e ele sai.' : yc ? 'Já tem amarelo. Chegando forte, pode deixar o time com 10.' : tired ? 'Está no limite. Daqui a pouco não acompanha mais.' : p.out ? 'Sentiu. Joga mancando se ficar.' : d.gl ? 'Está decidindo. Eu deixava.' : 'Está bem no jogo. Ninguém do banco rende mais na vaga agora.';
     const fitTag = q => (q.pos === slot ? ['ok', 'mesma posição'] : S.coFit(q.pos, slot) >= 0.88 ? ['sabe', 'conhece a vaga'] : ['fora', 'fora de posição: rende menos']);
     const draw = () => {
-      const row = q => { const [fc, ft] = fitTag(q), ok = s.subs && c.avail(q);
+      const row = q => { const [fc, ft] = fitTag(q), ok = can && c.avail(q);
         return '<button class="ldl-cand' + (q === pick ? ' on' : '') + (ok ? '' : ' dis') + '" data-c="' + q.id + '"' + (ok ? '' : ' disabled') + '><i>' + (q.num || '') + '</i><span><b>' + esc(q.n) + ' <small>' + q.pos + ' · ' + q.ovr + ' · energia ' + Math.round(q.en) + '%</small></b>' +
-          '<em class="' + fc + '">' + (q === list.find(c.avail) && s.subs ? 'Sugestão do auxiliar · ' : '') + ft + '</em></span></button>'; };
+          '<em class="' + fc + '">' + (q === list.find(c.avail) && can ? 'Sugestão do auxiliar · ' : '') + ft + '</em></span></button>'; };
       pop('<div class="ldl-ptop"><b>' + (back ? 'Mexer no time' : 'Jogo pausado') + ' · ' + S.coClock(m) + '</b></div>' +
         '<div class="ld-pb"><div class="ldl-pl">' +
           '<div class="ldl-ph"><i class="' + enC(p.en) + '">' + (p.num || '') + '</i><span><b>' + esc(p.n) + '</b><small>' + c.posTxt[p.pos] + (p.pos !== slot ? ' de ' + slot : '') + ' · geral ' + p.ovr + ' · ' + p.age + ' anos</small></span></div>' +
@@ -632,7 +633,7 @@
           '<div class="ld-st4">' + [['chutes', d.sh], ['gols', d.gl], ['faltas', d.fo], [yc ? 'amarelo' : 'cartão', d.am || '—']].map(([k, v], j) => '<span class="ld-st1' + (j === 3 && yc ? ' y' : '') + '"><small>' + k + '</small><b>' + v + '</b></span>').join('') + '</div>' +
           '<div class="ldl-aq">' + lbl('AUXILIAR') + '"' + aux + '"</div><span class="ld-gr"></span>' +
           '<button class="ld-b line" id="ldl-keep">' + (back ? 'Voltar sem trocar' : 'Deixar em campo e voltar ao jogo') + '</button></div>' +
-        '<div class="ldl-pr"><div class="ldl-prh">' + lbl('QUEM ENTRA NO LUGAR DELE') + '<small>' + (s.subs ? U.D.plural(s.subs, 'troca sobrando', 'trocas sobrando') : 'sem trocas') + '</small></div>' +
+        '<div class="ldl-pr"><div class="ldl-prh">' + lbl('QUEM ENTRA NO LUGAR DELE') + '<small>' + (s.subs ? U.D.plural(s.subs, 'troca sobrando', 'trocas sobrando') : can ? 'lesão não conta' : 'sem trocas') + '</small></div>' +
           '<div class="ldl-cl">' + (list.length ? list.map(row).join('') : '<p class="ld-none">Ninguém no banco para essa vaga.</p>') + '</div><span class="ld-gr"></span>' +
           (pick ? '<button class="ld-gold" id="ldl-sub"><b>Levantar a placa: sai ' + (p.num || '') + ', entra ' + (pick.num || '') + '</b><small>' + esc(c.last(p.n)) + ' sai, ' + esc(c.last(pick.n)) + ' entra agora</small></button>' : '') + '</div></div>',
         'Jogador ' + p.n, w => {
@@ -666,13 +667,15 @@
     // As trocas que o auxiliar sugere (até 3 e até onde há troca): machucado, cansado ou amarelado, cada um com o melhor
     // do banco para a vaga; ninguém entra duas vezes
     const suggs = () => {
-      if (!s.subs) return [];
       const by = byOf(s.squad), sl = S.coSlots(s.form), out = [], took = new Set();
+      let paid = 0; // a troca de quem se machucou não gasta uma das 5
+      if (!s.subs && !s.xi.some(id => by[id] && by[id].out > 0)) return [];
       const cand = s.xi.map((id, i) => [by[id], i]).filter(([p]) => p && (p.out || p.en < 58 || (s.bk && s.bk[p.id]))).sort((a, b) => (b[0].out ? 1 : 0) - (a[0].out ? 1 : 0) || a[0].en - b[0].en);
       for (const [p, i] of cand) {
-        if (out.length >= Math.min(3, s.subs)) break;
+        if (out.length >= 3) break;
+        if (!p.out && paid >= s.subs) continue;
         const slot = sl[i], q = s.bench.map(b => by[b]).filter(q => q && c.avail(q) && !took.has(q.id) && (q.pos === 'GOL') === (slot === 'GOL')).sort((a, b) => S.coSlotVal(b, s.form, i) - S.coSlotVal(a, s.form, i))[0];
-        if (q) { took.add(q.id); out.push({ o: p, i: q, slot, tag: S.coSlotLbl(s.form, i), why: p.out ? 'machucado' : p.en < 58 ? Math.round(p.en) + '%' : 'amarelo' }); }
+        if (q) { took.add(q.id); if (!p.out) paid++; out.push({ o: p, i: q, slot, tag: S.coSlotLbl(s.form, i), why: p.out ? 'machucado' : p.en < 58 ? Math.round(p.en) + '%' : 'amarelo' }); }
       }
       return out;
     };
@@ -697,19 +700,21 @@
     const draw = () => {
       const by = byOf(s.squad), sl = S.coSlots(s.form), G = suggs(), nT = x.read.tags.length, idle = sel < 0 && !selB;
       const gOut = new Set(G.map(g => g.o.id)), gIn = new Set(G.map(g => g.i.id)), selP = selB ? by[selB] : null;
+      // sem trocas, ainda dá para tirar quem se machucou (não gasta uma das 5)
+      const hurt = id => !!(by[id] && by[id].out > 0), anySub = s.subs > 0 || s.xi.some(hurt), selSub = sel >= 0 && (s.subs > 0 || hurt(s.xi[sel]));
       // longe da borda: o anel, o amarelo e o contorno da sugestão não podem ser cortados pelo campo
       const sp = spotsT(s.form).map(([px, py]) => [px, Math.round(10 + (py - 9) * 1.042)]);
       const dots = s.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: sel === i, yc: !!(s.bk && s.bk[id]),
         attr: ' data-xi="' + i + '"' + (inn.has(id) ? ' data-in="1"' : '') + (idle && gOut.has(id) ? ' data-sug="1"' : '') + (selP ? (fitsSlot(selP, sl[i]) ? ' data-fit="1"' : ' data-far="1"') : ''), tag: inn.has(id) ? 'ENTRA' : S.coSlotLbl(s.form, i) }) : '').join('');
       const bench = s.bench.map(b => by[b]).filter(Boolean).sort(benchSort(c));
-      const bstrip = bench.map((p, k) => { const ok = !!(s.subs && c.avail(p));
+      const bstrip = bench.map((p, k) => { const ok = !!(anySub && c.avail(p));
         return benchChip(p, bench[k - 1], (ok ? '' : ' dis') + (selB === p.id ? ' on' : '') + (idle && gIn.has(p.id) ? ' sug' : '') + (sel >= 0 && ok ? (p.pos === sl[sel] ? ' can' : (p.pos === 'GOL') === (sl[sel] === 'GOL') ? ' lo' : ' far') : ''), ok, true, sel >= 0 && ok ? ovrAt(p, sl[sel]) : null); }).join('');
       const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b>' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
-      const hint = sel >= 0 ? (s.subs ? 'Toque ou arraste quem entra, ou toque em outro titular' : 'Toque em outro titular')  : selB ? 'Toque em quem sai' : '';
+      const hint = sel >= 0 ? (selSub ? 'Toque ou arraste quem entra, ou toque em outro titular' : 'Toque em outro titular')  : selB ? 'Toque em quem sai' : '';
       const sc = esc(c.nm(m.home ? co.club : m.vs)).slice(0, 3).toUpperCase() + ' <u>' + m.gh + ' x ' + m.ga + '</u> ' + esc(c.nm(m.home ? m.vs : co.club)).slice(0, 3).toUpperCase();
       pop('<div class="tm ldl-tm"><div class="tm-h"><b>' + esc(T) + '</b><span class="ldl-sc">' + sc + '</span><small>' + S.coClock(m) + '</small>' + (hint ? '<span class="tm-hint">' + hint + '</span>' : LN_LEG) + '</div>' +
-        '<div class="ld-pitch tm-pitch">' + PITCH + dots + (sel >= 0 && s.subs ? nearList(sl[sel], bench, c.avail, sp[sel][0], sp[sel][1]) : '') + '</div>' +
-        '<div class="tm-bench"><small>BANCO<em>' + (s.subs ? U.D.plural(s.subs, 'troca', 'trocas') : 'sem trocas') + '</em></small>' + bstrip + '</div>' +
+        '<div class="ld-pitch tm-pitch">' + PITCH + dots + (selSub ? nearList(sl[sel], bench, c.avail, sp[sel][0], sp[sel][1]) : '') + '</div>' +
+        '<div class="tm-bench"><small>BANCO<em>' + (s.subs ? U.D.plural(s.subs, 'troca', 'trocas') : anySub ? 'só a da lesão' : 'sem trocas') + '</em></small>' + bstrip + '</div>' +
         '<div class="tm-side">' + (half ? '<div class="ldl-talk2">' + Object.keys(S.CO_TALK).map(k => '<button data-tk="' + k + '"' + (talk === k ? ' class="on"' : '') + '>' + esc(S.CO_TALK[k].name) + '</button>').join('') + '</div>' : '') +
           pick('form', 'Formação', s.form) + pick('sty', 'Estilo', esc(S.CO_STY[s.style].name)) +
           '<button class="tm-b" id="ldl-aux">Auxiliar' + (nT || G.length || st.t === 'vermelho' ? '<i class="tm-dot">' + (st.t === 'vermelho' ? '!' : G.length || '') + '</i>' : '') + '</button>' +
@@ -726,7 +731,7 @@
             if (sel >= 0) return doSub(s.xi[sel], id);
             selB = selB === id ? null : id; draw();
           });
-          if (s.subs) benchDrag(w.querySelector('.ldl-tm'), (id, i) => doSub(s.xi[i], id), (id, i) => !!by[id] && fitsSlot(by[id], sl[i]));
+          if (anySub) benchDrag(w.querySelector('.ldl-tm'), (id, i) => doSub(s.xi[i], id), (id, i) => !!by[id] && fitsSlot(by[id], sl[i]));
           benchShow(w); nearFix(w);
           w.querySelector('.ldl-tm').addEventListener('click', e => { if ((sel >= 0 || selB) && !e.target.closest('[data-xi],[data-bp],.tm-near,button')) { sel = -1; selB = null; draw(); } });
           w.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { sfx('tap'); talk = talk === b.dataset.tk ? null : b.dataset.tk; draw(); });
