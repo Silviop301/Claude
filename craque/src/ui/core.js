@@ -24,7 +24,7 @@
   // Versão de portal (tools/craque_portal.py): os escudos vêm de climbix.app, para o pacote caber no limite de arquivos
   const BADGES = window.CLIMBIX_BADGES || 'badges/';
   // Escudo trocado: versão na URL, senão o celular segue com o antigo do cache por 7 dias (Botafogo-SP, 11/11)
-  const CREST_V = { 'bra-c-9': 2 };
+  const CREST_V = { 'bra-c-9': 2, 'sco-2-0': 2 };
   // Clubes sem arquivo de escudo (11/11): nem pedem o arquivo (o pedido dava 404 no aparelho e no passeio das telas); o desenho sai de noCrest
   const NO_CREST = { 'qat-4': 1, 'sco-2-7': 1, 'gre-2-1': 1, 'aut-2-7': 1, 'col-2-9': 1, 'ara-2-2': 1, 'usa-2-5': 1 };
   const noCrest = id => { const cl = id && D.CLUB_BY_ID && D.CLUB_BY_ID[id]; if (!cl) return '';

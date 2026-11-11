@@ -9643,6 +9643,8 @@ button.coin-pill { cursor: pointer; border: 0; }
 .fdt-ch { border-radius: 14px; background: #141517; padding: 11px 12px; display: flex; align-items: center; gap: 10px; } .fdt-ch svg { width: 30px; height: 30px; flex: none; }
 .fdt-ch span { min-width: 0; display: flex; flex-direction: column; gap: 3px; } .fdt-ch b { font: 800 20px/1 var(--display); } .fdt-ch small { font: 500 15px/1.15 var(--body); color: #B9C9BF; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .fdt-ch.coin b { color: var(--gold); font-size: 21px; } .fdt-ch.warn b { color: #FFB37A; }
+/* 3 cartões com texto em duas linhas (nomes de clube longos): apertar para o Encerrar carreira caber no palco */
+.fdt-r.n3 { gap: 6px; } .fdt-r.n3 .fdt-ch { padding: 8px 12px; }
 .fdt button.fdt-mk { height: 46px; flex: none; border-radius: 14px; box-shadow: inset 0 0 0 2px rgba(243,241,234,.28); color: #F3F1EA; font: 700 18px/1 var(--display); }
 .fdt button.fdt-go { height: 62px; flex: none; border-radius: 16px; background: var(--gold); color: #1B1606; box-shadow: 0 4px 0 #B48A12; margin-bottom: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
 .fdt button.fdt-go b { font: 800 23px/1 var(--display); letter-spacing: .01em; } .fdt button.fdt-go small { font: 600 14px/1 var(--body); color: #4A3B08; }
