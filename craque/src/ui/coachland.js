@@ -1322,7 +1322,7 @@
       st.querySelector('#mk-back').onclick = () => { sfx('tap'); semana(); };
       mkCoins(st, mercado);
       st.querySelector('#mk-tnw').onclick = () => { sfx('tap'); noticias(); }; mkTabEl(st);
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição e só vale para quem o olheiro já viu. A janela do começo vale até a 3ª rodada (10 dias) e a do meio abre antes da rodada do meio (6 dias): proposta e contrato gastam 1 dia. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição: quem o olheiro ainda não viu entra pela fama, e a fama pode errar. A janela do começo vale até a 3ª rodada (10 dias) e a do meio abre antes da rodada do meio (6 dias): proposta e contrato gastam 1 dia. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.'); };
       st.querySelectorAll('[data-mf]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.mf, L = F[i].o.length; m.f[i] = ((m.f[i] || 0) + (+b.dataset.d) + L) % L; c.save(); mercado(); });
       const inp = st.querySelector('#mk-nm');
       inp.oninput = () => { m.nm = inp.value; const k = S.coMktSearch(co).length, good = k > 0 && k <= S.CO_MKT.max, nb = st.querySelector('#mk-n'), gb = st.querySelector('#mk-go');
