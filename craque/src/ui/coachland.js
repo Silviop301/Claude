@@ -2059,7 +2059,7 @@
     const ids = (stay && co.club ? [co.club] : []).concat(list.filter(id => id !== co.club)).slice(0, 3);
     let pick = ids.find(id => id !== co.club) || ids[0];
     const info = id => {
-      const lg = U.league(id), g = S.coGoalFor(co, id), sq = S.coGenSquad(id, co.season), top = sq.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 11), avg = top.reduce((a, p) => a + p.ovr, 0) / 11;
+      const lg = U.league(id), g = S.coGoalFor(co, id), sq = S.coGenSquad(id, co.season, { rf: co.rf, season: co.season }), top = sq.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 11), avg = top.reduce((a, p) => a + p.ovr, 0) / 11;
       const lgIds = D_CLUBS(lg), lgAvg = lgIds.length ? lgIds.reduce((a, x) => a + x.strength, 0) / lgIds.length : 60, rel = club(id).strength - lgAvg;
       const young = sq.filter(p => p.age <= 23).length >= 9;
       const folha = sq.reduce((a, p) => a + p.wage, 0);

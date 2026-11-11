@@ -359,7 +359,14 @@
   // a força segue a conta do sorteado (força do clube, ordem na posição, idade). Quem passa de 37 anos ou falta numa
   // posição vira garoto sorteado (e quem já está no seu elenco, co, sai do clube de origem). id 'r:' + id da fonte: o mesmo jogador tem o mesmo id em todo save e temporada.
   const REAL = () => root.CRAQUE_REAL || (typeof require !== 'undefined' ? (() => { try { return require('../real-squads.js'); } catch (e) { return null; } })() : null);
-  S.coRealOf = clubId => { const R = REAL(); return (R && R.clubs && R.clubs[clubId]) || null; };
+  // Os clubes de fora do Brasil ganharam elenco real em 2026-11-11 (antes só Série A e B). Numa carreira que já existia,
+  // o clube de fora troca o elenco sorteado pelo real só na temporada seguinte (co.rf, posto ao abrir o save em
+  // ui/coach.js): no meio da temporada sumiria quem você observa ou negocia. Carreira nova: co.rf = 0, real desde o começo
+  S.coRealOf = (clubId, co) => {
+    const R = REAL(), x = (R && R.clubs && R.clubs[clubId]) || null;
+    if (x && co && co.rf !== undefined && co.season < co.rf && !/^bra-/.test(clubId)) return null;
+    return x;
+  };
   function realSquad(club, season, rows, co) {
     const mine = new Set(((co && co.squad) || []).map(p => p.api).filter(Boolean));
     const r = S.rng(hash(club.id + '|' + season + '|real')), cty = D.countryOf(club), s = club.strength, out = [];
@@ -389,7 +396,7 @@
     return co && co.wm && S.coWorldSquad ? S.coWorldSquad(co, clubId, season, sq) : sq;
   }
   function genBase(clubId, season, co) {
-    const club = D.CLUB_BY_ID[clubId], real = S.coRealOf(clubId);
+    const club = D.CLUB_BY_ID[clubId], real = S.coRealOf(clubId, co);
     if (real) return realSquad(club, season, real, co);
     const r = S.rng(hash(clubId + '|' + season)), cty = D.countryOf(club), s = club.strength;
     const out = [];
@@ -505,7 +512,7 @@
   S.coNew = function (o) {
     const co = { mode: 'treinador', name: o.name || 'Técnico', country: o.country || 'Brasil', look: o.look || null, start: o.start === 'livre' ? 'livre' : 'baixo',
       season: 0, club: null, fame: CO.fame0[o.start === 'livre' ? 'livre' : 'baixo'], xp: { pts: 0, leitura: 0, motiv: 0, negoc: 0 },
-      seed: (o.seed || (Math.random() * 4294967295)) >>> 0, leagueOf: {}, clubBoost: {}, hist: [], titles: [], pid: 0, form: '4-4-2', style: 'equilibrado' };
+      seed: (o.seed || (Math.random() * 4294967295)) >>> 0, rf: 0, leagueOf: {}, clubBoost: {}, hist: [], titles: [], pid: 0, form: '4-4-2', style: 'equilibrado' };
     return co;
   };
   const rngCo = co => { const r = S.rng(co.seed); return { r, save: () => { co.seed = r.state(); } }; };
@@ -535,7 +542,7 @@
   S.coSign = function (co, clubId) {
     S.applyLeagues(co);
     co.club = clubId;
-    co.squad = genSquad(clubId, co.season, co.wm ? { wm: co.wm, season: co.season, squad: [] } : undefined).map(p => Object.assign(p, { id: 'p' + (co.pid++) }));
+    co.squad = genSquad(clubId, co.season, { wm: co.wm, season: co.season, rf: co.rf, squad: [] }).map(p => Object.assign(p, { id: 'p' + (co.pid++) }));
     co.sacked = false;
     co.since = co.season;
     const a = autoXI(co.squad, co.form);
