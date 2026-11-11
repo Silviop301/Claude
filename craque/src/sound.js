@@ -319,6 +319,11 @@
       tone('triangle', 660, 660, t, 0.06, 0.2, { a: 0.004 });
       tone('triangle', 990, 990, t + 0.055, 0.12, 0.2, { a: 0.004, echo: 0.1 });
     },
+    // Deu certo (negócio fechado, diretoria aprovou, preço novo valendo): três notas curtas subindo. As telas do Treinador
+    // pediam 'win' desde o mercado, mas o som não existia e nada tocava (achado em 2026-11-11)
+    win(t) {
+      [659, 880, 1175].forEach((f, i) => tone('triangle', f, f, t + i * 0.075, i === 2 ? 0.26 : 0.1, 0.17, { a: 0.006, echo: i === 2 ? 0.2 : 0 }));
+    },
     // Apito do juiz: dois toques curtos e um longo; a bolinha de dentro faz o tom tremer e "rolar"
     // Gravação do Silvio (2026-11-11): um apito (saída e pênalti), dois no intervalo (curto e longo) e três no fim (curto, curto, longo),
     // montados do mesmo apito. Enquanto a gravação não chega, a sintetizada
