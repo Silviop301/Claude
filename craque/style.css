@@ -9462,3 +9462,11 @@ button.coin-pill { cursor: pointer; border: 0; }
 /* Home deitada: Perfil e Ajustes com desenho cheio num disco creme (2026-11-11) */
 .hl-mr svg.fi { width: 30px; height: 30px; stroke: none; flex: none; }
 .hl-mr:has(svg.fi) { padding: 0 18px 0 9px !important; gap: 10px; }
+
+/* Recusa no contrato e na renovação (Treinador, 2026-11-11): ele responde no balão da conversa (.cvj) com o que aceita
+   e as tentativas que sobram; laranja na última */
+.ld-pop-c.cvj-pop.rcs-pop { width: 620px; }
+.rcs-li { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 46px; padding: 0 16px; border-radius: 14px; background: rgba(243, 241, 234, .07); font: 700 16px/1 var(--body); color: #B9C9BF; }
+.rcs-li b { font: 800 21px/1 var(--display); color: #F3F1EA; white-space: nowrap; }
+.rcs-b .hl-btn.off { opacity: .45; }
+.mkc-tn { font-style: normal; margin-left: auto; margin-right: 8px; color: #F3F1EA; } .mkc-tn.dn { color: #F5A57F; }
