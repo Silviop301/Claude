@@ -43,6 +43,7 @@
       fetch(url).then(r => r.arrayBuffer())
         .then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { rec[k] = b; }).catch(() => { /* fica a sintetizada */ });
     });
+    setInterval(() => { musicTick(); ambTick(); }, 600); // música e torcida de fundo seguem a tela (jogo ao vivo ou menu)
   }
   // A saída: tudo o que toca passa pelo master (e pelo eco). É refeita quando o app sai da frente (hush)
   function bus() {
@@ -118,13 +119,43 @@
       mEl.addEventListener('error', () => setTimeout(musicNext, 1000)); // faixa que não abre: pula
       musicNext();
       musicTick();
-      setInterval(musicTick, 600);
     } catch (e) { mEl = null; }
   }
+  // Torcida de fundo no jogo ao vivo (2026-11-11, gravação que o Silvio mandou, Pixabay vishiv "crowd cheering in stadium";
+  // ele pediu baixa, "pra não incomodar quem joga"). Só com `.lv` na tela e o Som ligado; baixada na primeira vez que um jogo
+  // ao vivo abre (assets/sons/ambiente.mp3, 260 KB). O arquivo já vem com a emenda feita (fim e começo cruzados em 2,5 s) e
+  // 0,3 s de sobra de cada lado: o loop vai de A_PAD a A_PAD + A_LOOP. Gol (cheer/cheerAway) levanta a torcida por ~3 s
+  const A_URL = 'assets/sons/ambiente.mp3?v=ff16016b', A_PAD = 0.3, A_LOOP = 1125609 / 44100, A_VOL = 0.14, A_UP = 2.4;
+  let aBuf = null, aSrc = null, aGain = null, aLoad = false, aWant = -1;
+  function ambTick() {
+    if (!ctx) return;
+    const want = on && !!(root.document && !root.document.hidden && root.document.querySelector('.lv')) ? A_VOL : 0;
+    if (want && !aBuf) {
+      if (!aLoad && root.fetch) { aLoad = true; fetch(A_URL).then(r => r.arrayBuffer()).then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { aBuf = b; }).catch(() => { aLoad = false; }); }
+      return;
+    }
+    if (want && !aSrc && ctx.state === 'running') {
+      aGain = ctx.createGain(); aGain.gain.value = 0; aGain.connect(ctx.destination);
+      aSrc = ctx.createBufferSource(); aSrc.buffer = aBuf; aSrc.loop = true;
+      aSrc.loopStart = A_PAD; aSrc.loopEnd = Math.min(aBuf.duration, A_PAD + A_LOOP);
+      aSrc.connect(aGain); aSrc.start(0, A_PAD + Math.random() * A_LOOP * 0.8);
+    }
+    if (!aGain || want === aWant) return;
+    aWant = want;
+    const g = aGain.gain, t = ctx.currentTime;
+    try { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(want, t + (want ? 2 : 0.5)); } catch (e) { g.value = want; }
+  }
+  function ambUp() { // gol: a torcida sobe e volta ao normal
+    if (!aGain || aWant <= 0) return;
+    const g = aGain.gain, t = ctx.currentTime;
+    try { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(A_VOL * A_UP, t + 0.4); g.setValueAtTime(A_VOL * A_UP, t + 1.4); g.linearRampToValueAtTime(A_VOL, t + 4); } catch (e) { /* enfeite */ }
+  }
+
   root.CRAQUE_MUSIC = {
     get has() { return M_LIST.length > 0; },
     get on() { return mOn; },
     get state() { return !mEl ? 'parada' : mWant > 0 && !mEl.paused ? 'tocando' : 'calada'; }, // para as ferramentas
+    get amb() { return aSrc && aWant > 0 ? 'tocando' : 'calada'; }, // torcida de fundo, para as ferramentas
     get track() { return mEl && mI >= 0 ? M_LIST[mOrd[mI]] : ''; },
     next() { musicNext(); },
     toggle() {
@@ -345,6 +376,7 @@
         if (root.document && root.document.hidden) return; // app fora da frente: nada toca nem fica guardado
         init();
         if (!ctx || !SOUNDS[name]) return;
+        if (name === 'cheer' || name === 'cheerAway') ambUp();
         if (ctx.state === 'running') return fire(name);
         // Contexto parado: o relógio dele não anda, então o som agendado agora ficaria na fila e tocaria junto com os
         // outros no próximo toque (o "som bizarro" da volta para o jogo). Só toca se acordar na hora; senão é esquecido
