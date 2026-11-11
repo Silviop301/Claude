@@ -17,7 +17,7 @@
     'Flamengo': [R, W, W, W], 'Palmeiras': [G, W, W, G], 'Atlético-MG': [K, K, W, W], 'São Paulo': [W, W, R, K], 'Corinthians': [W, K, K, K],
     'Fluminense': [V, W, W, W], 'Botafogo': [K, K, W, W], 'Grêmio': [S, K, W, W], 'Internacional': [R, W, W, W], 'Cruzeiro': [B, W, W, W],
     'Santos': [W, W, K, K], 'Bahia': [W, B, B, B], 'Fortaleza': [B, W, R, R], 'Vasco': [K, K, W, W], 'Red Bull Bragantino': [W, W, R, R],
-    'Vitória': [R, K, K, K], 'Juventude': [G, W, W, W], 'Mirassol': [Y, G, G, G], 'Sport': [R, K, W, W], 'Ceará': [K, K, W, W],
+    'Vitória': [R, K, K, K], 'Botafogo-SP': [R, K, W, W], 'Juventude': [G, W, W, W], 'Mirassol': [Y, G, G, G], 'Sport': [R, K, W, W], 'Ceará': [K, K, W, W],
     // Argentina
     'River Plate': [W, K, R, R], 'Boca Juniors': [B, B, Y, Y], 'Racing': [S, K, N, N], 'Independiente': [R, B, W, W], 'San Lorenzo': [B, B, W, W],
     'Vélez Sarsfield': [W, B, B, B], 'Estudiantes': [R, K, W, W], 'Talleres': [N, N, W, W], 'Rosario Central': [Y, B, B, B], "Newell's Old Boys": [R, K, W, W],
@@ -53,7 +53,7 @@
   root.CRAQUE_KITS_PAT = {
     'Argentina': ['listras', W], 'Croácia': ['xadrez', W], 'Peru': ['faixa', R], 'Paraguai': ['listras', W],
     'Flamengo': ['aros', K], 'Atlético-MG': ['listras', W], 'São Paulo': ['faixah', R], 'Fluminense': ['listras', G], 'Botafogo': ['listras', W],
-    'Grêmio': ['listras', K], 'Vasco': ['faixa', W], 'Fortaleza': ['aros', R], 'Vitória': ['listras', K], 'Sport': ['aros', K], 'Ceará': ['listras', W],
+    'Grêmio': ['listras', K], 'Botafogo-SP': ['listras', K], 'Vasco': ['faixa', W], 'Fortaleza': ['aros', R], 'Vitória': ['listras', K], 'Sport': ['aros', K], 'Ceará': ['listras', W],
     'River Plate': ['faixa', R], 'Boca Juniors': ['faixah', Y], 'Racing': ['listras', W], 'San Lorenzo': ['listras', R], 'Estudiantes': ['listras', W],
     'Talleres': ['listras', W], 'Rosario Central': ['listras', B], "Newell's Old Boys": ['meio', K],
     'Barcelona': ['listras', B], 'Atlético de Madrid': ['listras', W], 'Athletic Bilbao': ['listras', W], 'Real Betis': ['listras', W],

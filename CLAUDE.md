@@ -227,6 +227,14 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
   volta, e quem está com ela leva um anel branco fino (`ow` no `draw`). Só desenho, vale nos dois modos.
 - **Nota do goleiro** (`rateMatch`, `engine/coach.js`): não levar gol só vale inteiro com 3 chutes no gol deles (`gkW`); sem
   chute no gol o texto é "não foi exigido".
+- **Rodada de 11/11 (pedidos do Silvio no celular):** `ResizeObserver` no canvas (o palco se ajustava depois de abrir e o desenho
+  pulava); `bigSay` = texto grande animado "GOL!"/"PÊNALTI!" com a faixa da camisa (`big`, relógio de verdade; `o.noBig` desliga);
+  `LP.kits` compara base e desenho da camisa (preto e branco contra preto e branco vai de reserva) e o placar deitado mostra a cor
+  de cada time (`.ldl-kit`); `spaceAt` põe o passe em profundidade longe dos defensores; chegada do meia (`cmT`, contagem `CHEG`
+  em `_state()`); bola fora segue rolando para fora (`ghost`, só desenho) e a cobrança usa a bola reserva mais perto (`RACK`,
+  `outBall`); troca espera bola parada (12 s: o time da troca chuta para a lateral; 35 s: o juiz para, `whistle('Substituição')`);
+  `sim.canStop()` segura o apito do intervalo e do fim no escanteio, chute ou cruzamento no ar (até 9 s, `stopW` em `ui/coach.js`);
+  velocidade padrão dos jogos nos Ajustes (`U.coVel`, `climbix-co-vel`); Semana com o mandante à esquerda.
 - **Atributos** (`qa(p, 'fin'|'pas'|'dri'|'def'|'gol')`): cada lance lê `p.inf.at[k]` (0 a 99) se a escalação mandar; sem isso
   vale o geral. Quem preenche é a thread dos atributos por jogador (5º elemento do `simForm`).
 

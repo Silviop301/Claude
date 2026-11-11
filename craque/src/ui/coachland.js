@@ -290,8 +290,9 @@
     if (!nx.bye) {
       const pv = S.coPreview(co), them = pv.them, cl = club(co.club), vc = club(them.club), rv = t.find(x => x.id === them.club), rpos = t.indexOf(rv) + 1;
       card = '<small class="sm-rd">RODADA ' + nx.round + ' · ' + (nx.home ? 'EM CASA' : 'FORA') + '</small><div class="sm-vs">' +
-        side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name)) + '<i class="sm-x">x</i>' +
-        side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name)) + '</div>' +
+        // mandante à esquerda (Silvio, 10/11: "em jogo fora de casa eu quero meu escudo na direita"), como no placar do jogo
+        (nx.home ? side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name)) + '<i class="sm-x">x</i>' + side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name))
+          : side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name)) + '<i class="sm-x">x</i>' + side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name))) + '</div>' +
         (rv ? '<small class="sm-rv">' + ord(rpos) + ' · ' + rv.p + ' pts' + f5(rv.f) + '</small>' : '');
       const tr = co.train && co.train.i === co.ss.i ? S.CO_TRAIN[co.train.k] : null, sc = co.scout && co.scout.i === co.ss.i;
       wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
@@ -521,8 +522,12 @@
     // Campo limpo (Silvio, 2026-11-07): em cima do campinho só o placar; o último lance, quem manda, o grito e os números ficam
     // no painel da direita; o recado do auxiliar só aparece no "Parar e mexer"
     const { H, A, crestB } = o;
+    // A cor de cada time no campinho, do lado do escudo (Silvio, 10/11: "preto e branco contra preto e branco, não sei qual é qual")
+    const kit = k => { if (!k) return ''; const pc = k.pat && k.pat[1], d = k.pat && k.pat[0], bg = pc && d === 'listras' ? 'repeating-linear-gradient(90deg,' + k[0] + ' 0 3px,' + pc + ' 3px 6px)' : pc && d === 'aros' ? 'repeating-linear-gradient(0deg,' + k[0] + ' 0 3px,' + pc + ' 3px 6px)' : pc ? 'linear-gradient(135deg,' + k[0] + ' 55%,' + pc + ' 55%)' : k[0];
+      return '<i class="ldl-kit" style="background:' + bg + '"></i>'; };
+    const kH = o.kits ? (o.m.home ? o.kits.mine : o.kits.opp) : null, kA = o.kits ? (o.m.home ? o.kits.opp : o.kits.mine) : null;
     return '<div class="lv ldl"><div class="ldl-p">' + o.pitchHtml +
-      '<div class="ldl-sb">' + crestB(H.id, 'ldl-cr') + '<em id="lv-score">0 <i>x</i> 0</em>' + crestB(A.id, 'ldl-cr') + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' +
+      '<div class="ldl-sb">' + crestB(H.id, 'ldl-cr') + kit(kH) + '<em id="lv-score">0 <i>x</i> 0</em>' + kit(kA) + crestB(A.id, 'ldl-cr') + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' +
         '<i class="lv-crd" id="lv-cd-h"></i><i class="lv-crd" id="lv-cd-a"></i></div></div>' +
       '<div class="ldl-side"><ul class="lv-feed ldl-ev" id="lv-feed">' + o.feed0 + '</ul>' +
         '<div class="ldl-qm"><small>QUEM MANDA</small><span>' + crestB(H.id, 'ldl-c16') + '<i' + (o.m.home ? '' : ' class="r"') + '><u id="ldl-momb"></u></i>' + crestB(A.id, 'ldl-c16') + '</span></div>' +
