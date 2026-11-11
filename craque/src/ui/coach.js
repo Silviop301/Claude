@@ -8,7 +8,7 @@
   const { D, S, sfx, $, esc, money, club, league, crest, load, store, render, bar, G, YEAR0 } = U;
   const SAVE_CO = U.SAVE_CO = 'climbix-treinador-v1';
   let co = null;
-  // Duas vagas: co.slot 1 grava em SAVE_CO + '-2'
+  // Cinco vagas (U.CO_SLOTS): co.slot n grava em SAVE_CO + '-' + (n + 1); a vaga 0 é a chave pura
   // savedAt = hora do save desta carreira que este aparelho conhece; frozen = a carreira aberta ficou velha (ver U.coStale)
   let savedAt = 0, frozen = false;
   const save = step => { if (frozen) return; if (co) co.step = step || co.step; savedAt = Date.now(); store(U.slotKey(SAVE_CO, co && co.slot), co ? { co, at: savedAt } : { co: null, at: savedAt }); };
@@ -59,7 +59,7 @@
 
   // ---------- criação ----------
   function create(slot, pre) {
-    slot = slot ? 1 : 0;
+    slot = Math.max(0, Math.min(U.CO_SLOTS - 1, +slot || 0));
     const st = pre ? { name: pre.name, country: pre.country, start: pre.start, auto: false } : { name: D.randomName('Brasil'), country: 'Brasil', start: 'baixo', auto: true };
     const cty = () => D.COUNTRIES.find(k => k.id === st.country) || D.COUNTRIES[0];
     const START = [['baixo', 'Subir de baixo'], ['livre', 'Qualquer clube']];
@@ -93,9 +93,9 @@
       co.autoXI = true;
       // Primeira carreira de técnico neste aparelho (Silvio 2026-11-09): o auxiliar fecha diretoria e patrocínio no padrão
       // (co.first) e mostra o tutorial da Semana (co.tut, ui/coachland.js), a não ser com as dicas desligadas
-      if (!load('climbix-co-ja') && !U.coSaved() && !U.coSaved(1)) { co.first = 1; if (!(load('climbix-dicas-v1') || {}).off) co.tut = { n: 0 }; }
+      if (!load('climbix-co-ja') && ![...Array(U.CO_SLOTS).keys()].some(i => U.coSaved(i))) { co.first = 1; if (!(load('climbix-dicas-v1') || {}).off) co.tut = { n: 0 }; }
       store('climbix-co-ja', 1);
-      if (slot) co.slot = 1;
+      if (slot) co.slot = slot;
       offers(S.coOffers(co));
     };
     paint();
@@ -1194,10 +1194,12 @@
       document.querySelectorAll('[data-rp]').forEach(x => x.classList.toggle('on', x.dataset.rp === k)); if (k === 'cad') { const d = b.querySelector('.lv-dot'); if (d) d.remove(); } });
     $('b-co-next').onclick = () => { sfx('tap'); if (co.sacked) return sacked(); if (co.ss.done) return finishSeason(); hub(); };
   }
+  // Por que caiu: o ultimato ficou impossível (B.sk, desde 2026-11-11) ou save antigo sem o motivo
+  U.coSackWhy = co => { const k = co.board && co.board.sk; return k ? '“Precisava vencer ' + k.need + ' dos ' + k.of + ' jogos e não dá mais. Obrigado pelo trabalho, professor.”' : '“Não deu, professor. Obrigado pelo trabalho.”'; };
   function sacked() {
     const cl = club(co.club);
     render('<div class="co-msg">' + crest(cl.id, 'co-big') + '<div class="eyebrow">' + esc(cl.name) + '</div><h2>Você foi demitido.</h2>' +
-      '<p class="lead">"Não deu, professor. Obrigado pelo trabalho." A temporada segue sem você; no fim dela, o telefone toca de novo.</p>' +
+      '<p class="lead">' + U.coSackWhy(co) + ' A temporada segue sem você; no fim dela, o telefone toca de novo.</p>' +
       '<button class="btn" id="b-co-end">Ver como terminou a liga</button></div>', { center: true });
     $('b-co-end').onclick = () => { sfx('tap'); finishSeason(); };
   }
@@ -1256,7 +1258,9 @@
   const FAME_TXT = f => (f >= 80 ? 'técnico de seleção' : f >= 60 ? 'disputado pelos grandes' : f >= 40 ? 'nome conhecido' : f >= 20 ? 'começando a aparecer' : 'ninguém conhece ainda');
 
   // Para as telas deitadas (ui/coachland.js)
-  U._co = { get co() { return co; }, get pre() { return pre; }, save, sacked: () => sacked(), moodLine: () => moodLine(), susBox, exit: () => { save(); co = null; U.ldOff(); U.home(); }, hub, team, caderno, tabela, fin, finishSeason, play: k => play(k), live, result,
+  U._co = { get co() { return co; }, get pre() { return pre; }, save, sacked: () => sacked(), moodLine: () => moodLine(), susBox, exit: () => { save(); co = null; U.ldOff(); U.home(); },
+    // Encerrar carreira (2026-11-11, Silvio): a vaga fica livre; os números do técnico já entraram no Perfil no fim da temporada
+    retire: () => { const slot = co.slot; co = null; savedAt = Date.now(); store(U.slotKey(SAVE_CO, slot), { co: null, at: savedAt }); U.ldOff(); U.home(); }, hub, team, caderno, tabela, fin, finishSeason, play: k => play(k), live, result,
     LANE, avail, pend, susTxt, posTxt, FORM_TIP, STY_SHORT, cadLines, cadName, CAD_W, CAD_S, cadQuote, feedLine: (m, e) => feedLine(m, e), offers: (l, st) => offers(l, st), offersBack: (l, st) => offersBack(l, st), welcome: () => welcome(), SK_TXT, ordTxt, mi, sgn, finPres: f => finPres(f), FAME_TXT, keepBench: () => keepBench(), brl, nm, last };
   Object.assign(U, { coCreate: create, coHub: () => co && hub(), coCaderno: (c, pv) => (pv && pv.them ? cadBlock(c.form, c.style, pv.them) + hintCard() : '') });
 })();

@@ -8114,6 +8114,18 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .hl-x-btn svg { width: 22px; height: 22px; fill: none; stroke: var(--ink); stroke-width: 2.6; stroke-linecap: round; }
 .hl-mp .hl-new { justify-content: center; min-height: 52px; } .hl-mp .hl-new b { font: 800 20px var(--display); }
 .ld-pop-c.hl-pop:has(.hl-mp) { width: 440px; }
+/* 5 vagas do Treinador (2026-11-11): com 3 carreiras ou mais a janelinha alarga e as carreiras vão em 2 colunas (Nova carreira ocupa a última casa) */
+.hl-mpg { display: flex; flex-direction: column; gap: 10px; }
+.ld-pop-c.hl-pop:has(.hl-mp.many) { width: 760px; }
+.hl-mp.many .hl-mpg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.hl-mp.many .hl-row { min-width: 0; padding: 4px 6px 4px 8px; } .hl-mp.many .hl-rb { min-height: 50px; } .hl-mp.many .hl-rb b { font-size: 19px; } .hl-mp.many .hl-rb small { font-size: 14px; }
+.hl-mp.many .hl-cont { padding: 0 12px !important; min-height: 42px; font-size: 17px !important; } .hl-mp.many .hl-play { width: 42px; height: 42px; }
+.hl-mp.many .hl-new { min-height: 58px; }
+.hl-pkg { display: flex; flex-direction: column; gap: 8px; }
+.hl-pkg.many { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; } .hl-pkg.many .hl-pko { min-height: 52px; padding: 5px 8px !important; gap: 8px; min-width: 0; }
+.hl-pkg.many .hl-pko b { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .hl-pkg.many .hl-pko small { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hl-pkg.many .hl-pko img, .hl-pkg.many .hl-pko .crest { width: 32px; height: 32px; flex: none; } .hl-pkg.many .hl-pko em { font-size: 12px; padding: 2px 6px; }
+.hl-pk:has(.hl-pkg.many) .hl-pkl { flex: 1.9; } .hl-pk:has(.hl-pkg.many) .hl-pkl > b { font-size: 21px; } .hl-pk:has(.hl-pkg.many) .hl-pkr p { font-size: 15px; }
 .hl-pts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; } .hl-pts li { display: flex; align-items: center; gap: 10px; font: 600 17px/1.25 var(--body); color: var(--ink); }
 .hl-ed { font: 700 15px var(--body) !important; color: var(--ink) !important; text-decoration: underline; text-underline-offset: 3px; min-height: 36px; }
 .hl-desc { margin: 0; font: 600 17px/1.35 var(--body); color: var(--ink-2); }
@@ -9795,3 +9807,10 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .ld-st button.dmt { width: 100%; min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 10px; border-radius: 10px; background: #13201A; color: #F3F1EA; border: 0; cursor: pointer; }
 .dmt b { font: 800 15px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; } .dmt span { font: 800 15px/1 var(--display); color: var(--gold); flex: none; } .dmt span.dn { color: #F5A57F; }
 .ld-st button.dmt.off { opacity: .4; pointer-events: none; }
+/* Encerrar carreira (2026-11-11): link discreto no fim da temporada e a janelinha com o resumo da carreira */
+.fdt button.fdt-fim { height: 30px; flex: none; margin-top: -2px; color: #B9C9BF; font: 600 15px/1 var(--body); text-decoration: underline; text-underline-offset: 3px; }
+.ld-pop-c.hl-pop.acd-pop.fim-pop { width: 520px; }
+.fim-c .fim-n { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+.fim-c .fim-n span { background: #fff; border-radius: 12px; padding: 10px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.fim-c .fim-n b { font: 800 30px/1 var(--display); color: var(--ink); } .fim-c .fim-n small { font: 600 14px/1 var(--body); color: var(--ink-2); }
+.fim-c .fim-b { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 14px; } .fim-c .fim-b .hl-btn { margin-top: 0; width: auto; }

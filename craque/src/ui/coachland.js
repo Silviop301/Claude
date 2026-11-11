@@ -854,7 +854,7 @@
         if (st.querySelector('#rs-cad')) st.querySelector('#rs-cad').onclick = () => { sfx('tap'); pop(popHead('Anotado no caderno', vs ? c.nm(m.vs) : '') + '<div class="ld-pb col rs-cadp">' + cadN.map(cadTxt).join('') + '</div>', 'Anotado no caderno', null, 'w560'); };
         st.querySelector('#ldr-go').onclick = () => { sfx('tap'); if (co.sacked) { // demitido: janelinha por cima do resultado (a tela antiga era em pé, com a coluna estreita e o fundo de outra cor)
           const cl = club(co.club);
-          return pop('<div class="acd-help"><span class="aux-h">' + crest(cl.id, 'sack-cr') + '<b>Você foi demitido.</b></span><p>“Não deu, professor. Obrigado pelo trabalho.” A temporada segue sem você; no fim dela, o telefone toca de novo.</p>' +
+          return pop('<div class="acd-help"><span class="aux-h">' + crest(cl.id, 'sack-cr') + '<b>Você foi demitido.</b></span><p>' + U.coSackWhy(co) + ' A temporada segue sem você; no fim dela, o telefone toca de novo.</p>' +
             '<button class="hl-btn dark" id="ld-sack">Ver como terminou a liga</button></div>', 'Demitido', w => { w.querySelector('#ld-sack').onclick = () => { sfx('tap'); closePop(); off(); c.finishSeason(); }; }, 'hl-pop acd-pop', true); } if (co.ss.done) { off(); return c.finishSeason(); } segunda(log); };
       });
     };
@@ -2211,15 +2211,31 @@
           '<div class="fdt-p">' + body + '</div></div>' +
         '<div class="fdt-r"><small class="fdt-lb">O QUE VEM AGORA</small>' + next.map(([k, t, cls]) => '<div class="fdt-ch' + (cls ? ' ' + cls : '') + '">' + (cls === 'coin' && U.COINS ? U.COINS.svg : '') + '<span><b>' + k + '</b><small>' + t + '</small></span></div>').join('') + '<span class="ld-gr"></span>' +
           (out.offers ? '<button class="fdt-go" id="ldy-of"><b>Ver as propostas</b>' + (out.sacked ? '' : '<small>ou ficar no ' + esc(club(co.club).short || club(co.club).name) + '</small>') + '</button>' :
-            '<button class="fdt-mk" id="ldy-mk">Ouvir outros clubes</button><button class="fdt-go" id="ldy-ns"><b>Temporada ' + (U.YEAR0 + co.season) + '</b><small>continuar no ' + esc(club(co.club).short || club(co.club).name) + '</small></button>') + '</div></div>', st => {
+            '<button class="fdt-mk" id="ldy-mk">Ouvir outros clubes</button><button class="fdt-go" id="ldy-ns"><b>Temporada ' + (U.YEAR0 + co.season) + '</b><small>continuar no ' + esc(club(co.club).short || club(co.club).name) + '</small></button>') +
+          '<button class="fdt-fim" id="ldy-fim">Encerrar carreira</button></div></div>', st => {
         st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); tab = +b.dataset.ft; draw(); });
         st.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { if (S.coSkill(co, b.dataset.sk)) { sfx('tap'); c.save(); draw(); } });
         if (st.querySelector('#ldy-of')) st.querySelector('#ldy-of').onclick = () => { sfx('tap'); co.step = 'offers'; c.offers(out.offers); };
         if (st.querySelector('#ldy-ns')) st.querySelector('#ldy-ns').onclick = () => { sfx('tap'); delete co.mkl; S.coStart(co); c.save('hub'); semana(); };
+        st.querySelector('#ldy-fim').onclick = () => { sfx('tap'); fimCarreira(); };
         if (st.querySelector('#ldy-mk')) st.querySelector('#ldy-mk').onclick = () => { sfx('tap'); const l = co.mkl && co.mkl.s === co.season ? co.mkl.l : S.coOffers(co, 3); c.save(); c.offers(l, true); };
       });
     };
     draw();
+  }
+  // Encerrar carreira (2026-11-11, Silvio: "quero a opção de encerrar carreira, e não só assinar com outro"): no fim de toda
+  // temporada, demitido ou não. A janelinha é o resumo da carreira; confirmou, a vaga fica livre e volta para a home.
+  // Os números do técnico (temporadas, vitórias, títulos) já ficaram no Perfil (prof.co) no fim de cada temporada
+  function fimCarreira() {
+    const c = C(), co = c.co, H = co.hist || [];
+    const clubs = H.reduce((a, h) => (a.indexOf(h.club) < 0 ? a.concat(h.club) : a), []).length;
+    const k = [[H.length, 'temporada', 'temporadas'], [H.filter(h => h.won).length, 'título', 'títulos'], [H.filter(h => h.up).length, 'acesso', 'acessos'], [clubs, 'clube', 'clubes']];
+    pop('<div class="acd-help fim-c"><b>Encerrar a carreira de ' + esc(co.name) + '?</b>' +
+      '<div class="fim-n">' + k.map(([n, a, b]) => '<span><b>' + n + '</b><small>' + (n === 1 ? a : b) + '</small></span>').join('') + '</div>' +
+      '<p>Os números ficam no seu Perfil e a vaga fica livre para um técnico novo. Não dá para desfazer.</p>' +
+      '<div class="fim-b"><button class="hl-btn line" data-pop-x>Voltar</button><button class="hl-btn red" id="fim-y">Encerrar carreira</button></div></div>', 'Encerrar carreira', w => {
+      w.querySelector('#fim-y').onclick = () => { closePop(); c.retire(); };
+    }, 'hl-pop acd-pop fim-pop');
   }
   // ---------- Propostas deitado (42): o seu clube e quem chama, lado a lado; a escolhida em dourado ----------
   function propostas(list, stay) {

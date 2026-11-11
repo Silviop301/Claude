@@ -67,7 +67,7 @@
   const behind = m => { let u = 0, t = 0; return (m.ev || []).some(e => { if (e.t !== 'gol') return false; if (e.s === 'us') u++; else t++; return t > u; }); };
   // Dá para subir de divisão? (na elite a meta não é sorteada)
   function canGoUp() {
-    const S = U.S, cs = [0, 1].map(i => (U.coSaved ? U.coSaved(i) : null)).filter(Boolean).map(sv => sv.co).filter(co => co.club);
+    const S = U.S, cs = [...Array(U.CO_SLOTS).keys()].map(i => (U.coSaved ? U.coSaved(i) : null)).filter(Boolean).map(sv => sv.co).filter(co => co.club);
     return !cs.length || cs.some(co => S.coLgDepth((co.leagueOf || {})[co.club] || D.CLUB_BY_ID[co.club].league) > 0);
   }
   const GOALS_CO = [
@@ -225,7 +225,7 @@
     const p = prof();
     if (!p.co) {
       const r = { t: 0, v: 0, s: 0, last: null };
-      [0, 1].forEach(i => { const sv = U.coSaved ? U.coSaved(i) : null, co = sv && sv.co; if (!co) return;
+      [...Array(U.CO_SLOTS).keys()].forEach(i => { const sv = U.coSaved ? U.coSaved(i) : null, co = sv && sv.co; if (!co) return;
         r.t += (co.titles || []).length; r.s += (co.hist || []).length; r.v += ((co.ss && co.ss.log) || []).filter(l => l.res === 'v').length;
         const lt = (co.titles || []).slice(-1)[0]; if (lt && (!r.last || lt.s >= r.last.s)) r.last = { name: lt.name, club: lt.club, s: lt.s }; });
       p.co = r; U.ITEMS.put();

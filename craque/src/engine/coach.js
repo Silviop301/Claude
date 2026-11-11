@@ -1276,7 +1276,9 @@
     if (B.ult) {
       B.ult.n++; if (pts === 3) B.ult.got++;
       if (B.ult.got >= CO.ultNeed) { B.ult = null; B.conf = 45; B.passed = (B.passed || 0) + 1; }
-      else if (B.ult.n >= CO.ultN) { co.sacked = true; B.ult = null; }
+      // Demitido assim que o ultimato fica impossível (2026-11-11, Silvio: "perdi as duas primeiras e nem deveria ter jogado
+      // a última, ganhei e fui demitido"): com 2 de 3 para vencer, a 2ª derrota já encerra; nunca há demissão logo depois de vitória
+      else if (B.ult.n >= CO.ultN || B.ult.got + (CO.ultN - B.ult.n) < CO.ultNeed) { co.sacked = true; B.sk = { need: B.ult.need, of: B.ult.of }; B.ult = null; }
     } else if (B.conf < CO.ultAt && ss.i + 1 >= CO.ultMin && ss.rounds.length - ss.i > CO.ultN) {
       B.ult = { n: 0, got: 0, need: CO.ultNeed, of: CO.ultN };
     }
