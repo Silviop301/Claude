@@ -314,6 +314,7 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
 - **Som (`sound.js`, 2026-11-10):** só agenda som com o contexto de áudio rodando (parado, o relógio dele não anda e tudo
   tocaria junto no toque seguinte); sair do app corta o que tocava (`hush`). Tela que reabre no meio (jogo retomado em
   `live`, `retomado`) repõe a narração sem tocar de novo o som do que já aconteceu.
+- **Música de fundo (2026-11-11):** `CRAQUE_MUSIC` no `sound.js`: faixas reais do Silvio em `craque/assets/musica/` (nome em `M_LIST`, depois `craque_sw.py`), tocadas inteiras em ordem embaralhada por um `<audio>` ligado ao ganho do Web Audio (o iPhone ignora o volume do `<audio>`); começa no primeiro toque, pausa com `.lv` na tela (jogo ao vivo) e com o app fora da frente; chave `climbix-musica` (linha Música nos Ajustes só aparece com faixa na lista). Só faixa com licença para uso comercial (o jogo vende moedas). Silvio recusou música gerada em loop.
 - **Estilos do lance decisivo:** o primeiro de `S.STYLES[tipo]` é o lance de sempre; o segundo muda a mecânica. Mudou
   um número? Rode `craque_estilos.js` (chance pela carta igual ±4 pontos e nenhum estilo melhor em todos os níveis).
 - Melhoria de personagem por ajuste de SVG em código já foi recusada: precisa de arte nova.
