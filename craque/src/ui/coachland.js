@@ -2071,7 +2071,7 @@
   const D_CLUBS = lg => (window.CRAQUE_DATA.CLUBS || []).filter(x => x.league === lg.id);
   // ---------- Loja (quadro 40, Silvio aprovou 2026-11-09): abas Moedas e Dinheiro do clube ----------
   // Moedas: 4 pacotes fixos, sem sorteio (a cobrança pelo Mercado Pago chega na fase 5; até lá o botão fica "em breve").
-  // Dinheiro do clube: aporte do investidor em semanas da folha (S.coAporte), 12 moedas cada, só com uma carreira aberta.
+  // Dinheiro do clube: aporte do investidor em semanas da folha (S.coAporte), 12 moedas cada (piso R$ 500 mil, o teto sobe junto), só com uma carreira aberta.
   const PACKS = [{ k: 'p1', n: 120, nm: 'Punhado', pr: 'R$ 4,90', h: 1 }, { k: 'p2', n: 350, nm: 'Saco', pr: 'R$ 12,90', h: 2 },
     { k: 'p3', n: 800, nm: 'Baú', pr: 'R$ 24,90', h: 3, tag: '+20%' }, { k: 'p4', n: 2000, nm: 'Cofre', pr: 'R$ 49,90', h: 4, tag: '+50%' }];
   // Arte dos pacotes (ChatGPT, 2026-11-11): Punhado, Saco, Baú, Cofre
@@ -2118,8 +2118,8 @@
         wk = Math.max(1, Math.min(wk, Math.max(1, left)));
         const cost = wk * S.CO_APORTE.coin, v = S.coAporteValue(co, wk), ok = left > 0 && saldo >= cost;
         main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · vai para a verba</small></span><img class="lj-ai" src="' + CO_ART + 'mo-aporte.webp" alt=""></div>' +
-          '<div class="lj-v"><button id="lj-m" aria-label="Menos"' + (wk <= 1 ? ' disabled' : '') + '>' + BK + '</button><span><b>+ ' + c.brl(v) + '</b><small>' + U.D.plural(wk, 'semana', 'semanas') + ' da folha</small></span><button id="lj-p" aria-label="Mais"' + (wk >= left ? ' disabled' : '') + '>' + FW + '</button></div>' +
-          '<div class="lj-two"><span><small>Verba</small><b>' + c.brl(f.verba) + ' → ' + c.brl(f.verba + (left ? v : 0)) + '</b></span><span><small>Nesta temporada</small><b>' + (used + (left ? wk : 0)) + ' de ' + S.CO_APORTE.max + ' semanas</b></span></div></div>';
+          '<div class="lj-v"><button id="lj-m" aria-label="Menos"' + (wk <= 1 ? ' disabled' : '') + '>' + BK + '</button><span><b>+ ' + c.brl(v) + '</b><small>' + U.D.plural(wk, 'aporte', 'aportes') + ' · ' + (used + (left ? wk : 0)) + ' de ' + S.CO_APORTE.max + ' na temporada</small></span><button id="lj-p" aria-label="Mais"' + (wk >= left ? ' disabled' : '') + '>' + FW + '</button></div>' +
+          '<div class="lj-two"><span><small>Verba</small><b>' + c.brl(f.verba) + ' → ' + c.brl(f.verba + (left ? v : 0)) + '</b></span><span><small>Teto de salários por semana</small><b>' + c.brl(f.teto) + ' → ' + c.brl(f.teto + (left ? S.coAporteTeto(v) : 0)) + '</b></span></div></div>';
         side = '<div class="lj-box lj-cost"><small class="ld-lbl">CUSTA</small><span>' + U.COINS.svg + '<b>' + cost + '</b></span><small>' + (saldo >= cost ? 'sobram ' + (saldo - cost) + ' moedas' : 'faltam ' + (cost - saldo) + ' moedas') + '</small></div>' +
           '<button class="tm-go' + (ok ? '' : ' off') + '" id="lj-ap"' + (ok ? '' : ' disabled') + '>' + (red ? 'Caixa no vermelho' : !left ? 'Limite da temporada' : 'Fazer aporte') + '</button>';
       }
@@ -2143,7 +2143,7 @@
         if (st.querySelector('#lj-p')) st.querySelector('#lj-p').onclick = () => { sfx('tap'); wk++; draw(); };
         if (st.querySelector('#lj-ap')) st.querySelector('#lj-ap').onclick = () => {
           const cost = wk * S.CO_APORTE.coin; sfx('tap');
-          coinAsk(cost, 'Fazer aporte', '+ ' + c.brl(S.coAporteValue(co, wk)) + ' na verba', () => {
+          coinAsk(cost, 'Fazer aporte', '+ ' + c.brl(S.coAporteValue(co, wk)) + ' na verba e + ' + c.brl(S.coAporteTeto(S.coAporteValue(co, wk))) + ' no teto', () => {
           if (!U.COINS.spend(cost, 'Aporte: ' + (club(co.club).short || club(co.club).name))) return;
           const v = S.coAporte(co, wk); if (!v) { U.COINS.add({ n: cost, t: 'Aporte devolvido' }); return; }
           sfx('coin'); c.save(); wk = 1; draw();
