@@ -109,9 +109,11 @@
   // porque o iPhone ignora o volume do <audio>: o volume baixo e o fade saem do ganho. Começa no primeiro toque (regra do
   // iPhone), some no jogo ao vivo (`.lv` na tela) e com o app fora da frente, e volta de onde parou. Chave própria
   // (climbix-musica), separada do Som. Faixa nova: põe o .mp3 em assets/musica/, o nome em M_LIST e roda craque_sw.py
-  const M_LIST = ['uk-garage.mp3', 'lounge.mp3']; // Pixabay, artista monume (licença Pixabay: uso comercial liberado)
+  const M_LIST = ['uk-garage.mp3', 'lounge.mp3', 'sports-rocker.mp3', 'shut-the-funk-up.mp3', 'cheetah-print.mp3', 'atomic-bass.mp3', 'electric-desire.mp3', 'liberty-city.mp3', 'mood-swings.mp3', 'idiot.mp3']; // 2 da Pixabay (monume) + 8 da Epidemic Sound que o Silvio mandou em 11/11 (licença da conta dele)
   // Nome que o disco da home mostra (faixa · artista); faixa nova sem nome aqui mostra o nome do arquivo
-  const M_NAMES = { 'uk-garage.mp3': ['UK Garage', 'monume'], 'lounge.mp3': ['Lounge', 'monume'] };
+  const M_NAMES = { 'uk-garage.mp3': ['UK Garage', 'monume'], 'lounge.mp3': ['Lounge', 'monume'], 'sports-rocker.mp3': ['Sports Rocker', 'Taelimb'],
+    'shut-the-funk-up.mp3': ['Shut the Funk Up!', 'Daniel Fridell'], 'cheetah-print.mp3': ['Cheetah Print', 'Cushy'], 'atomic-bass.mp3': ['Atomic Bass', 'Daniel Fridell'],
+    'electric-desire.mp3': ['Electric Desire', 'Daniel Fridell'], 'liberty-city.mp3': ['Liberty City', 'DonVayei'], 'mood-swings.mp3': ['Mood Swings', 'Siine'], 'idiot.mp3': ['IDIOT', "I'MIN"] };
   // Avisa a tela (disco da home) quando a faixa troca ou a música toca/para
   const mSay = () => { try { root.dispatchEvent(new Event('climbix-musica')); } catch (e) { /* sem tela */ } };
   const M_VOL = 0.35;
@@ -122,11 +124,15 @@
     if (!mEl) return;
     if (++mI >= mOrd.length) { // nova volta embaralhada, sem repetir a última logo de cara
       const last = mOrd[mOrd.length - 1];
-      mOrd = M_LIST.map((x, i) => i).sort(() => Math.random() - 0.5);
-      if (mOrd.length > 1 && mOrd[0] === last) mOrd.push(mOrd.shift());
+      mOrd = M_LIST.map((x, i) => i); for (let i = mOrd.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [mOrd[i], mOrd[j]] = [mOrd[j], mOrd[i]]; } // embaralha de verdade (Fisher-Yates)
+      // nunca começa com a última que tocou, nem na volta nem ao abrir o jogo de novo (Silvio: "pra pessoa não enjoar")
+      let prev = last;
+      if (prev === undefined) try { prev = M_LIST.indexOf(localStorage.getItem('climbix-musica-ult')); } catch (e) { /* sem armazenamento */ }
+      if (mOrd.length > 1 && mOrd[0] === prev) mOrd.push(mOrd.shift());
       mI = 0;
     }
     mEl.src = 'assets/musica/' + M_LIST[mOrd[mI]];
+    try { localStorage.setItem('climbix-musica-ult', M_LIST[mOrd[mI]]); } catch (e) { /* ok */ }
     mSay();
     if (mWant > 0) mEl.play().catch(() => { /* espera o próximo toque */ });
   }
