@@ -234,7 +234,7 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
   em `_state()`); bola fora segue rolando para fora (`ghost`, só desenho) e a cobrança usa a bola reserva mais perto (`RACK`,
   `outBall`); troca espera bola parada (12 s: o time da troca chuta para a lateral; 35 s: o juiz para, `whistle('Substituição')`);
   `sim.canStop()` segura o apito do intervalo e do fim no escanteio, chute ou cruzamento no ar (até 9 s, `stopW` em `ui/coach.js`);
-  velocidade padrão dos jogos nos Ajustes (`U.coVel`, `climbix-co-vel`); Semana com o mandante à esquerda.
+  velocidade padrão dos jogos nos Ajustes (`U.coVel`, `climbix-co-vel`); Semana com o mandante à esquerda. Depois: GOOOL! e PÊNALTI! só com texto branco em ola (`waveText`), apito animado do ChatGPT (`assets/co/apito-anim.webp`, 6 quadros de 160 px; original `arte/apito/`); o juiz espera o ataque acabar para apitar o fim (`canStop`, até 16 s); camisinha da cor do time no placar (`.ldl-kit`); escudo trocado leva versão em `CREST_V` (`ui/core.js`), porque o servidor guarda escudo por 7 dias.
 - **Atributos** (`qa(p, 'fin'|'pas'|'dri'|'def'|'gol')`): cada lance lê `p.inf.at[k]` (0 a 99) se a escalação mandar; sem isso
   vale o geral. Quem preenche é a thread dos atributos por jogador (5º elemento do `simForm`).
 
