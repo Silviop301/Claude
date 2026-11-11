@@ -58,8 +58,10 @@ function build(co, st, n) {
   // Melhorias (fase 4): sem melhoria andando, pede a mais barata que não está travada. E o nome do estádio: aceita em metade das carreiras
   if (st.melLast && !e.mel) { if (st.melClub === co.club && e.up[st.melLast.k] !== st.melLast.to) alert('melhoria terminou sem subir o nível (carreira ' + n + ')'); st.melLast = null; }
   if (!e.mel && !process.env.SEM_MEL) {
-    const ps = E.mel.keys.map(k => S.coEstMelPlan(co, k)).filter(p => p && !p.max && !p.lock).sort((a, b) => a.cost - b.cost);
+    const ps = E.mel.keys.map(k => S.coEstMelPlan(co, k)).filter(p => p && !p.max && !p.lock && !p.need).sort((a, b) => a.cost - b.cost);
     if (E.mel.keys.some(k => { const p = S.coEstMelPlan(co, k); return p && p.lock && (k !== 'c' || e.lv.so >= E.mel.camSo); })) alert('melhoria travada sem motivo (carreira ' + n + ')');
+    if (E.mel.keys.some(k => { const p = S.coEstMelPlan(co, k); return p && !p.max && !!p.need !== !!(E.mel.need[p.to] && S.coEstCap(e) < E.mel.need[p.to]); })) alert('nível 4 ou 5 da melhoria com a exigência de lugares errada (carreira ' + n + ')');
+    if (E.mel.keys.some(k => e.up[k] > E.mel.max)) alert('melhoria acima do nível máximo (carreira ' + n + ')');
     if (ps.length) {
       const c0 = fin.caixa, u0 = JSON.stringify(e.up), r = S.coEstMelAsk(co, ps[0].k, 1 + (n + co.ss.i) % 3);
       if (!r.ok) { if (fin.caixa !== c0 || e.mel || JSON.stringify(e.up) !== u0) alert('melhoria recusada mexeu no clube (carreira ' + n + ')'); }
@@ -284,5 +286,21 @@ console.log('    acontecimentos (robô sem obra): portões fechados em ' + T.cl 
 console.log('    show (robô que constrói): ' + (O.show + O.showNo) + ' propostas em ' + B.sn + ' temporadas, ' + O.show + ' aceitas (média ' + Math.round(O.showV / Math.max(1, O.show) / 1000) + ' mil), ' + B.gt + ' jogos com o gramado castigado · moedas do legado por carreira: ' + ((O.pz || 0) / N).toFixed(1));
 // melhorias da chegada: níveis de 0 a 3 e camarote só com a Social coberta
 D.CLUBS.forEach(cl => { const u = S.coEstStartUp(cl.id), lv = S.coEstStart(cl.id); if (E.mel.keys.some(k => !(u[k] >= 0 && u[k] <= 3)) || (u.c && lv.so < E.mel.camSo)) alert('melhorias da chegada fora da regra: ' + cl.id); });
+// Melhorias com 5 níveis (2026-11-11): os níveis 4 e 5 custam e demoram 1,5x e 2x o nível 3, rendem o mesmo por nível,
+// pedem 25 mil e 40 mil lugares e depois do 5 não há mais nada
+{ const big = D.CLUBS.slice().sort((a, b) => b.strength - a.strength)[0], small = D.CLUBS.slice().sort((a, b) => a.strength - b.strength)[0], M = E.mel;
+  const mk = id => { const co = S.coNew({ name: 'T', start: 'livre', seed: 11 }); S.coSign(co, id); S.coStart(co); if (S.coFinAuto) S.coFinAuto(co); return co; };
+  const co = mk(big.id), e = S.coEst(co); e.lv = { n: 5, s: 5, a: 5, so: 5 };
+  for (const k of M.keys) { const sv = e.up[k], P = [0, 1, 2, 3, 4].map(n => { e.up[k] = n; return S.coEstMelPlan(co, k); }); e.up[k] = 5; const top = S.coEstMelPlan(co, k); e.up[k] = sv;
+    if (!top.max) alert('melhoria ' + k + ' não para no nível 5');
+    if (P.some(p => p.max || p.need || p.lock)) alert('melhoria ' + k + ' travada no maior estádio do jogo');
+    const base = k === 'g' ? P[2].cost / 3 : P[2].cost, c4 = k === 'g' ? P[3].cost / 4 : P[3].cost, c5 = k === 'g' ? P[4].cost / 5 : P[4].cost;
+    if (Math.abs(c4 / base - 1.5) > 0.03 || Math.abs(c5 / base - 2) > 0.03) alert('melhoria ' + k + ': níveis 4 e 5 fora de 1,5x e 2x (' + (c4 / base).toFixed(2) + ', ' + (c5 / base).toFixed(2) + ')');
+    if (P[3].perSeason !== P[2].perSeason || P[4].perSeason !== P[2].perSeason) alert('melhoria ' + k + ': níveis 4 e 5 rendem diferente do nível 3');
+    if (!(P[3].rounds > P[2].rounds && P[4].rounds > P[3].rounds)) alert('melhoria ' + k + ': níveis 4 e 5 não demoram mais'); }
+  const c2 = mk(small.id), e2 = S.coEst(c2); e2.up.g = 3; const p4 = S.coEstMelPlan(c2, 'g'); c2.fin.caixa += 5e8; const r = S.coEstMelAsk(c2, 'g', 1);
+  if (S.coEstCap(e2) >= M.need[4]) alert('o menor clube do jogo já chega com ' + M.need[4] + ' lugares'); else if (p4.need !== M.need[4] || r.ok || r.why !== 'lugares') alert('nível 4 liberado em estádio pequeno: ' + JSON.stringify([p4.need, r]));
+  const x = S.coEstExtra(co); e.up = { g: 5, l: 5, b: 5, c: 5 }; const y = S.coEstExtra(co);
+  if (!(y.tv > x.tv && y.bar > x.bar && y.cam > x.cam) || !isFinite(y.tv + y.bar + y.cam)) alert('melhorias no nível 5 não rendem mais que na chegada: ' + JSON.stringify([x, y])); }
 console.log(alerts.length ? alerts.length + ' alertas:\n  ' + alerts.join('\n  ') : '0 alertas');
 process.exit(alerts.length ? 1 : 0);

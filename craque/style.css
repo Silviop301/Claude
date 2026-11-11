@@ -9668,3 +9668,5 @@ button.coin-pill { cursor: pointer; border: 0; }
 .pzo .tcr-back { left: 16px; top: 10px; width: 44px; height: 44px; }
 /* Aviso do topo (meta, nível, compra) espera a festa da taça ou do acesso sair da tela */
 body:has(> .tc-ov) > .pay-ty { visibility: hidden; }
+/* Continuar da home: o nome encurta, o ano da carreira nunca é cortado (Silvio, 11/11) */
+.hl-go small { display: flex; overflow: visible; } .hl-go small span { min-width: 0; overflow: hidden; text-overflow: ellipsis; } .hl-go small i { flex: none; font-style: normal; white-space: pre; }
