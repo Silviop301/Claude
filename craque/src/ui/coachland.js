@@ -568,6 +568,9 @@
   function livePaint(x) {
     const m = x.m, sh = m.us.shout, $ = id => document.getElementById(id);
     const g = $('ldl-g4'); if (!g) return;
+    // O auxiliar avisa no "Parar e mexer" quantos titulares estão no limite (abaixo de 58%, os que ele sugere trocar)
+    { const by = byOf(m.us.squad), n = m.us.subs > 0 && m.us.bench.length ? m.us.xi.filter((id, i) => i && by[id] && by[id].en < 58).length : 0, b = $('b-lv-stop');
+      if (b && b._n !== n) { b._n = n; let d = b.querySelector('.tm-dot'); if (!n) { if (d) d.remove(); } else { if (!d) { d = document.createElement('i'); d.className = 'tm-dot'; b.appendChild(d); } d.textContent = n; } b.classList.toggle('aux', n > 0); } }
     g.querySelectorAll('[data-gr]').forEach(b => { const on = !!sh && sh.k === b.dataset.gr; b.classList.toggle('on', on); b.disabled = !!sh && !on;
       b.querySelector('small').textContent = on ? 'até os ' + sh.until + '\'' : S.CO_SHOUT[b.dataset.gr].sub; });
     const st = x.stats();
@@ -2282,7 +2285,10 @@
     // O auxiliar comenta o rival e sugere um treino
     const AUX = { posse: ['O ' + vn + ' fica com a bola. Sair no contra vale ouro.', 'contra'], pressao: ['O ' + vn + ' aperta lá na frente. Troca de passes ajuda.', 'toque'], contra: ['O ' + vn + ' espera e sai rápido. Linha de zaga ajuda.', 'linha'],
       retranca: ['O ' + vn + ' vai fechar a área. Escanteio pode decidir.', 'esc'], lados: ['O ' + vn + ' cruza muito. Defender escanteio ajuda.', 'defesc'], equilibrado: ['O ' + vn + ' não tem ponto fraco grande. Treine o que é seu.', null] };
-    const aux = pv ? AUX[pv.them.style] || AUX.equilibrado : ['Sem jogo nesta rodada: bom para recuperar.', 'recup'];
+    // Time cansado (S.coTrainTip): o auxiliar pede Recuperação antes do treino do rival
+    const tir = S.coTrainTip(co);
+    const aux = tir ? [tir.n > 1 ? tir.n + ' titulares chegam cansados (' + tir.who + '). Hoje vale mais recuperar do que treinar.' : 'O time está pesado do último jogo. Hoje vale mais recuperar do que treinar.', 'recup']
+      : pv ? AUX[pv.them.style] || AUX.equilibrado : ['Sem jogo nesta rodada: bom para recuperar.', 'recup'];
     const enTxt = t => (t.en > 0 ? 'energia −' + t.en : 'energia +' + (-t.en));
     // Fase 4: o atributo que o treino desenvolve (S.CO_TRAIN[k].dv; goleiro dvG) e de quem (as posições do treino)
     const AK = S.CO_AT.keys, POSN = { ATA: 'atacantes', MEI: 'meias', LAT: 'laterais', ZAG: 'zagueiros' }, grow = S.CO_GROW && S.CO_GROW.rate > 0;
