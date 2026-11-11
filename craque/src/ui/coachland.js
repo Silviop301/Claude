@@ -1734,6 +1734,9 @@
   // overall eu quero uma notificaçãozinha"). O cartão creme do "Meta cumprida", dentro do palco: sai uma vez (`co.train.seen`),
   // some sozinho e o Ver abre o Elenco no jogador. Com janelinha aberta espera a próxima vez que a Semana abrir.
   // Aviso da janela de transferências na Semana (abriu, última rodada, fechou): o cartão do upToast, uma vez cada
+  // Vida do aviso do topo (.up-ty): o tempo só conta sem janelinha por cima. Com uma aberta ele fica escondido (CSS) e volta
+  // depois: em 11/11 o aviso da janela saía em cima do título da proposta recebida. O número serve no clearTimeout
+  const toastLife = (box, ms) => { const iv = setInterval(() => { if (!box.isConnected) return clearInterval(iv); if (document.getElementById('ld-pop')) return; ms -= 250; if (ms <= 0) { clearInterval(iv); box.remove(); } }, 250); return iv; };
   function winToast(co) {
     const wi = S.coMktWinInfo(co), st = document.querySelector('#ld .ld-st');
     if (!wi || wi.seen || !st || !st.querySelector('.sm')) return;
@@ -1745,7 +1748,7 @@
     const box = document.createElement('div'); box.className = 'up-ty wn-ty' + (wi.st === 'last' ? ' ult' : ''); box.setAttribute('role', 'status');
     box.innerHTML = '<i><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="13" r="8"/>' + (wi.st === 'closed' ? '<path d="M8.5 9.5l7 7M15.5 9.5l-7 7"/>' : '<path d="M12 9v4l3 2M9.5 3h5"/>') + '</svg></i><span><b>' + T[0] + '</b><small>' + T[1] + '</small></span>' + (wi.st === 'closed' ? '' : '<button class="up-b">Mercado</button>');
     st.appendChild(box); sfx(wi.st === 'last' ? 'whistle' : 'tap');
-    const t = setTimeout(() => box.remove(), 8000);
+    const t = toastLife(box, 8000);
     box.onclick = () => { clearTimeout(t); box.remove(); };
     const b = box.querySelector('.up-b'); if (b) b.onclick = e => { e.stopPropagation(); clearTimeout(t); box.remove(); sfx('tap'); mercado(); };
   }
@@ -1760,7 +1763,7 @@
     box.innerHTML = '<i>▲</i>' + (L.length === 1 ? '<b class="o">' + q.ovr + '</b><span><b>' + esc(c.last(q.n)) + ' subiu de geral</b>' + (dv ? '<small>' + S.CO_AT.names[ks[dv[1]]] + ' ' + (at[dv[1]] - 1) + ' → ' + at[dv[1]] + '</small>' : '') + '</span>'
       : '<span><b>' + L.length + ' jogadores subiram de geral</b><small>' + L.slice(0, 2).map(p => esc(c.last(p.n)) + ' ' + p.ovr).join(' · ') + (L.length > 2 ? ' e mais ' + (L.length - 2) : '') + '</small></span>') + '<button class="up-b">Ver</button>';
     st.appendChild(box); sfx('levelup');
-    const t = setTimeout(() => box.remove(), 7000);
+    const t = toastLife(box, 7000);
     box.onclick = () => { clearTimeout(t); box.remove(); };
     box.querySelector('.up-b').onclick = e => { e.stopPropagation(); clearTimeout(t); box.remove(); sfx('tap'); elenco.ct = 0; elenco(q.pos === 'GOL' ? 0 : q.pos === 'MEI' ? 2 : q.pos === 'ATA' ? 3 : 1, q.id); };
   }
