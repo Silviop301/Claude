@@ -8258,6 +8258,7 @@ body.ld-on #ld { display: block; }
 .tu-bub small { font: 700 14px/1 var(--body); color: #5C6A62; }
 .ld-st .tu .tu-skip { height: 44px; padding: 0 10px 0 4px; font: 700 15px/1 var(--body); color: #5C6A62; text-decoration: underline; }
 .sm-nv { position: relative; } .sm-nv .tm-dot { right: 14px; top: 14px; text-align: center; }
+.tm-two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .tm-two .tm-b { font-size: 16px !important; padding: 0 4px; }
 .tm-b { position: relative; height: 44px; border-radius: 12px; box-shadow: inset 0 0 0 2px rgba(243,241,234,.22); font: 800 18px/1 var(--display) !important; color: #F3F1EA !important; }
 .tm-dot { position: absolute; right: 10px; top: 11px; width: 22px; height: 22px; border-radius: 50%; background: #F08A5D; color: #1B1606; font: 800 15px/22px var(--display); font-style: normal; }
 .tm-go { margin-top: auto; height: 56px; border-radius: 16px; background: var(--gold) !important; color: #1B1606 !important; box-shadow: 0 4px 0 #b48a12; font: 800 26px/1 var(--display) !important; }
@@ -8388,6 +8389,14 @@ body.ld-on #ld { display: block; }
 .rs-r span > i { display: flex; gap: 3px; height: 8px; } .rs-r u { display: block; border-radius: 4px; } .rs-r u.up { background: #4FCB7E; } .rs-r u.dn { background: #F08A5D; } .rs-r u.th { flex: 1; background: rgba(243, 241, 234, .18); }
 .rs-pane .ldr-mom { background: #141517; } .rs-momf { display: flex; justify-content: space-between; font: 700 12px var(--body); color: #9fb0a6; margin: 4px 0; }
 .rs-pane .ldl-last li { font-size: 14px; color: #D9E2DC; }
+/* Lances com ícone e escudo (Silvio 2026-11-10: "indicativos visuais claros do que foi gol, cartão e etc.") */
+.rs-pane .ldl-last li { grid-template-columns: 26px 20px 18px 1fr; align-items: center; gap: 6px; border-radius: 8px; padding: 1px 6px 1px 2px; }
+.rs-pane .ldl-last li.gol.us { background: rgba(74, 222, 128, .16); } .rs-pane .ldl-last li.gol.them { background: rgba(248, 113, 113, .16); }
+.rsi { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; position: relative; font-style: normal; } .rsi svg { width: 18px; height: 18px; } .rsi .rsi-c { width: 14px; height: 14px; }
+.rsi-k { display: block; width: 10px; height: 14px; border-radius: 2px; } .rsi-k.y { background: #F2C230; } .rsi-k.r { background: #E5484D; } .rsi-k.two { position: absolute; left: 3px; top: 1px; transform: rotate(-12deg); } .rsi-k.two + .rsi-k { position: relative; left: 3px; top: 1px; }
+.rsi-cr { width: 18px; height: 18px; object-fit: contain; display: block; }
+.rs-pane .ldr-mom { position: relative; } .rs-mkw { position: absolute; inset: 4px; pointer-events: none; }
+.rs-mk { position: absolute; transform: translateX(-50%); display: flex; gap: 0; } .rs-mk.us { top: 1px; } .rs-mk.th { bottom: 1px; } .rs-mk svg { width: 16px; height: 16px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .6)); } .rs-mk .rsi-k { width: 9px; height: 12px; }
 .rs-side { grid-column: 2; grid-row: 1 / -1; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 .rs-best { border-radius: 16px; background: #141517; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
 .rs-best > small { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
@@ -8444,13 +8453,17 @@ body.ld-on #ld { display: block; }
 .tb2-cr { width: 22px; height: 22px; object-fit: contain; }
 .tb2-r .ld-f5 { display: flex; gap: 4px; } .tb2-r .ld-f5 i { width: 10px; height: 10px; }
 .tb2-r.me { background: #F8F4EA; color: #13201A; } .tb2-r.me > em, .tb2-r.me > i { color: #13201A; }
-.tb2-h.art, .tb2-r.art { grid-template-columns: 26px minmax(0, 1fr) 60px; }
+.tb2-h.art, .tb2-r.art { grid-template-columns: 26px 26px minmax(0, 1fr) 60px; } .tb2-h.art span { grid-column: 2 / 4; }
+.tb2-r.art span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .tb2-r.art.me small { color: #4A5A52; }
 .tb2-r.art small { font: 700 13px var(--body); color: #9fb0a6; }
 .tb2-none { margin: 40px 0; text-align: center; font: 700 16px var(--body); color: #9fb0a6; }
 .tb2-nav { display: flex; align-items: center; justify-content: space-between; padding: 0 10px 6px; }
 .tb2-nav b { font: 800 20px/1 var(--display); }
 .tb2-nav button { width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(243, 241, 234, .25); font: 800 18px/1 var(--display) !important; color: #F3F1EA !important; background: none !important; }
 .tb2-nav button:disabled { opacity: .3; }
+/* Setas desenhadas (no iPhone o ◀ ▶ virava emoji azul: Silvio 2026-11-10) */
+.tb2-nav button, .pl2-ar { display: flex; align-items: center; justify-content: center; padding: 0 !important; }
+.tb2-nav button svg { width: 14px; height: 14px; fill: #F3F1EA; } .pl2-ar svg { width: 18px; height: 18px; fill: #F3F1EA; }
 .tb2-gm { display: grid; grid-template-columns: 1fr 64px 1fr; align-items: center; gap: 8px; height: 34px; margin: 0 6px; padding: 0 8px; border-radius: 10px; font: 800 17px/1 var(--display); }
 .tb2-gm span { display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; } .tb2-gm span.h { justify-content: flex-end; }
 .tb2-gm b { text-align: center; } .tb2-gm.me { background: #F8F4EA; color: #13201A; }
@@ -8592,7 +8605,9 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .kb2-pr.fc { flex-direction: row; align-items: center; gap: 12px; }
 .kb2-pr.fc > div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .kb2-fc { width: 58px; height: 58px; border-radius: 50%; background: #F8F4EA; flex: none; }
-.pi-fc { width: 84px; height: 84px; border-radius: 50%; background: #F8F4EA; float: left; margin: 0 14px 6px 0; }
+.pi-fc { width: 84px; height: 84px; border-radius: 50%; background: #F8F4EA; flex: none; }
+/* Popup do presidente no fundo carvão: rosto à esquerda, texto claro ao lado (Silvio 2026-11-10: texto escuro sumia) */
+.pi-pb { align-items: center; gap: 14px; } .pi-pb .ldn-p { color: #F3F1EA; font-size: 15px; } .pi-pb .ldn-p b { color: var(--gold); }
 .aux-h { display: flex; align-items: center; gap: 12px; } .aux-h b { font: 800 26px/1 var(--display); }
 .aux-fc { width: 56px; height: 56px; border-radius: 50%; background: #E9E2D2; flex: none; }
 .sack-cr { width: 56px; height: 56px; object-fit: contain; flex: none; }
@@ -8684,6 +8699,8 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .mkp-seg.big button { height: 52px; font-size: 21px; }
 .mkp-tr { display: flex; align-items: center; gap: 8px; } .mkp-tr .mk-ar { width: 40px; height: 40px; }
 .mkp-tr b { flex: 1; min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 800 19px/1 var(--display); color: #F3F1EA; } .mkp-tr b.off { color: #9fb0a6; }
+/* Jogador na troca com geral, idade e valor (Silvio 2026-11-10: "mais informações do meu jogador fora o nome") */
+.mkp-tr b { font-size: 17px; } .mkp-tr b small { display: block; margin-top: 4px; font: 700 12.5px/1 var(--body); letter-spacing: 0; color: #B9C9BF; overflow: hidden; text-overflow: ellipsis; } .mkp-tr b small u { text-decoration: none; color: var(--gold); font-weight: 800; }
 .mk button:disabled { opacity: .45; cursor: default; }
 .mkp-pr > b { font: 800 26px/1.05 var(--display); color: #F3F1EA; } .mkp-pr > b.up { color: #7ED39A; } .mkp-pr > b.mid { color: var(--gold); } .mkp-pr > b.dn { color: #F5A57F; }
 .mkp-pat { display: flex; align-items: center; justify-content: space-between; font: 700 15px/1 var(--body); color: #B9C9BF; }
@@ -9039,6 +9056,8 @@ button.coin-pill { cursor: pointer; border: 0; }
 .mkr2-p > b.mkr2-o { width: 64px; height: 64px; border-radius: 50%; box-shadow: inset 0 0 0 3px var(--gold); display: flex; align-items: center; justify-content: center; font-size: 30px; color: var(--gold); }
 .mkr2-p > span { font: 700 14px/1 var(--body); color: #B9C9BF; }
 .mkr2-p em { margin-top: 4px; padding: 6px 10px; border-radius: 9px; font: 800 16px/1 var(--display); font-style: normal; background: rgba(243, 241, 234, .1); color: #B9C9BF; }
+.mkr2-el { margin-top: 2px; height: 34px; padding: 0 14px !important; border-radius: 10px; box-shadow: inset 0 0 0 2px rgba(243, 241, 234, .3); background: none !important; color: #F8F4EA !important; font: 800 15px/1 var(--display) !important; }
+.mkr2-p:has(.mkr2-el) { gap: 6px; } .mkr2-p:has(.mkr2-el) > b.mkr2-o { width: 54px; height: 54px; font-size: 26px; }
 .mkr2-p em.g { color: var(--gold); } .mkr2-p em.b { color: #8fc3f0; }
 .mkr2-r { display: flex; flex-direction: column; gap: 10px; min-width: 0; color: #13201A; }
 .mkr2-h { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -9273,14 +9292,14 @@ button.coin-pill { cursor: pointer; border: 0; }
 .es-side .tm-go { flex: none; height: 54px; margin: 0 0 4px; }
 .es-k > em.up { color: #7ED39A; } .es-k > em.dn { color: #F5A57F; }
 .es-ig { grid-column: 1; grid-row: 2; min-height: 0; border-radius: 18px; background: #141517; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; padding: 14px 14px 12px; }
-.ld-st button.es-ic { border-radius: 14px; background: none; color: #F3F1EA; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 7px; padding: 8px 0 10px; position: relative; min-width: 0; }
-.es-ic > em { font-style: normal; font: 800 19px/1 var(--display); color: #B9C9BF; white-space: nowrap; }
+.ld-st button.es-ic { border-radius: 14px; background: none; color: #F3F1EA; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 7px; padding: 8px 8px 10px; position: relative; min-width: 0; }
+.es-ic > em { font-style: normal; font: 800 17px/1 var(--display); color: #B9C9BF; white-space: nowrap; }
 .es-ic > i { width: 46px; border-radius: 8px 8px 3px 3px; background: rgba(243, 241, 234, .26); }
-.es-ic > b { font: 800 21px/1 var(--display); margin-top: 3px; }
+.es-ic > b { font: 800 19px/1 var(--display); margin-top: 3px; }
 .es-ic > small { font: 700 13px/1 var(--body); color: #9fb0a6; white-space: nowrap; } .es-ic > small.f { color: var(--gold); }
 .es-ic > u { position: absolute; top: 8px; text-decoration: none; font: 800 12px/1 var(--display); letter-spacing: .08em; color: #9fb0a6; }
 .ld-st button.es-ic.on { background: #F8F4EA; color: #13201A; box-shadow: 0 0 0 3px var(--gold); }
-.es-ic.on > em { color: #13201A; font-size: 22px; } .es-ic.on > i { background: var(--gold); box-shadow: inset 0 0 0 1.5px #b48a12; } .es-ic.on > small { color: #4A5A52; } .es-ic.on > small.f { color: #9a6a00; } .es-ic.on > u { color: #5d6b62; }
+.es-ic.on > em { color: #13201A; font-size: 18px; } .es-ic.on > i { background: var(--gold); box-shadow: inset 0 0 0 1.5px #b48a12; } .es-ic.on > small { color: #4A5A52; } .es-ic.on > small.f { color: #9a6a00; } .es-ic.on > u { color: #5d6b62; }
 .es-fill { display: block; height: 8px; border-radius: 4px; background: rgba(243, 241, 234, .14); } .es-fill u { display: block; height: 100%; border-radius: 4px; background: #F3F1EA; }
 
 /* Estádio fase 3: tela Ampliar, estádio em obra e as janelinhas da obra */
