@@ -81,7 +81,7 @@
   // porque o iPhone ignora o volume do <audio>: o volume baixo e o fade saem do ganho. Começa no primeiro toque (regra do
   // iPhone), some no jogo ao vivo (`.lv` na tela) e com o app fora da frente, e volta de onde parou. Chave própria
   // (climbix-musica), separada do Som. Faixa nova: põe o .mp3 em assets/musica/, o nome em M_LIST e roda craque_sw.py
-  const M_LIST = [];
+  const M_LIST = ['uk-garage.mp3', 'lounge.mp3']; // Pixabay, artista monume (licença Pixabay: uso comercial liberado)
   const M_VOL = 0.35;
   let mOn = true, mWant = -1, mGain = null, mEl = null, mOrd = [], mI = -1, mStop = null;
   try { mOn = localStorage.getItem('climbix-musica') !== 'off'; } catch (e) { /* fica ligada */ }
