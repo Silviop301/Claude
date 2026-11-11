@@ -108,7 +108,7 @@
     // MKEEP/PRK: quem marca e quem pressiona continuam os mesmos. PASS_V: velocidade do passe (1 = antiga).
     // SHOT_PRE: passada de preparo do chute (s); SHOT_DRAG: quanto o chute perde de força; GK_DIVE: o goleiro voa no fim.
     // No node (ferramentas) cada uma aceita variável de ambiente com o mesmo nome, para medir ajustes sem editar.
-    const _e = (typeof process !== 'undefined' && process.env) || {}, KEEP_O = +(_e.KEEP_O || 3.4), KEEP_L = +(_e.KEEP_L || 1.5), HOLD0 = +(_e.HOLD0 || 1.5), MKEEP = +(_e.MKEEP || 0.6), PRK = +(_e.PRK || 3), PASS_V = +(_e.PASS_V || 0.9), SHOT_PRE = +(_e.SHOT_PRE || 0.14), GK_DIVE = +(_e.GK_DIVE || 0.42), SHOT_DRAG = +(_e.SHOT_DRAG || 0.24), SBT = +(_e.SBT || 0.8), V_SPR = +(_e.V_SPR || 7.8), V_DRB = +(_e.V_DRB || 6.4), V_CALM = +(_e.V_CALM || 5.5), CALM0 = +(_e.CALM0 || 1.4), CALMK = +(_e.CALMK || 0.4), CALMG = +(_e.CALMG || 1), ACC_C = +(_e.ACC_C || 6), ACC_S = +(_e.ACC_S || 11), ACC_B = +(_e.ACC_B || 12), ACC_D = +(_e.ACC_D || 15), VTK = +(_e.VTK || 4), SUPP = +(_e.SUPP || 22), CLOSE = +(_e.CLOSE === undefined ? 55 : _e.CLOSE), CLOSE_V = +(_e.CLOSE_V || 1.08), DRB_R = +(_e.DRB_R === undefined ? 1 : _e.DRB_R), DRB_D = +(_e.DRB_D || 5.5), DRB_A = +(_e.DRB_A || 2.6), LIVRE = +(_e.LIVRE === undefined ? 0.14 : _e.LIVRE), LIVRE_P = +(_e.LIVRE_P || 0.5), LIVRE_L = +(_e.LIVRE_L || 9), LIVRE_X = +(_e.LIVRE_X || 1.3), LIVRE_LK = +(_e.LIVRE_LK || 0.4), LIVRE_LP = +(_e.LIVRE_LP || 0.7), LIVRE_E = +(_e.LIVRE_E === undefined ? 0.5 : _e.LIVRE_E), CLOSE_LD = +(_e.CLOSE_LD === undefined ? 0.7 : _e.CLOSE_LD), ATT_R = +(_e.ATT_R || 1), ATT_CD = +(_e.ATT_CD || 2.5), ATT_MAX = +(_e.ATT_MAX || 14), FXG_K = +(_e.FXG_K || 1.85), FXG_G = +(_e.FXG_G || 0.5), ATT_G = +(_e.ATT_G || 1.5);
+    const _e = (typeof process !== 'undefined' && process.env) || {}, KEEP_O = +(_e.KEEP_O || 3.4), KEEP_L = +(_e.KEEP_L || 1.5), HOLD0 = +(_e.HOLD0 || 1.5), MKEEP = +(_e.MKEEP || 0.6), PRK = +(_e.PRK || 3), PASS_V = +(_e.PASS_V || 0.9), SHOT_PRE = +(_e.SHOT_PRE || 0.14), GK_DIVE = +(_e.GK_DIVE || 0.42), SHOT_DRAG = +(_e.SHOT_DRAG || 0.24), SBT = +(_e.SBT || 0.8), V_SPR = +(_e.V_SPR || 7.8), V_DRB = +(_e.V_DRB || 6.4), V_CALM = +(_e.V_CALM || 5.5), CALM0 = +(_e.CALM0 || 1.4), CALMK = +(_e.CALMK || 0.4), CALMG = +(_e.CALMG || 1), ACC_C = +(_e.ACC_C || 6), ACC_S = +(_e.ACC_S || 11), ACC_B = +(_e.ACC_B || 12), ACC_D = +(_e.ACC_D || 15), VTK = +(_e.VTK || 4), SUPP = +(_e.SUPP || 22), CLOSE = +(_e.CLOSE === undefined ? 55 : _e.CLOSE), CLOSE_V = +(_e.CLOSE_V || 1.08), DRB_R = +(_e.DRB_R === undefined ? 1 : _e.DRB_R), DRB_D = +(_e.DRB_D || 5.5), DRB_T = +(_e.DRB_T || 0.75), DRB_A = +(_e.DRB_A || 1.8), LIVRE = +(_e.LIVRE === undefined ? 0.14 : _e.LIVRE), LIVRE_P = +(_e.LIVRE_P || 0.5), LIVRE_L = +(_e.LIVRE_L || 9), LIVRE_X = +(_e.LIVRE_X || 1.3), LIVRE_LK = +(_e.LIVRE_LK || 0.4), LIVRE_LP = +(_e.LIVRE_LP || 0.7), LIVRE_E = +(_e.LIVRE_E === undefined ? 0.5 : _e.LIVRE_E), CLOSE_LD = +(_e.CLOSE_LD === undefined ? 0.7 : _e.CLOSE_LD), ATT_R = +(_e.ATT_R || 1), ATT_CD = +(_e.ATT_CD || 2.5), ATT_MAX = +(_e.ATT_MAX || 14), FXG_K = +(_e.FXG_K || 1.85), FXG_G = +(_e.FXG_G || 0.5), ATT_G = +(_e.ATT_G || 1.5);
     let poss = 0, mode = o.t0 > 0 ? 'ko' : 'wait', modeT = 1.2, koSide = 0, hero = null, bias = [1, 1], mom = 0, momT = 0, runT = 2, defT = 0, clk = 0;
     let curT = o.t0 || 0, mClk = 0, bxT = 50, lastPasser = null, lastPassClk = -9, frozen = false, en = null, cv = null, g = null, W = 0, H = 0, dpr = 1, raf = 0, last = 0, alive = true;
     stRefresh();
@@ -517,9 +517,9 @@
       if (DRB_R > 0 && p.r !== 'GK' && p.d > 0.4 && !D && !dm && !lc && !p.dr && bx > 50 && bx < 96) {
         let mk = null, md = DRB_D; for (const op of opp) { if (op.r === 'GK' || op.stun > 0 || tf(s, op)[0] < bx + 0.5) continue; const d = dist(op, p); if (d < md) { md = d; mk = op; } } // o marcador pela frente mais perto
         if (mk && rnd() < DRB_R * (p.d > 0.6 ? 1 : 0.6) * cl(1 + qa(p, 'dri') * 2, 0.5, 1.6) * (1 - 0.5 * pat)) {
-          const [mx, my] = tf(s, mk), [wx, wy] = toW(s, cl(mx + 5, 2, 101), cl(my + (my > by ? -1 : 1) * 2.2 + gauss() * 0.6, 3, 65)); // sai por um lado dele e segue
+          const [mx, my] = tf(s, mk), [wx, wy] = toW(s, cl(mx + 3.5, 2, 101), cl(my + (my > by ? -1 : 1) * 2.2 + gauss() * 0.6, 3, 65)); // sai por um lado dele e segue
           DRIB.tenta = (DRIB.tenta || 0) + 1;
-          if (rnd() < cl(0.6 + (qa(p, 'dri') - qa(mk, 'def')) * 1.3 + (bias[s] - 1) * 0.6, 0.2, 0.8)) { mk.stun = 1.3; ball.carry = { x: wx, y: wy, t: 1.3 }; drStart(p, mk, wx, wy); emit('drible', s, p); }
+          if (rnd() < cl(0.6 + (qa(p, 'dri') - qa(mk, 'def')) * 1.3 + (bias[s] - 1) * 0.6, 0.2, 0.8)) { mk.stun = 1.3; ball.carry = { x: wx, y: wy, t: DRB_T }; drStart(p, mk, wx, wy); emit('drible', s, p); }
           else if (rnd() < 0.55) { why = 'drible'; setOwner(mk); emit('desarme', 1 - s, mk, p); }
           else { ball.hold = 0.35; p.vx *= 0.3; p.vy *= 0.3; } // o marcador fechou: ele segura a bola e procura outro caminho
           return;
@@ -604,7 +604,7 @@
       for (const op of opts) { const u = op.u * (1 + 0.28 * gauss() * p.risk) + 0.004 * gauss(); if (u > bu) { bu = u; best = op; } }
       if (best.type === 'shot') return shoot(p, best.kind, 0);
       if (best.type === 'carry') {
-        if (best.kind === 'drible') { if (dm || rnd() < best.p) { best.presser.stun = 1.3; ball.carry = { x: best.wx, y: best.wy, t: 1.1 }; drStart(p, best.presser, best.wx, best.wy); emit('drible', s, p); } else { why = 'drible'; setOwner(best.presser); emit('desarme', 1 - s, best.presser, p); } }
+        if (best.kind === 'drible') { if (dm || rnd() < best.p) { best.presser.stun = 1.3; ball.carry = { x: best.wx, y: best.wy, t: DRB_T }; drStart(p, best.presser, best.wx, best.wy); emit('drible', s, p); } else { why = 'drible'; setOwner(best.presser); emit('desarme', 1 - s, best.presser, p); } }
         else ball.carry = { x: best.wx, y: best.wy, t: 0.7 + rnd() * 0.6 };
         return;
       }
@@ -861,7 +861,7 @@
       if (k === 'drible' || k === 'conduz') {
         const [wx, wy] = toW(s, Math.min(bx + (k === 'drible' ? 9 : 14), 95), by + (34 - by) * 0.15);
         if (k === 'drible' && near) { near.x = p.x + (s ? -1.2 : 1.2); near.y = p.y + 0.6; near.stun = 1.4; }
-        ball.carry = { x: wx, y: wy, t: k === 'drible' ? 1.1 : 1.5 };
+        ball.carry = { x: wx, y: wy, t: k === 'drible' ? DRB_T : 1.5 };
         if (k === 'drible' && near) drStart(p, near, wx, wy);
       } else if (k === 'perde') { if (near) setOwner(near); }
       else if (k === 'passe') {
@@ -878,7 +878,7 @@
     // Pênalti (bola parada, fase 2): apito, quem está na área sai para a entrada dela e para fora da meia-lua (9,15 m da
     // marca), o goleiro fica na linha, o batedor da lista vai para a marca, corre e bate. O motor já decidiu: gol, defesa
     // (segura ou espalma no rebote), fora ou trave (rebote). A câmera chega perto na cobrança e volta depois do lance
-    let pen = null, camT = 0, camS = 0;
+    let pen = null, camT = 0, camS = 0, penBan = null; const PEN_BAN = 1.7;
     const PEN_EDGE = [[87.8, 26.2], [87.8, 41.8], [83.2, 34], [87.8, 22.8], [87.8, 45.2], [84.2, 24.5], [84.2, 43.5], [81.6, 29.5], [81.6, 38.5], [87.8, 19.4], [87.8, 48.6], [84.2, 21], [84.2, 47], [79, 34], [87.8, 16], [87.8, 52], [84.2, 17.7], [84.2, 50.3]];
     function penStart(e) {
       if (e.pen && e.pen.fk) return fkStart(e);
@@ -893,14 +893,18 @@
       ALL.filter(q => q !== tk && q.r !== 'GK' && !(q.side === s && q.r === 'CB') && !(q.side !== s && q.r === 'ST') && tf(s, q)[0] > 40).sort((a, b) => tf(s, b)[0] - tf(s, a)[0]).forEach(q => {
         const [qx, qy] = tf(s, q); let bi = -1, bd = 1e9; free.forEach((f, i) => { const d = Math.hypot(f[0] - qx, f[1] - qy); if (d < bd) { bd = d; bi = i; } });
         if (bi >= 0) { tg.set(q, toW(s, free[bi][0], free[bi][1] + gauss() * 0.3)); free.splice(bi, 1); } });
-      pen = { e, s, tk, gk, spot: { x: spot[0], y: spot[1] }, tg, ph: 0, t: 0 };
-      due = null; mode = 'pen'; stopWhy = 'Pênalti'; camT = 1e9; camS = s; ALL.forEach(q => { q.run = 0; q.go = 0; q.th = 0; });
+      pen = { e, s, tk, gk, spot: { x: spot[0], y: spot[1] }, tg, ph: 0, t: 0, ban: PEN_BAN }; penBan = { t: 0 };
+      if (typeof window !== 'undefined' && window.CRAQUE_SFX) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {}
+      due = null; mode = 'pen'; stopWhy = 'Pênalti'; camT = 0; camS = s; // o zoom espera o aviso (camStep: pen.ban) ALL.forEach(q => { q.run = 0; q.go = 0; q.th = 0; });
       ball.owner = ball.fly = ball.carry = null; if (ball.loose) ball.loose = null;
     }
     function penStep(dt) {
       if (pen.fk) return fkStep(dt);
       if (pen.ck) return ckStep(dt);
       const P = pen; P.t += dt; const { s, tk, gk, spot } = P, gl = toW(s, L - 0.4, 34);
+      // 0) o aviso (Silvio, 10/11: "pararam pra se posicionar e deu zoom sem indicar nada"): PÊNALTI com o apito na tela, todos
+      // parados e a câmera ainda aberta; só depois a arrumação e o zoom
+      if (P.ban > 0) { P.ban -= dt; P.t = 0; ALL.forEach(q => { q.tx = q.x; q.ty = q.y; q.sprint = 0; }); return; }
       // 1) apito: todos param um instante; 2) arrumação: a bola vai para a marca, cada um para a sua vaga
       ALL.forEach(q => { if (q === tk || q === gk) return; const t = P.tg.get(q); if (P.t < 0.8 || !t) { q.tx = q.x; q.ty = q.y; } else { q.tx = t[0]; q.ty = t[1]; q.sprint = dist(q, { x: t[0], y: t[1] }) > 8 ? 1 : 0; } });
       gk.tx = gl[0]; gk.ty = 34; gk.sprint = 0;
@@ -1074,7 +1078,7 @@
       ball.fly.dur = Math.max(1.05, dd / 24, dh / 7.2); ball.fly.loft = Math.max(ball.fly.loft || 0, 5);
       e.kick = true;
     }
-    function penAbort() { if (!pen) return; const gk = pen.gk; pen = null; camT = 0; spray = null; mode = 'play'; stopWhy = ''; setOwner(gk); }
+    function penAbort() { if (!pen) return; const gk = pen.gk; pen = null; penBan = null; camT = 0; spray = null; mode = 'play'; stopWhy = ''; setOwner(gk); }
     function whistle(why, taker, spot) { mode = 'falta'; modeT = 1.5; stopWhy = why; foulSpot = spot ? { x: spot.x, y: spot.y } : { x: ball.x, y: ball.y }; ball.owner = ball.fly = ball.loose = ball.carry = null; foulTo = taker;
       // quem sofreu está no chão: cobra o companheiro mais perto do lugar da falta
       if (taker && taker.down) { const sp = foulSpot, m = T[taker.side].filter(q => q !== taker && q.r !== 'GK' && !q.down && !isMe(q)).sort((a, b) => dist(a, sp) - dist(b, sp))[0]; if (m) foulTo = m; } }
@@ -1839,9 +1843,34 @@
     }
     let vig = null, cam = { z: 1, x: 0, y: 0, cl: 0 };
     // Câmera da bola parada: chega perto da área do pênalti e volta depois do lance (o resto do tempo, o campo todo)
+    // Aviso do pênalti: a faixa PÊNALTI entra no meio da tela com um apito que treme e solta ondas; some sozinha (tempo de tela)
+    function penBanner(k) {
+      const now = performance.now(); if (!penBan.w) penBan.w = now; const a = (now - penBan.w) / 1000;
+      if (!penBan.e && !(pen && pen.ban > 0)) penBan.e = now; // a arrumação começou (no 3× mais cedo): a faixa some em 0,3 s
+      const out = penBan.e ? (now - penBan.e) / 300 : 0; if (out >= 1 || a > 6) { penBan = null; return; }
+      const al = Math.max(0, Math.min(1, a * 6, 1 - out)), pop = a < 0.22 ? 0.6 + 0.4 * Math.sin(a / 0.22 * Math.PI / 2) : 1;
+      g.save(); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalAlpha = al;
+      g.font = '800 ' + Math.round(30 * k) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
+      const txt = 'PÊNALTI', tw = g.measureText(txt).width, iw = 34 * k, w = tw + iw + 34 * k, h = 50 * k, cx = W / 2, cy = H * 0.3;
+      g.translate(cx, cy); g.scale(pop, pop);
+      g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 10 * k; g.shadowOffsetY = 3 * k;
+      g.fillStyle = '#141517'; g.beginPath(); g.roundRect(-w / 2, -h / 2, w, h, 10 * k); g.fill();
+      g.shadowColor = 'transparent'; g.strokeStyle = '#F2C230'; g.lineWidth = 2 * k; g.stroke();
+      // o apito: corpo redondo + bocal, tremendo enquanto toca, com ondas saindo
+      const wx = -w / 2 + 14 * k + iw / 2, wob = a < 1.1 ? Math.sin(a * 46) * 0.16 : 0;
+      g.save(); g.translate(wx, 2 * k); g.rotate(-0.35 + wob);
+      g.fillStyle = '#F2C230'; g.beginPath(); g.arc(0, 0, 9 * k, 0, Math.PI * 2); g.fill();
+      g.fillRect(-1 * k, -9 * k, 17 * k, 7.5 * k);
+      g.fillStyle = '#141517'; g.beginPath(); g.arc(0, 0, 3.4 * k, 0, Math.PI * 2); g.fill(); g.fillRect(6 * k, -9 * k, 3 * k, 3 * k);
+      g.restore();
+      g.strokeStyle = '#F2C230'; g.lineCap = 'round'; g.lineWidth = 2 * k;
+      if (a < 1.2) for (let i = 0; i < 3; i++) { const ph = (a * 2.4 + i / 3) % 1; g.globalAlpha = al * (1 - ph); g.beginPath(); g.arc(wx + 9 * k, -6 * k, (6 + ph * 12) * k, -1.25, -0.25); g.stroke(); }
+      g.globalAlpha = al; g.fillStyle = '#F2C230'; g.fillText(txt, wx + iw / 2 + 8 * k, 1.5 * k);
+      g.restore();
+    }
     function camStep() {
       const now = performance.now(), dt = Math.min(0.1, (now - (cam.cl || now)) / 1000); cam.cl = now;
-      const on = (pen || clk < camT) && W > 200, gs = camS, [fx, fy] = toW(gs, L - 13, 34), tz = on ? 1.65 : 1;
+      const on = ((pen && !(pen.ban > 0)) || clk < camT) && W > 200, gs = camS, [fx, fy] = toW(gs, L - 13, 34), tz = on ? 1.65 : 1;
       const k = Math.min(1, dt * (on ? 2.2 : 1.6)); cam.z += (tz - cam.z) * k;
       const tx = on ? X(fx) : W / 2, ty = on ? Y(fy) : H / 2; cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k;
       if (!cam.x) { cam.x = W / 2; cam.y = H / 2; }
@@ -1932,6 +1961,7 @@
         if (ow) { g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.6 * k; g.beginPath(); g.arc(X(ow.x + (bdo ? bdo[0] : 0)), Y(ow.y + (bdo ? bdo[1] : 0)), 13.2 * k, 0, Math.PI * 2); g.stroke(); }
         g.fillStyle = 'rgba(255,255,255,.2)'; g.beginPath(); g.arc(bx, by - air, (9.5 + air / 12) * k, 0, Math.PI * 2); g.fill();
         g.fillStyle = '#fff'; g.strokeStyle = '#13201A'; g.lineWidth = 1.7 * k; g.beginPath(); g.arc(bx, by - air, (5.7 + air / 12) * k, 0, Math.PI * 2); g.fill(); g.stroke(); }
+      if (penBan) penBanner(k0);
       if (tip) tipCard(k0);
     }
     loop.n = 0;

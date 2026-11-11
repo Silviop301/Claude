@@ -152,32 +152,45 @@
     if (f) bn.scrollLeft = Math.max(0, f.offsetLeft - (lb ? lb.offsetWidth : 0) - 8); };
   // Lista das trocas do auxiliar (Silvio 2026-11-10: "tocar uma vez só e trocar todos"): uma linha por troca, todas
   // marcadas; tocar numa linha tira ou põe de volta, e um botão só faz as marcadas. L = [{ o, i, why, slot }]
+  // Titular escolhido: à direita, quem do banco joga na vaga, do maior geral para o menor (Silvio 2026-11-10); os da
+  // posição primeiro, depois quem sabe jogar ali. Até 5 linhas (cabe sem rolar); o banco segue embaixo para os outros
+  const candList = (out, slot, bench, ok) => { const L = bench.filter(p => ok(p) && fitsSlot(p, slot)).sort((a, b) => (b.pos === slot) - (a.pos === slot) || b.ovr - a.ovr || b.en - a.en).slice(0, 5);
+    return '<div class="tm-cl"><div class="tm-clh"><em>SAI</em><b>' + esc(last(out.n)) + '</b><button class="tm-clx" id="tm-clx" aria-label="Cancelar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
+      (L.length ? L.map(p => '<button class="tm-bp tm-cd" data-bp="' + p.id + '"><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + p.ovr + '</b><span><i>' + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + p.pos + '</small></span><u>' + Math.round(p.en) + '%</u></button>').join('')
+        : '<p class="tm-cl0">Ninguém da posição no banco.</p>') + '</div>'; };
   const auxRows = L => '<div class="ax-l">' + L.map((g, k) => '<button class="ax-r on" data-ax="' + k + '" aria-pressed="true"><em data-ln="' + lnOf(g.slot) + '">' + g.tag + '</em><span><b>' + esc(last(g.o.n)) + '</b><small>' + g.why + '</small></span><u>›</u><span><b>' + esc(last(g.i.n)) + '</b><small>' + g.i.ovr + '</small></span><i class="ax-ck"></i></button>').join('') + '</div>';
   const auxLbl = n => (n === 0 ? 'Nenhuma troca' : n === 1 ? 'Fazer a troca' : 'Fazer as ' + n + ' trocas');
   // Liga as linhas ao botão: devolve quais estão marcadas
   const auxBind = (w, btn) => { const on = () => [...w.querySelectorAll('.ax-r')].filter(b => b.classList.contains('on')).map(b => +b.dataset.ax);
     w.querySelectorAll('.ax-r').forEach(b => b.onclick = () => { sfx('tap'); b.classList.toggle('on'); b.setAttribute('aria-pressed', b.classList.contains('on')); const n = on().length; btn.textContent = auxLbl(n); btn.disabled = !n; });
     return on; };
-  // Arrastar do banco para o campo: o reserva sobe, uma cópia segue o dedo e o titular embaixo acende; soltar em cima
+  // Arrastar do banco (ou da lista da direita) para o campo: o reserva sobe, uma cópia segue o dedo e o titular embaixo
+  // fica vermelho com a etiqueta SAI; soltar em cima
   // dele faz a troca. Puxar de lado continua rolando o banco. onDrop(idDoReserva, vaga)
-  function benchDrag(root, onDrop) {
+  function benchDrag(root, onDrop, fits) {
     if (!root) return;
     root.querySelectorAll('.tm-bp:not(.dis)').forEach(b => {
       let x0 = 0, y0 = 0, pid = null, gh = null, over = null, dragged = false;
       const at = (cx, cy) => { const r = root.getBoundingClientRect(), k = r.width / root.offsetWidth || 1; return [(cx - r.left) / k, (cy - r.top) / k]; };
       const hit = (cx, cy) => { const el = document.elementFromPoint(cx, cy), d = el && el.closest('[data-xi]'); return d && root.contains(d) ? d : null; };
-      const end = () => { if (gh) gh.remove(); gh = null; if (over) over.classList.remove('drop'); over = null; pid = null; root.classList.remove('tm-drag'); b.classList.remove('lift'); };
+      const free = b.classList.contains('tm-cd');
+      const end = () => { if (gh) gh.remove(); gh = null; if (over) over.classList.remove('drop'); over = null; pid = null; root.classList.remove('tm-drag'); b.classList.remove('lift');
+        root.querySelectorAll('[data-dfit],[data-dfar]').forEach(d => { d.removeAttribute('data-dfit'); d.removeAttribute('data-dfar'); }); };
       b.addEventListener('pointerdown', e => { if (e.button > 0) return; x0 = e.clientX; y0 = e.clientY; pid = e.pointerId; dragged = false; try { b.setPointerCapture(pid); } catch (er) {} });
       b.addEventListener('pointermove', e => {
         if (e.pointerId !== pid) return;
         const dx = e.clientX - x0, dy = e.clientY - y0;
         if (!gh) {
-          if (dy > -12 || Math.abs(dy) < Math.abs(dx) * 0.6) { if (Math.abs(dx) > 20 && dy > -12) pid = null; return; }
+          if (free ? Math.hypot(dx, dy) < 12 : dy > -12 || Math.abs(dy) < Math.abs(dx) * 0.6) { if (!free && Math.abs(dx) > 20 && dy > -12) pid = null; return; }
           gh = document.createElement('div'); gh.className = 'tm-bp tm-ghost'; gh.innerHTML = b.innerHTML; root.appendChild(gh);
           root.classList.add('tm-drag'); b.classList.add('lift'); dragged = true;
+          // as vagas em que ele joga acendem; quem estiver embaixo do dedo vira "SAI"
+          if (fits) root.querySelectorAll('[data-xi]').forEach(d => d.setAttribute(fits(b.dataset.bp, +d.dataset.xi) ? 'data-dfit' : 'data-dfar', '1'));
         }
         const [px, py] = at(e.clientX, e.clientY); gh.style.left = px + 'px'; gh.style.top = py + 'px';
-        const d = hit(e.clientX, e.clientY); if (d !== over) { if (over) over.classList.remove('drop'); over = d; if (d) d.classList.add('drop'); }
+        const d = hit(e.clientX, e.clientY); if (d !== over) { if (over) over.classList.remove('drop'); over = d; if (d) d.classList.add('drop');
+          // o dedo tampa o titular: o nome de quem sai vai junto com a cópia, em cima dela
+          const nm = d && d.querySelector('.ld-dn b'); if (nm) gh.dataset.out = nm.textContent; else delete gh.dataset.out; }
         e.preventDefault();
       });
       b.addEventListener('pointerup', e => { if (e.pointerId !== pid) return; const d = gh && over, id = b.dataset.bp; end(); if (d) onDrop(id, +d.dataset.xi); });
@@ -378,7 +391,7 @@
       const dots = co.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: swap === i, attr: ' data-xi="' + i + '" data-pid="' + id + '"' + (selP ? (fitsSlot(selP, sl[i]) ? ' data-fit="1"' : ' data-far="1"') : ''), tag: S.coSlotLbl(co.form, i) }) : '').join('');
       const bstrip = bench.map((p, k) => benchChip(p, bench[k - 1], (c.avail(p) ? '' : ' dis') + (selB === p.id ? ' on' : '') + (swap !== null && c.avail(p) ? (fitsSlot(p, sl[swap]) ? ' can' : ' far') : ''), c.avail(p))).join('');
       const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b id="tm-' + k + '">' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
-      const title = swap !== null ? '<span class="tm-hint">Arraste do banco, ou toque em quem entra ou em outro titular</span>' : selB ? '<span class="tm-hint">Toque em quem sai</span>'
+      const title = swap !== null ? '<span class="tm-hint">Toque ou arraste quem entra, ou toque em outro titular</span>' : selB ? '<span class="tm-hint">Toque em quem sai</span>'
         : (vs ? '<b>x ' + esc(vs.short || vs.name) + '</b><small>' + (nx.home ? 'em casa' : 'fora') + ' · rodada ' + nx.round + '</small>' : '<b>' + esc(cl.short || cl.name) + '</b><small>escalação</small>') + LN_LEG;
       const play = toPlay && vs;
       // Dica do auxiliar no topo (Silvio 2026-11-09, opção A): uma por jogo, de estilo ou de formação, com o rosto dele; o
@@ -390,7 +403,7 @@
       show('<div class="tm"><div class="tm-h"><button class="tcr-back" id="tm-back" aria-label="Voltar">' + BK + '</button>' + title + pill + '</div>' +
         '<div class="ld-pitch tm-pitch">' + PITCH + dots + '</div>' +
         '<div class="tm-bench"><small>BANCO</small>' + bstrip + '</div>' +
-        '<div class="tm-side">' + pick('form', 'Formação', co.form) + pick('sty', 'Estilo', esc(S.CO_STY[co.style].name)) +
+        '<div class="tm-side' + (swap !== null ? ' cl' : '') + '">' + (swap !== null ? candList(by[co.xi[swap]], sl[swap], bench, c.avail) : '') + pick('form', 'Formação', co.form) + pick('sty', 'Estilo', esc(S.CO_STY[co.style].name)) +
         '<button class="tm-b" id="ld-fun">Funções</button><button class="tm-b" id="ld-bat">Batedores</button>' +
         '<button class="tm-go" id="' + (play ? 'ld-go' : 'ld-ok') + '">' + (play ? 'Jogar' : 'Pronto') + '</button></div></div>', st => {
         st.querySelectorAll('[data-xi]').forEach(b => b.onclick = () => {
@@ -403,7 +416,8 @@
         st.querySelectorAll('[data-bp]').forEach(b => b.onclick = () => { const id = b.dataset.bp; sfx('tap');
           if (swap !== null) return put(id, swap);
           selB = selB === id ? null : id; draw(); });
-        benchDrag(st.querySelector('.tm'), put); benchShow(st);
+        benchDrag(st.querySelector('.tm'), put, (id, i) => !!by[id] && fitsSlot(by[id], sl[i])); benchShow(st);
+        if (st.querySelector('#tm-clx')) st.querySelector('#tm-clx').onclick = () => { sfx('tap'); swap = null; draw(); };
         st.querySelectorAll('[data-tmk]').forEach(b => b.onclick = () => {
           sfx('tap'); const d = +b.dataset.d;
           if (b.dataset.tmk === 'sty') { const L = S.CO_STYLES; co.style = L[(L.indexOf(co.style) + d + L.length) % L.length]; st.querySelector('#tm-sty').textContent = S.CO_STY[co.style].name; if (tip && tip.kind === 'sty' && used !== S.coTipUsed(co, tip)) draw(); return; }
@@ -652,12 +666,12 @@
       const bstrip = bench.map((p, k) => { const ok = !!(s.subs && c.avail(p));
         return benchChip(p, bench[k - 1], (ok ? '' : ' dis') + (selB === p.id ? ' on' : '') + (idle && gIn.has(p.id) ? ' sug' : '') + (sel >= 0 && ok ? (fitsSlot(p, sl[sel]) ? ' can' : ' far') : ''), ok, true); }).join('');
       const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b>' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
-      const hint = sel >= 0 ? 'Toque em quem entra ou em outro titular' : selB ? 'Toque em quem sai' : '';
+      const hint = sel >= 0 ? (s.subs ? 'Toque ou arraste quem entra, ou toque em outro titular' : 'Toque em outro titular')  : selB ? 'Toque em quem sai' : '';
       const sc = esc(c.nm(m.home ? co.club : m.vs)).slice(0, 3).toUpperCase() + ' <u>' + m.gh + ' x ' + m.ga + '</u> ' + esc(c.nm(m.home ? m.vs : co.club)).slice(0, 3).toUpperCase();
       pop('<div class="tm ldl-tm"><div class="tm-h"><b>' + esc(T) + '</b><span class="ldl-sc">' + sc + '</span><small>' + S.coClock(m) + '</small>' + (hint ? '<span class="tm-hint">' + hint + '</span>' : LN_LEG) + '</div>' +
         '<div class="ld-pitch tm-pitch">' + PITCH + dots + '</div>' +
         '<div class="tm-bench"><small>BANCO<em>' + (s.subs ? U.D.plural(s.subs, 'troca', 'trocas') : 'sem trocas') + '</em></small>' + bstrip + '</div>' +
-        '<div class="tm-side">' + (half ? '<div class="ldl-talk2">' + Object.keys(S.CO_TALK).map(k => '<button data-tk="' + k + '"' + (talk === k ? ' class="on"' : '') + '>' + esc(S.CO_TALK[k].name) + '</button>').join('') + '</div>' : '') +
+        '<div class="tm-side' + (sel >= 0 && s.subs ? ' cl' : '') + '">' + (sel >= 0 && s.subs ? candList(by[s.xi[sel]], sl[sel], bench, c.avail) : '') + (half ? '<div class="ldl-talk2">' + Object.keys(S.CO_TALK).map(k => '<button data-tk="' + k + '"' + (talk === k ? ' class="on"' : '') + '>' + esc(S.CO_TALK[k].name) + '</button>').join('') + '</div>' : '') +
           pick('form', 'Formação', s.form) + pick('sty', 'Estilo', esc(S.CO_STY[s.style].name)) +
           '<button class="tm-b" id="ldl-aux">Auxiliar' + (nT || G.length || st.t === 'vermelho' ? '<i class="tm-dot">' + (st.t === 'vermelho' ? '!' : G.length || '') + '</i>' : '') + '</button>' +
           '<button class="tm-go" id="ldl-go">' + (half ? 'Começar o 2º tempo' : 'Seguir o jogo') + '</button></div></div>',
@@ -673,7 +687,8 @@
             if (sel >= 0) return doSub(s.xi[sel], id);
             selB = selB === id ? null : id; draw();
           });
-          if (s.subs) benchDrag(w.querySelector('.ldl-tm'), (id, i) => doSub(s.xi[i], id));
+          if (s.subs) benchDrag(w.querySelector('.ldl-tm'), (id, i) => doSub(s.xi[i], id), (id, i) => !!by[id] && fitsSlot(by[id], sl[i]));
+          if (w.querySelector('#tm-clx')) w.querySelector('#tm-clx').onclick = () => { sfx('tap'); sel = -1; draw(); };
           benchShow(w);
           w.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { sfx('tap'); talk = talk === b.dataset.tk ? null : b.dataset.tk; draw(); });
           w.querySelectorAll('[data-tmk]').forEach(b => b.onclick = () => {
