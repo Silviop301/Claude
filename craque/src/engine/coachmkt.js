@@ -23,6 +23,7 @@
     preR: 3, incFrom: 2, // a janela do começo vale nas 3 primeiras rodadas; em clube novo as propostas pelos seus só chegam na 3ª semana
     days: { pre: 10, mid: 6 }, // dias da janela: pré-temporada e meio do ano (antes da rodada da metade)
     pat: 3,           // paciência do presidente e do empresário (cada recusa gasta 1)
+    quase: 1 / 3,     // "Quase lá" no contrato e na renovação: chance de ele assinar mesmo assim (Silvio 2026-11-11)
     cut: [0.8, 1, 1.2], // atalhos da proposta: baixa, justa (o preço da ficha) e alta
     payPen: [0, 0.04, 0.08], // à vista, 2x, 3x: o presidente aceita um pouco menos parcelado
     counter: 0.8,     // a partir de 80% do que ele quer, contrapõe; abaixo, recusa
@@ -266,7 +267,7 @@
     const d = n.deal || { v: 0, pay: 0, tr: null }, now = p.club ? S.coMktNow(co, d) : 0;
     if (now > Math.max(0, f.verba)) return { k: 'verba' };
     // recusa do empresário não gasta dia (Silvio 2026-11-11: "não quero perder um dia"); só a bolinha de paciência
-    if (S.coMktMood(co, p, t).lvl < 4) { n.apat--; if (n.apat <= 0) { n.st = 'no'; return { k: 'no' }; } return { k: 'recusa' }; }
+    if (!S.coMktYes(co, p, t, n)) { n.apat--; if (n.apat <= 0) { n.st = 'no'; return { k: 'no' }; } return { k: 'recusa' }; }
     spend(co);
     // Fechado: paga a 1ª parcela, o resto vem a cada 4 rodadas; o da troca sai; o novo chega no banco
     if (now) { f.verba -= now; f.caixa -= now; f.ss.comp += now; }
@@ -295,6 +296,10 @@
   // escolhido e os anos que ele prefere; com isso o humor dá 4 (assina)
   S.coMktWants = (co, p, t) => { const T = S.coMktTerms(co, p), md = S.coMktMood(co, p, t);
     return { w: T.ask(t.role), y: T.want, role: t.role, lvl: md.lvl, wOk: t.w >= T.ask(t.role), yOk: t.y === T.want }; };
+  // Assina? "Deve aceitar" sempre; "Quase lá" 1 vez em 3 (Silvio 2026-11-11, `S.CO_MKT.quase`). Sorteio preso ao jogador,
+  // à tentativa e ao salário (sem gastar o sorteio da carreira; recarregar não muda a resposta)
+  S.coMktYes = (co, p, t, n) => { const l = S.coMktMood(co, p, t).lvl;
+    return l >= 4 || (l === 3 && hash(p.id + '|q|' + n.apat + '|' + t.w + '|' + t.y + '|' + t.role + '|' + (co.season || 0)) % 1000 < 1000 * (M.quase || 0)); };
   S.coMktRenNeg = (co, p) => { const m = S.coMkt(co); m.ren = m.ren || {}; return m.ren[p.id] || (m.ren[p.id] = { apat: M.pat, st: 'open' }); };
   S.coMktRenOk = (co, p) => p.ct <= M.renMax;
   // { k: 'signed' (p) | 'recusa' | 'no' | 'teto' | 'cedo' }
@@ -303,7 +308,7 @@
     if (n.st === 'no' || n.st === 'signed') return { k: n.st };
     if (!S.coMktRenOk(co, p)) return { k: 'cedo' };
     if (S.coMktFolha(co, p, t).pct > 100 && t.w > p.wage) return { k: 'teto' };
-    if (S.coMktMood(co, p, t).lvl < 4) { n.apat--; if (n.apat <= 0) { n.st = 'no'; return { k: 'no' }; } return { k: 'recusa' }; }
+    if (!S.coMktYes(co, p, t, n)) { n.apat--; if (n.apat <= 0) { n.st = 'no'; return { k: 'no' }; } return { k: 'recusa' }; }
     // os anos contam depois desta temporada (antes, renovar por 1 ano quem estava no último ano não mudava nada e ele saía)
     p.wage = t.w; p.ct = t.y + 1; p.role = ROLE[t.role].k; p.mo = Math.min(100, (p.mo === undefined ? 60 : p.mo) + 8); n.st = 'signed';
     return { k: 'signed', p };
