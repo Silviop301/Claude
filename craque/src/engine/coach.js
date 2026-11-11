@@ -758,7 +758,7 @@
           if (!q) return;
           cnt('of'); const p = s.squad.find(x => x.id === q[0]);
           m.ev.push({ m: m.min, t: 'impedimento', s: sd, p: p ? p.n : '', pos: slotsOf(s.form)[q[1]] });
-        } else if (r() < CO.inj / CO.mins * injW(s).t) { const k = injW(s).pick(r()), id = s.xi[k], p = s.squad.find(x => x.id === id); if (!p) return; p.out = r.int(1, 6) + 1; m.ev.push({ m: m.min, t: 'lesao', s: sd, p: p.n }); if (s.mine) stop = { t: 'lesao', p: p.n, id, k }; else autoSub(s, k); }
+        } else if (r() < CO.inj / CO.mins * injW(s).t) { const k = injW(s).pick(r()), id = s.xi[k], p = s.squad.find(x => x.id === id); if (!p) return; p.out = r.int(1, 6) + 1; m.ev.push({ m: m.min, t: 'lesao', s: sd, p: p.n }); if (s.mine) stop = { t: 'lesao', p: p.n, id, k }; else autoSub(s, k, true); }
       });
       // Os minutos jogados nos acréscimos ficam marcados nos lances (st: 45+st ou 90+st)
       if (m.st) for (let i = ev0; i < m.ev.length; i++) m.ev[i].st = m.st;
@@ -841,11 +841,12 @@
     const avg = ps.reduce((a, p) => a + p.en, 0) / ps.length, low = ps.filter(p => p.en < 70).sort((a, b) => a.en - b.en);
     return avg < 80 || low.length >= 3 ? { n: low.length, who: low.slice(0, 2).map(p => last(p.n)).join(', ') + (low.length > 2 ? '…' : ''), avg } : null;
   };
-  function autoSub(s, k) {
-    if (s.subs <= 0 || !s.bench.length) { s.xi[k] = null; return; }
+  // free: troca por lesão, que não gasta uma das 5 (Silvio 2026-11-11)
+  function autoSub(s, k, free) {
+    if ((s.subs <= 0 && !free) || !s.bench.length) { s.xi[k] = null; return; }
     const m = byId(s.squad);
     const inn = s.bench.slice().sort((a, b) => S.coSlotVal(m[b], s.form, k) - S.coSlotVal(m[a], s.form, k))[0];
-    s.bench = s.bench.filter(x => x !== inn); s.xi[k] = inn; s.subs--;
+    s.bench = s.bench.filter(x => x !== inn); s.xi[k] = inn; if (!free) s.subs--;
   }
   // Troca o cansado só se quem está no banco rende mais naquela vaga agora
   function tiredSubs(s) {
@@ -907,11 +908,13 @@
     if (k === 'duro') p.mute = co.season;
     return true;
   };
-  // Troca (na parada): sai um titular, entra um do banco na mesma vaga
+  // Troca (na parada): sai um titular, entra um do banco na mesma vaga. Até 5 por jogo; quem sai não volta (sai do
+  // banco também, fica em s.gone); tirar quem se machucou neste jogo não gasta uma das 5 (Silvio 2026-11-11)
+  S.coSubFree = (m, id) => { const p = m.us.squad.find(x => x.id === id); return !!(p && p.out > 0); };
   S.coSub = function (co, m, outId, inId) {
-    const s = m.us, k = s.xi.indexOf(outId);
-    if (s.subs <= 0 || k < 0 || !s.bench.includes(inId)) return false;
-    s.xi[k] = inId; s.bench = s.bench.filter(x => x !== inId); s.subs--;
+    const s = m.us, k = s.xi.indexOf(outId), free = S.coSubFree(m, outId);
+    if ((s.subs <= 0 && !free) || k < 0 || !s.bench.includes(inId)) return false;
+    s.xi[k] = inId; s.bench = s.bench.filter(x => x !== inId); if (!free) s.subs--;
     s.gone = (s.gone || []).concat([outId]);
     return true;
   };
@@ -1089,7 +1092,7 @@
   // O auxiliar troca quem caiu (lesão) e os muito cansados: o que o robô e o "resumir" usam
   S.coAutoStop = function (co, m) {
     const s = m.us, st = m.stop;
-    if (st && st.t === 'lesao') { const k = s.xi.indexOf(st.id); if (k >= 0) autoSub(s, k); }
+    if (st && st.t === 'lesao') { const k = s.xi.indexOf(st.id); if (k >= 0) autoSub(s, k, true); }
     if (m.min >= 60) tiredSubs(s);
   };
   // Joga o resto do jogo sem parar (o auxiliar decide nas paradas)
