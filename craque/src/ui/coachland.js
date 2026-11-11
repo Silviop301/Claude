@@ -1832,16 +1832,49 @@
       const ov = st.querySelector('#lde-of'); if (ov) ov.onclick = () => { sfx('tap'); recebida(S.coMktOfferFor(co, q), me); };
     });
   }
-  function trofeus() {
-    const c = C(), co = c.co;
-    pop(popHead('Sala de troféus', co.titles.length ? 'O que você ganhou como técnico.' : 'Ainda vazia. O primeiro título entra aqui.') + '<div class="ld-pb col"><div class="ld-scroll">' +
-      (co.titles.length ? co.titles.map(t => '<div class="ld-cand">' + crest(t.club, 'ld-cr') + '<span><b>' + esc(t.name) + '</b><small>' + (U.YEAR0 + t.s) + ' · ' + esc(club(t.club).name) + '</small></span></div>').join('') : '<p class="ld-none">Nenhum título por enquanto.</p>') + '</div></div>', 'Sala de troféus', null, 'w560');
+  // Troféus e Hall (2026-11-11): telas cheias no padrão do Estádio (painel à esquerda, números à direita), no lugar das janelinhas
+  const TF_BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+  const taca = (name, h) => window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY('league', h, name) : '';
+  function trofeus(pg) {
+    const c = C(), co = c.co, cl = club(co.club), ss = co.ss, T = co.titles.slice().reverse(), n = T.length, PER = 4;
+    const pages = Math.max(1, Math.ceil(n / PER)); pg = Math.max(0, Math.min(pages - 1, pg || 0));
+    const ups = co.hist.filter(h => h.up).length, pos = ss ? S.coPos(co) : 0, left = ss ? ss.rounds.length - ss.i : 0;
+    const clubs = T.reduce((a, t) => (a.indexOf(t.club) < 0 ? a.concat(t.club) : a), []).length;
+    const shelf = n ? '<div class="tf2-sh">' + T.slice(pg * PER, pg * PER + PER).map(t => '<div class="tf2-c">' + taca(t.name, 104) + '<b>' + esc(t.name) + '</b><small>' + crest(t.club, 'tf2-cr') + '<span>' + (U.YEAR0 + t.s) + ' · ' + esc(club(t.club).short || club(t.club).name) + '</span></small></div>').join('') + '</div>' +
+        (pages > 1 ? '<div class="mk-pg tf2-pg"><button class="mk-ar" data-pg="-1"' + (pg ? '' : ' disabled') + ' aria-label="Mais novos">' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar" data-pg="1"' + (pg < pages - 1 ? '' : ' disabled') + ' aria-label="Mais antigos">' + MK_R + '</button></div>' : '')
+      : '<div class="tf2-no">' + (ss ? taca(ss.name, 118) : '') + '<b>A primeira taça entra aqui</b>' + (ss ? '<small>' + esc(ss.name) + '</small>' : '') + '</div>';
+    show('<div class="es tf2"><div class="tm-h"><button class="tcr-back" id="tf2-back" aria-label="Voltar">' + TF_BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>Troféus</b><small>' + esc(co.name) + '</small></div>' +
+      '<div class="es-pn tf2-pn">' + shelf + '</div>' +
+      '<div class="es-side">' +
+        '<div class="es-k"><small>TÍTULOS</small><b' + (n ? ' class="gd"' : '') + '>' + n + '</b><em>' + (n ? 'o último em ' + (U.YEAR0 + T[0].s) + (clubs > 1 ? ' · ' + clubs + ' clubes' : '') : 'nenhum por enquanto') + '</em></div>' +
+        '<div class="es-k"><small>ACESSOS</small><b>' + ups + '</b><em>' + (ups ? (ups > 1 ? 'subidas de divisão' : 'subida de divisão') : 'nenhum por enquanto') + '</em></div>' +
+        (ss ? '<div class="es-k"><small>NA DISPUTA</small><b class="tf2-lg">' + esc(ss.name) + '</b><em' + (pos === 1 ? ' class="up"' : '') + '>hoje ' + pos + 'º' + (left > 0 ? (left > 1 ? ' · faltam ' + left + ' rodadas' : ' · falta 1 rodada') : '') + '</em></div>' : '') +
+      '</div></div>', st => {
+      st.querySelector('#tf2-back').onclick = () => { sfx('tap'); clube(); };
+      st.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => { sfx('tap'); trofeus(pg + (+b.dataset.pg)); });
+    });
   }
   function hall() {
-    const c = C(), co = c.co;
-    pop(popHead('Hall do técnico', esc(co.name) + ' · fama ' + co.fame + ' (' + c.FAME_TXT(co.fame) + ')') + '<div class="ld-pb col"><div class="ld-scroll">' +
-      (S.coEstLegado ? S.coEstLegado(co) : []).map(g => '<div class="ld-cand">' + crest(g.club, 'ld-cr') + '<span><b>Estádio · ' + esc(club(g.club).short || club(g.club).name) + ' · ' + milK(g.cap0) + ' → ' + milK(g.cap) + '</b><small>' + U.D.plural(g.nob, 'obra sua', 'obras suas') + (g.best ? ' · recorde de ' + milK(g.best) : '') + '</small></span></div>').join('') +
-      (co.hist.length ? co.hist.slice().reverse().map(h => '<div class="ld-cand">' + crest(h.club, 'ld-cr') + '<span><b>' + (U.YEAR0 + h.s) + ' · ' + esc(club(h.club).short || club(h.club).name) + ' · ' + h.pos + 'º</b><small>' + esc(h.league) + (h.won ? ' · campeão' : h.up ? ' · subiu' : h.down ? ' · caiu' : '') + (h.sacked ? ' · demitido' : h.met ? ' · meta cumprida' : ' · meta não cumprida') + '</small></span></div>').join('') : '<p class="ld-none">A primeira temporada ainda está em andamento.</p>') + '</div></div>', 'Hall do técnico', null, 'w560');
+    const c = C(), co = c.co, cl = club(co.club), ss = co.ss, H = co.hist.slice().reverse(), f = Math.max(0, Math.min(100, Math.round(co.fame)));
+    const nx = [20, 40, 60, 80].find(v => v > f), now = ss && !co.hist.some(h => h.s === co.season);
+    const tag = h => h.sacked ? '<em class="dn">demitido</em>' : h.won ? '<em class="gd">campeão</em>' : h.up ? '<em class="up">subiu</em>' : h.down ? '<em class="dn">caiu</em>' : h.met ? '<em class="up">meta cumprida</em>' : '<em>meta não cumprida</em>';
+    const row = (s, id, lg, pos, t, cc) => '<div class="hl2-r' + (cc || '') + '"><i>' + (U.YEAR0 + s) + '</i><span>' + crest(id, 'hl2-cr') + '<b>' + esc(club(id).short || club(id).name) + '</b><small>' + esc(lg) + '</small></span><u>' + pos + 'º</u>' + t + '</div>';
+    const met = H.filter(h => h.met).length, cls = H.reduce((a, h) => (a.indexOf(h.club) < 0 ? a.concat(h.club) : a), now ? [co.club] : []).length;
+    const best = H.filter(h => h.won)[0] || H.slice().sort((a, b) => a.pos - b.pos || b.s - a.s)[0];
+    const leg = (S.coEstLegado ? S.coEstLegado(co) : [])[0];
+    show('<div class="es hl2"><div class="tm-h"><button class="tcr-back" id="hl2-back" aria-label="Voltar">' + TF_BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>Hall do técnico</b><small>' + esc(co.name) + '</small></div>' +
+      '<div class="hl2-m"><div class="hl2-fm"><span><small>FAMA</small><b>' + c.FAME_TXT(f) + '</b></span><span class="hl2-fb"><i><u style="width:' + f + '%"></u></i><small>' + (nx ? esc(c.FAME_TXT(nx)) + ' aos ' + nx : 'no topo da carreira') + '</small></span><em>' + f + '</em></div>' +
+        '<div class="hl2-l"><div class="hl2-h"><span>ANO</span><span>CLUBE</span><span>POS</span><span>COMO FOI</span></div>' +
+          (now ? row(co.season, co.club, ss.name, S.coPos(co), '<em class="nw">em andamento</em>', ' nw') : '') +
+          H.map(h => row(h.s, h.club, h.league, h.pos, tag(h))).join('') + '</div></div>' +
+      '<div class="es-side">' +
+        '<div class="es-k"><small>TEMPORADAS</small><b>' + (co.season + 1) + '</b><em>' + U.D.plural(cls, 'clube', 'clubes') + '</em></div>' +
+        '<div class="es-k"><small>METAS CUMPRIDAS</small>' + (H.length ? '<b>' + met + '<u> de ' + H.length + '</u></b>' : '<b>0</b>') + '<em>' + (H.length ? (H.filter(h => h.sacked).length ? U.D.plural(H.filter(h => h.sacked).length, 'demissão', 'demissões') : 'nenhuma demissão') : 'a primeira sai no fim do ano') + '</em></div>' +
+        (leg ? '<div class="es-k"><small>ESTÁDIO · ' + esc((club(leg.club).short || club(leg.club).name).toUpperCase()) + '</small><b class="hl2-st">' + milK(leg.cap0).replace(' mil', '') + ' › ' + milK(leg.cap) + '</b><em>' + U.D.plural(leg.nob, 'obra sua', 'obras suas') + (leg.best ? ' · recorde ' + milK(leg.best) : '') + '</em></div>'
+          : '<div class="es-k"><small>MELHOR CAMPANHA</small>' + (best ? '<b' + (best.won ? ' class="gd"' : '') + '>' + (best.won ? 'campeão' : best.pos + 'º lugar') + '</b><em>' + (U.YEAR0 + best.s) + ' · ' + esc(best.league) + '</em>' : '<b>' + S.coPos(co) + 'º lugar</b><em>hoje · ' + esc(ss ? ss.name : '') + '</em>') + '</div>') +
+      '</div></div>', st => {
+      st.querySelector('#hl2-back').onclick = () => { sfx('tap'); clube(); };
+    });
   }
 
   // ---------- Fim da temporada deitado (41): o lugar, a meta, os números do ano, os destaques e o que vem ----------
