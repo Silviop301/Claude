@@ -1656,7 +1656,7 @@
     const X = x => PAD + (mir() ? L - x : x) / L * (W - 2 * PAD), Y = y => PAD + y / WD * (H - 2 * PAD);
     function size() {
       if (!cv) return;
-      const r = cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1;
+      const r = U.box ? U.box(cv) : cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1;
       dpr = Math.min(2, window.devicePixelRatio || 1);
       W = Math.max(1, r.width / z); H = Math.max(1, r.height / z);
       cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
@@ -1795,7 +1795,7 @@
     }
     function onTap(ev) {
       if (!cv) return;
-      const rc = cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1, px = (ev.clientX - rc.left) / z, py = (ev.clientY - rc.top) / z;
+      const rc = U.box ? U.box(cv) : cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1, [ex, ey] = U.pt ? U.pt(ev.clientX, ev.clientY) : [ev.clientX, ev.clientY], px = (ex - rc.left) / z, py = (ey - rc.top) / z;
       let best = null, bd = 22; ALL.forEach(p => { const d = Math.hypot(X(p.x) - px, Y(p.y) - py); if (d < bd) { bd = d; best = p; } });
       tip = best ? { p: best, at: Date.now() } : null;
       if (best && o.onPick) o.onPick(best.side, best.inf, best.k); // a tela abre o jogador tocado (Treinador deitado)
@@ -2048,7 +2048,7 @@
       if (!alive) return;
       if (!cv || !cv.isConnected) return; // a tela trocou (intervalo, fim): para até o próximo attach
       const dt = Math.min(0.2, (ts - (last || ts)) / 1000) * (o.speed ? o.speed() : 1); last = ts; // até 5 quadros por segundo o campinho acompanha o relógio sozinho
-      if (W < 60 || H < 40 || ++loop.n % 30 === 0) { const r = cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1; if (Math.abs(r.width / z - W) > 1 || Math.abs(r.height / z - H) > 1) size(); }
+      if (W < 60 || H < 40 || ++loop.n % 30 === 0) { const r = U.box ? U.box(cv) : cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1; if (Math.abs(r.width / z - W) > 1 || Math.abs(r.height / z - H) > 1) size(); }
       raf = requestAnimationFrame(loop); // antes de tudo: um erro da tela num aviso do campinho não pode parar o campinho
       try {
         if (!frozen && !document.hidden) { const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
