@@ -266,7 +266,7 @@
     const html = '<div class="hl hl-x' + (so ? ' hl-so' : '') + '"><b class="hl-logo">CLIMBIX</b>' +
       (U.novidadesLand && !so ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.VERSION + '">' + U.emo('📣', 'md') + '<b>' + U.VERSION + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '') + // notas de versão (settings.js); o pontinho some depois de abrir
       '<div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') + '</div>' +
-      cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div></div>';
+      cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div>' + discHtml() + '</div>';
     U.LD.show(html, st => {
       st.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.hl; if (k === 'settings' && U.settingsLand) return U.settingsLand(home); if (k === 'profile' && U.profileLand) return U.profileLand(home); U.ldOff(); if (k === 'settings') return U.settings ? U.settings() : null; (U[k] || home)(); });
       bindSaves(st);
@@ -277,11 +277,43 @@
         if (!sl.some(Boolean)) { U.ldOff(); return begin(m, 0); }
         landMode(m);
       });
+      discBind(st);
       if (st.querySelector('#hl-nv')) st.querySelector('#hl-nv').onclick = () => { sfx('tap'); U.novidadesLand(home); };
       if (st.querySelector('#hl-coins') && U.LD.loja) st.querySelector('#hl-coins').onclick = () => { sfx('tap'); U.LD.loja(0, home); };
       if (st.querySelector('#hl-packs')) st.querySelector('#hl-packs').onclick = () => { sfx('tap'); U.ldOff(); U.openPacks ? U.openPacks(U.home) : (U.packsScreen && U.packsScreen()); };
     }, 'O Climbix é jogado com o celular deitado.');
     U.installHomeBind(); // tutorial de instalar: na home deitada abre com o celular em pé (install.js)
+  }
+  // Disco da música (2026-11-11, Silvio: "a música rolando desde a home, um disco girando no canto que indique a música"):
+  // canto de baixo à direita, gira enquanto toca; tocar liga/desliga a música (a mesma chave dos Ajustes) e mostra o nome
+  // da faixa ao lado por 4 s, que também aparece sozinho quando a faixa troca. A música já começa no primeiro toque (sound.js)
+  const DISC_SVG = '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="23" fill="#151617"/><circle cx="24" cy="24" r="19" fill="none" stroke="#2C2E31" stroke-width="1.2"/><circle cx="24" cy="24" r="15" fill="none" stroke="#2C2E31" stroke-width="1.2"/><path d="M24 3a21 21 0 0 1 18 10" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="2.4" stroke-linecap="round"/><circle cx="24" cy="24" r="9" fill="#F2C230"/><circle cx="24" cy="24" r="2.4" fill="#151617"/></svg>';
+  function discHtml() {
+    const M = window.CRAQUE_MUSIC;
+    if (!M || !M.has) return '';
+    return '<div class="hl-dk' + (M.on ? '' : ' off') + '" id="hl-dk"><span class="hl-dk-t" aria-live="polite"></span><button class="hl-dk-b" id="hl-dk-b" aria-label="Música">' + DISC_SVG + '<i></i></button></div>';
+  }
+  let discOff = null, discT = null;
+  function discBind(st) {
+    const box = st.querySelector('#hl-dk'), M = window.CRAQUE_MUSIC;
+    if (!box || !M) return;
+    const lbl = box.querySelector('.hl-dk-t');
+    let shown = '';
+    const name = () => { const t = M.title; return M.on ? (t ? '<b>' + esc(t[0]) + '</b>' + (t[1] ? '<small>' + esc(t[1]) + '</small>' : '') : '<b>Música</b><small>toque para começar</small>') : '<b>Música desligada</b><small>toque para ligar</small>'; };
+    const say = () => { lbl.innerHTML = name(); box.classList.add('say'); clearTimeout(discT); discT = setTimeout(() => box.classList.remove('say'), 4000); };
+    const paint = () => {
+      if (!document.body.contains(box)) { window.removeEventListener('climbix-musica', paint); return; }
+      box.classList.toggle('off', !M.on);
+      box.classList.toggle('spin', M.state === 'tocando');
+      const tr = M.track;
+      if (tr && tr !== shown && M.on) { shown = tr; say(); }
+    };
+    if (discOff) window.removeEventListener('climbix-musica', discOff);
+    discOff = paint;
+    window.addEventListener('climbix-musica', paint);
+    box.querySelector('#hl-dk-b').onclick = () => { M.toggle(); shown = M.track; paint(); say(); };
+    paint();
+    setTimeout(paint, 900); // a música começa no toque que abriu a home: o estado chega logo depois
   }
   function bindSaves(w) {
     w.querySelectorAll('[data-vg]').forEach(b => b.onclick = () => {

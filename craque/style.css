@@ -9670,3 +9670,17 @@ button.coin-pill { cursor: pointer; border: 0; }
 body:has(> .tc-ov) > .pay-ty { visibility: hidden; }
 /* Continuar da home: o nome encurta, o ano da carreira nunca é cortado (Silvio, 11/11) */
 .hl-go small { display: flex; overflow: visible; } .hl-go small span { min-width: 0; overflow: hidden; text-overflow: ellipsis; } .hl-go small i { flex: none; font-style: normal; white-space: pre; }
+
+/* Disco da música na home deitada (2026-11-11): canto de baixo à direita, gira enquanto toca, nome da faixa ao lado */
+.hl-dk { position: absolute; right: 16px; bottom: 14px; display: flex; align-items: center; gap: 10px; z-index: 3; }
+.ld-st button.hl-dk-b { position: relative; width: 52px; height: 52px; padding: 0; border-radius: 50%; background: none; border: 0; box-shadow: 0 4px 12px rgba(0,0,0,.35); }
+.hl-dk-b svg { width: 52px; height: 52px; display: block; animation: hlDk 3.2s linear infinite; animation-play-state: paused; }
+.hl-dk.spin .hl-dk-b svg { animation-play-state: running; }
+.hl-dk.off .hl-dk-b svg { opacity: .45; }
+.hl-dk.off .hl-dk-b i { position: absolute; left: 50%; top: 50%; width: 58px; height: 3px; margin: -1.5px 0 0 -29px; background: #E3ECE6; border-radius: 2px; transform: rotate(-45deg); box-shadow: 0 0 0 2px #0D2E21; }
+.hl-dk-t { display: flex; flex-direction: column; align-items: flex-end; padding: 6px 12px; border-radius: 12px; background: var(--panel, #141517); color: #F3F1EA; opacity: 0; transform: translateX(8px); transition: opacity .3s, transform .3s; pointer-events: none; white-space: nowrap; }
+.hl-dk.say .hl-dk-t { opacity: 1; transform: none; }
+.hl-dk-t b { font-size: 14px; font-weight: 800; line-height: 1.2; }
+.hl-dk-t small { font-size: 12px; color: #A9B7AF; line-height: 1.2; }
+@keyframes hlDk { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .hl-dk-b svg { animation: none; } }
