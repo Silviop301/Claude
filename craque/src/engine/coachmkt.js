@@ -75,8 +75,10 @@
   };
   // O titular da posição: o mais forte do seu elenco nela
   S.coMktStarter = (co, pos) => co.squad.filter(p => p.pos === pos).sort((a, b) => b.ovr - a.ovr)[0] || null;
-  // Relatórios que o olheiro tem: a sua liga ele já conhece (1); depois, os que você pediu
-  S.coMktReps = (co, p) => { const m = S.coMkt(co), r = m.rep[p.id] || 0; return Math.max(r, p.lg === S.coLeague(co) ? 1 : 0); };
+  // Relatórios que o olheiro tem: todo mundo já vem com 1; depois, os que você pediu
+  // Desde 11/11 o 1º relatório vale para todo mundo, de qualquer liga (Silvio: pagar a avaliação inicial de cada um de fora
+  // acabava com o caixa); o 2º e o 3º seguem pagos, do exterior pelo dobro
+  S.coMktReps = (co, p) => { const m = S.coMkt(co), r = m.rep[p.id] || 0; return Math.max(r, 1); };
   S.coLeague = co => D.CLUB_BY_ID[co.club].league;
   // piso de R$ 10 mil (o mesmo da pedida, r10k): garoto fraco de salário 0 saía na lista como "R$ 0" com clube
   S.coMktPrice = p => (p.club ? Math.max(10000, S.coValue(p)) : 0);
