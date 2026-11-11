@@ -9498,3 +9498,9 @@ button.coin-pill { cursor: pointer; border: 0; }
 /* Confirmar gasto de moedas (coinAsk, 2026-11-11) */
 .ca-pop .ca-n { display: flex; align-items: center; gap: 8px; font: 700 17px/1.2 var(--body); }
 .ca-pop .ca-n svg { width: 30px; height: 30px; flex: none; } .ca-pop .ca-n b { font: 800 30px/1 var(--display); color: var(--gold); }
+
+/* Cláusula de venda futura em Finanças > A seguir (2026-11-11) */
+.ldf-li.ldf-cl > span small { margin-left: 6px; font: 700 12px var(--body); color: #9fb0a6; } .ldf-li.ldf-cl > b { color: var(--gold); }
+
+/* Cláusula de venda futura em Finanças > A seguir (2026-11-11) */
+.fn2-li.fn2-cl > span small { margin-left: 6px; font: 700 12px var(--body); color: #9fb0a6; } .fn2-li.fn2-cl > b { color: var(--gold); }
