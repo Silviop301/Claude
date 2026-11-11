@@ -6,7 +6,7 @@
 (function () {
   const U = window.CRAQUE_UI;
   const { S, sfx, esc, club, crest } = U;
-  const W = 844, H = 390;
+  const W = 844, H = 390, DESK_K = 1.7; // DESK_K: maior escala do palco no computador (1435×663 px na tela)
   const on = () => true; // o Treinador é sempre deitado
   // Som de cada botão do palco (Silvio, 11/11: "muito agudo, a maioria vai ser mais grave"): voltar, fechar e cancelar = back
   // (mais grave), a ação principal (dourado, confirmar) = ok (o único mais agudo), o resto = tap
@@ -47,7 +47,10 @@
     // Área segura (entalhe e ilha do iPhone deitado): vem do padding do #ld. As telas não apertam (816×366 de conteúdo, como nos
     // desenhos): a escala diminui até o conteúdo caber entre os dois lados, e o palco cresce com a sobra para cobrir a tela inteira
     const cs = getComputedStyle(el), sx = Math.max(parseFloat(cs.paddingLeft) || 0, parseFloat(cs.paddingRight) || 0), sy = parseFloat(cs.paddingTop) || 0;
-    const k = Math.max(.05, Math.min(vw / W, vh / H, (vw - 2 * sx) / (W - 28), (vh - 2 * sy) / (H - 24)));
+    let k = Math.max(.05, Math.min(vw / W, vh / H, (vw - 2 * sx) / (W - 28), (vh - 2 * sy) / (H - 24)));
+    // Monitor grande com mouse (Silvio, 2026-11-11, 32" 2K: "tá muito grande"): o palco crescia até 3× e cada botão ficava enorme.
+    // No computador o palco para em DESK_K× o desenho de 844×390 (contando o zoom do html.desk), centrado; a sobra vira fundo
+    if (document.documentElement.classList.contains('desk')) k = Math.min(k, DESK_K / ((U.zk && U.zk()) || 1));
     const ex = Math.ceil(Math.max(0, vw / k - W) / 2) + 1, ey = Math.ceil(Math.max(0, vh / k - H) / 2) + 1; // sobra de cada lado em px do palco, com 1 a mais para a borda não deixar fio
     el.style.setProperty('--ldw', (W + 2 * ex) + 'px'); el.style.setProperty('--ldh', (H + 2 * ey) + 'px');
     el.style.setProperty('--ldpx', (14 + ex) + 'px'); el.style.setProperty('--ldpy', (12 + ey) + 'px');
