@@ -7434,6 +7434,14 @@ body.ld-on #ld { display: block; }
 .ld-turn-c b { font: 800 26px/1.1 var(--display); }
 .ld-turn-c small { font-size: 15px; color: var(--tx-2); }
 .ld-turn-c .btn { margin-top: 8px; width: auto; padding: 10px 22px; }
+.ld-turn-c small.ld-rot-s { font-size: 13px; color: var(--tx-3, var(--tx-2)); margin-top: -4px; }
+/* Tela girada (coachland.js rot()): celular em pé com a rotação travada; a página inteira gira 90° e vira deitada. Tudo que é fixo
+   (palco, popups, avisos) usa o body girado como tela. Área segura: a esquerda do jogo é o topo do celular (entalhe), etc. */
+html.rot, html.rot body { overflow: hidden; }
+html.rot body { position: fixed; left: 0; top: 0; margin: 0; width: var(--rw); height: var(--rh); min-height: 0; transform-origin: 0 0; transform: translateX(var(--rx)) rotate(90deg); }
+html.rot body::after { display: none; }
+html.rot .tm-bench { touch-action: none; } /* o navegador lê pan-x na tela (de lado = para cima no palco): o banco rola pelo benchDrag */
+html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px) env(safe-area-inset-top, 0px); }
 @keyframes ld-rot { 0%, 30% { transform: rotate(0); } 55%, 85% { transform: rotate(-90deg); } 100% { transform: rotate(0); } }
 .ld-st button:not(.btn) { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; padding: 0; -webkit-tap-highlight-color: transparent; }
 .ld-st small { font-size: inherit; }
@@ -7632,7 +7640,8 @@ body.ld-on #ld { display: block; }
 .ldl-sb > em { font: 800 26px/1 var(--display); font-style: normal; } .ldl-sb > em i { font-size: 13px; font-style: normal; color: var(--tx-3); }
 .ldl-clk { background: #D8404A; color: #FFF; border-radius: 6px; padding: 2px 6px; font: 800 13px var(--display); } .ldl-clk i { display: none; }
 .ldl-sb .lv-crd { display: none; }
-.ldl-sb .ldl-kit { width: 13px; height: 13px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px rgba(255,255,255,.85); margin: 0 -2px; }
+.ldl-sb .ldl-kit { display: block; flex: none; width: 17px; height: 15px; margin: 0 -1px; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 .5px #fff); }
+.ldl-sb .ldl-kit i { display: block; width: 100%; height: 100%; clip-path: polygon(30% 0, 40% 9%, 60% 9%, 70% 0, 100% 18%, 88% 42%, 78% 36%, 78% 100%, 22% 100%, 22% 36%, 12% 42%, 0 18%); }
 .ldl-side { width: 168px; flex: none; display: flex; flex-direction: column; gap: 8px; }
 /* Último lance (campo limpo, 2026-11-07): só a linha mais nova do relato, em cartão no topo do painel */
 /* Lances do ao vivo: lista rolável, o último em cima (Silvio, 2026-11-10); cada lance é a frase com o nome completo em até duas
@@ -7651,7 +7660,7 @@ body.ld-on #ld { display: block; }
 .ldl-qm { display: flex; flex-direction: column; gap: 5px; }
 .ldl-qm small { font: 700 13px var(--body); letter-spacing: .08em; color: var(--tx-3); }
 .ldl-qm span { display: flex; align-items: center; gap: 6px; } .ldl-c16 { flex: none; width: 16px; height: 16px; margin: 0; object-fit: contain; vertical-align: -3px; }
-.ldl-qm i { flex: 1; display: block; height: 6px; border-radius: 3px; background: #2a2d31; overflow: hidden; } .ldl-qm i.r u { margin-left: auto; }
+.ldl-qm i { flex: 1; display: block; height: 6px; border-radius: 3px; background: #e0524f; overflow: hidden; } .ldl-qm i.r u { margin-left: auto; }
 .ldl-qm u { display: block; height: 100%; width: 50%; background: #4fd18b; transition: width .6s; }
 .ldl-num { flex: none; width: 100%; height: 44px; background: #1b1d20 !important; border: 1px solid #3a3d42 !important; color: var(--tx-1) !important; border-radius: 10px; padding: 0 10px !important; font: 700 14px var(--body) !important; letter-spacing: 0; white-space: nowrap; }
 .ldl-num { display: flex; align-items: center; justify-content: center; } .ldl-num b { color: var(--gold); font: inherit; margin: 0 5px; } .ldl-num > span { margin-right: 7px; } .ldl-num > i { font: 700 18px/1 var(--body); font-style: normal; color: var(--tx-3); margin-left: 8px; }
@@ -9470,3 +9479,4 @@ button.coin-pill { cursor: pointer; border: 0; }
 .rcs-li b { font: 800 21px/1 var(--display); color: #F3F1EA; white-space: nowrap; }
 .rcs-b .hl-btn.off { opacity: .45; }
 .mkc-tn { font-style: normal; margin-left: auto; margin-right: 8px; color: #F3F1EA; } .mkc-tn.dn { color: #F5A57F; }
+.mkp-pr b .mkc-ch { display: inline-block; margin-left: 10px; padding: 4px 8px; border-radius: 7px; background: rgba(242, 194, 48, .16); color: #F2C230; font: 800 13px/1 var(--display); letter-spacing: .02em; vertical-align: middle; }

@@ -28,6 +28,7 @@
     // iPhone: girar o celular (ou a página por baixo rolada) deixa a página deslocada; o palco fixo aparece num lugar e o
     // toque cai em outro (acima). Com o palco aberto a página fica sempre no topo
     if (document.body.classList.contains('ld-on') && (window.scrollY || window.scrollX || document.documentElement.scrollTop)) { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; }
+    rot();
     const vw = el.clientWidth || window.innerWidth, vh = el.clientHeight || window.innerHeight, port = vh > vw * 1.05; // medidas do #ld (já sem o topo borrado do iPhone e com o zoom do monitor)
     el.classList.toggle('port', port);
     // Área segura (entalhe e ilha do iPhone deitado): vem do padding do #ld. As telas não apertam (816×366 de conteúdo, como nos
@@ -39,6 +40,21 @@
     el.style.setProperty('--ldpx', (14 + ex) + 'px'); el.style.setProperty('--ldpy', (12 + ey) + 'px');
     el.style.setProperty('--ldk', k.toFixed(4));
   }
+  // Tela girada (Silvio, 2026-11-11): com a rotação travada em pé (iPhone não deixa o site travar deitado), o botão do aviso
+  // "Gire o celular" desenha o jogo girado 90° (html.rot, style.css): ele vira o celular de lado e joga. Fica lembrado
+  // (U.rotPref, desliga nos Ajustes); com o celular realmente deitado nada gira. Toques: U.pt / U.box (ui/core.js)
+  function rot() {
+    const R = document.documentElement, ww = window.innerWidth, wh = window.innerHeight;
+    const on = document.body.classList.contains('ld-on') && wh > ww * 1.05 && U.rotPref();
+    R.classList.toggle('rot', on);
+    if (on) { R.style.setProperty('--rw', wh + 'px'); R.style.setProperty('--rh', ww + 'px'); R.style.setProperty('--rx', ww + 'px'); }
+  }
+  function rotGo() {
+    U.rotPref(true); sfx('tap');
+    // Android: tela cheia + travar deitado (com a trava, a tela de fato deita e o giro por CSS nem entra)
+    try { const d = document.documentElement, fs = d.requestFullscreen || d.webkitRequestFullscreen; if (fs && !document.fullscreenElement) { const p = fs.call(d); if (p && p.then) p.then(lockLand, () => {}); } } catch (e) {}
+    fit();
+  }
   // Mostra uma tela no palco. html = conteúdo do palco; bind(st) liga os botões
   function show(html, bind, turn) {
     const el = host();
@@ -46,7 +62,9 @@
     const st = document.getElementById('ld-st');
     st.innerHTML = html;
     // O Treinador é só deitado (Silvio 2026-11-06 tirou o "Jogar em pé"): em pé, só o aviso para girar
-    document.getElementById('ld-turn').innerHTML = '<div class="ld-turn-c"><i aria-hidden="true">' + PHONE + '</i><b>Gire o celular</b><small>' + (turn || 'O Treinador é jogado com o celular deitado.') + '</small></div>';
+    document.getElementById('ld-turn').innerHTML = '<div class="ld-turn-c"><i aria-hidden="true">' + PHONE + '</i><b>Gire o celular</b><small>' + (turn || 'O Treinador é jogado com o celular deitado.') + '</small>' +
+      '<button class="btn" id="ld-rotb">Girar a tela</button><small class="ld-rot-s">Para celular com a rotação travada</small></div>';
+    document.getElementById('ld-rotb').onclick = rotGo;
     lockLand();
     fit();
     st.querySelectorAll('[data-rail]').forEach(b => b.onclick = () => { sfx('tap'); go(b.dataset.rail); });
@@ -59,14 +77,14 @@
     const isField = t => !!(t && t.matches && t.matches('input:not([hidden]), textarea'));
     root.addEventListener('focusin', e => {
       if (!isField(e.target)) return;
-      const st = document.getElementById('ld-st'), k = st.getBoundingClientRect().width / st.offsetWidth || 1;
+      const st = document.getElementById('ld-st'), k = U.box(st).width / st.offsetWidth || 1;
       root.style.transition = 'none'; root.style.transform = '';
-      const dy = Math.round((e.target.getBoundingClientRect().top - root.getBoundingClientRect().top) / k) - 4;
+      const dy = Math.round((U.box(e.target).top - U.box(root).top) / k) - 4;
       root.style.transition = 'transform .15s'; root.style.transform = dy > 0 ? 'translateY(' + -dy + 'px)' : '';
     });
     root.addEventListener('focusout', () => setTimeout(() => { if (!root.contains(document.activeElement) || !isField(document.activeElement)) root.style.transform = ''; }, 60));
   }
-  function off() { document.body.classList.remove('ld-on'); closePop(); try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {} }
+  function off() { document.body.classList.remove('ld-on'); document.documentElement.classList.remove('rot'); closePop(); try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {} }
   // Android (app instalado ou tela cheia) deixa travar a tela deitada; o iPhone não deixa (fica o aviso para girar)
   function lockLand() { try { const so = screen.orientation; if (so && so.lock) so.lock('landscape').catch(() => {}); } catch (e) {} }
   const PHONE = '<svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M20 9a8 8 0 0 1 0 6M4 9a8 8 0 0 0 0 6"/></svg>';
@@ -103,6 +121,8 @@
   const face = (n, cls, alt) => '<img class="' + cls + '" src="' + CO_ART + 'rosto-' + String(n).padStart(2, '0') + '.webp" alt="' + esc(alt || '') + '">';
   const presFace = (P, cls) => { const l = FACE_PRES[P.k] || [5]; return face(l[hashS(P.n) % l.length], cls, P.n); };
   const auxFace = (co, cls) => face(7 + hashS((co.name || '') + '|' + co.club) % 2, cls, 'Auxiliar');
+  // rosto 08 é a auxiliar (mulher): o texto concorda com o rosto (Silvio 2026-11-11)
+  const auxEla = co => hashS((co.name || '') + '|' + co.club) % 2 === 1;
 
   // Campinho deitado: o seu gol à esquerda. Posições (x, y em %) a partir das linhas da formação.
   // full: o time ocupa o campo inteiro (Time); senão meio campo cada, encaixado com o rival espelhado (Semana).
@@ -174,18 +194,20 @@
   function benchDrag(root, onDrop, fits) {
     if (!root) return;
     root.querySelectorAll('.tm-bp:not(.dis)').forEach(b => {
-      let x0 = 0, y0 = 0, pid = null, gh = null, over = null, dragged = false;
-      const at = (cx, cy) => { const r = root.getBoundingClientRect(), k = r.width / root.offsetWidth || 1; return [(cx - r.left) / k, (cy - r.top) / k]; };
+      let x0 = 0, y0 = 0, pid = null, gh = null, over = null, dragged = false, bn = null, sl0 = 0;
+      const at = (cx, cy) => { const r = U.box(root), k = r.width / root.offsetWidth || 1; [cx, cy] = U.pt(cx, cy); return [(cx - r.left) / k, (cy - r.top) / k]; };
       const hit = (cx, cy) => { const el = document.elementFromPoint(cx, cy), d = el && el.closest('[data-xi]'); return d && root.contains(d) ? d : null; };
       const free = b.classList.contains('tm-cd');
       const end = () => { if (gh) gh.remove(); gh = null; if (over) over.classList.remove('drop'); over = null; pid = null; root.classList.remove('tm-drag'); b.classList.remove('lift');
         root.querySelectorAll('[data-dfit],[data-dfar]').forEach(d => { d.removeAttribute('data-dfit'); d.removeAttribute('data-dfar'); }); };
-      b.addEventListener('pointerdown', e => { if (e.button > 0) return; x0 = e.clientX; y0 = e.clientY; pid = e.pointerId; dragged = false; try { b.setPointerCapture(pid); } catch (er) {} });
+      b.addEventListener('pointerdown', e => { if (e.button > 0) return; [x0, y0] = U.pt(e.clientX, e.clientY); pid = e.pointerId; dragged = false; bn = null; try { b.setPointerCapture(pid); } catch (er) {} });
       b.addEventListener('pointermove', e => {
         if (e.pointerId !== pid) return;
-        const dx = e.clientX - x0, dy = e.clientY - y0;
+        const [ex, ey] = U.pt(e.clientX, e.clientY), dx = ex - x0, dy = ey - y0; // tela girada: o "para cima" do palco
         if (!gh) {
-          if (free ? Math.hypot(dx, dy) < 12 : dy > -12 || Math.abs(dy) < Math.abs(dx) * 0.6) { if (!free && Math.abs(dx) > 20 && dy > -12) pid = null; return; }
+          // tela girada: o navegador entende o "pan-x" do banco na tela, não no palco; lá o banco não deixa o navegador rolar e rola aqui
+          if (bn) { bn.scrollLeft = sl0 - dx; e.preventDefault(); return; }
+          if (free ? Math.hypot(dx, dy) < 12 : dy > -12 || Math.abs(dy) < Math.abs(dx) * 0.6) { if (!free && Math.abs(dx) > 20 && dy > -12) { bn = U.rotOn() && b.closest('.tm-bench'); if (bn) sl0 = bn.scrollLeft + dx; else pid = null; } return; }
           gh = document.createElement('div'); gh.className = 'tm-bp tm-ghost'; gh.innerHTML = b.innerHTML; root.appendChild(gh);
           root.classList.add('tm-drag'); b.classList.add('lift'); dragged = true;
           // as vagas em que ele joga acendem; quem estiver embaixo do dedo vira "SAI"
@@ -339,7 +361,7 @@
     const tg = st.querySelector(s[1]);
     // Sem o alvo (rodada sem jogo) ou já feito (treino escolhido, relatório lido): próximo passo
     if (!tg || tg.classList.contains('ok')) { co.tut.n++; return tutShow(co, st); }
-    const wk = TUT.filter(x => x[0] === s[0]), R = st.getBoundingClientRect(), k = R.width / st.offsetWidth || 1, r = tg.getBoundingClientRect();
+    const wk = TUT.filter(x => x[0] === s[0]), R = U.box(st), k = R.width / st.offsetWidth || 1, r = U.box(tg);
     const x = (r.left - R.left) / k, y = (r.top - R.top) / k, w = r.width / k, h = r.height / k;
     const el = document.createElement('div'); el.className = 'tu'; el.id = 'ld-tu';
     el.innerHTML = '<button class="tu-hole" style="left:' + x.toFixed(1) + 'px;top:' + y.toFixed(1) + 'px;width:' + w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px;border-radius:' + getComputedStyle(tg).borderRadius + '" aria-label="' + esc(tg.textContent.trim()) + '"></button>' +
@@ -446,15 +468,18 @@
         if (st.querySelector('#tm-aux')) st.querySelector('#tm-aux').onclick = () => { sfx('tap');
           if (tip && !tip.seen) { tip.seen = 1; const d = st.querySelector('.tm-tip-d'); if (d && !nFix) d.remove(); }
           // A dica do jogo em cima (curta quando há trocas), a lista das trocas com um botão só, e a escalação inteira
-          const say = tip ? (used ? 'Do jeito que está eu não mexeria, professor.' : S.coTipTxt(tip)) : aux, nw = t => t.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>');
-          const ALL = '<button class="tm-all" id="ld-auto">Usar a escalação dele inteira</button>';
+          // Sem o relatório do olheiro, a pílula diz "Leia o olheiro" e a fala explica e leva até ele
+          const toOl = vs && !scR && !nFix;
+          const say = tip ? (used ? 'Do jeito que está eu não mexeria, professor.' : S.coTipTxt(tip)) : toOl ? 'Leia o relatório do olheiro que eu te digo a melhor formação para esse jogo, professor.' : aux, nw = t => t.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>');
+          const ALL = '<button class="tm-all" id="ld-auto">Usar a escalação ' + (auxEla(co) ? 'dela' : 'dele') + ' inteira</button>';
           const tipHtml = !tip || (used && nFix) ? '' : nFix
             ? '<span class="tm-fix top"><small>' + nw(say) + '</small><button class="hl-btn line" id="ld-tip-y">Usar ' + esc(tipNm) + '</button></span>'
             : '<p>“' + nw(say) + '”</p>' + (used ? '' : '<span class="hl-ab"><button class="hl-btn dark" id="ld-tip-y">Usar ' + esc(tipNm) + '</button><button class="hl-btn line" data-pop-x>Manter</button></span>');
           pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b>' + (nFix ? ALL : '') + '</span>' +
             (tipHtml || (nFix ? '' : '<p>“' + say + '”</p>')) +
             (nFix ? auxRows(fixes) + '<span class="hl-ab"><button class="hl-btn dark" id="ld-aux-y">' + auxLbl(nFix) + '</button><button class="hl-btn line" data-pop-x>Manter</button></span>' : '') +
-            (nFix ? '' : ALL) + ((tip && !used) || nFix ? '' : '<button class="hl-btn line" data-pop-x>Fechar</button>') + '</div>', 'Auxiliar', w => {
+            (nFix ? '' : ALL) + ((tip && !used) || nFix ? '' : toOl ? '<span class="hl-ab"><button class="hl-btn dark" id="ld-see-ol">Ver o olheiro</button><button class="hl-btn line" data-pop-x>Fechar</button></span>' : '<button class="hl-btn line" data-pop-x>Fechar</button>') + '</div>', 'Auxiliar', w => {
+            if (w.querySelector('#ld-see-ol')) w.querySelector('#ld-see-ol').onclick = () => { sfx('tap'); closePop(); c.keepBench(); c.save(); olheiro(); };
             if (w.querySelector('#ld-tip-y')) w.querySelector('#ld-tip-y').onclick = () => { sfx('tap'); closePop();
               if (tip.kind === 'sty') co.style = tip.v; else { co.xi = xiFor(tip.v); co.form = tip.v; swap = null; selB = null; }
               draw(); };
@@ -527,7 +552,7 @@
     const { H, A, crestB } = o;
     // A cor de cada time no campinho, do lado do escudo (Silvio, 10/11: "preto e branco contra preto e branco, não sei qual é qual")
     const kit = k => { if (!k) return ''; const pc = k.pat && k.pat[1], d = k.pat && k.pat[0], bg = pc && d === 'listras' ? 'repeating-linear-gradient(90deg,' + k[0] + ' 0 3px,' + pc + ' 3px 6px)' : pc && d === 'aros' ? 'repeating-linear-gradient(0deg,' + k[0] + ' 0 3px,' + pc + ' 3px 6px)' : pc ? 'linear-gradient(135deg,' + k[0] + ' 55%,' + pc + ' 55%)' : k[0];
-      return '<i class="ldl-kit" style="background:' + bg + '"></i>'; };
+      return '<b class="ldl-kit"><i style="background:' + bg + '"></i></b>'; }; // camisinha, não bolinha (Silvio, 11/11: a bolinha confundia com a bola)
     const kH = o.kits ? (o.m.home ? o.kits.mine : o.kits.opp) : null, kA = o.kits ? (o.m.home ? o.kits.opp : o.kits.mine) : null;
     return '<div class="lv ldl"><div class="ldl-p">' + o.pitchHtml +
       '<div class="ldl-sb">' + crestB(H.id, 'ldl-cr') + kit(kH) + '<em id="lv-score">0 <i>x</i> 0</em>' + kit(kA) + crestB(A.id, 'ldl-cr') + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' +
@@ -1500,12 +1525,12 @@
       '<div class="mkc-l"><div class="mkc-g">' + box('SALÁRIO POR SEMANA', (t.w < 10000 && t.w % 1000 ? 'R$ ' + (t.w / 1000).toFixed(1).replace('.', ',') + ' mil' : c.brl(t.w)), 'cw', t.w >= md.ask ? 'o que ele pede' : 'abaixo do que ele pede') +
         box('DURAÇÃO', (own ? '+' : '') + t.y + (t.y > 1 ? ' anos' : ' ano'), 'cy', 'até ' + yr + (t.y === T.want ? ' · ele prefere' : '')) + '</div>' +
         '<div class="mk-k mkc-r"><small>PAPEL PROMETIDO</small><span class="mkp-seg big">' + R.map((r, i) => '<button class="' + (t.role === i ? 'on' : '') + '" data-cr="' + i + '">' + r.t + '</button>').join('') + '</span><span class="mkc-d">' + R[t.role].d + '</span></div></div>' +
-      '<div class="mk-side"><div class="mk-k mkp-pr"><small>EMPRESÁRIO</small><b class="' + cls + '">' + (neg.st === 'no' ? 'Desistiu' : md.t) + '</b><span class="mkf-dd mkc-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= md.lvl ? cls || 'up' : '') + '"></i>').join('') + '</span><span class="mkp-pat">Tentativas <em class="mkc-tn' + (neg.apat === 1 && neg.st === 'open' ? ' dn' : '') + '">' + (neg.st === 'no' ? 0 : neg.apat) + ' de ' + M.pat + '</em>' + mkDots(neg.st === 'no' ? 0 : neg.apat, M.pat) + '</span></div>' +
+      '<div class="mk-side"><div class="mk-k mkp-pr"><small>EMPRESÁRIO</small><b class="' + cls + '">' + (neg.st === 'no' ? 'Desistiu' : md.t + (md.lvl === 3 ? '<small class="mkc-ch">1 chance em 3</small>' : '')) + '</b><span class="mkf-dd mkc-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= md.lvl ? cls || 'up' : '') + '"></i>').join('') + '</span><span class="mkp-pat">Tentativas <em class="mkc-tn' + (neg.apat === 1 && neg.st === 'open' ? ' dn' : '') + '">' + (neg.st === 'no' ? 0 : neg.apat) + ' de ' + M.pat + '</em>' + mkDots(neg.st === 'no' ? 0 : neg.apat, M.pat) + '</span></div>' +
         '<div class="mk-k mkc-f"><small>FOLHA DEPOIS</small><b class="' + (over ? 'dn' : '') + '">' + fo.pct + '% do teto</b><i class="mk-bar"><u class="' + (over ? 'low' : fo.pct >= 95 ? 'mid' : 'ok') + '" style="width:' + Math.min(100, fo.pct) + '%"></u></i></div>' +
         '<span class="rs-gap"></span>' + gold + '</div></div>', st => {
       const re = x => contrato(id, back, Object.assign({}, t, x));
       st.querySelector('#mkc-back').onclick = () => { sfx('tap'); back(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'O empresário pesa salário, anos e papel, e o humor dele muda a cada toque: só com "Deve aceitar" ele assina. Cada recusa gasta uma das 3 tentativas (não gasta dia) e ele diz na hora o que aceita. Prometer titular baixa o salário que ele pede, mas a promessa vai ser cobrada. A folha não passa do teto.' + (own ? ' Sem renovar, ele sai do clube no fim do contrato, mesmo sendo titular.' : '')); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'O empresário pesa salário, anos e papel, e o humor dele muda a cada toque: com "Deve aceitar" ele assina, e com "Quase lá" pode assinar (1 chance em 3). Cada recusa gasta uma das 3 tentativas (não gasta dia) e ele diz na hora o que aceita. Prometer titular baixa o salário que ele pede, mas a promessa vai ser cobrada. A folha não passa do teto.' + (own ? ' Sem renovar, ele sai do clube no fim do contrato, mesmo sendo titular.' : '')); };
       st.querySelectorAll('[data-cw]').forEach(b => b.onclick = () => { sfx('tap'); re({ w: Math.max(1000, t.w + T.step * (+b.dataset.cw)) }); });
       st.querySelectorAll('[data-cy]').forEach(b => b.onclick = () => { sfx('tap'); re({ y: Math.max(1, Math.min(5, t.y + (+b.dataset.cy))) }); });
       st.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => { sfx('tap'); re({ role: +b.dataset.cr }); });
@@ -2365,6 +2390,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, lift, estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato, recebida };
+  U.LD = { on, show, off, fit, lift, estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato, recebida };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();

@@ -781,7 +781,7 @@
   // Simulação livre: um chute que o campinho acabou de jogar entra na súmula (placar, chutes, no gol, escanteio, lance
   // com o nome de quem bateu). sd: 'us' | 'them'; out: gol, def, fora, trave, bloq; info: { id, num, sv, lane }
   S.coMatchShot = function (co, m, sd, out, info) {
-    if (!m || m.done || !m.min) return null;
+    if (!m || (m.done && !(info && info.late)) || !m.min) return null; // late: o lance que o juiz esperou acabar depois do tempo (ui/coach.js)
     info = info || {};
     const S0 = sd === 'us' ? m.us : m.them, H = m.home ? m.us : m.them, mm = byId(S0.squad), on = S0.xi.map(id => mm[id]).filter(Boolean);
     const p = on.find(q => info.id != null && q.id === info.id) || on.find(q => info.num != null && q.num === info.num) || on.find(q => q.pos === 'ATA') || on[on.length - 1];

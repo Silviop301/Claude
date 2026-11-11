@@ -22,8 +22,11 @@
   const year = () => YEAR0 + G.c.season;
   // Versão de portal (tools/craque_portal.py): os escudos vêm de climbix.app, para o pacote caber no limite de arquivos
   const BADGES = window.CLIMBIX_BADGES || 'badges/';
-  const badgeSrc = s => String(s).replace(/^badges\//, BADGES);
-  const crest = (id, cls) => '<img class="crest' + (cls ? ' ' + cls : '') + '" src="' + BADGES + id + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">';
+  // Escudo trocado: versão na URL, senão o celular segue com o antigo do cache por 7 dias (Botafogo-SP, 11/11)
+  const CREST_V = { 'bra-c-9': 2 };
+  const crestUrl = id => BADGES + id + '.png' + (CREST_V[id] ? '?v=' + CREST_V[id] : '');
+  const badgeSrc = s => { s = String(s); const m = /^badges\/([a-z0-9-]+)\.png$/.exec(s); return m ? crestUrl(m[1]) : s.replace(/^badges\//, BADGES); };
+  const crest = (id, cls) => '<img class="crest' + (cls ? ' ' + cls : '') + '" src="' + crestUrl(id) + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">';
   const trophy = (type, size, name) => window.CRAQUE_TROPHY(type, size, name);
   const titleType = t => (t.id === 'cont' ? (t.name === 'Libertadores' ? 'lib' : 'ucl') : t.id);
   const meter = (label, v) => '<span class="m"><span class="ml">' + label + ' · ' + S.relLabel(v) + '</span><span class="mb"><i style="width:' + Math.round(v) + '%" class="' + (v >= 62 ? 'hi' : v < 32 ? 'lo' : '') + '"></i></span></span>';
@@ -335,7 +338,15 @@
   }
 
   // Zoom da página (monitor grande, style.css): medidas da tela ÷ zk() = pixels do CSS. Sem zoom, 1.
-  const zk = () => { const b = document.body, w = b && b.offsetWidth; return w ? b.getBoundingClientRect().width / w || 1 : 1; };
+  const zk = () => { if (rotOn()) return 1; const b = document.body, w = b && b.offsetWidth; return w ? b.getBoundingClientRect().width / w || 1 : 1; };
+  // Tela girada (Silvio, 2026-11-11: iPhone com a rotação travada em pé): o jogo deitado é desenhado girado 90° (html.rot, ui/coachland.js).
+  // O toque continua chegando em coordenadas da tela: pt() e box() passam ponto e retângulo para a página girada (sem giro, iguais)
+  const ROT_KEY = 'climbix-girar';
+  const rotPref = v => { try { if (v === undefined) return localStorage.getItem(ROT_KEY) === '1'; localStorage.setItem(ROT_KEY, v ? '1' : '0'); } catch (e) {} return !!v; };
+  const rotOn = () => document.documentElement.classList.contains('rot');
+  const rotW = () => parseFloat(document.documentElement.style.getPropertyValue('--rx')) || window.innerWidth;
+  const pt = (x, y) => (rotOn() ? [y, rotW() - x] : [x, y]);
+  const box = el => { const r = el.getBoundingClientRect(); if (!rotOn()) return r; const W = rotW(); return { left: r.top, top: W - r.right, right: r.bottom, bottom: W - r.left, width: r.height, height: r.width }; };
 
   // Faixa de cor da carta pela nota (bronze, prata, ouro, ícone)
   const tierCls = o => (o >= 85 ? 'icone' : o >= 75 ? 'ouro' : o >= 65 ? 'prata' : 'bronze');
@@ -391,5 +402,5 @@
   // Som do gol com mando: o seu gol em casa é a festa inteira, fora é o canto da sua torcida lá no fundo; o gol deles em
   // casa é o lamento, fora é a casa deles explodindo
   const goalSnd = (ours, home) => (ours ? (home ? 'cheer' : 'cheerAway') : home ? 'miss' : 'cheer');
-  window.CRAQUE_UI = { goalSnd, zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, slotKey, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg, totOf, titlesOf, toHome, modeHead, modeHeadBind };
+  window.CRAQUE_UI = { goalSnd, zk, rotPref, rotOn, pt, box, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, slotKey, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg, totOf, titlesOf, toHome, modeHead, modeHeadBind };
 })();
