@@ -6,7 +6,7 @@
 //   POST ?a=status                       {on, test}
 //   POST ?a=create {token, pack}         cria a compra e devolve {ref, url} (o jogador vai para o Mercado Pago)
 //   GET/POST ?a=hook                     aviso do Mercado Pago (notification_url): confere o pagamento na API deles
-//   POST ?a=check  {token}               compras pagas e ainda não entregues desta conta: {list: [{ref, coins}]}; e as já entregues em {paid}
+//   POST ?a=check  {token}               compras pagas e ainda não entregues desta conta: {list: [{ref, coins}]}; as já entregues em {paid}; {wait} = pagamentos esperando
 //   POST ?a=claim  {token, refs}         o aparelho já somou essas moedas (cada ref só entrega uma vez)
 // Nada aqui confia no que o aparelho diz sobre o pagamento: o status vem sempre da API do Mercado Pago.
 header('Content-Type: application/json; charset=utf-8');
@@ -45,7 +45,7 @@ try {
 } catch (Exception $e) { out(['error' => 'storage'], 500); }
 
 function mpCall($mp, $method, $path, $body = null) {
-  $ch = curl_init('https://api.mercadopago.com' . $path);
+  $ch = curl_init((getenv('CLIMBIX_MP_API') ?: 'https://api.mercadopago.com') . $path);   // CLIMBIX_MP_API só nos testes (Mercado Pago de mentira)
   $h = ['Authorization: Bearer ' . $mp, 'Content-Type: application/json'];
   if ($body !== null) $h[] = 'X-Idempotency-Key: ' . bin2hex(random_bytes(16));
   curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20, CURLOPT_CUSTOMREQUEST => $method, CURLOPT_HTTPHEADER => $h]);
@@ -66,16 +66,33 @@ function mpTest($mp, $dir) {
   @file_put_contents($f, $h . ':' . ($t ? '1' : '0'));
   return $t;
 }
-// Marca como paga a compra de um pagamento aprovado (confere valor e referência)
+// Marca como paga a compra de um pagamento aprovado (confere valor e referência). Cada pagamento do Mercado Pago entrega
+// uma vez só. Pagou duas vezes a mesma compra (voltou ao link e pagou de novo)? O 2º pagamento vira outra compra paga do
+// mesmo pacote, entregue como a 1ª: ninguém paga sem receber.
 function settle($db, $pay) {
-  $ref = (string)($pay['external_reference'] ?? '');
-  if ($ref === '' || ($pay['status'] ?? '') !== 'approved') return false;
-  $q = $db->prepare('SELECT price, status FROM purchases WHERE ref = ?'); $q->execute([$ref]);
-  $p = $q->fetch(PDO::FETCH_ASSOC);
-  if (!$p || $p['status'] !== 'created') return false;
-  if (abs((float)($pay['transaction_amount'] ?? 0) - (float)$p['price']) > 0.01) return false;
-  $db->prepare("UPDATE purchases SET status = 'approved', mp_id = ?, paid = ? WHERE ref = ? AND status = 'created'")->execute([(string)$pay['id'], time(), $ref]);
-  return true;
+  $ref = (string)($pay['external_reference'] ?? ''); $id = (string)($pay['id'] ?? '');
+  if ($ref === '' || $id === '' || ($pay['status'] ?? '') !== 'approved') return false;
+  $ok = false;
+  try {
+    $db->exec('BEGIN IMMEDIATE');
+    $q = $db->prepare('SELECT user_key, pack, coins, price, status, mp_id FROM purchases WHERE ref = ?'); $q->execute([$ref]);
+    $p = $q->fetch(PDO::FETCH_ASSOC);
+    if ($p && abs((float)($pay['transaction_amount'] ?? 0) - (float)$p['price']) <= 0.01) {
+      if ($p['status'] === 'created') {
+        $db->prepare("UPDATE purchases SET status = 'approved', mp_id = ?, paid = ? WHERE ref = ? AND status = 'created'")->execute([$id, time(), $ref]);
+        $ok = true;
+      } elseif ((string)$p['mp_id'] !== '' && (string)$p['mp_id'] !== $id) {
+        $q = $db->prepare('SELECT COUNT(*) FROM purchases WHERE mp_id = ?'); $q->execute([$id]);
+        if (!(int)$q->fetchColumn()) {
+          $db->prepare("INSERT INTO purchases (ref, user_key, pack, coins, price, status, mp_id, created, paid) VALUES (?, ?, ?, ?, ?, 'approved', ?, ?, ?)")
+            ->execute([bin2hex(random_bytes(12)), $p['user_key'], $p['pack'], $p['coins'], $p['price'], $id, time(), time()]);
+          $ok = true;
+        }
+      }
+    }
+    $db->exec('COMMIT');
+  } catch (Exception $e) { try { $db->exec('ROLLBACK'); } catch (Exception $e2) {} return false; }
+  return $ok;
 }
 
 if ($a === 'hook') {
@@ -123,17 +140,20 @@ if ($a === 'create') {
 }
 
 if ($a === 'check') {
-  // Compras abertas das últimas 48 h: pergunta ao Mercado Pago (o aviso pode ter se perdido)
+  // Compras abertas das últimas 48 h: pergunta ao Mercado Pago (o aviso pode ter se perdido); wait = pagamentos que ainda esperam (Pix gerado, cartão em análise)
   $q = $db->prepare("SELECT ref FROM purchases WHERE user_key = ? AND status = 'created' AND created > ? ORDER BY created DESC LIMIT 5"); $q->execute([$user, time() - 172800]);
+  $wait = 0;
   foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $ref) {
     [$code, $r] = mpCall($mp, 'GET', '/v1/payments/search?external_reference=' . urlencode($ref));
-    if ($code === 200) foreach (($r['results'] ?? []) as $pay) settle($db, $pay);
+    $w = false;
+    if ($code === 200) foreach (($r['results'] ?? []) as $pay) { if (in_array($pay['status'] ?? '', ['pending', 'in_process', 'authorized'], true)) $w = true; if (settle($db, $pay)) $w = false; }
+    if ($w) $wait++;
   }
   $q = $db->prepare("SELECT ref, coins FROM purchases WHERE user_key = ? AND status = 'approved'"); $q->execute([$user]);
   $list = array_map(fn($r) => ['ref' => $r['ref'], 'coins' => (int)$r['coins']], $q->fetchAll(PDO::FETCH_ASSOC));
   // paid: as já entregues (o aparelho confere se alguma sumiu do saldo e devolve; cada ref continua valendo uma vez só)
   $q = $db->prepare("SELECT ref, coins FROM purchases WHERE user_key = ? AND status = 'claimed' ORDER BY claimed DESC LIMIT 100"); $q->execute([$user]);
-  out(['list' => $list, 'paid' => array_map(fn($r) => ['ref' => $r['ref'], 'coins' => (int)$r['coins']], $q->fetchAll(PDO::FETCH_ASSOC))]);
+  out(['list' => $list, 'wait' => $wait, 'paid' => array_map(fn($r) => ['ref' => $r['ref'], 'coins' => (int)$r['coins']], $q->fetchAll(PDO::FETCH_ASSOC))]);
 }
 
 if ($a === 'claim') {
