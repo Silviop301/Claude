@@ -2136,6 +2136,19 @@
   ];
   // back: de onde veio (proposta recebida, Time); sem nada, volta ao Clube. As chamadas de dentro (aba, linha, ordem) mantêm
   let EL_BACK = null;
+  // Rescindir o contrato (Silvio 2026-11-11: "não dá pra fazer uns cortes de custo antes da janela?"): vale em qualquer
+  // rodada. A janelinha é a confirmação: a multa, o que a folha economiza por rodada e em quanto tempo a multa se paga.
+  function rescPop(q, me) {
+    const c = C(), co = c.co, P = S.coMktRescPlan(co, q); if (!P.ok) return;
+    const pay = P.payK === 'now' ? U.D.plural(P.pays, 'rodada', 'rodadas') : P.payK === 'next' ? 'ano que vem' : 'não se paga';
+    const cell = (k, v, cl) => '<span><small>' + k + '</small><b' + (cl ? ' class="' + cl + '"' : '') + '>' + v + '</b></span>';
+    pop('<div class="acd-help"><b>Rescindir com ' + esc(c.last(q.n)) + '?</b>' +
+      '<div class="rsc-g">' + cell('MULTA', 'R$ ' + c.mi(P.fee), 'dn') + cell('ECONOMIA', c.mi(P.wage) + '<i>/rodada</i>', 'up') + cell('SE PAGA EM', pay, P.payK === 'never' ? 'dn' : '') + '</div>' +
+      '<p>Ele sai agora e fica sem clube. ' + (P.caixa < 0 ? '<b class="dn">O caixa fica no vermelho.</b>' : 'O caixa vai a R$ ' + c.mi(P.caixa) + '.') + '</p>' +
+      '<button class="hl-btn gold" id="rsc-y">Rescindir · R$ ' + c.mi(P.fee) + '</button><button class="hl-btn line" data-pop-x>Cancelar</button></div>', 'Rescindir contrato', w => {
+      w.querySelector('#rsc-y').onclick = () => { const ok = S.coMktResc(co, q); closePop(); if (ok) { c.save(); me(); } };
+    }, 'hl-pop acd-pop tm-pop ca-pop rsc-pop');
+  }
   function elenco(tab, sel, back) {
     if (back) EL_BACK = back; else if (tab === undefined && sel === undefined) EL_BACK = null;
     const c = C(), co = c.co, T = [['Goleiros', ['GOL']], ['Defesa', ['ZAG', 'LAT']], ['Meio', ['MEI']], ['Ataque', ['ATA']]];
@@ -2155,7 +2168,7 @@
       const mo = q.mo === undefined ? 60 : q.mo, moT = mo >= 70 ? 'alta' : mo >= 45 ? 'boa' : 'baixa';
       const st = (k, v, bad) => '<span><small>' + k + '</small><b' + (bad ? ' class="dn"' : '') + '>' + v + '</b></span>';
       const renOk = S.coMktRenOk(co, q), listed = S.coMktListed(co, q), canS = S.coMktCanSell(co, q), ofq = S.coMktOfferFor(co, q), win = S.coMktWin(co);
-      const hint = ofq ? 'O ' + esc(club(ofq.club).short || club(ofq.club).name) + ' fez proposta' : listed ? (win.open ? 'À venda: as propostas chegam na janela' : 'À venda: propostas na próxima janela') : q.ct <= 1 ? 'Último ano: se não renovar, ele sai' : !canS ? 'Elenco curto nessa posição para vender' : '';
+      const hint = ofq ? 'O ' + esc(club(ofq.club).short || club(ofq.club).name) + ' fez proposta' : listed ? (win.open ? 'À venda: as propostas chegam na janela' : 'À venda: espera a janela abrir') : q.ct <= 1 ? 'Último ano: se não renovar, ele sai' : !canS ? 'Elenco curto nessa posição' : '';
       // A ficha tem duas abas (Silvio 2026-11-10, opção A): Atributos (as 6 barras de S.coAttrs: o mais alto em dourado, o
       // mais baixo em laranja) e Situação (energia, potencial, moral, salário, contrato, renovar e vender, como era a ficha)
       const at = S.coAttrs(q), ks = S.coAtKeys(q), hi = at.indexOf(Math.max.apply(null, at)), mn = Math.min.apply(null, at), lo = mn <= q.ovr - 8 ? at.indexOf(mn) : -1; // laranja só para ponto fraco de verdade (8 abaixo do geral)
@@ -2166,7 +2179,8 @@
         (elenco.ct ? '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/sem') + '</div>' +
         '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span></div>' +
         '<div class="lde2-act"><button class="lde2-ren" id="lde-ren" data-id="' + q.id + '"' + (renOk ? '' : ' disabled') + '>Renovar' + (renOk ? '' : '<small>no fim do contrato</small>') + '</button>' +
-          (ofq ? '<button class="lde2-sell of" id="lde-of">Ver proposta</button>' : '<button class="lde2-sell' + (listed ? ' on' : '') + '" id="lde-sell"' + (canS || listed ? '' : ' disabled') + '>' + (listed ? 'Tirar da venda' : 'Pôr à venda') + '</button>') + '</div>' +
+          (ofq ? '<button class="lde2-sell of" id="lde-of">Ver proposta</button>' : '<button class="lde2-sell' + (listed ? ' on' : '') + '" id="lde-sell"' + (canS || listed ? '' : ' disabled') + '>' + (listed ? 'Tirar da venda' : 'Pôr à venda') + '</button>') +
+          '<button class="lde2-resc" id="lde-resc"' + (canS ? '' : ' disabled') + '>Rescindir</button></div>' +
         (hint ? '<small class="lde2-hint">' + hint + '</small>' : '') : bars) + '</div>';
     }
     show('<div class="lde2"><div class="tm-h"><button class="tcr-back" id="lde-back" aria-label="Voltar">' + BK + '</button><b>Elenco</b><small><span class="lde2-n' + (co.squad.length >= S.CO_MKT.maxSquad ? ' full' : '') + '">' + co.squad.length + '/' + S.CO_MKT.maxSquad + '</span> jogadores · folha ' + c.mi(folha) + '/sem</small>' +
@@ -2182,6 +2196,7 @@
       const rn = st.querySelector('#lde-ren:not([disabled])'); if (rn) rn.onclick = () => { sfx('tap'); contrato(q.id, me); };
       const sl = st.querySelector('#lde-sell:not([disabled])'); if (sl) sl.onclick = () => { sfx('tap'); const of = S.coMktList(co, q, !S.coMktListed(co, q)); c.save(); me(); if (of) { of.seen = 1; c.save(); recebida(of, me); } };
       const ov = st.querySelector('#lde-of'); if (ov) ov.onclick = () => { sfx('tap'); recebida(S.coMktOfferFor(co, q), me); };
+      const rc = st.querySelector('#lde-resc:not([disabled])'); if (rc) rc.onclick = () => rescPop(q, me);
     });
   }
   // Troféus e Hall (2026-11-11): telas cheias no padrão do Estádio (painel à esquerda, números à direita), no lugar das janelinhas
