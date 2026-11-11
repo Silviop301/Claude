@@ -9552,3 +9552,10 @@ button.coin-pill { cursor: pointer; border: 0; }
 /* Aviso da janela de transferências (2026-11-11): cartão do upToast; na última rodada o relógio e a borda ficam laranja */
 .wn-ty i { color: #b45309; } .wn-ty.ult { box-shadow: 0 0 0 3px #f59e0b, 0 10px 30px rgba(0, 0, 0, .5); }
 .mk-win.ult { background: rgba(245, 158, 11, .2); color: #fbbf24; }
+/* Observados no Resultado do mercado (11/11): olho + 3 tracinhos do relatório; laranja = desatualizado */
+.mk-r > span b { display: flex; align-items: center; gap: 10px; } .mk-r > span b .mk-nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.mk-ob { flex: none; display: inline-flex; align-items: center; gap: 3px; text-decoration: none; color: var(--gold); }
+.mk-ob svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.4; margin-right: 2px; }
+.mk-ob i { width: 6px; height: 12px; border-radius: 2px; background: currentColor; opacity: .28; } .mk-ob i.on { opacity: 1; }
+.mk-ob.old { color: #F59E0B; } .mk-r.on .mk-ob { color: #8a6a10; } .mk-r.on .mk-ob.old { color: #b45309; }
+.mkf-cmp b small.old, .mka em.old { color: #F59E0B; }
