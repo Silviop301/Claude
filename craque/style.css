@@ -9509,3 +9509,24 @@ button.coin-pill { cursor: pointer; border: 0; }
 .mkf-ovw { display: flex; align-items: center; gap: 12px; } .mkf-ov { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 50%; box-shadow: inset 0 0 0 2.5px var(--gold); font: 800 22px/1 var(--display); font-style: normal; color: var(--gold); } .mkf-ov small { font: 800 8px/1 var(--body); letter-spacing: .08em; color: #B9C9BF; margin-bottom: 1px; }
 .mka .mkf-t em b { color: var(--gold); font-weight: 800; }
 .fn2-li.fn2-cl > b.up { color: #7ED39A; }
+/* Resultado do jogo: com 4 linhas (Tabela, Diretoria, Suspenso ou Ultimato, Público) a coluna da direita passava da tela e
+   cortava o Continuar (Silvio, 2026-11-11): as linhas encolhem e, com 4, os blocos apertam */
+.rs-ch { flex: 0 1 auto; min-height: 0; }
+.rs-ch > span, .rs-ch > button { height: auto; flex: 1 1 40px; min-height: 30px; max-height: 40px; }
+.rs-side.n4 { gap: 8px; }
+.rs-side.n4 .rs-best { padding: 10px 16px; gap: 6px; }
+.rs-side.n4 .tm-b { height: 42px; } .rs-side.n4 .tm-go { height: 56px; }
+/* Bola do gol nos lances e no gráfico: o desenho do jogo (assets/ic/26bd.webp) no lugar do rabisco em código (Silvio, 2026-11-11) */
+.rsi img.rsi-b { width: 19px; height: 19px; display: block; border-radius: 50%; box-shadow: 0 0 0 1px rgba(243, 241, 234, .5); }
+.rs-mk img.rsi-b { width: 17px; height: 17px; display: block; border-radius: 50%; box-shadow: 0 0 0 1px rgba(243, 241, 234, .6), 0 1px 3px rgba(0, 0, 0, .6); }
+/* Treino: a descrição passava do cartão e caía em cima do Auxiliar (Silvio, 2026-11-11): cartão mais justo, "Desenvolve" numa linha
+   com o atributo, e nada sai dele */
+.tr2-d { padding: 12px 16px; gap: 8px; overflow: hidden; }
+.tr2-d > b { font-size: 23px; } .tr2-d > p { font-size: 15px; line-height: 1.25; }
+.tr2-dv { align-items: center; gap: 3px 8px; padding-top: 8px; }
+.tr2-dv small { width: auto; } .tr2-dv span { width: 100%; font-size: 14px; line-height: 1.2; }
+/* Ao vivo deitado: a coluna da direita tinha 382 px num palco de 366 e o "Parar e mexer" passava da tela em aparelho sem entalhe
+   (com entalhe o palco é mais alto e cabia; achado pelo passeio, 2026-11-11) */
+.ldl-side { gap: 6px; } .ldl-side .ld-gr { margin-top: -6px; } .ldl-side .ldl-num { height: 40px; }
+/* Intervalo com as bolinhas de trocas e paradas: sem entalhe a coluna passava 12 px e cortava o "Começar o 2º tempo" (passeio, 2026-11-11) */
+.ldl-tm.ht .tm-b { height: 38px; } .ldl-tm.ht .tm-go { height: 52px; } .ldl-tm.ht .ldl-tro { padding: 5px 10px; gap: 2px; }
