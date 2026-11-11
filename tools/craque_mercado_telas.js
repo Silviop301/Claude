@@ -153,6 +153,18 @@ const OUT = process.argv[2] || '', SAFE = +process.env.SAFE || 0, URL = process.
   await tap('#mkf-go'); await shot('elenco-cheio'); want(await has('#ech-tr'), 'com o elenco cheio a ficha devia abrir o aviso com "Propor troca"');
   await tap('#ech-tr'); await shot('cheio-troca'); const s7 = await st(); want(s7.tela.includes('mkp'), 'o "Propor troca" devia abrir a Proposta'); want(/Enviar/.test(s7.gold), 'com um jogador na troca o Enviar devia estar aceso (diz: ' + s7.gold + ')');
   await tap('[data-pt="-1"]'); await tap('[data-pt="-1"]'); log.push('H cheio: ' + H0.n + '/' + H0.max);
+  // ---------- I. rescindir: um reserva sai pelo Elenco, a multa sai do caixa e a folha cai (vale sem janela) ----------
+  step = 'I rescindir';
+  const I0 = await ev(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co, q = co.squad.filter(x => !co.xi.includes(x.id) && S.coMktCanSell(co, x)).sort((a, b) => a.ovr - b.ovr)[0], P = S.coMktRescPlan(co, q), f = S.coFin(co);
+    return { id: q.id, pos: q.pos, n: co.squad.length, folha: S.coFolha(co), caixa: f.caixa, fee: P.fee, wage: q.wage, xi: co.xi.join() }; });
+  await ev(([t, id]) => window.CRAQUE_UI.LD.elenco(t, id, () => window.CRAQUE_UI.LD.semana()), [TAB[I0.pos] || 0, I0.id]); await p.waitForTimeout(500); await tap('[data-ec="1"]', true); await shot('elenco-rescindir');
+  await tap('#lde-resc:not([disabled])'); await shot('rescindir'); want(await has('#rsc-y'), 'o Rescindir devia abrir a confirmação'); await tap('[data-pop-x]');
+  const I1 = await ev(() => { const co = window.CRAQUE_UI._co.co; return { n: co.squad.length, caixa: window.CRAQUE_SIM.coFin(co).caixa }; }); want(I1.n === I0.n && I1.caixa === I0.caixa, 'Cancelar a rescisão mexeu no elenco ou no caixa');
+  await tap('#lde-resc:not([disabled])'); await tap('#rsc-y'); await shot('rescindido');
+  const I2 = await ev(id => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co, f = S.coFin(co); return { n: co.squad.length, folha: S.coFolha(co), caixa: f.caixa, has: co.squad.some(x => x.id === id), xi: co.xi.join(), free: co.wm.free.some(x => x.s === co.season + 1 && String(x.p.id).endsWith(':' + id)) }; }, I0.id);
+  want(!I2.has && I2.n === I0.n - 1, 'o jogador não saiu do elenco na rescisão'); want(I2.caixa === I0.caixa - I0.fee, 'a multa não saiu do caixa (' + I0.caixa + ' − ' + I0.fee + ' ≠ ' + I2.caixa + ')');
+  want(I2.folha === I0.folha - I0.wage, 'a folha não caiu o salário dele'); want(I2.xi === I0.xi, 'rescindir um reserva mexeu na escalação'); want(I2.free, 'quem rescindiu não ficou sem clube para a temporada seguinte');
+  want(!(await st()).pop, 'janelinha presa depois de rescindir'); log.push('I rescindiu: multa ' + I0.fee + ', folha ' + I0.folha + ' → ' + I2.folha);
   // a carreira continua jogável: volta para a Semana e ela abre
   step = 'fim'; await ev(() => window.CRAQUE_UI.LD.semana()); await p.waitForTimeout(600); await shot('semana-no-fim'); want((await st()).tela.includes('sm'), 'a Semana não abriu no fim');
 

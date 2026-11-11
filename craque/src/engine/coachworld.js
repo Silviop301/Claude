@@ -116,7 +116,7 @@
   const obsNow = (co, x) => !!(x.obs || (x.id && co.mkt && co.mkt.s === co.season && co.mkt.obs && co.mkt.obs[x.id]));
   S.coWorldObs = obsNow;
   S.coWorldNews = (co, flt) => { const L = (co.wm && co.wm.nw) || []; return flt === 3 ? L.filter(x => obsNow(co, x)) : flt === 2 ? L.filter(x => x.me) : flt === 1 ? L.filter(x => x.me || x.obs || S.coWorldInLg(co, x)) : L; };
-  S.coWorldNew = co => { const w = co.wm; return w ? w.nw.filter(x => x.i > (w.seen || 0) && (x.me || x.obs || S.coWorldInLg(co, x))).length : 0; };
+  S.coWorldNew = co => { const w = co.wm; return w ? w.nw.filter(x => x.i > (w.seen || 0) && !x.q && (x.me || x.obs || S.coWorldInLg(co, x))).length : 0; };
   // Os boatos que correm agora sobre um jogador de outro clube (a ficha mostra quem também quer; podem ser dois clubes)
   S.coWorldRumors = (co, id) => (co.wm && (co.wm.rm || []).filter(x => x.id === id && !x.me)) || [];
   // O observado que fechou com outro: devolve uma vez e apaga
@@ -158,6 +158,15 @@
       const id = 'x:' + (co.season + 1) + ':' + p.id, o = snapOf(p, id); o.id = id; o.ct = 0;
       w.free.push({ s: co.season + 1, lg, p: o });
     });
+    w.v++;
+  };
+  // Você rescindiu o contrato (S.coMktResc): sai notícia na hora e ele fica sem clube na temporada seguinte, como quem sai
+  // no fim do contrato; real não volta para o clube de origem
+  S.coWorldResc = function (co, p) {
+    const w = W(co), lg = D.CLUB_BY_ID[co.club].league;
+    addGone(w, p.api);
+    if (p.age < 34) { const id = 'x:' + (co.season + 1) + ':' + p.id, o = snapOf(p, id); o.id = id; o.ct = 0; w.free.push({ s: co.season + 1, lg, p: o }); }
+    news(co, w, { k: 'l', id: null, n: p.n, pos: p.pos, age: p.age, from: null, to: null, v: 0, me: 2, q: 1 }); // q = foi você quem fez: não acende o aviso de notícia nova
     w.v++;
   };
   // % de venda futura: o clube que comprou revende para um maior (chamado quando a sua parte é paga)

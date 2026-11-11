@@ -1988,10 +1988,10 @@
       '<div class="fn2-tabs">' + [['rod', 'Rodada'], ['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
       '<div class="fn2-p">' + rows + '</div>' +
       '<div class="fn2-side">' + finTrend(c, co, step) +
-        '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><div><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></div></div>' +
+        '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><' + (pt ? 'button data-fd="pat"' : 'div') + '><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></' + (pt ? 'button' : 'div') + '></div>' +
         '<span class="rs-gap"></span><div class="fn2-bt">' + (U.COINS ? '<button class="tm-b fn2-apo" data-fd="apo" id="fn2-apo">' + U.COINS.svg + 'Aporte</button>' : '') + '<button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div></div></div>', st => {
       st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); financas(b.dataset.ft); });
-      st.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.fd; if (k === 'banco') banco(); else if (k === 'pres') presInfo(); else if (k === 'apo') loja(1, () => financas(tab)); });
+      st.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.fd; if (k === 'banco') banco(); else if (k === 'pres') presInfo(true); else if (k === 'pat') patInfo(); else if (k === 'apo') loja(1, () => financas(tab)); });
       st.querySelector('#ldf-back').onclick = () => { sfx('tap'); const bk = FIN_BACK; FIN_BACK = null; (bk || clube)(); };
     });
   }
@@ -2010,9 +2010,21 @@
       r('banco', 'Banco', f.loan ? 'faltam ' + U.D.plural(f.loan.n, 'parcela', 'parcelas') + ' de ' + c.brl(f.loan.parc) + ' · deve ' + c.brl(f.loan.rem) : 'sem empréstimo · pode pegar até ' + c.brl(max), '') +
       r('banco', 'Situação do caixa', STEP[step], '<span class="ldn-steps">' + [1, 2, 3, 4].map(i => '<i class="' + (i < step ? 'd' : i === step ? 'c' : '') + '"></i>').join('') + '</span>', step >= 2 ? 'bad' : '');
   }
-  function presInfo() {
-    const co = C().co, P = S.coPres(co);
-    pop(popHead(esc(P.n), 'Presidente · ' + P.nome) + '<div class="ld-pb pi-pb">' + presFace(P, 'pi-fc') + '<div><p class="ldn-p">' + esc(P.txt) + '</p><p class="ldn-p">O caixa no vermelho pesa <b>' + RED_TXT(P.red) + '</b> na confiança dele. A cada 3 temporadas tem eleição e ele pode sair.</p></div></div>', 'Presidente', null, 'w560');
+  // ac = aberto pela linha Acordo de Finanças: o título é o acordo do ano e a primeira linha é a meta combinada
+  function presInfo(ac) {
+    const co = C().co, P = S.coPres(co), f = S.coFin(co), g = co.board && co.board.goal;
+    pop(popHead(ac ? 'Acordo ' + (AC_NM[f.ac] || 'Normal').toLowerCase() : esc(P.n), ac ? 'com ' + esc(P.n) + ' · presidente ' + P.nome : 'Presidente · ' + P.nome) + '<div class="ld-pb pi-pb">' + presFace(P, 'pi-fc') + '<div>' +
+      (ac && g ? '<p class="ldn-p">Meta do ano: <b>' + esc(S.CO_GOAL_TXT[g.k]).toLowerCase() + '</b>.</p>' : '') + '<p class="ldn-p">' + esc(P.txt) + '</p><p class="ldn-p">O caixa no vermelho pesa <b>' + RED_TXT(P.red) + '</b> na confiança dele. A cada 3 temporadas tem eleição e ele pode sair.</p></div></div>', ac ? 'Acordo' : 'Presidente', null, 'w560');
+  }
+  // Patrocínio da camisa (Silvio 2026-11-11: "cliquei no patrocinador e apareceu sobre o presidente"): a linha do
+  // patrocínio em Finanças abre o contrato que vale (valor do ano, por rodada, bônus na meta e até quando)
+  function patInfo() {
+    const c = C(), co = c.co, f = S.coFin(co), pt = f && f.pat; if (!pt) return;
+    const n = co.ss ? co.ss.rounds.length : 38, yrs = pt.until - co.season;
+    pop(popHead(esc(pt.name), 'Patrocínio da camisa') + '<div class="ld-pb pi-pb">' + (patImg(pt.name, 'pi-lg', 1) || '') + '<div>' +
+      '<p class="ldn-p"><b>' + c.brl(pt.fix) + '</b> ' + (pt.k === 'long' ? 'por ano' : 'no ano') + ', pagos a cada rodada (' + c.brl(Math.round(pt.fix / n)) + ').</p>' +
+      '<p class="ldn-p">' + (pt.bonus ? 'Bônus se cumprir a meta: <b>+ ' + c.brl(pt.bonus) + '</b>.' : 'Sem bônus pela meta.') + '</p>' +
+      '<p class="ldn-p">' + (yrs > 0 ? 'Contrato travado até o fim de <b>' + (U.YEAR0 + pt.until) + '</b>.' : 'Vale até o fim de <b>' + (U.YEAR0 + co.season) + '</b>. No ano que vem você escolhe outro.') + '</p></div></div>', 'Patrocínio', null, 'w560');
   }
   // Reunião de pré-temporada: 3 acordos de verba × meta. welcome: primeira conversa no clube novo (depois dela a carreira
   // cai na Semana, não mais na escalação: Silvio 2026-11-09)
@@ -2127,6 +2139,19 @@
   ];
   // back: de onde veio (proposta recebida, Time); sem nada, volta ao Clube. As chamadas de dentro (aba, linha, ordem) mantêm
   let EL_BACK = null;
+  // Rescindir o contrato (Silvio 2026-11-11: "não dá pra fazer uns cortes de custo antes da janela?"): vale em qualquer
+  // rodada. A janelinha é a confirmação: a multa, o que a folha economiza por rodada e em quanto tempo a multa se paga.
+  function rescPop(q, me) {
+    const c = C(), co = c.co, P = S.coMktRescPlan(co, q); if (!P.ok) return;
+    const pay = P.payK === 'now' ? U.D.plural(P.pays, 'rodada', 'rodadas') : P.payK === 'next' ? 'ano que vem' : 'não se paga';
+    const cell = (k, v, cl) => '<span><small>' + k + '</small><b' + (cl ? ' class="' + cl + '"' : '') + '>' + v + '</b></span>';
+    pop('<div class="acd-help"><b>Rescindir com ' + esc(c.last(q.n)) + '?</b>' +
+      '<div class="rsc-g">' + cell('MULTA', 'R$ ' + c.mi(P.fee), 'dn') + cell('ECONOMIA', c.mi(P.wage) + '<i>/rodada</i>', 'up') + cell('SE PAGA EM', pay, P.payK === 'never' ? 'dn' : '') + '</div>' +
+      '<p>Ele sai agora e fica sem clube. ' + (P.caixa < 0 ? '<b class="dn">O caixa fica no vermelho.</b>' : 'O caixa vai a R$ ' + c.mi(P.caixa) + '.') + '</p>' +
+      '<button class="hl-btn gold" id="rsc-y">Rescindir · R$ ' + c.mi(P.fee) + '</button><button class="hl-btn line" data-pop-x>Cancelar</button></div>', 'Rescindir contrato', w => {
+      w.querySelector('#rsc-y').onclick = () => { const ok = S.coMktResc(co, q); closePop(); if (ok) { c.save(); me(); } };
+    }, 'hl-pop acd-pop tm-pop ca-pop rsc-pop');
+  }
   function elenco(tab, sel, back) {
     if (back) EL_BACK = back; else if (tab === undefined && sel === undefined) EL_BACK = null;
     const c = C(), co = c.co, T = [['Goleiros', ['GOL']], ['Defesa', ['ZAG', 'LAT']], ['Meio', ['MEI']], ['Ataque', ['ATA']]];
@@ -2146,7 +2171,7 @@
       const mo = q.mo === undefined ? 60 : q.mo, moT = mo >= 70 ? 'alta' : mo >= 45 ? 'boa' : 'baixa';
       const st = (k, v, bad) => '<span><small>' + k + '</small><b' + (bad ? ' class="dn"' : '') + '>' + v + '</b></span>';
       const renOk = S.coMktRenOk(co, q), listed = S.coMktListed(co, q), canS = S.coMktCanSell(co, q), ofq = S.coMktOfferFor(co, q), win = S.coMktWin(co);
-      const hint = ofq ? 'O ' + esc(club(ofq.club).short || club(ofq.club).name) + ' fez proposta' : listed ? (win.open ? 'À venda: as propostas chegam na janela' : 'À venda: propostas na próxima janela') : q.ct <= 1 ? 'Último ano: se não renovar, ele sai' : !canS ? 'Elenco curto nessa posição para vender' : '';
+      const hint = ofq ? 'O ' + esc(club(ofq.club).short || club(ofq.club).name) + ' fez proposta' : listed ? (win.open ? 'À venda: as propostas chegam na janela' : 'À venda: espera a janela abrir') : q.ct <= 1 ? 'Último ano: se não renovar, ele sai' : !canS ? 'Elenco curto nessa posição' : '';
       // A ficha tem duas abas (Silvio 2026-11-10, opção A): Atributos (as 6 barras de S.coAttrs: o mais alto em dourado, o
       // mais baixo em laranja) e Situação (energia, potencial, moral, salário, contrato, renovar e vender, como era a ficha)
       const at = S.coAttrs(q), ks = S.coAtKeys(q), hi = at.indexOf(Math.max.apply(null, at)), mn = Math.min.apply(null, at), lo = mn <= q.ovr - 8 ? at.indexOf(mn) : -1; // laranja só para ponto fraco de verdade (8 abaixo do geral)
@@ -2157,7 +2182,8 @@
         (elenco.ct ? '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/sem') + '</div>' +
         '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span></div>' +
         '<div class="lde2-act"><button class="lde2-ren" id="lde-ren" data-id="' + q.id + '"' + (renOk ? '' : ' disabled') + '>Renovar' + (renOk ? '' : '<small>no fim do contrato</small>') + '</button>' +
-          (ofq ? '<button class="lde2-sell of" id="lde-of">Ver proposta</button>' : '<button class="lde2-sell' + (listed ? ' on' : '') + '" id="lde-sell"' + (canS || listed ? '' : ' disabled') + '>' + (listed ? 'Tirar da venda' : 'Pôr à venda') + '</button>') + '</div>' +
+          (ofq ? '<button class="lde2-sell of" id="lde-of">Ver proposta</button>' : '<button class="lde2-sell' + (listed ? ' on' : '') + '" id="lde-sell"' + (canS || listed ? '' : ' disabled') + '>' + (listed ? 'Tirar da venda' : 'Pôr à venda') + '</button>') +
+          '<button class="lde2-resc" id="lde-resc"' + (canS ? '' : ' disabled') + '>Rescindir</button></div>' +
         (hint ? '<small class="lde2-hint">' + hint + '</small>' : '') : bars) + '</div>';
     }
     show('<div class="lde2"><div class="tm-h"><button class="tcr-back" id="lde-back" aria-label="Voltar">' + BK + '</button><b>Elenco</b><small><span class="lde2-n' + (co.squad.length >= S.CO_MKT.maxSquad ? ' full' : '') + '">' + co.squad.length + '/' + S.CO_MKT.maxSquad + '</span> jogadores · folha ' + c.mi(folha) + '/sem</small>' +
@@ -2173,6 +2199,7 @@
       const rn = st.querySelector('#lde-ren:not([disabled])'); if (rn) rn.onclick = () => { sfx('tap'); contrato(q.id, me); };
       const sl = st.querySelector('#lde-sell:not([disabled])'); if (sl) sl.onclick = () => { sfx('tap'); const of = S.coMktList(co, q, !S.coMktListed(co, q)); c.save(); me(); if (of) { of.seen = 1; c.save(); recebida(of, me); } };
       const ov = st.querySelector('#lde-of'); if (ov) ov.onclick = () => { sfx('tap'); recebida(S.coMktOfferFor(co, q), me); };
+      const rc = st.querySelector('#lde-resc:not([disabled])'); if (rc) rc.onclick = () => rescPop(q, me);
     });
   }
   // Troféus e Hall (2026-11-11): telas cheias no padrão do Estádio (painel à esquerda, números à direita), no lugar das janelinhas
