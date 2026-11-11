@@ -1345,7 +1345,7 @@
     pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * 4, pg * 4 + 4); sel = Math.min(sel || 0, R.length - 1);
     const chips = F.map((x, i) => (m.f[i] ? '<span class="mk-chip">' + esc(x.o[m.f[i]].t.replace(' · verba', '')) + '</span>' : '')).join('') + (m.nm && m.nm.trim().length >= 3 ? '<span class="mk-chip">"' + esc(m.nm.trim()) + '"</span>' : '');
     const row = (p, i) => { const b = S.coMktBand(co, p), w = S.coMktWord(b), pr = S.coMktPrice(p);
-      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><i>' + p.pos + '</i><span><b>' + esc(p.n) + '</b><small' + (b ? '' : ' class="nr"') + '>' + p.age + ' anos · ' + mkClub(p) + (b ? '' : ' · sem relatório') + '</small></span>' +
+      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><i>' + p.pos + '</i><span><b>' + esc(p.n) + obsTag(co, p) + '</b><small' + (b ? '' : ' class="nr"') + '>' + p.age + ' anos · ' + mkClub(p) + (b ? '' : ' · sem relatório') + '</small></span>' +
         '<em class="' + (w || 'nr') + '">' + (w || '?') + '</em><strong>' + (p.club ? c.brl(pr) : 'grátis') + '</strong></button>'; };
     show('<div class="mk mkr">' + mkHead('mkr-back', 'Resultado', U.D.plural(list.length, 'jogador', 'jogadores'), false, true) +
       '<div class="mk-chips">' + chips + '<span class="rs-gap"></span><button class="mk-mud" id="mkr-mud">Mudar</button></div>' +
@@ -1417,7 +1417,15 @@
       if (!x) return '<div class="mka-r">' + nm + '<span class="mka-sc q"><i></i></span><em class="q">?</em></div>';
       if (x.v !== null) return '<div class="mka-r' + (i === top ? ' top' : '') + '">' + nm + '<span class="mka-sc"><i></i><u class="x" style="width:' + X(x.v) + '%"></u></span><em>' + x.v + '</em></div>';
       return '<div class="mka-r">' + nm + '<span class="mka-sc"><i></i><u style="left:' + X(x.lo) + '%;width:' + (X(x.hi) - X(x.lo)) + '%"></u></span><em class="rg">' + x.lo + ' a ' + x.hi + '</em></div>'; };
-    return '<div class="mk-k mka"><span class="mkf-t"><small>ATRIBUTOS</small><em>' + ['sem relatório', '1 de 3 relatórios · pouca certeza', '2 de 3 relatórios · certeza média', 'relatório completo · geral <b>' + p.ovr + '</b>'][Math.min(3, n)] + '</em></span><div class="mka-l">' + ks.map(row).join('') + '</div></div>';
+    return '<div class="mk-k mka"><span class="mkf-t"><small>ATRIBUTOS</small><em>' + (S.coMktOld(co, p) ? n + ' de 3 · desatualizado' : ['sem relatório', '1 de 3 relatórios · pouca certeza', '2 de 3 relatórios · certeza média', 'relatório completo · geral <b>' + p.ovr + '</b>'][Math.min(3, n)]) + '</em></span><div class="mka-l">' + ks.map(row).join('') + '</div></div>';
+  }
+  // Marca de quem você observa ou pagou relatório (Silvio 11/11: "os que já gastei dinheiro pra observar têm um indicativo?"):
+  // olho e os 3 tracinhos do relatório; laranja quando o relatório é da temporada passada (desatualizado)
+  function obsTag(co, p) {
+    const m = S.coMkt(co), n = (m.rep[p.id] || 0), old = S.coMktOld(co, p);
+    if (!m.obs[p.id] && n < 2) return '';
+    return '<u class="mk-ob' + (old ? ' old' : '') + '" title="' + (old ? 'relatório desatualizado' : 'observado') + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3.2"/></svg>' +
+      [1, 2, 3].map(k => '<i' + (k <= Math.max(1, n) ? ' class="on"' : '') + '></i>').join('') + '</u>';
   }
   function ficha(id, back) {
     const c = C(), co = c.co, p = S.coMktFind(co, id); if (!p) return mercado();
@@ -1433,7 +1441,7 @@
     const rumRow = rums.length ? '<div class="mkf-rm"><span>' + (rums.length > 1 ? 'Também querem' : 'Também quer') + '</span><b>' + rums.map(x => crest(x.to, 'nw-cr')).join('') + (rums.length === 1 ? '<i>' + rumNm(rums[0].to) + '</i>' : '') + '</b></div>' : '';
     const repC = S.coMktRepCost(co, p), repNo = n < S.CO_MKT.reps && (S.coFin(co).caixa || 0) < repC, repOff = n >= S.CO_MKT.reps || repNo;
     show('<div class="mk mkf' + (rumRow ? ' rm' : '') + '">' + mkHead('mkf-back', esc(p.n), S.CO_POS_NM[p.pos] + ' · ' + p.age + ' anos · ' + mkClub(p), false, true) +
-      (fichaAt ? fichaAttrs(co, p, n) : '<div class="mk-k mkf-cmp"><span class="mkf-t"><small>CONTRA O SEU ' + (S.CO_POS_NM[p.pos] || '').toUpperCase() + ' TITULAR</small>' + (b ? (n >= S.CO_MKT.reps ? '<span class="mkf-ovw"><i class="mkf-ov"><small>GERAL</small>' + p.ovr + '</i>' : '') + '<b class="' + word + '">' + word + '<small>' + CERT[n] + '</small></b>' + (n >= S.CO_MKT.reps ? '</span>' : '') : '<b class="nr">sem relatório</b>') + '</span>' +
+      (fichaAt ? fichaAttrs(co, p, n) : '<div class="mk-k mkf-cmp"><span class="mkf-t"><small>CONTRA O SEU ' + (S.CO_POS_NM[p.pos] || '').toUpperCase() + ' TITULAR</small>' + (b ? (n >= S.CO_MKT.reps ? '<span class="mkf-ovw"><i class="mkf-ov"><small>GERAL</small>' + p.ovr + '</i>' : '') + '<b class="' + word + '">' + word + '<small' + (S.coMktOld(co, p) ? ' class="old">desatualizado' : '>' + CERT[n]) + '</small></b>' + (n >= S.CO_MKT.reps ? '</span>' : '') : '<b class="nr">sem relatório</b>') + '</span>' +
         '<span class="mkf-sc"><i></i>' + band + '<em></em><strong>' + esc(st0 ? last(st0.n) : 'titular') + '</strong></span><span class="mkf-w"><span>pior</span><span>igual</span><span>melhor</span></span></div>' +
       '<div class="mkf-g"><div class="mk-k"><small>POTENCIAL</small><b>' + (pot ? pot[0] : 'Peça um relatório') + '</b>' + (pot ? '<span class="mkf-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= pot[1] ? 'on' : '') + '"></i>').join('') + '</span>' : '<span class="mkf-nr">o olheiro ainda não viu</span>') + '</div>' +
         '<div class="mk-k"><small>JEITO DE JOGAR</small>' + (tr ? '<span class="mkf-tr">' + tr.good.map(t => '<span>' + t + '</span>').join('') + '</span><span class="mkf-nr">' + (n >= 3 ? 'Ponto fraco: ' + tr.bad : n === 2 ? 'Ponto fraco: falta 1 relatório' : 'Ponto fraco: faltam 2 relatórios') + '</span>' : '<b>?</b><span class="mkf-nr">o olheiro ainda não viu</span>') + '</div></div>') +

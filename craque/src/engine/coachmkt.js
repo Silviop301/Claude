@@ -69,10 +69,24 @@
   };
 
   S.coMkt = co => {
-    if (!co.mkt || co.mkt.s !== co.season) co.mkt = { s: co.season, rep: {}, f: (co.mkt && co.mkt.f) || [0, 0, 0, 0, 0, 0], ord: (co.mkt && co.mkt.ord) || 0, nm: '', obs: {}, neg: {}, got: {} };
+    if (!co.mkt || co.mkt.s !== co.season) co.mkt = S.coMktCarry(co, co.mkt);
     if (!co.mkt.neg) { co.mkt.neg = {}; co.mkt.got = {}; }
     return co.mkt;
   };
+  // Observados de uma temporada para a outra (Silvio 11/11: "a lista vai precisar resetar no fim da temporada?"): não zera,
+  // porque o relatório foi pago. Cada relatório perde um nível (3→2, 2→1; o 1 é de graça e não precisa guardar) e fica
+  // "desatualizado" (m.old) até o próximo, porque o jogador muda. Sai da lista quem veio para o seu elenco e quem não existe
+  // mais: só jogador real (id r:) segue de um ano para o outro; o sorteado e o sem clube nascem de novo a cada temporada
+  S.coMktCarry = (co, o) => {
+    const m = { s: co.season, rep: {}, f: (o && o.f) || [0, 0, 0, 0, 0, 0], ord: (o && o.ord) || 0, nm: '', obs: {}, neg: {}, got: {}, old: {} };
+    if (!o) return m;
+    const mine = {}; (co.squad || []).forEach(p => { mine[p.id] = 1; });
+    const ok = id => id.indexOf('r:') === 0 && !mine[id] && !(o.got && o.got[id]);
+    Object.keys(o.obs || {}).forEach(id => { if (ok(id)) m.obs[id] = 1; });
+    Object.keys(o.rep || {}).forEach(id => { const r = o.rep[id] - 1; if (!ok(id) || r < 1) return; m.obs[id] = 1; m.old[id] = 1; if (r > 1) m.rep[id] = r; });
+    return m;
+  };
+  S.coMktOld = (co, p) => !!(S.coMkt(co).old || {})[p.id];
   // O titular da posição: o mais forte do seu elenco nela
   S.coMktStarter = (co, pos) => co.squad.filter(p => p.pos === pos).sort((a, b) => b.ovr - a.ovr)[0] || null;
   // Relatórios que o olheiro tem: todo mundo já vem com 1; depois, os que você pediu
@@ -190,7 +204,7 @@
     const m = S.coMkt(co), n = S.coMktReps(co, p); if (n >= M.reps) return false;
     const cost = S.coMktRepCost(co, p), f = S.coFin ? S.coFin(co) : null;
     if (f && cost) { if ((f.caixa || 0) < cost) return false; f.caixa -= cost; if (f.ss) f.ss.comp = (f.ss.comp || 0) + cost; }
-    m.rep[p.id] = n + 1; return true;
+    m.rep[p.id] = n + 1; m.obs[p.id] = 1; if (m.old) delete m.old[p.id]; return true; // pagou, entra nos Observados
   };
   S.coMktObs = (co, p) => { const m = S.coMkt(co); if (m.obs[p.id]) delete m.obs[p.id]; else m.obs[p.id] = 1; return !!m.obs[p.id]; };
   S.coMktFind = (co, id) => (S.coMkt(co).got[id] ? null : S.coMktPool(co).find(p => p.id === id) || null);
