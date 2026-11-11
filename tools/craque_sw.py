@@ -90,6 +90,7 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.pathname.includes('/api/')) return; // ranking: sempre da rede
+  if (url.pathname.includes('/assets/musica/')) return; // música de fundo: o navegador pede em pedaços (Range) e o iPhone não toca resposta inteira do cache
   const code = url.origin === location.origin && /(\\/|\\.html|\\.js|\\.css|\\.webmanifest)$/.test(url.pathname);
   if (code) {
     e.respondWith(fetch(req).then(res => {
