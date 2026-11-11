@@ -362,9 +362,9 @@
   // Os clubes de fora do Brasil ganharam elenco real em 2026-11-11 (antes só Série A e B). Numa carreira que já existia,
   // o clube de fora troca o elenco sorteado pelo real só na temporada seguinte (co.rf, posto ao abrir o save em
   // ui/coach.js): no meio da temporada sumiria quem você observa ou negocia. Carreira nova: co.rf = 0, real desde o começo
-  S.coRealOf = (clubId, co) => {
+  S.coRealOf = (clubId, co, season) => {
     const R = REAL(), x = (R && R.clubs && R.clubs[clubId]) || null;
-    if (x && co && co.rf !== undefined && co.season < co.rf && !/^bra-/.test(clubId)) return null;
+    if (x && co && co.rf !== undefined && (season === undefined ? co.season : season) < co.rf && !/^bra-/.test(clubId)) return null;
     return x;
   };
   function realSquad(club, season, rows, co) {
@@ -396,7 +396,7 @@
     return co && co.wm && S.coWorldSquad ? S.coWorldSquad(co, clubId, season, sq) : sq;
   }
   function genBase(clubId, season, co) {
-    const club = D.CLUB_BY_ID[clubId], real = S.coRealOf(clubId, co);
+    const club = D.CLUB_BY_ID[clubId], real = S.coRealOf(clubId, co, season);
     if (real) return realSquad(club, season, real, co);
     const r = S.rng(hash(clubId + '|' + season)), cty = D.countryOf(club), s = club.strength;
     const out = [];
