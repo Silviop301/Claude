@@ -570,7 +570,7 @@
     const m = x.m, sh = m.us.shout, $ = id => document.getElementById(id);
     const g = $('ldl-g4'); if (!g) return;
     // O auxiliar avisa no "Parar e mexer" quantos titulares estão no limite (abaixo de 58%, os que ele sugere trocar)
-    { const by = byOf(m.us.squad), n = m.us.subs > 0 && m.us.bench.length ? m.us.xi.filter((id, i) => i && by[id] && by[id].en < 58).length : 0, b = $('b-lv-stop');
+    { const by = byOf(m.us.squad), n = S.coSubLeft(m) > 0 && m.us.bench.length ? m.us.xi.filter((id, i) => i && by[id] && by[id].en < 58).length : 0, b = $('b-lv-stop');
       if (b && b._n !== n) { b._n = n; let d = b.querySelector('.tm-dot'); if (!n) { if (d) d.remove(); } else { if (!d) { d = document.createElement('i'); d.className = 'tm-dot'; b.appendChild(d); } d.textContent = n; } b.classList.toggle('aux', n > 0); } }
     g.querySelectorAll('[data-gr]').forEach(b => { const on = !!sh && sh.k === b.dataset.gr; b.classList.toggle('on', on); b.disabled = !!sh && !on;
       b.querySelector('small').textContent = on ? 'até os ' + sh.until + '\'' : S.CO_SHOUT[b.dataset.gr].sub; });
@@ -621,7 +621,7 @@
     const bench = s.bench.map(b => by[b]).filter(Boolean).filter(q => (q.pos === 'GOL') === (slot === 'GOL'));
     const score = q => S.coSlotVal(q, s.form, i) * (0.6 + 0.4 * q.en / 100); // o atributo da vaga conta (fase 3 dos atributos)
     const list = bench.slice().sort((a, b) => c.avail(b) - c.avail(a) || score(b) - score(a));
-    const can = s.subs > 0 || p.out > 0; // tirar quem se machucou não gasta uma das 5
+    const L = S.coSubLeft(m), can = L > 0 || p.out > 0; // tirar quem se machucou não gasta troca nem parada
     let pick = can ? list.find(c.avail) : null;
     const d = didOf(m, p), yc = s.bk && s.bk[id], tired = p.en < 55;
     const aux = yc && tired ? 'Amarelado e cansado. Mais uma falta dessas e ele sai.' : yc ? 'Já tem amarelo. Chegando forte, pode deixar o time com 10.' : tired ? 'Está no limite. Daqui a pouco não acompanha mais.' : p.out ? 'Sentiu. Joga mancando se ficar.' : d.gl ? 'Está decidindo. Eu deixava.' : 'Está bem no jogo. Ninguém do banco rende mais na vaga agora.';
@@ -637,7 +637,7 @@
           '<div class="ld-st4">' + [['chutes', d.sh], ['gols', d.gl], ['faltas', d.fo], [yc ? 'amarelo' : 'cartão', d.am || '—']].map(([k, v], j) => '<span class="ld-st1' + (j === 3 && yc ? ' y' : '') + '"><small>' + k + '</small><b>' + v + '</b></span>').join('') + '</div>' +
           '<div class="ldl-aq">' + lbl('AUXILIAR') + '"' + aux + '"</div><span class="ld-gr"></span>' +
           '<button class="ld-b line" id="ldl-keep">' + (back ? 'Voltar sem trocar' : 'Deixar em campo e voltar ao jogo') + '</button></div>' +
-        '<div class="ldl-pr"><div class="ldl-prh">' + lbl('QUEM ENTRA NO LUGAR DELE') + '<small>' + (s.subs ? U.D.plural(s.subs, 'troca sobrando', 'trocas sobrando') : can ? 'lesão não conta' : 'sem trocas') + '</small></div>' +
+        '<div class="ldl-pr"><div class="ldl-prh">' + lbl('QUEM ENTRA NO LUGAR DELE') + '<small>' + (L ? U.D.plural(L, 'troca sobrando', 'trocas sobrando') : can ? 'lesão não conta' : s.subs ? 'sem paradas' : 'sem trocas') + '</small></div>' +
           '<div class="ldl-cl">' + (list.length ? list.map(row).join('') : '<p class="ld-none">Ninguém no banco para essa vaga.</p>') + '</div><span class="ld-gr"></span>' +
           (pick ? '<button class="ld-gold" id="ldl-sub"><b>Levantar a placa: sai ' + (p.num || '') + ', entra ' + (pick.num || '') + '</b><small>' + esc(c.last(p.n)) + ' sai, ' + esc(c.last(pick.n)) + ' entra agora</small></button>' : '') + '</div></div>',
         'Jogador ' + p.n, w => {
@@ -670,20 +670,30 @@
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', FW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
     // As trocas que o auxiliar sugere (até 3 e até onde há troca): machucado, cansado ou amarelado, cada um com o melhor
     // do banco para a vaga; ninguém entra duas vezes
+    // a parada de agora: várias trocas nela gastam uma parada só; o intervalo não gasta (regra do futebol, Silvio 11/11)
+    const wk = half ? 'ht' : 'p' + m.min + (m.st || 0) + st.t, L = () => S.coSubLeft(m, wk);
+    // Quantas trocas e paradas sobram, em bolinhas (Silvio 11/11: "um indicativo pra saber quantas trocas ainda tenho")
+    const subBar = () => {
+      const pips = (n, on) => Array.from({ length: n }, (_, i) => '<u' + (i < on ? ' class="on"' : '') + '></u>').join('');
+      const W = s.win == null ? null : s.win + (s.wk === wk ? 1 : 0), Wn = S.CO.win || 3;
+      return '<div class="ldl-tro"><span><small>TROCAS</small><i>' + pips(S.CO.subs || 5, s.subs) + '</i><b>' + s.subs + '</b></span>' +
+        (W == null ? '' : '<span><small>PARADAS</small><i>' + pips(Wn, s.win) + '</i><b>' + s.win + '</b></span>') +
+        '<em>' + (half ? 'Intervalo não gasta parada' : s.wk === wk ? 'Esta parada já contou' : W ? 'Trocar agora gasta 1 parada' : s.subs ? 'Sem paradas: só troca por lesão' : 'Lesão não conta') + '</em></div>';
+    };
     const suggs = () => {
       const by = byOf(s.squad), sl = S.coSlots(s.form), out = [], took = new Set();
       let paid = 0; // a troca de quem se machucou não gasta uma das 5
-      if (!s.subs && !s.xi.some(id => by[id] && by[id].out > 0)) return [];
+      if (!L() && !s.xi.some(id => by[id] && by[id].out > 0)) return [];
       const cand = s.xi.map((id, i) => [by[id], i]).filter(([p]) => p && (p.out || p.en < 58 || (s.bk && s.bk[p.id]))).sort((a, b) => (b[0].out ? 1 : 0) - (a[0].out ? 1 : 0) || a[0].en - b[0].en);
       for (const [p, i] of cand) {
         if (out.length >= 3) break;
-        if (!p.out && paid >= s.subs) continue;
+        if (!p.out && paid >= L()) continue;
         const slot = sl[i], q = s.bench.map(b => by[b]).filter(q => q && c.avail(q) && !took.has(q.id) && (q.pos === 'GOL') === (slot === 'GOL')).sort((a, b) => S.coSlotVal(b, s.form, i) - S.coSlotVal(a, s.form, i))[0];
         if (q) { took.add(q.id); if (!p.out) paid++; out.push({ o: p, i: q, slot, tag: S.coSlotLbl(s.form, i), why: p.out ? 'machucado' : p.en < 58 ? Math.round(p.en) + '%' : 'amarelo' }); }
       }
       return out;
     };
-    const doSub = (outId, inId) => { if (x.sub(outId, inId)) { inn.add(inId); sfx('tap'); } sel = -1; selB = null; draw(); };
+    const doSub = (outId, inId) => { if (x.sub(outId, inId, wk)) { inn.add(inId); sfx('tap'); } sel = -1; selB = null; draw(); };
     const auxPop = () => {
       const r = x.read, G = suggs(), tc = t => /↓/.test(t) ? 'dn' : /↑/.test(t) ? 'up' : 'y';
       const host = document.querySelector('#ld-pop .ldl-full'); if (!host) return;
@@ -696,7 +706,7 @@
       host.appendChild(ov);
       { const w = ov, y = w.querySelector('#ldl-aux-y');
         w.querySelectorAll('[data-ro]').forEach(b => b.onclick = () => { sfx('tap'); x.redPick(b.dataset.ro); draw(); });
-        if (y) { const on = auxBind(w, y); y.onclick = () => { let did = 0; on().forEach(k => { const g = G[k]; if (x.sub(g.o.id, g.i.id)) { inn.add(g.i.id); did++; } }); if (did) sfx('tap'); sel = -1; selB = null; draw(); }; }
+        if (y) { const on = auxBind(w, y); y.onclick = () => { let did = 0; on().forEach(k => { const g = G[k]; if (x.sub(g.o.id, g.i.id, wk)) { inn.add(g.i.id); did++; } }); if (did) sfx('tap'); sel = -1; selB = null; draw(); }; }
         w.querySelector('#ldl-aux-n').onclick = () => { sfx('tap'); draw(); };
         w.onclick = e => { if (e.target === w) { sfx('tap'); draw(); } };
       }
@@ -705,7 +715,7 @@
       const by = byOf(s.squad), sl = S.coSlots(s.form), G = suggs(), nT = x.read.tags.length, idle = sel < 0 && !selB;
       const gOut = new Set(G.map(g => g.o.id)), gIn = new Set(G.map(g => g.i.id)), selP = selB ? by[selB] : null;
       // sem trocas, ainda dá para tirar quem se machucou (não gasta uma das 5)
-      const hurt = id => !!(by[id] && by[id].out > 0), anySub = s.subs > 0 || s.xi.some(hurt), selSub = sel >= 0 && (s.subs > 0 || hurt(s.xi[sel]));
+      const hurt = id => !!(by[id] && by[id].out > 0), anySub = L() > 0 || s.xi.some(hurt), selSub = sel >= 0 && (L() > 0 || hurt(s.xi[sel]));
       // longe da borda: o anel, o amarelo e o contorno da sugestão não podem ser cortados pelo campo
       const sp = spotsT(s.form).map(([px, py]) => [px, Math.round(10 + (py - 9) * 1.042)]);
       const dots = s.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: sel === i, yc: !!(s.bk && s.bk[id]),
@@ -716,12 +726,12 @@
       const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b>' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
       const hint = sel >= 0 ? (selSub ? 'Toque ou arraste quem entra, ou toque em outro titular' : 'Toque em outro titular')  : selB ? 'Toque em quem sai' : '';
       const sc = esc(c.nm(m.home ? co.club : m.vs)).slice(0, 3).toUpperCase() + ' <u>' + m.gh + ' x ' + m.ga + '</u> ' + esc(c.nm(m.home ? m.vs : co.club)).slice(0, 3).toUpperCase();
-      pop('<div class="tm ldl-tm"><div class="tm-h"><b>' + esc(T) + '</b><span class="ldl-sc">' + sc + '</span><small>' + S.coClock(m) + '</small>' + (hint ? '<span class="tm-hint">' + hint + '</span>' : LN_LEG) + '</div>' +
+      pop('<div class="tm ldl-tm' + (half ? ' ht' : '') + '"><div class="tm-h"><b>' + esc(T) + '</b><span class="ldl-sc">' + sc + '</span><small>' + S.coClock(m) + '</small>' + (hint ? '<span class="tm-hint">' + hint + '</span>' : LN_LEG) + '</div>' +
         '<div class="ld-pitch tm-pitch">' + PITCH + dots + (selSub ? nearList(sl[sel], bench, c.avail, sp[sel][0], sp[sel][1]) : '') + '</div>' +
-        '<div class="tm-bench"><small>BANCO<em>' + (s.subs ? U.D.plural(s.subs, 'troca', 'trocas') : anySub ? 'só a da lesão' : 'sem trocas') + '</em></small>' + bstrip + '</div>' +
+        '<div class="tm-bench"><small>BANCO<em>' + (L() ? U.D.plural(L(), 'troca', 'trocas') : anySub ? 'só a da lesão' : s.subs ? 'sem paradas' : 'sem trocas') + '</em></small>' + bstrip + '</div>' +
         '<div class="tm-side">' + (half ? '<div class="ldl-talk2">' + Object.keys(S.CO_TALK).map(k => '<button data-tk="' + k + '"' + (talk === k ? ' class="on"' : '') + '>' + esc(S.CO_TALK[k].name) + '</button>').join('') + '</div>' : '') +
           pick('form', 'Formação', s.form) + pick('sty', 'Estilo', esc(S.CO_STY[s.style].name)) +
-          '<button class="tm-b" id="ldl-aux">Auxiliar' + (nT || G.length || st.t === 'vermelho' ? '<i class="tm-dot">' + (st.t === 'vermelho' ? '!' : G.length || '') + '</i>' : '') + '</button>' +
+          subBar() + '<button class="tm-b" id="ldl-aux">Auxiliar' + (nT || G.length || st.t === 'vermelho' ? '<i class="tm-dot">' + (st.t === 'vermelho' ? '!' : G.length || '') + '</i>' : '') + '</button>' +
           '<button class="tm-go" id="ldl-go">' + (half ? 'Começar o 2º tempo' : 'Seguir o jogo') + '</button></div></div>',
         T, w => {
           w.querySelectorAll('[data-xi]').forEach(b => b.onclick = () => {

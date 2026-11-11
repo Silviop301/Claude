@@ -1008,7 +1008,7 @@
         // Pausa para um popup (jogador tocado); volta false se o jogo não pode parar agora
         pause() { if (open || wait || m.done) return false; clearTimeout(timer); open = true; read = S.coRead(co, m); if (sim) { clearTimeout(frz); sim.freeze(true); } return true; },
         resume() { open = false; if (sim) { clearTimeout(frz); sim.freeze(false); } paint(); if (co.speed === 'fim') return toEnd(); timer = setTimeout(tick, 400); },
-        sub(outId, inId) { const by = byId(); if (!S.coSub(co, m, outId, inId)) return false; m.ev.push({ m: m.min, t: 'troca', s: 'us', p: last(by[outId].n), q: last(by[inId].n) }); move(); paint(); return true; },
+        sub(outId, inId, key) { const by = byId(); if (!S.coSub(co, m, outId, inId, key)) return false; m.ev.push({ m: m.min, t: 'troca', s: 'us', p: last(by[outId].n), q: last(by[inId].n) }); move(); paint(); return true; },
         swap(i, j) { const x = m.us.xi; const t = x[i]; x[i] = x[j]; x[j] = t; paint(); },
         // A parada mexe na formação e no estilo direto (◀ ▶) e anota no fim, uma vez só
         tacLog(f0, y0) { const s0 = m.us; if (s0.form !== f0 || s0.style !== y0) { m.ev.push({ m: m.min, t: 'tatica', s: 'us', p: s0.form + ', ' + S.CO_STY[s0.style].name.toLowerCase() }); move(); } paint(); },
