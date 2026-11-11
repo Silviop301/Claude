@@ -251,7 +251,7 @@
     add('pat', patOf(co).fix / n);
     if (ri === 0 || ri === Math.floor(n / 2)) add('tv', fin.rec * F.tv / 2 * (S.coEstTv ? S.coEstTv(co) : 1));
     let g = 0;
-    if (home && vs) { g = gate(co, vs); add('bil', g); }
+    if (home && vs) { g = gate(co, vs); add('bil', g); if (S.coEstBar) fin.ss.bar = (fin.ss.bar || 0) + S.coEstBar(co, vs, gate0(co, vs), g); }
     if (fin.loan && (ri + 1) % F.mes === 0) parcela(co);
     if (S.coMktWeek) S.coMktWeek(co, ri, sub, add);
     // No vermelho a diretoria perde a paciência aos poucos (mais com o presidente pão-duro, o dobro no ultimato);
@@ -271,7 +271,7 @@
   const RD_IN = ['bil', 'tv', 'pat', 'prem', 'vend', 'apo'], RD_OUT = ['sal', 'comp', 'jur', 'obra'];
   function roundLog(co, ri, snap, h) { // h: 1 em casa, 0 fora, -1 sem jogo
     const fin = co.fin, d = k => Math.round((fin.ss[k] || 0) - ((snap.ss && snap.ss[k]) || 0));
-    const inn = RD_IN.map(k => [k, d(k)]).filter(x => x[1] > 0), out = RD_OUT.map(k => [k, d(k)]).filter(x => x[1] > 0);
+    const bar = d('bar'), inn = RD_IN.map(k => [k, d(k) - (k === 'bil' ? bar : 0)]).concat([['bar', bar]]).filter(x => x[1] > 0), out = RD_OUT.map(k => [k, d(k)]).filter(x => x[1] > 0);
     const dc = Math.round(fin.caixa - snap.cx), rest = dc - inn.reduce((a, x) => a + x[1], 0) + out.reduce((a, x) => a + x[1], 0);
     if (rest > 0) inn.push(['out', rest]); else if (rest < 0) out.push(['out', -rest]);
     fin.rd = { s: co.season, r: ri + 1, inn, out, cx: fin.caixa, dc, h };
