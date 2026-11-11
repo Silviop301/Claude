@@ -156,7 +156,7 @@
   // banco segue embaixo para quem é de fora da posição, com o geral que ele teria na vaga (ovrAt, perde um pouco)
   const ovrAt = (p, slot) => p.pos === slot || (p.pos === 'GOL') !== (slot === 'GOL') ? p.ovr : Math.round(p.ovr * S.coFit(p.pos, slot));
   const nearList = (slot, bench, ok, x, y) => { const L = bench.filter(p => ok(p) && p.pos === slot).sort((a, b) => b.ovr - a.ovr || b.en - a.en).slice(0, 4);
-    return '<div class="tm-near ' + (x < 55 ? 'r' : 'l') + '" style="' + (x < 55 ? 'left:' + x : 'right:' + (100 - x)) + '%;top:' + y + '%">' +
+    return '<div class="tm-near" style="' + (x < 55 ? 'left:calc(' + x : 'right:calc(' + (100 - x)) + '% + 40px);top:' + y + '%">' +
       (L.length ? L.map(p => '<button class="tm-bp tm-cd" data-bp="' + p.id + '"><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + p.ovr + '</b><span><i>' + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + p.pos + '</small></span></button>').join('')
         : '<p class="tm-cl0">Ninguém da posição. Use o banco.</p>') + '</div>'; };
   // Dentro do campo: a lista não pode sair por cima nem por baixo
@@ -376,7 +376,8 @@
     let anim = 0;
     const draw = () => {
       clearTimeout(anim);
-      const sl = S.coSlots(co.form), sp = spotsT(co.form);
+      // a linha de cima desce um pouco: o anel de quem está escolhido não pode ser cortado pelo campo (Silvio 2026-11-11)
+      const sl = S.coSlots(co.form), sp = spotsT(co.form).map(([px, py]) => [px, Math.round(13 + (py - 9) * 68 / 72)]);
       const bench = co.squad.filter(p => !co.xi.includes(p.id)).sort(benchSort(c));
       // O auxiliar junta todas as trocas que faria (até 3): primeiro quem está fora de posição, depois os mais cansados,
       // cada um com o melhor do banco para a vaga (ninguém entra duas vezes)
@@ -423,6 +424,8 @@
           if (swap !== null) return put(id, swap);
           selB = selB === id ? null : id; draw(); });
         benchDrag(st.querySelector('.tm'), put, (id, i) => !!by[id] && fitsSlot(by[id], sl[i])); benchShow(st); nearFix(st);
+        // tocar fora (campo vazio, cabeçalho, coluna) fecha a escolha
+        st.querySelector('.tm').addEventListener('click', e => { if ((swap !== null || selB) && !e.target.closest('[data-xi],[data-bp],.tm-near,button')) { swap = null; selB = null; draw(); } });
         st.querySelectorAll('[data-tmk]').forEach(b => b.onclick = () => {
           sfx('tap'); const d = +b.dataset.d;
           if (b.dataset.tmk === 'sty') { const L = S.CO_STYLES; co.style = L[(L.indexOf(co.style) + d + L.length) % L.length]; st.querySelector('#tm-sty').textContent = S.CO_STY[co.style].name; if (tip && tip.kind === 'sty' && used !== S.coTipUsed(co, tip)) draw(); return; }
@@ -695,6 +698,7 @@
           });
           if (s.subs) benchDrag(w.querySelector('.ldl-tm'), (id, i) => doSub(s.xi[i], id), (id, i) => !!by[id] && fitsSlot(by[id], sl[i]));
           benchShow(w); nearFix(w);
+          w.querySelector('.ldl-tm').addEventListener('click', e => { if ((sel >= 0 || selB) && !e.target.closest('[data-xi],[data-bp],.tm-near,button')) { sel = -1; selB = null; draw(); } });
           w.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { sfx('tap'); talk = talk === b.dataset.tk ? null : b.dataset.tk; draw(); });
           w.querySelectorAll('[data-tmk]').forEach(b => b.onclick = () => {
             sfx('tap'); const d = +b.dataset.d;
