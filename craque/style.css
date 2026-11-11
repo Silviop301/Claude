@@ -9798,6 +9798,15 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .axv-card p { margin: 0; font: 700 14px/1.3 var(--body); color: #9BA8A0; }
 /* bolinha do Auxiliar sempre no meio da altura do botão (no intervalo o botão é mais baixo e ela vazava) */
 .tm-b .tm-dot { top: 50%; right: 10px; transform: translateY(-50%); text-align: center; }
+/* Departamento médico (2026-11-11): presidente no canto da diretoria, cartão do DM no Clube, tratamentos no cartão da médica */
+.kb2-dir { position: relative; } .kb2-pf { position: absolute; right: 12px; top: 10px; width: 44px; height: 44px; border-radius: 50%; background: #E9E2D2; }
+.kb2-side.k3 .kb2-dir > small { padding-right: 50px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dmv .axv-lv b { width: 112px; } .dmv .axv-lv span { font-size: 14px; }
+.axv-me.tr { justify-content: flex-start; gap: 5px; padding: 10px 10px; } .axv-me.tr .axv-fc { width: 58px; height: 58px; } .axv-me.tr > b { font-size: 18px; } .axv-me.tr em { font-size: 14px; padding: 4px 8px; }
+.axv-me.tr > small { margin-top: 4px; font: 800 12px/1 var(--display); letter-spacing: .08em; color: #5C6A62; }
+.ld-st button.dmt { width: 100%; min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 10px; border-radius: 10px; background: #13201A; color: #F3F1EA; border: 0; cursor: pointer; }
+.dmt b { font: 800 15px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; } .dmt span { font: 800 15px/1 var(--display); color: var(--gold); flex: none; } .dmt span.dn { color: #F5A57F; }
+.ld-st button.dmt.off { opacity: .4; pointer-events: none; }
 /* Encerrar carreira (2026-11-11): link discreto no fim da temporada e a janelinha com o resumo da carreira */
 .fdt button.fdt-fim { height: 30px; flex: none; margin-top: -2px; color: #B9C9BF; font: 600 15px/1 var(--body); text-decoration: underline; text-underline-offset: 3px; }
 .ld-pop-c.hl-pop.acd-pop.fim-pop { width: 520px; }
