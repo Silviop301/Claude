@@ -9642,3 +9642,5 @@ button.coin-pill { cursor: pointer; border: 0; }
 .pay-ty { width: max-content; }
 /* Aviso da compra em tela estreita (voltou do pagamento com o celular em pé): quebra em duas linhas */
 @media (max-width: 560px) { .pay-ty { flex-wrap: wrap; width: calc(100vw - 32px); } .pay-ty b { white-space: normal; flex: 1 1 100%; } .pay-ty span { flex: 1; } }
+/* Proposta com troca desigual: 3ª linha "Perde na troca" no cartão do pagamento (as 3 cabem na altura das 2) */
+.mkp .mkf-li.o3 > div { height: 28px; } .mkp .mkf-li.o3 b { font-size: 19px; } .mkp .mkf-li.o3 span { white-space: nowrap; }

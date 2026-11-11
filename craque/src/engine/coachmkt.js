@@ -252,6 +252,8 @@
     .sort((a, b) => S.coValue(b) - S.coValue(a)).slice(0, 6);
   const tradeVal = (co, id) => { const q = id && co.squad.find(x => x.id === id); return q ? r10k(S.coValue(q) * M.trade) : 0; };
   S.coMktTradeVal = tradeVal;
+  // Troca desigual: quanto o jogador na troca vale a mais que a proposta (não tem troco)
+  S.coMktTradeOver = (co, o) => Math.max(0, tradeVal(co, o.tr) - o.v);
   // Quanto sai da verba agora: o valor menos a troca, dividido nas parcelas
   S.coMktNow = (co, o) => { const cash = Math.max(0, o.v - tradeVal(co, o.tr)); return Math.ceil(cash / ((o.pay || 0) + 1) / 1000) * 1000; };
   // Envia: { k: 'ok' | 'counter' (v) | 'recusa' | 'no' (acabou a paciência) | 'fechada' | 'verba' }
@@ -263,11 +265,13 @@
     if (!S.coMktWin(co).open) return { k: 'fechada' };
     if (S.coMktNow(co, o) > Math.max(0, f.verba)) return { k: 'verba' };
     spend(co);
-    const ask = S.coMktAsk(co, p), tv = tradeVal(co, o.tr), pen = M.payPen[o.pay || 0], eff = (o.v + tv) * (1 - pen);
+    // O valor da proposta é o pacote inteiro: o jogador na troca abate (o resto é dinheiro) e só o dinheiro parcelado pesa menos.
+    // Até 11/11 a troca contava duas vezes (abatia do dinheiro e ainda somava no pacote): comprar com troca saía pela metade.
+    const ask = S.coMktAsk(co, p), tv = tradeVal(co, o.tr), pen = M.payPen[o.pay || 0], eff = Math.max(0, o.v - tv) * (1 - pen) + tv;
     if (eff >= ask) { n.st = 'ok'; n.deal = { v: o.v, pay: o.pay || 0, tr: o.tr || null }; n.ans = { k: 'ok' }; return n.ans; }
     n.pat--;
     if (n.pat <= 0) { n.st = 'no'; n.ans = { k: 'no' }; return n.ans; }
-    if (eff >= ask * M.counter) { n.cv = r10k(ask / (1 - pen) - tv); n.ans = { k: 'counter', v: n.cv }; return n.ans; }
+    if (eff >= ask * M.counter) { n.cv = Math.ceil(((ask - tv) / (1 - pen) + tv) / 10000) * 10000; n.ans = { k: 'counter', v: n.cv }; return n.ans; }
     n.ans = { k: 'recusa' }; return n.ans;
   };
 
