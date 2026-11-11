@@ -153,5 +153,51 @@
     });
   }
 
-  Object.assign(U, { settings, settingsLand, whatsNew, VERSION, novidadesLand, newsNew });
+  // Termos e reembolso deitados (2026-11-11; Silvio: a página termos.html abria com letra enorme e rolando no celular
+  // deitado): o mesmo texto de craque/termos.html em 7 abas curtas no palco U.LD, sem rolar, com o contato à direita.
+  // Mudou um termo: mude aqui, em termos.html e em i18n/termos.en.html, e a data TERMOS_DT. tab = índice ou nome da aba
+  const CONTATO = 'contato@climbix.app', TERMOS_DT = '10 de novembro de 2026';
+  const TERMOS = [
+    ['O jogo', ['Ao jogar o Climbix (climbix.app) você concorda com estes termos.',
+      'O Climbix é um jogo de futebol <b>gratuito para jogar</b>. As carreiras, partidas e notícias são de ficção.',
+      'Nomes de clubes, seleções, competições e pessoas aparecem só como referência e não indicam ligação oficial com eles.',
+      'Estes termos seguem as leis do Brasil e podem mudar. A data no alto mostra a última versão.']],
+    ['Moedas', ['As <b>moedas</b> são um item do jogo. Você ganha moedas jogando e, se quiser, pode comprar pacotes na Loja. Comprar é opcional: dá para jogar tudo sem pagar.',
+      'Elas servem para escolher o clube em que a carreira começa e para fazer aportes no clube que você treina. Nenhuma compra é sorteio: o pacote mostra quantas moedas vêm e quanto custa antes de você pagar.',
+      'Para comprar é preciso ter conta, porque as moedas ficam guardadas nela. Elas não valem dinheiro, não podem ser trocadas por dinheiro nem passadas para outra conta.']],
+    ['Pagamento', ['O pagamento é feito pelo <b>Mercado Pago</b>, em reais, com os meios que ele oferecer (Pix e cartão, por exemplo).',
+      'As moedas entram na conta quando o Mercado Pago confirma o pagamento. Na fatura a compra aparece com o nome CLIMBIX.',
+      'Se você tem menos de 18 anos, compre só com a autorização de um responsável.',
+      'Os preços, os pacotes e o que as moedas compram podem mudar. O que você já comprou continua na sua conta.']],
+    ['Reembolso', ['Você pode desistir da compra em até <b>7 dias</b>, desde que as moedas daquele pacote ainda não tenham sido usadas. Devolvemos o valor inteiro pelo mesmo meio do pagamento e as moedas saem da conta.',
+      'Se você pagou e as moedas não chegaram, ou foi cobrado duas vezes, nós entregamos as moedas ou devolvemos o valor, como você preferir.',
+      'Para pedir, escreva para o e-mail ao lado com o seu usuário e a data da compra.',
+      'Moedas já usadas e compras com mais de 7 dias não são reembolsadas, a não ser nos casos em que a lei garante.']],
+    ['Conta', ['A conta é opcional e serve para salvar o jogo na nuvem e continuar em outro aparelho.',
+      'Cuide da sua senha e dos serviços (Google, GitHub ou Discord) ligados à conta: quem tiver acesso a eles entra na sua conta.',
+      'Sem um serviço ligado, uma senha esquecida não tem como ser recuperada.',
+      'Se você pedir para apagar a conta, as moedas que estiverem nela são apagadas junto.']],
+    ['Regras', ['Não use usuário ou apelido ofensivo, que engane ou que se passe por outra pessoa.',
+      'Não tente burlar o ranking, invadir contas ou sobrecarregar o servidor.',
+      'Podemos tirar do ranking, renomear ou apagar apelidos, carreiras e contas que desrespeitem essas regras.']],
+    ['Garantias', ['O jogo é oferecido como está. Ele pode mudar, ficar fora do ar ou ter o ranking reiniciado.',
+      'Fazemos o possível para guardar bem o seu jogo, mas não garantimos que ele nunca será perdido.',
+      'Sem conta, o jogo fica só no navegador e some se os dados do navegador forem apagados.']]];
+  function termosLand(tab, back) {
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const out = () => (back || U.home)();
+    let t = typeof tab === 'string' ? TERMOS.findIndex(x => x[0] === tab) : tab | 0; if (!TERMOS[t]) t = 0;
+    const draw = () => U.LD.show('<div class="trm"><div class="tm-h"><button class="tcr-back" id="trm-back" aria-label="Voltar">' + BK + '</button><span class="mk-tt"><b>Termos e reembolso</b><small>Atualizados em ' + TERMOS_DT + '</small></span></div>' +
+      '<div class="trm-tabs" role="tablist">' + TERMOS.map((x, i) => '<button role="tab" data-trm="' + i + '"' + (i === t ? ' class="on" aria-selected="true"' : ' aria-selected="false"') + '>' + x[0] + '</button>').join('') + '</div>' +
+      '<ul class="trm-c">' + TERMOS[t][1].map(x => '<li>' + x + '</li>').join('') + '</ul>' +
+      '<div class="trm-s"><small>CONTATO</small><p>Dúvida ou pedido? Escreva com o seu usuário.</p><b>' + CONTATO + '</b>' +
+        '<a class="trm-bt" id="trm-mail" href="mailto:' + CONTATO + '">Escrever e-mail</a>' +
+        '<a class="trm-lk" href="privacidade.html" target="_blank" rel="noopener">Política de privacidade</a></div></div>', st => {
+      st.querySelector('#trm-back').onclick = () => { U.sfx('tap'); out(); };
+      st.querySelectorAll('[data-trm]').forEach(b => b.onclick = () => { U.sfx('tap'); t = +b.dataset.trm; draw(); });
+    }, 'O Climbix é jogado com o celular deitado.');
+    draw();
+  }
+
+  Object.assign(U, { settings, settingsLand, whatsNew, VERSION, novidadesLand, newsNew, termosLand });
 })();
