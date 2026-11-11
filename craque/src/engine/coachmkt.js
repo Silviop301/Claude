@@ -88,6 +88,10 @@
     const e = M.err[n - 1], c = d + ((h % (2 * e + 1)) - e), w = M.half[n - 1];
     return { lo: c - w, hi: c + w, mid: c, n, st };
   };
+  // Sem relatório (outra liga), o filtro Nível vai pela fama: a diferença contra o titular com erro maior que o do 1º relatório
+  // (M.err0). Só filtra: a lista e a ficha seguem sem faixa até o olheiro ver (Silvio 11/11: "a pesquisa não retornou")
+  M.err0 = 5;
+  S.coMktFame = (co, p) => { const st = S.coMktStarter(co, p.pos), h = hash(p.id + '|fama'); return p.ovr - (st ? st.ovr : p.ovr) + (h % (2 * M.err0 + 1)) - M.err0; };
   // Uma palavra pela faixa (a lista usa o meio; a ficha, a faixa inteira)
   const word1 = v => (v > M.eq ? 'melhor' : v < -M.eq ? 'pior' : 'igual');
   S.coMktWord = (b, whole) => {
@@ -140,14 +144,19 @@
   S.coMktFilters = function (co) {
     const f = S.coFin ? S.coFin(co) : { verba: 0 }, verba = Math.max(0, f.verba || 0), lg = S.coLeague(co), cty = D.LEAGUE_BY_ID[lg].country;
     const brl = v => (v >= 1e6 ? 'R$ ' + (Math.round(v / 1e5) / 10).toString().replace('.', ',') + ' mi' : 'R$ ' + Math.round(v / 1000) + ' mil');
-    const ligas = D.LEAGUES.filter(l => l.country === cty).sort((a, b) => (a.id === lg ? -1 : b.id === lg ? 1 : 0));
-    const lvl = (p, w) => { const b = S.coMktBand(co, p); return b && word1(b.mid) === w; };
+    // ligas pela força média dos clubes; as do seu país primeiro (a sua na frente), depois "Exterior" e cada liga de fora, da mais forte
+    // para a mais fraca, para achar a Premier em poucos toques
+    const forca = l => { const cs = D.CLUBS.filter(c => c.league === l.id); return cs.reduce((a, c) => a + (c.strength || 0), 0) / Math.max(1, cs.length); };
+    const porForca = L => L.map(l => ({ l, f: forca(l) })).sort((a, b) => b.f - a.f).map(x => x.l);
+    const ligas = porForca(D.LEAGUES.filter(l => l.country === cty)).sort((a, b) => (a.id === lg ? -1 : b.id === lg ? 1 : 0));
+    const fora = porForca(D.LEAGUES.filter(l => l.country !== cty));
+    const lvl = (p, w) => { const b = S.coMktBand(co, p); return word1(b ? b.mid : S.coMktFame(co, p)) === w; };
     return [
       { k: 'pos', t: 'POSIÇÃO', o: [{ t: 'Qualquer' }].concat(['GOL', 'ZAG', 'LAT', 'MEI', 'ATA'].map(x => ({ t: POS_NM[x], ok: p => p.pos === x }))) },
       { k: 'niv', t: 'NÍVEL', o: [{ t: 'Qualquer' }, { t: 'Reserva', ok: p => lvl(p, 'pior') }, { t: 'Igual ao titular', ok: p => lvl(p, 'igual') }, { t: 'Melhor que o titular', ok: p => lvl(p, 'melhor') }] },
       { k: 'ida', t: 'IDADE', o: [{ t: 'Qualquer' }, { t: 'Até 21', ok: p => p.age <= 21 }, { t: 'Até 25', ok: p => p.age <= 25 }, { t: 'Até 29', ok: p => p.age <= 29 }, { t: '30 ou mais', ok: p => p.age >= 30 }] },
       { k: 'pre', t: 'PREÇO ATÉ', o: [{ t: 'Qualquer' }, { t: brl(Math.max(100000, Math.round(verba / 2))), ok: p => S.coMktPrice(p) <= Math.max(100000, verba / 2) }, { t: brl(verba) + ' · verba', ok: p => S.coMktPrice(p) <= verba }, { t: brl(verba * 2), ok: p => S.coMktPrice(p) <= verba * 2 }] },
-      { k: 'lig', t: 'LIGA', o: [{ t: 'Qualquer' }].concat(ligas.map(l => ({ t: l.name, ok: p => p.lg === l.id }))).concat([{ t: 'Exterior', ok: p => D.LEAGUE_BY_ID[p.lg].country !== cty }]) },
+      { k: 'lig', t: 'LIGA', o: [{ t: 'Qualquer' }].concat(ligas.map(l => ({ t: l.name, ok: p => p.lg === l.id }))).concat([{ t: 'Exterior', ok: p => D.LEAGUE_BY_ID[p.lg].country !== cty }]).concat(fora.map(l => ({ t: l.name, ok: p => p.lg === l.id }))) },
       { k: 'sit', t: 'SITUAÇÃO', o: [{ t: 'Qualquer' }, { t: 'Contrato acabando', ok: p => p.club && p.ct <= 1 }, { t: 'Sem contrato', ok: p => !p.club }, { t: 'Observados', ok: p => !!S.coMkt(co).obs[p.id] }] }
     ];
   };

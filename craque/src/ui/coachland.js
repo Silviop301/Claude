@@ -553,11 +553,18 @@
     const { H, A, crestB } = o;
     // A cor de cada time no campinho, do lado do escudo (Silvio, 10/11: "preto e branco contra preto e branco, não sei qual é qual")
     // faixa vertical com as duas cores, como no placar da TV (Silvio, 11/11: a camisinha era muita coisa)
+    // sigla de 3 letras como no placar da TV: a parte em maiúsculas do nome (CRB, ABC) ou a primeira palavra que conta
+    const tla = (c, alt) => { const n = String(c.short || c.name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''), w = n.split(/[\s\-.]+/).filter(Boolean),
+      sf = /-([A-Z]{2})$/.exec(n), up = w.find(x => /^[A-Z]{3,4}$/.test(x) && !/^(FC|EC|SC|CR|SE|AC|CF|CD|SV|FK|AFC)$/.test(x)), st = /^(fc|ec|sc|cr|se|ac|cf|cd|sv|fk|afc|clube|club|esporte|sport|sociedade|de|do|da|del|la|le|the|real)$/i;
+      if (sf && w.length > 1) return esc((w[0][0] + sf[1]).toUpperCase());
+      if (alt && w.length > 1) { const l = w[w.length - 1].replace(/[^A-Za-z]/g, ''); return esc((w[0][0] + l.slice(0, 2)).toUpperCase()); }
+      if (alt && w[0]) { const l = w[0].replace(/[^A-Za-z]/g, ''); return esc((l.slice(0, 2) + l.slice(-1)).toUpperCase()); }
+      return esc(((up || w.find(x => !st.test(x) && x.length > 2) || w[0] || '').replace(/[^A-Za-z]/g, '').slice(0, 3)).toUpperCase()); };
     const kit = k => { if (!k) return ''; const c2 = (k.pat && k.pat[1]) || k[1] || k[0], bg = 'linear-gradient(180deg,' + k[0] + ' 50%,' + c2 + ' 50%)';
       return '<b class="ldl-kit"><i style="background:' + bg + '"></i></b>'; };
     const kH = o.kits ? (o.m.home ? o.kits.mine : o.kits.opp) : null, kA = o.kits ? (o.m.home ? o.kits.opp : o.kits.mine) : null;
     return '<div class="lv ldl"><div class="ldl-p">' + o.pitchHtml +
-      '<div class="ldl-sb">' + crestB(H.id, 'ldl-cr') + kit(kH) + '<em id="lv-score">0 <i>x</i> 0</em>' + kit(kA) + crestB(A.id, 'ldl-cr') + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' +
+      '<div class="ldl-sb">' + kit(kH) + crestB(H.id, 'ldl-cr') + '<b class="ldl-tla">' + tla(H, tla(H) === tla(A)) + '</b><em id="lv-score">0 <i>x</i> 0</em><b class="ldl-tla">' + tla(A, tla(H) === tla(A)) + '</b>' + crestB(A.id, 'ldl-cr') + kit(kA) + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' +
         '<i class="lv-crd" id="lv-cd-h"></i><i class="lv-crd" id="lv-cd-a"></i></div></div>' +
       '<div class="ldl-side"><ul class="lv-feed ldl-ev" id="lv-feed">' + o.feed0 + '</ul>' +
         '<div class="ldl-qm"><small>QUEM MANDA</small><span>' + crestB(H.id, 'ldl-c16') + '<i' + (o.m.home ? '' : ' class="r"') + '><u id="ldl-momb"></u></i>' + crestB(A.id, 'ldl-c16') + '</span></div>' +
@@ -1315,7 +1322,7 @@
       st.querySelector('#mk-back').onclick = () => { sfx('tap'); semana(); };
       mkCoins(st, mercado);
       st.querySelector('#mk-tnw').onclick = () => { sfx('tap'); noticias(); }; mkTabEl(st);
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição e só vale para quem o olheiro já viu. A janela do começo vale até a 3ª rodada (10 dias) e a do meio abre antes da rodada do meio (6 dias): proposta e contrato gastam 1 dia. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Escolha os filtros até sobrarem ' + S.CO_MKT.max + ' jogadores ou menos. Nível é contra o seu titular da posição: quem o olheiro ainda não viu entra pela fama, e a fama pode errar. A janela do começo vale até a 3ª rodada (10 dias) e a do meio abre antes da rodada do meio (6 dias): proposta e contrato gastam 1 dia. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.'); };
       st.querySelectorAll('[data-mf]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.mf, L = F[i].o.length; m.f[i] = ((m.f[i] || 0) + (+b.dataset.d) + L) % L; c.save(); mercado(); });
       const inp = st.querySelector('#mk-nm');
       inp.oninput = () => { m.nm = inp.value; const k = S.coMktSearch(co).length, good = k > 0 && k <= S.CO_MKT.max, nb = st.querySelector('#mk-n'), gb = st.querySelector('#mk-go');
@@ -2090,7 +2097,7 @@
   const D_CLUBS = lg => (window.CRAQUE_DATA.CLUBS || []).filter(x => x.league === lg.id);
   // ---------- Loja (quadro 40, Silvio aprovou 2026-11-09): abas Moedas e Dinheiro do clube ----------
   // Moedas: 4 pacotes fixos, sem sorteio (a cobrança pelo Mercado Pago chega na fase 5; até lá o botão fica "em breve").
-  // Dinheiro do clube: aporte do investidor em semanas da folha (S.coAporte), 12 moedas cada, só com uma carreira aberta.
+  // Dinheiro do clube: aporte do investidor em semanas da folha (S.coAporte), 12 moedas cada (piso R$ 500 mil, o teto sobe junto), só com uma carreira aberta.
   const PACKS = [{ k: 'p1', n: 120, nm: 'Punhado', pr: 'R$ 4,90', h: 1 }, { k: 'p2', n: 350, nm: 'Saco', pr: 'R$ 12,90', h: 2 },
     { k: 'p3', n: 800, nm: 'Baú', pr: 'R$ 24,90', h: 3, tag: '+20%' }, { k: 'p4', n: 2000, nm: 'Cofre', pr: 'R$ 49,90', h: 4, tag: '+50%' }];
   // Arte dos pacotes (ChatGPT, 2026-11-11): Punhado, Saco, Baú, Cofre
@@ -2109,7 +2116,7 @@
         main = '<div class="lj-pk">' + PACKS.map((p, i) => '<button class="lj-p' + (i === pk ? ' on' : '') + '" data-pk="' + i + '">' + (p.tag ? '<em>' + p.tag + '</em>' : '') + COIN_PILE(p.h) +
           '<span><b>' + p.n.toLocaleString('pt-BR') + '</b><small>' + p.nm + '</small></span><i>' + p.pr + '</i></button>').join('') + '</div>';
         side = '<div class="lj-box"><small class="ld-lbl">GANHE JOGANDO</small>' + [['Título da Série A', 60], ['Acesso', 15], ['Meta cumprida', 5], ['Metas da semana', 10]].map(([t, n]) => '<div class="lj-li"><span>' + t + '</span><b>+' + n + '</b></div>').join('') + '</div>' +
-          '<small class="lj-ty">Sua compra ajuda a manter e melhorar o Climbix.</small>' +
+          '<small class="lj-ty">Sua compra ajuda a manter o Climbix. <a href="termos.html#reembolso" target="_blank" rel="noopener">Termos e reembolso</a></small>' +
           (!payOn ? '<button class="tm-go off" id="lj-buy" disabled>Compra em breve</button>' : !logged ? '<button class="tm-go ec-in" id="lj-buy">Entrar para comprar</button>' :
             '<button class="tm-go" id="lj-buy">' + (busy ? 'Abrindo…' : 'Comprar · ' + PACKS[pk].pr) + '</button>');
       } else if (tab === 2) {
@@ -2137,8 +2144,8 @@
         wk = Math.max(1, Math.min(wk, Math.max(1, left)));
         const cost = wk * S.CO_APORTE.coin, v = S.coAporteValue(co, wk), ok = left > 0 && saldo >= cost;
         main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · vai para a verba</small></span><img class="lj-ai" src="' + CO_ART + 'mo-aporte.webp" alt=""></div>' +
-          '<div class="lj-v"><button id="lj-m" aria-label="Menos"' + (wk <= 1 ? ' disabled' : '') + '>' + BK + '</button><span><b>+ ' + c.brl(v) + '</b><small>' + U.D.plural(wk, 'semana', 'semanas') + ' da folha</small></span><button id="lj-p" aria-label="Mais"' + (wk >= left ? ' disabled' : '') + '>' + FW + '</button></div>' +
-          '<div class="lj-two"><span><small>Verba</small><b>' + c.brl(f.verba) + ' → ' + c.brl(f.verba + (left ? v : 0)) + '</b></span><span><small>Nesta temporada</small><b>' + (used + (left ? wk : 0)) + ' de ' + S.CO_APORTE.max + ' semanas</b></span></div></div>';
+          '<div class="lj-v"><button id="lj-m" aria-label="Menos"' + (wk <= 1 ? ' disabled' : '') + '>' + BK + '</button><span><b>+ ' + c.brl(v) + '</b><small>' + U.D.plural(wk, 'aporte', 'aportes') + ' · ' + (used + (left ? wk : 0)) + ' de ' + S.CO_APORTE.max + ' na temporada</small></span><button id="lj-p" aria-label="Mais"' + (wk >= left ? ' disabled' : '') + '>' + FW + '</button></div>' +
+          '<div class="lj-two"><span><small>Verba</small><b>' + c.brl(f.verba) + ' → ' + c.brl(f.verba + (left ? v : 0)) + '</b></span><span><small>Teto de salários por semana</small><b>' + c.brl(f.teto) + ' → ' + c.brl(f.teto + (left ? S.coAporteTeto(v) : 0)) + '</b></span></div></div>';
         side = '<div class="lj-box lj-cost"><small class="ld-lbl">CUSTA</small><span>' + U.COINS.svg + '<b>' + cost + '</b></span><small>' + (saldo >= cost ? 'sobram ' + (saldo - cost) + ' moedas' : 'faltam ' + (cost - saldo) + ' moedas') + '</small></div>' +
           '<button class="tm-go' + (ok ? '' : ' off') + '" id="lj-ap"' + (ok ? '' : ' disabled') + '>' + (red ? 'Caixa no vermelho' : !left ? 'Limite da temporada' : 'Fazer aporte') + '</button>';
       }
@@ -2162,7 +2169,7 @@
         if (st.querySelector('#lj-p')) st.querySelector('#lj-p').onclick = () => { sfx('tap'); wk++; draw(); };
         if (st.querySelector('#lj-ap')) st.querySelector('#lj-ap').onclick = () => {
           const cost = wk * S.CO_APORTE.coin; sfx('tap');
-          coinAsk(cost, 'Fazer aporte', '+ ' + c.brl(S.coAporteValue(co, wk)) + ' na verba', () => {
+          coinAsk(cost, 'Fazer aporte', '+ ' + c.brl(S.coAporteValue(co, wk)) + ' na verba e + ' + c.brl(S.coAporteTeto(S.coAporteValue(co, wk))) + ' no teto', () => {
           if (!U.COINS.spend(cost, 'Aporte: ' + (club(co.club).short || club(co.club).name))) return;
           const v = S.coAporte(co, wk); if (!v) { U.COINS.add({ n: cost, t: 'Aporte devolvido' }); return; }
           sfx('coin'); c.save(); wk = 1; draw();

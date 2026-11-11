@@ -9,6 +9,13 @@ e o 3D entram no cache na primeira vez que aparecem.
 import hashlib, pathlib, re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent / "craque"
+# Sobra de conflito de merge (<<<<<<<, =======, >>>>>>>) em código do jogo: o navegador pula a regra ou quebra o arquivo sem
+# avisar (aconteceu no style.css em 2026-11-11 e foi para o ar). Para aqui, antes de gerar qualquer coisa.
+_mark = re.compile(r"^(<{7} |={7}$|>{7} )", re.M)
+_bad = [str(p.relative_to(ROOT)) for p in [ROOT / "index.html", ROOT / "style.css", *sorted((ROOT / "src").rglob("*.js")), *sorted((ROOT / "api").glob("*.php"))]
+        if p.is_file() and p.name != "sw.js" and _mark.search(p.read_text(errors="ignore"))]
+if _bad:
+    raise SystemExit("PARE: sobra de conflito de merge em " + ", ".join(_bad) + ". Tire as linhas <<<<<<<, ======= e >>>>>>> (ficando com os dois lados quando for o caso) e rode de novo.")
 # Imagens e modelos citados no código levam a versão do próprio conteúdo (?v=...): quando o arquivo
 # muda, o celular não reaproveita a cópia antiga do cache (o CDN guarda imagens por 7 dias).
 fhash = lambda p: hashlib.sha1(p.read_bytes()).hexdigest()[:8]

@@ -109,7 +109,7 @@
     const f = S.coFin(co), ss = co.ss; if (!f || !ss || !co.board) return [];
     const g = f.goal0 || co.board.goal, n = ss.ids.length, d = Math.max(2, Math.round(n * 0.15));
     const cap = ss.releg ? n - ss.releg : n - 1, vm = presOf(co).vm;
-    const opt = (k, pos, gk) => ({ k, pos, gk, verba: r10(f.verba0 * F.AC[k].v * vm), teto: r5(f.teto0 * F.AC[k].t) });
+    const opt = (k, pos, gk) => ({ k, pos, gk, verba: r10(f.verba0 * F.AC[k].v * vm), teto: r5(f.teto0 * F.AC[k].t) + (f.tap || 0) });
     const out = [];
     const sp = Math.min(cap, g.pos + d); if (sp > g.pos) out.push(opt('seguro', sp, 'seguro'));
     out.push(opt('normal', g.pos, g.k));
@@ -189,14 +189,19 @@
   // Aporte do investidor (moedas → dinheiro, fase 3 das moedas): 20 moedas = 1 semana da folha normal do clube, entra no
   // caixa e na verba (comprar tira dos dois); até 10 semanas por temporada; no vermelho não pode (não é saída da crise).
   // Fica fora do saldo da temporada (f.ss.apo), então não conta como lucro para a diretoria. Quem cobra as moedas é a tela.
-  S.CO_APORTE = { coin: 12, max: 10 }; // 12 moedas = 1 semana da folha (Silvio 2026-11-10: 20 estava caro)
+  // 12 moedas = 1 semana da folha (Silvio 2026-11-10: 20 estava caro). Desde 2026-11-11 (Silvio: reconstruir o clube pequeno,
+  // "120 pra 600 mil é pouco") cada aporte vale no mínimo `piso` e sobe o teto da folha em `tk` do valor por semana (R$ 25 mil
+  // por milhão = o dinheiro paga esse salário por uma temporada); o teto do aporte (`f.tap`) vale enquanto ficar no clube.
+  S.CO_APORTE = { coin: 12, max: 10, piso: 500000, tk: 0.025 };
   S.coAporteUsed = co => { const f = S.coFin(co); return f && f.ap && f.ap.s === co.season ? f.ap.wk : 0; };
   S.coAporteLeft = co => { const f = S.coFin(co); return !f || f.caixa < 0 ? 0 : Math.max(0, S.CO_APORTE.max - S.coAporteUsed(co)); };
-  S.coAporteValue = (co, wk) => r10(baseOf(co) * wk);
+  S.coAporteValue = (co, wk) => r10(Math.max(baseOf(co), S.CO_APORTE.piso) * wk);
+  S.coAporteTeto = v => r5(v * S.CO_APORTE.tk);
   S.coAporte = function (co, wk) {
     wk = Math.round(wk); if (!(wk > 0) || wk > S.coAporteLeft(co)) return 0;
     const f = S.coFin(co), v = S.coAporteValue(co, wk);
     f.caixa += v; f.verba += v; f.ss.apo = (f.ss.apo || 0) + v;
+    const t = S.coAporteTeto(v); f.teto += t; f.tap = (f.tap || 0) + t;
     f.ap = { s: co.season, wk: S.coAporteUsed(co) + wk };
     if (f.caixa >= 0) f.neg = 0;
     return v;
@@ -292,7 +297,7 @@
       // Eleição a cada 3 temporadas: metade das vezes entra outro presidente
       if (co.season - fin.pres.s >= F.eleicao) { const p = newPres(co); if (rngOf(co, 'eleicao')() < 0.5 && p.k !== fin.pres.k) { fin.pres = p; news(co, 'Eleição no clube: ' + p.n + ' é o novo presidente (' + PRES[p.k].nome + ').'); } else fin.pres.s = co.season; }
       // A reunião de pré-temporada parte da meta da diretoria e da verba/teto que o fim do ano deixou
-      fin.goal0 = Object.assign({}, co.board.goal); fin.verba0 = fin.verba; fin.teto0 = fin.teto; fin.ac = null;
+      fin.goal0 = Object.assign({}, co.board.goal); fin.verba0 = fin.verba; fin.teto0 = fin.teto - (fin.tap || 0); fin.ac = null;
       const keepPat = fin.pat && fin.pat.until >= co.season;
       fin.ops = keepPat ? null : offers(co);
       if (!keepPat) fin.pat = null;
@@ -337,7 +342,7 @@
     // verba nova pelo tamanho do clube mais uma parte do lucro; no vermelho não tem verba (o acordo da pré-temporada ainda mexe nela)
     const base = baseOf(co);
     const good = out.met && saldo > 0;
-    fin.teto = Math.max(r5(base * F.teto), fin.tmin || 0, good ? r5((fin.teto0 || fin.teto) * 1.05) : 0);
+    fin.teto = Math.max(r5(base * F.teto), fin.tmin || 0, good ? r5((fin.teto0 || (fin.teto - (fin.tap || 0))) * 1.05) : 0) + (fin.tap || 0);
     fin.verba = fin.caixa <= 0 ? 0 : Math.min(r10(fin.caixa * 0.6), r10(base * F.verba0 + Math.max(0, saldo) * F.lucro));
     bal.verba = fin.verba; bal.teto = fin.teto; bal.good = good;
     fin.last = bal; fin.ss = zero(); fin.rec = 0; fin.s = co.season; fin.pend = null;

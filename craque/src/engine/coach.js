@@ -205,7 +205,9 @@
 
   // ---------- elencos ----------
   const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
-  const wageOf = ovr => Math.round(Math.exp((ovr - 50) / 8.5) * 2) * 1000; // por semana
+  // por semana. Abaixo de mil o salário vai de 100 em 100 (mínimo R$ 100): o arredondamento para mil dava "R$ 0" a garoto de geral baixo
+  // (ficha do mercado, 2026-11-11); quem ganhava mil com geral 39 a 43 passa a ganhar de 500 a 900, e a folha fica quase igual
+  const wageOf = ovr => { const w = Math.exp((ovr - 50) / 8.5) * 2; return w < 0.95 ? Math.max(100, Math.round(w * 10) * 100) : Math.round(w) * 1000; };
   function mkPlayer(r, club, pos, ovr, age, id, cty, real) {
     const pot = Math.min(95, Math.round(ovr + Math.max(0, 25 - age) * r.range(0.6, 1.7)));
     const p = { id, n: D.randomName(cty, r), pos, age, ovr: clamp(Math.round(ovr), 30, 95), pot: Math.max(Math.round(ovr), pot), wage: wageOf(ovr), ct: r.int(1, 4), mo: 60, en: 100, out: 0, sus: 0 };
