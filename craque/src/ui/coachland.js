@@ -1987,13 +1987,11 @@
   const D_CLUBS = lg => (window.CRAQUE_DATA.CLUBS || []).filter(x => x.league === lg.id);
   // ---------- Loja (quadro 40, Silvio aprovou 2026-11-09): abas Moedas e Dinheiro do clube ----------
   // Moedas: 4 pacotes fixos, sem sorteio (a cobrança pelo Mercado Pago chega na fase 5; até lá o botão fica "em breve").
-  // Dinheiro do clube: aporte do investidor em semanas da folha (S.coAporte), 20 moedas cada, só com uma carreira aberta.
+  // Dinheiro do clube: aporte do investidor em semanas da folha (S.coAporte), 12 moedas cada, só com uma carreira aberta.
   const PACKS = [{ k: 'p1', n: 120, nm: 'Punhado', pr: 'R$ 4,90', h: 1 }, { k: 'p2', n: 350, nm: 'Saco', pr: 'R$ 12,90', h: 2 },
     { k: 'p3', n: 800, nm: 'Baú', pr: 'R$ 24,90', h: 3, tag: '+20%' }, { k: 'p4', n: 2000, nm: 'Cofre', pr: 'R$ 49,90', h: 4, tag: '+50%' }];
-  const COIN_PILE = h => { const cols = h >= 4 ? [22, 37, 52] : h >= 3 ? [26, 48] : [37]; let g = '';
-    cols.forEach((x, ci) => { const n = Math.min(6, h + 1 + (ci === 1 ? 1 : 0)); for (let i = 0; i < n; i++) { const y = 60 - i * 7;
-      g += '<ellipse cx="' + x + '" cy="' + (y + 3) + '" rx="15" ry="6" fill="#b48a12"/><ellipse cx="' + x + '" cy="' + y + '" rx="15" ry="6" fill="#F2C230"/><ellipse cx="' + x + '" cy="' + y + '" rx="10" ry="3.5" fill="none" stroke="#b48a12" stroke-width="1.5"/>'; } });
-    return '<svg viewBox="0 0 74 74" aria-hidden="true">' + g + '</svg>'; };
+  // Arte dos pacotes (ChatGPT, 2026-11-11): Punhado, Saco, Baú, Cofre
+  const COIN_PILE = h => '<img class="lj-pi" src="' + CO_ART + 'mo-' + ['punhado', 'saco', 'bau', 'cofre'][h - 1] + '.webp" alt="">';
   function loja(tab, back) {
     const c = C(), co = c && c.co && c.co.club ? c.co : null;
     let pk = 1, wk = 1, payOn = false, busy = false, hp = 0;
@@ -2027,7 +2025,7 @@
         const left = S.coAporteLeft(co), used = S.coAporteUsed(co), f = S.coFin(co), red = f.caixa < 0;
         wk = Math.max(1, Math.min(wk, Math.max(1, left)));
         const cost = wk * S.CO_APORTE.coin, v = S.coAporteValue(co, wk), ok = left > 0 && saldo >= cost;
-        main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · vai para a verba</small></span></div>' +
+        main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · vai para a verba</small></span><img class="lj-ai" src="' + CO_ART + 'mo-aporte.webp" alt=""></div>' +
           '<div class="lj-v"><button id="lj-m" aria-label="Menos"' + (wk <= 1 ? ' disabled' : '') + '>' + BK + '</button><span><b>+ ' + c.brl(v) + '</b><small>' + U.D.plural(wk, 'semana', 'semanas') + ' da folha</small></span><button id="lj-p" aria-label="Mais"' + (wk >= left ? ' disabled' : '') + '>' + FW + '</button></div>' +
           '<div class="lj-two"><span><small>Verba</small><b>' + c.brl(f.verba) + ' → ' + c.brl(f.verba + (left ? v : 0)) + '</b></span><span><small>Nesta temporada</small><b>' + (used + (left ? wk : 0)) + ' de ' + S.CO_APORTE.max + ' semanas</b></span></div></div>';
         side = '<div class="lj-box lj-cost"><small class="ld-lbl">CUSTA</small><span>' + U.COINS.svg + '<b>' + cost + '</b></span><small>' + (saldo >= cost ? 'sobram ' + (saldo - cost) + ' moedas' : 'faltam ' + (cost - saldo) + ' moedas') + '</small></div>' +
