@@ -4,7 +4,8 @@
 // pelas propostas, pela reunião e pelo patrocínio, até cair na Semana do ano seguinte. Confere a cada passo: erro de
 // página, texto quebrado (undefined, NaN), janelinha presa, elenco de 11 a 28, caixa com número de verdade e a temporada
 // que anda. É o teste das viradas de temporada, que os passeios do craque_telas_deitado.js só fazem uma vez.
-// Uso: NODE_PATH=$(npm root -g) node tools/craque_carreira_telas.js [temporadas=5] [pasta das fotos]   (SAFE=47 com o entalhe)
+// Uso: NODE_PATH=$(npm root -g) node tools/craque_carreira_telas.js [temporadas=5] [pasta das fotos]   (SAFE=47 com o entalhe; SOBE=1 começa por baixo e
+// põe o clube em 1º toda temporada: confere a festa do acesso a cada subida)
 // Esperado: Problemas: 0
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -17,7 +18,8 @@ if (OUT) fs.mkdirSync(OUT, { recursive: true });
   p.on('pageerror', e => errs.push('erro de página: ' + e.message));
   await p.addInitScript(() => { try { if (!sessionStorage.getItem('t')) { localStorage.clear(); sessionStorage.setItem('t', 1); localStorage.setItem('climbix-dicas-v1', '{"off":true}'); localStorage.setItem('climbix-co-ja', '1'); } } catch (e) {} });
   await p.goto(URL, { waitUntil: 'load' }); await p.waitForTimeout(1200);
-  let nShot = 0;
+  let nShot = 0, festas = 0, subiu = 0;
+  const SOBE = !!process.env.SOBE;
   const shot = async n => { if (OUT) await p.screenshot({ path: OUT + '/' + String(++nShot).padStart(2, '0') + '-' + n + '.png' }); };
   const has = sel => p.evaluate(s => { const e = document.querySelector(s); return !!(e && e.getClientRects().length && !e.disabled); }, sel);
   // toque de verdade; a janelinha engole toque por 450 ms depois de abrir (pop em coachland.js)
@@ -30,6 +32,12 @@ if (OUT) fs.mkdirSync(OUT, { recursive: true });
     for (let k = 0; k < 90; k++) {
       if (await has(quer)) return true;
       const s = await (async () => { for (const x of lista) if (await has(x)) return x; return ''; })();
+      if (s === '.tc-go' && await has('.tc-ac')) { // festa do acesso: conta, fotografa e confere que a fileira dos ganhos cabe e não encosta no botão
+        festas++; await p.waitForTimeout(2400); await shot('acesso-' + festas);
+        const f = await p.evaluate(() => { const r = e => e.getBoundingClientRect(), w = document.querySelector('.tc-rw'), g = r(document.querySelector('.tc-go')), m = r(document.querySelector('.tc-ac')); const wr = w ? r(w) : null;
+          return { n: w ? w.children.length : 0, fora: m.top < 0 || m.bottom > innerHeight || (wr && (wr.left < 0 || wr.right > innerWidth)), bate: !!wr && wr.bottom > g.top && wr.right > g.left, txt: document.querySelector('.tc-ac').innerText.replace(/\s+/g, ' ') }; });
+        if (f.fora) errs.push('festa do acesso sai da tela'); if (f.bate) errs.push('festa do acesso: os ganhos encostam no botão'); if (f.n < 2) errs.push('festa do acesso com ' + f.n + ' ganhos'); if (/undefined|NaN/.test(f.txt)) errs.push('festa do acesso com texto quebrado: ' + f.txt);
+        console.log('  festa do acesso: ' + f.txt); }
       if (s) { pres = 0; await tap(s); await texto(onde + ' depois de ' + s); continue; }
       if (await has('#ld-pop')) { pres++; if (pres < 3) { await p.keyboard.press('Escape'); await p.waitForTimeout(500); } else { const n = await p.evaluate(() => { const bs = [...document.querySelectorAll('#ld-pop button')].filter(e => e.getClientRects().length && !e.disabled); const l = bs[bs.length - 1]; if (l) { l.setAttribute('data-ult', '1'); return (l.innerText || l.id || '').slice(0, 30); } return ''; }); if (n) { await tap('#ld-pop [data-ult]'); } else pres = 0; } continue; }
       await p.waitForTimeout(700);
@@ -38,14 +46,16 @@ if (OUT) fs.mkdirSync(OUT, { recursive: true });
     return false;
   };
   // carreira nova: propostas, reunião e patrocínio
-  await tap('#b-new-co'); await tap('#co-start button[data-v="livre"]'); await tap('#b-co-go');
+  await tap('#b-new-co'); await tap('#co-start button[data-v="' + (SOBE ? 'baixo' : 'livre') + '"]'); await tap('#b-co-go');
   if (!(await anda('.sm', ['#ldo-go', '#ldn-go'], 'começo da carreira'))) { console.log('Problemas: ' + errs.length + '\n  ' + errs.join('\n  ')); await b.close(); process.exit(1); }
   for (let t = 0; t < N; t++) {
     const a = await estado();
     // o motor joga até faltar uma rodada
-    await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co; let g = 0;
+    const promo = await p.evaluate(() => !!window.CRAQUE_UI._co.co.ss.promo); if (SOBE && promo) subiu++;
+    await p.evaluate(sobe => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co; let g = 0;
       while (co.ss.i < co.ss.rounds.length - 1 && g++ < 80) { const nx = S.coNext(co); if (!nx) break; if (nx.bye) { S.coSkipRound(co); continue; } const m = S.coMatchStart(co); S.coMatchRest(co, m); S.coMatchEnd(co, m); }
-      U._co.save('hub'); U.LD.semana(); });
+      if (sobe && co.ss.promo) co.ss.tab[co.ss.ids.indexOf(co.club)].p += 200;   // SOBE=1: o clube termina em 1º e sobe
+      U._co.save('hub'); U.LD.semana(); }, SOBE);
     await p.waitForTimeout(600); await texto('semana da última rodada, temporada ' + (t + 1)); await shot('t' + (t + 1) + '-semana-fim');
     // último jogo ao vivo, pulando para o fim; depois resultado, taça ou demissão, até o Fim da temporada
     const fim = await anda('.fdt', ['#ctw-no', '.tc-go', '#ld-sack', '#ldr-go', '#b-lv-end', '#ldl-go', '[data-sp="fim"]', '#ldp-go', '#ld-go', '#ld-play'], 'último jogo da temporada ' + (t + 1));
@@ -64,6 +74,8 @@ if (OUT) fs.mkdirSync(OUT, { recursive: true });
     if (d.i !== 0) errs.push('temporada ' + (t + 2) + ': começou na rodada ' + (d.i + 1));
     console.log('temporada ' + (t + 1) + ' → ' + (t + 2) + ': ' + a.club + (d.club !== a.club ? ' → ' + d.club : '') + ' · elenco ' + d.n + ' · caixa ' + Math.round(d.caixa / 1000) + ' mil · fama ' + d.fama);
   }
+  if (SOBE && festas !== subiu) errs.push('subiu ' + subiu + ' vezes e a festa do acesso apareceu ' + festas);
+  if (SOBE) console.log('Acessos forçados: ' + subiu + ', festas: ' + festas);
   console.log('Carreira longa pela interface' + (SAFE ? ' (entalhe ' + SAFE + ')' : '') + ': ' + N + ' temporadas' + (OUT ? ', fotos em ' + OUT : '') + '; Problemas: ' + errs.length + (errs.length ? '\n  ' + errs.join('\n  ') : ''));
   await b.close(); process.exit(errs.length ? 1 : 0);
 })();

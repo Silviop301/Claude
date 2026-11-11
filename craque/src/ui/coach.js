@@ -41,9 +41,9 @@
   }
 
   // ---------- criação ----------
-  function create(slot) {
+  function create(slot, pre) {
     slot = slot ? 1 : 0;
-    const st = { name: D.randomName('Brasil'), country: 'Brasil', start: 'baixo', auto: true };
+    const st = pre ? { name: pre.name, country: pre.country, start: pre.start, auto: false } : { name: D.randomName('Brasil'), country: 'Brasil', start: 'baixo', auto: true };
     const cty = () => D.COUNTRIES.find(k => k.id === st.country) || D.COUNTRIES[0];
     const START = [['baixo', 'Subir de baixo'], ['livre', 'Qualquer clube']];
     // Deitado e enxuto (2026-11-08, Silvio aprovou "Criar técnico" no canvas): nome grande com a bandeira (o toque abre a
@@ -86,6 +86,15 @@
 
   // ---------- propostas ----------
   // list: ids de clube. stay: o clube atual entra como "Ficar" (fim de temporada, sem demissão)
+  // Voltar das propostas (Silvio, 11/11: "queria poder voltar dessa tela"): carreira que ainda não assinou com ninguém volta
+  // para a criação com o nome de antes e a vaga fica livre de novo; no fim da temporada volta para o resumo (as propostas
+  // de "Ouvir outros clubes" ficam em co.mkl para o voltar e entrar de novo não sortear outras)
+  function offersBack(list, stay) {
+    if (co.last && co.hist.length) { if (stay) co.mkl = { s: co.season, l: list }; save('end'); return seasonEnd(co.last); }
+    const pre = { name: co.name, country: co.country, start: co.start }, slot = co.slot;
+    co = null; store(U.slotKey(SAVE_CO, slot), { co: null, at: Date.now() });
+    create(slot, pre);
+  }
   function offers(list, stay) {
     co.offers = list; if (!stay) save('offers');
     G.c = null; bar();
@@ -1118,7 +1127,7 @@
     const t = S.coTable(co), me = t[0], left = co.ss.rounds.length - co.ss.i;
     let cf = ''; for (let i = 0; i < 46; i++) cf += '<i style="left:' + (Math.random() * 100).toFixed(1) + '%;background:' + ['#e8b84a', '#fff', '#ffe08a', '#c9a24a'][i % 4] + ';animation-duration:' + (2.5 + Math.random() * 3).toFixed(2) + 's;animation-delay:' + (1 + Math.random() * 3).toFixed(2) + 's"></i>';
     tacaPop('<div class="tc-ray"></div><div class="tc-cf">' + cf + '</div><div class="tc-mid"><div class="tc-tag">TÍTULO · ' + esc(co.ss.name).toUpperCase() + ' · ' + (U.YEAR0 + co.season) + '</div><div class="tc-cup">' + tacaImg(140) + '</div><div class="tc-big">Campeão!</div><div class="tc-sub">' + esc(nm(co.club)) + ' · ' + me.p + ' pontos' + (left > 0 ? ' · ' + left + (left === 1 ? ' rodada' : ' rodadas') + ' de folga' : '') + '</div></div><button class="btn tc-go">Seguir</button>', 'tc-fe', go);
-    sfx('win');
+    sfx('fanfare');
   }
   function result(m, log, aux, move) {
     if (!result.tc) { result.tc = 1; return tacaFesta(() => { try { result(m, log, aux, move); } finally { result.tc = 0; } }); } result.tc = 0;
@@ -1186,7 +1195,19 @@
     out.coinsTot = U.COINS.add(list);
     out.coinsPaid = true;
   }
-  function finishSeason() { const out = S.coSeasonEnd(co); payCoins(out); if (U.profileCoSeason) U.profileCoSeason(co, out); save('end'); seasonEnd(out); }
+  // Festa do acesso (2026-11-11): subiu de divisão, o fim da temporada abre com o momento "Acesso!" e o que o clube ganha
+  // (prêmio, moedas, fama, receita maior na liga de cima). Mesmo desenho da festa da taça; aparece uma vez, antes do Fim da temporada.
+  function acessoFesta(out, go) {
+    if (!out.up || out.sacked) return go();
+    const cl = club(out.club), fm = out.fame ? out.fame[1] - out.fame[0] : 0, cn = (out.coins || []).find(x => x.k === 'acesso');
+    const rw = [out.upPrem ? ['PRÊMIO', brl(out.upPrem)] : null, cn ? ['MOEDAS', '+' + cn.n] : null, fm > 0 ? ['FAMA', '+' + fm] : null, out.upRec >= 3 ? ['RECEITA', '+' + out.upRec + '%'] : null].filter(Boolean);
+    let cf = ''; for (let i = 0; i < 46; i++) cf += '<i style="left:' + (Math.random() * 100).toFixed(1) + '%;background:' + ['#e8b84a', '#fff', '#7ED39A', '#c9a24a'][i % 4] + ';animation-duration:' + (2.5 + Math.random() * 3).toFixed(2) + 's;animation-delay:' + (1 + Math.random() * 3).toFixed(2) + 's"></i>';
+    tacaPop('<div class="tc-ray"></div><div class="tc-cf">' + cf + '</div><div class="tc-mid tc-ac"><div class="tc-tag">ACESSO · ' + (U.YEAR0 + out.season) + '</div><div class="tc-cup">' + crest(cl.id, 'tc-cr') + '</div><div class="tc-big">Subiu!</div>' +
+      '<div class="tc-sub">' + (out.upTo ? 'Próxima temporada: ' + esc(out.upTo) : esc(cl.short || cl.name) + ' sobe de divisão') + '</div>' +
+      (rw.length ? '<div class="tc-rw">' + rw.map(x => '<span><small>' + x[0] + '</small><b>' + x[1] + '</b></span>').join('') + '</div>' : '') + '</div><button class="btn tc-go">Seguir</button>', 'tc-fe', go);
+    sfx('levelup'); sfx('cheer');
+  }
+  function finishSeason() { const out = S.coSeasonEnd(co); payCoins(out); if (U.profileCoSeason) U.profileCoSeason(co, out); save('end'); acessoFesta(out, () => seasonEnd(out)); }
   function seasonEnd(out) {
     G.c = null; bar();
     if (U.LD && U.LD.on()) return U.LD.temporada(out);
@@ -1217,6 +1238,6 @@
 
   // Para as telas deitadas (ui/coachland.js)
   U._co = { get co() { return co; }, get pre() { return pre; }, save, sacked: () => sacked(), moodLine: () => moodLine(), susBox, exit: () => { save(); co = null; U.ldOff(); U.home(); }, hub, team, caderno, tabela, fin, finishSeason, play: k => play(k), live, result,
-    LANE, avail, pend, susTxt, posTxt, FORM_TIP, STY_SHORT, cadLines, cadName, CAD_W, CAD_S, cadQuote, feedLine: (m, e) => feedLine(m, e), offers: (l, st) => offers(l, st), welcome: () => welcome(), SK_TXT, ordTxt, mi, sgn, finPres: f => finPres(f), FAME_TXT, keepBench: () => keepBench(), brl, nm, last };
+    LANE, avail, pend, susTxt, posTxt, FORM_TIP, STY_SHORT, cadLines, cadName, CAD_W, CAD_S, cadQuote, feedLine: (m, e) => feedLine(m, e), offers: (l, st) => offers(l, st), offersBack: (l, st) => offersBack(l, st), welcome: () => welcome(), SK_TXT, ordTxt, mi, sgn, finPres: f => finPres(f), FAME_TXT, keepBench: () => keepBench(), brl, nm, last };
   Object.assign(U, { coCreate: create, coHub: () => co && hub(), coCaderno: (c, pv) => (pv && pv.them ? cadBlock(c.form, c.style, pv.them) + hintCard() : '') });
 })();

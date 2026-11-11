@@ -9656,3 +9656,15 @@ button.coin-pill { cursor: pointer; border: 0; }
 .fn2-li.fn2-rs { height: 34px; border-top: 1px solid rgba(243, 241, 234, .12); }
 .fn2-rd { padding: 6px 0 2px; } .fn2-rc span { height: 21px; } .fn2-li.fn2-rs { height: 30px; }
 .fn2-fora { margin: 0; padding: 4px 0 6px; font: 700 13px/1.2 var(--body); color: #9fb0a6; }
+/* Festa do acesso (mesmo palco da festa da taça): escudo no lugar da taça e a fileira do que o clube ganha */
+.tc-ac { padding-bottom: 30px; } .tc-ac .tc-cup { margin: 6px 0 0; }
+.tc-cr { width: 84px; height: 84px; object-fit: contain; display: block; }
+.tc-ac .tc-big { font-size: 38px; line-height: 1.1; color: #7ED39A; }
+.tc-rw { display: flex; gap: 8px; margin-top: 12px; animation: tcFd .5s 1.8s both; }
+.tc-rw span { display: flex; flex-direction: column; gap: 4px; align-items: center; min-width: 104px; padding: 8px 12px; border-radius: 12px; background: #1f2226; border: 1px solid rgba(243, 241, 234, .1); }
+.tc-rw small { font: 700 12px/1 var(--body); letter-spacing: 1.2px; color: #9aa0a6; white-space: nowrap; }
+.tc-rw b { font: 800 20px/1 var(--display); color: #f2efe6; white-space: nowrap; }
+/* Propostas: voltar do tamanho e na altura da pílula das moedas (Silvio, 11/11) */
+.pzo .tcr-back { left: 16px; top: 10px; width: 44px; height: 44px; }
+/* Aviso do topo (meta, nível, compra) espera a festa da taça ou do acesso sair da tela */
+body:has(> .tc-ov) > .pay-ty { visibility: hidden; }

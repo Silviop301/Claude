@@ -287,11 +287,25 @@
   }
 
   const SOUNDS = {
-    // Toque em botão: clique curto. Até 2026-11-11 era um seno de 1100 Hz a 0,1 por 45 ms, que no alto-falante do celular
-    // quase não se ouvia (Silvio: "tá indo sem som nos botões"); agora um triângulo mais agudo e um estalinho por cima
+    // Toque em botão. Até 2026-11-11 era um seno de 1100 Hz a 0,1 que no alto-falante do celular quase não se ouvia; depois
+    // um triângulo de 1500 Hz que o Silvio achou agudo demais ("a maioria vai ser mais grave"). Agora três sons de botão:
+    // tap = toque comum, grave e macio; back = voltar, fechar e cancelar, mais grave ainda; ok = ação principal (o dourado,
+    // confirmar), duas notas subindo, o único mais agudo. Tap e back mudam um pouco de tom a cada toque (uiK, ±4%) para não
+    // enjoar. Quem escolhe o som de cada botão do palco é o ouvinte do #ld em coachland.js (uiSnd)
     tap(t) {
-      tone('triangle', 1500, 950, t, 0.055, 0.24, { a: 0.004 });
-      tone('sine', 2500, 1900, t, 0.03, 0.07, { a: 0.003 });
+      const k = uiK();
+      tone('triangle', 720 * k, 470 * k, t, 0.06, 0.34, { a: 0.004 });
+      noise(t, 0.018, 0.05, 0.002, 'bandpass', 1500, 0, 1.2);
+    },
+    back(t) {
+      const k = uiK();
+      tone('triangle', 560 * k, 370 * k, t, 0.08, 0.34, { a: 0.004 });
+      tone('sine', 1120 * k, 740 * k, t, 0.05, 0.06, { a: 0.004 }); // uma oitava acima, baixinho: o alto-falante do celular quase não toca abaixo de 400 Hz
+      noise(t, 0.02, 0.04, 0.002, 'bandpass', 1000, 0, 1.2);
+    },
+    ok(t) {
+      tone('triangle', 660, 660, t, 0.06, 0.2, { a: 0.004 });
+      tone('triangle', 990, 990, t + 0.055, 0.12, 0.2, { a: 0.004, echo: 0.1 });
     },
     // Apito do juiz: dois toques curtos e um longo; a bolinha de dentro faz o tom tremer e "rolar"
     whistle(t) {
@@ -358,14 +372,20 @@
     },
   };
   // Intervalo mínimo entre dois iguais: vários "tic" no mesmo instante viravam um estalo alto
-  const GAP = { tick: 0.03, tap: 0.04 };
+  const GAP = { tick: 0.03, ui: 0.04 };
+  // Os três sons de botão contam como um só: o ouvinte do palco toca primeiro (voltar, ok ou toque) e o sfx('tap') que a
+  // tela ainda chama no mesmo toque é ignorado
+  const UI = { tap: 1, back: 1, ok: 1 };
+  let uiLast = 1;
+  const uiK = () => { let k; do { k = 0.96 + Math.random() * 0.08; } while (Math.abs(k - uiLast) < 0.012); uiLast = k; return k; };
 
   // Som pedido com o contexto parado só vale se o contexto acordar em até 0,3 s (o primeiro toque da página)
   const LATE = 300;
   function fire(name) {
     const now = ctx.currentTime;
-    if (last[name] != null && now - last[name] < (GAP[name] || 0.08)) return;
-    last[name] = now;
+    const key = UI[name] ? 'ui' : name;
+    if (last[key] != null && now - last[key] < (GAP[key] || 0.08)) return;
+    last[key] = now;
     SOUNDS[name](now + 0.02);
   }
 

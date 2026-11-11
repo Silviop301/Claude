@@ -8,6 +8,11 @@
   const { S, sfx, esc, club, crest } = U;
   const W = 844, H = 390;
   const on = () => true; // o Treinador é sempre deitado
+  // Som de cada botão do palco (Silvio, 11/11: "muito agudo, a maioria vai ser mais grave"): voltar, fechar e cancelar = back
+  // (mais grave), a ação principal (dourado, confirmar) = ok (o único mais agudo), o resto = tap
+  const SND_BACK = '[id$="-back"], [id$="-bk"], [id$="-no"], [id$="-x"], #ldl-aux-n, #ca-n, .tcr-back, .ld-x, .hl-x-btn, [data-pop-x], [data-pop-back]';
+  const SND_OK = '[id$="-go"], [id$="-y"], [id$="-ok"], .hl-btn.gold';
+  const uiSnd = b => b.matches(SND_BACK) ? 'back' : b.matches(SND_OK) ? 'ok' : 'tap';
   const C = () => U._co; // ajudantes e estado do Treinador (ui/coach.js)
 
   // ---------- palco ----------
@@ -19,7 +24,7 @@
       document.body.appendChild(el);
       // Todo botão do palco faz o clique (Silvio, 2026-11-11: "tá indo sem som nos botões"). Quem já chama sfx('tap') não
       // dobra: o sound.js ignora o mesmo som repetido em 40 ms. Respeita o Som dos Ajustes (CRAQUE_SFX.play)
-      el.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b && !b.disabled) sfx('tap'); }, true);
+      el.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b && !b.disabled) sfx(uiSnd(b)); }, true);
       window.addEventListener('resize', fit);
       window.addEventListener('orientationchange', () => setTimeout(fit, 200));
       if (window.visualViewport) { visualViewport.addEventListener('resize', fit); visualViewport.addEventListener('scroll', fit); }
@@ -2124,8 +2129,8 @@
         st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); tab = +b.dataset.ft; draw(); });
         st.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { if (S.coSkill(co, b.dataset.sk)) { sfx('tap'); c.save(); draw(); } });
         if (st.querySelector('#ldy-of')) st.querySelector('#ldy-of').onclick = () => { sfx('tap'); co.step = 'offers'; c.offers(out.offers); };
-        if (st.querySelector('#ldy-ns')) st.querySelector('#ldy-ns').onclick = () => { sfx('tap'); S.coStart(co); c.save('hub'); semana(); };
-        if (st.querySelector('#ldy-mk')) st.querySelector('#ldy-mk').onclick = () => { sfx('tap'); const l = S.coOffers(co, 3); c.save(); c.offers(l, true); };
+        if (st.querySelector('#ldy-ns')) st.querySelector('#ldy-ns').onclick = () => { sfx('tap'); delete co.mkl; S.coStart(co); c.save('hub'); semana(); };
+        if (st.querySelector('#ldy-mk')) st.querySelector('#ldy-mk').onclick = () => { sfx('tap'); const l = co.mkl && co.mkl.s === co.season ? co.mkl.l : S.coOffers(co, 3); c.save(); c.offers(l, true); };
       });
     };
     draw();
@@ -2150,13 +2155,15 @@
           '<b>' + esc(cl.short || cl.name) + '</b><small>' + esc(x.lg.name) + '</small><span class="pzo-m' + (hi ? ' hi' : '') + '">' + esc(S.CO_GOAL_TXT[x.g.k]) + '</span></button>';
       };
       const pc = club(pick);
-      show('<div class="pzo"><h2>' + (co.club ? 'Propostas' : 'Escolha seu clube') + '</h2><div class="pzo-g" style="grid-template-columns:repeat(' + ids.length + ',minmax(0,1fr))">' + ids.map(card).join('') + '</div>' +
+      show('<div class="pzo"><button class="tcr-back" id="ldo-back" aria-label="Voltar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><h2>' + (co.club ? 'Propostas' : 'Escolha seu clube') + '</h2><div class="pzo-g" style="grid-template-columns:repeat(' + ids.length + ',minmax(0,1fr))">' + ids.map(card).join('') + '</div>' +
         '<button class="pzo-go" id="ldo-go">' + (pick === co.club ? 'Ficar no ' : 'Assinar com o ') + esc(pc.short || pc.name) + '</button>' +
         (U.COINS ? '<button class="pzo-mo" id="ldo-mo">' + U.COINS.svg + '<b>Escolher com moedas</b></button>' : '') + '</div>', st => {
         st.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { sfx('tap'); pick = b.dataset.o; draw(); });
         if (st.querySelector('#ldo-mo')) st.querySelector('#ldo-mo').onclick = () => { sfx('tap'); escolher(() => propostas(list, stay)); };
+        st.querySelector('#ldo-back').onclick = () => { sfx('tap'); c.offersBack(list, stay); };
         st.querySelector('#ldo-go').onclick = () => {
           sfx('tap');
+          delete co.mkl;
           if (pick === co.club && stay) { co.offers = null; S.coStart(co); c.save('hub'); return semana(); }
           S.coSign(co, pick); co.autoXI = true; co.offers = null; S.coStart(co); c.save('hub'); welcome();
         };

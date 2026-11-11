@@ -239,7 +239,9 @@
     box.className = 'pay-ty'; box.setAttribute('role', 'status');
     box.innerHTML = r.done.length ? '<b>Meta cumprida</b><span>' + r.done.map(d => esc(d.t)).join(' · ') + ' · +' + m + (m === 1 ? ' moeda' : ' moedas') + '</span><button aria-label="Fechar">OK</button>'
       : '<b>Nível ' + r.after + '</b><span>' + rankCo(r.after) + '</span><button aria-label="Fechar">OK</button>';
-    document.body.appendChild(box); box.querySelector('button').onclick = () => box.remove(); setTimeout(() => box.remove(), 7000);
+    document.body.appendChild(box); box.querySelector('button').onclick = () => box.remove();
+    // Os 7 s só contam sem a festa da taça ou do acesso por cima (o CSS esconde o aviso enquanto ela está na tela)
+    let left = 7000; const iv = setInterval(() => { if (!box.isConnected) return clearInterval(iv); if (!document.querySelector('.tc-ov') && (left -= 250) <= 0) { clearInterval(iv); box.remove(); } }, 250);
   }
   // Fim de um jogo do Treinador (ui/coach.js). pre = [sua posição, a deles, jogos já feitos] antes do jogo
   function coGame(co, m, log, aux) {
