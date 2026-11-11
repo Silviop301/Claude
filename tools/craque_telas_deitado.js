@@ -32,6 +32,9 @@ async function page(b, first) {
   const click = async sel => { await p.waitForSelector(sel, { timeout: 8000 });
     for (let k = 0; k < 4 && !/data-rb|mkr2/.test(sel) && await p.$('#ld-pop .mkr2-pop [data-rb]'); k++) { await p.waitForTimeout(500); await p.click('#ld-pop .mkr2-pop [data-rb]:last-child'); await p.waitForTimeout(400); }
     if (!/ctw-/.test(sel) && await p.$('#ctw-no')) { await p.waitForTimeout(500); await p.click('#ctw-no'); await p.waitForTimeout(300); } // "Contratos no fim" (faltando 5 rodadas)
+    // janelinha recém-aberta engole toque por 450 ms (`pop` em coachland.js); com a máquina ocupada ela abre atrasada e o
+    // toque seguinte caía nessa trava (era o "Acelerar a obra" que falhava de vez em quando): espera a janelinha ter 550 ms
+    { const age = await p.evaluate(sel => { const e = document.querySelector(sel), w = e && e.closest('#ld-pop'); if (!w) return 9999; if (!w.__t) w.__t = Date.now(); return Date.now() - w.__t; }, sel); if (age < 550) await p.waitForTimeout(550 - age); }
     await p.click(sel); await p.waitForTimeout(750); }; // 750 ms: a trava de duplo toque do jogo (~700 ms) engolia o toque seguinte de vez em quando e o passeio parava (ex.: Acelerar a obra)
   return { p, shot, click };
 }
@@ -188,8 +191,16 @@ async function page(b, first) {
       // Notícias do mercado vivo (engine/coachworld.js): a aba, o filtro Tudo e a volta
       await click('#mk-tnw'); await shot('c2s-noticias'); await click('[data-nf="-1"]'); await shot('c2t-noticias-tudo'); await click('#mk-tpr'); await click('#mk-back'); }
     await click('[data-rail="tabela"]'); await shot('c3-tabela'); await click('[data-tb="art"]'); await shot('c3b-art'); await click('[data-tb="rod"]'); await shot('c3c-rodadas'); await click('#tb2-back');
+    await p.evaluate(() => { const L = window.CRAQUE_UI.LD, t = L.temporada; if (!L.__t) { L.__t = 1; L.temporada = o => { if (!window.__fim) window.__out = o; return t(o); }; } }); // guarda o resultado do fim da temporada
     const nx = await p.$('#ld-play'); if (nx) { await click('#ld-play'); if (await p.$('#ld-go')) { await click('#ld-go'); await click('#ldp-go'); await p.waitForTimeout(2500); await click('[data-sp="fim"]'); for (let i = 0; i < 30 && !(await p.$('#b-lv-end')); i++) { await p.waitForTimeout(800); if (await p.$('#ldl-go')) await click('#ldl-go'); } await click('#b-lv-end'); await shot('c5-res'); if (process.env.DEMITIDO) await p.evaluate(() => { window.CRAQUE_UI._co.co.sacked = 1; }); await click('#ldr-go'); if (await p.$('#ld-sack')) { await shot('c5b-demitido'); await click('#ld-sack'); } } } // DEMITIDO=1 força a janelinha da demissão
     await p.waitForTimeout(800); await shot('c6-temporada');
+    // Os outros finais (polimento da 1.0, item p-clu-1): a mesma tela como campeão, com acesso, rebaixado e demitido.
+    // A foto acusa botão cortado e texto fora do cartão; no fim volta o resultado de verdade para o passeio seguir
+    if (await p.evaluate(() => !!window.__out)) { for (const [n, v] of [['campeao', { won: true, met: true, up: false, down: false, sacked: false, pos: 1 }], ['acesso', { won: false, met: true, up: true, down: false, sacked: false, pos: 2 }], ['rebaixado', { won: false, met: false, up: false, down: true, sacked: false, pos: 19 }], ['demitido', { won: false, met: false, up: false, down: false, sacked: true, pos: 15 }]]) {
+        await p.evaluate(v => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co, o = Object.assign({}, window.__out, v); if (v.sacked && !o.offers) o.offers = [o.club]; const k = co.club; co.club = k || o.club; window.__fim = true; U.LD.temporada(o); window.__fim = false; co.club = k; }, v); // demitido de verdade não tem clube: a tela dos outros finais precisa de um
+        await p.waitForTimeout(350); await shot('c6-' + n); const t = await p.evaluate(() => (document.querySelector('.ldy-h') || {}).innerText || ''); if (!t) errs.push('fim de temporada ' + n + ': a tela não abriu'); }
+      await p.evaluate(() => { window.__fim = true; window.CRAQUE_UI.LD.temporada(window.__out); window.__fim = false; }); await p.waitForTimeout(350); }
+    else errs.push('fim de temporada: não peguei o resultado para testar os outros finais');
     if (await p.$('#ldy-mk')) { await click('#ldy-mk'); await shot('c7-propostas'); }
     else if (await p.$('#ldy-of')) { await click('#ldy-of'); await shot('c7-propostas'); }
     // Escolher clube com moedas (fase 2): com saldo, troca de liga, assina

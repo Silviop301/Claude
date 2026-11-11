@@ -25,7 +25,9 @@ const OUT = process.argv[2] || '', SAFE = +process.env.SAFE || 0, URL = process.
     if (c.length) errs.push(step + ': botão fora do palco: ' + c.join(', ')); };
   let nShot = 0;
   const shot = async n => { await cut(); if (OUT) await p.screenshot({ path: OUT + '/' + String(++nShot).padStart(2, '0') + '-' + n + '.png' }); };
-  const tap = async (s, opt) => { try { await p.waitForSelector(s, { timeout: 6000, state: 'visible' }); await p.click(s); await p.waitForTimeout(750); return true; }
+  const tap = async (s, opt) => { try { await p.waitForSelector(s, { timeout: 6000, state: 'visible' });
+      { const age = await p.evaluate(s => { const e = document.querySelector(s), w = e && e.closest('#ld-pop'); if (!w) return 9999; if (!w.__t) w.__t = Date.now(); return Date.now() - w.__t; }, s); if (age < 550) await p.waitForTimeout(550 - age); } // janelinha nova engole toque por 450 ms
+      await p.click(s); await p.waitForTimeout(750); return true; }
     catch (e) { if (!opt) errs.push(step + ': não achei ' + s); return false; } };
   const st = () => p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co, f = S.coFin(co), m = S.coMkt(co), w = S.coMktWin(co);
     const top = document.querySelector('#ld .ld-st > div'), pop = document.getElementById('ld-pop');
