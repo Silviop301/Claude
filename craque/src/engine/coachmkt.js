@@ -205,6 +205,21 @@
     const max = M.days[k];
     return { open: m.used < max, k, day: Math.min(m.used + 1, max), max, left: max - m.used, next: k === 'pre' ? half + 1 : null };
   };
+  // Aviso da janela (Silvio 11/11: "perdi a chance de comprar porque não vi que ia acabar na próxima rodada"):
+  // rodadas que sobram com ela aberta (`rd`: a do começo vale até a rodada M.preR, a do meio só na semana da rodada do meio)
+  // e o aviso desta semana (`st`: 'open' quando abre, 'last' na última rodada dela, 'closed' na semana depois que fechou),
+  // dado uma vez por temporada e janela em `co.mkt.wn`.
+  S.coMktWinInfo = function (co) {
+    const ss = co.ss; if (!ss || ss.done || !ss.rounds) return null;
+    const half = Math.floor(ss.rounds.length / 2), pe = Math.min(M.preR, half), w = S.coMktWin(co);
+    let k = w.k, rd = 0, st = null;
+    if (k) { rd = k === 'pre' ? pe - ss.i : 1; st = rd === 1 ? 'last' : (k === 'pre' && ss.i === 0) ? 'open' : null; }
+    else if (ss.i === pe && pe < half) { k = 'pre'; st = 'closed'; }
+    else if (ss.i === half + 1) { k = 'mid'; st = 'closed'; }
+    const m = S.coMkt(co), key = k && st ? k + ':' + st : null;
+    return { k, rd, st, key, seen: !key || !!(m.wn && m.wn[key]) };
+  };
+  S.coMktWinSeen = (co, key) => { const m = S.coMkt(co); (m.wn = m.wn || {})[key] = 1; };
   function spend(co) { const w = S.coMktWin(co); if (w.open) S.coMkt(co).used++; }
   const r10k = v => Math.max(10000, Math.round(v / 10000) * 10000);
   const r1k = v => Math.max(1000, Math.round(v / 1000) * 1000);

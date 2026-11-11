@@ -9548,3 +9548,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 /* Polimento 1.0, lote 2 (2026-11-11): Loja com o atalho dos Termos e do reembolso; jeito de jogar nunca passa do cartão */
 .lj-ty a { color: #F3F1EA; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; display: inline-block; padding: 6px 0; }
 .mkf-tr span { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* Aviso da janela de transferências (2026-11-11): cartão do upToast; na última rodada o relógio e a borda ficam laranja */
+.wn-ty i { color: #b45309; } .wn-ty.ult { box-shadow: 0 0 0 3px #f59e0b, 0 10px 30px rgba(0, 0, 0, .5); }
+.mk-win.ult { background: rgba(245, 158, 11, .2); color: #fbbf24; }
