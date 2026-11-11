@@ -124,5 +124,29 @@
     draw();
   }
 
-  Object.assign(U, { settings, settingsLand, whatsNew, VERSION });
+  // Novidades deitadas (2026-11-11; Silvio escolheu a entrada A do desenho https://claude.ai/artifact/WmxuvUV4Ci5FsPrvTS2M2z):
+  // na home deitada a pílula "1.0 · Novidades" no canto de cima à esquerda (ui/start.js) leva o pontinho dourado enquanto a
+  // versão não foi vista (U.newsNew) e abre esta tela no palco U.LD. Cada versão = um anúncio curto e até 4 destaques, sem
+  // rolar; a mais nova primeiro, e com mais de uma as setas do topo trocam. `dt` = data por extenso (vazio não mostra)
+  const NEWS_LAND = [{ v: '1.0', dt: '', tag: 'LANÇAMENTO · VERSÃO 1.0', h: 'O Climbix chegou!', art: '🎉',
+    p: 'Você é o técnico. Escale o time, mexa com a bola rolando e leve o seu clube da última divisão ao topo.', s: 'Bom jogo, professor!', foot: 'Modo Jogador chega em breve.',
+    lt: 'O QUE TEM NA 1.0', li: [['⚽', 'Jogo ao vivo de verdade', 'Cada lance é decidido na hora.'], ['🤝', 'Mercado vivo', 'Compre, venda e renove contratos.'], ['🏟️', 'O seu estádio', 'Amplie e lote a casa.'], ['💪', 'Treino que evolui', 'Cada jogador cresce com o treino.']] }];
+  const newsNew = () => { try { return localStorage.getItem(NEWS_KEY) !== VERSION; } catch (e) { return false; } };
+  function novidadesLand(back, i) {
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', AR = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + (d < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7') + '"/></svg>';
+    const out = () => (back || U.home)(), n = NEWS_LAND.length; i = Math.max(0, Math.min(n - 1, i || 0));
+    const N = NEWS_LAND[i];
+    try { localStorage.setItem(NEWS_KEY, VERSION); } catch (e) {}
+    U.LD.show('<div class="nvd"><div class="tm-h"><button class="tcr-back" id="nvd-back" aria-label="Voltar">' + BK + '</button><span class="mk-tt"><b>Novidades</b><small>Versão ' + N.v + (N.dt ? ' · ' + N.dt : '') + '</small></span>' +
+        (n > 1 ? '<span class="nvd-pg"><button id="nvd-nx" aria-label="Versão mais nova"' + (i ? '' : ' disabled') + '>' + AR(-1) + '</button><button id="nvd-pv" aria-label="Versão anterior"' + (i < n - 1 ? '' : ' disabled') + '>' + AR(1) + '</button></span>' : '') + '</div>' +
+      '<div class="nvd-c">' + U.emo(N.art, 'lg') + '<small>' + N.tag + '</small><b>' + N.h + '</b><p>' + N.p + '</p>' + (N.s ? '<strong>' + N.s + '</strong>' : '') + (N.foot ? '<em>' + N.foot + '</em>' : '') + '</div>' +
+      '<div class="nvd-r"><div class="nvd-l"><small>' + N.lt + '</small>' + N.li.map(([e, t, d]) => '<div>' + U.emo(e, 'md') + '<span><b>' + t + '</b><small>' + d + '</small></span></div>').join('') + '</div>' +
+        '<button class="tm-go" id="nvd-go">Bora jogar</button></div></div>', st => {
+      st.querySelector('#nvd-back').onclick = () => { U.sfx('tap'); out(); };
+      st.querySelector('#nvd-go').onclick = () => { U.sfx('tap'); out(); };
+      if (st.querySelector('#nvd-nx')) { st.querySelector('#nvd-nx').onclick = () => { U.sfx('tap'); novidadesLand(back, i - 1); }; st.querySelector('#nvd-pv').onclick = () => { U.sfx('tap'); novidadesLand(back, i + 1); }; }
+    });
+  }
+
+  Object.assign(U, { settings, settingsLand, whatsNew, VERSION, novidadesLand, newsNew });
 })();
