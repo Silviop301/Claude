@@ -18,7 +18,11 @@
   const CO = S.CO = {
     squad: { GOL: 3, ZAG: 5, LAT: 4, MEI: 8, ATA: 5 },
     lamH: 1.32, lamA: 1.06, ch: 3.2, spMiss: { pen: 0.012, falta: 0.17, esc: 0.15 }, ck: 4, k: env('CO_K', 36), home: 2, kT: env('CO_KT', 0.3), kD: env('CO_KD', 40),
-    enGame: 12, enRest: 8, enOff: 20, enOpp: 80, inj: 0.011, subs: 5,
+    // Energia (Silvio 2026-11-11: "sinto falta da energia descer durante o jogo" e "a recuperação depende do treino físico"):
+    // enGame = quanto um titular gasta em 90 min no Equilibrado (o estilo, a preleção, o grito, a função e o Físico mudam;
+    // goleiro enGK do resto); entre um jogo e outro quem jogou recupera enRec do que falta para 100, quem não jogou volta
+    // inteiro; o treino da semana tira ou devolve por cima disso. Lesão: cansado abaixo de enInj machuca mais
+    enGame: 34, enGK: 0.35, enRec: 0.75, enOpp: 90, enInj: 65, inj: 0.011, subs: 5,
     // Acréscimos: a1 1 a 3 no 1º tempo, a2 3 a 7 no 2º; mins = minutos jogados num jogo médio (90 + acréscimos): as taxas
     // por minuto dividem por ele, para os acréscimos não aumentarem gols, faltas e cansaço
     mins: 96,
@@ -58,7 +62,7 @@
       tip: 'Sem ponto fraco grande, sem vantagem grande' },
     posse: { name: 'Posse de bola', ctrl: 1.3, press: 0.25, line: 0.65, counter: 0.1, wide: 0.45, build: 1.45, patience: 0.6, att: 0.97, def: 0.94, en: 0.95,
       tip: 'Fica com a bola e fura retranca; sofre contra pressão alta' },
-    pressao: { name: 'Pressão alta', ctrl: 1.05, press: 1.1, line: 0.95, counter: 0.2, wide: 0.5, build: 0.9, patience: 0.2, att: 1.03, def: 1.06, en: 1.4,
+    pressao: { name: 'Pressão alta', ctrl: 1.05, press: 1.1, line: 0.95, counter: 0.2, wide: 0.5, build: 0.9, patience: 0.2, att: 1.03, def: 1.06, en: 1.3,
       tip: 'Rouba a bola lá na frente e cansa; deixa espaço nas costas' },
     contra: { name: 'Contra-ataque', ctrl: 0.78, press: 0.1, line: 0.2, counter: 1.25, wide: 0.4, build: 0.85, patience: 0, att: 0.9, def: 0.88, en: 1,
       tip: 'Dá a bola e mata na velocidade; trava contra retranca' },
@@ -674,8 +678,8 @@
       // Para o caderno: quanto tempo cada confronto de estilo e de formação ficou em campo, e como o rival jogou
       const pm = m.pm = m.pm || {}, tm = m.tm = m.tm || {}, ks = 'sty:' + m.us.style + '|' + m.them.style, kf = 'frm:' + m.us.form + '|' + m.them.form, kt = m.them.form + '|' + m.them.style;
       pm[ks] = (pm[ks] || 0) + 1; pm[kf] = (pm[kf] || 0) + 1; tm[kt] = (tm[kt] || 0) + 1;
-      // Cansaço: quem está em campo perde energia aos poucos (o estilo de ataque cansa mais)
-      [m.us, m.them].forEach(s => { const sen = styOf(s).en; s.xi.forEach((id, i) => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / CO.mins * sen * (s.enK || 1) * (1 + 0.12 * Math.max(0, s.roles ? s.roles[i] || 0 : 0))); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }); });
+      // Cansaço: quem está em campo perde energia aos poucos (o estilo de ataque cansa mais; Físico alto cansa menos)
+      [m.us, m.them].forEach(s => { const sen = styOf(s).en; s.xi.forEach((id, i) => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / CO.mins * sen * (s.enK || 1) * (1 + 0.12 * Math.max(0, s.roles ? s.roles[i] || 0 : 0)) * enFis(p)); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }); });
       // Chances: cada gol esperado vira CO.ch chances; uma em CO.ch entra (as outras são defesa, para fora ou na trave)
       const chance = (S0, lam) => {
         if (r() >= lam * CO.ch / CO.mins) return false;
@@ -754,7 +758,7 @@
           if (!q) return;
           cnt('of'); const p = s.squad.find(x => x.id === q[0]);
           m.ev.push({ m: m.min, t: 'impedimento', s: sd, p: p ? p.n : '', pos: slotsOf(s.form)[q[1]] });
-        } else if (r() < CO.inj * 11 / CO.mins) { const k = r.int(0, s.xi.length - 1), id = s.xi[k], p = s.squad.find(x => x.id === id); if (!p) return; p.out = r.int(1, 6) + 1; m.ev.push({ m: m.min, t: 'lesao', s: sd, p: p.n }); if (s.mine) stop = { t: 'lesao', p: p.n, id, k }; else autoSub(s, k); }
+        } else if (r() < CO.inj / CO.mins * injW(s).t) { const k = injW(s).pick(r()), id = s.xi[k], p = s.squad.find(x => x.id === id); if (!p) return; p.out = r.int(1, 6) + 1; m.ev.push({ m: m.min, t: 'lesao', s: sd, p: p.n }); if (s.mine) stop = { t: 'lesao', p: p.n, id, k }; else autoSub(s, k); }
       });
       // Os minutos jogados nos acréscimos ficam marcados nos lances (st: 45+st ou 90+st)
       if (m.st) for (let i = ev0; i < m.ev.length; i++) m.ev[i].st = m.st;
@@ -767,7 +771,7 @@
       }
       if (!stop && m.min === 45 && !m.half && m.st >= (m.a1 || 0)) { m.half = true; m.st = 0; stop = { t: 'intervalo' }; }
       // O auxiliar do rival troca os cansados no segundo tempo
-      if (m.min === 60 || m.min === 70 || m.min === 80) tiredSubs(m.them);
+      if (m.min >= 55 && m.min % 5 === 0) tiredSubs(m.them);
       // O técnico rival muda o plano: perdendo no fim, se joga; ganhando, fecha
       if (m.min === 65 || m.min === 78) { const T = m.them, diff = (T === H ? m.gh - m.ga : m.ga - m.gh);
         const want = diff < 0 ? (m.min === 78 ? 'pressao' : 'lados') : diff > 0 && m.min === 78 ? 'retranca' : null;
@@ -822,6 +826,21 @@
     for (let i = 0; i < w.length; i++) { x -= w[i]; if (x <= 0) return m[s.xi[i]] ? m[s.xi[i]].n : ''; }
     return '';
   }
+  // Quanto cada um cansa pelo Físico (Físico 60 = normal; 84 cansa 20% menos, 36 cansa 20% mais); goleiro quase não cansa
+  function enFis(p) { if (p.pos === 'GOL') return CO.enGK; const f = Array.isArray(p.at) ? p.at[5] : 60; return clamp(1 + (60 - f) / 120, 0.8, 1.2); }
+  // Lesão: o peso de cada um em campo (1 descansado, até 2 com 35% de energia); t = soma (11 descansados = o número de antes)
+  function injW(s) {
+    const w = s.xi.map(id => { const p = id && s.squad.find(x => x.id === id); return p ? 1 + Math.max(0, CO.enInj - p.en) / 30 : 0; }), t = w.reduce((a, b) => a + b, 0) * 11 / Math.max(1, s.xi.length);
+    return { t, pick: u => { let x = u * w.reduce((a, b) => a + b, 0); for (let i = 0; i < w.length; i++) { x -= w[i]; if (x <= 0 && w[i]) return i; } return w.length - 1; } };
+  }
+  // O auxiliar no treino: com o time cansado (os 11 de agora com média abaixo de 80% ou três abaixo de 70%) ele pede Recuperação.
+  // Devolve null ou { n: quantos abaixo de 70, who: os nomes, avg }
+  S.coTrainTip = function (co) {
+    const by = byId(co.squad), xi = (co.xi || []).filter(id => by[id] && ok(by[id])).length === 11 ? co.xi : autoXI(co.squad, co.form).xi;
+    const ps = xi.map(id => by[id]).filter(p => p && p.pos !== 'GOL'); if (!ps.length) return null;
+    const avg = ps.reduce((a, p) => a + p.en, 0) / ps.length, low = ps.filter(p => p.en < 70).sort((a, b) => a.en - b.en);
+    return avg < 80 || low.length >= 3 ? { n: low.length, who: low.slice(0, 2).map(p => last(p.n)).join(', ') + (low.length > 2 ? '…' : ''), avg } : null;
+  };
   function autoSub(s, k) {
     if (s.subs <= 0 || !s.bench.length) { s.xi[k] = null; return; }
     const m = byId(s.squad);
@@ -1086,7 +1105,7 @@
     const motiv = co.xp.motiv * 0.06;
     co.squad.forEach(p => {
       const pl = m.played[p.id] || 0;
-      p.en = Math.min(100, p.en + (pl ? CO.enRest : CO.enOff));
+      p.en = pl ? Math.min(100, p.en + (100 - p.en) * CO.enRec) : 100;
       // Moral volta aos poucos para 60; vitória sobe, derrota desce (a motivação do técnico segura a queda)
       p.mo += (60 - p.mo) * 0.12;
       // Jogos seguidos sem entrar (bn) e a promessa de chance feita na conversa (some: moral cai se não cumprir)
