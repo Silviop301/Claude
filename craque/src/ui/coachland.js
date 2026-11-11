@@ -1400,7 +1400,7 @@
       if (!x) return '<div class="mka-r">' + nm + '<span class="mka-sc q"><i></i></span><em class="q">?</em></div>';
       if (x.v !== null) return '<div class="mka-r' + (i === top ? ' top' : '') + '">' + nm + '<span class="mka-sc"><i></i><u class="x" style="width:' + X(x.v) + '%"></u></span><em>' + x.v + '</em></div>';
       return '<div class="mka-r">' + nm + '<span class="mka-sc"><i></i><u style="left:' + X(x.lo) + '%;width:' + (X(x.hi) - X(x.lo)) + '%"></u></span><em class="rg">' + x.lo + ' a ' + x.hi + '</em></div>'; };
-    return '<div class="mk-k mka"><span class="mkf-t"><small>ATRIBUTOS</small><em>' + ['sem relatório', '1 de 3 relatórios · pouca certeza', '2 de 3 relatórios · certeza média', 'relatório completo'][Math.min(3, n)] + '</em></span><div class="mka-l">' + ks.map(row).join('') + '</div></div>';
+    return '<div class="mk-k mka"><span class="mkf-t"><small>ATRIBUTOS</small><em>' + ['sem relatório', '1 de 3 relatórios · pouca certeza', '2 de 3 relatórios · certeza média', 'relatório completo · geral <b>' + p.ovr + '</b>'][Math.min(3, n)] + '</em></span><div class="mka-l">' + ks.map(row).join('') + '</div></div>';
   }
   function ficha(id, back) {
     const c = C(), co = c.co, p = S.coMktFind(co, id); if (!p) return mercado();
@@ -1416,7 +1416,7 @@
     const rumRow = rums.length ? '<div class="mkf-rm"><span>' + (rums.length > 1 ? 'Também querem' : 'Também quer') + '</span><b>' + rums.map(x => crest(x.to, 'nw-cr')).join('') + (rums.length === 1 ? '<i>' + rumNm(rums[0].to) + '</i>' : '') + '</b></div>' : '';
     const repC = S.coMktRepCost(co, p), repNo = n < S.CO_MKT.reps && (S.coFin(co).caixa || 0) < repC, repOff = n >= S.CO_MKT.reps || repNo;
     show('<div class="mk mkf' + (rumRow ? ' rm' : '') + '">' + mkHead('mkf-back', esc(p.n), S.CO_POS_NM[p.pos] + ' · ' + p.age + ' anos · ' + mkClub(p), false, true) +
-      (fichaAt ? fichaAttrs(co, p, n) : '<div class="mk-k mkf-cmp"><span class="mkf-t"><small>CONTRA O SEU ' + (S.CO_POS_NM[p.pos] || '').toUpperCase() + ' TITULAR</small>' + (b ? '<b class="' + word + '">' + word + '<small>' + CERT[n] + '</small></b>' : '<b class="nr">sem relatório</b>') + '</span>' +
+      (fichaAt ? fichaAttrs(co, p, n) : '<div class="mk-k mkf-cmp"><span class="mkf-t"><small>CONTRA O SEU ' + (S.CO_POS_NM[p.pos] || '').toUpperCase() + ' TITULAR</small>' + (b ? (n >= S.CO_MKT.reps ? '<span class="mkf-ovw"><i class="mkf-ov"><small>GERAL</small>' + p.ovr + '</i>' : '') + '<b class="' + word + '">' + word + '<small>' + CERT[n] + '</small></b>' + (n >= S.CO_MKT.reps ? '</span>' : '') : '<b class="nr">sem relatório</b>') + '</span>' +
         '<span class="mkf-sc"><i></i>' + band + '<em></em><strong>' + esc(st0 ? last(st0.n) : 'titular') + '</strong></span><span class="mkf-w"><span>pior</span><span>igual</span><span>melhor</span></span></div>' +
       '<div class="mkf-g"><div class="mk-k"><small>POTENCIAL</small><b>' + (pot ? pot[0] : 'Peça um relatório') + '</b>' + (pot ? '<span class="mkf-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= pot[1] ? 'on' : '') + '"></i>').join('') + '</span>' : '<span class="mkf-nr">o olheiro ainda não viu</span>') + '</div>' +
         '<div class="mk-k"><small>JEITO DE JOGAR</small>' + (tr ? '<span class="mkf-tr">' + tr.good.map(t => '<span>' + t + '</span>').join('') + '</span><span class="mkf-nr">' + (n >= 3 ? 'Ponto fraco: ' + tr.bad : 'mais relatório mostra o ponto fraco') + '</span>' : '<b>?</b><span class="mkf-nr">o olheiro ainda não viu</span>') + '</div></div>') +
