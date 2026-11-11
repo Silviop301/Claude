@@ -1936,13 +1936,13 @@
     return '<svg viewBox="0 0 74 74" aria-hidden="true">' + g + '</svg>'; };
   function loja(tab, back) {
     const c = C(), co = c && c.co && c.co.club ? c.co : null;
-    let pk = 1, wk = 1, payOn = false, busy = false;
+    let pk = 1, wk = 1, payOn = false, busy = false, hp = 0;
     const logged = !!(U.cloudStatus && U.cloudStatus());
     if (U.payStatus) U.payStatus().then(r => { if (r && r.on && !payOn) { payOn = true; if (tab === 0 && document.querySelector('.lj')) draw(); } });
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', FW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
     const draw = () => {
       const saldo = U.COINS.get();
-      const tabs = '<span class="lj-tabs">' + ['Moedas', 'Dinheiro do clube'].map((t, i) => '<button data-lj="' + i + '"' + (i === tab ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('') + '</span>';
+      const tabs = '<span class="lj-tabs">' + ['Moedas', 'Dinheiro do clube', 'Histórico'].map((t, i) => '<button data-lj="' + i + '"' + (i === tab ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('') + '</span>';
       let main, side;
       if (tab === 0) {
         main = '<div class="lj-pk">' + PACKS.map((p, i) => '<button class="lj-p' + (i === pk ? ' on' : '') + '" data-pk="' + i + '">' + (p.tag ? '<em>' + p.tag + '</em>' : '') + COIN_PILE(p.h) +
@@ -1951,6 +1951,15 @@
           '<small class="lj-ty">Sua compra ajuda a manter e melhorar o Climbix.</small>' +
           (!payOn ? '<button class="tm-go off" id="lj-buy" disabled>Compra em breve</button>' : !logged ? '<button class="tm-go ec-in" id="lj-buy">Entrar para comprar</button>' :
             '<button class="tm-go" id="lj-buy">' + (busy ? 'Abrindo…' : 'Comprar · ' + PACKS[pk].pr) + '</button>');
+      } else if (tab === 2) {
+        // Histórico (2026-11-11): cada entrada e saída de moedas, 6 por página, mais nova primeiro
+        const log = U.COINS.log(), N = 6, pages = Math.max(1, Math.ceil(log.length / N)); hp = Math.min(hp, pages - 1);
+        const dt = at => { const d = new Date(at || 0); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); };
+        const rows = log.slice(hp * N, hp * N + N).map(x => '<div class="lj-h"><i>' + dt(x.at) + '</i><span>' + esc(x.t || 'Moedas') + '</span><b class="' + (x.n < 0 ? 'dn' : 'up') + '">' + (x.n > 0 ? '+' : '−') + Math.abs(x.n) + '</b></div>').join('');
+        main = '<div class="lj-ap lj-hist">' + (rows || '<div class="lj-none"><b>Nada ainda</b><small>Moedas ganhas, compradas e gastas aparecem aqui.</small></div>') +
+          (pages > 1 ? '<div class="lj-hp"><button id="lj-hm" aria-label="Mais novas"' + (hp ? '' : ' disabled') + '>' + BK + '</button><small>' + (hp + 1) + ' de ' + pages + '</small><button id="lj-hn" aria-label="Mais antigas"' + (hp < pages - 1 ? '' : ' disabled') + '>' + FW + '</button></div>' : '') + '</div>';
+        const sum = f => log.filter(f).reduce((a, x) => a + x.n, 0), buy = sum(x => x.n > 0 && /^Compra na loja/.test(x.t || ''));
+        side = '<div class="lj-box"><small class="ld-lbl">NO TOTAL</small>' + [['Ganhou jogando', U.COINS.got() - buy], ['Comprou', buy], ['Gastou', U.COINS.got() - saldo], ['Saldo', saldo]].map(([t, n]) => '<div class="lj-li"><span>' + t + '</span><b>' + Math.max(0, n) + '</b></div>').join('') + '</div>';
       } else if (!co) {
         main = '<div class="lj-ap lj-none"><b>Abra uma carreira do Treinador</b><small>O aporte entra na verba do clube que você treina.</small></div>';
         side = '<span class="rs-gap"></span>';
@@ -1978,6 +1987,8 @@
           U.payCreate(PACKS[pk].k).then(r => { location.href = r.url; }, e => { busy = false; draw();
             pop('<div class="acd-help"><b>Não deu para abrir o pagamento</b><p>' + (e && e.error === 'auth' ? 'Entre de novo na sua conta e tente outra vez.' : 'Tente de novo daqui a pouco.') + '</p><button class="hl-btn dark" data-pop-x>Fechar</button></div>', 'Erro', null, 'hl-pop acd-pop tm-pop'); });
         };
+        if (st.querySelector('#lj-hm')) st.querySelector('#lj-hm').onclick = () => { sfx('tap'); hp--; draw(); };
+        if (st.querySelector('#lj-hn')) st.querySelector('#lj-hn').onclick = () => { sfx('tap'); hp++; draw(); };
         if (st.querySelector('#lj-m')) st.querySelector('#lj-m').onclick = () => { sfx('tap'); wk--; draw(); };
         if (st.querySelector('#lj-p')) st.querySelector('#lj-p').onclick = () => { sfx('tap'); wk++; draw(); };
         if (st.querySelector('#lj-ap')) st.querySelector('#lj-ap').onclick = () => {

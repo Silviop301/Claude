@@ -9387,3 +9387,15 @@ button.coin-pill { cursor: pointer; border: 0; }
 @keyframes tcUp{from{transform:translateY(160px) scale(.5);opacity:0}}
 @keyframes tcPop{from{transform:scale(2.5);opacity:0}}
 @keyframes tcFd{from{opacity:0}}
+
+/* Loja: histórico de moedas (2026-11-11) */
+.lj-hist { gap: 0; padding: 8px 18px; }
+.lj-h { min-height: 44px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(243,241,234,.1); }
+.lj-h i { font: 700 14px/1 var(--body); font-style: normal; color: #8FA197; width: 44px; flex: none; }
+.lj-h span { flex: 1; min-width: 0; font: 700 16px/1.15 var(--body); color: #E6ECE8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lj-h b { font: 800 22px/1 var(--display); } .lj-h b.up { color: var(--gold); } .lj-h b.dn { color: #FF8A7A; }
+.lj-hp { margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 14px; padding-top: 6px; }
+.lj-hp small { font: 700 15px/1 var(--body); color: #B9C9BF; }
+.ld-st .lj-hp button { padding: 0 !important; width: 44px; height: 40px; border-radius: 12px; background: rgba(0,0,0,.35); display: grid; place-items: center; }
+.lj-hp button svg { width: 22px; height: 22px; fill: none; stroke: #F3F1EA; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.lj-hp button:disabled { opacity: .35; }
