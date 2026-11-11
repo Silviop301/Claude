@@ -28,6 +28,7 @@
     // iPhone: girar o celular (ou a página por baixo rolada) deixa a página deslocada; o palco fixo aparece num lugar e o
     // toque cai em outro (acima). Com o palco aberto a página fica sempre no topo
     if (document.body.classList.contains('ld-on') && (window.scrollY || window.scrollX || document.documentElement.scrollTop)) { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; }
+    rot();
     const vw = el.clientWidth || window.innerWidth, vh = el.clientHeight || window.innerHeight, port = vh > vw * 1.05; // medidas do #ld (já sem o topo borrado do iPhone e com o zoom do monitor)
     el.classList.toggle('port', port);
     // Área segura (entalhe e ilha do iPhone deitado): vem do padding do #ld. As telas não apertam (816×366 de conteúdo, como nos
@@ -39,6 +40,21 @@
     el.style.setProperty('--ldpx', (14 + ex) + 'px'); el.style.setProperty('--ldpy', (12 + ey) + 'px');
     el.style.setProperty('--ldk', k.toFixed(4));
   }
+  // Tela girada (Silvio, 2026-11-11): com a rotação travada em pé (iPhone não deixa o site travar deitado), o botão do aviso
+  // "Gire o celular" desenha o jogo girado 90° (html.rot, style.css): ele vira o celular de lado e joga. Fica lembrado
+  // (U.rotPref, desliga nos Ajustes); com o celular realmente deitado nada gira. Toques: U.pt / U.box (ui/core.js)
+  function rot() {
+    const R = document.documentElement, ww = window.innerWidth, wh = window.innerHeight;
+    const on = document.body.classList.contains('ld-on') && wh > ww * 1.05 && U.rotPref();
+    R.classList.toggle('rot', on);
+    if (on) { R.style.setProperty('--rw', wh + 'px'); R.style.setProperty('--rh', ww + 'px'); R.style.setProperty('--rx', ww + 'px'); }
+  }
+  function rotGo() {
+    U.rotPref(true); sfx('tap');
+    // Android: tela cheia + travar deitado (com a trava, a tela de fato deita e o giro por CSS nem entra)
+    try { const d = document.documentElement, fs = d.requestFullscreen || d.webkitRequestFullscreen; if (fs && !document.fullscreenElement) { const p = fs.call(d); if (p && p.then) p.then(lockLand, () => {}); } } catch (e) {}
+    fit();
+  }
   // Mostra uma tela no palco. html = conteúdo do palco; bind(st) liga os botões
   function show(html, bind, turn) {
     const el = host();
@@ -46,7 +62,9 @@
     const st = document.getElementById('ld-st');
     st.innerHTML = html;
     // O Treinador é só deitado (Silvio 2026-11-06 tirou o "Jogar em pé"): em pé, só o aviso para girar
-    document.getElementById('ld-turn').innerHTML = '<div class="ld-turn-c"><i aria-hidden="true">' + PHONE + '</i><b>Gire o celular</b><small>' + (turn || 'O Treinador é jogado com o celular deitado.') + '</small></div>';
+    document.getElementById('ld-turn').innerHTML = '<div class="ld-turn-c"><i aria-hidden="true">' + PHONE + '</i><b>Gire o celular</b><small>' + (turn || 'O Treinador é jogado com o celular deitado.') + '</small>' +
+      '<button class="btn" id="ld-rotb">Girar a tela</button><small class="ld-rot-s">Para celular com a rotação travada</small></div>';
+    document.getElementById('ld-rotb').onclick = rotGo;
     lockLand();
     fit();
     st.querySelectorAll('[data-rail]').forEach(b => b.onclick = () => { sfx('tap'); go(b.dataset.rail); });
@@ -59,14 +77,14 @@
     const isField = t => !!(t && t.matches && t.matches('input:not([hidden]), textarea'));
     root.addEventListener('focusin', e => {
       if (!isField(e.target)) return;
-      const st = document.getElementById('ld-st'), k = st.getBoundingClientRect().width / st.offsetWidth || 1;
+      const st = document.getElementById('ld-st'), k = U.box(st).width / st.offsetWidth || 1;
       root.style.transition = 'none'; root.style.transform = '';
-      const dy = Math.round((e.target.getBoundingClientRect().top - root.getBoundingClientRect().top) / k) - 4;
+      const dy = Math.round((U.box(e.target).top - U.box(root).top) / k) - 4;
       root.style.transition = 'transform .15s'; root.style.transform = dy > 0 ? 'translateY(' + -dy + 'px)' : '';
     });
     root.addEventListener('focusout', () => setTimeout(() => { if (!root.contains(document.activeElement) || !isField(document.activeElement)) root.style.transform = ''; }, 60));
   }
-  function off() { document.body.classList.remove('ld-on'); closePop(); try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {} }
+  function off() { document.body.classList.remove('ld-on'); document.documentElement.classList.remove('rot'); closePop(); try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {} }
   // Android (app instalado ou tela cheia) deixa travar a tela deitada; o iPhone não deixa (fica o aviso para girar)
   function lockLand() { try { const so = screen.orientation; if (so && so.lock) so.lock('landscape').catch(() => {}); } catch (e) {} }
   const PHONE = '<svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M20 9a8 8 0 0 1 0 6M4 9a8 8 0 0 0 0 6"/></svg>';
@@ -174,18 +192,20 @@
   function benchDrag(root, onDrop, fits) {
     if (!root) return;
     root.querySelectorAll('.tm-bp:not(.dis)').forEach(b => {
-      let x0 = 0, y0 = 0, pid = null, gh = null, over = null, dragged = false;
-      const at = (cx, cy) => { const r = root.getBoundingClientRect(), k = r.width / root.offsetWidth || 1; return [(cx - r.left) / k, (cy - r.top) / k]; };
+      let x0 = 0, y0 = 0, pid = null, gh = null, over = null, dragged = false, bn = null, sl0 = 0;
+      const at = (cx, cy) => { const r = U.box(root), k = r.width / root.offsetWidth || 1; [cx, cy] = U.pt(cx, cy); return [(cx - r.left) / k, (cy - r.top) / k]; };
       const hit = (cx, cy) => { const el = document.elementFromPoint(cx, cy), d = el && el.closest('[data-xi]'); return d && root.contains(d) ? d : null; };
       const free = b.classList.contains('tm-cd');
       const end = () => { if (gh) gh.remove(); gh = null; if (over) over.classList.remove('drop'); over = null; pid = null; root.classList.remove('tm-drag'); b.classList.remove('lift');
         root.querySelectorAll('[data-dfit],[data-dfar]').forEach(d => { d.removeAttribute('data-dfit'); d.removeAttribute('data-dfar'); }); };
-      b.addEventListener('pointerdown', e => { if (e.button > 0) return; x0 = e.clientX; y0 = e.clientY; pid = e.pointerId; dragged = false; try { b.setPointerCapture(pid); } catch (er) {} });
+      b.addEventListener('pointerdown', e => { if (e.button > 0) return; [x0, y0] = U.pt(e.clientX, e.clientY); pid = e.pointerId; dragged = false; bn = null; try { b.setPointerCapture(pid); } catch (er) {} });
       b.addEventListener('pointermove', e => {
         if (e.pointerId !== pid) return;
-        const dx = e.clientX - x0, dy = e.clientY - y0;
+        const [ex, ey] = U.pt(e.clientX, e.clientY), dx = ex - x0, dy = ey - y0; // tela girada: o "para cima" do palco
         if (!gh) {
-          if (free ? Math.hypot(dx, dy) < 12 : dy > -12 || Math.abs(dy) < Math.abs(dx) * 0.6) { if (!free && Math.abs(dx) > 20 && dy > -12) pid = null; return; }
+          // tela girada: o navegador entende o "pan-x" do banco na tela, não no palco; lá o banco não deixa o navegador rolar e rola aqui
+          if (bn) { bn.scrollLeft = sl0 - dx; e.preventDefault(); return; }
+          if (free ? Math.hypot(dx, dy) < 12 : dy > -12 || Math.abs(dy) < Math.abs(dx) * 0.6) { if (!free && Math.abs(dx) > 20 && dy > -12) { bn = U.rotOn() && b.closest('.tm-bench'); if (bn) sl0 = bn.scrollLeft + dx; else pid = null; } return; }
           gh = document.createElement('div'); gh.className = 'tm-bp tm-ghost'; gh.innerHTML = b.innerHTML; root.appendChild(gh);
           root.classList.add('tm-drag'); b.classList.add('lift'); dragged = true;
           // as vagas em que ele joga acendem; quem estiver embaixo do dedo vira "SAI"
@@ -339,7 +359,7 @@
     const tg = st.querySelector(s[1]);
     // Sem o alvo (rodada sem jogo) ou já feito (treino escolhido, relatório lido): próximo passo
     if (!tg || tg.classList.contains('ok')) { co.tut.n++; return tutShow(co, st); }
-    const wk = TUT.filter(x => x[0] === s[0]), R = st.getBoundingClientRect(), k = R.width / st.offsetWidth || 1, r = tg.getBoundingClientRect();
+    const wk = TUT.filter(x => x[0] === s[0]), R = U.box(st), k = R.width / st.offsetWidth || 1, r = U.box(tg);
     const x = (r.left - R.left) / k, y = (r.top - R.top) / k, w = r.width / k, h = r.height / k;
     const el = document.createElement('div'); el.className = 'tu'; el.id = 'ld-tu';
     el.innerHTML = '<button class="tu-hole" style="left:' + x.toFixed(1) + 'px;top:' + y.toFixed(1) + 'px;width:' + w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px;border-radius:' + getComputedStyle(tg).borderRadius + '" aria-label="' + esc(tg.textContent.trim()) + '"></button>' +
@@ -2365,6 +2385,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, lift, estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato, recebida };
+  U.LD = { on, show, off, fit, lift, estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePlayer, result, segunda, caderno, tabela, clube, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, ficha, proposta, contrato, recebida };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();

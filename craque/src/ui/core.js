@@ -335,7 +335,15 @@
   }
 
   // Zoom da página (monitor grande, style.css): medidas da tela ÷ zk() = pixels do CSS. Sem zoom, 1.
-  const zk = () => { const b = document.body, w = b && b.offsetWidth; return w ? b.getBoundingClientRect().width / w || 1 : 1; };
+  const zk = () => { if (rotOn()) return 1; const b = document.body, w = b && b.offsetWidth; return w ? b.getBoundingClientRect().width / w || 1 : 1; };
+  // Tela girada (Silvio, 2026-11-11: iPhone com a rotação travada em pé): o jogo deitado é desenhado girado 90° (html.rot, ui/coachland.js).
+  // O toque continua chegando em coordenadas da tela: pt() e box() passam ponto e retângulo para a página girada (sem giro, iguais)
+  const ROT_KEY = 'climbix-girar';
+  const rotPref = v => { try { if (v === undefined) return localStorage.getItem(ROT_KEY) === '1'; localStorage.setItem(ROT_KEY, v ? '1' : '0'); } catch (e) {} return !!v; };
+  const rotOn = () => document.documentElement.classList.contains('rot');
+  const rotW = () => parseFloat(document.documentElement.style.getPropertyValue('--rx')) || window.innerWidth;
+  const pt = (x, y) => (rotOn() ? [y, rotW() - x] : [x, y]);
+  const box = el => { const r = el.getBoundingClientRect(); if (!rotOn()) return r; const W = rotW(); return { left: r.top, top: W - r.right, right: r.bottom, bottom: W - r.left, width: r.height, height: r.width }; };
 
   // Faixa de cor da carta pela nota (bronze, prata, ouro, ícone)
   const tierCls = o => (o >= 85 ? 'icone' : o >= 75 ? 'ouro' : o >= 65 ? 'prata' : 'bronze');
@@ -391,5 +399,5 @@
   // Som do gol com mando: o seu gol em casa é a festa inteira, fora é o canto da sua torcida lá no fundo; o gol deles em
   // casa é o lamento, fora é a casa deles explodindo
   const goalSnd = (ours, home) => (ours ? (home ? 'cheer' : 'cheerAway') : home ? 'miss' : 'cheer');
-  window.CRAQUE_UI = { goalSnd, zk, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, slotKey, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg, totOf, titlesOf, toHome, modeHead, modeHeadBind };
+  window.CRAQUE_UI = { goalSnd, zk, rotPref, rotOn, pt, box, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, slotKey, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg, totOf, titlesOf, toHome, modeHead, modeHeadBind };
 })();
