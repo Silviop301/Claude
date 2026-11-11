@@ -22,8 +22,11 @@
   const year = () => YEAR0 + G.c.season;
   // Versão de portal (tools/craque_portal.py): os escudos vêm de climbix.app, para o pacote caber no limite de arquivos
   const BADGES = window.CLIMBIX_BADGES || 'badges/';
-  const badgeSrc = s => String(s).replace(/^badges\//, BADGES);
-  const crest = (id, cls) => '<img class="crest' + (cls ? ' ' + cls : '') + '" src="' + BADGES + id + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">';
+  // Escudo trocado: versão na URL, senão o celular segue com o antigo do cache por 7 dias (Botafogo-SP, 11/11)
+  const CREST_V = { 'bra-c-9': 2 };
+  const crestUrl = id => BADGES + id + '.png' + (CREST_V[id] ? '?v=' + CREST_V[id] : '');
+  const badgeSrc = s => { s = String(s); const m = /^badges\/([a-z0-9-]+)\.png$/.exec(s); return m ? crestUrl(m[1]) : s.replace(/^badges\//, BADGES); };
+  const crest = (id, cls) => '<img class="crest' + (cls ? ' ' + cls : '') + '" src="' + crestUrl(id) + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">';
   const trophy = (type, size, name) => window.CRAQUE_TROPHY(type, size, name);
   const titleType = t => (t.id === 'cont' ? (t.name === 'Libertadores' ? 'lib' : 'ucl') : t.id);
   const meter = (label, v) => '<span class="m"><span class="ml">' + label + ' · ' + S.relLabel(v) + '</span><span class="mb"><i style="width:' + Math.round(v) + '%" class="' + (v >= 62 ? 'hi' : v < 32 ? 'lo' : '') + '"></i></span></span>';
