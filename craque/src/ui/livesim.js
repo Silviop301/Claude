@@ -142,7 +142,7 @@
     // oppfora, pega, saimal, rebate (eles atacam perto de você) · none
     let lc = null, stopWhy = '';
     // Texto grande animado no campo (Silvio, 10/11: "no gol um indicativo de texto animado, assim como na marcação de pênalti"): { txt, s, t0, d } em relógio de verdade
-    let big = null; const bigSay = (txt, s, d) => { if (!o.noBig) big = { txt, s, t0: Date.now(), d: d || 2 }; };
+    let big = null; const bigSay = (txt, s, d, wave) => { if (!o.noBig) big = { txt, s, t0: Date.now(), d: d || 2, wave }; };
     const DEF = { desarme: 1, corte: 1, driblado: 1, falta: 1, defesa: 1, oppfora: 1, pega: 1, saimal: 1, rebate: 1 };
     function lcDone() { const f = lc && lc.cb; lc = null; if (f) f(); }
     const acc = { x: 0, n: 0 }, pt = [0, 0]; // quem mandou no minuto (média) e tempo de posse de cada time
@@ -865,7 +865,7 @@
       // Sobra: a bola vai para (rx, ry) e fica com quem chegar primeiro (um atacante perto bate de novo: o 2º chute do rebote)
       const spill = (from, rx, ry, k) => { rx = cl(rx, 1, L - 1); ry = cl(ry, 2, WD - 2); let q = null, qd = 1e9; for (const z of ALL) { if (z.r === 'GK' || z.down || z === f.blk) continue; const dd = Math.hypot(z.x - rx, z.y - ry) * (z.side === s ? 1.15 : 1); if (dd < qd) { qd = dd; q = z; } }
         if (!q) return setOwner(gk); if (q.side === s && rnd() < 0.7 && !lc) q.reb = 1.6; fly(from, rx, ry, q, k === 'soco', k, true); ball.fly.from = from; };
-      if (f.out === 'gol') { net = { gx, y: f.y1, t: 0, v: Math.hypot(f.x1 - f.x0, f.y1 - f.y0) / f.dur }; mode = 'goal'; modeT = 2; koSide = 1 - s; hero = f.from; back = 0; bigSay('GOL!', f.from.side, 2.1); if (due) { const e = due; due.done = true; due = null; if (o.onGoal) o.onGoal(e.m); if (e.cb) e.cb(); } }
+      if (f.out === 'gol') { net = { gx, y: f.y1, t: 0, v: Math.hypot(f.x1 - f.x0, f.y1 - f.y0) / f.dur }; mode = 'goal'; modeT = 2; koSide = 1 - s; hero = f.from; back = 0; bigSay('GOOOL!', f.from.side, 2.6, true); if (due) { const e = due; due.done = true; due = null; if (o.onGoal) o.onGoal(e.m); if (e.cb) e.cb(); } }
       else if (f.out === 'def' && f.lc && lc && lc.k === 'rebate') { const q = T[s].filter(x => x.r !== 'GK').sort((a, b) => dist(a, gk) - dist(b, gk))[0]; setOwner(q); }
       else if (f.out === 'def' && f.sv === 'escanteio' && !lc) { flyOut(gk, s ? -2.5 : L + 2.5, 34 + (ball.y < 34 ? -1 : 1) * (5 + rnd() * 6), true, 'espalma'); }
       else if (f.out === 'def' && f.sv === 'espalma' && !lc) { why = 'rebote'; spill(gk, gx + dg * (6 + rnd() * 5), ball.y + (ball.y < 34 ? -1 : 1) * (3 + rnd() * 7), 'rebote'); }
@@ -1994,8 +1994,16 @@
           const tw = g.measureText(big.txt).width, bw = tw + sz * 0.9, bh = sz * 0.22, by = sz * 0.5;
           g.fillStyle = 'rgba(10,14,12,.55)'; g.beginPath(); g.roundRect(-bw / 2, -sz * 0.62, bw, sz * 1.36, sz * 0.18); g.fill();
           g.fillStyle = kt[0]; g.fillRect(-bw / 2 + sz * 0.18, by, bw / 2 - sz * 0.18, bh); g.fillStyle = kt[1] || kt[0]; g.fillRect(0, by, bw / 2 - sz * 0.18, bh);
-          g.lineJoin = 'round'; g.lineWidth = sz * 0.1; g.strokeStyle = '#141517'; g.strokeText(big.txt, 0, -sz * 0.04);
-          g.fillStyle = '#F2C230'; g.shadowColor = 'rgba(242,194,48,.7)'; g.shadowBlur = sz * 0.3; g.fillText(big.txt, 0, -sz * 0.04);
+          g.lineJoin = 'round'; g.lineWidth = sz * 0.1; g.strokeStyle = '#141517';
+          if (!big.wave) { g.strokeText(big.txt, 0, -sz * 0.04); g.fillStyle = '#F2C230'; g.shadowColor = 'rgba(242,194,48,.7)'; g.shadowBlur = sz * 0.3; g.fillText(big.txt, 0, -sz * 0.04); }
+          else { // GOOOL! (Silvio, 11/11): cada letra entra na sua vez e sobe e desce como a ola da torcida
+            const ch = [...big.txt], ws = ch.map(c => g.measureText(c).width); let x = -tw / 2;
+            ch.forEach((c, i) => { const li = age - i * 0.06; if (li > 0) {
+              const up = li < 0.18 ? (1 - li / 0.18) * sz * 0.5 : 0, wv = Math.max(0, Math.sin(age * 7 - i * 0.75)) * sz * 0.2 * Math.min(1, age * 2);
+              const sc = li < 0.18 ? 0.4 + 0.6 * li / 0.18 : 1 + wv / sz * 0.35, cx = x + ws[i] / 2, cy = -sz * 0.04 + up - wv;
+              g.save(); g.translate(cx, cy); g.scale(sc, sc); g.rotate(Math.sin(age * 7 - i * 0.75) * 0.06); g.shadowBlur = 0;
+              g.strokeText(c, 0, 0); g.fillStyle = '#F2C230'; g.shadowColor = 'rgba(242,194,48,.7)'; g.shadowBlur = sz * 0.3; g.fillText(c, 0, 0); g.restore(); }
+              x += ws[i]; }); }
           g.restore(); } }
       if (cue) { const age = (Date.now() - cue.t0) / 1000;
         if (age > CUE_T) cue = null; else { const me = T[cue.s].filter(q => q.r !== 'GK'), cx = me.reduce((u, q) => u + q.x, 0) / (me.length || 1), d = (X(cx + 1) > X(cx) ? 1 : -1) * (cue.s ? -1 : 1) * (cue.k === 'recuar' ? -1 : 1);
@@ -2155,7 +2163,10 @@
       // no ar, nem com o ataque já chegando na área (Silvio, 10/11: "o jogo acabou no meio de um escanteio")
       canStop() { if (mode !== 'play') return mode !== 'rein' && mode !== 'pen' && mode !== 'falta' && mode !== 'troca' && mode !== 'tiro';
         if (clk - escClk < 3.5 || pen) return false; const f = ball.fly; if (f && (f.shot || f.kind === 'cruz' || f.kind === 'costas')) return false;
-        const a = due || att, ow = ball.owner; if (a && ow && ow.side === a.side && tf(a.side, ball)[0] > 78) return false; return true; },
+        // ataque perto da área (Silvio, 11/11: "não deveria encerrar na hora do chute"): o juiz espera a bola ser afastada, sair
+        // ou ficar com o goleiro. Quem tem a bola no último terço deles, ou bola solta / passe caindo perto de uma das áreas, segura o apito
+        const ow = ball.owner; if (ow && ow.r !== 'GK' && tf(ow.side, ball)[0] > 70) return false;
+        const bx = f ? f.x1 : ball.x; if (!ow && (bx < 30 || bx > L - 30)) return false; return true; },
       pending(m) { return mode !== 'wait' && goals.some(e => !e.done && e.m === m); },
       go() { if (mode === 'wait') { mode = 'ko'; modeT = 0.3; koHold = true; } },
       // true enquanto os times ainda se arrumam para a saída do 1º ou do 2º tempo: a tela não anda o minuto
