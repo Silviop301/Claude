@@ -254,7 +254,7 @@
     const add = (k, v) => { v = Math.round(v); fin.ss[k] = (fin.ss[k] || 0) + v; fin.caixa += v; };
     const sub = (k, v) => { v = Math.round(v); fin.ss[k] += v; fin.caixa -= v; };
     const ss0 = Object.assign({}, fin.ss), cx0 = fin.caixa;
-    sub('sal', S.coFolha(co));
+    sub('sal', S.coFolha(co) + S.coAuxWage(co)); // a folha e o salário da auxiliar (a Licença C não cobra)
     add('pat', patOf(co).fix / n);
     if (ri === 0 || ri === Math.floor(n / 2)) add('tv', fin.rec * F.tv / 2 * (S.coEstTv ? S.coEstTv(co) : 1));
     let g = 0;
@@ -296,7 +296,7 @@
     const bil = i ? x.bil / i : (nx && !nx.bye && nx.home ? gate(co, nx.vs) / 2 : 0);
     const tv = (i <= half ? fin.rec * F.tv / 2 * (S.coEstTv ? S.coEstTv(co) : 1) : 0) / rest;
     const inn = patOf(co).fix / n + bil + tv + (fin.recv || []).reduce((a, y) => a + y.v, 0) / F.mes;
-    const out = S.coFolha(co) + (fin.loan ? fin.loan.parc / F.mes : 0) + (fin.inst || []).reduce((a, y) => a + y.v, 0) / F.mes;
+    const out = S.coFolha(co) + S.coAuxWage(co) + (fin.loan ? fin.loan.parc / F.mes : 0) + (fin.inst || []).reduce((a, y) => a + y.v, 0) / F.mes;
     const net = Math.round(inn - out);
     if (fin.caixa < 0) return { net, left: 0, rest: n - i, st: 'red', inn: Math.round(inn), out: Math.round(out) };
     const left = net >= 0 ? null : Math.floor(fin.caixa / -net);
@@ -391,6 +391,57 @@
     out.fin = bal;
     return out;
   };
+
+  // ---------- Auxiliar com níveis (Silvio 2026-11-11: "seria legal upar a auxiliar") ----------
+  // co.aux = { lv: 0 a 4 (Licença C, B, A, PRO, PRO Elite), n: nome, ela: 1 mulher, fc: rosto (7 ou 8), crs: { to, left } curso
+  // andando, seg: [seguiu o plano e venceu?] últimos jogos }. Ela acompanha o técnico de clube em clube (o investimento é seu).
+  // O curso é pago do caixa (entra em Contratações) e dura `rounds` rodadas; o salário dela entra na folha (Salários).
+  // O que cada licença faz: acc = quantas vezes o plano dela é o melhor; ht = avisa no intervalo se o plano não encaixa;
+  // riv = avisa quando o rival muda o plano no meio do jogo; en = diz quem vai cansar antes de cair
+  const AX = S.CO_AUX = {
+    lv: [{ k: 'C', n: 'Licença C', acc: 0.8, t: 'Monta o plano do jogo. Acerta 4 em 5' },
+      { k: 'B', n: 'Licença B', acc: 0.9, ht: 1, t: 'Acerta 9 em 10 e avisa no intervalo' },
+      { k: 'A', n: 'Licença A', acc: 0.9, ht: 1, riv: 1, t: 'Avisa quando o rival muda o plano' },
+      { k: 'P', n: 'Licença PRO', acc: 0.92, ht: 1, riv: 1, en: 1, t: 'Diz quem vai cansar antes de cair' },
+      { k: 'P+', n: 'PRO Elite', acc: 0.95, ht: 1, riv: 1, en: 1, t: 'Quase não erra o plano' }],
+    fee: [0, 2, 4, 7, 10],          // preço do curso para chegar ao nível, em semanas da folha de hoje
+    wage: [0, 0.03, 0.06, 0.09, 0.12], // salário dela por rodada, em fração da folha (a Licença C vem no pacote)
+    rounds: 4, folga: 2,             // rodadas de curso; o caixa tem de seguir com 2 semanas de folha depois de pagar
+    names: [['Jorge Sales', 'Paulo Moreira', 'Ricardo Nunes', 'Márcio Teles', 'André Bastos', 'Fábio Leal'], ['Ana Paula Rocha', 'Marta Ribeiro', 'Juliana Prado', 'Camila Duarte', 'Renata Lopes', 'Patrícia Alves']],
+  };
+  // Cria para carreira nova e save antigo: rosto e nome pelo técnico e o clube de hoje (o mesmo que a tela já mostrava)
+  S.coAux = function (co) {
+    if (co.aux) return co.aux;
+    let h = 7; const t = (co.name || '') + '|' + co.club; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
+    const ela = h % 2 === 1 ? 1 : 0; // a mesma conta do auxFace de antes (rosto 07 ou 08): quem já jogava vê o mesmo rosto
+    return (co.aux = { lv: 0, ela, fc: 7 + ela, n: AX.names[ela][hash(String(co.name || '') + '|aux') % 6], crs: null, seg: [] });
+  };
+  S.coAuxLv = co => AX.lv[S.coAux(co).lv];
+  S.coAuxAcc = co => S.coAuxLv(co).acc;
+  S.coAuxWage = co => (co.aux && co.aux.lv ? Math.round(S.coFolha(co) * AX.wage[co.aux.lv] / 100) * 100 : 0);
+  // O próximo curso: { to, fee, wage (por rodada, já no nível novo), rounds, max, doing, why } (why: 'caixa' sem dinheiro)
+  S.coAuxPlan = function (co) {
+    const a = S.coAux(co), to = a.lv + 1, f = S.coFolha(co), fin = S.coFin(co);
+    if (to >= AX.lv.length) return { max: 1 };
+    const fee = Math.max(20000, Math.round(f * AX.fee[to] / 1000) * 1000), wage = Math.round(f * AX.wage[to] / 100) * 100;
+    const why = a.crs ? 'curso' : !fin || fin.caixa - fee < f * AX.folga ? 'caixa' : '';
+    return { to, fee, wage, dw: wage - S.coAuxWage(co), rounds: AX.rounds, doing: a.crs, why };
+  };
+  S.coAuxBuy = function (co) {
+    const P = S.coAuxPlan(co); if (P.max || P.why) return { ok: false, why: P.why || 'max' };
+    const fin = S.coFin(co); fin.caixa -= P.fee; fin.ss.comp = (fin.ss.comp || 0) + P.fee;
+    co.aux.crs = { to: P.to, left: P.rounds };
+    return { ok: true, P };
+  };
+  // A rodada anda o curso; pronto, sobe o nível e a tela avisa uma vez (S.coAuxDone)
+  const auxTick = co => { const a = co.aux; if (!a || !a.crs) return; if (--a.crs.left <= 0) { a.lv = a.crs.to; a.crs = null; a.up = a.lv; } };
+  S.coAuxDone = co => { const a = co.aux; if (!a || !a.up) return null; const lv = a.up; delete a.up; return AX.lv[lv]; };
+  // Placar de quem seguiu o plano: "seguiu o plano dela: 3 vitórias em 4" (últimos 10 jogos em que seguiu)
+  const auxSeg = (co, log) => { if (!log || !log.plan || log.plan === 'off') return; const a = S.coAux(co); a.seg.push(log.res === 'v' ? 1 : 0); if (a.seg.length > 10) a.seg.shift(); };
+  const auxEnd0 = S.coMatchEnd;
+  S.coMatchEnd = function (co, m) { const log = auxEnd0.apply(this, arguments); if (log) { auxSeg(co, log); auxTick(co); } return log; };
+  const auxSkip0 = S.coSkipRound;
+  S.coSkipRound = function (co) { auxSkip0.apply(this, arguments); auxTick(co); };
 
   if (typeof module !== 'undefined') module.exports = S;
 })(typeof window !== 'undefined' ? window : globalThis);

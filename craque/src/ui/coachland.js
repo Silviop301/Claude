@@ -130,9 +130,9 @@
   // ?v=2: os rostos foram recortados de novo em 11/11 e o celular guardava o desenho antigo (sobrava creme embaixo do busto); trocou a arte, sobe o número
   const face = (n, cls, alt) => '<img class="' + cls + '" src="' + CO_ART + 'rosto-' + String(n).padStart(2, '0') + '.webp?v=2" alt="' + esc(alt || '') + '">';
   const presFace = (P, cls) => { const l = FACE_PRES[P.k] || [5]; return face(l[hashS(P.n) % l.length], cls, P.n); };
-  const auxFace = (co, cls) => face(7 + hashS((co.name || '') + '|' + co.club) % 2, cls, 'Auxiliar');
+  const auxFace = (co, cls) => face(S.coAux(co).fc, cls, 'Auxiliar'); // co.aux: ela acompanha o técnico (coachfin.js)
   // rosto 08 é a auxiliar (mulher): o texto concorda com o rosto (Silvio 2026-11-11)
-  const auxEla = co => hashS((co.name || '') + '|' + co.club) % 2 === 1;
+  const auxEla = co => !!S.coAux(co).ela;
 
   // Campinho deitado: o seu gol à esquerda. Posições (x, y em %) a partir das linhas da formação.
   // full: o time ocupa o campo inteiro (Time); senão meio campo cada, encaixado com o rival espelhado (Semana).
@@ -301,7 +301,7 @@
     if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao() : patrocinio();
     c.save('hub');
     const tut = tutStep(co);
-    const popped = !tut && (inboxPop(co, semana) || lostPop(co) || obraPop(co) || nomePop(co) || ligaPop(co) || showPop(co));
+    const popped = !tut && (inboxPop(co, semana) || lostPop(co) || auxPop(co) || obraPop(co) || nomePop(co) || ligaPop(co) || showPop(co));
     if (!tut && !popped && !ctWarn(co)) finNews(co);
     if (!tut) setTimeout(() => { winToast(co); if (!popped) upToast(co); }, 0);
     // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
@@ -439,9 +439,9 @@
       // Dica do auxiliar no topo (Silvio 2026-11-09, opção A): uma por jogo, de estilo ou de formação, com o rosto dele; o
       // toque explica e aplica. O aviso de quem está cansado ou fora de posição entra na mesma janelinha (ponto laranja)
       // A sugestão de formação só sai depois do relatório do olheiro (Silvio 2026-11-10); antes, a pílula manda ler o olheiro
-      const scR = vs && co.scout && co.scout.i === co.ss.i, tip = scR ? S.coTip(co, true) : null, used = S.coTipUsed(co, tip), tipNm = tip && (tip.kind === 'sty' ? S.CO_STY[tip.v].name : tip.v);
-      const pill = swap !== null || selB ? '' : '<button class="tm-tip' + ((used || !tip) && !nFix ? ' ok' : '') + '" id="tm-aux">' + auxFace(co, 'tm-tip-f') +
-        '<span><small>' + (tip && !(used && nFix) ? 'DICA DO AUXILIAR' : 'AUXILIAR') + '</small><b>' + (tip && !(used && nFix) ? (used ? '✓ ' + esc(tipNm) : esc(S.coTipLbl(tip))) : nFix ? fixLbl : vs && !scR ? 'Leia o olheiro' : 'Tudo certo') + '</b></span>' +
+      const scR = vs && co.scout && co.scout.i === co.ss.i, tip = scR ? S.coTip(co, true) : null, used = S.coTipUsed(co, tip), tipNm = tip && S.coTipName(tip), plan = tip && tip.kind === 'plan', PL = 'PLANO ' + (auxEla(co) ? 'DA AUXILIAR' : 'DO AUXILIAR');
+      const pill = swap !== null || selB ? '' : '<button class="tm-tip' + ((used || !tip) && !nFix ? ' ok' : '') + '" id="tm-aux"><span class="tm-tip-fw">' + auxFace(co, 'tm-tip-f') + '<em>' + S.coAuxLv(co).k + '</em></span>' +
+        '<span><small>' + (tip && !(used && nFix) ? (plan ? PL : 'DICA DO AUXILIAR') : 'AUXILIAR') + '</small><b>' + (tip && !(used && nFix) ? (used ? (plan ? '✓ No plano ' + (auxEla(co) ? 'dela' : 'dele') : '✓ ' + esc(tipNm)) : esc(S.coTipLbl(tip))) : nFix ? fixLbl : vs && !scR ? 'Leia o olheiro' : 'Tudo certo') + '</b></span>' +
         (nFix ? '<i class="tm-tip-d n">' + nFix + '</i>' : tip && !used && !tip.seen ? '<i class="tm-tip-d"></i>' : '') + '</button>';
       show('<div class="tm"><div class="tm-h"><button class="tcr-back" id="tm-back" aria-label="Voltar">' + BK + '</button>' + title + pill + '</div>' +
         '<div class="ld-pitch tm-pitch">' + PITCH + dots + (swap !== null ? nearList(sl[swap], bench, c.avail, sp[swap][0], sp[swap][1]) : '') +
@@ -468,7 +468,7 @@
         st.querySelector('.tm').addEventListener('click', e => { if ((swap !== null || selB) && !e.target.closest('[data-xi],[data-bp],.tm-near,button')) { swap = null; selB = null; draw(); } });
         st.querySelectorAll('[data-tmk]').forEach(b => b.onclick = () => {
           sfx('tap'); const d = +b.dataset.d;
-          if (b.dataset.tmk === 'sty') { const L = S.CO_STYLES; co.style = L[(L.indexOf(co.style) + d + L.length) % L.length]; st.querySelector('#tm-sty').textContent = S.CO_STY[co.style].name; if (tip && tip.kind === 'sty' && used !== S.coTipUsed(co, tip)) draw(); return; }
+          if (b.dataset.tmk === 'sty') { const L = S.CO_STYLES; co.style = L[(L.indexOf(co.style) + d + L.length) % L.length]; st.querySelector('#tm-sty').textContent = S.CO_STY[co.style].name; if (tip && (tip.kind === 'sty' || plan) && used !== S.coTipUsed(co, tip)) draw(); return; }
           // Formação: os mesmos bonecos correm para as vagas novas e a tela se refaz depois
           const nf = FORMS[(FORMS.indexOf(co.form) + d + FORMS.length) % FORMS.length], xi = xiFor(nf), sl2 = S.coSlots(nf), sp2 = spotsT(nf);
           co.form = nf; co.xi = xi; swap = null; selB = null; st.querySelector('#tm-form').textContent = nf;
@@ -487,18 +487,18 @@
           // A dica do jogo em cima (curta quando há trocas), a lista das trocas com um botão só, e a escalação inteira
           // Sem o relatório do olheiro, a pílula diz "Leia o olheiro" e a fala explica e leva até ele
           const toOl = vs && !scR && !nFix;
-          const say = tip ? (used ? 'Do jeito que está eu não mexeria, professor.' : S.coTipTxt(tip)) : toOl ? 'Leia o relatório do olheiro que eu te digo a melhor formação para esse jogo, professor.' : aux, nw = t => t.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>');
+          const say = tip ? (used ? 'Do jeito que está eu não mexeria, professor.' : S.coTipTxt(tip)) : toOl ? 'Leia o relatório do olheiro que eu te digo o melhor plano para esse jogo, professor.' : aux, nw = t => t.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>');
           const ALL = '<button class="tm-all" id="ld-auto">Usar a escalação ' + (auxEla(co) ? 'dela' : 'dele') + ' inteira</button>';
           const tipHtml = !tip || (used && nFix) ? '' : nFix
-            ? '<span class="tm-fix top"><small>' + nw(say) + '</small><button class="hl-btn line" id="ld-tip-y">Usar ' + esc(tipNm) + '</button></span>'
-            : '<p>“' + nw(say) + '”</p>' + (used ? '' : '<span class="hl-ab"><button class="hl-btn dark" id="ld-tip-y">Usar ' + esc(tipNm) + '</button><button class="hl-btn line" data-pop-x>Manter</button></span>');
+            ? '<span class="tm-fix top"><small>' + nw(say) + '</small><button class="hl-btn line" id="ld-tip-y">' + (plan ? 'Usar o plano' : 'Usar ' + esc(tipNm)) + '</button></span>'
+            : '<p>“' + nw(say) + '”</p>' + (used ? '' : '<span class="hl-ab"><button class="hl-btn dark" id="ld-tip-y">' + (plan ? 'Usar o plano' : 'Usar ' + esc(tipNm)) + '</button><button class="hl-btn line" data-pop-x>Manter</button></span>');
           pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b>' + (nFix ? ALL : '') + '</span>' +
             (tipHtml || (nFix ? '' : '<p>“' + say + '”</p>')) +
             (nFix ? auxRows(fixes) + '<span class="hl-ab"><button class="hl-btn dark" id="ld-aux-y">' + auxLbl(nFix) + '</button><button class="hl-btn line" data-pop-x>Manter</button></span>' : '') +
             (nFix ? '' : ALL) + ((tip && !used) || nFix ? '' : toOl ? '<span class="hl-ab"><button class="hl-btn dark" id="ld-see-ol">Ver o olheiro</button><button class="hl-btn line" data-pop-x>Fechar</button></span>' : '<button class="hl-btn line" data-pop-x>Fechar</button>') + '</div>', 'Auxiliar', w => {
             if (w.querySelector('#ld-see-ol')) w.querySelector('#ld-see-ol').onclick = () => { sfx('tap'); closePop(); c.keepBench(); c.save(); olheiro(); };
             if (w.querySelector('#ld-tip-y')) w.querySelector('#ld-tip-y').onclick = () => { sfx('tap'); closePop();
-              if (tip.kind === 'sty') co.style = tip.v; else { co.xi = xiFor(tip.v); co.form = tip.v; swap = null; selB = null; }
+              if (plan) { co.style = tip.s; if (co.form !== tip.f) { co.xi = xiFor(tip.f); co.form = tip.f; } swap = null; selB = null; } else if (tip.kind === 'sty') co.style = tip.v; else { co.xi = xiFor(tip.v); co.form = tip.v; swap = null; selB = null; }
               draw(); };
             const y = w.querySelector('#ld-aux-y');
             if (y) { const on = auxBind(w, y); y.onclick = () => { sfx('tap'); on().forEach(k => { const g = fixes[k]; co.xi[g.at] = g.i.id; }); co.autoXI = false; closePop(); draw(); }; }
@@ -590,12 +590,31 @@
       '<div hidden><b id="lv-sh"></b><b id="lv-ot"></b><b id="lv-ps"></b><div id="lv-cst"></div><b id="lv-momw"></b><span id="lv-mom"></span><div id="lv-aux"></div></div>' +
       '<div class="lv-sheet ldl-sheet" id="lv-sheet"></div></div>';
   }
+  // Recado do auxiliar em cima do campinho do ao vivo por 4,5 s (rosto + frase curta; verde = deu certo, laranja = mexa)
+  function planToast(k, sm, txt) {
+    const p = document.querySelector('.ldl-p'); if (!p) return;
+    const old = p.querySelector('.pl-ty'); if (old) old.remove();
+    const t = document.createElement('div'); t.className = 'pl-ty ' + k; t.innerHTML = auxFace(C().co, 'pl-ty-f') + '<span><small>' + esc(sm) + '</small><b>' + esc(txt) + '</b></span>';
+    p.appendChild(t); setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, 4500);
+  }
   function livePaint(x) {
     const m = x.m, sh = m.us.shout, $ = id => document.getElementById(id);
     const g = $('ldl-g4'); if (!g) return;
     // O auxiliar avisa no "Parar e mexer" quantos titulares estão no limite (abaixo de 58%, os que ele sugere trocar)
     { const by = byOf(m.us.squad), n = S.coSubLeft(m) > 0 && m.us.bench.length ? m.us.xi.filter((id, i) => i && by[id] && by[id].en < 58).length : 0, b = $('b-lv-stop');
       if (b && b._n !== n) { b._n = n; let d = b.querySelector('.tm-dot'); if (!n) { if (d) d.remove(); } else { if (!d) { d = document.createElement('i'); d.className = 'tm-dot'; b.appendChild(d); } d.textContent = n; } b.classList.toggle('aux', n > 0); } }
+    // Plano do auxiliar (2026-11-11): aos 10' ele conta no campinho se o plano que você seguiu está funcionando
+    if (m.plan && !m.plan.said && m.min >= 10 && !m.done) { m.plan.said = 1; const pn = S.coPlanNow(m);
+      if (pn === 'ok') planToast('ok', 'O PLANO ESTÁ FUNCIONANDO', S.CO_PLAN_WHY[m.plan.why] || 'O time encaixou no jogo'); }
+    // O que as licenças acrescentam (S.CO_AUX): B avisa perto do intervalo se o plano não encaixa; A avisa quando o rival muda
+    // o plano; PRO diz quem vai cansar antes de cair (abaixo de 66%, uma vez por jogador)
+    { const L = S.coAuxLv(C().co), tk = m.them.form + '|' + m.them.style;
+      if (m.aux0 === undefined) m.aux0 = tk;
+      if (L.ht && m.plan && !m.plan.htSaid && m.min >= 38 && m.min < 45 && !m.done) { m.plan.htSaid = 1; if (S.coPlanNow(m) === 'no') planToast('no', 'O PLANO NÃO ENCAIXOU', 'Mexa no intervalo, professor'); }
+      if (L.riv && m.aux0 !== tk && !m.done) { m.aux0 = tk; planToast('no', 'ELES MUDARAM O PLANO', 'Agora vêm de ' + m.them.form + ' · ' + S.CO_STY[m.them.style].name + '. Pare e mexa'); }
+      if (L.en && !m.done && S.coSubLeft(m) > 0) { const by = byOf(m.us.squad); m.enSaid = m.enSaid || {};
+        const p = m.us.xi.map(id => by[id]).find(p => p && p.pos !== 'GOL' && p.en < 66 && p.en >= 58 && !m.enSaid[p.id]);
+        if (p) { m.enSaid[p.id] = 1; planToast('no', 'VAI CANSAR LOGO', p.n.split(' ').pop() + ' está no limite. Troque na próxima parada'); } } }
     g.querySelectorAll('[data-gr]').forEach(b => { const on = !!sh && sh.k === b.dataset.gr; b.classList.toggle('on', on); b.disabled = !!sh && !on;
       b.querySelector('small').textContent = on ? 'até os ' + sh.until + '\'' : S.CO_SHOUT[b.dataset.gr].sub; });
     const st = x.stats();
@@ -808,6 +827,9 @@
       { const rd = S.coFin(co) && S.coFin(co).rd; // dinheiro da rodada (Silvio 11/11): toque abre Finanças na aba Rodada
         if (rd && rd.s === co.season && rd.r === log.r) { const a = rd.inn.reduce((t, x) => t + x[1], 0), b = rd.out.reduce((t, x) => t + x[1], 0);
           rows.push(['Rodada', '+' + c.mi(a) + ' / −' + c.mi(b), a >= b ? 'up' : 'dn', 'rs-fin']); } }
+      // Plano do auxiliar (2026-11-11): a primeira linha diz se seguir o plano deu certo; com 5 linhas o Público sai
+      if (log.plan) { rows.unshift(['Plano ' + (auxEla(co) ? 'dela' : 'dele'), log.plan === 'ok' ? 'funcionou ✓' : log.plan === 'no' ? 'não encaixou' : 'não seguiu', log.plan === 'ok' ? 'up' : log.plan === 'no' ? 'dn' : '']);
+        if (rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); } }
       show('<div class="rs">' +
         '<div class="rs-sc">' + crest((m.home ? cl : vs).id, 'rs-cr') + '<em>' + m.gh + ' <i>x</i> ' + m.ga + '</em>' + crest((m.home ? vs : cl).id, 'rs-cr') +
           '<span class="rs-w"><b class="' + log.res + '">' + word + (aux ? ' · COM O AUXILIAR' : '') + '</b><small>' + (goals.length ? goals.join(' · ') : 'sem gols') + '</small></span></div>' +
@@ -965,7 +987,7 @@
   function clube() {
     const c = C(), co = c.co, cl = club(co.club), f = S.coFin(co), B = co.board, pos = S.coPos(co), conf = Math.round(B.conf);
     const exp = co.squad.filter(p => p.ct <= 1).length, pres = S.coPres ? S.coPres(co) : null;
-    const est = S.coEst && U.EST ? S.coEst(co) : null;
+    const est = S.coEst && U.EST ? S.coEst(co) : null, aux = S.coAux(co), auxLv = S.coAuxLv(co);
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const tile = (id, k, t, v, sub, cc) => '<button class="kb2-t"' + (id ? ' id="' + id + '"' : '') + ' data-k="' + k + '"><b>' + t + '</b><span><em class="' + (cc || '') + '">' + v + '</em><small>' + sub + '</small></span></button>';
     const meta = (B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + B.goal.pos + 'º') + ' · hoje ' + pos + 'º';
@@ -976,12 +998,53 @@
         tile('', 'hall', est ? 'Hall' : 'Hall do técnico', (co.season + 1) + 'ª', 'temporada de carreira') +
         (est ? '<button class="kb2-t kb2-es" id="kb2-est" data-k="est"><b>Estádio</b>' + estThumb(co, est) + '<span><em>' + milK(S.coEstCap(est)) + '</em><small>lugares</small>' +
           '<em class="hm ' + estCls(est) + '">torcida ' + S.coEstHum(est) + '</em></span></button>' : '') + '</div>' +
-      '<div class="kb2-side"><div class="kb2-dir"><small>DIRETORIA</small><b>' + (conf >= 70 ? 'confiança alta' : conf >= 45 ? 'confiança boa' : conf >= 30 ? 'confiança baixa' : 'no limite') + '</b>' +
+      '<div class="kb2-side k3"><div class="kb2-dir"><small>DIRETORIA</small><b>' + (conf >= 70 ? 'confiança alta' : conf >= 45 ? 'confiança boa' : conf >= 30 ? 'confiança baixa' : 'no limite') + '</b>' +
           '<i><u class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '" style="width:' + conf + '%"></u></i><em class="' + (pos <= B.goal.pos ? '' : 'hi') + '">' + meta + '</em></div>' +
         (pres ? '<div class="kb2-pr fc">' + presFace(pres, 'kb2-fc') + '<div><small>PRESIDENTE</small><b>' + esc(pres.n) + '</b><span>' + esc(pres.nome || '') + '</span></div></div>' : '') +
+        // A auxiliar logo abaixo do presidente, no mesmo cartão (Silvio 2026-11-11: "melhor encaixada embaixo do presidente")
+        '<button class="kb2-pr fc kb2-ax" id="kb2-aux">' + auxFace(co, 'kb2-fc') + '<div><small>AUXILIAR · ' + esc(auxLv.n.toUpperCase()) + '</small><b>' + esc(aux.n) + '</b>' +
+          '<span class="go">' + (aux.crs ? 'em curso · ' + U.D.plural(aux.crs.left, 'rodada', 'rodadas') : aux.lv >= S.CO_AUX.lv.length - 1 ? 'licença máxima' : 'subir de licença ›') + '</span></div></button>' +
         (est ? '' : '<span class="rs-gap"></span><p class="kb2-soon">Estádio e base chegam depois</p>') + '</div></div>', st => {
       st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') { FIN_BACK = null; financas(); } else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); else if (k === 'est') estadio(); });
+      st.querySelector('#kb2-aux').onclick = () => { sfx('tap'); auxiliar(); };
       st.querySelector('#kb2-back').onclick = () => { sfx('tap'); semana(); };
+    });
+  }
+
+  // Curso pronto: a janelinha na volta para a semana, uma vez (S.coAuxDone)
+  function auxPop(co) {
+    const L = S.coAuxDone(co); if (!L) return false; const a = S.coAux(co);
+    pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>' + esc(a.n) + '</b></span><p>Terminei o curso: agora tenho a <b>' + L.n + '</b>. ' + L.t + ', professor.</p>' +
+      '<span class="hl-ab"><button class="hl-btn dark" id="axp-go">Ver</button><button class="hl-btn line" data-pop-x>Fechar</button></span></div>', 'Auxiliar', w => {
+      w.querySelector('#axp-go').onclick = () => { sfx('tap'); closePop(); auxiliar(); }; }, 'hl-pop acd-pop tm-pop');
+    C().save(); return true;
+  }
+  // ---------- Auxiliar (2026-11-11, desenho aprovado): rosto e licença, a escada das 5 licenças e o curso da próxima ----------
+  function auxiliar() {
+    const c = C(), co = c.co, a = S.coAux(co), L = S.CO_AUX.lv, P = S.coAuxPlan(co), ela = !!a.ela;
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const seg = a.seg.length ? 'Seguiu o plano ' + (ela ? 'dela' : 'dele') + ': ' + U.D.plural(a.seg.filter(Boolean).length, 'vitória', 'vitórias') + ' em ' + a.seg.length : 'Siga o plano ' + (ela ? 'dela' : 'dele') + ' no Time';
+    const lv = (l, i) => { const st = i <= a.lv ? 'done' : (a.crs ? a.crs.to === i : i === a.lv + 1) ? 'next' : 'lock';
+      return '<div class="axv-lv ' + st + '"><i>' + (st === 'done' ? '✓' : l.k) + '</i><b>' + l.n + '</b><span>' + l.t + '</span></div>'; };
+    const row = (k, v, cls) => '<div><span>' + k + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</b></div>';
+    const acc = x => (x >= 0.95 ? '19 em 20' : x >= 0.92 ? '23 em 25' : x >= 0.9 ? '9 em 10' : '4 em 5');
+    const card = P.max ? '<small>' + L[a.lv].n.toUpperCase() + '</small><p>' + (ela ? 'Ela' : 'Ele') + ' já tem a licença máxima.</p>'
+      : a.crs ? '<small>EM CURSO · ' + L[a.crs.to].n.toUpperCase() + '</small>' + row('Falta', U.D.plural(a.crs.left, 'rodada', 'rodadas')) + '<p>' + (ela ? 'Ela segue' : 'Ele segue') + ' ajudando durante o curso.</p>'
+      : '<small>CURSO · ' + L[P.to].n.toUpperCase() + '</small>' + row('Acerta o plano', acc(L[P.to].acc), L[P.to].acc > L[a.lv].acc ? 'up' : '') + row('Duração', U.D.plural(P.rounds, 'rodada', 'rodadas')) +
+        row('Custo', c.brl(P.fee), P.why === 'caixa' ? 'dn' : '') + row('Salário ' + (ela ? 'dela' : 'dele'), '+' + c.brl(P.dw) + '/sem') + '<p>' + (P.why === 'caixa' ? 'O caixa não aguenta o curso agora.' : (ela ? 'Ela segue' : 'Ele segue') + ' ajudando durante o curso.') + '</p>';
+    const can = !P.max && !P.why;
+    show('<div class="axv"><div class="tm-h"><button class="tcr-back" id="axv-back" aria-label="Voltar">' + BK + '</button><b>Auxiliar</b><small>sua comissão técnica</small><span class="es-top">' + cxPill() + '</span></div>' +
+      '<div class="axv-l"><div class="axv-me">' + auxFace(co, 'axv-fc') + '<b>' + esc(a.n) + '</b><em>' + L[a.lv].n + '</em><p>' + seg + '</p></div>' +
+        '<div class="axv-lad">' + L.map(lv).join('') + '</div></div>' +
+      '<div class="axv-r"><div class="axv-card">' + card + '</div>' +
+        '<button class="tm-go' + (can ? '' : ' off') + '" id="axv-go">' + (P.max ? 'Licença máxima' : a.crs ? 'Em curso' : P.why === 'caixa' ? 'Caixa curto' : 'Pagar o curso') + '</button></div></div>', st => {
+      st.querySelector('#axv-back').onclick = () => { sfx('tap'); clube(); };
+      cxBind(st, auxiliar);
+      st.querySelector('#axv-go').onclick = () => {
+        if (!can) { if (P.why === 'caixa') mkHelp('', 'Depois de pagar, o caixa precisa seguir com 2 semanas de salários.'); return; }
+        const r = S.coAuxBuy(co); if (!r.ok) return;
+        c.save(); sfx('win'); auxiliar();
+      };
     });
   }
 
@@ -2439,7 +2502,7 @@
       // Guardar: o auxiliar lê o relatório e sugere a formação; a sugestão fica no Time, com o aviso no botão
       st.querySelector('#ldo-ok').onclick = () => { sfx('tap'); co.scout = { i: co.ss.i }; const tp = S.coTip(co, true); c.save(); semana();
         if (!tp || co.tut) return; // no tutorial a janelinha tampava o passo "Agora é jogar" (a dica fica no Time, com o aviso no botão)
-        const u = S.coTipUsed(co, tp), say = u ? 'Li o relatório. Contra o ' + tp.them + ' deles, eu manteria o ' + tp.v + ', professor.' : 'Li o relatório. ' + S.coTipTxt(tp);
+        const u = S.coTipUsed(co, tp), say = u ? 'Li o relatório. Contra o ' + tp.them + ' deles, eu manteria o ' + S.coTipName(tp) + ', professor.' : 'Li o relatório. ' + S.coTipTxt(tp);
         pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b></span><p>“' + say.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>') + '”</p>' +
           '<span class="hl-ab"><button class="hl-btn dark" id="ol2-tm">Ver no Time</button><button class="hl-btn line" data-pop-x>Depois</button></span></div>', 'Auxiliar', w => {
           w.querySelector('#ol2-tm').onclick = () => { sfx('tap'); closePop(); time(); };
