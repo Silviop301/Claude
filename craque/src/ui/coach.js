@@ -720,6 +720,7 @@
     const homeGoal = e => (e.s === 'us') === !!m.home;
     const paint = () => {
       let hh = 0, ha = 0; hidden.forEach(e => { if (e.t === 'gol') { if (homeGoal(e)) hh++; else ha++; } });
+      if (!$('lv-score')) return; // a tela do jogo já saiu (lance atrasado do campinho ou relógio ainda agendado)
       $('lv-score').innerHTML = (m.gh - hh) + ' <i>x</i> ' + (m.ga - ha);
       $('lv-clock').innerHTML = '<i></i>' + S.coClock(m);
       const ps = S.coPoss(m), pu = m.home ? ps : 1 - ps, sh = m.sh || { us: 0, them: 0 }, ot = m.ot || { us: 0, them: 0 };
@@ -806,6 +807,7 @@
     };
     const tick = () => {
       if (open || wait) return;
+      if (!$('lv-score')) { clearTimeout(timer); if (sim) sim.stop(); sim = null; return; } // saiu da tela com o relógio agendado: o jogo fica guardado em co.live
       if (m.done) return end();
       if (sim) sim.go(); // o apito (se a velocidade mudou antes dele, o timer do começo foi trocado)
       if (sim && h1 && !h2) { h2 = true; sim.second(); }
@@ -1066,10 +1068,13 @@
     };
     const off = () => { document.removeEventListener('visibilitychange', onVis); window.removeEventListener('pagehide', snap); };
     document.addEventListener('visibilitychange', onVis); window.addEventListener('pagehide', snap);
-    let wdMin = -1, wdT = Date.now();
+    let wdMin = -1, wdT = Date.now(), wdLast = Date.now();
     const wd = setInterval(() => {
       const sc = $('lv-score');
       if (!sc || m.done || !document.body.contains(sc)) { off(); return clearInterval(wd); }
+      // o iPhone congela a página sem avisar (central de controle, tela apagando): o vigia também parou, então não é travamento
+      const gap = Date.now() - wdLast; wdLast = Date.now();
+      if (gap > 6000 || stopW) { wdT = Date.now(); return; }
       if (m.min - snapMin >= 5) snap(); // de 5 em 5 minutos o jogo fica guardado
       if (away) { wdT = Date.now(); return; }
       const busyUi = document.getElementById('ld-pop') || ($('lv-sheet') && $('lv-sheet').classList.contains('on')) || document.hidden;
