@@ -7632,6 +7632,7 @@ body.ld-on #ld { display: block; }
 .ldl-sb > em { font: 800 26px/1 var(--display); font-style: normal; } .ldl-sb > em i { font-size: 13px; font-style: normal; color: var(--tx-3); }
 .ldl-clk { background: #D8404A; color: #FFF; border-radius: 6px; padding: 2px 6px; font: 800 13px var(--display); } .ldl-clk i { display: none; }
 .ldl-sb .lv-crd { display: none; }
+.ldl-sb .ldl-kit { width: 13px; height: 13px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px rgba(255,255,255,.85); margin: 0 -2px; }
 .ldl-side { width: 168px; flex: none; display: flex; flex-direction: column; gap: 8px; }
 /* Último lance (campo limpo, 2026-11-07): só a linha mais nova do relato, em cartão no topo do painel */
 /* Lances do ao vivo: lista rolável, o último em cima (Silvio, 2026-11-10); cada lance é a frase com o nome completo em até duas
@@ -9119,6 +9120,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 .aj-tg { width: 64px; height: 36px; border-radius: 18px; background: rgba(243, 241, 234, .18); padding: 4px; box-sizing: border-box; display: flex; flex: none; transition: background .15s; }
 .aj-tg i { width: 28px; height: 28px; border-radius: 50%; background: #D9E2DC; transition: transform .15s, background .15s; }
 .aj-sw.on .aj-tg { background: var(--gold); } .aj-sw.on .aj-tg i { background: #1B1606; transform: translateX(28px); }
+.aj-seg { display: flex; gap: 4px; background: rgba(243, 241, 234, .12); border-radius: 12px; padding: 4px; } .aj-seg i { font: 800 20px/1 var(--display); font-style: normal; padding: 6px 14px; border-radius: 9px; color: #F3F1EA; } .aj-seg i.on { background: var(--gold); color: #1B1606; }
 .aj-acc { border-radius: 18px; background: #F8F4EA; color: #13201A; padding: 22px; box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 .aj-acc small { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #4b5a52; }
 .aj-acc > b { margin-top: 12px; font: 800 34px/1 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -102,9 +102,10 @@
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const out = () => (back || U.home)();
     const draw = () => {
-      const on = !!value('sound'), st = !window.CLIMBIX_SOLO && U.cloudStatus ? U.cloudStatus() : null, solo = !!window.CLIMBIX_SOLO;
+      const on = !!value('sound'), vel = U.coVel ? U.coVel() : '1', st = !window.CLIMBIX_SOLO && U.cloudStatus ? U.cloudStatus() : null, solo = !!window.CLIMBIX_SOLO;
       U.LD.show('<div class="aj' + (solo ? ' aj-solo' : '') + '"><div class="tm-h"><button class="tcr-back" id="aj-back" aria-label="Voltar">' + BK + '</button><b>Ajustes</b><small class="aj-v">Climbix ' + VERSION + '</small></div>' +
         '<div class="aj-l"><button class="aj-sw' + (on ? ' on' : '') + '" id="aj-som" role="switch" aria-checked="' + on + '"><b>Som</b><span class="aj-tg"><i></i></span></button>' +
+          '<button class="aj-sw aj-vel" id="aj-vel" aria-label="Velocidade dos jogos: ' + vel + 'x"><b>Velocidade dos jogos</b><span class="aj-seg"><i' + (vel === '1' ? ' class="on"' : '') + '>1×</i><i' + (vel === '3' ? ' class="on"' : '') + '>3×</i></span></button>' +
           '<button class="aj-lk" id="aj-fb">Sua opinião</button></div>' +
         (solo ? '' : '<div class="aj-acc"><small>' + (st ? 'SUA CONTA' : 'CONTA') + '</small><b>' + esc(st ? U.cloudName() : 'Salve na nuvem') + '</b>' +
           '<span>' + esc(st || 'Suas carreiras e moedas em qualquer aparelho.') + '</span><i></i>' +
@@ -112,6 +113,7 @@
         w => {
           w.querySelector('#aj-back').onclick = () => { U.sfx('tap'); out(); };
           w.querySelector('#aj-som').onclick = () => { if (window.CRAQUE_SFX) window.CRAQUE_SFX.toggle(); U.sfx('tap'); draw(); };
+          w.querySelector('#aj-vel').onclick = () => { if (U.coVel) U.coVel(vel === '3' ? '1' : '3'); U.sfx('tap'); draw(); };
           w.querySelector('#aj-fb').onclick = () => { U.sfx('tap'); U.feedbackLand ? U.feedbackLand(draw) : U.feedback('config'); };
           if (w.querySelector('#aj-acc')) w.querySelector('#aj-acc').onclick = () => { U.sfx('tap'); U.cloud('login', null, null, draw); };
         }, 'O Climbix é jogado com o celular deitado.');
