@@ -1108,7 +1108,17 @@
     setTimeout(() => { if (document.getElementById('ld-pop')) return; const d = S.coEstDone(co, true); if (!d) return; C().save(); sfx('win'); obraPronta(co, d, true); }, 80);
     return true;
   }
-  // Acelerar com moedas: 2 rodadas a menos, até 2 vezes por obra
+  // Confirmação de gasto de moedas (Silvio, 2026-11-11: "pra não ocorrer toque acidental", também no clube e em
+  // qualquer coisa futura com moedas): todo gasto passa por aqui antes do U.COINS.spend. what = o que compra, gain = o que ganha.
+  function coinAsk(n, what, gain, go) {
+    const saldo = U.COINS.get();
+    pop('<div class="acd-help"><b>' + esc(what) + '</b><p class="ca-n">' + U.COINS.svg + '<b>' + n + '</b> moedas' + (gain ? ' · ' + esc(gain) : '') + '</p><p>Você fica com ' + U.D.plural(Math.max(0, saldo - n), 'moeda', 'moedas') + '.</p>' +
+      '<button class="hl-btn gold" id="ca-y">Confirmar</button><button class="hl-btn line" data-pop-x>Cancelar</button></div>', what, w => {
+      w.querySelector('#ca-y').onclick = () => { closePop(); go(); };
+    }, 'hl-pop acd-pop tm-pop ca-pop');
+  }
+  U.coinAsk = coinAsk;
+  // Acelerar com moedas: 2 rodadas a menos, até 2 vezes por obra (a própria janelinha já é a confirmação do gasto)
   function obraRush() {
     const c = C(), co = c.co, E = S.CO_EST, e = S.coEst(co), ob = e.obra; if (!ob || !U.COINS) return;
     const RC = E.obra.rushCoins, saldo = U.COINS.get(), ok = saldo >= RC, n = Math.min(E.obra.rush, ob.left);
@@ -2142,11 +2152,13 @@
         if (st.querySelector('#lj-m')) st.querySelector('#lj-m').onclick = () => { sfx('tap'); wk--; draw(); };
         if (st.querySelector('#lj-p')) st.querySelector('#lj-p').onclick = () => { sfx('tap'); wk++; draw(); };
         if (st.querySelector('#lj-ap')) st.querySelector('#lj-ap').onclick = () => {
-          const cost = wk * S.CO_APORTE.coin;
+          const cost = wk * S.CO_APORTE.coin; sfx('tap');
+          coinAsk(cost, 'Fazer aporte', '+ ' + c.brl(S.coAporteValue(co, wk)) + ' na verba', () => {
           if (!U.COINS.spend(cost, 'Aporte: ' + (club(co.club).short || club(co.club).name))) return;
           const v = S.coAporte(co, wk); if (!v) { U.COINS.add({ n: cost, t: 'Aporte devolvido' }); return; }
           sfx('coin'); c.save(); wk = 1; draw();
           pop('<div class="acd-help"><b>Aporte feito</b><p>+ ' + c.brl(v) + ' na verba do ' + esc(club(co.club).short || club(co.club).name) + '.</p><button class="hl-btn dark" data-pop-x>Fechar</button></div>', 'Aporte feito', null, 'hl-pop acd-pop tm-pop');
+          });
         };
       });
     };
@@ -2188,8 +2200,10 @@
           if (!ok) { sfx('tap'); return loja(0, draw); }
           // Comprar exige conta (Silvio 2026-11-09): o time fica no perfil e vai junto para outro aparelho
           if (!mine && !logged) { sfx('tap'); c.save(); off(); return U.cloud ? U.cloud() : U.home(); }
-          if (!mine) { if (!U.COINS.spend(price, 'Clube: ' + (cl.short || cl.name))) return; U.COINS.own(pick); }
-          sfx('tap'); S.coBuyClub(co, pick, price); co.autoXI = true; co.offers = null; S.coStart(co); c.save('hub'); welcome();
+          const sign = () => { sfx('tap'); S.coBuyClub(co, pick, price); co.autoXI = true; co.offers = null; S.coStart(co); c.save('hub'); welcome(); };
+          if (mine) return sign();
+          sfx('tap');
+          coinAsk(price, 'Comprar o ' + (cl.short || cl.name), 'fica no seu perfil', () => { if (!U.COINS.spend(price, 'Clube: ' + (cl.short || cl.name))) return; U.COINS.own(pick); sign(); });
         };
       });
     };

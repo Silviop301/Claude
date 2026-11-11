@@ -298,6 +298,7 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
 - **Textos:** pt-BR; no máximo um bordão por linha + opinião ou piada de verdade; X em voz de X-BR
   (minúsculas, kkkk); sem ofensa pesada. Personalidades reais ficam (jogo entre amigos).
 - Itens e coleções são **só visuais**: nunca mudam nota ou sorte.
+- **Todo gasto de moedas pede confirmação** (Silvio, 2026-11-11: sem toque acidental, inclusive em qualquer coisa nova com moedas): chame `coinAsk(n, o que compra, o que ganha, depois)` em `coachland.js` (`U.coinAsk` fora dele; janelinha `.ca-pop` com Confirmar `#ca-y`/Cancelar) e só dentro do `depois` o `U.COINS.spend`. Já usam: aporte e comprar clube; Acelerar a obra já abre a própria janelinha com o preço.
 - Ao criar intro de câmera em minigame, a ação cronometrada só começa depois que a câmera abre.
 - **Som (`sound.js`, 2026-11-10):** só agenda som com o contexto de áudio rodando (parado, o relógio dele não anda e tudo
   tocaria junto no toque seguinte); sair do app corta o que tocava (`hush`). Tela que reabre no meio (jogo retomado em

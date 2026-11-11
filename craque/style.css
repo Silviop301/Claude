@@ -7635,7 +7635,8 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .ldl-p .lp-cv { width: 100%; height: 100%; }
 .ldl-p .lv-forms { display: none; }
 .ldl-p .lp-zone, .ldl-p .lv-read { display: none !important; } /* campo limpo: sem etiqueta da zona */
-.ldl-sb { position: absolute; left: 8px; top: 8px; z-index: 3; display: flex; align-items: center; gap: 8px; background: rgba(12, 14, 16, .88); border-radius: 12px; padding: 6px 12px; }
+.ldl-sb { position: absolute; left: 8px; top: 8px; z-index: 3; display: flex; align-items: center; gap: 8px; background: rgba(12, 14, 16, .88); border-radius: 12px; padding: 6px 12px; transition: opacity .25s; }
+.ldl-sb.fade { opacity: .25; }
 .ldl-cr { width: 22px; height: 22px; object-fit: contain; }
 .ldl-sb > em { font: 800 26px/1 var(--display); font-style: normal; } .ldl-sb > em i { font-size: 13px; font-style: normal; color: var(--tx-3); }
 .ldl-clk { background: #D8404A; color: #FFF; border-radius: 6px; padding: 2px 6px; font: 800 13px var(--display); } .ldl-clk i { display: none; }
@@ -9494,3 +9495,6 @@ button.coin-pill { cursor: pointer; border: 0; }
 .ldl-tm.ht .tm-side { gap: 6px; } .ldl-tm.ht .ldl-talk2 { height: 40px; }
 .ldl-tm.ht .tm-pk { height: 48px; } .ldl-tm.ht .tm-pk > span { gap: 2px; } .ldl-tm.ht .tm-pk b { font-size: 22px; }
 .ldl-tm.ht .tm-b { flex: none; } .ldl-tm.ht .tm-go { flex: none; }
+/* Confirmar gasto de moedas (coinAsk, 2026-11-11) */
+.ca-pop .ca-n { display: flex; align-items: center; gap: 8px; font: 700 17px/1.2 var(--body); }
+.ca-pop .ca-n svg { width: 30px; height: 30px; flex: none; } .ca-pop .ca-n b { font: 800 30px/1 var(--display); color: var(--gold); }
