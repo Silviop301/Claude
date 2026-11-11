@@ -9470,3 +9470,4 @@ button.coin-pill { cursor: pointer; border: 0; }
 .rcs-li b { font: 800 21px/1 var(--display); color: #F3F1EA; white-space: nowrap; }
 .rcs-b .hl-btn.off { opacity: .45; }
 .mkc-tn { font-style: normal; margin-left: auto; margin-right: 8px; color: #F3F1EA; } .mkc-tn.dn { color: #F5A57F; }
+.mkp-pr b .mkc-ch { display: inline-block; margin-left: 10px; padding: 4px 8px; border-radius: 7px; background: rgba(242, 194, 48, .16); color: #F2C230; font: 800 13px/1 var(--display); letter-spacing: .02em; vertical-align: middle; }
