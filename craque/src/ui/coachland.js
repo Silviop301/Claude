@@ -17,6 +17,9 @@
       el = document.createElement('div'); el.id = 'ld';
       el.innerHTML = '<div class="ld-st" id="ld-st"></div><div class="ld-turn" id="ld-turn"></div>';
       document.body.appendChild(el);
+      // Todo botão do palco faz o clique (Silvio, 2026-11-11: "tá indo sem som nos botões"). Quem já chama sfx('tap') não
+      // dobra: o sound.js ignora o mesmo som repetido em 40 ms. Respeita o Som dos Ajustes (CRAQUE_SFX.play)
+      el.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b && !b.disabled) sfx('tap'); }, true);
       window.addEventListener('resize', fit);
       window.addEventListener('orientationchange', () => setTimeout(fit, 200));
       if (window.visualViewport) { visualViewport.addEventListener('resize', fit); visualViewport.addEventListener('scroll', fit); }
@@ -2050,27 +2053,43 @@
     const rev = avgs.find(([p]) => p.age <= 21);
     const dest = [art ? ['ARTILHEIRO', co.squad.find(p => p.n === art) || (out.left || []).find(x => x.n === art) || { n: art }, U.D.plural(g[art], 'gol', 'gols')] : null, avgs[0] ? ['MELHOR DO ANO', avgs[0][0], 'nota média ' + avgs[0][1].toFixed(1).replace('.', ',')] : null,
       rev && rev[0] !== (avgs[0] || [])[0] ? ['REVELAÇÃO', rev[0], rev[0].age + ' anos · nota ' + rev[1].toFixed(1).replace('.', ',')] : null].filter(Boolean);
-    const nums = [['Pontos em ' + n + ' jogos', v * 3 + e], ['Campanha', v + 'V ' + e + 'E ' + d + 'D'], ['Gols', gp + ' a ' + gc], ['Em casa', rec(log.filter(l => l.home))], ['Fora', rec(log.filter(l => !l.home))], ['Maior vitória', big && big.gf > big.ga ? big.gf + ' x ' + big.ga + ' ' + esc((club(big.vs).short || club(big.vs).name).slice(0, 3).toUpperCase()) : '—']];
+    const nums = [['Pontos em ' + n + ' jogos', v * 3 + e], ['Campanha', v + 'V ' + e + 'E ' + d + 'D'], ['Gols', gp + ' a ' + gc], ['Maior vitória', big && big.gf > big.ga ? big.gf + ' x ' + big.ga + ' ' + esc((club(big.vs).short || club(big.vs).name).slice(0, 3).toUpperCase()) : '—'], ['Em casa', rec(log.filter(l => l.home))], ['Fora', rec(log.filter(l => !l.home))]];
     const exp = co.squad.filter(p => p.ct <= 0).length;
-    const coinTxt = (out.coins || []).map(x => x.t.toLowerCase()).join(' · ');
+    const coinTxt = (out.coins || []).map(x => x.t.toLowerCase()).join(', ');
     const next = [out.coinsTot ? ['+' + out.coinsTot + ' moedas', coinTxt, 'coin'] : null, out.offers ? [out.sacked ? (out.offers.length > 1 ? 'Clubes ligaram' : 'Um clube ligou') : U.D.plural(out.offers.length, 'clube quer você', 'clubes querem você'), out.offers.slice(0, 2).map(id => esc(club(id).short || club(id).name)).join(' e ') + (out.offers.length > 1 ? ' mandaram proposta' : ' mandou proposta')] : null,
-      !out.sacked ? [out.met ? 'Diretoria satisfeita' : 'Diretoria cobra', out.met ? 'o trabalho continua' : 'a próxima temporada começa sob pressão'] : null,
-      out.kids && out.kids.length ? ['Base', 'subiram ' + out.kids.map(esc).join(', ')] : null,
-      out.left && out.left.length ? ['Saíram', out.left.slice(0, 3).map(x => esc(x.n) + ' (' + x.why + ')').join(', ')] : null].filter(Boolean);
+      !out.sacked ? [out.met ? 'Diretoria satisfeita' : 'Diretoria cobra', out.met ? 'o trabalho continua' : 'a próxima temporada começa sob pressão', out.met ? '' : 'warn'] : null].filter(Boolean);
     const fin = out.fin;
+    // Tela nova (2026-11-11, o Silvio aprovou o desenho https://claude.ai/artifact/5nPoZd4FRH5oUY9z1cRVg8): à esquerda o cartão
+    // creme só com o resultado (posição, meta, caixa, fama); no meio 4 abas (Números, Destaques, Elenco, Técnico, com o
+    // pontinho dourado quando há ponto de habilidade para usar); à direita o que vem agora e um botão dourado só.
+    // Nada abaixo de 13 px. Os ids dos botões (#ldy-of, #ldy-ns, #ldy-mk, [data-sk]) são os de antes
+    const OK_SVG = y => '<svg role="img" aria-label="' + (y ? 'Cumpriu' : 'Não cumpriu') + '" width="26" height="26" viewBox="0 0 26 26"><circle cx="13" cy="13" r="13" fill="' + (y ? '#1F6B45' : '#A32A25') + '"/><path d="' + (y ? 'M7.5 13.5l3.6 3.6 7.4-8' : 'M8.5 8.5l9 9M17.5 8.5l-9 9') + '" fill="none" stroke="#F6F3EA" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    const TRI = up => '<svg role="img" aria-label="' + (up ? 'subiu para' : 'caiu para') + '" width="14" height="13" viewBox="0 0 14 13"><path d="' + (up ? 'M7 1l6 11H1z' : 'M7 12L1 1h12z') + '" fill="' + (up ? '#1F6B45' : '#A32A25') + '"/></svg>';
+    const cap = t => t.charAt(0).toUpperCase() + t.slice(1), pct = v => Math.max(0, Math.min(100, v));
+    const good = !out.sacked && (out.met || out.won || out.up);
+    let tab = 0;
     const draw = () => {
-      const sk = Object.keys(S.CO_SKILLS).map(k => '<div class="ldy-sk"><span><b>' + S.CO_SKILLS[k] + ' ' + co.xp[k] + '</b><small>' + c.SK_TXT[k] + '</small></span><button class="ld-b dark" data-sk="' + k + '"' + (co.xp.pts > 0 && co.xp[k] < S.CO.skillMax ? '' : ' disabled') + ' aria-label="Mais um ponto em ' + S.CO_SKILLS[k] + '">+1</button></div>').join('');
-      show('<div class="ldy">' +
-        '<div class="ldy-l">' + lbl('FIM DA TEMPORADA ' + (out.season + 1) + ' · ' + esc(out.league).toUpperCase()) + '<div class="ldy-h">' + crest(cl.id, 'ldy-cr') + '<span><b>' + head + '</b><small class="' + (out.met || out.won || out.up ? 'up' : 'dn') + '">' + tag + '</small></span></div>' +
-          '<div class="ldy-meta">' + lbl('META DA DIRETORIA') + '<div><span>' + esc(S.CO_GOAL_TXT[out.goal.k]) + '</span><b class="' + (out.met ? 'up' : 'dn') + '">' + (out.met ? '✓ cumpriu' : out.sacked ? 'demitido' : '✗ não cumpriu') + '</b></div>' +
-            (fin && fin.saldo !== undefined ? '<div><span>Fechar no azul</span><b class="' + (fin.saldo >= 0 ? 'up' : 'dn') + '">' + (fin.saldo >= 0 ? '✓ ' : '✗ ') + c.sgn(fin.saldo) + '</b></div>' : '') + '</div>' +
-          lbl('VOCÊ COMO TÉCNICO') + '<div class="ldy-me"><span>Fama</span><b>' + out.fame[0] + ' → ' + out.fame[1] + ' <i class="' + (df >= 0 ? 'up' : 'dn') + '">' + (df >= 0 ? '▲' : '▼') + '</i></b></div>' +
-          '<div class="ldy-me"><small>' + c.FAME_TXT(out.fame[1]) + ' · experiência ' + (out.xp ? '+' + out.xp : '0') + (co.xp.pts ? ' · ' + U.D.plural(co.xp.pts, 'ponto', 'pontos') + ' para usar' : '') + '</small></div>' + sk + '</div>' +
-        '<div class="ldy-m">' + lbl('A TEMPORADA EM NÚMEROS') + '<div class="ldy-n">' + nums.map(([k, x]) => '<span><small>' + k + '</small><b>' + x + '</b></span>').join('') + '</div>' +
-          (dest.length ? lbl('DESTAQUES') + dest.map(([k, p, t]) => '<div class="ldy-d"><i>' + (p.num || p.ovr || '') + '</i><span><small>' + k + '</small><b>' + esc(p.n) + '</b></span><em>' + t + '</em></div>').join('') : '') + '</div>' +
-        '<div class="ldy-r">' + lbl('O QUE VEM AGORA') + next.map(([k, t, cl]) => '<div class="ldr-ch' + (cl ? ' ' + cl : '') + '"><b>' + k + '</b><small>' + t + '</small></div>').join('') + '<span class="ld-gr"></span>' +
-          (out.offers ? gold('ldy-of', 'Ver as propostas', out.sacked ? '' : 'ou ficar no ' + esc(club(co.club).short || club(co.club).name)) :
-            '<button class="ld-b line ldy-mk" id="ldy-mk">Ouvir outros clubes</button>' + gold('ldy-ns', 'Temporada ' + (U.YEAR0 + co.season), 'continuar no ' + esc(club(co.club).short || club(co.club).name))) + '</div></div>', st => {
+      const pts = co.xp.pts || 0;
+      const sk = Object.keys(S.CO_SKILLS).map(k => '<div class="fdt-sk"><span><b>' + S.CO_SKILLS[k] + ' <i>nível ' + co.xp[k] + '</i></b><small>' + cap(c.SK_TXT[k]) + '.</small></span><button class="fdt-p1" data-sk="' + k + '"' + (pts > 0 && co.xp[k] < S.CO.skillMax ? '' : ' disabled') + ' aria-label="Mais um ponto em ' + S.CO_SKILLS[k] + '">+1</button></div>').join('');
+      const kids = out.kids || [], left = out.left || [];
+      const body = tab === 0 ? '<div class="fdt-n">' + nums.map(([k, x]) => '<span><small>' + k + '</small><b>' + x + '</b></span>').join('') + '</div>'
+        : tab === 1 ? '<div class="fdt-d">' + (dest.length ? dest.map(([k, p, t]) => '<div><i>' + (p.num || p.ovr || '') + '</i><span><small>' + k + '</small><b>' + esc(p.n) + '</b></span><em>' + t + '</em></div>').join('') : '<p>Sem destaques nesta temporada.</p>') + '</div>'
+        : tab === 2 ? '<div class="fdt-e"><small>SUBIRAM DA BASE</small><p>' + (kids.length ? kids.map(esc).join(', ') : 'Ninguém neste ano.') + '</p><small>SAÍRAM</small>' +
+          (left.length ? left.slice(0, 4).map(x => '<div><b>' + esc(x.n) + '</b><em>' + x.why + '</em></div>').join('') + (left.length > 4 ? '<p>e mais ' + (left.length - 4) + '</p>' : '') : '<p>Ninguém saiu.</p>') + '</div>'
+        : '<div class="fdt-t"><div class="fdt-th">' + (pts ? '<b>' + (pts > 1 ? pts + ' PONTOS' : '1 PONTO') + ' PARA USAR</b>' : '<span>Sem ponto para usar</span>') + '<em>experiência ' + (out.xp ? '+' + out.xp : '0') + '</em></div>' + sk + '</div>';
+      show('<div class="fdt">' +
+        '<div class="fdt-l"><small class="fdt-eb">TEMPORADA ' + (U.YEAR0 + out.season) + ' · ' + esc(out.league).toUpperCase() + '</small>' +
+          '<div class="fdt-h">' + crest(cl.id, 'fdt-cr') + '<span><b>' + head + '</b><small class="' + (good ? 'up' : 'dn') + '">' + tag + '</small></span></div><hr>' +
+          '<div class="fdt-row"><span><small>META DA DIRETORIA</small><b>' + esc(S.CO_GOAL_TXT[out.goal.k]) + '</b></span>' + OK_SVG(out.met) + '</div>' +
+          (fin && fin.saldo !== undefined ? '<div class="fdt-row"><span><small>CAIXA DO ANO</small><b>' + (fin.saldo >= 0 ? 'Fechou no azul' : 'Fechou no vermelho') + '</b></span><em class="' + (fin.saldo >= 0 ? 'up' : 'dn') + '">' + (fin.saldo > 0 ? '+' : '') + c.brl(fin.saldo).replace('− ', '−') + '</em></div>' : '') +
+          '<span class="ld-gr"></span><div class="fdt-fm"><div><small>FAMA</small><i>' + out.fame[0] + '</i>' + (df ? TRI(df > 0) : '') + '<b>' + out.fame[1] + '</b></div>' +
+            '<span class="fdt-bar"><i class="' + (df >= 0 ? 'up' : 'dn') + '" style="width:' + pct(Math.max(out.fame[0], out.fame[1])) + '%"></i><i style="width:' + pct(Math.min(out.fame[0], out.fame[1])) + '%"></i></span><em>' + cap(c.FAME_TXT(out.fame[1])) + '</em></div></div>' +
+        '<div class="fdt-m"><div class="fdt-tabs" role="tablist">' + ['Números', 'Destaques', 'Elenco', 'Técnico'].map((t, i) => '<button class="fdt-tb' + (i === tab ? ' on' : '') + '" data-ft="' + i + '" role="tab" aria-selected="' + (i === tab) + '">' + t + (i === 3 && pts && tab !== 3 ? '<i aria-hidden="true"></i>' : '') + '</button>').join('') + '</div>' +
+          '<div class="fdt-p">' + body + '</div></div>' +
+        '<div class="fdt-r"><small class="fdt-lb">O QUE VEM AGORA</small>' + next.map(([k, t, cls]) => '<div class="fdt-ch' + (cls ? ' ' + cls : '') + '">' + (cls === 'coin' && U.COINS ? U.COINS.svg : '') + '<span><b>' + k + '</b><small>' + t + '</small></span></div>').join('') + '<span class="ld-gr"></span>' +
+          (out.offers ? '<button class="fdt-go" id="ldy-of"><b>Ver as propostas</b>' + (out.sacked ? '' : '<small>ou ficar no ' + esc(club(co.club).short || club(co.club).name) + '</small>') + '</button>' :
+            '<button class="fdt-mk" id="ldy-mk">Ouvir outros clubes</button><button class="fdt-go" id="ldy-ns"><b>Temporada ' + (U.YEAR0 + co.season) + '</b><small>continuar no ' + esc(club(co.club).short || club(co.club).name) + '</small></button>') + '</div></div>', st => {
+        st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); tab = +b.dataset.ft; draw(); });
         st.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { if (S.coSkill(co, b.dataset.sk)) { sfx('tap'); c.save(); draw(); } });
         if (st.querySelector('#ldy-of')) st.querySelector('#ldy-of').onclick = () => { sfx('tap'); co.step = 'offers'; c.offers(out.offers); };
         if (st.querySelector('#ldy-ns')) st.querySelector('#ldy-ns').onclick = () => { sfx('tap'); S.coStart(co); c.save('hub'); semana(); };

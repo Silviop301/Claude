@@ -195,9 +195,11 @@
   }
 
   const SOUNDS = {
-    // Toque em botão de escolha: clique curto e macio
+    // Toque em botão: clique curto. Até 2026-11-11 era um seno de 1100 Hz a 0,1 por 45 ms, que no alto-falante do celular
+    // quase não se ouvia (Silvio: "tá indo sem som nos botões"); agora um triângulo mais agudo e um estalinho por cima
     tap(t) {
-      tone('sine', 1100, 700, t, 0.045, 0.1);
+      tone('triangle', 1500, 950, t, 0.055, 0.24, { a: 0.004 });
+      tone('sine', 2500, 1900, t, 0.03, 0.07, { a: 0.003 });
     },
     // Apito do juiz: dois toques curtos e um longo; a bolinha de dentro faz o tom tremer e "rolar"
     whistle(t) {
