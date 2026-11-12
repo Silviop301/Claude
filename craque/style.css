@@ -10091,6 +10091,12 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 /* Ideia da auxiliar (12/11): ponto dourado de novidade, nunca laranja de erro */
 .tm-tip-d.g { background: var(--gold); }
 
+/* festa do título no campinho (12/11): cartão no painel da direita do ao vivo deitado */
+.ldl-side{position:relative}
+.ldl-festa{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;gap:8px;background:var(--bg,#0f1a14)}
+.ldf-c{flex:1;background:#141517;border:2px solid #F2C230;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:10px;animation:tcUp .9s cubic-bezier(.2,1.4,.4,1) both}
+.ldf-c small{font:800 12px/1 var(--display);letter-spacing:.08em;color:#F2C230}.ldf-c b{font:900 30px/1 var(--display);color:#F3F1EA}.ldf-c p{margin:0;font:700 15px/1.3 var(--display);color:#F3F1EA;opacity:.85}
+.ldf-go{width:100%;min-height:48px;justify-content:center}
 /* ---------- Copa nacional do Treinador (2026-11-12, engine/coachcup.js; desenhos em /mnt/project-files/climbix/copas/) ---------- */
 .sm-rd.cup { color: var(--gold); display: flex; align-items: center; gap: 6px; }
 .sm-rd.cup .trophy { height: 18px !important; width: auto; }
