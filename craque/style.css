@@ -10168,3 +10168,13 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .ldl-side .pk-r i { width: 18px; height: 18px; border-radius: 50%; background: #2a2d31; display: block; }
 .ldl-side .pk-r i.g { background: #4cc46f; } .ldl-side .pk-r i.x { background: #e0563f; } .ldl-side .pk-r i.n { box-shadow: 0 0 0 2px var(--gold); }
 .ld-st .ldl-side button.pk-go { height: 52px; border-radius: 14px; background: var(--gold) !important; color: #13201A !important; font: 800 18px/52px var(--display) !important; border: 0; box-shadow: 0 4px 0 #b88a10; margin-top: 8px; flex: none; width: 100%; }
+/* Seta de moral estilo PES (2026-11-12): campo (.ld-dot), banco (.mo-bn no anel) e Elenco (.mo-in ao lado do geral) */
+.mo-ar { position: absolute; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #10241a; z-index: 3; pointer-events: none; font-style: normal; }
+.mo-ar svg { width: 11px; height: 11px; stroke: #fff; stroke-width: 3.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.mo-ar.l5 { background: #E5484D; } .mo-ar.l4 { background: #F08A2E; } .mo-ar.l3 { background: #3FB56B; } .mo-ar.l2 { background: #3B82F6; } .mo-ar.l1 { background: #8B5CF6; }
+.ld-dot .mo-ar { right: -5px; top: -4px; }
+.tm-bp .tm-ring { position: relative; overflow: visible; }
+.tm-bp .mo-ar.mo-bn { right: -6px; bottom: -3px; top: auto; left: auto; width: 15px; height: 15px; }
+.tm-bp .mo-ar.mo-bn svg { width: 10px; height: 10px; }
+.lde2-r .o { white-space: nowrap; }
+.lde2-r .mo-ar.mo-in { position: static; display: inline-flex; vertical-align: middle; margin-left: 6px; width: 17px; height: 17px; box-shadow: none; }
