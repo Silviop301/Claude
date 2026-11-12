@@ -9500,8 +9500,8 @@ button.coin-pill { cursor: pointer; border: 0; }
 .lj-ah .lj-ai { width: 62px; height: 62px; object-fit: contain; margin-left: auto; flex: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,.35)); }
 
 /* Home deitada: Perfil e Ajustes com desenho cheio num disco creme (2026-11-11) */
-.hl-mr svg.fi { width: 36px; height: 36px; stroke: none; flex: none; }
-.hl-mr:has(svg.fi) { padding: 0 18px 0 10px !important; gap: 9px; }
+.hl-mr svg.fi { width: 30px; height: 30px; stroke: none; flex: none; }
+.hl-mr:has(svg.fi) { padding: 0 18px 0 9px !important; gap: 10px; }
 
 /* Recusa no contrato e na renovação (Treinador, 2026-11-11): ele responde no balão da conversa (.cvj) com o que aceita
    e as tentativas que sobram; laranja na última */
