@@ -8137,6 +8137,16 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .hl-rb b { font: 800 21px/1.1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hl-rb small { font: 600 15px/1.25 var(--body); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hl-rb.del b { color: #B3261E; }
+.hl-row.del { box-shadow: inset 0 0 0 2px rgba(194,54,46,.35); }
+.hl-trash { width: 46px; height: 46px; border-radius: 50%; background: #C2362E !important; color: #fff !important; display: flex; align-items: center; justify-content: center; flex: none; }
+.hl-mp.many .hl-trash { width: 42px; height: 42px; }
+.hl-trash svg { width: 20px; height: 20px; }
+.hl-askc { display: flex; align-items: center; gap: 12px; margin: 12px 0 0; padding: 10px 14px; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 2px rgba(194,54,46,.35); text-align: left; }
+.hl-askc > img, .hl-askc > .crest, .hl-askc > svg { width: 44px; height: 44px; flex: none; }
+.hl-askc > span { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.hl-askc b { font: 800 22px/1.1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hl-askc small { font: 600 15px/1.25 var(--body); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hl-askc em { font: 600 13px/1 var(--body); font-style: normal; color: var(--ink-3, #8a8a8a); flex: none; }
 .hl-cont { display: flex; align-items: center; gap: 6px; background: var(--gold) !important; color: #1B1606 !important; border-radius: 999px; padding: 0 18px !important; min-height: 46px; font: 800 19px var(--display) !important; box-shadow: var(--sh-press); flex: none; }
 .hl-play { width: 46px; height: 46px; border-radius: 50%; background: #141517 !important; color: #fff !important; display: flex; align-items: center; justify-content: center; flex: none; }
 .hl-new { display: flex; align-items: center; gap: 12px; border: 2px dashed rgba(20,21,23,.28) !important; border-radius: 14px; padding: 6px 12px !important; min-height: 58px; text-align: left; color: var(--ink) !important; }

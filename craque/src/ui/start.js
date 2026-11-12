@@ -409,17 +409,22 @@
     const M = MODES[m], ed = editing.has(m), sl = slotsOf(m);
     const order = sl.map((sv, i) => [sv, i]).filter(([sv]) => sv).sort((x, y) => (y[0].at || 0) - (x[0].at || 0));
     if (!order.length) { editing.delete(m); U.LD.closePop(); return homeLand(); }
-    const row = ([sv, i], first) => {
+    // Mesma identidade do cartão na lista, no modo excluir e na confirmação: escudo, nome, clube · ano · rodada
+    const card = sv => {
       const co = m === 'treinador', c = co ? sv.co : sv.c, cl = c.club && club(c.club);
       let at;
       if (co) { const ss = c.ss; at = svYear(sv) + (ss && !ss.done ? ' · rodada ' + Math.min(ss.i + 1, ss.rounds.length) : !c.club ? ' · sem clube' : ' · pré-temporada'); }
       else at = 'temporada ' + (YEAR0 + c.season);
-      if (ed) return '<div class="hl-row"><button class="hl-rb del" data-del="' + m + ':' + i + '"><span><b>Excluir ' + esc(c.name) + '</b><small>Some deste aparelho e da nuvem</small></span></button></div>';
-      return '<div class="hl-row"><button class="hl-rb" data-vg="' + m + ':' + i + '">' + (cl ? crest(cl.id) : '') + '<span><b>' + esc(c.name) + '</b><small>' +
-        (cl ? esc(cl.short || cl.name) + ' · ' : '') + at + '</small></span></button>' +
+      return (cl ? crest(cl.id) : '') + '<span><b>' + esc(c.name) + '</b><small>' + (cl ? esc(cl.short || cl.name) + ' · ' : '') + at + '</small></span>';
+    };
+    const row = ([sv, i], first) => {
+      const c = m === 'treinador' ? sv.co : sv.c;
+      if (ed) return '<div class="hl-row del"><button class="hl-rb" data-del="' + m + ':' + i + '">' + card(sv) + '</button>' +
+        '<button class="hl-trash" data-del="' + m + ':' + i + '" aria-label="Excluir ' + esc(c.name) + '">' + TRASH_SVG + '</button></div>';
+      return '<div class="hl-row"><button class="hl-rb" data-vg="' + m + ':' + i + '">' + card(sv) + '</button>' +
         (first ? '<button class="hl-cont" data-vg="' + m + ':' + i + '">' + PLAY_SVG + 'Continuar</button>' : '<button class="hl-play" data-vg="' + m + ':' + i + '" aria-label="Continuar ' + esc(c.name) + '">' + PLAY_SVG + '</button>') + '</div>';
     };
-    U.LD.pop('<div class="hl-mp' + (order.length > 2 ? ' many' : '') + '"><div class="hl-mph"><b>' + esc(M.name) + '</b><button class="hl-ed" data-ed>' + (ed ? 'Pronto' : 'Excluir') + '</button>' +
+    U.LD.pop('<div class="hl-mp' + (order.length > 2 ? ' many' : '') + '"><div class="hl-mph"><b>' + (ed ? 'Excluir qual?' : esc(M.name)) + '</b><button class="hl-ed" data-ed>' + (ed ? 'Pronto' : 'Excluir') + '</button>' +
       '<button class="hl-x-btn" data-pop-x aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
       '<div class="hl-mpg">' + order.map((x, k) => row(x, k === 0)).join('') +
       (ed ? '' : '<button class="hl-new" data-mode="' + m + '">' + PLUS_SVG + '<b>Nova carreira</b></button>') + '</div></div>',
@@ -429,7 +434,8 @@
         w.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
           const [mode, slot] = b.dataset.del.split(':'), sv = svAt(mode, +slot); if (!sv) return landMode(m);
           const co = mode === 'treinador', c = sv.co || sv.c;
-          landAsk('Excluir a carreira de ' + esc(c.name) + '?', (co ? 'O técnico some deste aparelho e da sua conta na nuvem, com a auxiliar, o departamento médico e o estádio dele: nada passa para outra carreira.' : 'O jogador some deste aparelho e da sua conta na nuvem.') + ' Não dá para desfazer.', 'Excluir carreira', () => {
+          landAsk('Excluir esta carreira?', '<div class="hl-askc">' + card(sv) + (sv.at ? '<em>salva ' + agoTxt(sv.at) + '</em>' : '') + '</div>' +
+            '<p>Some deste aparelho e da nuvem' + (co ? ', com estádio, auxiliar e médico' : '') + '. Não dá para desfazer.</p>', 'Excluir ' + esc(firstName(c.name)), () => {
             const base = co ? U.SAVE_CO : SLOT_BASE[mode]();
             store(U.slotKey(base, +slot), co ? { co: null, at: Date.now() } : { c: null, at: Date.now() });
             homeLand(); landMode(m);
@@ -439,7 +445,7 @@
   }
   // Pergunta no palco deitado (excluir carreira)
   function landAsk(t, s, ok, go, danger) {
-    U.LD.pop('<div class="hl-ask"><b>' + t + '</b><p>' + s + '</p><div class="hl-ab"><button class="hl-btn line" data-pop-x>Cancelar</button><button class="hl-btn ' + (danger ? 'red' : 'gold') + '" id="hl-ok">' + ok + '</button></div></div>',
+    U.LD.pop('<div class="hl-ask"><b>' + t + '</b>' + (s.charAt(0) === '<' ? s : '<p>' + s + '</p>') + '<div class="hl-ab"><button class="hl-btn line" data-pop-x>Cancelar</button><button class="hl-btn ' + (danger ? 'red' : 'gold') + '" id="hl-ok">' + ok + '</button></div></div>',
       t, w => { w.querySelector('#hl-ok').onclick = () => { sfx('tap'); U.LD.closePop(); go(); }; }, 'hl-pop');
   }
   // Vagas cheias (HCheio): qual carreira sai para a nova entrar; a mais antiga vem marcada. Nada é apagado aqui
