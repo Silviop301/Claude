@@ -16,7 +16,7 @@ function play(co, stopAt) {
     const m = S.coMatchStart(co); let k = 0; while (!m.done && k++ < 5000) { S.coMatchStep(co, m); S.coAutoStop(co, m); }
     const cup = co.ss.cup, i0 = co.ss.i, k0 = cup ? cup.k : 0;
     const log = S.coMatchEnd(co, m);
-    if (m.cup) {
+    if (m.cup && !m.cup.cont) {
       st.games++;
       if (co.ss.i !== i0) A('cup-round', 'jogo da copa andou a rodada da liga');
       if (i0 < cup.at[m.cup.k]) A('cup-early', 'copa antes da hora: rodada ' + i0 + ' fase ' + m.cup.k);

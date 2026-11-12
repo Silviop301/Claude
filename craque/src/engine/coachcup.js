@@ -89,11 +89,14 @@
     return true;
   }
   // Joga o que já passou do dia: as fases devidas sem o seu jogo (ou com ele, se você saiu, foi demitido, ou `all`)
+  const early = (co, k, j) => hash(co.seed + '|' + co.season + '|vesp|' + k + '|' + j) % 3 === 0;
   function tick(co, all) {
     const cup = cupOf(co); if (!cup) return;
     while (cup.k < cup.at.length && (all || due(co, cup))) {
       const k = cup.k, mj = pairOf(co, cup, k), wait = !all && alive(co, cup) && mj >= 0 && !cup.res[k][mj];
-      cup.br[k].forEach((_, j) => { if (!cup.res[k][j] && j !== (wait ? mj : -1)) simPair(co, cup, k, j); });
+      // Esperando o seu jogo: só um terço da fase joga antes (a véspera); o resto é na mesma noite do seu (Silvio 12/11:
+      // "quero que alguns jogos aconteçam junto ao meu") e sai no fim do seu jogo (cupEnd)
+      cup.br[k].forEach((_, j) => { if (!cup.res[k][j] && j !== (wait ? mj : -1) && (!wait || early(co, k, j))) simPair(co, cup, k, j); });
       if (wait) return;
       advance(co, cup);
     }

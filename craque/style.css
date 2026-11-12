@@ -10100,9 +10100,9 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 /* ---------- Copa nacional do Treinador (2026-11-12, engine/coachcup.js; desenhos em /mnt/project-files/climbix/copas/) ---------- */
 .sm-rd.cup { color: var(--gold); display: flex; align-items: center; gap: 6px; }
 .sm-rd.cup .trophy { height: 18px !important; width: auto; }
-.cpw-path { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 12px; background: #141517; }
+.cpw-path { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 8px; max-width: 100%; box-sizing: border-box; overflow: hidden; border-radius: 12px; background: #141517; }
 .cpw-st { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.cpw-st small { font: 700 10px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
+.cpw-st small { white-space: nowrap; font: 700 10px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
 .cpw-st div { display: flex; gap: 3px; align-items: center; height: 24px; padding: 0 6px; border-radius: 7px; background: #1f2124; }
 .cpw-st .cpw-cr { width: 20px; height: 20px; object-fit: contain; }
 .cpw-st div i { font-style: normal; font: 700 11px/1 var(--body); color: #9fb0a6; }
@@ -10137,7 +10137,10 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .cp-h { display: flex; align-items: baseline; gap: 10px; padding: 8px 14px 2px; }
 .cp-h b { font: 800 17px/1 var(--display); color: #F3F1EA; }
 .cp-h small { font: 600 13px/1 var(--body); color: #9fb0a6; }
-.cp-r32 { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 1fr; gap: 6px 8px; padding: 6px 10px 8px; min-height: 0; }
+.cp-r32 { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 4px 8px; padding: 4px 10px 8px; min-height: 0; overflow: hidden; }
+.cp-r32 .cp-m { padding: 1px 5px; gap: 0; min-height: 0; }
+.cp-r32 .cp-t { height: 18px; }
+.cp-r32 .cp-t .cp-cr { width: 17px; height: 17px; }
 .cp-r32 .cp-m { justify-content: center; }
 .cp-side b.cp-big { font: 800 26px/1.05 var(--display); }
 .cp-vs { display: flex; align-items: center; gap: 10px; }
