@@ -4,5 +4,5 @@ const D = require('./data.js');
 globalThis.CRAQUE_DATA = globalThis.CRAQUE_DATA || D;
 require('./names.js'); // nomes sorteados (as pessoas do celular no Jogo a Jogo)
 const S = require('./engine/core.js');
-['events', 'events2', 'stakes', 'decisions', 'events3', 'moments', 'worldcup', 'season', 'market', 'finish', 'achievements', 'rival', 'origins', 'contract', 'relampago', 'fixtures', 'fullcareer', 'cassino', 'phone', 'money', 'transfer', 'legado', 'coach', 'coachfin', 'coachmkt', 'coachworld', 'coachest'].forEach(part => require('./engine/' + part + '.js'));
+['events', 'events2', 'stakes', 'decisions', 'events3', 'moments', 'worldcup', 'season', 'market', 'finish', 'achievements', 'rival', 'origins', 'contract', 'relampago', 'fixtures', 'fullcareer', 'cassino', 'phone', 'money', 'transfer', 'legado', 'coach', 'coachfin', 'coachmkt', 'coachworld', 'coachest', 'coachcup'].forEach(part => require('./engine/' + part + '.js'));
 module.exports = S;
