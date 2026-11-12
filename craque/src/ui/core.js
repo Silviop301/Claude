@@ -418,6 +418,6 @@
   function modeHeadBind(o) { const b = $((o && o.cfg) || 'mh-cfg'); if (b) b.onclick = () => { sfx('tap'); window.CRAQUE_UI.settings(); }; }
   // Som do gol com mando: o seu gol em casa é a festa inteira, fora é o canto da sua torcida lá no fundo; o gol deles em
   // casa é o lamento, fora é a casa deles explodindo
-  const goalSnd = (ours, home) => (ours ? (home ? 'goal' : 'goalAway') : home ? 'miss' : 'cheer'); // gol seu: rede + torcida (gravações, o mesmo do lance decisivo; Silvio 11/11)
+  const goalSnd = (ours, home) => (ours ? (home ? 'goal' : 'goalAway') : home ? 'golContra' : 'golDeles'); // gol deles: vaia em casa, festa deles fora (12/11) // gol seu: rede + torcida (gravações, o mesmo do lance decisivo; Silvio 11/11)
   window.CRAQUE_UI = { goalSnd, zk, rotPref, rotOn, pt, box, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, slotKey, CO_SLOTS: 5, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg, totOf, titlesOf, toHome, modeHead, modeHeadBind };
 })();
