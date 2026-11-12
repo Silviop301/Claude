@@ -1214,7 +1214,7 @@
   // ---------- fim da temporada: posição, meta, fama, experiência ----------
   // Moedas da temporada (S.coSeasonEnd devolve out.coins) entram na carteira da conta aqui, uma vez por fim de temporada;
   // a primeira temporada terminada na conta ganha um bônus de boas-vindas (uma vez só, em qualquer carreira)
-  const COIN_FIRST = 30;
+  const COIN_FIRST = 15; // era 30 até 2026-11-12: a conta nova já ganha 36 de boas-vindas (api/account.php)
   function payCoins(out) {
     if (!U.COINS || out.coinsPaid) return;
     const list = (out.coins || []).slice();
