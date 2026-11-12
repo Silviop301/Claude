@@ -596,7 +596,7 @@
   const nm = id => { const c = club(id); return c.short || c.name; };
   const LANE = { e: 'pela esquerda', d: 'pela direita', c: 'pelo meio' };
   // Na simulação livre o lance diz como o chute saiu no campinho (e.hd de cabeça, e.far de fora da área); senão, o lado
-  const HOW = e => (e.hd ? 'de cabeça' : e.far ? 'de fora da área' : e.l ? LANE[e.l] : '');
+  const HOW = e => (e.fk ? 'de falta' : e.hd ? 'de cabeça' : e.far ? 'de fora da área' : e.l ? LANE[e.l] : '');
   const ICO = {
     pause: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
     ff: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5l7 7-7 7M13 5l7 7-7 7"/></svg>',

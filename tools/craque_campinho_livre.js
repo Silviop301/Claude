@@ -32,22 +32,25 @@ while (games < N) {
   while (!co.ss.done && !co.sacked && games < N) {
     const nx = S.coNext(co); if (!nx) break; if (nx.bye) { S.coSkipRound(co); continue; }
     const m = S.coMatchStart(co); if (!m) break;
-    const g = { xu: 0, xt: 0, sh: [0, 0], far: 0, gn: 0, pen: 0 };
+    const g = { xu: 0, xt: 0, sh: [0, 0], far: 0, gn: 0, pen: 0, fks: 0, fkg: 0, fkn: 0, fkc: 0 };
     const sim = LP.sim({ me: -1, goals: [], free: true, seed: games * 13 + 7, home: m.home ? 0 : 1, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]],
       spm: () => 2.2, speed: () => 1.25,
-      onShot: sh => { const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, sh); if (!e) return; g.sh[sh.side]++; if (sh.out === 'gol') { g.gn++; if (sh.dist > 18) g.far++; } if (sh.id == null) bad++; } });
-    sim.go(); let key = '';
+      onShot: sh => { const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, sh); if (!e) return; g.sh[sh.side]++; if (sh.kind === 'falta') { g.fks++; if (sh.out === 'gol') g.fkg++; } if (sh.out === 'gol') { g.gn++; if (sh.dist > 18) g.far++; } if (sh.id == null) bad++; } });
+    sim.go(); let key = ''; const sent = new Set();
     while (!m.done) {
       if (GRITO && !m.us.shout) S.coShout(co, m, GRITO);
       S.coMatchStep(co, m, m.min + 1, { free: true });
       if (m.lam) { g.xu += m.lam.us / S.CO.mins; g.xt += m.lam.them / S.CO.mins; }
       const k2 = [m.us, m.them].map(s => s.form + ':' + s.xi.join(',') + ':' + s.style + ':' + (s.shout ? s.shout.k : '')).join('|');
       if (key && k2 !== key) [m.us, m.them].forEach((s, k) => { sim.lineup(k, simForm(s)); sim.style(k, process.env.GRITO_CAMPO === '0' ? S.CO_STY[s.style] : S.coSimSty(s)); }); key = k2;
+      // o juiz (falta, cartão, impedimento) como a tela faz (`toSim` em ui/coach.js); REF=0 desliga
+      if (process.env.REF !== '0') m.ev.forEach(e => { if (sent.has(e)) return; sent.add(e); if (e.pk || !(e.t === 'falta' || e.t === 'amarelo' || e.t === 'vermelho' || e.t === 'impedimento')) return;
+        const T0 = e.s === 'us' ? m.us : m.them, who = (T0.squad || []).find(q => q.n === e.p); sim.ref({ side: e.s === 'us' ? 0 : 1, pos: e.pos, kind: e.t, how: e.how, num: who && who.num }, () => {}); });
       sim.minute(m.tk || m.min, m.mom[m.mom.length - 1], m.lam ? [m.lam.us, m.lam.them] : undefined);
       if (!m.done) for (let i = 0; i < STEPS; i++) sim._step(0.02);
       S.coAutoStop(co, m);
     }
-    sim.stop();
+    { const F = sim._state().FKN || {}; g.fkn = F.n || 0; g.fkc = F.cruz || 0; g.fkf = F.f || 0; } sim.stop();
     g.gu = m.home ? m.gh : m.ga; g.gt = m.home ? m.ga : m.gh; g.pen = m.ev.filter(e => e.sp === 'pen').length; G.push(g); games++;
     S.coMatchEnd(co, m);
   }
@@ -63,6 +66,7 @@ const band = k => { const a = sides.slice(k * third, k === 2 ? sides.length : (k
 const B = [0, 1, 2].map(band), alerts = [], warn = (ok, msg) => { if (!ok) alerts.push(msg); };
 console.log(`Simulação livre: ${games} jogos · gols por jogo ${(gols / games).toFixed(2)} (o motor espera ${(esp / games).toFixed(2)}) · chutes por jogo ${(sum(g => g.sh[0] + g.sh[1]) / games).toFixed(1)} · de fora da área ${pct(sum(g => g.far), sum(g => g.gn))} dos gols · pênaltis ${(sum(g => g.pen) / games).toFixed(2)} por jogo`);
 console.log(`  resultado do seu time V/E/D: ${res.map(x => pct(x, games)).join(' / ')} (esperado pelo motor ${ex.map(x => pct(x, games)).join(' / ')}) · 0 a 0: ${pct(sum(g => +(g.gu + g.gt === 0)), games)} · 5 gols ou mais: ${pct(sum(g => +(g.gu + g.gt >= 5)), games)}`);
+console.log(`  faltas apitadas ${(sum(g => g.fkf || 0) / games).toFixed(1)} por jogo · com barreira ${(sum(g => g.fkn) / games).toFixed(2)} por jogo · chute direto ${(sum(g => g.fks) / games).toFixed(2)} (gols ${(sum(g => g.fkg) / games).toFixed(3)}) · cruzadas na área ${(sum(g => g.fkc) / games).toFixed(2)}`);
 if (GRITO) console.log(`  com o grito ${GRITO} o jogo todo: seu time faz ${(sum(g => g.gu) / games).toFixed(2)} (o motor espera ${(sum(g => g.xu) / games).toFixed(2)}) e leva ${(sum(g => g.gt) / games).toFixed(2)} (espera ${(sum(g => g.xt) / games).toFixed(2)})`);
 console.log('  por força do ataque (esperado → saiu): ' + B.map((b, i) => ['fraco', 'médio', 'forte'][i] + ' ' + b[0].toFixed(2) + ' → ' + b[1].toFixed(2)).join(' · '));
 warn(Math.abs(gols / esp - 1) < 0.15, 'gols no total: ' + (gols / games).toFixed(2) + ' por jogo contra ' + (esp / games).toFixed(2) + ' esperados (tem de ficar a ±15%)');
