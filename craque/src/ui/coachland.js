@@ -656,6 +656,55 @@
     const t = document.createElement('div'); t.className = 'pl-ty ' + k; t.innerHTML = auxFace(C().co, 'pl-ty-f') + '<span><small>' + esc(sm) + '</small><b>' + esc(txt) + '</b></span>';
     p.appendChild(t); setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, 4500);
   }
+  // Momentos do auxiliar (2026-11-12, desenho B aprovado pelo Silvio): 2 ou 3 vezes por jogo, quando algo acontece de verdade, a
+  // auxiliar pede uma decisão de 5 s no painel da direita, por cima dos gritos. Cada escolha é um grito que já existe (vale 10
+  // minutos, com as setas no campo); "deixar" não muda nada. Quando o grito acaba, ela diz se funcionou (lista e recado no campo)
+  const MOM_T = 5000, MOM_GAP = 14, MOM_MAX = 3;
+  const momWin = (m, a, b) => { const r = { gu: 0, gt: 0, su: 0, st: 0 };
+    m.ev.forEach(e => { if (e.m < a || e.m > b || (e.t !== 'gol' && e.t !== 'chance')) return; const u = e.s === 'us';
+      if (e.t === 'gol') u ? r.gu++ : r.gt++; u ? r.su++ : r.st++; }); return r; };
+  // O que está acontecendo agora que vale um momento (null = nada)
+  function momPick(m) {
+    const d = (m.home ? m.gh - m.ga : m.ga - m.gh), t = m.min, w = momWin(m, t - 10, t), dn = m.auxM.done;
+    if (!dn.rec && w.st >= 2 && w.st >= w.su + 2) {
+      return { k: 'rec', g: 'recuar', txt: 'Eles chutaram ' + w.st + ' vezes em 10 minutos. Fechar atrás?', y: 'Fechar', ys: 'todos atrás', n: 'Deixar', ns: 'segue igual' }; }
+    if (!dn.pre && d < 0 && t >= 62 && t <= 85) return { k: 'pre', g: 'pressionar', txt: 'Estamos perdendo. Ir para cima com tudo?', y: 'Pressionar', ys: 'cansa mais', n: 'Manter', ns: 'segue igual' };
+    if (!dn.seg && d === 1 && t >= 74 && t <= 86) return { k: 'seg', g: 'segurar', txt: 'Vantagem no fim. Segurar a bola e gastar o tempo?', y: 'Segurar', ys: 'chega menos', n: 'Manter', ns: 'segue igual' };
+    if (!dn.lad && d === 0 && t >= 25 && t <= 70 && w.su === 0 && momWin(m, t - 15, t).su === 0) return { k: 'lad', g: 'lados', txt: 'O meio deles está fechado. Abrir o jogo pelas pontas?', y: 'Pelos lados', ys: 'abre o jogo', n: 'Manter', ns: 'segue igual' };
+    return null;
+  }
+  // Funcionou? Conta o que aconteceu enquanto o grito valeu
+  const MOM_OK = { rec: w => w.gt === 0 ? [1, 'Eles não marcaram enquanto o time fechou.'] : [0, 'O time fechou, mas eles marcaram.'],
+    pre: w => w.gu > 0 ? [1, 'A pressão deu gol.'] : w.su >= 2 ? [1, 'O time foi para cima e chegou ' + w.su + ' vezes.'] : [0, 'A pressão não criou chance.'],
+    seg: w => w.gt === 0 ? [1, 'O time segurou e eles não marcaram.'] : [0, 'Segurou, mas eles marcaram.'],
+    lad: w => w.gu > 0 || w.su >= 2 ? [1, 'Pelas pontas o time chegou ' + (w.gu ? 'e marcou.' : w.su + ' vezes.')] : [0, 'Pelas pontas também não saiu chute.'] };
+  function momClose() {
+    const c = document.getElementById('mom-c'); if (!c || c._end) return; c._end = 1; clearTimeout(c._t);
+    c.classList.add('out'); setTimeout(() => c.remove(), 300);
+  }
+  function momTick(x) {
+    const m = x.m, co = x.co; if (m.done || co.speed === 'fim') return;
+    m.auxM = m.auxM || { n: 0, at: -99, done: {}, run: null };
+    const mo = m.auxM;
+    // Resultado do momento escolhido, quando o grito acaba
+    if (mo.run && !m.us.shout) { const r = mo.run; mo.run = null; const ok = MOM_OK[r.k](momWin(m, r.from, m.min));
+      m.ev.push({ m: m.min, t: 'momento', s: 'us', p: ok[1], ok: ok[0] });
+      planToast(ok[0] ? 'ok' : 'no', ok[0] ? 'FUNCIONOU' : 'NÃO DEU', ok[1]); }
+    if (mo.n >= MOM_MAX || m.us.shout || m.min - mo.at < MOM_GAP || m.min < 8 || m.min > 87 || x.open || document.getElementById('ld-pop') || document.getElementById('mom-c')) return;
+    if (m.min >= 44 && m.min <= 47) return; // perto do intervalo não
+    const q = momPick(m); if (!q) return;
+    mo.n++; mo.at = m.min; mo.done[q.k] = 1;
+    const side = document.querySelector('.ldl-side'), g = document.getElementById('ldl-g4'); if (!side || !g) return;
+    const c = document.createElement('div'); c.id = 'mom-c'; c.className = 'mom-c';
+    c.style.height = (g.offsetTop + g.offsetHeight) + 'px';
+    c.innerHTML = '<div class="mom-hd">' + auxFace(co, 'mom-f') + '<span><small>AUXILIAR</small><b>Decida rápido</b></span></div><p>' + esc(q.txt) + '</p>' +
+      '<div class="mom-bt"><button id="mom-y"><b>' + q.y + '</b><small>' + q.ys + '</small></button><button id="mom-no"><b>' + q.n + '</b><small>' + q.ns + '</small></button></div><i class="mom-tm"><u></u></i>';
+    side.appendChild(c); sfx('tap');
+    requestAnimationFrame(() => { const u = c.querySelector('.mom-tm u'); if (u) { u.style.transition = 'width ' + MOM_T + 'ms linear'; u.style.width = '0%'; } });
+    c.querySelector('#mom-y').onclick = () => { if (c._end || m.done) return; if (x.shout(q.g)) mo.run = { k: q.k, from: m.min }; momClose(); };
+    c.querySelector('#mom-no').onclick = () => momClose();
+    c._t = setTimeout(() => momClose(), MOM_T);
+  }
   function livePaint(x) {
     const m = x.m, sh = m.us.shout, $ = id => document.getElementById(id);
     const g = $('ldl-g4'); if (!g) return;
@@ -680,6 +729,7 @@
       if (L.en && !m.done && S.coSubLeft(m) > 0) { const by = byOf(m.us.squad); m.enSaid = m.enSaid || {};
         const p = m.us.xi.map(id => by[id]).find(p => p && p.pos !== 'GOL' && p.en < 66 && p.en >= 58 && !m.enSaid[p.id]);
         if (p) { m.enSaid[p.id] = 1; planToast('no', 'VAI CANSAR LOGO', p.n.split(' ').pop() + ' está no limite. Troque na próxima parada'); } } }
+    momTick(x);
     g.querySelectorAll('[data-gr]').forEach(b => { const on = !!sh && sh.k === b.dataset.gr; b.classList.toggle('on', on); b.disabled = !!sh && !on;
       b.querySelector('small').textContent = on ? 'até os ' + sh.until + '\'' : S.CO_SHOUT[b.dataset.gr].sub; });
     const st = x.stats();

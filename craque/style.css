@@ -10042,3 +10042,18 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .tm-cd em.tm-na u.up { color: #6FD58F; }
 .tm-cd em.tm-na u.dn { color: #F5A57F; }
 .tu.tu-top { z-index: 24; }
+
+/* Momentos do auxiliar (2026-11-12): cartão de 5 s no painel da direita do ao vivo, por cima do lance, quem manda e gritos */
+.ldl-side { position: relative; }
+.mom-c { position: absolute; left: -4px; right: -4px; top: 0; z-index: 7; box-sizing: border-box; display: flex; flex-direction: column; background: #141517; border: 2px solid #F2C230; border-radius: 16px; padding: 9px 11px; box-shadow: 0 8px 24px rgba(0,0,0,.55); color: #F3F1EA; animation: mom-in .3s ease-out; transition: opacity .3s; }
+.mom-c.out { opacity: 0; }
+@keyframes mom-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.mom-hd { display: flex; align-items: center; gap: 9px; } .mom-hd .mom-f { width: 36px; height: 36px; border-radius: 50%; flex: none; background: #E9E2D2; object-fit: cover; }
+.mom-hd small { display: block; font: 800 12px/1 var(--display); color: #F2C230; letter-spacing: .06em; } .mom-hd b { display: block; margin-top: 2px; font: 800 15px/1 var(--display); }
+.mom-c p { margin: 7px 0 8px; font: 700 15px/1.2 var(--display); }
+.mom-bt { display: flex; gap: 7px; margin-top: auto; }
+.ld-st .mom-bt button { flex: 1; min-height: 52px; border: 0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: #26282c; color: #F3F1EA; cursor: pointer; }
+.ld-st .mom-bt button b { font: 800 16px/1 var(--display); } .ld-st .mom-bt button small { font: 600 12px/1 var(--body, sans-serif); opacity: .8; text-align: center; }
+.ld-st .mom-bt #mom-y { background: #F2C230; color: #13201A; }
+.mom-tm { display: block; height: 5px; border-radius: 3px; background: #26282c; margin-top: 8px; overflow: hidden; } .mom-tm u { display: block; height: 100%; width: 100%; background: #F2C230; }
+.lv-feed b.mom-ok { color: #4ADE80; } .lv-feed b.mom-no { color: #F08A5D; }
