@@ -216,7 +216,7 @@
     const res = gf > ga ? 'v' : gf < ga ? 'd' : 'e', ko = k >= 6;
     const pens = ko && gf === ga ? S.coCupPens(co, m) : null, win = pens ? pens.us > pens.them : gf > ga;
     const ycOut = A.afterGame(co, m, pens ? (win ? 'v' : 'd') : res);
-    const log = { cup: 1, cont: 1, k, ph: S.coContPhase(ct, k), name: ct.name, r: m.round, vs: m.vs, home: m.home, neutral: m.neutral, gf, ga, res, win, ycOut,
+    const log = { cup: 1, cont: 1, tr: ct.tr, k, ph: S.coContPhase(ct, k), name: ct.name, r: m.round, vs: m.vs, home: m.home, neutral: m.neutral, gf, ga, res, win, ycOut,
       pens: pens ? [pens.us, pens.them] : null, ev: m.ev.filter(e => e.t === 'gol' && e.s === 'us').map(e => e.p) };
     if (!ko) {
       const [g, f] = myFx(ct, k); log.grp = GL[g];

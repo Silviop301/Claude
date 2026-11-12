@@ -806,7 +806,7 @@
       if (cup) sub = 'Copa · ' + m.gh + ' x ' + m.ga; else { const me = S.coTable(co).find(x => x.me), left = co.ss.rounds.length - co.ss.i; sub = me.p + ' pontos' + (left > 0 ? '<br>' + left + (left === 1 ? ' rodada' : ' rodadas') + ' de folga' : ''); }
       sim.festa((window.CRAQUE_TROPHY_IMGS || {})[name]); sfx('fanfare');
       const side = document.querySelector('.ldl-side'), d = document.createElement('div'); d.className = 'ldl-festa';
-      d.innerHTML = '<div class="ldf-c">' + (window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY(cup ? 'cup' : 'league', 70, name) : '') + '<small>' + esc(name).toUpperCase() + ' · ' + (U.YEAR0 + co.season) + '</small><b>Campeão!</b><p>' + sub + '</p></div><button class="ld-gold ldf-go"><b>Seguir</b></button>';
+      d.innerHTML = '<div class="ldf-c">' + (window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY(cup ? log.tr || 'cup' : 'league', 70, name) : '') + '<small>' + esc(name).toUpperCase() + ' · ' + (U.YEAR0 + co.season) + '</small><b>Campeão!</b><p>' + sub + '</p></div><button class="ld-gold ldf-go"><b>Seguir</b></button>';
       side.appendChild(d); d.querySelector('.ldf-go').onclick = () => { sfx('tap'); d.remove(); go(); };
     };
     const finish = () => { clearTimeout(timer); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); if (U.profileCoGame) U.profileCoGame(co, m, log); save('hub');
@@ -815,7 +815,7 @@
       if (can && ((log && log.cup && log.champ && !log.tcOk) || (!m.cup && !co.ss.tw && S.coTitleWon(co)))) return festa(log, go);
       go(); };
     const end = () => {
-      const pk = m.cup && m.gh === m.ga && LDon && U.LD.livePens; // copa empatada: disputa de pênaltis por cima do ao vivo
+      const pk = m.cup && !m.cup.grp && m.gh === m.ga && LDon && U.LD.livePens; // copa empatada: disputa de pênaltis por cima do ao vivo
       clearTimeout(timer); hidden.clear(); paint(); open = true;
       if (sim && sim.fin) { sim.fin(); sfx('whistleEnd'); if (m.home && m.gh < m.ga && !retomado) setTimeout(() => sfx('vaia'), 2300); } // três apitos (curto, curto, longo): os jogadores param onde estão
       // vitória que dá o título sem depender de ninguém: a festa começa sozinha depois do apito, sem o 'Ver o resultado'
@@ -1185,7 +1185,7 @@
     if (!log || !log.cup || !log.champ || log.tcOk) return go();
     log.tcOk = 1;
     let cf = ''; for (let i = 0; i < 46; i++) cf += '<i style="left:' + (Math.random() * 100).toFixed(1) + '%;background:' + ['#e8b84a', '#fff', '#ffe08a', '#c9a24a'][i % 4] + ';animation-duration:' + (2.5 + Math.random() * 3).toFixed(2) + 's;animation-delay:' + (1 + Math.random() * 3).toFixed(2) + 's"></i>';
-    const img = window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY('cup', 140, log.name) : '';
+    const img = window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY(log.tr || 'cup', 140, log.name) : '';
     tacaPop('<div class="tc-ray"></div><div class="tc-cf">' + cf + '</div><div class="tc-mid"><div class="tc-tag">TÍTULO · ' + esc(log.name).toUpperCase() + ' · ' + (U.YEAR0 + co.season) + '</div><div class="tc-cup">' + img + '</div><div class="tc-big">Campeão!</div><div class="tc-sub">' + esc(nm(co.club)) + ' · final contra ' + esc(nm(log.vs)) + ' · ' + log.gf + ' x ' + log.ga + (log.pens ? ' (' + log.pens[0] + ' x ' + log.pens[1] + ' nos pênaltis)' : '') + '</div></div><button class="btn tc-go">Seguir</button>', 'tc-fe', go);
     sfx('fanfare');
   }
