@@ -121,7 +121,16 @@
   // Avisa a tela (disco da home) quando a faixa troca ou a música toca/para
   const mSay = () => { try { root.dispatchEvent(new Event('climbix-musica')); } catch (e) { /* sem tela */ } };
   const M_VOL = 0.35;
-  let mOn = true, mWant = -1, mGain = null, mEl = null, mOrd = [], mI = -1, mStop = null;
+  let mOn = true, mWant = -1, mGain = null, mEl = null, mOrd = [], mI = -1, mStop = null, mFade = true;
+  // Silvio, 12/11: "a música precisa iniciar com um aumento gradual de volume": toda faixa e toda volta (depois do ao vivo,
+  // de sair do app ou de pausar) sobem em M_FADE s a partir de quando o áudio começa a tocar de verdade (evento playing)
+  const M_FADE = 4;
+  function mFadeIn() {
+    if (!mGain || !ctx || mWant <= 0) return;
+    mFade = false;
+    const g = mGain.gain, t = ctx.currentTime;
+    try { g.cancelScheduledValues(t); g.setValueAtTime(0, t); g.linearRampToValueAtTime(mWant, t + M_FADE); } catch (e) { g.value = mWant; }
+  }
   try { mOn = localStorage.getItem('climbix-musica') !== 'off'; } catch (e) { /* fica ligada */ }
   // Música no jogo ao vivo (Silvio, 11/11: "a opção de rodar ou não a música durante a simulação"): desligada = só a torcida
   let mLive = false;
@@ -152,6 +161,7 @@
       mOrd = mOrd.filter((i) => pos(i) < 0).concat(mOrd.filter((i) => pos(i) >= 0).sort((a, b) => pos(a) - pos(b)));
       mI = 0;
     }
+    mFade = true; if (mGain) try { mGain.gain.cancelScheduledValues(ctx.currentTime); mGain.gain.setValueAtTime(0, ctx.currentTime); } catch (e) { /* ok */ }
     mEl.src = 'assets/musica/' + M_LIST[mOrd[mI]];
     mRecAdd(M_LIST[mOrd[mI]]);
     mSay();
@@ -163,7 +173,9 @@
     if (want === mWant) { if (want && mEl.paused && ctx.state === 'running') mEl.play().catch(() => {}); return; }
     mWant = want;
     clearTimeout(mStop);
-    try { g.cancelScheduledValues(ctx.currentTime); g.setValueAtTime(g.value, ctx.currentTime); g.linearRampToValueAtTime(want, ctx.currentTime + (want ? 1.5 : 0.6)); } catch (e) { g.value = want; }
+    if (want && (mEl.paused || mFade)) { mFade = true; try { g.cancelScheduledValues(ctx.currentTime); g.setValueAtTime(0, ctx.currentTime); } catch (e) { g.value = 0; } } // sobe no playing
+    else try { g.cancelScheduledValues(ctx.currentTime); g.setValueAtTime(g.value, ctx.currentTime); g.linearRampToValueAtTime(want, ctx.currentTime + (want ? M_FADE : 0.6)); } catch (e) { g.value = want; }
+    if (want && !mEl.paused && mFade) mFadeIn();
     if (want) mEl.play().catch(() => { mWant = -1; }); // parou de tocar fora de um toque: tenta de novo no próximo
     else mStop = setTimeout(() => { if (!mWant) mEl.pause(); }, 700); // pausa de verdade (não gasta bateria nem dados)
   }
@@ -175,7 +187,7 @@
       mGain = ctx.createGain(); mGain.gain.value = 0; mGain.connect(ctx.destination);
       ctx.createMediaElementSource(mEl).connect(mGain);
       mEl.addEventListener('ended', musicNext);
-      mEl.addEventListener('playing', mSay); mEl.addEventListener('pause', mSay);
+      mEl.addEventListener('playing', () => { if (mFade) mFadeIn(); mSay(); }); mEl.addEventListener('pause', () => { mFade = true; mSay(); });
       mEl.addEventListener('error', () => setTimeout(musicNext, 1000)); // faixa que não abre: pula
       musicNext();
       musicTick();
