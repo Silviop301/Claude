@@ -27,7 +27,10 @@
     penP: 0.76, penK: 40, penMax: 0.14,    // pênaltis: acerto base e quanto finalização contra o goleiro mexe
     coins: { champ: 30, final: 10 },
     fame: { champ: 6, final: 2, semi: 1 },
-    conf: { champ: 8, final: 4, semi: 2, zebra: -5 }
+    conf: { champ: 8, final: 4, semi: 2, zebra: -5 },
+    // Ida e volta (fase 3, 12/11): a semifinal em todo país; no Brasil também quartas e final (como a Copa do Brasil).
+    // A ida é na semana anterior à volta; a volta fica no `at` da fase e a ida em `at1` (null = jogo único).
+    two: { all: ['Semifinal'], bra: ['Quartas de final', 'Semifinal', 'Final'] }
   };
   const cupOf = co => (co && co.ss && co.ss.cup) || null;
   const rngK = (co, tag) => S.rng(hash((co.seed || 0) + '|' + co.season + '|copa|' + tag));
@@ -37,6 +40,26 @@
   S.coCupPhase = (cup, k) => C.names[nPh(cup) - 1 - k];
   S.coCupPhaseShort = (cup, k) => C.short[nPh(cup) - 1 - k];
   S.coCupIsFinal = (cup, k) => k === nPh(cup) - 1;
+  // ---------- ida e volta (vale para a copa nacional e para as continentais: S._coLegs) ----------
+  const legOf = (cup, k) => !!(cup.at1 && cup.at1[k] != null);
+  const l1Of = (cup, k) => (cup.l1 && cup.l1[k]) || [];
+  const leg1Open = (cup, k) => legOf(cup, k) && l1Of(cup, k).filter(Boolean).length < (cup.br[k] || []).length;
+  // Primeira data livre antes da volta (depois da fase anterior e fora das semanas ocupadas)
+  function legDay(at, k, busy) {
+    const lo = k ? at[k - 1] : 0;
+    for (let x = at[k] - 1; x > lo; x--) if (!busy.has(x)) return x;
+    return null;
+  }
+  // Placar da volta com a ida somada (do ponto de vista de quem manda a volta) e o vencedor; pênaltis se o agregado empatar
+  function legTie(l1, h2, x2, g, pens) {
+    const a = g.gh + (l1.h === h2 ? l1.gh : l1.ga), b = g.ga + (l1.h === h2 ? l1.ga : l1.gh);
+    const o = { gh: a, ga: b, h: h2, l1, l2: { gh: g.gh, ga: g.ga } };
+    if (a === b) { const p = pens(); o.ph = p[0]; o.px = p[1]; o.w = p[0] > p[1] ? h2 : x2; }
+    else o.w = a > b ? h2 : x2;
+    return o;
+  }
+  S._coLegs = { legOf, l1Of, leg1Open, legDay, legTie };
+  S.coCupLeg = (cup, k) => legOf(cup, k);
 
   // ---------- começo ----------
   S.coCupStart = function (co) {
@@ -50,29 +73,39 @@
     const R = ss.rounds.length, ph = Math.round(Math.log2(fn)), at = [];
     C.at.slice(5 - ph).forEach(f => { let x = clamp(Math.round(R * f), 1, R - 2); if (at.length && x <= at[at.length - 1]) x = at[at.length - 1] + 1; at.push(Math.min(x, R - 1)); });
     const br0 = []; for (let i = 0; i < fn; i += 2) br0.push([i, i + 1]);
+    const ctry = club.league.split('-')[0], two = C.two[ctry] || C.two.all, busy = new Set(at);
+    const at1 = at.map((_, k) => { if (!two.includes(C.names[ph - 1 - k])) return null; const x = legDay(at, k, busy); if (x != null) busy.add(x); return x; });
     // Régua do prêmio: a folha semanal normal do 6º clube mais forte do país (um clube médio-alto da elite)
     const ref = all[Math.min(5, all.length - 1)];
     let w = 0; try { w = S.coGenSquad(ref, co.season, { rf: co.rf, lv: co.lv, season: co.season }).reduce((a, p) => a + p.wage, 0); } catch (e) { w = 0; }
-    ss.cup = { name: lg.cup || 'Copa nacional', ids, n: fn, at, k: 0, br: [br0], res: [[]], out: null, champ: null, w: Math.round(w), log: [] };
+    ss.cup = { name: lg.cup || 'Copa nacional', ids, n: fn, at, at1, l1: at.map(() => []), k: 0, br: [br0], res: [[]], out: null, champ: null, w: Math.round(w), log: [] };
     return ss.cup;
   };
   const mineIx = (co, cup) => cup.ids.indexOf(co.club);
   const pairOf = (co, cup, k) => (cup.br[k] || []).findIndex(([a, b]) => a === mineIx(co, cup) || b === mineIx(co, cup));
   const alive = (co, cup) => cup && cup.out === null && !cup.champ && mineIx(co, cup) >= 0 && !co.sacked && co.club === co.ss.club;
-  const due = (co, cup) => cup && cup.k < cup.at.length && co.ss.i >= cup.at[cup.k];
+  const due = (co, cup) => cup && cup.k < cup.at.length && co.ss.i >= (leg1Open(cup, cup.k) ? cup.at1[cup.k] : cup.at[cup.k]);
   // Mando: a divisão menor joga em casa; mesma divisão, sorteio preso ao confronto. Final: neutro (o primeiro da chave fica à esquerda)
   function hostOf(co, cup, k, a, b) {
-    if (S.coCupIsFinal(cup, k)) return a;
+    if (S.coCupIsFinal(cup, k) && !legOf(cup, k)) return a;
     const da = depthOf(co, cup.ids[a]), db = depthOf(co, cup.ids[b]);
     if (da !== db) return da > db ? a : b;
     return hash(co.seed + '|' + co.season + '|mando|' + k + '|' + a + '|' + b) & 1 ? a : b;
   }
   // Pênaltis entre dois clubes do computador: meio a meio, um pouco pela força
   const pensAI = (r, sa, sb) => r() < clamp(0.5 + (sa - sb) / 80, 0.3, 0.7);
+  // Ida: quem manda o jogo único manda a ida; a volta é na casa do outro
+  function simLeg1(co, cup, k, j) {
+    const [a, b] = cup.br[k][j], h = hostOf(co, cup, k, a, b), x = h === a ? b : a, r = rngK(co, 'ida|' + k + '|' + j);
+    const g = L().simple(r, cup.ids[h], cup.ids[x], str(co, cup.ids[h]), str(co, cup.ids[x]), C.lamT);
+    if (!cup.l1) cup.l1 = cup.at.map(() => []);
+    cup.l1[k][j] = { gh: g.gh, ga: g.ga, h };
+  }
   function simPair(co, cup, k, j) {
-    const [a, b] = cup.br[k][j], h = hostOf(co, cup, k, a, b), x = h === a ? b : a, r = rngK(co, 'jogo|' + k + '|' + j);
+    const [a, b] = cup.br[k][j], h1 = hostOf(co, cup, k, a, b), two = legOf(cup, k), h = two ? (h1 === a ? b : a) : h1, x = h === a ? b : a, r = rngK(co, 'jogo|' + k + '|' + j);
     const sh = str(co, cup.ids[h]), sx = str(co, cup.ids[x]);
     const g = L().simple(r, cup.ids[h], cup.ids[x], sh, sx, C.lamT);
+    if (two) { if (!l1Of(cup, k)[j]) simLeg1(co, cup, k, j); cup.res[k][j] = legTie(cup.l1[k][j], h, x, g, () => { const hw = pensAI(r, sh, sx), big = 3 + Math.floor(r() * 3), small = Math.max(0, big - 1 - Math.floor(r() * 2)); return hw ? [big, small] : [small, big]; }); return; }
     const o = { gh: g.gh, ga: g.ga, h };
     if (g.gh === g.ga) { const hw = pensAI(r, sh, sx); const big = 3 + Math.floor(r() * 3), small = Math.max(0, big - 1 - Math.floor(r() * 2)); o.ph = hw ? big : small; o.px = hw ? small : big; o.w = hw ? h : x; }
     else o.w = g.gh > g.ga ? h : x;
@@ -93,7 +126,14 @@
   function tick(co, all) {
     const cup = cupOf(co); if (!cup) return;
     while (cup.k < cup.at.length && (all || due(co, cup))) {
-      const k = cup.k, mj = pairOf(co, cup, k), wait = !all && alive(co, cup) && mj >= 0 && !cup.res[k][mj];
+      const k = cup.k, mj = pairOf(co, cup, k);
+      if (leg1Open(cup, k)) {   // a ida: o mesmo jeito de esperar o seu jogo
+        const w1 = !all && alive(co, cup) && mj >= 0 && !l1Of(cup, k)[mj];
+        cup.br[k].forEach((_, j) => { if (!l1Of(cup, k)[j] && j !== (w1 ? mj : -1) && (!w1 || early(co, k, j))) simLeg1(co, cup, k, j); });
+        if (w1) return;
+        continue;
+      }
+      const wait = !all && alive(co, cup) && mj >= 0 && !cup.res[k][mj];
       // Esperando o seu jogo: só um terço da fase joga antes (a véspera); o resto é na mesma noite do seu (Silvio 12/11:
       // "quero que alguns jogos aconteçam junto ao meu") e sai no fim do seu jogo (cupEnd)
       cup.br[k].forEach((_, j) => { if (!cup.res[k][j] && j !== (wait ? mj : -1) && (!wait || early(co, k, j))) simPair(co, cup, k, j); });
@@ -108,9 +148,13 @@
   S.coCupNext = function (co) {
     const cup = cupOf(co); if (!cup || !due(co, cup) || !alive(co, cup)) return null;
     const k = cup.k, j = pairOf(co, cup, k); if (j < 0 || cup.res[k][j]) return null;
-    const [a, b] = cup.br[k][j], me = mineIx(co, cup), h = hostOf(co, cup, k, a, b), fin = S.coCupIsFinal(cup, k);
+    const [a, b] = cup.br[k][j], me = mineIx(co, cup), h1 = hostOf(co, cup, k, a, b), fin = S.coCupIsFinal(cup, k), two = legOf(cup, k), ida = leg1Open(cup, k);
+    if (ida && l1Of(cup, k)[j]) return null;
+    const h = two && !ida ? (h1 === a ? b : a) : h1, l1 = two && !ida ? l1Of(cup, k)[j] : null;
+    const c = { k, name: cup.name, ph: S.coCupPhase(cup, k), sh: S.coCupPhaseShort(cup, k), fin };
+    if (two) { c.leg = ida ? 1 : 2; if (l1) c.agg = l1.h === me ? [l1.gh, l1.ga] : [l1.ga, l1.gh]; }
     return { round: co.ss.i + 0.5, of: co.ss.rounds.length, vs: cup.ids[a === me ? b : a], home: h === me, ult: co.board ? co.board.ult : null,
-      neutral: fin, cup: { k, name: cup.name, ph: S.coCupPhase(cup, k), sh: S.coCupPhaseShort(cup, k), fin } };
+      neutral: fin && !two, at: ida ? cup.at1[k] : cup.at[k], cup: c };
   };
   const next0 = S.coNext;
   S.coNext = function (co) { return S.coCupNext(co) || next0(co); };
@@ -144,15 +188,33 @@
   // Fim do seu jogo da copa: sem tabela nem rodada; cansaço, moral, lesão e cartões andam como em qualquer jogo
   function cupEnd(co, m) {
     const ss = co.ss, cup = cupOf(co), k = m.cup.k, j = pairOf(co, cup, k), me = mineIx(co, cup), [a, b] = cup.br[k][j], vi = a === me ? b : a;
-    const gf = m.home ? m.gh : m.ga, ga = m.home ? m.ga : m.gh;
-    const pens = gf === ga ? S.coCupPens(co, m) : null, win = pens ? pens.us > pens.them : gf > ga;
+    const gf = m.home ? m.gh : m.ga, ga = m.home ? m.ga : m.gh, leg = m.cup.leg || 0, agg = m.cup.agg;
     const res = gf > ga ? 'v' : gf < ga ? 'd' : 'e', A = S._coAfter;
-    const ycOut = A.afterGame(co, m, pens ? (win ? 'v' : 'd') : res);
     const h = m.neutral ? (a === me ? me : vi) : m.home ? me : vi;
-    cup.res[k][j] = { gh: m.home || (m.neutral && h === me) ? gf : ga, ga: m.home || (m.neutral && h === me) ? ga : gf, h, w: win ? me : vi };
+    // Ida: só guarda o placar; nada decide, ninguém cai
+    if (leg === 1) {
+      const ycOut = A.afterGame(co, m, res);
+      if (!cup.l1) cup.l1 = cup.at.map(() => []);
+      cup.l1[k][j] = { gh: m.home ? gf : ga, ga: m.home ? ga : gf, h };
+      const log = { cup: 1, leg: 1, k, ph: S.coCupPhase(cup, k), name: cup.name, r: m.round, vs: m.vs, home: m.home, gf, ga, res, ycOut, ev: m.ev.filter(e => e.t === 'gol' && e.s === 'us').map(e => e.p) };
+      A.rateAfter(co, m, log, gf, ga);
+      const fin = S.coFin ? S.coFin(co) : null;
+      if (fin && m.home) { const g = Math.round((S.coGate ? S.coGate(co, m.vs) : 0) * (C.gateK[5 - nPh(cup) + k] || 1) / 1000) * 1000; if (g > 0) { fin.caixa += g; fin.ss.bil = (fin.ss.bil || 0) + g; log.gate = g; } }
+      cup.log.push(log);
+      cup.br[k].forEach((_, jj) => { if (!l1Of(cup, k)[jj]) simLeg1(co, cup, k, jj); });
+      A.xiAfter(co);
+      if (S.coWorldSync) S.coWorldSync(co);
+      return log;
+    }
+    const tf = gf + (agg ? agg[0] : 0), ta = ga + (agg ? agg[1] : 0);   // volta: vale o agregado
+    const pens = tf === ta ? S.coCupPens(co, m) : null, win = pens ? pens.us > pens.them : tf > ta;
+    const ycOut = A.afterGame(co, m, pens ? (win ? 'v' : 'd') : res);
+    cup.res[k][j] = { gh: m.home || (m.neutral && h === me) ? tf : ta, ga: m.home || (m.neutral && h === me) ? ta : tf, h, w: win ? me : vi };
+    if (agg) { cup.res[k][j].l1 = l1Of(cup, k)[j]; cup.res[k][j].l2 = { gh: m.home ? gf : ga, ga: m.home ? ga : gf }; }
     if (pens) { const o = cup.res[k][j]; o.ph = h === me ? pens.us : pens.them; o.px = h === me ? pens.them : pens.us; }
     const log = { cup: 1, k, ph: S.coCupPhase(cup, k), name: cup.name, r: m.round, vs: m.vs, home: m.home, neutral: m.neutral, gf, ga, res, win, ycOut,
       pens: pens ? [pens.us, pens.them] : null, ev: m.ev.filter(e => e.t === 'gol' && e.s === 'us').map(e => e.p) };
+    if (agg) { log.leg = 2; log.agg = [tf, ta]; }
     A.rateAfter(co, m, log, gf, ga);
     // Dinheiro: bilheteria do jogo em casa (a procura sobe por fase; final neutra: metade de uma comum) e o prêmio de passar
     const fin = S.coFin ? S.coFin(co) : null;

@@ -8,7 +8,7 @@ const D = require('../craque/src/data.js'); const S = require('../craque/src/sim
 const N = +process.argv[2] || 30, T = +process.argv[3] || 5;
 const al = {}; const A = (k, m) => { al[k] = al[k] || { n: 0, ex: m }; al[k].n++; };
 const isN = v => typeof v === 'number' && Number.isFinite(v);
-const st = { seasons: 0, cups: 0, games: 0, pens: 0, won: 0, best: {}, prize: [], champTop8: 0, champ: 0, zebra: 0 };
+const st = { legs: 0, seasons: 0, cups: 0, games: 0, pens: 0, won: 0, best: {}, prize: [], champTop8: 0, champ: 0, zebra: 0 };
 function play(co, stopAt) {
   while (!co.ss.done && !co.sacked) {
     if (stopAt != null && co.ss.i >= stopAt) return 'stop';
@@ -19,9 +19,12 @@ function play(co, stopAt) {
     if (m.cup && !m.cup.cont) {
       st.games++;
       if (co.ss.i !== i0) A('cup-round', 'jogo da copa andou a rodada da liga');
-      if (i0 < cup.at[m.cup.k]) A('cup-early', 'copa antes da hora: rodada ' + i0 + ' fase ' + m.cup.k);
+      const day = m.cup.leg === 1 ? cup.at1[m.cup.k] : cup.at[m.cup.k];
+      if (i0 < day) A('cup-early', 'copa antes da hora: rodada ' + i0 + ' fase ' + m.cup.k);
       if (m.cup.k !== k0) A('cup-k', 'fase errada');
-      if (log.gf === log.ga) { st.pens++; if (!log.pens || log.pens[0] === log.pens[1]) A('pens', 'empate sem vencedor nos pênaltis'); if (log.win !== log.pens[0] > log.pens[1]) A('pens-win', 'quem passou não bate com os pênaltis'); }
+      if (m.cup.leg) st.legs++;
+      if (m.cup.leg === 1) { if (log.pens || log.win !== undefined) A('leg1', 'ida decidiu algo'); }
+      else if ((log.agg ? log.agg[0] === log.agg[1] : log.gf === log.ga)) { st.pens++; if (!log.pens || log.pens[0] === log.pens[1]) A('pens', 'empate sem vencedor nos pênaltis'); if (log.win !== log.pens[0] > log.pens[1]) A('pens-win', 'quem passou não bate com os pênaltis'); }
       else if (log.pens) A('pens2', 'pênaltis sem empate');
       if (log.prize != null && (!isN(log.prize) || log.prize <= 0)) A('prize', log.prize);
       if (log.gate != null && !isN(log.gate)) A('gate', log.gate);
@@ -43,6 +46,8 @@ for (let n = 0; n < N; n++) {
       if (!cup.ids.includes(co.club)) A('not-in', 'seu clube fora da chave');
       if (new Set(cup.ids).size !== cup.ids.length) A('dup', 'clube repetido na chave');
       if (cup.at.some((x, i) => x <= (cup.at[i - 1] || 0) || x >= co.ss.rounds.length)) A('at', JSON.stringify(cup.at) + ' de ' + co.ss.rounds.length);
+      (cup.at1 || []).forEach((x, k) => { if (x != null && (x >= cup.at[k] || x <= (cup.at[k - 1] || 0))) A('at1', 'ida fora do lugar ' + JSON.stringify([cup.at, cup.at1])); });
+      if (!(cup.at1 || []).some(x => x != null)) A('no-legs', 'copa sem ida e volta');
     }
     // Save no meio: a metade da temporada, grava, segue nas duas cópias e compara
     const mid = Math.floor(co.ss.rounds.length / 2);
@@ -58,8 +63,11 @@ for (let n = 0; n < N; n++) {
       for (let k = 0; k < cup.br.length; k++) { if (cup.br[k].length !== cup.n / 2 ** (k + 1)) A('br', 'fase ' + k + ' com ' + cup.br[k].length); if ((cup.res[k] || []).filter(Boolean).length !== cup.br[k].length) A('res', 'fase ' + k + ' sem todos os jogos'); }
       if (!cup.champ || !cup.ids.includes(cup.champ)) A('champ', 'sem campeão');
       const me = cup.ids.indexOf(out.club); let reached = 0; while (reached < cup.res.length && cup.res[reached].some(o => o && o.w === me)) reached++;
-      if (!out.sacked && cup.log.length !== Math.min(cup.br.length, reached + 1)) A('games', 'jogou ' + cup.log.length + ' e chegou à fase ' + reached);
-      if (cup.log.some((l, i) => i < cup.log.length - 1 && !l.win)) A('after-out', 'jogou depois de cair');
+      const L2 = cup.log.filter(l => l.leg !== 1);
+      if (!out.sacked && L2.length !== Math.min(cup.br.length, reached + 1)) A('games', 'jogou ' + L2.length + ' e chegou à fase ' + reached);
+      if (cup.log.some(l => l.leg === 1 && !cup.log.some(x => x.k === l.k && x.leg === 2)) && !out.sacked) A('leg-miss', 'ida sem volta');
+      if (L2.some((l, i) => i < L2.length - 1 && !l.win)) A('after-out', 'jogou depois de cair');
+      cup.res.forEach((rs, k) => rs.forEach(o => { if (o && o.l1 && o.l2) { const a = o.l2.gh + (o.l1.h === o.h ? o.l1.gh : o.l1.ga), b = o.l2.ga + (o.l1.h === o.h ? o.l1.ga : o.l1.gh); if (a !== o.gh || b !== o.ga) A('agg', 'agregado errado'); if (a === b && o.ph == null) A('agg-pens', 'agregado empatado sem pênaltis'); } }));
       if (!out.cup) A('out-cup', 'fim da temporada sem a linha da copa');
       else { st.best[out.cup.ph] = (st.best[out.cup.ph] || 0) + 1; if (out.cup.won) { st.won++; if (!co.titles.some(t => t.k === 'cup' && t.s === out.season)) A('trophy', 'campeão sem taça'); } }
       if (co.titles.filter(t => t.k === 'cup' && t.s === out.season).length > 1) A('trophy2', 'duas taças da copa');
@@ -71,7 +79,7 @@ for (let n = 0; n < N; n++) {
   }
 }
 const avg = a => a && a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length / 1000) : 0;
-console.log('Temporadas', st.seasons, '· com copa', st.cups, '· seus jogos de copa', st.games, '(' + (st.games / Math.max(1, st.cups)).toFixed(1) + ' por temporada) · pênaltis', st.pens, '· títulos', st.won, '· zebras', st.zebra);
+console.log('Temporadas', st.seasons, '· com copa', st.cups, '· seus jogos de copa', st.games, '(' + (st.games / Math.max(1, st.cups)).toFixed(1) + ' por temporada, ' + st.legs + ' de ida e volta) · pênaltis', st.pens, '· títulos', st.won, '· zebras', st.zebra);
 console.log('Campanha:', Object.entries(st.best).sort((a, b) => b[1] - a[1]).map(x => x[0] + ' ' + x[1]).join(' · '));
 console.log('Prêmio médio por fase passada (mil):', st.prize.map(avg).join(' / '));
 console.log('Campeão entre os 8 mais fortes do país:', Math.round(100 * st.champTop8 / Math.max(1, st.champ)) + '%');

@@ -154,7 +154,7 @@
     if (b.s !== co.season) { delete co.pressB; return null; }
     if (nGames(co) <= b.n) return null;
     delete co.pressB;
-    const win = log.cup ? !!log.win : log.res === 'v';
+    const win = log.cup && log.leg !== 1 && !log.grp ? !!log.win : log.res === 'v';
     apply(co, win ? b.win : b.lose);
     return { win };
   };

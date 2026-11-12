@@ -815,7 +815,7 @@
       if (can && ((log && log.cup && log.champ && !log.tcOk) || (!m.cup && !co.ss.tw && S.coTitleWon(co)))) return festa(log, go);
       go(); };
     const end = () => {
-      const pk = m.cup && !m.cup.grp && m.gh === m.ga && LDon && U.LD.livePens; // copa empatada: disputa de pênaltis por cima do ao vivo
+      const pk = m.cup && !m.cup.grp && m.cup.leg !== 1 && (m.cup.agg ? ourGoals() + m.cup.agg[0] === theirGoals() + m.cup.agg[1] : m.gh === m.ga) && LDon && U.LD.livePens; // copa empatada: disputa de pênaltis por cima do ao vivo
       clearTimeout(timer); hidden.clear(); paint(); open = true;
       if (sim && sim.fin) { sim.fin(); sfx('whistleEnd'); if (m.home && m.gh < m.ga && !retomado) setTimeout(() => sfx('vaia'), 2300); } // três apitos (curto, curto, longo): os jogadores param onde estão
       // vitória que dá o título sem depender de ninguém: a festa começa sozinha depois do apito, sem o 'Ver o resultado'
