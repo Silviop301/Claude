@@ -9755,6 +9755,16 @@ body:has(> .tc-ov) > .pay-ty { visibility: hidden; }
 .ld-st .dk-sm .hl-dk-p button.dk-big, .dk-sm .hl-dk-p .dk-big .dk-i { width: 72px; height: 72px; }
 .dk-sm .hl-dk-p .dk-r { gap: 6px; } .dk-sm .hl-dk-p .dk-nm { max-width: 180px; }
 .ld-st .dk-sm .hl-dk-p button.dk-c { width: 44px; height: 40px; } .ld-st .dk-sm .hl-dk-p button.dk-c.pp { width: 50px; }
+/* Disco no jogo ao vivo (12/11): canto de cima à direita do campinho, só com "Música no jogo ao vivo" ligada; o cartão abre para a esquerda */
+.hl-dk.dk-lv { right: 10px; bottom: auto; top: 10px; z-index: 4; gap: 6px; }
+.ld-st .dk-lv button.hl-dk-b { width: 36px; height: 36px; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+.dk-lv .hl-dk-b .dk-i { width: 36px; height: 36px; }
+.dk-lv.off .hl-dk-b i { width: 40px; margin-left: -20px; }
+.dk-lv .hl-dk-t { padding: 4px 10px; }
+.hl-dk.dk-lv .hl-dk-p { right: -6px; bottom: auto; top: -6px; gap: 12px; padding: 10px 10px 10px 12px; border-radius: 20px; transform-origin: calc(100% - 24px) 24px; }
+.ld-st .dk-lv .hl-dk-p button.dk-big, .dk-lv .hl-dk-p .dk-big .dk-i { width: 72px; height: 72px; }
+.dk-lv .hl-dk-p .dk-r { gap: 6px; } .dk-lv .hl-dk-p .dk-nm { max-width: 180px; }
+.ld-st .dk-lv .hl-dk-p button.dk-c { width: 44px; height: 40px; } .ld-st .dk-lv .hl-dk-p button.dk-c.pp { width: 50px; }
 @media (prefers-reduced-motion: reduce) { .hl-dk-p { transition: opacity .2s; } .hl-dk-p .dk-big .dk-i { animation: none; } }
 /* Ajustes com 6 linhas (Música no jogo ao vivo): linhas mais baixas para caber sem rolar */
 .aj-l.n6 { gap: 6px; } .aj-l.n6 .aj-sw, .aj-l.n6 .aj-lk { min-height: 44px; border-radius: 14px; } .aj-l.n6 .aj-sw b, .ld-st .aj-l.n6 button.aj-lk { font-size: 24px; }

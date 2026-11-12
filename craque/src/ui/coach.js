@@ -734,6 +734,7 @@
     const feed0 = LDon ? '<li><i>0\'</i><span>Bola rolando</span></li>' : '<li><i>0\'</i><span>Bola rolando. ' + esc(nm(co.club)) + ' no ' + m.us.form + ', ' + esc(S.CO_STY[m.us.style].name.toLowerCase()) + '; ' + esc(nm(m.vs)) + ' no ' + m.them.form + '.' + '</span></li>';
     const speedHtml = '<div class="lv-speed" id="lv-speed">' + ['1', '3'].map(k => '<button data-sp="' + k + '"' + (k === co.speed ? ' class="on"' : '') + '>' + SPEED[k][0] + '</button>').join('') + '<button data-sp="fim" aria-label="Pular para o fim">' + ICO.ff + '</button></div>';
     if (LDon) U.LD.show(U.LD.liveHtml({ H, A, m, pitchHtml, feed0, speedHtml, crestB, pause: ICO.pause, kits: KT }));
+    if (LDon && U.discBind) U.discBind(document.getElementById('ld') || document); // disco da música, se estiver no campinho
     else render('<div class="lv">' +
       '<div class="lv-board"><div class="lv-sc"><span>' + crestB(H.id) + '<b>' + esc(H.short || H.name) + '</b><i class="lv-crd" id="lv-cd-h"></i></span>' +
         '<div class="lv-mid"><em id="lv-score">0 <i>x</i> 0</em><small id="lv-clock"><i></i>0\'</small></div><span>' + crestB(A.id) + '<b>' + esc(A.short || A.name) + '</b><i class="lv-crd" id="lv-cd-a"></i></span></div>' +
