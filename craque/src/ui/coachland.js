@@ -1272,26 +1272,48 @@
   // (S.coCupPath), antes disso "a definir"; fase depois da eliminação não aparece. { t: 'L'|'C', lab, home, vs, maybe, sc, fin, bye }
   let CUP_V = null; // aba Copas: 'nac' ou 'cont'
   let CAL_P = null; // primeira linha da página do calendário (null = perto do próximo jogo)
+  // Dia e data de cada jogo (Silvio 12/11: "todo jogo ser domingo me incomodou, busque mais realismo"): a rodada é um fim de
+  // semana (Europa começa em agosto, o resto em abril); o seu jogo cai no sábado ou no domingo, às vezes na sexta ou na
+  // segunda (segunda nunca antes de uma quarta de copa); copa nacional na quarta ou quinta, continental de terça a quinta.
+  // Só tela: presa à carreira, à temporada e à rodada (sem sorteio).
+  const DOW = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+  function calOff(co, i, t, cupWk, after) {
+    let h = 2166136261; const k = (co.seed || 0) + '|' + co.season + '|dia|' + t + '|' + i; for (let j = 0; j < k.length; j++) h = Math.imul(h ^ k.charCodeAt(j), 16777619); h = (h >>> 0) % 20;
+    if (t === 'C') return h < 12 ? 4 : 5;
+    if (t === 'K') return h < 6 ? 3 : h < 14 ? 4 : 5;
+    // depois de um jogo de copa: nunca sexta; quinta de copa empurra para domingo (ou segunda)
+    if (after) return calOff(co, i - 1, after) === 5 ? (h < 16 || cupWk ? 1 : 2) : h < 9 ? 0 : 1;
+    return h < 8 ? 0 : h < 17 || (h < 19 && cupWk) ? 1 : h < 19 ? 2 : -1;
+  }
+  function calDay(co, i, t, cupWk, after) {
+    const lg = (co.leagueOf || {})[co.club] || club(co.club).league, eu = S.confOf(lg) === 'eur';
+    const y = U.YEAR0 + co.season, d0 = new Date(Date.UTC(y, eu ? 7 : 3, 1)); d0.setUTCDate(1 + (6 - d0.getUTCDay() + 7) % 7); // 1º sábado
+    const off = calOff(co, i, t, cupWk, after);
+    const d = new Date(d0.getTime() + (i * 7 + off) * 864e5);
+    return DOW[d.getUTCDay()] + ' ' + String(d.getUTCDate()).padStart(2, '0') + '/' + String(d.getUTCMonth() + 1).padStart(2, '0');
+  }
   function calRows(co) {
     const ss = co.ss, cup = ss.cup, mi = ss.ids.indexOf(co.club), rows = [], path = cup ? S.coCupPath(co) : null, nx = cup ? S.coCupNext(co) : null;
     const ct = ss.cont, alive = ct && ct.out === null && !ct.champ && !co.sacked, cpath = ct ? S.coContPath(co) : null, cnx = ct ? S.coContNext(co) : null;
     ss.rounds.forEach((r, i) => {
       const g = r.find(([h, a]) => h === mi || a === mi), res = ss.res && ss.res[i] && ss.res[i].find(x => x[0] === mi || x[1] === mi);
-      rows.push({ t: 'L', lab: 'Rodada ' + (i + 1), bye: !g, home: g ? g[0] === mi : null, vs: g ? ss.ids[g[0] === mi ? g[1] : g[0]] : null,
+      const cupWk = (cup && cup.at.includes(i + 1)) || (ct && ct.at.includes(i + 1));
+      const after = cup && cup.at.includes(i) ? 'C' : ct && ct.at.includes(i) ? 'K' : null;
+      rows.push({ t: 'L', dt: calDay(co, i, 'L', cupWk, after), lab: 'Rodada ' + (i + 1), bye: !g, home: g ? g[0] === mi : null, vs: g ? ss.ids[g[0] === mi ? g[1] : g[0]] : null,
         sc: i < ss.i && res && res[2] != null ? (res[0] === mi ? [res[2], res[3]] : [res[3], res[2]]) : null, done: i < ss.i });
       if (cup) cup.at.forEach((at, k) => { if (at !== i + 1 || (cup.out !== null && k > cup.out) || cup.ids.indexOf(co.club) < 0) return;
         const lg = cup.log.find(l => l.k === k), pp = path && path.find(x => x.k === k), now = nx && nx.cup && nx.cup.k === k;
         if (!lg && !pp) return; // você já não joga essa fase (demitido, trocou de clube)
         const one = pp && pp.now ? pp.ids.filter(x => x !== co.club) : pp ? pp.ids : [];
-        rows.push({ t: 'C', lab: S.coCupPhaseShort(cup, k), fin: S.coCupIsFinal(cup, k), home: lg ? lg.home : now ? nx.home : null,
+        rows.push({ t: 'C', dt: calDay(co, i, 'C'), lab: S.coCupPhaseShort(cup, k), fin: S.coCupIsFinal(cup, k), home: lg ? lg.home : now ? nx.home : null,
           vs: lg ? lg.vs : one.length === 1 ? one[0] : null, maybe: !lg && one.length > 1 ? one : null,
           sc: lg ? [lg.gf, lg.ga] : null, pens: lg ? lg.pens : null, win: lg ? lg.win : null, done: !!lg }); });
       if (ct) ct.at.forEach((at, k) => { if (at !== i + 1) return; const lg = ct.log.find(l => l.k === k); if (!lg && !alive) return;
         if (k < 6) { const mg = S.coContGrpOf(ct), p = ct.grp[mg].indexOf(ct.me), md = S.CO_CONT.md[k], f = md.findIndex(pr => pr.includes(p)), home = md[f][0] === p;
-          return rows.push({ t: 'C', ic: 'cont', lab: 'Grupo ' + 'ABCDEFGH'[mg], home, vs: ct.ids[ct.grp[mg][home ? md[f][1] : md[f][0]]], sc: lg ? [lg.gf, lg.ga] : null, grp: 1, done: !!lg }); }
+          return rows.push({ t: 'C', ic: 'cont', dt: calDay(co, i, 'K'), lab: 'Grupo ' + 'ABCDEFGH'[mg], home, vs: ct.ids[ct.grp[mg][home ? md[f][1] : md[f][0]]], sc: lg ? [lg.gf, lg.ga] : null, grp: 1, done: !!lg }); }
         if (!lg && !(cpath && cpath.find(x => x.k === k))) return;
         const pp = cpath && cpath.find(x => x.k === k), now = cnx && cnx.cup && cnx.cup.k === k, one = pp && pp.now ? pp.ids.filter(x => x !== co.club) : pp ? pp.ids : [];
-        rows.push({ t: 'C', ic: 'cont', lab: S.coContPhaseShort(ct, k), fin: S.coContIsFinal(ct, k), home: lg ? lg.home : now ? cnx.home : null,
+        rows.push({ t: 'C', ic: 'cont', dt: calDay(co, i, 'K'), lab: S.coContPhaseShort(ct, k), fin: S.coContIsFinal(ct, k), home: lg ? lg.home : now ? cnx.home : null,
           vs: lg ? lg.vs : one.length === 1 ? one[0] : null, maybe: !lg && one.length > 1 ? one : null, sc: lg ? [lg.gf, lg.ga] : null, pens: lg ? lg.pens : null, win: lg ? lg.win : null, done: !!lg }); });
     });
     return rows;
@@ -1303,7 +1325,7 @@
     const row = (r, ix) => { const cur = from + ix === now, res = r.sc ? (r.t === 'C' && !r.grp ? (r.win ? 'v' : 'd') : r.sc[0] > r.sc[1] ? 'v' : r.sc[0] < r.sc[1] ? 'd' : 'e') : '';
       const opp = r.bye ? '<span class="cal-tb">folga</span>' : r.vs ? crest(r.vs, 'cal-cr') + '<span>' + nm(r.vs) + '</span>' :
         r.maybe ? '<span class="cal-mb">' + r.maybe.slice(0, 2).map(id => crest(id, 'cal-cr') + '<b>' + nm(id) + '</b>').join('<em>ou</em>') + (r.maybe.length > 2 ? '<em>+' + (r.maybe.length - 2) + '</em>' : '') + '</span>' : '<span class="cal-tb">a definir</span>';
-      return '<div class="cal-r ' + r.t + (cur ? ' cur' : '') + '"><small class="cal-d">' + (r.t === 'C' ? 'QUA' : 'DOM') + '</small><b class="cal-c">' + (r.t === 'C' ? (r.ic === 'cont' ? CONT_IC : CUP_IC) : '') + esc(r.lab) + '</b><i class="cal-h">' +
+      return '<div class="cal-r ' + r.t + (cur ? ' cur' : '') + '"><small class="cal-d">' + (r.dt || '') + '</small><b class="cal-c">' + (r.t === 'C' ? (r.ic === 'cont' ? CONT_IC : CUP_IC) : '') + esc(r.lab) + '</b><i class="cal-h">' +
         (r.fin ? 'N' : r.home === null ? '' : r.home ? 'C' : 'F') + '</i><div class="cal-o">' + opp + '</div>' +
         (r.sc ? '<b class="cal-s ' + res + '">' + r.sc[0] + ' x ' + r.sc[1] + (r.pens ? ' <small>(' + r.pens[0] + '-' + r.pens[1] + ')</small>' : '') + '</b>' : '<b class="cal-s nx">' + (cur ? 'PRÓXIMO' : '') + '</b>') + '</div>'; };
     return { from, html: '<div class="tb2-nav"><button id="ldc-prev"' + (from ? '' : ' disabled') + ' aria-label="Jogos de antes">' + MK_L + '</button><b>' + lc + ' · ' + rows.length + ' jogos</b><button id="ldc-next"' + (from < max ? '' : ' disabled') + ' aria-label="Próximos jogos">' + MK_R + '</button></div>' + rows.slice(from, from + PER).map(row).join('') };
