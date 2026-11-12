@@ -10070,3 +10070,6 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .lv-feed b.mom-ok { color: #4ADE80; } .lv-feed b.mom-no { color: #F08A5D; }
 /* Código da publicação na home (U.BUILD) */
 .hl-bd { position: absolute; left: 50%; transform: translateX(-50%); bottom: 4px; font: 600 12px/1 var(--body, sans-serif); letter-spacing: .04em; color: rgba(227,236,230,.38); pointer-events: none; z-index: 1; }
+
+/* Loja, aporte: bônus por várias semanas de uma vez (2026-11-12) */
+.lj-v small em.lj-bn { font-style: normal; color: #7BE3A0; font-weight: 700; }

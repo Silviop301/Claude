@@ -250,7 +250,7 @@
     G.c = null; bar();
     tab = tab || 'tmp';
     const f = S.coFin(co), ss = co.ss, folha = S.coFolha(co), wk = S.coFinSemanas(co), x = f.ss;
-    const pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
+    const teto = S.coFinTeto ? S.coFinTeto(co) : f.teto, pct = Math.min(100, Math.round(100 * folha / Math.max(1, teto)));
     const row = (t, v, max, neg) => '<div class="cf-li"><span>' + t + '</span><i class="cf-mini"><em class="' + (neg ? 'o' : '') + '" style="width:' + Math.round(100 * Math.min(1, v / Math.max(1, max))) + '%"></em></i><b class="' + (neg ? 'dn' : 'up') + '">' + (v ? (neg ? '− ' : '+ ') + mi(v) : '0') + '</b></div>';
     const homes = ss ? ss.log.filter(l => l.home).length : 0;
     const big = Math.max(x.bil, x.tv, x.pat, x.sal, x.comp, x.prem, x.vend, 1);
@@ -268,7 +268,7 @@
       '<div class="cf-card"><div><small class="cf-k">Caixa do clube</small><div class="cf-big' + (f.caixa < 0 ? ' dn' : '') + '">' + brl(f.caixa) + '</div><p class="cf-sm">' +
         (f.caixa < 0 ? 'No vermelho: a cada rodada assim, a diretoria perde a paciência.' : 'Paga ' + D.plural(wk, 'semana', 'semanas') + ' de salário mesmo sem entrar nada.') + '</p></div>' +
         '<div class="cf-two"><div class="cf-tile"><small class="cf-k">Verba para contratar</small><b class="g">' + mi(f.verba) + '</b><small class="cf-sm">para comprar no mercado</small></div>' +
-        '<div class="cf-tile"><small class="cf-k">Folha por semana</small><b>' + mi(folha) + ' <span>de ' + mi(f.teto) + '</span></b><i class="cf-track"><em style="width:' + pct + '%"></em></i></div></div></div>' +
+        '<div class="cf-tile"><small class="cf-k">Folha por semana</small><b>' + mi(folha) + ' <span>de ' + mi(teto) + '</span></b><i class="cf-track"><em style="width:' + pct + '%"></em></i></div></div></div>' +
       '<div class="cad-tabs cf-tabs"><button data-ft="tmp">Temporada</button><button data-ft="seg">A seguir</button><button data-ft="sal">Salários</button></div>' +
       '<div class="cf-panel">' + panes[tab] + '</div>' +
       '<p class="cf-pres"><b>Presidente</b> ' + pr[0] + '</p>' +

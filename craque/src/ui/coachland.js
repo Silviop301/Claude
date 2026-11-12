@@ -1614,7 +1614,7 @@
   }
   function mercadoRes(pg, sel) {
     if (WROOM) return mercadoW(pg, sel);
-    const c = C(), co = c.co, m = S.coMkt(co), F = S.coMktFilters(co), f = S.coFin(co), folha = S.coFolha(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
+    const c = C(), co = c.co, m = S.coMkt(co), F = S.coMktFilters(co), f = S.coFin(co), folha = S.coFolha(co), teto = S.coFinTeto(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, teto)));
     const ords = S.CO_MKT.ords, ord = Math.min(m.ord || 0, ords.length - 1);
     const list = S.coMktSort(co, S.coMktSearch(co)), pages = Math.max(1, Math.ceil(list.length / 4));
     pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * 4, pg * 4 + 4); sel = Math.min(sel || 0, R.length - 1);
@@ -1878,7 +1878,7 @@
     const md = S.coMktMood(co, p, t), fo = S.coMktFolha(co, p, t), over = fo.pct > 100;
     const cls = ['', 'dn', 'dn', 'mid', 'up'][md.lvl];
     // O caixa com este salário (Silvio, 12/11: "me fudi com os salários"): o teto deixa, mas a receita da rodada pode não pagar
-    const rt = S.coFinRitmo(co), fnc = S.coFin(co), nt2 = rt ? rt.net - (t.w - (own ? p.wage : 0)) : 0, lf2 = rt && nt2 < 0 && fnc.caixa > 0 ? Math.floor(fnc.caixa / -nt2) : null;
+    const rt = S.coFinRitmo(co), fnc = S.coFin(co), nt2 = rt ? rt.net - (t.w - (own ? p.wage : 0)) + (own ? 0 : S.coFinStarV(co, co.squad.concat([p])) - S.coFinStarV(co)) : 0, lf2 = rt && nt2 < 0 && fnc.caixa > 0 ? Math.floor(fnc.caixa / -nt2) : null;
     const cxw = !rt || nt2 >= 0 ? '' : fnc.caixa <= 0 ? '<em class="mkc-cx dn">Caixa no vermelho: piora R$ ' + c.mi(-nt2) + ' por rodada</em>' :
       lf2 < rt.rest ? '<em class="mkc-cx dn">Com ele o caixa zera em ' + lf2 + (lf2 === 1 ? ' rodada' : ' rodadas') + '</em>' : '<em class="mkc-cx">O caixa aguenta até o fim do ano</em>';
     const yr = U.YEAR0 + co.season + t.y + (own ? 1 : 0), need = p.club || w.open; // renovação: os anos contam depois desta temporada
@@ -2111,7 +2111,7 @@
   // no positivo ou se o saldo vai zerar em semanas"): `fin.rd` e `S.coFinRitmo` em coachfin.js. O cartão Caixa diz quantas
   // rodadas o caixa aguenta no ritmo atual (verde sobra ou chega ao fim da temporada, laranja mais de 4, vermelho 4 ou menos)
   let FIN_BACK = null;
-  const RD_NM = { bil: 'Ingressos', bar: 'Bares e lojas', tv: 'Cota de TV', pat: 'Patrocínio', prem: 'Prêmios', vend: 'Vendas', apo: 'Aporte do investidor', out: 'Outros', sal: 'Salários', comp: 'Contratações e parcelas', jur: 'Juros do banco', obra: 'Obras do estádio' };
+  const RD_NM = { bil: 'Ingressos', bar: 'Bares e lojas', tv: 'Cota de TV', pat: 'Patrocínio', cra: 'Camisas e marca', prem: 'Prêmios', vend: 'Vendas', apo: 'Aporte do investidor', out: 'Outros', sal: 'Salários', comp: 'Contratações e parcelas', jur: 'Juros do banco', obra: 'Obras do estádio' };
   // Ritmo com seta (11/11, Silvio: "não está clara a trajetória, se está diminuindo ou crescendo"): a rodada comum daqui para a frente
   const ritmoTxt = (c, R) => !R ? '' : R.net >= 0 ? '▲ + ' + c.mi(R.net) + ' por rodada' : '▼ − ' + c.mi(-R.net) + ' por rodada';
   // Cartão da trajetória: quanto o caixa mudou na temporada, a linha rodada a rodada (tracejado = até o fim do ano no ritmo
@@ -2137,7 +2137,7 @@
     return '<div class="fn2-st fn2-tr"><small>' + lbl + stp + '</small>' + big + dot + em + '</div>';
   }
   function financas(tab) {
-    const c = C(), co = c.co, f = S.coFin(co), folha = S.coFolha(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
+    const c = C(), co = c.co, f = S.coFin(co), folha = S.coFolha(co), teto = S.coFinTeto(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, teto)));
     const step = S.coFinStep(co), P = S.coPres(co), pt = f.pat, rd = f.rd && f.rd.s === co.season ? f.rd : null, R = S.coFinRitmo(co), WD = WROOM;
     tab = ['rod', 'tmp', 'seg', 'sal'].indexOf(tab) >= 0 && !(WD && tab === 'rod') ? tab : rd && !WD ? 'rod' : 'tmp'; FIN_TAB = tab;
     const li = (t, v, cls) => '<div class="fn2-li"><span>' + t + '</span><b class="' + (cls || '') + '">' + v + '</b></div>';
@@ -2168,7 +2168,7 @@
     const head = '<div class="tm-h"><button class="tcr-back" id="ldf-back" aria-label="Voltar">' + BK + '</button><b>Finanças</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (U.YEAR0 + co.season) + '</small></div>';
     const kpi = '<div><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span class="fn2-rt ' + (f.caixa < 0 ? 'red' : !R ? '' : R.net >= 0 ? 'up' : R.st === 'red' ? 'red' : 'warn') + '" title="rodada comum daqui para a frente">' + (f.caixa < 0 ? 'no vermelho' : ritmoTxt(c, R)) + '</span></div>' +
         '<div><small>VERBA</small><b class="up">' + c.brl(f.verba) + '</b><span>para contratar</span></div>' +
-        '<div><small>FOLHA</small><b>' + c.brl(folha) + '</b><i><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i><span>teto ' + c.brl(f.teto) + '</span></div>';
+        '<div><small>FOLHA</small><b>' + c.brl(folha) + '</b><i><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i><span>teto ' + c.brl(teto) + '</span></div>';
     const tabs = '<div class="fn2-tabs">' + [['rod', 'Rodada'], ['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].filter(x => !WD || x[0] !== 'rod').map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>';
     const ac = '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><' + (pt ? 'button data-fd="pat"' : 'div') + '><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></' + (pt ? 'button' : 'div') + '></div>';
     const bt = '<div class="fn2-bt">' + (U.COINS ? '<button class="tm-b fn2-apo" data-fd="apo" id="fn2-apo">' + U.COINS.svg + 'Aporte</button>' : '') + '<button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div>';
@@ -2607,8 +2607,11 @@
         // P = antes e depois (sem aporte sobrando, nada muda). No vermelho o aporte cobre o caixa primeiro: a tela mostra o caixa também
         const P = S.coAportePrev(co, left ? wk : 0), red = P.red, cost = wk * S.CO_APORTE.coin, v = S.coAporteValue(co, wk), ok = left > 0 && saldo >= cost;
         const cell = (t, a, cls) => '<span><small>' + t + '</small><b>' + c.brl(a[0]) + ' → ' + (cls && a[1] !== a[0] ? '<i class="' + cls + '">' + c.brl(a[1]) + '</i>' : c.brl(a[1])) + '</b></span>';
+        // bônus por aportar várias semanas de uma vez (Silvio, 12/11): mostra o que vale agora ou o próximo degrau que ainda cabe
+        const bn = S.coAporteBonus(wk), nxb = S.CO_APORTE.bonus.slice().reverse().find(x => x[0] > wk && x[0] <= left);
+        const bnTxt = !left ? '' : bn ? ' · <em class="lj-bn">bônus +' + Math.round(bn * 100) + '%</em>' : nxb ? ' · ' + nxb[0] + ' de uma vez: +' + Math.round(nxb[1] * 100) + '%' : '';
         main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (red ? 'cobre o caixa primeiro' : 'vai para a verba') + '</small></span><img class="lj-ai" src="' + CO_ART + 'mo-aporte.webp" alt=""></div>' +
-          '<div class="lj-v"><button id="lj-m" aria-label="Menos"' + (wk <= 1 ? ' disabled' : '') + '>' + BK + '</button><span><b>+ ' + c.brl(v) + '</b><small>' + U.D.plural(wk, 'aporte', 'aportes') + ' · ' + (used + (left ? wk : 0)) + ' de ' + S.CO_APORTE.max + ' na temporada</small></span><button id="lj-p" aria-label="Mais"' + (wk >= left ? ' disabled' : '') + '>' + FW + '</button></div>' +
+          '<div class="lj-v"><button id="lj-m" aria-label="Menos"' + (wk <= 1 ? ' disabled' : '') + '>' + BK + '</button><span><b>+ ' + c.brl(v) + '</b><small>' + U.D.plural(wk, 'aporte', 'aportes') + ' · ' + (used + (left ? wk : 0)) + ' de ' + S.CO_APORTE.max + ' na temporada' + bnTxt + '</small></span><button id="lj-p" aria-label="Mais"' + (wk >= left ? ' disabled' : '') + '>' + FW + '</button></div>' +
           '<div class="lj-two' + (red ? ' t3' : '') + '">' + (red ? cell('Caixa', P.caixa, P.caixa[1] >= 0 ? 'up' : 'dn') : '') + cell('Verba', P.verba) + cell(red ? 'Teto por semana' : 'Teto de salários por semana', P.teto) + '</div></div>';
         side = '<div class="lj-box lj-cost"><small class="ld-lbl">CUSTA</small><span>' + U.COINS.svg + '<b>' + cost + '</b></span><small>' + (saldo >= cost ? 'sobram ' + (saldo - cost) + ' moedas' : 'faltam ' + (cost - saldo) + ' moedas') + '</small></div>' +
           '<button class="tm-go' + (ok ? '' : ' off') + '" id="lj-ap"' + (ok ? '' : ' disabled') + '>' + (!left ? 'Limite da temporada' : 'Fazer aporte') + '</button>';

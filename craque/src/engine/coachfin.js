@@ -16,6 +16,7 @@
 
   // Números (calibrados com tools/craque_treinador.js)
   const F = S.CO_FIN = {
+    cra: { k: 0.1 },   // time melhor traz mais receita: +10% por ponto do 11 mais forte acima do normal do clube (S.coFinStar)
     marg: 1.03,     // a folha de um elenco normal do clube é 103% da receita prevista
     tv: 0.4, bil: 0.35,             // partes da receita (o patrocínio vem da proposta escolhida)
     titulo: 0.12, acesso: 0.08,     // prêmios
@@ -83,6 +84,23 @@
   S.coFinLg = lgMult;
   const baseOf = co => normal(co.club, co.season, co) * lgMult(co.club);
   S.coFinBase = baseOf;
+  // Time melhor traz mais receita (Silvio, 2026-11-12: "quero ter mais problemas com verba pra contratar e fazer as melhorias do
+  // que com salários altos"; um time 98 tem de ser possível). Cada ponto do 11 mais forte do elenco acima do 11 normal do clube
+  // soma F.cra.k (10%) na receita da rodada ("Camisas e marca", dentro do patrocínio: ss.cra) e no teto da folha. Só soma:
+  // time abaixo do normal não perde nada, e o robô (que não compra) fica igual. CO_CRAK=0 desliga.
+  const top11 = sq => { const o = sq.map(p => p.ovr).sort((a, b) => b - a).slice(0, 11); return o.length ? o.reduce((a, b) => a + b, 0) / o.length : 0; };
+  const n11 = {};
+  const norm11 = co => { const k = co.club + ':' + co.season + ':' + (co.rf || 0) + ':' + (co.lv || 0); if (n11[k] === undefined) n11[k] = top11(S.coGenSquad(co.club, co.season, { rf: co.rf, lv: co.lv, season: co.season })); return n11[k]; };
+  S.coFinStar = function (co, squad) {
+    const k = +((typeof process !== 'undefined' && process.env && process.env.CO_CRAK !== undefined) ? process.env.CO_CRAK : F.cra.k);
+    if (!k || !co || !co.club) return 0;
+    const d = top11(squad || co.squad || []) - norm11(co); return d > 0.05 ? Math.pow(1 + k, d) - 1 : 0;
+  };
+  S.coFinStarPts = (co, squad) => Math.max(0, top11(squad || co.squad || []) - norm11(co));
+  // por rodada: a receita prevista do ano dividida pelas rodadas, vezes o que o time soma
+  S.coFinStarV = (co, squad) => { const f = co.fin, n = rounds(co); return f ? r10((f.rec || recOf(co, n)) / n * S.coFinStar(co, squad)) : 0; };
+  // Teto da folha de hoje: o do clube (f.teto) mais o que o time titular soma. `squad` = elenco hipotético (contrato na mesa)
+  S.coFinTeto = (co, squad) => { const f = S.coFin(co); return f ? f.teto + r5(baseOf(co) * F.teto * S.coFinStar(co, squad)) : 0; };
   S.coFolha = co => (co.squad || []).reduce((a, p) => a + (p.wage || 0), 0);
   const rounds = co => (co.ss ? co.ss.rounds.length : 38);
   const zero = () => ({ bil: 0, tv: 0, pat: 0, prem: 0, vend: 0, sal: 0, comp: 0, jur: 0 });
@@ -199,14 +217,16 @@
   // 12 moedas = 1 semana da folha (Silvio 2026-11-10: 20 estava caro). Desde 2026-11-11 (Silvio: reconstruir o clube pequeno,
   // "120 pra 600 mil é pouco") cada aporte vale no mínimo `piso` e sobe o teto da folha em `tk` do valor por semana (R$ 25 mil
   // por milhão = o dinheiro paga esse salário por uma temporada); o teto do aporte (`f.tap`) vale enquanto ficar no clube.
-  S.CO_APORTE = { coin: 12, max: 10, piso: 500000, tk: 0.025 };
+  // bonus (Silvio, 12/11: "um bônus por aporte de mais semanas de uma vez, algo baixo"): [semanas de uma vez, parte a mais no valor]
+  S.CO_APORTE = { coin: 12, max: 10, piso: 500000, tk: 0.025, bonus: [[10, 0.15], [5, 0.1], [3, 0.05]] };
+  S.coAporteBonus = wk => { const b = S.CO_APORTE.bonus.find(x => wk >= x[0]); return b ? b[1] : 0; };
   S.coAporteUsed = co => { const f = S.coFin(co); return f && f.ap && f.ap.s === co.season ? f.ap.wk : 0; };
   // Com o caixa no vermelho o aporte também vale (Silvio 2026-11-11: "não entendi o bloqueio de aporte"; era bloqueado e a tela
   // não dizia por quê): o dinheiro cobre o buraco primeiro e só o que sobra vira verba para contratar. S.coAportePrev = antes e depois
   S.coAporteLeft = co => { const f = S.coFin(co); return !f ? 0 : Math.max(0, S.CO_APORTE.max - S.coAporteUsed(co)); };
   S.coAportePrev = (co, wk) => { const f = S.coFin(co), v = S.coAporteValue(co, wk), vb = Math.max(0, v - Math.max(0, -f.caixa)), t = S.coAporteTeto(v);
     return { v, red: f.caixa < 0, caixa: [f.caixa, f.caixa + v], verba: [f.verba, f.verba + vb], teto: [f.teto, f.teto + t] }; };
-  S.coAporteValue = (co, wk) => r10(Math.max(baseOf(co), S.CO_APORTE.piso) * wk);
+  S.coAporteValue = (co, wk) => r10(Math.max(baseOf(co), S.CO_APORTE.piso) * wk * (1 + S.coAporteBonus(wk)));
   S.coAporteTeto = v => r5(v * S.CO_APORTE.tk);
   S.coAporte = function (co, wk) {
     wk = Math.round(wk); if (!(wk > 0) || wk > S.coAporteLeft(co)) return 0;
@@ -260,6 +280,7 @@
     const ss0 = Object.assign({}, fin.ss), cx0 = fin.caixa;
     sub('sal', S.coFolha(co) + S.coAuxWage(co) + (S.coDmWage ? S.coDmWage(co) : 0)); // a folha e o salário da auxiliar (a Licença C não cobra)
     add('pat', patOf(co).fix / n);
+    { const cr = S.coFinStarV(co); if (cr > 0) { add('pat', cr); fin.ss.cra = (fin.ss.cra || 0) + cr; } }
     if (ri === 0 || ri === Math.floor(n / 2)) add('tv', fin.rec * F.tv / 2 * (S.coEstTv ? S.coEstTv(co) : 1));
     let g = 0;
     if (home && vs) { g = gate(co, vs); add('bil', g); if (S.coEstBar) fin.ss.bar = (fin.ss.bar || 0) + S.coEstBar(co, vs, gate0(co, vs), g); }
@@ -282,7 +303,7 @@
   const RD_IN = ['bil', 'tv', 'pat', 'prem', 'vend', 'apo'], RD_OUT = ['sal', 'comp', 'jur', 'obra'];
   function roundLog(co, ri, snap, h) { // h: 1 em casa, 0 fora, -1 sem jogo
     const fin = co.fin, d = k => Math.round((fin.ss[k] || 0) - ((snap.ss && snap.ss[k]) || 0));
-    const bar = d('bar'), inn = RD_IN.map(k => [k, d(k) - (k === 'bil' ? bar : 0)]).concat([['bar', bar]]).filter(x => x[1] > 0), out = RD_OUT.map(k => [k, d(k)]).filter(x => x[1] > 0);
+    const bar = d('bar'), cra = d('cra'), inn = RD_IN.map(k => [k, d(k) - (k === 'bil' ? bar : k === 'pat' ? cra : 0)]).concat([['bar', bar], ['cra', cra]]).filter(x => x[1] > 0), out = RD_OUT.map(k => [k, d(k)]).filter(x => x[1] > 0);
     const dc = Math.round(fin.caixa - snap.cx), rest = dc - inn.reduce((a, x) => a + x[1], 0) + out.reduce((a, x) => a + x[1], 0);
     if (rest > 0) inn.push(['out', rest]); else if (rest < 0) out.push(['out', -rest]);
     fin.rd = { s: co.season, r: ri + 1, inn, out, cx: fin.caixa, dc, h };
@@ -312,7 +333,7 @@
     const x = fin.s === co.season && fin.ss ? fin.ss : zero(), nx = S.coNext(co);
     const bil = i ? x.bil / i : (nx && !nx.bye && nx.home ? gate(co, nx.vs) / 2 : 0);
     const tv = (i <= half ? fin.rec * F.tv / 2 * (S.coEstTv ? S.coEstTv(co) : 1) : 0) / rest;
-    const inn = patOf(co).fix / n + bil + tv + (fin.recv || []).reduce((a, y) => a + y.v, 0) / F.mes;
+    const inn = patOf(co).fix / n + S.coFinStarV(co) + bil + tv + (fin.recv || []).reduce((a, y) => a + y.v, 0) / F.mes;
     const out = S.coFolha(co) + S.coAuxWage(co) + (S.coDmWage ? S.coDmWage(co) : 0) + (fin.loan ? fin.loan.parc / F.mes : 0) + (fin.inst || []).reduce((a, y) => a + y.v, 0) / F.mes;
     const net = Math.round(inn - out);
     if (fin.caixa < 0) return { net, left: 0, rest: n - i, st: 'red', inn: Math.round(inn), out: Math.round(out) };
