@@ -951,6 +951,9 @@
   };
   // Moral em 5 tracinhos e uma palavra (as mesmas faixas da ficha do Elenco)
   S.coMoTxt = p => { const mo = moOf(p); return { n: Math.max(1, Math.min(5, Math.ceil(mo / 20))), t: mo >= 70 ? 'alta' : mo >= 45 ? 'boa' : 'baixa', low: mo < 45 }; };
+  // Moral em 5 níveis para a seta da tela (estilo PES): 60 (o normal, para onde a moral volta) é a seta reta
+  S.CO_MO_LV = { 5: 'ótima', 4: 'boa', 3: 'normal', 2: 'baixa', 1: 'péssima' };
+  S.coMoLv = p => { const mo = moOf(p); return mo >= 78 ? 5 : mo >= 66 ? 4 : mo >= 50 ? 3 : mo >= 36 ? 2 : 1; };
   S.coTalk1 = function (co, id, k) {
     const p = co.squad.find(x => x.id === id), t = S.CO_TALK1[k]; if (!p || !t) return false;
     p.mo = clamp(moOf(p) + t.mo, 0, 100); p.talked = co.ss ? co.ss.i : 0; p.talkS = co.season;

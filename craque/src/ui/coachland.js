@@ -198,7 +198,7 @@
   // Quem joga bem numa vaga: da posição, ou que sabe jogar ali (goleiro só no gol)
   const fitsSlot = (p, slot) => p.pos === slot || ((p.pos === 'GOL') === (slot === 'GOL') && S.coFit(p.pos, slot) >= 0.88);
   // Reserva no banco: anel de energia com o geral, nome e a posição na cor do setor; o primeiro de cada setor abre espaço
-  const benchChip = (p, prev, cls, ok, num, ov) => '<button class="tm-bp' + cls + (prev && lnOf(prev.pos) !== lnOf(p.pos) ? ' g0' : '') + '" data-bp="' + p.id + '"' + (ok ? '' : ' disabled') + '><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + (ov != null ? ov : p.ovr) + '</b><span><i>' + (num && p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + p.pos + '</small></span></button>';
+  const benchChip = (p, prev, cls, ok, num, ov) => '<button class="tm-bp' + cls + (prev && lnOf(prev.pos) !== lnOf(p.pos) ? ' g0' : '') + '" data-bp="' + p.id + '"' + (ok ? '' : ' disabled') + '><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + (ov != null ? ov : p.ovr) + moAr(p, 'mo-bn') + '</b><span><i>' + (num && p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + p.pos + '</small></span></button>';
   // Com um titular escolhido o banco rola até o primeiro reserva que joga na vaga (o banco não cabe inteiro na tela)
   const benchShow = root => { const bn = root.querySelector('.tm-bench'), f = bn && bn.querySelector('.tm-bp.can, .tm-bp.lo'), lb = bn && bn.querySelector('small');
     if (f) bn.scrollLeft = Math.max(0, f.offsetLeft - (lb ? lb.offsetWidth : 0) - 8); };
@@ -265,13 +265,16 @@
       b.addEventListener('click', e => { if (dragged) { dragged = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
     });
   }
+  // Seta de moral no estilo PES (Silvio, 12/11): 5 níveis com cor e direção, no campo, no banco e no Elenco (`S.coMoLv`)
+  const MO_ROT = { 5: -90, 4: -45, 3: 0, 2: 45, 1: 90 };
+  const moAr = (p, cls) => { const l = S.coMoLv(p); return '<i class="mo-ar l' + l + (cls ? ' ' + cls : '') + '" title="Moral ' + S.CO_MO_LV[l] + '"><svg viewBox="0 0 24 24" aria-hidden="true" style="transform:rotate(' + MO_ROT[l] + 'deg)"><path d="M5 12h13M13 6l6 6-6 6"/></svg></i>'; };
   function dot(p, slot, x, y, o) {
     o = o || {};
     const fitC = !slot || p.pos === slot ? 'ok' : (S.coFit(p.pos, slot) >= 0.88 ? 'sabe' : 'fora');
     const yc = (o.yc !== undefined ? o.yc : C().pend(p)) ? '<i class="ld-yc" title="' + (o.yc !== undefined ? 'Amarelado' : 'Pendurado') + '"></i>' : '';
     return '<button class="ld-dot ' + enRing(p.en) + (o.sel ? ' sel' : '') + (fitC === 'fora' ? ' fora' : '') + '"' + (o.attr || '') + ' data-ln="' + lnOf(slot || p.pos) + '" style="left:' + x + '%;top:' + y + '%;--en:' + Math.round(p.en) + '"' +
       ' aria-label="' + esc(p.n) + ', ' + (slot || p.pos) + ', ' + p.ovr + ', energia ' + Math.round(p.en) + '%">' +
-      '<i class="ld-dc">' + (o.num ? (p.num || p.ovr) : p.ovr) + yc + '</i><span class="ld-dn"><b>' + (!o.num && p.num ? '<s class="ld-nu">' + p.num + '</s>' : '') + esc(last(p.n)) + '</b><em class="' + fitC + '">' + (o.tag || slot || p.pos) + '</em></span></button>';
+      '<i class="ld-dc">' + (o.num ? (p.num || p.ovr) : p.ovr) + yc + '</i>' + moAr(p) + '<span class="ld-dn"><b>' + (!o.num && p.num ? '<s class="ld-nu">' + p.num + '</s>' : '') + esc(last(p.n)) + '</b><em class="' + fitC + '">' + (o.tag || slot || p.pos) + '</em></span></button>';
   }
   function rivalDot(x, y, nm, tag) {
     return '<span class="ld-dot riv" style="left:' + x + '%;top:' + y + '%"><i class="ld-dc">?</i><span class="ld-dn"><b>' + esc(nm) + '</b>' + (tag ? '<em class="riv">' + tag + '</em>' : '') + '</span></span>';
@@ -2508,7 +2511,7 @@
     const ovD = p => { const d = S.coOvrDelta(co, p); return d ? '<sup class="' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '+' : '−') + Math.abs(d) + '</sup>' : ''; }; // +1 / −2: o geral contra o fim da temporada passada
     const rows = L.map(p => { const t = tag(p);
       return '<button class="lde2-r' + (q && p.id === q.id ? ' on' : '') + (c.avail(p) ? '' : ' out') + '" data-id="' + p.id + '"><i>' + (p.num || '') + '</i><span><b>' + esc(p.n) + '</b><small>' + p.pos + '</small>' + (t ? '<em class="' + t[0] + '">' + t[1] + '</em>' : '') + '</span>' +
-        '<span class="a">' + p.age + '</span><span class="o">' + p.ovr + ovD(p) + '</span>' + (O[4] ? '<span class="ct x">' + O[4](p, c) + '</span>' : '<span class="ct' + (p.ct <= 1 ? ' dn' : '') + '">' + ctT(p.ct) + '</span>') + '</button>'; }).join('');
+        '<span class="a">' + p.age + '</span><span class="o">' + p.ovr + moAr(p, 'mo-in') + ovD(p) + '</span>' + (O[4] ? '<span class="ct x">' + O[4](p, c) + '</span>' : '<span class="ct' + (p.ct <= 1 ? ' dn' : '') + '">' + ctT(p.ct) + '</span>') + '</button>'; }).join('');
     let card = '';
     if (q) {
       const mo = q.mo === undefined ? 60 : q.mo, moT = mo >= 70 ? 'alta' : mo >= 45 ? 'boa' : 'baixa';
