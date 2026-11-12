@@ -1271,11 +1271,17 @@
     // Saída de bola: cada time no seu campo
     const kicker = s => at(s, 9), kick2 = s => at(s, s ? 10 : 7);
     // Troca (fase de trocas, 2026-11-07): subQ { s, items: [{ p, f, oldNum, newNum }], ph: wait → sai → entra }
-    let subQ = null;
-    function subApply(quiet) { // quem entra assume a vaga; quiet: no intervalo (vem do túnel), sem placa
-      subQ.items.forEach(it => { reform(it.p, it.f); });
+    // subQ2: o outro time também trocou na mesma parada (Silvio 2026-11-12: "aparece um monte de número... separa pra cada
+    // time trocar por vez"): espera a vez e entra logo depois, com a placa só dele
+    let subQ = null, subQ2 = null;
+    function subBench() { // os reservas de cada time esperando na lateral, cada um do seu lado do meio
       for (let i = leaving.length - 1; i >= 0; i--) if (leaving[i].bench) leaving.splice(i, 1);
-      if (quiet) subQ = null;
+      [subQ && subQ.ph === 'wait' ? subQ : null, subQ2].forEach(q => { if (q) q.items.forEach((it, i) => leaving.push({ p: { x: 52.5 + (q.s ? 1 : -1) * (3 + i * 1.8), y: WD + 1.1, side: q.s, r: it.f[0] }, num: it.newNum, sub: true, bench: true, wait: 0, t: 0 })); });
+    }
+    function subApply(quiet) { // quem entra assume a vaga; quiet: no intervalo (vem do túnel), sem placa
+      subQ.items.forEach(it => { reform(it.p, it.f); }); if (subQ2) subQ2.items.forEach(it => { reform(it.p, it.f); });
+      for (let i = leaving.length - 1; i >= 0; i--) if (leaving[i].bench) leaving.splice(i, 1);
+      if (quiet) subQ = subQ2 = null;
     }
     function subStart() {
       subQ.ph = 'sai'; subQ.t = 0; subQ.save = { mode, modeT }; mode = 'troca';
@@ -1286,8 +1292,8 @@
         leaving.push({ p: { x: p.x, y: p.y, side: p.side, r: p.r }, num: it.oldNum, sub: true, run: true, wait: 0, t: 0, tx: c[0], ty: c[1] });
         it.hx = p.x; it.hy = p.y; out.push(it.oldNum); inn.push(it.newNum);
         reform(p, it.f); p.x = 52.5 + (s ? 1 : -1) * (3 + i * 1.8); p.y = WD + 1.1; p.vx = p.vy = 0; p.tx = p.x; p.ty = p.y; p.outT = 99; p.outE = 3; p.subW = 1; });
-      for (let i = leaving.length - 1; i >= 0; i--) if (leaving[i].bench) leaving.splice(i, 1);
-      Q4.b = { out, in: inn }; Q4.t = 99;
+      subBench();
+      Q4.b = { out, in: inn, s }; Q4.t = 99;
     }
     function subStep(dt) {
       subQ.t += dt; const items = subQ.items;
@@ -1297,7 +1303,7 @@
       else { items.forEach(it => { it.p.tx = it.hx; it.p.ty = it.hy; it.p.sprint = 1; });
         // pela regra o jogo recomeça assim que quem entra pisa no campo (pelo meio); ele termina de chegar com a bola rolando
         if (items.every(it => it.p.y < WD - 3) || subQ.t > 3) {
-          items.forEach(it => { it.p.subW = 0; }); mode = subQ.save.mode; modeT = subQ.save.modeT; Q4.t = 1.2; subQ = null; } }
+          items.forEach(it => { it.p.subW = 0; }); mode = subQ.save.mode; modeT = subQ.save.modeT; Q4.t = 1.2; subQ = subQ2; subQ2 = null; if (subQ) { subQ.t = 0; subStart(); } } }
     }
     // Túnel (Silvio, 2026-11-07): no meio da lateral de baixo; no intervalo os times saem por ele e no 2º tempo voltam por ele, em fila
     function tunnel(p) { const i = T[p.side].indexOf(p); return [52.5 + (p.side ? 1.6 : -1.6), WD + 2 + Math.max(0, i) * 1.7]; }
@@ -1905,12 +1911,14 @@
       if (!(Q4.t > 0) || !Q4.b) return;
       const b = Q4.b, parts = b.add ? [['+' + b.add, '#FFE14D']] : [[(b.out || []).join(' '), '#FF5C5C'], ['⇄', '#8A8A8A'], [(b.in || []).join(' '), '#5CFF8A']];
       g.font = '800 ' + Math.round(15 * k) + 'px "Barlow Condensed", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'left';
-      const ws = parts.map(q => g.measureText(q[0]).width), gap = 5 * k, w = ws.reduce((a, c) => a + c, 0) + gap * (parts.length - 1) + 12 * k, h = 20 * k;
+      const sw = b.s != null ? 13 * k : 0; // a cor da camisa de quem troca, antes dos números
+      const ws = parts.map(q => g.measureText(q[0]).width), gap = 5 * k, w = ws.reduce((a, c) => a + c, 0) + gap * (parts.length - 1) + 12 * k + sw, h = 20 * k;
       const bx = cl(x - w / 2, 2, W - w - 2), by = y - 13 * k - h - (o.boardUp || 0); // boardUp: a tela tem algo por cima da lateral de baixo (deitado: a narração)
       g.strokeStyle = '#9A9A9A'; g.lineWidth = 1.6 * k; g.beginPath(); g.moveTo(x + 3 * k, y - 4 * k); g.lineTo(x + 3 * k, by + h); g.stroke();
       g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(bx + 1.5, by + 2.5, w, h);
       g.fillStyle = '#111'; g.strokeStyle = '#3A3A3A'; g.lineWidth = 1.5 * k; g.beginPath(); g.roundRect(bx, by, w, h, 4 * k); g.fill(); g.stroke();
-      let cx = bx + 6 * k; parts.forEach((q, i) => { g.shadowColor = q[1]; g.shadowBlur = 6 * k; g.fillStyle = q[1]; g.fillText(q[0], cx, by + h / 2 + 0.5); cx += ws[i] + gap; }); g.shadowBlur = 0;
+      if (sw) { const kt = b.s ? KT.opp : KT.mine; g.fillStyle = kt[0]; g.strokeStyle = '#DDD'; g.lineWidth = 1 * k; g.beginPath(); g.roundRect(bx + 5 * k, by + 5 * k, 9 * k, h - 10 * k, 2 * k); g.fill(); g.stroke(); }
+      let cx = bx + 6 * k + sw; parts.forEach((q, i) => { g.shadowColor = q[1]; g.shadowBlur = 6 * k; g.fillStyle = q[1]; g.fillText(q[0], cx, by + h / 2 + 0.5); cx += ws[i] + gap; }); g.shadowBlur = 0;
     }
     function drawRefs(k) {
       AR.forEach(a => { const up = !a.sig && a.flag > 0; if (up) { g.strokeStyle = 'rgba(216,64,74,.85)'; g.lineWidth = 2.5 * k; g.beginPath(); g.arc(X(a.x), Y(a.y), 10 * k, 0, Math.PI * 2); g.stroke(); } official(X(a.x), Y(a.y), k, a.sig || (up ? 'up' : 'down'), (a.dir || 1) * (mir() ? -1 : 1), a.top ? 1 : -1); });
@@ -1997,6 +2005,11 @@
       if (ME >= 0) dot(T[0][ME], k);
       if (post) { const u = 1 - post.t / 0.5; g.strokeStyle = 'rgba(255,225,77,' + (1 - u).toFixed(2) + ')'; g.lineWidth = 2.5 * k0; g.beginPath(); g.arc(X(post.x), Y(post.y), (4 + u * 14) * k0, 0, Math.PI * 2); g.stroke(); } // a trave treme
       drawRefs(k); drawQ4(k0);
+      // Quem está com a bola leva o sobrenome embaixo (Silvio 2026-11-12: "nem sei quem é o 25"); só do seu time (inf.nm)
+      if (mode === 'play' && ball.owner && ball.owner.inf && ball.owner.inf.nm && !(tip && tip.p === ball.owner)) { const p = ball.owner, x = X(p.x), y = Y(p.y) + 9.6 * k + 9 * k0;
+        g.font = '700 ' + Math.round(11.5 * k0) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+        const t = p.inf.nm, w = g.measureText(t).width / 2, tx = cl(x, w + 3, W - w - 3), ty = Math.min(y, H - 8 * k0);
+        g.lineWidth = 3 * k0; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText(t, tx, ty); g.fillStyle = '#FFFFFF'; g.fillText(t, tx, ty); }
       if (playTag && !o.clean && mode === 'play') { const p = playTag.p, x = X(p.x), y = Y(p.y) - 14 * k0, al = Math.min(1, playTag.t * 3, (1.8 - playTag.t) * 6);
         g.globalAlpha = Math.max(0, al); g.font = '800 ' + Math.round(12.5 * k0) + 'px "Barlow Condensed", sans-serif'; const w = g.measureText(playTag.txt).width + 12 * k0, h = 17 * k0, x0 = cl(x - w / 2, 2, W - w - 2), y0 = Math.max(2, y - h / 2);
         g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0 + 1.5, y0 + 2, w, h); g.fillStyle = '#F2C230'; g.beginPath(); g.roundRect(x0, y0, w, h, 5 * k0); g.fill();
@@ -2186,11 +2199,11 @@
           // e só então quem entra pisa no campo, pelo meio. Antes do apito ou no intervalo, a troca é na hora
           if (!now && was[k] && n && n !== was[k] && !was.includes(n) && !isMe(p)) {
             if (!subQ) subQ = { s, items: [], ph: 'wait', t: 0 };
-            const it = subQ.items.find(q => q.p === p); if (it) { it.f = f; it.newNum = n; } else subQ.items.push({ p, f, oldNum: was[k], newNum: n });
-          } else if (!(subQ && subQ.items.some(q => q.p === p))) reform(p, f);
+            const Q = (subQ.s === s && subQ.ph === 'wait') || (subQ2 && subQ2.s !== s) ? subQ : (subQ2 = subQ2 || { s, items: [], ph: 'wait', t: 0 });
+            const it = Q.items.find(q => q.p === p); if (it) { it.f = f; it.newNum = n; } else Q.items.push({ p, f, oldNum: was[k], newNum: n });
+          } else if (!(subQ && subQ.items.some(q => q.p === p)) && !(subQ2 && subQ2.items.some(q => q.p === p))) reform(p, f);
         });
-        if (subQ && subQ.ph === 'wait') { leaving.splice(0, leaving.length, ...leaving.filter(q => !q.bench));
-          subQ.items.forEach((it, i) => leaving.push({ p: { x: 52.5 + (s ? 1 : -1) * (3 + i * 1.8), y: WD + 1.1, side: s, r: it.f[0] }, num: it.newNum, sub: true, bench: true, wait: 0, t: 0 })); }
+        subBench();
         ALL = T[0].concat(T[1]); ALL.forEach(p => { p.mark = null; p.th = 0; }); defT = 0;
       },
       // Treinador: mudou o estilo no meio do jogo

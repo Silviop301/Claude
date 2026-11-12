@@ -7494,6 +7494,7 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .ld-yc { position: absolute; top: -3px; right: -5px; width: 7px; height: 10px; border-radius: 1.5px; background: #F5D90A; transform: rotate(12deg); }
 .ld-dn { position: absolute; left: 15px; top: 33px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 1px; white-space: nowrap; pointer-events: none; }
 .ld-dn b { font: 700 11px/1 var(--display); color: #FFF; text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }
+.ld-nu { text-decoration: none; opacity: .72; font-weight: 800; margin-right: 3px; }
 .ld-dn em, .ld-leg em, .ld-cand em, .ld-pd { font: 800 9px/1.25 var(--display); font-style: normal; letter-spacing: .03em; border-radius: 3px; padding: 0 4px; background: rgba(12, 14, 16, .78); color: #FFF; }
 .ld-dn em.sabe, .ld-leg em.sabe, .ld-cand em.sabe, .ld-pd.sabe { background: #F2C230; color: #2A1E00; }
 .ld-dn em.fora, .ld-leg em.fora, .ld-cand em.fora, .ld-pd.fora { background: #FF9A3D; color: #2A1300; }
