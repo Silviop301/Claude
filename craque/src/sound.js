@@ -109,7 +109,8 @@
   // porque o iPhone ignora o volume do <audio>: o volume baixo e o fade saem do ganho. Começa no primeiro toque (regra do
   // iPhone), some no jogo ao vivo (`.lv` na tela) e com o app fora da frente, e volta de onde parou. Chave própria
   // (climbix-musica), separada do Som. Faixa nova: põe o .mp3 em assets/musica/, o nome em M_LIST e roda craque_sw.py
-  const M_LIST = ['uk-garage.mp3', 'lounge.mp3', 'sports-rocker.mp3', 'shut-the-funk-up.mp3', 'cheetah-print.mp3', 'atomic-bass.mp3', 'electric-desire.mp3', 'liberty-city.mp3', 'mood-swings.mp3', 'idiot-vocal.mp3', 'unite.mp3', 'drive.mp3', 'legends.mp3', 'dobronx.mp3', 'vultures.mp3', 'space-worm.mp3', 'whiskey-gasoline.mp3', 'underwxrld.mp3', 'wabi-sabi.mp3', 'winds-of-change.mp3', 'to-that-beat.mp3', 'gold-teeth-gasoline.mp3', 'showdown.mp3', 'funky-brew.mp3']; // 2 da Pixabay (monume) + 22 da Epidemic Sound que o Silvio mandou em 11/11 (licença da conta dele)
+  const M_LIST = ['uk-garage.mp3', 'lounge.mp3', 'sports-rocker.mp3', 'shut-the-funk-up.mp3', 'cheetah-print.mp3', 'atomic-bass.mp3', 'electric-desire.mp3', 'liberty-city.mp3', 'mood-swings.mp3', 'idiot-vocal.mp3', 'unite.mp3', 'drive.mp3', 'legends.mp3', 'dobronx.mp3', 'vultures.mp3', 'space-worm.mp3', 'whiskey-gasoline.mp3', 'underwxrld.mp3', 'wabi-sabi.mp3', 'winds-of-change.mp3', 'to-that-beat.mp3', 'gold-teeth-gasoline.mp3', 'showdown.mp3', 'funky-brew.mp3',
+    'kicking-it.mp3', 'some-kinda-stranger.mp3', 'what-i-want.mp3', 'o-cold.mp3', 'koi-na-parda.mp3', 'pressure.mp3', 'freaky-love.mp3', 'go-up.mp3', 'dance-dont-walk.mp3', 'se-nos-dio.mp3', 'mojo.mp3', 'make-up-your-mind.mp3', 'fracture.mp3', 'redemption.mp3', 'i-got-it.mp3', 'i-still-break.mp3', 'wildcard.mp3', 'cant-stop-wont-stop.mp3', 'keep-your-focus-on-me.mp3', 'it-blooms.mp3', 'para-amar.mp3', 'magic.mp3', 'outside.mp3', 'moon-stars.mp3']; // 2 da Pixabay (monume) + 22 da Epidemic Sound que o Silvio mandou em 11/11 + 24 em 12/11 (licença da conta dele)
   // Nome que o disco da home mostra (faixa · artista); faixa nova sem nome aqui mostra o nome do arquivo
   const M_NAMES = { 'uk-garage.mp3': ['UK Garage', 'monume'], 'lounge.mp3': ['Lounge', 'monume'], 'sports-rocker.mp3': ['Sports Rocker', 'Taelimb'],
     'shut-the-funk-up.mp3': ['Shut the Funk Up!', 'Daniel Fridell'], 'cheetah-print.mp3': ['Cheetah Print', 'Cushy'], 'atomic-bass.mp3': ['Atomic Bass', 'Daniel Fridell'],
@@ -117,7 +118,31 @@
     'unite.mp3': ['Unite!', 'Donell Mase'], 'drive.mp3': ['DRIVE', 'MXRPHEUS'], 'legends.mp3': ['LEGENDS', 'MXRPHEUS'], 'dobronx.mp3': ['DOBRONX', 'MXRPHEUS'],
     'vultures.mp3': ['VULTURES', 'MXRPHEUS'], 'space-worm.mp3': ['Space Worm', 'AGST'], 'whiskey-gasoline.mp3': ['Whiskey & Gasoline', 'Def Lev'],
     'underwxrld.mp3': ['UNDERWXRLD', 'MXRPHEUS'], 'wabi-sabi.mp3': ['Wabi Sabi', 'Lukas Got Lucky'], 'winds-of-change.mp3': ['Winds of Change', 'Cezar'],
-    'to-that-beat.mp3': ['To That Beat', 'AEILO'], 'gold-teeth-gasoline.mp3': ['Gold Teeth & Gasoline', 'Bankston'], 'showdown.mp3': ['SHOWDOWN', 'Cushy'], 'funky-brew.mp3': ['Funky Brew', 'Duke Herrington'] };
+    'to-that-beat.mp3': ['To That Beat', 'AEILO'], 'gold-teeth-gasoline.mp3': ['Gold Teeth & Gasoline', 'Bankston'], 'showdown.mp3': ['SHOWDOWN', 'Cushy'], 'funky-brew.mp3': ['Funky Brew', 'Duke Herrington'],
+    'kicking-it.mp3': ['Kicking It', 'Bhris Drip'],
+    'some-kinda-stranger.mp3': ['SOME KINDA STRANGER', 'Dylan Sitts'],
+    'what-i-want.mp3': ['WHAT I WANT', 'Baha Bank$'],
+    'o-cold.mp3': ['O COLD', 'Baha Bank$'],
+    'koi-na-parda.mp3': ['Koi Na Parda', 'NIMBU'],
+    'pressure.mp3': ['PRESSURE!', 'Nyck Caution'],
+    'freaky-love.mp3': ['Freaky Love', "I'MIN"],
+    'go-up.mp3': ['Go Up', 'Demon Baby'],
+    'dance-dont-walk.mp3': ["Dance Don't Walk", 'The Big Let Down'],
+    'se-nos-dio.mp3': ['Se Nos Dio', 'Manuelo Jersey'],
+    'mojo.mp3': ['MOJO', 'Nic Hanson'],
+    'make-up-your-mind.mp3': ['Make up Your Mind', 'Relyae'],
+    'fracture.mp3': ['Fracture', 'Sightless in Shadow'],
+    'redemption.mp3': ['REDEMPTION', 'Nyck Caution'],
+    'i-got-it.mp3': ['I Got It', 'Enophi'],
+    'i-still-break.mp3': ['I Still Break', 'Parellite'],
+    'wildcard.mp3': ['Wildcard', 'Nyck Caution'],
+    'cant-stop-wont-stop.mp3': ['Can’t Stop, Won’t Stop', 'Demon Baby'],
+    'keep-your-focus-on-me.mp3': ['Keep Your Focus on Me', 'Basixx'],
+    'it-blooms.mp3': ['It Blooms', 'First Timer'],
+    'para-amar.mp3': ['Para Amar', 'Loreana'],
+    'magic.mp3': ['Magic', 'Bhris Drip'],
+    'outside.mp3': ['Outside', 'Tusabe'],
+    'moon-stars.mp3': ['MOON & STARS', 'Baha Bank$'] };
   // Avisa a tela (disco da home) quando a faixa troca ou a música toca/para
   const mSay = () => { try { root.dispatchEvent(new Event('climbix-musica')); } catch (e) { /* sem tela */ } };
   const M_VOL = 0.35;
