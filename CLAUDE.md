@@ -300,7 +300,7 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
 ### Servidor — `craque/api/` (PHP + SQLite fora do `public_html`)
 
 `account.php` (contas), `oauth.php` (Google/GitHub/Discord), `rank.php`, `c.php` (link curto da carta),
-`feedback.php`, `errors.php`, `stats.php` (contagem anônima por dia, sem id; o jogo manda por `src/stats.js`). Nada pessoal é guardado além da conta. Cada opinião nova vai por e-mail (HTML) para o Silvio pelo `mail()` da Hostinger (`FB_EMAIL` em `feedback.php`; `climbix-data/feedback-mail-id` = último id mandado; o deploy chama `?a=mail` para mandar o que ficou para trás).
+`pay.php` (compra de moedas; `?a=gift` = presente de moedas só com a chave `climbix-data/admin-key`, gravada pelo deploy do segredo `CLIMBIX_ADMIN_KEY`: rodar o workflow "Publicar no climbix.app" à mão com `presente_conta` = usuário da conta e `presente_moedas`; entra como compra paga de R$ 0, pack `gift`, e chega pelo check/claim), `feedback.php`, `errors.php`, `stats.php` (contagem anônima por dia, sem id; o jogo manda por `src/stats.js`). Nada pessoal é guardado além da conta. Cada opinião nova vai por e-mail (HTML) para o Silvio pelo `mail()` da Hostinger (`FB_EMAIL` em `feedback.php`; `climbix-data/feedback-mail-id` = último id mandado; o deploy chama `?a=mail` para mandar o que ficou para trás).
 
 ### Ferramentas que geram arquivos
 
