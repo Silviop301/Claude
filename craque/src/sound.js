@@ -195,9 +195,10 @@
   let aBuf = null, aSrc = null, aGain = null, aLoad = false, aWant = -1;
   function ambTick() {
     if (!ctx) return;
-    const lv = on && !!(root.document && !root.document.hidden && root.document.querySelector('.lv')), ht = lv && !!(root.CRAQUE_CROWD || {}).ht, k = crowdK();
+    const vis = on && !!(root.document && !root.document.hidden), lv = vis && !!root.document.querySelector('.lv'), ht = lv && !!(root.CRAQUE_CROWD || {}).ht, k = crowdK();
+    const rs = vis && !lv && !!root.document.querySelector('#ld div.rs'); // resultado do jogo (Silvio, 12/11): o estádio segue até o Continuar
     const want = lv && !ht ? +(A_VOL * k).toFixed(3) : 0;
-    estTick(lv, ht ? +(E_VOL * k).toFixed(3) : 0);
+    estTick(lv || rs, ht || rs ? +(E_VOL * k).toFixed(3) : 0);
     if (want && !aBuf) {
       if (!aLoad && root.fetch) { aLoad = true; fetch(A_URL).then(r => r.arrayBuffer()).then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { aBuf = b; }).catch(() => { aLoad = false; }); }
       return;
@@ -224,7 +225,7 @@
     }
     if (!eGain || want === eWant) return;
     const was = eWant; eWant = want;
-    const g = eGain.gain, t = ctx.currentTime, d = want ? (was > 0 ? 1 : 5) : lv ? 3 : 0.5;
+    const g = eGain.gain, t = ctx.currentTime, d = want ? (was > 0 ? 1 : 5) : lv ? 3 : 1.5;
     try { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(want, t + d); } catch (e) { g.value = want; }
     if (!want) { const s = eSrc, gg = eGain; eSrc = null; eGain = null; try { s.stop(t + d + 0.1); } catch (e) { /* ok */ } setTimeout(() => { try { gg.disconnect(); } catch (e) { /* ok */ } }, (d + 0.3) * 1000); }
   }
