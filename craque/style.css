@@ -10088,3 +10088,5 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .pft .tm-h { grid-column: 1 / -1; }
 .ld-st button.pft-acc { margin-left: auto; flex: none; height: 44px; padding: 0 18px; border-radius: 12px; font: 800 18px/1 var(--display); color: #F3F1EA; box-shadow: inset 0 0 0 2px rgba(243,241,234,.22); white-space: nowrap; }
 .ld-st button.pft-acc.in { color: #F6D777; box-shadow: inset 0 0 0 2px rgba(240,196,75,.75); }
+/* Ideia da auxiliar (12/11): ponto dourado de novidade, nunca laranja de erro */
+.tm-tip-d.g { background: var(--gold); }

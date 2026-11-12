@@ -496,9 +496,10 @@
       // toque explica e aplica. O aviso de quem está cansado ou fora de posição entra na mesma janelinha (ponto laranja)
       // A sugestão de formação só sai depois do relatório do olheiro (Silvio 2026-11-10); antes, a pílula manda ler o olheiro
       const scR = vs && co.scout && co.scout.i === co.ss.i, tip = scR ? S.coTip(co, true) : null, used = S.coTipUsed(co, tip), tipNm = tip && S.coTipName(tip), plan = tip && tip.kind === 'plan', PL = 'PLANO ' + (auxEla(co) ? 'DA AUXILIAR' : 'DO AUXILIAR');
-      const pill = swap !== null || selB ? '' : '<button class="tm-tip' + ((used || !tip) && !nFix ? ' ok' : '') + '" id="tm-aux"><span class="tm-tip-fw">' + auxFace(co, 'tm-tip-f') + '<em>' + S.coAuxLv(co).k + '</em></span>' +
-        '<span><small>' + (tip && !(used && nFix) ? (plan ? PL : 'DICA DO AUXILIAR') : 'AUXILIAR') + '</small><b>' + (tip && !(used && nFix) ? (used ? (plan ? '✓ No plano ' + (auxEla(co) ? 'dela' : 'dele') : '✓ ' + esc(tipNm)) : esc(S.coTipLbl(tip))) : nFix ? fixLbl : vs && !scR ? 'Leia o olheiro' : 'Tudo certo') + '</b></span>' +
-        (nFix ? '<i class="tm-tip-d n">' + nFix + '</i>' : tip && !used && !tip.seen ? '<i class="tm-tip-d"></i>' : '') + '</button>';
+      const keep = tip && !used && tip.keep; // "Manter meu plano" (Silvio 12/11: sugestão sem culpa): fica apagada até a próxima rodada
+      const pill = swap !== null || selB ? '' : '<button class="tm-tip' + ((used || !tip || keep || (tip && tip.seen)) && !nFix ? ' ok' : '') + '" id="tm-aux"><span class="tm-tip-fw">' + auxFace(co, 'tm-tip-f') + '<em>' + S.coAuxLv(co).k + '</em></span>' +
+        '<span><small>' + (keep && !nFix ? 'SEU PLANO' : tip && !(used && nFix) ? (plan ? (auxEla(co) ? 'IDEIA DA AUXILIAR' : 'IDEIA DO AUXILIAR') : 'DICA DO AUXILIAR') : 'AUXILIAR') + '</small><b>' + (keep && !nFix ? esc(co.form + ' · ' + S.CO_STY[co.style].name) : tip && !(used && nFix) ? (used ? (plan ? '✓ No plano ' + (auxEla(co) ? 'dela' : 'dele') : '✓ ' + esc(tipNm)) : esc(S.coTipLbl(tip))) : nFix ? fixLbl : vs && !scR ? 'Leia o olheiro' : 'Tudo certo') + '</b></span>' +
+        (nFix ? '<i class="tm-tip-d n">' + nFix + '</i>' : tip && !used && !tip.seen ? '<i class="tm-tip-d g"></i>' : '') + '</button>';
       show('<div class="tm"><div class="tm-h"><button class="tcr-back" id="tm-back" aria-label="Voltar">' + BK + '</button>' + title + pill + '</div>' +
         '<div class="ld-pitch tm-pitch">' + PITCH + dots + (swap !== null ? nearList(sl[swap], bench, c.avail, sp[swap][0], sp[swap][1], by[co.xi[swap]]) : '') +
         '<button class="tm-best' + (bestXI().join() === co.xi.join() ? ' on' : '') + '" id="tm-best" aria-label="Escalar os melhores pelo geral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></svg>Melhores</button>' +
@@ -546,16 +547,17 @@
           // A dica do jogo em cima (curta quando há trocas), a lista das trocas com um botão só, e a escalação inteira
           // Sem o relatório do olheiro, a pílula diz "Leia o olheiro" e a fala explica e leva até ele
           const toOl = vs && !scR && !nFix;
-          const say = tip ? (used ? 'Do jeito que está eu não mexeria, professor.' : S.coTipTxt(tip)) : toOl ? 'Leia o relatório do olheiro que eu te digo o melhor plano para esse jogo, professor.' : aux, nw = t => t.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>');
+          const say = tip ? (used ? 'Do jeito que está eu não mexeria, professor.' : keep ? 'Fechado, vamos com o seu plano. Se quiser, a ideia continua aqui: ' + S.coTipName(tip) + '.' : 'Uma ideia: ' + S.coTipTxt(tip).replace(/^./, c => c.toLowerCase()).replace(/, professor\.$/, '. A escolha é sua, professor.')) : toOl ? 'Leia o relatório do olheiro que eu te digo o melhor plano para esse jogo, professor.' : aux, nw = t => t.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>');
           const ALL = '<button class="tm-all" id="ld-auto">Usar a escalação ' + (auxEla(co) ? 'dela' : 'dele') + ' inteira</button>';
           const tipHtml = !tip || (used && nFix) ? '' : nFix
             ? '<span class="tm-fix top"><small>' + nw(say) + '</small><button class="hl-btn line" id="ld-tip-y">' + (plan ? 'Usar o plano' : 'Usar ' + esc(tipNm)) + '</button></span>'
-            : '<p>“' + nw(say) + '”</p>' + (used ? '' : '<span class="hl-ab"><button class="hl-btn dark" id="ld-tip-y">' + (plan ? 'Usar o plano' : 'Usar ' + esc(tipNm)) + '</button><button class="hl-btn line" data-pop-x>Manter</button></span>');
+            : '<p>“' + nw(say) + '”</p>' + (used ? '' : '<span class="hl-ab"><button class="hl-btn dark" id="ld-tip-y">' + (plan ? 'Usar a ideia' : 'Usar ' + esc(tipNm)) + '</button><button class="hl-btn line" id="ld-tip-k">Manter meu plano</button></span>');
           pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b>' + (nFix ? ALL : '') + '</span>' +
             (tipHtml || (nFix ? '' : '<p>“' + say + '”</p>')) +
             (nFix ? auxRows(fixes) + '<span class="hl-ab"><button class="hl-btn dark" id="ld-aux-y">' + auxLbl(nFix) + '</button><button class="hl-btn line" data-pop-x>Manter</button></span>' : '') +
             (nFix ? '' : ALL) + ((tip && !used) || nFix ? '' : toOl ? '<span class="hl-ab"><button class="hl-btn dark" id="ld-see-ol">Ver o olheiro</button><button class="hl-btn line" data-pop-x>Fechar</button></span>' : '<button class="hl-btn line" data-pop-x>Fechar</button>') + '</div>', 'Auxiliar', w => {
             if (w.querySelector('#ld-see-ol')) w.querySelector('#ld-see-ol').onclick = () => { sfx('tap'); closePop(); c.keepBench(); c.save(); olheiro(); };
+            if (w.querySelector('#ld-tip-k')) w.querySelector('#ld-tip-k').onclick = () => { sfx('back'); tip.keep = 1; tip.seen = 1; closePop(); draw(); };
             if (w.querySelector('#ld-tip-y')) w.querySelector('#ld-tip-y').onclick = () => { sfx('tap'); closePop();
               if (plan) { co.style = tip.s; if (co.form !== tip.f) { co.xi = xiFor(tip.f); co.form = tip.f; } swap = null; selB = null; } else if (tip.kind === 'sty') co.style = tip.v; else { co.xi = xiFor(tip.v); co.form = tip.v; swap = null; selB = null; }
               draw(); };
@@ -973,7 +975,7 @@
         if (rd && rd.s === co.season && rd.r === log.r) { const a = rd.inn.reduce((t, x) => t + x[1], 0), b = rd.out.reduce((t, x) => t + x[1], 0);
           rows.push(['Rodada', '+' + c.mi(a) + ' / −' + c.mi(b), a >= b ? 'up' : 'dn', 'rs-fin']); } }
       // Plano do auxiliar (2026-11-11): a primeira linha diz se seguir o plano deu certo; com 5 linhas o Público sai
-      if (log.plan) { rows.unshift(['Plano ' + (auxEla(co) ? 'dela' : 'dele'), log.plan === 'ok' ? 'funcionou ✓' : log.plan === 'no' ? 'não encaixou' : 'não seguiu', log.plan === 'ok' ? 'up' : log.plan === 'no' ? 'dn' : '']);
+      if (log.plan) { rows.unshift(['Plano ' + (auxEla(co) ? 'dela' : 'dele'), log.plan === 'ok' ? 'funcionou ✓' : log.plan === 'no' ? 'não encaixou' : 'você foi no seu', log.plan === 'ok' ? 'up' : log.plan === 'no' ? 'dn' : '']);
         if (rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); } }
       show('<div class="rs">' +
         '<div class="rs-sc">' + crest((m.home ? cl : vs).id, 'rs-cr') + '<em>' + m.gh + ' <i>x</i> ' + m.ga + '</em>' + crest((m.home ? vs : cl).id, 'rs-cr') +
