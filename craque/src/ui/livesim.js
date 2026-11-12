@@ -1118,7 +1118,46 @@
     function penAbort() { if (!pen) return; const gk = pen.gk; pen = null; penBan = null; camT = 0; spray = null; mode = 'play'; stopWhy = ''; setOwner(gk); }
     function whistle(why, taker, spot) { if (typeof window !== 'undefined' && window.CRAQUE_SFX) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {} /* apito de falta, impedimento e troca (12/11: parava mudo) */ mode = 'falta'; modeT = 1.5; stopWhy = why; foulSpot = spot ? { x: spot.x, y: spot.y } : { x: ball.x, y: ball.y }; ball.owner = ball.fly = ball.loose = ball.carry = null; foulTo = taker;
       // quem sofreu está no chão: cobra o companheiro mais perto do lugar da falta
-      if (taker && taker.down) { const sp = foulSpot, m = T[taker.side].filter(q => q !== taker && q.r !== 'GK' && !q.down && !isMe(q)).sort((a, b) => dist(a, sp) - dist(b, sp))[0]; if (m) foulTo = m; } }
+      if (taker && taker.down) { const sp = foulSpot, m = T[taker.side].filter(q => q !== taker && q.r !== 'GK' && !q.down && !isMe(q)).sort((a, b) => dist(a, sp) - dist(b, sp))[0]; if (m) foulTo = m; }
+      if (why === 'Falta') FKN.f++; fkSet = why === 'Falta' && foulTo && FKW ? fkPlan(foulTo, foulSpot) : null; if (fkSet) foulTo = fkSet.tk; modeT = fkSet ? FK_T : FOUL_T; }
+    // Falta perto da área (Silvio, 12/11: "o time não desceu pra fechar a batida e não tem falta com barreira"): quem defende
+    // volta para o bloco e ninguém fica a menos de 9,15 m da bola; até 35 m do gol sai a barreira (2 a 4, na linha da bola
+    // até a trave mais perto) e quem bate é o melhor finalizador. De frente para o gol ele bate direto (o chute passa por
+    // `freeRoll`, que conta a barreira na frente); de lado ou de longe a bola vai cruzada para a área
+    const FKW = _e.FKW !== '0', FK_T = 4, FOUL_T = 2.2, FK_D = 9.15; let fkSet = null; const FKN = { n: 0, shot: 0, cruz: 0, f: 0 };
+    function fkPlan(q, sp) {
+      const s = q.side; let [fx, fy] = tf(s, sp);
+      if (L - fx < 17.5 && Math.abs(fy - 34) < 21) { fx = L - 17.5; const w = toW(s, fx, fy); sp.x = w[0]; sp.y = w[1]; } // falta dentro da área sem pênalti: sai na linha dela
+      const dg = Math.hypot(L - fx, 34 - fy), off = Math.abs(fy - 34);
+      if (fx < L - 35 || off > 26 || dg > 36) return null;
+      const sg = fy < 34 ? -1 : 1, n = off < 8 ? (dg < 25 ? 4 : 3) : off < 15 ? 3 : 2;
+      const ax = L - fx, ay = 34 + sg * 2 - fy, ad = Math.hypot(ax, ay), ux = ax / ad, uy = ay / ad, cx = fx + ux * FK_D, cy = fy + uy * FK_D, px = -uy, py = ux;
+      const tg = new Map(), used = new Set();
+      for (let i = 0; i < n; i++) { const o2 = (i - (n - 1) / 2) * 1.6 + sg * 0.5, [wx, wy] = toW(s, cx + px * o2, cy + py * o2);
+        const w = T[1 - s].filter(z => z.r !== 'GK' && !z.down && !used.has(z)).sort((a, b) => Math.hypot(a.x - wx, a.y - wy) + (lineOfRole(a) === 0 ? 14 : 0) - Math.hypot(b.x - wx, b.y - wy) - (lineOfRole(b) === 0 ? 14 : 0))[0];
+        if (w) { used.add(w); tg.set(w, [wx, wy]); } }
+      const dirK = dg < 31 && off < 17, kq = dirK ? 'fin' : 'pas'; let tk = q; if (!isMe(q)) { const b = T[s].filter(z => z.r !== 'GK' && z.r !== 'CB' && !z.down && !isMe(z) && Math.hypot(z.x - sp.x, z.y - sp.y) < 24).sort((a, b2) => qa(b2, kq) - qa(a, kq))[0]; if (b) tk = b; } // quem bate: o melhor no chute (de frente) ou no cruzamento entre os que estão perto
+      tg.set(tk, toW(s, fx - ux * 1.4, fy - uy * 1.4));
+      // quem ataca: os dois de trás seguram no meio-campo, os altos (zagueiros, centroavante) vão para a área, o resto na
+      // entrada dela para o rebote. Quem defende: um fica lá na frente para o contra-ataque, cada atacante da área ganha um
+      // marcador do lado do gol e quem sobra fecha a pequena área e a marca do pênalti
+      const A = T[s].filter(z => z.r !== 'GK' && z !== tk && !z.down), back = A.slice().sort((a, b) => a.d - b.d).slice(0, 2);
+      back.forEach((z, i) => { tg.set(z, toW(s, Math.min(52, fx - 25), 34 + (i ? 11 : -11))); });
+      const BX = [[L - 10.5, 31], [L - 10.5, 37.5], [L - 7.5, 34], [L - 12.5, 26.5], [L - 12.5, 42]], ED = [[L - 19, 21], [L - 19, 47], [L - 21, 34]];
+      const up = A.filter(z => !back.includes(z)).sort((a, b) => (b.r === 'CB' || b.r === 'ST') - (a.r === 'CB' || a.r === 'ST') || b.d - a.d), inBox = [];
+      up.forEach((z, i) => { const sp2 = i < BX.length ? BX[i] : ED[(i - BX.length) % ED.length]; let [x, y] = sp2; if (i >= BX.length && Math.hypot(x - fx, y - fy) < 4) y += y < fy ? -5 : 5; if (i < BX.length) inBox.push([x, y]); tg.set(z, toW(s, x, y)); });
+      const D = T[1 - s].filter(z => z.r !== 'GK' && !z.down && !used.has(z)), fw = D.slice().sort((a, b) => b.d - a.d)[0];
+      if (fw) tg.set(fw, toW(s, Math.max(40, fx - 38), 34 + (fy < 34 ? 8 : -8)));
+      const left = D.filter(z => z !== fw);
+      inBox.forEach(([x, y]) => { const w = left.sort((a, b) => Math.hypot(tf(s, a)[0] - x, tf(s, a)[1] - y) - Math.hypot(tf(s, b)[0] - x, tf(s, b)[1] - y)).shift(); if (w) tg.set(w, toW(s, x + 1.3, y + (34 - y) * 0.08)); });
+      const ZN = [[L - 5.5, 31], [L - 5.5, 37], [L - 11.5, 34], [L - 15, 29], [L - 15, 39]]; left.forEach((z, i) => tg.set(z, toW(s, ...ZN[i % ZN.length])));
+      // ninguém de quem defende (fora a barreira) a menos de 9,15 m da bola
+      tg.forEach((t, z) => { if (z.side === s || used.has(z)) return; const d = Math.hypot(t[0] - sp.x, t[1] - sp.y); if (d < FK_D + 0.5) { const a = Math.atan2(t[1] - sp.y, t[0] - sp.x); tg.set(z, [sp.x + Math.cos(a) * (FK_D + 0.5), sp.y + Math.sin(a) * (FK_D + 0.5)]); } });
+      const shot = FREE && !isMe(tk) && dirK && rnd() < (dg < 26 ? 0.8 : 0.5);
+      FKN.n++;
+      return { s, tg, shot, wall: n };
+    }
+
     // O juiz (o motor já decidiu): falta, cartão ou impedimento de quem joga na posição pos do lado side. O campinho para,
     // o cartão sobe em cima de quem fez, e só então a narração escreve (cb). O expulso sai da lógica na hora (o time joga com
     // um a menos) e fica parado no lugar até o apito acabar; depois sai andando pela lateral mais perto
@@ -1168,7 +1207,7 @@
       v.stun = 1.6; v.down = 1.6;
       whistle('Falta', v, v);
       const card = kind === 'amarelo' || kind === 'vermelho';
-      modeT = card ? 2.3 : 1.3;
+      modeT = Math.max(modeT, card ? 2.3 : 1.3); // falta com barreira: a arrumação (FK_T) manda
       if (card) refFx = { p, kind, how: o.how, t: 2.3 };
       if (kind === 'vermelho') goOff(p, 2.3);
     }
@@ -1613,18 +1652,26 @@
         // Todos param; a bola rola até o lugar da infração, o cobrador vai até ela (atrás da bola) e quem é do outro
         // time e está em cima recua um pouco. Só recomeça com o cobrador na bola
         modeT -= dt;
-        const q = foulTo || at(poss, 6), sp = foulSpot || { x: ball.x, y: ball.y }, dir = q.side ? -1 : 1;
+        const q = foulTo || at(poss, 6), sp = foulSpot || { x: ball.x, y: ball.y }, dir = q.side ? -1 : 1, F = fkSet;
+        // quem defende volta para o bloco (a barreira para a marca dela) e ninguém fica a menos de 9,15 m da bola; quem ataca se arma
         ALL.forEach(p => {
           if (p === q) return;
-          const d = dist(p, sp);
-          if (p.side !== q.side && d < 4.5 && p.r !== 'GK') { const a = Math.atan2(p.y - sp.y, p.x - sp.x); p.tx = sp.x + Math.cos(a) * 5; p.ty = sp.y + Math.sin(a) * 5; }
-          else { p.tx = p.x; p.ty = p.y; }
+          let t = F && F.tg.get(p);
+          if (!t) { const own = p.side, has = own === q.side, [bx, by] = tf(own, sp), [x, y] = shapeOf(p, has, bx, by, has ? lineOf(own) : 0); t = toW(own, x, y);
+            if (!has && p.r !== 'GK') { const d = Math.hypot(t[0] - sp.x, t[1] - sp.y); if (d < FK_D + 0.6) { const a = d > 0.1 ? Math.atan2(t[1] - sp.y, t[0] - sp.x) : Math.atan2(p.y - sp.y, p.x - sp.x); t = [sp.x + Math.cos(a) * (FK_D + 0.6), sp.y + Math.sin(a) * (FK_D + 0.6)]; } } }
+          p.tx = cl(t[0], 0.5, L - 0.5); p.ty = cl(t[1], 0.5, WD - 0.5); p.sprint = Math.hypot(p.tx - p.x, p.ty - p.y) > 6 ? 1 : 0;
         });
         const bd = Math.hypot(sp.x - ball.x, sp.y - ball.y), kb = bd > 0.01 ? Math.min(bd * dt * 4, 16 * dt) / bd : 0; ball.x += (sp.x - ball.x) * kb; ball.y += (sp.y - ball.y) * kb;
-        q.tx = cl(sp.x - dir * 0.9, 0.5, L - 0.5); q.ty = sp.y; q.sprint = dist(q, sp) > 3 ? 1 : 0;
-        if (modeT <= 0 && (dist(q, sp) < 1.6 || modeT < -3)) { mode = 'play'; stopWhy = ''; const fsp = foulSpot; foulTo = foulSpot = null; if (q.side !== poss) ALL.forEach(x => { x.th = 0; }); ball.x = fsp ? fsp.x : ball.x; ball.y = fsp ? fsp.y : ball.y; setOwner(q);
+        const qt = F && F.tg.get(q); if (qt) { q.tx = qt[0]; q.ty = qt[1]; } else { q.tx = cl(sp.x - dir * 0.9, 0.5, L - 0.5); q.ty = sp.y; } q.sprint = dist(q, sp) > 3 ? 1 : 0;
+        const set = !F || modeT < -2.5 || [...F.tg].every(([z, t]) => z.down || Math.hypot(z.x - t[0], z.y - t[1]) < 2.5); // com barreira: espera todo mundo chegar (até 2,5 s a mais)
+        if (modeT <= 0 && set && (dist(q, sp) < 2 || modeT < -3)) { mode = 'play'; stopWhy = ''; const fsp = foulSpot; foulTo = foulSpot = null; fkSet = null; if (q.side !== poss) ALL.forEach(x => { x.th = 0; }); ball.x = fsp ? fsp.x : ball.x; ball.y = fsp ? fsp.y : ball.y; setOwner(q);
+          const s = q.side, box = F && !isMe(q) ? T[s].filter(p => p !== q && p.r !== 'GK' && !p.down && tf(s, p)[0] > L - 18 && Math.abs(tf(s, p)[1] - 34) < 13) : [];
+          // falta de frente para o gol: chute direto por cima ou do lado da barreira (o sorteio é o do chute livre)
+          if (F && F.shot && !due && !lc) { FKN.shot++; shoot(q, 'falta'); if (ball.fly && ball.fly.out !== 'bloq') { ball.fly.loft = 2.6 + rnd() * 1.4; ball.fly.dur *= 1.12; } }
+          // de lado ou de longe: cruzada na área para quem está lá
+          else if (box.length) { FKN.cruz++; const t = box[Math.floor(rnd() * box.length)]; fly(q, t.x + gauss() * 1.2, t.y + gauss() * 1.2, t, true, 'cruz', false); }
           // cobrança: passe rasteiro para o companheiro livre a 6–22 m, de preferência para a frente
-          if (!isMe(q)) { const s = q.side; let best = null, bu = -1e9;
+          else if (!isMe(q)) { let best = null, bu = -1e9;
             T[s].forEach(p => { if (p === q || p.r === 'GK' || p.down) return; const d = dist(p, q); if (d < 6 || d > 22) return; let fr = 99; for (const o2 of T[1 - s]) fr = Math.min(fr, dist(o2, p)); const u = Math.min(fr, 7) - d * 0.06 + (tf(s, p)[0] - tf(s, q)[0]) * 0.04 + rnd() * 0.8; if (u > bu) { bu = u; best = p; } });
             if (best) fly(q, best.x, best.y, best, false, 'curto', false); } }
       } else if (mode === 'rein') { reinStep(dt);
@@ -2267,7 +2314,8 @@
       ballAt() { return [ball.x / L * 100, ball.y / WD * 100]; },
       stop() { alive = false; if (raf) cancelAnimationFrame(raf); raf = 0; window.removeEventListener('resize', onResize); if (ro) ro.disconnect(); },
       _refs: () => ({ REF, AR, REFC }), _place: (fn) => { fn({ T, ball, REF, AR, ALL }); },
-      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, CHEG, POCK, ALLX: ALL, WHY, DBG, PLAYS, DRIB, DISPN, CATCH, scr: g ? [X(ball.x), Y(ball.y)] : null, trail, REF, AR, Q4, leaving, rs, mode, poss, ball, due, att, goals, lc, offPend, foulPend, refFx, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
+      _fk(side, x, y) { const q = T[side].filter(p => p.r !== 'GK').sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0]; mode = 'falta'; whistle('Falta', q, { x, y }); return fkSet; }, // teste: falta do lado side no ponto (x, y) do campo
+      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, CHEG, POCK, ALLX: ALL, WHY, DBG, PLAYS, DRIB, DISPN, CATCH, FKN, scr: g ? [X(ball.x), Y(ball.y)] : null, trail, REF, AR, Q4, leaving, rs, mode, poss, ball, due, att, goals, lc, offPend, foulPend, refFx, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
     };
     LP._sim = api;
     return api;
