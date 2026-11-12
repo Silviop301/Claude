@@ -926,7 +926,11 @@
   function result(m, log, aux, move) {
     const c = C(), co = c.co, cl = club(co.club), vs = club(m.vs), pre = c.pre || {};
     const word = log.res === 'v' ? 'VITÓRIA' : log.res === 'e' ? 'EMPATE' : 'DERROTA';
-    const goals = m.ev.filter(e => e.t === 'gol').map(e => e.m + '\' ' + esc(last(e.p || '')) + (e.s === 'us' ? '' : ' (' + esc(c.nm(m.vs)) + ')'));
+    // gols juntos por autor (Silvio 12/11): "Mbappé 2' 35' 45'", na ordem do primeiro gol de cada um
+    const goals = (() => { const g = [], ix = {};
+      m.ev.filter(e => e.t === 'gol').forEach(e => { const n = last(e.p || ''), k = e.s + '|' + n;
+        if (!(k in ix)) { ix[k] = g.length; g.push({ n, us: e.s === 'us', ms: [] }); } g[ix[k]].ms.push(e.m + '\''); });
+      return g.map(x => (x.n ? esc(x.n) + ' ' : '') + x.ms.join(' ') + (x.us ? '' : ' (' + esc(c.nm(m.vs)) + ')')); })();
     let tab = 'num';
     const by = {}; co.squad.forEach(p => { by[p.id] = p; });
     const rt = (log.rt || []);
