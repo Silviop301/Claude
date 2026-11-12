@@ -8137,6 +8137,16 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .hl-rb b { font: 800 21px/1.1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hl-rb small { font: 600 15px/1.25 var(--body); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hl-rb.del b { color: #B3261E; }
+.hl-row.del { box-shadow: inset 0 0 0 2px rgba(194,54,46,.35); }
+.hl-trash { width: 46px; height: 46px; border-radius: 50%; background: #C2362E !important; color: #fff !important; display: flex; align-items: center; justify-content: center; flex: none; }
+.hl-mp.many .hl-trash { width: 42px; height: 42px; }
+.hl-trash svg { width: 20px; height: 20px; }
+.hl-askc { display: flex; align-items: center; gap: 12px; margin: 12px 0 0; padding: 10px 14px; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 2px rgba(194,54,46,.35); text-align: left; }
+.hl-askc > img, .hl-askc > .crest, .hl-askc > svg { width: 44px; height: 44px; flex: none; }
+.hl-askc > span { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.hl-askc b { font: 800 22px/1.1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hl-askc small { font: 600 15px/1.25 var(--body); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hl-askc em { font: 600 13px/1 var(--body); font-style: normal; color: var(--ink-3, #8a8a8a); flex: none; }
 .hl-cont { display: flex; align-items: center; gap: 6px; background: var(--gold) !important; color: #1B1606 !important; border-radius: 999px; padding: 0 18px !important; min-height: 46px; font: 800 19px var(--display) !important; box-shadow: var(--sh-press); flex: none; }
 .hl-play { width: 46px; height: 46px; border-radius: 50%; background: #141517 !important; color: #fff !important; display: flex; align-items: center; justify-content: center; flex: none; }
 .hl-new { display: flex; align-items: center; gap: 12px; border: 2px dashed rgba(20,21,23,.28) !important; border-radius: 14px; padding: 6px 12px !important; min-height: 58px; text-align: left; color: var(--ink) !important; }
@@ -8324,7 +8334,7 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .sm-w .tm-dot { right: 16px; top: 21px; text-align: center; }
 .sm-side { grid-column: 2; grid-row: 2 / -1; display: flex; flex-direction: column; gap: 10px; }
 .sm-nv { height: 50px; flex: none; border-radius: 14px; background: #141517 !important; color: #F3F1EA !important; font: 800 22px/1 var(--display) !important; text-align: left; padding: 0 18px !important; }
-.sm-side .tm-go { min-height: 56px; }
+.sm-side .tm-go { flex: none; height: 64px; min-height: 0; margin-bottom: 0; box-shadow: inset 0 -4px 0 #b48a12; padding-bottom: 4px !important; } /* mesma caixa de Treino/Olheiro: o relevo fica por dentro, senão parece mais baixo (Silvio 12/11) */
 /* Link só do Treinador (?so=treinador): um botão de carreiras centrado embaixo do dourado */
 .hl-x:not(.hl-so) .hl-mds { grid-template-columns: repeat(2, minmax(0, 300px)); justify-content: center; }
 /* Botões dos modos (Silvio 2026-11-09, "mais bonitos"): mais altos, letra maior e relevo como o do dourado. Treinador creme
@@ -9490,8 +9500,8 @@ button.coin-pill { cursor: pointer; border: 0; }
 .lj-ah .lj-ai { width: 62px; height: 62px; object-fit: contain; margin-left: auto; flex: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,.35)); }
 
 /* Home deitada: Perfil e Ajustes com desenho cheio num disco creme (2026-11-11) */
-.hl-mr svg.fi { width: 36px; height: 36px; stroke: none; flex: none; }
-.hl-mr:has(svg.fi) { padding: 0 18px 0 10px !important; gap: 9px; }
+.hl-mr svg.fi { width: 30px; height: 30px; stroke: none; flex: none; }
+.hl-mr:has(svg.fi) { padding: 0 18px 0 9px !important; gap: 10px; }
 
 /* Recusa no contrato e na renovação (Treinador, 2026-11-11): ele responde no balão da conversa (.cvj) com o que aceita
    e as tentativas que sobram; laranja na última */
@@ -9542,6 +9552,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 .rs-ch > span, .rs-ch > button { height: auto; flex: 1 1 40px; min-height: 30px; max-height: 40px; }
 .rs-side.n4 { gap: 8px; }
 .rs-side.n4 .rs-best { padding: 10px 16px; gap: 6px; }
+.rs-best span small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* uma linha só (card apertado, 2026-11-12) */
 .rs-side.n4 .tm-b { height: 42px; } .rs-side.n4 .tm-go { height: 56px; }
 /* Bola do gol nos lances e no gráfico: o desenho do jogo (assets/ic/26bd.webp) no lugar do rabisco em código (Silvio, 2026-11-11) */
 .rsi img.rsi-b { width: 19px; height: 19px; display: block; border-radius: 50%; box-shadow: 0 0 0 1px rgba(243, 241, 234, .5); }
@@ -9605,6 +9616,33 @@ button.coin-pill { cursor: pointer; border: 0; }
 .nvd-l > div img.tw { width: 30px; height: 30px; vertical-align: 0; }
 .nvd-l > div span { display: flex; flex-direction: column; gap: 3px; min-width: 0; } .nvd-l > div b { font: 700 19px/1 var(--display); } .nvd-l > div small { font: 500 15px/1.1 var(--body); color: #B9C9BF; }
 .nvd .tm-go { margin-top: 0; flex: none; margin-bottom: 4px; font-size: 24px !important; letter-spacing: .02em; }
+/* 2026-11-12 Novidades detalhadas (Silvio liberou rolar aqui): cartão creme estreito à esquerda com o Bora jogar,
+   painel carvão largo à direita com a lista por grupos em duas colunas, rolando, e a seta de "tem mais" embaixo */
+.nvd.nvd-x { grid-template-columns: 300px minmax(0, 1fr); }
+.nvd-x .nvd-c { padding: 16px 20px 12px; gap: 6px; overflow: hidden; }
+.nvd-x .nvd-c > img.tw { width: 56px; height: 56px; right: 16px; top: 14px; }
+.nvd-x .nvd-c > small { font-size: 12px; }
+.nvd-x .nvd-c > b { font-size: 34px; max-width: 200px; }
+.nvd-x .nvd-c > p { font-size: 15px; }
+.nvd-x .nvd-c > strong { font-size: 16px; }
+.nvd-x .nvd-c > em { font-size: 14px; }
+.nvd-lc { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.nvd-lc .nvd-c { flex: 1; }
+.nvd-x .nvd-lc .tm-go { margin: 0 0 4px; width: 100%; }
+.nvd-rs { position: relative; }
+.nvd-l.nvd-sc { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; gap: 0; padding: 14px 16px 26px; scrollbar-width: thin; scrollbar-color: rgba(243,241,234,.25) transparent; }
+.nvd-sc > small { padding: 10px 0 8px; } .nvd-sc > small:first-child { padding-top: 0; }
+.nvd-l > .nvd-g { flex: none; display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; gap: 8px; border-top: 0; }
+.nvd-g > div { display: flex; align-items: flex-start; gap: 10px; padding: 10px 10px 11px; border-radius: 12px; background: rgba(243,241,234,.05); }
+.nvd-g > div img.tw { width: 28px; height: 28px; flex: none; margin-top: 1px; }
+.nvd-g > div span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.nvd-g > div b { font: 700 17px/1.05 var(--display); }
+.nvd-g > div small { font: 500 14px/1.25 var(--body); color: #B9C9BF; }
+.nvd-mais { position: absolute; left: 0; right: 0; bottom: 0; height: 52px; border-radius: 0 0 18px 18px; pointer-events: none; background: linear-gradient(180deg, rgba(20,21,23,0), #141517 70%); transition: opacity .2s; }
+.nvd-mais::before, .nvd-mais::after { content: ''; position: absolute; left: 50%; bottom: 12px; width: 12px; height: 12px; margin-left: -8px; border: solid #8FD6AE; border-width: 0 4px 4px 0; border-radius: 2px; transform: rotate(45deg); animation: nvd-b 1.1s ease-in-out infinite; }
+.nvd-mais::before { bottom: 21px; opacity: .45; animation-delay: -.15s; }
+.nvd-mais.fim { opacity: 0; }
+@keyframes nvd-b { 0%, 100% { transform: translateY(-4px) rotate(45deg); } 50% { transform: translateY(5px) rotate(45deg); } }
 
 /* Fim da temporada novo (2026-11-11, desenho aprovado): cartão creme do resultado, 4 abas no painel carvão, o que vem agora
    e um dourado só. Nada abaixo de 13 px */
@@ -9883,7 +9921,7 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 #ld.wide .sm-wk { grid-row: 4; gap: 14px; } #ld.wide .sm-w { height: 100%; border-radius: 18px; padding: 0 20px !important; }
 #ld.wide .sm-w b { font-size: 26px; } #ld.wide .sm-w small { font-size: 14px; } #ld.wide .sm-w .tm-dot { top: 27px; }
 #ld.wide .sm-side { gap: 12px; } #ld.wide .sm-nv { height: clamp(52px, 11cqh, 70px); border-radius: 18px; font-size: 28px !important; padding: 0 22px !important; }
-#ld.wide .sm-nv .tm-dot { top: 20px; } #ld.wide .sm-side .tm-go { margin-top: auto; height: clamp(64px, 13cqh, 84px); min-height: 0; border-radius: 18px; font-size: 34px !important; }
+#ld.wide .sm-nv .tm-dot { top: 20px; } #ld.wide .sm-side .tm-go { margin-top: auto; margin-bottom: 0; height: clamp(64px, 13cqh, 84px); min-height: 0; border-radius: 18px; font-size: 34px !important; }
 
 .kb2-x { display: none; }
 #ld.wide .kb2 { container-type: size; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: 48px minmax(0, 1fr); gap: 14px 20px; }
@@ -10041,8 +10079,11 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .hlw .hw-bt .hl-dk-t { display: none; }
 
 /* Home deitada: botão Instalar o app (só no navegador do celular, até instalar) */
-.ld-st button.hl-nv.hl-ins { top: auto; bottom: 14px; left: 16px; display: flex; align-items: center; gap: 10px; padding: 5px 16px 5px 6px; }
-.hl-nv.hl-ins img { border-radius: 9px; display: block; }
+/* Instalar o app (2026-11-12, Silvio: "pequeno e com a borda diferente do ícone"): mesmo desenho dos botões Perfil/Ajustes
+   (canto 12, contorno fino), maior, e o ícone com o canto do ícone do iPhone (22,5% do lado) */
+.ld-st button.hl-nv.hl-ins { top: auto; bottom: 14px; left: 16px; height: 56px; display: flex; align-items: center; gap: 11px; padding: 0 20px 0 8px; border-radius: 12px; }
+.ld-st button.hl-nv.hl-ins b { font: 700 20px/1 var(--display); }
+.hl-nv.hl-ins img { width: 42px; height: 42px; border-radius: 9.5px; display: block; flex: none; }
 
 /* Quem entra, ao lado do titular: dois atributos da posição comparados com quem sai */
 .tm-near.at { width: 204px; }
@@ -10249,5 +10290,14 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .tb2-t.copa:has(.cg-top) { display: flex; flex-direction: column; }
 .cg-tag { align-self: flex-start; font-style: normal; font: 700 13px/1.2 var(--body); color: var(--gold); background: rgba(242, 194, 48, .12); padding: 5px 8px; border-radius: 7px; }
 .cg-tag.hi { color: #f08a5d; background: rgba(240, 138, 93, .12); }
+<<<<<<< HEAD
 /* Ida e volta (copas, fase 3): etiqueta embaixo do placar do ao vivo */
 .ldl .ldl-sb .ldl-agg { position: absolute; left: 0; top: 100%; margin-top: 4px; padding: 3px 9px; border-radius: 4px; background: rgba(14, 15, 17, .92); color: #F2C230; font: 800 12px/1 var(--display); letter-spacing: .08em; white-space: nowrap; }
+=======
+
+/* Aporte no limite da temporada (2026-11-12): o botão apagado diz "10 de 10" em vez de sumir sem explicar */
+.fn2-lim { display: flex; flex-direction: column; align-items: flex-start; line-height: 1; } .fn2-lim small { margin-top: 3px; font: 700 12px/1 var(--body, sans-serif); opacity: .75; }
+/* Aviso de espaço para salvar (2026-11-12): mesmo cartão claro dos avisos do topo, preso na tela para aparecer em qualquer lugar (home, jogo, Treinador) */
+.up-ty.sv-ty { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); z-index: 9999; max-width: calc(100vw - 32px); padding: 10px 16px 10px 14px; }
+.up-ty.sv-ty.err i { color: #b3261e; } .up-ty.sv-ty i { color: #9a6a00; display: flex; }
+>>>>>>> origin/claude/gracious-darwin-9gdlfp

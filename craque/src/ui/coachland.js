@@ -74,7 +74,7 @@
   // (U.rotPref, desliga nos Ajustes); com o celular realmente deitado nada gira. Toques: U.pt / U.box (ui/core.js)
   function rot() {
     const R = document.documentElement, ww = window.innerWidth, wh = window.innerHeight;
-    const on = document.body.classList.contains('ld-on') && wh > ww * 1.05 && U.rotPref();
+    const on = document.body.classList.contains('ld-on') && wh > ww * 1.05 && U.rotPref() && !U.rotHold; // rotHold: folha de instalar aberta, que é em pé (install.js)
     R.classList.toggle('rot', on);
     if (on) { R.style.setProperty('--rw', wh + 'px'); R.style.setProperty('--rh', ww + 'px'); R.style.setProperty('--rx', ww + 'px'); }
   }
@@ -1112,11 +1112,16 @@
     else if (log.pub) rows.push(['Público', milK(log.pub) + (log.pub >= log.cap * S.CO_EST.full ? ' · lotou' : ''), log.pub >= log.cap * S.CO_EST.full ? 'gd' : '']);   // estádio: só nos jogos em casa
       { const rd = S.coFin(co) && S.coFin(co).rd; // dinheiro da rodada (Silvio 11/11): toque abre Finanças na aba Rodada
         if (rd && rd.s === co.season && rd.r === log.r) { const a = rd.inn.reduce((t, x) => t + x[1], 0), b = rd.out.reduce((t, x) => t + x[1], 0);
-          rows.push(['Rodada', '+' + c.mi(a) + ' / −' + c.mi(b), a >= b ? 'up' : 'dn', 'rs-fin']); } }
+          const A = c.mi(a), B = c.mi(b), u = A.split(' ')[1]; // mesma unidade só no fim: "+170 / −140 mil" (Silvio 12/11: card apertado)
+          rows.push(['Rodada', '+' + (u && u === B.split(' ')[1] ? A.split(' ')[0] : A) + ' / −' + B, a >= b ? 'up' : 'dn', 'rs-fin']);
+          const i = rows.findIndex(r => r[0] === 'Bilheteria'); if (i >= 0) rows.splice(i, 1); } } // a bilheteria já está no "+" da Rodada (e em Finanças)
       // Plano do auxiliar (2026-11-11): a primeira linha diz se seguir o plano deu certo; com 5 linhas o Público sai
       if (log.plan) { rows.unshift(['Plano ' + (auxEla(co) ? 'dela' : 'dele'), log.plan === 'ok' ? 'funcionou ✓' : log.plan === 'no' ? 'não encaixou' : 'você foi no seu', log.plan === 'ok' ? 'up' : log.plan === 'no' ? 'dn' : '']);
         if (rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); } }
       if (log.cup && rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); }
+      // nunca mais de 4 linhas: a 5ª passava da borda do card no celular deitado (Silvio, 2026-11-12)
+      ['Público', 'Bilheteria', 'Prêmio', 'Caderno'].forEach(k => { const i = rows.findIndex(r => r[0] === k); if (rows.length > 4 && i >= 0) rows.splice(i, 1); });
+      rows.splice(4);
       show('<div class="rs">' +
         '<div class="rs-sc">' + crest((m.home ? cl : vs).id, 'rs-cr') + '<em>' + m.gh + ' <i>x</i> ' + m.ga + '</em>' + crest((m.home ? vs : cl).id, 'rs-cr') +
           '<span class="rs-w"><b class="' + wcls + '">' + word + (aux ? ' · COM O AUXILIAR' : '') + '</b><small>' + (goals.length ? goals.join(' · ') : 'sem gols') + '</small></span></div>' +
@@ -2471,7 +2476,7 @@
         '<div><small>FOLHA</small><b>' + c.brl(folha) + '</b><i><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i><span>teto ' + c.brl(teto) + '</span></div>';
     const tabs = '<div class="fn2-tabs">' + [['rod', 'Rodada'], ['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].filter(x => !WD || x[0] !== 'rod').map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>';
     const ac = '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><' + (pt ? 'button data-fd="pat"' : 'div') + '><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></' + (pt ? 'button' : 'div') + '></div>';
-    const bt = '<div class="fn2-bt">' + (U.COINS ? '<button class="tm-b fn2-apo' + (S.coAporteLeft(co) > 0 ? ' lv' + (f.caixa < 0 || (R && R.net < 0 && (R.st === 'red' || R.st === 'warn')) ? ' hot' : '') : '') + '" data-fd="apo" id="fn2-apo">' + U.COINS.svg + 'Aporte</button>' : '') + '<button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div>';
+    const bt = '<div class="fn2-bt">' + (U.COINS ? '<button class="tm-b fn2-apo' + (S.coAporteLeft(co) > 0 ? ' lv' + (f.caixa < 0 || (R && R.net < 0 && (R.st === 'red' || R.st === 'warn')) ? ' hot' : '') : '') + '" data-fd="apo" id="fn2-apo">' + U.COINS.svg + (S.coAporteLeft(co) > 0 ? 'Aporte' : '<span class="fn2-lim"><b>Aporte</b><small>' + S.CO_APORTE.max + ' de ' + S.CO_APORTE.max + '</small></span>') + '</button>' : '') + '<button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div>';
     const rdTop = rd ? '<small class="fn2-rh">RODADA ' + rd.r + (rd.h === 0 ? ' · FORA' : rd.h === -1 ? ' · SEM JOGO' : ' · EM CASA') + '</small>' : '<small class="fn2-rh">RODADA</small>';
     const html = WD ? '<div class="fn2 w">' + head + '<div class="fn2-k">' + kpi + ac + '</div>' +
         '<div class="fn2-l">' + finTrend(c, co, step, 1) + '<div class="fn2-tp">' + tabs + '<div class="fn2-p ' + tab + '">' + rows + '</div></div></div>' +
