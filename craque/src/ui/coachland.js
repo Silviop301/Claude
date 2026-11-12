@@ -335,7 +335,7 @@
   // O seu caminho até a taça no cartão da Semana (pedido do Silvio 12/11): a fase de agora acesa, quem pode vir em cada uma e o prêmio
   function cupPath(co) {
     const P = S.coCupPath(co); if (!P) return '';
-    const st = x => { const ids = x.ids.slice(0, 4), more = x.ids.length - ids.length;
+    const st = x => { const ids = x.ids.slice(0, 2), more = x.ids.length - ids.length;
       return '<div class="cpw-st' + (x.now ? ' now' : '') + '"><small>' + esc(x.sh).toUpperCase() + '</small><div>' +
         (x.now ? crest(ids[0], 'cpw-cr') + '<i>×</i>' + crest(ids[1], 'cpw-cr') : ids.length === 2 && x.ids.length === 2 ? crest(ids[0], 'cpw-cr') + '<i>ou</i>' + crest(ids[1], 'cpw-cr') : ids.map(id => crest(id, 'cpw-cr')).join('') + (more > 0 ? '<i>+' + more + '</i>' : '')) + '</div></div>'; };
     return '<div class="cpw-path">' + P.map(st).join('<span class="cpw-ar">›</span>') + '<span class="cpw-ar">›</span><div class="cpw-st tr"><small>+ R$ ' + C().mi(S.coCupPrizeLeft(co, co.ss.cup.k)) + '</small>' + cupImg(co.ss.cup.name, 28) + '</div></div>';
