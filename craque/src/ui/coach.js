@@ -12,7 +12,11 @@
   // Cinco vagas (U.CO_SLOTS): co.slot n grava em SAVE_CO + '-' + (n + 1); a vaga 0 é a chave pura
   // savedAt = hora do save desta carreira que este aparelho conhece; frozen = a carreira aberta ficou velha (ver U.coStale)
   let savedAt = 0, frozen = false;
-  const save = step => { if (frozen) return; if (co) co.step = step || co.step; savedAt = Date.now(); store(U.slotKey(SAVE_CO, co && co.slot), co ? { co, at: savedAt } : { co: null, at: savedAt }); };
+  // Contagem anônima (src/stats.js): carreira começou (assinou com o 1º clube), temporada terminou e carreira encerrada.
+  // co.sid só existe no aparelho, para não contar duas vezes ao recarregar; nunca é mandado
+  const sid = () => Math.random().toString(36).slice(2, 10);
+  const stat = (ev, n) => { if (!co || !window.CLIMBIX_STAT) return; if (!co.sid) co.sid = sid(); window.CLIMBIX_STAT(ev, 'treinador', n || 0, 'co' + co.sid + (n ? '|' + n : '')); };
+  const save = step => { if (frozen) return; if (co && co.club && !co.sid) stat('start'); if (co) co.step = step || co.step; savedAt = Date.now(); store(U.slotKey(SAVE_CO, co && co.slot), co ? { co, at: savedAt } : { co: null, at: savedAt }); };
   // Mesma conta em dois aparelhos (2026-11-11): o app que ficou aberto num aparelho seguia com a carreira da memória e, ao
   // salvar, apagava o que foi jogado no outro. Depois de puxar da nuvem (cloud.js), se o save guardado desta vaga é mais
   // novo que o que este aparelho conhece, a carreira aberta não salva mais e o jogo recarrega já com a nova
@@ -43,6 +47,7 @@
     if (co.rf === undefined) co.rf = co.club ? co.season + 1 : co.season;
     // Save de antes do nível firme dos jogadores reais (S.coGenSquad, co.lv): vale na próxima temporada
     if (co.lv === undefined) co.lv = co.club ? co.season + 1 : co.season;
+    if (!co.sid && co.club) co.sid = sid(); // carreira de antes da contagem: não conta como começo
     G.c = null; bar();
     S.applyLeagues(co);
     if (!co.club) return offers(co.offers || S.coOffers(co));
@@ -801,7 +806,7 @@
       if (cup) sub = 'Copa · ' + m.gh + ' x ' + m.ga; else { const me = S.coTable(co).find(x => x.me), left = co.ss.rounds.length - co.ss.i; sub = me.p + ' pontos' + (left > 0 ? '<br>' + left + (left === 1 ? ' rodada' : ' rodadas') + ' de folga' : ''); }
       sim.festa((window.CRAQUE_TROPHY_IMGS || {})[name]); sfx('fanfare');
       const side = document.querySelector('.ldl-side'), d = document.createElement('div'); d.className = 'ldl-festa';
-      d.innerHTML = '<div class="ldf-c">' + (window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY(cup ? 'cup' : 'league', 70, name) : '') + '<small>' + esc(name).toUpperCase() + ' · ' + (U.YEAR0 + co.season) + '</small><b>Campeão!</b><p>' + sub + '</p></div><button class="ld-gold ldf-go"><b>Seguir</b></button>';
+      d.innerHTML = '<div class="ldf-c">' + (window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY(cup ? log.tr || 'cup' : 'league', 70, name) : '') + '<small>' + esc(name).toUpperCase() + ' · ' + (U.YEAR0 + co.season) + '</small><b>Campeão!</b><p>' + sub + '</p></div><button class="ld-gold ldf-go"><b>Seguir</b></button>';
       side.appendChild(d); d.querySelector('.ldf-go').onclick = () => { sfx('tap'); d.remove(); go(); };
     };
     const finish = () => { clearTimeout(timer); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); if (U.profileCoGame) U.profileCoGame(co, m, log); save('hub');
@@ -810,7 +815,7 @@
       if (can && ((log && log.cup && log.champ && !log.tcOk) || (!m.cup && !co.ss.tw && S.coTitleWon(co)))) return festa(log, go);
       go(); };
     const end = () => {
-      const pk = m.cup && m.gh === m.ga && LDon && U.LD.livePens; // copa empatada: disputa de pênaltis por cima do ao vivo
+      const pk = m.cup && !m.cup.grp && m.gh === m.ga && LDon && U.LD.livePens; // copa empatada: disputa de pênaltis por cima do ao vivo
       clearTimeout(timer); hidden.clear(); paint(); open = true;
       if (sim && sim.fin) { sim.fin(); sfx('whistleEnd'); if (m.home && m.gh < m.ga && !retomado) setTimeout(() => sfx('vaia'), 2300); } // três apitos (curto, curto, longo): os jogadores param onde estão
       // vitória que dá o título sem depender de ninguém: a festa começa sozinha depois do apito, sem o 'Ver o resultado'
@@ -1180,7 +1185,7 @@
     if (!log || !log.cup || !log.champ || log.tcOk) return go();
     log.tcOk = 1;
     let cf = ''; for (let i = 0; i < 46; i++) cf += '<i style="left:' + (Math.random() * 100).toFixed(1) + '%;background:' + ['#e8b84a', '#fff', '#ffe08a', '#c9a24a'][i % 4] + ';animation-duration:' + (2.5 + Math.random() * 3).toFixed(2) + 's;animation-delay:' + (1 + Math.random() * 3).toFixed(2) + 's"></i>';
-    const img = window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY('cup', 140, log.name) : '';
+    const img = window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY(log.tr || 'cup', 140, log.name) : '';
     tacaPop('<div class="tc-ray"></div><div class="tc-cf">' + cf + '</div><div class="tc-mid"><div class="tc-tag">TÍTULO · ' + esc(log.name).toUpperCase() + ' · ' + (U.YEAR0 + co.season) + '</div><div class="tc-cup">' + img + '</div><div class="tc-big">Campeão!</div><div class="tc-sub">' + esc(nm(co.club)) + ' · final contra ' + esc(nm(log.vs)) + ' · ' + log.gf + ' x ' + log.ga + (log.pens ? ' (' + log.pens[0] + ' x ' + log.pens[1] + ' nos pênaltis)' : '') + '</div></div><button class="btn tc-go">Seguir</button>', 'tc-fe', go);
     sfx('fanfare');
   }
@@ -1265,7 +1270,7 @@
       (rw.length ? '<div class="tc-rw">' + rw.map(x => '<span><small>' + x[0] + '</small><b>' + x[1] + '</b></span>').join('') + '</div>' : '') + '</div><button class="btn tc-go">Seguir</button>', 'tc-fe', go);
     sfx('levelup'); sfx('cheer');
   }
-  function finishSeason() { const out = S.coSeasonEnd(co); payCoins(out); if (U.profileCoSeason) U.profileCoSeason(co, out); save('end'); acessoFesta(out, () => seasonEnd(out)); }
+  function finishSeason() { const out = S.coSeasonEnd(co); payCoins(out); if (U.profileCoSeason) U.profileCoSeason(co, out); stat('season', Math.min(40, co.hist.length)); save('end'); acessoFesta(out, () => seasonEnd(out)); }
   function seasonEnd(out) {
     G.c = null; bar();
     if (U.LD && U.LD.on()) return U.LD.temporada(out);
@@ -1297,7 +1302,7 @@
   // Para as telas deitadas (ui/coachland.js)
   U._co = { get co() { return co; }, get pre() { return pre; }, save, sacked: () => sacked(), moodLine: () => moodLine(), susBox, exit: () => { save(); co = null; U.ldOff(); U.home(); },
     // Encerrar carreira (2026-11-11, Silvio): a vaga fica livre; os números do técnico já entraram no Perfil no fim da temporada
-    retire: () => { const slot = co.slot; co = null; savedAt = Date.now(); store(U.slotKey(SAVE_CO, slot), { co: null, at: savedAt }); U.ldOff(); U.home(); }, hub, team, caderno, tabela, fin, finishSeason, play: k => play(k), live, result,
+    retire: () => { const slot = co.slot; stat('end'); co = null; savedAt = Date.now(); store(U.slotKey(SAVE_CO, slot), { co: null, at: savedAt }); U.ldOff(); U.home(); }, hub, team, caderno, tabela, fin, finishSeason, play: k => play(k), live, result,
     LANE, avail, pend, susTxt, posTxt, FORM_TIP, STY_SHORT, cadLines, cadName, CAD_W, CAD_S, cadQuote, feedLine: (m, e) => feedLine(m, e), offers: (l, st) => offers(l, st), offersBack: (l, st) => offersBack(l, st), welcome: () => welcome(), SK_TXT, ordTxt, mi, sgn, finPres: f => finPres(f), FAME_TXT, keepBench: () => keepBench(), brl, nm, last };
   Object.assign(U, { coCreate: create, coHub: () => co && hub(), coCaderno: (c, pv) => (pv && pv.them ? cadBlock(c.form, c.style, pv.them) + hintCard() : '') });
 })();
