@@ -28,12 +28,12 @@ for (let n = 0; n < N; n++) {
     }
     if (REN && !co.sacked) S.coAutoRenew(co);
     const wsum = co.squad.reduce((a, p) => a + (p.wage || 0), 0); if (co.fin && wsum > co.fin.teto * 1.001) st.tetoOver++;
-    const sq0 = co.squad.length, ttl0 = co.titles.length;
+    const sq0 = co.squad.length, ttl0 = co.titles.filter(t => t.k !== 'cup').length;
     const out = S.coSeasonEnd(co); st.seasons++;
     if (gm) st.gpm.push(g / gm);
-    const cv = (out.coins || []).reduce((a, x) => a + x.n, 0); if (!isN(cv) || cv < 0 || cv > 80) A('moedas', cv); st.coins[cv] = (st.coins[cv] || 0) + 1;
-    if (out.won) { st.titles++; if (co.titles.length !== ttl0 + 1) A('trophy', 'título sem taça'); if (out.pos !== 1) A('won-pos', out.pos); }
-    if (!out.won && co.titles.length !== ttl0) A('trophy2', 'taça sem título');
+    const cv = (out.coins || []).reduce((a, x) => a + x.n, 0); if (!isN(cv) || cv < 0 || cv > 120) A('moedas', cv); st.coins[cv] = (st.coins[cv] || 0) + 1;
+    if (out.won) { st.titles++; if (co.titles.filter(t => t.k !== 'cup').length !== ttl0 + 1) A('trophy', 'título sem taça'); if (out.pos !== 1) A('won-pos', out.pos); }
+    if (!out.won && co.titles.filter(t => t.k !== 'cup').length !== ttl0) A('trophy2', 'taça sem título');
     if (out.pos === 1 && !out.sacked && !out.won) A('pos1-nowin', out.league);
     if (out.met && out.sacked) A('met+sacked', '');
     st.left += (out.left || []).filter(x => x.tit).length;

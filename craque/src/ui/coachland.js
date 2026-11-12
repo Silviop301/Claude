@@ -324,6 +324,50 @@
   // ---------- Semana enxuta (Silvio 2026-11-08, opção A): sem trilho nem faixa do topo; uma linha com posição,
   // forma, meta e diretoria; o próximo jogo com os dois escudos grandes; treino e olheiro embaixo; à direita os botões
   // que eram do trilho e o dourado Jogar (abre a escalação). O caixa fica no Clube e os próximos jogos na Tabela.
+  // ---------- copa nacional (2026-11-12, engine/coachcup.js) ----------
+  const cupImg = (name, h) => (window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY('cup', h, name) : '');
+  // Sigla de 3 letras para a chave (como na TV): a lista conhecida, senão as 3 primeiras letras do nome curto
+  const CUP_COD = { 'bra-a-0': 'FLA', 'bra-a-1': 'PAL', 'bra-a-2': 'CAM', 'bra-a-3': 'SAO', 'bra-a-4': 'COR', 'bra-a-5': 'FLU', 'bra-a-6': 'BOT', 'bra-a-7': 'GRE', 'bra-a-8': 'INT', 'bra-a-9': 'CRU', 'bra-a-10': 'SAN', 'bra-a-11': 'BAH', 'bra-a-13': 'VAS', 'bra-a-14': 'CAP', 'bra-a-15': 'RBB', 'bra-a-16': 'VIT', 'bra-a-18': 'MIR', 'bra-a-12': 'FOR', 'bra-a-17': 'JUV', 'bra-b-0': 'CFC', 'bra-c-7': 'REM', 'bra-b-10': 'CHA' };
+  const cupCod = id => CUP_COD[id] || ((club(id).short || club(id).name).normalize('NFD').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase());
+  // O seu caminho até a taça no cartão da Semana (pedido do Silvio 12/11): a fase de agora acesa, quem pode vir em cada uma e o prêmio
+  function cupPath(co) {
+    const P = S.coCupPath(co); if (!P) return '';
+    const st = x => { const ids = x.ids.slice(0, 4), more = x.ids.length - ids.length;
+      return '<div class="cpw-st' + (x.now ? ' now' : '') + '"><small>' + esc(x.sh).toUpperCase() + '</small><div>' +
+        (x.now ? crest(ids[0], 'cpw-cr') + '<i>×</i>' + crest(ids[1], 'cpw-cr') : ids.length === 2 && x.ids.length === 2 ? crest(ids[0], 'cpw-cr') + '<i>ou</i>' + crest(ids[1], 'cpw-cr') : ids.map(id => crest(id, 'cpw-cr')).join('') + (more > 0 ? '<i>+' + more + '</i>' : '')) + '</div></div>'; };
+    return '<div class="cpw-path">' + P.map(st).join('<span class="cpw-ar">›</span>') + '<span class="cpw-ar">›</span><div class="cpw-st tr"><small>+ R$ ' + C().mi(S.coCupPrizeLeft(co, co.ss.cup.k)) + '</small>' + cupImg(co.ss.cup.name, 28) + '</div></div>';
+  }
+  // Aba Copa da Tabela (desenho A aprovado 12/11): a chave das oitavas à final com escudo, sigla e placar, o seu caminho em
+  // dourado; na fase de 32, os 16 jogos numa grade
+  function cupBracket(co) {
+    const cup = co.ss.cup, P = Math.round(Math.log2(cup.n)), me = cup.ids.indexOf(co.club);
+    const team = (i, sc, pen, out) => i == null ? '<div class="cp-t q"><span>–</span><b></b></div>' :
+      '<div class="cp-t' + (out ? ' out' : '') + (i === me ? ' mine' : '') + '">' + crest(cup.ids[i], 'cp-cr') + '<span>' + cupCod(cup.ids[i]) + '</span><b>' + (sc == null ? '' : sc) + '</b>' + (pen != null ? '<i>(' + pen + ')</i>' : '') + '</div>';
+    const box = (p, j) => { const pr = (cup.br[p] || [])[j]; if (!pr) return '<div class="cp-m">' + team(null) + team(null) + '</div>';
+      const o = (cup.res[p] || [])[j], [a, b] = pr; let sa = null, sb = null, pa = null, pb = null;
+      if (o) { const aH = o.h === a; sa = aH ? o.gh : o.ga; sb = aH ? o.ga : o.gh; if (o.ph != null) { pa = aH ? o.ph : o.px; pb = aH ? o.px : o.ph; } }
+      const mine = a === me || b === me;
+      return '<div class="cp-m' + (mine ? (o ? ' me' : ' nx') : '') + '">' + team(a, sa, pa, o && o.w !== a) + team(b, sb, pb, o && o.w !== b) + '</div>'; };
+    if (P === 5 && cup.k === 0) { const js = []; for (let j = 0; j < 16; j++) js.push(box(0, j)); return '<div class="cp-h"><b>' + esc(S.coCupPhase(cup, 0)) + '</b><small>a chave das oitavas sai daqui</small></div><div class="cp-r32">' + js.join('') + '</div>'; }
+    const p0 = Math.max(0, P - 4), cnt = p => cup.n / 2 ** (p + 1);
+    const col = (p, right) => { const n = cnt(p), h = n / 2, js = []; for (let j = right ? h : 0; j < (right ? n : h); j++) js.push(box(p, j)); return '<div class="cp-col"><h6>' + S.coCupPhaseShort(cup, p).toUpperCase() + '</h6><div class="cp-in">' + js.join('') + '</div></div>'; };
+    const L = [], R = []; for (let p = p0; p < P - 1; p++) { L.push(col(p, false)); R.unshift(col(p, true)); }
+    const champ = cup.champ ? '<div class="cp-ch">' + crest(cup.champ, 'cp-chc') + '<b>' + esc(club(cup.champ).short || club(cup.champ).name) + '</b></div>' : '';
+    const fin = '<div class="cp-fin"><small>FINAL</small>' + cupImg(cup.name, 74) + (cup.br[P - 1] ? box(P - 1, 0) : '<em>campo neutro</em>') + champ + '</div>';
+    return '<div class="cp-br" style="grid-template-columns:repeat(' + L.length + ',1fr) 80px repeat(' + L.length + ',1fr)">' + L.join('') + fin + R.join('') + '</div>';
+  }
+  function cupSide(co) {
+    const cup = co.ss.cup, P = Math.round(Math.log2(cup.n)), nx = S.coCupNext(co), path = S.coCupPath(co);
+    let top;
+    if (cup.champ === co.club) top = '<div class="tb2-race cp-side"><small>SUA COPA</small><b class="cp-big">Campeão!</b></div>';
+    else if (cup.out !== null) top = '<div class="tb2-race cp-side"><small>SUA COPA</small><b class="cp-big">Caiu ' + (cup.out === 0 ? 'na estreia' : (cup.out === P - 2 ? 'na ' : 'nas ') + esc(S.coCupPhase(cup, cup.out).toLowerCase())) + '</b></div>';
+    else if (path) { const vs = path[0].ids.find(id => id !== co.club), when = nx ? (nx.neutral ? 'campo neutro' : nx.home ? 'casa' : 'fora') : 'rodada ' + (cup.at[cup.k] + 1);
+      top = '<div class="tb2-race cp-side"><small>SUA COPA</small><div class="cp-vs">' + crest(vs, 'cp-vsc') + '<div><b>' + esc(club(vs).short || club(vs).name) + '</b><span>' + esc(path[0].sh.toLowerCase()) + ' · ' + when + '</span></div></div></div>'; }
+    else top = '<div class="tb2-race cp-side"><small>SUA COPA</small><b class="cp-big">Fora da copa</b></div>';
+    const alive = cup.out === null && !cup.champ && path;
+    const prz = alive ? '<div class="tb2-race cp-side"><small>PRÊMIO</small><div class="cp-pr"><span>Passar de fase</span><b>+ R$ ' + C().mi(S.coCupPrize(co, cup.k)) + '</b></div><div class="cp-pr"><span>Campeão</span><b>+ R$ ' + C().mi(S.coCupPrizeLeft(co, cup.k)) + '</b></div></div>' : '';
+    return top + prz;
+  }
   function semana() {
     const c = C(), co = c.co;
     const nx = S.coNext(co);
@@ -351,11 +395,12 @@
     let card, wk = '';
     if (!nx.bye) {
       const pv = S.coPreview(co), them = pv.them, cl = club(co.club), vc = club(them.club), rv = t.find(x => x.id === them.club), rpos = t.indexOf(rv) + 1;
-      card = '<small class="sm-rd">TEMPORADA ' + (U.YEAR0 + co.season) + ' · RODADA ' + nx.round + ' · ' + (nx.home ? 'EM CASA' : 'FORA') + '</small><div class="sm-vs">' +
+      card = (nx.cup ? '<small class="sm-rd cup">' + cupImg(nx.cup.name, 18) + esc(nx.cup.name).toUpperCase() + ' · ' + nx.cup.sh.toUpperCase() + ' · MEIO DA SEMANA · ' + (nx.neutral ? 'CAMPO NEUTRO' : nx.home ? 'EM CASA' : 'FORA') + '</small>'
+        : '<small class="sm-rd">TEMPORADA ' + (U.YEAR0 + co.season) + ' · RODADA ' + nx.round + ' · ' + (nx.home ? 'EM CASA' : 'FORA') + '</small>') + '<div class="sm-vs">' +
         // mandante à esquerda (Silvio, 10/11: "em jogo fora de casa eu quero meu escudo na direita"), como no placar do jogo
         (nx.home ? side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name)) + '<i class="sm-x">x</i>' + side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name))
           : side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name)) + '<i class="sm-x">x</i>' + side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name))) + '</div>' +
-        (rv ? '<small class="sm-rv">' + ord(rpos) + ' · ' + rv.p + ' pts' + f5(rv.f) + '</small>' : '');
+        (nx.cup ? cupPath(co) : rv ? '<small class="sm-rv">' + ord(rpos) + ' · ' + rv.p + ' pts' + f5(rv.f) + '</small>' : '');
       const tr = co.train && co.train.i === co.ss.i ? S.CO_TRAIN[co.train.k] : null, sc = co.scout && co.scout.i === co.ss.i;
       wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
         '<button class="sm-w' + (sc ? ' ok' : '') + '" id="ld-ol"><small>OLHEIRO</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o ' + esc(vc.short || vc.name)) + '</b></button></div>';
@@ -620,6 +665,42 @@
         w.querySelector('#ld-tac-ok').onclick = () => { sfx('tap'); o.onOk(pf, ps, xiNow); };
         if (o.back) w.querySelector('[data-pop-back]').onclick = () => { sfx('tap'); o.back(); };
       }, 'ld-tacp', !!o.back);
+  }
+
+  // ---------- Disputa de pênaltis da copa (desenho aprovado c-penaltis.png): por cima do ao vivo, o placar dos pênaltis no
+  // lugar do placar, o cartão de quem bate embaixo à esquerda e as cobranças no painel da direita, uma a cada 1,9 s; o motor já
+  // decidiu tudo em S.coCupPens (m.pens). Pular mostra o fim na hora; o dourado do fim leva ao resultado.
+  function livePens(m, done) {
+    const co = C().co, P = S.coCupPens(co, m), root = document.querySelector('#ld .ldl'); if (!root) return done();
+    const side = root.querySelector('.ldl-side'), sb = root.querySelector('.ldl-sb'), sh = root.querySelector('#lv-sheet');
+    if (sh) { sh.classList.remove('on'); sh.innerHTML = ''; } if (sb) sb.style.visibility = 'hidden';
+    const H = m.home ? 'us' : 'them', A = m.home ? 'them' : 'us', hid = m.home ? co.club : m.vs, aid = m.home ? m.vs : co.club;
+    const sq = s => (s === 'us' ? m.us : m.them).squad || [], find = (s, n) => sq(s).find(p => p.n === n);
+    const gkOf = s => { const T = s === 'us' ? m.us : m.them; return sq(s).find(p => p.pos === 'GOL' && (T.xi || []).indexOf(p.id) >= 0); };
+    const why = e => { const p = find(e.s, e.n), g = gkOf(e.s === 'us' ? 'them' : 'us'), d = S.coAtDev ? S.coAtDev : null;
+      const f = p && d ? (p.pos === 'GOL' ? -20 : d(p)[0]) : 0, k = g && d ? d(g)[5] : 0;
+      return (p && p.pos === 'GOL' ? 'O goleiro vai bater' : f > 6 ? 'Finalização ótima' : f > -2 ? 'Finalização boa' : 'Finalização fraca') + ' · ' +
+        (k > 6 ? 'o goleiro ' + (e.s === 'us' ? 'deles' : 'seu') + ' pega bem pênalti' : k < -6 ? 'o goleiro ' + (e.s === 'us' ? 'deles' : 'seu') + ' sofre no pênalti' : 'goleiro comum no pênalti'); };
+    let i = 0, tm = null;
+    const bar = document.createElement('div'); bar.className = 'pk-bar'; root.appendChild(bar);
+    const who = document.createElement('div'); who.className = 'pk-who'; root.appendChild(who);
+    const paint = () => {
+      const seen = P.seq.slice(0, i), sc = { us: 0, them: 0 }, cnt = { us: 0, them: 0 }; seen.forEach(e => { cnt[e.s]++; if (e.ok) sc[e.s]++; });
+      const nx = P.seq[i], fim = i >= P.seq.length;
+      const rows = Math.max(5, cnt.us, cnt.them, fim ? 0 : cnt[nx.s] + 1), from = Math.max(0, rows - 6);
+      const dot = (s, r) => { const e = P.seq.filter(x => x.s === s)[r], ix = P.seq.indexOf(e); return '<i class="' + (e && ix < i ? (e.ok ? 'g' : 'x') : e && ix === i ? 'n' : '') + '"></i>'; };
+      let li = ''; for (let r = from; r < rows; r++) li += '<div class="pk-r"><span>' + (r + 1) + 'ª</span>' + dot(H, r) + dot(A, r) + '</div>';
+      bar.innerHTML = crest(hid, 'pk-cr') + '<div class="pk-s"><small>PÊNALTIS</small><b>' + sc[H] + ' × ' + sc[A] + '</b><small class="pk-g">' + m.gh + ' a ' + m.ga + ' no jogo</small></div>' + crest(aid, 'pk-cr');
+      if (fim) { const won = P.us > P.them; who.innerHTML = '<small>FIM DOS PÊNALTIS</small><b>' + esc(C().nm(won ? co.club : m.vs)) + ' passa</b><span>' + (won ? 'Você está na próxima fase.' : 'Sua copa acabou aqui.') + '</span>'; }
+      else { const e = nx, n = cnt[e.s] + 1; who.innerHTML = '<small>' + (e.s === 'us' ? 'AGORA BATE' : 'BATE ' + esc(C().nm(m.vs)).toUpperCase()) + ' · ' + n + 'ª</small><b>' + esc(e.n) + '</b><span>' + esc(why(e)) + '</span>'; }
+      side.innerHTML = '<div class="pk-list"><small>COBRANÇAS</small><div class="pk-h"><span></span>' + crest(hid, 'pk-c2') + crest(aid, 'pk-c2') + '</div>' + li + '</div>' +
+        '<button class="pk-go" id="pk-go">' + (fim ? 'Ver o resultado' : 'Pular para o fim') + '</button>';
+      side.querySelector('#pk-go').onclick = () => { if (fim) { clearTimeout(tm); done(); } else { clearTimeout(tm); i = P.seq.length; paint(); } };
+    };
+    const step = () => { const e = P.seq[i]; if (!e) return; i++;
+      sfx(e.ok ? (e.s === 'us' ? (m.home ? 'goal' : 'goalAway') : 'whistle') : (e.s === 'us' ? 'uhh' : 'cheer'));
+      paint(); if (i < P.seq.length) tm = setTimeout(step, 1900); else sfx(P.us > P.them ? 'cheer' : 'vaia'); };
+    paint(); tm = setTimeout(step, 1600);
   }
 
   // ---------- Partida ao vivo deitada (MainB): campinho grande com placar, grito e narração por cima; à direita o grito do
@@ -927,7 +1008,10 @@
   }
   function result(m, log, aux, move) {
     const c = C(), co = c.co, cl = club(co.club), vs = club(m.vs), pre = c.pre || {};
-    const word = log.res === 'v' ? 'VITÓRIA' : log.res === 'e' ? 'EMPATE' : 'DERROTA';
+    const cupL = log.cup ? co.ss.cup : null;   // jogo da copa: a palavra é passou ou caiu, e a Tabela vira a Copa
+    const word = cupL ? (log.win ? (log.champ ? 'CAMPEÃO' : 'CLASSIFICADO') : 'ELIMINADO') + (log.pens ? ' NOS PÊNALTIS · ' + hv(m, log.pens[0], log.pens[1]).join(' x ') : '') :
+      log.res === 'v' ? 'VITÓRIA' : log.res === 'e' ? 'EMPATE' : 'DERROTA';
+    const wcls = cupL ? (log.win ? 'v' : 'd') : log.res;
     // gols juntos por autor (Silvio 12/11): "Mbappé 2' 35' 45'", na ordem do primeiro gol de cada um
     const goals = (() => { const g = [], ix = {};
       m.ev.filter(e => e.t === 'gol').forEach(e => { const n = last(e.p || ''), k = e.s + '|' + n;
@@ -938,7 +1022,7 @@
     const rt = (log.rt || []);
     const nota = x => '<div class="ldr-n"><b class="' + (x.r >= 7 ? 'up' : x.r < 5.8 ? 'dn' : '') + '">' + x.r.toFixed(1).replace('.', ',') + '</b><span><em>' + esc(by[x.id] ? by[x.id].n : '') + '</em><small>' + esc(x.w) + '</small></span></div>';
     const pos = S.coPos(co), B = co.board, dc = pre.conf !== undefined ? B.conf - pre.conf : 0;
-    const chg = [['Tabela', pre.pos ? ord(pre.pos) + (pre.pos !== pos ? ' → ' + ord(pos) : ' (igual)') + ' · ' + (S.coTable(co).find(x => x.me) || {}).p + ' pts' : ord(pos)],
+    const chg = [cupL ? ['Copa', log.win ? (log.champ ? 'campeão' : 'vai às ' + S.coCupPhaseShort(cupL, cupL.k).toLowerCase()) : 'eliminado', log.win ? 'up' : 'dn'] : ['Tabela', pre.pos ? ord(pre.pos) + (pre.pos !== pos ? ' → ' + ord(pos) : ' (igual)') + ' · ' + (S.coTable(co).find(x => x.me) || {}).p + ' pts' : ord(pos)],
       ['Diretoria', co.sacked ? 'demitido' : dc > 1 ? 'confiança subiu' : dc < -1 ? 'confiança caiu' : 'confiança igual', dc > 1 ? 'up' : dc < -1 ? 'dn' : ''],
       co.fin && pre.caixa !== null && pre.caixa !== undefined ? ['Caixa', (co.fin.caixa - pre.caixa >= 0 ? '+ ' : '− ') + c.brl(Math.abs(co.fin.caixa - pre.caixa)), co.fin.caixa - pre.caixa >= 0 ? 'up' : 'dn'] : null,
       B.ult ? ['Ultimato', B.ult.got + ' de ' + B.ult.need + ' vitórias · ' + (B.ult.of - B.ult.n) + ' jogos', 'dn'] : (log.ycOut || []).length ? ['Suspenso', log.ycOut.map(last).join(', '), 'dn'] : null].filter(Boolean);
@@ -967,7 +1051,9 @@
         tab === 'mom' ? '<div class="ldr-mom">' + U.lvMom(m, move !== null && move !== undefined ? move : null) + momMarks(m) + '</div><div class="rs-momf"><small>0\'</small><small>' + (move !== null && move !== undefined ? 'sua mudança aos ' + move + '\'' : 'acima é você') + '</small><small>90\'</small></div>' +
           '<ul class="ldl-last ldr-key">' + keyEv(m).map(e => sumLine(m, e)).join('') + '</ul>' :
         '<ul class="ldl-last ldr-all">' + m.ev.filter(e => e.t !== 'grito-fim').map(e => sumLine(m, e)).join('') + '</ul>';
-      const rows = chg.filter(r => r[0] !== 'Caixa').map(([k, v, cc]) => [k, k === 'Tabela' ? (pre.pos && pre.pos !== pos ? ord(pre.pos) + ' → ' + ord(pos) : ord(pos)) : k === 'Diretoria' ? (co.sacked ? 'demitido' : cc === 'up' ? 'subiu' : cc === 'dn' ? 'caiu' : 'igual') : v, cc]);
+      const rows = chg.filter(r => r[0] !== 'Caixa').map(([k, v, cc]) => [k, k === 'Copa' ? v : k === 'Tabela' ? (pre.pos && pre.pos !== pos ? ord(pre.pos) + ' → ' + ord(pos) : ord(pos)) : k === 'Diretoria' ? (co.sacked ? 'demitido' : cc === 'up' ? 'subiu' : cc === 'dn' ? 'caiu' : 'igual') : v, cc]);
+      if (log.prize) rows.push(['Prêmio', '+ ' + c.brl(log.prize), 'up']);
+      if (log.gate) rows.push(['Bilheteria', '+ ' + c.brl(log.gate), 'up']);
       if (cadN.length) rows.push(['Caderno', '+' + cadN.length + (cadN.length > 1 ? ' notas' : ' nota'), 'up', 1]);
       if (log.closed) rows.push(['Público', 'portões fechados', '']);
     else if (log.pub) rows.push(['Público', milK(log.pub) + (log.pub >= log.cap * S.CO_EST.full ? ' · lotou' : ''), log.pub >= log.cap * S.CO_EST.full ? 'gd' : '']);   // estádio: só nos jogos em casa
@@ -977,9 +1063,10 @@
       // Plano do auxiliar (2026-11-11): a primeira linha diz se seguir o plano deu certo; com 5 linhas o Público sai
       if (log.plan) { rows.unshift(['Plano ' + (auxEla(co) ? 'dela' : 'dele'), log.plan === 'ok' ? 'funcionou ✓' : log.plan === 'no' ? 'não encaixou' : 'você foi no seu', log.plan === 'ok' ? 'up' : log.plan === 'no' ? 'dn' : '']);
         if (rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); } }
+      if (cupL && rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); }
       show('<div class="rs">' +
         '<div class="rs-sc">' + crest((m.home ? cl : vs).id, 'rs-cr') + '<em>' + m.gh + ' <i>x</i> ' + m.ga + '</em>' + crest((m.home ? vs : cl).id, 'rs-cr') +
-          '<span class="rs-w"><b class="' + log.res + '">' + word + (aux ? ' · COM O AUXILIAR' : '') + '</b><small>' + (goals.length ? goals.join(' · ') : 'sem gols') + '</small></span></div>' +
+          '<span class="rs-w"><b class="' + wcls + '">' + word + (aux ? ' · COM O AUXILIAR' : '') + '</b><small>' + (goals.length ? goals.join(' · ') : 'sem gols') + '</small></span></div>' +
         '<div class="rs-tabs">' + [['num', 'Números'], ['mom', 'Quem mandou'], ['lan', 'Lances']].map(([k, t]) => '<button data-rt="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
         '<div class="rs-pane ' + tab + '">' + pane + '</div>' +
         '<div class="rs-side' + (rows.length > 3 ? ' n4' : '') + '">' +
@@ -990,7 +1077,7 @@
           '<button class="tm-go" id="ldr-go">' + (co.sacked ? 'Falar com o presidente' : co.ss.done ? 'Fim da temporada' : 'Continuar') + '</button>' +
         '</div></div>', st => {
         st.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { sfx('tap'); tab = b.dataset.rt; draw(); });
-        if (st.querySelector('#ldr-all')) st.querySelector('#ldr-all').onclick = () => { sfx('tap'); pop(popHead('Notas do jogo', 'Rodada ' + log.r + ' · ' + m.gh + ' x ' + m.ga) + '<div class="ld-pb col"><div class="ld-scroll ldr-alln">' + rt.map(nota).join('') + '</div></div>', 'Notas do jogo', null, 'w560'); };
+        if (st.querySelector('#ldr-all')) st.querySelector('#ldr-all').onclick = () => { sfx('tap'); pop(popHead('Notas do jogo', (cupL ? log.ph : 'Rodada ' + log.r) + ' · ' + m.gh + ' x ' + m.ga) + '<div class="ld-pb col"><div class="ld-scroll ldr-alln">' + rt.map(nota).join('') + '</div></div>', 'Notas do jogo', null, 'w560'); };
         if (st.querySelector('#rs-fin')) st.querySelector('#rs-fin').onclick = () => { sfx('tap'); FIN_BACK = () => result(m, log, aux, move); financas('rod'); };
         if (st.querySelector('#rs-cad')) st.querySelector('#rs-cad').onclick = () => { sfx('tap'); pop(popHead('Anotado no caderno', vs ? c.nm(m.vs) : '') + '<div class="ld-pb col rs-cadp">' + cadN.map(cadTxt).join('') + '</div>', 'Anotado no caderno', null, 'w560'); };
         st.querySelector('#ldr-go').onclick = () => { sfx('tap'); if (co.sacked) { // demitido: janelinha por cima do resultado (a tela antiga era em pé, com a coluna estreita e o fundo de outra cor)
@@ -1091,8 +1178,11 @@
     const zone = p => (ss.promo && p <= ss.promo) || (!ss.promo && p === 1) ? 'up' : ss.releg && p > n - ss.releg ? 'dn' : '';
     const dots = f => { const a = (f || '').split(''); while (a.length < 5) a.unshift('n'); return '<span class="ld-f5">' + a.map(x => '<i class="' + x + '"></i>').join('') + '</span>'; };
     let body;
+    const cupOn = !!ss.cup;
+    if (tab === 'copa' && !cupOn) tab = 'cls';
     // Tabela enxuta (2026-11-09, quadro 16): menos colunas, letra maior, sem trilho
-    if (tab === 'cls' || tab === 'gol') {
+    if (tab === 'copa') body = cupBracket(co);
+    else if (tab === 'cls' || tab === 'gol') {
       body = '<div class="tb2-h' + (tab === 'cls' ? ' cls' : '') + '"><i></i><i></i><span>CLUBE</span>' + (tab === 'cls' ? '<em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em><b>PTS</b>' : '<em>GP</em><em>GC</em><b>SG</b>') + '<span>FORMA</span></div><div class="tb2-b">' +
         t.map((x, k) => { const sg = x.gp - x.gc, cl = club(x.id), sgT = (sg > 0 ? '+' : '') + sg;
           return '<div class="tb2-r ' + zone(k + 1) + (x.me ? ' me' : '') + (tab === 'cls' ? ' cls' : '') + '"><i>' + (k + 1) + '</i>' + crest(x.id, 'tb2-cr') + '<span>' + esc(cl.short || cl.name) + '</span>' +
@@ -1117,11 +1207,12 @@
     for (let i = ss.i; i < Math.min(R, ss.i + 3); i++) { const g = ss.rounds[i].find(([h, a]) => h === mi2 || a === mi2); if (!g) { fut.push('<span class="tb2-nx"><i class="bye">–</i><b>folga</b></span>'); continue; } const hm = g[0] === mi2, id = ss.ids[hm ? g[1] : g[0]]; fut.push('<span class="tb2-nx">' + crest(id, 'tb2-nxc') + '<b>' + esc(club(id).short || club(id).name) + '</b><small>' + (hm ? 'casa' : 'fora') + '</small></span>'); }
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const meta = B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + gp + 'º';
-    show('<div class="tb2"><div class="tm-h"><button class="tcr-back" id="tb2-back" aria-label="Voltar">' + BK + '</button><b>' + esc(ss.name) + '</b><small>' + (ss.done ? 'encerrada' : 'rodada ' + Math.min(ss.i + 1, R) + ' de ' + R) + '</small></div>' +
-      '<div class="tb2-tabs">' + [['cls', 'Classificação'], ['gol', 'Gols'], ['art', 'Artilharia'], ['rod', 'Rodadas']].map(([k, tt]) => '<button data-tb="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + tt + '</button>').join('') + '</div>' +
+    const cupT = tab === 'copa', cup = ss.cup;
+    show('<div class="tb2' + (cupT ? ' cp' : '') + '"><div class="tm-h"><button class="tcr-back" id="tb2-back" aria-label="Voltar">' + BK + '</button><b>' + esc(cupT ? cup.name : ss.name) + '</b><small>' + (cupT ? (cup.champ ? 'encerrada' : esc(S.coCupPhase(cup, cup.k).toLowerCase()) + ' · jogo único') : ss.done ? 'encerrada' : 'rodada ' + Math.min(ss.i + 1, R) + ' de ' + R) + '</small></div>' +
+      '<div class="tb2-tabs' + (cupOn ? ' t5' : '') + '">' + [['cls', 'Classificação'], ['gol', 'Gols'], ['art', 'Artilharia'], ['rod', 'Rodadas']].concat(cupOn ? [['copa', 'Copa']] : []).map(([k, tt]) => '<button data-tb="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + tt + '</button>').join('') + '</div>' +
       '<div class="tb2-t ' + tab + '">' + body + '</div>' +
-      '<div class="tb2-side"><div class="tb2-race"><small>SUA CORRIDA</small><b>' + pos + 'º · ' + race + '</b><em class="' + (pos <= gp ? '' : 'hi') + '">' + meta + '</em></div>' +
-        (fut.length ? '<div class="tb2-fut"><small>PRÓXIMOS</small><div>' + fut.join('') + '</div></div>' : '') + '</div></div>', st => {
+      '<div class="tb2-side">' + (cupT ? cupSide(co) : '<div class="tb2-race"><small>SUA CORRIDA</small><b>' + pos + 'º · ' + race + '</b><em class="' + (pos <= gp ? '' : 'hi') + '">' + meta + '</em></div>' +
+        (fut.length ? '<div class="tb2-fut"><small>PRÓXIMOS</small><div>' + fut.join('') + '</div></div>' : '')) + '</div></div>', st => {
       st.querySelectorAll('[data-tb]').forEach(b => b.onclick = () => { sfx('tap'); tabela(b.dataset.tb, rd); });
       if (st.querySelector('#ldt-prev')) { st.querySelector('#ldt-prev').onclick = () => { sfx('tap'); tabela('rod', rd - 1); }; st.querySelector('#ldt-next').onclick = () => { sfx('tap'); tabela('rod', rd + 1); }; }
       st.querySelector('#tb2-back').onclick = () => { sfx('tap'); semana(); };
@@ -2417,13 +2508,13 @@
   }
   // Troféus e Hall (2026-11-11): telas cheias no padrão do Estádio (painel à esquerda, números à direita), no lugar das janelinhas
   const TF_BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
-  const taca = (name, h) => window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY('league', h, name) : '';
+  const taca = (name, h, k) => window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY(k === 'cup' ? 'cup' : 'league', h, name) : '';
   function trofeus(pg) {
     const c = C(), co = c.co, cl = club(co.club), ss = co.ss, T = co.titles.slice().reverse(), n = T.length, PER = 4;
     const pages = Math.max(1, Math.ceil(n / PER)); pg = Math.max(0, Math.min(pages - 1, pg || 0));
     const ups = co.hist.filter(h => h.up).length, pos = ss ? S.coPos(co) : 0, left = ss ? ss.rounds.length - ss.i : 0;
     const clubs = T.reduce((a, t) => (a.indexOf(t.club) < 0 ? a.concat(t.club) : a), []).length;
-    const shelf = n ? '<div class="tf2-sh">' + T.slice(pg * PER, pg * PER + PER).map(t => '<div class="tf2-c">' + taca(t.name, 104) + '<b>' + esc(t.name) + '</b><small>' + crest(t.club, 'tf2-cr') + '<span>' + (U.YEAR0 + t.s) + ' · ' + esc(club(t.club).short || club(t.club).name) + '</span></small></div>').join('') + '</div>' +
+    const shelf = n ? '<div class="tf2-sh">' + T.slice(pg * PER, pg * PER + PER).map(t => '<div class="tf2-c">' + taca(t.name, 104, t.k) + '<b>' + esc(t.name) + '</b><small>' + crest(t.club, 'tf2-cr') + '<span>' + (U.YEAR0 + t.s) + ' · ' + esc(club(t.club).short || club(t.club).name) + '</span></small></div>').join('') + '</div>' +
         (pages > 1 ? '<div class="mk-pg tf2-pg"><button class="mk-ar" data-pg="-1"' + (pg ? '' : ' disabled') + ' aria-label="Mais novos">' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar" data-pg="1"' + (pg < pages - 1 ? '' : ' disabled') + ' aria-label="Mais antigos">' + MK_R + '</button></div>' : '')
       : '<div class="tf2-no">' + (ss ? taca(ss.name, 118) : '') + '<b>A primeira taça entra aqui</b>' + (ss ? '<small>' + esc(ss.name) + '</small>' : '') + '</div>';
     show('<div class="es tf2"><div class="tm-h"><button class="tcr-back" id="tf2-back" aria-label="Voltar">' + TF_BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>Troféus</b><small>' + esc(co.name) + '</small></div>' +
@@ -2478,6 +2569,7 @@
     const dest = [art ? ['ARTILHEIRO', co.squad.find(p => p.n === art) || (out.left || []).find(x => x.n === art) || { n: art }, U.D.plural(g[art], 'gol', 'gols')] : null, avgs[0] ? ['MELHOR DO ANO', avgs[0][0], 'nota média ' + avgs[0][1].toFixed(1).replace('.', ',')] : null,
       rev && rev[0] !== (avgs[0] || [])[0] ? ['REVELAÇÃO', rev[0], rev[0].age + ' anos · nota ' + rev[1].toFixed(1).replace('.', ',')] : null].filter(Boolean);
     const nums = [['Pontos em ' + n + ' jogos', v * 3 + e], ['Campanha', v + 'V ' + e + 'E ' + d + 'D'], ['Gols', gp + ' a ' + gc], ['Maior vitória', big && big.gf > big.ga ? big.gf + ' x ' + big.ga + ' ' + esc((club(big.vs).short || club(big.vs).name).slice(0, 3).toUpperCase()) : '—'], ['Em casa', rec(log.filter(l => l.home))], ['Fora', rec(log.filter(l => !l.home))]];
+    if (out.cup) nums.splice(3, 1, [esc(out.cup.name), out.cup.ph.charAt(0).toUpperCase() + out.cup.ph.slice(1)]);   // copa no lugar da maior vitória
     const exp = co.squad.filter(p => p.ct <= 0).length;
     const coinTxt = (out.coins || []).map(x => x.t.toLowerCase()).join(', ');
     const next = [out.coinsTot ? ['+' + out.coinsTot + ' moedas', coinTxt, 'coin'] : null, out.offers ? [out.sacked ? (out.offers.length > 1 ? 'Clubes ligaram' : 'Um clube ligou') : U.D.plural(out.offers.length, 'clube quer você', 'clubes querem você'), out.offers.slice(0, 2).map(id => esc(club(id).short || club(id).name)).join(' e ') + (out.offers.length > 1 ? ' mandaram proposta' : ' mandou proposta')] : null,
@@ -2936,6 +3028,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, fit, lift, wroom: () => WROOM, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, result, segunda, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, recebidas, ficha, proposta, contrato, recebida };
+  U.LD = { on, show, off, fit, lift, wroom: () => WROOM, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePens, result, segunda, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, recebidas, ficha, proposta, contrato, recebida };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();

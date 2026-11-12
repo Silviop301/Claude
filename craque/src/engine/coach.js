@@ -655,7 +655,7 @@
     const nx = S.coNext(co); if (!nx || nx.bye) return null;
     const them = oppSide(co, nx.vs, !nx.home), xi = co.xi.filter(id => co.squad.some(p => p.id === id && ok(p))).length === 11 ? co.xi : autoXI(co.squad, form || co.form).xi;
     const us = { squad: co.squad, form: form || co.form, style: style || co.style, xi, bonus: co.xp.leitura * 0.2 };
-    const r = nx.home ? matchup(us, them) : matchup(them, us);
+    const r = nx.home ? matchup(us, them, !!nx.neutral) : matchup(them, us, !!nx.neutral);
     return { them, nx, xg: nx.home ? [r.lh, r.la] : [r.la, r.lh], us: nx.home ? r.h : r.a, op: nx.home ? r.a : r.h, ush: nx.home ? r.sh : r.sa, osh: nx.home ? r.sa : r.sh, poss: nx.home ? r.h.poss : r.a.poss };
   };
   S.coOpp = (co, vs) => oppSide(co, vs);
@@ -673,7 +673,7 @@
     // O plano do auxiliar (S.coTip com o olheiro lido): se o time entra nele, o ao vivo e o resultado contam se funcionou
     const tp = co.tip && co.tip.kind === 'plan' && co.tip.k === co.season + '|' + nx.round + '|p' ? co.tip : null;
     const plan = tp ? { f: tp.f, s: tp.s, good: tp.good, why: tp.why, used: S.coTipUsed(co, tp) ? 1 : 0 } : null;
-    return { min: 0, gh: 0, ga: 0, home: nx.home, us, them, ev: [], stop: null, done: false, half: false, classic: (D.RIVALS[co.club] || []).includes(nx.vs), vs: nx.vs, round: nx.round, played: {}, startXI: us.xi.slice(), plan };
+    return { min: 0, gh: 0, ga: 0, home: nx.home, us, them, ev: [], stop: null, done: false, half: false, classic: (D.RIVALS[co.club] || []).includes(nx.vs), vs: nx.vs, round: nx.round, played: {}, startXI: us.xi.slice(), plan, cup: nx.cup || null, neutral: !!nx.neutral };
   };
   // Como está o plano agora: 'ok' (seguiu e encaixa), 'no' (seguiu e não encaixa), 'off' (não seguiu ou mudou), null (sem plano)
   S.coPlanNow = m => { const p = m && m.plan; if (!p) return null; if (!p.used || m.us.form !== p.f || m.us.style !== p.s) return 'off'; return p.good ? 'ok' : 'no'; };
@@ -699,7 +699,7 @@
       if (m.us.pre && m.min > m.us.pre.until) delete m.us.pre;
       if (m.us.shout && m.min > m.us.shout.until) { delete m.us.shout; m.ev.push({ m: m.min, t: 'grito-fim', s: 'us' }); }
       const H = m.home ? m.us : m.them, A = m.home ? m.them : m.us;
-      const mu = matchup(H, A, false, free), lh = mu.lh, la = mu.la; // livre: sem o atributo por setor (o campinho já lê os atributos)
+      const mu = matchup(H, A, !!m.neutral, free), lh = mu.lh, la = mu.la; // livre: sem o atributo por setor (o campinho já lê os atributos)
       m.poss = (m.poss || 0) + (m.home ? mu.h.poss : 1 - mu.h.poss);
       // Quem manda no jogo, minuto a minuto (0 a 100, do seu lado): a faixa da tela e do resultado
       (m.mom = m.mom || []).push(Math.round(100 * (m.home ? lh : la) / (lh + la || 1)));
@@ -983,7 +983,7 @@
   };
   // A leitura do auxiliar no meio do jogo: o setor em que mais se sofre e o que está dando certo (em palavras, sem número)
   S.coRead = function (co, m) {
-    const H = m.home ? m.us : m.them, A = m.home ? m.them : m.us, mu = matchup(H, A), u = m.home ? mu.h : mu.a, o = m.home ? mu.a : mu.h;
+    const H = m.home ? m.us : m.them, A = m.home ? m.them : m.us, mu = matchup(H, A, !!m.neutral), u = m.home ? mu.h : mu.a, o = m.home ? mu.a : mu.h;
     const by = byId(m.us.squad), tired = m.us.xi.filter(id => by[id] && by[id].en < 55).map(id => by[id]).sort((a, b) => a.en - b.en);
     // De que lado eles chegam mais (a direita de quem ataca é a sua esquerda)
     const lanes = { e: 0, d: 0, c: 0 }; m.ev.filter(e => e.s === 'them' && e.l && e.m > m.min - 30).forEach(e => { lanes[e.l]++; });
@@ -1172,6 +1172,23 @@
     addTab(ss.tab, hi, ai, m.gh, m.ga, resOf(ss));
     const gf = m.home ? m.gh : m.ga, ga = m.home ? m.ga : m.gh, res = gf > ga ? 'v' : gf < ga ? 'd' : 'e';
     roundRest(co, [me, vi]);
+    const ycOut = afterGame(co, m, res);
+    const log = { r: m.round, vs: m.vs, home: m.home, gf, ga, res, ycOut, ev: m.ev.filter(e => e.t === 'gol' && e.s === 'us').map(e => e.p) };
+    // Plano do auxiliar no resultado: ficou nele em boa parte do jogo (2/3 dos minutos)?
+    if (m.plan) log.plan = m.plan.used && (m.plan.min || 0) >= 0.66 * Math.max(1, m.tk || m.min) ? (m.plan.good ? 'ok' : 'no') : 'off';
+    if (co.train && co.train.i <= ss.i) { log.train = co.train.k; delete co.train; }
+    rateAfter(co, m, log, gf, ga);
+    log.cad = cadNote(co, m, log);
+    ss.log.push(log);
+    board(co, log);
+    ss.i++;
+    xiAfter(co);
+    if (ss.i >= ss.rounds.length) ss.done = true;
+    if (S.coWorldSync) S.coWorldSync(co);
+    return log;
+  };
+  // Depois de qualquer jogo seu (liga ou copa): cansaço e moral, lesão e suspensão andam, amarelos acumulados
+  function afterGame(co, m, res) {
     // Elenco: quem jogou cansa, quem não jogou descansa; moral pelo resultado e por jogar ou não
     const motiv = co.xp.motiv * 0.06;
     co.squad.forEach(p => {
@@ -1190,22 +1207,18 @@
     // Amarelos acumulados: no CO.ycMax, um jogo de suspensão e a conta zera (quem foi expulso já cumpre pelo vermelho)
     const ycOut = [];
     (m.ycAdd || []).forEach(id => { const p = co.squad.find(x => x.id === id); if (!p) return; p.yc = (p.yc || 0) + 1; if (p.yc >= CO.ycMax) { p.yc = 0; if (!p.sus) { p.sus = 1; p.ycSus = 1; ycOut.push(p.n); } } });
-    const log = { r: m.round, vs: m.vs, home: m.home, gf, ga, res, ycOut, ev: m.ev.filter(e => e.t === 'gol' && e.s === 'us').map(e => e.p) };
-    // Plano do auxiliar no resultado: ficou nele em boa parte do jogo (2/3 dos minutos)?
-    if (m.plan) log.plan = m.plan.used && (m.plan.min || 0) >= 0.66 * Math.max(1, m.tk || m.min) ? (m.plan.good ? 'ok' : 'no') : 'off';
-    if (co.train && co.train.i <= ss.i) { log.train = co.train.k; delete co.train; }
+    return ycOut;
+  }
+  function rateAfter(co, m, log, gf, ga) {
     log.rt = rateMatch(co, m, gf, ga);
     log.rt.forEach(x => { const p = co.squad.find(q => q.id === x.id); if (!p) return; p.notes = (p.notes || []).concat([x.r]).slice(-5);
       if (x.r >= 7.5) p.mo = clamp(p.mo + 2, 0, 100); else if (x.r < 5.5) p.mo = clamp(p.mo - 2, 0, 100); });
-    log.cad = cadNote(co, m, log);
-    ss.log.push(log);
-    board(co, log);
-    ss.i++;
+  }
+  function xiAfter(co) {
     if (!co.sacked) { co.xi = co.xi.filter(id => co.squad.some(p => p.id === id && ok(p))); if (co.xi.length < 11 || co.autoXI) { const a = autoXI(co.squad, co.form); co.xi = a.xi; co.bench = a.bench; } else co.bench = co.squad.filter(p => ok(p) && !co.xi.includes(p.id)).sort((a, b) => b.ovr - a.ovr).slice(0, 9).map(p => p.id); }
-    if (ss.i >= ss.rounds.length) ss.done = true;
-    if (S.coWorldSync) S.coWorldSync(co);
-    return log;
-  };
+  }
+  // Para a copa (coachcup.js): o mesmo depois do jogo, sem tabela nem rodada
+  S._coAfter = { afterGame, rateAfter, xiAfter };
   // Notas do jogo (3 a 10) para quem jogou 10 minutos ou mais, com o porquê em poucas palavras. Sem sorteio do jogo:
   // um hash do jogador e da rodada dá a variação (o save no meio termina igual)
   const hsh = str => { let h = 2166136261; for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619); return (h >>> 0) / 4294967296; };
