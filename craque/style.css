@@ -10287,3 +10287,6 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .tb2-t.copa:has(.cg-top) { display: flex; flex-direction: column; }
 .cg-tag { align-self: flex-start; font-style: normal; font: 700 13px/1.2 var(--body); color: var(--gold); background: rgba(242, 194, 48, .12); padding: 5px 8px; border-radius: 7px; }
 .cg-tag.hi { color: #f08a5d; background: rgba(240, 138, 93, .12); }
+
+/* Aporte no limite da temporada (2026-11-12): o botão apagado diz "10 de 10" em vez de sumir sem explicar */
+.fn2-lim { display: flex; flex-direction: column; align-items: flex-start; line-height: 1; } .fn2-lim small { margin-top: 3px; font: 700 12px/1 var(--body, sans-serif); opacity: .75; }
