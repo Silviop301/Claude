@@ -128,6 +128,7 @@
   // o celular deitado, espera ele ficar em pé; girou com a folha aberta, ela fecha sem contar como "Agora não"
   const landHome = () => document.body.classList.contains('ld-on') && !!document.querySelector('#ld-st .hl');
   const fits = () => window.innerHeight >= 500;
+  let want = false; // tocou em Instalar o app com o celular deitado: abre quando ficar em pé
   let turned = false; // fechou porque o celular deitou: não insiste de novo nesta visita
   function auto() {
     const p = platform(), s = get();
@@ -143,6 +144,7 @@
     clearTimeout(rsT);
     rsT = setTimeout(() => {
       if (wrap && landHome() && !fits()) { if (wrap.classList.contains('ins-wrap')) turned = true; close(); }
+      else if (!wrap && want && fits() && platform()) { want = false; sheet(platform()); }
       else if (!wrap) auto();
     }, 350);
   });
@@ -154,4 +156,10 @@
     setTimeout(auto, 900); // primeira vez: espera a home assentar
   };
   U.installSheet = () => { const p = platform() || 'ios'; sheet(p); };
+  // Botão "Instalar o app" da home deitada (Silvio, 2026-11-12: fica até instalar, só no celular). `installCan`: navegador
+  // do celular e ainda não instalou. `installAsk`: abre o passo a passo; deitado ele não cabe, então devolve false, a
+  // home pede para virar o celular e a folha abre sozinha quando ele ficar em pé (`want`).
+  U.installIcon = 'icons/icon-192.png?v=bc5d742f';
+  U.installCan = () => { const p = platform(); return !!p && !get().done && (force || (navigator.maxTouchPoints > 0 && !document.documentElement.classList.contains('desk'))); };
+  U.installAsk = () => { const p = platform(); if (!p) return true; if (landHome() && !fits()) { want = true; turned = false; return false; } want = false; sheet(p); return true; };
 })();
