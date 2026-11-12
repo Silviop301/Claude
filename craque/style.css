@@ -8334,7 +8334,7 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .sm-w .tm-dot { right: 16px; top: 21px; text-align: center; }
 .sm-side { grid-column: 2; grid-row: 2 / -1; display: flex; flex-direction: column; gap: 10px; }
 .sm-nv { height: 50px; flex: none; border-radius: 14px; background: #141517 !important; color: #F3F1EA !important; font: 800 22px/1 var(--display) !important; text-align: left; padding: 0 18px !important; }
-.sm-side .tm-go { min-height: 56px; }
+.sm-side .tm-go { flex: none; height: 64px; min-height: 0; margin-bottom: 0; box-shadow: inset 0 -4px 0 #b48a12; padding-bottom: 4px !important; } /* mesma caixa de Treino/Olheiro: o relevo fica por dentro, senão parece mais baixo (Silvio 12/11) */
 /* Link só do Treinador (?so=treinador): um botão de carreiras centrado embaixo do dourado */
 .hl-x:not(.hl-so) .hl-mds { grid-template-columns: repeat(2, minmax(0, 300px)); justify-content: center; }
 /* Botões dos modos (Silvio 2026-11-09, "mais bonitos"): mais altos, letra maior e relevo como o do dourado. Treinador creme
@@ -9552,6 +9552,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 .rs-ch > span, .rs-ch > button { height: auto; flex: 1 1 40px; min-height: 30px; max-height: 40px; }
 .rs-side.n4 { gap: 8px; }
 .rs-side.n4 .rs-best { padding: 10px 16px; gap: 6px; }
+.rs-best span small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* uma linha só (card apertado, 2026-11-12) */
 .rs-side.n4 .tm-b { height: 42px; } .rs-side.n4 .tm-go { height: 56px; }
 /* Bola do gol nos lances e no gráfico: o desenho do jogo (assets/ic/26bd.webp) no lugar do rabisco em código (Silvio, 2026-11-11) */
 .rsi img.rsi-b { width: 19px; height: 19px; display: block; border-radius: 50%; box-shadow: 0 0 0 1px rgba(243, 241, 234, .5); }
@@ -9920,7 +9921,7 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 #ld.wide .sm-wk { grid-row: 4; gap: 14px; } #ld.wide .sm-w { height: 100%; border-radius: 18px; padding: 0 20px !important; }
 #ld.wide .sm-w b { font-size: 26px; } #ld.wide .sm-w small { font-size: 14px; } #ld.wide .sm-w .tm-dot { top: 27px; }
 #ld.wide .sm-side { gap: 12px; } #ld.wide .sm-nv { height: clamp(52px, 11cqh, 70px); border-radius: 18px; font-size: 28px !important; padding: 0 22px !important; }
-#ld.wide .sm-nv .tm-dot { top: 20px; } #ld.wide .sm-side .tm-go { margin-top: auto; height: clamp(64px, 13cqh, 84px); min-height: 0; border-radius: 18px; font-size: 34px !important; }
+#ld.wide .sm-nv .tm-dot { top: 20px; } #ld.wide .sm-side .tm-go { margin-top: auto; margin-bottom: 0; height: clamp(64px, 13cqh, 84px); min-height: 0; border-radius: 18px; font-size: 34px !important; }
 
 .kb2-x { display: none; }
 #ld.wide .kb2 { container-type: size; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: 48px minmax(0, 1fr); gap: 14px 20px; }
