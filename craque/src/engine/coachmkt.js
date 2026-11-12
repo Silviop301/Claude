@@ -301,7 +301,9 @@
   };
   // Folha depois da chegada (sai o da troca) contra o teto
   S.coMktFolha = (co, p, t) => { const n = S.coMkt(co).neg[p.id], tr = n && n.deal && n.deal.tr, q = tr && co.squad.find(x => x.id === tr);
-    const own = co.squad.find(x => x.id === p.id), f = S.coFin(co), fol = S.coFolha(co) + t.w - (q ? q.wage : 0) - (own ? own.wage : 0); return { fol, pct: Math.round(100 * fol / Math.max(1, f.teto)) }; };
+    const own = co.squad.find(x => x.id === p.id), fol = S.coFolha(co) + t.w - (q ? q.wage : 0) - (own ? own.wage : 0);
+    // o teto conta o elenco como fica com ele (time melhor traz mais receita: S.coFinTeto)
+    const teto = S.coFinTeto(co, co.squad.filter(x => x !== q && x !== own).concat([p])); return { fol, teto, pct: Math.round(100 * fol / Math.max(1, teto)) }; };
   // Elenco cheio para trazer este jogador? Com um dos seus na troca sai um e entra um: a troca vale mesmo com o elenco no limite.
   // O limite só barra quem chega (compra, sem clube): garoto da base sobe sempre e ninguém sai sozinho (save antigo acima do limite só não contrata).
   S.coMktFull = (co, p) => { const n = p && S.coMkt(co).neg[p.id], tr = n && n.deal && n.deal.tr; return co.squad.length - (tr && co.squad.some(x => x.id === tr) ? 1 : 0) >= M.maxSquad; };
