@@ -10079,8 +10079,11 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .hlw .hw-bt .hl-dk-t { display: none; }
 
 /* Home deitada: botão Instalar o app (só no navegador do celular, até instalar) */
-.ld-st button.hl-nv.hl-ins { top: auto; bottom: 14px; left: 16px; display: flex; align-items: center; gap: 10px; padding: 5px 16px 5px 6px; }
-.hl-nv.hl-ins img { border-radius: 9px; display: block; }
+/* Instalar o app (2026-11-12, Silvio: "pequeno e com a borda diferente do ícone"): mesmo desenho dos botões Perfil/Ajustes
+   (canto 12, contorno fino), maior, e o ícone com o canto do ícone do iPhone (22,5% do lado) */
+.ld-st button.hl-nv.hl-ins { top: auto; bottom: 14px; left: 16px; height: 56px; display: flex; align-items: center; gap: 11px; padding: 0 20px 0 8px; border-radius: 12px; }
+.ld-st button.hl-nv.hl-ins b { font: 700 20px/1 var(--display); }
+.hl-nv.hl-ins img { width: 42px; height: 42px; border-radius: 9.5px; display: block; flex: none; }
 
 /* Quem entra, ao lado do titular: dois atributos da posição comparados com quem sai */
 .tm-near.at { width: 204px; }

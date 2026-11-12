@@ -74,7 +74,7 @@
   // (U.rotPref, desliga nos Ajustes); com o celular realmente deitado nada gira. Toques: U.pt / U.box (ui/core.js)
   function rot() {
     const R = document.documentElement, ww = window.innerWidth, wh = window.innerHeight;
-    const on = document.body.classList.contains('ld-on') && wh > ww * 1.05 && U.rotPref();
+    const on = document.body.classList.contains('ld-on') && wh > ww * 1.05 && U.rotPref() && !U.rotHold; // rotHold: folha de instalar aberta, que é em pé (install.js)
     R.classList.toggle('rot', on);
     if (on) { R.style.setProperty('--rw', wh + 'px'); R.style.setProperty('--rh', ww + 'px'); R.style.setProperty('--rx', ww + 'px'); }
   }
