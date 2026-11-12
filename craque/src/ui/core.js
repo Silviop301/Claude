@@ -58,9 +58,23 @@
 
   function load(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } }
   function store(key, v) {
-    try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* sem storage */ }
+    try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { saveWarn(1); } // não gravou (aparelho cheio ou navegador bloqueando): avisa
     if (window.CLIMBIX_CLOUD) window.CLIMBIX_CLOUD.touch(key); // com conta, vai para a nuvem
   }
+  // Aviso de espaço (2026-11-12): falhou ao salvar (no máximo a cada 3 min) ou o armazenamento passou de ~80% (uma vez por abertura)
+  let warnAt = 0, warnFull = false;
+  function saveWarn(fail) {
+    if (fail ? Date.now() - warnAt < 180000 : warnFull) return;
+    if (fail) warnAt = Date.now(); else warnFull = true;
+    const old = document.getElementById('sv-ty'); if (old) old.remove();
+    const box = document.createElement('div'); box.id = 'sv-ty'; box.className = 'up-ty sv-ty' + (fail ? ' err' : ''); box.setAttribute('role', 'alert');
+    box.innerHTML = '<i><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></svg></i><span><b>' + (fail ? 'Não deu para salvar' : 'Pouco espaço para salvar') + '</b><small>' + (fail ? 'Falta espaço no aparelho · libere espaço' : 'Libere espaço no aparelho para não perder o jogo') + '</small></span>';
+    document.body.appendChild(box); sfx('whistle');
+    const t = setTimeout(() => box.remove(), 9000);
+    box.onclick = () => { clearTimeout(t); box.remove(); };
+  }
+  // Mede quanto o jogo já ocupa (navegadores dão ~5 milhões de caracteres por site); passou de 4 milhões, avisa
+  setTimeout(() => { try { let n = 0; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); n += k.length + (localStorage.getItem(k) || '').length; } if (n > 4e6) saveWarn(0); } catch (e) { /* sem acesso */ } }, 4000);
   // "at": quando foi salvo (na nuvem vale a carreira mais recente; carreira encerrada fica marcada como vazia)
   // Configurações do jogador (tela em ui/settings.js)
   const CFG_KEY = 'climbix-config';
@@ -419,5 +433,5 @@
   // Som do gol com mando: o seu gol em casa é a festa inteira, fora é o canto da sua torcida lá no fundo; o gol deles em
   // casa é o lamento, fora é a casa deles explodindo
   const goalSnd = (ours, home) => (ours ? (home ? 'goal' : 'goalAway') : home ? 'golContra' : 'golDeles'); // gol deles: vaia em casa, festa deles fora (12/11) // gol seu: rede + torcida (gravações, o mesmo do lance decisivo; Silvio 11/11)
-  window.CRAQUE_UI = { goalSnd, zk, rotPref, rotOn, pt, box, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, slotKey, CO_SLOTS: 5, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, save, render, bar, barLive, barInPhone, clubBg, totOf, titlesOf, toHome, modeHead, modeHeadBind };
+  window.CRAQUE_UI = { goalSnd, zk, rotPref, rotOn, pt, box, GEAR_SVG, ICON, emo, emoSrc, twCode, flag, icoOf, cfg, setCfg, vibe, ask, HOUSE, arm, disarm, tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, SAVE_FC, saveKey, slotKey, CO_SLOTS: 5, HALL, HALL_JAJ, YEAR0, esc, money, pts, club, league, stars, year, crest, badgeSrc, trophy, titleType, meter, load, store, saveWarn, save, render, bar, barLive, barInPhone, clubBg, totOf, titlesOf, toHome, modeHead, modeHeadBind };
 })();
