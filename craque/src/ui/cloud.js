@@ -58,7 +58,7 @@
   }
   function apply(m) { for (const k in KEYS) if (m[k] !== undefined && m[k] !== null) raw(KEYS[k], m[k]); if (U.ITEMS) U.ITEMS.reset(); }
   // Grava sem avisar a nuvem de novo (evita laço)
-  const raw = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sem espaço */ } };
+  const raw = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { if (U.saveWarn) U.saveWarn(1); } };
 
   // Sincroniza: puxa, junta, grava no aparelho e manda de volta
   let busy = null, again = false;
