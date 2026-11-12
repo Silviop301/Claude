@@ -109,7 +109,7 @@
   const staffBase = co => Math.min(S.coFolha(co), baseOf(co));
   S.coFolha = co => (co.squad || []).reduce((a, p) => a + (p.wage || 0), 0);
   const rounds = co => (co.ss ? co.ss.rounds.length : 38);
-  const zero = () => ({ bil: 0, tv: 0, pat: 0, prem: 0, vend: 0, sal: 0, comp: 0, jur: 0 });
+  const zero = () => ({ bil: 0, tv: 0, pat: 0, prem: 0, vend: 0, sal: 0, comp: 0, jur: 0, ren: 0 });
   // Receita prevista da temporada pelo tamanho do clube e pelo número de rodadas
   const margOf = clubId => { const G = F.mg, b = +((typeof process !== 'undefined' && process.env && process.env.CO_MG) || G.big), c = D.CLUB_BY_ID[clubId];
     const t = clamp(((c ? c.strength : G.lo) - G.lo) / (G.hi - G.lo), 0, 1); return F.marg - (F.marg - b) * t; };
@@ -212,6 +212,34 @@
     if (L.n <= 0 || L.rem <= 0) f.loan = null;
   }
 
+  // ---------- aplicação (Silvio 2026-11-12: "investir parte do dinheiro para ter uma renda e parar de sofrer com dinheiro") ----------
+  // Dinheiro do caixa parado no banco: rende `r` por rodada e o rendimento entra no caixa (receita da temporada, `ss.ren`).
+  // `r` fica abaixo do retorno das obras do estádio (~0,85% por rodada: se pagam em ~3 anos) para construir seguir valendo mais.
+  // Só sai do caixa o que deixa `keep` semanas de folha nele; resgate a qualquer hora, sem multa; no vermelho a aplicação cobre
+  // o buraco sozinha antes do degrau do vermelho, e a compra no mercado resgata o que faltar no caixa. É do clube (`f.apl`):
+  // trocar de clube ou ser demitido deixa o dinheiro lá. `f.apl` = { v aplicado, ren rendeu desde a 1ª aplicação }
+  const AP = S.CO_APL = { r: 0.005, keep: 4, step: 50000 };
+  const folhaWk = co => S.coFolha(co) + S.coAuxWage(co) + (S.coDmWage ? S.coDmWage(co) : 0);
+  S.coAplV = co => { const f = S.coFin(co); return f && f.apl ? f.apl.v : 0; };
+  S.coAplMax = co => { const f = S.coFin(co); if (!f) return 0; return Math.max(0, Math.floor((f.caixa - folhaWk(co) * AP.keep) / 10000) * 10000); };
+  S.coAplRen = v => Math.round(v * AP.r);
+  S.coAplPut = function (co, v) {
+    const f = S.coFin(co); v = Math.round(v / 10000) * 10000; if (!f || v <= 0 || v > S.coAplMax(co)) return false;
+    if (!f.apl) f.apl = { v: 0, ren: 0 };
+    f.apl.v += v; f.caixa -= v; f.ss.apl = (f.ss.apl || 0) + v; return true;
+  };
+  S.coAplGet = function (co, v) {
+    const f = S.coFin(co); if (!f || !f.apl) return 0; v = Math.min(f.apl.v, v == null ? f.apl.v : Math.round(v)); if (v <= 0) return 0;
+    f.apl.v -= v; f.caixa += v; f.ss.res = (f.ss.res || 0) + v; if (f.apl.v <= 0) f.apl = null;
+    if (f.caixa >= 0) f.neg = 0;
+    return v;
+  };
+  // resgata o que falta para o caixa chegar a `need` (compra no mercado, vermelho)
+  S.coAplCover = function (co, need) { const f = S.coFin(co); return f && f.apl && f.caixa < need ? S.coAplGet(co, need - f.caixa) : 0; };
+  // Verba que dá para gastar de verdade: a da diretoria, até o dinheiro que existe (caixa + aplicação). A verba é a
+  // permissão, não o dinheiro (Silvio 2026-11-12: "é basicamente meu limite"): sem essa trava dava para gastar 6 mi com 1,4 no caixa
+  S.coVerbaLivre = co => { const f = S.coFin(co); return f ? Math.max(0, Math.min(f.verba, f.caixa + (f.apl ? f.apl.v : 0))) : 0; };
+
   // ---------- vermelho ----------
   // Valor de mercado de um jogador seu (para a venda forçada e, depois, o mercado)
   S.coValue = p => { const k = p.age <= 23 ? 1.6 : p.age <= 27 ? 1.3 : p.age <= 30 ? 1 : 0.6; return r10(p.wage * 52 * k * (1 + Math.max(0, p.pot - p.ovr) / 40)); };
@@ -297,6 +325,8 @@
     if (home && vs) { g = gate(co, vs); add('bil', g); if (S.coEstBar) fin.ss.bar = (fin.ss.bar || 0) + S.coEstBar(co, vs, gate0(co, vs), g); }
     if (fin.loan && (ri + 1) % F.mes === 0) parcela(co);
     if (S.coMktWeek) S.coMktWeek(co, ri, sub, add);
+    if (fin.apl && fin.apl.v > 0) { const y = S.coAplRen(fin.apl.v); add('ren', y); fin.apl.ren += y; }
+    if (fin.caixa < 0 && fin.apl) S.coAplCover(co, 0);
     // No vermelho a diretoria perde a paciência aos poucos (mais com o presidente pão-duro, o dobro no ultimato);
     // com 6 rodadas seguidas o presidente vende o jogador mais caro
     if (fin.caixa < 0) {
@@ -311,7 +341,7 @@
   // continuar no positivo"): a diferença do saldo da temporada desde o fim da rodada anterior, então entra também o que
   // aconteceu entre os jogos (compra, venda, aporte, obra). O que mexeu no caixa sem estar no saldo (empréstimo, parte do
   // principal da parcela) vira "Banco e outros". `fin.rd` = { s, r, inn: [[k, v]], out: [[k, v]], cx, dc }
-  const RD_IN = ['bil', 'tv', 'pat', 'prem', 'vend', 'apo'], RD_OUT = ['sal', 'comp', 'jur', 'obra'];
+  const RD_IN = ['bil', 'tv', 'pat', 'prem', 'vend', 'apo', 'ren', 'res'], RD_OUT = ['sal', 'comp', 'jur', 'obra', 'apl'];
   function roundLog(co, ri, snap, h) { // h: 1 em casa, 0 fora, -1 sem jogo
     const fin = co.fin, d = k => Math.round((fin.ss[k] || 0) - ((snap.ss && snap.ss[k]) || 0));
     const bar = d('bar'), cra = d('cra'), inn = RD_IN.map(k => [k, d(k) - (k === 'bil' ? bar : k === 'pat' ? cra : 0)]).concat([['bar', bar], ['cra', cra]]).filter(x => x[1] > 0), out = RD_OUT.map(k => [k, d(k)]).filter(x => x[1] > 0);
@@ -344,7 +374,7 @@
     const x = fin.s === co.season && fin.ss ? fin.ss : zero(), nx = S.coNext(co);
     const bil = i ? x.bil / i : (nx && !nx.bye && nx.home ? gate(co, nx.vs) / 2 : 0);
     const tv = (i <= half ? fin.rec * F.tv / 2 * (S.coEstTv ? S.coEstTv(co) : 1) : 0) / rest;
-    const inn = patOf(co).fix / n + S.coFinStarV(co) + bil + tv + (fin.recv || []).reduce((a, y) => a + y.v, 0) / F.mes;
+    const inn = patOf(co).fix / n + S.coFinStarV(co) + bil + tv + (fin.recv || []).reduce((a, y) => a + y.v, 0) / F.mes + (fin.apl ? S.coAplRen(fin.apl.v) : 0);
     const out = S.coFolha(co) + S.coAuxWage(co) + (S.coDmWage ? S.coDmWage(co) : 0) + (fin.loan ? fin.loan.parc / F.mes : 0) + (fin.inst || []).reduce((a, y) => a + y.v, 0) / F.mes;
     const net = Math.round(inn - out);
     if (fin.caixa < 0) return { net, left: 0, rest: n - i, st: 'red', inn: Math.round(inn), out: Math.round(out) };
@@ -424,7 +454,7 @@
       if (out.won) add('prem', rec * F.titulo);
       if (out.up) { add('prem', rec * F.acesso); out.upPrem = r10(rec * F.acesso); }
     }
-    const ent = ss.bil + ss.tv + ss.pat + ss.prem + ss.vend, sai = ss.sal + ss.comp + (ss.jur || 0), saldo = ent - sai;
+    const ent = ss.bil + ss.tv + ss.pat + ss.prem + ss.vend + (ss.ren || 0), sai = ss.sal + ss.comp + (ss.jur || 0), saldo = ent - sai;
     const bal = { season: out.season, club: clubId, ss: Object.assign({}, ss), ent, sai, saldo, caixa: fin.caixa, verba0: fin.verba, teto0: fin.teto, ac: fin.ac, pat: pt ? pt.name : null };
     if (out.sacked) { out.fin = bal; co.fin = null; return out; }
     // A diretoria do ano seguinte: teto pela folha normal (cresce com a divisão), mais 5% se cumpriu a meta no azul;
@@ -434,7 +464,7 @@
     if (out.up && rec) { const n0 = normal(co.club, out.season, co), lg0 = n0 ? rec * margOf(co.club) / rounds(co) / n0 : 1; out.upRec = Math.round((lgMult(co.club) / (lg0 || 1) - 1) * 100); }
     const good = out.met && saldo > 0;
     fin.teto = Math.max(r5(base * F.teto), fin.tmin || 0, good ? r5((fin.teto0 || (fin.teto - (fin.tap || 0))) * 1.05) : 0) + (fin.tap || 0);
-    fin.verba = fin.caixa <= 0 ? 0 : Math.min(r10(fin.caixa * 0.6), r10(base * F.verba0 + Math.max(0, saldo) * F.lucro));
+    const cxA = fin.caixa + (fin.apl ? fin.apl.v : 0); fin.verba = cxA <= 0 ? 0 : Math.min(r10(cxA * 0.6), r10(base * F.verba0 + Math.max(0, saldo) * F.lucro));
     bal.verba = fin.verba; bal.teto = fin.teto; bal.good = good;
     fin.last = bal; fin.ss = zero(); fin.rec = 0; fin.s = co.season; fin.pend = null;
     out.fin = bal;

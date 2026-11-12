@@ -1930,7 +1930,7 @@
     show('<div class="mk mkr">' + mkHead('mkr-back', 'Resultado', U.D.plural(list.length, 'jogador', 'jogadores'), false, true) +
       '<div class="mk-chips">' + chips + '<span class="rs-gap"></span><button class="mk-mud" id="mkr-mud">Mudar</button></div>' +
       '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">Ninguém com esses filtros.</p>') + '</div>' +
-      '<div class="mk-side"><div class="mk-k"><small>VERBA</small><b class="up">' + c.brl(f.verba) + '</b><span class="mk-fl"><span>Folha</span><span>' + pct + '% do teto</span></span><i class="mk-bar"><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i></div>' +
+      '<div class="mk-side"><div class="mk-k"><small>VERBA</small><b class="up">' + c.brl(S.coVerbaLivre(co)) + '</b><span class="mk-fl"><span>Folha</span><span>' + pct + '% do teto</span></span><i class="mk-bar"><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i></div>' +
         '<div class="mk-k mk-ord"><button class="mk-ar" data-mo="-1" aria-label="ordem anterior">' + MK_L + '</button><span><small>ORDEM</small><b>' + ords[ord] + '</b></span><button class="mk-ar" data-mo="1" aria-label="ordem seguinte">' + MK_R + '</button></div>' +
         '<div class="mk-pg"><button class="mk-ar big" id="mkr-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar big" id="mkr-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></div>' +
         '<span class="rs-gap"></span><button class="tm-go' + (R.length ? '' : ' off') + '" id="mkr-go">Ver ficha</button></div></div>', st => {
@@ -2106,7 +2106,7 @@
     o = o || { v: neg.cv || cuts[1], pay: 0, tr: null };
     const TL = S.coMktTradeList(co), ti = o.tr ? TL.findIndex(q => q.id === o.tr) : -1, tq = ti >= 0 ? TL[ti] : null;
     const step = o.v >= 2e6 ? 100000 : o.v >= 500000 ? 50000 : 10000;
-    const now = S.coMktNow(co, o), after = f.verba - now, over = S.coMktTradeOver(co, o);
+    const now = S.coMktNow(co, o), after = S.coVerbaLivre(co) - now, over = S.coMktTradeOver(co, o);
     const pres = S.CO_MKT_PRES[S.coMktPres(co, p)], a = neg.ans;
     const ans = a ? (a.k === 'ok' ? ['Aceitou', 'up'] : a.k === 'counter' ? ['Pede ' + c.brl(a.v), 'mid'] : a.k === 'no' ? ['Encerrou a conversa', 'dn'] : ['Recusou', 'dn']) : [pres.t, pres.c];
     const cl = club(p.club), cn = esc(cl.short || cl.name);
@@ -2149,22 +2149,22 @@
     let w, cls, line, r1, v1, r2, v2, b1, b2, a1, a2;
     if (r.k === 'ok') { const now = S.coMktNow(co, neg.deal);
       w = 'Aceitou'; cls = 'up'; line = 'Fechado com o ' + cn + ' por ' + c.brl(neg.deal.v) + (neg.deal.pay ? ' em ' + (neg.deal.pay + 1) + 'x' : ' à vista') + '. Agora é acertar o contrato com o empresário.';
-      r1 = 'Paga agora'; v1 = c.brl(now); r2 = 'Verba depois'; v2 = f.verba - now; b1 = 'Ir ao contrato'; b2 = 'Depois';
+      r1 = 'Paga agora'; v1 = c.brl(now); r2 = 'Verba depois'; v2 = S.coVerbaLivre(co) - now; b1 = 'Ir ao contrato'; b2 = 'Depois';
       a1 = () => contrato(id, () => proposta(id, back)); a2 = null;
     } else if (r.k === 'counter') { const o2 = Object.assign({}, o, { v: r.v }), now = S.coMktNow(co, o2);
       w = 'Pede ' + c.brl(r.v); cls = 'mid'; line = 'Ele achou ' + c.brl(o.v) + ' pouco, mas topa conversar. Aceitar fecha agora.';
-      r1 = 'Se aceitar, paga'; v1 = c.brl(now); r2 = 'Verba depois'; v2 = f.verba - now; b1 = 'Aceitar ' + c.brl(r.v); b2 = 'Nova proposta';
+      r1 = 'Se aceitar, paga'; v1 = c.brl(now); r2 = 'Verba depois'; v2 = S.coVerbaLivre(co) - now; b1 = 'Aceitar ' + c.brl(r.v); b2 = 'Nova proposta';
       a1 = () => { const r2x = S.coMktOffer(co, p, o2); c.save(); sfx(r2x.k === 'ok' ? 'win' : 'tap'); proposta(id, back, o2); resposta(id, back, o2, r2x); }; a2 = null;
       if (v2 < 0) { line = 'Ele pede ' + c.brl(r.v) + ', mas isso passa da sua verba. Parcele ou ponha alguém na troca.'; b1 = 'Nova proposta'; b2 = 'Desistir'; a1 = null; a2 = () => back(); }
     } else if (r.k === 'recusa') {
       w = 'Recusou'; cls = 'dn'; line = c.brl(o.v) + ' ficou longe do que ele quer.' + (neg.pat === 1 ? ' Mais uma recusa e ele encerra a conversa.' : ' Tente chegar mais perto.');
-      r1 = 'Você ofereceu'; v1 = c.brl(o.v); r2 = 'Verba agora'; v2 = f.verba; b1 = 'Nova proposta'; b2 = 'Desistir'; a1 = null; a2 = () => back();
+      r1 = 'Você ofereceu'; v1 = c.brl(o.v); r2 = 'Verba agora'; v2 = S.coVerbaLivre(co); b1 = 'Nova proposta'; b2 = 'Desistir'; a1 = null; a2 = () => back();
     } else if (r.k === 'no') {
       w = 'Encerrou a conversa'; cls = 'dn'; line = 'Sem paciência, o ' + cn + ' não negocia o ' + nm + ' com você até a próxima temporada.';
-      r1 = 'Última proposta'; v1 = c.brl(o.v); r2 = 'Verba agora'; v2 = f.verba; b1 = 'Voltar ao mercado'; b2 = 'Fechar'; a1 = () => mercado(); a2 = null;
+      r1 = 'Última proposta'; v1 = c.brl(o.v); r2 = 'Verba agora'; v2 = S.coVerbaLivre(co); b1 = 'Voltar ao mercado'; b2 = 'Fechar'; a1 = () => mercado(); a2 = null;
     } else {
       w = r.k === 'verba' ? 'Sem verba' : 'Janela fechada'; cls = 'dn'; line = r.k === 'verba' ? 'O que sai agora passa da sua verba. Parcele ou ponha alguém na troca.' : 'A janela fechou. Sem clube dá para contratar a qualquer hora.';
-      r1 = 'Proposta'; v1 = c.brl(o.v); r2 = 'Verba agora'; v2 = f.verba; b1 = 'Entendi'; b2 = 'Mercado'; a1 = null; a2 = () => mercado();
+      r1 = 'Proposta'; v1 = c.brl(o.v); r2 = 'Verba agora'; v2 = S.coVerbaLivre(co); b1 = 'Entendi'; b2 = 'Mercado'; a1 = null; a2 = () => mercado();
     }
     const ini = esc((cl.short || cl.name).replace(/[^A-Za-zÀ-ú ]/g, '').split(' ').filter(Boolean).map((x, i, A) => A.length > 1 ? x[0] : x.slice(0, 2)).join('').slice(0, 2).toUpperCase() || 'P');
     pop('<div class="mkx"><div class="mkx-h"><i class="mkx-fc">' + ini + '</i><span><small>PRESIDENTE' + dtx + '</small><b class="' + cls + '">' + w + '</b></span>' + mkDots(neg.pat, S.CO_MKT.pat) + '</div>' +
@@ -2275,7 +2275,7 @@
     const payT = (pay, fut) => (pay ? (pay + 1) + 'x' : 'à vista') + (fut ? ' · ' + S.CO_MKT.futPct[fut] + '% futura' : '');
     if (r && r.k === 'ok') { const sl = r.sale;
       eb = 'VENDIDO · ' + bn.toUpperCase(); ti = 'Vendido por ' + brlS(c, sl.v); line = esc(last(p.n)) + ' vai para o ' + bn + '. ' + (sl.pay ? 'O resto entra a cada 4 rodadas.' : 'O dinheiro já está no caixa.') + ' Metade virou verba para contratar.';
-      rows = [['Recebe agora', brlS(c, sl.now)], ['Caixa agora', brlS(c, f.caixa), 'up'], ['Verba agora', brlS(c, f.verba), 'up']];
+      rows = [['Recebe agora', brlS(c, sl.now)], ['Caixa agora', brlS(c, f.caixa), 'up'], ['Verba agora', brlS(c, S.coVerbaLivre(co)), 'up']];
       btns = [['Ver o elenco', 'gold', () => elenco()], ['Fechar', 'line', () => back()]];
     } else if (r && r.k === 'no') {
       eb = bn.toUpperCase() + dtx; ti = 'Desistiram'; line = 'A paciência acabou: o ' + bn + ' foi atrás de outro. ' + esc(last(p.n)) + ' fica.';
@@ -2403,7 +2403,7 @@
     { k: 'dec', t: 'Decidir', html: (c, co, f) => finDecidir(c, co, f) },
     { k: 'tmp', t: 'Temporada', html: (c, co, f) => { const x = f.ss, ss = co.ss, homes = ss ? ss.log.filter(l => l.home).length : 0, big = Math.max(x.bil, x.tv, x.pat, x.sal, x.comp, x.prem, x.vend, 1);
       const row = (t, v, neg) => '<div class="ldf-li"><span>' + t + '</span><i><u class="' + (neg ? 'dn' : 'up') + '" style="width:' + Math.round(100 * Math.min(1, v / big)) + '%"></u></i><b class="' + (neg ? 'dn' : 'up') + '">' + (v ? (neg ? '− ' : '+ ') + c.mi(v) : '0') + '</b></div>';
-      const saldo = x.bil + x.tv + x.pat + x.prem + x.vend - x.sal - x.comp;
+      const saldo = x.bil + x.tv + x.pat + x.prem + x.vend + (x.ren || 0) - x.sal - x.comp;
       return row('Bilheteria · ' + U.D.plural(homes, 'jogo', 'jogos') + ' em casa', x.bil) + row('Cota de TV', x.tv) + row('Patrocínio', x.pat) + (x.prem ? row('Prêmios', x.prem) : '') + (x.vend ? row('Vendas', x.vend) : '') +
         row('Salários', x.sal, 1) + row('Contratações', x.comp, 1) + '<div class="ldf-li tot"><span>Saldo até agora</span><b class="' + (saldo >= 0 ? 'up' : 'dn') + '">' + c.sgn(saldo) + '</b></div>'; } },
     { k: 'seg', t: 'A seguir', html: (c, co) => S.coFinNext(co).map(n => '<div class="ldf-li"><span>' + esc(n.txt) + '</span><b>' + (n.aprox ? '~ ' : '') + c.mi(n.v) + '</b></div>').join('') || '<p class="ld-none">A temporada acabou.</p>' },
@@ -2416,7 +2416,7 @@
   // no positivo ou se o saldo vai zerar em semanas"): `fin.rd` e `S.coFinRitmo` em coachfin.js. O cartão Caixa diz quantas
   // rodadas o caixa aguenta no ritmo atual (verde sobra ou chega ao fim da temporada, laranja mais de 4, vermelho 4 ou menos)
   let FIN_BACK = null;
-  const RD_NM = { bil: 'Ingressos', bar: 'Bares e lojas', tv: 'Cota de TV', pat: 'Patrocínio', cra: 'Camisas e marca', prem: 'Prêmios', vend: 'Vendas', apo: 'Aporte do investidor', out: 'Outros', sal: 'Salários', comp: 'Contratações e parcelas', jur: 'Juros do banco', obra: 'Obras do estádio' };
+  const RD_NM = { bil: 'Ingressos', bar: 'Bares e lojas', tv: 'Cota de TV', pat: 'Patrocínio', cra: 'Camisas e marca', prem: 'Prêmios', vend: 'Vendas', apo: 'Aporte do investidor', ren: 'Rendimento', res: 'Resgate da aplicação', apl: 'Aplicação', out: 'Outros', sal: 'Salários', comp: 'Contratações e parcelas', jur: 'Juros do banco', obra: 'Obras do estádio' };
   // Ritmo com seta (11/11, Silvio: "não está clara a trajetória, se está diminuindo ou crescendo"): a rodada comum daqui para a frente
   const ritmoTxt = (c, R) => !R ? '' : R.net >= 0 ? '▲ + ' + c.mi(R.net) + ' por rodada' : '▼ − ' + c.mi(-R.net) + ' por rodada';
   // Cartão da trajetória: quanto o caixa mudou na temporada, a linha rodada a rodada (tracejado = até o fim do ano no ritmo
@@ -2461,7 +2461,7 @@
     if (tab === 'rod') rows = rodRows();
     else if (tab === 'tmp') { const x = f.ss, homes = co.ss ? co.ss.log.filter(l => l.home).length : 0, sg = v => (v ? '+ ' + c.mi(v) : '0'), sn = v => (v ? '− ' + c.mi(v) : '0');
       const saldo = x.bil + x.tv + x.pat + x.prem + x.vend - x.sal - x.comp;
-      rows = li('Bilheteria · ' + U.D.plural(homes, 'jogo', 'jogos') + ' em casa', sg(x.bil), 'up') + li('TV e patrocínio', sg(x.tv + x.pat), 'up') + (x.prem ? li('Prêmios', sg(x.prem), 'up') : '') + (x.vend ? li('Vendas', sg(x.vend), 'up') : '') +
+      rows = li('Bilheteria · ' + U.D.plural(homes, 'jogo', 'jogos') + ' em casa', sg(x.bil), 'up') + li('TV e patrocínio', sg(x.tv + x.pat), 'up') + (x.prem ? li('Prêmios', sg(x.prem), 'up') : '') + (x.vend ? li('Vendas', sg(x.vend), 'up') : '') + (x.ren ? li('Rendimento da aplicação', sg(x.ren), 'up') : '') +
         (f.futLog || []).filter(y => y.s === co.season).map(y => '<div class="fn2-li fn2-cl"><span>Cláusula · ' + esc(y.n) + ' · ' + esc(club(y.club).short || club(y.club).name) + '<small> ' + y.pct + '% da revenda</small></span><b class="up">+ ' + c.mi(y.v) + '</b></div>').join('') +
         li('Salários', sn(x.sal), 'dn') + (x.comp ? li('Contratações', sn(x.comp), 'dn') : '') + li('<b>Saldo</b>', c.sgn(saldo), saldo >= 0 ? 'up' : 'dn'); }
     // Cláusulas de venda futura que ainda valem, em cima (Silvio 2026-11-11: "já existe algum retorno da cláusula de venda?"):
@@ -2472,7 +2472,7 @@
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const head = '<div class="tm-h"><button class="tcr-back" id="ldf-back" aria-label="Voltar">' + BK + '</button><b>Finanças</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (U.YEAR0 + co.season) + '</small></div>';
     const kpi = '<div><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span class="fn2-rt ' + (f.caixa < 0 ? 'red' : !R ? '' : R.net >= 0 ? 'up' : R.st === 'red' ? 'red' : 'warn') + '" title="rodada comum daqui para a frente">' + (f.caixa < 0 ? 'no vermelho' : ritmoTxt(c, R)) + '</span></div>' +
-        '<div><small>VERBA</small><b class="up">' + c.brl(f.verba) + '</b><span>para contratar</span></div>' +
+        '<div><small>VERBA</small><b class="up">' + c.brl(S.coVerbaLivre(co)) + '</b><span>' + (f.verba > S.coVerbaLivre(co) + 9999 ? 'o caixa só cobre isso' : 'para contratar') + '</span></div>' +
         '<div><small>FOLHA</small><b>' + c.brl(folha) + '</b><i><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i><span>teto ' + c.brl(teto) + '</span></div>';
     const tabs = '<div class="fn2-tabs">' + [['rod', 'Rodada'], ['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].filter(x => !WD || x[0] !== 'rod').map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>';
     const ac = '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><' + (pt ? 'button data-fd="pat"' : 'div') + '><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></' + (pt ? 'button' : 'div') + '></div>';
@@ -2560,7 +2560,9 @@
       }, true);
   }
   // Banco enxuto (2026-11-09, quadro 21): o valor grande com ◀ ▶, juros, parcela e total; os degraus do vermelho no ?
-  function banco(amt) {
+  function banco(amt, tab) {
+    if (tab === 'apl' || (tab == null && BK_TAB === 'apl')) return aplicacao(amt);
+    BK_TAB = 'emp';
     const c = C(), co = c.co, f = S.coFin(co), step = S.coFinStep(co), max = S.coLoanMax(co), L = f.loan;
     const ST = ['A diretoria avisa (caixa abaixo de 4 semanas de folha)', 'No vermelho: proibido contratar com taxa', 'Com 6 rodadas no vermelho, o presidente vende o mais caro', 'Com 8, ultimato: a confiança cai o dobro'];
     const steps = max ? [0.25, 0.5, 0.75, 1].map(k => Math.round(max * k / 10000) * 10000).filter((v, i, a) => v > 0 && a.indexOf(v) === i) : [];
@@ -2576,13 +2578,56 @@
         (f.caixa >= L.rem ? '<button class="tm-b" id="ldn-back">Agora não</button><button class="tm-go" id="ldn-pay">Quitar ' + c.brl(L.rem) + '</button>' : '<button class="tm-go" id="ldn-back">Voltar</button>')
       : '<div class="fn2-st"><small>VOCÊ DEVE</small><b>nada</b><em>' + (max ? 'pode pegar até ' + c.brl(max) : 'sem crédito agora') + '</em></div><span class="rs-gap"></span><button class="tm-b" id="ldn-back">Agora não</button>' +
         (amt ? '<button class="tm-go" id="ldn-take">Pegar ' + c.brl(amt) + '</button>' : '');
-    show('<div class="bk2"><div class="tm-h"><button class="tcr-back" id="ldn-bk" aria-label="Voltar">' + BK + '</button><img class="bk2-lg" src="' + CO_ART + 'banco-esc.webp" alt="Banco Alicerce"><small>caixa ' + c.brl(f.caixa) + (f.neg ? ' · ' + U.D.plural(f.neg, 'rodada', 'rodadas') + ' no vermelho' : '') + '</small><button class="ol2-q" id="bk2-q" aria-label="Como funciona">?</button></div>' +
+    show('<div class="bk2"><div class="tm-h"><button class="tcr-back" id="ldn-bk" aria-label="Voltar">' + BK + '</button>' + bkTabs('emp') + '<button class="ol2-q" id="bk2-q" aria-label="Como funciona">?</button></div>' +
       '<div class="bk2-box">' + left + '</div><div class="fn2-side">' + side + '</div></div>', st => {
       st.querySelectorAll('[data-ai]').forEach(b => b.onclick = () => { sfx('tap'); banco(steps[Math.max(0, Math.min(steps.length - 1, i + +b.dataset.ai))]); });
       const tk = st.querySelector('#ldn-take'); if (tk) tk.onclick = () => { if (S.coLoanTake(co, amt)) { sfx('tap'); c.save('hub'); banco(); } };
       const py = st.querySelector('#ldn-pay'); if (py) py.onclick = () => { if (S.coLoanPay(co)) { sfx('tap'); c.save('hub'); banco(); } };
+      bkTabsBind(st);
       st.querySelectorAll('#ldn-bk, #ldn-back').forEach(b => b.onclick = () => { sfx('tap'); financas(); });
       st.querySelector('#bk2-q').onclick = () => { sfx('tap'); pop('<div class="acd-help"><b>Se o caixa ficar no vermelho</b><ol class="bk2-ol">' + ST.map((t, k) => '<li' + (k + 1 === step ? ' class="on"' : '') + '>' + t + (k + 1 === step ? ' · <b>agora</b>' : '') + '</li>').join('') + '</ol><p>Parcela a cada 4 rodadas. Quitar antes não tem multa. Também dá para vender alguém no Mercado.</p><button class="hl-btn line" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop'); };
+    });
+  }
+  // Banco em duas abas: Empréstimo e Aplicação (Silvio 2026-11-12: "investir parte do dinheiro para ter uma renda").
+  // Desenho aprovado: /mnt/project-files/climbix/aplicacao/m1-aplicar.png e m2-aplicado.png. Regras em S.CO_APL (coachfin.js)
+  let BK_TAB = 'emp';
+  const bkTabs = k => '<div class="bk2-tabs"><button data-bkt="emp"' + (k === 'emp' ? ' class="on"' : '') + '>Empréstimo</button><button data-bkt="apl"' + (k === 'apl' ? ' class="on"' : '') + '>Aplicação</button></div>';
+  const bkTabsBind = st => st.querySelectorAll('[data-bkt]').forEach(b => b.onclick = () => { if (b.classList.contains('on')) return; sfx('tap'); BK_TAB = b.dataset.bkt; banco(null, BK_TAB); });
+  function aplicacao(amt, more) {
+    BK_TAB = 'apl';
+    const c = C(), co = c.co, f = S.coFin(co), A = f.apl, max = S.coAplMax(co), AP = S.CO_APL;
+    const li = (t, v, cls) => '<div class="fn2-li"><span>' + t + '</span><b class="' + (cls || '') + '">' + v + '</b></div>';
+    const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    const pct = String(Math.round(AP.r * 1000) / 10).replace('.', ',') + '% por rodada';
+    const rest = co.ss && !co.ss.done ? Math.max(0, co.ss.rounds.length - (co.ss.i || 0)) : 0;
+    const steps = max ? [0.25, 0.5, 0.75, 1].map(k => Math.floor(max * k / 10000) * 10000).filter((v, i, a) => v > 0 && a.indexOf(v) === i) : [];
+    const pick = A && !more ? 0 : steps.indexOf(amt) >= 0 ? amt : (steps[1] || steps[0] || 0);
+    const i = steps.indexOf(pick), keep = AP.keep;
+    let left, side;
+    if (A && !more) {
+      left = '<div class="bk2-top"><span><small>APLICADO</small><b>' + c.brl(A.v) + '</b></span>' + (A.ren ? '<em class="bk2-tag">+ ' + c.mi(A.ren).toUpperCase() + '</em>' : '') + '</div>' +
+        '<div class="bk2-li">' + li('Rendeu até agora', A.ren ? '+ ' + c.mi(A.ren) : 'começa na próxima rodada', A.ren ? 'up' : '') + li('Por rodada', '+ ' + c.mi(S.coAplRen(A.v)), 'up') + li('Se o caixa ficar no vermelho', 'cobre sozinho') + '</div>';
+      side = '<div class="fn2-st"><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 's3' : '') + '">' + c.brl(f.caixa) + '</b><em>resgate na hora, sem multa</em></div><span class="rs-gap"></span>' +
+        (max ? '<button class="tm-b" id="apl-more">Aplicar mais</button>' : '<button class="tm-b" id="apl-back">Voltar</button>') + '<button class="tm-go" id="apl-get">Resgatar tudo</button>';
+    } else if (pick) {
+      left = '<div class="bk2-top"><button class="pl2-ar" data-ai="-1" aria-label="Menos"' + (i > 0 ? '' : ' disabled') + '>' + MK_L + '</button><span><small>APLICAR</small><b>' + c.brl(pick) + '</b></span><button class="pl2-ar" data-ai="1" aria-label="Mais"' + (i < steps.length - 1 ? '' : ' disabled') + '>' + MK_R + '</button></div>' +
+        '<div class="bk2-li">' + li('Rende', pct) + li('Por rodada', '+ ' + c.mi(S.coAplRen(pick)), 'up') + (rest ? li('Até o fim do ano', '+ ' + c.mi(S.coAplRen(pick) * rest), 'up') : li('Resgate', 'na hora, sem multa')) + '</div>';
+      side = '<div class="fn2-st"><small class="cx-l">' + CX_IC + 'CAIXA</small><b>' + c.brl(f.caixa) + '</b><em>fica ' + c.brl(f.caixa - pick) + '</em></div><span class="rs-gap"></span>' +
+        '<button class="tm-b" id="apl-back">' + (A ? 'Voltar' : 'Agora não') + '</button><button class="tm-go" id="apl-put">Aplicar ' + c.brl(pick) + '</button>';
+    } else {
+      left = '<div class="bk2-top"><span><small>APLICAÇÃO</small><b>' + pct + '</b></span></div><p class="fn2-none">O caixa precisa guardar ' + keep + ' semanas de folha antes de aplicar. Hoje não sobra nada para aplicar.</p>';
+      side = '<div class="fn2-st"><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 's3' : '') + '">' + c.brl(f.caixa) + '</b><em>' + (f.caixa < 0 ? 'no vermelho' : 'pouco para aplicar') + '</em></div><span class="rs-gap"></span><button class="tm-go" id="apl-back">Voltar</button>';
+    }
+    show('<div class="bk2 bk2-ap"><div class="tm-h"><button class="tcr-back" id="apl-bk" aria-label="Voltar">' + BK + '</button>' + bkTabs('apl') + '<button class="ol2-q" id="bk2-q" aria-label="Como funciona">?</button></div>' +
+      '<div class="bk2-box">' + left + '</div><div class="fn2-side">' + side + '</div></div>', st => {
+      bkTabsBind(st);
+      st.querySelectorAll('[data-ai]').forEach(b => b.onclick = () => { sfx('tap'); aplicacao(steps[Math.max(0, Math.min(steps.length - 1, i + +b.dataset.ai))], more); });
+      const put = st.querySelector('#apl-put'); if (put) put.onclick = () => { if (S.coAplPut(co, pick)) { sfx('win'); c.save('hub'); aplicacao(); } };
+      const get = st.querySelector('#apl-get'); if (get) get.onclick = () => { if (S.coAplGet(co)) { sfx('tap'); c.save('hub'); aplicacao(); } };
+      const mo = st.querySelector('#apl-more'); if (mo) mo.onclick = () => { sfx('tap'); aplicacao(null, true); };
+      st.querySelector('#apl-bk').onclick = () => { sfx('tap'); financas(); };
+      const bb = st.querySelector('#apl-back'); if (bb) bb.onclick = () => { sfx('tap'); if (A && more) aplicacao(); else financas(); };
+      st.querySelector('#bk2-q').onclick = () => { sfx('tap'); pop('<div class="acd-help"><b>Aplicação</b><ol class="bk2-ol"><li>Rende ' + pct + ', direto no caixa</li><li>O caixa guarda ' + keep + ' semanas de folha</li><li>Resgate na hora, sem multa</li><li>No vermelho, ela cobre o caixa sozinha</li></ol><p>Ampliar o estádio rende mais, mas demora. O dinheiro aplicado é do clube: fica nele se você sair.</p><button class="hl-btn line" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop'); };
     });
   }
   // Aviso do que aconteceu no caixa (venda forçada, eleição) na volta para a semana
