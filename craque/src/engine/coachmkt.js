@@ -158,7 +158,7 @@
   // ---------- filtros ----------
   // Cada filtro: rótulo e opções { t, ok(p, ctx) }. ctx = { co, verba, lg, cty }
   S.coMktFilters = function (co) {
-    const f = S.coFin ? S.coFin(co) : { verba: 0 }, verba = Math.max(0, f.verba || 0), lg = S.coLeague(co), cty = D.LEAGUE_BY_ID[lg].country;
+    const f = S.coFin ? S.coFin(co) : { verba: 0 }, verba = S.coVerbaLivre ? S.coVerbaLivre(co) : Math.max(0, f.verba || 0), lg = S.coLeague(co), cty = D.LEAGUE_BY_ID[lg].country;
     const brl = v => (v >= 1e6 ? 'R$ ' + (Math.round(v / 1e5) / 10).toString().replace('.', ',') + ' mi' : 'R$ ' + Math.round(v / 1000) + ' mil');
     // ligas pela força média dos clubes; as do seu país primeiro (a sua na frente), depois "Exterior" e cada liga de fora, da mais forte
     // para a mais fraca, para achar a Premier em poucos toques
@@ -268,7 +268,7 @@
     if (n.st === 'no' || n.st === 'signed') return { k: n.st };
     if (n.st === 'ok') return { k: 'ok' };
     if (!S.coMktWin(co).open) return { k: 'fechada' };
-    if (S.coMktNow(co, o) > Math.max(0, f.verba)) return { k: 'verba' };
+    if (S.coMktNow(co, o) > S.coVerbaLivre(co)) return { k: 'verba' };
     spend(co);
     // O valor da proposta é o pacote inteiro: o jogador na troca abate (o resto é dinheiro) e só o dinheiro parcelado pesa menos.
     // Até 11/11 a troca contava duas vezes (abatia do dinheiro e ainda somava no pacote): comprar com troca saía pela metade.
@@ -316,12 +316,12 @@
     if (S.coMktFolha(co, p, t).pct > 100) return { k: 'teto' };
     if (S.coMktFull(co, p)) return { k: 'cheio' };
     const d = n.deal || { v: 0, pay: 0, tr: null }, now = p.club ? S.coMktNow(co, d) : 0;
-    if (now > Math.max(0, f.verba)) return { k: 'verba' };
+    if (now > S.coVerbaLivre(co)) return { k: 'verba' };
     // recusa do empresário não gasta dia (Silvio 2026-11-11: "não quero perder um dia"); só a bolinha de paciência
     if (!S.coMktYes(co, p, t, n)) { n.apat--; if (n.apat <= 0) { n.st = 'no'; return { k: 'no' }; } return { k: 'recusa' }; }
     spend(co);
     // Fechado: paga a 1ª parcela, o resto vem a cada 4 rodadas; o da troca sai; o novo chega no banco
-    if (now) { f.verba -= now; f.caixa -= now; f.ss.comp += now; }
+    if (now) { S.coAplCover(co, now); f.verba -= now; f.caixa -= now; f.ss.comp += now; }
     const left = Math.max(0, d.v - tradeVal(co, d.tr)) - now;
     if (d.pay && left > 0) { f.inst = f.inst || []; f.inst.push({ n: p.n, v: Math.ceil(left / d.pay / 1000) * 1000, k: d.pay }); }
     if (d.tr) { const q = co.squad.find(x => x.id === d.tr); if (q && p.club && S.coWorldSold) S.coWorldSold(co, q, p.club, 0, { tr: 1 });
