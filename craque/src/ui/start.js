@@ -281,11 +281,15 @@
       const c = sv.co, cl = c.club && club(c.club), ss = c.ss, at = svYear(sv) + (ss && !ss.done ? ' · rodada ' + Math.min(ss.i + 1, ss.rounds.length) : !c.club ? ' · sem clube' : ' · pré-temporada');
       return '<button class="hw-r' + (last && last.i === i ? ' on' : '') + '" data-vg="treinador:' + i + '">' + cr(cl && cl.id) + '<span><b>' + esc(cl ? cl.short || cl.name : c.name) + '</b><small>' + esc(c.name) + ' · ' + at + '</small></span>' + PLAY_SVG + '</button>'; };
     const more = LAND_MORE.map(([k, l, d]) => '<button class="hl-mr" data-hl="' + k + '">' + lineSvg(d) + '<b>' + l + '</b></button>').join('');
-    return '<div class="hlw hl hl-x"><div class="hw-top">' + (U.novidadesLand ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.VERSION + '">' + U.emo('📣', 'md') + '<b>' + U.VERSION + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '<span></span>') +
+    return '<div class="hlw hl hl-x">' + bdTag() + '<div class="hw-top">' + (U.novidadesLand ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.VERSION + '">' + U.emo('📣', 'md') + '<b>' + U.VERSION + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '<span></span>') +
       '<b class="hl-logo">CLIMBIX' + (Date.now() < BETA_ATE ? '<i class="hl-beta">BETA</i>' : '') + '</b><div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + '</div></div>' +
       '<div class="hw-left">' + card + '<div class="hl-mds"><button class="hl-md hl-treinador" data-mode="treinador" id="b-new-co"><b>Treinador</b></button><button class="hl-md hl-jogador off" disabled aria-disabled="true"><b>Jogador</b><small>Em breve</small></button></div></div>' +
       '<div class="hw-right"><div class="hw-sv"><small class="hw-l">SUAS CARREIRAS · TREINADOR</small>' + sl.map(row).join('') + '</div><div class="hw-bt"><div class="hl-mrs">' + more + '</div>' + discHtml() + '</div></div></div>';
   }
+  // Código da publicação (o ?v= que o craque_sw.py põe no index.html): muda a cada publicação, para conferir o patch no aparelho
+  const BUILD = ((document.querySelector('script[src*="ui/start.js"]') || {}).src || '').split('v=')[1] || 'local';
+  U.BUILD = BUILD;
+  const bdTag = () => '<span class="hl-bd">versão ' + esc(BUILD.slice(0, 6)) + '</span>';
   function homeLand() {
     const so = U.soCo(), packs = so || !PACKS_ON ? 0 : U.ITEMS.get().packs.length, last = lastSave();
     const cont = last ? '<button class="hl-go" id="' + (MODES[last.m].cont || 'hl-go') + '" data-vg="' + last.m + ':' + last.i + '">' + PLAY_SVG + '<b>CONTINUAR</b><small><span>' + esc(svName(last.sv)) + '</span><i> · ' + svYear(last.sv) + '</i></small></button>'
@@ -297,7 +301,7 @@
     const html = U.LD.wroom && U.LD.wroom() && !so ? homeW(last) : '<div class="hl hl-x' + (so ? ' hl-so' : '') + '"><b class="hl-logo">CLIMBIX' + (Date.now() < BETA_ATE ? '<i class="hl-beta">BETA</i>' : '') + '</b>' +
       (U.installCan && U.installCan() ? '<button class="hl-nv hl-ins" id="hl-ins"><img src="' + U.installIcon + '" width="34" height="34" alt=""><b>Instalar o app</b></button>' : '') +
       (U.novidadesLand && !so ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.VERSION + '">' + U.emo('📣', 'md') + '<b>' + U.VERSION + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '') + // notas de versão (settings.js); o pontinho some depois de abrir
-      '<div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') + '</div>' +
+      bdTag() + '<div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') + '</div>' +
       cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div>' + discHtml() + '</div>';
     U.LD.show(html, st => {
       st.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.hl; if (k === 'settings' && U.settingsLand) return U.settingsLand(home); if (k === 'profile' && U.profileLand) return U.profileLand(home); U.ldOff(); if (k === 'settings') return U.settings ? U.settings() : null; (U[k] || home)(); });
