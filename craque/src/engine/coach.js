@@ -762,24 +762,30 @@
       // Escanteios que não viram chance (cruzamento afastado, cobrança curta): no ritmo de quem manda
       [[H, lh], [A, la]].forEach(([S0, lam]) => { if (r() < CO.ck / CO.mins * 2 * lam / (lh + la || 1)) { const sd = sideName(m, S0); m.ck = m.ck || { us: 0, them: 0 }; m.ck[sd]++; } });
       // Faltas, cartões, impedimento e lesão (o seu vermelho e a sua lesão param o jogo; os do rival entram no relato)
+      // Pênalti neste minuto (Silvio 2026-11-11: "tomei amarelo e o pênalti foi a favor do meu time?"): a falta e o cartão
+      // eram sorteados à parte e podiam cair em quem ganhou o pênalti. Agora quem ganhou não faz falta nem leva cartão
+      // neste minuto, e a falta do pênalti é de um defensor de quem levou (`pk`), contada antes da cobrança
+      const penEv = m.ev.slice(ev0).find(e => e.sp === 'pen');
       [m.us, m.them].forEach(s => {
         if (stop && stop.t !== 'gol') return;
         const sd = sideName(m, s), o = s === m.us ? m.them : m.us, st = styOf(s), cnt = k => { m[k] = m[k] || { us: 0, them: 0 }; m[k][sd]++; };
-        if (r() < CO.foul / CO.mins * (0.8 + 0.45 * st.press + 0.2 * (1 - st.ctrl))) {
+        const pk = penEv ? (penEv.s === sd ? -1 : 1) : 0; if (pk < 0) return;
+        if (pk || r() < CO.foul / CO.mins * (0.8 + 0.45 * st.press + 0.2 * (1 - st.ctrl))) {
           cnt('fo');
-          const k = foulPick(r, s), id = s.xi[k], p = id && s.squad.find(x => x.id === id); if (!p) return;
+          const k = pk ? penFoulPick(r, s) : foulPick(r, s), id = s.xi[k], p = id && s.squad.find(x => x.id === id); if (!p) return;
           s.bk = s.bk || {};
           const kc = m.classic ? CO.kCl : 1, bk = !!s.bk[id], card = r() < CO.redD * kc ? 'direto' : r() < CO.yel * kc * (bk ? 0.7 : 1) ? (bk ? '2am' : 'am') : '';
+          const put = e => { if (pk) { e.pk = 1; m.ev.splice(m.ev.indexOf(penEv), 0, e); } else m.ev.push(e); };
           if (card === 'am') {
             s.bk[id] = 1; cnt('yc');
             if (s.mine) (m.ycAdd = m.ycAdd || []).push(id);
-            m.ev.push({ m: m.min, t: 'amarelo', s: sd, p: p.n, pos: slotsOf(s.form)[k] });
+            put({ m: m.min, t: 'amarelo', s: sd, p: p.n, pos: slotsOf(s.form)[k] });
           } else if (card) {
             if (bk) { cnt('yc'); if (m.ycAdd) m.ycAdd = m.ycAdd.filter(x => x !== id); } // os amarelos do vermelho não acumulam
             cnt('rc'); s.xi[k] = null; s.red++; if (s.mine) p.sus = 2;
-            m.ev.push({ m: m.min, t: 'vermelho', s: sd, p: p.n, how: card, pos: slotsOf(s.form)[k] });
+            put({ m: m.min, t: 'vermelho', s: sd, p: p.n, how: card, pos: slotsOf(s.form)[k] });
             if (s.mine) stop = { t: 'vermelho', p: p.n, how: card, id };
-          } else if (r() < CO.foulShow) m.ev.push({ m: m.min, t: 'falta', s: sd, p: p.n, pos: slotsOf(s.form)[k] });
+          } else if (pk || r() < CO.foulShow) put({ m: m.min, t: 'falta', s: sd, p: p.n, pos: slotsOf(s.form)[k] });
         } else if (r() < CO.off / CO.mins * (0.55 + 0.9 * styOf(o).line) * (0.8 + 0.4 * st.counter)) {
           const at = s.xi.map((id, k) => [id, k]).filter(([id, k]) => id && /ATA|MEI/.test(slotsOf(s.form)[k])), q = at.length ? r.pick(at) : null;
           if (!q) return;
@@ -830,6 +836,13 @@
   };
   // Quem faz a falta: zagueiro, volante e lateral mais; goleiro quase nunca; quem já tem amarelo se cuida
   const FOUL_W = { GOL: 0.08, ZAG: 1.4, LAT: 1.15, MEI: 1.2, ATA: 0.65 };
+  // Quem faz o pênalti: zagueiro ou lateral (o goleiro de vez em quando); sem nenhum em campo, qualquer um
+  function penFoulPick(r, s) {
+    const slots = slotsOf(s.form), w = s.xi.map((id, i) => (id ? ({ GOL: 0.5, ZAG: 3, LAT: 1.5 })[slots[i]] || 0 : 0)), t = w.reduce((a, b) => a + b, 0);
+    if (!t) return foulPick(r, s);
+    let x = r() * t; for (let i = 0; i < w.length; i++) { x -= w[i]; if (x <= 0 && w[i]) return i; }
+    return w.findIndex(v => v > 0);
+  }
   function foulPick(r, s) {
     const slots = slotsOf(s.form), w = s.xi.map((id, i) => (id ? FOUL_W[slots[i]] * (s.bk && s.bk[id] ? 0.6 : 1) : 0));
     let x = r() * w.reduce((a, b) => a + b, 0);
