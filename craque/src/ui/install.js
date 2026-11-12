@@ -57,7 +57,10 @@
   const SPOT = { android: 'tr', ios: 'bc', ios18: 'bc', ipad: 'tr', iosapp: 'tr' };
 
   let wrap = null;
-  function close() { if (wrap) { wrap.remove(); wrap = null; } }
+  // Tela girada (html.rot): a folha e a seta são em pé (o Compartilhar do Safari só aparece em pé), então o giro para enquanto
+  // estão abertas e volta ao fechar (Silvio, 2026-11-12: "pediu pra virar o celular mas não virou a instrução")
+  const hold = on => { if (!!U.rotHold === on) return; U.rotHold = on; if (U.LD && U.LD.fit) U.LD.fit(); };
+  function close() { if (wrap) { wrap.remove(); wrap = null; } hold(false); }
   function later() { put({ later: Date.now() }); close(); chipIn(); }
 
   function sheet(p) {
@@ -87,7 +90,7 @@
     };
     const show = wrap.querySelector('[data-a="show"]');
     if (show) show.onclick = () => { put({ later: Date.now() }); close(); point(p); chipIn(); };
-    document.body.appendChild(wrap);
+    document.body.appendChild(wrap); hold(true);
   }
 
   // Depois de "Mostrar onde fica": a seta pulando no botão do navegador e, no alto, o que fazer depois dele
@@ -99,7 +102,7 @@
     wrap.innerHTML = '<button class="ins-tip" aria-label="Fechar dica"><em>1</em><span><b>' + st[0][1].replace(/<\/?b>/g, '') + '</b><small>Depois: ' + rest + '</small></span></button>' +
       '<span class="ins-arrow">' + ARROW + '</span>';
     wrap.querySelector('.ins-tip').onclick = close;
-    document.body.appendChild(wrap);
+    document.body.appendChild(wrap); hold(true);
     setTimeout(() => { if (wrap && wrap.classList.contains('ins-point')) close(); }, 20000);
   }
 

@@ -249,10 +249,10 @@
   const MINE_ON = false;
   // Pacotinhos são do Jogador (itens do personagem e cartas): o botão da home deitada volta com ele (Silvio 2026-11-10)
   const PACKS_ON = false;
-  // Perfil e Ajustes: desenhos do ChatGPT no estilo da moeda (assets/co/ic-*.webp, originais em arte/icones-home/; Silvio, 2026-11-11)
-  const fiSvg = k => '<svg class="fi" viewBox="0 0 32 32" aria-hidden="true"><image href="assets/co/ic-' + k + '.webp" width="32" height="32"/></svg>';
-  const FI_PERFIL = fiSvg('perfil');
-  const FI_AJUSTES = fiSvg('ajustes');
+  // Perfil e Ajustes: modelo chapado, desenho cheio escuro num disco creme (os do ChatGPT destoavam; Silvio, 2026-11-12)
+  const fiSvg = d => '<svg class="fi" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="16" fill="#F3F1EA"/><path fill="#0E2E22" fill-rule="evenodd" d="' + d + '"/></svg>';
+  const FI_PERFIL = fiSvg('M16 7.4a4.7 4.7 0 1 0 0 9.4a4.7 4.7 0 1 0 0-9.4zM7.4 25.5c.9-4.4 4.3-7 8.6-7s7.7 2.6 8.6 7a12.8 12.8 0 0 1-17.2 0z');
+  const FI_AJUSTES = fiSvg('M14.17 8.62L14.56 5.9L17.44 5.9L17.83 8.62A7.6 7.6 0 0 1 19.92 9.49L22.12 7.84L24.16 9.88L22.51 12.08A7.6 7.6 0 0 1 23.38 14.17L26.1 14.56L26.1 17.44L23.38 17.83A7.6 7.6 0 0 1 22.51 19.92L24.16 22.12L22.12 24.16L19.92 22.51A7.6 7.6 0 0 1 17.83 23.38L17.44 26.1L14.56 26.1L14.17 23.38A7.6 7.6 0 0 1 12.08 22.51L9.88 24.16L7.84 22.12L9.49 19.92A7.6 7.6 0 0 1 8.62 17.83L5.9 17.44L5.9 14.56L8.62 14.17A7.6 7.6 0 0 1 9.49 12.08L7.84 9.88L9.88 7.84L12.08 9.49A7.6 7.6 0 0 1 14.17 8.62ZM16 12.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7z');
   const LAND_MORE = [['mine', 'Carreiras', 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4'], ['ranking', 'Ranking', 'M12 14a5 5 0 1 0 0-10a5 5 0 1 0 0 10M9 13l-2 8 5-3 5 3-2-8'],
     ['profile', 'Perfil', FI_PERFIL], ['settings', 'Ajustes', FI_AJUSTES]].filter(x => (RANK_ON || x[0] !== 'ranking') && (MINE_ON || x[0] !== 'mine'));
   const lineSvg = d => d.charAt(0) === '<' ? d : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + d + '"/></svg>';
@@ -409,17 +409,22 @@
     const M = MODES[m], ed = editing.has(m), sl = slotsOf(m);
     const order = sl.map((sv, i) => [sv, i]).filter(([sv]) => sv).sort((x, y) => (y[0].at || 0) - (x[0].at || 0));
     if (!order.length) { editing.delete(m); U.LD.closePop(); return homeLand(); }
-    const row = ([sv, i], first) => {
+    // Mesma identidade do cartão na lista, no modo excluir e na confirmação: escudo, nome, clube · ano · rodada
+    const card = sv => {
       const co = m === 'treinador', c = co ? sv.co : sv.c, cl = c.club && club(c.club);
       let at;
       if (co) { const ss = c.ss; at = svYear(sv) + (ss && !ss.done ? ' · rodada ' + Math.min(ss.i + 1, ss.rounds.length) : !c.club ? ' · sem clube' : ' · pré-temporada'); }
       else at = 'temporada ' + (YEAR0 + c.season);
-      if (ed) return '<div class="hl-row"><button class="hl-rb del" data-del="' + m + ':' + i + '"><span><b>Excluir ' + esc(c.name) + '</b><small>Some deste aparelho e da nuvem</small></span></button></div>';
-      return '<div class="hl-row"><button class="hl-rb" data-vg="' + m + ':' + i + '">' + (cl ? crest(cl.id) : '') + '<span><b>' + esc(c.name) + '</b><small>' +
-        (cl ? esc(cl.short || cl.name) + ' · ' : '') + at + '</small></span></button>' +
+      return (cl ? crest(cl.id) : '') + '<span><b>' + esc(c.name) + '</b><small>' + (cl ? esc(cl.short || cl.name) + ' · ' : '') + at + '</small></span>';
+    };
+    const row = ([sv, i], first) => {
+      const c = m === 'treinador' ? sv.co : sv.c;
+      if (ed) return '<div class="hl-row del"><button class="hl-rb" data-del="' + m + ':' + i + '">' + card(sv) + '</button>' +
+        '<button class="hl-trash" data-del="' + m + ':' + i + '" aria-label="Excluir ' + esc(c.name) + '">' + TRASH_SVG + '</button></div>';
+      return '<div class="hl-row"><button class="hl-rb" data-vg="' + m + ':' + i + '">' + card(sv) + '</button>' +
         (first ? '<button class="hl-cont" data-vg="' + m + ':' + i + '">' + PLAY_SVG + 'Continuar</button>' : '<button class="hl-play" data-vg="' + m + ':' + i + '" aria-label="Continuar ' + esc(c.name) + '">' + PLAY_SVG + '</button>') + '</div>';
     };
-    U.LD.pop('<div class="hl-mp' + (order.length > 2 ? ' many' : '') + '"><div class="hl-mph"><b>' + esc(M.name) + '</b><button class="hl-ed" data-ed>' + (ed ? 'Pronto' : 'Excluir') + '</button>' +
+    U.LD.pop('<div class="hl-mp' + (order.length > 2 ? ' many' : '') + '"><div class="hl-mph"><b>' + (ed ? 'Excluir qual?' : esc(M.name)) + '</b><button class="hl-ed" data-ed>' + (ed ? 'Pronto' : 'Excluir') + '</button>' +
       '<button class="hl-x-btn" data-pop-x aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
       '<div class="hl-mpg">' + order.map((x, k) => row(x, k === 0)).join('') +
       (ed ? '' : '<button class="hl-new" data-mode="' + m + '">' + PLUS_SVG + '<b>Nova carreira</b></button>') + '</div></div>',
@@ -429,7 +434,8 @@
         w.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
           const [mode, slot] = b.dataset.del.split(':'), sv = svAt(mode, +slot); if (!sv) return landMode(m);
           const co = mode === 'treinador', c = sv.co || sv.c;
-          landAsk('Excluir a carreira de ' + esc(c.name) + '?', (co ? 'O técnico some deste aparelho e da sua conta na nuvem, com a auxiliar, o departamento médico e o estádio dele: nada passa para outra carreira.' : 'O jogador some deste aparelho e da sua conta na nuvem.') + ' Não dá para desfazer.', 'Excluir carreira', () => {
+          landAsk('Excluir esta carreira?', '<div class="hl-askc">' + card(sv) + (sv.at ? '<em>salva ' + agoTxt(sv.at) + '</em>' : '') + '</div>' +
+            '<p>Some deste aparelho e da nuvem' + (co ? ', com estádio, auxiliar e médico' : '') + '. Não dá para desfazer.</p>', 'Excluir ' + esc(firstName(c.name)), () => {
             const base = co ? U.SAVE_CO : SLOT_BASE[mode]();
             store(U.slotKey(base, +slot), co ? { co: null, at: Date.now() } : { c: null, at: Date.now() });
             homeLand(); landMode(m);
@@ -439,7 +445,7 @@
   }
   // Pergunta no palco deitado (excluir carreira)
   function landAsk(t, s, ok, go, danger) {
-    U.LD.pop('<div class="hl-ask"><b>' + t + '</b><p>' + s + '</p><div class="hl-ab"><button class="hl-btn line" data-pop-x>Cancelar</button><button class="hl-btn ' + (danger ? 'red' : 'gold') + '" id="hl-ok">' + ok + '</button></div></div>',
+    U.LD.pop('<div class="hl-ask"><b>' + t + '</b>' + (s.charAt(0) === '<' ? s : '<p>' + s + '</p>') + '<div class="hl-ab"><button class="hl-btn line" data-pop-x>Cancelar</button><button class="hl-btn ' + (danger ? 'red' : 'gold') + '" id="hl-ok">' + ok + '</button></div></div>',
       t, w => { w.querySelector('#hl-ok').onclick = () => { sfx('tap'); U.LD.closePop(); go(); }; }, 'hl-pop');
   }
   // Vagas cheias (HCheio): qual carreira sai para a nova entrar; a mais antiga vem marcada. Nada é apagado aqui

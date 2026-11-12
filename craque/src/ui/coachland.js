@@ -74,7 +74,7 @@
   // (U.rotPref, desliga nos Ajustes); com o celular realmente deitado nada gira. Toques: U.pt / U.box (ui/core.js)
   function rot() {
     const R = document.documentElement, ww = window.innerWidth, wh = window.innerHeight;
-    const on = document.body.classList.contains('ld-on') && wh > ww * 1.05 && U.rotPref();
+    const on = document.body.classList.contains('ld-on') && wh > ww * 1.05 && U.rotPref() && !U.rotHold; // rotHold: folha de instalar aberta, que é em pé (install.js)
     R.classList.toggle('rot', on);
     if (on) { R.style.setProperty('--rw', wh + 'px'); R.style.setProperty('--rh', ww + 'px'); R.style.setProperty('--rx', ww + 'px'); }
   }
@@ -2461,7 +2461,7 @@
         '<div><small>FOLHA</small><b>' + c.brl(folha) + '</b><i><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i><span>teto ' + c.brl(teto) + '</span></div>';
     const tabs = '<div class="fn2-tabs">' + [['rod', 'Rodada'], ['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].filter(x => !WD || x[0] !== 'rod').map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>';
     const ac = '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><' + (pt ? 'button data-fd="pat"' : 'div') + '><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></' + (pt ? 'button' : 'div') + '></div>';
-    const bt = '<div class="fn2-bt">' + (U.COINS ? '<button class="tm-b fn2-apo' + (S.coAporteLeft(co) > 0 ? ' lv' + (f.caixa < 0 || (R && R.net < 0 && (R.st === 'red' || R.st === 'warn')) ? ' hot' : '') : '') + '" data-fd="apo" id="fn2-apo">' + U.COINS.svg + 'Aporte</button>' : '') + '<button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div>';
+    const bt = '<div class="fn2-bt">' + (U.COINS ? '<button class="tm-b fn2-apo' + (S.coAporteLeft(co) > 0 ? ' lv' + (f.caixa < 0 || (R && R.net < 0 && (R.st === 'red' || R.st === 'warn')) ? ' hot' : '') : '') + '" data-fd="apo" id="fn2-apo">' + U.COINS.svg + (S.coAporteLeft(co) > 0 ? 'Aporte' : '<span class="fn2-lim"><b>Aporte</b><small>' + S.CO_APORTE.max + ' de ' + S.CO_APORTE.max + '</small></span>') + '</button>' : '') + '<button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div>';
     const rdTop = rd ? '<small class="fn2-rh">RODADA ' + rd.r + (rd.h === 0 ? ' · FORA' : rd.h === -1 ? ' · SEM JOGO' : ' · EM CASA') + '</small>' : '<small class="fn2-rh">RODADA</small>';
     const html = WD ? '<div class="fn2 w">' + head + '<div class="fn2-k">' + kpi + ac + '</div>' +
         '<div class="fn2-l">' + finTrend(c, co, step, 1) + '<div class="fn2-tp">' + tabs + '<div class="fn2-p ' + tab + '">' + rows + '</div></div></div>' +
