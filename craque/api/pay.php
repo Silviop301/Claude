@@ -166,10 +166,10 @@ if ($a === 'check') {
     if ($code === 200) foreach (($r['results'] ?? []) as $pay) { if (in_array($pay['status'] ?? '', ['pending', 'in_process', 'authorized'], true)) $w = true; if (settle($db, $pay)) $w = false; }
     if ($w) $wait++;
   }
-  $q = $db->prepare("SELECT ref, coins FROM purchases WHERE user_key = ? AND status = 'approved'"); $q->execute([$user]);
-  $list = array_map(fn($r) => ['ref' => $r['ref'], 'coins' => (int)$r['coins']], $q->fetchAll(PDO::FETCH_ASSOC));
-  // paid: as já entregues (o aparelho confere se alguma sumiu do saldo e devolve; cada ref continua valendo uma vez só)
-  $q = $db->prepare("SELECT ref, coins FROM purchases WHERE user_key = ? AND status = 'claimed' ORDER BY claimed DESC LIMIT 100"); $q->execute([$user]);
+  $q = $db->prepare("SELECT ref, coins, pack FROM purchases WHERE user_key = ? AND status = 'approved'"); $q->execute([$user]);
+  $list = array_map(fn($r) => ['ref' => $r['ref'], 'coins' => (int)$r['coins'], 'pack' => (string)$r['pack']], $q->fetchAll(PDO::FETCH_ASSOC));
+  // paid: as já entregues (sem o presente de boas-vindas, que vale uma vez por aparelho e não é recuperado) (o aparelho confere se alguma sumiu do saldo e devolve; cada ref continua valendo uma vez só)
+  $q = $db->prepare("SELECT ref, coins FROM purchases WHERE user_key = ? AND status = 'claimed' AND IFNULL(pack, '') != 'welcome' ORDER BY claimed DESC LIMIT 100"); $q->execute([$user]);
   out(['list' => $list, 'wait' => $wait, 'paid' => array_map(fn($r) => ['ref' => $r['ref'], 'coins' => (int)$r['coins']], $q->fetchAll(PDO::FETCH_ASSOC))]);
 }
 
