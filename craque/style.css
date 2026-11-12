@@ -10205,3 +10205,11 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .tm-bp .mo-ar.mo-bn svg { width: 10px; height: 10px; }
 .lde2-r .o { white-space: nowrap; }
 .lde2-r .mo-ar.mo-in { position: static; display: inline-flex; vertical-align: middle; margin-left: 6px; width: 17px; height: 17px; box-shadow: none; }
+/* ===== Coletiva e acontecimento da semana (2026-11-12): o desenho da conversa com a jornalista ou o jogador do caso;
+   `em.ar` = a parte arriscada da resposta (laranja), `em.cl` = a etiqueta do assunto em dourado ===== */
+.cvj-d.jr { background: #2a2d31 center/cover no-repeat; overflow: visible; } .cvj-d.jr em { background: #F2C230; }
+.cvj-d.pv-cr { background: rgba(243, 241, 234, .08); } .cvj-d.pv-cr .pv-crs { width: 42px; height: 42px; object-fit: contain; }
+.cvj-n small em.cl { background: rgba(242, 194, 48, .16); color: #F2C230; }
+.pv-pop .cvj-op > b { white-space: normal; font-size: 21px; line-height: 1.05; }
+.pv-pop .cvj-op em.ar { background: rgba(240, 160, 60, .16); color: #F5B562; }
+.pv-pop .cvj-say p { font-size: 18px; }
