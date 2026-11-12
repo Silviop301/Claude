@@ -39,11 +39,11 @@
     }
     bus();
     // Gravações de verdade (rede 40 KB, torcida 60 KB). Enquanto não chegam, o gol usa os sons sintetizados
-    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=9c4a53aa'], ['apito', 'assets/sons/apito.mp3?v=bd827477'], ['apitoInt', 'assets/sons/apito-int.mp3?v=16bc6ed2'], ['apitoFim', 'assets/sons/apito-fim.mp3?v=f154cab2']].filter(([k]) => !rec[k]).forEach(([k, url]) => { // contexto refeito (revive): o que já veio fica
+    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=097494f3'], ['apito', 'assets/sons/apito.mp3?v=bd827477'], ['apitoInt', 'assets/sons/apito-int.mp3?v=16bc6ed2'], ['apitoFim', 'assets/sons/apito-fim.mp3?v=f154cab2'], ['uhh', 'assets/sons/uhh.mp3?v=72ee0907'], ['vaia', 'assets/sons/vaia.mp3?v=47da5201']].filter(([k]) => !rec[k]).forEach(([k, url]) => { // contexto refeito (revive): o que já veio fica
       fetch(url).then(r => r.arrayBuffer())
         .then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { rec[k] = b; }).catch(() => { /* fica a sintetizada */ });
     });
-    if (!ticking) { ticking = true; setInterval(() => { musicTick(); ambTick(); }, 600); } // música e torcida de fundo seguem a tela (jogo ao vivo ou menu)
+    if (!ticking) { ticking = true; setInterval(() => { musicTick(); ambTick(); chantTick(); }, 600); } // música e torcida de fundo seguem a tela (jogo ao vivo ou menu)
   }
   // A saída: tudo o que toca passa pelo master (e pelo eco). É refeita quando o app sai da frente (hush)
   function bus() {
@@ -205,6 +205,28 @@
     const g = aGain.gain, t = ctx.currentTime;
     try { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(want, t + (want ? 2 : 0.5)); } catch (e) { g.value = want; }
   }
+  // Cantos da torcida por cima do fundo (Epidemic Sound do Silvio, 12/11): um trecho de 16 a 20 s de vez em quando, com espaço
+  // entre um e outro; em casa no volume do fundo, fora bem mais baixo (é a torcida deles). A tela diz onde é o jogo em CRAQUE_CROWD
+  const CH_URL = ['canto-1', 'canto-2', 'canto-3', 'canto-4', 'canto-5'].map(n => 'assets/sons/' + n + '.mp3'), CH_HOME = 0.16, CH_AWAY = 0.05;
+  let chBuf = [], chLoad = false, chSrc = null, chG = null, chNext = 0, chLast = -1;
+  function chantTick() {
+    if (!ctx) return;
+    const live = aWant > 0 && aSrc && ctx.state === 'running';
+    if (!live) { if (chSrc) { const s = chSrc, g = chG; chSrc = null; try { g.gain.cancelScheduledValues(ctx.currentTime); g.gain.setValueAtTime(g.gain.value, ctx.currentTime); g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5); s.stop(ctx.currentTime + 0.6); } catch (e) { /* ok */ } } chNext = 0; return; }
+    if (!chLoad && root.fetch) { chLoad = true; CH_URL.forEach((u, i) => fetch(u).then(r => r.arrayBuffer()).then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { chBuf[i] = b; }).catch(() => { /* fica sem esse canto */ })); }
+    const t = ctx.currentTime;
+    if (!chNext) chNext = t + 8 + Math.random() * 12; // o primeiro canto sai uns segundos depois da bola rolar
+    if (chSrc || t < chNext) return;
+    const ok = chBuf.map((b, i) => (b && i !== chLast ? i : -1)).filter(i => i >= 0);
+    if (!ok.length) { chNext = t + 5; return; }
+    const i = ok[Math.floor(Math.random() * ok.length)], b = chBuf[i], cr = root.CRAQUE_CROWD || {}, v = cr.home === false ? CH_AWAY : CH_HOME;
+    chLast = i; chG = ctx.createGain(); chG.gain.setValueAtTime(0, t); chG.gain.linearRampToValueAtTime(v, t + 1.5);
+    chG.gain.setValueAtTime(v, t + Math.max(1.6, b.duration - 2)); chG.gain.linearRampToValueAtTime(0, t + b.duration);
+    chG.connect(ctx.destination);
+    const s = ctx.createBufferSource(); s.buffer = b; s.connect(chG); s.start(t); chSrc = s;
+    s.onended = () => { if (chSrc === s) chSrc = null; };
+    chNext = t + b.duration + 25 + Math.random() * 35;
+  }
   function ambUp() { // gol: a torcida sobe e volta ao normal
     if (!aGain || aWant <= 0) return;
     const g = aGain.gain, t = ctx.currentTime;
@@ -216,6 +238,7 @@
     get on() { return mOn; },
     get state() { return !mEl ? 'parada' : mWant > 0 && !mEl.paused ? 'tocando' : 'calada'; }, // para as ferramentas
     get amb() { return aSrc && aWant > 0 ? 'tocando' : 'calada'; }, // torcida de fundo, para as ferramentas
+    get chant() { return chSrc ? CH_URL[chLast] : ''; }, // canto da torcida tocando agora, para as ferramentas
     get track() { return mEl && mI >= 0 ? M_LIST[mOrd[mI]] : ''; },
     get title() { const f = this.track; return f ? (M_NAMES[f] || [f.replace(/\.mp3$/, '').replace(/-/g, ' '), '']) : null; },
     next() { musicNext(); },
@@ -415,20 +438,24 @@
     // Gol: a bola estufa a rede e a torcida explode, cada vez mais aberta
     goal(t) {
       if (rec.rede) play('rede', t, 0.75, 0.15); else noise(t, 0.35, 0.16, 0.01, 'bandpass', 2600, 900, 0.9);
-      if (rec.torcida) play('torcida', t + 0.05, 0.3, 0.1); else crowd(t + 0.04, { vowel: 'o', dur: 2.9, a: 0.25, hold: 1.6, spread: 0.2, peak: 1, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.8, 1.2], [2.9, 0.95]], shouts: 14, shoutGain: 1.1, bend: [1, 1.15] });
+      if (rec.torcida) play('torcida', t + 0.05, 0.45, 0.1); else crowd(t + 0.04, { vowel: 'o', dur: 2.9, a: 0.25, hold: 1.6, spread: 0.2, peak: 1, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.8, 1.2], [2.9, 0.95]], shouts: 14, shoutGain: 1.1, bend: [1, 1.15] });
     },
     // Gol seu fora de casa: a mesma rede, a sua torcida é pouca e está longe (só gravações)
     goalAway(t) {
       if (rec.rede) play('rede', t, 0.75, 0.15);
-      if (rec.torcida) play('torcida', t + 0.05, 0.12, 0.2);
+      if (rec.torcida) play('torcida', t + 0.05, 0.18, 0.2);
     },
     // Vitória no fim de um jogo simulado: só a torcida, sem a bola na rede
     cheer(t) {
-      if (rec.torcida) play('torcida', t, 0.25, 0.1); else crowd(t, { vowel: 'o', dur: 2.4, a: 0.25, hold: 1.2, spread: 0.2, peak: 0.8, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.6, 1.2], [2.4, 0.95]], shouts: 12, shoutGain: 1, bend: [1, 1.12] });
+      if (rec.torcida) play('torcida', t, 0.38, 0.1); else crowd(t, { vowel: 'o', dur: 2.4, a: 0.25, hold: 1.2, spread: 0.2, peak: 0.8, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.6, 1.2], [2.4, 0.95]], shouts: 12, shoutGain: 1, bend: [1, 1.12] });
     },
     // Gol fora de casa: a sua torcida é pouca e está longe (a mesma gravação, bem mais baixa)
+    // Torcida da Epidemic Sound do Silvio (12/11): "uhh" no chute seu que o goleiro pega ou bate na trave, vaia de quem perde em casa
+    uhh(t) { if (rec.uhh) play('uhh', t, 0.4, 0.1); },
+    uhhAway(t) { if (rec.uhh) play('uhh', t, 0.12, 0.1); },
+    vaia(t) { if (rec.vaia) play('vaia', t, 0.4, 0.1); },
     cheerAway(t) {
-      if (rec.torcida) play('torcida', t, 0.08, 0.25); else crowd(t, { vowel: 'o', dur: 1.8, a: 0.2, hold: 0.8, spread: 0.2, peak: 0.3, sections: 3, color: [[0, 0.9], [0.4, 1.1], [1.8, 0.95]], shouts: 5, shoutGain: 0.6, bend: [1, 1.08] });
+      if (rec.torcida) play('torcida', t, 0.12, 0.25); else crowd(t, { vowel: 'o', dur: 1.8, a: 0.2, hold: 0.8, spread: 0.2, peak: 0.3, sections: 3, color: [[0, 0.9], [0.4, 1.1], [1.8, 0.95]], shouts: 5, shoutGain: 0.6, bend: [1, 1.08] });
     },
     // Erro: "uhhh" da torcida caindo (o som original, que o Silvio prefere)
     miss(t) {
@@ -448,7 +475,7 @@
     fanfare(t) {
       [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.36]].forEach(([f, dt]) => tone('sawtooth', f, f, t + dt, 0.2, 0.13, { a: 0.02, lp: 2400, echo: 0.3 }));
       [523, 659, 784, 1047].forEach(f => tone('sawtooth', f, f, t + 0.5, 1.2, 0.07, { a: 0.03, lp: 1800, echo: 0.4 }));
-      if (rec.torcida) play('torcida', t + 0.35, 0.14, 0.1); else crowd(t + 0.4, { vowel: 'a', dur: 2.2, a: 0.3, hold: 1.2, spread: 0.3, peak: 0.6, sections: 5, color: [[0, 0.95], [0.5, 1.1], [2.2, 0.95]], shouts: 10, shoutGain: 0.8, bend: [1, 1.1] });
+      if (rec.torcida) play('torcida', t + 0.35, 0.21, 0.1); else crowd(t + 0.4, { vowel: 'a', dur: 2.2, a: 0.3, hold: 1.2, spread: 0.3, peak: 0.6, sections: 5, color: [[0, 0.95], [0.5, 1.1], [2.2, 0.95]], shouts: 10, shoutGain: 0.8, bend: [1, 1.1] });
     },
     // Contador da temporada: "tic" curto a cada gol/assistência
     tick(t) {

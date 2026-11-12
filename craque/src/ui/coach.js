@@ -733,8 +733,8 @@
     const LDon = !!(U.LD && U.LD.on()); let ctx = null; // Treinador deitado: o mesmo jogo no palco de 844×390 (ui/coachland.js)
     const feed0 = LDon ? '<li><i>0\'</i><span>Bola rolando</span></li>' : '<li><i>0\'</i><span>Bola rolando. ' + esc(nm(co.club)) + ' no ' + m.us.form + ', ' + esc(S.CO_STY[m.us.style].name.toLowerCase()) + '; ' + esc(nm(m.vs)) + ' no ' + m.them.form + '.' + '</span></li>';
     const speedHtml = '<div class="lv-speed" id="lv-speed">' + ['1', '3'].map(k => '<button data-sp="' + k + '"' + (k === co.speed ? ' class="on"' : '') + '>' + SPEED[k][0] + '</button>').join('') + '<button data-sp="fim" aria-label="Pular para o fim">' + ICO.ff + '</button></div>';
-    if (LDon) U.LD.show(U.LD.liveHtml({ H, A, m, pitchHtml, feed0, speedHtml, crestB, pause: ICO.pause, kits: KT }));
-    if (LDon && U.discBind) U.discBind(document.getElementById('ld') || document); // disco da música, se estiver no campinho
+    window.CRAQUE_CROWD = { home: !!m.home }; // cantos da torcida: em casa altos, fora baixinhos (sound.js)
+    if (LDon) { U.LD.show(U.LD.liveHtml({ H, A, m, pitchHtml, feed0, speedHtml, crestB, pause: ICO.pause, kits: KT })); if (U.discBind) U.discBind(document.getElementById('ld') || document); } // disco da música, se estiver no campinho
     else render('<div class="lv">' +
       '<div class="lv-board"><div class="lv-sc"><span>' + crestB(H.id) + '<b>' + esc(H.short || H.name) + '</b><i class="lv-crd" id="lv-cd-h"></i></span>' +
         '<div class="lv-mid"><em id="lv-score">0 <i>x</i> 0</em><small id="lv-clock"><i></i>0\'</small></div><span>' + crestB(A.id) + '<b>' + esc(A.short || A.name) + '</b><i class="lv-crd" id="lv-cd-a"></i></span></div>' +
@@ -794,7 +794,7 @@
     const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); if (U.profileCoGame) U.profileCoGame(co, m, log); save('hub'); result(m, log, false, firstMove); };
     const end = () => {
       clearTimeout(timer); hidden.clear(); paint(); open = true;
-      if (sim && sim.fin) { sim.fin(); sfx('whistleEnd'); } // três apitos (curto, curto, longo): os jogadores param onde estão
+      if (sim && sim.fin) { sim.fin(); sfx('whistleEnd'); if (m.home && m.gh < m.ga && !retomado) setTimeout(() => sfx('vaia'), 2300); } // três apitos (curto, curto, longo): os jogadores param onde estão
       if (sim) { clearTimeout(frz); frz = setTimeout(() => sim.freeze(true), 1500); }
       $('lv-sheet').innerHTML = '<div class="lv-sh"><i class="lv-grab"></i><div class="lv-st-h"><small>' + S.coClock(m) + ' · Fim de jogo</small><b>' + m.gh + ' x ' + m.ga + '</b></div>' +
         '<h2>' + (ourGoals() > theirGoals() ? 'Vitória' : ourGoals() < theirGoals() ? 'Derrota' : 'Empate') + '</h2><button class="btn" id="b-lv-end">Ver o resultado</button></div>';
@@ -856,7 +856,7 @@
       const go = () => {
         // o juiz espera a bola sair de perigo para apitar o intervalo e o fim (escanteio, chute ou cruzamento no ar), até 9 s
         const busy = () => { if (!sim || !sim.canStop || sim.canStop()) { stopW = 0; return false; } if (!stopW) stopW = Date.now(); if (Date.now() - stopW > (co.speed === '3' ? 7000 : 16000)) { stopW = 0; return false; } timer = setTimeout(go, 150); return true; };
-        if (sim && m.half && !h1) { if (busy()) return; h1 = true; sim.half(); sfx('whistleHalf'); } // intervalo: dois apitos (curto e longo)
+        if (sim && m.half && !h1) { if (busy()) return; h1 = true; sim.half(); sfx('whistleHalf'); if (m.home && m.gh < m.ga) setTimeout(() => sfx('vaia'), 1500); } // intervalo: dois apitos (curto e longo)
         if (wantStop) { wantStop = false; $('b-lv-stop').classList.remove('on'); if (!m.done) return sheet(st && st.t !== 'fim' && st.t !== 'gol' ? st : { t: 'pausa' }); }
         if (st && st.t !== 'fim' && st.t !== 'gol') return sheet(st); // gol não para o jogo (Silvio, 2026-11-09): o placar e o painel contam
         if (m.done) { if (busy()) return; return end(); }
@@ -1079,7 +1079,7 @@
         if (z.className !== zc) z.className = zc;
       };
       sim = LP.sim({ me: -1, t0: m.tk || m.min, half2: m.min > 45, clean: LDon, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1.25), spm: () => spMs(co.speed === '3' ? '3' : '1') / 1000, onFrame: zone,
-        free: FREE, onShot: sh => { if (m.done && !stopW) return; const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, Object.assign({ late: !!stopW }, sh)); if (e) { sent.add(e); paint(); } },
+        free: FREE, onShot: sh => { if (m.done && !stopW) return; const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, Object.assign({ late: !!stopW }, sh)); if (e) { sent.add(e); paint(); } if (!sh.side && (sh.out === 'def' || sh.out === 'trave')) sfx(m.home ? 'uhh' : 'uhhAway'); },
         onPick: (side, inf) => { if (ctx && side === 0 && inf && inf.id && !open && !m.done && !wait) { sfx('tap'); sheet({ t: 'pausa', pick: inf.id }); } }, // tocou no seu jogador: para e abre a escalação com ele escolhido (quem entra ao lado dele)
         seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)], styles: [S.coSimSty(m.us), S.coSimSty(m.them)] });
       lineKey = [m.us, m.them].map(s => s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style);
