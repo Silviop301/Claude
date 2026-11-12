@@ -37,6 +37,13 @@ const sum = c => [c.list.length, c.list.reduce((s, x) => s + x.coins, 0), c.wait
   const ca = await conta('TesteA'), cb = await conta('TesteB'), TA = ca.token, TB = cb.token;
   const claim = async t => { const c = await post('check', { token: t }); await post('claim', { token: t, refs: c.list.map(x => x.ref) }); return c; };
 
+  // ---- presente de boas-vindas (conta nova ganha 36 uma vez, pack 'welcome', fora das entregues) ----
+  let w = await post('check', { token: TA });
+  eq('conta nova: presente de boas-vindas de 36 esperando', [ca.welcome, w.list.length, (w.list[0] || {}).coins, (w.list[0] || {}).pack], [36, 1, 36, 'welcome']);
+  await claim(TA); await claim(TB);
+  w = await post('check', { token: TA });
+  eq('presente entregue: some da lista e não volta como compra entregue', [w.list.length, w.paid.length], [0, 0]);
+
   // ---- servidor ----
   let r = await post('create', { token: TA, pack: 'p1' }); const ref1 = r.ref; eq('cria a compra', [/^[a-f0-9]{24}$/.test(ref1), /_checkout/.test(r.url)], [true, true]);
   eq('fechou no meio: nada pago, nada esperando', sum(await post('check', { token: TA })), [0, 0, 0, 0]);
@@ -123,6 +130,16 @@ const sum = c => [c.list.length, c.list.reduce((s, x) => s + x.coins, 0), c.wait
   eq('volta num navegador sem a conta: manda abrir o jogo', await aviso(q, 'Compra registrada'), true); await foto(q, '4-sem-conta-em-pe');
   eq('  o aviso cabe na tela em pé', await q.evaluate(() => { const r = document.querySelector('.pay-ty').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; }), true);
   if (errs.length) { bad += errs.length; console.log('FALHA erro de página: ' + errs.join(' | ')); }
+  // criar conta pela interface: presente de boas-vindas com aviso; outra conta nova no mesmo aparelho não soma de novo
+  const nv = await abre(false); await nv.goto(BASE + '/', { waitUntil: 'load' }); await nv.waitForTimeout(1200);
+  const reg = async u => { await nv.evaluate(() => window.CRAQUE_UI.cloud('register')); await nv.waitForSelector('#acc-user');
+    await nv.fill('#acc-user', u); await nv.fill('#acc-pass', 'segredo123'); await nv.waitForTimeout(600); await nv.click('#acc-go'); };
+  const w0 = await moedas(nv); await reg('NovaC');
+  eq('conta nova pela interface: aviso de boas-vindas', await aviso(nv, 'Bem-vindo'), true); await foto(nv, '5-boas-vindas');
+  eq('  +36 moedas na carteira', (await moedas(nv)) - w0, 36);
+  await nv.evaluate(() => { localStorage.removeItem('climbix-account'); document.querySelectorAll('.pay-ty').forEach(e => e.remove()); });
+  await reg('NovaD'); await nv.waitForTimeout(3000);
+  eq('  outra conta no mesmo aparelho: sem presente de novo', [(await moedas(nv)) - w0, await aviso(nv, 'Bem-vindo', 1500)], [36, false]);
   await b.close();
   console.log('Compras de ponta a ponta' + (OUT ? ', fotos em ' + OUT : '') + '; Falhas: ' + bad); fim(bad ? 1 : 0);
 })();

@@ -186,7 +186,9 @@
     apply(m);
     state = 'syncing';
     U.home();
-    return post('push', { token: r.token, data: m }).then(() => { state = 'ok'; }, () => { state = 'offline'; }).finally(paint);
+    return post('push', { token: r.token, data: m }).then(() => { state = 'ok'; }, () => { state = 'offline'; }).finally(paint)
+      // Conta nova: o presente de boas-vindas já está esperando no servidor (pay.php check/claim)
+      .then(() => { if (r.welcome) return payCheck().then(c => { if (c) payThanks(c, true); if (!G.c && U.home) U.home(); }); });
   }
 
   // ---------- telas ----------
@@ -436,7 +438,10 @@
       // Compra já entregue que sumiu do saldo (junção antiga de aparelhos): volta sem aviso de compra nova
       if (r && r.paid && U.COINS.fix && U.COINS.fix(r.paid)) { touch(KEYS.itens); if (!list.length && !G.c && U.home) U.home(); }
       if (!list.length) return 0;
-      const n = U.COINS.add(list.map(x => ({ n: x.coins, t: 'Compra na loja', once: 'pay-' + x.ref })));
+      // Presente de boas-vindas da conta nova (pack 'welcome'): uma vez por aparelho/carteira, com aviso próprio
+      const wel = list.filter(x => x.pack === 'welcome'), buy = list.filter(x => x.pack !== 'welcome');
+      if (wel.length) { const w = U.COINS.add([{ n: wel[0].coins, t: 'Presente de boas-vindas', once: 'boas-vindas' }]); if (w) welToast(w); }
+      const n = buy.length ? U.COINS.add(buy.map(x => ({ n: x.coins, t: 'Compra na loja', once: 'pay-' + x.ref }))) : 0;
       touch(KEYS.itens);
       if (!(r && r.wait)) try { localStorage.removeItem(POPEN); } catch (e) {}
       return post('claim', { token: a.token, refs: list.map(x => x.ref) }, PAPI).then(() => n, () => n);
@@ -447,6 +452,11 @@
     const box = document.createElement('div'); box.className = 'pay-ty pg'; box.setAttribute('role', 'status');
     box.innerHTML = '<b>' + t + '</b><span>' + x + '</span><button aria-label="Fechar">OK</button>';
     document.body.appendChild(box); box.querySelector('button').onclick = () => box.remove(); setTimeout(() => box.remove(), ms || 9000);
+  }
+  function welToast(n) {
+    try { if (window.CRAQUE_SFX) window.CRAQUE_SFX.play('win'); } catch (e) {}
+    payToast('Bem-vindo ao Climbix!', '+' + n + ' moedas de presente pela conta nova.', 8000);
+    try { window.dispatchEvent(new Event('climbix-pay')); } catch (e) {}
   }
   // stay: a pessoa já está no jogo (voltou do pagamento sem recarregar): não leva para a home, só avisa a tela aberta
   function payThanks(n, stay) {

@@ -23,6 +23,7 @@ header('Cache-Control: no-store');
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') exit;
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') { http_response_code(405); exit; }
 
+const WELCOME_COINS = 36; // presente de boas-vindas de cada conta nova (o aparelho lê o número que vem no check do pay.php)
 function out($data, $code = 200) { http_response_code($code); echo json_encode($data, JSON_UNESCAPED_UNICODE); exit; }
 
 $dir = getenv('CLIMBIX_DATA') ?: dirname(__DIR__, 2) . '/climbix-data';
@@ -183,9 +184,14 @@ if ($a === 'register') {
   $db->prepare('INSERT OR IGNORE INTO players (pid, created) VALUES (?, ?)')->execute([$pid, time()]);
   $db->prepare('UPDATE players SET nick = ?, nick_key = ? WHERE pid = ?')->execute([$user, $key, $pid]);
   if ($f) linkIdentity($db, $f, $key);
+  // Presente de boas-vindas (2026-11-12): moedas uma vez por conta criada, como compra paga de R$ 0 (pack 'welcome') que
+  // chega ao aparelho pelo check/claim do pay.php; no aparelho vale uma vez só (once 'boas-vindas'), então criar outra conta
+  // no mesmo aparelho não soma de novo. Conta que já existia não ganha.
+  $db->exec('CREATE TABLE IF NOT EXISTS purchases (ref TEXT PRIMARY KEY, user_key TEXT, pack TEXT, coins INTEGER, price REAL, status TEXT, mp_id TEXT, created INTEGER, paid INTEGER, claimed INTEGER)');
+  $db->prepare("INSERT INTO purchases (ref, user_key, pack, coins, price, status, mp_id, created, paid) VALUES (?, ?, 'welcome', ?, 0, 'approved', '', ?, ?)")->execute([bin2hex(random_bytes(12)), $key, WELCOME_COINS, time(), time()]);
   $db->commit();
   $via = $f ? $f['provider'] : null;
-  accountOut($db, $key, ['token' => newSession($db, $key, $via)], $via);
+  accountOut($db, $key, ['token' => newSession($db, $key, $via), 'welcome' => WELCOME_COINS], $via);
 }
 
 if ($a === 'login') {
