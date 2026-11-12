@@ -10209,7 +10209,7 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .tb2-tg { flex: 1 1 auto; display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: #141517; }
 .tb2-tg button { flex: 1 1 auto; font-size: 16px !important; padding: 0 8px !important; white-space: nowrap; }
 .tb2-t.cal { gap: 3px; padding: 6px 8px; }
-.cal-r { display: grid; grid-template-columns: 38px 108px 22px 1fr 96px; align-items: center; height: 34px; border-radius: 10px; padding: 0 8px; gap: 6px; color: #F3F1EA; flex: none; }
+.cal-r { display: grid; grid-template-columns: 76px 104px 20px 1fr 92px; align-items: center; height: 34px; border-radius: 10px; padding: 0 8px; gap: 6px; color: #F3F1EA; flex: none; }
 .cal-r.C { background: rgba(232, 184, 74, .12); box-shadow: inset 3px 0 0 #E8B84A; }
 .cal-r.cur { background: #F8F4EA; color: #13201A; box-shadow: none; }
 .cal-d { font: 700 12px var(--body); letter-spacing: .06em; color: #9fb0a6; } .cal-r.cur .cal-d { color: #4A5A52; }
