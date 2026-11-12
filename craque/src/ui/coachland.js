@@ -702,16 +702,32 @@
     if (m.min >= 44 && m.min <= 47) return; // perto do intervalo não
     const q = momPick(m); if (!q) return;
     mo.n++; mo.at = m.min; mo.done[q.k] = 1;
-    const side = document.querySelector('.ldl-side'), g = document.getElementById('ldl-g4'); if (!side || !g) return;
+    momCard(x, q, () => { if (x.shout(q.g)) mo.run = { k: q.k, from: m.min }; });
+  }
+  // Cartão da auxiliar no painel da direita (5 s, sem pausar): q = { txt, y, ys, n, ns, hd }; sim() roda no dourado
+  function momCard(x, q, sim) {
+    const m = x.m, co = x.co;
+    const side = document.querySelector('.ldl-side'), g = document.getElementById('ldl-g4'); if (!side || !g) return false;
     const c = document.createElement('div'); c.id = 'mom-c'; c.className = 'mom-c';
     c.style.height = (g.offsetTop + g.offsetHeight) + 'px';
-    c.innerHTML = '<div class="mom-hd">' + auxFace(co, 'mom-f') + '<span><small>AUXILIAR</small><b>Decida rápido</b></span></div><p>' + esc(q.txt) + '</p>' +
+    c.innerHTML = '<div class="mom-hd">' + auxFace(co, 'mom-f') + '<span><small>AUXILIAR</small><b>' + (q.hd || 'Decida rápido') + '</b></span></div><p>' + esc(q.txt) + '</p>' +
       '<div class="mom-bt"><button id="mom-y"><b>' + q.y + '</b><small>' + q.ys + '</small></button><button id="mom-no"><b>' + q.n + '</b><small>' + q.ns + '</small></button></div><i class="mom-tm"><u></u></i>';
     side.appendChild(c); sfx('tap');
-    requestAnimationFrame(() => { const u = c.querySelector('.mom-tm u'); if (u) { u.style.transition = 'width ' + MOM_T + 'ms linear'; u.style.width = '0%'; } });
-    c.querySelector('#mom-y').onclick = () => { if (c._end || m.done) return; if (x.shout(q.g)) mo.run = { k: q.k, from: m.min }; momClose(); };
+    requestAnimationFrame(() => { const u = c.querySelector('.mom-tm u'); if (u) { u.style.transition = 'width ' + (q.t || MOM_T) + 'ms linear'; u.style.width = '0%'; } });
+    c.querySelector('#mom-y').onclick = () => { if (c._end || m.done) return; sim(); momClose(); };
     c.querySelector('#mom-no').onclick = () => momClose();
-    c._t = setTimeout(() => momClose(), MOM_T);
+    c._t = setTimeout(() => momClose(), q.t || MOM_T);
+    return true;
+  }
+  // A resposta da auxiliar quando o plano muda ou não encaixa (Silvio 12/11: "avisa que trocaram de formação e não diz o que
+  // fazer"): o melhor par formação + estilo com o seu elenco contra o que eles usam agora; com cartão livre vira um botão
+  // que muda na hora (x.tac), senão a dica vai escrita no recado
+  function planFix(x, hd, why) {
+    const m = x.m, co = x.co, b = S.coPlanRank(co, { home: m.home }, m.them)[0], tn = S.CO_STY[b.s].name, same = b.f === m.us.form && b.s === m.us.style;
+    if (same) return planToast('ok', hd, why + '. O nosso plano ainda serve: mantenha');
+    const free = !x.open && !document.getElementById('ld-pop') && !document.getElementById('mom-c') && !m.us.shout;
+    if (free && momCard(x, { hd, t: 7000, txt: why + '. Eu iria de ' + b.f + ' · ' + tn + '.', y: 'Mudar', ys: b.f + ' · ' + tn, n: 'Manter', ns: 'segue igual' }, () => x.tac(b.f, b.s))) { m.auxM = m.auxM || { n: 0, at: -99, done: {}, run: null }; m.auxM.at = m.min; return; }
+    planToast('no', hd, why + '. Vá de ' + b.f + ' · ' + tn + ' no Parar e mexer');
   }
   function livePaint(x) {
     const m = x.m, sh = m.us.shout, $ = id => document.getElementById(id);
@@ -732,11 +748,12 @@
     // o plano; PRO diz quem vai cansar antes de cair (abaixo de 66%, uma vez por jogador)
     { const L = S.coAuxLv(C().co), tk = m.them.form + '|' + m.them.style;
       if (m.aux0 === undefined) m.aux0 = tk;
-      if (L.ht && m.plan && !m.plan.htSaid && m.min >= 38 && m.min < 45 && !m.done) { m.plan.htSaid = 1; if (S.coPlanNow(m) === 'no') planToast('no', 'O PLANO NÃO ENCAIXOU', 'Mexa no intervalo, professor'); }
-      if (L.riv && m.aux0 !== tk && !m.done) { m.aux0 = tk; planToast('no', 'ELES MUDARAM O PLANO', 'Agora vêm de ' + m.them.form + ' · ' + S.CO_STY[m.them.style].name + '. Pare e mexa'); }
+      if (L.ht && m.plan && !m.plan.htSaid && m.min >= 38 && m.min < 45 && !m.done) { m.plan.htSaid = 1; if (S.coPlanNow(m) === 'no') planFix(x, 'O PLANO NÃO ENCAIXOU', 'Não estamos encaixando'); }
+      if (L.riv && m.aux0 !== tk && !m.done) { m.aux0 = tk; planFix(x, 'ELES MUDARAM O PLANO', 'Agora vêm de ' + m.them.form + ' · ' + S.CO_STY[m.them.style].name); }
       if (L.en && !m.done && S.coSubLeft(m) > 0) { const by = byOf(m.us.squad); m.enSaid = m.enSaid || {};
         const p = m.us.xi.map(id => by[id]).find(p => p && p.pos !== 'GOL' && p.en < 66 && p.en >= 58 && !m.enSaid[p.id]);
-        if (p) { m.enSaid[p.id] = 1; planToast('no', 'VAI CANSAR LOGO', p.n.split(' ').pop() + ' está no limite. Troque na próxima parada'); } } }
+        if (p) { m.enSaid[p.id] = 1; const r = m.us.bench.map(id => by[id]).filter(q => q && q.pos === p.pos && !q.out && !(m.us.gone || []).includes(q.id)).sort((a, b) => b.ovr - a.ovr)[0];
+          planToast('no', 'VAI CANSAR LOGO', p.n.split(' ').pop() + ' está no limite. ' + (r ? 'Ponha ' + r.n.split(' ').pop() + ' na próxima parada' : 'Troque na próxima parada')); } } }
     momTick(x);
     g.querySelectorAll('[data-gr]').forEach(b => { const on = !!sh && sh.k === b.dataset.gr; b.classList.toggle('on', on); b.disabled = !!sh && !on;
       b.querySelector('small').textContent = on ? 'até os ' + sh.until + '\'' : S.CO_SHOUT[b.dataset.gr].sub; });
