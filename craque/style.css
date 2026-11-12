@@ -10068,3 +10068,5 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .ld-st .mom-bt #mom-y { background: #F2C230; color: #13201A; }
 .mom-tm { display: block; height: 5px; border-radius: 3px; background: #26282c; margin-top: 8px; overflow: hidden; } .mom-tm u { display: block; height: 100%; width: 100%; background: #F2C230; }
 .lv-feed b.mom-ok { color: #4ADE80; } .lv-feed b.mom-no { color: #F08A5D; }
+/* Código da publicação na home (U.BUILD) */
+.hl-bd { position: absolute; left: 50%; transform: translateX(-50%); bottom: 4px; font: 600 12px/1 var(--body, sans-serif); letter-spacing: .04em; color: rgba(227,236,230,.38); pointer-events: none; z-index: 1; }

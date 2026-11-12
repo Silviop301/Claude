@@ -673,6 +673,12 @@
     if (!dn.pre && d < 0 && t >= 62 && t <= 85) return { k: 'pre', g: 'pressionar', txt: 'Estamos perdendo. Ir para cima com tudo?', y: 'Pressionar', ys: 'cansa mais', n: 'Manter', ns: 'segue igual' };
     if (!dn.seg && d === 1 && t >= 74 && t <= 86) return { k: 'seg', g: 'segurar', txt: 'Vantagem no fim. Segurar a bola e gastar o tempo?', y: 'Segurar', ys: 'chega menos', n: 'Manter', ns: 'segue igual' };
     if (!dn.lad && d === 0 && t >= 25 && t <= 70 && w.su === 0 && momWin(m, t - 15, t).su === 0) return { k: 'lad', g: 'lados', txt: 'O meio deles está fechado. Abrir o jogo pelas pontas?', y: 'Pelos lados', ys: 'abre o jogo', n: 'Manter', ns: 'segue igual' };
+    // Nenhum momento até os 30': a auxiliar fala pelo placar, para todo jogo ter ao menos um
+    if (m.auxM.n === 0 && t >= 30) {
+      if (!dn.rec && d > 0) return { k: 'rec', g: 'recuar', txt: 'Estamos na frente. Fechar atrás e proteger o placar?', y: 'Fechar', ys: 'todos atrás', n: 'Deixar', ns: 'segue igual' };
+      if (!dn.pre && d < 0) return { k: 'pre', g: 'pressionar', txt: 'Estamos atrás. Ir para cima agora?', y: 'Pressionar', ys: 'cansa mais', n: 'Manter', ns: 'segue igual' };
+      if (!dn.lad && d === 0) return { k: 'lad', g: 'lados', txt: 'Jogo travado. Abrir pelas pontas?', y: 'Pelos lados', ys: 'abre o jogo', n: 'Manter', ns: 'segue igual' };
+    }
     return null;
   }
   // Funcionou? Conta o que aconteceu enquanto o grito valeu
