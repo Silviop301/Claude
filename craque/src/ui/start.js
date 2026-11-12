@@ -295,6 +295,7 @@
       : '<button class="hl-md hl-' + m + '" data-md="' + m + '" id="b-new-co"><b>Treinador</b></button>').join('');
     const more = (so ? LAND_MORE.filter(x => x[0] === 'settings') : LAND_MORE).map(([k, l, d]) => '<button class="hl-mr" data-hl="' + k + '">' + lineSvg(d) + '<b>' + l + '</b></button>').join('');
     const html = U.LD.wroom && U.LD.wroom() && !so ? homeW(last) : '<div class="hl hl-x' + (so ? ' hl-so' : '') + '"><b class="hl-logo">CLIMBIX' + (Date.now() < BETA_ATE ? '<i class="hl-beta">BETA</i>' : '') + '</b>' +
+      (U.installCan && U.installCan() ? '<button class="hl-nv hl-ins" id="hl-ins"><img src="' + U.installIcon + '" width="34" height="34" alt=""><b>Instalar o app</b></button>' : '') +
       (U.novidadesLand && !so ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.VERSION + '">' + U.emo('📣', 'md') + '<b>' + U.VERSION + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '') + // notas de versão (settings.js); o pontinho some depois de abrir
       '<div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') + '</div>' +
       cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div>' + discHtml() + '</div>';
@@ -309,6 +310,7 @@
         landMode(m);
       });
       discBind(st);
+      if (st.querySelector('#hl-ins')) st.querySelector('#hl-ins').onclick = e => { sfx('tap'); const bt = e.currentTarget, t = bt.querySelector('b'); if (!U.installAsk()) { t.textContent = 'Vire o celular em pé'; clearTimeout(bt._t); bt._t = setTimeout(() => { t.textContent = 'Instalar o app'; }, 4000); } };
       if (st.querySelector('#hl-nv')) st.querySelector('#hl-nv').onclick = () => { sfx('tap'); U.novidadesLand(home); };
       if (st.querySelector('#hl-coins') && U.LD.loja) st.querySelector('#hl-coins').onclick = () => { sfx('tap'); U.LD.loja(0, home); };
       if (st.querySelector('#hl-packs')) st.querySelector('#hl-packs').onclick = () => { sfx('tap'); U.ldOff(); U.openPacks ? U.openPacks(U.home) : (U.packsScreen && U.packsScreen()); };

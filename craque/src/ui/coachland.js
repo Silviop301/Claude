@@ -207,13 +207,21 @@
   // Titular escolhido (Silvio 2026-11-10): ao lado dele, os reservas da mesma posição, do maior geral para o menor; o
   // banco segue embaixo para quem é de fora da posição, com o geral que ele teria na vaga (ovrAt, perde um pouco)
   const ovrAt = (p, slot) => p.pos === slot || (p.pos === 'GOL') !== (slot === 'GOL') ? p.ovr : Math.round(p.ovr * S.coFit(p.pos, slot));
-  const nearList = (slot, bench, ok, x, y) => { const L = bench.filter(p => ok(p) && p.pos === slot).sort((a, b) => b.ovr - a.ovr || b.en - a.en).slice(0, 4);
-    return '<div class="tm-near" style="' + (x < 55 ? 'left:calc(' + x : 'right:calc(' + (100 - x)) + '% + 40px);top:' + y + '%">' +
-      (L.length ? L.map(p => '<button class="tm-bp tm-cd" data-bp="' + p.id + '"><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + p.ovr + '</b><span><i>' + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + p.pos + '</small></span></button>').join('')
+  // (2026-11-12, Silvio: "dois principais por função") cada reserva mostra os dois atributos de mais peso da posição,
+  // verde ▲ se é melhor que o de quem sai e laranja ▼ se é pior; em cima, o nome e os números de quem sai (`out`).
+  const nearList = (slot, bench, ok, x, y, out) => { const L = bench.filter(p => ok(p) && p.pos === slot).sort((a, b) => b.ovr - a.ovr || b.en - a.en).slice(0, 4);
+    const w = S.CO_AT.w[slot] || S.CO_AT.w.MEI, top = w.map((v, i) => [v, i]).sort((a, b) => b[0] - a[0] || a[1] - b[1]).slice(0, 2).map(q => q[1]).sort((a, b) => a - b);
+    const lb = p => { const ks = S.coAtKeys(p); return top.map(i => S.CO_AT.short[ks[i]]); }, oa = out ? S.coAttrs(out) : null;
+    const at = p => { const a = S.coAttrs(p), l = lb(p); return '<em class="tm-na">' + top.map((i, k) => { const d = oa ? a[i] - oa[i] : 0; return '<u class="' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + l[k] + ' ' + a[i] + (d > 0 ? ' ▲' : d < 0 ? ' ▼' : '') + '</u>'; }).join(' · ') + '</em>'; };
+    return '<div class="tm-near' + (L.length ? ' at' : '') + '" style="' + (x < 55 ? 'left:calc(' + x : 'right:calc(' + (100 - x)) + '% + 40px);top:' + y + '%">' +
+      (L.length ? (out ? '<div class="tm-nh"><b>' + esc(last(out.n)) + ' ' + out.ovr + '</b><span>' + lb(out).map((t, k) => t + ' ' + oa[top[k]]).join(' · ') + '</span></div>' : '') +
+        L.map(p => '<button class="tm-bp tm-cd" data-bp="' + p.id + '"><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + p.ovr + '</b><span><i>' + esc(last(p.n)) + '</i>' + at(p) + '</span></button>').join('')
         : '<p class="tm-cl0">Ninguém da posição. Use o banco.</p>') + '</div>'; };
   // Dentro do campo: a lista não pode sair por cima nem por baixo
   const nearFix = root => { const n = root.querySelector('.tm-near'), f = n && n.parentNode; if (!n) return;
-    const H = f.clientHeight, h = n.offsetHeight, c = n.offsetTop; n.style.top = Math.max(4, Math.min(H - h - 4, c - h / 2)) + 'px'; n.style.visibility = 'visible'; };
+    const H = f.clientHeight, h = n.offsetHeight, c = n.offsetTop; n.style.top = Math.max(4, Math.min(H - h - 4, c - h / 2)) + 'px';
+    const Wf = f.clientWidth, l = n.offsetLeft, wn = n.offsetWidth; if (l < 4 || l + wn > Wf - 4) { n.style.right = 'auto'; n.style.left = Math.max(4, Math.min(Wf - wn - 4, l)) + 'px'; }
+    n.style.visibility = 'visible'; };
   const auxRows = L => '<div class="ax-l">' + L.map((g, k) => '<button class="ax-r on" data-ax="' + k + '" aria-pressed="true"><em data-ln="' + lnOf(g.slot) + '">' + g.tag + '</em><span><b>' + esc(last(g.o.n)) + '</b><small>' + g.why + '</small></span><u>›</u><span><b>' + esc(last(g.i.n)) + '</b><small>' + g.i.ovr + '</small></span><i class="ax-ck"></i></button>').join('') + '</div>';
   const auxLbl = n => (n === 0 ? 'Nenhuma troca' : n === 1 ? 'Fazer a troca' : 'Fazer as ' + n + ' trocas');
   // Liga as linhas ao botão: devolve quais estão marcadas
@@ -397,6 +405,24 @@
     if (t.n >= TUT.length) { co.tut = null; return null; }
     return TUT[t.n][0] === co.ss.i ? TUT[t.n] : null;
   }
+  // Recado do auxiliar apontando um alvo fora da Semana (o mesmo desenho do tutorial): escurece, acende o alvo e fala.
+  // Usado no "Parar e mexer" do primeiro jogo ao vivo da primeira carreira (`co.tpm`: 1 = viu o 1º recado, 2 = acabou).
+  function tuAt(tg, txt, n, of, onHole, onSkip) {
+    const st = document.querySelector('#ld .ld-st'), co = C().co; if (!st || !tg || document.getElementById('ld-tu')) return false;
+    const R = U.box(st), k = R.width / st.offsetWidth || 1, r = U.box(tg);
+    const x = (r.left - R.left) / k, y = (r.top - R.top) / k, w = r.width / k, h = r.height / k;
+    const el = document.createElement('div'); el.className = 'tu tu-top'; el.id = 'ld-tu';
+    el.innerHTML = '<button class="tu-hole" style="left:' + x.toFixed(1) + 'px;top:' + y.toFixed(1) + 'px;width:' + w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px;border-radius:' + getComputedStyle(tg).borderRadius + '" aria-label="' + esc(tg.textContent.trim()) + '"></button>' +
+      '<div class="tu-bub" role="dialog" aria-label="Auxiliar">' + auxFace(co, 'tu-fc') + '<div><p>“' + txt + '”</p><span><small>' + n + ' de ' + of + '</small><button class="tu-skip" id="tu-skip">Pular</button></span></div></div>';
+    st.appendChild(el);
+    const b = el.querySelector('.tu-bub'), bw = b.offsetWidth, bh = b.offsetHeight, cl = (v, a, z) => Math.max(a, Math.min(z, v));
+    const ox = (st.offsetWidth - W) / 2, oy = (st.offsetHeight - H) / 2;
+    b.style.left = cl(x - bw - 24, ox + 8, ox + W - bw - 8) + 'px';
+    b.style.top = cl(y + h - bh, oy + 8, oy + H - bh - 8) + 'px';
+    el.querySelector('.tu-hole').onclick = () => { el.remove(); onHole(); };
+    el.querySelector('#tu-skip').onclick = () => { sfx('back'); el.remove(); onSkip(); };
+    return true;
+  }
   function tutShow(co, st) {
     const c = C(), s = tutStep(co); if (!s) return;
     const tg = st.querySelector(s[1]);
@@ -474,7 +500,7 @@
         '<span><small>' + (tip && !(used && nFix) ? (plan ? PL : 'DICA DO AUXILIAR') : 'AUXILIAR') + '</small><b>' + (tip && !(used && nFix) ? (used ? (plan ? '✓ No plano ' + (auxEla(co) ? 'dela' : 'dele') : '✓ ' + esc(tipNm)) : esc(S.coTipLbl(tip))) : nFix ? fixLbl : vs && !scR ? 'Leia o olheiro' : 'Tudo certo') + '</b></span>' +
         (nFix ? '<i class="tm-tip-d n">' + nFix + '</i>' : tip && !used && !tip.seen ? '<i class="tm-tip-d"></i>' : '') + '</button>';
       show('<div class="tm"><div class="tm-h"><button class="tcr-back" id="tm-back" aria-label="Voltar">' + BK + '</button>' + title + pill + '</div>' +
-        '<div class="ld-pitch tm-pitch">' + PITCH + dots + (swap !== null ? nearList(sl[swap], bench, c.avail, sp[swap][0], sp[swap][1]) : '') +
+        '<div class="ld-pitch tm-pitch">' + PITCH + dots + (swap !== null ? nearList(sl[swap], bench, c.avail, sp[swap][0], sp[swap][1], by[co.xi[swap]]) : '') +
         '<button class="tm-best' + (bestXI().join() === co.xi.join() ? ' on' : '') + '" id="tm-best" aria-label="Escalar os melhores pelo geral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></svg>Melhores</button>' +
         '<button class="tm-best tm-rest' + (restXI().join() === co.xi.join() ? ' on' : '') + '" id="tm-rest" aria-label="Escalar os mais descansados de cada posição"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h15v8H3zM18 10.5h3v3h-3z"/></svg>Descansados</button></div>' +
         '<div class="tm-bench"><small>BANCO</small>' + bstrip + '</div>' +
@@ -636,6 +662,12 @@
     // O auxiliar avisa no "Parar e mexer" quantos titulares estão no limite (abaixo de 58%, os que ele sugere trocar)
     { const by = byOf(m.us.squad), n = S.coSubLeft(m) > 0 && m.us.bench.length ? m.us.xi.filter((id, i) => i && by[id] && by[id].en < 58).length : 0, b = $('b-lv-stop');
       if (b && b._n !== n) { b._n = n; let d = b.querySelector('.tm-dot'); if (!n) { if (d) d.remove(); } else { if (!d) { d = document.createElement('i'); d.className = 'tm-dot'; b.appendChild(d); } d.textContent = n; } b.classList.toggle('aux', n > 0); } }
+    // Primeiro jogo ao vivo da primeira carreira: aos 3' o jogo pausa e a auxiliar aponta o "Parar e mexer"
+    if (x.co.first && !x.co.tpm && m.min >= 3 && m.min < 40 && !m.done && !(U.load('climbix-dicas-v1') || {}).off && !document.getElementById('ld-pop') && x.pause && x.pause()) {
+      const co = x.co, fim = n => { co.tpm = n; C().save(); x.resume(); };
+      if (!tuAt($('b-lv-stop'), 'Quer mudar algo no meio do jogo? Toque em <b>Parar e mexer</b>: o jogo pausa e você troca jogador, formação e estilo.', 1, 2,
+        () => { fim(1); const b = $('b-lv-stop'); if (b) b.click(); }, () => fim(2))) fim(2);
+    }
     // Plano do auxiliar (2026-11-11): aos 10' ele conta no campinho se o plano que você seguiu está funcionando
     if (m.plan && !m.plan.said && m.min >= 10 && !m.done) { m.plan.said = 1; const pn = S.coPlanNow(m);
       if (pn === 'ok') planToast('ok', 'O PLANO ESTÁ FUNCIONANDO', S.CO_PLAN_WHY[m.plan.why] || 'O time encaixou no jogo'); }
@@ -752,7 +784,7 @@
       const hint = sel >= 0 ? (selSub ? 'Toque ou arraste quem entra, ou toque em outro titular' : 'Toque em outro titular')  : selB ? 'Toque em quem sai' : '';
       const sc = esc(c.nm(m.home ? co.club : m.vs)).slice(0, 3).toUpperCase() + ' <u>' + m.gh + ' x ' + m.ga + '</u> ' + esc(c.nm(m.home ? m.vs : co.club)).slice(0, 3).toUpperCase();
       pop('<div class="tm ldl-tm' + (half ? ' ht' : '') + '"><div class="tm-h"><b>' + esc(T) + '</b><span class="ldl-sc">' + sc + '</span><small>' + S.coClock(m) + '</small>' + (hint ? '<span class="tm-hint">' + hint + '</span>' : LN_LEG) + '</div>' +
-        '<div class="ld-pitch tm-pitch">' + PITCH + dots + (selSub ? nearList(sl[sel], bench, c.avail, sp[sel][0], sp[sel][1]) : '') + '</div>' +
+        '<div class="ld-pitch tm-pitch">' + PITCH + dots + (selSub ? nearList(sl[sel], bench, c.avail, sp[sel][0], sp[sel][1], by[s.xi[sel]]) : '') + '</div>' +
         '<div class="tm-bench"><small>BANCO<em>' + (L() ? U.D.plural(L(), 'troca', 'trocas') : anySub ? 'só a da lesão' : s.subs ? 'sem paradas' : 'sem trocas') + '</em></small>' + bstrip + '</div>' +
         '<div class="tm-side">' + (half ? '<div class="ldl-talk2">' + Object.keys(S.CO_TALK).map(k => '<button data-tk="' + k + '"' + (talk === k ? ' class="on"' : '') + '>' + esc(S.CO_TALK[k].name) + '</button>').join('') + '</div>' : '') +
           pick('form', 'Formação', s.form) + pick('sty', 'Estilo', esc(S.CO_STY[s.style].name)) +
@@ -791,6 +823,7 @@
     };
     draw();
     if (st.t === 'vermelho') auxPop();
+    if (co.tpm === 1) { co.tpm = 2; c.save(); if (st.t === 'pausa') setTimeout(() => tuAt(document.querySelector('.ldl-tro'), 'Toque num titular e depois em quem entra. São <b>5 trocas em até 3 paradas</b>; no intervalo não gasta parada.', 2, 2, () => {}, () => {}), 500); }
   }
 
   // ---------- Fim de jogo deitado (TrFim): placar e números em abas, notas do seu time, o que mudou ----------
