@@ -256,6 +256,36 @@
   const LAND_MORE = [['mine', 'Carreiras', 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4'], ['ranking', 'Ranking', 'M12 14a5 5 0 1 0 0-10a5 5 0 1 0 0 10M9 13l-2 8 5-3 5 3-2-8'],
     ['profile', 'Perfil', FI_PERFIL], ['settings', 'Ajustes', FI_AJUSTES]].filter(x => (RANK_ON || x[0] !== 'ranking') && (MINE_ON || x[0] !== 'mine'));
   const lineSvg = d => d.charAt(0) === '<' ? d : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + d + '"/></svg>';
+  // Computador (desenho aprovado 2026-11-12, quadro "Home no computador"): a última carreira num cartão grande (tabela, próximo
+  // jogo, caixa e o Continuar), as vagas do Treinador à direita e Perfil, Ajustes e o disco embaixo. Vale quando a tela larga cabe
+  // (U.LD.wroom, o fit em coachland.js decide e redesenha a home se mudar)
+  function homeW(last) {
+    const B = U._co || {}, brl = B.brl || (v => 'R$ ' + v), sl = slotsOf('treinador');
+    const cr = id => id ? crest(id) : '<span class="hw-nc">?</span>';
+    let card;
+    if (last) {
+      const c = last.sv.co, cl = c.club && club(c.club), ss = c.ss, live = cl && ss && !ss.done && ss.tab;
+      const at = svYear(last.sv) + (ss && !ss.done ? ' · Rodada ' + Math.min(ss.i + 1, ss.rounds.length) : !c.club ? ' · sem clube' : ' · pré-temporada');
+      let k = '';
+      if (live) {
+        const pos = S.coPos(c), g = c.board && c.board.goal, nx = S.coNext(c), vs = nx && !nx.bye && club(nx.vs), f = c.fin; let R = null; try { R = f && S.coFinRitmo(c); } catch (e) {}
+        k = '<div class="hw-k"><div><small>TABELA</small><b>' + pos + 'º</b><span class="' + (g && pos <= g.pos ? 'up' : 'wn') + '">' + (g ? (g.k === 'titulo' ? 'meta: ser campeão' : 'meta: até o ' + g.pos + 'º') : '') + '</span></div>' +
+          '<div><small>PRÓXIMO JOGO</small>' + (vs ? '<span class="hw-vs">' + crest(vs.id) + '<b>' + esc(vs.short || vs.name) + '</b></span><span>' + (nx.home ? 'em casa' : 'fora de casa') + '</span>' : '<b class="sm">' + (nx ? 'rodada sem jogo' : 'fim da temporada') + '</b><span></span>') + '</div>' +
+          '<div><small>CAIXA</small><b class="' + (f && f.caixa < 0 ? 'dn' : '') + '">' + (f ? brl(f.caixa) : '—') + '</b><span class="' + (R ? (R.net >= 0 ? 'up' : 'wn') : '') + '">' + (R && B.mi ? (R.net >= 0 ? '▲ + ' : '▼ − ') + B.mi(Math.abs(R.net)) + '/rodada' : '') + '</span></div></div>';
+      }
+      card = '<div class="hw-c"><small class="hw-l">ÚLTIMA CARREIRA</small><div class="hw-cl">' + cr(cl && cl.id) + '<span><b>' + esc(cl ? cl.short || cl.name : c.name) + '</b><small>Temporada ' + at + '</small></span></div>' + (k || '<span class="rs-gap"></span>') +
+        '<button class="hl-go hw-go" id="' + (MODES[last.m].cont || 'hl-go') + '" data-vg="' + last.m + ':' + last.i + '">' + PLAY_SVG + '<b>CONTINUAR</b></button></div>';
+    } else card = '<div class="hw-c hw-new"><small class="hw-l">COMECE AQUI</small><b class="hw-t">Sua carreira de técnico</b><span class="hw-s">Escolha um clube, monte o time e jogue a temporada ao vivo.</span><span class="rs-gap"></span>' +
+      '<button class="hl-go hw-go solo" id="hl-go" data-mode="treinador">' + PLAY_SVG + '<b>JOGAR</b></button></div>';
+    const row = (sv, i) => { if (!sv) return '<button class="hw-r free" data-mode="treinador"><i>+</i><b>Vaga livre · nova carreira</b></button>';
+      const c = sv.co, cl = c.club && club(c.club), ss = c.ss, at = svYear(sv) + (ss && !ss.done ? ' · rodada ' + Math.min(ss.i + 1, ss.rounds.length) : !c.club ? ' · sem clube' : ' · pré-temporada');
+      return '<button class="hw-r' + (last && last.i === i ? ' on' : '') + '" data-vg="treinador:' + i + '">' + cr(cl && cl.id) + '<span><b>' + esc(cl ? cl.short || cl.name : c.name) + '</b><small>' + esc(c.name) + ' · ' + at + '</small></span>' + PLAY_SVG + '</button>'; };
+    const more = LAND_MORE.map(([k, l, d]) => '<button class="hl-mr" data-hl="' + k + '">' + lineSvg(d) + '<b>' + l + '</b></button>').join('');
+    return '<div class="hlw hl hl-x"><div class="hw-top">' + (U.novidadesLand ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.VERSION + '">' + U.emo('📣', 'md') + '<b>' + U.VERSION + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '<span></span>') +
+      '<b class="hl-logo">CLIMBIX' + (Date.now() < BETA_ATE ? '<i class="hl-beta">BETA</i>' : '') + '</b><div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + '</div></div>' +
+      '<div class="hw-left">' + card + '<div class="hl-mds"><button class="hl-md hl-treinador" data-mode="treinador" id="b-new-co"><b>Treinador</b></button><button class="hl-md hl-jogador off" disabled aria-disabled="true"><b>Jogador</b><small>Em breve</small></button></div></div>' +
+      '<div class="hw-right"><div class="hw-sv"><small class="hw-l">SUAS CARREIRAS · TREINADOR</small>' + sl.map(row).join('') + '</div><div class="hw-bt"><div class="hl-mrs">' + more + '</div>' + discHtml() + '</div></div></div>';
+  }
   function homeLand() {
     const so = U.soCo(), packs = so || !PACKS_ON ? 0 : U.ITEMS.get().packs.length, last = lastSave();
     const cont = last ? '<button class="hl-go" id="' + (MODES[last.m].cont || 'hl-go') + '" data-vg="' + last.m + ':' + last.i + '">' + PLAY_SVG + '<b>CONTINUAR</b><small><span>' + esc(svName(last.sv)) + '</span><i> · ' + svYear(last.sv) + '</i></small></button>'
@@ -264,7 +294,7 @@
       ? '<button class="hl-md hl-jogador off" disabled aria-disabled="true"><b>Jogador</b><small>Em breve</small></button>'
       : '<button class="hl-md hl-' + m + '" data-md="' + m + '" id="b-new-co"><b>Treinador</b></button>').join('');
     const more = (so ? LAND_MORE.filter(x => x[0] === 'settings') : LAND_MORE).map(([k, l, d]) => '<button class="hl-mr" data-hl="' + k + '">' + lineSvg(d) + '<b>' + l + '</b></button>').join('');
-    const html = '<div class="hl hl-x' + (so ? ' hl-so' : '') + '"><b class="hl-logo">CLIMBIX' + (Date.now() < BETA_ATE ? '<i class="hl-beta">BETA</i>' : '') + '</b>' +
+    const html = U.LD.wroom && U.LD.wroom() && !so ? homeW(last) : '<div class="hl hl-x' + (so ? ' hl-so' : '') + '"><b class="hl-logo">CLIMBIX' + (Date.now() < BETA_ATE ? '<i class="hl-beta">BETA</i>' : '') + '</b>' +
       (U.novidadesLand && !so ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.VERSION + '">' + U.emo('📣', 'md') + '<b>' + U.VERSION + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '') + // notas de versão (settings.js); o pontinho some depois de abrir
       '<div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') + '</div>' +
       cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div>' + discHtml() + '</div>';

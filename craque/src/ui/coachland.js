@@ -7,7 +7,7 @@
   const U = window.CRAQUE_UI;
   const { S, sfx, esc, club, crest } = U;
   const W = 844, H = 390, DESK_K = 1.7; // DESK_K: maior escala do palco no computador (1435×663 px na tela)
-  const WIDE = /^(lv|tm|lde2|tb2|rs|sm|kb2|fn2|mkw)(\s|$)/, WIDE_MAX = [1320, 660]; let WROOM = false, FIN_TAB = null; // telas que crescem no computador (fit) e o maior tamanho do conteúdo delas
+  const WIDE = /^(lv|tm|lde2|tb2|rs|sm|kb2|fn2|mkw|hlw)(\s|$)/, WIDE_MAX = [1320, 660]; let WROOM = false, FIN_TAB = null; // telas que crescem no computador (fit) e o maior tamanho do conteúdo delas
   const on = () => true; // o Treinador é sempre deitado
   // Som de cada botão do palco (Silvio, 11/11: "muito agudo, a maioria vai ser mais grave"): voltar, fechar e cancelar = back
   // (mais grave), a ação principal (dourado, confirmar) = ok (o único mais agudo), o resto = tap
@@ -64,7 +64,7 @@
     const room = desk && W + 2 * ex - 2 * wpx >= 1000 && H + 2 * ey - 2 * wpy >= 470; // notebook: quase não sobra, fica o desenho do celular
     const wide = wide0 && room; if (wide) { px = wpx; py = wpy; }
     // Tela com desenho próprio no computador (Finanças): monta outro HTML quando cabe; mudou o tamanho da janela, redesenha
-    if (room !== WROOM) { WROOM = room; const k0 = st0 && st0.firstElementChild && st0.firstElementChild.classList; if (k0 && k0.contains('fn2')) setTimeout(() => financas(FIN_TAB)); else if (k0 && (k0.contains('mkw') || (k0.contains('mk') && /^mk( |$)/.test(st0.firstElementChild.className) && st0.querySelector('#mk-go')) || k0.contains('mkr'))) setTimeout(() => mercado(MK_W[0], MK_W[1])); }
+    if (room !== WROOM) { WROOM = room; const k0 = st0 && st0.firstElementChild && st0.firstElementChild.classList; if (k0 && k0.contains('fn2')) setTimeout(() => financas(FIN_TAB)); else if (k0 && k0.contains('hl-x') && !k0.contains('hl-so') && U.home) setTimeout(() => U.home()); else if (k0 && (k0.contains('mkw') || (k0.contains('mk') && /^mk( |$)/.test(st0.firstElementChild.className) && st0.querySelector('#mk-go')) || k0.contains('mkr'))) setTimeout(() => mercado(MK_W[0], MK_W[1])); }
     el.classList.toggle('wide', wide); // #ld.wide: as janelas de tela cheia (parada do ao vivo, .ldl-full) seguem a tela larga
     el.style.setProperty('--ldpx', px + 'px'); el.style.setProperty('--ldpy', py + 'px');
     el.style.setProperty('--ldk', k.toFixed(4));
@@ -2819,6 +2819,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, fit, lift, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, result, segunda, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, recebidas, ficha, proposta, contrato, recebida };
+  U.LD = { on, show, off, fit, lift, wroom: () => WROOM, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, result, segunda, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, recebidas, ficha, proposta, contrato, recebida };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();
