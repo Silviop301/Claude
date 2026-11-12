@@ -1107,11 +1107,16 @@
     else if (log.pub) rows.push(['Público', milK(log.pub) + (log.pub >= log.cap * S.CO_EST.full ? ' · lotou' : ''), log.pub >= log.cap * S.CO_EST.full ? 'gd' : '']);   // estádio: só nos jogos em casa
       { const rd = S.coFin(co) && S.coFin(co).rd; // dinheiro da rodada (Silvio 11/11): toque abre Finanças na aba Rodada
         if (rd && rd.s === co.season && rd.r === log.r) { const a = rd.inn.reduce((t, x) => t + x[1], 0), b = rd.out.reduce((t, x) => t + x[1], 0);
-          rows.push(['Rodada', '+' + c.mi(a) + ' / −' + c.mi(b), a >= b ? 'up' : 'dn', 'rs-fin']); } }
+          const A = c.mi(a), B = c.mi(b), u = A.split(' ')[1]; // mesma unidade só no fim: "+170 / −140 mil" (Silvio 12/11: card apertado)
+          rows.push(['Rodada', '+' + (u && u === B.split(' ')[1] ? A.split(' ')[0] : A) + ' / −' + B, a >= b ? 'up' : 'dn', 'rs-fin']);
+          const i = rows.findIndex(r => r[0] === 'Bilheteria'); if (i >= 0) rows.splice(i, 1); } } // a bilheteria já está no "+" da Rodada (e em Finanças)
       // Plano do auxiliar (2026-11-11): a primeira linha diz se seguir o plano deu certo; com 5 linhas o Público sai
       if (log.plan) { rows.unshift(['Plano ' + (auxEla(co) ? 'dela' : 'dele'), log.plan === 'ok' ? 'funcionou ✓' : log.plan === 'no' ? 'não encaixou' : 'você foi no seu', log.plan === 'ok' ? 'up' : log.plan === 'no' ? 'dn' : '']);
         if (rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); } }
       if (log.cup && rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); }
+      // nunca mais de 4 linhas: a 5ª passava da borda do card no celular deitado (Silvio, 2026-11-12)
+      ['Público', 'Bilheteria', 'Prêmio', 'Caderno'].forEach(k => { const i = rows.findIndex(r => r[0] === k); if (rows.length > 4 && i >= 0) rows.splice(i, 1); });
+      rows.splice(4);
       show('<div class="rs">' +
         '<div class="rs-sc">' + crest((m.home ? cl : vs).id, 'rs-cr') + '<em>' + m.gh + ' <i>x</i> ' + m.ga + '</em>' + crest((m.home ? vs : cl).id, 'rs-cr') +
           '<span class="rs-w"><b class="' + wcls + '">' + word + (aux ? ' · COM O AUXILIAR' : '') + '</b><small>' + (goals.length ? goals.join(' · ') : 'sem gols') + '</small></span></div>' +
