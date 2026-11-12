@@ -379,7 +379,8 @@
     c.save('hub');
     const tut = tutStep(co);
     const inPop = !tut && inboxPop(co, semana), popped = inPop || (!tut && (lostPop(co) || auxPop(co) || dmPop(co) || obraPop(co) || nomePop(co) || ligaPop(co) || showPop(co)));
-    if (!tut && !popped && !ctWarn(co)) finNews(co);
+    semana.pop = !!(tut || popped);
+    if (!tut && !popped) { if (ctWarn(co)) semana.pop = true; else { const fx = co.fin && co.fin.news && co.fin.news[0]; if (fx && !fx.seen) semana.pop = true; finNews(co); } }
     if (!tut) setTimeout(() => { winToast(co); if (!popped) upToast(co); }, 0);
     // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
     const inN = tut ? 0 : S.coMktInbox(co).filter(o => !o.seen).length - (inPop ? 1 : 0); // só desconta a proposta que abriu agora (outra janelinha deixava o aviso em -1)
@@ -1099,10 +1100,17 @@
   function segunda(log) {
     const c = C(), co = c.co, nx = S.coNext(co);
     if (!nx) { off(); return c.finishSeason(); }
+    const bet = S.coPressBet ? S.coPressBet(co, log) : null; // a promessa da coletiva vale neste jogo
     c.save('hub');
-    const talker = S.coTalkWho(co);
     semana();
-    if (talker && !tutStep(co)) talkPop(talker, log); // com o tutorial da Semana na tela, a conversa fica para depois
+    if (bet) betToast(bet);
+    // Uma janelinha por semana (2026-11-12): coletiva de jogo grande, conversa, acontecimento ou coletiva comum, e só
+    // quando a Semana não abriu outra (proposta recebida, obra pronta...) nem o tutorial (`semana.pop`)
+    if (semana.pop) return;
+    const w = S.coWeekPop ? S.coWeekPop(co, log) : (S.coTalkWho(co) ? { kind: 'talk', p: S.coTalkWho(co) } : null);
+    if (!w) return;
+    if (w.kind === 'talk') { if (S.coWeekSeen) S.coWeekSeen(co); c.save('hub'); talkPop(w.p, log); }
+    else pvPop(w);
   }
   // A conversa (Silvio 2026-11-10, opção A; desenho em /mnt/project-files/climbix/conversa-jogador/): a ficha do jogador
   // (o disco da escalação com geral, posição e energia), o motivo numa etiqueta, a moral em 5 tracinhos, a fala num balão
@@ -1129,6 +1137,46 @@
         setTimeout(end, 2400);
       });
     }, 'cvj-pop');
+  }
+
+  // Coletiva e acontecimento da semana (2026-11-12, Silvio: "entrevistas que impactem na moral do elenco" e "mais eventos
+  // aleatórios"; desenho em /mnt/project-files/climbix/vestiario/): o mesmo desenho da conversa. Quem fala (a jornalista
+  // ou o jogador do caso), a fala no balão creme e 3 respostas com o preço em etiquetas. Tocou: a resposta (ou o que deu
+  // errado na arriscada) no balão, a moral anda e fecha sozinha. O X não responde e não volta (motor em coachpress.js)
+  const PV_MEDIA = [['Paula Ribeiro', 'Rádio Esporte'], ['Marcos Teles', 'TV Arena'], ['Lia Fontes', 'Jornal do Torcedor'], ['Caio Brandão', 'Canal da Bola']];
+  function pvPop(d) {
+    const c = C(), co = c.co, P = d.t && co.squad.find(x => x.id === d.t), P2 = d.t2 && co.squad.find(x => x.id === d.t2), press = d.kind === 'press';
+    const avg = () => ({ mo: co.squad.reduce((a, p) => a + (p.mo === undefined ? 60 : p.mo), 0) / Math.max(1, co.squad.length) });
+    const moP = () => (press || !P ? avg() : P);
+    const jm = PV_MEDIA[hashS(co.club + co.season) % PV_MEDIA.length];
+    const fx = o => o.tags.slice(0, 3).map(f => '<em' + (f[0] ? ' class="' + f[0] + '"' : '') + '>' + (f[1] ? '<i>' + f[1] + '</i>' : '') + esc(f[2]) + '</em>').join('');
+    const who = press ? '<span class="cvj-d jr" style="background-image:url(' + CO_ART + 'rosto-07.webp?v=2)"><em>TV</em></span><span class="cvj-n"><b>Coletiva</b><small>' + esc(jm[0] + ' · ' + jm[1]) + '<em class="cl">' + esc(d.tag) + '</em></small></span>'
+      : P ? '<span class="cvj-d ' + enRing(P.en) + '" style="--en:' + Math.round(P.en) + '"><b>' + P.ovr + '</b><em>' + P.pos + '</em></span><span class="cvj-n"><b>' + esc(d.ttl) + '</b><small>' + esc(P.n) + (P2 ? ' x ' + esc(P2.n) : '') + '<em class="cl">' + esc(d.tag) + '</em></small></span>'
+      : '<span class="cvj-d jr pv-cr">' + crest(co.club, 'pv-crs') + '</span><span class="cvj-n"><b>' + esc(d.ttl) + '</b><small>' + esc(club(co.club).short || club(co.club).name) + '<em class="cl">' + esc(d.tag) + '</em></small></span>';
+    const body = (say, pick, was, dl) => '<div class="cvj-h">' + who + (pick ? cvjMo(moP(), was, dl) : '<button class="ld-x" data-pop-x aria-label="Fechar">' + XI_ICO + '</button>') + '</div>' +
+      '<div class="cvj-say"><p>' + (press && !pick ? '“' + esc(say) + '”' : esc(say)) + '</p></div>' +
+      '<div class="cvj-ops">' + d.ops.map(o => '<button class="cvj-op' + (pick ? (o.k === pick ? ' on' : ' off') : '') + '" data-pv="' + o.k + '"' + (pick ? ' disabled' : '') + '><b>' + esc(o.name) + '</b><span>' + fx(o) + '</span></button>').join('') + '</div>';
+    if (S.coWeekSeen) S.coWeekSeen(co); c.save('hub');
+    pop(body(d.say), press ? 'Coletiva' : d.ttl, w => {
+      w.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => {
+        const k = b.dataset.pv, m0 = moP().mo, was = S.coMoTxt(moP()).n, cc = w.querySelector('.ld-pop-c');
+        const r = press ? S.coPressAnswer(co, d, k) : S.coEventAnswer(co, d, k); if (!r) return;
+        sfx(r.ok ? 'tap' : 'back'); c.save('hub');
+        cc.classList.add('done'); cc.innerHTML = body(r.re, k, was, Math.round(moP().mo - m0));
+        const end = () => { if (w.isConnected) { closePop(); semana(); } };
+        setTimeout(() => { if (w.isConnected) w.onclick = () => { sfx('tap'); end(); }; }, 350);
+        setTimeout(end, 2600);
+      });
+    }, 'cvj-pop pv-pop');
+  }
+  // A promessa da coletiva no jogo seguinte: cumpriu ou não (aviso no topo da Semana)
+  function betToast(b) {
+    const st = document.querySelector('#ld .ld-st'); if (!st || !st.querySelector('.sm')) return;
+    if (document.querySelector('#ld-pop') || st.querySelector('.up-ty')) { clearTimeout(betToast.t); betToast.t = setTimeout(() => betToast(b), 700); return; }
+    const box = document.createElement('div'); box.className = 'up-ty' + (b.win ? '' : ' ult'); box.setAttribute('role', 'status');
+    box.innerHTML = '<i><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' + (b.win ? '<path d="M5 12.5l4.5 4.5L19 7.5"/>' : '<path d="M7 7l10 10M17 7L7 17"/>') + '</svg></i><span><b>' + (b.win ? 'Promessa cumprida' : 'Promessa não cumprida') + '</b><small>' + (b.win ? 'Torcida e diretoria gostaram' : 'A torcida cobrou a vitória prometida') + '</small></span>';
+    st.appendChild(box); sfx(b.win ? 'ok' : 'back');
+    const t = toastLife(box, 6000); box.onclick = () => { clearTimeout(t); box.remove(); };
   }
 
   // ---------- Caderno do técnico deitado (40): a grade inteira, a casa tocada aberta ao lado, o próximo rival ----------
@@ -3070,6 +3118,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, fit, lift, wroom: () => WROOM, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePens, result, segunda, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, recebidas, ficha, proposta, contrato, recebida };
+  U.LD = { on, show, off, fit, lift, wroom: () => WROOM, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePens, result, segunda, pvPop, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, recebidas, ficha, proposta, contrato, recebida };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();

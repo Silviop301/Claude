@@ -31,6 +31,8 @@
     // Faltas e cartões por time e por jogo: foul faltas (o estilo muda), yel amarelos por falta, redD vermelho direto por falta,
     // ycMax amarelos que suspendem; off impedimentos; foulShow das faltas sem cartão que o campinho apita (as perigosas)
     foul: 12, yel: 0.08, redD: 0.002, kCl: 1.8, ycMax: 3, off: 2.2, foulShow: 0.14,
+    // moK: peso da moral no rendimento (moral 100 = +5%; era 1200 = +3% até 2026-11-12, "senão ninguém sente")
+    moK: env('CO_MOK', 750),
     conf0: 60, confK: env('CO_CK', 3), ppg: 1.34, ultAt: env('CO_ULT', 25), ultN: 3, ultNeed: 2, ultMin: 6,
     fame0: { baixo: 5, livre: 25 }, skillMax: 10,
   };
@@ -447,7 +449,7 @@
   // ---------- força do time e confronto ----------
   const byId = squad => { const m = {}; squad.forEach(p => { m[p.id] = p; }); return m; };
   const last = n => String(n || "").split(" ").filter(Boolean).pop() || "";
-  const eff = (p, sl) => p.ovr * fit(p.pos, sl) * (0.8 + 0.2 * (p.en === undefined ? 100 : p.en) / 100) * (p.out ? 0.5 : 1) * (1 + ((p.mo === undefined ? 60 : p.mo) - 60) / 1200);
+  const eff = (p, sl) => p.ovr * fit(p.pos, sl) * (0.8 + 0.2 * (p.en === undefined ? 100 : p.en) / 100) * (p.out ? 0.5 : 1) * (1 + ((p.mo === undefined ? 60 : p.mo) - 60) / CO.moK);
   // Forma de um lado em campo: quanto tem em cada parte (cada jogador vale ~1 = 70 de força na vaga)
   // `noAt`: sem o atributo por setor (só o geral). O ao vivo da simulação livre pede assim: lá o campinho já lê os
   // atributos em cada lance (fase 2), e contar de novo na força do ataque seria contar duas vezes
