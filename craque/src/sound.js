@@ -39,7 +39,7 @@
     }
     bus();
     // Gravações de verdade (rede 40 KB, torcida 60 KB). Enquanto não chegam, o gol usa os sons sintetizados
-    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=097494f3'], ['apito', 'assets/sons/apito.mp3?v=bd827477'], ['apitoInt', 'assets/sons/apito-int.mp3?v=16bc6ed2'], ['apitoFim', 'assets/sons/apito-fim.mp3?v=f154cab2'], ['uhh', 'assets/sons/uhh.mp3?v=72ee0907'], ['vaia', 'assets/sons/vaia.mp3?v=47da5201']].filter(([k]) => !rec[k]).forEach(([k, url]) => { // contexto refeito (revive): o que já veio fica
+    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=097494f3'], ['apito', 'assets/sons/apito.mp3?v=bd827477'], ['apitoInt', 'assets/sons/apito-int.mp3?v=16bc6ed2'], ['apitoFim', 'assets/sons/apito-fim.mp3?v=f154cab2'], ['uhh', 'assets/sons/uhh.mp3?v=72ee0907'], ['vaia', 'assets/sons/vaia.mp3?v=47da5201'], ['trave', 'assets/sons/trave.mp3?v=77bb387a']].filter(([k]) => !rec[k]).forEach(([k, url]) => { // contexto refeito (revive): o que já veio fica
       fetch(url).then(r => r.arrayBuffer())
         .then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { rec[k] = b; }).catch(() => { /* fica a sintetizada */ });
     });
@@ -186,10 +186,18 @@
   // ao vivo abre (assets/sons/ambiente.mp3, 260 KB). O arquivo já vem com a emenda feita (fim e começo cruzados em 2,5 s) e
   // 0,3 s de sobra de cada lado: o loop vai de A_PAD a A_PAD + A_LOOP. Gol (cheer/cheerAway) levanta a torcida por ~3 s
   const A_URL = 'assets/sons/ambiente.mp3?v=ff16016b', A_PAD = 0.3, A_LOOP = 1125609 / 44100, A_VOL = 0.14, A_UP = 2.4;
+  // Intervalo (Silvio, 12/11): a tela põe CRAQUE_CROWD.ht no apito do intervalo e tira na volta do 2º tempo; os cantos saem aos
+  // poucos, a torcida do jogo cala e entra o estádio de antes do jogo (estadio.mp3, Epidemic Sound, loop de 90 s com a emenda
+  // cruzada e E_PAD de sobra). Sem música tocando (desligada, pausada ou fora do jogo ao vivo) o estádio todo sobe MUTE_K
+  const E_URL = 'assets/sons/estadio.mp3?v=bcb30973', E_PAD = 0.3, E_LOOP = 90, E_VOL = 0.55, MUTE_K = 1.35;
+  let eBuf = null, eSrc = null, eGain = null, eLoad = false, eWant = -1;
+  const crowdK = () => (mEl && mWant > 0 && !mEl.paused ? 1 : MUTE_K);
   let aBuf = null, aSrc = null, aGain = null, aLoad = false, aWant = -1;
   function ambTick() {
     if (!ctx) return;
-    const want = on && !!(root.document && !root.document.hidden && root.document.querySelector('.lv')) ? A_VOL : 0;
+    const lv = on && !!(root.document && !root.document.hidden && root.document.querySelector('.lv')), ht = lv && !!(root.CRAQUE_CROWD || {}).ht, k = crowdK();
+    const want = lv && !ht ? +(A_VOL * k).toFixed(3) : 0;
+    estTick(lv, ht ? +(E_VOL * k).toFixed(3) : 0);
     if (want && !aBuf) {
       if (!aLoad && root.fetch) { aLoad = true; fetch(A_URL).then(r => r.arrayBuffer()).then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { aBuf = b; }).catch(() => { aLoad = false; }); }
       return;
@@ -203,7 +211,22 @@
     if (!aGain || want === aWant) return;
     aWant = want;
     const g = aGain.gain, t = ctx.currentTime;
-    try { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(want, t + (want ? 2 : 0.5)); } catch (e) { g.value = want; }
+    // no intervalo a torcida cala devagar; na volta sobe em 3 s
+    try { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(want, t + (want ? (eWant > 0 || ht ? 3 : 2) : ht ? 4 : 0.5)); } catch (e) { g.value = want; }
+  }
+  function estTick(lv, want) { // o estádio do intervalo: baixa junto com a torcida do jogo, toca só no intervalo
+    if (lv && !eBuf && !eLoad && root.fetch) { eLoad = true; fetch(E_URL).then(r => r.arrayBuffer()).then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { eBuf = b; }).catch(() => { eLoad = false; }); }
+    if (want && eBuf && !eSrc && ctx.state === 'running') {
+      eGain = ctx.createGain(); eGain.gain.value = 0; eGain.connect(ctx.destination);
+      eSrc = ctx.createBufferSource(); eSrc.buffer = eBuf; eSrc.loop = true;
+      eSrc.loopStart = E_PAD; eSrc.loopEnd = Math.min(eBuf.duration, E_PAD + E_LOOP);
+      eSrc.connect(eGain); eSrc.start(0, E_PAD + Math.random() * E_LOOP * 0.8);
+    }
+    if (!eGain || want === eWant) return;
+    const was = eWant; eWant = want;
+    const g = eGain.gain, t = ctx.currentTime, d = want ? (was > 0 ? 1 : 5) : lv ? 3 : 0.5;
+    try { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(want, t + d); } catch (e) { g.value = want; }
+    if (!want) { const s = eSrc, gg = eGain; eSrc = null; eGain = null; try { s.stop(t + d + 0.1); } catch (e) { /* ok */ } setTimeout(() => { try { gg.disconnect(); } catch (e) { /* ok */ } }, (d + 0.3) * 1000); }
   }
   // Cantos da torcida por cima do fundo (Epidemic Sound do Silvio, 12/11): um trecho de 16 a 20 s de vez em quando, com espaço
   // entre um e outro; em casa no volume do fundo, fora bem mais baixo (é a torcida deles). A tela diz onde é o jogo em CRAQUE_CROWD
@@ -212,14 +235,14 @@
   function chantTick() {
     if (!ctx) return;
     const live = aWant > 0 && aSrc && ctx.state === 'running';
-    if (!live) { if (chSrc) { const s = chSrc, g = chG; chSrc = null; try { g.gain.cancelScheduledValues(ctx.currentTime); g.gain.setValueAtTime(g.gain.value, ctx.currentTime); g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5); s.stop(ctx.currentTime + 0.6); } catch (e) { /* ok */ } } chNext = 0; return; }
+    if (!live) { if (chSrc) { const s = chSrc, g = chG; chSrc = null; try { g.gain.cancelScheduledValues(ctx.currentTime); g.gain.setValueAtTime(g.gain.value, ctx.currentTime); const f = (root.CRAQUE_CROWD || {}).ht ? 4 : 0.5; g.gain.linearRampToValueAtTime(0, ctx.currentTime + f); s.stop(ctx.currentTime + f + 0.1); } catch (e) { /* ok */ } } chNext = 0; return; }
     if (!chLoad && root.fetch) { chLoad = true; CH_URL.forEach((u, i) => fetch(u).then(r => r.arrayBuffer()).then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { chBuf[i] = b; }).catch(() => { /* fica sem esse canto */ })); }
     const t = ctx.currentTime;
     if (!chNext) chNext = t + 8 + Math.random() * 12; // o primeiro canto sai uns segundos depois da bola rolar
     if (chSrc || t < chNext) return;
     const ok = chBuf.map((b, i) => (b && i !== chLast ? i : -1)).filter(i => i >= 0);
     if (!ok.length) { chNext = t + 5; return; }
-    const i = ok[Math.floor(Math.random() * ok.length)], b = chBuf[i], cr = root.CRAQUE_CROWD || {}, v = cr.home === false ? CH_AWAY : CH_HOME;
+    const i = ok[Math.floor(Math.random() * ok.length)], b = chBuf[i], cr = root.CRAQUE_CROWD || {}, v = (cr.home === false ? CH_AWAY : CH_HOME) * crowdK();
     chLast = i; chG = ctx.createGain(); chG.gain.setValueAtTime(0, t); chG.gain.linearRampToValueAtTime(v, t + 1.5);
     chG.gain.setValueAtTime(v, t + Math.max(1.6, b.duration - 2)); chG.gain.linearRampToValueAtTime(0, t + b.duration);
     chG.connect(ctx.destination);
@@ -229,15 +252,17 @@
   }
   function ambUp() { // gol: a torcida sobe e volta ao normal
     if (!aGain || aWant <= 0) return;
-    const g = aGain.gain, t = ctx.currentTime;
-    try { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(A_VOL * A_UP, t + 0.4); g.setValueAtTime(A_VOL * A_UP, t + 1.4); g.linearRampToValueAtTime(A_VOL, t + 4); } catch (e) { /* enfeite */ }
+    const g = aGain.gain, t = ctx.currentTime, v = aWant;
+    try { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(v * A_UP, t + 0.4); g.setValueAtTime(v * A_UP, t + 1.4); g.linearRampToValueAtTime(v, t + 4); } catch (e) { /* enfeite */ }
   }
 
   root.CRAQUE_MUSIC = {
     get has() { return M_LIST.length > 0; },
     get on() { return mOn; },
     get state() { return !mEl ? 'parada' : mWant > 0 && !mEl.paused ? 'tocando' : 'calada'; }, // para as ferramentas
-    get amb() { return aSrc && aWant > 0 ? 'tocando' : 'calada'; }, // torcida de fundo, para as ferramentas
+    get amb() { return aSrc && aWant > 0 ? 'tocando' : 'calada'; },
+    get est() { return eSrc && eWant > 0 ? 'tocando' : 'calada'; }, // estádio do intervalo, para as ferramentas
+    get crowd() { return [aWant, eWant]; }, // torcida de fundo, para as ferramentas
     get chant() { return chSrc ? CH_URL[chLast] : ''; }, // canto da torcida tocando agora, para as ferramentas
     get track() { return mEl && mI >= 0 ? M_LIST[mOrd[mI]] : ''; },
     get title() { const f = this.track; return f ? (M_NAMES[f] || [f.replace(/\.mp3$/, '').replace(/-/g, ' '), '']) : null; },
@@ -451,6 +476,7 @@
     },
     // Gol fora de casa: a sua torcida é pouca e está longe (a mesma gravação, bem mais baixa)
     // Torcida da Epidemic Sound do Silvio (12/11): "uhh" no chute seu que o goleiro pega ou bate na trave, vaia de quem perde em casa
+    trave(t) { if (rec.trave) play('trave', t, 0.5, 0.05); }, // bola na trave no campinho (Epidemic Sound do Silvio, 12/11)
     uhh(t) { if (rec.uhh) play('uhh', t, 0.4, 0.1); },
     uhhAway(t) { if (rec.uhh) play('uhh', t, 0.12, 0.1); },
     vaia(t) { if (rec.vaia) play('vaia', t, 0.4, 0.1); },

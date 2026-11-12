@@ -847,7 +847,7 @@
       if (!$('lv-score')) { clearTimeout(timer); if (sim) sim.stop(); sim = null; return; } // saiu da tela com o relógio agendado: o jogo fica guardado em co.live
       if (m.done) return end();
       if (sim) sim.go(); // o apito (se a velocidade mudou antes dele, o timer do começo foi trocado)
-      if (sim && h1 && !h2) { h2 = true; sim.second(); }
+      if (sim && h1 && !h2) { h2 = true; sim.second(); if (window.CRAQUE_CROWD) window.CRAQUE_CROWD.ht = false; } // a torcida do jogo volta
       if (sim && sim.koWait && sim.koWait()) { timer = setTimeout(tick, 150); return; } // o relógio só anda depois do apito da saída
       const st = S.coMatchStep(co, m, m.min + 1, FREE && sim ? { free: true } : undefined);
       if (sim) { const tk = m.tk || m.min, v = m.mom && m.mom[tk - 1]; sim.minute(tk, v === undefined ? 50 : v, FREE && m.lam ? [m.lam.us, m.lam.them] : undefined); } // o campinho conta os minutos jogados (com os acréscimos)
@@ -856,7 +856,7 @@
       const go = () => {
         // o juiz espera a bola sair de perigo para apitar o intervalo e o fim (escanteio, chute ou cruzamento no ar), até 9 s
         const busy = () => { if (!sim || !sim.canStop || sim.canStop()) { stopW = 0; return false; } if (!stopW) stopW = Date.now(); if (Date.now() - stopW > (co.speed === '3' ? 7000 : 16000)) { stopW = 0; return false; } timer = setTimeout(go, 150); return true; };
-        if (sim && m.half && !h1) { if (busy()) return; h1 = true; sim.half(); sfx('whistleHalf'); if (m.home && m.gh < m.ga) setTimeout(() => sfx('vaia'), 1500); } // intervalo: dois apitos (curto e longo)
+        if (sim && m.half && !h1) { if (busy()) return; h1 = true; sim.half(); sfx('whistleHalf'); if (window.CRAQUE_CROWD) window.CRAQUE_CROWD.ht = true; if (m.home && m.gh < m.ga) setTimeout(() => sfx('vaia'), 1500); } // intervalo: dois apitos (curto e longo)
         if (wantStop) { wantStop = false; $('b-lv-stop').classList.remove('on'); if (!m.done) return sheet(st && st.t !== 'fim' && st.t !== 'gol' ? st : { t: 'pausa' }); }
         if (st && st.t !== 'fim' && st.t !== 'gol') return sheet(st); // gol não para o jogo (Silvio, 2026-11-09): o placar e o painel contam
         if (m.done) { if (busy()) return; return end(); }
