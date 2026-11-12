@@ -1187,14 +1187,15 @@
   // aleatórios"; desenho em /mnt/project-files/climbix/vestiario/): o mesmo desenho da conversa. Quem fala (a jornalista
   // ou o jogador do caso), a fala no balão creme e 3 respostas com o preço em etiquetas. Tocou: a resposta (ou o que deu
   // errado na arriscada) no balão, a moral anda e fecha sozinha. O X não responde e não volta (motor em coachpress.js)
-  const PV_MEDIA = [['Paula Ribeiro', 'Rádio Esporte'], ['Marcos Teles', 'TV Arena'], ['Lia Fontes', 'Jornal do Torcedor'], ['Caio Brandão', 'Canal da Bola']];
+  // [nome, veículo, rosto]: o rosto tem de bater com o nome (Silvio 12/11); repórter nova = rosto novo em assets/co
+  const PV_MEDIA = [['Marcos Teles', 'TV Arena', 9], ['Caio Brandão', 'Canal da Bola', 12]];
   function pvPop(d) {
     const c = C(), co = c.co, P = d.t && co.squad.find(x => x.id === d.t), P2 = d.t2 && co.squad.find(x => x.id === d.t2), press = d.kind === 'press';
     const avg = () => ({ mo: co.squad.reduce((a, p) => a + (p.mo === undefined ? 60 : p.mo), 0) / Math.max(1, co.squad.length) });
     const moP = () => (press || !P ? avg() : P);
     const jm = PV_MEDIA[hashS(co.club + co.season) % PV_MEDIA.length];
     const fx = o => o.tags.slice(0, 3).map(f => '<em' + (f[0] ? ' class="' + f[0] + '"' : '') + '>' + (f[1] ? '<i>' + f[1] + '</i>' : '') + esc(f[2]) + '</em>').join('');
-    const who = press ? '<span class="cvj-d jr" style="background-image:url(' + CO_ART + 'rosto-07.webp?v=2)"><em>TV</em></span><span class="cvj-n"><b>Coletiva</b><small>' + esc(jm[0] + ' · ' + jm[1]) + '<em class="cl">' + esc(d.tag) + '</em></small></span>'
+    const who = press ? '<span class="cvj-d jr" style="background-image:url(' + CO_ART + 'rosto-' + String(jm[2]).padStart(2, '0') + '.webp?v=2)"><em>TV</em></span><span class="cvj-n"><b>Coletiva</b><small>' + esc(jm[0] + ' · ' + jm[1]) + '<em class="cl">' + esc(d.tag) + '</em></small></span>'
       : P ? '<span class="cvj-d ' + enRing(P.en) + '" style="--en:' + Math.round(P.en) + '"><b>' + P.ovr + '</b><em>' + P.pos + '</em></span><span class="cvj-n"><b>' + esc(d.ttl) + '</b><small>' + esc(P.n) + (P2 ? ' x ' + esc(P2.n) : '') + '<em class="cl">' + esc(d.tag) + '</em></small></span>'
       : '<span class="cvj-d jr pv-cr">' + crest(co.club, 'pv-crs') + '</span><span class="cvj-n"><b>' + esc(d.ttl) + '</b><small>' + esc(club(co.club).short || club(co.club).name) + '<em class="cl">' + esc(d.tag) + '</em></small></span>';
     const body = (say, pick, was, dl) => '<div class="cvj-h">' + who + (pick ? cvjMo(moP(), was, dl) : '<button class="ld-x" data-pop-x aria-label="Fechar">' + XI_ICO + '</button>') + '</div>' +
