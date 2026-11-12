@@ -137,20 +137,55 @@
   // rolar; a mais nova primeiro, e com mais de uma as setas do topo trocam. `dt` = data por extenso (vazio não mostra)
   const NEWS_LAND = [{ v: '1.0', dt: '', tag: 'LANÇAMENTO · VERSÃO 1.0', h: 'O Climbix chegou!', art: '🎉',
     p: 'Você é o técnico. Escale o time, mexa com a bola rolando e leve o seu clube da última divisão ao topo.', s: 'Bom jogo, professor!', foot: 'Modo Jogador chega em breve.',
-    lt: 'O QUE TEM NA 1.0', li: [['⚽', 'Jogo ao vivo de verdade', 'Cada lance é decidido na hora.'], ['📣', 'Momentos da auxiliar', 'Ela sugere, você decide.'], ['🤝', 'Mercado e treino', 'Compre, venda e evolua o elenco.'], ['🏟️', 'O seu clube', 'Estádio, médico e finanças.']] }];
+    lt: 'O QUE TEM NA 1.0', li: [['⚽', 'Jogo ao vivo de verdade', 'Cada lance é decidido na hora.'], ['📣', 'Momentos da auxiliar', 'Ela sugere, você decide.'], ['🤝', 'Mercado e treino', 'Compre, venda e evolua o elenco.'], ['🏟️', 'O seu clube', 'Estádio, médico e finanças.']],
+    // 2026-11-12 (Silvio: "coloque mais informações... pode ser rolável"): a lista completa por grupos, no painel que rola
+    sec: [['JOGO AO VIVO', [
+      ['⚽', 'Jogado de verdade', 'Sem roteiro: cada passe e chute sai na hora, pelos atributos de quem está em campo.'],
+      ['🛑', 'Parar e mexer', 'Pare o jogo, mude a tática e faça até 5 trocas em 3 paradas.'],
+      ['📣', 'Momentos da auxiliar', 'Ela sugere uma mudança no meio do jogo. Você decide e vê se deu certo.'],
+      ['🧱', 'Falta e pênalti', 'Barreira a 9,15 m, chute direto perto do gol e pênalti com a câmera de perto.'],
+      ['🎉', 'Gol e festa', 'Câmera lenta no chute, torcida explodindo e festa do título no campo.']]],
+    ['COMPETIÇÕES', [
+      ['🏆', 'Copas nacionais', 'Copa do Brasil, FA Cup, Coppa Italia e outras, no meio da semana e com pênaltis.'],
+      ['🌍', 'Libertadores e Champions', 'Fase de grupos e mata-mata para quem se classificar.'],
+      ['📋', 'Calendário', 'Liga e copas juntas na aba Calendário da Tabela.'],
+      ['🥇', 'Troféus e Hall', 'Taças de verdade na estante do clube e no Hall do técnico.']]],
+    ['O SEU ELENCO', [
+      ['💪', 'Atributos e treino', 'Seis atributos por jogador, e o treino da semana faz cada um evoluir.'],
+      ['⬆️', 'Moral', 'Setas de moral na escalação, e a moral pesa no resultado.'],
+      ['🎙️', 'Coletiva e acontecimentos', 'Responda à imprensa depois do jogo e decida o que acontece na semana.'],
+      ['💬', 'Conversa com o jogador', 'Quem está chateado pede para conversar, e cada resposta tem um preço.'],
+      ['⚡', 'Energia', 'Cansa no jogo e volta no descanso. Poupe quem está no limite.']]],
+    ['MERCADO', [
+      ['🤝', 'Mercado vivo', 'Os outros clubes também negociam: boatos, notícias e elencos que mudam.'],
+      ['🔍', 'Olheiro e contratos', 'Relatório do olheiro, proposta ao clube, conversa com o empresário e renovação.'],
+      ['🌎', 'Elencos reais', 'Jogadores de verdade no Brasil e em 12 ligas de fora.']]],
+    ['O SEU CLUBE', [
+      ['🏟️', 'Estádio', 'Preço do ingresso, humor da torcida, ampliação e melhorias em 5 níveis.'],
+      ['🧑‍⚕️', 'Departamento médico', 'Menos lesões e jogadores de volta mais cedo.'],
+      ['💰', 'Finanças', 'Patrocínios, gráfico do caixa e aviso quando a folha aperta. Clube grande banca estrela.']]],
+    ['SOM', [
+      ['🎵', 'Trilha com 48 músicas', 'Mais de 2 horas em ordem aleatória, com o disco para pausar e passar.'],
+      ['📢', 'Clima de estádio', 'Torcida, uhh no quase, vaia e apito de verdade.']]],
+    ['MOEDAS', [
+      ['🪙', 'Presente de boas-vindas', 'Conta nova ganha 36 moedas para começar.'],
+      ['💼', 'Aporte e clube à escolha', 'Use moedas para investir no clube ou começar a carreira onde quiser.']]]] }];
   const newsNew = () => { try { return localStorage.getItem(NEWS_KEY) !== VERSION; } catch (e) { return false; } };
   function novidadesLand(back, i) {
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', AR = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + (d < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7') + '"/></svg>';
     const out = () => (back || U.home)(), n = NEWS_LAND.length; i = Math.max(0, Math.min(n - 1, i || 0));
     const N = NEWS_LAND[i];
     try { localStorage.setItem(NEWS_KEY, VERSION); } catch (e) {}
-    U.LD.show('<div class="nvd"><div class="tm-h"><button class="tcr-back" id="nvd-back" aria-label="Voltar">' + BK + '</button><span class="mk-tt"><b>Novidades</b><small>Versão ' + N.v + (N.dt ? ' · ' + N.dt : '') + '</small></span>' +
+    U.LD.show('<div class="nvd' + (N.sec ? ' nvd-x' : '') + '"><div class="tm-h"><button class="tcr-back" id="nvd-back" aria-label="Voltar">' + BK + '</button><span class="mk-tt"><b>Novidades</b><small>Versão ' + N.v + (N.dt ? ' · ' + N.dt : '') + '</small></span>' +
         (n > 1 ? '<span class="nvd-pg"><button id="nvd-nx" aria-label="Versão mais nova"' + (i ? '' : ' disabled') + '>' + AR(-1) + '</button><button id="nvd-pv" aria-label="Versão anterior"' + (i < n - 1 ? '' : ' disabled') + '>' + AR(1) + '</button></span>' : '') + '</div>' +
-      '<div class="nvd-c">' + U.emo(N.art, 'lg') + '<small>' + N.tag + '</small><b>' + N.h + '</b><p>' + N.p + '</p>' + (N.s ? '<strong>' + N.s + '</strong>' : '') + (N.foot ? '<em>' + N.foot + '</em>' : '') + '</div>' +
+      '<div class="nvd-c">' + U.emo(N.art, 'lg') + '<small>' + N.tag + '</small><b>' + N.h + '</b><p>' + N.p + '</p>' + (N.s ? '<strong>' + N.s + '</strong>' : '') + (N.foot ? '<em>' + N.foot + '</em>' : '') + (N.sec ? '<button class="tm-go" id="nvd-go">Bora jogar</button>' : '') + '</div>' +
+      (N.sec ? '<div class="nvd-r nvd-rs"><div class="nvd-l nvd-sc">' + N.sec.map(([g, it]) => '<small>' + g + '</small><div class="nvd-g">' + it.map(([e, t, d]) => '<div>' + U.emo(e, 'md') + '<span><b>' + t + '</b><small>' + d + '</small></span></div>').join('') + '</div>').join('') + '</div><i class="nvd-mais" aria-hidden="true"></i></div>' :
       '<div class="nvd-r"><div class="nvd-l"><small>' + N.lt + '</small>' + N.li.map(([e, t, d]) => '<div>' + U.emo(e, 'md') + '<span><b>' + t + '</b><small>' + d + '</small></span></div>').join('') + '</div>' +
-        '<button class="tm-go" id="nvd-go">Bora jogar</button></div></div>', st => {
+        '<button class="tm-go" id="nvd-go">Bora jogar</button></div>') + '</div>', st => {
       st.querySelector('#nvd-back').onclick = () => { U.sfx('tap'); out(); };
       st.querySelector('#nvd-go').onclick = () => { U.sfx('tap'); out(); };
+      const sc = st.querySelector('.nvd-sc'), mais = st.querySelector('.nvd-mais'); // a dica de rolar some no fim da lista
+      if (sc && mais) { const up = () => mais.classList.toggle('fim', sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 8); sc.addEventListener('scroll', up, { passive: true }); up(); }
       if (st.querySelector('#nvd-nx')) { st.querySelector('#nvd-nx').onclick = () => { U.sfx('tap'); novidadesLand(back, i - 1); }; st.querySelector('#nvd-pv').onclick = () => { U.sfx('tap'); novidadesLand(back, i + 1); }; }
     });
   }
