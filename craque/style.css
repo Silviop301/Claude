@@ -8738,6 +8738,7 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 .mkc-r { flex: 1; justify-content: space-between; } .mkc-d { font: 700 16px/1.25 var(--body); color: #D9E2DC; }
 .mkc-dd i.dn { background: #F5A57F; } .mkc-dd i.mid { background: var(--gold); } .mkc-dd i.up { background: #7ED39A; }
 .mkc-f > b { font: 800 26px/1 var(--display); color: #F3F1EA; } .mkc-f > b.dn { color: #F5A57F; }
+.mkc-f > em.mkc-cx { display: block; margin-top: 6px; font: 600 13px/1.2 var(--body, inherit); font-style: normal; color: #9DB5A6; } .mkc-f > em.mkc-cx.dn { color: #F5A57F; }
 .mkc-l { grid-row: 2 / -1; }
 .mk-k .mk-ar.big { background: rgba(243, 241, 234, .1) !important; }
 /* Notícias do mercado (aba do Mercado, 2026-11-10): a lista do Resultado com escudo › escudo, etiqueta e nota do que é seu */

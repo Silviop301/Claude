@@ -1778,6 +1778,10 @@
     t = t || { w: T.ask(1) - T.step, y: T.want, role: 1 };
     const md = S.coMktMood(co, p, t), fo = S.coMktFolha(co, p, t), over = fo.pct > 100;
     const cls = ['', 'dn', 'dn', 'mid', 'up'][md.lvl];
+    // O caixa com este salário (Silvio, 12/11: "me fudi com os salários"): o teto deixa, mas a receita da rodada pode não pagar
+    const rt = S.coFinRitmo(co), fnc = S.coFin(co), nt2 = rt ? rt.net - (t.w - (own ? p.wage : 0)) : 0, lf2 = rt && nt2 < 0 && fnc.caixa > 0 ? Math.floor(fnc.caixa / -nt2) : null;
+    const cxw = !rt || nt2 >= 0 ? '' : fnc.caixa <= 0 ? '<em class="mkc-cx dn">Caixa no vermelho: piora R$ ' + c.mi(-nt2) + ' por rodada</em>' :
+      lf2 < rt.rest ? '<em class="mkc-cx dn">Com ele o caixa zera em ' + lf2 + (lf2 === 1 ? ' rodada' : ' rodadas') + '</em>' : '<em class="mkc-cx">O caixa aguenta até o fim do ano</em>';
     const yr = U.YEAR0 + co.season + t.y + (own ? 1 : 0), need = p.club || w.open; // renovação: os anos contam depois desta temporada
     const gold = own ? (neg.st === 'no' ? '<button class="tm-go off" id="mkc-go" disabled>Não renova mais</button>' : neg.st === 'signed' ? '<button class="tm-go off" id="mkc-go" disabled>Renovado</button>' :
       over && t.w > p.wage ? '<button class="tm-go off" id="mkc-go" disabled>Acima do teto</button>' : '<button class="tm-go" id="mkc-go">Oferecer</button>') : neg.st === 'no' ? '<button class="tm-go off" id="mkc-go" disabled>Não negocia mais</button>' : (p.club && !w.open) ? '<button class="tm-go off" id="mkc-go" disabled>Janela fechada</button>' :
@@ -1790,7 +1794,7 @@
         box('DURAÇÃO', (own ? '+' : '') + t.y + (t.y > 1 ? ' anos' : ' ano'), 'cy', 'até ' + yr + (t.y === T.want ? ' · ele prefere' : '')) + '</div>' +
         '<div class="mk-k mkc-r"><small>PAPEL PROMETIDO</small><span class="mkp-seg big">' + R.map((r, i) => '<button class="' + (t.role === i ? 'on' : '') + '" data-cr="' + i + '">' + r.t + '</button>').join('') + '</span><span class="mkc-d">' + R[t.role].d + '</span></div></div>' +
       '<div class="mk-side"><div class="mk-k mkp-pr"><small>EMPRESÁRIO</small><b class="' + cls + '">' + (neg.st === 'no' ? 'Desistiu' : md.t + (md.lvl === 3 ? '<small class="mkc-ch">1 chance em 3</small>' : '')) + '</b><span class="mkf-dd mkc-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= md.lvl ? cls || 'up' : '') + '"></i>').join('') + '</span><span class="mkp-pat">Tentativas <em class="mkc-tn' + (neg.apat === 1 && neg.st === 'open' ? ' dn' : '') + '">' + (neg.st === 'no' ? 0 : neg.apat) + ' de ' + M.pat + '</em>' + mkDots(neg.st === 'no' ? 0 : neg.apat, M.pat) + '</span></div>' +
-        '<div class="mk-k mkc-f"><small>FOLHA DEPOIS</small><b class="' + (over ? 'dn' : '') + '">' + fo.pct + '% do teto</b><i class="mk-bar"><u class="' + (over ? 'low' : fo.pct >= 95 ? 'mid' : 'ok') + '" style="width:' + Math.min(100, fo.pct) + '%"></u></i></div>' +
+        '<div class="mk-k mkc-f"><small>FOLHA DEPOIS</small><b class="' + (over ? 'dn' : '') + '">' + fo.pct + '% do teto</b><i class="mk-bar"><u class="' + (over ? 'low' : fo.pct >= 95 ? 'mid' : 'ok') + '" style="width:' + Math.min(100, fo.pct) + '%"></u></i>' + cxw + '</div>' +
         '<span class="rs-gap"></span>' + gold + '</div></div>', st => {
       const re = x => contrato(id, back, Object.assign({}, t, x));
       st.querySelector('#mkc-back').onclick = () => { sfx('tap'); back(); };
