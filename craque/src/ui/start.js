@@ -106,6 +106,7 @@
   // ingressos (bola, taça, medalha de 1º, boneco). Desligada fica apagada em cinza; ligada, colorida e com o nome em ouro
   // Ranking fora da versão 1.0 (Silvio, 2026-11-09): some da home e da barra de baixo; a tela e o servidor continuam no código
   const RANK_ON = false;
+  const BETA_ATE = new Date(2026, 11, 1).getTime(); // selo BETA ao lado do logo da home até o lançamento (01/12/2026, hora do aparelho); some sozinho
   const TABS = [['home', 'Jogar', '⚽'], ['mine', 'Carreiras', '🏆'], ['ranking', 'Ranking', '🥇'], ['profile', 'Perfil', '👨']].filter(x => RANK_ON || x[0] !== 'ranking');
   U.tabs = cur => {
     const dot = U.ITEMS && U.ITEMS.streak().cells.some(c => c.claim); // prêmio da sequência para pegar: fica no Perfil
@@ -263,7 +264,7 @@
       ? '<button class="hl-md hl-jogador off" disabled aria-disabled="true"><b>Jogador</b><small>Em breve</small></button>'
       : '<button class="hl-md hl-' + m + '" data-md="' + m + '" id="b-new-co"><b>Treinador</b></button>').join('');
     const more = (so ? LAND_MORE.filter(x => x[0] === 'settings') : LAND_MORE).map(([k, l, d]) => '<button class="hl-mr" data-hl="' + k + '">' + lineSvg(d) + '<b>' + l + '</b></button>').join('');
-    const html = '<div class="hl hl-x' + (so ? ' hl-so' : '') + '"><b class="hl-logo">CLIMBIX</b>' +
+    const html = '<div class="hl hl-x' + (so ? ' hl-so' : '') + '"><b class="hl-logo">CLIMBIX' + (Date.now() < BETA_ATE ? '<i class="hl-beta">BETA</i>' : '') + '</b>' +
       (U.novidadesLand && !so ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.VERSION + '">' + U.emo('📣', 'md') + '<b>' + U.VERSION + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '') + // notas de versão (settings.js); o pontinho some depois de abrir
       '<div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') + '</div>' +
       cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div>' + discHtml() + '</div>';
