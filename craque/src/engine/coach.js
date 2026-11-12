@@ -314,6 +314,8 @@
     up: 3, dnL: [0.6, 0.4, 0.8, 0.8, 2, 1.4], dnG: [1.6, 0.5, 1.6, 0.8, 0.6, 0.9] };
   const growK = S.coGrowK = p => { const a = GROW.ages.find(x => p.age <= x[0]); return a ? a[1] * clamp((p.pot - p.ovr) / GROW.room, 0, 1) : 0; };
   S.coTrainAt = (k, pos) => { const t = TRAIN[k]; if (!t || t.dv === undefined || !t.who.includes(pos)) return -1; const i = pos === 'GOL' ? t.dvG : t.dv; return i === undefined ? -1 : i; };
+  // Quanto o geral mudou desde o fim da temporada passada: a virada (`p.sd`) mais o que o treino somou neste ano (`p.ug` = [temporada, pontos]).
+  S.coOvrDelta = (co, p) => (p.sd || 0) + (p.ug && co && p.ug[0] === co.season ? p.ug[1] : 0);
   function trainGrow(co, t) {
     if (!GROW.rate || t.dv === undefined) return;
     const dv = [], up = [];
@@ -326,7 +328,7 @@
       const a = S.coAttrs(p); if (a[i] >= AT.max) return;
       a[i] += 1; dv.push([p.id, i]);
       const o = Math.round(atMean(AT.w[p.pos] ? p.pos : 'MEI', a));
-      if (o > p.ovr) { p.ovr = Math.min(o, 95); up.push(p.id); }
+      if (o > p.ovr) { const o0 = p.ovr; p.ovr = Math.min(o, 95); up.push(p.id); if (p.ovr > o0) p.ug = [co.season, (p.ug && p.ug[0] === co.season ? p.ug[1] : 0) + p.ovr - o0]; }
     });
     if (dv.length) co.train.dv = dv; if (up.length) co.train.up = up;
   }

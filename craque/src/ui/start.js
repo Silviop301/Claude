@@ -194,7 +194,7 @@
       const [mode, slot] = b.dataset.del.split(':'), sv = svAt(mode, +slot);
       if (!sv) return home();
       const co = mode === 'treinador', c = sv.co || sv.c;
-      U.ask('Excluir a carreira de ' + c.name + '?', (co ? 'O técnico' : 'O jogador') + ' some deste aparelho e da sua conta na nuvem. Não dá para desfazer.', 'Excluir carreira', () => {
+      U.ask('Excluir a carreira de ' + c.name + '?', (co ? 'O técnico some deste aparelho e da sua conta na nuvem, com a auxiliar, o departamento médico e o estádio dele: nada passa para outra carreira.' : 'O jogador some deste aparelho e da sua conta na nuvem.') + ' Não dá para desfazer.', 'Excluir carreira', () => {
         const base = co ? U.SAVE_CO : SLOT_BASE[mode]();
         store(U.slotKey(base, +slot), co ? { co: null, at: Date.now() } : { c: null, at: Date.now() });
         sfx('tap'); home();
@@ -393,7 +393,7 @@
         w.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
           const [mode, slot] = b.dataset.del.split(':'), sv = svAt(mode, +slot); if (!sv) return landMode(m);
           const co = mode === 'treinador', c = sv.co || sv.c;
-          landAsk('Excluir a carreira de ' + esc(c.name) + '?', (co ? 'O técnico' : 'O jogador') + ' some deste aparelho e da sua conta na nuvem. Não dá para desfazer.', 'Excluir carreira', () => {
+          landAsk('Excluir a carreira de ' + esc(c.name) + '?', (co ? 'O técnico some deste aparelho e da sua conta na nuvem, com a auxiliar, o departamento médico e o estádio dele: nada passa para outra carreira.' : 'O jogador some deste aparelho e da sua conta na nuvem.') + ' Não dá para desfazer.', 'Excluir carreira', () => {
             const base = co ? U.SAVE_CO : SLOT_BASE[mode]();
             store(U.slotKey(base, +slot), co ? { co: null, at: Date.now() } : { c: null, at: Date.now() });
             homeLand(); landMode(m);

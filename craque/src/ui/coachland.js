@@ -1081,8 +1081,7 @@
       cxBind(st, auxiliar);
       st.querySelector('#axv-go').onclick = () => {
         if (!can) { if (P.why === 'caixa') mkHelp('', 'Depois de pagar, o caixa precisa seguir com 2 semanas de salários.'); return; }
-        const r = S.coAuxBuy(co); if (!r.ok) return;
-        c.save(); sfx('win'); auxiliar();
+        soCarreira('A licença da auxiliar', () => { const r = S.coAuxBuy(co); if (!r.ok) return; c.save(); sfx('win'); auxiliar(); });
       };
     });
   }
@@ -1127,8 +1126,7 @@
       });
       st.querySelector('#dmv-go').onclick = () => {
         if (!can) { if (P.why === 'caixa') mkHelp('', 'Depois de pagar, o caixa precisa seguir com 2 semanas de salários.'); return; }
-        const r = S.coDmBuy(co); if (!r.ok) return;
-        c.save(); sfx('win'); depMedico();
+        soCarreira('O departamento médico', () => { const r = S.coDmBuy(co); if (!r.ok) return; c.save(); sfx('win'); depMedico(); });
       };
     });
   }
@@ -1239,6 +1237,16 @@
   }
   // Confirmação de gasto de moedas (Silvio, 2026-11-11: "pra não ocorrer toque acidental", também no clube e em
   // qualquer coisa futura com moedas): todo gasto passa por aqui antes do U.COINS.spend. what = o que compra, gain = o que ganha.
+  // Primeira melhoria de profissionais (curso da auxiliar, obra do departamento médico) do aparelho: avisa uma vez que vale
+  // só nesta carreira (Silvio, 2026-11-12). Chave `climbix-co-so-carreira`.
+  function soCarreira(what, go) {
+    let ja = false; try { ja = localStorage.getItem('climbix-co-so-carreira') === '1'; } catch (e) {}
+    if (ja) return go();
+    pop('<div class="acd-help"><b>Vale só nesta carreira</b><p>' + esc(what) + ' fica com este técnico. Se você encerrar esta carreira ou começar outra, a nova começa do zero.</p>' +
+      '<button class="hl-btn gold" id="sc-y">Entendi, pagar</button><button class="hl-btn line" data-pop-x>Cancelar</button></div>', 'Vale só nesta carreira', w => {
+      w.querySelector('#sc-y').onclick = () => { try { localStorage.setItem('climbix-co-so-carreira', '1'); } catch (e) {} closePop(); go(); };
+    }, 'hl-pop acd-pop tm-pop ca-pop');
+  }
   function coinAsk(n, what, gain, go) {
     const saldo = U.COINS.get();
     pop('<div class="acd-help"><b>' + esc(what) + '</b><p class="ca-n">' + U.COINS.svg + '<b>' + n + '</b> moedas' + (gain ? ' · ' + esc(gain) : '') + '</p><p>Você fica com ' + U.D.plural(Math.max(0, saldo - n), 'moeda', 'moedas') + '.</p>' +
@@ -2253,9 +2261,10 @@
     const folha = co.squad.reduce((a, p) => a + (p.wage || 0), 0);
     const ctT = n => n <= 0 ? 'acaba agora' : n === 1 ? 'fim do ano' : U.D.plural(n, 'ano', 'anos');
     const tag = p => p.out ? ['dn', 'lesionado'] : p.sus ? ['dn', 'suspenso'] : c.pend(p) ? ['y', 'pendurado'] : S.coMktListed(co, p) ? ['g', 'à venda'] : p.prom ? ['y', 'promessa'] : null; // promessa = a chance prometida na conversa ainda vale
+    const ovD = p => { const d = S.coOvrDelta(co, p); return d ? '<sup class="' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '+' : '−') + Math.abs(d) + '</sup>' : ''; }; // +1 / −2: o geral contra o fim da temporada passada
     const rows = L.map(p => { const t = tag(p);
       return '<button class="lde2-r' + (q && p.id === q.id ? ' on' : '') + (c.avail(p) ? '' : ' out') + '" data-id="' + p.id + '"><i>' + (p.num || '') + '</i><span><b>' + esc(p.n) + '</b><small>' + p.pos + '</small>' + (t ? '<em class="' + t[0] + '">' + t[1] + '</em>' : '') + '</span>' +
-        '<span class="a">' + p.age + '</span><span class="o">' + p.ovr + '</span>' + (O[4] ? '<span class="ct x">' + O[4](p, c) + '</span>' : '<span class="ct' + (p.ct <= 1 ? ' dn' : '') + '">' + ctT(p.ct) + '</span>') + '</button>'; }).join('');
+        '<span class="a">' + p.age + '</span><span class="o">' + p.ovr + ovD(p) + '</span>' + (O[4] ? '<span class="ct x">' + O[4](p, c) + '</span>' : '<span class="ct' + (p.ct <= 1 ? ' dn' : '') + '">' + ctT(p.ct) + '</span>') + '</button>'; }).join('');
     let card = '';
     if (q) {
       const mo = q.mo === undefined ? 60 : q.mo, moT = mo >= 70 ? 'alta' : mo >= 45 ? 'boa' : 'baixa';
@@ -2268,7 +2277,7 @@
       const seg = '<div class="lde2-seg">' + ['Atributos', 'Situação'].map((t, i) => '<button data-ec="' + i + '"' + (i === elenco.ct ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('') + '</div>';
       const grw = co.train && co.ss && co.train.i === co.ss.i && co.train.dv ? co.train.dv.filter(x => x[0] === q.id).map(x => x[1]) : []; // subiu no treino desta semana: verde
       const bars = '<div class="lde2-at">' + at.map((v, i) => '<div class="lde2-ar' + (grw.includes(i) ? ' gr' : i === hi ? ' top' : i === lo ? ' low' : '') + '"><span>' + S.CO_AT.names[ks[i]] + '</span><i><u style="width:' + v + '%"></u></i><b>' + v + '</b></div>').join('') + '</div>';
-      card = '<div class="lde2-c' + (elenco.ct ? ' sit' + (hint ? ' hn' : '') : '') + '"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? q.num + ' ' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + ' · ' + q.age + ' anos</small></span></div>' + seg +
+      card = '<div class="lde2-c' + (elenco.ct ? ' sit' + (hint ? ' hn' : '') : '') + '"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? q.num + ' ' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + ' · ' + q.age + ' anos' + (S.coOvrDelta(co, q) ? ' · <em class="' + (S.coOvrDelta(co, q) > 0 ? 'up' : 'dn') + '">' + (S.coOvrDelta(co, q) > 0 ? '+' : '−') + Math.abs(S.coOvrDelta(co, q)) + ' no ano</em>' : '') + '</small></span></div>' + seg +
         (elenco.ct ? '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/sem') + '</div>' +
         '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span></div>' +
         '<div class="lde2-act"><button class="lde2-ren" id="lde-ren" data-id="' + q.id + '"' + (renOk ? '' : ' disabled') + '>Renovar' + (renOk ? '' : '<small>no fim do contrato</small>') + '</button>' +
@@ -2410,7 +2419,7 @@
     const k = [[H.length, 'temporada', 'temporadas'], [H.filter(h => h.won).length, 'título', 'títulos'], [H.filter(h => h.up).length, 'acesso', 'acessos'], [clubs, 'clube', 'clubes']];
     pop('<div class="acd-help fim-c"><b>Encerrar a carreira de ' + esc(co.name) + '?</b>' +
       '<div class="fim-n">' + k.map(([n, a, b]) => '<span><b>' + n + '</b><small>' + (n === 1 ? a : b) + '</small></span>').join('') + '</div>' +
-      '<p>Os números ficam no seu Perfil e a vaga fica livre para um técnico novo. Não dá para desfazer.</p>' +
+      '<p>Os números ficam no seu Perfil e a vaga fica livre. Auxiliar, departamento médico e estádio não passam para outra carreira. Não dá para desfazer.</p>' +
       '<div class="fim-b"><button class="hl-btn line" data-pop-x>Voltar</button><button class="hl-btn red" id="fim-y">Encerrar carreira</button></div></div>', 'Encerrar carreira', w => {
       w.querySelector('#fim-y').onclick = () => { closePop(); c.retire(); };
     }, 'hl-pop acd-pop fim-pop');
