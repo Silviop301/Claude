@@ -137,7 +137,7 @@
   // rolar; a mais nova primeiro, e com mais de uma as setas do topo trocam. `dt` = data por extenso (vazio não mostra)
   const NEWS_LAND = [{ v: '1.0', dt: '', tag: 'LANÇAMENTO · VERSÃO 1.0', h: 'O Climbix chegou!', art: '🎉',
     p: 'Você é o técnico. Escale o time, mexa com a bola rolando e leve o seu clube da última divisão ao topo.', s: 'Bom jogo, professor!', foot: 'Modo Jogador chega em breve.',
-    lt: 'O QUE TEM NA 1.0', li: [['⚽', 'Jogo ao vivo de verdade', 'Cada lance é decidido na hora.'], ['🤝', 'Mercado vivo', 'Compre, venda e renove contratos.'], ['🏟️', 'O seu estádio', 'Amplie e lote a casa.'], ['💪', 'Treino que evolui', 'Cada jogador cresce com o treino.']] }];
+    lt: 'O QUE TEM NA 1.0', li: [['⚽', 'Jogo ao vivo de verdade', 'Cada lance é decidido na hora.'], ['📣', 'Momentos da auxiliar', 'Ela sugere, você decide.'], ['🤝', 'Mercado e treino', 'Compre, venda e evolua o elenco.'], ['🏟️', 'O seu clube', 'Estádio, médico e finanças.']] }];
   const newsNew = () => { try { return localStorage.getItem(NEWS_KEY) !== VERSION; } catch (e) { return false; } };
   function novidadesLand(back, i) {
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', AR = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + (d < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7') + '"/></svg>';
