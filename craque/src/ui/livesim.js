@@ -110,7 +110,7 @@
     // MKEEP/PRK: quem marca e quem pressiona continuam os mesmos. PASS_V: velocidade do passe (1 = antiga).
     // SHOT_PRE: passada de preparo do chute (s); SHOT_DRAG: quanto o chute perde de força; GK_DIVE: o goleiro voa no fim.
     // No node (ferramentas) cada uma aceita variável de ambiente com o mesmo nome, para medir ajustes sem editar.
-    const _e = (typeof process !== 'undefined' && process.env) || {}, KEEP_O = +(_e.KEEP_O || 3.4), KEEP_L = +(_e.KEEP_L || 1.5), HOLD0 = +(_e.HOLD0 || 1.5), MKEEP = +(_e.MKEEP || 0.6), PRK = +(_e.PRK || 3), PASS_V = +(_e.PASS_V || 0.9), SHOT_PRE = +(_e.SHOT_PRE || 0.14), GK_DIVE = +(_e.GK_DIVE || 0.42), SHOT_DRAG = +(_e.SHOT_DRAG || 0.24), SBT = +(_e.SBT || 0.8), V_SPR = +(_e.V_SPR || 7.8), V_DRB = +(_e.V_DRB || 6.4), V_CALM = +(_e.V_CALM || 5.5), CALM0 = +(_e.CALM0 || 1.4), CALMK = +(_e.CALMK || 0.4), CALMG = +(_e.CALMG || 1), ACC_C = +(_e.ACC_C || 6), ACC_S = +(_e.ACC_S || 11), ACC_B = +(_e.ACC_B || 12), ACC_D = +(_e.ACC_D || 15), VTK = +(_e.VTK || 4), SUPP = +(_e.SUPP || 22), CLOSE = +(_e.CLOSE === undefined ? 55 : _e.CLOSE), CLOSE_V = +(_e.CLOSE_V || 1.08), DRB_R = +(_e.DRB_R === undefined ? 1 : _e.DRB_R), DRB_D = +(_e.DRB_D || 5.5), DRB_T = +(_e.DRB_T || 0.75), DRB_A = +(_e.DRB_A || 1.8), LIVRE = +(_e.LIVRE === undefined ? 0.14 : _e.LIVRE), LIVRE_P = +(_e.LIVRE_P || 0.5), LIVRE_L = +(_e.LIVRE_L || 9), LIVRE_X = +(_e.LIVRE_X || 1.3), LIVRE_LK = +(_e.LIVRE_LK || 0.4), LIVRE_LP = +(_e.LIVRE_LP || 0.7), LIVRE_E = +(_e.LIVRE_E === undefined ? 0.5 : _e.LIVRE_E), CLOSE_LD = +(_e.CLOSE_LD === undefined ? 0.7 : _e.CLOSE_LD), ATT_R = +(_e.ATT_R || 1), ATT_CD = +(_e.ATT_CD || 2.5), ATT_MAX = +(_e.ATT_MAX || 14), FXG_K = +(_e.FXG_K || 2.25), FXG_G = +(_e.FXG_G || 0.4), ATT_G = +(_e.ATT_G || 1.3), DISP = +(_e.DISP === undefined ? 1 : _e.DISP), DISP_M = +(_e.DISP_M || 3), DISP_R = +(_e.DISP_R || 3), CELEB = +(_e.CELEB || 9), CELEB_J = 2.2, SLOW_T = 0.9, SLOW_K = 0.3; // CELEB: segundos da comemoração do gol (era 2: ninguém chegava ao canto)
+    const _e = (typeof process !== 'undefined' && process.env) || {}, KEEP_O = +(_e.KEEP_O || 3.4), KEEP_L = +(_e.KEEP_L || 1.5), HOLD0 = +(_e.HOLD0 || 1.5), MKEEP = +(_e.MKEEP || 0.6), PRK = +(_e.PRK || 3), PASS_V = +(_e.PASS_V || 0.9), SHOT_PRE = +(_e.SHOT_PRE || 0.14), GK_DIVE = +(_e.GK_DIVE || 0.42), SHOT_DRAG = +(_e.SHOT_DRAG || 0.24), SBT = +(_e.SBT || 0.8), V_SPR = +(_e.V_SPR || 7.8), V_DRB = +(_e.V_DRB || 6.4), V_CALM = +(_e.V_CALM || 5.5), CALM0 = +(_e.CALM0 || 1.4), CALMK = +(_e.CALMK || 0.4), CALMG = +(_e.CALMG || 1), ACC_C = +(_e.ACC_C || 6), ACC_S = +(_e.ACC_S || 11), ACC_B = +(_e.ACC_B || 12), ACC_D = +(_e.ACC_D || 15), VTK = +(_e.VTK || 4), SUPP = +(_e.SUPP || 22), CLOSE = +(_e.CLOSE === undefined ? 55 : _e.CLOSE), CLOSE_V = +(_e.CLOSE_V || 1.08), DRB_R = +(_e.DRB_R === undefined ? 1 : _e.DRB_R), DRB_D = +(_e.DRB_D || 5.5), DRB_T = +(_e.DRB_T || 0.75), DRB_A = +(_e.DRB_A || 1.8), LIVRE = +(_e.LIVRE === undefined ? 0.14 : _e.LIVRE), LIVRE_P = +(_e.LIVRE_P || 0.5), LIVRE_L = +(_e.LIVRE_L || 9), LIVRE_X = +(_e.LIVRE_X || 1.3), LIVRE_LK = +(_e.LIVRE_LK || 0.4), LIVRE_LP = +(_e.LIVRE_LP || 0.7), LIVRE_E = +(_e.LIVRE_E === undefined ? 0.5 : _e.LIVRE_E), CLOSE_LD = +(_e.CLOSE_LD === undefined ? 0.7 : _e.CLOSE_LD), ATT_R = +(_e.ATT_R || 1), ATT_CD = +(_e.ATT_CD || 2.5), ATT_MAX = +(_e.ATT_MAX || 14), FXG_K = +(_e.FXG_K || 2.25), FXG_G = +(_e.FXG_G || 0.4), ATT_G = +(_e.ATT_G || 1.3), DISP = +(_e.DISP === undefined ? 1 : _e.DISP), DISP_M = +(_e.DISP_M || 3), DISP_R = +(_e.DISP_R || 3), CELEB = +(_e.CELEB || 9), CELEB_J = 2.2, SLOW_T = 0.9, SLOW_K = 0.3, CATCH_MAX = 1.2; // CELEB: segundos da comemoração do gol (era 2: ninguém chegava ao canto)
     let DISPN = 0; // bolas que ficaram com o adversário mais perto de onde ela caiu (disputa)
     let poss = 0, mode = o.t0 > 0 ? 'ko' : 'wait', modeT = 1.2, koSide = 0, hero = null, bias = [1, 1], mom = 0, momT = 0, runT = 2, defT = 0, clk = 0;
     let curT = o.t0 || 0, mClk = 0, bxT = 50, lastPasser = null, lastPassClk = -9, frozen = false, en = null, cv = null, g = null, W = 0, H = 0, dpr = 1, raf = 0, last = 0, alive = true;
@@ -782,7 +782,7 @@
     // ângulo e mergulha para o lado da bola; sv força o tipo de defesa (o 2º chute do rebote ele segura)
     // Comemoração e câmera lenta podem ser desligadas nos Ajustes (`climbix-co-fx` = '0', U.coFx)
     const FXON = () => { try { return !(typeof localStorage !== 'undefined' && localStorage.getItem('climbix-co-fx') === '0'); } catch (_) { return true; } };
-    let slowT = 0, slowDebt = 0, slowP = null; // câmera lenta do chute: só o quadro da tela anda devagar por SLOW_T s e devolve o tempo depois (o minuto segue igual)
+    let slowT = 0, slowDebt = 0, slowP = null, mR = 0; // mR: o que o laço devolveu da dívida neste minuto (não conta como tempo do minuto) // câmera lenta do chute: só o quadro da tela anda devagar por SLOW_T s e devolve o tempo depois (o minuto segue igual)
     function shoot(p, kind, forced, want, sv) {
       if (cv && FXON() && !(o.speed && o.speed() > 2)) { slowT = SLOW_T; slowP = p; }
       const s = p.side, gx = s ? 0 : L, gk = T[1 - s][0], dg = s ? 1 : -1;
@@ -2072,7 +2072,7 @@
       if (!alive) return;
       if (!cv || !cv.isConnected) return; // a tela trocou (intervalo, fim): para até o próximo attach
       const dtR = Math.min(0.2, (ts - (last || ts)) / 1000); let dt = dtR * (o.speed ? o.speed() : 1); last = ts;
-      if (slowT > 0) { slowT -= dtR; slowDebt += dt * (1 - SLOW_K); dt *= SLOW_K; } else if (slowDebt > 0) { slowDebt -= dt * 0.3; dt *= 1.3; } // até 5 quadros por segundo o campinho acompanha o relógio sozinho
+      if (slowT > 0) { slowT -= dtR; dt *= SLOW_K; } else if (slowDebt > 0) { const ex = Math.min(slowDebt, dt * 0.35); slowDebt -= ex; mR += ex; dt += ex; } // a câmera lenta atrasa o minuto; `minute` mede o que faltou e vira dívida // até 5 quadros por segundo o campinho acompanha o relógio sozinho
       if (W < 60 || H < 40 || ++loop.n % 30 === 0) { const r = U.box ? U.box(cv) : cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1; if (Math.abs(r.width / z - W) > 1 || Math.abs(r.height / z - H) > 1) size(); }
       raf = requestAnimationFrame(loop); // antes de tudo: um erro da tela num aviso do campinho não pode parar o campinho
       try {
@@ -2110,8 +2110,12 @@
         // Simulação livre: o jogo vale igual em qualquer aparelho (avaliação de 10/11: 2 chutes em 3 jogos num Chrome remoto,
         // 13 num iPhone). Cada minuto do motor tem de ter os mesmos segundos de campinho (spm × velocidade); com a tela lenta
         // ou a aba escondida o laço da tela entrega menos, e o que faltou é jogado aqui, de uma vez, sem desenhar
-        if (FREE && o.spm && !frozen && t === curT + 1 && mode !== 'wait' && mode !== 'half' && mode !== 'fim') { const need = o.spm() * (o.speed ? o.speed() : 1); let n = Math.min(220, Math.floor((need * 0.97 - mT) / 0.02)); if (n > 0) CATCH += n; while (n-- > 0) step(0.02); }
-        mT = 0;
+        if (FREE && o.spm && !frozen && t === curT + 1 && mode !== 'wait' && mode !== 'half' && mode !== 'fim') { const need = o.spm() * (o.speed ? o.speed() : 1); let n = Math.min(220, Math.floor((need * 0.97 - (mT - mR)) / 0.02)); if (n > 0) CATCH += n;
+          // O que faltou do minuto não é mais jogado de uma vez (Silvio, 12/11: "o jogador dá umas teleportadas"): com a tela
+          // visível vira dívida (`slowDebt`) que o laço devolve aos poucos, andando até 35% mais rápido; só o que passa de
+          // CATCH_MAX s (aparelho muito lento, aba escondida, Node) ainda é jogado na hora
+          if (n > 0) { const sm = cv && typeof document !== 'undefined' && !document.hidden ? CATCH_MAX : 0, d = slowDebt + n * 0.02, ex = Math.max(0, d - sm); slowDebt = d - ex; n = Math.round(ex / 0.02); while (n-- > 0) step1(0.02); } }
+        mT = 0; mR = 0;
         const avg = acc.n > 0 && t === curT + 1 ? acc.x / acc.n : null; acc.x = 0; acc.n = 0;
         if (t - curT > 1) goals.forEach(e => { if (e.m < t) e.done = true; });
         curT = t; bxT = bx; mClk = clk; stRefresh(); return avg;
