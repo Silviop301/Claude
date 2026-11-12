@@ -39,7 +39,7 @@
     }
     bus();
     // Gravações de verdade (rede 40 KB, torcida 60 KB). Enquanto não chegam, o gol usa os sons sintetizados
-    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=097494f3'], ['apito', 'assets/sons/apito.mp3?v=bd827477'], ['apitoInt', 'assets/sons/apito-int.mp3?v=16bc6ed2'], ['apitoFim', 'assets/sons/apito-fim.mp3?v=f154cab2'], ['uhh', 'assets/sons/uhh.mp3?v=72ee0907'], ['vaia', 'assets/sons/vaia.mp3?v=47da5201']].filter(([k]) => !rec[k]).forEach(([k, url]) => { // contexto refeito (revive): o que já veio fica
+    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=097494f3'], ['apito', 'assets/sons/apito.mp3?v=bd827477'], ['apitoInt', 'assets/sons/apito-int.mp3?v=16bc6ed2'], ['apitoFim', 'assets/sons/apito-fim.mp3?v=f154cab2'], ['uhh', 'assets/sons/uhh.mp3?v=72ee0907'], ['vaia', 'assets/sons/vaia.mp3?v=47da5201'], ['trave', 'assets/sons/trave.mp3?v=77bb387a']].filter(([k]) => !rec[k]).forEach(([k, url]) => { // contexto refeito (revive): o que já veio fica
       fetch(url).then(r => r.arrayBuffer())
         .then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { rec[k] = b; }).catch(() => { /* fica a sintetizada */ });
     });
@@ -476,6 +476,7 @@
     },
     // Gol fora de casa: a sua torcida é pouca e está longe (a mesma gravação, bem mais baixa)
     // Torcida da Epidemic Sound do Silvio (12/11): "uhh" no chute seu que o goleiro pega ou bate na trave, vaia de quem perde em casa
+    trave(t) { if (rec.trave) play('trave', t, 0.5, 0.05); }, // bola na trave no campinho (Epidemic Sound do Silvio, 12/11)
     uhh(t) { if (rec.uhh) play('uhh', t, 0.4, 0.1); },
     uhhAway(t) { if (rec.uhh) play('uhh', t, 0.12, 0.1); },
     vaia(t) { if (rec.vaia) play('vaia', t, 0.4, 0.1); },

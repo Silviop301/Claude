@@ -877,7 +877,7 @@
       else if (f.out === 'def' && f.sv === 'escanteio' && !lc) { flyOut(gk, s ? -2.5 : L + 2.5, 34 + (ball.y < 34 ? -1 : 1) * (5 + rnd() * 6), true, 'espalma'); }
       else if (f.out === 'def' && f.sv === 'espalma' && !lc) { why = 'rebote'; spill(gk, gx + dg * (6 + rnd() * 5), ball.y + (ball.y < 34 ? -1 : 1) * (3 + rnd() * 7), 'rebote'); }
       else if (f.out === 'def') { why = 'defesa'; setOwner(gk); }
-      else if (f.out === 'trave' && !lc) { why = 'trave'; post = { x: f.x1, y: f.y1, t: 0.5 }; spill(gk, gx + dg * (5 + rnd() * 6), 34 + (f.y1 < 34 ? -1 : 1) * (1 + rnd() * 5), 'trave'); }
+      else if (f.out === 'trave' && !lc) { why = 'trave'; post = { x: f.x1, y: f.y1, t: 0.5 }; if (typeof window !== 'undefined' && window.CRAQUE_SFX) try { window.CRAQUE_SFX.play('trave'); } catch (_) {} spill(gk, gx + dg * (5 + rnd() * 6), 34 + (f.y1 < 34 ? -1 : 1) * (1 + rnd() * 5), 'trave'); }
       else if (f.out === 'bloq' && !lc) { why = 'bloqueio'; const b = f.blk || gk;
         if (rnd() < 0.5 && outCd <= 0) { outCd = 2; flyOut(b, s ? -2.5 : L + 2.5, (ball.y < 34 ? GL - 4 - rnd() * 10 : GR + 4 + rnd() * 10), false, 'travado'); }
         else spill(b, ball.x - dg * (5 + rnd() * 8), ball.y + gauss() * 9, 'travado'); }
