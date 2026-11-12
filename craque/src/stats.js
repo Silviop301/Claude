@@ -59,7 +59,7 @@
   // Sessão: tempo com o jogo na tela, mandado quando ele sai da tela. Voltar depois de 30 min conta sessão nova
   let shown = Date.now(), acc = 0, sent = false, hiddenAt = 0;
   const band = ms => { const m = ms / 60000; return m < 1 ? '0-1' : m < 5 ? '1-5' : m < 10 ? '5-10' : m < 20 ? '10-20' : m < 40 ? '20-40' : '40+'; };
-  const curMode = () => { const U = window.CRAQUE_UI, c = U && U.G && U.G.c; return c ? (c.mode === 'completa' ? 'jaj' : 'rapida') : last || 'inicio'; };
+  const curMode = () => { const U = window.CRAQUE_UI, c = U && U.G && U.G.c; return c ? (c.mode === 'completa' ? 'jaj' : 'rapida') : U && U._co && U._co.co ? 'treinador' : last || 'inicio'; };
   function leave() {
     if (!shown) return;
     acc += Date.now() - shown; shown = 0; hiddenAt = Date.now();
