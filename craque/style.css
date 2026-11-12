@@ -10168,3 +10168,24 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .ldl-side .pk-r i { width: 18px; height: 18px; border-radius: 50%; background: #2a2d31; display: block; }
 .ldl-side .pk-r i.g { background: #4cc46f; } .ldl-side .pk-r i.x { background: #e0563f; } .ldl-side .pk-r i.n { box-shadow: 0 0 0 2px var(--gold); }
 .ld-st .ldl-side button.pk-go { height: 52px; border-radius: 14px; background: var(--gold) !important; color: #13201A !important; font: 800 18px/52px var(--display) !important; border: 0; box-shadow: 0 4px 0 #b88a10; margin-top: 8px; flex: none; width: 100%; }
+/* Tabela: abas em dois grupos (campeonato | rodadas, copa e calendário; Silvio 12/11) e o Calendário */
+.tb2-tabs.tg { background: none; padding: 0; display: flex; gap: 10px; }
+.tb2-tg { flex: 1 1 auto; display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: #141517; }
+.tb2-tg button { flex: 1 1 auto; font-size: 16px !important; padding: 0 8px !important; white-space: nowrap; }
+.tb2-t.cal { gap: 3px; padding: 6px 8px; }
+.cal-r { display: grid; grid-template-columns: 38px 108px 22px 1fr 96px; align-items: center; height: 34px; border-radius: 10px; padding: 0 8px; gap: 6px; color: #F3F1EA; flex: none; }
+.cal-r.C { background: rgba(232, 184, 74, .12); box-shadow: inset 3px 0 0 #E8B84A; }
+.cal-r.cur { background: #F8F4EA; color: #13201A; box-shadow: none; }
+.cal-d { font: 700 12px var(--body); letter-spacing: .06em; color: #9fb0a6; } .cal-r.cur .cal-d { color: #4A5A52; }
+.cal-c { font: 800 16px/1 var(--display); white-space: nowrap; display: flex; align-items: center; gap: 5px; } .cal-r.C .cal-c { color: #E8B84A; } .cal-r.cur.C .cal-c { color: #8a6410; }
+.cal-ti { display: flex; font-style: normal; } .cal-ti img, .cal-ti svg { height: 18px !important; width: auto; }
+.cal-h { font: 800 14px var(--display); font-style: normal; color: #9fb0a6; text-align: center; } .cal-r.cur .cal-h { color: #13201A; }
+.cal-o { display: flex; align-items: center; gap: 7px; font: 800 17px/1 var(--display); overflow: hidden; white-space: nowrap; min-width: 0; }
+.cal-o > span { overflow: hidden; text-overflow: ellipsis; }
+.cal-cr { width: 22px; height: 22px; object-fit: contain; flex: none; }
+.cal-mb { display: flex; align-items: center; gap: 5px; } .cal-mb em { font: 700 13px var(--body); font-style: normal; color: #9fb0a6; } .cal-mb b { font: 800 15px var(--display); }
+.cal-tb { font: 700 14px var(--body); color: #9fb0a6; }
+.cal-s { font: 800 17px var(--display); text-align: right; white-space: nowrap; } .cal-s small { font-size: 13px; }
+.cal-s.v { color: #7ED39A; } .cal-s.d { color: #F5A57F; } .cal-s.e { color: #cfd8d2; } .cal-s.nx { font-size: 12px; letter-spacing: .08em; color: #8a6410; }
+.cal-r.cur .cal-s.v { color: #1F6B45; } .cal-r.cur .cal-s.d { color: #A32A25; }
+.tb2-nx.cup b { color: #E8B84A; } .tb2-nx i.bye img { height: 36px !important; width: auto; }
