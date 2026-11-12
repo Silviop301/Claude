@@ -9966,3 +9966,6 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .mkw-b .mk-ord { flex: 1; padding: 0 18px !important; gap: 12px; } .mkw-b .mk-ord > b { flex: 1; text-align: center; font: 800 21px/1 var(--display); }
 .mkw-b .mk-ord .mk-ar { width: 34px; height: 34px; border-radius: 9px; }
 .mkw-b .tm-go { flex: none; width: 280px; height: 100%; margin: 0; font-size: 30px !important; }
+/* Selo BETA ao lado do logo da home deitada até o lançamento (BETA_ATE em ui/start.js, 2026-11-12) */
+.hl-x .hl-logo { position: relative; }
+.hl-beta { position: absolute; left: 100%; top: -4px; margin-left: 8px; transform: rotate(-8deg); background: var(--gold); color: #1B1606; font: 800 15px/1 var(--display); font-style: normal; letter-spacing: .08em; padding: 5px 8px 4px; border-radius: 6px; box-shadow: 0 2px 0 #b48a12; white-space: nowrap; }
