@@ -791,10 +791,26 @@
       retomado = false;
       if (ctx) U.LD.livePaint(ctx);
     };
-    const finish = () => { clearTimeout(timer); if (sim) sim.stop(); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); if (U.profileCoGame) U.profileCoGame(co, m, log); save('hub'); result(m, log, false, firstMove); };
+    // Festa do título no campinho (Silvio 12/11): o jogo que deu o título vira festa no campo, com o cartão no painel da direita
+    // (troca a tela cheia de confete, que fica só para o jogo sem campinho). Copas: a mesma festa
+    const festa = (log, go) => {
+      co.ss.tw = 1; save('hub'); $('lv-sheet').classList.remove('on');
+      const t = S.coTable(co), me = t.find(x => x.me), left = co.ss.rounds.length - co.ss.i;
+      sim.festa((window.CRAQUE_TROPHY_IMGS || {})[co.ss.name]); sfx('fanfare');
+      const side = document.querySelector('.ldl-side'), d = document.createElement('div'); d.className = 'ldl-festa';
+      d.innerHTML = '<div class="ldf-c">' + tacaImg(70) + '<small>' + esc(co.ss.name).toUpperCase() + ' · ' + (U.YEAR0 + co.season) + '</small><b>Campeão!</b>' +
+        '<p>' + me.p + ' pontos' + (left > 0 ? '<br>' + left + (left === 1 ? ' rodada' : ' rodadas') + ' de folga' : '') + '</p></div><button class="ld-gold ldf-go"><b>Seguir</b></button>';
+      side.appendChild(d); d.querySelector('.ldf-go').onclick = () => { sfx('tap'); d.remove(); go(); };
+    };
+    const finish = () => { clearTimeout(timer); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); if (U.profileCoGame) U.profileCoGame(co, m, log); save('hub');
+      const go = () => { if (sim) sim.stop(); result(m, log, false, firstMove); };
+      if (sim && sim.festa && LDon && document.querySelector('.ldl-side') && !co.ss.tw && S.coTitleWon(co)) return festa(log, go);
+      go(); };
     const end = () => {
       clearTimeout(timer); hidden.clear(); paint(); open = true;
       if (sim && sim.fin) { sim.fin(); sfx('whistleEnd'); if (m.home && m.gh < m.ga && !retomado) setTimeout(() => sfx('vaia'), 2300); } // três apitos (curto, curto, longo): os jogadores param onde estão
+      // vitória que dá o título sem depender de ninguém: a festa começa sozinha depois do apito, sem o 'Ver o resultado'
+      { const ch = S.coTitleChance(co); if (ch && !ch.rivals.length && ourGoals() > theirGoals() && sim && sim.festa && LDon) { setTimeout(finish, 1600); return; } }
       if (sim) { clearTimeout(frz); frz = setTimeout(() => sim.freeze(true), 1500); }
       $('lv-sheet').innerHTML = '<div class="lv-sh"><i class="lv-grab"></i><div class="lv-st-h"><small>' + S.coClock(m) + ' · Fim de jogo</small><b>' + m.gh + ' x ' + m.ga + '</b></div>' +
         '<h2>' + (ourGoals() > theirGoals() ? 'Vitória' : ourGoals() < theirGoals() ? 'Derrota' : 'Empate') + '</h2><button class="btn" id="b-lv-end">Ver o resultado</button></div>';

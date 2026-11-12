@@ -58,7 +58,7 @@ if (OUT) fs.mkdirSync(OUT, { recursive: true });
       U._co.save('hub'); U.LD.semana(); }, SOBE);
     await p.waitForTimeout(600); await texto('semana da última rodada, temporada ' + (t + 1)); await shot('t' + (t + 1) + '-semana-fim');
     // último jogo ao vivo, pulando para o fim; depois resultado, taça ou demissão, até o Fim da temporada
-    const fim = await anda('.fdt', ['#ctw-no', '.tc-go', '#ld-sack', '#ldr-go', '#b-lv-end', '#ldl-go', '[data-sp="fim"]', '#ldp-go', '#ld-go', '#ld-play'], 'último jogo da temporada ' + (t + 1));
+    const fim = await anda('.fdt', ['#ctw-no', '.tc-go', '.ldf-go', '#ld-sack', '#ldr-go', '#b-lv-end', '#ldl-go', '[data-sp="fim"]', '#ldp-go', '#ld-go', '#ld-play'], 'último jogo da temporada ' + (t + 1));
     if (!fim) break;
     await texto('fim da temporada ' + (t + 1)); await shot('t' + (t + 1) + '-fim');
     for (const i of [1, 2, 3, 0]) { await tap('[data-ft="' + i + '"]'); await texto('fim da temporada ' + (t + 1) + ', aba ' + i); if (i === 3) { if (await has('[data-sk]')) { const antes = (await estado()).pts; await tap('[data-sk]:not([disabled])'); const dep = (await estado()).pts; if (dep !== antes - 1) errs.push('temporada ' + (t + 1) + ': o ponto de habilidade não foi gasto (' + antes + ' → ' + dep + ')'); } await shot('t' + (t + 1) + '-tecnico'); } }

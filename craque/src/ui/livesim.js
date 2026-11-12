@@ -143,6 +143,7 @@
     // oppfora, pega, saimal, rebate (eles atacam perto de você) · none
     let lc = null, stopWhy = '';
     // Texto grande animado no campo (Silvio, 10/11: "no gol um indicativo de texto animado, assim como na marcação de pênalti"): { txt, s, t0, d } em relógio de verdade
+    let fest = null; // festa do título (Silvio 12/11): { s, t, cup: Image, cf: [confetes] }
     let big = null; const bigSay = (txt, s, d, wave) => { if (!o.noBig) big = { txt, s, t0: Date.now(), d: d || 2, wave }; };
     const DEF = { desarme: 1, corte: 1, driblado: 1, falta: 1, defesa: 1, oppfora: 1, pega: 1, saimal: 1, rebate: 1 };
     function lcDone() { const f = lc && lc.cb; lc = null; if (f) f(); }
@@ -1542,6 +1543,15 @@
     function startPlay() { if (koHold && typeof window !== 'undefined' && window.CRAQUE_SFX) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {} /* apito da saída de cada tempo */ koHold = false; back = 0; mode = 'play'; const k = kicker(koSide); ball.x = 52.5; ball.y = 34; setOwner(k); lastPasser = k; lastPassClk = clk; fly(k, at(koSide, 6).x, at(koSide, 6).y, at(koSide, 6), false, 'curto', false); }
     // A volta para o meio depois do gol passa em velocidade 3× (é o tempo de recomeçar, não um lance)
     let mT = 0; // segundos de campinho jogados desde o último minuto do motor (ver minute)
+    // Festa do título: o seu time corre para o meio e vira um bolo pulando; o goleiro vem do gol; os de lá vão para o seu campo
+    // e uns sentam na grama. Aos 2,5 s a taça sobe no meio do bolo (desenho em festDraw)
+    function festStep(dt) {
+      fest.t += dt; const s = fest.s, cx = 52.5, cy = 38; let n = 0;
+      T[s].forEach(p => { if (p.outT > 20 || p.subW) return; const ring = n < 6 ? 0 : 1, i = ring ? n - 6 : n, m = ring ? Math.max(1, T[s].length - 6) : 6, a = i / m * Math.PI * 2 + ring * 0.4, rr = ring ? 4.6 : 2.4; n++;
+        p.tx = cx + Math.cos(a) * rr; p.ty = cy + Math.sin(a) * rr * 0.8; p.sprint = 1; });
+      T[1 - s].forEach((p, i) => { const [hx] = toW(1 - s, 30 + (i % 4) * 4, 0); if (!p.fx0) { p.fx0 = 1; p.fy0 = p.y; if (i % 3 === 1) p.sitAt = 1.2 + i * 0.25; }
+        p.tx = hx; p.ty = Math.min(WD - 6, Math.max(6, p.fy0)); p.sprint = 0; if (p.sitAt && fest.t > p.sitAt) { p.down = 9; p.tx = p.x; p.ty = p.y; } });
+    }
     function step(dt) { mT += dt; step1(dt); if (back && mode === 'ko') { step1(dt); step1(dt); } }
     function step1(dt) {
       clk += dt;
@@ -1577,6 +1587,7 @@
       ALL.forEach(p => { if (p.down) p.down = Math.max(0, p.down - dt); });
       offStepRef(dt); if (outCd > 0) outCd -= dt;
       if (mode === 'wait') { ALL.forEach(p => { [p.tx, p.ty] = koShape(p, p.side); }); ball.x = 52.5; ball.y = 34; }
+      else if (mode === 'festa') festStep(dt);
       else if (mode === 'fim') { ALL.forEach(p => { p.tx = p.x + (p.tx - p.x) * 0.9; p.ty = p.y + (p.ty - p.y) * 0.9; p.sprint = 0; }); }
       else if (mode === 'play') play(dt);
       else if (mode === 'troca') subStep(dt);
@@ -1758,6 +1769,18 @@
       }
       la *= q.sg * DRB_A; fw *= DRB_A; return [q.nx * la + q.ux * fw, q.ny * la + q.uy * fw]; // DRB_A: o disco do boneco tem uns 4 m de largura no campo, a finta precisa ser do tamanho dele para aparecer
     }
+    // A taça no alto do bolo (luz atrás, sobe e balança) e os confetes nas cores do clube e dourado caindo no campo todo
+    function festDraw(k) {
+      const t = fest.t, x = X(52.5), y0 = Y(38);
+      if (t > 2.5 && fest.cup && fest.cup.complete && fest.cup.naturalWidth) { const u = Math.min(1, (t - 2.5) / 0.8), e = 1 - Math.pow(1 - u, 3), h = Math.min(H * 0.27, 76 * k), w = h * fest.cup.naturalWidth / fest.cup.naturalHeight, bob = Math.sin(t * 6) * 3 * k * e, cy = y0 - 26 * k - e * h * 0.5 + bob;
+        const gr = g.createRadialGradient(x, cy, 2, x, cy, h * 0.95); gr.addColorStop(0, 'rgba(255,224,138,' + (0.55 * e) + ')'); gr.addColorStop(1, 'rgba(255,224,138,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, cy, h * 0.95, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = e; g.drawImage(fest.cup, x - w / 2, cy - h / 2, w, h); g.globalAlpha = 1; }
+      const lit = c => { const n = parseInt(String(c).slice(1), 16); return ((n >> 16) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11) > 70; }, cols = [fest.c1, fest.c2, '#F2C230', '#FFE08A'].map(c => lit(c) ? c : '#FBF8EF');
+      if (!fest.cf) { fest.cf = []; for (let i = 0; i < 90; i++) fest.cf.push({ x: Math.random(), y: -Math.random() * 1.2, v: 0.12 + Math.random() * 0.16, a: Math.random() * 6, w: Math.random() * 6, c: cols[i % 4] }); }
+      const dt = Math.min(0.05, (Date.now() - (fest.lt || Date.now())) / 1000); fest.lt = Date.now();
+      fest.cf.forEach(q => { q.y += q.v * dt; q.a += q.w * dt; if (q.y > 1.05) { q.y = -0.05; q.x = Math.random(); }
+        g.save(); g.translate(q.x * W + Math.sin(q.a) * 8 * k, q.y * H); g.rotate(q.a); g.fillStyle = q.c; g.fillRect(-3 * k, -1.6 * k, 6 * k, 3.2 * k); g.restore(); });
+    }
     function dot(p, k) {
       // A batida: no chute o corpo recua um palmo (arma a perna) e vai na bola; no passe, só o toque para a frente
       let ko = 0; if (p.kk) { const q = p.kk, t = q.t; if (t < q.pre) ko = -0.45 * (t / q.pre); else { const v = (t - q.pre) / 0.26, a0 = q.pre ? -0.45 : 0; ko = v < 0.22 ? a0 + (1 - a0) * v / 0.22 : 1 - (v - 0.22) / 0.78; } ko *= q.pw; }
@@ -1766,6 +1789,7 @@
       g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x + 1, y + 2.5, r + 1.5 * k, (r + 1.5 * k) * 0.6, 0, 0, Math.PI * 2); g.fill();
       // Comemoração do gol: quem chegou ao canto pula (só desenho: o corpo sobe e a sombra fica no chão)
       if (mode === 'goal' && hero && p.side === hero.side && !p.down && Math.hypot(p.tx - p.x, p.ty - p.y) < 3.5) y -= Math.abs(Math.sin(Date.now() / 150 + p.k * 1.7)) * r * (p === hero ? 0.95 : 0.7);
+      if (mode === 'festa' && fest && p.side === fest.s && !p.down && Math.hypot(p.tx - p.x, p.ty - p.y) < 3) y -= Math.abs(Math.sin(Date.now() / 140 + p.k * 1.3)) * r * 0.85;
       if (me) { g.fillStyle = 'rgba(242,194,48,.35)'; g.beginPath(); g.arc(x, y, r + 5.5 * k, 0, Math.PI * 2); g.fill(); }
       g.globalAlpha = p.stun > 0 ? 0.65 : 1;
       const kt = p.r === 'GK' ? [KT.gk[p.side], '#1D1D1F'] : p.side ? KT.opp : KT.mine, shirt = me ? '#F2C230' : kt[0];
@@ -2031,6 +2055,7 @@
         g.fillStyle = '#F2C230'; g.fillRect(lx, fy - 8 * k, 6 * k, 4 * k); g.fillStyle = '#D8404A'; g.fillRect(lx + 6 * k, fy - 8 * k, 6 * k, 4 * k); g.fillRect(lx, fy - 4 * k, 6 * k, 4 * k); g.fillStyle = '#F2C230'; g.fillRect(lx + 6 * k, fy - 4 * k, 6 * k, 4 * k);
       }
       // Grito do técnico (Silvio, 2026-11-10): setas douradas e a palavra em cima do time por 2 s; depois o campo volta a ficar limpo
+      if (fest) festDraw(k);
       if (big) { const age = (Date.now() - big.t0) / 1000;
         if (age > big.d) big = null; else {
           // entra grande e assenta (0,2 s), treme de leve, e some no fim; a faixa embaixo tem a cor da camisa de quem fez
@@ -2230,6 +2255,8 @@
       // Placa do quarto árbitro: { add: n } (acréscimos) ou { out: [nums], in: [nums] } (troca)
       board(b) { Q4.b = b; Q4.t = b && b.add ? 4.5 : 4; },
       // Fim de jogo: três apitos, os jogadores param onde estão
+      // Festa do título (o seu time é o lado 0): cup = endereço da imagem da taça real
+      festa(cup) { if (lc) lcDone(); frozen = false; camT = 0; mode = 'festa'; stopWhy = ''; ball.owner = ball.fly = ball.loose = ball.carry = null; ball.x = -50; fest = { s: 0, t: 0, c1: KT.mine[0], c2: KT.mine[1] }; if (cup) { fest.cup = new Image(); fest.cup.src = cup; } bigSay('CAMPEÃO!', 0, 3.2, true); },
       fin() { if (lc) lcDone(); mode = 'fim'; stopWhy = 'Fim de jogo'; ball.owner = ball.fly = ball.loose = ball.carry = null; },
       half() { if (lc) lcDone(); mode = 'half'; koSide = 1; ball.owner = ball.fly = ball.loose = ball.carry = null; },
       second() { half2 = true; mode = 'ko'; modeT = 0.4; koSide = 1; koHold = true; back = 1; if (subQ) subApply(true); // voltam do túnel, correndo (como na volta depois do gol)
