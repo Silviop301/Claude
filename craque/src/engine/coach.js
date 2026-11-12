@@ -1242,7 +1242,7 @@
       r += g.length * 1.1 + on * 0.25 + sh * 0.08 - (yc ? 0.3 : 0) - (rc ? 1.6 : 0) - fo * 0.1;
       r = clamp(Math.round(r * 10) / 10, 3, 10);
       const sub = !start.includes(id);
-      const w = g.length ? (g.length > 1 ? g.length + ' gols' : 'gol') + (sub ? ' saindo do banco, aos ' + S.coEvMin(g[0]) : '') :
+      const w = g.length ? (g.length > 1 ? g.length + ' gols' : 'gol') + (sub ? ' vindo do banco' : '') :
         rc ? 'expulso' : p.pos === 'GOL' ? (ga === 0 ? (saves ? 'não levou gol, ' + saves + (saves > 1 ? ' defesas' : ' defesa') : 'não foi exigido') : saves ? saves + (saves > 1 ? ' defesas' : ' defesa') + ', ' + ga + (ga > 1 ? ' gols sofridos' : ' gol sofrido') : ga + (ga > 1 ? ' gols sofridos' : ' gol sofrido')) :
         def >= 0.6 && ga === 0 ? 'atrás sem levar gol' : on ? (sh > 1 ? sh + ' chutes, ' : '') + on + ' no gol' : sh ? sh + (sh > 1 ? ' chutes' : ' chute') + ' para fora' :
         yc ? 'amarelo' + (fo ? ' e ' + (fo + 1) + ' faltas' : '') : r < 5.6 ? (def >= 0.6 ? 'sofreu com o ataque deles' : 'sumiu do jogo') : r >= 7 ? (def >= 0.6 ? 'seguro atrás' : 'bom jogo') : sub ? 'entrou aos ' + (90 - min) + "'" : 'jogo discreto';
