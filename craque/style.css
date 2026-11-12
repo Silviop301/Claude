@@ -9605,6 +9605,33 @@ button.coin-pill { cursor: pointer; border: 0; }
 .nvd-l > div img.tw { width: 30px; height: 30px; vertical-align: 0; }
 .nvd-l > div span { display: flex; flex-direction: column; gap: 3px; min-width: 0; } .nvd-l > div b { font: 700 19px/1 var(--display); } .nvd-l > div small { font: 500 15px/1.1 var(--body); color: #B9C9BF; }
 .nvd .tm-go { margin-top: 0; flex: none; margin-bottom: 4px; font-size: 24px !important; letter-spacing: .02em; }
+/* 2026-11-12 Novidades detalhadas (Silvio liberou rolar aqui): cartão creme estreito à esquerda com o Bora jogar,
+   painel carvão largo à direita com a lista por grupos em duas colunas, rolando, e a seta de "tem mais" embaixo */
+.nvd.nvd-x { grid-template-columns: 300px minmax(0, 1fr); }
+.nvd-x .nvd-c { padding: 16px 20px 12px; gap: 6px; overflow: hidden; }
+.nvd-x .nvd-c > img.tw { width: 56px; height: 56px; right: 16px; top: 14px; }
+.nvd-x .nvd-c > small { font-size: 12px; }
+.nvd-x .nvd-c > b { font-size: 34px; max-width: 200px; }
+.nvd-x .nvd-c > p { font-size: 15px; }
+.nvd-x .nvd-c > strong { font-size: 16px; }
+.nvd-x .nvd-c > em { font-size: 14px; }
+.nvd-lc { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.nvd-lc .nvd-c { flex: 1; }
+.nvd-x .nvd-lc .tm-go { margin: 0 0 4px; width: 100%; }
+.nvd-rs { position: relative; }
+.nvd-l.nvd-sc { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; gap: 0; padding: 14px 16px 26px; scrollbar-width: thin; scrollbar-color: rgba(243,241,234,.25) transparent; }
+.nvd-sc > small { padding: 10px 0 8px; } .nvd-sc > small:first-child { padding-top: 0; }
+.nvd-l > .nvd-g { flex: none; display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; gap: 8px; border-top: 0; }
+.nvd-g > div { display: flex; align-items: flex-start; gap: 10px; padding: 10px 10px 11px; border-radius: 12px; background: rgba(243,241,234,.05); }
+.nvd-g > div img.tw { width: 28px; height: 28px; flex: none; margin-top: 1px; }
+.nvd-g > div span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.nvd-g > div b { font: 700 17px/1.05 var(--display); }
+.nvd-g > div small { font: 500 14px/1.25 var(--body); color: #B9C9BF; }
+.nvd-mais { position: absolute; left: 0; right: 0; bottom: 0; height: 52px; border-radius: 0 0 18px 18px; pointer-events: none; background: linear-gradient(180deg, rgba(20,21,23,0), #141517 70%); transition: opacity .2s; }
+.nvd-mais::before, .nvd-mais::after { content: ''; position: absolute; left: 50%; bottom: 12px; width: 12px; height: 12px; margin-left: -8px; border: solid #8FD6AE; border-width: 0 4px 4px 0; border-radius: 2px; transform: rotate(45deg); animation: nvd-b 1.1s ease-in-out infinite; }
+.nvd-mais::before { bottom: 21px; opacity: .45; animation-delay: -.15s; }
+.nvd-mais.fim { opacity: 0; }
+@keyframes nvd-b { 0%, 100% { transform: translateY(-4px) rotate(45deg); } 50% { transform: translateY(5px) rotate(45deg); } }
 
 /* Fim da temporada novo (2026-11-11, desenho aprovado): cartão creme do resultado, 4 abas no painel carvão, o que vem agora
    e um dourado só. Nada abaixo de 13 px */
