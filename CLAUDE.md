@@ -14,7 +14,7 @@ Este arquivo é a fonte única de orientação. Leia-o antes de abrir código; e
    `engine/season.js` (78 KB), `social-data.js`, `chars.js`, `avatar.js`, `social-events.js`, `sw.js`.
 2. **Não abra arquivos gerados** (uma linha gigante, sem valor para ler): `craque/sw.js`,
    `craque/src/kits.js`, `craque/src/trophy-imgs.js`. Gere de novo com a ferramenta (tabela abaixo).
-3. **Ignore pastas de mídia** em buscas e listagens: `craque/badges/` (~1000 PNG, 29 MB),
+3. **Ignore pastas de mídia** em buscas e listagens: `craque/badges/` (~1000 PNG de 256 px, 12 MB),
    `craque/assets/`, `craque/trophies/`, `craque/fonts/`, `craque/icons/`, `divulgacao/`,
    `docs/prints/`, `docs/design-itens/`. Ex.: `grep -rn X craque/src tools` em vez de `grep -rn X .`.
 4. **`docs/` é histórico** (briefings e relatórios já aplicados). Só abra se a tarefa citar o assunto.
@@ -300,7 +300,7 @@ minuto (o campinho precisa dos mesmos segundos por minuto do 1×). Mexeu numa de
 |---|---|
 | `craque/sw.js` + versões `?v=` no `index.html` | `python3 tools/craque_sw.py` |
 | `craque/src/kits.js` | `node tools/craque_kits.js` (com o `http.server` rodando) |
-| `craque/badges/*.png` | `python3 tools/craque_badges.py` (só os que faltam; conferir visualmente) |
+| `craque/badges/*.png` | `python3 tools/craque_badges.py` (só os que faltam; conferir visualmente). **Alta (2026-11-12):** `python3 tools/craque_badges_hd.py baixar PASTA` baixa todos em 256 px (ESPN 500 px para quem tem `tools/espn/<id>.json`, senão TheSportsDB no tamanho cheio), grava `relatorio.json` com a diferença `d` contra o atual (acima de 12 = conferir na tela) e `aplicar PASTA` copia; trocou o arquivo de um escudo: suba `CREST_V0` (todos) ou ponha o id em `CREST_V` (`ui/core.js`), porque o servidor guarda escudo por 7 dias. Moldura clara fraca na borda (alguns da ESPN, ex.: Al-Riyadh) tem de ser limpa à mão |
 | `craque/trophies/` + `trophy-imgs.js` | `tools/craque_trophies.py` → `tools/craque_trophies_resize.js` |
 | `craque/assets/tw/` (emojis) | `node tools/craque_twemoji.js` (rodar ao usar emoji novo, depois `craque_sw.py`) |
 | `craque/assets/co/` (Treinador: logos `pat-<nome>.webp`, `rosto-NN.webp`, `banco`, `tv`) | arte do ChatGPT (doc https://claude.ai/artifact/AinuvFC9Mc3BA3jCXztPvV), recortes em `/mnt/project-files/climbix/treinador-assets/recortes/`; nomes dos patrocinadores em `S.CO_SPONS` (`coachfin.js`), por país da liga. **Fora do Brasil (2026-11-10):** 16 marcas das folhas `arte/patrocinadores/folha-e.png` e `folha-f.png`, recortadas por `python3 tools/craque_patrocinadores.py <folha> "Nome 1" ... "Nome 8"` (nomes na ordem de leitura; grava `pat-<nome>.webp` e a versão `-esc` para o carvão; `PREVIA=pasta` mostra em creme e carvão); 8 internacionais valem em todo país de fora, mais 4 de língua espanhola e 4 de língua inglesa; Portugal segue com a lista brasileira |

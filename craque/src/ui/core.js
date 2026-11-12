@@ -24,7 +24,8 @@
   // Versão de portal (tools/craque_portal.py): os escudos vêm de climbix.app, para o pacote caber no limite de arquivos
   const BADGES = window.CLIMBIX_BADGES || 'badges/';
   // Escudo trocado: versão na URL, senão o celular segue com o antigo do cache por 7 dias (Botafogo-SP, 11/11)
-  const CREST_V = { 'bra-c-9': 2, 'sco-2-0': 2 };
+  // 12/11: todos os escudos trocados pelos de 256 px (tools/craque_badges_hd.py): CREST_V0 vale para todos; escudo trocado depois sobe só o dele acima disso
+  const CREST_V0 = 3, CREST_V = {};
   // Clubes sem arquivo de escudo (11/11): nem pedem o arquivo (o pedido dava 404 no aparelho e no passeio das telas); o desenho sai de noCrest
   const NO_CREST = { 'qat-4': 1, 'sco-2-7': 1, 'gre-2-1': 1, 'aut-2-7': 1, 'col-2-9': 1, 'ara-2-2': 1, 'usa-2-5': 1 };
   const noCrest = id => { const cl = id && D.CLUB_BY_ID && D.CLUB_BY_ID[id]; if (!cl) return '';
@@ -33,7 +34,7 @@
     let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
     const col = ['#1E5AA8', '#B3262E', '#1F7A4D', '#6B3FA0', '#C4731B', '#2B2D31'][h % 6];
     return 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M32 3l24 7v20c0 15-10 26-24 31C18 56 8 45 8 30V10z" fill="' + col + '" stroke="#F3F1EA" stroke-width="3" stroke-linejoin="round"/><text x="32" y="' + (ini.length > 2 ? 37 : 39) + '" text-anchor="middle" font-family="Arial Narrow,Arial,sans-serif" font-weight="800" font-size="' + (ini.length > 2 ? 18 : 23) + '" fill="#F3F1EA">' + ini + '</text></svg>'); };
-  const crestUrl = id => (NO_CREST[id] && noCrest(id)) || BADGES + id + '.png' + (CREST_V[id] ? '?v=' + CREST_V[id] : '');
+  const crestUrl = id => (NO_CREST[id] && noCrest(id)) || BADGES + id + '.png' + '?v=' + (CREST_V[id] || CREST_V0);
   const badgeSrc = s => { s = String(s); const m = /^badges\/([a-z0-9-]+)\.png$/.exec(s); return m ? crestUrl(m[1]) : s.replace(/^badges\//, BADGES); };
   const crest = (id, cls) => '<img class="crest' + (cls ? ' ' + cls : '') + '" src="' + crestUrl(id) + '" alt="" loading="lazy" onerror="CLIMBIX_NOCREST(this)">';
   // Clube sem escudo no arquivo (7 de 998 em 11/11: Al-Arabi, Queen's Park, Kalamata, Bregenz, Leones, Al-Arabi KSA, San Antonio):
