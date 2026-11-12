@@ -9758,6 +9758,7 @@ body:has(> .tc-ov) > .pay-ty { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .hl-dk-p { transition: opacity .2s; } .hl-dk-p .dk-big .dk-i { animation: none; } }
 /* Ajustes com 6 linhas (Música no jogo ao vivo): linhas mais baixas para caber sem rolar */
 .aj-l.n6 { gap: 6px; } .aj-l.n6 .aj-sw, .aj-l.n6 .aj-lk { min-height: 44px; border-radius: 14px; } .aj-l.n6 .aj-sw b, .ld-st .aj-l.n6 button.aj-lk { font-size: 24px; }
+.aj-l.n7 { gap: 4px; } .aj-l.n7 .aj-sw, .aj-l.n7 .aj-lk { min-height: 40px; } .aj-l.n7 .aj-sw b, .ld-st .aj-l.n7 button.aj-lk { font-size: 21px; }
 
 /* Termos e reembolso deitados (2026-11-11, U.termosLand em ui/settings.js): 7 abas curtas no cartão creme, sem rolar,
    e o contato no painel carvão à direita. Abre pelo link da Loja no lugar da página termos.html */

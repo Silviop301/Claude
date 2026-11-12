@@ -4,6 +4,7 @@
 (function () {
   const U = window.CRAQUE_UI;
   // Velocidade padrão dos jogos do Treinador, escolhida nos Ajustes ('1' ou '3'; neste aparelho)
+  U.coFx = v => { try { if (v !== undefined) localStorage.setItem('climbix-co-fx', v ? '1' : '0'); return localStorage.getItem('climbix-co-fx') !== '0'; } catch (e) { return true; } }; // comemoração do gol e câmera lenta do chute (lido no livesim.js)
   U.coVel = v => { try { if (v) localStorage.setItem('climbix-co-vel', v); const x = localStorage.getItem('climbix-co-vel'); return x === '3' ? '3' : '1'; } catch (e) { return v === '3' ? '3' : '1'; } };
   const { D, S, sfx, $, esc, money, club, league, crest, load, store, render, bar, G, YEAR0 } = U;
   const SAVE_CO = U.SAVE_CO = 'climbix-treinador-v1';
