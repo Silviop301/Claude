@@ -7,7 +7,7 @@
   const U = window.CRAQUE_UI;
   const { S, sfx, esc, club, crest } = U;
   const W = 844, H = 390, DESK_K = 1.7; // DESK_K: maior escala do palco no computador (1435×663 px na tela)
-  const WIDE = /^(lv|tm|lde2|tb2|rs|sm|kb2)(\s|$)/, WIDE_MAX = [1320, 660]; // telas que crescem no computador (fit) e o maior tamanho do conteúdo delas
+  const WIDE = /^(lv|tm|lde2|tb2|rs|sm|kb2|fn2|mkw)(\s|$)/, WIDE_MAX = [1320, 660]; let WROOM = false, FIN_TAB = null; // telas que crescem no computador (fit) e o maior tamanho do conteúdo delas
   const on = () => true; // o Treinador é sempre deitado
   // Som de cada botão do palco (Silvio, 11/11: "muito agudo, a maioria vai ser mais grave"): voltar, fechar e cancelar = back
   // (mais grave), a ação principal (dourado, confirmar) = ok (o único mais agudo), o resto = tap
@@ -59,9 +59,12 @@
     // Telas largas no computador (Silvio, 2026-11-11: "com tanto espaço a gente poderia aproveitar mais"): as telas de campo e de
     // lista (ao vivo, Time, Elenco, Tabela; o Mercado esticado fica vazio, ganha desenho próprio) usam a sobra do monitor, até WIDE_MAX px do palco, com a letra do mesmo tamanho.
     // As de cartões (home, Semana, Clube, Finanças) ficam no 816×366 do desenho, que esticado fica vazio
-    let px = 14 + ex, py = 12 + ey, wide = wide0;
-    if (wide) { px = Math.max(px - ex, (W + 2 * ex - WIDE_MAX[0]) / 2, 40); py = Math.max(py - ey, (H + 2 * ey - WIDE_MAX[1]) / 2, 36); px = Math.min(px, 14 + ex); py = Math.min(py, 12 + ey); }
-    if (wide && (W + 2 * ex - 2 * px < 1000 || H + 2 * ey - 2 * py < 470)) { wide = false; px = 14 + ex; py = 12 + ey; } // notebook: quase não sobra, fica o desenho do celular
+    let px = 14 + ex, py = 12 + ey;
+    const wpx = Math.min(Math.max(14, (W + 2 * ex - WIDE_MAX[0]) / 2, 40), 14 + ex), wpy = Math.min(Math.max(12, (H + 2 * ey - WIDE_MAX[1]) / 2, 36), 12 + ey);
+    const room = desk && W + 2 * ex - 2 * wpx >= 1000 && H + 2 * ey - 2 * wpy >= 470; // notebook: quase não sobra, fica o desenho do celular
+    const wide = wide0 && room; if (wide) { px = wpx; py = wpy; }
+    // Tela com desenho próprio no computador (Finanças): monta outro HTML quando cabe; mudou o tamanho da janela, redesenha
+    if (room !== WROOM) { WROOM = room; const k0 = st0 && st0.firstElementChild && st0.firstElementChild.classList; if (k0 && k0.contains('fn2')) setTimeout(() => financas(FIN_TAB)); else if (k0 && (k0.contains('mkw') || (k0.contains('mk') && /^mk( |$)/.test(st0.firstElementChild.className) && st0.querySelector('#mk-go')) || k0.contains('mkr'))) setTimeout(() => mercado(MK_W[0], MK_W[1])); }
     el.classList.toggle('wide', wide); // #ld.wide: as janelas de tela cheia (parada do ao vivo, .ldl-full) seguem a tela larga
     el.style.setProperty('--ldpx', px + 'px'); el.style.setProperty('--ldpy', py + 'px');
     el.style.setProperty('--ldk', k.toFixed(4));
@@ -1430,7 +1433,8 @@
     return [['Procurar', 'mk-tpr'], ['Elenco', 'mk-tel'], ['Notícias', 'mk-tnw'], ['Propostas', 'mk-tof']].map(([t, id], i) => '<button id="' + id + '"' + (i === on ? ' class="on"' : '') + '>' + t + (i === 2 && n ? '<i class="tm-dot">' + n + '</i>' : i === 3 && k ? '<i class="tm-dot">' + k + '</i>' : '') + '</button>').join(''); };
   const mkTabEl = st => { const b = st.querySelector('#mk-tel'); if (b) b.onclick = () => { sfx('tap'); elenco(undefined, undefined, () => mercado()); };
     const o = st.querySelector('#mk-tof:not(.on)'); if (o) o.onclick = () => { sfx('tap'); recebidas(); }; };
-  function mercado() {
+  function mercado(pg, sel) {
+    if (WROOM) return mercadoW(pg, sel);
     const c = C(), co = c.co, m = S.coMkt(co), F = S.coMktFilters(co);
     if (S.coWorldSync) S.coWorldSync(co);
     m.f = F.map((x, i) => Math.min(m.f[i] || 0, x.o.length - 1));
@@ -1460,7 +1464,57 @@
   }
   // Resultado (23b): os filtros usados em cima e Mudar; 4 jogadores por página; à direita verba, folha, a ordem
   // (◀ ▶ como o Mostrar das notícias; S.CO_MKT.ords, fica em `m.ord`) e as páginas
+  // Computador (desenho aprovado 2026-11-12): filtros à esquerda e o resultado em tabela à direita, na mesma tela, 7 por página.
+  // Sem a tela separada do Resultado: mercadoRes cai aqui. Tocar no escolhido (ou Ver ficha) abre a ficha e o Voltar devolve
+  let MK_W = [0, 0];
+  function mercadoW(pg, sel) {
+    const c = C(), co = c.co, m = S.coMkt(co), F = S.coMktFilters(co), N = 7;
+    if (S.coWorldSync) S.coWorldSync(co);
+    m.f = F.map((x, i) => Math.min(m.f[i] || 0, x.o.length - 1));
+    const all = S.coMktSearch(co), n = all.length, ok = n > 0 && n <= S.CO_MKT.max, dirty = m.f.some(v => v) || !!(m.nm || '').trim();
+    const ords = S.CO_MKT.ords, ord = Math.min(m.ord || 0, ords.length - 1);
+    const list = ok ? S.coMktSort(co, all) : [], pages = Math.max(1, Math.ceil(list.length / N));
+    pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * N, pg * N + N); sel = Math.max(0, Math.min(sel || 0, R.length - 1)); MK_W = [pg, sel];
+    const cell = (x, i) => { const v = m.f[i] || 0, t = x.o[v].t;
+      return '<div class="mkw-f' + (v ? ' on' : '') + '">' + (v ? '<button class="mk-fx" data-mx="' + i + '" aria-label="limpar ' + x.t.toLowerCase() + '">' + x.t + '<i>×</i></button>' : '<small>' + x.t + '</small>') +
+        '<button class="mk-ar" data-mf="' + i + '" data-d="-1" aria-label="' + x.t.toLowerCase() + ' anterior">' + MK_L + '</button><b>' + esc(t) + '</b><button class="mk-ar" data-mf="' + i + '" data-d="1" aria-label="' + x.t.toLowerCase() + ' seguinte">' + MK_R + '</button></div>'; };
+    const row = (p, i) => { const b = S.coMktBand(co, p), w = S.coMktWord(b), pr = S.coMktPrice(p);
+      return '<button class="mkw-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><b>' + esc(p.n) + obsTag(co, p) + '</b><i class="mkw-ps" data-ln="' + lnOf(p.pos) + '">' + p.pos + '</i><span>' + p.age + '</span><span class="cl">' + mkClub(p) + '</span>' +
+        '<em class="' + (w || 'nr') + '">' + (w || 'sem relatório') + '</em><strong>' + (p.club ? c.brl(pr) : 'grátis') + '</strong></button>'; };
+    const empty = n ? 'Filtre mais: com estes filtros são ' + plMil(n, 'jogador', 'jogadores') + '. A lista aparece com até ' + S.CO_MKT.max + '.' : 'Ninguém com estes filtros. Solte um deles.';
+    const help = 'Escolha os filtros à esquerda: com até ' + S.CO_MKT.max + ' jogadores a lista aparece ao lado. Melhor, igual ou pior é contra o seu titular da posição, pelo que o olheiro viu: com mais relatórios ele erra menos. A janela abre nas 3 primeiras rodadas e em 2 rodadas no meio do campeonato. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.';
+    show('<div class="mkw mk"><div class="tm-h"><button class="tcr-back" id="mk-back" aria-label="Voltar">' + MK_BK + '</button><span class="mk-tt"><b>Mercado</b><small>' + esc(club(co.club).short || club(co.club).name) + '</small></span>' +
+        '<div class="mk-tabs t4">' + mkTabs(co, 0) + '</div><span class="mk-top">' + mkCx(true) + mkWin() + '<button class="ol2-q" id="mk-q" aria-label="Como funciona">?</button></span></div>' +
+      '<div class="mkw-l"><label class="mk-k mk-nm"><small>NOME</small><input id="mk-nm" type="text" autocomplete="off" placeholder="Toque para digitar" value="' + esc(m.nm || '') + '"></label>' +
+        '<div class="mkw-fs">' + F.map(cell).join('') + '</div>' +
+        '<div class="mk-k mkw-n"><span><b id="mk-n" class="' + (ok ? 'ok' : '') + '">' + plMil(n, 'jogador', 'jogadores') + '</b><small>com estes filtros</small></span>' + (dirty ? '<button class="mk-clr" id="mk-clr">Limpar</button>' : '') + '</div></div>' +
+      '<div class="mkw-r0"><div class="mkw-t"><div class="mkw-h"><span>JOGADOR</span><span>POS</span><span>IDADE</span><span>CLUBE</span><span>CONTRA O SEU</span><span>PREÇO</span></div>' +
+        (R.length ? R.map(row).join('') : '<p class="fn2-none mkw-e" id="mkw-e">' + empty + '</p>') + '<span class="rs-gap"></span>' +
+        '<div class="mkw-pg"><span>' + (R.length ? (pg + 1) + ' de ' + pages : '') + '</span><span><button class="mk-ar" id="mkr-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><button class="mk-ar" id="mkr-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></span></div></div>' +
+        '<div class="mkw-b"><div class="mk-k mk-ord"><small>ORDEM</small><button class="mk-ar" data-mo="-1" aria-label="ordem anterior">' + MK_L + '</button><b>' + ords[ord] + '</b><button class="mk-ar" data-mo="1" aria-label="ordem seguinte">' + MK_R + '</button></div>' +
+        '<button class="tm-go' + (R.length ? '' : ' off') + '" id="mkr-go">Ver ficha</button></div></div></div>', st => {
+      const me = () => mercado(MK_W[0], MK_W[1]);
+      st.querySelector('#mk-back').onclick = () => { sfx('tap'); semana(); };
+      mkCoins(st, me);
+      st.querySelector('#mk-tnw').onclick = () => { sfx('tap'); noticias(); }; mkTabEl(st);
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', help); };
+      st.querySelectorAll('[data-mf]').forEach(b => b.onclick = () => { sfx('tap'); const i = +b.dataset.mf, L = F[i].o.length; m.f[i] = ((m.f[i] || 0) + (+b.dataset.d) + L) % L; c.save(); mercado(0, 0); });
+      st.querySelectorAll('[data-mx]').forEach(b => b.onclick = () => { sfx('tap'); m.f[+b.dataset.mx] = 0; c.save(); mercado(0, 0); });
+      const clr = st.querySelector('#mk-clr'); if (clr) clr.onclick = () => { sfx('tap'); m.f = F.map(() => 0); m.nm = ''; c.save(); mercado(0, 0); };
+      // Nome: a lista só redesenha quando a pessoa termina (Enter ou sai do campo); enquanto digita só o número muda
+      const inp = st.querySelector('#mk-nm');
+      inp.oninput = () => { m.nm = inp.value; const k = S.coMktSearch(co).length, nb = st.querySelector('#mk-n'); nb.textContent = plMil(k, 'jogador', 'jogadores'); nb.className = k > 0 && k <= S.CO_MKT.max ? 'ok' : ''; };
+      inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); };
+      inp.onchange = () => { c.save(); mercado(0, 0); };
+      st.querySelectorAll('[data-mr]').forEach(b => b.onclick = () => { const i = +b.dataset.mr; sfx('tap'); if (i === sel) return ficha(R[i].id, () => mercado(pg, i)); mercado(pg, i); });
+      st.querySelectorAll('[data-mo]').forEach(b => b.onclick = () => { sfx('tap'); m.ord = (ord + (+b.dataset.mo) + ords.length) % ords.length; c.save(); mercado(0, 0); });
+      st.querySelector('#mkr-prev').onclick = () => { sfx('tap'); mercado(pg - 1, 0); };
+      st.querySelector('#mkr-next').onclick = () => { sfx('tap'); mercado(pg + 1, 0); };
+      st.querySelector('#mkr-go').onclick = () => { if (!R.length) return; sfx('tap'); ficha(R[sel].id, () => mercado(pg, sel)); };
+    });
+  }
   function mercadoRes(pg, sel) {
+    if (WROOM) return mercadoW(pg, sel);
     const c = C(), co = c.co, m = S.coMkt(co), F = S.coMktFilters(co), f = S.coFin(co), folha = S.coFolha(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
     const ords = S.CO_MKT.ords, ord = Math.min(m.ord || 0, ords.length - 1);
     const list = S.coMktSort(co, S.coMktSearch(co)), pages = Math.max(1, Math.ceil(list.length / 4));
@@ -1959,9 +2013,9 @@
   const ritmoTxt = (c, R) => !R ? '' : R.net >= 0 ? '▲ + ' + c.mi(R.net) + ' por rodada' : '▼ − ' + c.mi(-R.net) + ' por rodada';
   // Cartão da trajetória: quanto o caixa mudou na temporada, a linha rodada a rodada (tracejado = até o fim do ano no ritmo
   // de hoje) e onde ele chega. A palavra do degrau (aviso, no vermelho...) fica no canto quando não está tranquilo
-  function finTrend(c, co, step) {
+  function finTrend(c, co, step, wd) {
     const T = S.coFinTrend(co), f = S.coFin(co); if (!T) return '';
-    const P = T.pts, all = P.concat(T.end === null ? [] : [T.end]), mn = Math.min(...all), mx = Math.max(...all), lo = mn < 0 ? mn : mn - (mx - mn) * 0.15, hi = mx > lo ? mx : lo + 1, W = 200, H = 40;
+    const P = T.pts, all = P.concat(T.end === null ? [] : [T.end]), mn = Math.min(...all), mx = Math.max(...all), lo = mn < 0 ? mn : mn - (mx - mn) * 0.15, hi = mx > lo ? mx : lo + 1, W = wd ? 860 : 200, H = wd ? 150 : 40;
     const X = r => Math.round(Math.min(1, r / Math.max(1, T.n)) * (W - 6) * 10) / 10 + 3, Y = v => Math.round((H - 5 - (v - lo) / (hi - lo || 1) * (H - 10)) * 10) / 10;
     const xy = P.map((v, k) => X(T.r0 + k) + ',' + Y(v)), lastX = X(T.r0 + P.length - 1), lastY = Y(P[P.length - 1]);
     const up = T.d === null ? (T.R ? T.R.net >= 0 : true) : T.d >= 0, col = f.caixa < 0 ? '#F08A5D' : up ? '#7ED39A' : '#F5B544';
@@ -1972,22 +2026,31 @@
     const big = T.d === null ? '<b>começa agora</b>' : '<b class="' + (T.d >= 0 ? 'up' : 'dn') + '">' + (T.d >= 0 ? '▲ + ' : '▼ − ') + c.brl(Math.abs(T.d)) + '</b>';
     const R = T.R, em = step >= 2 ? '<em class="dn">' + FIN_STEP[step][1] + '</em>' : R && R.net < 0 && R.left !== null && R.left < R.rest ? '<em class="dn">nesse ritmo zera ' + (R.left < 1 ? 'na próxima rodada' : 'em ' + U.D.plural(R.left, 'rodada', 'rodadas')) + '</em>' :
       T.end === null ? '<em>temporada encerrada</em>' : '<em>fim do ano ~ <b class="' + (T.end < 0 ? 'dn' : T.end >= f.caixa ? 'up' : '') + '">' + c.brl(T.end) + '</b></em>';
-    return '<div class="fn2-st fn2-tr"><small>' + (T.r0 ? 'DESDE A RODADA ' + (T.r0 + 1) : 'CAIXA NO ANO') + (step ? '<u class="s' + step + '">' + FIN_STEP[step][0] + '</u>' : '') + '</small>' + big + '<span class="fn2-spw">' + svg + '<i style="left:' + (lastX / W * 100) + '%;top:' + (lastY / H * 100) + '%;background:' + col + '"></i></span>' + em + '</div>';
+    const lbl = T.r0 ? 'DESDE A RODADA ' + (T.r0 + 1) : 'CAIXA NO ANO', stp = step ? '<u class="s' + step + '">' + FIN_STEP[step][0] + '</u>' : '', dot = '<span class="fn2-spw">' + svg + '<i style="left:' + (lastX / W * 100) + '%;top:' + (lastY / H * 100) + '%;background:' + col + '"></i></span>';
+    // Computador (desenho aprovado 2026-11-12): o gráfico grande do meio, com a rodada de hoje e a última embaixo
+    if (wd) { const now = T.r0 + P.length - 1;
+      return '<div class="fn2-st fn2-tr w"><div class="fn2-th"><small>' + lbl + '</small>' + big + em + stp + '</div>' + dot +
+        '<div class="fn2-ax"><span>' + (T.r0 ? 'rodada ' + T.r0 : 'começo') + '</span><span>' + (now > T.r0 ? 'hoje · rodada ' + now : 'hoje') + '</span><span>rodada ' + T.n + '</span></div></div>'; }
+    return '<div class="fn2-st fn2-tr"><small>' + lbl + stp + '</small>' + big + dot + em + '</div>';
   }
   function financas(tab) {
     const c = C(), co = c.co, f = S.coFin(co), folha = S.coFolha(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, f.teto)));
-    const step = S.coFinStep(co), P = S.coPres(co), pt = f.pat, rd = f.rd && f.rd.s === co.season ? f.rd : null, R = S.coFinRitmo(co);
-    tab = ['rod', 'tmp', 'seg', 'sal'].indexOf(tab) >= 0 ? tab : rd ? 'rod' : 'tmp';
+    const step = S.coFinStep(co), P = S.coPres(co), pt = f.pat, rd = f.rd && f.rd.s === co.season ? f.rd : null, R = S.coFinRitmo(co), WD = WROOM;
+    tab = ['rod', 'tmp', 'seg', 'sal'].indexOf(tab) >= 0 && !(WD && tab === 'rod') ? tab : rd && !WD ? 'rod' : 'tmp'; FIN_TAB = tab;
     const li = (t, v, cls) => '<div class="fn2-li"><span>' + t + '</span><b class="' + (cls || '') + '">' + v + '</b></div>';
     let rows = '';
-    if (tab === 'rod') { if (!rd) rows = '<p class="fn2-none">Nenhuma rodada jogada nesta temporada.</p>';
+    // No computador a Rodada é um cartão fixo à direita (rodRows) e as abas ficam Temporada, A seguir e Salários
+    const rodRows = () => { let rows = '';
+      if (!rd) rows = '<p class="fn2-none">Nenhuma rodada jogada nesta temporada.</p>';
       else { const a = rd.inn.reduce((t, x) => t + x[1], 0), b = rd.out.reduce((t, x) => t + x[1], 0);
         const top4 = L => { const o = L.filter(x => x[0] === 'out').reduce((t, x) => t + x[1], 0), R = L.filter(x => x[0] !== 'out').sort((x, y) => y[1] - x[1]);
           const k = R.length + (o ? 1 : 0) > 4 ? 3 : R.length, v = o + R.slice(k).reduce((t, x) => t + x[1], 0); return R.slice(0, k).concat(v ? [['out', v]] : []); }; // cabe sem rolar: até 4 linhas por coluna
         const col = (t, L, sg, cls) => '<div class="fn2-rc"><small>' + t + '</small>' + (L.length ? L.map(([k, v]) => '<span>' + (RD_NM[k] || k) + '<b class="' + cls + '">' + sg + c.mi(v) + '</b></span>').join('') : '<span class="nd">nada</span>') + '</div>';
         rows = '<div class="fn2-rd">' + col('ENTROU', top4(rd.inn), '+ ', 'up') + col('SAIU', top4(rd.out), '− ', 'dn') + '</div>' +
           (rd.h === 0 || rd.h === -1 ? '<p class="fn2-fora">' + (rd.h ? 'Sem jogo nesta rodada' : 'Jogo fora de casa') + ': sem bilheteria, bares e camarotes</p>' : '') +
-          '<div class="fn2-li fn2-rs"><span><b>Saldo da rodada ' + rd.r + '</b>' + (R ? '<small> · rodada comum ' + c.sgn(R.net) + '</small>' : '') + '</span><b class="' + (a >= b ? 'up' : 'dn') + '">' + c.sgn(a - b) + '</b></div>'; } }
+          '<div class="fn2-li fn2-rs"><span><b>Saldo da rodada ' + rd.r + '</b>' + (R ? '<small> · rodada comum ' + c.sgn(R.net) + '</small>' : '') + '</span><b class="' + (a >= b ? 'up' : 'dn') + '">' + c.sgn(a - b) + '</b></div>'; }
+      return rows; };
+    if (tab === 'rod') rows = rodRows();
     else if (tab === 'tmp') { const x = f.ss, homes = co.ss ? co.ss.log.filter(l => l.home).length : 0, sg = v => (v ? '+ ' + c.mi(v) : '0'), sn = v => (v ? '− ' + c.mi(v) : '0');
       const saldo = x.bil + x.tv + x.pat + x.prem + x.vend - x.sal - x.comp;
       rows = li('Bilheteria · ' + U.D.plural(homes, 'jogo', 'jogos') + ' em casa', sg(x.bil), 'up') + li('TV e patrocínio', sg(x.tv + x.pat), 'up') + (x.prem ? li('Prêmios', sg(x.prem), 'up') : '') + (x.vend ? li('Vendas', sg(x.vend), 'up') : '') +
@@ -1999,15 +2062,20 @@
       S.coFinNext(co).map(n => li(esc(n.txt), (n.aprox ? '~ ' : '') + c.mi(n.v))).join('')) || '<p class="fn2-none">A temporada acabou.</p>';
     else rows = co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 8).map(p => li(esc(p.n) + ' <small>' + p.pos + '</small>', c.mi(p.wage) + ' <small>até ' + (U.YEAR0 + co.season + p.ct) + '</small>')).join('');
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
-    show('<div class="fn2"><div class="tm-h"><button class="tcr-back" id="ldf-back" aria-label="Voltar">' + BK + '</button><b>Finanças</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (U.YEAR0 + co.season) + '</small></div>' +
-      '<div class="fn2-k"><div><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span class="fn2-rt ' + (f.caixa < 0 ? 'red' : !R ? '' : R.net >= 0 ? 'up' : R.st === 'red' ? 'red' : 'warn') + '" title="rodada comum daqui para a frente">' + (f.caixa < 0 ? 'no vermelho' : ritmoTxt(c, R)) + '</span></div>' +
+    const head = '<div class="tm-h"><button class="tcr-back" id="ldf-back" aria-label="Voltar">' + BK + '</button><b>Finanças</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (U.YEAR0 + co.season) + '</small></div>';
+    const kpi = '<div><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span class="fn2-rt ' + (f.caixa < 0 ? 'red' : !R ? '' : R.net >= 0 ? 'up' : R.st === 'red' ? 'red' : 'warn') + '" title="rodada comum daqui para a frente">' + (f.caixa < 0 ? 'no vermelho' : ritmoTxt(c, R)) + '</span></div>' +
         '<div><small>VERBA</small><b class="up">' + c.brl(f.verba) + '</b><span>para contratar</span></div>' +
-        '<div><small>FOLHA</small><b>' + c.brl(folha) + '</b><i><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i><span>teto ' + c.brl(f.teto) + '</span></div></div>' +
-      '<div class="fn2-tabs">' + [['rod', 'Rodada'], ['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
-      '<div class="fn2-p">' + rows + '</div>' +
-      '<div class="fn2-side">' + finTrend(c, co, step) +
-        '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><' + (pt ? 'button data-fd="pat"' : 'div') + '><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></' + (pt ? 'button' : 'div') + '></div>' +
-        '<span class="rs-gap"></span><div class="fn2-bt">' + (U.COINS ? '<button class="tm-b fn2-apo" data-fd="apo" id="fn2-apo">' + U.COINS.svg + 'Aporte</button>' : '') + '<button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div></div></div>', st => {
+        '<div><small>FOLHA</small><b>' + c.brl(folha) + '</b><i><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i><span>teto ' + c.brl(f.teto) + '</span></div>';
+    const tabs = '<div class="fn2-tabs">' + [['rod', 'Rodada'], ['tmp', 'Temporada'], ['seg', 'A seguir'], ['sal', 'Salários']].filter(x => !WD || x[0] !== 'rod').map(([k, t]) => '<button data-ft="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>';
+    const ac = '<div class="fn2-ac"><button data-fd="pres"><span>Acordo</span><b>' + (AC_NM[f.ac] || 'Normal').toLowerCase() + '</b></button><' + (pt ? 'button data-fd="pat"' : 'div') + '><span>' + (pt && patImg(pt.name, 'fn2-lg', 1) || 'Patrocínio') + '</span><b>' + (pt ? c.brl(pt.fix) : 'a escolher') + '</b></' + (pt ? 'button' : 'div') + '></div>';
+    const bt = '<div class="fn2-bt">' + (U.COINS ? '<button class="tm-b fn2-apo" data-fd="apo" id="fn2-apo">' + U.COINS.svg + 'Aporte</button>' : '') + '<button class="tm-go" data-fd="banco" id="fn2-bank">Banco</button></div>';
+    const rdTop = rd ? '<small class="fn2-rh">RODADA ' + rd.r + (rd.h === 0 ? ' · FORA' : rd.h === -1 ? ' · SEM JOGO' : ' · EM CASA') + '</small>' : '<small class="fn2-rh">RODADA</small>';
+    const html = WD ? '<div class="fn2 w">' + head + '<div class="fn2-k">' + kpi + ac + '</div>' +
+        '<div class="fn2-l">' + finTrend(c, co, step, 1) + '<div class="fn2-tp">' + tabs + '<div class="fn2-p ' + tab + '">' + rows + '</div></div></div>' +
+        '<div class="fn2-side"><div class="fn2-rw">' + rdTop + rodRows().replace('<small> · rodada comum', '<small>rodada comum') + '</div>' + bt + '</div></div>' :
+      '<div class="fn2">' + head + '<div class="fn2-k">' + kpi + '</div>' + tabs + '<div class="fn2-p">' + rows + '</div>' +
+      '<div class="fn2-side">' + finTrend(c, co, step) + ac + '<span class="rs-gap"></span>' + bt + '</div></div>';
+    show(html, st => {
       st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); financas(b.dataset.ft); });
       st.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.fd; if (k === 'banco') banco(); else if (k === 'pres') presInfo(true); else if (k === 'pat') patInfo(); else if (k === 'apo') loja(1, () => financas(tab)); });
       st.querySelector('#ldf-back').onclick = () => { sfx('tap'); const bk = FIN_BACK; FIN_BACK = null; (bk || clube)(); };

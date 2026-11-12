@@ -188,7 +188,13 @@ async function page(b, first) {
     // Mercado: topo com caixa e moedas, e a ficha na visão Atributos (sem relatório, faixa do 1º, número do 3º); os relatórios são postos à mão para não gastar o caixa do passeio
     { const mid = await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co, lg = S.coLeague(co), q = S.coMktPool(co).find(x => x.club && x.lg !== lg); U.LD.mercado(); return q.id; });
       const rep = n => p.evaluate(([id, n]) => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, m = S.coMkt(U._co.co); if (n) m.rep[id] = n; else delete m.rep[id]; U.LD.ficha(id); }, [mid, n]);
-      await p.waitForTimeout(400); await shot('c2n-mercado'); await rep(0); await p.waitForTimeout(400); await shot('c2o-ficha'); await click('#mkf-tg'); await shot('c2p-ficha-atributos-sem');
+      await p.waitForTimeout(400); await shot('c2n-mercado');
+      // com filtros até sobrar a lista (no computador ela aparece na mesma tela; no celular é o Buscar)
+      await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co, m = S.coMkt(co), F = S.coMktFilters(co), f0 = m.f.slice();
+        m.f[0] = F[0].o.length - 1; for (let i = 0; i < F[4].o.length; i++) { m.f[4] = i; const n = S.coMktSearch(co).length; if (n > 7 && n <= S.CO_MKT.max) break; }
+        U.LD.mercado(); window.__mkf0 = f0; });
+      await p.waitForTimeout(400); if (await p.$('#mk-go:not(.off)')) await click('#mk-go'); await click('[data-mr="1"]'); await shot('c2n2-mercado-lista');
+      await p.evaluate(() => { const S = window.CRAQUE_SIM, m = S.coMkt(window.CRAQUE_UI._co.co); m.f = window.__mkf0; }); await rep(0); await p.waitForTimeout(400); await shot('c2o-ficha'); await click('#mkf-tg'); await shot('c2p-ficha-atributos-sem');
       await rep(1); await p.waitForTimeout(400); await shot('c2q-ficha-atributos-faixa'); await rep(3); await p.waitForTimeout(400); await shot('c2r-ficha-atributos-numero');
       await click('#mkf-tg'); await rep(0); await p.waitForTimeout(300); await click('#mkf-back');
       // Notícias do mercado vivo (engine/coachworld.js): a aba, o filtro Tudo e a volta
