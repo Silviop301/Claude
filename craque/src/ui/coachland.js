@@ -1175,6 +1175,39 @@
   }
 
   // ---------- Tabela deitada (19): classificação, gols e forma, artilharia do time e rodadas; a sua corrida ao lado ----------
+  // Calendário do ano (Silvio 12/11: "ver o calendário do ano, atualizando com os confrontos que aparecem durante o avanço"):
+  // os seus jogos da liga (domingo) e da copa (quarta, em dourado) na ordem; o rival da copa entra quando a chave define
+  // (S.coCupPath), antes disso "a definir"; fase depois da eliminação não aparece. { t: 'L'|'C', lab, home, vs, maybe, sc, fin, bye }
+  let CAL_P = null; // primeira linha da página do calendário (null = perto do próximo jogo)
+  function calRows(co) {
+    const ss = co.ss, cup = ss.cup, mi = ss.ids.indexOf(co.club), rows = [], path = cup ? S.coCupPath(co) : null, nx = cup ? S.coCupNext(co) : null;
+    ss.rounds.forEach((r, i) => {
+      const g = r.find(([h, a]) => h === mi || a === mi), res = ss.res && ss.res[i] && ss.res[i].find(x => x[0] === mi || x[1] === mi);
+      rows.push({ t: 'L', lab: 'Rodada ' + (i + 1), bye: !g, home: g ? g[0] === mi : null, vs: g ? ss.ids[g[0] === mi ? g[1] : g[0]] : null,
+        sc: i < ss.i && res && res[2] != null ? (res[0] === mi ? [res[2], res[3]] : [res[3], res[2]]) : null, done: i < ss.i });
+      if (!cup) return;
+      cup.at.forEach((at, k) => { if (at !== i + 1 || (cup.out !== null && k > cup.out) || cup.ids.indexOf(co.club) < 0) return;
+        const lg = cup.log.find(l => l.k === k), pp = path && path.find(x => x.k === k), now = nx && nx.cup && nx.cup.k === k;
+        if (!lg && !pp) return; // você já não joga essa fase (demitido, trocou de clube)
+        const one = pp && pp.now ? pp.ids.filter(x => x !== co.club) : pp ? pp.ids : [];
+        rows.push({ t: 'C', lab: S.coCupPhaseShort(cup, k), fin: S.coCupIsFinal(cup, k), home: lg ? lg.home : now ? nx.home : null,
+          vs: lg ? lg.vs : one.length === 1 ? one[0] : null, maybe: !lg && one.length > 1 ? one : null,
+          sc: lg ? [lg.gf, lg.ga] : null, pens: lg ? lg.pens : null, win: lg ? lg.win : null, done: !!lg }); });
+    });
+    return rows;
+  }
+  function calBody(co, from) {
+    const rows = calRows(co), now = rows.findIndex(r => !r.done), PER = 5, max = Math.max(0, rows.length - PER);
+    from = from == null ? Math.max(0, Math.min(max, (now < 0 ? rows.length : now) - 2)) : Math.max(0, Math.min(max, from));
+    const nm = id => esc(club(id).short || club(id).name), lc = 'Calendário', CUP_IC = co.ss.cup ? '<i class="cal-ti">' + cupImg(co.ss.cup.name, 18) + '</i>' : '';
+    const row = (r, ix) => { const cur = from + ix === now, res = r.sc ? (r.t === 'C' ? (r.win ? 'v' : 'd') : r.sc[0] > r.sc[1] ? 'v' : r.sc[0] < r.sc[1] ? 'd' : 'e') : '';
+      const opp = r.bye ? '<span class="cal-tb">folga</span>' : r.vs ? crest(r.vs, 'cal-cr') + '<span>' + nm(r.vs) + '</span>' :
+        r.maybe ? '<span class="cal-mb">' + r.maybe.slice(0, 2).map(id => crest(id, 'cal-cr') + '<b>' + nm(id) + '</b>').join('<em>ou</em>') + (r.maybe.length > 2 ? '<em>+' + (r.maybe.length - 2) + '</em>' : '') + '</span>' : '<span class="cal-tb">a definir</span>';
+      return '<div class="cal-r ' + r.t + (cur ? ' cur' : '') + '"><small class="cal-d">' + (r.t === 'C' ? 'QUA' : 'DOM') + '</small><b class="cal-c">' + (r.t === 'C' ? CUP_IC : '') + esc(r.lab) + '</b><i class="cal-h">' +
+        (r.fin ? 'N' : r.home === null ? '' : r.home ? 'C' : 'F') + '</i><div class="cal-o">' + opp + '</div>' +
+        (r.sc ? '<b class="cal-s ' + res + '">' + r.sc[0] + ' x ' + r.sc[1] + (r.pens ? ' <small>(' + r.pens[0] + '-' + r.pens[1] + ')</small>' : '') + '</b>' : '<b class="cal-s nx">' + (cur ? 'PRÓXIMO' : '') + '</b>') + '</div>'; };
+    return { from, html: '<div class="tb2-nav"><button id="ldc-prev"' + (from ? '' : ' disabled') + ' aria-label="Jogos de antes">' + MK_L + '</button><b>' + lc + ' · ' + rows.length + ' jogos</b><button id="ldc-next"' + (from < max ? '' : ' disabled') + ' aria-label="Próximos jogos">' + MK_R + '</button></div>' + rows.slice(from, from + PER).map(row).join('') };
+  }
   function tabela(tab, rd) {
     const c = C(), co = c.co, ss = co.ss, t = S.coTable(co), n = t.length, R = ss.rounds.length, B = co.board, me = t.find(x => x.me), pos = t.indexOf(me) + 1;
     tab = tab || 'cls'; rd = rd == null ? Math.max(0, ss.i - 1) : Math.max(0, Math.min(R - 1, rd));
@@ -1184,7 +1217,8 @@
     const cupOn = !!ss.cup;
     if (tab === 'copa' && !cupOn) tab = 'cls';
     // Tabela enxuta (2026-11-09, quadro 16): menos colunas, letra maior, sem trilho
-    if (tab === 'copa') body = cupBracket(co);
+    if (tab === 'cal') { const cb = calBody(co, CAL_P); body = cb.html; CAL_P = cb.from; }
+    else if (tab === 'copa') body = cupBracket(co);
     else if (tab === 'cls' || tab === 'gol') {
       body = '<div class="tb2-h' + (tab === 'cls' ? ' cls' : '') + '"><i></i><i></i><span>CLUBE</span>' + (tab === 'cls' ? '<em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em><b>PTS</b>' : '<em>GP</em><em>GC</em><b>SG</b>') + '<span>FORMA</span></div><div class="tb2-b">' +
         t.map((x, k) => { const sg = x.gp - x.gc, cl = club(x.id), sgT = (sg > 0 ? '+' : '') + sg;
@@ -1207,16 +1241,21 @@
     const race = me.j === 0 ? 'começa agora' : B.goal.k === 'titulo' ? (pos === 1 ? (t[1] ? (me.p - t[1].p) + ' pontos à frente' : 'na frente') : (t[0].p - me.p) + ' pontos do líder')
       : pos <= gp ? (nxt ? (me.p - nxt.p === 0 ? 'empatado com o ' + (gp + 1) + 'º' : (me.p - nxt.p) + ' pontos à frente do ' + (gp + 1) + 'º') : 'dentro da meta') : (tgt.p - me.p) + ' pontos do ' + gp + 'º';
     const fut = []; const mi2 = ss.ids.indexOf(co.club);
-    for (let i = ss.i; i < Math.min(R, ss.i + 3); i++) { const g = ss.rounds[i].find(([h, a]) => h === mi2 || a === mi2); if (!g) { fut.push('<span class="tb2-nx"><i class="bye">–</i><b>folga</b></span>'); continue; } const hm = g[0] === mi2, id = ss.ids[hm ? g[1] : g[0]]; fut.push('<span class="tb2-nx">' + crest(id, 'tb2-nxc') + '<b>' + esc(club(id).short || club(id).name) + '</b><small>' + (hm ? 'casa' : 'fora') + '</small></span>'); }
+    // os 3 próximos do calendário, com o jogo da copa (rival a definir = troféu)
+    calRows(co).filter(r => !r.done).slice(0, 3).forEach(r => { if (r.bye) return fut.push('<span class="tb2-nx"><i class="bye">–</i><b>folga</b></span>');
+      const where = r.fin ? 'neutro' : r.home === null ? 'quarta' : r.home ? 'casa' : 'fora';
+      fut.push('<span class="tb2-nx' + (r.t === 'C' ? ' cup' : '') + '">' + (r.vs ? crest(r.vs, 'tb2-nxc') : '<i class="bye">' + cupImg(ss.cup.name, 36) + '</i>') + '<b>' + (r.vs ? esc(club(r.vs).short || club(r.vs).name) : esc(r.lab)) + '</b><small>' + (r.fin ? 'final' : (r.t === 'C' ? 'copa · ' : '') + where) + '</small></span>'); });
+    void mi2;
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const meta = B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + gp + 'º';
     const cupT = tab === 'copa', cup = ss.cup;
     show('<div class="tb2' + (cupT ? ' cp' : '') + '"><div class="tm-h"><button class="tcr-back" id="tb2-back" aria-label="Voltar">' + BK + '</button><b>' + esc(cupT ? cup.name : ss.name) + '</b><small>' + (cupT ? (cup.champ ? 'encerrada' : esc(S.coCupPhase(cup, cup.k).toLowerCase()) + ' · jogo único') : ss.done ? 'encerrada' : 'rodada ' + Math.min(ss.i + 1, R) + ' de ' + R) + '</small></div>' +
-      '<div class="tb2-tabs' + (cupOn ? ' t5' : '') + '">' + [['cls', 'Classificação'], ['gol', 'Gols'], ['art', 'Artilharia'], ['rod', 'Rodadas']].concat(cupOn ? [['copa', 'Copa']] : []).map(([k, tt]) => '<button data-tb="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + tt + '</button>').join('') + '</div>' +
+      '<div class="tb2-tabs tg">' + [[['cls', 'Classificação'], ['gol', 'Gols'], ['art', 'Artilharia']], [['rod', 'Rodadas']].concat(cupOn ? [['copa', 'Copa']] : [], [['cal', 'Calendário']])].map(G => '<div class="tb2-tg">' + G.map(([k, tt]) => '<button data-tb="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + tt + '</button>').join('') + '</div>').join('') + '</div>' +
       '<div class="tb2-t ' + tab + '">' + body + '</div>' +
       '<div class="tb2-side">' + (cupT ? cupSide(co) : '<div class="tb2-race"><small>SUA CORRIDA</small><b>' + pos + 'º · ' + race + '</b><em class="' + (pos <= gp ? '' : 'hi') + '">' + meta + '</em></div>' +
         (fut.length ? '<div class="tb2-fut"><small>PRÓXIMOS</small><div>' + fut.join('') + '</div></div>' : '')) + '</div></div>', st => {
-      st.querySelectorAll('[data-tb]').forEach(b => b.onclick = () => { sfx('tap'); tabela(b.dataset.tb, rd); });
+      st.querySelectorAll('[data-tb]').forEach(b => b.onclick = () => { sfx('tap'); CAL_P = null; tabela(b.dataset.tb, rd); });
+      if (st.querySelector('#ldc-prev')) { st.querySelector('#ldc-prev').onclick = () => { sfx('tap'); CAL_P = Math.max(0, CAL_P - 5); tabela('cal', rd); }; st.querySelector('#ldc-next').onclick = () => { sfx('tap'); CAL_P += 5; tabela('cal', rd); }; }
       if (st.querySelector('#ldt-prev')) { st.querySelector('#ldt-prev').onclick = () => { sfx('tap'); tabela('rod', rd - 1); }; st.querySelector('#ldt-next').onclick = () => { sfx('tap'); tabela('rod', rd + 1); }; }
       st.querySelector('#tb2-back').onclick = () => { sfx('tap'); semana(); };
       const me2 = st.querySelector('.tb2-r.me, .tb2-gm.me'), bx = st.querySelector('.tb2-b');
