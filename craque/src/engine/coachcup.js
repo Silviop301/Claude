@@ -178,6 +178,25 @@
   // Prêmio de passar da fase k (da primeira à final)
   S.coCupPrize = (co, k) => { const cup = cupOf(co); if (!cup) return 0; return Math.round((cup.w || 0) * (C.prize[5 - nPh(cup) + k] || 1) / 10000) * 10000; };
 
+  // O seu caminho até a taça (Semana da copa, pedido do Silvio 12/11): da fase de agora à final, quem pode vir em cada uma
+  // (o vencedor já definido ou os dois do confronto que falta). [{ k, sh, ids, now }]
+  S.coCupPath = function (co) {
+    const cup = cupOf(co); if (!cup || !alive(co, cup)) return null;
+    const k = cup.k, j = pairOf(co, cup, k); if (j < 0) return null;
+    const out = [{ k, sh: S.coCupPhaseShort(cup, k), ids: cup.br[k][j].map(i => cup.ids[i]), now: 1 }];
+    for (let d = 1; k + d < nPh(cup); d++) {
+      const sz = 2 ** (d - 1), blk = Math.floor(j / sz) ^ 1, ids = [];
+      for (let q = blk * sz; q < blk * sz + sz; q++) { const o = cup.res[k][q], pr = cup.br[k][q]; if (!pr) continue; if (o) ids.push(cup.ids[o.w]); else pr.forEach(i => ids.push(cup.ids[i])); }
+      out.push({ k: k + d, sh: S.coCupPhaseShort(cup, k + d), ids });
+    }
+    return out;
+  };
+  // Prêmio de quem levanta a taça (soma do que falta a partir da fase k)
+  S.coCupPrizeLeft = (co, k) => { const cup = cupOf(co); if (!cup) return 0; let t = 0; for (let q = k; q < nPh(cup); q++) t += S.coCupPrize(co, q); return t; };
+  // "O título pode sair hoje" é da liga: não aparece antes do jogo da copa
+  const tc0 = S.coTitleChance;
+  S.coTitleChance = co => (S.coCupNext(co) ? null : tc0(co));
+
   // ---------- ganchos ----------
   const start0 = S.coStart;
   S.coStart = function (co) { const r = start0.apply(this, arguments); S.coCupStart(co); return r; };
