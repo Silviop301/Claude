@@ -834,7 +834,7 @@
     else { if (k === 'defesa') m.ot[sd]++; if (info.sv === 'escanteio') { m.ck = m.ck || { us: 0, them: 0 }; m.ck[sd]++; } e = { m: m.min, t: 'chance', s: sd, p: p.n, k, l, sp: null, by: null }; }
     if (m.st) e.st = m.st;
     // como foi o chute no campinho, para o texto do lance bater com o que se viu: de cabeça ou de fora da área
-    if (info.kind === 'cabeca') e.hd = 1; else if (info.box === false) e.far = 1;
+    if (info.kind === 'cabeca') e.hd = 1; else if (info.kind === 'falta') { e.fk = 1; if (out === 'gol') e.sp = 'falta'; } else if (info.box === false) e.far = 1;
     e.livre = 1; m.ev.push(e);
     return e;
   };

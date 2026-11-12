@@ -333,7 +333,17 @@
   const CUP_COD = { 'bra-a-0': 'FLA', 'bra-a-1': 'PAL', 'bra-a-2': 'CAM', 'bra-a-3': 'SAO', 'bra-a-4': 'COR', 'bra-a-5': 'FLU', 'bra-a-6': 'BOT', 'bra-a-7': 'GRE', 'bra-a-8': 'INT', 'bra-a-9': 'CRU', 'bra-a-10': 'SAN', 'bra-a-11': 'BAH', 'bra-a-13': 'VAS', 'bra-a-14': 'CAP', 'bra-a-15': 'RBB', 'bra-a-16': 'VIT', 'bra-a-18': 'MIR', 'bra-a-12': 'FOR', 'bra-a-17': 'JUV', 'bra-b-0': 'CFC', 'bra-c-7': 'REM', 'bra-b-10': 'CHA' };
   const cupCod = id => CUP_COD[id] || ((club(id).short || club(id).name).normalize('NFD').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase());
   // O seu caminho até a taça no cartão da Semana (pedido do Silvio 12/11): a fase de agora acesa, quem pode vir em cada uma e o prêmio
+  // Continental (fase 2, desenho g aprovado 12/11): o grupo com os 4 escudos e a sua posição, depois o mata-mata
+  const contImg = (co, h) => { const ct = co.ss.cont; return ct && window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY(ct.tr, h, ct.name) : ''; };
+  function contPath(co) {
+    const P = S.coContPath(co); if (!P) return '';
+    const st = x => x.grp ? '<div class="cpw-st now"><small>GRUPO ' + x.grp + ' · ' + x.pos + 'º</small><div>' + x.ids.map(id => crest(id, 'cpw-cr')).join('') + '</div></div>'
+      : x.now ? '<div class="cpw-st now"><small>' + esc(x.sh).toUpperCase() + '</small><div>' + crest(x.ids[0], 'cpw-cr') + '<i>×</i>' + crest(x.ids[1], 'cpw-cr') + '</div></div>'
+      : '<div class="cpw-st"><small>' + esc(x.sh).toUpperCase() + '</small><div>' + (x.vs ? '<i>' + esc(x.vs) + '</i>' : x.ids.length && x.ids.length <= 2 ? x.ids.map(id => crest(id, 'cpw-cr')).join('<i>ou</i>') : x.ids.length ? crest(x.ids[0], 'cpw-cr') + crest(x.ids[1], 'cpw-cr') + '<i>+' + (x.ids.length - 2) + '</i>' : '<i>?</i>') + '</div></div>';
+    return '<div class="cpw-path">' + P.map(st).join('<span class="cpw-ar">›</span>') + '<span class="cpw-ar">›</span><div class="cpw-st tr"><small>+ R$ ' + C().mi(S.coContPrizeLeft(co)) + '</small>' + contImg(co, 28) + '</div></div>';
+  }
   function cupPath(co) {
+    if (co.ss.cont && (S.coNext(co) || {}).cup && S.coNext(co).cup.cont) return contPath(co);
     const P = S.coCupPath(co); if (!P) return '';
     const st = x => { const ids = x.ids.slice(0, 2), more = x.ids.length - ids.length;
       return '<div class="cpw-st' + (x.now ? ' now' : '') + '"><small>' + esc(x.sh).toUpperCase() + '</small><div>' +
@@ -342,8 +352,8 @@
   }
   // Aba Copa da Tabela (desenho A aprovado 12/11): a chave das oitavas à final com escudo, sigla e placar, o seu caminho em
   // dourado; na fase de 32, os 16 jogos numa grade
-  function cupBracket(co) {
-    const cup = co.ss.cup, P = Math.round(Math.log2(cup.n)), me = cup.ids.indexOf(co.club);
+  function cupBracket(co, cupX, tg) {
+    const cup = cupX || co.ss.cup, P = Math.round(Math.log2(cup.n)), me = cup.ids.indexOf(co.club);
     const team = (i, sc, pen, out) => i == null ? '<div class="cp-t q"><span>–</span><b></b></div>' :
       '<div class="cp-t' + (out ? ' out' : '') + (i === me ? ' mine' : '') + '">' + crest(cup.ids[i], 'cp-cr') + '<span>' + cupCod(cup.ids[i]) + '</span><b>' + (sc == null ? '' : sc) + '</b>' + (pen != null ? '<i>(' + pen + ')</i>' : '') + '</div>';
     const box = (p, j) => { const pr = (cup.br[p] || [])[j]; if (!pr) return '<div class="cp-m">' + team(null) + team(null) + '</div>';
@@ -351,13 +361,44 @@
       if (o) { const aH = o.h === a; sa = aH ? o.gh : o.ga; sb = aH ? o.ga : o.gh; if (o.ph != null) { pa = aH ? o.ph : o.px; pb = aH ? o.px : o.ph; } }
       const mine = a === me || b === me;
       return '<div class="cp-m' + (mine ? (o ? ' me' : ' nx') : '') + '">' + team(a, sa, pa, o && o.w !== a) + team(b, sb, pb, o && o.w !== b) + '</div>'; };
-    if (P === 5 && cup.k === 0) { const js = []; for (let j = 0; j < 16; j++) js.push(box(0, j)); return '<div class="cp-h"><b>' + esc(S.coCupPhase(cup, 0)) + '</b><small>a chave das oitavas sai daqui</small></div><div class="cp-r32">' + js.join('') + '</div>'; }
+    if (P === 5 && cup.k === 0) { const js = []; for (let j = 0; j < 16; j++) js.push(box(0, j)); return '<div class="cp-h">' + (tg || '') + '<b>' + esc(S.coCupPhase(cup, 0)) + '</b><small>a chave das oitavas sai daqui</small></div><div class="cp-r32">' + js.join('') + '</div>'; }
     const p0 = Math.max(0, P - 4), cnt = p => cup.n / 2 ** (p + 1);
     const col = (p, right) => { const n = cnt(p), h = n / 2, js = []; for (let j = right ? h : 0; j < (right ? n : h); j++) js.push(box(p, j)); return '<div class="cp-col"><h6>' + S.coCupPhaseShort(cup, p).toUpperCase() + '</h6><div class="cp-in">' + js.join('') + '</div></div>'; };
     const L = [], R = []; for (let p = p0; p < P - 1; p++) { L.push(col(p, false)); R.unshift(col(p, true)); }
     const champ = cup.champ ? '<div class="cp-ch">' + crest(cup.champ, 'cp-chc') + '<b>' + esc(club(cup.champ).short || club(cup.champ).name) + '</b></div>' : '';
-    const fin = '<div class="cp-fin"><small>FINAL</small>' + cupImg(cup.name, 74) + (cup.br[P - 1] ? box(P - 1, 0) : '<em>campo neutro</em>') + champ + '</div>';
-    return '<div class="cp-br" style="grid-template-columns:repeat(' + L.length + ',1fr) 80px repeat(' + L.length + ',1fr)">' + L.join('') + fin + R.join('') + '</div>';
+    const fin = '<div class="cp-fin"><small>FINAL</small>' + (cup.cont ? contImg(co, 74) : cupImg(cup.name, 74)) + (cup.br[P - 1] ? box(P - 1, 0) : '<em>campo neutro</em>') + champ + '</div>';
+    return (tg ? '<div class="cp-h">' + tg + '</div>' : '') + '<div class="cp-br" style="grid-template-columns:repeat(' + L.length + ',1fr) 80px repeat(' + L.length + ',1fr)">' + L.join('') + fin + R.join('') + '</div>';
+  }
+  // Continental na Tabela (desenho h aprovado 12/11): a tabela do grupo, os seus 6 jogos e, no mata-mata, a mesma chave da copa
+  let CG = null; // grupo mostrado (null = o seu)
+  function contGroup(co, tg) {
+    const ct = co.ss.cont, mg = S.coContGrpOf(ct), g = CG == null ? mg : CG, T = S.coContTable(co, g), GL = 'ABCDEFGH';
+    const rows = T.map((r, i) => '<div class="cg-r' + (r.id === co.club ? ' me' : '') + (i < 2 ? ' up' : '') + '"><i>' + (i + 1) + '</i>' + crest(r.id, 'cg-cr') + '<span>' + esc(club(r.id).short || club(r.id).name) + '</span><em>' + r.j + '</em><em>' + r.v + '</em><em>' + r.e + '</em><em>' + r.d + '</em><em>' + (r.gf - r.ga > 0 ? '+' : '') + (r.gf - r.ga) + '</em><b>' + r.pts + '</b></div>').join('');
+    let chips = '';
+    if (g === mg) {
+      const p = ct.grp[mg].indexOf(ct.me), cn = S.coContNext(co), nxk = cn ? cn.cup.k : -1;
+      chips = '<div class="cg-ch">' + S.CO_CONT.md.map((md, k) => { const f = md.findIndex(pr => pr.includes(p)), pr = md[f], home = pr[0] === p, vs = ct.ids[ct.grp[mg][home ? pr[1] : pr[0]]], o = ct.gr[k][mg][f];
+        const sc = o ? (home ? [o.gh, o.ga] : [o.ga, o.gh]) : null, cls = sc ? (sc[0] > sc[1] ? 'v' : sc[0] < sc[1] ? 'd' : 'e') : '';
+        return '<div class="cg-c' + (k === nxk ? ' nx' : '') + '"><small>' + (k + 1) + 'ª</small>' + crest(vs, 'cg-cc') + '<i>' + (home ? 'C' : 'F') + '</i><b class="' + cls + '">' + (sc ? sc[0] + ' x ' + sc[1] : k === nxk ? 'PRÓXIMO' : '·') + '</b></div>'; }).join('') + '</div>';
+    }
+    return '<div class="cg-top">' + (tg || '') + '<span class="cg-nav"><button id="cg-prev" aria-label="Grupo anterior">' + MK_L + '</button><b>Grupo ' + GL[g] + ' · passam 2</b><button id="cg-next" aria-label="Próximo grupo">' + MK_R + '</button></span></div>' +
+      '<div class="cg-h"><i></i><i></i><span>CLUBE</span><em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em><b>PTS</b></div>' + rows + chips;
+  }
+  function contSide(co) {
+    const ct = co.ss.cont, nm = (ct.cf === 'sul' ? 'SUA LIBERTADORES' : 'SUA ' + ct.name.toUpperCase()), nx = S.coContNext(co);
+    let top;
+    if (ct.champ === co.club) top = '<b class="cp-big">Campeão!</b>';
+    else if (ct.out === 'g') top = '<b class="cp-big">Caiu nos grupos</b>';
+    else if (ct.out !== null) { const P = Math.round(Math.log2(ct.n / 2)), q = ct.out - 6; top = '<b class="cp-big">' + (q === P - 1 ? 'Vice' : 'Caiu ' + (q === P - 2 ? 'na ' : 'nas ') + esc(S.coContPhase(ct, ct.out).toLowerCase())) + '</b>'; }
+    else if (ct.k < 6) { const g = S.coContGrpOf(ct), T = S.coContTable(co, g), i = T.findIndex(r => r.id === co.club), me = T[i], sn = id => esc(club(id).short || club(id).name), pt = d => d + (d === 1 ? ' ponto' : ' pontos');
+      const tag = i === 0 ? (T[1].pts === me.pts ? 'empatado com o ' + sn(T[1].id) : pt(me.pts - T[1].pts) + ' à frente do 2º') : i === 1 ? (T[0].pts === me.pts ? 'empatado com o líder' : pt(T[0].pts - me.pts) + ' atrás do ' + sn(T[0].id)) : pt(T[1].pts - me.pts) + ' do 2º';
+      top = '<b class="cp-big">' + (i + 1) + 'º do Grupo ' + 'ABCDEFGH'[g] + '</b>' + (me.j ? '<em class="cg-tag' + (i < 2 ? '' : ' hi') + '">' + tag + '</em>' : ''); }
+    else { const P = S.coContPath(co), vs = P && P[0].ids.find(id => id !== co.club), when = nx ? (nx.neutral ? 'campo neutro' : nx.home ? 'casa' : 'fora') : 'quarta';
+      top = vs ? '<div class="cp-vs">' + crest(vs, 'cp-vsc') + '<div><b>' + esc(club(vs).short || club(vs).name) + '</b><span>' + esc(P[0].sh.toLowerCase()) + ' · ' + when + '</span></div></div>' : ''; }
+    const alive = ct.out === null && !ct.champ;
+    const prz = !alive ? '' : '<div class="tb2-race cp-side"><small>PRÊMIO</small>' + (ct.k < 6 ? '<div class="cp-pr"><span>Por vitória</span><b>+ R$ ' + C().mi(S.coContPrize(co, 'v')) + '</b></div><div class="cp-pr"><span>Passar do grupo</span><b>+ R$ ' + C().mi(S.coContPrize(co, 'grp')) + '</b></div>'
+      : '<div class="cp-pr"><span>Passar de fase</span><b>+ R$ ' + C().mi(S.coContPrize(co, ct.k)) + '</b></div>') + '<div class="cp-pr"><span>Campeão</span><b>+ R$ ' + C().mi(S.coContPrizeLeft(co)) + '</b></div></div>';
+    return '<div class="tb2-race cp-side"><small>' + esc(nm) + '</small>' + top + '</div>' + prz;
   }
   function cupSide(co) {
     const cup = co.ss.cup, P = Math.round(Math.log2(cup.n)), nx = S.coCupNext(co), path = S.coCupPath(co);
@@ -399,7 +440,7 @@
     let card, wk = '';
     if (!nx.bye) {
       const pv = S.coPreview(co), them = pv.them, cl = club(co.club), vc = club(them.club), rv = t.find(x => x.id === them.club), rpos = t.indexOf(rv) + 1;
-      card = (nx.cup ? '<small class="sm-rd cup">' + cupImg(nx.cup.name, 18) + esc(nx.cup.name).toUpperCase() + ' · ' + nx.cup.sh.toUpperCase() + ' · MEIO DA SEMANA · ' + (nx.neutral ? 'CAMPO NEUTRO' : nx.home ? 'EM CASA' : 'FORA') + '</small>'
+      card = (nx.cup ? '<small class="sm-rd cup">' + (nx.cup.cont ? contImg(co, 18) : cupImg(nx.cup.name, 18)) + esc(nx.cup.name).toUpperCase() + ' · ' + (nx.cup.grp ? 'GRUPO ' + nx.cup.grp + ' · ' + (nx.cup.k + 1) + 'ª RODADA' : nx.cup.sh.toUpperCase()) + ' · ' + (nx.cup.cont ? 'QUARTA' : 'MEIO DA SEMANA') + ' · ' + (nx.neutral ? 'CAMPO NEUTRO' : nx.home ? 'EM CASA' : 'FORA') + '</small>'
         : '<small class="sm-rd">TEMPORADA ' + (U.YEAR0 + co.season) + ' · RODADA ' + nx.round + ' · ' + (nx.home ? 'EM CASA' : 'FORA') + '</small>') + '<div class="sm-vs">' +
         // mandante à esquerda (Silvio, 10/11: "em jogo fora de casa eu quero meu escudo na direita"), como no placar do jogo
         (nx.home ? side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name)) + '<i class="sm-x">x</i>' + side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name))
@@ -1012,7 +1053,9 @@
   }
   function result(m, log, aux, move) {
     const c = C(), co = c.co, cl = club(co.club), vs = club(m.vs), pre = c.pre || {};
-    const cupL = log.cup ? co.ss.cup : null;   // jogo da copa: a palavra é passou ou caiu, e a Tabela vira a Copa
+    // jogo da copa: a palavra é passou ou caiu, e a Tabela vira a Copa; continental no grupo = vitória, empate ou derrota
+    const ctL = log.cont ? co.ss.cont : null, grpL = !!(ctL && log.grp), cupL = log.cup && !grpL ? (ctL || co.ss.cup) : null;
+    const phS = x => (ctL ? S.coContPhaseShort(x, x.k) : S.coCupPhaseShort(x, x.k)).toLowerCase();
     const word = cupL ? (log.win ? (log.champ ? 'CAMPEÃO' : 'CLASSIFICADO') : 'ELIMINADO') + (log.pens ? ' NOS PÊNALTIS · ' + hv(m, log.pens[0], log.pens[1]).join(' x ') : '') :
       log.res === 'v' ? 'VITÓRIA' : log.res === 'e' ? 'EMPATE' : 'DERROTA';
     const wcls = cupL ? (log.win ? 'v' : 'd') : log.res;
@@ -1026,7 +1069,8 @@
     const rt = (log.rt || []);
     const nota = x => '<div class="ldr-n"><b class="' + (x.r >= 7 ? 'up' : x.r < 5.8 ? 'dn' : '') + '">' + x.r.toFixed(1).replace('.', ',') + '</b><span><em>' + esc(by[x.id] ? by[x.id].n : '') + '</em><small>' + esc(x.w) + '</small></span></div>';
     const pos = S.coPos(co), B = co.board, dc = pre.conf !== undefined ? B.conf - pre.conf : 0;
-    const chg = [cupL ? ['Copa', log.win ? (log.champ ? 'campeão' : 'vai às ' + S.coCupPhaseShort(cupL, cupL.k).toLowerCase()) : 'eliminado', log.win ? 'up' : 'dn'] : ['Tabela', pre.pos ? ord(pre.pos) + (pre.pos !== pos ? ' → ' + ord(pos) : ' (igual)') + ' · ' + (S.coTable(co).find(x => x.me) || {}).p + ' pts' : ord(pos)],
+    const chg = [grpL ? ['Grupo ' + log.grp, log.gpos ? ord(log.gpos) + ' · ' + (log.pass ? 'vai às ' + phS(ctL) : 'eliminado') : ord(S.coContTable(co, S.coContGrpOf(ctL)).findIndex(r => r.id === co.club) + 1) + ' do grupo', log.gpos ? (log.pass ? 'up' : 'dn') : ''] :
+      cupL ? [ctL ? (ctL.cf === 'sul' ? 'Libertadores' : 'Champions') : 'Copa', log.win ? (log.champ ? 'campeão' : 'vai às ' + phS(cupL)) : 'eliminado', log.win ? 'up' : 'dn'] : ['Tabela', pre.pos ? ord(pre.pos) + (pre.pos !== pos ? ' → ' + ord(pos) : ' (igual)') + ' · ' + (S.coTable(co).find(x => x.me) || {}).p + ' pts' : ord(pos)],
       ['Diretoria', co.sacked ? 'demitido' : dc > 1 ? 'confiança subiu' : dc < -1 ? 'confiança caiu' : 'confiança igual', dc > 1 ? 'up' : dc < -1 ? 'dn' : ''],
       co.fin && pre.caixa !== null && pre.caixa !== undefined ? ['Caixa', (co.fin.caixa - pre.caixa >= 0 ? '+ ' : '− ') + c.brl(Math.abs(co.fin.caixa - pre.caixa)), co.fin.caixa - pre.caixa >= 0 ? 'up' : 'dn'] : null,
       B.ult ? ['Ultimato', B.ult.got + ' de ' + B.ult.need + ' vitórias · ' + (B.ult.of - B.ult.n) + ' jogos', 'dn'] : (log.ycOut || []).length ? ['Suspenso', log.ycOut.map(last).join(', '), 'dn'] : null].filter(Boolean);
@@ -1069,7 +1113,7 @@
       // Plano do auxiliar (2026-11-11): a primeira linha diz se seguir o plano deu certo; com 5 linhas o Público sai
       if (log.plan) { rows.unshift(['Plano ' + (auxEla(co) ? 'dela' : 'dele'), log.plan === 'ok' ? 'funcionou ✓' : log.plan === 'no' ? 'não encaixou' : 'você foi no seu', log.plan === 'ok' ? 'up' : log.plan === 'no' ? 'dn' : '']);
         if (rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); } }
-      if (cupL && rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); }
+      if (log.cup && rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); }
       // nunca mais de 4 linhas: a 5ª passava da borda do card no celular deitado (Silvio, 2026-11-12)
       ['Público', 'Bilheteria', 'Prêmio', 'Caderno'].forEach(k => { const i = rows.findIndex(r => r[0] === k); if (rows.length > 4 && i >= 0) rows.splice(i, 1); });
       rows.splice(4);
@@ -1086,7 +1130,7 @@
           '<button class="tm-go" id="ldr-go">' + (co.sacked ? 'Falar com o presidente' : co.ss.done ? 'Fim da temporada' : 'Continuar') + '</button>' +
         '</div></div>', st => {
         st.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { sfx('tap'); tab = b.dataset.rt; draw(); });
-        if (st.querySelector('#ldr-all')) st.querySelector('#ldr-all').onclick = () => { sfx('tap'); pop(popHead('Notas do jogo', (cupL ? log.ph : 'Rodada ' + log.r) + ' · ' + m.gh + ' x ' + m.ga) + '<div class="ld-pb col"><div class="ld-scroll ldr-alln">' + rt.map(nota).join('') + '</div></div>', 'Notas do jogo', null, 'w560'); };
+        if (st.querySelector('#ldr-all')) st.querySelector('#ldr-all').onclick = () => { sfx('tap'); pop(popHead('Notas do jogo', (log.cup ? log.ph : 'Rodada ' + log.r) + ' · ' + m.gh + ' x ' + m.ga) + '<div class="ld-pb col"><div class="ld-scroll ldr-alln">' + rt.map(nota).join('') + '</div></div>', 'Notas do jogo', null, 'w560'); };
         if (st.querySelector('#rs-fin')) st.querySelector('#rs-fin').onclick = () => { sfx('tap'); FIN_BACK = () => result(m, log, aux, move); financas('rod'); };
         if (st.querySelector('#rs-cad')) st.querySelector('#rs-cad').onclick = () => { sfx('tap'); pop(popHead('Anotado no caderno', vs ? c.nm(m.vs) : '') + '<div class="ld-pb col rs-cadp">' + cadN.map(cadTxt).join('') + '</div>', 'Anotado no caderno', null, 'w560'); };
         st.querySelector('#ldr-go').onclick = () => { sfx('tap'); if (co.sacked) { // demitido: janelinha por cima do resultado (a tela antiga era em pé, com a coluna estreita e o fundo de outra cor)
@@ -1148,14 +1192,15 @@
   // aleatórios"; desenho em /mnt/project-files/climbix/vestiario/): o mesmo desenho da conversa. Quem fala (a jornalista
   // ou o jogador do caso), a fala no balão creme e 3 respostas com o preço em etiquetas. Tocou: a resposta (ou o que deu
   // errado na arriscada) no balão, a moral anda e fecha sozinha. O X não responde e não volta (motor em coachpress.js)
-  const PV_MEDIA = [['Paula Ribeiro', 'Rádio Esporte'], ['Marcos Teles', 'TV Arena'], ['Lia Fontes', 'Jornal do Torcedor'], ['Caio Brandão', 'Canal da Bola']];
+  // [nome, veículo, rosto]: o rosto tem de bater com o nome (Silvio 12/11); repórter nova = rosto novo em assets/co
+  const PV_MEDIA = [['Paula Ribeiro', 'Rádio Esporte', 13], ['Lia Fontes', 'Jornal do Torcedor', 14], ['Marcos Teles', 'TV Arena', 15], ['Caio Brandão', 'Canal da Bola', 16]];
   function pvPop(d) {
     const c = C(), co = c.co, P = d.t && co.squad.find(x => x.id === d.t), P2 = d.t2 && co.squad.find(x => x.id === d.t2), press = d.kind === 'press';
     const avg = () => ({ mo: co.squad.reduce((a, p) => a + (p.mo === undefined ? 60 : p.mo), 0) / Math.max(1, co.squad.length) });
     const moP = () => (press || !P ? avg() : P);
-    const jm = PV_MEDIA[hashS(co.club + co.season) % PV_MEDIA.length];
+    const jm = PV_MEDIA[hashS(co.club + '|' + co.season + '|' + (co.ss ? co.ss.i : 0)) % PV_MEDIA.length];
     const fx = o => o.tags.slice(0, 3).map(f => '<em' + (f[0] ? ' class="' + f[0] + '"' : '') + '>' + (f[1] ? '<i>' + f[1] + '</i>' : '') + esc(f[2]) + '</em>').join('');
-    const who = press ? '<span class="cvj-d jr" style="background-image:url(' + CO_ART + 'rosto-07.webp?v=2)"><em>TV</em></span><span class="cvj-n"><b>Coletiva</b><small>' + esc(jm[0] + ' · ' + jm[1]) + '<em class="cl">' + esc(d.tag) + '</em></small></span>'
+    const who = press ? '<span class="cvj-d jr" style="background-image:url(' + CO_ART + 'rosto-' + String(jm[2]).padStart(2, '0') + '.webp?v=2)"><em>TV</em></span><span class="cvj-n"><b>Coletiva</b><small>' + esc(jm[0] + ' · ' + jm[1]) + '<em class="cl">' + esc(d.tag) + '</em></small></span>'
       : P ? '<span class="cvj-d ' + enRing(P.en) + '" style="--en:' + Math.round(P.en) + '"><b>' + P.ovr + '</b><em>' + P.pos + '</em></span><span class="cvj-n"><b>' + esc(d.ttl) + '</b><small>' + esc(P.n) + (P2 ? ' x ' + esc(P2.n) : '') + '<em class="cl">' + esc(d.tag) + '</em></small></span>'
       : '<span class="cvj-d jr pv-cr">' + crest(co.club, 'pv-crs') + '</span><span class="cvj-n"><b>' + esc(d.ttl) + '</b><small>' + esc(club(co.club).short || club(co.club).name) + '<em class="cl">' + esc(d.tag) + '</em></small></span>';
     const body = (say, pick, was, dl) => '<div class="cvj-h">' + who + (pick ? cvjMo(moP(), was, dl) : '<button class="ld-x" data-pop-x aria-label="Fechar">' + XI_ICO + '</button>') + '</div>' +
@@ -1231,32 +1276,62 @@
   // Calendário do ano (Silvio 12/11: "ver o calendário do ano, atualizando com os confrontos que aparecem durante o avanço"):
   // os seus jogos da liga (domingo) e da copa (quarta, em dourado) na ordem; o rival da copa entra quando a chave define
   // (S.coCupPath), antes disso "a definir"; fase depois da eliminação não aparece. { t: 'L'|'C', lab, home, vs, maybe, sc, fin, bye }
+  let CUP_V = null; // aba Copas: 'nac' ou 'cont'
   let CAL_P = null; // primeira linha da página do calendário (null = perto do próximo jogo)
+  // Dia e data de cada jogo (Silvio 12/11: "todo jogo ser domingo me incomodou, busque mais realismo"): a rodada é um fim de
+  // semana (Europa começa em agosto, o resto em abril); o seu jogo cai no sábado ou no domingo, às vezes na sexta ou na
+  // segunda (segunda nunca antes de uma quarta de copa); copa nacional na quarta ou quinta, continental de terça a quinta.
+  // Só tela: presa à carreira, à temporada e à rodada (sem sorteio).
+  const DOW = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+  function calOff(co, i, t, cupWk, after) {
+    let h = 2166136261; const k = (co.seed || 0) + '|' + co.season + '|dia|' + t + '|' + i; for (let j = 0; j < k.length; j++) h = Math.imul(h ^ k.charCodeAt(j), 16777619); h = (h >>> 0) % 20;
+    if (t === 'C') return h < 12 ? 4 : 5;
+    if (t === 'K') return h < 6 ? 3 : h < 14 ? 4 : 5;
+    // depois de um jogo de copa: nunca sexta; quinta de copa empurra para domingo (ou segunda)
+    if (after) return calOff(co, i - 1, after) === 5 ? (h < 16 || cupWk ? 1 : 2) : h < 9 ? 0 : 1;
+    return h < 8 ? 0 : h < 17 || (h < 19 && cupWk) ? 1 : h < 19 ? 2 : -1;
+  }
+  function calDay(co, i, t, cupWk, after) {
+    const lg = (co.leagueOf || {})[co.club] || club(co.club).league, eu = S.confOf(lg) === 'eur';
+    const y = U.YEAR0 + co.season, d0 = new Date(Date.UTC(y, eu ? 7 : 3, 1)); d0.setUTCDate(1 + (6 - d0.getUTCDay() + 7) % 7); // 1º sábado
+    const off = calOff(co, i, t, cupWk, after);
+    const d = new Date(d0.getTime() + (i * 7 + off) * 864e5);
+    return DOW[d.getUTCDay()] + ' ' + String(d.getUTCDate()).padStart(2, '0') + '/' + String(d.getUTCMonth() + 1).padStart(2, '0');
+  }
   function calRows(co) {
     const ss = co.ss, cup = ss.cup, mi = ss.ids.indexOf(co.club), rows = [], path = cup ? S.coCupPath(co) : null, nx = cup ? S.coCupNext(co) : null;
+    const ct = ss.cont, alive = ct && ct.out === null && !ct.champ && !co.sacked, cpath = ct ? S.coContPath(co) : null, cnx = ct ? S.coContNext(co) : null;
     ss.rounds.forEach((r, i) => {
       const g = r.find(([h, a]) => h === mi || a === mi), res = ss.res && ss.res[i] && ss.res[i].find(x => x[0] === mi || x[1] === mi);
-      rows.push({ t: 'L', lab: 'Rodada ' + (i + 1), bye: !g, home: g ? g[0] === mi : null, vs: g ? ss.ids[g[0] === mi ? g[1] : g[0]] : null,
+      const cupWk = (cup && cup.at.includes(i + 1)) || (ct && ct.at.includes(i + 1));
+      const after = cup && cup.at.includes(i) ? 'C' : ct && ct.at.includes(i) ? 'K' : null;
+      rows.push({ t: 'L', dt: calDay(co, i, 'L', cupWk, after), lab: 'Rodada ' + (i + 1), bye: !g, home: g ? g[0] === mi : null, vs: g ? ss.ids[g[0] === mi ? g[1] : g[0]] : null,
         sc: i < ss.i && res && res[2] != null ? (res[0] === mi ? [res[2], res[3]] : [res[3], res[2]]) : null, done: i < ss.i });
-      if (!cup) return;
-      cup.at.forEach((at, k) => { if (at !== i + 1 || (cup.out !== null && k > cup.out) || cup.ids.indexOf(co.club) < 0) return;
+      if (cup) cup.at.forEach((at, k) => { if (at !== i + 1 || (cup.out !== null && k > cup.out) || cup.ids.indexOf(co.club) < 0) return;
         const lg = cup.log.find(l => l.k === k), pp = path && path.find(x => x.k === k), now = nx && nx.cup && nx.cup.k === k;
         if (!lg && !pp) return; // você já não joga essa fase (demitido, trocou de clube)
         const one = pp && pp.now ? pp.ids.filter(x => x !== co.club) : pp ? pp.ids : [];
-        rows.push({ t: 'C', lab: S.coCupPhaseShort(cup, k), fin: S.coCupIsFinal(cup, k), home: lg ? lg.home : now ? nx.home : null,
+        rows.push({ t: 'C', dt: calDay(co, i, 'C'), lab: S.coCupPhaseShort(cup, k), fin: S.coCupIsFinal(cup, k), home: lg ? lg.home : now ? nx.home : null,
           vs: lg ? lg.vs : one.length === 1 ? one[0] : null, maybe: !lg && one.length > 1 ? one : null,
           sc: lg ? [lg.gf, lg.ga] : null, pens: lg ? lg.pens : null, win: lg ? lg.win : null, done: !!lg }); });
+      if (ct) ct.at.forEach((at, k) => { if (at !== i + 1) return; const lg = ct.log.find(l => l.k === k); if (!lg && !alive) return;
+        if (k < 6) { const mg = S.coContGrpOf(ct), p = ct.grp[mg].indexOf(ct.me), md = S.CO_CONT.md[k], f = md.findIndex(pr => pr.includes(p)), home = md[f][0] === p;
+          return rows.push({ t: 'C', ic: 'cont', dt: calDay(co, i, 'K'), lab: 'Grupo ' + 'ABCDEFGH'[mg], home, vs: ct.ids[ct.grp[mg][home ? md[f][1] : md[f][0]]], sc: lg ? [lg.gf, lg.ga] : null, grp: 1, done: !!lg }); }
+        if (!lg && !(cpath && cpath.find(x => x.k === k))) return;
+        const pp = cpath && cpath.find(x => x.k === k), now = cnx && cnx.cup && cnx.cup.k === k, one = pp && pp.now ? pp.ids.filter(x => x !== co.club) : pp ? pp.ids : [];
+        rows.push({ t: 'C', ic: 'cont', dt: calDay(co, i, 'K'), lab: S.coContPhaseShort(ct, k), fin: S.coContIsFinal(ct, k), home: lg ? lg.home : now ? cnx.home : null,
+          vs: lg ? lg.vs : one.length === 1 ? one[0] : null, maybe: !lg && one.length > 1 ? one : null, sc: lg ? [lg.gf, lg.ga] : null, pens: lg ? lg.pens : null, win: lg ? lg.win : null, done: !!lg }); });
     });
     return rows;
   }
   function calBody(co, from) {
     const rows = calRows(co), now = rows.findIndex(r => !r.done), PER = 5, max = Math.max(0, rows.length - PER);
     from = from == null ? Math.max(0, Math.min(max, (now < 0 ? rows.length : now) - 2)) : Math.max(0, Math.min(max, from));
-    const nm = id => esc(club(id).short || club(id).name), lc = 'Calendário', CUP_IC = co.ss.cup ? '<i class="cal-ti">' + cupImg(co.ss.cup.name, 18) + '</i>' : '';
-    const row = (r, ix) => { const cur = from + ix === now, res = r.sc ? (r.t === 'C' ? (r.win ? 'v' : 'd') : r.sc[0] > r.sc[1] ? 'v' : r.sc[0] < r.sc[1] ? 'd' : 'e') : '';
+    const nm = id => esc(club(id).short || club(id).name), lc = 'Calendário', CUP_IC = co.ss.cup ? '<i class="cal-ti">' + cupImg(co.ss.cup.name, 18) + '</i>' : '', CONT_IC = co.ss.cont ? '<i class="cal-ti">' + contImg(co, 18) + '</i>' : '';
+    const row = (r, ix) => { const cur = from + ix === now, res = r.sc ? (r.t === 'C' && !r.grp ? (r.win ? 'v' : 'd') : r.sc[0] > r.sc[1] ? 'v' : r.sc[0] < r.sc[1] ? 'd' : 'e') : '';
       const opp = r.bye ? '<span class="cal-tb">folga</span>' : r.vs ? crest(r.vs, 'cal-cr') + '<span>' + nm(r.vs) + '</span>' :
         r.maybe ? '<span class="cal-mb">' + r.maybe.slice(0, 2).map(id => crest(id, 'cal-cr') + '<b>' + nm(id) + '</b>').join('<em>ou</em>') + (r.maybe.length > 2 ? '<em>+' + (r.maybe.length - 2) + '</em>' : '') + '</span>' : '<span class="cal-tb">a definir</span>';
-      return '<div class="cal-r ' + r.t + (cur ? ' cur' : '') + '"><small class="cal-d">' + (r.t === 'C' ? 'QUA' : 'DOM') + '</small><b class="cal-c">' + (r.t === 'C' ? CUP_IC : '') + esc(r.lab) + '</b><i class="cal-h">' +
+      return '<div class="cal-r ' + r.t + (cur ? ' cur' : '') + '"><small class="cal-d">' + (r.dt || '') + '</small><b class="cal-c">' + (r.t === 'C' ? (r.ic === 'cont' ? CONT_IC : CUP_IC) : '') + esc(r.lab) + '</b><i class="cal-h">' +
         (r.fin ? 'N' : r.home === null ? '' : r.home ? 'C' : 'F') + '</i><div class="cal-o">' + opp + '</div>' +
         (r.sc ? '<b class="cal-s ' + res + '">' + r.sc[0] + ' x ' + r.sc[1] + (r.pens ? ' <small>(' + r.pens[0] + '-' + r.pens[1] + ')</small>' : '') + '</b>' : '<b class="cal-s nx">' + (cur ? 'PRÓXIMO' : '') + '</b>') + '</div>'; };
     return { from, html: '<div class="tb2-nav"><button id="ldc-prev"' + (from ? '' : ' disabled') + ' aria-label="Jogos de antes">' + MK_L + '</button><b>' + lc + ' · ' + rows.length + ' jogos</b><button id="ldc-next"' + (from < max ? '' : ' disabled') + ' aria-label="Próximos jogos">' + MK_R + '</button></div>' + rows.slice(from, from + PER).map(row).join('') };
@@ -1267,11 +1342,14 @@
     const zone = p => (ss.promo && p <= ss.promo) || (!ss.promo && p === 1) ? 'up' : ss.releg && p > n - ss.releg ? 'dn' : '';
     const dots = f => { const a = (f || '').split(''); while (a.length < 5) a.unshift('n'); return '<span class="ld-f5">' + a.map(x => '<i class="' + x + '"></i>').join('') + '</span>'; };
     let body;
-    const cupOn = !!ss.cup;
+    const cupOn = !!(ss.cup || ss.cont), both = !!(ss.cup && ss.cont);
     if (tab === 'copa' && !cupOn) tab = 'cls';
+    // Copas (fase 2): as duas copas na mesma aba, com a chave de cima escolhendo; abre na do seu próximo jogo
+    if (tab === 'copa' && (!CUP_V || !both)) { const nc = (S.coNext(co) || {}).cup; CUP_V = !ss.cup ? 'cont' : !ss.cont ? 'nac' : nc ? (nc.cont ? 'cont' : 'nac') : (ss.cont.out === null && !ss.cont.champ ? 'cont' : 'nac'); }
+    const ctV = tab === 'copa' && CUP_V === 'cont', tgC = both ? '<span class="cps-tg"><button data-cv="nac"' + (CUP_V === 'nac' ? ' class="on"' : '') + '>' + esc(ss.cup.name) + '</button><button data-cv="cont"' + (CUP_V === 'cont' ? ' class="on"' : '') + '>' + esc(ss.cont.name) + '</button></span>' : '';
     // Tabela enxuta (2026-11-09, quadro 16): menos colunas, letra maior, sem trilho
     if (tab === 'cal') { const cb = calBody(co, CAL_P); body = cb.html; CAL_P = cb.from; }
-    else if (tab === 'copa') body = cupBracket(co);
+    else if (tab === 'copa') body = !ctV ? cupBracket(co) : ss.cont.k < 6 ? contGroup(co) : cupBracket(co, S.coContKo(co));
     else if (tab === 'cls' || tab === 'gol') {
       body = '<div class="tb2-h' + (tab === 'cls' ? ' cls' : '') + '"><i></i><i></i><span>CLUBE</span>' + (tab === 'cls' ? '<em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em><b>PTS</b>' : '<em>GP</em><em>GC</em><b>SG</b>') + '<span>FORMA</span></div><div class="tb2-b">' +
         t.map((x, k) => { const sg = x.gp - x.gc, cl = club(x.id), sgT = (sg > 0 ? '+' : '') + sg;
@@ -1297,17 +1375,20 @@
     // os 3 próximos do calendário, com o jogo da copa (rival a definir = troféu)
     calRows(co).filter(r => !r.done).slice(0, 3).forEach(r => { if (r.bye) return fut.push('<span class="tb2-nx"><i class="bye">–</i><b>folga</b></span>');
       const where = r.fin ? 'neutro' : r.home === null ? 'quarta' : r.home ? 'casa' : 'fora';
-      fut.push('<span class="tb2-nx' + (r.t === 'C' ? ' cup' : '') + '">' + (r.vs ? crest(r.vs, 'tb2-nxc') : '<i class="bye">' + cupImg(ss.cup.name, 36) + '</i>') + '<b>' + (r.vs ? esc(club(r.vs).short || club(r.vs).name) : esc(r.lab)) + '</b><small>' + (r.fin ? 'final' : (r.t === 'C' ? 'copa · ' : '') + where) + '</small></span>'); });
+      fut.push('<span class="tb2-nx' + (r.t === 'C' ? ' cup' : '') + '">' + (r.vs ? crest(r.vs, 'tb2-nxc') : '<i class="bye">' + (r.ic === 'cont' ? contImg(co, 36) : cupImg(ss.cup.name, 36)) + '</i>') + '<b>' + (r.vs ? esc(club(r.vs).short || club(r.vs).name) : esc(r.lab)) + '</b><small>' + (r.fin ? 'final' : (r.t === 'C' ? 'copa · ' : '') + where) + '</small></span>'); });
     void mi2;
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const meta = B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + gp + 'º';
-    const cupT = tab === 'copa', cup = ss.cup;
-    show('<div class="tb2' + (cupT ? ' cp' : '') + '"><div class="tm-h"><button class="tcr-back" id="tb2-back" aria-label="Voltar">' + BK + '</button><b>' + esc(cupT ? cup.name : ss.name) + '</b><small>' + (cupT ? (cup.champ ? 'encerrada' : esc(S.coCupPhase(cup, cup.k).toLowerCase()) + ' · jogo único') : ss.done ? 'encerrada' : 'rodada ' + Math.min(ss.i + 1, R) + ' de ' + R) + '</small></div>' +
-      '<div class="tb2-tabs tg">' + [[['cls', 'Classificação'], ['gol', 'Gols'], ['art', 'Artilharia']], [['rod', 'Rodadas']].concat(cupOn ? [['copa', 'Copa']] : [], [['cal', 'Calendário']])].map(G => '<div class="tb2-tg">' + G.map(([k, tt]) => '<button data-tb="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + tt + '</button>').join('') + '</div>').join('') + '</div>' +
+    const cupT = tab === 'copa', cup = ctV ? ss.cont : ss.cup;
+    const cupSub = !cupT ? '' : cup.champ ? 'encerrada' : ctV ? (cup.k < 6 ? 'fase de grupos · ' + Math.min(6, cup.k + 1) + ' de 6' : esc(S.coContPhase(cup, cup.k).toLowerCase()) + ' · jogo único') : esc(S.coCupPhase(cup, cup.k).toLowerCase()) + ' · jogo único';
+    show('<div class="tb2' + (cupT ? ' cp' + (ctV && cup.k < 6 ? ' cg' : '') : '') + '"><div class="tm-h"><button class="tcr-back" id="tb2-back" aria-label="Voltar">' + BK + '</button><b>' + esc(cupT ? cup.name : ss.name) + '</b><small>' + (cupT ? cupSub : ss.done ? 'encerrada' : 'rodada ' + Math.min(ss.i + 1, R) + ' de ' + R) + '</small>' + (cupT ? tgC : '') + '</div>' +
+      '<div class="tb2-tabs tg">' + [[['cls', 'Classificação'], ['gol', 'Gols'], ['art', 'Artilharia']], [['rod', 'Rodadas']].concat(cupOn ? [['copa', both ? 'Copas' : 'Copa']] : [], [['cal', 'Calendário']])].map(G => '<div class="tb2-tg">' + G.map(([k, tt]) => '<button data-tb="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + tt + '</button>').join('') + '</div>').join('') + '</div>' +
       '<div class="tb2-t ' + tab + '">' + body + '</div>' +
-      '<div class="tb2-side">' + (cupT ? cupSide(co) : '<div class="tb2-race"><small>SUA CORRIDA</small><b>' + pos + 'º · ' + race + '</b><em class="' + (pos <= gp ? '' : 'hi') + '">' + meta + '</em></div>' +
+      '<div class="tb2-side">' + (cupT ? (ctV ? contSide(co) : cupSide(co)) : '<div class="tb2-race"><small>SUA CORRIDA</small><b>' + pos + 'º · ' + race + '</b><em class="' + (pos <= gp ? '' : 'hi') + '">' + meta + '</em></div>' +
         (fut.length ? '<div class="tb2-fut"><small>PRÓXIMOS</small><div>' + fut.join('') + '</div></div>' : '')) + '</div></div>', st => {
-      st.querySelectorAll('[data-tb]').forEach(b => b.onclick = () => { sfx('tap'); CAL_P = null; tabela(b.dataset.tb, rd); });
+      st.querySelectorAll('[data-tb]').forEach(b => b.onclick = () => { sfx('tap'); CAL_P = null; CUP_V = null; CG = null; tabela(b.dataset.tb, rd); });
+      st.querySelectorAll('[data-cv]').forEach(b => b.onclick = () => { sfx('tap'); CUP_V = b.dataset.cv; CG = null; tabela('copa', rd); });
+      if (st.querySelector('#cg-prev')) { const G = ss.cont.g, g0 = CG == null ? S.coContGrpOf(ss.cont) : CG; st.querySelector('#cg-prev').onclick = () => { sfx('tap'); CG = (g0 + G - 1) % G; tabela('copa', rd); }; st.querySelector('#cg-next').onclick = () => { sfx('tap'); CG = (g0 + 1) % G; tabela('copa', rd); }; }
       if (st.querySelector('#ldc-prev')) { st.querySelector('#ldc-prev').onclick = () => { sfx('tap'); CAL_P = Math.max(0, CAL_P - 5); tabela('cal', rd); }; st.querySelector('#ldc-next').onclick = () => { sfx('tap'); CAL_P += 5; tabela('cal', rd); }; }
       if (st.querySelector('#ldt-prev')) { st.querySelector('#ldt-prev').onclick = () => { sfx('tap'); tabela('rod', rd - 1); }; st.querySelector('#ldt-next').onclick = () => { sfx('tap'); tabela('rod', rd + 1); }; }
       st.querySelector('#tb2-back').onclick = () => { sfx('tap'); semana(); };
@@ -2603,13 +2684,13 @@
   }
   // Troféus e Hall (2026-11-11): telas cheias no padrão do Estádio (painel à esquerda, números à direita), no lugar das janelinhas
   const TF_BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
-  const taca = (name, h, k) => window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY(k === 'cup' ? 'cup' : 'league', h, name) : '';
+  const taca = (name, h, k, tr) => window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY(k === 'cup' ? 'cup' : k === 'cont' ? tr || 'ucl' : 'league', h, name) : '';
   function trofeus(pg) {
     const c = C(), co = c.co, cl = club(co.club), ss = co.ss, T = co.titles.slice().reverse(), n = T.length, PER = 4;
     const pages = Math.max(1, Math.ceil(n / PER)); pg = Math.max(0, Math.min(pages - 1, pg || 0));
     const ups = co.hist.filter(h => h.up).length, pos = ss ? S.coPos(co) : 0, left = ss ? ss.rounds.length - ss.i : 0;
     const clubs = T.reduce((a, t) => (a.indexOf(t.club) < 0 ? a.concat(t.club) : a), []).length;
-    const shelf = n ? '<div class="tf2-sh">' + T.slice(pg * PER, pg * PER + PER).map(t => '<div class="tf2-c">' + taca(t.name, 104, t.k) + '<b>' + esc(t.name) + '</b><small>' + crest(t.club, 'tf2-cr') + '<span>' + (U.YEAR0 + t.s) + ' · ' + esc(club(t.club).short || club(t.club).name) + '</span></small></div>').join('') + '</div>' +
+    const shelf = n ? '<div class="tf2-sh">' + T.slice(pg * PER, pg * PER + PER).map(t => '<div class="tf2-c">' + taca(t.name, 104, t.k, t.tr) + '<b>' + esc(t.name) + '</b><small>' + crest(t.club, 'tf2-cr') + '<span>' + (U.YEAR0 + t.s) + ' · ' + esc(club(t.club).short || club(t.club).name) + '</span></small></div>').join('') + '</div>' +
         (pages > 1 ? '<div class="mk-pg tf2-pg"><button class="mk-ar" data-pg="-1"' + (pg ? '' : ' disabled') + ' aria-label="Mais novos">' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar" data-pg="1"' + (pg < pages - 1 ? '' : ' disabled') + ' aria-label="Mais antigos">' + MK_R + '</button></div>' : '')
       : '<div class="tf2-no">' + (ss ? taca(ss.name, 118) : '') + '<b>A primeira taça entra aqui</b>' + (ss ? '<small>' + esc(ss.name) + '</small>' : '') + '</div>';
     show('<div class="es tf2"><div class="tm-h"><button class="tcr-back" id="tf2-back" aria-label="Voltar">' + TF_BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>Troféus</b><small>' + esc(co.name) + '</small></div>' +
@@ -2665,6 +2746,7 @@
       rev && rev[0] !== (avgs[0] || [])[0] ? ['REVELAÇÃO', rev[0], rev[0].age + ' anos · nota ' + rev[1].toFixed(1).replace('.', ',')] : null].filter(Boolean);
     const nums = [['Pontos em ' + n + ' jogos', v * 3 + e], ['Campanha', v + 'V ' + e + 'E ' + d + 'D'], ['Gols', gp + ' a ' + gc], ['Maior vitória', big && big.gf > big.ga ? big.gf + ' x ' + big.ga + ' ' + esc((club(big.vs).short || club(big.vs).name).slice(0, 3).toUpperCase()) : '—'], ['Em casa', rec(log.filter(l => l.home))], ['Fora', rec(log.filter(l => !l.home))]];
     if (out.cup) nums.splice(3, 1, [esc(out.cup.name), out.cup.ph.charAt(0).toUpperCase() + out.cup.ph.slice(1)]);   // copa no lugar da maior vitória
+    if (out.cont) nums.splice(out.cup ? 4 : 3, 1, [esc(out.cont.name), out.cont.ph.charAt(0).toUpperCase() + out.cont.ph.slice(1)]);   // continental no lugar do Em casa
     const exp = co.squad.filter(p => p.ct <= 0).length;
     const coinTxt = (out.coins || []).map(x => x.t.toLowerCase()).join(', ');
     const next = [out.coinsTot ? ['+' + out.coinsTot + ' moedas', coinTxt, 'coin'] : null, out.offers ? [out.sacked ? (out.offers.length > 1 ? 'Clubes ligaram' : 'Um clube ligou') : U.D.plural(out.offers.length, 'clube quer você', 'clubes querem você'), out.offers.slice(0, 2).map(id => esc(club(id).short || club(id).name)).join(' e ') + (out.offers.length > 1 ? ' mandaram proposta' : ' mandou proposta')] : null,
