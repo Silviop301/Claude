@@ -794,28 +794,32 @@
     // Festa do título no campinho (Silvio 12/11): o jogo que deu o título vira festa no campo, com o cartão no painel da direita
     // (troca a tela cheia de confete, que fica só para o jogo sem campinho). Copas: a mesma festa
     const festa = (log, go) => {
-      co.ss.tw = 1; save('hub'); $('lv-sheet').classList.remove('on');
-      const t = S.coTable(co), me = t.find(x => x.me), left = co.ss.rounds.length - co.ss.i;
-      sim.festa((window.CRAQUE_TROPHY_IMGS || {})[co.ss.name]); sfx('fanfare');
+      const cup = !!(log && log.cup && log.champ), name = cup ? log.name : co.ss.name;
+      if (cup) log.tcOk = 1; else co.ss.tw = 1;
+      save('hub'); $('lv-sheet').classList.remove('on');
+      let sub = '';
+      if (cup) sub = 'Copa · ' + m.gh + ' x ' + m.ga; else { const me = S.coTable(co).find(x => x.me), left = co.ss.rounds.length - co.ss.i; sub = me.p + ' pontos' + (left > 0 ? '<br>' + left + (left === 1 ? ' rodada' : ' rodadas') + ' de folga' : ''); }
+      sim.festa((window.CRAQUE_TROPHY_IMGS || {})[name]); sfx('fanfare');
       const side = document.querySelector('.ldl-side'), d = document.createElement('div'); d.className = 'ldl-festa';
-      d.innerHTML = '<div class="ldf-c">' + tacaImg(70) + '<small>' + esc(co.ss.name).toUpperCase() + ' · ' + (U.YEAR0 + co.season) + '</small><b>Campeão!</b>' +
-        '<p>' + me.p + ' pontos' + (left > 0 ? '<br>' + left + (left === 1 ? ' rodada' : ' rodadas') + ' de folga' : '') + '</p></div><button class="ld-gold ldf-go"><b>Seguir</b></button>';
+      d.innerHTML = '<div class="ldf-c">' + (window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY(cup ? 'cup' : 'league', 70, name) : '') + '<small>' + esc(name).toUpperCase() + ' · ' + (U.YEAR0 + co.season) + '</small><b>Campeão!</b><p>' + sub + '</p></div><button class="ld-gold ldf-go"><b>Seguir</b></button>';
       side.appendChild(d); d.querySelector('.ldf-go').onclick = () => { sfx('tap'); d.remove(); go(); };
     };
     const finish = () => { clearTimeout(timer); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); if (U.profileCoGame) U.profileCoGame(co, m, log); save('hub');
       const go = () => { if (sim) sim.stop(); result(m, log, false, firstMove); };
-      if (sim && sim.festa && LDon && document.querySelector('.ldl-side') && !co.ss.tw && S.coTitleWon(co)) return festa(log, go);
+      const can = sim && sim.festa && LDon && document.querySelector('.ldl-side');
+      if (can && ((log && log.cup && log.champ && !log.tcOk) || (!m.cup && !co.ss.tw && S.coTitleWon(co)))) return festa(log, go);
       go(); };
     const end = () => {
+      const pk = m.cup && m.gh === m.ga && LDon && U.LD.livePens; // copa empatada: disputa de pênaltis por cima do ao vivo
       clearTimeout(timer); hidden.clear(); paint(); open = true;
       if (sim && sim.fin) { sim.fin(); sfx('whistleEnd'); if (m.home && m.gh < m.ga && !retomado) setTimeout(() => sfx('vaia'), 2300); } // três apitos (curto, curto, longo): os jogadores param onde estão
       // vitória que dá o título sem depender de ninguém: a festa começa sozinha depois do apito, sem o 'Ver o resultado'
-      { const ch = S.coTitleChance(co); if (ch && !ch.rivals.length && ourGoals() > theirGoals() && sim && sim.festa && LDon) { setTimeout(finish, 1600); return; } }
+      { const ch = S.coTitleChance(co); if (!m.cup && ch && !ch.rivals.length && ourGoals() > theirGoals() && sim && sim.festa && LDon) { setTimeout(finish, 1600); return; } }
       if (sim) { clearTimeout(frz); frz = setTimeout(() => sim.freeze(true), 1500); }
       $('lv-sheet').innerHTML = '<div class="lv-sh"><i class="lv-grab"></i><div class="lv-st-h"><small>' + S.coClock(m) + ' · Fim de jogo</small><b>' + m.gh + ' x ' + m.ga + '</b></div>' +
-        '<h2>' + (ourGoals() > theirGoals() ? 'Vitória' : ourGoals() < theirGoals() ? 'Derrota' : 'Empate') + '</h2><button class="btn" id="b-lv-end">Ver o resultado</button></div>';
+        '<h2>' + (ourGoals() > theirGoals() ? 'Vitória' : ourGoals() < theirGoals() ? 'Derrota' : pk ? 'Empate · vai para os pênaltis' : 'Empate') + '</h2><button class="btn" id="b-lv-end">' + (pk ? 'Disputa de pênaltis' : 'Ver o resultado') + '</button></div>';
       $('lv-sheet').classList.add('on');
-      $('b-lv-end').onclick = () => { sfx('tap'); finish(); };
+      $('b-lv-end').onclick = () => { sfx('tap'); if (pk) return U.LD.livePens(m, finish); finish(); };
     };
     // Os lances novos do motor vão para o campinho. Chance: a linha da narração sai quando a bola chega (ou em 9 s).
     // Gol: o relógio espera a rede balançar (o campinho força a jogada aos 9 s de bola rolando; a tela desiste só aos 30 s) e só então o placar vira. Volta a espera do gol, ou null
@@ -1171,7 +1175,17 @@
     tacaPop('<div class="tc-ray"></div><div class="tc-cf">' + cf + '</div><div class="tc-mid"><div class="tc-tag">TÍTULO · ' + esc(co.ss.name).toUpperCase() + ' · ' + (U.YEAR0 + co.season) + '</div><div class="tc-cup">' + tacaImg(140) + '</div><div class="tc-big">Campeão!</div><div class="tc-sub">' + esc(nm(co.club)) + ' · ' + me.p + ' pontos' + (left > 0 ? ' · ' + left + (left === 1 ? ' rodada' : ' rodadas') + ' de folga' : '') + '</div></div><button class="btn tc-go">Seguir</button>', 'tc-fe', go);
     sfx('fanfare');
   }
+  // Festa da copa (fase 1 das copas): a mesma festa da liga, com a taça da copa e a final que deu o título
+  function copaFesta(log, go) {
+    if (!log || !log.cup || !log.champ || log.tcOk) return go();
+    log.tcOk = 1;
+    let cf = ''; for (let i = 0; i < 46; i++) cf += '<i style="left:' + (Math.random() * 100).toFixed(1) + '%;background:' + ['#e8b84a', '#fff', '#ffe08a', '#c9a24a'][i % 4] + ';animation-duration:' + (2.5 + Math.random() * 3).toFixed(2) + 's;animation-delay:' + (1 + Math.random() * 3).toFixed(2) + 's"></i>';
+    const img = window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY('cup', 140, log.name) : '';
+    tacaPop('<div class="tc-ray"></div><div class="tc-cf">' + cf + '</div><div class="tc-mid"><div class="tc-tag">TÍTULO · ' + esc(log.name).toUpperCase() + ' · ' + (U.YEAR0 + co.season) + '</div><div class="tc-cup">' + img + '</div><div class="tc-big">Campeão!</div><div class="tc-sub">' + esc(nm(co.club)) + ' · final contra ' + esc(nm(log.vs)) + ' · ' + log.gf + ' x ' + log.ga + (log.pens ? ' (' + log.pens[0] + ' x ' + log.pens[1] + ' nos pênaltis)' : '') + '</div></div><button class="btn tc-go">Seguir</button>', 'tc-fe', go);
+    sfx('fanfare');
+  }
   function result(m, log, aux, move) {
+    if (log && log.cup && log.champ && !log.tcOk) return copaFesta(log, () => result(m, log, aux, move));
     if (!result.tc) { result.tc = 1; return tacaFesta(() => { try { result(m, log, aux, move); } finally { result.tc = 0; } }); } result.tc = 0;
     if (U.LD && U.LD.on()) return U.LD.result(m, log, aux, move);
     const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
@@ -1230,7 +1244,7 @@
   // ---------- fim da temporada: posição, meta, fama, experiência ----------
   // Moedas da temporada (S.coSeasonEnd devolve out.coins) entram na carteira da conta aqui, uma vez por fim de temporada;
   // a primeira temporada terminada na conta ganha um bônus de boas-vindas (uma vez só, em qualquer carreira)
-  const COIN_FIRST = 30;
+  const COIN_FIRST = 15; // era 30 até 2026-11-12: a conta nova já ganha 36 de boas-vindas (api/account.php)
   function payCoins(out) {
     if (!U.COINS || out.coinsPaid) return;
     const list = (out.coins || []).slice();
