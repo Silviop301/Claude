@@ -1245,12 +1245,26 @@
   }
   const resOf = ss => { ss.res = ss.res || []; return (ss.res[ss.i] = ss.res[ss.i] || []); };
   // Os outros jogos da rodada pela força dos clubes
+  // Jogos entre dois clubes do computador (Silvio, 2026-11-12: "Vasco, Bahia e Inter no topo é estranho" no começo, mas "não
+  // existe time hegemônico" depois). `LAM_T`: quanto a diferença de força pesa no placar desses jogos (menor = menos zebra;
+  // o Jogo a Jogo segue com 130). `S.coClubDrift`: fase do clube que anda a cada temporada (zero na 1ª temporada da
+  // carreira, passo de até `DRIFT` pontos por ano, no máximo `DRIFT_MAX`), presa à semente da carreira: sem save.
+  const _env = (typeof process !== 'undefined' && process.env) || {};
+  const LAM_T = +(_env.CO_LAM || 70), DRIFT = +(_env.CO_DRIFT === undefined ? 1.5 : _env.CO_DRIFT), DRIFT_MAX = 6;
+  const driftMemo = {};
+  S.coClubDrift = function (co, id) {
+    const s0 = 0, n = co.season | 0; if (!(n > 0) || !DRIFT) return 0;
+    const key = co.seed + ':' + id + ':' + n; if (driftMemo[key] !== undefined) return driftMemo[key];
+    let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+    let v = 0; for (let k = 1; k <= n; k++) { const q = S.rng(((co.seed | 0) ^ (h * 2654435761) ^ ((s0 + k) * 40503)) >>> 0); v = clamp(v * 0.8 + (q() * 2 - 1) * DRIFT, -DRIFT_MAX, DRIFT_MAX); }
+    return (driftMemo[key] = Math.round(v * 10) / 10);
+  };
   function roundRest(co, skip) {
-    const ss = co.ss, { r, save } = rngCo(co), str = id => D.CLUB_BY_ID[id].strength;
+    const ss = co.ss, { r, save } = rngCo(co), str = id => D.CLUB_BY_ID[id].strength + S.coClubDrift(co, id);
     ss.rounds[ss.i].forEach(([h, a]) => {
       if (skip.includes(h) && skip.includes(a)) return;
       if (skip.includes(h) || skip.includes(a)) return;
-      const g = L().simple(r, h, a, str(ss.ids[h]), str(ss.ids[a]));
+      const g = L().simple(r, h, a, str(ss.ids[h]), str(ss.ids[a]), LAM_T);
       addTab(ss.tab, h, a, g.gh, g.ga, resOf(ss));
     });
     save();
