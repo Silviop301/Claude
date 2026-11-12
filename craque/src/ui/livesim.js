@@ -110,7 +110,7 @@
     // MKEEP/PRK: quem marca e quem pressiona continuam os mesmos. PASS_V: velocidade do passe (1 = antiga).
     // SHOT_PRE: passada de preparo do chute (s); SHOT_DRAG: quanto o chute perde de força; GK_DIVE: o goleiro voa no fim.
     // No node (ferramentas) cada uma aceita variável de ambiente com o mesmo nome, para medir ajustes sem editar.
-    const _e = (typeof process !== 'undefined' && process.env) || {}, KEEP_O = +(_e.KEEP_O || 3.4), KEEP_L = +(_e.KEEP_L || 1.5), HOLD0 = +(_e.HOLD0 || 1.5), MKEEP = +(_e.MKEEP || 0.6), PRK = +(_e.PRK || 3), PASS_V = +(_e.PASS_V || 0.9), SHOT_PRE = +(_e.SHOT_PRE || 0.14), GK_DIVE = +(_e.GK_DIVE || 0.42), SHOT_DRAG = +(_e.SHOT_DRAG || 0.24), SBT = +(_e.SBT || 0.8), V_SPR = +(_e.V_SPR || 7.8), V_DRB = +(_e.V_DRB || 6.4), V_CALM = +(_e.V_CALM || 5.5), CALM0 = +(_e.CALM0 || 1.4), CALMK = +(_e.CALMK || 0.4), CALMG = +(_e.CALMG || 1), ACC_C = +(_e.ACC_C || 6), ACC_S = +(_e.ACC_S || 11), ACC_B = +(_e.ACC_B || 12), ACC_D = +(_e.ACC_D || 15), VTK = +(_e.VTK || 4), SUPP = +(_e.SUPP || 22), CLOSE = +(_e.CLOSE === undefined ? 55 : _e.CLOSE), CLOSE_V = +(_e.CLOSE_V || 1.08), DRB_R = +(_e.DRB_R === undefined ? 1 : _e.DRB_R), DRB_D = +(_e.DRB_D || 5.5), DRB_T = +(_e.DRB_T || 0.75), DRB_A = +(_e.DRB_A || 1.8), LIVRE = +(_e.LIVRE === undefined ? 0.14 : _e.LIVRE), LIVRE_P = +(_e.LIVRE_P || 0.5), LIVRE_L = +(_e.LIVRE_L || 9), LIVRE_X = +(_e.LIVRE_X || 1.3), LIVRE_LK = +(_e.LIVRE_LK || 0.4), LIVRE_LP = +(_e.LIVRE_LP || 0.7), LIVRE_E = +(_e.LIVRE_E === undefined ? 0.5 : _e.LIVRE_E), CLOSE_LD = +(_e.CLOSE_LD === undefined ? 0.7 : _e.CLOSE_LD), ATT_R = +(_e.ATT_R || 1), ATT_CD = +(_e.ATT_CD || 2.5), ATT_MAX = +(_e.ATT_MAX || 14), FXG_K = +(_e.FXG_K || 1.95), FXG_G = +(_e.FXG_G || 0.4), ATT_G = +(_e.ATT_G || 1.3), DISP = +(_e.DISP === undefined ? 1 : _e.DISP), DISP_M = +(_e.DISP_M || 1.5), DISP_R = +(_e.DISP_R || 5);
+    const _e = (typeof process !== 'undefined' && process.env) || {}, KEEP_O = +(_e.KEEP_O || 3.4), KEEP_L = +(_e.KEEP_L || 1.5), HOLD0 = +(_e.HOLD0 || 1.5), MKEEP = +(_e.MKEEP || 0.6), PRK = +(_e.PRK || 3), PASS_V = +(_e.PASS_V || 0.9), SHOT_PRE = +(_e.SHOT_PRE || 0.14), GK_DIVE = +(_e.GK_DIVE || 0.42), SHOT_DRAG = +(_e.SHOT_DRAG || 0.24), SBT = +(_e.SBT || 0.8), V_SPR = +(_e.V_SPR || 7.8), V_DRB = +(_e.V_DRB || 6.4), V_CALM = +(_e.V_CALM || 5.5), CALM0 = +(_e.CALM0 || 1.4), CALMK = +(_e.CALMK || 0.4), CALMG = +(_e.CALMG || 1), ACC_C = +(_e.ACC_C || 6), ACC_S = +(_e.ACC_S || 11), ACC_B = +(_e.ACC_B || 12), ACC_D = +(_e.ACC_D || 15), VTK = +(_e.VTK || 4), SUPP = +(_e.SUPP || 22), CLOSE = +(_e.CLOSE === undefined ? 55 : _e.CLOSE), CLOSE_V = +(_e.CLOSE_V || 1.08), DRB_R = +(_e.DRB_R === undefined ? 1 : _e.DRB_R), DRB_D = +(_e.DRB_D || 5.5), DRB_T = +(_e.DRB_T || 0.75), DRB_A = +(_e.DRB_A || 1.8), LIVRE = +(_e.LIVRE === undefined ? 0.14 : _e.LIVRE), LIVRE_P = +(_e.LIVRE_P || 0.5), LIVRE_L = +(_e.LIVRE_L || 9), LIVRE_X = +(_e.LIVRE_X || 1.3), LIVRE_LK = +(_e.LIVRE_LK || 0.4), LIVRE_LP = +(_e.LIVRE_LP || 0.7), LIVRE_E = +(_e.LIVRE_E === undefined ? 0.5 : _e.LIVRE_E), CLOSE_LD = +(_e.CLOSE_LD === undefined ? 0.7 : _e.CLOSE_LD), ATT_R = +(_e.ATT_R || 1), ATT_CD = +(_e.ATT_CD || 2.5), ATT_MAX = +(_e.ATT_MAX || 14), FXG_K = +(_e.FXG_K || 2.1), FXG_G = +(_e.FXG_G || 0.4), ATT_G = +(_e.ATT_G || 1.3), DISP = +(_e.DISP === undefined ? 1 : _e.DISP), DISP_M = +(_e.DISP_M || 3), DISP_R = +(_e.DISP_R || 3);
     let DISPN = 0; // bolas que ficaram com o adversário mais perto de onde ela caiu (disputa)
     let poss = 0, mode = o.t0 > 0 ? 'ko' : 'wait', modeT = 1.2, koSide = 0, hero = null, bias = [1, 1], mom = 0, momT = 0, runT = 2, defT = 0, clk = 0;
     let curT = o.t0 || 0, mClk = 0, bxT = 50, lastPasser = null, lastPassClk = -9, frozen = false, en = null, cv = null, g = null, W = 0, H = 0, dpr = 1, raf = 0, last = 0, alive = true;
@@ -1491,7 +1491,7 @@
           if (f.blk && u > 0.55 && !f.blk.down) { f.blk.dva = 0; f.blk.down = 1.1; f.blk.stun = 1.1; } }
         else if (f.to) { f.to.tx = f.x1; f.to.ty = f.y1; f.to.sprint = 1;
           // bola longa no ar: o adversário mais perto de onde ela vai cair também corre para lá (disputa)
-          if (DISP && f.dur > 0.7 && !f.cut && !f.ck && !lc && !(due && due.side === f.to.side) && f.from && f.from.side === f.to.side) { if (f.ch === undefined) { const o = nearOpp(f.to.side, f.x1, f.y1); f.ch = o && o.d < 9 ? o.p : null; }
+          if ((DISP & 2) && f.dur > 0.7 && !f.cut && !f.ck && !lc && !(due && due.side === f.to.side) && f.from && f.from.side === f.to.side) { if (f.ch === undefined) { const o = nearOpp(f.to.side, f.x1, f.y1); f.ch = o && o.d < 9 ? o.p : null; }
             if (f.ch && f.ch.stun <= 0) { f.ch.tx = f.x1; f.ch.ty = f.y1; f.ch.sprint = 1; } } }
         if (f.t >= 1) { if (f.shot) shotEnd(f); else if (f.out) ballOut(f.from ? f.from.side : lastSide, f.x1, f.y1);
           // passe cortado perto da lateral: o desvio às vezes manda a bola para fora (lateral para quem passou)
@@ -1501,7 +1501,7 @@
           else { ball.fly = null; const k0 = (f.loft ? 0.35 : 0.6) / f.dur;
             // Disputa: a bola caiu bem mais perto de um adversário do que de quem ia receber? Ela é dele (não passa por ele
             // até o companheiro que estava combinado). O lance do motor (gol decidido, lance com parada) segue protegido.
-            if (DISP && f.to && !f.cut && !f.ck && !f.gkc && !lc && !(due && due.side === f.to.side) && f.from && f.from.side === f.to.side) { const o = nearOpp(f.to.side, f.x1, f.y1);
+            if ((DISP & 1) && f.to && !f.cut && !f.ck && !f.gkc && !lc && !(due && due.side === f.to.side) && f.from && f.from.side === f.to.side) { const o = nearOpp(f.to.side, f.x1, f.y1);
               if (o && o.d < DISP_R && o.d + DISP_M < Math.hypot(f.to.x - f.x1, f.to.y - f.y1)) { f.to = o.p; f.cut = true; DISPN++; } }
             ball.loose = { to: f.to, f, t: 0, vx: (f.x1 - f.x0) * k0, vy: (f.y1 - f.y0) * k0 }; } }
       } else if (ball.loose) {
@@ -1516,7 +1516,7 @@
         // no lance do motor), e depois de 2 s quem ia receber domina (ninguém fica parado colado do lado da bola)
         // (a bola não é puxada: só vira dele quando ele chega nela; se demorar, quem estiver em cima dela fica com ela)
         // Disputa: o adversário que está mais perto da bola solta do que quem ia receber parte para ela na hora
-        if (DISP && lo.t > 0.2 && !lc && !(due && due.side === p.side)) { const o = nearOpp(p.side, ball.x, ball.y); if (o && o.p !== p && o.d < d) { o.p.tx = ball.x; o.p.ty = ball.y; o.p.sprint = 1; } }
+        if ((DISP & 4) && lo.t > 0.2 && !lc && !(due && due.side === p.side)) { const o = nearOpp(p.side, ball.x, ball.y); if (o && o.p !== p && o.d + 2 < d) { o.p.tx = ball.x; o.p.ty = ball.y; o.p.sprint = 1; } }
         if (d < 1.3 || lo.t > 6) receive(lo.f);
         else if (lo.t > 2) { let q = null, qd = 1.3; for (const x of ALL) { if (x === p || x.stun > 0 || (x.r === 'GK' && Math.abs(x.x - (x.side ? L : 0)) > 16)) continue; const dx = dist(x, ball); if (dx < qd && (x.side === p.side || (!lc && !(due && due.side === p.side)))) { qd = dx; q = x; } }
           if (q) { ball.loose = null; why = 'solta'; setOwner(q); }
