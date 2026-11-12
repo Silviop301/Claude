@@ -250,6 +250,18 @@
     s.onended = () => { if (chSrc === s) chSrc = null; };
     chNext = t + b.duration + 25 + Math.random() * 35;
   }
+  const REDE_OFF = 0.45, ROAR_OFF = 0.3, VAIA_OFF = 1.1;
+  function chantCut(sec) { // gol: o canto que tocava sai rápido (o gol manda) e o próximo espera
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    if (chSrc) { const s0 = chSrc, g = chG; chSrc = null; try { g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + 0.4); s0.stop(t + 0.5); } catch (e) { /* ok */ } }
+    if (chNext) chNext = Math.max(chNext, t + sec);
+  }
+  function ambDown() { // gol deles na sua casa: o estádio murcha por uns segundos debaixo da vaia e volta
+    if (!aGain || aWant <= 0) return;
+    const g = aGain.gain, t = ctx.currentTime, v = aWant;
+    try { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(v * 0.35, t + 0.3); g.setValueAtTime(v * 0.35, t + 5); g.linearRampToValueAtTime(v, t + 9); } catch (e) { /* enfeite */ }
+  }
   function ambUp() { // gol: a torcida sobe e volta ao normal
     if (!aGain || aWant <= 0) return;
     const g = aGain.gain, t = ctx.currentTime, v = aWant;
@@ -297,11 +309,11 @@
     if (echo) { const s = ctx.createGain(); s.gain.value = echo; node.connect(s); s.connect(room); }
   }
   // Toca uma gravação; a torcida é uma só: um gol novo apaga a comemoração anterior em vez de somar
-  function play(k, t, gain, echo) {
+  function play(k, t, gain, echo, off) { // off: começa a gravação já adiantada (pula o silêncio ou a subida do começo)
     const src = ctx.createBufferSource(), g = ctx.createGain();
     src.buffer = rec[k]; g.gain.value = gain;
     src.connect(g); out(g, echo);
-    src.start(t);
+    src.start(t, off || 0);
     if (k !== 'torcida') return;
     if (cheer) { cheer.g.gain.setTargetAtTime(0.0001, t, 0.08); cheer.src.stop(t + 0.5); }
     cheer = { src, g };
@@ -461,14 +473,26 @@
       noise(t, 0.02, 0.12, 0.002, 'highpass', 3500);
     },
     // Gol: a bola estufa a rede e a torcida explode, cada vez mais aberta
+    // Mixagem (Silvio, 12/11: "entrar no gol"): a rede.mp3 tem 0,47 s de silêncio antes da batida e o rugido sobe por ~1 s,
+    // então as duas entram adiantadas (REDE_OFF, ROAR_OFF) para o pico cair no instante em que a bola estufa a rede
     goal(t) {
-      if (rec.rede) play('rede', t, 0.75, 0.15); else noise(t, 0.35, 0.16, 0.01, 'bandpass', 2600, 900, 0.9);
-      if (rec.torcida) play('torcida', t + 0.05, 0.45, 0.1); else crowd(t + 0.04, { vowel: 'o', dur: 2.9, a: 0.25, hold: 1.6, spread: 0.2, peak: 1, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.8, 1.2], [2.9, 0.95]], shouts: 14, shoutGain: 1.1, bend: [1, 1.15] });
+      if (rec.rede) play('rede', t, 0.75, 0.15, REDE_OFF); else noise(t, 0.35, 0.16, 0.01, 'bandpass', 2600, 900, 0.9);
+      if (rec.torcida) play('torcida', t + 0.02, 0.5, 0.1, ROAR_OFF); else crowd(t + 0.04, { vowel: 'o', dur: 2.9, a: 0.25, hold: 1.6, spread: 0.2, peak: 1, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.8, 1.2], [2.9, 0.95]], shouts: 14, shoutGain: 1.1, bend: [1, 1.15] });
     },
     // Gol seu fora de casa: a mesma rede, a sua torcida é pouca e está longe (só gravações)
     goalAway(t) {
-      if (rec.rede) play('rede', t, 0.75, 0.15);
-      if (rec.torcida) play('torcida', t + 0.05, 0.18, 0.2);
+      if (rec.rede) play('rede', t, 0.75, 0.15, REDE_OFF);
+      if (rec.torcida) play('torcida', t + 0.02, 0.2, 0.2, ROAR_OFF);
+    },
+    // Gol deles na sua casa: a rede longe e a sua torcida vaia na hora (a vaia.mp3 entra já no meio da subida)
+    golContra(t) {
+      if (rec.rede) play('rede', t, 0.3, 0.2, REDE_OFF);
+      if (rec.vaia) play('vaia', t + 0.25, 0.75, 0.1, VAIA_OFF); else noise(t, 1.1, 0.22, 0.15, 'bandpass', 900, 280, 1.2);
+    },
+    // Gol deles na casa deles: a rede e a torcida deles explode (o estádio é deles)
+    golDeles(t) {
+      if (rec.rede) play('rede', t, 0.35, 0.2, REDE_OFF);
+      if (rec.torcida) play('torcida', t + 0.02, 0.42, 0.15, ROAR_OFF);
     },
     // Vitória no fim de um jogo simulado: só a torcida, sem a bola na rede
     cheer(t) {
@@ -541,7 +565,9 @@
         if (root.document && root.document.hidden) return; // app fora da frente: nada toca nem fica guardado
         init();
         if (!ctx || !SOUNDS[name]) return;
-        if (name === 'cheer' || name === 'cheerAway' || name === 'goal' || name === 'goalAway') ambUp();
+        if (name === 'cheer' || name === 'cheerAway' || name === 'goal' || name === 'goalAway' || name === 'golDeles') ambUp();
+        if (name === 'golContra') ambDown();
+        if (name === 'goal' || name === 'goalAway' || name === 'golContra' || name === 'golDeles') chantCut(12);
         if (ctx.state === 'running') return fire(name);
         // Contexto parado: o relógio dele não anda, então o som agendado agora ficaria na fila e tocaria junto com os
         // outros no próximo toque (o "som bizarro" da volta para o jogo). Só toca se acordar na hora; senão é esquecido
