@@ -271,7 +271,8 @@
       return '<div class="pft-g' + (g.done ? ' done' : '') + '"><span>' + (g.done ? 'OK' : (g.p || 0) + '/' + n) + '</span><b>' + esc(d.t) + '</b><em>' + (U.COINS ? U.COINS.svg : '') + '+' + PRIZE[d.tier].m + '</em></div>'; };
     const num = (v, l, gold) => '<span' + (gold ? ' class="au"' : '') + '><b>' + v + '</b><small>' + l + '</small></span>';
     const lt = R.last, cl = lt ? U.club(lt.club) || {} : null;
-    U.LD.show('<div class="pft"><div class="tm-h"><button class="tcr-back" id="pft-back" aria-label="Voltar">' + BK + '</button><b>Perfil</b>' + (nick ? '<small>' + esc(nick) + '</small>' : '') + '</div>' +
+    const acc = !window.CLIMBIX_SOLO && !!U.cloud, st = acc && U.cloudStatus ? U.cloudStatus() : null; // conta no Perfil (2026-11-12, Silvio: "essa tela conta não deveria estar em perfil?")
+    U.LD.show('<div class="pft"><div class="tm-h"><button class="tcr-back" id="pft-back" aria-label="Voltar">' + BK + '</button><b>Perfil</b>' + (nick ? '<small>' + esc(nick) + '</small>' : '') + (acc ? '<button class="pft-acc' + (st ? '' : ' in') + '" id="pft-acc">' + (st ? 'Sua conta' : 'Entrar ou criar conta') + '</button>' : '') + '</div>' +
       '<div class="pft-l"><div class="pft-card"><div><span><b>' + rankCo(L.lv) + '</b>' + (nx ? '<small>próximo: ' + nx[1] + ' no nível ' + nx[0] + '</small>' : '') + '</span>' +
         '<span><i><u style="width:' + Math.round(L.cur / L.next * 100) + '%"></u></i><b>' + L.cur + ' de ' + L.next + ' XP</b></span></div>' +
         '<div class="pft-lv"><small>NÍVEL</small><b>' + L.lv + '</b></div></div>' +
@@ -281,7 +282,8 @@
         '<div class="pft-p"><span class="pft-lb">ÚLTIMO TÍTULO</span>' + (lt ? '<span class="pft-t">' + U.crest(lt.club) + '<span><b>' + esc(lt.name) + ' ' + (U.YEAR0 + lt.s) + '</b><small>' + esc(cl.short || cl.name || '') + '</small></span></span>' : '<span class="pft-no">Nenhum por enquanto</span>') + '</div>' +
         (mine.length ? '<div class="pft-p grow"><span class="pft-lb">SEUS TIMES</span><span class="pft-cl">' + mine.slice(0, mine.length > 4 ? 3 : 4).map(id => U.crest(id)).join('') + (mine.length > 4 ? '<b>+' + (mine.length - 3) + '</b>' : '') + '</span></div>' : '') +
       '</div></div>',
-      w => { w.querySelector('#pft-back').onclick = () => { sfx('tap'); (back || U.home)(); }; }, 'O Climbix é jogado com o celular deitado.');
+      w => { w.querySelector('#pft-back').onclick = () => { sfx('tap'); (back || U.home)(); };
+        if (w.querySelector('#pft-acc')) w.querySelector('#pft-acc').onclick = () => { sfx('tap'); U.cloud('login', null, null, () => openLand(back)); }; }, 'O Climbix é jogado com o celular deitado.');
   }
 
   Object.assign(U, { profileLand: openLand, profileCoGame: coGame, profileCoSeason: coSeason, profile: open, profileHome: homeHtml, profileHomeBind: homeBind, profileCareer: career, profileRel: relampago, profileFinale: finaleHtml, profileJajGame: jajGame, profileJajSeason: jajSeason,
