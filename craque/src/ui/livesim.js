@@ -110,7 +110,7 @@
     // MKEEP/PRK: quem marca e quem pressiona continuam os mesmos. PASS_V: velocidade do passe (1 = antiga).
     // SHOT_PRE: passada de preparo do chute (s); SHOT_DRAG: quanto o chute perde de força; GK_DIVE: o goleiro voa no fim.
     // No node (ferramentas) cada uma aceita variável de ambiente com o mesmo nome, para medir ajustes sem editar.
-    const _e = (typeof process !== 'undefined' && process.env) || {}, KEEP_O = +(_e.KEEP_O || 3.4), KEEP_L = +(_e.KEEP_L || 1.5), HOLD0 = +(_e.HOLD0 || 1.5), MKEEP = +(_e.MKEEP || 0.6), PRK = +(_e.PRK || 3), PASS_V = +(_e.PASS_V || 0.9), SHOT_PRE = +(_e.SHOT_PRE || 0.14), GK_DIVE = +(_e.GK_DIVE || 0.42), SHOT_DRAG = +(_e.SHOT_DRAG || 0.24), SBT = +(_e.SBT || 0.8), V_SPR = +(_e.V_SPR || 7.8), V_DRB = +(_e.V_DRB || 6.4), V_CALM = +(_e.V_CALM || 5.5), CALM0 = +(_e.CALM0 || 1.4), CALMK = +(_e.CALMK || 0.4), CALMG = +(_e.CALMG || 1), ACC_C = +(_e.ACC_C || 6), ACC_S = +(_e.ACC_S || 11), ACC_B = +(_e.ACC_B || 12), ACC_D = +(_e.ACC_D || 15), VTK = +(_e.VTK || 4), SUPP = +(_e.SUPP || 22), CLOSE = +(_e.CLOSE === undefined ? 55 : _e.CLOSE), CLOSE_V = +(_e.CLOSE_V || 1.08), DRB_R = +(_e.DRB_R === undefined ? 1 : _e.DRB_R), DRB_D = +(_e.DRB_D || 5.5), DRB_T = +(_e.DRB_T || 0.75), DRB_A = +(_e.DRB_A || 1.8), LIVRE = +(_e.LIVRE === undefined ? 0.14 : _e.LIVRE), LIVRE_P = +(_e.LIVRE_P || 0.5), LIVRE_L = +(_e.LIVRE_L || 9), LIVRE_X = +(_e.LIVRE_X || 1.3), LIVRE_LK = +(_e.LIVRE_LK || 0.4), LIVRE_LP = +(_e.LIVRE_LP || 0.7), LIVRE_E = +(_e.LIVRE_E === undefined ? 0.5 : _e.LIVRE_E), CLOSE_LD = +(_e.CLOSE_LD === undefined ? 0.7 : _e.CLOSE_LD), ATT_R = +(_e.ATT_R || 1), ATT_CD = +(_e.ATT_CD || 2.5), ATT_MAX = +(_e.ATT_MAX || 14), FXG_K = +(_e.FXG_K || 2.1), FXG_G = +(_e.FXG_G || 0.4), ATT_G = +(_e.ATT_G || 1.3), DISP = +(_e.DISP === undefined ? 1 : _e.DISP), DISP_M = +(_e.DISP_M || 3), DISP_R = +(_e.DISP_R || 3);
+    const _e = (typeof process !== 'undefined' && process.env) || {}, KEEP_O = +(_e.KEEP_O || 3.4), KEEP_L = +(_e.KEEP_L || 1.5), HOLD0 = +(_e.HOLD0 || 1.5), MKEEP = +(_e.MKEEP || 0.6), PRK = +(_e.PRK || 3), PASS_V = +(_e.PASS_V || 0.9), SHOT_PRE = +(_e.SHOT_PRE || 0.14), GK_DIVE = +(_e.GK_DIVE || 0.42), SHOT_DRAG = +(_e.SHOT_DRAG || 0.24), SBT = +(_e.SBT || 0.8), V_SPR = +(_e.V_SPR || 7.8), V_DRB = +(_e.V_DRB || 6.4), V_CALM = +(_e.V_CALM || 5.5), CALM0 = +(_e.CALM0 || 1.4), CALMK = +(_e.CALMK || 0.4), CALMG = +(_e.CALMG || 1), ACC_C = +(_e.ACC_C || 6), ACC_S = +(_e.ACC_S || 11), ACC_B = +(_e.ACC_B || 12), ACC_D = +(_e.ACC_D || 15), VTK = +(_e.VTK || 4), SUPP = +(_e.SUPP || 22), CLOSE = +(_e.CLOSE === undefined ? 55 : _e.CLOSE), CLOSE_V = +(_e.CLOSE_V || 1.08), DRB_R = +(_e.DRB_R === undefined ? 1 : _e.DRB_R), DRB_D = +(_e.DRB_D || 5.5), DRB_T = +(_e.DRB_T || 0.75), DRB_A = +(_e.DRB_A || 1.8), LIVRE = +(_e.LIVRE === undefined ? 0.14 : _e.LIVRE), LIVRE_P = +(_e.LIVRE_P || 0.5), LIVRE_L = +(_e.LIVRE_L || 9), LIVRE_X = +(_e.LIVRE_X || 1.3), LIVRE_LK = +(_e.LIVRE_LK || 0.4), LIVRE_LP = +(_e.LIVRE_LP || 0.7), LIVRE_E = +(_e.LIVRE_E === undefined ? 0.5 : _e.LIVRE_E), CLOSE_LD = +(_e.CLOSE_LD === undefined ? 0.7 : _e.CLOSE_LD), ATT_R = +(_e.ATT_R || 1), ATT_CD = +(_e.ATT_CD || 2.5), ATT_MAX = +(_e.ATT_MAX || 14), FXG_K = +(_e.FXG_K || 2.25), FXG_G = +(_e.FXG_G || 0.4), ATT_G = +(_e.ATT_G || 1.3), DISP = +(_e.DISP === undefined ? 1 : _e.DISP), DISP_M = +(_e.DISP_M || 3), DISP_R = +(_e.DISP_R || 3), CELEB = +(_e.CELEB || 9), CELEB_J = 2.2, SLOW_T = 0.9, SLOW_K = 0.3; // CELEB: segundos da comemoração do gol (era 2: ninguém chegava ao canto)
     let DISPN = 0; // bolas que ficaram com o adversário mais perto de onde ela caiu (disputa)
     let poss = 0, mode = o.t0 > 0 ? 'ko' : 'wait', modeT = 1.2, koSide = 0, hero = null, bias = [1, 1], mom = 0, momT = 0, runT = 2, defT = 0, clk = 0;
     let curT = o.t0 || 0, mClk = 0, bxT = 50, lastPasser = null, lastPassClk = -9, frozen = false, en = null, cv = null, g = null, W = 0, H = 0, dpr = 1, raf = 0, last = 0, alive = true;
@@ -780,7 +780,11 @@
     // Chute (fase 5): só é gol o que o motor mandou; o resto bate com o que o narrador conta. out: gol | def (o goleiro defende:
     // segura, espalma no rebote ou manda para escanteio) | fora | trave | bloq (o zagueiro trava na frente). O goleiro já está no
     // ângulo e mergulha para o lado da bola; sv força o tipo de defesa (o 2º chute do rebote ele segura)
+    // Comemoração e câmera lenta podem ser desligadas nos Ajustes (`climbix-co-fx` = '0', U.coFx)
+    const FXON = () => { try { return !(typeof localStorage !== 'undefined' && localStorage.getItem('climbix-co-fx') === '0'); } catch (_) { return true; } };
+    let slowT = 0, slowDebt = 0, slowP = null; // câmera lenta do chute: só o quadro da tela anda devagar por SLOW_T s e devolve o tempo depois (o minuto segue igual)
     function shoot(p, kind, forced, want, sv) {
+      if (cv && FXON() && !(o.speed && o.speed() > 2)) { slowT = SLOW_T; slowP = p; }
       const s = p.side, gx = s ? 0 : L, gk = T[1 - s][0], dg = s ? 1 : -1;
       const roll = FREE && !forced && !want && !lc; if (att && att.side === s) attEnd();
       let out = forced ? 'gol' : want || (roll ? freeRoll(p, kind) : (() => { const r = rnd(); return r < 0.24 ? 'bloq' : r < 0.27 ? 'trave' : r < 0.6 ? 'def' : 'fora'; })());
@@ -868,7 +872,7 @@
       // Sobra: a bola vai para (rx, ry) e fica com quem chegar primeiro (um atacante perto bate de novo: o 2º chute do rebote)
       const spill = (from, rx, ry, k) => { rx = cl(rx, 1, L - 1); ry = cl(ry, 2, WD - 2); let q = null, qd = 1e9; for (const z of ALL) { if (z.r === 'GK' || z.down || z === f.blk) continue; const dd = Math.hypot(z.x - rx, z.y - ry) * (z.side === s ? 1.15 : 1); if (dd < qd) { qd = dd; q = z; } }
         if (!q) return setOwner(gk); if (q.side === s && rnd() < 0.7 && !lc) q.reb = 1.6; fly(from, rx, ry, q, k === 'soco', k, true); ball.fly.from = from; };
-      if (f.out === 'gol') { net = { gx, y: f.y1, t: 0, v: Math.hypot(f.x1 - f.x0, f.y1 - f.y0) / f.dur }; mode = 'goal'; modeT = 2; koSide = 1 - s; hero = f.from; back = 0; bigSay('GOOOL!', f.from.side, 2.6, true); if (due) { const e = due; due.done = true; due = null; if (o.onGoal) o.onGoal(e.m); if (e.cb) e.cb(); } }
+      if (f.out === 'gol') { net = { gx, y: f.y1, t: 0, v: Math.hypot(f.x1 - f.x0, f.y1 - f.y0) / f.dur }; mode = 'goal'; modeT = FXON() ? CELEB : 2; koSide = 1 - s; hero = f.from; back = 0; bigSay('GOOOL!', f.from.side, 2.6, true); if (due) { const e = due; due.done = true; due = null; if (o.onGoal) o.onGoal(e.m); if (e.cb) e.cb(); } }
       else if (f.out === 'def' && f.lc && lc && lc.k === 'rebate') { const q = T[s].filter(x => x.r !== 'GK').sort((a, b) => dist(a, gk) - dist(b, gk))[0]; setOwner(q); }
       else if (f.out === 'def' && f.sv === 'escanteio' && !lc) { flyOut(gk, s ? -2.5 : L + 2.5, 34 + (ball.y < 34 ? -1 : 1) * (5 + rnd() * 6), true, 'espalma'); }
       else if (f.out === 'def' && f.sv === 'espalma' && !lc) { why = 'rebote'; spill(gk, gx + dg * (6 + rnd() * 5), ball.y + (ball.y < 34 ? -1 : 1) * (3 + rnd() * 7), 'rebote'); }
@@ -1577,10 +1581,13 @@
         if (mode === 'ko' && modeT <= 0 && (home || modeT < -14)) startPlay();
       } else if (mode === 'goal') {
         modeT -= dt;
-        const s = hero.side, cx = s ? 5 : 100, cy = hero.y < 34 ? 5 : 63;
-        hero.tx = cx; hero.ty = cy; hero.sprint = 1;
-        T[s].forEach(p => { if (p !== hero && p.r !== 'GK' && p.d > 0.3) { p.tx = cx + (s ? 3 : -3) * (1 + (p.k % 3)); p.ty = cy + (cy < 34 ? 1 : -1) * (2 + (p.k % 4) * 1.6); } });
+        // Comemoração: quem fez corre para o canto e o time vai atrás, num bolo em volta dele (pulam no desenho, `dot`)
+        const s = hero.side, cx = s ? 4.5 : 100.5, cy = hero.y < 34 ? 4.5 : 63.5, ix = s ? 1 : -1, iy = cy < 34 ? 1 : -1;
+        hero.tx = cx; hero.ty = cy; hero.sprint = 1; let n = 0;
+        T[s].forEach(p => { if (p !== hero && p.r !== 'GK' && p.d > 0.3) { const a = (n % 5) * 0.39, rr = 2.3 + (n > 4 ? 2.2 : 0) + (n % 2) * 0.5; n++; p.tx = cx + ix * Math.cos(a) * rr; p.ty = cy + iy * Math.sin(a) * rr; p.sprint = 1; } });
         T[1 - s].forEach(p => { [p.tx, p.ty] = koShape(p, p.side); });
+        // dura até ele chegar ao canto e pularem CELEB_J s (no máximo CELEB); desligada nos Ajustes dura os 2 s de antes
+        if (modeT > CELEB_J && FXON() && Math.hypot(hero.tx - hero.x, hero.ty - hero.y) < 2.5) modeT = CELEB_J;
         if (modeT <= 0) { mode = 'ko'; modeT = 0.6; back = 1; }
       } else if (mode === 'falta') {
         // Todos param; a bola rola até o lugar da infração, o cobrador vai até ela (atrás da bola) e quem é do outro
@@ -1746,8 +1753,10 @@
       // A batida: no chute o corpo recua um palmo (arma a perna) e vai na bola; no passe, só o toque para a frente
       let ko = 0; if (p.kk) { const q = p.kk, t = q.t; if (t < q.pre) ko = -0.45 * (t / q.pre); else { const v = (t - q.pre) / 0.26, a0 = q.pre ? -0.45 : 0; ko = v < 0.22 ? a0 + (1 - a0) * v / 0.22 : 1 - (v - 0.22) / 0.78; } ko *= q.pw; }
       const dro = p.dr ? drOff(p.dr) : null;
-      const x = X(p.x + (ko ? p.kk.ux * ko : 0) + (dro ? dro[0] : 0)), y = Y(p.y + (ko ? p.kk.uy * ko : 0) + (dro ? dro[1] : 0)), me = isMe(p), r = (me ? 11 : 9.6) * k;
+      const x = X(p.x + (ko ? p.kk.ux * ko : 0) + (dro ? dro[0] : 0)), me = isMe(p), r = (me ? 11 : 9.6) * k; let y = Y(p.y + (ko ? p.kk.uy * ko : 0) + (dro ? dro[1] : 0));
       g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x + 1, y + 2.5, r + 1.5 * k, (r + 1.5 * k) * 0.6, 0, 0, Math.PI * 2); g.fill();
+      // Comemoração do gol: quem chegou ao canto pula (só desenho: o corpo sobe e a sombra fica no chão)
+      if (mode === 'goal' && hero && p.side === hero.side && !p.down && Math.hypot(p.tx - p.x, p.ty - p.y) < 3.5) y -= Math.abs(Math.sin(Date.now() / 150 + p.k * 1.7)) * r * (p === hero ? 0.95 : 0.7);
       if (me) { g.fillStyle = 'rgba(242,194,48,.35)'; g.beginPath(); g.arc(x, y, r + 5.5 * k, 0, Math.PI * 2); g.fill(); }
       g.globalAlpha = p.stun > 0 ? 0.65 : 1;
       const kt = p.r === 'GK' ? [KT.gk[p.side], '#1D1D1F'] : p.side ? KT.opp : KT.mine, shirt = me ? '#F2C230' : kt[0];
@@ -1945,8 +1954,9 @@
     function camStep() {
       const now = performance.now(), dt = Math.min(0.1, (now - (cam.cl || now)) / 1000); cam.cl = now;
       const on = ((pen && !(pen.ban > 0)) || clk < camT) && W > 200, gs = camS, [fx, fy] = toW(gs, L - 13, 34), tz = on ? 1.65 : 1;
-      const k = Math.min(1, dt * (on ? 2.2 : 1.6)); cam.z += (tz - cam.z) * k;
-      const tx = on ? X(fx) : W / 2, ty = on ? Y(fy) : H / 2; cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k;
+      const sz = !on && slowT > 0 && slowP && W > 200; // câmera lenta do chute: um zoom leve entre quem chuta e o gol (Silvio, 12/11)
+      const k = Math.min(1, dt * (sz ? 5 : on ? 2.2 : 1.6)); cam.z += ((sz ? 1.28 : tz) - cam.z) * k;
+      const tx = sz ? X(slowP.x * 0.65 + (slowP.side ? 0 : L) * 0.35) : on ? X(fx) : W / 2, ty = sz ? Y(slowP.y * 0.65 + 34 * 0.35) : on ? Y(fy) : H / 2; cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k;
       if (!cam.x) { cam.x = W / 2; cam.y = H / 2; }
     }
     function draw() {
@@ -2061,7 +2071,8 @@
       raf = 0;
       if (!alive) return;
       if (!cv || !cv.isConnected) return; // a tela trocou (intervalo, fim): para até o próximo attach
-      const dt = Math.min(0.2, (ts - (last || ts)) / 1000) * (o.speed ? o.speed() : 1); last = ts; // até 5 quadros por segundo o campinho acompanha o relógio sozinho
+      const dtR = Math.min(0.2, (ts - (last || ts)) / 1000); let dt = dtR * (o.speed ? o.speed() : 1); last = ts;
+      if (slowT > 0) { slowT -= dtR; slowDebt += dt * (1 - SLOW_K); dt *= SLOW_K; } else if (slowDebt > 0) { slowDebt -= dt * 0.3; dt *= 1.3; } // até 5 quadros por segundo o campinho acompanha o relógio sozinho
       if (W < 60 || H < 40 || ++loop.n % 30 === 0) { const r = U.box ? U.box(cv) : cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1; if (Math.abs(r.width / z - W) > 1 || Math.abs(r.height / z - H) > 1) size(); }
       raf = requestAnimationFrame(loop); // antes de tudo: um erro da tela num aviso do campinho não pode parar o campinho
       try {
