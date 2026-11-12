@@ -640,6 +640,7 @@
       e.t === 'tatica' ? (e.s === 'us' ? 'Você muda para ' + esc(e.p) : 'O ' + esc(who) + ' muda para <b>' + esc(e.p).toLowerCase() + '</b>') :
       e.t === 'troca' ? 'Sai ' + esc(e.p) + ', entra <b>' + esc(e.q) + '</b>' :
       e.t === 'grito' ? 'Você grita da beira do campo: <b>' + esc(e.p) + '</b>' :
+      e.t === 'momento' ? (e.ok ? '<b>Funcionou:</b> ' : '<b>Não deu:</b> ') + esc(e.p) :
       e.t === 'grito-fim' ? 'O time volta ao plano de jogo' :
       e.t === 'conversa' ? 'Conversa no vestiário: <b>' + esc(e.p).toLowerCase() + '</b>' :
       e.t === 'acrescimo' ? 'O quarto árbitro levanta a placa: <b>mais ' + e.p + ' ' + (e.p > 1 ? 'minutos' : 'minuto') + '</b>' :
@@ -650,7 +651,7 @@
   // ação também, tá muito curto"): minuto, escudo de quem fez e a frase com o nome completo, em até duas linhas (o escudo já diz
   // o time, então a frase não repete o clube); o que foi ordem sua leva a etiqueta VOCÊ no lugar do escudo
   function feedShort(m, e) {
-    const n = esc(e.p || ''), us = e.s === 'us', you = us && (e.t === 'tatica' || e.t === 'troca') || e.t === 'grito' || e.t === 'conversa';
+    const n = esc(e.p || ''), us = e.s === 'us', you = us && (e.t === 'tatica' || e.t === 'troca') || e.t === 'grito' || e.t === 'conversa' || e.t === 'momento';
     const t = e.t === 'gol' ? '<b>GOL!</b> ' + n + (e.sp === 'pen' ? ' de pênalti' : e.sp === 'falta' ? ' de falta' : e.sp ? ' de cabeça' : HOW(e) ? ' ' + HOW(e) : '') :
       e.t === 'chance' && e.sp === 'pen' ? (e.k === 'defesa' ? '<b>Pênalti defendido!</b> ' + n : e.k === 'trave' ? '<b>Pênalti na trave!</b> ' + n : '<b>Pênalti para fora!</b> ' + n) :
       e.t === 'chance' && e.sp === 'falta' ? (e.k === 'defesa' ? n + ' cobra a falta, o goleiro defende' : e.k === 'bloqueio' ? 'Falta de ' + n + ' na barreira' : e.k === 'trave' ? 'Falta de ' + n + ' na trave!' : 'Falta de ' + n + ' por cima') :
@@ -664,6 +665,7 @@
       e.t === 'tatica' ? 'Muda para ' + (us ? n : n.toLowerCase()) :
       e.t === 'troca' ? 'Sai ' + n + ', entra <b>' + esc(e.q || '') + '</b>' :
       e.t === 'grito' ? 'Grito: <b>' + n + '</b>' :
+      e.t === 'momento' ? (e.ok ? '<b class="mom-ok">✓ Funcionou</b> ' : '<b class="mom-no">Não deu</b> ') + n :
       e.t === 'grito-fim' ? 'O time volta ao plano de jogo' :
       e.t === 'conversa' ? 'Vestiário: <b>' + n.toLowerCase() + '</b>' :
       e.t === 'acrescimo' ? 'Mais ' + e.p + (e.p > 1 ? ' minutos' : ' minuto') + ' de acréscimo' :
