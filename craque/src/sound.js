@@ -263,7 +263,7 @@
     s.onended = () => { if (chSrc === s) chSrc = null; };
     chNext = t + b.duration + 25 + Math.random() * 35;
   }
-  const REDE_OFF = 0.45, ROAR_OFF = 0.3, VAIA_OFF = 1.1;
+  const REDE_OFF = 0.45, ROAR_OFF = 0.3, VAIA_OFF = 1.1, ROAR_FADE = 0.7; // Silvio, 12/11: o rugido entrava alto de uma vez e assustava
   function chantCut(sec) { // gol: o canto que tocava sai rápido (o gol manda) e o próximo espera
     if (!ctx) return;
     const t = ctx.currentTime;
@@ -322,9 +322,10 @@
     if (echo) { const s = ctx.createGain(); s.gain.value = echo; node.connect(s); s.connect(room); }
   }
   // Toca uma gravação; a torcida é uma só: um gol novo apaga a comemoração anterior em vez de somar
-  function play(k, t, gain, echo, off) { // off: começa a gravação já adiantada (pula o silêncio ou a subida do começo)
+  function play(k, t, gain, echo, off, fade) { // off: começa a gravação já adiantada (pula o silêncio ou a subida do começo); fade: sobe em tantos segundos
     const src = ctx.createBufferSource(), g = ctx.createGain();
     src.buffer = rec[k]; g.gain.value = gain;
+    if (fade) try { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(gain, t + fade); } catch (e) { /* toca direto */ }
     src.connect(g); out(g, echo);
     src.start(t, off || 0);
     if (k !== 'torcida') return;
@@ -490,12 +491,12 @@
     // então as duas entram adiantadas (REDE_OFF, ROAR_OFF) para o pico cair no instante em que a bola estufa a rede
     goal(t) {
       if (rec.rede) play('rede', t, 0.75, 0.15, REDE_OFF); else noise(t, 0.35, 0.16, 0.01, 'bandpass', 2600, 900, 0.9);
-      if (rec.torcida) play('torcida', t + 0.02, 0.5, 0.1, ROAR_OFF); else crowd(t + 0.04, { vowel: 'o', dur: 2.9, a: 0.25, hold: 1.6, spread: 0.2, peak: 1, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.8, 1.2], [2.9, 0.95]], shouts: 14, shoutGain: 1.1, bend: [1, 1.15] });
+      if (rec.torcida) play('torcida', t + 0.02, 0.42, 0.1, ROAR_OFF, ROAR_FADE); else crowd(t + 0.04, { vowel: 'o', dur: 2.9, a: 0.25, hold: 1.6, spread: 0.2, peak: 1, sections: 6, color: [[0, 0.9], [0.45, 1.2], [1.8, 1.2], [2.9, 0.95]], shouts: 14, shoutGain: 1.1, bend: [1, 1.15] });
     },
     // Gol seu fora de casa: a mesma rede, a sua torcida é pouca e está longe (só gravações)
     goalAway(t) {
       if (rec.rede) play('rede', t, 0.75, 0.15, REDE_OFF);
-      if (rec.torcida) play('torcida', t + 0.02, 0.2, 0.2, ROAR_OFF);
+      if (rec.torcida) play('torcida', t + 0.02, 0.18, 0.2, ROAR_OFF, ROAR_FADE);
     },
     // Gol deles na sua casa: a rede longe e a sua torcida vaia na hora (a vaia.mp3 entra já no meio da subida)
     golContra(t) {
@@ -505,7 +506,7 @@
     // Gol deles na casa deles: a rede e a torcida deles explode (o estádio é deles)
     golDeles(t) {
       if (rec.rede) play('rede', t, 0.35, 0.2, REDE_OFF);
-      if (rec.torcida) play('torcida', t + 0.02, 0.42, 0.15, ROAR_OFF);
+      if (rec.torcida) play('torcida', t + 0.02, 0.36, 0.15, ROAR_OFF, ROAR_FADE);
     },
     // Vitória no fim de um jogo simulado: só a torcida, sem a bola na rede
     cheer(t) {
