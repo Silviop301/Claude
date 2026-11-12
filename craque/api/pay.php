@@ -107,6 +107,23 @@ if ($a === 'hook') {
   out(['ok' => true]);
 }
 
+// Presente de moedas (2026-11-12, para o Silvio testar sem pagar): só com a chave de climbix-data/admin-key, que o deploy
+// grava do segredo CLIMBIX_ADMIN_KEY e nunca está no código nem no jogo. Sem o arquivo (ou chave curta) a rota não existe.
+// Entra como compra paga de R$ 0 (pack 'gift') da conta e chega ao aparelho pelo check/claim de sempre.
+//   POST ?a=gift {key, user (usuário ou e-mail do login), coins (1 a 5000)}
+if ($a === 'gift') {
+  $ak = is_file($dir . '/admin-key') ? trim((string)file_get_contents($dir . '/admin-key')) : '';
+  $in = json_decode(file_get_contents('php://input') ?: '', true) ?: [];
+  if (strlen($ak) < 12 || ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !is_string($in['key'] ?? null) || !hash_equals($ak, $in['key'])) out(['error' => 'action'], 400);
+  $n = (int)($in['coins'] ?? 0); $who = mb_strtolower(trim((string)($in['user'] ?? '')), 'UTF-8');
+  if ($n < 1 || $n > 5000 || $who === '') out(['error' => 'bad'], 400);
+  $q = $db->prepare('SELECT user_key FROM accounts WHERE user_key = ? UNION SELECT user_key FROM identities WHERE lower(label) = ?'); $q->execute([$who, $who]);
+  $keys = $q->fetchAll(PDO::FETCH_COLUMN);
+  if (count($keys) !== 1) out(['error' => 'user', 'found' => count($keys)], 404);
+  $db->prepare("INSERT INTO purchases (ref, user_key, pack, coins, price, status, mp_id, created, paid) VALUES (?, ?, 'gift', ?, 0, 'approved', '', ?, ?)")->execute([bin2hex(random_bytes(12)), $keys[0], $n, time(), time()]);
+  out(['ok' => true, 'coins' => $n]);
+}
+
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') out(['error' => 'method'], 405);
 $in = json_decode(file_get_contents('php://input') ?: '', true);
 if (!is_array($in)) out(['error' => 'json'], 400);

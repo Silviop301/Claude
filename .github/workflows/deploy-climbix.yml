@@ -10,6 +10,15 @@ on:
     branches: [claude/gracious-darwin-9gdlfp, main]
     paths: ['craque/**', '.github/workflows/deploy-climbix.yml']
   workflow_dispatch:
+    inputs:
+      presente_conta:
+        description: 'Moedas de presente (teste): usuário ou e-mail da conta. Vazio = só publica.'
+        required: false
+        default: ''
+      presente_moedas:
+        description: 'Quantas moedas (1 a 5000)'
+        required: false
+        default: '500'
 
 concurrency:
   group: deploy-climbix
@@ -169,6 +178,29 @@ jobs:
           DATA="$(dirname "$TARGET")/climbix-data"
           printf '%s' "$MP_TOKEN" | $SSH "$SSH_USER@$SSH_HOST" "mkdir -p $DATA && umask 077 && cat > $DATA/mp-token"
           case "$MP_TOKEN" in TEST-*) echo "Compra de moedas ligada no modo de TESTE (não cobra).";; *) echo "Compra de moedas ligada (produção).";; esac
+
+      # Presente de moedas (api/pay.php?a=gift): segredo CLIMBIX_ADMIN_KEY (frase longa) grava climbix-data/admin-key FORA do
+      # public_html. Rodar o workflow à mão com "presente_conta" manda as moedas para essa conta (chegam ao abrir o jogo logado).
+      - name: Presente de moedas
+        if: steps.key.outputs.ok == 'true'
+        env:
+          SSHPASS: ${{ secrets.CLIMBIX_SSH_PASSWORD }}
+          SSH: ${{ steps.key.outputs.ssh }}
+          ADMIN_KEY: ${{ secrets.CLIMBIX_ADMIN_KEY }}
+          CONTA: ${{ github.event.inputs.presente_conta }}
+          MOEDAS: ${{ github.event.inputs.presente_moedas }}
+        run: |
+          if [ "${#ADMIN_KEY}" -lt 12 ]; then
+            echo "Sem CLIMBIX_ADMIN_KEY: presente de moedas desligado."; exit 0
+          fi
+          DATA="$(dirname "$TARGET")/climbix-data"
+          printf '%s' "$ADMIN_KEY" | $SSH "$SSH_USER@$SSH_HOST" "mkdir -p $DATA && umask 077 && cat > $DATA/admin-key"
+          if [ -n "$CONTA" ]; then
+            BODY=$(jq -nc --arg k "$ADMIN_KEY" --arg u "$CONTA" --argjson n "${MOEDAS:-500}" '{key:$k,user:$u,coins:$n}')
+            R=$(curl -sS -m 30 -X POST -H 'Content-Type: application/json' --data "$BODY" "https://climbix.app/api/pay.php?a=gift")
+            echo "Presente: $R"
+            echo "$R" | grep -q '"ok":true' || { echo "::error::Presente não entregue: $R"; exit 1; }
+          fi
 
       # Opiniões por e-mail: cada opinião nova já vai sozinha (api/feedback.php). Aqui manda o que ficou para trás
       # (na primeira vez, tudo o que já existia, numa leva só). Falha aqui não derruba o deploy.
