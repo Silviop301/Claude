@@ -8349,7 +8349,7 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .tm .ld-dn b { font-size: 13px; }
 .tm-bench { overflow-x: auto; overflow-y: hidden; touch-action: pan-x; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
 .tm-bench::-webkit-scrollbar { display: none; }
-.tm-bench > small { position: sticky; left: 0; z-index: 1; align-self: stretch; display: flex; align-items: center; padding-right: 6px; background: #0B2E20; box-shadow: 10px 0 10px #0B2E20; }
+.tm-bench > small { position: sticky; left: 0; z-index: 5; align-self: stretch; display: flex; align-items: center; padding-right: 6px; background: #0B2E20; box-shadow: 10px 0 10px #0B2E20; }
 .sm-cr { width: 64px; height: 64px; }
 .sm-x { padding-top: 18px; }
 /* Treino e Olheiro enxutos (Silvio 2026-11-09): sem trilho, cabeçalho da escalação, coluna da direita com o dourado */
