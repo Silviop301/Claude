@@ -331,11 +331,11 @@
     if (S.coFinPend && S.coFinPend(co)) return co.fin.pend.ac ? reuniao() : patrocinio();
     c.save('hub');
     const tut = tutStep(co);
-    const popped = !tut && (inboxPop(co, semana) || lostPop(co) || auxPop(co) || dmPop(co) || obraPop(co) || nomePop(co) || ligaPop(co) || showPop(co));
+    const inPop = !tut && inboxPop(co, semana), popped = inPop || (!tut && (lostPop(co) || auxPop(co) || dmPop(co) || obraPop(co) || nomePop(co) || ligaPop(co) || showPop(co)));
     if (!tut && !popped && !ctWarn(co)) finNews(co);
     if (!tut) setTimeout(() => { winToast(co); if (!popped) upToast(co); }, 0);
     // Propostas pelos seus que ainda não abriram: aviso no botão Mercado (a janelinha sozinha é uma por semana)
-    const inN = tut ? 0 : S.coMktInbox(co).filter(o => !o.seen).length - (popped ? 1 : 0);
+    const inN = tut ? 0 : S.coMktInbox(co).filter(o => !o.seen).length - (inPop ? 1 : 0); // só desconta a proposta que abriu agora (outra janelinha deixava o aviso em -1)
     const nwN = tut || !S.coWorldNew ? 0 : (S.coWorldSync(co), S.coWorldNew(co));
     const t = S.coTable(co), me = t.find(x => x.me), pos = S.coPos(co), B = co.board, conf = Math.round(B.conf);
     const f5 = f => { const a = (f || '').split('').slice(-5); while (a.length < 5) a.unshift('n'); return '<span class="ld-f5 sm-f5">' + a.map(x => '<i class="' + x + '"></i>').join('') + '</span>'; };
