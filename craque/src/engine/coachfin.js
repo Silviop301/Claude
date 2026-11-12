@@ -17,7 +17,10 @@
   // Números (calibrados com tools/craque_treinador.js)
   const F = S.CO_FIN = {
     cra: { k: 0.1 },   // time melhor traz mais receita: +10% por ponto do 11 mais forte acima do normal do clube (S.coFinStar)
-    marg: 1.03,     // a folha de um elenco normal do clube é 103% da receita prevista
+    marg: 1.03,     // a folha de um elenco normal do clube pequeno é 103% da receita prevista
+    // Clube grande fatura mais que a folha (Silvio 2026-11-12: "nem o Real tanka time de estrelas"): a parte da receita que vai para
+    // a folha normal cai de `marg` (força até `lo`) até `big` (força `hi` ou mais). Real ~0,85, Flamengo ~0,92, Remo 1,03. CO_MG = big
+    mg: { lo: 60, hi: 84, big: 0.85 },
     tv: 0.4, bil: 0.35,             // partes da receita (o patrocínio vem da proposta escolhida)
     titulo: 0.12, acesso: 0.08,     // prêmios
     lg: { k: 0.3, lo: 0.88, hi: 1.4 },   // peso da divisão na receita: fora da liga de origem, exp(k × diferença de força média / 8,5), entre lo e hi
@@ -101,18 +104,24 @@
   S.coFinStarV = (co, squad) => { const f = co.fin, n = rounds(co); return f ? r10((f.rec || recOf(co, n)) / n * S.coFinStar(co, squad)) : 0; };
   // Teto da folha de hoje: o do clube (f.teto) mais o que o time titular soma. `squad` = elenco hipotético (contrato na mesa)
   S.coFinTeto = (co, squad) => { const f = S.coFin(co); return f ? f.teto + r5(baseOf(co) * F.teto * S.coFinStar(co, squad)) : 0; };
+  // Salário da auxiliar e do DM: % da folha, mas no máximo da folha normal do clube (Silvio 2026-11-12: o time de estrelas pagava
+  // a equipe em dobro e ia para o vermelho)
+  const staffBase = co => Math.min(S.coFolha(co), baseOf(co));
   S.coFolha = co => (co.squad || []).reduce((a, p) => a + (p.wage || 0), 0);
   const rounds = co => (co.ss ? co.ss.rounds.length : 38);
   const zero = () => ({ bil: 0, tv: 0, pat: 0, prem: 0, vend: 0, sal: 0, comp: 0, jur: 0 });
   // Receita prevista da temporada pelo tamanho do clube e pelo número de rodadas
-  const recOf = (co, n) => baseOf(co) * n / F.marg;
+  const margOf = clubId => { const G = F.mg, b = +((typeof process !== 'undefined' && process.env && process.env.CO_MG) || G.big), c = D.CLUB_BY_ID[clubId];
+    const t = clamp(((c ? c.strength : G.lo) - G.lo) / (G.hi - G.lo), 0, 1); return F.marg - (F.marg - b) * t; };
+  S.coFinMarg = margOf;
+  const recOf = (co, n) => baseOf(co) * n / margOf(co.club);
   function newPres(co) {
     const r = rngOf(co, 'pres'), club = D.CLUB_BY_ID[co.club];
     return { n: D.randomName(D.countryOf(club), r), k: r.pick(Object.keys(PRES)), s: co.season };
   }
   function init(co) {
     const base = baseOf(co);
-    co.fin = { caixa: r10(base * F.caixa0), verba: r10(base * F.verba0), teto: r5(base * F.teto), rec: 0, ss: zero(), last: null, neg: 0, s: co.season,
+    co.fin = { mg: 1, caixa: r10(base * F.caixa0), verba: r10(base * F.verba0), teto: r5(base * F.teto), rec: 0, ss: zero(), last: null, neg: 0, s: co.season,
       pres: newPres(co), ac: null, pat: null, ops: null, pend: null, loan: null, sold: false, news: [] };
     return co.fin;
   }
@@ -121,6 +130,8 @@
     if (!co || !co.club) return null;
     const f = co.fin || init(co);
     if (!f.pres) { f.pres = newPres(co); f.news = f.news || []; }
+    // Saves de antes da receita pelo tamanho do clube (12/11): refaz a receita da temporada já em andamento (o patrocínio assinado fica)
+    if (f.mg !== 1) { if (f.rec && co.ss) f.rec = recOf(co, rounds(co)); f.mg = 1; }
     return f;
   };
   const presOf = co => PRES[(S.coFin(co).pres || {}).k] || PRES.pac;
@@ -371,7 +382,7 @@
     const r = start0(co);
     const fin = S.coFin(co);
     if (fin) {
-      fin.s = co.season; fin.ss = zero(); fin.rec = recOf(co, rounds(co)); fin.neg = 0; fin.sold = false; fin.snap = { s: co.season, ss: zero(), cx: fin.caixa }; fin.rd = null; fin.cx = { s: co.season, r0: 0, v: [fin.caixa] };
+      fin.s = co.season; fin.ss = zero(); fin.rec = recOf(co, rounds(co)); fin.mg = 1; fin.neg = 0; fin.sold = false; fin.snap = { s: co.season, ss: zero(), cx: fin.caixa }; fin.rd = null; fin.cx = { s: co.season, r0: 0, v: [fin.caixa] };
       // Eleição a cada 3 temporadas: metade das vezes entra outro presidente
       if (co.season - fin.pres.s >= F.eleicao) { const p = newPres(co); if (rngOf(co, 'eleicao')() < 0.5 && p.k !== fin.pres.k) { fin.pres = p; news(co, 'Eleição no clube: ' + p.n + ' é o novo presidente (' + PRES[p.k].nome + ').'); } else fin.pres.s = co.season; }
       // A reunião de pré-temporada parte da meta da diretoria e da verba/teto que o fim do ano deixou
@@ -420,7 +431,7 @@
     // verba nova pelo tamanho do clube mais uma parte do lucro; no vermelho não tem verba (o acordo da pré-temporada ainda mexe nela)
     const base = baseOf(co);
     // Subiu: quanto a receita cresce só pela liga de cima (peso da liga nova contra o que valeu neste ano; sem o sobe e desce do elenco sorteado)
-    if (out.up && rec) { const n0 = normal(co.club, out.season, co), lg0 = n0 ? rec * F.marg / rounds(co) / n0 : 1; out.upRec = Math.round((lgMult(co.club) / (lg0 || 1) - 1) * 100); }
+    if (out.up && rec) { const n0 = normal(co.club, out.season, co), lg0 = n0 ? rec * margOf(co.club) / rounds(co) / n0 : 1; out.upRec = Math.round((lgMult(co.club) / (lg0 || 1) - 1) * 100); }
     const good = out.met && saldo > 0;
     fin.teto = Math.max(r5(base * F.teto), fin.tmin || 0, good ? r5((fin.teto0 || (fin.teto - (fin.tap || 0))) * 1.05) : 0) + (fin.tap || 0);
     fin.verba = fin.caixa <= 0 ? 0 : Math.min(r10(fin.caixa * 0.6), r10(base * F.verba0 + Math.max(0, saldo) * F.lucro));
@@ -456,7 +467,7 @@
   };
   S.coAuxLv = co => AX.lv[S.coAux(co).lv];
   S.coAuxAcc = co => S.coAuxLv(co).acc;
-  S.coAuxWage = co => (co.aux && co.aux.lv ? Math.round(S.coFolha(co) * AX.wage[co.aux.lv] / 100) * 100 : 0);
+  S.coAuxWage = co => (co.aux && co.aux.lv ? Math.round(staffBase(co) * AX.wage[co.aux.lv] / 100) * 100 : 0);
   // O próximo curso: { to, fee, wage (por rodada, já no nível novo), rounds, max, doing, why } (why: 'caixa' sem dinheiro)
   S.coAuxPlan = function (co) {
     const a = S.coAux(co), to = a.lv + 1, f = S.coFolha(co), fin = S.coFin(co);
@@ -507,7 +518,7 @@
   };
   S.coDmK = (co, k) => (co && co.club ? DM[k][S.coDm(co).lv] : k === 'cut' || k === 'treat' ? 0 : 1);
   S.coDmDoc = co => { const d = DM.docs[S.coDm(co).doc]; return { n: d[0], fc: d[1] }; };
-  S.coDmWage = co => { const d = co.dm && co.dm.club === co.club ? co.dm : null; if (!d || d.lv <= d.base) return 0; return Math.round(S.coFolha(co) * (DM.wage[d.lv] - DM.wage[d.base]) / 100) * 100; };
+  S.coDmWage = co => { const d = co.dm && co.dm.club === co.club ? co.dm : null; if (!d || d.lv <= d.base) return 0; return Math.round(staffBase(co) * (DM.wage[d.lv] - DM.wage[d.base]) / 100) * 100; };
   S.coDmPlan = function (co) {
     const d = S.coDm(co), to = d.lv + 1, f = S.coFolha(co), fin = S.coFin(co);
     if (to >= DM.lv.length) return { max: 1 };
