@@ -249,10 +249,10 @@
   const MINE_ON = false;
   // Pacotinhos são do Jogador (itens do personagem e cartas): o botão da home deitada volta com ele (Silvio 2026-11-10)
   const PACKS_ON = false;
-  // Perfil e Ajustes: desenhos do ChatGPT no estilo da moeda (assets/co/ic-*.webp, originais em arte/icones-home/; Silvio, 2026-11-11)
-  const fiSvg = k => '<svg class="fi" viewBox="0 0 32 32" aria-hidden="true"><image href="assets/co/ic-' + k + '.webp" width="32" height="32"/></svg>';
-  const FI_PERFIL = fiSvg('perfil');
-  const FI_AJUSTES = fiSvg('ajustes');
+  // Perfil e Ajustes: modelo chapado, desenho cheio escuro num disco creme (os do ChatGPT destoavam; Silvio, 2026-11-12)
+  const fiSvg = d => '<svg class="fi" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="16" fill="#F3F1EA"/><path fill="#0E2E22" fill-rule="evenodd" d="' + d + '"/></svg>';
+  const FI_PERFIL = fiSvg('M16 7.4a4.7 4.7 0 1 0 0 9.4a4.7 4.7 0 1 0 0-9.4zM7.4 25.5c.9-4.4 4.3-7 8.6-7s7.7 2.6 8.6 7a12.8 12.8 0 0 1-17.2 0z');
+  const FI_AJUSTES = fiSvg('M14.17 8.62L14.56 5.9L17.44 5.9L17.83 8.62A7.6 7.6 0 0 1 19.92 9.49L22.12 7.84L24.16 9.88L22.51 12.08A7.6 7.6 0 0 1 23.38 14.17L26.1 14.56L26.1 17.44L23.38 17.83A7.6 7.6 0 0 1 22.51 19.92L24.16 22.12L22.12 24.16L19.92 22.51A7.6 7.6 0 0 1 17.83 23.38L17.44 26.1L14.56 26.1L14.17 23.38A7.6 7.6 0 0 1 12.08 22.51L9.88 24.16L7.84 22.12L9.49 19.92A7.6 7.6 0 0 1 8.62 17.83L5.9 17.44L5.9 14.56L8.62 14.17A7.6 7.6 0 0 1 9.49 12.08L7.84 9.88L9.88 7.84L12.08 9.49A7.6 7.6 0 0 1 14.17 8.62ZM16 12.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7z');
   const LAND_MORE = [['mine', 'Carreiras', 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4'], ['ranking', 'Ranking', 'M12 14a5 5 0 1 0 0-10a5 5 0 1 0 0 10M9 13l-2 8 5-3 5 3-2-8'],
     ['profile', 'Perfil', FI_PERFIL], ['settings', 'Ajustes', FI_AJUSTES]].filter(x => (RANK_ON || x[0] !== 'ranking') && (MINE_ON || x[0] !== 'mine'));
   const lineSvg = d => d.charAt(0) === '<' ? d : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + d + '"/></svg>';
