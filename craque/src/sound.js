@@ -39,7 +39,7 @@
     }
     bus();
     // Gravações de verdade (rede 40 KB, torcida 60 KB). Enquanto não chegam, o gol usa os sons sintetizados
-    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=9c4a53aa'], ['apito', 'assets/sons/apito.mp3?v=b8f1c7c6'], ['apitoInt', 'assets/sons/apito-int.mp3?v=1242a373'], ['apitoFim', 'assets/sons/apito-fim.mp3?v=08534777']].filter(([k]) => !rec[k]).forEach(([k, url]) => { // contexto refeito (revive): o que já veio fica
+    if (root.fetch) [['rede', 'assets/sons/rede.mp3?v=7805c0ba'], ['torcida', 'assets/sons/torcida.mp3?v=9c4a53aa'], ['apito', 'assets/sons/apito.mp3?v=bd827477'], ['apitoInt', 'assets/sons/apito-int.mp3?v=16bc6ed2'], ['apitoFim', 'assets/sons/apito-fim.mp3?v=f154cab2']].filter(([k]) => !rec[k]).forEach(([k, url]) => { // contexto refeito (revive): o que já veio fica
       fetch(url).then(r => r.arrayBuffer())
         .then(b => new Promise((ok, err) => ctx.decodeAudioData(b, ok, err))).then(b => { rec[k] = b; }).catch(() => { /* fica a sintetizada */ });
     });
@@ -398,8 +398,8 @@
       [523, 659, 880].forEach((f, i) => tone('triangle', f, f, t + i * 0.075, i === 2 ? 0.26 : 0.1, 0.12, { a: 0.006, echo: i === 2 ? 0.2 : 0 }));
     },
     // Apito do juiz: dois toques curtos e um longo; a bolinha de dentro faz o tom tremer e "rolar"
-    // Gravação do Silvio (2026-11-11): um apito (saída e pênalti), dois no intervalo (curto e longo) e três no fim (curto, curto, longo),
-    // montados do mesmo apito. Enquanto a gravação não chega, a sintetizada
+    // Gravações do Silvio (Epidemic Sound, 12/11): um apito curto (saída e pênalti), curto + longo no intervalo e o "fim de jogo" (três apitos);
+    // originais em /mnt/project-files/climbix/sons/apitos-epidemic/. Enquanto a gravação não chega, a sintetizada
     whistle(t) {
       if (rec.apito) return play('apito', t, 0.45, 0.05);
       synthWhistle(t);
