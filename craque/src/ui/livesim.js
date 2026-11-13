@@ -132,6 +132,36 @@
     // Energia de cada um: começa no que veio (Treinador) ou perto de 100 e cai com os minutos (mais rápido na pressão alta)
     const enOf = p => (isMe(p) && en !== null ? en : p.inf && p.inf.enf ? cl(p.inf.enf(), 0, 100) : cl(p.e0 - (curT - p.eT) * p.eK * (0.8 + 0.5 * Math.min(1.2, ST[p.side].press)), 5, 100));
     numbers(0); numbers(1);
+    // Cérebro 11x11 (teste, ?motor=11, só na simulação livre): a bola rolando é jogada por cerebro11.js (física de verdade,
+    // nada disparado nem sorteado no fim). Este arquivo segue com o desenho, o juiz do motor, as trocas, o gol e o pênalti.
+    // B11_K: segundos de jogo do cérebro por segundo do campinho (90 min = 680 s, como na simulação que o Silvio trouxe)
+    const B11 = !!(o.free && o.brain && LP.cerebro11), B11_K = +(_e.B11_K || 2.75);
+    let b11 = null, b11In = false, b11F = null;
+    const qv = (p, k) => { const a = p && p.inf && p.inf.at; if (a && a[k] !== undefined && a[k] !== null) return a[k]; if (k === 'gol' && a && a.gol === undefined && p.r === 'GK') return 60 + (p.q || 0) * 100; if (k === 'vel') return 60 + (p.q || 0) * 100 + (p.spd - 1.01) * 60; return 60 + (p.q || 0) * 100; };
+    if (B11) b11 = LP.cerebro11({ R: rnd, T: () => T, at: qv, en: p => enOf(p), sty: s => ST[s], forma: s => Math.log(Math.max(0.05, lamF[s]) / 1.3),
+      onShot: sh => { if (!o.onShot) return; const nm = q => (q && q.inf ? q.inf.num : undefined);
+        o.onShot({ side: sh.side, out: sh.out, sv: sh.sv, kind: sh.kind, id: sh.p && sh.p.inf ? sh.p.inf.id : undefined, num: nm(sh.p), ast: nm(sh.ast), dist: sh.dist, box: sh.box, near: sh.near, lane: sh.lane }); },
+      onGoal: (p, s, y, v, own) => { b11In = false; if (own && o.onShot) o.onShot({ side: s, out: 'gol', kind: 'contra', dist: 8, box: true, near: false, lane: 0 });
+        net = { gx: s ? 0 : L, y, t: 0, v: Math.max(10, v) }; mode = 'goal'; modeT = FXON() ? CELEB : 2; koSide = 1 - s; back = 0; ball.owner = null;
+        hero = p && p.side === s ? p : T[s].filter(q => q.r !== 'GK').sort((a, b) => tf(s, b)[0] - tf(s, a)[0])[0]; bigSay('GOOOL!', s, 2.6, true); },
+      onPost: (x, y) => { post = { x, y, t: 0.5 }; if (typeof window !== 'undefined' && window.CRAQUE_SFX) try { window.CRAQUE_SFX.play('trave'); } catch (_) {} },
+      onStop: (k, s, x, y) => { poss = s; signal(s, x, y, k === 'lateral' ? 'lat' : k === 'escanteio' ? 'esc' : 'tiro'); if (k === 'escanteio') escClk = clk; },
+      onFoul: (p, v) => { const F = b11F; if (!F) return; b11F = null; b11.cacar(null); b11In = false; poss = v.side; foulNow(F.o, p, v); if (F.cb) setTimeout(F.cb, (F.o.kind === 'falta' ? 500 : 900) / Math.max(1, o.speed ? o.speed() : 1)); } });
+    // A bola rolando no cérebro: as paradas do motor (pênalti) e a falta do juiz esperam a vez dela aqui
+    function playB(dt) {
+      if (lc) lcDone();
+      if (!b11In) { b11.entrar(ball); b11In = true; }
+      const sd = b11.posse(); poss = sd; const ax = tf(sd, ball)[0] / L * 100, ctl = cl(55 + (ax - 25) * 0.6, 40, 100); acc.x += sd ? 100 - ctl : ctl; acc.n++; pt[sd] += dt;
+      // pênalti do motor: espera o time levar a bola ao ataque (até 5 s) e para o jogo
+      if (!pen && !b11F) { const pe = goals.find(q => !q.done && q.pen && !q.kick && q.m <= curT + 2);
+        if (pe) { pe.w = (pe.w || 0) + dt; const ow = ball.owner; if (pe.now || pe.w >= 5 || (ow && ow.side === pe.side && ow.r !== 'GK' && tf(pe.side, ball)[0] > 60)) { b11In = false; b11.sair(); penStart(pe); return; } } }
+      goals.forEach(q => { if (!q.done && !q.pen && q.m <= curT + 1) { q.done = true; if (q.cb) q.cb(); } }); // no livre o motor não manda outra jogada
+      // falta do juiz: quem fez vai no bote em quem está com a bola do outro time; o apito sai no contato (onFoul)
+      if (b11F) { const F = b11F; F.t += dt; const ow = ball.owner;
+        if (ow && ow.side !== F.o.side) { if (!F.p || F.p.side !== F.o.side || !T[F.o.side].includes(F.p)) F.p = fouler(F.o, ow); if (F.p) b11.cacar(F.p); if (F.p && F.t > 10) { b11F = null; b11.cacar(null); b11In = false; poss = ow.side; foulNow(F.o, F.p, ow); if (F.cb) setTimeout(F.cb, 500); return; } }
+        if (F.t > 16) { b11F = null; b11.cacar(null); if (F.o.kind === 'vermelho') { const p = whoDid(F.o.side, F.o.pos, F.o.me, F.o.num); if (p) goOff(p, 0); } if (F.cb) F.cb(); } }
+      b11.passo(dt * B11_K, ball);
+    }
     let due = null; // o gol do motor que está para sair
     // Simulação livre (o.free, teste do Treinador): o motor não manda gol nem chance. O time parte para o ataque sozinho
     // (`att`: a mesma jogada pelo estilo do gol do motor, mas sem proteção: a zaga desarma, corta o passe e trava) e cada
@@ -1186,6 +1216,18 @@
       if (foulTo === p) foulTo = at(s, 6);
       leaving.push({ p, wasMe, wait: wait || 0, t: 0, ty: p.y < WD / 2 ? -1 : WD + 1 });
     }
+    // Juiz do motor com o cérebro 11x11: impedimento sai na hora (no mais adiantado do ataque); falta e cartão esperam o bote
+    function refB(r0, cb) {
+      if (r0.kind === 'impedimento') {
+        const s = r0.side, q = T[s].filter(x => x.r !== 'GK').sort((a, b) => tf(s, b)[0] - tf(s, a)[0])[0];
+        if (!q) { if (cb) cb(); return; }
+        const sp = { x: cl(q.x, 1, L - 1), y: cl(q.y, 1, WD - 1) }, tk = T[1 - s].filter(x => x.r !== 'GK').sort((a, b) => dist(a, sp) - dist(b, sp))[0];
+        b11In = false; b11.sair(); poss = 1 - s; whistle('Impedimento', tk, sp); const ln = Math.max(L / 2, ...T[1 - s].filter(x => x.r !== 'GK').map(x => tf(s, x)[0])); offLine = { s, x: ln, t: 1.8 }; arFor(toW(s, ln, 0)[0]).flag = 1.8; refFx = { p: q, kind: 'impedimento', t: 1.8 };
+        if (cb) setTimeout(cb, 900 / Math.max(1, o.speed ? o.speed() : 1)); return;
+      }
+      if (b11F) { if (r0.kind === 'vermelho') { const p = whoDid(r0.side, r0.pos, r0.me, r0.num); if (p) goOff(p, 0); } if (cb) cb(); return; }
+      b11F = { o: r0, t: 0, p: null, cb };
+    }
     function refDo(o) {
       const kind = o.kind, p = whoDid(o.side, o.pos, o.me, o.num);
       if (!p) return false;
@@ -1616,26 +1658,27 @@
       for (const p of ALL) if (p.dr && (p.dr.t += dt * p.dr.sp) > 1.8) p.dr = null;
       ALL.forEach(p => { if (p.reb > 0) p.reb -= dt; if (!p.down && p.dva != null) p.dva = null; });
       for (const p of ALL) if (p.ovl > 0) p.ovl -= dt;
-      if (offPend) offStep(dt);
-      if (foulPend) foulStep(dt);
+      if (offPend && !B11) offStep(dt);
+      if (foulPend && !B11) foulStep(dt);
       for (let i = leaving.length - 1; i >= 0; i--) { const q = leaving[i]; q.wait -= dt; if (q.wait > 0) continue; q.t += dt;
         if (q.bench) continue;
         if (q.sub) { const dx = q.tx - q.p.x, dy = q.ty - q.p.y, d = Math.hypot(dx, dy), v = Math.min(d, (q.run ? 5.5 : 3.2) * dt); if (d > 0.01) { q.p.x += dx / d * v; q.p.y += dy / d * v; } if (d < 0.5 || q.t > 16) leaving.splice(i, 1); continue; } // a troca sai andando até o meio
         q.p.y += cl(q.ty - q.p.y, -3.6 * dt, 3.6 * dt); if (q.t > 6 || q.p.y < -0.5 || q.p.y > WD + 0.5) leaving.splice(i, 1); }
       if (Q4.t > 0) Q4.t -= dt;
       if (subQ && subQ.ph === 'wait') { subQ.t += dt; const busy = subQ.items.some(it => ball.owner === it.p || (rs && rs.taker === it.p) || foulTo === it.p || (ball.fly && ball.fly.to === it.p) || (ball.loose && ball.loose.to === it.p));
-        if ((mode === 'rein' || mode === 'tiro' || mode === 'falta' || mode === 'ko') && !busy) subStart();
+        if ((mode === 'rein' || mode === 'tiro' || mode === 'falta' || mode === 'ko' || (B11 && mode === 'play' && b11.parado())) && !busy) subStart();
         // Troca só com a bola parada (Silvio, 10/11: "parou para uma substituição sem nenhuma parada aparente"): passados 12 s sem
         // parada, o time que vai trocar, com a bola no seu campo ou no meio, chuta para a lateral; aos 35 s o juiz para o jogo
         else if (mode === 'play' && !due && !lc && !pen) { const ow = ball.owner;
-          if (subQ.t > 12 && ow && ow.side === subQ.s && ow.r !== 'GK' && !busy && tf(ow.side, ow)[0] < 65 && outCd <= 0) { outCd = 3; flyOut(ow, ow.x + (ow.side ? -6 : 6), ow.y < WD / 2 ? -3 : WD + 3, false, 'fora'); }
+          if (!B11 && subQ.t > 12 && ow && ow.side === subQ.s && ow.r !== 'GK' && !busy && tf(ow.side, ow)[0] < 65 && outCd <= 0) { outCd = 3; flyOut(ow, ow.x + (ow.side ? -6 : 6), ow.y < WD / 2 ? -3 : WD + 3, false, 'fora'); }
           else if (subQ.t > 35 && ow && !busy) whistle('Substituição', ow, { x: ball.x, y: ball.y }); } }
       ALL.forEach(p => { if (p.down) p.down = Math.max(0, p.down - dt); });
       offStepRef(dt); if (outCd > 0) outCd -= dt;
+      if (B11 && mode !== 'play') b11In = false;
       if (mode === 'wait') { ALL.forEach(p => { [p.tx, p.ty] = koShape(p, p.side); }); ball.x = 52.5; ball.y = 34; }
       else if (mode === 'festa') festStep(dt);
       else if (mode === 'fim') { ALL.forEach(p => { p.tx = p.x + (p.tx - p.x) * 0.9; p.ty = p.y + (p.ty - p.y) * 0.9; p.sprint = 0; }); }
-      else if (mode === 'play') play(dt);
+      else if (mode === 'play') { if (B11) playB(dt); else play(dt); }
       else if (mode === 'troca') subStep(dt);
       else if (mode === 'pen') { if (pen) penStep(dt); else mode = 'play'; }
       else if (mode === 'half') { ALL.forEach(p => { [p.tx, p.ty] = tunnel(p); p.outT = 30; p.outE = 40; }); }
@@ -1700,7 +1743,7 @@
       }
       if (mode === 'ko' || mode === 'half') { const dd = Math.hypot(52.5 - ball.x, 34 - ball.y), k = dd > 0.01 ? Math.min(1, 16 * dt / dd) : 1; ball.x += (52.5 - ball.x) * k; ball.y += (34 - ball.y) * k; } // volta ao meio rolando, não voando
       // Andar: cada um reage no seu tempo, acelera e freia; ninguém vira na hora nem atravessa o companheiro
-      ALL.forEach(p => {
+      if (!(B11 && mode === 'play' && b11In)) ALL.forEach(p => {
         p.lg = Math.max(0, (p.lg || 0) - dt); p.cd = Math.max(0, p.cd - dt); p.stun = Math.max(0, p.stun - dt); p.run = Math.max(0, p.run - dt); p.go = Math.max(0, p.go - dt);
         p.rt -= dt;
         if (p.sprint || p.rt <= 0 || mode !== 'play') {
@@ -2145,9 +2188,9 @@
         }
       }
       const bdo = ball.owner && ball.owner.dr && ball.owner.dr.who ? drOff(ball.owner.dr, true) : null;
-      const bx = X(ball.x + (bdo ? bdo[0] : 0)), by = Y(ball.y + (bdo ? bdo[1] : 0)), air = ball.fly ? Math.sin(Math.min(1, ball.fly.t) * Math.PI) * (ball.fly.loft || 0) * 1.3 * k : 0;
+      const bx = X(ball.x + (bdo ? bdo[0] : 0)), by = Y(ball.y + (bdo ? bdo[1] : 0)), air = ball.fly ? Math.sin(Math.min(1, ball.fly.t) * Math.PI) * (ball.fly.loft || 0) * 1.3 * k : B11 && ball.z ? ball.z * 1.3 * k : 0;
       // Rastro do chute: uma cauda curta atrás da bola, mais grossa e clara perto dela (dá a força do chute; some quando a bola para)
-      if (ball.fly && ball.fly.shot && !(ball.fly.pre > 0)) { bt.push([bx, by - air]); if (bt.length > 8) bt.shift(); } else if (bt.length) bt.splice(0, 2);
+      if ((ball.fly && ball.fly.shot && !(ball.fly.pre > 0)) || (B11 && ball.b11shot && mode === 'play')) { bt.push([bx, by - air]); if (bt.length > 8) bt.shift(); } else if (bt.length) bt.splice(0, 2);
       if (bt.length > 1) { g.lineCap = 'round'; for (let i = 1; i < bt.length; i++) { const a = i / bt.length; g.strokeStyle = 'rgba(255,238,180,' + (0.62 * a).toFixed(2) + ')'; g.lineWidth = (1 + 5 * a) * k; g.beginPath(); g.moveTo(bt[i - 1][0], bt[i - 1][1]); g.lineTo(bt[i][0], bt[i][1]); g.stroke(); } g.lineCap = 'butt'; }
       // Rastro do drible: uma cauda fina que mostra o caminho da bola na finta
       if (bdo && ball.owner.dr.t < 0.95) { bd.push([bx, by]); if (bd.length > 9) bd.shift(); } else if (bd.length) bd.splice(0, 2);
@@ -2263,6 +2306,7 @@
       // O juiz: { side: 0 seu time | 1, pos, kind: falta|amarelo|vermelho|impedimento, me, how }. cb quando o lance aparece
       // (com a bola parada, num gol saindo ou no seu lance, a linha sai na hora; o vermelho tira o jogador do mesmo jeito)
       ref(r0, cb) {
+        if (B11 && mode === 'play' && !r0.quiet && !pen) return refB(r0, cb);
         const free = mode === 'play' && !lc && !due && !r0.quiet;
         const r = free && !offPend && !foulPend ? refDo(r0) : false;
         if (r === 'pend') { (offPend || foulPend).cb = cb; return; }
@@ -2294,7 +2338,7 @@
       mirror() { return mir(); },
       // O juiz pode apitar o fim (do tempo ou do jogo)? Não no meio de um escanteio, de uma bola parada, de um chute ou cruzamento
       // no ar, nem com o ataque já chegando na área (Silvio, 10/11: "o jogo acabou no meio de um escanteio")
-      canStop() { if (mode !== 'play') return mode !== 'rein' && mode !== 'pen' && mode !== 'falta' && mode !== 'troca' && mode !== 'tiro';
+      canStop() { if (B11 && mode === 'play') return !b11.perigo(); if (mode !== 'play') return mode !== 'rein' && mode !== 'pen' && mode !== 'falta' && mode !== 'troca' && mode !== 'tiro';
         if (clk - escClk < 3.5 || pen) return false; const f = ball.fly; if (f && (f.shot || f.kind === 'cruz' || f.kind === 'costas')) return false;
         // ataque perto da área (Silvio, 11/11: "não deveria encerrar na hora do chute"): o juiz espera a bola ser afastada, sair
         // ou ficar com o goleiro. Quem tem a bola no último terço deles, ou bola solta / passe caindo perto de uma das áreas, segura o apito
