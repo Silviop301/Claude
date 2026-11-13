@@ -1135,7 +1135,7 @@
       rows.splice(4);
       show('<div class="rs">' +
         '<div class="rs-sc">' + crest((m.home ? cl : vs).id, 'rs-cr') + '<em>' + m.gh + ' <i>x</i> ' + m.ga + '</em>' + crest((m.home ? vs : cl).id, 'rs-cr') +
-          '<span class="rs-w"><b class="' + wcls + '">' + word + (aux ? ' · COM O AUXILIAR' : '') + '</b><small>' + (goals.length ? goals.join(' · ') : 'sem gols') + '</small></span></div>' +
+          '<span class="rs-w"><b class="' + wcls + '">' + word + (aux ? ' · COM O AUXILIAR' : '') + '</b><small><i>' + (goals.length ? goals.join(' · ') : 'sem gols') + '</i></small></span></div>' +
         '<div class="rs-tabs">' + [['num', 'Números'], ['mom', 'Quem mandou'], ['lan', 'Lances']].map(([k, t]) => '<button data-rt="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
         '<div class="rs-pane ' + tab + '">' + pane + '</div>' +
         '<div class="rs-side' + (rows.length > 3 ? ' n4' : '') + '">' +
@@ -1145,6 +1145,8 @@
           (rt.length ? '<button class="tm-b" id="ldr-all">Notas do time</button>' : '') +
           '<button class="tm-go" id="ldr-go">' + (co.sacked ? 'Falar com o presidente' : co.ss.done ? 'Fim da temporada' : 'Continuar') + '</button>' +
         '</div></div>', st => {
+        // Gols que não cabem na linha: o texto anda até o fim, espera e volta ao começo (Silvio 13/11)
+        setTimeout(() => { const g = st.querySelector('.rs-w small'), gi = g && g.firstElementChild; if (!gi) return; const d = gi.scrollWidth - g.clientWidth; if (d > 4) { g.style.setProperty('--mx', -(d + 6) + 'px'); g.style.setProperty('--md', (5 + d / 28).toFixed(1) + 's'); g.classList.add('mq'); } }, 150);
         st.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { sfx('tap'); tab = b.dataset.rt; draw(); });
         if (st.querySelector('#ldr-all')) st.querySelector('#ldr-all').onclick = () => { sfx('tap'); pop(popHead('Notas do jogo', (log.cup ? log.ph : 'Rodada ' + log.r) + ' · ' + m.gh + ' x ' + m.ga) + '<div class="ld-pb col"><div class="ld-scroll ldr-alln">' + rt.map(nota).join('') + '</div></div>', 'Notas do jogo', null, 'w560'); };
         if (st.querySelector('#rs-ol')) st.querySelector('#rs-ol').onclick = () => { sfx('tap');
