@@ -24,7 +24,7 @@
     // enGame = quanto um titular gasta em 90 min no Equilibrado (o estilo, a preleção, o grito, a função e o Físico mudam;
     // goleiro enGK do resto); entre um jogo e outro quem jogou recupera enRec do que falta para 100, quem não jogou volta
     // inteiro; o treino da semana tira ou devolve por cima disso. Lesão: cansado abaixo de enInj machuca mais
-    enGame: 34, enGK: 0.35, enRec: 0.75, enOpp: 90, enInj: 65, inj: 0.011, subs: 5, win: 3,
+    daySd: 0.1, prep: 0.04, enGame: 34, enGK: 0.35, enRec: 0.75, enOpp: 90, enInj: 65, inj: 0.011, subs: 5, win: 3,
     // Acréscimos: a1 1 a 3 no 1º tempo, a2 3 a 7 no 2º; mins = minutos jogados num jogo médio (90 + acréscimos): as taxas
     // por minuto dividem por ele, para os acréscimos não aumentarem gols, faltas e cansaço
     mins: 96,
@@ -50,7 +50,7 @@
     '5-3-2': 'LAT.W ZAG ZAG ZAG LAT.W|MEI MEI MEI|ATA ATA',
   };
   // Quanto a formação expõe ou protege (att: as chances que você cria; def: as que você deixa o outro criar)
-  const FORM_FX = S.CO_FORM_FX = { '4-4-2': [1, 0.95], '4-3-3': [1.04, 1.03], '4-2-3-1': [1.01, 0.99], '4-5-1': [0.93, 0.94], '3-5-2': [1.03, 1], '3-4-3': [1.07, 1.07], '5-3-2': [0.94, 0.9] };
+  const FORM_FX = S.CO_FORM_FX = { '4-4-2': [1, 0.95], '4-3-3': [1.04, 1.03], '4-2-3-1': [1.01, 0.99], '4-5-1': [0.90, 0.95], '3-5-2': [1.03, 1], '3-4-3': [1.07, 1.07], '5-3-2': [0.94, 0.9] };
   const FORMS = S.CO_FORMS = {};
   Object.keys(FSPEC).forEach(f => {
     const g = FSPEC[f].split('|'), lines = g.map((x, i) => (i === 0 ? 'd' : i === g.length - 1 ? 'a' : i === 2 && g.length === 4 ? 'am' : 'm'));
@@ -515,7 +515,8 @@
     eh.duel = duel(h, a); ea.duel = duel(a, h);
     const lh = (neutral ? (CO.lamH + CO.lamA) / 2 : CO.lamH) * Math.exp((h.q - a.q + h.bonus + (neutral ? 0 : CO.home)) / CO.k + CO.kT * eh.T + eh.duel) * sh.att * Math.pow(sa.def, 1 - sh.patience) * FORMS[H.form].att * FORMS[A.form].def;
     const la = (neutral ? (CO.lamH + CO.lamA) / 2 : CO.lamA) * Math.exp((a.q - h.q + a.bonus) / CO.k + CO.kT * ea.T + ea.duel) * sa.att * Math.pow(sh.def, 1 - sa.patience) * FORMS[A.form].att * FORMS[H.form].def;
-    return { lh, la, h: eh, a: ea, sh: h, sa: a };
+    // Dia bom ou ruim (2026-11-13): cada time sorteia no começo do jogo um fator em volta de 1 (S.coMatchStart); a prévia não sabe
+    return { lh: lh * (H.day || 1) * (1 + (H.prep || 0)) * (1 - (A.prep || 0)), la: la * (A.day || 1) * (1 + (A.prep || 0)) * (1 - (H.prep || 0)), h: eh, a: ea, sh: h, sa: a };
   }
   S.coMatchup = matchup;
   S.coShape = shape;
@@ -637,20 +638,68 @@
   // e o mais forte propõe. É o que o olheiro mostra antes do jogo
   const SCHOOL_F = ['4-4-2', '4-3-3', '4-2-3-1', '4-4-2', '4-5-1', '3-5-2', '4-3-3', '5-3-2', '4-2-3-1', '3-4-3'];
   const SCHOOL_S = [['posse', 'equilibrado'], ['pressao', 'equilibrado'], ['equilibrado', 'contra'], ['lados', 'equilibrado'], ['posse', 'pressao'], ['equilibrado', 'retranca'], ['lados', 'contra']];
-  function school(clubId) { const h = hash('escola|' + clubId); return { form: SCHOOL_F[h % SCHOOL_F.length], styles: SCHOOL_S[(h >>> 8) % SCHOOL_S.length] }; }
+  // Repertório (2026-11-13, "é uma tática só"): além da formação e dos dois estilos de sempre, cada escola tem uma
+  // formação reserva e um terceiro estilo, que o técnico usa quando estuda você ou quando precisa mudar no jogo
+  function school(clubId) {
+    const h = hash('escola|' + clubId), h2 = hash('escola2|' + clubId), form = SCHOOL_F[h % SCHOOL_F.length], styles = SCHOOL_S[(h >>> 8) % SCHOOL_S.length];
+    const fo = Object.keys(FSPEC).filter(f => f !== form), so = Object.keys(STY).filter(x => !styles.includes(x));
+    return { form, styles, alt: fo[h2 % fo.length], extra: so[(h2 >>> 8) % so.length] };
+  }
   S.coSchool = school;
-  function plan(clubId, d, home) {
+  // O técnico rival estuda você: se você repetiu a formação ou o estilo em 3 dos últimos 4 jogos, ele prepara a resposta
+  // (dentro do repertório dele). Clube maior estuda mais. O olheiro mostra o plano, então dá para se adaptar
+  const TH_N = 4, TH_REP = 3;
+  const strOf = id => (D.CLUB_BY_ID[id] ? D.CLUB_BY_ID[id].strength : 60);
+  function repOf(co) {
+    const H = (co && co.tHist || []).slice(-TH_N); if (H.length < TH_REP) return null;
+    const top = k => { const c = {}; H.forEach(x => { c[x[k]] = (c[x[k]] || 0) + 1; }); const b = Object.keys(c).sort((a, b2) => c[b2] - c[a])[0]; return c[b] >= TH_REP ? b : null; };
+    const f = top('f'), st = top('s'); if (!f && !st) return null;
+    const L = H[H.length - 1]; return { f: f || L.f, s: st || L.s, both: !!(f && st) };
+  }
+  S.coRepOf = repOf;
+  const repSets = (sc, d) => {
+    const fs = [sc.form, sc.alt], ss = sc.styles.concat(sc.extra);
+    if (d < -6) { fs.push('4-5-1', '5-3-2'); ss.push('retranca', 'contra'); }
+    return { fs: fs.filter((f, i) => FORMS[f] && fs.indexOf(f) === i), ss: ss.filter((x, i) => STY[x] && ss.indexOf(x) === i) };
+  };
+  // A melhor resposta do rival (dentro do repertório) contra um plano seu
+  function counterPlan(sc, d, sq, them, usSide, rivHome, neutral, allF) {
+    const R = repSets(sc, d); let best = null;
+    if (allF) R.fs = Object.keys(FORMS); // estudando a semana inteira, o técnico pode montar qualquer formação
+    R.fs.forEach(f => { const xi = them && them.form === f ? them.xi : autoXI(sq, f).xi; R.ss.forEach(st => {
+      const T = { squad: sq, form: f, style: st, xi, bonus: 0, red: them ? them.red : 0 }, mu = rivHome ? matchup(T, usSide, neutral) : matchup(usSide, T, neutral);
+      const v = rivHome ? mu.lh / mu.la : mu.la / mu.lh; if (!best || v > best.v) best = { f, s: st, v }; }); });
+    return best;
+  }
+  const planMemo = {};
+  function plan(clubId, d, home, co, sq) {
     const sc = school(clubId);
     let style = d > 3 || (home && d > -2) ? sc.styles[0] : sc.styles[1];
     let form = sc.form;
     if (d < -6) { style = (hash('f|' + clubId) & 1) ? 'retranca' : 'contra'; if (form === '3-4-3' || form === '4-3-3') form = '4-5-1'; }
+    // Na 1ª temporada da primeira carreira (co.first, tutorial) ninguém estuda você ainda
+    const rp = co && sq && !(co.first && co.season === 0) ? repOf(co) : null;
+    if (rp) {
+      const k = [clubId, co.season, co.ss ? co.ss.i : 0, home ? 1 : 0, rp.f, rp.s, co.club].join('|');
+      if (planMemo[k]) return Object.assign({}, planMemo[k]);
+      const p = clamp(0.3 + 0.035 * (strOf(clubId) - 55) + (rp.both ? 0.1 : 0), 0.3, 0.9), roll = hash('estudo|' + k + '|' + co.name) / 4294967296;
+      let out = { form, style };
+      if (roll < p) {
+        const us = { squad: co.squad, form: rp.f, style: rp.s, xi: autoXI(co.squad, rp.f).xi, bonus: co.xp ? co.xp.leitura * 0.2 : 0 };
+        const b = counterPlan(sc, d, sq, null, us, home, false, true);
+        if (b) out = { form: b.f, style: b.s, study: { f: rp.f, s: rp.s } };
+      }
+      const ks = Object.keys(planMemo); if (ks.length > 200) ks.slice(0, 100).forEach(x => delete planMemo[x]);
+      planMemo[k] = out; return Object.assign({}, out);
+    }
     return { form, style };
   }
   function oppSide(co, vs, home) {
     const sq = genSquad(vs, co.season, co); sq.forEach(p => { p.en = CO.enOpp; });
     const d = D.CLUB_BY_ID[vs].strength - D.CLUB_BY_ID[co.club].strength;
-    const pl = plan(vs, d, home), a = autoXI(sq, pl.form);
-    return { club: vs, squad: sq, form: pl.form, style: pl.style, plan: pl, xi: a.xi, bench: a.bench, subs: CO.subs, win: CO.win, red: 0 };
+    const pl = plan(vs, d, home, co, sq), a = autoXI(sq, pl.form);
+    // Estudou você: além da resposta tática, o time vem preparado para o seu jogo (CO.prep a mais para ele, a menos para você)
+    return { club: vs, squad: sq, form: pl.form, style: pl.style, plan: pl, xi: a.xi, bench: a.bench, subs: CO.subs, win: CO.win, red: 0, prep: pl.study ? CO.prep : 0 };
   }
   // Prévia do próximo jogo: o rival como deve vir e o confronto contra o seu time de agora
   S.coPreview = function (co, form, style) {
@@ -671,6 +720,11 @@
     const us = { club: co.club, squad: co.squad, form: co.form, style: co.style, bonus: co.xp.leitura * 0.2, xi: co.xi.slice(), bench: (co.bench || []).filter(id => co.squad.some(p => p.id === id && ok(p))), subs: CO.subs, win: CO.win, red: 0, mine: true, injK: S.coDmK ? S.coDmK(co, 'inj') : 1, outCut: S.coDmK ? S.coDmK(co, 'cut') : 0,
       roles: co.roles && co.roles[co.form] ? co.roles[co.form].slice() : null, takers: co.takers || null, train: co.train && co.ss && co.train.i === co.ss.i ? co.train.k : null };
     const them = oppSide(co, nx.vs, !nx.home);
+    // Dia de cada time: média 1, desvio ~DAY_SD (o mesmo jogo recomeçado sorteia igual)
+    { const rd = S.rng(hash(String(co.name) + '|' + co.club + '|' + co.season + '|' + nx.round + '|' + nx.vs + '|' + (nx.cup ? 'c' : 'l') + '|dia')), z = () => Math.sqrt(-2 * Math.log(1 - rd())) * Math.cos(2 * Math.PI * rd());
+      us.day = Math.exp(CO.daySd * z() - CO.daySd * CO.daySd / 2); them.day = Math.exp(CO.daySd * z() - CO.daySd * CO.daySd / 2); }
+    // O que você jogou (o rival dos próximos jogos estuda: S.coRepOf). Uma linha por jogo, as últimas 6
+    { const hk = co.season + '|' + nx.round + '|' + (nx.cup ? 'c' : 'l'); co.tHist = (co.tHist || []).filter(x => x.k !== hk); co.tHist.push({ k: hk, f: us.form, s: us.style }); if (co.tHist.length > 6) co.tHist = co.tHist.slice(-6); }
     if (!us.bench.length) us.bench = autoXI(co.squad, co.form).bench;
     // O plano do auxiliar (S.coTip com o olheiro lido): se o time entra nele, o ao vivo e o resultado contam se funcionou
     const tp = co.tip && co.tip.kind === 'plan' && co.tip.k === co.season + '|' + nx.round + '|p' ? co.tip : null;
@@ -809,9 +863,24 @@
       if (!stop && m.min === 45 && !m.half && m.st >= (m.a1 || 0)) { m.half = true; m.st = 0; stop = { t: 'intervalo' }; }
       // O auxiliar do rival troca os cansados no segundo tempo
       if (m.min >= 55 && m.min % 5 === 0) tiredSubs(m.them, 'm' + m.min);
+      // O técnico rival reage (2026-11-13): no começo do 2º tempo e aos 62', perdendo ou empatando dominado, troca formação
+      // e estilo para anular o seu jogo de agora (dentro do repertório dele; com expulsão, só o estilo)
+      if ((m.min === 46 || m.min === 62) && !m.st && !(m.reac && m.reac[m.min])) {
+        const T = m.them, diff = (T === H ? m.gh - m.ga : m.ga - m.gh), mm = (m.mom || []).slice(-15), dom = mm.length ? mm.reduce((a, b) => a + b, 0) / mm.length : 50;
+        (m.reac = m.reac || {})[m.min] = 1;
+        const vsd = strOf(m.vs) - strOf(co.club);
+        if ((diff < 0 || (diff === 0 && dom > 57)) && r() < clamp(0.45 + 0.03 * (strOf(m.vs) - 55), 0.35, 0.9)) {
+          const b = counterPlan(school(m.vs), vsd, T.squad.filter(p => T.xi.includes(p.id)), T, m.us, T === H, !!m.neutral);
+          if (b && (b.f !== T.form || b.s !== T.style)) {
+            const f = T.red ? T.form : b.f; T.style = b.s;
+            if (f !== T.form) { const on = T.squad.filter(p => T.xi.includes(p.id)), a = autoXI(on, f); T.form = f; T.xi = Array.from({ length: 11 }, (_, i) => a.xi[i] || null); }
+            m.ev.push({ m: m.min, t: 'tatica', s: 'them', p: T.form + ', ' + STY[T.style].name.toLowerCase() }); m.reacOk = 1;
+          }
+        }
+      }
       // O técnico rival muda o plano: perdendo no fim, se joga; ganhando, fecha
       if (m.min === 65 || m.min === 78) { const T = m.them, diff = (T === H ? m.gh - m.ga : m.ga - m.gh);
-        const want = diff < 0 ? (m.min === 78 ? 'pressao' : 'lados') : diff > 0 && m.min === 78 ? 'retranca' : null;
+        const want = diff < 0 ? (m.min === 78 ? 'pressao' : m.reacOk ? null : 'lados') : diff > 0 && m.min === 78 ? 'retranca' : null;
         if (want && T.style !== want) { T.style = want; m.ev.push({ m: m.min, t: 'tatica', s: 'them', p: STY[want].name }); } }
     }
     if (m.min >= 90 && m.st >= (m.a2 || 0) && !stop) { m.done = true; stop = { t: 'fim' }; }
@@ -1106,7 +1175,7 @@
       const rank = S.coPlanRank(co, nx, them), best = r() < auxAcc(co, nx), P = best ? rank[0] : r.pick(rank.slice(1, 6));
       const why = Object.keys(P.sec).sort((a, b) => P.sec[b] - P.sec[a])[0];
       // good: o plano rende mais que a metade das combinações (o que o aviso do ao vivo e o resultado contam)
-      return (co.tip = { k: key, kind: 'plan', f: P.f, s: P.s, v: P.f, them: them.form, ts: them.style, best: best ? 1 : 0, good: P.x > rank[rank.length >> 1].x ? 1 : 0, why });
+      return (co.tip = { k: key, kind: 'plan', f: P.f, s: P.s, v: P.f, them: them.form, ts: them.style, best: best ? 1 : 0, good: P.x > rank[rank.length >> 1].x ? 1 : 0, why, st: them.plan && them.plan.study ? them.plan.study.f + ' · ' + STY[them.plan.study.s].name : '' });
     }
     const sq = co.squad.filter(ok), sc = {}, F = Object.keys(FORMS);
     F.forEach(f => { const us = { squad: co.squad, form: f, style: co.style, xi: autoXI(sq, f).xi, bonus: 0 }, m = nx.home ? matchup(us, them) : matchup(them, us); sc[f] = nx.home ? m.lh / m.la : m.la / m.lh; });
@@ -1123,7 +1192,7 @@
   S.coTipUsed = (co, t) => !!t && (t.kind === 'plan' ? co.form === t.f && co.style === t.s : (t.kind === 'sty' ? co.style : co.form) === t.v);
   S.coTipName = t => (t.kind === 'plan' ? t.f + ' · ' + S.CO_STY[t.s].name : t.kind === 'sty' ? S.CO_STY[t.v].name : t.v);
   S.coTipLbl = t => (t.kind === 'plan' ? S.coTipName(t) : t.kind === 'sty' ? S.CO_AUX_GO[t.v] : 'Vá de ' + t.v);
-  S.coTipTxt = t => (t.kind === 'plan' ? 'Eles vêm no ' + t.them + '. ' + S.CO_AUX_SEE[t.ts] + ' Vá de ' + t.f + (t.s === 'equilibrado' ? ', no equilibrado' : ' e ' + S.CO_AUX_GO[t.s].replace(/^./, c => c.toLowerCase())) + ', professor.' : t.kind === 'sty' ? S.CO_AUX_SEE[t.them] + ' ' + S.CO_AUX_ME[t.v] + ', professor.' : 'Eles vêm no ' + t.them + '. Eu responderia com o ' + t.v + ', professor.');
+  S.coTipTxt = t => (t.kind === 'plan' ? (t.st ? 'Eles estudaram o nosso ' + t.st + ' dos últimos jogos. ' : '') + 'Eles vêm no ' + t.them + '. ' + S.CO_AUX_SEE[t.ts] + ' Vá de ' + t.f + (t.s === 'equilibrado' ? ', no equilibrado' : ' e ' + S.CO_AUX_GO[t.s].replace(/^./, c => c.toLowerCase())) + ', professor.' : t.kind === 'sty' ? S.CO_AUX_SEE[t.them] + ' ' + S.CO_AUX_ME[t.v] + ', professor.' : 'Eles vêm no ' + t.them + '. Eu responderia com o ' + t.v + ', professor.');
   // Anota depois do jogo: os confrontos que ficaram em campo por mais tempo (estilo e formação separados)
   function cadNote(co, m, log) {
     const cad = cadOf(co), T = cadTruth(), { r, save } = rngCo(co), acc = S.coCadAcc(co), per = S.coCadPer(co);

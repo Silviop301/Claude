@@ -303,7 +303,7 @@
     ['g', 'd', 'm', 'am', 'a'].forEach(ln => { const ix = sl.map((x, i) => i).filter(i => sl[i].ln === ln); ix.forEach((i, k) => { out[i] = [Math.round((k + 1) * 100 / (ix.length + 1)), Y[ln]]; }); });
     return out;
   }
-  const scout = them => '<p class="co-scout">' + U.emo('🔭', 'xs') + ' Olheiro: o ' + esc(club(them.club).short || club(them.club).name) + ' deve vir no <b>' + them.form + '</b>, ' + S.CO_STY[them.style].name.toLowerCase() + '.</p>';
+  const scout = them => '<p class="co-scout">' + U.emo('🔭', 'xs') + ' Olheiro: o ' + esc(club(them.club).short || club(them.club).name) + ' deve vir no <b>' + them.form + '</b>, ' + S.CO_STY[them.style].name.toLowerCase() + '.' + (them.plan && them.plan.study ? ' Estudaram o seu ' + them.plan.study.f + '.' : '') + '</p>';
   // ---------- caderno do técnico ----------
   // O que já se viu em campo: estilo × estilo e formação × formação, "?" no que nunca viu, lápis (pode estar errado)
   // e caneta (certo). Nada de número: seta e palavra
