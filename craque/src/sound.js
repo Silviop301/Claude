@@ -225,8 +225,8 @@
   const A_URL = 'assets/sons/ambiente.mp3?v=ff16016b', A_PAD = 0.3, A_LOOP = 1125609 / 44100, A_VOL = 0.14, A_UP = 2.4;
   // Intervalo (Silvio, 12/11): a tela põe CRAQUE_CROWD.ht no apito do intervalo e tira na volta do 2º tempo; os cantos saem aos
   // poucos, a torcida do jogo cala e entra o estádio de antes do jogo (estadio.mp3, Epidemic Sound, loop de 90 s com a emenda
-  // cruzada e E_PAD de sobra). Sem música tocando (desligada, pausada ou fora do jogo ao vivo) o estádio todo sobe MUTE_K
-  const E_URL = 'assets/sons/estadio.mp3?v=bcb30973', E_PAD = 0.3, E_LOOP = 90, E_VOL = 0.55, MUTE_K = 1.35;
+  // cruzada e E_PAD de sobra; 13/11 o Silvio achou alto: E_VOL 0,55 -> 0,25, uns 5 dB abaixo da torcida do jogo). Sem música tocando (desligada, pausada ou fora do jogo ao vivo) o estádio todo sobe MUTE_K
+  const E_URL = 'assets/sons/estadio.mp3?v=bcb30973', E_PAD = 0.3, E_LOOP = 90, E_VOL = 0.25, MUTE_K = 1.35;
   let eBuf = null, eSrc = null, eGain = null, eLoad = false, eWant = -1;
   const crowdK = () => (mEl && mWant > 0 && !mEl.paused ? 1 : MUTE_K);
   let aBuf = null, aSrc = null, aGain = null, aLoad = false, aWant = -1;
