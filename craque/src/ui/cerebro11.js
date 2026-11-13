@@ -388,6 +388,7 @@
       let ang = Math.atan2(dy, dx) + gauss() * sig; const tv = d / v; let vz = (zAim + 0.5 * G * tv * tv) / tv + gauss() * sig * 0.6 * v;
       if (!op.penalti && R() < BAL.pPegaMal * 2) { v *= 0.6; ang += gauss() * 0.15; vz *= R() * 1.6; }
       const x0 = bola.x, y0 = bola.y; soltar(p, ang, v, Math.max(0, vz));
+      if (o.onKick) o.onKick({ p: p.lp, pen: !!op.penalti }); // a tela liga a câmera lenta no instante do chute
       bola.chute = { time: T, autor: p, idade: 0, tentou: false, fim: false, cabeca: !!op.cabeca, x0, y0, ast: p.de && p.de.time === T && clk - p.deT < 10 ? p.de : null,
         penalti: !!op.penalti, falta: !!op.falta, palpite: R() < 0.5 ? -1 : 1,
         reacao: op.penalti ? 0 : BAL.gkReacao * (1.35 - 0.5 * (gk ? at(gk, 'gol') : 70) / 100) + R() * 0.08 };
