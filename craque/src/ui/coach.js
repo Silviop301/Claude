@@ -5,7 +5,10 @@
   const U = window.CRAQUE_UI;
   // Velocidade padrão dos jogos do Treinador, escolhida nos Ajustes ('1' ou '3'; neste aparelho)
   U.coFx = v => { try { if (v !== undefined) localStorage.setItem('climbix-co-fx', v ? '1' : '0'); return localStorage.getItem('climbix-co-fx') !== '0'; } catch (e) { return true; } }; // comemoração do gol e câmera lenta do chute (lido no livesim.js)
-  U.coVel = v => { try { if (v) localStorage.setItem('climbix-co-vel', v); const x = localStorage.getItem('climbix-co-vel'); return x === '3' ? '3' : '1'; } catch (e) { return v === '3' ? '3' : '1'; } };
+  // 'fim' = Só resultado (Silvio, 13/11: para quem só quer o gerenciamento): o jogo não abre o ao vivo; o motor joga os 90 min,
+  // o auxiliar faz as trocas de cansaço e lesão (S.coMatchRest), pênaltis da copa e festas de título seguem no resultado
+  const VELS = ['1', '3', 'fim'];
+  U.coVel = v => { try { if (v) localStorage.setItem('climbix-co-vel', v); const x = localStorage.getItem('climbix-co-vel'); return VELS.includes(x) ? x : '1'; } catch (e) { return VELS.includes(v) ? v : '1'; } };
   const { D, S, sfx, $, esc, money, club, league, crest, load, store, render, bar, G, YEAR0 } = U;
   const SAVE_CO = U.SAVE_CO = 'climbix-treinador-v1';
   let co = null;
@@ -571,8 +574,18 @@
     // Perfil (metas da semana): a sua posição e a do adversário antes do jogo; vai junto no jogo salvo no meio
     m.pfp = [pre.pos, S.coTable(co).findIndex(t => t.id === m.vs) + 1, co.ss.i];
     // Marca o jogo começado: se a pessoa sai no meio, o auxiliar termina (recarregar não desfaz o resultado)
+    if (U.coVel() === 'fim') return quick(m); // Só resultado nos Ajustes
     co.live = co.ss.i; save('live');
     live(m);
+  }
+  // Só resultado: o jogo inteiro de uma vez, direto no resumo (é o seu jogo: conta meta e não leva o selo "com o auxiliar")
+  function quick(m) {
+    S.coMatchRest(co, m);
+    const log = S.coMatchEnd(co, m);
+    delete co.live; delete co.liveM;
+    if (U.profileCoGame) U.profileCoGame(co, m, log);
+    save('hub');
+    result(m, log, false, null);
   }
   // Jogo largado no meio (fechou o app): o auxiliar comanda do começo ao fim
   function auxFinish() {
@@ -716,7 +729,7 @@
   function live(m) {
     U._coLiveM = m; // para as ferramentas de foto (cartões no Mexer no time)
     G.c = null; bar();
-    co.speed = U.coVel(); // todo jogo começa na velocidade dos Ajustes (Silvio, 10/11: o jogador escolhe 1× ou 3×; antes sempre 1×)
+    co.speed = U.coVel() === '3' ? '3' : '1'; // todo jogo começa na velocidade dos Ajustes (Silvio, 10/11: o jogador escolhe 1× ou 3×; antes sempre 1×)
     const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
     let timer = null, seen = new Set(), read = null, open = false, firstMove = null;
     let retomado = m.ev.length > 0; // jogo retomado no meio: a primeira pintura repõe a narração do que já aconteceu, sem o som do gol antigo nem a placa de acréscimo
