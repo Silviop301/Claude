@@ -9161,6 +9161,8 @@ button.coin-pill { cursor: pointer; border: 0; }
 .aj-tg i { width: 28px; height: 28px; border-radius: 50%; background: #D9E2DC; transition: transform .15s, background .15s; }
 .aj-sw.on .aj-tg { background: var(--gold); } .aj-sw.on .aj-tg i { background: #1B1606; transform: translateX(28px); }
 .aj-seg { display: flex; gap: 4px; background: rgba(243, 241, 234, .12); border-radius: 12px; padding: 4px; } .aj-seg i { font: 800 20px/1 var(--display); font-style: normal; padding: 6px 14px; border-radius: 9px; color: #F3F1EA; } .aj-seg i.on { background: var(--gold); color: #1B1606; }
+/* Só resultado (13/11): o terceiro segmento é texto; letra menor e numa linha só, como o nome da linha */
+.aj-vel > b { white-space: nowrap; } .aj-seg i { white-space: nowrap; } .aj-seg i.tx { font-size: 15px; padding: 8px 10px 4px; } .aj-vel .aj-seg { flex: none; margin-left: 8px; }
 .aj-acc { border-radius: 18px; background: #F8F4EA; color: #13201A; padding: 22px; box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 .aj-acc small { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #4b5a52; }
 .aj-acc > b { margin-top: 12px; font: 800 34px/1 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
