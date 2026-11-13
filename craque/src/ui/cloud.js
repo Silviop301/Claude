@@ -437,6 +437,9 @@
       payLast = r;
       // Compra já entregue que sumiu do saldo (junção antiga de aparelhos): volta sem aviso de compra nova
       if (r && r.paid && U.COINS.fix && U.COINS.fix(r.paid)) { touch(KEYS.itens); if (!list.length && !G.c && U.home) U.home(); }
+      // Quem já comprou antes desta mensagem: agradece uma vez por aparelho (sem compra nova agora)
+      const bought = ((r && r.paid) || []).some(x => x.pack && x.pack !== 'gift');
+      if (bought && !list.length && !thanksSeen()) { thanksMark(); setTimeout(() => payToast('Muito obrigado pelo apoio!', THANKS, 10000), 1200); }
       if (!list.length) return 0;
       // Presente de boas-vindas da conta nova (pack 'welcome'): uma vez por aparelho/carteira, com aviso próprio
       const wel = list.filter(x => x.pack === 'welcome'), gif = list.filter(x => x.pack === 'gift'), buy = list.filter(x => x.pack !== 'welcome' && x.pack !== 'gift');
@@ -449,6 +452,11 @@
       return post('claim', { token: a.token, refs: list.map(x => x.ref) }, PAPI).then(() => n, () => n);
     }, () => 0);
   }
+  // Agradecimento a quem compra moedas (texto aprovado pelo Silvio em 13/11)
+  const THANKS = 'Você está com a gente desde o começo do Climbix. Fique atento: muitas atualizações vêm aí!';
+  const THK = 'climbix-apoio-v1';
+  const thanksSeen = () => { try { return !!localStorage.getItem(THK); } catch (e) { return true; } };
+  const thanksMark = () => { try { localStorage.setItem(THK, '1'); } catch (e) {} };
   function payToast(t, x, ms) {
     document.querySelectorAll('.pay-ty.pg').forEach(e => e.remove());
     const box = document.createElement('div'); box.className = 'pay-ty pg'; box.setAttribute('role', 'status');
@@ -468,7 +476,8 @@
   // stay: a pessoa já está no jogo (voltou do pagamento sem recarregar): não leva para a home, só avisa a tela aberta
   function payThanks(n, stay) {
     if (!n) return;
-    payToast('Obrigado pelo apoio!', 'Suas ' + n.toLocaleString('pt-BR') + ' moedas já estão na conta.');
+    thanksMark();
+    payToast('Muito obrigado pelo apoio!', 'Suas ' + n.toLocaleString('pt-BR') + ' moedas já estão na conta. ' + THANKS, 10000);
     if (stay) { try { window.dispatchEvent(new Event('climbix-pay')); } catch (e) {} return; }
     if (!G.c && U.home) U.home();
   }
