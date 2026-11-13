@@ -108,18 +108,18 @@ const sum = c => [c.list.length, c.list.reduce((s, x) => s + x.coins, 0), c.wait
   await p.click('.pay-ty button').catch(() => {}); await p.click('#hl-coins'); await p.waitForSelector('.lj');
   set(2001, refU, 'approved', 12.9); await hook(2001);
   await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-  eq('pagou e voltou para o jogo sem recarregar: agradece', await aviso(p, 'Obrigado'), true); await p.waitForTimeout(400); await foto(p, '2-obrigado-na-loja');
+  eq('pagou e voltou para o jogo sem recarregar: agradece', await aviso(p, 'obrigado pelo apoio'), true); await p.waitForTimeout(400); await foto(p, '2-obrigado-na-loja');
   eq('  +350 moedas, segue na Loja e desmarca a compra aberta', [await moedas(p) - m0, !!(await p.$('.lj')), await p.evaluate(() => !!localStorage.getItem('climbix-pay-open'))], [350, true, false]);
   // volta paga pelo link do Mercado Pago
   r = await post('create', { token: TB, pack: 'p1' }); const ref2 = r.ref; set(2002, ref2, 'approved', 4.9); await hook(2002);
   await p.goto(BASE + '/?pago=' + ref2, { waitUntil: 'load' });
-  eq('volta paga: agradece e soma 120', [await aviso(p, 'Obrigado'), await moedas(p) - m0], [true, 470]);
+  eq('volta paga: agradece e soma 120', [await aviso(p, 'obrigado pelo apoio'), await moedas(p) - m0], [true, 470]);
   await p.reload({ waitUntil: 'load' }); await p.waitForTimeout(2500);
   eq('  recarregar não soma de novo', [await moedas(p) - m0, await p.$$eval('.pay-ty', e => e.length)], [470, 0]);
   // pagou a mesma compra de novo: entra na próxima abertura do jogo
   set(2003, ref2, 'approved', 4.9); await hook(2003);
   await p.reload({ waitUntil: 'load' });
-  eq('2º pagamento da mesma compra: mais 120 ao abrir o jogo', [await aviso(p, 'Obrigado'), await moedas(p) - m0], [true, 590]);
+  eq('2º pagamento da mesma compra: mais 120 ao abrir o jogo', [await aviso(p, 'obrigado pelo apoio'), await moedas(p) - m0], [true, 590]);
   // voltou sem pagar (o Mercado Pago manda para o endereço de falha)
   r = await post('create', { token: TB, pack: 'p1' });
   await p.goto(BASE + '/?pago=' + r.ref + '&falhou=1', { waitUntil: 'load' });
