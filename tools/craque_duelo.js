@@ -25,7 +25,7 @@ function simForm(s) { const sl = S.CO_FORMS[s.form].slots, sp = spots(s.form), a
   if (!gk.length && rest.length) { const g0 = rest.shift(); g0[0] = 'GK'; g0[1] = 0; g0[2] = 50; gk.push(g0); }
   return gk.concat(rest); }
 const xiAvg = s => { const v = s.xi.map(id => s.squad.find(p => p.id === id)).filter(Boolean).map(p => p.ovr); return v.reduce((a, b) => a + b, 0) / (v.length || 1); };
-const BR = process.env.MOTOR === '11', STEPS = BR ? 188 : 137, G = []; let ova = 0, ovb = 0;
+const BR = process.env.MOTOR !== '0', STEPS = BR ? 188 : 137, G = []; let ova = 0, ovb = 0;
 for (let g = 0; g < N; g++) {
   // metade dos jogos com o robô no banco de cada clube (o seu time tem o auxiliar escalando; o outro lado é o do motor)
   const mine = g % 2 ? idb : ida, other = g % 2 ? ida : idb;
