@@ -848,23 +848,22 @@
     const c = document.createElement('div'); c.id = 'mom-c'; c.className = 'mom-c';
     c.style.height = (g.offsetTop + g.offsetHeight) + 'px';
     c.innerHTML = '<div class="mom-hd">' + auxFace(co, 'mom-f') + '<span><small>AUXILIAR</small><b>' + (q.hd || 'Decida rápido') + '</b></span></div><p>' + esc(q.txt) + '</p>' +
-      '<div class="mom-bt"><button id="mom-y"><b>' + q.y + '</b><small>' + q.ys + '</small></button><button id="mom-no"><b>' + q.n + '</b><small>' + q.ns + '</small></button></div><i class="mom-tm"><u></u></i>';
+      (q.y ? '<div class="mom-bt"><button id="mom-y"><b>' + q.y + '</b><small>' + q.ys + '</small></button><button id="mom-no"><b>' + q.n + '</b><small>' + q.ns + '</small></button></div>' : '<div class="mom-bt"><button id="mom-no"><b>Entendi</b><small>só um aviso</small></button></div>') + '<i class="mom-tm"><u></u></i>';
     side.appendChild(c); sfx('tap');
     requestAnimationFrame(() => { const u = c.querySelector('.mom-tm u'); if (u) { u.style.transition = 'width ' + (q.t || MOM_T) + 'ms linear'; u.style.width = '0%'; } });
-    c.querySelector('#mom-y').onclick = () => { if (c._end || m.done) return; sim(); momClose(); };
+    if (q.y) c.querySelector('#mom-y').onclick = () => { if (c._end || m.done) return; sim(); momClose(); };
     c.querySelector('#mom-no').onclick = () => momClose();
     c._t = setTimeout(() => momClose(), q.t || MOM_T);
     return true;
   }
-  // A resposta da auxiliar quando o plano muda ou não encaixa (Silvio 12/11: "avisa que trocaram de formação e não diz o que
-  // fazer"): o melhor par formação + estilo com o seu elenco contra o que eles usam agora; com cartão livre vira um botão
-  // que muda na hora (x.tac), senão a dica vai escrita no recado
+  // A resposta da auxiliar quando o plano muda ou não encaixa. Silvio 13/11: "não quero ele me mandando colocar isso ou aquilo,
+  // quero sugestão; quando vê o time mudando, ele me diz e sugere o estilo, sem mudar e falar de formação". Então ela avisa no
+  // cartão do painel e sugere só um estilo (o melhor com a sua formação de agora contra o plano deles), sem botão que muda
   function planFix(x, hd, why) {
-    const m = x.m, co = x.co, b = S.coPlanRank(co, { home: m.home }, m.them)[0], tn = S.CO_STY[b.s].name, same = b.f === m.us.form && b.s === m.us.style;
-    if (same) return planToast('ok', hd, why + '. O nosso plano ainda serve: mantenha');
-    const free = !x.open && !document.getElementById('ld-pop') && !document.getElementById('mom-c') && !m.us.shout;
-    if (free && momCard(x, { hd, t: 7000, txt: why + '. Eu iria de ' + b.f + ' · ' + tn + '.', y: 'Mudar', ys: b.f + ' · ' + tn, n: 'Manter', ns: 'segue igual' }, () => x.tac(b.f, b.s))) { m.auxM = m.auxM || { n: 0, at: -99, done: {}, run: null }; m.auxM.at = m.min; return; }
-    planToast('no', hd, why + '. Vá de ' + b.f + ' · ' + tn + ' no Parar e mexer');
+    const m = x.m, co = x.co, L = S.coPlanRank(co, { home: m.home }, m.them).filter(q => q.f === m.us.form), b = L[0]; if (!b) return;
+    const tn = S.CO_STY[b.s].name.toLowerCase(), txt = why + '. ' + (b.s === m.us.style ? 'O nosso estilo ainda serve, eu manteria.' : 'Uma ideia: ' + tn + '. A escolha é sua.');
+    const free = !x.open && !document.getElementById('ld-pop') && !document.getElementById('mom-c');
+    if (free && momCard(x, { hd, t: 7000, txt })) { m.auxM = m.auxM || { n: 0, at: -99, done: {}, run: null }; m.auxM.at = m.min; }
   }
   function livePaint(x) {
     const m = x.m, sh = m.us.shout, $ = id => document.getElementById(id);
@@ -3215,7 +3214,8 @@
       // Guardar: o auxiliar lê o relatório e sugere a formação; a sugestão fica no Time, com o aviso no botão
       st.querySelector('#ldo-ok').onclick = () => { sfx('tap'); co.scout = { i: co.ss.i }; const tp = S.coTip(co, true); c.save(); semana();
         if (!tp || co.tut) return; // no tutorial a janelinha tampava o passo "Agora é jogar" (a dica fica no Time, com o aviso no botão)
-        const u = S.coTipUsed(co, tp), say = u ? 'Li o relatório. Contra o ' + tp.them + ' deles, eu manteria o ' + S.coTipName(tp) + ', professor.' : 'Li o relatório. ' + S.coTipTxt(tp);
+        const sn = tp.kind === 'plan' ? tp.s : tp.kind === 'sty' ? tp.v : null; if (!sn) return; // Silvio 13/11: só sugestão de estilo, nada de formação nem ordem
+        const say = 'Li o relatório. Eles vêm no ' + tp.them + (tp.st ? ' e estudaram o nosso ' + tp.st : '') + '. ' + (sn === co.style ? 'O nosso estilo serve, eu manteria.' : 'Uma ideia: ' + S.CO_STY[sn].name.toLowerCase() + '. A escolha é sua, professor.');
         pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b></span><p>“' + say.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>') + '”</p>' +
           '<button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Auxiliar', null, 'hl-pop acd-pop tm-pop'); };
     });
