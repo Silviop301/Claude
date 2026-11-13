@@ -11,6 +11,9 @@
   const KEY = 'climbix-stats-v1';
   const MODE = { completa: 'jaj', rapida: 'rapida', relampago: 'relampago', treinador: 'treinador' };
   let last = '';
+  // De onde veio (link com ?de=canal): guardado na primeira visita do aparelho e mandado no first e no start
+  const SRCS = ['tiktok', 'insta', 'yt', 'zap', 'tabnews', 'reddit', 'face', 'criador', 'itch', 'x', 'discord', 'imprensa'];
+  const srcNow = (() => { const m = /[?&]de=([a-z]+)/i.exec(location.search); const v = m && m[1].toLowerCase(); return v ? (SRCS.includes(v) ? v : 'outro') : ''; })();
   function send(ev, mode, k) {
     if (off) return;
     const body = JSON.stringify({ ev, mode: mode || '', k: k == null ? '' : String(k) });
@@ -32,9 +35,9 @@
       // Aparelho que já tinha jogo salvo, perfil ou itens: jogava antes da contagem, fica fora da linha de base
       let old = false;
       try { for (let i = 0; i < localStorage.length; i++) if (/^(craque|climbix)-/.test(localStorage.key(i) || '')) { old = true; break; } } catch (e) { /* sem acesso */ }
-      st = { f: t, old: old ? 1 : 0, seen: [] };
+      st = { f: t, old: old ? 1 : 0, seen: [], src: srcNow };
       put(st);
-      if (!old) send('first');
+      if (!old) send('first', '', srcNow);
       return;
     }
     if (st.old) return;
@@ -53,7 +56,8 @@
       if (st.seen.includes(id)) return;
       st.seen.push(id); st.seen = st.seen.slice(-40); put(st);
     }
-    send(ev, m, ev === 'season' ? n : '');
+    const st2 = ev === 'start' ? get() : null;
+    send(ev, m, ev === 'season' ? n : st2 && !st2.old ? st2.src || '' : '');
   };
 
   // Sessão: tempo com o jogo na tela, mandado quando ele sai da tela. Voltar depois de 30 min conta sessão nova

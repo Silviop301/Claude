@@ -5,7 +5,7 @@
 //   POST ?a=hit   {ev, mode, k}     soma +1 em (hoje, ev, mode, k)
 //   GET  ?a=list[&days=30]          linhas dos últimos dias (somas anônimas, leitura aberta)
 // Eventos: first (primeira visita do aparelho), d1 (voltou no dia seguinte), d7 (voltou entre o 7º e o 13º dia),
-// session (k = faixa de minutos), start (carreira começou), season (k = número da temporada), end (carreira terminou).
+// session (k = faixa de minutos), first e start (k = canal do link ?de=, vazio = direto), start (carreira começou), season (k = número da temporada), end (carreira terminou).
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -29,6 +29,8 @@ $a = $_GET['a'] ?? '';
 $EVS = ['first', 'd1', 'd7', 'session', 'start', 'season', 'end'];
 $MODES = ['', 'inicio', 'rapida', 'jaj', 'relampago', 'treinador'];
 $DUR = ['0-1', '1-5', '5-10', '10-20', '20-40', '40+'];
+// De onde o aparelho veio (link climbix.app/?de=canal), só no first e no start
+$SRCS = ['', 'tiktok', 'insta', 'yt', 'zap', 'tabnews', 'reddit', 'face', 'criador', 'itch', 'x', 'discord', 'imprensa', 'outro'];
 
 if ($a === 'hit') {
   $raw = file_get_contents('php://input');
@@ -42,6 +44,7 @@ if ($a === 'hit') {
   // Só o que cada evento usa: faixa de minutos na sessão, número da temporada (até 40) na temporada
   if ($ev === 'session') { if (!in_array($k, $DUR, true)) out(['error' => 'bad'], 400); }
   elseif ($ev === 'season') { $s = (int)$k; if ($s < 1 || $s > 40) out(['error' => 'bad'], 400); $k = (string)$s; }
+  elseif ($ev === 'first' || $ev === 'start') { if (!in_array($k, $SRCS, true)) $k = 'outro'; }
   else $k = '';
   $db->prepare('INSERT INTO counts (day, ev, mode, k, n) VALUES (?,?,?,?,1) ON CONFLICT(day, ev, mode, k) DO UPDATE SET n = counts.n + 1')
     ->execute([date('Y-m-d'), $ev, $mode, $k]);
