@@ -449,7 +449,7 @@
         (nx.cup ? cupPath(co) : rv ? '<small class="sm-rv">' + ord(rpos) + ' · ' + rv.p + ' pts' + f5(rv.f) + '</small>' : '');
       const tr = co.train && co.train.i === co.ss.i ? S.CO_TRAIN[co.train.k] : null, sc = co.scout && co.scout.i === co.ss.i;
       wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
-        '<button class="sm-w' + (sc ? ' ok' : '') + '" id="ld-ol"><small>OLHEIRO</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o ' + esc(vc.short || vc.name)) + '</b></button></div>';
+        '<button class="sm-w' + (sc ? ' ok' : '') + '" id="ld-ol"><small>ANALISAR RIVAL</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o ' + esc(vc.short || vc.name)) + '</b></button></div>';
     } else card = '<div class="sm-bye"><b>Sem jogo nesta rodada</b><small>Temporada ' + (U.YEAR0 + co.season) + ' · o time descansa, os outros jogam.</small></div>';
     // Computador (tela larga, #ld.wide): os 3 jogos depois deste e a tabela perto de você (desenho aprovado 2026-11-11, quadro
     // "Climbix no computador"); no celular .sm-ex fica escondido
@@ -648,7 +648,7 @@
           pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b>' + (nFix ? ALL : '') + '</span>' +
             (tipHtml || (nFix ? '' : '<p>“' + say + '”</p>')) +
             (nFix ? auxRows(fixes) + '<span class="hl-ab"><button class="hl-btn dark" id="ld-aux-y">' + auxLbl(nFix) + '</button><button class="hl-btn line" data-pop-x>Manter</button></span>' : '') +
-            (nFix ? '' : ALL) + ((tip && !used) || nFix ? '' : toOl ? '<span class="hl-ab"><button class="hl-btn dark" id="ld-see-ol">Ver o olheiro</button><button class="hl-btn line" data-pop-x>Fechar</button></span>' : '<button class="hl-btn line" data-pop-x>Fechar</button>') + '</div>', 'Auxiliar', w => {
+            (nFix ? '' : ALL) + ((tip && !used) || nFix ? '' : toOl ? '<span class="hl-ab"><button class="hl-btn dark" id="ld-see-ol">Analisar o rival</button><button class="hl-btn line" data-pop-x>Fechar</button></span>' : '<button class="hl-btn line" data-pop-x>Fechar</button>') + '</div>', 'Auxiliar', w => {
             if (w.querySelector('#ld-see-ol')) w.querySelector('#ld-see-ol').onclick = () => { sfx('tap'); closePop(); c.keepBench(); c.save(); olheiro(); };
             if (w.querySelector('#ld-tip-k')) w.querySelector('#ld-tip-k').onclick = () => { sfx('back'); tip.keep = 1; tip.seen = 1; closePop(); draw(); };
             if (w.querySelector('#ld-tip-y')) w.querySelector('#ld-tip-y').onclick = () => { sfx('tap'); closePop();
