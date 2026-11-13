@@ -20,6 +20,8 @@
     try { if (window.top !== window) return null; } catch (e) { return null; }
     if ((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone) return null;
     const ua = navigator.userAgent;
+    // Navegador de dentro do Instagram, TikTok, Facebook e afins: não tem Adicionar à Tela de Início, então nada de passo a passo
+    if (/Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Bytedance|Snapchat|Twitter|Line\//i.test(ua)) return null;
     const ipad = /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
     if (ipad || /iPhone|iPod/.test(ua)) {
       if (ipad) return 'ipad';
@@ -131,11 +133,15 @@
   // o celular deitado, espera ele ficar em pé; girou com a folha aberta, ela fecha sem contar como "Agora não"
   const landHome = () => document.body.classList.contains('ld-on') && !!document.querySelector('#ld-st .hl');
   const fits = () => window.innerHeight >= 500;
+  const played = () => { try { return !!force || [...Array(U.CO_SLOTS || 0).keys()].some(i => { const v = U.coSaved && U.coSaved(i), c = v && v.co; return !!(c && c.club && (c.season > 0 || (c.ss && c.ss.i > 0))); }); } catch (e) { return false; } };
   let want = false; // tocou em Instalar o app com o celular deitado: abre quando ficar em pé
   let turned = false; // fechou porque o celular deitou: não insiste de novo nesta visita
   function auto() {
     const p = platform(), s = get();
     if (!p || s.later || s.done || wrap || turned) return;
+    // Só sozinha para quem já jogou (13/11: quem chegava pelo link via este passo a passo antes de ver o jogo e não começava
+    // carreira). Antes disso, só pelo botão Instalar o app da home
+    if (!played()) return;
     const land = landHome();
     if (!land && !document.querySelector('.hm')) return;
     if (land && !fits()) return;
