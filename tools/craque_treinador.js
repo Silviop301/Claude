@@ -1,5 +1,6 @@
 // Modo Treinador: o robô técnico joga carreiras de 10 temporadas e mostra se títulos, metas e demissões ficam realistas.
 // Uso (na raiz): node tools/craque_treinador.js [carreiras] [temporadas]     (padrão 200 carreiras de 10 temporadas)
+// FORMA=4-5-1 (com ESTILO=lados) joga sempre essa formação; ROBO=auxiliar segue o plano da auxiliar (S.coTip).
 // INICIO=baixo|livre fixa o começo (padrão: metade cada). ROBO=esperto: antes de cada jogo escolhe a formação e o estilo
 // que dão mais pontos esperados contra o plano do rival (mede quanto vale acertar a tática; mais lento). O robô deixa o auxiliar escalar, troca os cansados e as
 // lesões, gasta a experiência em rodízio e aceita proposta de clube maior no fim da temporada quando a fama deixa.
@@ -35,6 +36,8 @@ for (let n = 0; n < N; n++) {
         Object.keys(S.CO_FORMS).forEach(f => S.CO_STYLES.forEach(st => { const pv = S.coPreview(co, f, st), v = ptsOf(pv.xg[0], pv.xg[1]); if (v > bv) { bv = v; best = [f, st]; } }));
         co.form = best[0]; co.style = best[1]; co.xi = S.coAutoXI(co.squad, co.form).xi;
       }
+      if (process.env.ROBO === 'auxiliar') { const tp = S.coTip(co, true); if (tp && tp.kind === 'plan') { co.form = tp.f; co.style = tp.s; co.xi = S.coAutoXI(co.squad, co.form).xi; } } // segue o plano da auxiliar
+      if (process.env.FORMA && co.form !== process.env.FORMA) { co.form = process.env.FORMA; co.xi = S.coAutoXI(co.squad, co.form).xi; }
       if (process.env.ESTILO) co.style = process.env.ESTILO; // ESTILO=pressao: joga sempre nesse estilo
       // TREINA=1: o robô treina toda semana (roda os treinos que desenvolvem; descansa com o time cansado). Sem isso ele não treina.
       if (process.env.TREINA === '1' || process.env.TREINA === '2') { // 2: nunca descansa (ignora o auxiliar)
