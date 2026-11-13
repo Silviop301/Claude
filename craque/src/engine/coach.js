@@ -901,7 +901,7 @@
     if (!m || m.done || !m.min) return null;
     info = info || {};
     const s = sd === 'us' ? m.us : m.them, cnt = k => { m[k] = m[k] || { us: 0, them: 0 }; m[k][sd]++; };
-    const k = s.xi.findIndex(id => { const p = id && s.squad.find(x => x.id === id); return p && p.num === info.num; });
+    const k = info.num == null ? -1 : s.xi.findIndex(id => { const p = id && s.squad.find(x => x.id === id); return p && p.num === info.num; });
     const id = k >= 0 ? s.xi[k] : null, p = id && s.squad.find(x => x.id === id), pos = k >= 0 ? slotsOf(s.form)[k] : '';
     const e = { m: m.min, t, s: sd, p: p ? p.n : '', pos, b11: 1 }; if (m.st) e.st = m.st; if (info.pen) e.pen = 1;
     if (t === 'impedimento') cnt('of');

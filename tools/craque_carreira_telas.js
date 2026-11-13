@@ -17,6 +17,7 @@ if (OUT) fs.mkdirSync(OUT, { recursive: true });
   if (SAFE) await (await p.context().newCDPSession(p)).send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, left: SAFE, right: SAFE, bottom: 21 } });
   p.on('pageerror', e => errs.push('erro de página: ' + e.message));
   await p.addInitScript(() => { try { if (!sessionStorage.getItem('t')) { localStorage.clear(); sessionStorage.setItem('t', 1); localStorage.setItem('climbix-dicas-v1', '{"off":true}'); localStorage.setItem('climbix-co-ja', '1'); } } catch (e) {} });
+  if (process.env.MOTOR === '11') await p.addInitScript(() => { try { localStorage.setItem('climbix-motor', '11'); } catch (e) {} });
   await p.goto(URL, { waitUntil: 'load' }); await p.waitForTimeout(1200);
   let nShot = 0, festas = 0, subiu = 0;
   const SOBE = !!process.env.SOBE;
