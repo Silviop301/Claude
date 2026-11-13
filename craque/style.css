@@ -10569,3 +10569,9 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .rs-w small.mq { text-overflow: clip; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 18px), transparent); }
 .rs-w small.mq i { animation: rsMq var(--md, 8s) linear infinite; }
 @keyframes rsMq { 0% { transform: translateX(0); opacity: 0; } 4% { opacity: 1; } 22% { transform: translateX(0); } 78% { transform: translateX(var(--mx)); } 95% { transform: translateX(var(--mx)); opacity: 1; } 100% { transform: translateX(var(--mx)); opacity: 0; } }
+
+/* Novidades: "O que vem na 1.1" (2026-11-13) — link no cartão creme e cartões tracejados no fim da lista */
+.nvd-c > button.nvd-vem { margin: auto 0 -12px; align-self: flex-start; padding: 12px 0; color: #1F6B45; font: 700 16px/1 var(--display); letter-spacing: .02em; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
+.nvd-sc > small.nvd-fs { color: var(--gold); padding-top: 18px; }
+.nvd-sc > small.nvd-fs i { font-style: normal; margin-left: 8px; padding: 3px 7px; border-radius: 9px; background: var(--gold); color: #13201A; letter-spacing: .08em; }
+.nvd-g.nvd-fut > div { background: transparent; outline: 1.5px dashed rgba(242,194,48,.55); outline-offset: -1.5px; }

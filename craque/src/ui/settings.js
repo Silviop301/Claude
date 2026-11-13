@@ -169,7 +169,13 @@
       ['📢', 'Clima de estádio', 'Torcida, uhh no quase, vaia e apito de verdade.']]],
     ['MOEDAS', [
       ['🪙', 'Presente de boas-vindas', 'Conta nova ganha 36 moedas para começar.'],
-      ['💼', 'Aporte e clube à escolha', 'Use moedas para investir no clube ou começar a carreira onde quiser.']]]] }];
+      ['💼', 'Aporte e clube à escolha', 'Use moedas para investir no clube ou começar a carreira onde quiser.']]]],
+    // 2026-11-13 (Silvio: "o que vem por aí" da 1.1): fim da lista, cartões tracejados "em breve", sem prometer data
+    prox: ['O QUE VEM NA 1.1', [
+      ['👆', 'Posição livre', 'Arraste o jogador para qualquer ponto do campo e monte o time do seu jeito.'],
+      ['🏆', 'Estaduais e Supercopa', 'Mais taças no calendário, com clássico logo no começo do ano.'],
+      ['📸', 'Compartilhe o título', 'Mostre a taça e a campanha para os amigos com um toque.'],
+      ['📱', 'Tablet em tela cheia', 'iPad e tablets usam a tela toda, com mais espaço no jogo ao vivo.']]] }];
   const newsNew = () => { try { return localStorage.getItem(NEWS_KEY) !== VERSION; } catch (e) { return false; } };
   function novidadesLand(back, i) {
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', AR = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + (d < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7') + '"/></svg>';
@@ -178,12 +184,14 @@
     try { localStorage.setItem(NEWS_KEY, VERSION); } catch (e) {}
     U.LD.show('<div class="nvd' + (N.sec ? ' nvd-x' : '') + '"><div class="tm-h"><button class="tcr-back" id="nvd-back" aria-label="Voltar">' + BK + '</button><span class="mk-tt"><b>Novidades</b><small>Versão ' + N.v + (N.dt ? ' · ' + N.dt : '') + '</small></span>' +
         (n > 1 ? '<span class="nvd-pg"><button id="nvd-nx" aria-label="Versão mais nova"' + (i ? '' : ' disabled') + '>' + AR(-1) + '</button><button id="nvd-pv" aria-label="Versão anterior"' + (i < n - 1 ? '' : ' disabled') + '>' + AR(1) + '</button></span>' : '') + '</div>' +
-      (N.sec ? '<div class="nvd-lc">' : '') + '<div class="nvd-c">' + U.emo(N.art, 'lg') + '<small>' + N.tag + '</small><b>' + N.h + '</b><p>' + N.p + '</p>' + (N.s ? '<strong>' + N.s + '</strong>' : '') + (N.foot ? '<em>' + N.foot + '</em>' : '') + '</div>' + (N.sec ? '<button class="tm-go" id="nvd-go">Bora jogar</button></div>' : '') +
-      (N.sec ? '<div class="nvd-r nvd-rs"><div class="nvd-l nvd-sc">' + N.sec.map(([g, it]) => '<small>' + g + '</small><div class="nvd-g">' + it.map(([e, t, d]) => '<div>' + U.emo(e, 'md') + '<span><b>' + t + '</b><small>' + d + '</small></span></div>').join('') + '</div>').join('') + '</div><i class="nvd-mais" aria-hidden="true"></i></div>' :
+      (N.sec ? '<div class="nvd-lc">' : '') + '<div class="nvd-c">' + U.emo(N.art, 'lg') + '<small>' + N.tag + '</small><b>' + N.h + '</b><p>' + N.p + '</p>' + (N.s ? '<strong>' + N.s + '</strong>' : '') + (N.prox ? '<button class="nvd-vem" id="nvd-vem">O que vem na 1.1 ›</button>' : N.foot ? '<em>' + N.foot + '</em>' : '') + '</div>' + (N.sec ? '<button class="tm-go" id="nvd-go">Bora jogar</button></div>' : '') +
+      (N.sec ? '<div class="nvd-r nvd-rs"><div class="nvd-l nvd-sc">' + N.sec.map(([g, it]) => '<small>' + g + '</small><div class="nvd-g">' + it.map(([e, t, d]) => '<div>' + U.emo(e, 'md') + '<span><b>' + t + '</b><small>' + d + '</small></span></div>').join('') + '</div>').join('') + (N.prox ? '<small class="nvd-fs" id="nvd-fs">' + N.prox[0] + '<i>EM BREVE</i></small><div class="nvd-g nvd-fut">' + N.prox[1].map(([e, t, d]) => '<div>' + U.emo(e, 'md') + '<span><b>' + t + '</b><small>' + d + '</small></span></div>').join('') + '</div>' : '') + '</div><i class="nvd-mais" aria-hidden="true"></i></div>' :
       '<div class="nvd-r"><div class="nvd-l"><small>' + N.lt + '</small>' + N.li.map(([e, t, d]) => '<div>' + U.emo(e, 'md') + '<span><b>' + t + '</b><small>' + d + '</small></span></div>').join('') + '</div>' +
         '<button class="tm-go" id="nvd-go">Bora jogar</button></div>') + '</div>', st => {
       st.querySelector('#nvd-back').onclick = () => { U.sfx('tap'); out(); };
       st.querySelector('#nvd-go').onclick = () => { U.sfx('tap'); out(); };
+      const vem = st.querySelector('#nvd-vem'), fs = st.querySelector('#nvd-fs'); // leva ao fim da lista, no "o que vem"
+      if (vem && fs) vem.onclick = () => { U.sfx('tap'); const sc = st.querySelector('.nvd-sc'); sc.scrollTo({ top: fs.offsetTop - sc.offsetTop - 8, behavior: 'smooth' }); };
       const sc = st.querySelector('.nvd-sc'), mais = st.querySelector('.nvd-mais'); // a dica de rolar some no fim da lista
       if (sc && mais) { const up = () => mais.classList.toggle('fim', sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 8); sc.addEventListener('scroll', up, { passive: true }); up(); }
       if (st.querySelector('#nvd-nx')) { st.querySelector('#nvd-nx').onclick = () => { U.sfx('tap'); novidadesLand(back, i - 1); }; st.querySelector('#nvd-pv').onclick = () => { U.sfx('tap'); novidadesLand(back, i + 1); }; }
