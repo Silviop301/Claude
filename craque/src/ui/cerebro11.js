@@ -2,8 +2,10 @@
 // física (atrito, quique, altura), cada jogador lê a bola e escolhe tocar, lançar, cruzar, conduzir, driblar ou chutar com erro
 // humano, o passe pode ser cortado no caminho, o goleiro mergulha e o chute pode bater na trave ou sobrar. O gol sai do lance.
 // Veio da simulação 11x11 que o Silvio trouxe (13/11), adaptada: atributos de cada jogador do Climbix (fin, pas, dri, def, vel,
-// gol), as formações e os estilos do Treinador. O livesim.js continua com o desenho, o juiz do motor (faltas, cartões,
-// impedimento, pênalti), as trocas, o gol e a festa; este arquivo só joga a bola rolando (mais lateral, escanteio e tiro de meta).
+// gol), as formações e os estilos do Treinador. Desde 13/11 à noite (Silvio: "nada scriptado, deixe acontecer") o juiz também
+// é daqui: impedimento só de quem estava à frente do penúltimo defensor na hora do passe e tocou na bola, falta só no bote
+// (cartão pela falta), pênalti só da falta dentro da área; cobrança de falta com barreira e de pênalti também. Cada apito vai
+// para a tela por o.onRef, que o livesim desenha e o motor anota. O livesim fica com o desenho, as trocas, o gol e a festa.
 // Coordenadas em metros, 105 x 68; o lado 0 ataca para a direita e o lado 1 é espelhado (igual ao livesim).
 (function () {
   const U = (typeof window !== 'undefined' && window.CRAQUE_UI) || {}, LP = U.LP || (U.LP = {});
@@ -22,14 +24,14 @@
     recuoDefesa: 20, linhaAltaMax: 40,
     ruidoDecisao: 0.34, velChegada: 12, freioPasseAlto: 0.55, pesoAvanco: 0.022, vontadeCruzar: 0.7,
     erroPasse: 0.045, pPegaMal: 0.035, distMaxChute: 31, pesoChute: 6.8, freioChute: 0.55,
-    erroChute: 0.105, erroChuteDist: 0.0024, erroChutePressao: 0.45,
+    erroChute: 0.08, erroChuteDist: 0.0024, erroChutePressao: 0.45,
     gkDist: 0.02, // chute de longe: o goleiro tem tempo de ver a bola (mais defesa por metro além de 11 m)
     distChute: 18, // a chance que o jogador enxerga cai e^(-d/distChute)
-    gkReacao: 0.26, gkMergulho: 5.7, gkAlcance: 1.45, gkBase: 0.97, gkAlcancePen: 0.16, gkVelPen: 75,
-    pDesarme: 0.36,
+    gkReacao: 0.26, gkMergulho: 5.7, gkAlcance: 1.45, gkBase: 0.86, gkAlcancePen: 0.16, gkVelPen: 75,
+    pDesarme: 0.36, pFalta: 0.06, pFaltaBatido: 0.4, pAmarelo: 0.22, pVermelho: 0.015, pFaltaArea: 0.8, erroLinha: 2.6, pSemFreio: 0.25, // falta no bote: a desajeitada (pFalta) e a de quem foi batido e segura (pFaltaBatido; na própria área ele se segura: pFaltaArea); erroLinha: metros que o passador erra ao ler a linha do impedimento
     gastoBase: 0.0004, gastoCorrida: 0.000018,
     kAt: 1, // quanto o atributo se afasta da média dos 22 em campo (1 = um ponto vale um ponto da simulação original)
-    kForma: 20, // pontos de atributo por unidade de ln(força do ataque no minuto / 1,3): tática, mando, moral e cansaço do motor
+    kForma: 26, // pontos de atributo por unidade de ln(força do ataque no minuto / 1,3): tática, mando, moral e cansaço do motor
   };
   Object.keys(BAL).forEach(k => { BAL[k] = num('B11_' + k, BAL[k]); });
   LP.B11 = BAL;
@@ -154,10 +156,10 @@
           if (naAreaPropria(T, g.iX, g.iY) && g.tInter < T.adv.tPers - 0.25 && g.tInter < T.tPers) T.perseguidor = g; }
       } else {
         const T = dono.time.adv; let p1 = null, t1 = 1e9, p2 = null, t2 = 1e9;
-        for (const p of T.jogadores) { if (!emPe(p) || p.gol) continue; const t = hip(p.x - bola.x, p.y - bola.y) / velMax(p) - (p.lp === M.cacador ? 9 : 0);
+        for (const p of T.jogadores) { if (!emPe(p) || p.gol) continue; const t = hip(p.x - bola.x, p.y - bola.y) / velMax(p);
           if (t < t1) { p2 = p1; t2 = t1; p1 = p; t1 = t; } else if (t < t2) { p2 = p; t2 = t; } }
         // pressão baixa: quem está longe da própria área espera no bloco em vez de correr atrás (retranca e contra-ataque)
-        if (p1 && p1.lp !== M.cacador && T.sty.press < 0.3 && RX(T, bola.x) > 60 && t1 > 0.9) p1 = null;
+        if (p1 && T.sty.press < 0.3 && RX(T, bola.x) > 60 && t1 > 0.9) p1 = null;
         if (!dono.naMao) { T.pressor = p1; T.cobertura = p2; }
       }
     }
@@ -186,7 +188,8 @@
       if (papel === 'LAT') pInf = ((p.base.y - 34) * (RY(T, bola.y) - 34) > 0 && brx > 42) ? 0.3 : 0.03;
       const r = R();
       if (r < pInf) { p.acao = 'infiltrar'; p.tAcao = sorteia(1.6, 3.2); const ry = RY(T, p.y);
-        p.infY = papel === 'LAT' ? ry : clamp(papel === 'PON' ? ry + (34 - ry) * sorteia(0, 0.6) : ry + sorteia(-9, 9), 5, 63); }
+        p.infY = papel === 'LAT' ? ry : clamp(papel === 'PON' ? ry + (34 - ry) * sorteia(0, 0.6) : ry + sorteia(-9, 9), 5, 63);
+        p.semFreio = R() < BAL.pSemFreio; /* às vezes sai antes da hora: se o passe sair, é impedimento */ }
       else if (r < pInf + 0.33) { p.acao = 'apoio'; p.tAcao = sorteia(1.2, 2.6); p.tPos = 0; }
       else { p.acao = 'abrir'; p.tAcao = sorteia(0.9, 2.2); p.desvX = sorteia(-3.5, 3.5); p.desvY = sorteia(-4, 4); }
     }
@@ -212,7 +215,7 @@
         if (ex) { TX = RX(T, Math.min(ex + p.desvX * 0.4, Math.max(T.impLinha - 0.3, brx))); TY = RY(T, ey + p.desvY * 0.4); p.vDes = 1; p.tAcao -= dt; if (p.tAcao <= 0) { p.tAcao = 1; p.desvX = sorteia(-3.5, 3.5); p.desvY = sorteia(-4, 4); } return; }
       }
       p.tAcao -= dt; if (p.tAcao <= 0) escolherAcao(p, brx);
-      if (p.acao === 'infiltrar') { let x = Math.min(T.impLinha + 10, 99.5); if (bola.receptor !== p) x = Math.min(x, T.impLinha - 0.4); TX = RX(T, x); TY = RY(T, p.infY); p.vDes = 1; return; }
+      if (p.acao === 'infiltrar') { let x = Math.min(T.impLinha + 10, 99.5); if (!p.semFreio && bola.receptor !== p) x = Math.min(x, T.impLinha - 0.4); TX = RX(T, x); TY = RY(T, p.infY); p.vDes = 1; return; }
       ancora(p, true); const ancX = TX, ancY = TY;
       if (p.acao === 'apoio' && dono) { p.tPos -= dt; if (p.tPos <= 0) { p.tPos = 0.45; calcApoio(p, dono, ancX, ancY); } TX = p.apX; TY = p.apY; p.vDes = 0.9; return; }
       let ox = 0, oy = 0; const d = distMaisPerto(T.adv, p.x, p.y);
@@ -247,7 +250,8 @@
         if (p.gol && ch && ch.time !== T && !ch.tentou) {
           p.ax = p.x; p.ay = p.y; p.vDes = 0;
           if (ch.idade >= ch.reacao && Math.abs(bola.vx) > 1) { const tt = (p.x - bola.x) / bola.vx;
-            if (tt > 0 && tt < 3) { p.ay = clamp(bola.y + bola.vy * tt, GOL_Y1 - 1.5, GOL_Y2 + 1.5); p.mergulho = true; } }
+            if (tt > 0 && tt < 3) { let yp = bola.y + bola.vy * tt; if (ch.penalti && ch.palpite * (yp - 34) < 0) yp = 34 + ch.palpite * 2.6; /* pênalti: pulou para o lado errado */
+              p.ay = clamp(yp, GOL_Y1 - 1.5, GOL_Y2 + 1.5); p.mergulho = true; } }
           return;
         }
         if (p === T.perseguidor || p === bola.receptor) { const perto = hip(bola.x - p.x, bola.y - p.y) < 2.5 && bola.z < 1; p.ax = perto ? bola.x : p.iX; p.ay = perto ? bola.y : p.iY; p.vDes = 1; return; }
@@ -290,7 +294,7 @@
       const T = p.time, S = T.sty, prx = RX(T, bola.x), pry = RY(T, bola.y), vAqui = valorPos(prx, pry), ruido = () => gauss() * S.ruido;
       for (const m of T.jogadores) {
         if (m === p || !emPe(m)) continue; const d0 = hip(m.x - bola.x, m.y - bola.y); if (d0 < 5 || d0 > (op.max || 62)) continue;
-        const mrx = RX(T, m.x); if (mrx > T.impLinha + 0.2 && mrx > prx) continue; // não passa para quem está impedido
+        const mrx = RX(T, m.x); if (mrx > T.impLinha + 0.2 + gauss() * BAL.erroLinha * (1.3 - at(p, 'pas') / 100) && mrx > prx) continue; // não passa para quem ele vê impedido (às vezes lê mal a linha)
         const tEst = d0 / 15, ax = clamp(m.x + m.vx * tEst * 0.8, 1.5, CL - 1.5), ay = clamp(m.y + m.vy * tEst * 0.8, 1.5, CW - 1.5);
         const d = hip(ax - bola.x, ay - bola.y), arx = RX(T, ax), ary = RY(T, ay), risco = riscoLinha(bola.x, bola.y, ax, ay, T.adv);
         const dRec = distMaisPerto(T.adv, ax, ay), aberto = clamp(dRec / 7, 0, 1), prog = arx - prx, ganho = valorPos(arx, ary) - vAqui;
@@ -347,7 +351,7 @@
     function soltar(p, ang, vh, vz) {
       if (bola.dono === p) { bola.x = p.x + Math.cos(ang) * 0.6; bola.y = p.y + Math.sin(ang) * 0.6; }
       bola.dono = null; bola.z = 0; bola.vx = Math.cos(ang) * vh; bola.vy = Math.sin(ang) * vh; bola.vz = vz;
-      bola.ultimo = p; bola.ultimoTime = p.time; bola.receptor = null; bola.chute = null; bola.cruz = false; bola.desvioEsc = false;
+      bola.ultimo = p; bola.ultimoTime = p.time; bola.receptor = null; bola.chute = null; bola.cruz = false; bola.desvioEsc = false; bola.impedidos = null;
       p.cdToque = 0.45; p.naMao = false; p.driblando = false; p.dir = ang; bola.tSolta = 0;
     }
     function passar(p, ax, ay, alto, m, op) {
@@ -357,42 +361,48 @@
       if (alto) { const tv = (op.tVoo || 0.75 + d / 38); soltar(p, ang, d / tv * fv * (1 + BAL.arrastoAr * tv * 0.5), G * tv / 2); }
       else soltar(p, ang, clamp((BAL.velChegada + BAL.atritoK * d + BAL.atritoC * d / 14) * fv, 5, op.maxVel || 27), op.vz || 0);
       bola.receptor = m; if (m) { m.de = p; m.deT = clk; }
-      if (!alto && d < 18 && !p.gol && p.base.papel !== 'ZAG' && R() < 0.4) { p.acao = 'infiltrar'; p.tAcao = 2.2; p.infY = clamp(RY(T, p.y) + sorteia(-5, 5), 5, 63); }
+      // impedimento de verdade: quem está à frente do penúltimo defensor (o goleiro conta), da bola e no campo deles na hora do passe
+      // fica marcado; se for ele a tocar na bola, apita (lateral, escanteio e tiro de meta não têm impedimento)
+      let imp = null;
+      if (!op.semImp) { const lin = Math.max(segundoUltimo(T), RX(T, bola.x), 52.5); for (const q of T.jogadores) if (q !== p && q.ativo && RX(T, q.x) > lin + 0.15) (imp || (imp = [])).push(q); }
+      bola.impedidos = imp;
+      if (!alto && d < 18 && !p.gol && p.base.papel !== 'ZAG' && R() < 0.4) { p.acao = 'infiltrar'; p.tAcao = 2.2; p.infY = clamp(RY(T, p.y) + sorteia(-5, 5), 5, 63); p.semFreio = false; }
       else p.tAcao = Math.min(p.tAcao, 0.4);
     }
     function cruzar(p, op) {
       const T = p.time, lado = RY(T, bola.y) < 34 ? 1 : -1, tx = RX(T, CL - sorteia(5.5, 12)), ty = RY(T, 34 + lado * sorteia(-4, 7)); let m = null, dm = 99;
       for (const q of T.jogadores) { if (q === p || !emPe(q) || q.gol) continue; const d = hip(q.x - tx, q.y - ty); if (d < dm) { dm = d; m = q; } }
-      const d = hip(tx - bola.x, ty - bola.y); passar(p, tx, ty, true, m, { pressao: op.pressao || 0, erro: 1.2, tVoo: 0.85 + d / 40 }); bola.cruz = true;
+      const d = hip(tx - bola.x, ty - bola.y); passar(p, tx, ty, true, m, { pressao: op.pressao || 0, erro: 1.2, tVoo: 0.85 + d / 40, semImp: op.semImp }); bola.cruz = true;
     }
     function chutao(p) {
       const T = p.time, tx = RX(T, Math.min(RX(T, bola.x) + sorteia(35, 55), 95)), ty = clamp(RY(T, 34 + sorteia(-24, 24)), 3, CW - 3); let m = null, dm = 99;
       for (const q of T.jogadores) { if (q === p || !emPe(q)) continue; const d = hip(q.x - tx, q.y - ty); if (d < dm) { dm = d; m = q; } }
-      passar(p, tx, ty, true, m, { erro: 1.8 });
+      passar(p, tx, ty, true, m, { erro: 1.8, semImp: true }); bola.impedidos = null; // o chutão do tiro de meta e da zaga: sem impedimento (não é passe para alguém)
     }
     function chutar(p, op) {
       const T = p.time, gx = T.dir > 0 ? CL : 0, fin = at(p, 'fin'), gk = goleiro(T.adv);
       let lado = gk && gk.y > 34 ? -1 : 1; if (R() < 0.3) lado = -lado;
-      const yAim = 34 + lado * sorteia(1.5, 3.1), zAim = R() < 0.55 ? sorteia(0.15, 0.65) : sorteia(0.7, 2.0), dx = gx - bola.x, dy = yAim - bola.y, d = hip(dx, dy);
+      const yAim = 34 + lado * (op.penalti ? sorteia(1.7, 3.0) : sorteia(1.5, 3.1)), zAim = op.falta ? sorteia(1.2, 2.1) : R() < 0.55 ? sorteia(0.15, 0.65) : sorteia(0.7, 2.0), dx = gx - bola.x, dy = yAim - bola.y, d = hip(dx, dy);
       let v = (op.cabeca ? sorteia(14, 19) : sorteia(21, 28) + fin * 0.03);
-      const sig = BAL.erroChute * (1.55 - fin / 100) * (1 + (op.pressao || 0) * BAL.erroChutePressao) * (1 + (1 - p.e) * 0.3) * (op.mult || 1) + d * BAL.erroChuteDist;
+      const sig = op.penalti ? 0.035 * (1.5 - fin / 100) : BAL.erroChute * (1.55 - fin / 100) * (1 + (op.pressao || 0) * BAL.erroChutePressao) * (1 + (1 - p.e) * 0.3) * (op.mult || 1) + d * BAL.erroChuteDist;
       let ang = Math.atan2(dy, dx) + gauss() * sig; const tv = d / v; let vz = (zAim + 0.5 * G * tv * tv) / tv + gauss() * sig * 0.6 * v;
-      if (R() < BAL.pPegaMal * 2) { v *= 0.6; ang += gauss() * 0.15; vz *= R() * 1.6; }
+      if (!op.penalti && R() < BAL.pPegaMal * 2) { v *= 0.6; ang += gauss() * 0.15; vz *= R() * 1.6; }
       const x0 = bola.x, y0 = bola.y; soltar(p, ang, v, Math.max(0, vz));
       bola.chute = { time: T, autor: p, idade: 0, tentou: false, fim: false, cabeca: !!op.cabeca, x0, y0, ast: p.de && p.de.time === T && clk - p.deT < 10 ? p.de : null,
-        reacao: BAL.gkReacao * (1.35 - 0.5 * (gk ? at(gk, 'gol') : 70) / 100) + R() * 0.08 };
+        penalti: !!op.penalti, falta: !!op.falta, palpite: R() < 0.5 ? -1 : 1,
+        reacao: op.penalti ? 0 : BAL.gkReacao * (1.35 - 0.5 * (gk ? at(gk, 'gol') : 70) / 100) + R() * 0.08 };
     }
     // O chute acabou (gol, defesa, trave, travado ou fora): a tela conta (placar, narração, números do jogo) uma vez por chute
     function fimChute(ch, out, x) {
       if (!ch || ch.fim) return; ch.fim = true;
       const s = ch.time.id, [fx, fy] = s ? [CL - ch.x0, CW - ch.y0] : [ch.x0, ch.y0], yy = x && x.y !== undefined ? x.y : bola.y;
-      o.onShot({ side: s, out, sv: x && x.sv, kind: ch.cabeca ? 'cabeca' : 'chute', p: ch.autor.lp, ast: ch.ast ? ch.ast.lp : null, blk: x && x.blk ? x.blk.lp : null,
+      o.onShot({ side: s, out, sv: x && x.sv, kind: ch.penalti ? 'pen' : ch.falta ? 'falta' : ch.cabeca ? 'cabeca' : 'chute', p: ch.autor.lp, ast: ch.ast ? ch.ast.lp : null, blk: x && x.blk ? x.blk.lp : null,
         dist: hip(CL - fx, 34 - fy), box: CL - fx <= 16.5 && Math.abs(34 - fy) <= 20.15, near: out === 'trave' || (out === 'fora' && Math.min(Math.abs(yy - GOL_Y1), Math.abs(yy - GOL_Y2)) < 2), lane: fy < 24 ? -1 : fy > 44 ? 1 : 0 });
     }
 
     /* ---------------- Contato com a bola ---------------- */
     function dominar(p) {
-      const T = p.time; bola.dono = p; bola.z = 0; bola.vz = 0; bola.receptor = null; bola.chute = null; bola.cruz = false; bola.desvioEsc = false;
+      const T = p.time; bola.dono = p; bola.z = 0; bola.vz = 0; bola.receptor = null; bola.impedidos = null; bola.chute = null; bola.cruz = false; bola.desvioEsc = false;
       bola.ultimo = p; bola.ultimoTime = T; p.naMao = p.gol && naAreaPropria(T, p.x, p.y);
       p.tDec = p.naMao ? sorteia(1.2, 2.3) : sorteia(0.18, 0.45); p.driblando = false; p.conduz = T.dir > 0 ? 0 : Math.PI;
       for (const q of T.adv.jogadores) if (q.cdDes < 0.3) q.cdDes = 0.3;
@@ -400,7 +410,7 @@
     function espirrar(p, forca) {
       const a = R() * TAU, f = forca || sorteia(2, 5.5);
       bola.vx = p.vx * 0.5 + bola.vx * 0.2 + Math.cos(a) * f; bola.vy = p.vy * 0.5 + bola.vy * 0.2 + Math.sin(a) * f; bola.vz = R() * 2.5;
-      bola.ultimo = p; bola.ultimoTime = p.time; bola.receptor = null; bola.chute = null; bola.cruz = false; p.cdToque = 0.4;
+      bola.ultimo = p; bola.ultimoTime = p.time; bola.receptor = null; bola.chute = null; bola.cruz = false; bola.impedidos = null; p.cdToque = 0.4;
     }
     function defender(p, dPerp) {
       const ch = bola.chute, T = p.time, v = hip(bola.vx, bola.vy); ch.tentou = true; p.cdToque = 0.5;
@@ -422,6 +432,7 @@
         if (Math.cos(a) * ch.time.dir > 0.3) { b.vx *= 1.6; b.vy *= 1.6; b.vz = sorteia(3, 7); }
         b.ultimo = p; b.ultimoTime = T; b.chute = null; b.receptor = null; b.cruz = false; p.cdToque = 0.4; return true;
       }
+      if (b.impedidos && b.impedidos.indexOf(p) >= 0) { impedimento(p); return true; }
       const vb = hip(b.vx - p.vx, b.vy - p.vy), meuPasse = T === b.ultimoTime;
       if (!meuPasse && b.tSolta < 0.35 && !p.gol && vb > 8) { const v = hip(b.vx, b.vy), a = Math.atan2(b.vy, b.vx) + (R() < 0.5 ? -1 : 1) * sorteia(0.4, 1.3), f = v * sorteia(0.35, 0.6);
         b.vx = Math.cos(a) * f; b.vy = Math.sin(a) * f; b.vz = sorteia(1, 5); b.ultimo = p; b.ultimoTime = T; b.receptor = null; b.cruz = false; p.cdToque = 0.45; return true; }
@@ -448,17 +459,21 @@
       }
       return melhor ? tocar(melhor, dReal) : false;
     }
-    // Bote: quem chega perto da bola dominada tenta roubar (as faltas e os cartões vêm do juiz do motor)
+    // Bote: quem chega perto da bola dominada tenta roubar (pode ganhar, levar o drible ou fazer falta)
     function desarmes() {
       const dono = bola.dono; if (!dono || dono.naMao) return;
       for (const q of dono.time.adv.jogadores) {
         if (!emPe(q) || q.cdDes > 0 || q.atord > 0) continue; if (hip(q.x - bola.x, q.y - bola.y) > BAL.raioDesarme) continue;
-        if (q.lp === M.cacador && o.onFoul) { o.onFoul(q.lp, dono.lp); return; }
         q.cdDes = sorteia(0.8, 1.2);
-        let pW = BAL.pDesarme + (at(q, 'def') - at(dono, 'dri')) / 220; const n = hip(dono.x - q.x, dono.y - q.y) || 1;
+        let pW = BAL.pDesarme + (at(q, 'def') - at(dono, 'dri')) / 220, pF = BAL.pFalta; const n = hip(dono.x - q.x, dono.y - q.y) || 1;
         const tras = ((dono.x - q.x) * Math.cos(dono.dir) + (dono.y - q.y) * Math.sin(dono.dir)) / n;
-        if (tras > 0.4) pW -= 0.14; if (dono.driblando) pW -= 0.1; if (q.gol) pW += 0.25; pW += (q.e - dono.e) * 0.1;
-        if (R() < pW) { dono.atord = 0.4; dono.cdToque = 0.5; dono.naMao = false;
+        if (tras > 0.4) { pW -= 0.14; pF += 0.07; } if (dono.driblando) { pW -= 0.1; pF += 0.02; } if (q.gol) { pW += 0.25; pF = 0.03; } pW += (q.e - dono.e) * 0.1;
+        pF *= 1 + (1 - q.e) * 0.4 - (at(q, 'def') - 70) / 250; // cansado e marcador ruim chegam atrasados
+        if (naAreaPropria(q.time, dono.x, dono.y)) pF *= BAL.pFaltaArea;
+        const r = R();
+        if (r < pF) { falta(q, dono); return; }
+        if (r >= pF + pW && R() < pF / BAL.pFalta * BAL.pFaltaBatido) { falta(q, dono); return; } // foi batido e segura, puxa ou chega atrasado
+        if (r < pF + pW) { dono.atord = 0.4; dono.cdToque = 0.5; dono.naMao = false;
           if (R() < 0.55) dominar(q);
           else { bola.dono = null; espirrar(q, sorteia(3, 7)); q.cdToque = 0.25;
             if (RX(q.time, q.x) < 22 && R() < 0.6) { const f = sorteia(11, 16); bola.vx = -q.time.dir * f; bola.vy = (bola.y < 34 ? -1 : 1) * sorteia(3, 8); bola.vz = bola.y > GOL_Y1 - 2 && bola.y < GOL_Y2 + 2 ? 9 : sorteia(3, 6); } }
@@ -468,6 +483,23 @@
     }
 
     /* ---------------- Regras ---------------- */
+    // Falta: quem sofreu cai; cartão pelo lance (vermelho direto raro, amarelo; o 2º amarelo do jogo expulsa: o.amarelos diz
+    // quantos ele já tem na súmula). Dentro da própria área é pênalti. A tela apita, desenha o cartão e o motor anota (o.onRef)
+    function falta(q, v) {
+      const To = q.time, Tv = v.time; v.caido = 1.3; v.vx = v.vy = 0; bola.dono = null;
+      const r = R(), am0 = o.amarelos ? o.amarelos(q.lp) : 0; let card = '';
+      if (!q.gol && r < BAL.pVermelho) card = 'direto';
+      else if (r < BAL.pVermelho + BAL.pAmarelo) card = am0 >= 1 && !q.gol ? '2am' : 'am';
+      if (card === 'direto' || card === '2am') q.ativo = false;
+      const fx = clamp(v.x, 0.5, CL - 0.5), fy = clamp(v.y, 0.5, CW - 0.5), pen = naAreaPropria(To, fx, fy);
+      if (o.onRef) o.onRef({ t: 'falta', side: To.id, p: q.lp, v: v.lp, card, pen, x: fx, y: fy });
+      if (pen) parar('penalti', Tv, RX(Tv, CL - 11), 34); else parar('falta', Tv, fx, fy);
+    }
+    function impedimento(q) {
+      const T = q.time, ln = Math.max(segundoUltimo(T), 52.5);
+      if (o.onRef) o.onRef({ t: 'impedimento', side: T.id, p: q.lp, x: q.x, y: q.y, lin: ln });
+      parar('falta', T.adv, clamp(q.x, 1, CL - 1), clamp(q.y, 1, CW - 1), { indireta: true });
+    }
     function gol(T, yc) {
       const ch = bola.chute, autor = ch && ch.time === T ? ch.autor : (bola.ultimo && bola.ultimo.time === T ? bola.ultimo : null);
       if (ch && ch.time === T) fimChute(ch, 'gol', { y: yc });
@@ -500,33 +532,42 @@
     }
 
     /* ---------------- Bola parada (lateral, escanteio, tiro de meta) ---------------- */
-    const ESPERA = { lateral: 1.2, escanteio: 2.4, meta: 1.8 };
+    const ESPERA = { lateral: 1.2, escanteio: 2.4, meta: 1.8, falta: 2.6, penalti: 4.5 };
     // Escanteio por função (no original era pela ordem do 4-3-3): quem cabeceia vai para a área, um fica para o contra-ataque
     const PRI_A = { ZAG: 0, ATA: 1, PON: 2, MEI: 3, VOL: 4, LAT: 5 }, PRI_D = { ZAG: 0, VOL: 1, LAT: 2, MEI: 3, PON: 4, ATA: 5 };
     const ESC_A = [[99, 0], [97.5, 4], [96, -4], [93.5, -4.5], [93.5, 4.5], [88, 0], [96, 22], [72, 0], [62, -12], [62, 12]];
     const ESC_D = [[2.5, -2.5], [2.5, 2.5], [5.5, -3], [5.5, 3], [9, 0], [8, -5], [8, 5], [12, -4], [12, 4], [38, 0]];
-    function parar(tipo, T, x, y) {
-      const b = bola; M.fase = 'parado'; b.dono = null; b.receptor = null; b.chute = null; b.cruz = false; b.desvioEsc = false;
+    function parar(tipo, T, x, y, op) {
+      op = op || {};
+      const b = bola; M.fase = 'parado'; b.dono = null; b.receptor = null; b.chute = null; b.cruz = false; b.desvioEsc = false; b.impedidos = null;
       for (const p of todos) { p.naMao = false; p.driblando = false; }
-      const s = M.parado = { tipo, time: T, x, y, t: 0, espera: ESPERA[tipo], cobrador: null, jit: [], vaga: new Map() };
+      const s = M.parado = { tipo, time: T, x, y, t: 0, espera: ESPERA[tipo], cobrador: null, jit: [], vaga: new Map(), indireta: !!op.indireta, barreira: null };
       for (let i = 0; i < 30; i++) s.jit.push(sorteia(-1.5, 1.5));
       b.x = x; b.y = y; b.z = 0; b.vx = b.vy = b.vz = 0;
       const J = T.jogadores, maisPerto = filtro => { let m = null, dm = 1e9; for (const q of J) { if (!q.ativo || q.gol || q.caido > 0 || (filtro && !filtro(q))) continue; const d = hip(q.x - x, q.y - y); if (d < dm) { dm = d; m = q; } } return m; };
+      const dGol = hip((T.dir > 0 ? CL : 0) - x, 34 - y), melhorEm = k => { let m = null; for (const q of J) if (emPe(q) && !q.gol && (!m || at(q, k) > at(m, k))) m = q; return m; };
       if (tipo === 'meta') s.cobrador = goleiro(T);
+      else if (tipo === 'penalti') s.cobrador = (o.batedor && W.get(o.batedor(T.id))) || melhorEm('fin');
+      else if (tipo === 'falta' && dGol < 30 && !op.indireta) s.cobrador = melhorEm('fin');
       else if (tipo === 'escanteio') s.cobrador = maisPerto(q => q.base.papel === 'PON' || q.base.papel === 'MEI') || maisPerto();
       else s.cobrador = maisPerto() || J.find(q => q.ativo);
       if (tipo === 'escanteio') {
         J.filter(q => q !== s.cobrador && !q.gol).sort((a, c) => PRI_A[a.base.papel] - PRI_A[c.base.papel]).forEach((q, k) => s.vaga.set(q, ESC_A[Math.min(k, ESC_A.length - 1)]));
         T.adv.jogadores.filter(q => !q.gol).sort((a, c) => PRI_D[a.base.papel] - PRI_D[c.base.papel]).forEach((q, k) => s.vaga.set(q, ESC_D[Math.min(k, ESC_D.length - 1)]));
       }
+      if (s.cobrador && !emPe(s.cobrador)) s.cobrador = maisPerto() || s.cobrador;
+      if (tipo === 'falta' && dGol < 32) s.barreira = T.adv.jogadores.filter(q => emPe(q) && !q.gol).sort((a, c) => hip(a.x - x, a.y - y) - hip(c.x - x, c.y - y)).slice(0, dGol < 24 ? 4 : 3); // barreira: os mais perto
       if (o.onStop) o.onStop(tipo, T.id, x, y);
     }
     function alvoParado(p) {
       const s = M.parado, T = p.time, atq = T === s.time, tipo = s.tipo; p.vDes = 0.85;
       if (p === s.cobrador) { let ox = -T.dir * 0.8, oy = 0; if (tipo === 'lateral') { ox = 0; oy = s.y < 34 ? -0.5 : 0.5; } if (tipo === 'escanteio') { ox = s.x < 52 ? -0.5 : 0.5; oy = s.y < 34 ? -0.5 : 0.5; } TX = s.x + ox; TY = s.y + oy; p.vDes = 1; return; }
-      if (p.gol) { alvoGoleiro(p); return; }
+      if (p.gol) { if (tipo === 'penalti' && !atq) { TX = RX(T, 0.4); TY = 34; } else alvoGoleiro(p); return; }
       const jx = s.jit[(p.i * 2) % 30], jy = s.jit[(p.i * 2 + 1) % 30];
-      if (tipo === 'escanteio' && s.vaga.has(p)) { const S = s.time, lado = RY(S, s.y) < 34 ? -1 : 1, e = s.vaga.get(p);
+      if (tipo === 'penalti') { const S = s.time; TX = RX(S, 84.5 - (p.i % 3) * 2); TY = RY(S, 15 + p.i * 3.4 + (atq ? 0 : 1.7)); } // todos fora da área, atrás da bola
+      else if (s.barreira && s.barreira.indexOf(p) >= 0) { const k = s.barreira.indexOf(p), n0 = s.barreira.length, gx = T.dir > 0 ? 0 : CL; let ux = gx - s.x, uy = 34 - s.y; const nn = hip(ux, uy) || 1; ux /= nn; uy /= nn;
+        TX = s.x + ux * 9.3 - uy * (k - (n0 - 1) / 2) * 0.9; TY = s.y + uy * 9.3 + ux * (k - (n0 - 1) / 2) * 0.9; p.vDes = 1; TX = clamp(TX, 0.5, CL - 0.5); TY = clamp(TY, 0.5, CW - 0.5); return; }
+      else if (tipo === 'escanteio' && s.vaga.has(p)) { const S = s.time, lado = RY(S, s.y) < 34 ? -1 : 1, e = s.vaga.get(p);
         if (atq) { TX = RX(S, e[0] + jx); TY = RY(S, 34 + lado * e[1] + jy); } else { TX = RX(T, e[0] + jx * 0.4); TY = RY(T, 34 + e[1] + jy * 0.4); } }
       else ancora(p, atq);
       if (!atq) { const r0 = tipo === 'lateral' ? 3 : tipo === 'meta' ? 0 : 9.3;
@@ -536,6 +577,7 @@
     }
     function atualizarParado(dt) {
       const s = M.parado; s.t += dt; const c = s.cobrador;
+      if (c && c.caido > 0) { s.t = Math.min(s.t, s.espera - 0.5); return; }
       if (!c || !c.ativo || !todos.includes(c)) { s.cobrador = s.tipo === 'meta' ? goleiro(s.time) : s.time.jogadores.find(q => q.ativo && !q.gol); return; }
       if (s.t < s.espera) return; const d = hip(c.x - s.x, c.y - s.y);
       if (d > 1.6 && s.t < s.espera + 4) return; if (d > 1.6) { c.x = s.x - c.time.dir * 0.8; c.y = s.y; }
@@ -545,9 +587,14 @@
       const s = M.parado, p = s.cobrador, T = s.time, tipo = s.tipo; M.fase = 'jogo'; M.parado = null; const ops = [];
       const melhor = () => { let m = null; for (const q of ops) if (!m || q.u > m.u) m = q; return m; };
       if (tipo === 'lateral') { avaliarPasses(p, 0, ops, { max: 24, soCurto: true }); const m = melhor();
-        if (m) passar(p, m.x, m.y, false, m.m, { maxVel: 13, vz: 3.2 }); else passar(p, clamp(bola.x + T.dir * 10, 2, CL - 2), bola.y < 34 ? 6 : CW - 6, false, null, { maxVel: 12, vz: 3 }); }
-      else if (tipo === 'escanteio') { const curto = [...s.vaga.entries()].find(([q, e]) => q.time === T && e[1] === 22); if (R() < 0.15 && curto && emPe(curto[0])) passar(p, curto[0].x, curto[0].y, false, curto[0], {}); else cruzar(p, {}); }
-      else { avaliarPasses(p, 0, ops, {}); const m = melhor(); if (m && m.u > 0.5 && R() < 0.8) passar(p, m.x, m.y, m.alto, m.m, {}); else chutao(p); }
+        if (m) passar(p, m.x, m.y, false, m.m, { maxVel: 13, vz: 3.2, semImp: true }); else passar(p, clamp(bola.x + T.dir * 10, 2, CL - 2), bola.y < 34 ? 6 : CW - 6, false, null, { maxVel: 12, vz: 3, semImp: true }); }
+      else if (tipo === 'escanteio') { const curto = [...s.vaga.entries()].find(([q, e]) => q.time === T && e[1] === 22); if (R() < 0.15 && curto && emPe(curto[0])) passar(p, curto[0].x, curto[0].y, false, curto[0], { semImp: true }); else cruzar(p, { semImp: true }); }
+      else if (tipo === 'meta') { avaliarPasses(p, 0, ops, { semImp: true }); const m = melhor(); if (m && m.u > 0.5 && R() < 0.8) passar(p, m.x, m.y, m.alto, m.m, { semImp: true }); else chutao(p); }
+      else if (tipo === 'penalti') chutar(p, { penalti: true });
+      else { const dGol = hip((T.dir > 0 ? CL : 0) - bola.x, 34 - bola.y); // falta: de frente e perto bate direto, no ataque cruza, senão toca
+        if (!s.indireta && dGol < 29 && Math.abs(bola.y - 34) < 20 && R() < 0.6) chutar(p, { mult: 1.15, falta: true });
+        else if (RX(T, bola.x) > 68) cruzar(p, {});
+        else { avaliarPasses(p, 0, ops, {}); const m = melhor(); if (m) passar(p, m.x, m.y, m.alto, m.m, {}); else chutao(p); } }
       p.cdToque = 0.7;
     }
 
@@ -593,12 +640,10 @@
       },
       // dt em segundos do campinho já na escala do cérebro
       passo(dt, ball) { if (M.fase === 'fora') return; acc += dt; let n = 0; while (acc >= DT && n++ < 12) { acc -= DT; passo(); if (M.fase === 'fora') break; } if (acc > DT) acc = 0; escrever(ball); },
-      sair() { M.fase = 'fora'; M.parado = null; bola.dono = null; bola.chute = null; M.cacador = null; },
+      sair() { M.fase = 'fora'; M.parado = null; bola.dono = null; bola.chute = null; },
       parado: () => M.fase === 'parado',
       // o juiz espera: chute ou cruzamento no ar, bola perto de uma das áreas, escanteio para sair
-      perigo: () => !!(bola.chute || bola.cruz || (M.fase === 'parado' && M.parado.tipo === 'escanteio') || (M.fase === 'jogo' && (bola.x < 20 || bola.x > CL - 20))),
-      // a falta do motor: este jogador vai no bote em quem tem a bola (o apito sai no contato, onFoul)
-      cacar(lp) { M.cacador = lp || null; },
+      perigo: () => !!(bola.chute || bola.cruz || (M.fase === 'parado' && (M.parado.tipo === 'escanteio' || M.parado.tipo === 'penalti' || (M.parado.tipo === 'falta' && M.parado.barreira))) || (M.fase === 'jogo' && (bola.x < 20 || bola.x > CL - 20))),
       posse: () => (bola.dono ? bola.dono.time.id : bola.ultimoTime.id),
     };
     return api;

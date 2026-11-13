@@ -25,7 +25,7 @@ function simForm(s) { const sl = S.CO_FORMS[s.form].slots, sp = spots(s.form), a
   if (!gk.length && rest.length) { const g0 = rest.shift(); g0[0] = 'GK'; g0[1] = 0; g0[2] = 50; gk.push(g0); }
   return gk.concat(rest); }
 const xiAvg = s => { const v = s.xi.map(id => s.squad.find(p => p.id === id)).filter(Boolean).map(p => p.ovr); return v.reduce((a, b) => a + b, 0) / (v.length || 1); };
-const STEPS = 137, G = []; let ova = 0, ovb = 0;
+const BR = process.env.MOTOR === '11', STEPS = BR ? 188 : 137, G = []; let ova = 0, ovb = 0;
 for (let g = 0; g < N; g++) {
   // metade dos jogos com o robô no banco de cada clube (o seu time tem o auxiliar escalando; o outro lado é o do motor)
   const mine = g % 2 ? idb : ida, other = g % 2 ? ida : idb;
@@ -38,12 +38,13 @@ for (let g = 0; g < N; g++) {
   ss.ids[oi] = other; if (g % 4 >= 2) { fx.reverse(); } // e alterna quem joga em casa
   const m = S.coMatchStart(co); if (!m) continue;
   const sh = [0, 0];
-  const sim = LP.sim({ me: -1, goals: [], free: true, brain: process.env.MOTOR === '11', seed: g * 13 + 7, home: m.home ? 0 : 1, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]], spm: () => 2.2, speed: () => 1.25,
+  const sim = LP.sim({ me: -1, goals: [], free: true, brain: BR, seed: g * 13 + 7, home: m.home ? 0 : 1, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]], spm: () => (BR ? 3 : 2.2), speed: () => 1.25,
+    onRef: r0 => { S.coMatchRef(co, m, r0.side ? 'them' : 'us', r0.kind, r0); }, yc: (side, num) => { const s = side ? m.them : m.us, p = s.squad.find(q => q.num === num && s.xi.includes(q.id)); return p && s.bk && s.bk[p.id] ? 1 : 0; }, taker: side => { const t = S.coTaker(side ? m.them : m.us, 'pen'); return t ? t.num : null; },
     onShot: s => { const e = S.coMatchShot(co, m, s.side ? 'them' : 'us', s.out, s); if (e) sh[s.side]++; } });
   sim.go(); let key = '', xu = 0, xt = 0;
   const a0 = xiAvg(m.us), b0 = xiAvg(m.them);
   while (!m.done) {
-    S.coMatchStep(co, m, m.min + 1, { free: true });
+    S.coMatchStep(co, m, m.min + 1, { free: true, brain: BR });
     if (m.lam) { xu += m.lam.us / S.CO.mins; xt += m.lam.them / S.CO.mins; }
     const k2 = [m.us, m.them].map(s => s.form + ':' + s.xi.join(',') + ':' + s.style).join('|');
     if (key && k2 !== key) [m.us, m.them].forEach((s, k) => { sim.lineup(k, simForm(s)); sim.style(k, S.CO_STY[s.style]); }); key = k2;

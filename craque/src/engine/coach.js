@@ -746,7 +746,8 @@
   // saindo daqui (o campinho não marca falta sozinho), na mesma proporção de antes. Sem opt, tudo como sempre
   S.coMatchStep = function (co, m, until, opt) {
     if (m.done) return null;
-    const free = !!(opt && opt.free);
+    const free = !!(opt && opt.free), brain = free && !!opt.brain; // brain: o cérebro 11x11 tem juiz próprio (S.coMatchRef); aqui não sai falta, cartão, impedimento nem pênalti
+    if (m.refStop) { const st0 = m.refStop; delete m.refStop; m.stop = st0; return st0; } // o seu expulso no campo: para como o vermelho do motor
     const { r, save } = rngCo(co);
     let stop = null;
     let n = 0;
@@ -812,7 +813,7 @@
       if (free) {
         m.lam = { us: m.home ? lh : la, them: m.home ? la : lh };
         const PF = 0.08 + (CO.ch - 1) * CO.spMiss.pen; // pênaltis por gol esperado: os que entram (8% dos gols) e os perdidos
-        [[H, lh], [A, la]].forEach(([S0, lam]) => {
+        if (!brain) [[H, lh], [A, la]].forEach(([S0, lam]) => {
           if (stop || r() >= lam / CO.mins * PF) return;
           const sd = sideName(m, S0), tk = takerOf(S0, 'pen'), who = tk ? tk.n : scorer(r, S0), u = r();
           m.sh = m.sh || { us: 0, them: 0 }; m.sh[sd]++; m.ot = m.ot || { us: 0, them: 0 };
@@ -831,6 +832,7 @@
         if (stop && stop.t !== 'gol') return;
         const sd = sideName(m, s), o = s === m.us ? m.them : m.us, st = styOf(s), cnt = k => { m[k] = m[k] || { us: 0, them: 0 }; m[k][sd]++; };
         const pk = penEv ? (penEv.s === sd ? -1 : 1) : 0; if (pk < 0) return;
+        if (brain) { if (r() < CO.inj / CO.mins * injW(s).t * (s.injK || 1)) { const k = injW(s).pick(r()), id = s.xi[k], p = s.squad.find(x => x.id === id); if (!p) return; p.out = Math.max(1, r.int(1, 6) + 1 - (s.outCut || 0)); m.ev.push({ m: m.min, t: 'lesao', s: sd, p: p.n }); if (s.mine) stop = { t: 'lesao', p: p.n, id, k }; else autoSub(s, k, true); } return; }
         if (pk || r() < CO.foul / CO.mins * (0.8 + 0.45 * st.press + 0.2 * (1 - st.ctrl))) {
           cnt('fo');
           const k = pk ? penFoulPick(r, s) : foulPick(r, s), id = s.xi[k], p = id && s.squad.find(x => x.id === id); if (!p) return;
@@ -892,6 +894,30 @@
     save();
     return stop;
   };
+  // Cérebro 11x11: o juiz do campo apitou. sd = quem fez ('us' | 'them'); t: falta, amarelo, vermelho, impedimento;
+  // info: { num, how ('direto' | '2am'), pen }. Conta como os do motor (faltas, cartões, suspensão, impedimentos) e o seu
+  // vermelho para o jogo no próximo minuto (m.refStop). Volta o lance da súmula
+  S.coMatchRef = function (co, m, sd, t, info) {
+    if (!m || m.done || !m.min) return null;
+    info = info || {};
+    const s = sd === 'us' ? m.us : m.them, cnt = k => { m[k] = m[k] || { us: 0, them: 0 }; m[k][sd]++; };
+    const k = s.xi.findIndex(id => { const p = id && s.squad.find(x => x.id === id); return p && p.num === info.num; });
+    const id = k >= 0 ? s.xi[k] : null, p = id && s.squad.find(x => x.id === id), pos = k >= 0 ? slotsOf(s.form)[k] : '';
+    const e = { m: m.min, t, s: sd, p: p ? p.n : '', pos, b11: 1 }; if (m.st) e.st = m.st; if (info.pen) e.pen = 1;
+    if (t === 'impedimento') cnt('of');
+    else {
+      cnt('fo'); s.bk = s.bk || {};
+      if (t === 'amarelo') { if (id) s.bk[id] = 1; cnt('yc'); if (s.mine && id) (m.ycAdd = m.ycAdd || []).push(id); }
+      else if (t === 'vermelho') {
+        const bk = id && s.bk[id]; e.how = info.how === '2am' || bk ? '2am' : 'direto';
+        if (e.how === '2am') { cnt('yc'); if (m.ycAdd) m.ycAdd = m.ycAdd.filter(x => x !== id); }
+        cnt('rc'); if (k >= 0) s.xi[k] = null; s.red++; if (s.mine && p) p.sus = 2;
+        if (s.mine && p) m.refStop = { t: 'vermelho', p: p.n, how: e.how, id };
+      }
+    }
+    m.ev.push(e);
+    return e;
+  };
   // Simulação livre: um chute que o campinho acabou de jogar entra na súmula (placar, chutes, no gol, escanteio, lance
   // com o nome de quem bateu). sd: 'us' | 'them'; out: gol, def, fora, trave, bloq; info: { id, num, sv, lane }
   S.coMatchShot = function (co, m, sd, out, info) {
@@ -907,7 +933,7 @@
     else { if (k === 'defesa') m.ot[sd]++; if (info.sv === 'escanteio') { m.ck = m.ck || { us: 0, them: 0 }; m.ck[sd]++; } e = { m: m.min, t: 'chance', s: sd, p: p.n, k, l, sp: null, by: null }; }
     if (m.st) e.st = m.st;
     // como foi o chute no campinho, para o texto do lance bater com o que se viu: de cabeça ou de fora da área
-    if (info.kind === 'cabeca') e.hd = 1; else if (info.kind === 'falta') { e.fk = 1; if (out === 'gol') e.sp = 'falta'; } else if (info.box === false) e.far = 1;
+    if (info.kind === 'pen') { e.sp = 'pen'; e.l = 'c'; } else if (info.kind === 'cabeca') e.hd = 1; else if (info.kind === 'falta') { e.fk = 1; if (out === 'gol') e.sp = 'falta'; } else if (info.box === false) e.far = 1;
     e.livre = 1; m.ev.push(e); scoutGoal(m, e);
     return e;
   };
