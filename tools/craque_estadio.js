@@ -129,10 +129,11 @@ function career(n, opt) {
       if (opt.obra) build(co, st, n);
       st.rd++; if (co.fin && co.fin.caixa < 0) st.red++;
       if (nx.bye) { S.coSkipRound(co); continue; }
+      const hm = nx.home && !nx.cup;   // jogo de copa (coachcup.js) tem bilheteria própria e não entra no histórico do estádio
       if (opt.cut && co.ss.i === 9) co = JSON.parse(JSON.stringify(co));
       if (opt.f1 && co.ss.i === 9) { const e0 = S.coEst(co); delete e0.cap0; delete e0.pr; }
       let cr = null;
-      if (nx.home && !opt.cut && !opt.old && !opt.f1 && !opt.obra) {
+      if (hm && !opt.cut && !opt.old && !opt.f1 && !opt.obra) {
         const e0 = S.coEst(co), P = S.coEstPrices(co), L = P.list, mx = Math.max(...L.map(x => x.gate));
         cr = S.coEstCrowd(co, nx.vs);
         if (P.vs !== nx.vs) alert('próximo jogo em casa errado (carreira ' + n + ')');
@@ -141,12 +142,12 @@ function career(n, opt) {
         if (L[0].pub < L[2].pub || L[4].pub > L[2].pub) alert('preço e público ao contrário (carreira ' + n + ')');
         if (e0.hum === 50 && e0.pr === 2 && S.coEstCap(e0) === e0.cap0 && S.coGate(co, nx.vs) !== S.coGateBase(co, nx.vs)) alert('a régua da bilheteria não bate na chegada (carreira ' + n + '): ' + S.coGate(co, nx.vs) + ' x ' + S.coGateBase(co, nx.vs));
       }
-      if (opt.obra && nx.home) {   // quanto a bilheteria deste jogo ganhou (ou perdeu) com as obras: contra o mesmo jogo no estádio da chegada
+      if (opt.obra && hm) {   // quanto a bilheteria deste jogo ganhou (ou perdeu) com as obras: contra o mesmo jogo no estádio da chegada
         const e0 = S.coEst(co), g0 = S.coGateBase(co, nx.vs), sv = [e0.lv, e0.base, e0.obra], act = S.coEstGate(co, nx.vs, g0);
         e0.lv = e0.lv0; e0.base = e0.base0; e0.obra = null; const up1 = e0.up; e0.up = e0.up0; const cf = S.coEstGate(co, nx.vs, g0); e0.lv = sv[0]; e0.base = sv[1]; e0.obra = sv[2]; e0.up = up1;
         st.extra += act - cf;
       }
-      const e5 = S.coEst(co), lg5 = S.coEstLiga(co), fine = nx.home && lg5 && lg5.on ? lg5.fine : 0, cl5 = !!(nx.home && e5 && e5.cl), gt5 = nx.home && e5 ? e5.gt || 0 : 0, hum5 = e5 ? e5.hum : 50;
+      const e5 = S.coEst(co), lg5 = S.coEstLiga(co), fine = hm && lg5 && lg5.on ? lg5.fine : 0, cl5 = !!(hm && e5 && e5.cl), gt5 = nx.home && !(nx.cup && nx.neutral) && e5 ? e5.gt || 0 : 0, hum5 = e5 ? e5.hum : 50;
       if (lg5 && (e5.up.l >= 1 || !(lg5.fine > 0))) alert('exigência da liga com refletores ou sem multa (carreira ' + n + ')');
       if (lg5 && co.ss.i === 0) st.lgS++;
       const m = S.coMatchStart(co);
@@ -165,11 +166,11 @@ function career(n, opt) {
       if (e) {
         if (!(e.hum >= 0 && e.hum <= 100)) alert('humor fora da faixa: ' + e.hum + ' (carreira ' + n + ')');
         st.hum[S.coEstHumIdx(e.hum)]++;
-        if (nx.home && !!log.closed !== cl5) alert('portões fechados não bate com o aviso (carreira ' + n + ')');
-        if (nx.home && e.cl && (log.res !== 'd' || e.hum >= E.ev.fechaHum + E.obra.hum || cl5)) alert('portões fechados sem derrota em casa com a torcida revoltada (carreira ' + n + ')');
-        if (nx.home) { if (fine) st.lg++; if (log.tit) { st.tit++; if (!cl5 && S.coEstCap(e) === e.cap0 && !e.obra && hum5 >= 50 && e.pr <= 2 && log.pub < log.cap) alert('jogo do título sem lotar (carreira ' + n + ')'); } if (gt5) { st.gt++; if (e.gt !== gt5 - 1) alert('gramado do show não voltou (carreira ' + n + ')'); } }
-        if (nx.home && log.closed) { st.cl++; if (log.pub !== 0 || log.gate || e.cl) alert('portões fechados com público ou renda (carreira ' + n + ')'); }
-        else if (nx.home) {
+        if (hm && !!log.closed !== cl5) alert('portões fechados não bate com o aviso (carreira ' + n + ')');
+        if (hm && e.cl && (log.res !== 'd' || e.hum >= E.ev.fechaHum + E.obra.hum || cl5)) alert('portões fechados sem derrota em casa com a torcida revoltada (carreira ' + n + ')');
+        if (hm) { if (fine) st.lg++; if (log.tit) { st.tit++; if (!cl5 && S.coEstCap(e) === e.cap0 && !e.obra && hum5 >= 50 && e.pr <= 2 && log.pub < log.cap) alert('jogo do título sem lotar (carreira ' + n + ')'); } if (gt5) { st.gt++; if (e.gt !== gt5 - 1) alert('gramado do show não voltou (carreira ' + n + ')'); } }
+        if (hm && log.closed) { st.cl++; if (log.pub !== 0 || log.gate || e.cl) alert('portões fechados com público ou renda (carreira ' + n + ')'); }
+        else if (hm) {
           if (!Number.isInteger(log.pub) || log.pub <= 0 || log.pub % 100 || log.pub > log.cap) alert('público ruim: ' + log.pub + ' de ' + log.cap + ' (carreira ' + n + ')');
           st.home++; st.occ += log.pub / log.cap; if (log.pub >= log.cap * E.full) st.full++;
           const h = e.h[e.h.length - 1]; if (!h || h.pub !== log.pub || h.r !== log.r) alert('histórico não bate com o jogo (carreira ' + n + ')');

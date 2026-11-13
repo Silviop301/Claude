@@ -340,6 +340,7 @@
     let r = 3 + Math.floor(hash('est-show-r-' + co.club + '-' + co.season) * Math.max(1, n - 9));
     while (r < n - 3 && !away(r)) r++;
     if (ss.i !== r || !away(r)) return null;
+    const nx = S.coNext(co); if (nx && nx.cup && nx.home) return null;   // semana com jogo de copa em casa: a proposta espera o jogo passar
     return { v: r10k(gameBase(co) * V.showV * cap / e.cap0), games: V.showGames };
   };
   // Aceitar: o dinheiro entra na hora (bilheteria) e o gramado sofre nos próximos jogos em casa. Recusar: só no ano que vem
