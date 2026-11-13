@@ -175,8 +175,7 @@
       ['👆', 'Posição livre', 'Arraste o jogador para qualquer ponto do campo e monte o time do seu jeito.'],
       ['🏆', 'Estaduais e Supercopa', 'Mais taças no calendário, com clássico logo no começo do ano.'],
       ['📸', 'Compartilhe o título', 'Mostre a taça e a campanha para os amigos com um toque.'],
-      ['📱', 'Tablet em tela cheia', 'iPad e tablets usam a tela toda, com mais espaço no jogo ao vivo.'],
-      ['👟', 'Modo Jogador', 'Crie o seu craque e leve ele da base ao topo.']]] }];
+      ['📱', 'Tablet em tela cheia', 'iPad e tablets usam a tela toda, com mais espaço no jogo ao vivo.']]] }];
   const newsNew = () => { try { return localStorage.getItem(NEWS_KEY) !== VERSION; } catch (e) { return false; } };
   function novidadesLand(back, i) {
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', AR = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + (d < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7') + '"/></svg>';
