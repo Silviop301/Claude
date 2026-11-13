@@ -50,7 +50,7 @@ for m in MODOS:
 
 print("\nCarreiras por modo: começaram, chegaram à 2ª / 5ª / 10ª temporada, terminaram")
 for m in MODOS[:4]:
-    ini = tot[("start", m, "")]
+    ini = sum(n for (ev, mm, k), n in tot.items() if ev == "start" and mm == m)
     seas = {int(k): n for (ev, mm, k), n in tot.items() if ev == "season" and mm == m}
     chega = lambda s: seas.get(s - 1, 0)  # chegou à Nª = a (N-1)ª terminou
     fim = tot[("end", m, "")]
@@ -60,4 +60,9 @@ for m in MODOS[:4]:
         else:
             print("%-12s %5d começaram  2ª %4d %s  5ª %4d %s  10ª %4d %s  %5d terminaram %s" % (
                 NOME[m], ini, chega(2), pct(chega(2), ini), chega(5), pct(chega(5), ini), chega(10), pct(chega(10), ini), fim, pct(fim, ini)))
+print("\nDe onde vieram (link climbix.app/?de=canal; direto = sem ?de)")
+fontes = sorted({k for (ev, m, k) in tot if ev in ("first", "start")}, key=lambda k: -tot[("start", "treinador", k)])
+print("%-10s %6s  %s" % ("canal", "novos", "carreiras do Treinador"))
+for k in fontes:
+    print("%-10s %6d  %6d" % (k or "direto", tot[("first", "", k)], tot[("start", "treinador", k)]))
 print("\n(Chegar à Nª temporada = terminar a anterior. Aparelhos que já jogavam antes da contagem não entram em novos/D1/D7.)")

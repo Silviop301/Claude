@@ -10143,16 +10143,18 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 /* ---------- Copa nacional do Treinador (2026-11-12, engine/coachcup.js; desenhos em /mnt/project-files/climbix/copas/) ---------- */
 .sm-rd.cup { color: var(--gold); display: flex; align-items: center; gap: 6px; }
 .sm-rd.cup .trophy { height: 18px !important; width: auto; }
-.cpw-path { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 8px; max-width: 100%; box-sizing: border-box; overflow: hidden; border-radius: 12px; background: #141517; }
-.cpw-st { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+/* 13/11 (Silvio: "tá cortando a borda do confronto"): com 16 avos a trilha passava do cartão e o centro cortava as duas
+   pontas. Espaços mais curtos para caber os 6 degraus, e "safe center" encosta à esquerda em vez de cortar se ainda faltar */
+.cpw-path { display: flex; align-items: center; justify-content: safe center; gap: 3px; padding: 6px 6px; max-width: 100%; box-sizing: border-box; overflow: hidden; border-radius: 12px; background: #141517; }
+.cpw-st { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: none; }
 .cpw-st small { white-space: nowrap; font: 700 10px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
-.cpw-st div { display: flex; gap: 3px; align-items: center; height: 24px; padding: 0 6px; border-radius: 7px; background: #1f2124; }
+.cpw-st div { display: flex; gap: 2px; align-items: center; height: 24px; padding: 0 4px; border-radius: 7px; background: #1f2124; }
 .cpw-st .cpw-cr { width: 20px; height: 20px; object-fit: contain; }
 .cpw-st div i { font-style: normal; font: 700 11px/1 var(--body); color: #9fb0a6; }
 .cpw-st.now div { box-shadow: 0 0 0 1.5px var(--gold) inset; }
 .cpw-st.tr .trophy { height: 28px !important; width: auto; }
 .cpw-st.tr small { color: #6fd08c; }
-.cpw-ar { color: var(--gold); font: 800 14px/1 var(--display); margin-top: 12px; }
+.cpw-ar { color: var(--gold); font: 800 13px/1 var(--display); margin-top: 12px; flex: none; }
 .tb2-tabs.t5 { grid-template-columns: repeat(5, 1fr); }
 .tb2-tabs.t5 button { font-size: 16px !important; }
 .tb2-t.copa { padding: 0; }
