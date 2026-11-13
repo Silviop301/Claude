@@ -729,7 +729,10 @@
     // O plano do auxiliar (S.coTip com o olheiro lido): se o time entra nele, o ao vivo e o resultado contam se funcionou
     const tp = co.tip && co.tip.kind === 'plan' && co.tip.k === co.season + '|' + nx.round + '|p' ? co.tip : null;
     const plan = tp ? { f: tp.f, s: tp.s, good: tp.good, why: tp.why, used: S.coTipUsed(co, tp) ? 1 : 0 } : null;
-    return { min: 0, gh: 0, ga: 0, home: nx.home, us, them, ev: [], stop: null, done: false, half: false, classic: (D.RIVALS[co.club] || []).includes(nx.vs), vs: nx.vs, round: nx.round, played: {}, startXI: us.xi.slice(), plan, cup: nx.cup || null, neutral: !!nx.neutral };
+    // O olheiro (2026-11-13): só com o relatório deste jogo lido (co.scout.k; save antigo pela rodada)
+    const rd = co.scout && (co.scout.k ? co.scout.k === S.coScoutKey(co, nx) : co.scout.i === co.ss.i && !nx.cup), so = rd ? S.coScout(co, them, nx) : null;
+    const scout = so && so.list.length ? { list: so.list, miss: so.miss, mn: {}, w: {}, said: {} } : null;
+    return { min: 0, gh: 0, ga: 0, home: nx.home, us, them, ev: [], scout, stop: null, done: false, half: false, classic: (D.RIVALS[co.club] || []).includes(nx.vs), vs: nx.vs, round: nx.round, played: {}, startXI: us.xi.slice(), plan, cup: nx.cup || null, neutral: !!nx.neutral };
   };
   // Como está o plano agora: 'ok' (seguiu e encaixa), 'no' (seguiu e não encaixa), 'off' (não seguiu ou mudou), null (sem plano)
   S.coPlanNow = m => { const p = m && m.plan; if (!p) return null; if (!p.used || m.us.form !== p.f || m.us.style !== p.s) return 'off'; return p.good ? 'ok' : 'no'; };
@@ -755,7 +758,7 @@
       if (m.us.pre && m.min > m.us.pre.until) delete m.us.pre;
       if (m.us.shout && m.min > m.us.shout.until) { delete m.us.shout; m.ev.push({ m: m.min, t: 'grito-fim', s: 'us' }); }
       const H = m.home ? m.us : m.them, A = m.home ? m.them : m.us;
-      const mu = matchup(H, A, !!m.neutral, free), lh = mu.lh, la = mu.la; // livre: sem o atributo por setor (o campinho já lê os atributos)
+      const mu = matchup(H, A, !!m.neutral, free), scF = scoutMin(m), lh = mu.lh * (m.home ? scF.us : scF.them), la = mu.la * (m.home ? scF.them : scF.us); // livre: sem o atributo por setor (o campinho já lê os atributos)
       m.poss = (m.poss || 0) + (m.home ? mu.h.poss : 1 - mu.h.poss);
       // Quem manda no jogo, minuto a minuto (0 a 100, do seu lado): a faixa da tela e do resultado
       (m.mom = m.mom || []).push(Math.round(100 * (m.home ? lh : la) / (lh + la || 1)));
@@ -851,6 +854,7 @@
           m.ev.push({ m: m.min, t: 'impedimento', s: sd, p: p ? p.n : '', pos: slotsOf(s.form)[q[1]] });
         } else if (r() < CO.inj / CO.mins * injW(s).t * (s.injK || 1)) { const k = injW(s).pick(r()), id = s.xi[k], p = s.squad.find(x => x.id === id); if (!p) return; p.out = Math.max(1, r.int(1, 6) + 1 - (s.outCut || 0)); m.ev.push({ m: m.min, t: 'lesao', s: sd, p: p.n }); if (s.mine) stop = { t: 'lesao', p: p.n, id, k }; else autoSub(s, k, true); }
       });
+      { const g = m.ev.slice(ev0).find(e => e.t === 'gol' && e.s === 'us'); if (g) scoutGoal(m, g); }
       // Os minutos jogados nos acréscimos ficam marcados nos lances (st: 45+st ou 90+st)
       if (m.st) for (let i = ev0; i < m.ev.length; i++) m.ev[i].st = m.st;
       // A placa do quarto árbitro: no 45' e no 90', pelo que parou o jogo (gols, trocas, cartões, lesões)
@@ -904,9 +908,142 @@
     if (m.st) e.st = m.st;
     // como foi o chute no campinho, para o texto do lance bater com o que se viu: de cabeça ou de fora da área
     if (info.kind === 'cabeca') e.hd = 1; else if (info.kind === 'falta') { e.fk = 1; if (out === 'gol') e.sp = 'falta'; } else if (info.box === false) e.far = 1;
-    e.livre = 1; m.ev.push(e);
+    e.livre = 1; m.ev.push(e); scoutGoal(m, e);
     return e;
   };
+  // ---------- Olheiro (2026-11-13, Silvio: "mostra 3 fraquezas padrões e não se reflete em campo") ----------
+  // Descobertas tiradas do rival de verdade (atributos, formação, estilo, idade). Cada uma é CHANCE (fraqueza deles, ty 'c') ou
+  // CUIDADO (força deles, ty 'w'), tem uma resposta (formação, estilo, grito, treino, escalação) e vale em campo quando você
+  // responde: CHANCE soma nos seus gols esperados, CUIDADO tira dos deles (fx, teto `cap` por lado). Quanto o olheiro vê vem da
+  // Leitura de jogo (0 a 10), não linear e com sorte por jogo; uma pode ser falsa (não paga nada). Só vale com o relatório lido.
+  const SC = S.CO_SCOUT = {
+    on: env('CO_SCOUT', 1), cap: 0.12, fxK: env('CO_SCOUT_FX', 1), // fxK 0: as descobertas aparecem e contam, mas não valem nada (régua)
+    lv: [{ to: 1, n: [0.3, 0.5, 0.2], fake: 0.4, no: ['cansa2', 'goleiro', 'meio', 'fim'] },
+      { to: 4, n: [0.05, 0.6, 0.35], fake: 0.3, no: ['fim', 'goleiro'] },
+      { to: 7, n: [0, 0.12, 0.88], fake: 0.2, no: [] },
+      { to: 9, n: [0, 0.02, 0.98], fake: 0.12, no: [] },
+      { to: 10, n: [0, 0, 1], fake: 0.08, no: [], best: 1 }],
+  };
+  const scLast = p => String(p.n || '').split(' ').pop();
+  const scWideSide = f => { const sl = FORMS[f].slots, n = { d: 0, m: 0 }; ['d', 'm'].forEach(ln => { const ix = sl.map((x, i) => i).filter(i => sl[i].ln === ln || (ln === 'm' && sl[i].ln === 'am')); n[ln] = ix.filter((i, k) => k < ix.length / 2 && sl[i].w).length; }); return n.d >= 1 && n.m >= 1; };
+  const scShout = (s, k) => !!(s.shout && s.shout.k === k);
+  const scPl = (X, pos) => X.on.filter(o => o.sl.pos === pos);
+  const scMin = (arr, f) => arr.reduce((b, o) => (!b || f(o) < f(b) ? o : b), null);
+  const scMax = (arr, f) => arr.reduce((b, o) => (!b || f(o) > f(b) ? o : b), null);
+  const SCD = S.CO_SCOUT_K = {
+    perigo: { ty: 'w', fx: 0.06, ans: 'Dois do mesmo lado (4-4-2, 4-2-3-1, 4-5-1) ou grito Recuar',
+      gen(X, f) { const w = X.on.filter(o => o.sl.w && o.sl.ln !== 'd'), b = scMax(w, o => o.p.ovr); if (!b) return null;
+        const pw = b.p.ovr - X.avg - 3; if (pw <= 0 && !f) return null;
+        return { i: b.i, pw, t: scLast(b.p) + ' é o perigo deles', d: 'O melhor deles joga aberto e decide.' }; },
+      ok: s => scWideSide(s.form) || scShout(s, 'recuar') },
+    zagLento: { ty: 'c', fx: 0.06, ans: 'Contra-ataque, treino de Velocidade ou um atacante rápido',
+      gen(X, f) { const b = scMin(scPl(X, 'ZAG'), o => o.dv[4]); if (!b) return null; const pw = -b.dv[4] - 4; if (pw <= 0 && !f) return null;
+        return { i: b.i, pw, v: b.a[4], t: 'Zagueiro ' + scLast(b.p) + ' é lento', d: 'Bola nas costas dele vira chance.' }; },
+      ok: (s, m, e) => s.style === 'contra' || s.train === 'veloc' || s.xi.some((id, i) => { const p = id && s.by[id]; return p && FORMS[s.form].slots[i].pos === 'ATA' && S.coAttrs(p)[4] >= (e.v || 60) + 12; }) },
+    zagAlto: { ty: 'c', fx: 0.06, ans: 'Jogo pelos lados ou treino de Escanteio a favor',
+      gen(X, f) { const b = scMin(scPl(X, 'ZAG'), o => o.dv[5]); if (!b) return null; const pw = -b.dv[5] - 4; if (pw <= 0 && !f) return null;
+        return { i: b.i, pw, t: 'Zagueiro ' + scLast(b.p) + ' perde no alto', d: 'Cruzamento em cima dele vira chance.' }; },
+      ok: s => s.style === 'lados' || s.train === 'esc' },
+    latLento: { ty: 'c', fx: 0.06, ans: 'Jogo pelos lados (estilo ou grito) com ponta ou meia aberto',
+      gen(X, f) { const b = scMin(scPl(X, 'LAT'), o => o.dv[4]); if (!b) return null; const pw = -b.dv[4] - 4; if (pw <= 0 && !f) return null;
+        return { i: b.i, pw, t: 'Lateral ' + scLast(b.p) + ' é lento', d: 'Ponta rápido em cima dele ganha a corrida.' }; },
+      ok: s => (s.style === 'lados' || scShout(s, 'lados')) && FORMS[s.form].slots.some(x => x.w && x.ln !== 'd') },
+    goleiro: { ty: 'c', fx: 0.05, ans: 'Jogo pelos lados ou treino de Escanteio a favor',
+      gen(X, f) { const g = X.on.find(o => o.sl.pos === 'GOL'); if (!g) return null; const v = Math.min(g.dv[1], g.dv[2]), pw = -v - 4; if (pw <= 0 && !f) return null;
+        return { i: g.i, pw, t: 'O goleiro ' + scLast(g.p) + ' sai mal', d: 'Bola alta na área dele vira confusão.' }; },
+      ok: s => s.style === 'lados' || s.train === 'esc' },
+    cansa2: { ty: 'c', fx: 0.06, from: 60, ans: 'Posse de bola ou grito Pressionar depois dos 60\'',
+      gen(X, f) { if (X.them.style !== 'pressao' && !f) return null; return { pw: 2 + X.r() * 2, t: 'Pressionam e cansam', d: 'Depois dos 60\' sobra espaço.' }; },
+      ok: s => s.style === 'posse' || scShout(s, 'pressionar') },
+    linha: { ty: 'c', fx: 0.06, ans: 'Contra-ataque ou treino de Contra-ataque',
+      gen(X, f) { const st = X.them.style; if (st !== 'pressao' && st !== 'posse' && !f) return null; return { pw: 2 + X.r() * 3, t: 'Linha alta, espaço nas costas', d: 'A zaga joga lá no meio do campo.' }; },
+      ok: s => s.style === 'contra' || s.train === 'contra' },
+    fechados: { ty: 'c', fx: 0.06, ans: 'Posse de bola, jogo pelos lados ou treino de Troca de passes',
+      gen(X, f) { const st = X.them.style; if (st !== 'retranca' && st !== 'contra' && !f) return null; return { pw: 2 + X.r() * 3, t: 'Vêm fechados', d: 'Todo mundo atrás da bola.' }; },
+      ok: s => s.style === 'posse' || s.style === 'lados' || s.train === 'toque' },
+    craque: { ty: 'w', fx: 0.06, ans: 'Dois volantes (4-2-3-1, 4-5-1, 4-3-3) ou treino de Duelos',
+      gen(X, f) { const l = X.on.filter(o => o.sl.pos !== 'GOL').sort((a, b) => b.p.ovr - a.p.ovr), b = l[0]; if (!b || b.sl.w) return null;
+        const pw = b.p.ovr - (l[1] ? l[1].p.ovr : b.p.ovr) - 4; if (pw <= 0 && !f) return null;
+        return { i: b.i, pw, t: 'Tudo passa pelo ' + scLast(b.p), d: 'O craque deles joga pelo meio.' }; },
+      ok: s => ['4-2-3-1', '4-5-1', '4-3-3'].includes(s.form) || s.train === 'duelos' },
+    tresZag: { ty: 'c', fx: 0.06, ans: 'Jogo pelos lados (estilo ou grito) ou pontas (4-3-3, 3-4-3)',
+      gen(X, f) { if (!/^3|^5/.test(X.them.form) && !f) return null; return { pw: 2 + X.r() * 2, t: 'Três zagueiros: sobra lado', d: 'Os alas sobem e a ponta fica vazia.' }; },
+      ok: s => s.style === 'lados' || scShout(s, 'lados') || s.form === '4-3-3' || s.form === '3-4-3' },
+    meio: { ty: 'c', fx: 0.06, ans: 'Três ou mais no meio e Posse de bola',
+      gen(X, f) { const a = X.on.filter(o => o.sl.pos === 'MEI' && !o.sl.w), mv = a.length ? a.reduce((t, o) => t + o.p.ovr, 0) / a.length : 0, pw = X.usMid - mv - 3;
+        if (!a.length || (pw <= 0 && !f)) return null; return { pw, t: 'Meio fraco', d: 'O seu meio é melhor que o deles.' }; },
+      ok: s => FORMS[s.form].slots.filter(x => x.pos === 'MEI' && !x.w && x.ln !== 'a').length >= 3 && s.style === 'posse' },
+    faltosos: { ty: 'c', fx: 0.05, ans: 'Treino de Falta a favor',
+      gen(X, f) { const st = X.them.style; if (st !== 'pressao' && st !== 'retranca' && !f) return null; return { pw: 1 + X.r() * 2, t: 'Fazem falta perto da área', d: 'Chegam atrasados na dividida.' }; },
+      ok: s => s.train === 'falta' },
+    fim: { ty: 'c', fx: 0.06, from: 70, live: 1, ans: 'Trocas depois dos 70\' ou grito Pressionar no fim',
+      gen(X, f) { const l = X.on.filter(o => o.sl.pos !== 'GOL'), age = l.reduce((t, o) => t + o.p.age, 0) / (l.length || 1), fis = l.reduce((t, o) => t + o.dv[5], 0) / (l.length || 1);
+        const pw = Math.max(age - 28.5, -fis - 2) * 1.5; if (pw <= 0 && !f) return null; return { pw, t: 'Cansam no fim', d: 'Do 70\' em diante eles caem.' }; },
+      ok: (s, m) => !!m && m.min > 70 && (scShout(s, 'pressionar') || m.ev.some(e => e.t === 'troca' && e.s === 'us' && e.m >= 70)) },
+    escanteio: { ty: 'w', fx: 0.05, ans: 'Treino de Defender escanteio',
+      gen(X, f) { const z = scPl(X, 'ZAG'); if (!z.length) return null; const b = scMax(z, o => o.dv[5]), pw = b.dv[5] - 4; if (pw <= 0 && !f) return null;
+        return { i: b.i, pw, t: 'Perigo no escanteio', d: scLast(b.p) + ' ganha tudo pelo alto na área.' }; },
+      ok: s => s.train === 'defesc' },
+  };
+  // Os que podem ser a falsa: os que a tela não desmente (formação e estilo deles já estão no topo)
+  const SC_FAKE = ['perigo', 'zagLento', 'zagAlto', 'latLento', 'goleiro', 'craque', 'meio', 'fim', 'escanteio'];
+  S.coScoutLv = co => { const l = co && co.xp ? co.xp.leitura || 0 : 0; return SC.lv.find(x => l <= x.to) || SC.lv[SC.lv.length - 1]; };
+  S.coScoutKey = (co, nx) => co.season + '|' + nx.round + '|' + (nx.cup ? 'c' + (nx.cup.leg || '') : 'l') + '|' + nx.vs;
+  const scMemo = {};
+  S.coScout = function (co, them, nx) {
+    nx = nx || S.coNext(co); if (!SC.on || !nx || nx.bye) return null;
+    them = them || oppSide(co, nx.vs, !nx.home);
+    const key = S.coScoutKey(co, nx), lv = S.coScoutLv(co), mk = co.name + '|' + co.club + '|' + key + '|' + (co.xp ? co.xp.leitura : 0);
+    if (scMemo[mk]) return JSON.parse(scMemo[mk]);
+    const r = S.rng(hash(String(co.name) + '|' + co.club + '|' + key + '|olheiro')), tby = byId(them.squad), sl = FORMS[them.form].slots;
+    const on = them.xi.map((id, i) => { const p = id && tby[id]; return p ? { p, i, sl: sl[i], a: S.coAttrs(p), dv: atDev(p) } : null; }).filter(Boolean);
+    const fl = on.filter(o => o.sl.pos !== 'GOL'), uby = byId(co.squad);
+    const um = co.xi.map((id, i) => [uby[id], FORMS[co.form].slots[i]]).filter(([p, x]) => p && x && x.pos === 'MEI' && !x.w);
+    const X = { co, them, on, r, avg: fl.reduce((t, o) => t + o.p.ovr, 0) / (fl.length || 1), usMid: um.length ? um.reduce((t, [p]) => t + p.ovr, 0) / um.length : 0 };
+    const all = Object.keys(SCD).map(k => { const g = SCD[k].gen(X, false); return g ? Object.assign({ k }, g) : null; }).filter(Boolean);
+    const vis = all.filter(e => !lv.no.includes(e.k));
+    // Quantas vê neste jogo (sorte do dia) e quais: no 10 as mais fortes; abaixo, sorteio puxado pela força
+    const u = r(); let n = u < lv.n[0] ? 1 : u < lv.n[0] + lv.n[1] ? 2 : 3;
+    const pick = [], pool = vis.slice();
+    while (pick.length < n && pool.length) {
+      let j = 0;
+      if (lv.best) pool.forEach((e, q) => { if (e.pw > pool[j].pw) j = q; });
+      else { const w = pool.map(e => 1 + Math.max(0, e.pw)), t = w.reduce((a, b) => a + b, 0); let x = r() * t; j = w.findIndex(v => (x -= v) <= 0); if (j < 0) j = 0; }
+      pick.push(pool.splice(j, 1)[0]);
+    }
+    // Uma pode ser falsa: troca uma das vistas por algo que ele achou ter visto
+    if (pick.length && r() < lv.fake) {
+      const fk = SC_FAKE.filter(k => !all.some(e => e.k === k) && !lv.no.includes(k)).map(k => { const g = SCD[k].gen(X, true); return g ? Object.assign({ k, fake: 1 }, g) : null; }).filter(Boolean);
+      if (fk.length) pick[Math.floor(r() * pick.length)] = fk[Math.floor(r() * fk.length)];
+    }
+    const out = { key, lv: co.xp ? co.xp.leitura || 0 : 0, miss: 3 - pick.length,
+      list: pick.map(e => { const d = SCD[e.k]; return { k: e.k, ty: d.ty, fx: d.fx, from: d.from || 0, live: d.live || 0, t: e.t, d: e.d, ans: d.ans, i: e.i, v: e.v, fake: e.fake ? 1 : 0 }; }) };
+    const ks = Object.keys(scMemo); if (ks.length > 60) ks.slice(0, 30).forEach(x => delete scMemo[x]);
+    scMemo[mk] = JSON.stringify(out); return out;
+  };
+  // Você já responde a essa descoberta? (s = lado do jogo ou o seu time de agora; m = o jogo, para o que só se faz em campo)
+  S.coScoutAns = function (e, s, m) { const d = SCD[e.k]; if (!d) return false; return !!d.ok(Object.assign({}, s, { by: byId(s.squad) }), m, e); };
+  S.coScoutSide = co => ({ squad: co.squad, form: co.form, style: co.style, xi: co.xi, train: co.train && co.ss && co.train.i === co.ss.i ? co.train.k : null });
+  // No jogo: quanto as descobertas respondidas valem neste minuto (verdadeiras pagam; falsas só contam como respondidas)
+  function scoutMin(m) {
+    const sc = m.scout; if (!sc) return { us: 1, them: 1 };
+    let a = 0, b = 0; sc.on = [];
+    sc.list.forEach((e, j) => { if (m.min < e.from) return; sc.w[j] = (sc.w[j] || 0) + 1; if (!S.coScoutAns(e, m.us, m)) return; sc.mn[j] = (sc.mn[j] || 0) + 1;
+      if (e.fake) return; if (e.ty === 'c') { a += e.fx * SC.fxK; sc.on.push(j); } else b += e.fx * SC.fxK; });
+    return { us: 1 + Math.min(SC.cap, a), them: 1 - Math.min(SC.cap, b) };
+  }
+  // Gol seu com uma CHANCE do olheiro respondida: a lista de lances conta (uma vez por descoberta)
+  function scoutGoal(m, e) {
+    const sc = m.scout; if (!sc || !e || e.t !== 'gol' || e.s !== 'us' || !sc.on || !sc.on.length) return;
+    const j = sc.on.find(q => !sc.said[q]); if (j === undefined) return; sc.said[j] = 1;
+    m.ev.push({ m: e.m, st: e.st, t: 'olheiro', s: 'us', p: sc.list[j].t });
+  }
+  // No fim: das que você respondeu (metade do tempo que valiam), quantas eram verdadeiras
+  function scoutLog(m) {
+    const sc = m.scout; if (!sc) return null;
+    const it = sc.list.map((e, j) => ({ t: e.t, ty: e.ty, a: (sc.mn[j] || 0) >= 0.5 * Math.max(1, sc.w[j] || 0) && (sc.w[j] || 0) > 0 ? 1 : 0, f: e.fake }));
+    return { it, n: it.filter(x => x.a).length, hit: it.filter(x => x.a && !x.f).length, miss: sc.miss };
+  }
   // Quem faz a falta: zagueiro, volante e lateral mais; goleiro quase nunca; quem já tem amarelo se cuida
   const FOUL_W = { GOL: 0.08, ZAG: 1.4, LAT: 1.15, MEI: 1.2, ATA: 0.65 };
   // Quem faz o pênalti: zagueiro ou lateral (o goleiro de vez em quando); sem nenhum em campo, qualquer um
@@ -1250,6 +1387,7 @@
     const log = { r: m.round, vs: m.vs, home: m.home, gf, ga, res, ycOut, ev: m.ev.filter(e => e.t === 'gol' && e.s === 'us').map(e => e.p) };
     // Plano do auxiliar no resultado: ficou nele em boa parte do jogo (2/3 dos minutos)?
     if (m.plan) log.plan = m.plan.used && (m.plan.min || 0) >= 0.66 * Math.max(1, m.tk || m.min) ? (m.plan.good ? 'ok' : 'no') : 'off';
+    { const sl = scoutLog(m); if (sl) log.scout = sl; }
     if (co.train && co.train.i <= ss.i) { log.train = co.train.k; delete co.train; }
     rateAfter(co, m, log, gf, ga);
     log.cad = cadNote(co, m, log);

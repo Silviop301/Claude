@@ -1,6 +1,7 @@
 // Modo Treinador: o robô técnico joga carreiras de 10 temporadas e mostra se títulos, metas e demissões ficam realistas.
 // Uso (na raiz): node tools/craque_treinador.js [carreiras] [temporadas]     (padrão 200 carreiras de 10 temporadas)
 // FORMA=4-5-1 (com ESTILO=lados) joga sempre essa formação; ROBO=auxiliar segue o plano da auxiliar (S.coTip).
+// OLHEIRO=1 lê o relatório do olheiro e ignora; OLHEIRO=2 responde com estilo e treino (mede quanto vale o olheiro).
 // INICIO=baixo|livre fixa o começo (padrão: metade cada). ROBO=esperto: antes de cada jogo escolhe a formação e o estilo
 // que dão mais pontos esperados contra o plano do rival (mede quanto vale acertar a tática; mais lento). O robô deixa o auxiliar escalar, troca os cansados e as
 // lesões, gasta a experiência em rodízio e aceita proposta de clube maior no fim da temporada quando a fama deixa.
@@ -45,6 +46,14 @@ for (let n = 0; n < N; n++) {
         const ks = Object.keys(S.CO_TRAIN).filter(k => S.CO_TRAIN[k].dv !== undefined), tr = st.tr = st.tr || { n: 0, up: 0, dv: 0, xi: [] };
         if (S.coTrain(co, process.env.TREINA !== '2' && (S.coTrainTip ? S.coTrainTip(co) : en < 70) ? 'recup' : ks[(co.ss.i + s * 5) % ks.length])) { tr.n++; tr.up += (co.train.up || []).length; tr.dv += (co.train.dv || []).length; }
       }
+      // OLHEIRO=1 lê o relatório do olheiro e não faz nada com ele; OLHEIRO=2 lê e responde o que der com estilo e treino
+      // (sem mudar a formação), escolhendo o par que responde mais descobertas (não sabe qual é a falsa)
+      if (process.env.OLHEIRO && S.coScout) { const sc = S.coScout(co); co.scout = { i: co.ss.i, k: S.coScoutKey(co, nx) };
+        if (process.env.OLHEIRO === '2' && sc && sc.list.length && !(co.train && co.train.i === co.ss.i)) {
+          const TR = [null, 'veloc', 'esc', 'contra', 'toque', 'duelos', 'falta', 'defesc'], cnt = (sty, tr) => sc.list.filter(e => S.coScoutAns(e, { squad: co.squad, form: co.form, style: sty, xi: co.xi, train: tr })).length;
+          let best = [co.style, null], bv = cnt(co.style, null);
+          S.CO_STYLES.forEach(sy => TR.forEach(tr => { const v = cnt(sy, tr) - (sy !== co.style ? 0.5 : 0); if (v > bv) { bv = v; best = [sy, tr]; } }));
+          co.style = best[0]; if (best[1]) S.coTrain(co, best[1]); const ol = st.ol = st.ol || { n: 0, a: 0 }; ol.n += sc.list.length; ol.a += cnt(co.style, best[1]); } }
       const hadUlt = !!co.board.ult;
       const m = S.coMatchStart(co);
       // Energia: dos 11 que começam (antes do jogo), dos que começaram no apito final, e os mais cansados de cada lado
@@ -58,6 +67,7 @@ for (let n = 0; n < N; n++) {
       st.subs += 5 - m.us.subs;
       if (co.fin && co.fin.caixa < 0) seasonRed = true;
       S.coMatchEnd(co, m);
+      { const L = co.ss.log[co.ss.log.length - 1]; if (L && L.scout) { const o = st.olr = st.olr || { g: 0, n: 0, hit: 0, ev: 0 }; o.g++; o.n += L.scout.n; o.hit += L.scout.hit; o.ev += m.ev.filter(e => e.t === 'olheiro').length; } }
       st.games++; st.goals += m.gh + m.ga; st.a1 = (st.a1 || 0) + (m.a1 || 0); st.a2 = (st.a2 || 0) + (m.a2 || 0); st.gst = (st.gst || 0) + m.ev.filter(e => e.t === 'gol' && e.st).length;
       { const bp = st.bp = st.bp || { pg: 0, pm: 0, fg: 0, fm: 0, eg: 0, em: 0, ck: 0 }; m.ev.forEach(e => { if (!e.sp) return; const g = e.t === 'gol'; if (e.sp === 'pen') bp[g ? 'pg' : 'pm']++; else if (e.sp === 'falta') bp[g ? 'fg' : 'fm']++; else bp[g ? 'eg' : 'em']++; }); bp.ck += m.ck ? m.ck.us + m.ck.them : 0; }
       // Faltas, cartões e impedimentos (por time e por jogo; o seu time e o rival juntos)
@@ -100,6 +110,7 @@ console.log(`Jogo: ${(st.goals / st.games).toFixed(2)} gols, mandante ${pct(st.h
 { const b = st.bp || {}, g = st.games, f = x => ((x || 0) / g).toFixed(2), cv = (a, b2) => (100 * (a || 0) / Math.max(1, (a || 0) + (b2 || 0))).toFixed(0) + '%'; console.log(`Bola parada por jogo: pênaltis ${f(b.pg + b.pm)} (${cv(b.pg, b.pm)} gol), faltas diretas ${f(b.fg + b.fm)} (${cv(b.fg, b.fm)}), cabeçadas de escanteio ${f(b.eg + b.em)} (${cv(b.eg, b.em)}), escanteios ${f(b.ck)}`); }
 console.log(`Temporada: meta cumprida ${pct(st.met, st.seasons)}, demitido ${pct(st.sacked, st.seasons)}, campeão ${pct(st.won, st.seasons)}, subiu ${pct(st.up, st.seasons)}, caiu ${pct(st.down, st.seasons)}`);
 console.log(`Ultimato: ${st.ult} (${pct(st.ult, st.seasons)} das temporadas), salvo ${pct(st.ultOk, st.ult)}; trocas de clube por proposta ${(st.moves / N).toFixed(1)} por carreira`);
+if (st.olr) console.log(`Olheiro: ${(st.olr.n / st.olr.g).toFixed(2)} respondidas por jogo, ${pct(st.olr.hit, st.olr.n)} verdadeiras, lances 'como o olheiro viu' ${(st.olr.ev / st.olr.g).toFixed(2)} por jogo${st.ol ? ', o robô responde ' + pct(st.ol.a, st.ol.n) + ' das vistas' : ''}`);
 console.log('Por meta: ' + Object.keys(st.byGoal).map(k => { const g = st.byGoal[k]; return `${k} ${g.n} (cumpriu ${pct(g.met, g.n)}, demitido ${pct(g.sacked, g.n)}, campeão ${pct(g.won, g.n)})`; }).join(' · '));
 console.log(`Moedas ganhas no Treinador (sem bônus de 1ª temporada e metas da semana): ${(st.coins / st.seasons).toFixed(1)} por temporada`);
 console.log(`Títulos por carreira: média ${avg(st.titlesPer)} [${dist(st.titlesPer)}]; demissões: média ${avg(st.sacksPer)} [${dist(st.sacksPer)}]`);
