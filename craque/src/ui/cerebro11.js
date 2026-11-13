@@ -27,7 +27,7 @@
     erroChute: 0.08, erroChuteDist: 0.0024, erroChutePressao: 0.45,
     gkDist: 0.02, // chute de longe: o goleiro tem tempo de ver a bola (mais defesa por metro além de 11 m)
     distChute: 18, // a chance que o jogador enxerga cai e^(-d/distChute)
-    gkReacao: 0.26, gkMergulho: 5.7, gkAlcance: 1.45, gkBase: 0.86, gkAlcancePen: 0.16, gkVelPen: 75,
+    gkReacao: 0.26, gkMergulho: 5.7, gkAlcance: 1.45, gkBase: 0.77, gkAlcancePen: 0.16, gkVelPen: 75,
     pDesarme: 0.36, pFalta: 0.06, pFaltaBatido: 0.4, pAmarelo: 0.22, pVermelho: 0.015, pFaltaArea: 0.8, erroLinha: 2.6, pSemFreio: 0.25, // falta no bote: a desajeitada (pFalta) e a de quem foi batido e segura (pFaltaBatido; na própria área ele se segura: pFaltaArea); erroLinha: metros que o passador erra ao ler a linha do impedimento
     gastoBase: 0.0004, gastoCorrida: 0.000018,
     kAt: 1, // quanto o atributo se afasta da média dos 22 em campo (1 = um ponto vale um ponto da simulação original)
