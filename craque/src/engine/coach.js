@@ -24,7 +24,7 @@
     // enGame = quanto um titular gasta em 90 min no Equilibrado (o estilo, a preleção, o grito, a função e o Físico mudam;
     // goleiro enGK do resto); entre um jogo e outro quem jogou recupera enRec do que falta para 100, quem não jogou volta
     // inteiro; o treino da semana tira ou devolve por cima disso. Lesão: cansado abaixo de enInj machuca mais
-    daySd: 0.1, prep: 0.04, enGame: 34, enGK: 0.35, enRec: 0.75, enOpp: 90, enInj: 65, inj: 0.011, subs: 5, win: 3,
+    daySd: env('CO_DAYSD', 0.1), prep: env('CO_PREP', 0), study: env('CO_STUDY', 0.6), reac: env('CO_REAC', 0.6), enGame: 34, enGK: 0.35, enRec: 0.75, enOpp: 90, enInj: 65, inj: 0.011, subs: 5, win: 3,
     // Acréscimos: a1 1 a 3 no 1º tempo, a2 3 a 7 no 2º; mins = minutos jogados num jogo médio (90 + acréscimos): as taxas
     // por minuto dividem por ele, para os acréscimos não aumentarem gols, faltas e cansaço
     mins: 96,
@@ -759,7 +759,7 @@
     if (rp) {
       const k = [clubId, co.season, co.ss ? co.ss.i : 0, home ? 1 : 0, rp.f, rp.s, co.club].join('|');
       if (planMemo[k]) return Object.assign({}, planMemo[k]);
-      const p = clamp(0.3 + 0.035 * (strOf(clubId) - 55) + (rp.both ? 0.1 : 0), 0.3, 0.9), roll = hash('estudo|' + k + '|' + co.name) / 4294967296;
+      const p = CO.study * clamp(0.3 + 0.035 * (strOf(clubId) - 55) + (rp.both ? 0.1 : 0), 0.3, 0.9), roll = hash('estudo|' + k + '|' + co.name) / 4294967296;
       let out = { form, style };
       if (roll < p) {
         const us = { squad: co.squad, form: rp.f, style: rp.s, xi: autoXI(co.squad, rp.f).xi, bonus: co.xp ? co.xp.leitura * 0.2 : 0 };
@@ -964,7 +964,7 @@
         const T = m.them, diff = (T === H ? m.gh - m.ga : m.ga - m.gh), mm = (m.mom || []).slice(-15), dom = mm.length ? mm.reduce((a, b) => a + b, 0) / mm.length : 50;
         (m.reac = m.reac || {})[m.min] = 1;
         const vsd = strOf(m.vs) - strOf(co.club);
-        if ((diff < 0 || (diff === 0 && dom > 57)) && r() < clamp(0.45 + 0.03 * (strOf(m.vs) - 55), 0.35, 0.9)) {
+        if ((diff < 0 || (diff === 0 && dom > 57)) && r() < CO.reac * clamp(0.45 + 0.03 * (strOf(m.vs) - 55), 0.35, 0.9)) {
           const b = counterPlan(school(m.vs), vsd, T.squad.filter(p => T.xi.includes(p.id)), T, m.us, T === H, !!m.neutral);
           if (b && (b.f !== T.form || b.s !== T.style)) {
             const f = T.red ? T.form : b.f; T.style = b.s;

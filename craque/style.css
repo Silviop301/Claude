@@ -10547,3 +10547,5 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .fu3-tr span i { width: 12px; flex: none; font: 900 14px/1.15 var(--body); font-style: normal; }
 .fu3-tr .p i { color: #1F9D57; } .fu3-tr .m i { color: #D2453B; } .fu3-tr .n { color: var(--ink-2); }
 .fu3-tr .cb { font: 700 12.5px/1 var(--body); color: var(--ink-2); letter-spacing: .02em; }
+
+.ol2-st { font-style: normal; color: #F0A050; font-weight: 700; }
