@@ -7726,10 +7726,11 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .ldl-ev { display: flex; flex-direction: column; gap: 2px; background: var(--paper-2); border-radius: 10px; padding: 7px 9px; }
 .ldl-ev small { font: 800 10px var(--display); letter-spacing: .06em; color: var(--ink-2); } .ldl-ev b { font: 800 17px/1.1 var(--display); } .ldl-ev span { font: 600 12px/1.3 var(--body); }
 .ldl-ev.good { background: #DDF3E3; } .ldl-ev.good small { color: var(--up-ink); } .ldl-ev.bad { background: #FBD9DB; } .ldl-ev.bad small { color: #C03A3A; }
-.ldl-red .lv-opts { display: flex; flex-direction: column; gap: 4px; } .ldl-red .lv-bh { font: 800 10px var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.ldl-red .lv-opts { display: flex; flex-direction: column; gap: 4px; } .ldl-red .lv-bh { font: 800 12px var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
 .ldl-red .lv-opt { display: flex !important; gap: 7px; align-items: center; background: #FFF !important; border: 1.5px solid rgba(19, 32, 26, .14) !important; border-radius: 9px; padding: 4px 7px !important; text-align: left; }
 .ldl-red .lv-opt.on { border-color: var(--gold) !important; background: #FFF6D6 !important; }
-.ldl-red .lv-opt > i { font: 800 12px var(--display); font-style: normal; min-width: 34px; } .ldl-red .lv-opt b { font: 800 12.5px var(--display); display: block; } .ldl-red .lv-opt small { font: 500 10.5px/1.2 var(--body); color: var(--ink-2); display: block; }
+.ldl-red .lv-opt > i { font: 800 14px var(--display); font-style: normal; min-width: 34px; } .ldl-red .lv-opt b { font: 800 16px var(--display); display: block; } .ldl-red .lv-opt small { font: 600 13.5px/1.25 var(--body); color: var(--ink-2); display: block; margin-top: 1px; }
+.ldl-red .lv-opt { min-height: 50px; } .ldl-red .lv-opt > i.y { background: var(--ink); } .ldl-red .lv-opt > i.y .co-yc { width: 13px; height: 18px; vertical-align: 0; } /* texto maior (Silvio 13/11: "esse texto pequeno") */
 .ldl-sel { display: flex !important; align-items: center; gap: 6px; background: #FFF !important; border: 1.5px solid rgba(19, 32, 26, .14) !important; border-radius: 10px; padding: 6px 9px !important; }
 .ldl-sel small { font: 600 12px var(--body); color: var(--ink-2); flex: 1; text-align: left; } .ldl-sel b { font: 800 14px var(--display); }
 .ldl-trh { display: flex; justify-content: space-between; align-items: baseline; margin-top: 2px; } .ldl-trh small { font: 600 11px var(--body); color: var(--ink-2); }
