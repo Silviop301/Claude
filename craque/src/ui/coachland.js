@@ -1122,6 +1122,9 @@
       // Plano do auxiliar (2026-11-11): a primeira linha diz se seguir o plano deu certo; com 5 linhas o Público sai
       if (log.plan) { rows.unshift(['Plano ' + (auxEla(co) ? 'dela' : 'dele'), log.plan === 'ok' ? 'funcionou ✓' : log.plan === 'no' ? 'não encaixou' : 'você foi no seu', log.plan === 'ok' ? 'up' : log.plan === 'no' ? 'dn' : '']);
         if (rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); } }
+      // Olheiro (2026-11-13): das descobertas que você respondeu, quantas eram verdadeiras; tocar mostra as 3
+      if (log.scout && log.scout.n) { rows.unshift(['Olheiro', 'acertou ' + log.scout.hit + ' de ' + log.scout.n, log.scout.hit ? 'up' : 'dn', 'rs-ol']);
+        if (rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); } }
       if (log.cup && rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); }
       // nunca mais de 4 linhas: a 5ª passava da borda do card no celular deitado (Silvio, 2026-11-12)
       ['Público', 'Bilheteria', 'Prêmio', 'Caderno'].forEach(k => { const i = rows.findIndex(r => r[0] === k); if (rows.length > 4 && i >= 0) rows.splice(i, 1); });
@@ -1140,6 +1143,9 @@
         '</div></div>', st => {
         st.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { sfx('tap'); tab = b.dataset.rt; draw(); });
         if (st.querySelector('#ldr-all')) st.querySelector('#ldr-all').onclick = () => { sfx('tap'); pop(popHead('Notas do jogo', (log.cup ? log.ph : 'Rodada ' + log.r) + ' · ' + m.gh + ' x ' + m.ga) + '<div class="ld-pb col"><div class="ld-scroll ldr-alln">' + rt.map(nota).join('') + '</div></div>', 'Notas do jogo', null, 'w560'); };
+        if (st.querySelector('#rs-ol')) st.querySelector('#rs-ol').onclick = () => { sfx('tap');
+          pop('<div class="acd-help"><b>O que o olheiro viu</b>' + log.scout.it.map(x => '<p class="ol2-rs"><u class="' + (x.ty === 'c' ? 'ch' : 'cu') + '">' + (x.ty === 'c' ? 'CHANCE' : 'CUIDADO') + '</u> ' + esc(x.t) + ' · ' +
+            (!x.a ? 'você não respondeu' : x.f ? '<em class="dn">ele errou essa</em>' : '<em class="up">verdade, rendeu</em>') + '</p>').join('') + '<button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Olheiro', null, 'hl-pop acd-pop tm-pop'); };
         if (st.querySelector('#rs-fin')) st.querySelector('#rs-fin').onclick = () => { sfx('tap'); FIN_BACK = () => result(m, log, aux, move); financas('rod'); };
         if (st.querySelector('#rs-cad')) st.querySelector('#rs-cad').onclick = () => { sfx('tap'); pop(popHead('Anotado no caderno', vs ? c.nm(m.vs) : '') + '<div class="ld-pb col rs-cadp">' + cadN.map(cadTxt).join('') + '</div>', 'Anotado no caderno', null, 'w560'); };
         st.querySelector('#ldr-go').onclick = () => { sfx('tap'); if (co.sacked) { // demitido: janelinha por cima do resultado (a tela antiga era em pé, com a coluna estreita e o fundo de outra cor)
@@ -3197,41 +3203,34 @@
     const tsl0 = S.CO_FORMS[them.form].slots, tsp = spotsL(them.form, true, true).map(([x], i) => { const ln = tsl0[i].ln, ix = tsl0.map((q, j) => j).filter(j => tsl0[j].ln === ln), n = ix.length, k = ix.indexOf(i);
       if (n === 1) return [x, 45]; return [n === 5 ? x + (k % 2 ? -5 : 0) : x, Math.round(47 + (k - (n - 1) / 2) * Math.min(21, 68 / (n - 1)))]; });
     const tc = club(them.club);
-    const F = scoutOf(co, them);
+    // Olheiro novo (2026-11-13): descobertas do rival de verdade (S.coScout), quantas pela Leitura de jogo; o cartão diz se
+    // você já responde pela escalação, formação, estilo e treino de agora (sem número nenhum)
+    const SO = S.coScout(co, them, nx) || { list: [], miss: 3 }, side = S.coScoutSide(co);
+    const F = SO.list.map(e => ({ i: e.i, t: esc(e.t), ty: e.ty, d: esc(e.d), ans: esc(e.ans), st: S.coScoutAns(e, side) ? 1 : e.live ? 2 : 0 }));
+    const stTxt = f => f.st === 1 ? '<em class="ok">✓ já responde</em>' : f.st === 2 ? '<em>▸ no jogo</em>' : '<em>○ falta responder</em>';
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const mark = (i, n) => '<b class="ol2-mk" style="left:' + tsp[i][0] + '%;top:' + tsp[i][1] + '%">' + n + '</b>';
     show('<div class="ol2"><div class="tm-h"><button class="tcr-back" id="ol2-back" aria-label="Voltar">' + BK + '</button><b>Olheiro</b><small>' + esc(tc.short || tc.name) + ' · ' + them.form + ' · ' + esc(S.CO_STY[them.style].name) + '</small>' +
       '<button class="ol2-q" id="ol2-q" aria-label="Como funciona">?</button></div>' +
       '<div class="ld-pitch ol2-pitch">' + PITCH + them.xi.map((id, i) => tby[id] ? rivalDot(tsp[i][0], tsp[i][1], last(tby[id].n)).replace('class="ld-dot riv"', 'class="ld-dot riv" data-ri="' + i + '"') : '').join('') +
         F.map((f, n) => f.i !== undefined ? mark(f.i, n + 1) : '').join('') + '</div>' +
-      '<div class="ol2-side">' + F.map((f, n) => '<button class="ol2-f' + (n ? '' : ' on') + '" data-of="' + n + '"><i>' + (n + 1) + '</i><b>' + f.t + '</b></button>').join('') +
+      '<div class="ol2-side">' + F.map((f, n) => '<button class="ol2-f' + (n ? '' : ' on') + '" data-of="' + n + '"><i>' + (n + 1) + '</i><span><b>' + f.t + '</b>' +
+          '<span class="ol2-t"><u class="' + (f.ty === 'c' ? 'ch' : 'cu') + '">' + (f.ty === 'c' ? 'CHANCE' : 'CUIDADO') + '</u>' + stTxt(f) + '</span><p>' + f.d + ' Responde: <b>' + f.ans + '</b></p></span></button>').join('') +
+        (SO.miss > 0 ? '<div class="ol2-f ol2-nv"><i>?</i><b>' + (F.length ? 'Não deu para ver mais nada nesse jogo' : 'O olheiro não viu nada nesse jogo') + '</b></div>' : '') +
         '<button class="tm-go" id="ldo-ok">Guardar</button></div></div>', st => {
-      const lit = n => { st.querySelectorAll('[data-of]').forEach(b => b.classList.toggle('on', +b.dataset.of === n)); st.querySelectorAll('[data-ri]').forEach(d => d.classList.toggle('hi', F[n].i !== undefined && +d.dataset.ri === F[n].i)); };
-      lit(0);
+      const lit = n => { st.querySelectorAll('[data-of]').forEach(b => b.classList.toggle('on', +b.dataset.of === n)); st.querySelectorAll('[data-ri]').forEach(d => d.classList.toggle('hi', !!F[n] && F[n].i !== undefined && +d.dataset.ri === F[n].i)); };
+      if (F.length) lit(0);
       st.querySelectorAll('[data-of]').forEach(b => b.onclick = () => { sfx('tap'); lit(+b.dataset.of); });
       st.querySelector('#ol2-back').onclick = () => { sfx('tap'); semana(); };
-      st.querySelector('#ol2-q').onclick = () => { sfx('tap'); pop('<div class="acd-help"><b>Como funciona</b><p>O olheiro viu um jogo só: uma das três pode não se repetir. O que se confirmar em campo vale para o jogo.</p><button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop'); };
+      st.querySelector('#ol2-q').onclick = () => { sfx('tap'); pop('<div class="acd-help"><b>Como funciona</b><p>Responda ao que o olheiro viu (estilo, formação, treino, escalação ou grito) e isso vale no jogo. Ele pode errar uma. Com mais Leitura de jogo ele vê mais e erra menos.</p><button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop'); };
       // Guardar: o auxiliar lê o relatório e sugere a formação; a sugestão fica no Time, com o aviso no botão
-      st.querySelector('#ldo-ok').onclick = () => { sfx('tap'); co.scout = { i: co.ss.i }; const tp = S.coTip(co, true); c.save(); semana();
+      st.querySelector('#ldo-ok').onclick = () => { sfx('tap'); co.scout = { i: co.ss.i, k: S.coScoutKey(co, nx) }; const tp = S.coTip(co, true); c.save(); semana();
         if (!tp || co.tut) return; // no tutorial a janelinha tampava o passo "Agora é jogar" (a dica fica no Time, com o aviso no botão)
         const sn = tp.kind === 'plan' ? tp.s : tp.kind === 'sty' ? tp.v : null; if (!sn) return; // Silvio 13/11: só sugestão de estilo, nada de formação nem ordem
         const say = 'Li o relatório. Eles vêm no ' + tp.them + (tp.st ? ' e estudaram o nosso ' + tp.st : '') + '. ' + (sn === co.style ? 'O nosso estilo serve, eu manteria.' : 'Uma ideia: ' + S.CO_STY[sn].name.toLowerCase() + '. A escolha é sua, professor.');
         pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b></span><p>“' + say.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>') + '”</p>' +
           '<button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Auxiliar', null, 'hl-pop acd-pop tm-pop'); };
     });
-  }
-  // Três descobertas sobre o rival; uma pode ser falsa (sorteio fixo pelo jogo)
-  function scoutOf(co, them) {
-    const tby = {}; them.squad.forEach(p => { tby[p.id] = p; });
-    const sl = S.CO_FORMS[them.form].slots, xi = them.xi, h = n => { let x = 2166136261; const st = them.club + ':' + co.season + ':' + co.ss.i + ':' + n; for (let i = 0; i < st.length; i++) x = Math.imul(x ^ st.charCodeAt(i), 16777619); return (x >>> 0) / 4294967296; };
-    const wide = xi.map((id, i) => [tby[id], i]).filter(([p, i]) => p && sl[i].w && sl[i].ln !== 'd').sort((a, b) => b[0].ovr - a[0].ovr)[0];
-    const zag = xi.map((id, i) => [tby[id], i]).filter(([p, i]) => p && sl[i].pos === 'ZAG').sort((a, b) => a[0].ovr - b[0].ovr)[0];
-    const st9 = xi.map((id, i) => [tby[id], i]).filter(([p, i]) => p && sl[i].pos === 'ATA' && !sl[i].w && (!wide || wide[1] !== i)).sort((a, b) => b[0].ovr - a[0].ovr)[0];
-    const out = [];
-    if (wide) out.push({ i: wide[1], t: 'Atacam pelo lado do ' + esc(last(wide[0].n)), d: 'Quase tudo passa pelo ' + esc(last(wide[0].n)) + ', o melhor deles aberto. Feche esse lado.' });
-    if (zag) out.push({ i: zag[1], t: 'O zagueiro ' + esc(last(zag[0].n)) + ' é o ponto fraco', d: 'Bola nas costas dele vira chance. Atacante rápido em cima dele.' });
-    out.push(h(3) < 0.5 ? { t: 'Marcam mal no escanteio', d: 'Deixam o primeiro pau livre. Combina com o treino de bola parada.' } : st9 ? { i: st9[1], t: 'Tudo passa pelo ' + esc(last(st9[0].n)), d: 'O centroavante deles decide. Volante fixo em cima dele.' } : { t: 'Cansam no fim', d: 'Do minuto 70 em diante, eles caem. Guarde as trocas.' });
-    return out.slice(0, 3);
   }
   // ---------- Preleção (37): a última conversa, vale os primeiros 15 minutos ----------
   function prelecao() {
