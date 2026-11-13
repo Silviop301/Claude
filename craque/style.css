@@ -9668,7 +9668,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 .fdt-p { flex: 1; min-height: 0; box-sizing: border-box; border-radius: 18px; background: #141517; padding: 12px; display: flex; flex-direction: column; }
 .fdt-n { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 8px; }
 .fdt-n span { border-radius: 12px; background: #1E2023; padding: 0 14px; display: flex; flex-direction: column; justify-content: center; gap: 6px; min-width: 0; }
-.fdt-n small { font: 600 14px/1 var(--body); color: #B9C9BF; } .fdt-n b { font: 800 26px/1 var(--display); white-space: nowrap; }
+.fdt-n small { font: 600 14px/1 var(--body); color: #B9C9BF; } .fdt-n b { font: 800 26px/1 var(--display); white-space: nowrap; } .fdt-n b.sm { font-size: 21px; line-height: 1.08; white-space: normal; } /* "Caiu na estreia" passava do quadro (2026-11-13) */
 .fdt-d { flex: 1; display: flex; flex-direction: column; } .fdt-d > div { flex: 1; display: flex; align-items: center; gap: 12px; padding: 0 4px; } .fdt-d > div + div { border-top: 1px solid rgba(243,241,234,.1); }
 .fdt-d i { width: 44px; height: 44px; flex: none; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--gold); display: flex; align-items: center; justify-content: center; font: 800 19px/1 var(--display); font-style: normal; }
 .fdt-d span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; } .fdt-d small { font: 700 13px/1 var(--display); letter-spacing: .12em; color: var(--gold); }

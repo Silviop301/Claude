@@ -92,8 +92,10 @@
     st.innerHTML = html;
     const sk = st.firstElementChild ? st.firstElementChild.className : ''; if (sk !== swapKey) { swapKey = sk; swapAt = performance.now(); }
     // O Treinador é só deitado (Silvio 2026-11-06 tirou o "Jogar em pé"): em pé, só o aviso para girar
-    document.getElementById('ld-turn').innerHTML = '<div class="ld-turn-c"><i aria-hidden="true">' + PHONE + '</i><b>Gire o celular</b><small>' + (turn || 'O Treinador é jogado com o celular deitado.') + '</small>' +
-      '<button class="btn" id="ld-rotb">Girar a tela</button><small class="ld-rot-s">Para celular com a rotação travada</small></div>';
+    // iPad e tablets (lado menor da tela ≥ 600 px) leem "tablet" no aviso (2026-11-13)
+    const dv = Math.min(screen.width || 0, screen.height || 0) >= 600 ? 'tablet' : 'celular';
+    document.getElementById('ld-turn').innerHTML = '<div class="ld-turn-c"><i aria-hidden="true">' + PHONE + '</i><b>Gire o ' + dv + '</b><small>' + (turn || 'O Treinador é jogado com o ' + dv + ' deitado.') + '</small>' +
+      '<button class="btn" id="ld-rotb">Girar a tela</button><small class="ld-rot-s">Para ' + dv + ' com a rotação travada</small></div>';
     document.getElementById('ld-rotb').onclick = rotGo;
     lockLand();
     fit();
@@ -2835,7 +2837,7 @@
       const pts = co.xp.pts || 0;
       const sk = Object.keys(S.CO_SKILLS).map(k => '<div class="fdt-sk"><span><b>' + S.CO_SKILLS[k] + ' <i>nível ' + co.xp[k] + '</i></b><small>' + cap(c.SK_TXT[k]) + '.</small></span><button class="fdt-p1" data-sk="' + k + '"' + (pts > 0 && co.xp[k] < S.CO.skillMax ? '' : ' disabled') + ' aria-label="Mais um ponto em ' + S.CO_SKILLS[k] + '">+1</button></div>').join('');
       const kids = out.kids || [], left = out.left || [];
-      const body = tab === 0 ? '<div class="fdt-n">' + nums.map(([k, x]) => '<span><small>' + k + '</small><b>' + x + '</b></span>').join('') + '</div>'
+      const body = tab === 0 ? '<div class="fdt-n">' + nums.map(([k, x]) => '<span><small>' + k + '</small><b' + (String(x).replace(/<[^>]*>/g, '').length > 11 ? ' class="sm"' : '') + '>' + x + '</b></span>').join('') + '</div>'
         : tab === 1 ? '<div class="fdt-d">' + (dest.length ? dest.map(([k, p, t]) => '<div><i>' + (p.num || p.ovr || '') + '</i><span><small>' + k + '</small><b>' + esc(p.n) + '</b></span><em>' + t + '</em></div>').join('') : '<p>Sem destaques nesta temporada.</p>') + '</div>'
         : tab === 2 ? '<div class="fdt-e"><small>SUBIRAM DA BASE</small><p>' + (kids.length ? kids.map(esc).join(', ') : 'Ninguém neste ano.') + '</p><small>SAÍRAM</small>' +
           (left.length ? left.slice(0, 4).map(x => '<div><b>' + esc(x.n) + '</b><em>' + x.why + '</em></div>').join('') + (left.length > 4 ? '<p>e mais ' + (left.length - 4) + '</p>' : '') : '<p>Ninguém saiu.</p>') + '</div>'
