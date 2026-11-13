@@ -120,7 +120,14 @@
     if (!log || !co.ss) return null;
     const r = log.res, R = r === 'v' ? 'V' : r === 'd' ? 'D' : 'E', B = co.board || {};
     if (B.ult && !log.cup) return { q: 'ult', big: 1 };
-    if (log.cup) { const cup = co.ss.cup; if (cup && cup.champ) return { q: 'copaV', big: 1, r: 'v' }; if (cup && cup.out !== null && cup.out !== undefined && log.res !== 'v') return { q: 'copaD', big: 1, r: 'd' }; return null; }
+    // Copa: decide pelo próprio jogo (log), não pela copa nacional: um jogo da continental não olha ss.cup (13/11: o
+    // repórter dizia "fora da copa" no meio dos grupos da Sul-Americana, porque a copa nacional já tinha acabado).
+    // Fora só quando ESTE jogo eliminou: perdeu o mata-mata (jogo único ou volta) ou fechou o grupo (jogo 6) sem passar.
+    if (log.cup) {
+      if (log.champ) return { q: 'copaV', big: 1, r: 'v' };
+      const grp = log.cont && log.k < 6, out = grp ? log.k === 5 && log.pass === false : log.leg !== 1 && log.win === false;
+      return out ? { q: 'copaD', big: 1, r: 'd' } : null;
+    }
     if ((D.RIVALS[co.club] || []).includes(log.vs)) return { q: 'class' + R, big: 1 };
     if (Math.abs(log.gf - log.ga) >= 4) return { q: 'gol' + (r === 'v' ? 'V' : 'D'), big: 1 };
     const l4 = co.ss.log.slice(-4).map(x => x.res), l3 = l4.slice(-3); // exatamente 3 seguidas (a 4ª, a 5ª... não repetem)
