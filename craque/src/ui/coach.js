@@ -916,9 +916,9 @@
     function redOpts(st) {
       const s = m.us, f = CLOSE[s.form] || '4-5-1', bk = bookedOut();
       return '<div class="lv-opts"><small class="lv-bh">O auxiliar sugere</small>' +
-        (f !== s.form ? '<button class="lv-opt" data-ro="close"><i>' + f + '</i><span><b>Fechar o time</b><small>Com um a menos, o ' + f + ' fecha o buraco no meio. Segura o resultado.</small></span></button>' : '') +
-        '<button class="lv-opt" data-ro="keep"><i>' + s.form + '</i><span><b>Manter como está</b><small>Arrisca mais, mas o time cansa e eles chegam mais.</small></span></button>' +
-        (bk && s.subs && s.bench.length ? '<button class="lv-opt" data-ro="bk"><i class="y"><span class="co-yc"></span></i><span><b>Tirar o ' + esc(last(bk.n)) + '</b><small>Tem amarelo e ' + Math.round(bk.en) + '% de energia. Mais um cartão e você fica com 9.</small></span></button>' : '') + '</div>';
+        (f !== s.form ? '<button class="lv-opt" data-ro="close"><i>' + f + '</i><span><b>Fechar o time</b><small>O ' + f + ' fecha o meio e segura o placar.</small></span></button>' : '') +
+        '<button class="lv-opt" data-ro="keep"><i>' + s.form + '</i><span><b>Manter como está</b><small>Arrisca mais, mas o time cansa.</small></span></button>' +
+        (bk && s.subs && s.bench.length ? '<button class="lv-opt" data-ro="bk"><i class="y"><span class="co-yc"></span></i><span><b>Tirar o ' + esc(last(bk.n)) + '</b><small>Amarelo e ' + Math.round(bk.en) + '% de energia. Outro cartão: fica com 9.</small></span></button>' : '') + '</div>';
     }
     function redPick(k) {
       const s = m.us;
