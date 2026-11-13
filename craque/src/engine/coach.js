@@ -108,23 +108,23 @@
     ZAG: { def: 'zag', old: ['cobre', 'zag', 'sai'], l: [
       RS('cobre', 'Cobre', ['def', 'vel'], 'Quase nunca batido nas costas', 'Deixa espaço para o chute de fora', { tl: -1, b: { dx: -3 } }),
       RS('zag', 'Zagueiro', ['def'], 'Marca e sai curto', 'Nada de especial'),
-      RS('ant', 'Antecipa', ['def', 'fis'], 'Rouba a bola mais cedo', 'Mais faltas e cartões', { d: 0.03, b: { bote: 0.08, falta: 1.6, dx: 1.5 } }),
+      RS('ant', 'Antecipa', ['def', 'fis'], 'Rouba a bola mais cedo', 'Mais faltas e cartões', { b: { bote: 0.08, falta: 1.6, dx: 1.5 } }),
       RS('sai', 'Sai jogando', ['pas', 'dri'], 'Conduz e lança, fura a pressão', 'Perde bola perto da área', { tl: 1, b: { lanc: 0.3, dri: 0.3, ax: 4 } })] },
     LAT: { def: 'lat', old: ['seg', 'lat', 'ala'], l: [
       RS('seg', 'Segura', ['def'], 'Não deixa as costas', 'Quase não apoia', { tl: -1, b: { inf: 0.3, ax: -6 } }),
       RS('lat', 'Lateral', ['def', 'vel'], 'Apoia quando dá', 'Nada de especial'),
       RS('ala', 'Ala', ['vel', 'pas'], 'Vive no fundo e cruza', 'Deixa as costas e cansa', { tl: 1, en: 0.15, b: { inf: 1.8, ax: 6, dx: 2, cruz: 0.2 } }),
-      RS('dentro', 'Por dentro', ['pas', 'def'], 'Vira meia, mais toque de bola', 'Cruza pouco', { a: 0.02, b: { larg: 0.55, cruz: -0.3, apo: 0.25 } })] },
+      RS('dentro', 'Por dentro', ['pas', 'def'], 'Vira meia, mais toque de bola', 'Cruza pouco', { b: { larg: 0.55, cruz: -0.3, apo: 0.25 } })] },
     VOL: { def: 'vol', old: ['fixo', 'vol', 'chega'], l: [
       RS('fixo', 'Fixo', ['def'], 'Protege a zaga', 'Quase não chega na frente', { tl: -1, b: { ax: -5, inf: 0.3 } }),
       RS('vol', 'Volante', ['def', 'pas'], 'Marca e distribui', 'Nada de especial'),
-      RS('dest', 'Destruidor', ['def', 'fis'], 'Ganha mais divididas', 'Faltas, cartões e cansaço', { d: 0.04, en: 0.12, b: { bote: 0.1, falta: 1.6, pres: 0.7 } }),
+      RS('dest', 'Destruidor', ['def', 'fis'], 'Ganha mais divididas', 'Faltas, cartões e cansaço', { d: 0.03, en: 0.12, b: { bote: 0.1, falta: 2, pres: 0.7 } }),
       RS('org', 'Organizador', ['pas'], 'Lança e vira o jogo', 'Marca pouco', { a: 0.03, d: -0.03, b: { lanc: 0.3, bote: -0.06, apo: 0.2 } }),
       RS('chega', 'Chega', ['fin', 'fis'], 'Aparece na área', 'Deixa buraco na frente da zaga', { tl: 1, b: { inf: 3, ax: 6, chu: 0.15 } })] },
     MC: { def: 'meia', old: ['marca', 'meia', 'chega'], l: [
       RS('marca', 'Marca', ['def'], 'Fecha o meio', 'Ataca pouco', { tl: -1, b: { ax: -4, inf: 0.4, bote: 0.04 } }),
       RS('meia', 'Meia', ['pas'], 'Liga defesa e ataque', 'Nada de especial'),
-      RS('vv', 'Vai e volta', ['fis', 'vel'], 'Ajuda nos dois lados', 'Cansa muito', { a: 0.03, d: 0.03, en: 0.25, b: { bote: 0.04, inf: 1.4 } }),
+      RS('vv', 'Vai e volta', ['fis', 'vel'], 'Ajuda nos dois lados', 'Cansa muito', { a: 0.02, d: 0.02, en: 0.25, b: { bote: 0.04, inf: 1.4 } }),
       RS('chega', 'Chega na área', ['fin'], 'Entra para finalizar', 'Deixa o meio aberto', { tl: 1, b: { inf: 2.2, ax: 5, chu: 0.12 } })] },
     MEI: { def: 'meia', old: ['arm', 'meia', 'seg'], l: [
       RS('arm', 'Armador', ['pas'], 'Recua e organiza', 'Pouco na área', { tl: -1, b: { ax: -5, apo: 0.3, lanc: 0.15 } }),
@@ -135,19 +135,19 @@
       RS('recua', 'Recua', ['def'], 'Ajuda o lateral', 'Ataca pouco', { tl: -1, b: { ax: -5, inf: 0.4 } }),
       RS('aberto', 'Meia aberto', ['pas', 'vel'], 'Cruza da linha', 'Nada de especial'),
       RS('ponta', 'Ponta', ['vel', 'dri'], 'Joga lá na frente', 'Deixa o lateral sozinho', { tl: 1, b: { ax: 6, inf: 1.5 } }),
-      RS('dentro', 'Por dentro', ['pas', 'fin'], 'Fecha o meio e chuta', 'Cruza pouco', { a: 0.02, b: { larg: 0.6, cruz: -0.3, chu: 0.1 } })] },
+      RS('dentro', 'Por dentro', ['pas', 'fin'], 'Fecha o meio e chuta', 'Cruza pouco', { b: { larg: 0.6, cruz: -0.3, chu: 0.1 } })] },
     PE: { def: 'aberto', old: ['recua', 'aberto', 'inv'], l: [
       RS('recua', 'Que recua', ['def'], 'Ajuda o lateral', 'Ataca pouco', { tl: -1, b: { ax: -5, inf: 0.4 } }),
       RS('aberto', 'Aberto', ['vel', 'pas'], 'Cruza da linha de fundo', 'Chuta pouco'),
       RS('inv', 'Invertido', ['dri', 'fin'], 'Corta para dentro e chuta', 'Cruza pouco', { tl: 1, b: { larg: 0.7, cruz: -0.35, chu: 0.2, dri: 0.1 } }),
-      RS('drib', 'Driblador', ['dri', 'vel'], 'Parte para cima no 1x1', 'Perde mais bola', { a: 0.02, b: { dri: 0.35 } })] },
+      RS('drib', 'Driblador', ['dri', 'vel'], 'Parte para cima no 1x1', 'Perde mais bola', { b: { dri: 0.35 } })] },
     ATA: { def: 'ata', old: ['pivo', 'ata', 'costas'], l: [
       RS('pivo', 'Pivô', ['fis', 'pas'], 'Segura de costas e toca', 'Chuta menos', { tl: -1, b: { ax: -4, apo: 0.3, chu: -0.15, inf: 0.4 } }),
       RS('ata', 'Atacante', ['fin'], 'Finaliza', 'Nada de especial'),
       RS('mat', 'Matador', ['fin'], 'Vive na área e finaliza', 'Pouco participa do jogo', { tl: 1, b: { area: 1, apo: -0.3, inf: 0.6, chu: 0.2 } }),
-      RS('costas', 'Nas costas', ['vel', 'fin'], 'Mais cara a cara com o goleiro', 'Cai mais em impedimento', { tl: 1, b: { inf: 2, semF: 0.25 } }),
+      RS('costas', 'Nas costas', ['vel', 'fin'], 'Mais cara a cara com o goleiro', 'Cai mais em impedimento', { tl: 1, b: { inf: 3, semF: 0.45 } }),
       RS('f9', 'Falso 9', ['pas', 'dri'], 'Recua e abre espaço para os pontas', 'Pouca presença na área', { tl: -1, b: { ax: -10, apo: 0.45, lanc: 0.1, inf: 0.3 } }),
-      RS('pres', 'Pressiona', ['fis', 'vel'], 'Rouba a saída de bola deles', 'Cansa rápido', { d: 0.03, a: -0.01, en: 0.25, b: { pres: 0.6, bote: 0.04 } })] },
+      RS('pres', 'Pressiona', ['fis', 'vel'], 'Rouba a saída de bola deles', 'Cansa rápido', { d: 0.02, a: -0.01, en: 0.25, b: { pres: 0.6, bote: 0.04 } })] },
   };
   Object.keys(STYLES).forEach(k => { const g = STYLES[k]; g.by = {}; g.l.forEach(x => { g.by[x.k] = x; }); });
     S.coRoleKey = (form, i) => { const l = S.coSlotLbl(form, i); return l === 'LD' ? 'LAT' : l === 'LE' ? 'LAT' : l === 'MD' ? 'ME' : l === 'PD' ? 'PE' : l; };
@@ -175,7 +175,7 @@
     const st = S.coStyleAt(s.form, i, s.roles ? s.roles[i] : null) || RS('', '', [], '', ''), lk = lnKey(sl), lh = s.lnh && lk ? (s.lnh[lk] || 0) : 0;
     const fk = p && (st.a > 0 || st.d > 0) ? FIT_K[S.coStyleFit(p, st)] : 1, g = v => (v > 0 ? v * fk : v);
     const b = Object.assign({}, st.b); if (lh) { b.ax = (b.ax || 0) + 3 * lh; b.dx = (b.dx || 0) + 2 * lh; }
-    return { tl: st.tl + lh, a: g(st.a), d: g(st.d), en: st.en + 0.12 * Math.max(0, st.tl + lh), b, st };
+    return { tl: (env('CO_TL', 1) ? st.tl : 0) + lh, a: env('CO_AD', 1) ? g(st.a) : 0, d: env('CO_AD', 1) ? g(st.d) : 0, en: st.en + 0.12 * Math.max(0, st.tl + lh), b, st };
   };
   // Treino da semana: um foco, vale para o próximo jogo; cansa quem treina (en tira energia de todo o elenco)
   const TRAIN = S.CO_TRAIN = {
@@ -785,7 +785,7 @@
   const AI_PREF = { pressao: ['pres', 'dest', 'ant', 'vv'], contra: ['costas', 'ala', 'ponta', 'drib', 'seg'], posse: ['org', 'flut', 'dentro', 'sai', 'f9', 'lib', 'arm'],
     retranca: ['cobre', 'seg', 'fixo', 'marca', 'recua', 'pivo', 'fica'], lados: ['ala', 'aberto', 'ponta', 'drib'], equilibrado: [] };
   S.coAiRoles = function (club, season, form, style, sq, xi) {
-    const r = S.rng(hash(club + '|' + season + '|' + form + '|estilos')), m = byId(sq), pref = AI_PREF[style] || [];
+    if (!env('CO_AIR', 1)) return null; const r = S.rng(hash(club + '|' + season + '|' + form + '|estilos')), m = byId(sq), pref = AI_PREF[style] || [];
     return xi.map((id, i) => { const g = STYLES[S.coRoleKey(form, i)], p = id && m[id], u = r(), v = r(); if (!g || !p || u > 0.45) return g ? g.def : 0;
       const c = g.l.filter(x => x.k !== g.def).map(x => ({ k: x.k, w: (pref.includes(x.k) ? 2 : 0) + (S.coStyleFit(p, x) === 3 ? 1 : 0) })).filter(x => x.w > 0);
       if (!c.length) return g.def; let t = c.reduce((a, x) => a + x.w, 0) * v; return (c.find(x => (t -= x.w) <= 0) || c[0]).k; });

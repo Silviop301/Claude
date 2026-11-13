@@ -1,7 +1,7 @@
 // Estilos de jogo por vaga do Treinador (S.CO_PSTY, Funções): o mesmo jogo com o jogador de uma vaga em cada estilo, no
 // cérebro 11x11. Mostra o que muda no lance dele (impedimentos, faltas, chutes, gols, passes para gol, onde joga, energia) e
 // no placar do time. Os jogos são pareados: mesma carreira, mesmo adversário, só o estilo muda.
-// Uso: node tools/craque_funcoes.js [grupo|todos] [jogos por estilo]   ex.: node tools/craque_funcoes.js ATA 60
+// Uso: node tools/craque_funcoes.js [grupo|todos] [jogos por estilo]   ex.: node tools/craque_funcoes.js ATA 60 (SO=costas só esse e o padrão)
 //   Esperado: 0 alertas (cada estilo mostra o ganho e o custo que promete e nenhum estilo ganha muito mais pontos que o padrão)
 const fs = require('fs'), path = require('path');
 const D = require('../craque/src/data.js'), S = require('../craque/src/sim.js');
@@ -63,10 +63,11 @@ groups.forEach(g => {
   const G = S.CO_PSTY[g], si = slotOf(g); if (!G || !si) { console.log(g + ': sem vaga'); return; }
   console.log(`\n${g} (${si[0]}, vaga ${si[1]}) · ${N} jogos por estilo · por jogo: impedimentos / faltas / cartões / chutes / gols / passes p/ gol · x médio (m, do próprio gol) · energia no fim · gols pró-contra · pontos`);
   const out = {};
-  G.l.forEach(st => { const R = run(g, st.k, si[0], si[1]); out[st.k] = R; const q = v => (v / R.n).toFixed(2);
+  const SO = process.env.SO ? process.env.SO.split(',') : null;
+  G.l.filter(st => !SO || SO.includes(st.k) || st.k === G.def).forEach(st => { const R = run(g, st.k, si[0], si[1]); out[st.k] = R; const q = v => (v / R.n).toFixed(2);
     console.log(`  ${(st.n + (st.k === G.def ? ' *' : '')).padEnd(18)} ${q(R.off)} / ${q(R.fo)} / ${q(R.yc)} / ${q(R.sh)} / ${q(R.gl)} / ${q(R.ast)} · x ${(R.x / Math.max(1, R.nx)).toFixed(1)} · en ${(R.en / R.n).toFixed(0)} · ${q(R.gf)}-${q(R.ga)} · ${q(R.pts)}`); });
   const d = out[G.def], pp = R => R.pts / R.n;
-  G.l.forEach(st => { if (st.k !== G.def && pp(out[st.k]) > pp(d) + 0.3) alerts.push(`${g}/${st.n}: ${pp(out[st.k]).toFixed(2)} pontos por jogo contra ${pp(d).toFixed(2)} do padrão (estilo forte demais?)`); });
+  G.l.forEach(st => { if (out[st.k] && st.k !== G.def && pp(out[st.k]) > pp(d) + 0.3) alerts.push(`${g}/${st.n}: ${pp(out[st.k]).toFixed(2)} pontos por jogo contra ${pp(d).toFixed(2)} do padrão (estilo forte demais?)`); });
   if (out.costas) { const a = out.costas.off / N, b = d.off / N; if (a < b * 1.3 + 0.05) alerts.push(`ATA/Nas costas: impedimentos ${a.toFixed(2)} contra ${b.toFixed(2)} do padrão (devia subir)`); }
   if (g === 'ZAG' && out.ant) { if (out.ant.fo < d.fo * 1.2) alerts.push(`ZAG/Antecipa: faltas ${(out.ant.fo / N).toFixed(2)} contra ${(d.fo / N).toFixed(2)} (devia subir)`); }
 });

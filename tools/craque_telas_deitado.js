@@ -93,7 +93,7 @@ async function page(b, first) {
     await shot('a10b-conversa'); await p.waitForTimeout(400); await click('[data-t1="paciencia"]'); await shot('a10c-conversa-resposta'); await p.waitForTimeout(2600);
     if (await p.$('#ld-pop')) errs.push('a conversa não fechou sozinha');
     await p.evaluate(() => { const q = window.__q; q.mo = 60; q.bn = 0; delete q.talked; delete q.talkS; });
-    await click('#ld-play'); await click('#ld-fun'); await click('[data-fi="2"]'); await shot('a11-funcoes'); await click('[data-r="1"]'); await click('[data-gl="d:-1"]'); await shot('a11b-funcoes-mudou');
+    await click('#ld-play'); await click('#ld-fun'); await click('[data-fi="2"]'); await shot('a11-funcoes'); await click('.fu3-op:not(.on)'); await click('[data-gl="d:-1"]'); await shot('a11b-funcoes-mudou');
     await click('[data-sub="bat"]'); await click('[data-bk="fl"]'); await shot('a12-batedores'); await click('[data-bk="pen"]'); await shot('a12b-batedores-penalti'); await click('[data-bk="ckE"]'); await shot('a12c-batedores-escanteio'); await click('[data-bk="cap"]'); await shot('a12d-batedores-capitao'); await click('#ldm-ok');
     await click('#ld-go'); await click('[data-pk="calma"]'); await shot('a13-prelecao');
     await p.close();
