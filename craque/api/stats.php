@@ -5,7 +5,7 @@
 //   POST ?a=hit   {ev, mode, k}     soma +1 em (hoje, ev, mode, k)
 //   GET  ?a=list[&days=30]          linhas dos últimos dias (somas anônimas, leitura aberta)
 //   GET  ?a=mail                    contador por e-mail para o Silvio: o primeiro de todos sai na hora, depois um por dia
-//                                   a partir das 18h (Brasília). O cron da Hostinger chama de hora em hora (o deploy instala) e,
+//                                   a partir das 18h (Brasília). O Cron Job do hPanel chama de hora em hora e,
 //                                   de reserva, o primeiro hit depois das 18h também dispara. Nunca manda dois no mesmo dia.
 // Eventos: first (primeira visita do aparelho), d1 (voltou no dia seguinte), d7 (voltou entre o 7º e o 13º dia),
 // session (k = faixa de minutos), first e start (k = canal do link ?de=, vazio = direto), start (carreira começou), season (k = número da temporada), end (carreira terminou).
@@ -140,8 +140,10 @@ if ($a === 'hit') {
   $db->prepare('INSERT INTO counts (day, ev, mode, k, n) VALUES (?,?,?,?,1) ON CONFLICT(day, ev, mode, k) DO UPDATE SET n = counts.n + 1')
     ->execute([date('Y-m-d'), $ev, $mode, $k]);
   // Reserva do cron: depois das 18h, o primeiro hit do dia manda o contador (já respondido ao jogador antes)
-  if ((int)date('G') >= 18 && function_exists('fastcgi_finish_request')) {
-    echo json_encode(['ok' => true]); fastcgi_finish_request();
+  // (a Hostinger roda LiteSpeed: litespeed_finish_request; sem nenhum dos dois, o jogador só espera um pouco nesse hit)
+  if ((int)date('G') >= 18 && trim((string)@file_get_contents($dir . '/stats-mail-day')) !== date('Y-m-d')) {
+    echo json_encode(['ok' => true]);
+    if (function_exists('litespeed_finish_request')) litespeed_finish_request(); elseif (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
     try { st_mail_maybe($db, $dir, $SRC_TXT); } catch (Throwable $e) {}
     exit;
   }
