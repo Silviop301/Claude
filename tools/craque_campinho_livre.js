@@ -25,7 +25,7 @@ function simForm(s) { const sl = S.CO_FORMS[s.form].slots, sp = spots(s.form), a
   const gk = out.filter(p => p[0] === 'GK'), rest = out.filter(p => p[0] !== 'GK').sort((a, b) => a[1] - b[1]);
   if (!gk.length && rest.length) { const g0 = rest.shift(); g0[0] = 'GK'; g0[1] = 0; g0[2] = 50; gk.push(g0); }
   return gk.concat(rest); }
-const BR = process.env.MOTOR === '11', STEPS = BR ? 188 : 137; // passos de 0,02 s do campinho por minuto do jogo (2,2 s a 1,25; o cérebro: 3,0 s a 1,25, B11_MIN em ui/coach.js)
+const BR = process.env.MOTOR !== '0', STEPS = BR ? 188 : 137; // passos de 0,02 s do campinho por minuto do jogo (2,2 s a 1,25; o cérebro: 3,0 s a 1,25, B11_MIN em ui/coach.js)
 const G = []; let games = 0, n = 0, bad = 0;
 while (games < N) {
   const co = S.coNew({ name: 'Robô', country: 'Brasil', start: n % 2 ? 'livre' : 'baixo', seed: SEED * 1000 + n * 7919 }); n++;
