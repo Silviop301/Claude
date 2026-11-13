@@ -2132,9 +2132,8 @@
           if (cue.k === 'segurar') [-1, 1].forEach(i => ln(1, [[x0 + i * 8 * k0, y0 - hh * 0.85], [x0 + i * 8 * k0, y0 + hh * 0.85]]));
           else if (cue.k === 'lados') [-1, 1].forEach(i => ln(1, [[x0 - u * 0.9, y0 + i * (3 * k0 + mv * 0.6)], [x0, y0 + i * (3 * k0 + mv * 0.6 + u * 0.8)], [x0 + u * 0.9, y0 + i * (3 * k0 + mv * 0.6)]]));
           else [0, 1, 2].forEach(i => { const xx = x0 + d * ((i - 1) * 18 * k0 - u / 2 + mv); ln(0.4 + i * 0.3, [[xx, y0 - hh], [xx + d * u, y0], [xx, y0 + hh]]); });
-          const txt = CUE_N[cue.k] || ''; g.globalAlpha = al; g.font = '800 ' + Math.round(12.5 * k0) + 'px "Barlow Condensed", sans-serif'; const w = g.measureText(txt).width + 16 * k0, h = 18 * k0, ty = y0 + hh + 9 * k0;
-          g.fillStyle = '#F2C230'; g.beginPath(); g.roundRect(x0 - w / 2, ty, w, h, 5 * k0); g.fill(); g.shadowColor = 'transparent';
-          g.fillStyle = '#141517'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, x0, ty + h / 2 + 0.5); g.restore(); } }
+          // Silvio 13/11: nada de palavra no campo; só as setas do grito
+          g.restore(); } }
       if (refFx) {
         const p = refFx.p, x = X(p.x), y = Y(p.y), up = Math.min(1, (2.3 - refFx.t) * 4);
         if (refFx.kind === 'impedimento') { g.strokeStyle = 'rgba(216,64,74,.9)'; g.lineWidth = 3 * k; g.beginPath(); g.arc(x, y, 10 * k, 0, Math.PI * 2); g.stroke(); }

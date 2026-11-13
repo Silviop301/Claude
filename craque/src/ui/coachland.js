@@ -786,7 +786,10 @@
       '<div class="lv-sheet ldl-sheet" id="lv-sheet"></div></div>';
   }
   // Recado do auxiliar em cima do campinho do ao vivo por 4,5 s (rosto + frase curta; verde = deu certo, laranja = mexa)
+  // Silvio 13/11: "não quero a mensagem no campo da simulação". O recado da auxiliar não aparece mais por cima do campinho;
+  // o que ela tinha a dizer segue na lista de lances e no resultado
   function planToast(k, sm, txt) {
+    return;
     const p = document.querySelector('.ldl-p'); if (!p) return;
     const old = p.querySelector('.pl-ty'); if (old) old.remove();
     const t = document.createElement('div'); t.className = 'pl-ty ' + k; t.innerHTML = auxFace(C().co, 'pl-ty-f') + '<span><small>' + esc(sm) + '</small><b>' + esc(txt) + '</b></span>';
