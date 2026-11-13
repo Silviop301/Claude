@@ -140,6 +140,7 @@
     let b11 = null, b11In = false;
     const qv = (p, k) => { const a = p && p.inf && p.inf.at; if (a && a[k] !== undefined && a[k] !== null) return a[k]; if (k === 'gol' && a && a.gol === undefined && p.r === 'GK') return 60 + (p.q || 0) * 100; if (k === 'vel') return 60 + (p.q || 0) * 100 + (p.spd - 1.01) * 60; return 60 + (p.q || 0) * 100; };
     if (B11) b11 = LP.cerebro11({ R: rnd, T: () => T, at: qv, en: p => enOf(p), sty: s => ST[s], forma: s => Math.log(Math.max(0.05, lamF[s]) / 1.3),
+      onKick: k => { if (!k.pen && k.p && cv && FXON() && !(o.speed && o.speed() > 2)) { slowT = SLOW_T; slowP = k.p; } }, // câmera lenta e zoom no chute (Silvio, 13/11)
       onShot: sh => { if (!o.onShot) return; const nm = q => (q && q.inf ? q.inf.num : undefined);
         o.onShot({ side: sh.side, out: sh.out, sv: sh.sv, kind: sh.kind, id: sh.p && sh.p.inf ? sh.p.inf.id : undefined, num: nm(sh.p), ast: nm(sh.ast), dist: sh.dist, box: sh.box, near: sh.near, lane: sh.lane }); },
       onGoal: (p, s, y, v, own) => { b11In = false; if (own && o.onShot) o.onShot({ side: s, out: 'gol', kind: 'contra', dist: 8, box: true, near: false, lane: 0 });
