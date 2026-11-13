@@ -1910,7 +1910,9 @@
       }
       g.fillStyle = shirt; g.strokeStyle = edge; g.lineWidth = 1.6 * k;
       g.beginPath(); if (p.down) g.ellipse(x, y, r * (p.dva != null ? 1.5 : 1.2), r * 0.62, p.dva != null ? (p.dva ? Math.PI / 2 : 0) : 0.5, 0, Math.PI * 2); else g.arc(x, y, r, 0, Math.PI * 2); g.fill();
-      if (!me && p.r !== 'GK' && kt.pat) shirtPat(x, y, r, kt.pat, p.down, kt[0]);
+      // o desenho da camisa troca o caminho atual (faixa, fundo do número): refaz o contorno do disco antes do traço,
+      // senão a borda sai no polígono da faixa, fora do disco, por cima do anel de energia
+      if (!me && p.r !== 'GK' && kt.pat) { shirtPat(x, y, r, kt.pat, p.down, kt[0]); g.beginPath(); if (p.down) g.ellipse(x, y, r * (p.dva != null ? 1.5 : 1.2), r * 0.62, p.dva != null ? (p.dva ? Math.PI / 2 : 0) : 0.5, 0, Math.PI * 2); else g.arc(x, y, r, 0, Math.PI * 2); }
       g.stroke();
       // Bico: para onde ele olha (corre ou vira para a bola), na borda do disco
       if (!p.down) { const fx = mir() ? -p.fx : p.fx, fy = p.fy, fm = Math.hypot(fx, fy) || 1, ux = fx / fm, uy = fy / fm, a = r + 3.6 * k, b = r - 0.6 * k, w = 2.6 * k;
