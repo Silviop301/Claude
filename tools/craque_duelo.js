@@ -5,6 +5,7 @@
 const fs = require('fs'), path = require('path');
 const D = require('../craque/src/data.js'), S = require('../craque/src/sim.js');
 global.window = { CRAQUE_UI: {}, addEventListener() {}, removeEventListener() {} }; global.document = { hidden: false };
+eval(fs.readFileSync(path.join(__dirname, '../craque/src/ui/cerebro11.js'), 'utf8'));
 eval(fs.readFileSync(path.join(__dirname, '../craque/src/ui/livesim.js'), 'utf8'));
 const LP = window.CRAQUE_UI.LP;
 const prng = s => { let a = s >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
@@ -37,7 +38,7 @@ for (let g = 0; g < N; g++) {
   ss.ids[oi] = other; if (g % 4 >= 2) { fx.reverse(); } // e alterna quem joga em casa
   const m = S.coMatchStart(co); if (!m) continue;
   const sh = [0, 0];
-  const sim = LP.sim({ me: -1, goals: [], free: true, seed: g * 13 + 7, home: m.home ? 0 : 1, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]], spm: () => 2.2, speed: () => 1.25,
+  const sim = LP.sim({ me: -1, goals: [], free: true, brain: process.env.MOTOR === '11', seed: g * 13 + 7, home: m.home ? 0 : 1, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]], spm: () => 2.2, speed: () => 1.25,
     onShot: s => { const e = S.coMatchShot(co, m, s.side ? 'them' : 'us', s.out, s); if (e) sh[s.side]++; } });
   sim.go(); let key = '', xu = 0, xt = 0;
   const a0 = xiAvg(m.us), b0 = xiAvg(m.them);

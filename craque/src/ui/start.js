@@ -230,6 +230,9 @@
   // Simulação livre do Treinador (padrão desde 2026-11-10, o Silvio aprovou: o resultado não é predefinido, cada chute é
   // decidido no campinho): ?livre=0 volta ao jogo encenado pelo motor neste aparelho, ?livre=1 religa
   try { const q = new URLSearchParams(location.search).get('livre'); if (q === '0') localStorage.setItem('climbix-sim-livre', '0'); else if (q === '1') localStorage.removeItem('climbix-sim-livre'); } catch (e) { /* sem armazenamento */ }
+  // Cérebro 11x11 no campinho (teste, 13/11): ?motor=11 liga neste aparelho, ?motor=0 desliga
+  try { const q = new URLSearchParams(location.search).get('motor'); if (q === '11') localStorage.setItem('climbix-motor', '11'); else if (q === '0') localStorage.removeItem('climbix-motor'); } catch (e) { /* sem armazenamento */ }
+  U.motor11 = () => { try { return localStorage.getItem('climbix-motor') === '11'; } catch (e) { return false; } };
   U.simLivre = () => { try { return localStorage.getItem('climbix-sim-livre') !== '0'; } catch (e) { return true; } };
   U.soCo = () => { try { return localStorage.getItem('climbix-so') === 'treinador'; } catch (e) { return false; } };
   // Home com dois modos (Silvio 2026-11-09): Treinador e Jogador; Jogador desabilitado com "Em breve". Carreira Rápida,

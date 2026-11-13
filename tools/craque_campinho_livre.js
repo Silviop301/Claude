@@ -6,6 +6,7 @@
 const fs = require('fs'), path = require('path');
 const D = require('../craque/src/data.js'), S = require('../craque/src/sim.js');
 global.window = { CRAQUE_UI: {}, addEventListener() {}, removeEventListener() {} }; global.document = { hidden: false };
+eval(fs.readFileSync(path.join(__dirname, '../craque/src/ui/cerebro11.js'), 'utf8'));
 eval(fs.readFileSync(path.join(__dirname, '../craque/src/ui/livesim.js'), 'utf8'));
 const LP = window.CRAQUE_UI.LP;
 const prng = s => { let a = s >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
@@ -33,9 +34,9 @@ while (games < N) {
     const nx = S.coNext(co); if (!nx) break; if (nx.bye) { S.coSkipRound(co); continue; }
     const m = S.coMatchStart(co); if (!m) break;
     const g = { xu: 0, xt: 0, sh: [0, 0], far: 0, gn: 0, pen: 0, fks: 0, fkg: 0, fkn: 0, fkc: 0 };
-    const sim = LP.sim({ me: -1, goals: [], free: true, seed: games * 13 + 7, home: m.home ? 0 : 1, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]],
+    const sim = LP.sim({ me: -1, goals: [], free: true, brain: process.env.MOTOR === '11', seed: games * 13 + 7, home: m.home ? 0 : 1, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]],
       spm: () => 2.2, speed: () => 1.25,
-      onShot: sh => { const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, sh); if (!e) return; g.sh[sh.side]++; if (sh.kind === 'falta') { g.fks++; if (sh.out === 'gol') g.fkg++; } if (sh.out === 'gol') { g.gn++; if (sh.dist > 18) g.far++; } if (sh.id == null) bad++; } });
+      onShot: sh => { const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, sh); if (!e) return; g.sh[sh.side]++; if (sh.kind === 'falta') { g.fks++; if (sh.out === 'gol') g.fkg++; } if (sh.out === 'gol') { g.gn++; if (sh.dist > 18) g.far++; } if (sh.id == null && sh.kind !== 'contra') bad++; } });
     sim.go(); let key = ''; const sent = new Set();
     while (!m.done) {
       if (GRITO && !m.us.shout) S.coShout(co, m, GRITO);
