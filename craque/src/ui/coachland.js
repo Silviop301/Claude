@@ -373,7 +373,7 @@
     const st = x => x.grp ? '<div class="cpw-st now"><small>GRUPO ' + x.grp + ' · ' + x.pos + 'º</small><div>' + x.ids.map(id => crest(id, 'cpw-cr')).join('') + '</div></div>'
       : x.now ? '<div class="cpw-st now"><small>' + esc(x.sh).toUpperCase() + '</small><div>' + crest(x.ids[0], 'cpw-cr') + '<i>×</i>' + crest(x.ids[1], 'cpw-cr') + '</div></div>'
       : '<div class="cpw-st"><small>' + esc(x.sh).toUpperCase() + '</small><div>' + (x.vs ? '<i>' + esc(x.vs) + '</i>' : x.ids.length && x.ids.length <= 2 ? x.ids.map(id => crest(id, 'cpw-cr')).join('<i>ou</i>') : x.ids.length ? crest(x.ids[0], 'cpw-cr') + crest(x.ids[1], 'cpw-cr') + '<i>+' + (x.ids.length - 2) + '</i>' : '<i>?</i>') + '</div></div>';
-    return '<div class="cpw-path">' + P.map(st).join('<span class="cpw-ar">›</span>') + '<span class="cpw-ar">›</span><div class="cpw-st tr"><small>+ R$ ' + C().mi(S.coContPrizeLeft(co)) + '</small>' + contImg(co, 28) + '</div></div>';
+    return '<div class="cpw-path" role="button" data-cpgo="cont" aria-label="Ver a tabela da copa">' + P.map(st).join('<span class="cpw-ar">›</span>') + '<span class="cpw-ar">›</span><div class="cpw-st tr"><small>+ R$ ' + C().mi(S.coContPrizeLeft(co)) + '</small>' + contImg(co, 28) + '</div></div>';
   }
   function cupPath(co) {
     if (co.ss.cont && (S.coNext(co) || {}).cup && S.coNext(co).cup.cont) return contPath(co);
@@ -381,7 +381,7 @@
     const st = x => { const ids = x.ids.slice(0, 2), more = x.ids.length - ids.length;
       return '<div class="cpw-st' + (x.now ? ' now' : '') + '"><small>' + esc(x.sh).toUpperCase() + '</small><div>' +
         (x.now ? crest(ids[0], 'cpw-cr') + '<i>×</i>' + crest(ids[1], 'cpw-cr') : ids.length === 2 && x.ids.length === 2 ? crest(ids[0], 'cpw-cr') + '<i>ou</i>' + crest(ids[1], 'cpw-cr') : ids.map(id => crest(id, 'cpw-cr')).join('') + (more > 0 ? '<i>+' + more + '</i>' : '')) + '</div></div>'; };
-    return '<div class="cpw-path">' + P.map(st).join('<span class="cpw-ar">›</span>') + '<span class="cpw-ar">›</span><div class="cpw-st tr"><small>+ R$ ' + C().mi(S.coCupPrizeLeft(co, co.ss.cup.k)) + '</small>' + cupImg(co.ss.cup.name, 28) + '</div></div>';
+    return '<div class="cpw-path" role="button" data-cpgo="nac" aria-label="Ver a chave da copa">' + P.map(st).join('<span class="cpw-ar">›</span>') + '<span class="cpw-ar">›</span><div class="cpw-st tr"><small>+ R$ ' + C().mi(S.coCupPrizeLeft(co, co.ss.cup.k)) + '</small>' + cupImg(co.ss.cup.name, 28) + '</div></div>';
   }
   // Aba Copa da Tabela (desenho A aprovado 12/11): a chave das oitavas à final com escudo, sigla e placar, o seu caminho em
   // dourado; na fase de 32, os 16 jogos numa grade
@@ -499,6 +499,8 @@
       if (st.querySelector('#sm-coins')) st.querySelector('#sm-coins').onclick = () => { sfx('tap'); loja(0, semana); };
       st.querySelector('#ld-play').onclick = () => { sfx('tap'); if (nx.bye) { S.coSkipRound(co); c.save(); return semana(); } time(true); };
       st.querySelector('#sm-back').onclick = () => { sfx('tap'); go('inicio'); };
+      // Tocar no caminho da copa abre a chave/grupo dessa copa na Tabela (pedido do Silvio 13/11)
+      if (st.querySelector('[data-cpgo]')) st.querySelector('[data-cpgo]').onclick = e => { sfx('tap'); CUP_V = e.currentTarget.dataset.cpgo; CG = null; tabela('copa'); };
       if (st.querySelector('#ld-tr')) st.querySelector('#ld-tr').onclick = () => { sfx('tap'); treino(); };
       if (st.querySelector('#ld-ol')) st.querySelector('#ld-ol').onclick = () => { sfx('tap'); olheiro(); };
       // Silvio 11/11: "não tá legal tentar abrir o mercado e ter que ver todas as propostas antes": o Mercado abre direto e as

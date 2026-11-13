@@ -10147,6 +10147,8 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .sm-rd.cup .trophy { height: 18px !important; width: auto; }
 /* 13/11 (Silvio: "tá cortando a borda do confronto"): com 16 avos a trilha passava do cartão e o centro cortava as duas
    pontas. Espaços mais curtos para caber os 6 degraus, e "safe center" encosta à esquerda em vez de cortar se ainda faltar */
+.cpw-path[data-cpgo] { cursor: pointer; }
+.cpw-path[data-cpgo]:active { filter: brightness(1.25); }
 .cpw-path { display: flex; align-items: center; justify-content: safe center; gap: 3px; padding: 6px 6px; max-width: 100%; box-sizing: border-box; overflow: hidden; border-radius: 12px; background: #141517; }
 .cpw-st { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: none; }
 .cpw-st small { white-space: nowrap; font: 700 10px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
