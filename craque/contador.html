@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Contador · Climbix</title>
+<meta name="theme-color" content="#0F3D2A">
+<link rel="icon" href="icons/icon-192.png">
+<!-- Contador ao vivo: lê as somas anônimas de api/stats.php?a=list a cada 15 s (as mesmas do e-mail das 18h). -->
+<style>
+  @font-face { font-family: 'Barlow'; font-weight: 500; font-display: swap; src: url('fonts/barlow-500-latin.woff2') format('woff2'); }
+  @font-face { font-family: 'Barlow'; font-weight: 700; font-display: swap; src: url('fonts/barlow-700-latin.woff2') format('woff2'); }
+  @font-face { font-family: 'Barlow Condensed'; font-weight: 800; font-display: swap; src: url('fonts/barlow-condensed-800-latin.woff2') format('woff2'); }
+  :root { --pitch: #0F3D2A; --card: #144A34; --line: #1E5C42; --text: #FBF8EF; --text-2: #A9CDB8; --gold: #F2C230; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--pitch); color: var(--text); font-family: 'Barlow', system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: max(14px, env(safe-area-inset-top)) 16px 20px; }
+  h1 { font: 800 26px/1 'Barlow Condensed', sans-serif; margin: 0; letter-spacing: .5px; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .live { font-size: 13px; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 0 0 #3ddc8488; animation: pulse 2s infinite; }
+  .dot.off { background: #e05a4f; animation: none; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 8px #3ddc8400; } 100% { box-shadow: 0 0 0 0 #3ddc8400; } }
+  .big { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+  .tile { background: var(--card); border-radius: 12px; padding: 10px 12px; }
+  .tile b { display: block; font: 800 34px/1 'Barlow Condensed', sans-serif; color: var(--gold); transition: color .3s; }
+  .tile span { font-size: 12px; color: var(--text-2); }
+  .bump { animation: bump 1.2s; }
+  @keyframes bump { 0% { color: #3ddc84; transform: scale(1.15); } 100% { color: var(--gold); transform: none; } }
+  .card { background: var(--card); border-radius: 12px; padding: 6px 12px 8px; margin-bottom: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { font-size: 11px; color: var(--text-2); font-weight: 700; text-transform: uppercase; text-align: right; padding: 6px 4px; white-space: nowrap; }
+  td { text-align: right; padding: 6px 4px; border-top: 1px solid var(--line); color: var(--text-2); }
+  td:first-child, th:first-child { text-align: left; color: var(--text); }
+  td.h { color: var(--text); font-weight: 700; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 560px) { .cols { grid-template-columns: 1fr; } }
+  .foot { font-size: 11px; color: var(--text-2); text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><h1>CONTADOR AO VIVO</h1><div class="live"><i class="dot" id="dot"></i><span id="st">carregando…</span></div></div>
+  <div class="big">
+    <div class="tile"><b id="t0">–</b><span>aparelhos novos hoje</span></div>
+    <div class="tile"><b id="t1">–</b><span>carreiras hoje</span></div>
+    <div class="tile"><b id="t2">–</b><span>sessões hoje</span></div>
+  </div>
+  <div class="cols">
+    <div class="card"><table id="tab"></table></div>
+    <div class="card"><table id="src"></table></div>
+  </div>
+  <div class="foot">Contagem anônima (sem nome, conta ou IP). Atualiza sozinho a cada 15 s.</div>
+</main>
+<script>
+(function () {
+  var SRC = { '': 'Direto', tiktok: 'TikTok', insta: 'Instagram', yt: 'YouTube', zap: 'WhatsApp', tabnews: 'TabNews', reddit: 'Reddit', face: 'Facebook',
+    criador: 'Criador', itch: 'itch.io', x: 'X', discord: 'Discord', imprensa: 'Imprensa', outro: 'Outro' };
+  var LINES = [
+    ['Aparelhos novos', function (r) { return r.ev === 'first'; }],
+    ['Carreiras (Treinador)', function (r) { return r.ev === 'start' && r.mode === 'treinador'; }],
+    ['Temporadas', function (r) { return r.ev === 'season'; }],
+    ['Sessões', function (r) { return r.ev === 'session'; }],
+    ['Sessões 5+ min', function (r) { return r.ev === 'session' && ['5-10', '10-20', '20-40', '40+'].indexOf(r.k) >= 0; }],
+    ['Voltaram (1 dia)', function (r) { return r.ev === 'd1'; }],
+    ['Voltaram (1 semana)', function (r) { return r.ev === 'd7'; }]
+  ];
+  var API = /climbix\.app$/.test(location.hostname) ? 'api/stats.php' : 'https://climbix.app/api/stats.php';
+  var last = {}, okAt = 0;
+  function day(s, d) { var t = new Date(s + 'T12:00:00'); t.setDate(t.getDate() + d); return t.toISOString().slice(0, 10); }
+  function sum(rows, a, b, f) { var n = 0; rows.forEach(function (r) { if (r.day >= a && r.day <= b && f(r)) n += r.n; }); return n; }
+  function set(id, v) { var el = document.getElementById(id); if (last[id] !== undefined && v > last[id]) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } last[id] = v; el.textContent = v; }
+  function draw(data) {
+    var rows = data.rows, h = data.today, y = day(h, -1), w = day(h, -6);
+    var cols = [[h, h], [y, y], [w, h], ['0000', '9999']];
+    var html = '<tr><th></th><th>Hoje</th><th>Ontem</th><th>7 dias</th><th>Total</th></tr>';
+    LINES.forEach(function (l) {
+      var v = cols.map(function (c) { return sum(rows, c[0], c[1], l[1]); });
+      html += '<tr><td>' + l[0] + '</td><td class="h">' + v[0] + '</td><td>' + v[1] + '</td><td>' + v[2] + '</td><td>' + v[3] + '</td></tr>';
+    });
+    document.getElementById('tab').innerHTML = html;
+    set('t0', sum(rows, h, h, LINES[0][1])); set('t1', sum(rows, h, h, LINES[1][1])); set('t2', sum(rows, h, h, LINES[3][1]));
+    var s = {};
+    rows.forEach(function (r) { if (r.ev !== 'first' && !(r.ev === 'start' && r.mode === 'treinador')) return;
+      var o = s[r.k] = s[r.k] || [0, 0, 0]; if (r.ev === 'first') { if (r.day === h) o[0] += r.n; o[2] += r.n; } else if (r.day === h) o[1] += r.n; });
+    var ks = Object.keys(s).sort(function (a, b) { return s[b][0] - s[a][0] || s[b][2] - s[a][2]; });
+    document.getElementById('src').innerHTML = '<tr><th>De onde vieram</th><th>Hoje</th><th>Carreiras</th><th>Total</th></tr>' + ks.map(function (k) {
+      return '<tr><td>' + (SRC[k] || k) + '</td><td class="h">' + s[k][0] + '</td><td>' + s[k][1] + '</td><td>' + s[k][2] + '</td></tr>'; }).join('');
+  }
+  function tick() {
+    fetch(API + '?a=list&days=400&t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); })
+      .then(function (d) { draw(d); okAt = Date.now(); document.getElementById('dot').classList.remove('off'); })
+      .catch(function () { document.getElementById('dot').classList.add('off'); });
+  }
+  setInterval(function () {
+    var st = document.getElementById('st');
+    st.textContent = okAt ? 'atualizado há ' + Math.round((Date.now() - okAt) / 1000) + ' s' : 'sem conexão';
+  }, 1000);
+  tick(); setInterval(tick, 15000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) tick(); });
+})();
+</script>
+</body>
+</html>
