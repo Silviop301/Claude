@@ -91,21 +91,92 @@
     if (cen.length === 2) return hasAm ? 'VOL' : 'MC';
     return ck === Math.floor(cen.length / 2) ? 'VOL' : 'MC';
   };
-  // Função de cada vaga (o jeito de jogar: -1 mais atrás, 0 normal, +1 mais à frente). Fica na vaga: quem entra joga igual.
-  // Mais à frente ajuda o ataque e tira da defesa (e cansa mais); mais atrás, o contrário
-  const ROLES = S.CO_ROLES = {
-    GOL: [['Fica no gol', 'não sai da área'], ['Goleiro', 'sai quando precisa'], ['Sai jogando', 'joga com os pés, adianta a linha']],
-    ZAG: [['Cobre', 'fica atrás da linha'], ['Zagueiro', 'marca e sai curto'], ['Sai jogando', 'conduz a bola até o meio']],
-    LAT: [['Segura', 'não passa do meio'], ['Lateral', 'apoia quando dá'], ['Apoia', 'vive no ataque, deixa as costas']],
-    VOL: [['Volante fixo', 'protege a zaga'], ['Volante', 'marca e distribui'], ['Chega', 'aparece na área']],
-    MC: [['Marca', 'fecha o meio'], ['Meia', 'liga defesa e ataque'], ['Chega na área', 'entra para finalizar']],
-    ME: [['Recua', 'ajuda o lateral'], ['Meia aberto', 'cruza da linha'], ['Ponta', 'joga lá na frente']],
-    MEI: [['Armador', 'recua para buscar'], ['Meia', 'dá o passe final'], ['Segundo atacante', 'pisa na área']],
-    PE: [['Que recua', 'ajuda o lateral'], ['Aberto', 'cruza da linha'], ['Invertido', 'corta para dentro e chuta']],
-    ATA: [['Pivô', 'segura de costas, faz a parede'], ['Atacante', 'finaliza'], ['Na frente', 'vive na linha do impedimento']],
+  // Estilo de jogo de cada vaga (Silvio 13/11: "um nove que corre nas costas mas que fica mais em impedimento"). Fica na vaga:
+  // quem entra joga igual. Cada estilo tem um ganho e um custo (p, m) e os atributos com que combina (at). Nada é roteirizado:
+  // no cérebro 11x11 o estilo só mexe nas decisões e no lugar do jogador (b: inf = corridas nas costas, semF = sair antes da
+  // hora, ax/dx = metros à frente com e sem a bola, apo = vir buscar, larg = abrir/fechar, dri/chu/cruz/lanc = vontade de
+  // driblar, chutar, cruzar e lançar, bote = arriscar o desarme, falta = chegar duro, pres = caçar a bola, gk = goleiro sai
+  // mais/menos, area = fica na área). Na conta resumida (Só resultado, força do ataque no minuto): tl inclina a vaga para o
+  // ataque (+) ou defesa (−) como antes, a/d somam (o ganho vale pela afinidade) e en gasta mais energia.
+  // O primeiro de cada lista é o mais atrás; `def` é o padrão (o jogo de antes); `old` = as 3 funções antigas (−1, 0, +1).
+  const RS = (k, n, at, p, m, x) => Object.assign({ k, n, at, p, m, tl: 0, a: 0, d: 0, en: 0, b: {} }, x || {});
+  const STYLES = S.CO_PSTY = {
+    GOL: { def: 'gol', old: ['fica', 'gol', 'lib'], l: [
+      RS('fica', 'Fica no gol', ['col'], 'Sempre bem colocado na linha', 'Não sai na bola nas costas', { tl: -1, b: { gk: 0.55 } }),
+      RS('gol', 'Goleiro', ['ref', 'col'], 'Sai quando precisa', 'Nada de especial'),
+      RS('lib', 'Líbero', ['sai', 'pes'], 'Corta a bola nas costas da zaga', 'Pode levar gol por cobertura', { tl: 1, b: { gk: 1.7 } })] },
+    ZAG: { def: 'zag', old: ['cobre', 'zag', 'sai'], l: [
+      RS('cobre', 'Cobre', ['def', 'vel'], 'Quase nunca batido nas costas', 'Deixa espaço para o chute de fora', { tl: -1, b: { dx: -3 } }),
+      RS('zag', 'Zagueiro', ['def'], 'Marca e sai curto', 'Nada de especial'),
+      RS('ant', 'Antecipa', ['def', 'fis'], 'Rouba a bola mais cedo', 'Mais faltas e cartões', { d: 0.03, b: { bote: 0.08, falta: 1.6, dx: 1.5 } }),
+      RS('sai', 'Sai jogando', ['pas', 'dri'], 'Conduz e lança, fura a pressão', 'Perde bola perto da área', { tl: 1, b: { lanc: 0.3, dri: 0.3, ax: 4 } })] },
+    LAT: { def: 'lat', old: ['seg', 'lat', 'ala'], l: [
+      RS('seg', 'Segura', ['def'], 'Não deixa as costas', 'Quase não apoia', { tl: -1, b: { inf: 0.3, ax: -6 } }),
+      RS('lat', 'Lateral', ['def', 'vel'], 'Apoia quando dá', 'Nada de especial'),
+      RS('ala', 'Ala', ['vel', 'pas'], 'Vive no fundo e cruza', 'Deixa as costas e cansa', { tl: 1, en: 0.15, b: { inf: 1.8, ax: 6, dx: 2, cruz: 0.2 } }),
+      RS('dentro', 'Por dentro', ['pas', 'def'], 'Vira meia, mais toque de bola', 'Cruza pouco', { a: 0.02, b: { larg: 0.55, cruz: -0.3, apo: 0.25 } })] },
+    VOL: { def: 'vol', old: ['fixo', 'vol', 'chega'], l: [
+      RS('fixo', 'Fixo', ['def'], 'Protege a zaga', 'Quase não chega na frente', { tl: -1, b: { ax: -5, inf: 0.3 } }),
+      RS('vol', 'Volante', ['def', 'pas'], 'Marca e distribui', 'Nada de especial'),
+      RS('dest', 'Destruidor', ['def', 'fis'], 'Ganha mais divididas', 'Faltas, cartões e cansaço', { d: 0.04, en: 0.12, b: { bote: 0.1, falta: 1.6, pres: 0.7 } }),
+      RS('org', 'Organizador', ['pas'], 'Lança e vira o jogo', 'Marca pouco', { a: 0.03, d: -0.03, b: { lanc: 0.3, bote: -0.06, apo: 0.2 } }),
+      RS('chega', 'Chega', ['fin', 'fis'], 'Aparece na área', 'Deixa buraco na frente da zaga', { tl: 1, b: { inf: 3, ax: 6, chu: 0.15 } })] },
+    MC: { def: 'meia', old: ['marca', 'meia', 'chega'], l: [
+      RS('marca', 'Marca', ['def'], 'Fecha o meio', 'Ataca pouco', { tl: -1, b: { ax: -4, inf: 0.4, bote: 0.04 } }),
+      RS('meia', 'Meia', ['pas'], 'Liga defesa e ataque', 'Nada de especial'),
+      RS('vv', 'Vai e volta', ['fis', 'vel'], 'Ajuda nos dois lados', 'Cansa muito', { a: 0.03, d: 0.03, en: 0.25, b: { bote: 0.04, inf: 1.4 } }),
+      RS('chega', 'Chega na área', ['fin'], 'Entra para finalizar', 'Deixa o meio aberto', { tl: 1, b: { inf: 2.2, ax: 5, chu: 0.12 } })] },
+    MEI: { def: 'meia', old: ['arm', 'meia', 'seg'], l: [
+      RS('arm', 'Armador', ['pas'], 'Recua e organiza', 'Pouco na área', { tl: -1, b: { ax: -5, apo: 0.3, lanc: 0.15 } }),
+      RS('meia', 'Meia', ['pas', 'dri'], 'Dá o passe final', 'Nada de especial'),
+      RS('flut', 'Flutua', ['dri', 'pas'], 'Acha espaço entre as linhas', 'Não marca ninguém', { a: 0.04, d: -0.05, b: { apo: 0.35, dri: 0.1, bote: -0.08 } }),
+      RS('seg', 'Segundo atacante', ['fin', 'vel'], 'Pisa na área', 'Some na marcação', { tl: 1, b: { inf: 2, ax: 6, chu: 0.15 } })] },
+    ME: { def: 'aberto', old: ['recua', 'aberto', 'ponta'], l: [
+      RS('recua', 'Recua', ['def'], 'Ajuda o lateral', 'Ataca pouco', { tl: -1, b: { ax: -5, inf: 0.4 } }),
+      RS('aberto', 'Meia aberto', ['pas', 'vel'], 'Cruza da linha', 'Nada de especial'),
+      RS('ponta', 'Ponta', ['vel', 'dri'], 'Joga lá na frente', 'Deixa o lateral sozinho', { tl: 1, b: { ax: 6, inf: 1.5 } }),
+      RS('dentro', 'Por dentro', ['pas', 'fin'], 'Fecha o meio e chuta', 'Cruza pouco', { a: 0.02, b: { larg: 0.6, cruz: -0.3, chu: 0.1 } })] },
+    PE: { def: 'aberto', old: ['recua', 'aberto', 'inv'], l: [
+      RS('recua', 'Que recua', ['def'], 'Ajuda o lateral', 'Ataca pouco', { tl: -1, b: { ax: -5, inf: 0.4 } }),
+      RS('aberto', 'Aberto', ['vel', 'pas'], 'Cruza da linha de fundo', 'Chuta pouco'),
+      RS('inv', 'Invertido', ['dri', 'fin'], 'Corta para dentro e chuta', 'Cruza pouco', { tl: 1, b: { larg: 0.7, cruz: -0.35, chu: 0.2, dri: 0.1 } }),
+      RS('drib', 'Driblador', ['dri', 'vel'], 'Parte para cima no 1x1', 'Perde mais bola', { a: 0.02, b: { dri: 0.35 } })] },
+    ATA: { def: 'ata', old: ['pivo', 'ata', 'costas'], l: [
+      RS('pivo', 'Pivô', ['fis', 'pas'], 'Segura de costas e toca', 'Chuta menos', { tl: -1, b: { ax: -4, apo: 0.3, chu: -0.15, inf: 0.4 } }),
+      RS('ata', 'Atacante', ['fin'], 'Finaliza', 'Nada de especial'),
+      RS('mat', 'Matador', ['fin'], 'Vive na área e finaliza', 'Pouco participa do jogo', { tl: 1, b: { area: 1, apo: -0.3, inf: 0.6, chu: 0.2 } }),
+      RS('costas', 'Nas costas', ['vel', 'fin'], 'Mais cara a cara com o goleiro', 'Cai mais em impedimento', { tl: 1, b: { inf: 2, semF: 0.25 } }),
+      RS('f9', 'Falso 9', ['pas', 'dri'], 'Recua e abre espaço para os pontas', 'Pouca presença na área', { tl: -1, b: { ax: -10, apo: 0.45, lanc: 0.1, inf: 0.3 } }),
+      RS('pres', 'Pressiona', ['fis', 'vel'], 'Rouba a saída de bola deles', 'Cansa rápido', { d: 0.03, a: -0.01, en: 0.25, b: { pres: 0.6, bote: 0.04 } })] },
   };
-  S.coRoleKey = (form, i) => { const l = S.coSlotLbl(form, i); return l === 'LD' ? 'LAT' : l === 'LE' ? 'LAT' : l === 'MD' ? 'ME' : l === 'PD' ? 'PE' : l; };
-  S.coRoles = (co, form) => { co.roles = co.roles || {}; return co.roles[form] || (co.roles[form] = new Array(11).fill(0)); };
+  Object.keys(STYLES).forEach(k => { const g = STYLES[k]; g.by = {}; g.l.forEach(x => { g.by[x.k] = x; }); });
+    S.coRoleKey = (form, i) => { const l = S.coSlotLbl(form, i); return l === 'LD' ? 'LAT' : l === 'LE' ? 'LAT' : l === 'MD' ? 'ME' : l === 'PD' ? 'PE' : l; };
+  // co.roles[formação] = chave do estilo por vaga; save antigo guardava −1/0/+1 (vira a função antiga de mesmo lugar)
+  S.coRoles = (co, form) => { co.roles = co.roles || {}; const R = co.roles[form] || (co.roles[form] = new Array(11).fill(0));
+    R.forEach((v, i) => { if (typeof v !== 'string') { const g = STYLES[S.coRoleKey(form, i)]; R[i] = g ? g.old[(+v || 0) + 1] : 0; } }); return R; };
+  // Estilo da vaga i de um lado da partida (s.roles = chaves; antigo em número; sem nada = padrão)
+  S.coStyleAt = (form, i, v) => { const g = STYLES[S.coRoleKey(form, i)]; if (!g) return null; if (typeof v === 'string' && g.by[v]) return g.by[v]; return g.by[typeof v === 'number' && v ? g.old[v + 1] : g.def]; };
+  // Altura de cada setor (as setas Defesa/Meio/Ataque): co.lnh[formação] = {d, m, a} −1/0/+1
+  S.coLnh = (co, form) => { co.lnh = co.lnh || {}; return co.lnh[form] || (co.lnh[form] = { d: 0, m: 0, a: 0 }); };
+  const lnKey = sl => (sl.ln === 'am' ? 'm' : sl.ln === 'g' ? null : sl.ln);
+  // Afinidade: média dos atributos do estilo (1 a 3 bolinhas) e o fator do ganho na conta resumida (0,45 a 1)
+  S.coStyleFit = (p, st) => { if (!p || !st || !st.at.length) return 2; const a = S.coAttrs(p), K = S.coAtKeys(p);
+    let t = 0, n = 0; st.at.forEach(k => { const j = K.indexOf(k); if (j >= 0) { t += a[j]; n++; } }); if (!n) return 2;
+    const m = t / n, ref = Math.max(45, p.ovr); return m >= ref + 3 ? 3 : m >= ref - 6 ? 2 : 1; };
+  S.coStyleTxt = o => { const pl = (n, a, b) => n + ' ' + (n === 1 ? a : b), L = [];
+    if (o.g) L.push(pl(o.g, 'gol', 'gols')); else if (o.sh) L.push(pl(o.sh, 'chute', 'chutes'));
+    if (o.of) L.push(pl(o.of, 'imped.', 'imped.')); if (o.yc) L.push(pl(o.yc, 'cartão', 'cartões')); else if (o.fo) L.push(pl(o.fo, 'falta', 'faltas'));
+    return L.length ? o.n + ': ' + L.slice(0, 2).join(' · ') : ''; };
+  S.coStyleAtTxt = (p, st) => { const a = S.coAttrs(p), K = S.coAtKeys(p); return st.at.map(k => AT.short[k] + ' ' + a[K.indexOf(k)]).join(' · '); };
+  const FIT_K = [0, 0.45, 0.75, 1];
+  // O que o estilo + a altura do setor fazem na conta resumida da vaga: { tl, a, d, en, b (cérebro), st }
+  S.coRoleFx = function (s, i, p) {
+    const F = FORMS[s.form], sl = F && F.slots[i]; if (!sl) return { tl: 0, a: 0, d: 0, en: 0, b: {} };
+    const st = S.coStyleAt(s.form, i, s.roles ? s.roles[i] : null) || RS('', '', [], '', ''), lk = lnKey(sl), lh = s.lnh && lk ? (s.lnh[lk] || 0) : 0;
+    const fk = p && (st.a > 0 || st.d > 0) ? FIT_K[S.coStyleFit(p, st)] : 1, g = v => (v > 0 ? v * fk : v);
+    const b = Object.assign({}, st.b); if (lh) { b.ax = (b.ax || 0) + 3 * lh; b.dx = (b.dx || 0) + 2 * lh; }
+    return { tl: st.tl + lh, a: g(st.a), d: g(st.d), en: st.en + 0.12 * Math.max(0, st.tl + lh), b, st };
+  };
   // Treino da semana: um foco, vale para o próximo jogo; cansa quem treina (en tira energia de todo o elenco)
   const TRAIN = S.CO_TRAIN = {
     final: { tab: 'Ataque', name: 'Finalização', sub: 'chutar mais certo', fx: { mul: { att: 1.04 } }, en: 4, who: ['ATA', 'MEI'], dv: 0 },
@@ -464,9 +535,9 @@
       cmd: 0, wmd: 0, wbd: 0, vel: 0, nvel: 0, dvel: 0, ndvel: 0, fis: 0, nfis: 0 };
     s.xi.forEach((id, i) => {
       const p = id && m[id], sl = F.slots[i]; if (!p || !sl) return;
-      const e0 = eff(p, sl.pos) / 70, tl = s.roles ? (s.roles[i] || 0) : 0;
+      const e0 = eff(p, sl.pos) / 70, rf = S.coRoleFx(s, i, p), tl = rf.tl;
       // A função da vaga puxa o jogador para o ataque (ea) ou para a defesa (ed)
-      const e = e0, ea = e0 * (1 + 0.08 * tl), ed = e0 * (1 - 0.08 * tl);
+      const e = e0, ea = e0 * (1 + 0.08 * tl + rf.a), ed = e0 * (1 - 0.08 * tl + rf.d);
       // Fase 3: em cada parte do jogo o jogador vale o geral mais o atributo daquele setor (finalizar, criar, ir pelo
       // lado, marcar; o goleiro pela defesa do chute). `o.q` (a força geral) segue só pelo geral
       const d = AT.kS && !noAt ? atDev(p) : null, gk = p.pos === 'GOL', ov = Math.max(30, p.ovr), SC = AT.sec;
@@ -705,8 +776,20 @@
     const d = D.CLUB_BY_ID[vs].strength - D.CLUB_BY_ID[co.club].strength;
     const pl = plan(vs, d, home, co, sq), a = autoXI(sq, pl.form);
     // Estudou você: além da resposta tática, o time vem preparado para o seu jogo (CO.prep a mais para ele, a menos para você)
-    return { club: vs, squad: sq, form: pl.form, style: pl.style, plan: pl, xi: a.xi, bench: a.bench, subs: CO.subs, win: CO.win, red: 0, prep: pl.study ? CO.prep : 0 };
+    return { club: vs, squad: sq, form: pl.form, style: pl.style, plan: pl, xi: a.xi, bench: a.bench, subs: CO.subs, win: CO.win, red: 0, prep: pl.study ? CO.prep : 0,
+      roles: S.coAiRoles(vs, co.season, pl.form, pl.style, sq, a.xi) };
   }
+  // Estilos de jogo do time da máquina: cada vaga fica no padrão ou, em ~45%, vai para um estilo que combina com quem joga
+  // ali ou com o estilo do time (pressão caça, contra corre nas costas, posse toca, retranca segura). Preso ao clube, à
+  // temporada e à formação (sem sorteio da carreira). O olheiro pode ver (descobertas costas e ala)
+  const AI_PREF = { pressao: ['pres', 'dest', 'ant', 'vv'], contra: ['costas', 'ala', 'ponta', 'drib', 'seg'], posse: ['org', 'flut', 'dentro', 'sai', 'f9', 'lib', 'arm'],
+    retranca: ['cobre', 'seg', 'fixo', 'marca', 'recua', 'pivo', 'fica'], lados: ['ala', 'aberto', 'ponta', 'drib'], equilibrado: [] };
+  S.coAiRoles = function (club, season, form, style, sq, xi) {
+    const r = S.rng(hash(club + '|' + season + '|' + form + '|estilos')), m = byId(sq), pref = AI_PREF[style] || [];
+    return xi.map((id, i) => { const g = STYLES[S.coRoleKey(form, i)], p = id && m[id], u = r(), v = r(); if (!g || !p || u > 0.45) return g ? g.def : 0;
+      const c = g.l.filter(x => x.k !== g.def).map(x => ({ k: x.k, w: (pref.includes(x.k) ? 2 : 0) + (S.coStyleFit(p, x) === 3 ? 1 : 0) })).filter(x => x.w > 0);
+      if (!c.length) return g.def; let t = c.reduce((a, x) => a + x.w, 0) * v; return (c.find(x => (t -= x.w) <= 0) || c[0]).k; });
+  };
   // Prévia do próximo jogo: o rival como deve vir e o confronto contra o seu time de agora
   S.coPreview = function (co, form, style) {
     const nx = S.coNext(co); if (!nx || nx.bye) return null;
@@ -724,7 +807,7 @@
     if (!nx || nx.bye) return null;
     co.xi = co.xi.filter(id => co.squad.some(p => p.id === id && ok(p))).length === 11 ? co.xi : autoXI(co.squad, co.form).xi;
     const us = { club: co.club, squad: co.squad, form: co.form, style: co.style, bonus: co.xp.leitura * 0.2, xi: co.xi.slice(), bench: (co.bench || []).filter(id => co.squad.some(p => p.id === id && ok(p))), subs: CO.subs, win: CO.win, red: 0, mine: true, injK: S.coDmK ? S.coDmK(co, 'inj') : 1, outCut: S.coDmK ? S.coDmK(co, 'cut') : 0,
-      roles: co.roles && co.roles[co.form] ? co.roles[co.form].slice() : null, takers: co.takers || null, train: S.coTrainNow(co) ? co.train.k : null };
+      roles: co.roles && co.roles[co.form] ? S.coRoles(co, co.form).slice() : null, lnh: co.lnh && co.lnh[co.form] ? Object.assign({}, co.lnh[co.form]) : null, takers: co.takers || null, train: S.coTrainNow(co) ? co.train.k : null };
     const them = oppSide(co, nx.vs, !nx.home);
     // Dia de cada time: média 1, desvio ~DAY_SD (o mesmo jogo recomeçado sorteia igual)
     { const rd = S.rng(hash(String(co.name) + '|' + co.club + '|' + co.season + '|' + nx.round + '|' + nx.vs + '|' + (nx.cup ? 'c' : 'l') + '|dia')), z = () => Math.sqrt(-2 * Math.log(1 - rd())) * Math.cos(2 * Math.PI * rd());
@@ -774,7 +857,7 @@
       pm[ks] = (pm[ks] || 0) + 1; pm[kf] = (pm[kf] || 0) + 1; tm[kt] = (tm[kt] || 0) + 1;
       if (m.plan && S.coPlanNow(m) !== 'off') m.plan.min = (m.plan.min || 0) + 1; // minutos no plano do auxiliar
       // Cansaço: quem está em campo perde energia aos poucos (o estilo de ataque cansa mais; Físico alto cansa menos)
-      [m.us, m.them].forEach(s => { const sen = styOf(s).en; s.xi.forEach((id, i) => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / CO.mins * sen * (s.enK || 1) * (1 + 0.12 * Math.max(0, s.roles ? s.roles[i] || 0 : 0)) * enFis(p)); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }); });
+      [m.us, m.them].forEach(s => { const sen = styOf(s).en; s.xi.forEach((id, i) => { const p = id && s.squad.find(x => x.id === id); if (p) { p.en = Math.max(0, p.en - CO.enGame / CO.mins * sen * (s.enK || 1) * (1 + S.coRoleFx(s, i).en) * enFis(p)); if (s.mine) m.played[id] = (m.played[id] || 0) + 1; } }); });
       // Chances: cada gol esperado vira CO.ch chances; uma em CO.ch entra (as outras são defesa, para fora ou na trave)
       const chance = (S0, lam) => {
         if (r() >= lam * CO.ch / CO.mins) return false;
@@ -903,6 +986,16 @@
   // Cérebro 11x11: o juiz do campo apitou. sd = quem fez ('us' | 'them'); t: falta, amarelo, vermelho, impedimento;
   // info: { num, how ('direto' | '2am'), pen }. Conta como os do motor (faltas, cartões, suspensão, impedimentos) e o seu
   // vermelho para o jogo no próximo minuto (m.refStop). Volta o lance da súmula
+  // Estilos no resumo (2026-11-13): o jogador seu de estilo diferente do padrão que mais apareceu no lance (gols, chutes,
+  // impedimentos, faltas, cartões) vira a linha "Estilo" do resultado: prova de que o estilo mudou o jogo dele
+  function styleLog(m) {
+    const s = m.us; if (!s || !s.roles) return null; let best = null;
+    s.xi.forEach((id, i) => { const p = id && s.squad.find(x => x.id === id), st = S.coStyleAt(s.form, i, s.roles[i]), g = STYLES[S.coRoleKey(s.form, i)];
+      if (!p || !st || !g || st.k === g.def) return; const E = m.ev.filter(e => e.s === 'us' && e.p === p.n), c = t => E.filter(e => e.t === t).length;
+      const o = { n: String(p.n).split(' ').pop(), st: st.n, g: c('gol'), sh: c('gol') + c('chance'), of: c('impedimento'), fo: c('falta') + c('amarelo') + c('vermelho'), yc: c('amarelo') + c('vermelho') };
+      o.v = o.g * 3 + o.of * 2 + o.yc * 2 + o.fo + o.sh; if (o.v > 0 && (!best || o.v > best.v)) best = o; });
+    return best;
+  }
   S.coMatchRef = function (co, m, sd, t, info) {
     if (!m || m.done || !m.min) return null;
     info = info || {};
@@ -963,6 +1056,15 @@
   const scMin = (arr, f) => arr.reduce((b, o) => (!b || f(o) < f(b) ? o : b), null);
   const scMax = (arr, f) => arr.reduce((b, o) => (!b || f(o) > f(b) ? o : b), null);
   const SCD = S.CO_SCOUT_K = {
+    // Estilos de jogo deles (S.coAiRoles): o 9 que corre nas costas e o lateral que vive no ataque
+    costas: { ty: 'w', fx: 0.05, ans: 'Zagueiro no estilo Cobre ou Defesa ▼ nas Funções',
+      gen(X, f) { const b = X.on.find(o => scSty(X.them, o.i) === 'costas'); if (!b) return null;
+        return { i: b.i, pw: 3 + b.dv[4] / 3, t: scLast(b.p) + ' corre nas costas', d: 'Vive na linha do impedimento esperando o lançamento.' }; },
+      ok: s => scHas(s, 'cobre') || (s.lnh && s.lnh.d < 0) },
+    ala: { ty: 'c', fx: 0.05, ans: 'Ponta, Nas costas ou o estilo Contra-ataque',
+      gen(X, f) { const b = X.on.find(o => scSty(X.them, o.i) === 'ala'); if (!b) return null;
+        return { i: b.i, pw: 2 - b.dv[3] / 3, t: 'Lateral ' + scLast(b.p) + ' vive no ataque', d: 'Sobra espaço nas costas dele.' }; },
+      ok: s => scHas(s, 'ponta') || scHas(s, 'costas') || s.style === 'contra' },
     perigo: { ty: 'w', fx: 0.06, ans: 'Dois do mesmo lado (4-4-2, 4-2-3-1, 4-5-1) ou grito Recuar',
       gen(X, f) { const w = X.on.filter(o => o.sl.w && o.sl.ln !== 'd'), b = scMax(w, o => o.p.ovr); if (!b) return null;
         const pw = b.p.ovr - X.avg - 3; if (pw <= 0 && !f) return null;
@@ -1055,7 +1157,9 @@
   };
   // Você já responde a essa descoberta? (s = lado do jogo ou o seu time de agora; m = o jogo, para o que só se faz em campo)
   S.coScoutAns = function (e, s, m) { const d = SCD[e.k]; if (!d) return false; return !!d.ok(Object.assign({}, s, { by: byId(s.squad) }), m, e); };
-  S.coScoutSide = co => ({ squad: co.squad, form: co.form, style: co.style, xi: co.xi, train: S.coTrainNow(co) ? co.train.k : null });
+  S.coScoutSide = co => ({ squad: co.squad, form: co.form, style: co.style, xi: co.xi, train: S.coTrainNow(co) ? co.train.k : null, roles: co.roles && co.roles[co.form] ? S.coRoles(co, co.form) : null, lnh: co.lnh ? co.lnh[co.form] || null : null });
+  function scSty(s, i) { const st = S.coStyleAt(s.form, i, s.roles ? s.roles[i] : null); return st ? st.k : ''; }
+  function scHas(s, k) { return !!(s.roles && s.xi && s.xi.some((id, i) => id && scSty(s, i) === k)); }
   // No jogo: quanto as descobertas respondidas valem neste minuto (verdadeiras pagam; falsas só contam como respondidas)
   function scoutMin(m) {
     const sc = m.scout; if (!sc) return { us: 1, them: 1 };
@@ -1220,7 +1324,7 @@
     if (form && FORMS[form] && form !== s.form) {
       const on = s.squad.filter(p => s.xi.includes(p.id)), a = autoXI(on, form);
       s.form = form; s.xi = Array.from({ length: 11 }, (_, i) => a.xi[i] || null);
-      s.roles = co.roles && co.roles[form] ? co.roles[form].slice() : null;
+      s.roles = co.roles && co.roles[form] ? S.coRoles(co, form).slice() : null; s.lnh = co.lnh && co.lnh[form] ? Object.assign({}, co.lnh[form]) : null;
     }
     return true;
   };
@@ -1420,6 +1524,7 @@
     // Plano do auxiliar no resultado: ficou nele em boa parte do jogo (2/3 dos minutos)?
     if (m.plan) log.plan = m.plan.used && (m.plan.min || 0) >= 0.66 * Math.max(1, m.tk || m.min) ? (m.plan.good ? 'ok' : 'no') : 'off';
     { const sl = scoutLog(m); if (sl) log.scout = sl; }
+    { const st = styleLog(m); if (st) log.sty = st; }
     if (co.train && co.train.i <= ss.i) { if (S.coTrainNow(co)) log.train = co.train.k; delete co.train; } // o da copa (já jogada) não conta aqui
     rateAfter(co, m, log, gf, ga);
     log.cad = cadNote(co, m, log);
