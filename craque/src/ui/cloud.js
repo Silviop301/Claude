@@ -439,8 +439,10 @@
       if (r && r.paid && U.COINS.fix && U.COINS.fix(r.paid)) { touch(KEYS.itens); if (!list.length && !G.c && U.home) U.home(); }
       if (!list.length) return 0;
       // Presente de boas-vindas da conta nova (pack 'welcome'): uma vez por aparelho/carteira, com aviso próprio
-      const wel = list.filter(x => x.pack === 'welcome'), buy = list.filter(x => x.pack !== 'welcome');
+      const wel = list.filter(x => x.pack === 'welcome'), gif = list.filter(x => x.pack === 'gift'), buy = list.filter(x => x.pack !== 'welcome' && x.pack !== 'gift');
       if (wel.length) { const w = U.COINS.add([{ n: wel[0].coins, t: 'Presente de boas-vindas', once: 'boas-vindas' }]); if (w) welToast(w); }
+      // Presente de beta tester (pack 'gift', pay.php?a=gift): aviso próprio, não conta como compra
+      if (gif.length) { const g = U.COINS.add(gif.map(x => ({ n: x.coins, t: 'Presente de beta tester', once: 'pay-' + x.ref }))); if (g) giftToast(g); }
       const n = buy.length ? U.COINS.add(buy.map(x => ({ n: x.coins, t: 'Compra na loja', once: 'pay-' + x.ref }))) : 0;
       touch(KEYS.itens);
       if (!(r && r.wait)) try { localStorage.removeItem(POPEN); } catch (e) {}
@@ -456,6 +458,11 @@
   function welToast(n) {
     try { if (window.CRAQUE_SFX) window.CRAQUE_SFX.play('win'); } catch (e) {}
     payToast('Bem-vindo ao Climbix!', '+' + n + ' moedas de presente pela conta nova.', 8000);
+    try { window.dispatchEvent(new Event('climbix-pay')); } catch (e) {}
+  }
+  function giftToast(n) {
+    try { if (window.CRAQUE_SFX) window.CRAQUE_SFX.play('win'); } catch (e) {}
+    payToast('Presente de beta tester', '+' + n.toLocaleString('pt-BR') + ' moedas para testar aportes e compras. Obrigado por ajudar!', 9000);
     try { window.dispatchEvent(new Event('climbix-pay')); } catch (e) {}
   }
   // stay: a pessoa já está no jogo (voltou do pagamento sem recarregar): não leva para a home, só avisa a tela aberta
