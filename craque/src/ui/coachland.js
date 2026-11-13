@@ -267,6 +267,37 @@
       b.addEventListener('click', e => { if (dragged) { dragged = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
     });
   }
+  // Arrastar um titular até outra vaga do campo (Silvio, 13/11: "tirar esse do meio e deixar ele cobrindo a direita"): solta
+  // em cima de outro titular, os dois trocam de lugar; solta na vaga vazia (um a menos), ele vai para ela e o buraco fica onde
+  // ele estava. Só vagas da formação de hoje; o motor lê a vaga nova como lê qualquer escalação
+  function fieldDrag(root, onDrop) {
+    if (!root) return;
+    root.querySelectorAll('.ld-pitch .ld-dot[data-xi]:not(.ld-emp)').forEach(b => {
+      let x0 = 0, y0 = 0, pid = null, gh = null, over = null, dragged = false;
+      const at = (cx, cy) => { const r = U.box(root), k = r.width / root.offsetWidth || 1; [cx, cy] = U.pt(cx, cy); return [(cx - r.left) / k, (cy - r.top) / k]; };
+      const hit = (cx, cy) => { for (const el of document.elementsFromPoint(cx, cy)) { const d = el.closest && el.closest('[data-xi]'); if (d && d !== b && root.contains(d) && d.closest('.ld-pitch')) return d; } return null; };
+      const end = () => { if (gh) gh.remove(); gh = null; if (over) over.classList.remove('mv'); over = null; pid = null; root.classList.remove('tm-drag'); b.classList.remove('lift'); };
+      b.addEventListener('pointerdown', e => { if (e.button > 0) return; [x0, y0] = U.pt(e.clientX, e.clientY); pid = e.pointerId; dragged = false; try { b.setPointerCapture(pid); } catch (er) {} });
+      b.addEventListener('pointermove', e => {
+        if (e.pointerId !== pid) return;
+        const [ex, ey] = U.pt(e.clientX, e.clientY);
+        if (!gh) { if (Math.hypot(ex - x0, ey - y0) < 12) return;
+          gh = b.cloneNode(true); gh.className = 'ld-dot tm-fghost'; gh.removeAttribute('data-xi'); root.appendChild(gh);
+          root.classList.add('tm-drag'); b.classList.add('lift'); dragged = true; }
+        const [px, py] = at(e.clientX, e.clientY); gh.style.left = px + 'px'; gh.style.top = py + 'px';
+        const d = hit(e.clientX, e.clientY); if (d !== over) { if (over) over.classList.remove('mv'); over = d; if (d) d.classList.add('mv'); }
+        e.preventDefault();
+      });
+      b.addEventListener('pointerup', e => { if (e.pointerId !== pid) return; const d = gh && over; end(); if (d) onDrop(+b.dataset.xi, +d.dataset.xi); });
+      b.addEventListener('pointercancel', end);
+      b.addEventListener('click', e => { if (dragged) { dragged = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    });
+  }
+  // A vaga vazia (um a menos): só o contorno e a etiqueta da vaga; tocar escolhe, e o próximo titular tocado vai para ela
+  function empDot(slot, x, y, i, tag, sel) {
+    return '<button class="ld-dot ld-emp' + (sel ? ' sel' : '') + '" data-xi="' + i + '" data-ln="' + lnOf(slot) + '" style="left:' + x + '%;top:' + y + '%" aria-label="Vaga vazia, ' + tag + '">' +
+      '<i class="ld-dc"></i><span class="ld-dn"><b>Vazia</b><em class="ok">' + tag + '</em></span></button>';
+  }
   // Seta de moral no estilo PES (Silvio, 12/11): 5 níveis com cor e direção, no campo, no banco e no Elenco (`S.coMoLv`)
   const MO_ROT = { 5: -90, 4: -45, 3: 0, 2: 45, 1: 90 };
   const moAr = (p, cls) => { const l = S.coMoLv(p); return '<i class="mo-ar l' + l + (cls ? ' ' + cls : '') + '" title="Moral ' + S.CO_MO_LV[l] + '"><svg viewBox="0 0 24 24" aria-hidden="true" style="transform:rotate(' + MO_ROT[l] + 'deg)"><path d="M5 12h13M13 6l6 6-6 6"/></svg></i>'; };
@@ -618,6 +649,7 @@
         st.querySelector('#tm-rest').onclick = () => { const xi = restXI(); if (xi.join() === co.xi.join()) { sfx('tap'); return; }
           sfx('ok'); co.xi = xi; co.autoXI = false; swap = null; selB = null; draw(); };
         benchDrag(st.querySelector('.tm'), put, (id, i) => !!by[id] && fitsSlot(by[id], sl[i])); benchShow(st); nearFix(st);
+        fieldDrag(st.querySelector('.tm'), (i, j) => { if (i === j) return; sfx('tap'); const t = co.xi[i]; co.xi[i] = co.xi[j]; co.xi[j] = t; co.autoXI = false; swap = null; selB = null; draw(); });
         // tocar fora (campo vazio, cabeçalho, coluna) fecha a escolha
         st.querySelector('.tm').addEventListener('click', e => { if ((swap !== null || selB) && !e.target.closest('[data-xi],[data-bp],.tm-near,button')) { swap = null; selB = null; draw(); } });
         st.querySelectorAll('[data-tmk]').forEach(b => b.onclick = () => {
@@ -985,16 +1017,16 @@
       const by = byOf(s.squad), sl = S.coSlots(s.form), G = suggs(), nT = x.read.tags.length, idle = sel < 0 && !selB;
       const gOut = new Set(G.map(g => g.o.id)), gIn = new Set(G.map(g => g.i.id)), selP = selB ? by[selB] : null;
       // sem trocas, ainda dá para tirar quem se machucou (não gasta uma das 5)
-      const hurt = id => !!(by[id] && by[id].out > 0), anySub = L() > 0 || s.xi.some(hurt), selSub = sel >= 0 && (L() > 0 || hurt(s.xi[sel]));
+      const hurt = id => !!(by[id] && by[id].out > 0), anySub = L() > 0 || s.xi.some(hurt), selSub = sel >= 0 && !!s.xi[sel] && (L() > 0 || hurt(s.xi[sel])), hole = s.xi.some(id => !id);
       // longe da borda: o anel, o amarelo e o contorno da sugestão não podem ser cortados pelo campo
       const sp = spotsT(s.form).map(([px, py]) => [px, Math.round(10 + (py - 9) * 1.042)]);
-      const dots = s.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: sel === i, yc: !!(s.bk && s.bk[id]),
+      const dots = s.xi.map((id, i) => !id ? empDot(sl[i], sp[i][0], sp[i][1], i, S.coSlotLbl(s.form, i), sel === i) : by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: sel === i, yc: !!(s.bk && s.bk[id]),
         attr: ' data-xi="' + i + '"' + (inn.has(id) ? ' data-in="1"' : '') + (idle && gOut.has(id) ? ' data-sug="1"' : '') + (selP ? (fitsSlot(selP, sl[i]) ? ' data-fit="1"' : ' data-far="1"') : ''), tag: inn.has(id) ? 'ENTRA' : S.coSlotLbl(s.form, i) }) : '').join('');
       const bench = s.bench.map(b => by[b]).filter(Boolean).sort(benchSort(c));
       const bstrip = bench.map((p, k) => { const ok = !!(anySub && c.avail(p));
         return benchChip(p, bench[k - 1], (ok ? '' : ' dis') + (selB === p.id ? ' on' : '') + (idle && gIn.has(p.id) ? ' sug' : '') + (sel >= 0 && ok ? (p.pos === sl[sel] ? ' can' : (p.pos === 'GOL') === (sl[sel] === 'GOL') ? ' lo' : ' far') : ''), ok, true, sel >= 0 && ok ? ovrAt(p, sl[sel]) : null); }).join('');
       const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b>' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
-      const hint = sel >= 0 ? (selSub ? 'Toque ou arraste quem entra, ou toque em outro titular' : 'Toque em outro titular')  : selB ? 'Toque em quem sai' : '';
+      const hint = sel >= 0 ? (!s.xi[sel] ? 'Toque em quem vai para esta vaga' : selSub ? 'Toque ou arraste quem entra, ou toque em outro titular' : 'Toque em outro titular') : selB ? 'Toque em quem sai' : hole ? 'Arraste um jogador até a vaga vazia' : '';
       const sc = esc(c.nm(m.home ? co.club : m.vs)).slice(0, 3).toUpperCase() + ' <u>' + m.gh + ' x ' + m.ga + '</u> ' + esc(c.nm(m.home ? m.vs : co.club)).slice(0, 3).toUpperCase();
       pop('<div class="tm ldl-tm' + (half ? ' ht' : '') + '"><div class="tm-h"><b>' + esc(T) + '</b><span class="ldl-sc">' + sc + '</span><small>' + S.coClock(m) + '</small>' + (hint ? '<span class="tm-hint">' + hint + '</span>' : LN_LEG) + '</div>' +
         '<div class="ld-pitch tm-pitch">' + PITCH + dots + (selSub ? nearList(sl[sel], bench, c.avail, sp[sel][0], sp[sel][1], by[s.xi[sel]]) : '') + '</div>' +
@@ -1006,16 +1038,17 @@
         T, w => {
           w.querySelectorAll('[data-xi]').forEach(b => b.onclick = () => {
             const i = +b.dataset.xi, id = s.xi[i]; sfx('tap');
-            if (selB) return doSub(id, selB);
+            if (selB) { if (!id) return; return doSub(id, selB); } // a vaga do expulso não recebe ninguém do banco
             if (sel < 0 || sel === i) { sel = sel === i ? -1 : i; return draw(); }
             x.swap(sel, i); sel = -1; draw();
           });
           w.querySelectorAll('[data-bp]').forEach(b => b.onclick = () => {
             const id = b.dataset.bp; sfx('tap');
-            if (sel >= 0) return doSub(s.xi[sel], id);
-            selB = selB === id ? null : id; draw();
+            if (sel >= 0 && s.xi[sel]) return doSub(s.xi[sel], id);
+            sel = -1; selB = selB === id ? null : id; draw();
           });
-          if (anySub) benchDrag(w.querySelector('.ldl-tm'), (id, i) => doSub(s.xi[i], id), (id, i) => !!by[id] && fitsSlot(by[id], sl[i]));
+          if (anySub) benchDrag(w.querySelector('.ldl-tm'), (id, i) => { if (s.xi[i]) doSub(s.xi[i], id); }, (id, i) => !!by[id] && !!s.xi[i] && fitsSlot(by[id], sl[i]));
+          fieldDrag(w.querySelector('.ldl-tm'), (i, j) => { if (i === j) return; sfx('tap'); x.swap(i, j); sel = -1; selB = null; draw(); });
           benchShow(w); nearFix(w);
           w.querySelector('.ldl-tm').addEventListener('click', e => { if ((sel >= 0 || selB) && !e.target.closest('[data-xi],[data-bp],.tm-near,button')) { sel = -1; selB = null; draw(); } });
           w.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { sfx('tap'); talk = talk === b.dataset.tk ? null : b.dataset.tk; draw(); });
