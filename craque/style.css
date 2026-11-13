@@ -10570,6 +10570,16 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .rs-w small.mq i { animation: rsMq var(--md, 8s) linear infinite; }
 @keyframes rsMq { 0% { transform: translateX(0); opacity: 0; } 4% { opacity: 1; } 22% { transform: translateX(0); } 78% { transform: translateX(var(--mx)); } 95% { transform: translateX(var(--mx)); opacity: 1; } 100% { transform: translateX(var(--mx)); opacity: 0; } }
 
+/* Vaga vazia com um a menos e arrastar titular para outra vaga (Silvio, 2026-11-13: "tirar esse do meio e deixar ele cobrindo a direita") */
+.tm .ld-pitch .ld-dot[data-xi] { touch-action: none; }
+.tm .ld-dot.ld-emp::before { background: none; border: 2.5px dashed rgba(248, 244, 234, .55); inset: -3px; }
+.tm .ld-dot.ld-emp .ld-dc { background: rgba(6, 16, 11, .35); box-shadow: none; }
+.tm .ld-dot.ld-emp .ld-dn b { color: rgba(248, 244, 234, .7); font-weight: 700; }
+.tm .ld-dot.ld-emp.sel::before { border-color: var(--gold); }
+.tm.tm-drag .ld-dot.lift { opacity: .35; }
+.tm .ld-dot.mv { z-index: 5; }
+.tm .ld-dot.mv::after { content: ''; position: absolute; inset: -9px; border-radius: 50%; border: 3px solid var(--gold); box-shadow: 0 0 0 6px rgba(242, 194, 48, .3); pointer-events: none; }
+.ld-dot.tm-fghost { position: absolute; z-index: 60; pointer-events: none; transform: scale(1.12); filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .55)); }
 /* Novidades: "O que vem na 1.1" (2026-11-13) — link no cartão creme e cartões tracejados no fim da lista */
 .nvd-c > button.nvd-vem { margin: auto 0 -12px; align-self: flex-start; padding: 12px 0; color: #1F6B45; font: 700 16px/1 var(--display); letter-spacing: .02em; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
 .nvd-sc > small.nvd-fs { color: var(--gold); padding-top: 18px; }
