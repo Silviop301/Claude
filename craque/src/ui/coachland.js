@@ -447,7 +447,7 @@
         (nx.home ? side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name)) + '<i class="sm-x">x</i>' + side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name))
           : side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name)) + '<i class="sm-x">x</i>' + side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name))) + '</div>' +
         (nx.cup ? cupPath(co) : rv ? '<small class="sm-rv">' + ord(rpos) + ' · ' + rv.p + ' pts' + f5(rv.f) + '</small>' : '');
-      const tr = co.train && co.train.i === co.ss.i ? S.CO_TRAIN[co.train.k] : null, sc = co.scout && co.scout.i === co.ss.i;
+      const tr = S.coTrainNow(co) ? S.CO_TRAIN[co.train.k] : null, sc = S.coScoutNow(co);
       wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
         '<button class="sm-w' + (sc ? ' ok' : '') + '" id="ld-ol"><small>ANALISAR RIVAL</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o ' + esc(vc.short || vc.name)) + '</b></button></div>';
     } else card = '<div class="sm-bye"><b>Sem jogo nesta rodada</b><small>Temporada ' + (U.YEAR0 + co.season) + ' · o time descansa, os outros jogam.</small></div>';
@@ -587,7 +587,7 @@
       // toque explica e aplica. O aviso de quem está cansado ou fora de posição entra na mesma janelinha (ponto laranja)
       // A sugestão de formação só sai depois do relatório do olheiro (Silvio 2026-11-10); antes, a pílula manda ler o olheiro
       // Silvio 2026-11-13: o Time não mostra mais a ideia da auxiliar (nem o que ela escolheria); ela só fala depois do olheiro
-      const scR = vs && co.scout && co.scout.i === co.ss.i, tip = null, used = S.coTipUsed(co, tip), tipNm = tip && S.coTipName(tip), plan = tip && tip.kind === 'plan', PL = 'PLANO ' + (auxEla(co) ? 'DA AUXILIAR' : 'DO AUXILIAR');
+      const scR = vs && S.coScoutNow(co), tip = null, used = S.coTipUsed(co, tip), tipNm = tip && S.coTipName(tip), plan = tip && tip.kind === 'plan', PL = 'PLANO ' + (auxEla(co) ? 'DA AUXILIAR' : 'DO AUXILIAR');
       const keep = tip && !used && tip.keep; // "Manter meu plano" (Silvio 12/11: sugestão sem culpa): fica apagada até a próxima rodada
       const pill = swap !== null || selB ? '' : '<button class="tm-tip' + ((used || !tip || keep || (tip && tip.seen)) && !nFix ? ' ok' : '') + '" id="tm-aux"><span class="tm-tip-fw">' + auxFace(co, 'tm-tip-f') + '<em>' + S.coAuxLv(co).k + '</em></span>' +
         '<span><small>' + (keep && !nFix ? 'SEU PLANO' : tip && !(used && nFix) ? (plan ? (auxEla(co) ? 'IDEIA DA AUXILIAR' : 'IDEIA DO AUXILIAR') : 'DICA DO AUXILIAR') : 'AUXILIAR') + '</small><b>' + (keep && !nFix ? esc(co.form + ' · ' + S.CO_STY[co.style].name) : tip && !(used && nFix) ? (used ? (plan ? '✓ No plano ' + (auxEla(co) ? 'dela' : 'dele') : '✓ ' + esc(tipNm)) : esc(S.coTipLbl(tip))) : nFix ? fixLbl : vs && !scR ? 'Leia o olheiro' : 'Tudo certo') + '</b></span>' +
@@ -2384,7 +2384,7 @@
   function upToast(co) {
     const tr = co.train, st = document.querySelector('#ld .ld-st');
     if (st && st.querySelector('.up-ty')) return;
-    if (!tr || !co.ss || tr.i !== co.ss.i || !tr.up || !tr.up.length || tr.seen || !st || !st.querySelector('.sm') || document.querySelector('#ld-pop')) return;
+    if (!tr || !S.coTrainNow(co) || !tr.up || !tr.up.length || tr.seen || !st || !st.querySelector('.sm') || document.querySelector('#ld-pop')) return;
     const c = C(), L = tr.up.map(id => co.squad.find(p => p.id === id)).filter(Boolean); if (!L.length) return;
     tr.seen = 1; c.save('hub');
     const q = L[0], dv = (tr.dv || []).find(x => x[0] === q.id), ks = S.coAtKeys(q), at = S.coAttrs(q);
@@ -2726,7 +2726,7 @@
       // mais baixo em laranja) e Situação (energia, potencial, moral, salário, contrato, renovar e vender, como era a ficha)
       const at = S.coAttrs(q), ks = S.coAtKeys(q), hi = at.indexOf(Math.max.apply(null, at)), mn = Math.min.apply(null, at), lo = mn <= q.ovr - 8 ? at.indexOf(mn) : -1; // laranja só para ponto fraco de verdade (8 abaixo do geral)
       const seg = '<div class="lde2-seg">' + ['Atributos', 'Situação'].map((t, i) => '<button data-ec="' + i + '"' + (i === elenco.ct ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('') + '</div>';
-      const grw = co.train && co.ss && co.train.i === co.ss.i && co.train.dv ? co.train.dv.filter(x => x[0] === q.id).map(x => x[1]) : []; // subiu no treino desta semana: verde
+      const grw = S.coTrainNow(co) && co.train.dv ? co.train.dv.filter(x => x[0] === q.id).map(x => x[1]) : []; // subiu no treino desta semana: verde
       const bars = '<div class="lde2-at">' + at.map((v, i) => '<div class="lde2-ar' + (grw.includes(i) ? ' gr' : i === hi ? ' top' : i === lo ? ' low' : '') + '"><span>' + S.CO_AT.names[ks[i]] + '</span><i><u style="width:' + v + '%"></u></i><b>' + v + '</b></div>').join('') + '</div>';
       card = '<div class="lde2-c' + (elenco.ct ? ' sit' + (hint ? ' hn' : '') : '') + '"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? q.num + ' ' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + ' · ' + q.age + ' anos' + (S.coOvrDelta(co, q) ? ' · <em class="' + (S.coOvrDelta(co, q) > 0 ? 'up' : 'dn') + '">' + (S.coOvrDelta(co, q) > 0 ? '+' : '−') + Math.abs(S.coOvrDelta(co, q)) + ' no ano</em>' : '') + '</small></span></div>' + seg +
         (elenco.ct ? '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/sem') + '</div>' +
@@ -3149,7 +3149,7 @@
   // com uma frase do que muda; o comentário do auxiliar sobre o rival vira um botão com aviso; dourado Treinar
   function treino(tab) {
     const c = C(), co = c.co, T = S.CO_TRAIN, tabs = ['Ataque', 'Defesa', 'Bola parada', 'Físico'];
-    const done = co.train && co.train.i === co.ss.i ? co.train.k : null;
+    const done = S.coTrainNow(co) ? co.train.k : null;
     let pick = done || null;
     tab = tab || (done ? T[done].tab : 'Ataque');
     const nx = S.coNext(co), vs = nx && !nx.bye ? club(nx.vs) : null;
