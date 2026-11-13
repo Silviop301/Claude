@@ -544,6 +544,7 @@
       for (const p of todos) { p.naMao = false; p.driblando = false; }
       const s = M.parado = { tipo, time: T, x, y, t: 0, espera: ESPERA[tipo], cobrador: null, jit: [], vaga: new Map(), indireta: !!op.indireta, barreira: null };
       for (let i = 0; i < 30; i++) s.jit.push(sorteia(-1.5, 1.5));
+      const sai = { vx: b.vx, vy: b.vy }; // como a bola saiu (a tela deixa ela rolar para fora)
       b.x = x; b.y = y; b.z = 0; b.vx = b.vy = b.vz = 0;
       const J = T.jogadores, maisPerto = filtro => { let m = null, dm = 1e9; for (const q of J) { if (!q.ativo || q.gol || q.caido > 0 || (filtro && !filtro(q))) continue; const d = hip(q.x - x, q.y - y); if (d < dm) { dm = d; m = q; } } return m; };
       const dGol = hip((T.dir > 0 ? CL : 0) - x, 34 - y), melhorEm = k => { let m = null; for (const q of J) if (emPe(q) && !q.gol && (!m || at(q, k) > at(m, k))) m = q; return m; };
@@ -558,7 +559,7 @@
       }
       if (s.cobrador && !emPe(s.cobrador)) s.cobrador = maisPerto() || s.cobrador;
       if (tipo === 'falta' && dGol < 32) s.barreira = T.adv.jogadores.filter(q => emPe(q) && !q.gol).sort((a, c) => hip(a.x - x, a.y - y) - hip(c.x - x, c.y - y)).slice(0, dGol < 24 ? 4 : 3); // barreira: os mais perto
-      if (o.onStop) o.onStop(tipo, T.id, x, y);
+      if (o.onStop) o.onStop(tipo, T.id, x, y, sai);
     }
     function alvoParado(p) {
       const s = M.parado, T = p.time, atq = T === s.time, tipo = s.tipo; p.vDes = 0.85;
