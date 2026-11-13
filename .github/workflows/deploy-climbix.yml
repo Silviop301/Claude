@@ -209,16 +209,10 @@ jobs:
         run: |
           curl -sS -m 60 -X POST "https://climbix.app/api/feedback.php?a=mail" || echo "::warning::Não deu para chamar o envio das opiniões."
 
-      # Contador de acessos por e-mail (api/stats.php?a=mail): o cron da Hostinger chama de hora em hora e o PHP só manda
-      # um por dia, a partir das 18h de Brasília (o primeiro de todos sai na hora). Aqui instala a linha do cron (sem
-      # duplicar) e chama uma vez. Falha aqui não derruba o deploy: o primeiro acesso depois das 18h também dispara.
+      # Contador de acessos por e-mail (api/stats.php?a=mail): o PHP só manda um por dia, a partir das 18h de Brasília.
+      # Quem chama: o primeiro acesso ao jogo depois das 18h e o Cron Job do hPanel (Avançado > Cron Jobs, de hora em hora;
+      # a Hostinger não tem crontab pelo SSH). Aqui só chama uma vez; falha não derruba o deploy.
       - name: Contador por e-mail
         if: steps.key.outputs.ok == 'true'
-        env:
-          SSHPASS: ${{ secrets.CLIMBIX_SSH_PASSWORD }}
-          SSH: ${{ steps.key.outputs.ssh }}
         run: |
-          LINE='7 * * * * curl -sS -m 60 "https://climbix.app/api/stats.php?a=mail" >/dev/null 2>&1 # climbix-contador'
-          $SSH "$SSH_USER@$SSH_HOST" "(crontab -l 2>/dev/null | grep -v climbix-contador; echo '$LINE') | crontab - && crontab -l | grep climbix-contador" \
-            || echo "::warning::Não deu para instalar o cron do contador (o primeiro acesso depois das 18h ainda manda)."
           curl -sS -m 60 "https://climbix.app/api/stats.php?a=mail" || echo "::warning::Não deu para chamar o contador."
