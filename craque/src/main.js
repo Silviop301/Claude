@@ -3,6 +3,8 @@
 window.CRAQUE_UI.challengeFromLink(); // desafio (?d=...) fica guardado e aparece na tela inicial
 window.CRAQUE_UI.relampagoFromLink(); // desafio da Carreira Relâmpago (?r=...), idem
 if (!window.CRAQUE_UI.cardFromLink()) window.CRAQUE_UI.home();
+// A tela de carregar (index.html) sai quando a primeira tela abre (a home deitada fica no palco, fora do #screen)
+{ const bt = document.getElementById('boot'); if (bt) bt.remove(); }
 // Com conta: traz o que mudou em outro aparelho
 window.CRAQUE_UI.cloudBoot();
 if (window.CRAQUE_UI.payBoot) window.CRAQUE_UI.payBoot();

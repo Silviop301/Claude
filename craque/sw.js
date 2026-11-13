@@ -44,103 +44,103 @@ const ASSETS = [
   "./icons/icon-maskable-512.png",
   "./index.html",
   "./manifest.webmanifest",
-  "./src/avatar.js?v=0cc577bf",
-  "./src/ball3d.js?v=0cc577bf",
-  "./src/card.js?v=0cc577bf",
-  "./src/chars.js?v=0cc577bf",
-  "./src/cine.js?v=0cc577bf",
-  "./src/data.js?v=0cc577bf",
-  "./src/defend.js?v=0cc577bf",
-  "./src/engine/achievements.js?v=0cc577bf",
-  "./src/engine/cassino.js?v=0cc577bf",
-  "./src/engine/coach.js?v=0cc577bf",
-  "./src/engine/coachcont.js?v=0cc577bf",
-  "./src/engine/coachcup.js?v=0cc577bf",
-  "./src/engine/coachest.js?v=0cc577bf",
-  "./src/engine/coachfin.js?v=0cc577bf",
-  "./src/engine/coachmkt.js?v=0cc577bf",
-  "./src/engine/coachpress.js?v=0cc577bf",
-  "./src/engine/coachworld.js?v=0cc577bf",
-  "./src/engine/contract.js?v=0cc577bf",
-  "./src/engine/core.js?v=0cc577bf",
-  "./src/engine/decisions.js?v=0cc577bf",
-  "./src/engine/events.js?v=0cc577bf",
-  "./src/engine/events2.js?v=0cc577bf",
-  "./src/engine/events3.js?v=0cc577bf",
-  "./src/engine/finish.js?v=0cc577bf",
-  "./src/engine/fixtures.js?v=0cc577bf",
-  "./src/engine/fullcareer.js?v=0cc577bf",
-  "./src/engine/legado.js?v=0cc577bf",
-  "./src/engine/market.js?v=0cc577bf",
-  "./src/engine/moments.js?v=0cc577bf",
-  "./src/engine/money.js?v=0cc577bf",
-  "./src/engine/origins.js?v=0cc577bf",
-  "./src/engine/phone.js?v=0cc577bf",
-  "./src/engine/relampago.js?v=0cc577bf",
-  "./src/engine/rival.js?v=0cc577bf",
-  "./src/engine/season.js?v=0cc577bf",
-  "./src/engine/stakes.js?v=0cc577bf",
-  "./src/engine/transfer.js?v=0cc577bf",
-  "./src/engine/worldcup.js?v=0cc577bf",
-  "./src/errors.js?v=0cc577bf",
-  "./src/events-text.js?v=0cc577bf",
-  "./src/kick.js?v=0cc577bf",
-  "./src/kits-real.js?v=0cc577bf",
-  "./src/kits.js?v=0cc577bf",
-  "./src/livre.js?v=0cc577bf",
-  "./src/main.js?v=0cc577bf",
-  "./src/names.js?v=0cc577bf",
-  "./src/real-squads.js?v=0cc577bf",
+  "./src/avatar.js?v=4d207ebd",
+  "./src/ball3d.js?v=4d207ebd",
+  "./src/card.js?v=4d207ebd",
+  "./src/chars.js?v=4d207ebd",
+  "./src/cine.js?v=4d207ebd",
+  "./src/data.js?v=4d207ebd",
+  "./src/defend.js?v=4d207ebd",
+  "./src/engine/achievements.js?v=4d207ebd",
+  "./src/engine/cassino.js?v=4d207ebd",
+  "./src/engine/coach.js?v=4d207ebd",
+  "./src/engine/coachcont.js?v=4d207ebd",
+  "./src/engine/coachcup.js?v=4d207ebd",
+  "./src/engine/coachest.js?v=4d207ebd",
+  "./src/engine/coachfin.js?v=4d207ebd",
+  "./src/engine/coachmkt.js?v=4d207ebd",
+  "./src/engine/coachpress.js?v=4d207ebd",
+  "./src/engine/coachworld.js?v=4d207ebd",
+  "./src/engine/contract.js?v=4d207ebd",
+  "./src/engine/core.js?v=4d207ebd",
+  "./src/engine/decisions.js?v=4d207ebd",
+  "./src/engine/events.js?v=4d207ebd",
+  "./src/engine/events2.js?v=4d207ebd",
+  "./src/engine/events3.js?v=4d207ebd",
+  "./src/engine/finish.js?v=4d207ebd",
+  "./src/engine/fixtures.js?v=4d207ebd",
+  "./src/engine/fullcareer.js?v=4d207ebd",
+  "./src/engine/legado.js?v=4d207ebd",
+  "./src/engine/market.js?v=4d207ebd",
+  "./src/engine/moments.js?v=4d207ebd",
+  "./src/engine/money.js?v=4d207ebd",
+  "./src/engine/origins.js?v=4d207ebd",
+  "./src/engine/phone.js?v=4d207ebd",
+  "./src/engine/relampago.js?v=4d207ebd",
+  "./src/engine/rival.js?v=4d207ebd",
+  "./src/engine/season.js?v=4d207ebd",
+  "./src/engine/stakes.js?v=4d207ebd",
+  "./src/engine/transfer.js?v=4d207ebd",
+  "./src/engine/worldcup.js?v=4d207ebd",
+  "./src/errors.js?v=4d207ebd",
+  "./src/events-text.js?v=4d207ebd",
+  "./src/kick.js?v=4d207ebd",
+  "./src/kits-real.js?v=4d207ebd",
+  "./src/kits.js?v=4d207ebd",
+  "./src/livre.js?v=4d207ebd",
+  "./src/main.js?v=4d207ebd",
+  "./src/names.js?v=4d207ebd",
+  "./src/real-squads.js?v=4d207ebd",
   "./src/sim.js",
-  "./src/social-data.js?v=0cc577bf",
-  "./src/social-events.js?v=0cc577bf",
-  "./src/sound.js?v=0cc577bf",
-  "./src/stats.js?v=0cc577bf",
-  "./src/trophies.js?v=0cc577bf",
-  "./src/trophy-imgs.js?v=0cc577bf",
-  "./src/ui/achievements.js?v=0cc577bf",
-  "./src/ui/album.js?v=0cc577bf",
-  "./src/ui/cardview.js?v=0cc577bf",
-  "./src/ui/cerebro11.js?v=0cc577bf",
-  "./src/ui/challenge.js?v=0cc577bf",
-  "./src/ui/cloud.js?v=0cc577bf",
-  "./src/ui/coach.js?v=0cc577bf",
-  "./src/ui/coachland.js?v=0cc577bf",
-  "./src/ui/collection.js?v=0cc577bf",
-  "./src/ui/core.js?v=0cc577bf",
-  "./src/ui/daily.js?v=0cc577bf",
-  "./src/ui/desktop.js?v=0cc577bf",
-  "./src/ui/estadio.js?v=0cc577bf",
-  "./src/ui/feedback.js?v=0cc577bf",
-  "./src/ui/finale.js?v=0cc577bf",
-  "./src/ui/fullcareer.js?v=0cc577bf",
-  "./src/ui/fullseason.js?v=0cc577bf",
-  "./src/ui/install.js?v=0cc577bf",
-  "./src/ui/items.js?v=0cc577bf",
-  "./src/ui/livepitch.js?v=0cc577bf",
-  "./src/ui/livesim.js?v=0cc577bf",
-  "./src/ui/match.js?v=0cc577bf",
-  "./src/ui/motion.js?v=0cc577bf",
-  "./src/ui/offers.js?v=0cc577bf",
-  "./src/ui/packs.js?v=0cc577bf",
-  "./src/ui/paper.js?v=0cc577bf",
-  "./src/ui/preseason.js?v=0cc577bf",
-  "./src/ui/profile.js?v=0cc577bf",
-  "./src/ui/ranking.js?v=0cc577bf",
-  "./src/ui/relampago.js?v=0cc577bf",
-  "./src/ui/season.js?v=0cc577bf",
-  "./src/ui/settings.js?v=0cc577bf",
-  "./src/ui/sheet.js?v=0cc577bf",
-  "./src/ui/social.js?v=0cc577bf",
-  "./src/ui/start.js?v=0cc577bf",
-  "./src/ui/tips.js?v=0cc577bf",
-  "./src/ui/training.js?v=0cc577bf",
-  "./src/ui/trophyroom.js?v=0cc577bf",
-  "./src/ui/walkout.js?v=0cc577bf",
-  "./src/ui/world.js?v=0cc577bf",
-  "./src/ui/worldcup.js?v=0cc577bf",
-  "./src/world-map.js?v=0cc577bf",
-  "./style.css?v=0cc577bf"
+  "./src/social-data.js?v=4d207ebd",
+  "./src/social-events.js?v=4d207ebd",
+  "./src/sound.js?v=4d207ebd",
+  "./src/stats.js?v=4d207ebd",
+  "./src/trophies.js?v=4d207ebd",
+  "./src/trophy-imgs.js?v=4d207ebd",
+  "./src/ui/achievements.js?v=4d207ebd",
+  "./src/ui/album.js?v=4d207ebd",
+  "./src/ui/cardview.js?v=4d207ebd",
+  "./src/ui/cerebro11.js?v=4d207ebd",
+  "./src/ui/challenge.js?v=4d207ebd",
+  "./src/ui/cloud.js?v=4d207ebd",
+  "./src/ui/coach.js?v=4d207ebd",
+  "./src/ui/coachland.js?v=4d207ebd",
+  "./src/ui/collection.js?v=4d207ebd",
+  "./src/ui/core.js?v=4d207ebd",
+  "./src/ui/daily.js?v=4d207ebd",
+  "./src/ui/desktop.js?v=4d207ebd",
+  "./src/ui/estadio.js?v=4d207ebd",
+  "./src/ui/feedback.js?v=4d207ebd",
+  "./src/ui/finale.js?v=4d207ebd",
+  "./src/ui/fullcareer.js?v=4d207ebd",
+  "./src/ui/fullseason.js?v=4d207ebd",
+  "./src/ui/install.js?v=4d207ebd",
+  "./src/ui/items.js?v=4d207ebd",
+  "./src/ui/livepitch.js?v=4d207ebd",
+  "./src/ui/livesim.js?v=4d207ebd",
+  "./src/ui/match.js?v=4d207ebd",
+  "./src/ui/motion.js?v=4d207ebd",
+  "./src/ui/offers.js?v=4d207ebd",
+  "./src/ui/packs.js?v=4d207ebd",
+  "./src/ui/paper.js?v=4d207ebd",
+  "./src/ui/preseason.js?v=4d207ebd",
+  "./src/ui/profile.js?v=4d207ebd",
+  "./src/ui/ranking.js?v=4d207ebd",
+  "./src/ui/relampago.js?v=4d207ebd",
+  "./src/ui/season.js?v=4d207ebd",
+  "./src/ui/settings.js?v=4d207ebd",
+  "./src/ui/sheet.js?v=4d207ebd",
+  "./src/ui/social.js?v=4d207ebd",
+  "./src/ui/start.js?v=4d207ebd",
+  "./src/ui/tips.js?v=4d207ebd",
+  "./src/ui/training.js?v=4d207ebd",
+  "./src/ui/trophyroom.js?v=4d207ebd",
+  "./src/ui/walkout.js?v=4d207ebd",
+  "./src/ui/world.js?v=4d207ebd",
+  "./src/ui/worldcup.js?v=4d207ebd",
+  "./src/world-map.js?v=4d207ebd",
+  "./style.css?v=4d207ebd"
 ];
 // Guardados depois (mensagem 'warm' da página, com o jogo já aberto), em lotes
 const LATER = [
@@ -740,8 +740,15 @@ self.addEventListener('activate', e => {
     .then(() => self.clients.claim()));
 });
 
-// Código/página: rede primeiro (sempre a versão nova), cache se estiver sem internet.
-// Imagens, 3D e bibliotecas externas: cache primeiro; o que não está no cache entra nele na primeira vez.
+// Código com versão (?v=, muda a cada publicação): cache primeiro. O endereço já é outro quando o código muda,
+// então o que está no aparelho é sempre o certo e o app abre sem baixar ~100 arquivos de novo (rede fraca = tela verde).
+// Página e código sem versão: rede primeiro, mas com 4 s de espera no máximo; depois vale o do aparelho.
+const getNet = req => fetch(req).then(res => {
+  // Só guarda resposta boa: erro do servidor (500, 404 no meio do deploy) não pode tomar o lugar do arquivo no offline
+  if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
+  return res;
+});
+const fromCache = req => caches.match(req).then(hit => hit || caches.match(req, { ignoreSearch: true }));
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
@@ -749,12 +756,19 @@ self.addEventListener('fetch', e => {
   if (url.pathname.includes('/api/')) return; // ranking: sempre da rede
   if (url.pathname.includes('/assets/musica/')) return; // música de fundo: o navegador pede em pedaços (Range) e o iPhone não toca resposta inteira do cache
   const code = url.origin === location.origin && /(\/|\.html|\.js|\.css|\.webmanifest)$/.test(url.pathname);
+  if (code && /^[0-9a-f]{8}$/.test(url.searchParams.get('v') || '')) {
+    e.respondWith(caches.match(req).then(hit => hit || getNet(req)));
+    return;
+  }
   if (code) {
-    e.respondWith(fetch(req).then(res => {
-      // Só guarda resposta boa: erro do servidor (500, 404 no meio do deploy) não pode tomar o lugar do arquivo no offline
-      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
-      return res;
-    }).catch(() => caches.match(req).then(hit => hit || caches.match(req, { ignoreSearch: true }))));
+    const net = getNet(req);
+    e.respondWith(new Promise(ok => {
+      let done = false;
+      const fall = () => fromCache(req).then(hit => { if (hit && !done) { done = true; ok(hit); } return hit; });
+      const t = setTimeout(fall, 4000);
+      net.then(res => { clearTimeout(t); if (!done) { done = true; ok(res); } })
+        .catch(() => { clearTimeout(t); fall().then(hit => { if (!hit && !done) { done = true; ok(Response.error()); } }); });
+    }));
     return;
   }
   e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => {
