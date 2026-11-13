@@ -2484,7 +2484,7 @@
       S.coFinNext(co).map(n => li(esc(n.txt), (n.aprox ? '~ ' : '') + c.mi(n.v))).join('')) || '<p class="fn2-none">A temporada acabou.</p>';
     else rows = co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 8).map(p => li(esc(p.n) + ' <small>' + p.pos + '</small>', c.mi(p.wage) + ' <small>até ' + (U.YEAR0 + co.season + p.ct) + '</small>')).join('');
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
-    const head = '<div class="tm-h"><button class="tcr-back" id="ldf-back" aria-label="Voltar">' + BK + '</button><b>Finanças</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (U.YEAR0 + co.season) + '</small></div>';
+    const head = '<div class="tm-h"><button class="tcr-back" id="ldf-back" aria-label="Voltar">' + BK + '</button><b>Finanças</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (U.YEAR0 + co.season) + '</small><button class="ol2-q fn2-q' + (finTutSeen() ? '' : ' nv') + '" id="fn2-q" aria-label="Como funciona a tela de Finanças">?</button></div>';
     const kpi = '<div><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span class="fn2-rt ' + (f.caixa < 0 ? 'red' : !R ? '' : R.net >= 0 ? 'up' : R.st === 'red' ? 'red' : 'warn') + '" title="rodada comum daqui para a frente">' + (f.caixa < 0 ? 'no vermelho' : ritmoTxt(c, R)) + '</span></div>' +
         '<div><small>VERBA</small><b class="up">' + c.brl(S.coVerbaLivre(co)) + '</b><span>' + (f.verba > S.coVerbaLivre(co) + 9999 ? 'o caixa só cobre isso' : 'para contratar') + '</span></div>' +
         '<div><small>FOLHA</small><b>' + c.brl(folha) + '</b><i><u class="' + (pct > 95 ? 'low' : pct > 85 ? 'mid' : 'ok') + '" style="width:' + pct + '%"></u></i><span>teto ' + c.brl(teto) + '</span></div>';
@@ -2501,7 +2501,50 @@
       st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); financas(b.dataset.ft); });
       st.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.fd; if (k === 'banco') banco(); else if (k === 'pres') presInfo(true); else if (k === 'pat') patInfo(); else if (k === 'apo') loja(1, () => financas(tab)); });
       st.querySelector('#ldf-back').onclick = () => { sfx('tap'); const bk = FIN_BACK; FIN_BACK = null; (bk || clube)(); };
+      st.querySelector('#fn2-q').onclick = () => { sfx('tap'); finTut(st, 0); };
     });
+  }
+  // ---------- Tutorial de Finanças (Silvio 2026-11-13: "interrogação na tela de finanças e um tutorial passando de card em
+  // card explicando certinho"): só abre no ?, a tela escurece e um cartão de cada vez fica aceso com a auxiliar explicando.
+  // Passo = [alvo, título, texto]; alvo que não existe na tela (computador, sem patrocínio) é pulado. O ? tem o pontinho
+  // dourado até a primeira vez (climbix-fin-tut)
+  const FIN_TUT = [
+    ['.fn2-k > div:nth-child(1)', 'Caixa', 'O dinheiro do clube hoje. Embaixo, quanto ele ganha ou perde numa rodada comum.'],
+    ['.fn2-k > div:nth-child(2)', 'Verba', 'Quanto a diretoria deixa gastar em contratações. Nunca passa do que há no caixa.'],
+    ['.fn2-k > div:nth-child(3)', 'Folha', 'Os salários de todo o elenco por rodada. Com a barra cheia, ninguém novo cabe no teto.'],
+    ['.fn2-tabs', 'Abas', 'Rodada e Temporada: o que entrou e saiu. A seguir: o que ainda vem. Salários: quem ganha mais.'],
+    ['.fn2-tr', 'Trajetória', 'O caixa rodada a rodada. O tracejado mostra onde ele chega no fim do ano nesse ritmo.'],
+    ['.fn2-rw', 'Rodada', 'O que entrou e saiu no último jogo: bilheteria, TV, patrocínio e salários.'],
+    ['.fn2-ac', 'Acordo e patrocínio', 'A meta combinada com o presidente e o dinheiro da camisa. Toque para ver os detalhes.'],
+    ['#fn2-apo', 'Aporte', 'Moedas viram dinheiro no caixa e na verba. Bom para sair do vermelho ou reforçar o time.'],
+    ['#fn2-bank', 'Banco', 'Empréstimo para um aperto, pago em parcelas, ou Aplicação para o dinheiro parado render.'],
+  ];
+  const finTutSeen = () => { try { return !!localStorage.getItem('climbix-fin-tut'); } catch (e) { return true; } };
+  function finTut(st, n) {
+    const old = st.querySelector('#ld-tu'); if (old) old.remove();
+    const L = FIN_TUT.filter(s => st.querySelector(s[0])); if (!L.length) return;
+    n = Math.max(0, Math.min(n, L.length - 1));
+    try { localStorage.setItem('climbix-fin-tut', '1'); } catch (e) {} const q = st.querySelector('#fn2-q'); if (q) q.classList.remove('nv');
+    const [sel, tt, txt] = L[n], tg = st.querySelector(sel), co = C().co, R = U.box(st), k = R.width / st.offsetWidth || 1, r = U.box(tg);
+    const x = (r.left - R.left) / k - 4, y = (r.top - R.top) / k - 4, w = r.width / k + 8, h = r.height / k + 8, last = n === L.length - 1;
+    const el = document.createElement('div'); el.className = 'tu fnt'; el.id = 'ld-tu';
+    el.innerHTML = '<div class="tu-hole" style="left:' + x.toFixed(1) + 'px;top:' + y.toFixed(1) + 'px;width:' + w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px;border-radius:18px"></div>' +
+      '<div class="tu-bub fnt-b" role="dialog" aria-label="' + tt + '">' + auxFace(co, 'tu-fc') + '<div><b>' + tt + '</b><p>' + txt + '</p>' +
+      '<span><small>' + (n + 1) + ' de ' + L.length + '</small><button class="tu-skip" id="fnt-x">' + (last ? 'Fechar' : 'Pular') + '</button><i></i>' +
+      (n ? '<button class="fnt-pv" id="fnt-pv" aria-label="Anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>' : '') +
+      '<button class="fnt-go" id="fnt-go">' + (last ? 'Entendi' : 'Próximo') + '</button></span></div></div>';
+    st.appendChild(el);
+    // O balão fica embaixo do cartão aceso; se não couber, em cima; sempre dentro do conteúdo (longe do entalhe)
+    const b = el.querySelector('.tu-bub'), bw = b.offsetWidth, bh = b.offsetHeight, cl = (v, a, z) => Math.max(a, Math.min(z, v));
+    const W = WROOM ? st.offsetWidth : 844, H = WROOM ? st.offsetHeight : 390, ox = (st.offsetWidth - W) / 2, oy = (st.offsetHeight - H) / 2;
+    const bT = Math.min(y + h + 10, oy + H - bh - 4), aT = Math.max(y - 10 - bh, oy + 4), below = bT >= y + h + 2, above = !below && aT + bh <= y - 2;
+    const side = !below && !above; // cartão alto (trajetória, abas no computador): ao lado
+    b.style.left = (side ? (x - ox > W / 2 ? cl(x - bw - 14, ox + 8, ox + W - bw - 8) : cl(x + w + 14, ox + 8, ox + W - bw - 8)) : cl(x + w / 2 - bw / 2, ox + 8, ox + W - bw - 8)) + 'px';
+    b.style.top = (side ? cl(y + h / 2 - bh / 2, oy + 8, oy + H - bh - 8) : below ? bT : aT) + 'px';
+    el.onclick = e => { if (e.target === el) { sfx('tap'); finTut(st, n + 1 < L.length ? n + 1 : n); } };
+    el.querySelector('#fnt-go').onclick = () => { if (last) { sfx('ok'); el.remove(); } else { sfx('tap'); finTut(st, n + 1); } };
+    el.querySelector('#fnt-x').onclick = () => { sfx('back'); el.remove(); };
+    const pv = el.querySelector('#fnt-pv'); if (pv) pv.onclick = () => { sfx('back'); finTut(st, n - 1); };
   }
   // ---------- Finanças 2.0: reunião com a diretoria, patrocínio, banco e a aba Decidir ----------
   const AC_NM = { seguro: 'Seguro', normal: 'Normal', ousado: 'Ousado' };
