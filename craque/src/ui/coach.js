@@ -730,7 +730,10 @@
     // Simulação livre (teste: ?livre=1 liga, ?livre=0 desliga): o gol nasce no campinho e o motor só anota (S.coMatchShot)
     const FREE = useSim && !!(U.simLivre && U.simLivre());
     // No livre o 3× dá ao campinho os mesmos segundos por minuto do 1× (o gol depende do que o campo joga): o jogo leva ~1,5 min
-    const spMs = k => (FREE && k === '3' ? 917 : SPEED[k][1]);
+    // Cérebro 11x11 (?motor=11): o jogador corre na velocidade de verdade, então o minuto do 1× fica mais longo (B11_MIN; o 3× é
+    // o mesmo campo três vezes mais rápido); o juiz é do campo (S.coMatchRef) e o motor não sorteia falta, cartão, impedimento nem pênalti
+    const BRAIN = FREE && !!(U.motor11 && U.motor11()), B11_MIN = 3000;
+    const spMs = k => (BRAIN && k !== 'fim' ? (k === '3' ? B11_MIN * 1.25 / 3 : B11_MIN) : FREE && k === '3' ? 917 : SPEED[k][1]);
     const pitchHtml = useSim ?
       '<div class="lp-pitch lp-cvm lv-cvp" id="lp-pitch" aria-hidden="true"><b class="lp-band" id="lp-band"></b><canvas class="lp-cv" id="lp-cv"></canvas>' +
         '<span class="lp-tag lv-read" id="lv-zone" hidden></span><span class="lp-tag lp-zone" id="lp-zone"></span>' +
@@ -876,7 +879,7 @@
       if (sim) sim.go(); // o apito (se a velocidade mudou antes dele, o timer do começo foi trocado)
       if (sim && h1 && !h2) { h2 = true; sim.second(); if (window.CRAQUE_CROWD) window.CRAQUE_CROWD.ht = false; } // a torcida do jogo volta
       if (sim && sim.koWait && sim.koWait()) { timer = setTimeout(tick, 150); return; } // o relógio só anda depois do apito da saída
-      const st = S.coMatchStep(co, m, m.min + 1, FREE && sim ? { free: true } : undefined);
+      const st = S.coMatchStep(co, m, m.min + 1, FREE && sim ? { free: true, brain: BRAIN } : undefined);
       if (sim) { const tk = m.tk || m.min, v = m.mom && m.mom[tk - 1]; sim.minute(tk, v === undefined ? 50 : v, FREE && m.lam ? [m.lam.us, m.lam.them] : undefined); } // o campinho conta os minutos jogados (com os acréscimos)
       const gw = toSim();
       paint();
@@ -1106,7 +1109,11 @@
         if (z.className !== zc) z.className = zc;
       };
       sim = LP.sim({ me: -1, t0: m.tk || m.min, half2: m.min > 45, clean: LDon, flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1.25), spm: () => spMs(co.speed === '3' ? '3' : '1') / 1000, onFrame: zone,
-        free: FREE, brain: FREE && !!(U.motor11 && U.motor11()), onShot: sh => { if (m.done && !stopW) return; const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, Object.assign({ late: !!stopW }, sh)); if (e) { sent.add(e); paint(); } if (!sh.side && sh.near) sfx(m.home ? 'quase' : 'quaseAway'); else if (!sh.side && sh.out !== 'gol') sfx(m.home ? 'uhh' : 'uhhAway'); /* todo chute seu que não entra: defesa, fora, travado */ },
+        free: FREE, brain: BRAIN,
+        onRef: r0 => { if (m.done) return; const e = S.coMatchRef(co, m, r0.side ? 'them' : 'us', r0.kind, r0); if (e) { sent.add(e); paint(); } },
+        yc: (side, num) => { const s = side ? m.them : m.us, p = s.squad.find(q => q.num === num && s.xi.includes(q.id)); return p && s.bk && s.bk[p.id] ? 1 : 0; },
+        taker: side => { const t = S.coTaker(side ? m.them : m.us, 'pen'); return t ? t.num : null; },
+        onShot: sh => { if (m.done && !stopW) return; const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, Object.assign({ late: !!stopW }, sh)); if (e) { sent.add(e); paint(); } if (!sh.side && sh.near) sfx(m.home ? 'quase' : 'quaseAway'); else if (!sh.side && sh.out !== 'gol') sfx(m.home ? 'uhh' : 'uhhAway'); /* todo chute seu que não entra: defesa, fora, travado */ },
         onPick: (side, inf) => { if (ctx && side === 0 && inf && inf.id && !open && !m.done && !wait) { sfx('tap'); sheet({ t: 'pausa', pick: inf.id }); } }, // tocou no seu jogador: para e abre a escalação com ele escolhido (quem entra ao lado dele)
         seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)], styles: [S.coSimSty(m.us), S.coSimSty(m.them)] });
       lineKey = [m.us, m.them].map(s => s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style);

@@ -25,7 +25,7 @@ function simForm(s) { const sl = S.CO_FORMS[s.form].slots, sp = spots(s.form), a
   const gk = out.filter(p => p[0] === 'GK'), rest = out.filter(p => p[0] !== 'GK').sort((a, b) => a[1] - b[1]);
   if (!gk.length && rest.length) { const g0 = rest.shift(); g0[0] = 'GK'; g0[1] = 0; g0[2] = 50; gk.push(g0); }
   return gk.concat(rest); }
-const STEPS = 137; // passos de 0,02 s do campinho por minuto do jogo (2,2 s a 1,25)
+const BR = process.env.MOTOR === '11', STEPS = BR ? 188 : 137; // passos de 0,02 s do campinho por minuto do jogo (2,2 s a 1,25; o cérebro: 3,0 s a 1,25, B11_MIN em ui/coach.js)
 const G = []; let games = 0, n = 0, bad = 0;
 while (games < N) {
   const co = S.coNew({ name: 'Robô', country: 'Brasil', start: n % 2 ? 'livre' : 'baixo', seed: SEED * 1000 + n * 7919 }); n++;
@@ -34,13 +34,16 @@ while (games < N) {
     const nx = S.coNext(co); if (!nx) break; if (nx.bye) { S.coSkipRound(co); continue; }
     const m = S.coMatchStart(co); if (!m) break;
     const g = { xu: 0, xt: 0, sh: [0, 0], far: 0, gn: 0, pen: 0, fks: 0, fkg: 0, fkn: 0, fkc: 0 };
-    const sim = LP.sim({ me: -1, goals: [], free: true, brain: process.env.MOTOR === '11', seed: games * 13 + 7, home: m.home ? 0 : 1, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]],
-      spm: () => 2.2, speed: () => 1.25,
+    const sim = LP.sim({ me: -1, goals: [], free: true, brain: BR, seed: games * 13 + 7, home: m.home ? 0 : 1, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]],
+      spm: () => (BR ? 3 : 2.2), speed: () => 1.25,
+      onRef: r0 => { S.coMatchRef(co, m, r0.side ? 'them' : 'us', r0.kind, r0); },
+      yc: (side, num) => { const s = side ? m.them : m.us, p = s.squad.find(q => q.num === num && s.xi.includes(q.id)); return p && s.bk && s.bk[p.id] ? 1 : 0; },
+      taker: side => { const t = S.coTaker(side ? m.them : m.us, 'pen'); return t ? t.num : null; },
       onShot: sh => { const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, sh); if (!e) return; g.sh[sh.side]++; if (sh.kind === 'falta') { g.fks++; if (sh.out === 'gol') g.fkg++; } if (sh.out === 'gol') { g.gn++; if (sh.dist > 18) g.far++; } if (sh.id == null && sh.kind !== 'contra') bad++; } });
     sim.go(); let key = ''; const sent = new Set();
     while (!m.done) {
       if (GRITO && !m.us.shout) S.coShout(co, m, GRITO);
-      S.coMatchStep(co, m, m.min + 1, { free: true });
+      S.coMatchStep(co, m, m.min + 1, { free: true, brain: BR });
       if (m.lam) { g.xu += m.lam.us / S.CO.mins; g.xt += m.lam.them / S.CO.mins; }
       const k2 = [m.us, m.them].map(s => s.form + ':' + s.xi.join(',') + ':' + s.style + ':' + (s.shout ? s.shout.k : '')).join('|');
       if (key && k2 !== key) [m.us, m.them].forEach((s, k) => { sim.lineup(k, simForm(s)); sim.style(k, process.env.GRITO_CAMPO === '0' ? S.CO_STY[s.style] : S.coSimSty(s)); }); key = k2;
@@ -52,6 +55,7 @@ while (games < N) {
       S.coAutoStop(co, m);
     }
     { const F = sim._state().FKN || {}; g.fkn = F.n || 0; g.fkc = F.cruz || 0; g.fkf = F.f || 0; } sim.stop();
+    { const c = k => (m[k] ? m[k].us + m[k].them : 0); g.fo = c('fo'); g.yc = c('yc'); g.rc = c('rc'); g.of = c('of'); }
     g.gu = m.home ? m.gh : m.ga; g.gt = m.home ? m.ga : m.gh; g.pen = m.ev.filter(e => e.sp === 'pen').length; G.push(g); games++;
     S.coMatchEnd(co, m);
   }
@@ -68,6 +72,7 @@ const B = [0, 1, 2].map(band), alerts = [], warn = (ok, msg) => { if (!ok) alert
 console.log(`Simulação livre: ${games} jogos · gols por jogo ${(gols / games).toFixed(2)} (o motor espera ${(esp / games).toFixed(2)}) · chutes por jogo ${(sum(g => g.sh[0] + g.sh[1]) / games).toFixed(1)} · de fora da área ${pct(sum(g => g.far), sum(g => g.gn))} dos gols · pênaltis ${(sum(g => g.pen) / games).toFixed(2)} por jogo`);
 console.log(`  resultado do seu time V/E/D: ${res.map(x => pct(x, games)).join(' / ')} (esperado pelo motor ${ex.map(x => pct(x, games)).join(' / ')}) · 0 a 0: ${pct(sum(g => +(g.gu + g.gt === 0)), games)} · 5 gols ou mais: ${pct(sum(g => +(g.gu + g.gt >= 5)), games)}`);
 console.log(`  faltas apitadas ${(sum(g => g.fkf || 0) / games).toFixed(1)} por jogo · com barreira ${(sum(g => g.fkn) / games).toFixed(2)} por jogo · chute direto ${(sum(g => g.fks) / games).toFixed(2)} (gols ${(sum(g => g.fkg) / games).toFixed(3)}) · cruzadas na área ${(sum(g => g.fkc) / games).toFixed(2)}`);
+if (BR) console.log(`  juiz do campo: faltas ${(sum(g => g.fo) / games).toFixed(1)} · amarelos ${(sum(g => g.yc) / games).toFixed(1)} · vermelhos ${(sum(g => g.rc) / games).toFixed(2)} · impedimentos ${(sum(g => g.of) / games).toFixed(1)} · pênaltis ${(sum(g => g.pen) / games).toFixed(2)} por jogo`);
 if (GRITO) console.log(`  com o grito ${GRITO} o jogo todo: seu time faz ${(sum(g => g.gu) / games).toFixed(2)} (o motor espera ${(sum(g => g.xu) / games).toFixed(2)}) e leva ${(sum(g => g.gt) / games).toFixed(2)} (espera ${(sum(g => g.xt) / games).toFixed(2)})`);
 console.log('  por força do ataque (esperado → saiu): ' + B.map((b, i) => ['fraco', 'médio', 'forte'][i] + ' ' + b[0].toFixed(2) + ' → ' + b[1].toFixed(2)).join(' · '));
 warn(Math.abs(gols / esp - 1) < 0.15, 'gols no total: ' + (gols / games).toFixed(2) + ' por jogo contra ' + (esp / games).toFixed(2) + ' esperados (tem de ficar a ±15%)');

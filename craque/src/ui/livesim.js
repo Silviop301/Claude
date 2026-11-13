@@ -133,10 +133,11 @@
     const enOf = p => (isMe(p) && en !== null ? en : p.inf && p.inf.enf ? cl(p.inf.enf(), 0, 100) : cl(p.e0 - (curT - p.eT) * p.eK * (0.8 + 0.5 * Math.min(1.2, ST[p.side].press)), 5, 100));
     numbers(0); numbers(1);
     // Cérebro 11x11 (teste, ?motor=11, só na simulação livre): a bola rolando é jogada por cerebro11.js (física de verdade,
-    // nada disparado nem sorteado no fim). Este arquivo segue com o desenho, o juiz do motor, as trocas, o gol e o pênalti.
-    // B11_K: segundos de jogo do cérebro por segundo do campinho (90 min = 680 s, como na simulação que o Silvio trouxe)
-    const B11 = !!(o.free && o.brain && LP.cerebro11), B11_K = +(_e.B11_K || 2.75);
-    let b11 = null, b11In = false, b11F = null;
+    // nada disparado nem sorteado no fim), com o juiz dele (falta, cartão, pênalti, impedimento). Este arquivo segue com o
+    // desenho, as trocas, o gol e a festa. B11_K: segundos de jogo do cérebro por segundo do campinho (Silvio 13/11: "está no
+    // 3x"; era 2,75 e agora o jogador corre na velocidade de verdade)
+    const B11 = !!(o.free && o.brain && LP.cerebro11), B11_K = +(_e.B11_K || 1.15);
+    let b11 = null, b11In = false;
     const qv = (p, k) => { const a = p && p.inf && p.inf.at; if (a && a[k] !== undefined && a[k] !== null) return a[k]; if (k === 'gol' && a && a.gol === undefined && p.r === 'GK') return 60 + (p.q || 0) * 100; if (k === 'vel') return 60 + (p.q || 0) * 100 + (p.spd - 1.01) * 60; return 60 + (p.q || 0) * 100; };
     if (B11) b11 = LP.cerebro11({ R: rnd, T: () => T, at: qv, en: p => enOf(p), sty: s => ST[s], forma: s => Math.log(Math.max(0.05, lamF[s]) / 1.3),
       onShot: sh => { if (!o.onShot) return; const nm = q => (q && q.inf ? q.inf.num : undefined);
@@ -145,21 +146,29 @@
         net = { gx: s ? 0 : L, y, t: 0, v: Math.max(10, v) }; mode = 'goal'; modeT = FXON() ? CELEB : 2; koSide = 1 - s; back = 0; ball.owner = null;
         hero = p && p.side === s ? p : T[s].filter(q => q.r !== 'GK').sort((a, b) => tf(s, b)[0] - tf(s, a)[0])[0]; bigSay('GOOOL!', s, 2.6, true); },
       onPost: (x, y) => { post = { x, y, t: 0.5 }; if (typeof window !== 'undefined' && window.CRAQUE_SFX) try { window.CRAQUE_SFX.play('trave'); } catch (_) {} },
-      onStop: (k, s, x, y) => { poss = s; signal(s, x, y, k === 'lateral' ? 'lat' : k === 'escanteio' ? 'esc' : 'tiro'); if (k === 'escanteio') escClk = clk; },
-      onFoul: (p, v) => { const F = b11F; if (!F) return; b11F = null; b11.cacar(null); b11In = false; poss = v.side; foulNow(F.o, p, v); if (F.cb) setTimeout(F.cb, (F.o.kind === 'falta' ? 500 : 900) / Math.max(1, o.speed ? o.speed() : 1)); } });
-    // A bola rolando no cérebro: as paradas do motor (pênalti) e a falta do juiz esperam a vez dela aqui
+      onStop: (k, s, x, y) => { poss = s; if (k === 'lateral' || k === 'escanteio' || k === 'meta') signal(s, x, y, k === 'lateral' ? 'lat' : k === 'escanteio' ? 'esc' : 'tiro'); if (k === 'escanteio') escClk = clk; },
+      amarelos: q => (o.yc ? o.yc(q.side, q.inf ? q.inf.num : q.num) || 0 : 0),
+      batedor: s => { const n = o.taker ? o.taker(s) : null; return n == null ? null : T[s].find(q => (q.inf ? q.inf.num : q.num) === n) || null; },
+      onRef: b11Ref });
+    // O juiz do cérebro apitou (falta, cartão, pênalti ou impedimento que aconteceram no campo): apito, cartão em cima de quem
+    // fez, a linha do impedimento com a bandeira, o expulso sai andando; a tela anota no motor (o.onRef)
+    function b11Ref(e) {
+      const s = e.side, p = e.p, num = p && (p.inf ? p.inf.num : p.num);
+      if (typeof window !== 'undefined' && window.CRAQUE_SFX) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {}
+      let kind = 'falta';
+      if (e.t === 'impedimento') { kind = 'impedimento'; offLine = { s, x: e.lin, t: 1.8 }; arFor(toW(s, e.lin, 0)[0]).flag = 1.8; refFx = { p, kind, t: 1.8 }; }
+      else {
+        if (e.card) { kind = e.card === 'am' ? 'amarelo' : 'vermelho'; refFx = { p, kind, how: e.card, t: 2.3 }; if (kind === 'vermelho') goOff(p, 2.3); }
+        if (e.pen) bigSay('PÊNALTI!', 1 - s, 2.2, true);
+      }
+      if (o.onRef) o.onRef({ side: s, kind, how: e.card === 'direto' ? 'direto' : e.card === '2am' ? '2am' : undefined, num, pen: !!e.pen });
+    }
+    // A bola rolando no cérebro (o juiz é dele: nada do motor espera a vez aqui)
     function playB(dt) {
       if (lc) lcDone();
       if (!b11In) { b11.entrar(ball); b11In = true; }
       const sd = b11.posse(); poss = sd; const ax = tf(sd, ball)[0] / L * 100, ctl = cl(55 + (ax - 25) * 0.6, 40, 100); acc.x += sd ? 100 - ctl : ctl; acc.n++; pt[sd] += dt;
-      // pênalti do motor: espera o time levar a bola ao ataque (até 5 s) e para o jogo
-      if (!pen && !b11F) { const pe = goals.find(q => !q.done && q.pen && !q.kick && q.m <= curT + 2);
-        if (pe) { pe.w = (pe.w || 0) + dt; const ow = ball.owner; if (pe.now || pe.w >= 5 || (ow && ow.side === pe.side && ow.r !== 'GK' && tf(pe.side, ball)[0] > 60)) { b11In = false; b11.sair(); penStart(pe); return; } } }
-      goals.forEach(q => { if (!q.done && !q.pen && q.m <= curT + 1) { q.done = true; if (q.cb) q.cb(); } }); // no livre o motor não manda outra jogada
-      // falta do juiz: quem fez vai no bote em quem está com a bola do outro time; o apito sai no contato (onFoul)
-      if (b11F) { const F = b11F; F.t += dt; const ow = ball.owner;
-        if (ow && ow.side !== F.o.side) { if (!F.p || F.p.side !== F.o.side || !T[F.o.side].includes(F.p)) F.p = fouler(F.o, ow); if (F.p) b11.cacar(F.p); if (F.p && F.t > 10) { b11F = null; b11.cacar(null); b11In = false; poss = ow.side; foulNow(F.o, F.p, ow); if (F.cb) setTimeout(F.cb, 500); return; } }
-        if (F.t > 16) { b11F = null; b11.cacar(null); if (F.o.kind === 'vermelho') { const p = whoDid(F.o.side, F.o.pos, F.o.me, F.o.num); if (p) goOff(p, 0); } if (F.cb) F.cb(); } }
+      goals.forEach(q => { if (!q.done && q.m <= curT + 1) { q.done = true; if (q.cb) q.cb(); } }); // no livre com o cérebro o motor não manda jogada nem pênalti
       b11.passo(dt * B11_K, ball);
     }
     let due = null; // o gol do motor que está para sair
@@ -1216,18 +1225,8 @@
       if (foulTo === p) foulTo = at(s, 6);
       leaving.push({ p, wasMe, wait: wait || 0, t: 0, ty: p.y < WD / 2 ? -1 : WD + 1 });
     }
-    // Juiz do motor com o cérebro 11x11: impedimento sai na hora (no mais adiantado do ataque); falta e cartão esperam o bote
-    function refB(r0, cb) {
-      if (r0.kind === 'impedimento') {
-        const s = r0.side, q = T[s].filter(x => x.r !== 'GK').sort((a, b) => tf(s, b)[0] - tf(s, a)[0])[0];
-        if (!q) { if (cb) cb(); return; }
-        const sp = { x: cl(q.x, 1, L - 1), y: cl(q.y, 1, WD - 1) }, tk = T[1 - s].filter(x => x.r !== 'GK').sort((a, b) => dist(a, sp) - dist(b, sp))[0];
-        b11In = false; b11.sair(); poss = 1 - s; whistle('Impedimento', tk, sp); const ln = Math.max(L / 2, ...T[1 - s].filter(x => x.r !== 'GK').map(x => tf(s, x)[0])); offLine = { s, x: ln, t: 1.8 }; arFor(toW(s, ln, 0)[0]).flag = 1.8; refFx = { p: q, kind: 'impedimento', t: 1.8 };
-        if (cb) setTimeout(cb, 900 / Math.max(1, o.speed ? o.speed() : 1)); return;
-      }
-      if (b11F) { if (r0.kind === 'vermelho') { const p = whoDid(r0.side, r0.pos, r0.me, r0.num); if (p) goOff(p, 0); } if (cb) cb(); return; }
-      b11F = { o: r0, t: 0, p: null, cb };
-    }
+    // Com o cérebro o juiz é dele (b11Ref); se o motor mandar um lance mesmo assim (jogo antigo), só a narração sai
+    function refB(r0, cb) { if (r0.kind === 'vermelho') { const p = whoDid(r0.side, r0.pos, r0.me, r0.num); if (p) goOff(p, 0); } if (cb) cb(); }
     function refDo(o) {
       const kind = o.kind, p = whoDid(o.side, o.pos, o.me, o.num);
       if (!p) return false;
