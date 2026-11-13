@@ -641,8 +641,9 @@
           const say = tip ? (used ? 'Do jeito que está eu não mexeria, professor.' : keep ? 'Fechado, vamos com o seu plano. Se quiser, a ideia continua aqui: ' + S.coTipName(tip) + '.' : 'Uma ideia: ' + S.coTipTxt(tip).replace(/^./, c => c.toLowerCase()).replace(/, professor\.$/, '. A escolha é sua, professor.')) : toOl ? 'Leia o relatório do olheiro que eu te digo o melhor plano para esse jogo, professor.' : aux, nw = t => t.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>');
           const ALL = '<button class="tm-all" id="ld-auto">Usar a escalação ' + (auxEla(co) ? 'dela' : 'dele') + ' inteira</button>';
           const tipHtml = !tip || (used && nFix) ? '' : nFix
-            ? '<span class="tm-fix top"><small>' + nw(say) + '</small><button class="hl-btn line" id="ld-tip-y">' + (plan ? 'Usar o plano' : 'Usar ' + esc(tipNm)) + '</button></span>'
-            : '<p>“' + nw(say) + '”</p>' + (used ? '' : '<span class="hl-ab"><button class="hl-btn dark" id="ld-tip-y">' + (plan ? 'Usar a ideia' : 'Usar ' + esc(tipNm)) + '</button><button class="hl-btn line" id="ld-tip-k">Manter meu plano</button></span>');
+            ? '<span class="tm-fix top"><small>' + nw(say) + '</small></span>'
+            // Silvio 2026-11-13 (fase de testes): a ideia da auxiliar é só fala; quem monta formação e estilo é você
+            : '<p>“' + nw(say) + '”</p>' + (used ? '' : '<span class="hl-ab"><button class="hl-btn line" id="ld-tip-k">Entendi</button></span>');
           pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b>' + (nFix ? ALL : '') + '</span>' +
             (tipHtml || (nFix ? '' : '<p>“' + say + '”</p>')) +
             (nFix ? auxRows(fixes) + '<span class="hl-ab"><button class="hl-btn dark" id="ld-aux-y">' + auxLbl(nFix) + '</button><button class="hl-btn line" data-pop-x>Manter</button></span>' : '') +
@@ -3212,9 +3213,7 @@
         if (!tp || co.tut) return; // no tutorial a janelinha tampava o passo "Agora é jogar" (a dica fica no Time, com o aviso no botão)
         const u = S.coTipUsed(co, tp), say = u ? 'Li o relatório. Contra o ' + tp.them + ' deles, eu manteria o ' + S.coTipName(tp) + ', professor.' : 'Li o relatório. ' + S.coTipTxt(tp);
         pop('<div class="acd-help"><span class="aux-h">' + auxFace(co, 'aux-fc') + '<b>Auxiliar</b></span><p>“' + say.replace(/\d(-\d)+/g, f => '<span class="tm-nw">' + f + '</span>') + '”</p>' +
-          '<span class="hl-ab"><button class="hl-btn dark" id="ol2-tm">Ver no Time</button><button class="hl-btn line" data-pop-x>Depois</button></span></div>', 'Auxiliar', w => {
-          w.querySelector('#ol2-tm').onclick = () => { sfx('tap'); closePop(); time(); };
-        }, 'hl-pop acd-pop tm-pop'); };
+          '<button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Auxiliar', null, 'hl-pop acd-pop tm-pop'); };
     });
   }
   // Três descobertas sobre o rival; uma pode ser falsa (sorteio fixo pelo jogo)

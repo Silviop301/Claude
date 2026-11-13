@@ -79,7 +79,7 @@ async function page(b, first) {
       await p.mouse.move(sx, sy); await p.mouse.down(); await p.mouse.move(sx, sy - 25); for (let k = 1; k <= 12; k++) await p.mouse.move(sx + (tx - sx) * k / 12, sy + (ty - sy) * k / 12);
       await shot('a02c-arrastando'); await p.mouse.up(); await p.waitForTimeout(200); await shot('a02d-soltou');
     }
-    await click('[data-tmk="form"][data-d="1"]'); await p.waitForTimeout(150); await shot('a03-formacao-correndo'); await p.waitForTimeout(500); await shot('a03b-formacao'); await click('[data-tmk="sty"][data-d="1"]'); await click('#tm-aux'); await shot('a04-auxiliar'); if (await p.$('#ld-tip-y')) { await click('#ld-tip-y'); await shot('a04b-dica-usada'); } else await click('[data-pop-x]');
+    await click('[data-tmk="form"][data-d="1"]'); await p.waitForTimeout(150); await shot('a03-formacao-correndo'); await p.waitForTimeout(500); await shot('a03b-formacao'); await click('[data-tmk="sty"][data-d="1"]'); await click('#tm-aux'); await shot('a04-auxiliar'); if (await p.$('#ld-tip-k')) { await click('#ld-tip-k'); await shot('a04b-dica-usada'); } else await click('[data-pop-x]');
     await click('.tm-bp:not(.dis)'); await shot('a05-banco'); await click('[data-xi="9"]');
     await click('#ld-ok'); await shot('a06-semana');
     await click('#ld-tr'); await click('[data-tk="lados"]'); await shot('a07-treino'); await click('[data-tt="Bola parada"]'); await shot('a08-treino-bola-parada');
@@ -232,7 +232,7 @@ async function page(b, first) {
     await click('#b-new-co'); await click('#co-start button[data-v="livre"]'); await click('#b-co-go'); await click('#ldo-go'); await shot('d01-chegada');
     await want('chegada', s => s.i === 0 && s.tut === 0 && !s.pend && s.tu && !s.pop);
     await p.mouse.click(300, 250); await p.waitForTimeout(300); await want('toque fora do alvo', s => s.tu && s.tut === 0);
-    await click('.tu-hole'); await shot('d02-time-dica'); await click('#tm-aux'); await shot('d03-dica'); if (await p.$('#ld-tip-y')) await click('#ld-tip-y'); else await click('[data-pop-x]'); await shot('d04-dica-usada');
+    await click('.tu-hole'); await shot('d02-time-dica'); await click('#tm-aux'); await shot('d03-dica'); if (await p.$('#ld-tip-k')) await click('#ld-tip-k'); else await click('[data-pop-x]'); await shot('d04-dica-usada');
     await click('#ld-ok'); await shot('d05-passo-treino'); await click('.tu-hole'); await click('[data-tt="Bola parada"]'); await click('[data-tk="esc"]'); await click('#ldtr-go');
     await shot('d06-passo-olheiro'); await click('.tu-hole'); await click('#ldo-ok'); await shot('d07-passo-jogar'); await click('.tu-hole'); await want('semana 1 feita', s => s.tut === 4);
     await round(); await shot('d08-semana2-tabela'); await want('semana 2', s => s.i === 1 && s.tu && !s.pop && s.win);
