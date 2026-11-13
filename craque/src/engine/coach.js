@@ -125,9 +125,15 @@
     veloc: { tab: 'Físico', name: 'Velocidade', sub: 'arrancada e recomposição', fx: { add: { counter: 0.06, press: 0.06 } }, en: 5, who: ['ATA', 'LAT'], dv: 4 },
     folga: { tab: 'Físico', name: 'Folga', sub: 'dia livre: moral e energia', fx: {}, en: -12, mo: 3, who: [] },
   };
+  // O treino vale para UM jogo: o próximo (`co.train.m` = chave do jogo, a mesma do olheiro). Copa no meio da semana e
+  // liga no fim de semana dividem a rodada (ss.i), então a rodada sozinha não basta (2026-11-13: o treino da copa
+  // aparecia feito e valia de novo no jogo da liga). Save antigo sem `m`: pela rodada.
+  const trKey = co => { const nx = co.ss && !co.ss.done ? S.coNext(co) : null; return nx && !nx.bye ? S.coScoutKey(co, nx) : null; };
+  S.coTrainNow = co => { const t = co && co.train; if (!t || !co.ss) return null; return t.m ? (t.m === trKey(co) ? t : null) : (t.i === co.ss.i ? t : null); };
+  S.coScoutNow = co => { const s = co && co.scout; if (!s || !co.ss) return false; if (s.k) return s.k === trKey(co); const nx = S.coNext(co); return s.i === co.ss.i && !(nx && nx.cup); };
   S.coTrain = function (co, k) {
-    const t = TRAIN[k]; if (!t || !co.ss || (co.train && co.train.i === co.ss.i)) return false;
-    co.train = { k, i: co.ss.i };
+    const t = TRAIN[k]; if (!t || !co.ss || S.coTrainNow(co)) return false;
+    co.train = { k, i: co.ss.i, m: trKey(co) };
     trainGrow(co, t);
     const dk = t.en > 0 && S.coDmK ? S.coDmK(co, 'tr') : 1;
     co.squad.forEach(p => { p.en = Math.max(0, Math.min(100, p.en - t.en * dk * (t.en > 0 && !t.who.includes(p.pos) ? 0.5 : 1))); if (t.mo) p.mo = Math.min(100, (p.mo === undefined ? 60 : p.mo) + t.mo); });
@@ -718,7 +724,7 @@
     if (!nx || nx.bye) return null;
     co.xi = co.xi.filter(id => co.squad.some(p => p.id === id && ok(p))).length === 11 ? co.xi : autoXI(co.squad, co.form).xi;
     const us = { club: co.club, squad: co.squad, form: co.form, style: co.style, bonus: co.xp.leitura * 0.2, xi: co.xi.slice(), bench: (co.bench || []).filter(id => co.squad.some(p => p.id === id && ok(p))), subs: CO.subs, win: CO.win, red: 0, mine: true, injK: S.coDmK ? S.coDmK(co, 'inj') : 1, outCut: S.coDmK ? S.coDmK(co, 'cut') : 0,
-      roles: co.roles && co.roles[co.form] ? co.roles[co.form].slice() : null, takers: co.takers || null, train: co.train && co.ss && co.train.i === co.ss.i ? co.train.k : null };
+      roles: co.roles && co.roles[co.form] ? co.roles[co.form].slice() : null, takers: co.takers || null, train: S.coTrainNow(co) ? co.train.k : null };
     const them = oppSide(co, nx.vs, !nx.home);
     // Dia de cada time: média 1, desvio ~DAY_SD (o mesmo jogo recomeçado sorteia igual)
     { const rd = S.rng(hash(String(co.name) + '|' + co.club + '|' + co.season + '|' + nx.round + '|' + nx.vs + '|' + (nx.cup ? 'c' : 'l') + '|dia')), z = () => Math.sqrt(-2 * Math.log(1 - rd())) * Math.cos(2 * Math.PI * rd());
@@ -1049,7 +1055,7 @@
   };
   // Você já responde a essa descoberta? (s = lado do jogo ou o seu time de agora; m = o jogo, para o que só se faz em campo)
   S.coScoutAns = function (e, s, m) { const d = SCD[e.k]; if (!d) return false; return !!d.ok(Object.assign({}, s, { by: byId(s.squad) }), m, e); };
-  S.coScoutSide = co => ({ squad: co.squad, form: co.form, style: co.style, xi: co.xi, train: co.train && co.ss && co.train.i === co.ss.i ? co.train.k : null });
+  S.coScoutSide = co => ({ squad: co.squad, form: co.form, style: co.style, xi: co.xi, train: S.coTrainNow(co) ? co.train.k : null });
   // No jogo: quanto as descobertas respondidas valem neste minuto (verdadeiras pagam; falsas só contam como respondidas)
   function scoutMin(m) {
     const sc = m.scout; if (!sc) return { us: 1, them: 1 };
@@ -1414,7 +1420,7 @@
     // Plano do auxiliar no resultado: ficou nele em boa parte do jogo (2/3 dos minutos)?
     if (m.plan) log.plan = m.plan.used && (m.plan.min || 0) >= 0.66 * Math.max(1, m.tk || m.min) ? (m.plan.good ? 'ok' : 'no') : 'off';
     { const sl = scoutLog(m); if (sl) log.scout = sl; }
-    if (co.train && co.train.i <= ss.i) { log.train = co.train.k; delete co.train; }
+    if (co.train && co.train.i <= ss.i) { if (S.coTrainNow(co)) log.train = co.train.k; delete co.train; } // o da copa (já jogada) não conta aqui
     rateAfter(co, m, log, gf, ga);
     log.cad = cadNote(co, m, log);
     ss.log.push(log);
