@@ -373,7 +373,9 @@
   // Tela girada (Silvio, 2026-11-11: iPhone com a rotação travada em pé): o jogo deitado é desenhado girado 90° (html.rot, ui/coachland.js).
   // O toque continua chegando em coordenadas da tela: pt() e box() passam ponto e retângulo para a página girada (sem giro, iguais)
   const ROT_KEY = 'climbix-girar';
-  const rotPref = v => { try { if (v === undefined) return localStorage.getItem(ROT_KEY) === '1'; localStorage.setItem(ROT_KEY, v ? '1' : '0'); } catch (e) {} return !!v; };
+  // Sem escolha feita, aparelho de toque já entra girado (2026-11-13: quem chegava em pé pelo link via só "Gire o celular" e saía)
+  const rotDef = () => { try { return !!(window.matchMedia && matchMedia('(pointer: coarse)').matches) && Math.min(window.screen.width || 0, window.screen.height || 0) < 600; } catch (e) { return false; } };
+  const rotPref = v => { try { if (v === undefined) { const g = localStorage.getItem(ROT_KEY); return g === '1' || (g !== '0' && rotDef()); } localStorage.setItem(ROT_KEY, v ? '1' : '0'); } catch (e) {} return !!v; };
   const rotOn = () => document.documentElement.classList.contains('rot');
   const rotW = () => parseFloat(document.documentElement.style.getPropertyValue('--rx')) || window.innerWidth;
   const pt = (x, y) => (rotOn() ? [y, rotW() - x] : [x, y]);
