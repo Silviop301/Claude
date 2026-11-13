@@ -1127,9 +1127,11 @@
       // Olheiro (2026-11-13): das descobertas que você respondeu, quantas eram verdadeiras; tocar mostra as 3
       if (log.scout && log.scout.n) { rows.unshift(['Olheiro', 'acertou ' + log.scout.hit + ' de ' + log.scout.n, log.scout.hit ? 'up' : 'dn', 'rs-ol']);
         if (rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); } }
+      // Estilo (2026-11-13): o jogador de estilo diferente que mais apareceu (S.coStyleTxt); entra antes do Público
+      if (log.sty) { const t = S.coStyleTxt(log.sty); if (t) { rows.push(['Estilo', t, '']); if (rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); } } }
       if (log.cup && rows.length > 4) { const i = rows.findIndex(r => r[0] === 'Público'); if (i >= 0) rows.splice(i, 1); }
       // nunca mais de 4 linhas: a 5ª passava da borda do card no celular deitado (Silvio, 2026-11-12)
-      ['Público', 'Bilheteria', 'Prêmio', 'Caderno'].forEach(k => { const i = rows.findIndex(r => r[0] === k); if (rows.length > 4 && i >= 0) rows.splice(i, 1); });
+      ['Público', 'Bilheteria', 'Prêmio', 'Caderno', 'Estilo'].forEach(k => { const i = rows.findIndex(r => r[0] === k); if (rows.length > 4 && i >= 0) rows.splice(i, 1); });
       rows.splice(4);
       show('<div class="rs">' +
         '<div class="rs-sc">' + crest((m.home ? cl : vs).id, 'rs-cr') + '<em>' + m.gh + ' <i>x</i> ' + m.ga + '</em>' + crest((m.home ? vs : cl).id, 'rs-cr') +
@@ -3083,28 +3085,31 @@
   const BKS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
   const segFB = act => '<div class="fb2-seg">' + [['fun', 'Funções'], ['bat', 'Batedores']].map(([k, t]) => '<button data-sub="' + k + '"' + (k === act ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>';
   function funcoes(sel, back) {
+    // Estilos de jogo (Silvio 13/11): cada vaga escolhe um estilo com ganho e custo (S.CO_PSTY); as bolinhas dizem se combina
+    // com os atributos de quem joga ali. Embaixo, Defesa/Meio/Ataque ▼ — ▲ = a altura do setor (co.lnh)
     const c = C(), co = c.co, by = {}; co.squad.forEach(p => { by[p.id] = p; }); S.coNums(co.squad);
-    const R = S.coRoles(co, co.form), sl = S.coSlots(co.form), sp = spotsT(co.form);
+    const R = S.coRoles(co, co.form), LH = S.coLnh(co, co.form), sl = S.coSlots(co.form), sp = spotsT(co.form);
     sel = sel == null ? 0 : sel;
-    const rk = i => S.coRoleKey(co.form, i), rn = i => S.CO_ROLES[rk(i)][R[i] + 1][0];
-    const AR = { '-1': '▼', 1: '▲' };
-    const dots = co.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: i === sel, yc: false, num: true, tag: rn(i), attr: ' data-fi="' + i + '" data-rv="' + R[i] + '"' }).replace('</i><span class="ld-dn">', (R[i] ? '<u class="fu2-ar">' + AR[R[i]] + '</u>' : '') + '</i><span class="ld-dn">') : '').join('');
-    const p = by[co.xi[sel]], lb = S.coSlotLbl(co.form, sel), opts = S.CO_ROLES[rk(sel)];
+    const stOf = i => S.coStyleAt(co.form, i, R[i]), rn = i => stOf(i).n;
+    const dots = co.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: i === sel, yc: false, num: true, tag: rn(i), attr: ' data-fi="' + i + '" data-rv="' + Math.sign(stOf(i).tl) + '"' }) : '').join('');
+    const p = by[co.xi[sel]], lb = S.coSlotLbl(co.form, sel), G = S.CO_PSTY[S.coRoleKey(co.form, sel)], cur = stOf(sel);
     const lnOf = i => { const l = S.CO_FORMS[co.form].slots[i].ln; return l === 'am' ? 'm' : l; };
-    const grp = [['d', 'DEFESA'], ['m', 'MEIO'], ['a', 'ATAQUE']].map(([k, t]) => { const ix = sl.map((x, i) => i).filter(i => lnOf(i) === k), all = ix.length && ix.every(i => R[i] === R[ix[0]]) ? R[ix[0]] : null;
-      return '<span><small>' + t + '</small>' + [[-1, '▼', 'mais atrás'], [0, '—', 'normal'], [1, '▲', 'mais à frente']].map(([v, ic, al]) => '<button data-gl="' + k + ':' + v + '"' + (all === v ? ' class="on"' : '') + ' aria-label="' + t.toLowerCase() + ' ' + al + '">' + ic + '</button>').join('') + '</span>'; }).join('');
+    const grp = [['d', 'DEFESA'], ['m', 'MEIO'], ['a', 'ATAQUE']].map(([k, t]) => '<span><small>' + t + '</small>' + [[-1, '▼', 'mais atrás'], [0, '—', 'normal'], [1, '▲', 'mais à frente']].map(([v, ic, al]) => '<button data-gl="' + k + ':' + v + '"' + ((LH[k] || 0) === v ? ' class="on"' : '') + ' aria-label="' + t.toLowerCase() + ' ' + al + '">' + ic + '</button>').join('') + '</span>').join('');
+    const fit = st => { const n = p ? S.coStyleFit(p, st) : 2; return '<span class="fu3-fit" aria-label="combina ' + n + ' de 3">' + [1, 2, 3].map(j => '<u' + (j <= n ? ' class="y"' : '') + '></u>').join('') + '</span>'; };
+    const ops = G ? G.l : [], odd = ops.length % 2;
     show('<div class="fb2"><div class="tm-h"><button class="tcr-back" id="ldm-back" aria-label="Voltar">' + BKS + '</button><b>Funções</b><small>' + co.form + '</small>' + segFB('fun') + '</div>' +
       '<div class="ld-pitch fu2-pitch">' + PITCH + dots + '</div>' +
       '<div class="fu2-grp">' + grp + '</div>' +
-      '<div class="fb2-c"><div class="fb2-who"><i>' + (p ? p.num || p.ovr : '') + '</i><span><b>' + (p ? esc(last(p.n)) : '') + '</b><small>' + lb + ' · ' + rn(sel).toLowerCase() + '</small></span></div>' +
-        opts.map((o, j) => '<button class="fu2-op' + (R[sel] === j - 1 ? ' on' : '') + '" data-r="' + (j - 1) + '"><b>' + o[0] + '</b>' + (j === 1 ? '' : '<em>' + (j ? '▲ frente' : '▼ atrás') + '</em>') + '</button>').join('') +
-        '<p class="fb2-sub">' + opts[R[sel] + 1][1] + '</p></div>' +
+      '<div class="fb2-c fu3-c"><div class="fb2-who"><i>' + (p ? p.num || p.ovr : '') + '</i><span><b>' + (p ? esc(last(p.n)) : '') + '</b><small>' + lb + ' · ' + cur.n.toLowerCase() + '</small></span></div>' +
+        '<div class="fu3-g' + (ops.length > 4 ? ' n6' : '') + '">' + ops.map((o, j) => '<button class="fu3-op' + (o.k === cur.k ? ' on' : '') + (odd && j === ops.length - 1 ? ' full' : '') + '" data-r="' + o.k + '"><b>' + o.n + '</b>' + fit(o) + '</button>').join('') + '</div>' +
+        '<div class="fu3-tr">' + (cur.k === G.def ? '<span class="n">' + cur.p + '</span>' : '<span class="p"><i>+</i>' + cur.p + '</span><span class="m"><i>−</i>' + cur.m + '</span>') +
+        (p && cur.at.length ? '<span class="cb">COMBINA · ' + S.coStyleAtTxt(p, cur) + '</span>' : '') + '</div></div>' +
       '<button class="tm-go fb2-go" id="ldm-ok">Pronto</button></div>', st => {
       bindSub(st, back);
       st.querySelector('#ldm-back').onclick = st.querySelector('#ldm-ok').onclick = () => { sfx('tap'); c.save(); (back || time)(); };
       st.querySelectorAll('[data-fi]').forEach(b => b.onclick = () => { sfx('tap'); funcoes(+b.dataset.fi, back); });
-      st.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { sfx('tap'); R[sel] = +b.dataset.r; c.save(); funcoes(sel, back); });
-      st.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { sfx('tap'); const [ln, v] = b.dataset.gl.split(':'); sl.forEach((x, i) => { if (lnOf(i) === ln) R[i] = +v; }); c.save(); funcoes(sel, back); });
+      st.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { sfx('tap'); R[sel] = b.dataset.r; c.save(); funcoes(sel, back); });
+      st.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { sfx('tap'); const [ln, v] = b.dataset.gl.split(':'); LH[ln] = +v; c.save(); funcoes(sel, back); });
     });
   }
   // ---------- Batedores (39): pênalti, faltas, escanteios e capitão; o 1º que estiver em campo bate ----------

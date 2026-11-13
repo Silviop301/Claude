@@ -83,13 +83,15 @@
       TM.forEach((T, s) => { const L0 = LT[s];
         if (T.jogadores.length !== L0.length || T.jogadores.some((p, i) => p.lp !== L0[i])) { mud = true;
           T.jogadores = L0.map((lp, i) => { let p = W.get(lp); if (!p) { p = novo(lp, T, i); W.set(lp, p); } p.i = i; p.time = T; return p; }); }
-        T.jogadores.forEach(p => { p.base = base(p.lp); p.gol = p.lp.r === 'GK'; });
+        T.jogadores.forEach(p => { p.base = base(p.lp); p.gol = p.lp.r === 'GK'; p.es = (p.lp.inf && p.lp.inf.es) || NOES; });
       });
       if (mud) todos = A.jogadores.concat(B.jogadores);
       if (bola.dono && !todos.includes(bola.dono)) bola.dono = null;
       if (bola.receptor && !todos.includes(bola.receptor)) bola.receptor = null;
     }
     const goleiro = T => T.jogadores.find(p => p.gol) || T.jogadores[0];
+    // Estilo do jogador (Treinador, Funções): só mexe nas decisões e no lugar dele; nada é disparado (ver S.CO_PSTY)
+    const NOES = {}, es = (p, k, d) => { const v = p.es && p.es[k]; return v === undefined ? d : v; };
     // O estilo do Treinador vira o jeito de jogar: linha (altura da defesa), pressão, paciência (ctrl), contra-ataque e abertura
     function estilos() {
       TM.forEach((T, s) => { const x = o.sty(s) || {}, v = (k, d) => (x[k] === undefined ? d : x[k]);
@@ -156,10 +158,10 @@
           if (naAreaPropria(T, g.iX, g.iY) && g.tInter < T.adv.tPers - 0.25 && g.tInter < T.tPers) T.perseguidor = g; }
       } else {
         const T = dono.time.adv; let p1 = null, t1 = 1e9, p2 = null, t2 = 1e9;
-        for (const p of T.jogadores) { if (!emPe(p) || p.gol) continue; const t = hip(p.x - bola.x, p.y - bola.y) / velMax(p);
+        for (const p of T.jogadores) { if (!emPe(p) || p.gol) continue; const t = hip(p.x - bola.x, p.y - bola.y) / velMax(p) * es(p, 'pres', 1);
           if (t < t1) { p2 = p1; t2 = t1; p1 = p; t1 = t; } else if (t < t2) { p2 = p; t2 = t; } }
         // pressão baixa: quem está longe da própria área espera no bloco em vez de correr atrás (retranca e contra-ataque)
-        if (p1 && T.sty.press < 0.3 && RX(T, bola.x) > 60 && t1 > 0.9) p1 = null;
+        if (p1 && T.sty.press < 0.3 && RX(T, bola.x) > 60 && t1 > 0.9 && !p1.es.pres) p1 = null;
         if (!dono.naMao) { T.pressor = p1; T.cobertura = p2; }
       }
     }
@@ -172,25 +174,29 @@
       } else if (f.linha === 2) {
         x = !atq ? T.dl + 10 + (f.x - 45) * 0.45 : f.papel === 'VOL' ? Math.max(T.dl + 9, brx - 7) : Math.max(T.dl + 14, brx + 5 + (f.x - 50));
       } else { x = !atq ? T.dl + 22 + (f.x - 75) * 0.6 : f.papel === 'ATA' ? Math.max(brx + 20, T.dl + 36) : Math.max(brx + 13, T.dl + 30); }
+      x += atq ? es(p, 'ax', 0) : es(p, 'dx', 0); const ar = atq && p.es.area;
+      if (ar) x = Math.min(Math.max(x, 86), 93); // matador: fica na área
       if (atq) x = Math.min(x, T.impLinha - (f.papel === 'ATA' ? 1 : 2.5), 99);
-      const y = 34 + (f.y - 34) * (atq ? 1.14 * T.sty.larg : 0.64) + (bry - 34) * (atq ? 0.22 : 0.5);
+      const y = 34 + (f.y - 34) * (atq ? 1.14 * T.sty.larg * es(p, 'larg', 1) * (ar ? 0.4 : 1) : 0.64) + (bry - 34) * (atq ? 0.22 : 0.5);
       TX = RX(T, clamp(x, 3, 101)); TY = RY(T, clamp(y, 2.5, 65.5));
     }
     function alvoGoleiro(p) {
       const T = p.time, brx = RX(T, bola.x), dy = RY(T, bola.y) - 34, d = hip(brx, dy) || 1;
       let fora = clamp(d * 0.16, 1.0, T === M.posse ? 15 : 6.5); const dono = bola.dono;
       if (dono && dono.time !== T && brx < 20 && Math.abs(dy) < 16) fora = clamp(d * 0.3, 1.2, 5);
+      fora = clamp(fora * es(p, 'gk', 1), 0.6, 18); // líbero sai mais; quem fica no gol, menos
       TX = RX(T, brx / d * fora); TY = RY(T, 34 + dy / d * fora);
     }
     function escolherAcao(p, brx) {
       const T = p.time, papel = p.base.papel; let pInf = P_INFILTRA[papel] * T.sty.infK;
       if (brx < 38) pInf *= 0.45; else if (brx > 65) pInf *= 1.5;
       if (papel === 'LAT') pInf = ((p.base.y - 34) * (RY(T, bola.y) - 34) > 0 && brx > 42) ? 0.3 : 0.03;
+      pInf = Math.min(0.85, pInf * es(p, 'inf', 1)); const pApo = Math.max(0.05, 0.33 + es(p, 'apo', 0));
       const r = R();
       if (r < pInf) { p.acao = 'infiltrar'; p.tAcao = sorteia(1.6, 3.2); const ry = RY(T, p.y);
         p.infY = papel === 'LAT' ? ry : clamp(papel === 'PON' ? ry + (34 - ry) * sorteia(0, 0.6) : ry + sorteia(-9, 9), 5, 63);
-        p.semFreio = R() < BAL.pSemFreio; /* às vezes sai antes da hora: se o passe sair, é impedimento */ }
-      else if (r < pInf + 0.33) { p.acao = 'apoio'; p.tAcao = sorteia(1.2, 2.6); p.tPos = 0; }
+        p.semFreio = R() < BAL.pSemFreio + es(p, 'semF', 0); /* às vezes sai antes da hora: se o passe sair, é impedimento */ }
+      else if (r < pInf + pApo) { p.acao = 'apoio'; p.tAcao = sorteia(1.2, 2.6); p.tPos = 0; }
       else { p.acao = 'abrir'; p.tAcao = sorteia(0.9, 2.2); p.desvX = sorteia(-3.5, 3.5); p.desvY = sorteia(-4, 4); }
     }
     function calcApoio(p, dono, ancX, ancY) {
@@ -291,7 +297,7 @@
       return c;
     }
     function avaliarPasses(p, pressao, lista, op) {
-      const T = p.time, S = T.sty, prx = RX(T, bola.x), pry = RY(T, bola.y), vAqui = valorPos(prx, pry), ruido = () => gauss() * S.ruido;
+      const T = p.time, S = T.sty, eL = es(p, 'lanc', 0), prx = RX(T, bola.x), pry = RY(T, bola.y), vAqui = valorPos(prx, pry), ruido = () => gauss() * S.ruido;
       for (const m of T.jogadores) {
         if (m === p || !emPe(m)) continue; const d0 = hip(m.x - bola.x, m.y - bola.y); if (d0 < 5 || d0 > (op.max || 62)) continue;
         const mrx = RX(T, m.x); if (mrx > T.impLinha + 0.2 + gauss() * BAL.erroLinha * (1.3 - at(p, 'pas') / 100) && mrx > prx) continue; // não passa para quem ele vê impedido (às vezes lê mal a linha)
@@ -300,11 +306,11 @@
         const dRec = distMaisPerto(T.adv, ax, ay), aberto = clamp(dRec / 7, 0, 1), prog = arx - prx, ganho = valorPos(arx, ary) - vAqui;
         const comum = 0.5 + prog * S.avanco + ganho * 2.2 + aberto * 0.45 - (m.gol ? 0.5 : 0) + (prog < 0 ? pressao * 0.35 : 0);
         lista.push({ u: comum - risco * 2.4 - (d > 30 ? 0.2 : 0) + ruido(), tipo: 'passe', m, x: ax, y: ay, alto: false });
-        if (d0 > 24 && !op.soCurto) lista.push({ u: comum - S.alto - (clamp(1 - dRec / 6, 0, 1) * 0.7 + 0.25 + d0 * 0.004) * 1.6 + ruido(), tipo: 'passe', m, x: ax, y: ay, alto: true });
+        if (d0 > 24 && !op.soCurto) lista.push({ u: comum - S.alto - (clamp(1 - dRec / 6, 0, 1) * 0.7 + 0.25 + d0 * 0.004) * 1.6 + eL + ruido(), tipo: 'passe', m, x: ax, y: ay, alto: true });
         if (m.acao === 'infiltrar' && mrx > prx && T.impLinha < 93 && d0 > 12 && d0 < 48 && !op.soCurto) {
           const lx = RX(T, Math.min(Math.max(mrx, T.impLinha) + sorteia(7, 14), 98)), ly = RY(T, lerp(RY(T, m.y), 34, 0.2));
           const esp = clamp(distMaisPerto(T.adv, lx, ly) / 10, 0, 1), rl = riscoLinha(bola.x, bola.y, lx, ly, T.adv), alto = rl > 0.45 || hip(lx - bola.x, ly - bola.y) > 28;
-          lista.push({ u: 0.5 + (valorPos(RX(T, lx), RY(T, ly)) - vAqui) * 1.6 + esp * 0.6 - (alto ? 0.6 : rl * 1.6) - d0 * 0.012 + (at(p, 'pas') - 70) / 120 + ruido(), tipo: 'passe', m, x: lx, y: ly, alto, lanc: true });
+          lista.push({ u: 0.5 + (valorPos(RX(T, lx), RY(T, ly)) - vAqui) * 1.6 + esp * 0.6 - (alto ? 0.6 : rl * 1.6) - d0 * 0.012 + (at(p, 'pas') - 70) / 120 + eL + ruido(), tipo: 'passe', m, x: lx, y: ly, alto, lanc: true });
         }
       }
     }
@@ -317,9 +323,9 @@
       avaliarPasses(p, pressao, ops, {});
       if (p.naMao) ops.push({ u: 0.45 + ruido(), tipo: 'chutao' });
       else {
-        if (dGol < BAL.distMaxChute) ops.push({ u: Math.sqrt(chancePercebida(p, T, dGol)) * BAL.pesoChute * (0.85 + 0.3 * at(p, 'fin') / 100) - BAL.freioChute + pressao * 0.15 + ruido(), tipo: 'chute' });
+        if (dGol < BAL.distMaxChute) ops.push({ u: Math.sqrt(chancePercebida(p, T, dGol)) * BAL.pesoChute * (0.85 + 0.3 * at(p, 'fin') / 100) - BAL.freioChute + pressao * 0.15 + es(p, 'chu', 0) + ruido(), tipo: 'chute' });
         if (prx > 72 && Math.abs(pry - 34) > 11) { let nArea = 0; for (const m of T.jogadores) if (m !== p && emPe(m) && RX(T, m.x) > 86 && Math.abs(m.y - 34) < 13) nArea++;
-          if (nArea) ops.push({ u: S.cruz + 0.28 * nArea + (prx > 90 ? 0.3 : 0) + pressao * 0.2 + ruido(), tipo: 'cruz' }); }
+          if (nArea) ops.push({ u: S.cruz + es(p, 'cruz', 0) + 0.28 * nArea + (prx > 90 ? 0.3 : 0) + pressao * 0.2 + ruido(), tipo: 'cruz' }); }
         let mc = null;
         for (let k = 0; k < 6; k++) {
           const ang = k === 0 ? Math.atan2(34 - p.y, gx - p.x) : frente + [0, 0.6, -0.6, 1.2, -1.2][k - 1], ux = Math.cos(ang), uy = Math.sin(ang), cx = p.x + ux * 5, cy = p.y + uy * 5;
@@ -330,7 +336,7 @@
           if (!mc || u > mc.u) mc = { u, tipo: 'conduz', ang };
         }
         if (mc) ops.push(mc);
-        if (op && dOp < 4.5 && prx > 35 && (op.x - p.x) * T.dir > 0) ops.push({ u: 0.3 + P_DRIBLE[p.base.papel] + (at(p, 'dri') - 70) / 90 + (prx > 70 ? 0.25 : 0) - (nPerto - 1) * 0.3 + ruido(), tipo: 'drible', op });
+        if (op && dOp < 4.5 && prx > 35 && (op.x - p.x) * T.dir > 0) ops.push({ u: 0.3 + P_DRIBLE[p.base.papel] + es(p, 'dri', 0) + (at(p, 'dri') - 70) / 90 + (prx > 70 ? 0.25 : 0) - (nPerto - 1) * 0.3 + ruido(), tipo: 'drible', op });
         if (prx < 22 && pressao > 0.55) ops.push({ u: 0.9 + pressao * 0.5 + ruido(), tipo: 'chutao' });
       }
       let m = null; for (const q of ops) if (!m || q.u > m.u) m = q;
@@ -466,7 +472,7 @@
       for (const q of dono.time.adv.jogadores) {
         if (!emPe(q) || q.cdDes > 0 || q.atord > 0) continue; if (hip(q.x - bola.x, q.y - bola.y) > BAL.raioDesarme) continue;
         q.cdDes = sorteia(0.8, 1.2);
-        let pW = BAL.pDesarme + (at(q, 'def') - at(dono, 'dri')) / 220, pF = BAL.pFalta; const n = hip(dono.x - q.x, dono.y - q.y) || 1;
+        let pW = BAL.pDesarme + (at(q, 'def') - at(dono, 'dri')) / 220 + es(q, 'bote', 0), pF = BAL.pFalta * es(q, 'falta', 1); const n = hip(dono.x - q.x, dono.y - q.y) || 1;
         const tras = ((dono.x - q.x) * Math.cos(dono.dir) + (dono.y - q.y) * Math.sin(dono.dir)) / n;
         if (tras > 0.4) { pW -= 0.14; pF += 0.07; } if (dono.driblando) { pW -= 0.1; pF += 0.02; } if (q.gol) { pW += 0.25; pF = 0.03; } pW += (q.e - dono.e) * 0.1;
         pF *= 1 + (1 - q.e) * 0.4 - (at(q, 'def') - 70) / 250; // cansado e marcador ruim chegam atrasados
