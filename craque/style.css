@@ -8355,7 +8355,8 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
    embaixo da bolinha de baixo; banco inteiro rolando de lado; escudos menores (as imagens são pequenas) */
 .tm .ld-dot { width: 34px; height: 34px; margin: -17px 0 0 -17px; }
 .tm .ld-dc { width: 34px; height: 34px; font-size: 17px; }
-.tm .ld-dn { left: 17px; top: 23px; }
+.tm .ld-dn { left: 17px; top: 28px; } /* vaga mais baixa: não tampa o geral (Silvio, 13/11) */
+.tm .ld-pitch .ld-dot, .fu2-pitch .ld-dot { z-index: auto; } .tm .ld-pitch .ld-dn, .fu2-pitch .ld-dn { z-index: 4; } /* nome e etiqueta por cima da bolinha de baixo */
 .tm .ld-dn b { font-size: 13px; }
 .tm-bench { overflow-x: auto; overflow-y: hidden; touch-action: pan-x; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
 .tm-bench::-webkit-scrollbar { display: none; }
