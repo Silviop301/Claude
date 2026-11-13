@@ -83,8 +83,15 @@ self.addEventListener('activate', e => {
     .then(() => self.clients.claim()));
 });
 
-// Código/página: rede primeiro (sempre a versão nova), cache se estiver sem internet.
-// Imagens, 3D e bibliotecas externas: cache primeiro; o que não está no cache entra nele na primeira vez.
+// Código com versão (?v=, muda a cada publicação): cache primeiro. O endereço já é outro quando o código muda,
+// então o que está no aparelho é sempre o certo e o app abre sem baixar ~100 arquivos de novo (rede fraca = tela verde).
+// Página e código sem versão: rede primeiro, mas com 4 s de espera no máximo; depois vale o do aparelho.
+const getNet = req => fetch(req).then(res => {
+  // Só guarda resposta boa: erro do servidor (500, 404 no meio do deploy) não pode tomar o lugar do arquivo no offline
+  if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
+  return res;
+});
+const fromCache = req => caches.match(req).then(hit => hit || caches.match(req, { ignoreSearch: true }));
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
@@ -92,12 +99,19 @@ self.addEventListener('fetch', e => {
   if (url.pathname.includes('/api/')) return; // ranking: sempre da rede
   if (url.pathname.includes('/assets/musica/')) return; // música de fundo: o navegador pede em pedaços (Range) e o iPhone não toca resposta inteira do cache
   const code = url.origin === location.origin && /(\\/|\\.html|\\.js|\\.css|\\.webmanifest)$/.test(url.pathname);
+  if (code && /^[0-9a-f]{8}$/.test(url.searchParams.get('v') || '')) {
+    e.respondWith(caches.match(req).then(hit => hit || getNet(req)));
+    return;
+  }
   if (code) {
-    e.respondWith(fetch(req).then(res => {
-      // Só guarda resposta boa: erro do servidor (500, 404 no meio do deploy) não pode tomar o lugar do arquivo no offline
-      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
-      return res;
-    }).catch(() => caches.match(req).then(hit => hit || caches.match(req, { ignoreSearch: true }))));
+    const net = getNet(req);
+    e.respondWith(new Promise(ok => {
+      let done = false;
+      const fall = () => fromCache(req).then(hit => { if (hit && !done) { done = true; ok(hit); } return hit; });
+      const t = setTimeout(fall, 4000);
+      net.then(res => { clearTimeout(t); if (!done) { done = true; ok(res); } })
+        .catch(() => { clearTimeout(t); fall().then(hit => { if (!hit && !done) { done = true; ok(Response.error()); } }); });
+    }));
     return;
   }
   e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => {
