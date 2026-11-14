@@ -556,7 +556,7 @@
     }
 
     /* ---------------- Bola parada (lateral, escanteio, tiro de meta) ---------------- */
-    const ESPERA = { lateral: 1.2, escanteio: 2.4, meta: 1.8, falta: 2.6, penalti: 4.5 };
+    const ESPERA = { lateral: 1.2, escanteio: 2.4, meta: 2.5, falta: 2.6, penalti: 4.5 }; // meta 1,8 -> 2,5 (14/11): dá tempo da bola sair, parar e a reserva chegar ao goleiro (TOSS_D + TOSS_T no livesim)
     // Escanteio por função (no original era pela ordem do 4-3-3): quem cabeceia vai para a área, um fica para o contra-ataque
     const PRI_A = { ZAG: 0, ATA: 1, PON: 2, MEI: 3, VOL: 4, LAT: 5 }, PRI_D = { ZAG: 0, VOL: 1, LAT: 2, MEI: 3, PON: 4, ATA: 5 };
     const ESC_A = [[99, 0], [97.5, 4], [96, -4], [93.5, -4.5], [93.5, 4.5], [88, 0], [96, 22], [72, 0], [62, -12], [62, 12]];
