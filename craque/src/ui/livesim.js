@@ -5,7 +5,7 @@
 // (out.my.ev), que só saem no minuto deles. Você ataca para a direita; o adversário é espelhado.
 (function () {
   const U = window.CRAQUE_UI, LP = U.LP || (U.LP = {});
-  const L = 105, WD = 68, GL = 30.34, GR = 37.66;
+  const L = 105, WD = 68, GL = 28.8, GR = 39.2; // gol de 10,4 m, o mesmo do cérebro 11x11 (GOL_HW, 14/11)
   const cl = (v, a, b) => Math.max(a, Math.min(b, v));
   const sig = v => 1 / (1 + Math.exp(-v));
   const F433 = [['GK', 0, 50], ['LB', .22, 12], ['CB', .16, 37], ['CB', .16, 63], ['RB', .22, 88], ['CM', .5, 30], ['DM', .38, 50], ['CM', .5, 70], ['LW', .8, 15], ['ST', .9, 50], ['RW', .8, 85]];
@@ -1829,13 +1829,14 @@
         [0, 1].forEach(sd => { const x0 = sd ? XL(L) : XL(0), dir = sd ? 1 : -1; let amp = 0, ny = 0;
           if (net && Math.abs(X(net.gx) - x0) < 3) { amp = Math.min(6, 2 + net.v * 0.12) * Math.exp(-net.t * 3) * Math.cos(net.t * 14); ny = Y(net.y); }
           const bz = yy => (amp ? amp * Math.max(0, 1 - ((yy - ny) / hh) ** 2) : 0), back = (yy, f) => x0 + dir * (nd + bz(yy)) * f;
-          g.fillStyle = 'rgba(255,255,255,.09)'; g.beginPath(); g.moveTo(x0, y0); for (let yy = y0; yy <= y1 + 0.1; yy += (y1 - y0) / 8) g.lineTo(back(yy, 1), yy); g.lineTo(x0, y1); g.closePath(); g.fill();
-          g.strokeStyle = 'rgba(255,255,255,.26)'; g.lineWidth = 0.6; g.beginPath();
+          g.fillStyle = 'rgba(255,255,255,.16)'; g.beginPath(); g.moveTo(x0, y0); for (let yy = y0; yy <= y1 + 0.1; yy += (y1 - y0) / 8) g.lineTo(back(yy, 1), yy); g.lineTo(x0, y1); g.closePath(); g.fill();
+          g.strokeStyle = 'rgba(255,255,255,.34)'; g.lineWidth = 0.7; g.beginPath();
           for (let i = 1; i < 8; i++) { const yy = y0 + (y1 - y0) * i / 8; g.moveTo(x0, yy); g.lineTo(back(yy, 1), yy); }
           for (let j = 1; j < 3; j++) { g.moveTo(back(y0, j / 3), y0); for (let i = 1; i <= 8; i++) { const yy = y0 + (y1 - y0) * i / 8; g.lineTo(back(yy, j / 3), yy); } }
           g.stroke();
-          g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.3; g.beginPath(); g.moveTo(x0, y0); for (let i = 0; i <= 8; i++) { const yy = y0 + (y1 - y0) * i / 8; g.lineTo(back(yy, 1), yy); } g.lineTo(x0, y1); g.stroke();
-          g.fillStyle = '#fff'; g.beginPath(); g.arc(x0, y0, 2.2, 0, Math.PI * 2); g.arc(x0, y1, 2.2, 0, Math.PI * 2); g.fill(); }); }
+          g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(x0, y0); for (let i = 0; i <= 8; i++) { const yy = y0 + (y1 - y0) * i / 8; g.lineTo(back(yy, 1), yy); } g.lineTo(x0, y1); g.stroke();
+          g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0, y1); g.stroke(); // o travessão visto de cima
+          g.fillStyle = '#fff'; g.beginPath(); g.arc(x0, y0, 2.8, 0, Math.PI * 2); g.arc(x0, y1, 2.8, 0, Math.PI * 2); g.fill(); }); }
       // Marca do pênalti, arco da área (a 9,15 m da marca, só a parte fora da área), quartos de círculo e bandeirinhas de escanteio
       const rx = XL(9.15) - XL(0), ry = Y(9.15) - Y(0), a0 = Math.acos(5.5 / 9.15);
       g.fillStyle = 'rgba(255,255,255,.6)'; [11, L - 11].forEach(x => { g.beginPath(); g.arc(XL(x), Y(34), 1.6, 0, Math.PI * 2); g.fill(); });

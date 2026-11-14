@@ -10,12 +10,14 @@
 (function () {
   const U = (typeof window !== 'undefined' && window.CRAQUE_UI) || {}, LP = U.LP || (U.LP = {});
   const CL = 105, CW = 68, G = 9.81, DT = 1 / 20, TAU = Math.PI * 2;
-  const GOL_Y1 = 30.34, GOL_Y2 = 37.66, GOL_ALT = 2.44;
+  const _e = (typeof process !== 'undefined' && process.env) || {}, num = (k, d) => (_e[k] !== undefined && _e[k] !== '' ? +_e[k] : d);
+  // Gol mais largo que o real (14/11, Silvio: "o gol é muito pequeno"): os bonecos têm ~2,3 m de largura no desenho, então o gol de
+  // 7,32 m parecia ter três bonecos; 10,4 m (GOL_HW 5,2, variável B11_golHW no node) deixa o gol na proporção dos bonecos.
+  const GOL_HW = num('B11_golHW', 5.2), GOL_Y1 = 34 - GOL_HW, GOL_Y2 = 34 + GOL_HW, GOL_ALT = 2.44;
   const AREA_F = 16.5, AREA_Y1 = 13.85, AREA_Y2 = 54.15, PEQ_F = 5.5;
   const FATOR_PAPEL = { GOL: 0.9, ZAG: 0.97, LAT: 1.02, VOL: 0.98, MEI: 1.0, PON: 1.04, ATA: 1.02 };
   const P_INFILTRA = { GOL: 0, ZAG: 0, LAT: 0.1, VOL: 0.05, MEI: 0.18, PON: 0.42, ATA: 0.5 };
   const P_DRIBLE = { GOL: -9, ZAG: -0.3, LAT: 0.1, VOL: 0, MEI: 0.25, PON: 0.42, ATA: 0.3 };
-  const _e = (typeof process !== 'undefined' && process.env) || {}, num = (k, d) => (_e[k] !== undefined && _e[k] !== '' ? +_e[k] : d);
   // Equilíbrio (os mesmos nomes da simulação original; no node cada um aceita variável de ambiente B11_<nome>)
   const BAL = {
     velBase: 7.3, acel: 10,
@@ -27,7 +29,7 @@
     erroChute: 0.08, erroChuteDist: 0.0024, erroChutePressao: 0.45,
     gkDist: 0.02, // chute de longe: o goleiro tem tempo de ver a bola (mais defesa por metro além de 11 m)
     distChute: 18, // a chance que o jogador enxerga cai e^(-d/distChute)
-    gkReacao: 0.26, gkMergulho: 5.7, gkAlcance: 1.45, gkBase: 0.77, gkAlcancePen: 0.16, gkVelPen: 75,
+    gkReacao: 0.26, gkMergulho: 5.7, gkAlcance: 1.45, gkBase: 0.81, gkAlcancePen: 0.16, gkVelPen: 75,
     pDesarme: 0.36, pFalta: 0.06, pFaltaBatido: 0.4, pAmarelo: 0.22, pVermelho: 0.015, pFaltaArea: 0.8, erroLinha: 2.6, pSemFreio: 0.25, // falta no bote: a desajeitada (pFalta) e a de quem foi batido e segura (pFaltaBatido; na própria área ele se segura: pFaltaArea); erroLinha: metros que o passador erra ao ler a linha do impedimento
     gastoBase: 0.0004, gastoCorrida: 0.000018,
     kAt: 1, // quanto o atributo se afasta da média dos 22 em campo (1 = um ponto vale um ponto da simulação original)
@@ -258,6 +260,7 @@
           if (ch.idade >= ch.reacao && Math.abs(bola.vx) > 1) { const tt = (p.x - bola.x) / bola.vx;
             if (tt > 0 && tt < 3) { let yp = bola.y + bola.vy * tt; if (ch.penalti && ch.palpite * (yp - 34) < 0) yp = 34 + ch.palpite * 2.6; /* pênalti: pulou para o lado errado */
               p.ay = clamp(yp, GOL_Y1 - 1.5, GOL_Y2 + 1.5); p.mergulho = true; } }
+          decideGoleiro(p, ch);
           return;
         }
         if (p === T.perseguidor || p === bola.receptor) { const perto = hip(bola.x - p.x, bola.y - p.y) < 2.5 && bola.z < 1; p.ax = perto ? bola.x : p.iX; p.ay = perto ? bola.y : p.iY; p.vDes = 1; return; }
@@ -267,7 +270,7 @@
     }
     function mover(p, dt) {
       if (p.caido > 0) { p.vx = p.vy = 0; return; }
-      if (p.mergulho) { const vm = BAL.gkMergulho * (0.75 + 0.5 * at(p, 'gol') / 100); p.vx = 0; p.vy = clamp((p.ay - p.y) / dt, -vm, vm); p.y += p.vy * dt; return; }
+      if (p.mergulho) { const vm = BAL.gkMergulho * (0.75 + 0.5 * at(p, 'gol') / 100) * (bola.chute && bola.chute.gkPassa ? 1.7 : 1); /* vencido: o pulo de quem já não chega é só desenho, sai da frente da bola */ p.vx = 0; p.vy = clamp((p.ay - p.y) / dt, -vm, vm); p.y += p.vy * dt; return; }
       const dx = p.ax - p.x, dy = p.ay - p.y, d = hip(dx, dy), des = Math.min(velMax(p) * p.vDes, d * 3.2);
       let dvx = (d > 0.01 ? dx / d * des : 0) - p.vx, dvy = (d > 0.01 ? dy / d * des : 0) - p.vy; const dv = hip(dvx, dvy), lim = BAL.acel * dt;
       if (dv > lim) { dvx *= lim / dv; dvy *= lim / dv; }
@@ -388,7 +391,7 @@
     function chutar(p, op) {
       const T = p.time, gx = T.dir > 0 ? CL : 0, fin = at(p, 'fin'), gk = goleiro(T.adv);
       let lado = gk && gk.y > 34 ? -1 : 1; if (R() < 0.3) lado = -lado;
-      const yAim = 34 + lado * (op.penalti ? sorteia(1.7, 3.0) : sorteia(1.5, 3.1)), zAim = op.falta ? sorteia(1.2, 2.1) : R() < 0.55 ? sorteia(0.15, 0.65) : sorteia(0.7, 2.0), dx = gx - bola.x, dy = yAim - bola.y, d = hip(dx, dy);
+      const yAim = 34 + lado * GOL_HW / 3.66 * (op.penalti ? sorteia(1.7, 3.0) : sorteia(1.5, 3.1)), zAim = op.falta ? sorteia(1.2, 2.1) : R() < 0.55 ? sorteia(0.15, 0.65) : sorteia(0.7, 2.0), dx = gx - bola.x, dy = yAim - bola.y, d = hip(dx, dy);
       let v = (op.cabeca ? sorteia(14, 19) : sorteia(21, 28) + fin * 0.03);
       const sig = op.penalti ? 0.035 * (1.5 - fin / 100) : BAL.erroChute * (1.55 - fin / 100) * (1 + (op.pressao || 0) * BAL.erroChutePressao) * (1 + (1 - p.e) * 0.3) * (op.mult || 1) + d * BAL.erroChuteDist;
       let ang = Math.atan2(dy, dx) + gauss() * sig; const tv = d / v; let vz = (zAim + 0.5 * G * tv * tv) / tv + gauss() * sig * 0.6 * v;
@@ -419,10 +422,24 @@
       bola.vx = p.vx * 0.5 + bola.vx * 0.2 + Math.cos(a) * f; bola.vy = p.vy * 0.5 + bola.vy * 0.2 + Math.sin(a) * f; bola.vz = R() * 2.5;
       bola.ultimo = p; bola.ultimoTime = p.time; bola.receptor = null; bola.chute = null; bola.cruz = false; bola.impedidos = null; p.cdToque = 0.4;
     }
+    const chanceDefesa = (p, ch, dPerp, v) => clamp(BAL.gkBase + Math.max(0, hip(ch.x0 - p.x, ch.y0 - p.y) - 11) * BAL.gkDist - dPerp * BAL.gkAlcancePen - Math.max(0, v - 20) / BAL.gkVelPen + (at(p, 'gol') - 70) / 140, 0.08, 0.97);
+    // A bola não atravessa o goleiro (14/11, Silvio): pouco antes da bola chegar (GK_ANTES s) o goleiro já sabe se pega. Pega: mergulha
+    // na linha da bola e a defesa sai no toque. Não pega: mergulha mas para antes (ou vai para o lado errado) e a bola passa fora do
+    // boneco (GK_FOLGA m além do alcance). Mesma conta de antes, com a distância que vai sobrar depois do mergulho.
+    const GK_ANTES = 0.32, GK_FOLGA = 0.5;
+    function decideGoleiro(p, ch) {
+      if (ch.gkDec) { if (ch.gkY !== undefined) { p.ay = ch.gkY; p.mergulho = true; } return; }
+      if (Math.abs(bola.vx) < 1 || p.caido > 0) return; const tt = (p.x - bola.x) / bola.vx; if (!(tt > 0 && tt <= GK_ANTES)) return;
+      const yb = bola.y + bola.vy * tt, zb = bola.z + bola.vz * tt - 0.5 * G * tt * tt; if (zb > 2.55) { ch.gkDec = 'alto'; return; }
+      const vm = BAL.gkMergulho * (0.75 + 0.5 * at(p, 'gol') / 100), alvo = p.mergulho ? p.ay : p.y, yk = p.y + clamp(alvo - p.y, -vm * tt, vm * tt), dP = Math.abs(yb - yk), alc = BAL.gkAlcance;
+      const sai = () => { const sg = Math.sign(yb - p.y) || (R() < 0.5 ? -1 : 1); ch.gkY = yb - sg * (alc + GK_FOLGA); p.ay = ch.gkY; p.mergulho = true; ch.gkPassa = true; };
+      if (dP > alc) { ch.gkDec = 'longe'; if (dP < alc + GK_FOLGA) sai(); return; }
+      if (R() < chanceDefesa(p, ch, dP, hip(bola.vx, bola.vy))) { ch.gkDec = 'pega'; ch.gkY = clamp(yb, GOL_Y1 - 1.5, GOL_Y2 + 1.5); p.ay = ch.gkY; p.mergulho = true; }
+      else { ch.gkDec = 'passa'; sai(); }
+    }
     function defender(p, dPerp) {
       const ch = bola.chute, T = p.time, v = hip(bola.vx, bola.vy); ch.tentou = true; p.cdToque = 0.5;
-      const pS = clamp(BAL.gkBase + Math.max(0, hip(ch.x0 - p.x, ch.y0 - p.y) - 11) * BAL.gkDist - dPerp * BAL.gkAlcancePen - Math.max(0, v - 20) / BAL.gkVelPen + (at(p, 'gol') - 70) / 140, 0.08, 0.97);
-      if (R() >= pS) return false;
+      if (ch.gkDec !== 'pega' && R() >= chanceDefesa(p, ch, dPerp, v)) return false;
       if (v < 16 || R() < 0.4) { fimChute(ch, 'def', { sv: 'segura' }); dominar(p); return true; }
       const fora = T.dir > 0 ? 1 : -1; bola.ultimo = p; bola.ultimoTime = T; bola.chute = null; bola.receptor = null; bola.cruz = false;
       if (R() < 0.5) { fimChute(ch, 'def', { sv: 'escanteio' }); bola.desvioEsc = true; bola.vx = -fora * sorteia(4, 7); bola.vy = (bola.y < 34 ? -1 : 1) * sorteia(2, 6); bola.vz = sorteia(5, 7); bola.z = Math.max(bola.z, 1); }
@@ -457,7 +474,7 @@
       const b = bola, ch = b.chute, dx = b.x - x0, dy = b.y - y0, L2 = dx * dx + dy * dy, vel = hip(b.vx, b.vy); let melhor = null, dm = 1e9, dReal = 0;
       for (const p of todos) {
         if (!emPe(p) || p.cdToque > 0) continue; let raio = BAL.raioDominio, alt = 1.9;
-        if (ch) { if (p.time === ch.time) { if (vel > 12 || p === ch.autor) continue; } else if (p.gol) { if (ch.tentou) continue; raio = BAL.gkAlcance; alt = 2.55; } else { raio = BAL.raioBloqueio; alt = 1.8; } }
+        if (ch) { if (p.time === ch.time) { if (vel > 12 || p === ch.autor) continue; } else if (p.gol) { if (ch.tentou || ch.gkPassa) continue; raio = BAL.gkAlcance; alt = 2.55; } else { raio = BAL.raioBloqueio; alt = 1.8; } }
         else if (p.gol && naAreaPropria(p.time, p.x, p.y)) { raio = 1.15; alt = 2.45; }
         else if (p.time !== b.ultimoTime && b.z < 0.5) raio = b.tSolta < 0.3 ? 0.45 : vel > 8 ? BAL.raioCorte : raio;
         if (b.z > alt) continue;
