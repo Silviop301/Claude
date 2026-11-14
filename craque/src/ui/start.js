@@ -301,10 +301,16 @@
       ? '<button class="hl-md hl-jogador off" disabled aria-disabled="true"><b>Jogador</b><small>Em breve</small></button>'
       : '<button class="hl-md hl-' + m + '" data-md="' + m + '" id="b-new-co"><b>Treinador</b></button>').join('');
     const more = (so ? LAND_MORE.filter(x => x[0] === 'settings') : LAND_MORE).map(([k, l, d]) => '<button class="hl-mr" data-hl="' + k + '">' + lineSvg(d) + '<b>' + l + '</b></button>').join('');
-    const html = U.LD.wroom && U.LD.wroom() && !so ? homeW(last) : '<div class="hl hl-x' + (so ? ' hl-so' : '') + '"><b class="hl-logo">CLIMBIX' + (Date.now() < BETA_ATE ? '<i class="hl-beta">BETA</i>' : '') + '</b>' +
+    // Home com o jogo passando atrás (Silvio 14/11, desenho E): coluna à esquerda (logo, dourado, botões), o campinho de verdade
+    // rodando sozinho à direita, apagado e sem som (homeBg); em cima à direita Instalar, Novidades e as moedas (ou, sem conta,
+    // o convite "Ganhe 36 moedas", que abre a criação da conta)
+    const bg = !so && U.LP && U.LP.sim ? '<div class="hl-bg" aria-hidden="true"><canvas id="hl-cv"></canvas></div>' : '';
+    const gift = !so && !window.CLIMBIX_SOLO && U.cloud && U.cloudStatus && !U.cloudStatus() && !(U.COINS && U.COINS.has('boas-vindas'));
+    const html = U.LD.wroom && U.LD.wroom() && !so ? homeW(last) : '<div class="hl hl-x' + (so ? ' hl-so' : ' hl-e') + '">' + bg + '<b class="hl-logo">CLIMBIX' + (Date.now() < BETA_ATE ? '<i class="hl-beta">BETA</i>' : '') + '</b>' +
+      bdTag() + '<div class="hl-tops">' +
       (U.installCan && U.installCan() ? '<button class="hl-nv hl-ins" id="hl-ins"><img src="' + U.installIcon + '" width="34" height="34" alt=""><b>Instalar o app</b></button>' : '') +
       (U.novidadesLand && !so ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.VERSION + '">' + U.emo('📣', 'md') + '<b>' + U.VERSION + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '') + // notas de versão (settings.js); o pontinho some depois de abrir
-      bdTag() + '<div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') + '</div>' +
+      (gift ? '<button class="hl-gift" id="hl-gift">' + U.COINS.svg + '<span><b>GANHE 36 MOEDAS</b><small>Crie sua conta grátis</small></span></button>' : U.COINS ? U.COINS.pill('', 'hl-coins') : '') + (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') + '</div>' +
       cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div>' + discHtml() + '</div>';
     U.LD.show(html, st => {
       st.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.hl; if (k === 'settings' && U.settingsLand) return U.settingsLand(home); if (k === 'profile' && U.profileLand) return U.profileLand(home); U.ldOff(); if (k === 'settings') return U.settings ? U.settings() : null; (U[k] || home)(); });
@@ -320,9 +326,32 @@
       if (st.querySelector('#hl-ins')) st.querySelector('#hl-ins').onclick = e => { sfx('tap'); const bt = e.currentTarget, t = bt.querySelector('b'); if (!U.installAsk()) { t.textContent = 'Vire o celular em pé'; clearTimeout(bt._t); bt._t = setTimeout(() => { t.textContent = 'Instalar o app'; }, 4000); } };
       if (st.querySelector('#hl-nv')) st.querySelector('#hl-nv').onclick = () => { sfx('tap'); U.novidadesLand(home); };
       if (st.querySelector('#hl-coins') && U.LD.loja) st.querySelector('#hl-coins').onclick = () => { sfx('tap'); U.LD.loja(0, home); };
+      if (st.querySelector('#hl-gift')) st.querySelector('#hl-gift').onclick = () => { sfx('tap'); U.cloud('register', null, null, home); };
+      homeBg(st);
       if (st.querySelector('#hl-packs')) st.querySelector('#hl-packs').onclick = () => { sfx('tap'); U.ldOff(); U.openPacks ? U.openPacks(U.home) : (U.packsScreen && U.packsScreen()); };
     }, 'O Climbix é jogado com o celular deitado.');
     U.installHomeBind(); // tutorial de instalar: na home deitada abre com o celular em pé (install.js)
+  }
+  // O jogo passando atrás da home (Silvio 14/11: "o jogo passando atrás? que ideia legal"): o campinho de verdade (livesim.js)
+  // joga sozinho no #hl-cv, sem som (o.mute) e sem gol (sem motor mandando chute), um minuto a cada HBG_MIN ms; no minuto 42
+  // começa outro jogo. Para sozinho quando a home sai da tela ou outra partida começa (LP._sim é uma só)
+  const HBG_MIN = 2800;
+  let hbg = null;
+  function homeBg(st) {
+    const cv = st.querySelector('#hl-cv'), LP = U.LP;
+    if (hbg) { clearInterval(hbg.iv); if (LP && LP._sim === hbg.sim) hbg.sim.stop(); hbg = null; }
+    if (!cv || !LP || !LP.sim) return;
+    const start = () => {
+      let sim; try { sim = LP.sim({ me: -1, clean: true, mute: true, seed: Date.now() % 99991, t0: 1, speed: () => 1, spm: () => HBG_MIN / 1000 }); sim.attach(cv); sim.go(); } catch (e) { return; }
+      const me = hbg = { sim, t: 1, iv: setInterval(() => {
+        if (hbg !== me) return clearInterval(me.iv);
+        if (!document.body.contains(cv) || LP._sim !== sim) { clearInterval(me.iv); if (LP._sim === sim) sim.stop(); hbg = null; return; }
+        if (document.hidden) return;
+        if (++me.t > 42) { clearInterval(me.iv); sim.stop(); return start(); }
+        sim.minute(me.t, 50);
+      }, HBG_MIN) };
+    };
+    start();
   }
   // Disco da música (2026-11-11, Silvio: "a música rolando desde a home, um disco girando no canto que indique a música"):
   // canto de baixo à direita, gira enquanto toca; tocar liga/desliga a música (a mesma chave dos Ajustes) e mostra o nome

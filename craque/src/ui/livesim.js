@@ -146,7 +146,7 @@
       onGoal: (p, s, y, v, own) => { b11In = false; if (own && o.onShot) o.onShot({ side: s, out: 'gol', kind: 'contra', dist: 8, box: true, near: false, lane: 0 });
         net = { gx: s ? 0 : L, y, t: 0, v: Math.max(10, v) }; mode = 'goal'; modeT = FXON() ? CELEB : 2; koSide = 1 - s; back = 0; ball.owner = null;
         hero = p && p.side === s ? p : T[s].filter(q => q.r !== 'GK').sort((a, b) => tf(s, b)[0] - tf(s, a)[0])[0]; bigSay('GOOOL!', s, 2.6, true); },
-      onPost: (x, y) => { post = { x, y, t: 0.5 }; if (typeof window !== 'undefined' && window.CRAQUE_SFX) try { window.CRAQUE_SFX.play('trave'); } catch (_) {} },
+      onPost: (x, y) => { post = { x, y, t: 0.5 }; if (typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play('trave'); } catch (_) {} },
       onStop: (k, s, x, y, sai) => { poss = s; if (k === 'lateral' || k === 'escanteio' || k === 'meta') b11Out(x, y, sai); if (k === 'lateral' || k === 'escanteio' || k === 'meta') signal(s, x, y, k === 'lateral' ? 'lat' : k === 'escanteio' ? 'esc' : 'tiro'); if (k === 'escanteio') escClk = clk; },
       amarelos: q => (o.yc ? o.yc(q.side, q.inf ? q.inf.num : q.num) || 0 : 0),
       batedor: s => { const n = o.taker ? o.taker(s) : null; return n == null ? null : T[s].find(q => (q.inf ? q.inf.num : q.num) === n) || null; },
@@ -155,7 +155,7 @@
     // fez, a linha do impedimento com a bandeira, o expulso sai andando; a tela anota no motor (o.onRef)
     function b11Ref(e) {
       const s = e.side, p = e.p, num = p && (p.inf ? p.inf.num : p.num);
-      if (typeof window !== 'undefined' && window.CRAQUE_SFX) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {}
+      if (typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {}
       let kind = 'falta';
       if (e.t === 'impedimento') { kind = 'impedimento'; offLine = { s, x: e.lin, t: 1.8 }; arFor(toW(s, e.lin, 0)[0]).flag = 1.8; refFx = { p, kind, t: 1.8 }; }
       else {
@@ -930,7 +930,7 @@
       else if (f.out === 'def' && f.sv === 'escanteio' && !lc) { flyOut(gk, s ? -2.5 : L + 2.5, 34 + (ball.y < 34 ? -1 : 1) * (5 + rnd() * 6), true, 'espalma'); }
       else if (f.out === 'def' && f.sv === 'espalma' && !lc) { why = 'rebote'; spill(gk, gx + dg * (6 + rnd() * 5), ball.y + (ball.y < 34 ? -1 : 1) * (3 + rnd() * 7), 'rebote'); }
       else if (f.out === 'def') { why = 'defesa'; setOwner(gk); }
-      else if (f.out === 'trave' && !lc) { why = 'trave'; post = { x: f.x1, y: f.y1, t: 0.5 }; if (typeof window !== 'undefined' && window.CRAQUE_SFX) try { window.CRAQUE_SFX.play('trave'); } catch (_) {} spill(gk, gx + dg * (5 + rnd() * 6), 34 + (f.y1 < 34 ? -1 : 1) * (1 + rnd() * 5), 'trave'); }
+      else if (f.out === 'trave' && !lc) { why = 'trave'; post = { x: f.x1, y: f.y1, t: 0.5 }; if (typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play('trave'); } catch (_) {} spill(gk, gx + dg * (5 + rnd() * 6), 34 + (f.y1 < 34 ? -1 : 1) * (1 + rnd() * 5), 'trave'); }
       else if (f.out === 'bloq' && !lc) { why = 'bloqueio'; const b = f.blk || gk;
         if (rnd() < 0.5 && outCd <= 0) { outCd = 2; flyOut(b, s ? -2.5 : L + 2.5, (ball.y < 34 ? GL - 4 - rnd() * 10 : GR + 4 + rnd() * 10), false, 'travado'); }
         else spill(b, ball.x - dg * (5 + rnd() * 8), ball.y + gauss() * 9, 'travado'); }
@@ -980,7 +980,7 @@
         const [qx, qy] = tf(s, q); let bi = -1, bd = 1e9; free.forEach((f, i) => { const d = Math.hypot(f[0] - qx, f[1] - qy); if (d < bd) { bd = d; bi = i; } });
         if (bi >= 0) { tg.set(q, toW(s, free[bi][0], free[bi][1] + gauss() * 0.3)); free.splice(bi, 1); } });
       pen = { e, s, tk, gk, spot: { x: spot[0], y: spot[1] }, tg, ph: 0, t: 0, ban: PEN_BAN }; penBan = { t: 0 };
-      if (typeof window !== 'undefined' && window.CRAQUE_SFX) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {}
+      if (typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {}
       due = null; mode = 'pen'; stopWhy = 'Pênalti'; camT = 0; camS = s; ALL.forEach(q => { q.run = 0; q.go = 0; q.th = 0; }); // o zoom espera o aviso (camStep: pen.ban)
       ball.owner = ball.fly = ball.carry = null; if (ball.loose) ball.loose = null;
     }
@@ -1165,7 +1165,7 @@
       e.kick = true;
     }
     function penAbort() { if (!pen) return; const gk = pen.gk; pen = null; penBan = null; camT = 0; spray = null; mode = 'play'; stopWhy = ''; setOwner(gk); }
-    function whistle(why, taker, spot) { if (typeof window !== 'undefined' && window.CRAQUE_SFX) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {} /* apito de falta, impedimento e troca (12/11: parava mudo) */ mode = 'falta'; modeT = 1.5; stopWhy = why; foulSpot = spot ? { x: spot.x, y: spot.y } : { x: ball.x, y: ball.y }; ball.owner = ball.fly = ball.loose = ball.carry = null; foulTo = taker;
+    function whistle(why, taker, spot) { if (typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {} /* apito de falta, impedimento e troca (12/11: parava mudo) */ mode = 'falta'; modeT = 1.5; stopWhy = why; foulSpot = spot ? { x: spot.x, y: spot.y } : { x: ball.x, y: ball.y }; ball.owner = ball.fly = ball.loose = ball.carry = null; foulTo = taker;
       // quem sofreu está no chão: cobra o companheiro mais perto do lugar da falta
       if (taker && taker.down) { const sp = foulSpot, m = T[taker.side].filter(q => q !== taker && q.r !== 'GK' && !q.down && !isMe(q)).sort((a, b) => dist(a, sp) - dist(b, sp))[0]; if (m) foulTo = m; }
       if (why === 'Falta') FKN.f++; fkSet = why === 'Falta' && foulTo && FKW ? fkPlan(foulTo, foulSpot) : null; if (fkSet) foulTo = fkSet.tk; modeT = fkSet ? FK_T : FOUL_T; }
@@ -1636,7 +1636,7 @@
     }
     let back = 0; // voltando para o meio depois do gol (correm de volta)
     let koHold = false; // saída do começo de cada tempo: o relógio da tela espera o apito (todos no lugar)
-    function startPlay() { if (koHold && typeof window !== 'undefined' && window.CRAQUE_SFX) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {} /* apito da saída de cada tempo */ koHold = false; back = 0; mode = 'play'; const k = kicker(koSide); ball.x = 52.5; ball.y = 34; setOwner(k); lastPasser = k; lastPassClk = clk; fly(k, at(koSide, 6).x, at(koSide, 6).y, at(koSide, 6), false, 'curto', false); }
+    function startPlay() { if (koHold && typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {} /* apito da saída de cada tempo */ koHold = false; back = 0; mode = 'play'; const k = kicker(koSide); ball.x = 52.5; ball.y = 34; setOwner(k); lastPasser = k; lastPassClk = clk; fly(k, at(koSide, 6).x, at(koSide, 6).y, at(koSide, 6), false, 'curto', false); }
     // A volta para o meio depois do gol passa em velocidade 3× (é o tempo de recomeçar, não um lance)
     let mT = 0; // segundos de campinho jogados desde o último minuto do motor (ver minute)
     // Festa do título: o seu time corre para o meio e vira um bolo pulando; o goleiro vem do gol; os de lá vão para o seu campo
