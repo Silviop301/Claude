@@ -1941,17 +1941,17 @@
     const cell = (x, i) => { const v = m.f[i] || 0, t = x.o[v].t;
       return '<div class="mkw-f' + (v ? ' on' : '') + '">' + (v ? '<button class="mk-fx" data-mx="' + i + '" aria-label="limpar ' + x.t.toLowerCase() + '">' + x.t + '<i>×</i></button>' : '<small>' + x.t + '</small>') +
         '<button class="mk-ar" data-mf="' + i + '" data-d="-1" aria-label="' + x.t.toLowerCase() + ' anterior">' + MK_L + '</button><b>' + esc(t) + '</b><button class="mk-ar" data-mf="' + i + '" data-d="1" aria-label="' + x.t.toLowerCase() + ' seguinte">' + MK_R + '</button></div>'; };
-    const row = (p, i) => { const b = S.coMktBand(co, p), w = S.coMktWord(b), pr = S.coMktPrice(p);
+    const row = (p, i) => { const o = S.coMktOvr(co, p), pr = S.coMktPrice(p);
       return '<button class="mkw-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><b>' + esc(p.n) + obsTag(co, p) + '</b><i class="mkw-ps" data-ln="' + lnOf(p.pos) + '">' + p.pos + '</i><span>' + p.age + '</span><span class="cl">' + mkClub(p) + '</span>' +
-        '<em class="' + (w || 'nr') + '">' + (w || 'sem relatório') + '</em><strong>' + (p.club ? c.brl(pr) : 'grátis') + '</strong></button>'; };
+        '<em class="mk-ovr ' + (o ? o.vs : 'nr') + '">' + S.coMktOvrTxt(o) + '</em><strong>' + (p.club ? c.brl(pr) : 'grátis') + '</strong></button>'; };
     const empty = n ? 'Filtre mais: com estes filtros são ' + plMil(n, 'jogador', 'jogadores') + '. A lista aparece com até ' + S.CO_MKT.max + '.' : 'Ninguém com estes filtros. Solte um deles.';
-    const help = 'Escolha os filtros à esquerda: com até ' + S.CO_MKT.max + ' jogadores a lista aparece ao lado. Melhor, igual ou pior é contra o seu titular da posição, pelo que o olheiro viu: com mais relatórios ele erra menos. A janela abre nas 3 primeiras rodadas e em 2 rodadas no meio do campeonato. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.';
+    const help = 'Escolha os filtros à esquerda: com até ' + S.CO_MKT.max + ' jogadores a lista aparece ao lado. O geral aparece em faixa, pelo que o olheiro viu: cada relatório estreita a faixa e o completo mostra o número certo. Verde é melhor que o seu titular da posição; laranja, pior. A janela abre nas 3 primeiras rodadas e em 2 rodadas no meio do campeonato. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.';
     show('<div class="mkw mk"><div class="tm-h"><button class="tcr-back" id="mk-back" aria-label="Voltar">' + MK_BK + '</button><span class="mk-tt"><b>Mercado</b><small>' + esc(club(co.club).short || club(co.club).name) + '</small></span>' +
         '<div class="mk-tabs t4">' + mkTabs(co, 0) + '</div><span class="mk-top">' + mkCx(true) + mkWin() + '<button class="ol2-q" id="mk-q" aria-label="Como funciona">?</button></span></div>' +
       '<div class="mkw-l"><label class="mk-k mk-nm"><small>NOME</small><input id="mk-nm" type="text" autocomplete="off" placeholder="Toque para digitar" value="' + esc(m.nm || '') + '"></label>' +
         '<div class="mkw-fs">' + F.map(cell).join('') + '</div>' +
         '<div class="mk-k mkw-n"><span><b id="mk-n" class="' + (ok ? 'ok' : '') + '">' + plMil(n, 'jogador', 'jogadores') + '</b><small>com estes filtros</small></span>' + (dirty ? '<button class="mk-clr" id="mk-clr">Limpar</button>' : '') + '</div></div>' +
-      '<div class="mkw-r0"><div class="mkw-t"><div class="mkw-h"><span>JOGADOR</span><span>POS</span><span>IDADE</span><span>CLUBE</span><span>CONTRA O SEU</span><span>PREÇO</span></div>' +
+      '<div class="mkw-r0"><div class="mkw-t"><div class="mkw-h"><span>JOGADOR</span><span>POS</span><span>IDADE</span><span>CLUBE</span><span>GERAL</span><span>PREÇO</span></div>' +
         (R.length ? R.map(row).join('') : '<p class="fn2-none mkw-e" id="mkw-e">' + empty + '</p>') + '<span class="rs-gap"></span>' +
         '<div class="mkw-pg"><span>' + (R.length ? (pg + 1) + ' de ' + pages : '') + '</span><span><button class="mk-ar" id="mkr-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><button class="mk-ar" id="mkr-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></span></div></div>' +
         '<div class="mkw-b"><div class="mk-k mk-ord"><small>ORDEM</small><button class="mk-ar" data-mo="-1" aria-label="ordem anterior">' + MK_L + '</button><b>' + ords[ord] + '</b><button class="mk-ar" data-mo="1" aria-label="ordem seguinte">' + MK_R + '</button></div>' +
@@ -1983,9 +1983,9 @@
     const list = S.coMktSort(co, S.coMktSearch(co)), pages = Math.max(1, Math.ceil(list.length / 4));
     pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * 4, pg * 4 + 4); sel = Math.min(sel || 0, R.length - 1);
     const chips = F.map((x, i) => (m.f[i] ? '<span class="mk-chip">' + esc(x.o[m.f[i]].t.replace(' · verba', '')) + '</span>' : '')).join('') + (m.nm && m.nm.trim().length >= 3 ? '<span class="mk-chip">"' + esc(m.nm.trim()) + '"</span>' : '');
-    const row = (p, i) => { const b = S.coMktBand(co, p), w = S.coMktWord(b), pr = S.coMktPrice(p);
-      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><i>' + p.pos + '</i><span><b>' + esc(p.n) + obsTag(co, p) + '</b><small' + (b ? '' : ' class="nr"') + '>' + p.age + ' anos · ' + mkClub(p) + (b ? '' : ' · sem relatório') + '</small></span>' +
-        '<em class="' + (w || 'nr') + '">' + (w || '?') + '</em><strong>' + (p.club ? c.brl(pr) : 'grátis') + '</strong></button>'; };
+    const row = (p, i) => { const o = S.coMktOvr(co, p), pr = S.coMktPrice(p);
+      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><i>' + p.pos + '</i><span><b>' + esc(p.n) + obsTag(co, p) + '</b><small' + (o ? '' : ' class="nr"') + '>' + p.age + ' anos · ' + mkClub(p) + (o ? '' : ' · sem relatório') + '</small></span>' +
+        '<em class="mk-ovr ' + (o ? o.vs : 'nr') + '">' + S.coMktOvrTxt(o) + '</em><strong>' + (p.club ? c.brl(pr) : 'grátis') + '</strong></button>'; };
     show('<div class="mk mkr">' + mkHead('mkr-back', 'Resultado', U.D.plural(list.length, 'jogador', 'jogadores'), false, true) +
       '<div class="mk-chips">' + chips + '<span class="rs-gap"></span><button class="mk-mud" id="mkr-mud">Mudar</button></div>' +
       '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">Ninguém com esses filtros.</p>') + '</div>' +
@@ -1996,7 +1996,7 @@
       st.querySelector('#mkr-back').onclick = () => { sfx('tap'); mercado(); };
       mkCoins(st, () => mercadoRes(pg, sel));
       st.querySelector('#mkr-mud').onclick = () => { sfx('tap'); mercado(); };
-      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Melhor, igual ou pior é contra o seu titular da posição. Quem o olheiro ainda não viu aparece sem relatório; peça um na ficha. Em Ordem você escolhe quem vem primeiro: em Nível, os com relatório, do melhor para o pior.'); };
+      st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'O número é o geral do jogador em faixa, pelo que o olheiro viu: peça mais relatórios na ficha e a faixa estreita até o número certo. Verde é melhor que o seu titular da posição; laranja, pior. Em Ordem, Geral põe o melhor primeiro.'); };
       st.querySelectorAll('[data-mr]').forEach(b => b.onclick = () => { const i = +b.dataset.mr; sfx('tap'); if (i === sel) return ficha(R[i].id, () => mercadoRes(pg, i)); mercadoRes(pg, i); });
       st.querySelectorAll('[data-mo]').forEach(b => b.onclick = () => { sfx('tap'); m.ord = (ord + (+b.dataset.mo) + ords.length) % ords.length; c.save(); mercadoRes(0, 0); });
       st.querySelector('#mkr-prev').onclick = () => { sfx('tap'); mercadoRes(pg - 1, 0); };
@@ -2113,7 +2113,7 @@
     const rumRow = rums.length ? '<div class="mkf-rm"><span>' + (rums.length > 1 ? 'Também querem' : 'Também quer') + '</span><b>' + rums.map(x => crest(x.to, 'nw-cr')).join('') + (rums.length === 1 ? '<i>' + rumNm(rums[0].to) + '</i>' : '') + '</b></div>' : '';
     const repC = S.coMktRepCost(co, p), repNo = n < S.CO_MKT.reps && (S.coFin(co).caixa || 0) < repC, repOff = n >= S.CO_MKT.reps || repNo;
     show('<div class="mk mkf' + (rumRow ? ' rm' : '') + '">' + mkHead('mkf-back', esc(p.n), S.CO_POS_NM[p.pos] + ' · ' + p.age + ' anos · ' + mkClub(p), false, true) +
-      (fichaAt ? fichaAttrs(co, p, n) : '<div class="mk-k mkf-cmp"><span class="mkf-t"><small>CONTRA O SEU ' + (S.CO_POS_NM[p.pos] || '').toUpperCase() + ' TITULAR</small>' + (b ? (n >= S.CO_MKT.reps ? '<span class="mkf-ovw"><i class="mkf-ov"><small>GERAL</small>' + p.ovr + '</i>' : '') + '<b class="' + word + '">' + word + '<small' + (S.coMktOld(co, p) ? ' class="old">desatualizado' : '>' + CERT[n]) + '</small></b>' + (n >= S.CO_MKT.reps ? '</span>' : '') : '<b class="nr">sem relatório</b>') + '</span>' +
+      (fichaAt ? fichaAttrs(co, p, n) : '<div class="mk-k mkf-cmp"><span class="mkf-t"><small>CONTRA O SEU ' + (S.CO_POS_NM[p.pos] || '').toUpperCase() + ' TITULAR</small>' + (b ? '<span class="mkf-ovw"><i class="mkf-ov"><small>GERAL</small>' + S.coMktOvrTxt(S.coMktOvr(co, p)) + '</i>' + '<b class="' + word + '">' + word + '<small' + (S.coMktOld(co, p) ? ' class="old">desatualizado' : '>' + CERT[n]) + '</small></b></span>' : '<b class="nr">sem relatório</b>') + '</span>' +
         '<span class="mkf-sc"><i></i>' + band + '<em></em><strong>' + esc(st0 ? last(st0.n) : 'titular') + '</strong></span><span class="mkf-w"><span>pior</span><span>igual</span><span>melhor</span></span></div>' +
       '<div class="mkf-g"><div class="mk-k"><small>POTENCIAL</small><b>' + (pot ? pot[0] : 'Peça um relatório') + '</b>' + (pot ? '<span class="mkf-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= pot[1] ? 'on' : '') + '"></i>').join('') + '</span>' : '<span class="mkf-nr">o olheiro ainda não viu</span>') + '</div>' +
         '<div class="mk-k"><small>JEITO DE JOGAR</small>' + (tr ? '<span class="mkf-tr">' + tr.good.map(t => '<span>' + t + '</span>').join('') + '</span><span class="mkf-nr">' + (n >= 3 ? 'Ponto fraco: ' + tr.bad : n === 2 ? 'Ponto fraco: falta 1 relatório' : 'Ponto fraco: faltam 2 relatórios') + '</span>' : '<b>?</b><span class="mkf-nr">o olheiro ainda não viu</span>') + '</div></div>') +
