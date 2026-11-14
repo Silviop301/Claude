@@ -10610,3 +10610,12 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .hl-bg { position: absolute; left: 28%; right: 0; top: 0; bottom: 0; z-index: -1; pointer-events: none; perspective: 900px; display: flex; align-items: center;
   -webkit-mask-image: radial-gradient(ellipse 50% 46% at 56% 54%, #000 0, #000 45%, rgba(0,0,0,.5) 72%, transparent 100%); mask-image: radial-gradient(ellipse 50% 46% at 56% 54%, #000 0, #000 45%, rgba(0,0,0,.5) 72%, transparent 100%); }
 .hl-bg canvas { width: 108%; flex: none; aspect-ratio: 17 / 10; display: block; transform: rotateX(36deg) rotateZ(-5deg); transform-origin: 50% 60%; opacity: .34; filter: saturate(.6); }
+/* Força por setor no cartão da Semana (Silvio 2026-11-14): no lugar do "x", 3 linhas ATA/MEI/DEF, mandante à esquerda;
+   seu número verde quando passa da faixa do rival, laranja quando fica abaixo */
+.sm-vs:has(.sm-sx) { grid-template-columns: 1fr 200px 1fr; }
+.sm-sx { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
+.sm-sr { display: grid; grid-template-columns: 1fr 44px 1fr; align-items: center; height: 30px; border-radius: 9px; background: rgba(243, 241, 234, .06); }
+.sm-sr small { font: 700 13px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; text-align: center; }
+.sm-sr b { font: 800 20px/1 var(--display); text-align: center; color: #F3F1EA; white-space: nowrap; }
+.sm-sr b.up { color: #7ED39A; } .sm-sr b.dn { color: #F08A5D; }
+#ld.wide .sm-vs:has(.sm-sx) { grid-template-columns: 1fr 240px 1fr; }

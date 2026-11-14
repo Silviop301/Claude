@@ -88,6 +88,7 @@ async function page(b, first) {
     for (let t = 0; t < 4; t++) { await (await p.$$('[data-tt]'))[t].click(); await p.waitForTimeout(300); for (let i = 0; i < 4; i++) { const cs = await p.$$('[data-tk]'); if (!cs[i]) break; await cs[i].click(); await shot('a08-treino-' + t + i, true); } }
     await (await p.$$('[data-tt]'))[2].click(); await p.waitForTimeout(300); await click('[data-tk="esc"]'); await click('#ldtr-go');
     await click('#ld-ol'); await shot('a09-olheiro'); await click('#ldo-ok'); await shot('a10-semana-pronta');
+    if (await p.$('[data-pop-x]')) { await click('[data-pop-x]'); await shot('a10a-semana-setores-lido'); } // força por setor: faixa do rival afinada pelo relatório
     // A conversa com quem está chateado (forçada: o melhor reserva com a moral baixa) e a resposta dele; depois volta ao que era
     await p.evaluate(() => { const U = window.CRAQUE_UI, co = U._co.co, xi = new Set(co.xi), q = co.squad.filter(x => !xi.has(x.id)).sort((a, b) => b.ovr - a.ovr)[0]; q.mo = 30; q.bn = 3; window.__q = q; U.LD.segunda({}); });
     await shot('a10b-conversa'); await p.waitForTimeout(400); await click('[data-t1="paciencia"]'); await shot('a10c-conversa-resposta'); await p.waitForTimeout(2600);
