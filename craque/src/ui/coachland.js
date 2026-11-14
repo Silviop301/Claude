@@ -470,7 +470,7 @@
       (B.ult ? '<em class="sm-tag ult">ULTIMATO · VENÇA ' + B.ult.need + ' DE ' + B.ult.of + '</em>' : '') +
       // caixa no topo (Silvio 2026-11-10, como no mercado); com ultimato a etiqueta já diz como a diretoria está e a barra sai para caber
       cxPill() + (U.COINS ? U.COINS.pill('cp-sm', 'sm-coins') : '') + (B.ult ? '' : '<span class="sm-dir">Diretoria <em class="ld-bar"><u style="width:' + conf + '%" class="' + (conf >= 55 ? 'ok' : conf >= 35 ? 'mid' : 'low') + '"></u></em></span>') + '</div>';
-    const side = (id, nm, sub) => '<div class="sm-tm">' + crest(id, 'sm-cr') + '<b>' + esc(nm) + '</b><small>' + sub + '</small></div>';
+    const side = (id, nm, sub) => '<div class="sm-tm">' + crest(id, 'sm-cr') + '<b' + (nm.length > 15 ? ' class="l2"' : nm.length > 10 ? ' class="l1"' : '') + '>' + esc(nm) + '</b><small>' + sub + '</small></div>';
     let card, wk = '';
     if (!nx.bye) {
       const pv = S.coPreview(co), them = pv.them, cl = club(co.club), vc = club(them.club), rv = t.find(x => x.id === them.club), rpos = t.indexOf(rv) + 1;

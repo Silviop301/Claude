@@ -10619,3 +10619,9 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .sm-sr b { font: 800 20px/1 var(--display); text-align: center; color: #F3F1EA; white-space: nowrap; }
 .sm-sr b.up { color: #7ED39A; } .sm-sr b.dn { color: #F08A5D; }
 #ld.wide .sm-vs:has(.sm-sx) { grid-template-columns: 1fr 240px 1fr; }
+/* Nome longo no cartão da Semana (Silvio 14/11: "Red Bull Bragantino" passava do cartão): colunas que encolhem, folga nas
+   bordas e a letra diminui para nomes longos antes das reticências */
+.sm-vs:has(.sm-sx) { grid-template-columns: minmax(0, 1fr) 200px minmax(0, 1fr); padding: 0 12px; box-sizing: border-box; column-gap: 8px; }
+.sm-tm > b.l1 { font-size: 23px; } .sm-tm > b.l2 { font-size: 19px; }
+#ld.wide .sm-vs:has(.sm-sx) { grid-template-columns: minmax(0, 1fr) 240px minmax(0, 1fr); }
+#ld.wide .sm-tm > b.l1 { font-size: clamp(23px, 4.8cqh, 32px); } #ld.wide .sm-tm > b.l2 { font-size: clamp(19px, 4cqh, 27px); }
