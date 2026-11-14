@@ -83,6 +83,10 @@ async function page(b, first) {
     await click('[data-tmk="form"][data-d="1"]'); await p.waitForTimeout(150); await shot('a03-formacao-correndo'); await p.waitForTimeout(500); await shot('a03b-formacao'); await click('[data-tmk="sty"][data-d="1"]'); await click('#tm-aux'); await shot('a04-auxiliar'); if (await p.$('#ld-tip-k')) { await click('#ld-tip-k'); await shot('a04b-dica-usada'); } else await click('[data-pop-x]');
     await click('.tm-bp:not(.dis)'); await shot('a05-banco'); await click('[data-xi="9"]');
     await click('#ld-ok'); await shot('a06-semana');
+    { // nome longo no cartão da Semana (Red Bull Bragantino passava do cartão, 14/11): os dois lados com nome comprido
+      await p.evaluate(() => { const U = window.CRAQUE_UI, D = window.CRAQUE_DATA, co = U._co.co, nx = window.CRAQUE_SIM.coNext(co); window.__nm = [co.club, nx.vs].map(id => [id, D.CLUB_BY_ID[id].name, D.CLUB_BY_ID[id].short]); co.club && [co.club, nx.vs].forEach(id => { D.CLUB_BY_ID[id].name = 'Red Bull Bragantino'; D.CLUB_BY_ID[id].short = 'Red Bull Bragantino'; }); U.LD.semana(); });
+      await shot('a06b-semana-nome-longo');
+      await p.evaluate(() => { const D = window.CRAQUE_DATA; window.__nm.forEach(([id, n, sh]) => { D.CLUB_BY_ID[id].name = n; D.CLUB_BY_ID[id].short = sh; }); window.CRAQUE_UI.LD.semana(); }); }
     await click('#ld-tr'); await click('[data-tk="lados"]'); await shot('a07-treino'); await click('[data-tt="Bola parada"]'); await shot('a08-treino-bola-parada');
     // os 16 treinos: a descrição de cada um tem de caber no cartão da direita (a do escanteio passava, 2026-11-11)
     for (let t = 0; t < 4; t++) { await (await p.$$('[data-tt]'))[t].click(); await p.waitForTimeout(300); for (let i = 0; i < 4; i++) { const cs = await p.$$('[data-tk]'); if (!cs[i]) break; await cs[i].click(); await shot('a08-treino-' + t + i, true); } }
