@@ -804,6 +804,22 @@
     return { them, nx, xg: nx.home ? [r.lh, r.la] : [r.la, r.lh], us: nx.home ? r.h : r.a, op: nx.home ? r.a : r.h, ush: nx.home ? r.sh : r.sa, osh: nx.home ? r.sa : r.sh, poss: nx.home ? r.h.poss : r.a.poss };
   };
   S.coOpp = (co, vs) => oppSide(co, vs);
+  // Força por setor (Silvio 14/11: "ver o overall médio de ataque, meio e defesa do rival"): média do geral de quem joga em
+  // cada linha (goleiro conta na defesa; meia de ligação no meio). Do rival vem em faixa, como no mercado: sem relatório ±3,
+  // com o relatório do olheiro lido ±1 (a faixa sempre contém o valor certo, deslocada por um sorteio preso ao jogo)
+  S.coSectors = function (sq, form, xi) {
+    const m = byId(sq), sl = FORMS[form].slots, t = { d: [0, 0], m: [0, 0], a: [0, 0] };
+    xi.forEach((id, i) => { const p = m[id]; if (!p || !sl[i]) return; const l = sl[i].ln, k = l === 'g' || l === 'd' ? 'd' : l === 'a' ? 'a' : 'm'; t[k][0] += p.ovr; t[k][1]++; });
+    return { d: Math.round(t.d[0] / (t.d[1] || 1)), m: Math.round(t.m[0] / (t.m[1] || 1)), a: Math.round(t.a[0] / (t.a[1] || 1)) };
+  };
+  S.coSectorsVs = function (co, pv) {
+    pv = pv || S.coPreview(co); if (!pv) return null;
+    const us = S.coSectors(co.squad, co.form, pv.them && co.xi.length === 11 ? co.xi : autoXI(co.squad, co.form).xi), th = S.coSectors(pv.them.squad, pv.them.form, pv.them.xi);
+    const read = S.coScoutNow(co), half = read ? 1 : 3, out = {};
+    ['d', 'm', 'a'].forEach(k => { const v = th[k], u = half > 1 ? (hash(co.season + '|' + pv.nx.round + '|' + pv.them.club + '|' + k) % 3) - 1 : 0, lo = v - half + u;
+      out[k] = { us: us[k], lo, hi: lo + 2 * half, v }; });
+    return { s: out, read };
+  };
 
   // ---------- partida minuto a minuto ----------
   // m = { min, gh, ga, home, us: lado, them: lado, ev: [lances], stop, done, half }

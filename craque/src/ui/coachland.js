@@ -474,11 +474,15 @@
     let card, wk = '';
     if (!nx.bye) {
       const pv = S.coPreview(co), them = pv.them, cl = club(co.club), vc = club(them.club), rv = t.find(x => x.id === them.club), rpos = t.indexOf(rv) + 1;
+      // Força por setor no meio do cartão (Silvio 14/11): seu número exato, o do rival em faixa (o relatório do olheiro afina)
+      const SX = S.coSectorsVs ? S.coSectorsVs(co, pv) : null, sxRow = (k, nm) => { const r = SX.s[k], cc = r.us > r.hi ? 'up' : r.us < r.lo ? 'dn' : '', me = '<b class="' + cc + '">' + r.us + '</b>', rv = '<b>' + r.lo + '–' + r.hi + '</b>';
+        return '<span class="sm-sr">' + (nx.home ? me : rv) + '<small>' + nm + '</small>' + (nx.home ? rv : me) + '</span>'; };
+      const mid = SX ? '<div class="sm-sx">' + sxRow('a', 'ATA') + sxRow('m', 'MEI') + sxRow('d', 'DEF') + '</div>' : '<i class="sm-x">x</i>';
       card = (nx.cup ? '<small class="sm-rd cup">' + (nx.cup.cont ? contImg(co, 18) : cupImg(nx.cup.name, 18)) + esc(nx.cup.name).toUpperCase() + ' · ' + (nx.cup.grp ? 'GRUPO ' + nx.cup.grp + ' · ' + (nx.cup.k + 1) + 'ª RODADA' : nx.cup.sh.toUpperCase() + (nx.cup.leg ? (nx.cup.leg === 1 ? ' · IDA' : ' · VOLTA') : '')) + ' · ' + (nx.cup.cont ? 'QUARTA' : 'MEIO DA SEMANA') + ' · ' + (nx.neutral ? 'CAMPO NEUTRO' : nx.home ? 'EM CASA' : 'FORA') + '</small>'
         : '<small class="sm-rd">TEMPORADA ' + (U.YEAR0 + co.season) + ' · RODADA ' + nx.round + ' · ' + (nx.home ? 'EM CASA' : 'FORA') + '</small>') + '<div class="sm-vs">' +
         // mandante à esquerda (Silvio, 10/11: "em jogo fora de casa eu quero meu escudo na direita"), como no placar do jogo
-        (nx.home ? side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name)) + '<i class="sm-x">x</i>' + side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name))
-          : side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name)) + '<i class="sm-x">x</i>' + side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name))) + '</div>' +
+        (nx.home ? side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name)) + mid + side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name))
+          : side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name)) + mid + side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name))) + '</div>' +
         (nx.cup ? cupPath(co) : rv ? '<small class="sm-rv">' + ord(rpos) + ' · ' + rv.p + ' pts' + f5(rv.f) + '</small>' : '');
       const tr = S.coTrainNow(co) ? S.CO_TRAIN[co.train.k] : null, sc = S.coScoutNow(co);
       wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
