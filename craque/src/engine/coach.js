@@ -498,6 +498,10 @@
         out.push(mkPlayer(r, club, pos, ovr, age, clubId + ':' + season + ':' + out.length, cty));
       }
     });
+    // Sem sobrenome repetido no mesmo elenco (youtuber, 14/11: o campinho e a escalação mostram só o último nome, e um time
+    // com dois "Bardakcı" parecia erro). Sorteio à parte, para não mudar os gerais e as idades do elenco
+    const seen = new Set(), rn = S.rng(hash(clubId + '|' + season + '|nomes'));
+    out.forEach(p => { for (let i = 0; i < 12 && seen.has(last(p.n)); i++) p.n = D.randomName(cty, rn); seen.add(last(p.n)); });
     return out;
   }
   S.coGenSquad = genSquad;
@@ -620,14 +624,15 @@
     if (co.start === 'baixo' && co.season === 0 && !co.club) pool = D.CLUBS.filter(x => !(D.LADDER[x.league] && D.LADDER[x.league].down) && x.strength <= 56);
     if (!pool.length) pool = D.CLUBS.slice().sort((a, b) => Math.abs(a.strength - top) - Math.abs(b.strength - top)).slice(0, 12);
     const home = pool.filter(x => D.countryOf(x) === cty), rest = pool.filter(x => D.countryOf(x) !== cty);
-    const out = [];
+    const out = [], first = co.season === 0 && !co.club;
     while (out.length < (n || 4) && (home.length || rest.length)) {
-      const src = home.length && (r() < 0.7 || !rest.length) ? home : rest;
+      // Primeiras propostas da carreira (youtuber, 14/11): pelo menos duas do país do técnico; o resto pode vir de fora
+      const src = home.length && ((first && out.length < 2) || r() < 0.7 || !rest.length) ? home : rest;
       out.push(src.splice(Math.floor(r() * src.length), 1)[0].id);
     }
     // Uma das propostas costuma ser de um clube que briga lá em cima na liga dele (de divisão menor, se preciso)
     if (out.length && !out.some(id => ['subir', 'titulo', 'g4'].includes(S.coGoalFor(co, id).k))) {
-      const fav = home.concat(rest).filter(x => ['subir', 'titulo', 'g4'].includes(S.coGoalFor(co, x.id).k));
+      const fav = (first && home.length ? home : home.concat(rest)).filter(x => ['subir', 'titulo', 'g4'].includes(S.coGoalFor(co, x.id).k));
       if (fav.length && r() < 0.7) out[out.length - 1] = fav[Math.floor(r() * fav.length)].id;
     }
     save();

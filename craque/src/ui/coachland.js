@@ -908,7 +908,11 @@
     { const by = byOf(m.us.squad), n = S.coSubLeft(m) > 0 && m.us.bench.length ? m.us.xi.filter((id, i) => i && by[id] && by[id].en < 58).length : 0, b = $('b-lv-stop');
       if (b && b._n !== n) { b._n = n; let d = b.querySelector('.tm-dot'); if (!n) { if (d) d.remove(); } else { if (!d) { d = document.createElement('i'); d.className = 'tm-dot'; b.appendChild(d); } d.textContent = n; } b.classList.toggle('aux', n > 0); } }
     // Primeiro jogo ao vivo da primeira carreira: aos 3' o jogo pausa e a auxiliar aponta o "Parar e mexer"
-    if (x.co.first && !x.co.tpm && m.min >= 3 && m.min < 40 && !m.done && !(U.load('climbix-dicas-v1') || {}).off && !document.getElementById('ld-pop') && x.pause && x.pause()) {
+    // Nunca em cima de um gol (youtuber, 14/11): o placar na tela muda quando o gol aparece no campinho; a dica espera 8 s
+    // depois disso, e também não sai com um gol já decidido que ainda vai aparecer (placar da tela atrás do placar real)
+    const scT = ($('lv-score') || {}).textContent || '', scOk = scT.replace(/\s/g, '') === m.gh + 'x' + m.ga;
+    if (m._scT !== scT) { m._scT = scT; m._scAt = Date.now(); }
+    if (x.co.first && !x.co.tpm && m.min >= 3 && m.min < 40 && !m.done && scOk && Date.now() - (m._scAt || 0) > 8000 && !(U.load('climbix-dicas-v1') || {}).off && !document.getElementById('ld-pop') && x.pause && x.pause()) {
       const co = x.co, fim = n => { co.tpm = n; C().save(); x.resume(); };
       if (!tuAt($('b-lv-stop'), 'Quer mudar algo no meio do jogo? Toque em <b>Parar e mexer</b>: o jogo pausa e você troca jogador, formação e estilo.', 1, 2,
         () => { fim(1); const b = $('b-lv-stop'); if (b) b.click(); }, () => fim(2))) fim(2);
