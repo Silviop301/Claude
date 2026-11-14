@@ -10607,6 +10607,6 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .hl-gift span { display: flex; flex-direction: column; gap: 2px; }
 .hl-gift b { font: 800 17px/1 var(--display); letter-spacing: .02em; }
 .hl-gift small { font: 700 12px/1.1 var(--body); opacity: .8; }
-.hl-bg { position: absolute; left: 30%; right: -8%; top: -6%; bottom: -12%; z-index: -1; pointer-events: none; perspective: 900px; display: flex; align-items: center; }
-.hl-bg canvas { width: 100%; aspect-ratio: 17 / 10; display: block; transform: rotateX(36deg) rotateZ(-5deg) scale(1.05); transform-origin: 50% 60%; opacity: .32; filter: saturate(.6); }
-.hl-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, #0B2E20 0%, #0B2E20 6%, rgba(11, 46, 32, 0) 42%), linear-gradient(0deg, #0B2E20 0%, rgba(11, 46, 32, 0) 32%), linear-gradient(180deg, #0B2E20 0%, rgba(11, 46, 32, 0) 24%); }
+.hl-bg { position: absolute; left: 28%; right: 0; top: 0; bottom: 0; z-index: -1; pointer-events: none; perspective: 900px; display: flex; align-items: center;
+  -webkit-mask-image: radial-gradient(ellipse 50% 46% at 56% 54%, #000 0, #000 45%, rgba(0,0,0,.5) 72%, transparent 100%); mask-image: radial-gradient(ellipse 50% 46% at 56% 54%, #000 0, #000 45%, rgba(0,0,0,.5) 72%, transparent 100%); }
+.hl-bg canvas { width: 108%; flex: none; aspect-ratio: 17 / 10; display: block; transform: rotateX(36deg) rotateZ(-5deg); transform-origin: 50% 60%; opacity: .34; filter: saturate(.6); }
