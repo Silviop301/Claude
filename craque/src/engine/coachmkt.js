@@ -15,8 +15,8 @@
     free: 40,         // jogadores sem clube por temporada
     reps: 3,          // relatórios por jogador (cada um estreita a faixa)
     rep0: 5000, repK: 0.25, repUp: [1, 1.5, 2.25],   // preço do relatório: 1/4 da receita semanal do clube (mín. R$ 5 mil), sobe a cada um; exterior x2
-    half: [7, 4, 2],  // meia largura da faixa (pontos de força) com 1, 2 e 3 relatórios
-    err: [3, 2, 1],   // quanto o centro da faixa pode errar
+    half: [4, 2, 0],  // meia largura da faixa (pontos de geral) com 1, 2 e 3 relatórios; com 3 o número certo (Silvio 2026-11-14: o geral em faixa na lista)
+    err: [3, 1, 0],   // quanto o centro da faixa pode errar (nunca mais que a meia largura: o geral de verdade fica sempre dentro)
     atHalf: [8, 4, 0], atErr: 4,   // atributos na ficha: meia largura da faixa com 1, 2 e 3 relatórios (0 = o número certo) e o erro do centro no 1º (cai pela metade no 2º)
     span: 15,         // a régua vai de 15 pontos pior a 15 melhor que o titular
     eq: 2,            // até 2 pontos de diferença = igual
@@ -104,6 +104,14 @@
     const e = M.err[n - 1], c = d + ((h % (2 * e + 1)) - e), w = M.half[n - 1];
     return { lo: c - w, hi: c + w, mid: c, n, st };
   };
+  // O geral que o olheiro viu, em faixa (Silvio 2026-11-14: "ver na tela assim que fizer a busca o intervalo de overall dele"):
+  // { lo, hi, mid } em geral de verdade (lo = hi com o relatório completo) e `vs` = melhor/igual/pior contra o seu titular
+  S.coMktOvr = (co, p) => {
+    const b = S.coMktBand(co, p); if (!b) return null;
+    const base = b.st ? b.st.ovr : p.ovr, cl = v => Math.max(1, Math.min(99, base + v));
+    return { lo: cl(b.lo), hi: cl(b.hi), mid: cl(b.mid), n: b.n, vs: word1(b.mid) };
+  };
+  S.coMktOvrTxt = o => (!o ? '?' : o.lo === o.hi ? String(o.lo) : o.lo + '–' + o.hi);
   // Sem relatório (outra liga), o filtro Nível vai pela fama: a diferença contra o titular com erro maior que o do 1º relatório
   // (M.err0). Só filtra: a lista e a ficha seguem sem faixa até o olheiro ver (Silvio 11/11: "a pesquisa não retornou")
   M.err0 = 5;
@@ -167,9 +175,11 @@
     const ligas = porForca(D.LEAGUES.filter(l => l.country === cty)).sort((a, b) => (a.id === lg ? -1 : b.id === lg ? 1 : 0));
     const fora = porForca(D.LEAGUES.filter(l => l.country !== cty));
     const lvl = (p, w) => { const b = S.coMktBand(co, p); return word1(b ? b.mid : S.coMktFame(co, p)) === w; };
+    // GERAL (2026-11-14, no lugar de NÍVEL melhor/igual/pior): pelo meio da faixa que o olheiro viu
+    const ovm = p => { const o = S.coMktOvr(co, p); return o ? o.mid : p.ovr; };
     return [
       { k: 'pos', t: 'POSIÇÃO', o: [{ t: 'Qualquer' }].concat(['GOL', 'ZAG', 'LAT', 'MEI', 'ATA'].map(x => ({ t: POS_NM[x], ok: p => p.pos === x }))) },
-      { k: 'niv', t: 'NÍVEL', o: [{ t: 'Qualquer' }, { t: 'Reserva', ok: p => lvl(p, 'pior') }, { t: 'Igual ao titular', ok: p => lvl(p, 'igual') }, { t: 'Melhor que o titular', ok: p => lvl(p, 'melhor') }] },
+      { k: 'niv', t: 'GERAL', o: [{ t: 'Qualquer' }, { t: 'Melhor que o titular', ok: p => lvl(p, 'melhor') }].concat([80, 75, 70, 65, 60].map(v => ({ t: v + ' ou mais', ok: p => ovm(p) >= v }))).concat([{ t: 'Até 59', ok: p => ovm(p) < 60 }]) },
       { k: 'ida', t: 'IDADE', o: [{ t: 'Qualquer' }, { t: 'Até 21', ok: p => p.age <= 21 }, { t: 'Até 25', ok: p => p.age <= 25 }, { t: 'Até 29', ok: p => p.age <= 29 }, { t: '30 ou mais', ok: p => p.age >= 30 }] },
       { k: 'pre', t: 'PREÇO ATÉ', o: [{ t: 'Qualquer' }, { t: brl(Math.max(100000, Math.round(verba / 2))), ok: p => S.coMktPrice(p) <= Math.max(100000, verba / 2) }, { t: brl(verba) + ' · verba', ok: p => S.coMktPrice(p) <= verba }, { t: brl(verba * 2), ok: p => S.coMktPrice(p) <= verba * 2 }] },
       { k: 'lig', t: 'LIGA', o: [{ t: 'Qualquer' }].concat(ligas.map(l => ({ t: l.name, ok: p => p.lg === l.id }))).concat([{ t: 'Exterior', ok: p => D.LEAGUE_BY_ID[p.lg].country !== cty }]).concat(fora.map(l => ({ t: l.name, ok: p => p.lg === l.id }))) },
@@ -185,7 +195,7 @@
   // Ordem do resultado (Silvio 2026-11-10: "ordenar por over, valor, etc"): `m.ord` escolhe entre S.CO_MKT.ords. No mercado
   // o geral não aparece, então "Nível" é a ordem do olheiro (com relatório primeiro, do melhor para o pior; depois o mais
   // barato), que segue sendo o desempate das outras; quem está sem clube tem preço 0 e abre o "Menor preço"
-  M.ords = ['Nível', 'Menor preço', 'Maior preço', 'Mais novo', 'Mais velho'];
+  M.ords = ['Geral', 'Menor preço', 'Maior preço', 'Mais novo', 'Mais velho'];
   S.coMktSort = (co, list) => {
     const o = S.coMkt(co).ord || 0;
     const niv = (x, y) => (y.b ? 1 : 0) - (x.b ? 1 : 0) || (y.b && x.b ? y.b.mid - x.b.mid : 0) || x.v - y.v;
