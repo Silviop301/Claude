@@ -147,7 +147,7 @@
         net = { gx: s ? 0 : L, y, t: 0, v: Math.max(10, v) }; mode = 'goal'; modeT = FXON() ? CELEB : 2; koSide = 1 - s; back = 0; ball.owner = null;
         hero = p && p.side === s ? p : T[s].filter(q => q.r !== 'GK').sort((a, b) => tf(s, b)[0] - tf(s, a)[0])[0]; bigSay('GOOOL!', s, 2.6, true); },
       onPost: (x, y) => { post = { x, y, t: 0.5 }; if (typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play('trave'); } catch (_) {} },
-      onStop: (k, s, x, y, sai) => { poss = s; if (k === 'lateral' || k === 'escanteio' || k === 'meta') b11Out(x, y, sai); if (k === 'lateral' || k === 'escanteio' || k === 'meta') signal(s, x, y, k === 'lateral' ? 'lat' : k === 'escanteio' ? 'esc' : 'tiro'); if (k === 'escanteio') escClk = clk; },
+      onStop: (k, s, x, y, sai) => { poss = s; if (k === 'lateral' || k === 'escanteio' || k === 'meta') b11Out(x, y, sai, k); if (k === 'lateral' || k === 'escanteio' || k === 'meta') signal(s, x, y, k === 'lateral' ? 'lat' : k === 'escanteio' ? 'esc' : 'tiro'); if (k === 'escanteio') escClk = clk; },
       amarelos: q => (o.yc ? o.yc(q.side, q.inf ? q.inf.num : q.num) || 0 : 0),
       batedor: s => { const n = o.taker ? o.taker(s) : null; return n == null ? null : T[s].find(q => (q.inf ? q.inf.num : q.num) === n) || null; },
       onRef: b11Ref });
@@ -744,11 +744,13 @@
     const BV = { px: 52.5, py: 34, vx: 0, vy: 0 }; let ghost = null, escClk = -9;
     // Cérebro: a bola que saiu segue rolando para fora (ghost) e a cobrança usa a reserva mais perto, que vai até o ponto da
     // cobrança em `TOSS_T` s (só desenho: o cérebro já pôs a bola no ponto; Silvio 13/11: "saída efetiva da bola")
-    let toss = null; const TOSS_T = 0.6;
-    function b11Out(x, y, sai) {
+    // 14/11 (Silvio: "parece um tp da bola em jogo pra mão do goleiro"): a reserva espera `toss.d` s parada na grade enquanto a
+    // que saiu rola para fora, e só então vai até o ponto em `TOSS_T` s (tiro de meta e escanteio esperam mais que o lateral)
+    let toss = null; const TOSS_T = 0.85, TOSS_D = { lateral: 0.1, escanteio: 0.6, meta: 0.65 };
+    function b11Out(x, y, sai, k) {
       const vx = sai ? sai.vx * B11_K : BV.vx, vy = sai ? sai.vy * B11_K : BV.vy, sp = Math.hypot(vx, vy), kv = sp > 30 ? 30 / sp : sp < 3 ? (sp > 0.01 ? 3 / sp : 0) : 1; ghost = { x: ball.x, y: ball.y, vx: vx * kv, vy: vy * kv, t: 0 };
       const r = RACK.filter(q => q.h <= clk).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0];
-      toss = null; if (r) { r.h = clk + 12; toss = { x: r.x, y: r.y, t: 0 }; }
+      toss = null; if (r) { r.h = clk + 12; toss = { x: r.x, y: r.y, t: 0, d: TOSS_D[k] || 0.3 }; }
     }
     function outBall(x, y) {
       ghost = { x: ball.x, y: ball.y, vx: BV.vx, vy: BV.vy, t: 0 };
@@ -1652,7 +1654,7 @@
     function step1(dt) {
       clk += dt;
       BV.vx = (ball.x - BV.px) / dt; BV.vy = (ball.y - BV.py) / dt; BV.px = ball.x; BV.py = ball.y;
-      if (toss && (toss.t += dt) > TOSS_T) toss = null;
+      if (toss && (toss.t += dt) > toss.d + TOSS_T) toss = null;
       if (ghost) { const sp = Math.hypot(ghost.vx, ghost.vy), k = sp > 0.01 ? Math.max(0, sp - 5 * dt) / sp : 0; ghost.vx *= k; ghost.vy *= k; ghost.x += ghost.vx * dt; ghost.y += ghost.vy * dt; if ((ghost.t += dt) > 2.2) ghost = null; }
       { const f = ball.fly, tg = mode === 'play' && f && !f.shot && !f.out ? { x: f.x1, y: f.y1 } : ball, k = mode === 'play' ? 1 - Math.exp(-dt / SBT) : 1; SB.x += (tg.x - SB.x) * k; SB.y += (tg.y - SB.y) * k; }
       if (ckW && (ckW.e.done ? (ckW = null, 0) : clk - ckW.t > 6)) { const e = ckW.e; ckW = null; e.done = true; if (e.cb) e.cb(); }
@@ -2203,7 +2205,7 @@
         }
       }
       const bdo = ball.owner && ball.owner.dr && ball.owner.dr.who ? drOff(ball.owner.dr, true) : null;
-      const tk = toss ? (q => q * q * (3 - 2 * q))(Math.min(1, toss.t / TOSS_T)) : 1, tx0 = toss ? toss.x + (ball.x - toss.x) * tk - ball.x : 0, ty0 = toss ? toss.y + (ball.y - toss.y) * tk - ball.y : 0; // a reserva indo até o ponto da cobrança
+      const tk = toss ? (q => q * q * (3 - 2 * q))(Math.max(0, Math.min(1, (toss.t - toss.d) / TOSS_T))) : 1, tx0 = toss ? toss.x + (ball.x - toss.x) * tk - ball.x : 0, ty0 = toss ? toss.y + (ball.y - toss.y) * tk - ball.y : 0; // a reserva indo até o ponto da cobrança
       const bx = X(ball.x + tx0 + (bdo ? bdo[0] : 0)), by = Y(ball.y + ty0 + (bdo ? bdo[1] : 0)), air = toss ? Math.sin(tk * Math.PI) * 6 * k : ball.fly ? Math.sin(Math.min(1, ball.fly.t) * Math.PI) * (ball.fly.loft || 0) * 1.3 * k : B11 && ball.z ? ball.z * 1.3 * k : 0;
       // Rastro do chute: uma cauda curta atrás da bola, mais grossa e clara perto dela (dá a força do chute; some quando a bola para)
       if ((ball.fly && ball.fly.shot && !(ball.fly.pre > 0)) || (B11 && ball.b11shot && mode === 'play')) { bt.push([bx, by - air]); if (bt.length > 8) bt.shift(); } else if (bt.length) bt.splice(0, 2);
