@@ -3118,7 +3118,8 @@
         main = '<div class="lj-ap lj-none"><b>Abra uma carreira do Treinador</b><small>O aporte entra na verba do clube que você treina.</small></div>';
         side = '<span class="rs-gap"></span>';
       } else {
-        const left = S.coAporteLeft(co), used = S.coAporteUsed(co);
+        // sem limite na temporada (15/11): o ▶ vai até o que as moedas pagam (e o que sobrar de um teto, se houver)
+        const used = S.coAporteUsed(co), left = Math.min(S.coAporteLeft(co), Math.max(1, Math.floor(saldo / S.CO_APORTE.coin)));
         wk = Math.max(1, Math.min(wk, Math.max(1, left)));
         // P = antes e depois (sem aporte sobrando, nada muda). No vermelho o aporte cobre o caixa primeiro: a tela mostra o caixa também
         const P = S.coAportePrev(co, left ? wk : 0), red = P.red, cost = wk * S.CO_APORTE.coin, v = S.coAporteValue(co, wk), ok = left > 0 && saldo >= cost;
@@ -3127,7 +3128,7 @@
         const bn = S.coAporteBonus(wk), nxb = S.CO_APORTE.bonus.slice().reverse().find(x => x[0] > wk && x[0] <= left);
         const bnTxt = !left ? '' : bn ? ' · <em class="lj-bn">bônus +' + Math.round(bn * 100) + '%</em>' : nxb ? ' · ' + nxb[0] + ' de uma vez: +' + Math.round(nxb[1] * 100) + '%' : '';
         main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (red ? 'cobre o caixa primeiro' : 'caixa e verba') + '</small></span><img class="lj-ai" src="' + CO_ART + 'mo-aporte.webp" alt=""></div>' +
-          '<div class="lj-v"><button id="lj-m" aria-label="Menos"' + (wk <= 1 ? ' disabled' : '') + '>' + BK + '</button><span><b>+ ' + c.brl(v) + '</b><small>' + U.D.plural(wk, 'aporte', 'aportes') + ' · ' + (used + (left ? wk : 0)) + ' de ' + S.CO_APORTE.max + ' na temporada' + bnTxt + '</small></span><button id="lj-p" aria-label="Mais"' + (wk >= left ? ' disabled' : '') + '>' + FW + '</button></div>' +
+          '<div class="lj-v"><button id="lj-m" aria-label="Menos"' + (wk <= 1 ? ' disabled' : '') + '>' + BK + '</button><span><b>+ ' + c.brl(v) + '</b><small>' + U.D.plural(wk, 'aporte', 'aportes') + ' · ' + (isFinite(S.CO_APORTE.max) ? (used + (left ? wk : 0)) + ' de ' + S.CO_APORTE.max + ' na temporada' : used ? used + ' já nesta temporada' : 'sem limite na temporada') + bnTxt + '</small></span><button id="lj-p" aria-label="Mais"' + (wk >= left ? ' disabled' : '') + '>' + FW + '</button></div>' +
           '<div class="lj-two t3">' + cell('Caixa', P.caixa, P.caixa[1] >= 0 ? 'up' : 'dn') + cell('Verba', P.verba) + cell('Teto por semana', P.teto) + '</div></div>';
         side = '<div class="lj-box lj-cost"><small class="ld-lbl">CUSTA</small><span>' + U.COINS.svg + '<b>' + cost + '</b></span><small>' + (saldo >= cost ? 'sobram ' + (saldo - cost) + ' moedas' : 'faltam ' + (cost - saldo) + ' moedas') + '</small></div>' +
           '<button class="tm-go' + (ok ? '' : ' off') + '" id="lj-ap"' + (ok ? '' : ' disabled') + '>' + (!left ? 'Limite da temporada' : 'Fazer aporte') + '</button>';
