@@ -312,7 +312,7 @@
       (U.installCan && U.installCan() ? '<button class="hl-nv hl-ins" id="hl-ins"><img src="' + U.installIcon + '" width="34" height="34" alt=""><b>Instalar o app</b></button>' : '') +
       (U.novidadesLand && !so ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.VERSION + '">' + U.emo('📣', 'md') + '<b>' + U.VERSION + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '') + // notas de versão (settings.js); o pontinho some depois de abrir
       (gift ? '<button class="hl-gift" id="hl-gift">' + U.COINS.svg + '<span><b>GANHE 36 MOEDAS</b><small>Crie sua conta grátis</small></span></button>' : U.COINS ? U.COINS.pill('', 'hl-coins') : '') + (packs ? '<button class="hl-chip gold" id="hl-packs">' + packs + (packs === 1 ? ' pacotinho' : ' pacotinhos') + '</button>' : '') + '</div>' +
-      cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div>' + discHtml() + '</div>';
+      cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div>' + discHtml() + (last && U.CHAMA && U.COINS ? U.CHAMA.homeCard() : '') + '</div>'; // chama do técnico só para quem já tem carreira (ui/chama.js)
     U.LD.show(html, st => {
       st.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.hl; if (k === 'settings' && U.settingsLand) return U.settingsLand(home); if (k === 'profile' && U.profileLand) return U.profileLand(home); U.ldOff(); if (k === 'settings') return U.settings ? U.settings() : null; (U[k] || home)(); });
       bindSaves(st);
@@ -324,6 +324,7 @@
         landMode(m);
       });
       discBind(st);
+      if (U.CHAMA) U.CHAMA.homeBind(st, home);
       if (st.querySelector('#hl-ins')) st.querySelector('#hl-ins').onclick = e => { sfx('tap'); const bt = e.currentTarget, t = bt.querySelector('b'); if (!U.installAsk()) { t.textContent = 'Vire o celular em pé'; clearTimeout(bt._t); bt._t = setTimeout(() => { t.textContent = 'Instalar o app'; }, 4000); } };
       if (st.querySelector('#hl-iab')) st.querySelector('#hl-iab').onclick = () => { sfx('tap'); U.inAppGo(); };
       if (st.querySelector('#hl-nv')) st.querySelector('#hl-nv').onclick = () => { sfx('tap'); U.novidadesLand(home); };

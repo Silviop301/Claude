@@ -250,6 +250,7 @@
     const up = pp ? (pp[2] > 0 ? pp[1] < pp[0] : (cb(m.vs).strength || 0) > (cb(co.club).strength || 0)) : false;
     const r = credit({ kind: 'cog', co, m, log, up, aux: !!aux }, 0);
     coToast(r);
+    if (U.CHAMA) U.CHAMA.notify(U.CHAMA.game(log, aux)); // chama do técnico (ui/chama.js)
     return r;
   }
   // Fim da temporada: XP (mais com meta, acesso e título), metas da temporada e os números do técnico. Uma vez por temporada
