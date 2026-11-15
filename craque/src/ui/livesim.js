@@ -144,7 +144,7 @@
       onShot: sh => { if (!o.onShot) return; const nm = q => (q && q.inf ? q.inf.num : undefined);
         o.onShot({ side: sh.side, out: sh.out, sv: sh.sv, kind: sh.kind, id: sh.p && sh.p.inf ? sh.p.inf.id : undefined, num: nm(sh.p), ast: nm(sh.ast), dist: sh.dist, box: sh.box, near: sh.near, lane: sh.lane }); },
       onGoal: (p, s, y, v, own) => { b11In = false; if (own && o.onShot) o.onShot({ side: s, out: 'gol', kind: 'contra', dist: 8, box: true, near: false, lane: 0 });
-        net = { gx: s ? 0 : L, y, t: 0, v: Math.max(10, v) }; mode = 'goal'; modeT = FXON() ? CELEB : 2; koSide = 1 - s; back = 0; ball.owner = null;
+        net = { gx: s ? 0 : L, y, t: 0, v: Math.max(10, v) }; mode = 'goal'; modeT = FXON() ? CELEB : 2; koSide = 1 - s; back = 0; ball.owner = null; b11Net(s, y, v);
         hero = p && p.side === s ? p : T[s].filter(q => q.r !== 'GK').sort((a, b) => tf(s, b)[0] - tf(s, a)[0])[0]; bigSay('GOOOL!', s, 2.6, true); },
       onPost: (x, y) => { post = { x, y, t: 0.5 }; if (typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play('trave'); } catch (_) {} },
       onStop: (k, s, x, y, sai) => { poss = s; if (k === 'lateral' || k === 'escanteio' || k === 'meta') b11Out(x, y, sai, k); if (k === 'lateral' || k === 'escanteio' || k === 'meta') signal(s, x, y, k === 'lateral' ? 'lat' : k === 'escanteio' ? 'esc' : 'tiro'); if (k === 'escanteio') escClk = clk; },
@@ -746,6 +746,13 @@
     // cobrança em `TOSS_T` s (só desenho: o cérebro já pôs a bola no ponto; Silvio 13/11: "saída efetiva da bola")
     // 14/11 (Silvio: "parece um tp da bola em jogo pra mão do goleiro"): a reserva espera `toss.d` s parada na grade enquanto a
     // que saiu rola para fora, e só então vai até o ponto em `TOSS_T` s (tiro de meta e escanteio esperam mais que o lateral)
+    // Gol do cérebro (15/11, Silvio: "o gol é contado com a bola em cima da linha"; "a bola poderia bater na trave e entrar"): só
+    // desenho, o placar já foi contado. A bola passa da linha e morre no fundo da rede (NET_D m); colada na trave (TRAVE_IN m)
+    // ela bate na trave (treme e soa) e entra mais para o meio. Na rede a bola fica no chão (nunca acima do travessão).
+    let gnet = null; const NET_D = 1.3, TRAVE_IN = 0.75;
+    function b11Net(s, y, v) { const gx = s ? 0 : L, dx = s ? -1 : 1, dp = Math.min(Math.abs(y - GL), Math.abs(y - GR)), pY = Math.abs(y - GL) < Math.abs(y - GR) ? GL : GR;
+      let y1 = y, tr = false; if (dp < TRAVE_IN) { tr = true; y1 = pY + (34 - pY) * 0.22; post = { x: gx, y: pY, t: 0.5 }; if (typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play('trave'); } catch (_) {} }
+      y1 = cl(y1, GL + 0.35, GR - 0.35); gnet = { x0: cl(ball.x, gx - 0.6, gx + 0.6), y0: cl(ball.y, GL + 0.2, GR - 0.2), x1: gx + dx * NET_D, y1, t: 0, T: cl(NET_D / Math.max(8, v * B11_K) * 2.2, 0.12, 0.35) }; ball.z = 0; }
     let toss = null; const TOSS_T = 0.85, TOSS_D = { lateral: 0.1, escanteio: 0.6, meta: 0.65 };
     function b11Out(x, y, sai, k) {
       const vx = sai ? sai.vx * B11_K : BV.vx, vy = sai ? sai.vy * B11_K : BV.vy, sp = Math.hypot(vx, vy), kv = sp > 30 ? 30 / sp : sp < 3 ? (sp > 0.01 ? 3 / sp : 0) : 1; ghost = { x: ball.x, y: ball.y, vx: vx * kv, vy: vy * kv, t: 0 };
@@ -1655,6 +1662,7 @@
       clk += dt;
       BV.vx = (ball.x - BV.px) / dt; BV.vy = (ball.y - BV.py) / dt; BV.px = ball.x; BV.py = ball.y;
       if (toss && (toss.t += dt) > toss.d + TOSS_T) toss = null;
+      if (gnet) { if (mode !== 'goal') gnet = null; else { gnet.t += dt; const u = Math.min(1, gnet.t / gnet.T), e = 1 - (1 - u) * (1 - u); ball.x = gnet.x0 + (gnet.x1 - gnet.x0) * e; ball.y = gnet.y0 + (gnet.y1 - gnet.y0) * e; ball.z = 0; } }
       if (ghost) { const sp = Math.hypot(ghost.vx, ghost.vy), k = sp > 0.01 ? Math.max(0, sp - 5 * dt) / sp : 0; ghost.vx *= k; ghost.vy *= k; ghost.x += ghost.vx * dt; ghost.y += ghost.vy * dt; if ((ghost.t += dt) > 2.2) ghost = null; }
       { const f = ball.fly, tg = mode === 'play' && f && !f.shot && !f.out ? { x: f.x1, y: f.y1 } : ball, k = mode === 'play' ? 1 - Math.exp(-dt / SBT) : 1; SB.x += (tg.x - SB.x) * k; SB.y += (tg.y - SB.y) * k; }
       if (ckW && (ckW.e.done ? (ckW = null, 0) : clk - ckW.t > 6)) { const e = ckW.e; ckW = null; e.done = true; if (e.cb) e.cb(); }
@@ -2206,7 +2214,7 @@
       }
       const bdo = ball.owner && ball.owner.dr && ball.owner.dr.who ? drOff(ball.owner.dr, true) : null;
       const tk = toss ? (q => q * q * (3 - 2 * q))(Math.max(0, Math.min(1, (toss.t - toss.d) / TOSS_T))) : 1, tx0 = toss ? toss.x + (ball.x - toss.x) * tk - ball.x : 0, ty0 = toss ? toss.y + (ball.y - toss.y) * tk - ball.y : 0; // a reserva indo até o ponto da cobrança
-      const bx = X(ball.x + tx0 + (bdo ? bdo[0] : 0)), by = Y(ball.y + ty0 + (bdo ? bdo[1] : 0)), air = toss ? Math.sin(tk * Math.PI) * 6 * k : ball.fly ? Math.sin(Math.min(1, ball.fly.t) * Math.PI) * (ball.fly.loft || 0) * 1.3 * k : B11 && ball.z ? ball.z * 1.3 * k : 0;
+      const bx = X(ball.x + tx0 + (bdo ? bdo[0] : 0)), by = Y(ball.y + ty0 + (bdo ? bdo[1] : 0)), air = toss ? Math.sin(tk * Math.PI) * 6 * k : ball.fly ? Math.sin(Math.min(1, ball.fly.t) * Math.PI) * (ball.fly.loft || 0) * 1.3 * k : B11 && ball.z ? ball.z * 1.3 * k * (ball.b11shot && ball.y > GL - 1 && ball.y < GR + 1 ? cl(Math.min(ball.x, L - ball.x) / 5, 0, 1) : 1) : 0;
       // Rastro do chute: uma cauda curta atrás da bola, mais grossa e clara perto dela (dá a força do chute; some quando a bola para)
       if ((ball.fly && ball.fly.shot && !(ball.fly.pre > 0)) || (B11 && ball.b11shot && mode === 'play')) { bt.push([bx, by - air]); if (bt.length > 8) bt.shift(); } else if (bt.length) bt.splice(0, 2);
       if (bt.length > 1) { g.lineCap = 'round'; for (let i = 1; i < bt.length; i++) { const a = i / bt.length; g.strokeStyle = 'rgba(255,238,180,' + (0.62 * a).toFixed(2) + ')'; g.lineWidth = (1 + 5 * a) * k; g.beginPath(); g.moveTo(bt[i - 1][0], bt[i - 1][1]); g.lineTo(bt[i][0], bt[i][1]); g.stroke(); } g.lineCap = 'butt'; }

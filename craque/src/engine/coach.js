@@ -33,7 +33,7 @@
     foul: 12, yel: 0.08, redD: 0.002, kCl: 1.8, ycMax: 3, off: 2.2, foulShow: 0.14,
     // moK: peso da moral no rendimento (moral 100 = +5%; era 1200 = +3% até 2026-11-12, "senão ninguém sente")
     moK: env('CO_MOK', 750),
-    conf0: 60, confK: env('CO_CK', 3), ppg: 1.34, ultAt: env('CO_ULT', 25), ultN: 3, ultNeed: 2, ultMin: 6,
+    conf0: 60, confK: env('CO_CK', 3), ppg: 1.34, ultAt: env('CO_ULT', 22), ultN: 3, ultNeed: 2, ultMin: 6,
     fame0: { baixo: 5, livre: 25 }, skillMax: 10,
   };
   // ---------- tática ----------

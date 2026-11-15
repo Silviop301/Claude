@@ -186,10 +186,12 @@
   // Vagas da escalação: x da formação, y usando o campo todo (o banco fica fora), linhas de 5 em zigue-zague
   const spotsT = f => { const sp = spotsL(f, false, true), sl = S.CO_FORMS[f].slots;
     return sp.map(([x], i) => { const ln = sl[i].ln, ix = sl.map((q, j) => j).filter(j => sl[j].ln === ln), n = ix.length, k = ix.indexOf(i);
-      if (n === 1) return [x, 45];
+      // nome e etiqueta vão numa linha só embaixo da bolinha (15/11): o centroavante sozinho vai mais à frente para não
+      // encostar no meia do meio, e a zaga de 3 ou 5 sobe para o nome do zagueiro do meio não bater no do goleiro
+      if (n === 1) return [ln === 'a' && sl.some(q => q.ln === 'am') ? x + 7 : x, 45];
       const step = Math.min(24, 72 / (n - 1));
-      let nx5 = x;
-      if (n === 5) { const base = k === 0 || k === 4 ? x - 10 : k === 2 && ln === 'm' ? x + 5 : x; nx5 = ln === 'd' ? base + (k === 0 || k === 4 ? 18 : k === 2 ? -3 : 9) : base + (k === 0 || k === 4 ? 12 : k === 2 ? 2 : -8); }
+      let nx5 = ln === 'd' && n === 3 ? x + 6 : ln === 'm' && n === 3 && sl.filter(q => q.ln === 'd').length === 5 ? x + 6 : x;
+      if (n === 5) { const base = k === 0 || k === 4 ? x - 10 : k === 2 && ln === 'm' ? x + 5 : x; nx5 = ln === 'd' ? base + (k === 0 || k === 4 ? 16 : k === 2 ? 10 : 0) : base + (k === 0 || k === 4 ? 12 : k === 2 ? 2 : -8); }
       return [nx5, Math.round(45 + (k - (n - 1) / 2) * step)]; }); };
   // Círculo só com o número (tamanho fixo); nome e posição embaixo, fora do círculo
   // Banco em ordem de posição (Silvio 2026-11-09), não de geral: quem não pode jogar vai para o fim
