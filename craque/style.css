@@ -10630,3 +10630,7 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .mk-r > em.mk-ovr, .mkw-r > em.mk-ovr { white-space: nowrap; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 .mk-r > em.mk-ovr { width: 84px; font-size: 22px; }
 .mkw-r > em.mk-ovr { font-size: 20px; }
+
+/* Fora de posição (15/11): o número no campo é o geral que ele rende na vaga, em laranja (como no banco) */
+.ld-dc.pen { color: #FFB27A; }
+.tm .ld-dc.pen, .ldl-tm .ld-dc.pen { color: #C8501A; }
