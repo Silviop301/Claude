@@ -9676,9 +9676,9 @@ button.coin-pill { cursor: pointer; border: 0; }
 .fdt button.fdt-tb { position: relative; border-radius: 9px; color: #C9D6CE; font: 700 17px/1 var(--display); } .fdt button.fdt-tb.on { background: #F3F1EA; color: #13201A; font-weight: 800; }
 .fdt-tb i { position: absolute; right: 7px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--gold); }
 .fdt-p { flex: 1; min-height: 0; box-sizing: border-box; border-radius: 18px; background: #141517; padding: 12px; display: flex; flex-direction: column; }
-.fdt-n { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 8px; }
+.fdt-n { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 8px; }
 .fdt-n span { border-radius: 12px; background: #1E2023; padding: 0 14px; display: flex; flex-direction: column; justify-content: center; gap: 6px; min-width: 0; }
-.fdt-n small { font: 600 14px/1 var(--body); color: #B9C9BF; } .fdt-n b { font: 800 26px/1 var(--display); white-space: nowrap; } .fdt-n b.sm { font-size: 21px; line-height: 1.08; white-space: normal; } /* "Caiu na estreia" passava do quadro (2026-11-13) */
+.fdt-n small { font: 600 14px/1 var(--body); color: #B9C9BF; } .fdt-n b { font: 800 26px/1 var(--display); white-space: nowrap; } .fdt-n b.sm { font-size: 18px; line-height: 1.22; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } /* copa com fase longa ("Caiu nas oitavas de final") quebrava em 5 linhas e os 6 quadros passavam da caixa (2026-11-15) */ /* "Caiu na estreia" passava do quadro (2026-11-13) */
 .fdt-d { flex: 1; display: flex; flex-direction: column; } .fdt-d > div { flex: 1; display: flex; align-items: center; gap: 12px; padding: 0 4px; } .fdt-d > div + div { border-top: 1px solid rgba(243,241,234,.1); }
 .fdt-d i { width: 44px; height: 44px; flex: none; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--gold); display: flex; align-items: center; justify-content: center; font: 800 19px/1 var(--display); font-style: normal; }
 .fdt-d span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; } .fdt-d small { font: 700 13px/1 var(--display); letter-spacing: .12em; color: var(--gold); }
@@ -9695,7 +9695,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 .fdt-r { width: 196px; flex: none; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
 .fdt-lb { font: 700 13px/1 var(--display); letter-spacing: .14em; color: #8FD6AE; padding: 4px 2px 2px; }
 .fdt-ch { border-radius: 14px; background: #141517; padding: 11px 12px; display: flex; align-items: center; gap: 10px; } .fdt-ch svg { width: 30px; height: 30px; flex: none; }
-.fdt-ch span { min-width: 0; display: flex; flex-direction: column; gap: 3px; } .fdt-ch b { font: 800 20px/1 var(--display); } .fdt-ch small { font: 500 15px/1.15 var(--body); color: #B9C9BF; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.fdt-ch span { min-width: 0; display: flex; flex-direction: column; gap: 3px; } .fdt-ch b { font: 800 20px/1 var(--display); } .fdt-ch small { font: 500 15px/1.25 var(--body); color: #B9C9BF; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .fdt-ch.coin b { color: var(--gold); font-size: 21px; } .fdt-ch.warn b { color: #FFB37A; }
 /* 3 cartões com texto em duas linhas (nomes de clube longos): apertar para o Encerrar carreira caber no palco */
 .fdt-r.n3 { gap: 6px; } .fdt-r.n3 .fdt-ch { padding: 8px 12px; }
@@ -10086,7 +10086,7 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .hw-c.hw-new { background: linear-gradient(90deg, rgba(20, 21, 23, .96) 0, rgba(20, 21, 23, .82) 45%, rgba(20, 21, 23, .25) 100%), url(assets/link-climbix-v1.jpg) right center / cover no-repeat, #141517; }
 .hw-c.hw-new { background: linear-gradient(90deg, #141517 0, #141517 50%, rgba(20, 21, 23, .55) 68%, rgba(20, 21, 23, .1) 100%), url(assets/link-climbix-v1.jpg) right center / auto 100% no-repeat, #141517; }
 .hw-c .hw-k { flex: 1; min-height: 0; } .hw-c .hw-k > div { justify-content: center; gap: clamp(6px, 1.6cqh, 12px); padding: 12px 18px; }
-.hw-k > div > b { font-size: clamp(28px, 7cqh, 46px); } .hw-k > div > b.sm { font-size: 22px; } .hw-k .hw-vs b { font-size: clamp(22px, 4.6cqh, 30px); } .hw-vs .crest { width: clamp(30px, 6.4cqh, 44px); height: clamp(30px, 6.4cqh, 44px); }
+.hw-k > div > b { font-size: clamp(28px, 7cqh, 46px); } .hw-k > div > b.sm { font-size: 22px; } .hw-k > div > b.md { font-size: clamp(24px, 5cqh, 34px); } /* caixa "R$ 230 mil" cortava com reticências no computador (2026-11-15) */ .hw-k .hw-vs b { font-size: clamp(22px, 4.6cqh, 30px); } .hw-vs .crest { width: clamp(30px, 6.4cqh, 44px); height: clamp(30px, 6.4cqh, 44px); }
 .hw-k > div > span { font-size: 16px; }
 .hlw .hw-bt .hl-dk-t { right: 0; bottom: 70px; align-items: flex-end; }
 .hlw .hw-bt .hl-dk-t { display: none; }
