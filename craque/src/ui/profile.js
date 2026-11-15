@@ -240,8 +240,8 @@
     box.innerHTML = r.done.length ? '<b>Meta cumprida</b><span>' + r.done.map(d => esc(d.t)).join(' · ') + ' · +' + m + (m === 1 ? ' moeda' : ' moedas') + '</span><button aria-label="Fechar">OK</button>'
       : '<b>Nível ' + r.after + '</b><span>' + rankCo(r.after) + '</span><button aria-label="Fechar">OK</button>';
     document.body.appendChild(box); box.querySelector('button').onclick = () => box.remove();
-    // Os 7 s só contam sem a festa da taça ou do acesso por cima (o CSS esconde o aviso enquanto ela está na tela)
-    let left = 7000; const iv = setInterval(() => { if (!box.isConnected) return clearInterval(iv); if (!document.querySelector('.tc-ov') && (left -= 250) <= 0) { clearInterval(iv); box.remove(); } }, 250);
+    // Os 7 s só contam sem a festa da taça ou do acesso por cima e fora do fim da temporada (o CSS esconde o aviso nessas telas)
+    let left = 7000; const iv = setInterval(() => { if (!box.isConnected) return clearInterval(iv); if (!document.querySelector('.tc-ov, .fdt') && (left -= 250) <= 0) { clearInterval(iv); box.remove(); } }, 250);
   }
   // Fim de um jogo do Treinador (ui/coach.js). pre = [sua posição, a deles, jogos já feitos] antes do jogo
   function coGame(co, m, log, aux) {
@@ -250,6 +250,7 @@
     const up = pp ? (pp[2] > 0 ? pp[1] < pp[0] : (cb(m.vs).strength || 0) > (cb(co.club).strength || 0)) : false;
     const r = credit({ kind: 'cog', co, m, log, up, aux: !!aux }, 0);
     coToast(r);
+    if (U.CHAMA) U.CHAMA.notify(U.CHAMA.game(log, aux)); // chama do técnico (ui/chama.js)
     return r;
   }
   // Fim da temporada: XP (mais com meta, acesso e título), metas da temporada e os números do técnico. Uma vez por temporada
