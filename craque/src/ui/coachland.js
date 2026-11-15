@@ -53,6 +53,8 @@
     // No computador o palco para em DESK_K× o desenho de 844×390 (contando o zoom do html.desk), centrado; a sobra vira fundo
     const desk = document.documentElement.classList.contains('desk');
     if (desk) k = Math.min(k, DESK_K / ((U.zk && U.zk()) || 1));
+    // Notebook (Silvio 2026-11-15, 1440x900): letra um pouco menor para sobrar largura e as telas largas entrarem, sem as faixas vazias
+    if (desk && vw >= 1150) k = Math.min(k, vw / 1080);
     const st0 = document.getElementById('ld-st'), wide0 = desk && !!(st0 && st0.firstElementChild && WIDE.test(st0.firstElementChild.className));
     const ex = Math.ceil(Math.max(0, vw / k - W) / 2) + 1, ey = Math.ceil(Math.max(0, vh / k - H) / 2) + 1; // sobra de cada lado em px do palco, com 1 a mais para a borda não deixar fio
     el.style.setProperty('--ldw', (W + 2 * ex) + 'px'); el.style.setProperty('--ldh', (H + 2 * ey) + 'px');

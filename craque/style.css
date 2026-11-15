@@ -10729,3 +10729,7 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .ch-big .ch-ins { color: #C9A98A; }
 .ch-big .ch-nx { font: 600 14px var(--body); color: #C9A98A; }
 @media (prefers-reduced-motion: reduce) { .ch-card.risk .ch-fl, .ch-big .ch-in > .ch-fl { animation: none; } }
+
+/* Mercado largo no notebook: o título "Mercado" virava "Me..."; ele não encolhe, as abas encolhem (2026-11-15) */
+#ld.wide .mkw .mk-tt { flex: none; }
+#ld.wide .mkw .mk-tabs { width: auto; flex: 0 1 470px; min-width: 0; }
