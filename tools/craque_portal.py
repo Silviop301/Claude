@@ -42,7 +42,7 @@ EN_HTML = [
     ('Jogo de técnico de futebol grátis no navegador', 'Free football manager game in your browser'),
     ('Jogo de técnico de futebol">', 'Football manager game">'),
     ('Jogo grátis de técnico de futebol no navegador: assuma um clube, monte o time, acerte a tática e veja a partida ao vivo até chegar ao topo.', 'Free football manager game in your browser: take over a club, build the team, set the tactics and watch the match live on your way to the top.'),
-    ('Assuma um clube, monte o time e chegue ao topo.', 'Take over a club, build the team and reach the top.'),
+    ('Jogo de técnico grátis, direto no navegador. Sem baixar nada.', 'Free football manager game, right in your browser. Nothing to download.'),
     ('aria-label="Nota geral"', 'aria-label="Overall rating"'),
     ('<div class="eyebrow">Carreira de futebol</div>', '<div class="eyebrow">Football career</div>'),
 ]

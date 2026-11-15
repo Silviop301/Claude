@@ -10737,3 +10737,7 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 /* Parada do jogo: o campo é mais baixo que o da escalação e o nome de quem joga na linha de baixo (lateral, ponta) era cortado
    pela borda do campo. O nome pode passar alguns px para o vão entre o campo e o banco (2026-11-15). */
 .ldl-tm .tm-pitch { overflow: visible; }
+/* Home: "Joga no navegador · sem baixar nada" embaixo do logo (quem chega pelo link perguntava onde baixar) */
+.hl-e .hl-logo { margin-bottom: 6px; }
+.hl-nav { margin: 0 0 14px; display: flex; align-items: center; gap: 7px; font: 600 15px/1.2 var(--body); color: var(--gold); }
+.hl-nav svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
