@@ -33,12 +33,13 @@
   }
   const firstName = n => String(n || '').split(' ').filter(Boolean)[0] || '';
   // Linha de uma carreira salva: escudo, nome e onde ela está
+  const NC_SEAL = '<i class="hw-nc" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l7 2.6v5.6c0 4.6-3 8-7 9.8c-4-1.8-7-5.2-7-9.8V5.6z"/></svg></i>';
   function slotRow(mode, sv, slot) {
     if (mode === 'treinador') {
       const c = sv.co, cl = c.club && club(c.club), ss = c.ss;
       const at = ss && !ss.done ? 'Rodada ' + Math.min(ss.i + 1, ss.rounds.length) + ' de ' + ss.rounds.length : 'Temporada ' + (YEAR0 + c.season);
       return '<button class="tk-vg" data-vg="' + mode + ':' + slot + '">' + (cl ? crest(cl.id) : U.emo('📋', 'md')) + '<span class="tk-vt"><b>' + esc(c.name) + '</b><small>' +
-        (cl ? esc(cl.short || cl.name) : 'Sem clube') + ' · técnico</small><small>' + at + '</small></span><i class="tk-go" aria-hidden="true">' + PLAY_SVG + '</i></button>';
+        (cl ? esc(cl.short || cl.name) + ' · técnico' : 'Escolhendo clube') + '</small><small>' + at + '</small></span><i class="tk-go" aria-hidden="true">' + PLAY_SVG + '</i></button>';
     }
     const sc = sv.c, cl = club(sc.club), fc = sc.fc;
     let at = 'Temporada ' + (YEAR0 + sc.season);
@@ -264,11 +265,12 @@
   // (U.LD.wroom, o fit em coachland.js decide e redesenha a home se mudar)
   function homeW(last) {
     const B = U._co || {}, brl = B.brl || (v => 'R$ ' + v), sl = slotsOf('treinador');
-    const cr = id => id ? crest(id) : '<span class="hw-nc">?</span>';
+    // Sem clube (criou o técnico e recarregou antes de assinar, ou demitido): selo redondo neutro, nunca "?" esticado
+    const cr = id => id ? crest(id) : NC_SEAL;
     let card;
     if (last) {
       const c = last.sv.co, cl = c.club && club(c.club), ss = c.ss, live = cl && ss && !ss.done && ss.tab;
-      const at = svYear(last.sv) + (ss && !ss.done ? ' · Rodada ' + Math.min(ss.i + 1, ss.rounds.length) : !c.club ? ' · sem clube' : ' · pré-temporada');
+      const at = svYear(last.sv) + (ss && !ss.done ? ' · Rodada ' + Math.min(ss.i + 1, ss.rounds.length) : !c.club ? ' · escolhendo clube' : ' · pré-temporada');
       let k = '';
       if (live) {
         const pos = S.coPos(c), g = c.board && c.board.goal, nx = S.coNext(c), vs = nx && !nx.bye && club(nx.vs), f = c.fin; let R = null; try { R = f && S.coFinRitmo(c); } catch (e) {}
@@ -281,8 +283,8 @@
     } else card = '<div class="hw-c hw-new"><small class="hw-l">COMECE AQUI</small><b class="hw-t">Sua carreira de técnico</b><span class="hw-s">Escolha um clube, monte o time e jogue a temporada ao vivo.</span><span class="rs-gap"></span>' +
       '<button class="hl-go hw-go solo" id="hl-go" data-mode="treinador">' + PLAY_SVG + '<b>JOGAR</b></button></div>';
     const row = (sv, i) => { if (!sv) return '<button class="hw-r free" data-mode="treinador"><i>+</i><b>Vaga livre · nova carreira</b></button>';
-      const c = sv.co, cl = c.club && club(c.club), ss = c.ss, at = svYear(sv) + (ss && !ss.done ? ' · rodada ' + Math.min(ss.i + 1, ss.rounds.length) : !c.club ? ' · sem clube' : ' · pré-temporada');
-      return '<button class="hw-r' + (last && last.i === i ? ' on' : '') + '" data-vg="treinador:' + i + '">' + cr(cl && cl.id) + '<span><b>' + esc(cl ? cl.short || cl.name : c.name) + '</b><small>' + esc(c.name) + ' · ' + at + '</small></span>' + PLAY_SVG + '</button>'; };
+      const c = sv.co, cl = c.club && club(c.club), ss = c.ss, at = svYear(sv) + (ss && !ss.done ? ' · rodada ' + Math.min(ss.i + 1, ss.rounds.length) : !c.club ? ' · escolhendo clube' : ' · pré-temporada');
+      return '<button class="hw-r' + (last && last.i === i ? ' on' : '') + '" data-vg="treinador:' + i + '">' + cr(cl && cl.id) + '<span><b>' + esc(cl ? cl.short || cl.name : c.name) + '</b><small>' + (cl ? esc(c.name) + ' · ' : '') + at + '</small></span>' + PLAY_SVG + '</button>'; };
     const more = LAND_MORE.map(([k, l, d]) => '<button class="hl-mr" data-hl="' + k + '">' + lineSvg(d) + '<b>' + l + '</b></button>').join('');
     return '<div class="hlw hl hl-x">' + bdTag() + '<div class="hw-top">' + (U.novidadesLand ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.VERSION + '">' + U.emo('📣', 'md') + '<b>' + U.VERSION + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '<span></span>') +
       '<b class="hl-logo">CLIMBIX' + (Date.now() < BETA_ATE ? '<i class="hl-beta">BETA</i>' : '') + '</b><div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + '</div></div>' +
@@ -449,9 +451,9 @@
     const card = sv => {
       const co = m === 'treinador', c = co ? sv.co : sv.c, cl = c.club && club(c.club);
       let at;
-      if (co) { const ss = c.ss; at = svYear(sv) + (ss && !ss.done ? ' · rodada ' + Math.min(ss.i + 1, ss.rounds.length) : !c.club ? ' · sem clube' : ' · pré-temporada'); }
+      if (co) { const ss = c.ss; at = svYear(sv) + (ss && !ss.done ? ' · rodada ' + Math.min(ss.i + 1, ss.rounds.length) : !c.club ? ' · escolhendo clube' : ' · pré-temporada'); }
       else at = 'temporada ' + (YEAR0 + c.season);
-      return (cl ? crest(cl.id) : '') + '<span><b>' + esc(c.name) + '</b><small>' + (cl ? esc(cl.short || cl.name) + ' · ' : '') + at + '</small></span>';
+      return (cl ? crest(cl.id) : co ? NC_SEAL : '') + '<span><b>' + esc(c.name) + '</b><small>' + (cl ? esc(cl.short || cl.name) + ' · ' : '') + at + '</small></span>';
     };
     const row = ([sv, i], first) => {
       const c = m === 'treinador' ? sv.co : sv.c;
