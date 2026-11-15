@@ -98,6 +98,9 @@ for (let n = 0; n < N; n++) {
     while (co.xp.pts > 0) { const k = ['leitura', 'motiv', 'negoc'][co.xp.pts % 3]; if (!S.coSkill(co, k)) break; }
     if (!Number.isFinite(co.fame) || co.squad.some(p => !Number.isFinite(p.ovr))) st.nan++;
     if (out.offers) S.coSign(co, pick(out.offers));
+    // o robô fica no clube com que acabou de subir ou ser campeão (FICA=0 desliga): a vitrine (15/11) oferece clubes da divisão de cima
+    // e o robô que sempre aceitava ia para um emprego mais difícil (demitido 24% -> 26% em 600 temporadas), o que mede o robô e não a regra
+    else if (process.env.FICA !== '0' && co.last && co.last.season === co.season - 1 && (co.last.up || co.last.won)) { /* fica */ }
     else { const offs = S.coOffers(co, 3), best = pick(offs); if (best && str(best) >= str(co.club) + 3 && S.coGoalFor(co, best).k !== 'naocair') { S.coSign(co, best); st.moves++; } }
   }
   st.titlesPer.push(titles); st.sacksPer.push(sacks); st.fameEnd.push(co.fame); st.strEnd.push(str(co.club));
