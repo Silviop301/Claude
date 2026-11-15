@@ -25,6 +25,7 @@
     raioDominio: 0.95, dominioBase: 1.18, raioDesarme: 1.35, raioBloqueio: 0.8, reacaoCorte: 0.4, raioCorte: 0.65,
     recuoDefesa: 20, linhaAltaMax: 40,
     ruidoDecisao: 0.34, velChegada: 12, freioPasseAlto: 0.55, pesoAvanco: 0.022, vontadeCruzar: 0.7,
+    vontadeConduzir: 0.45, freioRecuo: 0.45, pressaoAtras: 0.7, // livre com campo à frente ele conduz; sem ninguém fechando não toca para trás; quem vem por trás aperta menos que quem está na frente
     erroPasse: 0.045, pPegaMal: 0.035, distMaxChute: 31, pesoChute: 6.8, freioChute: 0.55,
     erroChute: 0.08, erroChuteDist: 0.0024, erroChutePressao: 0.45,
     gkDist: 0.02, // chute de longe: o goleiro tem tempo de ver a bola (mais defesa por metro além de 11 m)
@@ -307,7 +308,7 @@
         const tEst = d0 / 15, ax = clamp(m.x + m.vx * tEst * 0.8, 1.5, CL - 1.5), ay = clamp(m.y + m.vy * tEst * 0.8, 1.5, CW - 1.5);
         const d = hip(ax - bola.x, ay - bola.y), arx = RX(T, ax), ary = RY(T, ay), risco = riscoLinha(bola.x, bola.y, ax, ay, T.adv);
         const dRec = distMaisPerto(T.adv, ax, ay), aberto = clamp(dRec / 7, 0, 1), prog = arx - prx, ganho = valorPos(arx, ary) - vAqui;
-        const comum = 0.5 + prog * S.avanco + ganho * 2.2 + aberto * 0.45 - (m.gol ? 0.5 : 0) + (prog < 0 ? pressao * 0.35 : 0);
+        const comum = 0.5 + prog * S.avanco + ganho * 2.2 + aberto * 0.45 - (m.gol ? 0.5 : 0) + (prog < 0 ? pressao * 0.35 : 0) - (prog < -2 && op.campo ? BAL.freioRecuo * op.campo : 0);
         lista.push({ u: comum - risco * 2.4 - (d > 30 ? 0.2 : 0) + ruido(), tipo: 'passe', m, x: ax, y: ay, alto: false });
         if (d0 > 24 && !op.soCurto) lista.push({ u: comum - S.alto - (clamp(1 - dRec / 6, 0, 1) * 0.7 + 0.25 + d0 * 0.004) * 1.6 + eL + ruido(), tipo: 'passe', m, x: ax, y: ay, alto: true });
         if (m.acao === 'infiltrar' && mrx > prx && T.impLinha < 93 && d0 > 12 && d0 < 48 && !op.soCurto) {
@@ -321,9 +322,13 @@
       p.tDec -= dt; if (p.tDec > 0) return;
       const T = p.time, S = T.sty, prx = RX(T, p.x), pry = RY(T, p.y), frente = T.dir > 0 ? 0 : Math.PI, gx = T.dir > 0 ? CL : 0, dGol = hip(gx - p.x, 34 - p.y);
       let dOp = 99, op = null, nPerto = 0;
-      for (const q of T.adv.jogadores) { if (!emPe(q)) continue; const d = hip(q.x - p.x, q.y - p.y); if (d < dOp) { dOp = d; op = q; } if (d < 4) nPerto++; }
+      let pF = 0; // para decidir se conduz: quem está entre ele e o gol aperta; quem ficou para trás aperta pouco (o erro do passe e do chute segue pela distância)
+      for (const q of T.adv.jogadores) { if (!emPe(q)) continue; const d = hip(q.x - p.x, q.y - p.y); if (d < dOp) { dOp = d; op = q; } if (d < 4) nPerto++;
+        const pq = clamp(1 - (d - 1) / 5, 0, 1) * ((q.x - p.x) * T.dir > -0.5 ? 1 : BAL.pressaoAtras); if (pq > pF) pF = pq; }
       const pressao = clamp(1 - (dOp - 1) / 5, 0, 1), ruido = () => gauss() * S.ruido, ops = [];
-      avaliarPasses(p, pressao, ops, {});
+      let lf = 14; for (const q of T.adv.jogadores) { if (!emPe(q)) continue; const ox = (q.x - p.x) * T.dir, oy = q.y - p.y; if (ox > 0 && ox < lf && Math.abs(oy) < 3 + ox * 0.35) lf = ox; }
+      const campo = p.naMao || p.gol || prx > 88 ? 0 : clamp((lf - 4) / 8, 0, 1) * (1 - pF); // campo livre à frente e ninguém apertando
+      avaliarPasses(p, pressao, ops, { campo });
       if (p.naMao) ops.push({ u: 0.45 + ruido(), tipo: 'chutao' });
       else {
         if (dGol < BAL.distMaxChute) ops.push({ u: Math.sqrt(chancePercebida(p, T, dGol)) * BAL.pesoChute * (0.85 + 0.3 * at(p, 'fin') / 100) - BAL.freioChute + pressao * 0.15 + es(p, 'chu', 0) + ruido(), tipo: 'chute' });
@@ -335,7 +340,7 @@
           if (cx < 1.5 || cx > CL - 1.5 || cy < 1.5 || cy > CW - 1.5) continue; let livre = 12;
           for (const q of T.adv.jogadores) { if (!emPe(q)) continue; const ox = q.x - p.x, oy = q.y - p.y, al = ox * ux + oy * uy; if (al > 0 && al < livre && Math.abs(ox * uy - oy * ux) < 2.2 + al * 0.25) livre = al; }
           let da = ang - p.conduz; while (da > Math.PI) da -= TAU; while (da < -Math.PI) da += TAU;
-          const u = 0.2 + livre / 12 * 0.75 + ux * T.dir * 0.25 + (valorPos(RX(T, p.x + ux * 8), RY(T, p.y + uy * 8)) - valorPos(prx, pry)) * 1.5 - pressao * 0.35 + (Math.abs(da) < 0.35 ? 0.12 : 0) + ruido() * 0.7;
+          const u = 0.2 + livre / 12 * 0.75 + ux * T.dir * 0.25 + (valorPos(RX(T, p.x + ux * 8), RY(T, p.y + uy * 8)) - valorPos(prx, pry)) * 1.5 - pressao * 0.35 + (Math.abs(da) < 0.35 ? 0.12 : 0) + BAL.vontadeConduzir * campo * (livre / 12) * (ux * T.dir > 0.3 ? 1 : 0.3) + ruido() * 0.7;
           if (!mc || u > mc.u) mc = { u, tipo: 'conduz', ang };
         }
         if (mc) ops.push(mc);
