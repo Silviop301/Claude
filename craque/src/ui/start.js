@@ -307,6 +307,7 @@
     const bg = !so && U.LP && U.LP.sim ? '<div class="hl-bg" aria-hidden="true"><canvas id="hl-cv"></canvas></div>' : '';
     const gift = !so && !window.CLIMBIX_SOLO && U.cloud && U.cloudStatus && !U.cloudStatus() && !(U.COINS && U.COINS.has('boas-vindas'));
     const html = U.LD.wroom && U.LD.wroom() && !so ? homeW(last) : '<div class="hl hl-x' + (so ? ' hl-so' : ' hl-e') + '">' + bg + '<b class="hl-logo">CLIMBIX' + (Date.now() < BETA_ATE ? '<i class="hl-beta">BETA</i>' : '') + '</b>' +
+      (so ? '' : '<p class="hl-nav"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Joga no navegador · sem baixar nada</p>') + // quem chega pelo Instagram pergunta onde baixar (Silvio, 15/11)
       bdTag() + '<div class="hl-tops">' +
       (U.inApp && U.inApp() ? '<button class="hl-nv hl-ins hl-iab" id="hl-iab"><span class="hl-iab-ic">' + U.inAppIcon + '</span><span><b>Abrir no navegador</b><small>pra instalar e salvar</small></span></button>' : '') + // dentro do Instagram/TikTok (install.js)
       (U.installCan && U.installCan() ? '<button class="hl-nv hl-ins" id="hl-ins"><img src="' + U.installIcon + '" width="34" height="34" alt=""><b>Instalar o app</b></button>' : '') +
