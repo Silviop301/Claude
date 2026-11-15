@@ -33,6 +33,9 @@ function checkWorld(co, tag) {
     });
     Object.keys(S.CO.squad).forEach(pos => { if (cnt[pos] !== S.CO.squad[pos] && !(held && cnt[pos] > S.CO.squad[pos])) alert(tag + ' ' + id + ' com ' + (cnt[pos] || 0) + ' ' + pos); });
   });
+  // sem clube que é cópia de um dos seus (15/11: Silvio contratou de graça um jogador que já tinha)
+  S.coMktFree(co).forEach(p => { if (S.coMktMine(co, p)) alert(tag + ' ' + p.n + ' sem clube e no seu elenco'); });
+  if (co.squad.length !== new Set(co.squad.map(p => p.n + '|' + p.pos + '|' + p.age)).size) alert(tag + ' jogador repetido no seu elenco');
   // cada negócio que vale: o jogador está no clube de destino e não no de origem
   const last = {}; w.mv.forEach(m => { last[m.id] = m; });
   Object.keys(last).forEach(id => { const m = last[id]; if (!m.to || m.to === co.club) return;

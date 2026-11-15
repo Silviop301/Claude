@@ -50,7 +50,8 @@
     if (co.rf === undefined) co.rf = co.club ? co.season + 1 : co.season;
     // Save de antes do nível firme dos jogadores reais (S.coGenSquad, co.lv): vale na próxima temporada
     if (co.lv === undefined) co.lv = co.club ? co.season + 1 : co.season;
-    if (!co.sid && co.club) co.sid = sid(); // carreira de antes da contagem: não conta como começo
+    if (!co.sid && co.club) co.sid = sid();
+    if (S.coSquadDedup) S.coSquadDedup(co); // save com o mesmo jogador duas vezes (sem clube que copiava um dos seus, 15/11) // carreira de antes da contagem: não conta como começo
     G.c = null; bar();
     S.applyLeagues(co);
     if (!co.club) return offers(co.offers || S.coOffers(co));
