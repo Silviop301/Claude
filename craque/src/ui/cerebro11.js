@@ -454,8 +454,8 @@
       if (Math.abs(bola.vx) < 1 || p.caido > 0) return; const tt = (p.x - bola.x) / bola.vx; if (!(tt > 0 && tt <= GK_ANTES)) return;
       const yb = bola.y + bola.vy * tt + 0.5 * (bola.cv || 0) * (bola.vx / (hip(bola.vx, bola.vy) || 1)) * tt * tt, zb = bola.z + bola.vz * tt - 0.5 * G * tt * tt; if (zb > 2.55) { ch.gkDec = 'alto'; return; }
       const vm = BAL.gkMergulho * (0.75 + 0.5 * at(p, 'gol') / 100), alvo = p.mergulho ? p.ay : p.y, yk = p.y + clamp(alvo - p.y, -vm * tt, vm * tt), dP = Math.abs(yb - yk), alc = BAL.gkAlcance;
-      const sai = () => { const sg = Math.sign(yb - p.y) || (R() < 0.5 ? -1 : 1); ch.gkY = yb - sg * (alc + GK_FOLGA); p.ay = ch.gkY; p.mergulho = true; ch.gkPassa = true; };
-      if (dP > alc) { ch.gkDec = 'longe'; if (dP < alc + GK_FOLGA) sai(); return; }
+      const sai = () => { const sg = Math.sign(yb - p.y) || (R() < 0.5 ? -1 : 1); ch.gkY = yb - sg * (alc + GK_FOLGA); ch.gkYb = yb; ch.gkP = p; p.ay = ch.gkY; p.mergulho = true; ch.gkPassa = true; };
+      if (dP > alc) { ch.gkDec = 'longe'; ch.gkYb = yb; ch.gkP = p; ch.gkVis = true; if (dP < alc + GK_FOLGA) sai(); return; }
       if (R() < chanceDefesa(p, ch, dP, hip(bola.vx, bola.vy))) { ch.gkDec = 'pega'; ch.gkY = clamp(yb, GOL_Y1 - 1.5, GOL_Y2 + 1.5); p.ay = ch.gkY; p.mergulho = true; }
       else { ch.gkDec = 'passa'; sai(); }
     }
@@ -647,7 +647,7 @@
 
     /* ---------------- Um passo ---------------- */
     function passo() {
-      clk += DT; const b = bola;
+      clk += DT; const b = bola; visGoleiro();
       if ((tEn -= DT) <= 0) { tEn = 1; elenco(); estilos(); medias(); for (const p of todos) p.e = clamp((o.en ? o.en(p.lp) : 100) / 100, 0.05, 1); }
       coletivo(DT);
       if (M.fase === 'parado') atualizarParado(DT);
@@ -658,8 +658,16 @@
       if (M.fase === 'jogo') { moverBola(DT); if (M.fase === 'jogo') desarmes(); }
     }
     // Escreve no livesim onde cada um está (o desenho e o resto da tela leem de lá)
+    // Só desenho (15/11, Silvio ainda via a bola "passar pelo meio do goleiro"): o goleiro vencido (ch.gkPassa) aparece afastado da
+    // linha da bola até GK_VIS m (o disco tem ~1,2 m de raio + a bola); a física e o placar não mudam. Volta ao lugar em ~0,5 s.
+    const GK_VIS = 3.0;
+    function visGoleiro() { const ch = bola.chute;
+      for (const p of todos) { if (!p.gol) continue; let alvo = 0;
+        if (ch && (ch.gkPassa || ch.gkVis) && ch.gkP === p) { const dy = p.y - ch.gkYb, sg = Math.sign(dy) || (ch.gkY !== undefined && ch.gkY < ch.gkYb ? -1 : 1); alvo = sg * Math.max(0, GK_VIS - Math.abs(dy)); p.visAlvo = alvo; p.visT = 0.35; }
+        else if (p.visT > 0) { p.visT -= DT; alvo = p.visAlvo; }
+        const v = p.vis || 0; p.vis = v + clamp(alvo - v, -0.8, 0.8); } }
     function escrever(ball) {
-      for (const p of todos) { const q = p.lp; q.x = q.tx = q.gx = p.x; q.y = q.ty = q.gy = p.y; q.vx = p.vx; q.vy = p.vy; q.fx = Math.cos(p.dir); q.fy = Math.sin(p.dir); q.sprint = 0; q.drib = 0; q.stun = p.atord > 0 ? p.atord : 0; }
+      for (const p of todos) { const q = p.lp; q.x = q.tx = q.gx = p.x; q.y = q.ty = q.gy = p.y + (p.vis || 0); q.vx = p.vx; q.vy = p.vy; q.fx = Math.cos(p.dir); q.fy = Math.sin(p.dir); q.sprint = 0; q.drib = 0; q.stun = p.atord > 0 ? p.atord : 0; }
       ball.x = bola.x; ball.y = bola.y; ball.z = bola.z; ball.owner = bola.dono ? bola.dono.lp : null; ball.fly = ball.loose = ball.carry = null;
       ball.b11shot = !!bola.chute; ball.b11cv = bola.chute ? bola.chute.curva || 0 : 0; // a gravação dos clipes acha o gol com curva
     }
