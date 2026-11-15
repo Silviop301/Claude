@@ -9891,7 +9891,7 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .dmt b { font: 800 15px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; } .dmt span { font: 800 15px/1 var(--display); color: var(--gold); flex: none; } .dmt span.dn { color: #F5A57F; }
 .ld-st button.dmt.off { opacity: .4; pointer-events: none; }
 /* Encerrar carreira (2026-11-11): link discreto no fim da temporada e a janelinha com o resumo da carreira */
-.fdt button.fdt-fim { height: 30px; flex: none; margin-top: -2px; color: #B9C9BF; font: 600 15px/1 var(--body); text-decoration: underline; text-underline-offset: 3px; }
+.fdt button.fdt-fim { height: 26px; flex: none; margin-top: -2px; color: #B9C9BF; font: 600 15px/1 var(--body); text-decoration: underline; text-underline-offset: 3px; }
 .ld-pop-c.hl-pop.acd-pop.fim-pop { width: 520px; }
 .fim-c .fim-n { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
 .fim-c .fim-n span { background: #fff; border-radius: 12px; padding: 10px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -10781,3 +10781,6 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .sr-gl li.mais { color: var(--tx-4); font-size: 15px; }
 @media (max-height: 340px) { .sr-sb { top: 44px; } .sr-sc { font-size: 64px; } .sr-clk { top: 128px; } .sr-bar { top: 170px; } .sr-gl { top: 192px; } }
 @media (prefers-reduced-motion: reduce) { .sr-sc b.pop, .sr-bar .g, .sr-gl li, .sr-go.pulse { animation: none; } }
+/* Notícias e Propostas no computador: todas numa lista que rola (2026-11-15) */
+.mk-list.sc { position: relative; overflow-y: auto; scrollbar-width: thin; } .mk-list.sc > * { flex: none; }
+html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a perna do g na 2ª linha (2026-11-15) */

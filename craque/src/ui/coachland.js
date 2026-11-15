@@ -2020,8 +2020,8 @@
     if (S.coWorldSync) S.coWorldSync(co);
     if (pg === undefined) { nwSeen = (co.wm && co.wm.seen) || 0; S.coWorldSeen(co); c.save(); } // entrou agora: o que era novo segue marcado até sair
     if (flt !== undefined) nwFlt = flt;
-    const all = S.coWorldNews(co, 0), list = S.coWorldNews(co, nwFlt), pages = Math.max(1, Math.ceil(list.length / 4));
-    pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * 4, pg * 4 + 4); sel = Math.max(0, Math.min(sel || 0, R.length - 1));
+    const all = S.coWorldNews(co, 0), list = S.coWorldNews(co, nwFlt), PP = WROOM ? 999 : 4, pages = Math.max(1, Math.ceil(list.length / PP));   // computador: todas numa lista que rola (2026-11-15)
+    pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * PP, pg * PP + PP); sel = Math.max(0, Math.min(sel || 0, R.length - 1));
     const nNew = list.filter(x => x.i > nwSeen).length, win = S.coMktWin(co);
     const nm = id => '<span class="nw-c">' + esc((club(id).short || club(id).name).replace(/^Red Bull /, '')) + '</span>';
     const row = (x, i) => {
@@ -2033,10 +2033,10 @@
     const cur = R[sel], p = cur && cur.id ? S.coMktFind(co, cur.id) : null, goT = !cur ? 'Ver ficha' : p ? 'Ver ficha' : cur.to === co.club || (cur.k === 'b' && cur.from === co.club) ? 'No seu elenco' : 'Sem ficha';
     show('<div class="mk nw">' + mkHead('nw-back', 'Mercado', esc(club(co.club).short || club(co.club).name), false, true) +
       '<div class="mk-tabs t4">' + mkTabs(co, 2) + '</div>' +
-      '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">' + none + '</p>') + '</div>' +
+      '<div class="mk-list' + (WROOM ? ' sc' : '') + '">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">' + none + '</p>') + '</div>' +
       '<div class="mk-side"><div class="mk-k nw-flt"><small>MOSTRAR</small><span><button class="mk-ar" data-nf="-1" aria-label="filtro anterior">' + MK_L + '</button><b>' + NW_FLT[nwFlt] + '</b><button class="mk-ar" data-nf="1" aria-label="filtro seguinte">' + MK_R + '</button></span>' +
         '<em>' + U.D.plural(list.length, 'notícia', 'notícias') + (nNew ? ' · <i>' + U.D.plural(nNew, 'nova', 'novas') + '</i>' : '') + '</em></div>' +
-        '<div class="mk-pg"><button class="mk-ar big" id="nw-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar big" id="nw-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></div>' +
+        (WROOM ? '' : '<div class="mk-pg"><button class="mk-ar big" id="nw-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar big" id="nw-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></div>') +
         '<span class="rs-gap"></span><button class="tm-go' + (p ? '' : ' off') + '" id="nw-go">' + goT + '</button></div></div>', st => {
       const open = i => { const x = R[i]; if (!x || !x.id || !S.coMktFind(co, x.id)) return; ficha(x.id, () => noticias(pg, i)); };
       st.querySelector('#nw-back').onclick = () => { sfx('tap'); semana(); };
@@ -2045,8 +2045,9 @@
       st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Os negócios dos clubes com a janela aberta. BOATO: 2 em cada 3 fecham na semana seguinte. LIVRE: ficou sem clube e sai de graça. ▲ verde: chegou para ser titular. Ver ficha mostra o jogador no clube novo.'); };
       st.querySelectorAll('[data-nr]').forEach(b => b.onclick = () => { const i = +b.dataset.nr; sfx('tap'); if (i === sel) return open(i); noticias(pg, i); });
       st.querySelectorAll('[data-nf]').forEach(b => b.onclick = () => { sfx('tap'); noticias(0, 0, (nwFlt + (+b.dataset.nf) + NW_FLT.length) % NW_FLT.length); });
-      st.querySelector('#nw-prev').onclick = () => { sfx('tap'); noticias(pg - 1, 0); };
-      st.querySelector('#nw-next').onclick = () => { sfx('tap'); noticias(pg + 1, 0); };
+      { const sc = st.querySelector('.mk-list.sc'), on = sc && sc.querySelector('.mk-r.on'); if (on && on.offsetTop + on.offsetHeight > sc.clientHeight) sc.scrollTop = on.offsetTop - sc.clientHeight / 2 + on.offsetHeight / 2; } // computador: a escolhida continua à vista
+      if (st.querySelector('#nw-prev')) st.querySelector('#nw-prev').onclick = () => { sfx('tap'); noticias(pg - 1, 0); };
+      if (st.querySelector('#nw-next')) st.querySelector('#nw-next').onclick = () => { sfx('tap'); noticias(pg + 1, 0); };
       st.querySelector('#nw-go').onclick = () => { if (!p) return; sfx('tap'); open(sel); };
     });
   }
@@ -2055,9 +2056,9 @@
   // janelinha da proposta e o Voltar dela devolve a lista. Entrar na aba marca todas como vistas (o aviso da Semana some)
   function recebidas(pg, sel) {
     const c = C(), co = c.co, win = S.coMktWin(co);
-    const list = S.coMktInbox(co).slice().sort((a, b) => b.v - a.v), pages = Math.max(1, Math.ceil(list.length / 4));
+    const list = S.coMktInbox(co).slice().sort((a, b) => b.v - a.v), PP = WROOM ? 999 : 4, pages = Math.max(1, Math.ceil(list.length / PP));   // computador: todas numa lista que rola (2026-11-15)
     if (list.some(o => !o.seen)) { list.forEach(o => { o.seen = 1; }); c.save(); }
-    pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * 4, pg * 4 + 4); sel = Math.max(0, Math.min(sel || 0, R.length - 1));
+    pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * PP, pg * PP + PP); sel = Math.max(0, Math.min(sel || 0, R.length - 1));
     const row = (o, i) => { const p = co.squad.find(x => x.id === o.id), bc = club(o.club);
       const note = o.ask ? 'à venda' : o.wish === 1 ? 'quer ir' : o.wish === 2 ? 'quer ficar' : '';
       return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-or="' + i + '"><i>' + p.pos + '</i><span><b><span class="nw-n">' + esc(p.n) + '</span>' + (note ? '<u>' + note + '</u>' : '') + '</b>' +
@@ -2067,10 +2068,10 @@
     const me = () => recebidas(pg, sel);
     show('<div class="mk nw of">' + mkHead('of-back', 'Mercado', esc(club(co.club).short || club(co.club).name), false, true) +
       '<div class="mk-tabs t4">' + mkTabs(co, 3) + '</div>' +
-      '<div class="mk-list">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">' + none + '</p>') + '</div>' +
+      '<div class="mk-list' + (WROOM ? ' sc' : '') + '">' + (R.length ? R.map(row).join('') : '<p class="fn2-none">' + none + '</p>') + '</div>' +
       '<div class="mk-side"><div class="mk-k nw-flt"><small>PELOS SEUS</small><span><b>' + U.D.plural(list.length, 'proposta', 'propostas') + '</b></span>' +
         '<em>' + (list.length ? 'Valem enquanto a janela estiver aberta.' : 'Nada para decidir.') + '</em></div>' +
-        '<div class="mk-pg"><button class="mk-ar big" id="of-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar big" id="of-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></div>' +
+        (WROOM ? '' : '<div class="mk-pg"><button class="mk-ar big" id="of-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><b>' + (pg + 1) + ' de ' + pages + '</b><button class="mk-ar big" id="of-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></div>') +
         '<span class="rs-gap"></span><button class="tm-go' + (R.length ? '' : ' off') + '" id="of-go">Ver proposta</button></div></div>', st => {
       const open = i => { const o = R[i]; if (!o) return; recebida(o, () => recebidas(pg, i)); };
       st.querySelector('#of-back').onclick = () => { sfx('tap'); semana(); };
@@ -2078,8 +2079,9 @@
       st.querySelector('#mk-tpr').onclick = () => { sfx('tap'); mercado(); }; st.querySelector('#mk-tnw').onclick = () => { sfx('tap'); noticias(); }; mkTabEl(st);
       st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Clubes que querem comprar um dos seus. Só chegam com a janela aberta e somem quando ela fecha. Quem está à venda no Elenco recebe mais propostas. Dá para aceitar, negociar ou recusar.'); };
       st.querySelectorAll('[data-or]').forEach(b => b.onclick = () => { const i = +b.dataset.or; sfx('tap'); if (i === sel) return open(i); recebidas(pg, i); });
-      st.querySelector('#of-prev').onclick = () => { sfx('tap'); recebidas(pg - 1, 0); };
-      st.querySelector('#of-next').onclick = () => { sfx('tap'); recebidas(pg + 1, 0); };
+      { const sc = st.querySelector('.mk-list.sc'), on = sc && sc.querySelector('.mk-r.on'); if (on && on.offsetTop + on.offsetHeight > sc.clientHeight) sc.scrollTop = on.offsetTop - sc.clientHeight / 2 + on.offsetHeight / 2; } // computador: a escolhida continua à vista
+      if (st.querySelector('#of-prev')) st.querySelector('#of-prev').onclick = () => { sfx('tap'); recebidas(pg - 1, 0); };
+      if (st.querySelector('#of-next')) st.querySelector('#of-next').onclick = () => { sfx('tap'); recebidas(pg + 1, 0); };
       st.querySelector('#of-go').onclick = () => { if (!R.length) return; sfx('tap'); open(sel); };
     });
   }
