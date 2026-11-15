@@ -37,7 +37,7 @@
   let cache = null;
   S.coMktPool = function (co) {
     // com o mercado vivo (co.wm) a lista muda a cada negócio dos outros e a cada compra sua
-    const key = co.season + '|' + co.club + '|' + co.squad.map(p => p.api || '').join(',') + '|' + (co.wm ? co.wm.v : 0) + '|' + (co.mkt && co.mkt.s === co.season && co.mkt.got ? Object.keys(co.mkt.got).length : 0);
+    const key = co.season + '|' + co.club + '|' + co.squad.map(p => p.id).join(',') + '|' + (co.wm ? co.wm.v : 0) + '|' + (co.mkt && co.mkt.s === co.season && co.mkt.got ? Object.keys(co.mkt.got).length : 0);
     if (cache && cache.k === key) return cache.list;
     const list = [];
     D.CLUBS.forEach(cl => {
@@ -45,8 +45,43 @@
       S.coGenSquad(cl.id, co.season, co).forEach(p => { list.push(Object.assign({}, p, { club: cl.id, lg: cl.league })); });
     });
     S.coMktFree(co).forEach(p => list.push(p));
-    cache = { k: key, list };
+    // quem já é seu nunca aparece (a lista dos sem clube nasce dos elencos da temporada passada, que podem ter um dos seus)
+    const own = mineIx(co);
+    cache = { k: key, list: list.filter(p => !isMine(own, p)) };
     return list;
+  };
+
+  // Quem já é seu (Silvio 15/11: "contratei um jogador que já tenho no elenco"). A lista dos sem clube sorteia dos elencos
+  // da temporada passada e podia trazer uma cópia de um dos seus: o elenco com que você chegou ao clube ou quem você
+  // contratou (Mandela Dubois, Club Brugge, temporada 2). Confere pela origem (src, desde 15/11), pelo jogador real (api) e,
+  // em save antigo sem src, pelo nome, posição e idade
+  const mineIx = co => { const o = { src: {}, api: {}, nm: {} };
+    (co.squad || []).forEach(q => { if (q.src) o.src[q.src] = 1; if (q.api) o.api[q.api] = 1; o.nm[q.n + '|' + q.pos + '|' + q.age] = 1; });
+    return o; };
+  const isMine = (o, p) => !!(o.src[p.id] || (p.src && o.src[p.src]) || (p.api && o.api[p.api]) || (!p.club && o.nm[p.n + '|' + p.pos + '|' + p.age]));
+  S.coMktMine = (co, p) => isMine(mineIx(co), p);
+  // Conserta o save que já tem o mesmo jogador duas vezes (mesmo nome, posição e idade, ou a mesma origem): fica o que
+  // estava no clube antes (o id mais antigo, com o contrato e o salário dele) e a cópia sai sem multa. Onde a cópia estava
+  // (escalação, banco, à venda, batedores) passa a valer o que fica. Devolve os nomes tirados
+  S.coSquadDedup = co => {
+    if (!co || !co.squad || !co.squad.length) return [];
+    const pid = q => { const m = /^p(\d+)$/.exec(q.id); return m ? +m[1] : 1e9; }, keep = {}, swap = {}, out = [];
+    co.squad.slice().sort((a, b) => pid(a) - pid(b)).forEach(q => {
+      const ks = [q.n + '|' + q.pos + '|' + q.age].concat(q.src ? ['s:' + q.src] : [], q.api ? ['a:' + q.api] : []);
+      const k0 = ks.find(k => keep[k]);
+      if (k0) { swap[q.id] = keep[k0].id; out.push(q.n); return; }
+      ks.forEach(k => { keep[k] = q; });
+    });
+    if (!out.length) return out;
+    const fix = L => { const r = []; (L || []).forEach(id => { const v = swap[id] || id; if (!r.includes(v)) r.push(v); }); return r; };
+    co.squad = co.squad.filter(q => !swap[q.id]);
+    const xi = (co.xi || []).map(id => swap[id] || id);
+    if (xi.some((id, i) => id && xi.indexOf(id) !== i)) { const a = S.coAutoXI(co.squad, co.form); co.xi = a.xi; co.bench = a.bench; } // os dois jogavam: o auxiliar remonta
+    else { co.xi = xi; co.bench = fix(co.bench).filter(id => !co.xi.includes(id)); }
+    if (co.sell) Object.keys(swap).forEach(id => { if (co.sell[id]) { co.sell[swap[id]] = co.sell[swap[id]] || co.sell[id]; delete co.sell[id]; } });
+    if (co.takers) Object.keys(co.takers).forEach(k => { const v = co.takers[k];
+      if (Array.isArray(v)) co.takers[k] = fix(v); else if (swap[v]) co.takers[k] = swap[v]; });
+    return out;
   };
 
   // Sem clube: veteranos e quem sobrou, sorteados pela temporada (os 40 de sempre, menos os que já fecharam com um clube
@@ -54,12 +89,15 @@
   let fcache = null;
   S.coMktFree = function (co) {
     const w = co.wm && co.wm.s === co.season ? co.wm : null;
-    const key = co.season + '|' + co.squad.map(p => p.api || '').join(',');
+    const key = co.season + '|' + co.squad.map(p => p.id).join(',');
     if (!fcache || fcache.k !== key || fcache.w !== (co.wm || null) || fcache.v !== (co.wm ? co.wm.v : 0)) {
-      const base = [];
+      const base = [], own = mineIx(co);
       for (let i = 0; i < M.free; i++) {
-        const h = hash('free|' + co.season + '|' + i), cl = D.CLUBS[h % D.CLUBS.length], sq = S.coGenSquad(cl.id, co.season - 1, co), p = sq[(h >>> 8) % sq.length];
-        base.push(Object.assign({}, p, { id: 'f:' + co.season + ':' + i, club: null, lg: cl.league, ct: 0, age: p.age + 1, ovr: Math.max(30, p.ovr - 3) }));
+        const h = hash('free|' + co.season + '|' + i), cl = D.CLUBS[h % D.CLUBS.length], sq = S.coGenSquad(cl.id, co.season - 1, co);
+        // um dos seus no sorteio: pega o seguinte do mesmo elenco (os outros 39 não mudam)
+        let p = null; for (let k = 0; k < sq.length && !p; k++) { const q = sq[((h >>> 8) + k) % sq.length]; if (!isMine(own, Object.assign({}, q, { club: null, src: q.id, age: q.age + 1 }))) p = q; }
+        if (!p) continue;
+        base.push(Object.assign({}, p, { id: 'f:' + co.season + ':' + i, src: p.id, club: null, lg: cl.league, ct: 0, age: p.age + 1, ovr: Math.max(30, p.ovr - 3) }));
       }
       fcache = { k: key, w: co.wm || null, v: co.wm ? co.wm.v : 0, base };
     }
@@ -325,6 +363,7 @@
     if (p.club && !S.coMktWin(co).open) return { k: 'fechada' };
     if (S.coMktFolha(co, p, t).pct > 100) return { k: 'teto' };
     if (S.coMktFull(co, p)) return { k: 'cheio' };
+    if (S.coMktMine(co, p)) return { k: 'no' }; // já é seu (nunca deveria chegar aqui: a lista do mercado tira)
     const d = n.deal || { v: 0, pay: 0, tr: null }, now = p.club ? S.coMktNow(co, d) : 0;
     if (now > S.coVerbaLivre(co)) return { k: 'verba' };
     // recusa do empresário não gasta dia (Silvio 2026-11-11: "não quero perder um dia"); só a bolinha de paciência
@@ -336,7 +375,7 @@
     if (d.pay && left > 0) { f.inst = f.inst || []; f.inst.push({ n: p.n, v: Math.ceil(left / d.pay / 1000) * 1000, k: d.pay }); }
     if (d.tr) { const q = co.squad.find(x => x.id === d.tr); if (q && p.club && S.coWorldSold) S.coWorldSold(co, q, p.club, 0, { tr: 1 });
       co.squad = co.squad.filter(x => x.id !== d.tr); co.xi = (co.xi || []).filter(x => x !== d.tr); co.bench = (co.bench || []).filter(x => x !== d.tr); }
-    const np = Object.assign({}, p, { id: 'p' + (co.pid++), wage: t.w, ct: t.y, role: ROLE[t.role].k, mo: 70, en: 100, out: 0, sus: 0, from: p.club || null });
+    const np = Object.assign({}, p, { src: p.src || p.id, id: 'p' + (co.pid++), wage: t.w, ct: t.y, role: ROLE[t.role].k, mo: 70, en: 100, out: 0, sus: 0, from: p.club || null });
     delete np.club; delete np.lg; delete np.num;
     co.squad.push(np);
     m.got[p.id] = 1; n.st = 'signed';

@@ -642,7 +642,7 @@
   S.coSign = function (co, clubId) {
     S.applyLeagues(co);
     co.club = clubId;
-    co.squad = genSquad(clubId, co.season, { wm: co.wm, season: co.season, rf: co.rf, lv: co.lv, squad: [] }).map(p => Object.assign(p, { id: 'p' + (co.pid++) }));
+    co.squad = genSquad(clubId, co.season, { wm: co.wm, season: co.season, rf: co.rf, lv: co.lv, squad: [] }).map(p => Object.assign(p, { src: p.id, id: 'p' + (co.pid++) })); // src: quem ele era no sorteio (S.coMktMine)
     co.sacked = false;
     co.since = co.season;
     const a = autoXI(co.squad, co.form);
