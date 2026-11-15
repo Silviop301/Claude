@@ -19,8 +19,8 @@ function simForm(s) { const sl = S.CO_FORMS[s.form].slots, sp = spots(s.form), a
   S.coNums(s.squad);
   sl.forEach((x, i) => { if (!s.xi[i] || !sp[i]) return; const lat = sp[i][0], w = Math.max(8, Math.min(92, 50 + (lat - 50) * 1.25));
     const r = x.pos === 'GOL' ? 'GK' : x.pos === 'LAT' ? (lat < 50 ? 'LB' : 'RB') : x.pos === 'ZAG' ? 'CB' : x.pos === 'ATA' ? 'ST' : x.w ? (lat < 50 ? 'LM' : 'RM') : 'CM';
-    const pl = s.squad.find(q => q.id === s.xi[i]), ov = pl ? pl.ovr - (100 - (pl.en === undefined ? 100 : pl.en)) * 0.1 : undefined;
-    out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w, ov, pl ? { id: pl.id, num: pl.num, at: process.env.SEM_AT ? null : S.coAtSim(pl, ov - pl.ovr), enf: () => (pl.en === undefined ? 100 : pl.en) } : null]); });
+    const pl = s.squad.find(q => q.id === s.xi[i]), ov = pl ? (process.env.SEM_FORA ? pl.ovr : S.coOvrAt(pl, x.pos)) - (100 - (pl.en === undefined ? 100 : pl.en)) * 0.1 : undefined;
+    out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w, ov, pl ? { id: pl.id, num: pl.num, at: process.env.SEM_AT ? null : process.env.SEM_FORA ? S.coAtSim(pl, ov - pl.ovr) : S.coAtIn(pl, x.pos, ov), enf: () => (pl.en === undefined ? 100 : pl.en) } : null]); });
   const gk = out.filter(p => p[0] === 'GK'), rest = out.filter(p => p[0] !== 'GK').sort((a, b) => a[1] - b[1]);
   if (!gk.length && rest.length) { const g0 = rest.shift(); g0[0] = 'GK'; g0[1] = 0; g0[2] = 50; gk.push(g0); }
   return gk.concat(rest); }
@@ -37,6 +37,12 @@ for (let g = 0; g < N; g++) {
   const ss = co.ss, me = ss.ids.indexOf(co.club), fx = ss.rounds[ss.i].find(([h, a]) => h === me || a === me), oi = fx[0] === me ? fx[1] : fx[0];
   ss.ids[oi] = other; if (g % 4 >= 2) { fx.reverse(); } // e alterna quem joga em casa
   const m = S.coMatchStart(co); if (!m) continue;
+  // IMPROVISA=gol|zag|mei: o clube A escala o melhor atacante no gol, na zaga ou no meio (troca de vaga com quem estava lá).
+  // SEM_FORA=1 mede como era antes (o ao vivo ignorava a posição)
+  const IMP = { gol: 'GOL', zag: 'ZAG', mei: 'MEI' }[process.env.IMPROVISA || ''];
+  if (IMP && mine === ida) { const sl = S.CO_FORMS[m.us.form].slots, by = id => m.us.squad.find(p => p.id === id);
+    const ia = m.us.xi.findIndex((id, i) => sl[i].pos === 'ATA' && by(id) && by(id).pos === 'ATA'), it = sl.findIndex(x => x.pos === IMP);
+    if (ia >= 0 && it >= 0) { const t = m.us.xi[ia]; m.us.xi[ia] = m.us.xi[it]; m.us.xi[it] = t; } }
   const sh = [0, 0];
   const sim = LP.sim({ me: -1, goals: [], free: true, brain: BR, seed: g * 13 + 7, home: m.home ? 0 : 1, forms: [simForm(m.us), simForm(m.them)], styles: [S.CO_STY[m.us.style], S.CO_STY[m.them.style]], spm: () => (BR ? 3 : 2.2), speed: () => 1.25,
     onRef: r0 => { S.coMatchRef(co, m, r0.side ? 'them' : 'us', r0.kind, r0); }, yc: (side, num) => { const s = side ? m.them : m.us, p = s.squad.find(q => q.num === num && s.xi.includes(q.id)); return p && s.bk && s.bk[p.id] ? 1 : 0; }, taker: side => { const t = S.coTaker(side ? m.them : m.us, 'pen'); return t ? t.num : null; },

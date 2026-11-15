@@ -208,7 +208,7 @@
   // marcadas; tocar numa linha tira ou põe de volta, e um botão só faz as marcadas. L = [{ o, i, why, slot }]
   // Titular escolhido (Silvio 2026-11-10): ao lado dele, os reservas da mesma posição, do maior geral para o menor; o
   // banco segue embaixo para quem é de fora da posição, com o geral que ele teria na vaga (ovrAt, perde um pouco)
-  const ovrAt = (p, slot) => p.pos === slot || (p.pos === 'GOL') !== (slot === 'GOL') ? p.ovr : Math.round(p.ovr * S.coFit(p.pos, slot));
+  const ovrAt = (p, slot) => S.coOvrAt(p, slot);
   // (2026-11-12, Silvio: "dois principais por função") cada reserva mostra os dois atributos de mais peso da posição,
   // verde ▲ se é melhor que o de quem sai e laranja ▼ se é pior; em cima, o nome e os números de quem sai (`out`).
   const nearList = (slot, bench, ok, x, y, out) => { const L = bench.filter(p => ok(p) && p.pos === slot).sort((a, b) => b.ovr - a.ovr || b.en - a.en).slice(0, 4);
@@ -306,8 +306,8 @@
     const fitC = !slot || p.pos === slot ? 'ok' : (S.coFit(p.pos, slot) >= 0.88 ? 'sabe' : 'fora');
     const yc = (o.yc !== undefined ? o.yc : C().pend(p)) ? '<i class="ld-yc" title="' + (o.yc !== undefined ? 'Amarelado' : 'Pendurado') + '"></i>' : '';
     return '<button class="ld-dot ' + enRing(p.en) + (o.sel ? ' sel' : '') + (fitC === 'fora' ? ' fora' : '') + '"' + (o.attr || '') + ' data-ln="' + lnOf(slot || p.pos) + '" style="left:' + x + '%;top:' + y + '%;--en:' + Math.round(p.en) + '"' +
-      ' aria-label="' + esc(p.n) + ', ' + (slot || p.pos) + ', ' + p.ovr + ', energia ' + Math.round(p.en) + '%">' +
-      '<i class="ld-dc">' + (o.num ? (p.num || p.ovr) : p.ovr) + yc + '</i>' + moAr(p) + '<span class="ld-dn"><b>' + (!o.num && p.num ? '<s class="ld-nu">' + p.num + '</s>' : '') + esc(last(p.n)) + '</b><em class="' + fitC + '">' + (o.tag || slot || p.pos) + '</em></span></button>';
+      ' aria-label="' + esc(p.n) + ', ' + (slot || p.pos) + ', ' + S.coOvrAt(p, slot) + ', energia ' + Math.round(p.en) + '%">' +
+      '<i class="ld-dc' + (!o.num && fitC !== 'ok' ? ' pen' : '') + '">' + (o.num ? (p.num || p.ovr) : S.coOvrAt(p, slot)) + yc + '</i>' + moAr(p) + '<span class="ld-dn"><b>' + (!o.num && p.num ? '<s class="ld-nu">' + p.num + '</s>' : '') + esc(last(p.n)) + '</b><em class="' + fitC + '">' + (o.tag || slot || p.pos) + '</em></span></button>';
   }
   function rivalDot(x, y, nm, tag) {
     return '<span class="ld-dot riv" style="left:' + x + '%;top:' + y + '%"><i class="ld-dc">?</i><span class="ld-dn"><b>' + esc(nm) + '</b>' + (tag ? '<em class="riv">' + tag + '</em>' : '') + '</span></span>';

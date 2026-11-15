@@ -284,6 +284,10 @@
   const FIT = { ZAG: { LAT: 0.92, MEI: 0.85 }, LAT: { ZAG: 0.9, MEI: 0.9, ATA: 0.8 }, MEI: { LAT: 0.88, ZAG: 0.82, ATA: 0.9 }, ATA: { MEI: 0.88, LAT: 0.78 } };
   const fit = (pos, slot) => (pos === slot ? 1 : pos === 'GOL' || slot === 'GOL' ? 0.4 : (FIT[pos] && FIT[pos][slot]) || 0.7);
   S.coFit = fit;
+  // Geral que o jogador rende NAQUELA vaga (Silvio 15/11: "atacante perde mais sendo goleiro do que meia improvisado", e só
+  // naquele jogo: de volta à posição fica normal). Progressivo pela distância: atacante de 75 vale 66 de meia, 59 de lateral,
+  // 53 de zagueiro e 30 no gol. Vale na tela (campo, banco, força por setor) e no jogo ao vivo (simForm em ui/coach.js)
+  S.coOvrAt = (p, slot) => (!slot || p.pos === slot ? p.ovr : Math.round(p.ovr * fit(p.pos, slot)));
 
   // ---------- elencos ----------
   const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
@@ -374,6 +378,15 @@
     const a = S.coAttrs(p), f = v => Math.max(0, Math.min(99, Math.round((v + (d || 0)) * 10) / 10));
     if (p.pos === 'GOL') return { gol: f(a[0] * AT.gol[0] + a[1] * AT.gol[1] + a[3] * AT.gol[2]), pas: f(a[4]) };
     const o = {}; AT.keys.L.forEach((k, i) => { o[k] = f(a[i]); }); return o;
+  };
+  // Atributos no campinho de quem joga numa vaga (`ov` = geral que rende ali, S.coOvrAt menos o cansaço): na posição dele
+  // (ou improvisado na linha) os seus, todos descendo o mesmo tanto; de linha no gol só tem o geral cortado para defender
+  // (e os pés para passar); goleiro na linha vale o geral cortado em tudo
+  S.coAtIn = function (pl, pos, ov) {
+    if ((pl.pos === 'GOL') === (pos === 'GOL')) return S.coAtSim(pl, ov - pl.ovr);
+    const v = Math.max(0, Math.round(ov));
+    if (pos === 'GOL') return { gol: v, pas: S.coAtSim(pl, ov - pl.ovr).pas };
+    const o = {}; AT.keys.L.forEach(k => { o[k] = v; }); return o;
   };
   S.coAtKeys = p => AT.keys[p.pos === 'GOL' ? 'G' : 'L'];
   S.coAtMean = p => atMean(AT.w[p.pos] ? p.pos : 'MEI', S.coAttrs(p));
@@ -809,7 +822,7 @@
   // com o relatório do olheiro lido ±1 (a faixa sempre contém o valor certo, deslocada por um sorteio preso ao jogo)
   S.coSectors = function (sq, form, xi) {
     const m = byId(sq), sl = FORMS[form].slots, t = { d: [0, 0], m: [0, 0], a: [0, 0] };
-    xi.forEach((id, i) => { const p = m[id]; if (!p || !sl[i]) return; const l = sl[i].ln, k = l === 'g' || l === 'd' ? 'd' : l === 'a' ? 'a' : 'm'; t[k][0] += p.ovr; t[k][1]++; });
+    xi.forEach((id, i) => { const p = m[id]; if (!p || !sl[i]) return; const l = sl[i].ln, k = l === 'g' || l === 'd' ? 'd' : l === 'a' ? 'a' : 'm'; t[k][0] += S.coOvrAt(p, sl[i].pos); t[k][1]++; }); // improvisado conta com o geral reduzido
     return { d: Math.round(t.d[0] / (t.d[1] || 1)), m: Math.round(t.m[0] / (t.m[1] || 1)), a: Math.round(t.a[0] / (t.a[1] || 1)) };
   };
   S.coSectorsVs = function (co, pv) {
