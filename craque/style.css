@@ -9747,7 +9747,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 /* Propostas: voltar do tamanho e na altura da pílula das moedas (Silvio, 11/11) */
 .pzo .tcr-back { left: 16px; top: 10px; width: 44px; height: 44px; }
 /* Aviso do topo (meta, nível, compra) espera a festa da taça ou do acesso sair da tela */
-body:has(> .tc-ov) > .pay-ty { visibility: hidden; }
+body:has(> .tc-ov) > .pay-ty, body:has(.fdt) > .pay-ty { visibility: hidden; } /* fim da temporada: o aviso cobria o título e as abas; espera a próxima tela (2026-11-15) */
 /* Continuar da home: o nome encurta, o ano da carreira nunca é cortado (Silvio, 11/11) */
 .hl-go small { display: flex; overflow: visible; } .hl-go small span { min-width: 0; overflow: hidden; text-overflow: ellipsis; } .hl-go small i { flex: none; font-style: normal; white-space: pre; }
 
@@ -10684,3 +10684,5 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .iab-steps li span { font-size: 16px; }
 .iab-steps li i { width: 40px; height: 40px; }
 .iab-arrow { right: 14px; top: 4px; transform: rotate(180deg); animation-name: ins-bob-up; }
+/* Home larga: a "versão" ficava embaixo do botão Jogador; sobe para o alto, entre o logo e as moedas (2026-11-15) */
+.hlw > .hl-bd { bottom: auto; top: 8px; left: 72%; }
