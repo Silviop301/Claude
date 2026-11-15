@@ -10684,10 +10684,8 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .iab-steps li span { font-size: 16px; }
 .iab-steps li i { width: 40px; height: 40px; }
 .iab-arrow { right: 14px; top: 4px; transform: rotate(180deg); animation-name: ins-bob-up; }
-<<<<<<< HEAD
 /* Home larga: a "versão" ficava embaixo do botão Jogador; sobe para o alto, entre o logo e as moedas (2026-11-15) */
 .hlw > .hl-bd { bottom: auto; top: 8px; left: 72%; }
-=======
 
 /* ===== Chama do técnico (2026-11-15, jeito Duolingo; ui/chama.js): cartão na home deitada, avisos depois do jogo ===== */
 .ld-st .hl-e .ch-card { position: absolute; right: 24px; top: 88px; width: 330px; z-index: 2; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 18px; background: rgba(7,17,12,.78); border: 1.5px solid rgba(255,255,255,.14); color: #FBF8EF; text-align: left; }
@@ -10731,4 +10729,3 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .ch-big .ch-ins { color: #C9A98A; }
 .ch-big .ch-nx { font: 600 14px var(--body); color: #C9A98A; }
 @media (prefers-reduced-motion: reduce) { .ch-card.risk .ch-fl, .ch-big .ch-in > .ch-fl { animation: none; } }
->>>>>>> origin/claude/gracious-darwin-9gdlfp
