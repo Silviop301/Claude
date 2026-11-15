@@ -170,5 +170,46 @@
   // home pede para virar o celular e a folha abre sozinha quando ele ficar em pé (`want`).
   U.installIcon = 'icons/icon-192.png?v=bc5d742f';
   U.installCan = () => { const p = platform(); return !!p && !get().done && (force || (navigator.maxTouchPoints > 0 && !document.documentElement.classList.contains('desk'))); };
+  // Navegador de dentro do Instagram, TikTok, Facebook (Silvio, 2026-11-15): lá não dá para instalar e a carreira fica
+  // presa naquele navegador. O botão da home vira "Abrir no navegador": no Android abre o Chrome direto (intent://); no
+  // iPhone a página não consegue sair sozinha, então uma dica em pé aponta o ••• do alto e o item do menu (nome exato do
+  // Instagram: "Abrir no navegador externo"). Não trava o jogo. Teste: ?instalar=iab-ios | iab-android.
+  const IAB = /Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Bytedance|Snapchat|Twitter|Line\//i;
+  U.inApp = () => {
+    if (force) return /^iab-/.test(force) ? force.slice(4) : null;
+    if (window.CLIMBIX_PORTAL) return null;
+    try { if (window.top !== window) return null; } catch (e) { return null; }
+    const ua = navigator.userAgent;
+    if (!IAB.test(ua)) return null;
+    return /Android/.test(ua) ? 'android' : /iPhone|iPad|iPod|Macintosh/.test(ua) ? 'ios' : null;
+  };
+  const OUT = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+  U.inAppIcon = OUT;
+  function copy(btn) {
+    const url = location.origin + location.pathname, ok = () => { btn.textContent = 'Link copiado'; };
+    const old = () => { const t = document.createElement('textarea'); t.value = url; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); ok(); } catch (e) {} t.remove(); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(ok, old); else old();
+  }
+  function iabHint() {
+    close();
+    const ig = /Instagram/i.test(navigator.userAgent) || force === 'iab-ios';
+    wrap = document.createElement('div');
+    wrap.className = 'ins-wrap iab-wrap';
+    wrap.innerHTML = '<span class="ins-arrow iab-arrow">' + ARROW + '</span><div class="ins iab" role="dialog" aria-modal="true" aria-label="Abrir no Safari">' +
+      '<div class="iab-head"><b>Abra no Safari</b><p>Aqui dentro não dá pra instalar e a carreira pode se perder.</p></div>' +
+      '<ol class="ins-steps iab-steps"><li><em>1</em><span>Toque em <b>•••</b> lá em cima</span></li>' +
+      '<li><em>2</em><span><b>' + (ig ? 'Abrir no navegador externo' : 'Abrir no navegador') + '</b></span><i>' + OUT + '</i></li></ol>' +
+      '<div class="ins-row"><button class="ins-later" data-a="copy">Copiar link</button><button class="btn ins-go" data-a="ok">Entendi</button></div></div>';
+    wrap.onclick = e => { if (e.target === wrap) close(); };
+    wrap.querySelector('[data-a="ok"]').onclick = close;
+    wrap.querySelector('[data-a="copy"]').onclick = e => copy(e.currentTarget);
+    document.body.appendChild(wrap); hold(true);
+  }
+  U.inAppGo = () => {
+    const p = U.inApp(); if (!p) return;
+    if (p === 'android' && !force) { location.href = 'intent://' + location.host + location.pathname + location.search + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(location.href) + ';end'; return; }
+    if (p === 'android') return;
+    iabHint();
+  };
   U.installAsk = () => { const p = platform(); if (!p) return true; if (landHome() && !fits()) { want = true; turned = false; return false; } want = false; sheet(p); return true; };
 })();

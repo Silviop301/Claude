@@ -3032,9 +3032,13 @@
           '<b>' + esc(cl.short || cl.name) + '</b><small>' + esc(x.lg.name) + '</small><span class="pzo-m' + (hi ? ' hi' : '') + '">' + esc(S.CO_GOAL_TXT[x.g.k]) + '</span></button>';
       };
       const pc = club(pick);
-      show('<div class="pzo"><button class="tcr-back" id="ldo-back" aria-label="Voltar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><h2>' + (co.club ? 'Propostas' : 'Escolha seu clube') + '</h2><div class="pzo-g" style="grid-template-columns:repeat(' + ids.length + ',minmax(0,1fr))">' + ids.map(card).join('') + '</div>' +
-        '<button class="pzo-go" id="ldo-go">' + (pick === co.club ? 'Ficar no ' : 'Assinar com o ') + esc(pc.short || pc.name) + '</button>' +
-        (U.COINS ? '<button class="pzo-mo" id="ldo-mo">' + U.COINS.svg + '<b>Escolher com moedas</b></button>' : '') + '</div>', st => {
+      // Qualquer clube com moedas (Silvio 15/11, desenho A): 4º cartão tracejado ao lado das propostas grátis, com os escudos
+      // dos 2 maiores do seu país e do maior de fora; abre a tela de comprar clube (antes era uma pílula pequena no canto)
+      const mo = U.COINS ? '<button class="pzo-c pzo-mo" id="ldo-mo"><span class="pzo-mcr">' + bigCrests(co).map(id => crest(id, 'pzo-mi')).join('') + '</span>' +
+        '<b>Qualquer clube</b><small>Brasil e mundo</small><span class="pzo-mp">' + U.COINS.svg + 'com moedas</span></button>' : '';
+      const n = ids.length + (mo ? 1 : 0);
+      show('<div class="pzo"><button class="tcr-back" id="ldo-back" aria-label="Voltar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><h2>' + (co.club ? 'Propostas' : 'Escolha seu clube') + '</h2><div class="pzo-g' + (n > 3 ? ' c4' : '') + '" style="grid-template-columns:repeat(' + n + ',minmax(0,1fr))">' + ids.map(card).join('') + mo + '</div>' +
+        '<button class="pzo-go" id="ldo-go">' + (pick === co.club ? 'Ficar no ' : 'Assinar com o ') + esc(pc.short || pc.name) + '</button></div>', st => {
         st.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { sfx('tap'); pick = b.dataset.o; draw(); });
         if (st.querySelector('#ldo-mo')) st.querySelector('#ldo-mo').onclick = () => { sfx('tap'); escolher(() => propostas(list, stay)); };
         st.querySelector('#ldo-back').onclick = () => { sfx('tap'); c.offersBack(list, stay); };
@@ -3049,6 +3053,13 @@
     draw();
   }
   const D_CLUBS = lg => (window.CRAQUE_DATA.CLUBS || []).filter(x => x.league === lg.id);
+  // escudos do cartão "Qualquer clube": os 2 mais fortes do país do técnico (o de mais força no meio) e o mais forte de fora
+  function bigCrests(co) {
+    const D = window.CRAQUE_DATA, all = (D.CLUBS || []).slice().sort((a, b) => b.strength - a.strength), lgc = id => (D.LEAGUES.find(l => l.id === id) || {}).country;
+    const home = all.filter(c => lgc(c.league) === co.country).slice(0, 2), out = all.find(c => lgc(c.league) !== co.country);
+    const l = home.concat(out ? [out] : []).concat(all).filter((c, i, a) => a.indexOf(c) === i).slice(0, 3).map(c => c.id);
+    return [l[1], l[0], l[2]];
+  }
   // ---------- Loja (quadro 40, Silvio aprovou 2026-11-09): abas Moedas e Dinheiro do clube ----------
   // Moedas: 4 pacotes fixos, sem sorteio (a cobrança pelo Mercado Pago chega na fase 5; até lá o botão fica "em breve").
   // Dinheiro do clube: aporte do investidor em semanas da folha (S.coAporte), 12 moedas cada (piso R$ 500 mil, o teto sobe junto), só com uma carreira aberta.
