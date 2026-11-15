@@ -155,7 +155,7 @@
   function notify(r) {
     if (!r || typeof document === 'undefined' || (!r.first && !r.dcDone && !r.marco)) return;
     const go = () => {
-      if (document.querySelector('.tc-ov')) return setTimeout(go, 600);
+      if (document.querySelector('.tc-ov, .sr-ov')) return setTimeout(go, 600);
       if (!r.marco && !r.dcDone) return toastBox('<b>' + FLAME(true, 18) + ' Chama acesa</b><span>' + seg(r.n) + (r.s.next ? ' · marco de ' + r.s.next[0] + ' em ' + (r.s.next[0] - r.n) : '') + '</span>');
       document.querySelectorAll('.ch-ov').forEach(e => e.remove());
       const ov = document.createElement('div');
