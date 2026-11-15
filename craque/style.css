@@ -10748,3 +10748,36 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .tb2-nav.cal-all { justify-content: center; min-height: 40px; }
 .cal-b { display: flex; flex-direction: column; gap: 2px; }
 .mkw-sc { position: relative; flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; } .mkw-sc + .rs-gap { display: none; } /* Mercado no computador: os 40 numa lista que rola */
+/* Só resultado: tela de ~5 s com relógio e gols (srAnim em ui/coach.js) */
+.sr-ov { position: fixed; inset: 0; z-index: 8990; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 38%, #173a2a 0, var(--board) 70%); padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+.sr-box { position: relative; width: min(844px, 100%); height: min(390px, 100%); }
+.sr-lg { position: absolute; top: 18px; left: 0; right: 0; text-align: center; font: 700 14px var(--display); letter-spacing: .14em; color: var(--tx-4); text-transform: uppercase; }
+.sr-sb { position: absolute; top: 56px; left: 0; right: 0; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 22px; padding: 0 32px; }
+.sr-tm { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.sr-tm.h { justify-content: flex-end; }
+.sr-tm b { font: 800 30px/1.1 var(--display); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-tm .sr-cr { width: 64px; height: 64px; object-fit: contain; flex: none; }
+.sr-sc { font: 800 84px/1 var(--display); display: flex; gap: 14px; align-items: center; font-variant-numeric: tabular-nums; color: var(--paper); }
+.sr-sc i { font-style: normal; color: var(--tx-4); font-size: 56px; }
+.sr-sc b.pop { animation: sr-pop .5s; }
+@keyframes sr-pop { 0% { transform: scale(1.5); color: var(--gold); } 100% { transform: scale(1); } }
+.sr-clk { position: absolute; top: 158px; left: 50%; transform: translateX(-50%); font: 800 26px var(--display); background: var(--paper); color: var(--ink); padding: 2px 14px; border-radius: 10px; font-variant-numeric: tabular-nums; min-width: 52px; text-align: center; }
+.sr-bar { position: absolute; top: 204px; left: 60px; right: 60px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .12); }
+.sr-bar .f { position: absolute; left: 0; top: 0; bottom: 0; background: var(--gold); border-radius: 3px; }
+.sr-bar .ht { position: absolute; left: 50%; top: -5px; width: 2px; height: 16px; background: var(--tx-4); opacity: .6; }
+.sr-bar .g { position: absolute; top: -6px; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; border: 2px solid var(--board); box-sizing: border-box; animation: sr-pop .5s; }
+.sr-bar .g.us { background: var(--gold); } .sr-bar .g.them { background: var(--tx-4); }
+.sr-gl { position: absolute; top: 232px; left: 60px; right: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+.sr-gl ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.sr-gl ul:first-child { align-items: flex-end; }
+.sr-gl li { font: 600 17px/1.25 var(--body); color: var(--paper); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; animation: sr-in .4s; }
+.sr-gl li em { font: 800 18px var(--display); font-style: normal; color: var(--gold); }
+@keyframes sr-in { from { opacity: 0; transform: translateY(6px); } }
+.sr-ft { position: absolute; left: 24px; bottom: 34px; font: 700 15px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--tx-4); }
+.sr-ft.end { color: var(--gold); }
+.sr-go { position: absolute; right: 22px; bottom: 20px; width: auto; min-height: 52px; padding: 0 26px; margin: 0; }
+.sr-go.pulse { animation: sr-pulse .8s ease-in-out 2; }
+@keyframes sr-pulse { 50% { transform: scale(1.06); } }
+.sr-gl li.mais { color: var(--tx-4); font-size: 15px; }
+@media (max-height: 340px) { .sr-sb { top: 44px; } .sr-sc { font-size: 64px; } .sr-clk { top: 128px; } .sr-bar { top: 170px; } .sr-gl { top: 192px; } }
+@media (prefers-reduced-motion: reduce) { .sr-sc b.pop, .sr-bar .g, .sr-gl li, .sr-go.pulse { animation: none; } }

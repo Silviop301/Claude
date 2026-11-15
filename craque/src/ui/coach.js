@@ -586,7 +586,47 @@
     delete co.live; delete co.liveM;
     if (U.profileCoGame) U.profileCoGame(co, m, log);
     save('hub');
-    result(m, log, false, null);
+    srAnim(m, log, () => result(m, log, false, null));
+  }
+  // Só resultado: uns 5 s com o relógio de 0' a 90' e os gols surgindo no minuto em que saíram; Continuar pula a qualquer hora
+  // (Silvio 2026-11-15, mockup https://claude.ai/artifact/UEuvFgsZkfy6CfbBxwLfaG)
+  function srAnim(m, log, go) {
+    const cl = club(co.club), vs = club(m.vs), H = m.home ? cl : vs, A = m.home ? vs : cl;
+    const side = e => ((e.s === 'us') === !!m.home ? 'h' : 'a');
+    const gl = m.ev.filter(e => e.t === 'gol').map(e => ({ m: Math.min(90, Math.max(1, e.m)), s: side(e), p: e.p || '', us: e.s === 'us' })).sort((a, b) => a.m - b.m);
+    const comp = log && log.cup ? log.name || '' : (co.ss && co.ss.name) || '';
+    const pens = log && log.pens ? (m.home ? log.pens : [log.pens[1], log.pens[0]]) : null;
+    const tm = (c, h) => '<div class="sr-tm' + (h ? ' h' : '') + '">' + (h ? '<b>' + esc(c.short || c.name) + '</b>' + crest(c.id, 'sr-cr') : crest(c.id, 'sr-cr') + '<b>' + esc(c.short || c.name) + '</b>') + '</div>';
+    const d = document.createElement('div'); d.className = 'sr-ov';
+    d.innerHTML = '<div class="sr-box"><div class="sr-lg">' + esc(comp) + '</div>' +
+      '<div class="sr-sb">' + tm(H, 1) + '<div class="sr-sc"><b id="sr-h">0</b><i>–</i><b id="sr-a">0</b></div>' + tm(A, 0) + '</div>' +
+      '<div class="sr-clk" id="sr-clk">0\'</div><div class="sr-bar" id="sr-bar"><div class="f" id="sr-f"></div><div class="ht"></div></div>' +
+      '<div class="sr-gl"><ul id="sr-lh"></ul><ul id="sr-la"></ul></div>' +
+      '<div class="sr-ft" id="sr-ft">1º tempo</div><button class="btn sr-go" id="sr-go">Continuar</button></div>';
+    document.body.appendChild(d);
+    const q = id => d.querySelector('#' + id), col = { h: m.home ? '#FBF8EF' : '#9DB5A6', a: m.home ? '#9DB5A6' : '#FBF8EF' };
+    let t0 = 0, raf = 0, fin = 0, out = 0;
+    const leave = () => { if (out) return; out = 1; cancelAnimationFrame(raf); d.remove(); go(); };
+    q('sr-go').onclick = () => { sfx('tap'); leave(); };
+    const T = 4500;
+    const tick = now => {
+      if (!t0) t0 = now;
+      const min = Math.min(90, Math.floor((now - t0) / T * 90));
+      q('sr-clk').textContent = min + '\''; q('sr-f').style.width = (min / 90 * 100) + '%';
+      if (min >= 45 && !fin) q('sr-ft').textContent = '2º tempo';
+      gl.forEach(g => {
+        if (g.on || min < g.m) return; g.on = 1;
+        const b = q(g.s === 'h' ? 'sr-h' : 'sr-a'); b.textContent = +b.textContent + 1; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+        const o = document.createElement('i'); o.className = 'g ' + (g.us ? 'us' : 'them'); o.style.left = (g.m / 90 * 100) + '%'; q('sr-bar').appendChild(o);
+        const ul = q(g.s === 'h' ? 'sr-lh' : 'sr-la'), n = ul.children.length; // cabem 3 nomes; do 4º em diante vira "+N"
+        if (n < 3) ul.insertAdjacentHTML('beforeend', g.s === 'h' ? '<li>' + esc(g.p) + ' <em>' + g.m + '\'</em></li>' : '<li><em>' + g.m + '\'</em> ' + esc(g.p) + '</li>');
+        else { let x = ul.querySelector('.mais'); if (!x) { x = document.createElement('li'); x.className = 'mais'; x.dataset.n = 0; ul.appendChild(x); } x.dataset.n = +x.dataset.n + 1; x.textContent = '+' + x.dataset.n + (x.dataset.n === '1' ? ' gol' : ' gols'); }
+        try { sfx(U.goalSnd(g.us, !!m.home)); } catch (e) { /* som é enfeite */ }
+      });
+      if (min < 90) { raf = requestAnimationFrame(tick); return; }
+      fin = 1; const ft = q('sr-ft'); ft.textContent = pens ? 'Pênaltis ' + pens[0] + ' x ' + pens[1] : 'Fim de jogo'; ft.classList.add('end'); q('sr-go').classList.add('pulse');
+    };
+    raf = requestAnimationFrame(tick);
   }
   // Jogo largado no meio (fechou o app): o auxiliar comanda do começo ao fim
   function auxFinish() {

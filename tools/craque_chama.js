@@ -71,6 +71,12 @@ const { chromium } = require('playwright');
   await click('#ld-play'); await click('#ld-go'); await p.waitForTimeout(400);
   if (await p.$('#ld-go')) await click('#ld-go');
   await click('#ldp-go');
+  // Só resultado: tela de ~5 s (relógio e gols) antes do resumo; Continuar pula
+  await p.waitForSelector('.sr-ov', { timeout: 8000 }); await p.waitForTimeout(2600);
+  await p.screenshot({ path: out + '/ch1b-so-resultado-meio.png' });
+  await p.waitForTimeout(2600); await p.screenshot({ path: out + '/ch1c-so-resultado-fim.png' });
+  ok(/Fim de jogo|Pênaltis/.test(await p.textContent('#sr-ft')), 'Só resultado chega ao 90\'');
+  await click('#sr-go');
   await p.waitForTimeout(2500);
   const st = await p.evaluate(() => window.CRAQUE_UI.CHAMA.state());
   ok(st.n === 1 && st.lit, 'jogo de verdade acende a chama (' + st.n + ')');
