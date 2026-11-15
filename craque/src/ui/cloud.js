@@ -120,7 +120,7 @@
   // Na versão de portal o jogo roda dentro de outra página, onde o Google e afins recusam abrir: só usuário e senha
   let provP = window.CLIMBIX_PORTAL ? Promise.resolve([]) : null;
   const providers = () => provP || (provP = fetch(OAPI + '?a=providers').then(r => r.json())
-    .then(j => (j.providers || []).filter(p => PROV[p]), () => { provP = null; return []; }));
+    .then(j => (j.providers || []).filter(p => PROV[p] && !(p === 'google' && U.inApp && U.inApp())) /* o Google recusa login dentro do Instagram/TikTok */, () => { provP = null; return []; }));
 
   // Vai para o serviço. Com conta aberta, o serviço volta ligado a ela
   function oauthGo(p, btn) {
