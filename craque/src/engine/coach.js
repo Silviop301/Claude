@@ -1682,8 +1682,12 @@
     let v = 0; for (let k = 1; k <= n; k++) { const q = S.rng(((co.seed | 0) ^ (h * 2654435761) ^ ((s0 + k) * 40503)) >>> 0); v = clamp(v * 0.8 + (q() * 2 - 1) * DRIFT, -DRIFT_MAX, DRIFT_MAX); }
     return (driftMemo[key] = Math.round(v * 10) / 10);
   };
+  // `SPREAD`: abre a distância de força entre os clubes da liga nesses jogos (2026-11-15, Silvio: o meio da Série A ficava
+  // embolado, grande caía e médio era campeão); 1,5 desde então, 1 = como era; `CO_SPREAD` mede. A média da liga não muda.
+  const SPREAD = +(_env.CO_SPREAD || 1.5);
+  const leagueAvg = ss => ss._avg || (ss._avg = ss.ids.reduce((a, id) => a + D.CLUB_BY_ID[id].strength, 0) / ss.ids.length);
   function roundRest(co, skip) {
-    const ss = co.ss, { r, save } = rngCo(co), str = id => D.CLUB_BY_ID[id].strength + S.coClubDrift(co, id);
+    const ss = co.ss, { r, save } = rngCo(co), avg = leagueAvg(ss), str = id => avg + (D.CLUB_BY_ID[id].strength - avg) * SPREAD + S.coClubDrift(co, id);
     ss.rounds[ss.i].forEach(([h, a]) => {
       if (skip.includes(h) && skip.includes(a)) return;
       if (skip.includes(h) || skip.includes(a)) return;
