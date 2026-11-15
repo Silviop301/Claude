@@ -648,9 +648,36 @@
       const fav = (first && home.length ? home : home.concat(rest)).filter(x => ['subir', 'titulo', 'g4'].includes(S.coGoalFor(co, x.id).k));
       if (fav.length && r() < 0.7) out[out.length - 1] = fav[Math.floor(r() * fav.length)].id;
     }
+    vitrine(co, out, r);
     save();
     return out;
   };
+  // Vitrine (Silvio 15/11: "se eu subir com um time da Série B acho legal ter mais do que outros times da Série B" e
+  // "ou quando ganho títulos importantes"): só nas propostas do fim da temporada que acabou de ser conquistada.
+  // Acesso = 2 da divisão para onde subiu; título da liga = 2 da divisão de cima (na elite, clubes grandes dela);
+  // copa nacional = 1 da elite; continental = 1 clube grande. Fica sempre ao menos 1 proposta pela fama. Demitido não tem.
+  S.CO_VITRINE = { up: 2, liga: 2, copa: 1, cont: 1, max: 3 };
+  function vitrine(co, out, r) {
+    const L0 = co.last, V = S.CO_VITRINE;
+    if (!L0 || L0.sacked || L0.season !== co.season - 1 || !co.club || !D.CLUB_BY_ID[co.club] || !out.length) return;
+    const me = D.CLUB_BY_ID[co.club], cty = D.countryOf(me), dNow = lgDepth(me.league);
+    const of = (d, part) => {
+      const a = D.CLUBS.filter(x => x.id !== co.club && D.countryOf(x) === cty && lgDepth(x.league) === d).sort((x, y) => x.strength - y.strength);
+      const h = Math.max(1, Math.ceil(a.length / 2));
+      return part === 'big' ? a.slice(-Math.max(1, Math.ceil(a.length / 4))) : part === 'low' ? a.slice(0, h) : a;
+    };
+    const want = [];
+    if (L0.up) for (let i = 0; i < V.up; i++) want.push(of(dNow, 'low'));
+    else if (L0.won) for (let i = 0; i < V.liga; i++) want.push(dNow > 0 ? of(dNow - 1, 'low') : of(0, 'big'));
+    if (L0.cup && L0.cup.won) want.push(dNow > 0 ? of(0, 'low') : of(0, 'big'));
+    if (L0.cont && L0.cont.won) want.push(of(0, 'big'));
+    let k = 0;
+    want.slice(0, Math.min(V.max, out.length - 1)).forEach(pool => {
+      const p = pool.filter(x => !out.includes(x.id));
+      if (p.length) out[k++] = p[Math.floor(r() * p.length)].id;
+    });
+  }
+  S.coVitrine = vitrine;
   // Assina com um clube: o elenco dele vira o seu (sorteado na temporada)
   S.coSign = function (co, clubId) {
     S.applyLeagues(co);
@@ -1725,7 +1752,7 @@
     const up = ss.promo && pos <= ss.promo, down = ss.releg && pos > n - ss.releg;
     // Fama: título, meta, campanha acima do esperado; cai com rebaixamento e demissão
     const f0 = co.fame;
-    let df = (won ? 10 : 0) + (met ? 5 : -2) + clamp(B.goal.exp - pos, -4, 6) * 0.8 + (up ? 4 : 0) - (down && !co.sacked ? 8 : 0) - (co.sacked ? 10 : 0);
+    let df = (won ? 10 : 0) + (met ? 5 : -2) + clamp(B.goal.exp - pos, -4, 6) * 0.8 + (up ? 8 : 0) - (down && !co.sacked ? 8 : 0) - (co.sacked ? 10 : 0);
     df = Math.max(-15, df); // uma temporada ruim tira no máximo 15
     co.fame = clamp(Math.round(co.fame + df), 0, 100);
     // Experiência: um ponto por temporada, dois por título, um pela meta
