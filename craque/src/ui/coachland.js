@@ -2561,7 +2561,7 @@
     ['.fn2-tr', 'Trajetória', 'O caixa rodada a rodada. O tracejado mostra onde ele chega no fim do ano nesse ritmo.'],
     ['.fn2-rw', 'Rodada', 'O que entrou e saiu no último jogo: bilheteria, TV, patrocínio e salários.'],
     ['.fn2-ac', 'Acordo e patrocínio', 'A meta combinada com o presidente e o dinheiro da camisa. Toque para ver os detalhes.'],
-    ['#fn2-apo', 'Aporte', 'Moedas viram dinheiro no caixa e na verba. Bom para sair do vermelho ou reforçar o time.'],
+    ['#fn2-apo', 'Aporte', 'Moedas viram dinheiro no caixa. Parte vira verba para contratar e o resto fica para os salários.'],
     ['#fn2-bank', 'Banco', 'Empréstimo para um aperto, pago em parcelas, ou Aplicação para o dinheiro parado render.'],
   ];
   const finTutSeen = () => { try { return !!localStorage.getItem('climbix-fin-tut'); } catch (e) { return true; } };
@@ -3075,9 +3075,9 @@
         // bônus por aportar várias semanas de uma vez (Silvio, 12/11): mostra o que vale agora ou o próximo degrau que ainda cabe
         const bn = S.coAporteBonus(wk), nxb = S.CO_APORTE.bonus.slice().reverse().find(x => x[0] > wk && x[0] <= left);
         const bnTxt = !left ? '' : bn ? ' · <em class="lj-bn">bônus +' + Math.round(bn * 100) + '%</em>' : nxb ? ' · ' + nxb[0] + ' de uma vez: +' + Math.round(nxb[1] * 100) + '%' : '';
-        main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (red ? 'cobre o caixa primeiro' : 'vai para a verba') + '</small></span><img class="lj-ai" src="' + CO_ART + 'mo-aporte.webp" alt=""></div>' +
+        main = '<div class="lj-ap"><div class="lj-ah">' + crest(co.club, 'lj-cr') + '<span><b>Aporte do investidor</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (red ? 'cobre o caixa primeiro' : 'caixa e verba') + '</small></span><img class="lj-ai" src="' + CO_ART + 'mo-aporte.webp" alt=""></div>' +
           '<div class="lj-v"><button id="lj-m" aria-label="Menos"' + (wk <= 1 ? ' disabled' : '') + '>' + BK + '</button><span><b>+ ' + c.brl(v) + '</b><small>' + U.D.plural(wk, 'aporte', 'aportes') + ' · ' + (used + (left ? wk : 0)) + ' de ' + S.CO_APORTE.max + ' na temporada' + bnTxt + '</small></span><button id="lj-p" aria-label="Mais"' + (wk >= left ? ' disabled' : '') + '>' + FW + '</button></div>' +
-          '<div class="lj-two' + (red ? ' t3' : '') + '">' + (red ? cell('Caixa', P.caixa, P.caixa[1] >= 0 ? 'up' : 'dn') : '') + cell('Verba', P.verba) + cell(red ? 'Teto por semana' : 'Teto de salários por semana', P.teto) + '</div></div>';
+          '<div class="lj-two t3">' + cell('Caixa', P.caixa, P.caixa[1] >= 0 ? 'up' : 'dn') + cell('Verba', P.verba) + cell('Teto por semana', P.teto) + '</div></div>';
         side = '<div class="lj-box lj-cost"><small class="ld-lbl">CUSTA</small><span>' + U.COINS.svg + '<b>' + cost + '</b></span><small>' + (saldo >= cost ? 'sobram ' + (saldo - cost) + ' moedas' : 'faltam ' + (cost - saldo) + ' moedas') + '</small></div>' +
           '<button class="tm-go' + (ok ? '' : ' off') + '" id="lj-ap"' + (ok ? '' : ' disabled') + '>' + (!left ? 'Limite da temporada' : 'Fazer aporte') + '</button>';
       }
@@ -3106,11 +3106,11 @@
         if (st.querySelector('#lj-ap')) st.querySelector('#lj-ap').onclick = () => {
           const cost = wk * S.CO_APORTE.coin; sfx('tap');
           const P = S.coAportePrev(co, wk), vb = P.verba[1] - P.verba[0], tt = '+ ' + c.brl(P.teto[1] - P.teto[0]) + ' no teto';
-          coinAsk(cost, 'Fazer aporte', P.red ? '+ ' + c.brl(P.v) + ' no caixa' + (vb ? ', + ' + c.brl(vb) + ' na verba' : '') + ' e ' + tt : '+ ' + c.brl(P.v) + ' na verba e ' + tt, () => {
+          coinAsk(cost, 'Fazer aporte', '+ ' + c.brl(P.v) + ' no caixa' + (vb ? ', + ' + c.brl(vb) + ' na verba' : '') + ' e ' + tt, () => {
           if (!U.COINS.spend(cost, 'Aporte: ' + (club(co.club).short || club(co.club).name))) return;
           const v = S.coAporte(co, wk); if (!v) { U.COINS.add({ n: cost, t: 'Aporte devolvido' }); return; }
           sfx('coin'); c.save(); wk = 1; draw();
-          pop('<div class="acd-help"><b>Aporte feito</b><p>+ ' + c.brl(v) + (P.red ? ' no caixa do ' : ' na verba do ') + esc(club(co.club).short || club(co.club).name) + (P.red ? (P.caixa[1] >= 0 ? '. O caixa saiu do vermelho.' : '. O caixa ainda está no vermelho.') : '.') + '</p><button class="hl-btn dark" data-pop-x>Fechar</button></div>', 'Aporte feito', null, 'hl-pop acd-pop tm-pop');
+          pop('<div class="acd-help"><b>Aporte feito</b><p>+ ' + c.brl(v) + ' no caixa do ' + esc(club(co.club).short || club(co.club).name) + (vb ? ', + ' + c.brl(vb) + ' na verba' : '') + (P.red ? (P.caixa[1] >= 0 ? '. O caixa saiu do vermelho.' : '. O caixa ainda está no vermelho.') : '. O resto fica no caixa para os salários.') + '</p><button class="hl-btn dark" data-pop-x>Fechar</button></div>', 'Aporte feito', null, 'hl-pop acd-pop tm-pop');
           });
         };
       });

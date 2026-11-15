@@ -257,20 +257,24 @@
   // "120 pra 600 mil é pouco") cada aporte vale no mínimo `piso` e sobe o teto da folha em `tk` do valor por semana (R$ 25 mil
   // por milhão = o dinheiro paga esse salário por uma temporada); o teto do aporte (`f.tap`) vale enquanto ficar no clube.
   // bonus (Silvio, 12/11: "um bônus por aporte de mais semanas de uma vez, algo baixo"): [semanas de uma vez, parte a mais no valor]
-  S.CO_APORTE = { coin: 12, max: 10, piso: 500000, tk: 0.025, bonus: [[10, 0.15], [5, 0.1], [3, 0.05]] };
+  // vk (2026-11-15, clube pequeno com estrela): só essa parte do aporte vira verba; o resto fica no caixa para pagar o salário de
+  // quem chega. Com a verba igual ao dinheiro todo, quem gastava tudo num reforço ficava sem caixa, ia para o vermelho e o presidente
+  // vendia o reforço em ~6 rodadas (robô de clube pequeno com 3 semanas de aporte: venda forçada em 8 de 8 carreiras; com 0,6, em 1 de 8 e sem vermelho na 1ª temporada). CO_APVK mede.
+  S.CO_APORTE = { coin: 12, max: 10, piso: 500000, tk: 0.025, vk: 0.6, bonus: [[10, 0.15], [5, 0.1], [3, 0.05]] };
+  const apVb = (f, v) => r10(Math.max(0, v - Math.max(0, -f.caixa)) * +((typeof process !== 'undefined' && process.env && process.env.CO_APVK) || S.CO_APORTE.vk));
   S.coAporteBonus = wk => { const b = S.CO_APORTE.bonus.find(x => wk >= x[0]); return b ? b[1] : 0; };
   S.coAporteUsed = co => { const f = S.coFin(co); return f && f.ap && f.ap.s === co.season ? f.ap.wk : 0; };
   // Com o caixa no vermelho o aporte também vale (Silvio 2026-11-11: "não entendi o bloqueio de aporte"; era bloqueado e a tela
   // não dizia por quê): o dinheiro cobre o buraco primeiro e só o que sobra vira verba para contratar. S.coAportePrev = antes e depois
   S.coAporteLeft = co => { const f = S.coFin(co); return !f ? 0 : Math.max(0, S.CO_APORTE.max - S.coAporteUsed(co)); };
-  S.coAportePrev = (co, wk) => { const f = S.coFin(co), v = S.coAporteValue(co, wk), vb = Math.max(0, v - Math.max(0, -f.caixa)), t = S.coAporteTeto(v);
+  S.coAportePrev = (co, wk) => { const f = S.coFin(co), v = S.coAporteValue(co, wk), vb = apVb(f, v), t = S.coAporteTeto(v);
     return { v, red: f.caixa < 0, caixa: [f.caixa, f.caixa + v], verba: [f.verba, f.verba + vb], teto: [f.teto, f.teto + t] }; };
   S.coAporteValue = (co, wk) => r10(Math.max(baseOf(co), S.CO_APORTE.piso) * wk * (1 + S.coAporteBonus(wk)));
   S.coAporteTeto = v => r5(v * S.CO_APORTE.tk);
   S.coAporte = function (co, wk) {
     wk = Math.round(wk); if (!(wk > 0) || wk > S.coAporteLeft(co)) return 0;
     const f = S.coFin(co), v = S.coAporteValue(co, wk);
-    f.verba += Math.max(0, v - Math.max(0, -f.caixa)); f.caixa += v; f.ss.apo = (f.ss.apo || 0) + v;
+    f.verba += apVb(f, v); f.caixa += v; f.ss.apo = (f.ss.apo || 0) + v;
     const t = S.coAporteTeto(v); f.teto += t; f.tap = (f.tap || 0) + t;
     f.ap = { s: co.season, wk: S.coAporteUsed(co) + wk };
     if (f.caixa >= 0) f.neg = 0;
