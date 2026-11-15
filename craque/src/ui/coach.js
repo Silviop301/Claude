@@ -72,7 +72,7 @@
     slot = Math.max(0, Math.min(U.CO_SLOTS - 1, +slot || 0));
     const st = pre ? { name: pre.name, country: pre.country, start: pre.start, auto: false } : { name: D.randomName('Brasil'), country: 'Brasil', start: 'baixo', auto: true };
     const cty = () => D.COUNTRIES.find(k => k.id === st.country) || D.COUNTRIES[0];
-    const START = [['baixo', 'Subir de baixo'], ['livre', 'Qualquer clube']];
+    const START = [['baixo', 'Subir de baixo'], ['livre', 'Clube sorteado']];
     // Deitado e enxuto (2026-11-08, Silvio aprovou "Criar técnico" no canvas): nome grande com a bandeira (o toque abre a
     // grade dos países) e o dado, o começo num seletor e o botão dourado; sem descrições
     const startSeg = () => START.map(([k, t]) => '<button data-v="' + k + '"' + (k === st.start ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('');

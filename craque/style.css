@@ -9009,8 +9009,17 @@ img.acd-av { width: 64px; height: 64px; padding: 0; object-fit: cover; border-ra
 
 /* Escolher clube com moedas (quadro 41) */
 .pzo { position: relative; }
-.pzo-mo { position: absolute; right: 16px; top: 10px; height: 44px; padding: 0 16px 0 10px !important; border-radius: 22px; background: rgba(0,0,0,.35) !important; color: #F3F1EA !important; display: flex; align-items: center; gap: 8px; }
-.pzo-mo svg { width: 24px; height: 24px; } .pzo-mo b { font: 800 19px/1 var(--display); }
+/* Qualquer clube com moedas (15/11, desenho A): 4º cartão tracejado dourado */
+.pzo-c.pzo-mo { opacity: 1; border: 3px dashed var(--gold) !important; background: rgba(0,0,0,.28) !important; color: #F3F1EA !important; }
+.pzo-mcr { display: flex; align-items: center; justify-content: center; height: 78px; }
+.pzo-mcr .pzo-mi { width: 54px; height: 54px; object-fit: contain; margin: 0 -7px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
+.pzo-mcr .pzo-mi:nth-child(2) { width: 70px; height: 70px; position: relative; z-index: 2; }
+.pzo-c.pzo-mo > small { color: #C9D3CC; }
+.pzo-mp { margin-top: 12px; display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 14px; background: var(--gold); color: #1B1606; font: 800 18px/1 var(--display); white-space: nowrap; }
+.pzo-mp svg { width: 22px; height: 22px; }
+.pzo-g.c4 { gap: 14px; }
+.pzo-g.c4 .pzo-m { font-size: 15px; padding: 6px 10px; }
+.pzo-g.c4 .pzo-c > b { font-size: 26px; }
 .ec { width: 100%; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 238px; grid-template-rows: 44px minmax(0, 1fr); gap: 10px 16px; color: #F3F1EA; position: relative; }
 .ec .tm-h { grid-column: 1; min-width: 0; } .ec .tm-h > b { flex: none; white-space: nowrap; }
 .ec-lg { flex: 0 1 316px; min-width: 0; margin-left: auto; height: 44px; border-radius: 22px; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: space-between; padding: 0 4px; box-sizing: border-box; }
