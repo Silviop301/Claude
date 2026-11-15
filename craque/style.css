@@ -10784,3 +10784,8 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 /* Notícias e Propostas no computador: todas numa lista que rola (2026-11-15) */
 .mk-list.sc { position: relative; overflow-y: auto; scrollbar-width: thin; } .mk-list.sc > * { flex: none; }
 html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a perna do g na 2ª linha (2026-11-15) */
+
+/* Escalação: etiqueta da vaga e nome na mesma linha embaixo da bolinha (Silvio 15/11: nomes da linha de 3 e 4
+   encostavam na bolinha de baixo e a seta da moral tampava o nome de cima). O goleiro, sozinho na linha, fica em coluna. */
+.tm .ld-pitch .ld-dot:not([data-ln="g"]) .ld-dn { flex-direction: row; align-items: center; gap: 4px; top: 29px; max-width: 128px; }
+.tm .ld-pitch .ld-dot:not([data-ln="g"]) .ld-dn b { overflow: hidden; text-overflow: ellipsis; padding-bottom: .16em; margin-bottom: -.16em; }
