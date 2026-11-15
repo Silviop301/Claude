@@ -10634,3 +10634,18 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 /* Fora de posição (15/11): o número no campo é o geral que ele rende na vaga, em laranja (como no banco) */
 .ld-dc.pen { color: #FFB27A; }
 .tm .ld-dc.pen, .ldl-tm .ld-dc.pen { color: #C8501A; }
+
+/* Dentro do Instagram/TikTok: botão "Abrir no navegador" no lugar do Instalar e dica em pé apontando o ••• (install.js) */
+.ld-st button.hl-nv.hl-iab { border: 2px solid var(--gold); background: rgba(242, 194, 48, .1); padding: 0 16px 0 10px; gap: 10px; text-align: left; }
+.hl-iab-ic { width: 34px; height: 34px; flex: none; border-radius: 9px; background: var(--gold); color: var(--ink); display: grid; place-items: center; }
+.hl-iab > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.ld-st button.hl-nv.hl-iab b { font: 700 17px/1.05 var(--body); }
+.hl-iab small { font: 500 13px/1.1 var(--body); color: #CFC9B4; }
+.iab-wrap { align-items: center; padding: 0 20px; }
+.iab-wrap .iab { border-radius: 22px; padding: 22px 20px 16px; animation: enter .25s ease-out; }
+.iab-head b { display: block; font: italic 800 28px/1 var(--display); color: var(--pitch); }
+.iab-head p { margin: 6px 0 0; font: 500 15px/1.35 var(--body); color: #3C4A42; }
+.iab-steps li { grid-template-columns: 30px 1fr auto; }
+.iab-steps li span { font-size: 16px; }
+.iab-steps li i { width: 40px; height: 40px; }
+.iab-arrow { right: 14px; top: 4px; transform: rotate(180deg); animation-name: ins-bob-up; }
