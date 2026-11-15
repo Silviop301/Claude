@@ -28,9 +28,10 @@
     vontadeConduzir: 0.45, freioRecuo: 0.45, pressaoAtras: 0.7, // livre com campo à frente ele conduz; sem ninguém fechando não toca para trás; quem vem por trás aperta menos que quem está na frente
     erroPasse: 0.045, pPegaMal: 0.035, distMaxChute: 31, pesoChute: 6.8, freioChute: 0.55,
     erroChute: 0.08, erroChuteDist: 0.0024, erroChutePressao: 0.45,
+    pCurva: 0.55, curvaMin: 5, curvaMax: 11, curvaFora: 0.45, curvaGiro: 0.3, // chute com curva (15/11, Silvio: "golaços"): chance de fora da área pela finalização, aceleração de lado em m/s², parte que começa no goleiro e abre (o resto sai por fora e fecha), quanto o efeito perde por segundo
     gkDist: 0.02, // chute de longe: o goleiro tem tempo de ver a bola (mais defesa por metro além de 11 m)
     distChute: 18, // a chance que o jogador enxerga cai e^(-d/distChute)
-    gkReacao: 0.26, gkMergulho: 5.7, gkAlcance: 1.45, gkBase: 0.81, gkAlcancePen: 0.16, gkVelPen: 75,
+    gkReacao: 0.26, gkMergulho: 5.7, gkAlcance: 1.45, gkBase: 0.87, gkAlcancePen: 0.16, gkVelPen: 75,
     pDesarme: 0.36, pFalta: 0.06, pFaltaBatido: 0.4, pAmarelo: 0.22, pVermelho: 0.015, pFaltaArea: 0.8, erroLinha: 2.6, pSemFreio: 0.25, // falta no bote: a desajeitada (pFalta) e a de quem foi batido e segura (pFaltaBatido; na própria área ele se segura: pFaltaArea); erroLinha: metros que o passador erra ao ler a linha do impedimento
     gastoBase: 0.0004, gastoCorrida: 0.000018,
     kAt: 1, // quanto o atributo se afasta da média dos 22 em campo (1 = um ponto vale um ponto da simulação original)
@@ -115,6 +116,7 @@
 
     /* ---------------- Física da bola ---------------- */
     function fisicaBola(b, dt) {
+      if (b.cv) { const v = hip(b.vx, b.vy); if (v > 3) { const a = b.cv * (b.z > 0.05 ? 1 : 0.35) * dt / v; b.vx += -b.vy * a; b.vy += b.vx * a; } b.cv *= 1 - BAL.curvaGiro * dt; } // efeito: a bola faz a curva para o lado (Magnus)
       if (b.z > 0 || b.vz > 0) {
         b.vz -= G * dt; const ar = 1 - BAL.arrastoAr * dt; b.vx *= ar; b.vy *= ar;
         b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt;
@@ -127,7 +129,7 @@
     }
     const bPrev = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0 };
     function prever() {
-      const b = bPrev; b.x = bola.x; b.y = bola.y; b.z = bola.z; b.vx = bola.vx; b.vy = bola.vy; b.vz = bola.vz; let n = 0;
+      const b = bPrev; b.x = bola.x; b.y = bola.y; b.z = bola.z; b.vx = bola.vx; b.vy = bola.vy; b.vz = bola.vz; b.cv = bola.cv || 0; let n = 0;
       for (let i = 0; i < 28; i++) { fisicaBola(b, 0.1); if (b.x < 0.3 || b.x > CL - 0.3 || b.y < 0.3 || b.y > CW - 0.3) break;
         const q = M.traj[n] || (M.traj[n] = { x: 0, y: 0, z: 0 }); q.x = b.x; q.y = b.y; q.z = b.z; n++; }
       M.nTraj = n;
@@ -393,6 +395,13 @@
       for (const q of T.jogadores) { if (q === p || !emPe(q)) continue; const d = hip(q.x - tx, q.y - ty); if (d < dm) { dm = d; m = q; } }
       passar(p, tx, ty, true, m, { erro: 1.8, semImp: true }); bola.impedidos = null; // o chutão do tiro de meta e da zaga: sem impedimento (não é passe para alguém)
     }
+    // Onde a bola cruza a linha do gol (y), com ou sem efeito: a mesma física, sem sorteio
+    const bCv = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, cv: 0 };
+    function vooY(ang, v, vz, cv, gx) {
+      const b = bCv; b.x = bola.x; b.y = bola.y; b.z = 0; b.vx = Math.cos(ang) * v; b.vy = Math.sin(ang) * v; b.vz = vz; b.cv = cv;
+      for (let i = 0; i < 150 && (gx - b.x) * (gx - bola.x) > 0; i++) fisicaBola(b, 0.02);
+      return b.y;
+    }
     function chutar(p, op) {
       const T = p.time, gx = T.dir > 0 ? CL : 0, fin = at(p, 'fin'), gk = goleiro(T.adv);
       let lado = gk && gk.y > 34 ? -1 : 1; if (R() < 0.3) lado = -lado;
@@ -400,16 +409,24 @@
       let v = (op.cabeca ? sorteia(14, 19) : sorteia(21, 28) + fin * 0.03);
       const sig = op.penalti ? 0.035 * (1.5 - fin / 100) : BAL.erroChute * (1.55 - fin / 100) * (1 + (op.pressao || 0) * BAL.erroChutePressao) * (1 + (1 - p.e) * 0.3) * (op.mult || 1) + d * BAL.erroChuteDist;
       let ang = Math.atan2(dy, dx) + gauss() * sig; const tv = d / v; let vz = (zAim + 0.5 * G * tv * tv) / tv + gauss() * sig * 0.6 * v;
-      if (!op.penalti && R() < BAL.pPegaMal * 2) { v *= 0.6; ang += gauss() * 0.15; vz *= R() * 1.6; }
-      const x0 = bola.x, y0 = bola.y; soltar(p, ang, v, Math.max(0, vz));
+      // Curva: de fora da área (e na falta) quem finaliza bem bate com efeito; sai por fora e fecha no canto, ou começa no goleiro e abre. A mira já conta a curva: o gol segue saindo do lance
+      let cv = 0, cvTipo = 0;
+      if (!op.penalti && !op.cabeca && R() < (op.falta ? 0.9 : BAL.pCurva * clamp((d - 11) / 14, 0, 1) * (0.5 + at(p, 'fin') / 100))) {
+        const a = sorteia(BAL.curvaMin, BAL.curvaMax) * (0.75 + 0.5 * fin / 100), dentro = Math.sign(34 - yAim) || 1; cvTipo = R() < BAL.curvaFora ? -1 : 1;
+        const sy = dentro * cvTipo, vxs = Math.sign(dx) || 1; cv = sy * a * vxs; // aceleração em y = cv * vx/v
+      }
+      if (cv) { const y0 = vooY(ang, v, Math.max(0, vz), 0, gx), sx = Math.sign(dx) || 1; // a mira já conta a curva: a bola com efeito termina onde a reta terminaria
+        for (let k = 0; k < 3; k++) ang -= sx * (vooY(ang, v, Math.max(0, vz), cv, gx) - y0) / d; }
+      if (!op.penalti && R() < BAL.pPegaMal * 2) { v *= 0.6; ang += gauss() * 0.15; vz *= R() * 1.6; cv *= 0.3; }
+      const x0 = bola.x, y0 = bola.y; soltar(p, ang, v, Math.max(0, vz)); bola.cv = cv;
       if (o.onKick) o.onKick({ p: p.lp, pen: !!op.penalti }); // a tela liga a câmera lenta no instante do chute
       bola.chute = { time: T, autor: p, idade: 0, tentou: false, fim: false, cabeca: !!op.cabeca, x0, y0, ast: p.de && p.de.time === T && clk - p.deT < 10 ? p.de : null,
-        penalti: !!op.penalti, falta: !!op.falta, palpite: R() < 0.5 ? -1 : 1,
+        penalti: !!op.penalti, falta: !!op.falta, curva: cvTipo, palpite: R() < 0.5 ? -1 : 1,
         reacao: op.penalti ? 0 : BAL.gkReacao * (1.35 - 0.5 * (gk ? at(gk, 'gol') : 70) / 100) + R() * 0.08 };
     }
     // O chute acabou (gol, defesa, trave, travado ou fora): a tela conta (placar, narração, números do jogo) uma vez por chute
     function fimChute(ch, out, x) {
-      if (!ch || ch.fim) return; ch.fim = true;
+      if (!ch || ch.fim) return; ch.fim = true; bola.cv = 0;
       const s = ch.time.id, [fx, fy] = s ? [CL - ch.x0, CW - ch.y0] : [ch.x0, ch.y0], yy = x && x.y !== undefined ? x.y : bola.y;
       o.onShot({ side: s, out, sv: x && x.sv, kind: ch.penalti ? 'pen' : ch.falta ? 'falta' : ch.cabeca ? 'cabeca' : 'chute', p: ch.autor.lp, ast: ch.ast ? ch.ast.lp : null, blk: x && x.blk ? x.blk.lp : null,
         dist: hip(CL - fx, 34 - fy), box: CL - fx <= 16.5 && Math.abs(34 - fy) <= 20.15, near: out === 'trave' || (out === 'fora' && Math.min(Math.abs(yy - GOL_Y1), Math.abs(yy - GOL_Y2)) < 2), lane: fy < 24 ? -1 : fy > 44 ? 1 : 0 });
@@ -435,7 +452,7 @@
     function decideGoleiro(p, ch) {
       if (ch.gkDec) { if (ch.gkY !== undefined) { p.ay = ch.gkY; p.mergulho = true; } return; }
       if (Math.abs(bola.vx) < 1 || p.caido > 0) return; const tt = (p.x - bola.x) / bola.vx; if (!(tt > 0 && tt <= GK_ANTES)) return;
-      const yb = bola.y + bola.vy * tt, zb = bola.z + bola.vz * tt - 0.5 * G * tt * tt; if (zb > 2.55) { ch.gkDec = 'alto'; return; }
+      const yb = bola.y + bola.vy * tt + 0.5 * (bola.cv || 0) * (bola.vx / (hip(bola.vx, bola.vy) || 1)) * tt * tt, zb = bola.z + bola.vz * tt - 0.5 * G * tt * tt; if (zb > 2.55) { ch.gkDec = 'alto'; return; }
       const vm = BAL.gkMergulho * (0.75 + 0.5 * at(p, 'gol') / 100), alvo = p.mergulho ? p.ay : p.y, yk = p.y + clamp(alvo - p.y, -vm * tt, vm * tt), dP = Math.abs(yb - yk), alc = BAL.gkAlcance;
       const sai = () => { const sg = Math.sign(yb - p.y) || (R() < 0.5 ? -1 : 1); ch.gkY = yb - sg * (alc + GK_FOLGA); p.ay = ch.gkY; p.mergulho = true; ch.gkPassa = true; };
       if (dP > alc) { ch.gkDec = 'longe'; if (dP < alc + GK_FOLGA) sai(); return; }
@@ -555,7 +572,7 @@
     function moverBola(dt) {
       const b = bola;
       if (b.dono) { const p = b.dono, x0 = b.x, y0 = b.y; b.x = p.x + Math.cos(p.dir) * 0.75; b.y = p.y + Math.sin(p.dir) * 0.75; b.z = 0; b.vx = p.vx; b.vy = p.vy; b.vz = 0; limites(x0, y0, 0); return; }
-      if (b.chute) b.chute.idade += dt; b.tSolta += dt;
+      if (b.chute) b.chute.idade += dt; else b.cv = 0; b.tSolta += dt;
       for (let s = 0; s < 3; s++) { const x0 = b.x, y0 = b.y, z0 = b.z; fisicaBola(b, dt / 3); if (limites(x0, y0, z0)) return; if (contatos(x0, y0) && (b.dono || M.fase !== 'jogo')) return; }
       if (b.chute && hip(b.vx, b.vy) < 2) { fimChute(b.chute, 'fora'); b.chute = null; }
     }
@@ -644,7 +661,7 @@
     function escrever(ball) {
       for (const p of todos) { const q = p.lp; q.x = q.tx = q.gx = p.x; q.y = q.ty = q.gy = p.y; q.vx = p.vx; q.vy = p.vy; q.fx = Math.cos(p.dir); q.fy = Math.sin(p.dir); q.sprint = 0; q.drib = 0; q.stun = p.atord > 0 ? p.atord : 0; }
       ball.x = bola.x; ball.y = bola.y; ball.z = bola.z; ball.owner = bola.dono ? bola.dono.lp : null; ball.fly = ball.loose = ball.carry = null;
-      ball.b11shot = !!bola.chute;
+      ball.b11shot = !!bola.chute; ball.b11cv = bola.chute ? bola.chute.curva || 0 : 0; // a gravação dos clipes acha o gol com curva
     }
     const api = {
       bola, M,
