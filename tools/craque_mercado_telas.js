@@ -81,6 +81,14 @@ const OUT = process.argv[2] || '', SAFE = +process.env.SAFE || 0, URL = process.
   let s2 = await st(); want(s2.n === s1.n + 1 && await ev(id => !!window.CRAQUE_SIM.coMkt(window.CRAQUE_UI._co.co).got[id], idB), 'o sem clube não entrou no elenco'); want(/\bmk\b/.test(s2.tela), 'devia voltar ao Mercado (tela: ' + s2.tela + ')');
   log.push('B sem clube: elenco ' + s2.n);
 
+  // ---------- B2. contraproposta com meio termo (15/11): presidente "Aceita negociar", proposta na Baixa ----------
+  step = 'B2 meio termo';
+  const mt = await ev(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co, m = S.coMkt(co), q = S.coMktPool(co).filter(x => x.club && !(m.neg || {})[x.id] && S.coMktPres(co, x) === 1)[3]; if (!q) return null; U.LD.proposta(q.id, () => U.LD.mercado()); return q.id; });
+  if (mt) { await p.waitForTimeout(600); await tap('[data-pc="0"]'); await tap('[data-pv="1"]'); await shot('proposta-baixa'); await tap('#mkp-go:not(.off)');
+    const h = await ev(() => (document.querySelector('.mkx-h b') || {}).innerText || ''); await shot('contraproposta');
+    want(/Contrap/.test(h), 'proposta logo acima da Baixa devia trazer contraproposta (veio: ' + h + ')');
+    if (await has('#mkx-3')) { await tap('#mkx-3'); await shot('meio-termo'); const h2 = await ev(() => (document.querySelector('.mkx-h b') || {}).innerText || ''); log.push('B2 meio termo: ' + h2); if (await has('#mkx-2')) await tap('#mkx-2'); }
+    else want(false, 'a contraproposta devia ter o botão Meio termo'); }
   // ---------- C. compra com um dos seus na troca ----------
   step = 'C troca';
   const C0 = await ev(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co, m = S.coMkt(co), q = S.coMktPool(co).filter(x => x.club && x.lg === S.coLeague(co) && !(m.obs || {})[x.id])[5]; U.LD.proposta(q.id, () => U.LD.mercado()); return { id: q.id, club: q.club, tl: S.coMktTradeList(co).map(x => ({ id: x.id, n: x.n })) }; });
@@ -98,7 +106,7 @@ const OUT = process.argv[2] || '', SAFE = +process.env.SAFE || 0, URL = process.
   await p.waitForTimeout(600); await tap('[data-pc="0"]'); for (let k = 0; k < 10; k++) await tap('[data-pv="-1"]');
   let fim = '';
   for (let i = 0; i < 5 && !/Encerrou|Janela|Aceitou/.test(fim); i++) { await tap('#mkp-go:not(.off)'); fim = await ev(() => (document.querySelector('.mkx-h b') || {}).innerText || ''); await shot('baixa-' + i);
-    if (/Pede/.test(fim)) { await tap('#mkx-2'); await tap('[data-pc="0"]'); for (let k = 0; k < 10; k++) await tap('[data-pv="-1"]'); } else await tap(/Recusou/.test(fim) ? '#mkx-1' : '#mkx-2'); } // Recusou: "Nova proposta" fecha a janelinha; Encerrou: "Fechar"
+    if (/Pede|Contrap/.test(fim)) { await tap('#mkx-2'); await tap('[data-pc="0"]'); for (let k = 0; k < 10; k++) await tap('[data-pv="-1"]'); } else await tap(/Recusou/.test(fim) ? '#mkx-1' : '#mkx-2'); } // Recusou: "Nova proposta" fecha a janelinha; Encerrou: "Fechar"
   let s4 = await st(); want(/Encerrou/.test(fim), 'proposta baixa 5 vezes devia encerrar a conversa (última resposta: ' + fim + ')');
   want(!s4.pop, 'janelinha presa: ' + s4.pop); if (/Encerrou/.test(fim)) want(/Não negocia/.test(s4.gold), 'depois de encerrar o botão devia dizer "Não negocia mais" (diz: ' + s4.gold + ')');
   await tap('#mkp-back'); await tap('#mk-tel'); await shot('aba-elenco'); want((await st()).tela.includes('lde2'), 'a aba Elenco do Mercado não abriu o Elenco'); await tap('#lde-back'); want(/\bmk\b/.test((await st()).tela), 'o Voltar do Elenco não devolveu ao Mercado');

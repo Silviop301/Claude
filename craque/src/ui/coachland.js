@@ -2159,15 +2159,40 @@
   // à direita o presidente (humor numa palavra, paciência em 3 bolinhas; depois de enviar, a resposta no lugar do humor),
   // quanto sai da verba agora e quanto sobra. Empréstimo fica para a fase 5.
   const mkDots = (n, max) => '<span class="mkp-dots">' + Array.from({ length: max }, (_, i) => '<i class="' + (i < n ? 'on' : '') + '"></i>').join('') + '</span>';
+  // Régua do valor (Silvio 2026-11-15: "muito travado"): vai de um pouco abaixo da Baixa a um pouco acima da Alta,
+  // anda no passo fino (S.coMktStep) e os 3 atalhos viram marcas nela. Usada na proposta e na venda
+  function mkRange(marks, step) { const lo = Math.max(step, Math.floor(marks[0] * 0.85 / step) * step), hi = Math.ceil(marks[2] * 1.1 / step) * step; return { lo, hi: Math.max(hi, lo + step * 4), step }; }
+  const mkPct = (rg, v) => Math.max(0, Math.min(100, (v - rg.lo) / (rg.hi - rg.lo) * 100));
+  function mkRuler(rg, v, labels, marks, k, off) {
+    return '<span class="mkp-rg"><input type="range" class="mkp-rng" min="' + rg.lo + '" max="' + rg.hi + '" step="' + rg.step + '" value="' + Math.max(rg.lo, Math.min(rg.hi, v)) + '" aria-label="Valor"' + (off ? ' disabled' : '') + ' style="--p:' + mkPct(rg, v) + '%">' +
+      '<span class="mkp-tk">' + marks.map((m, i) => '<button class="' + (v === m ? 'on' : '') + (mkPct(rg, m) < 12 ? ' l' : mkPct(rg, m) > 88 ? ' r' : '') + '" data-' + k + '="' + i + '" style="left:' + mkPct(rg, m) + '%"' + (off ? ' disabled' : '') + '>' + labels[i] + '</button>').join('') + '</span></span>';
+  }
+  function mkRulerSet(st, rg, v, marks) { const r = st.querySelector('.mkp-rng'); if (r) { r.value = v; r.style.setProperty('--p', mkPct(rg, v) + '%'); }
+    st.querySelectorAll('.mkp-tk button').forEach((b, i) => b.classList.toggle('on', v === marks[i])); }
+  // ◀ ▶ com segurar (acelera depois de meio segundo), a régua e as marcas: `live` mexe na hora, `done` redesenha
+  function mkValueBind(st, kv, km, rg, get, live, done, marks, min) {
+    const clamp = v => Math.max(min || rg.step, v);
+    st.querySelectorAll('[data-' + kv + ']').forEach(b => { let t = null, n = 0, moved = false;
+      const stop = () => { if (t) { clearTimeout(t); t = null; } };
+      const tick = () => { n++; moved = true; live(clamp(get() + rg.step * (+b.dataset[kv]) * (n > 12 ? 4 : n > 5 ? 2 : 1))); t = setTimeout(tick, n === 1 ? 450 : 90); };
+      b.onpointerdown = e => { if (b.disabled) return; e.preventDefault(); n = 0; moved = false; sfx('tap'); tick(); };
+      b.onpointerup = b.onpointerleave = b.onpointercancel = () => { if (!t) return; stop(); if (moved) done(); };
+      b.onclick = e => { if (!moved && !b.disabled) { sfx('tap'); live(clamp(get() + rg.step * (+b.dataset[kv]))); done(); } moved = false; }; });
+    const r = st.querySelector('.mkp-rng'); if (r) { r.oninput = () => live(+r.value); r.onchange = () => { sfx('tap'); done(); }; }
+    st.querySelectorAll('[data-' + km + ']').forEach(b => b.onclick = () => { sfx('tap'); live(marks[+b.dataset[km]]); done(); });
+  }
   function proposta(id, back, o) {
     const c = C(), co = c.co, p = S.coMktFind(co, id); if (!p) return mercado();
     const f = S.coFin(co), cuts = S.coMktCuts(p), neg = S.coMktNeg(co, p), w = S.coMktWin(co), M = S.CO_MKT;
     o = o || { v: neg.cv || cuts[1], pay: 0, tr: null };
     const TL = S.coMktTradeList(co), ti = o.tr ? TL.findIndex(q => q.id === o.tr) : -1, tq = ti >= 0 ? TL[ti] : null;
-    const step = o.v >= 2e6 ? 100000 : o.v >= 500000 ? 50000 : 10000;
+    const step = S.coMktStep(cuts[1]), rg = mkRange(cuts, step);
     const now = S.coMktNow(co, o), after = S.coVerbaLivre(co) - now, over = S.coMktTradeOver(co, o);
     const pres = S.CO_MKT_PRES[S.coMktPres(co, p)], a = neg.ans;
-    const ans = a ? (a.k === 'ok' ? ['Aceitou', 'up'] : a.k === 'counter' ? ['Pede ' + c.brl(a.v), 'mid'] : a.k === 'no' ? ['Encerrou a conversa', 'dn'] : ['Recusou', 'dn']) : [pres.t, pres.c];
+    // Presidente reage a cada toque (Silvio 2026-11-15, como o empresário): 4 tracinhos e "Quase lá · 1 chance em 3"
+    const ans = neg.st === 'ok' ? ['Aceitou', 'up'] : neg.st === 'no' ? ['Encerrou a conversa', 'dn'] : null;
+    const moodHtml = () => { if (ans) return '<b class="' + ans[1] + '">' + ans[0] + '</b>'; const md = S.coMktPresMood(co, p, o), cls = ['', 'dn', 'dn', 'mid', 'up'][md.lvl];
+      return '<b class="' + cls + '">' + md.t + (md.lvl === 3 ? '<small class="mkc-ch">1 chance em 3</small>' : '') + '</b><span class="mkf-dd mkc-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= md.lvl ? cls : '') + '"></i>').join('') + '</span>'; };
     const cl = club(p.club), cn = esc(cl.short || cl.name);
     const done = neg.st === 'ok' || neg.st === 'no';
     const gold = neg.st === 'ok' ? '<button class="tm-go" id="mkp-go">Ir ao contrato</button>' : neg.st === 'no' ? '<button class="tm-go off" id="mkp-go" disabled>Não negocia mais</button>' :
@@ -2176,19 +2201,22 @@
     const seg = (on, t, attr) => '<button class="' + (on ? 'on' : '') + '" ' + attr + '>' + t + '</button>';
     show('<div class="mk mkp nt">' + mkHead('mkp-back', 'Proposta', esc(p.n) + ' · ' + S.CO_POS_NM[p.pos] + ' · ' + cn) + // sem abas: só existe compra na 1.0 (empréstimo "em breve" saiu)
       '<div class="mkp-l"><div class="mk-k mkp-v"><small>VALOR DA PROPOSTA</small><span class="mkp-row"><button class="mk-ar big" data-pv="-1" aria-label="Menos"' + (done ? ' disabled' : '') + '>' + MK_L + '</button><b>' + c.brl(o.v) + '</b><button class="mk-ar big" data-pv="1" aria-label="Mais"' + (done ? ' disabled' : '') + '>' + MK_R + '</button></span>' +
-        '<span class="mkp-cuts">' + ['Baixa', 'Justa', 'Alta'].map((t, i) => seg(o.v === cuts[i], t + ' · ' + c.brl(cuts[i]), 'data-pc="' + i + '"' + (done ? ' disabled' : ''))).join('') + '</span></div>' +
+        mkRuler(rg, o.v, ['Baixa', 'Justa', 'Alta'].map((t, i) => t + ' ' + c.mi(cuts[i])), cuts, 'pc', done) + '</div>' +
         '<div class="mkp-g"><div class="mk-k"><small>PAGAMENTO</small><span class="mkp-seg">' + ['À vista', '2x', '3x'].map((t, i) => seg(o.pay === i, t, 'data-pp="' + i + '"' + (done ? ' disabled' : ''))).join('') + '</span></div>' +
           '<div class="mk-k"><small>JOGADOR NA TROCA</small><span class="mkp-tr"><button class="mk-ar" data-pt="-1" aria-label="Anterior"' + (done || !TL.length ? ' disabled' : '') + '>' + MK_L + '</button><b class="' + (tq ? '' : 'off') + '">' + (tq ? esc(last(tq.n)) + ' · ' + tq.pos + '<small><u>' + tq.ovr + '</u> · ' + tq.age + ' anos · ' + c.brl(S.coValue(tq)) + '</small>' : TL.length ? 'Ninguém' : 'Sem reservas') + '</b><button class="mk-ar" data-pt="1" aria-label="Próximo"' + (done || !TL.length ? ' disabled' : '') + '>' + MK_R + '</button></span></div></div></div>' +
-      '<div class="mk-side"><div class="mk-k mkp-pr"><small>PRESIDENTE</small><b class="' + ans[1] + '">' + ans[0] + '</b><span class="mkp-pat">Paciência' + mkDots(neg.pat, M.pat) + '</span></div>' +
-        '<div class="mk-k mkf-li' + (over && !done ? ' o3' : '') + '"><div><span>' + (o.pay ? 'Agora · ' + (o.pay + 1) + 'x' : 'Paga agora') + '</span><b>' + c.brl(now) + '</b></div><div><span>Verba depois</span><b class="' + (after < 0 ? 'dn' : 'up') + '">' + (after < 0 ? '− ' + c.brl(-after) : c.brl(after)) + '</b></div>' +
+      '<div class="mk-side"><div class="mk-k mkp-pr"><small>PRESIDENTE · ' + pres.t.toUpperCase() + '</small><span class="mkp-md">' + moodHtml() + '</span><span class="mkp-pat">Paciência' + mkDots(neg.pat, M.pat) + '</span></div>' +
+        '<div class="mk-k mkf-li' + (over && !done ? ' o3' : '') + '"><div><span>' + (o.pay ? 'Agora · ' + (o.pay + 1) + 'x' : 'Paga agora') + '</span><b class="mkp-now">' + c.brl(now) + '</b></div><div><span>Verba depois</span><b class="mkp-af ' + (after < 0 ? 'dn' : 'up') + '">' + (after < 0 ? '− ' + c.brl(-after) : c.brl(after)) + '</b></div>' +
           (over && !done ? '<div class="mkp-ov"><span>Perde na troca</span><b class="dn">' + c.brl(over) + '</b></div>' : '') + '</div>' +
         '<span class="rs-gap"></span>' + gold + '</div></div>', st => {
       const re = x => proposta(id, back, Object.assign({}, o, x));
       st.querySelector('#mkp-back').onclick = () => { sfx('tap'); back(); };
       cxBind(st, () => proposta(id, back, o));
       st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Com a janela aberta você propõe quantas vezes quiser. Abaixo do que ele quer, o presidente contrapõe (perto) ou recusa (longe), e cada resposta que não é sim gasta uma bolinha de paciência. Sem paciência, ele não negocia mais nesta temporada. Parcelado pesa menos na verba agora, mas ele aceita um pouco menos. O jogador na troca abate do valor; se ele vale mais que a proposta, não tem troco.'); };
-      st.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { sfx('tap'); re({ v: Math.max(10000, o.v + step * (+b.dataset.pv)) }); });
-      st.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => { sfx('tap'); re({ v: cuts[+b.dataset.pc] }); });
+      // régua e ◀ ▶ (segurar acelera) mexem o valor na hora, sem redesenhar a tela; ao soltar, redesenha
+      const live = v => { o.v = v; const n2 = S.coMktNow(co, o), af = S.coVerbaLivre(co) - n2;
+        st.querySelector('.mkp-row > b').textContent = c.brl(v); st.querySelector('.mkp-md').innerHTML = moodHtml(); st.querySelector('.mkp-now').textContent = c.brl(n2);
+        const e = st.querySelector('.mkp-af'); e.className = 'mkp-af ' + (af < 0 ? 'dn' : 'up'); e.textContent = af < 0 ? '− ' + c.brl(-af) : c.brl(af); mkRulerSet(st, rg, v, cuts); };
+      mkValueBind(st, 'pv', 'pc', rg, () => o.v, live, () => re({}), cuts);
       st.querySelectorAll('[data-pp]').forEach(b => b.onclick = () => { sfx('tap'); re({ pay: +b.dataset.pp }); });
       st.querySelectorAll('[data-pt]').forEach(b => b.onclick = () => { sfx('tap'); const L = TL.length + 1, k = ((ti + 1) + (+b.dataset.pt) + L) % L; re({ tr: k ? TL[k - 1].id : null }); });
       const go = st.querySelector('#mkp-go:not(.off)');
@@ -2205,15 +2233,19 @@
     const c = C(), co = c.co, p = S.coMktFind(co, id); if (!p) return;
     const f = S.coFin(co), neg = S.coMktNeg(co, p), cl = club(p.club), cn = esc(cl.short || cl.name), nm = esc(last(p.n));
     const dtx = '';
-    let w, cls, line, r1, v1, r2, v2, b1, b2, a1, a2;
+    let w, cls, line, r1, v1, r2, v2, b1, b2, a1, a2, b3 = null, a3 = null, three = null;
     if (r.k === 'ok') { const now = S.coMktNow(co, neg.deal);
       w = 'Aceitou'; cls = 'up'; line = 'Fechado com o ' + cn + ' por ' + c.brl(neg.deal.v) + (neg.deal.pay ? ' em ' + (neg.deal.pay + 1) + 'x' : ' à vista') + '. Agora é acertar o contrato com o empresário.';
       r1 = 'Paga agora'; v1 = c.brl(now); r2 = 'Verba depois'; v2 = S.coVerbaLivre(co) - now; b1 = 'Ir ao contrato'; b2 = 'Depois';
       a1 = () => contrato(id, () => proposta(id, back)); a2 = null;
     } else if (r.k === 'counter') { const o2 = Object.assign({}, o, { v: r.v }), now = S.coMktNow(co, o2);
-      w = 'Pede ' + c.brl(r.v); cls = 'mid'; line = 'Ele achou ' + c.brl(o.v) + ' pouco, mas topa conversar. Aceitar fecha agora.';
-      r1 = 'Se aceitar, paga'; v1 = c.brl(now); r2 = 'Verba depois'; v2 = S.coVerbaLivre(co) - now; b1 = 'Aceitar ' + c.brl(r.v); b2 = 'Nova proposta';
-      a1 = () => { const r2x = S.coMktOffer(co, p, o2); c.save(); sfx(r2x.k === 'ok' ? 'win' : 'tap'); proposta(id, back, o2); resposta(id, back, o2, r2x); }; a2 = null;
+      w = 'Contrapôs'; cls = 'mid'; line = 'Por ' + c.brl(o.v) + ' não dá. Ele pede ' + c.brl(r.v) + ', mas topa conversar.';
+      r1 = 'Se aceitar, paga'; v1 = c.brl(now); r2 = 'Verba depois'; v2 = S.coVerbaLivre(co) - now; b1 = 'Aceitar ' + c.mi(r.v); b2 = 'Outro valor';
+      const send = ox => { const r2x = S.coMktOffer(co, p, ox); c.save(); sfx(r2x.k === 'ok' ? 'win' : 'tap'); proposta(id, back, r2x.k === 'counter' ? Object.assign({}, ox, { v: r2x.v }) : ox); resposta(id, back, ox, r2x); };
+      a1 = () => send(o2); a2 = null;
+      // Meio termo (Silvio 2026-11-15): o valor do meio entre os dois; pode passar, ficar no "Quase lá" ou virar outra contra
+      if (r.mid && r.mid > o.v && r.mid < r.v) { const om = Object.assign({}, o, { v: r.mid }); b3 = 'Meio termo<small>' + c.mi(r.mid) + '</small>'; a3 = () => send(om);
+        three = [['VOCÊ', c.mi(o.v), 'me'], ['MEIO TERMO', c.mi(r.mid), 'mid'], ['ELE', c.mi(r.v), 'him']]; }
       if (v2 < 0) { line = 'Ele pede ' + c.brl(r.v) + ', mas isso passa da sua verba. Parcele ou ponha alguém na troca.'; b1 = 'Nova proposta'; b2 = 'Desistir'; a1 = null; a2 = () => back(); }
     } else if (r.k === 'recusa') {
       w = 'Recusou'; cls = 'dn'; line = c.brl(o.v) + ' ficou longe do que ele quer.' + (neg.pat === 1 ? ' Mais uma recusa e ele encerra a conversa.' : ' Tente chegar mais perto.');
@@ -2227,8 +2259,10 @@
     }
     const ini = esc((cl.short || cl.name).replace(/[^A-Za-zÀ-ú ]/g, '').split(' ').filter(Boolean).map((x, i, A) => A.length > 1 ? x[0] : x.slice(0, 2)).join('').slice(0, 2).toUpperCase() || 'P');
     pop('<div class="mkx"><div class="mkx-h"><i class="mkx-fc">' + ini + '</i><span><small>PRESIDENTE' + dtx + '</small><b class="' + cls + '">' + w + '</b></span>' + mkDots(neg.pat, S.CO_MKT.pat) + '</div>' +
-      '<p>' + line + '</p><div class="mkx-li"><div><span>' + r1 + '</span><b>' + v1 + '</b></div><div><span>' + r2 + '</span><b class="' + (v2 < 0 ? 'dn' : 'up') + '">' + (v2 < 0 ? '− ' + c.brl(-v2) : c.brl(v2)) + '</b></div></div>' +
-      '<span class="rs-gap"></span><span class="mkx-b"><button class="hl-btn gold" id="mkx-1">' + b1 + '</button><button class="hl-btn dark" id="mkx-2">' + b2 + '</button></span></div>', 'Resposta do clube', x => {
+      '<p>' + line + '</p>' + (three ? '<div class="mkx-3">' + three.map(t => '<span class="' + t[2] + '"><small>' + t[0] + '</small><b>' + t[1] + '</b></span>').join('') + '</div>' :
+        '<div class="mkx-li"><div><span>' + r1 + '</span><b>' + v1 + '</b></div><div><span>' + r2 + '</span><b class="' + (v2 < 0 ? 'dn' : 'up') + '">' + (v2 < 0 ? '− ' + c.brl(-v2) : c.brl(v2)) + '</b></div></div>') +
+      '<span class="rs-gap"></span><span class="mkx-b' + (b3 ? ' n3' : '') + '"><button class="hl-btn gold" id="mkx-1">' + b1 + '</button>' + (b3 ? '<button class="hl-btn dark" id="mkx-3">' + b3 + '</button>' : '') + '<button class="hl-btn ' + (b3 ? 'line' : 'dark') + '" id="mkx-2">' + b2 + '</button></span></div>', 'Resposta do clube', x => {
+      if (b3) x.querySelector('#mkx-3').onclick = () => { sfx('tap'); closePop(); a3(); };
       x.querySelector('#mkx-1').onclick = () => { sfx('tap'); closePop(); a1 && a1(); };
       x.querySelector('#mkx-2').onclick = () => { sfx('tap'); closePop(); a2 && a2(); };
     }, 'hl-pop mkx-pop', true);
@@ -2350,6 +2384,10 @@
       btns = [['Aceitar', 'gold', () => { const x = S.coMktSellAccept(co, o); c.save(); sfx('win'); back(); recebida(o, back, x); }],
         ['Negociar', 'dark', () => negociar(o.id, back)],
         ['Recusar', 'line', () => { S.coMktSellReject(co, o); c.save(); back(); }]];
+      // Meio termo (Silvio 2026-11-15): entre a oferta deles e o seu último pedido, no lugar do Recusar (ele segue no Negociar)
+      const mine = cnt && o.hist.filter(h => h[0] === 'voce').slice(-1)[0], mid = mine && S.coMktMid(o.v, mine[1]);
+      if (mid && mid > o.v && mid < mine[1]) btns[2] = ['Meio termo<small>' + c.mi(mid) + '</small>', 'line', () => { const x = S.coMktSellTry(co, o, mid, o.pay, o.fut); c.save();
+        if (x.k === 'ok') sfx('win'); back(); recebida(o, back, x); }];
     }
     pop('<div class="mkr2"><div class="mkr2-p"><b class="mkr2-o">' + p.ovr + '</b><b>' + (p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</b><span>' + S.CO_POS_NM[p.pos] + ' · ' + p.age + ' anos</span>' +
         ((co.xi || []).includes(p.id) ? '<span>titular</span>' : '<span>reserva</span>') + '<em class="' + wi[1] + '">' + wi[0] + '</em>' +
@@ -2371,26 +2409,31 @@
     const bc = club(o.club), bn = esc(bc.short || bc.name), mid = Math.round(o.v0 * 1.25 / 10000) * 10000, hi = Math.round(o.v0 * 1.6 / 10000) * 10000;
     const cuts = [o.v, Math.max(o.v + 10000, mid), Math.max(o.v + 20000, hi)];
     t = t || { v: cuts[1], pay: o.pay || 0, fut: 0 };
-    const step = t.v >= 2e6 ? 100000 : t.v >= 500000 ? 50000 : 10000;
+    const step = S.coMktStep(o.v0), rg = { lo: o.v, hi: Math.max(o.v + step * 4, Math.ceil(cuts[2] * 1.1 / step) * step), step };
     const md = S.coMktSellMood(co, o, t), cls = ['', 'dn', 'dn', 'mid', 'up'][md.lvl], acc = t.v <= o.v;
+    const moodHtml = () => { const m = S.coMktSellMood(co, o, t), k = ['', 'dn', 'dn', 'mid', 'up'][m.lvl];
+      return '<b class="' + k + '">' + m.t + '</b><span class="mkf-dd mkc-dd">' + [1, 2, 3, 4].map(x => '<i class="' + (x <= m.lvl ? k || 'up' : '') + '"></i>').join('') + '</span>'; };
     const now = Math.ceil(t.v / (t.pay + 1) / 1000) * 1000;
     const hist = o.hist.slice(-4).map(h => '<i class="' + (h[0] === 'voce' ? 'me' : '') + '">' + (h[0] === 'voce' ? 'Você ' : 'Eles ') + c.mi(h[1]) + '</i>').join('<em>›</em>');
     const seg = (on, tx, attr) => '<button class="' + (on ? 'on' : '') + '" ' + attr + '>' + tx + '</button>';
     show('<div class="mk mkp mkn">' + mkHead('mkn-back', 'Negociar', esc(p.n) + ' · ' + S.CO_POS_NM[p.pos] + ' · para o ' + bn) +
       '<div class="mk-k mkn-h"><small>CONVERSA</small>' + hist + '</div>' +
       '<div class="mkp-l"><div class="mk-k mkp-v"><small>VOCÊ PEDE</small><span class="mkp-row"><button class="mk-ar big" data-nv="-1" aria-label="Menos">' + MK_L + '</button><b>' + c.brl(t.v) + '</b><button class="mk-ar big" data-nv="1" aria-label="Mais">' + MK_R + '</button></span>' +
-        '<span class="mkp-cuts">' + ['O deles', 'Meio', 'Alto'].map((x, i) => seg(t.v === cuts[i], x + ' · ' + c.mi(cuts[i]), 'data-nc="' + i + '"')).join('') + '</span></div>' +
+        mkRuler(rg, t.v, ['O deles', 'Meio', 'Alto'].map((x, i) => x + ' ' + c.mi(cuts[i])), cuts, 'nc') + '</div>' +
         '<div class="mkp-g"><div class="mk-k"><small>PAGAMENTO</small><span class="mkp-seg">' + ['À vista', '2x', '3x'].map((x, i) => seg(t.pay === i, x, 'data-np="' + i + '"')).join('') + '</span></div>' +
           '<div class="mk-k"><small>% DE UMA VENDA FUTURA</small><span class="mkp-seg">' + M.futPct.map((x, i) => seg(t.fut === i, x + '%', 'data-nf="' + i + '"')).join('') + '</span></div></div></div>' +
-      '<div class="mk-side"><div class="mk-k mkp-pr"><small>DIRETOR DO ' + bn.toUpperCase() + '</small><b class="' + cls + '">' + md.t + '</b><span class="mkf-dd mkc-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= md.lvl ? cls || 'up' : '') + '"></i>').join('') + '</span><span class="mkp-pat">Paciência' + mkDots(o.pat, M.sellPat) + '</span></div>' +
-        '<div class="mk-k mkf-li"><div><span>' + (t.pay ? 'Agora · ' + (t.pay + 1) + 'x' : 'Recebe agora') + '</span><b class="up">' + c.brl(now) + '</b></div><div><span>Verba ganha</span><b class="up">' + c.brl(Math.round(now * M.sellVerba)) + '</b></div></div>' +
+      '<div class="mk-side"><div class="mk-k mkp-pr"><small>DIRETOR DO ' + bn.toUpperCase() + '</small><span class="mkp-md">' + moodHtml() + '</span><span class="mkp-pat">Paciência' + mkDots(o.pat, M.sellPat) + '</span></div>' +
+        '<div class="mk-k mkf-li"><div><span>' + (t.pay ? 'Agora · ' + (t.pay + 1) + 'x' : 'Recebe agora') + '</span><b class="up mkp-now">' + c.brl(now) + '</b></div><div><span>Verba ganha</span><b class="up mkp-af">' + c.brl(Math.round(now * M.sellVerba)) + '</b></div></div>' +
         '<span class="rs-gap"></span><button class="tm-go" id="mkn-go">' + (acc ? 'Aceitar o deles' : 'Contrapropor') + '</button></div></div>', st => {
       const re = x => negociar(id, back, Object.assign({}, t, x));
       st.querySelector('#mkn-back').onclick = () => { sfx('tap'); back(); recebida(o, back); };
       cxBind(st, () => negociar(id, back, t));
       st.querySelector('#mk-q').onclick = () => { sfx('tap'); mkHelp('', 'Peça um valor e mande a contraproposta. O diretor deles tem um teto escondido: abaixo dele, aceita; acima, sobe um pouco ou, sem paciência, desiste. Pedir à vista ou uma % alta de uma venda futura deixa mais difícil. A venda entra no caixa e metade vira verba para contratar.'); };
-      st.querySelectorAll('[data-nv]').forEach(b => b.onclick = () => { sfx('tap'); re({ v: Math.max(o.v, t.v + step * (+b.dataset.nv)) }); });
-      st.querySelectorAll('[data-nc]').forEach(b => b.onclick = () => { sfx('tap'); re({ v: cuts[+b.dataset.nc] }); });
+      const live = v => { t.v = Math.max(o.v, v); const n2 = Math.ceil(t.v / (t.pay + 1) / 1000) * 1000;
+        st.querySelector('.mkp-row > b').textContent = c.brl(t.v); st.querySelector('.mkp-md').innerHTML = moodHtml();
+        st.querySelector('.mkp-now').textContent = c.brl(n2); st.querySelector('.mkp-af').textContent = c.brl(Math.round(n2 * M.sellVerba));
+        st.querySelector('#mkn-go').textContent = t.v <= o.v ? 'Aceitar o deles' : 'Contrapropor'; mkRulerSet(st, rg, t.v, cuts); };
+      mkValueBind(st, 'nv', 'nc', rg, () => t.v, live, () => re({}), cuts, o.v);
       st.querySelectorAll('[data-np]').forEach(b => b.onclick = () => { sfx('tap'); re({ pay: +b.dataset.np }); });
       st.querySelectorAll('[data-nf]').forEach(b => b.onclick = () => { sfx('tap'); re({ fut: +b.dataset.nf }); });
       st.querySelector('#mkn-go').onclick = () => { sfx('tap');

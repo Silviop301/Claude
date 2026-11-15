@@ -27,6 +27,8 @@
     cut: [0.8, 1, 1.2], // atalhos da proposta: baixa, justa (o preço da ficha) e alta
     payPen: [0, 0.04, 0.08], // à vista, 2x, 3x: o presidente aceita um pouco menos parcelado
     counter: 0.8,     // a partir de 80% do que ele quer, contrapõe; abaixo, recusa
+    counterUp: 0.5,   // a contra dele fica acima do mínimo: mínimo + metade da distância até a sua proposta (máx. +12%)
+    quaseBuy: 0.93,   // na compra, a partir de 93% do que ele quer é "Quase lá" (1 chance em 3, `quase`)
     trade: 0.8,       // jogador na troca vale 80% do valor dele
     maxSquad: 28      // limite do elenco (Silvio 2026-11-10): todo clube começa com 25, cabem 2 contratações e 1 garoto da base. Só barra quem chega
   };
@@ -299,6 +301,13 @@
   // O que ele quer de verdade (escondido): o preço da ficha pelo humor, menos a sua negociação
   S.coMktAsk = (co, p) => r10k(S.coMktPrice(p) * PRES[S.coMktPres(co, p)].k * (1 - 0.015 * ((co.xp && co.xp.negoc) || 0)));
   S.coMktCuts = p => M.cut.map(k => r10k(S.coMktPrice(p) * k));
+  // Passo do ◀ ▶ (Silvio 2026-11-15: "muito travado"): uns 2% do valor, num número redondo (5 mil em 200 mil, 50 mil em 2 mi)
+  const NICE = [1000, 2000, 5000, 10000, 20000, 25000, 50000, 100000, 200000, 250000, 500000, 1e6];
+  S.coMktStep = v => { const x = Math.max(10000, v) * 0.02; return NICE.find(n => n >= x * 0.8) || 1e6; };
+  S.coMktMid = (a, b) => { const st = S.coMktStep((a + b) / 2); return Math.round((a + b) / 2 / st) * st; };
+  // Humor do presidente a cada toque (como o empresário): 4 deve aceitar, 3 quase lá (1 chance em 3), 2 longe (contrapõe), 1 não vai topar
+  S.coMktPresMood = (co, p, o) => { const tv = tradeVal(co, o.tr), eff = Math.max(0, o.v - tv) * (1 - M.payPen[o.pay || 0]) + tv, r = eff / S.coMktAsk(co, p);
+    const lvl = r >= 1 ? 4 : r >= M.quaseBuy ? 3 : r >= M.counter ? 2 : 1; return { lvl, t: ['', 'Não vai topar', 'Longe', 'Quase lá', 'Deve aceitar'][lvl] }; };
   S.coMktNeg = (co, p) => { const m = S.coMkt(co); return m.neg[p.id] || (m.neg[p.id] = { pat: M.pat, apat: M.pat, st: 'open' }); };
   // Quem pode ir na troca: reservas (fora do time titular) sem deixar a posição com menos de 2
   S.coMktTradeList = co => co.squad.filter(q => !(co.xi || []).includes(q.id) && co.squad.filter(x => x.pos === q.pos).length > 2)
@@ -321,10 +330,16 @@
     // O valor da proposta é o pacote inteiro: o jogador na troca abate (o resto é dinheiro) e só o dinheiro parcelado pesa menos.
     // Até 11/11 a troca contava duas vezes (abatia do dinheiro e ainda somava no pacote): comprar com troca saía pela metade.
     const ask = S.coMktAsk(co, p), tv = tradeVal(co, o.tr), pen = M.payPen[o.pay || 0], eff = Math.max(0, o.v - tv) * (1 - pen) + tv;
-    if (eff >= ask) { n.st = 'ok'; n.deal = { v: o.v, pay: o.pay || 0, tr: o.tr || null }; n.ans = { k: 'ok' }; return n.ans; }
+    // "Quase lá" (Silvio 2026-11-15, como no contrato): perto do que ele quer, 1 chance em 3 de fechar assim mesmo
+    const quase = eff >= ask * M.quaseBuy && hash(p.id + '|bq|' + n.pat + '|' + o.v + '|' + (o.pay || 0) + '|' + (o.tr || '') + '|' + (co.season || 0)) % 1000 < 1000 * (M.quase || 0);
+    if (eff >= ask || quase) { n.st = 'ok'; n.deal = { v: o.v, pay: o.pay || 0, tr: o.tr || null }; n.ans = { k: 'ok' }; return n.ans; }
     n.pat--;
     if (n.pat <= 0) { n.st = 'no'; n.ans = { k: 'no' }; return n.ans; }
-    if (eff >= ask * M.counter) { n.cv = Math.ceil(((ask - tv) / (1 - pen) + tv) / 10000) * 10000; n.ans = { k: 'counter', v: n.cv }; return n.ans; }
+    // Contraproposta de verdade (Silvio 2026-11-15: "quero um meio termo"): ele pede acima do mínimo dele (metade da
+    // distância, no máximo +12%), então o meio termo entre os dois pode passar. Até 15/11 a contra era o próprio mínimo
+    if (eff >= ask * M.counter) {
+      const T = Math.min(ask + (ask - eff) * M.counterUp, ask * 1.12), cv = (T - tv) / (1 - pen) + tv, st = S.coMktStep(cv);
+      n.cv = Math.ceil(cv / st) * st; n.ans = { k: 'counter', v: n.cv, mid: S.coMktMid(o.v, n.cv) }; return n.ans; }
     n.ans = { k: 'recusa' }; return n.ans;
   };
 

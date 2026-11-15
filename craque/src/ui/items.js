@@ -311,7 +311,7 @@
         .sort((x, y) => (y.at || 0) - (x.at || 0)).slice(0, 60);
       coins = coinSum(Object.assign({}, cn, { dv, once, rp, log, clubs: Object.assign({}, (ca || {}).clubs, (cb || {}).clubs) }));
     }
-    return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news), days }, prof ? { prof } : {}, coins ? { coins } : {});
+    return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news), days }, prof ? { prof } : {}, coins ? { coins } : {}, (a.ch || b.ch) && U.CHAMA ? { ch: U.CHAMA.merge(a.ch, b.ch) } : {});
   }
 
   // ---------- moedas da conta (2026-11-09, Silvio: moedas e dinheiro do clube) ----------
