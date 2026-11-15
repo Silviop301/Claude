@@ -10684,5 +10684,51 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .iab-steps li span { font-size: 16px; }
 .iab-steps li i { width: 40px; height: 40px; }
 .iab-arrow { right: 14px; top: 4px; transform: rotate(180deg); animation-name: ins-bob-up; }
+<<<<<<< HEAD
 /* Home larga: a "versão" ficava embaixo do botão Jogador; sobe para o alto, entre o logo e as moedas (2026-11-15) */
 .hlw > .hl-bd { bottom: auto; top: 8px; left: 72%; }
+=======
+
+/* ===== Chama do técnico (2026-11-15, jeito Duolingo; ui/chama.js): cartão na home deitada, avisos depois do jogo ===== */
+.ld-st .hl-e .ch-card { position: absolute; right: 24px; top: 88px; width: 330px; z-index: 2; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 18px; background: rgba(7,17,12,.78); border: 1.5px solid rgba(255,255,255,.14); color: #FBF8EF; text-align: left; }
+.ch-card .ch-top { display: flex; align-items: center; gap: 12px; }
+.ch-card .ch-n { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ch-card .ch-n b { font: 800 26px/1 var(--display); }
+.ch-card .ch-n span { font: 600 14px/1.2 var(--body); color: #B9CDBF; }
+.ch-card.lit .ch-n span { color: #7BE3A0; }
+.ch-card.risk .ch-n span { color: #FFB547; }
+.ch-fl .o { fill: #6F7E76; } .ch-fl .i { fill: #A9B6AF; }
+.ch-fl.on .o { fill: #FF9A1F; } .ch-fl.on .i { fill: #FFD24A; }
+.ch-card.risk .ch-fl { animation: chRisk 1.6s ease-in-out infinite; }
+@keyframes chRisk { 50% { transform: scale(1.08); } }
+.ld-st button.ch-shs { flex: none; display: flex; gap: 3px; align-items: center; min-height: 44px; min-width: 60px; justify-content: center; padding: 0 4px; border: 0; background: none; cursor: pointer; }
+.ch-sh path { fill: none; stroke: #5E7A6C; stroke-width: 1.6; stroke-dasharray: 3 2; }
+.ch-sh.on path { fill: #5FB7FF; stroke: #2F6FD6; stroke-dasharray: none; }
+.ch-card .ch-dc { border-top: 1px solid rgba(255,255,255,.12); padding-top: 9px; display: flex; flex-direction: column; gap: 3px; }
+.ch-card .ch-lb { font: 700 13px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; color: #9DB5A6; }
+.ch-card .ch-dr { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ch-card .ch-dc-t { font: 800 19px/1.1 var(--display); }
+.ch-card .ch-dc-t small { font: 700 15px var(--display); color: #F2C230; margin-left: 4px; }
+.ch-pz, .ch-amt { display: inline-flex; align-items: center; gap: 5px; font: 800 19px/1 var(--display); color: #F2C230; }
+.ch-pz svg { width: 24px; height: 24px; }
+.ch-ok { font: 800 16px/1 var(--display); color: #7BE3A0; }
+.pay-ty.ch-t b { display: inline-flex; align-items: center; gap: 6px; }
+.ch-ov { position: fixed; inset: 0; z-index: 9998; display: grid; place-items: center; background: rgba(4,10,7,.72); animation: fade-in .25s ease; }
+.ch-pop { width: min(430px, calc(100% - 32px)); background: #FBF8EF; color: #13201A; border-radius: 20px; padding: 18px 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; box-shadow: 0 18px 40px rgba(0,0,0,.45); }
+.ch-pop .ch-k { font: 700 14px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: #5E6B63; }
+.ch-pop .ch-bt { font: 800 30px/1 var(--display); }
+.ch-pop .ch-amt { font-size: 38px; color: #A9861C; } .ch-pop .ch-amt svg { width: 44px; height: 44px; }
+.ch-pop .ch-fr { display: inline-flex; align-items: center; gap: 6px; font: 800 18px/1 var(--display); color: #C9660A; }
+.ch-pop p, .ch-big .ch-ins { margin: 0; font: 600 15px/1.3 var(--body); color: #5E6B63; }
+.ch-ov .ch-go { border: 0; cursor: pointer; width: 100%; max-width: 300px; min-height: 50px; font: 800 21px/1 var(--display); }
+.ch-big { background: radial-gradient(90% 90% at 50% 45%, #5A2A06 0%, #2A1405 60%, #140A03 100%); }
+.ch-big .ch-in { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 16px; }
+.ch-big .ch-in > .ch-fl { animation: chPop .6s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes chPop { from { transform: scale(.3); opacity: 0; } }
+.ch-big .ch-bn { font: 800 64px/.9 var(--display); color: #FFD24A; }
+.ch-big .ch-bs { font: 700 20px/1.2 var(--display); color: #F7E2C2; }
+.ch-big .ch-amt { font-size: 30px; } .ch-big .ch-amt svg { width: 34px; height: 34px; }
+.ch-big .ch-ins { color: #C9A98A; }
+.ch-big .ch-nx { font: 600 14px var(--body); color: #C9A98A; }
+@media (prefers-reduced-motion: reduce) { .ch-card.risk .ch-fl, .ch-big .ch-in > .ch-fl { animation: none; } }
+>>>>>>> origin/claude/gracious-darwin-9gdlfp
