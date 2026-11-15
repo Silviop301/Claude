@@ -1400,8 +1400,9 @@
     return rows;
   }
   function calBody(co, from) {
-    const rows = calRows(co), now = rows.findIndex(r => !r.done), PER = 5, max = Math.max(0, rows.length - PER);
-    from = from == null ? Math.max(0, Math.min(max, (now < 0 ? rows.length : now) - 2)) : Math.max(0, Math.min(max, from));
+    // Computador (Silvio 2026-11-15: "No desk não precisa ter só 5 itens e pode ter rolagem"): a temporada inteira numa lista que rola, aberta no próximo jogo
+    const rows = calRows(co), now = rows.findIndex(r => !r.done), all = WROOM, PER = all ? rows.length : 5, max = Math.max(0, rows.length - PER);
+    from = all ? 0 : from == null ? Math.max(0, Math.min(max, (now < 0 ? rows.length : now) - 2)) : Math.max(0, Math.min(max, from));
     const nm = id => esc(club(id).short || club(id).name), lc = 'Calendário', CUP_IC = co.ss.cup ? '<i class="cal-ti">' + cupImg(co.ss.cup.name, 18) + '</i>' : '', CONT_IC = co.ss.cont ? '<i class="cal-ti">' + contImg(co, 18) + '</i>' : '';
     const row = (r, ix) => { const cur = from + ix === now, res = r.sc ? (r.t === 'C' && !r.grp ? (r.win ? 'v' : 'd') : r.sc[0] > r.sc[1] ? 'v' : r.sc[0] < r.sc[1] ? 'd' : 'e') : '';
       const opp = r.bye ? '<span class="cal-tb">folga</span>' : r.vs ? crest(r.vs, 'cal-cr') + '<span>' + nm(r.vs) + '</span>' :
@@ -1409,6 +1410,7 @@
       return '<div class="cal-r ' + r.t + (cur ? ' cur' : '') + '"><small class="cal-d">' + (r.dt || '') + '</small><b class="cal-c">' + (r.t === 'C' ? (r.ic === 'cont' ? CONT_IC : CUP_IC) : '') + esc(r.lab) + '</b><i class="cal-h">' +
         (r.fin ? 'N' : r.home === null ? '' : r.home ? 'C' : 'F') + '</i><div class="cal-o">' + opp + '</div>' +
         (r.sc ? '<b class="cal-s ' + res + '">' + r.sc[0] + ' x ' + r.sc[1] + (r.pens ? ' <small>(' + r.pens[0] + '-' + r.pens[1] + ')</small>' : '') + '</b>' : '<b class="cal-s nx">' + (cur ? 'PRÓXIMO' : '') + '</b>') + '</div>'; };
+    if (all) return { from, html: '<div class="tb2-nav cal-all"><b>' + lc + ' · ' + rows.length + ' jogos</b></div><div class="tb2-b cal-b">' + rows.map(row).join('') + '</div>' };
     return { from, html: '<div class="tb2-nav"><button id="ldc-prev"' + (from ? '' : ' disabled') + ' aria-label="Jogos de antes">' + MK_L + '</button><b>' + lc + ' · ' + rows.length + ' jogos</b><button id="ldc-next"' + (from < max ? '' : ' disabled') + ' aria-label="Próximos jogos">' + MK_R + '</button></div>' + rows.slice(from, from + PER).map(row).join('') };
   }
   function tabela(tab, rd) {
@@ -1432,7 +1434,8 @@
             (tab === 'cls' ? '<em>' + x.j + '</em><em>' + (x.v || 0) + '</em><em>' + (x.e || 0) + '</em><em>' + (x.d || 0) + '</em><em>' + sgT + '</em><b>' + x.p + '</b>' : '<em>' + x.gp + '</em><em>' + x.gc + '</em><b>' + sgT + '</b>') + dots(x.f) + '</div>'; }).join('') + '</div>';
     } else if (tab === 'art') {
       // Artilharia do campeonato com o escudo de cada um; os seus em destaque e, se nenhum está entre os 6, o seu melhor no fim
-      const all = S.coLeagueScorers(co), TOP = 6, list = all.slice(0, TOP).map((x, k) => [x, k]), mineAt = all.findIndex(x => x.me);
+      const all = S.coLeagueScorers(co), TOP = WROOM ? 40 : 6,   // computador: lista longa que rola (2026-11-15)
+      list = all.slice(0, TOP).map((x, k) => [x, k]), mineAt = all.findIndex(x => x.me);
       if (mineAt >= TOP) list[TOP - 1] = [all[mineAt], mineAt];
       body = '<div class="tb2-h art"><i></i><span>ARTILHARIA</span><b>GOLS</b></div><div class="tb2-b">' + (list.length ? list.map(([x, k]) => '<div class="tb2-r art' + (x.me ? ' me' : '') + '"><i>' + (k + 1) + '</i>' + crest(x.club, 'tb2-cr') + '<span>' + esc(x.n) + ' <small>' + (x.pos || 'saiu') + ' · ' + esc(club(x.club).short || club(x.club).name) + '</small></span><b>' + x.g + '</b></div>').join('') : '<p class="tb2-none">Ninguém marcou ainda.</p>') + '</div>';
     } else {
@@ -1468,7 +1471,7 @@
       if (st.querySelector('#ldc-prev')) { st.querySelector('#ldc-prev').onclick = () => { sfx('tap'); CAL_P = Math.max(0, CAL_P - 5); tabela('cal', rd); }; st.querySelector('#ldc-next').onclick = () => { sfx('tap'); CAL_P += 5; tabela('cal', rd); }; }
       if (st.querySelector('#ldt-prev')) { st.querySelector('#ldt-prev').onclick = () => { sfx('tap'); tabela('rod', rd - 1); }; st.querySelector('#ldt-next').onclick = () => { sfx('tap'); tabela('rod', rd + 1); }; }
       st.querySelector('#tb2-back').onclick = () => { sfx('tap'); semana(); };
-      const me2 = st.querySelector('.tb2-r.me, .tb2-gm.me'), bx = st.querySelector('.tb2-b');
+      const me2 = st.querySelector('.tb2-r.me, .tb2-gm.me, .cal-b .cal-r.cur'), bx = st.querySelector('.tb2-b');
       if (me2 && bx) bx.scrollTop = Math.max(0, me2.offsetTop - bx.offsetTop - bx.clientHeight / 2 + me2.offsetHeight / 2);
     });
   }
@@ -1933,7 +1936,7 @@
   // Sem a tela separada do Resultado: mercadoRes cai aqui. Tocar no escolhido (ou Ver ficha) abre a ficha e o Voltar devolve
   let MK_W = [0, 0];
   function mercadoW(pg, sel) {
-    const c = C(), co = c.co, m = S.coMkt(co), F = S.coMktFilters(co), N = 7;
+    const c = C(), co = c.co, m = S.coMkt(co), F = S.coMktFilters(co), N = 40;   // os 40 da busca numa lista que rola (Silvio 2026-11-15: no computador pode rolar); antes 7 por página
     if (S.coWorldSync) S.coWorldSync(co);
     m.f = F.map((x, i) => Math.min(m.f[i] || 0, x.o.length - 1));
     const all = S.coMktSearch(co), n = all.length, ok = n > 0 && n <= S.CO_MKT.max, dirty = m.f.some(v => v) || !!(m.nm || '').trim();
@@ -1954,10 +1957,11 @@
         '<div class="mkw-fs">' + F.map(cell).join('') + '</div>' +
         '<div class="mk-k mkw-n"><span><b id="mk-n" class="' + (ok ? 'ok' : '') + '">' + plMil(n, 'jogador', 'jogadores') + '</b><small>com estes filtros</small></span>' + (dirty ? '<button class="mk-clr" id="mk-clr">Limpar</button>' : '') + '</div></div>' +
       '<div class="mkw-r0"><div class="mkw-t"><div class="mkw-h"><span>JOGADOR</span><span>POS</span><span>IDADE</span><span>CLUBE</span><span>GERAL</span><span>PREÇO</span></div>' +
-        (R.length ? R.map(row).join('') : '<p class="fn2-none mkw-e" id="mkw-e">' + empty + '</p>') + '<span class="rs-gap"></span>' +
+        (R.length ? '<div class="mkw-sc">' + R.map(row).join('') + '</div>' : '<p class="fn2-none mkw-e" id="mkw-e">' + empty + '</p>') + '<span class="rs-gap"></span>' +
         '<div class="mkw-pg"><span>' + (R.length ? (pg + 1) + ' de ' + pages : '') + '</span><span><button class="mk-ar" id="mkr-prev" aria-label="Página anterior"' + (pg ? '' : ' disabled') + '>' + MK_L + '</button><button class="mk-ar" id="mkr-next" aria-label="Próxima página"' + (pg < pages - 1 ? '' : ' disabled') + '>' + MK_R + '</button></span></div></div>' +
         '<div class="mkw-b"><div class="mk-k mk-ord"><small>ORDEM</small><button class="mk-ar" data-mo="-1" aria-label="ordem anterior">' + MK_L + '</button><b>' + ords[ord] + '</b><button class="mk-ar" data-mo="1" aria-label="ordem seguinte">' + MK_R + '</button></div>' +
         '<button class="tm-go' + (R.length ? '' : ' off') + '" id="mkr-go">Ver ficha</button></div></div></div>', st => {
+      { const sc = st.querySelector('.mkw-sc'), on = sc && sc.querySelector('.mkw-r.on'); if (on && on.offsetTop + on.offsetHeight > sc.clientHeight) sc.scrollTop = on.offsetTop - sc.clientHeight / 2 + on.offsetHeight / 2; } // o escolhido continua à vista depois do toque
       const me = () => mercado(MK_W[0], MK_W[1]);
       st.querySelector('#mk-back').onclick = () => { sfx('tap'); semana(); };
       mkCoins(st, me);
