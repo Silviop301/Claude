@@ -260,7 +260,9 @@
   // vk (2026-11-15, clube pequeno com estrela): só essa parte do aporte vira verba; o resto fica no caixa para pagar o salário de
   // quem chega. Com a verba igual ao dinheiro todo, quem gastava tudo num reforço ficava sem caixa, ia para o vermelho e o presidente
   // vendia o reforço em ~6 rodadas (robô de clube pequeno com 3 semanas de aporte: venda forçada em 8 de 8 carreiras; com 0,6, em 1 de 8 e sem vermelho na 1ª temporada). CO_APVK mede.
-  S.CO_APORTE = { coin: 12, max: 10, piso: 500000, tk: 0.025, vk: 0.6, bonus: [[10, 0.15], [5, 0.1], [3, 0.05]] };
+  // Sem limite por temporada desde 2026-11-15 (Silvio: "se uma pessoa quiser investir 500 moedas e fazer do Paysandu o melhor time
+  // do mundo, pode"; era 10). `max` fica para ferramentas que queiram simular um teto (CO_APMAX)
+  S.CO_APORTE = { coin: 12, max: +((typeof process !== 'undefined' && process.env && process.env.CO_APMAX) || Infinity), piso: 500000, tk: 0.025, vk: 0.6, bonus: [[10, 0.15], [5, 0.1], [3, 0.05]] };
   const apVb = (f, v) => r10(Math.max(0, v - Math.max(0, -f.caixa)) * +((typeof process !== 'undefined' && process.env && process.env.CO_APVK) || S.CO_APORTE.vk));
   S.coAporteBonus = wk => { const b = S.CO_APORTE.bonus.find(x => wk >= x[0]); return b ? b[1] : 0; };
   S.coAporteUsed = co => { const f = S.coFin(co); return f && f.ap && f.ap.s === co.season ? f.ap.wk : 0; };
