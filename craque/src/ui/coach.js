@@ -1165,7 +1165,8 @@
       if (m.min - snapMin >= 5) snap(); // de 5 em 5 minutos o jogo fica guardado
       if (away) { wdT = Date.now(); return; }
       const busyUi = document.getElementById('ld-pop') || ($('lv-sheet') && $('lv-sheet').classList.contains('on')) || document.hidden;
-      if (m.min !== wdMin || busyUi) { wdMin = m.min; wdT = Date.now(); return; }
+      const wdNow = m.tk != null ? m.tk : m.min; // nos acréscimos o minuto fica em 45 ou 90 e só os minutos jogados andam
+      if (wdNow !== wdMin || busyUi) { wdMin = wdNow; wdT = Date.now(); return; }
       if (Date.now() - wdT < (wait ? 40000 : 15000)) return;
       if (window.CLIMBIX_REPORT) window.CLIMBIX_REPORT('treinador ao vivo travou', JSON.stringify({ min: m.min, open, wait: !!wait, speed: co.speed, ko: !!(sim && sim.koWait && sim.koWait()), ld: !!ctx }));
       clearTimeout(timer); open = false; hidden.clear();

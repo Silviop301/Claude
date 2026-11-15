@@ -10733,3 +10733,7 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 /* Mercado largo no notebook: o título "Mercado" virava "Me..."; ele não encolhe, as abas encolhem (2026-11-15) */
 #ld.wide .mkw .mk-tt { flex: none; }
 #ld.wide .mkw .mk-tabs { width: auto; flex: 0 1 470px; min-width: 0; }
+
+/* Parada do jogo: o campo é mais baixo que o da escalação e o nome de quem joga na linha de baixo (lateral, ponta) era cortado
+   pela borda do campo. O nome pode passar alguns px para o vão entre o campo e o banco (2026-11-15). */
+.ldl-tm .tm-pitch { overflow: visible; }
