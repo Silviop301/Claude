@@ -714,8 +714,11 @@
   // Lance da lista do ao vivo deitado (Silvio, 2026-11-10: lista rolável, o último em cima; "quero o nome do jogador que fez a
   // ação também, tá muito curto"): minuto, escudo de quem fez e a frase com o nome completo, em até duas linhas (o escudo já diz
   // o time, então a frase não repete o clube); o que foi ordem sua leva a etiqueta VOCÊ no lugar do escudo
+  // Nome comprido (jogador real "V. Peixoto Trindade Da Silva", 16/11) passava das duas linhas e a letra de baixo era
+  // cortada: na lista fica o primeiro e o último nome ("V. Silva")
+  const feedNm = x => { x = String(x || ''); const w = x.split(' '); return x.length > 16 && w.length > 2 ? w[0] + ' ' + w[w.length - 1] : x; };
   function feedShort(m, e) {
-    const n = esc(e.p || ''), us = e.s === 'us', you = us && (e.t === 'tatica' || e.t === 'troca') || e.t === 'grito' || e.t === 'conversa' || e.t === 'momento' || e.t === 'olheiro';
+    const n = esc(feedNm(e.p)), us = e.s === 'us', you = us && (e.t === 'tatica' || e.t === 'troca') || e.t === 'grito' || e.t === 'conversa' || e.t === 'momento' || e.t === 'olheiro';
     const t = e.t === 'gol' ? '<b>GOL!</b> ' + n + (e.sp === 'pen' ? ' de pênalti' : e.sp === 'falta' ? ' de falta' : e.sp ? ' de cabeça' : HOW(e) ? ' ' + HOW(e) : '') :
       e.t === 'chance' && e.sp === 'pen' ? (e.k === 'defesa' ? '<b>Pênalti defendido!</b> ' + n : e.k === 'trave' ? '<b>Pênalti na trave!</b> ' + n : '<b>Pênalti para fora!</b> ' + n) :
       e.t === 'chance' && e.sp === 'falta' ? (e.k === 'defesa' ? n + ' cobra a falta, o goleiro defende' : e.k === 'bloqueio' ? 'Falta de ' + n + ' na barreira' : e.k === 'trave' ? 'Falta de ' + n + ' na trave!' : 'Falta de ' + n + ' por cima') :
@@ -727,7 +730,7 @@
       e.t === 'impedimento' ? (n ? 'Impedimento de ' + n : 'Impedimento') :
       e.t === 'lesao' ? n + ' sente e pede para sair' :
       e.t === 'tatica' ? 'Muda para ' + (us ? n : n.toLowerCase()) :
-      e.t === 'troca' ? 'Sai ' + n + ', entra <b>' + esc(e.q || '') + '</b>' :
+      e.t === 'troca' ? 'Sai ' + n + ', entra <b>' + esc(feedNm(e.q)) + '</b>' :
       e.t === 'grito' ? 'Grito: <b>' + n + '</b>' :
       e.t === 'momento' ? (e.ok ? '<b class="mom-ok">✓ Funcionou</b> ' : '<b class="mom-no">Não deu</b> ') + n :
       e.t === 'olheiro' ? '<b class="mom-ok">Como o olheiro viu</b> ' + n :
