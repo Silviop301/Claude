@@ -3412,9 +3412,9 @@
         '<div class="tr2-g">' + ks.map(k => '<button class="tr2-c' + (k === pick ? ' on' : '') + (done && k !== done ? ' dis' : '') + '" data-tk="' + k + '"' + (done && k !== done ? ' disabled' : '') + '><span class="tr3-tx">' + (k === sug ? '<span class="tr3-sg">★ AUXILIAR SUGERE</span>' : '') + '<b>' + (done === k ? '✓ ' : '') + T[k].name + '</b><span class="tr2-tg"><em class="' + (T[k].en > 0 ? 'dn' : 'up') + '">' + enTxt(T[k]) + '</em>' + dvTag(T[k]) + '</span></span><span class="tr3-th" data-th="' + k + '"></span></button>').join('') + '</div>' +
         '<div class="tr2-side"><div class="tr2-d tr3-d">' + (sel ? '<div class="tr3-pit"></div><div class="tr3-di"><b>' + sel.name + '</b><p>' + trTip(pick) + '</p>' + dvBox(sel) + '</div>' : '<p class="tr2-none">Toque num treino</p>') + '</div>' + go + '</div></div>', st => {
         // pranchetas paradas nos cartões e a cena andando no cartão da direita
-        const me = ++run, TRC = U.TRC;
-        if (TRC) { st.querySelectorAll('[data-th]').forEach(h => TRC.scene(h, h.dataset.th, false));
-          const pit = st.querySelector('.tr3-pit'), sc = pit && TRC.scene(pit, pick, true), t0 = performance.now();
+        const me = ++run, TRC = U.TRC, cl0 = club(co.club), kit = U.LP && U.LP.kitFor && cl0 ? U.LP.kitFor(cl0.name, cl0.id) : null;
+        if (TRC) { st.querySelectorAll('[data-th]').forEach(h => TRC.scene(h, h.dataset.th, false, kit));
+          const pit = st.querySelector('.tr3-pit'), sc = pit && TRC.scene(pit, pick, true, kit), t0 = performance.now();
           if (sc && !still) { const loop = now => { if (me !== run || !pit.isConnected) return; sc.paint(((now - t0) / 1000 / sc.dur) % 1); requestAnimationFrame(loop); }; requestAnimationFrame(loop); } }
         st.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { sfx('tap'); tab = b.dataset.tt; draw(); });
         st.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { sfx('tap'); pick = b.dataset.tk; draw(); });

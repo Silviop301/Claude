@@ -2,7 +2,7 @@
 // Só desenho: cada um dos 16 treinos de S.CO_TRAIN tem um campinho em miniatura (SVG) com bolinhas que se mexem em laço.
 // U.TRC.scene(host, chave, grande) desenha e devolve { paint(u 0..1), dur em segundos }; parado fica no quadro `at`.
 // Campo 100x46, ataque para a direita. a = [tipo, quadros [t, x, y]..., fase?]: u nosso, r colete, g goleiro, c cone,
-// p guarda-sol, k coco. `top: 1` = visto de trás do gol (bola parada). Treino novo no motor: ponha a cena aqui com a mesma chave.
+// b cama, z o "z" do sono (sobe e some). `top: 1` = visto de trás do gol (bola parada). Treino novo no motor: ponha a cena aqui com a mesma chave.
 (function () {
 'use strict';
 const U = window.CRAQUE_UI = window.CRAQUE_UI || {};
@@ -39,34 +39,63 @@ const SC = {
   recup: { bg: 'plain', dur: 9, at: .2, a: [0, 1, 2, 3].map(i => ['u', [0, 20 + 9 * i, i % 2 ? 26 : 20], [.5, 52 + 9 * i, i % 2 ? 26 : 20], [1, 20 + 9 * i, i % 2 ? 26 : 20]]), b: [] },
   resist: { bg: 'plain', dur: 7, at: .1, a: [st('c', 19, 5.5), st('c', 81, 5.5), st('c', 81, 40.5), st('c', 19, 40.5), lap(0), lap(.07), lap(.14), lap(.21)], b: [] },
   veloc: { bg: 'plain', dur: 4.5, at: .22, a: [...[5, 17, 29, 41].flatMap(y => [st('c', 24, y), st('c', 79, y)]), ...[11, 23, 35].map((y, i) => ['u', [0, 26, y], [.1, 26, y], [.32, 77, y], [.45, 77, y], [.9, 26, y], [1, 26, y], i * .06])], b: [] },
-  folga: { bg: 'plain', dur: 7, at: .3, a: [st('p', 50, 22), ['u', [0, 40, 17], [.5, 40.5, 17.4], [1, 40, 17]], ['u', [0, 60, 18], [.5, 59.6, 18.3], [1, 60, 18]], ['u', [0, 43, 31], [.5, 43.3, 30.6], [1, 43, 31]], ['u', [0, 58, 31], [.5, 57.7, 31.3], [1, 58, 31]],
-      st('k', 37, 20), st('k', 63.5, 20.5), st('k', 46.5, 33.5), st('k', 61, 34), st('c', 24, 36), st('c', 27, 36)],
-    b: [[[0, 45.5, 30], [.1, 45.5, 30], [.4, 55.6, 30.4], [.6, 55.6, 30.4], [.9, 45.5, 30], [1, 45.5, 30]]] },
+  folga: { bg: 'plain', dur: 5, at: .35, a: [st('b', 29, 17), st('b', 63, 17), st('b', 29, 37), st('b', 63, 37),
+      ['z', [0, 25, 12], [1, 33, 5], 0.001], ['z', [0, 25, 12], [1, 33, 5], 0.5], ['z', [0, 59, 12], [1, 67, 5], 0.131], ['z', [0, 59, 12], [1, 67, 5], 0.63], ['z', [0, 25, 32], [1, 33, 25], 0.261], ['z', [0, 25, 32], [1, 33, 25], 0.76], ['z', [0, 59, 32], [1, 67, 25], 0.391], ['z', [0, 59, 32], [1, 67, 25], 0.89]], b: [[[0, 46, 27]]] },
 };
 const NS = 'http://www.w3.org/2000/svg';
 const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
 const at = (kf, u) => { if (kf.length === 1) return [kf[0][1], kf[0][2]]; let i = 0; while (i < kf.length - 2 && u > kf[i + 1][0]) i++; const a = kf[i], b = kf[i + 1]; let k = Math.max(0, Math.min(1, (u - a[0]) / ((b[0] - a[0]) || 1))); k = k * k * (3 - 2 * k); return [a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]; };
-const sun = svg => { const g = el('g', {}, svg); el('circle', { r: 7.2, fill: '#F8F4EA', stroke: '#13201A', 'stroke-width': .6 }, g);
-  for (let i = 0; i < 4; i++) el('path', { d: 'M0 0 L7.2 0 A7.2 7.2 0 0 1 5.09 5.09 Z', fill: '#F08A5D', transform: 'rotate(' + i * 90 + ')' }, g);
-  el('circle', { r: 7.2, fill: 'none', stroke: '#13201A', 'stroke-width': .6 }, g); el('circle', { r: .9, fill: '#13201A' }, g); return g; };
-const coco = svg => { const g = el('g', {}, svg); el('circle', { r: 1.5, fill: '#6FBF4A', stroke: '#13201A', 'stroke-width': .4 }, g); el('circle', { r: .7, fill: '#F8F4EA' }, g);
-  el('line', { x1: .2, y1: -.2, x2: 1.9, y2: -2.2, stroke: '#F8F4EA', 'stroke-width': .45, 'stroke-linecap': 'round' }, g); return g; };
-function scene(host, key, big) {
+const bed = svg => { const g = el('g', {}, svg); el('rect', { x: -10.5, y: -5.5, width: 21, height: 11, rx: 1.6, fill: '#8A5A33', stroke: '#13201A', 'stroke-width': .6 }, g);
+  el('rect', { x: -9.3, y: -4.3, width: 18.6, height: 8.6, rx: 1, fill: '#F8F4EA' }, g); el('rect', { x: -8.5, y: -3, width: 5, height: 6, rx: 1.2, fill: '#BFD0E6', stroke: '#13201A', 'stroke-width': .35 }, g);
+  el('circle', { cx: -5.6, r: 2, fill: '#F8F4EA', stroke: '#13201A', 'stroke-width': .6 }, g); el('rect', { x: -3, y: -4.3, width: 12.3, height: 8.6, rx: 1, fill: '#2F6FB5' }, g); el('rect', { x: -3, y: -4.3, width: 2, height: 8.6, fill: '#7FB2E8' }, g); return g; };
+const zed = svg => { const t = el('text', { 'font-size': 9, 'font-weight': 800, 'font-family': 'inherit', fill: '#F8F4EA', stroke: '#13201A', 'stroke-width': .25, 'text-anchor': 'middle' }, svg); t.textContent = 'z'; return t; };
+// Desde 16/11 (Silvio: "o modelo de jogador e campo utilizados na simulação aparecendo no preview") o desenho copia o campinho
+// ao vivo (livesim.js): gramado #1B6B44/#196340, linhas brancas, gol com rede, luz de estádio, e o boneco = sombra, anel de
+// energia, disco na cor da camisa do clube (`kit` = U.LP.kitFor), bico para onde ele vai e número. O colete do treino e o
+// goleiro pegam cores longe da camisa.
+const hx = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const cdist = (a, b) => { const x = hx(a), y = hx(b), r = (x[0] + y[0]) / 2, d = [x[0] - y[0], x[1] - y[1], x[2] - y[2]]; return Math.sqrt((2 + r / 256) * d[0] * d[0] + 4 * d[1] * d[1] + (2 + (255 - r) / 256) * d[2] * d[2]); };
+const lum = h => { const c = hx(h); return (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255; };
+const okc = h => typeof h === 'string' && /^#[0-9a-f]{6}$/i.test(h);
+const edgeOf = (c, c2) => c2 && cdist(c2, c) > 120 ? c2 : lum(c) > 0.55 ? '#1D1D1F' : '#F4F1E8';
+let UID = 0;
+function scene(host, key, big, kit) {
   const s = SC[key]; if (!s || !host) return null;
-  const top = s.top, sv = el('svg', { viewBox: top ? '0 0 46 24.7' : s.bg === 'half' ? '16 0 84 46' : '8 0 84 46', preserveAspectRatio: top ? 'xMidYMin meet' : s.bg === 'half' ? 'xMaxYMid meet' : 'xMidYMid meet', 'aria-hidden': 'true' }), svg = el('g', top ? { transform: 'matrix(0 -1 1 0 0 100)' } : {}, sv);
-  el('rect', { x: -60, y: -20, width: 220, height: 86, fill: '#1F8A4C' }, svg);
-  for (let i = -3; i < 8; i++) el('rect', { x: i * 20 + 10, y: -20, width: 10, height: 86, fill: '#1B7F45' }, svg);
-  const ln = { fill: 'none', stroke: 'rgba(255,255,255,.55)', 'stroke-width': top ? .4 : .6 };
-  if (s.bg === 'half') { el('rect', Object.assign({ x: 80, y: 8, width: 18, height: 30 }, ln), svg); el('rect', Object.assign({ x: 92, y: 16, width: 6, height: 14 }, ln), svg); el('path', Object.assign({ d: 'M80 17 A8 8 0 0 0 80 29' }, ln), svg); el('line', Object.assign({ x1: 98, y1: 0, x2: 98, y2: 46 }, ln), svg); el('rect', { x: 98, y: 18.5, width: 2, height: 9, fill: 'rgba(255,255,255,.85)' }, svg); el('circle', { cx: 86, cy: 23, r: .6, fill: '#fff' }, svg); }
+  const mine = kit && okc(kit[0]) ? kit[0] : '#F4F1E8', mine2 = kit && okc(kit[1]) ? kit[1] : '#1D1D1F', far = c => cdist(c, mine) > 190 && cdist(c, '#1B6B44') > 120;
+  const bib = ['#E8742A', '#F7D117', '#7FC4EE', '#C8323A', '#F4F1E8'].find(far) || '#E8742A', gkc = ['#9B5DE5', '#20C5C5', '#E84A8A', '#FF8A1F', '#B7E34B'].find(c => far(c) && cdist(c, bib) > 190) || '#9B5DE5';
+  const col = { u: [mine, edgeOf(mine, mine2)], r: [bib, edgeOf(bib)], g: [gkc, '#1D1D1F'] };
+  const top = s.top, id = 'trc' + (++UID), sv = el('svg', { viewBox: top ? '0 0 46 24.7' : s.bg === 'half' ? '16 0 84 46' : '8 0 84 46', preserveAspectRatio: top ? 'xMidYMin meet' : s.bg === 'half' ? 'xMaxYMid meet' : 'xMidYMid meet', 'aria-hidden': 'true', overflow: 'visible' }), svg = el('g', top ? { transform: 'matrix(0 -1 1 0 0 100)' } : {}, sv);
+  const df = el('defs', {}, sv), rg = el('radialGradient', { id: id, cx: '50%', cy: '50%', r: '75%' }, df); el('stop', { offset: '25%', 'stop-color': '#fffff0', 'stop-opacity': .05 }, rg); el('stop', { offset: '100%', 'stop-color': '#000', 'stop-opacity': .3 }, rg);
+  el('rect', { x: -60, y: -20, width: 220, height: 86, fill: '#1B6B44' }, svg);
+  for (let i = -3; i < 8; i++) el('rect', { x: i * 20 + 10, y: -20, width: 10, height: 86, fill: '#196340' }, svg);
+  const lw = top ? .3 : .5, ln = { fill: 'none', stroke: 'rgba(255,255,255,.5)', 'stroke-width': lw };
+  if (s.bg === 'half') { el('rect', Object.assign({ x: 80, y: 8, width: 18, height: 30 }, ln), svg); el('rect', Object.assign({ x: 92, y: 16, width: 6, height: 14 }, ln), svg); el('path', Object.assign({ d: 'M80 17 A8 8 0 0 0 80 29' }, ln), svg); el('line', Object.assign({ x1: 98, y1: 0, x2: 98, y2: 46 }, ln), svg); el('circle', { cx: 86, cy: 23, r: .5, fill: 'rgba(255,255,255,.6)' }, svg);
+    // o gol como no ao vivo: rede atrás da linha, travessão branco grosso e as duas traves
+    el('rect', { x: 98, y: 18.5, width: 2.2, height: 9, fill: 'rgba(255,255,255,.16)', stroke: 'rgba(255,255,255,.85)', 'stroke-width': lw * .8 }, svg);
+    let d = ''; for (let i = 1; i < 6; i++) d += 'M98 ' + (18.5 + i * 1.5) + 'h2.2'; d += 'M98.73 18.5v9M99.47 18.5v9'; el('path', { d: d, fill: 'none', stroke: 'rgba(255,255,255,.4)', 'stroke-width': lw * .4 }, svg);
+    el('line', { x1: 98, y1: 18.5, x2: 98, y2: 27.5, stroke: '#fff', 'stroke-width': lw * 2 }, svg); el('circle', { cx: 98, cy: 18.5, r: lw * 1.4, fill: '#fff' }, svg); el('circle', { cx: 98, cy: 27.5, r: lw * 1.4, fill: '#fff' }, svg); }
   if (s.bg === 'mid') { el('line', Object.assign({ x1: 50, y1: 0, x2: 50, y2: 46 }, ln), svg); el('circle', Object.assign({ cx: 50, cy: 23, r: 9 }, ln), svg); }
+  el('rect', { x: -60, y: -20, width: 220, height: 86, fill: 'url(#' + id + ')', 'pointer-events': 'none', transform: top ? 'matrix(0 1 -1 0 100 0)' : '' }, sv);
   const dash = s.line !== undefined ? el('line', { y1: 0, y2: 46, stroke: '#F8F4EA', 'stroke-width': .7, 'stroke-dasharray': '2 2', opacity: .8 }, svg) : null;
-  const R = (big ? 2.5 : 3.3) * (top ? .62 : 1), col = { u: ['#F8F4EA', '#13201A'], r: ['#F08A5D', '#5a2a12'], g: ['#F2C230', '#5a4505'] };
-  const nodes = s.a.map(a => a[0] === 'c' ? el('path', { d: 'M-1.6 1.5 L0 -1.8 L1.6 1.5 Z', fill: '#F2C230', stroke: '#13201A', 'stroke-width': .4 }, svg) : a[0] === 'p' ? sun(svg) : a[0] === 'k' ? coco(svg) : el('circle', { r: R, fill: col[a[0]][0], stroke: col[a[0]][1], 'stroke-width': top ? .5 : .8 }, svg));
-  const balls = s.b.map(() => el('circle', { r: (big ? 1.3 : 1.8) * (top ? .62 : 1), fill: '#fff', stroke: '#13201A', 'stroke-width': .5 }, svg));
+  const R = (big ? 2.5 : 3.3) * (top ? .62 : 1), sh = top ? [-R * .25, R * .1] : [R * .1, R * .25]; let nU = 1, nR = 1;
+  const man = k => { const g = el('g', {}, svg), c = col[k], num = k === 'g' ? 1 : k === 'u' ? ++nU : ++nR, dark = lum(c[0]) > .5;
+    el('ellipse', { cx: sh[0], cy: sh[1], rx: top ? R * .7 : R * 1.12, ry: top ? R * 1.12 : R * .7, fill: 'rgba(0,0,0,.25)' }, g);
+    el('circle', { r: R * 1.27, fill: 'none', stroke: 'rgba(7,17,12,.55)', 'stroke-width': R * .25 }, g); el('circle', { r: R * 1.27, fill: 'none', stroke: '#7BE3A0', 'stroke-width': R * .25, 'stroke-dasharray': (R * 1.27 * 6.283 * (.72 + (num * 37 % 25) / 100)).toFixed(2) + ' 99', 'stroke-linecap': 'round', transform: 'rotate(' + (top ? 0 : -90) + ')' }, g);
+    const bk = el('path', { d: 'M' + R * 1.38 + ' 0L' + R * .94 + ' ' + -R * .27 + 'L' + R * .94 + ' ' + R * .27 + 'Z', fill: '#FBF8EF', stroke: 'rgba(0,0,0,.55)', 'stroke-width': R * .09 }, g);
+    el('circle', { r: R, fill: c[0], stroke: c[1], 'stroke-width': R * .17 }, g);
+    const t = el('text', { y: R * .08, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-family': '"Barlow Condensed", sans-serif', 'font-weight': 800, 'font-size': R * 1.4, fill: dark ? '#0B120E' : '#fff', stroke: dark ? 'rgba(255,255,255,.75)' : 'rgba(0,0,0,.8)', 'stroke-width': R * .26, 'stroke-linejoin': 'round', 'paint-order': 'stroke', transform: top ? 'rotate(90)' : '' }, g); t.textContent = num;
+    g._bk = bk; return g; };
+  const nodes = s.a.map(a => a[0] === 'c' ? el('path', { d: 'M-1.6 1.5 L0 -1.8 L1.6 1.5 Z', fill: '#F2C230', stroke: '#13201A', 'stroke-width': .4 }, svg) : a[0] === 'b' ? bed(svg) : a[0] === 'z' ? zed(svg) : man(a[0]));
+  const br = (big ? 1.3 : 1.8) * (top ? .62 : 1), balls = s.b.map(() => { const g = el('g', {}, svg); el('circle', { r: br * 1.6, fill: 'rgba(255,255,255,.22)' }, g); el('circle', { r: br, fill: '#fff', stroke: '#13201A', 'stroke-width': br * .3 }, g); return g; });
   host.textContent = ''; host.appendChild(sv);
-  const paint = u => { s.a.forEach((a, i) => { const ph = typeof a[a.length - 1] === 'number' ? a[a.length - 1] : 0, kf = a.slice(1, ph || typeof a[a.length - 1] === 'number' ? -1 : undefined), p = at(kf, ((u - ph) % 1 + 1) % 1);
-      if (a[0] === 'c' || a[0] === 'p' || a[0] === 'k') nodes[i].setAttribute('transform', 'translate(' + p[0] + ' ' + p[1] + ')'); else { nodes[i].setAttribute('cx', p[0]); nodes[i].setAttribute('cy', p[1]); } if (dash && i === s.line) { dash.setAttribute('x1', p[0] + R + 1); dash.setAttribute('x2', p[0] + R + 1); } });
-    s.b.forEach((kf, i) => { const p = at(kf, u); balls[i].setAttribute('cx', p[0]); balls[i].setAttribute('cy', p[1]); }); };
+  const kfOf = a => { const n = typeof a[a.length - 1] === 'number'; return [a.slice(1, n ? -1 : undefined), n ? a[a.length - 1] : 0]; };
+  const paint = u => { const b0 = s.b[0] ? at(s.b[0], u) : null;
+    s.a.forEach((a, i) => { const q = kfOf(a), kf = q[0], ph = q[1], w = ((u - ph) % 1 + 1) % 1, p = at(kf, w), n = nodes[i];
+      if (a[0] === 'z') { n.setAttribute('transform', 'translate(' + p[0] + ' ' + p[1] + ') scale(' + (.5 + .6 * w) + ')'); n.setAttribute('opacity', Math.min(1, w * 5, (1 - w) * 2.5)); return; }
+      n.setAttribute('transform', 'translate(' + p[0] + ' ' + p[1] + ')');
+      if (n._bk) { const p2 = at(kf, Math.min(1, w + .012)); let dx = p2[0] - p[0], dy = p2[1] - p[1]; if (Math.hypot(dx, dy) < .02) { dx = b0 ? b0[0] - p[0] : 1; dy = b0 ? b0[1] - p[1] : 0; } n._bk.setAttribute('transform', 'rotate(' + (Math.atan2(dy, dx) * 180 / Math.PI).toFixed(1) + ')'); }
+      if (dash && i === s.line) { dash.setAttribute('x1', p[0] + R + 1); dash.setAttribute('x2', p[0] + R + 1); } });
+    s.b.forEach((kf, i) => { const p = at(kf, u); balls[i].setAttribute('transform', 'translate(' + p[0] + ' ' + p[1] + ')'); }); };
   paint(s.at); return { paint, dur: s.dur };
 }
 U.TRC = { scene, has: k => !!SC[k] };
