@@ -2232,6 +2232,8 @@
         if (ow) { g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.6 * k; g.beginPath(); g.arc(X(ow.x + (bdo ? bdo[0] : 0)), Y(ow.y + (bdo ? bdo[1] : 0)), 13.2 * k, 0, Math.PI * 2); g.stroke(); }
         g.fillStyle = 'rgba(255,255,255,.2)'; g.beginPath(); g.arc(bx, by - air, (9.5 + air / 12) * k, 0, Math.PI * 2); g.fill();
         g.fillStyle = '#fff'; g.strokeStyle = '#13201A'; g.lineWidth = 1.7 * k; g.beginPath(); g.arc(bx, by - air, (5.7 + air / 12) * k, 0, Math.PI * 2); g.fill(); g.stroke(); }
+      // Profundidade (16/11): bola baixa encostada no goleiro (a luva que raspa, a defesa) fica por baixo dele: redesenha o goleiro por cima
+      if (!(ball.z > 1.9)) ALL.forEach(p => { if (p.r === 'GK' && ball.owner !== p && Math.hypot(p.x - ball.x, p.y - ball.y) < 1.7) dot(p, k); });
       // a bola na boca do gol ou dentro da rede passa por baixo do travessão e do teto da rede
       [0, 1].forEach(sd => { const XLs = x => PAD + x / L * (W - 2 * PAD), x0 = sd ? XLs(L) : XLs(0); if ((sd ? bx > x0 - (XLs(1.2) - XLs(0)) : bx < x0 + (XLs(1.2) - XLs(0))) && by > Y(GL) - 8 * k && by < Y(GR) + 8 * k) goalDraw(sd, true); });
       if (penBan) penBanner(k0);
