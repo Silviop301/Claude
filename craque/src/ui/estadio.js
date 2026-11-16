@@ -206,7 +206,7 @@ window.CRAQUE_UI.EST = (function () {
         if (LZ >= 4) { const tx = px + pw * q[2], ty = py + ph * q[3], nx = -(ty - hy), ny = tx - hx, nl = Math.sqrt(nx * nx + ny * ny), w = pw * 0.14;
           s += '<linearGradient id="ebm' + id + i + '" gradientUnits="userSpaceOnUse" x1="' + f(hx) + '" y1="' + f(hy) + '" x2="' + f(tx) + '" y2="' + f(ty) + '"><stop offset="0" stop-color="#FFF7DC" stop-opacity="' + (LZ >= 5 ? 0.34 : 0.24) + '"/><stop offset="1" stop-color="#FFF7DC" stop-opacity="0"/></linearGradient>' +
             '<path d="M' + f(hx) + ' ' + f(hy) + ' L' + f(tx + nx / nl * w) + ' ' + f(ty + ny / nl * w) + ' L' + f(tx - nx / nl * w) + ' ' + f(ty - ny / nl * w) + 'Z" fill="url(#ebm' + id + i + ')" style="mix-blend-mode:screen"/>'; }
-        s += '<circle cx="' + f(hx) + '" cy="' + f(hy) + '" r="' + f(hz) + '" fill="url(#elz' + id + ')"/>';
+        s += '<circle cx="' + f(hx) + '" cy="' + f(hy) + '" r="' + f(hz) + '" fill="url(#elz' + id + ')"' + (LZ >= 4 ? ' class="est-hz" style="animation-delay:' + f(-i * 0.9) + 's"' : '') + '/>';
         let t = '';
         if (LZ >= 3) { const hw = 1.5 * k, n = Math.round(Lp / (2.4 * k)); let zz = 'M0 ' + f(-hw);
           for (let a = 1; a <= n; a++) zz += ' L' + f(Lp * a / n) + ' ' + f(a % 2 ? hw : -hw);
@@ -222,7 +222,7 @@ window.CRAQUE_UI.EST = (function () {
     // churrasqueira com fumaça, mesas de guarda-sol, trailer, varal de luzes; do nível 4 em diante também atrás da Social, e
     // no 5 a loja do clube. Tudo em coordenadas locais: u para fora a partir do rótulo, v para longe do setor
     if (BAR) {
-      const rb = rng((c.seed || 7) + 4242), g0 = c.barGap === undefined ? 34 * k : c.barGap, INK = '#13201A', CR = '#F8F4EA', c0 = cols[0] === '#8E949C' ? '#F2C230' : cols[0], c2 = cols[2] === CR ? '#F2C230' : cols[2];
+      const rb = rng((c.seed || 7) + 4242), g0 = c.barGap === undefined ? 34 * k : c.barGap, INK = '#13201A', CR = '#F8F4EA', lumC = h => { const v = [1, 3, 5].map(q => parseInt(h.slice(q, q + 2), 16)); return (0.299 * v[0] + 0.587 * v[1] + 0.114 * v[2]) / 255; }, c0 = cols[0] === '#8E949C' || lumC(cols[0]) > 0.8 ? '#F2C230' : cols[0], c2 = cols[2] === CR ? '#F2C230' : cols[2];
       const back = key => (box[key].d || 9 * k) + ((c.obra === key ? Math.min(5, lv[key] + 1) : lv[key]) >= 4 ? 3.5 * k : 0);
       const R = (x, y, w, h, rx, fill, ex) => '<rect x="' + f(x) + '" y="' + f(y) + '" width="' + f(w) + '" height="' + f(h) + '" rx="' + f(rx) + '" fill="' + fill + '"' + (ex || '') + '/>';
       const C = (x, y, r, fill, ex) => '<circle cx="' + f(x) + '" cy="' + f(y) + '" r="' + f(r) + '" fill="' + fill + '"' + (ex || '') + '/>';
@@ -232,12 +232,12 @@ window.CRAQUE_UI.EST = (function () {
         const k0 = k / BK, ox = px + pw / 2 + sx * g0, oy = sy < 0 ? py - gap - back(key) - 2 * k0 : py + ph + gap + back(key) + 2 * k0, OUT = ' stroke="' + INK + '" stroke-width="' + f(0.8 * k) + '"';
         const X = u => ox + sx * u * k, Y = v => oy + sy * v * k, bx = (u, w) => (sx > 0 ? X(u) : X(u + w)), by = (v, h) => (sy > 0 ? Y(v) : Y(v + h));
         const ppl = (u, v, n, su, sv) => { let o = ''; for (let a = 0; a < n; a++) { const q = rb(); o += C(X(u + (rb() - 0.5) * su), Y(v + (rb() - 0.5) * sv), 1.15 * k, q < 0.45 ? c0 : q < 0.7 ? c2 : '#F3F1EA'); } return o; };
-        const smoke = (u, v) => [[0, 0, 1.7, 0.5], [1.8, 3, 2.4, 0.36], [4.2, 6.2, 3.1, 0.22], [7.2, 9.4, 3.8, 0.1]].map(m => C(X(u + m[0]), Y(v) - m[1] * k, m[2] * k, '#E9ECEF', ' fill-opacity="' + m[3] + '"')).join('');
+        const smoke = (u, v) => [[0, 0, 1.7, 0.5], [1.8, 3, 2.4, 0.36], [4.2, 6.2, 3.1, 0.22], [7.2, 9.4, 3.8, 0.1]].map((m, n) => C(X(u + m[0]), Y(v) - m[1] * k, m[2] * k, '#E9ECEF', ' class="est-sm" style="--o:' + m[3] + ';--d:' + f(3.4 * k) + 'px;animation-delay:' + f(-n * 0.65) + 's"')).join('');
         const awn = (u, v, w, h, a, b) => { const n = Math.round(w / 2.6), sw = w * k / n, x0 = bx(u, w), y0 = by(v, h), kid = 'ebk' + id + '_' + Math.round(x0) + '_' + Math.round(y0); let o = R(x0 + k, y0 + 1.4 * k, w * k, h * k, 1.3 * k, '#000', SH) + '<clipPath id="' + kid + '">' + R(x0, y0, w * k, h * k, 1.3 * k, '#000') + '</clipPath><g clip-path="url(#' + kid + ')">';
           for (let q = 0; q < n; q++) o += R(x0 + q * sw, y0, sw + 0.2, h * k, 0, q % 2 ? b : a);
           return o + R(x0, sy < 0 ? y0 : y0 + h * k * 0.72, w * k, h * k * 0.28, 0, '#000', ' fill-opacity=".2"') + '</g>' + R(x0, y0, w * k, h * k, 1.3 * k, 'none', OUT); };
         let o = '', sm = '';
-        if (it.lights) { for (let a = 0; a <= 10; a++) o += C(X(1 + a * 2.9), Y(13.6 + Math.sin(a / 10 * Math.PI * 3) * 0.9), 0.85 * k, '#F2C230'); o += '<path d="M' + f(X(1)) + ' ' + f(Y(13.6)) + ' L' + f(X(30)) + ' ' + f(Y(13.6)) + '" stroke="#F2C230" stroke-opacity=".35" stroke-width="' + f(0.4 * k) + '"/>'; }
+        if (it.lights) { for (let a = 0; a <= 10; a++) o += C(X(1 + a * 2.9), Y(13.6 + Math.sin(a / 10 * Math.PI * 3) * 0.9), 0.85 * k, '#F2C230', ' class="est-vl" style="animation-delay:' + f(-(a % 3) * 0.6) + 's"'); o += '<path d="M' + f(X(1)) + ' ' + f(Y(13.6)) + ' L' + f(X(30)) + ' ' + f(Y(13.6)) + '" stroke="#F2C230" stroke-opacity=".35" stroke-width="' + f(0.4 * k) + '"/>'; }
         if (it.bar) { o += ppl(8, 11.6, 3 + BAR, 11, 2) + awn(1, 2, 14, 8, c0, CR) + R(bx(2.5, 11), sy < 0 ? Y(2) - 1.2 * k : Y(10), 11 * k, 1.2 * k, 0.5 * k, '#6B4A2B'); }
         if (it.grill) { const u = 18; o += R(bx(u, 5), by(3, 4), 5 * k, 4 * k, 0.8 * k, '#2A2D32', OUT) + C(X(u + 1.5), Y(5), 0.7 * k, '#FF8A3C') + C(X(u + 3.3), Y(4.6), 0.7 * k, '#FFC44D') + C(X(u + 2.5), Y(5.8), 0.6 * k, '#FF5B2E'); sm += smoke(u + 2.5, sy < 0 ? 7 : 3); }
         if (it.truck) { const x0 = bx(1, 15), y0 = by(2.5, 7); o += ppl(8, 11.8, 4, 12, 2) + R(x0 + k, y0 + 1.4 * k, 15 * k, 7 * k, 1.8 * k, '#000', SH) + R(x0, y0, 15 * k, 7 * k, 1.8 * k, CR, OUT) + R(x0, y0 + 2.6 * k, 15 * k, 1.8 * k, 0, c0) + R(sx > 0 ? x0 + 11.6 * k : x0 + 0.9 * k, y0 + 1 * k, 2.5 * k, 5 * k, 0.8 * k, '#7FD6FF', ' stroke="' + INK + '" stroke-width="' + f(0.6 * k) + '"') + R(x0, y0, 15 * k, 7 * k, 1.8 * k, 'none', OUT) + R(x0 + 3.5 * k, sy < 0 ? y0 - 1.6 * k : y0 + 7 * k, 8 * k, 1.6 * k, 0.5 * k, c2, OUT); }
