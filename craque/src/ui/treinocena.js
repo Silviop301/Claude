@@ -2,7 +2,7 @@
 // Só desenho: cada um dos 16 treinos de S.CO_TRAIN tem um campinho em miniatura (SVG) com bolinhas que se mexem em laço.
 // U.TRC.scene(host, chave, grande) desenha e devolve { paint(u 0..1), dur em segundos }; parado fica no quadro `at`.
 // Campo 100x46, ataque para a direita. a = [tipo, quadros [t, x, y]..., fase?]: u nosso, r colete, g goleiro, c cone,
-// p guarda-sol, k coco. `top: 1` = visto de trás do gol (bola parada). Treino novo no motor: ponha a cena aqui com a mesma chave.
+// b cama, z o "z" do sono (sobe e some). `top: 1` = visto de trás do gol (bola parada). Treino novo no motor: ponha a cena aqui com a mesma chave.
 (function () {
 'use strict';
 const U = window.CRAQUE_UI = window.CRAQUE_UI || {};
@@ -39,18 +39,16 @@ const SC = {
   recup: { bg: 'plain', dur: 9, at: .2, a: [0, 1, 2, 3].map(i => ['u', [0, 20 + 9 * i, i % 2 ? 26 : 20], [.5, 52 + 9 * i, i % 2 ? 26 : 20], [1, 20 + 9 * i, i % 2 ? 26 : 20]]), b: [] },
   resist: { bg: 'plain', dur: 7, at: .1, a: [st('c', 19, 5.5), st('c', 81, 5.5), st('c', 81, 40.5), st('c', 19, 40.5), lap(0), lap(.07), lap(.14), lap(.21)], b: [] },
   veloc: { bg: 'plain', dur: 4.5, at: .22, a: [...[5, 17, 29, 41].flatMap(y => [st('c', 24, y), st('c', 79, y)]), ...[11, 23, 35].map((y, i) => ['u', [0, 26, y], [.1, 26, y], [.32, 77, y], [.45, 77, y], [.9, 26, y], [1, 26, y], i * .06])], b: [] },
-  folga: { bg: 'plain', dur: 7, at: .3, a: [st('p', 50, 22), ['u', [0, 40, 17], [.5, 40.5, 17.4], [1, 40, 17]], ['u', [0, 60, 18], [.5, 59.6, 18.3], [1, 60, 18]], ['u', [0, 43, 31], [.5, 43.3, 30.6], [1, 43, 31]], ['u', [0, 58, 31], [.5, 57.7, 31.3], [1, 58, 31]],
-      st('k', 37, 20), st('k', 63.5, 20.5), st('k', 46.5, 33.5), st('k', 61, 34), st('c', 24, 36), st('c', 27, 36)],
-    b: [[[0, 45.5, 30], [.1, 45.5, 30], [.4, 55.6, 30.4], [.6, 55.6, 30.4], [.9, 45.5, 30], [1, 45.5, 30]]] },
+  folga: { bg: 'plain', dur: 5, at: .35, a: [st('b', 29, 17), st('b', 63, 17), st('b', 29, 37), st('b', 63, 37),
+      ['z', [0, 25, 12], [1, 33, 5], 0.001], ['z', [0, 25, 12], [1, 33, 5], 0.5], ['z', [0, 59, 12], [1, 67, 5], 0.131], ['z', [0, 59, 12], [1, 67, 5], 0.63], ['z', [0, 25, 32], [1, 33, 25], 0.261], ['z', [0, 25, 32], [1, 33, 25], 0.76], ['z', [0, 59, 32], [1, 67, 25], 0.391], ['z', [0, 59, 32], [1, 67, 25], 0.89]], b: [[[0, 46, 27]]] },
 };
 const NS = 'http://www.w3.org/2000/svg';
 const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
 const at = (kf, u) => { if (kf.length === 1) return [kf[0][1], kf[0][2]]; let i = 0; while (i < kf.length - 2 && u > kf[i + 1][0]) i++; const a = kf[i], b = kf[i + 1]; let k = Math.max(0, Math.min(1, (u - a[0]) / ((b[0] - a[0]) || 1))); k = k * k * (3 - 2 * k); return [a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]; };
-const sun = svg => { const g = el('g', {}, svg); el('circle', { r: 7.2, fill: '#F8F4EA', stroke: '#13201A', 'stroke-width': .6 }, g);
-  for (let i = 0; i < 4; i++) el('path', { d: 'M0 0 L7.2 0 A7.2 7.2 0 0 1 5.09 5.09 Z', fill: '#F08A5D', transform: 'rotate(' + i * 90 + ')' }, g);
-  el('circle', { r: 7.2, fill: 'none', stroke: '#13201A', 'stroke-width': .6 }, g); el('circle', { r: .9, fill: '#13201A' }, g); return g; };
-const coco = svg => { const g = el('g', {}, svg); el('circle', { r: 1.5, fill: '#6FBF4A', stroke: '#13201A', 'stroke-width': .4 }, g); el('circle', { r: .7, fill: '#F8F4EA' }, g);
-  el('line', { x1: .2, y1: -.2, x2: 1.9, y2: -2.2, stroke: '#F8F4EA', 'stroke-width': .45, 'stroke-linecap': 'round' }, g); return g; };
+const bed = svg => { const g = el('g', {}, svg); el('rect', { x: -10.5, y: -5.5, width: 21, height: 11, rx: 1.6, fill: '#8A5A33', stroke: '#13201A', 'stroke-width': .6 }, g);
+  el('rect', { x: -9.3, y: -4.3, width: 18.6, height: 8.6, rx: 1, fill: '#F8F4EA' }, g); el('rect', { x: -8.5, y: -3, width: 5, height: 6, rx: 1.2, fill: '#BFD0E6', stroke: '#13201A', 'stroke-width': .35 }, g);
+  el('circle', { cx: -5.6, r: 2, fill: '#F8F4EA', stroke: '#13201A', 'stroke-width': .6 }, g); el('rect', { x: -3, y: -4.3, width: 12.3, height: 8.6, rx: 1, fill: '#2F6FB5' }, g); el('rect', { x: -3, y: -4.3, width: 2, height: 8.6, fill: '#7FB2E8' }, g); return g; };
+const zed = svg => { const t = el('text', { 'font-size': 9, 'font-weight': 800, 'font-family': 'inherit', fill: '#F8F4EA', stroke: '#13201A', 'stroke-width': .25, 'text-anchor': 'middle' }, svg); t.textContent = 'z'; return t; };
 function scene(host, key, big) {
   const s = SC[key]; if (!s || !host) return null;
   const top = s.top, sv = el('svg', { viewBox: top ? '0 0 46 24.7' : s.bg === 'half' ? '16 0 84 46' : '8 0 84 46', preserveAspectRatio: top ? 'xMidYMin meet' : s.bg === 'half' ? 'xMaxYMid meet' : 'xMidYMid meet', 'aria-hidden': 'true' }), svg = el('g', top ? { transform: 'matrix(0 -1 1 0 0 100)' } : {}, sv);
@@ -61,11 +59,12 @@ function scene(host, key, big) {
   if (s.bg === 'mid') { el('line', Object.assign({ x1: 50, y1: 0, x2: 50, y2: 46 }, ln), svg); el('circle', Object.assign({ cx: 50, cy: 23, r: 9 }, ln), svg); }
   const dash = s.line !== undefined ? el('line', { y1: 0, y2: 46, stroke: '#F8F4EA', 'stroke-width': .7, 'stroke-dasharray': '2 2', opacity: .8 }, svg) : null;
   const R = (big ? 2.5 : 3.3) * (top ? .62 : 1), col = { u: ['#F8F4EA', '#13201A'], r: ['#F08A5D', '#5a2a12'], g: ['#F2C230', '#5a4505'] };
-  const nodes = s.a.map(a => a[0] === 'c' ? el('path', { d: 'M-1.6 1.5 L0 -1.8 L1.6 1.5 Z', fill: '#F2C230', stroke: '#13201A', 'stroke-width': .4 }, svg) : a[0] === 'p' ? sun(svg) : a[0] === 'k' ? coco(svg) : el('circle', { r: R, fill: col[a[0]][0], stroke: col[a[0]][1], 'stroke-width': top ? .5 : .8 }, svg));
+  const nodes = s.a.map(a => a[0] === 'c' ? el('path', { d: 'M-1.6 1.5 L0 -1.8 L1.6 1.5 Z', fill: '#F2C230', stroke: '#13201A', 'stroke-width': .4 }, svg) : a[0] === 'b' ? bed(svg) : a[0] === 'z' ? zed(svg) : el('circle', { r: R, fill: col[a[0]][0], stroke: col[a[0]][1], 'stroke-width': top ? .5 : .8 }, svg));
   const balls = s.b.map(() => el('circle', { r: (big ? 1.3 : 1.8) * (top ? .62 : 1), fill: '#fff', stroke: '#13201A', 'stroke-width': .5 }, svg));
   host.textContent = ''; host.appendChild(sv);
   const paint = u => { s.a.forEach((a, i) => { const ph = typeof a[a.length - 1] === 'number' ? a[a.length - 1] : 0, kf = a.slice(1, ph || typeof a[a.length - 1] === 'number' ? -1 : undefined), p = at(kf, ((u - ph) % 1 + 1) % 1);
-      if (a[0] === 'c' || a[0] === 'p' || a[0] === 'k') nodes[i].setAttribute('transform', 'translate(' + p[0] + ' ' + p[1] + ')'); else { nodes[i].setAttribute('cx', p[0]); nodes[i].setAttribute('cy', p[1]); } if (dash && i === s.line) { dash.setAttribute('x1', p[0] + R + 1); dash.setAttribute('x2', p[0] + R + 1); } });
+      if (a[0] === 'z') { const w = ((u - ph) % 1 + 1) % 1; nodes[i].setAttribute('transform', 'translate(' + p[0] + ' ' + p[1] + ') scale(' + (.5 + .6 * w) + ')'); nodes[i].setAttribute('opacity', Math.min(1, w * 5, (1 - w) * 2.5)); }
+      else if (a[0] === 'c' || a[0] === 'b') nodes[i].setAttribute('transform', 'translate(' + p[0] + ' ' + p[1] + ')'); else { nodes[i].setAttribute('cx', p[0]); nodes[i].setAttribute('cy', p[1]); } if (dash && i === s.line) { dash.setAttribute('x1', p[0] + R + 1); dash.setAttribute('x2', p[0] + R + 1); } });
     s.b.forEach((kf, i) => { const p = at(kf, u); balls[i].setAttribute('cx', p[0]); balls[i].setAttribute('cy', p[1]); }); };
   paint(s.at); return { paint, dur: s.dur };
 }
