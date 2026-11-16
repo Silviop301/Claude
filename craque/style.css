@@ -10908,7 +10908,7 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .tr3-th svg, .tr3-pit svg { width: 100%; height: 100%; display: block; }
 .tr2-d.tr3-d { padding: 0; gap: 0; }
 .tr2-d.tr3-d .tr2-none { margin: auto; }
-.tr3-pit { flex: 1; min-height: 0; background: #1F8A4C; }
+.tr3-pit { flex: 1; min-height: 0; background: #1B6B44; overflow: hidden; }
 .tr3-di { flex: none; padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 6px; }
 .tr3-di > b { font: 800 23px/1 var(--display); } .tr3-di > p { margin: 0; font: 700 15px/1.25 var(--body); color: #D9E2DC; }
 .tr3-dv { display: flex; flex-wrap: wrap; gap: 5px 12px; margin-top: 2px; }
