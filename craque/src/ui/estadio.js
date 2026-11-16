@@ -112,11 +112,23 @@ window.CRAQUE_UI.EST = (function () {
       g += o + '</g>';
     } else if (gram >= 5) { const m = 8, bh = ph / m; for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) g += '<rect x="' + f(px + i * bw) + '" y="' + f(py + j * bh) + '" width="' + f(bw + 0.3) + '" height="' + f(bh + 0.3) + '" fill="' + ((i + j) % 2 ? a : b) + '"/>'; }
     else for (let i = 0; i < n; i++) g += '<rect x="' + f(px + i * bw) + '" y="' + py + '" width="' + f(bw + 0.3) + '" height="' + ph + '" fill="' + (i % 2 ? a : b) + '"/>';
-    if (gram <= 1) { // terra: as duas áreas e o meio; no castigado, manchas pelo campo todo
-      const T = '#8C7647', op = gram ? 0.4 : 0.7, e = (cx, cy, rx, ry, o, rot) => '<ellipse cx="' + f(cx) + '" cy="' + f(cy) + '" rx="' + f(rx) + '" ry="' + f(ry) + '" fill="' + T + '" fill-opacity="' + f(o) + '"' + (rot ? ' transform="rotate(' + f(rot) + ' ' + f(cx) + ' ' + f(cy) + ')"' : '') + '/>';
-      const sz = gram ? 0.7 : 1;
-      g += e(px + pw * 0.055, py + ph / 2, pw * 0.05 * sz, ph * 0.17 * sz, op) + e(px + pw * 0.945, py + ph / 2, pw * 0.05 * sz, ph * 0.17 * sz, op) + e(px + pw / 2, py + ph / 2, pw * 0.07 * sz, ph * 0.1 * sz, op * 0.7);
-      if (!gram) { const r = rng((seed || 7) + 911); for (let i = 0; i < 13; i++) { const cx = px + pw * (0.08 + r() * 0.84), cy = py + ph * (0.1 + r() * 0.8), rx = (4 + r() * 9) * k; g += e(cx, cy, rx, rx * (0.4 + r() * 0.4), 0.3 + r() * 0.35, r() * 180); } }
+    if (gram <= 1) { // terra: manchas de borda torta (nada de elipse): as duas áreas e o meio gastos; no castigado, pelo campo todo
+      const T = '#8C7647', T2 = '#7A6539', op = gram ? 0.4 : 0.7, sz = gram ? 0.7 : 1, r = rng((seed || 7) + 911);
+      const blob = (cx, cy, rx, ry, o, col) => { // contorno com raio sorteado a cada ângulo, alisado por curvas
+        const n = 9 + Math.floor(r() * 5), rot = r() * 6.28, P = []; let w = 0.75 + r() * 0.4;
+        for (let j = 0; j < n; j++) { w = Math.max(0.45, Math.min(1.3, w + (r() - 0.5) * 0.7)); const a = j / n * 6.28 + (r() - 0.5) * 0.35, x = Math.cos(a) * rx * w, y = Math.sin(a) * ry * w; P.push([cx + x * Math.cos(rot) - y * Math.sin(rot), cy + x * Math.sin(rot) + y * Math.cos(rot)]); }
+        const m = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], s = m(P[n - 1], P[0]); let d = 'M' + f(s[0]) + ' ' + f(s[1]);
+        for (let j = 0; j < n; j++) { const q = m(P[j], P[(j + 1) % n]); d += 'Q' + f(P[j][0]) + ' ' + f(P[j][1]) + ' ' + f(q[0]) + ' ' + f(q[1]); }
+        return '<path d="' + d + 'Z" fill="' + (col || T) + '" fill-opacity="' + f(o) + '"/>';
+      };
+      const patch = (cx, cy, rx, ry, o) => { // mancha = borda clara + miolo mais gasto + respingos em volta
+        let s = blob(cx, cy, rx, ry, o * 0.6) + blob(cx + (r() - 0.5) * rx * 0.4, cy + (r() - 0.5) * ry * 0.4, rx * 0.62, ry * 0.62, o * 0.75, T2);
+        const q = 2 + Math.floor(r() * 4); for (let j = 0; j < q; j++) { const a = r() * 6.28, dd = 1 + r() * 0.5, e = (0.12 + r() * 0.2) * Math.min(rx, ry) + 0.6 * k; s += blob(cx + Math.cos(a) * rx * dd, cy + Math.sin(a) * ry * dd, e * (0.8 + r() * 0.8), e, o * 0.6); }
+        return s;
+      };
+      const X0 = px + 2 * k, X1 = px + pw - 2 * k, Y0 = py + 2 * k, Y1 = py + ph - 2 * k, in_ = (x, a, b, m) => Math.max(a + m, Math.min(b - m, x));
+      g += patch(px + pw * 0.06, py + ph / 2, pw * 0.045 * sz, ph * 0.16 * sz, op) + patch(px + pw * 0.94, py + ph / 2, pw * 0.045 * sz, ph * 0.16 * sz, op) + patch(px + pw / 2, py + ph / 2, pw * 0.065 * sz, ph * 0.1 * sz, op * 0.75);
+      const nn = gram ? 4 : 15; for (let i = 0; i < nn; i++) { const rx = (2.5 + r() * r() * 13) * k * (gram ? 0.7 : 1), ry = rx * (0.4 + r() * 0.5); g += patch(in_(px + pw * (0.06 + r() * 0.88), X0, X1, rx * 1.4), in_(py + ph * (0.08 + r() * 0.84), Y0, Y1, ry * 1.4), rx, ry, (gram ? 0.3 : 0.35 + r() * 0.35)); }
     }
     const st = ' fill="none" stroke="#F3F1EA" stroke-opacity=".82" stroke-width="' + f(1.15 * k) + '"';
     const ax = pw * 0.157, ay = ph * 0.593, gx = pw * 0.052, gy = ph * 0.27, cr = ph * 0.134;
