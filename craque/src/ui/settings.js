@@ -24,6 +24,8 @@
   // Versão do jogo (aparece nas Configurações e decide quando mostrar as novidades)
   const VERSION = '1.0';
   const NEWS_KEY = 'climbix-novidades';
+  // NEWS_ID = a última atualização (NEWS_LAND[0].id): quem não viu esta ganha o pontinho e, se já tinha carreira, o aviso uma vez (newsPop)
+  const NEWS_ID = '1.0-1611';
   const NEWS = [
     ['🎲', 'Decisões que mudam a carreira', 'Todo evento mostra a chance de dar certo e o que se ganha ou perde. Atributos ganhos ou perdidos ficam para sempre.'],
     ['🧭', 'Escolhas de fim de carreira', 'Depois dos 30: liderança, herdeiro, ambição, cuidar do corpo. Valem legado na nota final.'],
@@ -135,7 +137,31 @@
   // na home deitada a pílula "1.0 · Novidades" no canto de cima à esquerda (ui/start.js) leva o pontinho dourado enquanto a
   // versão não foi vista (U.newsNew) e abre esta tela no palco U.LD. Cada versão = um anúncio curto e até 4 destaques, sem
   // rolar; a mais nova primeiro, e com mais de uma as setas do topo trocam. `dt` = data por extenso (vazio não mostra)
-  const NEWS_LAND = [{ v: '1.0', dt: '', tag: 'LANÇAMENTO · VERSÃO 1.0', h: 'O Climbix chegou!', art: '🎉',
+  // 2026-11-16 (Silvio: "mensagem na tela de quem ta jogando o beta sobre o que mudou" + "a opção de mandar sugestão"):
+  // cada atualização do beta = uma entrada com `id` (NEWS_ID), `pop` (6 destaques do aviso da home) e `fb` (link Mandar sugestão)
+  const NEWS_LAND = [{ v: '1.0', id: '1.0-1611', dt: '16 de novembro', tag: 'ATUALIZAÇÃO · 16 DE NOVEMBRO', h: 'O que mudou', art: '📣',
+    p: 'Valeu por jogar o beta! Cada ideia de vocês vira melhoria aqui.', s: 'Bom jogo, professor!', fb: 1,
+    pop: [['⭐', 'Notas do EA FC', 'Jogadores reais com a nota do EA FC 26.'], ['🎯', 'Chute com curva', 'Golaços de fora da área e de falta.'],
+      ['🔥', 'Chama do técnico', 'Jogue todo dia e ganhe moedas.'], ['⏩', 'Só resultado', 'O placar corre em 5 segundos.'],
+      ['📈', 'Propostas melhores', 'Subiu ou ganhou? Clube maior chama.'], ['🤝', 'Negociação nova', 'Régua de valor e humor do presidente.']],
+    sec: [['NOVO', [
+      ['⭐', 'Notas do EA FC', 'Os jogadores reais têm o geral do EA FC 26, e cada clube segue com a força de antes.'],
+      ['🔥', 'Chama do técnico', 'Jogue um jogo por dia, cumpra o desafio do dia e ganhe moedas nos marcos.'],
+      ['⏩', 'Só resultado', 'Uma tela de 5 segundos com o relógio correndo e os gols aparecendo.'],
+      ['📋', 'Estilos por posição', 'Cada vaga tem o seu estilo, e jogador fora de posição rende menos.'],
+      ['📊', 'Força por setor', 'Ataque, meio e defesa seus e do rival no cartão da semana.']]],
+    ['JOGO AO VIVO', [
+      ['🎯', 'Chute com curva', 'Efeito de fora da área e na falta, com golaços no ângulo.'],
+      ['🥅', 'Bola na rede', 'O gol balança a rede e a bola pode bater na trave antes de entrar.'],
+      ['🧤', 'Goleiro de verdade', 'Quem não pega mergulha na bola, sem desviar dela.'],
+      ['🏃', 'Mais ousadia', 'Jogador livre conduz para frente em vez de tocar para trás.']]],
+    ['MERCADO E CARREIRA', [
+      ['📈', 'Propostas melhores', 'Subiu de divisão ou ganhou título? Clubes maiores aparecem.'],
+      ['🤝', 'Negociação nova', 'Régua de valor, passo fino, humor do presidente e meio termo.'],
+      ['💼', 'Aporte sem limite', 'Invista moedas no clube quantas vezes quiser.'],
+      ['🔍', 'Falas novas', 'Mais variação no olheiro, na coletiva e nos acontecimentos.'],
+      ['✅', 'Botão Melhores', 'Não embaralha mais quem já está na posição certa.']]]] },
+    { v: '1.0', dt: '', tag: 'LANÇAMENTO · VERSÃO 1.0', h: 'O Climbix chegou!', art: '🎉',
     p: 'Você é o técnico. Escale o time, mexa com a bola rolando e leve o seu clube da última divisão ao topo.', s: 'Bom jogo, professor!', foot: 'Modo Jogador chega em breve.',
     lt: 'O QUE TEM NA 1.0', li: [['⚽', 'Jogo ao vivo de verdade', 'Cada lance é decidido na hora.'], ['📣', 'Momentos da auxiliar', 'Ela sugere, você decide.'], ['🤝', 'Mercado e treino', 'Compre, venda e evolua o elenco.'], ['🏟️', 'O seu clube', 'Estádio, médico e finanças.']],
     // 2026-11-12 (Silvio: "coloque mais informações... pode ser rolável"): a lista completa por grupos, no painel que rola
@@ -176,20 +202,40 @@
       ['🏆', 'Estaduais e Supercopa', 'Mais taças no calendário, com clássico logo no começo do ano.'],
       ['📸', 'Compartilhe o título', 'Mostre a taça e a campanha para os amigos com um toque.'],
       ['📱', 'Tablet em tela cheia', 'iPad e tablets usam a tela toda, com mais espaço no jogo ao vivo.']]] }];
-  const newsNew = () => { try { return localStorage.getItem(NEWS_KEY) !== VERSION; } catch (e) { return false; } };
+  const newsNew = () => { try { return localStorage.getItem(NEWS_KEY) !== NEWS_ID; } catch (e) { return false; } };
+  const newsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) {} };
+  // Aviso "O que mudou" na home deitada: uma vez por atualização, só para quem já tinha carreira do Treinador (quem chega agora
+  // só ganha o pontinho apagado). Não abre em cima de outra janelinha (chama, agradecimento): fica para a próxima home
+  function newsPop(home) {
+    if (!newsNew()) return;
+    const N = NEWS_LAND[0], vet = [...Array(U.CO_SLOTS || 3).keys()].some(i => U.coSaved && U.coSaved(i));
+    if (!vet || !N.pop) { newsSeen(); return; }
+    if (!U.LD || !U.LD.pop || document.getElementById('ld-pop') || document.querySelector('.ch-ov, .pay-ty, .tc-ov')) return;
+    newsSeen();
+    const dot = document.querySelector('#hl-nv i'); if (dot) dot.remove();
+    U.LD.pop('<div class="nvp-hd">' + U.emo('📣', 'lg') + '<span><small>' + N.tag + '</small><b>' + N.h + '</b></span></div>' +
+      '<div class="nvp-g">' + N.pop.map(([e, t, d]) => '<div>' + U.emo(e, 'md') + '<span><b>' + t + '</b><small>' + d + '</small></span></div>').join('') + '</div>' +
+      '<div class="nvp-ft"><button class="nvp-fb" id="nvp-fb">' + U.emo('💬', 'sm') + '<b>Mandar sugestão</b></button><button class="nvp-tudo" id="nvp-tudo">Ver tudo</button><button class="nvp-go" id="nvp-go">Bora jogar</button></div>',
+      'O que mudou', w => {
+        w.querySelector('#nvp-go').onclick = () => { U.sfx('tap'); U.LD.closePop(); };
+        w.querySelector('#nvp-tudo').onclick = () => { U.sfx('tap'); U.LD.closePop(); novidadesLand(home); };
+        w.querySelector('#nvp-fb').onclick = () => { U.sfx('tap'); U.LD.closePop(); U.feedbackLand ? U.feedbackLand(home) : U.feedback('config'); };
+      }, 'nvp');
+  }
   function novidadesLand(back, i) {
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>', AR = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + (d < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7') + '"/></svg>';
     const out = () => (back || U.home)(), n = NEWS_LAND.length; i = Math.max(0, Math.min(n - 1, i || 0));
     const N = NEWS_LAND[i];
-    try { localStorage.setItem(NEWS_KEY, VERSION); } catch (e) {}
+    newsSeen();
     U.LD.show('<div class="nvd' + (N.sec ? ' nvd-x' : '') + '"><div class="tm-h"><button class="tcr-back" id="nvd-back" aria-label="Voltar">' + BK + '</button><span class="mk-tt"><b>Novidades</b><small>Versão ' + N.v + (N.dt ? ' · ' + N.dt : '') + '</small></span>' +
         (n > 1 ? '<span class="nvd-pg"><button id="nvd-nx" aria-label="Versão mais nova"' + (i ? '' : ' disabled') + '>' + AR(-1) + '</button><button id="nvd-pv" aria-label="Versão anterior"' + (i < n - 1 ? '' : ' disabled') + '>' + AR(1) + '</button></span>' : '') + '</div>' +
-      (N.sec ? '<div class="nvd-lc">' : '') + '<div class="nvd-c">' + U.emo(N.art, 'lg') + '<small>' + N.tag + '</small><b>' + N.h + '</b><p>' + N.p + '</p>' + (N.s ? '<strong>' + N.s + '</strong>' : '') + (N.prox ? '<button class="nvd-vem" id="nvd-vem">O que vem na 1.1 ›</button>' : N.foot ? '<em>' + N.foot + '</em>' : '') + '</div>' + (N.sec ? '<button class="tm-go" id="nvd-go">Bora jogar</button></div>' : '') +
+      (N.sec ? '<div class="nvd-lc">' : '') + '<div class="nvd-c">' + U.emo(N.art, 'lg') + '<small>' + N.tag + '</small><b>' + N.h + '</b><p>' + N.p + '</p>' + (N.s ? '<strong>' + N.s + '</strong>' : '') + (N.prox ? '<button class="nvd-vem" id="nvd-vem">O que vem na 1.1 ›</button>' : N.fb ? '<button class="nvd-vem" id="nvd-fb">Mandar sugestão ›</button>' : N.foot ? '<em>' + N.foot + '</em>' : '') + '</div>' + (N.sec ? '<button class="tm-go" id="nvd-go">Bora jogar</button></div>' : '') +
       (N.sec ? '<div class="nvd-r nvd-rs"><div class="nvd-l nvd-sc">' + N.sec.map(([g, it]) => '<small>' + g + '</small><div class="nvd-g">' + it.map(([e, t, d]) => '<div>' + U.emo(e, 'md') + '<span><b>' + t + '</b><small>' + d + '</small></span></div>').join('') + '</div>').join('') + (N.prox ? '<small class="nvd-fs" id="nvd-fs">' + N.prox[0] + '<i>EM BREVE</i></small><div class="nvd-g nvd-fut">' + N.prox[1].map(([e, t, d]) => '<div>' + U.emo(e, 'md') + '<span><b>' + t + '</b><small>' + d + '</small></span></div>').join('') + '</div>' : '') + '</div><i class="nvd-mais" aria-hidden="true"></i></div>' :
       '<div class="nvd-r"><div class="nvd-l"><small>' + N.lt + '</small>' + N.li.map(([e, t, d]) => '<div>' + U.emo(e, 'md') + '<span><b>' + t + '</b><small>' + d + '</small></span></div>').join('') + '</div>' +
         '<button class="tm-go" id="nvd-go">Bora jogar</button></div>') + '</div>', st => {
       st.querySelector('#nvd-back').onclick = () => { U.sfx('tap'); out(); };
       st.querySelector('#nvd-go').onclick = () => { U.sfx('tap'); out(); };
+      if (st.querySelector('#nvd-fb')) st.querySelector('#nvd-fb').onclick = () => { U.sfx('tap'); U.feedbackLand ? U.feedbackLand(() => novidadesLand(back, i)) : U.feedback('config'); };
       const vem = st.querySelector('#nvd-vem'), fs = st.querySelector('#nvd-fs'); // leva ao fim da lista, no "o que vem"
       if (vem && fs) vem.onclick = () => { U.sfx('tap'); const sc = st.querySelector('.nvd-sc'); sc.scrollTo({ top: fs.offsetTop - sc.offsetTop - 8, behavior: 'smooth' }); };
       const sc = st.querySelector('.nvd-sc'), mais = st.querySelector('.nvd-mais'); // a dica de rolar some no fim da lista
@@ -285,5 +331,5 @@
   }
   const termosLand = (tab, back) => legalLand('termos', tab, back), privacidadeLand = (tab, back) => legalLand('privacidade', tab, back);
 
-  Object.assign(U, { settings, settingsLand, whatsNew, VERSION, novidadesLand, newsNew, termosLand, privacidadeLand });
+  Object.assign(U, { settings, settingsLand, whatsNew, VERSION, novidadesLand, newsNew, newsPop, termosLand, privacidadeLand });
 })();

@@ -10800,6 +10800,7 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .ld-st .mkp-tk button { height: 26px; padding: 0 10px; border-radius: 8px; font: 700 15px/26px var(--display); }
 .ld-st .mkp-tk button.on { padding: 0 11px; }
 .tm-h small.tm-vs { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+<<<<<<< HEAD
 
 /* Estádio vivo (2026-11-16): fumaça do churrasco sobe, varal de luzes pisca e o brilho dos refletores pulsa; só desenho */
 .est-svg .est-sm { fill-opacity: var(--o); transform-box: fill-box; transform-origin: center; animation: estSm 2.6s linear infinite; }
@@ -10819,3 +10820,26 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .es-gps b { font: 800 22px/1 var(--display) !important; color: var(--gold); }
 .es-gp { gap: 6px !important; justify-content: flex-start !important; }
 @media (prefers-reduced-motion: reduce) { .est-svg .est-sm, .est-svg .est-vl, .est-svg .est-hz, .est-svg .est-pk { animation: none; } }
+=======
+.tm-bp > b.tm-ring.lo { color: #F08A5D; }
+
+/* Aviso "O que mudou" na home deitada (settings.js newsPop, Silvio 16/11): creme com o painel carvão dos 6 destaques */
+.ld-pop-c.nvp { width: 640px; max-height: 366px; box-sizing: border-box; border-radius: 20px; background: linear-gradient(180deg, #F6F3EA, #EAE3D1); color: #13201A; padding: 14px 20px 14px; gap: 10px; box-shadow: 0 6px 0 rgba(0,0,0,.35), 0 18px 40px rgba(0,0,0,.4); }
+.nvp-hd { display: flex; align-items: center; gap: 12px; }
+.nvp-hd > img.tw { width: 44px; height: 44px; transform: rotate(-8deg); }
+.nvp-hd span { display: flex; flex-direction: column; gap: 4px; }
+.nvp-hd small { font: 700 12px/1 var(--display); letter-spacing: .16em; color: #1F6B45; }
+.nvp-hd b { font: 800 30px/1 var(--display); }
+.nvp-g { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; background: #141517; border-radius: 14px; padding: 12px 14px; }
+.nvp-g > div { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.nvp-g img.tw { width: 30px; height: 30px; flex: none; }
+.nvp-g span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.nvp-g b { font: 700 17px/1.05 var(--display); color: #F3F1EA; }
+.nvp-g small { font: 500 13px/1.2 var(--body); color: #B9C9BF; }
+.nvp-ft { display: flex; gap: 10px; align-items: center; }
+.ld-st .nvp-ft button { height: 46px; border-radius: 14px; font: 800 20px/1 var(--display); letter-spacing: .02em; }
+.ld-st .nvp-ft button.nvp-fb { flex: none; display: flex; align-items: center; gap: 6px; padding: 0 6px; color: #1F6B45; font-size: 17px; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
+.nvp-fb img.tw { width: 22px; height: 22px; }
+.ld-st .nvp-ft button.nvp-tudo { flex: 1; color: #13201A; box-shadow: inset 0 0 0 2px rgba(19,32,26,.35); }
+.ld-st .nvp-ft button.nvp-go { flex: 1; background: #F2C230; color: #13201A; box-shadow: 0 4px 0 #A9861C; }
+>>>>>>> a9c61508af1be244a0d2bda117c7f256b8b913c4

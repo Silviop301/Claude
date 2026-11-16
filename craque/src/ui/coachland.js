@@ -212,16 +212,19 @@
   // marcadas; tocar numa linha tira ou põe de volta, e um botão só faz as marcadas. L = [{ o, i, why, slot }]
   // Titular escolhido (Silvio 2026-11-10): ao lado dele, os reservas da mesma posição, do maior geral para o menor; o
   // banco segue embaixo para quem é de fora da posição, com o geral que ele teria na vaga (ovrAt, perde um pouco)
-  const ovrAt = (p, slot) => S.coOvrAt(p, slot);
+  // Lado do jogador no cartão do Elenco (Silvio 16/11): laterais, meias e atacantes; zagueiro e goleiro não têm
+  const sideTxt = p => (p.pos === 'GOL' || p.pos === 'ZAG' ? '' : ' · ' + ({ E: 'esquerda', D: 'direita', A: 'dois lados' })[S.coSide(p)]);
+  const ovrAt = (p, slot, fm, fi) => S.coOvrAt(p, slot, fm, fi);
   // (2026-11-12, Silvio: "dois principais por função") cada reserva mostra os dois atributos de mais peso da posição,
   // verde ▲ se é melhor que o de quem sai e laranja ▼ se é pior; em cima, o nome e os números de quem sai (`out`).
-  const nearList = (slot, bench, ok, x, y, out) => { const L = bench.filter(p => ok(p) && p.pos === slot).sort((a, b) => b.ovr - a.ovr || b.en - a.en).slice(0, 4);
+  // com a vaga (`fm`, `fi`) o geral é o que rende ali: do lado trocado sai menor, em laranja, e a lista ordena por ele
+  const nearList = (slot, bench, ok, x, y, out, fm, fi) => { const va = p => S.coOvrAt(p, slot, fm, fi); const L = bench.filter(p => ok(p) && p.pos === slot).sort((a, b) => va(b) - va(a) || b.en - a.en).slice(0, 4);
     const w = S.CO_AT.w[slot] || S.CO_AT.w.MEI, top = w.map((v, i) => [v, i]).sort((a, b) => b[0] - a[0] || a[1] - b[1]).slice(0, 2).map(q => q[1]).sort((a, b) => a - b);
     const lb = p => { const ks = S.coAtKeys(p); return top.map(i => S.CO_AT.short[ks[i]]); }, oa = out ? S.coAttrs(out) : null;
     const at = p => { const a = S.coAttrs(p), l = lb(p); return '<em class="tm-na">' + top.map((i, k) => { const d = oa ? a[i] - oa[i] : 0; return '<u class="' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + l[k] + ' ' + a[i] + (d > 0 ? ' ▲' : d < 0 ? ' ▼' : '') + '</u>'; }).join(' · ') + '</em>'; };
     return '<div class="tm-near' + (L.length ? ' at' : '') + '" style="' + (x < 55 ? 'left:calc(' + x : 'right:calc(' + (100 - x)) + '% + 40px);top:' + y + '%">' +
       (L.length ? (out ? '<div class="tm-nh"><b>' + esc(last(out.n)) + ' ' + out.ovr + '</b><span>' + lb(out).map((t, k) => t + ' ' + oa[top[k]]).join(' · ') + '</span></div>' : '') +
-        L.map(p => '<button class="tm-bp tm-cd" data-bp="' + p.id + '"><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + p.ovr + '</b><span><i>' + (p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</i>' + at(p) + '</span></button>').join('')
+        L.map(p => '<button class="tm-bp tm-cd" data-bp="' + p.id + '"><b class="tm-ring ' + enRing(p.en) + (va(p) < p.ovr ? ' lo' : '') + '" style="--en:' + Math.round(p.en) + '">' + va(p) + '</b><span><i>' + (p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</i>' + at(p) + '</span></button>').join('')
         : '<p class="tm-cl0">Ninguém da posição. Use o banco.</p>') + '</div>'; };
   // Dentro do campo: a lista não pode sair por cima nem por baixo
   const nearFix = root => { const n = root.querySelector('.tm-near'), f = n && n.parentNode; if (!n) return;
@@ -307,11 +310,12 @@
   const moAr = (p, cls) => { const l = S.coMoLv(p); return '<i class="mo-ar l' + l + (cls ? ' ' + cls : '') + '" title="Moral ' + S.CO_MO_LV[l] + '"><svg viewBox="0 0 24 24" aria-hidden="true" style="transform:rotate(' + MO_ROT[l] + 'deg)"><path d="M5 12h13M13 6l6 6-6 6"/></svg></i>'; };
   function dot(p, slot, x, y, o) {
     o = o || {};
-    const fitC = !slot || p.pos === slot ? 'ok' : (S.coFit(p.pos, slot) >= 0.88 ? 'sabe' : 'fora');
+    // do lado trocado (S.coSideOk) o número também sai laranja, com o geral que rende ali
+    const fitC = !slot || p.pos === slot ? (S.coSideOk(p, o.form, o.i) ? 'ok' : 'lado') : (S.coFit(p.pos, slot) >= 0.88 ? 'sabe' : 'fora'), ova = S.coOvrAt(p, slot, o.form, o.i);
     const yc = (o.yc !== undefined ? o.yc : C().pend(p)) ? '<i class="ld-yc" title="' + (o.yc !== undefined ? 'Amarelado' : 'Pendurado') + '"></i>' : '';
     return '<button class="ld-dot ' + enRing(p.en) + (o.sel ? ' sel' : '') + (fitC === 'fora' ? ' fora' : '') + '"' + (o.attr || '') + ' data-ln="' + lnOf(slot || p.pos) + '" style="left:' + x + '%;top:' + y + '%;--en:' + Math.round(p.en) + '"' +
-      ' aria-label="' + esc(p.n) + ', ' + (slot || p.pos) + ', ' + S.coOvrAt(p, slot) + ', energia ' + Math.round(p.en) + '%">' +
-      '<i class="ld-dc' + (!o.num && fitC !== 'ok' ? ' pen' : '') + '">' + (o.num ? (p.num || p.ovr) : S.coOvrAt(p, slot)) + yc + '</i>' + moAr(p) + '<span class="ld-dn"><b>' + (!o.num && p.num ? '<s class="ld-nu">' + p.num + '</s>' : '') + esc(last(p.n)) + '</b><em class="' + fitC + '">' + (o.tag || slot || p.pos) + '</em></span></button>';
+      ' aria-label="' + esc(p.n) + ', ' + (slot || p.pos) + ', ' + ova + ', energia ' + Math.round(p.en) + '%">' +
+      '<i class="ld-dc' + (!o.num && fitC !== 'ok' ? ' pen' : '') + '">' + (o.num ? (p.num || p.ovr) : ova) + yc + '</i>' + moAr(p) + '<span class="ld-dn"><b>' + (!o.num && p.num ? '<s class="ld-nu">' + p.num + '</s>' : '') + esc(last(p.n)) + '</b><em class="' + fitC + '">' + (o.tag || slot || p.pos) + '</em></span></button>';
   }
   function rivalDot(x, y, nm, tag) {
     return '<span class="ld-dot riv" style="left:' + x + '%;top:' + y + '%"><i class="ld-dc">?</i><span class="ld-dn"><b>' + esc(nm) + '</b>' + (tag ? '<em class="riv">' + tag + '</em>' : '') + '</span></span>';
@@ -620,8 +624,8 @@
       const nFix = fixes.length, fixLbl = nFix === 1 ? 'Uma troca' : nFix + ' trocas';
       // Com um titular escolhido acende no banco quem joga na vaga; com um reserva escolhido, as vagas em que ele joga
       const selP = selB ? by[selB] : null;
-      const dots = co.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: swap === i, attr: ' data-xi="' + i + '" data-pid="' + id + '"' + (selP ? (fitsSlot(selP, sl[i]) ? ' data-fit="1"' : ' data-far="1"') : ''), tag: S.coSlotLbl(co.form, i) }) : '').join('');
-      const bstrip = bench.map((p, k) => benchChip(p, bench[k - 1], (c.avail(p) ? '' : ' dis') + (selB === p.id ? ' on' : '') + (swap !== null && c.avail(p) ? (p.pos === sl[swap] ? ' can' : (p.pos === 'GOL') === (sl[swap] === 'GOL') ? ' lo' : ' far') : ''), c.avail(p), true, swap !== null ? ovrAt(p, sl[swap]) : null)).join('');
+      const dots = co.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { form: co.form, i, sel: swap === i, attr: ' data-xi="' + i + '" data-pid="' + id + '"' + (selP ? (fitsSlot(selP, sl[i]) ? ' data-fit="1"' : ' data-far="1"') : ''), tag: S.coSlotLbl(co.form, i) }) : '').join('');
+      const bstrip = bench.map((p, k) => benchChip(p, bench[k - 1], (c.avail(p) ? '' : ' dis') + (selB === p.id ? ' on' : '') + (swap !== null && c.avail(p) ? (p.pos === sl[swap] ? ' can' : (p.pos === 'GOL') === (sl[swap] === 'GOL') ? ' lo' : ' far') : ''), c.avail(p), true, swap !== null ? ovrAt(p, sl[swap], co.form, swap) : null)).join('');
       const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b id="tm-' + k + '">' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
       const title = swap !== null ? '<span class="tm-hint">Toque ou arraste quem entra, ou toque em outro titular</span>' : selB ? '<span class="tm-hint">Toque em quem sai</span>'
         : (vs ? crest(co.club, 'tm-cr') + '<b>' + esc(cl.short || cl.name) + '</b><small class="tm-vs">x ' + esc(vs.short || vs.name) + ' · ' + (nx.home ? 'em casa' : 'fora') + ' · rodada ' + nx.round + '</small>' : '<b>' + esc(cl.short || cl.name) + '</b><small>escalação</small>') + LN_LEG;
@@ -636,7 +640,7 @@
         '<span><small>' + (keep && !nFix ? 'SEU PLANO' : tip && !(used && nFix) ? (plan ? (auxEla(co) ? 'IDEIA DA AUXILIAR' : 'IDEIA DO AUXILIAR') : 'DICA DO AUXILIAR') : 'AUXILIAR') + '</small><b>' + (keep && !nFix ? esc(co.form + ' · ' + S.CO_STY[co.style].name) : tip && !(used && nFix) ? (used ? (plan ? '✓ No plano ' + (auxEla(co) ? 'dela' : 'dele') : '✓ ' + esc(tipNm)) : esc(S.coTipLbl(tip))) : nFix ? fixLbl : vs && !scR ? 'Leia o olheiro' : 'Tudo certo') + '</b></span>' +
         (nFix ? '<i class="tm-tip-d n">' + nFix + '</i>' : tip && !used && !tip.seen ? '<i class="tm-tip-d g"></i>' : '') + '</button>';
       show('<div class="tm"><div class="tm-h"><button class="tcr-back" id="tm-back" aria-label="Voltar">' + BK + '</button>' + title + pill + '</div>' +
-        '<div class="ld-pitch tm-pitch">' + PITCH + dots + (swap !== null ? nearList(sl[swap], bench, c.avail, sp[swap][0], sp[swap][1], by[co.xi[swap]]) : '') +
+        '<div class="ld-pitch tm-pitch">' + PITCH + dots + (swap !== null ? nearList(sl[swap], bench, c.avail, sp[swap][0], sp[swap][1], by[co.xi[swap]], co.form, swap) : '') +
         '<button class="tm-best' + (bestXI().join() === co.xi.join() ? ' on" disabled' : '"') + ' id="tm-best" aria-label="Escalar os melhores pelo geral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></svg>Melhores</button>' +
         '<button class="tm-best tm-rest' + (restXI().join() === co.xi.join() ? ' on" disabled' : '"') + ' id="tm-rest" aria-label="Escalar os mais descansados de cada posição"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h15v8H3zM18 10.5h3v3h-3z"/></svg>Descansados</button></div>' +
         '<div class="tm-bench"><small>BANCO</small>' + bstrip + '</div>' +
@@ -1033,7 +1037,7 @@
       const hurt = id => !!(by[id] && by[id].out > 0), anySub = L() > 0 || s.xi.some(hurt), selSub = sel >= 0 && !!s.xi[sel] && (L() > 0 || hurt(s.xi[sel])), hole = s.xi.some(id => !id);
       // longe da borda: o anel, o amarelo e o contorno da sugestão não podem ser cortados pelo campo
       const sp = spotsT(s.form).map(([px, py]) => [px, Math.round(10 + (py - 9) * 1.042)]);
-      const dots = s.xi.map((id, i) => !id ? empDot(sl[i], sp[i][0], sp[i][1], i, S.coSlotLbl(s.form, i), sel === i) : by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { sel: sel === i, yc: !!(s.bk && s.bk[id]),
+      const dots = s.xi.map((id, i) => !id ? empDot(sl[i], sp[i][0], sp[i][1], i, S.coSlotLbl(s.form, i), sel === i) : by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { form: s.form, i, sel: sel === i, yc: !!(s.bk && s.bk[id]),
         attr: ' data-xi="' + i + '"' + (inn.has(id) ? ' data-in="1"' : '') + (idle && gOut.has(id) ? ' data-sug="1"' : '') + (selP ? (fitsSlot(selP, sl[i]) ? ' data-fit="1"' : ' data-far="1"') : ''), tag: inn.has(id) ? 'ENTRA' : S.coSlotLbl(s.form, i) }) : '').join('');
       const bench = s.bench.map(b => by[b]).filter(Boolean).sort(benchSort(c));
       const bstrip = bench.map((p, k) => { const ok = !!(anySub && c.avail(p));
@@ -1042,7 +1046,7 @@
       const hint = sel >= 0 ? (!s.xi[sel] ? 'Toque em quem vai para esta vaga' : selSub ? 'Toque ou arraste quem entra, ou toque em outro titular' : 'Toque em outro titular') : selB ? 'Toque em quem sai' : hole ? 'Arraste um jogador até a vaga vazia' : '';
       const sc = esc(c.nm(m.home ? co.club : m.vs)).slice(0, 3).toUpperCase() + ' <u>' + m.gh + ' x ' + m.ga + '</u> ' + esc(c.nm(m.home ? m.vs : co.club)).slice(0, 3).toUpperCase();
       pop('<div class="tm ldl-tm' + (half ? ' ht' : '') + '"><div class="tm-h"><b>' + esc(T) + '</b><span class="ldl-sc">' + sc + '</span><small>' + S.coClock(m) + '</small>' + (hint ? '<span class="tm-hint">' + hint + '</span>' : LN_LEG) + '</div>' +
-        '<div class="ld-pitch tm-pitch">' + PITCH + dots + (selSub ? nearList(sl[sel], bench, c.avail, sp[sel][0], sp[sel][1], by[s.xi[sel]]) : '') + '</div>' +
+        '<div class="ld-pitch tm-pitch">' + PITCH + dots + (selSub ? nearList(sl[sel], bench, c.avail, sp[sel][0], sp[sel][1], by[s.xi[sel]], s.form, sel) : '') + '</div>' +
         '<div class="tm-bench"><small>BANCO<em>' + (L() ? U.D.plural(L(), 'troca', 'trocas') : anySub ? 'só a da lesão' : s.subs ? 'sem paradas' : 'sem trocas') + '</em></small>' + bstrip + '</div>' +
         '<div class="tm-side">' + (half ? '<div class="ldl-talk2">' + Object.keys(S.CO_TALK).map(k => '<button data-tk="' + k + '"' + (talk === k ? ' class="on"' : '') + '>' + esc(S.CO_TALK[k].name) + '</button>').join('') + '</div>' : '') +
           pick('form', 'Formação', s.form) + pick('sty', 'Estilo', esc(S.CO_STY[s.style].name)) +
@@ -2875,7 +2879,7 @@
       const seg = '<div class="lde2-seg">' + ['Atributos', 'Situação'].map((t, i) => '<button data-ec="' + i + '"' + (i === elenco.ct ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('') + '</div>';
       const grw = S.coTrainNow(co) && co.train.dv ? co.train.dv.filter(x => x[0] === q.id).map(x => x[1]) : []; // subiu no treino desta semana: verde
       const bars = '<div class="lde2-at">' + at.map((v, i) => '<div class="lde2-ar' + (grw.includes(i) ? ' gr' : i === hi ? ' top' : i === lo ? ' low' : '') + '"><span>' + S.CO_AT.names[ks[i]] + '</span><i><u style="width:' + v + '%"></u></i><b>' + v + '</b></div>').join('') + '</div>';
-      card = '<div class="lde2-c' + (elenco.ct ? ' sit' + (hint ? ' hn' : '') : '') + '"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? q.num + ' ' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + ' · ' + q.age + ' anos' + (S.coOvrDelta(co, q) ? ' · <em class="' + (S.coOvrDelta(co, q) > 0 ? 'up' : 'dn') + '">' + (S.coOvrDelta(co, q) > 0 ? '+' : '−') + Math.abs(S.coOvrDelta(co, q)) + ' no ano</em>' : '') + '</small></span></div>' + seg +
+      card = '<div class="lde2-c' + (elenco.ct ? ' sit' + (hint ? ' hn' : '') : '') + '"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? q.num + ' ' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + sideTxt(q) + ' · ' + q.age + ' anos' + (S.coOvrDelta(co, q) ? ' · <em class="' + (S.coOvrDelta(co, q) > 0 ? 'up' : 'dn') + '">' + (S.coOvrDelta(co, q) > 0 ? '+' : '−') + Math.abs(S.coOvrDelta(co, q)) + ' no ano</em>' : '') + '</small></span></div>' + seg +
         (elenco.ct ? '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/sem') + '</div>' +
         '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span></div>' +
         '<div class="lde2-act"><button class="lde2-ren" id="lde-ren" data-id="' + q.id + '"' + (renOk ? '' : ' disabled') + '>Renovar' + (renOk ? '' : '<small>no fim do contrato</small>') + '</button>' +

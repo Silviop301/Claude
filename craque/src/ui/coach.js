@@ -764,7 +764,7 @@
       const r = x.pos === 'GOL' ? 'GK' : x.pos === 'LAT' ? (lat < 50 ? 'LB' : 'RB') : x.pos === 'ZAG' ? 'CB' : x.pos === 'ATA' ? 'ST' : x.w ? (lat < 50 ? 'LM' : 'RM') : 'CM';
       // cansado rende menos; fora de posição também (S.coOvrAt, só neste jogo): todos os atributos descem o mesmo tanto, e
       // quem é de linha no gol (ou goleiro na linha) defende/joga com o geral cortado, não com o geral cheio
-      const pl = (s.squad || []).find(q => q.id === s.xi[i]), ov = pl ? S.coOvrAt(pl, x.pos) - (100 - (pl.en === undefined ? 100 : pl.en)) * 0.1 : undefined;
+      const pl = (s.squad || []).find(q => q.id === s.xi[i]), ov = pl ? S.coOvrAt(pl, x.pos, s.form, i) - (100 - (pl.en === undefined ? 100 : pl.en)) * 0.1 : undefined;
       out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w, ov, pl ? { id: pl.id, num: pl.num, nm: last(pl.n) || pl.n, at: S.coAtIn(pl, x.pos, ov), es: S.coRoleFx(s, i, pl).b, yc: () => !!(s.bk && s.bk[pl.id]), enf: () => (pl.en === undefined ? 100 : pl.en) } : null]); // energia ao vivo (o motor gasta minuto a minuto)
     });
     const gk = out.filter(p => p[0] === 'GK'), rest = out.filter(p => p[0] !== 'GK').sort((a, b) => a[1] - b[1]);
