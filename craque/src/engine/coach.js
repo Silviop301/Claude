@@ -264,7 +264,6 @@
   S.coSimSty = side => { const b = sty(side.style), sh = side.shout && SHOUT[side.shout.k]; if (!sh) return b;
     const o = Object.assign({}, b), ad = sh.sim || sh.add; Object.keys(ad).forEach(k => { o[k] = Math.max(0, (o[k] || 0) + ad[k]); }); return o; };
   const slotsOf = form => FORMS[form].slots.map(x => x.pos);
-  const sectorOf = (form, i) => { const l = FORMS[form].slots[i].ln; return l === 'am' ? 'm' : l; };
   S.coSlots = slotsOf;
   // Número de camisa fixo de cada jogador do elenco (p.num): quem não tem ganha o número clássico da posição que estiver livre
   // (os melhores primeiro), senão o menor livre. Fica no jogador, então não muda com trocas nem de jogo para jogo.

@@ -65,7 +65,6 @@
   };
   // O ícone do app: o desenho próprio ou, sem desenho (Agenda, treino, evoluir), o emoji de sempre
   const appIco = (k, sz) => (APP_SVG[k] ? APP_SVG[k] : U.emo(APP_EMO[k] || '📱', sz || 'md'));
-  const BACK_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function appScr(cur, title, body, o) {
     o = o || {};
     const c = G.c;
@@ -107,7 +106,6 @@
   // Ficha) e Próximo jogo (abre a Tabela); os nove apps em grade; o ingresso embaixo, igual em todo app.
   const GRID2 = ['msg', 'ag', 'me', 'bank', 'shop', 'tbl', 'cal', 'mkt', 'bet'].map(k => [k, APP_EMO[k], APP_LBL[k] || APP_NAME[k]]);
   const GEAR = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4z M19.4 13.5l1.6 1.2-1.8 3.1-1.9-.7a7.6 7.6 0 0 1-2 1.2l-.3 2h-3.6l-.3-2a7.6 7.6 0 0 1-2-1.2l-1.9.7-1.8-3.1 1.6-1.2a7.4 7.4 0 0 1 0-2.4L3.4 9.3l1.8-3.1 1.9.7a7.6 7.6 0 0 1 2-1.2l.3-2h3.6l.3 2a7.6 7.6 0 0 1 2 1.2l1.9-.7 1.8 3.1-1.6 1.2a7.4 7.4 0 0 1 0 2.4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
-  const EXIT = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4.5 3 12l7.5 7.5M3.8 12h17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const DAYS_LONG = { Seg: 'Segunda', Ter: 'Terça', Qua: 'Quarta', Qui: 'Quinta', Sex: 'Sexta', 'Sáb': 'Sábado', Dom: 'Domingo' };
   let nAll = false; // notificações abertas (todas) ou só a mais nova
   function meter(lbl, v, cls) { return '<span>' + lbl + '</span><i class="p2-mb"><i class="' + (cls || '') + '" style="width:' + Math.max(0, Math.min(100, Math.round(v))) + '%"></i></i>'; }
@@ -855,33 +853,6 @@
         D.plural(A.assists, 'assistência', 'assistências') + (A.games ? ' · nota ' + rate(A.rsum / A.games) : '') + (L ? ' · ' + L.pts.toLocaleString('pt-BR') + ' de legado' : '') + '</p>';
     document.querySelectorAll('#fc-conq [data-go2]').forEach(b => { b.onclick = () => { sfx('tap'); go(b.dataset.go2); }; });
   }
-  // Pontos de evolução: a fração do ano enche a barra; com 1 ponto inteiro, dá para evoluir agora
-  function peBox() {
-    const c = G.c, fc = c.fc, whole = c.pe || 0;
-    const can = whole >= 1 && S.canInvestAny(c), yr = S.fcPeYear(c), full = yr >= S.PE_CAP - 0.001;
-    // O que a pessoa precisa saber: quanto tem para gastar, quanto ganhou no ano e o limite do ano
-    $('fc-pe').innerHTML = '<div class="fc-pe-row"><span>Evolução</span><div class="fc-pe-bar"><i style="width:' + Math.round(fc.peFrac * 100) + '%"></i></div><b>' + num1(whole + fc.peFrac) + '</b>' +
-      (can ? '<button class="btn ghost fc-evo" id="fc-evo">Evoluir</button>' : '') + '</div>' +
-      '<p>' + (full ? 'Limite do ano atingido: ' + S.PE_CAP + ' de ' + S.PE_CAP + ' pontos. A barra volta a encher na próxima temporada.'
-        : 'No ano: ' + num1(yr) + ' de ' + S.PE_CAP + ' pontos (limite). Todo jogo enche a barra, e nota alta enche mais.') +
-      (whole >= 1 ? ' Para gastar: ' + whole + (whole === 1 ? ' ponto.' : ' pontos.') : ' Com 1 ponto inteiro, dá para evoluir.') + '</p>';
-    if ($('fc-evo')) $('fc-evo').onclick = evolve;
-  }
-  function meBox() {
-    const A = G.c.fc.acc, gk = G.c.pos === 'GOL' || G.c.pos === 'ZAG';
-    $('fc-me').innerHTML = '<div><b>' + A.games + '</b><span>Jogos</span></div>' + (gk ? '<div><b>' + A.cs + '</b><span>Sem sofrer gol</span></div>' : '<div><b>' + A.goals + '</b><span>Gols</span></div>') +
-      '<div><b>' + A.assists + '</b><span>Assist.</span></div><div><b>' + (A.games ? rate(A.rsum / A.games) : '–') + '</b><span>Nota</span></div>';
-  }
-  // Pontos de legado da carreira (engine/legado.js): somam desde a primeira temporada
-  const LEG_LBL = { metas: 'Metas', titulos: 'Títulos', premios: 'Prêmios', idolo: 'Ídolo', selecao: 'Seleção' };
-  function legBox() {
-    const el = $('fc-leg');
-    if (!el || !S.legacy) return;
-    const L = S.legacy(G.c);
-    el.innerHTML = '<div class="fs-rlbl">Legado da carreira</div><div class="lg-top"><b>' + L.pts.toLocaleString('pt-BR') + '</b><span>pontos de legado</span></div>' +
-      '<div class="lg-by">' + Object.keys(LEG_LBL).map(k => '<div><small>' + LEG_LBL[k] + '</small><b>' + L.by[k].toLocaleString('pt-BR') + '</b></div>').join('') + '</div>' +
-      '<p class="lg-note">Metas cumpridas, títulos, prêmios, anos de ídolo num clube e a seleção somam desde a primeira temporada.</p>';
-  }
   // Situação em cada competição
   function compsBox(pos) {
     const fc = G.c.fc, cup = fc.cup, ct = fc.cont;
@@ -966,8 +937,6 @@
   // Zé: palpites da rodada da liga inteira (sem o seu jogo), cupom simples ou múltipla e o extrato da carreira.
   // Atleta apostar é proibido: o faro da federação (chance de ser pego) aparece sempre e sobe a cada aposta
   let zeTab = 'cas', betSel = {}, betStake = 0, csOpen = null, csG = [1, 0], betAll = false;
-  const oddTxt = o => o.toFixed(2).replace('.', ',');
-  const pctTxt = p => (p < 0.1 ? (Math.round(p * 1000) / 10).toFixed(1).replace('.', ',') : String(Math.round(p * 100))) + '%';
   function legTxt(l) {
     if (l.m === 'x') return l.pick === 1 ? 'Empate' : 'Vitória ' + nameOf(l.pick === 0 ? l.h : l.a);
     if (l.m === 'btts') return l.pick === 0 ? 'Ambos marcam' : 'Só um marca (ou nenhum)';
@@ -976,49 +945,6 @@
   }
   // Pernas escolhidas no cupom, na ordem dos jogos
   function betLegs(R) { return R ? R.games.filter(g => betSel[g.h]).map(g => Object.assign({ h: g.h, a: g.a, ext: g.ext, lg: g.lg }, betSel[g.h], { odd: betSel[g.h].m === 'cs' ? g.odds.cs[betSel[g.h].pick] : g.odds[betSel[g.h].m][betSel[g.h].pick] })) : []; }
-  function betBox(c, R$) {
-    const fc = c.fc, risk = S.fcBetRisk(c), n = fc.betN || 0;
-    const faro = '<div class="ze-faro"><p><span>Faro da federação</span><b>' + pctTxt(risk) + ' de ser pego</b></p><i><u style="width:' + Math.round(risk / 0.25 * 100) + '%"></u></i>' +
-      '<small>' + (n ? n + (n === 1 ? ' aposta' : ' apostas') + ' nesta temporada.' : 'Nenhuma aposta nesta temporada.') + ' Pego = ' + S.FC_BET_BAN + ' jogos de suspensão, técnico e torcida contra.</small></div>';
-    const placed = S.fcBets(c).map(t => '<li><span>' + t.legs.map(l => esc(nameOf(l.h)) + ' × ' + esc(nameOf(l.a)) + ': <b>' + esc(legTxt(l)) + '</b>').join('<br>') + '</span><em>' + R$(t.stake) + ' · paga ' + R$(Math.round(t.stake * t.odd)) + '</em></li>').join('');
-    const head = faro + (placed ? '<div class="ze-placed"><h3>Seus cupons</h3><ul>' + placed + '</ul><small>Saem na próxima rodada da liga.</small></div>' : '');
-    const R = S.fcBetRound(c);
-    if (!R) return head + '<p class="fc-own">Sem rodada da liga pela frente.</p>';
-    Object.keys(betSel).forEach(h => { if (!R.games.some(g => String(g.h) === h)) delete betSel[h]; });
-    const B = (h, m, pick, lab, o) => { const s = betSel[h], on = s && s.m === m && s.pick === pick; return '<button class="ze-o' + (on ? ' on' : '') + '" data-h="' + h + '" data-m="' + m + '" data-p="' + pick + '"><small>' + esc(lab) + '</small><b>' + oddTxt(o) + '</b></button>'; };
-    const card = g => {
-      const s = betSel[g.h], cs = csOpen === g.h;
-      const csBtn = '<button class="ze-o ze-cs' + (s && s.m === 'cs' ? ' on' : '') + '" data-csopen="' + g.h + '"><small>Placar exato</small><b>' + (s && s.m === 'cs' ? s.pick.replace('-', ' × ') : '…') + '</b></button>';
-      const k = csG[0] + '-' + csG[1];
-      const csBox = cs ? '<div class="ze-csbox"><div class="ze-st"><button data-cs="0" data-d="-1" aria-label="Menos gols do mandante">−</button><b>' + csG[0] + '</b><button data-cs="0" data-d="1" aria-label="Mais gols do mandante">+</button></div><span>×</span>' +
-        '<div class="ze-st"><button data-cs="1" data-d="-1" aria-label="Menos gols do visitante">−</button><b>' + csG[1] + '</b><button data-cs="1" data-d="1" aria-label="Mais gols do visitante">+</button></div>' +
-        B(g.h, 'cs', k, 'Odd', g.odds.cs[k]) + '</div>' : '';
-      return '<div class="ze-g"><p>' + crest(g.h, 'xs') + '<b>' + esc(nameOf(g.h)) + ' × ' + esc(nameOf(g.a)) + '</b>' + crest(g.a, 'xs') + '</p>' +
-        '<div class="ze-x">' + B(g.h, 'x', 0, nameOf(g.h), g.odds.x[0]) + B(g.h, 'x', 1, 'Empate', g.odds.x[1]) + B(g.h, 'x', 2, nameOf(g.a), g.odds.x[2]) + '</div>' +
-        '<div class="ze-m">' + B(g.h, 'btts', 0, 'Ambos marcam', g.odds.btts[0]) + B(g.h, 'o25', 0, '+2,5 gols', g.odds.o25[0]) + B(g.h, 'o25', 1, '−2,5 gols', g.odds.o25[1]) + csBtn + '</div>' + csBox + '</div>';
-    };
-    // Um bloco por campeonato: o seu primeiro; fechado, cada um mostra dois jogos (e os que já estão no cupom)
-    let hidden = 0;
-    const games = R.groups.map((G, k) => {
-      const show = betAll ? G.games : G.games.filter((g, j) => j < 2 || betSel[g.h] || csOpen === g.h);
-      hidden += G.games.length - show.length;
-      return '<h3 class="ze-rd">' + (k ? esc(G.name) : 'Rodada ' + (R.ri + 1) + ' · ' + esc(G.name)) + '</h3>' + show.map(card).join('');
-    }).join('');
-    const more = hidden || betAll ? '<button class="btn ghost ze-more" id="ze-more">' + (betAll ? 'Mostrar menos' : 'Mais ' + hidden + ' jogos') + '</button>' : '';
-    // Cupom: odd multiplicada, chance de acertar (sem a margem da casa) e o risco desta aposta
-    const legs = betLegs(R), st = S.fcBetStakes(c);
-    if (!st.includes(betStake)) betStake = st[0];
-    let slip = '';
-    if (legs.length) {
-      const o = Math.round(legs.reduce((s, l) => s * l.odd, 1) * 100) / 100, ch = legs.reduce((s, l) => s * 0.9 / l.odd, 1);
-      slip = '<div class="ze-slip"><p><span>' + (legs.length === 1 ? 'Cupom simples' : 'Múltipla de ' + legs.length) + '</span><b>odd ' + oddTxt(o) + '</b></p>' +
-        '<ul>' + legs.map(l => '<li>' + (l.ext ? '<small>' + esc(l.lg) + '</small> ' : '') + esc(nameOf(l.h)) + ' × ' + esc(nameOf(l.a)) + ': <b>' + esc(legTxt(l)) + '</b> <em>' + oddTxt(l.odd) + '</em></li>').join('') + '</ul>' +
-        '<div class="seg ze-stk">' + st.map(v => '<button data-s="' + v + '"' + (v === betStake ? ' class="on"' : '') + ((c.money || 0) >= v ? '' : ' disabled') + '>' + R$(v) + '</button>').join('') + '</div>' +
-        '<button class="btn" id="ze-go"' + ((c.money || 0) < betStake ? ' disabled' : '') + '>Apostar ' + R$(betStake) + ' · paga ' + R$(Math.round(betStake * o)) + '</button>' +
-        '<small>Chance de acertar: ' + pctTxt(ch) + '. Chance de ser pego nesta aposta: ' + pctTxt(risk) + '.' + (legs.length < S.FC_BET_MAX_LEGS ? ' Junte jogos de campeonatos diferentes para fazer múltipla.' : '') + '</small></div>';
-    }
-    return head + games + more + slip;
-  }
   function extratoBox(c, R$) {
     const L = c.betLog || { n: 0, net: 0, caught: 0, won: 0 }, K = c.casLog, F = c.fixLog;
     const cas = K && K.n ? '<h3 class="ze-rd">Cassino Bet171</h3><div class="ze-ext"><div><b>' + K.n + '</b><small>jogadas</small></div><div><b class="up">+' + R$(K.best || 0) + '</b><small>maior prêmio</small></div><div><b class="' + (K.net >= 0 ? 'up' : 'down') + '">' + (K.net >= 0 ? '+' : '−') + R$(Math.abs(K.net)) + '</b><small>saldo</small></div></div>' +
