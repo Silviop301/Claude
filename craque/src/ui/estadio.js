@@ -203,10 +203,12 @@ window.CRAQUE_UI.EST = (function () {
       const hz = [0, 8, 13, 17, 23, 29][LZ] * k, Lp = [0, 6, 8, 10, 11, 12][LZ] * k, rows = [0, 1, 2, 3, 3, 4][LZ], cl = [0, 2, 3, 4, 5, 6][LZ], ce = 2.3 * k, dp = rows * ce + 1.2 * k, wd = cl * ce + 1.2 * k;
       [[px - off, py - off, 0.3, 0.3], [px + pw + off, py - off, 0.7, 0.3], [px - off, py + ph + off, 0.3, 0.7], [px + pw + off, py + ph + off, 0.7, 0.7]].forEach((q, i) => {
         const x = q[0], y = q[1], ux = (x < px ? -1 : 1) * Math.SQRT1_2, uy = (y < py ? -1 : 1) * Math.SQRT1_2, hx = x + ux * (Lp + dp / 2), hy = y + uy * (Lp + dp / 2);
+        const pk = ' class="est-pk" style="animation-duration:' + [8.5, 11, 9.5, 12.5][i] + 's;animation-delay:' + [-1, -6.5, -3.2, -9][i] + 's"';
+        s += '<g' + pk + '>';
         if (LZ >= 4) { const tx = px + pw * q[2], ty = py + ph * q[3], nx = -(ty - hy), ny = tx - hx, nl = Math.sqrt(nx * nx + ny * ny), w = pw * 0.14;
           s += '<linearGradient id="ebm' + id + i + '" gradientUnits="userSpaceOnUse" x1="' + f(hx) + '" y1="' + f(hy) + '" x2="' + f(tx) + '" y2="' + f(ty) + '"><stop offset="0" stop-color="#FFF7DC" stop-opacity="' + (LZ >= 5 ? 0.34 : 0.24) + '"/><stop offset="1" stop-color="#FFF7DC" stop-opacity="0"/></linearGradient>' +
             '<path d="M' + f(hx) + ' ' + f(hy) + ' L' + f(tx + nx / nl * w) + ' ' + f(ty + ny / nl * w) + ' L' + f(tx - nx / nl * w) + ' ' + f(ty - ny / nl * w) + 'Z" fill="url(#ebm' + id + i + ')" style="mix-blend-mode:screen"/>'; }
-        s += '<circle cx="' + f(hx) + '" cy="' + f(hy) + '" r="' + f(hz) + '" fill="url(#elz' + id + ')"' + (LZ >= 4 ? ' class="est-hz" style="animation-delay:' + f(-i * 0.9) + 's"' : '') + '/>';
+        s += '<circle cx="' + f(hx) + '" cy="' + f(hy) + '" r="' + f(hz) + '" fill="url(#elz' + id + ')"' + (LZ >= 4 ? ' class="est-hz" style="animation-delay:' + f(-i * 0.9) + 's"' : '') + '/></g>';
         let t = '';
         if (LZ >= 3) { const hw = 1.5 * k, n = Math.round(Lp / (2.4 * k)); let zz = 'M0 ' + f(-hw);
           for (let a = 1; a <= n; a++) zz += ' L' + f(Lp * a / n) + ' ' + f(a % 2 ? hw : -hw);
@@ -214,7 +216,9 @@ window.CRAQUE_UI.EST = (function () {
         else t += '<line x1="0" y1="0" x2="' + f(Lp) + '" y2="0" stroke="#101113" stroke-width="' + f(2.4 * k) + '"/><line x1="0" y1="0" x2="' + f(Lp) + '" y2="0" stroke="#9AA2AB" stroke-width="' + f(1.1 * k) + '"/>';
         t += '<circle cx="0" cy="0" r="' + f((LZ >= 3 ? 2.6 : 1.9) * k) + '" fill="#2A2D32" stroke="#9AA2AB" stroke-width="' + f(0.7 * k) + '"/>';
         t += '<rect x="' + f(Lp) + '" y="' + f(-wd / 2) + '" width="' + f(dp) + '" height="' + f(wd) + '" rx="' + f(0.9 * k) + '" fill="#17181B" stroke="#9AA2AB" stroke-width="' + f(0.8 * k) + '"/>';
+        t += '<g' + pk + '>';
         for (let a = 0; a < rows; a++) for (let b = 0; b < cl; b++) t += '<circle cx="' + f(Lp + 0.6 * k + ce * (a + 0.5)) + '" cy="' + f(-wd / 2 + 0.6 * k + ce * (b + 0.5)) + '" r="' + f(0.82 * k) + '" fill="#FFF7DC"/>';
+        t += '</g>';
         s += '<g transform="translate(' + f(x) + ' ' + f(y) + ') rotate(' + f(Math.atan2(uy, ux) * 180 / Math.PI) + ')">' + t + '</g>';
       });
     }
