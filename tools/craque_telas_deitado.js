@@ -94,7 +94,11 @@ async function page(b, first) {
     await click('[data-tk="folga"]'); await p.waitForTimeout(900); await shot('a08b-treino-folga'); await click('#tr2-aux'); await shot('a08c-treino-auxiliar'); await click('[data-pop-x]'); // a cena da folga (guarda-sol e água de coco) e a janelinha do auxiliar, agora na pílula do topo
     await (await p.$$('[data-tt]'))[2].click(); await p.waitForTimeout(300); await click('[data-tk="esc"]'); await click('#ldtr-go');
     await click('#ld-tr'); await shot('a08d-treino-feito'); await click('#ldtr-back');
-    await click('#ld-ol'); await shot('a09-olheiro'); await click('#ldo-ok'); await shot('a10-semana-pronta');
+    await click('#ld-ol'); await shot('a09-olheiro');
+    // os textos mais longos do olheiro no cartão escolhido: o Guardar não pode passar do palco (passava 7 px, 2026-11-16)
+    for (const [i, t] of [['Zagueiro Albuquerque é lento', 'Corrida de 30 metros ele perde até para o juiz.', 'Contra-ataque, treino de Velocidade ou um atacante rápido'], ['Ônibus na frente da área', 'Dez atrás da linha da bola, esperando o erro.', 'Posse de bola, jogo pelos lados ou treino de Troca de passes'], ['Tudo sai do pé do Nascimento', 'Deixar ele livre na ponta é pedir para sofrer.', 'Dois do mesmo lado (4-4-2, 4-2-3-1, 4-5-1) ou grito Recuar']].entries()) {
+      await p.evaluate(t => { const on = document.querySelector('.ol2-f.on'); if (!on) return; on.querySelector('b').textContent = t[0]; on.querySelector('p').innerHTML = t[1] + ' Responde: <b>' + t[2] + '</b>'; }, t); await shot('a09b-olheiro-longo-' + i, i < 2); }
+    await click('#ldo-ok'); await shot('a10-semana-pronta');
     if (await p.$('[data-pop-x]')) { await click('[data-pop-x]'); await shot('a10a-semana-setores-lido'); } // força por setor: faixa do rival afinada pelo relatório
     // A conversa com quem está chateado (forçada: o melhor reserva com a moral baixa) e a resposta dele; depois volta ao que era
     await p.evaluate(() => { const U = window.CRAQUE_UI, co = U._co.co, xi = new Set(co.xi), q = co.squad.filter(x => !xi.has(x.id)).sort((a, b) => b.ovr - a.ovr)[0]; q.mo = 30; q.bn = 3; window.__q = q; U.LD.segunda({}); });
