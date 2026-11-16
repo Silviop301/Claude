@@ -10800,6 +10800,25 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .ld-st .mkp-tk button { height: 26px; padding: 0 10px; border-radius: 8px; font: 700 15px/26px var(--display); }
 .ld-st .mkp-tk button.on { padding: 0 11px; }
 .tm-h small.tm-vs { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* Estádio vivo (2026-11-16): fumaça do churrasco sobe, varal de luzes pisca e o brilho dos refletores pulsa; só desenho */
+.est-svg .est-sm { fill-opacity: var(--o); transform-box: fill-box; transform-origin: center; animation: estSm 2.6s linear infinite; }
+.est-svg .est-vl { animation: estVl 1.8s ease-in-out infinite; }
+.est-svg .est-hz { transform-box: fill-box; transform-origin: center; animation: estHz 3.6s ease-in-out infinite; }
+@keyframes estSm { 0% { transform: translate(-1px, var(--d)) scale(.7); fill-opacity: 0; } 25% { fill-opacity: var(--o); } 100% { transform: translate(2px, calc(var(--d) * -1.6)) scale(1.35); fill-opacity: 0; } }
+@keyframes estVl { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes estHz { 0%, 100% { opacity: .82; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.06); } }
+.est-svg .est-pk.pk { animation: estPk .7s linear 1; } .est-svg .est-pk.pk2 { animation: estPk2 .35s linear 1; }
+@keyframes estPk { 0%, 100% { opacity: 1; } 12% { opacity: .2; } 34% { opacity: 1; } 55% { opacity: .4; } 72% { opacity: 1; } }
+@keyframes estPk2 { 0%, 100% { opacity: 1; } 40% { opacity: .25; } }
+/* corte do gramado no nível 5 (Melhorias) */
+.es-gp { align-items: stretch; } .es-gp > em { text-align: center; }
+.es-gps { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.es-gps span { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.es-gps .est-svg { position: static; display: block; }
+.es-gps b { font: 800 22px/1 var(--display) !important; color: var(--gold); }
+.es-gp { gap: 6px !important; justify-content: flex-start !important; }
+@media (prefers-reduced-motion: reduce) { .est-svg .est-sm, .est-svg .est-vl, .est-svg .est-hz, .est-svg .est-pk { animation: none; } }
 .tm-bp > b.tm-ring.lo { color: #F08A5D; }
 
 /* Aviso "O que mudou" na home deitada (settings.js newsPop, Silvio 16/11): creme com o painel carvão dos 6 destaques */

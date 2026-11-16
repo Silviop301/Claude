@@ -1611,7 +1611,7 @@
   function estFit(lv, w, h, max) { const d = U.EST.depth; return Math.max(0.2, Math.min(max, w / (288 + d[lv.n] + d[lv.s]), h / (165 + d[lv.a] + d[lv.so]))); }
   function estThumb(co, e) {
     const d = U.EST.depth, k = estFit(e.lv, 150, 116, 0.44);
-    return U.EST.svg({ w: 158, h: 124, k, dx: (d[e.lv.n] - d[e.lv.s]) * k / 2, dy: (d[e.lv.a] - d[e.lv.so]) * k / 2, lv: e.lv, occ: e.occ || EST_OCC0, cols: estCols(club(co.club)), seed: estSeed(co.club), gram: e.up ? e.up.g : 1, luz: !!(e.up && e.up.l), cam: !!(e.up && e.up.c), obra: e.obra ? e.obra.k : null }).svg;
+    return U.EST.svg({ w: 158, h: 124, k, dx: (d[e.lv.n] - d[e.lv.s]) * k / 2, dy: (d[e.lv.a] - d[e.lv.so]) * k / 2, lv: e.lv, occ: e.occ || EST_OCC0, cols: estCols(club(co.club)), seed: estSeed(co.club), gram: e.up ? e.up.g : 1, pad: e.gp, luz: e.up ? e.up.l : 0, cam: e.up ? e.up.c : 0, bar: e.up ? e.up.b : 0, obra: e.obra ? e.obra.k : null }).svg;
   }
   // Ingresso (fase 2): 5 preços em palavras para o próximo jogo em casa, com a renda, o público e o que a torcida acha
   function ingresso(pick) {
@@ -1640,8 +1640,8 @@
     const W = pn.clientWidth, H = pn.clientHeight, d = U.EST.depth; if (!W || !H) return null;
     const up = o.obra || o.prev, lv = e.lv, lf = up ? Object.assign({}, lv, { [up]: Math.min(5, lv[up] + 1) }) : lv;   // o setor em obra ou na prévia já ocupa o tamanho novo
     const k = estFit(lf, W - o.wPad, H - o.hPad, 1), roof = x => (lf[x] >= 4 ? 3.5 * k : 0);
-    const R = U.EST.svg({ w: W, h: H, k, dx: (d[lf.n] - d[lf.s]) * k / 2 + (o.dx || 0), dy: (d[lf.a] - d[lf.so]) * k / 2, lv, occ: e.occ || EST_OCC0, cols: estCols(cl), gram: e.up ? Math.max(0, e.up.g - (e.gt > 0 ? 1 : 0)) : 1, luz: !!(e.up && e.up.l), telao: !!(e.up && e.up.l >= 2), cam: !!(e.up && e.up.c), seed: estSeed(cl.id), obra: o.obra, prev: o.prev });
-    R.dep = x => d[lf[x]] * k + roof(x); R.W = W; R.H = H;
+    const R = U.EST.svg({ w: W, h: H, k, dx: (d[lf.n] - d[lf.s]) * k / 2 + (o.dx || 0), dy: (d[lf.a] - d[lf.so]) * k / 2, lv, occ: e.occ || EST_OCC0, cols: estCols(cl), gram: e.up ? Math.max(0, e.up.g - (e.gt > 0 ? 1 : 0)) : 1, luz: e.up ? e.up.l : 0, telao: !!(e.up && e.up.l >= 2), cam: e.up ? e.up.c : 0, bar: e.up ? e.up.b : 0, barGap: o.barGap, pad: e.gp, seed: estSeed(cl.id), obra: o.obra, prev: o.prev });
+    R.dep = x => d[lf[x]] * k + roof(x); R.W = W; R.H = H; U.EST.live(pn);
     return R;
   }
   function estadio() {
@@ -1668,7 +1668,7 @@
       st.querySelector('#es-q').onclick = () => { sfx('tap'); mkHelp('', 'Os pontinhos são o público do último jogo em casa. Torcida empolgada enche o estádio e empurra o time em casa; revoltada, pesa contra. Ampliar fecha o setor durante a obra e ele reabre maior: vale a pena quando a casa vive cheia. Melhorias não fecham nada e rendem todo ano. Quem aprova é a diretoria.'); };
       const amp = st.querySelector('#es-amp'); if (amp) amp.onclick = () => { if (allMax) return; sfx('tap'); ampliar(); };
       const rb = st.querySelector('#es-rush'); if (rb) rb.onclick = () => { if (!rush) return; sfx('tap'); obraRush(); };
-      const pn = st.querySelector('#es-pn'), R = estDraw(pn, e, cl, { obra: ob ? ob.k : null, wPad: 216, hPad: 84 });
+      const pn = st.querySelector('#es-pn'), R = estDraw(pn, e, cl, { obra: ob ? ob.k : null, wPad: 216, hPad: 84, barGap: 118 });
       if (!R) return;
       const { px, py, pw, ph, gap, dep, W } = R;
       pn.innerHTML = R.svg +
@@ -1754,9 +1754,11 @@
       return '<button class="es-m' + (q === k ? ' on' : '') + (lock ? ' lock' : '') + '" data-mk="' + q + '"><span><b>' + M.names[q] + '</b>' + (lock ? '' : '<span class="es-pp">' + Array.from({ length: M.max }, (_, i) => '<i' + (i < e.up[q] ? ' class="on"' : '') + '></i>').join('') + '</span>') + '</span><em>' + w[0] + '</em><small>' + (e.mel && e.mel.k === q ? 'em reforma · ' + U.D.plural(e.mel.left, 'rodada', 'rodadas') : w[1]) + '</small></button>'; };
     const row = (a, b, cls) => '<div><span>' + a + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' + b + '</b></div>';
     const doing = e.mel && e.mel.k === k, can = !P.max && !P.lock && !P.need && !e.mel;
+    const gpI = Math.max(0, U.EST.pads.findIndex(q => q[0] === e.gp)), gpNow = U.EST.pads[gpI], FWD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
     const liga = S.coEstLiga ? S.coEstLiga(co) : null;
     const fx = k === 'g' ? row('Cansaço em casa', '−' + Math.round(M.gram * 100) + '%', 'up') : k === 'l' ? (liga ? row('Multa da liga', 'acaba', 'up') : row('Cota de TV', pc(M.tv), 'up')) : k === 'b' ? row('Renda por torcedor', pc(M.bar), 'up') : row('Por jogo em casa', '+' + camV(1), 'up');
     const card = doing ? '<small>EM REFORMA · ' + P.name.toUpperCase() + '</small><div class="es-mn"><b>' + e.mel.left + '</b><em>' + (e.mel.left > 1 ? 'rodadas para ficar pronto' : 'rodada para ficar pronto') + '</em></div>'
+      : P.max && k === 'g' ? '<small>GRAMADO · NÍVEL ' + M.max + ' DE ' + M.max + '</small><div class="es-mn es-gp"><em>Escolha o corte do gramado</em><div class="es-gps"><button class="tm-ar" data-gp="-1" aria-label="Corte anterior">' + BK + '</button><span>' + U.EST.svg({ w: 110, h: 62, k: 0.365, lv: { n: 0, s: 0, a: 0, so: 0 }, gram: 5, pad: gpNow[0] }).svg + '<b>' + gpNow[1] + '</b></span><button class="tm-ar" data-gp="1" aria-label="Próximo corte">' + FWD + '</button></div></div>'
       : P.max ? '<small>' + P.name.toUpperCase() + ' · NÍVEL ' + M.max + ' DE ' + M.max + '</small><div class="es-mn"><em>No nível máximo.</em></div>'
       : P.lock ? '<small>' + P.name.toUpperCase() + '</small><div class="es-mn"><em>Camarotes pedem a Social coberta (nível 4). Amplie a Social primeiro.</em></div>'
       : P.need ? '<small>' + P.name.toUpperCase() + ' · NÍVEL ' + P.to + ' DE ' + M.max + '</small><div class="es-mn"><em>O nível ' + P.to + ' pede um estádio de ' + milK(P.need) + ' lugares. O seu tem ' + milK(S.coEstCap(e)) + ': amplie primeiro.</em></div>'
@@ -1770,6 +1772,7 @@
       st.querySelector('#es-back').onclick = () => { sfx('tap'); estadio(); };
       cxBind(st, () => melhorias(k, x));
       st.querySelectorAll('[data-mk]').forEach(b => b.onclick = () => { sfx('tap'); melhorias(b.dataset.mk, x); });
+      st.querySelectorAll('[data-gp]').forEach(b => b.onclick = () => { sfx('tap'); const n = U.EST.pads.length; e.gp = U.EST.pads[(gpI + +b.dataset.gp + n) % n][0]; c.save(); melhorias('g', x); });
       st.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { if (!can) return; sfx('tap'); const i = +b.dataset.x;
         if (i > P.payMax) return mkHelp('', 'Este presidente só paga à vista.');
         melhorias(k, i); });
