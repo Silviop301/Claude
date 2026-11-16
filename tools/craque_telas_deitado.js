@@ -53,6 +53,13 @@ async function page(b, first) {
     const { p, shot, click } = await page(b);
     await click('#b-new-co'); await click('#co-start button[data-v="livre"]'); await click('#b-co-go'); await click('#ldo-go'); await click('#ldn-go'); await click('#ldn-go');
     await shot('a00-chegada'); await click('[data-rail="time"]'); await shot('a01-time');
+    { // banco rolado até o fim: tocar num reserva redesenha a tela e o banco não pode voltar ao começo (Silvio 16/11)
+      await p.evaluate(() => { const bn = document.querySelector('.tm-bench'); bn.scrollLeft = bn.scrollWidth; bn.dispatchEvent(new Event('scroll')); });
+      const x0 = await p.evaluate(() => document.querySelector('.tm-bench').scrollLeft);
+      await p.evaluate(() => { const L = [...document.querySelectorAll('.tm-bench .tm-bp:not([disabled])')]; L[L.length - 1].click(); }); await p.waitForTimeout(400);
+      const x1 = await p.evaluate(() => document.querySelector('.tm-bench').scrollLeft); await shot('a01a-banco-rolado');
+      if (!(x0 > 0) || Math.abs(x1 - x0) > 2) errs.push('banco voltou ao começo ao tocar num reserva: ' + x0 + ' → ' + x1);
+      await p.evaluate(() => { const L = [...document.querySelectorAll('.tm-bench .tm-bp:not([disabled])')]; L[L.length - 1].click(); }); await p.waitForTimeout(300); }
     { // três titulares cansados: o auxiliar lista as trocas, uma linha desmarcada, e um botão faz as marcadas
       const en = v => p.evaluate(v => { const co = window.CRAQUE_UI._co.co, by = {}; co.squad.forEach(q => { by[q.id] = q; q.en = 100; }); if (v) [3, 6, 9].forEach((i, k) => { by[co.xi[i]].en = v[k]; }); }, v);
       await en([48, 61, 55]); await click('#tm-back'); await click('[data-rail="time"]'); await shot('a01b-setores-cansados');
