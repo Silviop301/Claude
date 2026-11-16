@@ -2,7 +2,7 @@
 // Só desenho: cada um dos 16 treinos de S.CO_TRAIN tem um campinho em miniatura (SVG) com bolinhas que se mexem em laço.
 // U.TRC.scene(host, chave, grande) desenha e devolve { paint(u 0..1), dur em segundos }; parado fica no quadro `at`.
 // Campo 100x46, ataque para a direita. a = [tipo, quadros [t, x, y]..., fase?]: u nosso, r colete, g goleiro, c cone,
-// b cama, z o "z" do sono (sobe e some). `top: 1` = visto de trás do gol (bola parada). Treino novo no motor: ponha a cena aqui com a mesma chave.
+// m lua, s estrela (pisca), f plaquinha FOLGA (balança). `top: 1` = visto de trás do gol (bola parada). Treino novo no motor: ponha a cena aqui com a mesma chave.
 (function () {
 'use strict';
 const U = window.CRAQUE_UI = window.CRAQUE_UI || {};
@@ -39,16 +39,16 @@ const SC = {
   recup: { bg: 'plain', dur: 9, at: .2, a: [0, 1, 2, 3].map(i => ['u', [0, 20 + 9 * i, i % 2 ? 26 : 20], [.5, 52 + 9 * i, i % 2 ? 26 : 20], [1, 20 + 9 * i, i % 2 ? 26 : 20]]), b: [] },
   resist: { bg: 'plain', dur: 7, at: .1, a: [st('c', 19, 5.5), st('c', 81, 5.5), st('c', 81, 40.5), st('c', 19, 40.5), lap(0), lap(.07), lap(.14), lap(.21)], b: [] },
   veloc: { bg: 'plain', dur: 4.5, at: .22, a: [...[5, 17, 29, 41].flatMap(y => [st('c', 24, y), st('c', 79, y)]), ...[11, 23, 35].map((y, i) => ['u', [0, 26, y], [.1, 26, y], [.32, 77, y], [.45, 77, y], [.9, 26, y], [1, 26, y], i * .06])], b: [] },
-  folga: { bg: 'plain', dur: 5, at: .35, a: [st('b', 29, 17), st('b', 63, 17), st('b', 29, 37), st('b', 63, 37),
-      ['z', [0, 25, 12], [1, 33, 5], 0.001], ['z', [0, 25, 12], [1, 33, 5], 0.5], ['z', [0, 59, 12], [1, 67, 5], 0.131], ['z', [0, 59, 12], [1, 67, 5], 0.63], ['z', [0, 25, 32], [1, 33, 25], 0.261], ['z', [0, 25, 32], [1, 33, 25], 0.76], ['z', [0, 59, 32], [1, 67, 25], 0.391], ['z', [0, 59, 32], [1, 67, 25], 0.89]], b: [[[0, 46, 27]]] },
+  folga: { bg: 'mid', night: 1, dur: 6, at: .3, a: [st('m', 78, 9), ['s', [0, 20, 7], 0.001], ['s', [0, 36, 12], .4], ['s', [0, 62, 6], .7], ['s', [0, 86, 21], .2], ['s', [0, 14, 24], .55],
+      st('c', 16, 39), st('c', 19, 39), st('c', 17.5, 36.4), st('f', 50, 27)], b: [[[0, 50, 23]]] },
 };
 const NS = 'http://www.w3.org/2000/svg';
 const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
 const at = (kf, u) => { if (kf.length === 1) return [kf[0][1], kf[0][2]]; let i = 0; while (i < kf.length - 2 && u > kf[i + 1][0]) i++; const a = kf[i], b = kf[i + 1]; let k = Math.max(0, Math.min(1, (u - a[0]) / ((b[0] - a[0]) || 1))); k = k * k * (3 - 2 * k); return [a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]; };
-const bed = svg => { const g = el('g', {}, svg); el('rect', { x: -10.5, y: -5.5, width: 21, height: 11, rx: 1.6, fill: '#8A5A33', stroke: '#13201A', 'stroke-width': .6 }, g);
-  el('rect', { x: -9.3, y: -4.3, width: 18.6, height: 8.6, rx: 1, fill: '#F8F4EA' }, g); el('rect', { x: -8.5, y: -3, width: 5, height: 6, rx: 1.2, fill: '#BFD0E6', stroke: '#13201A', 'stroke-width': .35 }, g);
-  el('circle', { cx: -5.6, r: 2, fill: '#F8F4EA', stroke: '#13201A', 'stroke-width': .6 }, g); el('rect', { x: -3, y: -4.3, width: 12.3, height: 8.6, rx: 1, fill: '#2F6FB5' }, g); el('rect', { x: -3, y: -4.3, width: 2, height: 8.6, fill: '#7FB2E8' }, g); return g; };
-const zed = svg => { const t = el('text', { 'font-size': 9, 'font-weight': 800, 'font-family': 'inherit', fill: '#F8F4EA', stroke: '#13201A', 'stroke-width': .25, 'text-anchor': 'middle' }, svg); t.textContent = 'z'; return t; };
+const moon = svg => { const g = el('g', {}, svg); el('circle', { r: 4.6, fill: '#F8F4EA' }, g); el('circle', { cx: 2, cy: -1.5, r: 4.2, fill: '#0F2C1F' }, g); return g; };
+const sign = svg => { const g = el('g', {}, svg), w = el('g', {}, g); el('path', { d: 'M-6 0V3.4M6 0V3.4', stroke: '#F8F4EA', 'stroke-width': .5, fill: 'none' }, w);
+  el('rect', { x: -11.5, y: 3.4, width: 23, height: 8.4, rx: 1.6, fill: '#F8F4EA', stroke: '#13201A', 'stroke-width': .6 }, w);
+  const t = el('text', { y: 9.7, 'text-anchor': 'middle', 'font-family': '"Barlow Condensed", sans-serif', 'font-weight': 800, 'font-size': 6, fill: '#13201A' }, w); t.textContent = 'FOLGA'; g._sw = w; return g; };
 // Desde 16/11 (Silvio: "o modelo de jogador e campo utilizados na simulação aparecendo no preview") o desenho copia o campinho
 // ao vivo (livesim.js): gramado #1B6B44/#196340, linhas brancas, gol com rede, luz de estádio, e o boneco = sombra, anel de
 // energia, disco na cor da camisa do clube (`kit` = U.LP.kitFor), bico para onde ele vai e número. O colete do treino e o
@@ -76,6 +76,7 @@ function scene(host, key, big, kit) {
     el('line', { x1: 98, y1: 18.5, x2: 98, y2: 27.5, stroke: '#fff', 'stroke-width': lw * 2 }, svg); el('circle', { cx: 98, cy: 18.5, r: lw * 1.4, fill: '#fff' }, svg); el('circle', { cx: 98, cy: 27.5, r: lw * 1.4, fill: '#fff' }, svg); }
   if (s.bg === 'mid') { el('line', Object.assign({ x1: 50, y1: 0, x2: 50, y2: 46 }, ln), svg); el('circle', Object.assign({ cx: 50, cy: 23, r: 9 }, ln), svg); }
   el('rect', { x: -60, y: -20, width: 220, height: 86, fill: 'url(#' + id + ')', 'pointer-events': 'none', transform: top ? 'matrix(0 1 -1 0 100 0)' : '' }, sv);
+  if (s.night) el('rect', { x: -60, y: -20, width: 220, height: 86, fill: 'rgba(6,20,14,.58)' }, svg); // CT fechado: as luzes apagadas
   const dash = s.line !== undefined ? el('line', { y1: 0, y2: 46, stroke: '#F8F4EA', 'stroke-width': .7, 'stroke-dasharray': '2 2', opacity: .8 }, svg) : null;
   const R = (big ? 2.5 : 3.3) * (top ? .62 : 1), sh = top ? [-R * .25, R * .1] : [R * .1, R * .25]; let nU = 1, nR = 1;
   const man = k => { const g = el('g', {}, svg), c = col[k], num = k === 'g' ? 1 : k === 'u' ? ++nU : ++nR, dark = lum(c[0]) > .5;
@@ -85,13 +86,14 @@ function scene(host, key, big, kit) {
     el('circle', { r: R, fill: c[0], stroke: c[1], 'stroke-width': R * .17 }, g);
     const t = el('text', { y: R * .08, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-family': '"Barlow Condensed", sans-serif', 'font-weight': 800, 'font-size': R * 1.4, fill: dark ? '#0B120E' : '#fff', stroke: dark ? 'rgba(255,255,255,.75)' : 'rgba(0,0,0,.8)', 'stroke-width': R * .26, 'stroke-linejoin': 'round', 'paint-order': 'stroke', transform: top ? 'rotate(90)' : '' }, g); t.textContent = num;
     g._bk = bk; return g; };
-  const nodes = s.a.map(a => a[0] === 'c' ? el('path', { d: 'M-1.6 1.5 L0 -1.8 L1.6 1.5 Z', fill: '#F2C230', stroke: '#13201A', 'stroke-width': .4 }, svg) : a[0] === 'b' ? bed(svg) : a[0] === 'z' ? zed(svg) : man(a[0]));
+  const nodes = s.a.map(a => a[0] === 'c' ? el('path', { d: 'M-1.6 1.5 L0 -1.8 L1.6 1.5 Z', fill: '#F2C230', stroke: '#13201A', 'stroke-width': .4 }, svg) : a[0] === 'm' ? moon(svg) : a[0] === 'f' ? sign(svg) : a[0] === 's' ? el('circle', { r: .8, fill: '#F8F4EA' }, svg) : man(a[0]));
   const br = (big ? 1.3 : 1.8) * (top ? .62 : 1), balls = s.b.map(() => { const g = el('g', {}, svg); el('circle', { r: br * 1.6, fill: 'rgba(255,255,255,.22)' }, g); el('circle', { r: br, fill: '#fff', stroke: '#13201A', 'stroke-width': br * .3 }, g); return g; });
   host.textContent = ''; host.appendChild(sv);
   const kfOf = a => { const n = typeof a[a.length - 1] === 'number'; return [a.slice(1, n ? -1 : undefined), n ? a[a.length - 1] : 0]; };
   const paint = u => { const b0 = s.b[0] ? at(s.b[0], u) : null;
     s.a.forEach((a, i) => { const q = kfOf(a), kf = q[0], ph = q[1], w = ((u - ph) % 1 + 1) % 1, p = at(kf, w), n = nodes[i];
-      if (a[0] === 'z') { n.setAttribute('transform', 'translate(' + p[0] + ' ' + p[1] + ') scale(' + (.5 + .6 * w) + ')'); n.setAttribute('opacity', Math.min(1, w * 5, (1 - w) * 2.5)); return; }
+      if (a[0] === 's') n.setAttribute('opacity', (.6 + .4 * Math.sin(w * 6.283)).toFixed(2));
+      if (n._sw) n._sw.setAttribute('transform', 'rotate(' + (4 * Math.sin(u * 12.566)).toFixed(2) + ')');
       n.setAttribute('transform', 'translate(' + p[0] + ' ' + p[1] + ')');
       if (n._bk) { const p2 = at(kf, Math.min(1, w + .012)); let dx = p2[0] - p[0], dy = p2[1] - p[1]; if (Math.hypot(dx, dy) < .02) { dx = b0 ? b0[0] - p[0] : 1; dy = b0 ? b0[1] - p[1] : 0; } n._bk.setAttribute('transform', 'rotate(' + (Math.atan2(dy, dx) * 180 / Math.PI).toFixed(1) + ')'); }
       if (dash && i === s.line) { dash.setAttribute('x1', p[0] + R + 1); dash.setAttribute('x2', p[0] + R + 1); } });
