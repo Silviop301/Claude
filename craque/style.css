@@ -10800,6 +10800,7 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .ld-st .mkp-tk button { height: 26px; padding: 0 10px; border-radius: 8px; font: 700 15px/26px var(--display); }
 .ld-st .mkp-tk button.on { padding: 0 11px; }
 .tm-h small.tm-vs { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tm-bp > b.tm-ring.lo { color: #F08A5D; }
 
 /* Aviso "O que mudou" na home deitada (settings.js newsPop, Silvio 16/11): creme com o painel carvão dos 6 destaques */
 .ld-pop-c.nvp { width: 640px; max-height: 366px; box-sizing: border-box; border-radius: 20px; background: linear-gradient(180deg, #F6F3EA, #EAE3D1); color: #13201A; padding: 14px 20px 14px; gap: 10px; box-shadow: 0 6px 0 rgba(0,0,0,.35), 0 18px 40px rgba(0,0,0,.4); }
