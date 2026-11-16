@@ -3362,7 +3362,10 @@
   }
   // ---------- Treino da semana (35): um foco em 16, em 4 abas; vale para o próximo jogo ----------
   // Treino enxuto (Silvio 2026-11-09): sem trilho; 4 abas e 4 treinos grandes (nome e energia); à direita o escolhido
-  // com uma frase do que muda; o comentário do auxiliar sobre o rival vira um botão com aviso; dourado Treinar
+  // com uma frase do que muda; dourado Treinar. Visual de 2026-11-16 (Silvio: "essa tela me dá a sensação de estar atrás das
+  // outras" e "um bobinho no card da direita"; desenho B): cada cartão leva a prancheta parada do treino e o cartão da direita
+  // o treino acontecendo (`U.TRC.scene`, ui/treinocena.js); o auxiliar sobe para o topo na pílula da escalação (`#tr2-aux`,
+  // abre a mesma janelinha) e o treino que ele sugere leva o selo dourado `.tr3-sg`. Só desenho: nenhuma regra muda
   function treino(tab) {
     const c = C(), co = c.co, T = S.CO_TRAIN, tabs = ['Ataque', 'Defesa', 'Bola parada', 'Físico'];
     const done = S.coTrainNow(co) ? co.train.k : null;
@@ -3379,21 +3382,32 @@
     const tir = S.coTrainTip(co);
     const aux = tir ? [tir.n > 1 ? tir.n + ' titulares chegam cansados (' + tir.who + '). Hoje vale mais recuperar do que treinar.' : 'O time está pesado do último jogo. Hoje vale mais recuperar do que treinar.', 'recup']
       : pv ? AUX[pv.them.style] || AUX.equilibrado : ['Sem jogo nesta rodada: bom para recuperar.', 'recup'];
-    const enTxt = t => (t.en > 0 ? 'energia −' + t.en : 'energia +' + (-t.en));
+    const BAT = '<svg viewBox="0 0 17 10" aria-hidden="true"><rect x=".8" y=".8" width="13" height="8.4" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="14.6" y="3" width="2" height="4" rx=".8" fill="currentColor"/><rect x="3" y="3" width="5" height="4" rx=".6" fill="currentColor"/></svg>';
+    const enTxt = t => BAT + (t.en > 0 ? '−' + t.en : '+' + (-t.en));
+    const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let run = 0; // o laço da cena do cartão da direita: um por desenho, para sozinho quando a tela sai
     // Fase 4: o atributo que o treino desenvolve (S.CO_TRAIN[k].dv; goleiro dvG) e de quem (as posições do treino)
     const AK = S.CO_AT.keys, POSN = { ATA: 'atacantes', MEI: 'meias', LAT: 'laterais', ZAG: 'zagueiros' }, grow = S.CO_GROW && S.CO_GROW.rate > 0;
     const dvTag = t => (grow && t.dv !== undefined ? '<em class="at">▲ ' + S.CO_AT.short[AK.L[t.dv]] + '</em>' : '');
+    const PLN = { ATA: 'a', MEI: 'm', LAT: 'd', ZAG: 'd' };
     const dvBox = t => { if (!grow || t.dv === undefined) return '';
-      const ps = t.who.filter(x => POSN[x]).map(x => POSN[x]).join(' e '), g = t.who.includes('GOL') && t.dvG !== undefined ? S.CO_AT.names[AK.G[t.dvG]] : '';
-      return '<div class="tr2-dv"><small>DESENVOLVE</small><b>▲ ' + S.CO_AT.names[AK.L[t.dv]] + '</b><span>de ' + ps + '</span>' + (g ? '<span class="g">Goleiros: ▲ ' + g + '</span>' : '') + '</div>'; };
+      const ps = t.who.filter(x => POSN[x]).map(x => '<i data-ln="' + PLN[x] + '">' + x + '</i>').join(''), g = t.who.includes('GOL') && t.dvG !== undefined ? S.CO_AT.names[AK.G[t.dvG]] : '';
+      return '<div class="tr3-dv"><span>▲ ' + S.CO_AT.names[AK.L[t.dv]] + ' ' + ps + '</span>' + (g ? '<span>▲ ' + g + ' <i data-ln="g">GOL</i></span>' : '') + '</div>'; };
+    const sug = aux[1] && !done ? aux[1] : null;
+    if (!done && !pick) { pick =sug && T[sug].tab === tab ? sug : Object.keys(T).find(k => T[k].tab === tab); } // já abre com um treino na direita (a cena passando)
     const draw = () => {
       const ks = Object.keys(T).filter(k => T[k].tab === tab), sel = pick && T[pick];
       const go = done ? '<button class="tm-go" id="ldtr-back">Voltar</button>' : '<button class="tm-go' + (sel ? '' : ' off') + '" id="ldtr-go">' + (sel ? 'Treinar' : 'Escolha um') + '</button>';
-      show('<div class="tr2"><div class="tm-h"><button class="tcr-back" id="tr2-back" aria-label="Voltar">' + BK + '</button><b>Treino</b><small>' + (vs ? 'para o jogo contra o ' + vn : 'sem jogo nesta rodada') + '</small></div>' +
+      show('<div class="tr2"><div class="tm-h"><button class="tcr-back" id="tr2-back" aria-label="Voltar">' + BK + '</button><b>Treino</b><small>' + (vs ? 'para o jogo contra o ' + vn : 'sem jogo nesta rodada') + '</small>' +
+        '<button class="tm-tip' + (sug ? '' : ' ok') + '" id="tr2-aux"><span class="tm-tip-fw">' + auxFace(co, 'tm-tip-f') + '<em>' + S.coAuxLv(co).k + '</em></span><span><small>AUXILIAR</small><b>' + (sug ? T[sug].name : done ? 'Treino feito' : 'Treine o que é seu') + '</b></span></button></div>' +
         '<div class="tr2-tabs">' + tabs.map(t => '<button data-tt="' + t + '"' + (t === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
-        '<div class="tr2-g">' + ks.map(k => '<button class="tr2-c' + (k === pick ? ' on' : '') + (done && k !== done ? ' dis' : '') + '" data-tk="' + k + '"' + (done && k !== done ? ' disabled' : '') + '><b>' + (done === k ? '✓ ' : '') + T[k].name + '</b><span class="tr2-tg"><em class="' + (T[k].en > 0 ? 'dn' : 'up') + '">' + enTxt(T[k]) + '</em>' + dvTag(T[k]) + '</span></button>').join('') + '</div>' +
-        '<div class="tr2-side"><div class="tr2-d">' + (sel ? '<b>' + sel.name + '</b><p>' + trTip(pick) + '</p>' + dvBox(sel) : '<p class="tr2-none">Toque num treino</p>') + '</div>' +
-          '<button class="tm-b" id="tr2-aux">Auxiliar' + (aux[1] && !done ? '<i class="tm-dot">1</i>' : '') + '</button>' + go + '</div></div>', st => {
+        '<div class="tr2-g">' + ks.map(k => '<button class="tr2-c' + (k === pick ? ' on' : '') + (done && k !== done ? ' dis' : '') + '" data-tk="' + k + '"' + (done && k !== done ? ' disabled' : '') + '><span class="tr3-tx">' + (k === sug ? '<span class="tr3-sg">★ AUXILIAR SUGERE</span>' : '') + '<b>' + (done === k ? '✓ ' : '') + T[k].name + '</b><span class="tr2-tg"><em class="' + (T[k].en > 0 ? 'dn' : 'up') + '">' + enTxt(T[k]) + '</em>' + dvTag(T[k]) + '</span></span><span class="tr3-th" data-th="' + k + '"></span></button>').join('') + '</div>' +
+        '<div class="tr2-side"><div class="tr2-d tr3-d">' + (sel ? '<div class="tr3-pit"></div><div class="tr3-di"><b>' + sel.name + '</b><p>' + trTip(pick) + '</p>' + dvBox(sel) + '</div>' : '<p class="tr2-none">Toque num treino</p>') + '</div>' + go + '</div></div>', st => {
+        // pranchetas paradas nos cartões e a cena andando no cartão da direita
+        const me = ++run, TRC = U.TRC;
+        if (TRC) { st.querySelectorAll('[data-th]').forEach(h => TRC.scene(h, h.dataset.th, false));
+          const pit = st.querySelector('.tr3-pit'), sc = pit && TRC.scene(pit, pick, true), t0 = performance.now();
+          if (sc && !still) { const loop = now => { if (me !== run || !pit.isConnected) return; sc.paint(((now - t0) / 1000 / sc.dur) % 1); requestAnimationFrame(loop); }; requestAnimationFrame(loop); } }
         st.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { sfx('tap'); tab = b.dataset.tt; draw(); });
         st.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { sfx('tap'); pick = b.dataset.tk; draw(); });
         st.querySelector('#tr2-back').onclick = () => { sfx('tap'); semana(); };
