@@ -21,6 +21,25 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EA_DIR = os.path.join(ROOT, 'tools', 'ea')
 EA_JSON = os.path.join(EA_DIR, 'ea.json')
 REF_JSON = os.path.join(EA_DIR, 'ref.json')
+LADO_JSON = os.path.join(EA_DIR, 'lado.json')  # lado de cada jogador (Silvio 2026-11-16: "o Vini é ponta esquerda"): E, D ou A (os dois)
+L_POS, R_POS = {'LB', 'LWB', 'LM', 'LW'}, {'RB', 'RWB', 'RM', 'RW'}
+
+
+def lado(pos, alt, foot):
+    """E, D ou A pela posição do EA FC; quem joga pelos dois lados é A; central sem lado na base vai pelo pé (2 = canhoto)."""
+    if not pos:
+        return None
+    alls = [pos] + list(alt or [])
+    e, d = any(x in L_POS for x in alls), any(x in R_POS for x in alls)
+    if pos in L_POS:
+        return 'A' if d else 'E'
+    if pos in R_POS:
+        return 'A' if e else 'D'
+    if e and d:
+        return 'A'
+    if e or d:
+        return 'E' if e else 'D'
+    return 'E' if foot == 2 else 'D' if foot == 1 else None
 API = 'https://drop-api.ea.com/rating/ea-sports-fc?locale=en&limit=100&offset=%d'
 TOP = 14      # média dos 14 melhores do clube = nível que fica igual
 MINM = 8      # clube com menos jogadores na base que isso fica com a conta antiga
@@ -46,7 +65,9 @@ def baixar():
             if (p.get('gender') or {}).get('id') != 0:
                 continue
             out.append([p['id'], p['overallRating'], p['firstName'], p['lastName'], p.get('commonName'),
-                        (p.get('birthdate') or '').split(' ')[0], (p.get('team') or {}).get('label')])
+                        (p.get('birthdate') or '').split(' ')[0], (p.get('team') or {}).get('label'),
+                        (p.get('position') or {}).get('shortLabel'),
+                        [a.get('shortLabel') for a in (p.get('alternatePositions') or [])], p.get('preferredFoot')])
         off += 100
         time.sleep(0.3)
     json.dump(out, open(EA_JSON, 'w'), ensure_ascii=False)
@@ -84,9 +105,10 @@ def casar():
     rows = json.loads(subprocess.run(['node', '-e', DUMP], cwd=ROOT, capture_output=True, text=True, check=True).stdout)
     game = [dict(club=r[0], cn=r[1], str=r[2], api=r[3], n=r[4], age=r[5], ovr=r[6]) for r in rows]
     idx = collections.defaultdict(list)
-    for eid, ovr, fn, ln, cn, bd, team in ea:
+    for r in ea:
+        eid, ovr, fn, ln, cn, bd, team = r[:7]
         names = [norm('%s %s' % (fn, ln))] + ([norm(cn)] if cn else [])
-        rec = dict(ovr=ovr, age=age_of(bd), names=names, team=team)
+        rec = dict(ovr=ovr, age=age_of(bd), names=names, team=team, side=lado(*(r[7:10] if len(r) >= 10 else (None, [], None))))
         for t in set(t for n in names for t in n):
             idx[t].append(rec)
 
@@ -124,7 +146,7 @@ def casar():
             sc = [x for x in sc if x[0] >= sc[0][0] and difflib.SequenceMatcher(None, cl, ' '.join(norm(x[1]['team'] or ''))).ratio() > 0.6]
             if len(sc) != 1:
                 continue
-        match[g['api']] = (sc[0][1]['ovr'], sc[0][0])
+        match[g['api']] = (sc[0][1]['ovr'], sc[0][0], sc[0][1]['side'])
 
     clubs = collections.defaultdict(list)
     for g in game:
@@ -158,6 +180,9 @@ def casar():
                 ref[p['api']] = round(MIX * (match[p['api']][0] + dg) + (1 - MIX) * p['ovr'] - p['str'])
                 mix += 1
     json.dump(dict(sorted(ref.items())), open(REF_JSON, 'w'), separators=(',', ':'))
+    sides = {k: v[2] for k, v in match.items() if v[2]}
+    json.dump(dict(sorted(sides.items())), open(LADO_JSON, 'w'), separators=(',', ':'))
+    print('lado de %d jogadores (%s)' % (len(sides), dict(collections.Counter(sides.values()))))
     print('casados %d de %d; clubes pela base %d, fora %d (%d meio a meio); EA -> jogo %.1f em média'
           % (len(match), len(game), len(clubs) - len(skipped), len(skipped), mix, dg))
 
