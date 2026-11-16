@@ -3,7 +3,6 @@
   const U = window.CRAQUE_UI;
   const { tierCls, TIER_NAME, G, D, S, sfx, $, screen, SAVE, HALL, YEAR0, esc, money, club, league, stars, year, crest, trophy, titleType, meter, load, store, save, render, bar } = U;
   // ---------- pré-temporada: característica ----------
-  const SUP = ['', '', '²', '³'];
   function traitsHtml() {
     const syn = S.synergies(G.c);
     const slots = [];
@@ -50,7 +49,6 @@
     $('mc-tier').textContent = TIER_NAME[t];
   }
   // Investimentos na mesma posição dos atributos na carta (RIT FIN / PAS DRI / DEF FÍS); fisioterapia embaixo
-  const INV_ORDER = () => D.ATTRS.map(k => D.INVEST.find(t => t.attr && t.attr[k])).filter(Boolean).concat(D.INVEST.filter(t => !t.attr));
   // Com pontos para gastar, cada atributo da carta vira o botão do treino dele (um toque compra +2)
   function miniCard(inv) {
     const E = S.eff(G.c), t = tierCls(S.ovr(G.c));

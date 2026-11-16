@@ -972,7 +972,6 @@
     pop(popHead('Números do jogo', S.coClock(x.m)) + '<div class="ld-pb col ldl-nums" id="ldl-nums">' + numBody(x) + '</div>', 'Números do jogo', null, 'w560');
   }
   const byOf = sq => { const o = {}; sq.forEach(p => { o[p.id] = p; }); return o; };
-  const enC = e => (e >= 70 ? 'ok' : e >= 50 ? 'mid' : 'low');
   // Tocar num jogador seu no campinho abre esta mesma parada com ele já escolhido (st.pick): quem entra aparece ao lado dele
   // A parada (intervalo, vermelho, lesão, "Parar e mexer"; o gol não para desde 2026-11-09): o campo da escalação
   // (Silvio 2026-11-09), com o anel de energia e o amarelo de cada um. Troca: toque num titular e num do banco (ou o
