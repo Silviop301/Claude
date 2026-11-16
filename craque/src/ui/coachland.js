@@ -312,10 +312,13 @@
     o = o || {};
     // do lado trocado (S.coSideOk) o número também sai laranja, com o geral que rende ali
     const fitC = !slot || p.pos === slot ? (S.coSideOk(p, o.form, o.i) ? 'ok' : 'lado') : (S.coFit(p.pos, slot) >= 0.88 ? 'sabe' : 'fora'), ova = S.coOvrAt(p, slot, o.form, o.i);
+    // Escalação (o.own, Silvio 2026-11-16): a etiqueta leva a cor do setor DO JOGADOR e, fora da posição, diz a posição
+    // dele (um zagueiro no meio aparece azul no meio dos verdes); na posição dele segue o nome da vaga (LE, VOL, PD...)
+    const own = o.own && slot, tagT = own && p.pos !== slot ? p.pos : (o.tag || slot || p.pos);
     const yc = (o.yc !== undefined ? o.yc : C().pend(p)) ? '<i class="ld-yc" title="' + (o.yc !== undefined ? 'Amarelado' : 'Pendurado') + '"></i>' : '';
-    return '<button class="ld-dot ' + enRing(p.en) + (o.sel ? ' sel' : '') + (fitC === 'fora' ? ' fora' : '') + '"' + (o.attr || '') + ' data-ln="' + lnOf(slot || p.pos) + '" style="left:' + x + '%;top:' + y + '%;--en:' + Math.round(p.en) + '"' +
+    return '<button class="ld-dot ' + enRing(p.en) + (o.sel ? ' sel' : '') + (fitC === 'fora' ? ' fora' : '') + '"' + (o.attr || '') + ' data-ln="' + lnOf(own ? p.pos : slot || p.pos) + '"' + (own ? ' data-own' : '') + ' style="left:' + x + '%;top:' + y + '%;--en:' + Math.round(p.en) + '"' +
       ' aria-label="' + esc(p.n) + ', ' + (slot || p.pos) + ', ' + ova + ', energia ' + Math.round(p.en) + '%">' +
-      '<i class="ld-dc' + (!o.num && fitC !== 'ok' ? ' pen' : '') + '">' + (o.num ? (p.num || p.ovr) : ova) + yc + '</i>' + moAr(p) + '<span class="ld-dn"><b>' + (!o.num && p.num ? '<s class="ld-nu">' + p.num + '</s>' : '') + esc(last(p.n)) + '</b><em class="' + fitC + '">' + (o.tag || slot || p.pos) + '</em></span></button>';
+      '<i class="ld-dc' + (!o.num && fitC !== 'ok' ? ' pen' : '') + '">' + (o.num ? (p.num || p.ovr) : ova) + yc + '</i>' + moAr(p) + '<span class="ld-dn"><b>' + (!o.num && p.num ? '<s class="ld-nu">' + p.num + '</s>' : '') + esc(last(p.n)) + '</b><em class="' + fitC + '">' + tagT + '</em></span></button>';
   }
   function rivalDot(x, y, nm, tag) {
     return '<span class="ld-dot riv" style="left:' + x + '%;top:' + y + '%"><i class="ld-dc">?</i><span class="ld-dn"><b>' + esc(nm) + '</b>' + (tag ? '<em class="riv">' + tag + '</em>' : '') + '</span></span>';
@@ -624,7 +627,7 @@
       const nFix = fixes.length, fixLbl = nFix === 1 ? 'Uma troca' : nFix + ' trocas';
       // Com um titular escolhido acende no banco quem joga na vaga; com um reserva escolhido, as vagas em que ele joga
       const selP = selB ? by[selB] : null;
-      const dots = co.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { form: co.form, i, sel: swap === i, attr: ' data-xi="' + i + '" data-pid="' + id + '"' + (selP ? (fitsSlot(selP, sl[i]) ? ' data-fit="1"' : ' data-far="1"') : ''), tag: S.coSlotLbl(co.form, i) }) : '').join('');
+      const dots = co.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { own: 1, form: co.form, i, sel: swap === i, attr: ' data-xi="' + i + '" data-pid="' + id + '"' + (selP ? (fitsSlot(selP, sl[i]) ? ' data-fit="1"' : ' data-far="1"') : ''), tag: S.coSlotLbl(co.form, i) }) : '').join('');
       const bstrip = bench.map((p, k) => benchChip(p, bench[k - 1], (c.avail(p) ? '' : ' dis') + (selB === p.id ? ' on' : '') + (swap !== null && c.avail(p) ? (p.pos === sl[swap] ? ' can' : (p.pos === 'GOL') === (sl[swap] === 'GOL') ? ' lo' : ' far') : ''), c.avail(p), true, swap !== null ? ovrAt(p, sl[swap], co.form, swap) : null)).join('');
       const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b id="tm-' + k + '">' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
       const title = swap !== null ? '<span class="tm-hint">Toque ou arraste quem entra, ou toque em outro titular</span>' : selB ? '<span class="tm-hint">Toque em quem sai</span>'
@@ -643,7 +646,7 @@
         '<div class="ld-pitch tm-pitch">' + PITCH + dots + (swap !== null ? nearList(sl[swap], bench, c.avail, sp[swap][0], sp[swap][1], by[co.xi[swap]], co.form, swap) : '') +
         '<button class="tm-best' + (bestXI().join() === co.xi.join() ? ' on" disabled' : '"') + ' id="tm-best" aria-label="Escalar os melhores pelo geral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></svg>Melhores</button>' +
         '<button class="tm-best tm-rest' + (restXI().join() === co.xi.join() ? ' on" disabled' : '"') + ' id="tm-rest" aria-label="Escalar os mais descansados de cada posição"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h15v8H3zM18 10.5h3v3h-3z"/></svg>Descansados</button></div>' +
-        '<div class="tm-bench"><small>BANCO</small>' + bstrip + '</div>' +
+        '<div class="tm-bench v"><small>BANCO</small>' + bstrip + '</div>' +
         '<div class="tm-side">' + pick('form', 'Formação', co.form) + pick('sty', 'Estilo', esc(S.CO_STY[co.style].name)) +
         '<span class="tm-two"><button class="tm-b" id="ld-fun">Funções</button><button class="tm-b" id="ld-bat">Batedores</button></span><button class="tm-b" id="ld-ele">Elenco</button>' +
         '<button class="tm-go" id="' + (play ? 'ld-go' : 'ld-ok') + '">' + (play ? 'Jogar' : 'Pronto') + '</button></div></div>', st => {
@@ -674,7 +677,7 @@
           co.form = nf; co.xi = xi; swap = null; selB = null; st.querySelector('#tm-form').textContent = nf;
           xi.forEach((id, i) => { const el = st.querySelector('[data-pid="' + id + '"]'), p = by[id]; if (!el || !p) return;
             el.style.left = sp2[i][0] + '%'; el.style.top = sp2[i][1] + '%'; el.dataset.xi = i;
-            const em = el.querySelector('.ld-dn em'); if (em) { em.className = fitOf(p, sl2[i]); em.textContent = S.coSlotLbl(nf, i); }
+            const em = el.querySelector('.ld-dn em'); if (em) { em.className = fitOf(p, sl2[i]); em.textContent = p.pos !== sl2[i] ? p.pos : S.coSlotLbl(nf, i); }
             el.classList.toggle('fora', fitOf(p, sl2[i]) === 'fora'); });
           st.querySelectorAll('[data-pid]').forEach(el => { if (!xi.includes(el.dataset.pid)) el.classList.add('tm-out'); });
           clearTimeout(anim); anim = setTimeout(draw, 430);
@@ -1901,7 +1904,14 @@
     '<span class="mk-top">' + mkCx(coins) + (noWin ? '' : mkWin()) + '<button class="ol2-q" id="mk-q" aria-label="Como funciona">?</button></span></div>';
   const mkCoins = (st, me) => { cxBind(st, me); const b = st.querySelector('#mk-coins'); if (b) b.onclick = () => { sfx('tap'); loja(0, me); }; };
   const mkHelp = (t, p) => pop('<div class="acd-help"><b>Como funciona</b><p>' + p + '</p><button class="hl-btn dark" data-pop-x>Entendi</button></div>', 'Como funciona', null, 'hl-pop acd-pop tm-pop');
-  const mkClub = p => (p.club ? esc(club(p.club).short || club(p.club).name) : 'sem clube');
+  // Escudo antes do clube e bandeira antes do nome (Silvio 2026-11-16): a lista do mercado se lê sem precisar ler
+  const mkClub = (p, cr) => (p.club ? (cr ? crest(p.club, 'mk-cr') : '') + esc(club(p.club).short || club(p.club).name) : 'sem clube');
+  // Bandeira: p.nat é o código ISO (gb-eng etc.) de quem é de fora ou o nome do país; sem ele, o país do clube (ou da liga
+  // de onde saiu quem está sem clube). O emoji aparece pela fonte de bandeiras do jogo (no Windows também)
+  const RI = c => String.fromCodePoint(...[...c.toUpperCase()].map(ch => 0x1F1E6 + ch.charCodeAt(0) - 65));
+  const natFlag = p => { const D = U.D, lg = p.club ? (D.CLUB_BY_ID[p.club] || {}).league : p.lg, n = p.nat || (lg && D.LEAGUE_BY_ID[lg] ? D.LEAGUE_BY_ID[lg].country : '');
+    const f = /^[a-z]{2}$/.test(n) ? RI(n) : /^gb-[a-z]{3}$/.test(n) ? '\u{1F3F4}' + [...n.replace('-', '')].map(ch => String.fromCodePoint(0xE0000 + ch.charCodeAt(0))).join('') + '\u{E007F}' : (D.NATION_BY_NAME[n] || {}).flag;
+    return f ? '<i class="mk-fl" aria-hidden="true">' + f + '</i>' : ''; };
   // As 3 abas do Mercado: Procurar, Elenco (abre o seu elenco e o Voltar devolve ao Mercado) e Notícias. "Indicados" saiu na 1.0
   // (aba apagada com "em breve"). O aviso laranja conta as notícias novas da sua liga e do seu clube
   // Propostas (11/11): as propostas pelos seus esperam na 4ª aba, com o número das que estão abertas
@@ -1955,7 +1965,7 @@
       return '<div class="mkw-f' + (v ? ' on' : '') + '">' + (v ? '<button class="mk-fx" data-mx="' + i + '" aria-label="limpar ' + x.t.toLowerCase() + '">' + x.t + '<i>×</i></button>' : '<small>' + x.t + '</small>') +
         '<button class="mk-ar" data-mf="' + i + '" data-d="-1" aria-label="' + x.t.toLowerCase() + ' anterior">' + MK_L + '</button><b>' + esc(t) + '</b><button class="mk-ar" data-mf="' + i + '" data-d="1" aria-label="' + x.t.toLowerCase() + ' seguinte">' + MK_R + '</button></div>'; };
     const row = (p, i) => { const o = S.coMktOvr(co, p), pr = S.coMktPrice(p);
-      return '<button class="mkw-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><b>' + esc(p.n) + obsTag(co, p) + '</b><i class="mkw-ps" data-ln="' + lnOf(p.pos) + '">' + p.pos + '</i><span>' + p.age + '</span><span class="cl">' + mkClub(p) + '</span>' +
+      return '<button class="mkw-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><b>' + natFlag(p) + esc(p.n) + obsTag(co, p) + '</b><i class="mkw-ps" data-ln="' + lnOf(p.pos) + '">' + p.pos + '</i><span>' + p.age + '</span><span class="cl">' + mkClub(p, true) + '</span>' +
         '<em class="mk-ovr ' + (o ? o.vs : 'nr') + '">' + S.coMktOvrTxt(o) + '</em><strong>' + (p.club ? c.brl(pr) : 'grátis') + '</strong></button>'; };
     const empty = n ? 'Filtre mais: com estes filtros são ' + plMil(n, 'jogador', 'jogadores') + '. A lista aparece com até ' + S.CO_MKT.max + '.' : 'Ninguém com estes filtros. Solte um deles.';
     const help = 'Escolha os filtros à esquerda: com até ' + S.CO_MKT.max + ' jogadores a lista aparece ao lado. O geral aparece em faixa, pelo que o olheiro viu: cada relatório estreita a faixa e o completo mostra o número certo. Verde é melhor que o seu titular da posição; laranja, pior. A janela abre nas 3 primeiras rodadas e em 2 rodadas no meio do campeonato. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.';
@@ -1998,7 +2008,7 @@
     pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * 4, pg * 4 + 4); sel = Math.min(sel || 0, R.length - 1);
     const chips = F.map((x, i) => (m.f[i] ? '<span class="mk-chip">' + esc(x.o[m.f[i]].t.replace(' · verba', '')) + '</span>' : '')).join('') + (m.nm && m.nm.trim().length >= 3 ? '<span class="mk-chip">"' + esc(m.nm.trim()) + '"</span>' : '');
     const row = (p, i) => { const o = S.coMktOvr(co, p), pr = S.coMktPrice(p);
-      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><i>' + p.pos + '</i><span><b>' + esc(p.n) + obsTag(co, p) + '</b><small' + (o ? '' : ' class="nr"') + '>' + p.age + ' anos · ' + mkClub(p) + (o ? '' : ' · sem relatório') + '</small></span>' +
+      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><i data-ln="' + lnOf(p.pos) + '">' + p.pos + '</i><span><b>' + natFlag(p) + esc(p.n) + obsTag(co, p) + '</b><small' + (o ? '' : ' class="nr"') + '>' + mkClub(p, true) + ' · ' + p.age + ' anos' + (o ? '' : ' · sem relatório') + '</small></span>' +
         '<em class="mk-ovr ' + (o ? o.vs : 'nr') + '">' + S.coMktOvrTxt(o) + '</em><strong>' + (p.club ? c.brl(pr) : 'grátis') + '</strong></button>'; };
     show('<div class="mk mkr">' + mkHead('mkr-back', 'Resultado', U.D.plural(list.length, 'jogador', 'jogadores'), false, true) +
       '<div class="mk-chips">' + chips + '<span class="rs-gap"></span><button class="mk-mud" id="mkr-mud">Mudar</button></div>' +
@@ -2865,7 +2875,8 @@
       (num ? '<text x="60" y="40" text-anchor="middle" font-family="Barlow, sans-serif" font-weight="800" font-size="11" letter-spacing="1.2" fill="' + ink + '" stroke="' + out + '" stroke-width="2.4" paint-order="stroke">' + esc(name) + '</text>' +
         '<text x="60" y="88" text-anchor="middle" font-family="Barlow Condensed, sans-serif" font-weight="800" font-size="46" fill="' + ink + '" stroke="' + out + '" stroke-width="3.5" paint-order="stroke">' + num + '</text>' : '') + '</svg>';
   }
-  function numPop(q, sel, me) {
+  // (era numPop: o mesmo nome do "Números do jogo" do ao vivo engolia aquele botão)
+  function shirtPop(q, sel, me) {
     const c = C(), co = c.co, cl = club(co.club), ok = h => typeof h === 'string' && /^#[0-9a-f]{6}$/i.test(h);
     const k = (U.LP && U.LP.kitFor ? U.LP.kitFor(cl.name, cl.id) : null) || ['#F4F1E8', '#1D1D1F'];
     const base = ok(k[0]) ? k[0] : '#F4F1E8', trim = ok(k[1]) && k[1].toLowerCase() !== base.toLowerCase() ? k[1] : k.pat && ok(k.pat[1]) ? k.pat[1] : '#1D1D1F';
@@ -2878,7 +2889,7 @@
       '<div class="nm-lg"><span><u class="me"></u>o de hoje</span><span><u class="t"></u>de outro do elenco</span><span><u></u>livre</span></div></div>' +
       '<div class="nm-r"><div class="nm-shirt">' + shirtSvg(base, trim, last.toUpperCase().slice(0, 12), sel) + '</div><p class="nm-nt">' + note + '</p>' + btn + '</div>' +
       '<button class="ld-x nm-x" data-pop-x aria-label="Fechar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>', 'Número da camisa', w => {
-      w.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { sfx('tap'); numPop(q, +b.dataset.n, me); });
+      w.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { sfx('tap'); shirtPop(q, +b.dataset.n, me); });
       const go = w.querySelector('#nm-go:not([disabled])'); if (go) go.onclick = () => { S.coSetNum(co, q, sel); c.save(); closePop(); me(); };
     }, 'nmp');
   }
@@ -2931,7 +2942,7 @@
       const sl = st.querySelector('#lde-sell:not([disabled])'); if (sl) sl.onclick = () => { sfx('tap'); const of = S.coMktList(co, q, !S.coMktListed(co, q)); c.save(); me(); if (of) { of.seen = 1; c.save(); recebida(of, me); } };
       const ov = st.querySelector('#lde-of'); if (ov) ov.onclick = () => { sfx('tap'); recebida(S.coMktOfferFor(co, q), me); };
       const rc = st.querySelector('#lde-resc:not([disabled])'); if (rc) rc.onclick = () => rescPop(q, me);
-      const nb = st.querySelector('#lde-num'); if (nb) nb.onclick = () => { sfx('tap'); numPop(q, q.num, me); };
+      const nb = st.querySelector('#lde-num'); if (nb) nb.onclick = () => { sfx('tap'); shirtPop(q, q.num, me); };
     });
   }
   // Troféus e Hall (2026-11-11): telas cheias no padrão do Estádio (painel à esquerda, números à direita), no lugar das janelinhas
