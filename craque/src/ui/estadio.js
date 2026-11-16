@@ -203,7 +203,7 @@ window.CRAQUE_UI.EST = (function () {
       const hz = [0, 8, 13, 17, 23, 29][LZ] * k, Lp = [0, 6, 8, 10, 11, 12][LZ] * k, rows = [0, 1, 2, 3, 3, 4][LZ], cl = [0, 2, 3, 4, 5, 6][LZ], ce = 2.3 * k, dp = rows * ce + 1.2 * k, wd = cl * ce + 1.2 * k;
       [[px - off, py - off, 0.3, 0.3], [px + pw + off, py - off, 0.7, 0.3], [px - off, py + ph + off, 0.3, 0.7], [px + pw + off, py + ph + off, 0.7, 0.7]].forEach((q, i) => {
         const x = q[0], y = q[1], ux = (x < px ? -1 : 1) * Math.SQRT1_2, uy = (y < py ? -1 : 1) * Math.SQRT1_2, hx = x + ux * (Lp + dp / 2), hy = y + uy * (Lp + dp / 2);
-        const pk = ' class="est-pk" style="animation-duration:' + [8.5, 11, 9.5, 12.5][i] + 's;animation-delay:' + [-1, -6.5, -3.2, -9][i] + 's"';
+        const pk = ' class="est-pk" data-tw="' + i + '"';
         s += '<g' + pk + '>';
         if (LZ >= 4) { const tx = px + pw * q[2], ty = py + ph * q[3], nx = -(ty - hy), ny = tx - hx, nl = Math.sqrt(nx * nx + ny * ny), w = pw * 0.14;
           s += '<linearGradient id="ebm' + id + i + '" gradientUnits="userSpaceOnUse" x1="' + f(hx) + '" y1="' + f(hy) + '" x2="' + f(tx) + '" y2="' + f(ty) + '"><stop offset="0" stop-color="#FFF7DC" stop-opacity="' + (LZ >= 5 ? 0.34 : 0.24) + '"/><stop offset="1" stop-color="#FFF7DC" stop-opacity="0"/></linearGradient>' +
@@ -267,5 +267,14 @@ window.CRAQUE_UI.EST = (function () {
       '<rect x="0" y="' + (h - 5) + '" width="' + w + '" height="5" fill="#22834A"/><line x1="0" y1="' + (h - 5) + '" x2="' + w + '" y2="' + (h - 5) + '" stroke="#F3F1EA" stroke-opacity=".8" stroke-width="1"/>' +
       '<g transform="matrix(1,0,0,-1,0,' + (h - 9) + ')">' + o.g + '</g></svg>';
   }
-  return { svg, slice, depth: D0, pads: [['xadrez', 'Xadrez'], ['faixas', 'Faixas largas'], ['diagonal', 'Diagonal'], ['circulos', 'Círculos'], ['losango', 'Losangos'], ['cruzado', 'Cruzado']] };
+  // Piscada dos refletores: de tempos em tempos, sem padrão, uma torre qualquer falha um instante (lâmpadas, brilho e facho)
+  function live(root) {
+    if (!root || root._estLive || typeof setTimeout === 'undefined') return; root._estLive = 1;
+    const tick = () => { if (!root.isConnected) return;
+      const g = root.querySelectorAll('[data-tw]'), i = String(Math.floor(Math.random() * 4));
+      g.forEach(x => { if (x.dataset.tw !== i) return; x.classList.remove('pk', 'pk2'); void x.getBoundingClientRect(); x.classList.add(Math.random() < 0.5 ? 'pk' : 'pk2'); });
+      setTimeout(tick, 2200 + Math.random() * 7000); };
+    setTimeout(tick, 1200 + Math.random() * 3500);
+  }
+  return { svg, slice, live, depth: D0, pads: [['xadrez', 'Xadrez'], ['faixas', 'Faixas largas'], ['diagonal', 'Diagonal'], ['circulos', 'Círculos'], ['losango', 'Losangos'], ['cruzado', 'Cruzado']] };
 })();
