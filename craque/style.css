@@ -10862,3 +10862,10 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .nm-nt { font: 700 14px/1.3 var(--body); color: #B9C9BF; text-align: center; margin: 0; } .nm-nt em { color: #F2C230; font-style: normal; }
 .nm-r .hl-btn { margin-top: auto; width: 100%; }
 .ld-st button.nm-x { position: absolute; right: 12px; top: 10px; }
+/* Ajustes deitados (16/11): as linhas não passam por trás do card da conta. A coluna cede (min-width 0), ganha
+   mais largura que o card e a linha da Velocidade fica um pouco mais justa para caber numa linha só */
+.aj-l, .aj-sw, .aj-lk { min-width: 0; }
+.aj-l > .aj-sw, .aj-l > .aj-lk { min-height: 0; } /* a altura vem da grade (1fr): com 5 linhas no computador elas não invadem o espaço entre si */
+.aj-sw > b { min-width: 0; }
+.aj-l:not(.n6) .aj-vel > b { font-size: 26px; } .aj-vel .aj-seg i { padding-left: 11px; padding-right: 11px; } .aj-vel .aj-seg i.tx { padding-left: 9px; padding-right: 9px; }
+.aj:not(.aj-solo) { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); } /* o card da conta tem folga; as linhas ganham largura e cabem numa linha só */
