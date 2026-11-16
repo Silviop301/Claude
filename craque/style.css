@@ -10795,3 +10795,7 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .tm .ld-pitch .ld-dn em { font-size: 10px; padding: 1px 5px; border-radius: 5px; }
 .tm .ld-pitch .ld-dot .mo-ar { width: 14px; height: 14px; right: -5px; top: -4px; }
 .tm .ld-pitch .ld-dot .mo-ar svg { width: 9px; height: 9px; }
+
+/* Régua da proposta: o `.ld-st button:not(.btn)` zerava o padding e o texto do "Justa" encostava na borda do creme (Silvio 16/11) */
+.ld-st .mkp-tk button { height: 26px; padding: 0 10px; border-radius: 8px; font: 700 15px/26px var(--display); }
+.ld-st .mkp-tk button.on { padding: 0 11px; }
