@@ -55,7 +55,13 @@ window.CRAQUE_UI.EST = (function () {
     walks.forEach(wk => { g += '<rect x="' + f(x0) + '" y="' + f(d * wk - 1.5 * k) + '" width="' + f(len) + '" height="' + f(3 * k) + '" fill="#17181B"/>'; });
     if (!o.empty) g += crowd(seats, o.occ, cols, r, 1.3 * k);
     else g += crowd(seats, 0, cols, r, 1.3 * k);
-    if (o.cam && lvl >= 4) g += '<rect x="' + f(x0 + len * 0.18) + '" y="' + f(d * walks[0] - 2.2 * k) + '" width="' + f(len * 0.64) + '" height="' + f(4.4 * k) + '" rx="1.5" fill="#E9D79B"/><rect x="' + f(x0 + len * 0.18) + '" y="' + f(d * walks[0] - 2.2 * k) + '" width="' + f(len * 0.64) + '" height="' + f(1.4 * k) + '" fill="#FFF6D2"/>';
+    if (o.cam && lvl >= 4) {   // camarotes: faixa de vidro com luz quente no meio do setor, cresce a cada nível
+      const cm = Math.min(5, +o.cam || 1), cw = len * (0.16 + 0.12 * cm), cx = x0 + (len - cw) / 2, chh = (cm >= 4 ? 5.8 : 4.4) * k, cy = d * walks[0] - chh / 2;
+      g += '<rect x="' + f(cx - 2.5 * k) + '" y="' + f(cy - 2.5 * k) + '" width="' + f(cw + 5 * k) + '" height="' + f(chh + 5 * k) + '" rx="' + f(3 * k) + '" fill="#FFC44D" fill-opacity="' + f(0.1 + 0.035 * cm) + '"/>';
+      g += '<rect x="' + f(cx) + '" y="' + f(cy) + '" width="' + f(cw) + '" height="' + f(chh) + '" rx="1.5" fill="#F0BE55" stroke="#1B1C1F" stroke-width="' + f(0.7 * k) + '"/><rect x="' + f(cx + 0.6 * k) + '" y="' + f(cy + 0.6 * k) + '" width="' + f(cw - 1.2 * k) + '" height="' + f(chh * 0.42) + '" fill="#FFF3C8"/>';
+      for (let x = cx + 6 * k; x < cx + cw - 2 * k; x += 6 * k) g += '<line x1="' + f(x) + '" y1="' + f(cy) + '" x2="' + f(x) + '" y2="' + f(cy + chh) + '" stroke="#1B1C1F" stroke-opacity=".55" stroke-width="' + f(0.7 * k) + '"/>';
+      if (cm >= 4) g += '<line x1="' + f(cx) + '" y1="' + f(cy + chh / 2) + '" x2="' + f(cx + cw) + '" y2="' + f(cy + chh / 2) + '" stroke="#1B1C1F" stroke-opacity=".55" stroke-width="' + f(0.7 * k) + '"/>';
+    }
     if (lvl >= 4) {
       const y1 = lvl === 5 ? d * 0.46 : d * 0.6, y2 = d + 3.5 * k;
       g += '<rect x="' + f(x0) + '" y="' + f(y1 - 5 * k) + '" width="' + f(len) + '" height="' + f(5 * k) + '" fill="url(#esh' + id + ')"/>';
@@ -89,13 +95,19 @@ window.CRAQUE_UI.EST = (function () {
     return g;
   }
 
-  function pitch(px, py, pw, ph, gram, k) {
+  // Gramado por nível: 0 terra aparecendo, 1 verde gasto, 2 faixas, 3 faixas vivas, 4 faixas finas, 5 xadrez
+  const GR = [['#5F7A3D', '#5A753A'], ['#2F7A44', '#2C7440'], ['#22834A', '#1C733F'], ['#24904F', '#1B7741'], ['#26994F', '#1A7A40'], ['#28A254', '#1A7C40']];
+  function pitch(px, py, pw, ph, gram, k, seed) {
     let g = '<rect x="' + (px - 7 * k) + '" y="' + (py - 7 * k) + '" width="' + (pw + 14 * k) + '" height="' + (ph + 14 * k) + '" rx="5" fill="#16402B"/>';
-    const n = 12, bw = pw / n, a = gram >= 2 ? '#22834A' : '#237A45', b = gram >= 2 ? '#1C733F' : '#20723F';
-    for (let i = 0; i < n; i++) g += '<rect x="' + f(px + i * bw) + '" y="' + py + '" width="' + f(bw + 0.3) + '" height="' + ph + '" fill="' + (i % 2 ? a : b) + '"/>';
-    if (gram === 0) { // gramado castigado
-      g += '<ellipse cx="' + (px + pw / 2) + '" cy="' + (py + ph / 2) + '" rx="' + pw * 0.1 + '" ry="' + ph * 0.13 + '" fill="#6B6A3A" fill-opacity=".28"/>';
-      g += '<ellipse cx="' + (px + pw * 0.06) + '" cy="' + (py + ph / 2) + '" rx="' + pw * 0.045 + '" ry="' + ph * 0.16 + '" fill="#6B6A3A" fill-opacity=".5"/><ellipse cx="' + (px + pw * 0.94) + '" cy="' + (py + ph / 2) + '" rx="' + pw * 0.045 + '" ry="' + ph * 0.16 + '" fill="#6B6A3A" fill-opacity=".5"/>';
+    gram = Math.max(0, Math.min(5, Math.round(gram)));
+    const n = gram >= 4 ? 16 : 12, bw = pw / n, a = GR[gram][0], b = GR[gram][1];
+    if (gram >= 5) { const m = 8, bh = ph / m; for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) g += '<rect x="' + f(px + i * bw) + '" y="' + f(py + j * bh) + '" width="' + f(bw + 0.3) + '" height="' + f(bh + 0.3) + '" fill="' + ((i + j) % 2 ? a : b) + '"/>'; }
+    else for (let i = 0; i < n; i++) g += '<rect x="' + f(px + i * bw) + '" y="' + py + '" width="' + f(bw + 0.3) + '" height="' + ph + '" fill="' + (i % 2 ? a : b) + '"/>';
+    if (gram <= 1) { // terra: as duas áreas e o meio; no castigado, manchas pelo campo todo
+      const T = '#8C7647', op = gram ? 0.4 : 0.7, e = (cx, cy, rx, ry, o, rot) => '<ellipse cx="' + f(cx) + '" cy="' + f(cy) + '" rx="' + f(rx) + '" ry="' + f(ry) + '" fill="' + T + '" fill-opacity="' + f(o) + '"' + (rot ? ' transform="rotate(' + f(rot) + ' ' + f(cx) + ' ' + f(cy) + ')"' : '') + '/>';
+      const sz = gram ? 0.7 : 1;
+      g += e(px + pw * 0.055, py + ph / 2, pw * 0.05 * sz, ph * 0.17 * sz, op) + e(px + pw * 0.945, py + ph / 2, pw * 0.05 * sz, ph * 0.17 * sz, op) + e(px + pw / 2, py + ph / 2, pw * 0.07 * sz, ph * 0.1 * sz, op * 0.7);
+      if (!gram) { const r = rng((seed || 7) + 911); for (let i = 0; i < 13; i++) { const cx = px + pw * (0.08 + r() * 0.84), cy = py + ph * (0.1 + r() * 0.8), rx = (4 + r() * 9) * k; g += e(cx, cy, rx, rx * (0.4 + r() * 0.4), 0.3 + r() * 0.35, r() * 180); } }
     }
     const st = ' fill="none" stroke="#F3F1EA" stroke-opacity=".82" stroke-width="' + f(1.15 * k) + '"';
     const ax = pw * 0.157, ay = ph * 0.593, gx = pw * 0.052, gy = ph * 0.27, cr = ph * 0.134;
@@ -123,9 +135,17 @@ window.CRAQUE_UI.EST = (function () {
     s += '<defs><linearGradient id="erf' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#454C55"/><stop offset="1" stop-color="#5E6670"/></linearGradient>' +
       '<linearGradient id="esh' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".42"/></linearGradient>' +
       '<pattern id="eht' + id + '" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="9" height="9" fill="#1B1C1F"/><rect width="4.5" height="9" fill="#F2C230" fill-opacity=".85"/></pattern>' +
-      '<radialGradient id="elz' + id + '"><stop offset="0" stop-color="#FFF7DC" stop-opacity=".5"/><stop offset=".4" stop-color="#FFF7DC" stop-opacity=".14"/><stop offset="1" stop-color="#FFF7DC" stop-opacity="0"/></radialGradient></defs>';
-    s += pitch(px, py, pw, ph, c.gram === undefined ? 1 : c.gram, k);
-    if (c.luz) s += '<g style="mix-blend-mode:screen">' + [[0.2, 0.22], [0.8, 0.22], [0.2, 0.78], [0.8, 0.78]].map(q => '<ellipse cx="' + f(px + pw * q[0]) + '" cy="' + f(py + ph * q[1]) + '" rx="' + f(pw * 0.3) + '" ry="' + f(ph * 0.42) + '" fill="url(#elz' + id + ')" opacity=".3"/>').join('') + '</g>';
+      '<radialGradient id="elz' + id + '"><stop offset="0" stop-color="#FFF7DC" stop-opacity=".5"/><stop offset=".4" stop-color="#FFF7DC" stop-opacity=".14"/><stop offset="1" stop-color="#FFF7DC" stop-opacity="0"/></radialGradient>' +
+      '<radialGradient id="evg' + id + '" r=".75"><stop offset=".45" stop-color="#04120A" stop-opacity="0"/><stop offset="1" stop-color="#04120A" stop-opacity=".5"/></radialGradient></defs>';
+    const LZ = c.luz === true ? 2 : Math.max(0, Math.min(5, +c.luz || 0)), BAR = Math.max(0, Math.min(5, +c.bar || 0));
+    s += pitch(px, py, pw, ph, c.gram === undefined ? 1 : c.gram, k, c.seed);
+    if (LZ) s += '<g style="mix-blend-mode:screen">' + [[0.2, 0.22], [0.8, 0.22], [0.2, 0.78], [0.8, 0.78]].map(q => '<ellipse cx="' + f(px + pw * q[0]) + '" cy="' + f(py + ph * q[1]) + '" rx="' + f(pw * 0.3) + '" ry="' + f(ph * 0.42) + '" fill="url(#elz' + id + ')" opacity="' + [0, 0.14, 0.3, 0.42, 0.62, 0.8][LZ] + '"/>').join('') + '</g>';
+    if (LZ >= 4) {   // jogo à noite: as traves fazem sombra para os dois lados e as bordas do campo escurecem
+      const gh = ph * 0.108, sl = (LZ >= 5 ? 13 : 10) * k, so = LZ >= 5 ? 0.3 : 0.22;
+      s += '<rect x="' + px + '" y="' + py + '" width="' + pw + '" height="' + ph + '" fill="url(#evg' + id + ')"/>';
+      [0, 1].forEach(sd => { const x = sd ? px + pw : px, dx = sd ? -sl : sl, y1 = py + ph / 2 - gh / 2, y2 = py + ph / 2 + gh / 2;
+        s += '<path d="M' + f(x) + ' ' + f(y1) + ' L' + f(x + dx) + ' ' + f(y1 + sl * 0.55) + ' L' + f(x + dx) + ' ' + f(y2 + sl * 0.55) + ' L' + f(x) + ' ' + f(y2) + 'Z" fill="#06140C" fill-opacity="' + so + '"/><path d="M' + f(x) + ' ' + f(y1) + ' L' + f(x + dx) + ' ' + f(y1 - sl * 0.55) + ' L' + f(x + dx) + ' ' + f(y2 - sl * 0.55) + ' L' + f(x) + ' ' + f(y2) + 'Z" fill="#06140C" fill-opacity="' + so + '"/>'; });
+    }
     // bancos e túnel (lado da Social, embaixo)
     s += '<rect x="' + f(px + pw * 0.34) + '" y="' + f(py + ph + 2.4 * k) + '" width="' + f(pw * 0.1) + '" height="' + f(3.4 * k) + '" rx="1.2" fill="#DDE3E6" fill-opacity=".8"/><rect x="' + f(px + pw * 0.56) + '" y="' + f(py + ph + 2.4 * k) + '" width="' + f(pw * 0.1) + '" height="' + f(3.4 * k) + '" rx="1.2" fill="#DDE3E6" fill-opacity=".8"/>';
     const T = {
@@ -167,12 +187,47 @@ window.CRAQUE_UI.EST = (function () {
     if (lv.so >= 2) s += '<rect x="' + f(px + pw / 2 - 4 * k) + '" y="' + f(py + ph + gap - 1) + '" width="' + f(8 * k) + '" height="' + f(7 * k) + '" rx="1.5" fill="#0B0C0D"/>';
     // telão atrás do gol da direita
     if (c.telao) { const d = (box.s.d || 9 * k) + (lv.s >= 4 ? 3.5 * k : 0), x = px + pw + gap + d + 3 * k; s += '<rect x="' + f(x) + '" y="' + f(py + ph / 2 - 17 * k) + '" width="' + f(5 * k) + '" height="' + f(34 * k) + '" rx="1.5" fill="#0B0C0D" stroke="#F2C230" stroke-width="1"/><rect x="' + f(x + 1.3 * k) + '" y="' + f(py + ph / 2 - 14 * k) + '" width="' + f(2.2 * k) + '" height="' + f(28 * k) + '" fill="#7FD6FF" fill-opacity=".75"/>'; }
-    // refletores nos 4 cantos
-    if (c.luz) {
-      const off = (Math.max(D0[Math.max(lv.a, lv.n, lv.s, lv.so, 3)] * k) + gap) * 0.86;
-      [[px - off, py - off], [px + pw + off, py - off], [px - off, py + ph + off], [px + pw + off, py + ph + off]].forEach(q => {
-        s += '<circle cx="' + f(q[0]) + '" cy="' + f(q[1]) + '" r="' + f(15 * k) + '" fill="url(#elz' + id + ')"/><rect x="' + f(q[0] - 4.2 * k) + '" y="' + f(q[1] - 4.2 * k) + '" width="' + f(8.4 * k) + '" height="' + f(8.4 * k) + '" rx="2" fill="#17181B" stroke="#8A929B" stroke-width=".8" transform="rotate(45 ' + f(q[0]) + ' ' + f(q[1]) + ')"/><circle cx="' + f(q[0]) + '" cy="' + f(q[1]) + '" r="' + f(2.6 * k) + '" fill="#FFF7DC"/>';
+    // refletores nos 4 cantos: poste simples, torre, torre com 4 lâmpadas, e nos níveis altos o facho até o campo
+    const closed = { nw: all5('a', 'n'), ne: all5('a', 's'), se: all5('so', 's'), sw: all5('so', 'n') };
+    const off = (Math.max(D0[Math.max(lv.a, lv.n, lv.s, lv.so, 3)] * k) + gap) * 0.86;
+    if (LZ) {
+      const hz = [0, 7, 15, 18, 24, 30][LZ] * k, sz = [0, 2.6, 4.2, 5, 5.8, 6.4][LZ] * k;
+      [[px - off, py - off, 0.3, 0.3], [px + pw + off, py - off, 0.7, 0.3], [px - off, py + ph + off, 0.3, 0.7], [px + pw + off, py + ph + off, 0.7, 0.7]].forEach((q, i) => {
+        const x = q[0], y = q[1];
+        if (LZ >= 4) { const tx = px + pw * q[2], ty = py + ph * q[3], nx = -(ty - y), ny = tx - x, nl = Math.sqrt(nx * nx + ny * ny), w = pw * 0.14;
+          s += '<linearGradient id="ebm' + id + i + '" gradientUnits="userSpaceOnUse" x1="' + f(x) + '" y1="' + f(y) + '" x2="' + f(tx) + '" y2="' + f(ty) + '"><stop offset="0" stop-color="#FFF7DC" stop-opacity="' + (LZ >= 5 ? 0.34 : 0.24) + '"/><stop offset="1" stop-color="#FFF7DC" stop-opacity="0"/></linearGradient>' +
+            '<path d="M' + f(x) + ' ' + f(y) + ' L' + f(tx + nx / nl * w) + ' ' + f(ty + ny / nl * w) + ' L' + f(tx - nx / nl * w) + ' ' + f(ty - ny / nl * w) + 'Z" fill="url(#ebm' + id + i + ')" style="mix-blend-mode:screen"/>'; }
+        s += '<circle cx="' + f(x) + '" cy="' + f(y) + '" r="' + f(hz) + '" fill="url(#elz' + id + ')"/>';
+        if (LZ === 1) s += '<circle cx="' + f(x) + '" cy="' + f(y) + '" r="' + f(sz) + '" fill="#17181B" stroke="#8A929B" stroke-width=".8"/><circle cx="' + f(x) + '" cy="' + f(y) + '" r="' + f(1.3 * k) + '" fill="#FFF7DC"/>';
+        else {
+          s += '<rect x="' + f(x - sz) + '" y="' + f(y - sz) + '" width="' + f(sz * 2) + '" height="' + f(sz * 2) + '" rx="2" fill="#17181B" stroke="#8A929B" stroke-width=".8" transform="rotate(45 ' + f(x) + ' ' + f(y) + ')"/>';
+          if (LZ >= 3) { const o2 = sz * 0.42; [[-o2, 0], [o2, 0], [0, -o2], [0, o2]].forEach(m => { s += '<circle cx="' + f(x + m[0]) + '" cy="' + f(y + m[1]) + '" r="' + f(1.35 * k) + '" fill="#FFF7DC"/>'; }); }
+          else s += '<circle cx="' + f(x) + '" cy="' + f(y) + '" r="' + f(2.6 * k) + '" fill="#FFF7DC"/>';
+          if (LZ >= 5) { const a = sz * 1.9, b = sz * 0.26; s += '<path d="M' + f(x) + ' ' + f(y - a) + ' L' + f(x + b) + ' ' + f(y - b) + ' L' + f(x + a) + ' ' + f(y) + ' L' + f(x + b) + ' ' + f(y + b) + ' L' + f(x) + ' ' + f(y + a) + ' L' + f(x - b) + ' ' + f(y + b) + ' L' + f(x - a) + ' ' + f(y) + ' L' + f(x - b) + ' ' + f(y - b) + 'Z" fill="#FFF7DC" fill-opacity=".8"/>'; }
+        }
       });
+    }
+    // bares: barracas de toldo listrado atrás da Arquibancada, dos dois lados do rótulo (c.barGap = meia largura do rótulo),
+    // com fregueses e a fumaça do churrasco; mais barracas a cada nível, e no nível 5 também atrás da Social
+    if (BAR) {
+      const rb = rng((c.seed || 7) + 4242), kw = 12 * k, kh = 8 * k, stp = 15.5 * k, g0 = (c.barGap === undefined ? 34 * k : c.barGap) + kw / 2;
+      const nT = [0, 1, 2, 3, 4, 4][BAR], nB = BAR >= 5 ? 2 : 0, back = key => (box[key].d || 9 * k) + ((c.obra === key ? Math.min(5, lv[key] + 1) : lv[key]) >= 4 ? 3.5 * k : 0);
+      const kiosk = (x, y, up, smoke, sd) => {
+        const x0 = x - kw / 2, y0 = y - kh / 2, n = 5, sw = kw / n, kid = 'ebk' + id + '_' + Math.round(x) + '_' + Math.round(y); let o = '';
+        for (let j = 0; j < 1 + BAR; j++) { if (rb() < 0.2) continue; const q = rb(); o += '<circle cx="' + f(x0 + rb() * kw) + '" cy="' + f(up ? y0 - (1.6 + rb() * 2.4) * k : y0 + kh + (1.6 + rb() * 2.4) * k) + '" r="' + f(1.25 * k) + '" fill="' + (q < 0.5 ? cols[0] : q < 0.8 ? cols[2] : '#F3F1EA') + '"/>'; }
+        o += '<rect x="' + f(x0 + 1.2 * k) + '" y="' + f(y0 + 1.6 * k) + '" width="' + f(kw) + '" height="' + f(kh) + '" rx="' + f(1.5 * k) + '" fill="#000" fill-opacity=".4"/>';
+        o += '<clipPath id="' + kid + '"><rect x="' + f(x0) + '" y="' + f(y0) + '" width="' + f(kw) + '" height="' + f(kh) + '" rx="' + f(1.5 * k) + '"/></clipPath><g clip-path="url(#' + kid + ')">';
+        for (let j = 0; j < n; j++) o += '<rect x="' + f(x0 + j * sw) + '" y="' + f(y0) + '" width="' + f(sw + 0.2) + '" height="' + f(kh) + '" fill="' + (j % 2 ? '#F8F4EA' : cols[0]) + '"/>';
+        o += '<rect x="' + f(x0) + '" y="' + f(y0 + kh * 0.7) + '" width="' + f(kw) + '" height="' + f(kh * 0.3) + '" fill="#000" fill-opacity=".2"/></g>';
+        o += '<rect x="' + f(x0) + '" y="' + f(y0) + '" width="' + f(kw) + '" height="' + f(kh) + '" rx="' + f(1.5 * k) + '" fill="none" stroke="#13201A" stroke-width="' + f(1.1 * k) + '"/>';
+        if (smoke) { const sx = x + (rb() - 0.5) * kw * 0.4, dy = up ? -1 : 1, yy = up ? y0 : y0 + kh; [[0.6, 1.2, 1.9, 0.55], [2.4, 4.4, 2.6, 0.38], [5, 7.8, 3.3, 0.22], [8.4, 11, 4, 0.1]].forEach(m => { o += '<circle cx="' + f(sx + sd * m[0] * k) + '" cy="' + f(yy + dy * m[1] * k) + '" r="' + f(m[2] * k) + '" fill="#E9ECEF" fill-opacity="' + m[3] + '"/>'; }); }
+        return o;
+      };
+      const row = (n, y, up) => { let o = ''; for (let i = 0; i < n; i++) [-1, 1].forEach(sd => { const x = px + pw / 2 + sd * (g0 + i * stp);
+          if (BAR >= 5 && i < n - 1) for (let t = 1; t <= 3; t++) o += '<circle cx="' + f(x + sd * (kw / 2 + (stp - kw) * t / 4)) + '" cy="' + f(y) + '" r="' + f(0.95 * k) + '" fill="#F2C230"/>';
+          o += kiosk(x, y, up, BAR >= 3 || i === 0 || sd < 0, sd); }); return o; };
+      s += row(nT, py - gap - back('a') - 3 * k - kh / 2, true);
+      if (nB) s += row(nB, py + ph + gap + back('so') + 3 * k + kh / 2, false);
     }
     s += '</svg>';
     return { svg: s, px, py, pw, ph, gap, box, k };
