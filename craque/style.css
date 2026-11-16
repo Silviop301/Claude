@@ -10330,6 +10330,8 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
    do texto com reticências (...) cortava a perna da letra. A caixa ganha 0,16 em embaixo por dentro (padding) e devolve por fora
    (margin negativa): o lugar na tela não muda. Texto novo com reticências: entra nesta lista; o craque_telas_deitado.js acusa
    "letra cortada" em toda foto. */
+.tm-h small.tm-vs,
+html.desk .fdt-ch small,
 .bar-sub,
 .crest-pick button span,
 .sh-seasons td.cl,
