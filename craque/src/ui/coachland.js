@@ -2852,6 +2852,36 @@
       w.querySelector('#rsc-y').onclick = () => { const ok = S.coMktResc(co, q); closePop(); if (ok) { c.save(); me(); } };
     }, 'hl-pop acd-pop tm-pop ca-pop rsc-pop');
   }
+  // Número da camisa (Silvio 2026-11-16, desenho aprovado em /mnt/project-files/climbix/numero-camisa/): chip no cartão do
+  // Elenco abre a grade de 1 a 99 (dourado = o de hoje, tracejado = de outro do elenco); a camisa de costas nas cores do clube
+  const NM_PEN = '<svg class="nm-pen" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4L16 5l3 3L8 19z"/></svg>';
+  const NM_BODY = 'M49 15Q60 20 71 15L87 19L109 33L101 52L89 47L89 108Q60 112 31 108L31 47L19 52L11 33L33 19Z';
+  function shirtSvg(base, trim, name, num) {
+    const v = [1, 3, 5].map(i => parseInt(base.slice(i, i + 2), 16)), lt = (0.299 * v[0] + 0.587 * v[1] + 0.114 * v[2]) / 255;
+    const ink = lt > 0.55 ? '#1A1A1A' : '#FFFFFF', out = lt > 0.55 ? '#FFFFFF' : '#1A1A1A';
+    return '<svg class="nm-sh" viewBox="0 0 120 120" aria-hidden="true"><path d="' + NM_BODY + '" fill="' + base + '"/>' +
+      '<path d="M13.5 37.5L21.5 50M106.5 37.5L98.5 50" stroke="' + trim + '" stroke-width="3" stroke-linecap="round"/><path d="M49 15Q60 20 71 15Q60 24 49 15Z" fill="' + trim + '"/>' +
+      '<path d="' + NM_BODY + '" fill="none" stroke="#13201A" stroke-width="2" stroke-linejoin="round"/>' +
+      (num ? '<text x="60" y="40" text-anchor="middle" font-family="Barlow, sans-serif" font-weight="800" font-size="11" letter-spacing="1.2" fill="' + ink + '" stroke="' + out + '" stroke-width="2.4" paint-order="stroke">' + esc(name) + '</text>' +
+        '<text x="60" y="88" text-anchor="middle" font-family="Barlow Condensed, sans-serif" font-weight="800" font-size="46" fill="' + ink + '" stroke="' + out + '" stroke-width="3.5" paint-order="stroke">' + num + '</text>' : '') + '</svg>';
+  }
+  function numPop(q, sel, me) {
+    const c = C(), co = c.co, cl = club(co.club), ok = h => typeof h === 'string' && /^#[0-9a-f]{6}$/i.test(h);
+    const k = (U.LP && U.LP.kitFor ? U.LP.kitFor(cl.name, cl.id) : null) || ['#F4F1E8', '#1D1D1F'];
+    const base = ok(k[0]) ? k[0] : '#F4F1E8', trim = ok(k[1]) && k[1].toLowerCase() !== base.toLowerCase() ? k[1] : k.pat && ok(k.pat[1]) ? k.pat[1] : '#1D1D1F';
+    const own = n => co.squad.find(x => x !== q && x.num === n);
+    let g = ''; for (let n = 1; n <= 99; n++) g += '<button class="nm-c' + (n === q.num ? ' me' : n === sel ? ' on' : own(n) ? ' t' : '') + '" data-n="' + n + '">' + n + '</button>';
+    const o = sel !== q.num ? own(sel) : null, last = c.last(q.n);
+    const note = sel === q.num ? 'Este é o número de hoje. Escolha outro na grade.' : o ? 'O <em>' + sel + '</em> é do <em>' + esc(c.last(o.n)) + '</em>. Os dois trocam de número.' : 'Livre. Vale já no próximo jogo.';
+    const btn = sel === q.num ? '<button class="hl-btn gold" id="nm-go" disabled>Escolha um número</button>' : '<button class="hl-btn gold" id="nm-go">' + (o ? 'Trocar com o ' + esc(c.last(o.n)) : 'Usar o ' + sel) + '</button>';
+    pop('<div class="nm-l"><div class="nm-h"><b>Número da camisa</b><small>' + esc(q.n) + ' · ' + c.posTxt[q.pos] + '</small></div><div class="nm-g">' + g + '</div>' +
+      '<div class="nm-lg"><span><u class="me"></u>o de hoje</span><span><u class="t"></u>de outro do elenco</span><span><u></u>livre</span></div></div>' +
+      '<div class="nm-r"><div class="nm-shirt">' + shirtSvg(base, trim, last.toUpperCase().slice(0, 12), sel) + '</div><p class="nm-nt">' + note + '</p>' + btn + '</div>' +
+      '<button class="ld-x nm-x" data-pop-x aria-label="Fechar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>', 'Número da camisa', w => {
+      w.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { sfx('tap'); numPop(q, +b.dataset.n, me); });
+      const go = w.querySelector('#nm-go:not([disabled])'); if (go) go.onclick = () => { S.coSetNum(co, q, sel); c.save(); closePop(); me(); };
+    }, 'nmp');
+  }
   function elenco(tab, sel, back) {
     if (back) EL_BACK = back; else if (tab === undefined && sel === undefined) EL_BACK = null;
     const c = C(), co = c.co, T = [['Goleiros', ['GOL']], ['Defesa', ['ZAG', 'LAT']], ['Meio', ['MEI']], ['Ataque', ['ATA']]];
@@ -2879,7 +2909,7 @@
       const seg = '<div class="lde2-seg">' + ['Atributos', 'Situação'].map((t, i) => '<button data-ec="' + i + '"' + (i === elenco.ct ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('') + '</div>';
       const grw = S.coTrainNow(co) && co.train.dv ? co.train.dv.filter(x => x[0] === q.id).map(x => x[1]) : []; // subiu no treino desta semana: verde
       const bars = '<div class="lde2-at">' + at.map((v, i) => '<div class="lde2-ar' + (grw.includes(i) ? ' gr' : i === hi ? ' top' : i === lo ? ' low' : '') + '"><span>' + S.CO_AT.names[ks[i]] + '</span><i><u style="width:' + v + '%"></u></i><b>' + v + '</b></div>').join('') + '</div>';
-      card = '<div class="lde2-c' + (elenco.ct ? ' sit' + (hint ? ' hn' : '') : '') + '"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? q.num + ' ' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + sideTxt(q) + ' · ' + q.age + ' anos' + (S.coOvrDelta(co, q) ? ' · <em class="' + (S.coOvrDelta(co, q) > 0 ? 'up' : 'dn') + '">' + (S.coOvrDelta(co, q) > 0 ? '+' : '−') + Math.abs(S.coOvrDelta(co, q)) + ' no ano</em>' : '') + '</small></span></div>' + seg +
+      card = '<div class="lde2-c' + (elenco.ct ? ' sit' + (hint ? ' hn' : '') : '') + '"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? '<button class="lde2-nm" id="lde-num" aria-label="Trocar o número">' + shirtSvg('#F8F4EA', '#13201A') + q.num + NM_PEN + '</button>' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + sideTxt(q) + ' · ' + q.age + ' anos' + (S.coOvrDelta(co, q) ? ' · <em class="' + (S.coOvrDelta(co, q) > 0 ? 'up' : 'dn') + '">' + (S.coOvrDelta(co, q) > 0 ? '+' : '−') + Math.abs(S.coOvrDelta(co, q)) + ' no ano</em>' : '') + '</small></span></div>' + seg +
         (elenco.ct ? '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/sem') + '</div>' +
         '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span></div>' +
         '<div class="lde2-act"><button class="lde2-ren" id="lde-ren" data-id="' + q.id + '"' + (renOk ? '' : ' disabled') + '>Renovar' + (renOk ? '' : '<small>no fim do contrato</small>') + '</button>' +
@@ -2901,6 +2931,7 @@
       const sl = st.querySelector('#lde-sell:not([disabled])'); if (sl) sl.onclick = () => { sfx('tap'); const of = S.coMktList(co, q, !S.coMktListed(co, q)); c.save(); me(); if (of) { of.seen = 1; c.save(); recebida(of, me); } };
       const ov = st.querySelector('#lde-of'); if (ov) ov.onclick = () => { sfx('tap'); recebida(S.coMktOfferFor(co, q), me); };
       const rc = st.querySelector('#lde-resc:not([disabled])'); if (rc) rc.onclick = () => rescPop(q, me);
+      const nb = st.querySelector('#lde-num'); if (nb) nb.onclick = () => { sfx('tap'); numPop(q, q.num, me); };
     });
   }
   // Troféus e Hall (2026-11-11): telas cheias no padrão do Estádio (painel à esquerda, números à direita), no lugar das janelinhas

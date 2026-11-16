@@ -10842,3 +10842,23 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .nvp-fb img.tw { width: 22px; height: 22px; }
 .ld-st .nvp-ft button.nvp-tudo { flex: 1; color: #13201A; box-shadow: inset 0 0 0 2px rgba(19,32,26,.35); }
 .ld-st .nvp-ft button.nvp-go { flex: 1; background: #F2C230; color: #13201A; box-shadow: 0 4px 0 #A9861C; }
+
+/* Número da camisa (2026-11-16): chip no cartão do Elenco e a grade 1 a 99 */
+.ld-st button.lde2-nm { display: inline-flex; align-items: center; gap: 3px; height: 26px; padding: 0 6px 0 4px; margin-right: 6px; border-radius: 13px; background: #13201A; color: #F8F4EA; font: 800 17px/1 var(--display); box-shadow: 0 0 0 2px rgba(242, 194, 48, .55); vertical-align: 2px; }
+.lde2-nm .nm-sh { width: 17px; height: 17px; } .lde2-nm .nm-pen { width: 10px; height: 10px; fill: #B9C9BF; }
+.ld-pop-c.nmp { width: 790px; height: 356px; max-height: 356px; flex-direction: row; gap: 16px; padding: 14px 16px; position: relative; color: #F8F4EA; }
+.nm-l { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.nm-h { display: flex; align-items: baseline; gap: 10px; min-width: 0; padding-right: 8px; } .nm-h b { font: 800 24px/1 var(--display); flex: none; }
+.nm-h small { font: 700 15px/1 var(--body); color: #B9C9BF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-bottom: .16em; margin-bottom: -.16em; }
+.nm-g { display: grid; grid-template-columns: repeat(11, 1fr); grid-auto-rows: 1fr; gap: 4px; flex: 1; min-height: 0; }
+.ld-st button.nm-c { display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #22252a; font: 800 16px/1 var(--display); color: #F8F4EA; min-height: 0; padding: 0; border: 0; }
+.ld-st button.nm-c.t { background: transparent; border: 1px dashed rgba(255, 255, 255, .2); color: #6f7680; }
+.ld-st button.nm-c.me { background: #3a3320; color: #F2C230; border: 1px solid #F2C230; }
+.ld-st button.nm-c.on { background: #F8F4EA; color: #13201A; }
+.nm-lg { display: flex; gap: 14px; font: 700 13px/1 var(--body); color: #B9C9BF; } .nm-lg span { display: flex; align-items: center; gap: 5px; }
+.nm-lg u { width: 14px; height: 14px; border-radius: 4px; display: inline-block; background: #22252a; } .nm-lg u.me { background: #3a3320; border: 1px solid #F2C230; } .nm-lg u.t { background: none; border: 1px dashed #777; }
+.nm-r { width: 220px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 30px; }
+.nm-shirt { width: 168px; height: 168px; flex: none; } .nm-shirt .nm-sh { width: 100%; height: 100%; }
+.nm-nt { font: 700 14px/1.3 var(--body); color: #B9C9BF; text-align: center; margin: 0; } .nm-nt em { color: #F2C230; font-style: normal; }
+.nm-r .hl-btn { margin-top: auto; width: 100%; }
+.ld-st button.nm-x { position: absolute; right: 12px; top: 10px; }
