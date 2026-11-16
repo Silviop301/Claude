@@ -265,7 +265,7 @@
         const [px, py] = at(e.clientX, e.clientY); gh.style.left = px + 'px'; gh.style.top = py + 'px';
         const d = hit(e.clientX, e.clientY); if (d !== over) { if (over) over.classList.remove('drop'); over = d; if (d) d.classList.add('drop');
           // o dedo tampa o titular: o nome de quem sai vai junto com a cópia, em cima dela
-          const nm = d && d.querySelector('.ld-dn b'); if (nm) gh.dataset.out = nm.textContent; else delete gh.dataset.out; }
+          const nm = d && d.querySelector('.ld-dn b'); if (nm) gh.dataset.out = [...nm.childNodes].map(n => n.textContent.trim()).filter(Boolean).join(' '); else delete gh.dataset.out; } // número e nome separados ("SAI 72 Derek", Silvio 16/11)
         e.preventDefault();
       });
       b.addEventListener('pointerup', e => { if (e.pointerId !== pid) return; const d = gh && over, id = b.dataset.bp; end(); if (d) onDrop(id, +d.dataset.xi); });
