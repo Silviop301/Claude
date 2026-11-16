@@ -1180,6 +1180,42 @@
         return { i: b.i, pw, t: 'Perigo no escanteio', d: scLast(b.p) + ' ganha tudo pelo alto na área.' }; },
       ok: s => s.train === 'defesc' },
   };
+  // Falas do olheiro com variação (2026-11-16, Silvio: "mais variação no que o olheiro diz"): título e linha sorteados à parte,
+  // por jogo (rng próprio, não mexe em quais descobertas saem). {n} = sobrenome do jogador deles.
+  const SC_TX = {
+    costas: { t: ['{n} corre nas costas', '{n} vive no impedimento', '{n} sai no pique', '{n} ataca o espaço', '{n} caça lançamento'],
+      d: ['Vive na linha do impedimento esperando o lançamento.', 'Fica pendurado na zaga esperando a bola longa.', 'O bandeirinha vai trabalhar: ele sai sempre no limite.', 'Um passe longo e ele já está cara a cara.', 'Zaga adiantada contra ele é convite.'] },
+    ala: { t: ['Lateral {n} vive no ataque', '{n} sobe e não volta', '{n} esquece de marcar', '{n} é quase um ponta'],
+      d: ['Sobra espaço nas costas dele.', 'Quando ele sobe, abre uma avenida.', 'Volta para marcar só no intervalo.', 'Contra-ataque pelo lado dele é chance clara.'] },
+    perigo: { t: ['{n} é o perigo deles', 'Tudo sai do pé do {n}', 'Fecha o lado do {n}', '{n} decide jogo'],
+      d: ['O melhor deles joga aberto e decide.', 'Joga aberto e parte para cima sempre.', 'No um contra um, ele resolve sozinho.', 'Deixar ele livre na ponta é pedir para sofrer.'] },
+    zagLento: { t: ['Zagueiro {n} é lento', '{n} perde na corrida', '{n} é pesado', '{n} gira devagar'],
+      d: ['Bola nas costas dele vira chance.', 'Em campo aberto ele chega sempre atrasado.', 'Lançamento em cima dele é meio caminho.', 'Corrida de 30 metros ele perde até para o juiz.'] },
+    zagAlto: { t: ['Zagueiro {n} perde no alto', '{n} sofre na bola aérea', '{n} sobe pouco', '{n} erra o tempo da bola'],
+      d: ['Cruzamento em cima dele vira chance.', 'Bola alta na área dele, alguém cabeceia livre.', 'Pula atrasado e olha a bola passar.', 'Escanteio do lado dele é meio gol.'] },
+    latLento: { t: ['Lateral {n} é lento', '{n} sofre com ponta', 'Lado do {n} é o caminho', '{n} perde no pique'],
+      d: ['Ponta rápido em cima dele ganha a corrida.', 'Um drible e ele fica para trás.', 'Na velocidade ele não acompanha ninguém.', 'Ponta no um contra um em cima dele.'] },
+    goleiro: { t: ['O goleiro {n} sai mal', '{n} treme na bola alta', '{n} não sai do gol', '{n} solta a bola'],
+      d: ['Bola alta na área dele vira confusão.', 'Cruzamento na pequena área vira bate-rebate.', 'Sai do gol como quem atravessa avenida.', 'Rebate tudo para a frente. Rebote é ouro.'] },
+    cansa2: { t: ['Pressionam e cansam', 'Muita corrida, pouco gás', 'Pressão que acaba cedo', 'Gás para uma hora'],
+      d: ['Depois dos 60\' sobra espaço.', 'O ritmo cai no segundo tempo.', 'Aos 60\' já estão de mão na cintura.', 'Aguenta o começo: o fôlego deles acaba.'] },
+    linha: { t: ['Linha alta, espaço nas costas', 'Zaga lá no meio-campo', 'Defendem longe do gol', 'Linha adiantada demais'],
+      d: ['A zaga joga lá no meio do campo.', 'Um passe certo e é cara a cara com o goleiro.', 'Tem campo de sobra atrás dos zagueiros.', 'Quem acerta o tempo do passe entra sozinho.'] },
+    fechados: { t: ['Vêm fechados', 'Ônibus na frente da área', 'Retranca armada', 'Jogam pelo 0 a 0'],
+      d: ['Todo mundo atrás da bola.', 'Dez atrás da linha da bola, esperando o erro.', 'Vai precisar de paciência e bola rodando.', 'Empate para eles já é festa.'] },
+    craque: { t: ['Tudo passa pelo {n}', '{n} é o cérebro deles', 'Marca o {n} e acabou', '{n} pensa o jogo'],
+      d: ['O craque deles joga pelo meio.', 'Sem ele, eles só dão chutão.', 'Toda jogada boa nasce no pé dele.', 'Joga de cabeça erguida no meio.'] },
+    tresZag: { t: ['Três zagueiros: sobra lado', 'Linha de três, ponta vazia', 'Três atrás, lado aberto'],
+      d: ['Os alas sobem e a ponta fica vazia.', 'Quando o ala sobe, ninguém cobre o lado.', 'O lado do campo é terra de ninguém.'] },
+    meio: { t: ['Meio fraco', 'O meio é nosso', 'Meio deles não segura', 'Eles perdem no meio'],
+      d: ['O seu meio é melhor que o deles.', 'Com a bola no chão, ganhamos o meio.', 'Toque rápido e eles correm atrás.', 'O volante deles sofre com time que troca passe.'] },
+    faltosos: { t: ['Fazem falta perto da área', 'Batem muito', 'Chegam atrasados', 'Time de muita falta'],
+      d: ['Chegam atrasados na dividida.', 'Falta na entrada da área vai ter.', 'Cartão amarelo é o esporte deles.', 'Treine bola parada: vai ter falta boa.'] },
+    fim: { t: ['Cansam no fim', 'Time pesado no fim', 'Somem depois dos 70\'', 'A perna acaba cedo'],
+      d: ['Do 70\' em diante eles caem.', 'Elenco rodado: no fim é caminhada.', 'Troca no fim pega eles parados.', 'Os últimos 20 minutos são nossos.'] },
+    escanteio: { t: ['Perigo no escanteio', 'Cuidado na bola parada', '{n} é o terror da área', 'Escanteio deles é pênalti'],
+      d: ['{n} ganha tudo pelo alto na área.', '{n} sobe mais que todo mundo.', 'Na bola alta, {n} é gol certo.', '{n} cabeceia até bola rasteira.'] },
+  };
   // Os que podem ser a falsa: os que a tela não desmente (formação e estilo deles já estão no topo)
   const SC_FAKE = ['perigo', 'zagLento', 'zagAlto', 'latLento', 'goleiro', 'craque', 'meio', 'fim', 'escanteio'];
   S.coScoutLv = co => { const l = co && co.xp ? co.xp.leitura || 0 : 0; return SC.lv.find(x => l <= x.to) || SC.lv[SC.lv.length - 1]; };
@@ -1211,6 +1247,10 @@
       const fk = SC_FAKE.filter(k => !all.some(e => e.k === k) && !lv.no.includes(k)).map(k => { const g = SCD[k].gen(X, true); return g ? Object.assign({ k, fake: 1 }, g) : null; }).filter(Boolean);
       if (fk.length) pick[Math.floor(r() * pick.length)] = fk[Math.floor(r() * fk.length)];
     }
+    const tr = S.rng(hash(String(co.name) + '|' + co.club + '|' + key + '|olheiro-txt'));
+    pick.forEach(e => { const x = SC_TX[e.k]; if (!x) return; const o = on.find(q => q.i === e.i), nm = o ? scLast(o.p) : '';
+      const ft = x.t.filter(v => nm || v.indexOf('{n}') < 0), fd = x.d.filter(v => nm || v.indexOf('{n}') < 0);
+      if (ft.length) e.t = ft[Math.floor(tr() * ft.length)].replace('{n}', nm); if (fd.length) e.d = fd[Math.floor(tr() * fd.length)].replace('{n}', nm); });
     const out = { key, lv: co.xp ? co.xp.leitura || 0 : 0, miss: 3 - pick.length,
       list: pick.map(e => { const d = SCD[e.k]; return { k: e.k, ty: d.ty, fx: d.fx, from: d.from || 0, live: d.live || 0, t: e.t, d: e.d, ans: d.ans, i: e.i, v: e.v, fake: e.fake ? 1 : 0 }; }) };
     const ks = Object.keys(scMemo); if (ks.length > 60) ks.slice(0, 30).forEach(x => delete scMemo[x]);

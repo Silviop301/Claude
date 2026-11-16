@@ -27,14 +27,19 @@ const sane = (co, t) => {
   ok(co.pressB, 'promessa guardada'); ok(S.coPressBet(co, log) === null, 'promessa não vale no mesmo jogo');
   const l2 = play(co), b = S.coPressBet(co, l2); ok(b && b.win === (l2.res === 'v') && !co.pressB, 'promessa resolvida no jogo seguinte');
 }
-// 2. Acontecimentos: os 12 aparecem com o caso certo e cada resposta aplica
+// 2. Acontecimentos: todos aparecem com o caso certo e cada resposta aplica
 {
   const co = mk(901, 'baixo'); for (let i = 0; i < 2; i++) play(co);
   co.squad[0].age = 34; co.squad.filter(p => !co.xi.includes(p.id))[0].age = 19; S.coEst(co).hum = 30;
   const seen = new Set();
   for (let k = 0; k < 40 && seen.size < S.CO_EVT.length; k++) {
     co.pv = co.pv || { s: co.season, r: -9, e: -9, w: -9, d: [] }; co.pv.d = S.CO_EVT.filter(e => seen.has(e.id)).map(e => e.id);
+    S.coEst(co).hum = seen.has('protesto') ? 80 : 30; co.ss.log[co.ss.log.length - 1].home = false; // protesto (<45), festa (>=65), voo (último fora)
     const d = S.coEvent(co); if (!d) break; seen.add(d.id);
+    // todas as variações do texto, sem buraco
+    const e = S.CO_EVT.find(x => x.id === d.id), tt = { p: co.squad.find(p => p.id === d.t) || null, p2: co.squad.find(p => p.id === d.t2) || null };
+    [].concat(e.say).forEach((f, j) => { const s = f(tt, co); ok(s && !/undefined|NaN|null/.test(s), 'texto ' + d.id + ' #' + j + ': ' + s); });
+    e.ops.forEach(o => [].concat(o.re, o.reLose || []).forEach(s => ok(typeof s === 'string' && s.length > 5, 'resposta ' + d.id + '/' + o.k)));
     ok(d.say && !/undefined|NaN/.test(d.say), 'texto ' + d.id + ': ' + d.say);
     d.ops.forEach(o => ok(o.tags.length && o.tags.every(t => !/undefined|NaN/.test(t.join(' '))), 'etiquetas ' + d.id + '/' + o.k));
     const o = d.ops[k % 3], r = S.coEventAnswer(co, d, o.k); ok(r && r.re, 'resposta ' + d.id + '/' + o.k);
