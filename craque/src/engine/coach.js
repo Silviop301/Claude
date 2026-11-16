@@ -281,6 +281,12 @@
       });
     return squad;
   };
+  // Trocar o número (Silvio 2026-11-16): número de outro do elenco = os dois trocam; devolve quem trocou (ou null)
+  S.coSetNum = (co, p, n) => {
+    if (!p || !(n >= 1 && n <= 99) || p.num === n) return null;
+    const q = co.squad.find(x => x !== p && x.num === n) || null;
+    if (q) q.num = p.num; p.num = n; return q;
+  };
   // Jogador fora da posição rende menos
   const FIT = { ZAG: { LAT: 0.92, MEI: 0.85 }, LAT: { ZAG: 0.9, MEI: 0.9, ATA: 0.8 }, MEI: { LAT: 0.88, ZAG: 0.82, ATA: 0.9 }, ATA: { MEI: 0.88, LAT: 0.78 } };
   const fit = (pos, slot) => (pos === slot ? 1 : pos === 'GOL' || slot === 'GOL' ? 0.4 : (FIT[pos] && FIT[pos][slot]) || 0.7);
