@@ -523,7 +523,7 @@
         if (o && RF) { const rel = RF[o.x[0]];
           if (rel !== undefined) ovr = s + rel + refAge(o.x[2], age); else if (capR !== undefined) ovr = Math.min(ovr, s + capR); }
         const p = mkPlayer(j, club, pos, ovr, age, o ? 'r:' + o.x[0] : club.id + ':' + season + ':' + out.length, cty, o ? { x: o.x, k: Math.max(0, 1 - season * 0.25) } : null);
-        if (o) { p.n = o.x[1]; p.api = o.x[0]; if (o.x[4] >= 1 && o.x[4] <= 99) p.num = o.x[4]; }
+        if (o) { p.n = o.x[1]; p.api = o.x[0]; if (o.x[4] >= 1 && o.x[4] <= 99) p.num = o.x[4]; p.nat = (REAL().nat || {})[o.x[0]] || cty; } // nacionalidade: bandeira no mercado (ISO de quem é de fora, senão o país do clube)
         out.push(p);
       }
     });
