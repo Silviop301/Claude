@@ -31,6 +31,7 @@ if (OUT) fs.mkdirSync(OUT, { recursive: true });
   const anda = async (quer, lista, onde) => {
     let pres = 0;
     for (let k = 0; k < 90; k++) {
+      if (await has('.ch-ov .ch-go')) { await tap('.ch-ov .ch-go'); continue; }   // desafio do dia ou marco da chama por cima da tela
       if (await has(quer)) return true;
       const s = await (async () => { for (const x of lista) if (await has(x)) return x; return ''; })();
       if (s === '.tc-go' && await has('.tc-ac')) { // festa do acesso: conta, fotografa e confere que a fileira dos ganhos cabe e não encosta no botão
@@ -48,7 +49,7 @@ if (OUT) fs.mkdirSync(OUT, { recursive: true });
   };
   // carreira nova: propostas, reunião e patrocínio
   await tap('#b-new-co'); await tap('#co-start button[data-v="' + (SOBE ? 'baixo' : 'livre') + '"]'); await tap('#b-co-go');
-  if (!(await anda('.sm', ['#ldo-go', '#ldn-go'], 'começo da carreira'))) { console.log('Problemas: ' + errs.length + '\n  ' + errs.join('\n  ')); await b.close(); process.exit(1); }
+  if (!(await anda('#ld .ld-st > .sm', ['#ldo-go', '#ldn-go'], 'começo da carreira'))) { console.log('Problemas: ' + errs.length + '\n  ' + errs.join('\n  ')); await b.close(); process.exit(1); }
   for (let t = 0; t < N; t++) {
     const a = await estado();
     // o motor joga até faltar uma rodada
@@ -64,7 +65,7 @@ if (OUT) fs.mkdirSync(OUT, { recursive: true });
     await texto('fim da temporada ' + (t + 1)); await shot('t' + (t + 1) + '-fim');
     for (const i of [1, 2, 3, 0]) { await tap('[data-ft="' + i + '"]'); await texto('fim da temporada ' + (t + 1) + ', aba ' + i); if (i === 3) { if (await has('[data-sk]')) { const antes = (await estado()).pts; await tap('[data-sk]:not([disabled])'); const dep = (await estado()).pts; if (dep !== antes - 1) errs.push('temporada ' + (t + 1) + ': o ponto de habilidade não foi gasto (' + antes + ' → ' + dep + ')'); } await shot('t' + (t + 1) + '-tecnico'); } }
     // ano seguinte: fica (ou vê as propostas), reunião com a diretoria, patrocínio, até a Semana
-    const ok = await anda('.sm', ['#ldy-ns', '#ldy-of', '#ldo-go', '#ldn-go', '#ctw-no', '.tc-go'], 'virada para a temporada ' + (t + 2));
+    const ok = await anda('#ld .ld-st > .sm', ['#ldy-ns', '#ldy-of', '#ldo-go', '#ldn-go', '#ctw-no', '.tc-go'], 'virada para a temporada ' + (t + 2));
     if (!ok) break;
     await p.waitForTimeout(500); await texto('semana da temporada ' + (t + 2)); await shot('t' + (t + 2) + '-semana');
     const d = await estado();

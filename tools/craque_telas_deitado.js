@@ -69,7 +69,7 @@ async function page(b, first) {
       const L = await p.evaluate(() => { const n = document.querySelector('.tm-near'), f = document.querySelector('.tm-pitch'), co = window.CRAQUE_UI._co.co, by = {}; co.squad.forEach(q => { by[q.id] = q; });
         const slot = window.CRAQUE_SIM.coSlots(co.form)[5], a = n && n.getBoundingClientRect(), b = f.getBoundingClientRect();
         return { on: !!n, in: !!a && a.top >= b.top - 1 && a.bottom <= b.bottom + 1 && a.left >= b.left - 1 && a.right <= b.right + 1,
-          pos: n ? [...n.querySelectorAll('.tm-cd')].every(e => by[e.dataset.bp].pos === slot) : false, r: n ? [...n.querySelectorAll('.tm-cd')].map(e => by[e.dataset.bp].ovr) : [] }; });
+          pos: n ? [...n.querySelectorAll('.tm-cd')].every(e => by[e.dataset.bp].pos === slot) : false, r: n ? [...n.querySelectorAll('.tm-cd')].map(e => window.CRAQUE_SIM.coOvrAt(by[e.dataset.bp], slot, co.form, 5)) : [] }; });
       if (!L.on) errs.push('escalação: titular escolhido e a lista ao lado dele não apareceu');
       else { if (!L.in) errs.push('escalação: a lista ao lado do titular sai do campo'); if (!L.pos) errs.push('escalação: a lista ao lado do titular tem gente de outra posição');
         if (L.r.some((v, k) => k && v > L.r[k - 1])) errs.push('escalação: a lista ao lado do titular não está do maior geral para o menor'); }
