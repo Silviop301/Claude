@@ -1648,6 +1648,7 @@
     function startPlay() { if (koHold && typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {} /* apito da saída de cada tempo */ koHold = false; back = 0; mode = 'play'; const k = kicker(koSide); ball.x = 52.5; ball.y = 34; setOwner(k); lastPasser = k; lastPassClk = clk; fly(k, at(koSide, 6).x, at(koSide, 6).y, at(koSide, 6), false, 'curto', false); }
     // A volta para o meio depois do gol passa em velocidade 3× (é o tempo de recomeçar, não um lance)
     let mT = 0; // segundos de campinho jogados desde o último minuto do motor (ver minute)
+    let mW = 0; // segundos de relógio (já na velocidade do jogo) com a tela rodando desde o último minuto: o que o campinho podia ter jogado
     // Festa do título: o seu time corre para o meio e vira um bolo pulando; o goleiro vem do gol; os de lá vão para o seu campo
     // e uns sentam na grama. Aos 2,5 s a taça sobe no meio do bolo (desenho em festDraw)
     function festStep(dt) {
@@ -2239,7 +2240,7 @@
       if (W < 60 || H < 40 || ++loop.n % 30 === 0) { const r = U.box ? U.box(cv) : cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1; if (Math.abs(r.width / z - W) > 1 || Math.abs(r.height / z - H) > 1) size(); }
       raf = requestAnimationFrame(loop); // antes de tudo: um erro da tela num aviso do campinho não pode parar o campinho
       try {
-        if (!frozen && !document.hidden) { const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
+        if (!frozen && !document.hidden) { mW += dtR * (o.speed ? o.speed() : 1); const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
         draw();
         if (o.onFrame) o.onFrame(api.info());
         if (loop.n % 4 === 0) sbFade();
@@ -2273,12 +2274,16 @@
         // Simulação livre: o jogo vale igual em qualquer aparelho (avaliação de 10/11: 2 chutes em 3 jogos num Chrome remoto,
         // 13 num iPhone). Cada minuto do motor tem de ter os mesmos segundos de campinho (spm × velocidade); com a tela lenta
         // ou a aba escondida o laço da tela entrega menos, e o que faltou é jogado aqui, de uma vez, sem desenhar
-        if (FREE && o.spm && !frozen && t === curT + 1 && mode !== 'wait' && mode !== 'half' && mode !== 'fim') { const need = o.spm() * (o.speed ? o.speed() : 1); let n = Math.min(220, Math.floor((need * 0.97 - (mT - mR)) / 0.02)); if (n > 0) CATCH += n;
+        if (FREE && o.spm && !frozen && t === curT + 1 && mode !== 'wait' && mode !== 'half' && mode !== 'fim') { const need = loop.n > 0 ? Math.min(o.spm() * (o.speed ? o.speed() : 1), mW) : o.spm() * (o.speed ? o.speed() : 1); let n = Math.min(220, Math.floor((need * 0.97 - (mT - mR)) / 0.02)); if (n > 0) CATCH += n;
           // O que faltou do minuto não é mais jogado de uma vez (Silvio, 12/11: "o jogador dá umas teleportadas"): com a tela
           // visível vira dívida (`slowDebt`) que o laço devolve aos poucos, andando até 35% mais rápido; só o que passa de
           // CATCH_MAX s (aparelho muito lento, aba escondida, Node) ainda é jogado na hora
+          // A conta é contra o relógio que a tela de fato teve (`mW`), não contra o minuto cheio (Silvio, 16/11: "começa, dá uma
+          // travadinha, continua acelerado e fica normal"): o 1º minuto chega logo depois do apito e a volta de uma parada dura
+          // 0,4 s, e cobrar o minuto inteiro ali jogava ~2 s de uma vez (a travada) e o resto como dívida (o acelerado).
+          // Quadro travado (>0,2 s) também não vira dívida: o tempo perdido some, em vez de ser devolvido correndo
           if (n > 0) { const sm = cv && typeof document !== 'undefined' && !document.hidden ? CATCH_MAX : 0, d = slowDebt + n * 0.02, ex = Math.max(0, d - sm); slowDebt = d - ex; n = Math.round(ex / 0.02); while (n-- > 0) step1(0.02); } }
-        mT = 0; mR = 0;
+        mT = 0; mR = 0; mW = 0;
         const avg = acc.n > 0 && t === curT + 1 ? acc.x / acc.n : null; acc.x = 0; acc.n = 0;
         if (t - curT > 1) goals.forEach(e => { if (e.m < t) e.done = true; });
         curT = t; bxT = bx; mClk = clk; stRefresh(); return avg;
@@ -2391,7 +2396,7 @@
       stop() { alive = false; if (raf) cancelAnimationFrame(raf); raf = 0; window.removeEventListener('resize', onResize); if (ro) ro.disconnect(); },
       _refs: () => ({ REF, AR, REFC }), _place: (fn) => { fn({ T, ball, REF, AR, ALL }); },
       _fk(side, x, y) { const q = T[side].filter(p => p.r !== 'GK').sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0]; mode = 'falta'; whistle('Falta', q, { x, y }); return fkSet; }, // teste: falta do lado side no ponto (x, y) do campo
-      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, CHEG, POCK, ALLX: ALL, WHY, DBG, PLAYS, DRIB, DISPN, CATCH, FKN, BUN, scr: g ? [X(ball.x), Y(ball.y)] : null, trail, REF, AR, Q4, leaving, rs, mode, poss, ball, due, att, goals, lc, offPend, foulPend, refFx, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
+      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, slowDebt, mT, CHEG, POCK, ALLX: ALL, WHY, DBG, PLAYS, DRIB, DISPN, CATCH, FKN, BUN, scr: g ? [X(ball.x), Y(ball.y)] : null, trail, REF, AR, Q4, leaving, rs, mode, poss, ball, due, att, goals, lc, offPend, foulPend, refFx, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
     };
     LP._sim = api;
     return api;
