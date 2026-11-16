@@ -11,9 +11,9 @@
   const U = (typeof window !== 'undefined' && window.CRAQUE_UI) || {}, LP = U.LP || (U.LP = {});
   const CL = 105, CW = 68, G = 9.81, DT = 1 / 20, TAU = Math.PI * 2;
   const _e = (typeof process !== 'undefined' && process.env) || {}, num = (k, d) => (_e[k] !== undefined && _e[k] !== '' ? +_e[k] : d);
-  // Gol mais largo que o real (14/11, Silvio: "o gol é muito pequeno"): os bonecos têm ~2,3 m de largura no desenho, então o gol de
+  // Gol mais largo que o real (14/11; 16/11 de 10,4 para 12 m, Silvio: "tá pequeno em comparação com o goleiro", gkBase 0,87 -> 0,90, Silvio: "o gol é muito pequeno"): os bonecos têm ~2,3 m de largura no desenho, então o gol de
   // 7,32 m parecia ter três bonecos; 10,4 m (GOL_HW 5,2, variável B11_golHW no node) deixa o gol na proporção dos bonecos.
-  const GOL_HW = num('B11_golHW', 5.2), GOL_Y1 = 34 - GOL_HW, GOL_Y2 = 34 + GOL_HW, GOL_ALT = 2.44;
+  const GOL_HW = num('B11_golHW', 6), GOL_Y1 = 34 - GOL_HW, GOL_Y2 = 34 + GOL_HW, GOL_ALT = 2.44;
   const AREA_F = 16.5, AREA_Y1 = 13.85, AREA_Y2 = 54.15, PEQ_F = 5.5;
   const FATOR_PAPEL = { GOL: 0.9, ZAG: 0.97, LAT: 1.02, VOL: 0.98, MEI: 1.0, PON: 1.04, ATA: 1.02 };
   const P_INFILTRA = { GOL: 0, ZAG: 0, LAT: 0.1, VOL: 0.05, MEI: 0.18, PON: 0.42, ATA: 0.5 };
@@ -31,7 +31,7 @@
     pCurva: 0.55, curvaMin: 5, curvaMax: 11, curvaFora: 0.45, curvaGiro: 0.3, // chute com curva (15/11, Silvio: "golaços"): chance de fora da área pela finalização, aceleração de lado em m/s², parte que começa no goleiro e abre (o resto sai por fora e fecha), quanto o efeito perde por segundo
     gkDist: 0.02, // chute de longe: o goleiro tem tempo de ver a bola (mais defesa por metro além de 11 m)
     distChute: 18, // a chance que o jogador enxerga cai e^(-d/distChute)
-    gkReacao: 0.26, gkMergulho: 5.7, gkAlcance: 1.45, gkBase: 0.87, gkAlcancePen: 0.16, gkVelPen: 75,
+    gkReacao: 0.26, gkMergulho: 5.7, gkAlcance: 1.45, gkBase: 0.90, gkAlcancePen: 0.16, gkVelPen: 75,
     pDesarme: 0.36, pFalta: 0.06, pFaltaBatido: 0.4, pAmarelo: 0.22, pVermelho: 0.015, pFaltaArea: 0.8, erroLinha: 2.6, pSemFreio: 0.25, folgaImp: 0.5, // folgaImp: metros além da linha para apitar (meio corpo: na tela o boneco tem ~2 m; o empate é legal)
     // falta no bote: a desajeitada (pFalta) e a de quem foi batido e segura (pFaltaBatido; na própria área ele se segura: pFaltaArea); erroLinha: metros que o passador erra ao ler a linha do impedimento
     lancPontos: [3, 6, 9, 12], lancMaxX: 97, vChegaLanc: 6, lancReacao: 0.25, lancCorrida: 0.8, lancBase: 1, // lançamento: metros à frente do corredor que o passador testa, até onde, velocidade que a bola rasteira chega, reação da zaga e quanto pesa ganhar a corrida (lancBase: folga em s que vale o de antes)
