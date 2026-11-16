@@ -162,7 +162,7 @@
         if (e.card) { kind = e.card === 'am' ? 'amarelo' : 'vermelho'; refFx = { p, kind, how: e.card, t: 2.3 }; if (kind === 'vermelho') goOff(p, 2.3); }
         if (e.pen) bigSay('PÊNALTI!', 1 - s, 2.2, true);
       }
-      if (o.onRef) o.onRef({ side: s, kind, how: e.card === 'direto' ? 'direto' : e.card === '2am' ? '2am' : undefined, num, pen: !!e.pen });
+      if (o.onRef) o.onRef({ side: s, kind, how: e.card === 'direto' ? 'direto' : e.card === '2am' ? '2am' : undefined, num, id: p && p.inf ? p.inf.id : undefined, pen: !!e.pen });
     }
     // A bola rolando no cérebro (o juiz é dele: nada do motor espera a vez aqui)
     function playB(dt) {
