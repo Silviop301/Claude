@@ -50,6 +50,8 @@
     if (co.rf === undefined) co.rf = co.club ? co.season + 1 : co.season;
     // Save de antes do nível firme dos jogadores reais (S.coGenSquad, co.lv): vale na próxima temporada
     if (co.lv === undefined) co.lv = co.club ? co.season + 1 : co.season;
+    // Save de antes do geral pela nota do EA FC (co.rv): os elencos dos outros mudam só na próxima temporada
+    if (co.rv === undefined) co.rv = co.club ? co.season + 1 : co.season;
     if (!co.sid && co.club) co.sid = sid();
     if (S.coSquadDedup) S.coSquadDedup(co); // save com o mesmo jogador duas vezes (sem clube que copiava um dos seus, 15/11) // carreira de antes da contagem: não conta como começo
     G.c = null; bar();
@@ -128,7 +130,7 @@
     if (U.LD && U.LD.on()) return U.LD.propostas(list, stay);
     const first = !co.hist.length && !co.club;
     const card = id => {
-      const cl = club(id), lg = league(id), g = S.coGoalFor(co, id), sq = S.coGenSquad(id, co.season, { rf: co.rf, lv: co.lv, season: co.season }), avg = Math.round(sq.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 11).reduce((a, p) => a + p.ovr, 0) / 11);
+      const cl = club(id), lg = league(id), g = S.coGoalFor(co, id), sq = S.coGenSquad(id, co.season, { rf: co.rf, lv: co.lv, rv: co.rv, season: co.season }), avg = Math.round(sq.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 11).reduce((a, p) => a + p.ovr, 0) / 11);
       const hard = g.k === 'naocair' || g.k === 'digna', top = ['titulo', 'subir', 'g4'].includes(g.k);
       return '<div class="of-card co-of" style="--of-c:' + (U.bandColor ? U.bandColor(id) : '#1F6B3E') + '">' +
         '<div class="of-band">' + crest(id, 'of-crest') + '<div class="of-id"><b class="of-name">' + esc(cl.name) + '</b><span class="of-lg">' + U.flag(lg.flag) + ' ' + esc(lg.name) + '</span></div></div>' +

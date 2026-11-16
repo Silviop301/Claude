@@ -77,7 +77,7 @@
     const at1 = at.map((_, k) => { if (!two.includes(C.names[ph - 1 - k])) return null; const x = legDay(at, k, busy); if (x != null) busy.add(x); return x; });
     // Régua do prêmio: a folha semanal normal do 6º clube mais forte do país (um clube médio-alto da elite)
     const ref = all[Math.min(5, all.length - 1)];
-    let w = 0; try { w = S.coGenSquad(ref, co.season, { rf: co.rf, lv: co.lv, season: co.season }).reduce((a, p) => a + p.wage, 0); } catch (e) { w = 0; }
+    let w = 0; try { w = S.coGenSquad(ref, co.season, { rf: co.rf, lv: co.lv, rv: co.rv, season: co.season }).reduce((a, p) => a + p.wage, 0); } catch (e) { w = 0; }
     ss.cup = { name: lg.cup || 'Copa nacional', ids, n: fn, at, at1, l1: at.map(() => []), k: 0, br: [br0], res: [[]], out: null, champ: null, w: Math.round(w), log: [] };
     return ss.cup;
   };

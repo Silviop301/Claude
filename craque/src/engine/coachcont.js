@@ -123,7 +123,7 @@
     at.forEach(x => busy.add(x));
     const at1 = at.map((_, k) => { if (k < 6 || k === at.length - 1) return null; const x = S._coLegs.legDay(at, k, busy); if (x != null) busy.add(x); return x; });
     let w = ss.cup && ss.cup.w;
-    if (!w) { const all = S.cupField(D.CLUB_BY_ID[co.club]), ref = all[Math.min(5, all.length - 1)]; try { w = S.coGenSquad(ref, co.season, { rf: co.rf, lv: co.lv, season: co.season }).reduce((a, p) => a + p.wage, 0); } catch (e) { w = 0; } }
+    if (!w) { const all = S.cupField(D.CLUB_BY_ID[co.club]), ref = all[Math.min(5, all.length - 1)]; try { w = S.coGenSquad(ref, co.season, { rf: co.rf, lv: co.lv, rv: co.rv, season: co.season }).reduce((a, p) => a + p.wage, 0); } catch (e) { w = 0; } }
     const me = ids.indexOf(co.club);
     const t2 = tier === 2;
     ss.cont = { name: t2 ? C.names2[cf] : C.names[cf], sn: t2 ? C.sn2[cf] : C.sn[cf], tier, cf, tr: t2 ? (C.tr2[cf] || 'cup') : cf === 'sul' ? 'lib' : 'ucl', ids, n, g: G, grp, me,
