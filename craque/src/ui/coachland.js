@@ -206,8 +206,13 @@
   // Reserva no banco: anel de energia com o geral, nome e a posição na cor do setor; o primeiro de cada setor abre espaço
   const benchChip = (p, prev, cls, ok, num, ov) => '<button class="tm-bp' + cls + (prev && lnOf(prev.pos) !== lnOf(p.pos) ? ' g0' : '') + '" data-bp="' + p.id + '"' + (ok ? '' : ' disabled') + '><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + (ov != null ? ov : p.ovr) + moAr(p, 'mo-bn') + '</b><span><i>' + (num && p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + p.pos + '</small></span></button>';
   // Com um titular escolhido o banco rola até o primeiro reserva que joga na vaga (o banco não cabe inteiro na tela)
+  // Tocar num reserva redesenha a tela: o banco volta para onde estava (Silvio 16/11: "quero que o clique mantenha a
+  // posição"); BENCH_X zera ao abrir a escalação ou a parada
+  let BENCH_X = 0;
   const benchShow = root => { const bn = root.querySelector('.tm-bench'), f = bn && bn.querySelector('.tm-bp.can, .tm-bp.lo'), lb = bn && bn.querySelector('small');
-    if (f) bn.scrollLeft = Math.max(0, f.offsetLeft - (lb ? lb.offsetWidth : 0) - 8); };
+    if (!bn) return; bn.scrollLeft = BENCH_X;
+    if (f) bn.scrollLeft = Math.max(0, f.offsetLeft - (lb ? lb.offsetWidth : 0) - 8);
+    BENCH_X = bn.scrollLeft; bn.addEventListener('scroll', () => { BENCH_X = bn.scrollLeft; }, { passive: true }); };
   // Lista das trocas do auxiliar (Silvio 2026-11-10: "tocar uma vez só e trocar todos"): uma linha por troca, todas
   // marcadas; tocar numa linha tira ou põe de volta, e um botão só faz as marcadas. L = [{ o, i, why, slot }]
   // Titular escolhido (Silvio 2026-11-10): ao lado dele, os reservas da mesma posição, do maior geral para o menor; o
@@ -587,6 +592,7 @@
 
   // ---------- Time: escalação, popups de troca e de formação/estilo ----------
   function time(toPlay) {
+    BENCH_X = 0;
     const c = C(), co = c.co, by = {}; S.coNums(co.squad); co.squad.forEach(p => { by[p.id] = p; }); // os mesmos números do campinho
     if (co.xi.some(id => !c.avail(by[id])) || co.xi.length < 11) co.xi = S.coAutoXI(co.squad, co.form).xi;
     const bestXI = () => S.coAutoXI(co.squad.filter(c.avail), co.form, true, co.xi).xi;
@@ -993,6 +999,7 @@
   // contrário); dois titulares trocam de lugar. Formação e estilo com ◀ ▶; o auxiliar num botão (etiquetas e a troca que
   // ele sugere); no intervalo, a conversa em cima. Nada de cartão do lance, frase longa ou "o que aconteceu".
   function liveStop(x, st) {
+    BENCH_X = 0;
     const m = x.m, s = m.us, c = C(), co = c.co, half = st.t === 'intervalo', us = st.s === 'us';
     const f0 = s.form, y0 = s.style, FORMS = Object.keys(S.CO_FORMS), inn = new Set();
     let talk = null, sel = st.pick ? s.xi.indexOf(st.pick) : -1, selB = null;
@@ -1917,9 +1924,10 @@
   // Bandeira: p.nat é o código ISO (gb-eng etc.) de quem é de fora ou o nome do país; sem ele, o país do clube (ou da liga
   // de onde saiu quem está sem clube). O emoji aparece pela fonte de bandeiras do jogo (no Windows também)
   const RI = c => String.fromCodePoint(...[...c.toUpperCase()].map(ch => 0x1F1E6 + ch.charCodeAt(0) - 65));
-  const natFlag = p => { const D = U.D, lg = p.club ? (D.CLUB_BY_ID[p.club] || {}).league : p.lg, n = p.nat || (lg && D.LEAGUE_BY_ID[lg] ? D.LEAGUE_BY_ID[lg].country : '');
+  const natFlag = p => { const D = U.D, cl0 = p.club || (!p.lg && C().co && C().co.club), lg = cl0 ? (D.CLUB_BY_ID[cl0] || {}).league : p.lg, // do seu elenco: o país do seu clube
+    n = p.nat || (p.api && ((window.CRAQUE_REAL || {}).nat || {})[p.api]) || (lg && D.LEAGUE_BY_ID[lg] ? D.LEAGUE_BY_ID[lg].country : '');
     const f = /^[a-z]{2}$/.test(n) ? RI(n) : /^gb-[a-z]{3}$/.test(n) ? '\u{1F3F4}' + [...n.replace('-', '')].map(ch => String.fromCodePoint(0xE0000 + ch.charCodeAt(0))).join('') + '\u{E007F}' : (D.NATION_BY_NAME[n] || {}).flag;
-    return f ? '<i class="mk-fl" aria-hidden="true">' + f + '</i>' : ''; };
+    return f ? '<i class="nat-fl" aria-hidden="true">' + f + '</i>' : ''; };
   // As 3 abas do Mercado: Procurar, Elenco (abre o seu elenco e o Voltar devolve ao Mercado) e Notícias. "Indicados" saiu na 1.0
   // (aba apagada com "em breve"). O aviso laranja conta as notícias novas da sua liga e do seu clube
   // Propostas (11/11): as propostas pelos seus esperam na 4ª aba, com o número das que estão abertas
@@ -2914,7 +2922,7 @@
     const tag = p => p.out ? ['dn', 'lesionado'] : p.sus ? ['dn', 'suspenso'] : c.pend(p) ? ['y', 'pendurado'] : S.coMktListed(co, p) ? ['g', 'à venda'] : p.prom ? ['y', 'promessa'] : null; // promessa = a chance prometida na conversa ainda vale
     const ovD = p => { const d = S.coOvrDelta(co, p); return d ? '<sup class="' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '+' : '−') + Math.abs(d) + '</sup>' : ''; }; // +1 / −2: o geral contra o fim da temporada passada
     const rows = L.map(p => { const t = tag(p);
-      return '<button class="lde2-r' + (q && p.id === q.id ? ' on' : '') + (c.avail(p) ? '' : ' out') + '" data-id="' + p.id + '"><i>' + (p.num || '') + '</i><span><b>' + esc(p.n) + '</b><small>' + p.pos + '</small>' + (t ? '<em class="' + t[0] + '">' + t[1] + '</em>' : '') + '</span>' +
+      return '<button class="lde2-r' + (q && p.id === q.id ? ' on' : '') + (c.avail(p) ? '' : ' out') + '" data-id="' + p.id + '"><i>' + (p.num || '') + '</i><span><b>' + natFlag(p) + esc(p.n) + '</b><small>' + p.pos + '</small>' + (t ? '<em class="' + t[0] + '">' + t[1] + '</em>' : '') + '</span>' +
         '<span class="a">' + p.age + '</span><span class="o">' + p.ovr + moAr(p, 'mo-in') + ovD(p) + '</span>' + (O[4] ? '<span class="ct x">' + O[4](p, c) + '</span>' : '<span class="ct' + (p.ct <= 1 ? ' dn' : '') + '">' + ctT(p.ct) + '</span>') + '</button>'; }).join('');
     let card = '';
     if (q) {
@@ -2928,7 +2936,7 @@
       const seg = '<div class="lde2-seg">' + ['Atributos', 'Situação'].map((t, i) => '<button data-ec="' + i + '"' + (i === elenco.ct ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('') + '</div>';
       const grw = S.coTrainNow(co) && co.train.dv ? co.train.dv.filter(x => x[0] === q.id).map(x => x[1]) : []; // subiu no treino desta semana: verde
       const bars = '<div class="lde2-at">' + at.map((v, i) => '<div class="lde2-ar' + (grw.includes(i) ? ' gr' : i === hi ? ' top' : i === lo ? ' low' : '') + '"><span>' + S.CO_AT.names[ks[i]] + '</span><i><u style="width:' + v + '%"></u></i><b>' + v + '</b></div>').join('') + '</div>';
-      card = '<div class="lde2-c' + (elenco.ct ? ' sit' + (hint ? ' hn' : '') : '') + '"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? '<button class="lde2-nm" id="lde-num" aria-label="Trocar o número">' + shirtSvg('#F8F4EA', '#13201A') + q.num + NM_PEN + '</button>' : '') + esc(c.last(q.n)) + '</b><small>' + c.posTxt[q.pos] + sideTxt(q) + ' · ' + q.age + ' anos' + (S.coOvrDelta(co, q) ? ' · <em class="' + (S.coOvrDelta(co, q) > 0 ? 'up' : 'dn') + '">' + (S.coOvrDelta(co, q) > 0 ? '+' : '−') + Math.abs(S.coOvrDelta(co, q)) + ' no ano</em>' : '') + '</small></span></div>' + seg +
+      card = '<div class="lde2-c' + (elenco.ct ? ' sit' + (hint ? ' hn' : '') : '') + '"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? '<button class="lde2-nm" id="lde-num" aria-label="Trocar o número">' + shirtSvg('#F8F4EA', '#13201A') + q.num + NM_PEN + '</button>' : '') + esc(c.last(q.n)) + '</b><small>' + natFlag(q) + c.posTxt[q.pos] + sideTxt(q) + ' · ' + q.age + ' anos' + (S.coOvrDelta(co, q) ? ' · <em class="' + (S.coOvrDelta(co, q) > 0 ? 'up' : 'dn') + '">' + (S.coOvrDelta(co, q) > 0 ? '+' : '−') + Math.abs(S.coOvrDelta(co, q)) + ' no ano</em>' : '') + '</small></span></div>' + seg +
         (elenco.ct ? '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/rodada') + '</div>' +
         '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span></div>' +
         '<div class="lde2-act"><button class="lde2-ren" id="lde-ren" data-id="' + q.id + '"' + (renOk ? '' : ' disabled') + '>Renovar' + (renOk ? '' : '<small>no fim do contrato</small>') + '</button>' +
