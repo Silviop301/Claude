@@ -532,7 +532,7 @@
   const ok = p => p && !p.out && !p.sus;
   // O auxiliar monta o time: para cada vaga, o melhor que sobra pela força na vaga (energia conta)
   // `pure`: da posição primeiro, depois o geral na vaga (botão "Melhores" da escalação), sem energia nem atributo por setor
-  function autoXI(squad, form, pure) {
+  function autoXI(squad, form, pure, keep) {
     const used = new Set(), slots = slotsOf(form), SL = FORMS[form].slots, xi = [];
     // pure = 'rest' (Silvio 2026-11-11: "seria bom ter os mais descansados, pra poupar em jogo menor eu tenho que tirar um a um"):
     // cada vaga pega primeiro quem é da posição e, entre eles, o de mais energia (de 5 em 5 pontos); no empate, o maior geral
@@ -544,6 +544,21 @@
       const best = squad.filter(p => ok(p) && !used.has(p.id)).sort((a, b) => val(b, slots[i], i) - val(a, slots[i], i))[0];
       if (best) { used.add(best.id); xi[i] = best.id; }
     });
+    // `keep` (Silvio 2026-11-16: "às vezes clico em melhores e ele só muda a posição dos meus meias e atacantes"): quem já
+    // está entre os escolhidos numa vaga da mesma posição fica onde está; vagas iguais dão o mesmo valor, então trocar
+    // dois meias de lugar não melhora nada e só bagunçava as funções. Assim o botão vira idempotente
+    if (keep && keep.length === slots.length) {
+      const at = {}; xi.forEach((id, i) => { if (id) at[id] = i; });
+      const res = [], put = new Set();
+      keep.forEach((id, i) => { if (id && at[id] !== undefined && slots[at[id]] === slots[i]) { res[i] = id; put.add(id); } });
+      xi.forEach((id, j) => {
+        if (!id || put.has(id)) return;
+        let k = res[j] === undefined ? j : slots.findIndex((sl, i) => sl === slots[j] && res[i] === undefined && xi[i] !== undefined);
+        if (k < 0) k = j;
+        res[k] = id; put.add(id);
+      });
+      for (let i = 0; i < slots.length; i++) xi[i] = res[i];
+    }
     const bench = squad.filter(p => ok(p) && !used.has(p.id)).sort((a, b) => b.ovr - a.ovr).slice(0, 9).map(p => p.id);
     return { xi, bench };
   }

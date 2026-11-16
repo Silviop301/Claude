@@ -8245,7 +8245,7 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .tm { width: 100%; flex: 1; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 238px; grid-template-rows: 44px minmax(0, 1fr) 50px; gap: 10px 16px; color: #F3F1EA; }
 .tm-h { grid-column: 1 / -1; position: relative; display: flex; align-items: center; gap: 10px; padding-left: 56px; }
 .tm-h .tcr-back { left: 0; top: 0; width: 44px; height: 44px; }
-.tm-h b { font: 800 26px/1 var(--display); } .tm-h small { font: 700 16px/1 var(--body); color: #B9C9BF; }
+.tm-h b { font: 800 26px/1 var(--display); white-space: nowrap; flex: none; } .tm-h .tm-cr { width: 30px; height: 30px; object-fit: contain; flex: none; margin-right: -2px; } .tm-h small { font: 700 16px/1 var(--body); color: #B9C9BF; }
 .tm-hint { font: 700 17px/1.2 var(--body); color: var(--gold); }
 .tm-pitch { grid-column: 1; grid-row: 2; border-radius: 16px; }
 .tm .ld-dot { width: 38px; height: 38px; margin: -19px 0 0 -19px; transition: left .4s cubic-bezier(.3, .8, .3, 1), top .4s cubic-bezier(.3, .8, .3, 1), opacity .3s; }
@@ -10799,3 +10799,4 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 /* Régua da proposta: o `.ld-st button:not(.btn)` zerava o padding e o texto do "Justa" encostava na borda do creme (Silvio 16/11) */
 .ld-st .mkp-tk button { height: 26px; padding: 0 10px; border-radius: 8px; font: 700 15px/26px var(--display); }
 .ld-st .mkp-tk button.on { padding: 0 11px; }
+.tm-h small.tm-vs { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
