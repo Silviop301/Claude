@@ -5,7 +5,7 @@
 // (out.my.ev), que só saem no minuto deles. Você ataca para a direita; o adversário é espelhado.
 (function () {
   const U = window.CRAQUE_UI, LP = U.LP || (U.LP = {});
-  const L = 105, WD = 68, GL = 28.8, GR = 39.2; // gol de 10,4 m, o mesmo do cérebro 11x11 (GOL_HW, 14/11)
+  const L = 105, WD = 68, GL = 28, GR = 40; // gol de 12 m, o mesmo do cérebro 11x11 (GOL_HW, 14/11)
   const cl = (v, a, b) => Math.max(a, Math.min(b, v));
   const sig = v => 1 / (1 + Math.exp(-v));
   const F433 = [['GK', 0, 50], ['LB', .22, 12], ['CB', .16, 37], ['CB', .16, 63], ['RB', .22, 88], ['CM', .5, 30], ['DM', .38, 50], ['CM', .5, 70], ['LW', .8, 15], ['ST', .9, 50], ['RW', .8, 85]];
@@ -17,7 +17,7 @@
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   const toW = (s, x, y) => (s ? [L - x, WD - y] : [x, y]);
   // Avançar vale por si (time que só roda a bola atrás não é futebol), quem chega perto chuta, e o bote dá certo 3 vezes em 10
-  const DOTK = 0.65; // tamanho dos bonecos no desenho
+  const DOTK = 0.65, K0_REF = 1.45; // K0_REF: escala dos bonecos no campo do iPhone 14 deitado (~600 x 366) // tamanho dos bonecos no desenho
   const PASS_OK = 0.25, PASS_PAT = 0.55; // passe executado: quanto do risco o jogador salva (todos um pouco, o time de posse mais)
   const NEED = 10, CRZ0 = 0.02, CRZ1 = 0.14; // NEED: passes antes de forçar no estilo mais paciente; cruzamento vale menos que antes (era 0,05 + 0,3 × lados)
   const PROG = 0.05, SHOT = 3.2, TK = 0.3, DUE_AHEAD = 6, AHEAD_S = 9; // a jogada do gol do motor começa uns 9 s do campinho antes (6 minutos sem o ritmo da tela), para dar tempo de construir
@@ -740,7 +740,7 @@
     // Bola fora (Silvio, 10/11: "a bola que sai não deve bater na parede invisível; sai da visão e outra vem da lateral"): a que
     // saiu segue rolando para fora do campo (ghost, só desenho) e a cobrança usa a bola reserva mais perto, das que ficam em
     // volta do campo (RACK: nas laterais e duas atrás de cada gol, uma de cada lado da trave); a usada volta uns segundos depois
-    const RACK = [[17, -1.5], [35, -1.5], [52.5, -1.5], [70, -1.5], [88, -1.5], [17, WD + 1.5], [35, WD + 1.5], [70, WD + 1.5], [88, WD + 1.5], [-1.5, 27], [-1.5, 41], [L + 1.5, 27], [L + 1.5, 41]].map(([x, y]) => ({ x, y, h: 0 }));
+    const RACK = [[17, -1.5], [35, -1.5], [70, -1.5], [88, -1.5], [17, WD + 1.5], [35, WD + 1.5], [70, WD + 1.5], [88, WD + 1.5], [-1.5, 25], [-1.5, 43], [L + 1.5, 25], [L + 1.5, 43]].map(([x, y]) => ({ x, y, h: 0 }));
     const BV = { px: 52.5, py: 34, vx: 0, vy: 0 }; let ghost = null, escClk = -9;
     // Cérebro: a bola que saiu segue rolando para fora (ghost) e a cobrança usa a reserva mais perto, que vai até o ponto da
     // cobrança em `TOSS_T` s (só desenho: o cérebro já pôs a bola no ponto; Silvio 13/11: "saída efetiva da bola")
@@ -1836,7 +1836,7 @@
       g.strokeRect(XL(0), Y(13.85), bw, Y(54.15) - Y(13.85)); g.strokeRect(XL(L) - bw, Y(13.85), bw, Y(54.15) - Y(13.85));
       g.strokeRect(XL(0), Y(24.85), sw, Y(43.15) - Y(24.85)); g.strokeRect(XL(L) - sw, Y(24.85), sw, Y(43.15) - Y(24.85));
       // Os gols: traves e rede atrás da linha; no gol a rede estufa onde a bola bateu e balança até parar
-      goalDraw(0, false); goalDraw(1, false);
+      goalDraw(0, false); goalDraw(1, false); g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 2; // a meia-lua e os quartos de círculo voltam ao branco das linhas (o gol deixava o traço branco e grosso)
       // Marca do pênalti, arco da área (a 9,15 m da marca, só a parte fora da área), quartos de círculo e bandeirinhas de escanteio
       const rx = XL(9.15) - XL(0), ry = Y(9.15) - Y(0), a0 = Math.acos(5.5 / 9.15);
       g.fillStyle = 'rgba(255,255,255,.6)'; [11, L - 11].forEach(x => { g.beginPath(); g.arc(XL(x), Y(34), 1.6, 0, Math.PI * 2); g.fill(); });
@@ -2144,7 +2144,7 @@
         g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 2; g.setLineDash([2.5, 2.5]); g.beginPath(); g.moveTo(X(a[0] - kx), Y(a[1] - ky)); g.lineTo(X(a[0] - kx + (ex - a[0] + 2 * kx) * u), Y(a[1] - ky + (ey - a[1] + 2 * ky) * u)); g.stroke(); g.setLineDash([]); } }
       // Bonecos, bola e árbitros em 65% (Silvio, 2026-11-06: o campo respirando vale mais que o número grande); placa, etiqueta,
       // o VOCÊ e o cartão do toque ficam no tamanho cheio (k0)
-      const k0 = cl(W / SK / 380, 0.85, 1.45) * SK, k = Math.max(k0 * DOTK, 0.75); // campinho pequeno (em pé) não encolhe tanto
+      const k0 = Math.max(0.75, K0_REF * Math.sqrt((W / 600) * (H / 366))), k = Math.max(k0 * DOTK, 0.75); // bonecos na proporção do campo do iPhone 14 deitado (16/11, Silvio: "deixar sempre no mesmo tamanho que eu vejo no iPhone 14"): o tamanho cresce junto com o campo em qualquer tela, sem o teto de antes (no computador os bonecos ficavam pequenos e o gol parecia enorme)
       if (ball.fly && !ball.fly.shot) { g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1.5 * k; g.setLineDash([4 * k, 4 * k]); g.beginPath(); g.moveTo(X(ball.fly.x0), Y(ball.fly.y0)); g.lineTo(X(ball.x), Y(ball.y)); g.stroke(); g.setLineDash([]); }
       // Duelo: quem tem a bola e quem vem no bote ganham um anel pontilhado em volta dos dois (um duelo por vez)
       // o.clean (Treinador deitado, Silvio 2026-11-07): campo limpo, sem anel do duelo nem nome da jogada; fica o rastro do passe
