@@ -59,6 +59,7 @@
     if (!co.club) return offers(co.offers || S.coOffers(co));
     if (co.step === 'end' && co.last) return seasonEnd(co.last);
     if (!co.ss) S.coStart(co);
+    else if (S.coFixLeague && S.coFixLeague(co)) save();
     if (co.live !== undefined && co.ss && co.live === co.ss.i) {
       // O app fechou no meio do jogo (no iPhone, sair e voltar pode recarregar a página): o jogo volta do minuto em que parou
       const lm = co.liveM;

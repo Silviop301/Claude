@@ -1952,6 +1952,21 @@
     if (LD.up && ss.promo) swap(ids.slice(0, ss.promo), LD.up, 'up');
     if (LD.down && ss.releg) swap(ids.slice(-ss.releg), LD.down, 'down');
   }
+  // Save com a temporada começada antes da divisão real de 2026 (PR #424, ex.: Paraná ainda na Série B):
+  // quem não é mais da liga passa a linha da tabela (pontos, jogos, calendário) para quem é da liga e faltava,
+  // pela ordem de força. Só mexe em clube de outra liga; o seu clube e os times de complemento ficam.
+  S.coFixLeague = function (co) {
+    const ss = co && co.ss; if (!ss || ss.done || !co.club) return 0;
+    S.applyLeagues(co);
+    const club = D.CLUB_BY_ID[co.club], lg = club.league;
+    if (!D.LEAGUE_BY_ID[lg] || D.LEAGUE_BY_ID[lg].name !== ss.name) return 0;
+    const want = L().leagueTeams(club), has = new Set(ss.ids), byStr = (a, b) => D.CLUB_BY_ID[b].strength - D.CLUB_BY_ID[a].strength;
+    const out = ss.ids.filter(id => id !== co.club && D.CLUB_BY_ID[id] && D.CLUB_BY_ID[id].league !== lg && !want.includes(id)).sort(byStr);
+    const inn = want.filter(id => !has.has(id) && D.CLUB_BY_ID[id].league === lg).sort(byStr);
+    const n = Math.min(out.length, inn.length);
+    for (let k = 0; k < n; k++) ss.ids[ss.ids.indexOf(out[k])] = inn[k];
+    return n;
+  };
   // Diz se a carreira já tem clube e temporada em andamento
   S.coState = co => (!co.club ? 'sem-clube' : !co.ss ? 'pre' : co.ss.done ? 'fim' : 'jogo');
 
