@@ -10800,7 +10800,6 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .ld-st .mkp-tk button { height: 26px; padding: 0 10px; border-radius: 8px; font: 700 15px/26px var(--display); }
 .ld-st .mkp-tk button.on { padding: 0 11px; }
 .tm-h small.tm-vs { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-<<<<<<< HEAD
 
 /* Estádio vivo (2026-11-16): fumaça do churrasco sobe, varal de luzes pisca e o brilho dos refletores pulsa; só desenho */
 .est-svg .est-sm { fill-opacity: var(--o); transform-box: fill-box; transform-origin: center; animation: estSm 2.6s linear infinite; }
@@ -10820,7 +10819,6 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .es-gps b { font: 800 22px/1 var(--display) !important; color: var(--gold); }
 .es-gp { gap: 6px !important; justify-content: flex-start !important; }
 @media (prefers-reduced-motion: reduce) { .est-svg .est-sm, .est-svg .est-vl, .est-svg .est-hz, .est-svg .est-pk { animation: none; } }
-=======
 .tm-bp > b.tm-ring.lo { color: #F08A5D; }
 
 /* Aviso "O que mudou" na home deitada (settings.js newsPop, Silvio 16/11): creme com o painel carvão dos 6 destaques */
@@ -10842,4 +10840,3 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .nvp-fb img.tw { width: 22px; height: 22px; }
 .ld-st .nvp-ft button.nvp-tudo { flex: 1; color: #13201A; box-shadow: inset 0 0 0 2px rgba(19,32,26,.35); }
 .ld-st .nvp-ft button.nvp-go { flex: 1; background: #F2C230; color: #13201A; box-shadow: 0 4px 0 #A9861C; }
->>>>>>> a9c61508af1be244a0d2bda117c7f256b8b913c4
