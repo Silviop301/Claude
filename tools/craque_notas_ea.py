@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Geral dos jogadores reais pela nota pública do EA SPORTS FC (Silvio, 2026-11-16: "o geral do Yamal tá baixo, tem uma base?").
+"""Geral dos jogadores reais pela nota pública do EA SPORTS FC (FC 27 desde 16/11; antes FC 26) (Silvio, 2026-11-16: "o geral do Yamal tá baixo, tem uma base?").
 
 Antes o geral do jogador real saía só da força do clube e da ordem no elenco (quem mais começou jogando na ESPN): o Yamal
 ficava 76 e o Endrick 81. Agora a nota do EA FC (site público de notas da EA) decide a ORDEM e a DISTÂNCIA entre os
@@ -7,7 +7,7 @@ jogadores de cada clube, mas o NÍVEL do clube continua o do jogo: a média dos 
 antes, então a força dos clubes (Opta) e o equilíbrio não mudam.
 
 Uso (na raiz):
-  python3 tools/craque_notas_ea.py baixar     # notas do site da EA -> tools/ea/ea.json (fora do git; ~3 min)
+  python3 tools/craque_notas_ea.py baixar     # notas do site da EA (página de notas, o jogo do ano) -> tools/ea/ea.json (fora do git; ~5 min)
   python3 tools/craque_notas_ea.py casar      # casa com os elencos (nome + idade) e grava tools/ea/ref.json
   python3 tools/craque_api_elencos.py gerar   # põe o ref.json dentro de craque/src/real-squads.js (CRAQUE_REAL.ref)
 
@@ -21,34 +21,43 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EA_DIR = os.path.join(ROOT, 'tools', 'ea')
 EA_JSON = os.path.join(EA_DIR, 'ea.json')
 REF_JSON = os.path.join(EA_DIR, 'ref.json')
-API = 'https://drop-api.ea.com/rating/ea-sports-fc?locale=en&limit=100&offset=%d'
+PAGE = 'https://www.ea.com/games/ea-sports-fc/ratings?page=%d'
 TOP = 14      # média dos 14 melhores do clube = nível que fica igual
 MINM = 8      # clube com menos jogadores na base que isso fica com a conta antiga
 MIX = 0.5     # clube fora da base: jogador casado pelo nome inteiro vai meio a meio
 REF = (2026, 11, 11)  # dia do download da ESPN (idade)
 
 
+def pagina(n):
+    """Página n do site de notas (100 por página). O site mostra o jogo do ano (EA FC 27 desde set/2026); a API
+    drop-api sozinha ainda devolve o FC 26, então as notas saem do __NEXT_DATA__ da página."""
+    req = urllib.request.Request(PAGE % n, headers={'User-Agent': 'Mozilla/5.0'})
+    h = urllib.request.urlopen(req, timeout=40).read().decode('utf-8', 'replace')
+    d = json.loads(re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', h, re.S).group(1))
+    r = d['props']['pageProps']['ratingDetails']
+    return {'items': r['items'], 'totalItems': r['totalItems']}
+
+
 def baixar():
     os.makedirs(EA_DIR, exist_ok=True)
-    out, off, total = [], 0, 1
-    while off < total:
+    out, n, total = [], 1, 1
+    while (n - 1) * 100 < total:
         for t in range(5):
             try:
-                req = urllib.request.Request(API % off, headers={'User-Agent': 'Mozilla/5.0'})
-                d = json.load(urllib.request.urlopen(req, timeout=30))
+                d = pagina(n)
                 break
             except Exception:
                 time.sleep(2 + 3 * t)
         else:
-            sys.exit('falhou em offset %d' % off)
+            sys.exit('falhou na página %d' % n)
+        n += 1
         total = d['totalItems']
         for p in d['items']:
             if (p.get('gender') or {}).get('id') != 0:
                 continue
             out.append([p['id'], p['overallRating'], p['firstName'], p['lastName'], p.get('commonName'),
                         (p.get('birthdate') or '').split(' ')[0], (p.get('team') or {}).get('label')])
-        off += 100
-        time.sleep(0.3)
+        time.sleep(0.4)
     json.dump(out, open(EA_JSON, 'w'), ensure_ascii=False)
     print('%s: %d jogadores' % (os.path.relpath(EA_JSON, ROOT), len(out)))
 
