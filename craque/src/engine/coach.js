@@ -1122,8 +1122,12 @@
     if (!m || m.done || !m.min) return null;
     info = info || {};
     const s = sd === 'us' ? m.us : m.them, cnt = k => { m[k] = m[k] || { us: 0, them: 0 }; m[k][sd]++; };
-    const k = info.num == null ? -1 : s.xi.findIndex(id => { const p = id && s.squad.find(x => x.id === id); return p && p.num === info.num; });
-    const id = k >= 0 ? s.xi[k] : null, p = id && s.squad.find(x => x.id === id), pos = k >= 0 ? slotsOf(s.form)[k] : '';
+    // Quem fez: pelo id do campinho, senão pelo número entre os titulares, senão no elenco todo (análise 16/11: saía
+    // "Falta de  (Juazeirense)" quando o número não batia com ninguém da escalação de agora)
+    let k = info.id != null ? s.xi.indexOf(info.id) : -1;
+    if (k < 0 && info.num != null) k = s.xi.findIndex(id => { const p = id && s.squad.find(x => x.id === id); return p && p.num === info.num; });
+    const id = k >= 0 ? s.xi[k] : null, pos = k >= 0 ? slotsOf(s.form)[k] : '';
+    const p = (id && s.squad.find(x => x.id === id)) || s.squad.find(x => (info.id != null && x.id === info.id) || (info.num != null && x.num === info.num));
     const e = { m: m.min, t, s: sd, p: p ? p.n : '', pos, b11: 1 }; if (m.st) e.st = m.st; if (info.pen) e.pen = 1;
     if (t === 'impedimento') cnt('of');
     else {

@@ -280,7 +280,7 @@
       '<div class="cf-card"><div><small class="cf-k">Caixa do clube</small><div class="cf-big' + (f.caixa < 0 ? ' dn' : '') + '">' + brl(f.caixa) + '</div><p class="cf-sm">' +
         (f.caixa < 0 ? 'No vermelho: a cada rodada assim, a diretoria perde a paciência.' : 'Paga ' + D.plural(wk, 'semana', 'semanas') + ' de salário mesmo sem entrar nada.') + '</p></div>' +
         '<div class="cf-two"><div class="cf-tile"><small class="cf-k">Verba para contratar</small><b class="g">' + mi(f.verba) + '</b><small class="cf-sm">para comprar no mercado</small></div>' +
-        '<div class="cf-tile"><small class="cf-k">Folha por semana</small><b>' + mi(folha) + ' <span>de ' + mi(teto) + '</span></b><i class="cf-track"><em style="width:' + pct + '%"></em></i></div></div></div>' +
+        '<div class="cf-tile"><small class="cf-k">Folha por rodada</small><b>' + mi(folha) + ' <span>de ' + mi(teto) + '</span></b><i class="cf-track"><em style="width:' + pct + '%"></em></i></div></div></div>' +
       '<div class="cad-tabs cf-tabs"><button data-ft="tmp">Temporada</button><button data-ft="seg">A seguir</button><button data-ft="sal">Salários</button></div>' +
       '<div class="cf-panel">' + panes[tab] + '</div>' +
       '<p class="cf-pres"><b>Presidente</b> ' + pr[0] + '</p>' +
@@ -697,8 +697,8 @@
       e.t === 'chance' ? (e.k === 'defesa' ? esc(e.p) + (e.hd ? ' cabeceia ' : ' chuta ' + (HOW(e) ? HOW(e) + ' ' : '')) + 'e o goleiro defende' : e.k === 'fora' ? esc(e.p) + ' finaliza para fora' : e.k === 'trave' ? esc(e.p) + ' acerta a trave!' : 'Chute de ' + esc(e.p) + ' travado pela zaga') :
       e.t === 'vermelho' ? (e.how === '2am' ? '<span class="co-yc"></span> ' : '') + '<span class="co-red"></span> <b>' + esc(e.p) + ' é expulso</b> (' + esc(who) + ')' + (e.how === '2am' ? ', segundo amarelo' : e.how === 'direto' ? ', vermelho direto' : '') :
       e.t === 'amarelo' ? (e.pk ? '<b>Pênalti!</b> ' : '') + '<span class="co-yc"></span> Amarelo para ' + esc(e.p) + ' (' + esc(who) + ')' :
-      e.t === 'falta' ? (e.pk ? '<b>Pênalti!</b> ' : '') + 'Falta de ' + esc(e.p) + ' (' + esc(who) + ')' + (e.pk ? ' na área' : e.m % 3 ? '' : ' perto da área') :
-      e.t === 'impedimento' ? 'Impedimento: ' + esc(e.p) + ' saiu antes da hora (' + esc(who) + ')' :
+      e.t === 'falta' ? (e.pk ? '<b>Pênalti!</b> ' : '') + (e.p ? 'Falta de ' + esc(e.p) + ' (' + esc(who) + ')' : 'Falta do ' + esc(who)) + (e.pk ? ' na área' : e.m % 3 ? '' : ' perto da área') :
+      e.t === 'impedimento' ? (e.p ? 'Impedimento: ' + esc(e.p) + ' saiu antes da hora (' + esc(who) + ')' : 'Impedimento do ' + esc(who)) :
       e.t === 'lesao' ? esc(e.p) + ' sente e pede para sair (' + esc(who) + ')' :
       e.t === 'tatica' ? (e.s === 'us' ? 'Você muda para ' + esc(e.p) : 'O ' + esc(who) + ' muda para <b>' + esc(e.p).toLowerCase() + '</b>') :
       e.t === 'troca' ? 'Sai ' + esc(e.p) + ', entra <b>' + esc(e.q) + '</b>' :
@@ -723,8 +723,8 @@
       e.t === 'chance' ? (e.k === 'defesa' ? n + ' chuta, o goleiro defende' : e.k === 'fora' ? n + ' chuta para fora' : e.k === 'trave' ? n + ' acerta a trave!' : 'Chute de ' + n + ' travado') :
       e.t === 'vermelho' ? (e.pk ? '<b>Pênalti!</b> ' : '') + '<span class="co-red"></span> ' + n + ' é expulso' :
       e.t === 'amarelo' ? (e.pk ? '<b>Pênalti!</b> ' : '') + '<span class="co-yc"></span> Amarelo para ' + n :
-      e.t === 'falta' ? (e.pk ? '<b>Pênalti!</b> Falta de ' + n + ' na área' : 'Falta de ' + n) :
-      e.t === 'impedimento' ? 'Impedimento de ' + n :
+      e.t === 'falta' ? (e.pk ? '<b>Pênalti!</b> ' + (n ? 'Falta de ' + n + ' na área' : 'Falta na área') : n ? 'Falta de ' + n : 'Falta') :
+      e.t === 'impedimento' ? (n ? 'Impedimento de ' + n : 'Impedimento') :
       e.t === 'lesao' ? n + ' sente e pede para sair' :
       e.t === 'tatica' ? 'Muda para ' + (us ? n : n.toLowerCase()) :
       e.t === 'troca' ? 'Sai ' + n + ', entra <b>' + esc(e.q || '') + '</b>' :
