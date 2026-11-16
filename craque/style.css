@@ -1127,7 +1127,7 @@ details.more .hl { background: rgba(255, 255, 255, 0.08); border-radius: 10px; p
 
 .col-rar { font: 800 9px var(--display); letter-spacing: .1em; text-transform: uppercase; font-style: normal; padding: 1px 6px; border-radius: 6px; }
 .col-rar.rara { background: #2A4D9B; color: #fff; }
-.col-rar.epica { background: #7C3AED; color: #fff; }
+.col-rar.epica { background: #6E4A8E; color: #fff; }
 .col-rar.lendaria { background: linear-gradient(90deg, #FF6EC7, #7AFCFF, #FFF38A); color: #1A1030; }
 
 /* Conta */
@@ -8431,7 +8431,7 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .rs-pane .ldl-last li { grid-template-columns: 26px 20px 18px 1fr; align-items: center; gap: 6px; border-radius: 8px; padding: 1px 6px 1px 2px; }
 .rs-pane .ldl-last li.gol.us { background: rgba(74, 222, 128, .16); } .rs-pane .ldl-last li.gol.them { background: rgba(248, 113, 113, .16); }
 .rsi { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; position: relative; font-style: normal; } .rsi svg { width: 18px; height: 18px; } .rsi .rsi-c { width: 14px; height: 14px; }
-.rsi-k { display: block; width: 10px; height: 14px; border-radius: 2px; } .rsi-k.y { background: #F2C230; } .rsi-k.r { background: #E5484D; } .rsi-k.two { position: absolute; left: 3px; top: 1px; transform: rotate(-12deg); } .rsi-k.two + .rsi-k { position: relative; left: 3px; top: 1px; }
+.rsi-k { display: block; width: 10px; height: 14px; border-radius: 2px; } .rsi-k.y { background: #F2C230; } .rsi-k.r { background: #D9473F; } .rsi-k.two { position: absolute; left: 3px; top: 1px; transform: rotate(-12deg); } .rsi-k.two + .rsi-k { position: relative; left: 3px; top: 1px; }
 .rsi-cr { width: 18px; height: 18px; object-fit: contain; display: block; }
 .rs-pane .ldr-mom { position: relative; } .rs-mkw { position: absolute; inset: 4px; pointer-events: none; }
 .rs-mk { position: absolute; transform: translateX(-50%); display: flex; gap: 0; } .rs-mk.us { top: 1px; } .rs-mk.th { bottom: 1px; } .rs-mk svg { width: 16px; height: 16px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .6)); } .rs-mk .rsi-k { width: 9px; height: 12px; }
@@ -8458,7 +8458,7 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .pl2-ar { width: 56px; height: 56px; flex: none; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(243, 241, 234, .25); font: 800 26px/1 var(--display) !important; color: #F3F1EA !important; background: none !important; }
 .pl2-ar:disabled { opacity: .3; }
 .pl2-rg { position: relative; height: 34px; margin: 0 14px; }
-.pl2-rg > i { position: absolute; left: 0; right: 0; top: 12px; height: 10px; border-radius: 5px; background: linear-gradient(90deg, #5AA9E6, #7ED39A 50%, #F08A5D); }
+.pl2-rg > i { position: absolute; left: 0; right: 0; top: 12px; height: 10px; border-radius: 5px; background: linear-gradient(90deg, #4E8FC4 0 32%, transparent 32% 34%, #5FB27E 34% 66%, transparent 66% 68%, #E07A4F 68%); border-radius: 2px; }
 .pl2-rg button { position: absolute; top: 9px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #141517 !important; box-shadow: 0 0 0 3px rgba(243, 241, 234, .4); padding: 0 !important; }
 .pl2-rg button::after { content: ''; position: absolute; inset: -14px; }
 .pl2-rg button.on { top: 3px; width: 28px; height: 28px; margin-left: -14px; background: #F8F4EA !important; box-shadow: 0 0 0 3px var(--gold); }
@@ -9594,15 +9594,15 @@ button.coin-pill { cursor: pointer; border: 0; }
 .mkf-tr span { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
 /* Aviso da janela de transferências (2026-11-11): cartão do upToast; na última rodada o relógio e a borda ficam laranja */
-.wn-ty i { color: #b45309; } .wn-ty.ult { box-shadow: 0 0 0 3px #f59e0b, 0 10px 30px rgba(0, 0, 0, .5); }
+.wn-ty i { color: #b45309; } .wn-ty.ult { box-shadow: 0 0 0 3px #E8A13A, 0 10px 30px rgba(0, 0, 0, .5); }
 .mk-win.ult { background: rgba(245, 158, 11, .2); color: #fbbf24; }
 /* Observados no Resultado do mercado (11/11): olho + 3 tracinhos do relatório; laranja = desatualizado */
 .mk-r > span b { display: flex; align-items: center; gap: 10px; } .mk-r > span b .mk-nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .mk-ob { flex: none; display: inline-flex; align-items: center; gap: 3px; text-decoration: none; color: var(--gold); }
 .mk-ob svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.4; margin-right: 2px; }
 .mk-ob i { width: 6px; height: 12px; border-radius: 2px; background: currentColor; opacity: .28; } .mk-ob i.on { opacity: 1; }
-.mk-ob.old { color: #F59E0B; } .mk-r.on .mk-ob { color: #8a6a10; } .mk-r.on .mk-ob.old { color: #b45309; }
-.mkf-cmp b small.old, .mka em.old { color: #F59E0B; }
+.mk-ob.old { color: #E8A13A; } .mk-r.on .mk-ob { color: #8a6a10; } .mk-r.on .mk-ob.old { color: #b45309; }
+.mkf-cmp b small.old, .mka em.old { color: #E8A13A; }
 
 /* Novidades na home deitada (2026-11-11, entrada A): pílula no canto de cima à esquerda, do lado oposto das moedas, com o
    pontinho dourado de versão nova; a tela .nvd tem o anúncio no cartão creme e até 4 destaques no painel carvão */
@@ -10261,7 +10261,7 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 /* Seta de moral estilo PES (2026-11-12): campo (.ld-dot), banco (.mo-bn no anel) e Elenco (.mo-in ao lado do geral) */
 .mo-ar { position: absolute; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #10241a; z-index: 3; pointer-events: none; font-style: normal; }
 .mo-ar svg { width: 11px; height: 11px; stroke: #fff; stroke-width: 3.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.mo-ar.l5 { background: #E5484D; } .mo-ar.l4 { background: #F08A2E; } .mo-ar.l3 { background: #3FB56B; } .mo-ar.l2 { background: #3B82F6; } .mo-ar.l1 { background: #8B5CF6; }
+.mo-ar.l5 { background: #D9473F; } .mo-ar.l4 { background: #F08A2E; } .mo-ar.l3 { background: #3FB56B; } .mo-ar.l2 { background: #3F7FBF; } .mo-ar.l1 { background: #7B52A8; }
 .ld-dot .mo-ar { right: -5px; top: -4px; }
 .tm-bp .tm-ring { position: relative; overflow: visible; }
 .tm-bp .mo-ar.mo-bn { right: -6px; bottom: -3px; top: auto; left: auto; width: 15px; height: 15px; }
@@ -10921,3 +10921,15 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
    direita fica mais larga (o texto cabe em 4 linhas e o título em uma) e o dourado um pouco mais baixo. */
 .ol2 { grid-template-columns: minmax(0, 1fr) 278px; gap: 10px 14px; }
 .ol2-side .tm-go { height: 52px; }
+
+/* Visual autêntico (2026-11-16, Silvio: tirar o que tem cara de IA). Etiquetas viram carimbo (canto quase reto),
+   o Aporte perde o brilho que passa e o pulso de luz (fica a moeda que pula e a borda dourada), e o confete vira papel
+   picado com contorno de tinta, como as figurinhas do guia de identidade. */
+html .ld-st .acd-tag, html .ld-st .cvj-d em, html .ld-st .cvj-n small em, html .ld-st .cvj-op em, html .ld-st .ol2-rs u, html .ld-st .ol2-t u,
+html .ld-st .sm-tag, html .ld-st .pl2-fx em, html .ld-st .mk-win, html .ld-st .ldl-tags em, html .ld-st .pzo-m, html .ld-st .pzo-c > em,
+html .ld-st .tr3-dv i, html .ld-st .ld-pill { border-radius: 3px; }
+.fn2-apo.apo-on::after { display: none; }
+.ld-st button.fn2-apo.hot { animation: none; box-shadow: inset 0 0 0 3px var(--gold); background: rgba(242, 194, 48, .12) !important; }
+.tc-cf i, .bm-confetti i, .rlv-confetti i { border-radius: 0; box-shadow: 0 0 0 1.5px #13201A; }
+.tc-cf i:nth-child(3n), .bm-confetti i:nth-child(3n), .rlv-confetti i:nth-child(3n) { width: 4px; height: 24px; }
+.tc-cf i:nth-child(3n+1), .bm-confetti i:nth-child(3n+1), .rlv-confetti i:nth-child(3n+1) { width: 10px; height: 10px; }
