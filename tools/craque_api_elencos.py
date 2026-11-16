@@ -310,13 +310,17 @@ def cmd_gerar():
         rows = [r for r in rows if r[0] in keep]
         out[cid] = [r[:5] + (r[5:] if r[5] >= 0 else []) for r in rows]
         tot += len(out[cid])
+    # Geral pela nota do EA FC (tools/craque_notas_ea.py casar -> tools/ea/ref.json): geral − força do clube, por jogador
+    ids = {r[0] for rows in out.values() for r in rows}
+    ref = {k: v for k, v in load(os.path.join(ROOT, 'tools', 'ea', 'ref.json'), {}).items() if k in ids or (k[0] == '#' and k[1:] in out)}
     js = ('// Gerado por tools/craque_api_elencos.py (ESPN e API-Football, elenco atual de cada clube). Não edite à mão.\n'
           '// Por clube do jogo: [id com a fonte (e ESPN, a API-Football), nome, idade, posição, número, jogos como titular, entradas,\n'
           '// e da ESPN, para os atributos: gols, assistências, chutes, faltas sofridas, altura (pol), peso (lb), defesas, gols sofridos].\n'
-          '// A força é calculada pelo jogo (coach.js): quem mais começa jogando fica com a maior.\n'
-          '(function (root) {\n  root.CRAQUE_REAL = { t: %d, clubs: %s };\n'
+          '// A força é calculada pelo jogo (coach.js): quem mais começa jogando fica com a maior; ref = geral − força do clube\n'
+          '// pela nota do EA FC (tools/craque_notas_ea.py), "#clube" = teto de quem não está na base.\n'
+          '(function (root) {\n  root.CRAQUE_REAL = { t: %d, clubs: %s, ref: %s };\n'
           "  if (typeof module !== 'undefined') module.exports = root.CRAQUE_REAL;\n"
-          "})(typeof window !== 'undefined' ? window : globalThis);\n") % (int(time.time()), json.dumps(out, ensure_ascii=False, separators=(',', ':')))
+          "})(typeof window !== 'undefined' ? window : globalThis);\n") % (int(time.time()), json.dumps(out, ensure_ascii=False, separators=(',', ':')), json.dumps(ref, separators=(',', ':')))
     with open(OUT, 'w') as f:
         f.write(js)
     print('%s: %d clubes, %d jogadores, %.1f KB' % (os.path.relpath(OUT, ROOT), len(out), tot, len(js) / 1024))

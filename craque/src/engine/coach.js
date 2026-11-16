@@ -465,17 +465,24 @@
     if (x && co && co.rf !== undefined && (season === undefined ? co.season : season) < co.rf && !/^bra-/.test(clubId)) return null;
     return x;
   };
+  // Quanto o geral anda da idade real (temporada 0) até a idade de agora: garoto cresce, veterano cai
+  const refAge = (a0, a) => { let d = 0; for (let x = a0; x < a; x++) d += x < 21 ? 2.5 : x < 24 ? 1.5 : x < 27 ? 0.5 : x < 30 ? 0 : x < 32 ? -1 : -2; return d; };
   function realSquad(club, season, rows, co) {
     const mine = new Set(((co && co.squad) || []).map(p => p.api).filter(Boolean));
     const r = S.rng(hash(club.id + '|' + season + '|real')), cty = D.countryOf(club), s = club.strength, out = [];
     const lv = co && co.lv !== undefined ? co.lv : 0;
+    // Geral pela nota do EA FC (2026-11-16, tools/craque_notas_ea.py): REF[id] = geral − força do clube na temporada 0
+    // (o nível do clube é o do jogo, a nota só decide a ordem e a distância); '#clube' = teto de quem não está na base.
+    // Depois anda pela idade (refAge). Save de antes: vale na temporada seguinte (co.rv, como co.lv). NOTAS=0 no Node desliga
+    const RF = (season >= (co && co.rv !== undefined ? co.rv : 0) && !(typeof process !== 'undefined' && process.env && process.env.NOTAS === '0') && REAL().ref) || null;
+    const capR = RF ? RF['#' + club.id] : undefined;
     Object.keys(CO.squad).forEach(pos => {
       const n = CO.squad[pos];
       // Quem joga: quem mais começou jogando na temporada real (ESPN; o peso some em 4 temporadas do jogo), número de
       // titular (1 a 23), idade boa (23 a 31); garotos de número alto por último
       const L = rows.filter(x => x[3] === pos).map(x => ({ x, age: x[2] + season }))
         .filter(o => o.age <= 37 && !mine.has(o.x[0]))
-        .map(o => ({ ...o, sc: (o.x.length > 5 ? Math.min(40, o.x[5] + 0.4 * o.x[6]) * Math.max(0, 1 - season * 0.25) : 0) + (o.x[4] >= 1 && o.x[4] <= 11 ? 12 : o.x[4] >= 1 && o.x[4] <= 23 ? 8 : o.x[4] >= 1 && o.x[4] <= 40 ? 4 : 0) + (o.age >= 23 && o.age <= 31 ? 4 : o.age >= 20 && o.age <= 33 ? 2 : 0) + (hash(o.x[0] + '|' + season) % 100) / 100 }))
+        .map(o => ({ ...o, sc: (RF && RF[o.x[0]] !== undefined ? Math.max(0, RF[o.x[0]] + 6) : 0) + (o.x.length > 5 ? Math.min(40, o.x[5] + 0.4 * o.x[6]) * Math.max(0, 1 - season * 0.25) : 0) + (o.x[4] >= 1 && o.x[4] <= 11 ? 12 : o.x[4] >= 1 && o.x[4] <= 23 ? 8 : o.x[4] >= 1 && o.x[4] <= 40 ? 4 : 0) + (o.age >= 23 && o.age <= 31 ? 4 : o.age >= 20 && o.age <= 33 ? 2 : 0) + (hash(o.x[0] + '|' + season) % 100) / 100 }))
         .sort((a, b) => b.sc - a.sc).slice(0, n);
       for (let k = 0; k < n; k++) {
         // Nível firme (2026-11-11): o sorteio do jogador real é sempre o mesmo (o da temporada 0), então o geral não pula
@@ -483,7 +490,9 @@
         // partir de co.lv (posto ao abrir o save, como o co.rf), para o rival não mudar no meio da temporada
         const o = L[k], j = S.rng(hash((o ? o.x[0] + '|' + (season >= lv ? 0 : season) : club.id + pos + k + '|' + season) + '|f'));
         const age = o ? o.age : r.int(17, 20), young = !o || age <= 20;
-        const ovr = s + 2.5 - 8 * (k / Math.max(1, n - 1)) + j.gauss() * 2.5 - (young ? 6 : 0) - (age >= 33 ? 2 : 0);
+        let ovr = s + 2.5 - 8 * (k / Math.max(1, n - 1)) + j.gauss() * 2.5 - (young ? 6 : 0) - (age >= 33 ? 2 : 0);
+        if (o && RF) { const rel = RF[o.x[0]];
+          if (rel !== undefined) ovr = s + rel + refAge(o.x[2], age); else if (capR !== undefined) ovr = Math.min(ovr, s + capR); }
         const p = mkPlayer(j, club, pos, ovr, age, o ? 'r:' + o.x[0] : club.id + ':' + season + ':' + out.length, cty, o ? { x: o.x, k: Math.max(0, 1 - season * 0.25) } : null);
         if (o) { p.n = o.x[1]; p.api = o.x[0]; if (o.x[4] >= 1 && o.x[4] <= 99) p.num = o.x[4]; }
         out.push(p);
@@ -623,7 +632,7 @@
   S.coNew = function (o) {
     const co = { mode: 'treinador', name: o.name || 'Técnico', country: o.country || 'Brasil', look: o.look || null, start: o.start === 'livre' ? 'livre' : 'baixo',
       season: 0, club: null, fame: CO.fame0[o.start === 'livre' ? 'livre' : 'baixo'], xp: { pts: 0, leitura: 0, motiv: 0, negoc: 0 },
-      seed: (o.seed || (Math.random() * 4294967295)) >>> 0, rf: 0, lv: 0, leagueOf: {}, clubBoost: {}, hist: [], titles: [], pid: 0, form: '4-4-2', style: 'equilibrado' };
+      seed: (o.seed || (Math.random() * 4294967295)) >>> 0, rf: 0, lv: 0, rv: 0, leagueOf: {}, clubBoost: {}, hist: [], titles: [], pid: 0, form: '4-4-2', style: 'equilibrado' };
     return co;
   };
   const rngCo = co => { const r = S.rng(co.seed); return { r, save: () => { co.seed = r.state(); } }; };
@@ -681,7 +690,7 @@
   S.coSign = function (co, clubId) {
     S.applyLeagues(co);
     co.club = clubId;
-    co.squad = genSquad(clubId, co.season, { wm: co.wm, season: co.season, rf: co.rf, lv: co.lv, squad: [] }).map(p => Object.assign(p, { src: p.id, id: 'p' + (co.pid++) })); // src: quem ele era no sorteio (S.coMktMine)
+    co.squad = genSquad(clubId, co.season, { wm: co.wm, season: co.season, rf: co.rf, lv: co.lv, rv: co.rv, squad: [] }).map(p => Object.assign(p, { src: p.id, id: 'p' + (co.pid++) })); // src: quem ele era no sorteio (S.coMktMine)
     co.sacked = false;
     co.since = co.season;
     const a = autoXI(co.squad, co.form);

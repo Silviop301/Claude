@@ -72,7 +72,7 @@
   const rngOf = (co, tag) => S.rng(hash(co.club + '|' + co.season + '|' + tag + '|' + (co.seed || co.name || '')));
   // A folha que um elenco normal do clube teria (o elenco sorteado dele na temporada)
   // e o peso da divisão em que ele está (subir traz mais TV e público; cair, menos)
-  const normal = (clubId, season, co) => S.coGenSquad(clubId, season, co && { rf: co.rf, lv: co.lv, season: co.season }).reduce((a, p) => a + p.wage, 0);
+  const normal = (clubId, season, co) => S.coGenSquad(clubId, season, co && { rf: co.rf, lv: co.lv, rv: co.rv, season: co.season }).reduce((a, p) => a + p.wage, 0);
   // Peso da divisão: a liga em que o clube está hoje contra a liga de origem dele (subiu: mais TV e público; caiu: menos).
   // Na liga de origem vale 1 (a régua de sempre). Até 11/11 a conta comparava a liga de hoje com ela mesma (`applyLeagues`
   // troca o `league` do clube) e dava sempre 1: subir não mexia na receita. Números em `F.lg` (peso, piso, teto).
@@ -93,7 +93,7 @@
   // time abaixo do normal não perde nada, e o robô (que não compra) fica igual. CO_CRAK=0 desliga.
   const top11 = sq => { const o = sq.map(p => p.ovr).sort((a, b) => b - a).slice(0, 11); return o.length ? o.reduce((a, b) => a + b, 0) / o.length : 0; };
   const n11 = {};
-  const norm11 = co => { const k = co.club + ':' + co.season + ':' + (co.rf || 0) + ':' + (co.lv || 0); if (n11[k] === undefined) n11[k] = top11(S.coGenSquad(co.club, co.season, { rf: co.rf, lv: co.lv, season: co.season })); return n11[k]; };
+  const norm11 = co => { const k = co.club + ':' + co.season + ':' + (co.rf || 0) + ':' + (co.lv || 0) + ':' + (co.rv || 0); if (n11[k] === undefined) n11[k] = top11(S.coGenSquad(co.club, co.season, { rf: co.rf, lv: co.lv, rv: co.rv, season: co.season })); return n11[k]; };
   S.coFinStar = function (co, squad) {
     const k = +((typeof process !== 'undefined' && process.env && process.env.CO_CRAK !== undefined) ? process.env.CO_CRAK : F.cra.k);
     if (!k || !co || !co.club) return 0;
