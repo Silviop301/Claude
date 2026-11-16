@@ -8245,7 +8245,7 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .tm { width: 100%; flex: 1; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 238px; grid-template-rows: 44px minmax(0, 1fr) 50px; gap: 10px 16px; color: #F3F1EA; }
 .tm-h { grid-column: 1 / -1; position: relative; display: flex; align-items: center; gap: 10px; padding-left: 56px; }
 .tm-h .tcr-back { left: 0; top: 0; width: 44px; height: 44px; }
-.tm-h b { font: 800 26px/1 var(--display); } .tm-h small { font: 700 16px/1 var(--body); color: #B9C9BF; }
+.tm-h b { font: 800 26px/1 var(--display); white-space: nowrap; flex: none; } .tm-h .tm-cr { width: 30px; height: 30px; object-fit: contain; flex: none; margin-right: -2px; } .tm-h small { font: 700 16px/1 var(--body); color: #B9C9BF; }
 .tm-hint { font: 700 17px/1.2 var(--body); color: var(--gold); }
 .tm-pitch { grid-column: 1; grid-row: 2; border-radius: 16px; }
 .tm .ld-dot { width: 38px; height: 38px; margin: -19px 0 0 -19px; transition: left .4s cubic-bezier(.3, .8, .3, 1), top .4s cubic-bezier(.3, .8, .3, 1), opacity .3s; }
@@ -10330,6 +10330,8 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
    do texto com reticências (...) cortava a perna da letra. A caixa ganha 0,16 em embaixo por dentro (padding) e devolve por fora
    (margin negativa): o lugar na tela não muda. Texto novo com reticências: entra nesta lista; o craque_telas_deitado.js acusa
    "letra cortada" em toda foto. */
+.tm-h small.tm-vs,
+html.desk .fdt-ch small,
 .bar-sub,
 .crest-pick button span,
 .sh-seasons td.cl,
@@ -10795,3 +10797,127 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .tm .ld-pitch .ld-dn em { font-size: 10px; padding: 1px 5px; border-radius: 5px; }
 .tm .ld-pitch .ld-dot .mo-ar { width: 14px; height: 14px; right: -5px; top: -4px; }
 .tm .ld-pitch .ld-dot .mo-ar svg { width: 9px; height: 9px; }
+
+/* Régua da proposta: o `.ld-st button:not(.btn)` zerava o padding e o texto do "Justa" encostava na borda do creme (Silvio 16/11) */
+.ld-st .mkp-tk button { height: 26px; padding: 0 10px; border-radius: 8px; font: 700 15px/26px var(--display); }
+.ld-st .mkp-tk button.on { padding: 0 11px; }
+.tm-h small.tm-vs { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* Estádio vivo (2026-11-16): fumaça do churrasco sobe, varal de luzes pisca e o brilho dos refletores pulsa; só desenho */
+.est-svg .est-sm { fill-opacity: var(--o); transform-box: fill-box; transform-origin: center; animation: estSm 2.6s linear infinite; }
+.est-svg .est-vl { animation: estVl 1.8s ease-in-out infinite; }
+.est-svg .est-hz { transform-box: fill-box; transform-origin: center; animation: estHz 3.6s ease-in-out infinite; }
+@keyframes estSm { 0% { transform: translate(-1px, var(--d)) scale(.7); fill-opacity: 0; } 25% { fill-opacity: var(--o); } 100% { transform: translate(2px, calc(var(--d) * -1.6)) scale(1.35); fill-opacity: 0; } }
+@keyframes estVl { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes estHz { 0%, 100% { opacity: .82; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.06); } }
+.est-svg .est-pk.pk { animation: estPk .7s linear 1; } .est-svg .est-pk.pk2 { animation: estPk2 .35s linear 1; }
+@keyframes estPk { 0%, 100% { opacity: 1; } 12% { opacity: .2; } 34% { opacity: 1; } 55% { opacity: .4; } 72% { opacity: 1; } }
+@keyframes estPk2 { 0%, 100% { opacity: 1; } 40% { opacity: .25; } }
+/* corte do gramado no nível 5 (Melhorias) */
+.es-gp { align-items: stretch; } .es-gp > em { text-align: center; }
+.es-gps { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.es-gps span { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.es-gps .est-svg { position: static; display: block; }
+.es-gps b { font: 800 22px/1 var(--display) !important; color: var(--gold); }
+.es-gp { gap: 6px !important; justify-content: flex-start !important; }
+@media (prefers-reduced-motion: reduce) { .est-svg .est-sm, .est-svg .est-vl, .est-svg .est-hz, .est-svg .est-pk { animation: none; } }
+.tm-bp > b.tm-ring.lo { color: #F08A5D; }
+
+/* Aviso "O que mudou" na home deitada (settings.js newsPop, Silvio 16/11): creme com o painel carvão dos 6 destaques */
+.ld-pop-c.nvp { width: 640px; max-height: 366px; box-sizing: border-box; border-radius: 20px; background: linear-gradient(180deg, #F6F3EA, #EAE3D1); color: #13201A; padding: 14px 20px 14px; gap: 10px; box-shadow: 0 6px 0 rgba(0,0,0,.35), 0 18px 40px rgba(0,0,0,.4); }
+.nvp-hd { display: flex; align-items: center; gap: 12px; }
+.nvp-hd > img.tw { width: 44px; height: 44px; transform: rotate(-8deg); }
+.nvp-hd span { display: flex; flex-direction: column; gap: 4px; }
+.nvp-hd small { font: 700 12px/1 var(--display); letter-spacing: .16em; color: #1F6B45; }
+.nvp-hd b { font: 800 30px/1 var(--display); }
+.nvp-g { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; background: #141517; border-radius: 14px; padding: 12px 14px; }
+.nvp-g > div { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.nvp-g img.tw { width: 30px; height: 30px; flex: none; }
+.nvp-g span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.nvp-g b { font: 700 17px/1.05 var(--display); color: #F3F1EA; }
+.nvp-g small { font: 500 13px/1.2 var(--body); color: #B9C9BF; }
+.nvp-ft { display: flex; gap: 10px; align-items: center; }
+.ld-st .nvp-ft button { height: 46px; border-radius: 14px; font: 800 20px/1 var(--display); letter-spacing: .02em; }
+.ld-st .nvp-ft button.nvp-fb { flex: none; display: flex; align-items: center; gap: 6px; padding: 0 6px; color: #1F6B45; font-size: 17px; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
+.nvp-fb img.tw { width: 22px; height: 22px; }
+.ld-st .nvp-ft button.nvp-tudo { flex: 1; color: #13201A; box-shadow: inset 0 0 0 2px rgba(19,32,26,.35); }
+.ld-st .nvp-ft button.nvp-go { flex: 1; background: #F2C230; color: #13201A; box-shadow: 0 4px 0 #A9861C; }
+
+/* Número da camisa (2026-11-16): chip no cartão do Elenco e a grade 1 a 99 */
+.ld-st button.lde2-nm { display: inline-flex; align-items: center; gap: 3px; height: 26px; padding: 0 6px 0 4px; margin-right: 6px; border-radius: 13px; background: #13201A; color: #F8F4EA; font: 800 17px/1 var(--display); box-shadow: 0 0 0 2px rgba(242, 194, 48, .55); vertical-align: 2px; }
+.lde2-nm .nm-sh { width: 17px; height: 17px; } .lde2-nm .nm-pen { width: 10px; height: 10px; fill: #B9C9BF; }
+.ld-pop-c.nmp { width: 790px; height: 356px; max-height: 356px; flex-direction: row; gap: 16px; padding: 14px 16px; position: relative; color: #F8F4EA; }
+.nm-l { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.nm-h { display: flex; align-items: baseline; gap: 10px; min-width: 0; padding-right: 8px; } .nm-h b { font: 800 24px/1 var(--display); flex: none; }
+.nm-h small { font: 700 15px/1 var(--body); color: #B9C9BF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-bottom: .16em; margin-bottom: -.16em; }
+.nm-g { display: grid; grid-template-columns: repeat(11, 1fr); grid-auto-rows: 1fr; gap: 4px; flex: 1; min-height: 0; }
+.ld-st button.nm-c { display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #22252a; font: 800 16px/1 var(--display); color: #F8F4EA; min-height: 0; padding: 0; border: 0; }
+.ld-st button.nm-c.t { background: transparent; border: 1px dashed rgba(255, 255, 255, .2); color: #6f7680; }
+.ld-st button.nm-c.me { background: #3a3320; color: #F2C230; border: 1px solid #F2C230; }
+.ld-st button.nm-c.on { background: #F8F4EA; color: #13201A; }
+.nm-lg { display: flex; gap: 14px; font: 700 13px/1 var(--body); color: #B9C9BF; } .nm-lg span { display: flex; align-items: center; gap: 5px; }
+.nm-lg u { width: 14px; height: 14px; border-radius: 4px; display: inline-block; background: #22252a; } .nm-lg u.me { background: #3a3320; border: 1px solid #F2C230; } .nm-lg u.t { background: none; border: 1px dashed #777; }
+.nm-r { width: 220px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 30px; }
+.nm-shirt { width: 168px; height: 168px; flex: none; } .nm-shirt .nm-sh { width: 100%; height: 100%; }
+.nm-nt { font: 700 14px/1.3 var(--body); color: #B9C9BF; text-align: center; margin: 0; } .nm-nt em { color: #F2C230; font-style: normal; }
+.nm-r .hl-btn { margin-top: auto; width: 100%; }
+.ld-st button.nm-x { position: absolute; right: 12px; top: 10px; }
+/* Ajustes deitados (16/11): as linhas não passam por trás do card da conta. A coluna cede (min-width 0), ganha
+   mais largura que o card e a linha da Velocidade fica um pouco mais justa para caber numa linha só */
+.aj-l, .aj-sw, .aj-lk { min-width: 0; }
+.aj-l > .aj-sw, .aj-l > .aj-lk { min-height: 0; } /* a altura vem da grade (1fr): com 5 linhas no computador elas não invadem o espaço entre si */
+.aj-sw > b { min-width: 0; }
+.aj-l:not(.n6) .aj-vel > b { font-size: 26px; } .aj-vel .aj-seg i { padding-left: 11px; padding-right: 11px; } .aj-vel .aj-seg i.tx { padding-left: 9px; padding-right: 9px; }
+.aj:not(.aj-solo) { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); } /* o card da conta tem folga; as linhas ganham largura e cabem numa linha só */
+/* Escalação e mercado mais claros (Silvio 2026-11-16, desenho A aprovado): cores de setor fortes (goleiro amarelo,
+   defesa azul, meio verde, ataque rosa); no campo a etiqueta tem a cor do setor DO JOGADOR (quem está fora de posição
+   destoa dos vizinhos); o banco da escalação usa a mesma bolinha do campo, com o nome inteiro embaixo;
+   no mercado, bandeira antes do nome, escudo antes do clube e a posição na cor do setor */
+.ld-st { --ln-g: #FFC94A; --ln-d: #4FA3FF; --ln-m: #5EDB8A; --ln-a: #FF6F91; }
+.tm .ld-pitch .ld-dot[data-own][data-ln] .ld-dn em { background: var(--ln); color: #0F1813; box-shadow: 0 0 0 1.5px rgba(8, 20, 13, .85); }
+.tm:not(.ldl-tm) { grid-template-rows: 44px minmax(0, 1fr) 62px; }
+.tm-bench.v { gap: 0; }
+.tm-bench.v > small { margin-right: 12px; } /* o nome do primeiro reserva não fica sob a sombra do rótulo */
+.ld-st .tm-bench.v button.tm-bp { height: 62px; padding: 0 4px !important; background: none !important; flex-direction: column; justify-content: center; gap: 0; border-radius: 12px; }
+.tm-bench.v .tm-bp > b.tm-ring { width: 36px; height: 36px; font-size: 16px; color: #13201A; position: relative;
+  background: radial-gradient(circle closest-side, #F8F4EA 83%, transparent 86%), conic-gradient(var(--enc) calc(var(--en, 100) * 1%), rgba(6, 16, 11, .6) 0); }
+.tm-bench.v .tm-bp > span { flex-direction: column-reverse; align-items: center; gap: 2px; margin-top: -6px; position: relative; z-index: 1; }
+.tm-bench.v .tm-bp small[data-ln] { font-size: 10px; padding: 1px 5px; border-radius: 5px; box-shadow: 0 0 0 1.5px rgba(8, 20, 13, .85); }
+.tm-bench.v .tm-bp i { font: 700 12px/1 var(--body); white-space: nowrap; }
+.tm-bench.v .tm-bp.g0 { margin-left: 8px; }
+.tm .tm-bench.v .tm-bp.on { background: #2b2612 !important; }
+.nat-fl { display: inline; font-style: normal; margin-right: 6px; font-family: 'Twemoji Country Flags', sans-serif; font-weight: 400; }
+.mk-r > span b .nat-fl { margin-right: -4px; }
+.crest.mk-cr { width: 17px; height: 17px; object-fit: contain; vertical-align: -3px; margin-right: 5px; }
+.mk-r > i[data-ln] { background: var(--ln); color: #0F1813; }
+
+/* Treino com prancheta e cena (2026-11-16, Silvio: "essa tela me dá a sensação de estar atrás das outras"; desenho B em
+   /mnt/project-files/climbix/treino-visual/). Cada cartão leva a prancheta parada (.tr3-th) e o cartão da direita o treino
+   acontecendo (.tr3-pit, ui/treinocena.js); o auxiliar é a pílula .tm-tip no topo; selo dourado .tr3-sg no treino sugerido. */
+.tr2 { grid-template-columns: minmax(0, 1fr) 258px; gap: 10px 14px; }
+.tr2 .tm-h small { min-width: 0; flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .16em; margin-bottom: -.16em; }
+.tr2 .tm-h .tm-tip small { overflow: visible; padding-bottom: 0; margin-bottom: 0; }
+.tr2-c { flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; padding: 0 12px 0 16px !important; overflow: hidden; }
+.tr3-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.tr2-c .tr3-tx > b { font-size: 23px; line-height: 1.02; }
+.tr3-sg { font: 800 13px/1 var(--display); letter-spacing: .06em; color: var(--gold); margin-bottom: -2px; white-space: nowrap; }
+.tr2-c.on .tr3-sg { color: #8a6a05; }
+.tr2-c em { font-size: 15px; line-height: 1; padding: 4px 8px; display: flex; align-items: center; gap: 5px; }
+.tr2-c em svg { width: 17px; height: 10px; flex: none; }
+.tr3-th { width: 100px; height: 68px; border-radius: 10px; overflow: hidden; flex: none; box-shadow: 0 0 0 2px rgba(243, 241, 234, .12); }
+.tr2-c.on .tr3-th { box-shadow: 0 0 0 2px rgba(19, 32, 26, .25); }
+.tr3-th svg, .tr3-pit svg { width: 100%; height: 100%; display: block; }
+.tr2-d.tr3-d { padding: 0; gap: 0; }
+.tr2-d.tr3-d .tr2-none { margin: auto; }
+.tr3-pit { flex: 1; min-height: 0; background: #1B6B44; overflow: hidden; }
+.tr3-di { flex: none; padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 6px; }
+.tr3-di > b { font: 800 23px/1 var(--display); } .tr3-di > p { margin: 0; font: 700 15px/1.25 var(--body); color: #D9E2DC; }
+.tr3-dv { display: flex; flex-wrap: wrap; gap: 5px 12px; margin-top: 2px; }
+.tr3-dv span { display: flex; align-items: center; gap: 6px; font: 800 17px/1 var(--display); color: #7ED39A; white-space: nowrap; }
+.tr3-dv i { font: 800 13px/1 var(--display); font-style: normal; background: var(--ln); color: #0F1813; border-radius: 6px; padding: 3px 5px; }
+.tr2-side .tm-go { box-shadow: inset 0 -4px 0 #b48a12; padding-bottom: 4px !important; }
+
+/* Olheiro: o Guardar passava 7 px do palco quando a descoberta escolhida tinha 5 linhas de texto (2026-11-16). A coluna da
+   direita fica mais larga (o texto cabe em 4 linhas e o título em uma) e o dourado um pouco mais baixo. */
+.ol2 { grid-template-columns: minmax(0, 1fr) 278px; gap: 10px 14px; }
+.ol2-side .tm-go { height: 52px; }

@@ -162,7 +162,7 @@
         if (e.card) { kind = e.card === 'am' ? 'amarelo' : 'vermelho'; refFx = { p, kind, how: e.card, t: 2.3 }; if (kind === 'vermelho') goOff(p, 2.3); }
         if (e.pen) bigSay('PÊNALTI!', 1 - s, 2.2, true);
       }
-      if (o.onRef) o.onRef({ side: s, kind, how: e.card === 'direto' ? 'direto' : e.card === '2am' ? '2am' : undefined, num, pen: !!e.pen });
+      if (o.onRef) o.onRef({ side: s, kind, how: e.card === 'direto' ? 'direto' : e.card === '2am' ? '2am' : undefined, num, id: p && p.inf ? p.inf.id : undefined, pen: !!e.pen });
     }
     // A bola rolando no cérebro (o juiz é dele: nada do motor espera a vez aqui)
     function playB(dt) {
@@ -1648,6 +1648,7 @@
     function startPlay() { if (koHold && typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {} /* apito da saída de cada tempo */ koHold = false; back = 0; mode = 'play'; const k = kicker(koSide); ball.x = 52.5; ball.y = 34; setOwner(k); lastPasser = k; lastPassClk = clk; fly(k, at(koSide, 6).x, at(koSide, 6).y, at(koSide, 6), false, 'curto', false); }
     // A volta para o meio depois do gol passa em velocidade 3× (é o tempo de recomeçar, não um lance)
     let mT = 0; // segundos de campinho jogados desde o último minuto do motor (ver minute)
+    let mW = 0; // segundos de relógio (já na velocidade do jogo) com a tela rodando desde o último minuto: o que o campinho podia ter jogado
     // Festa do título: o seu time corre para o meio e vira um bolo pulando; o goleiro vem do gol; os de lá vão para o seu campo
     // e uns sentam na grama. Aos 2,5 s a taça sobe no meio do bolo (desenho em festDraw)
     function festStep(dt) {
@@ -1835,18 +1836,7 @@
       g.strokeRect(XL(0), Y(13.85), bw, Y(54.15) - Y(13.85)); g.strokeRect(XL(L) - bw, Y(13.85), bw, Y(54.15) - Y(13.85));
       g.strokeRect(XL(0), Y(24.85), sw, Y(43.15) - Y(24.85)); g.strokeRect(XL(L) - sw, Y(24.85), sw, Y(43.15) - Y(24.85));
       // Os gols: traves e rede atrás da linha; no gol a rede estufa onde a bola bateu e balança até parar
-      { const nd = Math.min(PAD - 2, XL(2.2) - XL(0)), y0 = Y(GL), y1 = Y(GR), hh = (y1 - y0) * 0.55;
-        [0, 1].forEach(sd => { const x0 = sd ? XL(L) : XL(0), dir = sd ? 1 : -1; let amp = 0, ny = 0;
-          if (net && Math.abs(X(net.gx) - x0) < 3) { amp = Math.min(6, 2 + net.v * 0.12) * Math.exp(-net.t * 3) * Math.cos(net.t * 14); ny = Y(net.y); }
-          const bz = yy => (amp ? amp * Math.max(0, 1 - ((yy - ny) / hh) ** 2) : 0), back = (yy, f) => x0 + dir * (nd + bz(yy)) * f;
-          g.fillStyle = 'rgba(255,255,255,.16)'; g.beginPath(); g.moveTo(x0, y0); for (let yy = y0; yy <= y1 + 0.1; yy += (y1 - y0) / 8) g.lineTo(back(yy, 1), yy); g.lineTo(x0, y1); g.closePath(); g.fill();
-          g.strokeStyle = 'rgba(255,255,255,.34)'; g.lineWidth = 0.7; g.beginPath();
-          for (let i = 1; i < 8; i++) { const yy = y0 + (y1 - y0) * i / 8; g.moveTo(x0, yy); g.lineTo(back(yy, 1), yy); }
-          for (let j = 1; j < 3; j++) { g.moveTo(back(y0, j / 3), y0); for (let i = 1; i <= 8; i++) { const yy = y0 + (y1 - y0) * i / 8; g.lineTo(back(yy, j / 3), yy); } }
-          g.stroke();
-          g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(x0, y0); for (let i = 0; i <= 8; i++) { const yy = y0 + (y1 - y0) * i / 8; g.lineTo(back(yy, 1), yy); } g.lineTo(x0, y1); g.stroke();
-          g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0, y1); g.stroke(); // o travessão visto de cima
-          g.fillStyle = '#fff'; g.beginPath(); g.arc(x0, y0, 2.8, 0, Math.PI * 2); g.arc(x0, y1, 2.8, 0, Math.PI * 2); g.fill(); }); }
+      goalDraw(0, false); goalDraw(1, false);
       // Marca do pênalti, arco da área (a 9,15 m da marca, só a parte fora da área), quartos de círculo e bandeirinhas de escanteio
       const rx = XL(9.15) - XL(0), ry = Y(9.15) - Y(0), a0 = Math.acos(5.5 / 9.15);
       g.fillStyle = 'rgba(255,255,255,.6)'; [11, L - 11].forEach(x => { g.beginPath(); g.arc(XL(x), Y(34), 1.6, 0, Math.PI * 2); g.fill(); });
@@ -1900,6 +1890,22 @@
       const dt = Math.min(0.05, (Date.now() - (fest.lt || Date.now())) / 1000); fest.lt = Date.now();
       fest.cf.forEach(q => { q.y += q.v * dt; q.a += q.w * dt; if (q.y > 1.05) { q.y = -0.05; q.x = Math.random(); }
         g.save(); g.translate(q.x * W + Math.sin(q.a) * 8 * k, q.y * H); g.rotate(q.a); g.fillStyle = q.c; g.fillRect(-3 * k, -1.6 * k, 6 * k, 3.2 * k); g.restore(); });
+    }
+    // Gol visto de cima (16/11, Silvio: "a bola ainda entra no gol estando acima do travessão"): o travessão e o teto da rede ficam
+    // POR CIMA da bola que entra. top = segunda passada, depois da bola, só no gol onde ela está: malha, contorno e travessão.
+    function goalDraw(sd, top) {
+      const XL = x => PAD + x / L * (W - 2 * PAD), nd = Math.min(PAD - 2, XL(2.2) - XL(0)), y0 = Y(GL), y1 = Y(GR), hh = (y1 - y0) * 0.55;
+      const x0 = sd ? XL(L) : XL(0), dir = sd ? 1 : -1; let amp = 0, ny = 0;
+      if (net && Math.abs(X(net.gx) - x0) < 3) { amp = Math.min(6, 2 + net.v * 0.12) * Math.exp(-net.t * 3) * Math.cos(net.t * 14); ny = Y(net.y); }
+      const bz = yy => (amp ? amp * Math.max(0, 1 - ((yy - ny) / hh) ** 2) : 0), back = (yy, f) => x0 + dir * (nd + bz(yy)) * f;
+      if (!top) { g.fillStyle = 'rgba(255,255,255,.16)'; g.beginPath(); g.moveTo(x0, y0); for (let yy = y0; yy <= y1 + 0.1; yy += (y1 - y0) / 8) g.lineTo(back(yy, 1), yy); g.lineTo(x0, y1); g.closePath(); g.fill(); }
+      g.strokeStyle = 'rgba(255,255,255,' + (top ? '.5' : '.34') + ')'; g.lineWidth = 0.7; g.beginPath();
+      for (let i = 1; i < 8; i++) { const yy = y0 + (y1 - y0) * i / 8; g.moveTo(x0, yy); g.lineTo(back(yy, 1), yy); }
+      for (let j = 1; j < 3; j++) { g.moveTo(back(y0, j / 3), y0); for (let i = 1; i <= 8; i++) { const yy = y0 + (y1 - y0) * i / 8; g.lineTo(back(yy, j / 3), yy); } }
+      g.stroke();
+      g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(x0, y0); for (let i = 0; i <= 8; i++) { const yy = y0 + (y1 - y0) * i / 8; g.lineTo(back(yy, 1), yy); } g.lineTo(x0, y1); g.stroke();
+      g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0, y1); g.stroke(); // o travessão visto de cima
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(x0, y0, 2.8, 0, Math.PI * 2); g.arc(x0, y1, 2.8, 0, Math.PI * 2); g.fill();
     }
     function dot(p, k) {
       // A batida: no chute o corpo recua um palmo (arma a perna) e vai na bola; no passe, só o toque para a frente
@@ -2226,6 +2232,10 @@
         if (ow) { g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.6 * k; g.beginPath(); g.arc(X(ow.x + (bdo ? bdo[0] : 0)), Y(ow.y + (bdo ? bdo[1] : 0)), 13.2 * k, 0, Math.PI * 2); g.stroke(); }
         g.fillStyle = 'rgba(255,255,255,.2)'; g.beginPath(); g.arc(bx, by - air, (9.5 + air / 12) * k, 0, Math.PI * 2); g.fill();
         g.fillStyle = '#fff'; g.strokeStyle = '#13201A'; g.lineWidth = 1.7 * k; g.beginPath(); g.arc(bx, by - air, (5.7 + air / 12) * k, 0, Math.PI * 2); g.fill(); g.stroke(); }
+      // Profundidade (16/11): bola baixa encostada no goleiro (a luva que raspa, a defesa) fica por baixo dele: redesenha o goleiro por cima
+      if (!(ball.z > 1.9)) ALL.forEach(p => { if (p.r === 'GK' && ball.owner !== p && Math.hypot(p.x - ball.x, p.y - ball.y) < 1.7) dot(p, k); });
+      // a bola na boca do gol ou dentro da rede passa por baixo do travessão e do teto da rede
+      [0, 1].forEach(sd => { const XLs = x => PAD + x / L * (W - 2 * PAD), x0 = sd ? XLs(L) : XLs(0); if ((sd ? bx > x0 - (XLs(1.2) - XLs(0)) : bx < x0 + (XLs(1.2) - XLs(0))) && by > Y(GL) - 8 * k && by < Y(GR) + 8 * k) goalDraw(sd, true); });
       if (penBan) penBanner(k0);
       if (tip) tipCard(k0);
     }
@@ -2239,7 +2249,7 @@
       if (W < 60 || H < 40 || ++loop.n % 30 === 0) { const r = U.box ? U.box(cv) : cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1; if (Math.abs(r.width / z - W) > 1 || Math.abs(r.height / z - H) > 1) size(); }
       raf = requestAnimationFrame(loop); // antes de tudo: um erro da tela num aviso do campinho não pode parar o campinho
       try {
-        if (!frozen && !document.hidden) { const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
+        if (!frozen && !document.hidden) { mW += dtR * (o.speed ? o.speed() : 1); const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
         draw();
         if (o.onFrame) o.onFrame(api.info());
         if (loop.n % 4 === 0) sbFade();
@@ -2273,12 +2283,16 @@
         // Simulação livre: o jogo vale igual em qualquer aparelho (avaliação de 10/11: 2 chutes em 3 jogos num Chrome remoto,
         // 13 num iPhone). Cada minuto do motor tem de ter os mesmos segundos de campinho (spm × velocidade); com a tela lenta
         // ou a aba escondida o laço da tela entrega menos, e o que faltou é jogado aqui, de uma vez, sem desenhar
-        if (FREE && o.spm && !frozen && t === curT + 1 && mode !== 'wait' && mode !== 'half' && mode !== 'fim') { const need = o.spm() * (o.speed ? o.speed() : 1); let n = Math.min(220, Math.floor((need * 0.97 - (mT - mR)) / 0.02)); if (n > 0) CATCH += n;
+        if (FREE && o.spm && !frozen && t === curT + 1 && mode !== 'wait' && mode !== 'half' && mode !== 'fim') { const need = loop.n > 0 ? Math.min(o.spm() * (o.speed ? o.speed() : 1), mW) : o.spm() * (o.speed ? o.speed() : 1); let n = Math.min(220, Math.floor((need * 0.97 - (mT - mR)) / 0.02)); if (n > 0) CATCH += n;
           // O que faltou do minuto não é mais jogado de uma vez (Silvio, 12/11: "o jogador dá umas teleportadas"): com a tela
           // visível vira dívida (`slowDebt`) que o laço devolve aos poucos, andando até 35% mais rápido; só o que passa de
           // CATCH_MAX s (aparelho muito lento, aba escondida, Node) ainda é jogado na hora
+          // A conta é contra o relógio que a tela de fato teve (`mW`), não contra o minuto cheio (Silvio, 16/11: "começa, dá uma
+          // travadinha, continua acelerado e fica normal"): o 1º minuto chega logo depois do apito e a volta de uma parada dura
+          // 0,4 s, e cobrar o minuto inteiro ali jogava ~2 s de uma vez (a travada) e o resto como dívida (o acelerado).
+          // Quadro travado (>0,2 s) também não vira dívida: o tempo perdido some, em vez de ser devolvido correndo
           if (n > 0) { const sm = cv && typeof document !== 'undefined' && !document.hidden ? CATCH_MAX : 0, d = slowDebt + n * 0.02, ex = Math.max(0, d - sm); slowDebt = d - ex; n = Math.round(ex / 0.02); while (n-- > 0) step1(0.02); } }
-        mT = 0; mR = 0;
+        mT = 0; mR = 0; mW = 0;
         const avg = acc.n > 0 && t === curT + 1 ? acc.x / acc.n : null; acc.x = 0; acc.n = 0;
         if (t - curT > 1) goals.forEach(e => { if (e.m < t) e.done = true; });
         curT = t; bxT = bx; mClk = clk; stRefresh(); return avg;
@@ -2391,7 +2405,7 @@
       stop() { alive = false; if (raf) cancelAnimationFrame(raf); raf = 0; window.removeEventListener('resize', onResize); if (ro) ro.disconnect(); },
       _refs: () => ({ REF, AR, REFC }), _place: (fn) => { fn({ T, ball, REF, AR, ALL }); },
       _fk(side, x, y) { const q = T[side].filter(p => p.r !== 'GK').sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0]; mode = 'falta'; whistle('Falta', q, { x, y }); return fkSet; }, // teste: falta do lado side no ponto (x, y) do campo
-      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, CHEG, POCK, ALLX: ALL, WHY, DBG, PLAYS, DRIB, DISPN, CATCH, FKN, BUN, scr: g ? [X(ball.x), Y(ball.y)] : null, trail, REF, AR, Q4, leaving, rs, mode, poss, ball, due, att, goals, lc, offPend, foulPend, refFx, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
+      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, slowDebt, mT, CHEG, POCK, ALLX: ALL, WHY, DBG, PLAYS, DRIB, DISPN, CATCH, FKN, BUN, scr: g ? [X(ball.x), Y(ball.y)] : null, trail, REF, AR, Q4, leaving, rs, mode, poss, ball, due, att, goals, lc, offPend, foulPend, refFx, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
     };
     LP._sim = api;
     return api;

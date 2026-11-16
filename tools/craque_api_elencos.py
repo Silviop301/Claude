@@ -287,6 +287,44 @@ def squads():
     return {cid: [r for r in rows if r[3] and r[1] and last[r[0]][1] == cid] for cid, (t, rows) in data.items()}
 
 
+# Nacionalidade (bandeira no mercado, Silvio 2026-11-16): país da ESPN (citizenship) -> código ISO de 2 letras
+# (gb-eng/gb-sct/gb-wls; Irlanda do Norte sem bandeira própria no emoji: gb). No arquivo do jogo só vai quem é de fora do país do clube.
+NAT_ISO = {
+    'Afghanistan': 'af', 'Albania': 'al', 'Algeria': 'dz', 'Angola': 'ao', 'Argentina': 'ar', 'Armenia': 'am', 'Australia': 'au',
+    'Austria': 'at', 'Azerbaijan': 'az', 'Belarus': 'by', 'Belgium': 'be', 'Benin': 'bj', 'Bolivia': 'bo',
+    'Bosnia and Herzegovina': 'ba', 'Brazil': 'br', 'Bulgaria': 'bg', 'Burkina Faso': 'bf', 'Burundi': 'bi', 'Cameroon': 'cm',
+    'Canada': 'ca', 'Cape Verde Islands': 'cv', 'Central African Republic': 'cf', 'Chile': 'cl', 'China': 'cn', 'Colombia': 'co',
+    'Congo': 'cg', 'Congo DR': 'cd', 'Costa Rica': 'cr', 'Croatia': 'hr', 'Cuba': 'cu', 'Curaçao': 'cw', 'Cyprus': 'cy',
+    'Czechia': 'cz', 'Czech Republic': 'cz', 'Denmark': 'dk', 'Dominican Republic': 'do', 'Ecuador': 'ec', 'Egypt': 'eg',
+    'El Salvador': 'sv', 'England': 'gb-eng', 'Equatorial Guinea': 'gq', 'Estonia': 'ee', 'Finland': 'fi', 'France': 'fr',
+    'French Guiana': 'gf', 'Gabon': 'ga', 'Gambia': 'gm', 'Georgia': 'ge', 'Germany': 'de', 'Ghana': 'gh', 'Greece': 'gr',
+    'Grenada': 'gd', 'Guadeloupe': 'gp', 'Guatemala': 'gt', 'Guinea': 'gn', 'Guinea-Bissau': 'gw', 'Haiti': 'ht',
+    'Honduras': 'hn', 'Hungary': 'hu', 'Iceland': 'is', 'India': 'in', 'Indonesia': 'id', 'Iran': 'ir', 'Iraq': 'iq',
+    'Israel': 'il', 'Italy': 'it', 'Ivory Coast': 'ci', 'Jamaica': 'jm', 'Japan': 'jp', 'Jordan': 'jo', 'Kenya': 'ke',
+    'Latvia': 'lv', 'Lebanon': 'lb', 'Liberia': 'lr', 'Libya': 'ly', 'Lithuania': 'lt', 'Luxembourg': 'lu',
+    'Madagascar': 'mg', 'Malaysia': 'my', 'Mali': 'ml', 'Malta': 'mt', 'Martinique': 'mq', 'Mauritania': 'mr', 'Mexico': 'mx',
+    'Moldova': 'md', 'Montenegro': 'me', 'Morocco': 'ma', 'Mozambique': 'mz', 'Netherlands': 'nl', 'New Caledonia': 'nc',
+    'New Zealand': 'nz', 'Niger': 'ne', 'Nigeria': 'ng', 'North Macedonia': 'mk', 'Northern Ireland': 'gb', 'Norway': 'no',
+    'Palestine': 'ps', 'Panama': 'pa', 'Paraguay': 'py', 'Peru': 'pe', 'Philippines': 'ph', 'Poland': 'pl', 'Portugal': 'pt',
+    'Puerto Rico': 'pr', 'Qatar': 'qa', 'Republic of Ireland': 'ie', 'Romania': 'ro', 'Russia': 'ru', 'Rwanda': 'rw',
+    'Saudi Arabia': 'sa', 'Scotland': 'gb-sct', 'Senegal': 'sn', 'Serbia': 'rs', 'Sierra Leone': 'sl', 'Slovakia': 'sk',
+    'Slovenia': 'si', 'South Africa': 'za', 'South Korea': 'kr', 'Spain': 'es', 'St Lucia': 'lc', 'Suriname': 'sr',
+    'Sweden': 'se', 'Switzerland': 'ch', 'Syria': 'sy', 'Tanzania': 'tz', 'Thailand': 'th', 'Togo': 'tg',
+    'Trinidad and Tobago': 'tt', 'Tunisia': 'tn', 'Türkiye': 'tr', 'Turkey': 'tr', 'Uganda': 'ug', 'Ukraine': 'ua',
+    'United Arab Emirates': 'ae', 'Uruguay': 'uy', 'USA': 'us', 'Uzbekistan': 'uz', 'Venezuela': 've', 'Wales': 'gb-wls',
+    'Zambia': 'zm', 'Zimbabwe': 'zw',
+}
+# País do clube no jogo (data.js) -> o mesmo código, para não gravar quem é do país do clube
+PAIS_ISO = {
+    'Brasil': 'br', 'Argentina': 'ar', 'Portugal': 'pt', 'Espanha': 'es', 'Inglaterra': 'gb-eng', 'Itália': 'it', 'Alemanha': 'de',
+    'França': 'fr', 'Arábia Saudita': 'sa', 'EUA': 'us', 'Uruguai': 'uy', 'Colômbia': 'co', 'Holanda': 'nl', 'Turquia': 'tr',
+    'México': 'mx', 'Bélgica': 'be', 'Escócia': 'gb-sct', 'Grécia': 'gr', 'Suíça': 'ch', 'Áustria': 'at', 'Dinamarca': 'dk',
+    'Chile': 'cl', 'Paraguai': 'py', 'Equador': 'ec', 'Japão': 'jp', 'Coreia do Sul': 'kr', 'Catar': 'qa', 'Peru': 'pe',
+    'Bolívia': 'bo', 'Venezuela': 've', 'Croácia': 'hr', 'Sérvia': 'rs', 'Noruega': 'no', 'Suécia': 'se', 'Polônia': 'pl',
+    'República Tcheca': 'cz', 'Marrocos': 'ma', 'Egito': 'eg', 'Austrália': 'au',
+}
+
+
 def cmd_gerar():
     out, tot = {}, 0
     for cid, rows in squads().items():
@@ -313,14 +351,29 @@ def cmd_gerar():
     # Geral pela nota do EA FC (tools/craque_notas_ea.py casar -> tools/ea/ref.json): geral − força do clube, por jogador
     ids = {r[0] for rows in out.values() for r in rows}
     ref = {k: v for k, v in load(os.path.join(ROOT, 'tools', 'ea', 'ref.json'), {}).items() if k in ids or (k[0] == '#' and k[1:] in out)}
+    side = {k: v for k, v in load(os.path.join(ROOT, 'tools', 'ea', 'lado.json'), {}).items() if k in ids}
+    # Nacionalidade de quem é de fora do país do clube (ESPN); os outros são do país do clube (o jogo deduz)
+    cty = {c[0]: PAIS_ISO.get(c[4]) for c in clubs(True)}
+    nat = {}
+    for cid, rows in out.items():
+        e = load(os.path.join(EDIR, '%s.json' % cid))
+        by = {'e%s' % p['id']: NAT_ISO.get(p.get('cty') or '') for p in (e or {}).get('players', [])}
+        for r in rows:
+            n = by.get(r[0])
+            if n and n != cty.get(cid):
+                nat[r[0]] = n
+    miss = sorted({p.get('cty') for cid in out for p in (load(os.path.join(EDIR, '%s.json' % cid)) or {}).get('players', []) if p.get('cty') and p.get('cty') not in NAT_ISO})
+    if miss:
+        print('sem código de bandeira:', ', '.join(miss))
     js = ('// Gerado por tools/craque_api_elencos.py (ESPN e API-Football, elenco atual de cada clube). Não edite à mão.\n'
           '// Por clube do jogo: [id com a fonte (e ESPN, a API-Football), nome, idade, posição, número, jogos como titular, entradas,\n'
           '// e da ESPN, para os atributos: gols, assistências, chutes, faltas sofridas, altura (pol), peso (lb), defesas, gols sofridos].\n'
           '// A força é calculada pelo jogo (coach.js): quem mais começa jogando fica com a maior; ref = geral − força do clube\n'
-          '// pela nota do EA FC (tools/craque_notas_ea.py), "#clube" = teto de quem não está na base.\n'
-          '(function (root) {\n  root.CRAQUE_REAL = { t: %d, clubs: %s, ref: %s };\n'
+          '// pela nota do EA FC (tools/craque_notas_ea.py), "#clube" = teto de quem não está na base; side = lado (E, D, A) pela posição do EA FC.\n'
+          '// nat = nacionalidade (código ISO; gb-eng etc.) de quem é de fora do país do clube; os outros são do país do clube.\n'
+          '(function (root) {\n  root.CRAQUE_REAL = { t: %d, clubs: %s, ref: %s, side: %s, nat: %s };\n'
           "  if (typeof module !== 'undefined') module.exports = root.CRAQUE_REAL;\n"
-          "})(typeof window !== 'undefined' ? window : globalThis);\n") % (int(time.time()), json.dumps(out, ensure_ascii=False, separators=(',', ':')), json.dumps(ref, separators=(',', ':')))
+          "})(typeof window !== 'undefined' ? window : globalThis);\n") % (int(time.time()), json.dumps(out, ensure_ascii=False, separators=(',', ':')), json.dumps(ref, separators=(',', ':')), json.dumps(side, separators=(',', ':')), json.dumps(nat, separators=(',', ':')))
     with open(OUT, 'w') as f:
         f.write(js)
     print('%s: %d clubes, %d jogadores, %.1f KB' % (os.path.relpath(OUT, ROOT), len(out), tot, len(js) / 1024))

@@ -33,6 +33,8 @@
     foul: 12, yel: 0.08, redD: 0.002, kCl: 1.8, ycMax: 3, off: 2.2, foulShow: 0.14,
     // moK: peso da moral no rendimento (moral 100 = +5%; era 1200 = +3% até 2026-11-12, "senão ninguém sente")
     moK: env('CO_MOK', 750),
+    // sideK: quanto rende do lado trocado numa vaga aberta (Silvio 2026-11-16; 75 vira 72). CO_SIDE=0 desliga
+    sideK: env('CO_SIDE', 0.96),
     conf0: 60, confK: env('CO_CK', 3), ppg: 1.34, ultAt: env('CO_ULT', 22), ultN: 3, ultNeed: 2, ultMin: 6,
     fame0: { baixo: 5, livre: 25 }, skillMax: 10,
   };
@@ -279,6 +281,12 @@
       });
     return squad;
   };
+  // Trocar o número (Silvio 2026-11-16): número de outro do elenco = os dois trocam; devolve quem trocou (ou null)
+  S.coSetNum = (co, p, n) => {
+    if (!p || !(n >= 1 && n <= 99) || p.num === n) return null;
+    const q = co.squad.find(x => x !== p && x.num === n) || null;
+    if (q) q.num = p.num; p.num = n; return q;
+  };
   // Jogador fora da posição rende menos
   const FIT = { ZAG: { LAT: 0.92, MEI: 0.85 }, LAT: { ZAG: 0.9, MEI: 0.9, ATA: 0.8 }, MEI: { LAT: 0.88, ZAG: 0.82, ATA: 0.9 }, ATA: { MEI: 0.88, LAT: 0.78 } };
   const fit = (pos, slot) => (pos === slot ? 1 : pos === 'GOL' || slot === 'GOL' ? 0.4 : (FIT[pos] && FIT[pos][slot]) || 0.7);
@@ -286,7 +294,28 @@
   // Geral que o jogador rende NAQUELA vaga (Silvio 15/11: "atacante perde mais sendo goleiro do que meia improvisado", e só
   // naquele jogo: de volta à posição fica normal). Progressivo pela distância: atacante de 75 vale 66 de meia, 59 de lateral,
   // 53 de zagueiro e 30 no gol. Vale na tela (campo, banco, força por setor) e no jogo ao vivo (simForm em ui/coach.js)
-  S.coOvrAt = (p, slot) => (!slot || p.pos === slot ? p.ovr : Math.round(p.ovr * fit(p.pos, slot)));
+  // Lado (Silvio 2026-11-16: "o Vini é ponta esquerda e o jogo põe na direita"; "se for perder um pouco, lateral esquerdo e
+  // direito também"): cada jogador tem um lado, E, D ou A (os dois). Real pela posição do EA FC (CRAQUE_REAL.side); os outros
+  // por sorteio preso a quem ele é (sem save). Só pesa nas vagas abertas (laterais, meias e pontas pelos lados): do lado
+  // trocado rende `CO.sideK` do geral (75 vira 72), só naquele jogo, como fora de posição. `CO_SIDE=0` desliga
+  S.coSide = p => {
+    if (!p) return 'A'; const R = REAL(), s = p.api && R && R.side && R.side[p.api]; if (s) return s;
+    if (p.pos === 'GOL' || p.pos === 'ZAG') return 'A';
+    const h = hash(String(p.src || p.id) + '|lado') % 100;
+    return p.pos === 'LAT' ? (h < 45 ? 'E' : h < 90 ? 'D' : 'A') : (h < 38 ? 'E' : h < 76 ? 'D' : 'A');
+  };
+  S.CO_SIDE_TXT = { E: 'esquerdo', D: 'direito', A: 'os dois lados' };
+  // Lado da vaga: 'E' ou 'D' nas vagas abertas (o primeiro da linha é o lado esquerdo, como S.coSlotLbl), senão nada
+  const slotSide = (form, i) => {
+    const sl = FORMS[form] && FORMS[form].slots, x = sl && sl[i]; if (!x || !(x.w || x.pos === 'LAT')) return null;
+    const line = sl.map((y, j) => j).filter(j => sl[j].ln === x.ln); return line.indexOf(i) < line.length / 2 ? 'E' : 'D';
+  };
+  S.coSlotSide = slotSide;
+  const sideK = (p, form, i) => { if (form === undefined || i === undefined || !(+CO.sideK > 0 && +CO.sideK < 1)) return 1; const v = slotSide(form, i), s = v && S.coSide(p); return v && s !== 'A' && s !== v ? +CO.sideK : 1; };
+  S.coSideK = sideK;
+  S.coSideOk = (p, form, i) => sideK(p, form, i) === 1;
+  // `form`/`i` (a vaga) contam o lado; sem eles só a posição
+  S.coOvrAt = (p, slot, form, i) => { const k = (!slot || p.pos === slot ? 1 : fit(p.pos, slot)) * sideK(p, form, i); return k === 1 ? p.ovr : Math.round(p.ovr * k); };
 
   // ---------- elencos ----------
   const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
@@ -451,7 +480,7 @@
   S.coAtNeutral = (pos, ovr) => profN[AT.w[pos] ? pos : 'MEI'].map(v => ovr + v);
   S.coAtDev = atDev; S.coSecDev = secDev; S.coSlotSec = (form, i) => slotSec(FORMS[form].slots[i]);
   // Quanto o jogador rende numa vaga da formação (geral, encaixe na posição e o atributo do setor): a conta do auxiliar
-  S.coSlotVal = (p, form, i) => { const sl = FORMS[form].slots[i]; return p.ovr * fit(p.pos, sl.pos) * secK(p, slotSec(sl)); };
+  S.coSlotVal = (p, form, i) => { const sl = FORMS[form].slots[i]; return p.ovr * fit(p.pos, sl.pos) * sideK(p, form, i) * secK(p, slotSec(sl)); };
   // Elenco de um clube na temporada: os mais fortes perto da força do clube, o banco abaixo, os garotos mais abaixo
   // Elencos reais (tools/craque_api_elencos.py gera src/real-squads.js): nome, idade, posição e número de verdade;
   // a força segue a conta do sorteado (força do clube, ordem na posição, idade). Quem passa de 37 anos ou falta numa
@@ -494,7 +523,7 @@
         if (o && RF) { const rel = RF[o.x[0]];
           if (rel !== undefined) ovr = s + rel + refAge(o.x[2], age); else if (capR !== undefined) ovr = Math.min(ovr, s + capR); }
         const p = mkPlayer(j, club, pos, ovr, age, o ? 'r:' + o.x[0] : club.id + ':' + season + ':' + out.length, cty, o ? { x: o.x, k: Math.max(0, 1 - season * 0.25) } : null);
-        if (o) { p.n = o.x[1]; p.api = o.x[0]; if (o.x[4] >= 1 && o.x[4] <= 99) p.num = o.x[4]; }
+        if (o) { p.n = o.x[1]; p.api = o.x[0]; if (o.x[4] >= 1 && o.x[4] <= 99) p.num = o.x[4]; p.nat = (REAL().nat || {})[o.x[0]] || cty; } // nacionalidade: bandeira no mercado (ISO de quem é de fora, senão o país do clube)
         out.push(p);
       }
     });
@@ -532,18 +561,42 @@
   const ok = p => p && !p.out && !p.sus;
   // O auxiliar monta o time: para cada vaga, o melhor que sobra pela força na vaga (energia conta)
   // `pure`: da posição primeiro, depois o geral na vaga (botão "Melhores" da escalação), sem energia nem atributo por setor
-  function autoXI(squad, form, pure) {
+  function autoXI(squad, form, pure, keep) {
     const used = new Set(), slots = slotsOf(form), SL = FORMS[form].slots, xi = [];
     // pure = 'rest' (Silvio 2026-11-11: "seria bom ter os mais descansados, pra poupar em jogo menor eu tenho que tirar um a um"):
     // cada vaga pega primeiro quem é da posição e, entre eles, o de mais energia (de 5 em 5 pontos); no empate, o maior geral
-    const val = pure === 'rest' ? (p, sl) => (p.pos === sl ? 1000 : 0) + Math.round((p.en === undefined ? 100 : p.en) / 5) * 5 + p.ovr * fit(p.pos, sl) / 100 :
-      pure ? (p, sl) => (p.pos === sl ? 100 : 0) + p.ovr * fit(p.pos, sl) : (p, sl, i) => p.ovr * fit(p.pos, sl) * secK(p, slotSec(SL[i])) * (0.75 + 0.25 * (p.en === undefined ? 100 : p.en) / 100);
+    const val = pure === 'rest' ? (p, sl, i) => (p.pos === sl ? 1000 : 0) + Math.round((p.en === undefined ? 100 : p.en) / 5) * 5 + p.ovr * fit(p.pos, sl) * sideK(p, form, i) / 100 :
+      pure ? (p, sl, i) => (p.pos === sl ? 100 : 0) + p.ovr * fit(p.pos, sl) * sideK(p, form, i) : (p, sl, i) => p.ovr * fit(p.pos, sl) * sideK(p, form, i) * secK(p, slotSec(SL[i])) * (0.75 + 0.25 * (p.en === undefined ? 100 : p.en) / 100);
     // Primeiro as vagas da própria posição (mais escassas antes: goleiro, laterais, zagueiros)
     const order = slots.map((sl, i) => i).sort((a, b) => ['GOL', 'LAT', 'ZAG', 'ATA', 'MEI'].indexOf(slots[a]) - ['GOL', 'LAT', 'ZAG', 'ATA', 'MEI'].indexOf(slots[b]));
     order.forEach(i => {
       const best = squad.filter(p => ok(p) && !used.has(p.id)).sort((a, b) => val(b, slots[i], i) - val(a, slots[i], i))[0];
       if (best) { used.add(best.id); xi[i] = best.id; }
     });
+    // Lado (16/11): a escolha vaga a vaga pode pôr o destro na esquerda e o canhoto na direita; troca dois da mesma posição
+    // de vaga sempre que os dois juntos rendem mais assim
+    const by = {}; squad.forEach(p => { by[p.id] = p; });
+    for (let pass = 0, ch = true; ch && pass < 4; pass++) { ch = false;
+      for (let a = 0; a < slots.length; a++) for (let b = a + 1; b < slots.length; b++) {
+        const pa = by[xi[a]], pb = by[xi[b]]; if (!pa || !pb || slots[a] !== slots[b] || slotSide(form, a) === slotSide(form, b)) continue;
+        if (val(pa, slots[b], b) + val(pb, slots[a], a) > val(pa, slots[a], a) + val(pb, slots[b], b) + 1e-9) { xi[a] = pb.id; xi[b] = pa.id; ch = true; }
+      } }
+    // `keep` (Silvio 2026-11-16: "às vezes clico em melhores e ele só muda a posição dos meus meias e atacantes"): quem já
+    // está entre os escolhidos numa vaga da mesma posição fica onde está; vagas iguais dão o mesmo valor, então trocar
+    // dois meias de lugar não melhora nada e só bagunçava as funções. Assim o botão vira idempotente
+    if (keep && keep.length === slots.length) {
+      const at = {}; xi.forEach((id, i) => { if (id) at[id] = i; });
+      const res = [], put = new Set();
+      const same = (a, b) => slots[a] === slots[b] && slotSide(form, a) === slotSide(form, b); // mesma posição e mesmo lado
+      keep.forEach((id, i) => { if (id && at[id] !== undefined && same(at[id], i)) { res[i] = id; put.add(id); } });
+      xi.forEach((id, j) => {
+        if (!id || put.has(id)) return;
+        let k = res[j] === undefined ? j : slots.findIndex((sl, i) => same(i, j) && res[i] === undefined && xi[i] !== undefined);
+        if (k < 0) k = j;
+        res[k] = id; put.add(id);
+      });
+      for (let i = 0; i < slots.length; i++) xi[i] = res[i];
+    }
     const bench = squad.filter(p => ok(p) && !used.has(p.id)).sort((a, b) => b.ovr - a.ovr).slice(0, 9).map(p => p.id);
     return { xi, bench };
   }
@@ -560,7 +613,7 @@
       cmd: 0, wmd: 0, wbd: 0, vel: 0, nvel: 0, dvel: 0, ndvel: 0, fis: 0, nfis: 0 };
     s.xi.forEach((id, i) => {
       const p = id && m[id], sl = F.slots[i]; if (!p || !sl) return;
-      const e0 = eff(p, sl.pos) / 70, rf = S.coRoleFx(s, i, p), tl = rf.tl;
+      const e0 = eff(p, sl.pos) * sideK(p, s.form, i) / 70, rf = S.coRoleFx(s, i, p), tl = rf.tl;
       // A função da vaga puxa o jogador para o ataque (ea) ou para a defesa (ed)
       const e = e0, ea = e0 * (1 + 0.08 * tl + rf.a), ed = e0 * (1 - 0.08 * tl + rf.d);
       // Fase 3: em cada parte do jogo o jogador vale o geral mais o atributo daquele setor (finalizar, criar, ir pelo
@@ -857,7 +910,7 @@
   // com o relatório do olheiro lido ±1 (a faixa sempre contém o valor certo, deslocada por um sorteio preso ao jogo)
   S.coSectors = function (sq, form, xi) {
     const m = byId(sq), sl = FORMS[form].slots, t = { d: [0, 0], m: [0, 0], a: [0, 0] };
-    xi.forEach((id, i) => { const p = m[id]; if (!p || !sl[i]) return; const l = sl[i].ln, k = l === 'g' || l === 'd' ? 'd' : l === 'a' ? 'a' : 'm'; t[k][0] += S.coOvrAt(p, sl[i].pos); t[k][1]++; }); // improvisado conta com o geral reduzido
+    xi.forEach((id, i) => { const p = m[id]; if (!p || !sl[i]) return; const l = sl[i].ln, k = l === 'g' || l === 'd' ? 'd' : l === 'a' ? 'a' : 'm'; t[k][0] += S.coOvrAt(p, sl[i].pos, form, i); t[k][1]++; }); // improvisado conta com o geral reduzido
     return { d: Math.round(t.d[0] / (t.d[1] || 1)), m: Math.round(t.m[0] / (t.m[1] || 1)), a: Math.round(t.a[0] / (t.a[1] || 1)) };
   };
   S.coSectorsVs = function (co, pv) {
@@ -1069,8 +1122,12 @@
     if (!m || m.done || !m.min) return null;
     info = info || {};
     const s = sd === 'us' ? m.us : m.them, cnt = k => { m[k] = m[k] || { us: 0, them: 0 }; m[k][sd]++; };
-    const k = info.num == null ? -1 : s.xi.findIndex(id => { const p = id && s.squad.find(x => x.id === id); return p && p.num === info.num; });
-    const id = k >= 0 ? s.xi[k] : null, p = id && s.squad.find(x => x.id === id), pos = k >= 0 ? slotsOf(s.form)[k] : '';
+    // Quem fez: pelo id do campinho, senão pelo número entre os titulares, senão no elenco todo (análise 16/11: saía
+    // "Falta de  (Juazeirense)" quando o número não batia com ninguém da escalação de agora)
+    let k = info.id != null ? s.xi.indexOf(info.id) : -1;
+    if (k < 0 && info.num != null) k = s.xi.findIndex(id => { const p = id && s.squad.find(x => x.id === id); return p && p.num === info.num; });
+    const id = k >= 0 ? s.xi[k] : null, pos = k >= 0 ? slotsOf(s.form)[k] : '';
+    const p = (id && s.squad.find(x => x.id === id)) || s.squad.find(x => (info.id != null && x.id === info.id) || (info.num != null && x.num === info.num));
     const e = { m: m.min, t, s: sd, p: p ? p.n : '', pos, b11: 1 }; if (m.st) e.st = m.st; if (info.pen) e.pen = 1;
     if (t === 'impedimento') cnt('of');
     else {
@@ -1899,6 +1956,21 @@
     if (LD.up && ss.promo) swap(ids.slice(0, ss.promo), LD.up, 'up');
     if (LD.down && ss.releg) swap(ids.slice(-ss.releg), LD.down, 'down');
   }
+  // Save com a temporada começada antes da divisão real de 2026 (PR #424, ex.: Paraná ainda na Série B):
+  // quem não é mais da liga passa a linha da tabela (pontos, jogos, calendário) para quem é da liga e faltava,
+  // pela ordem de força. Só mexe em clube de outra liga; o seu clube e os times de complemento ficam.
+  S.coFixLeague = function (co) {
+    const ss = co && co.ss; if (!ss || ss.done || !co.club) return 0;
+    S.applyLeagues(co);
+    const club = D.CLUB_BY_ID[co.club], lg = club.league;
+    if (!D.LEAGUE_BY_ID[lg] || D.LEAGUE_BY_ID[lg].name !== ss.name) return 0;
+    const want = L().leagueTeams(club), has = new Set(ss.ids), byStr = (a, b) => D.CLUB_BY_ID[b].strength - D.CLUB_BY_ID[a].strength;
+    const out = ss.ids.filter(id => id !== co.club && D.CLUB_BY_ID[id] && D.CLUB_BY_ID[id].league !== lg && !want.includes(id)).sort(byStr);
+    const inn = want.filter(id => !has.has(id) && D.CLUB_BY_ID[id].league === lg).sort(byStr);
+    const n = Math.min(out.length, inn.length);
+    for (let k = 0; k < n; k++) ss.ids[ss.ids.indexOf(out[k])] = inn[k];
+    return n;
+  };
   // Diz se a carreira já tem clube e temporada em andamento
   S.coState = co => (!co.club ? 'sem-clube' : !co.ss ? 'pre' : co.ss.done ? 'fim' : 'jogo');
 

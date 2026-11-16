@@ -53,6 +53,13 @@ async function page(b, first) {
     const { p, shot, click } = await page(b);
     await click('#b-new-co'); await click('#co-start button[data-v="livre"]'); await click('#b-co-go'); await click('#ldo-go'); await click('#ldn-go'); await click('#ldn-go');
     await shot('a00-chegada'); await click('[data-rail="time"]'); await shot('a01-time');
+    { // banco rolado até o fim: tocar num reserva redesenha a tela e o banco não pode voltar ao começo (Silvio 16/11)
+      await p.evaluate(() => { const bn = document.querySelector('.tm-bench'); bn.scrollLeft = bn.scrollWidth; bn.dispatchEvent(new Event('scroll')); });
+      const x0 = await p.evaluate(() => document.querySelector('.tm-bench').scrollLeft);
+      await p.evaluate(() => { const L = [...document.querySelectorAll('.tm-bench .tm-bp:not([disabled])')]; L[L.length - 1].click(); }); await p.waitForTimeout(400);
+      const x1 = await p.evaluate(() => document.querySelector('.tm-bench').scrollLeft); await shot('a01a-banco-rolado');
+      if (!(x0 > 0) || Math.abs(x1 - x0) > 2) errs.push('banco voltou ao começo ao tocar num reserva: ' + x0 + ' → ' + x1);
+      await p.evaluate(() => { const L = [...document.querySelectorAll('.tm-bench .tm-bp:not([disabled])')]; L[L.length - 1].click(); }); await p.waitForTimeout(300); }
     { // três titulares cansados: o auxiliar lista as trocas, uma linha desmarcada, e um botão faz as marcadas
       const en = v => p.evaluate(v => { const co = window.CRAQUE_UI._co.co, by = {}; co.squad.forEach(q => { by[q.id] = q; q.en = 100; }); if (v) [3, 6, 9].forEach((i, k) => { by[co.xi[i]].en = v[k]; }); }, v);
       await en([48, 61, 55]); await click('#tm-back'); await click('[data-rail="time"]'); await shot('a01b-setores-cansados');
@@ -69,7 +76,7 @@ async function page(b, first) {
       const L = await p.evaluate(() => { const n = document.querySelector('.tm-near'), f = document.querySelector('.tm-pitch'), co = window.CRAQUE_UI._co.co, by = {}; co.squad.forEach(q => { by[q.id] = q; });
         const slot = window.CRAQUE_SIM.coSlots(co.form)[5], a = n && n.getBoundingClientRect(), b = f.getBoundingClientRect();
         return { on: !!n, in: !!a && a.top >= b.top - 1 && a.bottom <= b.bottom + 1 && a.left >= b.left - 1 && a.right <= b.right + 1,
-          pos: n ? [...n.querySelectorAll('.tm-cd')].every(e => by[e.dataset.bp].pos === slot) : false, r: n ? [...n.querySelectorAll('.tm-cd')].map(e => by[e.dataset.bp].ovr) : [] }; });
+          pos: n ? [...n.querySelectorAll('.tm-cd')].every(e => by[e.dataset.bp].pos === slot) : false, r: n ? [...n.querySelectorAll('.tm-cd')].map(e => window.CRAQUE_SIM.coOvrAt(by[e.dataset.bp], slot, co.form, 5)) : [] }; });
       if (!L.on) errs.push('escalação: titular escolhido e a lista ao lado dele não apareceu');
       else { if (!L.in) errs.push('escalação: a lista ao lado do titular sai do campo'); if (!L.pos) errs.push('escalação: a lista ao lado do titular tem gente de outra posição');
         if (L.r.some((v, k) => k && v > L.r[k - 1])) errs.push('escalação: a lista ao lado do titular não está do maior geral para o menor'); }
@@ -91,8 +98,14 @@ async function page(b, first) {
     await click('#ld-tr'); await click('[data-tk="lados"]'); await shot('a07-treino'); await click('[data-tt="Bola parada"]'); await shot('a08-treino-bola-parada');
     // os 16 treinos: a descrição de cada um tem de caber no cartão da direita (a do escanteio passava, 2026-11-11)
     for (let t = 0; t < 4; t++) { await (await p.$$('[data-tt]'))[t].click(); await p.waitForTimeout(300); for (let i = 0; i < 4; i++) { const cs = await p.$$('[data-tk]'); if (!cs[i]) break; await cs[i].click(); await shot('a08-treino-' + t + i, true); } }
+    await click('[data-tk="folga"]'); await p.waitForTimeout(900); await shot('a08b-treino-folga'); await click('#tr2-aux'); await shot('a08c-treino-auxiliar'); await click('[data-pop-x]'); // a cena da folga (guarda-sol e água de coco) e a janelinha do auxiliar, agora na pílula do topo
     await (await p.$$('[data-tt]'))[2].click(); await p.waitForTimeout(300); await click('[data-tk="esc"]'); await click('#ldtr-go');
-    await click('#ld-ol'); await shot('a09-olheiro'); await click('#ldo-ok'); await shot('a10-semana-pronta');
+    await click('#ld-tr'); await shot('a08d-treino-feito'); await click('#ldtr-back');
+    await click('#ld-ol'); await shot('a09-olheiro');
+    // os textos mais longos do olheiro no cartão escolhido: o Guardar não pode passar do palco (passava 7 px, 2026-11-16)
+    for (const [i, t] of [['Zagueiro Albuquerque é lento', 'Corrida de 30 metros ele perde até para o juiz.', 'Contra-ataque, treino de Velocidade ou um atacante rápido'], ['Ônibus na frente da área', 'Dez atrás da linha da bola, esperando o erro.', 'Posse de bola, jogo pelos lados ou treino de Troca de passes'], ['Tudo sai do pé do Nascimento', 'Deixar ele livre na ponta é pedir para sofrer.', 'Dois do mesmo lado (4-4-2, 4-2-3-1, 4-5-1) ou grito Recuar']].entries()) {
+      await p.evaluate(t => { const on = document.querySelector('.ol2-f.on'); if (!on) return; on.querySelector('b').textContent = t[0]; on.querySelector('p').innerHTML = t[1] + ' Responde: <b>' + t[2] + '</b>'; }, t); await shot('a09b-olheiro-longo-' + i, i < 2); }
+    await click('#ldo-ok'); await shot('a10-semana-pronta');
     if (await p.$('[data-pop-x]')) { await click('[data-pop-x]'); await shot('a10a-semana-setores-lido'); } // força por setor: faixa do rival afinada pelo relatório
     // A conversa com quem está chateado (forçada: o melhor reserva com a moral baixa) e a resposta dele; depois volta ao que era
     await p.evaluate(() => { const U = window.CRAQUE_UI, co = U._co.co, xi = new Set(co.xi), q = co.squad.filter(x => !xi.has(x.id)).sort((a, b) => b.ovr - a.ovr)[0]; q.mo = 30; q.bn = 3; window.__q = q; U.LD.segunda({}); });
@@ -195,7 +208,7 @@ async function page(b, first) {
     { const r = await p.evaluate(() => ({ ap: window.CRAQUE_UI._co.co.fin.ap, n: window.CRAQUE_UI.COINS.get() })); if (!r.ap || r.ap.wk !== 3) errs.push('aporte: ' + JSON.stringify(r)); else console.log('aporte', JSON.stringify(r)); }
     await click('[data-pop-x]'); await click('[data-lj="0"]'); await shot('c2l4-loja-moedas'); await click('[data-pk="3"]'); await shot('c2l5-loja-cofre'); await click('#lj-back'); await click('[data-fd="banco"]'); await shot('c2d-banco'); await click('#bk2-q'); await shot('c2d2-banco-ajuda'); await click('[data-pop-x]');
     await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co; co.fin.caixa = -300000; co.fin.neg = 5; }); await click('#ldn-bk'); await click('[data-fd="banco"]'); await shot('c2e-banco-vermelho');
-    await click('#ldn-take'); await shot('c2f-banco-emprestimo'); await click('#ldn-bk'); await shot('c2g-financas-com-emprestimo'); await click('[data-ft="sal"]'); await shot('c2h-salarios'); await click('#ldf-back'); await click('[data-k="ele"]'); await shot('c2i-elenco'); await click('[data-et="1"]'); await click('.lde2-r:nth-of-type(4)'); await shot('c2j-elenco-defesa'); await click('[data-ec="1"]'); await shot('c2k-elenco-situacao'); await click('[data-et="0"]'); await shot('c2l-elenco-goleiro-situacao'); await click('[data-ec="0"]'); await shot('c2m-elenco-goleiro'); await click('#lde-back'); await click('#kb2-back'); 
+    await click('#ldn-take'); await shot('c2f-banco-emprestimo'); await click('#ldn-bk'); await shot('c2g-financas-com-emprestimo'); await click('[data-ft="sal"]'); await shot('c2h-salarios'); await click('#ldf-back'); await click('[data-k="ele"]'); await shot('c2i-elenco'); await click('[data-et="1"]'); await click('.lde2-r:nth-of-type(4)'); await shot('c2j-elenco-defesa'); await click('[data-ec="1"]'); await shot('c2k-elenco-situacao'); await click('[data-et="0"]'); await shot('c2l-elenco-goleiro-situacao'); await click('[data-ec="0"]'); await shot('c2m-elenco-goleiro'); await click('#lde-num'); await shot('c2n-numero'); await click('[data-n="77"]'); await shot('c2o-numero-livre'); await click('.nm-c.t'); await shot('c2p-numero-de-outro'); await click('#nm-go'); await shot('c2q-numero-trocado'); await click('#lde-back'); await click('#kb2-back'); 
     // Mercado: topo com caixa e moedas, e a ficha na visão Atributos (sem relatório, faixa do 1º, número do 3º); os relatórios são postos à mão para não gastar o caixa do passeio
     { const mid = await p.evaluate(() => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U._co.co, lg = S.coLeague(co), q = S.coMktPool(co).find(x => x.club && x.lg !== lg); U.LD.mercado(); return q.id; });
       const rep = n => p.evaluate(([id, n]) => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, m = S.coMkt(U._co.co); if (n) m.rep[id] = n; else delete m.rep[id]; U.LD.ficha(id); }, [mid, n]);

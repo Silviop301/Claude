@@ -59,6 +59,7 @@
     if (!co.club) return offers(co.offers || S.coOffers(co));
     if (co.step === 'end' && co.last) return seasonEnd(co.last);
     if (!co.ss) S.coStart(co);
+    else if (S.coFixLeague && S.coFixLeague(co)) save();
     if (co.live !== undefined && co.ss && co.live === co.ss.i) {
       // O app fechou no meio do jogo (no iPhone, sair e voltar pode recarregar a página): o jogo volta do minuto em que parou
       const lm = co.liveM;
@@ -279,7 +280,7 @@
       '<div class="cf-card"><div><small class="cf-k">Caixa do clube</small><div class="cf-big' + (f.caixa < 0 ? ' dn' : '') + '">' + brl(f.caixa) + '</div><p class="cf-sm">' +
         (f.caixa < 0 ? 'No vermelho: a cada rodada assim, a diretoria perde a paciência.' : 'Paga ' + D.plural(wk, 'semana', 'semanas') + ' de salário mesmo sem entrar nada.') + '</p></div>' +
         '<div class="cf-two"><div class="cf-tile"><small class="cf-k">Verba para contratar</small><b class="g">' + mi(f.verba) + '</b><small class="cf-sm">para comprar no mercado</small></div>' +
-        '<div class="cf-tile"><small class="cf-k">Folha por semana</small><b>' + mi(folha) + ' <span>de ' + mi(teto) + '</span></b><i class="cf-track"><em style="width:' + pct + '%"></em></i></div></div></div>' +
+        '<div class="cf-tile"><small class="cf-k">Folha por rodada</small><b>' + mi(folha) + ' <span>de ' + mi(teto) + '</span></b><i class="cf-track"><em style="width:' + pct + '%"></em></i></div></div></div>' +
       '<div class="cad-tabs cf-tabs"><button data-ft="tmp">Temporada</button><button data-ft="seg">A seguir</button><button data-ft="sal">Salários</button></div>' +
       '<div class="cf-panel">' + panes[tab] + '</div>' +
       '<p class="cf-pres"><b>Presidente</b> ' + pr[0] + '</p>' +
@@ -696,8 +697,8 @@
       e.t === 'chance' ? (e.k === 'defesa' ? esc(e.p) + (e.hd ? ' cabeceia ' : ' chuta ' + (HOW(e) ? HOW(e) + ' ' : '')) + 'e o goleiro defende' : e.k === 'fora' ? esc(e.p) + ' finaliza para fora' : e.k === 'trave' ? esc(e.p) + ' acerta a trave!' : 'Chute de ' + esc(e.p) + ' travado pela zaga') :
       e.t === 'vermelho' ? (e.how === '2am' ? '<span class="co-yc"></span> ' : '') + '<span class="co-red"></span> <b>' + esc(e.p) + ' é expulso</b> (' + esc(who) + ')' + (e.how === '2am' ? ', segundo amarelo' : e.how === 'direto' ? ', vermelho direto' : '') :
       e.t === 'amarelo' ? (e.pk ? '<b>Pênalti!</b> ' : '') + '<span class="co-yc"></span> Amarelo para ' + esc(e.p) + ' (' + esc(who) + ')' :
-      e.t === 'falta' ? (e.pk ? '<b>Pênalti!</b> ' : '') + 'Falta de ' + esc(e.p) + ' (' + esc(who) + ')' + (e.pk ? ' na área' : e.m % 3 ? '' : ' perto da área') :
-      e.t === 'impedimento' ? 'Impedimento: ' + esc(e.p) + ' saiu antes da hora (' + esc(who) + ')' :
+      e.t === 'falta' ? (e.pk ? '<b>Pênalti!</b> ' : '') + (e.p ? 'Falta de ' + esc(e.p) + ' (' + esc(who) + ')' : 'Falta do ' + esc(who)) + (e.pk ? ' na área' : e.m % 3 ? '' : ' perto da área') :
+      e.t === 'impedimento' ? (e.p ? 'Impedimento: ' + esc(e.p) + ' saiu antes da hora (' + esc(who) + ')' : 'Impedimento do ' + esc(who)) :
       e.t === 'lesao' ? esc(e.p) + ' sente e pede para sair (' + esc(who) + ')' :
       e.t === 'tatica' ? (e.s === 'us' ? 'Você muda para ' + esc(e.p) : 'O ' + esc(who) + ' muda para <b>' + esc(e.p).toLowerCase() + '</b>') :
       e.t === 'troca' ? 'Sai ' + esc(e.p) + ', entra <b>' + esc(e.q) + '</b>' :
@@ -713,8 +714,11 @@
   // Lance da lista do ao vivo deitado (Silvio, 2026-11-10: lista rolável, o último em cima; "quero o nome do jogador que fez a
   // ação também, tá muito curto"): minuto, escudo de quem fez e a frase com o nome completo, em até duas linhas (o escudo já diz
   // o time, então a frase não repete o clube); o que foi ordem sua leva a etiqueta VOCÊ no lugar do escudo
+  // Nome comprido (jogador real "V. Peixoto Trindade Da Silva", 16/11) passava das duas linhas e a letra de baixo era
+  // cortada: na lista fica o primeiro e o último nome ("V. Silva")
+  const feedNm = x => { x = String(x || ''); const w = x.split(' '); return x.length > 16 && w.length > 2 ? w[0] + ' ' + w[w.length - 1] : x; };
   function feedShort(m, e) {
-    const n = esc(e.p || ''), us = e.s === 'us', you = us && (e.t === 'tatica' || e.t === 'troca') || e.t === 'grito' || e.t === 'conversa' || e.t === 'momento' || e.t === 'olheiro';
+    const n = esc(feedNm(e.p)), us = e.s === 'us', you = us && (e.t === 'tatica' || e.t === 'troca') || e.t === 'grito' || e.t === 'conversa' || e.t === 'momento' || e.t === 'olheiro';
     const t = e.t === 'gol' ? '<b>GOL!</b> ' + n + (e.sp === 'pen' ? ' de pênalti' : e.sp === 'falta' ? ' de falta' : e.sp ? ' de cabeça' : HOW(e) ? ' ' + HOW(e) : '') :
       e.t === 'chance' && e.sp === 'pen' ? (e.k === 'defesa' ? '<b>Pênalti defendido!</b> ' + n : e.k === 'trave' ? '<b>Pênalti na trave!</b> ' + n : '<b>Pênalti para fora!</b> ' + n) :
       e.t === 'chance' && e.sp === 'falta' ? (e.k === 'defesa' ? n + ' cobra a falta, o goleiro defende' : e.k === 'bloqueio' ? 'Falta de ' + n + ' na barreira' : e.k === 'trave' ? 'Falta de ' + n + ' na trave!' : 'Falta de ' + n + ' por cima') :
@@ -722,11 +726,11 @@
       e.t === 'chance' ? (e.k === 'defesa' ? n + ' chuta, o goleiro defende' : e.k === 'fora' ? n + ' chuta para fora' : e.k === 'trave' ? n + ' acerta a trave!' : 'Chute de ' + n + ' travado') :
       e.t === 'vermelho' ? (e.pk ? '<b>Pênalti!</b> ' : '') + '<span class="co-red"></span> ' + n + ' é expulso' :
       e.t === 'amarelo' ? (e.pk ? '<b>Pênalti!</b> ' : '') + '<span class="co-yc"></span> Amarelo para ' + n :
-      e.t === 'falta' ? (e.pk ? '<b>Pênalti!</b> Falta de ' + n + ' na área' : 'Falta de ' + n) :
-      e.t === 'impedimento' ? 'Impedimento de ' + n :
+      e.t === 'falta' ? (e.pk ? '<b>Pênalti!</b> ' + (n ? 'Falta de ' + n + ' na área' : 'Falta na área') : n ? 'Falta de ' + n : 'Falta') :
+      e.t === 'impedimento' ? (n ? 'Impedimento de ' + n : 'Impedimento') :
       e.t === 'lesao' ? n + ' sente e pede para sair' :
       e.t === 'tatica' ? 'Muda para ' + (us ? n : n.toLowerCase()) :
-      e.t === 'troca' ? 'Sai ' + n + ', entra <b>' + esc(e.q || '') + '</b>' :
+      e.t === 'troca' ? 'Sai ' + n + ', entra <b>' + esc(feedNm(e.q)) + '</b>' :
       e.t === 'grito' ? 'Grito: <b>' + n + '</b>' :
       e.t === 'momento' ? (e.ok ? '<b class="mom-ok">✓ Funcionou</b> ' : '<b class="mom-no">Não deu</b> ') + n :
       e.t === 'olheiro' ? '<b class="mom-ok">Como o olheiro viu</b> ' + n :
@@ -764,7 +768,7 @@
       const r = x.pos === 'GOL' ? 'GK' : x.pos === 'LAT' ? (lat < 50 ? 'LB' : 'RB') : x.pos === 'ZAG' ? 'CB' : x.pos === 'ATA' ? 'ST' : x.w ? (lat < 50 ? 'LM' : 'RM') : 'CM';
       // cansado rende menos; fora de posição também (S.coOvrAt, só neste jogo): todos os atributos descem o mesmo tanto, e
       // quem é de linha no gol (ou goleiro na linha) defende/joga com o geral cortado, não com o geral cheio
-      const pl = (s.squad || []).find(q => q.id === s.xi[i]), ov = pl ? S.coOvrAt(pl, x.pos) - (100 - (pl.en === undefined ? 100 : pl.en)) * 0.1 : undefined;
+      const pl = (s.squad || []).find(q => q.id === s.xi[i]), ov = pl ? S.coOvrAt(pl, x.pos, s.form, i) - (100 - (pl.en === undefined ? 100 : pl.en)) * 0.1 : undefined;
       out.push([r, DP[x.ln] + (x.pos === 'LAT' && x.ln === 'd' ? 0.05 : 0) + (x.w && x.ln === 'a' ? -0.08 : 0), w, ov, pl ? { id: pl.id, num: pl.num, nm: last(pl.n) || pl.n, at: S.coAtIn(pl, x.pos, ov), es: S.coRoleFx(s, i, pl).b, yc: () => !!(s.bk && s.bk[pl.id]), enf: () => (pl.en === undefined ? 100 : pl.en) } : null]); // energia ao vivo (o motor gasta minuto a minuto)
     });
     const gk = out.filter(p => p[0] === 'GK'), rest = out.filter(p => p[0] !== 'GK').sort((a, b) => a[1] - b[1]);
