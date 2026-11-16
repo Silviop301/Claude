@@ -27,15 +27,17 @@
     ruidoDecisao: 0.34, velChegada: 12, freioPasseAlto: 0.55, pesoAvanco: 0.022, vontadeCruzar: 0.7,
     vontadeConduzir: 0.45, freioRecuo: 0.45, pressaoAtras: 0.7, // livre com campo à frente ele conduz; sem ninguém fechando não toca para trás; quem vem por trás aperta menos que quem está na frente
     erroPasse: 0.045, pPegaMal: 0.035, distMaxChute: 31, pesoChute: 6.8, freioChute: 0.55,
-    erroChute: 0.08, erroChuteDist: 0.0024, erroChutePressao: 0.45,
+    erroChute: 0.12, erroChuteDist: 0.0024, erroChutePressao: 0.45,
     pCurva: 0.55, curvaMin: 5, curvaMax: 11, curvaFora: 0.45, curvaGiro: 0.3, // chute com curva (15/11, Silvio: "golaços"): chance de fora da área pela finalização, aceleração de lado em m/s², parte que começa no goleiro e abre (o resto sai por fora e fecha), quanto o efeito perde por segundo
     gkDist: 0.02, // chute de longe: o goleiro tem tempo de ver a bola (mais defesa por metro além de 11 m)
     distChute: 18, // a chance que o jogador enxerga cai e^(-d/distChute)
     gkReacao: 0.26, gkMergulho: 5.7, gkAlcance: 1.45, gkBase: 0.87, gkAlcancePen: 0.16, gkVelPen: 75,
-    pDesarme: 0.36, pFalta: 0.06, pFaltaBatido: 0.4, pAmarelo: 0.22, pVermelho: 0.015, pFaltaArea: 0.8, erroLinha: 2.6, pSemFreio: 0.25, // falta no bote: a desajeitada (pFalta) e a de quem foi batido e segura (pFaltaBatido; na própria área ele se segura: pFaltaArea); erroLinha: metros que o passador erra ao ler a linha do impedimento
+    pDesarme: 0.36, pFalta: 0.06, pFaltaBatido: 0.4, pAmarelo: 0.22, pVermelho: 0.015, pFaltaArea: 0.8, erroLinha: 2.6, pSemFreio: 0.25, folgaImp: 0.5, // folgaImp: metros além da linha para apitar (meio corpo: na tela o boneco tem ~2 m; o empate é legal)
+    // falta no bote: a desajeitada (pFalta) e a de quem foi batido e segura (pFaltaBatido; na própria área ele se segura: pFaltaArea); erroLinha: metros que o passador erra ao ler a linha do impedimento
+    lancPontos: [3, 6, 9, 12], lancMaxX: 97, vChegaLanc: 6, lancReacao: 0.25, lancCorrida: 0.8, lancBase: 1, // lançamento: metros à frente do corredor que o passador testa, até onde, velocidade que a bola rasteira chega, reação da zaga e quanto pesa ganhar a corrida (lancBase: folga em s que vale o de antes)
     gastoBase: 0.0004, gastoCorrida: 0.000018,
     kAt: 1, // quanto o atributo se afasta da média dos 22 em campo (1 = um ponto vale um ponto da simulação original)
-    kForma: 26, // pontos de atributo por unidade de ln(força do ataque no minuto / 1,3): tática, mando, moral e cansaço do motor
+    kForma: 20, // pontos de atributo por unidade de ln(força do ataque no minuto / 1,3): tática, mando, moral e cansaço do motor
   };
   Object.keys(BAL).forEach(k => { BAL[k] = num('B11_' + k, BAL[k]); });
   LP.B11 = BAL;
@@ -314,9 +316,19 @@
         lista.push({ u: comum - risco * 2.4 - (d > 30 ? 0.2 : 0) + ruido(), tipo: 'passe', m, x: ax, y: ay, alto: false });
         if (d0 > 24 && !op.soCurto) lista.push({ u: comum - S.alto - (clamp(1 - dRec / 6, 0, 1) * 0.7 + 0.25 + d0 * 0.004) * 1.6 + eL + ruido(), tipo: 'passe', m, x: ax, y: ay, alto: true });
         if (m.acao === 'infiltrar' && mrx > prx && T.impLinha < 93 && d0 > 12 && d0 < 48 && !op.soCurto) {
-          const lx = RX(T, Math.min(Math.max(mrx, T.impLinha) + sorteia(7, 14), 98)), ly = RY(T, lerp(RY(T, m.y), 34, 0.2));
-          const esp = clamp(distMaisPerto(T.adv, lx, ly) / 10, 0, 1), rl = riscoLinha(bola.x, bola.y, lx, ly, T.adv), alto = rl > 0.45 || hip(lx - bola.x, ly - bola.y) > 28;
-          lista.push({ u: 0.5 + (valorPos(RX(T, lx), RY(T, ly)) - vAqui) * 1.6 + esp * 0.6 - (alto ? 0.6 : rl * 1.6) - d0 * 0.012 + (at(p, 'pas') - 70) / 120 + eL + ruido(), tipo: 'passe', m, x: lx, y: ly, alto, lanc: true });
+          // lançamento (16/11, Silvio: "muitos lançamentos para fora ou para os defensores"): o passador mede a corrida. Testa
+          // alguns pontos à frente do corredor e fica com o que ele alcança junto com a bola e antes da zaga e do goleiro;
+          // rasteiro sai "na medida" (chega a vChegaLanc m/s e morre no espaço em vez de passar reto pela linha de fundo)
+          const vR = velMax(m), ryM = RY(T, m.y); let me = null;
+          for (const L of BAL.lancPontos) {
+            const lrx = Math.min(Math.max(mrx, T.impLinha) + L + sorteia(-1, 1), BAL.lancMaxX), lx = RX(T, lrx), ly = RY(T, clamp(lerp(ryM, 34, 0.2), 4, 64));
+            const dl = hip(lx - bola.x, ly - bola.y), rl = riscoLinha(bola.x, bola.y, lx, ly, T.adv), alto = rl > 0.45 || dl > 28;
+            const tb = alto ? 0.75 + dl / 38 : dl / (BAL.vChegaLanc + (BAL.atritoK * dl + BAL.atritoC * dl / 14) / 2), tR = hip(lx - m.x, ly - m.y) / vR;
+            let tD = 9; for (const q of T.adv.jogadores) { if (!emPe(q)) continue; const gk = q.gol && naAreaPropria(q.time, lx, ly), t = Math.max(0, hip(lx - q.x, ly - q.y) - (gk ? 2.5 : 1)) / velMax(q) + (gk ? 0.1 : BAL.lancReacao); if (t < tD) tD = t; }
+            const marg = clamp(tD - Math.max(tb, tR), -1.5, 1) - Math.max(0, tR - tb - 0.3) * 0.8;
+            if (!me || marg > me.marg) me = { lx, ly, rl, alto, marg };
+          }
+          lista.push({ u: 0.5 + (valorPos(RX(T, me.lx), RY(T, me.ly)) - vAqui) * 1.6 + (me.marg + BAL.lancBase) * BAL.lancCorrida - (me.alto ? 0.6 : me.rl * 1.6) - d0 * 0.012 + (at(p, 'pas') - 70) / 120 + eL + ruido(), tipo: 'passe', m, x: me.lx, y: me.ly, alto: me.alto, lanc: true, vChega: me.alto ? 0 : BAL.vChegaLanc });
         }
       }
     }
@@ -354,7 +366,7 @@
       p.driblando = false;
       switch (m.tipo) {
         case 'chute': chutar(p, { pressao }); break;
-        case 'passe': passar(p, m.x, m.y, m.alto, m.m, { pressao }); break;
+        case 'passe': passar(p, m.x, m.y, m.alto, m.m, { pressao, lanc: m.lanc, vChega: m.vChega }); break;
         case 'cruz': cruzar(p, { pressao }); break;
         case 'chutao': chutao(p); break;
         case 'conduz': p.conduz = m.ang; p.tDec = sorteia(0.2, 0.4); break;
@@ -375,12 +387,12 @@
       ang += gauss() * (BAL.erroPasse * (1.6 - at(p, 'pas') / 100) * (1 + (op.pressao || 0) * 0.9) * (1 + (1 - p.e) * 0.4) * (alto ? 1.25 : 1) * (op.erro || 1) + d * 0.0007);
       if (R() < BAL.pPegaMal) { ang += gauss() * 0.25; fv *= sorteia(0.5, 0.85); }
       if (alto) { const tv = (op.tVoo || 0.75 + d / 38); soltar(p, ang, d / tv * fv * (1 + BAL.arrastoAr * tv * 0.5), G * tv / 2); }
-      else soltar(p, ang, clamp((BAL.velChegada + BAL.atritoK * d + BAL.atritoC * d / 14) * fv, 5, op.maxVel || 27), op.vz || 0);
+      else soltar(p, ang, clamp(((op.vChega || BAL.velChegada) + BAL.atritoK * d + BAL.atritoC * d / 14) * fv, 5, op.maxVel || 27), op.vz || 0);
       bola.receptor = m; if (m) { m.de = p; m.deT = clk; }
       // impedimento de verdade: quem está à frente do penúltimo defensor (o goleiro conta), da bola e no campo deles na hora do passe
       // fica marcado; se for ele a tocar na bola, apita (lateral, escanteio e tiro de meta não têm impedimento)
       let imp = null;
-      if (!op.semImp) { const lin = Math.max(segundoUltimo(T), RX(T, bola.x), 52.5); for (const q of T.jogadores) if (q !== p && q.ativo && RX(T, q.x) > lin + 0.15) (imp || (imp = [])).push(q); }
+      if (!op.semImp) { const lin = Math.max(segundoUltimo(T), RX(T, bola.x), 52.5); for (const q of T.jogadores) if (q !== p && q.ativo && RX(T, q.x) > lin + BAL.folgaImp) (imp || (imp = [])).push(q); bola.linImp = lin; }
       bola.impedidos = imp;
       if (!alto && d < 18 && !p.gol && p.base.papel !== 'ZAG' && R() < 0.4) { p.acao = 'infiltrar'; p.tAcao = 2.2; p.infY = clamp(RY(T, p.y) + sorteia(-5, 5), 5, 63); p.semFreio = false; }
       else p.tAcao = Math.min(p.tAcao, 0.4);
@@ -494,12 +506,12 @@
       if (b.impedidos && b.impedidos.indexOf(p) >= 0) { impedimento(p); return true; }
       const vb = hip(b.vx - p.vx, b.vy - p.vy), meuPasse = T === b.ultimoTime;
       if (!meuPasse && b.tSolta < 0.35 && !p.gol && vb > 8) { const v = hip(b.vx, b.vy), a = Math.atan2(b.vy, b.vx) + (R() < 0.5 ? -1 : 1) * sorteia(0.4, 1.3), f = v * sorteia(0.35, 0.6);
-        b.vx = Math.cos(a) * f; b.vy = Math.sin(a) * f; b.vz = sorteia(1, 5); b.ultimo = p; b.ultimoTime = T; b.receptor = null; b.cruz = false; p.cdToque = 0.45; return true; }
+        b.vx = Math.cos(a) * f; b.vy = Math.sin(a) * f; b.vz = sorteia(1, 5); b.ultimo = p; b.ultimoTime = T; b.receptor = null; b.cruz = false; b.impedidos = null; p.cdToque = 0.45; return true; }
       if (b.cruz) { const gx = T.dir > 0 ? CL : 0;
         if (meuPasse && p !== b.ultimo && hip(gx - p.x, 34 - p.y) < 17 && R() < 0.8) { b.x = p.x; b.y = p.y; chutar(p, { mult: 1.35, cabeca: b.z > 0.9, pressao: clamp(1 - (distMaisPerto(T.adv, p.x, p.y) - 0.8) / 3, 0, 1) }); return true; }
         if (!meuPasse && !p.gol && naAreaPropria(T, p.x, p.y) && R() < 0.7) {
           const a = R() < 0.35 ? (T.dir > 0 ? Math.PI : 0) + (b.y < 34 ? -1 : 1) * T.dir * sorteia(0.5, 1.1) : (T.dir > 0 ? 0 : Math.PI) + sorteia(-1.1, 1.1), f = sorteia(9, 17);
-          b.vx = Math.cos(a) * f; b.vy = Math.sin(a) * f; b.vz = sorteia(4, 8); b.ultimo = p; b.ultimoTime = T; b.receptor = null; b.cruz = false; p.cdToque = 0.5; return true; } }
+          b.vx = Math.cos(a) * f; b.vy = Math.sin(a) * f; b.vz = sorteia(4, 8); b.ultimo = p; b.ultimoTime = T; b.receptor = null; b.cruz = false; b.impedidos = null; p.cdToque = 0.5; return true; } }
       let pc = BAL.dominioBase - vb / 60 - (b.z > 0.6 ? 0.12 : 0) + (at(p, p.gol ? 'gol' : 'dri') - 70) / 180 + (p === b.receptor ? 0.06 : 0) - (!meuPasse && vb > 9 ? 0.2 : 0);
       if (p.gol && naAreaPropria(T, p.x, p.y)) pc += 0.2;
       if (R() < clamp(pc, 0.12, 0.985)) dominar(p); else espirrar(p);
@@ -555,7 +567,7 @@
       if (pen) parar('penalti', Tv, RX(Tv, CL - 11), 34); else parar('falta', Tv, fx, fy);
     }
     function impedimento(q) {
-      const T = q.time, ln = Math.max(segundoUltimo(T), 52.5);
+      const T = q.time, ln = bola.linImp || Math.max(segundoUltimo(T), 52.5); // a linha desenhada é a da hora do passe (16/11: a de agora fazia o impedido parecer em posição legal)
       if (o.onRef) o.onRef({ t: 'impedimento', side: T.id, p: q.lp, x: q.x, y: q.y, lin: ln });
       parar('falta', T.adv, clamp(q.x, 1, CL - 1), clamp(q.y, 1, CW - 1), { indireta: true });
     }
