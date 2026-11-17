@@ -788,7 +788,7 @@
     const KT = useSim ? LP.kits(LP.kitFor(cl.name, cl.id), LP.kitFor(vs.name, vs.id), !!m.home) : null;
     const hidden = new Set(), sent = new Set(); // lances que o campinho ainda está jogando / já mandados para ele
     m.ev.forEach(e => sent.add(e)); // jogo retomado no meio: o que já aconteceu não volta a ser jogado no campinho
-    let stopW = 0, sim = null, wait = null, wantStop = false, h1 = !!m.half, h2 = m.min > 45, frz = 0, lineKey = ['', ''], styKey = ['', ''];
+    let stallRep = 0, stopW = 0, sim = null, wait = null, wantStop = false, h1 = !!m.half, h2 = m.min > 45, frz = 0, lineKey = ['', ''], styKey = ['', ''];
     // Simulação livre (teste: ?livre=1 liga, ?livre=0 desliga): o gol nasce no campinho e o motor só anota (S.coMatchShot)
     const FREE = useSim && !!(U.simLivre && U.simLivre());
     // No livre o 3× dá ao campinho os mesmos segundos por minuto do 1× (o gol depende do que o campo joga): o jogo leva ~1,5 min
@@ -876,7 +876,9 @@
       d.innerHTML = '<div class="ldf-c">' + (window.CRAQUE_TROPHY ? window.CRAQUE_TROPHY(cup ? log.tr || 'cup' : 'league', 70, name) : '') + '<small>' + esc(name).toUpperCase() + ' · ' + (U.YEAR0 + co.season) + '</small><b>Campeão!</b><p>' + sub + '</p></div><button class="ld-gold ldf-go"><b>Seguir</b></button>';
       side.appendChild(d); d.querySelector('.ldf-go').onclick = () => { sfx('tap'); d.remove(); go(); };
     };
-    const finish = () => { clearTimeout(timer); const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); if (U.profileCoGame) U.profileCoGame(co, m, log); save('hub');
+    const finish = () => { clearTimeout(timer);
+      { const sh = m.sh || { us: 0, them: 0 }; if (sim && sim.diag && sh.us + sh.them > 50 && window.CLIMBIX_REPORT) window.CLIMBIX_REPORT('treinador ao vivo: chutes demais', JSON.stringify(Object.assign({ sh, g: [m.gh, m.ga], min: m.min, tk: m.tk, speed: co.speed, brain: BRAIN, cup: !!m.cup }, sim.diag()))); } // jogo de 4 x 28 (17/11): o servidor guarda como o campo andou
+      const log = S.coMatchEnd(co, m); delete co.live; delete co.liveM; off(); if (U.profileCoGame) U.profileCoGame(co, m, log); save('hub');
       const go = () => { if (sim) sim.stop(); result(m, log, false, firstMove); };
       const can = sim && sim.festa && LDon && document.querySelector('.ldl-side');
       if (can && ((log && log.cup && log.champ && !log.tcOk) || (!m.cup && !co.ss.tw && S.coTitleWon(co)))) return festa(log, go);
@@ -1176,6 +1178,7 @@
         yc: (side, num) => { const s = side ? m.them : m.us, p = s.squad.find(q => q.num === num && s.xi.includes(q.id)); return p && s.bk && s.bk[p.id] ? 1 : 0; },
         taker: side => { const t = S.coTaker(side ? m.them : m.us, 'pen'); return t ? t.num : null; },
         onShot: sh => { if (m.done && !stopW) return; const e = S.coMatchShot(co, m, sh.side ? 'them' : 'us', sh.out, Object.assign({ late: !!stopW }, sh)); if (e) { sent.add(e); paint(); } if (!sh.side && sh.near) sfx(m.home ? 'quase' : 'quaseAway'); else if (!sh.side && sh.out !== 'gol') sfx(m.home ? 'uhh' : 'uhhAway'); /* todo chute seu que não entra: defesa, fora, travado */ },
+        onStall: d => { if (stallRep || !window.CLIMBIX_REPORT) return; stallRep = 1; const pp = document.getElementById('ld-pop'); window.CLIMBIX_REPORT('treinador ao vivo: campo andando sem o minuto', JSON.stringify(Object.assign({ min: m.min, tk: m.tk, open, wait: !!wait, away, stopW: !!stopW, pop: pp ? (pp.className || 'sim').slice(0, 60) : '', sheet: !!($('lv-sheet') && $('lv-sheet').classList.contains('on')), hid: document.hidden, speed: co.speed, ko: !!(sim && sim.koWait && sim.koWait()), sh: m.sh }, d))); },
         onPick: (side, inf) => { if (ctx && side === 0 && inf && inf.id && !open && !m.done && !wait) { sfx('tap'); sheet({ t: 'pausa', pick: inf.id }); } }, // tocou no seu jogador: para e abre a escalação com ele escolhido (quem entra ao lado dele)
         seed: (co.season || 0) * 101 + (co.ss ? co.ss.i : 0) * 13 + m.min + 7, forms: [simForm(m.us), simForm(m.them)], styles: [S.coSimSty(m.us), S.coSimSty(m.them)] });
       lineKey = [m.us, m.them].map(s => s.form + ':' + s.xi.filter(Boolean).length + ':' + s.style);
@@ -1210,7 +1213,8 @@
       if (gap > 6000 || stopW) { wdT = Date.now(); return; }
       if (m.min - snapMin >= 5) snap(); // de 5 em 5 minutos o jogo fica guardado
       if (away) { wdT = Date.now(); return; }
-      const busyUi = document.getElementById('ld-pop') || ($('lv-sheet') && $('lv-sheet').classList.contains('on')) || document.hidden;
+      // janelinha aberta só conta com o jogo parado (`open`): com Números aberto o relógio segue, e relógio parado ali é travamento (17/11)
+      const busyUi = (document.getElementById('ld-pop') && open) || ($('lv-sheet') && $('lv-sheet').classList.contains('on')) || document.hidden;
       const wdNow = m.tk != null ? m.tk : m.min; // nos acréscimos o minuto fica em 45 ou 90 e só os minutos jogados andam
       if (wdNow !== wdMin || busyUi) { wdMin = wdNow; wdT = Date.now(); return; }
       if (Date.now() - wdT < (wait ? 40000 : 15000)) return;
