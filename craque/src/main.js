@@ -34,3 +34,19 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:' && !window.CLI
   if (document.readyState === 'complete') idle(); else window.addEventListener('load', idle);
 })();
 
+
+// Versão nova no ar com a aba aberta (17/11: um jogador seguiu dois jogos na versão de antes do conserto): de 10 em 10 min e
+// ao voltar para a aba, lê o index.html sem cache e compara o ?v= do start.js com U.BUILD; com versão nova, recarrega ao voltar
+// para a aba, ou na home e na Semana, sem jogo ao vivo nem campo de texto aberto (o jogo ao vivo fica guardado e volta do minuto)
+(function () {
+  const U = window.CRAQUE_UI; if (!U || window.CLIMBIX_PORTAL || location.protocol === 'file:' || navigator.webdriver) return;
+  let novo = false, t = 0;
+  const livre = () => !document.getElementById('lv-score') && !(document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName));
+  const vai = volta => { if (novo && livre() && (volta || document.querySelector('.hl-e, .ld-st .sm'))) location.reload(); }; // na hora, só na home ou na Semana
+  const olha = () => { if (novo || Date.now() - t < 60000) return vai(); t = Date.now();
+    fetch('index.html?u=' + Date.now(), { cache: 'no-store' }).then(r => r.text()).then(h => { const m = /start\.js\?v=([a-z0-9]+)/.exec(h);
+      if (m && U.BUILD && m[1] !== U.BUILD) { novo = true; vai(); } }).catch(() => {}); };
+  setInterval(() => { if (!document.hidden) olha(); else if (novo) vai(); }, 600000);
+  setInterval(() => { if (novo && !document.hidden) vai(); }, 15000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { if (novo) vai(true); else olha(); } });
+})();

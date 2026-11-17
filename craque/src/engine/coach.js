@@ -955,8 +955,25 @@
   // minuto, só diz a força do ataque de cada lado (`m.lam`, gols esperados em 90 min pelo confronto, energia, gritos e
   // expulsões); o campinho joga, sorteia cada chute na hora e conta de volta em `S.coMatchShot`. O pênalti continua
   // saindo daqui (o campinho não marca falta sozinho), na mesma proporção de antes. Sem opt, tudo como sempre
+  // Escalação que aponta para quem não está no elenco (17/11, dois jogos de 28 e 34 gols: o time do jogador ficou com
+  // geral 0, o motor esperou 30 gols do rival e o campinho não achava quem chutou): a vaga recebe o melhor disponível
+  // do elenco para ela; sem ninguém, fica vazia. `m.xiFix` conta para o aviso ao servidor
+  const xiFix = (m, s, sd) => {
+    if (!s || !Array.isArray(s.squad) || !Array.isArray(s.xi) || !FORMS[s.form]) return;
+    const by = byId(s.squad); if (s.xi.every(id => !id || by[id])) return;
+    const sl = FORMS[s.form].slots, gone = s.gone || [], miss = s.xi.filter(id => id && !by[id]);
+    s.xi = s.xi.map((id, i) => { if (!id || by[id]) return id;
+      const pool = s.squad.filter(p => ok(p) && !s.xi.includes(p.id) && !gone.includes(p.id));
+      const pk = pool.sort((a, b) => S.coOvrAt(b, sl[i] ? sl[i].pos : b.pos, s.form, i) - S.coOvrAt(a, sl[i] ? sl[i].pos : a.pos, s.form, i))[0];
+      return pk ? pk.id : null; });
+    s.bench = (s.bench || []).filter(id => by[id] && !s.xi.includes(id));
+    m.xiFix = m.xiFix || { us: 0, them: 0, ids: [] }; m.xiFix[sd] += miss.length; m.xiFix.ids = m.xiFix.ids.concat(miss).slice(-12);
+  };
+  S.coXiFix = m => { if (m && !m.done) { xiFix(m, m.us, 'us'); xiFix(m, m.them, 'them'); } return m && m.xiFix; };
+  const LAM_MAX = 12;
   S.coMatchStep = function (co, m, until, opt) {
     if (m.done) return null;
+    S.coXiFix(m);
     const free = !!(opt && opt.free), brain = free && !!opt.brain; // brain: o cérebro 11x11 tem juiz próprio (S.coMatchRef); aqui não sai falta, cartão, impedimento nem pênalti
     if (m.refStop) { const st0 = m.refStop; delete m.refStop; m.stop = st0; return st0; } // o seu expulso no campo: para como o vermelho do motor
     const { r, save } = rngCo(co);
@@ -1022,7 +1039,7 @@
         return true;
       };
       if (free) {
-        m.lam = { us: m.home ? lh : la, them: m.home ? la : lh };
+        m.lam = { us: Math.min(LAM_MAX, m.home ? lh : la), them: Math.min(LAM_MAX, m.home ? la : lh) }; // teto: o campo nunca recebe a força de um jogo de 30 gols (17/11)
         const PF = 0.08 + (CO.ch - 1) * CO.spMiss.pen; // pênaltis por gol esperado: os que entram (8% dos gols) e os perdidos
         if (!brain) [[H, lh], [A, la]].forEach(([S0, lam]) => {
           if (stop || r() >= lam / CO.mins * PF) return;
@@ -1147,7 +1164,7 @@
   // com o nome de quem bateu). sd: 'us' | 'them'; out: gol, def, fora, trave, bloq; info: { id, num, sv, lane }
   S.coMatchShot = function (co, m, sd, out, info) {
     if (!m || (m.done && !(info && info.late)) || !m.min) return null; // late: o lance que o juiz esperou acabar depois do tempo (ui/coach.js)
-    info = info || {};
+    info = info || {}; S.coXiFix(m);
     const S0 = sd === 'us' ? m.us : m.them, H = m.home ? m.us : m.them, mm = byId(S0.squad), on = S0.xi.map(id => mm[id]).filter(Boolean);
     const p = on.find(q => info.id != null && q.id === info.id) || on.find(q => info.num != null && q.num === info.num) || on.find(q => q.pos === 'ATA') || on[on.length - 1];
     if (!p) return null;

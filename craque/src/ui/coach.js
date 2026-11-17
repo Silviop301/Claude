@@ -63,7 +63,7 @@
     if (co.live !== undefined && co.ss && co.live === co.ss.i) {
       // O app fechou no meio do jogo (no iPhone, sair e voltar pode recarregar a página): o jogo volta do minuto em que parou
       const lm = co.liveM;
-      if (lm && lm.round === (S.coNext(co) || {}).round && !lm.done && lm.us && lm.them) { lm.us.squad = co.squad; return live(lm); }
+      if (lm && lm.round === (S.coNext(co) || {}).round && !lm.done && lm.us && lm.them) { lm.us.squad = co.squad; if (S.coXiFix && S.coXiFix(lm) && window.CLIMBIX_REPORT) window.CLIMBIX_REPORT('treinador: jogo retomado com escalação fora do elenco', JSON.stringify(lm.xiFix)); return live(lm); }
       return auxFinish();
     }
     delete co.live; delete co.liveM;
@@ -788,7 +788,7 @@
     const KT = useSim ? LP.kits(LP.kitFor(cl.name, cl.id), LP.kitFor(vs.name, vs.id), !!m.home) : null;
     const hidden = new Set(), sent = new Set(); // lances que o campinho ainda está jogando / já mandados para ele
     m.ev.forEach(e => sent.add(e)); // jogo retomado no meio: o que já aconteceu não volta a ser jogado no campinho
-    let stallRep = 0, stopW = 0, sim = null, wait = null, wantStop = false, h1 = !!m.half, h2 = m.min > 45, frz = 0, lineKey = ['', ''], styKey = ['', ''];
+    let xiRep = 0, stallRep = 0, stopW = 0, sim = null, wait = null, wantStop = false, h1 = !!m.half, h2 = m.min > 45, frz = 0, lineKey = ['', ''], styKey = ['', ''];
     // Simulação livre (teste: ?livre=1 liga, ?livre=0 desliga): o gol nasce no campinho e o motor só anota (S.coMatchShot)
     const FREE = useSim && !!(U.simLivre && U.simLivre());
     // No livre o 3× dá ao campinho os mesmos segundos por minuto do 1× (o gol depende do que o campo joga): o jogo leva ~1,5 min
@@ -944,6 +944,7 @@
       if (sim && h1 && !h2) { h2 = true; sim.second(); if (window.CRAQUE_CROWD) window.CRAQUE_CROWD.ht = false; } // a torcida do jogo volta
       if (sim && sim.koWait && sim.koWait()) { timer = setTimeout(tick, 150); return; } // o relógio só anda depois do apito da saída
       const st = S.coMatchStep(co, m, m.min + 1, FREE && sim ? { free: true, brain: BRAIN } : undefined);
+      if (m.xiFix && !xiRep && window.CLIMBIX_REPORT) { xiRep = 1; window.CLIMBIX_REPORT('treinador ao vivo: escalação fora do elenco', JSON.stringify(Object.assign({ min: m.min }, m.xiFix))); }
       if (sim) { const tk = m.tk || m.min, v = m.mom && m.mom[tk - 1]; sim.minute(tk, v === undefined ? 50 : v, FREE && m.lam ? [m.lam.us, m.lam.them] : undefined); } // o campinho conta os minutos jogados (com os acréscimos)
       const gw = toSim();
       paint();
