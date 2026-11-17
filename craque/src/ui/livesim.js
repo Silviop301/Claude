@@ -1647,6 +1647,7 @@
     let koHold = false; // saída do começo de cada tempo: o relógio da tela espera o apito (todos no lugar)
     function startPlay() { if (koHold && typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {} /* apito da saída de cada tempo */ koHold = false; back = 0; mode = 'play'; const k = kicker(koSide); ball.x = 52.5; ball.y = 34; setOwner(k); lastPasser = k; lastPassClk = clk; fly(k, at(koSide, 6).x, at(koSide, 6).y, at(koSide, 6), false, 'curto', false); }
     // A volta para o meio depois do gol passa em velocidade 3× (é o tempo de recomeçar, não um lance)
+    let mxT = 0, stallOn = false, stallN = 0, fpsN = 0; const STALL_T = 45, born = Date.now(); // diagnóstico do minuto (diag)
     let mT = 0; // segundos de campinho jogados desde o último minuto do motor (ver minute)
     let mW = 0; // segundos de relógio (já na velocidade do jogo) com a tela rodando desde o último minuto: o que o campinho podia ter jogado
     // Festa do título: o seu time corre para o meio e vira um bolo pulando; o goleiro vem do gol; os de lá vão para o seu campo
@@ -2249,7 +2250,13 @@
       if (W < 60 || H < 40 || ++loop.n % 30 === 0) { const r = U.box ? U.box(cv) : cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1; if (Math.abs(r.width / z - W) > 1 || Math.abs(r.height / z - H) > 1) size(); }
       raf = requestAnimationFrame(loop); // antes de tudo: um erro da tela num aviso do campinho não pode parar o campinho
       try {
-        if (!frozen && !document.hidden) { mW += dtR * (o.speed ? o.speed() : 1); const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
+        // Trava do minuto (17/11, jogo de 4 x 28 com 100 chutes num Chrome do Windows): o campinho nunca joga mais que STALL_T s
+        // num minuto do motor. Se o relógio do jogo parar e o campo seguir, os chutes se acumulam sem o minuto andar; aqui o campo
+        // espera o minuto e o caso vai para o servidor (`onStall`). Nenhum caminho certo chega perto (o juiz espera até 16 s, o vigia destrava em 15 s)
+        const capT = FREE && o.spm && mode === 'play' ? Math.max(STALL_T, 7 * o.spm() * (o.speed ? o.speed() : 1)) : 1e9, over = mT - mR > capT;
+        if (over && !stallOn) { stallOn = true; stallN++; if (o.onStall) try { o.onStall({ mT: Math.round(mT), n: stallN }); } catch (e) {} }
+        if (!frozen && !document.hidden && !over) { mW += dtR * (o.speed ? o.speed() : 1); const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
+        fpsN++;
         draw();
         if (o.onFrame) o.onFrame(api.info());
         if (loop.n % 4 === 0) sbFade();
@@ -2292,7 +2299,7 @@
           // 0,4 s, e cobrar o minuto inteiro ali jogava ~2 s de uma vez (a travada) e o resto como dívida (o acelerado).
           // Quadro travado (>0,2 s) também não vira dívida: o tempo perdido some, em vez de ser devolvido correndo
           if (n > 0) { const sm = cv && typeof document !== 'undefined' && !document.hidden ? CATCH_MAX : 0, d = slowDebt + n * 0.02, ex = Math.max(0, d - sm); slowDebt = d - ex; n = Math.round(ex / 0.02); while (n-- > 0) step1(0.02); } }
-        mT = 0; mR = 0; mW = 0;
+        mxT = Math.max(mxT, mT - mR); mT = 0; mR = 0; mW = 0; stallOn = false;
         const avg = acc.n > 0 && t === curT + 1 ? acc.x / acc.n : null; acc.x = 0; acc.n = 0;
         if (t - curT > 1) goals.forEach(e => { if (e.m < t) e.done = true; });
         curT = t; bxT = bx; mClk = clk; stRefresh(); return avg;
@@ -2405,6 +2412,7 @@
       stop() { alive = false; if (raf) cancelAnimationFrame(raf); raf = 0; window.removeEventListener('resize', onResize); if (ro) ro.disconnect(); },
       _refs: () => ({ REF, AR, REFC }), _place: (fn) => { fn({ T, ball, REF, AR, ALL }); },
       _fk(side, x, y) { const q = T[side].filter(p => p.r !== 'GK').sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0]; mode = 'falta'; whistle('Falta', q, { x, y }); return fkSet; }, // teste: falta do lado side no ponto (x, y) do campo
+      diag: () => ({ mxT: Math.round(mxT * 10) / 10, stall: stallN, catchN: CATCH, fps: Math.round(fpsN / Math.max(1, (Date.now() - born) / 1000)), W: Math.round(W), H: Math.round(H) }),
       _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, slowDebt, mT, CHEG, POCK, ALLX: ALL, WHY, DBG, PLAYS, DRIB, DISPN, CATCH, FKN, BUN, scr: g ? [X(ball.x), Y(ball.y)] : null, trail, REF, AR, Q4, leaving, rs, mode, poss, ball, due, att, goals, lc, offPend, foulPend, refFx, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
     };
     LP._sim = api;
