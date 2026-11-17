@@ -864,7 +864,10 @@
     const rp = co && sq && !(co.first && co.season === 0) ? repOf(co) : null;
     if (rp) {
       const k = [clubId, co.season, co.ss ? co.ss.i : 0, home ? 1 : 0, rp.f, rp.s, co.club].join('|');
-      if (planMemo[k]) return Object.assign({}, planMemo[k]);
+      // a memória leva a carreira, a força e o seu elenco (17/11: sem eles, outra carreira ou o elenco de antes de uma compra
+      // devolviam o plano velho, e o save retomado no meio da temporada terminava diferente)
+      const mk = k + '|' + co.seed + '|' + co.name + '|' + d + '|' + co.squad.map(p => p.id + ':' + p.ovr).join(',');
+      if (planMemo[mk]) return Object.assign({}, planMemo[mk]);
       const p = CO.study * clamp(0.3 + 0.035 * (strOf(clubId) - 55) + (rp.both ? 0.1 : 0), 0.3, 0.9), roll = hash('estudo|' + k + '|' + co.name) / 4294967296;
       let out = { form, style };
       if (roll < p) {
@@ -873,7 +876,7 @@
         if (b) out = { form: b.f, style: b.s, study: { f: rp.f, s: rp.s } };
       }
       const ks = Object.keys(planMemo); if (ks.length > 200) ks.slice(0, 100).forEach(x => delete planMemo[x]);
-      planMemo[k] = out; return Object.assign({}, out);
+      planMemo[mk] = out; return Object.assign({}, out);
     }
     return { form, style };
   }
@@ -1306,7 +1309,7 @@
   S.coScout = function (co, them, nx) {
     nx = nx || S.coNext(co); if (!SC.on || !nx || nx.bye) return null;
     them = them || oppSide(co, nx.vs, !nx.home);
-    const key = S.coScoutKey(co, nx), lv = S.coScoutLv(co), mk = co.name + '|' + co.club + '|' + key + '|' + (co.xp ? co.xp.leitura : 0);
+    const key = S.coScoutKey(co, nx), lv = S.coScoutLv(co), mk = co.seed + '|' + co.name + '|' + co.club + '|' + key + '|' + (co.xp ? co.xp.leitura : 0);
     if (scMemo[mk]) return JSON.parse(scMemo[mk]);
     const r = S.rng(hash(String(co.name) + '|' + co.club + '|' + key + '|olheiro')), tby = byId(them.squad), sl = FORMS[them.form].slots;
     const on = them.xi.map((id, i) => { const p = id && tby[id]; return p ? { p, i, sl: sl[i], a: S.coAttrs(p), dv: atDev(p) } : null; }).filter(Boolean);

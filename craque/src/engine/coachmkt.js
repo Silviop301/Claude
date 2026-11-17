@@ -50,7 +50,7 @@
     // quem já é seu nunca aparece (a lista dos sem clube nasce dos elencos da temporada passada, que podem ter um dos seus)
     const own = mineIx(co);
     cache = { k: key, list: list.filter(p => !isMine(own, p)) };
-    return list;
+    return cache.list; // (17/11) a 1ª chamada devolvia a lista sem tirar os seus
   };
 
   // Quem já é seu (Silvio 15/11: "contratei um jogador que já tenho no elenco"). A lista dos sem clube sorteia dos elencos
@@ -83,6 +83,13 @@
     if (co.sell) Object.keys(swap).forEach(id => { if (co.sell[id]) { co.sell[swap[id]] = co.sell[swap[id]] || co.sell[id]; delete co.sell[id]; } });
     if (co.takers) Object.keys(co.takers).forEach(k => { const v = co.takers[k];
       if (Array.isArray(v)) co.takers[k] = fix(v); else if (swap[v]) co.takers[k] = swap[v]; });
+    // Jogo guardado no meio (co.liveM): a escalação dele também aponta para a cópia que saiu (17/11: o jogo retomado ficava
+    // com vaga fora do elenco); a vaga repetida fica vazia e S.coXiFix completa com o melhor disponível
+    const L = co.liveM && co.liveM.us;
+    if (L && Array.isArray(L.xi)) {
+      L.xi = L.xi.map(id => swap[id] || id).map((id, i, a) => (id && a.indexOf(id) !== i ? 'x:dup' : id));
+      L.bench = fix(L.bench).filter(id => !L.xi.includes(id)); if (L.gone) L.gone = fix(L.gone);
+    }
     return out;
   };
 

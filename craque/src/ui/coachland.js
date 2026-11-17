@@ -2008,7 +2008,7 @@
       const inp = st.querySelector('#mk-nm');
       inp.oninput = () => { m.nm = inp.value; const k = S.coMktSearch(co).length, nb = st.querySelector('#mk-n'); nb.textContent = plMil(k, 'jogador', 'jogadores'); nb.className = k > 0 && k <= S.CO_MKT.max ? 'ok' : ''; const ee = st.querySelector('#mkw-e'); if (ee) ee.textContent = emptyOf(k); }; // o aviso do meio anda junto com o número (análise 16/11)
       inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); };
-      inp.onchange = () => { c.save(); mercado(0, 0); };
+      inp.onchange = () => { c.save(); setTimeout(() => { if (inp.isConnected) mercado(0, 0); }, 0); }; // o blur de outro toque que já trocou a tela não redesenha por cima (erro real 16/11)
       st.querySelectorAll('[data-mr]').forEach(b => b.onclick = () => { const i = +b.dataset.mr; sfx('tap'); if (i === sel) return ficha(R[i].id, () => mercado(pg, i)); mercado(pg, i); });
       st.querySelectorAll('[data-mo]').forEach(b => b.onclick = () => { sfx('tap'); m.ord = (ord + (+b.dataset.mo) + ords.length) % ords.length; c.save(); mercado(0, 0); });
       st.querySelector('#mkr-prev').onclick = () => { sfx('tap'); mercado(pg - 1, 0); };

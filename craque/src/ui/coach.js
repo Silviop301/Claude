@@ -63,7 +63,7 @@
     if (co.live !== undefined && co.ss && co.live === co.ss.i) {
       // O app fechou no meio do jogo (no iPhone, sair e voltar pode recarregar a página): o jogo volta do minuto em que parou
       const lm = co.liveM;
-      if (lm && lm.round === (S.coNext(co) || {}).round && !lm.done && lm.us && lm.them) { lm.us.squad = co.squad; if (S.coXiFix && S.coXiFix(lm) && window.CLIMBIX_REPORT) window.CLIMBIX_REPORT('treinador: jogo retomado com escalação fora do elenco', JSON.stringify(lm.xiFix)); return live(lm); }
+      if (lm && lm.round === (S.coNext(co) || {}).round && !lm.done && lm.us && lm.them) { lm.us.squad = co.squad; if (S.coXiFix && S.coXiFix(lm) && window.CLIMBIX_REPORT) window.CLIMBIX_REPORT('treinador: jogo retomado com escalação fora do elenco', JSON.stringify(Object.assign({ sq: co.squad.length, pid: co.pid, ids0: co.squad.slice(0, 3).map(p => p.id) }, lm.xiFix))); return live(lm); }
       return auxFinish();
     }
     delete co.live; delete co.liveM;
@@ -944,7 +944,7 @@
       if (sim && h1 && !h2) { h2 = true; sim.second(); if (window.CRAQUE_CROWD) window.CRAQUE_CROWD.ht = false; } // a torcida do jogo volta
       if (sim && sim.koWait && sim.koWait()) { timer = setTimeout(tick, 150); return; } // o relógio só anda depois do apito da saída
       const st = S.coMatchStep(co, m, m.min + 1, FREE && sim ? { free: true, brain: BRAIN } : undefined);
-      if (m.xiFix && !xiRep && window.CLIMBIX_REPORT) { xiRep = 1; window.CLIMBIX_REPORT('treinador ao vivo: escalação fora do elenco', JSON.stringify(Object.assign({ min: m.min }, m.xiFix))); }
+      if (m.xiFix && !xiRep && window.CLIMBIX_REPORT) { xiRep = 1; window.CLIMBIX_REPORT('treinador ao vivo: escalação fora do elenco', JSON.stringify(Object.assign({ min: m.min, sq: co.squad.length, msq: (m.us.squad || []).length, same: m.us.squad === co.squad, pid: co.pid }, m.xiFix))); }
       if (sim) { const tk = m.tk || m.min, v = m.mom && m.mom[tk - 1]; sim.minute(tk, v === undefined ? 50 : v, FREE && m.lam ? [m.lam.us, m.lam.them] : undefined); } // o campinho conta os minutos jogados (com os acréscimos)
       const gw = toSim();
       paint();
