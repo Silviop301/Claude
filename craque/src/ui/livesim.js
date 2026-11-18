@@ -1981,8 +1981,59 @@
       g.fillStyle = e > 55 ? '#1E7A45' : e >= 30 ? '#8A6400' : '#B83A2E'; g.font = '600 ' + Math.round(11 * k) + 'px Inter, sans-serif'; g.fillText(l2, bx + 8 * k, by + 26 * k);
       g.textAlign = 'center'; g.globalAlpha = 1;
     }
+    // Replay do gol (Silvio, 18/11: "e um replay do gol?"): o campinho guarda os últimos segundos (posições de todos, bola e
+    // árbitros) e, quando a comemoração acaba, repete o lance em câmera lenta com a etiqueta REPLAY. Só desenho: o motor, o
+    // placar e o relógio não mudam; durante o replay o jogo fica parado (`koWait` segura o minuto) e um toque no campo pula.
+    // No 3× passa sem câmera lenta; com os efeitos desligados nos Ajustes não tem replay
+    const RP_PRE = 3.8, RP_POS = 0.9, RP_HOLD = 0.5, RP_Z = 1.3; let rpBuf = [], rp = null, rpGoal = -1, RPL = false;
+    function rpRec(pm) {
+      if (mode === 'goal' && pm !== 'goal') rpGoal = clk;
+      if (pm === 'goal' && mode !== 'goal' && rpGoal >= 0) { const s0 = rpGoal; rpGoal = -1; if (FXON() && g && !document.hidden) rpStart(s0); rpBuf = []; return; }
+      const on = mode === 'goal' ? clk - rpGoal < RP_POS : mode !== 'ko' && mode !== 'half' && mode !== 'wait' && mode !== 'fim' && mode !== 'festa';
+      if (on) rpBuf.push({ c: clk, P: ALL.map(p => [p, p.x, p.y, p.down, p.kk && Object.assign({}, p.kk), p.dr && Object.assign({}, p.dr), p.dva]),
+        b: [ball.x, ball.y, ball.z || 0, ball.b11shot, ball.owner, ball.fly && Object.assign({}, ball.fly)], r: [REF.x, REF.y], a: AR.map(q => [q.x, q.y]), n: net && Object.assign({}, net) });
+      if (on && mode !== 'goal') while (rpBuf.length && rpBuf[0].c < clk - RP_PRE - 1) rpBuf.shift(); // na comemoração o lance fica guardado
+    }
+    function rpStart(s0) {
+      const buf = rpBuf.filter(f => f.c >= s0 - RP_PRE && f.c <= s0 + RP_POS); if (buf.length < 12) return;
+      const sp = o.speed ? o.speed() : 1, gb = buf.find(f => f.c >= s0) || buf[buf.length - 1];
+      rp = { buf, t: buf[0].c, end: buf[buf.length - 1].c, rate: sp > 1.5 ? 1.3 : 0.7, s: gb.b[0] < L / 2 ? 1 : 0, i: 0 }; bt.length = 0;
+    }
+    function rpEnd() { if (!rp) return; rp = null; bt.length = 0; }
+    function rpDraw() {
+      const B = rp.buf; let i = rp.i; while (i < B.length - 2 && B[i + 1].c <= rp.t) i++; rp.i = i;
+      const A = B[i], Z = B[Math.min(i + 1, B.length - 1)], f = Z.c > A.c ? cl((rp.t - A.c) / (Z.c - A.c), 0, 1) : 0, mx = (a, b) => a + (b - a) * f;
+      const sv = { ALL, mode, big, cue, refFx, offLine, post, tip, toss, spray, ghost, playTag, penBan, pen, net, q4: Q4.b, tr: trail.splice(0), lv: leaving.splice(0) };
+      const pv = A.P.map(e => { const p = e[0]; return [p, p.x, p.y, p.down, p.kk, p.dr, p.dva]; }), bv = [ball.x, ball.y, ball.z, ball.b11shot, ball.owner, ball.fly], rv = [REF.x, REF.y], av = AR.map(q => [q.x, q.y]);
+      try {
+        ALL = A.P.map(e => e[0]);
+        A.P.forEach((e, j) => { const p = e[0], q = Z.P[j] && Z.P[j][0] === p ? Z.P[j] : e; p.x = mx(e[1], q[1]); p.y = mx(e[2], q[2]); p.down = e[3]; p.kk = e[4]; p.dr = e[5]; p.dva = e[6]; });
+        ball.x = mx(A.b[0], Z.b[0]); ball.y = mx(A.b[1], Z.b[1]); ball.z = mx(A.b[2], Z.b[2]); ball.b11shot = A.b[3]; ball.owner = A.b[4]; ball.fly = A.b[5];
+        REF.x = mx(A.r[0], Z.r[0]); REF.y = mx(A.r[1], Z.r[1]); AR.forEach((q, j) => { q.x = mx(A.a[j][0], Z.a[j][0]); q.y = mx(A.a[j][1], Z.a[j][1]); });
+        mode = 'play'; big = cue = refFx = offLine = post = tip = toss = spray = ghost = playTag = penBan = pen = null; net = A.n; Q4.b = null; RPL = true;
+        draw(); rpTag();
+      } finally {
+        RPL = false; ALL = sv.ALL; mode = sv.mode; big = sv.big; cue = sv.cue; refFx = sv.refFx; offLine = sv.offLine; post = sv.post; tip = sv.tip; toss = sv.toss; spray = sv.spray; ghost = sv.ghost; playTag = sv.playTag; penBan = sv.penBan; pen = sv.pen; net = sv.net; Q4.b = sv.q4;
+        trail.push(...sv.tr); leaving.push(...sv.lv);
+        pv.forEach(e => { const p = e[0]; p.x = e[1]; p.y = e[2]; p.down = e[3]; p.kk = e[4]; p.dr = e[5]; p.dva = e[6]; });
+        ball.x = bv[0]; ball.y = bv[1]; ball.z = bv[2]; ball.b11shot = bv[3]; ball.owner = bv[4]; ball.fly = bv[5]; REF.x = rv[0]; REF.y = rv[1]; AR.forEach((q, j) => { q.x = av[j][0]; q.y = av[j][1]; });
+      }
+    }
+    // Etiqueta do replay: pílula escura no canto de cima à direita, ponto vermelho piscando e a palavra; o campo escurece nas bordas
+    function rpTag() {
+      const k0 = Math.max(0.75, K0_REF * Math.sqrt((W / 600) * (H / 366))), age = rp.t - rp.buf[0].c, al = Math.min(1, age / rp.rate * 4, Math.max(0, rp.end + RP_HOLD - rp.t) / rp.rate * 3);
+      g.save(); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalAlpha = al;
+      const vg = g.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, Math.hypot(W, H) * 0.6); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.38)'); g.fillStyle = vg; g.fillRect(0, 0, W, H);
+      g.font = '800 ' + Math.round(13 * k0) + 'px "Barlow Condensed", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'left';
+      const tw = g.measureText('REPLAY').width, h = 22 * k0, w = tw + 30 * k0, x0 = W - w - 10 * k0, y0 = 10 * k0; // à direita: o placar fica à esquerda
+      g.fillStyle = 'rgba(12,16,14,.78)'; g.beginPath(); g.roundRect(x0, y0, w, h, h / 2); g.fill();
+      g.fillStyle = 'rgba(216,64,74,' + (0.55 + 0.45 * Math.abs(Math.sin(performance.now() / 380))).toFixed(2) + ')'; g.beginPath(); g.arc(x0 + 11 * k0, y0 + h / 2, 3.6 * k0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#F4F1E8'; g.fillText('REPLAY', x0 + 20 * k0, y0 + h / 2 + 0.5);
+      g.restore();
+    }
     function onTap(ev) {
       if (!cv) return;
+      if (rp) { rpEnd(); return; } // um toque pula o replay
       const rc = U.box ? U.box(cv) : cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1, [ex, ey] = U.pt ? U.pt(ev.clientX, ev.clientY) : [ev.clientX, ev.clientY], px = (ex - rc.left) / z, py = (ey - rc.top) / z;
       let best = null, bd = 22; ALL.forEach(p => { const d = Math.hypot(X(p.x) - px, Y(p.y) - py); if (d < bd) { bd = d; best = p; } });
       tip = best ? { p: best, at: Date.now() } : null;
@@ -2117,6 +2168,7 @@
     }
     function camStep() {
       const now = performance.now(), dt = Math.min(0.1, (now - (cam.cl || now)) / 1000); cam.cl = now;
+      if (RPL && W > 200) { const gx = rp.s ? 0 : L, k = Math.min(1, dt * 2.4); cam.z += (RP_Z - cam.z) * k; cam.x += (X(ball.x * 0.6 + gx * 0.4) - cam.x) * k; cam.y += (Y(ball.y * 0.75 + 34 * 0.25) - cam.y) * k; if (!cam.x) { cam.x = W / 2; cam.y = H / 2; } return; } // replay: zoom seguindo a bola, puxado para o gol
       const on = ((pen && !(pen.ban > 0)) || clk < camT) && W > 200, gs = camS, [fx, fy] = toW(gs, L - 13, 34), tz = on ? 1.65 : 1;
       const sz = !on && slowT > 0 && slowP && W > 200; // câmera lenta do chute: um zoom leve entre quem chuta e o gol (Silvio, 12/11)
       const k = Math.min(1, dt * (sz ? 5 : on ? 2.2 : 1.6)); cam.z += ((sz ? 1.28 : tz) - cam.z) * k;
@@ -2255,9 +2307,10 @@
         // espera o minuto e o caso vai para o servidor (`onStall`). Nenhum caminho certo chega perto (o juiz espera até 16 s, o vigia destrava em 15 s)
         const capT = FREE && o.spm && mode === 'play' ? Math.max(STALL_T, 7 * o.spm() * (o.speed ? o.speed() : 1)) : 1e9, over = mT - mR > capT;
         if (over && !stallOn) { stallOn = true; stallN++; if (o.onStall) try { o.onStall({ mT: Math.round(mT), n: stallN }); } catch (e) {} }
-        if (!frozen && !document.hidden && !over) { mW += dtR * (o.speed ? o.speed() : 1); const n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); }
+        if (rp) { rp.t += dtR * rp.rate; if (rp.t > rp.end + RP_HOLD) rpEnd(); } // replay: o jogo fica parado (nem o relógio anda) e o campo mostra o lance gravado
+        else if (!frozen && !document.hidden && !over) { mW += dtR * (o.speed ? o.speed() : 1); const pm = mode, n = Math.ceil(dt / 0.02); for (let i = 0; i < n; i++) step(dt / n); rpRec(pm); }
         fpsN++;
-        draw();
+        if (rp) rpDraw(); else draw();
         if (o.onFrame) o.onFrame(api.info());
         if (loop.n % 4 === 0) sbFade();
       } catch (err) { if (!loop.rep && window.CLIMBIX_REPORT) { loop.rep = 1; window.CLIMBIX_REPORT('campinho: ' + err.message, err.stack); } }
@@ -2394,15 +2447,15 @@
       pending(m) { return mode !== 'wait' && goals.some(e => !e.done && e.m === m); },
       go() { if (mode === 'wait') { mode = 'ko'; modeT = 0.3; koHold = true; } },
       // true enquanto os times ainda se arrumam para a saída do 1º ou do 2º tempo: a tela não anda o minuto
-      koWait() { return koHold && (mode === 'ko' || mode === 'wait'); },
-      unhold() { koHold = false; }, // a tela destrava o relógio (vigia do Treinador)
+      koWait() { return (koHold && (mode === 'ko' || mode === 'wait')) || !!rp; }, // o replay do gol também segura o relógio
+      unhold() { koHold = false; rpEnd(); }, // a tela destrava o relógio (vigia do Treinador)
       // Placa do quarto árbitro: { add: n } (acréscimos) ou { out: [nums], in: [nums] } (troca)
       board(b) { Q4.b = b; Q4.t = b && b.add ? 4.5 : 4; },
       // Fim de jogo: três apitos, os jogadores param onde estão
       // Festa do título (o seu time é o lado 0): cup = endereço da imagem da taça real
-      festa(cup) { if (lc) lcDone(); frozen = false; camT = 0; mode = 'festa'; stopWhy = ''; ball.owner = ball.fly = ball.loose = ball.carry = null; ball.x = -50; fest = { s: 0, t: 0, c1: KT.mine[0], c2: KT.mine[1] }; if (cup) { fest.cup = new Image(); fest.cup.src = cup; } bigSay('CAMPEÃO!', 0, 3.2, true); },
-      fin() { if (lc) lcDone(); mode = 'fim'; stopWhy = 'Fim de jogo'; ball.owner = ball.fly = ball.loose = ball.carry = null; },
-      half() { if (lc) lcDone(); mode = 'half'; koSide = 1; ball.owner = ball.fly = ball.loose = ball.carry = null; },
+      festa(cup) { rpEnd(); if (lc) lcDone(); frozen = false; camT = 0; mode = 'festa'; stopWhy = ''; ball.owner = ball.fly = ball.loose = ball.carry = null; ball.x = -50; fest = { s: 0, t: 0, c1: KT.mine[0], c2: KT.mine[1] }; if (cup) { fest.cup = new Image(); fest.cup.src = cup; } bigSay('CAMPEÃO!', 0, 3.2, true); },
+      fin() { rpEnd(); if (lc) lcDone(); mode = 'fim'; stopWhy = 'Fim de jogo'; ball.owner = ball.fly = ball.loose = ball.carry = null; },
+      half() { rpEnd(); if (lc) lcDone(); mode = 'half'; koSide = 1; ball.owner = ball.fly = ball.loose = ball.carry = null; },
       second() { half2 = true; mode = 'ko'; modeT = 0.4; koSide = 1; koHold = true; back = 1; if (subQ) subApply(true); // voltam do túnel, correndo (como na volta depois do gol)
         ALL.forEach(p => { const i = Math.max(0, T[p.side].indexOf(p)); p.x = 52.5 + (p.side ? 1 : -1) * (1.2 + (i % 3) * 1.3); p.y = WD + 0.8 + Math.floor(i / 3) * 1.1; p.vx = p.vy = 0; p.outT = 4; p.outE = 40; }); REF.x = 52.5; REF.y = WD + 1; },
       freeze(v) { frozen = !!v; },
