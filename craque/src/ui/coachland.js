@@ -103,6 +103,67 @@
     fit();
     st.querySelectorAll('[data-rail]').forEach(b => b.onclick = () => { sfx('tap'); go(b.dataset.rail); });
     bind && bind(st);
+    try { vEnter(st); vNums(st); } catch (e) { /* só enfeite: nunca derruba a tela */ }
+  }
+  // ---------- Vida (2026-11-18, Silvio: "o jogo tá muito seco", sem virar desenho animado): movimento curto, tom de
+  // transmissão de TV. Só visual: nada aqui muda regra, valor ou ordem de toque. "Reduzir movimento" do aparelho = tudo direto.
+  //  - vEnter: tela nova (1ª classe da raiz mudou) = os blocos entram em fila (.vd-in, 0,26 s; `translate`, não mexe no transform de ninguém)
+  //  - vNums: caixa e moedas correm até o valor novo (com o "+R$" que some), posição rola, pontos contam, campanha acende, barra da diretoria anda
+  //  - vTable: na Classificação as linhas saem do lugar da última vez que você viu e vão para o de agora
+  const VE = 'cubic-bezier(.2,.8,.2,1)';
+  const still = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; } };
+  let vKey = '', vS = { co: null, v: {} }, vCoins = null;
+  function vEnter(st) {
+    const r = st.firstElementChild; if (!r || r.id === 'ld-pop') return;
+    const k = String(r.className || '').split(' ')[0]; if (k === vKey) return; vKey = k;
+    if (still()) return;
+    let it = [...r.children].filter(e => e.id !== 'ld-pop' && e.offsetParent !== null);
+    // tela de cabeçalho + um corpo só: a fila é dos blocos do corpo
+    if (it.length <= 2) { const bd = it[it.length - 1]; if (bd && bd.children.length >= 2 && bd.children.length <= 12 && !bd.querySelector(':scope > canvas')) it = it.slice(0, -1).concat([...bd.children].filter(e => e.offsetParent !== null)); }
+    // grade ou coluna de cartões sem fundo próprio (3 a 8 filhos): entram os cartões, um a um
+    it = [].concat(...it.map(e => { const n = e.children.length, cs = getComputedStyle(e); return n >= 3 && n <= 8 && /grid|flex/.test(cs.display) && cs.backgroundColor === 'rgba(0, 0, 0, 0)' && cs.overflowY === 'visible' && !e.matches('[class*="-h"]') ? [...e.children].filter(x => x.offsetParent !== null) : [e]; }));
+    it = it.filter(e => getComputedStyle(e).animationName === 'none');
+    it.forEach((e, i) => { e.style.setProperty('--vi', Math.min(i, 8)); e.classList.add('vd-in'); });
+    setTimeout(() => it.forEach(e => { e.classList.remove('vd-in'); e.style.removeProperty('--vi'); }), 700);
+  }
+  // Número que corre de a até b; no fim volta o texto exato que a tela escreveu
+  function vCount(el, a, b, fmt, ms) {
+    const end = el.textContent, t0 = performance.now(); ms = ms || 700;
+    (function f(t) { if (!el.isConnected) return; const k = Math.min(1, (t - t0) / ms); if (k >= 1) { el.textContent = end; return; } el.textContent = fmt(a + (b - a) * (1 - Math.pow(1 - k, 3))); requestAnimationFrame(f); })(t0);
+  }
+  function vRoll(el, old) {
+    if (!el.animate) return; const end = el.textContent; el.textContent = old; el.style.display = 'inline-block';
+    const o = el.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateY(-60%)', opacity: 0 }], { duration: 150, easing: 'ease-in', delay: 350, fill: 'forwards' });
+    o.onfinish = () => { o.cancel(); el.textContent = end; el.animate([{ transform: 'translateY(60%)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 240, easing: VE }); };
+  }
+  function vNums(st) {
+    const c = C(), co = c && c.co, q = s => st.querySelector(s);
+    if (q('.sm-h') && semana.pop) return; // janelinha vai abrir por cima da Semana: os números correm quando ela fechar e a Semana voltar
+    // moedas da conta (valem fora da carreira também)
+    const cb = q('.coin-pill b'); if (cb && U.COINS) { const n = U.COINS.get(), p = vCoins; vCoins = n; if (p != null && p !== n && !still()) vCount(cb, p, n, v => Math.round(v).toLocaleString('pt-BR'), 800); }
+    if (!co) return;
+    if (vS.co !== co) vS = { co, v: {} };
+    const V = vS.v, set = (k, v) => { const p = V[k]; V[k] = v; return p == null || p === v || still() ? null : { p }; };
+    const cx = q('.mk-cx b');
+    if (cx) { const n = S.coFin(co).caixa || 0, ch = set('cx', n); if (ch && Math.abs(n - ch.p) >= 1000) { vCount(cx, ch.p, n, v => c.brl(Math.round(v / 1000) * 1000), 900);
+      const d = document.createElement('i'); d.className = 'vd-dl ' + (n > ch.p ? 'up' : 'dn'); d.textContent = (n > ch.p ? '+ ' : '') + c.brl(n - ch.p); d.setAttribute('aria-hidden', 'true'); cx.parentNode.appendChild(d); setTimeout(() => d.remove(), 2400); } }
+    const h = q('.sm-h'); if (!h) return;
+    const pb = h.querySelector(':scope > b'), ps = h.querySelector(':scope > small'), f5 = h.querySelector('.sm-f5'), bar = h.querySelector('.sm-dir .ld-bar u');
+    if (pb) { const ch = set('pos', pb.textContent); if (ch) vRoll(pb, ch.p); }
+    if (ps) { const n = parseInt(ps.textContent, 10), ch = set('pts', n); if (ch && n > ch.p) vCount(ps, ch.p, n, v => Math.round(v) + ' pts', 450); }
+    if (f5) { const ch = set('f5', [...f5.children].map(i => i.className).join('')), l = f5.lastElementChild; if (ch && l) { l.classList.add('vd-pp'); setTimeout(() => l.classList.remove('vd-pp'), 600); } }
+    if (bar) { const w = bar.style.width, ch = set('dir', w); if (ch) { bar.style.width = ch.p; void bar.offsetWidth; bar.style.transition = 'width .7s ' + VE + ' .5s'; bar.style.width = w; } }
+  }
+  function vTable(st, ids) {
+    const co = C().co; if (vS.co !== co) vS = { co, v: {} };
+    const prev = vS.v.tb; vS.v.tb = ids;
+    const rows = [...st.querySelectorAll('.tb2-b > .tb2-r')];
+    if (!prev || still() || rows.length < 2 || rows.length !== ids.length || !rows[0].animate || prev.join() === ids.join()) return;
+    const hh = rows[1].offsetTop - rows[0].offsetTop;
+    rows.forEach((r, k) => { const o = prev.indexOf(ids[k]); if (o < 0 || o === k) return;
+      if (o > k) r.classList.add('vd-up'); r.style.zIndex = r.classList.contains('me') ? 3 : o > k ? 2 : 1; r.style.position = 'relative';
+      const a = r.animate([{ transform: 'translateY(' + Math.max(-5, Math.min(5, o - k)) * hh + 'px)' }, { transform: 'none' }], { duration: 600, delay: 300, easing: VE, fill: 'backwards' });
+      a.onfinish = () => { r.style.zIndex = ''; r.style.position = ''; r.classList.remove('vd-up'); }; });
   }
   // Teclado do celular deitado cobre a metade de baixo da tela: com um campo em foco, a tela (root) sobe até o campo ficar
   // no alto do palco e desce quando o foco sai. Só em tela de toque (Conta e Sua opinião)
@@ -341,9 +402,10 @@
   // ---------- popups (dentro do palco, para escalar junto) ----------
   // lock: popup do jogo parado (sem fechar tocando fora nem no Esc; sai pelos botões)
   function pop(html, label, onBind, cls, lock) {
+    const re = !!document.getElementById('ld-pop');
     closePop();
     const st = document.getElementById('ld-st'); if (!st) return;
-    const w = document.createElement('div'); w.className = 'ld-pop'; w.id = 'ld-pop';
+    const w = document.createElement('div'); w.className = 'ld-pop' + (re ? ' re' : ''); w.id = 'ld-pop';
     w.innerHTML = '<div class="ld-pop-c ' + (cls || '') + '" role="dialog" aria-modal="true" aria-label="' + esc(label) + '">' + html + '</div>';
     st.appendChild(w);
     const t0 = Date.now(); // o toque que abriu não pode cair num botão do popup (iPhone)
@@ -1498,6 +1560,7 @@
       if (st.querySelector('#ldc-prev')) { st.querySelector('#ldc-prev').onclick = () => { sfx('tap'); CAL_P = Math.max(0, CAL_P - 5); tabela('cal', rd); }; st.querySelector('#ldc-next').onclick = () => { sfx('tap'); CAL_P += 5; tabela('cal', rd); }; }
       if (st.querySelector('#ldt-prev')) { st.querySelector('#ldt-prev').onclick = () => { sfx('tap'); tabela('rod', rd - 1); }; st.querySelector('#ldt-next').onclick = () => { sfx('tap'); tabela('rod', rd + 1); }; }
       st.querySelector('#tb2-back').onclick = () => { sfx('tap'); semana(); };
+      if (tab === 'cls') try { vTable(st, t.map(x => x.id)); } catch (e) { /* só enfeite */ }
       const me2 = st.querySelector('.tb2-r.me, .tb2-gm.me, .cal-b .cal-r.cur'), bx = st.querySelector('.tb2-b');
       if (me2 && bx) bx.scrollTop = Math.max(0, me2.offsetTop - bx.offsetTop - bx.clientHeight / 2 + me2.offsetHeight / 2);
     });
