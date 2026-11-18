@@ -10923,8 +10923,8 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .ol2-side .tm-go { height: 52px; }
 /* Vermelho ao lado da sigla e acréscimo fixo no relógio, como na TV (Silvio, 18/11) */
 .ldl-sb .ldl-tla { position: relative; } /* vermelho embaixo da sigla, vazando da caixa: o placar não cresce (Silvio, 18/11) */
-.ldl-rc { position: absolute; left: 50%; top: calc(100% + 3px); transform: translateX(-50%); display: flex; gap: 2px; z-index: 1; } .ldl-rc:empty { display: none; }
-.ldl-rc span { display: block; width: 8px; height: 12px; border-radius: 1.5px; background: #E5383B; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
+.ldl-rc { position: absolute; left: 1px; top: calc(100% + 4px); display: flex; gap: 2px; z-index: 1; } .ldl-rc:empty { display: none; }
+.ldl-rc span { display: block; width: 6px; height: 9px; border-radius: 1.5px; background: #E5383B; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
 #lv-clock .lv-add { text-decoration: none; margin-left: 5px; padding: 1px 4px; border-radius: 3px; background: #15171A; color: #F2C230; font-size: .8em; }
 
 .ldl .ldl-sb:has(.ldl-rc:not(:empty)) .ldl-agg { margin-top: 12px; } /* "IDA 2 x 1" desce para não cobrir o vermelho */
