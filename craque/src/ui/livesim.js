@@ -843,6 +843,7 @@
     // segura, espalma no rebote ou manda para escanteio) | fora | trave | bloq (o zagueiro trava na frente). O goleiro já está no
     // ângulo e mergulha para o lado da bola; sv força o tipo de defesa (o 2º chute do rebote ele segura)
     // Comemoração e câmera lenta podem ser desligadas nos Ajustes (`climbix-co-fx` = '0', U.coFx)
+    const RPON = () => { try { return !(typeof localStorage !== 'undefined' && localStorage.getItem('climbix-co-rp') === '0'); } catch (_) { return true; } }; // replay do gol (Ajustes)
     const FXON = () => { try { return !(typeof localStorage !== 'undefined' && localStorage.getItem('climbix-co-fx') === '0'); } catch (_) { return true; } };
     let slowT = 0, slowDebt = 0, slowP = null, mR = 0; // mR: o que o laço devolveu da dívida neste minuto (não conta como tempo do minuto) // câmera lenta do chute: só o quadro da tela anda devagar por SLOW_T s e devolve o tempo depois (o minuto segue igual)
     function shoot(p, kind, forced, want, sv) {
@@ -1988,7 +1989,7 @@
     const RP_PRE = 3.8, RP_POS = 0.9, RP_HOLD = 0.5, RP_Z = 1.3; let rpBuf = [], rp = null, rpGoal = -1, RPL = false;
     function rpRec(pm) {
       if (mode === 'goal' && pm !== 'goal') rpGoal = clk;
-      if (pm === 'goal' && mode !== 'goal' && rpGoal >= 0) { const s0 = rpGoal; rpGoal = -1; if (FXON() && g && !document.hidden) rpStart(s0); rpBuf = []; return; }
+      if (pm === 'goal' && mode !== 'goal' && rpGoal >= 0) { const s0 = rpGoal; rpGoal = -1; if (FXON() && RPON() && g && !document.hidden) rpStart(s0); rpBuf = []; return; }
       const on = mode === 'goal' ? clk - rpGoal < RP_POS : mode !== 'ko' && mode !== 'half' && mode !== 'wait' && mode !== 'fim' && mode !== 'festa';
       if (on) rpBuf.push({ c: clk, P: ALL.map(p => [p, p.x, p.y, p.down, p.kk && Object.assign({}, p.kk), p.dr && Object.assign({}, p.dr), p.dva]),
         b: [ball.x, ball.y, ball.z || 0, ball.b11shot, ball.owner, ball.fly && Object.assign({}, ball.fly)], r: [REF.x, REF.y], a: AR.map(q => [q.x, q.y]), n: net && Object.assign({}, net) });
