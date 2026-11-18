@@ -124,6 +124,50 @@ if ($a === 'gift') {
   out(['ok' => true, 'coins' => $n]);
 }
 
+// Zerar moedas e times comprados de uma conta (2026-11-18, o Silvio testar como jogador novo): mesma chave do presente.
+// Antes de mexer guarda tudo em climbix-data/zerar-<conta>-<hora>.json (o salvo da nuvem e as compras) para devolver depois.
+// A carteira da nuvem vira uma vazia com `z` (hora do zerar): no aparelho a junção (U.ITEMS.merge) descarta a de antes.
+// As compras entregues viram status 'zerada' (fora do paid do check: o coinFix não as devolve). Carreiras ficam como estão.
+//   POST ?a=zerar {key, user}
+if ($a === 'zerar') {
+  $ak = is_file($dir . '/admin-key') ? trim((string)file_get_contents($dir . '/admin-key')) : '';
+  $in = json_decode(file_get_contents('php://input') ?: '', true) ?: [];
+  if (strlen($ak) < 12 || ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !is_string($in['key'] ?? null) || !hash_equals($ak, $in['key'])) out(['error' => 'action'], 400);
+  $who = mb_strtolower(trim((string)($in['user'] ?? '')), 'UTF-8');
+  if ($who === '') out(['error' => 'bad'], 400);
+  $q = $db->prepare('SELECT user_key FROM accounts WHERE user_key = ? UNION SELECT user_key FROM identities WHERE lower(label) = ?'); $q->execute([$who, $who]);
+  $keys = $q->fetchAll(PDO::FETCH_COLUMN);
+  if (count($keys) !== 1) out(['error' => 'user', 'found' => count($keys)], 404);
+  $uk = $keys[0];
+  try {
+    $db->exec('BEGIN IMMEDIATE');
+    $q = $db->prepare('SELECT data, updated FROM saves WHERE user_key = ?'); $q->execute([$uk]);
+    $sv = $q->fetch(PDO::FETCH_ASSOC);
+    $q = $db->prepare('SELECT * FROM purchases WHERE user_key = ?'); $q->execute([$uk]);
+    $buys = $q->fetchAll(PDO::FETCH_ASSOC);
+    $file = 'zerar-' . preg_replace('/[^a-z0-9_-]/', '_', $uk) . '-' . date('Ymd-His') . '.json';
+    if (@file_put_contents($dir . '/' . $file, json_encode(['user' => $uk, 'at' => time(), 'save' => $sv, 'purchases' => $buys], JSON_UNESCAPED_UNICODE)) === false) throw new Exception('backup');
+    @chmod($dir . '/' . $file, 0600);
+    $data = $sv ? json_decode((string)$sv['data'], true) : null;
+    $old = ['coins' => null, 'clubs' => []];
+    if (is_array($data)) {
+      $inv = $data['itens'] ?? null;
+      if (is_array($inv)) {
+        $c = $inv['coins'] ?? null;
+        if (is_array($c)) $old = ['coins' => $c['n'] ?? null, 'clubs' => array_keys((array)($c['clubs'] ?? []))];
+        $inv['coins'] = ['v' => 2, 'n' => 0, 'got' => 0, 'log' => [], 'once' => new stdClass, 'clubs' => new stdClass, 'dv' => new stdClass, 'rp' => new stdClass, 'z' => (int)round(microtime(true) * 1000)];
+        $inv['at'] = (int)round(microtime(true) * 1000);
+        $data['itens'] = $inv;
+        $db->prepare('UPDATE saves SET data = ?, updated = ? WHERE user_key = ?')->execute([json_encode($data, JSON_UNESCAPED_UNICODE), time(), $uk]);
+      }
+    }
+    $u = $db->prepare("UPDATE purchases SET status = 'zerada' WHERE user_key = ? AND status IN ('approved', 'claimed')"); $u->execute([$uk]);
+    $n = $u->rowCount();
+    $db->exec('COMMIT');
+  } catch (Exception $e) { try { $db->exec('ROLLBACK'); } catch (Exception $e2) {} out(['error' => 'storage'], 500); }
+  out(['ok' => true, 'antes' => $old, 'compras' => $n, 'copia' => $file]);
+}
+
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') out(['error' => 'method'], 405);
 $in = json_decode(file_get_contents('php://input') ?: '', true);
 if (!is_array($in)) out(['error' => 'json'], 400);
