@@ -19,6 +19,10 @@ on:
         description: 'Quantas moedas (1 a 5000)'
         required: false
         default: '500'
+      zerar_conta:
+        description: 'Zerar moedas e times comprados (teste): usuário da conta. Guarda cópia antes. Vazio = nada.'
+        required: false
+        default: ''
 
 concurrency:
   group: deploy-climbix
@@ -201,6 +205,18 @@ jobs:
             echo "Presente: $R"
             echo "$R" | grep -q '"ok":true' || { echo "::error::Presente não entregue: $R"; exit 1; }
           fi
+
+      # Zerar moedas e times comprados (api/pay.php?a=zerar, 2026-11-18): mesma chave do presente; cópia em climbix-data/zerar-*.json
+      - name: Zerar conta
+        if: steps.key.outputs.ok == 'true' && github.event.inputs.zerar_conta != ''
+        env:
+          ADMIN_KEY: ${{ secrets.CLIMBIX_ADMIN_KEY }}
+          CONTA: ${{ github.event.inputs.zerar_conta }}
+        run: |
+          BODY=$(jq -nc --arg k "$ADMIN_KEY" --arg u "$CONTA" '{key:$k,user:$u}')
+          R=$(curl -sS -m 30 -X POST -H 'Content-Type: application/json' --data "$BODY" "https://climbix.app/api/pay.php?a=zerar")
+          echo "Zerar: $R"
+          echo "$R" | grep -q '"ok":true' || { echo "::error::Conta não zerada: $R"; exit 1; }
 
       # Opiniões por e-mail: cada opinião nova já vai sozinha (api/feedback.php). Aqui manda o que ficou para trás
       # (na primeira vez, tudo o que já existia, numa leva só). Falha aqui não derruba o deploy.
