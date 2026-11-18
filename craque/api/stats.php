@@ -5,6 +5,7 @@
 //   POST ?a=hit   {ev, mode, k}     soma +1 em (hoje, ev, mode, k)
 //   GET  ?a=list[&days=30]          linhas dos últimos dias (somas anônimas, leitura aberta)
 // Eventos: first (primeira visita do aparelho), d1 (voltou no dia seguinte), d7 (voltou entre o 7º e o 13º dia),
+// day (aparelho abriu o jogo hoje, 1x por dia) e play (aparelho jogou hoje, 1x por dia): somados dão aparelhos diferentes no dia,
 // session (k = faixa de minutos), first e start (k = canal do link ?de=, vazio = direto), start (carreira começou), season (k = número da temporada), end (carreira terminou).
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -26,7 +27,7 @@ try {
 } catch (Exception $e) { out(['error' => 'db'], 500); }
 
 $a = $_GET['a'] ?? '';
-$EVS = ['first', 'd1', 'd7', 'session', 'start', 'season', 'end'];
+$EVS = ['first', 'd1', 'd7', 'session', 'start', 'season', 'end', 'day', 'play'];
 $MODES = ['', 'inicio', 'rapida', 'jaj', 'relampago', 'treinador'];
 $DUR = ['0-1', '1-5', '5-10', '10-20', '20-40', '40+'];
 // De onde o aparelho veio (link climbix.app/?de=canal), só no first e no start
