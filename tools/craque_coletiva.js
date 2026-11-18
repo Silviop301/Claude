@@ -38,11 +38,15 @@ const sane = (co, t) => {
     const d = S.coEvent(co); if (!d) break; seen.add(d.id);
     // todas as variações do texto, sem buraco
     const e = S.CO_EVT.find(x => x.id === d.id), tt = { p: co.squad.find(p => p.id === d.t) || null, p2: co.squad.find(p => p.id === d.t2) || null };
-    [].concat(e.say).forEach((f, j) => { const s = f(tt, co); ok(s && !/undefined|NaN|null/.test(s), 'texto ' + d.id + ' #' + j + ': ' + s); });
-    e.ops.forEach(o => [].concat(o.re, o.reLose || []).forEach(s => ok(typeof s === 'string' && s.length > 5, 'resposta ' + d.id + '/' + o.k)));
+    // todas as versões: as de contexto (S.coPvCx) podem não valer (sem o dado), as outras sempre; nada de buraco no texto
+    const X = S.coPvCtx(co), chk = (f, s, t) => ok(S.coPvCx(f) && !s ? true : typeof s === 'string' && s.length > 5 && !/undefined|NaN|null|\bx\b x/.test(s), t + ': ' + s);
+    [].concat(e.say).forEach((f, j) => chk(f, typeof f === 'function' ? f(tt, co, X) : f, 'texto ' + d.id + ' #' + j));
+    e.ops.forEach(o => [].concat(o.re, o.reLose || []).forEach(f => chk(f, typeof f === 'function' ? f(tt, co, X) : f, 'resposta ' + d.id + '/' + o.k)));
     ok(d.say && !/undefined|NaN/.test(d.say), 'texto ' + d.id + ': ' + d.say);
     d.ops.forEach(o => ok(o.tags.length && o.tags.every(t => !/undefined|NaN/.test(t.join(' '))), 'etiquetas ' + d.id + '/' + o.k));
     const o = d.ops[k % 3], r = S.coEventAnswer(co, d, o.k); ok(r && r.re, 'resposta ' + d.id + '/' + o.k);
+    ok(r && Array.isArray(r.res) && r.res.every(x => !/undefined|NaN/.test(x[1])), 'resultado ' + d.id + '/' + o.k + ': ' + (r && JSON.stringify(r.res)));
+    if (process.env.VER) console.log(d.id, '|', d.say, '|', o.name, '→', r.re, '|', r.res.map(x => x[1]).join(' · '));
     sane(co, d.id);
     co.squad.forEach(p => { p.sus = 0; p.out = 0; });
   }
