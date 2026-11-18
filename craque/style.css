@@ -9226,9 +9226,11 @@ button.coin-pill { cursor: pointer; border: 0; }
 .pft-t > span { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .pft-t b { font: 800 22px/1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pft-t small, .pft-no { font: 700 15px/1 var(--body); color: #B9C9BF; }
-.pft-cl { display: flex; align-items: center; gap: 12px; }
-.pft-cl .crest { width: 44px; height: 44px; object-fit: contain; flex: none; }
-.pft-cl b { font: 800 22px/1 var(--display); color: #B9C9BF; }
+.pft-cl { display: flex; align-items: center; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; scroll-padding: 0 16px; }
+.pft-lb em { font-style: normal; color: #F3F1EA; margin-left: 4px; }
+.pft-cl::-webkit-scrollbar { display: none; }
+.pft-cl.more { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 44px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 44px), transparent); }
+.pft-cl .crest { width: 44px; height: 44px; object-fit: contain; flex: none; scroll-snap-align: start; }
 
 /* Conta deitada (2026-11-10, quadro 54): cartão creme à esquerda (Entrar/Criar conta, senha, primeiro acesso ou a conta
    aberta) e a coluna de apoio à direita (Google, esqueci a senha, formas de entrar, sair, reiniciar). ui/cloud.js land() */
