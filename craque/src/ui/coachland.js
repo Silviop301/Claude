@@ -3508,11 +3508,12 @@
         const cap1 = t => t.charAt(0).toUpperCase() + t.slice(1);
         return '<button class="pl3-o' + (k === pick ? ' on' : '') + '" data-pk="' + k + '"><svg class="pl3-ic" viewBox="0 0 24 24" aria-hidden="true">' + IC[k] + '</svg>' +
           '<span><b>' + pr.name + '</b><small>' + esc(pr.q.replace(/^"|"$/g, '')) + '</small><em>' + tg.map(([cc, t]) => '<i class="' + cc + '">' + esc(cap1(t)) + '</i>').join('') + '</em></span>' +
-          (k === pick ? '<svg class="pl3-ok" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11"/><path d="M7 12.5l3.2 3.2L17.5 8.5"/></svg>' : '') + '</button>'; };
+          '<svg class="pl3-ok" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11"/><path d="M7 12.5l3.2 3.2L17.5 8.5"/></svg></button>'; };
       show('<div class="pl3"><div class="tm-h"><b>Vestiário</b><small>' + sub + '</small></div>' + capHtml +
         '<div class="pl3-ops">' + K.map(card).join('') + '</div>' +
         '<div class="pl3-ab"><button class="tm-b" id="ldp-skip">Não falar nada</button><button class="tm-go" id="ldp-go">Entrar em campo</button></div></div>', st => {
-        st.querySelectorAll('[data-pk]').forEach(b => b.onclick = () => { sfx('tap'); pick = b.dataset.pk; draw(); });
+        // Silvio 18/11: redesenhar a tela no toque fazia o texto dos outros cartões crescer e voltar; só troca a marca
+        st.querySelectorAll('[data-pk]').forEach(b => b.onclick = () => { sfx('tap'); pick = b.dataset.pk; st.querySelectorAll('.pl3-o').forEach(o => o.classList.toggle('on', o === b)); });
         st.querySelector('#ldp-go').onclick = () => { sfx('tap'); c.play(pick); };
         st.querySelector('#ldp-skip').onclick = () => { sfx('tap'); c.play(null); };
       });

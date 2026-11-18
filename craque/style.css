@@ -8475,7 +8475,7 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .pl3-o b { font: 800 21px/1 var(--display); } .pl3-o small { font: 600 14px/1.15 var(--body); color: #C9D2CC; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pl3-o em { display: flex; gap: 5px; font-style: normal; } .pl3-o em i { font: 800 normal 14px/1.1 var(--display); color: #8F9A93; } .pl3-o em i + i::before { content: '· '; color: #5d6762; }
 .pl3-o.on em i.up { color: #7ED39A; } .pl3-o.on em i.dn { color: #F5A57F; } .pl3-o.on em i.eq { color: #E7D27A; }
-.pl3-ok { width: 30px; height: 30px; flex: none; } .pl3-ok circle { fill: var(--gold); } .pl3-ok path { fill: none; stroke: #1B1606; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.pl3-ok { width: 30px; height: 30px; flex: none; visibility: hidden; } .pl3-o.on .pl3-ok { visibility: visible; } .pl3-o, .pl3-o * { transition: none !important; animation: none !important; } .pl3-ok circle { fill: var(--gold); } .pl3-ok path { fill: none; stroke: #1B1606; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .pl3-ab { grid-column: 2; grid-row: 3; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 12px; }
 .pl3-ab .tm-b { height: 56px; } .pl3-ab .tm-go { height: 56px; margin-top: 0; }
 
