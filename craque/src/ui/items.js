@@ -300,7 +300,12 @@
     // Moedas (2026-11-10, as 120 do Silvio sumiram): o saldo NÃO vem mais do salvo mais recente. Cada aparelho soma o que
     // ganhou e gastou na sua conta (`dv`), os prêmios de uma vez guardam o valor (`once`), e juntar é pegar o maior de cada:
     // nada ganho num aparelho se perde por ter jogado depois em outro. Só o log vem do mais recente.
-    const ca = coinNorm(a.coins), cb = coinNorm(b.coins), cn = coinNorm(newer.coins) || ca || cb;
+    // Carteira zerada pelo servidor (2026-11-18, pay.php?a=zerar: o Silvio testar como jogador novo): a carteira com o `z`
+    // mais novo vale sozinha, a de antes do zerar não volta em nenhum aparelho
+    let ca = coinNorm(a.coins), cb = coinNorm(b.coins);
+    const za = (ca && ca.z) || 0, zb = (cb && cb.z) || 0;
+    if (za < zb) ca = null; else if (zb < za) cb = null;
+    const cn = (za === zb ? coinNorm(newer.coins) : null) || ca || cb;
     let coins;
     if (cn) {
       const dv = {}, once = {}, rp = {};
@@ -312,7 +317,7 @@
       // Histórico: as linhas dos dois aparelhos, sem repetir, da mais nova para a mais velha
       const seen = {}, log = [].concat((ca || {}).log || [], (cb || {}).log || []).filter(x => { const k = x && x.at + '|' + x.n + '|' + x.t; if (!x || seen[k]) return false; seen[k] = 1; return true; })
         .sort((x, y) => (y.at || 0) - (x.at || 0)).slice(0, 60);
-      coins = coinSum(Object.assign({}, cn, { dv, once, rp, log, clubs: Object.assign({}, (ca || {}).clubs, (cb || {}).clubs) }));
+      coins = coinSum(Object.assign({}, cn, { dv, once, rp, log, clubs: Object.assign({}, (ca || {}).clubs, (cb || {}).clubs) }, Math.max(za, zb) ? { z: Math.max(za, zb) } : {}));
     }
     return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news), days }, prof ? { prof } : {}, coins ? { coins } : {}, (a.ch || b.ch) && U.CHAMA ? { ch: U.CHAMA.merge(a.ch, b.ch) } : {});
   }
