@@ -3477,27 +3477,38 @@
     const mo = Math.round(xi.reduce((a, p) => a + (p.mo === undefined ? 60 : p.mo), 0) / Math.max(1, xi.length));
     const nerv = xi.filter(p => (p.mo === undefined ? 60 : p.mo) < 45).sort((a, b) => a.mo - b.mo)[0];
     const capId = (co.takers && co.takers.cap && co.takers.cap.find(id => co.xi.includes(id))) || xi.slice().sort((a, b) => b.age - a.age)[0].id, cap = by[capId];
-    // Preleção enxuta (2026-11-09, quadro 15): o tom numa régua de calmo a forte, ◀ ▶ como a formação
-    const P = S.CO_PRE, K = ['calma', 'voces', 'cima'], WHO = { calma: 'TOM CALMO', voces: 'TOM DO GRUPO', cima: 'TOM FORTE' };
+    // Vestiário novo (Silvio 2026-11-18, ideia do GPT): o capitão de verdade à esquerda (a camisa dele, com nome, número e a
+    // braçadeira) com o clima do grupo e a pergunta; os três tons em cartões grandes; os efeitos são os mesmos de S.CO_PRE
+    const P = S.CO_PRE, K = ['calma', 'voces', 'cima'];
+    const IC = {
+      calma: '<path d="M6 2h12v2h-1v3.2a4 4 0 0 1-1.6 3.2L13.2 12l2.2 1.6A4 4 0 0 1 17 16.8V20h1v2H6v-2h1v-3.2a4 4 0 0 1 1.6-3.2l2.2-1.6-2.2-1.6A4 4 0 0 1 7 7.2V4H6zm3 2v3.2c0 .6.3 1.2.8 1.6L12 10.4l2.2-1.6c.5-.4.8-1 .8-1.6V4zm3 9.6l-2.2 1.6c-.5.4-.8 1-.8 1.6V20h6v-3.2c0-.6-.3-1.2-.8-1.6z"/>',
+      voces: '<path d="M12 21l-1.4-1.3C5.4 15 2 11.9 2 8.1 2 5 4.4 2.6 7.5 2.6c1.7 0 3.4.8 4.5 2.1 1.1-1.3 2.8-2.1 4.5-2.1C19.6 2.6 22 5 22 8.1c0 3.8-3.4 6.9-8.6 11.6z"/>',
+      cima: '<path d="M13.5 1L4 13.5h6.5L9 23l11-13.5h-6.8z"/>',
+    };
+    const cl = club(co.club), nx = S.coNext(co), vs = nx && !nx.bye && club(nx.vs);
+    const okH = h => typeof h === 'string' && /^#[0-9a-f]{6}$/i.test(h);
+    const kit = (U.LP && U.LP.kitFor ? U.LP.kitFor(cl.name, cl.id) : null) || ['#F4F1E8', '#1D1D1F'];
+    const base = okH(kit[0]) ? kit[0] : '#F4F1E8', trim = okH(kit[1]) && kit[1].toLowerCase() !== base.toLowerCase() ? kit[1] : kit.pat && okH(kit.pat[1]) ? kit.pat[1] : '#1D1D1F';
+    const sub = vs ? esc((nx.home ? cl.name : vs.name) + ' × ' + (nx.home ? vs.name : cl.name)) + ' · ' + esc(nx.cup ? nx.cup.ph || nx.cup.name : 'Rodada ' + nx.round) : 'primeiros 15 minutos';
+    const moK = mo >= 70 ? 'up' : mo >= 50 ? '' : 'dn', moT = mo >= 70 ? 'Grupo confiante' : mo >= 50 ? 'Grupo tranquilo' : 'Grupo abalado';
+    const capHtml = '<div class="pl3-cap"><span class="pl3-sh">' + shirtSvg(base, trim, last(cap.n).toUpperCase(), cap.num || '') + '<i>C</i></span>' +
+      '<b>' + esc(last(cap.n)) + '<small>capitão</small></b><span class="pl3-mo ' + moK + '"><i></i>' + moT + '</span>' +
+      (nerv ? '<span class="pl3-nv"><i></i>' + esc(last(nerv.n)) + ' está nervoso</span>' : '') +
+      '<p>“Como você quer que a gente comece, professor?”</p></div>';
     let pick = 'voces';
     const draw = () => {
-      const i = K.indexOf(pick), pr = P[pick], [up, dn] = pr.tip.split(' · ');
-      const fx = [['up', up.replace(', ajuda os nervosos', '')]];
-      if (nerv && pick === 'voces') fx.push(['up', 'o ' + last(nerv.n) + ' se acalma']);
-      fx.push(['dn', dn]);
-      if (nerv && pick === 'cima') fx.push(['dn', 'não ajuda o ' + last(nerv.n)]);
-      const cap1 = t => t.charAt(0).toLowerCase() + t.slice(1);
-      show('<div class="pl2"><div class="tm-h"><b>Vestiário</b><small>escolha o tom dos primeiros 15 minutos</small></div>' +
-        '<div class="pl2-box"><div class="pl2-top"><button class="pl2-ar" data-pa="-1" aria-label="Mais calmo"' + (i ? '' : ' disabled') + '>' + MK_L + '</button>' +
-          '<span><small>' + WHO[pick] + '</small><b>' + pr.name + '</b></span><button class="pl2-ar" data-pa="1" aria-label="Mais forte"' + (i < 2 ? '' : ' disabled') + '>' + MK_R + '</button></div>' +
-          '<div class="pl2-rg"><i></i>' + K.map((k, j) => '<button data-pk="' + k + '" aria-label="' + P[k].name + '" class="' + (k === pick ? 'on' : '') + '" style="left:' + j * 50 + '%"></button>').join('') + '</div>' +
-          '<div class="pl2-lb"><span>calmo</span><span>pelo grupo</span><span>forte</span></div>' +
-          '<div class="pl2-fx">' + fx.map(([cc, t]) => '<em class="' + cc + '">' + (cc === 'up' ? '+ ' : '− ') + esc(cap1(t)) + '</em>').join('') + '</div></div>' +
-        '<div class="pl2-side"><div class="pl2-cl"><small>CLIMA DO GRUPO</small><b class="' + (mo >= 70 ? 'up' : mo >= 50 ? '' : 'dn') + '">' + (mo >= 70 ? 'confiante' : mo >= 50 ? 'tranquilo' : 'abalado') + '</b>' +
-          (nerv ? '<span><i></i>' + esc(last(nerv.n)) + ' está nervoso</span>' : cap ? '<span class="ok"><i></i>' + esc(last(cap.n)) + ' puxa o grupo</span>' : '') + '</div>' +
-          '<span class="rs-gap"></span><button class="tm-b" id="ldp-skip">Não falar nada</button><button class="tm-go" id="ldp-go">Entrar em campo</button></div></div>', st => {
+      const card = k => { const pr = P[k], [up, dn] = pr.tip.split(' · '), tg = [['up', up.replace(', ajuda os nervosos', '')]];
+        if (nerv && k === 'voces') tg.push(['up', last(nerv.n) + ' se acalma']);
+        tg.push([k === 'voces' ? 'eq' : 'dn', dn]);
+        if (nerv && k === 'cima') tg.push(['dn', 'não ajuda o ' + last(nerv.n)]);
+        const cap1 = t => t.charAt(0).toUpperCase() + t.slice(1);
+        return '<button class="pl3-o' + (k === pick ? ' on' : '') + '" data-pk="' + k + '"><svg class="pl3-ic" viewBox="0 0 24 24" aria-hidden="true">' + IC[k] + '</svg>' +
+          '<span><b>' + pr.name + '</b><small>' + esc(pr.q.replace(/^"|"$/g, '')) + '</small><em>' + tg.map(([cc, t]) => '<i class="' + cc + '">' + esc(cap1(t)) + '</i>').join('') + '</em></span>' +
+          (k === pick ? '<svg class="pl3-ok" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11"/><path d="M7 12.5l3.2 3.2L17.5 8.5"/></svg>' : '') + '</button>'; };
+      show('<div class="pl3"><div class="tm-h"><b>Vestiário</b><small>' + sub + '</small></div>' + capHtml +
+        '<div class="pl3-ops">' + K.map(card).join('') + '</div>' +
+        '<div class="pl3-ab"><button class="tm-b" id="ldp-skip">Não falar nada</button><button class="tm-go" id="ldp-go">Entrar em campo</button></div></div>', st => {
         st.querySelectorAll('[data-pk]').forEach(b => b.onclick = () => { sfx('tap'); pick = b.dataset.pk; draw(); });
-        st.querySelectorAll('[data-pa]').forEach(b => b.onclick = () => { sfx('tap'); pick = K[Math.max(0, Math.min(2, i + +b.dataset.pa))]; draw(); });
         st.querySelector('#ldp-go').onclick = () => { sfx('tap'); c.play(pick); };
         st.querySelector('#ldp-skip').onclick = () => { sfx('tap'); c.play(null); };
       });
