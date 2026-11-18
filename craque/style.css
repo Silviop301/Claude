@@ -10952,3 +10952,17 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 /* geral só do próximo jogo a mais (acontecimento): verde no campo da escalação; a menos usa o laranja de .pen */
 .ld-dc.tvu { color: #7ED39A; }
 .tm .ld-dc.tvu, .ldl-tm .ld-dc.tvu { color: #1E8A4C; }
+/* Velocidade do ao vivo (2026-11-18): pílula que desliza entre 1× e 3× e pulinho no toque; aviso antes de pular (skipAsk) */
+.lv-speed { position: relative; }
+.lv-speed .lv-th { position: absolute; top: 3px; bottom: 3px; left: 0; border-radius: 9px; background: var(--paper); pointer-events: none; opacity: 0; }
+.lv-speed.sl .lv-th { transition: transform .26s cubic-bezier(.3, 1.35, .5, 1), width .26s ease; }
+.lv-speed button { position: relative; transition: color .2s ease; }
+.lv-speed button.on, .ld-st .lv-speed button.on { background: transparent; color: var(--lv-ink); } /* no palco o `.ld-st button:not(.btn)` apagava o 1×/3× escolhido */
+.ldl-side .lv-speed .lv-th { top: 3px; bottom: 3px; }
+.lv-speed button.tap { animation: lvTap .3s ease; }
+@keyframes lvTap { 0% { transform: scale(1); } 35% { transform: scale(.84); } 100% { transform: scale(1); } }
+.lv-speed button[data-sp="fim"].tap svg { animation: lvFf .34s ease; }
+@keyframes lvFf { 0% { transform: translateX(0); } 45% { transform: translateX(4px); } 100% { transform: translateX(0); } }
+.sk-pop .sk-no { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 2px; font: 600 13px var(--body); color: var(--muted); cursor: pointer; }
+.sk-pop .sk-no input { width: 16px; height: 16px; margin: 0; accent-color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .lv-speed.sl .lv-th { transition: none; } .lv-speed button.tap, .lv-speed button.tap svg { animation: none; } }

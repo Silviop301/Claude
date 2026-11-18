@@ -1738,6 +1738,19 @@
       w.querySelector('#sc-y').onclick = () => { try { localStorage.setItem('climbix-co-so-carreira', '1'); } catch (e) {} closePop(); go(); };
     }, 'hl-pop acd-pop tm-pop ca-pop');
   }
+  // Aviso antes de pular para o resultado (botão » do ao vivo). done(true) pula, done(false) segue o jogo.
+  // "Não perguntar de novo" grava climbix-co-pular = '0' (os Ajustes não mostram; limpar o aparelho volta a perguntar).
+  function skipAsk(done) {
+    let off = false; try { off = localStorage.getItem('climbix-co-pular') === '0'; } catch (e) {}
+    if (off) return done(true);
+    pop('<div class="acd-help sk-pop"><b>Pular para o resultado?</b><p>O jogo é simulado até o apito final.</p>' +
+      '<button class="hl-btn gold" id="sk-y">Pular</button><button class="hl-btn line" id="sk-n">Continuar assistindo</button>' +
+      '<label class="sk-no"><input type="checkbox" id="sk-ck"><span>Não perguntar de novo</span></label></div>', 'Pular para o resultado', w => {
+      const fim = go => { sfx('tap'); if (go && w.querySelector('#sk-ck').checked) { try { localStorage.setItem('climbix-co-pular', '0'); } catch (e) {} } closePop(); done(go); };
+      w.querySelector('#sk-y').onclick = () => fim(true);
+      w.querySelector('#sk-n').onclick = () => fim(false);
+    }, 'hl-pop acd-pop tm-pop ca-pop sk-c', true);
+  }
   function coinAsk(n, what, gain, go) {
     const saldo = U.COINS.get();
     pop('<div class="acd-help"><b>' + esc(what) + '</b><p class="ca-n">' + U.COINS.svg + '<b>' + n + '</b> moedas' + (gain ? ' · ' + esc(gain) : '') + '</p><p>Você fica com ' + U.D.plural(Math.max(0, saldo - n), 'moeda', 'moedas') + '.</p>' +
@@ -3525,6 +3538,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, fit, lift, wroom: () => WROOM, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePens, result, segunda, pvPop, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, recebidas, ficha, proposta, contrato, recebida };
+  U.LD = { on, show, off, fit, lift, wroom: () => WROOM, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePens, skipAsk, result, segunda, pvPop, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, recebidas, ficha, proposta, contrato, recebida };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();

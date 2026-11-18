@@ -78,7 +78,7 @@ const RESUMO = () => { const U = window.CRAQUE_UI, S = window.CRAQUE_SIM, co = U
     await fecha(); await shot('d1-semana-fim');
     try {
       await fecha(); await tap('#ld-play');
-      if (await p.$('#ld-go')) { await tap('#ld-go'); await tap('#ldp-go'); await p.waitForTimeout(2500); await tap('[data-sp="fim"]');
+      if (await p.$('#ld-go')) { await tap('#ld-go'); await tap('#ldp-go'); await p.waitForTimeout(2500); await tap('[data-sp="fim"]'); if (await p.$('#sk-y')) await tap('#sk-y');
         for (let i = 0; i < 30 && !(await p.$('#b-lv-end')); i++) { await p.waitForTimeout(800); if (await p.$('#ldl-go')) await tap('#ldl-go'); }
         await tap('#b-lv-end'); await shot('d2-resultado'); await tap('#ldr-go'); if (await p.$('#ld-sack')) await tap('#ld-sack'); }
       await p.waitForTimeout(900); await shot('d3-temporada');
