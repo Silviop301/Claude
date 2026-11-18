@@ -225,9 +225,9 @@
     // GERAL (2026-11-14, no lugar de NÍVEL melhor/igual/pior): pelo meio da faixa que o olheiro viu
     const ovm = p => { const o = S.coMktOvr(co, p); return o ? o.mid : p.ovr; };
     return [
-      { k: 'pos', t: 'POSIÇÃO', o: [{ t: 'Qualquer' }].concat(['GOL', 'ZAG', 'LAT', 'LE', 'LD', 'MEI', 'VOL', 'MO', 'ATA', 'PE', 'PD', 'CA'].map(x => // lado e ponta (2026-11-18); quem joga dos dois lados entra nos dois
-        x === 'LE' || x === 'LD' ? { t: x === 'LE' ? 'Lateral esquerdo' : 'Lateral direito', ok: p => p.pos === 'LAT' && S.coSide(p) !== (x === 'LE' ? 'D' : 'E') }
-        : x === 'PE' || x === 'PD' ? { t: x === 'PE' ? 'Ponta esquerda' : 'Ponta direita', ok: p => S.coPonta(p) && S.coSide(p) !== (x === 'PE' ? 'D' : 'E') }
+      { k: 'pos', t: 'POSIÇÃO', o: [{ t: 'Qualquer' }].concat(['GOL', 'ZAG', 'LAT', 'LE', 'LD', 'MEI', 'VOL', 'MO', 'ATA', 'PE', 'PD', 'CA'].map(x => // lado e ponta (2026-11-18), pela mesma sigla que a tela mostra
+        x === 'LE' || x === 'LD' ? { t: x === 'LE' ? 'Lateral esquerdo' : 'Lateral direito', ok: p => p.pos === 'LAT' && S.coSideLbl(p) === (x === 'LE' ? 'E' : 'D') }
+        : x === 'PE' || x === 'PD' ? { t: x === 'PE' ? 'Ponta esquerda' : 'Ponta direita', ok: p => S.coPonta(p) && S.coSideLbl(p) === (x === 'PE' ? 'E' : 'D') }
         : x === 'CA' ? { t: 'Centroavante', ok: p => p.pos === 'ATA' && !S.coPonta(p) }
         : x === 'VOL' || x === 'MO' ? { t: x === 'VOL' ? 'Volante' : 'Meia', ok: p => p.pos === 'MEI' && S.coVol(p) === (x === 'VOL') }
         : { t: x === 'MEI' ? 'Meio-campo' : POS_NM[x], ok: p => p.pos === x })) },

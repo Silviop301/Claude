@@ -326,12 +326,15 @@
     if (p.vo !== undefined) return !!p.vo;
     return hash(String(p.src || p.id) + '|vol') % 100 < 45;
   };
-  // Sigla e nome da posição com o lado (Silvio 2026-11-18: "trocar o nome pra LE e LD", em todo lugar; pontas PE/PD).
-  // Lateral dos dois lados fica LAT, ponta dos dois lados PON, centroavante ATA
-  S.coPosAb = p => !p ? '' : p.pos === 'LAT' ? ({ E: 'LE', D: 'LD' })[S.coSide(p)] || 'LAT'
-    : p.pos === 'ATA' && S.coPonta(p) ? ({ E: 'PE', D: 'PD' })[S.coSide(p)] || 'PON' : p.pos === 'MEI' && S.coVol(p) ? 'VOL' : p.pos;
-  S.coPosNm = p => !p ? '' : p.pos === 'LAT' ? ({ E: 'Lateral esquerdo', D: 'Lateral direito' })[S.coSide(p)] || 'Lateral'
-    : p.pos === 'ATA' ? (S.coPonta(p) ? ({ E: 'Ponta esquerda', D: 'Ponta direita' })[S.coSide(p)] || 'Ponta' : 'Centroavante')
+  // Sigla e nome da posição com o lado (Silvio 2026-11-18: "trocar o nome pra LE e LD", em todo lugar; pontas PE/PD; ATA = centroavante)
+  // Silvio 23:42: "não quero ver PON no banco e PD e PE na escalação": a sigla sempre tem um lado. Quem joga dos dois lados
+  // (S.coSide 'A', sem perda em nenhum) aparece pelo lado de um sorteio preso a ele; a regra do lado não muda
+  const sideLbl = p => { const v = S.coSide(p); return v !== 'A' ? v : hash(String(p.src || p.id) + '|ladoA') % 2 ? 'D' : 'E'; };
+  S.coSideLbl = sideLbl;
+  S.coPosAb = p => !p ? '' : p.pos === 'LAT' ? (sideLbl(p) === 'E' ? 'LE' : 'LD')
+    : p.pos === 'ATA' && S.coPonta(p) ? (sideLbl(p) === 'E' ? 'PE' : 'PD') : p.pos === 'MEI' && S.coVol(p) ? 'VOL' : p.pos;
+  S.coPosNm = p => !p ? '' : p.pos === 'LAT' ? (sideLbl(p) === 'E' ? 'Lateral esquerdo' : 'Lateral direito')
+    : p.pos === 'ATA' ? (S.coPonta(p) ? (sideLbl(p) === 'E' ? 'Ponta esquerda' : 'Ponta direita') : 'Centroavante')
     : p.pos === 'MEI' ? (S.coVol(p) ? 'Volante' : 'Meia') : ({ GOL: 'Goleiro', ZAG: 'Zagueiro' })[p.pos] || p.pos;
   // Lado da vaga: 'E' ou 'D' nas vagas abertas (o primeiro da linha é o lado esquerdo, como S.coSlotLbl), senão nada
   const slotSide = (form, i) => {
