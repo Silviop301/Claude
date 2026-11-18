@@ -7,7 +7,7 @@
 <title>Contador · Climbix</title>
 <meta name="theme-color" content="#0F3D2A">
 <link rel="icon" href="icons/icon-192.png">
-<!-- Contador ao vivo: lê as somas anônimas de api/stats.php?a=list a cada 15 s (as mesmas do e-mail das 18h). -->
+<!-- Contador ao vivo: lê as somas anônimas de api/stats.php?a=list a cada 15 s . -->
 <style>
   @font-face { font-family: 'Barlow'; font-weight: 500; font-display: swap; src: url('fonts/barlow-500-latin.woff2') format('woff2'); }
   @font-face { font-family: 'Barlow'; font-weight: 700; font-display: swap; src: url('fonts/barlow-700-latin.woff2') format('woff2'); }
@@ -22,7 +22,7 @@
   .dot { width: 9px; height: 9px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 0 0 #3ddc8488; animation: pulse 2s infinite; }
   .dot.off { background: #e05a4f; animation: none; }
   @keyframes pulse { 70% { box-shadow: 0 0 0 8px #3ddc8400; } 100% { box-shadow: 0 0 0 0 #3ddc8400; } }
-  .big { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+  .big { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
   .tile { background: var(--card); border-radius: 12px; padding: 10px 12px; }
   .tile b { display: block; font: 800 34px/1 'Barlow Condensed', sans-serif; color: var(--gold); transition: color .3s; }
   .tile span { font-size: 12px; color: var(--text-2); }
@@ -43,7 +43,8 @@
 <main>
   <div class="top"><h1>CONTADOR AO VIVO</h1><div class="live"><i class="dot" id="dot"></i><span id="st">carregando…</span></div></div>
   <div class="big">
-    <div class="tile"><b id="t0">–</b><span>aparelhos novos hoje</span></div>
+    <div class="tile"><b id="ta">–</b><span>aparelhos hoje</span></div>
+    <div class="tile"><b id="t0">–</b><span>novos hoje</span></div>
     <div class="tile"><b id="t1">–</b><span>carreiras hoje</span></div>
     <div class="tile"><b id="t2">–</b><span>sessões hoje</span></div>
   </div>
@@ -51,16 +52,20 @@
     <div class="card"><table id="tab"></table></div>
     <div class="card"><table id="src"></table></div>
   </div>
-  <div class="foot">Contagem anônima (sem nome, conta ou IP). Atualiza sozinho a cada 15 s.</div>
+  <div class="foot">Contagem anônima (sem nome, conta ou IP). Aparelhos diferentes: 7 dias = média por dia, Total = recorde. Atualiza a cada 15 s.</div>
 </main>
 <script>
 (function () {
   var SRC = { '': 'Direto', tiktok: 'TikTok', insta: 'Instagram', yt: 'YouTube', zap: 'WhatsApp', tabnews: 'TabNews', reddit: 'Reddit', face: 'Facebook',
     criador: 'Criador', itch: 'itch.io', x: 'X', discord: 'Discord', imprensa: 'Imprensa', outro: 'Outro' };
+  // 3º item = aparelhos diferentes no dia: não dá para somar dias (o mesmo aparelho volta), então 7 dias = média por dia e Total = recorde
   var LINES = [
+    ['Aparelhos que abriram', function (r) { return r.ev === 'day'; }, 1],
+    ['Aparelhos que jogaram', function (r) { return r.ev === 'play'; }, 1],
     ['Aparelhos novos', function (r) { return r.ev === 'first'; }],
     ['Carreiras (Treinador)', function (r) { return r.ev === 'start' && r.mode === 'treinador'; }],
     ['Temporadas', function (r) { return r.ev === 'season'; }],
+    ['Carreiras terminadas', function (r) { return r.ev === 'end'; }],
     ['Sessões', function (r) { return r.ev === 'session'; }],
     ['Sessões 5+ min', function (r) { return r.ev === 'session' && ['5-10', '10-20', '20-40', '40+'].indexOf(r.k) >= 0; }],
     ['Voltaram (1 dia)', function (r) { return r.ev === 'd1'; }],
@@ -77,10 +82,14 @@
     var html = '<tr><th></th><th>Hoje</th><th>Ontem</th><th>7 dias</th><th>Total</th></tr>';
     LINES.forEach(function (l) {
       var v = cols.map(function (c) { return sum(rows, c[0], c[1], l[1]); });
+      if (l[2]) { var pd = {}; rows.forEach(function (r) { if (l[1](r)) pd[r.day] = (pd[r.day] || 0) + r.n; });
+        var nd = Object.keys(pd).filter(function (d) { return d >= w; }).length;
+        v[2] = nd ? Math.round(v[2] / nd) + '/dia' : '–';
+        v[3] = Object.keys(pd).length ? 'rec. ' + Math.max.apply(null, Object.keys(pd).map(function (d) { return pd[d]; })) : '–'; }
       html += '<tr><td>' + l[0] + '</td><td class="h">' + v[0] + '</td><td>' + v[1] + '</td><td>' + v[2] + '</td><td>' + v[3] + '</td></tr>';
     });
     document.getElementById('tab').innerHTML = html;
-    set('t0', sum(rows, h, h, LINES[0][1])); set('t1', sum(rows, h, h, LINES[1][1])); set('t2', sum(rows, h, h, LINES[3][1]));
+    set('ta', sum(rows, h, h, LINES[0][1])); set('t0', sum(rows, h, h, LINES[2][1])); set('t1', sum(rows, h, h, LINES[3][1])); set('t2', sum(rows, h, h, LINES[6][1]));
     var s = {};
     rows.forEach(function (r) { if (r.ev !== 'first' && !(r.ev === 'start' && r.mode === 'treinador')) return;
       var o = s[r.k] = s[r.k] || [0, 0, 0]; if (r.ev === 'first') { if (r.day === h) o[0] += r.n; o[2] += r.n; } else if (r.day === h) o[1] += r.n; });
