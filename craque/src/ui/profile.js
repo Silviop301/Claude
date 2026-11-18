@@ -281,9 +281,11 @@
         '<div class="pft-gs">' + wk.goals.map(goal).join('') + '</div></div>' +
       '<div class="pft-r"><div class="pft-p"><span class="pft-lb">COMO TÉCNICO</span><div class="pft-n">' + num(R.t, R.t === 1 ? 'título' : 'títulos', 1) + num(R.v, R.v === 1 ? 'vitória' : 'vitórias') + num(R.s, R.s === 1 ? 'temporada' : 'temporadas') + '</div></div>' +
         '<div class="pft-p"><span class="pft-lb">ÚLTIMO TÍTULO</span>' + (lt ? '<span class="pft-t">' + U.crest(lt.club) + '<span><b>' + esc(lt.name) + ' ' + (U.YEAR0 + lt.s) + '</b><small>' + esc(cl.short || cl.name || '') + '</small></span></span>' : '<span class="pft-no">Nenhum por enquanto</span>') + '</div>' +
-        (mine.length ? '<div class="pft-p grow"><span class="pft-lb">SEUS TIMES</span><span class="pft-cl">' + mine.slice(0, mine.length > 4 ? 3 : 4).map(id => U.crest(id)).join('') + (mine.length > 4 ? '<b>+' + (mine.length - 3) + '</b>' : '') + '</span></div>' : '') +
+        (mine.length ? '<div class="pft-p grow"><span class="pft-lb">SEUS TIMES' + (mine.length > 3 ? ' <em>' + mine.length + '</em>' : '') + '</span><span class="pft-cl" id="pft-cl">' + mine.map(id => U.crest(id)).join('') + '</span></div>' : '') +
       '</div></div>',
       w => { w.querySelector('#pft-back').onclick = () => { sfx('tap'); (back || U.home)(); };
+        const cl = w.querySelector('#pft-cl'); // todos os escudos numa faixa que rola de lado, com o esmaecido na borda enquanto há mais (2026-11-18)
+        if (cl) { const f = () => cl.classList.toggle('more', cl.scrollLeft + cl.clientWidth < cl.scrollWidth - 2); cl.onscroll = f; requestAnimationFrame(f); }
         if (w.querySelector('#pft-acc')) w.querySelector('#pft-acc').onclick = () => { sfx('tap'); U.cloud('login', null, null, () => openLand(back)); }; }, 'O Climbix é jogado com o celular deitado.');
   }
 
