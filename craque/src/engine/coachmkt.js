@@ -397,7 +397,7 @@
     if (d.pay && left > 0) { f.inst = f.inst || []; f.inst.push({ n: p.n, v: Math.ceil(left / d.pay / 1000) * 1000, k: d.pay }); }
     if (d.tr) { const q = co.squad.find(x => x.id === d.tr); if (q && p.club && S.coWorldSold) S.coWorldSold(co, q, p.club, 0, { tr: 1 });
       co.squad = co.squad.filter(x => x.id !== d.tr); co.xi = (co.xi || []).filter(x => x !== d.tr); co.bench = (co.bench || []).filter(x => x !== d.tr); }
-    const np = Object.assign({}, p, { src: p.src || p.id, id: 'p' + (co.pid++), wage: t.w, ct: t.y, role: ROLE[t.role].k, mo: 70, en: 100, out: 0, sus: 0, from: p.club || null });
+    const np = Object.assign({}, p, { src: p.src || p.id, id: 'p' + (co.pid++), wage: t.w, vw: Math.min(t.w, S.coMktTerms(co, p).ask(1)), ct: t.y, role: ROLE[t.role].k, mo: 70, en: 100, out: 0, sus: 0, from: p.club || null, chg: co.season });
     delete np.club; delete np.lg; delete np.num;
     co.squad.push(np);
     m.got[p.id] = 1; n.st = 'signed';
@@ -432,7 +432,7 @@
     if (S.coMktFolha(co, p, t).pct > 100 && t.w > p.wage) return { k: 'teto' };
     if (!S.coMktYes(co, p, t, n)) { n.apat--; if (n.apat <= 0) { n.st = 'no'; return { k: 'no' }; } return { k: 'recusa' }; }
     // os anos contam depois desta temporada (antes, renovar por 1 ano quem estava no último ano não mudava nada e ele saía)
-    p.wage = t.w; p.ct = t.y + 1; p.role = ROLE[t.role].k; p.mo = Math.min(100, (p.mo === undefined ? 60 : p.mo) + 8); n.st = 'signed';
+    p.vw = Math.min(t.w, S.coMktTerms(co, p).ask(1)); p.wage = t.w; p.ct = t.y + 1; p.role = ROLE[t.role].k; p.mo = Math.min(100, (p.mo === undefined ? 60 : p.mo) + 8); n.st = 'signed';
     return { k: 'signed', p };
   };
 
@@ -458,6 +458,10 @@
   const rngS = (co, k) => S.rng(hash((co.seed || 0) + '|' + co.season + '|' + k));
   S.coMktCanSell = (co, p) => co.squad.length > 18 && co.squad.filter(x => x.pos === p.pos).length > (MINP[p.pos] || 2);
   S.coMktListed = (co, p) => !!(co.sell && co.sell[p.id]);
+  // Chegou nesta temporada (2026-11-18, caça de brechas): contratar alguém sem clube de graça e vender na mesma janela
+  // dobrava o caixa (R$ 3 mi por jogador). Quem chegou só pode ser vendido na temporada seguinte; rescindir continua valendo
+  S.coMktNew = (co, p) => !!p && p.chg === co.season;
+  S.coMktSellOk = (co, p) => S.coMktCanSell(co, p) && !S.coMktNew(co, p);
   // Rescisão (Silvio 2026-11-11: "não dá pra fazer uns cortes de custo antes da janela?"): vale em qualquer rodada, sem janela.
   // Multa = M.resc.k dos salários que faltam do contrato (rodadas desta temporada + as das seguintes), entre `min` e `max`
   // semanas; sai do caixa na hora (Contratações, mesmo no vermelho), o salário sai da folha e ele fica sem clube na temporada
@@ -501,7 +505,7 @@
   // elenco (Silvio 2026-11-09); quem ela mesma pôs à venda (o.ask) recebe na hora
   function incDraw(co, k) {
     const L = [], r = rngS(co, 'inc' + k);
-    const cand = co.squad.filter(p => S.coMktCanSell(co, p) && !p.from).map(p => ({ p, x: r() / (M.inc * (1 + Math.max(0, p.ovr - 60) / 20) + (S.coMktListed(co, p) ? M.incList : 0)) }))
+    const cand = co.squad.filter(p => S.coMktSellOk(co, p) && !p.from).map(p => ({ p, x: r() / (M.inc * (1 + Math.max(0, p.ovr - 60) / 20) + (S.coMktListed(co, p) ? M.incList : 0)) }))
       .filter(o => o.x < 1).sort((a, b) => a.x - b.x);
     const nList = cand.filter(o => S.coMktListed(co, o.p)).length;
     cand.slice(0, M.incMax + nList).forEach(o => { const of = mkOffer(co, o.p, r); if (of) { if (S.coMktListed(co, o.p)) of.ask = 1; L.push(of); } });
@@ -515,14 +519,14 @@
     if (!w.open) return [];
     const early = w.k === 'pre' && co.since === co.season && co.ss.i < M.incFrom;
     if (m.incK !== w.k) { m.incK = w.k; m.inc = incDraw(co, w.k); }
-    return m.inc.filter(o => o.st === 'open' && (!early || o.ask) && co.squad.some(p => p.id === o.id));
+    return m.inc.filter(o => o.st === 'open' && (!early || o.ask) && co.squad.some(p => p.id === o.id && !S.coMktNew(co, p)));
   };
   S.coMktOfferFor = (co, p) => S.coMktInbox(co).find(o => o.id === p.id) || null;
   // Pôr à venda / tirar; com a janela aberta, quem entra à venda pode receber proposta na hora
   S.coMktList = function (co, p, on) {
     co.sell = co.sell || {}; if (on) co.sell[p.id] = 1; else delete co.sell[p.id];
     if (!on) return null;
-    const box = S.coMktInbox(co), m = S.coMkt(co); if (!S.coMktWin(co).open || box.some(o => o.id === p.id) || (m.inc || []).some(o => o.id === p.id) || !S.coMktCanSell(co, p)) return null;
+    const box = S.coMktInbox(co), m = S.coMkt(co); if (!S.coMktWin(co).open || box.some(o => o.id === p.id) || (m.inc || []).some(o => o.id === p.id) || !S.coMktSellOk(co, p)) return null;
     const r = rngS(co, 'list' + p.id + '|' + (m.used || 0)); if (r() > M.incList) return null;
     const of = mkOffer(co, p, r); if (of) { of.ask = 1; m.inc.push(of); } return of;
   };

@@ -2802,7 +2802,7 @@
       side = '<div class="fn2-st"><small class="cx-l">' + CX_IC + 'CAIXA</small><b>' + c.brl(f.caixa) + '</b><em>fica ' + c.brl(f.caixa - pick) + '</em></div><span class="rs-gap"></span>' +
         '<button class="tm-b" id="apl-back">' + (A ? 'Voltar' : 'Agora não') + '</button><button class="tm-go" id="apl-put">Aplicar ' + c.brl(pick) + '</button>';
     } else {
-      left = '<div class="bk2-top"><span><small>APLICAÇÃO</small><b>' + pct + '</b></span></div><p class="fn2-none">O caixa precisa guardar ' + keep + ' semanas de folha antes de aplicar. Hoje não sobra nada para aplicar.</p>';
+      left = '<div class="bk2-top"><span><small>APLICAÇÃO</small><b>' + pct + '</b></span></div><p class="fn2-none">O caixa precisa guardar ' + keep + ' semanas de folha' + (f.loan ? ' e o que falta do empréstimo' : '') + ' antes de aplicar. Hoje não sobra nada para aplicar.</p>';
       side = '<div class="fn2-st"><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 's3' : '') + '">' + c.brl(f.caixa) + '</b><em>' + (f.caixa < 0 ? 'no vermelho' : 'pouco para aplicar') + '</em></div><span class="rs-gap"></span><button class="tm-go" id="apl-back">Voltar</button>';
     }
     show('<div class="bk2 bk2-ap"><div class="tm-h"><button class="tcr-back" id="apl-bk" aria-label="Voltar">' + BK + '</button>' + bkTabs('apl') + '<button class="ol2-q" id="bk2-q" aria-label="Como funciona">?</button></div>' +
@@ -2928,8 +2928,8 @@
     if (q) {
       const mo = q.mo === undefined ? 60 : q.mo, moT = mo >= 70 ? 'alta' : mo >= 45 ? 'boa' : 'baixa';
       const st = (k, v, bad) => '<span><small>' + k + '</small><b' + (bad ? ' class="dn"' : '') + '>' + v + '</b></span>';
-      const renOk = S.coMktRenOk(co, q), listed = S.coMktListed(co, q), canS = S.coMktCanSell(co, q), ofq = S.coMktOfferFor(co, q), win = S.coMktWin(co);
-      const hint = ofq ? 'O ' + esc(club(ofq.club).short || club(ofq.club).name) + ' fez proposta' : listed ? (win.open ? 'À venda: as propostas chegam na janela' : 'À venda: espera a janela abrir') : q.ct <= 1 ? 'Último ano: se não renovar, ele sai' : !canS ? 'Elenco curto nessa posição' : '';
+      const renOk = S.coMktRenOk(co, q), listed = S.coMktListed(co, q), canS = S.coMktCanSell(co, q), nova = S.coMktNew(co, q), ofq = S.coMktOfferFor(co, q), win = S.coMktWin(co);
+      const hint = ofq ? 'O ' + esc(club(ofq.club).short || club(ofq.club).name) + ' fez proposta' : listed ? (win.open ? 'À venda: as propostas chegam na janela' : 'À venda: espera a janela abrir') : nova ? 'Chegou agora: vender só no ano que vem' : q.ct <= 1 ? 'Último ano: se não renovar, ele sai' : !canS ? 'Elenco curto nessa posição' : '';
       // A ficha tem duas abas (Silvio 2026-11-10, opção A): Atributos (as 6 barras de S.coAttrs: o mais alto em dourado, o
       // mais baixo em laranja) e Situação (energia, potencial, moral, salário, contrato, renovar e vender, como era a ficha)
       const at = S.coAttrs(q), ks = S.coAtKeys(q), hi = at.indexOf(Math.max.apply(null, at)), mn = Math.min.apply(null, at), lo = mn <= q.ovr - 8 ? at.indexOf(mn) : -1; // laranja só para ponto fraco de verdade (8 abaixo do geral)
@@ -2940,7 +2940,7 @@
         (elenco.ct ? '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/rodada') + '</div>' +
         '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span></div>' +
         '<div class="lde2-act"><button class="lde2-ren" id="lde-ren" data-id="' + q.id + '"' + (renOk ? '' : ' disabled') + '>Renovar' + (renOk ? '' : '<small>no fim do contrato</small>') + '</button>' +
-          (ofq ? '<button class="lde2-sell of" id="lde-of">Ver proposta</button>' : '<button class="lde2-sell' + (listed ? ' on' : '') + '" id="lde-sell"' + (canS || listed ? '' : ' disabled') + '>' + (listed ? 'Tirar da venda' : 'Pôr à venda') + '</button>') +
+          (ofq ? '<button class="lde2-sell of" id="lde-of">Ver proposta</button>' : '<button class="lde2-sell' + (listed ? ' on' : '') + '" id="lde-sell"' + ((canS && !nova) || listed ? '' : ' disabled') + '>' + (listed ? 'Tirar da venda' : 'Pôr à venda') + '</button>') +
           '<button class="lde2-resc" id="lde-resc"' + (canS ? '' : ' disabled') + '>Rescindir</button></div>' +
         (hint ? '<small class="lde2-hint">' + hint + '</small>' : '') : bars) + '</div>';
     }
