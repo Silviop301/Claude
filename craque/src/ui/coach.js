@@ -4,6 +4,7 @@
 (function () {
   const U = window.CRAQUE_UI;
   // Velocidade padrão dos jogos do Treinador, escolhida nos Ajustes ('1' ou '3'; neste aparelho)
+  U.coRp = v => { try { if (v !== undefined) localStorage.setItem('climbix-co-rp', v ? '1' : '0'); return localStorage.getItem('climbix-co-rp') !== '0'; } catch (e) { return true; } }; // replay do gol (lido no livesim.js; Silvio 18/11: opção para tirar)
   U.coFx = v => { try { if (v !== undefined) localStorage.setItem('climbix-co-fx', v ? '1' : '0'); return localStorage.getItem('climbix-co-fx') !== '0'; } catch (e) { return true; } }; // comemoração do gol e câmera lenta do chute (lido no livesim.js)
   // 'fim' = Só resultado (Silvio, 13/11: para quem só quer o gerenciamento): o jogo não abre o ao vivo; o motor joga os 90 min,
   // o auxiliar faz as trocas de cansaço e lesão (S.coMatchRest), pênaltis da copa e festas de título seguem no resultado
