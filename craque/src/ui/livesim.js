@@ -1235,6 +1235,9 @@
       const s = p.side, i = T[s].indexOf(p); if (i < 0) return;
       const wasMe = isMe(p);
       T[s].splice(i, 1);
+      // Expulso enquanto esperava a troca (sai quando a bola para): a troca cai, quem ia entrar fica no banco
+      if (subQ && subQ.ph === 'wait') { subQ.items = subQ.items.filter(q => q.p !== p); if (!subQ.items.length) { subQ = subQ2; subQ2 = null; } }
+      if (subQ2) { subQ2.items = subQ2.items.filter(q => q.p !== p); if (!subQ2.items.length) subQ2 = null; }
       if (s === 0 && ME >= 0) { if (i === ME) { ME = -1; en = null; if (lc) lcDone(); } else if (i < ME) ME--; }
       ALL = T[0].concat(T[1]);
       ALL.forEach(q => { if (q.mark === p) q.mark = null; });
