@@ -414,6 +414,7 @@
 
   // Abriu o jogo: volta de um login com serviço ou, com conta, busca o que mudou em outro aparelho
   function boot() {
+    try { if (sessionStorage.getItem('climbix-outra-aba')) { sessionStorage.removeItem('climbix-outra-aba'); setTimeout(() => payToast('Carreira atualizada', 'Ela foi jogada em outra aba. Continua de onde parou lá.'), 600); } } catch (e) {}
     if (window.CLIMBIX_SOLO || oauthReturn() || !acc()) return;
     sync().then(fresh);
     try { if (sessionStorage.getItem('climbix-outro-aparelho')) { sessionStorage.removeItem('climbix-outro-aparelho'); payToast('Carreira atualizada', 'Você jogou em outro aparelho. Ela continua de onde parou lá.'); } } catch (e) {}

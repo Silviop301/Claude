@@ -23,12 +23,16 @@
   // Mesma conta em dois aparelhos (2026-11-11): o app que ficou aberto num aparelho seguia com a carreira da memória e, ao
   // salvar, apagava o que foi jogado no outro. Depois de puxar da nuvem (cloud.js), se o save guardado desta vaga é mais
   // novo que o que este aparelho conhece, a carreira aberta não salva mais e o jogo recarrega já com a nova
-  U.coStale = () => {
+  U.coStale = aba => {
     if (!co || frozen) return false;
     const sv = load(U.slotKey(SAVE_CO, co.slot)); if (!sv || !(sv.at > savedAt)) return false;
-    frozen = true; try { sessionStorage.setItem('climbix-outro-aparelho', '1'); } catch (e) {}
+    frozen = true; try { sessionStorage.setItem(aba ? 'climbix-outra-aba' : 'climbix-outro-aparelho', '1'); } catch (e) {}
     location.reload(); return true;
   };
+  // A mesma carreira aberta em duas abas do mesmo aparelho (2026-11-18, caça de brechas): cada aba seguia com a sua cópia e
+  // dava para fechar a temporada (e ganhar as moedas) duas vezes, ou a aba velha apagava o que a outra jogou. Quando a
+  // outra aba grava esta vaga, esta para de salvar e recarrega com a carreira nova
+  window.addEventListener('storage', e => { if (co && !frozen && e.key && e.key === U.slotKey(SAVE_CO, co.slot)) U.coStale(true); });
   const yr = () => YEAR0 + co.season;
   const last = n => String(n || '').split(' ').filter(Boolean).pop() || '';
   const posTxt = { GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', MEI: 'Meia', ATA: 'Atacante' };
