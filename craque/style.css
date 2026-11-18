@@ -9686,7 +9686,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 .fdt-p { flex: 1; min-height: 0; box-sizing: border-box; border-radius: 18px; background: #141517; padding: 12px; display: flex; flex-direction: column; }
 .fdt-n { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 8px; }
 .fdt-n span { border-radius: 12px; background: #1E2023; padding: 0 14px; display: flex; flex-direction: column; justify-content: center; gap: 6px; min-width: 0; }
-.fdt-n small { font: 600 14px/1 var(--body); color: #B9C9BF; } .fdt-n b { font: 800 26px/1 var(--display); white-space: nowrap; } .fdt-n b.sm { font-size: 18px; line-height: 1.22; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } /* copa com fase longa ("Caiu nas oitavas de final") quebrava em 5 linhas e os 6 quadros passavam da caixa (2026-11-15) */ /* "Caiu na estreia" passava do quadro (2026-11-13) */
+.fdt-n small { font: 600 14px/1 var(--body); color: #B9C9BF; } .fdt-n b { font: 800 26px/1 var(--display); white-space: nowrap; } .fdt-n b.sm { font-size: 18px; line-height: 1.22; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: none; max-height: 2.44em; } /* no iPhone o -webkit-box esticava até o fundo do quadro e a copa ficava no alto (2026-11-18) */ /* copa com fase longa ("Caiu nas oitavas de final") quebrava em 5 linhas e os 6 quadros passavam da caixa (2026-11-15) */ /* "Caiu na estreia" passava do quadro (2026-11-13) */
 .fdt-d { flex: 1; display: flex; flex-direction: column; } .fdt-d > div { flex: 1; display: flex; align-items: center; gap: 12px; padding: 0 4px; } .fdt-d > div + div { border-top: 1px solid rgba(243,241,234,.1); }
 .fdt-d i { width: 44px; height: 44px; flex: none; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--gold); display: flex; align-items: center; justify-content: center; font: 800 19px/1 var(--display); font-style: normal; }
 .fdt-d span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; } .fdt-d small { font: 700 13px/1 var(--display); letter-spacing: .12em; color: var(--gold); }
@@ -9751,7 +9751,9 @@ button.coin-pill { cursor: pointer; border: 0; }
 .tc-rw { display: flex; gap: 8px; margin-top: 12px; animation: tcFd .5s 1.8s both; }
 .tc-rw span { display: flex; flex-direction: column; gap: 4px; align-items: center; min-width: 104px; padding: 8px 12px; border-radius: 12px; background: #1f2226; border: 1px solid rgba(243, 241, 234, .1); }
 .tc-rw small { font: 700 12px/1 var(--body); letter-spacing: 1.2px; color: #9aa0a6; white-space: nowrap; }
-.tc-rw b { font: 800 20px/1 var(--display); color: #f2efe6; white-space: nowrap; }
+.tc-rw b { font: 800 20px/1 var(--display); color: #f2efe6; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+.tc-rw span { justify-content: center; }
+.tc-rwi { width: 30px; height: 30px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .4)); }
 /* Propostas: voltar do tamanho e na altura da pílula das moedas (Silvio, 11/11) */
 .pzo .tcr-back { left: 16px; top: 10px; width: 44px; height: 44px; }
 /* Aviso do topo (meta, nível, compra) espera a festa da taça ou do acesso sair da tela */
